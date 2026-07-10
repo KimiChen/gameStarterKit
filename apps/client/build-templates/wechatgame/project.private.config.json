@@ -1,0 +1,6 @@
+{
+  "description": "由 build-templates 在每次微信小游戏构建时自动拷入构建产物。作用：默认关闭开发者工具的合法域名校验（等价于手动勾选 详情→本地设置→不校验合法域名），使 http://localhost:2568 的本地服务端可用。仅影响开发者工具，真机/上线仍需在微信后台配置 https/wss 域名白名单。",
+  "setting": {
+    "urlCheck": false
+  }
+}

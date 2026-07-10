@@ -1,0 +1,21 @@
+{
+  // 服务端不继承根 tsconfig.base.json，原因：
+  //  - @colyseus/schema v4 需要传统装饰器：experimentalDecorators=true，
+  //    且 useDefineForClassFields 必须为 false，否则 @type() 装饰的字段会被类字段语义覆盖而静默失效
+  //  - moduleResolution 用 Bundler 而非官方模板的 NodeNext：共享包 @game/shared 的
+  //    相对导入必须无后缀（Cocos 编译器要求 .ts 导入省略后缀），NodeNext 会强制 .js 后缀。
+  //    运行时始终通过 tsx（dev/start 脚本），tsx 支持无后缀解析，不受影响
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true
+  },
+  "include": ["src", "test"]
+}

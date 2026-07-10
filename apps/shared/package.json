@@ -1,0 +1,16 @@
+{
+  "name": "@game/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "双端共享的协议 / 常量 / 纯逻辑（零依赖，Cocos 编译器安全）",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

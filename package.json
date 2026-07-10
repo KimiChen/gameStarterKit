@@ -1,0 +1,21 @@
+{
+  "name": "game",
+  "version": "0.1.0",
+  "private": true,
+  "description": "微信小游戏 monorepo：Cocos Creator 3.8.8 客户端 + Colyseus 0.17 服务端 + 双端共享包",
+  "workspaces": [
+    "apps/shared",
+    "apps/server"
+  ],
+  "scripts": {
+    "sync:shared": "node scripts/sync-shared.mjs",
+    "sync:shared:watch": "node scripts/sync-shared.mjs --watch",
+    "dev:server": "npm --workspace @game/server run dev",
+    "start:server": "npm --workspace @game/server run start",
+    "typecheck": "npm --workspace @game/shared run typecheck && npm --workspace @game/server run typecheck",
+    "verify:ecs": "cd apps/client/assets/script/lib/ecs && shasum -a 256 -c ../../../../../../scripts/ecs.sha256"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

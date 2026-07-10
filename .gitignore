@@ -1,0 +1,22 @@
+# Node
+node_modules/
+*.log
+
+# 构建产物
+dist/
+
+# Cocos Creator（apps/client）——编辑器可再生目录
+apps/client/library/
+apps/client/temp/
+apps/client/local/
+apps/client/build/
+apps/client/profiles/
+apps/client/native/
+
+# 系统
+.DS_Store
+
+# 说明：
+#  - apps/client/assets/script/shared/ 是 sync:shared 生成的，但需要提交
+#    （连同 .meta，保证 uuid 稳定、新 checkout 可直接打开工程）
+#  - apps/client/settings/ 需要提交（工程配置）

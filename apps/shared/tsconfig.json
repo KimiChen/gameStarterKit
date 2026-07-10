@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": [],
+    // 钉死到客户端 tsconfig 的最低 lib（ES2017）：共享代码必须在最保守的消费端也能编译，
+    // 否则 shared 这里能过、同步到 Cocos 后报错
+    "lib": ["ES2017"]
+  },
+  "include": ["src"]
+}
