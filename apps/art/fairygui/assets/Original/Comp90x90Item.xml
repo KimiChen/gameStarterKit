@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="90,90">
+  <displayList>
+    <loader id="n0_p9k5" name="ld_quality" xy="0,0" size="90,91" url="ui://k85eojd9p9k5d"/>
+    <loader id="n1_p9k5" name="ld_icon" xy="1,1" size="88,88" align="center" vAlign="middle" fill="scale"/>
+    <text id="n2_p9k5" name="txt_txt" xy="14,60" size="62,32" fontSize="22" color="#ff0000" align="center" vAlign="middle" text="{num}"/>
+    <component id="n3_sr5g" name="jb_red" src="pmstk" fileName="CommonRedDotNumber.xml" xy="75,-8" customData="{&quot;comps&quot;:[{&quot;type&quot;:&quot;JsBehaviour&quot;}]}"/>
+  </displayList>
+</component>

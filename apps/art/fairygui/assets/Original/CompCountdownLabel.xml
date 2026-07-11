@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="300,32" remark="{&quot;comps&quot;:[{&quot;type&quot;:&quot;JsBehaviour&quot;,&quot;module&quot;:&quot;CountdownLabel&quot;,&quot;comp&quot;:[{&quot;k&quot;:&quot;cdComp&quot;,&quot;v&quot;:&quot;txt_time&quot;,&quot;t&quot;:&quot;GRichTextField&quot;}],&quot;normal&quot;:{&quot;toTheNearestInt&quot;:true,&quot;endSceond&quot;:0,&quot;updateInterval&quot;:1},&quot;l10n&quot;:{&quot;endText&quot;:&quot;&quot;,&quot;content&quot;:&quot;&quot;},&quot;arraymap&quot;:{&quot;formatRules&quot;:[]}}]}">
+  <displayList>
+    <richtext id="093b7b10" name="txt_time" xy="151,16" pivot="0.5,0.5" anchor="true" size="270,42" fontSize="30" align="center" leading="0" ubb="true" text="[color=#000000]剩余时间[/color][color=#ffffff]：[/color][color=#6feb4f]10:10:10[/color]">
+      <relation target="" sidePair="center-center,middle-middle"/>
+    </richtext>
+  </displayList>
+</component>

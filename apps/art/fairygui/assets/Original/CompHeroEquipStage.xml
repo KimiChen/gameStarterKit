@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="50,30">
+  <displayList>
+    <loader id="n0_ed16" name="ld_stageBg" xy="0,0" size="50,30" group="n1_ed16" url="ui://k85eojd9imn6m" fill="scaleFree"/>
+    <richtext id="n2_ed16" name="txt_stage" xy="25,14" pivot="0.5,0.5" anchor="true" size="42,19" group="n1_ed16" fontSize="12" color="#ffffff" align="center" vAlign="middle" text="{stage}"/>
+    <group id="n1_ed16" name="go_normalStage" xy="0,0" size="50,30" advanced="true"/>
+  </displayList>
+</component>

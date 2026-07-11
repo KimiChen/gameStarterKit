@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="100,40" overflow="hidden" extention="Button">
+  <controller name="button" pages="0,up,1,down,2,over,3,selectedOver" selected="0"/>
+  <displayList>
+    <image id="n0" name="img_down" src="imn6y" fileName="RGBA/b12_png.png" xy="0,0">
+      <gearDisplay controller="button" pages="0,2"/>
+      <gearXY controller="button" pages="1,3" values="-100,0|-100,0" default="0,0" tween="true"/>
+    </image>
+    <image id="n1" name="img_up" src="imn6z" fileName="RGBA/b13_png.png" xy="100,0">
+      <gearDisplay controller="button" pages="1,3"/>
+      <gearXY controller="button" pages="1,3" values="0,0|0,0" default="100,0" tween="true"/>
+    </image>
+    <text id="n4" name="title" xy="37,0" size="64,40" fontSize="24" color="#ffffff" align="center" vAlign="middle" autoSize="none" text="">
+      <gearXY controller="button" pages="0,1,2,3" values="37,0|0,0|37,0|0,0"/>
+    </text>
+  </displayList>
+  <Button mode="Check"/>
+</component>

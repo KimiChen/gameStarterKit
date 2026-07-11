@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component extention="Button" size="34,35">
+  <controller name="button" pages="0,up,1,down,2,over,3,selectedOver" selected="0"/>
+  <displayList>
+    <image anchor="true" fileName="RGBA/icon_view_npc_details_view.png" id="59585296" name="icon" pivot="0.5,0.5" scale="0.8095,0.7907" size="42,43" src="e9pj85" xy="17,17"/>
+  </displayList>
+  <Button/>
+</component>

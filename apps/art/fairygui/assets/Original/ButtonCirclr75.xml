@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="75,75" extention="Button">
+  <displayList>
+    <image id="n0_ed16" name="img_bg" src="gsiac" fileName="RGBA/mail_7.png" xy="37,37" pivot="0.5,0.5" anchor="true"/>
+    <loader id="n1_ed16" name="icon" xy="21,21" size="32,32" url="ui://k85eojd9ed1613" fill="scale" autoSize="true" clearOnPublish="true"/>
+    <richtext id="n2_ed16" name="title" xy="37,49" pivot="0.5,0" anchor="true" size="57,29" fontSize="20" color="#00ff00" strokeColor="#000000" text="{num}"/>
+  </displayList>
+  <Button/>
+</component>

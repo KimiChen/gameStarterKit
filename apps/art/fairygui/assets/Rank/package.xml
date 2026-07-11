@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<packageDescription id="f5rank00">
+  <resources>
+    <component id="rken01" name="RankEntry.xml" path="/" exported="true"/>
+    <component id="rkmn01" name="RankMain.xml" path="/" exported="true"/>
+    <component id="rkit01" name="RankItem.xml" path="/" exported="true"/>
+    <!-- 榜单专属美术(从原版反编译图集 img/rank + img/gameOverUI 抽出,忠实原版;抽图配方 tools/rank-extract-sprites.cjs)。 -->
+    <image id="md0" name="rankImg0.png" path="/art/" exported="true"/>
+    <image id="md1" name="rankImg1.png" path="/art/" exported="true"/>
+    <image id="md2" name="rankImg2.png" path="/art/" exported="true"/>
+    <image id="md3" name="rankImg3.png" path="/art/" exported="true"/>
+    <image id="rbg0" name="rankItem0.png" path="/art/" exported="true" scale="9grid" scale9grid="15,15,20,25"/>
+    <image id="rbg1" name="rankItem1.png" path="/art/" exported="true" scale="9grid" scale9grid="15,15,20,25"/>
+    <image id="rbg2" name="rankItem2.png" path="/art/" exported="true" scale="9grid" scale9grid="15,15,20,25"/>
+    <image id="rbg3" name="rankItem3.png" path="/art/" exported="true" scale="9grid" scale9grid="15,15,20,25"/>
+    <image id="rbgS" name="rankItemSelf.png" path="/art/" exported="true" scale="9grid" scale9grid="15,15,26,28"/>
+    <image id="avbg" name="avatarBg.png" path="/art/" exported="true"/>
+    <image id="sta0" name="star0.png" path="/art/" exported="true"/>
+    <image id="sta1" name="star1.png" path="/art/" exported="true"/>
+    <image id="pbg" name="rankBg1.png" path="/art/" exported="true" scale="9grid" scale9grid="47,256,556,80"/>
+    <image id="tbg" name="titleBg.png" path="/art/" exported="true"/>
+    <image id="tabC" name="countryBtn.png" path="/art/" exported="true" scale="9grid" scale9grid="30,15,166,42"/>
+    <image id="tabP" name="provinceBtn.png" path="/art/" exported="true" scale="9grid" scale9grid="30,15,166,42"/>
+    <misc id="stag2" name="README.md" path="/"/>
+  </resources>
+  <publish name="Rank"/>
+</packageDescription>

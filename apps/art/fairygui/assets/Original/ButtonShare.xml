@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="100,30" extention="Button">
+  <displayList>
+    <image id="n3_ed16" name="img_share" src="ed161b" fileName="RGBA/img_faction_location_img_share.png" xy="0,4"/>
+    <richtext id="n2_ed16" name="txt" xy="56,15" pivot="0.5,0.5" anchor="true" size="48,32" fontSize="22" color="#33cc00" underline="true" strokeColor="#000000" text="分享"/>
+  </displayList>
+  <Button/>
+</component>

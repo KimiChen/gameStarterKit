@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="494,106">
+  <displayList>
+    <image id="n8_evxd" name="img_titleBg" src="evxd9w" fileName="RGBA/1 - layer_4CVpMFsprR5eTpsTpcNmS.png" xy="-3,3"/>
+    <text id="n7_nza0" name="txt_title" xy="189,23" size="116,59" fontSize="44" color="#ffffff" strokeColor="#000000" strokeSize="2" text="第1章"/>
+  </displayList>
+</component>

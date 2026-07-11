@@ -27,6 +27,11 @@ export interface IGameRoomState {
     tick: number;
     /** 房间阶段，取值见 constants/game.ts 的 GamePhase */
     phase: string;
+    /**
+     * 本局唯一 id：进入 Playing 时生成一次、结算/证据链/去重全部复用同一 id
+     * （服务端框架 M8a，09·K4）；Waiting 阶段为空串。
+     */
+    matchId: string;
     /** key 为 sessionId */
     players: Map<string, IPlayerState>;
 }

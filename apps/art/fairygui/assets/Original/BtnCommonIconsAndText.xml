@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="112,106" extention="Button">
+  <controller name="button" pages="0,up,1,down,2,over,3,selectedOver" selected="0"/>
+  <displayList>
+    <loader id="b2411d3e" name="icon" xy="57,48" pivot="0.5,0.5" anchor="true" size="95,95" url="ui://k85eojd9e9pj7u" autoSize="true" clearOnPublish="true"/>
+    <text id="0e4bd277" name="title" xy="57,70" pivot="0.5,0" anchor="true" size="112,42" fontSize="30" color="#fffcf2" align="center" leading="0" letterSpacing="-4" strokeColor="#000000" strokeSize="2" faceDilate="2" text="防守消息"/>
+  </displayList>
+  <Button downEffect="dark" downEffectValue=".8"/>
+</component>

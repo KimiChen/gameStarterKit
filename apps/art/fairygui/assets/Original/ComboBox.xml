@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="100,20" extention="ComboBox">
+  <controller name="button" pages="0,up,1,down,2,over,3,selectedOver" selected="0"/>
+  <displayList>
+    <image id="n1" name="n1" src="imn61n" fileName="RGBA/c1_png.png" xy="0,0" size="100,20" aspect="true">
+      <gearDisplay controller="button" pages="0"/>
+      <relation target="" sidePair="width-width,height-height"/>
+    </image>
+    <image id="n2" name="n2" src="imn61o" fileName="RGBA/c3_png.png" xy="0,0" size="100,20" aspect="true">
+      <gearDisplay controller="button" pages="1,3"/>
+      <relation target="" sidePair="width-width,height-height"/>
+    </image>
+    <image id="n3" name="n3" src="imn61p" fileName="RGBA/c2_png.png" xy="0,0" size="100,20" aspect="true">
+      <gearDisplay controller="button" pages="2"/>
+      <relation target="" sidePair="width-width,height-height"/>
+    </image>
+    <text id="n4" name="title" xy="2,2" size="78,16" fontSize="12" color="#ffcc00" autoSize="none" text="">
+      <relation target="" sidePair="width-width,height-height"/>
+    </text>
+    <image id="n5" name="n5" src="imn61q" fileName="RGBA/b72_png.png" xy="83,2"/>
+  </displayList>
+  <ComboBox dropdown="ui://k85eojd9kibr71"/>
+</component>

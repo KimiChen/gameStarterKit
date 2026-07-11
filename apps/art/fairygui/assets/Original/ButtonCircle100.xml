@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="100,100" extention="Button">
+  <displayList>
+    <loader id="n1_ed16" name="icon" xy="0,0" size="100,100" url="ui://k85eojd9gsiac" fill="scale"/>
+    <richtext id="n2_ed16" name="txt" xy="50,101" pivot="0.5,1" anchor="true" size="64,42" fontSize="30" color="#ffffff" strokeColor="#000000" text="皮肤"/>
+  </displayList>
+  <Button/>
+</component>

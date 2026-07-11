@@ -37,6 +37,13 @@ export const S2C = {
 export type C2SType = (typeof C2S)[keyof typeof C2S];
 export type S2CType = (typeof S2C)[keyof typeof S2C];
 
+// ---------------- 网关大厅房（服务端框架 M5，docs/server/03） ----------------
+
+/** LobbyRoom 的 RPC 请求消息名（信封 {id,type,payload}，id 做请求-响应配对） */
+export const LOBBY_MSG_RPC = "rpc";
+/** LobbyRoom 的服务端主动推送消息名（{type,data}） */
+export const LOBBY_MSG_PUSH = "push";
+
 // ---------------- C2S payload ----------------
 
 export interface IPingReq {

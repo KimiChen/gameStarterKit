@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="144,61" remark="{&quot;comps&quot;:[{&quot;type&quot;:&quot;JsBehaviour&quot;,&quot;module&quot;:&quot;CompGeneralBubble&quot;}]}">
+  <displayList>
+    <image id="2e08442a" name="img_bubbleBottom" src="jm339g" fileName="RGBA/img_general_bubble_bubble_bottom.png" xy="5,49" pivot="0,1" anchor="true" size="135,45"/>
+    <image id="4fbb379e" name="img_bubblePoint" src="jm339h" fileName="RGBA/img_general_bubble_bubble_point.png" xy="18,47" size="16,12"/>
+    <richtext id="9c6e8182" name="txt_dialogue" xy="15,46" pivot="0,1" anchor="true" size="78,34" fontSize="24" leading="0" ubb="true" text="[color=#000000]{value}[/color]"/>
+  </displayList>
+</component>

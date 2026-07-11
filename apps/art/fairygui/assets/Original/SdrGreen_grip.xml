@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="35,59" pivot="0.5,0.5" anchor="true" extention="Button">
+  <controller name="button" pages="0,up,1,down,2,over,3,selectedOver" selected="0"/>
+  <displayList>
+    <image id="n3_nx0e" name="n3" src="nx0ed" fileName="img_slide_drag_drag.png" xy="0,0"/>
+  </displayList>
+  <Button/>
+</component>

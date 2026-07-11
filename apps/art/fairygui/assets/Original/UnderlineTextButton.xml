@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="60,20" extention="Button">
+  <controller name="button" pages="0,up,1,down,2,over,3,selectedOver" selected="0"/>
+  <displayList>
+    <text id="n3_bnpz" name="title" xy="10,0" size="40,19" fontSize="12" align="center" vAlign="middle" underline="true" text="文本啊">
+      <relation target="" sidePair="width-width,height-height,center-center"/>
+    </text>
+  </displayList>
+  <Button/>
+</component>

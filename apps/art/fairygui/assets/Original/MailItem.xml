@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="380,125">
+  <displayList>
+    <image id="n10" name="n10" src="gsia8" fileName="RGBA/mail_2.png" xy="3,2" size="375,122"/>
+    <image id="n14" name="n14" src="gsiac" fileName="RGBA/mail_7.png" xy="30,26"/>
+    <image id="n13" name="img_select" src="gsia9" fileName="RGBA/mail_0.png" xy="-2,-3" size="386,131"/>
+    <image id="n15" name="img_open" src="gsiad" fileName="RGBA/mail_9.png" xy="40,29"/>
+    <image id="n16" name="img_unOpen" src="gsiae" fileName="RGBA/mail_6.png" xy="40,42"/>
+    <text id="n4" name="txt_time" xy="113,67" size="239,39" fontSize="20" color="#075747" vAlign="middle" leading="0" autoSize="none" text=""/>
+    <text id="n9" name="txt_title" xy="114,28" size="240,28" fontSize="22" color="#3333ff" vAlign="middle" autoSize="none" text=""/>
+    <image id="n17" name="img_already" src="gsiaf" fileName="RGBA/mail_8.png" xy="234,2"/>
+  </displayList>
+  <transition name="t0">
+    <item time="0" type="Visible" value="true"/>
+    <item time="0" type="XY" tween="true" startValue="391,-" endValue="0,0" duration="9"/>
+  </transition>
+</component>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="130,130">
+  <displayList>
+    <loader id="n1_ed16" name="ld_skill" xy="4,4" size="122,121" url="ui://k85eojd9ed161d"/>
+    <image id="n3_ed16" name="img_bg" src="imn6m" fileName="RGBA/k11.png" xy="83,91"/>
+    <richtext id="n4_ed16" name="txt_quality" xy="98,99" pivot="0.5,0.5" size="19,32" fontSize="22" color="#ffffff" strokeColor="#000000" text="S"/>
+    <component id="n2_ed16" name="btn_click" src="pmstm" fileName="CommonEmptyButton.xml" xy="0,0" size="130,130"/>
+    <richtext id="n5_ed16" name="txt_unlockTip" xy="65,70" pivot="0.5,0.5" anchor="true" size="120,32" fontSize="22" color="#ffffff" align="center" autoSize="height" strokeColor="#000000" text="lv{lv}解锁"/>
+  </displayList>
+</component>

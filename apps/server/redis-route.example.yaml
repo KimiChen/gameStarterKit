@@ -1,0 +1,11 @@
+# Redis 桶路由表（REDIS_ROUTE_FILE 指向本文件的副本；不设则退化为 env 单实例）。
+# 16384 桶永不改（09·S2）。扩容 = 调整 range 划分 + 数据迁移，⛔ 不许只改常量。
+# range 必须无缝覆盖 [0, 16383]，redisRoute.ts 装载时校验。
+version: 1
+buckets: 16384
+durable:
+  - name: durable-0
+    url: redis://127.0.0.1:6401
+    range: [0, 16383]
+cache:
+  url: redis://127.0.0.1:6402

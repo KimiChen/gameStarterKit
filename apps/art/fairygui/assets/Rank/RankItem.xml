@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  排行榜单行（忠实原版 prefab/rankItem.lh + IndexedComponent.oK/lK 换皮逻辑）。榜单专属美术取自**原版反编译图集**
+  (assets/resources/img/rank + gameOverUI),抽到本包 art/:行底 rankItem0/1/2/3(金/银/铜/通用,9宫)+ rankItemSelf(我的名次)、
+  奖牌 rankImg0-3(金/银/铜/普通冠)、头像框 avatarBg、星 star0/1(小·熄/亮;皇帝大星复用 star1)。
+  全部**代码驱动**(RankView.renderInto 按 presenter 设 url/visible),刻意不用控制器 → 便于手写、Creator 侧零编辑器接线。
+  行底做法:5 张 9宫底图叠放、按名次/自身行只显一张(GImage 换皮不便,故用可见性切换,虚拟复用安全)。
+  命名契约(presenter/RankView 按名绑,勿改):img_bg/img_bg0/img_bg1/img_bg2/img_bgSelf、ld_medal、txt_rankNum、
+  img_avatarBg、ld_avatar、txt_name、txt_province、txt_rankTitle、ld_star0..4、ld_bigStar、txt_level。
+  一点保留:头像本体(avatarId 1..16)原版运行时按 id/URL 动态载、不在反编译图集,故 ld_avatar 先空(只显框)。
+-->
+<component size="540,117" extention="Button">
+  <displayList>
+    <image id="n0" name="img_bg" src="rbg3" fileName="art/rankItem3.png" xy="0,0" size="540,117"/>
+    <image id="n1" name="img_bg0" src="rbg0" fileName="art/rankItem0.png" xy="0,0" size="540,117" visible="false"/>
+    <image id="n2" name="img_bg1" src="rbg1" fileName="art/rankItem1.png" xy="0,0" size="540,117" visible="false"/>
+    <image id="n3" name="img_bg2" src="rbg2" fileName="art/rankItem2.png" xy="0,0" size="540,117" visible="false"/>
+    <image id="n4" name="img_bgSelf" src="rbgS" fileName="art/rankItemSelf.png" xy="0,0" size="540,117" visible="false"/>
+    <loader id="n5" name="ld_medal" xy="16,27" size="64,55" fill="scale" align="center" vAlign="middle" url="ui://f5rank00md0"/>
+    <text id="n6" name="txt_rankNum" xy="16,30" size="64,50" fontSize="32" color="#000000" align="center" vAlign="middle" bold="true" text="1"/>
+    <image id="n7" name="img_avatarBg" src="avbg" fileName="art/avatarBg.png" xy="82,13" size="90,90"/>
+    <loader id="n8" name="ld_avatar" xy="87,18" size="80,80" fill="scale" align="center" vAlign="middle"/>
+    <text id="n9" name="txt_name" xy="182,14" size="170,46" fontSize="30" color="#000000" vAlign="middle" text="昵称"/>
+    <text id="n10" name="txt_province" xy="182,62" size="150,40" fontSize="28" color="#000000" vAlign="middle" text="省份"/>
+    <text id="n11" name="txt_rankTitle" xy="356,14" size="150,44" fontSize="30" color="#fee641" strokeColor="#000000" align="center" vAlign="middle" text="军衔"/>
+    <loader id="n12" name="ld_star0" xy="360,68" size="30,30" fill="scale" align="center" vAlign="middle" url="ui://f5rank00sta1"/>
+    <loader id="n13" name="ld_star1" xy="392,68" size="30,30" fill="scale" align="center" vAlign="middle" url="ui://f5rank00sta1"/>
+    <loader id="n14" name="ld_star2" xy="424,68" size="30,30" fill="scale" align="center" vAlign="middle" url="ui://f5rank00sta1"/>
+    <loader id="n15" name="ld_star3" xy="456,68" size="30,30" fill="scale" align="center" vAlign="middle" url="ui://f5rank00sta1"/>
+    <loader id="n16" name="ld_star4" xy="488,68" size="30,30" fill="scale" align="center" vAlign="middle" url="ui://f5rank00sta1"/>
+    <loader id="n17" name="ld_bigStar" xy="400,60" size="40,40" fill="scale" align="center" vAlign="middle" visible="false" url="ui://f5rank00sta1"/>
+    <text id="n18" name="txt_level" xy="444,54" size="70,44" fontSize="28" color="#ffffff" strokeColor="#000000" vAlign="middle" visible="false" text="25"/>
+  </displayList>
+  <Button/>
+</component>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="750,1624" extention="Button" remark="{&quot;comps&quot;:[{&quot;type&quot;:&quot;JsBehaviour&quot;,&quot;module&quot;:&quot;CloseBtn&quot;,&quot;comp&quot;:[{&quot;k&quot;:&quot;root&quot;,&quot;v&quot;:&quot;&quot;,&quot;t&quot;:&quot;GObject&quot;},{&quot;k&quot;:&quot;btn&quot;,&quot;v&quot;:&quot;&quot;,&quot;t&quot;:&quot;GObject&quot;}],&quot;normal&quot;:{&quot;enableDelay&quot;:0}}]}">
+  <controller name="button" pages="0,up,1,down,2,over,3,selectedOver" selected="0"/>
+  <displayList>
+    <image id="afb24803" name="img_backgroundMask" src="e9pj7s" fileName="RGBA/img_background_close60_background_mask.png" xy="-125,-188" pivot="0.5,0.5" size="1000,2000" alpha="0.6">
+      <relation target="" sidePair="center-center,height-height,middle-middle,width-width"/>
+    </image>
+  </displayList>
+  <Button/>
+</component>

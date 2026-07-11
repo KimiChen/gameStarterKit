@@ -17,18 +17,29 @@ assets/script/
 │   ├── NetManager.ts    # Colyseus 房间连接/消息/状态回调封装
 │   └── HttpApi.ts       # HTTP 模拟接口客户端（XHR，三端一致）
 └── game/                # ECS 用法示例：组件/系统/世界管理
+    └── ui/              # FairyGUI 三层模型：契约(fguiContracts) + presenter(rankRows，无头测)
+        └── fgui/        # 绑定层（FguiView 薄基类 + RankView 示例；依赖 fairygui-cc，Creator 侧验证）
+
+assets/resources/ui/     # FairyGUI 发布产物（Original/Rank 的 .bin + 图集；源在 apps/art/fairygui）
+extensions/fairygui-cc/  # fairygui-cc 运行时扩展（外壳入库；运行时 `npm run fetch:fgui` 生成）
 ```
 
 ## 首次打开（一次性步骤）
 
 1. 在仓库根目录执行 `npm run sync:shared`（生成 `assets/script/shared/`，本仓库已提交生成结果）
-2. 用 **Cocos Dashboard 3.8.8** 打开本目录，等待首次导入（生成 `temp/`、`library/`、`.meta`）
-3. 选中 `assets/script/lib/colyseus/colyseus.js` → 属性检查器勾选
+2. 在仓库根目录执行 `npm run fetch:fgui`（生成 `extensions/fairygui-cc/runtime/`，
+   运行时 600K+ 可再生、不入库——不跑这步 FairyGUI 相关脚本在 Creator 里会报模块缺失）
+3. 用 **Cocos Dashboard 3.8.8** 打开本目录，等待首次导入（生成 `temp/`、`library/`、`.meta`）
+4. 选中 `assets/script/lib/colyseus/colyseus.js` → 属性检查器勾选
    **导入为插件** + 各平台加载（详见 `lib/colyseus/README.md`），应用后重启编辑器
-4. 新建场景（含 Canvas），把 `Main.ts` 挂到 Canvas 节点，保存场景
-5. 启动服务端：仓库根目录 `npm run dev:server`（默认 http://localhost:2568，
+5. 菜单「扩展 → 扩展管理器 → 已安装扩展」确认 **fairygui-cc** 已启用
+   （挂载 `db://fairygui-cc/fairygui.mjs`）
+6. 新建场景（含 Canvas），把 `Main.ts` 挂到 Canvas 节点，保存场景
+7. 启动服务端：仓库根目录 `npm run dev:server`（默认 http://localhost:2568，
    端口在 `apps/server/.env.development` 配置，需与 Main 组件的 `serverUrl` 一致）
-6. 编辑器预览：控制台应输出 mock 登录成功、进房日志；按住屏幕可移动小圆点
+8. 编辑器预览：控制台应输出 mock 登录成功、进房日志；按住屏幕可移动小圆点。
+   勾选 Main 组件的 **showRankDemo** 可在启动时打开 FairyGUI 排行榜示例
+   （公司标准组件库 Original + Rank 包，假数据；关闭按钮即公司库 CloseButton1 跨包复用）
 
 > `.meta` 文件由编辑器生成后要**连同资源一起提交**（uuid 不稳定会丢引用）。
 
@@ -51,3 +62,10 @@ assets/script/
 - `assets/script/shared/` 与 `assets/script/lib/ecs/` 都是"生成/外部"目录：
   改共享代码去 `apps/shared/src`，改后重新 `npm run sync:shared`
 - 客户端只允许用 `@colyseus/sdk`（全局 `Colyseus`），禁止引入服务端包 `colyseus`/`@colyseus/core`
+- FairyGUI 视图走三层模型：绑定层（`game/ui/fgui/`，只"取组件+搬数据"）/
+  presenter（纯函数，无头单测）/ 结构契约（`fguiContracts.ts`，`npm run test:fgui` 对
+  `apps/art/fairygui` 的设计师 XML 把关）。新视图引用公司库组件前先
+  `FguiView.ensurePackages(["ui/Original"])`，UI 源改动在 FairyGUI 编辑器里做、
+  发布到 `assets/resources/ui` 后连 .bin/.meta 一起提交
+- FairyGUI 经 `Main.ts` 的**动态 import** 进入（rankOpener 桥），不进静态依赖图——
+  扩展没挂/运行时没 fetch 时其余功能不受影响

@@ -21,6 +21,9 @@ export const PLAYER_INIT_HP = 100;
 export const MAP_WIDTH = 700;
 export const MAP_HEIGHT = 1500;
 
+/** 体力上限（服务端框架建号初始体力 = 满；user:{uid} 的 stamina 字段） */
+export const STAMINA_MAX = 30;
+
 /** 房间阶段 */
 export const GamePhase = {
     /** 等待玩家 */

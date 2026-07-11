@@ -13,6 +13,10 @@
 
   "include": [
     "assets/**/*.ts",
-    "assets/**/*.d.ts"
+    "assets/**/*.d.ts",
+    "fairygui-cc.d.ts",
+    // fairygui-cc.d.ts 的 `export * from "fairygui-cc"` 依赖运行时自带的模块声明；
+    // 不 include 它则所有 db://fairygui-cc 导入报 TS2305（运行时未 fetch 时该 glob 为空，无害）
+    "extensions/fairygui-cc/runtime/*.d.ts"
   ]
 }

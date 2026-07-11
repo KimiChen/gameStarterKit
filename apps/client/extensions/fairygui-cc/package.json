@@ -1,0 +1,16 @@
+{
+  "name": "fairygui-cc",
+  "package_version": 2,
+  "version": "1.2.2",
+  "description": "FairyGUI runtime for Cocos Creator (vendored via npm run fetch:fgui)",
+  "author": "Guzhu",
+  "main": "browser.js",
+  "contributions": {
+    "asset-db": {
+      "mount": {
+        "path": "./runtime",
+        "readonly": true
+      }
+    }
+  }
+}

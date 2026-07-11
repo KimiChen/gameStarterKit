@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="40,40">
+  <displayList>
+    <loader id="n0_ed16" name="ld_gems" xy="20,20" pivot="0.5,0.5" anchor="true" size="36,24" url="ui://k85eojd9ed16a" autoSize="true" clearOnPublish="true"/>
+    <component id="n1_ed16" name="btn_click" src="pmstm" fileName="CommonEmptyButton.xml" xy="20,20" pivot="0.5,0.5" anchor="true" size="40,40"/>
+  </displayList>
+</component>

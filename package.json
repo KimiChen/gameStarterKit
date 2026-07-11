@@ -13,7 +13,9 @@
     "dev:server": "npm --workspace @game/server run dev",
     "start:server": "npm --workspace @game/server run start",
     "typecheck": "npm --workspace @game/shared run typecheck && npm --workspace @game/server run typecheck",
-    "verify:ecs": "cd apps/client/assets/script/lib/ecs && shasum -a 256 -c ../../../../../../scripts/ecs.sha256"
+    "verify:ecs": "cd apps/client/assets/script/lib/ecs && shasum -a 256 -c ../../../../../../scripts/ecs.sha256",
+    "fetch:fgui": "bash scripts/fetch-fgui.sh",
+    "test:fgui": "cd apps/server && node --import tsx --test ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/*.test.ts"
   },
   "engines": {
     "node": ">=22"

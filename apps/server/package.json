@@ -9,17 +9,36 @@
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "smoke": "tsx test/smoke.ts",
+    "smoke:framework": "tsx tools/smoke.ts",
+    "test": "node --import tsx --test --test-concurrency=1 test/*.test.ts",
+    "test:int": "node --import tsx --test --test-concurrency=1 test/int/*.test.ts",
+    "stack": "tools/dev-stack.sh start",
+    "stack:stop": "tools/dev-stack.sh stop",
+    "db:bootstrap": "tsx tools/db-bootstrap.ts",
+    "relayer": "tsx src/economy/relayer.ts",
+    "freeze-worker": "tsx src/archive/freezeWorker.ts",
+    "season-rotation": "tsx src/rank/seasonRotation.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@colyseus/core": "^0.17.0",
     "@colyseus/schema": "^4.0.27",
     "@colyseus/tools": "^0.17.19",
+    "@colyseus/ws-transport": "^0.17.0",
     "@game/shared": "0.1.0",
     "colyseus": "^0.17.10",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "ioredis": "^5.11.1",
+    "mysql2": "^3.22.6",
+    "uuid": "^14.0.1",
+    "yaml": "^2.9.0",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@colyseus/redis-driver": "^0.17.7",
+    "@colyseus/redis-presence": "^0.17.7",
     "@colyseus/sdk": "^0.17.43",
+    "@colyseus/testing": "^0.17.0",
     "@types/express": "^4.17.21",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"

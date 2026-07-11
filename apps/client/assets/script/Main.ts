@@ -12,6 +12,7 @@ import { installWeChatCompat } from "./net/wechat-compat";
 import { HttpApi } from "./net/HttpApi";
 import { NetManager } from "./net/NetManager";
 import { GameECS } from "./game/GameECS";
+import { setRankOpener, openRank } from "./game/ui/rankOpener";
 import { S2C, MAP_WIDTH, MAP_HEIGHT, ErrorCode, normalize, distance, type IPlayerState } from "./shared/index";
 
 // ⚠ 必须在任何 Colyseus 调用之前安装（模块加载期执行，早于所有组件生命周期）
@@ -23,6 +24,9 @@ const { ccclass, property } = _decorator;
 export class Main extends Component {
     @property({ tooltip: "服务端 http(s) 地址（微信真机需 https + 域名白名单）；与 server/.env.development 的 PORT 保持一致" })
     serverUrl = "http://localhost:2568";
+
+    @property({ tooltip: "启动后自动打开 FairyGUI 排行榜示例（公司标准组件库 Original + Rank 包，假数据）。需先启用 fairygui-cc 扩展并跑过 npm run fetch:fgui" })
+    showRankDemo = false;
 
     // ECS 组/系统注册是全局状态，必须用单例（重复 new 会泄漏 group 与回调）
     private gameECS = GameECS.inst;
@@ -41,10 +45,22 @@ export class Main extends Component {
     /** 距目标小于该距离即停下，防止小球越过手指来回抖动 */
     private static readonly ARRIVE_RADIUS = 24;
 
+    onLoad() {
+        // 排行榜打开桥：业务层（菜单等）只调 openRank()，真正的 open 在此注入——
+        // fairygui 经**动态 import** 只关进本回调，不进 Main 的静态依赖图（扩展没挂时其余功能不受影响）。
+        setRankOpener(() => {
+            void import("./game/ui/fgui/RankView")
+                .then(({ RankView }) => RankView.open())
+                .catch((e) => console.error(
+                    "[rank] 打开失败（fairygui-cc 扩展启用了吗？跑过 npm run fetch:fgui 吗？Rank.bin/Original.bin 在 resources/ui 吗？）", e));
+        });
+    }
+
     async start() {
         this.initRenderLayer();
         this.initInput();
         this.gameECS.init();
+        if (this.showRankDemo) openRank();
 
         try {
             await this.connectServer();
