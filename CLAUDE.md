@@ -44,7 +44,7 @@ npm --workspace @game/server run test:int        # 集成测试（真实 Redis+M
 7. **双端 Colyseus 版本 major.minor 必须一致**（当前 0.17.x）。升级 SDK：`curl -L https://unpkg.com/@colyseus/sdk@<版本>/dist/colyseus.js -o apps/client/assets/script/lib/colyseus/colyseus.js`，同时升服务端依赖。
 8. **服务端框架写路径必须对照 `docs/server/09-dev-constraints.md` 的规则写**（⛔ 禁 HGETALL/INSERT IGNORE/ZINCRBY/无 fence 写档等，代码注释里的 `09·XX` 即规则编号）。新增常量/key/错误码先进 07 再进 `infra/config.ts`/`infra/keys.ts`，禁止散落。
 9. **FairyGUI 三层模型**：绑定层（`game/ui/fgui/`，依赖 fairygui-cc，Creator 侧验证）只做「取组件+搬数据」；行为归纯 presenter（无头单测）；代码依赖的命名元素必须登记进 `fguiContracts.ts`（`npm run test:fgui` 对设计师 XML 把关）。跨包用公司库组件前先 `FguiView.ensurePackages(["ui/Original"])`；共享库包全程常驻、⛔ 不许 removePackage。
-10. **FairyGUI 入口只走动态 import**（Main.ts 的 rankOpener 桥模式）：fairygui 不得进任何常规脚本的静态依赖图——扩展没挂时会连锁炸掉整个 root 脚本。
+10. **FairyGUI 入口只走动态 import**（桥模式：业务层只调注入回调，`import("…/fgui/XxxView")` 只关进回调体内）：fairygui 不得进任何常规脚本的静态依赖图——扩展没挂时会连锁炸掉整个 root 脚本。
 
 ## Colyseus 0.17 与旧资料的差异（网上教程大多是 0.16 的，别照抄）
 
@@ -86,6 +86,7 @@ npm --workspace @game/server run test:int        # 集成测试（真实 Redis+M
 - 本地栈脚本 `apps/server/tools/dev-stack.sh` 依赖 brew 的 `redis` 与 `mysql@8.4`；数据目录 `~/.game-dev`（`GAME_DEV_DATA` 可改）。端口 6401/6402/3316 与 Arthur 项目约定一致，两项目可共用同一套本地实例（库名不同：`game` vs `fable5`）。
 - **跑 `test:int` 前先停 dev server**：settlement/gateway 集成测会 `boot(server)` 真实监听 2568，dev server 占着端口会 EADDRINUSE 且整个 test runner 卡住不退出。另外 `npm run dev:server` 是 tsx watch——只 kill 监听进程会被 watch 父进程拉活，要 kill 整棵 tsx watch 进程树。
 - FairyGUI 编辑器工程 `apps/art/fairygui` 的 `.objs/` 是编辑器缓存（已 gitignore）；FGUI 只扫 `assets/` 直接子目录，公司库 Original 因此平铺在包级。
+- **设计分辨率 750×1624 竖屏 + FIXED_WIDTH**（宽恒铺满、高随机型浮动 ≈1334~1730，全机型无黑边；Arthur 分辨率 P0/P1 拍板）。真源 `apps/client/assets/script/designSpec.ts`，与 `settings/v2/packages/project.json` 的 designResolution（fitWidth=true 烘焙值）、Main.ts 的 `setDesignResolutionSize` **三处必须一致**；⛔ 视图层禁写 640/1386、960×640 等旧稿魔法数。全屏 FGUI 页用 `FguiView.mountFullScreen()`（高浮动由 relation 吸收），贴顶 HUD 摆放加 `FguiView.safeTopInset()`。引入旧稿坐标系的 FGUI 包源时先迁 750 系再发布 bin（FGUI 编辑器等比迁移，参照 Arthur 668efaa ×75/64）。
 
 ## 服务端现状（框架真实 + 玩法 mock 共存，替换时逐个删掉 mock）
 

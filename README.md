@@ -24,10 +24,10 @@ game/
     │   ├── sql/schema.sql    # MySQL 8 全量 DDL
     │   └── tools/            # dev-stack.sh 本地栈 / db-bootstrap / 框架冒烟 / M0 验证工具
     ├── art/
-    │   └── fairygui/         # FairyGUI 编辑器工程：公司标准组件库 Original(+A) + Rank 示例包
+    │   └── fairygui/         # FairyGUI 编辑器工程：公司标准组件库 Original(+A)
     └── client/               # Cocos Creator 3.8.8 工程（微信小游戏），见其 README
         ├── assets/script/{Main.ts,lib/ecs,lib/colyseus,shared,net,game}
-        ├── assets/resources/ui/      # FairyGUI 发布产物（Original/Rank 的 .bin + 图集）
+        ├── assets/resources/ui/      # FairyGUI 发布产物（公司库 Original 等的 .bin + 图集）
         └── extensions/fairygui-cc/   # fairygui-cc 运行时扩展（外壳入库，运行时 fetch:fgui 生成）
 ```
 
@@ -116,10 +116,9 @@ npm run dev:server          # 启动服务端 http://localhost:2568
 ## FairyGUI（公司标准组件库）
 
 - 编辑器工程 `apps/art/fairygui`（FairyGUI 编辑器打开 `FairyGUI.fairy`）：
-  公司原子组件库 **Original**（id k85eojd9，CloseButton1/CommonButton/CompTab…）+ **A** +
-  排行榜示例包 **Rank**（跨包复用 Original 组件的完整范例）
+  公司原子组件库 **Original**（id k85eojd9，CloseButton1/CommonButton/CompTab…）+ **A**
 - 运行时 `fairygui-cc` 以 Creator 扩展挂载（`db://fairygui-cc/fairygui.mjs`），
   外壳入库、运行时 `npm run fetch:fgui` 生成；发布产物（.bin+图集）在 `client/assets/resources/ui`
-- 代码层三层模型：`FguiView` 薄基类（绑定层）+ 纯 presenter（`rankRows`，无头单测）+
+- 代码层三层模型：`FguiView` 薄基类（绑定层）+ 纯 presenter（无头单测）+
   结构契约（`fguiContracts` ↔ 设计师 XML，`npm run test:fgui` 把关）
 - 上手/方案/设计师工作流见 `docs/research/fairgui-setup-guide.md` 等

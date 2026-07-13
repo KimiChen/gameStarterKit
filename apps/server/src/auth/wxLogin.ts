@@ -51,12 +51,13 @@ async function createAccount(openid: string, unionid: string | null): Promise<Ac
     }
     throw e;
   }
-  // 建号是 user:{uid} 的合法创建点（09·R2）。新号初始字段对齐 emptySave 语义
+  // 建号是 user:{uid} 的合法创建点（09·R2）。新号初始字段对齐 emptySave 语义。
+  // 音频偏好（musicOn/sfxOn）⛔ 不在建号初始化——读侧「缺失即默认开」（07 字段表），存量档零迁移
   await createUser(uid, {
     registerTime: String(Date.now()),
     stamina: String(STAMINA_MAX),
+    lastStaminaRecoverAt: "0", // 满体力：恢复计时未开始（shared logic/stamina.ts）
     avatarId: "-1",
-    soundOn: "1",
   });
   await invalidateUserNegcache(uid).catch(() => {}); // 建号成功立即失效负缓存（09·F4）
   return { user_id: uid, status: 0, token_epoch: 0 } as AccountRow;

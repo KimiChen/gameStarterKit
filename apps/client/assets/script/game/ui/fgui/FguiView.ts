@@ -4,11 +4,11 @@
  *
  * ⚠ 本目录（`ui/fgui/**`）依赖 fairygui-cc（其 d.ts 引真 cc），由 Cocos Creator 自带 tsconfig
  *   （真 cc + 扩展）在编辑器里 typecheck。**Creator 侧验证**。
- *   行为层（presenter，如 rankRows）与结构契约（fgui-codegen）在无头测试里跑（npm run test:fgui）；
+ *   行为层（纯 presenter）与结构契约（fgui-codegen）在无头测试里跑（npm run test:fgui）；
  *   本层只做"取组件 + 搬数据"。见 docs/research/fairgui.md §5。
  */
-import { Canvas, director } from "cc";
-import { GComponent, GObject, GRoot, UIPackage } from "db://fairygui-cc/fairygui.mjs";
+import { Canvas, director, sys, view } from "cc";
+import { GComponent, GObject, GRoot, RelationType, UIPackage } from "db://fairygui-cc/fairygui.mjs";
 
 export abstract class FguiView {
   /**
@@ -85,9 +85,53 @@ export abstract class FguiView {
 
   /** 挂到 GRoot（或指定父容器）。GRoot 懒启动：此时才建（若还没建）。 */
   mountTo(parent?: GComponent): this {
-    if (!parent) { FguiView.ensureRoot(); }
+    if (!parent) { FguiView.ensureRoot(); FguiView.syncGRootSize(); }
     (parent ?? GRoot.inst).addChild(this.root);
+    if (!parent) { FguiView.bringGRootToFront(); }
     return this;
+  }
+
+  /**
+   * 全屏页挂载（FIXED_WIDTH 配套，回流自 Arthur P1）：挂 GRoot 并把根拉到 GRoot 当前尺寸 +
+   * Size relation 跟随。FIXED_WIDTH 下 GRoot 宽恒 750、高随机型浮动（约 1334~1730）：设计稿全屏
+   * 组件不拉伸会在长屏下方露底/短屏底部出屏；根拉伸后，组件内部靠 XML relation 重排
+   * （bg 拉伸/底部件贴底，无 relation 的子元素保持左上原位）。非全屏覆盖件（HUD/条）勿用。
+   */
+  mountFullScreen(): this {
+    this.mountTo();
+    this.root.setSize(GRoot.inst.width, GRoot.inst.height);
+    this.root.addRelation(GRoot.inst, RelationType.Size);
+    return this;
+  }
+
+  /**
+   * 顶部安全区高度（设计像素；刘海/挖孔）。FIXED_WIDTH 铺满全屏后，贴 y=0 的 HUD 在真机会顶进
+   * 刘海——摆放时加此偏移。视口/安全区同为 UI 坐标系，差值即顶部不可用高；取不到（旧引擎/编辑器）回 0。
+   */
+  static safeTopInset(): number {
+    try {
+      const r = sys.getSafeAreaRect();
+      const vs = view.getVisibleSize();
+      return Math.max(0, vs.height - (r.y + r.height));
+    } catch {
+      return 0;
+    }
+  }
+
+  /**
+   * GRoot 尺寸/位置自愈（回流自 Arthur）：官方在构造器挂了 View 'canvas-resize' 监听，但 Creator
+   * 预览里开关/拖动 devtools 改视口时该事件不一定触发（表现为面板整体偏移、露出旧视口外的世界）。
+   * onWinResize 按当前视口重算，幂等且便宜——每次挂载前补一发，过期即自愈。
+   */
+  private static syncGRootSize(): void {
+    (GRoot as unknown as { _inst?: GRoot })._inst?.onWinResize();
+  }
+
+  /** GRoot 节点置顶（回流自 Arthur）：防后建的全屏游戏背景节点把 FGUI 层盖死。 */
+  private static bringGRootToFront(): void {
+    const node = (GRoot as unknown as { _inst?: GRoot })._inst?.node;
+    const parent = node?.parent;
+    if (node && parent) { node.setSiblingIndex(parent.children.length - 1); }
   }
 
   /** 销毁：从父移除 + dispose FairyGUI 对象树。 */

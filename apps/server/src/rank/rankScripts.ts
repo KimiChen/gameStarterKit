@@ -35,6 +35,9 @@ local old = redis.call('ZSCORE', KEYS[1], ARGV[1])
 local intScore = 0
 if old then intScore = math.floor(tonumber(old)) end
 intScore = intScore + tonumber(ARGV[2])
+-- 下限 0：分数域是段位星 curStar(≥0)。delta 由调用方经 advanceCurStar 推导,正常不会穿 0,
+-- 此处仅防御并发/陈旧读产生的负值（分数域若允许负值需去掉此 clamp）
+if intScore < 0 then intScore = 0 end
 
 -- 重算 encodeScore（与 score.ts 同一公式）：赛季窗口推导 + clamp [0, len]
 local n = math.floor((now - base) / len)

@@ -9,11 +9,11 @@
  */
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
-import { getRank, selfEntry, updateScore } from "../../src/rank/rankService";
+import { encodeProvince, getRank, selfEntry, updateScore } from "../../src/rank/rankService";
 import { rotateIfNeeded } from "../../src/rank/seasonRotation";
 import { decodeScore } from "../../src/rank/score";
 import { SEASON_BASE, SEASON_LEN_S } from "../../src/infra/config";
-import { kLbDedup, kRank, kRankSub } from "../../src/infra/keys";
+import { kLbDedup, kRank, kRankProv, kRankSub } from "../../src/infra/keys";
 import { clientForKey, closeRedis } from "../../src/infra/redisRoute";
 import { assertRedisUp, sleep, testUid } from "./helpers";
 
@@ -87,6 +87,43 @@ test("累加：两次 +10 → decodeScore = 20（frac 不被累进整数位）",
   assert.equal(decodeScore(raw), 20);          // 若走了 ZINCRBY，旧 frac 会混进整数位使其 ≠ 20
   const frac = raw - 20;
   assert.ok(frac > 0 && frac <= 0.1, `frac 应在 (0, 0.1]，实际 ${frac}`);
+});
+
+test("负 delta 穿 0 被 Lua 钳回 0（并发/陈旧读防御），不产出负段位星", async () => {
+  const s = season("s_clamp");
+  const u = testUid("clamp");
+
+  assert.equal(await updateScore(rankType, s, u, 5, matchId("cl1", u), { nick: "n" }), "ok");
+  assert.equal(await updateScore(rankType, s, u, -30, matchId("cl2", u), { nick: "n" }), "ok");
+
+  const raw = Number(await clientForKey(kRank(rankType, s)).zscore(kRank(rankType, s), u));
+  assert.equal(decodeScore(raw), 0, "5 - 30 应钳回 0 而非 -25");
+});
+
+test("省榜：双写 + 写路径自管 TTL + province 读切换；展示信息复用 rank_sub", async () => {
+  const s = season("s_prov");
+  const u = testUid("prov");
+  const prov = "广东省"; // 中文省名走 encodeURIComponent 键段
+  const provKey = kRankProv(rankType, encodeProvince(prov), s);
+  usedKeys.add(provKey);
+
+  assert.equal(await updateScore(rankType, s, u, 12, matchId("pv1", u), { nick: "粤" }, prov), "ok");
+
+  const c = clientForKey(provKey);
+  assert.equal(decodeScore(Number(await c.zscore(provKey, u))), 12, "省榜有分");
+  assert.ok((await c.ttl(provKey)) > 0, "省榜 TTL 由写路径设置");
+  assert.equal(await clientForKey(kRank(rankType, s)).ttl(kRank(rankType, s)), -1, "当季总榜无 TTL");
+
+  const provList = await getRank(rankType, s, u, 0, 10, prov);
+  assert.equal(provList[0].uid, u);
+  assert.deepEqual(provList[0].sub, { nick: "粤" }, "展示信息复用 rank_sub");
+  const self = await selfEntry(rankType, s, u, prov);
+  assert.equal(self.rank, 1);
+
+  // 无省份的更新不写省榜（游客/未填省份）
+  const u2 = testUid("noprov");
+  assert.equal(await updateScore(rankType, s, u2, 8, matchId("pv2", u2), {}), "ok");
+  assert.equal(await c.zscore(provKey, u2), null);
 });
 
 // ── 4. getRank 两段式 + 补自己 ──────────────────────────────────

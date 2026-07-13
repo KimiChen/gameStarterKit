@@ -20,6 +20,11 @@ export interface UserView {
   wins: number;
   losses: number;
   stamina: number;
+  /** 体力恢复计时起点（ms）；0 = 满体力/未开始恢复（shared logic/stamina.ts，07 字段表） */
+  lastStaminaRecoverAt: number;
+  // 音频偏好字段级上云（07 字段表）：缺失=默认开——存量档零迁移，⛔ 不回填
+  musicOn: boolean;
+  sfxOn: boolean;
   ver: number;
 }
 
@@ -36,6 +41,8 @@ export interface PublicUserView {
 }
 
 const num = (v: string | null, dflt = 0): number => (v === null ? dflt : Number(v));
+/** 布尔偏好读侧兜底：字段缺失 = 默认值（"缺失即默认"模式，存量档零迁移）。 */
+const flag = (v: string | null, dflt = true): boolean => (v === null ? dflt : v === "1");
 
 /** 按需取字段。⛔ 禁止 HGETALL。缺失字段返回 null（09·R9：hmget 数组自己 zip）。 */
 export async function loadFields(uid: string, fields: string[]): Promise<Record<string, string | null>> {
@@ -45,12 +52,16 @@ export async function loadFields(uid: string, fields: string[]): Promise<Record<
 
 /** 只读自档。档不存在（可能冷档）返回 null——上层决定 ensureLive 还是 404。 */
 export async function readUser(uid: string): Promise<UserView | null> {
-  const f = await loadFields(uid, ["star", "maxRound", "wins", "losses", "stamina", "ver"]);
+  const f = await loadFields(uid, [
+    "star", "maxRound", "wins", "losses", "stamina", "lastStaminaRecoverAt", "musicOn", "sfxOn", "ver",
+  ]);
   if (f.ver === null) { return null; } // 建号必写 ver=0，ver 缺失 ⇒ 档不存在
   return {
     uid,
     star: num(f.star), maxRound: num(f.maxRound), wins: num(f.wins), losses: num(f.losses),
-    stamina: num(f.stamina), ver: num(f.ver),
+    stamina: num(f.stamina), lastStaminaRecoverAt: num(f.lastStaminaRecoverAt),
+    musicOn: flag(f.musicOn), sfxOn: flag(f.sfxOn),
+    ver: num(f.ver),
   };
 }
 

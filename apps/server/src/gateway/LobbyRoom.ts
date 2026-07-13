@@ -7,11 +7,14 @@
  * - 大包防护在 transport 层 maxPayload（09·G4，见 app.ts）。
  */
 import { ErrorCode, Room, ServerError, validate, type AuthContext, type Client } from "@colyseus/core";
-import { LOBBY_MSG_PUSH, LOBBY_MSG_RPC } from "@game/shared";
+import {
+  LOBBY_MSG_PUSH, LOBBY_MSG_RPC, PROTOCOL_VERSION, ErrorMessage,
+  ErrorCode as SharedErrorCode, type IRoomJoinOptions,
+} from "@game/shared";
 import { verifyBearer } from "../auth/session";
 import { toErrCode } from "../core/errors";
 import { dispatchRpc, rpcEnvelopeSchema, type RpcCtx, type RpcReply } from "./dispatcher";
-import { registerOnline, startMailWakeLoop, unregisterOnline } from "./push";
+import { registerOnline, startMailWakeLoop, unregisterOnline, type PushSink } from "./push";
 import { registerMailRoutes } from "./handlers/mail";
 import { registerShopRoutes } from "./handlers/shop";
 import { registerUserRoutes } from "./handlers/user";
@@ -38,7 +41,11 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
   maxClients = 5000;
 
   /** token 反查 uid + 严格校验（连接级）。⛔ 不接受客户端单独传 userId（09·G1）。 */
-  static async onAuth(token: string, _options: unknown, _context: AuthContext) {
+  static async onAuth(token: string, options: IRoomJoinOptions | undefined, _context: AuthContext) {
+    // 协议版本硬闸（缺省按 1 兼容首版客户端）——语义同 GameRoom.onAuth，见 shared/protocol/rooms.ts
+    if ((options?.v ?? 1) !== PROTOCOL_VERSION) {
+      throw new ServerError(SharedErrorCode.ProtocolMismatch, ErrorMessage[SharedErrorCode.ProtocolMismatch]);
+    }
     try {
       const uid = await verifyBearer(token, true);
       return { userId: uid, token };
@@ -73,12 +80,20 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
     }),
   };
 
+  // 每连接的推送 sink（sessionId→sink）：onLeave 必须按 sink 条件注销——客户端断线重连时,
+  // 旧连接的 onLeave 可能晚于新连接的 onJoin 到达,无条件删 uid 槽位会误删新连接的注册
+  private sinks = new Map<string, PushSink>();
+
   onJoin(client: LobbyClient): void {
     if (!client.auth) { return; }
-    registerOnline(client.auth.userId, (type, data) => client.send(LOBBY_MSG_PUSH, { type, data }));
+    const sink: PushSink = (type, data) => client.send(LOBBY_MSG_PUSH, { type, data });
+    this.sinks.set(client.sessionId, sink);
+    registerOnline(client.auth.userId, sink);
   }
 
   onLeave(client: LobbyClient): void {
-    if (client.auth) { unregisterOnline(client.auth.userId); }
+    const sink = this.sinks.get(client.sessionId);
+    this.sinks.delete(client.sessionId);
+    if (client.auth) { unregisterOnline(client.auth.userId, sink); }
   }
 }

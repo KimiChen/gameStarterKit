@@ -138,6 +138,30 @@ export async function purchase(uid: string, sku: ShopSku, clientReqId: string): 
 }
 
 /**
+ * 吸干某用户的全部 pending intent（按创建序 apply + 标记 done）。
+ *
+ * 用途：档字段走**绝对值 setField** 的写路径，与 item/star 增量不同**不可交换**——
+ * 若旧 intent 在阶段 2 前崩溃、且用户后续操作先写了同字段，relayer 迟到重放会把
+ * 旧绝对值盖回去（序反转）。所有含 setField 的写操作在 withUser 锁内**先调本函数**
+ * 吸干旧 intent，把崩溃窗口收敛为「锁内串行」。与 relayer 并发重放同一 op 是安全的
+ * （redisApply 经 applied 集合幂等判 dup）。
+ * cold（档冻结）原样上抛——⛔ 不在缺失档上造残档（09·R2），由上层 ensureLive 流程处理。
+ */
+export async function drainPendingFor(uid: string): Promise<number> {
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    "SELECT op_id, effect FROM gameplay_outbox WHERE user_id = ? AND status = ? ORDER BY created_at, op_id",
+    [uid, OUTBOX_PENDING]);
+  let applied = 0;
+  for (const row of rows) {
+    const r = await redisApply(uid, row.op_id as string, row.effect as Effect);
+    if (r === "cold") { throw new Error(`drainPendingFor: 档已冻结 uid=${uid}`); }
+    await markOutboxDone(row.op_id as string);
+    applied++;
+  }
+  return applied;
+}
+
+/**
  * applied:{uid} 裁剪（09·I5）：窗口必须严格大于 outbox 保留窗口
  * （APPLIED_RETENTION ≥ 2 × OUTBOX_RETENTION 已在 config 固化）。
  */

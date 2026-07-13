@@ -7,12 +7,12 @@
  *
  * 使用前：启动服务端 `npm run dev:server`（默认 http://localhost:2568）。
  */
-import { _decorator, Component, Node, Graphics, UITransform, Color, input, Input, EventTouch, Vec3 } from "cc";
+import { _decorator, Component, Node, Graphics, UITransform, Color, input, Input, EventTouch, Vec3, view, ResolutionPolicy } from "cc";
+import { DESIGN_WIDTH, DESIGN_HEIGHT } from "./designSpec";
 import { installWeChatCompat } from "./net/wechat-compat";
 import { HttpApi } from "./net/HttpApi";
 import { NetManager } from "./net/NetManager";
 import { GameECS } from "./game/GameECS";
-import { setRankOpener, openRank } from "./game/ui/rankOpener";
 import { S2C, MAP_WIDTH, MAP_HEIGHT, ErrorCode, normalize, distance, type IPlayerState } from "./shared/index";
 
 // ⚠ 必须在任何 Colyseus 调用之前安装（模块加载期执行，早于所有组件生命周期）
@@ -24,9 +24,6 @@ const { ccclass, property } = _decorator;
 export class Main extends Component {
     @property({ tooltip: "服务端 http(s) 地址（微信真机需 https + 域名白名单）；与 server/.env.development 的 PORT 保持一致" })
     serverUrl = "http://localhost:2568";
-
-    @property({ tooltip: "启动后自动打开 FairyGUI 排行榜示例（公司标准组件库 Original + Rank 包，假数据）。需先启用 fairygui-cc 扩展并跑过 npm run fetch:fgui" })
-    showRankDemo = false;
 
     // ECS 组/系统注册是全局状态，必须用单例（重复 new 会泄漏 group 与回调）
     private gameECS = GameECS.inst;
@@ -46,21 +43,20 @@ export class Main extends Component {
     private static readonly ARRIVE_RADIUS = 24;
 
     onLoad() {
-        // 排行榜打开桥：业务层（菜单等）只调 openRank()，真正的 open 在此注入——
-        // fairygui 经**动态 import** 只关进本回调，不进 Main 的静态依赖图（扩展没挂时其余功能不受影响）。
-        setRankOpener(() => {
-            void import("./game/ui/fgui/RankView")
-                .then(({ RankView }) => RankView.open())
-                .catch((e) => console.error(
-                    "[rank] 打开失败（fairygui-cc 扩展启用了吗？跑过 npm run fetch:fgui 吗？Rank.bin/Original.bin 在 resources/ui 吗？）", e));
-        });
+        // 竖屏 750×1624：FIXED_WIDTH 宽恒铺满、高随机型浮动（≈1334~1730），全机型无黑边（Arthur P1 拍板）。
+        // 高度差由场景 Widget / FGUI relation 吸收。真源 designSpec.ts，与 project.json 烘焙值三处一致——
+        // 烘焙值只管启动窗口期，这里显式设置消除「烘焙缺 policy 时回退 FIXED_HEIGHT」的不一致（Arthur P0）。
+        view.setDesignResolutionSize(DESIGN_WIDTH, DESIGN_HEIGHT, ResolutionPolicy.FIXED_WIDTH);
+
+        // ⚠ 接 FairyGUI 视图时：fairygui 不得进任何常规脚本的静态依赖图（铁律 10），
+        //   入口一律「桥 + 动态 import」——业务层只调一个注入回调，`import("./game/ui/fgui/XxxView")`
+        //   只关进回调体内，扩展没挂时其余功能不受影响。
     }
 
     async start() {
         this.initRenderLayer();
         this.initInput();
         this.gameECS.init();
-        if (this.showRankDemo) openRank();
 
         try {
             await this.connectServer();

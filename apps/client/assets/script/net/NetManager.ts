@@ -10,6 +10,7 @@ import {
     RoomName,
     C2S,
     S2C,
+    PROTOCOL_VERSION,
     type IGameRoomState,
     type IPingReq,
     type IMoveReq,
@@ -60,10 +61,10 @@ export class NetManager {
         this.client = new Colyseus.Client(endpoint);
     }
 
-    /** 加入（或创建）主玩法房间 */
+    /** 加入（或创建）主玩法房间。协议版本 v 在此统一注入（服务端 onAuth 硬闸，shared/protocol/rooms.ts） */
     async joinGame(options?: Record<string, unknown>): Promise<Colyseus.Room<IGameRoomState>> {
         if (!this.client) throw new Error("[NetManager] 未初始化，请先调用 init(endpoint)");
-        const room = await this.client.joinOrCreate<IGameRoomState>(RoomName.Game, options);
+        const room = await this.client.joinOrCreate<IGameRoomState>(RoomName.Game, { v: PROTOCOL_VERSION, ...options });
         this._room = room;
         this.cachedReconnectionToken = room.reconnectionToken;
 

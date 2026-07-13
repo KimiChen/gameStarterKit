@@ -22,9 +22,14 @@ for (const c of FGUI_CONTRACTS) {
             `设计师的 ${c.pkg}/${c.comp}.xml 不满足契约——缺失: [${r.missing}] 类型不符: [${r.mismatched}]`,
         );
     });
-}
 
-test("FGUI 契约:包描述里组件已导出(exported)，运行时 createObject 才可见", () => {
-    const pkgXml = readFileSync(join(FGUI_ROOT, "Rank/package.xml"), "utf8");
-    assert.match(pkgXml, /name="RankMain\.xml"[^>]*exported="true"/, "RankMain 需在包里标记导出");
-});
+    // 包描述里组件必须已导出(exported)，运行时 createObject 才可见（随契约逐视图检查）
+    test(`FGUI 契约:${c.pkg}/package.xml 已导出 ${c.comp}`, () => {
+        const pkgXml = readFileSync(join(FGUI_ROOT, c.pkg, "package.xml"), "utf8");
+        assert.match(
+            pkgXml,
+            new RegExp(`name="${c.comp}\\.xml"[^>]*exported="true"`),
+            `${c.comp} 需在 ${c.pkg} 包里标记导出`,
+        );
+    });
+}

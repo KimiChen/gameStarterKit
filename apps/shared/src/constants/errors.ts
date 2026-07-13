@@ -21,6 +21,8 @@ export const ErrorCode = {
     GameAlreadyStarted: 3002,
     /** 技能不存在或未解锁 */
     SkillUnavailable: 3003,
+    /** 双端协议版本不匹配（join options.v ≠ 服务端 PROTOCOL_VERSION，见 protocol/rooms.ts） */
+    ProtocolMismatch: 3004,
 } as const;
 
 export type ErrorCodeType = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -35,4 +37,5 @@ export const ErrorMessage: Record<number, string> = {
     [ErrorCode.RoomFull]: "房间已满",
     [ErrorCode.GameAlreadyStarted]: "对局已开始",
     [ErrorCode.SkillUnavailable]: "技能不可用",
+    [ErrorCode.ProtocolMismatch]: "客户端版本过旧，请更新后再试",
 };

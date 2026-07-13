@@ -8,6 +8,7 @@ import {
     RoomName,
     ApiPath,
     ErrorCode,
+    PROTOCOL_VERSION,
     S2C,
     C2S,
     type IApiResponse,
@@ -72,7 +73,7 @@ async function main() {
 
     // ---------- Colyseus 房间 ----------
     const client = new Client(BASE);
-    const room = await client.joinOrCreate(RoomName.Game, { token: loginData.token });
+    const room = await client.joinOrCreate(RoomName.Game, { v: PROTOCOL_VERSION, token: loginData.token });
     check("joinOrCreate('game')", room.sessionId.length > 0, room.roomId);
 
     // Welcome 消息（服务端 onJoin 即发，SDK 会缓存 join 前到达的消息直到注册处理器）

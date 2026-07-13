@@ -14,11 +14,11 @@ import { getShopSku } from "../../src/economy/catalog";
 import { getBalance, invalidateBalanceCache } from "../../src/economy/currency";
 import { claimMailAttach, sendMail } from "../../src/economy/mailer";
 import {
-  deriveOpId, markOutboxDone, purchase, purchaseTx, readBack, redisApply,
+  deriveOpId, drainPendingFor, markOutboxDone, purchase, purchaseTx, readBack, redisApply,
 } from "../../src/economy/outbox";
 import { createOrder, handleWxPayNotify } from "../../src/economy/purchases";
 import { createUser } from "../../src/gameplay/userStore";
-import { CUR_GOLD } from "../../src/infra/config";
+import { CUR_GOLD, OUTBOX_PENDING } from "../../src/infra/config";
 import { kBag, kCacheCurrency, kUser } from "../../src/infra/keys";
 import { cacheClient, clientFor, closeRedis } from "../../src/infra/redisRoute";
 import { closeMysql, getPool } from "../../src/infra/mysql";
@@ -147,4 +147,25 @@ test("领附件并发双击 → 只发一次货；重复领幂等回读（09·A6
   const [m] = await getPool().query<RowDataPacket[]>(
     "SELECT claimed_at, read_at FROM mail WHERE mail_id = ?", [mailId]);
   assert.ok(m[0].claimed_at, "claimed_at 权威已落");
+});
+
+test("setField 序反转防御：写前 drainPendingFor 吸干旧 intent，迟到重放只判 dup（04）", async () => {
+  const u = await seedUser("drain", 0);
+  // 模拟「阶段 2 前崩溃」残留的 pending intent（绝对值 setField）
+  const oldOp = deriveOpId(u, "test.drain", "req-old");
+  await getPool().execute(
+    `INSERT INTO gameplay_outbox (op_id, user_id, effect, status) VALUES (?,?,CAST(? AS JSON),?)`,
+    [oldOp, u, JSON.stringify([{ kind: "setField", field: "drainProbe", value: "old" }]), OUTBOX_PENDING]);
+
+  // 新写之前先吸干：旧 intent 按创建序 apply + 标 done
+  assert.equal(await drainPendingFor(u), 1);
+  assert.equal(await clientFor(u).hget(kUser(u), "drainProbe"), "old");
+
+  // 用户后续写同字段（新值）
+  const newOp = deriveOpId(u, "test.drain", "req-new");
+  assert.equal(await redisApply(u, newOp, [{ kind: "setField", field: "drainProbe", value: "new" }]), "ok");
+
+  // relayer 迟到重放旧 op → applied 判 dup，新值不被盖回（序保证成立）
+  assert.equal(await redisApply(u, oldOp, [{ kind: "setField", field: "drainProbe", value: "old" }]), "dup");
+  assert.equal(await clientFor(u).hget(kUser(u), "drainProbe"), "new");
 });

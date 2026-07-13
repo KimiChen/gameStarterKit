@@ -35,6 +35,11 @@ export const kRl = (scope: string) => `rl:${scope}`;
 export const kRank = (type: string, season: string) => `rank:${type}:${season}`;
 /** 榜展示信息 HASH（field=uid, value=JSON）。跨用户 key。 */
 export const kRankSub = (type: string, season: string) => `rank_sub:${type}:${season}`;
+/** 省榜 ZSET（07 key 全表）。provinceEnc = encodeURIComponent(省名)——键段安全 ASCII。
+ *  展示信息复用 rank_sub:{type}:{season}（同一用户展示一份）；省份数量不定 → TTL 由写路径
+ *  逐次刷新（rankService.provKeyTtlSec），⛔ 不进 seasonRotation 遍历。跨用户 key。 */
+export const kRankProv = (type: string, provinceEnc: string, season: string) =>
+  `rank:${type}:prov:${provinceEnc}:${season}`;
 /** 结算去重 STRING，TTL 7d。⚠ 必须 per (matchId, uid)（09·K2）。 */
 export const kLbDedup = (matchId: string, uid: string) => `lb:dedup:${matchId}:${uid}`;
 /** 活跃索引 ZSET（member=uid, score=lastActiveMs）。hash-tag 是 {bucket} 不是 {uid}。 */

@@ -35,6 +35,7 @@
 | `idem:{scope}:{key}` | STRING | 见下 | 幂等占位 |
 | `rank:{type}:{season}` | ZSET | 赛季后设 TTL | member = uid，score = `encodeScore()` |
 | `rank_sub:{type}:{season}` | HASH | 赛季后设 TTL | field = uid，value = JSON 展示信息 |
+| `rank:{type}:prov:{provinceEnc}:{season}` | ZSET | 写路径自管理（当季剩余+`RANK_OLD_GRACE_S`，逐写刷新） | 省榜（回流自 Arthur）。provinceEnc = `encodeURIComponent(省名)`；展示信息**复用** `rank_sub:{type}:{season}`；省份数量不定 → ⛔ 不进 seasonRotation 遍历（`rankService.provKeyTtlSec`） |
 | `lb:dedup:{matchId}:{uid}` | STRING | 7d | 结算去重（**必须 per (matchId, uid)**） |
 | `active:lru:{bucket}` | ZSET | **无** | 活跃索引，member=uid, score=lastActiveMs。⚠️ hash-tag 是 `{bucket}` 不是 `{uid}`，**寻址规则不同**（[08](./08-cold-archive.md)） |
 | `stream:match` | STREAM | **无**（`XTRIM MINID` 按落库位点裁） | 对局证据链（P7），consumer group 消费落 `match_results`。⚠️ 跨用户 key，不与 `{uid}` 同槽；裁剪 owner = 证据链消费者（09·K6） |
@@ -45,6 +46,16 @@
 > 协调类 key（`lock` / `idem` / `sess`）按用途设短 TTL，这不违反上面的不变量。
 >
 > ⛔ **`thaw:{uid}` 已废弃** —— 冻结/解冻/玩法写/清理任务共用同一把 `lock:{uid}`（[08](./08-cold-archive.md)）。
+
+### `user:{uid}` 玩法字段
+
+建号基线字段（`userStore.createUser` / `wxLogin`）：`star` / `maxRound` / `wins` / `losses` /
+`stamina`（建号 = `STAMINA_MAX` 满值）/ `ver` / `fence` / `schemaVersion`。回流批次追加：
+
+| 字段 | 值 | 说明 |
+|---|---|---|
+| `musicOn` / `sfxOn` | `"0"` \| `"1"` | 音频偏好字段级上云（回流自 Arthur）。**缺失即默认开**（`"1"`）——存量档零迁移，读侧 `flag()` 兜底，⛔ 不回填 |
+| `lastStaminaRecoverAt` | int(ms) | 体力恢复计时起点；`0` = 满体力/未开始恢复。建号写 `"0"`。恢复/消费公式在 shared `logic/stamina.ts`（`STAMINA_REGEN_MS` / `STAMINA_COST` 常量在 shared `constants/game.ts`，双端同源），服务端为唯一真源，nowMs 用服务端时钟 |
 
 ### cache 实例（`allkeys-lru`，物理独立）
 
@@ -273,6 +284,8 @@ const ERR_MAP = new Map<Function, string>([
 | `RPC_RATE_CAPACITY` / `RPC_RATE_REFILL_PER_S` | 20 / 10 | RPC per-user 令牌桶（env 可调） |
 | `HANDLER_TIMEOUT_MS` | 10_000 | handler 超时 race（⚠ 不取消副作用，G9） |
 | `LB_DEDUP_TTL_MS` | 7d | `lb:dedup` 去重键 TTL（M7 增补，暂在 rankService.ts） |
+| `RANK_OLD_GRACE_S` | 30d | 旧季榜回收窗（seasonRotation 设 TTL 与省榜 `provKeyTtlSec` 共用，回流批次归位 config） |
+| `RANK_PAGE_LEN` | 50 | `/rank/list` 页长（回流批次，暂在 routes/index.ts） |
 
 ### MySQL 服务器配置
 

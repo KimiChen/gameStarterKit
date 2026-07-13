@@ -14,7 +14,7 @@
  * rotateIfNeeded(nowSec) 收显式参数，纯逻辑可被测试直接调用。
  */
 import { pathToFileURL } from "node:url";
-import { LEASE_TTL_S } from "../infra/config";
+import { LEASE_TTL_S, RANK_OLD_GRACE_S } from "../infra/config";
 import { kRank, kRankSub } from "../infra/keys";
 import { LeaseLostError, makeHolderId, tryAcquireLease, withLeaseTx } from "../infra/lease";
 import type { SingletonLease } from "../infra/lease";
@@ -23,8 +23,8 @@ import { clientForKey, closeRedis } from "../infra/redisRoute";
 import { RANK_TYPES } from "./rankService";
 import { seasonIdAt, seasonIndexAt } from "./score";
 
-/** 旧季榜保留 30d 后回收（07 key 全表「赛季后设 TTL」；给补发奖/申诉留窗口）。 */
-const RANK_OLD_TTL_S = 30 * 86_400;
+/** 旧季榜保留窗常量已归位 infra/config（07 常量表）：RANK_OLD_GRACE_S。 */
+const RANK_OLD_TTL_S = RANK_OLD_GRACE_S;
 /** 主循环周期：续租 + 轮换判定。须 < LEASE_TTL_S，取 1/3。 */
 const ROTATION_POLL_MS = (LEASE_TTL_S * 1000) / 3;
 

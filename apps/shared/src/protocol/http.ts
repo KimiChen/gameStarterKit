@@ -80,3 +80,23 @@ export interface IHealthRes {
     serverTime: number;
     version: string;
 }
+
+// ================ 以下为服务端框架**真实**端点（server/src/routes，非 mock） ================
+
+// ---------------- GET /version ----------------
+
+/** 部署自检：服务名 + 双端协议版本（PROTOCOL_VERSION，见 protocol/rooms.ts）。 */
+export interface IVersionRes {
+    name: string;
+    protocol: number;
+}
+
+// ---------------- GET /clock/now ----------------
+
+/**
+ * 服务端权威时钟（无鉴权）。每日奖励/跨天判定/体力恢复展示的对时真源，
+ * 防改本地时钟；客户端启动时取一次差值即可（毫秒）。
+ */
+export interface IClockNowRes {
+    serverTime: number;
+}

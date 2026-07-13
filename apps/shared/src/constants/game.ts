@@ -24,6 +24,12 @@ export const MAP_HEIGHT = 1500;
 /** 体力上限（服务端框架建号初始体力 = 满；user:{uid} 的 stamina 字段） */
 export const STAMINA_MAX = 30;
 
+/** 体力恢复间隔（ms）：每 5 分钟回 1 点（logic/stamina.ts 纯函数；档字段见 docs/server/07） */
+export const STAMINA_REGEN_MS = 5 * 60 * 1000;
+
+/** 每局体力消耗（logic/stamina.ts spendStamina 默认值） */
+export const STAMINA_COST = 1;
+
 /** 房间阶段 */
 export const GamePhase = {
     /** 等待玩家 */

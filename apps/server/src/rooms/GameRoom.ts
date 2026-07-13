@@ -15,6 +15,8 @@ import {
     getSkillDef,
     calcDamage,
     SeededRandom,
+    PROTOCOL_VERSION,
+    type IRoomJoinOptions,
     type IPingReq,
     type IMoveReq,
     type ICastSkillReq,
@@ -33,6 +35,10 @@ import { emitMatchEvidence, MATCH_MODE_CASUAL, newMatchId } from "../gameplay/ma
 /** 框架不透明 token 形制：`{uid}.{hex}`（auth/session.ts issueSession，TOKEN_BYTES=24 → 48 位 hex）。
  *  mock token（`mock-token-*`）不匹配 → 按游客进房，全程不触碰 Redis。 */
 const FRAMEWORK_TOKEN_RE = /\.[0-9a-f]{48}$/;
+
+/** 非主动断线的重连宽限（秒）。微信小游戏切后台必断 socket，实机常态不是异常——
+ *  没有宽限就等于「切个后台 = 弃赛」。回流自 Arthur 三房间标配。 */
+const RECONNECT_GRACE_S = 10;
 
 /**
  * 主玩法房间（玩法逻辑仍为演示/假数据，用于跑通链路）：
@@ -67,7 +73,12 @@ export class GameRoom extends Room {
      * ⛔ 不信客户端单独传的 userId）；mock token / 无 token = 游客照常进（不触碰 Redis）。
      * 校验失败也按游客放行——玩法房不做硬闸，硬闸在 LobbyRoom.onAuth。
      */
-    static async onAuth(token: string, options: { token?: string } | undefined, _context: AuthContext) {
+    static async onAuth(token: string, options: IRoomJoinOptions | undefined, _context: AuthContext) {
+        // 协议版本硬闸（缺省按 1 兼容首版客户端）：服务端升协议后旧包 join 即拒——
+        // 给出可识别错误码，而不是让旧客户端在 Schema 对不上的畸形状态里挂死
+        if ((options?.v ?? 1) !== PROTOCOL_VERSION) {
+            throw new ServerError(ErrorCode.ProtocolMismatch, ErrorMessage[ErrorCode.ProtocolMismatch]);
+        }
         const raw = options?.token ?? token ?? "";
         if (FRAMEWORK_TOKEN_RE.test(raw)) {
             try {
@@ -160,8 +171,21 @@ export class GameRoom extends Room {
         console.log(`[GameRoom ${this.roomId}] ${player.name}(${client.sessionId}) 加入，当前 ${this.state.players.size} 人`);
     }
 
-    onLeave(client: Client, code: number) {
+    async onLeave(client: Client, code: number) {
         const consented = code === CloseCode.CONSENTED;
+        if (!consented) {
+            try {
+                // 非主动断线（微信切后台必断 socket / 网络抖动）：保留座位等重连，
+                // 宽限期内玩家仍在 state 里照常被模拟、不阻塞他人；客户端用 SDK 的
+                // reconnect(reconnectionToken) 归位。M8a 簿记必须推迟到重连失败——
+                // 在这里先记会把重连成功者也算成阵亡，污染名次与证据。
+                await this.allowReconnection(client, RECONNECT_GRACE_S);
+                console.log(`[GameRoom ${this.roomId}] ${client.sessionId} 断线后重连成功`);
+                return; // 数据原样保留，无任何簿记
+            } catch {
+                // 宽限到期未归 → 按真离开走下方清理
+            }
+        }
         const player = this.state.players.get(client.sessionId);
         if (player && this.state.phase === GamePhase.Playing) {
             // 结算证据还需要退房者的名字——无论死活都先快照（state.players 马上要删）
@@ -170,7 +194,7 @@ export class GameRoom extends Room {
             if (player.alive) this.deathOrder.push(client.sessionId);
         }
         this.state.players.delete(client.sessionId);
-        console.log(`[GameRoom ${this.roomId}] ${client.sessionId} 离开（${consented ? "主动" : `code=${code}`}），剩余 ${this.state.players.size} 人`);
+        console.log(`[GameRoom ${this.roomId}] ${client.sessionId} 离开（${consented ? "主动" : `code=${code}，宽限已过`}），剩余 ${this.state.players.size} 人`);
         this.maybeSettle();
     }
 

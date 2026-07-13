@@ -9,7 +9,7 @@ import "./env-setup"; // ⚠ 必须第一个 import（限流放宽）
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
-import { LOBBY_MSG_PUSH, LOBBY_MSG_RPC, RoomName } from "@game/shared";
+import { LOBBY_MSG_PUSH, LOBBY_MSG_RPC, PROTOCOL_VERSION, RoomName } from "@game/shared";
 import { server } from "../../src/app.config";
 import { banUser, issueSession } from "../../src/auth/session";
 import { acquireLease } from "../../src/core/locks";
@@ -35,10 +35,10 @@ async function makeUser(name: string): Promise<{ uid: string; token: string }> {
   return { uid, token };
 }
 
-/** 经 SDK 入大厅房。 */
+/** 经 SDK 入大厅房（v = 协议版本，onAuth 硬闸）。 */
 async function joinLobby(token: string) {
   colyseus.sdk.auth.token = token;
-  return colyseus.sdk.joinOrCreate(RoomName.Lobby, {});
+  return colyseus.sdk.joinOrCreate(RoomName.Lobby, { v: PROTOCOL_VERSION });
 }
 
 /** RPC 往返：按信封 id 配对回包。 */
@@ -116,6 +116,25 @@ test("写样板 updateProfile：casHset 落字段 + lastActiveAt + active:lru（
   const r2 = await rpc(room, "user.updateProfile", { clientReqId: "c1", nickname: "赵子龙" });
   assert.equal(r2.ok, true);
   assert.equal(await c.hget(kUser(uid), "ver"), "1", "重放未二次写入");
+  await room.leave();
+});
+
+test("偏好字段级上云：缺失即默认开（零迁移）→ 覆写落档 → getInfo 回读", async () => {
+  const { uid, token } = await makeUser("pref");
+  const room = await joinLobby(token);
+
+  // 建号不写偏好字段：读侧兜底默认开（07 字段表「缺失即默认」）
+  const before = await rpc(room, "user.getInfo", {});
+  assert.equal(before.data.user.musicOn, true, "缺失 → 默认开");
+  assert.equal(before.data.user.sfxOn, true);
+  assert.equal(await clientFor(uid).hget(kUser(uid), "musicOn"), null, "读不回填");
+
+  const w = await rpc(room, "user.updateProfile", { clientReqId: "pf1", musicOn: false });
+  assert.equal(w.ok, true);
+  const after = await rpc(room, "user.getInfo", {});
+  assert.equal(after.data.user.musicOn, false, "覆写生效");
+  assert.equal(after.data.user.sfxOn, true, "未写字段仍默认开");
+  assert.equal(after.data.user.lastStaminaRecoverAt, 0, "lastStaminaRecoverAt 缺省读 0（wx-login 建号显式写 0）");
   await room.leave();
 });
 
@@ -216,4 +235,35 @@ test("邮件：list / markRead（MySQL 权威，09·A6）+ 唤醒推送（09·K6
   await emitMailWake(uid, mailId);
   assert.equal((await pushed).mailId, mailId);
   await room.leave();
+});
+
+test("断线重连竞态：旧连接晚 leave 不误删新连接的推送注册（sink 条件注销）", async () => {
+  const { uid, token } = await makeUser("resink");
+  const oldConn = await joinLobby(token);
+  const newConn = await joinLobby(token); // 重连后的新连接：uid 槽位被新 sink 覆盖
+
+  const pushed = new Promise<any>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error("等 push 超时")), 8000);
+    newConn.onMessage(LOBBY_MSG_PUSH, (m: any) => {
+      if (m.type === "mail.new") { clearTimeout(t); resolve(m.data); }
+    });
+  });
+
+  await oldConn.leave(); // 竞态时序：旧连接的 onLeave 晚于新连接的 onJoin 到达
+  await sleep(100);      // 等服务端 onLeave 处理完
+
+  const [ins] = await getPool().execute<ResultSetHeader>(
+    "INSERT INTO mail (user_id, title, body) VALUES (?, '竞态', 'sink 条件注销')", [uid]);
+  await emitMailWake(uid, ins.insertId);
+  assert.equal((await pushed).mailId, ins.insertId, "新连接仍应收到 mail.new 推送");
+  await newConn.leave();
+});
+
+test("协议版本闸门：v 不匹配在 onAuth 即拒（ProtocolMismatch）；缺省 v 按 1 兼容", async () => {
+  const { token } = await makeUser("proto");
+  colyseus.sdk.auth.token = token;
+  await assert.rejects(colyseus.sdk.joinOrCreate(RoomName.Lobby, { v: 999 }), "旧协议客户端应被拒");
+  const ok = await colyseus.sdk.joinOrCreate(RoomName.Lobby, {}); // 未带 v = 首版客户端
+  assert.ok(ok.sessionId, "缺省 v 视为 1，当前版本放行");
+  await ok.leave();
 });

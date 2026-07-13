@@ -12,12 +12,18 @@
     "sync:shared:watch": "node scripts/sync-shared.mjs --watch",
     "dev:server": "npm --workspace @game/server run dev",
     "start:server": "npm --workspace @game/server run start",
-    "typecheck": "npm --workspace @game/shared run typecheck && npm --workspace @game/server run typecheck",
+    "typecheck": "npm --workspace @game/shared run typecheck && npm --workspace @game/server run typecheck && npm run typecheck:client",
     "verify:ecs": "cd apps/client/assets/script/lib/ecs && shasum -a 256 -c ../../../../../../scripts/ecs.sha256",
     "fetch:fgui": "bash scripts/fetch-fgui.sh",
-    "test:fgui": "cd apps/server && node --import tsx --test ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/*.test.ts"
+    "test:fgui": "cd apps/server && node --import tsx --test ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/*.test.ts",
+    "config:excel-to-json": "node tools/excel-to-json.mjs",
+    "config:excel-to-json:check": "node tools/excel-to-json.mjs --check",
+    "typecheck:client": "tsc -p apps/client/tsconfig.typecheck.json"
   },
   "engines": {
     "node": ">=22"
+  },
+  "devDependencies": {
+    "xlsx": "^0.18.5"
   }
 }

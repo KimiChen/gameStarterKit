@@ -30,6 +30,9 @@ export function registerUserRoutes(): void {
       nickname: z.string().max(24).optional(),
       avatarId: z.number().int().min(-1).max(999).optional(),
       province: z.string().max(16).optional(),
+      // 音频偏好字段级上云：覆写 last-write-wins；读侧在 user.getInfo（缺失=默认开，07 字段表）
+      musicOn: z.boolean().optional(),
+      sfxOn: z.boolean().optional(),
     }),
     idem: true,
     handler: async (ctx, p) =>
@@ -37,6 +40,8 @@ export function registerUserRoutes(): void {
         if (p.nickname !== undefined) { uow.set("nickname", p.nickname); }
         if (p.avatarId !== undefined) { uow.set("avatarId", String(p.avatarId)); }
         if (p.province !== undefined) { uow.set("province", p.province); }
+        if (p.musicOn !== undefined) { uow.set("musicOn", p.musicOn ? "1" : "0"); }
+        if (p.sfxOn !== undefined) { uow.set("sfxOn", p.sfxOn ? "1" : "0"); }
         return { ok: true };
       }),
   });

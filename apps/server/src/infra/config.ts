@@ -66,6 +66,9 @@ export const BUCKETS = 16384;
 /** 赛季起始 epoch 秒 / 长度秒（每赛季独立，运营配置注入）。 */
 export const SEASON_BASE = envInt("SEASON_BASE", 1_782_864_000); // 2026-07-01 00:00 UTC
 export const SEASON_LEN_S = envInt("SEASON_LEN_S", 30 * 86_400);
+/** 旧季榜回收窗（07 常量表）：赛季结束后保留 30d 给补发奖/申诉。
+ *  seasonRotation 给旧季总榜设 TTL、rankService.provKeyTtlSec 给省榜自管 TTL 共用同一语义。 */
+export const RANK_OLD_GRACE_S = 30 * 86_400;
 /** 冷档天数。⚠ 必须 >> max(OUTBOX_RETENTION, APPLIED_RETENTION)，且避开 30 天月度回流周期。 */
 export const COLD_DAYS = 90;
 /** 冻结开关：按内存水位（used_memory/maxmemory > 0.6）启用（09·F5），默认关。 */

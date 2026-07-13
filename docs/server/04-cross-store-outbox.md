@@ -79,6 +79,19 @@ export type Grant =
 export type Effect = Grant[];
 ```
 
+### ⚠️ `setField` 的序保证：写前必须 `drainPendingFor`
+
+`item` / `star` 是增量（HINCRBY），乱序重放**可交换**，结果不变；`setField` 是绝对值（HSET），
+**不可交换**——若旧 intent 在阶段 2 前崩溃，用户后续操作又写了同字段，relayer 迟到重放会把
+旧绝对值盖回去（序反转），且 applied 集合只防同 op 重复、防不了跨 op 乱序。
+
+规则：**任何含 `setField` 的写操作，进入 `withUser` 锁后、发起新写之前，先调
+`drainPendingFor(uid)`** 把该用户的 pending intent 按创建序吸干（apply + 标 done）。
+崩溃窗口由此收敛为「锁内串行」：锁内 drain → 本次写 → relayer 即使迟到也只会判 dup。
+`cold`（档冻结）直接上抛，⛔ 不在缺失档上造残档（09·R2）。
+
+（回流自 Arthur 生产修复，Arthur commit `6940979`。）
+
 ### 背包存储布局
 
 背包**不能**塞进 `user:{uid}` 主 Hash（大 Hash 的 `HGETALL` 会阻塞 Redis 单线程，见 [03](./03-gateway-data-layer.md)）。按固定分片拆开：
