@@ -72,7 +72,11 @@ interface RpcReply    { id: string; ok: boolean; data?: unknown; err?: { code: s
 // 中间件链：鉴权 → 限流 → zod 校验 → 幂等占位 → handler
 ```
 
-handler 独立成文件：`handlers/user.ts`、`handlers/rank.ts`、`handlers/mail.ts` …
+handler 按「每接口一文件」组织：`handlers/<域>/<接口>.ts`（如 `handlers/user/getInfo.ts`），
+default 导出 `defineRpc(...)`（gateway/rpc.ts），由 `handlers/loader.ts` 启动扫描注册——
+路由名必须 = `<域目录名>.<文件名>`，且与 shared `ALL_LOBBY_RPC_TYPES` 集合相等，否则拒绝启动。
+⛔ 平铺文件（旧式 `handlers/rank.ts`）loader 不扫描，写了等于没注册——新增域一律建目录。
+（本节与 Arthur 原文的差异：本仓库已契约化，见 loader.ts 头注释与 CLAUDE.md 服务端现状。）
 
 ### 必须踩住的几个坑
 

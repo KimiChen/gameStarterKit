@@ -162,7 +162,7 @@ M10 运维与监控：核心告警随 M6/M9 各自交付，全量看板上线前
 
 - [ ] `rank/score.ts`：`encodeScore`/`decodeScore`（09·K1）+ 边界单测（赛季首尾/同分先后/1e12 精度）
 - [ ] 更新分：单条 Lua `ZSCORE→重算→ZADD` + `rank_sub` 写入；去重键 `lb:dedup:{matchId}:{uid}`（09·K2）。**matchId 在 M8 才接线——本里程碑用合成 matchId 跑单测/集成测**，真实结算端到端归 M8
-- [ ] `handlers/rank.ts`：两段式取榜 + 补自己（Cluster 形态按 M0 结论决定 hydrate 写法）
+- [ ] `handlers/rank/*.ts`（每接口一文件 + shared lobbyRpc 契约，见 03 · handler 组织）：两段式取榜 + 补自己（Cluster 形态按 M0 结论决定 hydrate 写法）
 - [ ] 赛季轮换任务：key 内嵌 `seasonId`，换季写新 key、旧 key 设 TTL；**走 `singleton_lease`（`season_rotation` 行，09·X7）**
 - [ ] `rank_snapshot` 定期 top-N 快照进 MySQL（可延后，但归属本里程碑）
 - [ ] 发奖（需 rating 拍板 + M6）：`rank_award UNIQUE(season,uid)` + 走 outbox 发放（09·K3：100% 校验）
@@ -226,7 +226,7 @@ apps/server/src/
 ├── infra/        redisRoute.ts · redisScripts.ts · mysql.ts · config.ts     (M1)
 ├── core/         locks.ts · uow.ts · idem.ts · errors.ts                    (M2)
 ├── auth/         wxLogin.ts · session.ts · legacyBind.ts(存量绑定)          (M3)
-├── gateway/      LobbyRoom.ts · dispatcher.ts · handlers/{user,rank,shop,mail}.ts  (M5–M7)
+├── gateway/      LobbyRoom.ts · dispatcher.ts · rpc.ts · handlers/loader.ts · handlers/<域>/<接口>.ts  (M5–M7)
 ├── economy/      currency.ts · outbox.ts · purchases.ts(充值) · relayer.ts(独立进程) (M6)
 ├── gameplay/     userStore.ts · bag.ts                                      (M2/M6)
 ├── rank/         score.ts · rankService.ts · seasonRotation.ts              (M7)

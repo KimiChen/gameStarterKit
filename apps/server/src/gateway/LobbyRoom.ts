@@ -15,24 +15,12 @@ import { verifyBearer } from "../auth/session";
 import { toErrCode } from "../core/errors";
 import { dispatchRpc, rpcEnvelopeSchema, type RpcCtx, type RpcReply } from "./dispatcher";
 import { registerOnline, startMailWakeLoop, unregisterOnline, type PushSink } from "./push";
-import { registerMailRoutes } from "./handlers/mail";
-import { registerShopRoutes } from "./handlers/shop";
-import { registerUserRoutes } from "./handlers/user";
+import { registerAllRoutes } from "./handlers/loader";
 
 type LobbyClient = Client<{
   messages: { [LOBBY_MSG_RPC]: RpcReply; [LOBBY_MSG_PUSH]: { type: string; data: unknown } };
   auth: { userId: string; token: string };
 }>;
-
-/** 路由表注册一次（模块热重载防重复）。 */
-let routesRegistered = false;
-function ensureRoutes(): void {
-  if (routesRegistered) { return; }
-  routesRegistered = true;
-  registerUserRoutes();
-  registerMailRoutes();
-  registerShopRoutes();
-}
 
 export class LobbyRoom extends Room<{ client: LobbyClient }> {
   // 大厅是共享房：不因空转销毁，人数上限放宽（单房单节点是 Colyseus 模型；
@@ -54,8 +42,8 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
     }
   }
 
-  onCreate(): void {
-    ensureRoutes();
+  async onCreate(): Promise<void> {
+    await registerAllRoutes(); // 扫描 handlers/<域>/<接口>.ts 注册（异步就绪前房间不接客，无竞态窗口）
     startMailWakeLoop(); // 邮件唤醒流消费（本节点）
   }
 

@@ -18,6 +18,8 @@ declare namespace Colyseus {
     class Client {
         /** endpoint 传 http(s) 地址（如 http://localhost:2568），SDK 自动派生 ws(s) */
         constructor(endpoint: string);
+        /** 认证模块：设置 token 后，后续 matchmaking 请求带 Authorization: Bearer 头（服务端 static onAuth 第一参） */
+        readonly auth: { token: string | null };
         joinOrCreate<TState = any>(roomName: string, options?: any): Promise<Room<TState>>;
         create<TState = any>(roomName: string, options?: any): Promise<Room<TState>>;
         join<TState = any>(roomName: string, options?: any): Promise<Room<TState>>;
