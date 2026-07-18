@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<component size="158,58">
-  <displayList>
-    <image id="n0" name="img_bg" src="imn61s" fileName="RGBA/p1_png.png" xy="0,0">
-      <relation target="" sidePair="width-width,height-height"/>
-    </image>
-    <list id="n1" name="lst_combo" xy="0,1" size="157,56" overflow="scroll" scrollBarFlags="4" defaultItem="ui://k85eojd9kibr7q"/>
-  </displayList>
-</component>

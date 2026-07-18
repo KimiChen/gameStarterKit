@@ -1,0 +1,160 @@
+
+GuideFinger.png
+size: 2048,512
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+dianji/d_00000
+  rotate: true
+  xy: 1168, 12
+  size: 125, 103
+  orig: 256, 256
+  offset: 88, 65
+  index: -1
+dianji/d_00001
+  rotate: false
+  xy: 1016, 8
+  size: 151, 129
+  orig: 256, 256
+  offset: 64, 63
+  index: -1
+dianji/d_00002
+  rotate: false
+  xy: 1857, 350
+  size: 167, 152
+  orig: 256, 256
+  offset: 52, 52
+  index: -1
+dianji/d_00003
+  rotate: true
+  xy: 1700, 326
+  size: 176, 156
+  orig: 256, 256
+  offset: 50, 50
+  index: -1
+dianji/d_00004
+  rotate: true
+  xy: 1533, 317
+  size: 185, 166
+  orig: 256, 256
+  offset: 48, 42
+  index: -1
+dianji/d_00005
+  rotate: true
+  xy: 1485, 22
+  size: 191, 173
+  orig: 256, 256
+  offset: 46, 37
+  index: -1
+dianji/d_00006
+  rotate: true
+  xy: 1634, 225
+  size: 91, 78
+  orig: 256, 256
+  offset: 147, 35
+  index: -1
+dianji/d_00007
+  rotate: true
+  xy: 1659, 121
+  size: 91, 78
+  orig: 256, 256
+  offset: 146, 37
+  index: -1
+dianji/d_00008
+  rotate: true
+  xy: 1659, 29
+  size: 91, 78
+  orig: 256, 256
+  offset: 142, 42
+  index: -1
+dianji/d_00009
+  rotate: true
+  xy: 1738, 121
+  size: 91, 78
+  orig: 256, 256
+  offset: 135, 50
+  index: -1
+dianji/d_00010
+  rotate: true
+  xy: 1738, 29
+  size: 91, 78
+  orig: 256, 256
+  offset: 128, 58
+  index: -1
+dianji/d_00011
+  rotate: true
+  xy: 1817, 121
+  size: 91, 78
+  orig: 256, 256
+  offset: 124, 63
+  index: -1
+j/j_00000
+  rotate: false
+  xy: 1, 64
+  size: 438, 438
+  orig: 512, 512
+  offset: 36, 38
+  index: -1
+j/j_00001
+  rotate: false
+  xy: 440, 64
+  size: 438, 438
+  orig: 512, 512
+  offset: 36, 38
+  index: -1
+j/j_00002
+  rotate: false
+  xy: 879, 138
+  size: 364, 364
+  orig: 512, 512
+  offset: 74, 74
+  index: -1
+j/j_00003
+  rotate: false
+  xy: 1244, 214
+  size: 288, 288
+  orig: 512, 512
+  offset: 112, 112
+  index: -1
+j/j_00004
+  rotate: false
+  xy: 1272, 1
+  size: 212, 212
+  orig: 512, 512
+  offset: 150, 150
+  index: -1
+j/j_00005
+  rotate: false
+  xy: 879, 1
+  size: 136, 136
+  orig: 512, 512
+  offset: 188, 188
+  index: -1
+j/j_00006
+  rotate: false
+  xy: 1857, 225
+  size: 124, 124
+  orig: 512, 512
+  offset: 194, 194
+  index: -1
+j/j_00007
+  rotate: false
+  xy: 1713, 213
+  size: 112, 112
+  orig: 512, 512
+  offset: 200, 200
+  index: -1
+j/j_00008
+  rotate: false
+  xy: 1533, 216
+  size: 100, 100
+  orig: 512, 512
+  offset: 206, 206
+  index: -1
+j/j_00009
+  rotate: false
+  xy: 1817, 32
+  size: 88, 88
+  orig: 512, 512
+  offset: 212, 212
+  index: -1

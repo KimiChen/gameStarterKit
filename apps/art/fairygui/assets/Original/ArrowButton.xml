@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<component size="101,58" pivot="0.5,0.5" anchor="true" extention="Button">
-  <controller name="button" pages="0,up,1,down,2,over,3,selectedOver" selected="0"/>
-  <displayList>
-    <image id="7902291f" name="img_arrow" src="e9pj83" fileName="RGBA/img_quick_jump_expand_arrow_arrow.png" xy="0,0" size="101,58"/>
-  </displayList>
-  <Button/>
-</component>

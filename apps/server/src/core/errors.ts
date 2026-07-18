@@ -1,24 +1,13 @@
 /**
- * 异常类型 + 错误码映射（[07 · 错误码表](../../../../docs/server/07-contracts-and-config.md#错误码表)）。
+ * 异常类型 + 错误码映射（[07 · 错误码表](docs/SERVER.md)）。
  *
  * 客户端按 `code` 分支，⛔ 禁止解析 `msg`（09·G3）。新增错误码必须先加 07 的表。
  */
 
-export type ErrCode =
-  | "AUTH_REQUIRED"
-  | "AUTH_EPOCH_STALE"
-  | "ACCOUNT_BANNED"
-  | "RATE_LIMITED"
-  | "INVALID_PAYLOAD"
-  | "UNKNOWN_TYPE"
-  | "INSUFFICIENT_BALANCE"
-  | "BUSY"
-  | "STALE_FENCE"
-  | "IN_PROGRESS"
-  | "GRANTING"
-  | "THAWING"
-  | "USER_DATA_LOST"
-  | "INTERNAL";
+import type { RpcErrCode } from "@game/shared";
+
+// 错误码真源在 shared/protocol/lobbyRpc/envelope.ts 的 RPC_ERR_CODES（登记顺序：07 表 → shared → 此处映射）
+export type ErrCode = RpcErrCode;
 
 /** 抢 lock:{uid} 失败（客户端同一 clientReqId 自动重试）。 */
 export class BusyError extends Error {

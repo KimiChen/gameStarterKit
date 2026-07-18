@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<component size="166,65">
-  <displayList>
-    <image id="n3_evxd" name="img_bg" src="evxdcp" fileName="RGBA/3 - layer_1IQDnfIid639MjwcJZp3B.png" xy="0,1"/>
-    <text id="n4_evxd" name="txt_power" xy="55,16" size="69,34" fontSize="24" color="#ffffff" text="12345"/>
-    <component id="n6_evxd" name="jb_skillIcon" src="evxd9p" fileName="ComponentSkillIcon.xml" xy="-15,-10" customData="{&quot;comps&quot;:[{&quot;type&quot;:&quot;JsBehaviour&quot;}]}"/>
-  </displayList>
-</component>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="750,1624" extention="Button" remark="{&quot;comps&quot;:[{&quot;type&quot;:&quot;JsBehaviour&quot;,&quot;module&quot;:&quot;CloseBtn&quot;}]}">
+  <controller name="button" pages="0,up,1,down,2,over,3,selectedOver" selected="0"/>
+  <displayList>
+    <image id="n7_eery" name="n7" src="wegn2c" fileName="mask.png" pkg="egjqb8zp" xy="0,0" size="750,1624" alpha="0.754">
+      <relation target="" sidePair="width-width,height-height"/>
+    </image>
+  </displayList>
+  <Button/>
+</component>

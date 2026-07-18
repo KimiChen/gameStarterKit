@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<packageDescription id="egjqb8zp">
+  <resources>
+    <image id="pjz8i" name="btn_purple.png" path="/" exported="true" scale="9grid" scale9grid="10,10,46,37" smoothing="false"/>
+    <image id="pjz8j" name="btn_red.png" path="/" exported="true" scale="9grid" scale9grid="10,10,45,37" smoothing="false"/>
+    <image id="pjz81d" name="bg_pro1.png" path="/" exported="true" scale="9grid" scale9grid="22,11,17,22" smoothing="false"/>
+    <image id="pjz81n" name="icon_arrow.png" path="/Arrow/" exported="true" smoothing="false"/>
+    <image id="em771o" name="btn_plus.png" path="/" exported="true" smoothing="false"/>
+    <image id="wla11u" name="btn_green.png" path="/" exported="true" scale="9grid" scale9grid="8,9,45,39" smoothing="false"/>
+    <image id="rhop27" name="icon_help.png" path="/" exported="true" smoothing="false"/>
+    <image id="wegn29" name="dialog_bg.png" path="/" exported="true" scale="9grid" scale9grid="17,71,100,44" smoothing="false"/>
+    <image id="wegn2a" name="dialog_content.png" path="/" exported="true" scale="9grid" scale9grid="11,12,43,41" smoothing="false"/>
+    <image id="wegn2b" name="btn_close.png" path="/" exported="true" smoothing="false"/>
+    <image id="wegn2c" name="mask.png" path="/" exported="true" scale="9grid" scale9grid="5,5,-2,-2" smoothing="false"/>
+    <image id="dkzf2d" name="btn_com_disabled.png" path="/" exported="true" scale="9grid" scale9grid="7,8,50,39" smoothing="false"/>
+    <image id="bazm2p" name="bg_cbox.png" path="/" exported="true" smoothing="false"/>
+    <image id="bazm2q" name="icon_cbox_selected.png" path="/" exported="true" smoothing="false"/>
+    <image id="oknk3k" name="icon_arrow_red.png" path="/Arrow/" exported="true" smoothing="false"/>
+    <image id="i5av3k" name="bg_tab_dark1.png" path="/" exported="true" scale="9grid" scale9grid="10,16,20,17" smoothing="false"/>
+    <image id="i5av3l" name="bg_tab_light1.png" path="/" exported="true" scale="9grid" scale9grid="9,17,29,16" smoothing="false"/>
+    <image id="bdm03v" name="btn_copy.png" path="/" exported="true" smoothing="false"/>
+    <image id="bdm030" name="btn_plus_disabled.png" path="/" exported="true" smoothing="false"/>
+    <image id="rze123" name="bg_chat.png" path="/" exported="true" scale="9grid" scale9grid="10,10,8,8" smoothing="false"/>
+    <image id="pjz819" name="icon_chat.png" path="/" exported="true" smoothing="false"/>
+    <image id="pjz8s" name="nav_equip_1.png" path="/Overlay/" exported="true" smoothing="false"/>
+    <image id="pjz81h" name="nav_equip_2.png" path="/Overlay/" exported="true" smoothing="false"/>
+    <image id="pjz81k" name="nav_fabao_1.png" path="/Overlay/" exported="true" smoothing="false"/>
+    <image id="pjz81e" name="nav_fabao_2.png" path="/Overlay/" exported="true" smoothing="false"/>
+    <image id="t4o744" name="nav_gongfa_1.png" path="/Overlay/" exported="true" smoothing="false"/>
+    <image id="pjz89" name="nav_gongfa_2.png" path="/Overlay/" exported="true" smoothing="false"/>
+    <image id="oq626a" name="nav_kui_1.png" path="/Overlay/" exported="true" smoothing="false"/>
+    <image id="pjz8y" name="nav_lilian_1.png" path="/Overlay/" exported="true" smoothing="false"/>
+    <image id="pjz813" name="nav_lilian_2.png" path="/Overlay/" exported="true" smoothing="false"/>
+    <image id="pjz817" name="nav_selected.png" path="/Overlay/" exported="true" scale="9grid" scale9grid="25,26,50,52" smoothing="false"/>
+    <image id="pjz87" name="nav_unselected.png" path="/Overlay/" exported="true" scale="9grid" scale9grid="25,26,50,52" smoothing="false"/>
+    <image id="pjz810" name="nav_xiulian_1.png" path="/Overlay/" exported="true" smoothing="false"/>
+    <image id="pjz816" name="nav_xiulian_2.png" path="/Overlay/" exported="true" smoothing="false"/>
+    <misc id="vvlx1s" name="nav_overlay.desc" path="/"/>
+    <misc id="i8ep6d" name="nav_selected.desc" path="/"/>
+    <misc id="ba1mc60" name="prop_label_icon.desc" path="/"/>
+    <image id="uguqc5y" name="icon_red_arrow.png" path="/Arrow/" exported="true" smoothing="false"/>
+    <image id="p3ll4z" name="bg_progress_style1_green.png" path="/ProgressBar/Style1/" exported="true" scale="9grid" scale9grid="14,18,7,7" smoothing="false"/>
+    <image id="p3ll50" name="bg_progress_style1_yellow.png" path="/ProgressBar/Style1/" exported="true" scale="9grid" scale9grid="14,20,7,7" smoothing="false"/>
+    <image id="wla11v" name="bg_progress_style_1.png" path="/ProgressBar/StyleBg/" exported="true" scale="9grid" scale9grid="16,21,4,6" smoothing="false"/>
+    <image id="7qam3i" name="bg_progress_style_2.png" path="/ProgressBar/StyleBg/" exported="true" scale="9grid" scale9grid="8,7,26,6" smoothing="false"/>
+    <image id="babndi3" name="bg_progress_style_3.png" path="/ProgressBar/StyleBg/" exported="true" smoothing="false"/>
+    <image id="mxn1czg" name="icon_arrow_up_green.png" path="/Arrow/" exported="true" smoothing="false"/>
+    <image id="qc3c5z" name="img_content.png" path="/" exported="true" scale="9grid" scale9grid="18,12,36,24" smoothing="false"/>
+    <image id="rqbrdip" name="icon_red_dot2.png" path="/" exported="true" smoothing="false"/>
+    <image id="smlbdjq" name="nav_bonus_2.png" path="/Overlay/" exported="true" smoothing="false"/>
+    <image id="smlbdjr" name="nav_bonus_1.png" path="/Overlay/" exported="true" smoothing="false"/>
+    <image id="e994djx" name="overlay_bottom_bg.png" path="/" exported="true" scale="9grid" scale9grid="8,8,16,16" smoothing="false"/>
+    <image id="e994djy" name="chatbar_system.png" path="/ChatBar/" exported="true" smoothing="false"/>
+    <image id="e994djz" name="chatbar_friend.png" path="/ChatBar/" exported="true" smoothing="false"/>
+    <image id="e994dk0" name="chatbar_mail.png" path="/ChatBar/" exported="true" smoothing="false"/>
+    <image id="79gld" name="bg_guide_talk_arrow.png" path="/Arrow/" exported="true" smoothing="false"/>
+    <misc id="f1mrdka" name="chatbar_icon.desc" path="/"/>
+    <image id="pf3fe" name="icon_spin.png" path="/" exported="true" smoothing="false"/>
+    <image id="e7rkv" name="img_toggle.png" path="/" exported="true" smoothing="false"/>
+    <image id="jsc79" name="bg_top_title_purple.png" path="/" exported="true" scale="9grid" scale9grid="0,0,30,25" smoothing="false"/>
+    <image id="jkdpdl7" name="btn_back.png" path="/" exported="true" smoothing="false"/>
+    <image id="yikicq" name="icon_prop_mask.png" path="/" exported="true" scale="9grid" scale9grid="16,16,32,32" smoothing="false"/>
+    <image id="na834z" name="bg_overlay_bottom.png" path="/Overlay/" exported="true" scale="9grid" scale9grid="8,233,16,19" smoothing="false"/>
+    <image id="mp25awrsi" name="nav_guild_1.png" path="/Overlay/" exported="true" smoothing="false"/>
+    <image id="mp25awrsj" name="nav_guild_2.png" path="/Overlay/" exported="true" smoothing="false"/>
+    <image id="q3irawrsx" name="bg_progress_style1_red.png" path="/ProgressBar/Style1/" exported="true" scale="9grid" scale9grid="14,20,7,7" smoothing="false"/>
+    <image id="kvyzawrt0" name="bg_progress_style_4.png" path="/ProgressBar/StyleBg/" exported="true" scale="9grid" scale9grid="11,5,110,4" smoothing="false"/>
+    <image id="qr3w6awrtf" name="bot_bg_fix.png" path="/" exported="true" scale="9grid" scale9grid="0,125,750,4" smoothing="false"/>
+  </resources>
+  <publish name=""/>
+</packageDescription>

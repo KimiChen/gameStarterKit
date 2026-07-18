@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="30,28" pivot="0.5,0.5" extention="Button" remark="{&quot;comps&quot;:[{&quot;type&quot;:&quot;Config&quot;,&quot;audioName&quot;:&quot;click&quot;}]}">
+  <controller name="button" pages="0,up,1,down,2,over,3,selectedOver" selected="0"/>
+  <displayList>
+    <image id="n2_bdm0" name="n2" src="bdm03v" fileName="btn_copy.png" pkg="egjqb8zp" xy="2,0"/>
+  </displayList>
+  <Button downEffect="scale" downEffectValue=".8"/>
+</component>

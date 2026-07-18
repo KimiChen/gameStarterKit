@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseFguiComponent } from "../../../tools/fgui-codegen/parseFgui";
 import { checkContract } from "../../../tools/fgui-codegen/binding";
-import { FGUI_CONTRACTS } from "../assets/script/game/ui/fguiContracts";
+import { FGUI_CONTRACTS } from "../assets/src/view/fguiContracts";
 
 // FGUI 组件源在 apps/art/fairygui/assets（FGUI 工程扫描根，只扫直接子目录）；公司标准库 Original 平铺同级。
 const FGUI_ROOT = join(import.meta.dirname, "../../art/fairygui/assets");

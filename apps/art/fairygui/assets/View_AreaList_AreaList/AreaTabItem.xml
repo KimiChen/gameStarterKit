@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="160,76" designImageOffsetX="-59" designImageOffsetY="-391" remark="{&quot;comps&quot;:[{&quot;type&quot;:&quot;JsBehaviour&quot;,&quot;module&quot;:&quot;AreaTabItem&quot;}]}">
+  <controller name="lib" pages="0,normal,1,selected" selected="1"/>
+  <displayList>
+    <loader id="n10_th7v" name="n10" xy="1,14" size="158,48" group="n12_th7v" url="ui://fk4x5zk1e6t9g" fill="scaleFree">
+      <gearIcon controller="lib" pages="0,1" values="ui://fk4x5zk1e6t9e|ui://fk4x5zk1e6t9g"/>
+    </loader>
+    <text id="n11_th7v" name="txt_title2" xy="0,19" size="160,37" group="n12_th7v" fontSize="26" color="#fed471" align="center" vAlign="middle" letterSpacing="5" autoSize="none" bold="true" strokeColor="#000000" strokeSize="2" text="{name}">
+      <gearColor controller="lib" pages="0,1" values="#e9e0fd,#000000|#fed471,#000000"/>
+    </text>
+    <group id="n12_th7v" name="go_open" xy="0,14" size="160,48" advanced="true"/>
+    <loader id="n6_th7v" name="n6" xy="0,0" size="160,76" group="n13_th7v" url="ui://egjqb8zppjz817" fill="scaleFree">
+      <gearIcon controller="lib" pages="0,1" values="ui://egjqb8zppjz87|ui://egjqb8zppjz817"/>
+    </loader>
+    <text id="n7_th7v" name="txt_title1" xy="0,12" size="160,42" group="n13_th7v" fontSize="30" color="#ffffff" align="center" vAlign="middle" letterSpacing="5" autoSize="none" bold="true" strokeColor="#000000" strokeSize="2" text="{name}">
+      <gearColor controller="lib" pages="0" values="#b5b5b5,#000000" default="#ffffff,#000000"/>
+    </text>
+    <group id="n13_th7v" name="go_close" xy="0,0" size="160,76" advanced="true"/>
+    <component id="n9_th7v" name="btn_select" src="uzey29" fileName="BtnEmpty.xml" pkg="qdouwnr2" xy="0,0" size="160,76">
+      <relation target="" sidePair="height-height,center-center"/>
+    </component>
+  </displayList>
+</component>

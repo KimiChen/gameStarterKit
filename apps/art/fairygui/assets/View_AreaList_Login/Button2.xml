@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="90,90" pivot="0.5,0.5" extention="Button">
+  <controller name="button" pages="0,up,1,down,2,over,3,selectedOver" selected="0"/>
+  <displayList>
+    <image id="n5_e6t9" name="n5" src="e6t9k" fileName="RGBA/bg_login_btn.png" xy="7,7" size="75,75" aspect="true"/>
+    <loader id="n4_e6t9" name="icon" xy="0,-7" size="90,90" grayed="true" url="ui://c3yvjaqge6t9l" align="center" vAlign="middle">
+      <relation target="" sidePair="width-width,height-height"/>
+    </loader>
+    <text id="n3_e6t9" name="title" xy="0,53" size="90,40" fontSize="26" color="#ffffff" align="center" vAlign="middle" autoSize="none" strokeColor="#000000" strokeSize="2" singleLine="true" text="账号"/>
+  </displayList>
+  <Button downEffect="scale" downEffectValue="0.8"/>
+</component>

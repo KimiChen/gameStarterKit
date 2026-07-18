@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<packageDescription id="y58q4zu3">
+  <resources>
+    <folder id="/Common/GuideFinger/1/" name="1" path="/Common/GuideFinger/" atlas="alone"/>
+    <folder id="/Login/" name="Login" path="/" atlas="alone"/>
+    <folder id="/Login/1/" name="1" path="/Login/" atlas="alone"/>
+    <misc id="ba1mqjn" name="GuideFinger.atlas.txt" path="/Common/GuideFinger/1/"/>
+    <image id="ba1mqjo" name="GuideFinger.png" path="/Common/GuideFinger/1/" smoothing="false"/>
+    <spine id="ba1mqjm" name="GuideFinger.skel" path="/Common/GuideFinger/1/" exported="true" width="100" height="100" require="ba1mqjn,ba1mqjo" atlasNames="GuideFinger" anchor="100,100"/>
+    <misc id="r9po1a7kmz5" name="loading_animals.atlas.txt" path="/Login/1/"/>
+    <image id="r9po1a7kmz6" name="loading_animals.png" path="/Login/1/"/>
+    <spine id="r9po1a7kmz4" name="loading_animals.skel" path="/Login/1/" exported="true" width="872" height="1283" require="r9po1a7kmz5,r9po1a7kmz6" atlasNames="loading_animals" anchor="441,705"/>
+  </resources>
+  <publish name=""/>
+</packageDescription>

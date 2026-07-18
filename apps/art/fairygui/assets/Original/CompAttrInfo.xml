@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<component size="100,50">
-  <displayList>
-    <image id="n0_ed16" name="img_bg" src="imn61n" fileName="RGBA/c1_png.png" xy="3,14"/>
-    <loader id="n1_ed16" name="ld_attrIcon" xy="0,9" size="32,32" url="ui://k85eojd9ed1613"/>
-    <richtext id="n2_ed16" name="txt_attrName" xy="16,26" pivot="0.5,0" anchor="true" size="36,24" fontSize="16" color="#ffffff" strokeColor="#000000" text="{attr}"/>
-    <richtext id="n3_ed16" name="txt_attrVal" xy="60,11" pivot="0.5,0" anchor="true" size="35,24" fontSize="16" color="#ffffff" strokeColor="#000000" text="{val}"/>
-  </displayList>
-</component>

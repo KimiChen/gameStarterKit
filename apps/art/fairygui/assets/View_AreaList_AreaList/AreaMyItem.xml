@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="450,148" remark="{&quot;comps&quot;:[{&quot;type&quot;:&quot;JsBehaviour&quot;,&quot;module&quot;:&quot;AreaMyItem&quot;}]}">
+  <displayList>
+    <image id="n0_th7v" name="n0" src="e6t9d" fileName="RGBA/bg_area_item.png" pkg="fk4x5zk1" xy="0,0" size="450,148"/>
+    <text id="n1_th7v" name="txt_uName" xy="146,19" size="164,42" fontSize="30" leading="-10" text="{userName}" bold="true" vAlign="middle"/>
+    <loader id="n2_th7v" name="ld_status" xy="150,67" size="24,24" autoSize="true"/>
+    <text id="n3_th7v" name="txt_serverName" xy="181,60" size="160,36" fontSize="26" color="#44414f" leading="-9" text="{serverName}" vAlign="middle"/>
+    <text id="n4_th7v" name="txt_openTime" xy="144,96" size="180,32" fontSize="22" color="#44414f" leading="-7" text="开服时间:{time}" bold="true" vAlign="middle"/>
+    <component id="n7_sasa" name="btn_click" src="uzey29" fileName="BtnEmpty.xml" pkg="qdouwnr2" xy="0,0" size="450,148"/>
+  </displayList>
+</component>

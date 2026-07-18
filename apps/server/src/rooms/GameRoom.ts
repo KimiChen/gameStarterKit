@@ -29,8 +29,8 @@ import {
 } from "@game/shared";
 import { GameRoomState, PlayerState } from "./schema/GameRoomState";
 import { randomNickname } from "../mock/data";
-import { verifyBearer } from "../auth/session";
-import { emitMatchEvidence, MATCH_MODE_CASUAL, newMatchId } from "../gameplay/matchConsumer";
+import { verifyBearer } from "../core/auth/session";
+import { emitMatchEvidence, MATCH_MODE_CASUAL, newMatchId } from "../core/match/matchConsumer";
 
 /** 框架不透明 token 形制：`{uid}.{hex}`（auth/session.ts issueSession，TOKEN_BYTES=24 → 48 位 hex）。
  *  mock token（`mock-token-*`）不匹配 → 按游客进房，全程不触碰 Redis。 */
@@ -167,6 +167,11 @@ export class GameRoom extends Room {
             tickRate: Math.round(1000 / TICK_MS),
             motd: "欢迎来到 game（mock 服务端）",
         };
+        // onJoin 里同步 send 是安全的：@colyseus/ws-transport 在客户端 JOIN ack 之前
+        //（state !== JOINED）把所有 send 缓冲进 _enqueuedMessages，ack 后先发全量 state
+        // 再 flush——Welcome 不可能先于客户端 joinOrCreate 的 resolve 到达，⛔ 不需要
+        // 延迟一拍（曾误诊为竞态；int 日志里的 's2c.welcome' 告警实为 settlement 测试
+        // 未注册 Welcome 处理器所致，延迟也消不掉）。
         client.send(S2C.Welcome, welcome);
         console.log(`[GameRoom ${this.roomId}] ${player.name}(${client.sessionId}) 加入，当前 ${this.state.players.size} 人`);
     }

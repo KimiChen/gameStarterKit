@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<packageDescription id="22ylet4n">
+  <resources>
+    <component id="lsnn0" name="LoginNotice.xml" path="/" exported="true"/>
+    <component id="lsnn3" name="LoginNoticeItem.xml" path="/"/>
+    <component id="ph1yh" name="CompTab.xml" path="/"/>
+    <component id="ph1yi" name="CompTabItem.xml" path="/"/>
+    <image id="p9k53" name="b6_png.png" path="/RGBA/" scale="9grid" scale9grid="9,5,66,16"/>
+    <image id="p9k51" name="b7_png.png" path="/RGBA/" scale="9grid" scale9grid="8,7,66,14"/>
+  </resources>
+  <publish name=""/>
+</packageDescription>

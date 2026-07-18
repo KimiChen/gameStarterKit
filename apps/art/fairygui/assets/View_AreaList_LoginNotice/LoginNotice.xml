@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="750,1624" remark="{&quot;comps&quot;:[{&quot;type&quot;:&quot;JsBehaviour&quot;,&quot;module&quot;:&quot;LoginNoticeView&quot;}]}">
+  <displayList>
+    <component id="n16_it97" name="btn_mask" src="n9ab2w" fileName="BtnCloseFullScreen.xml" pkg="qdouwnr2" xy="0,0">
+      <relation target="" sidePair="center-center,middle-middle"/>
+    </component>
+    <image id="n13_it97" name="n13" src="wegn29" fileName="dialog_bg.png" pkg="egjqb8zp" xy="51,308" size="650,890">
+      <relation target="" sidePair="center-center,middle-middle"/>
+    </image>
+    <text id="n14_it97" name="txt_title" xy="76,320" pivot="0.5,0.5" size="84,54" group="n6_th7v" fontSize="40" color="#ffffff" bold="true" text="公告"/>
+    <component id="n11_jexr" name="jb_tabbar" src="ph1yh" fileName="CompTab.xml" xy="81,383" group="n6_th7v" customData="{&quot;comps&quot;:[{&quot;type&quot;:&quot;JsBehaviour&quot;}]}"/>
+    <image id="n9_c16w" name="n9" src="wegn2a" fileName="dialog_content.png" pkg="egjqb8zp" xy="65,446" size="620,688" group="n6_th7v"/>
+    <text id="n12_dvgh" name="txt_content" xy="95,477" size="560,630" group="n6_th7v" fontSize="24" color="#ffffff" autoSize="none" text="内容"/>
+    <component id="n7_jxmi" name="tge_tip" src="e7rkw" fileName="ComboBoxCommon2.xml" pkg="lxjdkhpj" xy="59,1143" group="n6_th7v" scale="0.8,0.8"/>
+    <text id="n8_jxmi" name="n8" xy="107,1148" size="160,36" group="n6_th7v" fontSize="26" color="#d3d3d4" vAlign="middle" text="今日不再提醒"/>
+    <component id="n15_it97" name="btn_close" src="it9774l" fileName="ButtonClose.xml" pkg="qdouwnr2" xy="332,1225" group="n6_th7v"/>
+    <group id="n6_th7v" name="n6" xy="59,320" size="657,995" advanced="true">
+      <relation target="" sidePair="center-center,middle-middle"/>
+    </group>
+  </displayList>
+</component>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<packageDescription id="c3yvjaqg">
+  <resources>
+    <folder id="/RGBA/" name="RGBA" path="/" atlas="1"/>
+    <folder id="/RGB/" name="RGB" path="/" atlas="alone_npot"/>
+    <component id="nofd0" name="Login.xml" path="/" exported="true"/>
+    <component id="nofd1" name="Button1.xml" path="/"/>
+    <image id="e6t94" name="黑色信息底.png" path="/RGBA/" smoothing="false"/>
+    <image id="e6t9a" name="bg_loading_text.png" path="/RGBA/" scale="9grid" scale9grid="10,10,20,20" smoothing="false"/>
+    <image id="e6t9b" name="页签深色_20.png" path="/RGBA/" smoothing="false"/>
+    <image id="e6t9c" name="页签亮色_13.png" path="/RGBA/" smoothing="false"/>
+    <image id="e6t9f" name="progress_loading_bar.png" path="/RGBA/" scale="9grid" scale9grid="6,6,12,12" smoothing="false"/>
+    <image id="e6t9k" name="bg_login_btn.png" path="/RGBA/" smoothing="false"/>
+    <image id="e6t9l" name="btn_login_account.png" path="/RGBA/" smoothing="false"/>
+    <image id="e6t9m" name="btn_login_notice.png" path="/RGBA/" smoothing="false"/>
+    <image id="e6t9n" name="btn_server_change.png" path="/RGBA/" smoothing="false"/>
+    <image id="e6t9o" name="bg_btn_server.png" path="/RGBA/" smoothing="false"/>
+    <image id="e6t9s" name="progress_loading_bg.png" path="/RGBA/" scale="9grid" scale9grid="6,6,12,12" smoothing="false"/>
+    <component id="e6t914" name="Button2.xml" path="/"/>
+    <component id="e6t917" name="Button3.xml" path="/"/>
+    <component id="e6t919" name="ButtonServer.xml" path="/"/>
+    <component id="e6t91a" name="ProgressBarLoading.xml" path="/"/>
+    <image id="p1eh1b" name="btn_music_on.png" path="/RGBA/" smoothing="false"/>
+    <image id="p1eh1c" name="btn_music_off.png" path="/RGBA/" smoothing="false"/>
+    <image id="tm4b1d" name="icon_progress_fox.png" path="/RGBA/" smoothing="false"/>
+    <image id="h8l61m" name="bg_login.jpg" path="/RGB/"/>
+    <image id="h0d01o" name="tge_checkbox_autoFight.png" path="/RGBA/" smoothing="false"/>
+    <image id="h0d0dir" name="bg_cbox.png" path="/RGBA/" smoothing="false"/>
+    <image id="slmediz" name="bg_cover.png" path="/RGBA/" scale="9grid" scale9grid="17,729,36,38" smoothing="false"/>
+  </resources>
+  <publish name=""/>
+</packageDescription>

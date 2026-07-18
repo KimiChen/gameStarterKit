@@ -1,7 +1,7 @@
 /**
  * M9 冷档冻结层 DoD 集成测试（10·M9）——真实 Redis + MySQL，⛔ 不 mock。
  *
- * [08](../../../../docs/server/08-cold-archive.md) 两张崩溃 / 锁过期分析表**逐格**对应：
+ * [08](docs/SERVER.md) 两张崩溃 / 锁过期分析表**逐格**对应：
  *
  * Freeze 表                         │ 用例
  *  ① ② 之前崩溃/中止 → 无事发生      │ 「冻结前置闸」（skipped 后无 archive、Redis 完好）
@@ -24,26 +24,26 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import {
   COLD_DAYS, OUTBOX_DEAD, OUTBOX_DONE, OUTBOX_PENDING, WHALE_FIELDS,
-} from "../../src/infra/config";
+} from "../../src/core/infra/config";
 import {
   activeLruBucketOf, kActiveLru, kApplied, kBag, kBagAll, kFence, kLock, kNegcacheUser, kSess, kUser,
-} from "../../src/infra/keys";
-import { cacheClient, clientFor, closeRedis, indexClientFor } from "../../src/infra/redisRoute";
-import { CAS_HSET, evalshaWithReload } from "../../src/infra/redisScripts";
-import { closeMysql, getPool } from "../../src/infra/mysql";
-import type { RowDataPacket } from "../../src/infra/mysql";
-import { makeHolderId, tryAcquireLease, type SingletonLease } from "../../src/infra/lease";
+} from "../../src/core/infra/keys";
+import { cacheClient, clientFor, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
+import { CAS_HSET, evalshaWithReload } from "../../src/core/infra/redisScripts";
+import { closeMysql, getPool } from "../../src/core/infra/mysql";
+import type { RowDataPacket } from "../../src/core/infra/mysql";
+import { makeHolderId, tryAcquireLease, type SingletonLease } from "../../src/core/infra/lease";
 import { acquireLease, withUserLock } from "../../src/core/locks";
 import { ThawingError, UserDataLostError } from "../../src/core/errors";
 import { withUser } from "../../src/core/uow";
-import { createUser } from "../../src/gameplay/userStore";
-import { deriveOpId, redisApply } from "../../src/economy/outbox";
-import { relayerTick } from "../../src/economy/relayer"; // 导入即完成 setEnsureLive(ensureLive) 接线
-import { thawRestore, type ArchiveSnapshot } from "../../src/archive/archiveScripts";
+import { createUser } from "../../src/core/userRecord";
+import { deriveOpId, redisApply } from "../../src/core/economy/outbox";
+import { relayerTick } from "../../src/core/economy/relayer"; // 导入即完成 setEnsureLive(ensureLive) 接线
+import { thawRestore, type ArchiveSnapshot } from "../../src/core/archive/archiveScripts";
 import {
   archiveCounters, ensureLive, invalidateUserNegcache, resolve, thawLimiter,
-} from "../../src/archive/thaw";
-import { _freezeTestHooks, freezeUser, janitorSweep, sweepOnce } from "../../src/archive/freezeWorker";
+} from "../../src/core/archive/thaw";
+import { _freezeTestHooks, freezeUser, janitorSweep, sweepOnce } from "../../src/core/archive/freezeWorker";
 import { assertRedisUp, cleanupUser, testUid } from "./helpers";
 
 const COLD_MS = COLD_DAYS * 86_400_000;

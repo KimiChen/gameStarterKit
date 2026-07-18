@@ -10,13 +10,13 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { after, before, test } from "node:test";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { CUR_GOLD, OUTBOX_DONE, OUTBOX_PENDING } from "../../src/infra/config";
-import { kBag } from "../../src/infra/keys";
-import { clientFor, closeRedis } from "../../src/infra/redisRoute";
-import { closeMysql, getPool } from "../../src/infra/mysql";
-import type { RowDataPacket } from "../../src/infra/mysql";
-import { createUser } from "../../src/gameplay/userStore";
-import { deriveOpId } from "../../src/economy/outbox";
+import { CUR_GOLD, OUTBOX_DONE, OUTBOX_PENDING } from "../../src/core/infra/config";
+import { kBag } from "../../src/core/infra/keys";
+import { clientFor, closeRedis } from "../../src/core/infra/redisRoute";
+import { closeMysql, getPool } from "../../src/core/infra/mysql";
+import type { RowDataPacket } from "../../src/core/infra/mysql";
+import { createUser } from "../../src/core/userRecord";
+import { deriveOpId } from "../../src/core/economy/outbox";
 import { assertRedisUp, cleanupUser, sleep, testUid } from "./helpers";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -90,7 +90,7 @@ after(async () => {
 
 test("阶段 1 提交后 kill -9 → relayer 补发道具；阶段 2 后 kill → 重放判 dup 不重复发", async () => {
   const killWorker = join(here, "workers", "purchaseKill.ts");
-  const relayerScript = join(serverRoot, "src", "economy", "relayer.ts");
+  const relayerScript = join(serverRoot, "src", "core", "economy", "relayer.ts");
   await expireLease();
 
   // 场景 A：阶段 1 后猝死（钱扣了、intent durable、道具没发）
@@ -119,7 +119,7 @@ test("阶段 1 提交后 kill -9 → relayer 补发道具；阶段 2 后 kill �
 });
 
 test("僵尸 relayer：SIGSTOP 超租约再 SIGCONT → 守卫 0 行自杀，未写业务表", async () => {
-  const relayerScript = join(serverRoot, "src", "economy", "relayer.ts");
+  const relayerScript = join(serverRoot, "src", "core", "economy", "relayer.ts");
   await expireLease();
 
   const zombie = await spawnUntil(relayerScript, [], "lease acquired");

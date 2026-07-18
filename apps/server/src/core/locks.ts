@@ -1,5 +1,5 @@
 /**
- * per-uid 两层锁（[03 · withUser](../../../../docs/server/03-gateway-data-layer.md#withuser每请求工作单元)）：
+ * per-uid 两层锁（[03 · withUser](docs/SERVER.md)）：
  *
  * 1. `localMutex` —— 进程内同 uid 请求在 event loop 上排队（await 队列，⛔ 不轮询，09·L5）
  * 2. `acquireLease` —— 跨实例 Redis 锁 + fence（`INCR fence:{uid}` + `SET NX PX`）
@@ -7,12 +7,15 @@
  * fence 语义（09·L2，⛔ 三个 fence 概念禁止混用）：
  * - `fence:{uid}` 计数器**永不过期、永不重置**，只需单调不需连续——抢锁失败消耗号是安全的。
  * - 锁中途过期不需要看门狗：fence 会在业务写处拦僵尸（casHset / MySQL last_fence，09·L3）。
+ *   ⚠ 诚实边界：casHset 的 `cur > new` 判据只拦「新主已首写之后」的僵尸——锁过期后、
+ *   新主首次业务写之前，僵尸写仍会被接受（fence-on-write 的固有窗口）。缓解 = LOCK_TTL_MS
+ *   远大于业务 p99 + 抢锁消耗号保证新主 fence 恒更高，窗口内需「>TTL 停顿 + 跨实例换主」。
  *   **仅 freeze/thaw 的非 fence 守卫破坏性操作**开看门狗（09·L6），走 `renewMs` 可选参数。
  */
-import { LOCK_RETRY_MAX, LOCK_TTL_MS } from "../infra/config";
-import { kFence, kLock } from "../infra/keys";
-import { clientFor } from "../infra/redisRoute";
-import { CAS_DEL, CAS_RENEW, evalshaWithReload } from "../infra/redisScripts";
+import { LOCK_RETRY_MAX, LOCK_TTL_MS } from "./infra/config";
+import { kFence, kLock } from "./infra/keys";
+import { clientFor } from "./infra/redisRoute";
+import { CAS_DEL, CAS_RENEW, evalshaWithReload } from "./infra/redisScripts";
 import { BusyError } from "./errors";
 
 export interface Lease {
@@ -99,7 +102,9 @@ export async function withUserLock<T>(
       return await fn(lease.fence);
     } finally {
       if (watchdog) { clearInterval(watchdog); }
-      await lease.release();
+      // 释放失败（Redis 抖动）不致命：锁有 TTL 兜底。⛔ 不能让 release 的错冒进 finally——
+      // fn 已抛错时会替换掉可行动的错误码（如 STALE_FENCE→INTERNAL），fn 成功时会把成功报成失败
+      await lease.release().catch(() => {});
     }
   });
 }

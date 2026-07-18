@@ -1,7 +1,7 @@
 /**
  * M0 硬闸 ②：货币同步事务压测（10·M0）。
  *
- * 目标事务 = [04 · 阶段 1](../../../../docs/server/04-cross-store-outbox.md#协议实现) 的原样三条：
+ * 目标事务 = [04 · 阶段 1](docs/SERVER.md) 的原样三条：
  *   BEGIN(READ COMMITTED, 09·DB5)
  *     INSERT currency_ledger … ON DUPLICATE KEY UPDATE id = id   （幂等去重，⛔ 禁 INSERT IGNORE，09·DB1）
  *     UPDATE user_currency SET balance = balance - ? …
@@ -19,9 +19,9 @@
  *   txns    = 每 worker 事务数；users = 预置 bench 用户数
  */
 import { parseArgs } from "node:util";
-import { CUR_GOLD, LOCK_TTL_MS, OUTBOX_PENDING } from "../../src/infra/config";
-import { closeMysql, getPool, retryOnContention, withRcTx } from "../../src/infra/mysql";
-import type { ResultSetHeader } from "../../src/infra/mysql";
+import { CUR_GOLD, LOCK_TTL_MS, OUTBOX_PENDING } from "../../src/core/infra/config";
+import { closeMysql, getPool, retryOnContention, withRcTx } from "../../src/core/infra/mysql";
+import type { ResultSetHeader } from "../../src/core/infra/mysql";
 
 const { values: args } = parseArgs({
   options: {

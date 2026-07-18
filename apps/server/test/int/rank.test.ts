@@ -9,12 +9,12 @@
  */
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
-import { encodeProvince, getRank, selfEntry, updateScore } from "../../src/rank/rankService";
-import { rotateIfNeeded } from "../../src/rank/seasonRotation";
-import { decodeScore } from "../../src/rank/score";
-import { SEASON_BASE, SEASON_LEN_S } from "../../src/infra/config";
-import { kLbDedup, kRank, kRankProv, kRankSub } from "../../src/infra/keys";
-import { clientForKey, closeRedis } from "../../src/infra/redisRoute";
+import { encodeProvince, getRank, selfEntry, updateScore } from "../../src/core/rank/rankService";
+import { rotateIfNeeded } from "../../src/core/rank/seasonRotation";
+import { decodeScore } from "../../src/core/rank/score";
+import { SEASON_BASE, SEASON_LEN_S } from "../../src/core/infra/config";
+import { kLbDedup, kRank, kRankProv, kRankSub } from "../../src/core/infra/keys";
+import { clientForKey, closeRedis } from "../../src/core/infra/redisRoute";
 import { assertRedisUp, sleep, testUid } from "./helpers";
 
 // 榜是跨用户 key：type 段带运行期随机，整个测试文件的 key 空间与并行运行互相隔离

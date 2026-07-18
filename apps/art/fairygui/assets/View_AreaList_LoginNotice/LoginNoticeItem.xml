@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="630,160" remark="{&quot;comps&quot;:[{&quot;type&quot;:&quot;JsBehaviour&quot;,&quot;module&quot;:&quot;LoginNoticeItem&quot;}]}">
+  <displayList>
+    <text id="n0_lsnn" name="txt_title" xy="260,10" pivot="0.5,0.5" size="109,42" fontSize="30" color="#ffffff" text="{title}" vAlign="middle"/>
+    <richtext id="n1_lsnn" name="txt_desc" xy="10,57" size="94,42" restrictSize="0,610,0,0" touchable="false" fontSize="30" color="#ffffff" vAlign="middle" leading="-10" ubb="true" text="{desc}"/>
+    <text id="n2_jxmi" name="txt_desc1" xy="10,57" size="94,42" restrictSize="0,610,0,0" fontSize="30" color="#ffffff" vAlign="middle" leading="-10" text="{desc}"/>
+  </displayList>
+</component>

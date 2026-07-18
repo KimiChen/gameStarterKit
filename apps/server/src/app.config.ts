@@ -2,10 +2,10 @@ import { defineServer, defineRoom, monitor, playground } from "colyseus";
 import { WebSocketTransport } from "@colyseus/ws-transport";
 import { RoomName } from "@game/shared";
 import { GameRoom } from "./rooms/GameRoom";
-import { LobbyRoom } from "./gateway/LobbyRoom";
-import { MAX_WS_PAYLOAD_BYTES } from "./infra/config";
-import { routes } from "./routes/index";
-import { registerMockRoutes } from "./mock/routes";
+import { LobbyRoom } from "./websocket/LobbyRoom";
+import { MAX_WS_PAYLOAD_BYTES } from "./core/infra/config";
+import { routes } from "./http";
+import { registerMockRoutes } from "./mock";
 
 /**
  * Colyseus 0.17 服务端配置。
@@ -29,9 +29,9 @@ export const server = defineServer({
     // 大包防护在 transport 层：超限断帧不解码（09·G4；dispatcher 校验只是兜底）
     transport: new WebSocketTransport({ maxPayload: MAX_WS_PAYLOAD_BYTES }),
 
-    express: (app) => {
-        // 模拟 REST 接口（假数据），路径与协议见 @game/shared 的 ApiPath
-        registerMockRoutes(app);
+    express: async (app) => {
+        // 模拟 REST 接口（假数据）：扫描 mock/api/ 自动挂载（Colyseus 0.17 会 await 本钩子）
+        await registerMockRoutes(app);
 
         // 房间监控面板：http://localhost:2568/monitor
         app.use("/monitor", monitor());

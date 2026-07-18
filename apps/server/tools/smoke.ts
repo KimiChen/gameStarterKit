@@ -5,11 +5,11 @@
  *  3. EVALSHA 走通 NOSCRIPT 重载路径（先 SCRIPT FLUSH 再调用，必须自动 SCRIPT LOAD 成功）
  * 用法: npm --workspace @game/server run smoke:framework
  */
-import { cacheClient, clientFor, closeRedis } from "../src/infra/redisRoute";
-import { CAS_DEL, TOKEN_BUCKET, evalshaWithReload } from "../src/infra/redisScripts";
-import { closeMysql, getPool } from "../src/infra/mysql";
-import type { RowDataPacket } from "../src/infra/mysql";
-import { kLock, kRl } from "../src/infra/keys";
+import { cacheClient, clientFor, closeRedis } from "../src/core/infra/redisRoute";
+import { CAS_DEL, TOKEN_BUCKET, evalshaWithReload } from "../src/core/infra/redisScripts";
+import { closeMysql, getPool } from "../src/core/infra/mysql";
+import type { RowDataPacket } from "../src/core/infra/mysql";
+import { kLock, kRl } from "../src/core/infra/keys";
 
 const EXPECTED_TABLES = [
   "accounts", "user_currency", "currency_ledger", "gameplay_outbox", "singleton_lease",

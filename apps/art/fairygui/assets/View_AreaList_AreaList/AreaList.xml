@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="750,1624" remark="{&quot;comps&quot;:[{&quot;type&quot;:&quot;JsBehaviour&quot;,&quot;module&quot;:&quot;AreaListView&quot;}]}">
+  <displayList>
+    <component id="n24_e03h" name="btn_mask" src="n9ab2w" fileName="BtnCloseFullScreen.xml" pkg="qdouwnr2" xy="0,0">
+      <relation target="" sidePair="center-center,middle-middle"/>
+    </component>
+    <image id="n23_e03h" name="n23" src="wegn29" fileName="dialog_bg.png" pkg="egjqb8zp" xy="50,306" size="651,898">
+      <relation target="" sidePair="center-center,middle-middle"/>
+    </image>
+    <image id="n11_th7v" name="n11" src="wegn2a" fileName="dialog_content.png" pkg="egjqb8zp" xy="226,388" size="460,770" group="n19_th7v"/>
+    <list id="n8_lsnn" name="lst_server" xy="231,398" size="450,750" group="n19_th7v" customData="{&quot;comps&quot;:[{&quot;type&quot;:&quot;Config&quot;,&quot;list&quot;:{&quot;itemAnimType&quot;:&quot;alpha&quot;}}]}" overflow="scroll" lineGap="8" defaultItem="ui://fk4x5zk1lsnn1" autoClearItems="true">
+      <item/>
+      <item/>
+      <item/>
+      <item/>
+      <item/>
+    </list>
+    <list id="n22_th7v" name="lst_my" xy="231,399" size="450,750" group="n19_th7v" customData="{&quot;comps&quot;:[{&quot;type&quot;:&quot;Config&quot;,&quot;list&quot;:{&quot;itemAnimType&quot;:&quot;alpha&quot;}}]}" overflow="scroll" lineGap="8" defaultItem="ui://fk4x5zk1th7va" autoClearItems="true">
+      <item/>
+      <item/>
+      <item/>
+      <item/>
+      <item/>
+    </list>
+    <list id="n20_th7v" name="jb_tabbar" xy="58,394" size="160,740" group="n19_th7v" customData="{&quot;comps&quot;:[{&quot;type&quot;:&quot;JsBehaviour&quot;,&quot;module&quot;:&quot;TabBar&quot;},{&quot;type&quot;:&quot;Config&quot;,&quot;list&quot;:{&quot;itemAnimType&quot;:&quot;alpha&quot;}}]}" overflow="scroll" lineGap="15" defaultItem="ui://fk4x5zk1lsnn2" autoClearItems="true">
+      <item/>
+      <item/>
+      <item/>
+    </list>
+    <loader id="n12_th7v" name="ld_status2" xy="355,1165" size="24,24" group="n18_th7v" autoSize="true"/>
+    <loader id="n13_th7v" name="ld_status1" xy="474,1165" size="24,24" group="n18_th7v" autoSize="true"/>
+    <loader id="n14_th7v" name="ld_status9" xy="593,1165" size="24,24" group="n18_th7v" autoSize="true"/>
+    <text id="n15_th7v" name="n15" xy="382,1159" size="56,36" group="n18_th7v" fontSize="26" color="#ffffff" strokeColor="#000000" strokeSize="2" text="爆满"/>
+    <text id="n16_th7v" name="n16" xy="502,1159" size="56,36" group="n18_th7v" fontSize="26" color="#ffffff" strokeColor="#000000" strokeSize="2" text="流畅"/>
+    <text id="n17_th7v" name="n17" xy="626,1159" size="56,36" group="n18_th7v" fontSize="26" color="#ffffff" strokeColor="#000000" strokeSize="2" text="维护"/>
+    <group id="n18_th7v" name="n18" xy="355,1159" size="327,36" group="n19_th7v"/>
+    <text id="n26_it97" name="txt_title" xy="61,316" pivot="0.5,0.5" size="164,54" group="n19_th7v" fontSize="40" color="#ffffff" align="center" vAlign="middle" bold="true" text="区服列表"/>
+    <component id="n25_it97" name="btn_close" src="it9774l" fileName="ButtonClose.xml" pkg="qdouwnr2" xy="332,1238" group="n19_th7v"/>
+    <group id="n19_th7v" name="n19" xy="58,316" size="628,1011" advanced="true">
+      <relation target="" sidePair="center-center,middle-middle"/>
+    </group>
+  </displayList>
+</component>

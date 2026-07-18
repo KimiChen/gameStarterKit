@@ -87,7 +87,7 @@ function parseArgs() {
         } else if (arg.startsWith("--client-output=")) {
             result.clientOutputFile = path.resolve(ROOT, arg.slice("--client-output=".length));
         } else if (arg.startsWith("--assets-root=")) {
-            result.assetsRoot = path.resolve(arg.slice("--assets-root=".length));
+            result.assetsRoot = path.resolve(ROOT, arg.slice("--assets-root=".length));
         } else {
             throw new Error(`未知参数：${arg}`);
         }

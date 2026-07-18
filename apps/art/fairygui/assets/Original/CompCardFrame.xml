@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<component size="150,200">
-  <displayList>
-    <loader id="n1_rmi4" name="ld_quality" xy="0,0" size="150,200" url="ui://k85eojd9imn6m" fill="scaleFree" clearOnPublish="true"/>
-    <image id="n2_rmi4" name="img_selected" src="gsia9" fileName="RGBA/mail_0.png" xy="0,0" size="150,200"/>
-  </displayList>
-</component>

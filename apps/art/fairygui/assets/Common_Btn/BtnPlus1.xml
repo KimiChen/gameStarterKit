@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="50,50" pivot="0.5,0.5" extention="Button" remark="{&quot;comps&quot;:[{&quot;type&quot;:&quot;Config&quot;,&quot;audioName&quot;:&quot;click&quot;}]}">
+  <controller name="button" pages="0,up,1,down,2,over,3,selectedOver,4,disabled,5,selectedDisabled" selected="0"/>
+  <displayList>
+    <loader id="n0_hjuc" name="n0" xy="0,0" size="50,50" touchable="false" url="ui://egjqb8zpem771o">
+      <gearIcon controller="button" pages="4,5" values="ui://egjqb8zpbdm030|ui://egjqb8zpbdm030" default="ui://egjqb8zpem771o"/>
+      <relation target="" sidePair="width-width,height-height"/>
+    </loader>
+  </displayList>
+  <Button downEffect="scale" downEffectValue=".8"/>
+</component>

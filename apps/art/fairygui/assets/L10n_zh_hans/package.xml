@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<packageDescription id="15js40c9">
+  <resources>
+    <folder id="/Image/Login/" name="Login" path="/Image/" atlas="10"/>
+    <image id="e6t9j" name="login_ageTip.png" path="/Image/Login/" exported="true" smoothing="false"/>
+    <image id="tm4bc8z" name="login_enterGame.png" path="/Image/Login/" exported="true" smoothing="false"/>
+    <image id="p4gccbj" name="login_logo.png" path="/Image/Login/" exported="true" smoothing="false"/>
+    <font id="kj3ocbk" name="siyuanheitiCNRegular.ttf" path="/Font/" renderMode="" samplePointSize="16"/>
+  </resources>
+  <publish name=""/>
+</packageDescription>

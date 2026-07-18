@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="450,93" remark="{&quot;comps&quot;:[{&quot;type&quot;:&quot;JsBehaviour&quot;,&quot;module&quot;:&quot;AreaItem&quot;}]}">
+  <displayList>
+    <image id="n10_th7v" name="n10" src="e6t9d" fileName="RGBA/bg_area_item.png" pkg="fk4x5zk1" xy="0,0" size="450,93"/>
+    <text id="n0_lsnn" name="txt_openTime" xy="5,1" size="169,32" fontSize="22" color="#21951d" leading="-7" text="开服时间:{time}" vAlign="middle"/>
+    <text id="n1_lsnn" name="txt_serverName" xy="74,22" size="190,42" fontSize="30" leading="-10" text="{serverName}" bold="true" vAlign="middle"/>
+    <loader id="n11_th7v" name="ld_status" xy="38,34" size="24,24" autoSize="true"/>
+    <component id="n9_lsnn" name="btn_click" src="uzey29" fileName="BtnEmpty.xml" pkg="qdouwnr2" xy="0,0" size="450,90"/>
+    <image id="n12_th7v" name="n12" src="e6t9p" fileName="RGBA/icon_server_status_new.png" pkg="fk4x5zk1" xy="380,-5" group="n14_th7v"/>
+    <text id="n13_th7v" name="n13" xy="418,-5" size="49,32" group="n14_th7v" fontSize="22" color="#ffffff" strokeColor="#000000" strokeSize="2" text="新服" bold="true" vAlign="middle" rotation="45"/>
+    <group id="n14_th7v" name="go_new" xy="380,-5" size="86,75" advanced="true"/>
+    <image id="n15_th7v" name="n15" src="e6t9q" fileName="RGBA/icon_server_status_full.png" pkg="fk4x5zk1" xy="380,-6" group="n17_th7v"/>
+    <text id="n16_th7v" name="n16" xy="418,-5" size="49,32" group="n17_th7v" fontSize="22" color="#ffffff" strokeColor="#000000" strokeSize="2" text="爆满" bold="true" vAlign="middle" rotation="45"/>
+    <group id="n17_th7v" name="go_full" xy="380,-6" size="86,75" advanced="true"/>
+  </displayList>
+</component>

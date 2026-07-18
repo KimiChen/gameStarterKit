@@ -5,7 +5,7 @@
  */
 import { BusyError } from "../../../src/core/errors";
 import { withUser } from "../../../src/core/uow";
-import { closeRedis } from "../../../src/infra/redisRoute";
+import { closeRedis } from "../../../src/core/infra/redisRoute";
 
 const [uid, countStr] = process.argv.slice(2);
 const count = Number(countStr);

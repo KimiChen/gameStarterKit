@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<component extention="Button" size="47,44">
-  <controller name="button" pages="0,up,1,down,2,over,3,selectedOver" selected="0"/>
-  <displayList>
-    <image fileName="RGBA/img_exclamation_mark1_exclamation_mark.png" id="bafe7788" name="img_exclamationMark" size="31,34" src="e9pj7z" xy="8,5"/>
-  </displayList>
-  <Button/>
-</component>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<packageDescription id="qdouwnr2">
+  <resources>
+    <component id="i8eo0" name="BtnCommon.xml" path="/" exported="true"/>
+    <component id="uzey29" name="BtnEmpty.xml" path="/" exported="true"/>
+    <component id="vjb22f" name="BtnCommon210x70.xml" path="/" exported="true"/>
+    <component id="bazm2j" name="Checkbox.xml" path="/" exported="true"/>
+    <component id="k3os2o" name="BtnPurple210x70.xml" path="/" exported="true"/>
+    <component id="hjuc2u" name="BtnPlus1.xml" path="/" exported="true"/>
+    <component id="n9ab2w" name="BtnCloseFullScreen.xml" path="/" exported="true"/>
+    <component id="bdm02z" name="BtnCopy.xml" path="/" exported="true"/>
+    <component id="r72w74k" name="BtnCommon1.xml" path="/" exported="true"/>
+    <component id="it9774l" name="ButtonClose.xml" path="/" exported="true"/>
+  </resources>
+  <publish name=""/>
+</packageDescription>

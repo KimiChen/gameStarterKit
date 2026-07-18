@@ -1,7 +1,7 @@
 /**
  * M0 硬闸 ①：Colyseus 0.17 定向建房 + RedisDriver / RedisPresence 实测（10·M0）。
  *
- * 实测三件事（结论写入 docs/server/m0-verification.md）：
+ * 实测三件事（结论写入 docs/SERVER.md）：
  *  (a) RedisDriver/RedisPresence 下，跨进程房间列表与匹配（joinOrCreate 命中他进程的房）是否工作
  *  (b) 能否「在指定节点建房」—— 0.17 的 `ServerOptions.selectProcessIdToCreateRoom`
  *      （node_modules/@colyseus/core/src/Server.ts L49、MatchMaker.ts L461-465 已核对源码，非凭记忆）：

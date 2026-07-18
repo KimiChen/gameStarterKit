@@ -9,8 +9,8 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { SEASON_BASE, SEASON_LEN_S } from "../src/infra/config";
-import { decodeScore, encodeScore, seasonIdAt, seasonIndexAt, seasonStartSec } from "../src/rank/score";
+import { SEASON_BASE, SEASON_LEN_S } from "../src/core/infra/config";
+import { decodeScore, encodeScore, seasonIdAt, seasonIndexAt, seasonStartSec } from "../src/core/rank/score";
 
 const FRAC_MAX = 0.1; // elapsed=0 时 frac = (1-0)/10
 

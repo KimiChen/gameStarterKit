@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import mysql from "mysql2/promise";
-import { MYSQL_URL } from "../src/infra/config";
+import { MYSQL_URL } from "../src/core/infra/config";
 
 const here = dirname(fileURLToPath(import.meta.url));
 

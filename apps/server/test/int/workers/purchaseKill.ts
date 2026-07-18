@@ -5,8 +5,8 @@
  * 用法: node --import tsx purchaseKill.ts <uid> <sku> <clientReqId> <p1|p2>
  */
 import { acquireLease } from "../../../src/core/locks";
-import { getShopSku } from "../../../src/economy/catalog";
-import { deriveOpId, purchaseTx, redisApply } from "../../../src/economy/outbox";
+import { getShopSku } from "../../../src/core/economy/catalog";
+import { deriveOpId, purchaseTx, redisApply } from "../../../src/core/economy/outbox";
 
 const [uid, skuId, clientReqId, phase] = process.argv.slice(2);
 const sku = getShopSku(skuId);

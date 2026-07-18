@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="100,100" pivot="0.5,0.5" extention="Button" remark="{&quot;comps&quot;:[{&quot;type&quot;:&quot;Config&quot;,&quot;audioName&quot;:&quot;empty&quot;}]}">
+  <controller name="button" pages="0,up,1,down,2,over,3,selectedOver" selected="0"/>
+  <displayList>
+    <loader id="n3_e9sz" name="icon" xy="0,0" size="100,100" touchable="false" align="center" vAlign="middle">
+      <relation target="" sidePair="width-width,height-height"/>
+    </loader>
+  </displayList>
+  <Button downEffect="scale" downEffectValue=".8"/>
+</component>

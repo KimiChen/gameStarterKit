@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="158,60" pivot="0.5,0.5" extention="Button" designImageOffsetX="-536" designImageOffsetY="-877" designImageLayer="1" remark="{&quot;comps&quot;:[{&quot;type&quot;:&quot;Config&quot;,&quot;audioName&quot;:&quot;click&quot;}]}">
+  <controller name="button" pages="0,up,1,down,2,over,3,selectedOver,4,disabled,5,selectedDisabled" selected="0"/>
+  <controller name="setGray" pages="0,false,1,true" selected="0"/>
+  <displayList>
+    <loader id="n5_i8eo" name="icon" xy="0,0" size="159,60" touchable="false" url="ui://egjqb8zpwla11u" fill="scaleFree">
+      <gearIcon controller="setGray" pages="0" values="ui://egjqb8zpwla11u" default="ui://egjqb8zpdkzf2d"/>
+      <relation target="" sidePair="width-width,height-height"/>
+    </loader>
+    <text id="n4_i8eo" name="title" xy="10,1" size="137,49" customData="{&quot;comps&quot;:[{&quot;type&quot;:&quot;Config&quot;,&quot;cacheMode&quot;:&quot;bitmap&quot;}]}" fontSize="36" color="#ffffff" align="center" vAlign="middle" autoSize="none" bold="true" strokeColor="#166145" strokeSize="2" shadowColor="#166145" shadowOffset="1,4" text="{title}">
+      <gearLook controller="setGray" pages="0" values="1,0,0,0" default="1,0,1,0"/>
+      <relation target="" sidePair="center-center,middle-middle"/>
+    </text>
+  </displayList>
+  <Button downEffect="dark" downEffectValue=".8"/>
+</component>

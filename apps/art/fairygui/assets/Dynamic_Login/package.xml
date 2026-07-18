@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<packageDescription id="2qj3aviv">
+  <resources>
+    <folder id="/ServerStatus/" name="ServerStatus" path="/" atlas="default"/>
+    <image id="ugqr0" name="login_status_1.png" path="/ServerStatus/" exported="true" smoothing="false"/>
+    <image id="ugqr1" name="login_status_10.png" path="/ServerStatus/" exported="true" smoothing="false"/>
+    <image id="ugqr2" name="login_status_2.png" path="/ServerStatus/" exported="true" smoothing="false"/>
+    <image id="ugqr3" name="login_status_9.png" path="/ServerStatus/" exported="true" smoothing="false"/>
+  </resources>
+  <publish name=""/>
+</packageDescription>

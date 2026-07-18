@@ -1,0 +1,5 @@
+{
+  "path": "nav_{type}_{v}",
+  "type": "sprite",
+  "desc": "底部菜单"
+}

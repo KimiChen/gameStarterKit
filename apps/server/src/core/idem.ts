@@ -1,5 +1,5 @@
 /**
- * 幂等占位（[07 · 幂等占位的两个状态](../../../../docs/server/07-contracts-and-config.md#幂等占位的两个状态)）。
+ * 幂等占位（[07 · 幂等占位的两个状态](docs/SERVER.md)）。
  *
  * 幂等 = **执行前**原子占位（SET NX PX，pending 短租约 10s）+ **数据层 UNIQUE 兜底**（09·I1）。
  * ⛔ 禁止「成功后 SET」——并发双发会双双执行；⛔ 禁止 pending 用长 TTL（24h 毒丸卡死用户）。
@@ -7,8 +7,8 @@
  * 保证抢占后的重复执行也 exactly-once。
  */
 import type Redis from "ioredis";
-import { IDEM_PENDING_MS, IDEM_RESULT_MS } from "../infra/config";
-import { CAS_DEL, evalshaWithReload } from "../infra/redisScripts";
+import { IDEM_PENDING_MS, IDEM_RESULT_MS } from "./infra/config";
+import { CAS_DEL, evalshaWithReload } from "./infra/redisScripts";
 
 const PENDING_PREFIX = "__PENDING__:";
 

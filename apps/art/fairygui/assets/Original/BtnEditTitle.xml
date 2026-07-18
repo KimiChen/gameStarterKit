@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<component extention="Button" size="54,54">
-  <controller name="button" pages="0,up,1,down,2,over,3,selectedOver" selected="0"/>
-  <displayList>
-    <image fileName="RGBA/frame_edit_title_recycle.png" id="2ba5713e" name="img_frameRecycle" size="54,54" src="e9pj7w" xy="0,0"/>
-    <image fileName="RGBA/img_edit_title_edit.png" id="0d0a5334" name="img_edit" size="25,27" src="e9pj7x" xy="15,12"/>
-  </displayList>
-  <Button/>
-</component>

@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<component size="100,150">
-  <displayList>
-    <loader id="n0_ed16" name="ld_hero" xy="49,74" pivot="0.5,0.5" anchor="true" size="69,135" url="ui://k85eojd9ed16p" autoSize="true"/>
-  </displayList>
-</component>

@@ -1,16 +1,16 @@
 /**
- * 每 RPC 工作单元（[03 · UnitOfWork](../../../../docs/server/03-gateway-data-layer.md#unitofwork)）。
+ * 每 RPC 工作单元（[03 · UnitOfWork](docs/SERVER.md)）。
  *
  * 脏追踪必须**每 RPC 作用域**（09·R8）：⛔ module 级全局脏表会在 await 点被别的玩家 RPC
  * 改写，把 A 的改动 flush 进 B；⛔ 也不用 Proxy 魔术拦截——`set()` 显式记脏。
  * `lock → load → mutate → commit / rollback` 是单一提交边界：没 commit 就没写，天然不落。
  */
-import { kUser } from "../infra/keys";
-import { clientFor } from "../infra/redisRoute";
-import { CAS_HSET, evalshaWithReload } from "../infra/redisScripts";
+import { kUser } from "./infra/keys";
+import { clientFor } from "./infra/redisRoute";
+import { CAS_HSET, evalshaWithReload } from "./infra/redisScripts";
 import { ColdUserError, StaleFenceError } from "./errors";
 import { withUserLock } from "./locks";
-import { touchActive } from "../gameplay/userStore";
+import { touchActive } from "./userRecord";
 
 export class UnitOfWork {
   private dirty = new Map<string, string>(); // 作用域对象，绝不是单例（09·R8）

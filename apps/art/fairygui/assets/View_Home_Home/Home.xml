@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="750,1624" remark="{&quot;comps&quot;:[{&quot;type&quot;:&quot;JsBehaviour&quot;,&quot;module&quot;:&quot;HomeView&quot;}]}">
+  <displayList>
+    <text id="n0_ly62" name="txt_userId" xy="375,800" pivot="0.5,0.5" size="40,42" fontSize="30" color="#ffffff" align="center" text=""/>
+    <component id="n1_home" name="btn_enter" src="vjb22f" fileName="BtnCommon210x70.xml" pkg="qdouwnr2" xy="270,1000" size="210,70">
+      <Button title="小球移动"/>
+    </component>
+  </displayList>
+</component>

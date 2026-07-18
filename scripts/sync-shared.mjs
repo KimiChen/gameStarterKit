@@ -1,7 +1,7 @@
 /**
  * 共享代码同步脚本
  *
- * 把 apps/shared/src/** 逐字节复制到 apps/client/assets/script/shared/**，
+ * 把 apps/shared/src/** 逐字节复制到 apps/client/assets/src/shared/**，
  * 让 Cocos 编译器以普通项目脚本的方式编译共享代码（微信小游戏构建 100% 兼容，
  * 无需处理 node_modules 解析 / import map / 符号链接的兼容性问题）。
  *
@@ -21,7 +21,7 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SRC = path.join(ROOT, "apps/shared/src");
-const DEST = path.join(ROOT, "apps/client/assets/script/shared");
+const DEST = path.join(ROOT, "apps/client/assets/src/shared");
 
 const BANNER_FILE = "README.md";
 const BANNER = `# ⚠ 本目录由脚本生成，禁止手改
@@ -57,6 +57,13 @@ function collectDirs(dir, base = dir) {
 }
 
 function syncOnce() {
+    // 源目录缺失时 ⛔ 必须 fail-fast 而不是照常执行：collectFiles 对缺失目录返回 []，
+    // 继续走会把 DEST 全部文件（含 .meta）判孤儿清空——事后恢复同步时 Cocos 重生成 .meta，
+    // uuid 全变、场景/prefab 对 shared 脚本的引用全断（误删/改名 src、切分支瞬间、
+    // watch 运行中 SRC 被 mv 都可能触发）
+    if (!fs.existsSync(SRC)) {
+        throw new Error(`[sync-shared] 源目录不存在: ${SRC}——拒绝执行（继续会清空 ${DEST} 的全部生成物与 .meta）`);
+    }
     const srcFiles = collectFiles(SRC);
     // 源目录自带 README.md 时以源文件为准，不再生成警示 banner（避免覆盖与写入抖动）
     const srcHasReadme = srcFiles.includes(BANNER_FILE);

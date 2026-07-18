@@ -2,8 +2,8 @@
  * 集成测试公共件：真实 Redis（⛔ 不 mock，10·M2 DoD），先 `npm run stack`（apps/server）起本地栈。
  * uid 带运行期前缀隔离，跑完 UNLINK 清理（09·R6）。
  */
-import { kApplied, kBagAll, kFence, kLock, kUser } from "../../src/infra/keys";
-import { clientFor } from "../../src/infra/redisRoute";
+import { kApplied, kBagAll, kFence, kLock, kUser } from "../../src/core/infra/keys";
+import { clientFor } from "../../src/core/infra/redisRoute";
 
 const runId = `t${Date.now().toString(36)}_${process.pid}`;
 export const testUid = (name: string): string => `${runId}_${name}`;

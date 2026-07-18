@@ -15,9 +15,9 @@
     "stack": "tools/dev-stack.sh start",
     "stack:stop": "tools/dev-stack.sh stop",
     "db:bootstrap": "tsx tools/db-bootstrap.ts",
-    "relayer": "tsx src/economy/relayer.ts",
-    "freeze-worker": "tsx src/archive/freezeWorker.ts",
-    "season-rotation": "tsx src/rank/seasonRotation.ts",
+    "relayer": "tsx src/core/economy/relayer.ts",
+    "freeze-worker": "tsx src/core/archive/freezeWorker.ts",
+    "season-rotation": "tsx src/core/rank/seasonRotation.ts",
     "typecheck": "tsc --noEmit",
     "loadtest": "tsx loadtest/bot.ts --endpoint ws://localhost:2568 --room game --numClients 20"
   },

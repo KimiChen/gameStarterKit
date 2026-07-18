@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<packageDescription id="fk4x5zk1">
+  <resources>
+    <component id="q87g0" name="AreaList.xml" path="/" exported="true"/>
+    <component id="lsnn1" name="AreaItem.xml" path="/"/>
+    <component id="lsnn2" name="AreaTabItem.xml" path="/"/>
+    <image id="e6t9q" name="icon_server_status_full.png" path="/RGBA/" smoothing="false"/>
+    <image id="e6t9p" name="icon_server_status_new.png" path="/RGBA/" smoothing="false"/>
+    <image id="e6t9g" name="bg_tab_server_light.png" path="/RGBA/" smoothing="false"/>
+    <image id="e6t9e" name="bg_tab_server_dark.png" path="/RGBA/" smoothing="false"/>
+    <image id="e6t9r" name="头像2.png" path="/RGBA/" smoothing="false"/>
+    <image id="e6t9d" name="bg_area_item.png" path="/RGBA/" scale="9grid" scale9grid="11,11,22,22" smoothing="false"/>
+    <component id="th7va" name="AreaMyItem.xml" path="/"/>
+  </resources>
+  <publish name=""/>
+</packageDescription>

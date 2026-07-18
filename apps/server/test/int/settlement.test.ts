@@ -24,10 +24,10 @@ import {
   startMatchConsumer,
   stopMatchConsumer,
   type MatchEvidence,
-} from "../../src/gameplay/matchConsumer";
-import { activeLruBucketOf, kActiveLru, kSess, K_STREAM_MATCH } from "../../src/infra/keys";
-import { closeMysql, getPool, type RowDataPacket } from "../../src/infra/mysql";
-import { clientFor, clientForKey, closeRedis, indexClientFor } from "../../src/infra/redisRoute";
+} from "../../src/core/match/matchConsumer";
+import { activeLruBucketOf, kActiveLru, kSess, K_STREAM_MATCH } from "../../src/core/infra/keys";
+import { closeMysql, getPool, type RowDataPacket } from "../../src/core/infra/mysql";
+import { clientFor, clientForKey, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
 import { assertRedisUp, cleanupUser, sleep, testUid } from "./helpers";
 
 const GROUP = "settle";
@@ -191,8 +191,8 @@ test("GameRoom 端到端：开局生成 matchId（09·K4）→ 收局 XADD 证�
   try {
     // 造框架账号会话（绕过 wxLogin——微信侧 M3 已单独测过；GameRoom.onAuth 走 verifyBearer 快路径，
     // 快路径只查 sess:{uid}，无需 accounts 行）
-    const { issueSession } = await import("../../src/auth/session");
-    const { createUser } = await import("../../src/gameplay/userStore");
+    const { issueSession } = await import("../../src/core/auth/session");
+    const { createUser } = await import("../../src/core/userRecord");
     const mk = async (name: string) => {
       const uid = testUid(name).slice(0, 32);
       uids.push(uid);

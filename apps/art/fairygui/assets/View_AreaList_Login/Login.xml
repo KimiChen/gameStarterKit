@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="750,1624" designImageAlpha="100" remark="{&quot;comps&quot;:[{&quot;type&quot;:&quot;JsBehaviour&quot;,&quot;module&quot;:&quot;LoginView&quot;}]}">
+  <controller name="view" pages="0,login,1,loading" selected="0"/>
+  <controller name="mode" pages="0,dev,1,pro" selected="0"/>
+  <controller name="read" pages="0,true,1,false" selected="0"/>
+  <displayList>
+    <image id="n51_h8l6" name="n51" src="h8l61m" fileName="RGB/bg_login.jpg" xy="0,0">
+      <relation target="" sidePair="bottom-bottom"/>
+    </image>
+    <loader3D id="n101_r9po" name="n101" xy="-66,106" size="100,100" url="ui://y58q4zu3r9po1a7kmz4" animation="idle" skin="" loop="true">
+      <relation target="" sidePair="bottom-bottom"/>
+    </loader3D>
+    <image id="n100_slme" name="n100" src="slmediz" fileName="RGBA/bg_cover.png" xy="-5,789" size="760,836">
+      <relation target="" sidePair="width-width,bottom-bottom"/>
+    </image>
+    <loader id="n7_e6t9" name="ld_logo" xy="133,192" size="505,160" group="n9_e6t9" customData="{&quot;comps&quot;:[{&quot;type&quot;:&quot;Config&quot;,&quot;dynamic&quot;:{&quot;loadInRuntime&quot;:1,&quot;localType&quot;:15,&quot;content&quot;:&quot;ui://L10n_zh_hans/login_logo&quot;}}]}" url="ui://15js40c9p4gccbj" autoSize="true" clearOnPublish="true"/>
+    <component id="n99_tcvm" name="btn_copy" src="uzey29" fileName="BtnEmpty.xml" pkg="qdouwnr2" xy="284,137" size="78,66" group="n9_e6t9"/>
+    <component id="n11_e6t9" name="btn_ageTip" src="e6t917" fileName="Button3.xml" xy="31,46" size="97,125" group="n9_e6t9">
+      <Button icon="ui://15js40c9e6t9j"/>
+    </component>
+    <component id="n23_p1eh" name="btn_musicon" src="e6t914" fileName="Button2.xml" xy="639,248" group="n71_x7d2">
+      <Button title="音乐" icon="ui://c3yvjaqgp1eh1b"/>
+    </component>
+    <component id="n24_p1eh" name="btn_musicoff" src="e6t914" fileName="Button2.xml" xy="639,248" group="n71_x7d2">
+      <Button title="音乐" icon="ui://c3yvjaqgp1eh1c"/>
+    </component>
+    <component id="n5_e6t9" name="btn_notice" src="e6t914" fileName="Button2.xml" xy="639,148" group="n71_x7d2">
+      <Button title="公告" icon="ui://c3yvjaqge6t9m"/>
+    </component>
+    <component id="n6_e6t9" name="btn_account" src="e6t914" fileName="Button2.xml" xy="639,48" group="n71_x7d2">
+      <Button title="账号" icon="ui://c3yvjaqge6t9l"/>
+    </component>
+    <group id="n71_x7d2" name="go_topBtns" xy="639,48" size="90,290" group="n9_e6t9" advanced="true"/>
+    <group id="n9_e6t9" name="go_top" xy="31,46" size="698,306" advanced="true">
+      <gearDisplay controller="view" pages="0"/>
+    </group>
+    <text id="n16_e6t9" name="n16" xy="312,1438" size="124,29" group="n21_e6t9" fontSize="20" color="#bdbdbd" vAlign="middle" leading="-7" text="游戏健康忠告"/>
+    <text id="n17_e6t9" name="n17" xy="108,1471" size="535,56" group="n21_e6t9" fontSize="20" color="#bdbdbd" vAlign="middle" text="抵制不良游戏,拒绝盗版游戏。注意自我保护,谨防受骗上当。&#xA;适度游戏益脑,沉迷游戏伤身。合理安排时间,享受健康生活。"/>
+    <image id="n18_e6t9" name="n18" src="e6t9a" fileName="RGBA/bg_loading_text.png" xy="-1,1555" size="750,40" group="n21_e6t9"/>
+    <text id="n19_e6t9" name="txt_progress" xy="268,1557" pivot="0.5,0.5" size="212,34" group="n21_e6t9" fontSize="24" color="#fed471" vAlign="middle" leading="-8" text="预加载文件({per}%)"/>
+    <component id="n20_e6t9" name="pg_loading" src="e6t91a" fileName="ProgressBarLoading.xml" xy="-1,1597" size="750,26" group="n21_e6t9">
+      <ProgressBar value="50" max="100"/>
+    </component>
+    <group id="n21_e6t9" name="go_bottom" xy="-1,1438" size="750,185" advanced="true">
+      <gearDisplay controller="view" pages="1"/>
+      <relation target="" sidePair="bottom-bottom"/>
+    </group>
+    <component id="n54_c4ln" name="go_container" src="vf7ev" fileName="GoContainer.xml" pkg="fx542vng" xy="374,400" touchable="false">
+      <relation target="" sidePair="top-top"/>
+    </component>
+    <text id="n55_h0d0" name="n55" xy="-1,1460" pivot="0.5,0" size="750,76" fontSize="18" color="#bdbdbd" align="center" vAlign="middle" letterSpacing="-1" autoSize="height" text="开发团队承诺积极履行《网络游戏行业防沉迷自律公约》&#xA;审批文号：国新出审〔20x3〕XXX号             &#x9;&#x9;出版物号：ISBN XXX-7-XXX-XXX-0&#xA;游戏著作权人：专做游戏网络科技有限公司&#x9;&#x9;出版单位：专做游戏股份有限公司">
+      <gearDisplay controller="view" pages="0"/>
+      <relation target="" sidePair="bottom-bottom"/>
+    </text>
+    <text id="n90_hbg9" name="n90" xy="2,1534" pivot="0.5,0" size="750,32" fontSize="22" color="#bdbdbd" align="center" vAlign="middle" letterSpacing="-1" autoSize="height" text="健康游戏忠告">
+      <gearDisplay controller="view" pages="0"/>
+      <relation target="" sidePair="bottom-bottom"/>
+    </text>
+    <text id="n89_hbg9" name="n89" xy="3,1559" pivot="0.5,0" size="752,64" fontSize="15" color="#bdbdbd" align="center" vAlign="middle" autoSize="none" text="抵制不良游戏，拒绝盗版游戏。注意自我保护，谨防受骗上当。&#xA;适度游戏益脑，沉迷游戏伤身。合理安排时间，享受健康生活。&#xA;本游戏适合年满18周岁以上的用户使用，未满18周岁的用户建议在家长监督下使用。">
+      <gearDisplay controller="view" pages="0"/>
+      <relation target="" sidePair="bottom-bottom"/>
+    </text>
+    <richtext id="n60_h0d0" name="txt_privacy" xy="208,1418" pivot="0.5,0" size="420,36" group="n88_hbg9" fontSize="26" color="#bdbdbd" vAlign="middle" leading="0" ubb="true" strokeColor="#000000" text="我已阅读并同意[url=agreement][color=#FED471]用户协议[/color][/url]和[url=privacy][color=#FED471]隐私协议[/color][/url]">
+      <gearDisplay controller="view" pages="0"/>
+    </richtext>
+    <image id="n61_h0d0" name="n61" src="h0d0dir" fileName="RGBA/bg_cbox.png" xy="167,1415" group="n88_hbg9">
+      <gearDisplay controller="view" pages="0"/>
+    </image>
+    <image id="n58_h0d0" name="n58" src="h0d01o" fileName="RGBA/tge_checkbox_autoFight.png" xy="173,1424" group="n88_hbg9">
+      <gearDisplay controller="read" pages="0"/>
+      <gearDisplay2 controller="view" pages="0" condition="0"/>
+    </image>
+    <component id="n59_h0d0" name="btn_select" src="uzey29" fileName="BtnEmpty.xml" pkg="qdouwnr2" xy="158,1415" size="56,47" group="n88_hbg9"/>
+    <group id="n88_hbg9" name="n88" xy="158,1415" size="470,47" advanced="true">
+      <relation target="" sidePair="bottom-bottom"/>
+    </group>
+    <loader3D id="n92_tzfv" name="ld3_testAnim" xy="256,53" size="100,100" animation="" skin="" loop="true"/>
+    <component id="n12_e6t9" name="btn_login" src="e6t917" fileName="Button3.xml" xy="203,1278" size="342,90" group="n105_kqka">
+      <Button icon="ui://15js40c9tm4bc8z"/>
+    </component>
+    <component id="n13_e6t9" name="btn_server" src="e6t919" fileName="ButtonServer.xml" xy="201,1221" size="342,50" group="n105_kqka"/>
+    <component id="n106_it97" name="btn_test" src="i8eo0" fileName="BtnCommon.xml" pkg="qdouwnr2" xy="590,1241" size="130,60" group="n105_kqka">
+      <gearDisplay controller="mode" pages="0"/>
+      <Button title="测试" titleFontSize="20"/>
+    </component>
+    <component id="n91_izvg" name="btn_clearDataCache" src="i8eo0" fileName="BtnCommon.xml" pkg="qdouwnr2" xy="590,1160" size="130,60" group="n105_kqka">
+      <gearDisplay controller="mode" pages="0"/>
+      <Button title="清缓存数据" titleFontSize="20"/>
+    </component>
+    <group id="n105_kqka" name="n105" xy="201,1160" size="519,208" advanced="true">
+      <gearDisplay controller="view" pages="0"/>
+      <relation target="" sidePair="bottom-bottom"/>
+    </group>
+  </displayList>
+</component>

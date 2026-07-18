@@ -28,6 +28,16 @@ start_redis() { # $1=name $2=port $3=extra-config(多行)
     echo "$3"
   } > "$dir/redis.conf"
   "$REDIS_SERVER" "$dir/redis.conf"
+  # daemonize 下 bind 失败（端口被占等）父进程仍返回 0——必须 ping 复核再报成功
+  local i
+  for i in $(seq 1 50); do
+    if "$REDIS_CLI" -p "$2" ping >/dev/null 2>&1; then break; fi
+    sleep 0.1
+  done
+  if ! "$REDIS_CLI" -p "$2" ping >/dev/null 2>&1; then
+    echo "redis-$1 启动失败，日志：$dir/redis.log" >&2
+    return 1
+  fi
   echo "redis-$1 启动于 :$2"
 }
 

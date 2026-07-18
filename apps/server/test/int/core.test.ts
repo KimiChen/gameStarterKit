@@ -17,12 +17,12 @@ import { fileURLToPath } from "node:url";
 import { acquireLease } from "../../src/core/locks";
 import { withUser } from "../../src/core/uow";
 import { idemAcquire, idemComplete, idemRelease } from "../../src/core/idem";
-import { deriveOpId, redisApply } from "../../src/economy/outbox";
-import { createUser } from "../../src/gameplay/userStore";
-import { LOCK_TTL_MS } from "../../src/infra/config";
-import { kApplied, kBag, kBagAll, kFence, kIdemUser, kLock, kUser } from "../../src/infra/keys";
-import { clientFor, closeRedis } from "../../src/infra/redisRoute";
-import { CAS_HSET, evalshaWithReload } from "../../src/infra/redisScripts";
+import { deriveOpId, redisApply } from "../../src/core/economy/outbox";
+import { createUser } from "../../src/core/userRecord";
+import { LOCK_TTL_MS } from "../../src/core/infra/config";
+import { kApplied, kBag, kBagAll, kFence, kIdemUser, kLock, kUser } from "../../src/core/infra/keys";
+import { clientFor, closeRedis } from "../../src/core/infra/redisRoute";
+import { CAS_HSET, evalshaWithReload } from "../../src/core/infra/redisScripts";
 import { assertRedisUp, cleanupUser, sleep, testUid } from "./helpers";
 
 const here = dirname(fileURLToPath(import.meta.url));

@@ -16,6 +16,8 @@ import {
     type IPlayerProfile,
     type IRankRes,
     type IHealthRes,
+    type IAreaListRes,
+    type INoticeListRes,
     type IWelcomeRes,
     type IPongRes,
     type ISkillResultRes,
@@ -50,26 +52,39 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 async function main() {
     // ---------- HTTP 模拟接口 ----------
     const health = (await fetch(BASE + ApiPath.Health).then((r) => r.json())) as IApiResponse<IHealthRes>;
-    check("GET /api/health", health.code === ErrorCode.Ok && health.data?.status === "ok", health);
+    check("GET /mock/health", health.code === ErrorCode.Ok && health.data?.status === "ok", health);
 
     const login = (await fetch(BASE + ApiPath.Login, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ code: "smoke-test" }),
     }).then((r) => r.json())) as IApiResponse<ILoginRes>;
-    check("POST /api/login", login.code === ErrorCode.Ok && (login.data?.token.length ?? 0) > 0, login);
+    check("POST /mock/login", login.code === ErrorCode.Ok && (login.data?.token.length ?? 0) > 0, login);
     const loginData = login.data!;
 
     const profile = (await fetch(BASE + ApiPath.Profile, {
         headers: { authorization: `Bearer ${loginData.token}` },
     }).then((r) => r.json())) as IApiResponse<IPlayerProfile>;
-    check("GET /api/player/profile", profile.code === ErrorCode.Ok && profile.data?.openId === loginData.openId, profile);
+    check("GET /mock/player/profile", profile.code === ErrorCode.Ok && profile.data?.openId === loginData.openId, profile);
 
     const badProfile = (await fetch(BASE + ApiPath.Profile).then((r) => r.json())) as IApiResponse<null>;
     check("profile 无 token 返回 TokenExpired", badProfile.code === ErrorCode.TokenExpired, badProfile);
 
+    // ---------- 真实 HTTP：选服列表 + 公告（config 驱动，无栈）----------
+    const areaList = (await fetch(BASE + "/area/list", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({}),
+    }).then((r) => r.json())) as IAreaListRes;
+    check("POST /area/list", Array.isArray(areaList.al) && areaList.al.length > 0
+        && typeof areaList.al[0].sId === "number" && Array.isArray(areaList.ul), areaList);
+
+    const notice = (await fetch(BASE + "/notice/list").then((r) => r.json())) as INoticeListRes;
+    const noticeSorted = notice.list.every((n, i) => i === 0 || notice.list[i - 1].at >= n.at);
+    check("GET /notice/list（按 at 倒序）", notice.list.length > 0 && noticeSorted, notice);
+
     const rank = (await fetch(BASE + ApiPath.Rank).then((r) => r.json())) as IApiResponse<IRankRes>;
-    check("GET /api/rank", rank.code === ErrorCode.Ok && rank.data?.list.length === 20 && rank.data?.list[0].rank === 1, rank);
+    check("GET /mock/rank", rank.code === ErrorCode.Ok && rank.data?.list.length === 20 && rank.data?.list[0].rank === 1, rank);
 
     // ---------- Colyseus 房间 ----------
     const client = new Client(BASE);

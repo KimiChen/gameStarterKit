@@ -25,6 +25,6 @@ apps/client/extensions/fairygui-cc/runtime/
 .DS_Store
 
 # 说明：
-#  - apps/client/assets/script/shared/ 是 sync:shared 生成的，但需要提交
+#  - apps/client/assets/src/shared/ 是 sync:shared 生成的，但需要提交
 #    （连同 .meta，保证 uuid 稳定、新 checkout 可直接打开工程）
 #  - apps/client/settings/ 需要提交（工程配置）

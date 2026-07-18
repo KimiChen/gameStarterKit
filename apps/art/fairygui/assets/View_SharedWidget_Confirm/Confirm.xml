@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="750,1624" designImageLayer="1" remark="{&quot;comps&quot;:[{&quot;type&quot;:&quot;JsBehaviour&quot;,&quot;module&quot;:&quot;ConfirmView&quot;,&quot;selfArgs&quot;:[],&quot;comp&quot;:[{&quot;k&quot;:&quot;closeBtn&quot;,&quot;v&quot;:&quot;closeBtn&quot;,&quot;t&quot;:&quot;GButton&quot;},{&quot;k&quot;:&quot;content&quot;,&quot;v&quot;:&quot;content&quot;,&quot;t&quot;:&quot;GTextField&quot;},{&quot;k&quot;:&quot;title&quot;,&quot;v&quot;:&quot;title&quot;,&quot;t&quot;:&quot;GTextField&quot;},{&quot;k&quot;:&quot;noBtn&quot;,&quot;v&quot;:&quot;noBtn&quot;,&quot;t&quot;:&quot;GButton&quot;},{&quot;k&quot;:&quot;noText&quot;,&quot;v&quot;:&quot;noText&quot;,&quot;t&quot;:&quot;GTextField&quot;},{&quot;k&quot;:&quot;yesBtn&quot;,&quot;v&quot;:&quot;yesBtn&quot;,&quot;t&quot;:&quot;GButton&quot;},{&quot;k&quot;:&quot;yesText&quot;,&quot;v&quot;:&quot;yesText&quot;,&quot;t&quot;:&quot;GTextField&quot;}]}]}">
+  <displayList>
+    <image id="n24_bw5e" name="n24" src="cbox3" fileName="RGBA/frame_hint_small_base_plate_hint_small_base_plate.png" xy="51,602" size="653,426" group="n20_dkgz"/>
+    <richtext id="n21_ghc8" name="content" xy="379,795" pivot="0.5,0.5" anchor="true" size="548,221" group="n20_dkgz" fontSize="30" align="center" vAlign="middle" ubb="true" autoSize="none" text="适得府君书快点放假"/>
+    <text id="n3_sdsm" name="title" xy="317,610" size="103,49" group="n20_dkgz" fontSize="36" color="#ffffff" vAlign="middle" leading="-12" bold="true" strokeColor="#000000" strokeSize="2" text="{title}"/>
+    <component id="n26_gieh" name="noBtn" src="i8eo0" fileName="BtnCommon.xml" pkg="qdouwnr2" xy="151,927" group="n17_yrpu"/>
+    <text id="n15_yrpu" name="noText" xy="147,926" size="169,66" group="n17_yrpu" fontSize="36" color="#ffffff" align="center" vAlign="middle" autoSize="none" bold="true" strokeColor="#474071" strokeSize="2" shadowColor="#474071" shadowOffset="0,1" text=""/>
+    <group id="n17_yrpu" name="go_noBtn" xy="147,926" size="169,66" group="n18_i5p2" advanced="true"/>
+    <component id="n27_gieh" name="yesBtn" src="i8eo0" fileName="BtnCommon.xml" pkg="qdouwnr2" xy="409,925" group="n16_yrpu"/>
+    <text id="n14_yrpu" name="yesText" xy="404,925" size="168,66" group="n16_yrpu" fontSize="36" color="#ffffff" align="center" vAlign="middle" autoSize="none" bold="true" strokeColor="#166145" strokeSize="2" shadowColor="#166145" shadowOffset="0,1" text=""/>
+    <group id="n16_yrpu" name="go_yesBtn" xy="404,925" size="168,66" group="n18_i5p2" advanced="true"/>
+    <group id="n18_i5p2" name="n18" xy="147,925" size="425,67" group="n20_dkgz" advanced="true" layout="hz" colGap="88" excludeInvisibles="true">
+      <relation target="" sidePair="center-center"/>
+    </group>
+    <group id="n20_dkgz" name="n20" xy="51,602" size="653,426" advanced="true">
+      <relation target="" sidePair="center-center,middle-middle"/>
+    </group>
+  </displayList>
+  <customProperty target="noText" propertyId="0"/>
+  <customProperty target="yesText" propertyId="0"/>
+  <customProperty target="title" propertyId="0"/>
+  <customProperty target="content" propertyId="0"/>
+</component>

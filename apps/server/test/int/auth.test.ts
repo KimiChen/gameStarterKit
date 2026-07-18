@@ -10,14 +10,14 @@
 import assert from "node:assert/strict";
 import { createServer, type Server } from "node:http";
 import { after, before, test } from "node:test";
-import { banUser, verifySession, verifySessionStrict } from "../../src/auth/session";
-import { _resetBreaker } from "../../src/auth/wxClient";
-import { wxLogin } from "../../src/auth/wxLogin";
+import { banUser, verifySession, verifySessionStrict } from "../../src/core/auth/session";
+import { _resetBreaker } from "../../src/core/auth/wxClient";
+import { wxLogin } from "../../src/core/auth/wxLogin";
 import { AuthRequiredError, BannedError, EpochStaleError, RateLimitedError } from "../../src/core/errors";
-import { activeLruBucketOf, kActiveLru, kRl, kSess, kUser } from "../../src/infra/keys";
-import { clientFor, clientForKey, closeRedis, indexClientFor } from "../../src/infra/redisRoute";
-import { closeMysql, getPool } from "../../src/infra/mysql";
-import type { RowDataPacket } from "../../src/infra/mysql";
+import { activeLruBucketOf, kActiveLru, kRl, kSess, kUser } from "../../src/core/infra/keys";
+import { clientFor, clientForKey, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
+import { closeMysql, getPool } from "../../src/core/infra/mysql";
+import type { RowDataPacket } from "../../src/core/infra/mysql";
 import { assertRedisUp, cleanupUser, testUid } from "./helpers";
 
 const run = testUid("wx"); // openid 前缀，保证跨运行不撞 UNIQUE(openid)

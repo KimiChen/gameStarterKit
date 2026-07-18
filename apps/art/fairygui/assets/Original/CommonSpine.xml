@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<component size="1,1" remark="{&quot;comps&quot;:[{&quot;type&quot;:&quot;JsBehaviour&quot;,&quot;module&quot;:&quot;CommonSpine&quot;}]}">
-  <displayList>
-    <loader3D id="n0_a1la" name="ld3_spine" xy="-100,-100" size="100,100" animation="" skin="" loop="true"/>
-  </displayList>
-</component>

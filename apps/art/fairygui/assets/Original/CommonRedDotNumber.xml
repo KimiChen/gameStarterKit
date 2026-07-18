@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<component size="26,26" remark="{&quot;comps&quot;:[{&quot;type&quot;:&quot;JsBehaviour&quot;,&quot;module&quot;:&quot;RedDot&quot;,&quot;comp&quot;:[{&quot;k&quot;:&quot;go_image&quot;,&quot;v&quot;:&quot;n0&quot;,&quot;t&quot;:&quot;GObject&quot;},{&quot;k&quot;:&quot;txt_number&quot;,&quot;v&quot;:&quot;txt_redDotCount&quot;,&quot;t&quot;:&quot;GTextField&quot;}],&quot;normal&quot;:{&quot;name&quot;:&quot;&quot;,&quot;isShowCount&quot;:false}}]}">
-  <displayList>
-    <graph id="n0_pmst" name="n0" xy="0,0" size="26,26" type="eclipse" fillColor="#ffff0000"/>
-    <text id="n1_pmst" name="txt_redDotCount" xy="2,1" pivot="0.5,0.5" size="24,26" fontSize="18" align="center" text="99"/>
-  </displayList>
-</component>

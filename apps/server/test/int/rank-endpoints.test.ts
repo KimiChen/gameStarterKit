@@ -15,17 +15,19 @@ import { boot, type ColyseusTestServer } from "@colyseus/testing";
 import {
   FRIEND_RANK_KV_KEY, RANK_UNLISTED, type FriendRankValue, type RankListResponse, type RankReportRes,
 } from "@game/shared";
-import { issueSession } from "../../src/auth/session";
-import { createUser } from "../../src/gameplay/userStore";
-import { encodeProvince } from "../../src/rank/rankService";
-import { seasonIdAt } from "../../src/rank/score";
-import { kLbDedup, kRank, kRankProv, kRankSub } from "../../src/infra/keys";
-import { clientForKey, closeRedis } from "../../src/infra/redisRoute";
-import { closeMysql, getPool, type ResultSetHeader } from "../../src/infra/mysql";
+import { issueSession } from "../../src/core/auth/session";
+import { createUser } from "../../src/core/userRecord";
+import { encodeProvince } from "../../src/core/rank/rankService";
+import { seasonIdAt } from "../../src/core/rank/score";
+import { kLbDedup, kRank, kRankProv, kRankSub } from "../../src/core/infra/keys";
+import { clientForKey, closeRedis } from "../../src/core/infra/redisRoute";
+import { closeMysql, getPool, type ResultSetHeader } from "../../src/core/infra/mysql";
 import { assertRedisUp, cleanupUser, testUid } from "./helpers";
 
 let colyseus: ColyseusTestServer;
-const BASE = `http://127.0.0.1:${process.env.PORT ?? "2568"}`;
+// boot(server) 恒监听 2568（@colyseus/testing DEFAULT_TEST_PORT）——⛔ 不取 process.env.PORT
+//（那是 dev server 的端口来源，环境里 PORT≠2568 时整个文件会假红）
+const BASE = "http://127.0.0.1:2568";
 const RANK_TYPE = "star";
 const season = () => seasonIdAt(Math.floor(Date.now() / 1000));
 

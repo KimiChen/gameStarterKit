@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<packageDescription id="fx542vng">
+  <resources>
+    <component id="vf7ev" name="GoContainer.xml" path="/" exported="true"/>
+    <component id="y121x" name="Progress.xml" path="/" exported="true"/>
+  </resources>
+  <publish name=""/>
+</packageDescription>

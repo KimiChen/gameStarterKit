@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component size="342,50" extention="Button" pivot="0.5,0.5">
+  <controller name="button" pages="0,up,1,down,2,over,3,selectedOver" selected="0"/>
+  <displayList>
+    <image id="n5_e6t9" name="n5" src="e6t9o" fileName="RGBA/bg_btn_server.png" pkg="c3yvjaqg" xy="0,0" size="342,50"/>
+    <image id="n6_e6t9" name="n6" src="e6t9n" fileName="RGBA/btn_server_change.png" pkg="c3yvjaqg" xy="274,5"/>
+    <text id="n3_e6t9" name="title" xy="106,0" size="160,50" fontSize="30" color="#ffffff" strokeColor="#000000" strokeSize="2" align="center" vAlign="middle" autoSize="none" singleLine="true" pivot="0.5,0.5"/>
+    <loader id="n4_e6t9" name="icon" xy="75,13" size="24,24" url="ui://2qj3avivugqr0" align="center" vAlign="middle" autoSize="true">
+      <relation sidePair="width-width,height-height"/>
+    </loader>
+  </displayList>
+  <Button downEffect="scale" downEffectValue=".8"/>
+</component>

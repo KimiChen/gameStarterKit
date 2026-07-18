@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<component size="85,85" remark="{&quot;comps&quot;:[{&quot;type&quot;:&quot;JsBehaviour&quot;,&quot;module&quot;:&quot;ComponentSkillIcon&quot;}]}">
-  <displayList>
-    <loader id="n0_evxd" name="ld_icon" xy="0,0" size="85,85" url="ui://k85eojd9b6igcq" fill="scaleFree"/>
-  </displayList>
-</component>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<packageDescription id="lxjdkhpj">
+  <resources>
+    <image id="c7kqq" name="btn_close.png" path="/RGBA/" smoothing="false"/>
+    <image id="c7kqr" name="btn_open.png" path="/RGBA/" smoothing="false"/>
+    <component id="e7rkw" name="ComboBoxCommon2.xml" path="/" exported="true"/>
+  </resources>
+  <publish name=""/>
+</packageDescription>

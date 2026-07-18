@@ -10,19 +10,19 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { InsufficientBalanceError } from "../../src/core/errors";
 import { acquireLease } from "../../src/core/locks";
-import { getShopSku } from "../../src/economy/catalog";
-import { getBalance, invalidateBalanceCache } from "../../src/economy/currency";
-import { claimMailAttach, sendMail } from "../../src/economy/mailer";
+import { getShopSku } from "../../src/core/economy/catalog";
+import { getBalance, invalidateBalanceCache } from "../../src/core/economy/currency";
+import { claimMailAttach, sendMail } from "../../src/core/economy/mailer";
 import {
   deriveOpId, drainPendingFor, markOutboxDone, purchase, purchaseTx, readBack, redisApply,
-} from "../../src/economy/outbox";
-import { createOrder, handleWxPayNotify } from "../../src/economy/purchases";
-import { createUser } from "../../src/gameplay/userStore";
-import { CUR_GOLD, OUTBOX_PENDING } from "../../src/infra/config";
-import { kBag, kCacheCurrency, kUser } from "../../src/infra/keys";
-import { cacheClient, clientFor, closeRedis } from "../../src/infra/redisRoute";
-import { closeMysql, getPool } from "../../src/infra/mysql";
-import type { RowDataPacket } from "../../src/infra/mysql";
+} from "../../src/core/economy/outbox";
+import { createOrder, handleWxPayNotify } from "../../src/core/economy/purchases";
+import { createUser } from "../../src/core/userRecord";
+import { CUR_GOLD, OUTBOX_PENDING } from "../../src/core/infra/config";
+import { kBag, kCacheCurrency, kUser } from "../../src/core/infra/keys";
+import { cacheClient, clientFor, closeRedis } from "../../src/core/infra/redisRoute";
+import { closeMysql, getPool } from "../../src/core/infra/mysql";
+import type { RowDataPacket } from "../../src/core/infra/mysql";
 import { assertRedisUp, cleanupUser, testUid } from "./helpers";
 
 const uids: string[] = [];

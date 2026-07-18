@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<component size="371,147" extention="Button">
-  <displayList>
-    <image id="n5_b6ig" name="img_bg" src="b6igcs" fileName="RGBA/icon-button-text.png" xy="11,12" size="345,130"/>
-    <text id="n3_p3z8" name="title" xy="147,52" size="80,52" fontSize="38" color="#ffff00" strokeColor="#000000" strokeSize="2" text="挑战"/>
-    <text id="n4_p3z8" name="txt_title2" xy="166,11" size="38,34" fontSize="24" color="#00ff66" strokeColor="#000000" strokeSize="2" text="1-5"/>
-  </displayList>
-  <Button/>
-</component>

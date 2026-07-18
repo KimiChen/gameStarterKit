@@ -11,14 +11,15 @@ import { after, before, test } from "node:test";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
 import { LOBBY_MSG_PUSH, LOBBY_MSG_RPC, PROTOCOL_VERSION, RoomName } from "@game/shared";
 import { server } from "../../src/app.config";
-import { banUser, issueSession } from "../../src/auth/session";
+import { banUser, issueSession } from "../../src/core/auth/session";
 import { acquireLease } from "../../src/core/locks";
-import { createUser } from "../../src/gameplay/userStore";
-import { emitMailWake, stopMailWakeLoop } from "../../src/gateway/push";
-import { activeLruBucketOf, kActiveLru, kFence, kLock, kSess, kUser } from "../../src/infra/keys";
-import { clientFor, closeRedis, indexClientFor } from "../../src/infra/redisRoute";
-import { closeMysql, getPool } from "../../src/infra/mysql";
-import type { ResultSetHeader, RowDataPacket } from "../../src/infra/mysql";
+import { createUser } from "../../src/core/userRecord";
+import { emitMailWake } from "../../src/core/economy/mailer";
+import { stopMailWakeLoop } from "../../src/websocket/push";
+import { activeLruBucketOf, kActiveLru, kFence, kLock, kSess, kUser } from "../../src/core/infra/keys";
+import { clientFor, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
+import { closeMysql, getPool } from "../../src/core/infra/mysql";
+import type { ResultSetHeader, RowDataPacket } from "../../src/core/infra/mysql";
 import { assertRedisUp, cleanupUser, sleep, testUid } from "./helpers";
 
 let colyseus: ColyseusTestServer;
@@ -47,7 +48,10 @@ function rpc(room: Awaited<ReturnType<typeof joinLobby>>, type: string, payload?
   Promise<{ id: string; ok: boolean; data?: any; err?: { code: string; msg: string } }> {
   const id = `r${rpcSeq++}`;
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(`rpc 超时: ${type}`)), 15_000);
+    const timer = setTimeout(() => {
+      stop(); // 超时也要摘监听——房间存活期内 onMessage 会持续累积（并发用例会放大）
+      reject(new Error(`rpc 超时: ${type}`));
+    }, 15_000);
     const stop = room.onMessage(LOBBY_MSG_RPC, (reply: any) => {
       if (reply.id !== id) { return; }
       clearTimeout(timer);

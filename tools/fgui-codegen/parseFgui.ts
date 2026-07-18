@@ -5,7 +5,7 @@
  * 是该组件的直接子元素（text/image/loader/list/component/...），每个带 `name`。本解析器只取 displayList
  * 的**直接子元素**（list 的 item、button 的配置等嵌套内容不计），供 codegen 生成绑定字段 / 契约校验。
  * 纯函数、无渲染、无 fairygui 运行时依赖 → 可无头单测（见 fgui-codegen.test.ts）。
- * 方案见 docs/research/fairgui.md §4。
+ * 方案见 docs/CLIENT.md §4。
  */
 
 /** displayList 里的一个 UI 元素。 */
