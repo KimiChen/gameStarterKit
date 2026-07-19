@@ -1,7 +1,7 @@
 /**
  * 微信小游戏构建体积报告（docs/CLIENT.md 方案 4 的准备项——触发条件的测量仪）。
  *
- * 用法：npm run report:size [-- <构建目录>]（默认 apps/client/build/wechatgame）
+ * 用法：npm run report:size [-- <构建目录>]（默认 apps/Cocos/build/wechatgame）
  * 输出：主包 / 各分包（game.json subpackages）体积 + 4MB 红线水位；
  * 主包超 3.5MB（红线 87%）→ 提示启动 docs/CLIENT.md 方案 4 第一级（资源分包）。
  * 构建目录不存在时给出指引并正常退出（不阻塞 CI）。
@@ -11,7 +11,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const buildDir = path.resolve(ROOT, process.argv[2] ?? "apps/client/build/wechatgame");
+const buildDir = path.resolve(ROOT, process.argv[2] ?? "apps/Cocos/build/wechatgame");
 
 const MAIN_LIMIT = 4 * 1024 * 1024;      // 微信主包红线
 const WARN_AT = 3.5 * 1024 * 1024;       // 方案 4 触发水位（红线 87%）

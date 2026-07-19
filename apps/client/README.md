@@ -1,0 +1,22 @@
+# apps/client — 纯 TS 游戏代码工程
+
+引擎无关的游戏客户端代码（对标 sect 的 TsProject）：视图/逻辑/网络/共享契约全在这里，
+**不含任何 Cocos 工程文件与 `.meta`**。Cocos Creator 工程壳在 [../Cocos](../Cocos)，
+代码经同步脚本灌入 `apps/Cocos/assets/src` 后由 Creator 编译。
+
+## 同步链
+
+```
+apps/shared/src ──npm run sync:shared──▶ apps/client/src/shared ──npm run sync:client──▶ apps/Cocos/assets/src
+```
+
+- 日常只改 `src/`（`src/shared/` 除外——那是 `sync:shared` 生成物，禁手改；改 `apps/shared/src` 再同步）。
+- 改完跑 `npm run sync:client`（或常驻 `npm run sync:client:watch`）同步进 Cocos 工程。
+- `src/lib/ecs/` 8 个 .ts 是字节锁区（`npm run verify:ecs`），禁改。
+
+## 目录
+
+- `src/` —— 游戏代码（view/logic/net/core/lib/shared，视图/逻辑二分见 [docs/CLIENT.md](../../docs/CLIENT.md)）
+- `test/` —— 无头单测（`npm run test:fgui`，tsx 直跑，不依赖 Creator）
+- `cc-stub.d.ts` / `fairygui-cc.d.ts` —— 无头类型检查用的 cc / fairygui 声明桩
+- `tsconfig.json` —— 独立类型检查配置（`npm run typecheck:client`，不 extends Creator 的 temp/）

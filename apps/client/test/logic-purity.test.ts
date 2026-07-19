@@ -11,7 +11,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const LOGIC_DIR = fileURLToPath(new URL("../assets/src/logic", import.meta.url));
+const LOGIC_DIR = fileURLToPath(new URL("../src/logic", import.meta.url));
 // 静态 import/export ... from "cc"|"fairygui-cc"|"db://fairygui-cc/..."（全仓 fairygui 的唯一真实引用
 // 形态就是 db://，漏了它守门形同虚设）；动态 import("db://fairygui-cc/...")；
 // 以及任何指向 view/ 目录的相对引用——view/ 静态依赖 fairygui，经它间接引入与直引同等违规

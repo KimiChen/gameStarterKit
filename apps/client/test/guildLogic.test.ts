@@ -5,8 +5,8 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { GuildLogic } from "../assets/src/logic/page/GuildLogic";
-import type { IGuildEvent } from "../assets/src/shared/index";
+import { GuildLogic } from "../src/logic/page/GuildLogic";
+import type { IGuildEvent } from "../src/shared/index";
 
 const GID = 7;
 

@@ -18,5 +18,5 @@
 	"compressDesc":false,
 	"fileExtension":"bin",
 	"packageCount":3,
-	"path":"../../client/assets/resources/ui"
+	"path":"../../Cocos/assets/resources/ui"
 }

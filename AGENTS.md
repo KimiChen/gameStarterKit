@@ -10,6 +10,8 @@
 ## 技术栈（2026-07 定版）
 
 - 客户端：Cocos Creator **3.8.8**（微信小游戏）+ FairyGUI（fairygui-cc **1.2.2**）+ Oops ECS 库（字节锁）
+- 布局：**引擎壳与游戏代码分离**（对标 sect）——`apps/client` 纯 TS 游戏代码（源码唯一真相）、
+  `apps/Cocos` Creator 工程壳（`sync:client` 灌入 `assets/src`）、`apps/Unity` Unity 骨架
 - 服务端：Colyseus **0.17**（Node ≥ 22，tsx 直跑 TS）+ 公司服务端框架（双 Redis + MySQL 8）
 - 客户端网络：`@colyseus/sdk` 0.17.43 UMD 插件（全局 `Colyseus`）
 - 双端共享：`apps/shared`（零依赖纯 TS，`npm run sync:shared` 复制进客户端）
@@ -17,8 +19,9 @@
 ## 常用命令
 
 ```bash
-npm install                  # 装 shared + server（client 不在 workspaces）
-npm run sync:shared          # 改完 apps/shared/src 后必须执行（同步到客户端）
+npm install                  # 装 shared + server（client/Cocos 不在 workspaces）
+npm run sync:shared          # 改完 apps/shared/src 后必须执行（→ apps/client/src/shared）
+npm run sync:client          # 改完 apps/client/src 后必须执行（→ apps/Cocos/assets/src）
 npm run dev:server           # 启动服务端 http://localhost:2568（tsx watch）
 npm run typecheck            # 三端类型检查
 npm run test:fgui            # FairyGUI 结构契约 + 客户端无头单测
@@ -32,8 +35,9 @@ npm --workspace @game/server run test:int    # 集成测试（真实栈；跑前
 
 ## 铁律（违反会出隐蔽问题，详见对应文档）
 
-1. **`client/assets/src/lib/ecs/` 8 个 .ts 禁改**（与上游字节一致，`verify:ecs`；基线 commit `46bcb58`）。
-2. **`client/assets/src/shared/` 禁手改**——`sync:shared` 生成物；改 `apps/shared/src` 再同步，连 `.meta` 提交。
+1. **`apps/client/src/lib/ecs/` 8 个 .ts 禁改**（与上游字节一致，`verify:ecs`；基线 commit `46bcb58`）。
+2. **`apps/client/src/shared/` 禁手改**——`sync:shared` 生成物；改 `apps/shared/src` 再同步。
+   **`apps/Cocos/assets/src/` 整份禁手改**——`sync:client` 生成物，连 `.meta` 提交（uuid 稳定）。
 3. **相对导入不带扩展名**（Cocos 要求；服务端因此用 `moduleResolution: Bundler` + tsx，别改回 NodeNext）。
 4. **shared 零依赖**：只用 TS 语言 + ES 标准库；禁 npm 包/Node API/cc/wx/DOM；禁 `const enum`；lib 钉 ES2017。
 5. 客户端只用 `@colyseus/sdk`（全局 `Colyseus`），**禁 import 服务端包** `colyseus`/`@colyseus/core`。
@@ -49,6 +53,7 @@ npm --workspace @game/server run test:int    # 集成测试（真实栈；跑前
 ```
 shared 契约 → npm run sync:shared → 服务端端点文件（websocket/http）→ 登记点（07/keys/config/错误码）
 → 客户端 view/XxxView.ts（codegen）+ logic/page/XxxLogic.ts + viewRegistry 登记（打开 = ViewMgr.open）
+→ npm run sync:client（灌入 apps/Cocos/assets/src，Creator 侧验证）
 ```
 
 net/、dispatcher/loader、Main.ts 永远不碰。分端细节见 docs/SERVER.md、docs/CLIENT.md。

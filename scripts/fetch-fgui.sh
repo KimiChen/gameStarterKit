@@ -10,7 +10,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-RUNTIME="$ROOT/apps/client/extensions/fairygui-cc/runtime"
+RUNTIME="$ROOT/apps/Cocos/extensions/fairygui-cc/runtime"
 mkdir -p "$RUNTIME"
 
 echo "▶ 从 npm 下载 fairygui-cc…"

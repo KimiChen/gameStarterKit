@@ -3,7 +3,7 @@
  *
  * 用法：npm run codegen:fgui -- <Pkg> <Comp> [ViewClass]
  *   ViewClass 缺省 = <Comp>View；源 XML = apps/art/fairygui/assets/<Pkg>/<Comp>.xml；
- *   目标 = apps/client/assets/src/view/<ViewClass>.ts。
+ *   目标 = apps/client/src/view/<ViewClass>.ts（再由 sync:client 灌入 apps/Cocos/assets/src）。
  * 目标已存在 → 幂等重写四个 AUTO 区块（区块外业务代码不动）；不存在 → 生成脚手架并
  * 打印接入清单（契约/注册表/typecheck 排除/.meta）。
  */
@@ -15,7 +15,7 @@ import { emitFguiViewScaffold, regenerateViewSource } from "./binding";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const ART = path.join(ROOT, "apps/art/fairygui/assets");
-const VIEW_DIR = path.join(ROOT, "apps/client/assets/src/view");
+const VIEW_DIR = path.join(ROOT, "apps/client/src/view");
 
 const [pkg, comp, viewClassArg] = process.argv.slice(2);
 if (!pkg || !comp) {
@@ -57,6 +57,6 @@ if (fs.existsSync(target)) {
   console.log(`  1. view/fguiContracts.ts：加 ${comp} 契约常量并放进 FGUI_CONTRACTS`);
   console.log(`  2. view/viewRegistry.ts：加 defineView 条目（contract/layer/fullscreen/onlyOne/permanent/interactive/load）`);
   console.log(`  3. logic/page/${viewClass.replace(/View$/, "")}Logic.ts：行为层配对文件`);
-  console.log(`  4. apps/client/tsconfig.typecheck.json exclude：加 "assets/src/view/${viewClass}.ts"（依赖 fairygui，Creator 侧验证）`);
-  console.log(`  5. .meta：开一次 Creator 生成（或照同目录格式手工），随 commit 提交`);
+  console.log(`  4. apps/client/tsconfig.json exclude：加 "src/view/${viewClass}.ts"（依赖 fairygui，Creator 侧验证）`);
+  console.log(`  5. sync+meta：npm run sync:client 灌入 apps/Cocos 后开一次 Creator 生成 .meta（或照同目录格式手工），随 commit 提交`);
 }

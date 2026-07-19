@@ -8,8 +8,8 @@
  */
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
-import { GuildRpc, LOBBY_MSG_RPC, UserRpc } from "../assets/src/shared/index";
-import { RpcError, WebSocketClient } from "../assets/src/net/WebSocketClient";
+import { GuildRpc, LOBBY_MSG_RPC, UserRpc } from "../src/shared/index";
+import { RpcError, WebSocketClient } from "../src/net/WebSocketClient";
 
 interface IRpcReplyLite { id: string; ok: boolean; data?: unknown; err?: { code: string; msg: string } }
 

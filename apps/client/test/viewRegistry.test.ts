@@ -13,13 +13,13 @@ import { test } from "node:test";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { VIEW_LAYERS } from "../assets/src/view/layers";
-import { FGUI_CONTRACTS } from "../assets/src/view/fguiContracts";
-import { VIEW_REGISTRY } from "../assets/src/view/viewRegistry";
+import { VIEW_LAYERS } from "../src/view/layers";
+import { FGUI_CONTRACTS } from "../src/view/fguiContracts";
+import { VIEW_REGISTRY } from "../src/view/viewRegistry";
 import { parseFguiComponent } from "../../../tools/fgui-codegen/parseFgui";
 import { regenerateViewSource } from "../../../tools/fgui-codegen/binding";
 
-const VIEW_DIR = fileURLToPath(new URL("../assets/src/view", import.meta.url));
+const VIEW_DIR = fileURLToPath(new URL("../src/view", import.meta.url));
 const ART_DIR = fileURLToPath(new URL("../../art/fairygui/assets", import.meta.url));
 /** view/ 下的机械件（非页面视图），不参与文件⇔注册表比对 */
 const MACHINERY = new Set(["FguiView.ts"]);
@@ -34,7 +34,7 @@ test("view/*View.ts 文件集合 ⇔ 注册表键集合（含 meta 基本合法�
   const names = Object.keys(VIEW_REGISTRY).sort();
   assert.deepEqual(files, names,
     "页面文件与 viewRegistry 必须一一对应（新页面加注册条目；删页面删条目）");
-  const LOGIC_PAGE_DIR = fileURLToPath(new URL("../assets/src/logic/page", import.meta.url));
+  const LOGIC_PAGE_DIR = fileURLToPath(new URL("../src/logic/page", import.meta.url));
   for (const [key, meta] of Object.entries(VIEW_REGISTRY)) {
     assert.equal(meta.name, key, `注册键与 meta.name 不一致: ${key}`);
     assert.ok((VIEW_LAYERS as readonly string[]).includes(meta.layer), `${key}: 非法 layer ${meta.layer}`);

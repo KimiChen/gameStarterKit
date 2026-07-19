@@ -4,12 +4,12 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { AreaListLogic } from "../assets/src/logic/page/AreaListLogic";
-import { LoginNoticeLogic } from "../assets/src/logic/page/LoginNoticeLogic";
-import { LoginLogic } from "../assets/src/logic/page/LoginLogic";
-import { ConfirmLogic } from "../assets/src/logic/page/ConfirmLogic";
-import { chooseServer, getCurrentServer, pickDefaultServer, setServerList, getListHash } from "../assets/src/net/serverSession";
-import type { IAreaListRes, IAreaServer } from "../assets/src/shared/index";
+import { AreaListLogic } from "../src/logic/page/AreaListLogic";
+import { LoginNoticeLogic } from "../src/logic/page/LoginNoticeLogic";
+import { LoginLogic } from "../src/logic/page/LoginLogic";
+import { ConfirmLogic } from "../src/logic/page/ConfirmLogic";
+import { chooseServer, getCurrentServer, pickDefaultServer, setServerList, getListHash } from "../src/net/serverSession";
+import type { IAreaListRes, IAreaServer } from "../src/shared/index";
 
 const srv = (sId: number, t = 0): IAreaServer =>
   ({ sId, name: `区${sId}`, t, status: 1, openTime: t === 9 ? 0 : 1_700_000_000, wsUrl: "ws://localhost:2568" });

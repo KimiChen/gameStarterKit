@@ -12,7 +12,9 @@
 
 ```
 apps/
-├── client/     Cocos Creator 工程（不在 npm workspaces；代码在 assets/src/）
+├── client/     纯 TS 游戏代码工程（引擎无关，源码唯一真相；test/ 无头单测）
+├── Cocos/      Cocos Creator 3.8.8 工程壳（不在 npm workspaces；代码由 sync:client 灌入 assets/src/）
+├── Unity/      Unity 工程（骨架，规划消费 apps/client 的同一份 TS）
 ├── server/     Colyseus 0.17 服务端（tsx 直跑 TS）
 ├── shared/     双端共享层（零依赖纯 TS：协议/公式/常量）—— sync 到客户端
 └── art/        FairyGUI 编辑器工程（设计师产 UI 包）
@@ -25,14 +27,15 @@ tools/          codegen / excel 导表 / 体积报告等
 ## 30 秒跑起来（纯 mock，不需要数据库）
 
 ```bash
-npm install            # 安装 shared + server 依赖（client 不在 workspaces）
-npm run sync:shared    # 把 apps/shared/src 同步进客户端 assets（首次必跑）
+npm install            # 安装 shared + server 依赖（client/Cocos 不在 workspaces）
+npm run sync:shared    # 把 apps/shared/src 同步进 apps/client/src/shared（首次必跑）
+npm run sync:client    # 把 apps/client/src 灌入 apps/Cocos/assets/src（首次必跑）
 npm run dev:server     # 启动服务端 http://localhost:2568
 ```
 
 然后打开客户端预览：
 
-1. 用 **Cocos Dashboard 3.8.8** 打开 **`apps/client`** 目录，等首次导入完成；
+1. 用 **Cocos Dashboard 3.8.8** 打开 **`apps/Cocos`** 目录，等首次导入完成；
 2. 编辑器里点 **预览** —— 控制台应输出 mock 登录成功 + 进房日志，**按住屏幕可拖动小圆点**。
 
 服务端起来后还带三个网页入口：`/` Playground 调试台、`/monitor` 房间监控、`/mock/*` HTTP 假数据接口。
@@ -48,7 +51,8 @@ npm run dev:server     # 启动服务端 http://localhost:2568
 | 命令 | 作用 |
 |---|---|
 | `npm run dev:server` | 启动服务端（tsx watch，热重载，端口 2568） |
-| `npm run sync:shared` | 改完 `apps/shared/src` 后**必须**执行（同步到客户端；生成物入库） |
+| `npm run sync:shared` | 改完 `apps/shared/src` 后**必须**执行（同步到 `apps/client/src/shared`；生成物入库） |
+| `npm run sync:client` | 改完 `apps/client/src` 后**必须**执行（灌入 `apps/Cocos/assets/src`；生成物连 .meta 入库） |
 | `npm run typecheck` | 三端类型检查（shared + server + client） |
 | `npm run test:fgui` | FairyGUI 结构契约 + 客户端无头单测 |
 | `npm run codegen:fgui -- <Pkg> <Comp>` | 从 FairyGUI 组件生成/幂等重写 `view/XxxView.ts` |
@@ -63,8 +67,9 @@ npm run dev:server     # 启动服务端 http://localhost:2568
 
 ## 三条最容易踩的红线（详见各文档）
 
-1. **`apps/client/assets/src/shared/` 与 `lib/ecs/` 是生成物/字节锁区，禁手改**——改共享代码去
+1. **`apps/client/src/shared/` 与 `lib/ecs/` 是生成物/字节锁区，禁手改**——改共享代码去
    `apps/shared/src` 再 `npm run sync:shared`；ECS 库要与上游逐字节一致。
+   `apps/Cocos/assets/src/` 整份是 `sync:client` 生成物，同样禁手改。
 2. **消息名/协议类型/公式一律 `import` 自 shared**，不手写字符串、不复制公式（双端单源）。
 3. **相对导入不带扩展名**（Cocos 编译器要求）——全仓统一，别"顺手"加 `.ts`/`.js`。
 

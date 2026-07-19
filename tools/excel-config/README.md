@@ -58,7 +58,7 @@ Excel 中前四行看起来像这样：
 | 输出 | 路径 | 内容 |
 | --- | --- | --- |
 | 服务端权威配置 | `apps/server/data/items.config.json` | 全量字段（含 `price` 等结算依据） |
-| 客户端展示配置 | `apps/client/assets/resources/config/items.json` | 裁掉服务端敏感字段（示例中裁 `price`），防抓包改包、避免展示值被误当结算值 |
+| 客户端展示配置 | `apps/Cocos/assets/resources/config/items.json` | 裁掉服务端敏感字段（示例中裁 `price`），防抓包改包、避免展示值被误当结算值 |
 
 两份 JSON 均带 `schemaVersion`（运行时兼容判断）与 `sourceFiles`（来源溯源）；
 导表成功后终端打印各表行数 summary。**只要有任何错误，两份文件都不会写入**。

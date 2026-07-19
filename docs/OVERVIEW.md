@@ -16,14 +16,16 @@
 
 ---
 
-## 2. 三包 + 一个编辑器工程
+## 2. 五包（引擎壳与游戏代码分离，对标 sect）
 
 | 包 | 是什么 | 运行/构建方式 |
 |---|---|---|
 | `apps/shared` | 双端共享层：协议类型、纯公式、常量 | **零依赖纯 TS**；`npm run sync:shared` 复制进客户端 |
 | `apps/server` | Colyseus 0.17 服务端 | tsx 直跑 TS（Node ≥ 22），workspace 直接依赖 shared 源码 |
-| `apps/client` | Cocos Creator 工程 | 编辑器构建；**不在 npm workspaces**（Cocos 要自己的目录结构） |
-| `apps/art/fairygui` | FairyGUI 编辑器工程 | 设计师产 UI 包，发布 `.bin` 到 `client/assets/resources/ui` |
+| `apps/client` | 纯 TS 游戏代码工程（引擎无关，源码唯一真相） | `npm run sync:client` 灌入 `apps/Cocos`；无头 typecheck/单测 |
+| `apps/Cocos` | Cocos Creator 3.8.8 工程壳 | 编辑器构建；**不在 npm workspaces**（Cocos 要自己的目录结构） |
+| `apps/Unity` | Unity 工程（骨架） | 待建，规划走 pyts 类路线消费 `apps/client` |
+| `apps/art/fairygui` | FairyGUI 编辑器工程 | 设计师产 UI 包，发布 `.bin` 到 `Cocos/assets/resources/ui` |
 
 **为什么共享代码用「复制同步」而不是 npm 包 / 符号链接 / import map：** 符号链接有 Cocos 编辑器
 确认的资源刷新 bug、且会把 `.meta` 写进共享源码目录；import map 是实验特性，对 assets 外目标和
@@ -85,7 +87,8 @@ workspace 直接吃 `@game/shared` 源码，无需复制。
 两端都遵循**「根层文件 = 入口与全局真源；子目录 = 层/域」**，且都区分「不可动区 / 少动区 / 日常区」：
 
 - 服务端 `src/` 根 = `rooms/ websocket/ http/ mock/ player/ core/` 六目录 + 入口两文件；
-- 客户端 `assets/src/` 根 = `view/ logic/ net/ core/ lib/ shared/` 六目录 + `Main.ts`/`designSpec.ts`；
+- 客户端 `apps/client/src/` 根 = `view/ logic/ net/ core/ lib/ shared/` 六目录 + `Main.ts`/`designSpec.ts`
+  （`sync:client` 灌入 `apps/Cocos/assets/src/` 后由 Creator 编译）；
 - 两端的 `lib/`+`shared/`（客户端）、`core/`（两端）是"少动/不可动"区，其余是日常主战场。
 
 ---
@@ -96,7 +99,7 @@ workspace 直接吃 `@game/shared` 源码，无需复制。
 
 ```
 ① shared/protocol/lobbyRpc/<域>.ts  加路由名 + Req/Res + Map 条目
-② npm run sync:shared               生成物同步进客户端（连 .meta 提交）
+② npm run sync:shared && npm run sync:client   生成物同步进客户端（连 .meta 提交）
 ③ 服务端建端点文件 websocket/<域>/<接口>.ts（defineRpc 包装，loader 自动注册）
 ④ 登记点（若需）：docs 07 表 → core/infra/config·keys → shared RPC_ERR_CODES
 ⑤ 客户端调用 WebSocketClient.rpc(域Rpc.接口, payload)   —— 类型自动推导
@@ -124,8 +127,9 @@ workspace 直接吃 `@game/shared` 源码，无需复制。
 
 违反会出隐蔽问题。分端细节在各文档，这里是索引：
 
-1. `client/assets/src/lib/ecs/` 8 个 .ts **禁改**（与上游字节一致，`verify:ecs`）。
-2. `client/assets/src/shared/` 是 `sync:shared` 生成物，**禁手改**（改 `apps/shared/src` 再同步；连 `.meta` 提交）。
+1. `apps/client/src/lib/ecs/` 8 个 .ts **禁改**（与上游字节一致，`verify:ecs`）。
+2. `apps/client/src/shared/` 是 `sync:shared` 生成物，**禁手改**（改 `apps/shared/src` 再同步；
+   `apps/Cocos/assets/src/` 整份是 `sync:client` 生成物，连 `.meta` 提交）。
 3. **相对导入不带扩展名**（Cocos 要求；服务端因此用 `moduleResolution: Bundler` + tsx）。
 4. **shared 零依赖**：只用 TS 语言 + ES 标准库；禁 npm 包/Node API/cc/wx/DOM；禁 `const enum`；lib 钉 ES2017。
 5. 客户端只用 `@colyseus/sdk`（全局 `Colyseus`），**禁 import 服务端包** `colyseus`/`@colyseus/core`。

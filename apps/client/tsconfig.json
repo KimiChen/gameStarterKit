@@ -1,22 +1,52 @@
 {
-  /* Base configuration. Do not edit this field. */
-  "extends": "./temp/tsconfig.cocos.json",
-
-  /* Add your custom configuration here. */
+  // 独立的客户端类型检查配置（不 extends Creator 生成的 temp/，可离线/CI 跑；回流自 Arthur）。
+  // 用 cc 桩（cc-stub.d.ts）替代真 cc，对 src 做类型/导入路径检查。
+  // 跑法：npm run typecheck:client（根 package.json；tsc 来自 server workspace 的依赖提升）。
   "compilerOptions": {
-    "strict": false,
-    "esModuleInterop": true,
+    "strict": true,
+    "noEmit": true,
+    // 钉 ES2017（铁律 4：客户端下限）——⛔ 不放宽到 ES2020：无头 CI 会放行 Creator 侧标红、
+    // 老 JSCore 运行时才崩的 API（Object.fromEntries / Promise.allSettled / matchAll…）
+    "target": "ES2017",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2017", "DOM"],
+    "types": [],
+    "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "skipLibCheck": true,
-    "lib": ["DOM", "ES2015", "ES2016", "ES2017"]
+    "resolveJsonModule": false,
+    "baseUrl": ".",
+    "paths": {}
   },
-
   "include": [
-    "assets/**/*.ts",
-    "assets/**/*.d.ts",
-    "fairygui-cc.d.ts",
-    // fairygui-cc.d.ts 的 `export * from "fairygui-cc"` 依赖运行时自带的模块声明；
-    // 不 include 它则所有 db://fairygui-cc 导入报 TS2305（运行时未 fetch 时该 glob 为空，无害）
-    "extensions/fairygui-cc/runtime/*.d.ts"
+    "cc-stub.d.ts",
+    "src/designSpec.ts",
+    "src/lib/**/*.ts",
+    "src/lib/**/*.d.ts",
+    "src/net/**/*.ts",
+    "src/core/**/*.ts",
+    "src/view/**/*.ts",
+    "src/logic/**/*.ts",
+    "src/shared/**/*.ts"
+  ],
+  "exclude": [
+    // Main.ts 引 cc 运行时（组件装配/动态 import FairyGUI 视图），cc 桩下测不了；由 Creator 验。
+    "src/Main.ts",
+    // FairyGUI 绑定层机械件：依赖 fairygui-cc（其 d.ts 引真 cc），cc 桩下测不了；
+    // fguiContracts/defineView/layers 是纯数据保持在检；viewRegistry 因 load 闭包解析 View
+    // 模块类型、ViewMgr 因静态 import FguiView 一并排除（Creator 侧验证 + viewRegistry 守门测试）。
+    // 行为层（logic/）与结构契约在无头 CI 里测（npm run test:fgui）。
+    "src/view/FguiView.ts",
+    "src/view/ViewMgr.ts",
+    "src/view/viewRegistry.ts",
+    "src/view/pages.ts",
+    "src/view/LoginView.ts",
+    "src/view/AreaListView.ts",
+    "src/view/LoginNoticeView.ts",
+    "src/view/HomeView.ts",
+    "src/view/ConfirmView.ts",
+    "**/*.meta"
   ]
 }
