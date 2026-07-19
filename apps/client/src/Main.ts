@@ -16,6 +16,7 @@ import { getToken, initHttp } from "./core/http";
 import { getCurrentServer } from "./net/serverSession";
 import { RoomClient } from "./net/RoomClient";
 import { GameECS } from "./logic/rooms/ballMove/GameECS";
+import { PlayerModel } from "./logic/rooms/ballMove/GameComps";
 import { S2C, MAP_WIDTH, MAP_HEIGHT, normalize, distance, type IPlayerState } from "./shared/index";
 
 // ⚠ 必须在任何 Colyseus 调用之前安装（模块加载期执行，早于所有组件生命周期）
@@ -36,7 +37,7 @@ export class Main extends Component {
     @property({ tooltip: "服务端 http(s) 地址（微信真机需 https + 域名白名单）；与 server/.env.development 的 PORT 保持一致" })
     serverUrl = "http://localhost:2568";
 
-    // ECS 组/系统注册是全局状态，必须用单例（重复 new 会泄漏 group 与回调）
+    // world 与玩家表挂模块级单例（场景重载重复建会让旧房间回调喂旧 world，幽灵 isSelf）
     private gameECS = GameECS.inst;
     private graphics: Graphics | null = null;
     private layerTf: UITransform | null = null;
@@ -93,7 +94,6 @@ export class Main extends Component {
         } catch { /* 关不掉不阻塞进战斗 */ }
         this.initRenderLayer();
         this.initInput();
-        this.gameECS.init();
         try {
             await this.connectRoom();
             this.started = true;
@@ -191,17 +191,17 @@ export class Main extends Component {
         gfx.rect(ox, oy, MAP_WIDTH, MAP_HEIGHT);
         gfx.stroke();
 
-        this.gameECS.forEachPlayer((m) => {
-            const px = ox + m.x;
-            const py = oy + m.y;
+        this.gameECS.forEachPlayer((eid) => {
+            const px = ox + PlayerModel.x[eid];
+            const py = oy + PlayerModel.y[eid];
 
             // 本机绿色，其他人橙色，死亡灰色
-            gfx.fillColor = !m.alive ? COLOR_DEAD : m.isSelf ? COLOR_SELF : COLOR_OTHER;
+            gfx.fillColor = !PlayerModel.alive[eid] ? COLOR_DEAD : PlayerModel.isSelf[eid] ? COLOR_SELF : COLOR_OTHER;
             gfx.circle(px, py, 20);
             gfx.fill();
 
             // 血条
-            const ratio = m.maxHp > 0 ? m.hp / m.maxHp : 0;
+            const ratio = PlayerModel.maxHp[eid] > 0 ? PlayerModel.hp[eid] / PlayerModel.maxHp[eid] : 0;
             gfx.fillColor = COLOR_HP_BG;
             gfx.rect(px - 25, py + 28, 50, 6);
             gfx.fill();
@@ -240,13 +240,13 @@ export class Main extends Component {
     private steerToTarget() {
         if (!this.touchTarget || !RoomClient.inst.connected) return;
         const me = this.gameECS.getSelfPlayer();
-        if (!me) return;
+        if (me === null) return;
 
-        if (distance(me.x, me.y, this.touchTarget.x, this.touchTarget.y) <= Main.ARRIVE_RADIUS) {
+        if (distance(PlayerModel.x[me], PlayerModel.y[me], this.touchTarget.x, this.touchTarget.y) <= Main.ARRIVE_RADIUS) {
             this.sendDir(0, 0);
             return;
         }
-        const dir = normalize(this.touchTarget.x - me.x, this.touchTarget.y - me.y);
+        const dir = normalize(this.touchTarget.x - PlayerModel.x[me], this.touchTarget.y - PlayerModel.y[me]);
         this.sendDir(dir.x, dir.y);
     }
 

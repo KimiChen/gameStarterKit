@@ -30,6 +30,8 @@ tools/          codegen / excel 导表 / 体积报告等
 npm install            # 安装 shared + server 依赖（client/Cocos 不在 workspaces）
 npm run sync:shared    # 把 apps/shared/src 同步进 apps/client/src/shared（首次必跑）
 npm run sync:client    # 把 apps/client/src 灌入 apps/Cocos/assets/src（首次必跑）
+npm run fetch:fgui     # 拉 fairygui-cc 运行时（首次必跑，每台机一次）
+npm run fetch:colyseus # 拉 colyseus UMD 插件（首次必跑，每台机一次；插件标记由脚本保证）
 npm run dev:server     # 启动服务端 http://localhost:2568
 ```
 
@@ -57,7 +59,7 @@ npm run dev:server     # 启动服务端 http://localhost:2568
 | `npm run test:fgui` | FairyGUI 结构契约 + 客户端无头单测 |
 | `npm run codegen:fgui -- <Pkg> <Comp>` | 从 FairyGUI 组件生成/幂等重写 `view/XxxView.ts` |
 | `npm run report:size` | 微信构建体积报告（4MB 主包水位） |
-| `npm run verify:ecs` | 校验 ECS 库 8 个文件与上游字节一致 |
+| `npm run verify:ecs` | 校验 ECS 库（bitECS）12 个文件字节锁定 |
 | `npm --workspace @game/server run test` | 服务端单测 |
 | `npm --workspace @game/server run smoke` | mock 链路冒烟（需 dev:server 已启动） |
 | `npm --workspace @game/server run stack` | 起本地 Redis×2 + MySQL（真实玩法链路用） |
@@ -67,8 +69,8 @@ npm run dev:server     # 启动服务端 http://localhost:2568
 
 ## 三条最容易踩的红线（详见各文档）
 
-1. **`apps/client/src/shared/` 与 `lib/ecs/` 是生成物/字节锁区，禁手改**——改共享代码去
-   `apps/shared/src` 再 `npm run sync:shared`；ECS 库要与上游逐字节一致。
+1. **`apps/client/src/shared/` 与 `lib/bitecs/` 是生成物/字节锁区，禁手改**——改共享代码去
+   `apps/shared/src` 再 `npm run sync:shared`；ECS 库字节锁定（verify:ecs）。
    `apps/Cocos/assets/src/` 整份是 `sync:client` 生成物，同样禁手改。
 2. **消息名/协议类型/公式一律 `import` 自 shared**，不手写字符串、不复制公式（双端单源）。
 3. **相对导入不带扩展名**（Cocos 编译器要求）——全仓统一，别"顺手"加 `.ts`/`.js`。
@@ -80,7 +82,7 @@ npm run dev:server     # 启动服务端 http://localhost:2568
 
 ## 技术栈定版（2026-07）
 
-- 客户端：Cocos Creator **3.8.8**（微信小游戏）+ FairyGUI（fairygui-cc 1.2.2）+ Oops ECS 库（字节锁）
+- 客户端：Cocos Creator **3.8.8**（微信小游戏）+ FairyGUI（fairygui-cc 1.2.2）+ bitECS 0.4（字节锁）
 - 服务端：Colyseus **0.17**（Node ≥ 22，tsx 直跑 TS）+ 公司服务端框架（双 Redis + MySQL 8）
 - 客户端网络：`@colyseus/sdk` 0.17.43 UMD 插件（全局 `Colyseus`）
 - 共享层：`apps/shared`（零依赖纯 TS，`npm run sync:shared` 复制进客户端）

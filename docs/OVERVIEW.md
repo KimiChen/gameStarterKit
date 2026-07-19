@@ -59,7 +59,7 @@ workspace 直接吃 `@game/shared` 源码，无需复制。
 | `logic-purity.test.ts` | 客户端 `logic/` 全目录禁 import cc/fairygui | CI |
 | `viewRegistry.test.ts` | 页面文件 ⇔ 注册表 ⇔ 契约 ⇔ AUTO 区块 四重相等 | CI |
 | `defineRpc` 类型胶水 | schema/handler 与 shared 契约不符不过编译；idem⇔clientReqId | typecheck |
-| `verify:ecs` | ECS 库 8 文件与上游逐字节一致 | 手动/CI |
+| `verify:ecs` | ECS 库（bitECS）12 文件字节锁定 | 手动/CI |
 | `[rpc-budget]` 探针 | handler 同步 CPU 超预算（铁律 11） | 运行时告警 |
 | `docs/server/09` → `09·XX` | 服务端写路径 64 条规则（见 SERVER.md） | PR 审查 + 代码注释锚点 |
 
@@ -127,7 +127,7 @@ workspace 直接吃 `@game/shared` 源码，无需复制。
 
 违反会出隐蔽问题。分端细节在各文档，这里是索引：
 
-1. `apps/client/src/lib/ecs/` 8 个 .ts **禁改**（与上游字节一致，`verify:ecs`）。
+1. `apps/client/src/lib/bitecs/` 12 个 .ts **禁改**（字节锁定，`verify:ecs`；偏差见 lib README）。
 2. `apps/client/src/shared/` 是 `sync:shared` 生成物，**禁手改**（改 `apps/shared/src` 再同步；
    `apps/Cocos/assets/src/` 整份是 `sync:client` 生成物，连 `.meta` 提交）。
 3. **相对导入不带扩展名**（Cocos 要求；服务端因此用 `moduleResolution: Bundler` + tsx）。

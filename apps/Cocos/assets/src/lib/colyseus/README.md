@@ -10,21 +10,16 @@ Cocos 的构建管线（尤其微信小游戏）解析不可靠；自包含 UMD 
 Cocos 集成方式（维护者确认：不再有 Cocos 专用构建，直接用 dist 包）。
 参考：https://docs.colyseus.io/getting-started/cocos
 
-## ⚠ 首次打开编辑器后的一次性手动配置
+## ⚠ 产物不入库：每台机先跑 `npm run fetch:colyseus`
 
-在 Cocos Creator 资源管理器中选中 `colyseus.js`，属性检查器里：
+`colyseus.js`（440KB）由 `npm run fetch:colyseus` 从 npm 拉取（版本钉死 0.17.43，
+对齐服务端，⛔ 不飘 latest），`.gitignore` 忽略、可再生。脚本同时：
 
-1. 勾选 **导入为插件（Import As Plugin）**
-2. 勾选 **允许编辑器加载**、Web、**小游戏**、原生平台加载
-3. 点击右上角 ✓ 应用，然后重启编辑器
+- 把文件写进 `apps/client/src/lib/colyseus/`（sync 源）与 `apps/Cocos/assets/src/lib/colyseus/`；
+- 保证 Cocos 侧 `.meta` 带 **「导入为插件 + 全平台加载」** 标记（uuid 稳定）——
+  旧文档的「属性检查器手工勾插件」步骤已被此脚本替代，**无需任何编辑器手工操作**。
 
-之后即可在任意脚本中直接使用全局 `Colyseus`（类型由 `colyseus.d.ts` 提供，无需 import）。
-
-## 版本与升级
-
-- 版本必须与服务端 colyseus 的 major.minor 一致（当前双端均为 **0.17.x**）
-- 升级方式：`curl -L https://unpkg.com/@colyseus/sdk@<版本>/dist/colyseus.js -o colyseus.js`，
-  同步更新服务端依赖与本 README 的版本号
+升级 = 改 `scripts/fetch-colyseus.mjs` 顶部版本号（连同服务端依赖）再跑一次。
 
 ## 微信小游戏注意
 

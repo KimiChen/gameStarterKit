@@ -17,6 +17,11 @@ apps/Cocos/native/
 # 运行时(`npm run fetch:fgui` 生成，fairygui.mjs 600K+ 可再生)忽略。
 apps/Cocos/extensions/fairygui-cc/runtime/
 
+# colyseus UMD：`npm run fetch:colyseus` 生成（440KB 可再生）忽略；
+# .meta 提交入库（内含"导入为插件 + 全平台加载"标记，由 fetch 脚本保证）。
+apps/client/src/lib/colyseus/colyseus.js
+apps/Cocos/assets/src/lib/colyseus/colyseus.js
+
 # FairyGUI 编辑器工程缓存(.objs：metas + workspace.json，编辑器可再生，勿提交)；
 # .fairy/assets/settings 是源须提交，仅 .objs 忽略。无路径前缀=匹配任意 FairyGUI 工程。
 .objs/

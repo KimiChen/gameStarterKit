@@ -9,7 +9,7 @@
 
 ## 技术栈（2026-07 定版）
 
-- 客户端：Cocos Creator **3.8.8**（微信小游戏）+ FairyGUI（fairygui-cc **1.2.2**）+ Oops ECS 库（字节锁）
+- 客户端：Cocos Creator **3.8.8**（微信小游戏）+ FairyGUI（fairygui-cc **1.2.2**）+ bitECS **0.4**（数据导向 ECS，字节锁）
 - 布局：**引擎壳与游戏代码分离**（对标 sect）——`apps/client` 纯 TS 游戏代码（源码唯一真相）、
   `apps/Cocos` Creator 工程壳（`sync:client` 灌入 `assets/src`）、`apps/Unity` Unity 骨架
 - 服务端：Colyseus **0.17**（Node ≥ 22，tsx 直跑 TS）+ 公司服务端框架（双 Redis + MySQL 8）
@@ -26,7 +26,7 @@ npm run dev:server           # 启动服务端 http://localhost:2568（tsx watch
 npm run typecheck            # 三端类型检查
 npm run test:fgui            # FairyGUI 结构契约 + 客户端无头单测
 npm run codegen:fgui -- <Pkg> <Comp>   # 生成/幂等重写 view/XxxView.ts
-npm run verify:ecs           # 校验 ECS 库 8 文件与上游字节一致
+npm run verify:ecs           # 校验 ECS 库（bitECS）12 文件字节锁定
 npm --workspace @game/server run test        # 服务端单测
 npm --workspace @game/server run smoke       # mock 冒烟（需 dev:server 已起）
 npm --workspace @game/server run stack       # 起本地 Redis×2 + MySQL
@@ -35,7 +35,7 @@ npm --workspace @game/server run test:int    # 集成测试（真实栈；跑前
 
 ## 铁律（违反会出隐蔽问题，详见对应文档）
 
-1. **`apps/client/src/lib/ecs/` 8 个 .ts 禁改**（与上游字节一致，`verify:ecs`；基线 commit `46bcb58`）。
+1. **`apps/client/src/lib/bitecs/` 12 个 .ts 禁改**（字节锁定，唯一偏差为首行 ts-nocheck 注释，`verify:ecs`；基线 tag `0.4.0` commit `efacc63`）。
 2. **`apps/client/src/shared/` 禁手改**——`sync:shared` 生成物；改 `apps/shared/src` 再同步。
    **`apps/Cocos/assets/src/` 整份禁手改**——`sync:client` 生成物，连 `.meta` 提交（uuid 稳定）。
 3. **相对导入不带扩展名**（Cocos 要求；服务端因此用 `moduleResolution: Bundler` + tsx，别改回 NodeNext）。

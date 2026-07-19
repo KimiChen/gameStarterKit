@@ -1,88 +1,79 @@
 /**
- * 游戏 ECS 世界：根系统驱动 + 玩家实体管理。
+ * 游戏 ECS 世界：bitECS world + 玩家实体管理。
  * 由 Main.ts 每帧调用 update(dt)；由网络层的状态回调调用 add/sync/remove。
  */
-import { ecs } from "../../../lib/ecs/ECS";
+import { createWorld, addEntity, addComponent, removeEntity, type World } from "../../../lib/bitecs/index";
 import type { IPlayerState } from "../../../shared/index";
-import { PlayerEntity, PlayerModelComp } from "./GameComps";
-import { PlayerLerpSystem } from "./GameSystems";
+import { PlayerModel } from "./GameComps";
+import { playerLerpSystem } from "./GameSystems";
 
 export class GameECS {
-    // 必须是单例：ecs 的组/系统注册是模块级全局状态，每次 new PlayerLerpSystem()
-    // 都会创建新 matcher 并向 ECSModel 注册一个无法移除的 group 回调，重复初始化会累积泄漏
+    // 单例：world 与 sessionId→eid 表挂在模块级单例上——场景重载若新建实例，
+    // 旧房间回调会继续喂旧 world（幽灵 isSelf），见 Main.ts connectRoom 的竞态处理
     private static _inst: GameECS | null = null;
     static get inst(): GameECS {
         if (!this._inst) this._inst = new GameECS();
         return this._inst;
     }
 
-    readonly root = new ecs.RootSystem();
-    private players = new Map<string, PlayerEntity>();
-    private inited = false;
-
-    init(): void {
-        if (this.inited) return;
-        this.inited = true;
-        this.root.add(new PlayerLerpSystem());
-        this.root.init();
-    }
+    private world: World = createWorld();
+    private players = new Map<string, number>();
 
     update(dt: number): void {
-        this.root.execute(dt);
+        playerLerpSystem(this.world, dt);
     }
 
     /** 服务端 players.onAdd → 创建实体 */
-    addPlayer(state: IPlayerState, isSelf: boolean): PlayerEntity {
-        const e = ecs.getEntity<PlayerEntity>(PlayerEntity);
-        const m = e.PlayerModel;
-        m.id = state.id;
-        m.name = state.name;
-        m.hp = state.hp;
-        m.maxHp = state.maxHp;
-        m.alive = state.alive;
-        m.isSelf = isSelf;
-        m.x = m.targetX = state.x;
-        m.y = m.targetY = state.y;
-        this.players.set(state.id, e);
-        return e;
+    addPlayer(state: IPlayerState, isSelf: boolean): number {
+        const eid = addEntity(this.world);
+        addComponent(this.world, eid, PlayerModel);
+        PlayerModel.id[eid] = state.id;
+        PlayerModel.name[eid] = state.name;
+        PlayerModel.hp[eid] = state.hp;
+        PlayerModel.maxHp[eid] = state.maxHp;
+        PlayerModel.alive[eid] = state.alive;
+        PlayerModel.isSelf[eid] = isSelf;
+        PlayerModel.x[eid] = PlayerModel.targetX[eid] = state.x;
+        PlayerModel.y[eid] = PlayerModel.targetY[eid] = state.y;
+        this.players.set(state.id, eid);
+        return eid;
     }
 
     /** 服务端字段变化 → 更新实体（坐标只改 target，渲染坐标由插值系统追赶） */
     syncPlayer(state: IPlayerState): void {
-        const e = this.players.get(state.id);
-        if (!e) return;
-        const m = e.PlayerModel;
-        m.name = state.name;
-        m.hp = state.hp;
-        m.maxHp = state.maxHp;
-        m.alive = state.alive;
-        m.targetX = state.x;
-        m.targetY = state.y;
+        const eid = this.players.get(state.id);
+        if (eid === undefined) return;
+        PlayerModel.name[eid] = state.name;
+        PlayerModel.hp[eid] = state.hp;
+        PlayerModel.maxHp[eid] = state.maxHp;
+        PlayerModel.alive[eid] = state.alive;
+        PlayerModel.targetX[eid] = state.x;
+        PlayerModel.targetY[eid] = state.y;
     }
 
     /** 服务端 players.onRemove → 销毁实体 */
     removePlayer(id: string): void {
-        const e = this.players.get(id);
-        if (!e) return;
+        const eid = this.players.get(id);
+        if (eid === undefined) return;
         this.players.delete(id);
-        e.destroy();
+        removeEntity(this.world, eid);
     }
 
-    /** 遍历存活玩家（渲染用） */
-    forEachPlayer(cb: (m: PlayerModelComp) => void): void {
-        this.players.forEach((e) => cb(e.PlayerModel));
+    /** 遍历玩家实体（渲染用；cb 收 eid，字段从 PlayerModel store 按 eid 取） */
+    forEachPlayer(cb: (eid: number) => void): void {
+        this.players.forEach((eid) => cb(eid));
     }
 
-    /** 本机玩家（输入指向计算用），未进房/未同步到时返回 null */
-    getSelfPlayer(): PlayerModelComp | null {
-        for (const e of this.players.values()) {
-            if (e.PlayerModel.isSelf) return e.PlayerModel;
+    /** 本机玩家 eid（输入指向计算用），未进房/未同步到时返回 null */
+    getSelfPlayer(): number | null {
+        for (const eid of this.players.values()) {
+            if (PlayerModel.isSelf[eid]) return eid;
         }
         return null;
     }
 
     clear(): void {
-        this.players.forEach((e) => e.destroy());
+        this.players.forEach((eid) => removeEntity(this.world, eid));
         this.players.clear();
     }
 }
