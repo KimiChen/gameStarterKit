@@ -48,9 +48,10 @@ export class UnitOfWork {
  * 只读请求⛔不要走这里（09·G2）——用 userStore 的 readUser / readUserReadonly。
  * commit 尾部接线活跃索引（10·M5：与 M3 登录点一起构成完整 active:lru）。
  *
- * 冷档自愈（评审接线）：commit 判 'cold' → **锁外** ensureLive 解冻 → 整段重试一次
- * （ensureLive 内部自取同一把 per-uid 锁，锁内调用会自缠——必须先出锁）。
- * ⚠ fn 会被重跑：与客户端按错误码重试同一约束——fn 内 uow 之外的副作用需自幂等。
+ * 冷档自愈（评审接线）：锁内**先预检档存在性**（callback 前，冷档时 callback 零执行）
+ * → 锁外 ensureLive 解冻（其内部自取同一把 per-uid 锁，锁内调用会自缠）→ 整段重试一次。
+ * commit 的 'cold' 判定保留为兜底（同锁内 freeze 不可能穿插，防御性保险）。
+ * ⚠ 极端竞态下 fn 仍可能重跑一次：与客户端按错误码重试同一约束——fn 内 uow 之外的副作用需自幂等。
  * 重试后仍 cold（并发再冻结，极端）按原语义抛 THAWING 由客户端退避；
  * 后台写路径（relayer 等）不走本入口，自行编排 ensureLive（09·X5）。
  */
@@ -67,6 +68,12 @@ export async function withUser<T>(uid: string, fn: (uow: UnitOfWork) => Promise<
 
 async function withUserAttempt<T>(uid: string, fn: (uow: UnitOfWork) => Promise<T>): Promise<T> {
   return withUserLock(uid, async (fence) => {
+    // 冷档预检（评审二轮）：callback **之前**查档存在性——cold 原本只在「有 dirty 的
+    // commit CAS」才被发现，条件读后写（loadFields 全 null → 判定不需写 → 空 commit
+    // 直接成功）会对冻结用户**假成功**（反例：guild.leave 把归档中的 guildId>0 读成 0
+    // 并跳过退会）。预检让常规冷路径 callback 零执行、直接走外层 ensureLive 重试；
+    // EXISTS 与后续读写同在本锁内，freeze/thaw 也走同一把锁，无 TOCTOU。
+    if ((await clientFor(uid).exists(kUser(uid))) === 0) { throw new ColdUserError(); }
     const uow = new UnitOfWork(uid, fence);
     try {
       const r = await fn(uow);

@@ -67,7 +67,8 @@ export const THAW_RESTORE = defineScript("thawRestore", `
 if redis.call('GET', KEYS[1]) ~= ARGV[1] then return 'lost' end
 if ARGV[4] == '1' then
   -- overwrite（ARCHIVE_NEWER/PITR）：删陈旧档，但 ⛔ KEYS[3]=fence 计数器保留——
-  -- 它可能已发出超过 hwm 的号（每次抢锁 INCR、与 hash fence 无关），删除后按 hwm 恢复
+  -- acquireLease 是「先 INCR 再抢锁」，抢锁**失败**者也推计数器：resolve 读完计数器到
+  -- 本 Lua 执行之间（TOCTOU），并发失败抢锁可把计数推过 hwm——删除后按 hwm 恢复
   -- = 计数回退、已发号被复用（评审修正，与 freezeCommit 同一契约：计数器永不重置）
   redis.call('UNLINK', KEYS[2], KEYS[4])
   for i = 5, #KEYS do redis.call('UNLINK', KEYS[i]) end

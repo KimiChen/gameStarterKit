@@ -29,27 +29,43 @@
   parseFgui 扩展嵌套/列表 item 解析 + .bin 与 .fui 的新鲜度校验。
 - **触发条件**：无（随时可做；约一天）。
 
-## ⚠ 支付验签 · 微信支付 APIv3 全链 【上线阻断级】
+## ⚠ 支付接入 · 微信小游戏支付方案与全链 【上线阻断级】
 
 - **现状**：`apps/server/src/http/pay/wxNotify.ts` 用**共享密钥头占位**（WXPAY_NOTIFY_SECRET），
-  代码注释自认「上线前必须换 APIv3 平台证书验签」——伪造回调即可发货，⛔ 不得带着它上线。
-- **要做**（APIv3 全链，不止验签一件）：平台证书验签（Wechatpay-Signature/Serial/
-  Timestamp/Nonce 四头 + SHA256-RSA2048）；回调报文 AES-256-GCM（APIv3 密钥）解密；
-  **证书轮换**（平台证书下载/缓存/按 serial 选取，过期自动更新）；退款接口 + 退款回调；
-  **对账**（下载账单 ↔ purchases 状态机核对，差异告警）。
-- **入手点**：purchases 状态机/幂等（wx_txn_id 去重）已就绪，只换鉴权与增补链路；
-  凭证走 env/KMS（AUTH_DEV_ENABLED 同款「生产缺失即拒启」断言保护 WXPAY 配置项）。
+  代码注释自认「上线前必须换 APIv3 平台证书验签」——它无法证明请求来自微信，共享密钥
+  一旦泄漏，任意调用方都能伪造发货；`createOrder()`
+  只有内部函数、没有下单端点，客户端也没有支付调起代码；当前 SKU 发的是游戏内虚拟资产，
+  却尚未确认应走小游戏虚拟支付还是普通微信支付，⛔ 当前不是可上线的支付链。
+- **先做通道决策闸**：按上线地区、主体、终端平台及商品性质，对照**接入时最新微信小游戏
+  官方规则**确认支付产品；游戏币/皮肤/道具等虚拟商品不得想当然套用小程序
+  `wx.requestPayment`。结论、平台限制、费率/结算差异及降级策略写成 ADR，再允许实现：
+  - 若走**小游戏虚拟支付/Midas**：服务端按官方协议创建业务订单并生成支付签名，客户端调用
+    当期小游戏虚拟支付 API，服务端校验发货通知、商品 ID/价格/数量/用户/订单并幂等发货；
+  - 只有商品和主体明确允许走**普通微信支付**时，才使用 APIv3 JSAPI/小程序下单：商户请求
+    签名 → `prepay_id` → 服务端生成客户端调起参数 → `wx.requestPayment`；回调做平台证书验签
+    （Wechatpay-Signature/Serial/Timestamp/Nonce + SHA256-RSA2048）、AES-256-GCM 解密、
+    时间窗/重放防护及证书按 serial 自动轮换。HTTP 层必须保留**原始请求体**，先对 raw body
+    验签，再解密并做 schema 校验，⛔ 不得拿解析后重新序列化的 JSON 验签。
+- **两条通道都必须闭环**：查单/超时订单收敛、退款及退款回调、账单对账、差异告警和人工修复；
+  退款状态 CAS、ledger 幂等以及已发虚拟资产的补偿/追回策略；客户端成功回调不作为发货依据，
+  金额与商品配置以服务端为准。
+- **入手点**：purchases 状态机/幂等（wx_txn_id 去重）可复用；先把支付通道抽象与渠道订单号
+  纳入模型，避免把现有 APIv3 占位字段固化成唯一方案。凭证走 env/KMS，生产缺失即拒启。
 - **触发条件**：接入真实支付前**必须**完成；在此之前 wxNotify 生产环境应直接 501。
 
 ## Excel 配置表管线 · 后半程 【中】
 
 - **现状**：只有前半截——`tools/excel-to-json.mjs` 导表脚本 + `config:excel-to-json(:check)`
   npm 命令；**双端消费代码为零**（服务端不读 `apps/server/data/items.config.json`，客户端
-  不读 `assets/resources/config/items.json`）、产物未生成入库、`:check` 未进 CI。
+  不读 `assets/resources/config/items.json`）、产物未生成入库、`:check` 未进 CI；当前
+  `--check` 只校验源表且跳过输出，**不会比较入库 JSON**，还不能发现“表改了但没重导”。
 - **要做**：生成产物并入库；服务端加载器（启动读 + 类型校验，接 economy/catalog 的
   「将来由 Excel 导表取代」预留位）；客户端加载器（resources 读 + shared 类型）；
-  `config:excel-to-json:check` 挂进 CI（表改了没重导 = 红）。
-- **触发条件**：第一张真实配置表需求出现时；`:check` 进 CI 可先行（半小时）。
+  把生成过程抽成纯函数，使 `--check` 在内存生成规范化的服务端/客户端 JSON，与入库产物
+  **逐字节比较**（缺失或漂移即失败），再把 `config:excel-to-json:check` 挂进 CI。
+- **触发条件**：第一张真实配置表需求出现时；漂移闸可先行，但顺序必须是「增强 check →
+  首次生成并提交两份产物 → 挂 CI」，不能把当前只校验源表的命令直接挂上去。
+
 
 ## D4 余项 · 服务端安全边界收口 【中】
 
@@ -77,6 +93,9 @@
   - **多实例恢复细节**：消费者名 per 主机——同机多 settle 实例会撞名（各领各的 PEL 语义
     失效），需实例序号/env 区分；XAUTOCLAIM min-idle 与处理时长上限的关系写成契约
     （处理慢于 min-idle 会被同伴抢走 → 双处理靠幂等闸兜底，量化验证）；
+  - **XAUTOCLAIM 游标/公平性**：不能每轮固定从 `0` 开始并丢弃返回 cursor；保存下一起点，
+    按有界批次续扫直至 `0-0` 后再开启新一轮，保证 PEL 很大或前段持续活跃时尾部孤儿也能被接管；
+    增加「超过 COUNT 的多页 PEL + 前段未过 min-idle + 尾部已过期」回归用例；
   - **告警消费**：流深度/DLQ 深度接入 E3 的真实告警通道（现仅 console）；
   - **多消费组安全位点**：verifier 组接入后 XTRIM MINID 取各组位点 min（原 M10 项）。
 - **触发条件**：对局战绩/奖励/审计依赖该链路时（= 真实玩法上线前）。
@@ -88,8 +107,12 @@
   （pages.ts onEnter：只查 t===9）都没查 openTime：未开服区可被默认选中并直接进入。
 - **要做**：三处统一为同一判定函数（shared 或 serverSession 导出 `isServerEnterable(s)`：
   `t!==9 && openTime>0`），pickDefaultServer 跳过不可进服、onEnter 维护闸复用；
-  服务端 GameRoom/area 侧要不要二次校验一并定（⛔ 不信客户端）。补 pageLogic 用例。
-- **触发条件**：无（一小时内）。
+  每个游戏服实例由生产配置注入可信 `SERVER_ID`（当前尚无），启动时从服务端目录解析自身区服，
+  GameRoom/准入层按该目录项的维护态/openTime 做同一硬校验（⛔ 不信客户端传入的
+  sId/t/openTime，客户端值最多用于一致性核对，客户端判断只改善 UX）。补 pageLogic 用例及
+  绕过客户端直接进房的服务端拒绝用例；生产缺失/未知 `SERVER_ID` 应拒绝启动。
+- **触发条件**：客户端三处统一——无（一小时内）；服务端 SERVER_ID 硬校验——部署配置
+  （实例→区服映射的注入方式）确定后。
 
 ## 发布期硬校验 · 生产 URL / HTTPS / 微信合法域名 【小中】
 
@@ -167,6 +190,12 @@
 ## 近期已修（不在待办，留档防重复登记）
 
 - ~~冷档 ARCHIVE_NEWER + overwrite 重置 fence counter~~ → `f148879`：overwrite 分支保留
-  计数器（脚本自身不变量，janitor 门控下原不可达）；构造性回归用例已入 int 套件。
-- ~~通用 withUser/uow 冷写不主动 thaw~~ → `f148879`：cold → 锁外 ensureLive → 重试一次
-  （fn 重跑幂等约束已注释）；「冻结用户直接 withUser 写入成功」用例已入 int 套件。
+  计数器并取 `MAX(counter,hwm)`。旧问题不是绝对不可达：resolve 读完 counter 后，其他实例
+  抢锁失败也会先 INCR，使 counter 在 Lua 前反超 hwm；修复已闭合该竞态，构造性用例已入 int 套件。
+- ~~withUser/uow 的“有 dirty 冷写”不主动 thaw~~ → `f148879`：commit cold → 锁外
+  ensureLive → 重试一次；「冻结用户无条件 set 后写入成功」用例已入 int 套件。条件读/无 dirty
+  与 callback 重跑余项尚未关闭，已在上文重新登记。
+- ~~withUser 冷档「条件读后写假成功」与 callback 重跑~~ → 与本条同一提交：锁内 callback
+  **前**预检档存在性（冷路径 callback 零执行；guild.leave 形态反例封堵）；四项验收全部
+  入 int 套件——条件读后写读到归档真值 + 回调恰跑一次 / 并发冷写 singleFlight 无死锁双写
+  皆落 / thaw 限流 ThawingError 原样上抛且档保持冻结（二次 cold 映射由 ERR_MAP 承接）。
