@@ -6,6 +6,25 @@
 
 // ───────────────────────── 环境变量 ─────────────────────────
 
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+// 根 .env.development 加载（仅开发便利；只填 process.env 里**没有**的键，显式环境变量优先）。
+// 放根而非 apps/server：projectId 是全仓级标识，且不依赖 @colyseus/tools 的 cwd 自动加载——
+// 单测/db-bootstrap/集成测试等任何入口 import 本文件即生效。
+{
+  const rootEnvFile = join(dirname(fileURLToPath(import.meta.url)), "../../../../..", ".env.development");
+  try {
+    for (const line of readFileSync(rootEnvFile, "utf8").split("\n")) {
+      const m = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/.exec(line);
+      if (m && !line.trimStart().startsWith("#") && process.env[m[1]] === undefined) {
+        process.env[m[1]] = m[2];
+      }
+    }
+  } catch { /* 文件不存在 = 全部走默认值 */ }
+}
+
 const env = (name: string, dflt?: string): string => {
   const v = process.env[name];
   if (v !== undefined && v !== "") { return v; }
@@ -29,7 +48,14 @@ export const wxConfig = () => ({
   code2sessionUrl: env("WX_CODE2SESSION_URL", "https://api.weixin.qq.com/sns/jscode2session"),
 });
 
-export const MYSQL_URL = () => env("MYSQL_URL", "mysql://root@127.0.0.1:3316/game");
+/** 项目标识（根 .env.development 的 projectId，缺省 gono）：多项目共用同一套本地
+ *  Redis/MySQL 实例时的命名空间——Redis 键前缀 `<projectId>_`（keys.ts 统一拼接）、
+ *  MySQL 库名 `game_<projectId>`。 */
+export const PROJECT_ID = env("projectId", "gono");
+/** 全部 Redis key 的运行时前缀（07 全表登记的是逻辑键名，存储时带本前缀）。 */
+export const REDIS_KEY_PREFIX = `${PROJECT_ID}_`;
+
+export const MYSQL_URL = () => env("MYSQL_URL", `mysql://root@127.0.0.1:3316/game_${PROJECT_ID}`);
 export const MYSQL_POOL_SIZE = envInt("MYSQL_POOL_SIZE", 20);
 
 /** durable（noeviction + AOF everysec）与 cache（allkeys-lru）是两个物理实例（09·R4）。 */

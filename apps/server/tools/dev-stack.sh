@@ -3,9 +3,10 @@
 # 用法: tools/dev-stack.sh start|stop|status
 # 实例形态对齐 06：durable = noeviction + AOF everysec；cache = allkeys-lru；物理分实例（09·R4）。
 #
-# 多项目并行：端口从 .env.development 的三个连接 URL 派生（单一配置点，连接与栈永不脱节）——
-# 每个项目在自己的 .env.development 里设不同的 REDIS_DURABLE_URL/REDIS_CACHE_URL/MYSQL_URL
-# 即可各起一套互不重叠的栈；数据目录随 MySQL 端口自动分家（非默认端口 → ~/.game-dev-<port>）。
+# 多项目并行默认**共用**这一套实例：隔离靠根 .env.development 的 projectId（Redis 键前缀 +
+# MySQL 独立库名，见 infra/config.ts/keys.ts），无需给每个项目单起栈。
+# 进阶（真要物理分栈）：端口仍从 .env.development 的三个连接 URL 派生（连接与栈不脱节），
+# 数据目录随 MySQL 端口自动分家（非默认端口 → ~/.game-dev-<port>）。
 # ⚠ .env.development 须保持 KEY=VALUE 简单格式（本脚本直接 source 它）。
 set -euo pipefail
 
