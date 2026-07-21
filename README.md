@@ -41,7 +41,7 @@ npm run dev            # 启动服务端 http://localhost:2568
 服务端起来后还带三个网页入口：`/` Playground 调试台、`/monitor` 房间监控、`/mock/*` HTTP 假数据接口。
 
 > 首次打开客户端还有几步一次性配置（fairygui 运行时、colyseus 插件、场景挂 Main）——
-> 见 [docs/CLIENT.md · 首次打开](docs/CLIENT.md#首次打开一次性配置)。服务端跑真实玩法链路（登录/排行/工会/充值）
+> 见 [docs/CLIENT.md · 首次打开](docs/CLIENT.md#首次打开一次性配置)。服务端跑真实玩法链路（登录/工会/充值）
 > 需本地 Redis + MySQL，见 [docs/SERVER.md · 本地开发栈](docs/SERVER.md#本地开发栈)。
 
 ---

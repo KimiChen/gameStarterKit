@@ -478,7 +478,7 @@ test("relayer 收 cold → ensureLive → 重试成功：后到 outbox 行照常
   await makeCold(u);
   assert.equal(await freezeUser(u, freezeLease), "frozen");
 
-  // 冻结**之后**插入的后到行（赛季发奖 / T+1 退款 / GM 补偿场景）；created_at 拨旧越过可见性窗口
+  // 冻结**之后**插入的后到行（活动发奖 / T+1 退款 / GM 补偿场景）；created_at 拨旧越过可见性窗口
   const op = deriveOpId(u, "grant", "r-late");
   await getPool().execute(
     `INSERT INTO gameplay_outbox (op_id, user_id, effect, status, created_at)

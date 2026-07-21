@@ -5,7 +5,7 @@
  *
  * `{...}` 是 Cluster hash-tag：per-user key 用 `{uid}` 同槽（09·R3），单条 Lua 才能原子操作；
  * `active:lru` 的 hash-tag 是 `{bucket}`（寻址规则不同，见 08）；
- * 跨用户 key（rank / stream:match）无 hash-tag，⛔ 不与 per-user key 进同一条 Lua。
+ * 跨用户 key（stream:match）无 hash-tag，⛔ 不与 per-user key 进同一条 Lua。
  */
 import { crc32 } from "node:zlib";
 import { ACTIVE_LRU_BUCKETS, BAG_SHARDS } from "./config";
@@ -31,17 +31,6 @@ export const kIdem = (scope: string, key: string) => `idem:${scope}:${key}`;
 export const kIdemUser = (scope: string, uid: string, sub: string) => `idem:${scope}:{${uid}}:${sub}`;
 /** 限流令牌桶（07 Lua 清单 `rl:{scope}`）。匿名走 sessionId/IP，⛔ 禁止 null 塌缩（09·G5）。 */
 export const kRl = (scope: string) => `rl:${scope}`;
-/** 排行 ZSET（member=uid, score=encodeScore），赛季后设 TTL。跨用户 key。 */
-export const kRank = (type: string, season: string) => `rank:${type}:${season}`;
-/** 榜展示信息 HASH（field=uid, value=JSON）。跨用户 key。 */
-export const kRankSub = (type: string, season: string) => `rank_sub:${type}:${season}`;
-/** 省榜 ZSET（07 key 全表）。provinceEnc = encodeURIComponent(省名)——键段安全 ASCII。
- *  展示信息复用 rank_sub:{type}:{season}（同一用户展示一份）；省份数量不定 → TTL 由写路径
- *  逐次刷新（rankService.provKeyTtlSec），⛔ 不进 seasonRotation 遍历。跨用户 key。 */
-export const kRankProv = (type: string, provinceEnc: string, season: string) =>
-  `rank:${type}:prov:${provinceEnc}:${season}`;
-/** 结算去重 STRING，TTL 7d。⚠ 必须 per (matchId, uid)（09·K2）。 */
-export const kLbDedup = (matchId: string, uid: string) => `lb:dedup:${matchId}:${uid}`;
 /** 活跃索引 ZSET（member=uid, score=lastActiveMs）。hash-tag 是 {bucket} 不是 {uid}。 */
 export const kActiveLru = (bucket: number) => `active:lru:{${bucket}}`;
 /** uid → active:lru 桶号（0..255）。⚠ 与 16384 路由桶是两套空间（09·S2：改分片数即迁移）。 */
@@ -62,7 +51,5 @@ export const kGuildEvtLog = (gid: number) => `guild:evt:log:{g${gid}}`;
 
 /** 货币只读缓存 HASH，TTL 5m，真源在 MySQL。⛔ 不混进 user:{uid}（09·A2）。 */
 export const kCacheCurrency = (uid: string) => `cache:currency:{${uid}}`;
-/** 榜单展示缓存 STRING，TTL 30s。 */
-export const kCacheRankview = (sub: string) => `cache:rankview:${sub}`;
 /** 不存在用户的负缓存 STRING，TTL 10s。读点必须在 EXISTS user 之后（09·F4）。 */
 export const kNegcacheUser = (uid: string) => `negcache:user:{${uid}}`;

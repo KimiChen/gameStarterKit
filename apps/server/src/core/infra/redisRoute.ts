@@ -81,7 +81,7 @@ export function indexClientFor(bucket: number): Redis {
   return durableForBucket(bucketOf(String(bucket)));
 }
 
-/** 跨用户 key（rank:* / stream:match / 匿名 rl:*）：按整 key 或其 hash-tag 路由。 */
+/** 跨用户 key（stream:match / 匿名 rl:*）：按整 key 或其 hash-tag 路由。 */
 export function clientForKey(key: string): Redis {
   const m = /\{(.+?)\}/.exec(key);
   return durableForBucket(bucketOf(m ? m[1] : key));

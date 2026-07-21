@@ -13,11 +13,9 @@ import version from "./misc/version";
 import clockNow from "./misc/clockNow";
 import wxLogin from "./account/wxLogin";
 import wxPayNotify from "./pay/wxNotify";
-import rankReport from "./rank/report";
-import rankList from "./rank/list";
 import areaList from "./area/list";
 import noticeList from "./notice/list";
 
 export const routes = createRouter({
-  version, clockNow, wxLogin, wxPayNotify, rankReport, rankList, areaList, noticeList,
+  version, clockNow, wxLogin, wxPayNotify, areaList, noticeList,
 });

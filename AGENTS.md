@@ -3,7 +3,7 @@
 > 本文件是 **AI 助手 / 开发者的速查指令**：铁律 + 常用命令 + 去哪找详情。
 > 完整设计意图、目录导览、规则明细已收敛到三篇文档，改代码前按需读：
 > - **[docs/OVERVIEW.md](docs/OVERVIEW.md)** —— 双端设计意图、单源契约、机检哲学、玩法概念去处
-> - **[docs/SERVER.md](docs/SERVER.md)** —— 服务端目录/ws-RPC/outbox/冷档/广播/**64 条 `09·XX` 规则目录 + 07 契约表**
+> - **[docs/SERVER.md](docs/SERVER.md)** —— 服务端目录/ws-RPC/outbox/冷档/广播/**61 条 `09·XX` 规则目录 + 07 契约表**
 > - **[docs/CLIENT.md](docs/CLIENT.md)** —— 客户端目录/视图逻辑二分/viewRegistry/codegen/微信踩坑/首次打开
 > 每个源码目录另有就近 README（`每个目录有 README` 约定）。根上手页见 [README.md](README.md)。
 
@@ -48,7 +48,7 @@ npm --workspace @game/server run test:int    # 集成测试（真实栈；跑前
 5. 客户端只用 `@colyseus/sdk`（全局 `Colyseus`），**禁 import 服务端包** `colyseus`/`@colyseus/core`。
 6. **消息名/协议类型/公式一律 import 自 shared**，不手写不复制（Schema 字段增删同步改 `shared/protocol/state.ts` 镜像）。
 7. 双端 Colyseus **版本 major.minor 一致**（当前 0.17.x）。
-8. **服务端写路径对照 64 条规则**（[docs/SERVER.md §12](docs/SERVER.md#12-开发约束64-条规则目录)；代码注释 `09·XX` 即编号；⛔ 禁 HGETALL/INSERT IGNORE/ZINCRBY/无 fence 写档等）。新增常量/key/错误码先进 [§13 契约表](docs/SERVER.md#13-契约与配置redis-key--字段--错误码--常量) 再进 `core/infra/config.ts`/`keys.ts`（错误码另进 shared `RPC_ERR_CODES`）；登记点清单见 `apps/server/src/core/README.md`。
+8. **服务端写路径对照 61 条规则**（[docs/SERVER.md §12](docs/SERVER.md#12-开发约束61-条规则目录)；代码注释 `09·XX` 即编号；⛔ 禁 HGETALL/INSERT IGNORE/ZINCRBY/无 fence 写档等）。新增常量/key/错误码先进 [§13 契约表](docs/SERVER.md#13-契约与配置redis-key--字段--错误码--常量) 再进 `core/infra/config.ts`/`keys.ts`（错误码另进 shared `RPC_ERR_CODES`）；登记点清单见 `apps/server/src/core/README.md`。
 9. **客户端视图/逻辑二分**：视图 `view/`（依赖 cc/fairygui，只搬数据）、行为 `logic/`（⛔ 禁 import cc/fairygui，`logic-purity.test.ts` 机检）；FGUI 命名元素登记 `view/fguiContracts.ts`；跨包公司库在 viewRegistry `sharedPkgs` 声明。详见 [docs/CLIENT.md](docs/CLIENT.md)。
 10. **FairyGUI 只走动态 import**（`ViewMgr.open`/`import("./view/XxxView")`）：fairygui 不进任何常规脚本的静态依赖图——扩展没挂时会连锁炸掉整个 root 脚本。
 11. **网关进程禁重计算**（单线程：同步 CPU 卡一次 = 全服冻结）：handler 同步预算开发 20ms/生产 100ms（`[rpc-budget]` 探针告警）；全服/全会员/全榜级计算卸载到 `core/compute/tasks/`（worker 池）或独立进程；四类关键词：结算模拟/全量重算/批量发放/离线补算。详见 [docs/SERVER.md §11](docs/SERVER.md#11-事件循环防阻塞铁律-11)。
@@ -67,4 +67,4 @@ net/、dispatcher/loader、Main.ts 永远不碰。分端细节见 docs/SERVER.md
 
 - 玩法是 demo（`ballMove` 小球移动 + 技能结算，纯 mock 可无栈跑）；服务端框架生产级（源自 Arthur M0–M9，
   **已停止回流、独立演进**）。Arthur 专属未移植件（M4 存量迁移、wxLogin 存量账号绑定）本项目 N/A。
-- 验证基线（近期全绿）：typecheck 三端 + verify:sync / 服务端单测 19 / 客户端 test:fgui 49 / 集成测试 69 / mock 冒烟 12。
+- 验证基线（近期全绿）：typecheck 三端 + verify:sync / 服务端单测 11 / 客户端 test:fgui 49 / 集成测试 60 / mock 冒烟 13。

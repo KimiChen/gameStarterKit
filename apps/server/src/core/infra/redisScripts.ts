@@ -12,7 +12,7 @@ import type Redis from "ioredis";
 
 export interface RedisScript { readonly name: string; readonly lua: string; readonly sha: string }
 
-/** 定义 Lua 脚本（sha 本地算好供 EVALSHA）。模块专属脚本（rank/archive）在各自文件用它定义。 */
+/** 定义 Lua 脚本（sha 本地算好供 EVALSHA）。模块专属脚本（archive 等）在各自文件用它定义。 */
 export const defineScript = (name: string, lua: string): RedisScript =>
   ({ name, lua, sha: createHash("sha1").update(lua).digest("hex") });
 const script = defineScript;

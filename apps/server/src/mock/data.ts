@@ -3,7 +3,6 @@ import {
     SKILL_TABLE,
     type ILoginRes,
     type IPlayerProfile,
-    type IRankItem,
 } from "@game/shared";
 
 /**
@@ -47,17 +46,3 @@ export function mockProfileByToken(token: string): IPlayerProfile | undefined {
     return profiles.get(openId);
 }
 
-export function mockRank(count = 20): IRankItem[] {
-    // 固定种子：排行榜每次请求返回一致的假数据，方便前端调试
-    const rng = new SeededRandom(666);
-    const list: IRankItem[] = [];
-    for (let i = 0; i < count; i++) {
-        list.push({
-            openId: `mock-openid-${9000 + i}`,
-            nickname: randomNickname(rng),
-            score: 100000 - i * rng.nextInt(500, 3000),
-            rank: i + 1,
-        });
-    }
-    return list;
-}

@@ -14,7 +14,6 @@ import {
     type IApiResponse,
     type ILoginRes,
     type IPlayerProfile,
-    type IRankRes,
     type IHealthRes,
     type IAreaListRes,
     type INoticeListRes,
@@ -82,9 +81,6 @@ async function main() {
     const notice = (await fetch(BASE + "/notice/list").then((r) => r.json())) as INoticeListRes;
     const noticeSorted = notice.list.every((n, i) => i === 0 || notice.list[i - 1].at >= n.at);
     check("GET /notice/list（按 at 倒序）", notice.list.length > 0 && noticeSorted, notice);
-
-    const rank = (await fetch(BASE + ApiPath.Rank).then((r) => r.json())) as IApiResponse<IRankRes>;
-    check("GET /mock/rank", rank.code === ErrorCode.Ok && rank.data?.list.length === 20 && rank.data?.list[0].rank === 1, rank);
 
     // ---------- Colyseus 房间 ----------
     const client = new Client(BASE);

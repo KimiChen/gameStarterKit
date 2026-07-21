@@ -36,7 +36,6 @@ export const RPC_ERR_CODES = [
     "GRANTING",
     "THAWING",
     "USER_DATA_LOST",
-    "RANK_UNAVAILABLE",
     "ORDER_MISMATCH",
     "INTERNAL",
 ] as const;

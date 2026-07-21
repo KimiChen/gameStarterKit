@@ -13,8 +13,6 @@ export const ApiPath = {
     Login: "/mock/login",
     /** 拉取玩家档案 */
     Profile: "/mock/player/profile",
-    /** 排行榜 */
-    Rank: "/mock/rank",
     /** 服务器时间/健康检查 */
     Health: "/mock/health",
 } as const;
@@ -56,21 +54,6 @@ export interface IPlayerProfile {
     gold: number;
     /** 已解锁技能 id 列表 */
     skills: number[];
-}
-
-// ---------------- /mock/rank ----------------
-
-export interface IRankItem {
-    openId: string;
-    nickname: string;
-    score: number;
-    rank: number;
-}
-
-export interface IRankRes {
-    list: IRankItem[];
-    /** 自己的名次，未上榜为 -1 */
-    myRank: number;
 }
 
 // ---------------- /mock/health ----------------

@@ -1,7 +1,6 @@
 -- game 服务端 MySQL 8.0 全量 DDL（来源：docs/SERVER.md §8 outbox / §13 契约表）
 -- 幂等：全部 CREATE TABLE IF NOT EXISTS + 预置行 ODKU no-op，可重复执行。
 -- 前置：MySQL ≥ 8.0.19，binlog_format=ROW，sql_mode 含 STRICT_TRANS_TABLES。
--- ⏸ rank_award / rank_snapshot 依赖 rating 算法拍板（M0），拍板后补充。
 
 -- 账号（token_epoch 是撤销的持久真相；封号先写 MySQL 再删 Redis session）
 CREATE TABLE IF NOT EXISTS accounts (
