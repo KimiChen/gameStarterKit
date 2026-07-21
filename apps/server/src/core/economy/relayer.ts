@@ -4,8 +4,8 @@
  * - `singleton_lease('outbox_relayer')` 抢占；**续租守卫与业务批写同一 MySQL 事务、
  *   守卫作第一句、0 行即 ROLLBACK 自杀**（09·X7，僵尸 leader 绝不双写）。
  * - `FOR UPDATE SKIP LOCKED` 取行（RC 会话，09·DB5）。
- * - ⚠ relayer 不走 withUser（09·X5）；`cold` → M9 前 stub 成告警 + 跳过（保持 pending），
- *   M9 交付后换真 `ensureLive` 再重试。
+ * - ⚠ relayer 不走 withUser（09·X5）；`cold` → 先 `ensureLive` 解冻再重试
+ *   （M9 已接线；冻结后仍可能有后到 outbox 行，08 / 09·X5）。
  * - 死信：attempts > OUTBOX_MAX_ATTEMPTS → status=2 + 告警；人工处置走 replayDead（09·X6）。
  *
  * 启动：node --import tsx src/core/economy/relayer.ts
@@ -28,10 +28,6 @@ interface OutboxRow extends RowDataPacket {
   op_id: string; user_id: string; effect: Effect; attempts: number;
 }
 
-/** M9 挂接点：冷档解冻。M6 阶段是 stub（告警 + 跳过），⛔ 绝不在缺失 hash 上造残档。 */
-let ensureLiveHook: ((uid: string) => Promise<void>) | null = null;
-export function setEnsureLive(fn: (uid: string) => Promise<void>): void { ensureLiveHook = fn; }
-setEnsureLive(ensureLive); // M9 接线：cold → 真 ensureLive（08 / 09·X5，冻结后仍可能有后到 outbox 行）
 
 /** 单轮：续租守卫（第一句）+ 取批 + apply + 标记，全在一个 RC 事务。返回处理行数。 */
 export async function relayerTick(lease: SingletonLease): Promise<number> {
@@ -48,14 +44,8 @@ export async function relayerTick(lease: SingletonLease): Promise<number> {
       try {
         let r = await redisApply(row.user_id, row.op_id, row.effect); // stringify 在 redisApply 内（09·DB8）
         if (r === "cold") {
-          if (ensureLiveHook) {
-            await ensureLiveHook(row.user_id);                        // 先解冻再重试（09·X5）
-            r = await redisApply(row.user_id, row.op_id, row.effect);
-          } else {
-            // M9 前 stub：告警 + 跳过（保持 pending，不计失败——冷档不是本行的错）
-            console.warn(`[relayer] ⚠ cold uid=${row.user_id} op=${row.op_id}（M9 ensureLive 未接线，保持 pending）`);
-            continue;
-          }
+          await ensureLive(row.user_id);                              // 先解冻再重试（09·X5）
+          r = await redisApply(row.user_id, row.op_id, row.effect);
         }
         if (r !== "ok" && r !== "dup") { throw new Error(`apply=${r}`); }
         await conn.execute<ResultSetHeader>(

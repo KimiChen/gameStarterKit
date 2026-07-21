@@ -117,7 +117,8 @@ export class AreaListView extends FguiView {
     item.getChild<GTextField>("txt_serverName").text = s.name;
     item.getChild("go_new").visible = s.t === 1;    // 新服角标
     item.getChild("go_full").visible = s.t === 2;   // 爆满角标
-    item.getChild<GLoader>("ld_status").url = `ui://View_AreaList_AreaList/login_status_${s.status}`;
+    // 状态图标在 Dynamic_Login 包（同 LoginView；本页 sharedPkgs 已声明该包）
+    item.getChild<GLoader>("ld_status").url = `ui://Dynamic_Login/login_status_${s.status}`;
     const openTime = item.getChild<GTextField>("txt_openTime");
     openTime.visible = s.openTime > 0;
     if (s.openTime > 0) {

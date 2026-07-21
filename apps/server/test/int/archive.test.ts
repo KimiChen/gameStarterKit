@@ -38,7 +38,7 @@ import { ThawingError, UserDataLostError } from "../../src/core/errors";
 import { withUser } from "../../src/core/uow";
 import { createUser } from "../../src/core/userRecord";
 import { deriveOpId, redisApply } from "../../src/core/economy/outbox";
-import { relayerTick } from "../../src/core/economy/relayer"; // 导入即完成 setEnsureLive(ensureLive) 接线
+import { relayerTick } from "../../src/core/economy/relayer"; // cold 行内部直接走 ensureLive 解冻重试（09·X5）
 import { thawRestore, type ArchiveSnapshot } from "../../src/core/archive/archiveScripts";
 import {
   archiveCounters, ensureLive, invalidateUserNegcache, resolve, thawLimiter,

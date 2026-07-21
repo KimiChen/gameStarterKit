@@ -27,7 +27,8 @@ export const VIEW_REGISTRY: Readonly<Record<string, ViewMeta>> = {
   AreaList: defineView({
     name: "AreaList", contract: AREALIST_CONTRACT, layer: "popup",
     fullscreen: true, onlyOne: true, permanent: false, interactive: true,
-    sharedPkgs: ["ui/Common_Btn", "ui/Common_RGBA"],
+    // Dynamic_Login：区服状态图标 login_status_*（代码 ui:// 引用，非 art XML 依赖）
+    sharedPkgs: ["ui/Common_Btn", "ui/Common_RGBA", "ui/Dynamic_Login"],
     load: () => import("./AreaListView").then((m) => m.AreaListView),
   }),
   LoginNotice: defineView({

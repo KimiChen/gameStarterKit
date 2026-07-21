@@ -573,4 +573,4 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 - 服务端因无扩展名相对导入用 `moduleResolution: Bundler` + tsx（不是官方模板的 NodeNext）。
 - 大包防护在 ws transport 层 `maxPayload`（G4，`app.config.ts` 配置）。
 
-改 core 前先跑 `npm --workspace @game/server run test && test:int`；改端点/mock 后先跑 `smoke`（12 项）。
+改 core 前先跑 `npm --workspace @game/server run test && test:int`；改端点/mock 后先跑 `smoke`（项数见 CLAUDE.md 验证基线，⛔ 本行不再重复计数）。

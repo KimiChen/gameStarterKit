@@ -1,6 +1,10 @@
 /**
  * 工会事件页面逻辑——「唤醒式推送 + seq 自愈拉取」的客户端样板（无头单测：test/guildLogic.test.ts）。
  *
+ * ⚠ **刻意"有头无尾"**（拍板保留）：只有 Logic + 单测，无 View、不进 viewRegistry——
+ * 它的价值是给真实工会 UI 当**行为契约起点**（推送水位/自愈拉取语义已被测试钉死），
+ * 落地 UI 时按四步动线补 View/注册即可，⛔ 不要因为"没有页面用"而删除本文件。
+ *
  * 契约语义（shared/protocol/lobbyRpc/guild.ts 是双端真源）：
  *  - 推送只带 seq（IGuildEventPush）；本地按「收到的最大 seq」记账，⛔ 不按连号消费；
  *  - 唤醒 seq ≤ 本地 seq → 迟到/重复，忽略；否则拉增量 getEvents(本地 seq)；

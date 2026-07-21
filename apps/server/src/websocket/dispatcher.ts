@@ -120,6 +120,10 @@ export async function dispatchRpc(ctx: RpcCtx, msg: RpcEnvelope): Promise<RpcRep
   } catch (e) {
     const code = toErrCode(e);
     if (code === "INTERNAL") { console.error(`[rpc] INTERNAL type=${msg.type}`, e); }
-    return { id: msg.id, ok: false, err: { code, msg: (e as Error)?.message ?? "" } };
+    // INTERNAL = 未映射异常，message 可能携带栈/SQL/内部路径——生产环境不下发原文
+    //（完整异常已进上面的服务端日志）；业务错误码的 message 是刻意给客户端的，照传
+    const rawMsg = (e as Error)?.message ?? "";
+    const msgOut = code === "INTERNAL" && process.env.NODE_ENV === "production" ? "internal error" : rawMsg;
+    return { id: msg.id, ok: false, err: { code, msg: msgOut } };
   }
 }

@@ -90,7 +90,9 @@ export class Main extends Component {
         }
     }
 
-    /** Home 点「进入游戏」：关大厅 FGUI → 建 ballMove 渲染层/ECS/连房。 */
+    /** Home 点「进入游戏」：关大厅 FGUI → 建 ballMove 渲染层/ECS/连房。
+     *  连接失败必须**完整回滚**（拆渲染层/输入/ECS + 重开大厅）——只打日志的话
+     *  玩家停在不可恢复的空界面（inBattle 已置位，重点「进入游戏」也进不来）。 */
     private async enterBattle(): Promise<void> {
         if (this.inBattle) return;
         this.inBattle = true;
@@ -105,7 +107,25 @@ export class Main extends Component {
             this.started = true;
         } catch (err) {
             console.error("[Main] 连接房间失败（请确认已运行 npm run dev）：", err);
+            this.abortBattle();
         }
+    }
+
+    /** 进战斗失败回滚：拆渲染层/输入/ECS → 复位标志 → 重开大厅（可重试）。 */
+    private abortBattle(): void {
+        input.off(Input.EventType.TOUCH_START, this.onTouch, this);
+        input.off(Input.EventType.TOUCH_MOVE, this.onTouch, this);
+        input.off(Input.EventType.TOUCH_END, this.onTouchEnd, this);
+        input.off(Input.EventType.TOUCH_CANCEL, this.onTouchEnd, this);
+        this.graphics?.node.destroy();
+        this.graphics = null;
+        this.layerTf = null;
+        this.touchTarget = null;
+        this.gameECS.clear();
+        this.inBattle = false;
+        void import("./view/pages")
+            .then((pages) => pages.openLogin(() => { void this.enterBattle(); }))
+            .catch((e) => console.error("[Main] 回大厅失败：", e));
     }
 
     /** 连 ballMove 玩法房（token 已在大厅登录时设置；无 token 走游客）。

@@ -71,7 +71,8 @@ export class AreaListLogic {
     /** 选服：维护/未开服（t===9 或 openTime===0）不可进 → 返回 false 由 view 提示 */
     choose(sId: number): boolean {
         const s = this.data.al.find((a) => a.sId === sId);
-        if (!s || s.t === 9) return false;
+        // openTime===0 = 未开服（协议语义）：新服角标（t===1）也可能未开服，必须双条件拦
+        if (!s || s.t === 9 || s.openTime === 0) return false;
         this.onChoose(s);
         return true;
     }

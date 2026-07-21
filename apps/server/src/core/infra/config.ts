@@ -13,16 +13,27 @@ import { fileURLToPath } from "node:url";
 // 根 .env.development 加载（仅开发便利；只填 process.env 里**没有**的键，显式环境变量优先）。
 // 放根而非 apps/server：PROJECT_ID 是全仓级标识，且不依赖 @colyseus/tools 的 cwd 自动加载——
 // 单测/db-bootstrap/集成测试等任何入口 import 本文件即生效。
+/** 根 env 文件里 PORT 的派生值（客户端 devEnv 生成器只认它）——用于显式 env 覆盖时的分叉警告 */
+let fileDerivedPort = 2568;
 {
+  const envPortBeforeLoad = process.env.PORT; // 显式环境变量（loader 只填缺失键，它必然胜出）
   const rootEnvFile = join(dirname(fileURLToPath(import.meta.url)), "../../../../..", ".env.development");
   try {
     for (const line of readFileSync(rootEnvFile, "utf8").split("\n")) {
       const m = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/.exec(line);
-      if (m && !line.trimStart().startsWith("#") && process.env[m[1]] === undefined) {
-        process.env[m[1]] = m[2];
-      }
+      if (!m || line.trimStart().startsWith("#")) { continue; }
+      if (m[1] === "PORT" && /^\d+$/.test(m[2])) { fileDerivedPort = Number(m[2]); }
+      if (process.env[m[1]] === undefined) { process.env[m[1]] = m[2]; }
     }
   } catch { /* 文件不存在 = 全部走默认值 */ }
+  // ⚠ PORT 被显式 env 覆盖且与文件派生值不一致：客户端 devEnv.ts 只跟随文件（生成期），
+  // 双端端口将分叉——env 覆盖是合法的 12-factor 语义，但绝不允许**静默**分叉
+  if (envPortBeforeLoad !== undefined && envPortBeforeLoad !== "" && envPortBeforeLoad !== String(fileDerivedPort)) {
+    console.warn(
+      `⚠⚠ [config] PORT 被显式环境变量覆盖为 ${envPortBeforeLoad}，但客户端 devEnv 跟随根 .env.development（${fileDerivedPort}）——` +
+      `双端端口不一致，仅限临时调试；要改端口请改根 .env.development 并跑 npm run sync:client`
+    );
+  }
 }
 
 const env = (name: string, dflt?: string): string => {

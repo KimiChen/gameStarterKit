@@ -76,8 +76,9 @@ export class LoginView extends FguiView {
   /** 显示当前选中区服（对应原项目 btn_server：名 + 状态图标 login_status_{status}）。 */
   showCurrentServer(server: { name: string; status: number } | null): void {
     this.btn_server.title = server ? server.name : "未开服";
-    // 状态图标：本包状态图集 login_status_{status}（无则留空）
-    if (server) { this.btn_server.icon = `ui://View_AreaList_Login/login_status_${server.status}`; }
+    // 状态图标在 Dynamic_Login 包（⛔ 不是本页包——写错包名不报错、运行时图标空白，
+    // viewRegistry.test 的「代码内 ui:// 引用 ⊆ 闭包」扫描把关）
+    if (server) { this.btn_server.icon = `ui://Dynamic_Login/login_status_${server.status}`; }
   }
 
   /** 登录进度（0~1 + 文案）——LoginLogic.onProgress 回调驱动。 */

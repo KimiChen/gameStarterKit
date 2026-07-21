@@ -39,6 +39,12 @@ export function request<T>(method: "GET" | "POST", path: string, body?: unknown)
             xhr.setRequestHeader("Authorization", `Bearer ${token}`);
         }
         xhr.onload = () => {
+            // ⚠ onload 只代表「收到了响应」：401/403/429/500 也会走到这——必须先验状态码，
+            // 否则错误体被 JSON.parse 后当正常数据 resolve，业务层拿着错误对象继续跑（曾是真实 bug）
+            if (xhr.status < 200 || xhr.status >= 300) {
+                reject(new Error(`[http] HTTP ${xhr.status} ${method} ${path}: ${xhr.responseText?.slice(0, 200)}`));
+                return;
+            }
             try {
                 resolve(JSON.parse(xhr.responseText) as T);
             } catch (e) {
