@@ -20,10 +20,14 @@
 
 ```bash
 npm install                  # 装 shared + server（client/Cocos 不在 workspaces）
-npm run sync:shared          # 改完 apps/shared/src 后必须执行（→ apps/client/src/shared）
+npm run fetch:fgui           # 拉 fairygui-cc 运行时（首次必跑，每台机一次）
+npm run fetch:colyseus       # 拉 colyseus UMD 插件（首次必跑，每台机一次）
+npm run sync:shared          # 改完 apps/shared/src 后必须执行（→ apps/client/src/shared，并级联 sync:client）
 npm run sync:client          # 改完 apps/client/src 后必须执行（→ apps/Cocos/assets/src）
+npm run dev:client           # 双 watcher 常驻：shared→client→Cocos 保存即同步
 npm run dev:server           # 启动服务端 http://localhost:2568（tsx watch）
-npm run typecheck            # 三端类型检查
+npm run typecheck            # 三端类型检查 + verify:sync（镜像新鲜度机检）
+npm run verify:sync          # 只读校验两级镜像：漂移/孤儿/入库文件缺 .meta 即红
 npm run test:fgui            # FairyGUI 结构契约 + 客户端无头单测
 npm run codegen:fgui -- <Pkg> <Comp>   # 生成/幂等重写 view/XxxView.ts
 npm run verify:ecs           # 校验 ECS 库（bitECS）12 文件字节锁定
@@ -35,9 +39,10 @@ npm --workspace @game/server run test:int    # 集成测试（真实栈；跑前
 
 ## 铁律（违反会出隐蔽问题，详见对应文档）
 
-1. **`apps/client/src/lib/bitecs/` 12 个 .ts 禁改**（字节锁定，唯一偏差为首行 ts-nocheck 注释，`verify:ecs`；基线 tag `0.4.0` commit `efacc63`）。
+1. **`apps/client/src/lib/bitecs/` 12 个 .ts 禁改**（字节锁定，与上游偏差仅两处：各文件首行 ts-nocheck 注释 + Relation.ts 的 `./index` 自指导入改写，见 lib README；`verify:ecs`；基线 tag `0.4.0` commit `efacc63`）。
 2. **`apps/client/src/shared/` 禁手改**——`sync:shared` 生成物；改 `apps/shared/src` 再同步。
    **`apps/Cocos/assets/src/` 整份禁手改**——`sync:client` 生成物，连 `.meta` 提交（uuid 稳定）。
+   两级镜像由 `verify:sync` 机检（挂在 `typecheck` 尾部 + CI）：漂移/孤儿/入库文件缺 `.meta` 即红。
 3. **相对导入不带扩展名**（Cocos 要求；服务端因此用 `moduleResolution: Bundler` + tsx，别改回 NodeNext）。
 4. **shared 零依赖**：只用 TS 语言 + ES 标准库；禁 npm 包/Node API/cc/wx/DOM；禁 `const enum`；lib 钉 ES2017。
 5. 客户端只用 `@colyseus/sdk`（全局 `Colyseus`），**禁 import 服务端包** `colyseus`/`@colyseus/core`。
@@ -62,4 +67,4 @@ net/、dispatcher/loader、Main.ts 永远不碰。分端细节见 docs/SERVER.md
 
 - 玩法是 demo（`ballMove` 小球移动 + 技能结算，纯 mock 可无栈跑）；服务端框架生产级（源自 Arthur M0–M9，
   **已停止回流、独立演进**）。Arthur 专属未移植件（M4 存量迁移、wxLogin 存量账号绑定）本项目 N/A。
-- 验证基线（近期全绿）：typecheck 三端 / 服务端单测 19 / 客户端 test:fgui 30 / 集成测试 69 / mock 冒烟 12。
+- 验证基线（近期全绿）：typecheck 三端 + verify:sync / 服务端单测 19 / 客户端 test:fgui 49 / 集成测试 69 / mock 冒烟 12。

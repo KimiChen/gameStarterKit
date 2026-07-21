@@ -11,12 +11,14 @@ apps/shared/src ──npm run sync:shared──▶ apps/client/src/shared ──
 ```
 
 - 日常只改 `src/`（`src/shared/` 除外——那是 `sync:shared` 生成物，禁手改；改 `apps/shared/src` 再同步）。
-- 改完跑 `npm run sync:client`（或常驻 `npm run sync:client:watch`）同步进 Cocos 工程。
-- `src/lib/ecs/` 8 个 .ts 是字节锁区（`npm run verify:ecs`），禁改。
+- 改完跑 `npm run sync:client`（或常驻 `npm run dev:client` 双 watcher 全链自动同步）；
+  忘跑有机检兜底：`npm run verify:sync`（挂在 `typecheck` 尾部）漂移即红。
+- `src/lib/bitecs/` 12 个 .ts 是字节锁区（`npm run verify:ecs`），禁改。
 
 ## 目录
 
 - `src/` —— 游戏代码（view/logic/net/core/lib/shared，视图/逻辑二分见 [docs/CLIENT.md](../../docs/CLIENT.md)）
 - `test/` —— 无头单测（`npm run test:fgui`，tsx 直跑，不依赖 Creator）
-- `cc-stub.d.ts` / `fairygui-cc.d.ts` —— 无头类型检查用的 cc / fairygui 声明桩
+- `cc-stub.d.ts` —— 无头类型检查用的 cc 声明桩（fairygui 绑定层不在无头检查范围，
+  其声明 `fairygui-cc.d.ts` 在 [../Cocos](../Cocos) 工程壳侧，由 Creator 编译时使用）
 - `tsconfig.json` —— 独立类型检查配置（`npm run typecheck:client`，不 extends Creator 的 temp/）

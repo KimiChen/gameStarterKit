@@ -1,0 +1,28 @@
+# 最小 CI：把「验证基线」从人肉手跑升级为机器强制（docs/OVERVIEW.md §3.2 机检哲学）。
+# 不需要 Redis/MySQL/Creator：typecheck 三端 + verify:sync（镜像新鲜度）+ 无头单测 + 字节锁。
+# 集成测试（真实栈）与 mock 冒烟仍走本地（见 CLAUDE.md 常用命令）。
+name: ci
+
+on:
+  push:
+    branches: [main, new]   # new 是当前直推的工作分支——只挂 main 的话日常提交一次 CI 都不跑
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # 三端类型检查，尾部挂 verify:sync：镜像漂移/孤儿/入库文件缺 .meta 都会红
+      - run: npm run typecheck
+      # FairyGUI 结构契约 + 客户端无头单测（logic 纯度、铁律 5 导入禁令、ECS、RPC 配对等）
+      - run: npm run test:fgui
+      # bitECS 12 文件字节锁
+      - run: npm run verify:ecs
+      # 服务端单测（mock，无栈）
+      - run: npm --workspace @game/server run test

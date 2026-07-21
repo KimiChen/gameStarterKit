@@ -41,7 +41,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 // 输入默认 tools/excel-config；双输出 = 服务端权威 + 客户端展示（裁剪版）
 const defaultInputDir = path.join(ROOT, "tools", "excel-config");
 const defaultOutputFile = path.join(ROOT, "apps", "server", "data", "items.config.json");
-const defaultClientOutputFile = path.join(ROOT, "apps", "client", "assets", "resources", "config", "items.json");
+const defaultClientOutputFile = path.join(ROOT, "apps", "Cocos", "assets", "resources", "config", "items.json");
 
 // 只在这里声明参与导表的源文件；增减配置表先改这份映射，输出 JSON 也会记录来源。
 const sourceFiles = {

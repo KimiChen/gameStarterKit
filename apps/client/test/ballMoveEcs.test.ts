@@ -52,3 +52,32 @@ test("ballMove ECS：add/sync/插值/remove/clear", () => {
   ecs.removePlayer("ghost");
   ecs.clear();
 });
+
+test("eid 复用防残值：addPlayer 必须全量覆写 PlayerModel 每个字段", () => {
+  // bitECS 的 removeEntity 会回收 eid，SoA 数组保留旧值——新实体的唯一防线是
+  // addPlayer 全字段赋值。本测试机检这条约定：给 PlayerModel 新增字段却漏改
+  // addPlayer 时，复用 eid 上该字段为 undefined（或残留前任的值），当场红。
+  const ecs = GameECS.inst;
+  ecs.clear();
+
+  // 先用 filler 烧掉前面用例已触碰过的 eid（单例共进程，eid 1 被上一用例的
+  // addPlayer/syncPlayer 写过全部字段——若在它上面演练回收，syncPlayer 路径的
+  // 残值会把 undefined 兜底网填住，漏改 addPlayer 也测不红）。烧掉后，回收演练
+  // 发生在本用例独占的全新 eid 上，字段只来自 recycle-a 的 addPlayer。
+  ecs.addPlayer(player("filler"), false);
+  const first = ecs.addPlayer({ ...player("recycle-a", 300, 300), hp: 1, alive: false }, true);
+  ecs.removePlayer("recycle-a");
+  const second = ecs.addPlayer(player("recycle-b", 50, 60), false);
+  assert.equal(second, first, "removeEntity 后 eid 应被回收复用（前提不成立则本测试失去意义）");
+
+  for (const key of Object.keys(PlayerModel) as (keyof typeof PlayerModel)[]) {
+    assert.notEqual(PlayerModel[key][second], undefined,
+      `PlayerModel.${String(key)} 在 addPlayer 里没有赋值——eid 复用会读到 undefined/残值，新增字段必须同步进 addPlayer`);
+  }
+  assert.equal(PlayerModel.id[second], "recycle-b");
+  assert.equal(PlayerModel.hp[second], 80, "hp 残留了前任实体的值");
+  assert.equal(PlayerModel.alive[second], true, "alive 残留了前任实体的值");
+  assert.equal(PlayerModel.isSelf[second], false, "isSelf 残留了前任实体的值");
+  assert.equal(PlayerModel.x[second], 50, "渲染坐标未按新实体重置");
+  ecs.clear();
+});

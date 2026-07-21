@@ -60,6 +60,8 @@ workspace 直接吃 `@game/shared` 源码，无需复制。
 | `viewRegistry.test.ts` | 页面文件 ⇔ 注册表 ⇔ 契约 ⇔ AUTO 区块 四重相等 | CI |
 | `defineRpc` 类型胶水 | schema/handler 与 shared 契约不符不过编译；idem⇔clientReqId | typecheck |
 | `verify:ecs` | ECS 库（bitECS）12 文件字节锁定 | 手动/CI |
+| `verify:sync` | 两级镜像新鲜度：漂移/孤儿/入库文件缺 `.meta` | typecheck 尾部 + CI |
+| `serverImportBan.test.ts` | 客户端 `src/` 全目录禁 import colyseus npm 包（铁律 5） | CI |
 | `[rpc-budget]` 探针 | handler 同步 CPU 超预算（铁律 11） | 运行时告警 |
 | `docs/server/09` → `09·XX` | 服务端写路径 64 条规则（见 SERVER.md） | PR 审查 + 代码注释锚点 |
 
@@ -99,7 +101,7 @@ workspace 直接吃 `@game/shared` 源码，无需复制。
 
 ```
 ① shared/protocol/lobbyRpc/<域>.ts  加路由名 + Req/Res + Map 条目
-② npm run sync:shared && npm run sync:client   生成物同步进客户端（连 .meta 提交）
+② npm run sync:shared   生成物同步进客户端（已级联 sync:client，连 .meta 提交）
 ③ 服务端建端点文件 websocket/<域>/<接口>.ts（defineRpc 包装，loader 自动注册）
 ④ 登记点（若需）：docs 07 表 → core/infra/config·keys → shared RPC_ERR_CODES
 ⑤ 客户端调用 WebSocketClient.rpc(域Rpc.接口, payload)   —— 类型自动推导
@@ -148,4 +150,4 @@ workspace 直接吃 `@game/shared` 源码，无需复制。
 - **服务端框架是生产级**但部分能力**代码就绪、水位/里程碑未全启用**（如冷档冻结按内存水位启用、
   ranked 发奖需 rating 拍板）。里程碑地图见 SERVER.md。
 - **Arthur 专属未移植件**：M4 存量迁移 ETL、wxLogin 存量账号绑定协议——本项目无旧账号体系，N/A。
-- **验证基线**（近期全绿）：typecheck 三端 / 服务端单测 19 / 客户端 test:fgui 30 / 集成测试 69 / mock 冒烟 12。
+- **验证基线**（近期全绿）：typecheck 三端 + verify:sync / 服务端单测 19 / 客户端 test:fgui 49 / 集成测试 69 / mock 冒烟 12。

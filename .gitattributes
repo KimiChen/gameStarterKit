@@ -1,0 +1,4 @@
+# 生成物目录：GitHub PR 默认折叠 diff（linguist-generated），审查只看源侧
+# （新鲜度由 verify:sync 机检保证——见 CLAUDE.md 铁律 2）
+apps/Cocos/assets/src/** linguist-generated=true
+apps/client/src/shared/** linguist-generated=true

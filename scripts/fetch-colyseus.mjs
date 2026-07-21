@@ -14,12 +14,16 @@
  * 用法: npm run fetch:colyseus
  */
 import { execFileSync } from "node:child_process";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SDK_VERSION = "0.17.43";
+/** 该版本 tarball 的 registry 完整性哈希（npm view @colyseus/sdk@0.17.43 dist.integrity）；
+ *  升 SDK_VERSION 时同步更新——内容钉死，registry/镜像源被篡改或分叉时 fail-fast */
+const SDK_INTEGRITY = "sha512-aXefQuh7esEZbtd11TzKMqoLmUjKIfWVDr7ytPR7atV2QgnVyOHof3WIX7B8MDfr9ShyFFVEy2BseCGIfzzvBA==";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const REL = path.join("lib", "colyseus", "colyseus.js");
 const DESTS = [
@@ -35,6 +39,12 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "colyseus-"));
 try {
     execFileSync("npm", ["pack", `@colyseus/sdk@${SDK_VERSION}`, "--silent"], { cwd: tmp, stdio: "pipe" });
     const tgz = fs.readdirSync(tmp).find((f) => f.endsWith(".tgz"));
+    // 内容校验：对照钉死的 registry integrity（sha512-<base64>），防镜像源分叉/篡改
+    const [algo, expected] = SDK_INTEGRITY.split("-");
+    const actual = crypto.createHash(algo).update(fs.readFileSync(path.join(tmp, tgz))).digest("base64");
+    if (actual !== expected) {
+        throw new Error(`tarball ${algo} 不符：期望 ${expected}，实得 ${actual}——registry/镜像源内容与钉死版本不一致，拒绝落盘`);
+    }
     execFileSync("tar", ["xzf", tgz], { cwd: tmp, stdio: "pipe" });
     const src = path.join(tmp, "package", "dist", "colyseus.js");
     if (!fs.existsSync(src)) throw new Error(`npm 包内未找到 dist/colyseus.js（包结构变了？）`);

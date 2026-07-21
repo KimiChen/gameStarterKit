@@ -13,13 +13,17 @@ Cocos Creator **3.8.8** 微信小游戏工程 + FairyGUI（fairygui-cc 1.2.2）+
 ## 首次打开（一次性配置）
 
 ```bash
-# 仓库根目录先跑：
-npm run sync:shared    # apps/shared/src → apps/client/src/shared（双端共享层）
-npm run sync:client    # apps/client/src → apps/Cocos/assets/src（已入库）
+# 仓库根目录先跑（fetch 在 sync 前：sync 的孤儿清理对 fetch 产物有豁免，但顺序对更省心）：
 npm run fetch:fgui     # 拉 fairygui-cc 运行时到 apps/Cocos/extensions/fairygui-cc/runtime/（每台机一次）
 npm run fetch:colyseus # 拉 colyseus UMD 到 lib/colyseus/（440KB 可再生，每台机一次；
                        #  .meta 的「导入为插件 + 全平台加载」标记由脚本保证，无需编辑器手勾）
+npm run sync:shared    # apps/shared/src → apps/client/src/shared，并级联 sync:client
+npm run sync:client    # apps/client/src → apps/Cocos/assets/src（已入库；上一步已级联，单改 client 时用）
 ```
+
+> 日常迭代建议常驻 `npm run dev:client`（双 watcher：shared→client→Cocos 全链自动级联，
+> 保存即同步）；忘跑同步有机检兜底——`npm run typecheck` 尾部挂了 `verify:sync`
+> （`--check` 只读校验：镜像漂移/孤儿/入库文件缺 `.meta` 都会红）。
 
 然后在 Cocos 里：
 

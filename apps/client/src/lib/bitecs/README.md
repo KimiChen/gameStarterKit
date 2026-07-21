@@ -1,6 +1,6 @@
 # bitecs（数据导向 ECS）
 
-本目录为 [bitECS](https://github.com/NateTheGreatt/bitECS) 中 `src/core/` 的 **12 个 TypeScript 文件的锁定副本**（唯一偏差：每文件首行一行 `// @ts-nocheck`，见下文），遵循 MPL-2.0 许可证（见同目录 [LICENSE](./LICENSE)，文件级 copyleft：改动这些文件须保持 MPL 并公开——所以我们不改逻辑、字节锁定）。
+本目录为 [bitECS](https://github.com/NateTheGreatt/bitECS) 中 `src/core/` 的 **12 个 TypeScript 文件的锁定副本**（与上游偏差仅两处：每文件首行一行 `// @ts-nocheck` + Relation.ts 的 `./index` 自指导入改写，见「与上游的偏差」一节），遵循 MPL-2.0 许可证（见同目录 [LICENSE](./LICENSE)，文件级 copyleft：改动这些文件须保持 MPL 并公开——所以我们不改逻辑、字节锁定）。
 
 ## 来源
 

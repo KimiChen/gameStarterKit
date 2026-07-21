@@ -28,10 +28,9 @@ tools/          codegen / excel 导表 / 体积报告等
 
 ```bash
 npm install            # 安装 shared + server 依赖（client/Cocos 不在 workspaces）
-npm run sync:shared    # 把 apps/shared/src 同步进 apps/client/src/shared（首次必跑）
-npm run sync:client    # 把 apps/client/src 灌入 apps/Cocos/assets/src（首次必跑）
 npm run fetch:fgui     # 拉 fairygui-cc 运行时（首次必跑，每台机一次）
 npm run fetch:colyseus # 拉 colyseus UMD 插件（首次必跑，每台机一次；插件标记由脚本保证）
+npm run sync:shared    # apps/shared/src → apps/client/src/shared，并级联 sync:client 灌入 apps/Cocos/assets/src
 npm run dev:server     # 启动服务端 http://localhost:2568
 ```
 
@@ -53,9 +52,12 @@ npm run dev:server     # 启动服务端 http://localhost:2568
 | 命令 | 作用 |
 |---|---|
 | `npm run dev:server` | 启动服务端（tsx watch，热重载，端口 2568） |
-| `npm run sync:shared` | 改完 `apps/shared/src` 后**必须**执行（同步到 `apps/client/src/shared`；生成物入库） |
+| `npm run dev:client` | 双 watcher 常驻：shared→client→Cocos 保存即同步 |
+| `npm run fetch:fgui` / `fetch:colyseus` | 拉 fairygui-cc 运行时 / colyseus UMD 插件（首次必跑，每台机一次） |
+| `npm run sync:shared` | 改完 `apps/shared/src` 后**必须**执行（→ `apps/client/src/shared`，并级联 `sync:client`） |
 | `npm run sync:client` | 改完 `apps/client/src` 后**必须**执行（灌入 `apps/Cocos/assets/src`；生成物连 .meta 入库） |
-| `npm run typecheck` | 三端类型检查（shared + server + client） |
+| `npm run typecheck` | 三端类型检查 + `verify:sync`（镜像新鲜度机检） |
+| `npm run verify:sync` | 只读校验两级镜像：漂移/孤儿/入库文件缺 .meta 即红 |
 | `npm run test:fgui` | FairyGUI 结构契约 + 客户端无头单测 |
 | `npm run codegen:fgui -- <Pkg> <Comp>` | 从 FairyGUI 组件生成/幂等重写 `view/XxxView.ts` |
 | `npm run report:size` | 微信构建体积报告（4MB 主包水位） |

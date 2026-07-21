@@ -24,5 +24,5 @@ Cocos 集成方式（维护者确认：不再有 Cocos 专用构建，直接用 
 ## 微信小游戏注意
 
 微信环境缺少 Headers / URL / URLSearchParams / TextEncoder，且 wx 的 WebSocket
-只接受 string | ArrayBuffer——这些兼容补丁在 `assets/src/core/wechat-compat.ts`
+只接受 string | ArrayBuffer——这些兼容补丁在 `src/core/wechat-compat.ts`
 中统一处理（必须在任何 Colyseus 调用之前导入），参考 colyseus/colyseus#945。

@@ -16,4 +16,6 @@
 ## 打开方式
 
 Cocos Dashboard 3.8.8 打开本目录，等首次导入（生成 `temp/`、`library/`，均已 gitignore）。
-首次使用前先 `npm install && npm run sync:shared && npm run sync:client && npm run fetch:fgui`（仓库根目录）。
+首次使用前先在仓库根目录跑
+`npm install && npm run fetch:fgui && npm run fetch:colyseus && npm run sync:shared`
+（fetch 两条每台机一次；`sync:shared` 已级联 `sync:client`，缺 `fetch:colyseus` 则预览时全局 `Colyseus` 不存在、登录进房直接失败）。
