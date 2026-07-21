@@ -9,6 +9,7 @@
 | 加 Redis key | `infra/keys.ts`（同上） |
 | 加错误码 | `errors.ts` + shared `RPC_ERR_CODES`（先进 07 错误码表） |
 | 加商店 SKU | `economy/catalog.ts`（将来由 Excel 导表取代） |
+| 加 demo 工会 | `guild/catalog.ts`（join 校验 gid ∈ 目录——铸键权归目录，防任意 gid 刷键） |
 | 玩家档字段跨版本迁移 | `archive/lazyMigrate.ts`（字段本身在 ../player/userStore.ts） |
 | 卸载重计算任务（铁律 11） | `compute/tasks/<任务>.ts`（default 导出纯函数；判据见 compute/README.md） |
 
