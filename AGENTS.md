@@ -20,8 +20,8 @@
 
 ```bash
 npm install                  # 装 shared + server（client/Cocos 不在 workspaces）
-npm run fetch:fgui           # 拉 fairygui-cc 运行时（首次必跑，每台机一次）
-npm run fetch:colyseus       # 拉 colyseus UMD 插件（首次必跑，每台机一次）
+npm run fetch:fgui           # 升级 fairygui-cc 运行时（产物已入库,clone 即可用;升级后提交 diff）
+npm run fetch:colyseus       # 升级 colyseus UMD 插件（产物已入库;同上）
 npm run sync:shared          # 改完 apps/shared/src 后必须执行（→ apps/client/src/shared，并级联 sync:client）
 npm run sync:client          # 改完 apps/client/src 后必须执行（→ apps/Cocos/assets/src）
 npm run dev:client           # 双 watcher 常驻：shared→client→Cocos 保存即同步

@@ -1,12 +1,13 @@
 /**
- * 拉取 @colyseus/sdk 的自包含 UMD 构建（dist/colyseus.js，~440KB，暴露全局 Colyseus）。
+ * 升级 @colyseus/sdk 的自包含 UMD 构建（dist/colyseus.js，~440KB，暴露全局 Colyseus）。
  *
- * 与 fetch-fgui 同一约定：产物体积大、可再生，故 .gitignore 忽略（每台机跑一次
- * `npm run fetch:colyseus`）；类型用手写精简版 colyseus.d.ts（已入库）。
+ * 产物**已入库**（连同 Cocos 侧 .meta），新机 clone 即可用——本脚本只在**升级版本**时跑
+ * （与 fetch-fgui 同一约定）：拉 npm 包、验完整性、写两处产物，然后把 diff 提交入库。
+ * 类型用手写精简版 colyseus.d.ts（已入库，升级时人工对照官方 d.ts 核一遍）。
  *
  * 产物落两处（内容相同）：
  *  - apps/client/src/lib/colyseus/colyseus.js   —— sync:client 的同步源
- *  - apps/Cocos/assets/src/lib/colyseus/colyseus.js —— 让工程未跑 sync 也能直接开
+ *  - apps/Cocos/assets/src/lib/colyseus/colyseus.js —— sync 镜像（verify:sync 校验一致）
  * 并保证 Cocos 侧 .meta 带「导入为插件 + 全平台加载」标记（替代旧文档的手工勾选步骤；
  * 已有 meta 保留其 uuid，引用不断）。
  *

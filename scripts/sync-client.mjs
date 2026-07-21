@@ -9,8 +9,6 @@
  *  - 内容相同的文件跳过写入，避免触发 Cocos 编辑器无意义的重新导入
  *  - 清理目标目录中已不存在于源目录的孤儿文件（连同其 .meta）
  *  - 保留 Cocos 生成的 .meta 文件（uuid 稳定，引用不丢失）
- *  - fetch 产物豁免（FETCH_KEEP）：colyseus.js 被 .gitignore、未跑 fetch:colyseus 的机器上
- *    SRC 侧不存在，但 DEST 侧的 js 与已入库的 .meta（插件标记 + 稳定 uuid）不得判孤儿删除
  *  - 源目录缺失时 fail-fast，拒绝执行（防止把 DEST 判孤儿清空）
  *  - --watch 监听 apps/client/src 持续同步；单轮清理量异常大时熔断（防切分支中间态误删成批 .meta）
  *  - --check 只读校验（npm run verify:sync）：镜像漂移/孤儿 = 红；入库文件缺入库 .meta = 红
@@ -37,19 +35,11 @@ const BANNER = `# ⚠ 本目录由脚本生成，禁止手改
 （\`.meta\` 文件由 Cocos 编辑器生成，属正常现象，随本目录一起提交。）
 `;
 
-/**
- * fetch 脚本产物（SRC 侧被 .gitignore 忽略）：SRC 缺该文件 ≠ 已删除，多半只是本机没跑过
- * fetch:colyseus——此时 DEST 侧的产物及其已入库 .meta（含「导入为插件 + 全平台加载」标记）
- * 必须保留，否则每台新机首跑 sync 都会删掉 tracked 的 .meta、弄脏 git（曾是真实 bug）。
- * 新增 fetch 产物时同步维护本清单与 .gitignore。
- */
-const FETCH_KEEP = new Set(["lib/colyseus/colyseus.js"]);
-
 /** watch 熔断阈值：单轮孤儿清理 ≥20 个或 ≥30% 视为异常（切分支/大规模 mv 的中间态） */
 const BREAKER_MIN = 20;
 const BREAKER_RATIO = 0.3;
 
-/** 统一 POSIX 分隔符（FETCH_KEEP/git ls-files 均以 / 记路径） */
+/** 统一 POSIX 分隔符（git ls-files 与报错信息均以 / 记路径） */
 const posix = (rel) => rel.split(path.sep).join("/");
 
 /** 递归收集目录下所有文件的相对路径 */
@@ -107,8 +97,6 @@ function diffOnce() {
         if (!srcHasReadme && (rel === BANNER_FILE || rel === BANNER_FILE + ".meta")) continue;
         const isMeta = rel.endsWith(".meta");
         const logical = isMeta ? rel.slice(0, -".meta".length) : rel;
-        // fetch 产物（及其 .meta）：SRC 缺失多半是本机没跑过 fetch，不是删除
-        if (FETCH_KEEP.has(posix(logical))) continue;
         // 目录 .meta（logical 对应源目录中的文件夹）也要保留
         if (isMeta && fs.existsSync(path.join(SRC, logical)) && fs.statSync(path.join(SRC, logical)).isDirectory()) continue;
         if (srcSet.has(logical)) continue;
@@ -175,8 +163,6 @@ function syncOnce(fromWatch = false) {
  *  2. 入库 .meta 缺失——git 里有 assets/src 下的文件但没有配套 .meta：
  *     多台机器各自打开 Creator 会铸出不同 uuid，场景/prefab 引用断裂。
  *     只查 git 已跟踪（含暂存）的文件，不打扰「新文件还没开过 Creator」的本地迭代。
- *     fetch 产物（正文被 gitignore、永不入 tracked 遍历）单独断言其 .meta 必须已跟踪——
- *     那个 meta 承载插件标记，正是本套豁免要保住的东西，丢了 CI 必须红。
  */
 function checkOnce() {
     const { srcHasReadme, toWrite, toRemove } = diffOnce();
@@ -205,9 +191,6 @@ function checkOnce() {
     }
     for (const dir of trackedDirs) {
         if (!trackedSet.has(dir + ".meta")) problems.push(`缺目录 .meta：${dir}/（开一次 Creator 生成后连同提交）`);
-    }
-    for (const rel of FETCH_KEEP) {
-        if (!trackedSet.has(rel + ".meta")) problems.push(`缺 .meta：${rel}（fetch 产物的插件标记 meta 必须入库，由 fetch:colyseus 重建后提交）`);
     }
 
     if (problems.length > 0) {

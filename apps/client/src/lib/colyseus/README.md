@@ -10,16 +10,18 @@ Cocos 的构建管线（尤其微信小游戏）解析不可靠；自包含 UMD 
 Cocos 集成方式（维护者确认：不再有 Cocos 专用构建，直接用 dist 包）。
 参考：https://docs.colyseus.io/getting-started/cocos
 
-## ⚠ 产物不入库：每台机先跑 `npm run fetch:colyseus`
+## 产物已入库，升级用 `npm run fetch:colyseus`
 
-`colyseus.js`（440KB）由 `npm run fetch:colyseus` 从 npm 拉取（版本钉死 0.17.43，
-对齐服务端，⛔ 不飘 latest），`.gitignore` 忽略、可再生。脚本同时：
+`colyseus.js`（440KB，版本钉死 0.17.43，对齐服务端，⛔ 不飘 latest）**连同 Cocos 侧
+`.meta` 一起入库**，新机 clone 即可用。升级时跑 `npm run fetch:colyseus`，脚本会：
 
+- 校验 tarball sha512（对照脚本顶部钉死的 registry integrity，防镜像源分叉/篡改）；
 - 把文件写进 `apps/client/src/lib/colyseus/`（sync 源）与 `apps/Cocos/assets/src/lib/colyseus/`；
 - 保证 Cocos 侧 `.meta` 带 **「导入为插件 + 全平台加载」** 标记（uuid 稳定）——
   旧文档的「属性检查器手工勾插件」步骤已被此脚本替代，**无需任何编辑器手工操作**。
 
-升级 = 改 `scripts/fetch-colyseus.mjs` 顶部版本号（连同服务端依赖）再跑一次。
+升级 = 改 `scripts/fetch-colyseus.mjs` 顶部版本号与 integrity 哈希（连同服务端依赖）
+再跑一次，然后把 diff 提交入库。
 
 ## 微信小游戏注意
 
