@@ -12,4 +12,6 @@
 
 版本一致性由 `apps/client/test/vendorLock.test.ts` 机检（fetch 脚本钉的版本 ⇔ 入库产物内容 ⇔
 package-lock ⇔ 双端 Colyseus major.minor 一致（铁律 7）⇔ CLAUDE.md 技术栈声明），随
-`npm run test:fgui` / CI 跑。
+`npm run test:fgui` / CI 跑。产物**内容**另有 `scripts/vendor.sha256` 锁（fairygui 运行时不内嵌
+版本串且在 verify:sync 镜像域外，内容锁是其唯一守门）：fetch 脚本升级后自动重钉；给 fairygui
+打补丁后手动 `node scripts/vendor-lock.mjs` 重钉并连锁文件一起提交。

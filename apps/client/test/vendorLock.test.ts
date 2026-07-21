@@ -6,6 +6,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -46,6 +47,21 @@ test("fairygui-cc：扩展外壳 package.json 版本 = fetch 脚本钉的版本"
   const shell = JSON.parse(read("apps/Cocos/extensions/fairygui-cc/package.json")) as { version: string };
   assert.equal(shell.version, FGUI_VERSION,
     "扩展外壳版本与 fetch 脚本脱节——升级时两处一起改（外壳 version 供 Creator 展示）");
+});
+
+test("vendor 内容锁：产物 sha256 与 scripts/vendor.sha256 逐一相符", () => {
+  // fairygui 运行时不内嵌版本串、又在 verify:sync 镜像域之外——内容锁是它唯一的守门；
+  // colyseus.js 锁内容防「同版本号但内容被改」。升级经 fetch 脚本自动重钉；
+  // 给 fairygui 打社区补丁后手动 node scripts/vendor-lock.mjs 重钉并连锁文件一起提交。
+  const lock = read("scripts/vendor.sha256").trim().split("\n");
+  assert.ok(lock.length >= 3, "vendor.sha256 至少应锁 3 个产物");
+  for (const line of lock) {
+    const m = /^([0-9a-f]{64})  (.+)$/.exec(line);
+    assert.ok(m, `锁行格式非法：${line}`);
+    const actual = createHash("sha256").update(readFileSync(join(ROOT, m![2]))).digest("hex");
+    assert.equal(actual, m![1],
+      `${m![2]} 内容与锁不符——非预期改动请还原；升级/打补丁后跑 node scripts/vendor-lock.mjs 重钉并提交`);
+  }
 });
 
 test("CLAUDE.md 技术栈声明与钉死版本一致（文档不说谎）", () => {

@@ -93,4 +93,7 @@ try {
     fs.rmSync(tmp, { recursive: true, force: true });
 }
 
+// 升级后重钉内容锁（vendorLock.test 校验）
+execFileSync(process.execPath, [path.join(ROOT, "scripts", "vendor-lock.mjs")], { stdio: "inherit" });
+
 console.log(`✅ colyseus.js ${SDK_VERSION} 就绪（全局 Colyseus，类型见同目录 colyseus.d.ts）`);

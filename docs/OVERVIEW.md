@@ -62,7 +62,7 @@ workspace 直接吃 `@game/shared` 源码，无需复制。
 | `verify:ecs` | ECS 库（bitECS）12 文件字节锁定 | 手动/CI |
 | `verify:sync` | 两级镜像新鲜度：漂移/孤儿/入库文件缺 `.meta` | typecheck 尾部 + CI |
 | `serverImportBan.test.ts` | 客户端 `src/` 全目录禁 import colyseus npm 包（铁律 5） | CI |
-| `vendorLock.test.ts` | vendored 版本五方一致：fetch 钉版 ⇔ 产物 ⇔ lock ⇔ 双端 major.minor ⇔ 文档 | CI |
+| `vendorLock.test.ts` | vendored 版本五方一致（fetch 钉版 ⇔ 产物 ⇔ lock ⇔ 双端 major.minor ⇔ 文档）+ 产物 sha256 内容锁（vendor.sha256） | CI |
 | `[rpc-budget]` 探针 | handler 同步 CPU 超预算（铁律 11） | 运行时告警 |
 | `docs/server/09` → `09·XX` | 服务端写路径 61 条规则（见 SERVER.md） | PR 审查 + 代码注释锚点 |
 
@@ -151,4 +151,4 @@ workspace 直接吃 `@game/shared` 源码，无需复制。
 - **服务端框架是生产级**但部分能力**代码就绪、水位/里程碑未全启用**（如冷档冻结按内存水位启用）。
   排行榜演示已移除（M7 编号保留）。里程碑地图见 SERVER.md。
 - **Arthur 专属未移植件**：M4 存量迁移 ETL、wxLogin 存量账号绑定协议——本项目无旧账号体系，N/A。
-- **验证基线**（近期全绿）：typecheck 三端 + verify:sync / 服务端单测 13 / 客户端 test:fgui 53 / 集成测试 60 / mock 冒烟 13。
+- **验证基线**（近期全绿）：typecheck 三端 + verify:sync / 服务端单测 13 / 客户端 test:fgui 54 / 集成测试 60 / mock 冒烟 13。

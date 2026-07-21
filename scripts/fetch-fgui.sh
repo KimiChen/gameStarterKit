@@ -7,6 +7,7 @@
 # ⚠ 官方对 3.8 淡维护：生产建议在此基础上打社区 3.8 补丁（mask/输入偏移/GLoader/位图字体，
 #   见 docs/CLIENT.md §4 与 Cocos 论坛 topic 153699）——补丁直接改入库的运行时文件并提交，
 #   git 追踪补丁演进（⚠ 打过补丁后勿再裸跑本脚本，会用干净的上游版覆盖补丁）。
+#   补丁后跑 `node scripts/vendor-lock.mjs` 重钉内容锁（否则 vendorLock.test 红）。
 # 用法: npm run fetch:fgui
 set -euo pipefail
 
@@ -33,6 +34,7 @@ fi
 (cd "$TMP" && tar xzf ./*.tgz)
 cp "$TMP/package/dist/fairygui.mjs"  "$RUNTIME/fairygui.mjs"
 cp "$TMP/package/dist/fairygui.d.ts" "$RUNTIME/fairygui.d.ts"
+node "$ROOT/scripts/vendor-lock.mjs"   # 升级后重钉内容锁（vendorLock.test 校验）
 
 echo "✅ fairygui-cc 运行时已更新：$RUNTIME"
 echo "   代码里用：import * as fgui from \"db://fairygui-cc/fairygui.mjs\""
