@@ -1,5 +1,6 @@
 import { listen } from "@colyseus/tools";
 import app from "./app.config";
+import { PORT } from "./core/infra/config";
 import { startInfraMonitors } from "./core/infra/loopMonitor";
 import { registerAllRoutes } from "./websocket/loader";
 
@@ -11,5 +12,6 @@ await registerAllRoutes();
 // 单线程「心电图」：事件循环延迟 p99 + MySQL 池排队（与 [rpc-budget] 告警配合定位）
 startInfraMonitors();
 
-// 端口取 PORT 环境变量，默认 2567
-listen(app);
+// 端口统一走 config.PORT（根 .env.development 可覆盖，默认 2568）——⛔ 不依赖
+// @colyseus/tools 的 process.env.PORT || 2567 隐式默认
+listen(app, PORT);

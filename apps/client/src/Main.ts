@@ -34,7 +34,7 @@ const { ccclass, property } = _decorator;
 
 @ccclass("Main")
 export class Main extends Component {
-    @property({ tooltip: "服务端 http(s) 地址（微信真机需 https + 域名白名单）；与 server/.env.development 的 PORT 保持一致" })
+    @property({ tooltip: "服务端 http(s) 地址（微信真机需 https + 域名白名单）；与根 .env.development / server config 的 PORT（默认 2568）保持一致" })
     serverUrl = "http://localhost:2568";
 
     // world 与玩家表挂模块级单例（场景重载重复建会让旧房间回调喂旧 world，幽灵 isSelf）
