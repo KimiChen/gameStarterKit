@@ -16,6 +16,9 @@
  * 隔离：探针用 redis db 9（业务在 db 0），结束 SCAN+UNLINK 清空 db 9 的探针 key
  * （`roomcaches` / `roomcount` 是 driver/presence 的固定 key 名，不可加前缀——所以用独立 db）。
  * ⚠ Redis pub/sub 不分 db，但探针频道名（`p:*` / `$roomId`）与业务频道不冲突。
+ * ⚠ 「db 9 隔离」**仅探针场景成立**（单个 Colyseus 部署 vs 无 Colyseus 的业务键），
+ *   ⛔ 不构成多项目先例：两个完整 Colyseus 部署的 `$lobby` 等固定频道跨 db 必撞——
+ *   多项目横向扩展必须独立 Redis 实例（见 app.config.ts / SERVER.md 多项目段）。
  *
  * 用法: npm --workspace @game/server exec tsx -- tools/m0/colyseus-redis-probe.ts
  * 环境: PROBE_REDIS_URL（默认 redis://127.0.0.1:6401/9）、PROBE_PORT_A/B（默认 3701/3702）

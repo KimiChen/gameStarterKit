@@ -45,8 +45,11 @@ export const server = defineServer({
     // 横向扩展时改这里即可，房间代码不动：
     // presence: new RedisPresence(), driver: new RedisDriver(), publicAddress: "...",
     // ⚠ 多项目共用 Redis 的 PROJECT_ID 前缀只覆盖业务键（keys.ts）：RedisDriver/RedisPresence
-    //   用固定键名 roomcaches/roomcount，不可加前缀（tools/m0/colyseus-redis-probe.ts 实测）——
-    //   启用横向扩展时各项目须用独立 Redis db（如 db 1/2）或独立实例承载 driver/presence。
+    //   用固定键名 roomcaches/roomcount，不可加前缀（tools/m0/colyseus-redis-probe.ts 实测）。
+    //   启用横向扩展时各项目**必须独立 Redis 实例**承载 driver/presence——
+    //   ⛔ 独立 db 不够：Pub/Sub 是实例全局的（不分 db），$lobby/匹配协调等固定频道
+    //   跨项目必撞，故障形态是静默错乱（幽灵房间/匹配混淆）而非报错。
+    //   （自维「键+频道全带前缀」的 driver/presence 封装技术上可行但贴内部实现，不推荐。）
 });
 
 export default server;
