@@ -10,6 +10,7 @@
  * 使用前：启动服务端 `npm run dev`（默认 http://localhost:2568）。
  */
 import { _decorator, Component, Node, Graphics, UITransform, Color, input, Input, EventTouch, Vec3, view, ResolutionPolicy } from "cc";
+import { DEV_SERVER_URL } from "./core/devEnv";
 import { DESIGN_WIDTH, DESIGN_HEIGHT } from "./designSpec";
 import { installWeChatCompat } from "./core/wechat-compat";
 import { getToken, initHttp } from "./core/http";
@@ -34,8 +35,13 @@ const { ccclass, property } = _decorator;
 
 @ccclass("Main")
 export class Main extends Component {
-    @property({ tooltip: "服务端 http(s) 地址（微信真机需 https + 域名白名单）；与根 .env.development / server config 的 PORT（默认 2568）保持一致" })
-    serverUrl = "http://localhost:2568";
+    @property({ tooltip: "服务端 http(s) 地址。留空 = 自动跟随根 .env.development 的 PORT（sync:client 生成 core/devEnv.ts，默认 http://localhost:2568）；填写即覆盖（远程/真机调试，微信真机需 https + 域名白名单）" })
+    serverUrl = "";
+
+    /** 生效的服务端地址：Inspector 填写值优先，留空自动跟随 devEnv（根 .env.development 的 PORT） */
+    private get effectiveServerUrl(): string {
+        return this.serverUrl || DEV_SERVER_URL;
+    }
 
     // world 与玩家表挂模块级单例（场景重载重复建会让旧房间回调喂旧 world，幽灵 isSelf）
     private gameECS = GameECS.inst;
@@ -73,7 +79,7 @@ export class Main extends Component {
     private inBattle = false;
 
     async start() {
-        initHttp(this.serverUrl);
+        initHttp(this.effectiveServerUrl);
         // 大厅壳走 FGUI：动态 import 组合根（铁律 10——fairygui 不进静态依赖图）。
         // 登录页的「进入游戏」经 Home 走到 enterBattle 回调，才拉起 ballMove。
         try {
@@ -107,7 +113,7 @@ export class Main extends Component {
      *  Colyseus Client 收 http(s) 端点自行派生 ws(s)，故把 ws:// 换回 http:// 再传。 */
     private async connectRoom() {
         const cur = getCurrentServer();
-        const endpoint = cur?.wsUrl ? cur.wsUrl.replace(/^ws/, "http") : this.serverUrl;
+        const endpoint = cur?.wsUrl ? cur.wsUrl.replace(/^ws/, "http") : this.effectiveServerUrl;
         RoomClient.inst.init(endpoint);
         const room = await RoomClient.inst.joinGame({ token: getToken() });
         if (this.destroyed) {

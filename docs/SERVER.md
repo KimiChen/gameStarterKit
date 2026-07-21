@@ -46,7 +46,8 @@ npm --workspace @game/server run test:int        # 集成测试（真实 Redis+M
   EADDRINUSE 且卡死 test runner。根脚本 `npm run dev` 起的是 tsx watch——kill 要 kill 整棵 watch 进程树。
 - 开发端口默认 **2568**（`config.ts` 的 `PORT` 常量，与 `PROJECT_ID` 同机制——根
   `.env.development` 的 `PORT` 可覆盖）：Colyseus 默认 2567 常被占用。
-  改端口需同步场景里 Main 组件 `serverUrl` 与 smoke 的 `SERVER_URL`。
+  **客户端自动跟随**：`sync:client` 从同一真源生成 `core/devEnv.ts`（新鲜度由 verify:sync
+  机检），场景里 Main 组件 `serverUrl` 留空即自动、填写即覆盖；smoke 用 `SERVER_URL` 覆盖。
 
 ---
 

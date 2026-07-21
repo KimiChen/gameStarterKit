@@ -39,6 +39,41 @@ const BANNER = `# ⚠ 本目录由脚本生成，禁止手改
 const BREAKER_MIN = 20;
 const BREAKER_RATIO = 0.3;
 
+// ── devEnv.ts 生成：把根 .env.development 的 PORT 派生成客户端常量 ──
+// 客户端运行时（Creator/微信）读不了文件系统，端口跟随只能发生在同步期。
+// 真源 = 根 .env.development（与服务端 config.ts 同源），生成进 SRC 再随常规同步进 Cocos；
+// --check 校验生成物与真源一致（改了 PORT 忘跑 sync 即红）。
+const ROOT_ENV = path.join(ROOT, ".env.development");
+const DEVENV_REL = path.join("core", "devEnv.ts");
+
+function devEnvContent() {
+    let port = 2568;
+    try {
+        for (const line of fs.readFileSync(ROOT_ENV, "utf8").split("\n")) {
+            const m = /^\s*PORT\s*=\s*(\d+)\s*$/.exec(line);
+            if (m && !line.trimStart().startsWith("#")) { port = Number(m[1]); }
+        }
+    } catch { /* 无根 env 文件 = 默认 2568（与服务端 config.ts 一致） */ }
+    return `/**
+ * ⚠ 生成物勿手改 —— 真源：根 .env.development 的 PORT（缺省 2568，与服务端 config.ts 同源）。
+ * \`npm run sync:client\` / dev:client 保存时重生成；verify:sync（--check）校验新鲜度。
+ * 场景里 Main 组件 serverUrl **留空即用本值**；填写可覆盖（远程/真机调试）。
+ */
+export const DEV_SERVER_PORT = ${port};
+export const DEV_SERVER_URL = \`http://localhost:\${DEV_SERVER_PORT}\`;
+`;
+}
+
+/** 把 devEnv.ts 落进 SRC（内容相同跳写）；返回是否发生写入 */
+function generateDevEnv() {
+    const target = path.join(SRC, DEVENV_REL);
+    const content = devEnvContent();
+    if (fs.existsSync(target) && fs.readFileSync(target, "utf8") === content) { return false; }
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, content);
+    return true;
+}
+
 /** 统一 POSIX 分隔符（git ls-files 与报错信息均以 / 记路径） */
 const posix = (rel) => rel.split(path.sep).join("/");
 
@@ -107,6 +142,7 @@ function diffOnce() {
 }
 
 function syncOnce(fromWatch = false) {
+    generateDevEnv(); // 先生成再 diff，devEnv 随本轮常规同步进 Cocos
     const { srcFiles, srcHasReadme, toWrite, toRemove } = diffOnce();
 
     // watch 熔断：切分支/大规模 mv 的中间态会让 SRC 逐文件消失，若此刻防抖触发，
@@ -167,6 +203,10 @@ function syncOnce(fromWatch = false) {
 function checkOnce() {
     const { srcHasReadme, toWrite, toRemove } = diffOnce();
     const problems = [];
+    const devEnvPath = path.join(SRC, DEVENV_REL);
+    if (!fs.existsSync(devEnvPath) || fs.readFileSync(devEnvPath, "utf8") !== devEnvContent()) {
+        problems.push(`漂移：${posix(DEVENV_REL)}（根 .env.development 的 PORT 已变或生成物缺失，跑 npm run sync:client）`);
+    }
     for (const rel of toWrite) problems.push(`漂移：${posix(rel)}（源与镜像不一致，跑 npm run sync:client）`);
     for (const rel of toRemove) problems.push(`孤儿：${posix(rel)}（源已删除但镜像残留，跑 npm run sync:client）`);
     if (!srcHasReadme) {
@@ -212,7 +252,7 @@ if (CHECK_MODE) {
 if (!CHECK_MODE && process.argv.includes("--watch")) {
     console.log(`[sync-client] 监听中：${path.relative(ROOT, SRC)} → ${path.relative(ROOT, DEST)}`);
     let timer = null;
-    fs.watch(SRC, { recursive: true }, () => {
+    const schedule = () => {
         // 300ms 防抖，编辑器连续保存只触发一次
         clearTimeout(timer);
         timer = setTimeout(() => {
@@ -222,5 +262,8 @@ if (!CHECK_MODE && process.argv.includes("--watch")) {
                 console.error("[sync-client] 同步失败：", err.message);
             }
         }, 300);
-    });
+    };
+    fs.watch(SRC, { recursive: true }, schedule);
+    // 根 .env.development 也在监听内：改 PORT 保存即重生成 devEnv.ts 并同步进 Cocos
+    if (fs.existsSync(ROOT_ENV)) { fs.watch(ROOT_ENV, schedule); }
 }

@@ -67,7 +67,8 @@ export const REDIS_KEY_PREFIX = `${PROJECT_ID}_`;
 
 /** 开发端口（根 .env.development 的 PORT 可覆盖；与 PROJECT_ID 同一套加载机制）。
  *  默认 2568：本机 2567（Colyseus 默认）常被其他项目占用；多项目并行时各项目在根
- *  .env.development 错开本值。客户端 Main 组件 serverUrl 默认值与此保持一致。 */
+ *  .env.development 错开本值。客户端经 sync:client 从同一真源生成 core/devEnv.ts
+ *  自动跟随（场景 Main.serverUrl 留空即自动，填写可覆盖）。 */
 export const PORT = envInt("PORT", 2568);
 
 export const MYSQL_URL = () => env("MYSQL_URL", `mysql://root@127.0.0.1:3316/game_${PROJECT_ID}`);
