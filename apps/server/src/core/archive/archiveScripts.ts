@@ -66,7 +66,10 @@ export const THAW_RESTORE = defineScript("thawRestore", `
 -- ARGV[1]=myFence ARGV[2]=fenceHwm ARGV[3]=snapshotJson ARGV[4]=overwrite('1' 时先删陈旧档)
 if redis.call('GET', KEYS[1]) ~= ARGV[1] then return 'lost' end
 if ARGV[4] == '1' then
-  redis.call('UNLINK', KEYS[2], KEYS[3], KEYS[4])
+  -- overwrite（ARCHIVE_NEWER/PITR）：删陈旧档，但 ⛔ KEYS[3]=fence 计数器保留——
+  -- 它可能已发出超过 hwm 的号（每次抢锁 INCR、与 hash fence 无关），删除后按 hwm 恢复
+  -- = 计数回退、已发号被复用（评审修正，与 freezeCommit 同一契约：计数器永不重置）
+  redis.call('UNLINK', KEYS[2], KEYS[4])
   for i = 5, #KEYS do redis.call('UNLINK', KEYS[i]) end
 end
 local s = cjson.decode(ARGV[3])

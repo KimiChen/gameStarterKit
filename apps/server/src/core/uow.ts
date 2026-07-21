@@ -47,8 +47,25 @@ export class UnitOfWork {
  * 写路径入口：localMutex → 跨实例锁 → UoW → fn → commit（[03]）。
  * 只读请求⛔不要走这里（09·G2）——用 userStore 的 readUser / readUserReadonly。
  * commit 尾部接线活跃索引（10·M5：与 M3 登录点一起构成完整 active:lru）。
+ *
+ * 冷档自愈（评审接线）：commit 判 'cold' → **锁外** ensureLive 解冻 → 整段重试一次
+ * （ensureLive 内部自取同一把 per-uid 锁，锁内调用会自缠——必须先出锁）。
+ * ⚠ fn 会被重跑：与客户端按错误码重试同一约束——fn 内 uow 之外的副作用需自幂等。
+ * 重试后仍 cold（并发再冻结，极端）按原语义抛 THAWING 由客户端退避；
+ * 后台写路径（relayer 等）不走本入口，自行编排 ensureLive（09·X5）。
  */
 export async function withUser<T>(uid: string, fn: (uow: UnitOfWork) => Promise<T>): Promise<T> {
+  try {
+    return await withUserAttempt(uid, fn);
+  } catch (e) {
+    if (!(e instanceof ColdUserError)) { throw e; }
+    const { ensureLive } = await import("./archive/thaw"); // 动态 import 斩静态环（thaw→locks→…）
+    await ensureLive(uid);
+    return withUserAttempt(uid, fn);
+  }
+}
+
+async function withUserAttempt<T>(uid: string, fn: (uow: UnitOfWork) => Promise<T>): Promise<T> {
   return withUserLock(uid, async (fence) => {
     const uow = new UnitOfWork(uid, fence);
     try {
