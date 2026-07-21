@@ -12,9 +12,9 @@
 
 ```
 apps/
-├── client/     纯 TS 游戏代码工程（引擎无关，源码唯一真相；test/ 无头单测）
+├── client/     纯 TS 游戏代码工程（源码唯一真相，无头可测；logic/shared 引擎无关，view/Main 绑 cc+fairygui）
 ├── Cocos/      Cocos Creator 3.8.8 工程壳（不在 npm workspaces；代码由 sync:client 灌入 assets/src/）
-├── Unity/      Unity 工程（骨架，规划消费 apps/client 的同一份 TS）
+├── Unity/      Unity 工程（骨架，规划消费 apps/client 的引擎无关子集：logic/shared/bitecs）
 ├── server/     Colyseus 0.17 服务端（tsx 直跑 TS）
 ├── shared/     双端共享层（零依赖纯 TS：协议/公式/常量）—— sync 到客户端
 └── art/        FairyGUI 编辑器工程（设计师产 UI 包）

@@ -6,7 +6,7 @@ Cocos Creator **3.8.8** 微信小游戏工程 + FairyGUI（fairygui-cc 1.2.2）+
 > 引擎壳与游戏代码分离（对标 sect）：**代码全在 `apps/client/src/`（纯 TS 工程，源码唯一真相）**；
 > `apps/Cocos` 是 Creator 工程壳（**不在 npm workspaces**），`npm run sync:client` 把代码灌入
 > `apps/Cocos/assets/src/` 后由编辑器编译。第三方库以源码/UMD 形式直接放在 `assets/` 内。
-> Unity 壳（`apps/Unity`）是骨架，规划消费同一份 TS。
+> Unity 壳（`apps/Unity`）是骨架，规划消费 TS 的引擎无关子集（logic/shared/bitecs，见其 README）。
 
 ---
 

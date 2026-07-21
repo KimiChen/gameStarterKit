@@ -22,9 +22,9 @@
 |---|---|---|
 | `apps/shared` | 双端共享层：协议类型、纯公式、常量 | **零依赖纯 TS**；`npm run sync:shared` 复制进客户端 |
 | `apps/server` | Colyseus 0.17 服务端 | tsx 直跑 TS（Node ≥ 22），workspace 直接依赖 shared 源码 |
-| `apps/client` | 纯 TS 游戏代码工程（引擎无关，源码唯一真相） | `npm run sync:client` 灌入 `apps/Cocos`；无头 typecheck/单测 |
+| `apps/client` | 纯 TS 游戏代码工程（源码唯一真相；logic/shared/bitecs 引擎无关，view/Main/net 绑 cc·fairygui·wx·Colyseus） | `npm run sync:client` 灌入 `apps/Cocos`；无头 typecheck/单测 |
 | `apps/Cocos` | Cocos Creator 3.8.8 工程壳 | 编辑器构建；**不在 npm workspaces**（Cocos 要自己的目录结构） |
-| `apps/Unity` | Unity 工程（骨架） | 待建，规划走 pyts 类路线消费 `apps/client` |
+| `apps/Unity` | Unity 工程（骨架） | 待建，规划走 pyts 类路线消费 `apps/client` 的引擎无关子集 |
 | `apps/art/fairygui` | FairyGUI 编辑器工程 | 设计师产 UI 包，发布 `.bin` 到 `Cocos/assets/resources/ui` |
 
 **为什么共享代码用「复制同步」而不是 npm 包 / 符号链接 / import map：** 符号链接有 Cocos 编辑器
