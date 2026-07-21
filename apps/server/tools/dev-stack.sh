@@ -3,7 +3,7 @@
 # 用法: tools/dev-stack.sh start|stop|status
 # 实例形态对齐 06：durable = noeviction + AOF everysec；cache = allkeys-lru；物理分实例（09·R4）。
 #
-# 多项目并行默认**共用**这一套实例：隔离靠根 .env.development 的 projectId（Redis 键前缀 +
+# 多项目并行默认**共用**这一套实例：隔离靠根 .env.development 的 PROJECT_ID（Redis 键前缀 +
 # MySQL 独立库名，见 infra/config.ts/keys.ts），无需给每个项目单起栈。
 # 进阶（真要物理分栈）：端口仍从 .env.development 的三个连接 URL 派生（连接与栈不脱节），
 # 数据目录随 MySQL 端口自动分家（非默认端口 → ~/.game-dev-<port>）。

@@ -1,7 +1,7 @@
 /**
  * 建库 + 执行 sql/schema.sql（幂等，可重复跑）。
  * 用法: npm --workspace @game/server run db:bootstrap
- * 连接目标取 MYSQL_URL（缺省 mysql://root@127.0.0.1:3316/game_<projectId>，对齐 tools/dev-stack.sh）。
+ * 连接目标取 MYSQL_URL（缺省 mysql://root@127.0.0.1:3316/game_<PROJECT_ID>，对齐 tools/dev-stack.sh）。
  */
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";

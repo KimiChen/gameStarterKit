@@ -3,7 +3,7 @@
  *
  * ⛔ 业务代码禁止手拼 key（09·R5：新增 key 必须先进 07 全表再进本文件）。
  *
- * **全部键带 `${projectId}_` 运行时前缀**（config.REDIS_KEY_PREFIX，缺省 `gono_`）：
+ * **全部键带 `${PROJECT_ID}_` 运行时前缀**（config.REDIS_KEY_PREFIX，缺省 `gono_`）：
  * 多项目共用同一套本地/测试 Redis 实例时按项目隔离，07 全表登记的是去前缀的逻辑键名。
  * 前缀不含 hash-tag，`{...}` 语义不受影响；本文件是唯一拼接点，⛔ 别处不得再拼前缀。
  *

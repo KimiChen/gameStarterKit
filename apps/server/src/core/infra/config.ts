@@ -11,7 +11,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // 根 .env.development 加载（仅开发便利；只填 process.env 里**没有**的键，显式环境变量优先）。
-// 放根而非 apps/server：projectId 是全仓级标识，且不依赖 @colyseus/tools 的 cwd 自动加载——
+// 放根而非 apps/server：PROJECT_ID 是全仓级标识，且不依赖 @colyseus/tools 的 cwd 自动加载——
 // 单测/db-bootstrap/集成测试等任何入口 import 本文件即生效。
 {
   const rootEnvFile = join(dirname(fileURLToPath(import.meta.url)), "../../../../..", ".env.development");
@@ -48,10 +48,20 @@ export const wxConfig = () => ({
   code2sessionUrl: env("WX_CODE2SESSION_URL", "https://api.weixin.qq.com/sns/jscode2session"),
 });
 
-/** 项目标识（根 .env.development 的 projectId，缺省 gono）：多项目共用同一套本地
- *  Redis/MySQL 实例时的命名空间——Redis 键前缀 `<projectId>_`（keys.ts 统一拼接）、
- *  MySQL 库名 `game_<projectId>`。 */
-export const PROJECT_ID = env("projectId", "gono");
+/** 项目标识（根 .env.development 的 PROJECT_ID，缺省 gono）：多项目共用同一套本地
+ *  Redis/MySQL 实例时的命名空间——Redis 键前缀 `<PROJECT_ID>_`（keys.ts 统一拼接）、
+ *  MySQL 库名 `game_<PROJECT_ID>`。
+ *  非法值在模块加载期直接 throw（服务端/建库/测试任何入口 import 即 fail-fast）：
+ *  它会进 Redis 键名与 MySQL 库名，放宽约束 = 两套命名空间的注入面。 */
+export const PROJECT_ID = (() => {
+  const v = env("PROJECT_ID", "gono");
+  if (!/^[a-z][a-z0-9_]{0,31}$/.test(v)) {
+    throw new Error(
+      `PROJECT_ID 非法：「${v}」——须匹配 ^[a-z][a-z0-9_]{0,31}$（小写字母开头，仅小写字母/数字/下划线，总长 ≤32；它同时用作 Redis 键前缀与 MySQL 库名 game_<PROJECT_ID>）`
+    );
+  }
+  return v;
+})();
 /** 全部 Redis key 的运行时前缀（07 全表登记的是逻辑键名，存储时带本前缀）。 */
 export const REDIS_KEY_PREFIX = `${PROJECT_ID}_`;
 

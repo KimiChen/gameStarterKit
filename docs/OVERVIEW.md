@@ -63,7 +63,7 @@ workspace 直接吃 `@game/shared` 源码，无需复制。
 | `verify:sync` | 两级镜像新鲜度：漂移/孤儿/入库文件缺 `.meta` | typecheck 尾部 + CI |
 | `serverImportBan.test.ts` | 客户端 `src/` 全目录禁 import colyseus npm 包（铁律 5） | CI |
 | `[rpc-budget]` 探针 | handler 同步 CPU 超预算（铁律 11） | 运行时告警 |
-| `docs/server/09` → `09·XX` | 服务端写路径 64 条规则（见 SERVER.md） | PR 审查 + 代码注释锚点 |
+| `docs/server/09` → `09·XX` | 服务端写路径 61 条规则（见 SERVER.md） | PR 审查 + 代码注释锚点 |
 
 这套「约定即机检」的哲学贯穿两端：服务端 loader、客户端 viewRegistry、双端契约测试，都是同一个物种。
 
@@ -137,7 +137,7 @@ workspace 直接吃 `@game/shared` 源码，无需复制。
 5. 客户端只用 `@colyseus/sdk`（全局 `Colyseus`），**禁 import 服务端包** `colyseus`/`@colyseus/core`。
 6. **消息名/协议类型/公式一律 import 自 shared**，不手写不复制。
 7. 双端 Colyseus **版本 major.minor 一致**。
-8. 服务端写路径**对照 09 规则**（见 SERVER.md 的 64 条规则目录；代码注释 `09·XX` 即编号）；新增常量/key/错误码先进 07 表再进 `core/infra`。
+8. 服务端写路径**对照 09 规则**（见 SERVER.md 的 61 条规则目录；代码注释 `09·XX` 即编号）；新增常量/key/错误码先进 07 表再进 `core/infra`。
 9. **客户端视图/逻辑二分**：视图 `view/`（依赖 cc/fairygui）、行为 `logic/`（禁 cc/fairygui，`logic-purity` 机检）。
 10. **FairyGUI 只走动态 import**（`ViewMgr.open`/`import("./view/XxxView")`），fairygui 不进任何常规脚本的静态依赖图。
 11. **网关进程禁重计算**（单线程：同步 CPU 卡一次 = 全服冻结）；重计算卸载到 `core/compute/tasks/`（worker 池）或独立进程。
@@ -150,4 +150,4 @@ workspace 直接吃 `@game/shared` 源码，无需复制。
 - **服务端框架是生产级**但部分能力**代码就绪、水位/里程碑未全启用**（如冷档冻结按内存水位启用）。
   排行榜演示已移除（M7 编号保留）。里程碑地图见 SERVER.md。
 - **Arthur 专属未移植件**：M4 存量迁移 ETL、wxLogin 存量账号绑定协议——本项目无旧账号体系，N/A。
-- **验证基线**（近期全绿）：typecheck 三端 + verify:sync / 服务端单测 11 / 客户端 test:fgui 49 / 集成测试 60 / mock 冒烟 13。
+- **验证基线**（近期全绿）：typecheck 三端 + verify:sync / 服务端单测 13 / 客户端 test:fgui 49 / 集成测试 60 / mock 冒烟 13。
