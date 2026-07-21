@@ -37,6 +37,9 @@ npm --workspace @game/server run test:int        # 集成测试（真实 Redis+M
   `PROJECT_ID`**（缺省 `gono`）——Redis 全部键带 `<PROJECT_ID>_` 前缀（`infra/keys.ts` 唯一拼接点）、
   MySQL 库名 `game_<PROJECT_ID>`（`db:bootstrap` 自动建）。第二个项目只需改根 `PROJECT_ID` +
   `apps/server/.env.development` 的 `PORT`（两个 dev server 不能同端口）。
+  ⚠ **前缀只覆盖业务键**：启用横向扩展（RedisDriver/RedisPresence）后 Colyseus 用固定键名
+  `roomcaches`/`roomcount`（不可加前缀，`tools/m0/colyseus-redis-probe.ts` 实测），届时各项目
+  须用独立 Redis db 或独立实例承载 driver/presence（pub/sub 不分 db，频道名也需留意）。
   进阶（真要物理分栈）：`dev-stack.sh` 会从 `.env.development` 的三个连接 URL 派生栈端口、
   数据目录随 MySQL 端口自动分家，通常用不到。
 - **跑 `test:int` 前先停 dev server**：集成测会 `boot(server)` 真实监听 2568，dev server 占端口会
@@ -98,7 +101,7 @@ npm --workspace @game/server run test:int        # 集成测试（真实 Redis+M
 
 ## 4. ws-RPC：LobbyRoom + dispatcher + 每接口一文件
 
-客户端 join 房间 `lobby` 后，所有取数/排位/邮件/工会请求走**单一 `rpc` 消息通道**。Colyseus 的
+客户端 join 房间 `lobby` 后，所有取数/邮件/工会请求走**单一 `rpc` 消息通道**。Colyseus 的
 send/onMessage 无请求配对，信封里的 `id` 做 correlation：
 
 ```

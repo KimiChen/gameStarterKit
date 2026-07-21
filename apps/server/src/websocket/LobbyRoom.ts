@@ -1,5 +1,5 @@
 /**
- * 网关大厅房（10·M5）：客户端 join 后，所有取数/排位/邮件请求走单一 `rpc` 消息通道
+ * 网关大厅房（10·M5）：客户端 join 后，所有取数/邮件/工会请求走单一 `rpc` 消息通道
  * （Colyseus 的 send/onMessage 无请求配对，信封里的 id 做 correlation，03）。
  *
  * - onAuth：token 反查 uid（09·G1）+ 严格校验（回源 MySQL epoch/status）。

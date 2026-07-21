@@ -167,6 +167,5 @@ ON DUPLICATE KEY UPDATE name = name;
 
 INSERT INTO singleton_lease (lease_name, holder, fence_token, expires_at) VALUES
   ('outbox_relayer',  '', 0, NOW(3)),
-  ('freeze_worker',   '', 0, NOW(3)),
-  ('season_rotation', '', 0, NOW(3))
+  ('freeze_worker',   '', 0, NOW(3))
 ON DUPLICATE KEY UPDATE lease_name = lease_name;

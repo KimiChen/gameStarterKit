@@ -38,6 +38,9 @@
     // fguiContracts/defineView/layers 是纯数据保持在检；viewRegistry 因 load 闭包解析 View
     // 模块类型、ViewMgr 因静态 import FguiView 一并排除（Creator 侧验证 + viewRegistry 守门测试）。
     // 行为层（logic/）与结构契约在无头 CI 里测（npm run test:fgui）。
+    // TODO(类型盲区收敛)：本清单 + Cocos 侧 strict:false 意味着入口装配/视图绑定只有 Creator
+    // 人工验证——后续做一个对齐 cc-stub 的最小 fairygui 桩（GButton/GTextField/GList/GRoot/
+    // UIPackage/Event 等本仓实际用到的面），把 View 类逐个拉回无头 strict 检查、逐步缩短本清单。
     "src/view/FguiView.ts",
     "src/view/ViewMgr.ts",
     "src/view/viewRegistry.ts",

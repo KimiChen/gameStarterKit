@@ -16,7 +16,7 @@ const EXPECTED_TABLES = [
   "purchases", "match_index", "match_results", "mail", "login_audit", "seq",
   "user_archive", "user_snapshot_readonly",
 ];
-const EXPECTED_LEASES = ["outbox_relayer", "freeze_worker", "season_rotation"];
+const EXPECTED_LEASES = ["outbox_relayer", "freeze_worker"];
 
 let failed = false;
 const check = (name: string, ok: boolean, detail = ""): void => {

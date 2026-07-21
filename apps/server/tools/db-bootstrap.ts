@@ -45,6 +45,8 @@ async function main(): Promise<void> {
       if (e.errno !== 1060) { throw e; }
     });
   }
+  // 存量清理：排行榜演示移除后遗留的 season_rotation 租约行（新库 schema 已不再预置；幂等）
+  await conn.query("DELETE FROM singleton_lease WHERE lease_name = 'season_rotation'");
   const [rows] = await conn.query<mysql.RowDataPacket[]>("SHOW TABLES");
   console.log(`✅ ${dbName} 就绪，共 ${rows.length} 张表:`, rows.map((r) => Object.values(r)[0]).join(", "));
   await conn.end();

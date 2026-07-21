@@ -4,7 +4,7 @@
 
 - 循环上界 = 单玩家资产级（背包/阵容/建筑，有配置上限）→ 在 handler 内联，不进来；
 - 循环上界 = 全服 / 全会员 / 全榜级 → **请求触发的**进 `tasks/`；**周期性/批量的**
-  ⛔ 不进这里，走独立进程先例（relayer / freeze-worker / season-rotation + singleton_lease）；
+  ⛔ 不进这里，走独立进程先例（relayer / freeze-worker + singleton_lease）；
 - 说不清上界 → 按卸载处理。写错位置会被 [rpc-budget] 告警当场指出。
 
 **任务约定**：`tasks/<任务>.ts` default 导出纯函数（任务名 = 文件名，与 websocket loader

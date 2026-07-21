@@ -18,7 +18,7 @@ import { registerMockRoutes } from "./mock/index";
 export const server = defineServer({
     rooms: {
         [RoomName.Game]: defineRoom(GameRoom),
-        // 网关大厅房（框架 M5）：取数/排位/邮件走单一 rpc 消息通道。连接需要框架 token
+        // 网关大厅房（框架 M5）：取数/邮件/工会走单一 rpc 消息通道。连接需要框架 token
         //（/account/wx-login 签发），且依赖本地栈（npm --workspace @game/server run stack）；
         // 纯 mock 联调不 join 它即可，不影响 GameRoom。
         [RoomName.Lobby]: defineRoom(LobbyRoom),
@@ -44,6 +44,9 @@ export const server = defineServer({
 
     // 横向扩展时改这里即可，房间代码不动：
     // presence: new RedisPresence(), driver: new RedisDriver(), publicAddress: "...",
+    // ⚠ 多项目共用 Redis 的 PROJECT_ID 前缀只覆盖业务键（keys.ts）：RedisDriver/RedisPresence
+    //   用固定键名 roomcaches/roomcount，不可加前缀（tools/m0/colyseus-redis-probe.ts 实测）——
+    //   启用横向扩展时各项目须用独立 Redis db（如 db 1/2）或独立实例承载 driver/presence。
 });
 
 export default server;

@@ -2,7 +2,7 @@
  * worker_threads 计算池——铁律 11 的卸载点（docs/SERVER.md 2026-07）。
  *
  * 适用：**请求触发**的 CPU 重计算（结算模拟等，玩家在等结果）。周期性/批量重活
- * ⛔ 不进这里——走独立进程先例（relayer / freeze-worker / season-rotation + singleton_lease）。
+ * ⛔ 不进这里——走独立进程先例（relayer / freeze-worker + singleton_lease）。
  *
  * 任务约定：core/compute/tasks/<任务>.ts 的 default 导出纯函数（任务名 = 文件名，
  * 与 websocket loader 同一「路径即名字」哲学）；输入/输出必须可 structuredClone 序列化
