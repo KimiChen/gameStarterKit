@@ -1,6 +1,8 @@
-# 最小 CI：把「验证基线」从人肉手跑升级为机器强制（docs/OVERVIEW.md §3.2 机检哲学）。
-# 不需要 Redis/MySQL/Creator：typecheck 三端 + verify:sync（镜像新鲜度）+ 无头单测 + 字节锁。
-# 集成测试（真实栈）与 mock 冒烟仍走本地（见 CLAUDE.md 常用命令）。
+# CI：把「验证基线」从人肉手跑升级为机器强制（docs/OVERVIEW.md §3.2 机检哲学）。
+# verify job：无栈机检（typecheck+verify:sync / 无头单测 / 字节锁 / 服务端单测）。
+# integration job：真栈集成（docker 起 Redis×2 + MySQL 8.4，形态对齐 dev-stack：
+#   durable=noeviction+AOF、cache=allkeys-lru——61 个含故障注入的最有价值用例从此不再只靠本地手跑）。
+# mock 冒烟仍走本地（需 dev server 常驻，见 CLAUDE.md 常用命令）。
 name: ci
 
 on:
@@ -22,7 +24,53 @@ jobs:
       - run: npm run typecheck
       # FairyGUI 结构契约 + 客户端无头单测（logic 纯度、铁律 5 导入禁令、ECS、RPC 配对等）
       - run: npm run test:fgui
-      # bitECS 12 文件字节锁
+      # bitECS 12 文件字节锁（node 实现，跨平台）
       - run: npm run verify:ecs
       # 服务端单测（mock，无栈）
       - run: npm --workspace @game/server run test
+      # Linux 侧 dev:client 双 watcher 冒烟：起 watcher → 改一个 shared 文件 → 断言两级镜像跟随
+      #（顺带实证 fs.watch recursive 在本 Node 版本的 Linux 上可用）
+      - name: dev:client watch smoke (Linux)
+        run: |
+          node scripts/dev-client.mjs > /tmp/watch.log 2>&1 &
+          WPID=$!
+          sleep 2
+          echo "export const ciProbe = 1;" > apps/shared/src/__ci_probe.ts
+          sleep 2
+          test -f apps/client/src/shared/__ci_probe.ts
+          test -f apps/Cocos/assets/src/shared/__ci_probe.ts
+          rm apps/shared/src/__ci_probe.ts
+          sleep 2
+          test ! -f apps/Cocos/assets/src/shared/__ci_probe.ts
+          kill $WPID || true
+          git checkout -- . && git clean -fdq apps/client/src/shared apps/Cocos/assets/src/shared
+          cat /tmp/watch.log
+
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # 真栈（形态对齐 tools/dev-stack.sh；services 传不了 command 参数，直接 docker run）
+      - name: start stack
+        run: |
+          docker run -d --name redis-durable -p 6401:6379 redis:7 \
+            redis-server --maxmemory-policy noeviction --appendonly yes --appendfsync everysec
+          docker run -d --name redis-cache -p 6402:6379 redis:7 \
+            redis-server --maxmemory-policy allkeys-lru --maxmemory 256mb --save ""
+          docker run -d --name mysql -p 3316:3306 \
+            -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -e MYSQL_ROOT_HOST=% \
+            mysql:8.4 --binlog-format=ROW
+          # 等 MySQL 就绪（镜像初始化约 20-30s）
+          for i in $(seq 1 60); do
+            docker exec mysql mysqladmin -uroot ping --silent && break
+            sleep 2
+          done
+          docker exec mysql mysqladmin -uroot ping
+      - run: npm --workspace @game/server run db:bootstrap
+      # 集成测试：真实 Redis+MySQL，含 kill worker / 僵尸 relayer / 支付重放等故障注入
+      - run: npm --workspace @game/server run test:int

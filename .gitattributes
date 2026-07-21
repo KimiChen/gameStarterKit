@@ -2,3 +2,12 @@
 # （新鲜度由 verify:sync 机检保证——见 CLAUDE.md 铁律 2）
 apps/Cocos/assets/src/** linguist-generated=true
 apps/client/src/shared/** linguist-generated=true
+
+# 机检域钉 LF：Windows autocrlf=true 检出成 CRLF 会让「字节级镜像比较（verify:sync）
+# + 哈希锁（bitecs/vendor.sha256）」全线误报漂移——文本一律按 LF 检出
+apps/client/** text=auto eol=lf
+apps/Cocos/assets/src/** text=auto eol=lf
+apps/shared/** text=auto eol=lf
+scripts/** text=auto eol=lf
+*.sha256 text eol=lf
+.env.development text eol=lf

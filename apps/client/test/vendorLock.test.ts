@@ -21,7 +21,7 @@ function pin(file: string, re: RegExp): string {
 }
 
 const SDK_VERSION = pin("scripts/fetch-colyseus.mjs", /SDK_VERSION = "([^"]+)"/);
-const FGUI_VERSION = pin("scripts/fetch-fgui.sh", /FGUI_VERSION="([^"]+)"/);
+const FGUI_VERSION = pin("scripts/fetch-fgui.mjs", /FGUI_VERSION = "([^"]+)"/);
 
 test("colyseus UMD：入库产物内嵌版本 = fetch 脚本钉的版本（两侧副本）", () => {
   for (const rel of ["apps/client/src/lib/colyseus/colyseus.js", "apps/Cocos/assets/src/lib/colyseus/colyseus.js"]) {
