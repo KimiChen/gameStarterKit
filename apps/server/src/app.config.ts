@@ -4,8 +4,8 @@ import { RoomName } from "@game/shared";
 import { GameRoom } from "./rooms/GameRoom";
 import { LobbyRoom } from "./websocket/LobbyRoom";
 import { MAX_WS_PAYLOAD_BYTES } from "./core/infra/config";
-import { routes } from "./http";
-import { registerMockRoutes } from "./mock";
+import { routes } from "./http/index";
+import { registerMockRoutes } from "./mock/index";
 
 /**
  * Colyseus 0.17 服务端配置。

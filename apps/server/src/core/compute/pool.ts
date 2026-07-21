@@ -35,7 +35,7 @@ interface Job {
 }
 interface WorkerReply { id: number; ok: boolean; result?: unknown; error?: string }
 
-const WORKER_PATH = fileURLToPath(new URL("./worker.ts", import.meta.url));
+const WORKER_PATH = fileURLToPath(new URL("./worker-boot.mjs", import.meta.url));
 const SIZE = Math.max(1, COMPUTE_POOL_SIZE);
 const RESPAWN_DELAY_MS = 1_000;
 
@@ -67,8 +67,10 @@ function reap(w: Worker, cause: Error): void {
 }
 
 function spawn(): Worker {
-  // execArgv 显式带 tsx：无论父进程经 tsx CLI 还是 node --import tsx 启动，worker 都能加载 .ts
-  const w = new Worker(WORKER_PATH, { execArgv: ["--import", "tsx"] });
+  // 入口是 worker-boot.mjs 引导壳（线程内程序化注册 tsx 后再载 worker.ts）：
+  // Node 22 的 worker 里 execArgv 传 --import tsx 钩子不生效（见 worker-boot.mjs 注释）。
+  // execArgv 显式清空：不继承父进程的 --test 等测试期 flag。
+  const w = new Worker(WORKER_PATH, { execArgv: [] });
   w.unref(); // 空闲不阻止进程退出；接任务时 ref()（见 start）
   workers.add(w);
   w.on("message", (msg: WorkerReply) => {
