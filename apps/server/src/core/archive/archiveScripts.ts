@@ -28,11 +28,13 @@ export interface ArchiveSnapshot {
 }
 
 /**
- * freezeCommit（08 原文照抄）：同一条 Lua 内复检锁归属（09·L4）+ ver 未变（快照期间
- * 玩法写检测——relayer 的 applyEffect 不持锁也不走 fence，只有 ver 能暴露它）→ 才 UNLINK。
+ * freezeCommit：同一条 Lua 内复检锁归属（09·L4）+ ver 未变（快照期间玩法写检测——
+ * relayer 的 applyEffect 不持锁也不走 fence，只有 ver 能暴露它）→ 才 UNLINK。
  *
- * ⚠ KEYS[3]=fence:{uid} 计数器**按 08 的 Lua 一并 UNLINK**：thaw 时会以 fence_hwm 同时恢复
- * 计数器与 hash 字段（约束 3 / 09·F3），冻结期间发出的小号 fence 只会拿到 'cold'，无破坏面。
+ * ⚠ KEYS[3]=fence:{uid} 计数器**保留不删**（偏离 08 原文，评审修正）：它的契约本就是
+ * 「永不过期永不重置」——删除后冷档期间 acquireLease 会从 1 重新 INCR，若冷档期长到计数
+ * 反超 fence_hwm，thaw 绝对写回 hwm = 计数**回退**，滞留 writer 的大号 fence 就能穿过
+ * hash 字段 CAS（僵尸写被重新接受）。保留计数器 + thaw 侧 MAX 双保险闭死此窗口。
  *
  * 返回 'ok' | 'lost'（锁已易主）| 'changed'（快照已过期，放弃，archive 行留给清理任务）。
  */
@@ -42,7 +44,8 @@ export const FREEZE_COMMIT = defineScript("freezeCommit", `
 -- ARGV[1]=myFence  ARGV[2]=verAtRead
 if redis.call('GET', KEYS[1]) ~= ARGV[1] then return 'lost' end
 if redis.call('HGET', KEYS[2], 'ver') ~= ARGV[2] then return 'changed' end
-redis.call('UNLINK', KEYS[2], KEYS[3], KEYS[4])
+-- ⛔ KEYS[3]=fence 计数器不删（永不重置契约；防冷档期重新计数导致 thaw 后计数回退）
+redis.call('UNLINK', KEYS[2], KEYS[4])
 for i = 5, #KEYS do redis.call('UNLINK', KEYS[i]) end
 return 'ok'
 `);
@@ -85,9 +88,14 @@ if s.applied then
     redis.call('ZADD', KEYS[4], s.applied[i + 1], s.applied[i])
   end
 end
--- fence_hwm 双写：hash 字段 + 计数器（约束 3）。必须在 user 全字段之后，覆盖快照里的旧 fence
-redis.call('HSET', KEYS[2], 'fence', ARGV[2])
-redis.call('SET',  KEYS[3], ARGV[2])
+-- fence 双写：hash 字段 + 计数器（约束 3），取 MAX(当前计数器, fence_hwm)——
+-- ⛔ 不许绝对写回 hwm：计数器若已超 hwm（冷档期发号/历史残留），回退 = 滞留 writer
+-- 的大号 fence 能穿过 hash CAS（僵尸写复活）；MAX 保证单调性在任何交错下不破
+local cur = tonumber(redis.call('GET', KEYS[3])) or 0
+local hwm = tonumber(ARGV[2])
+local fence = math.max(cur, hwm)
+redis.call('HSET', KEYS[2], 'fence', fence)
+redis.call('SET',  KEYS[3], fence)
 return 'ok'
 `);
 

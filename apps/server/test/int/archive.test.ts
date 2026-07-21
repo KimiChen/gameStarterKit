@@ -154,10 +154,14 @@ test("完整往返：字段/背包/applied 全等；fence ≥ 冻结前；旧 fe
 
   assert.equal(await freezeUser(u, freezeLease), "frozen");
 
-  // 冻结后：user/bag/applied/fence 计数器全部 UNLINK（08 freezeCommit Lua 原文含 KEYS[3]=fence）
-  for (const k of [kUser(u), kApplied(u), kFence(u), ...kBagAll(u)]) {
+  // 冻结后：user/bag/applied UNLINK；fence 计数器**保留**（评审修正，偏离 08 原文——
+  // 「永不重置」契约：删除会让冷档期重新计数，若反超 hwm 则 thaw 绝对写回 = 计数回退，
+  // 滞留 writer 的大号 fence 可穿过 hash CAS）
+  for (const k of [kUser(u), kApplied(u), ...kBagAll(u)]) {
     assert.equal(await c.exists(k), 0, `${k} 应已 UNLINK`);
   }
+  assert.equal(await c.exists(kFence(u)), 1, "fence 计数器保留（永不重置契约）");
+  assert.ok(Number(await c.get(kFence(u))) >= f0, "保留的计数器不回退");
   const b = activeLruBucketOf(u);
   assert.equal(await indexClientFor(b).zscore(kActiveLru(b), u), null, "冻结成功后 ZREM 索引");
   const row = await archiveRow(u);
@@ -172,10 +176,16 @@ test("完整往返：字段/背包/applied 全等；fence ≥ 冻结前；旧 fe
   await ensureLive(u); // thaw（也是 thaw 崩溃表①的「重试」形态：Lua 前无任何变更）
 
   const after = await dumpAll(u);
-  assert.deepEqual(after.user, { ...before.user, fence: String(row!.fenceHwm) }, "user 全字段等值，fence 提到 hwm（09·F3）");
+  // fence 语义（评审修正）：thaw 写 MAX(计数器, hwm)——thaw 自身抢锁 INCR 过计数器，
+  // 故 fence ≥ hwm 且 hash 字段与计数器一致；其余字段严格全等（09·F3）
+  const fenceAfter = Number(after.user.fence);
+  assert.ok(fenceAfter >= row!.fenceHwm, `thaw 后 fence(${fenceAfter}) ≥ hwm(${row!.fenceHwm})`);
+  assert.equal(String(fenceAfter), after.counter, "hash fence 与计数器一致（约束 3 双写）");
+  const cmpAfter = { ...after.user }; delete (cmpAfter as Record<string, string>).fence;
+  const cmpBefore = { ...before.user }; delete (cmpBefore as Record<string, string>).fence;
+  assert.deepEqual(cmpAfter, cmpBefore, "user 全字段等值（除 fence 语义变更外，09·F3）");
   assert.deepEqual(after.bags, before.bags, "背包全等");
   assert.deepEqual(after.applied, before.applied, "applied 全等（09·F2）");
-  assert.equal(Number(after.counter), row!.fenceHwm, "计数器 = hwm（约束 3 双写）");
   assert.ok(Number(after.counter) >= f0, "fence 计数器 ≥ 冻结前（僵尸写仍被拦）");
   assert.equal(await archiveRow(u), null, "thaw 最后一步删 archive 行（08）");
 
@@ -521,5 +531,40 @@ test("鲸鱼档：字段数 > WHALE_FIELDS 走 HSCAN 分块快照，往返全等
   const hwm = (await archiveRow(u))!.fenceHwm;
   await ensureLive(u);
   const afterUser = await c.hgetall(kUser(u));
-  assert.deepEqual(afterUser, { ...before, fence: String(hwm) }, "HSCAN 快照往返全等");
+  // fence 语义（评审修正）：thaw 写 MAX(计数器, hwm)——thaw 自己的抢锁会 INCR 计数器，
+  // 故 fence ≥ hwm 且与计数器一致；其余字段严格全等
+  const fenceAfter = Number(afterUser.fence);
+  assert.ok(fenceAfter >= hwm, `thaw 后 fence(${fenceAfter}) ≥ hwm(${hwm})`);
+  assert.equal(String(fenceAfter), await c.get(kFence(u)), "hash fence 与计数器一致（约束 3）");
+  delete (afterUser as Record<string, string>).fence;
+  const beforeNoFence = { ...before };
+  delete (beforeNoFence as Record<string, string>).fence;
+  assert.deepEqual(afterUser, beforeNoFence, "HSCAN 快照往返全等（除 fence 语义变更外）");
+});
+
+// ── fence 单调性回归（评审修正：冷档期计数反超 hwm 时 thaw 不得回退） ─────────
+
+test("fence 不回退：冷档期计数器发号反超 hwm → thaw 取 MAX，滞留大号 fence 仍被拦", async () => {
+  const { uid: u } = await seedFullUser("fmax");
+  const c = clientFor(u);
+  await makeCold(u);
+  assert.equal(await freezeUser(u, freezeLease), "frozen");
+  const hwm = (await archiveRow(u))!.fenceHwm;
+
+  // 冷档期长跑场景：计数器（评审修正后保留不删）继续发号，反超 hwm
+  await c.incrby(kFence(u), 5);
+  const inflated = Number(await c.get(kFence(u)));
+  assert.ok(inflated > hwm, "构造前提：计数器已反超 hwm");
+
+  await ensureLive(u); // thaw：旧实现绝对写回 hwm（回退！），修正后取 MAX(计数器, hwm)
+
+  const counter = Number(await c.get(kFence(u)));
+  const hashFence = Number(await c.hget(kUser(u), "fence"));
+  assert.ok(counter >= inflated, `计数器不回退（${counter} ≥ ${inflated}）——旧实现此处 = ${hwm}`);
+  assert.equal(hashFence, counter, "hash fence 与计数器一致（约束 3）");
+
+  // 红线：滞留 writer 持有「hwm < fence ≤ 反超值」的号——旧实现回退后它能穿过 CAS
+  const zombieFence = hwm + 2;
+  assert.equal(await evalshaWithReload(c, CAS_HSET, [kUser(u)], [String(zombieFence), "z", "boom"]), "stale");
+  assert.equal(await c.hget(kUser(u), "z"), null, "僵尸写零破坏");
 });

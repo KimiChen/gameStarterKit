@@ -10,9 +10,10 @@
  *    09·DB1 ⛔ INSERT IGNORE），重复 matchId 跳过 `match_results` 但仍 XACK；
  *    周期性按「已 ACK 且已落库」安全位点 XTRIM MINID（09·K6 ⛔ MAXLEN）。
  *
- * 进程归属：当前只 export 启停函数，由网关进程**可选**启动（不强行接线 app.ts）；
- * 生产归属待 M10 收口（独立 settle worker vs 网关常驻，连同 pending 深度告警、
- * 多消费组安全位点一起定）。
+ * 进程归属（评审收口）：独立 **settle worker**（`npm --workspace @game/server run settle`，
+ * 本文件自带进程入口；consumer group 天然支持多实例分工，无需 singleton_lease）。
+ * 网关侧只挂**流深度告警**（startStreamDepthAlert——没人消费时流无界增长必须被看见）。
+ * 多消费组安全位点（verifier 组接入后）仍归 M10。
  */
 import { randomBytes } from "node:crypto";
 import { hostname } from "node:os";
@@ -35,8 +36,13 @@ const CONSUME_BLOCK_MS = 5000;
 /** 裁剪节流周期（消费循环内）。 */
 const TRIM_INTERVAL_MS = 60_000;
 
-/** consumer 名 per 进程（同组多进程各自领活；重启复用同名可接回自己的 PEL 残留）。 */
-const CONSUMER = `c_${hostname()}_${process.pid}`;
+/** consumer 名 per **主机**（⛔ 不含 PID，评审修正）：进程崩溃重启后复用同名，
+ *  consumeOnce 的 "0" 起点直接接回自己的 PEL 残留；含 PID 会让旧 PEL 变成孤儿，
+ *  只能靠 XAUTOCLAIM 兜（跨机死进程仍由 claimStale 接管）。 */
+const CONSUMER = `c_${hostname()}`;
+
+/** 跨消费者 PEL 接管的空闲阈值：条目在别的（死）消费者手里挂 ≥ 此值即认领。 */
+const CLAIM_MIN_IDLE_MS = 60_000;
 
 // ── 证据类型（payload JSON 的形状；09·K5 输入完整性） ──
 
@@ -187,8 +193,8 @@ export interface ConsumeOptions {
 
 /**
  * 消费一轮（可单测）：先重放本 consumer 的 PEL 残留（上次落库失败/崩溃未 ACK；
- * XREADGROUP 指定起点 id 只回 PEL、不阻塞），再取新条目（">"）。
- * ⚠ 跨消费者的 PEL 接管（XAUTOCLAIM 死进程遗留）归 M10 收口，此处先不做。
+ * XREADGROUP 指定起点 id 只回 PEL、不阻塞），再 XAUTOCLAIM 接管**别的死消费者**
+ * 挂 ≥ CLAIM_MIN_IDLE_MS 的 PEL 条目（换主机/改名后的孤儿不再永久滞留），最后取新条目（">"）。
  * @returns 本轮处理条数（含判重跳过与损坏丢弃）。
  */
 export async function consumeOnce(opts: ConsumeOptions = {}): Promise<number> {
@@ -198,12 +204,29 @@ export async function consumeOnce(opts: ConsumeOptions = {}): Promise<number> {
   let n = 0;
   try {
     n += await readBatch(client, "0", count);
+    n += await claimStale(client, count);
     n += await readBatch(client, ">", count, opts.blockMs);
   } catch (e) {
     // NOGROUP = 组没了（实例重建 / failover 到不含组的空副本）：重置标志，下轮 ensureGroup
     // 用 MKSTREAM 重建自愈——否则 groupEnsured 卡在 true，消费循环永久 1s 报错直到进程重启
     if (e instanceof Error && e.message.includes("NOGROUP")) { groupEnsured = false; }
     throw e;
+  }
+  return n;
+}
+
+/** XAUTOCLAIM 接管死消费者的 PEL（幂等闸保证重复处理无害）。认领即成为 owner，随后走同一落库+ACK 路径。 */
+async function claimStale(client: Redis, count: number): Promise<number> {
+  const res = (await client.call(
+    "XAUTOCLAIM", K_STREAM_MATCH, GROUP, CONSUMER, String(CLAIM_MIN_IDLE_MS), "0", "COUNT", String(count),
+  )) as [string, [string, string[] | null][]];
+  const entries = res?.[1] ?? [];
+  let n = 0;
+  for (const [id, fields] of entries) {
+    // fields=null：条目已被 XTRIM 裁掉只剩 PEL 影子——ACK 清影子即可
+    if (!fields) { await client.xack(K_STREAM_MATCH, GROUP, id); continue; }
+    await settleEntry(client, id, fields);
+    n++;
   }
   return n;
 }
@@ -279,4 +302,39 @@ export async function stopMatchConsumer(): Promise<void> {
   await loopDone?.catch(() => { /* 循环收尾异常无需上抛 */ });
   loopClient = null;
   loopDone = null;
+}
+
+// ── 网关侧流深度告警（没人消费时流无界增长必须被看见——⛔ 禁 MAXLEN 兜底，09·K6） ──
+
+/** 深度阈值（⚠ 07 常量表待补条目）：超过即告警（约 = 高峰每分对局数 × 可容忍积压分钟数）。 */
+const STREAM_DEPTH_ALERT = 1000;
+const STREAM_DEPTH_CHECK_MS = 60_000;
+
+/** 网关启动时挂上：周期 XLEN，超阈值告警（settle worker 没起/挂了的第一信号）。 */
+export function startStreamDepthAlert(): void {
+  const timer = setInterval(() => {
+    void clientForKey(K_STREAM_MATCH).xlen(K_STREAM_MATCH).then((len) => {
+      if (len > STREAM_DEPTH_ALERT) {
+        // eslint-disable-next-line no-console
+        console.error(`[matchConsumer] ⚠⚠ stream:match 深度 ${len} 超阈值 ${STREAM_DEPTH_ALERT}——settle worker 未运行或积压（npm --workspace @game/server run settle）`);
+      }
+    }).catch(() => { /* Redis 抖动不告警——连接级问题由 infra 监控负责 */ });
+  }, STREAM_DEPTH_CHECK_MS);
+  timer.unref();
+}
+
+// ── 独立 settle worker 进程入口（consumer group 多实例天然分工，无需 singleton_lease） ──
+
+import { realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
+const isMain = process.argv[1] && realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1]);
+if (isMain) {
+  console.log(`[settle] 启动（consumer=${CONSUMER}，group=${GROUP}）`);
+  startMatchConsumer();
+  const shutdown = () => {
+    void stopMatchConsumer().then(() => process.exit(0));
+  };
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
 }

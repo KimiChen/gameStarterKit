@@ -15,7 +15,7 @@ import { getPool, nextSeq } from "../infra/mysql";
 import type { ResultSetHeader, RowDataPacket } from "../infra/mysql";
 import { BannedError, RateLimitedError } from "../errors";
 import { createUser } from "../userRecord";
-import { invalidateUserNegcache } from "../archive/thaw";
+import { ensureLive, invalidateUserNegcache } from "../archive/thaw";
 import { code2session } from "./wxClient";
 import { auditLogin, issueSession, type IssuedSession } from "./session";
 import { STAMINA_MAX } from "@game/shared";
@@ -95,6 +95,10 @@ export async function loginByOpenid(
     await auditLogin("fail", account.user_id, "banned", ip, deviceId);
     throw new BannedError();
   }
+
+  // 回流用户解冻（08：访问冷 uid 必须先 ensureLive）：登录是回流的第一入口——
+  // 不在这里解冻，用户会「登录成功但档案为空、写操作 THAWING」。热档用户此调用近零成本。
+  if (!isNew) { await ensureLive(account.user_id); }
 
   const session = await issueSession(account.user_id, Number(account.token_epoch), sessionKey);
   await getPool().execute<ResultSetHeader>(

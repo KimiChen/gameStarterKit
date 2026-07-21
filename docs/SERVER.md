@@ -265,6 +265,11 @@ shared IUserView（protocol/lobbyRpc/user.ts，类型真源）
 为什么比 fence 不比存在：Redis 从 2h 前 RDB 恢复，这期间冻结的用户 archive 才最新，按「谁存在」会
 删 archive → 静默回档无报错。
 
+**fence 生命周期（评审修正，偏离 08 原文）**：freeze **不删** `fence:{uid}` 计数器（「永不
+过期永不重置」契约）；thaw 恢复取 **MAX(当前计数器, fence_hwm)** 写双点（hash 字段 + 计数器）
+——⛔ 绝对写回 hwm 会在「冷档期计数反超 hwm」时造成计数回退，滞留 writer 的大号 fence 穿过
+hash CAS（int 测试「fence 不回退」用例把关）。
+
 **根本纪律**（L1/L4/F3）：freeze/thaw/玩法写/清理对同一 uid **全走同一把 `lock:{uid}`**；破坏性
 操作（UNLINK / 批量恢复 HSET）必须在**同一条 Lua 内先复检锁归属**（`GET lock == myFence`）再执行，
 返回 lost 即放弃——这是正确性的唯一依靠，看门狗（L6，仅 freeze/thaw 启用）只减少无用功。thaw 恢复
@@ -423,6 +428,9 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 ### K — 结算与流
 
 > K1–K3 原为排行榜规则，已随排行榜演示一并移除；**编号保留不复用**（代码注释 `09·KX` 锚点不重排）。
+> 消费归属：独立 **settle worker**（`npm --workspace @game/server run settle`，consumer group
+> 多实例天然分工无需 lease；消费者名 per 主机不含 PID——重启接回自身 PEL，跨机死进程 PEL 由
+> XAUTOCLAIM 接管）；网关挂流深度告警（没人消费必须被看见——流禁 MAXLEN，无人消费即无界）。
 
 - **K4** matchId 在 startMatch 生成一次写进 state，结算复用；落库前过 `match_index` 幂等闸。
 - **K5** 回放校验输入必须完整——InjectWave 注入序列（含 nonce/tick）、loadout、mapIndex 都入证据链。

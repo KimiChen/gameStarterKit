@@ -161,11 +161,35 @@ export async function drainPendingFor(uid: string): Promise<number> {
 }
 
 /**
- * applied:{uid} 裁剪（09·I5）：窗口必须严格大于 outbox 保留窗口
- * （APPLIED_RETENTION ≥ 2 × OUTBOX_RETENTION 已在 config 固化）。
+ * applied:{uid} 裁剪（09·I5，评审修正版）：时间窗只是**候选**条件，裁剪必须与 coordinator
+ * 状态联动——仍 pending/dead 的 op_id ⛔ 永不裁：它们还会被 relayer/replayDead 重放，
+ * applied 标记是防二次发货的**唯一**去重记录（场景：Redis 已发货但 markOutboxDone 长期
+ * 失败 → 行滞留 pending → 纯时间窗裁掉标记后重放 = 双发）。
+ * done 行本身由 sweepOutboxRetention 按窗清理；不在 outbox 表里的候选（done 已清）安全可裁。
+ * （APPLIED_RETENTION ≥ 2 × OUTBOX_RETENTION 仍在 config 固化，作为第一道窗口不等式。）
  */
 export async function trimApplied(uid: string): Promise<number> {
-  return clientFor(uid).zremrangebyscore(kApplied(uid), "-inf", `(${Date.now() - APPLIED_RETENTION_MS}`);
+  const redis = clientFor(uid);
+  const candidates = await redis.zrangebyscore(kApplied(uid), "-inf", `(${Date.now() - APPLIED_RETENTION_MS}`);
+  if (candidates.length === 0) { return 0; }
+  const keep = new Set<string>();
+  for (let i = 0; i < candidates.length; i += 500) {
+    const chunk = candidates.slice(i, i + 500);
+    const [rows] = await getPool().query<RowDataPacket[]>(
+      `SELECT op_id FROM gameplay_outbox WHERE user_id = ? AND status != ? AND op_id IN (${chunk.map(() => "?").join(",")})`,
+      [uid, OUTBOX_DONE, ...chunk]);
+    for (const r of rows) { keep.add(r.op_id as string); }
+  }
+  const removable = candidates.filter((id) => !keep.has(id));
+  if (keep.size > 0) {
+    console.warn(`[outbox] ⚠ applied 裁剪跳过 ${keep.size} 个未完结 op（uid=${uid}）——outbox 行滞留 pending/dead，需人工关注`);
+  }
+  if (removable.length === 0) { return 0; }
+  let removed = 0;
+  for (let i = 0; i < removable.length; i += 500) {
+    removed += await redis.zrem(kApplied(uid), ...removable.slice(i, i + 500));
+  }
+  return removed;
 }
 
 /**

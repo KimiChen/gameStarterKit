@@ -94,6 +94,9 @@ const ERR_MAP = new Map<Function, ErrCode>([
   [UnknownTypeError, "UNKNOWN_TYPE"],
   [InProgressError, "IN_PROGRESS"],
   [ThawingError, "THAWING"],
+  // 冷档命中：语义上就是「解冻中/需解冻，稍后重试」——⛔ 不许落到 INTERNAL
+  //（曾经未映射：回流用户写操作全部报内部错误）
+  [ColdUserError, "THAWING"],
   [UserDataLostError, "USER_DATA_LOST"],
 ]);
 
