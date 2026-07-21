@@ -11,12 +11,28 @@ import { MYSQL_URL } from "../src/core/infra/config";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
+/** 首连瞬态重试：mysql 容器初始化的「临时服务器→真服务器」重启窗口、本地栈刚起等场景，
+ *  连接会被对端关闭/拒绝——固定次数短退避重试，非瞬态错误（如认证失败）立即上抛。 */
+const TRANSIENT = new Set(["PROTOCOL_CONNECTION_LOST", "ECONNREFUSED", "ECONNRESET", "ETIMEDOUT"]);
+async function connectWithRetry(opts: Parameters<typeof mysql.createConnection>[0], tries = 10): Promise<mysql.Connection> {
+  for (let i = 1; ; i++) {
+    try {
+      return await mysql.createConnection(opts);
+    } catch (e) {
+      const code = (e as { code?: string }).code ?? "";
+      if (!TRANSIENT.has(code) || i >= tries) { throw e; }
+      console.log(`  MySQL 未就绪（${code}），${i}/${tries} 次重试…`);
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+  }
+}
+
 async function main(): Promise<void> {
   const url = new URL(MYSQL_URL());
   const dbName = url.pathname.replace(/^\//, "") || "game";
 
   // 先不带库名连，建库
-  const admin = await mysql.createConnection({
+  const admin = await connectWithRetry({
     host: url.hostname,
     port: Number(url.port || 3306),
     user: decodeURIComponent(url.username || "root"),

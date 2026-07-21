@@ -65,12 +65,14 @@ jobs:
           docker run -d --name mysql -p 3316:3306 \
             -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -e MYSQL_ROOT_HOST=% \
             mysql:8.4 --binlog-format=ROW
-          # 等 MySQL 就绪（镜像初始化约 20-30s）
+          # 等 MySQL 就绪（镜像初始化约 20-30s）。⚠ 必须走 TCP：官方镜像初始化期会先起一个
+          # 仅 socket 的临时服务器，socket ping 会提前放行，随后真服务器重启窗口撞出
+          # PROTOCOL_CONNECTION_LOST（CI 实翻车）；临时服务器不开网络，TCP ping 只对最终服务器成立
           for i in $(seq 1 60); do
-            docker exec mysql mysqladmin -uroot ping --silent && break
+            docker exec mysql mysqladmin -h127.0.0.1 --protocol=tcp -uroot ping --silent && break
             sleep 2
           done
-          docker exec mysql mysqladmin -uroot ping
+          docker exec mysql mysqladmin -h127.0.0.1 --protocol=tcp -uroot ping
       - run: npm --workspace @game/server run db:bootstrap
       # 集成测试：真实 Redis+MySQL，含 kill worker / 僵尸 relayer / 支付重放等故障注入
       - run: npm --workspace @game/server run test:int
