@@ -31,8 +31,13 @@ npm --workspace @game/server run test            # 单测
 npm --workspace @game/server run test:int        # 集成测试（真实 Redis+MySQL 含故障注入）
 ```
 
-- 本地栈脚本 `tools/dev-stack.sh` 依赖 brew 的 `redis` 与 `mysql@8.4`；数据目录 `~/.game-dev`
-  （`GAME_DEV_DATA` 可改）。端口 6401/6402/3316 与 Arthur 项目约定一致，可共用一套本地实例（库名不同）。
+- 本地栈脚本 `tools/dev-stack.sh` 依赖 brew 的 `redis` 与 `mysql@8.4`；数据目录默认 `~/.game-dev`
+  （`GAME_DEV_DATA` 可改）。默认端口 6401/6402/3316 与 Arthur 项目约定一致。
+- **多项目并行（同机两个本框架项目，端口/数据完全隔离）**：`.env.development` 是单一配置点——
+  `dev-stack.sh` 会 source 它并从 `REDIS_DURABLE_URL`/`REDIS_CACHE_URL`/`MYSQL_URL` 三个 URL
+  派生栈端口，`db:bootstrap` 从 `MYSQL_URL` 取库名建库，服务端连接读同一组变量。第二个项目只需在
+  自己的 `.env.development` 里设一组不冲突的 `PORT` + 三个 URL（模板见该文件注释），栈数据目录
+  自动分家到 `~/.game-dev-<mysql端口>`，两套栈互不相见。
 - **跑 `test:int` 前先停 dev server**：集成测会 `boot(server)` 真实监听 2568，dev server 占端口会
   EADDRINUSE 且卡死 test runner。根脚本 `npm run dev` 起的是 tsx watch——kill 要 kill 整棵 watch 进程树。
 - 开发端口固定 **2568**（`.env.development`，可用 `PORT` 覆盖）：Colyseus 默认 2567 常被占用。

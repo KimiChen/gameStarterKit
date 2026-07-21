@@ -1,18 +1,38 @@
 #!/usr/bin/env bash
-# 本地开发栈：redis-durable(6401) + redis-cache(6402) + MySQL 8.4(3316)。
+# 本地开发栈：redis-durable(默认 6401) + redis-cache(默认 6402) + MySQL 8.4(默认 3316)。
 # 用法: tools/dev-stack.sh start|stop|status
 # 实例形态对齐 06：durable = noeviction + AOF everysec；cache = allkeys-lru；物理分实例（09·R4）。
+#
+# 多项目并行：端口从 .env.development 的三个连接 URL 派生（单一配置点，连接与栈永不脱节）——
+# 每个项目在自己的 .env.development 里设不同的 REDIS_DURABLE_URL/REDIS_CACHE_URL/MYSQL_URL
+# 即可各起一套互不重叠的栈；数据目录随 MySQL 端口自动分家（非默认端口 → ~/.game-dev-<port>）。
+# ⚠ .env.development 须保持 KEY=VALUE 简单格式（本脚本直接 source 它）。
 set -euo pipefail
 
-DATA="${GAME_DEV_DATA:-$HOME/.game-dev}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="$HERE/../.env.development"
+# shellcheck disable=SC1090
+[ -f "$ENV_FILE" ] && source "$ENV_FILE"
+
+# 从 URL 尾部提取端口（redis://host:6401 / mysql://user@host:3316/db）；解析不出数字即回退默认
+port_of() { # $1=url $2=default
+  local p="${1##*:}"
+  p="${p%%/*}"
+  [[ "$p" =~ ^[0-9]+$ ]] && echo "$p" || echo "$2"
+}
+DURABLE_PORT="$(port_of "${REDIS_DURABLE_URL:-}" 6401)"
+CACHE_PORT="$(port_of "${REDIS_CACHE_URL:-}" 6402)"
+MYSQL_PORT="$(port_of "${MYSQL_URL:-}" 3316)"
+
+# 数据目录：默认端口沿用 ~/.game-dev（存量兼容）；自定义端口自动分家防两套 mysqld/redis 抢同一 datadir
+DATA_DEFAULT="$HOME/.game-dev"
+[ "$MYSQL_PORT" != "3316" ] && DATA_DEFAULT="$HOME/.game-dev-$MYSQL_PORT"
+DATA="${GAME_DEV_DATA:-$DATA_DEFAULT}"
+
 BREW_PREFIX="$(brew --prefix)"
 MYSQL_BIN="$BREW_PREFIX/opt/mysql@8.4/bin"
 REDIS_SERVER="$BREW_PREFIX/opt/redis/bin/redis-server"
 REDIS_CLI="$BREW_PREFIX/opt/redis/bin/redis-cli"
-
-DURABLE_PORT=6401
-CACHE_PORT=6402
-MYSQL_PORT=3316
 
 start_redis() { # $1=name $2=port $3=extra-config(多行)
   local dir="$DATA/redis-$1"
@@ -43,6 +63,11 @@ start_redis() { # $1=name $2=port $3=extra-config(多行)
 
 start_mysql() {
   local dir="$DATA/mysql"
+  # mysqld 的 unix socket 路径上限 103 字符，超长会以一条含糊的 daemon 启动失败告终——提前拦截
+  if [ "${#dir}" -gt 90 ]; then
+    echo "GAME_DEV_DATA 路径过长（mysql socket 会超 103 字符上限）：$dir——换个短路径（如 ~/.game-dev-xxx）" >&2
+    return 1
+  fi
   if "$MYSQL_BIN/mysqladmin" --host=127.0.0.1 --port=$MYSQL_PORT -uroot ping >/dev/null 2>&1; then
     echo "mysql($MYSQL_PORT) 已在跑"; return
   fi
