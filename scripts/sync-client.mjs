@@ -50,10 +50,20 @@ function devEnvContent() {
     let port = 2568;
     try {
         for (const line of fs.readFileSync(ROOT_ENV, "utf8").split("\n")) {
-            const m = /^\s*PORT\s*=\s*(\d+)\s*$/.exec(line);
-            if (m && !line.trimStart().startsWith("#")) { port = Number(m[1]); }
+            // 与服务端 config.ts 同一严格规则：纯整数 1–65535，非法即失败——
+            // ⛔ 不许各自「容错」（parseInt 截断 vs 正则回退默认 = 双端端口静默脑裂）
+            const m = /^\s*PORT\s*=\s*(.*?)\s*$/.exec(line);
+            if (!m || line.trimStart().startsWith("#")) continue;
+            const n = /^\d+$/.test(m[1]) ? Number(m[1]) : NaN;
+            if (!Number.isInteger(n) || n < 1 || n > 65535) {
+                throw new Error(`[sync-client] 根 .env.development 的 PORT 非法：「${m[1]}」——须为 1–65535 的纯整数（服务端 config.ts 同一规则）`);
+            }
+            port = n;
         }
-    } catch { /* 无根 env 文件 = 默认 2568（与服务端 config.ts 一致） */ }
+    } catch (err) {
+        if (err instanceof Error && err.message.includes("PORT 非法")) { throw err; }
+        /* 无根 env 文件 = 默认 2568（与服务端 config.ts 一致） */
+    }
     return `/**
  * ⚠ 生成物勿手改 —— 真源：根 .env.development 的 PORT（缺省 2568，与服务端 config.ts 同源）。
  * \`npm run sync:client\` / dev:client 保存时重生成；verify:sync（--check）校验新鲜度。
