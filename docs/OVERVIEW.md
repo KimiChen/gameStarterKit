@@ -78,7 +78,6 @@ workspace 直接吃 `@game/shared` 源码，无需复制。
 | 无状态单次请求-响应 | `websocket/<域>/<接口>.ts`（ws-RPC） | `net/WebSocketClient.ts` |
 | 有状态实时玩法（Schema 同步） | `rooms/`（GameRoom + Schema） | `net/RoomClient.ts` + `logic/rooms/<玩法>/` |
 | 真实 HTTP（仅 auth/支付/utility） | `http/<域>/<接口>.ts` | `net/http/<域>.ts` |
-| 假数据（无栈调试） | `mock/api/<接口>.ts`（`/mock/` 前缀） | `net/mock/<接口>.ts` |
 | 玩家数据 | `player/userStore` | — |
 | UI 页面 | — | `view/XxxView.ts` + `logic/page/XxxLogic.ts` |
 
@@ -89,7 +88,7 @@ workspace 直接吃 `@game/shared` 源码，无需复制。
 
 两端都遵循**「根层文件 = 入口与全局真源；子目录 = 层/域」**，且都区分「不可动区 / 少动区 / 日常区」：
 
-- 服务端 `src/` 根 = `rooms/ websocket/ http/ mock/ player/ core/` 六目录 + 入口两文件；
+- 服务端 `src/` 根 = `rooms/ websocket/ http/ player/ core/` 五目录 + 入口两文件；
 - 客户端 `apps/client/src/` 根 = `view/ logic/ net/ core/ lib/ shared/` 六目录 + `Main.ts`/`designSpec.ts`
   （`sync:client` 灌入 `apps/Cocos/assets/src/` 后由 Creator 编译）；
 - 两端的 `lib/`+`shared/`（客户端）、`core/`（两端）是"少动/不可动"区，其余是日常主战场。
@@ -147,8 +146,9 @@ workspace 直接吃 `@game/shared` 源码，无需复制。
 
 ## 7. 现状与边界
 
-- **玩法是 demo**：`ballMove`（小球移动）+ 技能结算，纯 mock 可无栈跑通；fork 后改名换真实玩法。
+- **玩法是 demo**：`ballMove`（小球移动）+ 技能结算；登录走 dev-login 真实链路（需本地栈，
+  mock 层已移除）。fork 后改名换真实玩法。
 - **服务端框架是生产级**但部分能力**代码就绪、水位/里程碑未全启用**（如冷档冻结按内存水位启用）。
   排行榜演示已移除（M7 编号保留）。里程碑地图见 SERVER.md。
 - **Arthur 专属未移植件**：M4 存量迁移 ETL、wxLogin 存量账号绑定协议——本项目无旧账号体系，N/A。
-- **验证基线**（近期全绿）：typecheck 三端 + verify:sync / 服务端单测 15 / 客户端 test:fgui 59 / 集成测试 61 / mock 冒烟 13。
+- **验证基线**（近期全绿）：typecheck 三端 + verify:sync / 服务端单测 15 / 客户端 test:fgui 62 / 集成测试 61 / 真实链冒烟 13。

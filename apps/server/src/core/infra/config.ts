@@ -76,6 +76,14 @@ export const PROJECT_ID = (() => {
 /** 全部 Redis key 的运行时前缀（07 全表登记的是逻辑键名，存储时带本前缀）。 */
 export const REDIS_KEY_PREFIX = `${PROJECT_ID}_`;
 
+/** dev-login 开关（07 §13）：POST /account/dev-login——绕过 code2session、其余全走真实
+ *  账号链路（建号/token/sess/审计）的本地登录入口。默认开发开、生产关；
+ *  生产环境显式开启 = 配置事故，加载期直接拒绝启动（与 PROJECT_ID 校验同款 fail-fast）。 */
+export const AUTH_DEV_ENABLED = env("AUTH_DEV_ENABLED", process.env.NODE_ENV === "production" ? "0" : "1") === "1";
+if (process.env.NODE_ENV === "production" && AUTH_DEV_ENABLED) {
+  throw new Error("AUTH_DEV_ENABLED=1 在生产环境被显式开启——dev-login 无微信凭证即可拿真 token，生产必须关闭");
+}
+
 /** 开发端口（根 .env.development 的 PORT 可覆盖；与 PROJECT_ID 同一套加载机制）。
  *  默认 2568：本机 2567（Colyseus 默认）常被其他项目占用；多项目并行时各项目在根
  *  .env.development 错开本值。客户端经 sync:client 从同一真源生成 core/devEnv.ts

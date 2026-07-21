@@ -1,19 +1,18 @@
 /**
- * 端到端冒烟测试：验证 HTTP 模拟接口 + Colyseus 房间全链路。
- * 前置：服务端已启动（npm run dev）。
+ * 端到端冒烟测试（真实链路）：/healthz → dev-login（真实建号/token）→ 选服/公告 →
+ * 带真 token 进 GameRoom → 移动/技能 → 伪 token 拒连。对着**运行中的 dev server** 跑，
+ * 验「进程真的起得来 + 全链真的通」——与 test:int 的 boot(server) 是不同维度。
+ * 前置：本地栈已起（stack + db:bootstrap，dev-login 走真实账号链路）+ npm run dev。
  * 运行：npm --workspace @game/server run smoke
  */
 import { Client, getStateCallbacks } from "@colyseus/sdk";
 import {
     RoomName,
     ApiPath,
-    ErrorCode,
     PROTOCOL_VERSION,
     S2C,
     C2S,
-    type IApiResponse,
     type ILoginRes,
-    type IPlayerProfile,
     type IHealthRes,
     type IAreaListRes,
     type INoticeListRes,
@@ -49,25 +48,19 @@ function waitMessage<T>(room: any, type: string, timeoutMs = 5000): Promise<T> {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function main() {
-    // ---------- HTTP 模拟接口 ----------
-    const health = (await fetch(BASE + ApiPath.Health).then((r) => r.json())) as IApiResponse<IHealthRes>;
-    check("GET /mock/health", health.code === ErrorCode.Ok && health.data?.status === "ok", health);
+    // ---------- 真实 HTTP：健康检查 + dev-login（真实账号链路） ----------
+    const health = (await fetch(BASE + ApiPath.Health).then((r) => r.json())) as IHealthRes;
+    check("GET /healthz", health.status === "ok" && health.serverTime > 0, health);
 
-    const login = (await fetch(BASE + ApiPath.Login, {
+    const loginRes = await fetch(BASE + ApiPath.DevLogin, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ code: "smoke-test" }),
-    }).then((r) => r.json())) as IApiResponse<ILoginRes>;
-    check("POST /mock/login", login.code === ErrorCode.Ok && (login.data?.token.length ?? 0) > 0, login);
-    const loginData = login.data!;
-
-    const profile = (await fetch(BASE + ApiPath.Profile, {
-        headers: { authorization: `Bearer ${loginData.token}` },
-    }).then((r) => r.json())) as IApiResponse<IPlayerProfile>;
-    check("GET /mock/player/profile", profile.code === ErrorCode.Ok && profile.data?.openId === loginData.openId, profile);
-
-    const badProfile = (await fetch(BASE + ApiPath.Profile).then((r) => r.json())) as IApiResponse<null>;
-    check("profile 无 token 返回 TokenExpired", badProfile.code === ErrorCode.TokenExpired, badProfile);
+        body: JSON.stringify({ devKey: "smoke" }),
+    });
+    check("POST /account/dev-login（HTTP 2xx）", loginRes.ok, loginRes.status);
+    const loginData = (await loginRes.json()) as ILoginRes;
+    check("dev-login 契约（userId/token 形制）", loginData.userId.startsWith("u_")
+        && /\.[0-9a-f]{48}$/.test(loginData.token) && typeof loginData.isNew === "boolean", loginData);
 
     // ---------- 真实 HTTP：选服列表 + 公告（config 驱动，无栈）----------
     const areaList = (await fetch(BASE + "/area/list", {
@@ -82,8 +75,16 @@ async function main() {
     const noticeSorted = notice.list.every((n, i) => i === 0 || notice.list[i - 1].at >= n.at);
     check("GET /notice/list（按 at 倒序）", notice.list.length > 0 && noticeSorted, notice);
 
-    // ---------- Colyseus 房间 ----------
+    // ---------- Colyseus 房间（真 token；伪 token 必须拒连） ----------
     const client = new Client(BASE);
+    let rejected = false;
+    try {
+        await client.joinOrCreate(RoomName.Game, { v: PROTOCOL_VERSION, token: "forged-token" });
+    } catch {
+        rejected = true;
+    }
+    check("伪 token 拒连（去 mock 后无游客降级）", rejected);
+
     const room = await client.joinOrCreate(RoomName.Game, { v: PROTOCOL_VERSION, token: loginData.token });
     check("joinOrCreate('game')", room.sessionId.length > 0, room.roomId);
 

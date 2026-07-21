@@ -67,10 +67,11 @@ const login = async (code: string) => {
   return s;
 };
 
-test("新号 wx-login：建号 + 出参只有 userId/token（09·G8）", async () => {
+test("新号 wx-login：建号 + 出参只有 userId/token/isNew（09·G8）", async () => {
   const s = await login("alice");
   assert.match(s.userId, /^u_\d+$/);
-  assert.deepEqual(Object.keys(s).sort(), ["token", "userId"]); // ⛔ openid/unionid/session_key 不下发
+  assert.deepEqual(Object.keys(s).sort(), ["isNew", "token", "userId"]); // ⛔ openid/unionid/session_key 不下发
+  assert.equal((s as { isNew?: boolean }).isNew, true, "新建账号 isNew=true（shared ILoginRes 契约）");
   // Redis 档已建（建号合法创建点），fence/ver/schemaVersion 齐
   const h = await clientFor(s.userId).hmget(kUser(s.userId), "fence", "ver", "schemaVersion", "stamina");
   assert.deepEqual(h, ["0", "0", "1", "30"]);

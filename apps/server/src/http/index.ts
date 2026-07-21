@@ -11,11 +11,13 @@
 import { createRouter } from "@colyseus/core";
 import version from "./misc/version";
 import clockNow from "./misc/clockNow";
+import healthz from "./misc/healthz";
 import wxLogin from "./account/wxLogin";
+import devLogin from "./account/devLogin";
 import wxPayNotify from "./pay/wxNotify";
 import areaList from "./area/list";
 import noticeList from "./notice/list";
 
 export const routes = createRouter({
-  version, clockNow, wxLogin, wxPayNotify, areaList, noticeList,
+  version, clockNow, healthz, wxLogin, devLogin, wxPayNotify, areaList, noticeList,
 });

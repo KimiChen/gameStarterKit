@@ -7,7 +7,7 @@
 import { createEndpoint } from "@colyseus/core";
 import { z } from "zod";
 import type { IAreaListRes } from "@game/shared";
-import { AREA_DEMO_UL, AREA_IS_OPS, AREA_SERVERS, areaListHash, getUserRecentServers } from "./catalog";
+import { AREA_IS_OPS, AREA_SERVERS, areaListHash, getUserRecentServers } from "./catalog";
 import { uidFromToken } from "../common";
 
 export default createEndpoint("/area/list", {
@@ -20,7 +20,5 @@ export default createEndpoint("/area/list", {
     const uid = await uidFromToken(ctx.body.token);
     if (uid) { ul = await getUserRecentServers(uid); }
   }
-  // demo 回落：mock 登录 token 过不了 verifyBearer，AREA_DEMO_UL 开时仍给「我的」页签内容
-  if (ul.length === 0 && AREA_DEMO_UL) { ul = await getUserRecentServers("demo"); }
   return ctx.json({ isOps: AREA_IS_OPS, al: [...AREA_SERVERS], ul, h: areaListHash() } satisfies IAreaListRes);
 });

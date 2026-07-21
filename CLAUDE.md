@@ -32,7 +32,7 @@ npm run test:fgui            # FairyGUI 结构契约 + 客户端无头单测
 npm run codegen:fgui -- <Pkg> <Comp>   # 生成/幂等重写 view/XxxView.ts
 npm run verify:ecs           # 校验 ECS 库（bitECS）12 文件字节锁定
 npm --workspace @game/server run test        # 服务端单测
-npm --workspace @game/server run smoke       # mock 冒烟（需 npm run dev 已起）
+npm --workspace @game/server run smoke       # 真实链冒烟：dev-login→进房→技能（需 stack+db:bootstrap+dev 已起）
 npm --workspace @game/server run stack       # 起本地 Redis×2 + MySQL
 npm --workspace @game/server run test:int    # 集成测试（真实栈；跑前先停 npm run dev）
 ```
@@ -65,6 +65,7 @@ net/、dispatcher/loader、Main.ts 永远不碰。分端细节见 docs/SERVER.md
 
 ## 现状
 
-- 玩法是 demo（`ballMove` 小球移动 + 技能结算，纯 mock 可无栈跑）；服务端框架生产级（源自 Arthur M0–M9，
+- 玩法是 demo（`ballMove` 小球移动 + 技能结算）；登录走 dev-login 真实链路（**需本地栈**，
+  mock 层已移除；微信 wx.login 侧接入后补）。服务端框架生产级（源自 Arthur M0–M9，
   **已停止回流、独立演进**）。Arthur 专属未移植件（M4 存量迁移、wxLogin 存量账号绑定）本项目 N/A。
-- 验证基线（近期全绿）：typecheck 三端 + verify:sync / 服务端单测 15 / 客户端 test:fgui 59 / 集成测试 61 / mock 冒烟 13。
+- 验证基线（近期全绿）：typecheck 三端 + verify:sync / 服务端单测 15 / 客户端 test:fgui 62 / 集成测试 61 / 真实链冒烟 13。

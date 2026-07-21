@@ -28,8 +28,8 @@ export interface WxLoginInput {
 
 interface AccountRow extends RowDataPacket { user_id: string; status: number; token_epoch: number }
 
-/** 登录限流：独立严格档，按真实 IP（09·G5：⛔ 共享桶连坐）。 */
-async function loginRateCheck(ip: string): Promise<void> {
+/** 登录限流：独立严格档，按真实 IP（09·G5：⛔ 共享桶连坐）。wx 与 dev 两个入口共用。 */
+export async function loginRateCheck(ip: string): Promise<void> {
   const key = kRl(`login:${ip}`);
   const r = await evalshaWithReload(clientForKey(key), TOKEN_BUCKET, [key],
     [LOGIN_RATE_CAPACITY, LOGIN_RATE_REFILL_PER_S, 1]);
@@ -72,12 +72,42 @@ async function createAccount(openid: string, unionid: string | null): Promise<Ac
   return { user_id: uid, status: 0, token_epoch: 0 } as AccountRow;
 }
 
-/**
- * wx-login 主入口：openid 查档，无则建号。返回值只有 userId + token（09·G8）。
- */
-export async function wxLogin(input: WxLoginInput): Promise<IssuedSession> {
-  await loginRateCheck(input.ip);
+/** 登录出参（shared ILoginRes 的服务端侧）：⛔ 禁含 openid/unionid/session_key（09·G8）。 */
+export interface LoginResult extends IssuedSession { isNew: boolean }
 
+/**
+ * 按 openid 登录编排（wx 与 dev 两个 provider 的公共段）：
+ * 查/建账号（签发前必查 status，09·G7）→ 签发 token → last_login_at → 审计。
+ * ⚠ 限流由调用方**前置**执行（loginRateCheck）：wx 路径必须在 code2session 之前扣桶
+ * （否则刷子先烧微信配额再被拦），放本函数内会让 wx 路径双扣。
+ */
+export async function loginByOpenid(
+  openid: string, unionid: string | null, sessionKey: string | null,
+  ip: string, deviceId: string | null, auditKind: string,
+): Promise<LoginResult> {
+  const [rows] = await getPool().query<AccountRow[]>(
+    "SELECT user_id, status, token_epoch FROM accounts WHERE openid = ?", [openid]);
+  const isNew = rows.length === 0;
+  const account: AccountRow = isNew ? await createAccount(openid, unionid) : rows[0];
+
+  // 签发前必查 status（09·G7）：封号挡住重新登录
+  if (Number(account.status) !== 0) {
+    await auditLogin("fail", account.user_id, "banned", ip, deviceId);
+    throw new BannedError();
+  }
+
+  const session = await issueSession(account.user_id, Number(account.token_epoch), sessionKey);
+  await getPool().execute<ResultSetHeader>(
+    "UPDATE accounts SET last_login_at = NOW(3) WHERE user_id = ?", [account.user_id]);
+  await auditLogin(auditKind, account.user_id, null, ip, deviceId);
+  return { ...session, isNew };
+}
+
+/**
+ * wx-login 主入口：code2session → loginByOpenid。返回 userId + token + isNew（09·G8）。
+ */
+export async function wxLogin(input: WxLoginInput): Promise<LoginResult> {
+  await loginRateCheck(input.ip);
   let wx;
   try {
     wx = await code2session(input.code);
@@ -85,20 +115,5 @@ export async function wxLogin(input: WxLoginInput): Promise<IssuedSession> {
     await auditLogin("fail", null, `code2session:${(e as Error).name}`, input.ip, input.deviceId ?? null);
     throw e;
   }
-
-  const [rows] = await getPool().query<AccountRow[]>(
-    "SELECT user_id, status, token_epoch FROM accounts WHERE openid = ?", [wx.openid]);
-  const account: AccountRow = rows.length > 0 ? rows[0] : await createAccount(wx.openid, wx.unionid);
-
-  // 签发前必查 status（09·G7）：封号挡住重新登录
-  if (Number(account.status) !== 0) {
-    await auditLogin("fail", account.user_id, "banned", input.ip, input.deviceId ?? null);
-    throw new BannedError();
-  }
-
-  const session = await issueSession(account.user_id, Number(account.token_epoch), wx.sessionKey);
-  await getPool().execute<ResultSetHeader>(
-    "UPDATE accounts SET last_login_at = NOW(3) WHERE user_id = ?", [account.user_id]);
-  await auditLogin("wx_login", account.user_id, null, input.ip, input.deviceId ?? null);
-  return session;
+  return loginByOpenid(wx.openid, wx.unionid, wx.sessionKey, input.ip, input.deviceId ?? null, "wx_login");
 }

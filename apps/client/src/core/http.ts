@@ -3,16 +3,19 @@
  *
  * 用 XHR 而不用 fetch：微信小游戏没有 fetch，而 Cocos 微信适配层提供 XHR 包装
  * （wx.request），XHR 在 Web 预览 / 微信 / 原生三端行为一致。
- * 业务调用面在 net/http/（真实接口，未来）与 net/mock/（假数据）——本文件只管收发。
+ * 业务调用面在 net/http/（真实接口）——本文件只管收发。
  */
-import type { IApiResponse } from "../shared/index";
-
 let baseUrl = "http://localhost:2568";
 let token = "";
 
 /** 初始化服务器地址，如 https://game.example.com（尾部斜杠自动去除） */
 export function initHttp(url: string): void {
     baseUrl = url.replace(/\/+$/, "");
+}
+
+/** 当前服务器地址（WebSocketClient 等复用同一 endpoint，不各自持有配置） */
+export function getBaseUrl(): string {
+    return baseUrl;
 }
 
 /** 保存登录 token（后续请求自动带 Authorization: Bearer 头） */
@@ -26,8 +29,8 @@ export function getToken(): string {
 
 /**
  * 发起 JSON 请求，返回解析后的响应体（原样，不假设外层结构）。
- * mock 接口用 `request<IApiResponse<T>>`（IApiResponse 包裹）；真实端点（http/area·notice…）
- * 直接返回数据体，用 `request<数据体类型>`。响应解析失败/网络错误/超时一律 reject。
+ * 真实端点直接返回数据体，用 `request<数据体类型>`（契约 import 自 shared）。
+ * 非 2xx / 响应解析失败 / 网络错误 / 超时一律 reject。
  */
 export function request<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
     return new Promise((resolve, reject) => {

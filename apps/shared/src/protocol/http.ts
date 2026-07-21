@@ -1,70 +1,49 @@
 /**
- * HTTP 模拟接口协议 —— 双端共享。
+ * HTTP 端点协议 —— 双端共享（全部为**真实**端点，mock 层已随「去 mock」移除）。
  *
- * 服务端在 app.config.ts 的 defineServer({ express }) 回调中通过
- * src/mock 扫描 api/ 目录按 ApiPath 挂载 mock 路由（/mock/ 前缀 = 假数据）；
- * 客户端 net/mock/<接口>.ts（core/http.ts XHR 底座）按同一份 ApiPath 请求。
- * 所有接口统一返回 IApiResponse<T> 包裹。
+ * 服务端 http/<域>/<接口>.ts（createEndpoint + zod）按 ApiPath 提供；
+ * 客户端 net/http/<域>.ts（core/http.ts XHR 底座）按同一份 ApiPath 请求。
+ * 端点直接返回数据体（非 2xx 时 core/http.ts reject），⛔ 无 IApiResponse 包裹层。
  */
 
-/** HTTP 接口路径 */
+/** HTTP 接口路径（真实端点单源；服务端路由与客户端调用都 import 它） */
 export const ApiPath = {
-    /** 登录（mock：任意 code 都成功） */
-    Login: "/mock/login",
-    /** 拉取玩家档案 */
-    Profile: "/mock/player/profile",
-    /** 服务器时间/健康检查 */
-    Health: "/mock/health",
+    /** 微信登录（POST；code2session → 建号/复用 → 签发 token） */
+    WxLogin: "/account/wx-login",
+    /** 本地/CI 登录（POST；绕过 code2session、其余全走真实链路——AUTH_DEV_ENABLED 控制，生产禁用） */
+    DevLogin: "/account/dev-login",
+    /** 进程级健康检查（GET） */
+    Health: "/healthz",
 } as const;
 
 export type ApiPathType = (typeof ApiPath)[keyof typeof ApiPath];
 
-/** 统一响应包装；失败时（code !== 0）data 为 null */
-export interface IApiResponse<T> {
-    /** 0 表示成功，其余见 constants/errors.ts */
-    code: number;
-    message: string;
-    data: T | null;
-}
+// ---------------- POST /account/wx-login | /account/dev-login ----------------
 
-// ---------------- /mock/login ----------------
-
+/** wx-login 入参（dev-login 为 { devKey, deviceId? }，见服务端 devLogin.ts schema）。 */
 export interface ILoginReq {
-    /** 微信 wx.login 拿到的临时 code（mock 阶段任意字符串均可） */
+    /** 微信 wx.login 拿到的临时 code */
     code: string;
+    deviceId?: string;
 }
 
+/** 登录响应（wx 与 dev 同契约）。⛔ 禁含 openid/unionid/session_key（09·G8）。 */
 export interface ILoginRes {
-    /** mock 生成的用户 id */
-    openId: string;
-    /** 会话令牌（mock 为固定前缀 + 随机串） */
+    userId: string;
+    /** 不透明 token（`{uid}.{hex}`），后续 HTTP Bearer / 房间 join 携带 */
     token: string;
-    /** 是否新用户 */
+    /** 新建账号 = true（新手引导用） */
     isNew: boolean;
 }
 
-// ---------------- /mock/player/profile ----------------
+// ---------------- GET /healthz ----------------
 
-export interface IPlayerProfile {
-    openId: string;
-    nickname: string;
-    level: number;
-    exp: number;
-    /** 金币 */
-    gold: number;
-    /** 已解锁技能 id 列表 */
-    skills: number[];
-}
-
-// ---------------- /mock/health ----------------
-
+/** 进程级健康检查：只证明进程活着；依赖健康另走 smoke:framework / readiness（M10）。 */
 export interface IHealthRes {
     status: "ok";
     serverTime: number;
     version: string;
 }
-
-// ================ 以下为服务端框架**真实**端点（server/src/routes，非 mock） ================
 
 // ---------------- GET /version ----------------
 

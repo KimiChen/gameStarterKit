@@ -28,12 +28,16 @@ import {
     type IErrorRes,
 } from "@game/shared";
 import { GameRoomState, PlayerState } from "./schema/GameRoomState";
-import { randomNickname } from "../mock/data";
 import { verifyBearer } from "../core/auth/session";
 import { emitMatchEvidence, MATCH_MODE_CASUAL, newMatchId } from "../core/match/matchConsumer";
 
+// demo 昵称池（原 mock/data，mock 层删除后归本房间私有；真实项目从档案取昵称）
+const NICK_PREFIX = ["快乐", "无敌", "神秘", "暴走", "咸鱼", "低调", "闪电", "锦鲤"];
+const NICK_SUFFIX = ["小汉字", "词王", "笔画侠", "拼音怪", "部首君", "成语精"];
+const randomNickname = (rng: SeededRandom): string => `${rng.pick(NICK_PREFIX)}${rng.pick(NICK_SUFFIX)}`;
+
 /** 框架不透明 token 形制：`{uid}.{hex}`（auth/session.ts issueSession，TOKEN_BYTES=24 → 48 位 hex）。
- *  mock token（`mock-token-*`）不匹配 → 按游客进房，全程不触碰 Redis。 */
+ *  形制不符 = 伪造/旧 mock 残余 → 直接拒连（去 mock 后无游客模式）。 */
 const FRAMEWORK_TOKEN_RE = /\.[0-9a-f]{48}$/;
 
 /** 非主动断线的重连宽限（秒）。微信小游戏切后台必断 socket，实机常态不是异常——
@@ -42,11 +46,11 @@ const RECONNECT_GRACE_S = 10;
 
 /**
  * 主玩法房间（玩法逻辑仍为演示/假数据，用于跑通链路）：
- *  - 玩家进出：随机出生点 + mock 昵称
+ *  - 玩家进出：随机出生点 + demo 昵称（真实项目从档案取）
  *  - 移动：客户端发方向输入，服务端按逻辑帧积分位置
  *  - 技能：使用 shared 战斗公式结算伤害并广播
  *  - 结算（服务端框架 M8a）：存活 ≤1 → Settle + 证据链 XADD stream:match
- *    （消费落库见 gameplay/matchConsumer；纯游客局不产证据）
+ *    （消费落库见 core/match/matchConsumer）
  */
 export class GameRoom extends Room {
     maxClients = MAX_PLAYERS;
@@ -59,7 +63,7 @@ export class GameRoom extends Room {
     /** 确定性随机源，以对局种子初始化 */
     private rng = new SeededRandom(this.matchSeed);
 
-    /** sessionId → 框架账号 uid（M8a 证据链 userId 来源；游客/mock token 不入表） */
+    /** sessionId → 框架账号 uid（M8a 证据链 userId 来源；onAuth 严格化后必有值） */
     private sessionUserId = new Map<string, string>();
     /** 死亡顺序（sessionId，先死在前）；结算名次 = 存活者优先、其余按死亡逆序 */
     private deathOrder: string[] = [];
@@ -69,9 +73,8 @@ export class GameRoom extends Room {
     private matchStartMs = 0;
 
     /**
-     * 账号绑定（M8a）：带框架 token（wx-login 签发）则反查 uid 存入 client.auth（09·G1
-     * ⛔ 不信客户端单独传的 userId）；mock token / 无 token = 游客照常进（不触碰 Redis）。
-     * 校验失败也按游客放行——玩法房不做硬闸，硬闸在 LobbyRoom.onAuth。
+     * 账号绑定（M8a）：框架 token（wx/dev-login 签发）反查 uid 存入 client.auth（09·G1
+     * ⛔ 不信客户端单独传的 userId）。token 缺失/伪造/过期一律拒连（去 mock 后无游客模式）。
      */
     static async onAuth(token: string, options: IRoomJoinOptions | undefined, _context: AuthContext) {
         // 协议版本硬闸（缺省按 1 兼容首版客户端）：服务端升协议后旧包 join 即拒——
@@ -79,15 +82,17 @@ export class GameRoom extends Room {
         if ((options?.v ?? 1) !== PROTOCOL_VERSION) {
             throw new ServerError(ErrorCode.ProtocolMismatch, ErrorMessage[ErrorCode.ProtocolMismatch]);
         }
+        // token 严格化（去 mock 后）：⛔ 不再有「伪造/过期静默降游客」——dev-login 让真
+        // token 零成本，游客模式失去存在理由；验不过一律拒连（可识别错误码给客户端回登录）
         const raw = options?.token ?? token ?? "";
-        if (FRAMEWORK_TOKEN_RE.test(raw)) {
-            try {
-                return { userId: await verifyBearer(raw, false) };
-            } catch {
-                // 过期/伪造：按游客进房（战绩不落库）
-            }
+        if (!FRAMEWORK_TOKEN_RE.test(raw)) {
+            throw new ServerError(ErrorCode.TokenExpired, ErrorMessage[ErrorCode.TokenExpired]);
         }
-        return { userId: null };
+        try {
+            return { userId: await verifyBearer(raw, false) };
+        } catch {
+            throw new ServerError(ErrorCode.TokenExpired, ErrorMessage[ErrorCode.TokenExpired]);
+        }
     }
 
     /** Colyseus 0.17 消息处理表，消息名来自双端共享的 C2S 常量 */
@@ -165,7 +170,7 @@ export class GameRoom extends Room {
         const welcome: IWelcomeRes = {
             sessionId: client.sessionId,
             tickRate: Math.round(1000 / TICK_MS),
-            motd: "欢迎来到 game（mock 服务端）",
+            motd: "欢迎来到 game（dev 服务端）",
         };
         // onJoin 里同步 send 是安全的：@colyseus/ws-transport 在客户端 JOIN ack 之前
         //（state !== JOINED）把所有 send 缓冲进 _enqueuedMessages，ack 后先发全量 state

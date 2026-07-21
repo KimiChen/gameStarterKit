@@ -8,8 +8,10 @@
  * 使用约定：
  *  - 错误处理只按 RpcError.code 分支，⛔ 禁止解析 msg（09·G3）
  *  - 写接口一律走 rpcIdem：clientReqId 每个逻辑操作生成一次，重试复用同一个（09·I2）
- *  - join 需要框架 token（POST /account/wx-login 签发）；mock token 会被服务端 onAuth 拒绝
+ *  - join 需要框架 token（POST /account/wx-login 或 /account/dev-login 签发）
+ *  - 鉴权类错误码（踢线/过期/封号）统一上报 net/session.notifyAuthInvalid，UI 从 session 订阅
  */
+import { notifyAuthInvalid, notifyConnLost, type AuthInvalidReason } from "./session";
 import {
     LOBBY_MSG_PUSH,
     LOBBY_MSG_RPC,
@@ -80,6 +82,8 @@ export class WebSocketClient {
     private pending = new Map<string, IPending>();
     private seq = 0;
     private pushHandlers = new Map<string, Set<(data: unknown) => void>>();
+    /** 主动 leave 进行中的标志：区分「用户登出/换号」与「连接意外死亡」（后者才通知 connLost） */
+    private leaving = false;
 
     get connected(): boolean {
         return this.room != null;
@@ -127,7 +131,13 @@ export class WebSocketClient {
             if (reply.ok) {
                 p.resolve(reply.data);
             } else {
-                p.reject(new RpcError((reply.err?.code ?? "INTERNAL") as RpcErrCode, reply.err?.msg ?? ""));
+                const code = (reply.err?.code ?? "INTERNAL") as RpcErrCode;
+                // 踢线/过期/封号：dispatcher 每消息复验 tokenEpoch，命中即上报 session
+                //（清会话 + 广播）——调用方仍收到原样 RpcError 以终止自身流程
+                if (code === "AUTH_EPOCH_STALE" || code === "AUTH_REQUIRED" || code === "ACCOUNT_BANNED") {
+                    notifyAuthInvalid(code as AuthInvalidReason);
+                }
+                p.reject(new RpcError(code, reply.err?.msg ?? ""));
             }
         });
         room.onMessage(LOBBY_MSG_PUSH, (msg: { type: string; data: unknown }) => {
@@ -148,9 +158,13 @@ export class WebSocketClient {
         });
         room.onLeave(() => {
             if (this.room !== room) return;
+            const wasIntentional = this.leaving;
             this.room = null;
             this.joinedToken = "";
             this.rejectAll("CONN_LOST");
+            // 非主动 leave 的最终死亡（SDK 自动重连耗尽/服务端强断）：通知 session，
+            // UI 层提示后可用原 token 重新 join（登录态未失效）
+            if (!wasIntentional) { notifyConnLost(); }
         });
     }
 
@@ -164,15 +178,20 @@ export class WebSocketClient {
         if (this.joining) { await this.joining.catch(() => {}); }
         const room = this.room;
         if (!room) return;
-        this.room = null; // 先摘引用：leave 期间新发起的 rpc 直接 CONN_LOST，不发往将死的连接
-        this.joinedToken = "";
-        this.rejectAll("CONN_LOST");
-        room.reconnection.enabled = false;
-        await Promise.race([
-            room.leave(true).catch(() => { /* 掉线窗口发不出 LEAVE 帧属预期 */ }),
-            new Promise<void>((r) => setTimeout(r, LEAVE_TIMEOUT_MS)),
-        ]);
-        room.removeAllListeners();
+        this.leaving = true; // 主动离开：onLeave 不得当成意外死亡广播 connLost
+        try {
+            this.room = null; // 先摘引用：leave 期间新发起的 rpc 直接 CONN_LOST，不发往将死的连接
+            this.joinedToken = "";
+            this.rejectAll("CONN_LOST");
+            room.reconnection.enabled = false;
+            await Promise.race([
+                room.leave(true).catch(() => { /* 掉线窗口发不出 LEAVE 帧属预期 */ }),
+                new Promise<void>((r) => setTimeout(r, LEAVE_TIMEOUT_MS)),
+            ]);
+            room.removeAllListeners();
+        } finally {
+            this.leaving = false;
+        }
     }
 
     /**

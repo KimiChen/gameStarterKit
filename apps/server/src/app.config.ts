@@ -5,13 +5,12 @@ import { GameRoom } from "./rooms/GameRoom";
 import { LobbyRoom } from "./websocket/LobbyRoom";
 import { MAX_WS_PAYLOAD_BYTES } from "./core/infra/config";
 import { routes } from "./http/index";
-import { registerMockRoutes } from "./mock/index";
 
 /**
  * Colyseus 0.17 服务端配置。
  *  - rooms：房间定义，房间名来自双端共享的 RoomName 常量
  *  - routes：服务端框架的真实 HTTP 端点（M3 wx-login / M6 支付回调，见 routes/index.ts）
- *  - express：挂载 HTTP 模拟接口（假数据）与开发工具
+ *  - express：挂载开发工具（monitor / playground）
  *
  * `export const server` 供测试直接 boot(server)（@colyseus/testing），监听入口在 index.ts。
  */
@@ -20,7 +19,7 @@ export const server = defineServer({
         [RoomName.Game]: defineRoom(GameRoom),
         // 网关大厅房（框架 M5）：取数/邮件/工会走单一 rpc 消息通道。连接需要框架 token
         //（/account/wx-login 签发），且依赖本地栈（npm --workspace @game/server run stack）；
-        // 纯 mock 联调不 join 它即可，不影响 GameRoom。
+        // 不需要大厅功能的联调不 join 它即可，不影响 GameRoom。
         [RoomName.Lobby]: defineRoom(LobbyRoom),
     },
 
@@ -30,8 +29,6 @@ export const server = defineServer({
     transport: new WebSocketTransport({ maxPayload: MAX_WS_PAYLOAD_BYTES }),
 
     express: async (app) => {
-        // 模拟 REST 接口（假数据）：扫描 mock/api/ 自动挂载（Colyseus 0.17 会 await 本钩子）
-        await registerMockRoutes(app);
 
         // 房间监控面板：http://localhost:2568/monitor
         app.use("/monitor", monitor());

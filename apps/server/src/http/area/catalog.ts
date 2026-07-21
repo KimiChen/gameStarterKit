@@ -10,13 +10,6 @@ import type { IAreaServer } from "@game/shared";
 /** 运维模式（1=灰度/维护中，客户端提示）。env AREA_IS_OPS 可覆盖。 */
 export const AREA_IS_OPS = process.env.AREA_IS_OPS ? Number(process.env.AREA_IS_OPS) : 0;
 
-/**
- * demo：无有效 token 时是否仍回填「我的角色」页签（starter kit 默认开）。
- * 客户端走 mock 登录，其 token 过不了 verifyBearer；开此项让「我的」页签有内容可演示。
- * 真实部署置 `AREA_DEMO_UL=0`，只走 token 反查（09·G1：⛔ 不信客户端 sId）。
- */
-export const AREA_DEMO_UL = process.env.AREA_DEMO_UL ? Number(process.env.AREA_DEMO_UL) !== 0 : true;
-
 /** demo：所有区服的游戏服地址（本机 dev server）。真实实现每服不同实例地址。 */
 const AREA_WS_URL = process.env.AREA_WS_URL ?? "ws://localhost:2568";
 

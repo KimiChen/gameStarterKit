@@ -24,21 +24,25 @@ tools/          codegen / excel 导表 / 体积报告等
 
 ---
 
-## 30 秒跑起来（纯 mock，不需要数据库）
+## 三分钟跑起来（真实链路：本地栈 + dev-login）
 
 ```bash
-npm install            # 安装 shared + server 依赖（client/Cocos 不在 workspaces）
-npm run sync:shared    # apps/shared/src → apps/client/src/shared，并级联 sync:client 灌入 apps/Cocos/assets/src
-npm run dev            # 启动服务端 http://localhost:2568
-# 运行时产物（colyseus UMD、fairygui-cc 运行时）已入库，clone 即可用，无需任何 fetch
+npm install                                  # 安装 shared + server 依赖（client/Cocos 不在 workspaces）
+npm run sync:shared                          # shared→client→Cocos 全链同步（生成物已入库，通常无 diff）
+npm --workspace @game/server run stack       # 起本地 Redis×2 + MySQL（一次性；brew redis + mysql@8.4）
+npm --workspace @game/server run db:bootstrap# 建 game_<PROJECT_ID> 库 + 全量 DDL（一次性，幂等）
+npm run dev                                  # 启动服务端 http://localhost:2568
+# 运行时产物（colyseus UMD、fairygui-cc 运行时）已入库，无需任何 fetch；
+# 登录走 /account/dev-login（真实建号/token/会话链路，无微信凭证也严谨可跑；生产自动禁用）
 ```
 
 然后打开客户端预览：
 
 1. 用 **Cocos Dashboard 3.8.8** 打开 **`apps/Cocos`** 目录，等首次导入完成；
-2. 编辑器里点 **预览** —— 控制台应输出 mock 登录成功 + 进房日志，**按住屏幕可拖动小圆点**。
+2. 编辑器里点 **预览** —— 点「进入游戏」：dev-login 建真实账号 → 进大厅拉档案 → 主界面 →
+   再点「进入游戏」进房，**按住屏幕可拖动小圆点**。
 
-服务端起来后还带三个网页入口：`/` Playground 调试台、`/monitor` 房间监控、`/mock/*` HTTP 假数据接口。
+服务端起来后还带两个网页入口：`/` Playground 调试台、`/monitor` 房间监控。
 
 > 首次打开客户端还有几步一次性配置（fairygui 运行时、colyseus 插件、场景挂 Main）——
 > 见 [docs/CLIENT.md · 首次打开](docs/CLIENT.md#首次打开一次性配置)。服务端跑真实玩法链路（登录/工会/充值）
@@ -62,7 +66,7 @@ npm run dev            # 启动服务端 http://localhost:2568
 | `npm run report:size` | 微信构建体积报告（4MB 主包水位） |
 | `npm run verify:ecs` | 校验 ECS 库（bitECS）12 个文件字节锁定 |
 | `npm --workspace @game/server run test` | 服务端单测 |
-| `npm --workspace @game/server run smoke` | mock 链路冒烟（需 npm run dev 已启动） |
+| `npm --workspace @game/server run smoke` | 真实链路冒烟：dev-login→选服→进房→技能（需 stack + db:bootstrap + dev 已起） |
 | `npm --workspace @game/server run stack` | 起本地 Redis×2 + MySQL（真实玩法链路用） |
 | `npm --workspace @game/server run test:int` | 集成测试（真实 Redis+MySQL；**跑前先停 npm run dev**） |
 

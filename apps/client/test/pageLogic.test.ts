@@ -102,18 +102,21 @@ test("LoginNotice：页签标题最多 4 字 + 默认选中首条正文 + 切标
 test("Login：进度回调 + 登录幂等（重复点不重复请求）", async () => {
   let calls = 0;
   const logic = new LoginLogic({
-    login: async (code) => { calls++; return { openId: "u", token: `tk-${code}`, isNew: true }; },
+    login: async (key) => { calls++; return { userId: "u_1", token: `u_1.${"a".repeat(48)}-${key}`, isNew: true }; },
   });
   const prog: number[] = [];
   logic.onProgress = (r) => prog.push(r);
-  const [a, b] = await Promise.all([logic.doLogin("c"), logic.doLogin("c")]);
-  assert.equal(a, "tk-c");
+  const [a, b] = await Promise.all([logic.doLogin("dev_a"), logic.doLogin("dev_a")]);
+  assert.equal(a?.userId, "u_1");
+  assert.equal(b?.userId, "u_1", "并发第二发合流拿同一结果（不是 null）");
   assert.equal(calls, 1, "并发重复点只请求一次");
-  assert.equal(logic.token, "tk-c");
-  assert.ok(prog.includes(1), "成功进度到 1");
+  assert.equal(logic.userId, "u_1");
+  assert.ok(prog.includes(0.4), "账号验证成功推进到 0.4（满格由编排层进大厅/拉档案后收口）");
 
   const failLogic = new LoginLogic({ login: async () => null });
-  assert.equal(await failLogic.doLogin(), null, "登录失败 resolve null");
+  assert.equal(await failLogic.doLogin("dev_a"), null, "登录失败 resolve null");
+  const throwLogic = new LoginLogic({ login: async () => { throw new Error("HTTP 500"); } });
+  assert.equal(await throwLogic.doLogin("dev_a"), null, "登录 reject 也按失败处理（不外抛）");
 });
 
 test("Confirm：单/双按钮 + 只结算一次", () => {

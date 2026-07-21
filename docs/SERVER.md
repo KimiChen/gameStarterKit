@@ -16,8 +16,9 @@ npm install                 # 根目录，装 shared + server
 npm run dev                 # tsx watch 启动，http://localhost:2568（热重载）
 ```
 
-起来后三个网页入口：`/` Playground 调试台、`/monitor` 房间监控、`/mock/*` HTTP 假数据。
-**纯 mock 链路不需要任何数据库**——房间玩法、mock HTTP 接口开箱即用。
+起来后两个网页入口：`/` Playground 调试台、`/monitor` 房间监控。
+**登录走 `/account/dev-login` 真实链路**（建号/token/会话，mock 层已移除）——需先起本地栈
++ `db:bootstrap`（见下节）；微信 wx.login 侧接入后走 `/account/wx-login`，dev-login 生产自动禁用。
 
 ### 本地开发栈
 
@@ -53,7 +54,7 @@ npm --workspace @game/server run test:int        # 集成测试（真实 Redis+M
 
 ---
 
-## 2. 目录导览（`src/` 根 = 6 目录 + 入口两文件，每个目录有 README）
+## 2. 目录导览（`src/` 根 = 5 目录 + 入口两文件，每个目录有 README）
 
 **端点层按传输方式分**：有 Schema 状态同步的实时玩法 → `rooms/`；无状态单次请求-响应 →
 `websocket/`（两者都走 ws，按「有无状态同步」分，不按协议分）。
@@ -63,7 +64,6 @@ npm --workspace @game/server run test:int        # 集成测试（真实 Redis+M
 | `rooms/` | 实时玩法房（GameRoom + Schema）。当前 demo：移动积分 20fps、技能结算用 shared 公式 |
 | `websocket/` | ws-RPC：LobbyRoom（房间 `lobby`）+ dispatcher 中间件链 + 每接口一文件端点 + 集合广播/推送 |
 | `http/` | 真实 HTTP 端点（仅 auth/支付/utility）：`<域>/<接口>.ts` + `index.ts` 静态 spread 装配 |
-| `mock/` | **常驻**假数据（供客户端无栈调试）：`api/<接口>.ts`，`/mock/` 前缀，扫描自动挂载 |
 | `player/` | 玩家数据日常主战场：`userStore`（readUser/readUserReadonly；加档字段起点） |
 | `core/` | 服务端底座（横切原语 + infra/auth/economy/archive/match/guild/compute 子模块） |
 | `index.ts` | 进程入口：启动期先 `registerAllRoutes()` 契约校验 + `startInfraMonitors()` 再 `listen` |
@@ -144,7 +144,7 @@ C2S: { id, type, payload }  →  S2C: { id, ok, data?, err? }
 
 ---
 
-## 5. HTTP 与 mock
+## 5. HTTP 端点
 
 - **HTTP（`http/`）**：真实端点，Colyseus 0.17 typed router（`createEndpoint`，zod 校验 body）。
   仅限 auth / 支付 / utility（通道分工）：`POST /account/wx-login`（wx 登录、不透明 token、
@@ -157,12 +157,14 @@ C2S: { id, type, payload }  →  S2C: { id, ok, data?, err? }
     选服后连它（Main 把 `ws→http` 传给 Colyseus Client）。demo 全部指向同一 dev server（env
     `AREA_WS_URL` 覆盖）；真实实现由中心服/调度按 `sId` 返回各实例地址（改 `area/catalog.ts` 接配置表即可）。
   - `h` = serverList 一致性哈希（`areaListHash()` djb2），进服/踢人校验用（对应原项目 `serverList.h`）。
-  - `ul` = 该用户最近登录区服（`getUserRecentServers`，喂「我的角色」页签）。token 反查出 uid 才回填；
-    demo 因走 mock 登录（token 过不了 `verifyBearer`），`AREA_DEMO_UL`（默认开）回落给一条最近服，
-    让「我的」页签有内容——真实部署置 `AREA_DEMO_UL=0` 只走 token 反查。
-- **mock（`mock/`）**：常驻假数据，`api/<接口>.ts` 的 `defineMock({method,path,handler})` 扫描
-  自动挂载；路径一律 `/mock/` 前缀（与真实接口隔离，启动断言）。**真实实现落地后 ⛔ 不删 mock**——
-  在文件头标记「⚠ 已替换 → <路径>」；req/res 类型必须 import shared 契约（差异只允许假数据、不允许假协议）。
+  - `ul` = 该用户最近登录区服（`getUserRecentServers`，喂「我的角色」页签）。token 反查出 uid
+    才回填（dev-login 签发的就是真 token，⛔ 无匿名回落——09·G1 不信客户端 sId）。
+- **dev-login（`account/devLogin.ts`）**：本地/CI 登录入口——只绕过 code2session 一跳
+  （devKey → `dev_<devKey>` openid），其余全走真实链路（限流/建号/token/sess/审计），出参与
+  wx-login 同契约（shared `ILoginRes`）。`AUTH_DEV_ENABLED` 控制：默认开发开、生产关，
+  **生产显式开启 = config 加载期拒绝启动**。mock 层已移除（AI 主导开发下假数据层价值 < 维护成本；
+  客户端联调直接跑真栈）。
+- **healthz（`misc/healthz.ts`）**：进程级健康检查（冒烟/探活）；依赖健康另走 smoke:framework。
 
 ---
 
@@ -205,8 +207,8 @@ shared IUserView（protocol/lobbyRpc/user.ts，类型真源）
 - `auth`：wx 登录 / 不透明 token / token_epoch
 - `economy`：三阶段 outbox / 充值状态机 / relayer 单例进程 / mailer 邮件附件 / catalog
 - `archive`：冷档 freeze/thaw/lazyMigrate/janitor
-- `match`：M8a 结算证据链消费（一局一条 XADD → 幂等闸落库；GameRoom 带框架 token 才绑账号，
-  mock token/游客全程不碰 Redis）
+- `match`：M8a 结算证据链消费（一局一条 XADD → 幂等闸落库；GameRoom onAuth 严格化后
+  参战者必绑框架账号）
 - `guild`：工会事件存取（seq + 近窗 list，见 §10）
 - `compute`：worker_threads 计算池（铁律 11 卸载点，见 §11）
 
@@ -533,6 +535,7 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 | `ACTIVE_LRU_BUCKETS / BUCKETS / BAG_SHARDS` | 256 / 16384 / 4 | 分片数，改即迁移（S2） |
 | `SCHEMA_VERSION` | 1 | 玩法档 schema 版本（S1 懒迁移） |
 | `PROJECT_ID / REDIS_KEY_PREFIX` | 根 .env 的 PROJECT_ID（缺省 gono）/ `<PROJECT_ID>_` | 多项目共用栈的命名空间：Redis 键前缀 + MySQL 库名 `game_<PROJECT_ID>`；校验 `^[a-z][a-z0-9_]{0,31}$`，非法即拒绝启动（config-guard.test 机检） |
+| `AUTH_DEV_ENABLED` | 开发 1 / 生产 0 | dev-login 开关；生产显式开启 = 加载期拒绝启动（config-guard 同族 fail-fast） |
 | `PORT` | 2568（根 .env 可覆盖） | 开发端口，`index.ts` 显式传 `listen(app, PORT)`；多项目并行时各项目错开；Colyseus 默认 2567 常被占用故不用之。校验纯整数 1–65535，服务端与 devEnv 生成器同一规则、非法即失败（config-guard.test 机检） |
 | `WX_APPID / WX_SECRET` | env | 微信凭证（KMS 注入，不进代码库） |
 
@@ -573,4 +576,4 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 - 服务端因无扩展名相对导入用 `moduleResolution: Bundler` + tsx（不是官方模板的 NodeNext）。
 - 大包防护在 ws transport 层 `maxPayload`（G4，`app.config.ts` 配置）。
 
-改 core 前先跑 `npm --workspace @game/server run test && test:int`；改端点/mock 后先跑 `smoke`（项数见 CLAUDE.md 验证基线，⛔ 本行不再重复计数）。
+改 core 前先跑 `npm --workspace @game/server run test && test:int`；改端点后先跑 `smoke`（真实链冒烟，项数见 CLAUDE.md 验证基线，⛔ 本行不再重复计数）。

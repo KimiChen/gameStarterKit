@@ -20,14 +20,46 @@ import { AreaListLogic } from "../logic/page/AreaListLogic";
 import { LoginNoticeLogic } from "../logic/page/LoginNoticeLogic";
 import type { IConfirmOptions } from "../logic/page/ConfirmLogic";
 import { ConfirmLogic } from "../logic/page/ConfirmLogic";
-import { getToken } from "../core/http";
-import { login as mockLogin } from "../net/mock/login";
+import { getBaseUrl, getToken } from "../core/http";
+import { devLogin } from "../net/http/account";
+import { WebSocketClient } from "../net/WebSocketClient";
+import { clearSession, onAuthInvalid, onConnLost, setSession } from "../net/session";
+import { UserRpc, type IUserView } from "../shared/index";
 import { fetchAreaList } from "../net/http/area";
 import { fetchNotices } from "../net/http/notice";
 import { chooseServer, getCurrentServer, pickDefaultServer, setServerList, getServerList } from "../net/serverSession";
 import type { IAreaServer } from "../shared/index";
 
 const NOTICE_DONT_REMIND_DATE_KEY = "game.notice.dont-remind-date";
+
+/** 本地开发登录身份（dev-login 的 devKey：同 key 恒同账号，换号 = 换 key）。
+ *  微信侧接入后此处换 wx.login 取 code → wxLogin(code)。 */
+const DEV_LOGIN_KEY = "dev_local";
+
+/** 会话事件接线（踢线/掉线 → 清态回登录页）。整个应用生命周期一次。 */
+let sessionWired = false;
+function wireSessionEvents(reopenLogin: () => void): void {
+  if (sessionWired) return;
+  sessionWired = true;
+  onAuthInvalid((reason) => {
+    void (async () => {
+      await WebSocketClient.inst.leave().catch(() => {});
+      closeLobby();
+      const text = reason === "ACCOUNT_BANNED" ? "账号已被封禁"
+        : reason === "AUTH_EPOCH_STALE" ? "账号在其他设备登录，已下线" : "登录已过期，请重新登录";
+      await openConfirm({ title: "提示", content: text, noText: null });
+      reopenLogin();
+    })();
+  });
+  onConnLost(() => {
+    void (async () => {
+      // 登录态未失效（非鉴权死亡）：提示后回登录页，用户可原路重进
+      closeLobby();
+      await openConfirm({ title: "连接断开", content: "与服务器的连接已断开，请重新进入", noText: null });
+      reopenLogin();
+    })();
+  });
+}
 
 function localDateStamp(date = new Date()): string {
   const year = date.getFullYear();
@@ -61,9 +93,11 @@ export async function openLogin(onEnterBattle: () => void): Promise<void> {
     if (def) chooseServer(def);
   } catch { /* 拉取失败不阻塞登录界面（无栈/离线仍能看到登录页） */ }
 
+  wireSessionEvents(() => { void openLogin(onEnterBattle); });
+
   const h = await ViewMgr.open("Login");
   const view = h.view as LoginView;
-  const logic = new LoginLogic({ login: (code) => mockLogin(code).then((r) => r.data) });
+  const logic = new LoginLogic({ login: (key) => devLogin(key) });
   logic.onProgress = (ratio, text) => view.setProgress(ratio, text);
 
   view.onEnter = async () => {
@@ -74,8 +108,28 @@ export async function openLogin(onEnterBattle: () => void): Promise<void> {
       await openConfirm({ title: "维护中", content: "区服维护中，请稍候再试", noText: null });
       return;
     }
-    const token = await logic.doLogin();
-    if (token) { h.close(); await openHome(onEnterBattle); }
+    // 真实链路：dev-login（本地身份）→ 会话入 session → join 大厅房 → 拉真实档案
+    const r = await logic.doLogin(DEV_LOGIN_KEY);
+    if (!r) return; // 进度条已显示失败文案，可重点
+    setSession(r);
+    let user: IUserView | null = null;
+    try {
+      logic.onProgress(0.6, "正在进入大厅…");
+      WebSocketClient.inst.init(getBaseUrl());
+      await WebSocketClient.inst.join(r.token);
+      logic.onProgress(0.85, "正在加载角色…");
+      user = (await WebSocketClient.inst.rpc(UserRpc.GetInfo, {})).user;
+    } catch (e) {
+      // 大厅/档案失败即整体失败（严谨：不带半截会话进主界面）；清态可重试
+      console.error("[pages] 进入大厅失败：", e);
+      clearSession();
+      await WebSocketClient.inst.leave().catch(() => {});
+      logic.onProgress(0, "进入大厅失败，请重试");
+      return;
+    }
+    logic.onProgress(1, "登录成功");
+    h.close();
+    await openHome(onEnterBattle, r.userId, user);
   };
   view.onNotice = () => { void openNotice(); };
   view.onSelectServer = () => { void openAreaList((s) => view.showCurrentServer(s)); };
@@ -84,13 +138,15 @@ export async function openLogin(onEnterBattle: () => void): Promise<void> {
   view.showCurrentServer(getCurrentServer());
 }
 
-/** 主界面：展示用户 id，「进入游戏」→ ballMove（onEnterBattle 由 Main 注入，连 currentServer.wsUrl）。 */
-export async function openHome(onEnterBattle: () => void): Promise<void> {
+/** 主界面：展示真实账号/档案摘要，「进入游戏」→ ballMove（onEnterBattle 由 Main 注入，连 currentServer.wsUrl）。 */
+export async function openHome(onEnterBattle: () => void, userId = "", user: IUserView | null = null): Promise<void> {
   const h = await ViewMgr.open("Home");
   const view = h.view as HomeView;
   view.onEnterBattle = onEnterBattle;
   const cur = getCurrentServer();
-  view.setup(cur ? `${cur.name} · 已登录` : "游客");
+  const who = userId || "未登录";
+  const summary = user ? ` · 体力 ${user.stamina} · ${user.wins}胜${user.losses}负` : "";
+  view.setup(`${cur ? `${cur.name} · ` : ""}${who}${summary}`);
 }
 
 /** 选服列表（HTTP）：选服 → 存 currentServer + 回调刷新登录页 → 关闭。 */
