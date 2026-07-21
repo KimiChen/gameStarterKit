@@ -3,7 +3,7 @@
  *
  * 运行：npm --workspace @game/server run loadtest（默认 20 连接），或
  *   npm --workspace @game/server exec tsx loadtest/bot.ts -- --endpoint ws://localhost:2568 --room game --numClients 50
- * 需要 dev server 已启动（npm run dev:server）；mock 链路即可，不依赖本地栈。
+ * 需要 dev server 已启动（npm run dev）；mock 链路即可，不依赖本地栈。
  */
 import { cli, type Options } from "@colyseus/loadtest";
 import { Client } from "@colyseus/sdk";

@@ -1,6 +1,6 @@
 /**
  * 端到端冒烟测试：验证 HTTP 模拟接口 + Colyseus 房间全链路。
- * 前置：服务端已启动（npm run dev:server）。
+ * 前置：服务端已启动（npm run dev）。
  * 运行：npm --workspace @game/server run smoke
  */
 import { Client, getStateCallbacks } from "@colyseus/sdk";

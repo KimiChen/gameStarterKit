@@ -7,7 +7,7 @@
  * 大厅壳（登录/选服/公告/Home）走 FGUI（view/pages.ts 组合根，动态 import 铁律 10）；
  * ballMove 玩法在「进入游戏」后才建渲染层/ECS/连房。
  *
- * 使用前：启动服务端 `npm run dev:server`（默认 http://localhost:2568）。
+ * 使用前：启动服务端 `npm run dev`（默认 http://localhost:2568）。
  */
 import { _decorator, Component, Node, Graphics, UITransform, Color, input, Input, EventTouch, Vec3, view, ResolutionPolicy } from "cc";
 import { DESIGN_WIDTH, DESIGN_HEIGHT } from "./designSpec";
@@ -98,7 +98,7 @@ export class Main extends Component {
             await this.connectRoom();
             this.started = true;
         } catch (err) {
-            console.error("[Main] 连接房间失败（请确认已运行 npm run dev:server）：", err);
+            console.error("[Main] 连接房间失败（请确认已运行 npm run dev）：", err);
         }
     }
 

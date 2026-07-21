@@ -29,7 +29,7 @@ tools/          codegen / excel 导表 / 体积报告等
 ```bash
 npm install            # 安装 shared + server 依赖（client/Cocos 不在 workspaces）
 npm run sync:shared    # apps/shared/src → apps/client/src/shared，并级联 sync:client 灌入 apps/Cocos/assets/src
-npm run dev:server     # 启动服务端 http://localhost:2568
+npm run dev            # 启动服务端 http://localhost:2568
 # 运行时产物（colyseus UMD、fairygui-cc 运行时）已入库，clone 即可用，无需任何 fetch
 ```
 
@@ -50,7 +50,7 @@ npm run dev:server     # 启动服务端 http://localhost:2568
 
 | 命令 | 作用 |
 |---|---|
-| `npm run dev:server` | 启动服务端（tsx watch，热重载，端口 2568） |
+| `npm run dev` | 启动服务端（tsx watch，热重载，端口 2568） |
 | `npm run dev:client` | 双 watcher 常驻：shared→client→Cocos 保存即同步 |
 | `npm run fetch:fgui` / `fetch:colyseus` | **升级**运行时版本时用（产物已入库；拉新版 + 验完整性后提交 diff） |
 | `npm run sync:shared` | 改完 `apps/shared/src` 后**必须**执行（→ `apps/client/src/shared`，并级联 `sync:client`） |
@@ -62,9 +62,9 @@ npm run dev:server     # 启动服务端 http://localhost:2568
 | `npm run report:size` | 微信构建体积报告（4MB 主包水位） |
 | `npm run verify:ecs` | 校验 ECS 库（bitECS）12 个文件字节锁定 |
 | `npm --workspace @game/server run test` | 服务端单测 |
-| `npm --workspace @game/server run smoke` | mock 链路冒烟（需 dev:server 已启动） |
+| `npm --workspace @game/server run smoke` | mock 链路冒烟（需 npm run dev 已启动） |
 | `npm --workspace @game/server run stack` | 起本地 Redis×2 + MySQL（真实玩法链路用） |
-| `npm --workspace @game/server run test:int` | 集成测试（真实 Redis+MySQL；**跑前先停 dev:server**） |
+| `npm --workspace @game/server run test:int` | 集成测试（真实 Redis+MySQL；**跑前先停 npm run dev**） |
 
 ---
 

@@ -13,7 +13,7 @@ tsx 直跑 TS。整体设计意图见 [OVERVIEW.md](OVERVIEW.md)；客户端见 
 
 ```bash
 npm install                 # 根目录，装 shared + server
-npm run dev:server          # tsx watch 启动，http://localhost:2568（热重载）
+npm run dev                 # tsx watch 启动，http://localhost:2568（热重载）
 ```
 
 起来后三个网页入口：`/` Playground 调试台、`/monitor` 房间监控、`/mock/*` HTTP 假数据。
@@ -34,7 +34,7 @@ npm --workspace @game/server run test:int        # 集成测试（真实 Redis+M
 - 本地栈脚本 `tools/dev-stack.sh` 依赖 brew 的 `redis` 与 `mysql@8.4`；数据目录 `~/.game-dev`
   （`GAME_DEV_DATA` 可改）。端口 6401/6402/3316 与 Arthur 项目约定一致，可共用一套本地实例（库名不同）。
 - **跑 `test:int` 前先停 dev server**：集成测会 `boot(server)` 真实监听 2568，dev server 占端口会
-  EADDRINUSE 且卡死 test runner。`dev:server` 是 tsx watch——kill 要 kill 整棵 watch 进程树。
+  EADDRINUSE 且卡死 test runner。根脚本 `npm run dev` 起的是 tsx watch——kill 要 kill 整棵 watch 进程树。
 - 开发端口固定 **2568**（`.env.development`，可用 `PORT` 覆盖）：Colyseus 默认 2567 常被占用。
   改端口需同步 `.env.development`、场景里 Main 组件 `serverUrl`、smoke 默认地址。
 
