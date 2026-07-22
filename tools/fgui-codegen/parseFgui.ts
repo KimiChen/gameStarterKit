@@ -21,7 +21,7 @@ export interface FguiComponent {
 
 /** FairyGUI displayList 支持的元素标签（用于识别 UI 元素、忽略 relation/item 等配置节点）。 */
 const ELEMENT_TAGS = new Set([
-  "text", "richtext", "image", "loader", "list", "graph", "group", "component", "movieclip",
+  "text", "richtext", "image", "loader", "loader3D", "list", "graph", "group", "component", "movieclip",
 ]);
 
 /** 解析组件 XML → displayList 直接子元素清单。容错:无 displayList 时对全文兜底扫描。 */

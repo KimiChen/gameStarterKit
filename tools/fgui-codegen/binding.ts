@@ -15,13 +15,15 @@ export interface BindingField {
   tsType: string; // fairygui-cc 类名（GButton/GTextField/...）
 }
 
-/** name 前缀 → 生成绑定字段（普通 group 等无识别前缀者不绑，与源项目 genTs.js 一致）。 */
-const RECOGNIZED_PREFIXES = new Set(["btn", "tge", "txt", "ld", "lst", "img", "go", "jb"]);
+/** name 前缀 → 生成绑定字段（普通 group 等无识别前缀者不绑，与源项目 genTs.js 一致；
+ *  pg/ld3 为 2026-07 对照 kimi 规范包 prefixTypeMap 补齐——art 已有实例此前被静默跳过；
+ *  其 sdr/cb/it 三项等真用到再加，ld3 的源项目映射 Loader3D 在 fairygui-cc 里是 GLoader3D）。 */
+const RECOGNIZED_PREFIXES = new Set(["btn", "tge", "txt", "ld", "ld3", "lst", "img", "go", "jb", "pg"]);
 
-/** 元素标签 → fairygui-cc 类型。component 按 name 前缀区分 GButton/GComponent。 */
+/** 元素标签 → fairygui-cc 类型。component 按 name 前缀区分 GButton/GProgressBar/GComponent。 */
 const TAG_TYPE: Record<string, string> = {
   text: "GTextField", richtext: "GRichTextField", image: "GImage", loader: "GLoader",
-  list: "GList", graph: "GGraph", group: "GGroup", movieclip: "GMovieClip",
+  loader3D: "GLoader3D", list: "GList", graph: "GGraph", group: "GGroup", movieclip: "GMovieClip",
 };
 
 function prefixOf(name: string): string | undefined {
@@ -37,6 +39,7 @@ export function elementTsType(el: FguiElement): string {
   if (el.tag === "component") {
     const p = prefixOf(el.name);
     if (p === "btn" || p === "tge") { return "GButton"; }
+    if (p === "pg") { return "GProgressBar"; } // extention="ProgressBar" 组件引用（如 Login 的 pg_loading）
     return "GComponent";
   }
   return TAG_TYPE[el.tag] ?? el.tag;

@@ -33,3 +33,20 @@ for (const c of FGUI_CONTRACTS) {
         );
     });
 }
+
+// 编辑器工程 Adaptation ⇔ 代码真源 designSpec 一致性：设计师在错误分辨率/适配模式下出图
+// 是「UI 偏小 + 黑边」的放大器（designSpec.ts 头注释）。分辨率两值比 designSpec；
+// 适配策略半边（FIXED_WIDTH ≙ FairyGUI 的 MatchWidth）designSpec 里没有，钉 Main.ts 源文本。
+test("FGUI 编辑器 Adaptation 设置 ⇔ designSpec/Main.ts 三处一致", async () => {
+    const { DESIGN_WIDTH, DESIGN_HEIGHT } = await import("../src/designSpec");
+    const adaptation = JSON.parse(
+        readFileSync(join(import.meta.dirname, "../../art/fairygui/settings/Adaptation.json"), "utf8"),
+    );
+    assert.strictEqual(adaptation.designResolutionX, DESIGN_WIDTH, "编辑器设计宽 ≠ designSpec.DESIGN_WIDTH");
+    assert.strictEqual(adaptation.designResolutionY, DESIGN_HEIGHT, "编辑器设计高 ≠ designSpec.DESIGN_HEIGHT");
+    assert.strictEqual(adaptation.scaleMode, "ScaleWithScreenSize");
+    // FairyGUI 真实键名就是 screenMathMode（非 Match 拼写笔误）
+    assert.strictEqual(adaptation.screenMathMode, "MatchWidth", "编辑器适配模式须与 Main.ts 的 FIXED_WIDTH 同语义");
+    const mainTs = readFileSync(join(import.meta.dirname, "../src/Main.ts"), "utf8");
+    assert.match(mainTs, /ResolutionPolicy\.FIXED_WIDTH/, "Main.ts 适配策略不再是 FIXED_WIDTH——编辑器 MatchWidth 假设失效，连同本断言一起重议");
+});

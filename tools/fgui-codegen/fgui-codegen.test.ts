@@ -39,6 +39,11 @@ test("类型推断:fairygui-cc 类名;tge_ 是 GButton;jb_ 是 GComponent;无前
   assert.strictEqual(tsTypeOf({ name: "lst_rows", tag: "list" }), "GList");
   assert.strictEqual(tsTypeOf({ name: "ld_icon", tag: "loader" }), "GLoader");
   assert.strictEqual(tsTypeOf({ name: "go_border", tag: "graph" }), "GGraph");
+  assert.strictEqual(tsTypeOf({ name: "pg_loading", tag: "component", fileName: "ProgressBarLoading.xml" }), "GProgressBar",
+    "pg_ 组件引用（extention=ProgressBar）→ GProgressBar（2026-07 对照 kimi prefixTypeMap 补齐）");
+  assert.strictEqual(tsTypeOf({ name: "ld3_testAnim", tag: "loader3D" }), "GLoader3D",
+    "loader3D 标签 + ld3_ 前缀 → GLoader3D（此前标签不在白名单被静默跳过）");
+  assert.strictEqual(tsTypeOf({ name: "spineDecor", tag: "loader3D" }), undefined, "无前缀 loader3D 不绑定");
   assert.strictEqual(tsTypeOf({ name: "jb_seal", tag: "component", fileName: "CompSeal.xml" }), "GComponent",
     "jb_ 嵌套组件无 UIObjectFactory 扩展机制，运行时就是 GComponent");
   assert.strictEqual(tsTypeOf({ name: "frameGroup", tag: "group" }), undefined, "无识别前缀 → 不生成字段");

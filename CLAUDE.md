@@ -69,4 +69,4 @@ net/、dispatcher/loader、Main.ts 永远不碰。分端细节见 docs/SERVER.md
 - 玩法是 demo（`ballMove` 小球移动 + 技能结算）；登录走 dev-login 真实链路（**需本地栈**，
   mock 层已移除；微信 wx.login 侧接入后补）。服务端框架生产级（源自 Arthur M0–M9，
   **已停止回流、独立演进**）。Arthur 专属未移植件（M4 存量迁移、wxLogin 存量账号绑定）本项目 N/A。
-- 验证基线（近期全绿）：typecheck 三端 + verify:sync / 服务端单测 15 / 客户端 test:fgui 66 / 集成测试 68 / 真实链冒烟 13。
+- 验证基线（近期全绿）：typecheck 三端 + verify:sync / 服务端单测 15 / 客户端 test:fgui 67 / 集成测试 68 / 真实链冒烟 13。
