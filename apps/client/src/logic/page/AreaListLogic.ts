@@ -4,6 +4,7 @@
  * 数据源经依赖注入（生产接 net/http/area.fetchAreaList）；导航/渲染在 view 层。
  * 固定页签：recommend=推荐(t===1)、my=我的角色(ul∩al)、all=全部区服。
  */
+import { isServerEnterable } from "../../shared/index";
 import type { IAreaListRes, IAreaServer } from "../../shared/index";
 
 /** 选服页固定展示的三个分类。 */
@@ -68,11 +69,12 @@ export class AreaListLogic {
         return this.data.al;
     }
 
-    /** 选服：维护/未开服（t===9 或 openTime===0）不可进 → 返回 false 由 view 提示 */
+    /** 选服：不可进（isServerEnterable=false：维护 t===9 / 未开服 openTime===0）→ 返回 false 由 view 提示。
+     *  运维模式（isOps，部署环境级）豁免——维护/未开服的开服前验证都要能选中进入；
+     *  新服角标（t===1）也可能未开服，判定单源已双条件拦。 */
     choose(sId: number): boolean {
         const s = this.data.al.find((a) => a.sId === sId);
-        // openTime===0 = 未开服（协议语义）：新服角标（t===1）也可能未开服，必须双条件拦
-        if (!s || s.t === 9 || s.openTime === 0) return false;
+        if (!s || (!this.isOps && !isServerEnterable(s))) return false;
         this.onChoose(s);
         return true;
     }

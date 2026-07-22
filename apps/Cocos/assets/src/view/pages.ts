@@ -24,7 +24,7 @@ import { getBaseUrl, getToken } from "../core/http";
 import { devLogin } from "../net/http/account";
 import { WebSocketClient } from "../net/WebSocketClient";
 import { clearSession, onAuthInvalid, onConnLost, setSession } from "../net/session";
-import { UserRpc, type IUserView } from "../shared/index";
+import { UserRpc, isServerEnterable, type IUserView } from "../shared/index";
 import { fetchAreaList } from "../net/http/area";
 import { fetchNotices } from "../net/http/notice";
 import { chooseServer, getCurrentServer, pickDefaultServer, setServerList, getServerList } from "../net/serverSession";
@@ -102,10 +102,17 @@ export async function openLogin(onEnterBattle: () => void): Promise<void> {
 
   view.onEnter = async () => {
     const cur = getCurrentServer();
-    // 维护闸（对齐原项目 waitLogin）：无服 / 维护中（t===9 且非运维模式）不进
+    // 进服闸（判定单源 isServerEnterable，对齐原项目 waitLogin）：无服 / 不可进（维护 or 未开服）
+    // 且非运维模式不进。isOps 是部署环境级开关（服务端 AREA_IS_OPS），豁免覆盖两种不可进态——
+    // 维护服重开前与新服开服前的验证是同一运维形态。⛔ 此闸只是 UX，真闸在服务端准入层。
     if (!cur) { await openConfirm({ title: "提示", content: "暂无可用区服", noText: null }); return; }
-    if (cur.t === 9 && (getServerList()?.isOps ?? 0) <= 0) {
-      await openConfirm({ title: "维护中", content: "区服维护中，请稍候再试", noText: null });
+    if (!isServerEnterable(cur) && (getServerList()?.isOps ?? 0) <= 0) {
+      const unopened = cur.openTime === 0 && cur.t !== 9;
+      await openConfirm({
+        title: unopened ? "未开服" : "维护中",
+        content: unopened ? "该区服尚未开放，敬请期待" : "区服维护中，请稍候再试",
+        noText: null,
+      });
       return;
     }
     // 真实链路：dev-login（本地身份）→ 会话入 session → join 大厅房 → 拉真实档案

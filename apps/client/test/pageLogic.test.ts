@@ -1,6 +1,7 @@
 /**
  * 迁移页面的逻辑层无头单测（logic/page/ 纯 TS，依赖注入 net）。
- * 覆盖：选服拉取/分页/维护不可进、公告拉取/选中、登录进度/幂等、Confirm 单双按钮/只结算一次。
+ * 覆盖：选服拉取/分页/维护与未开服不可进（isServerEnterable 判定单源）/运维豁免/默认选中过滤、
+ * 公告拉取/选中、登录进度/幂等、Confirm 单双按钮/只结算一次。
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -9,22 +10,23 @@ import { LoginNoticeLogic } from "../src/logic/page/LoginNoticeLogic";
 import { LoginLogic } from "../src/logic/page/LoginLogic";
 import { ConfirmLogic } from "../src/logic/page/ConfirmLogic";
 import { chooseServer, getCurrentServer, pickDefaultServer, setServerList, getListHash } from "../src/net/serverSession";
+import { isServerEnterable } from "../src/shared/index";
 import type { IAreaListRes, IAreaServer } from "../src/shared/index";
 
-const srv = (sId: number, t = 0): IAreaServer =>
-  ({ sId, name: `区${sId}`, t, status: 1, openTime: t === 9 ? 0 : 1_700_000_000, wsUrl: "ws://localhost:2568" });
+const srv = (sId: number, t = 0, openTime = t === 9 ? 0 : 1_700_000_000): IAreaServer =>
+  ({ sId, name: `区${sId}`, t, status: 1, openTime, wsUrl: "ws://localhost:2568" });
 const areaRes = (al: IAreaServer[], ul: number[] = [], isOps = 0): IAreaListRes =>
   ({ isOps, al, ul, h: "hh" });
 
 test("AreaList：拉取 + 推荐/我的角色/全部区服页签 + 维护不可进", async () => {
   const al = [srv(1, 1), srv(2), srv(3, 9), ...Array.from({ length: 9 }, (_, i) => srv(11 + i))];
-  const logic = new AreaListLogic({ fetchAreaList: async () => areaRes(al, [2], 1) });
+  const logic = new AreaListLogic({ fetchAreaList: async () => areaRes(al, [2]) });
   const rendered: number[][] = [];
   let tabKeys: string[] = [];
   logic.onServers = (s) => rendered.push(s.map((x) => x.sId));
   logic.onTabs = (t) => { tabKeys = t.map((x) => x.key); };
   await logic.start();
-  assert.equal(logic.isOps, true);
+  assert.equal(logic.isOps, false);
   assert.deepEqual(tabKeys, ["recommend", "my", "all"], "固定展示推荐/我的角色/全部区服");
   assert.deepEqual(logic.serversOfTab("recommend").map((s) => s.sId), [1], "推荐 = t===1");
   assert.deepEqual(logic.serversOfTab("my").map((s) => s.sId), [2], "我的 = ul ∩ al");
@@ -52,15 +54,46 @@ test("AreaList：未开服（openTime=0）不可进——含挂新服角标（t=
   assert.equal(logic.choose(1), true, "正常服不受影响");
 });
 
-test("serverSession：存列表 + 默认选中（ul 优先，否则首个非维护）+ 选服", () => {
+test("AreaList：运维模式（isOps）豁免——维护/未开服的开服前验证可选中", async () => {
+  // isOps 是部署环境级开关（服务端 AREA_IS_OPS），非按账号：运维环境下维护服重开前、
+  // 新服 openTime 翻正前都要能从选服页选中进入验证；普通环境两者都拦（上两个用例）。
+  const logic = new AreaListLogic({ fetchAreaList: async () => areaRes([srv(3, 9), srv(5, 1, 0)], [], 1) });
+  await logic.start();
+  assert.equal(logic.isOps, true);
+  let chosen = -1;
+  logic.onChoose = (s) => { chosen = s.sId; };
+  assert.equal(logic.choose(3), true, "运维模式：维护服可选（重开前验证）");
+  assert.equal(chosen, 3);
+  assert.equal(logic.choose(5), true, "运维模式：未开服可选（开服前验证）");
+  assert.equal(logic.choose(999), false, "不存在的服运维也不可选");
+});
+
+test("shared：isServerEnterable 判定单源（维护/未开服双条件）", () => {
+  assert.equal(isServerEnterable({ t: 0, openTime: 1_700_000_000 }), true);
+  assert.equal(isServerEnterable({ t: 9, openTime: 1_700_000_000 }), false, "维护不可进");
+  assert.equal(isServerEnterable({ t: 1, openTime: 0 }), false, "未开服不可进——新服角标也一样");
+  assert.equal(isServerEnterable({ t: 9, openTime: 0 }), false);
+});
+
+test("serverSession：存列表 + 默认选中（ul 优先，否则首个可进入服）+ 选服", () => {
   const list = areaRes([srv(1, 9), srv(2), srv(3)], [3]);
   setServerList(list);
   assert.equal(getListHash(), "hh");
   assert.equal(pickDefaultServer(list)?.sId, 3, "ul[0]=3 优先");
-  assert.equal(pickDefaultServer(areaRes([srv(1, 9), srv(2)]))?.sId, 2, "无 ul → 首个非维护(跳过 t=9)");
+  assert.equal(pickDefaultServer(areaRes([srv(1, 9), srv(2)]))?.sId, 2, "无 ul → 首个可进入服（跳过维护）");
   chooseServer(srv(2));
   assert.equal(getCurrentServer()?.sId, 2);
   assert.equal(getCurrentServer()?.wsUrl, "ws://localhost:2568", "选中服带连接地址");
+});
+
+test("serverSession：默认选中跳过不可进服——ul 顺延 / 兜底扫描跳未开服 / 全不可进兜底 al[0]", () => {
+  // ul[0] 维护中 → 顺延到下一个最近服（旧实现 ul 命中即返回，会默认选中维护服）
+  assert.equal(pickDefaultServer(areaRes([srv(1, 9), srv(2), srv(3)], [1, 3]))?.sId, 3, "ul[0]=1 维护 → 顺延 ul[1]=3");
+  // ul 全不可进 → 兜底扫描；扫描也要跳过未开服（挂新服角标的未开服不落默认位）
+  assert.equal(pickDefaultServer(areaRes([srv(5, 1, 0), srv(2)], [5]))?.sId, 2, "兜底扫描跳过未开服（t=1/openTime=0）");
+  // 全不可进 → al[0] 展示位兜底（进服闸负责拦截，pages.ts onEnter）
+  assert.equal(pickDefaultServer(areaRes([srv(1, 9), srv(5, 1, 0)]))?.sId, 1, "全不可进 → al[0] 展示位兜底");
+  assert.equal(pickDefaultServer(areaRes([])), null, "空列表 → null");
 });
 
 test("LoginNotice：页签标题最多 4 字 + 默认选中首条正文 + 切标签换正文", async () => {

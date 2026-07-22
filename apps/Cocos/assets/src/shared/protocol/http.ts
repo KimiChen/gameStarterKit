@@ -88,6 +88,17 @@ export interface IAreaServer {
 }
 
 /**
+ * 区服可进入判定——客户端三处统一复用（默认选服 pickDefaultServer / 选服 choose / 进服闸），
+ * 服务端 SERVER_ID 准入硬校验（todo「区服 openTime 统一校验」后半）将来复用同一函数。
+ * t===9=维护、openTime===0=未开服（字段语义见 IAreaServer）均不可进。
+ * 运维豁免（isOps，部署环境级开关）不属于区服本身属性，由调用方叠加；
+ * ⛔ 客户端判断只改善 UX，不是安全闸——真闸在服务端准入层。
+ */
+export function isServerEnterable(s: Pick<IAreaServer, "t" | "openTime">): boolean {
+    return s.t !== 9 && s.openTime > 0;
+}
+
+/**
  * 选服列表响应。真实实现可从配置表/运维后台读；starter kit 用服务端 demo 配置。
  * `ul` 需用户身份（登录后回填最近登录区服），匿名请求为空数组。
  */

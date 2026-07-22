@@ -4,6 +4,7 @@
  * 大厅（登录/选服，view 层）写、Main（进房）读；纯状态模块，只 import shared 类型（无 cc/fairygui）。
  * ⚠ 区服 = 独立实例：进入游戏时 Main 连 `getCurrentServer().wsUrl`（非固定 serverUrl）。
  */
+import { isServerEnterable } from "../shared/index";
 import type { IAreaListRes, IAreaServer } from "../shared/index";
 
 let current: IAreaServer | null = null;
@@ -36,12 +37,14 @@ export function getCurrentServer(): IAreaServer | null {
 
 /**
  * 默认选中区服（对应原项目 init 后 currentServer 的默认值）：
- * 最近登录服（ul[0]，且仍在 al 中）优先，否则第一个非维护服（t!==9）。都没有返回 null。
+ * 最近登录服（ul 顺序，且仍在 al 中、可进入）优先，否则第一个可进入服（isServerEnterable：
+ * 非维护且已开服）。全不可进时兜底 al[0]（展示位——进服闸会拦，见 pages.ts onEnter）。
+ * 刻意不看 isOps：运维环境也不自动落到维护/未开服上，运维要进的服自己在选服页点（choose 有豁免）。
  */
 export function pickDefaultServer(list: IAreaListRes): IAreaServer | null {
   for (const sId of list.ul) {
     const s = list.al.find((a) => a.sId === sId);
-    if (s) return s;
+    if (s && isServerEnterable(s)) return s; // 最近服不可进 → 看下一个最近服
   }
-  return list.al.find((a) => a.t !== 9) ?? list.al[0] ?? null;
+  return list.al.find(isServerEnterable) ?? list.al[0] ?? null;
 }

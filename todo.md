@@ -100,19 +100,18 @@
   - **多消费组安全位点**：verifier 组接入后 XTRIM MINID 取各组位点 min（原 M10 项）。
 - **触发条件**：对局战绩/奖励/审计依赖该链路时（= 真实玩法上线前）。
 
-## 区服 openTime 统一校验 【小】
+## 区服 openTime 服务端硬校验 【小】
 
-- **现状**：`openTime===0`（未开服）只在 AreaList 的 `choose()` 拦——**默认选服**
-  （serverSession.pickDefaultServer：最近服 ul[0] 优先/首个非维护服）与**最终进服维护闸**
-  （pages.ts onEnter：只查 t===9）都没查 openTime：未开服区可被默认选中并直接进入。
-- **要做**：三处统一为同一判定函数（shared 或 serverSession 导出 `isServerEnterable(s)`：
-  `t!==9 && openTime>0`），pickDefaultServer 跳过不可进服、onEnter 维护闸复用；
-  每个游戏服实例由生产配置注入可信 `SERVER_ID`（当前尚无），启动时从服务端目录解析自身区服，
-  GameRoom/准入层按该目录项的维护态/openTime 做同一硬校验（⛔ 不信客户端传入的
-  sId/t/openTime，客户端值最多用于一致性核对，客户端判断只改善 UX）。补 pageLogic 用例及
-  绕过客户端直接进房的服务端拒绝用例；生产缺失/未知 `SERVER_ID` 应拒绝启动。
-- **触发条件**：客户端三处统一——无（一小时内）；服务端 SERVER_ID 硬校验——部署配置
-  （实例→区服映射的注入方式）确定后。
+- **现状**：客户端三处已统一为 shared `isServerEnterable(s)`（`t!==9 && openTime>0`，
+  protocol/http.ts）：pickDefaultServer 跳过不可进服（全不可进兜底 al[0] 展示位）、
+  AreaListLogic.choose 拦截（运维模式 isOps 豁免——维护/未开服的开服前验证可选中）、
+  pages.ts onEnter 进服闸（同豁免，文案分「维护中」「未开服」）。**但这些全是 UX**：
+  服务端在房间准入上对维护态/openTime 零校验，绕过客户端直连仍可进。
+- **要做**：每个游戏服实例由生产配置注入可信 `SERVER_ID`（当前尚无），启动时从服务端目录
+  解析自身区服，GameRoom/准入层按该目录项的维护态/openTime 做硬校验，**直接复用 shared
+  `isServerEnterable`**（⛔ 不信客户端传入的 sId/t/openTime，客户端值最多用于一致性核对）。
+  补绕过客户端直接进房的服务端拒绝用例；生产缺失/未知 `SERVER_ID` 应拒绝启动。
+- **触发条件**：部署配置（实例→区服映射的注入方式）确定后。
 
 ## 发布期硬校验 · 生产 URL / HTTPS / 微信合法域名 【小中】
 
