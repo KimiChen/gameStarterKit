@@ -55,6 +55,14 @@ async function main(): Promise<void> {
   // 增量列迁移（幂等：1060 重复列即已迁）。CREATE IF NOT EXISTS 不会给存量表加新列
   const alters = [
     "ALTER TABLE mail ADD COLUMN attach_effect JSON NULL AFTER attach_op_id",
+    // M12c 2b-1：accounts 加 token 记录列（MySQL 权威）+ 推迟授权画像列
+    "ALTER TABLE accounts ADD COLUMN token_hash VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL AFTER last_login_at",
+    "ALTER TABLE accounts ADD COLUMN token_issued_at DATETIME(3) NULL AFTER token_hash",
+    "ALTER TABLE accounts ADD COLUMN token_issued_epoch BIGINT UNSIGNED NOT NULL DEFAULT 0 AFTER token_issued_at",
+    "ALTER TABLE accounts ADD COLUMN session_key VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL AFTER token_issued_epoch",
+    "ALTER TABLE accounts ADD COLUMN nickname VARCHAR(64) NULL AFTER session_key",
+    "ALTER TABLE accounts ADD COLUMN avatar_url VARCHAR(256) NULL AFTER nickname",
+    "ALTER TABLE accounts ADD COLUMN phone VARCHAR(20) CHARACTER SET ascii COLLATE ascii_bin NULL AFTER avatar_url",
   ];
   for (const sql of alters) {
     await conn.query(sql).catch((e: { errno?: number }) => {

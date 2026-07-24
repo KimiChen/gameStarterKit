@@ -11,6 +11,14 @@ CREATE TABLE IF NOT EXISTS accounts (
   token_epoch   BIGINT UNSIGNED NOT NULL DEFAULT 0,
   created_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   last_login_at DATETIME(3) NULL,
+  -- M12c 2b-1：token 记录改 MySQL 权威（WebPlatform MySQL-only verify）；Redis sess 退为组缓存/freeze-guard
+  token_hash         VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,  -- 当前有效 token 的 sha256（NULL=无/已撤销）
+  token_issued_at    DATETIME(3) NULL,                                        -- 签发时刻（过期判定）
+  token_issued_epoch BIGINT UNSIGNED NOT NULL DEFAULT 0,                      -- 签发时 epoch 快照（< token_epoch 即 stale，L2 第三 fence）
+  session_key        VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,  -- 微信 session_key（⛔ 服务端持有 G8；手机号解密）
+  nickname           VARCHAR(64) NULL,                                        -- ↓ 推迟授权补画像（§2.7），开局 NULL
+  avatar_url         VARCHAR(256) NULL,
+  phone              VARCHAR(20) CHARACTER SET ascii COLLATE ascii_bin NULL,
   PRIMARY KEY (user_id),
   UNIQUE KEY uk_openid  (openid),
   UNIQUE KEY uk_unionid (unionid)

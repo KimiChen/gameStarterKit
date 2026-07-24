@@ -1,12 +1,14 @@
 /**
- * 会话签发 / 校验 / 撤销（[02·P1](docs/SERVER.md) / 07）。
+ * 会话签发 / 校验 / 撤销（[02·P1](docs/SERVER.md) / 07；M12c 2b-1：token 记录改 MySQL 权威）。
  *
  * - token 是**不透明随机串**（randomBytes），服务端只存 sha256——⛔ 不是 JWT（被否掉的方案）。
- * - `token_epoch` 三处一致（09·L2 第三种 fence，仅封号/踢人递增）：MySQL accounts（权威）、
- *   sess:{uid}.tokenEpoch、签发时的 token 记录（= sess 本身，token 无载荷）。
- * - 封号/踢人 = **先写 MySQL** token_epoch+1，再删 sess:{uid}；⛔ 绝不删 user:{uid}（09·G7）。
- * - 多端策略待 M0 拍板；当前实现单会话最后写者胜（新登录轮换 token = 互踢），
- *   sess 结构保持 hash，改多端只动本文件。
+ * - **权威 token 记录在 MySQL `accounts`**（token_hash / token_issued_at / token_issued_epoch / session_key）：
+ *   `verifySessionStrict` 纯 MySQL 一条 PK 表达（WebPlatform MySQL-only 也能验，DUAL_MODE §2.7）。
+ * - `token_epoch` 是 L2 第三种 fence（仅封号/踢人递增，权威在 accounts）；签发时快照进 `token_issued_epoch`，
+ *   `token_issued_epoch < token_epoch` 即 stale（AUTH_EPOCH_STALE）。
+ * - Redis `sess:{uid}` 退为**组侧缓存**：快路径 tokenHash + freeze-guard 存在性 + connId/gwNode。
+ *   2b-1 由 issueSession 暂时双写；2b-2 拆进程后由 onAuth 从 verify 结果懒填（2d 加 verifiedAt）。
+ * - 封号/踢人 = **先写 MySQL** token_epoch+1 + token_hash=NULL，再删 sess:{uid}；⛔ 绝不删 user:{uid}（09·G7）。
  */
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { SESS_TTL_S, TOKEN_BYTES } from "../infra/config";
@@ -33,9 +35,16 @@ export interface IssuedSession { userId: string; token: string }
  */
 export async function issueSession(uid: string, tokenEpoch: number, sessionKey: string | null, gwNode = ""): Promise<IssuedSession> {
   const token = `${uid}.${randomBytes(TOKEN_BYTES).toString("hex")}`;
-  const redis = clientFor(uid);
+  // 权威记录：MySQL accounts（换发 token_hash 即旧 token 失效；token_issued_epoch 快照 epoch；
+  // session_key 传 null 保留旧值，G8 再登录不清空）。合成会话（无 accounts 行的测试）命中 0 行无害——
+  // 那些走 GameRoom 快路径读 Redis sess，不读 MySQL。
+  await getPool().execute<ResultSetHeader>(
+    `UPDATE accounts SET token_hash = ?, token_issued_at = NOW(3), token_issued_epoch = ?,
+        session_key = COALESCE(?, session_key) WHERE user_id = ?`,
+    [sha256(token), tokenEpoch, sessionKey, uid]);
+  // 组侧缓存（2b-1 暂双写；2b-2 移 onAuth）：快路径 tokenHash + freeze-guard 存在性 + connId/gwNode。
   const key = kSess(uid);
-  await redis.multi()
+  await clientFor(uid).multi()
     .del(key) // 原子换发：旧会话字段不残留
     .hset(key, {
       tokenHash: sha256(token),
@@ -66,17 +75,23 @@ export async function verifySession(uid: string, token: string): Promise<void> {
  * 拦截 Redis failover 后从旧副本「复活」的被撤销会话（02·P1）。
  */
 export async function verifySessionStrict(uid: string, token: string): Promise<void> {
-  await verifySession(uid, token);
-  const [sessEpochStr] = await clientFor(uid).hmget(kSess(uid), "tokenEpoch");
+  // 纯 MySQL 权威校验（无 Redis，WebPlatform MySQL-only 即此逻辑）：hash → status → epoch → 过期。
   const [rows] = await getPool().query<RowDataPacket[]>(
-    "SELECT status, token_epoch FROM accounts WHERE user_id = ?", [uid]);
+    `SELECT token_hash, token_issued_epoch, token_epoch, status,
+            TIMESTAMPDIFF(SECOND, token_issued_at, NOW(3)) AS age_s
+       FROM accounts WHERE user_id = ?`, [uid]);
   if (rows.length === 0) { throw new AuthRequiredError("账号不存在"); }
-  if (Number(rows[0].status) === 1) { throw new BannedError(); } // 封号 → ACCOUNT_BANNED（07）
-  if (Number(rows[0].status) !== 0) { throw new AuthRequiredError("账号已注销"); }
-  if (Number(sessEpochStr ?? "0") < Number(rows[0].token_epoch)) {
-    await clientFor(uid).del(kSess(uid)); // 复活会话就地清除
+  const a = rows[0];
+  if (a.token_hash === null || !safeEqualHex(String(a.token_hash), sha256(token))) {
+    throw new AuthRequiredError("token 不匹配或已撤销");
+  }
+  if (Number(a.status) === 1) { throw new BannedError(); } // 封号 → ACCOUNT_BANNED（07）
+  if (Number(a.status) !== 0) { throw new AuthRequiredError("账号已注销"); }
+  if (Number(a.token_issued_epoch) < Number(a.token_epoch)) {
+    await clientFor(uid).del(kSess(uid)); // 复活会话就地清组缓存（2b-1；2b-2 拆进程后此清理移组侧 onAuth）
     throw new EpochStaleError();
   }
+  if (a.age_s === null || Number(a.age_s) > SESS_TTL_S) { throw new AuthRequiredError("会话已过期"); }
 }
 
 /** 网关入口：token 反查 uid（09·G1）+ 校验。strict 用于建立连接，快路径用于每 RPC。 */
@@ -98,15 +113,15 @@ export async function auditLogin(event: string, uid: string | null, reason: stri
 /** 封号：先 MySQL（status=1 + epoch+1，撤销的持久真相），后删 sess。⛔ 绝不删 user:{uid}。 */
 export async function banUser(uid: string, reason: string): Promise<void> {
   await getPool().execute<ResultSetHeader>(
-    "UPDATE accounts SET status = 1, token_epoch = token_epoch + 1 WHERE user_id = ?", [uid]);
-  await clientFor(uid).del(kSess(uid));
+    "UPDATE accounts SET status = 1, token_epoch = token_epoch + 1, token_hash = NULL WHERE user_id = ?", [uid]);
+  await clientFor(uid).del(kSess(uid)); // 清组缓存（在场连接下一条快路径即 401）
   await auditLogin("ban", uid, reason, null, null);
 }
 
 /** 踢人/强制下线：epoch+1 + 删 sess，账号状态不变。 */
 export async function revokeSessions(uid: string, reason: string): Promise<void> {
   await getPool().execute<ResultSetHeader>(
-    "UPDATE accounts SET token_epoch = token_epoch + 1 WHERE user_id = ?", [uid]);
-  await clientFor(uid).del(kSess(uid));
+    "UPDATE accounts SET token_epoch = token_epoch + 1, token_hash = NULL WHERE user_id = ?", [uid]);
+  await clientFor(uid).del(kSess(uid)); // 清组缓存
   await auditLogin("revoke", uid, reason, null, null);
 }
