@@ -218,6 +218,13 @@ CREATE TABLE char_registry (
 
 **撤销（M12c 期间，诚实的有界回退）**：账号服务无 Redis、控制总线是 M12d，故封号靠组 `verifiedAt` 60s 兜底（`AUTH_REVERIFY_TTL_S`）——账号写 accounts epoch，组 ≤60s 内重验即拒。相对今天「删 sess 即时」是**临时有界弱化**，pre-launch 无真实封号可接受；M12d 上控制总线后提升近实时。
 
+**微信两段式授权（先玩后授权，D1 产品动线）**：WeChat 静默 `wx.login`（无 UI）→ WebPlatform `login(code)` code2session → openid→uid+token，**开局即得身份、可玩**；有弹窗的 `getUserProfile`/手机号**推迟**到用户玩了十几分钟后再拉。「直接体验」= 免授权弹窗，**非**免身份（openid 从第一秒就有）。整条链只碰账号 plane：
+- login 保持**静默 / openid-only**（§2.2 契约不变，无画像）；`accounts` 加可空列 `nickname / avatar_url / phone`（开局 NULL、授权后填）。
+- WebPlatform 加**补画像端点** `bindProfile(uid,{nickname,avatar})` / `bindPhone(uid,encryptedData,iv)`（登录后任意时刻可调；手机号用 WebPlatform 存的 `session_key` 解密——正是 session_key 留服务端 G8 的用武之地）。
+- **玩法（apps/server）零改动**：全程只认 uid，永不需要微信画像。⛔ 不走「匿名游客再合并账号」（框架已砍游客模式，静默登录零摩擦）。
+- 微信画像（WebPlatform accounts）≠ 角色展示（char_registry 投影列）：两平面分开，游戏可选择授权后 seed 角色名。
+- 客户端可**开局并行**静默 login + 渲染首屏，第一次碰服务端时 token 已就位 → 体感「秒进」。
+
 **两步走（去 big-bang 风险）**：
 - **Step 1 立接缝（纯重构，零行为/零部署/零库变化）**：定 `AccountClient` 接口（login/verify/ban/character.register/query），用「同进程实现」直接调现有 `core/auth/*` + `player/character`；把 `LobbyRoom.onAuth` / `ensureCharacter` / `thaw` ABSENT / `area/list` 全改走 `AccountClient`。现有全套测试守护即绿。
 - **Step 2 拆进程**：起 `apps/WebPlatform`（MySQL-only HTTP）；accounts/seq/login_audit/char_registry 迁其库；业务侧 `AccountClient` 换 HTTP client；`/area/list` 整体迁 WebPlatform；onAuth 远程 verify + 懒填组 sess（`verifiedAt`）；建角远程 register 失败 → 新码 `CHAR_CREATE_FAILED`（进 shared）；客户端 login + area/list 指向 WebPlatform。
