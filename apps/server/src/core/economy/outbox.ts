@@ -12,7 +12,7 @@ import {
   APPLIED_RETENTION_MS, BAG_SHARDS, OP_ID_NAMESPACE, OUTBOX_DONE, OUTBOX_PENDING,
   OUTBOX_RETENTION_MS,
 } from "../infra/config";
-import { kApplied, kBagAll, kUser } from "../infra/keys";
+import { currentZoneId, kApplied, kBagAll, kUser, zoneCtx } from "../infra/keys";
 import { clientFor } from "../infra/redisRoute";
 import { APPLY_EFFECT, evalshaWithReload } from "../infra/redisScripts";
 import { getPool, withRcTx } from "../infra/mysql";
@@ -31,12 +31,15 @@ export type Grant = IGrant;
 export type Effect = IGrant[];
 
 /**
- * op_id 服务端派生（09·I2）：同一 (uid, type, clientReqId) 永远同一个 op_id，
- * 客户端只提供 clientReqId 且重试必须复用；跨用户无法碰撞。
+ * op_id 服务端派生（09·I2）：同一 (uid, sId, type, clientReqId) 永远同一个 op_id，
+ * 客户端只提供 clientReqId 且重试必须复用；跨用户/跨区无法碰撞。
  * 三处同一个 id（09·I3）：currency_ledger.idem_key = gameplay_outbox.op_id = applied:{uid} member。
+ * ⚠ 每区独立经济红线（DUAL_MODE §3.4）：sId 必须编码进派生输入——gameplay_outbox.op_id 是全局 PK，
+ * 同账号跨区复用同 clientReqId 若不编码 sId 会撞主键、ODKU no-op 静默吞掉 intent（发货凭空消失）。
+ * 与 `currency_ledger UNIQUE(user_id, server_id, idem_key)` 同源同废（D2）；⛔ OP_ID_NAMESPACE 永不改。
  */
-export function deriveOpId(uid: string, type: string, clientReqId: string): string {
-  return uuidv5(`${uid}:${type}:${clientReqId}`, OP_ID_NAMESPACE);
+export function deriveOpId(uid: string, sId: number, type: string, clientReqId: string): string {
+  return uuidv5(`${uid}:${sId}:${type}:${clientReqId}`, OP_ID_NAMESPACE);
 }
 
 /**
@@ -70,18 +73,18 @@ export type PurchaseResult = IPurchaseResult;
  * ledger 行一并消失，Redis 未动，干净失败。
  */
 export async function purchaseTx(
-  uid: string, fence: number, sku: ShopSku, opId: string,
+  uid: string, sId: number, fence: number, sku: ShopSku, opId: string,
 ): Promise<"DUP" | "OK"> {
   const outcome = await withRcTx(async (conn) => {
-    const debit = await debitInTx(conn, uid, sku.currency, sku.price, fence, opId, "shop.purchase");
+    const debit = await debitInTx(conn, uid, sId, sku.currency, sku.price, fence, opId, "shop.purchase");
     if (debit === "DUP") { return "DUP" as const; }
     await conn.execute<ResultSetHeader>(
-      `INSERT INTO gameplay_outbox (op_id, user_id, effect, status)
-       VALUES (?,?,CAST(? AS JSON),?)`,
-      [opId, uid, JSON.stringify(sku.grants), OUTBOX_PENDING]);
+      `INSERT INTO gameplay_outbox (op_id, user_id, server_id, effect, status)
+       VALUES (?,?,?,CAST(? AS JSON),?)`,
+      [opId, uid, sId, JSON.stringify(sku.grants), OUTBOX_PENDING]);
     return "OK" as const;
   });
-  if (outcome === "OK") { await invalidateBalanceCache(uid); }
+  if (outcome === "OK") { await invalidateBalanceCache(uid, sId); }
   return outcome;
 }
 
@@ -99,10 +102,10 @@ export async function bumpAttempts(opId: string, err: string): Promise<void> {
 }
 
 /** 回读操作状态（shop.queryOp / purchase 返回值共用）。 */
-export async function readBack(uid: string, opId: string): Promise<PurchaseResult> {
+export async function readBack(uid: string, sId: number, opId: string): Promise<PurchaseResult> {
   const [rows] = await getPool().query<RowDataPacket[]>(
     "SELECT status, effect FROM gameplay_outbox WHERE op_id = ? AND user_id = ?", [opId, uid]);
-  const balance = await getBalance(uid);
+  const balance = await getBalance(uid, sId);
   if (rows.length === 0) { return { opId, status: "dead", balance }; } // 不存在的 op 按 dead 报
   const status = Number(rows[0].status);
   return {
@@ -120,19 +123,20 @@ export async function readBack(uid: string, opId: string): Promise<PurchaseResul
  * 返回 granting 让客户端轮询 shop.queryOp（⛔ 客户端不要做「超时即失败」）。
  */
 export async function purchase(uid: string, sku: ShopSku, clientReqId: string): Promise<PurchaseResult> {
-  const opId = deriveOpId(uid, "shop.purchase", clientReqId);
+  const sId = currentZoneId();                                      // 当前区（§3.4/§3.5；单形态=0）
+  const opId = deriveOpId(uid, sId, "shop.purchase", clientReqId);
   return withUser(uid, async (uow) => {
-    const outcome = await purchaseTx(uid, uow.fence, sku, opId);   // 阶段 1（原子）
-    if (outcome === "DUP") { return readBack(uid, opId); }
+    const outcome = await purchaseTx(uid, sId, uow.fence, sku, opId);   // 阶段 1（原子）
+    if (outcome === "DUP") { return readBack(uid, sId, opId); }
 
     try {
-      const r = await redisApply(uid, opId, sku.grants);           // 阶段 2：幂等 apply（无 fence）
+      const r = await redisApply(uid, opId, sku.grants);           // 阶段 2：幂等 apply（无 fence；Redis 键 per-zone via zoneCtx）
       if (r === "ok" || r === "dup") {
         await markOutboxDone(opId);                                 // 阶段 3：best-effort
       }
       // cold（罕见：档刚被冻结）→ 留 pending 给 relayer→ensureLive（09·X5）
     } catch { /* 阶段 2/3 失败留给 relayer 收敛（04 崩溃窗口分析） */ }
-    return readBack(uid, opId);
+    return readBack(uid, sId, opId);
   });
 }
 
@@ -146,10 +150,10 @@ export async function purchase(uid: string, sku: ShopSku, clientReqId: string): 
  * （redisApply 经 applied 集合幂等判 dup）。
  * cold（档冻结）原样上抛——⛔ 不在缺失档上造残档（09·R2），由上层 ensureLive 流程处理。
  */
-export async function drainPendingFor(uid: string): Promise<number> {
+export async function drainPendingFor(uid: string, sId: number): Promise<number> {
   const [rows] = await getPool().query<RowDataPacket[]>(
-    "SELECT op_id, effect FROM gameplay_outbox WHERE user_id = ? AND status = ? ORDER BY created_at, op_id",
-    [uid, OUTBOX_PENDING]);
+    "SELECT op_id, effect FROM gameplay_outbox WHERE user_id = ? AND server_id = ? AND status = ? ORDER BY created_at, op_id",
+    [uid, sId, OUTBOX_PENDING]);
   let applied = 0;
   for (const row of rows) {
     const r = await redisApply(uid, row.op_id as string, row.effect as Effect);
@@ -198,9 +202,11 @@ export async function trimApplied(uid: string): Promise<number> {
  */
 export async function replayDead(opId: string): Promise<"ok" | "dup" | "cold" | "missing"> {
   const [rows] = await getPool().query<RowDataPacket[]>(
-    "SELECT user_id, effect FROM gameplay_outbox WHERE op_id = ?", [opId]);
+    "SELECT user_id, server_id, effect FROM gameplay_outbox WHERE op_id = ?", [opId]);
   if (rows.length === 0) { return "missing"; }
-  const r = await redisApply(rows[0].user_id as string, opId, rows[0].effect as Effect);
+  // 后台重放无请求上下文（§3.6 B4）：从行的 server_id 重建区上下文，redisApply 才落对区 Redis 前缀。
+  const r = await zoneCtx.run({ sId: Number(rows[0].server_id) }, () =>
+    redisApply(rows[0].user_id as string, opId, rows[0].effect as Effect));
   if (r === "ok" || r === "dup") { await markOutboxDone(opId); }
   return r;
 }

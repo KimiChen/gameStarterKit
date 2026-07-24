@@ -95,18 +95,18 @@ test("余额不足 → 干净失败：Redis 未动、无 outbox 行、无 ledger
 test("granting 中间态：阶段 1 后 queryOp=granting，补 apply 后=done（04）", async () => {
   const u = await seedUser("grant", 500);
   const sku = getShopSku("shop.frag17x10")!;
-  const opId = deriveOpId(u, "shop.purchase", "req-g");
+  const opId = deriveOpId(u, 0, "shop.purchase", "req-g");
   const lease = await acquireLease(u);
-  assert.equal(await purchaseTx(u, lease.fence, sku, opId), "OK"); // 只做阶段 1
+  assert.equal(await purchaseTx(u, 0, lease.fence, sku, opId), "OK"); // 只做阶段 1
   await lease.release();
 
-  const mid = await readBack(u, opId);
+  const mid = await readBack(u, 0, opId);
   assert.equal(mid.status, "granting", "钱已扣、道具未发 → 发放中");
   assert.equal(mid.balance, 400);
 
   assert.equal(await redisApply(u, opId, sku.grants), "ok");
   await markOutboxDone(opId);
-  const done = await readBack(u, opId);
+  const done = await readBack(u, 0, opId);
   assert.equal(done.status, "done");
   assert.deepEqual(done.granted, sku.grants);
 });
@@ -129,8 +129,8 @@ test("充值回调重放：同 wx_txn_id 两次 → 只发一次币（purchases 
   assert.equal(await handleWxPayNotify({ orderId: o2.orderId, wxTxnId: `wx_${o2.orderId}`, amountFen: 1 }), "mismatch");
   assert.equal(await mysqlBalance(u), 600);
   // 缓存失效后回源一致
-  await invalidateBalanceCache(u);
-  assert.equal(await getBalance(u), 600);
+  await invalidateBalanceCache(u, 0);
+  assert.equal(await getBalance(u, 0), 600);
 });
 
 test("领附件并发双击 → 只发一次货；重复领幂等回读（09·A6）", async () => {
@@ -152,17 +152,17 @@ test("领附件并发双击 → 只发一次货；重复领幂等回读（09·A6
 test("setField 序反转防御：写前 drainPendingFor 吸干旧 intent，迟到重放只判 dup（04）", async () => {
   const u = await seedUser("drain", 0);
   // 模拟「阶段 2 前崩溃」残留的 pending intent（绝对值 setField）
-  const oldOp = deriveOpId(u, "test.drain", "req-old");
+  const oldOp = deriveOpId(u, 0, "test.drain", "req-old");
   await getPool().execute(
     `INSERT INTO gameplay_outbox (op_id, user_id, effect, status) VALUES (?,?,CAST(? AS JSON),?)`,
     [oldOp, u, JSON.stringify([{ kind: "setField", field: "drainProbe", value: "old" }]), OUTBOX_PENDING]);
 
   // 新写之前先吸干：旧 intent 按创建序 apply + 标 done
-  assert.equal(await drainPendingFor(u), 1);
+  assert.equal(await drainPendingFor(u, 0), 1);
   assert.equal(await clientFor(u).hget(kUser(u), "drainProbe"), "old");
 
   // 用户后续写同字段（新值）
-  const newOp = deriveOpId(u, "test.drain", "req-new");
+  const newOp = deriveOpId(u, 0, "test.drain", "req-new");
   assert.equal(await redisApply(u, newOp, [{ kind: "setField", field: "drainProbe", value: "new" }]), "ok");
 
   // relayer 迟到重放旧 op → applied 判 dup，新值不被盖回（序保证成立）
@@ -176,7 +176,7 @@ test("applied 裁剪与 coordinator 联动：pending/dead 的 op 标记超窗也
   const c = clientFor(u);
 
   // 构造：Redis 已发货（applied 有标记）但 markOutboxDone 长期失败（outbox 行滞留 pending）
-  const stuckOp = deriveOpId(u, "test.trim", "stuck");
+  const stuckOp = deriveOpId(u, 0, "test.trim", "stuck");
   assert.equal(await redisApply(u, stuckOp, [{ kind: "item", itemId: 9, count: 1 }]), "ok");
   await getPool().execute(
     "INSERT INTO gameplay_outbox (op_id, user_id, effect, status, created_at) VALUES (?,?,?,?,NOW(3))",

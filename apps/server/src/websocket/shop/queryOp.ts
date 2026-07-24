@@ -3,10 +3,12 @@
  */
 import { z } from "zod";
 import { ShopRpc } from "@game/shared";
+import { currentZoneId } from "../../core/infra/keys";
 import { readBack } from "../../core/economy/outbox";
 import { defineRpc } from "../rpc";
 
 export default defineRpc(ShopRpc.QueryOp, {
   schema: z.object({ opId: z.string().min(1).max(64) }),
-  handler: async (ctx, p) => readBack(ctx.uid, p.opId),
+  // sId 取当前区上下文（zoneCtx；单形态/未包裹 = 0，DUAL_MODE §3.4）
+  handler: async (ctx, p) => readBack(ctx.uid, currentZoneId(), p.opId),
 });

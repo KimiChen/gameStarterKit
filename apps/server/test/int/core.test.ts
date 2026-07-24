@@ -104,7 +104,7 @@ test("casHset / applyEffect 对不存在的 uid → cold，未创建任何 key",
 
   const r1 = await evalshaWithReload(c, CAS_HSET, [kUser(u)], ["1", "f", "v"]);
   assert.equal(r1, "cold");
-  const r2 = await redisApply(u, deriveOpId(u, "test", "req1"), [{ kind: "item", itemId: 7, count: 1 }]);
+  const r2 = await redisApply(u, deriveOpId(u, 0, "test", "req1"), [{ kind: "item", itemId: 7, count: 1 }]);
   assert.equal(r2, "cold");
 
   for (const k of [kUser(u), kApplied(u), ...kBagAll(u)]) {
@@ -118,7 +118,7 @@ test("同一 op_id 重放 applyEffect → 第二次 dup，背包数量不变", a
   const u = uid("dup");
   await createUser(u);
   const c = clientFor(u);
-  const opId = deriveOpId(u, "shop.purchase", "req-abc");
+  const opId = deriveOpId(u, 0, "shop.purchase", "req-abc");
   const effect = [{ kind: "item" as const, itemId: 5, count: 3 }, { kind: "star" as const, delta: 2 }];
 
   assert.equal(await redisApply(u, opId, effect), "ok");
@@ -132,16 +132,16 @@ test("同一 op_id 重放 applyEffect → 第二次 dup，背包数量不变", a
   assert.equal(await c.hget(kUser(u), "ver"), "1");       // ver 也只 bump 一次
 
   // 同 (uid,type,clientReqId) 派生恒等；换 clientReqId = 新交易（09·I2）
-  assert.equal(deriveOpId(u, "shop.purchase", "req-abc"), opId);
-  assert.notEqual(deriveOpId(u, "shop.purchase", "req-xyz"), opId);
+  assert.equal(deriveOpId(u, 0, "shop.purchase", "req-abc"), opId);
+  assert.notEqual(deriveOpId(u, 0, "shop.purchase", "req-xyz"), opId);
 });
 
 test("clawback 负数下溢：回补到 0 且仍 ok（09·X8）", async () => {
   const u = uid("under");
   await createUser(u);
   const c = clientFor(u);
-  await redisApply(u, deriveOpId(u, "t", "r1"), [{ kind: "item", itemId: 9, count: 2 }]);
-  const r = await redisApply(u, deriveOpId(u, "t", "r2"), [{ kind: "item", itemId: 9, count: -5 }]);
+  await redisApply(u, deriveOpId(u, 0, "t", "r1"), [{ kind: "item", itemId: 9, count: 2 }]);
+  const r = await redisApply(u, deriveOpId(u, 0, "t", "r2"), [{ kind: "item", itemId: 9, count: -5 }]);
   assert.equal(r, "ok");
   assert.equal(await c.hget(kBag(u, 9 % 4), "9"), "0"); // 不出现负数背包
 });

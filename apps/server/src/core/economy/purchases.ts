@@ -9,6 +9,7 @@ import { randomBytes } from "node:crypto";
 import {
   PURCHASE_CREATED, PURCHASE_DELIVERED, PURCHASE_PAID, CUR_GOLD,
 } from "../infra/config";
+import { currentZoneId } from "../infra/keys";
 import { withRcTx } from "../infra/mysql";
 import type { ResultSetHeader, RowDataPacket } from "../infra/mysql";
 import { getRechargeSku } from "./catalog";
@@ -22,8 +23,8 @@ export async function createOrder(uid: string, sku: string): Promise<{ orderId: 
   const orderId = `o_${Date.now().toString(36)}_${randomBytes(6).toString("hex")}`;
   await withRcTx(async (conn) => {
     await conn.execute<ResultSetHeader>(
-      "INSERT INTO purchases (order_id, user_id, sku, amount_fen, status) VALUES (?,?,?,?,?)",
-      [orderId, uid, sku, product.amountFen, PURCHASE_CREATED]);
+      "INSERT INTO purchases (order_id, user_id, server_id, sku, amount_fen, status) VALUES (?,?,?,?,?,?)",
+      [orderId, uid, currentZoneId(), sku, product.amountFen, PURCHASE_CREATED]); // server_id=下单时当前区（§3.7）
   });
   return { orderId, amountFen: product.amountFen };
 }
@@ -45,7 +46,7 @@ export interface WxPayNotify {
 export async function handleWxPayNotify(n: WxPayNotify): Promise<"ok" | "already" | "mismatch"> {
   const result = await withRcTx(async (conn) => {
     const [rows] = await conn.query<RowDataPacket[]>(
-      "SELECT user_id, sku, amount_fen, status FROM purchases WHERE order_id = ? FOR UPDATE", [n.orderId]);
+      "SELECT user_id, server_id, sku, amount_fen, status FROM purchases WHERE order_id = ? FOR UPDATE", [n.orderId]);
     if (rows.length === 0) { return "mismatch" as const; }
     const order = rows[0];
     if (Number(order.status) !== PURCHASE_CREATED) { return "already" as const; } // 重放：直接 ack
@@ -54,7 +55,8 @@ export async function handleWxPayNotify(n: WxPayNotify): Promise<"ok" | "already
     const product = getRechargeSku(order.sku as string);
     if (!product) { return "mismatch" as const; }
     const uid = order.user_id as string;
-    const opId = deriveOpId(uid, "recharge.deliver", n.orderId); // 订单号即幂等源
+    const sId = Number(order.server_id);                           // 充值落哪个区钱包（§3.7；回调无 ALS，从订单读）
+    const opId = deriveOpId(uid, sId, "recharge.deliver", n.orderId); // 订单号即幂等源
 
     // created → paid（含 wx_txn_id 落库；同 txn 撞 uk_wx_txn 由外层 1062 拒掉）
     const [paid] = await conn.execute<ResultSetHeader>(
@@ -63,17 +65,18 @@ export async function handleWxPayNotify(n: WxPayNotify): Promise<"ok" | "already
     if (paid.affectedRows === 0) { return "already" as const; }
 
     // 同事务发币 + delivered（paid 与 delivered 之间不存在崩溃窗口——就是一个事务）
-    await creditInTx(conn, uid, CUR_GOLD, product.gold, opId, "recharge.deliver");
+    await creditInTx(conn, uid, sId, CUR_GOLD, product.gold, opId, "recharge.deliver");
     await conn.execute<ResultSetHeader>(
       "UPDATE purchases SET status = ? WHERE order_id = ?", [PURCHASE_DELIVERED, n.orderId]);
-    return { uid } as { uid: string };
+    return { uid, sId } as { uid: string; sId: number };
   }).catch((e: unknown) => {
     if ((e as { errno?: number }).errno === 1062) { return "already" as const; } // uk_wx_txn 重放
     throw e;
   });
 
   if (typeof result === "object") {
-    await invalidateBalanceCache(result.uid);
+    // cache 失效落对区（§3.7 C3）：invalidateBalanceCache 自包 zoneCtx，传订单 server_id 即可。
+    await invalidateBalanceCache(result.uid, result.sId);
     return "ok";
   }
   return result;

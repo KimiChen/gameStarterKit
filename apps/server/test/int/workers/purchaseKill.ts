@@ -12,10 +12,10 @@ const [uid, skuId, clientReqId, phase] = process.argv.slice(2);
 const sku = getShopSku(skuId);
 if (!sku) { console.error(`未知 sku: ${skuId}`); process.exit(2); }
 
-const opId = deriveOpId(uid, "shop.purchase", clientReqId);
+const opId = deriveOpId(uid, 0, "shop.purchase", clientReqId);
 const lease = await acquireLease(uid);
 
-const outcome = await purchaseTx(uid, lease.fence, sku, opId);
+const outcome = await purchaseTx(uid, 0, lease.fence, sku, opId);
 if (outcome !== "OK") { console.error(`phase1 非 OK: ${outcome}`); process.exit(2); }
 if (phase === "p1") {
   console.log("PHASE1_DONE");

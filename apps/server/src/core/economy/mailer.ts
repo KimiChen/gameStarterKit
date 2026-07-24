@@ -7,7 +7,7 @@
  */
 import { randomUUID } from "node:crypto";
 import { OUTBOX_PENDING } from "../infra/config";
-import { K_STREAM_MAILWAKE } from "../infra/keys";
+import { K_STREAM_MAILWAKE, currentZoneId, zoneCtx } from "../infra/keys";
 import { withRcTx } from "../infra/mysql";
 import type { ResultSetHeader, RowDataPacket } from "../infra/mysql";
 import { clientForKey } from "../infra/redisRoute";
@@ -26,14 +26,15 @@ export async function emitMailWake(uid: string, mailId: number): Promise<void> {
 
 /** 发件（GM/系统调用）。attach 为空 = 纯文本邮件。落库后发实时唤醒（流仅唤醒，09·K6）。 */
 export async function sendMail(uid: string, title: string, body: string, attach?: Effect): Promise<number> {
+  const sId = currentZoneId();                                      // 邮件所属区（§3.4；单形态=0）
   const attachOpId = attach && attach.length > 0
-    ? deriveOpId(uid, "mail.attach", randomUUID()) // 发件时固化 op_id：领取幂等的锚点（09·I3）
+    ? deriveOpId(uid, sId, "mail.attach", randomUUID()) // 发件时固化 op_id：领取幂等的锚点（09·I3）
     : null;
   const mailId = await withRcTx(async (conn) => {
     const [r] = await conn.execute<ResultSetHeader>(
-      `INSERT INTO mail (user_id, title, body, attach_op_id, attach_effect)
-       VALUES (?,?,?,?,${attachOpId ? "CAST(? AS JSON)" : "?"})`,
-      [uid, title, body, attachOpId, attachOpId ? JSON.stringify(attach) : null]);
+      `INSERT INTO mail (user_id, server_id, title, body, attach_op_id, attach_effect)
+       VALUES (?,?,?,?,?,${attachOpId ? "CAST(? AS JSON)" : "?"})`,
+      [uid, sId, title, body, attachOpId, attachOpId ? JSON.stringify(attach) : null]);
     return r.insertId;
   });
   await emitMailWake(uid, mailId).catch(() => {}); // 唤醒是尽力而为：丢了客户端上线自拉
@@ -44,6 +45,7 @@ interface MailAttachRow extends RowDataPacket {
   attach_op_id: string | null;
   attach_effect: Effect | null;
   claimed_at: Date | null;
+  server_id: number;
 }
 
 /**
@@ -54,33 +56,35 @@ interface MailAttachRow extends RowDataPacket {
 export async function claimMailAttach(uid: string, mailId: number): Promise<PurchaseResult> {
   const claim = await withRcTx(async (conn) => {
     const [rows] = await conn.query<MailAttachRow[]>(
-      "SELECT attach_op_id, attach_effect, claimed_at FROM mail WHERE mail_id = ? AND user_id = ? FOR UPDATE",
+      "SELECT attach_op_id, attach_effect, claimed_at, server_id FROM mail WHERE mail_id = ? AND user_id = ? FOR UPDATE",
       [mailId, uid]);
     if (rows.length === 0 || rows[0].attach_op_id === null) {
       throw new InvalidPayloadError("邮件不存在或无附件");
     }
     const { attach_op_id: opId, attach_effect: effect } = rows[0];
-    if (rows[0].claimed_at !== null) { return { opId, effect, fresh: false }; } // 已领：幂等回读
+    const sId = Number(rows[0].server_id); // 邮件所属区（§3.4/§3.6）：outbox intent + apply 落对区
+    if (rows[0].claimed_at !== null) { return { opId, effect, sId, fresh: false }; } // 已领：幂等回读
 
     const [upd] = await conn.execute<ResultSetHeader>(
       "UPDATE mail SET claimed_at = NOW(3), read_at = COALESCE(read_at, NOW(3)) WHERE mail_id = ? AND claimed_at IS NULL",
       [mailId]);
-    if (upd.affectedRows === 0) { return { opId, effect, fresh: false }; } // 并发双击输家
+    if (upd.affectedRows === 0) { return { opId, effect, sId, fresh: false }; } // 并发双击输家
 
     await conn.execute<ResultSetHeader>(
-      `INSERT INTO gameplay_outbox (op_id, user_id, effect, status)
-       VALUES (?,?,CAST(? AS JSON),?)
+      `INSERT INTO gameplay_outbox (op_id, user_id, server_id, effect, status)
+       VALUES (?,?,?,CAST(? AS JSON),?)
        ON DUPLICATE KEY UPDATE op_id = op_id`,   // ⛔ 绝不 INSERT IGNORE（09·DB1）
-      [opId, uid, JSON.stringify(effect), OUTBOX_PENDING]);
-    return { opId, effect, fresh: true };
+      [opId, uid, sId, JSON.stringify(effect), OUTBOX_PENDING]);
+    return { opId, effect, sId, fresh: true };
   });
 
+  // 后台/领取无稳定 ALS：按邮件 server_id 包 zoneCtx，redisApply/readBack 才落对区 Redis 前缀（§3.6）。
   if (claim.fresh && claim.effect) {
     try {
-      const r = await redisApply(uid, claim.opId, claim.effect); // 阶段 2（无 fence，09·X3）
+      const r = await zoneCtx.run({ sId: claim.sId }, () => redisApply(uid, claim.opId, claim.effect!)); // 阶段 2（无 fence，09·X3）
       if (r === "ok" || r === "dup") { await markOutboxDone(claim.opId); }
       // cold → 留给 relayer→ensureLive（09·X5）
     } catch { /* relayer 收敛 */ }
   }
-  return readBack(uid, claim.opId);
+  return zoneCtx.run({ sId: claim.sId }, () => readBack(uid, claim.sId, claim.opId));
 }

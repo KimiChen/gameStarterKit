@@ -64,7 +64,7 @@ async function seedFullUser(name: string): Promise<{ uid: string; seedOp: string
   const u = uid(name);
   assert.equal(await createUser(u, { nickname: "旅人", star: "0" }), "ok");
   await withUser(u, async (uow) => { uow.set("maxRound", "12"); uow.set("stamina", "5"); });
-  const seedOp = deriveOpId(u, "seed", "r1");
+  const seedOp = deriveOpId(u, 0, "seed", "r1");
   assert.equal(await redisApply(u, seedOp, [
     { kind: "item", itemId: 5, count: 3 }, { kind: "item", itemId: 6, count: 2 }, { kind: "star", delta: 4 },
   ]), "ok");
@@ -170,7 +170,7 @@ test("完整往返：字段/背包/applied 全等；fence ≥ 冻结前；旧 fe
 
   // 冻结后写路径 → cold，且未凭空造残档（09·R2；错误路径 = 30 天存档被一条 grant 覆盖）
   assert.equal(await evalshaWithReload(c, CAS_HSET, [kUser(u)], [String(f0), "f", "v"]), "cold");
-  assert.equal(await redisApply(u, deriveOpId(u, "t", "after-freeze"), [{ kind: "item", itemId: 7, count: 1 }]), "cold");
+  assert.equal(await redisApply(u, deriveOpId(u, 0, "t", "after-freeze"), [{ kind: "item", itemId: 7, count: 1 }]), "cold");
   assert.equal(await c.exists(kUser(u)), 0, "cold 未创建任何 key");
 
   await ensureLive(u); // thaw（也是 thaw 崩溃表①的「重试」形态：Lua 前无任何变更）
@@ -203,7 +203,7 @@ test("完整往返：字段/背包/applied 全等；fence ≥ 冻结前；旧 fe
 test("freeze 与玩法写并发：快照后 relayer applyEffect → freezeCommit 'changed' 放弃、档完好", async () => {
   const { uid: u } = await seedFullUser("chg");
   await makeCold(u);
-  const racedOp = deriveOpId(u, "grant", "raced");
+  const racedOp = deriveOpId(u, 0, "grant", "raced");
   _freezeTestHooks.afterSnapshot = async (hookUid) => {
     // relayer 式无锁 apply（09·X5：relayer 不走 withUser）——bump ver，暴露快照已过期
     assert.equal(await redisApply(hookUid, racedOp, [{ kind: "item", itemId: 9, count: 1 }]), "ok");
@@ -450,7 +450,7 @@ test("ensureLive 并发 singleFlight：同 uid 100 并发只 thaw 一次", async
 test("冻结前置闸：pending / dead outbox 行锁内拦下冻结；闸清后可冻结", async () => {
   const { uid: u } = await seedFullUser("gate");
   await makeCold(u);
-  const op = deriveOpId(u, "late", "r-gate");
+  const op = deriveOpId(u, 0, "late", "r-gate");
   await getPool().execute(
     "INSERT INTO gameplay_outbox (op_id, user_id, effect, status) VALUES (?,?,CAST(? AS JSON),?)",
     [op, u, JSON.stringify([{ kind: "item", itemId: 3, count: 1 }]), OUTBOX_PENDING]);
@@ -489,7 +489,7 @@ test("relayer 收 cold → ensureLive → 重试成功：后到 outbox 行照常
   assert.equal(await freezeUser(u, freezeLease), "frozen");
 
   // 冻结**之后**插入的后到行（活动发奖 / T+1 退款 / GM 补偿场景）；created_at 拨旧越过可见性窗口
-  const op = deriveOpId(u, "grant", "r-late");
+  const op = deriveOpId(u, 0, "grant", "r-late");
   await getPool().execute(
     `INSERT INTO gameplay_outbox (op_id, user_id, effect, status, created_at)
      VALUES (?,?,CAST(? AS JSON),?, NOW(3) - INTERVAL 30 SECOND)`,

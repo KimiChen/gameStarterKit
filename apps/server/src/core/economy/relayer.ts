@@ -16,6 +16,7 @@ import {
   LEASE_TTL_S, OUTBOX_DEAD, OUTBOX_DONE, OUTBOX_MAX_ATTEMPTS, OUTBOX_PENDING,
   OUTBOX_SWEEP_INTERVAL_MS, RELAYER_POLL_MS, RELAYER_VISIBILITY_S,
 } from "../infra/config";
+import { zoneCtx } from "../infra/keys";
 import { LeaseLostError, makeHolderId, tryAcquireLease, withLeaseTx, type SingletonLease } from "../infra/lease";
 import type { ResultSetHeader, RowDataPacket } from "../infra/mysql";
 import { ensureLive } from "../archive/thaw";
@@ -25,7 +26,7 @@ const BATCH = 100;
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
 interface OutboxRow extends RowDataPacket {
-  op_id: string; user_id: string; effect: Effect; attempts: number;
+  op_id: string; user_id: string; server_id: number; effect: Effect; attempts: number;
 }
 
 
@@ -33,7 +34,7 @@ interface OutboxRow extends RowDataPacket {
 export async function relayerTick(lease: SingletonLease): Promise<number> {
   return withLeaseTx(lease, async (conn) => {
     const [rows] = await conn.query<OutboxRow[]>(
-      `SELECT op_id, user_id, effect, attempts FROM gameplay_outbox
+      `SELECT op_id, user_id, server_id, effect, attempts FROM gameplay_outbox
         WHERE status = ? AND created_at < NOW(3) - INTERVAL ? SECOND
         ORDER BY created_at, op_id
         LIMIT ${BATCH}
@@ -42,15 +43,19 @@ export async function relayerTick(lease: SingletonLease): Promise<number> {
 
     for (const row of rows) {
       try {
-        let r = await redisApply(row.user_id, row.op_id, row.effect); // stringify 在 redisApply 内（09·DB8）
-        if (r === "cold") {
-          await ensureLive(row.user_id);                              // 先解冻再重试（09·X5）
-          r = await redisApply(row.user_id, row.op_id, row.effect);
-        }
-        if (r !== "ok" && r !== "dup") { throw new Error(`apply=${r}`); }
-        await conn.execute<ResultSetHeader>(
-          "UPDATE gameplay_outbox SET status = ? WHERE op_id = ?", [OUTBOX_DONE, row.op_id]);
-        if (Math.random() < 0.01) { await trimApplied(row.user_id).catch(() => {}); } // 顺路裁剪（09·I5）
+        // 后台无请求上下文（DUAL_MODE §3.6 B4）：按行 server_id 重建区上下文，
+        // redisApply/ensureLive/trimApplied 才落对区 Redis 前缀（落 run 外 = 落 s0 影子区 → 二次发货/漏裁剪）。
+        await zoneCtx.run({ sId: row.server_id }, async () => {
+          let r = await redisApply(row.user_id, row.op_id, row.effect); // stringify 在 redisApply 内（09·DB8）
+          if (r === "cold") {
+            await ensureLive(row.user_id);                              // 先解冻再重试（09·X5）
+            r = await redisApply(row.user_id, row.op_id, row.effect);
+          }
+          if (r !== "ok" && r !== "dup") { throw new Error(`apply=${r}`); }
+          await conn.execute<ResultSetHeader>(
+            "UPDATE gameplay_outbox SET status = ? WHERE op_id = ?", [OUTBOX_DONE, row.op_id]);
+          if (Math.random() < 0.01) { await trimApplied(row.user_id).catch(() => {}); } // 顺路裁剪（09·I5）
+        });
       } catch (e) {
         // 真失败（Redis 连不上 / Lua 报错 / effect 非法）才累加；超限进死信
         const attempts = row.attempts + 1;

@@ -95,7 +95,7 @@ test("阶段 1 提交后 kill -9 → relayer 补发道具；阶段 2 后 kill �
 
   // 场景 A：阶段 1 后猝死（钱扣了、intent durable、道具没发）
   const ua = await seedUser("k1", 1000);
-  const opA = deriveOpId(ua, "shop.purchase", "req-k1");
+  const opA = deriveOpId(ua, 0, "shop.purchase", "req-k1");
   await spawnUntil(killWorker, [ua, "shop.frag29x10", "req-k1", "p1"], "PHASE1_DONE");
   await sleep(100); // 等 SIGKILL 生效
   assert.equal(await outboxStatus(opA), OUTBOX_PENDING, "intent durable 且 pending");
@@ -103,7 +103,7 @@ test("阶段 1 提交后 kill -9 → relayer 补发道具；阶段 2 后 kill �
 
   // 场景 B：阶段 2 后猝死（道具已发、outbox 仍 pending）
   const ub = await seedUser("k2", 1000);
-  const opB = deriveOpId(ub, "shop.purchase", "req-k2");
+  const opB = deriveOpId(ub, 0, "shop.purchase", "req-k2");
   await spawnUntil(killWorker, [ub, "shop.frag29x10", "req-k2", "p2"], "PHASE2_DONE");
   await sleep(100);
   assert.equal(await outboxStatus(opB), OUTBOX_PENDING);
@@ -130,7 +130,7 @@ test("僵尸 relayer：SIGSTOP 超租约再 SIGCONT → 守卫 0 行自杀，未
 
   // 顶替者在位期间投一行 outbox：只有它能处理
   const u = await seedUser("zb", 1000);
-  const opId = deriveOpId(u, "shop.purchase", "req-zb");
+  const opId = deriveOpId(u, 0, "shop.purchase", "req-zb");
   await getPool().execute(
     "INSERT INTO gameplay_outbox (op_id, user_id, effect, status) VALUES (?,?,CAST(? AS JSON),?)",
     [opId, u, JSON.stringify([{ kind: "item", itemId: 29, count: 10 }]), OUTBOX_PENDING]);
