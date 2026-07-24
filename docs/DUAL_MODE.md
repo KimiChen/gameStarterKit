@@ -15,7 +15,7 @@
 | **M12a** 建角 + `char_registry` | ✅ 落地 | 首进区建 per-zone 档 + 角色注册表（§2.6 排序：char 行先写） |
 | **M12b** F4 thaw 按区判 | ✅ 落地 | ABSENT 分支 sId=0 用 accounts、sId≥1 用 char_registry；⚠ user_archive per-zone 待 archive 步 |
 | **M12e** `/area/list` ul 接真建角数据 | ✅ 落地 | `getUserRecentServers` → `listCharacterZones`（§2.5） |
-| **M12c** 账号服务抽独立进程 | ⬜ 待做 | 结构性大改：独立部署 + 跨服务契约 + 组本地 session 缓存；char_registry 迁其库 |
+| **M12c** WebPlatform 门户抽出 | 🔧 Step 1 接缝落地（typecheck+单测20+int74 绿），Step 2 待起 | 门户=目录+身份+只读投影(MySQL-only)；Step1 立 AccountClient 接缝(纯重构、8 调用点收敛)✅ → Step2 拆 apps/WebPlatform；`/area/list` 整体迁、char_registry 迁其库、组 sess 60s verifiedAt 校验缓存 |
 | **M12d** 控制总线 + 撤销 A + maxEpoch + 定向踢 | ⬜ 待做 | 会话/安全重设计（§2.3） |
 | **archive 步** user_archive 分区 + active:lru/freeze 区化 | ⬜ 待做 | 耦合 M12c；⛔ 补齐前不开「多区 + freeze」 |
 | **M14/M15** 大混服实时横向 + presence/广播 | ⬜ 待做 | §4 |
@@ -94,6 +94,8 @@ flowchart TB
 ### 2.1 边界与三个「盲」
 
 账号服务是平台级、业务无关的独立进程，硬约束三盲：**zone-blind**（不知 sId/区/组）、**status-blind**（不感知区里有无角色/多少钱）、**project-blind**（一实例喂多游戏）。它只做三件事：
+
+> ⚠ **M12c 精化（以 §2.7 为准）**：`WebPlatform` 实为**门户 = 目录 + 身份权威 + 只读投影**，**zone-aware**（serve 服务器列表、按服存角色展示数据）而非严格「三盲」；它不拥有权威玩法态、不跑区逻辑。下表「三盲」是抽象前的初版框架，M12c 已改为「目录 + 投影」，见 §2.7。
 
 | 职责 | 内容 | 现状接缝 |
 |---|---|---|
@@ -176,6 +178,54 @@ F4 的两问：
 | 真 | 有 | 全无 | 真数据丢失 → `USER_DATA_LOST`（含建角中途崩的 false-positive，运维处置） |
 
 `character` 注册表既是 `ul` 源、也是 F4 权威判据，**不再是「纯 UX 缓存」**（但仍只存存在性+时间、不存玩法数据，守 A3）。**R2 重锚**：createUser 仍是区内唯一合法建点（另一为 thaw），sId 来自 ALS 而非入参。
+
+### 2.7 M12c：WebPlatform 门户抽出（实施计划，M12c 单一参考）
+
+**定位精化（覆盖 §2.1 的「三盲」）**：`apps/WebPlatform` 不是「三盲的账号服务」，而是**平台门户 = 目录 + 身份权威 + 只读投影**。它 **zone-aware**（知道有哪些服、按服给角色数据打标签），但**不拥有权威玩法/经济状态、不跑区内逻辑**——这才是准确的边界，`§2.1` 的「三盲」按此读。
+
+**分层**：
+- **WebPlatform（web/门户层，MySQL-only、⛔ 无 Redis 无缓存）**：login/verify/ban、服务器目录（`/area/list` 整体：al/h/wsUrl/isOps）、char_registry（存在性权威 + 展示投影）、character.register/query。**客户端进游戏前的一切（登录 + 选服 + 选角）都打这。**
+- **apps/server（游戏层）**：ws 对局、每区经济/玩法、**pay 回调**（唯一留 server 的 HTTP，zone-aware）；组 onAuth 保留**强一致进服硬闸**；（future）向 WebPlatform 投影服务器状态 + 角色展示摘要。
+
+**一致性两级（弱一致门户能安全成立的支点）**：
+
+| 数据 | 权威方 | 一致性 |
+|---|---|---|
+| 身份/token、char_registry 存在性、路由 wsUrl | **WebPlatform** | 强 |
+| 服务器状态（正常/爆满/维护）、角色展示（名/等级/头像/上次登录） | **业务组投影** | 弱、尽力而为、最终一致（纯 UX） |
+
+- **进服硬闸必须在组 onAuth**（§4.3 `isServerEnterable`）——WebPlatform 的 al 状态仅**展示**、可滞后；真正拦人在组内。**门户展示弱一致，准入闸强一致且在组。**
+- **角色展示是投影非真源**：等级/名/头像真源永在业务组；WebPlatform 存业务组推上来的副本，推丢/滞后 = 选服界面显旧值，自愈、F4 绝不读它。
+
+**MySQL-only 账号服务形态（D3）**：
+- 权威 token 记录进 `accounts`（加 `token_hash` + `token_issued_at` + `session_key` 列，单会话策略一行够）；`verify()` = accounts 一条 PK SELECT，**不缓存**（权威永不缓存 = 永远正确）。命中点：每连接一次 + 每活跃用户每 60s 一次（组缓存过期重验）。
+- 组本地校验缓存仍在**组** durable `sess:{uid}`，用 **`verifiedAt` 字段**做 60s 新鲜度（⛔ 不压 Key TTL，免冲掉 connId/gwNode）；`tokenHash` 匹配 + `now-verifiedAt≤60s` 即信本地 epoch，超 60s 才重调 verify。
+- 登录限流 `rl:login:{ip}` → WebPlatform **进程内令牌桶**（复用 `InProcTokenBucket`）；规模化靠前置 LB 按 IP 限流或那时配 Redis。
+
+**char_registry（WebPlatform MySQL，Step 2 迁库；列名 `server_id` 务实，对本服务不透明）**：
+```sql
+CREATE TABLE char_registry (
+  user_id    VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  server_id  SMALLINT UNSIGNED NOT NULL,       -- 对本服务不透明（业务侧=sId）
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),  -- 存在性权威：建角写、F4 判据、ul 源
+  char_name       VARCHAR(64)  NULL,           -- ↓ 4 列 = 展示投影，M12c 留空、future 由业务 best-effort 推
+  char_level      INT UNSIGNED NULL,
+  char_avatar_url VARCHAR(256) NULL,
+  last_login_at   DATETIME(3)  NULL,
+  PRIMARY KEY (user_id, server_id)
+);
+```
+
+**撤销（M12c 期间，诚实的有界回退）**：账号服务无 Redis、控制总线是 M12d，故封号靠组 `verifiedAt` 60s 兜底（`AUTH_REVERIFY_TTL_S`）——账号写 accounts epoch，组 ≤60s 内重验即拒。相对今天「删 sess 即时」是**临时有界弱化**，pre-launch 无真实封号可接受；M12d 上控制总线后提升近实时。
+
+**两步走（去 big-bang 风险）**：
+- **Step 1 立接缝（纯重构，零行为/零部署/零库变化）**：定 `AccountClient` 接口（login/verify/ban/character.register/query），用「同进程实现」直接调现有 `core/auth/*` + `player/character`；把 `LobbyRoom.onAuth` / `ensureCharacter` / `thaw` ABSENT / `area/list` 全改走 `AccountClient`。现有全套测试守护即绿。
+- **Step 2 拆进程**：起 `apps/WebPlatform`（MySQL-only HTTP）；accounts/seq/login_audit/char_registry 迁其库；业务侧 `AccountClient` 换 HTTP client；`/area/list` 整体迁 WebPlatform；onAuth 远程 verify + 懒填组 sess（`verifiedAt`）；建角远程 register 失败 → 新码 `CHAR_CREATE_FAILED`（进 shared）；客户端 login + area/list 指向 WebPlatform。
+- **Step 1 全绿是 Step 2 前提。** 提交切分见交付。
+
+**范围外**：M12d（控制总线/maxEpoch/定向踢）、archive 步（user_archive 按区，正交、独立排期）、展示投影数据流（future）。
+
+**列表哈希 h 细节**：`/area/list` 迁 WebPlatform 后，组 onAuth 的 listHash 新鲜度闸（§4.3）需拿当前 h——组周期同步 / verify 响应带回，记一笔。
 
 ---
 
