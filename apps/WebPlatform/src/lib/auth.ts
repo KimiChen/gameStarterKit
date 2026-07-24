@@ -56,17 +56,42 @@ export async function verifyToken(uid: string, token: string): Promise<VerifyRes
   return { ok: true, epoch: Number(a.token_epoch), status: Number(a.status) };
 }
 
-/** 封号：MySQL status=1 + epoch+1 + token_hash=NULL（撤销的持久真相，G7）。 */
-export async function banAccount(uid: string): Promise<void> {
-  await getPool().execute<ResultSetHeader>(
-    "UPDATE accounts SET status = 1, token_epoch = token_epoch + 1, token_hash = NULL WHERE user_id = ?", [uid]);
+/**
+ * 撤销 in-tx（DUAL_MODE §2.3，M12d）：UPDATE accounts（epoch+1 + token_hash=NULL[+status]）与
+ * INSERT revocation_log **同事务** → 换「可证明零漏发」（撤销的持久真相 + 广播记录原子）。
+ * 返回递增后的 token_epoch（**0 = 无此账号**，未撤销）。⛔ 本 lib 不 XADD（跨包无 Redis）——
+ * 发行由业务侧 relayer 扫 revocation_log 进控制总线。
+ */
+async function revokeInTx(uid: string, ban: boolean): Promise<number> {
+  const conn = await getPool().getConnection();
+  try {
+    await conn.beginTransaction();
+    const [r] = await conn.execute<ResultSetHeader>(
+      ban
+        ? "UPDATE accounts SET status = 1, token_epoch = token_epoch + 1, token_hash = NULL WHERE user_id = ?"
+        : "UPDATE accounts SET token_epoch = token_epoch + 1, token_hash = NULL WHERE user_id = ?",
+      [uid]);
+    if (r.affectedRows === 0) { await conn.commit(); return 0; } // 无此账号：不写日志、不广播
+    const [rows] = await conn.query<RowDataPacket[]>(
+      "SELECT token_epoch FROM accounts WHERE user_id = ?", [uid]);
+    const epoch = Number(rows[0].token_epoch);
+    await conn.execute<ResultSetHeader>(
+      "INSERT INTO revocation_log (user_id, epoch) VALUES (?, ?)", [uid, epoch]);
+    await conn.commit();
+    return epoch;
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
 }
 
-/** 踢人/换端：MySQL epoch+1 + token_hash=NULL（status 不变）。 */
-export async function revokeAccount(uid: string): Promise<void> {
-  await getPool().execute<ResultSetHeader>(
-    "UPDATE accounts SET token_epoch = token_epoch + 1, token_hash = NULL WHERE user_id = ?", [uid]);
-}
+/** 封号：status=1 + epoch+1 + token_hash=NULL + revocation_log（同事务，G7）。返回新 epoch（0=无此账号）。 */
+export async function banAccount(uid: string): Promise<number> { return revokeInTx(uid, true); }
+
+/** 踢人/换端：epoch+1 + token_hash=NULL + revocation_log（status 不变）。返回新 epoch（0=无此账号）。 */
+export async function revokeAccount(uid: string): Promise<number> { return revokeInTx(uid, false); }
 
 /** 同步写登录审计（revoke/ban/login/fail 等高危事件不能尽力而为）。 */
 export async function auditLogin(

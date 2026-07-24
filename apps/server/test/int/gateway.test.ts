@@ -74,6 +74,7 @@ after(async () => {
   for (const u of uids) {
     await pool.execute("DELETE FROM mail WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM login_audit WHERE user_id = ?", [u]);
+    await pool.execute("DELETE FROM revocation_log WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM accounts WHERE user_id = ?", [u]);
     await cleanupUser(u);
     await clientFor(u).unlink(kSess(u));

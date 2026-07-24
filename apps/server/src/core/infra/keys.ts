@@ -84,6 +84,9 @@ export const kRl = (scope: string) => `${G}rl:${scope}`;
 export const K_STREAM_MATCH = `${G}stream:match`;
 /** 邮件唤醒 STREAM（10·M5，跨节点消费）。可靠流：⛔ 禁 MAXLEN，XTRIM MINID 按已投递位点裁（09·K6）。 */
 export const K_STREAM_MAILWAKE = `${G}stream:mailwake`;
+/** 控制总线撤销流（DUAL_MODE §2.3）：账号服务自持 coord Redis 上，广播 {uid, epoch}（max-wins 幂等）。
+ *  每节点独立游标消费维护本地 maxEpoch。⛔ 禁 MAXLEN，走 XTRIM MINID（epoch 单调 + verify 重设基线）。 */
+export const K_STREAM_REVOKE = `${G}stream:revoke`;
 
 /** 活跃索引 ZSET（member=uid, score=lastActiveMs）。hash-tag 是 {bucket} 不是 {uid}。
  *  ⚠ per-zone 归属留到 archive 步（登录 touchActive 前置区上下文的一致性待解），暂用全局前缀（单形态无差）。 */

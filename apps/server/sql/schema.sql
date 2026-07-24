@@ -163,6 +163,19 @@ CREATE TABLE IF NOT EXISTS login_audit (
   KEY idx_user_time (user_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- 撤销 outbox（DUAL_MODE §2.3，M12d）：封号/踢人与 accounts.token_epoch+1 **同事务**写一行，
+-- 换「可证明零漏发」。relayer 扫 relayed=0 → 控制总线 XADD {uid, epoch} → 标 relayed=1（幂等，
+-- 重发经 epoch max-wins 无害）。⛔ 裁剪只删 relayed=1 老行。
+CREATE TABLE IF NOT EXISTS revocation_log (
+  id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id    VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  epoch      BIGINT UNSIGNED NOT NULL,               -- 递增后的 token_epoch（广播的 max-wins 值）
+  relayed    TINYINT UNSIGNED NOT NULL DEFAULT 0,    -- 0 未发行 / 1 已 XADD 进控制总线
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  KEY idx_unrelayed (relayed, id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 -- 单调发号（仅 user_id）。⚠ 行必须预置，否则首次采番错值（05）
 CREATE TABLE IF NOT EXISTS seq (
   name VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,

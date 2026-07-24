@@ -14,7 +14,7 @@ import { readFileSync } from "node:fs";
 import { crc32 } from "node:zlib";
 import Redis from "ioredis";
 import { parse as parseYaml } from "yaml";
-import { BUCKETS, REDIS_CACHE_URL, REDIS_DURABLE_URL, REDIS_ROUTE_FILE } from "./config";
+import { BUCKETS, REDIS_CACHE_URL, REDIS_COORD_URL, REDIS_DURABLE_URL, REDIS_ROUTE_FILE } from "./config";
 
 interface RouteEntry { url: string; range: [number, number] }
 interface RouteTable { durable: RouteEntry[]; cacheUrl: string }
@@ -90,6 +90,12 @@ export function clientForKey(key: string): Redis {
 /** cache 实例（allkeys-lru，物理独立）。只放可再生数据。 */
 export function cacheClient(): Redis {
   return clientOf(loadTable().cacheUrl);
+}
+
+/** 控制总线 Redis（账号服务自持撤销流，DUAL_MODE §2.3）：dev 缺省复用 durable 实例（同 URL → clientOf 复用同连接），
+ *  prod-split 指向物理隔离 HA。只承载 stream:revoke（幂等 epoch），⛔ 非路由键（直连单实例）。 */
+export function coordClient(): Redis {
+  return clientOf(REDIS_COORD_URL());
 }
 
 /** 测试/停服：断开全部连接并重置路由表（下次按新 env 重建）。 */

@@ -49,6 +49,7 @@ after(async () => {
   const pool = getPool();
   for (const u of createdUids) {
     await pool.execute("DELETE FROM login_audit WHERE user_id = ?", [u]);
+    await pool.execute("DELETE FROM revocation_log WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM accounts WHERE user_id = ?", [u]);
     await cleanupUser(u);
     await clientFor(u).unlink(kSess(u));
@@ -99,7 +100,8 @@ test("同 openid 再登录 → 同一 user_id；无效 code → AUTH_REQUIRED", 
 test("封号：存量 token 立即失效 + 重新 wx-login 被 403 拒（09·G7）", async () => {
   const s = await login("carol");
   await banUser(s.userId, "test-ban");
-  await assert.rejects(verifySession(s.userId, s.token), AuthRequiredError); // ① sess 已删，立即失效
+  // ① 控制总线即时 applyRevoke 本节点 maxEpoch → 快路径比对 sess.tokenEpoch 落后即拒（M12d §2.3，⛔ 不再靠删 sess）
+  await assert.rejects(verifySession(s.userId, s.token), EpochStaleError);
   await assert.rejects(login("carol"), BannedError);                        // ② 签发前 SELECT status 拦住
 });
 

@@ -20,6 +20,8 @@ import { AuthRequiredError, BannedError, EpochStaleError } from "../errors";
 import { touchActive } from "../userRecord";
 // 权威 token 逻辑（MySQL-only）在 WebPlatform lib；本文件只做组侧 Redis 缓存 + 结果码→错误类映射。
 import { issueToken, verifyToken, banAccount, revokeAccount } from "@game/webplatform/lib";
+// 控制总线（DUAL_MODE §2.3 / M12d）：本地 maxEpoch 快检 + 撤销即时扇出（撤销源直接 applyRevoke + drainRevocations）。
+import { applyRevoke, drainRevocations, revokedEpoch } from "./revoke";
 
 const sha256 = (s: string): string => createHash("sha256").update(s).digest("hex");
 const safeEqualHex = (a: string, b: string): boolean =>
@@ -76,11 +78,13 @@ export async function verifySession(
   // 本地根本没这行 accounts，用本地重验会把每个连接的用户在 AUTH_REVERIFY_TTL_S 后全部误踢）。
   reverify: (uid: string, token: string) => Promise<void> = verifySessionStrict,
 ): Promise<void> {
-  const [tokenHash, verifiedAtStr] = await clientFor(uid).hmget(kSess(uid), "tokenHash", "verifiedAt");
+  const [tokenHash, tokenEpochStr, verifiedAtStr] = await clientFor(uid).hmget(kSess(uid), "tokenHash", "tokenEpoch", "verifiedAt");
   if (tokenHash === null) { throw new AuthRequiredError("session 不存在或已过期"); }
   if (!safeEqualHex(tokenHash, sha256(token))) { throw new AuthRequiredError("token 不匹配"); }
-  // verifiedAt 兜底（§2.3 U2）：缓存超 AUTH_REVERIFY_TTL_S 未回权威 → 重验 + 刷新。split 模式账号服务
-  // 够不到组 sess 时的有界撤销窗口（封号/踢人在此被逮）；in-process 下封号已删 sess，走不到这。
+  // maxEpoch 快检（§2.3 C2/C4）：控制总线把撤销 epoch 推到本节点，会话 epoch 落后即拒——广播到达即在
+  // 下一条 RPC 生效，不依赖删键/TTL（关掉「定向踢+广播双失 → 被封用户整个 TTL 内照常收发」窗）。
+  if (Number(tokenEpochStr ?? "0") < revokedEpoch(uid)) { throw new EpochStaleError(); }
+  // verifiedAt 兜底（§2.3 U2）：缓存超 AUTH_REVERIFY_TTL_S 未回权威 → 重验 + 刷新（maxEpoch 被 evict/漏读的兜底）。
   if (Date.now() - Number(verifiedAtStr ?? "0") > AUTH_REVERIFY_TTL_S * 1000) {
     await reverify(uid, token); // 权威；token_hash=NULL / epoch-stale / banned 即抛
     await clientFor(uid).hset(kSess(uid), "verifiedAt", String(Date.now()));
@@ -120,16 +124,25 @@ export async function auditLogin(event: string, uid: string | null, reason: stri
     [uid, event, reason, ip, deviceId]);
 }
 
-/** 封号：先 MySQL（status=1 + epoch+1，撤销的持久真相），后删 sess。⛔ 绝不删 user:{uid}。 */
+/**
+ * 封号：lib in-tx（status=1 + epoch+1 + revocation_log，撤销的持久真相）→ 控制总线扇出撤销 epoch。
+ * ⛔ 不再删 sess（DUAL_MODE §2.3：业务侧不直接 del sess，改由 maxEpoch 快检拒 + M12d-b 自筛踢）；⛔ 绝不删 user:{uid}。
+ */
 export async function banUser(uid: string, reason: string): Promise<void> {
-  await banAccount(uid); // WebPlatform lib：MySQL status=1 + token_epoch+1 + token_hash=NULL
-  await clientFor(uid).del(kSess(uid)); // 清组缓存（在场连接下一条快路径即 401）
+  const epoch = await banAccount(uid); // 新 token_epoch（0 = 无此账号）
+  if (epoch > 0) {
+    applyRevoke(uid, epoch);   // 本节点即时（maxEpoch 快检下一条 RPC 即拒；M12d-b 追加自筛踢）
+    await drainRevocations();  // 即时扇出其它组/节点（relayer 兜底崩溃窗）
+  }
   await auditLogin("ban", uid, reason, null, null);
 }
 
-/** 踢人/强制下线：epoch+1 + 删 sess，账号状态不变。 */
+/** 踢人/强制下线：lib in-tx（epoch+1 + revocation_log，status 不变）→ 控制总线扇出。⛔ 不再删 sess。 */
 export async function revokeSessions(uid: string, reason: string): Promise<void> {
-  await revokeAccount(uid); // WebPlatform lib：MySQL token_epoch+1 + token_hash=NULL
-  await clientFor(uid).del(kSess(uid)); // 清组缓存
+  const epoch = await revokeAccount(uid);
+  if (epoch > 0) {
+    applyRevoke(uid, epoch);
+    await drainRevocations();
+  }
   await auditLogin("revoke", uid, reason, null, null);
 }
