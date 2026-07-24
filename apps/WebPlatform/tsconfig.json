@@ -1,0 +1,15 @@
+{
+  // 平台服务：不用 Colyseus schema 装饰器，故无 experimentalDecorators。
+  // moduleResolution=Bundler：@game/shared 相对导入无后缀（同 server；运行时走 tsx）。
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true
+  },
+  "include": ["src", "test"]
+}

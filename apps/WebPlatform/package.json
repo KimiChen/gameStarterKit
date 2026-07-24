@@ -1,0 +1,26 @@
+{
+  "name": "@game/webplatform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "平台门户服务（MySQL-only，⛔ 无 Redis）：身份/令牌/角色注册表 + 选服目录。DUAL_MODE §2.7 / M12c。",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@game/shared": "0.1.0",
+    "fastify": "^5.0.0",
+    "mysql2": "^3.22.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.14",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

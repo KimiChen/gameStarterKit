@@ -5,7 +5,8 @@
   "description": "微信小游戏 monorepo：Cocos Creator 3.8.8 客户端 + Colyseus 0.17 服务端 + 双端共享包",
   "workspaces": [
     "apps/shared",
-    "apps/server"
+    "apps/server",
+    "apps/WebPlatform"
   ],
   "scripts": {
     "sync:shared": "node scripts/sync-shared.mjs && node scripts/sync-client.mjs",
@@ -17,7 +18,7 @@
     "dev:client": "node scripts/dev-client.mjs",
     "dev": "npm --workspace @game/server run dev",
     "start:server": "npm --workspace @game/server run start",
-    "typecheck": "npm --workspace @game/shared run typecheck && npm --workspace @game/server run typecheck && npm run typecheck:client && npm run verify:sync",
+    "typecheck": "npm --workspace @game/shared run typecheck && npm --workspace @game/server run typecheck && npm --workspace @game/webplatform run typecheck && npm run typecheck:client && npm run verify:sync",
     "verify:sync": "node scripts/sync-shared.mjs --check && node scripts/sync-client.mjs --check",
     "verify:ecs": "node scripts/verify-ecs.mjs",
     "fetch:fgui": "node scripts/fetch-fgui.mjs",
