@@ -2,9 +2,26 @@
 
 ## 文档状态
 
-> ⚠ **本文是前瞻性设计规格，尚未实施。** 它描述「让当前架构同时支持大混服与区服」的目标形态，扩展并部分改写 [SERVER.md §9.5 扩容模型 ADR](SERVER.md)（原 ADR 立场：扩容单位 = 区服实例、单区服多节点不在承诺内）。现网仍是单形态骨架（玩法为 demo，见 [OVERVIEW.md](OVERVIEW.md) / [SERVER.md](SERVER.md)）。落地按 §5 里程碑推进，§9 未决项须先拍板。
+> **本文是设计规格 + 实施进度记录。** 它描述「让当前架构同时支持大混服与区服」的目标形态，扩展并部分改写 [SERVER.md §9.5 扩容模型 ADR](SERVER.md)（原 ADR 立场：扩容单位 = 区服实例、单区服多节点不在承诺内）。**核心已落地**（区服进服硬闸 + 每区独立经济 + 建角 + 冷档按区判，见下「实施进度」）；**账号服务独立进程（M12c）与撤销/控制总线（M12d）待做**。落地按 §5 里程碑推进。
 
 本规格是「同一套 Colyseus 0.17 代码同时承载大混服与区服」的工程落地规格。其结论由 **8 轮技术评审锁定的 7 项决策** 为前提（不再论证「是否该这么做」，只写「怎么落地」），并经 **61 条服务端规则的两份对抗式评审对撞校验**（钱/幂等/跨存储 一份，鉴权/网关/冷档/撤销 一份）后定稿。评审指出的所有阻断级正确性洞（MySQL 谓词分区、ALS-vs-列概念二分、撤销传输层缺失、前缀孤儿化、F4 误判、快路径 epoch 窗口）已在正文改对；当场无法收敛者列入 §9「未决与风险」。本规格与源码逐一核对，文件锚点为仓库相对路径（`apps/server/src/...` 等）。
+
+### 实施进度（截至 2026-07-24）
+
+| 里程碑 / slice | 状态 | 说明 |
+|---|---|---|
+| **M11** 公共地基（进服硬闸 + `GROUP_ZONES` + 客户端 `sId`） | ✅ 落地 | 服务端 onAuth 硬闸 + 客户端 Main 带 sId，端到端；向后兼容（sId 缺省=单形态） |
+| **M13** 每区独立经济 | ✅ 落地 | DDL 加 server_id + `deriveOpId` 编码 sId（红线）+ MySQL 谓词带 server_id（B1）+ `keys.ts` `zoneCtx` 区前缀（§3.5 分类）+ 硬化 `fail-fast`（门控 `GROUP_ZONES`）；含两轮对抗评审修复 |
+| **M12a** 建角 + `char_registry` | ✅ 落地 | 首进区建 per-zone 档 + 角色注册表（§2.6 排序：char 行先写） |
+| **M12b** F4 thaw 按区判 | ✅ 落地 | ABSENT 分支 sId=0 用 accounts、sId≥1 用 char_registry；⚠ user_archive per-zone 待 archive 步 |
+| **M12e** `/area/list` ul 接真建角数据 | ✅ 落地 | `getUserRecentServers` → `listCharacterZones`（§2.5） |
+| **M12c** 账号服务抽独立进程 | ⬜ 待做 | 结构性大改：独立部署 + 跨服务契约 + 组本地 session 缓存；char_registry 迁其库 |
+| **M12d** 控制总线 + 撤销 A + maxEpoch + 定向踢 | ⬜ 待做 | 会话/安全重设计（§2.3） |
+| **archive 步** user_archive 分区 + active:lru/freeze 区化 | ⬜ 待做 | 耦合 M12c；⛔ 补齐前不开「多区 + freeze」 |
+| **M14/M15** 大混服实时横向 + presence/广播 | ⬜ 待做 | §4 |
+| **M16** 物理分组（100 组 × 10 区） | ⬜ 待做 | §5.1 |
+
+**当前能力**：单进程下大混服（sId=0）完全可跑；一个 `GROUP_ZONES` 配好的区服组，**选服→进服硬闸→建角→每区独立经济→冷档按区判→我的区** 机制完整可玩、经济按区隔离，由 sId≥1 真实栈测试守护（`test/int/perzone.test.ts` 6 用例）。**验证基线**：typecheck 三端 + verify:sync / server 单测 20 / test:int 74 / test:fgui 67 / smoke 13 全绿。⚠ 真开多区（`GROUP_ZONES` 非空）前，`keys.ts` fail-fast 会挡住任何漏包 `zoneCtx.run` 的 per-zone 路径（`test/zone-failfast.test.ts` 守）。
 
 ---
 
