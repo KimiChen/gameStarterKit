@@ -17,21 +17,25 @@ CREATE TABLE IF NOT EXISTS accounts (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 货币余额【权威】。复合 PK 走主键等值锁；CHECK 只是兜底，SQL 内必须 WHERE balance >= ?
+-- 每区独立经济（docs/DUAL_MODE.md §3.2）：server_id 进 PK；⚠ 写路径谓词必须带 server_id（§3.3 B1，M13 代码步补）。
 CREATE TABLE IF NOT EXISTS user_currency (
   user_id    VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  server_id  SMALLINT UNSIGNED NOT NULL DEFAULT 0,   -- 0=大混服/单形态；区服取 1..N
   currency   SMALLINT UNSIGNED NOT NULL,
   balance    BIGINT NOT NULL DEFAULT 0,
   version    BIGINT UNSIGNED NOT NULL DEFAULT 0,
   last_fence BIGINT UNSIGNED NOT NULL DEFAULT 0,
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
-  PRIMARY KEY (user_id, currency),
+  PRIMARY KEY (user_id, server_id, currency),
   CONSTRAINT chk_balance CHECK (balance >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 货币流水 + 幂等键。幂等必须 UNIQUE(user_id, idem_key)，⛔ 不是全局 UNIQUE(idem_key)（09·I4）
+-- 货币流水 + 幂等键。幂等必须 UNIQUE(user_id, server_id, idem_key)，⛔ 不是全局 UNIQUE(idem_key)（09·I4）
+-- 每区独立经济（§3.2/§3.4）：op_id 已编码 sId（deriveOpId），server_id 进唯一键让跨区同 idem_key 并存。
 CREATE TABLE IF NOT EXISTS currency_ledger (
   id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   user_id       VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  server_id     SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   currency      SMALLINT UNSIGNED NOT NULL,
   delta         BIGINT NOT NULL,
   balance_after BIGINT NOT NULL,
@@ -39,14 +43,17 @@ CREATE TABLE IF NOT EXISTS currency_ledger (
   reason        VARCHAR(64) NOT NULL,
   created_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
-  UNIQUE KEY uk_idem (user_id, idem_key),
-  KEY idx_user_time (user_id, created_at)
+  UNIQUE KEY uk_idem (user_id, server_id, idem_key),
+  KEY idx_user_time (user_id, server_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 跨存储 intent（04）。status TINYINT：0 pending / 1 done / 2 dead，⛔ 全代码数字常量（09·X4）
+-- 每区独立经济（§3.2/§3.6）：op_id 仍全局 PK（编码 sId 已全局唯一，刻意不分区，D3）；
+-- server_id 补列供后台 worker（relayer/replayDead）重建区上下文 + apply 到对区 Redis 前缀。
 CREATE TABLE IF NOT EXISTS gameplay_outbox (
   op_id       VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   user_id     VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  server_id   SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   effect      JSON NOT NULL,
   status      TINYINT UNSIGNED NOT NULL DEFAULT 0,
   attempts    SMALLINT UNSIGNED NOT NULL DEFAULT 0,
@@ -54,7 +61,8 @@ CREATE TABLE IF NOT EXISTS gameplay_outbox (
   created_at  DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at  DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (op_id),
-  KEY idx_pending (status, created_at)
+  KEY idx_pending (status, created_at),
+  KEY idx_pending_srv (status, server_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 单例任务领导权 + fencing。⛔ 别用 GET_LOCK（连接作用域，连接池下泄漏）（09·X7）
@@ -68,9 +76,11 @@ CREATE TABLE IF NOT EXISTS singleton_lease (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 微信支付订单状态机。status：0 created / 1 paid / 2 delivered / 3 refunded / 4 closed
+-- 每区独立经济（§3.2/§3.7）：server_id 记充值落哪个区钱包；回调 handleWxPayNotify 据它重建区上下文。
 CREATE TABLE IF NOT EXISTS purchases (
   order_id      VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   user_id       VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  server_id     SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   sku           VARCHAR(64) NOT NULL,
   amount_fen    INT UNSIGNED NOT NULL,
   status        TINYINT UNSIGNED NOT NULL DEFAULT 0,
@@ -80,7 +90,7 @@ CREATE TABLE IF NOT EXISTS purchases (
   updated_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (order_id),
   UNIQUE KEY uk_wx_txn (wx_txn_id),
-  KEY idx_user (user_id, created_at)
+  KEY idx_user (user_id, server_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- match_id 幂等闸：非分区表，match_id 单独唯一（05·Δ2）
@@ -105,9 +115,11 @@ PARTITION BY RANGE COLUMNS (created_at) (
 );
 
 -- 必达邮件【权威】：read_at / claimed_at 是唯一权威，Redis Stream 只作唤醒（09·A6）
+-- 每区独立经济（§3.2）：server_id 隔离各区邮箱（PK 仍 mail_id 自增，server_id 进收件箱索引）。
 CREATE TABLE IF NOT EXISTS mail (
   mail_id      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   user_id      VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  server_id    SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   title        VARCHAR(128) NOT NULL,
   body         VARCHAR(1024) NOT NULL,
   attach_op_id VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
@@ -116,7 +128,7 @@ CREATE TABLE IF NOT EXISTS mail (
   claimed_at   DATETIME(3) NULL,
   created_at   DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   PRIMARY KEY (mail_id),
-  KEY idx_user_unread (user_id, read_at, created_at)
+  KEY idx_user_unread (user_id, server_id, read_at, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 登录/撤销审计。revoke / ban 同步写，普通 login 可批量
