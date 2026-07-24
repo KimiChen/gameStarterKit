@@ -25,6 +25,8 @@ export const ErrorCode = {
     ProtocolMismatch: 3004,
     /** 目标区服不属于本进程/组（串服）或不可进入（维护/未开服）——进服硬闸拒连，客户端重新选服（docs/DUAL_MODE.md §4.3） */
     WrongServer: 3005,
+    /** 建角失败（进区时角色注册/创建未成功，M12c D5）——可重试，客户端提示重进（docs/DUAL_MODE.md §2.7） */
+    CharCreateFailed: 3006,
 } as const;
 
 export type ErrorCodeType = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -41,4 +43,5 @@ export const ErrorMessage: Record<number, string> = {
     [ErrorCode.SkillUnavailable]: "技能不可用",
     [ErrorCode.ProtocolMismatch]: "客户端版本过旧，请更新后再试",
     [ErrorCode.WrongServer]: "该区服不可进入，请重新选服",
+    [ErrorCode.CharCreateFailed]: "进入失败，请重试",
 };
