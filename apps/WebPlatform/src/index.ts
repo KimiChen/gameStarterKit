@@ -7,12 +7,13 @@
  * login / bindProfile / area/list 随 split 激活续接（此处先 verify/character/ban）。
  */
 import { pathToFileURL } from "node:url";
-import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
+import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
+import { ApiPath, type ILoginRes } from "@game/shared";
 import { AUTH_DEV_ENABLED, WEBPLATFORM_PORT } from "./config";
 import { getPool } from "./lib/mysql";
 import {
   accountExists, areaList, banAccount, characterHas, characterRegister, characterZones,
-  devLogin, revokeAccount, verifyToken, wxLogin,
+  devLogin, type LoginResult, revokeAccount, verifyToken, wxLogin,
 } from "./lib";
 
 /** 真实 IP 取 XFF **最右段**（可信 LB append 真实对端；最左段客户端可伪造，绕登录限流，09·G5）。 */
@@ -20,6 +21,22 @@ const realIp = (req: FastifyRequest): string => {
   const xff = (req.headers["x-forwarded-for"] as string | undefined) ?? "";
   return xff.split(",").map((s) => s.trim()).filter(Boolean).pop() ?? req.ip;
 };
+
+/**
+ * lib 登录结果码 → **客户端契约**（成功回 shared `ILoginRes{userId,token,isNew}`；失败 reply.code+错误码），
+ * 与 in-process apps/server http/account/{wxLogin,devLogin}.ts **同契约**（客户端 portalRequest 二形态无感）。
+ * ⛔ 出参禁含 openid/unionid/session_key/epoch（09·G8）。
+ */
+function loginReply(r: LoginResult, reply: FastifyReply): ILoginRes | { error: string } {
+  if (r.ok) { return { userId: r.uid, token: r.token, isNew: r.isNew }; }
+  const [status, code]: [number, string] =
+    r.reason === "banned" ? [403, "ACCOUNT_BANNED"]
+    : r.reason === "rate_limited" || r.reason === "wx_rate_limited" ? [429, "RATE_LIMITED"]
+    : r.reason === "wx_invalid" ? [401, "AUTH_REQUIRED"]
+    : [500, "INTERNAL"]; // wx_unavailable
+  reply.code(status);
+  return { error: code };
+}
 
 export function buildServer(): FastifyInstance {
   const app = Fastify({ logger: true });
@@ -64,14 +81,16 @@ export function buildServer(): FastifyInstance {
     return { ok: true };
   });
 
-  // 登录（split：客户端直连 WebPlatform）：lib 全链（限流→code2session→查/建号→签发），返回**结果码**
-  // （{ok,uid,token,epoch,isNew} | {ok:false,reason}）；网关/客户端映射错误 + 组 sess 由 onAuth 懒填。
-  app.post<{ Body: { code: string; deviceId?: string } }>("/login", async (req) => {
-    return wxLogin({ code: req.body.code, ip: realIp(req), deviceId: req.body.deviceId ?? null });
+  // 登录（split：客户端 portalRequest 直连 WebPlatform）：路径 = 单源 ApiPath（铁律 6，与 in-process 端点一致）；
+  // lib 全链（限流→code2session→查/建号→签发）→ loginReply 映射成客户端契约。组 sess 由网关 onAuth 懒填（2g）。
+  app.post<{ Body: { code?: string; deviceId?: string } }>(ApiPath.WxLogin, async (req, reply) => {
+    const r = await wxLogin({ code: String(req.body?.code ?? ""), ip: realIp(req), deviceId: req.body?.deviceId ?? null });
+    return loginReply(r, reply);
   });
-  app.post<{ Body: { devKey: string; deviceId?: string } }>("/dev-login", async (req, reply) => {
+  app.post<{ Body: { devKey?: string; deviceId?: string } }>(ApiPath.DevLogin, async (req, reply) => {
     if (!AUTH_DEV_ENABLED) { reply.code(404); return { error: "NOT_FOUND" }; }
-    return devLogin(req.body.devKey, realIp(req), req.body.deviceId ?? null);
+    const r = await devLogin(String(req.body?.devKey ?? ""), realIp(req), req.body?.deviceId ?? null);
+    return loginReply(r, reply);
   });
 
   // 选服目录（登录前展示，无鉴权；token 可选、best-effort 回填 ul）。返回 IAreaListRes（al/ul/isOps/h）。

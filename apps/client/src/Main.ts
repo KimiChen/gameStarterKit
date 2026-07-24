@@ -13,7 +13,7 @@ import { _decorator, Component, Node, Graphics, UITransform, Color, input, Input
 import { DEV_SERVER_URL } from "./core/devEnv";
 import { DESIGN_WIDTH, DESIGN_HEIGHT } from "./designSpec";
 import { installWeChatCompat } from "./core/wechat-compat";
-import { getToken, initHttp } from "./core/http";
+import { getToken, initHttp, initPortal } from "./core/http";
 import { getCurrentServer } from "./net/serverSession";
 import { RoomClient } from "./net/RoomClient";
 import { GameECS } from "./logic/rooms/ballMove/GameECS";
@@ -37,6 +37,9 @@ const { ccclass, property } = _decorator;
 export class Main extends Component {
     @property({ tooltip: "服务端 http(s) 地址。留空 = 自动跟随根 .env.development 的 PORT（sync:client 生成 core/devEnv.ts，默认 http://localhost:2568）；填写即覆盖（远程/真机调试，微信真机需 https + 域名白名单）" })
     serverUrl = "";
+
+    @property({ tooltip: "门户（登录 + 选服）http(s) 地址 —— 账号服务 WebPlatform（DUAL_MODE §2.7）。留空 = 跟随服务端地址（dev/内嵌单机同址）；split 部署时填 WebPlatform 域名。游戏服/区服 WS 不走此地址。" })
+    portalUrl = "";
 
     /** 生效的服务端地址：Inspector 填写值优先，留空自动跟随 devEnv（根 .env.development 的 PORT） */
     private get effectiveServerUrl(): string {
@@ -80,6 +83,8 @@ export class Main extends Component {
 
     async start() {
         initHttp(this.effectiveServerUrl);
+        initPortal(this.portalUrl); // 留空 = 跟随游戏服（getPortalUrl 回退 baseUrl）；split 时填 WebPlatform 域名
+
         // 大厅壳走 FGUI：动态 import 组合根（铁律 10——fairygui 不进静态依赖图）。
         // 登录页的「进入游戏」经 Home 走到 enterBattle 回调，才拉起 ballMove。
         try {
