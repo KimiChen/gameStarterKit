@@ -8,13 +8,15 @@
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { creditInTx, debitInTx, getBalance, invalidateBalanceCache } from "../../src/core/economy/currency";
-import { deriveOpId } from "../../src/core/economy/outbox";
+import { deriveOpId, purchase } from "../../src/core/economy/outbox";
+import { getShopSku } from "../../src/core/economy/catalog";
+import { createUser } from "../../src/core/userRecord";
 import { CUR_GOLD } from "../../src/core/infra/config";
-import { kSess, kUser, zoneCtx } from "../../src/core/infra/keys";
-import { cacheClient, closeRedis } from "../../src/core/infra/redisRoute";
+import { kApplied, kBag, kSess, kUser, zoneCtx } from "../../src/core/infra/keys";
+import { clientFor, closeRedis } from "../../src/core/infra/redisRoute";
 import { closeMysql, getPool, withRcTx } from "../../src/core/infra/mysql";
 import type { RowDataPacket } from "../../src/core/infra/mysql";
-import { assertRedisUp, testUid } from "./helpers";
+import { assertRedisUp, cleanupUser, testUid } from "./helpers";
 
 const uids: string[] = [];
 const uid = (n: string): string => { const u = testUid(n).slice(0, 32); uids.push(u); return u; };
@@ -25,7 +27,11 @@ after(async () => {
   for (const u of uids) {
     await pool.execute("DELETE FROM currency_ledger WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM user_currency WHERE user_id = ?", [u]);
-    for (const s of [0, 1, 2]) { await invalidateBalanceCache(u, s).catch(() => {}); }
+    await pool.execute("DELETE FROM gameplay_outbox WHERE user_id = ?", [u]);
+    for (const s of [0, 1, 2, 5]) {
+      await invalidateBalanceCache(u, s).catch(() => {});
+      await zoneCtx.run({ sId: s }, () => cleanupUser(u)).catch(() => {}); // 清各区 user/bag/applied 键
+    }
   }
   await closeRedis();
   await closeMysql();
@@ -91,4 +97,40 @@ test("per-zone: 每区独立钱包 + 谓词隔离(B1) + 跨区同 idem_key 并�
   const [led] = await getPool().query<RowDataPacket[]>(
     "SELECT COUNT(*) c FROM currency_ledger WHERE user_id = ? AND idem_key = 'same-idem'", [u]);
   assert.equal(Number(led[0].c), 2, "跨区同 idem_key 并存（I4 唯一键含 server_id）");
+});
+
+test("per-zone: purchase 全链落对区（sId=5：钱扣 s5 + Redis apply 落 s5 前缀，不串 s0/基础）", async () => {
+  const u = uid("pz-buy");
+  const sku = getShopSku("shop.frag17x10")!;
+  const res = await zoneCtx.run({ sId: 5 }, async () => {
+    await createUser(u); // 建 s5_user:{u}（区上下文=5）
+    await getPool().execute(
+      "INSERT INTO user_currency (user_id, server_id, currency, balance) VALUES (?,?,?,?)", [u, 5, CUR_GOLD, 500]);
+    return purchase(u, sku, "buy-req"); // 阶段1 扣钱(s5 谓词) + 阶段2 redisApply(落 s5_user/bag/applied)
+  });
+  assert.ok(res.status === "done" || res.status === "granting", `purchase 应成功，实际 ${res.status}`);
+
+  const bal = async (s: number): Promise<number | null> => {
+    const [r] = await getPool().query<RowDataPacket[]>(
+      "SELECT balance FROM user_currency WHERE user_id=? AND server_id=? AND currency=?", [u, s, CUR_GOLD]);
+    return r.length ? Number(r[0].balance) : null;
+  };
+  assert.equal(await bal(5), 500 - sku.price, "s5 钱包已扣 sku.price");
+  assert.equal(await bal(0), null, "s0 无影子钱包（未串区）");
+
+  // Redis apply 落 s5 前缀：s5_applied 有 op、基础 applied 无（证明 redisApply 用了 s5 区上下文）
+  const c = clientFor(u);
+  const s5applied = zoneCtx.run({ sId: 5 }, () => kApplied(u));
+  const baseApplied = kApplied(u); // 未设置 zoneCtx = 基础前缀
+  assert.notEqual(s5applied, baseApplied);
+  assert.ok(Number(await c.zcard(s5applied)) >= 1, "op 落 s5_applied");
+  assert.equal(Number(await c.zcard(baseApplied)), 0, "基础 applied 无（apply 未串区）");
+
+  // 道具落 s5 前缀的 bag（取首个 item grant 验证）
+  const item = sku.grants.find((g) => g.kind === "item");
+  if (item && item.kind === "item") {
+    const s5bag = zoneCtx.run({ sId: 5 }, () => kBag(u, item.itemId % 4));
+    assert.ok(await c.hget(s5bag, String(item.itemId)), "道具落 s5_bag 前缀");
+    assert.equal(await c.hget(kBag(u, item.itemId % 4), String(item.itemId)), null, "基础 bag 无货（未串区）");
+  }
 });

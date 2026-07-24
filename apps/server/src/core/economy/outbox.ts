@@ -154,14 +154,18 @@ export async function drainPendingFor(uid: string, sId: number): Promise<number>
   const [rows] = await getPool().query<RowDataPacket[]>(
     "SELECT op_id, effect FROM gameplay_outbox WHERE user_id = ? AND server_id = ? AND status = ? ORDER BY created_at, op_id",
     [uid, sId, OUTBOX_PENDING]);
-  let applied = 0;
-  for (const row of rows) {
-    const r = await redisApply(uid, row.op_id as string, row.effect as Effect);
-    if (r === "cold") { throw new Error(`drainPendingFor: 档已冻结 uid=${uid}`); }
-    await markOutboxDone(row.op_id as string);
-    applied++;
-  }
-  return applied;
+  // 显式包 zoneCtx（§3.6 B4，评审 C1）：即使调用方 ambient 与 sId 不一致，redisApply 也落 sId 对应区，
+  // 消除「按 server_id=sId 取行、却 apply 到 ambient 区」的签名歧义（本函数为 setField 写路径预留）。
+  return zoneCtx.run({ sId }, async () => {
+    let applied = 0;
+    for (const row of rows) {
+      const r = await redisApply(uid, row.op_id as string, row.effect as Effect);
+      if (r === "cold") { throw new Error(`drainPendingFor: 档已冻结 uid=${uid}`); }
+      await markOutboxDone(row.op_id as string);
+      applied++;
+    }
+    return applied;
+  });
 }
 
 /**

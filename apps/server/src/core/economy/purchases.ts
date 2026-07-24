@@ -41,7 +41,7 @@ export interface WxPayNotify {
  *
  * 重放安全（DoD：同 wx_txn_id 回调两次只发一次币）三重闸：
  * ① 状态 CAS `WHERE status = created` 0 行即已处理；② `uk_wx_txn` UNIQUE；
- * ③ ledger `UNIQUE(user_id, idem_key)`（deliver_op_id 恒定派生）。
+ * ③ ledger `UNIQUE(user_id, server_id, idem_key)`（deliver_op_id 恒定派生、已编码 sId）。
  */
 export async function handleWxPayNotify(n: WxPayNotify): Promise<"ok" | "already" | "mismatch"> {
   const result = await withRcTx(async (conn) => {

@@ -25,8 +25,9 @@ export async function emitMailWake(uid: string, mailId: number): Promise<void> {
 }
 
 /** 发件（GM/系统调用）。attach 为空 = 纯文本邮件。落库后发实时唤醒（流仅唤醒，09·K6）。 */
-export async function sendMail(uid: string, title: string, body: string, attach?: Effect): Promise<number> {
-  const sId = currentZoneId();                                      // 邮件所属区（§3.4；单形态=0）
+export async function sendMail(uid: string, title: string, body: string, attach?: Effect, sId = currentZoneId()): Promise<number> {
+  // sId = 收件人经济区（§3.4，评审 C2）：自发链路默认当前区；⚠ GM/系统跨区发件**必须显式传收件人区**，
+  // 否则 ambient=0 时附件 intent 落 s0 影子背包、玩家在本区看不到货。
   const attachOpId = attach && attach.length > 0
     ? deriveOpId(uid, sId, "mail.attach", randomUUID()) // 发件时固化 op_id：领取幂等的锚点（09·I3）
     : null;
