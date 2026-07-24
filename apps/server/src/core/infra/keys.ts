@@ -22,14 +22,27 @@
  */
 import { AsyncLocalStorage } from "node:async_hooks";
 import { crc32 } from "node:zlib";
-import { ACTIVE_LRU_BUCKETS, BAG_SHARDS, REDIS_KEY_PREFIX } from "./config";
+import { ACTIVE_LRU_BUCKETS, BAG_SHARDS, GROUP_ZONES, REDIS_KEY_PREFIX } from "./config";
 
 /** 区上下文（per-request sId，docs/DUAL_MODE.md §3.5）。入口（LobbyRoom.messages / room / worker）
- *  `zoneCtx.run({ sId }, ...)` 建立（多区硬化步）；ALS 自动透传进 dispatcher/handler，⛔ 无需碰 dispatcher。 */
+ *  `zoneCtx.run({ sId }, ...)` 建立；ALS 自动透传进 dispatcher/handler，⛔ 无需碰 dispatcher。 */
 export const zoneCtx = new AsyncLocalStorage<{ sId: number }>();
-/** 当前区 sId。未设置 = 单形态/大混服 = 0（过渡期安全默认；硬化步改 fail-fast）。 */
-export const currentZoneId = (): number => zoneCtx.getStore()?.sId ?? 0;
-/** per-zone 前缀：sId=0（大混服/单形态/未设置）= 项目前缀；sId≥1（区服）= 项目前缀 + `s{sId}_`（§5.3）。 */
+/**
+ * 当前区 sId。**fail-fast 门控在 GROUP_ZONES（硬化步）**：
+ * - 已设 zoneCtx → 返回其 sId（含 0=大混服）。
+ * - 未设 + GROUP_ZONES 空（单形态/大混服）→ 回退 0（安全默认，测试/现网零影响）。
+ * - 未设 + GROUP_ZONES 非空（真开多区）→ **throw**：抓漏包裹的危险路径（防 per-zone 写静默落基础前缀/s0，§3.5 B3）。
+ * 严格性自动跟随真实风险：只有真开多区才严格，不必包裹每个测试/cleanup 的直接键调用。
+ */
+export const currentZoneId = (): number => {
+  const s = zoneCtx.getStore();
+  if (s) { return s.sId; }
+  if (GROUP_ZONES.length > 0) {
+    throw new Error("zoneCtx 未建立且 GROUP_ZONES 非空——per-zone 路径必须在 zoneCtx.run 内（DUAL_MODE §3.5 硬化：入口漏包裹）");
+  }
+  return 0;
+};
+/** per-zone 前缀：sId=0（大混服/单形态）= 项目前缀；sId≥1（区服）= 项目前缀 + `s{sId}_`（§5.3）。复用 currentZoneId 的 fail-fast。 */
 const P = (): string => {
   const sId = currentZoneId();
   return sId === 0 ? REDIS_KEY_PREFIX : `${REDIS_KEY_PREFIX}s${sId}_`;

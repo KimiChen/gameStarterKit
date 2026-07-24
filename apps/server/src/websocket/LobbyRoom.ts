@@ -12,6 +12,7 @@ import {
   ErrorCode as SharedErrorCode, type IRoomJoinOptions,
 } from "@game/shared";
 import { groupAdmitsZone } from "../core/infra/config";
+import { zoneCtx } from "../core/infra/keys";
 import { verifyBearer } from "../core/auth/session";
 import { toErrCode } from "../core/errors";
 import { loadFields } from "../core/userRecord";
@@ -21,7 +22,7 @@ import { registerAllRoutes } from "./loader";
 
 type LobbyClient = Client<{
   messages: { [LOBBY_MSG_RPC]: RpcReply; [LOBBY_MSG_PUSH]: { type: string; data: unknown } };
-  auth: { userId: string; token: string };
+  auth: { userId: string; token: string; sId: number };
 }>;
 
 export class LobbyRoom extends Room<{ client: LobbyClient }> {
@@ -43,7 +44,7 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
     }
     try {
       const uid = await verifyBearer(token, true);
-      return { userId: uid, token };
+      return { userId: uid, token, sId: options?.sId ?? 0 }; // sId 存进 auth，供 messages/onJoin 建区上下文（§3.5）
     } catch (e) {
       throw new ServerError(ErrorCode.AUTH_FAILED, toErrCode(e));
     }
@@ -70,7 +71,11 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
         client.send(LOBBY_MSG_RPC, { id: msg.id, ok: false, err: { code: toErrCode(e), msg: "" } } satisfies RpcReply);
         return;
       }
-      const reply = await dispatchRpc(ctx, { id: msg.id, type: msg.type, payload: msg.payload });
+      // 区上下文（§3.5 硬化）：整个 RPC handler —— 含 dispatcher 中间件的 kIdemUser、
+      // handler 里 withUser 的 kLock/casHset、readUser 等 per-zone 键 —— 全在 auth.sId 区内跑。
+      // ALS 自动透传进 dispatchRpc（⛔ 无需碰 dispatcher）。
+      const reply = await zoneCtx.run({ sId: auth.sId }, () =>
+        dispatchRpc(ctx, { id: msg.id, type: msg.type, payload: msg.payload }));
       client.send(LOBBY_MSG_RPC, reply);
     }),
   };
@@ -82,12 +87,14 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
   onJoin(client: LobbyClient): void {
     if (!client.auth) { return; }
     const uid = client.auth.userId;
+    const sId = client.auth.sId;
     const sink: PushSink = (type, data) => client.send(LOBBY_MSG_PUSH, { type, data });
     this.sinks.set(client.sessionId, sink);
     registerOnline(uid, sink);
     // 工会在线索引挂载（三个维护点之一）：异步读档一次，不阻塞 join；
-    // 读档失败不影响连接（换会端点/重连会修复）；guildId 缺失 = 0 = 无工会
-    void loadFields(uid, ["guildId"])
+    // 读档失败不影响连接（换会端点/重连会修复）；guildId 缺失 = 0 = 无工会。
+    // loadFields 读 kUser（per-zone）→ 包 zoneCtx.run({sId})（§3.5 硬化）。
+    void zoneCtx.run({ sId }, () => loadFields(uid, ["guildId"]))
       .then((f) => setOnlineGuild(uid, Number(f.guildId ?? 0) || null))
       .catch(() => { /* 无栈调试等场景：索引缺失只影响工会广播，不影响其余功能 */ });
   }

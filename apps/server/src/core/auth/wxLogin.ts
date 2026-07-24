@@ -8,7 +8,7 @@
  * 本 starter kit 是全新项目、无存量账号，该协议未移植（需要时参考 Arthur 的 wxLogin.bindLegacy）。
  */
 import { LOGIN_RATE_CAPACITY, LOGIN_RATE_REFILL_PER_S } from "../infra/config";
-import { kRl } from "../infra/keys";
+import { kRl, zoneCtx } from "../infra/keys";
 import { clientForKey } from "../infra/redisRoute";
 import { evalshaWithReload, TOKEN_BUCKET } from "../infra/redisScripts";
 import { getPool, nextSeq } from "../infra/mysql";
@@ -54,12 +54,14 @@ async function createAccount(openid: string, unionid: string | null): Promise<Ac
   // 建号是 user:{uid} 的合法创建点（09·R2）。新号初始字段对齐 emptySave 语义。
   // 音频偏好（musicOn/sfxOn）⛔ 不在建号初始化——读侧「缺失即默认开」（07 字段表），存量档零迁移
   try {
-    await createUser(uid, {
+    // 建号建 user:{uid} 于**基础前缀**（sId=0：大混服/大厅基线档）。⚠ 区服的 per-zone 角色档
+    // 走建角（首进区，M12），⛔ 不在登录建。fail-fast 硬化下 createUser 触 P()，须显式 zoneCtx.run（§3.5/§2.6）。
+    await zoneCtx.run({ sId: 0 }, () => createUser(uid, {
       registerTime: String(Date.now()),
       stamina: String(STAMINA_MAX),
       lastStaminaRecoverAt: "0", // 满体力：恢复计时未开始（shared logic/stamina.ts）
       avatarId: "-1",
-    });
+    }));
   } catch (e) {
     // 跨存储补偿：accounts 已插入而 Redis 建档失败（Redis 抖动）时回收账号行——否则
     // 「号在档无」的残号会让该 openid 永久走「已存在」分支不再补建 user:{uid}，读档
