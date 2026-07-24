@@ -135,7 +135,10 @@ export class Main extends Component {
         const cur = getCurrentServer();
         const endpoint = cur?.wsUrl ? cur.wsUrl.replace(/^ws/, "http") : this.effectiveServerUrl;
         RoomClient.inst.init(endpoint);
-        const room = await RoomClient.inst.joinGame({ token: getToken() });
+        // 区服进服硬闸接线（docs/DUAL_MODE.md §4.3 / M11）：带上选中区服 sId，供服务端 onAuth
+        // 校验 sId ∈ GROUP_ZONES（防串服）。cur 为 null 的单形态路径 → sId undefined →
+        // 服务端 groupAdmitsZone 恒放行，现有行为不变。此处是 Main 已有「区服 wsUrl 路由」的补全。
+        const room = await RoomClient.inst.joinGame({ token: getToken(), sId: cur?.sId });
         if (this.destroyed) {
             // 连接在途期间组件已销毁（场景重载）：房间立即退掉——否则它永驻并把
             // state 回调喂给 GameECS 单例，新 Main 再 join 后双房间喂同一 ECS（幽灵 isSelf）
