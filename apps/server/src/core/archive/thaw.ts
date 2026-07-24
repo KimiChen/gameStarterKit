@@ -11,7 +11,7 @@
  * 否则 localMutex 自等死锁）。relayer 不走 withUser（09·X5），是合法调用方。
  */
 import { LOCK_RENEW_MS, THAW_RATE } from "../infra/config";
-import { kFence, kNegcacheUser, kUser } from "../infra/keys";
+import { currentZoneId, kFence, kNegcacheUser, kUser } from "../infra/keys";
 import { cacheClient, clientFor } from "../infra/redisRoute";
 import { getPool } from "../infra/mysql";
 import type { ResultSetHeader, RowDataPacket } from "../infra/mysql";
@@ -213,16 +213,24 @@ async function thawSlowPath(uid: string): Promise<void> {
       }
       case "ABSENT": {
         archiveCounters.absentAccountChecks++;
-        const [acct] = await getPool().query<RowDataPacket[]>(
-          "SELECT 1 FROM accounts WHERE user_id = ? LIMIT 1", [uid]);
-        if (acct.length > 0) {
-          // accounts 有号但热档冷档全无 = 真实数据丢失。⛔ 拒绝建空档（09·F4）：
-          // 建了空档就把数据丢失伪装成正常注册，30 天存档无声蒸发
+        // 「本区建过角没」判据（DUAL_MODE §2.6 / M12b）——按区分：
+        //  · sId=0（大混服/基础档）：登录建号创建 → 用 accounts 存在性判（原逻辑）；
+        //  · sId≥1（区服）：per-zone 角色档由建角(ensureCharacter)创建 → 用 char_registry(uid,sId) 判。
+        // 有标记 + 热档冷档全无 = 真实数据丢失（拒建空档，09·F4）；无标记 = 未在本区建过角
+        // （首进区/无账号）→ 放行建角/建号。⚠ user_archive 尚全局(archive 步再 per-zone 化)，
+        // 故 sId≥1 的 ABSENT 仅覆盖「从未冻结」路径；冻结跨区的完整正确性待 archive 步。
+        const sId = currentZoneId();
+        const [mark] = await getPool().query<RowDataPacket[]>(
+          sId === 0
+            ? "SELECT 1 FROM accounts WHERE user_id = ? LIMIT 1"
+            : "SELECT 1 FROM char_registry WHERE user_id = ? AND server_id = ? LIMIT 1",
+          sId === 0 ? [uid] : [uid, sId]);
+        if (mark.length > 0) {
           archiveCounters.userDataLost++;
-          console.error(`[thaw] ☠ USER_DATA_LOST uid=${uid}：accounts 有号但 Redis 与 user_archive 全无（≡0 告警线）`);
+          console.error(`[thaw] ☠ USER_DATA_LOST uid=${uid} sId=${sId}：${sId === 0 ? "accounts 有号" : "char_registry 有本区角色"}但 Redis 与 user_archive 全无（≡0 告警线）`);
           throw new UserDataLostError(uid);
         }
-        // 真新号：负缓存挡住重复穿透（cache 实例，TTL 10s）；建号成功后由建号路径立即失效
+        // 未在本区建过角（真新号/首进区）：负缓存挡重复穿透（per-zone，cache TTL 10s）；建号/建角成功后失效
         await cacheClient().set(kNegcacheUser(uid), "1", "EX", NEGCACHE_TTL_S);
         return;
       }

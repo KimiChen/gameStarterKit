@@ -12,9 +12,11 @@ import { deriveOpId, purchase } from "../../src/core/economy/outbox";
 import { getShopSku } from "../../src/core/economy/catalog";
 import { createUser } from "../../src/core/userRecord";
 import { ensureCharacter, listCharacterZones } from "../../src/player/character";
+import { ensureLive } from "../../src/core/archive/thaw";
+import { UserDataLostError } from "../../src/core/errors";
 import { CUR_GOLD } from "../../src/core/infra/config";
-import { kApplied, kBag, kSess, kUser, zoneCtx } from "../../src/core/infra/keys";
-import { clientFor, closeRedis } from "../../src/core/infra/redisRoute";
+import { kApplied, kBag, kNegcacheUser, kSess, kUser, zoneCtx } from "../../src/core/infra/keys";
+import { cacheClient, clientFor, closeRedis } from "../../src/core/infra/redisRoute";
 import { closeMysql, getPool, withRcTx } from "../../src/core/infra/mysql";
 import type { RowDataPacket } from "../../src/core/infra/mysql";
 import { assertRedisUp, cleanupUser, testUid } from "./helpers";
@@ -156,4 +158,17 @@ test("per-zone: 建角 ensureCharacter —— char_registry 行 + s{sId}_user �
   await ensureCharacter(u, 8);
   assert.deepEqual(await listCharacterZones(u), [7, 8], "两区角色（喂 ul『我的区』）");
   assert.equal(await c.exists(zoneCtx.run({ sId: 8 }, () => kUser(u))), 1, "s8_user 已建");
+});
+
+test("per-zone: thaw ABSENT 按区判(M12b §2.6) —— sId≥1 用 char_registry（没建角→放行，建过角+档全无→UserDataLost）", async () => {
+  const u = uid("pz-thaw");
+  const c = clientFor(u);
+  // ① 未建角本区 + 热档冷档全无 → ABSENT + 无标记 → 放行（不抛，走建角/建号）
+  await zoneCtx.run({ sId: 5 }, () => ensureLive(u));
+  // ② 建角本区（char_registry(u,5) + s5_user），删 s5_user 模拟热档丢失、清负缓存
+  await ensureCharacter(u, 5);
+  await c.unlink(zoneCtx.run({ sId: 5 }, () => kUser(u)));
+  await cacheClient().unlink(zoneCtx.run({ sId: 5 }, () => kNegcacheUser(u)));
+  // char_registry(u,5) 有、热档冷档全无 → ABSENT + 建过角 → UserDataLost 告警 + 拒建空档（09·F4）
+  await assert.rejects(zoneCtx.run({ sId: 5 }, () => ensureLive(u)), UserDataLostError);
 });
