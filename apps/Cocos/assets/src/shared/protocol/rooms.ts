@@ -25,4 +25,15 @@ export interface IRoomJoinOptions {
     v?: number;
     /** 框架 token（wx-login 签发；mock token / 缺省按游客进玩法房） */
     token?: string;
+    /**
+     * 目标区服 sId（区服形态）。服务端 onAuth 进服硬闸校验 `sId ∈ 本进程/组 GROUP_ZONES`，
+     * 不属于本组即拒（防串服）。缺省 = 单形态 / 大混服 / legacy，服务端不做区归属闸。
+     * 详见 docs/DUAL_MODE.md §4.3（进服硬闸）/ §5.1（M11）。sId=0 保留大混服池。
+     */
+    sId?: number;
+    /**
+     * serverList 一致性哈希（/area/list 响应的 `h`）。进服带上供服务端校验选服列表新鲜度
+     * （配置更新后逼客户端重拉，避免用陈旧列表被准入层拒连）。当前为预留字段。
+     */
+    listHash?: string;
 }

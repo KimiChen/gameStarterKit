@@ -28,6 +28,7 @@ import {
     type IErrorRes,
 } from "@game/shared";
 import { GameRoomState, PlayerState } from "./schema/GameRoomState";
+import { groupAdmitsZone } from "../core/infra/config";
 import { verifyBearer } from "../core/auth/session";
 import { emitMatchEvidence, MATCH_MODE_CASUAL, newMatchId } from "../core/match/matchConsumer";
 
@@ -81,6 +82,11 @@ export class GameRoom extends Room {
         // 给出可识别错误码，而不是让旧客户端在 Schema 对不上的畸形状态里挂死
         if ((options?.v ?? 1) !== PROTOCOL_VERSION) {
             throw new ServerError(ErrorCode.ProtocolMismatch, ErrorMessage[ErrorCode.ProtocolMismatch]);
+        }
+        // 进服区归属硬闸（docs/DUAL_MODE.md §4.3 / M11）：sId ∉ 本组 GROUP_ZONES 即拒（防串服）；
+        // sId 缺省 / GROUP_ZONES 空（单形态/大混服）放行，向后兼容（客户端软判定只改善 UX）。
+        if (!groupAdmitsZone(options?.sId)) {
+            throw new ServerError(ErrorCode.WrongServer, ErrorMessage[ErrorCode.WrongServer]);
         }
         // token 严格化（去 mock 后）：⛔ 不再有「伪造/过期静默降游客」——dev-login 让真
         // token 零成本，游客模式失去存在理由；验不过一律拒连（可识别错误码给客户端回登录）

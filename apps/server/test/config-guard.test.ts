@@ -59,3 +59,22 @@ test("PORT 合法值与缺省值：正常加载", () => {
   assert.equal(loadConfigWith({ PORT: undefined }).status, 0, "未设置走默认 2568");
   assert.equal(loadConfigWith({ PORT: "" }).status, 0, "空串 = 未设置走默认");
 });
+
+// GROUP_ZONES：本进程/组承载的区服 sId 集合（进服硬闸单源，docs/DUAL_MODE.md §5.1 M11）。
+// 空=承载全部；非法（非「逗号分隔的非负整数」）加载期即 throw。
+test("GROUP_ZONES 非法值：config 加载期即 throw（防区归属闸配错）", () => {
+  for (const bad of ["1,2,x", "a", "-1", "1,,2,z", "1.5", "70000", "1;2"]) {
+    const r = loadConfigWith({ GROUP_ZONES: bad });
+    assert.notEqual(r.status, 0, `「${bad}」应拒绝启动`);
+    assert.match(r.stderr, /GROUP_ZONES 非法/, `「${bad}」应报 GROUP_ZONES 非法，实际 stderr：${r.stderr.slice(0, 200)}`);
+  }
+});
+
+test("GROUP_ZONES 合法值与缺省值：正常加载", () => {
+  for (const ok of ["1,2,3", "0", "1", "1, 2, 3", "1,2,3,", "10,11,12,13,14,15,16,17,18,19"]) {
+    const r = loadConfigWith({ GROUP_ZONES: ok });
+    assert.equal(r.status, 0, `「${ok}」应通过，stderr：${r.stderr.slice(0, 200)}`);
+  }
+  assert.equal(loadConfigWith({ GROUP_ZONES: undefined }).status, 0, "未设置 = 承载全部");
+  assert.equal(loadConfigWith({ GROUP_ZONES: "" }).status, 0, "空串 = 承载全部");
+});

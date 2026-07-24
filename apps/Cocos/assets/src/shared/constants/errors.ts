@@ -23,6 +23,8 @@ export const ErrorCode = {
     SkillUnavailable: 3003,
     /** 双端协议版本不匹配（join options.v ≠ 服务端 PROTOCOL_VERSION，见 protocol/rooms.ts） */
     ProtocolMismatch: 3004,
+    /** 目标区服不属于本进程/组（串服）或不可进入（维护/未开服）——进服硬闸拒连，客户端重新选服（docs/DUAL_MODE.md §4.3） */
+    WrongServer: 3005,
 } as const;
 
 export type ErrorCodeType = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -38,4 +40,5 @@ export const ErrorMessage: Record<number, string> = {
     [ErrorCode.GameAlreadyStarted]: "对局已开始",
     [ErrorCode.SkillUnavailable]: "技能不可用",
     [ErrorCode.ProtocolMismatch]: "客户端版本过旧，请更新后再试",
+    [ErrorCode.WrongServer]: "该区服不可进入，请重新选服",
 };

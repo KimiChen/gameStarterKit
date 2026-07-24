@@ -11,6 +11,7 @@ import {
   LOBBY_MSG_PUSH, LOBBY_MSG_RPC, PROTOCOL_VERSION, ErrorMessage,
   ErrorCode as SharedErrorCode, type IRoomJoinOptions,
 } from "@game/shared";
+import { groupAdmitsZone } from "../core/infra/config";
 import { verifyBearer } from "../core/auth/session";
 import { toErrCode } from "../core/errors";
 import { loadFields } from "../core/userRecord";
@@ -34,6 +35,11 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
     // 协议版本硬闸（缺省按 1 兼容首版客户端）——语义同 GameRoom.onAuth，见 shared/protocol/rooms.ts
     if ((options?.v ?? 1) !== PROTOCOL_VERSION) {
       throw new ServerError(SharedErrorCode.ProtocolMismatch, ErrorMessage[SharedErrorCode.ProtocolMismatch]);
+    }
+    // 进服区归属硬闸（docs/DUAL_MODE.md §4.3 / M11）：sId ∉ 本组 GROUP_ZONES 即拒（防串服）。
+    // sId 缺省 / GROUP_ZONES 空（单形态）放行，向后兼容。
+    if (!groupAdmitsZone(options?.sId)) {
+      throw new ServerError(SharedErrorCode.WrongServer, ErrorMessage[SharedErrorCode.WrongServer]);
     }
     try {
       const uid = await verifyBearer(token, true);

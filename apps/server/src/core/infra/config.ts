@@ -100,6 +100,35 @@ export const PORT = (() => {
   return n;
 })();
 
+/** 本进程/组承载的区服 sId 集合（逗号分隔，如 `"1,2,3"`）。**空 = 承载全部**
+ *  （单形态 / 大混服 / legacy，onAuth 不做区归属闸）。区服形态下由它做进服硬闸：
+ *  join options.sId 必须 ∈ 本集合，否则拒连（防串服）。详见 docs/DUAL_MODE.md §5.1 M11 / §4.3。
+ *  ⚠ 非法（非「逗号分隔的非负整数 sId」）加载期即 throw（与 PROJECT_ID/PORT 同款 fail-fast，
+ *  config-guard.test 机检）。sId=0 保留大混服池。 */
+export const GROUP_ZONES: readonly number[] = (() => {
+  const v = process.env.GROUP_ZONES;
+  if (v === undefined || v.trim() === "") { return []; }
+  const out: number[] = [];
+  for (const raw of v.split(",")) {
+    const p = raw.trim();
+    if (p === "") { continue; } // 容忍尾逗号/多余空格
+    if (!/^\d+$/.test(p)) {
+      throw new Error(`GROUP_ZONES 非法：「${v}」——须为逗号分隔的非负整数 sId（如 "1,2,3"；空=承载全部）。非法项「${p}」`);
+    }
+    const n = Number(p);
+    if (!Number.isInteger(n) || n > 65535) {
+      throw new Error(`GROUP_ZONES 非法：「${v}」——sId 须为 0–65535 整数，非法项「${p}」`);
+    }
+    out.push(n);
+  }
+  return out;
+})();
+
+/** 进服区归属闸（docs/DUAL_MODE.md §4.3 / M11）：sId 缺省或 GROUP_ZONES 空（单形态/大混服）
+ *  = 承载全部，放行；否则要求 sId ∈ GROUP_ZONES。⛔ 客户端软判定只改善 UX，服务端此闸才是真闸。 */
+export const groupAdmitsZone = (sId: number | undefined): boolean =>
+  sId === undefined || GROUP_ZONES.length === 0 || GROUP_ZONES.includes(sId);
+
 export const MYSQL_URL = () => env("MYSQL_URL", `mysql://root@127.0.0.1:3316/game_${PROJECT_ID}`);
 export const MYSQL_POOL_SIZE = envInt("MYSQL_POOL_SIZE", 20);
 
