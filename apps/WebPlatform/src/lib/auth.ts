@@ -67,3 +67,12 @@ export async function revokeAccount(uid: string): Promise<void> {
   await getPool().execute<ResultSetHeader>(
     "UPDATE accounts SET token_epoch = token_epoch + 1, token_hash = NULL WHERE user_id = ?", [uid]);
 }
+
+/** 同步写登录审计（revoke/ban/login/fail 等高危事件不能尽力而为）。 */
+export async function auditLogin(
+  event: string, uid: string | null, reason: string | null, ip: string | null, deviceId: string | null,
+): Promise<void> {
+  await getPool().execute<ResultSetHeader>(
+    "INSERT INTO login_audit (user_id, event, reason, ip, device_id) VALUES (?,?,?,INET6_ATON(?),?)",
+    [uid, event, reason, ip, deviceId]);
+}

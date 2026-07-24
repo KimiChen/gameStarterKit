@@ -10,7 +10,7 @@ import { createEndpoint } from "@colyseus/core";
 import { z } from "zod";
 import { AUTH_DEV_ENABLED } from "../../core/infra/config";
 import { toErrCode } from "../../core/errors";
-import { loginByOpenid, loginRateCheck } from "../../core/auth/wxLogin";
+import { devLogin } from "../../core/auth/wxLogin";
 
 export default createEndpoint("/account/dev-login", {
   method: "POST",
@@ -24,8 +24,7 @@ export default createEndpoint("/account/dev-login", {
   const xff = ctx.headers?.get?.("x-forwarded-for") ?? "";
   const ip = xff.split(",").map((s: string) => s.trim()).filter(Boolean).pop() ?? "0.0.0.0";
   try {
-    await loginRateCheck(ip);
-    return await loginByOpenid(`dev_${ctx.body.devKey}`, null, null, ip, ctx.body.deviceId ?? null, "dev_login");
+    return await devLogin(ctx.body.devKey, ip, ctx.body.deviceId ?? null);
   } catch (e) {
     const code = toErrCode(e);
     const http = code === "ACCOUNT_BANNED" ? 403 : code === "RATE_LIMITED" ? 429 : 500;

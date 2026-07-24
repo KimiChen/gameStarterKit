@@ -7,12 +7,19 @@
  * login / bindProfile / area/list 随 split 激活续接（此处先 verify/character/ban）。
  */
 import { pathToFileURL } from "node:url";
-import Fastify, { type FastifyInstance } from "fastify";
-import { WEBPLATFORM_PORT } from "./config";
+import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
+import { AUTH_DEV_ENABLED, WEBPLATFORM_PORT } from "./config";
 import { getPool } from "./lib/mysql";
 import {
-  accountExists, banAccount, characterHas, characterRegister, characterZones, revokeAccount, verifyToken,
+  accountExists, banAccount, characterHas, characterRegister, characterZones,
+  devLogin, revokeAccount, verifyToken, wxLogin,
 } from "./lib";
+
+/** 真实 IP 取 XFF **最右段**（可信 LB append 真实对端；最左段客户端可伪造，绕登录限流，09·G5）。 */
+const realIp = (req: FastifyRequest): string => {
+  const xff = (req.headers["x-forwarded-for"] as string | undefined) ?? "";
+  return xff.split(",").map((s) => s.trim()).filter(Boolean).pop() ?? req.ip;
+};
 
 export function buildServer(): FastifyInstance {
   const app = Fastify({ logger: true });
@@ -57,7 +64,17 @@ export function buildServer(): FastifyInstance {
     return { ok: true };
   });
 
-  // TODO(split 激活续)：/login（rate-limit→code2session→accounts→issueToken）、/bindProfile、/bindPhone、/area/list。
+  // 登录（split：客户端直连 WebPlatform）：lib 全链（限流→code2session→查/建号→签发），返回**结果码**
+  // （{ok,uid,token,epoch,isNew} | {ok:false,reason}）；网关/客户端映射错误 + 组 sess 由 onAuth 懒填。
+  app.post<{ Body: { code: string; deviceId?: string } }>("/login", async (req) => {
+    return wxLogin({ code: req.body.code, ip: realIp(req), deviceId: req.body.deviceId ?? null });
+  });
+  app.post<{ Body: { devKey: string; deviceId?: string } }>("/dev-login", async (req, reply) => {
+    if (!AUTH_DEV_ENABLED) { reply.code(404); return { error: "NOT_FOUND" }; }
+    return devLogin(req.body.devKey, realIp(req), req.body.deviceId ?? null);
+  });
+
+  // TODO(split 激活续)：/bindProfile、/bindPhone、/area/list。
   return app;
 }
 

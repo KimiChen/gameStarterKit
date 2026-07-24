@@ -89,23 +89,8 @@ export async function retryOnContention<T>(fn: () => Promise<T>, attempts = 3): 
   throw lastErr;
 }
 
-/**
- * 单调发号（`seq` 表，仅用于 user_id）。
- * ⚠ 两条语句必须同一根物理连接（09·DB2：LAST_INSERT_ID 是连接局部的）。
- * ⚠ 行必须已预置（schema.sql），惰性 ODKU 建行首次采番是错的（05）。
- */
-export async function nextSeq(name: string): Promise<number> {
-  const conn = await getPool().getConnection();
-  try {
-    const [r] = await conn.execute<ResultSetHeader>(
-      "UPDATE seq SET val = LAST_INSERT_ID(val + 1) WHERE name = ?", [name]);
-    if (r.affectedRows === 0) { throw new Error(`seq 行缺失: ${name}（schema.sql 必须预置）`); }
-    const [rows] = await conn.query<RowDataPacket[]>("SELECT LAST_INSERT_ID() AS v");
-    return Number(rows[0].v);
-  } finally {
-    conn.release();
-  }
-}
+// 单调发号 nextSeq(`seq` 表) 随建号迁至 WebPlatform lib（apps/WebPlatform/src/lib/mysql.ts，M12c）：
+// 发 user_id 是账号 plane 职责；同连接 LAST_INSERT_ID 纪律（09·DB2）在彼侧沿用。
 
 /** 测试/停服。 */
 export async function closeMysql(): Promise<void> {

@@ -48,6 +48,11 @@ export class RateLimitedError extends Error {
   constructor(msg = "rate limited") { super(msg); this.name = "RateLimitedError"; }
 }
 
+/** 微信侧不可用（超时/熔断/系统繁忙）——客户端退避重试，不算凭证错误。未映射 → INTERNAL(500)。 */
+export class WxUnavailableError extends Error {
+  constructor(msg = "wx unavailable") { super(msg); this.name = "WxUnavailableError"; }
+}
+
 /** zod 校验失败。 */
 export class InvalidPayloadError extends Error {
   constructor(msg = "invalid payload") { super(msg); this.name = "InvalidPayloadError"; }

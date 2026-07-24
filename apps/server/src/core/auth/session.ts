@@ -38,7 +38,17 @@ export interface IssuedSession { userId: string; token: string }
 export async function issueSession(uid: string, tokenEpoch: number, sessionKey: string | null, gwNode = ""): Promise<IssuedSession> {
   // 权威 token 记录（MySQL accounts）由 WebPlatform lib 生成并写入，返回不透明 token。
   const token = await issueToken(uid, tokenEpoch, sessionKey);
-  // 组侧缓存（暂双写；2d 移 onAuth）：快路径 tokenHash + freeze-guard 存在性 + connId/gwNode。
+  await writeGroupSess(uid, token, tokenEpoch, gwNode);
+  return { userId: uid, token };
+}
+
+/**
+ * 写组侧 sess:{uid} 缓存（token 已由 WebPlatform lib 签发）：一次性 HSET 全字段 + TTL
+ * （最后写者胜，并发登录不会留下「双方互撤为零」的状态）。
+ * ⚠ session_key 权威在 accounts（MySQL），组缓存**不再存**（09·G8：无人从组缓存读它）。
+ * 登录薄委托（wxLogin）拿到 lib 已签发的 token 后调此写组缓存；split 拆进程后由 onAuth 从 verify 结果懒填。
+ */
+export async function writeGroupSess(uid: string, token: string, tokenEpoch: number, gwNode = ""): Promise<void> {
   const key = kSess(uid);
   await clientFor(uid).multi()
     .del(key) // 原子换发：旧会话字段不残留
@@ -49,12 +59,10 @@ export async function issueSession(uid: string, tokenEpoch: number, sessionKey: 
       loginTs: String(Date.now()),
       connId: "",
       gwNode,
-      ...(sessionKey !== null ? { sessionKey } : {}),
     })
     .expire(key, SESS_TTL_S)
     .exec();
   await touchActive(uid);
-  return { userId: uid, token };
 }
 
 /**

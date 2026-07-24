@@ -52,12 +52,8 @@ const envFloat = (name: string, dflt: number): number => {
   return v ? Number.parseFloat(v) : dflt;
 };
 
-/** 微信凭证走 KMS/Secret Manager 注入环境，不进代码库。惰性读取：仅 auth 路径需要。 */
-export const wxConfig = () => ({
-  appid: env("WX_APPID"),
-  secret: env("WX_SECRET"),
-  code2sessionUrl: env("WX_CODE2SESSION_URL", "https://api.weixin.qq.com/sns/jscode2session"),
-});
+// 微信凭证 / code2session / 登录限流配置随登录 orchestration 迁至 WebPlatform（apps/WebPlatform/src/config.ts，
+// M12c / DUAL_MODE §2.7）：wxConfig / WX_TIMEOUT_MS / WX_BREAKER_* / LOGIN_RATE_* / TOKEN_BYTES 皆在彼侧。
 
 /** 项目标识（根 .env.development 的 PROJECT_ID，缺省 gono）：多项目共用同一套本地
  *  Redis/MySQL 实例时的命名空间——Redis 键前缀 `<PROJECT_ID>_`（keys.ts 统一拼接）、
@@ -217,18 +213,7 @@ export const SCHEMA_VERSION = 1;
 /** deriveOpId 的 uuidv5 namespace（固定，⛔ 永不改：改了同一 clientReqId 会派生出新 op_id 破坏幂等）。 */
 export const OP_ID_NAMESPACE = "7c9e6679-7425-40de-944b-e07fc1f90ae7";
 
-// ── M3 鉴权（⚠ 07 表待补条目，先集中在此，禁止散落） ──────────
-
-/** code2session HTTP 超时。 */
-export const WX_TIMEOUT_MS = 3000;
-/** 熔断：连续失败 N 次断路，OPEN_MS 后半开试探。 */
-export const WX_BREAKER_THRESHOLD = 5;
-export const WX_BREAKER_OPEN_MS = 10_000;
-/** 登录限流（独立严格档，按 IP）：桶容量 / 每秒回填。 */
-export const LOGIN_RATE_CAPACITY = envInt("LOGIN_RATE_CAPACITY", 5);
-export const LOGIN_RATE_REFILL_PER_S = envFloat("LOGIN_RATE_REFILL_PER_S", 0.2);
-/** token 明文长度（randomBytes 字节数，hex 后 ×2）。库里只存 sha256。 */
-export const TOKEN_BYTES = 24;
+// ── M3 鉴权：WX_*/LOGIN_RATE_*/TOKEN_BYTES 已迁 WebPlatform config（见上方面包屑，M12c）──────
 
 // ── M5 网关（⚠ 07 表待补条目） ────────────────────────────────
 

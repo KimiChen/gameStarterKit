@@ -2,7 +2,7 @@
 
 ## 文档状态
 
-> **本文是设计规格 + 实施进度记录。** 它描述「让当前架构同时支持大混服与区服」的目标形态，扩展并部分改写 [SERVER.md §9.5 扩容模型 ADR](SERVER.md)（原 ADR 立场：扩容单位 = 区服实例、单区服多节点不在承诺内）。**核心已落地**（区服进服硬闸 + 每区独立经济 + 建角 + 冷档按区判，见下「实施进度」）；**账号服务独立进程（M12c）大半落地**（账号原语迁 `@game/webplatform/lib` + Fastify 独立进程 + `ACCOUNT_MODE` http/inProcess 开关 + verifiedAt 有界撤销，剩 login-lib/area-list/客户端）；**撤销/控制总线（M12d）待做**。落地按 §5 里程碑推进。
+> **本文是设计规格 + 实施进度记录。** 它描述「让当前架构同时支持大混服与区服」的目标形态，扩展并部分改写 [SERVER.md §9.5 扩容模型 ADR](SERVER.md)（原 ADR 立场：扩容单位 = 区服实例、单区服多节点不在承诺内）。**核心已落地**（区服进服硬闸 + 每区独立经济 + 建角 + 冷档按区判，见下「实施进度」）；**账号服务独立进程（M12c）主体落地**（账号原语迁 `@game/webplatform/lib` + Fastify 独立进程 + `ACCOUNT_MODE` http/inProcess 开关 + verifiedAt 有界撤销 + 登录编排/code2session 迁 lib，剩 area-list/客户端）；**撤销/控制总线（M12d）待做**。落地按 §5 里程碑推进。
 
 本规格是「同一套 Colyseus 0.17 代码同时承载大混服与区服」的工程落地规格。其结论由 **8 轮技术评审锁定的 7 项决策** 为前提（不再论证「是否该这么做」，只写「怎么落地」），并经 **61 条服务端规则的两份对抗式评审对撞校验**（钱/幂等/跨存储 一份，鉴权/网关/冷档/撤销 一份）后定稿。评审指出的所有阻断级正确性洞（MySQL 谓词分区、ALS-vs-列概念二分、撤销传输层缺失、前缀孤儿化、F4 误判、快路径 epoch 窗口）已在正文改对；当场无法收敛者列入 §9「未决与风险」。本规格与源码逐一核对，文件锚点为仓库相对路径（`apps/server/src/...` 等）。
 
@@ -15,7 +15,7 @@
 | **M12a** 建角 + `char_registry` | ✅ 落地 | 首进区建 per-zone 档 + 角色注册表（§2.6 排序：char 行先写） |
 | **M12b** F4 thaw 按区判 | ✅ 落地 | ABSENT 分支 sId=0 用 accounts、sId≥1 用 char_registry；⚠ user_archive per-zone 待 archive 步 |
 | **M12e** `/area/list` ul 接真建角数据 | ✅ 落地 | `getUserRecentServers` → `listCharacterZones`（§2.5） |
-| **M12c** WebPlatform 门户抽出 | 🔧 Step1 接缝 + Step2 大半落地（int75+单测20 绿） | 账号原语(verify/token/char/accountExists)迁 `@game/webplatform/lib`✅、auth 改 MySQL 权威✅、createUser→onJoin(ensureLive-first 防丢数据)✅、WebPlatform Fastify 独立进程✅、`ACCOUNT_MODE` http↔inProcess 开关✅(smoke 通)、verifiedAt 有界撤销✅。**剩**：登录编排+code2session 迁 lib + `/login` 端点 + 限流进程内、`/area/list` 迁、客户端 login 指向 |
+| **M12c** WebPlatform 门户抽出 | 🔧 Step1 接缝 + Step2 主体落地（int75+单测20 绿） | 账号原语(verify/token/char/accountExists)迁 `@game/webplatform/lib`✅、auth 改 MySQL 权威✅、createUser→onJoin(ensureLive-first 防丢数据)✅、WebPlatform Fastify 独立进程✅、`ACCOUNT_MODE` http↔inProcess 开关✅(smoke 通)、verifiedAt 有界撤销✅、登录编排+code2session 迁 lib(结果码边界)+进程内限流+`/login`/`/dev-login` 端点✅(standalone split 冒烟通)。**剩**：`/area/list` 迁 WebPlatform、客户端 login/area 指向 |
 | **M12d** 控制总线 + 撤销 A + maxEpoch + 定向踢 | ⬜ 待做 | 会话/安全重设计（§2.3） |
 | **archive 步** user_archive 分区 + active:lru/freeze 区化 | ⬜ 待做 | 耦合 M12c；⛔ 补齐前不开「多区 + freeze」 |
 | **M14/M15** 大混服实时横向 + presence/广播 | ⬜ 待做 | §4 |

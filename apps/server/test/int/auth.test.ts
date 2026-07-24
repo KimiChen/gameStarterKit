@@ -11,7 +11,7 @@ import assert from "node:assert/strict";
 import { createServer, type Server } from "node:http";
 import { after, before, test } from "node:test";
 import { banUser, verifySession, verifySessionStrict } from "../../src/core/auth/session";
-import { _resetBreaker } from "../../src/core/auth/wxClient";
+import { _resetBreaker } from "@game/webplatform/lib";
 import { wxLogin } from "../../src/core/auth/wxLogin";
 import { AuthRequiredError, BannedError, EpochStaleError, RateLimitedError } from "../../src/core/errors";
 import { activeLruBucketOf, kActiveLru, kRl, kSess, kUser } from "../../src/core/infra/keys";
