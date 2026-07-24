@@ -11,7 +11,7 @@ import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
 import { AUTH_DEV_ENABLED, WEBPLATFORM_PORT } from "./config";
 import { getPool } from "./lib/mysql";
 import {
-  accountExists, banAccount, characterHas, characterRegister, characterZones,
+  accountExists, areaList, banAccount, characterHas, characterRegister, characterZones,
   devLogin, revokeAccount, verifyToken, wxLogin,
 } from "./lib";
 
@@ -31,7 +31,7 @@ export function buildServer(): FastifyInstance {
 
   // 校验（token 内嵌 uid = {uid}.{hex}）：返回结果码，业务侧映射错误类（09·G1）。
   app.post<{ Body: { token: string } }>("/verify", async (req) => {
-    const token = req.body?.token ?? "";
+    const token = typeof req.body?.token === "string" ? req.body.token : ""; // Fastify 泛型仅编译期，运行期防非串
     const dot = token.lastIndexOf(".");
     if (dot <= 0) { return { ok: false as const, reason: "mismatch" as const }; }
     const uid = token.slice(0, dot);
@@ -74,7 +74,14 @@ export function buildServer(): FastifyInstance {
     return devLogin(req.body.devKey, realIp(req), req.body.deviceId ?? null);
   });
 
-  // TODO(split 激活续)：/bindProfile、/bindPhone、/area/list。
+  // 选服目录（登录前展示，无鉴权；token 可选、best-effort 回填 ul）。返回 IAreaListRes（al/ul/isOps/h）。
+  // ⚠ Fastify 无运行期 body 校验（`Body` 泛型仅编译期）：token 若非字符串，lib 内 lastIndexOf 会抛→500，
+  // 破坏 best-effort ⛔不抛 契约。就地收敛成 string|null（对齐 in-process 端点的 zod）。
+  app.post<{ Body: { token?: string } }>("/area/list", async (req) => {
+    return areaList(typeof req.body?.token === "string" ? req.body.token : null);
+  });
+
+  // TODO(split 激活续)：/bindProfile、/bindPhone。
   return app;
 }
 

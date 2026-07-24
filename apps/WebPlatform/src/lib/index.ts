@@ -6,5 +6,6 @@
 export { useServerPool, nextSeq } from "./mysql";
 export * from "./auth";
 export * from "./character";
+export * from "./area";
 export * from "./login";
 export * from "./wxClient";
