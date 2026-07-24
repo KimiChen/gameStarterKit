@@ -214,18 +214,15 @@ async function thawSlowPath(uid: string): Promise<void> {
       }
       case "ABSENT": {
         archiveCounters.absentAccountChecks++;
-        // 「本区建过角没」判据（DUAL_MODE §2.6 / M12b）——按区分：
-        //  · sId=0（大混服/基础档）：登录建号创建 → 用 accounts 存在性判（原逻辑）；
-        //  · sId≥1（区服）：per-zone 角色档由建角(ensureCharacter)创建 → 用 char_registry(uid,sId) 判。
-        // 有标记 + 热档冷档全无 = 真实数据丢失（拒建空档，09·F4）；无标记 = 未在本区建过角
-        // （首进区/无账号）→ 放行建角/建号。⚠ user_archive 尚全局(archive 步再 per-zone 化)，
-        // 故 sId≥1 的 ABSENT 仅覆盖「从未冻结」路径；冻结跨区的完整正确性待 archive 步。
+        // 「本区建过角没」判据**统一走 char_registry**（DUAL_MODE §2.7 登录编排劈开）：基础档(sId=0)
+        // 现在也在 onJoin 由 ensureCharacter 建 + 写 char_registry(0)，故所有 sId 同一判据（不再按 sId 分）。
+        // 有 char 行 + 热档冷档全无 = 真实数据丢失（拒建空档，09·F4）；无 char 行 = 未在本区建过角 → 放行建角。
+        // ⚠ greenfield(U3)前提：无「老基础档无 char 行」历史包袱（有存量需 backfill char_registry(0)）。
+        // ⚠ user_archive 尚全局(archive 步再 per-zone 化)，冻结跨区完整正确性待 archive 步（门控多区+freeze）。
         const sId = currentZoneId();
-        // 「本区建过角没」判据走账号 plane 接缝（M12c）：sId=0 查账号存在性、sId≥1 查 char_registry。
-        const everExisted = sId === 0 ? await account.accountExists(uid) : await account.character.has(uid, sId);
-        if (everExisted) {
+        if (await account.character.has(uid, sId)) {
           archiveCounters.userDataLost++;
-          console.error(`[thaw] ☠ USER_DATA_LOST uid=${uid} sId=${sId}：${sId === 0 ? "accounts 有号" : "char_registry 有本区角色"}但 Redis 与 user_archive 全无（≡0 告警线）`);
+          console.error(`[thaw] ☠ USER_DATA_LOST uid=${uid} sId=${sId}：char_registry 有本区角色但 Redis 与 user_archive 全无（≡0 告警线）`);
           throw new UserDataLostError(uid);
         }
         // 未在本区建过角（真新号/首进区）：负缓存挡重复穿透（per-zone，cache TTL 10s）；建号/建角成功后失效

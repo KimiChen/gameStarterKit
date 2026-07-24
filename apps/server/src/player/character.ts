@@ -14,6 +14,7 @@
 import { STAMINA_MAX } from "@game/shared";
 import { zoneCtx } from "../core/infra/keys";
 import { createUser } from "../core/userRecord";
+import { ensureLive, invalidateUserNegcache } from "../core/archive/thaw";
 import { account } from "../platform/accountClient";
 
 /** 首进区角色初始字段（与登录建号一致；缺 musicOn/sfxOn = 读侧默认开，07 字段表）。 */
@@ -26,8 +27,15 @@ const zoneCharInit = (): Record<string, string> => ({
 
 /** 幂等建角：char_registry 行先写，再建 s{sId}_user。失败不抛给连接（调用方 best-effort，重连自愈）。 */
 export async function ensureCharacter(uid: string, sId: number): Promise<void> {
-  await account.character.register(uid, sId);              // char_registry 行先写（§2.6，走账号 plane 接缝）
-  await zoneCtx.run({ sId }, () => createUser(uid, zoneCharInit()));
+  // ⚠ **ensureLive 先于 createUser**（DUAL_MODE §2.7 登录编排劈开）：冻结回流用户先 thaw 恢复真档，
+  // ⛔ 绝不在冻结档上 createUser 建空档（空档上先发生写会致 archive 被删、真档永久丢失）。
+  // ⚠ ensureLive 内部抢 lock:{uid}——本函数不得在 withUser 锁内调用（onJoin best-effort 调，安全）。
+  await zoneCtx.run({ sId }, async () => {
+    await ensureLive(uid);                        // 冻结→thaw 恢复；真新→ABSENT(F4 判)；热→无；真丢→抛
+    await account.character.register(uid, sId);   // §2.6：先写 char 行（幂等 ODKU）
+    await createUser(uid, zoneCharInit());        // 幂等：热/解冻→'exists'，真新才建（⛔ 不覆盖真档）
+    await invalidateUserNegcache(uid);            // 建后失效负缓存（09·F4）
+  });
 }
 
 /** 查 uid 在哪些区建过角（喂 ul「我的区」/ F4 判据）。M12c：委托账号 plane 接缝（Step 2 起远调 WebPlatform）。 */

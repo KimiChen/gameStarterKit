@@ -401,9 +401,9 @@ test("ARCHIVE_NEWER（PITR）：janitor 持锁修复——UNLINK 陈旧档并从
 
 // ── ABSENT：数据丢失 vs 真新号（09·F4） ─────────────────────────────────────
 
-test("ABSENT + accounts 有号 → UserDataLostError 告警 + 拒绝建空档（09·F4）", async () => {
+test("ABSENT + char_registry 有角色 → UserDataLostError 告警 + 拒绝建空档（09·F4）", async () => {
   const u = uid("lostx");
-  await getPool().execute("INSERT INTO accounts (user_id, status) VALUES (?, 0)", [u]);
+  await getPool().execute("INSERT INTO char_registry (user_id, server_id) VALUES (?, 0)", [u]);
   const lost0 = archiveCounters.userDataLost;
   await assert.rejects(ensureLive(u), UserDataLostError);
   assert.equal(archiveCounters.userDataLost, lost0 + 1, "USER_DATA_LOST 计数（≡0 告警线）");
