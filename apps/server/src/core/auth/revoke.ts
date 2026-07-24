@@ -24,10 +24,17 @@ const maxEpoch = new Map<string, number>();
 /** 本节点已知的撤销 epoch（快路径比对：sess.tokenEpoch < 此值 → 拒）。缺省 0。 */
 export function revokedEpoch(uid: string): number { return maxEpoch.get(uid) ?? 0; }
 
-/** 应用一条撤销（消费流 / 撤销源即时调）：max-wins 更新本地 maxEpoch。 */
+// 自筛踢句柄：websocket 层（online 表）在启动期注入 kickUser（core/auth ⛔ 不反向依赖 websocket 层）。
+let kickHandler: ((uid: string) => void) | null = null;
+/** 注入本节点强制下线句柄（index.ts 启动期挂 push.kickUser）。 */
+export function setKickHandler(fn: (uid: string) => void): void { kickHandler = fn; }
+
+/** 应用一条撤销（消费流 / 撤销源即时调）：max-wins 更新本地 maxEpoch + 本节点在线即自筛踢。 */
 export function applyRevoke(uid: string, epoch: number): void {
-  if (epoch > (maxEpoch.get(uid) ?? 0)) { maxEpoch.set(uid, epoch); }
-  // M12d-b：此处追加「本节点 online 命中即踢」自筛。
+  if (epoch > (maxEpoch.get(uid) ?? 0)) {
+    maxEpoch.set(uid, epoch);
+    kickHandler?.(uid); // 本节点 online 命中即强制下线（未注册/不命中直接跳过，§2.3 每节点自筛）
+  }
 }
 
 /** 测试用：清空本地 maxEpoch。 */

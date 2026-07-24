@@ -3,7 +3,8 @@ import app from "./app.config";
 import { PORT } from "./core/infra/config";
 import { startInfraMonitors } from "./core/infra/loopMonitor";
 import { startStreamDepthAlert } from "./core/match/matchConsumer";
-import { startRevokeConsumer, startRevokeRelayer } from "./core/auth/revoke";
+import { setKickHandler, startRevokeConsumer, startRevokeRelayer } from "./core/auth/revoke";
+import { kickUser } from "./websocket/push";
 import { registerAllRoutes } from "./websocket/loader";
 
 // RPC 契约校验前置到启动期：shared 声明与 websocket/<域>/<接口>.ts 不齐 → 进程直接退出
@@ -18,7 +19,8 @@ startInfraMonitors();
 startStreamDepthAlert();
 
 // 控制总线（DUAL_MODE §2.3 / M12d）：本节点独立游标消费撤销流维护本地 maxEpoch（快路径比对）；
-// relayer 兜底扫 revocation_log 发行进控制总线（happy path 由撤销源即时扇出）。
+// relayer 兜底扫 revocation_log 发行进控制总线（happy path 由撤销源即时扇出）；自筛踢挂 online 表 kick。
+setKickHandler(kickUser);
 startRevokeConsumer();
 startRevokeRelayer();
 

@@ -19,13 +19,28 @@ export interface PushSink { (type: string, data: unknown): void }
 
 // 本节点在线用户注册表（uid → 连接推送函数；LobbyRoom onJoin/onLeave 维护）
 const online = new Map<string, PushSink>();
+// 本节点在线连接的强制下线句柄（uid → kick）：撤销自筛踢用（M12d §2.3）。与 sink 同 uid 配对，
+// 由 registerOnline 同写、unregisterOnline 同删（sink 条件删已防 reconnect 竞态误删新连接）。
+const kickers = new Map<string, () => void>();
 
-export function registerOnline(uid: string, sink: PushSink): void { online.set(uid, sink); }
+export function registerOnline(uid: string, sink: PushSink, kick?: () => void): void {
+  online.set(uid, sink);
+  if (kick) { kickers.set(uid, kick); } else { kickers.delete(uid); }
+}
 export function unregisterOnline(uid: string, sink?: PushSink): void {
   if (!sink || online.get(uid) === sink) {
     online.delete(uid);
+    kickers.delete(uid);
     setOnlineGuild(uid, null); // 下线清理（工会在线索引三个维护点之一）
   }
+}
+
+/** 本节点若有该 uid 在线连接 → 强制下线（撤销自筛踢，§2.3）。不命中本节点直接跳过。返回是否命中。 */
+export function kickUser(uid: string): boolean {
+  const kick = kickers.get(uid);
+  if (!kick) { return false; }
+  try { kick(); } catch { /* 将死连接，放弃 */ }
+  return true;
 }
 export function pushToUser(uid: string, type: string, data: unknown): boolean {
   const sink = online.get(uid);

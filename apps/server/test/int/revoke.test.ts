@@ -11,8 +11,10 @@ import { after, before, test } from "node:test";
 import { banUser, issueSession, verifySession } from "../../src/core/auth/session";
 import { EpochStaleError } from "../../src/core/errors";
 import {
-  _resetMaxEpoch, applyRevoke, drainRevocations, revokedEpoch, startRevokeConsumer, stopRevokeConsumer,
+  _resetMaxEpoch, applyRevoke, drainRevocations, revokedEpoch, setKickHandler,
+  startRevokeConsumer, stopRevokeConsumer,
 } from "../../src/core/auth/revoke";
+import { kickUser, registerOnline, unregisterOnline, type PushSink } from "../../src/websocket/push";
 import { K_STREAM_REVOKE, kSess } from "../../src/core/infra/keys";
 import { clientFor, closeRedis, coordClient } from "../../src/core/infra/redisRoute";
 import { closeMysql, getPool } from "../../src/core/infra/mysql";
@@ -94,4 +96,21 @@ test("drainRevocations 幂等：relayed 标记不重发 + 本地 applyRevoke max
 
   applyRevoke(uid, 2); applyRevoke(uid, 3); applyRevoke(uid, 2);
   assert.equal(revokedEpoch(uid), 3, "max-wins：乱序应用后取最大");
+});
+
+test("自筛踢：applyRevoke 命中本节点 online → 强制下线；不在本节点则跳过（不抛）", async () => {
+  const uid = testUid("rv-kick").slice(0, 32);
+  uids.push(uid);
+  setKickHandler(kickUser); // index.ts 生产期挂；boot 测试不跑 index.ts，此处显式挂
+  let kicked = 0;
+  const sink: PushSink = () => {};
+  registerOnline(uid, sink, () => { kicked++; }); // 模拟本节点在线连接 + kick 句柄
+  applyRevoke(uid, 5);
+  assert.equal(kicked, 1, "在线 → 自筛踢一次");
+  assert.equal(revokedEpoch(uid), 5);
+  // 下线后再撤销更高 epoch：不命中本节点 → kickUser 跳过（跨节点：目标连别处，本节点只更新 maxEpoch）
+  unregisterOnline(uid, sink);
+  applyRevoke(uid, 6);
+  assert.equal(kicked, 1, "已下线 → 不再踢");
+  assert.equal(revokedEpoch(uid), 6, "但 maxEpoch 仍 max-wins 更新");
 });
