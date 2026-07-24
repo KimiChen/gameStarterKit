@@ -6,7 +6,7 @@
  * （同事改这里接配置表/运维后台即可）。
  */
 import type { IAreaServer } from "@game/shared";
-import { listCharacterZones } from "../../player/character";
+import { account } from "../../platform/accountClient";
 
 /** 运维模式（1=灰度/维护中，客户端提示）。env AREA_IS_OPS 可覆盖。 */
 export const AREA_IS_OPS = process.env.AREA_IS_OPS ? Number(process.env.AREA_IS_OPS) : 0;
@@ -37,8 +37,8 @@ export function areaListHash(): string {
  * ⛔ 不信客户端传的 sId，一律 token 反查后查库。
  */
 export async function getUserRecentServers(uid: string): Promise<number[]> {
-  // ul「我的区」= 该 uid 建过角的区（char_registry，DUAL_MODE §2.5 / M12e）。
-  // ⚠ 账号服务抽出后(M12c)此调用迁至账号服务 footprint.query；director 只管 al/h/wsUrl。
-  // 仅带 token 的请求会走到这（area/list.ts token 反查 uid 后调），无栈匿名联调不触达。
-  return listCharacterZones(uid);
+  // ul「我的区」= 该 uid 建过角的区。M12c Step 1：走账号 plane 接缝（account.character.query）；
+  // Step 2 起该接缝远调 apps/WebPlatform，本处不动。仅带 token 的请求会走到这
+  // （area/list.ts token 反查 uid 后调），无栈匿名联调不触达。
+  return account.character.query(uid);
 }

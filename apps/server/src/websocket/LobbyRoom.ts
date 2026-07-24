@@ -13,7 +13,7 @@ import {
 } from "@game/shared";
 import { groupAdmitsZone } from "../core/infra/config";
 import { zoneCtx } from "../core/infra/keys";
-import { verifyBearer } from "../core/auth/session";
+import { account } from "../platform/accountClient";
 import { toErrCode } from "../core/errors";
 import { loadFields } from "../core/userRecord";
 import { ensureCharacter } from "../player/character";
@@ -44,7 +44,7 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
       throw new ServerError(SharedErrorCode.WrongServer, ErrorMessage[SharedErrorCode.WrongServer]);
     }
     try {
-      const uid = await verifyBearer(token, true);
+      const uid = await account.verify(token, true);
       return { userId: uid, token, sId: options?.sId ?? 0 }; // sId 存进 auth，供 messages/onJoin 建区上下文（§3.5）
     } catch (e) {
       throw new ServerError(ErrorCode.AUTH_FAILED, toErrCode(e));
@@ -67,7 +67,7 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
       };
       // 每消息快路径复验：封号/踢人删 sess 后，在途连接的下一条 RPC 立即 401
       try {
-        await verifyBearer(auth.token, false);
+        await account.verify(auth.token, false);
       } catch (e) {
         client.send(LOBBY_MSG_RPC, { id: msg.id, ok: false, err: { code: toErrCode(e), msg: "" } } satisfies RpcReply);
         return;

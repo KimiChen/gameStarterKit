@@ -29,7 +29,7 @@ import {
 } from "@game/shared";
 import { GameRoomState, PlayerState } from "./schema/GameRoomState";
 import { groupAdmitsZone } from "../core/infra/config";
-import { verifyBearer } from "../core/auth/session";
+import { account } from "../platform/accountClient";
 import { emitMatchEvidence, MATCH_MODE_CASUAL, newMatchId } from "../core/match/matchConsumer";
 
 // demo 昵称池（原 mock/data，mock 层删除后归本房间私有；真实项目从档案取昵称）
@@ -95,7 +95,7 @@ export class GameRoom extends Room {
             throw new ServerError(ErrorCode.TokenExpired, ErrorMessage[ErrorCode.TokenExpired]);
         }
         try {
-            return { userId: await verifyBearer(raw, false) };
+            return { userId: await account.verify(raw, false) };
         } catch {
             throw new ServerError(ErrorCode.TokenExpired, ErrorMessage[ErrorCode.TokenExpired]);
         }

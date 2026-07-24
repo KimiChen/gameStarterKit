@@ -13,9 +13,8 @@
  */
 import { STAMINA_MAX } from "@game/shared";
 import { zoneCtx } from "../core/infra/keys";
-import { getPool } from "../core/infra/mysql";
-import type { ResultSetHeader, RowDataPacket } from "../core/infra/mysql";
 import { createUser } from "../core/userRecord";
+import { account } from "../platform/accountClient";
 
 /** 首进区角色初始字段（与登录建号一致；缺 musicOn/sfxOn = 读侧默认开，07 字段表）。 */
 const zoneCharInit = (): Record<string, string> => ({
@@ -27,15 +26,11 @@ const zoneCharInit = (): Record<string, string> => ({
 
 /** 幂等建角：char_registry 行先写，再建 s{sId}_user。失败不抛给连接（调用方 best-effort，重连自愈）。 */
 export async function ensureCharacter(uid: string, sId: number): Promise<void> {
-  await getPool().execute<ResultSetHeader>(
-    "INSERT INTO char_registry (user_id, server_id) VALUES (?,?) ON DUPLICATE KEY UPDATE user_id = user_id", // ⛔ 非 INSERT IGNORE（09·DB1）
-    [uid, sId]);
+  await account.character.register(uid, sId);              // char_registry 行先写（§2.6，走账号 plane 接缝）
   await zoneCtx.run({ sId }, () => createUser(uid, zoneCharInit()));
 }
 
-/** 查 uid 在哪些区建过角（喂 ul「我的区」/ F4 判据）。⛔ 不 SCAN，走 PK 前缀索引。 */
+/** 查 uid 在哪些区建过角（喂 ul「我的区」/ F4 判据）。M12c：委托账号 plane 接缝（Step 2 起远调 WebPlatform）。 */
 export async function listCharacterZones(uid: string): Promise<number[]> {
-  const [rows] = await getPool().query<RowDataPacket[]>(
-    "SELECT server_id FROM char_registry WHERE user_id = ? ORDER BY created_at", [uid]);
-  return rows.map((r) => Number(r.server_id));
+  return account.character.query(uid);
 }

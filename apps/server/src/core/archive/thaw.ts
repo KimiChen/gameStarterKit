@@ -19,6 +19,7 @@ import { withUserLock } from "../locks";
 import { BusyError, ThawingError, UserDataLostError } from "../errors";
 import { thawRestore, type ArchiveSnapshot } from "./archiveScripts";
 import { lazyMigrateSchema } from "./lazyMigrate";
+import { account } from "../../platform/accountClient";
 
 // ───────────────────── 常量（07 已规定，随 M9 落地） ─────────────────────
 
@@ -220,12 +221,9 @@ async function thawSlowPath(uid: string): Promise<void> {
         // （首进区/无账号）→ 放行建角/建号。⚠ user_archive 尚全局(archive 步再 per-zone 化)，
         // 故 sId≥1 的 ABSENT 仅覆盖「从未冻结」路径；冻结跨区的完整正确性待 archive 步。
         const sId = currentZoneId();
-        const [mark] = await getPool().query<RowDataPacket[]>(
-          sId === 0
-            ? "SELECT 1 FROM accounts WHERE user_id = ? LIMIT 1"
-            : "SELECT 1 FROM char_registry WHERE user_id = ? AND server_id = ? LIMIT 1",
-          sId === 0 ? [uid] : [uid, sId]);
-        if (mark.length > 0) {
+        // 「本区建过角没」判据走账号 plane 接缝（M12c）：sId=0 查账号存在性、sId≥1 查 char_registry。
+        const everExisted = sId === 0 ? await account.accountExists(uid) : await account.character.has(uid, sId);
+        if (everExisted) {
           archiveCounters.userDataLost++;
           console.error(`[thaw] ☠ USER_DATA_LOST uid=${uid} sId=${sId}：${sId === 0 ? "accounts 有号" : "char_registry 有本区角色"}但 Redis 与 user_archive 全无（≡0 告警线）`);
           throw new UserDataLostError(uid);
