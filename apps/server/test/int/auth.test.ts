@@ -112,6 +112,19 @@ test("failover 复活会话被 token_epoch 拦（verifySessionStrict）", async 
   await assert.rejects(verifySession(s.userId, s.token), AuthRequiredError);     // 且就地清除了复活会话
 });
 
+test("verifiedAt 兜底：缓存超时重验——有效则刷新、账号侧撤销则拦（§2.3 U2 / 2d）", async () => {
+  const s = await login("reverify");
+  // ① 造陈旧 verifiedAt（模拟 >AUTH_REVERIFY_TTL_S 未回权威），token 仍有效 → 重验通过 + 刷新
+  await clientFor(s.userId).hset(kSess(s.userId), "verifiedAt", String(Date.now() - 61_000));
+  await verifySession(s.userId, s.token);
+  const va = await clientFor(s.userId).hget(kSess(s.userId), "verifiedAt");
+  assert.ok(Date.now() - Number(va) < 5_000, "重验后 verifiedAt 已刷新");
+  // ② 模拟 split：账号侧撤销（token_hash=NULL）但组 sess 未删；再造陈旧 → 快路径重验查 MySQL 拦住
+  await getPool().execute("UPDATE accounts SET token_hash = NULL WHERE user_id = ?", [s.userId]);
+  await clientFor(s.userId).hset(kSess(s.userId), "verifiedAt", String(Date.now() - 61_000));
+  await assert.rejects(verifySession(s.userId, s.token), AuthRequiredError);
+});
+
 test("登录限流：同 IP 超容量 → RATE_LIMITED（独立严格档）", async () => {
   const ip = freshIp();
   for (let i = 0; i < 5; i++) { await wxLogin({ code: "grace", ip }); } // 容量 5

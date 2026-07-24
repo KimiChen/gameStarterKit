@@ -11,7 +11,7 @@
  * - 封号/踢人 = **先写 MySQL** token_epoch+1 + token_hash=NULL，再删 sess:{uid}；⛔ 绝不删 user:{uid}（09·G7）。
  */
 import { createHash, timingSafeEqual } from "node:crypto";
-import { SESS_TTL_S } from "../infra/config";
+import { AUTH_REVERIFY_TTL_S, SESS_TTL_S } from "../infra/config";
 import { kSess } from "../infra/keys";
 import { clientFor } from "../infra/redisRoute";
 import { getPool } from "../infra/mysql";
@@ -45,6 +45,7 @@ export async function issueSession(uid: string, tokenEpoch: number, sessionKey: 
     .hset(key, {
       tokenHash: sha256(token),
       tokenEpoch: String(tokenEpoch),
+      verifiedAt: String(Date.now()), // 权威校验时刻（快路径 §2.3 verifiedAt 兜底）
       loginTs: String(Date.now()),
       connId: "",
       gwNode,
@@ -61,9 +62,15 @@ export async function issueSession(uid: string, tokenEpoch: number, sessionKey: 
  * 存量 token **立即**失效；epoch 双保险见 verifySessionStrict。
  */
 export async function verifySession(uid: string, token: string): Promise<void> {
-  const [tokenHash] = await clientFor(uid).hmget(kSess(uid), "tokenHash");
+  const [tokenHash, verifiedAtStr] = await clientFor(uid).hmget(kSess(uid), "tokenHash", "verifiedAt");
   if (tokenHash === null) { throw new AuthRequiredError("session 不存在或已过期"); }
   if (!safeEqualHex(tokenHash, sha256(token))) { throw new AuthRequiredError("token 不匹配"); }
+  // verifiedAt 兜底（§2.3 U2）：缓存超 AUTH_REVERIFY_TTL_S 未回权威 → 重验 + 刷新。split 模式账号服务
+  // 够不到组 sess 时的有界撤销窗口（封号/踢人在此被逮）；in-process 下封号已删 sess，走不到这。
+  if (Date.now() - Number(verifiedAtStr ?? "0") > AUTH_REVERIFY_TTL_S * 1000) {
+    await verifySessionStrict(uid, token); // 权威（MySQL）；token_hash=NULL / epoch-stale 即抛
+    await clientFor(uid).hset(kSess(uid), "verifiedAt", String(Date.now()));
+  }
 }
 
 /**

@@ -154,6 +154,9 @@ export const IDEM_PENDING_MS = 10_000;
 export const IDEM_RESULT_MS = 60_000;
 /** sess:{uid} TTL = 3d。 */
 export const SESS_TTL_S = 259_200;
+/** 组本地鉴权缓存 verifiedAt 兜底窗秒（DUAL_MODE §2.3 / U2）：快路径缓存超此值未回权威 → 重验刷新。
+ *  ⛔ 与 SESS_TTL_S（会话时长 3d）是两个量。split 模式撤销的有界窗口（M12d 控制总线后近实时）。 */
+export const AUTH_REVERIFY_TTL_S = envInt("AUTH_REVERIFY_TTL_S", 60);
 /** outbox done 行保留窗（relayer 周期清理；pending/dead ⛔ 不删）。09·I5 窗口不等式的前提。 */
 export const OUTBOX_RETENTION_MS = 86_400_000;
 /** ⚠ 必须 ≥ 2 × OUTBOX_RETENTION_MS（09·I5），否则 relayer 重放老 intent 二次发货。 */
