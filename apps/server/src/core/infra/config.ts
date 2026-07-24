@@ -132,6 +132,11 @@ export const groupAdmitsZone = (sId: number | undefined): boolean =>
 export const MYSQL_URL = () => env("MYSQL_URL", `mysql://root@127.0.0.1:3316/game_${PROJECT_ID}`);
 export const MYSQL_POOL_SIZE = envInt("MYSQL_POOL_SIZE", 20);
 
+/** 账号 plane 接线模式（DUAL_MODE §2.7）：`in-process`（默认，dev/test 内嵌 lib）| `http`（split，走 WebPlatform）。 */
+export const ACCOUNT_MODE = () => env("ACCOUNT_MODE", "in-process");
+/** split 模式下 WebPlatform 的 HTTP 基址（httpAccount 用）。 */
+export const WEBPLATFORM_BASE_URL = () => env("WEBPLATFORM_BASE_URL", "http://localhost:2570");
+
 /** durable（noeviction + AOF everysec）与 cache（allkeys-lru）是两个物理实例（09·R4）。 */
 export const REDIS_DURABLE_URL = () => env("REDIS_DURABLE_URL", "redis://127.0.0.1:6401");
 export const REDIS_CACHE_URL = () => env("REDIS_CACHE_URL", "redis://127.0.0.1:6402");

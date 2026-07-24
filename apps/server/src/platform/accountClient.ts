@@ -10,7 +10,9 @@
  * 展示投影（名/等级/头像/上次登录）是业务组 best-effort 推的只读副本，不在本接口的强一致面内（future）。
  */
 import { verifyBearer } from "../core/auth/session";
+import { ACCOUNT_MODE } from "../core/infra/config";
 import { accountExists, characterHas, characterRegister, characterZones } from "@game/webplatform/lib";
+import { httpAccount } from "./httpAccount";
 // 池共用注入在 core/infra/mysql.ts（池模块，注入可靠）——见那里的 useServerPool。
 
 export interface AccountClient {
@@ -39,5 +41,5 @@ export const inProcessAccount: AccountClient = {
   accountExists: (uid) => accountExists(uid),
 };
 
-/** 当前账号 client（M12c Step 2c 起可切 httpAccount 指向 apps/WebPlatform 进程）。 */
-export const account: AccountClient = inProcessAccount;
+/** 当前账号 client：`ACCOUNT_MODE=http`（split）→ httpAccount 走 WebPlatform 进程；否则内嵌 inProcessAccount。 */
+export const account: AccountClient = ACCOUNT_MODE() === "http" ? httpAccount : inProcessAccount;
