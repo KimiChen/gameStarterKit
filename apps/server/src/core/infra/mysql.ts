@@ -9,6 +9,7 @@
 import mysql from "mysql2/promise";
 import type { Pool, PoolConnection, ResultSetHeader, RowDataPacket } from "mysql2/promise";
 import { MYSQL_POOL_SIZE, MYSQL_URL } from "./config";
+import { useServerPool } from "@game/webplatform/lib";
 
 export type { PoolConnection, ResultSetHeader, RowDataPacket };
 
@@ -32,6 +33,11 @@ export function getPool(): Pool {
   }
   return pool;
 }
+
+// WebPlatform lib（内嵌模式）共用本进程 MySQL 池，避免双池致测试进程退出挂起（DUAL_MODE §2.7）。
+// ⚠ 放池模块：任何用到 lib 的路径（session / accountClient）都必加载 infra/mysql → 注入可靠。
+// getPool 惰性，此处只传 getter；split 模式（lib 独立进程）不加载本文件、用自建池。
+useServerPool(getPool);
 
 /** 默认（REPEATABLE READ）事务。 */
 export async function withTx<T>(fn: (conn: PoolConnection) => Promise<T>): Promise<T> {

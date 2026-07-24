@@ -72,9 +72,8 @@ test("新号 wx-login：建号 + 出参只有 userId/token/isNew（09·G8）", a
   assert.match(s.userId, /^u_\d+$/);
   assert.deepEqual(Object.keys(s).sort(), ["isNew", "token", "userId"]); // ⛔ openid/unionid/session_key 不下发
   assert.equal((s as { isNew?: boolean }).isNew, true, "新建账号 isNew=true（shared ILoginRes 契约）");
-  // Redis 档已建（建号合法创建点），fence/ver/schemaVersion 齐
-  const h = await clientFor(s.userId).hmget(kUser(s.userId), "fence", "ver", "schemaVersion", "stamina");
-  assert.deepEqual(h, ["0", "0", "1", "30"]);
+  // 登录只建 accounts 行、⛔ 不建游戏档（DUAL_MODE §2.7：基础档改由 onJoin 的 ensureCharacter 建）
+  assert.equal(await clientFor(s.userId).exists(kUser(s.userId)), 0, "登录不建游戏档（挪到 onJoin 建角）");
   // 活跃索引已积累（冷档候选，08）
   const b = activeLruBucketOf(s.userId);
   assert.ok(await indexClientFor(b).zscore(kActiveLru(b), s.userId));

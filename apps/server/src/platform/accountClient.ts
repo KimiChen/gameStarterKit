@@ -10,12 +10,8 @@
  * 展示投影（名/等级/头像/上次登录）是业务组 best-effort 推的只读副本，不在本接口的强一致面内（future）。
  */
 import { verifyBearer } from "../core/auth/session";
-import { getPool as serverPool } from "../core/infra/mysql";
-import { accountExists, characterHas, characterRegister, characterZones, useServerPool } from "@game/webplatform/lib";
-
-// 内嵌模式（dev/test）：WebPlatform lib 共用 apps/server 的 MySQL 池，避免双池致测试进程退出挂起。
-// prod split 时 lib 在独立进程用自建池，此注入不发生。
-useServerPool(serverPool);
+import { accountExists, characterHas, characterRegister, characterZones } from "@game/webplatform/lib";
+// 池共用注入在 core/infra/mysql.ts（池模块，注入可靠）——见那里的 useServerPool。
 
 export interface AccountClient {
   /** token 反查 uid + 校验（strict=建连回源 MySQL epoch/status，false=快路径只查 sess）。失败抛（09·G1）。 */
