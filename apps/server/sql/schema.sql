@@ -16,6 +16,17 @@ CREATE TABLE IF NOT EXISTS accounts (
   UNIQUE KEY uk_unionid (unionid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- 角色/足迹注册表（DUAL_MODE §2.5/§2.6，M12）：「uid 在哪些区建过角」的 durable 权威。
+-- 建角(首进区)时写、⚠ **先于** Redis 档（保证「有档⇒有 char 行」，无 false-negative 丢档）；
+-- 喂 F4「本区建过角没」判据(M12b) + ul「我的区」。⚠ 账号服务抽出后(M12c)迁至其库、handle 换不透明句柄。
+-- （character/role 是 MySQL 保留字，故名 char_registry。）
+CREATE TABLE IF NOT EXISTS char_registry (
+  user_id    VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  server_id  SMALLINT UNSIGNED NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (user_id, server_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 -- 货币余额【权威】。复合 PK 走主键等值锁；CHECK 只是兜底，SQL 内必须 WHERE balance >= ?
 -- 每区独立经济（docs/DUAL_MODE.md §3.2）：server_id 进 PK；⚠ 写路径谓词必须带 server_id（§3.3 B1，M13 代码步补）。
 CREATE TABLE IF NOT EXISTS user_currency (

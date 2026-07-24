@@ -16,6 +16,7 @@ import { zoneCtx } from "../core/infra/keys";
 import { verifyBearer } from "../core/auth/session";
 import { toErrCode } from "../core/errors";
 import { loadFields } from "../core/userRecord";
+import { ensureCharacter } from "../player/character";
 import { dispatchRpc, rpcEnvelopeSchema, type RpcCtx, type RpcReply } from "./dispatcher";
 import { registerOnline, setOnlineGuild, startMailWakeLoop, unregisterOnline, type PushSink } from "./push";
 import { registerAllRoutes } from "./loader";
@@ -91,12 +92,13 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
     const sink: PushSink = (type, data) => client.send(LOBBY_MSG_PUSH, { type, data });
     this.sinks.set(client.sessionId, sink);
     registerOnline(uid, sink);
-    // 工会在线索引挂载（三个维护点之一）：异步读档一次，不阻塞 join；
-    // 读档失败不影响连接（换会端点/重连会修复）；guildId 缺失 = 0 = 无工会。
-    // loadFields 读 kUser（per-zone）→ 包 zoneCtx.run({sId})（§3.5 硬化）。
-    void zoneCtx.run({ sId }, () => loadFields(uid, ["guildId"]))
+    // 建角（§2.6 / M12a）：玩家进本区 → 确保该区角色存在（char_registry 行 + s{sId}_user），幂等自愈；
+    // 再挂工会在线索引（loadFields 读 s{sId}_user 的 guildId，per-zone → zoneCtx 硬化）。
+    // 全程 best-effort：失败只影响工会广播/首帧，不阻塞连接（重连/换会修复）。
+    void ensureCharacter(uid, sId)
+      .then(() => zoneCtx.run({ sId }, () => loadFields(uid, ["guildId"])))
       .then((f) => setOnlineGuild(uid, Number(f.guildId ?? 0) || null))
-      .catch(() => { /* 无栈调试等场景：索引缺失只影响工会广播，不影响其余功能 */ });
+      .catch(() => { /* 建角/读档失败不阻塞连接 */ });
   }
 
   onLeave(client: LobbyClient): void {

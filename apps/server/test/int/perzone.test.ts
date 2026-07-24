@@ -11,6 +11,7 @@ import { creditInTx, debitInTx, getBalance, invalidateBalanceCache } from "../..
 import { deriveOpId, purchase } from "../../src/core/economy/outbox";
 import { getShopSku } from "../../src/core/economy/catalog";
 import { createUser } from "../../src/core/userRecord";
+import { ensureCharacter, listCharacterZones } from "../../src/player/character";
 import { CUR_GOLD } from "../../src/core/infra/config";
 import { kApplied, kBag, kSess, kUser, zoneCtx } from "../../src/core/infra/keys";
 import { clientFor, closeRedis } from "../../src/core/infra/redisRoute";
@@ -28,7 +29,8 @@ after(async () => {
     await pool.execute("DELETE FROM currency_ledger WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM user_currency WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM gameplay_outbox WHERE user_id = ?", [u]);
-    for (const s of [0, 1, 2, 5]) {
+    await pool.execute("DELETE FROM char_registry WHERE user_id = ?", [u]);
+    for (const s of [0, 1, 2, 5, 7, 8]) {
       await invalidateBalanceCache(u, s).catch(() => {});
       await zoneCtx.run({ sId: s }, () => cleanupUser(u)).catch(() => {}); // 清各区 user/bag/applied 键
     }
@@ -133,4 +135,25 @@ test("per-zone: purchase 全链落对区（sId=5：钱扣 s5 + Redis apply 落 s
     assert.ok(await c.hget(s5bag, String(item.itemId)), "道具落 s5_bag 前缀");
     assert.equal(await c.hget(kBag(u, item.itemId % 4), String(item.itemId)), null, "基础 bag 无货（未串区）");
   }
+});
+
+test("per-zone: 建角 ensureCharacter —— char_registry 行 + s{sId}_user 建立、幂等、多区（M12a §2.6）", async () => {
+  const u = uid("pz-char");
+  const c = clientFor(u);
+  // 首进 7 区建角
+  await ensureCharacter(u, 7);
+  assert.deepEqual(await listCharacterZones(u), [7], "char_registry 有 (u,7)");
+  assert.equal(await c.exists(zoneCtx.run({ sId: 7 }, () => kUser(u))), 1, "s7_user 已建");
+  assert.equal(await c.exists(kUser(u)), 0, "基础 user 未建（建角只建本区，登录才建基础）");
+
+  // 幂等：重复进区不重复行、不报错
+  await ensureCharacter(u, 7);
+  const [cnt] = await getPool().query<RowDataPacket[]>(
+    "SELECT COUNT(*) c FROM char_registry WHERE user_id = ?", [u]);
+  assert.equal(Number(cnt[0].c), 1, "重复建角不重复 char_registry 行");
+
+  // 另进 8 区 → 第二区角色，两区独立（各自 s{sId}_user）
+  await ensureCharacter(u, 8);
+  assert.deepEqual(await listCharacterZones(u), [7, 8], "两区角色（喂 ul『我的区』）");
+  assert.equal(await c.exists(zoneCtx.run({ sId: 8 }, () => kUser(u))), 1, "s8_user 已建");
 });
