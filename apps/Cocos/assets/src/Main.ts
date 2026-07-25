@@ -19,7 +19,7 @@ import { onAuthInvalid, onBattleLost } from "./net/session";
 import { RoomClient } from "./net/RoomClient";
 import { GameECS } from "./logic/rooms/ballMove/GameECS";
 import { PlayerModel } from "./logic/rooms/ballMove/GameComps";
-import { S2C, MAP_WIDTH, MAP_HEIGHT, normalize, distance, type IPlayerState } from "./shared/index";
+import { S2C, MAP_WIDTH, MAP_HEIGHT, normalize, distance, joinErrText, type IPlayerState } from "./shared/index";
 
 // ⚠ 必须在任何 Colyseus 调用之前安装（模块加载期执行，早于所有组件生命周期）
 installWeChatCompat();
@@ -119,7 +119,8 @@ export class Main extends Component {
             await this.connectRoom();
             this.started = true;
         } catch (err) {
-            console.error("[Main] 连接房间失败（请确认已运行 npm run dev）：", err);
+            // 拒连的业务码走 message（服务端 joinRefused）→ shared 单源解码，日志里给人看得懂的原因
+            console.error(`[Main] 进入战斗失败：${joinErrText((err as Error)?.message, "连接房间失败（请确认已运行 npm run dev）")}`, err);
             this.abortBattle();
         }
     }
@@ -143,6 +144,12 @@ export class Main extends Component {
         this.graphics = null;
         this.layerTf = null;
         this.touchTarget = null;
+        // ⚠ 方向/心跳也必须复位：本函数现在也跑在「打过一局才断线」的路径上（battleLost/authInvalid），
+        // lastDir 会停在断线瞬间的非零值上；⛔ 不复位则下一局同方向的第一次输入被 sendDir 的去重早退吞掉。
+        this.lastDirX = 0;
+        this.lastDirY = 0;
+        this.pingTimer = 0;
+        this.rttMs = -1;
         this.gameECS.clear();
     }
 

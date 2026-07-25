@@ -24,7 +24,7 @@ import { getBaseUrl, getToken } from "../core/http";
 import { devLogin } from "../net/http/account";
 import { WebSocketClient } from "../net/WebSocketClient";
 import { clearSession, onAuthInvalid, onBattleLost, onConnLost, setSession } from "../net/session";
-import { ForceLogoutMessage, ForceLogoutReason, UserRpc, isServerEnterable, type IUserView } from "../shared/index";
+import { ForceLogoutMessage, ForceLogoutReason, UserRpc, isServerEnterable, joinErrText, type IUserView } from "../shared/index";
 import { fetchAreaList } from "../net/http/area";
 import { fetchNotices } from "../net/http/notice";
 import { chooseServer, getCurrentServer, pickDefaultServer, setServerList, getServerList } from "../net/serverSession";
@@ -55,9 +55,13 @@ function wireSessionEvents(reopenLogin: () => void): void {
       reopenLogin();
     })();
   });
-  // 战斗连接最终死亡：战斗态已由 Main 回滚（订阅序在前），此处只管提示 + 导航
+  // 战斗连接最终死亡：战斗态已由 Main 回滚（订阅序在前），此处只管提示 + 导航。
+  // ⚠ **必须先退大厅房**：战斗房死掉不影响大厅房，而 `closeLobby()` 只关 FGUI 面板、从不 leave；
+  // 若不退，回登录页后重登会拿到**新 token** → `WebSocketClient.join` 撞上"已用其他 token 在线"
+  // 而抛错（换号必须先 leave），玩家再也进不去。authInvalid 那条早就这么做了，此处对齐。
   onBattleLost(() => {
     void (async () => {
+      await WebSocketClient.inst.leave().catch(() => {});
       closeLobby();
       await openConfirm({ title: "战斗已结束", content: "与对局的连接已断开", noText: null });
       reopenLogin();
@@ -141,10 +145,12 @@ export async function openLogin(onEnterBattle: () => void): Promise<void> {
       user = (await WebSocketClient.inst.rpc(UserRpc.GetInfo, {})).user;
     } catch (e) {
       // 大厅/档案失败即整体失败（严谨：不带半截会话进主界面）；清态可重试
+      // 业务码走 message（服务端 joinRefused）：用 shared 单源解码器取文案，⛔ 别把 "3004" 甩给玩家
       console.error("[pages] 进入大厅失败：", e);
+      const why = joinErrText((e as Error)?.message, "进入大厅失败，请重试");
       clearSession();
       await WebSocketClient.inst.leave().catch(() => {});
-      logic.onProgress(0, "进入大厅失败，请重试");
+      logic.onProgress(0, why);
       return;
     }
     logic.onProgress(1, "登录成功");

@@ -6,7 +6,7 @@
  * - 每消息快路径复验 sess（**纯组缓存 hash 比对、零权威回源**；在线撤销靠踢，见 §2.3 封号 SOP）。
  * - 大包防护在 transport 层 maxPayload（09·G4，见 app.ts）。
  */
-import { ErrorCode, Room, ServerError, validate, type AuthContext, type Client } from "@colyseus/core";
+import { Room, ServerError, validate, type AuthContext, type Client } from "@colyseus/core";
 import {
   LOBBY_MSG_PUSH, LOBBY_MSG_RPC, PROTOCOL_VERSION,
   ErrorCode as SharedErrorCode, type IRoomJoinOptions,
@@ -14,7 +14,7 @@ import {
 import { groupAdmitsZone } from "../core/infra/config";
 import { zoneCtx } from "../core/infra/keys";
 import { account } from "../platform/accountClient";
-import { joinRefused, toErrCode } from "../core/errors";
+import { joinRefused, joinRefusedAuth, toErrCode } from "../core/errors";
 import { loadFields } from "../core/userRecord";
 import { ensureCharacter } from "../player/character";
 import { dispatchRpc, rpcEnvelopeSchema, type RpcCtx, type RpcReply } from "./dispatcher";
@@ -48,7 +48,7 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
       const uid = await account.verify(token, true);
       return { userId: uid, token, sId: options?.sId ?? 0 }; // sId 存进 auth，供 messages/onJoin 建区上下文（§3.5）
     } catch (e) {
-      throw new ServerError(ErrorCode.AUTH_FAILED, toErrCode(e));
+      throw joinRefusedAuth(toErrCode(e)); // 统一出口（⛔ 禁在此 new ServerError，见 errors-http-status.test）
     }
   }
 
@@ -103,7 +103,12 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
     void ensureCharacter(uid, sId)
       .then(() => zoneCtx.run({ sId }, () => loadFields(uid, ["guildId"])))
       .then((f) => setOnlineGuild(uid, Number(f.guildId ?? 0) || null))
-      .catch(() => { /* 建角/读档失败不阻塞连接 */ });
+      .catch((e) => {
+        // ⛔ 不再静默：建角失败（尤其 char_registry 写失败）会留下「有档无 char 行」——
+        // 该态可自愈（下次进区补写），但**期间 09·F4 的丢档告警对该 (uid,sId) 失效**，
+        // 必须可观测。⚠ 仍不阻塞连接（best-effort：重连/换会即修复）。
+        console.error(`[lobby] ensureCharacter 失败 uid=${uid} sId=${sId}（有档无 char 行→下次进区自愈；期间 F4 告警对其失效）`, e);
+      });
   }
 
   onLeave(client: LobbyClient): void {

@@ -12,7 +12,7 @@
 |---|---|---|
 | **M11** 公共地基（进服硬闸 + `GROUP_ZONES` + 客户端 `sId`） | ✅ 落地 | 服务端 onAuth 硬闸 + 客户端 Main 带 sId，端到端；向后兼容（sId 缺省=单形态） |
 | **M13** 每区独立经济 | ✅ 落地 | DDL 加 server_id + `deriveOpId` 编码 sId（红线）+ MySQL 谓词带 server_id（B1）+ `keys.ts` `zoneCtx` 区前缀（§3.5 分类）+ 硬化 `fail-fast`（门控 `GROUP_ZONES`）；含两轮对抗评审修复 |
-| **M12a** 建角 + `char_registry` | ✅ 落地 | 首进区建 per-zone 档 + 角色注册表（§2.6 排序：char 行先写） |
+| **M12a** 建角 + `char_registry` | ✅ 落地 | 首进区建 per-zone 档 + 角色注册表（§2.6 排序：**档先建、char 行后写**，M12d 评审后反转） |
 | **M12b** F4 thaw 按区判 | ✅ 落地 | ABSENT 分支 sId=0 用 accounts、sId≥1 用 char_registry；⚠ user_archive per-zone 待 archive 步 |
 | **M12e** `/area/list` ul 接真建角数据 | ✅ 落地 | `getUserRecentServers` → `listCharacterZones`（§2.5） |
 | **M12c** WebPlatform 门户抽出 | ✅ 落地完成（int89+单测20 绿，split 全链 e2e 绿） | 账号原语(verify/token/char/accountExists)迁 `@game/webplatform/lib`✅、auth 改 MySQL 权威✅、createUser→onJoin(ensureLive-first 防丢数据)✅、WebPlatform Fastify 独立进程✅、`ACCOUNT_MODE` http↔inProcess 开关✅、登录编排+code2session 迁 lib(结果码边界)+进程内限流✅、选服目录 `/area/list`(目录+ul best-effort)迁 lib✅、WebPlatform 端点按单源 `ApiPath`(/account/wx-login·/dev-login)+客户端契约✅、客户端 login/area 走门户 `portalUrl`(空=回退游戏服)✅、onAuth 懒填组 sess✅ |
@@ -114,7 +114,7 @@ flowchart TB
 | `login` | `{provider,code/devKey,ip,deviceId?}` | `{uid,token,isNew,ul:number[]}` | `ACCOUNT_BANNED`/`RATE_LIMITED`；**限流键对匿名落 ip/deviceId(G5)**；**maxPayload 闸(G4)** |
 | `verify` | `token` | `{ok,uid,status}`（结果码，组侧映射错误类） | `AUTH_REQUIRED`/`ACCOUNT_BANNED`（⛔ 无 epoch 码，M12d 已砍） |
 | `ban/revoke` | `uid` | `{banned}`/`{revoked}`（是否命中账号） | 一条 UPDATE 写权威（status/token_hash）；**踢在线由组侧发起**，本服务⛔ 不广播（§2.3 SOP + 09·G7b） |
-| `character.register` | `uid,sId`（建角时**同步 must-succeed + 幂等**，⛔ 非 fire-and-forget） | `{ok}` | 建角必经；账号服务先落 `character` 行、再由业务建 Redis 档（排序见 §2.6） |
+| `character.register` | `uid,sId`（建角时**同步 must-succeed + 幂等**，⛔ 非 fire-and-forget） | `{ok}` | 建角必经；⚠ 排序为**业务先建 Redis 档、再落 `character` 行**（M12d 评审后反转，见 §2.6） |
 | `character.query` | `uid` | `ul:handle[]` | 答 `/area/list` 的 ul |
 
 **G8**：`login`/`verify` 出参绝不含 `sessionKey`——sessionKey 仅账号服务内持有。`ILoginRes`（`http.ts:31`）扩 `ul` 字段。
@@ -222,12 +222,23 @@ sequenceDiagram
 
 F4 的两问：
 - 「这是不是真账号」：走**账号权威**——onAuth 的 `verify` 已拿到账号为真，直接透传该事实进 thaw，无需二次远调。
-- 「本区建过角没」：查**账号服务 `character` 注册表**（U5 定案）。⚠ 这是对评审 C1「用业务侧同事务标记、不得用 footprint」的**审后修订**——判据搬到账号服务后，靠**两点**保证仍无「真丢档被当新角」的静默漏判：**① `character.register` 建角时同步 must-succeed + 幂等**（不再是可丢的 fire-and-forget）；**② 排序 = 账号服务先落 `character` 行、再建 Redis 档/钱包**。于是「有档 ⇒ 必有 character 行」恒成立（**无 false-negative 静默丢失**）；反向「有 character 行但档没建成」只发生在建角中途崩溃，表现为 F4 报 `USER_DATA_LOST` 告警（**false-positive，安全方向**，运维可查可补）。数据丢失守卫本就该偏告警、不偏静默。
+- 「本区建过角没」：查**账号服务 `character` 注册表**（U5 定案）。⚠ 这是对评审 C1「用业务侧同事务标记、不得用 footprint」的**审后修订**——判据搬到账号服务后，靠**两点**保证仍无「真丢档被当新角」的静默漏判：**① `character.register` 建角时同步 must-succeed + 幂等**（不再是可丢的 fire-and-forget）；**② 排序**。
+>
+> ⚑ **排序在 M12d 对抗评审后反转为「先建 Redis 档、再落 `character` 行」**（`player/character.ts` 文件头有完整推导）。
+> 原序（character 行先）的崩溃窗留下「有 char 行、无档无冷档」——而 F4 **只在 ABSENT（热档冷档全无）** 时查该表 ⇒
+> 下次进区判 `has=true` ⇒ **永久 `USER_DATA_LOST`，永远走不到建档**：这不是「偏告警的 false-positive」，
+> 而是**不可自愈的毒态**（玩家永久进不去该区）。原设想的 false-negative（有档却被当新角覆盖）**不可能发生**——
+> F4 压根不在「有档」时触发。
+> 反转后：崩溃 ⇒ 有档无 char 行 ⇒ 状态是 LIVE、F4 不参与 ⇒ 下次进区补写，**自愈**；且判据更硬
+> （有 char 行 ⇒ 曾建过档 ⇒ 现在全无 = 真丢失）。
+> **代价（需补偿）**：崩溃窗内该 (uid,sId) 的 F4 丢档告警失效、`ul` 暂缺该区。故 ①「`register` must-succeed」
+> 这条**仍然要求**（当前是 onJoin 的 best-effort 调用，失败已改为 **error 级日志**可观测；
+> 进一步的有限重试/补写留待 U6 与发奖一起做）。
 - 判定表（`thaw.ts:214-228` ABSENT 分支）：
 
 | verify(账号真) | character 行 | 热档+archive | 判定 |
 |---|---|---|---|
-| 真 | 无 | 无 | 正常 new-in-zone 建角（先写 character 再建档），`userDataLost` 不增 |
+| 真 | 无 | 无 | 正常 new-in-zone 建角（**先建档、再写 character**），`userDataLost` 不增 |
 | 真 | 有 | 全无 | 真数据丢失 → `USER_DATA_LOST`（含建角中途崩的 false-positive，运维处置） |
 
 `character` 注册表既是 `ul` 源、也是 F4 权威判据，**不再是「纯 UX 缓存」**（但仍只存存在性+时间、不存玩法数据，守 A3）。**R2 重锚**：createUser 仍是区内唯一合法建点（另一为 thaw），sId 来自 ALS 而非入参。

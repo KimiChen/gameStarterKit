@@ -59,6 +59,8 @@ function collectDirs(dir, base = dir) {
 }
 
 /** watch 熔断阈值：单轮孤儿清理 ≥20 个或 ≥30% 视为异常（切分支/大规模 mv 的中间态） */
+/** 显式放行大规模清理（熔断逃生口）。⚠ npm 会吞掉 --force，必须 `npm run sync:shared -- --force`。 */
+const FORCE = process.argv.includes("--force");
 const BREAKER_MIN = 20;
 const BREAKER_RATIO = 0.3;
 
@@ -104,9 +106,11 @@ function syncOnce(fromWatch = false) {
 
     // watch 熔断：切分支中间态会让 SRC 逐文件消失，若此刻防抖触发会误删成批 DEST 文件。
     // 与 SRC 缺失 fail-fast 同一防御哲学（语义与 sync-client.mjs 一致）。
-    if (fromWatch && toRemove.length >= BREAKER_MIN && toRemove.length >= Math.ceil(srcFiles.length * BREAKER_RATIO)) {
+    // ⚠ 熔断对**手动执行也生效**（原先只在 watch 生效 ⇒ `npm run sync:shared` 与 dev-client 启动那次
+    // 同步可无阻拦清空镜像）。与 sync-client 同款。
+    if (!FORCE && toRemove.length >= BREAKER_MIN && toRemove.length >= Math.ceil(srcFiles.length * BREAKER_RATIO)) {
         throw new Error(
-            `[sync-shared] 本轮要清理 ${toRemove.length} 个文件（源仅 ${srcFiles.length} 个），疑似分支切换中间态——已熔断，待状态稳定后手动执行 npm run sync:shared`
+            `[sync-shared] 本轮要清理 ${toRemove.length} 个文件（源仅 ${srcFiles.length} 个），疑似分支切换中间态——已熔断，确认无误后跑「npm run sync:shared -- --force」放行（⚠ 那两个 -- 必需：npm 会吞掉裸 --force）`
         );
     }
 

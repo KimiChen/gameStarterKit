@@ -113,7 +113,11 @@ export class RoomClient {
             // **非主动离开 = 这一局没了**（重连耗尽/服务端强断/房间销毁）：必须上报，
             // ⛔ 否则 Main 永远不知道连接已死，会拿着死房间继续驱动渲染（inBattle 恒 true，
             // 玩家卡在冻结的战斗画面且回不去大厅）。登录态不受影响，故走 battleLost 而非 authInvalid。
-            if (!this._leaving) { notifyBattleLost(); }
+            //
+            // ⚠ 主动 leave **不会**走到这里：`leave()` 先把 `this._room = null`，本回调开头的
+            // 房身份守卫（`this._room !== room`）即 return —— 房身份守卫已足够，⛔ 无需额外的
+            // `_leaving` 标志（那反而会因中途抛错卡住而永久漏报）。
+            notifyBattleLost();
         });
         room.onError((code, message) => {
             console.error(`[RoomClient] 房间错误 code=${code} message=${message ?? ""}`);
@@ -127,14 +131,10 @@ export class RoomClient {
      *  join 在途时等落定再离开（取消不了进行中的握手，完成后清理，不留幽灵房）。
      *  已知边界：合流进同一在途 join 的其他调用方会拿到随后被本 leave 关闭的房——
      *  调用方持有的 room 引用用前应查 connected（Main.connectServer 的销毁判定即此模式）。 */
-    /** 主动 leave 进行中：区分「用户/流程主动离开」与「连接意外死亡」（后者才上报 battleLost）。 */
-    private _leaving = false;
-
     async leave(): Promise<void> {
         if (this.joining) { await this.joining.catch(() => {}); }
         const room = this._room;
         if (!room) return;
-        this._leaving = true; // 主动离开：onLeave ⛔ 不得上报 battleLost（那是"意外死亡"的信号）
         this._room = null; // 先摘引用：leave 期间新发起的调用直接面对「未加入」而非将死连接
         this._dropping = false; // 超时路径 removeAllListeners 会摘掉能复位它的回调——必须在此显式复位，
                                 // 否则重新 joinGame 后心跳/移动上发被永久扣死（评审验证探针实证）
@@ -144,7 +144,6 @@ export class RoomClient {
             new Promise<void>((r) => setTimeout(r, LEAVE_TIMEOUT_MS)),
         ]);
         room.removeAllListeners();
-        this._leaving = false;
     }
 
     /**

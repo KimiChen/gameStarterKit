@@ -5,7 +5,7 @@
  */
 
 import { ErrorCode as ColyseusErrorCode, ServerError } from "@colyseus/core";
-import type { ErrorCodeType, RpcErrCode } from "@game/shared";
+import { ErrorMessage, type ErrorCodeType, type RpcErrCode } from "@game/shared";
 
 // 错误码真源在 shared/protocol/lobbyRpc/envelope.ts 的 RPC_ERR_CODES（登记顺序：07 表 → shared → 此处映射）
 export type ErrCode = RpcErrCode;
@@ -126,8 +126,20 @@ export function toErrCode(e: unknown): ErrCode {
  * `ErrorMessage` 取文案，仍是单源）。`errors-http-status.test.ts` 机检不再有越界 status。
  */
 export function joinRefused(code: ErrorCodeType, kind: "auth" | "app" = "app"): ServerError {
+  // message = `码|文案`：客户端用 shared `joinErrCodeOf/joinErrText` 解（双端单源），
+  // 同时保证服务端日志/抓包里**人也读得懂**（⛔ 不要只发裸数字）。
   return new ServerError(
     kind === "auth" ? ColyseusErrorCode.AUTH_FAILED : ColyseusErrorCode.APPLICATION_ERROR,
-    String(code),
+    `${code}|${ErrorMessage[code] ?? ""}`,
   );
+}
+
+/**
+ * 鉴权失败的建连拒绝：message 用 **RPC 错误码字符串**（`AUTH_REQUIRED`/`ACCOUNT_BANNED`/…），
+ * 客户端按 code 分支（09·G3）、`session.AuthInvalidReason` 直接吃这一形态。
+ * ⚠ 与 `joinRefused` 是**两种 message 编码**，但都由 shared `joinErrCodeOf` 判别（数字前缀 = 房间业务码）。
+ * ⛔ 统一出口在此：源码别处禁止 `new ServerError(`（errors-http-status.test.ts 机检）。
+ */
+export function joinRefusedAuth(rpcCode: RpcErrCode): ServerError {
+  return new ServerError(ColyseusErrorCode.AUTH_FAILED, rpcCode);
 }

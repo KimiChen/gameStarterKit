@@ -6,7 +6,7 @@
 import { getPool } from "./mysql";
 import type { ResultSetHeader, RowDataPacket } from "./mysql";
 
-/** 建角登记 char_registry 行（存在性权威；§2.6 排序上先于 Redis 档）。幂等。 */
+/** 建角登记 char_registry 行（存在性权威；⚠ 排序上**后于** Redis 档，见 apps/server player/character.ts 文件头）。幂等。 */
 export async function characterRegister(uid: string, sId: number): Promise<void> {
   await getPool().execute<ResultSetHeader>(
     "INSERT INTO char_registry (user_id, server_id) VALUES (?,?) ON DUPLICATE KEY UPDATE user_id = user_id", // ⛔ 非 INSERT IGNORE（09·DB1）

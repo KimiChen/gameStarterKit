@@ -32,7 +32,7 @@ const zoneCharInit = (): Record<string, string> => ({
   avatarId: "-1",
 });
 
-/** 幂等建角：char_registry 行先写，再建 s{sId}_user。失败不抛给连接（调用方 best-effort，重连自愈）。 */
+/** 幂等建角：**先建 `s{sId}_user`，再写 char_registry 行**（顺序理由见文件头）。失败不抛给连接（调用方 best-effort，重连自愈）。 */
 export async function ensureCharacter(uid: string, sId: number): Promise<void> {
   // ⚠ **ensureLive 先于 createUser**（DUAL_MODE §2.7 登录编排劈开）：冻结回流用户先 thaw 恢复真档，
   // ⛔ 绝不在冻结档上 createUser 建空档（空档上先发生写会致 archive 被删、真档永久丢失）。

@@ -48,3 +48,23 @@ export const ErrorMessage: Record<number, string> = {
     [ErrorCode.CharCreateFailed]: "进入失败，请重试",
     [ErrorCode.AlreadyInRoom]: "该账号已在本对局中",
 };
+
+// ── 进房/建连拒绝的 message 编码（双端单源） ──────────────────────────────
+//
+// ⚠ Colyseus 的 join 失败只给 `{code, error}` 两个字段，且 **code 会被当 HTTP status**
+// （框架自身取值 520–526），业务码放不进去 ⇒ 约定：**业务码走 message**。
+// 两种形态（都可由 `joinErrCodeOf` 判别）：
+//   - 房间业务码：`"3004|客户端版本过旧，请更新后再试"`（码 + 文案，日志也可读）
+//   - 鉴权失败：RPC 错误码字符串 `"AUTH_REQUIRED"` / `"ACCOUNT_BANNED"` / …（客户端按 code 分支）
+
+/** join 失败 message → 房间业务码；非业务码形态（鉴权 RPC 码字符串）返回 null。 */
+export function joinErrCodeOf(msg: string | undefined): number | null {
+    const n = Number((msg ?? "").split("|")[0]);
+    return Number.isFinite(n) && n !== 0 ? n : null;
+}
+
+/** join 失败 message → 可展示文案（业务码查表；鉴权码/未知一律回退通用文案）。 */
+export function joinErrText(msg: string | undefined, fallback = "进入失败，请重试"): string {
+    const code = joinErrCodeOf(msg);
+    return (code !== null ? ErrorMessage[code] : undefined) ?? fallback;
+}

@@ -155,7 +155,7 @@ function syncOnce(fromWatch = false) {
     if (!FORCE && removedLogical >= BREAKER_MIN && removedLogical >= Math.ceil(srcFiles.length * BREAKER_RATIO)) {
         throw new Error(
             `[sync-client] 本轮要清理 ${removedLogical} 个源文件对应条目（源仅 ${srcFiles.length} 个），疑似分支切换/误删中间态——已熔断。` +
-            `确认无误后加 --force 放行（会连同 .meta 一起删，Creator 重开将重铸 uuid）`
+            `确认无误后跑「npm run sync:client -- --force」放行（⚠ 那两个 -- 必需：npm 会吞掉裸 --force）——会连同 .meta 一起删，Creator 重开将重铸 uuid`
         );
     }
 

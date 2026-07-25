@@ -21,7 +21,7 @@ export interface AccountClient {
   /** token 反查 uid + 校验（strict=建连回源 MySQL 权威，false=快路径只查组 sess 缓存）。失败抛（09·G1）。 */
   verify(token: string, strict: boolean): Promise<string>;
   character: {
-    /** 建角登记 char_registry 行（存在性权威；§2.6 排序上先于 Redis 档）。幂等。 */
+    /** 建角登记 char_registry 行（存在性权威；⚠ 排序上**后于** Redis 档，见 player/character.ts 文件头）。幂等。 */
     register(uid: string, sId: number): Promise<void>;
     /** uid 在哪些区建过角（ul 源）。 */
     query(uid: string): Promise<number[]>;
