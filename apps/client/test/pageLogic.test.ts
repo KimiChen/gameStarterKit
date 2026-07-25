@@ -152,6 +152,45 @@ test("Login：进度回调 + 登录幂等（重复点不重复请求）", async 
   assert.equal(await throwLogic.doLogin("dev_a"), null, "登录 reject 也按失败处理（不外抛）");
 });
 
+test("Login：BUSY（登录锁被 freeze/thaw 占住）自动退避重试一次 + 文案区分（评审 [11]）", async () => {
+  // ① 第一发 BUSY、第二发成功 → 用户不该看到任何失败文案
+  let n = 0;
+  const flaky = new LoginLogic({
+    login: async () => {
+      if (++n === 1) { throw Object.assign(new Error("[http] HTTP 409"), { status: 409, code: "BUSY" }); }
+      return { userId: "u_2", token: `u_2.${"a".repeat(48)}`, isNew: false };
+    },
+  });
+  const texts: string[] = [];
+  flaky.onProgress = (_r, t) => texts.push(t);
+  assert.equal((await flaky.doLogin("dev_b"))?.userId, "u_2", "退避重试后登录成功");
+  assert.equal(n, 2, "恰好重试一次");
+  assert.ok(texts.includes("系统繁忙，正在重试…"), "重试期间给出「正在重试」而非失败文案");
+  assert.ok(!texts.includes("登录失败，请重试"), "⛔ BUSY 不得报「登录失败」（会让用户以为账号有问题）");
+
+  // ② 持续 BUSY → 有界（⛔ 不无限重试，否则 freeze/thaw 期变登录风暴）+ 文案是「系统繁忙」
+  let m = 0;
+  const busy = new LoginLogic({
+    login: async () => { m++; throw Object.assign(new Error("busy"), { status: 409, code: "BUSY" }); },
+  });
+  const bt: string[] = [];
+  busy.onProgress = (_r, t) => bt.push(t);
+  assert.equal(await busy.doLogin("dev_c"), null);
+  assert.equal(m, 2, "总共只发 2 次（1 次 + 1 次重试），⛔ 无界重试即红");
+  assert.equal(bt[bt.length - 1], "系统繁忙，请稍后重试");
+
+  // ③ 非 BUSY 失败 ⛔ 不重试（500/401 重试无意义，只会拖长用户等待）
+  let k = 0;
+  const boom = new LoginLogic({
+    login: async () => { k++; throw Object.assign(new Error("500"), { status: 500, code: "INTERNAL" }); },
+  });
+  const kt: string[] = [];
+  boom.onProgress = (_r, t) => kt.push(t);
+  assert.equal(await boom.doLogin("dev_d"), null);
+  assert.equal(k, 1, "非 BUSY 只发一次");
+  assert.equal(kt[kt.length - 1], "登录失败，请重试");
+});
+
 test("Confirm：单/双按钮 + 只结算一次", () => {
   let yes = 0, closed = 0;
   const two = new ConfirmLogic({ content: "确定吗", onYes: () => yes++ });

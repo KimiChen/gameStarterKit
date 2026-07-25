@@ -46,6 +46,18 @@
 | `POST /account/exists` | 内部 | F4「是不是真账号」判据（sId=0） |
 | `POST /ban`·`/revoke` | **特权** | 一条 UPDATE 写权威（`status=1` / `token_hash=NULL`）= **下次登不上**；返回 `{banned}`/`{revoked}` = 是否命中（组侧据此决定是否踢在线；`false`=无此账号则不广播） |
 
+### `login_audit.event` 取值（新增事件先进本表，铁律 8）
+
+⚠ 表在**账号库**，但写入方**两侧都有**：WebPlatform lib 写登录类，组侧 `apps/server` 写运营/异常类
+（in-process 同库；split 下组侧那几个会落进**组库** ⇒ 见待办 **W2**）。
+
+| event | 写入方 | 含义 |
+|---|---|---|
+| `wx_login` / `dev_login` | lib `loginByOpenid` | 登录成功（`auditKind` 由入口传入） |
+| `fail` | lib | 登录被拒；`reason` = `banned` / `code2session:<码>` |
+| `ban` / `revoke` | 组侧 `core/auth/ban.ts` | 运营动作（`reason` 为操作理由） |
+| `login_diverged` | 组侧 `platform/inProcessLogin.ts` | ⚠ **仅 in-process**：抢锁失败/写缓存失败，`accounts.token_hash` 已换发成一个**没人持有**的 token、组 `sess` 仍是旧 hash ⇒ 同一 uid 会同时有一行登录成功 + 一行本事件。客户端重登即自愈；出现即说明该号撞上了 freeze/thaw 长持锁（HANDOFF §8.5/§8.6） |
+
 **踢在线不在本服务**：封号 SOP 第二步由 **GM 工具**直连各组节点 `POST /admin/kick` 并按 ack 确认送达
 （规则 [09·G7b](SERVER.md#12-开发约束63-条规则目录)；运营侧实现规格见 [GM-TOOL-SPEC.md](GM-TOOL-SPEC.md)）。本服务**刻意不持 coord Redis、不广播**——
 保证来自 GM 的遍历确认，而非 fire-and-forget 广播（决策见 §5）。

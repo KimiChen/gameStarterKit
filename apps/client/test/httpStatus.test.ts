@@ -48,3 +48,25 @@ test("http：2xx resolve、非 2xx reject（错误 JSON 体不得伪装成功）
     (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = orig;
   }
 });
+
+test("http：非 2xx 带出可判别的 status/code（业务层靠字段分流，⛔ 不靠正则抠 message）", async () => {
+  const orig = (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest;
+  (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = FakeXhr;
+  try {
+    // 409 BUSY：LoginLogic 据此做单次退避重试并改文案（评审 [11]）——码必须原样带到业务层
+    FakeXhr.nextStatus = 409;
+    FakeXhr.nextBody = `{"error":"BUSY"}`;
+    const e = await request("GET", "/x").then(() => null, (x: unknown) => x) as { status?: number; code?: string };
+    assert.equal(e.status, 409);
+    assert.equal(e.code, "BUSY", "端点 { error } 体必须解成 code 字段");
+
+    // 非 JSON / 无 error 字段的错误体 → code 空串，status 仍可用（⛔ 解析失败不得反过来吃掉错误）
+    FakeXhr.nextStatus = 502;
+    FakeXhr.nextBody = "<html>bad gateway</html>";
+    const g = await request("GET", "/x").then(() => null, (x: unknown) => x) as { status?: number; code?: string };
+    assert.equal(g.status, 502);
+    assert.equal(g.code, "");
+  } finally {
+    (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = orig;
+  }
+});

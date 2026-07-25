@@ -530,7 +530,7 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 | `INVALID_PAYLOAD` | zod 校验失败 | 修参（bug） |
 | `UNKNOWN_TYPE` | 路由表无此 type | 灰度期忽略，⛔ 不封禁（G6） |
 | `INSUFFICIENT_BALANCE` | 余额不足 | 引导充值 |
-| `BUSY` | 抢 `lock:{uid}` 失败 | 同 clientReqId 自动重试 |
+| `BUSY` | 抢 `lock:{uid}` 失败 | 同 clientReqId 自动重试。⚠ **登录也产出它**（HTTP 409）：登录与 freeze/thaw 抢同一把锁（L1），而 freeze/thaw 开看门狗可按秒持有、登录只有 `LOCK_RETRY_MAX` 有界重试 ⇒ 客户端 `LoginLogic` 退避重试**一次**后报「系统繁忙」，⛔ 不报「登录失败」（HANDOFF §8.6） |
 | `STALE_FENCE` | fence 被更高值超越 | 同 clientReqId 自动重试 |
 | `IN_PROGRESS` | 幂等 pending 命中 | 短轮询 |
 | `GRANTING` | 发放中（outbox 三阶段） | `shop.queryOp` 轮询，⛔ 不「超时即失败」 |

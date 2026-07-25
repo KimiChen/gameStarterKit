@@ -16,7 +16,7 @@ import { verifySessionStrict } from "../../src/platform/inProcessAccount";
 import { _resetBreaker } from "@game/webplatform/lib";
 import { wxLogin } from "../../src/platform/inProcessLogin";
 import { AuthRequiredError, BannedError, RateLimitedError } from "../../src/core/errors";
-import { activeLruBucketOf, kActiveLru, kRl, kSess, kUser } from "../../src/core/infra/keys";
+import { activeLruBucketOf, kActiveLru, kLock, kRl, kSess, kUser, zoneCtx } from "../../src/core/infra/keys";
 import { clientFor, clientForKey, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
 import { closeMysql, getPool } from "../../src/core/infra/mysql";
 import type { RowDataPacket } from "../../src/core/infra/mysql";
@@ -123,6 +123,55 @@ test("快路径纯缓存：账号侧撤销后组 sess 未清 → 快路径仍放
   await verifySession(s.userId, s.token);
   // 权威路径（建连 onAuth / 重新登录）仍即时拒
   await assert.rejects(verifySessionStrict(s.userId, s.token), AuthRequiredError);
+});
+
+test("抢锁失败 → 权威/缓存分叉，但留下 login_diverged 审计（评审 [10]，决策=可观测不改结构）", async () => {
+  const { createHash } = await import("node:crypto");
+  const s1 = await login("divergent");
+  const lockKey = zoneCtx.run({ sId: 0 }, () => kLock(s1.userId)); // 登录显式 sId=0（与区无关）
+  // 模拟**另一实例**正持着这把锁（真实成因：该号正在 freeze/thaw，看门狗按秒续租）。
+  // LOCK_TTL 5s > 登录抢锁预算 ~350–500ms（LOCK_RETRY_MAX=3）⇒ 本次登录必吃 BusyError。
+  await clientFor(s1.userId).set(lockKey, "999999", "PX", 5000, "NX");
+  try {
+    await assert.rejects(login("divergent"), (e: unknown) => /BUSY|busy/i.test(String((e as Error)?.name ?? "")
+      + String(e)), "抢锁失败必须是可重试 BUSY（客户端重登即自愈）");
+
+    // ① 分叉确已发生：token 由 lib 在**进锁之前**签发落库，故权威已换发、组缓存还是旧的
+    const [rows] = await getPool().query<RowDataPacket[]>(
+      "SELECT token_hash FROM accounts WHERE user_id = ?", [s1.userId]);
+    const cached = await clientFor(s1.userId).hget(kSess(s1.userId), "tokenHash");
+    assert.equal(cached, createHash("sha256").update(s1.token).digest("hex"), "组缓存仍是旧 token 的 hash");
+    assert.notEqual(rows[0].token_hash, cached, "权威已换发到那个**没人持有**的幽灵 token ⇒ 与缓存分叉");
+
+    // ② 后果如文档所述：旧端在场连接（快路径纯缓存）继续放行，但新建连（strict 比权威）被拒
+    await verifySession(s1.userId, s1.token);
+    await assert.rejects(verifySessionStrict(s1.userId, s1.token), AuthRequiredError);
+
+    // ③ 因此必须留痕——否则审计里只有一条「登录成功」，线上无从发现
+    const [audit] = await getPool().query<RowDataPacket[]>(
+      "SELECT reason FROM login_audit WHERE user_id = ? AND event = 'login_diverged'", [s1.userId]);
+    assert.equal(audit.length, 1, "抢锁失败必须补一行 login_diverged 审计");
+    assert.match(String(audit[0].reason), /权威已换发但组缓存未更新/);
+  } finally {
+    await clientFor(s1.userId).unlink(lockKey);
+  }
+
+  // ④ 客户端重登即自愈（新登录重新换发 + 写缓存 ⇒ 两存储回到一致）
+  const s2 = await login("divergent");
+  const [after] = await getPool().query<RowDataPacket[]>(
+    "SELECT token_hash FROM accounts WHERE user_id = ?", [s2.userId]);
+  assert.equal(await clientFor(s2.userId).hget(kSess(s2.userId), "tokenHash"), after[0].token_hash, "重登后一致");
+});
+
+test("输家路径 ⛔ 不记 login_diverged（正常顶号语义、两存储一致，记了只会刷噪音）", async () => {
+  const results = await Promise.allSettled(
+    Array.from({ length: 6 }, () => wxLogin({ code: "noise", ip: freshIp() })));
+  const won = results.filter((r) => r.status === "fulfilled") as PromiseFulfilledResult<{ userId: string }>[];
+  const uid = won[0].value.userId;
+  if (!createdUids.includes(uid)) { createdUids.push(uid); }
+  const [audit] = await getPool().query<RowDataPacket[]>(
+    "SELECT COUNT(*) AS n FROM login_audit WHERE user_id = ? AND event = 'login_diverged'", [uid]);
+  assert.equal(Number(audit[0].n), 0, "并发登录的输家是干净的，⛔ 不该产出分叉审计");
 });
 
 test("登录限流：同 IP 超容量 → RATE_LIMITED（独立严格档）", async () => {

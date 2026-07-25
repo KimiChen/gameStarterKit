@@ -11,7 +11,7 @@
  */
 import { devLogin as libDevLogin, verifyToken, wxLogin as libWxLogin, type LoginResult as LibLoginResult } from "@game/webplatform/lib";
 import { AuthRequiredError, BannedError, BusyError, RateLimitedError, WxUnavailableError } from "../core/errors";
-import { writeGroupSess } from "../core/auth/session";
+import { auditLogin, writeGroupSess } from "../core/auth/session";
 import { withUserLock } from "../core/locks";
 import { zoneCtx } from "../core/infra/keys";
 
@@ -50,15 +50,35 @@ function loginFail(reason: LoginFailReason): never {
  * ⚠ 复用**唯一那把** per-uid 锁（09·L1 禁第二把）；它是 per-zone 键、而登录本就与区无关，
  * 故显式 `sId=0`（区服部署下与各区玩法锁不同键，互不阻塞）。
  * ⚠ split 不走本路径（登录在 WebPlatform、缓存由 onAuth 回权威后懒填），天然无此竞态。
+ *
+ * ⚠ **已知残留分叉：抢锁失败 / 写缓存失败**（in-process 独有，评审 [10]，决策=可观测不改结构）。
+ * token 由 lib 在**进锁之前**就签发落库了，故本函数**非输家路径**上的任何抛错都留下：
+ * MySQL=本次新 hash（客户端拿到的却是 409，**没人持有**＝幽灵 token）、组 sess=旧 hash、
+ * 审计已记一行登录**成功**。后果：旧端在场连接走快路径（纯缓存比对）**继续放行**，但任何
+ * 新建连走 strict 比对权威即被拒 ⇒「能玩到掉线为止，一掉线就登不回来」；且**没广播顶号踢**
+ * （踢在 writeGroupSess 里，压根没跑到）。客户端重登即自愈（新登录重新换发并写缓存）。
+ * 因此这里**补一行 `login_diverged` 审计**——线上出现时能从审计定位，而不是只看到一条成功。
+ * ⛔ 输家路径不记（那是正常顶号语义、两存储一致，记了只会在每次顶号竞态刷噪音）。
  */
 async function finish(r: Extract<LibLoginResult, { ok: true }>): Promise<LoginResult> {
-  await zoneCtx.run({ sId: 0 }, () => withUserLock(r.uid, async () => {
-    const v = await verifyToken(r.uid, r.token);
-    if (!v.ok) {
-      throw new BusyError(`并发登录：本次签发已被更晚的登录取代（${v.reason}），请重试`);
+  let lost = false; // true = 输家（权威已属更晚的登录）⇒ 无分叉
+  try {
+    await zoneCtx.run({ sId: 0 }, () => withUserLock(r.uid, async () => {
+      const v = await verifyToken(r.uid, r.token);
+      if (!v.ok) {
+        lost = true;
+        throw new BusyError(`并发登录：本次签发已被更晚的登录取代（${v.reason}），请重试`);
+      }
+      await writeGroupSess(r.uid, r.token);
+    }));
+  } catch (e) {
+    if (!lost) {
+      // ⛔ 审计失败不能盖掉原错误：那会把可重试的 409 变成 500（客户端不再重登 = 分叉不自愈）
+      await auditLogin("login_diverged", r.uid, `权威已换发但组缓存未更新（客户端未拿到 token）：${String(e).slice(0, 180)}`, null, null)
+        .catch((ae: unknown) => { console.error("[login] 分叉审计写入失败", r.uid, ae); });
     }
-    await writeGroupSess(r.uid, r.token);
-  }));
+    throw e;
+  }
   return { userId: r.uid, token: r.token, isNew: r.isNew };
 }
 

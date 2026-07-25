@@ -9,6 +9,36 @@ let baseUrl = "http://localhost:2568";
 let portalUrl = "";
 let token = "";
 
+/**
+ * 非 2xx 的结构化错误：**状态码与服务端错误码是可判别字段**，不是 message 里的字符串。
+ *
+ * ⚠ 曾经只 reject 一个拼好的 `Error("[http] HTTP 409 …")`：业务层想区分「系统繁忙可重试」
+ * 与「登录失败」就只能正则抠 message —— 于是全都被 `.catch(() => null)` 抹平成同一个失败。
+ * 端点错误体统一是 `{ error: <ErrCode> }`（见 http/account/*.ts），故这里解出来放 `code`。
+ */
+export class HttpError extends Error {
+    constructor(
+        msg: string,
+        /** HTTP 状态码；网络错误/超时为 0。 */
+        readonly status: number,
+        /** 服务端错误码（`{error}` 体解出，如 BUSY / RATE_LIMITED）；无则空串。 */
+        readonly code: string,
+    ) {
+        super(msg);
+        this.name = "HttpError";
+    }
+}
+
+/** 从错误体 `{ error: "BUSY" }` 取码；非 JSON / 无该字段 → 空串（⛔ 不抛，调用方在错误路径上）。 */
+function errCodeOf(text: string | undefined): string {
+    try {
+        const c = (JSON.parse(text ?? "") as { error?: unknown }).error;
+        return typeof c === "string" ? c : "";
+    } catch {
+        return "";
+    }
+}
+
 /** 初始化服务器地址，如 https://game.example.com（尾部斜杠自动去除） */
 export function initHttp(url: string): void {
     baseUrl = url.replace(/\/+$/, "");
@@ -72,17 +102,19 @@ function doRequest<T>(base: string, method: "GET" | "POST", path: string, body?:
             // ⚠ onload 只代表「收到了响应」：401/403/429/500 也会走到这——必须先验状态码，
             // 否则错误体被 JSON.parse 后当正常数据 resolve，业务层拿着错误对象继续跑（曾是真实 bug）
             if (xhr.status < 200 || xhr.status >= 300) {
-                reject(new Error(`[http] HTTP ${xhr.status} ${method} ${path}: ${xhr.responseText?.slice(0, 200)}`));
+                const body = xhr.responseText?.slice(0, 200);
+                reject(new HttpError(`[http] HTTP ${xhr.status} ${method} ${path}: ${body}`,
+                    xhr.status, errCodeOf(xhr.responseText)));
                 return;
             }
             try {
                 resolve(JSON.parse(xhr.responseText) as T);
             } catch (e) {
-                reject(new Error(`[http] 响应解析失败 ${method} ${path}: ${xhr.responseText?.slice(0, 200)}`));
+                reject(new HttpError(`[http] 响应解析失败 ${method} ${path}: ${xhr.responseText?.slice(0, 200)}`, xhr.status, ""));
             }
         };
-        xhr.onerror = () => reject(new Error(`[http] 请求失败 ${method} ${path} (status=${xhr.status})`));
-        xhr.ontimeout = () => reject(new Error(`[http] 请求超时 ${method} ${path}`));
+        xhr.onerror = () => reject(new HttpError(`[http] 请求失败 ${method} ${path} (status=${xhr.status})`, 0, ""));
+        xhr.ontimeout = () => reject(new HttpError(`[http] 请求超时 ${method} ${path}`, 0, ""));
         xhr.send(body != null ? JSON.stringify(body) : undefined);
     });
 }

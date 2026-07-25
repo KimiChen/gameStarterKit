@@ -158,6 +158,22 @@ npm --workspace @game/server run stack && npm --workspace @game/server run db:bo
 3. **WebPlatform 刻意不持 coord Redis、不广播踢人**：fire-and-forget 广播本就不构成保证，
    两者并存只会让人误以为有保证（见 [WEBPLATFORM.md §5](WEBPLATFORM.md)）。
 4. **`AUTH_EPOCH_STALE`** 保留为契约码但**服务端不再产出**（不 churn 客户端 union / 协议指纹）。
+5. **登录抢锁失败留下「权威已换发、组缓存未跟上」的分叉**（**仅 in-process**）。
+   token 由 lib 在**进锁之前**签发落库，故 `finish()` 非输家路径上的任何抛错都留下：MySQL=新 hash
+   （客户端只拿到 409 ⇒ 这个 token **没人持有**）、组 `sess`=旧 hash、审计已记一行登录**成功**。
+   后果：旧端在场连接走快路径（纯缓存比对）**继续放行**，但新建连走 strict 比权威即被拒 ⇒
+   「能玩到掉线为止，一掉线就登不回来」；且**没广播顶号踢**（踢在 `writeGroupSess` 里，没跑到）。
+   **客户端重登即自愈。** 决策 = **可观测不改结构**：补一行 `login_diverged` 审计（线上可定位），
+   ⛔ 不为此改 WebPlatform lib 的登录 API（把签发也拖进锁只利好 in-process，split 本无此分叉）。
+   特征化测试：`test/int/auth.test.ts`「抢锁失败 → …login_diverged 审计」（含输家路径不记的反例）。
+6. **登录会被 `freeze`/`thaw` 的长持锁打成硬 409**。09·L1 只允许一把 per-uid 锁，而两边预算不对称：
+   freeze/thaw 开看门狗（`LOCK_RENEW_MS`）可按秒持有，登录只有 `LOCK_RETRY_MAX=3`、退避
+   50/100/200 ≈ **350–500ms 封顶**。最可能的触发面是**冷号回归**（正在冻/解冻时在另一端顶号）。
+   决策 = **维持现状 + 诚实告知**：⛔ 不给登录单独放宽预算、⛔ 不开第二把锁；客户端
+   `LoginLogic` 自动退避重试**一次**（600ms）后如实报「系统繁忙，请稍后重试」——与「登录失败」
+   分开，别让用户以为账号有问题。为此 `core/http.ts` 的非 2xx 改抛 `HttpError{status,code}`
+   （此前状态码只在 message 字符串里，业务层无从判别）。机检：`test/pageLogic.test.ts`
+   「BUSY …自动退避重试一次 + 文案区分」（含「⛔ 无界重试即红」与「非 BUSY 不重试」）。
 
 ---
 
