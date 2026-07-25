@@ -4,6 +4,7 @@
  */
 import { createEndpoint } from "@colyseus/core";
 import { z } from "zod";
+import { ACCOUNT_MODE } from "../../core/infra/config";
 import { toErrCode } from "../../core/errors";
 import { wxLogin } from "../../platform/inProcessLogin";
 
@@ -15,6 +16,10 @@ export default createEndpoint("/account/wx-login", {
     deviceId: z.string().max(64).optional(),
   }),
 }, async (ctx) => {
+  // ⛔ split（ACCOUNT_MODE=http）下本端点必须关：登录在 WebPlatform（客户端 portalRequest 直连）。
+  // 此处若放行，inProcessLogin 会用**组库**建号/签发 token（WebPlatform 根本不认）——与"直调 lib 打错库"
+  // 同一类隐患，故 fail-closed（docs/WEBPLATFORM.md §2）。
+  if (ACCOUNT_MODE() === "http") { throw ctx.error(404, { error: "NOT_FOUND" }); }
   // 真实 IP 取 XFF **最右段**：可信 LB 把真实对端 append 到末尾，最左段是客户端可伪造的
   // （伪造最左段可每请求换 IP 绕过登录限流桶，09·G5）。部署要求网关前置恰一层可信 LB
   const xff = ctx.headers?.get?.("x-forwarded-for") ?? "";

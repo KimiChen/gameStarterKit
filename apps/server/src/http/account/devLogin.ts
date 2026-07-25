@@ -8,7 +8,7 @@
  */
 import { createEndpoint } from "@colyseus/core";
 import { z } from "zod";
-import { AUTH_DEV_ENABLED } from "../../core/infra/config";
+import { ACCOUNT_MODE, AUTH_DEV_ENABLED } from "../../core/infra/config";
 import { toErrCode } from "../../core/errors";
 import { devLogin } from "../../platform/inProcessLogin";
 
@@ -20,6 +20,10 @@ export default createEndpoint("/account/dev-login", {
     deviceId: z.string().max(64).optional(),
   }),
 }, async (ctx) => {
+  // ⛔ split（ACCOUNT_MODE=http）下本端点必须关：登录在 WebPlatform（客户端 portalRequest 直连）。
+  // 此处若放行，inProcessLogin 会用**组库**建号/签发 token（WebPlatform 根本不认）——与"直调 lib 打错库"
+  // 同一类隐患，故 fail-closed（docs/WEBPLATFORM.md §2）。
+  if (ACCOUNT_MODE() === "http") { throw ctx.error(404, { error: "NOT_FOUND" }); }
   if (!AUTH_DEV_ENABLED) { throw ctx.error(404, { error: "NOT_FOUND" }); }
   const xff = ctx.headers?.get?.("x-forwarded-for") ?? "";
   const ip = xff.split(",").map((s: string) => s.trim()).filter(Boolean).pop() ?? "0.0.0.0";

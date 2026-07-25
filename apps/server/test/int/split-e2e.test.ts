@@ -9,15 +9,17 @@ import "./env-setup-http"; // ⚠ 必须第一个 import：置 ACCOUNT_MODE=http
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
-import { ApiPath, LOBBY_MSG_RPC, PROTOCOL_VERSION, RoomName } from "@game/shared";
+import { ApiPath, KICK_CLOSE_CODE, LOBBY_MSG_RPC, PROTOCOL_VERSION, RoomName } from "@game/shared";
 import type { FastifyInstance } from "fastify";
 import { buildServer } from "@game/webplatform";
 import { server } from "../../src/app.config";
-import { stopMailWakeLoop } from "../../src/websocket/push";
+import { banUser } from "../../src/core/auth/ban";
+import { setKickHandler } from "../../src/core/auth/kickBus";
+import { kickUser, stopMailWakeLoop } from "../../src/websocket/push";
 import { activeLruBucketOf, kActiveLru, kSess } from "../../src/core/infra/keys";
 import { clientFor, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
 import { closeMysql, getPool } from "../../src/core/infra/mysql";
-import { assertRedisUp, cleanupUser, testUid } from "./helpers";
+import { assertRedisUp, cleanupUser, sleep, testUid } from "./helpers";
 
 let colyseus: ColyseusTestServer;
 let wp: FastifyInstance;
@@ -87,4 +89,28 @@ test("门户 dev-login → SDK 入大厅（onAuth 懒填组 sess）→ 快路径
   } finally {
     await room.leave();
   }
+});
+
+test("split 封号全链：banUser → 走接缝远程写权威（⛔ 非本地组库）→ 踢在线 + 重连被拒", async () => {
+  const res = await fetch(`${portal}${ApiPath.DevLogin}`, {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ devKey: testUid("e2eban").slice(0, 30).replace(/[^a-zA-Z0-9_-]/g, "") }),
+  });
+  const login = await res.json() as { userId: string; token: string };
+  uids.push(login.userId);
+
+  colyseus.sdk.auth.token = login.token;
+  const room = await colyseus.sdk.joinOrCreate(RoomName.Lobby, { v: PROTOCOL_VERSION });
+  await sleep(100);
+  setKickHandler(kickUser); // boot 不跑 index.ts，显式挂
+  const left = new Promise<number>((resolve) => { room.onLeave((code: number) => resolve(code)); });
+
+  // ⚠ 本用例正是 X 方案要修的那个洞：改接缝前 banUser 直调 lib → 打组库 → hit=false → 既不封也不踢（静默）
+  await banUser(login.userId, "e2e");
+
+  assert.equal(await Promise.race([left, sleep(5000).then(() => -1)]), KICK_CLOSE_CODE.banned,
+    "远程写权威成功 → 组侧踢在线（语义化关闭码）");
+  await assert.rejects(
+    colyseus.sdk.joinOrCreate(RoomName.Lobby, { v: PROTOCOL_VERSION }), // 同 token 重连
+    "封后重连被 onAuth 远程权威拒");
 });

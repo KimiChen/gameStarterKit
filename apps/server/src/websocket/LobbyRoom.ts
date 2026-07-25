@@ -2,8 +2,8 @@
  * 网关大厅房（10·M5）：客户端 join 后，所有取数/邮件/工会请求走单一 `rpc` 消息通道
  * （Colyseus 的 send/onMessage 无请求配对，信封里的 id 做 correlation，03）。
  *
- * - onAuth：token 反查 uid（09·G1）+ 严格校验（回源 MySQL epoch/status）。
- * - 每消息快路径复验 sess（封号删 sess → 存量 token 立即失效）。
+ * - onAuth：token 反查 uid（09·G1）+ 严格校验（回源 MySQL 权威 token_hash/status）。
+ * - 每消息快路径复验 sess（**纯组缓存 hash 比对、零权威回源**；在线撤销靠踢，见 §2.3 封号 SOP）。
  * - 大包防护在 transport 层 maxPayload（09·G4，见 app.ts）。
  */
 import { ErrorCode, Room, ServerError, validate, type AuthContext, type Client } from "@colyseus/core";
@@ -65,7 +65,8 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
         sessionId: client.sessionId,
         push: (type, data) => client.send(LOBBY_MSG_PUSH, { type, data }),
       };
-      // 每消息快路径复验：封号/踢人删 sess 后，在途连接的下一条 RPC 立即 401
+      // 每消息快路径复验（纯组缓存 hash 比对）：顶号换发后旧 token 下一条即 401；
+      // ⚠ 封号**不靠这里**（快路径零权威回源）——靠踢（§2.3 SOP：GM 逐节点 /admin/kick 确认）
       try {
         await account.verify(auth.token, false);
       } catch (e) {

@@ -151,14 +151,14 @@ C2S: { id, type, payload }  →  S2C: { id, ok, data?, err? }
   账号撤销）、`POST /pay/wx-notify`、`GET /version`、`GET /clock/now`、
   `POST /area/list`（选服列表 `{al,ul,isOps,h}`，登录前展示，token 可选回填最近登录区服）、
   `POST /admin/kick`（**GM 内部**：踢本节点该 uid 在线连接并回 `kicked`，共享密钥鉴权，封号 SOP 第二步）、
-  `GET /notice/list`（公告列表，按 at 倒序）。选服/公告是 **config 驱动无 DB**（`http/<域>/catalog.ts`
-  demo 数据，无栈即可联调；真实实现从配置表/CMS 读）。客户端 token 走 body 传，服务端 `verifyBearer`
+  `GET /notice/list`（公告列表，按 at 倒序）。公告是 **config 驱动无 DB**（`http/notice/catalog.ts` demo 数据）；
+  **选服目录已迁 WebPlatform**（`@game/webplatform/lib` 的 `area.ts`，端点薄委托 `account.areaList` 接缝）。客户端 token 走 body 传，服务端 `verifyBearer`
   反查（⛔ 不信客户端传的 userId，G1）。
   - **区服 = 独立实例**：`IAreaServer.wsUrl` 是**每区服游戏服的连接地址**（`ws(s)://host:port`），客户端
     选服后连它（Main 把 `ws→http` 传给 Colyseus Client）。demo 全部指向同一 dev server（env
-    `AREA_WS_URL` 覆盖）；真实实现由中心服/调度按 `sId` 返回各实例地址（改 `area/catalog.ts` 接配置表即可）。
+    `AREA_WS_URL` 覆盖）；真实实现由中心服/调度按 `sId` 返回各实例地址（改 WebPlatform 的 `lib/area.ts` 接配置表即可）。
   - `h` = serverList 一致性哈希（`areaListHash()` djb2），进服/踢人校验用（对应原项目 `serverList.h`）。
-  - `ul` = 该用户最近登录区服（`getUserRecentServers`，喂「我的角色」页签）。token 反查出 uid
+  - `ul` = 该用户建过角的区（`char_registry`，喂「我的角色」页签）。token 反查出 uid
     才回填（dev-login 签发的就是真 token，⛔ 无匿名回落——09·G1 不信客户端 sId）。
 - **dev-login（`account/devLogin.ts`）**：本地/CI 登录入口——只绕过 code2session 一跳
   （devKey → `dev_<devKey>` openid），其余全走真实链路（限流/建号/token/sess/审计），出参与
