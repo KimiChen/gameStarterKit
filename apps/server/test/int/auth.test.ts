@@ -3,7 +3,7 @@
  *  1. 新号建档 + 出参不含 openid/session_key（09·G8）
  *  2. 同 openid 再登录找回同一 user_id
  *  3. 封号后：存量 token 立即失效 + 重新 wx-login 被拒（09·G7）
- *  4. failover 复活会话被 token_epoch 拦（verifySessionStrict）
+ *  4. failover 复活会话被权威 token_hash 拦（verifySessionStrict）
  *  5. 登录限流独立严格档
  *（Arthur 的「存量账号绑定」用例未移植：本项目无旧账号体系）
  */
@@ -13,7 +13,7 @@ import { after, before, test } from "node:test";
 import { banUser, verifySession, verifySessionStrict } from "../../src/core/auth/session";
 import { _resetBreaker } from "@game/webplatform/lib";
 import { wxLogin } from "../../src/core/auth/wxLogin";
-import { AuthRequiredError, BannedError, EpochStaleError, RateLimitedError } from "../../src/core/errors";
+import { AuthRequiredError, BannedError, RateLimitedError } from "../../src/core/errors";
 import { activeLruBucketOf, kActiveLru, kRl, kSess, kUser } from "../../src/core/infra/keys";
 import { clientFor, clientForKey, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
 import { closeMysql, getPool } from "../../src/core/infra/mysql";
@@ -49,7 +49,6 @@ after(async () => {
   const pool = getPool();
   for (const u of createdUids) {
     await pool.execute("DELETE FROM login_audit WHERE user_id = ?", [u]);
-    await pool.execute("DELETE FROM revocation_log WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM accounts WHERE user_id = ?", [u]);
     await cleanupUser(u);
     await clientFor(u).unlink(kSess(u));
@@ -97,21 +96,20 @@ test("同 openid 再登录 → 同一 user_id；无效 code → AUTH_REQUIRED", 
   await verifySession(b.userId, b.token);
 });
 
-test("封号：存量 token 立即失效 + 重新 wx-login 被 403 拒（09·G7）", async () => {
+test("封号 = 下次登不上：权威即拒 + 重新 wx-login 被 403 拒（09·G7 / M12d §2.3）", async () => {
   const s = await login("carol");
   await banUser(s.userId, "test-ban");
-  // ① 控制总线即时 applyRevoke 本节点 maxEpoch → 快路径比对 sess.tokenEpoch 落后即拒（M12d §2.3，⛔ 不再靠删 sess）
-  await assert.rejects(verifySession(s.userId, s.token), EpochStaleError);
+  // ① 权威（status=1 + token_hash=NULL）：建连级 strict 校验即拒（在线连接由踢+verifiedAt 收敛）
+  await assert.rejects(verifySessionStrict(s.userId, s.token), AuthRequiredError);
   await assert.rejects(login("carol"), BannedError);                        // ② 签发前 SELECT status 拦住
 });
 
-test("failover 复活会话被 token_epoch 拦（verifySessionStrict）", async () => {
+test("failover 复活会话被权威 token_hash 拦（verifySessionStrict）", async () => {
   const s = await login("frank");
-  // 模拟：MySQL epoch 已 +1（踢人已写权威），但 sess 因 failover 从旧副本复活（未被删）
-  await getPool().execute("UPDATE accounts SET token_epoch = token_epoch + 1 WHERE user_id = ?", [s.userId]);
-  await verifySession(s.userId, s.token); // 快路径看不出（sess 还在）
-  await assert.rejects(verifySessionStrict(s.userId, s.token), EpochStaleError); // 严格路径拦住
-  await assert.rejects(verifySession(s.userId, s.token), AuthRequiredError);     // 且就地清除了复活会话
+  // 模拟：权威已撤销（token_hash=NULL），但 sess 因 failover 从旧副本复活（未被删）
+  await getPool().execute("UPDATE accounts SET token_hash = NULL WHERE user_id = ?", [s.userId]);
+  await verifySession(s.userId, s.token); // 快路径看不出（sess 还在、verifiedAt 新鲜）
+  await assert.rejects(verifySessionStrict(s.userId, s.token), AuthRequiredError); // 严格路径回权威拦住
 });
 
 test("verifiedAt 兜底：缓存超时重验——有效则刷新、账号侧撤销则拦（§2.3 U2 / 2d）", async () => {

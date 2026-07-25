@@ -10,7 +10,7 @@ import { auditLogin, issueToken } from "./auth";
 import { code2session } from "./wxClient";
 
 export type LoginResult =
-  | { ok: true; uid: string; token: string; epoch: number; isNew: boolean }
+  | { ok: true; uid: string; token: string; isNew: boolean }
   | { ok: false; reason: "banned" | "rate_limited" | "wx_invalid" | "wx_rate_limited" | "wx_unavailable" };
 
 // 进程内登录限流令牌桶（per WebPlatform 实例；规模化靠前置 LB 按 IP，§2.7）。按真实 IP，⛔ 不共享桶连坐（G5）。
@@ -26,7 +26,7 @@ function rateAllow(ip: string): boolean {
   return true;
 }
 
-interface AccountRow extends RowDataPacket { user_id: string; status: number; token_epoch: number }
+interface AccountRow extends RowDataPacket { user_id: string; status: number }
 
 /** 建号：seq 发 user_id（同连接纪律在 nextSeq，09·DB2）→ accounts 行。⛔ 不建游戏档。 */
 async function createAccount(openid: string, unionid: string | null): Promise<AccountRow> {
@@ -38,12 +38,12 @@ async function createAccount(openid: string, unionid: string | null): Promise<Ac
     if ((e as { errno?: number }).errno === 1062) {
       // 并发建号撞 UNIQUE(openid)：对方赢了，回读复用（发出去的 seq 号作废安全，只需单调）
       const [rows] = await getPool().query<AccountRow[]>(
-        "SELECT user_id, status, token_epoch FROM accounts WHERE openid = ?", [openid]);
+        "SELECT user_id, status FROM accounts WHERE openid = ?", [openid]);
       if (rows.length > 0) { return rows[0]; }
     }
     throw e;
   }
-  return { user_id: uid, status: 0, token_epoch: 0 } as AccountRow;
+  return { user_id: uid, status: 0 } as AccountRow;
 }
 
 /** 按 openid 登录（dev 直连 / wx 经 code2session 后的公共段）。签发前必查 status（G7）。 */
@@ -52,18 +52,18 @@ export async function loginByOpenid(
   ip: string, deviceId: string | null, auditKind: string,
 ): Promise<LoginResult> {
   const [rows] = await getPool().query<AccountRow[]>(
-    "SELECT user_id, status, token_epoch FROM accounts WHERE openid = ?", [openid]);
+    "SELECT user_id, status FROM accounts WHERE openid = ?", [openid]);
   const isNew = rows.length === 0;
   const account = isNew ? await createAccount(openid, unionid) : rows[0];
   if (Number(account.status) !== 0) {
     await auditLogin("fail", account.user_id, "banned", ip, deviceId);
     return { ok: false, reason: "banned" };
   }
-  const token = await issueToken(account.user_id, Number(account.token_epoch), sessionKey);
+  const token = await issueToken(account.user_id, sessionKey);
   await getPool().execute<ResultSetHeader>(
     "UPDATE accounts SET last_login_at = NOW(3) WHERE user_id = ?", [account.user_id]);
   await auditLogin(auditKind, account.user_id, null, ip, deviceId);
-  return { ok: true, uid: account.user_id, token, epoch: Number(account.token_epoch), isNew };
+  return { ok: true, uid: account.user_id, token, isNew };
 }
 
 export interface WxLoginInput { code: string; ip: string; deviceId?: string | null }

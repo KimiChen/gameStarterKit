@@ -34,7 +34,7 @@ async function makeUser(name: string): Promise<{ uid: string; token: string }> {
   await getPool().execute<ResultSetHeader>(
     "INSERT INTO accounts (user_id, openid) VALUES (?, ?)", [uid, `op_${uid}`]);
   await createUser(uid);
-  const { token } = await issueSession(uid, 0, null);
+  const { token } = await issueSession(uid, null);
   return { uid, token };
 }
 
@@ -76,7 +76,6 @@ after(async () => {
   for (const u of uids) {
     await pool.execute("DELETE FROM mail WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM login_audit WHERE user_id = ?", [u]);
-    await pool.execute("DELETE FROM revocation_log WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM accounts WHERE user_id = ?", [u]);
     await cleanupUser(u);
     await clientFor(u).unlink(kSess(u));
@@ -203,16 +202,17 @@ test("错误码：RATE_LIMITED（per-user 桶）", async () => {
   await room.leave();
 });
 
-test("错误码：AUTH_EPOCH_STALE / ACCOUNT_BANNED（复活会话被权威拦，09·G7）", async () => {
-  // epoch stale：MySQL epoch+1 而 sess 还在（failover 复活形态）
+test("错误码：AUTH_REQUIRED / ACCOUNT_BANNED（复活会话被权威拦，09·G7）", async () => {
+  // 撤销后的复活会话（failover 形态）：权威 token_hash 已 NULL 而组 sess 还在 → onAuth strict 回权威即拒
+  //（M12d 简化：撤销真相位只剩 token_hash/status，⛔ 无 epoch fence）
   const a = await makeUser("ep");
-  await getPool().execute("UPDATE accounts SET token_epoch = token_epoch + 1 WHERE user_id = ?", [a.uid]);
-  await assert.rejects(joinLobby(a.token), /AUTH_EPOCH_STALE/);
+  await getPool().execute("UPDATE accounts SET token_hash = NULL WHERE user_id = ?", [a.uid]);
+  await assert.rejects(joinLobby(a.token), /AUTH_REQUIRED/);
 
-  // banned（M12d：封号不再删 sess，靠 maxEpoch 快检 + 权威 status）：重签会话再 join → 严格校验查 status=1 拦下
+  // banned：封号后即便重新签发 token（hash 又匹配了），strict 校验查 status=1 仍拦下 —— 封号 = 下次登不上
   const b = await makeUser("ban");
   await banUser(b.uid, "test");
-  const revived = await issueSession(b.uid, 99, null); // 复活的会话（epoch 假装很新）
+  const revived = await issueSession(b.uid, null);
   await assert.rejects(joinLobby(revived.token), /ACCOUNT_BANNED/);
 });
 

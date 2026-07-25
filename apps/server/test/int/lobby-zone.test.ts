@@ -39,7 +39,7 @@ async function makeAcct(name: string): Promise<{ uid: string; token: string }> {
   uids.push(uid);
   await getPool().execute<ResultSetHeader>(
     "INSERT INTO accounts (user_id, openid) VALUES (?, ?)", [uid, `op_${uid}`]);
-  const { token } = await issueSession(uid, 0, null);
+  const { token } = await issueSession(uid, null);
   return { uid, token };
 }
 

@@ -2,7 +2,7 @@
 
 ## 文档状态
 
-> **本文是设计规格 + 实施进度记录。** 它描述「让当前架构同时支持大混服与区服」的目标形态，扩展并部分改写 [SERVER.md §9.5 扩容模型 ADR](SERVER.md)（原 ADR 立场：扩容单位 = 区服实例、单区服多节点不在承诺内）。**核心已落地**（区服进服硬闸 + 每区独立经济 + 建角 + 冷档按区判，见下「实施进度」）；**账号服务独立进程（M12c）落地完成**（账号原语迁 `@game/webplatform/lib` + Fastify 独立进程 + `ACCOUNT_MODE` http/inProcess 开关 + verifiedAt 有界撤销 + 登录编排/code2session 迁 lib + 选服目录 `/area/list` 迁 lib + 客户端 login/area 走门户 portalUrl + onAuth 懒填组 sess + 快路径陈旧重验回远程；split 全链 e2e 绿）；**撤销/控制总线（M12d）待做**。落地按 §5 里程碑推进。
+> **本文是设计规格 + 实施进度记录。** 它描述「让当前架构同时支持大混服与区服」的目标形态，扩展并部分改写 [SERVER.md §9.5 扩容模型 ADR](SERVER.md)（原 ADR 立场：扩容单位 = 区服实例、单区服多节点不在承诺内）。**核心已落地**（区服进服硬闸 + 每区独立经济 + 建角 + 冷档按区判，见下「实施进度」）；**账号服务独立进程（M12c）落地完成**（账号原语迁 `@game/webplatform/lib` + Fastify 独立进程 + `ACCOUNT_MODE` http/inProcess 开关 + verifiedAt 有界撤销 + 登录编排/code2session 迁 lib + 选服目录 `/area/list` 迁 lib + 客户端 login/area 走门户 portalUrl + onAuth 懒填组 sess + 快路径陈旧重验回远程；split 全链 e2e 绿）；**撤销/踢在线（M12d）in-process 落地**（封号 = 账号级「下次登不上」+ 控制总线广播踢在线；权威简化为 status+token_hash，剩 split 发布端）。落地按 §5 里程碑推进。
 
 本规格是「同一套 Colyseus 0.17 代码同时承载大混服与区服」的工程落地规格。其结论由 **8 轮技术评审锁定的 7 项决策** 为前提（不再论证「是否该这么做」，只写「怎么落地」），并经 **61 条服务端规则的两份对抗式评审对撞校验**（钱/幂等/跨存储 一份，鉴权/网关/冷档/撤销 一份）后定稿。评审指出的所有阻断级正确性洞（MySQL 谓词分区、ALS-vs-列概念二分、撤销传输层缺失、前缀孤儿化、F4 误判、快路径 epoch 窗口）已在正文改对；当场无法收敛者列入 §9「未决与风险」。本规格与源码逐一核对，文件锚点为仓库相对路径（`apps/server/src/...` 等）。
 
@@ -16,12 +16,12 @@
 | **M12b** F4 thaw 按区判 | ✅ 落地 | ABSENT 分支 sId=0 用 accounts、sId≥1 用 char_registry；⚠ user_archive per-zone 待 archive 步 |
 | **M12e** `/area/list` ul 接真建角数据 | ✅ 落地 | `getUserRecentServers` → `listCharacterZones`（§2.5） |
 | **M12c** WebPlatform 门户抽出 | ✅ 落地完成（int89+单测20 绿，split 全链 e2e 绿） | 账号原语(verify/token/char/accountExists)迁 `@game/webplatform/lib`✅、auth 改 MySQL 权威✅、createUser→onJoin(ensureLive-first 防丢数据)✅、WebPlatform Fastify 独立进程✅、`ACCOUNT_MODE` http↔inProcess 开关✅、verifiedAt 有界撤销✅、登录编排+code2session 迁 lib(结果码边界)+进程内限流✅、选服目录 `/area/list`(目录+ul best-effort)迁 lib✅、WebPlatform 端点按单源 `ApiPath`(/account/wx-login·/dev-login)+客户端契约✅、客户端 login/area 走门户 `portalUrl`(空=回退游戏服)✅、onAuth 懒填组 sess✅、split 快路径 verifiedAt 陈旧**回远程**重验(⛔ 不打本地组 pool)✅ |
-| **M12d** 控制总线 + 撤销 A + maxEpoch + 定向踢 | 🔧 in-process 核心落地（int95 绿；剩 split 发布端） | `startStreamConsumer` 工厂✅、coord Redis(复用 durable 配置驱动)✅、revocation_log outbox(同事务+relayer+保留窗)✅、每节点消费本地 maxEpoch✅、`verifySession` maxEpoch 快检(移除 del sess)✅、自筛踢(client.leave 4001，WS e2e 绿)✅。**剩**：split 发布端(WebPlatform 侧 relayer + coord Redis)、发奖 recheck(待发奖逻辑) |
+| **M12d** 控制总线 + 撤销 + 踢在线 | 🔧 in-process 落地（int98 绿；剩 split 发布端） | `startStreamConsumer` 工厂✅、coord Redis(复用 durable 配置驱动)✅、`stream:kick` 广播 + 每节点消费✅、自筛踢(`client.leave(4001)`，WS e2e 绿)✅、权威简化为 status+token_hash(⛔ 去 epoch/outbox/maxEpoch)✅、verifiedAt 60s 漏踢兜底✅。**剩**：split 发布端(WebPlatform 持 coord Redis 后 XADD)、发奖 recheck(待发奖逻辑) |
 | **archive 步** user_archive 分区 + active:lru/freeze 区化 | ⬜ 待做 | 耦合 M12c；⛔ 补齐前不开「多区 + freeze」 |
 | **M14/M15** 大混服实时横向 + presence/广播 | ⬜ 待做 | §4 |
 | **M16** 物理分组（100 组 × 10 区） | ⬜ 待做 | §5.1 |
 
-**当前能力**：单进程下大混服（sId=0）完全可跑；一个 `GROUP_ZONES` 配好的区服组，**选服→进服硬闸→建角→每区独立经济→冷档按区判→我的区** 机制完整可玩、经济按区隔离，由 sId≥1 真实栈测试守护（`test/int/perzone.test.ts` 6 用例）。**验证基线**：typecheck 三端 + verify:sync / server 单测 20 / test:int 75 / test:fgui 67 / smoke 13 全绿。⚠ 真开多区（`GROUP_ZONES` 非空）前，`keys.ts` fail-fast 会挡住任何漏包 `zoneCtx.run` 的 per-zone 路径（`test/zone-failfast.test.ts` 守）。
+**当前能力**：单进程下大混服（sId=0）完全可跑；一个 `GROUP_ZONES` 配好的区服组，**选服→进服硬闸→建角→每区独立经济→冷档按区判→我的区** 机制完整可玩、经济按区隔离，由 sId≥1 真实栈测试守护（`test/int/perzone.test.ts` 6 用例）。**验证基线**：typecheck 三端 + verify:sync / server 单测 20 / test:int 98 / test:fgui 68 / smoke 13 全绿。⚠ 真开多区（`GROUP_ZONES` 非空）前，`keys.ts` fail-fast 会挡住任何漏包 `zoneCtx.run` 的 per-zone 路径（`test/zone-failfast.test.ts` 守）。
 
 ---
 
@@ -119,7 +119,27 @@ flowchart TB
 
 **G8**：`login`/`verify` 出参绝不含 `sessionKey`——sessionKey 仅账号服务内持有。`ILoginRes`（`http.ts:31`）扩 `ul` 字段。
 
-### 2.3 撤销模型：A（本地缓存 + epoch 消息流广播 + TTL 兜底）+ 每节点自筛踢
+### 2.3 撤销模型：账号级封号 =「下次登不上」+ 踢在线（best-effort 广播 + TTL 兜底）
+
+> **⚑ 最终定案（M12d 落地，2026-07 简化）**：本节下方的 epoch/maxEpoch/outbox 推导是**历史设计**，实施时按下述更简模型收敛——
+> 因为「每节点自筛踢」落地后，踢与 maxEpoch **依赖同一条广播**，maxEpoch 只多兜「踢已发起、连接关闭前那几毫秒的在途 RPC」，边际极小；
+> 而广播丢失的场景两者一起失效、真正兜底的是 `verifiedAt`。故砍 maxEpoch 与 outbox。
+>
+> **封号语义 = 账号级（封人、所有区）**：角色级/区级封禁是**另一套机制**（准入闸 + 单区踢），未纳入本轮。
+>
+> **权威真相只有两位**：`accounts.status`（1=封禁）+ `accounts.token_hash`（NULL=已撤销/换发）。封号 = **一条 UPDATE**（⛔ 无 `token_epoch` fence、⛔ 无 `revocation_log` outbox）。
+>
+> **四层拦截**（只有第 ③ 层依赖广播，故广播 best-effort 不损正确性）：
+> | 层 | 拦点 | 依赖广播 |
+> |---|---|---|
+> | ① 新建连接 | `onAuth` strict → 权威 `verify`（hash=NULL/status=1 即拒） | 否 |
+> | ② 重新登录 | login 签发前 `SELECT status` → `ACCOUNT_BANNED` | 否 |
+> | ③ 踢在线 | 控制总线 `stream:kick` 广播 `{uid}` → 各节点自筛踢（`client.leave(4001)`） | **是**（best-effort） |
+> | ④ 在连漏踢兜底 | 快路径 `verifiedAt > AUTH_REVERIFY_TTL_S(60s)` → 回权威 → 拒 | 否 |
+> | ⑤ 发钱 | 结算发奖边界 ban recheck（U6，待发奖逻辑落地） | 否 |
+>
+> **控制总线退化为纯粹的「跨组踢人通道」**：事件体只有 `{uid}`，`stream:kick` 跑在 coord Redis（`REDIS_COORD_URL`，dev 缺省复用 durable）。
+> **split 发布端**：WebPlatform 侧需自持 coord Redis 并在 `/ban`·`/revoke` 后 `XADD`（待接；未接前 split 在连用户由第 ④ 层兜底）。
 
 **这是评审对撞后最关键的重写。** 原草稿「账号服务 O(1) 直接读 `presence:{uid}` 定向踢」在 zone-blind 模型下不成立：presence 是带区前缀 `s{sId}_presence:{uid}` 且经组内路由的键，账号服务既不知 sId、也不知落在哪组 durable，拼不出键。同时全拓扑不存在跨组共享 Redis 承载广播。因此定死两条基础设施与降级：
 
@@ -152,10 +172,10 @@ sequenceDiagram
 
 | 现状 | 服务化后 |
 |---|---|
-| `verifySession`（快路径 HMGET） | 组本地读 + **比对 maxEpoch(新增)** |
+| `verifySession`（快路径 HMGET） | 组本地读 tokenHash + **verifiedAt 超时回权威（漏踢兜底）** |
 | `verifySessionStrict`（回源 accounts） | `verify(token)` 远调账号服务 |
 | `issueSession`（登录内联签发） | 账号服务 `login` 拥有；组本地 `sess:{uid}` 由 onAuth 从 verify 结果懒填 |
-| `banUser`/`revokeSessions` | 账号服务写 accounts + 控制总线广播 + 各组定向踢；业务侧不再直接 del sess |
+| `banUser`/`revokeSessions` | 账号服务写权威（status/token_hash）+ 控制总线广播 kick + 各节点自筛踢；业务侧不再 del sess |
 
 **onAuth 复检 + 发奖 recheck（C3 / U6 定案）**：进房与每条 RPC **全线统一用组本地 `maxEpoch` 快检**（⛔ 不为对局入口单独升 strict——那会把玩法可用性耦合到账号服务、每次换房多一个远调，且与「房内消息走快路径」不一致，只多抓毫秒级传播缝隙）。撤销流毫秒级把 epoch 推到每节点，被封用户下一次进房即被拒。真正不可逆的**发钱在结算边界补一道权威 ban recheck**：settle worker（`core/match/matchConsumer`，低频可批处理）发奖前 recheck 封号状态——把权威校验放在「发钱那一刻」而非「进房那一刻」（G9 精神：钱的安全在数据层，不靠 session 撤销）。高赌注房（真金对赌/带实物奖励）可例外地在进房加 strict。
 

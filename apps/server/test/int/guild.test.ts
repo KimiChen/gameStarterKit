@@ -46,7 +46,7 @@ async function makeUser(name: string): Promise<{ uid: string; token: string }> {
   await getPool().execute<ResultSetHeader>(
     "INSERT INTO accounts (user_id, openid) VALUES (?, ?)", [uid, `op_${uid}`]);
   await createUser(uid);
-  const { token } = await issueSession(uid, 0, null);
+  const { token } = await issueSession(uid, null);
   return { uid, token };
 }
 

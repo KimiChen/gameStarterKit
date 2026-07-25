@@ -34,7 +34,7 @@ function loginFail(reason: LoginFailReason): never {
 
 /** 成功：token 已由 lib 签 MySQL 权威 → 写组侧 sess 缓存 → 返回精简出参。 */
 async function finish(r: Extract<LibLoginResult, { ok: true }>): Promise<LoginResult> {
-  await writeGroupSess(r.uid, r.token, r.epoch);
+  await writeGroupSess(r.uid, r.token);
   return { userId: r.uid, token: r.token, isNew: r.isNew };
 }
 

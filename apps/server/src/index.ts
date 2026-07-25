@@ -3,7 +3,7 @@ import app from "./app.config";
 import { PORT } from "./core/infra/config";
 import { startInfraMonitors } from "./core/infra/loopMonitor";
 import { startStreamDepthAlert } from "./core/match/matchConsumer";
-import { setKickHandler, startRevokeConsumer, startRevokeRelayer } from "./core/auth/revoke";
+import { setKickHandler, startKickConsumer } from "./core/auth/revoke";
 import { kickUser } from "./websocket/push";
 import { registerAllRoutes } from "./websocket/loader";
 
@@ -18,11 +18,10 @@ startInfraMonitors();
 // 结算流深度告警：settle worker 没起/积压时网关必须看得见（流禁 MAXLEN，无人消费即无界）
 startStreamDepthAlert();
 
-// 控制总线（DUAL_MODE §2.3 / M12d）：本节点独立游标消费撤销流维护本地 maxEpoch（快路径比对）；
-// relayer 兜底扫 revocation_log 发行进控制总线（happy path 由撤销源即时扇出）；自筛踢挂 online 表 kick。
+// 控制总线踢人（DUAL_MODE §2.3 / M12d）：本节点独立游标消费 stream:kick → 自筛踢在线连接
+// （权威撤销已落 accounts；踢是 best-effort，漏了由快路径 verifiedAt 60s 回权威兜底）。
 setKickHandler(kickUser);
-startRevokeConsumer();
-startRevokeRelayer();
+startKickConsumer();
 
 // 端口统一走 config.PORT（根 .env.development 可覆盖，默认 2568）——⛔ 不依赖
 // @colyseus/tools 的 process.env.PORT || 2567 隐式默认

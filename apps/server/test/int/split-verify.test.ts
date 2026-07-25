@@ -43,7 +43,6 @@ after(async () => {
   const pool = getPool();
   for (const u of uids) {
     await pool.execute("DELETE FROM login_audit WHERE user_id = ?", [u]);
-    await pool.execute("DELETE FROM revocation_log WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM accounts WHERE user_id = ?", [u]);
     await clientFor(u).unlink(kSess(u));
   }
@@ -57,7 +56,7 @@ async function makeSplitLogin(name: string): Promise<{ uid: string; token: strin
   uids.push(uid);
   await getPool().execute<ResultSetHeader>(
     "INSERT INTO accounts (user_id, openid) VALUES (?, ?)", [uid, `op_${uid}`]);
-  const token = await issueToken(uid, 0, null); // 写 accounts token_hash，⛔ 无 Redis
+  const token = await issueToken(uid, null); // 写 accounts token_hash，⛔ 无 Redis
   await clientFor(uid).unlink(kSess(uid));       // 确保组 sess 缺席
   return { uid, token };
 }
@@ -98,15 +97,15 @@ test("伪造 token → 远程 mismatch → AuthRequiredError，⛔ 不建组 ses
 });
 
 test("真实封号/踢人（banAccount/revokeAccount → token_hash=NULL）→ strict verify 拒连、⛔ 不建 sess", async () => {
-  // ⚠ 真实撤销路径都置 token_hash=NULL → verifyToken 先命中 hash 空判 mismatch（早于 status/epoch 判），
-  //   故远程 reason=mismatch → AuthRequiredError（而非 ACCOUNT_BANNED/EPOCH_STALE）；封号在登录步另由 status 拦。
+  // ⚠ 真实撤销路径都置 token_hash=NULL → verifyToken 先命中 hash 空判 mismatch（早于 status 判），
+  //   故远程 reason=mismatch → AuthRequiredError（而非 ACCOUNT_BANNED）；封号在登录步另由 status 拦。
   const { uid: u1, token: t1 } = await makeSplitLogin("sv-ban");
-  await banAccount(u1); // status=1 + epoch+1 + token_hash=NULL
+  await banAccount(u1); // status=1 + token_hash=NULL
   await assert.rejects(httpAccount.verify(t1, true), AuthRequiredError);
   assert.equal(await clientFor(u1).exists(kSess(u1)), 0, "封号不建组 sess");
 
   const { uid: u2, token: t2 } = await makeSplitLogin("sv-revoke");
-  await revokeAccount(u2); // epoch+1 + token_hash=NULL
+  await revokeAccount(u2); // token_hash=NULL（status 不变）
   await assert.rejects(httpAccount.verify(t2, true), AuthRequiredError);
   assert.equal(await clientFor(u2).exists(kSess(u2)), 0, "踢人不建组 sess");
 });

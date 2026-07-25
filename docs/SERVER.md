@@ -95,7 +95,7 @@ npm --workspace @game/server run test:int        # 集成测试（真实 Redis+M
 
 | P | 教训 |
 |---|---|
-| P1 | 货币/token_epoch 撤销走权威同步 MySQL 事务，**先写 MySQL 再删 Redis session** |
+| P1 | 货币/账号撤销走权威同步 MySQL 事务，**先写 MySQL 权威**（撤销 = status/token_hash），再踢在线 |
 | P4 | 幂等下沉到 `currency_ledger` 的 `UNIQUE(user_id, idem_key)` |
 | P5 | 跨存储重放用**绝对值覆写不重加 delta**；单存储内 op_id 去重 + HINCRBY 本身幂等 |
 | P6 | 续租守卫 `UPDATE(holder+fence_token)` 与业务批写同事务，0 行立即 ROLLBACK 自杀 |
@@ -148,7 +148,7 @@ C2S: { id, type, payload }  →  S2C: { id, ok, data?, err? }
 
 - **HTTP（`http/`）**：真实端点，Colyseus 0.17 typed router（`createEndpoint`，zod 校验 body）。
   仅限 auth / 支付 / utility（通道分工）：`POST /account/wx-login`（wx 登录、不透明 token、
-  token_epoch 撤销）、`POST /pay/wx-notify`、`GET /version`、`GET /clock/now`、
+  账号撤销）、`POST /pay/wx-notify`、`GET /version`、`GET /clock/now`、
   `POST /area/list`（选服列表 `{al,ul,isOps,h}`，登录前展示，token 可选回填最近登录区服）、
   `GET /notice/list`（公告列表，按 at 倒序）。选服/公告是 **config 驱动无 DB**（`http/<域>/catalog.ts`
   demo 数据，无栈即可联调；真实实现从配置表/CMS 读）。客户端 token 走 body 传，服务端 `verifyBearer`
@@ -204,7 +204,7 @@ shared IUserView（protocol/lobbyRpc/user.ts，类型真源）
 - `infra`：双 Redis 桶路由（durable/cache 物理分实例，16384 桶）/ MySQL 池（⚠ 已关
   CLIENT_FOUND_ROWS，affectedRows=changed 语义）/ Lua 注册 + NOSCRIPT 自动重载 / `loopMonitor`
   事件循环「心电图」（index.ts 启动）
-- `auth`：wx 登录 / 不透明 token / token_epoch
+- `auth`：wx 登录 / 不透明 token / 撤销（status + token_hash）
 - `economy`：三阶段 outbox / 充值状态机 / relayer 单例进程 / mailer 邮件附件 / catalog
 - `archive`：冷档 freeze/thaw/lazyMigrate/janitor
 - `match`：M8a 结算证据链消费（一局一条 XADD → 幂等闸落库；GameRoom onAuth 严格化后
@@ -379,7 +379,7 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 ### L — 锁与 fence
 
 - **L1** 同一 uid 的玩法写/freeze/thaw/清理全走同一把 `lock:{uid}`（`withUserLock`）；⛔ `thaw:{uid}` 已废弃，禁第二把 per-uid 锁。
-- **L2** 三个 fence 概念禁混用：① per-uid 锁 fence（`fence:{uid}` 计数器 / `user:{uid}.fence` 字段 / `user_currency.last_fence`）② `singleton_lease.fence_token` ③ `token_epoch`（仅封号/踢人递增）。
+- **L2** 三个 fence 概念禁混用：① per-uid 锁 fence（`fence:{uid}` 计数器 / `user:{uid}.fence` 字段 / `user_currency.last_fence`）② `singleton_lease.fence_token`。（原第三种 `token_epoch` 已随 M12d 简化取消——撤销真相位改为 `status` + `token_hash`。）
 - **L3** fence 必须守业务写——MySQL `WHERE last_fence <= :f`，Redis 在 casHset Lua 内 CAS；⛔ 只守租约行不算。
 - **L4** UNLINK/批量恢复 HSET 等不受 fence 守卫的破坏性操作，必须同一条 Lua 内先复检锁归属（`GET lock == myFence`）再执行，返回 lost 即放弃。
 - **L5** 进程内 per-uid 排队用 async mutex（await 队列）；⛔ 禁 `sleep()` 轮询抢锁；跨实例锁有界重试禁无限递归。
@@ -435,7 +435,7 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 - **G4** 大包防护在 ws transport 层设 maxPayload（超限断帧不解码），dispatcher 校验只是兜底。
 - **G5** 匿名/optional-auth 的限流与幂等 key 用 sessionId/真实 IP，⛔ 禁 userId=null 塌缩成共享 key。
 - **G6** 未知 type 只回 UNKNOWN_TYPE + 低权重计数，⛔ 不计 flood 不封禁。
-- **G7** 封号/踢人 = MySQL `token_epoch+1` + `revocation_log`（同事务，先写 MySQL）→ 控制总线广播 epoch → 各节点本地 maxEpoch 快检拒 + 自筛踢（M12d §2.3，⛔ 不再删 `sess:{uid}`）；⛔ 绝不删 `user:{uid}`；wx-login 签发前必须 SELECT status。
+- **G7** 封号 = **账号级「下次登不上」**：一条 UPDATE 写权威 `status=1` + `token_hash=NULL`（先写 MySQL），再经控制总线 `stream:kick` **踢在线**逼其重登（best-effort，漏踢由快路径 `verifiedAt` 60s 回权威兜底）（M12d §2.3，⛔ 不删 `sess:{uid}`、⛔ 无 epoch fence）；⛔ 绝不删 `user:{uid}`；wx-login 签发前必须 SELECT status。
 - **G8** session_key 仅服务端持有绝不下发；wx-login 出参 ⛔ 禁含 openid/unionid/session_key。
 - **G9** handler 超时用 Promise.race 无法真正取消——关键写副作用必须数据层幂等/CAS（I1/L3），⛔ 不依赖应用层取消。
 
@@ -476,7 +476,6 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 |---|---|---|---|
 | per-uid 并发写 fence | `fence:{uid}` 计数器 + `user:{uid}.fence` 字段 | `user_currency.last_fence` | `uow.fence` |
 | 单例任务领导权 fence | — | `singleton_lease.fence_token` | `lease.fenceToken` |
-| 账号撤销 epoch | `sess:{uid}.tokenEpoch` | `accounts.token_epoch` | — |
 
 ### Redis key（durable 实例：noeviction + AOF）
 
@@ -491,13 +490,13 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 | `applied:{uid}` | ZSET | 无 | 幂等已 apply 集合（member=op_id, score=applyMs，I5 裁剪） |
 | `lock:{uid}` | STRING | 5s | 跨实例用户锁（值=fence，SET NX PX） |
 | `idem:{type}:{uid}:{clientReqId}` | STRING | pending 10s / done 60s | 幂等占位（I1） |
-| `sess:{uid}` | HASH | 3d | 组侧会话缓存（tokenHash/tokenEpoch/verifiedAt/connId/gwNode）。撤销靠**本地 maxEpoch 快检**（M12d §2.3），⛔ 不再删它 |
+| `sess:{uid}` | HASH | 3d | 组侧会话缓存（tokenHash/verifiedAt/connId/gwNode）。撤销的在线即时性靠**踢**；`verifiedAt`(60s) 回权威兜底（M12d §2.3），⛔ 不删它 |
 | `guild:evt:seq:{gid}` | STRING | 无 | 工会事件 seq（INCR，§10）。⚠ gid 仅限 `core/guild/catalog`（join 硬校验）——INCR 隐式铸键 + 无 TTL + noeviction，键面必须有硬上限 |
 | `guild:evt:log:{gid}` | LIST | 无（LTRIM 上限） | 工会事件近窗（gid 约束同上） |
 | `active:lru:{bucket}` | ZSET | 无 | 活跃索引（找冷用户，bucket 非 uid hash-tag） |
 | `stream:match` | STREAM | 无（XTRIM MINID，K6） | 结算证据链 |
 | mail 唤醒流 | STREAM | 无（XTRIM MINID） | 邮件实时唤醒（权威在 MySQL mail 表，A6） |
-| `stream:revoke` | STREAM | 无（XTRIM MINID，K6） | **控制总线撤销流**（M12d §2.3；跑在 coord 实例 `REDIS_COORD_URL`，dev 复用 durable）。广播 {uid,epoch} max-wins，每节点独立游标消费维护本地 maxEpoch |
+| `stream:kick` | STREAM | 无（XTRIM MINID，K6） | **控制总线踢人流**（M12d §2.3；跑在 coord 实例 `REDIS_COORD_URL`，dev 复用 durable）。广播 `{uid}` 触发各节点自筛踢在线连接；**best-effort**（权威在 accounts，漏踢由 verifiedAt 兜底） |
 
 ### Redis key（cache 实例：allkeys-lru，物理独立）
 
@@ -521,7 +520,7 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 | code | 触发 | 客户端处置 |
 |---|---|---|
 | `AUTH_REQUIRED` | 无 token / token 无效 | 重新登录 |
-| `AUTH_EPOCH_STALE` | 被踢/封号后旧会话 | 重新登录 |
+| `AUTH_EPOCH_STALE` | *（保留码，M12d 后服务端不再产出——撤销走 AUTH_REQUIRED/ACCOUNT_BANNED）* | 重新登录 |
 | `ACCOUNT_BANNED` | accounts.status=1 | 提示封号 |
 | `RATE_LIMITED` | 令牌桶耗尽 | 退避重试 |
 | `INVALID_PAYLOAD` | zod 校验失败 | 修参（bug） |
@@ -563,7 +562,7 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 | `WX_APPID / WX_SECRET` | env | 微信凭证（KMS 注入，不进代码库） |
 | `AUTH_REVERIFY_TTL_S` | 60 | 组本地鉴权缓存兜底窗（快路径超此值未回权威 → 重验；⛔ ≠ SESS_TTL_S。M12d §2.3 / U2） |
 | `REDIS_COORD_URL` | = `REDIS_DURABLE_URL` | 控制总线 coord Redis（撤销流；dev 复用 durable、prod 物理隔离 HA。M12d §2.3） |
-| `REVOKE_RELAY_POLL_MS / REVOKE_STREAM_TRIM_MS / REVOKE_RETENTION_MS` | 1000 / 24h / 3d | 撤销 relayer 兜底扫描间隔 / 撤销流 MINID 裁剪窗 / revocation_log 保留窗（须 > TRIM，M12d） |
+| `KICK_STREAM_TRIM_MS` | 24h | 踢人流 MINID 裁剪窗（踢是即时动作，老事件无价值，M12d） |
 
 ---
 
@@ -577,7 +576,7 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 | M0 前置验证 | 三硬闸：Colyseus 0.17 指定节点建房 + RedisDriver/Presence；货币事务 p99 < LOCK_TTL；填验收阈值表 |
 | M1 基础设施 | 双 Redis + MySQL(binlog_format=ROW) + 全 DDL；桶路由；Lua 注册；singleton_lease 预置三行 |
 | M2 核心原语 | locks（两层锁+fence+看门狗）/ 四条 Lua / uow+withUser / idem / userStore（**最重要**） |
-| M3 鉴权 | wx-login → 建号 → 不透明 token → sess；token_epoch 撤销；登录限流 |
+| M3 鉴权 | wx-login → 建号 → 不透明 token → sess；撤销（status/token_hash）；登录限流 |
 | M4 存量迁移 | ⚠ **Arthur 专属，本项目 N/A**（无旧账号体系，无 SQLite 存量） |
 | M5 网关 | LobbyRoom + dispatcher 信封/中间件链；user.getInfo/getProfile + 写样板；邮件收件箱；推送雏形 |
 | M6 货币+outbox+充值+邮件附件 | currency 事务 / 三阶段 outbox / 充值状态机 / relayer 独立进程 / claimAttach |

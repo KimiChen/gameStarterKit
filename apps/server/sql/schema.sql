@@ -2,19 +2,18 @@
 -- 幂等：全部 CREATE TABLE IF NOT EXISTS + 预置行 ODKU no-op，可重复执行。
 -- 前置：MySQL ≥ 8.0.19，binlog_format=ROW，sql_mode 含 STRICT_TRANS_TABLES。
 
--- 账号（token_epoch 是撤销的持久真相；封号先写 MySQL 再删 Redis session）
+-- 账号。撤销的真相位只有两个：status（1=封禁，登录/校验即拒）与 token_hash（NULL=已撤销/换发）——
+-- 封号 = 账号级「下次登不上」（M12d §2.3 简化：⛔ 无 token_epoch fence；踢在线走控制总线 stream:kick）。
 CREATE TABLE IF NOT EXISTS accounts (
   user_id       VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   openid        VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
   unionid       VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
   status        TINYINT UNSIGNED NOT NULL DEFAULT 0,      -- 0 正常 / 1 封禁 / 2 注销
-  token_epoch   BIGINT UNSIGNED NOT NULL DEFAULT 0,
   created_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   last_login_at DATETIME(3) NULL,
   -- M12c 2b-1：token 记录改 MySQL 权威（WebPlatform MySQL-only verify）；Redis sess 退为组缓存/freeze-guard
   token_hash         VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,  -- 当前有效 token 的 sha256（NULL=无/已撤销）
   token_issued_at    DATETIME(3) NULL,                                        -- 签发时刻（过期判定）
-  token_issued_epoch BIGINT UNSIGNED NOT NULL DEFAULT 0,                      -- 签发时 epoch 快照（< token_epoch 即 stale，L2 第三 fence）
   session_key        VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,  -- 微信 session_key（⛔ 服务端持有 G8；手机号解密）
   nickname           VARCHAR(64) NULL,                                        -- ↓ 推迟授权补画像（§2.7），开局 NULL
   avatar_url         VARCHAR(256) NULL,
@@ -161,19 +160,6 @@ CREATE TABLE IF NOT EXISTS login_audit (
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
   KEY idx_user_time (user_id, created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- 撤销 outbox（DUAL_MODE §2.3，M12d）：封号/踢人与 accounts.token_epoch+1 **同事务**写一行，
--- 换「可证明零漏发」。relayer 扫 relayed=0 → 控制总线 XADD {uid, epoch} → 标 relayed=1（幂等，
--- 重发经 epoch max-wins 无害）。⛔ 裁剪只删 relayed=1 老行。
-CREATE TABLE IF NOT EXISTS revocation_log (
-  id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  user_id    VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
-  epoch      BIGINT UNSIGNED NOT NULL,               -- 递增后的 token_epoch（广播的 max-wins 值）
-  relayed    TINYINT UNSIGNED NOT NULL DEFAULT 0,    -- 0 未发行 / 1 已 XADD 进控制总线
-  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-  PRIMARY KEY (id),
-  KEY idx_unrelayed (relayed, id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 单调发号（仅 user_id）。⚠ 行必须预置，否则首次采番错值（05）

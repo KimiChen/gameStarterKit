@@ -197,7 +197,7 @@ test("GameRoom 端到端：开局生成 matchId（09·K4）→ 收局 XADD 证�
       const uid = testUid(name).slice(0, 32);
       uids.push(uid);
       await createUser(uid);
-      const { token } = await issueSession(uid, 0, null);
+      const { token } = await issueSession(uid, null);
       return { uid, token };
     };
     const a = await mk("gsA");

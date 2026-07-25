@@ -1,102 +1,44 @@
 /**
- * 控制总线消费 + 撤销 outbox 发行 + 本地 maxEpoch（DUAL_MODE §2.3，M12d）。
+ * 撤销「踢在线」通道（DUAL_MODE §2.3，M12d 简化模型）。
  *
- * 撤销传播链（跨组唯一通道，只走幂等 epoch，⛔ 非 Pub/Sub）：
- *   封号/踢人 → lib banAccount/revokeAccount（accounts.token_epoch+1 与 revocation_log **同事务**）
- *   → relayer 扫 relayed=0 → coord Redis `XADD stream:revoke {uid,epoch}` → 标 relayed=1
- *   → **每节点**独立游标消费 → 更新本地 maxEpoch[uid]（max-wins）→ 快路径 verifySession 比对即拒。
+ * **封号语义 = 账号级「下次登不上」**：权威真相是 `accounts.status=1` + `token_hash=NULL`（一条 UPDATE），
+ * 由 WebPlatform lib 写。本模块只负责第二件事——**把在线连接踢下线，逼其重走登录流程**。
  *
- * 每节点自持 maxEpoch、⛔ 不查 presence；发行幂等（重发 max-wins 无害），崩溃窗由 relayer 兜底扫描收敛。
- * 自筛踢在线连接见 M12d-b（applyRevoke 内追加）。
+ * 传输：coord Redis 的 `stream:kick`（唯一合法跨组通道；每节点独立游标 XREAD，⛔ 非 Pub/Sub）。
+ * 事件只有 `{uid}`——**没有 epoch、没有 outbox**：踢是 **best-effort**，丢了不影响正确性，因为
+ *   ① 新建连接 onAuth strict 回权威 verify 即拒；② 重新登录 SELECT status 即拒；
+ *   ③ 在连漏踢由快路径 `verifiedAt`（AUTH_REVERIFY_TTL_S=60s）回权威兜底；④ 发钱由结算 recheck 兜（U6）。
+ * 四层里只有本通道依赖广播，故 ⛔ 不需要「可证明零漏发」的 outbox/relayer。
  */
-import { REVOKE_RELAY_POLL_MS, REVOKE_RETENTION_MS, REVOKE_STREAM_TRIM_MS } from "../infra/config";
-import { K_STREAM_REVOKE } from "../infra/keys";
+import { KICK_STREAM_TRIM_MS } from "../infra/config";
+import { K_STREAM_KICK } from "../infra/keys";
 import { coordClient } from "../infra/redisRoute";
-import { getPool } from "../infra/mysql";
-import type { ResultSetHeader, RowDataPacket } from "../infra/mysql";
 import { fieldOf, startStreamConsumer, type StreamConsumer } from "../infra/streamConsumer";
-
-// 本节点撤销 epoch 缓存（uid → 已知最大撤销 epoch）：控制总线消费维护 + 撤销源即时写。
-// ⚠ 只增按 max-wins；条目量 = 本进程存活期见过的撤销 uid 数（封号低频、泄漏缓慢）——离线 uid 清理留 M12d-b，
-//   且 evict 后的漏网由 verifiedAt 兜底权威回源逮住（AUTH_REVERIFY_TTL_S 内），非正确性依赖。
-const maxEpoch = new Map<string, number>();
-
-/** 本节点已知的撤销 epoch（快路径比对：sess.tokenEpoch < 此值 → 拒）。缺省 0。 */
-export function revokedEpoch(uid: string): number { return maxEpoch.get(uid) ?? 0; }
 
 // 自筛踢句柄：websocket 层（online 表）在启动期注入 kickUser（core/auth ⛔ 不反向依赖 websocket 层）。
 let kickHandler: ((uid: string) => void) | null = null;
 /** 注入本节点强制下线句柄（index.ts 启动期挂 push.kickUser）。 */
 export function setKickHandler(fn: (uid: string) => void): void { kickHandler = fn; }
 
-/** 应用一条撤销（消费流 / 撤销源即时调）：max-wins 更新本地 maxEpoch + 本节点在线即自筛踢。 */
-export function applyRevoke(uid: string, epoch: number): void {
-  if (epoch > (maxEpoch.get(uid) ?? 0)) {
-    maxEpoch.set(uid, epoch);
-    kickHandler?.(uid); // 本节点 online 命中即强制下线（未注册/不命中直接跳过，§2.3 每节点自筛）
-  }
-}
+/** 本节点自筛踢：命中本节点在线连接即强制下线；不在本节点直接跳过（§2.3 每节点自筛，⛔ 不查 presence）。 */
+export function kickLocal(uid: string): void { kickHandler?.(uid); }
 
-/** 测试用：清空本地 maxEpoch。 */
-export function _resetMaxEpoch(): void { maxEpoch.clear(); }
-
-/**
- * 发行 outbox：扫 revocation_log relayed=0 → 控制总线 XADD → 标 relayed=1。幂等
- * （XADD 后崩溃则行滞留 relayed=0，下轮重发+重标；重发经 epoch max-wins 无害）。
- * 撤销源即时调一次（低延迟）+ relayer 周期兜底崩溃窗。
- */
-export async function drainRevocations(): Promise<number> {
-  const [rows] = await getPool().query<RowDataPacket[]>(
-    "SELECT id, user_id, epoch FROM revocation_log WHERE relayed = 0 ORDER BY id LIMIT 500");
-  let n = 0;
-  for (const row of rows) {
-    await coordClient().xadd(K_STREAM_REVOKE, "*", "uid", String(row.user_id), "epoch", String(row.epoch));
-    await getPool().execute<ResultSetHeader>("UPDATE revocation_log SET relayed = 1 WHERE id = ?", [row.id]);
-    n++;
-  }
-  return n;
-}
-
-/** 保留窗清理：删已发行（relayed=1）老行（idx_unrelayed 让 relayer 扫始终落在 relayed=0 前缀）。返回删除行数。 */
-export async function sweepRevokeRetention(): Promise<number> {
-  const [r] = await getPool().execute<ResultSetHeader>(
-    "DELETE FROM revocation_log WHERE relayed = 1 AND created_at < NOW(3) - INTERVAL ? SECOND",
-    [Math.floor(REVOKE_RETENTION_MS / 1000)]);
-  return r.affectedRows;
-}
-
-let relayer: ReturnType<typeof setInterval> | null = null;
-let draining = false;  // 重入护栏：setInterval 不等前次完成，慢 drain 期禁并发
-let lastSweep = 0;
-async function relayTick(): Promise<void> {
-  if (draining) { return; }
-  draining = true;
+/** 广播踢人到控制总线（best-effort：Redis 抖动只是漏踢，权威撤销已落 MySQL，由兜底层收敛）。 */
+export async function broadcastKick(uid: string): Promise<void> {
   try {
-    await drainRevocations();
-    if (Date.now() - lastSweep > REVOKE_RETENTION_MS / 4) { lastSweep = Date.now(); await sweepRevokeRetention(); }
+    await coordClient().xadd(K_STREAM_KICK, "*", "uid", uid);
   } catch (e) {
-    console.error("[revoke-relayer]", e);
-  } finally {
-    draining = false;
+    console.error(`[kick] 广播失败 uid=${uid}（权威已落库，靠 verifiedAt 兜底）`, e);
   }
 }
-
-/** 撤销发行 relayer（崩溃窗兜底周期扫描 + 保留窗清理；happy path 由撤销源即时 drainRevocations）。幂等，多实例并发无害。 */
-export function startRevokeRelayer(): void {
-  if (relayer) { return; }
-  relayer = setInterval(() => { void relayTick(); }, REVOKE_RELAY_POLL_MS);
-  relayer.unref?.(); // ⛔ 不阻止进程退出
-}
-export function stopRevokeRelayer(): void { if (relayer) { clearInterval(relayer); relayer = null; } }
 
 let consumer: StreamConsumer | null = null;
-/** 控制总线消费（每节点一个，独立游标）：读 stream:revoke → applyRevoke 更新本地 maxEpoch。 */
-export function startRevokeConsumer(): void {
+/** 控制总线消费（每节点一个，独立游标）：读 stream:kick → 本节点在线即踢。 */
+export function startKickConsumer(): void {
   if (consumer) { return; }
-  consumer = startStreamConsumer("revoke", coordClient, K_STREAM_REVOKE, (fields) => {
+  consumer = startStreamConsumer("kick", coordClient, K_STREAM_KICK, (fields) => {
     const uid = fieldOf(fields, "uid");
-    const epoch = fieldOf(fields, "epoch");
-    if (uid && epoch !== undefined) { applyRevoke(uid, Number(epoch)); }
-  }, { trimMs: REVOKE_STREAM_TRIM_MS });
+    if (uid) { kickLocal(uid); }
+  }, { trimMs: KICK_STREAM_TRIM_MS });
 }
-export function stopRevokeConsumer(): void { consumer?.stop(); consumer = null; }
+export function stopKickConsumer(): void { consumer?.stop(); consumer = null; }

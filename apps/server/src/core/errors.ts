@@ -33,10 +33,9 @@ export class BannedError extends Error {
   constructor(msg = "account banned") { super(msg); this.name = "BannedError"; }
 }
 
-/** sess.tokenEpoch < accounts.token_epoch（被踢/封号后旧会话）。 */
-export class EpochStaleError extends Error {
-  constructor(msg = "token epoch stale") { super(msg); this.name = "EpochStaleError"; }
-}
+// EpochStaleError 已随 M12d 简化退休（撤销真相位只剩 status + token_hash，无 epoch fence）：
+// 撤销的存量 token 一律走 AuthRequiredError（hash 不匹配）/ BannedError（status=1）。
+// shared 的 `AUTH_EPOCH_STALE` 错误码**保留不删**（客户端 union 少动；服务端不再产出）。
 
 /** 无 token / token 无效。 */
 export class AuthRequiredError extends Error {
@@ -92,7 +91,6 @@ const ERR_MAP = new Map<Function, ErrCode>([
   [StaleFenceError, "STALE_FENCE"],
   [InsufficientBalanceError, "INSUFFICIENT_BALANCE"],
   [BannedError, "ACCOUNT_BANNED"],
-  [EpochStaleError, "AUTH_EPOCH_STALE"],
   [AuthRequiredError, "AUTH_REQUIRED"],
   [RateLimitedError, "RATE_LIMITED"],
   [InvalidPayloadError, "INVALID_PAYLOAD"],

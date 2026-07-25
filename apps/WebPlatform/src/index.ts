@@ -53,7 +53,7 @@ export function buildServer(): FastifyInstance {
     if (dot <= 0) { return { ok: false as const, reason: "mismatch" as const }; }
     const uid = token.slice(0, dot);
     const r = await verifyToken(uid, token);
-    return r.ok ? { ok: true as const, uid, epoch: r.epoch, status: r.status } : r;
+    return r.ok ? { ok: true as const, uid, status: r.status } : r;
   });
 
   // 角色/足迹注册表（存在性权威）。
@@ -71,9 +71,9 @@ export function buildServer(): FastifyInstance {
     return { exists: await accountExists(req.body.uid) };
   });
 
-  // 撤销（封号 / 踢人）：lib in-tx 写 accounts.epoch+1 + revocation_log。
-  // ⚠ TODO(M12d split 发布端)：split 下本进程写的 revocation_log 需 **WebPlatform 侧 relayer**（本进程持 coord Redis）
-  //   扫 relayed=0 → XADD 控制总线；游戏服进程的 relayer 够不到本账号库。未接前 split 撤销仅靠组 verifiedAt 60s 兜底。
+  // 撤销（封号 / 踢人）：一条 UPDATE 写权威（status=1 / token_hash=NULL）= **下次登不上**。
+  // ⚠ TODO(M12d split 发布端)：split 下还需本进程持 coord Redis 并 `XADD stream:kick {uid}` 才能**踢在线**；
+  //   未接前 split 的在连用户由组侧快路径 verifiedAt(60s) 回权威兜底（新建连接/重登已即时被拒）。
   app.post<{ Body: { uid: string } }>("/ban", async (req) => {
     await banAccount(req.body.uid);
     return { ok: true };

@@ -137,9 +137,9 @@ export const WEBPLATFORM_BASE_URL = () => env("WEBPLATFORM_BASE_URL", "http://lo
 export const REDIS_DURABLE_URL = () => env("REDIS_DURABLE_URL", "redis://127.0.0.1:6401");
 export const REDIS_CACHE_URL = () => env("REDIS_CACHE_URL", "redis://127.0.0.1:6402");
 export const REDIS_ROUTE_FILE = () => process.env.REDIS_ROUTE_FILE ?? "";
-/** 控制总线 Redis（账号服务自持撤销消息流，DUAL_MODE §2.3）：专用 HA 实例，唯一合法跨组通道、只走幂等 epoch。
- *  dev 缺省**复用 durable 实例**（同实例专用流键 K_STREAM_REVOKE，配置驱动）；prod-split 指向物理隔离 HA Redis。
- *  ⛔ 绝不放 cache（allkeys-lru 会逐出撤销流 = 漏发）。 */
+/** 控制总线 Redis（账号服务自持踢人消息流，DUAL_MODE §2.3）：专用 HA 实例，唯一合法跨组通道。
+ *  dev 缺省**复用 durable 实例**（同实例专用流键 K_STREAM_KICK，配置驱动）；prod-split 指向物理隔离 HA Redis。
+ *  ⛔ 绝不放 cache（allkeys-lru 会逐出踢人流）。 */
 export const REDIS_COORD_URL = () => env("REDIS_COORD_URL", REDIS_DURABLE_URL());
 
 // ───────────────────────── 常量（07 全表） ─────────────────────────
@@ -157,12 +157,8 @@ export const SESS_TTL_S = 259_200;
 /** 组本地鉴权缓存 verifiedAt 兜底窗秒（DUAL_MODE §2.3 / U2）：快路径缓存超此值未回权威 → 重验刷新。
  *  ⛔ 与 SESS_TTL_S（会话时长 3d）是两个量。split 模式撤销的有界窗口（M12d 控制总线后近实时）。 */
 export const AUTH_REVERIFY_TTL_S = envInt("AUTH_REVERIFY_TTL_S", 60);
-/** 撤销 outbox relayer 兜底扫描间隔毫秒（revocation_log 未发行 → 控制总线 XADD 的崩溃窗补扫；happy path 走即时扇出）。 */
-export const REVOKE_RELAY_POLL_MS = envInt("REVOKE_RELAY_POLL_MS", 1000);
-/** 撤销流 MINID 兜底裁剪窗毫秒（epoch max-wins + verify 重设基线 → 老事件无害）。 */
-export const REVOKE_STREAM_TRIM_MS = envInt("REVOKE_STREAM_TRIM_MS", 24 * 3600 * 1000);
-/** revocation_log outbox 保留窗毫秒（relayer 周期删 relayed=1 老行）：⚠ 须 > REVOKE_STREAM_TRIM_MS（默认 3d）。 */
-export const REVOKE_RETENTION_MS = envInt("REVOKE_RETENTION_MS", 3 * 24 * 3600 * 1000);
+/** 踢人流 MINID 兜底裁剪窗毫秒（踢是即时动作，老事件无价值；权威撤销在 accounts，M12d §2.3）。 */
+export const KICK_STREAM_TRIM_MS = envInt("KICK_STREAM_TRIM_MS", 24 * 3600 * 1000);
 /** outbox done 行保留窗（relayer 周期清理；pending/dead ⛔ 不删）。09·I5 窗口不等式的前提。 */
 export const OUTBOX_RETENTION_MS = 86_400_000;
 /** ⚠ 必须 ≥ 2 × OUTBOX_RETENTION_MS（09·I5），否则 relayer 重放老 intent 二次发货。 */
