@@ -66,6 +66,42 @@ after(async () => {
   await closeMysql();
 });
 
+test("门户登录端点：入参越界必须**在签发之前**被 400 拦下（评审 P1：token 已签发却 500 = 登录分叉）", async () => {
+  const post = async (path: string, body: unknown) => {
+    const r = await fetch(`${portal}${path}`, {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body),
+    });
+    return { status: r.status, body: await r.json().catch(() => ({})) as { error?: string; userId?: string } };
+  };
+  const key = () => testUid("v").slice(0, 24).replace(/[^a-zA-Z0-9_-]/g, "");
+
+  // ① deviceId 65 字符：曾经一路带到 login_audit.device_id VARCHAR(64) ⇒ 1406。
+  //    ⚠ 那一步发生在 loginByOpenid **签发并轮换 token 之后** ⇒ 客户端拿 500、没有 token，
+  //    权威却已经换了 —— 比 login_diverged 更彻底的分叉。必须在**进入 lib 之前**就拒。
+  const over = await post(ApiPath.DevLogin, { devKey: key(), deviceId: "d".repeat(65) });
+  assert.equal(over.status, 400, "deviceId 65 必须 400（⛔ 不能进 lib）");
+  assert.equal(over.body.error, "INVALID_PAYLOAD");
+  assert.equal(over.body.userId, undefined, "⛔ 400 时不得已经建号/签发");
+
+  // ② 边界值 64 必须放行（⛔ 别把校验写严一格，那会让合法客户端登不上）
+  const okDev = await post(ApiPath.DevLogin, { devKey: key(), deviceId: "d".repeat(64) });
+  assert.equal(okDev.status, 200, "deviceId 恰好 64 是合法值");
+  if (okDev.body.userId) { uids.push(okDev.body.userId); }
+
+  // ③ devKey 越界/非法字符：`dev_<devKey>` 会进 accounts.openid VARCHAR(64) **ascii**
+  //    （in-process 侧的 zod 早有 /^[a-zA-Z0-9_-]{1,32}$/，本端点此前裸传 ⇒ 两模式契约漂移）
+  for (const bad of ["k".repeat(33), "有中文", "bad key", ""]) {
+    const r = await post(ApiPath.DevLogin, { devKey: bad, deviceId: null });
+    assert.equal(r.status, 400, `devKey=${JSON.stringify(bad).slice(0, 20)} 必须 400`);
+  }
+
+  // ④ wx-login 的 code：= zod `string().min(1).max(128)`
+  for (const bad of ["", "c".repeat(129)]) {
+    const r = await post(ApiPath.WxLogin, { code: bad });
+    assert.equal(r.status, 400, `code 长度 ${bad.length} 必须 400`);
+  }
+});
+
 test("门户 dev-login → SDK 入大厅（onAuth 懒填组 sess）→ 快路径 getInfo 成功", async () => {
   // 1) 门户登录（客户端 portalRequest 打的正是 WebPlatform 的 ApiPath.DevLogin）
   const res = await fetch(`${portal}${ApiPath.DevLogin}`, {

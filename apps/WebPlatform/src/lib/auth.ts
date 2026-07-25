@@ -89,10 +89,16 @@ export async function revokeAccount(uid: string): Promise<boolean> {
  * 会把整行审计弄丢、并让调用方误判成操作失败。与组侧 `core/auth/session.ts` 的 `clampReason` 同一份语义
  * （两边各一份实现：lib 跨包不能 import 组网关代码）。
  */
-const AUDIT_REASON_MAX = 255; // = login_audit.reason 列宽（改列宽必须同步改这里与组侧那份）
-function clampReason(s: string | null): string | null {
-  if (s === null || s.length <= AUDIT_REASON_MAX) { return s; }
-  const cut = s.slice(0, AUDIT_REASON_MAX);
+// ⚠ 宽度取**最小兼容值**而非本仓 schema.sql 的值：本服务在 split 下连的是**独立账号库**，
+// 而那个库尚无自己的 bootstrap（待办）⇒ 很可能仍是加宽前的 VARCHAR(64)，钳到 255 对它毫无保护。
+// ⛔ 账号库 migration 被强制执行之前，不要把这里跟着 schema.sql 放宽（组侧 session.ts 同款注释）。
+const AUDIT_REASON_MAX = 64;
+const AUDIT_DEVICE_MAX = 64;  // ⚠ device_id 来自**客户端输入**，本服务端点无运行期校验时全靠它兜
+const AUDIT_EVENT_MAX = 24;
+
+function clamp(s: string | null, max: number): string | null {
+  if (s === null || s.length <= max) { return s; }
+  const cut = s.slice(0, max);
   const last = cut.charCodeAt(cut.length - 1);
   return last >= 0xd800 && last <= 0xdbff ? cut.slice(0, -1) : cut; // ⛔ 不切断代理对
 }
@@ -102,5 +108,5 @@ export async function auditLogin(
 ): Promise<void> {
   await getPool().execute<ResultSetHeader>(
     "INSERT INTO login_audit (user_id, event, reason, ip, device_id) VALUES (?,?,?,INET6_ATON(?),?)",
-    [uid, event, clampReason(reason), ip, deviceId]);
+    [uid, clamp(event, AUDIT_EVENT_MAX), clamp(reason, AUDIT_REASON_MAX), ip, clamp(deviceId, AUDIT_DEVICE_MAX)]);
 }

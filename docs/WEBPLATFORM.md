@@ -83,11 +83,23 @@
 ⚠ 表在**账号库**，但写入方**两侧都有**：WebPlatform lib 写登录类，组侧 `apps/server` 写运营/异常类
 （in-process 同库；split 下组侧那几个会落进**组库** ⇒ 见待办 **W2**）。
 
-⚠ **`reason` 必须在写入前钳到列宽**（当前 `VARCHAR(255)`）。它有两个不受控来源——`ban`/`revoke` 是**运营输入**、
+⚠ **`reason`/`device_id`/`event` 必须在写入前钳到列宽**，且**宽度按各自实际写入的那个库分侧取**（⛔ 不是一刀切）：组侧 `core/auth/session.ts` 写**组库** → `255/64/24`；lib 侧 `lib/auth.ts` 可能写**独立账号库** → `64/64/24`。它有两个不受控来源——`ban`/`revoke` 是**运营输入**、
 `login_diverged` 含错误原文；MySQL 在 `STRICT_TRANS_TABLES` 下超长是**抛 `ER_DATA_TOO_LONG`(1406) 而非截断**，
 后果是 ① 审计整行写不进（`login_diverged` 恰在它唯一该起作用的场景下失效）② `banUser` 末尾那句 `auditLogin`
-无 catch ⇒ **权威已写、人已踢，接口却报失败**，运营会以为没封上。两处 `auditLogin`（组侧 `core/auth/session.ts`
-与 lib `lib/auth.ts`）各有一份 `clampReason`：⛔ 不切断代理对；split 下账号库没跑过加宽 DDL 时靠它兜底。
+无 catch ⇒ **权威已写、人已踢，接口却报失败**，运营会以为没封上。两处 `auditLogin`（组侧 `core/auth/session.ts` 与 lib `lib/auth.ts`）各有一份 `clamp`：⛔ 不切断代理对。
+
+⚠ **为什么分侧而不是一刀切**：lib 侧在 split 连的是**独立账号库**，而那个库**尚无自己的 bootstrap**（见 §4），
+很可能仍是加宽前的 `VARCHAR(64)` ⇒ 钳到 255 对它**毫无保护**（65–255 照样 1406）；账号库 migration 被强制
+执行之后才可放宽。组侧则相反：它用 `MYSQL_URL` 的**组库**、⛔ 从不写账号库（那正是 **W2** 描述的事），
+组库必然跑过 `db-bootstrap`（幂等 `MODIFY reason VARCHAR(255)`）⇒ 列**在任何部署下都是 255**。
+⚠ 曾一度把组侧也收到 64，理由抄的是账号库那条——**对组侧是假的**，净效果只有数据损失（运营封号理由被砍、
+`login_diverged` 的错误原文只剩前 64 字、去掉固定前缀后仅余约 38 字）。改口径时务必分侧想。
+
+⚠ **`device_id` 尤其要钳**：它来自**客户端输入**，而 Fastify 的 `Body` 泛型仅编译期、本服务登录端点
+（`ApiPath.WxLogin`/`DevLogin`）原先直接透传。未钳时后果比 `reason` 更糟——`loginByOpenid` 里 token
+**已经签发轮换**才走到 `auditLogin`，抛 1406 ⇒ **客户端收 500 拿不到新 token、审计也没有**，是一条比
+`login_diverged` 更彻底的登录分叉。现两端点已就地校验（与 in-process 的 zod `string().max(64)` 同契约，
+超长 400 `INVALID_PAYLOAD`），钳制作为第二道。
 
 | event | 写入方 | 含义 |
 |---|---|---|

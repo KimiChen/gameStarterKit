@@ -95,11 +95,25 @@ export async function verifySession(uid: string, token: string): Promise<void> {
  * 列已加宽到 255（schema.sql + db-bootstrap 幂等 MODIFY），钳制是第二道：**split 下账号库
  * 没有自己的 bootstrap（待办 W/E 系列），那边可能还是旧列宽**——靠钳制才不会退回上面两个后果。
  */
-const AUDIT_REASON_MAX = 255; // = login_audit.reason 列宽（改列宽必须同步改这里）
+// ⚠ **宽度按「本文件实际写的那个库」定，⛔ 不是按"任何部署下最窄的列"一刀切**。
+// 本文件用 `core/infra/mysql.ts` 的 `getPool()`＝`MYSQL_URL` 的**组库**，⛔ 从不写账号库
+// （split 下组侧 auditLogin 落组库正是待办 **W2** 描述的那件事）。组库必然跑过 db-bootstrap
+// （schema.sql 声明 + tools/db-bootstrap.ts 的幂等 `MODIFY reason VARCHAR(255)`）⇒ 这里的
+// reason **在任何部署下都是 255**。
+// ⚠ 曾经把它收到 64，理由写的是"split 账号库可能还是旧列宽"——**那个理由对本文件是假的**，
+// 净效果只有数据损失：运营封号理由被砍、`login_diverged` 的错误原文只剩前 64 字（去掉固定前缀
+// 后仅余 ~38 字，等于把上一轮特意加宽列所要保住的东西又丢了）。account 侧那份 64 在
+// `@game/webplatform/lib` 的 auth.ts —— 它才可能连到**没有 bootstrap 的**独立账号库。
+const AUDIT_REASON_MAX = 255;   // login_audit.reason（组库，schema.sql + bootstrap 保证）
+const AUDIT_DEVICE_MAX = 64;    // login_audit.device_id（两库同宽）
+const AUDIT_EVENT_MAX = 24;     // login_audit.event（取值是代码字面量，钳制只作兜底）
+// ⚠ device_id 的钳制在本文件是**防御性**的：现有三个调用点（ban/revoke/login_diverged）都传 null，
+// 真正接客户端 deviceId 的是 lib 那份 auditLogin 与端点校验 —— 机检要钉的是那两处，⛔ 别拿这里充数。
+
 /** 钳到 max「字符」：⛔ 不能切断代理对（半个 emoji 会变成非法 utf8mb4，MySQL 照样拒）。 */
-function clampReason(s: string | null): string | null {
-  if (s === null || s.length <= AUDIT_REASON_MAX) { return s; }
-  const cut = s.slice(0, AUDIT_REASON_MAX);
+function clamp(s: string | null, max: number): string | null {
+  if (s === null || s.length <= max) { return s; }
+  const cut = s.slice(0, max);
   const last = cut.charCodeAt(cut.length - 1);
   return last >= 0xd800 && last <= 0xdbff ? cut.slice(0, -1) : cut; // 尾部是高代理 ⇒ 连它一起去掉
 }
@@ -107,7 +121,7 @@ function clampReason(s: string | null): string | null {
 export async function auditLogin(event: string, uid: string | null, reason: string | null, ip: string | null, deviceId: string | null): Promise<void> {
   await getPool().execute<ResultSetHeader>(
     "INSERT INTO login_audit (user_id, event, reason, ip, device_id) VALUES (?,?,?,INET6_ATON(?),?)",
-    [uid, event, clampReason(reason), ip, deviceId]);
+    [uid, clamp(event, AUDIT_EVENT_MAX), clamp(reason, AUDIT_REASON_MAX), ip, clamp(deviceId, AUDIT_DEVICE_MAX)]);
 }
 
 

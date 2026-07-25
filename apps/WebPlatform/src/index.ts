@@ -9,18 +9,55 @@
 import { pathToFileURL } from "node:url";
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
 import { ApiPath, type ILoginRes } from "@game/shared";
-import { AUTH_DEV_ENABLED, WEBPLATFORM_PORT } from "./config";
+import { AUTH_DEV_ENABLED, TRUST_PROXY, WEBPLATFORM_PORT } from "./config";
 import { getPool } from "./lib/mysql";
 import {
   accountExists, areaList, banAccount, characterHas, characterRegister, characterZones,
   devLogin, type LoginResult, revokeAccount, verifyToken, wxLogin,
 } from "./lib";
 
-/** 真实 IP 取 XFF **最右段**（可信 LB append 真实对端；最左段客户端可伪造，绕登录限流，09·G5）。 */
+/**
+ * 真实 IP。取 XFF **最右段**（可信 LB append 真实对端；最左段客户端可伪造）。
+ *
+ * 由 `WEBPLATFORM_TRUST_PROXY` 门控，**缺省信**——理由与代价见 config.ts 该项的注释：
+ * 本进程只在 split 起，而 split 的流量必经 LB；缺省不信会把全服塌缩进一个令牌桶
+ * （12 次登录/分钟）。伪造 XFF 的防护归 **W1（鉴权 + 绑定内网）**，不归本函数。
+ */
 const realIp = (req: FastifyRequest): string => {
+  if (!TRUST_PROXY()) { return req.ip; }
   const xff = (req.headers["x-forwarded-for"] as string | undefined) ?? "";
   return xff.split(",").map((s) => s.trim()).filter(Boolean).pop() ?? req.ip;
 };
+
+/** 非法哨兵：Fastify 的 `Body` 泛型仅编译期，运行期必须自己收敛（同 `/area/list` 的处置）。 */
+const INVALID = Symbol("invalid");
+
+/**
+ * 登录入参就地校验 —— 与 in-process 端点的 zod **逐字段同契约**
+ * （`http/account/wxLogin.ts` / `devLogin.ts`）。⛔ 两种部署模式不能有不同的入参语义：
+ * 那正是本仓反复踩到的一类 bug，且这次踩得尤其冤——`wxLogin.ts:15` 的 zod 上方**早就写着**
+ * 「device_id 是 VARCHAR(64)：超长审计插入会 1406，会话已签发却报 500」，只是这份知识
+ * 没跨过部署模式的边界，本文件的同名端点一直在裸传。
+ *
+ * 未校验的具体后果（按严重度）：
+ *  - `deviceId` >64 → `login_audit.device_id VARCHAR(64)` 1406。⚠ 此时 token **已经签发轮换**，
+ *    于是 **客户端收 500 拿不到新 token、审计也没有** = 一条比 `login_diverged` 更彻底的登录分叉。
+ *  - `devKey` 越界/非 ascii → `dev_<devKey>` 进 `accounts.openid VARCHAR(64) ascii` 报错
+ *    （发生在签发之前，是干净的 500，但仍是两模式契约漂移）。
+ */
+function pickDeviceId(v: unknown): string | null | typeof INVALID {
+  if (v === undefined || v === null) { return null; }
+  if (typeof v !== "string" || v.length > 64) { return INVALID; }
+  return v;
+}
+/** = `z.string().regex(/^[a-zA-Z0-9_-]{1,32}$/)`（devLogin.ts）。 */
+function pickDevKey(v: unknown): string | typeof INVALID {
+  return typeof v === "string" && /^[a-zA-Z0-9_-]{1,32}$/.test(v) ? v : INVALID;
+}
+/** = `z.string().min(1).max(128)`（wxLogin.ts）。 */
+function pickWxCode(v: unknown): string | typeof INVALID {
+  return typeof v === "string" && v.length >= 1 && v.length <= 128 ? v : INVALID;
+}
 
 /**
  * lib 登录结果码 → **客户端契约**（成功回 shared `ILoginRes{userId,token,isNew}`；失败 reply.code+错误码），
@@ -85,12 +122,18 @@ export function buildServer(): FastifyInstance {
   // 登录（split：客户端 portalRequest 直连 WebPlatform）：路径 = 单源 ApiPath（铁律 6，与 in-process 端点一致）；
   // lib 全链（限流→code2session→查/建号→签发）→ loginReply 映射成客户端契约。组 sess 由网关 onAuth 懒填（2g）。
   app.post<{ Body: { code?: string; deviceId?: string } }>(ApiPath.WxLogin, async (req, reply) => {
-    const r = await wxLogin({ code: String(req.body?.code ?? ""), ip: realIp(req), deviceId: req.body?.deviceId ?? null });
+    const d = pickDeviceId(req.body?.deviceId);
+    const code = pickWxCode(req.body?.code);
+    if (d === INVALID || code === INVALID) { reply.code(400); return { error: "INVALID_PAYLOAD" }; }
+    const r = await wxLogin({ code, ip: realIp(req), deviceId: d });
     return loginReply(r, reply);
   });
   app.post<{ Body: { devKey?: string; deviceId?: string } }>(ApiPath.DevLogin, async (req, reply) => {
     if (!AUTH_DEV_ENABLED) { reply.code(404); return { error: "NOT_FOUND" }; }
-    const r = await devLogin(String(req.body?.devKey ?? ""), realIp(req), req.body?.deviceId ?? null);
+    const d = pickDeviceId(req.body?.deviceId);
+    const devKey = pickDevKey(req.body?.devKey);
+    if (d === INVALID || devKey === INVALID) { reply.code(400); return { error: "INVALID_PAYLOAD" }; }
+    const r = await devLogin(devKey, realIp(req), d);
     return loginReply(r, reply);
   });
 
@@ -109,6 +152,13 @@ export function buildServer(): FastifyInstance {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   buildServer()
     .listen({ port: WEBPLATFORM_PORT, host: "0.0.0.0" })
-    .then((addr) => console.log(`[webplatform] listening ${addr}`))
+    .then((addr) => {
+      // ⚠ 把限流的**实际身份来源**打出来：两种取法的失败形态都很隐蔽（一个是限流失效、
+      // 一个是全服共桶被限到 12 次/分钟），事后从日志能一眼看出当时是哪种。
+      console.log(`[webplatform] listening ${addr}`);
+      console.log(TRUST_PROXY()
+        ? "[webplatform] 限流身份 = X-Forwarded-For 最右段（信任前置 LB）。⚠ 本进程必须**不可被直连**，否则该头可伪造 ⇒ 限流失效（防护归 W1：鉴权 + 绑定内网）"
+        : "[webplatform] 限流身份 = socket 对端 req.ip（WEBPLATFORM_TRUST_PROXY=0）。⚠ 若位于 LB 之后，全服将塌缩进同一个令牌桶（约 12 次登录/分钟）");
+    })
     .catch((e) => { console.error(e); process.exit(1); });
 }

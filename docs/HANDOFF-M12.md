@@ -117,6 +117,7 @@
 | `WEBPLATFORM_BASE_URL` | `http://localhost:2570` | split 下 WebPlatform 地址（每请求现读） |
 | `WEBPLATFORM_MYSQL_URL` | = `MYSQL_URL` | 账号库（dev 与游戏服共库；split 指向独立库） |
 | `WEBPLATFORM_PORT` | `2570` | WebPlatform 监听端口 |
+| `WEBPLATFORM_TRUST_PROXY` | `1`（**信**） | 置 `0` 才改用 socket 对端 `req.ip`。⚠ **缺省信不是疏忽**：本进程只在 split 起，而 split 的流量必经 LB ⇒ 不信 XFF 时所有玩家的 `req.ip` 都是 **LB 地址**，全服塌缩进同一个令牌桶（容量 5 / 补 0.2 每秒 = **全服 12 次登录/分钟**），既是开服即挂也正是 09·G5 禁的连坐。⚠ **伪造 XFF 的防护归 [W1](WEBPLATFORM.md)（鉴权 + 绑定内网），不归本开关**——别让人直连到即可。启动日志会打出当前用的是哪种身份来源 |
 | `REDIS_COORD_URL` | = `REDIS_DURABLE_URL` | 踢人流所在实例（dev 复用 durable；prod 可物理隔离） |
 | `ADMIN_API_SECRET` | 空 = **端点关闭** | `/admin/kick` 共享密钥（fail-closed） |
 | `KICK_STREAM_TRIM_MS` | 24h | 踢人流 `XTRIM MINID` 窗 |
@@ -158,7 +159,15 @@ npm --workspace @game/server run stack && npm --workspace @game/server run db:bo
 3. **WebPlatform 刻意不持 coord Redis、不广播踢人**：fire-and-forget 广播本就不构成保证，
    两者并存只会让人误以为有保证（见 [WEBPLATFORM.md §5](WEBPLATFORM.md)）。
 4. **`AUTH_EPOCH_STALE`** 保留为契约码但**服务端不再产出**（不 churn 客户端 union / 协议指纹）。
-5. **登录抢锁失败留下「权威已换发、组缓存未跟上」的分叉**（**仅 in-process**）。
+5. **`in-process` 的两个登录端点仍无条件采信 `X-Forwarded-For`**（`http/account/{wxLogin,devLogin}.ts`）。
+   ⚠ 上面那条 `WEBPLATFORM_TRUST_PROXY` **只管 WebPlatform 独立进程**，⛔ 不要读成"XFF 已全局收口"——
+   `ACCOUNT_MODE` 缺省就是 `in-process`，那两个端点才是开发/测试期真正对外的登录入口。
+   **为什么没顺手照搬闸门**：Colyseus 的 `ctx` 拿不到 socket 对端（`@colyseus/better-call` 的
+   node adapter 只把 method/body/headers 搬进新 `Request`，丢弃 `req.socket.remoteAddress`），
+   所以"不信 XFF"时唯一能取的值是硬编码 `"0.0.0.0"` ⇒ 全部直连请求塌缩进一个桶。
+   照搬闸门＝把这条变成默认行为，是拿一个洞换一个更确定的事故。**真正的修法**是先从 transport
+   层把对端 IP 透传进来，或由 W1 把暴露面收掉。⛔ 在那之前别做"半个移植"。
+6. **登录抢锁失败留下「权威已换发、组缓存未跟上」的分叉**（**仅 in-process**）。
    token 由 lib 在**进锁之前**签发落库，故 `finish()` 非输家路径上的任何抛错都留下：MySQL=新 hash
    （客户端只拿到 409 ⇒ 这个 token **没人持有**）、组 `sess`=旧 hash、审计已记一行登录**成功**。
    后果：旧端在场连接走快路径（纯缓存比对）**继续放行**，但新建连走 strict 比权威即被拒 ⇒
@@ -166,7 +175,7 @@ npm --workspace @game/server run stack && npm --workspace @game/server run db:bo
    **客户端重登即自愈。** 决策 = **可观测不改结构**：补一行 `login_diverged` 审计（线上可定位），
    ⛔ 不为此改 WebPlatform lib 的登录 API（把签发也拖进锁只利好 in-process，split 本无此分叉）。
    特征化测试：`test/int/auth.test.ts`「抢锁失败 → …login_diverged 审计」（含输家路径不记的反例）。
-6. **登录会被 `freeze`/`thaw` 的长持锁打成硬 409**。09·L1 只允许一把 per-uid 锁，而两边预算不对称：
+7. **登录会被 `freeze`/`thaw` 的长持锁打成硬 409**。09·L1 只允许一把 per-uid 锁，而两边预算不对称：
    freeze/thaw 开看门狗（`LOCK_RENEW_MS`）可按秒持有，登录只有 `LOCK_RETRY_MAX=3`、退避
    50/100/200 ≈ **350–500ms 封顶**。最可能的触发面是**冷号回归**（正在冻/解冻时在另一端顶号）。
    决策 = **维持现状 + 诚实告知**：⛔ 不给登录单独放宽预算、⛔ 不开第二把锁；客户端

@@ -39,7 +39,12 @@ before(async () => {
     const code = new URL(req.url ?? "/", "http://x").searchParams.get("js_code") ?? "";
     res.setHeader("content-type", "application/json");
     if (code.startsWith("bad_")) { res.end(JSON.stringify({ errcode: 40029, errmsg: "invalid code" })); return; }
-    res.end(JSON.stringify({ openid: `op_${run}_${code}`, session_key: `sk_${code}` }));
+    // `uni_<人>_<第几次>` → openid 每次都不同、unionid 恒定：模拟「同一个人换了 openid」
+    // （appid/主体变更、存量导入）。⚠ 其余 code 一律**不返 unionid**，保持既有用例行为不变。
+    const m = /^uni_([a-z]+)_/.exec(code);
+    res.end(JSON.stringify(m
+      ? { openid: `op_${run}_${code}`, unionid: `un_${run}_${m[1]}`, session_key: `sk_${code}` }
+      : { openid: `op_${run}_${code}`, session_key: `sk_${code}` }));
   });
   await new Promise<void>((r) => mockWx.listen(0, "127.0.0.1", r));
   const addr = mockWx.address();
@@ -184,17 +189,56 @@ test("审计 reason 超长必须钳制：⛔ 不能抛 ER_DATA_TOO_LONG 把封�
   const [rows] = await getPool().query<RowDataPacket[]>(
     "SELECT reason FROM login_audit WHERE user_id = ? AND event = 'ban'", [s.userId]);
   assert.equal(rows.length, 1, "封号审计必须落库（曾因超长整行写不进）");
-  assert.ok(String(rows[0].reason).length <= 255, `reason 必须钳到列宽，实际 ${String(rows[0].reason).length}`);
+  assert.ok(String(rows[0].reason).length <= 255, `reason 必须钳到组库列宽 255，实际 ${String(rows[0].reason).length}`);
+  assert.ok(String(rows[0].reason).length > 64, "⛔ 组侧不该钳到 64：它写的是组库（bootstrap 保证 255），钳窄只丢运营填的封号理由");
   assert.ok(String(rows[0].reason).startsWith("运营填的超长封号理由："), "钳的是尾部，前缀信息保留");
 
   // ② 钳制发生在**写入侧**（两处 auditLogin 各一份）：split 下账号库没跑过加宽 DDL 时靠它兜底
   await auditLogin("login_diverged", s.userId, "x".repeat(1000), null, null); // ⛔ 不得抛
   const [d] = await getPool().query<RowDataPacket[]>(
     "SELECT CHAR_LENGTH(reason) AS n FROM login_audit WHERE user_id = ? AND event = 'login_diverged'", [s.userId]);
-  assert.equal(Number(d[0].n), 255, "钳到列宽上限");
+  // ⚠ 组侧钳到 **255**（组库列宽，schema.sql + db-bootstrap 保证），⛔ 不是 64：
+  // 本文件的 auditLogin 用的是 MYSQL_URL 的**组库**、从不写账号库（那正是待办 W2 描述的事），
+  // 所以"split 账号库可能还是旧列宽"这个理由对它不成立，钳窄只会白丢 login_diverged 的错误原文。
+  assert.equal(Number(d[0].n), 255, "组侧钳到组库列宽 255");
+
+  // ④ **接客户端 deviceId 的是 lib 那份 auditLogin**，不是组侧这份（组侧三个调用点全传 null）。
+  //    未钳时的后果比 reason 更糟：token 已在 auditLogin 之前签发轮换 ⇒ 客户端收 500 拿不到
+  //    新 token、审计也没有 = 又一条登录分叉。故机检要钉在 lib 那一份上。
+  const { auditLogin: libAuditLogin } = await import("@game/webplatform/lib");
+  await libAuditLogin("dev_login", s.userId, null, null, "d".repeat(200)); // ⛔ 不得抛
+  const [dev] = await getPool().query<RowDataPacket[]>(
+    "SELECT CHAR_LENGTH(device_id) AS n FROM login_audit WHERE user_id = ? AND event = 'dev_login'", [s.userId]);
+  assert.equal(Number(dev[0].n), 64, "lib 侧 device_id 钳到列宽");
 
   // ③ ⛔ 不能切断代理对：半个 emoji 是非法 utf8mb4，MySQL 照样拒
   await auditLogin("login_diverged", s.userId, "😀".repeat(200), null, null); // 400 个 UTF-16 单元
+});
+
+test("换过 openid 的老号：按 unionid 找回 → isNew=false 且 ⛔ 不烧 seq（评审 P2）", async () => {
+  const seqOf = async (): Promise<number> => {
+    const [r] = await getPool().query<RowDataPacket[]>("SELECT val FROM seq WHERE name = 'user_id'");
+    return Number(r[0].val);
+  };
+  // ① 首登：真新号
+  const first = await login("uni_alice_1");
+  assert.equal(first.isNew, true, "首登是新号");
+
+  // ② 同一个人换了 openid（unionid 不变）再登：必须找回同一账号，且**不是新号**
+  const seqBefore = await seqOf();
+  const again = await login("uni_alice_2");
+  assert.equal(again.userId, first.userId, "按 unionid 找回同一账号");
+  assert.equal(again.isNew, false,
+    "⛔ 恒 isNew=true 会让首登奖励/首充判据对老号反复触发（此前 isNew 在 unionid 回读之前就算好了）");
+
+  // ③ 且不再走「发一条注定失败的 INSERT」那条路：seq 不该被烧
+  assert.equal(await seqOf(), seqBefore, "⛔ 老号登录不得消耗 user_id 发号（此前每次登录烧一个）");
+
+  // ④ 再登一次仍然稳定（本次没改写 accounts.openid，故走的仍是 unionid 分支——钉住这个已知形态）
+  const third = await login("uni_alice_3");
+  assert.equal(third.userId, first.userId);
+  assert.equal(third.isNew, false);
+  assert.equal(await seqOf(), seqBefore, "多次重复登录也不烧 seq");
 });
 
 test("登录限流：同 IP 超容量 → RATE_LIMITED（独立严格档）", async () => {
