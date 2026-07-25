@@ -64,6 +64,10 @@ async function main(): Promise<void> {
     "ALTER TABLE accounts ADD COLUMN nickname VARCHAR(64) NULL AFTER session_key",
     "ALTER TABLE accounts ADD COLUMN avatar_url VARCHAR(256) NULL AFTER nickname",
     "ALTER TABLE accounts ADD COLUMN phone VARCHAR(20) CHARACTER SET ascii COLLATE ascii_bin NULL AFTER avatar_url",
+    // 评审：login_audit.reason 原 VARCHAR(64) 撑不下运营输入的封号理由/错误原文，
+    // STRICT_TRANS_TABLES 下超长直接 ER_DATA_TOO_LONG ⇒ 审计丢失、banUser 连带报错。
+    // MODIFY 天然幂等（重复执行只是再声明同一类型，⛔ 无需吞错误码）。
+    "ALTER TABLE login_audit MODIFY COLUMN reason VARCHAR(255) NULL",
   ];
   for (const sql of alters) {
     await conn.query(sql).catch((e: { errno?: number }) => {

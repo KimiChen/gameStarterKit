@@ -22,6 +22,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { breakerMessage, breakerTripped, forceRequested } from "./lib/sync-breaker.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SRC = path.join(ROOT, "apps/client/src");
@@ -35,11 +36,8 @@ const BANNER = `# ⚠ 本目录由脚本生成，禁止手改
 （\`.meta\` 文件由 Cocos 编辑器生成，属正常现象，随本目录一起提交。）
 `;
 
-/** watch 熔断阈值：单轮孤儿清理 ≥20 个或 ≥30% 视为异常（切分支/大规模 mv 的中间态） */
-/** 显式放行大规模清理（熔断逃生口；只有"有意的重构"才该用）。 */
-const FORCE = process.argv.includes("--force");
-const BREAKER_MIN = 20;
-const BREAKER_RATIO = 0.3;
+/** 熔断判据与逃生口：与 sync-shared 共用一份（scripts/lib/sync-breaker.mjs，表驱动回归钉住）。 */
+const FORCE = forceRequested();
 
 // ── devEnv.ts 生成：把根 .env.development 的 PORT 派生成客户端常量 ──
 // 客户端运行时（Creator/微信）读不了文件系统，端口跟随只能发生在同步期。
@@ -152,11 +150,8 @@ function syncOnce(fromWatch = false) {
     ).size;
     // ⚠ 熔断对**手动执行也生效**（原先只在 watch 生效 ⇒ 直接 `npm run sync:client` 可无阻拦清库）。
     // 真要大规模删除（有意的重构）用 `--force` 显式放行。
-    if (!FORCE && removedLogical >= BREAKER_MIN && removedLogical >= Math.ceil(srcFiles.length * BREAKER_RATIO)) {
-        throw new Error(
-            `[sync-client] 本轮要清理 ${removedLogical} 个源文件对应条目（源仅 ${srcFiles.length} 个），疑似分支切换/误删中间态——已熔断。` +
-            `确认无误后跑「npm run sync:client -- --force」放行（⚠ 那两个 -- 必需：npm 会吞掉裸 --force）——会连同 .meta 一起删，Creator 重开将重铸 uuid`
-        );
+    if (!FORCE && breakerTripped({ removed: removedLogical, srcCount: srcFiles.length })) {
+        throw new Error(breakerMessage("sync-client", removedLogical, srcFiles.length));
     }
 
     for (const rel of toWrite) {

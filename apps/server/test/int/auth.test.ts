@@ -10,7 +10,7 @@
 import assert from "node:assert/strict";
 import { createServer, type Server } from "node:http";
 import { after, before, test } from "node:test";
-import { verifySession } from "../../src/core/auth/session";
+import { auditLogin, verifySession } from "../../src/core/auth/session";
 import { banUser } from "../../src/core/auth/ban";
 import { verifySessionStrict } from "../../src/platform/inProcessAccount";
 import { _resetBreaker } from "@game/webplatform/lib";
@@ -172,6 +172,29 @@ test("输家路径 ⛔ 不记 login_diverged（正常顶号语义、两存储一
   const [audit] = await getPool().query<RowDataPacket[]>(
     "SELECT COUNT(*) AS n FROM login_audit WHERE user_id = ? AND event = 'login_diverged'", [uid]);
   assert.equal(Number(audit[0].n), 0, "并发登录的输家是干净的，⛔ 不该产出分叉审计");
+});
+
+test("审计 reason 超长必须钳制：⛔ 不能抛 ER_DATA_TOO_LONG 把封号/分叉审计弄丢", async () => {
+  const s = await login("longreason");
+  // ① 封号理由来自**运营输入**，长度不可控；而 banUser 末尾那句 auditLogin **无 catch** ⇒
+  //    超长若抛错，会变成「权威已写 + 人已踢，接口却报失败」，运营以为没封上（实测 sql_mode
+  //    含 STRICT_TRANS_TABLES：超长是抛 1406 而非截断）。
+  const huge = "运营填的超长封号理由：" + "违规".repeat(300); // 611 字符，远超列宽
+  await banUser(s.userId, huge);                              // ⛔ 不得抛
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    "SELECT reason FROM login_audit WHERE user_id = ? AND event = 'ban'", [s.userId]);
+  assert.equal(rows.length, 1, "封号审计必须落库（曾因超长整行写不进）");
+  assert.ok(String(rows[0].reason).length <= 255, `reason 必须钳到列宽，实际 ${String(rows[0].reason).length}`);
+  assert.ok(String(rows[0].reason).startsWith("运营填的超长封号理由："), "钳的是尾部，前缀信息保留");
+
+  // ② 钳制发生在**写入侧**（两处 auditLogin 各一份）：split 下账号库没跑过加宽 DDL 时靠它兜底
+  await auditLogin("login_diverged", s.userId, "x".repeat(1000), null, null); // ⛔ 不得抛
+  const [d] = await getPool().query<RowDataPacket[]>(
+    "SELECT CHAR_LENGTH(reason) AS n FROM login_audit WHERE user_id = ? AND event = 'login_diverged'", [s.userId]);
+  assert.equal(Number(d[0].n), 255, "钳到列宽上限");
+
+  // ③ ⛔ 不能切断代理对：半个 emoji 是非法 utf8mb4，MySQL 照样拒
+  await auditLogin("login_diverged", s.userId, "😀".repeat(200), null, null); // 400 个 UTF-16 单元
 });
 
 test("登录限流：同 IP 超容量 → RATE_LIMITED（独立严格档）", async () => {

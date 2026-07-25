@@ -21,6 +21,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { breakerMessage, breakerTripped, forceRequested } from "./lib/sync-breaker.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SRC = path.join(ROOT, "apps/shared/src");
@@ -58,11 +59,8 @@ function collectDirs(dir, base = dir) {
     return out;
 }
 
-/** watch 熔断阈值：单轮孤儿清理 ≥20 个或 ≥30% 视为异常（切分支/大规模 mv 的中间态） */
-/** 显式放行大规模清理（熔断逃生口）。⚠ npm 会吞掉 --force，必须 `npm run sync:shared -- --force`。 */
-const FORCE = process.argv.includes("--force");
-const BREAKER_MIN = 20;
-const BREAKER_RATIO = 0.3;
+/** 熔断判据与逃生口：与 sync-client 共用一份（scripts/lib/sync-breaker.mjs，表驱动回归钉住）。 */
+const FORCE = forceRequested();
 
 /** 计算一轮同步的差异：待写入（缺失/内容漂移）与待清理（孤儿）文件清单，不落盘 */
 function diffOnce() {
@@ -108,10 +106,8 @@ function syncOnce(fromWatch = false) {
     // 与 SRC 缺失 fail-fast 同一防御哲学（语义与 sync-client.mjs 一致）。
     // ⚠ 熔断对**手动执行也生效**（原先只在 watch 生效 ⇒ `npm run sync:shared` 与 dev-client 启动那次
     // 同步可无阻拦清空镜像）。与 sync-client 同款。
-    if (!FORCE && toRemove.length >= BREAKER_MIN && toRemove.length >= Math.ceil(srcFiles.length * BREAKER_RATIO)) {
-        throw new Error(
-            `[sync-shared] 本轮要清理 ${toRemove.length} 个文件（源仅 ${srcFiles.length} 个），疑似分支切换中间态——已熔断，确认无误后跑「npm run sync:shared -- --force」放行（⚠ 那两个 -- 必需：npm 会吞掉裸 --force）`
-        );
+    if (!FORCE && breakerTripped({ removed: toRemove.length, srcCount: srcFiles.length })) {
+        throw new Error(breakerMessage("sync-shared", toRemove.length, srcFiles.length));
     }
 
     for (const rel of toWrite) {

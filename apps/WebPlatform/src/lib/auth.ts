@@ -82,11 +82,25 @@ export async function revokeAccount(uid: string): Promise<boolean> {
   return accountExists(uid); // ⚠ 同上
 }
 
-/** 同步写登录审计（revoke/ban/login/fail 等高危事件不能尽力而为）。 */
+/**
+ * 同步写登录审计（revoke/ban/login/fail 等高危事件不能尽力而为）。
+ *
+ * ⚠ `reason` 写入前钳到列宽：`STRICT_TRANS_TABLES` 下超长是**抛 ER_DATA_TOO_LONG(1406) 而非截断**，
+ * 会把整行审计弄丢、并让调用方误判成操作失败。与组侧 `core/auth/session.ts` 的 `clampReason` 同一份语义
+ * （两边各一份实现：lib 跨包不能 import 组网关代码）。
+ */
+const AUDIT_REASON_MAX = 255; // = login_audit.reason 列宽（改列宽必须同步改这里与组侧那份）
+function clampReason(s: string | null): string | null {
+  if (s === null || s.length <= AUDIT_REASON_MAX) { return s; }
+  const cut = s.slice(0, AUDIT_REASON_MAX);
+  const last = cut.charCodeAt(cut.length - 1);
+  return last >= 0xd800 && last <= 0xdbff ? cut.slice(0, -1) : cut; // ⛔ 不切断代理对
+}
+
 export async function auditLogin(
   event: string, uid: string | null, reason: string | null, ip: string | null, deviceId: string | null,
 ): Promise<void> {
   await getPool().execute<ResultSetHeader>(
     "INSERT INTO login_audit (user_id, event, reason, ip, device_id) VALUES (?,?,?,INET6_ATON(?),?)",
-    [uid, event, reason, ip, deviceId]);
+    [uid, event, clampReason(reason), ip, deviceId]);
 }

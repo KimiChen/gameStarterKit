@@ -154,7 +154,11 @@ CREATE TABLE IF NOT EXISTS login_audit (
   id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   user_id    VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NULL,
   event      VARCHAR(24) NOT NULL,     -- wx_login | refresh | logout | revoke | ban | fail
-  reason     VARCHAR(64) NULL,
+  -- ⚠ 曾是 VARCHAR(64)：ban/revoke 的 reason 来自**运营输入**、login_diverged 的 reason 含错误原文，
+  -- 超长在 STRICT_TRANS_TABLES 下抛 ER_DATA_TOO_LONG(1406) 而非截断 ⇒ 审计整行丢失，
+  -- 且 banUser 末尾那句 auditLogin 无 catch ⇒ 权威已写、人已踢，接口却报失败。
+  -- 加宽 + 写入侧集中钳制（两处 auditLogin）双保险：split 下账号库没跑过本 DDL 时靠钳制兜底。
+  reason     VARCHAR(255) NULL,
   ip         VARBINARY(16) NULL,       -- INET6_ATON()
   device_id  VARCHAR(64) NULL,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),

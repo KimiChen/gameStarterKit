@@ -83,6 +83,12 @@
 ⚠ 表在**账号库**，但写入方**两侧都有**：WebPlatform lib 写登录类，组侧 `apps/server` 写运营/异常类
 （in-process 同库；split 下组侧那几个会落进**组库** ⇒ 见待办 **W2**）。
 
+⚠ **`reason` 必须在写入前钳到列宽**（当前 `VARCHAR(255)`）。它有两个不受控来源——`ban`/`revoke` 是**运营输入**、
+`login_diverged` 含错误原文；MySQL 在 `STRICT_TRANS_TABLES` 下超长是**抛 `ER_DATA_TOO_LONG`(1406) 而非截断**，
+后果是 ① 审计整行写不进（`login_diverged` 恰在它唯一该起作用的场景下失效）② `banUser` 末尾那句 `auditLogin`
+无 catch ⇒ **权威已写、人已踢，接口却报失败**，运营会以为没封上。两处 `auditLogin`（组侧 `core/auth/session.ts`
+与 lib `lib/auth.ts`）各有一份 `clampReason`：⛔ 不切断代理对；split 下账号库没跑过加宽 DDL 时靠它兜底。
+
 | event | 写入方 | 含义 |
 |---|---|---|
 | `wx_login` / `dev_login` | lib `loginByOpenid` | 登录成功（`auditKind` 由入口传入） |

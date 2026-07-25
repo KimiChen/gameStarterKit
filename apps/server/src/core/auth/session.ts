@@ -85,11 +85,29 @@ export async function verifySession(uid: string, token: string): Promise<void> {
 
 
 
-/** 同步写审计（revoke/ban 等高危事件不能是尽力而为，05）。 */
+/**
+ * 同步写审计（revoke/ban 等高危事件不能是尽力而为，05）。
+ *
+ * ⚠ **`reason` 必须在写入前钳到列宽**：它有两个不受控来源——`ban`/`revoke` 是**运营输入**、
+ * `login_diverged` 含错误原文。MySQL 在 `STRICT_TRANS_TABLES` 下超长是**抛 ER_DATA_TOO_LONG(1406)
+ * 而非截断** ⇒ ① 审计整行写不进（`login_diverged` 恰在它唯一该起作用的场景下失效）；
+ * ② `banUser` 末尾这句无 catch ⇒ 权威已写、人已踢，接口却报失败，运营会以为没封上。
+ * 列已加宽到 255（schema.sql + db-bootstrap 幂等 MODIFY），钳制是第二道：**split 下账号库
+ * 没有自己的 bootstrap（待办 W/E 系列），那边可能还是旧列宽**——靠钳制才不会退回上面两个后果。
+ */
+const AUDIT_REASON_MAX = 255; // = login_audit.reason 列宽（改列宽必须同步改这里）
+/** 钳到 max「字符」：⛔ 不能切断代理对（半个 emoji 会变成非法 utf8mb4，MySQL 照样拒）。 */
+function clampReason(s: string | null): string | null {
+  if (s === null || s.length <= AUDIT_REASON_MAX) { return s; }
+  const cut = s.slice(0, AUDIT_REASON_MAX);
+  const last = cut.charCodeAt(cut.length - 1);
+  return last >= 0xd800 && last <= 0xdbff ? cut.slice(0, -1) : cut; // 尾部是高代理 ⇒ 连它一起去掉
+}
+
 export async function auditLogin(event: string, uid: string | null, reason: string | null, ip: string | null, deviceId: string | null): Promise<void> {
   await getPool().execute<ResultSetHeader>(
     "INSERT INTO login_audit (user_id, event, reason, ip, device_id) VALUES (?,?,?,INET6_ATON(?),?)",
-    [uid, event, reason, ip, deviceId]);
+    [uid, event, clampReason(reason), ip, deviceId]);
 }
 
 
