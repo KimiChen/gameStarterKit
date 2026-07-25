@@ -164,7 +164,7 @@ flowchart TB
 >
 > ### 踢人的客户端可感知性（三种原因不可混淆）
 >
-> 踢 = **先推 `auth.forceLogout{reason}`、再用语义化关闭码关连接**（`KICK_CLOSE_CODE`：4001 封禁 / 4002 顶号 / 4003 强制下线）。
+> 踢 = **先推 `auth.forceLogout{reason}`、再用语义化关闭码关连接**（`KICK_CLOSE_CODE`：4901 封禁 / 4902 顶号 / 4903 强制下线）。
 > 推送先到、文案准确；推送若因连接已死送不到，客户端 `onLeave(code)` 按关闭码兜底判因。
 > ⛔ 缺这层，用户只看到「连接断开」，要点一次重连失败才知道真相。文案单源 `ForceLogoutMessage`（shared）。
 

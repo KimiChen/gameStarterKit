@@ -172,3 +172,15 @@ test("per-zone: thaw ABSENT 按区判(M12b §2.6) —— sId≥1 用 char_regist
   // char_registry(u,5) 有、热档冷档全无 → ABSENT + 建过角 → UserDataLost 告警 + 拒建空档（09·F4）
   await assert.rejects(zoneCtx.run({ sId: 5 }, () => ensureLive(u)), UserDataLostError);
 });
+
+test("建角崩溃窗**可自愈**：有档无 char 行（档先建、崩在写 char 行前）→ 下次进区补写，⛔ 不判数据丢失", async () => {
+  const u = uid("pz-crashwin");
+  // 模拟崩溃窗中间态：档已建、char 行未写（新序 createUser → char_registry 之间断电）
+  await zoneCtx.run({ sId: 9 }, () => createUser(u, { registerTime: String(Date.now()) }));
+  assert.deepEqual(await listCharacterZones(u), [], "崩溃窗：char 行还没写");
+
+  // 下次进区：⛔ 旧序在此会判 ABSENT+has=true 抛 UserDataLost（永久毒态）；新序状态是 LIVE，直接补写
+  await ensureCharacter(u, 9);
+  assert.deepEqual(await listCharacterZones(u), [9], "自愈：char 行补上");
+  assert.equal(await zoneCtx.run({ sId: 9 }, () => clientFor(u).exists(kUser(u))), 1, "真档未被覆盖");
+});

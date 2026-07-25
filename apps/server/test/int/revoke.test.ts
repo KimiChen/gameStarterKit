@@ -218,3 +218,12 @@ test("kickBus reason 容错：缺失/非法值一律兜底按封号（⛔ 不裸
     unregisterOnline(uid, "s1");
   }
 });
+
+test("封号幂等：重复 ban 同一账号恒返 true（⛔ 不随 affectedRows/部署模式翻转 —— GM 重试不会跳过踢人）", async () => {
+  const { uid } = await makeUser("rv-idem");
+  const { banAccount, revokeAccount } = await import("@game/webplatform/lib");
+  assert.equal(await banAccount(uid), true, "首次");
+  assert.equal(await banAccount(uid), true, "重复：仍 true（曾因 -FOUND_ROWS 返 false → GM 判「无此账号」跳过踢人）");
+  assert.equal(await revokeAccount(uid), true, "revoke 同理");
+  assert.equal(await banAccount("u_no_such_account_x"), false, "真不存在才 false");
+});

@@ -61,19 +61,25 @@ export async function verifyToken(uid: string, token: string): Promise<VerifyRes
  * 封号（M12d 简化模型，09·G7）：**一条 UPDATE** —— `status=1` + `token_hash=NULL`。
  * 语义 = 「下次登不上」（login 签发前查 status；verify 见 hash=NULL/status=1 即拒）；
  * 「踢在线」由业务侧广播 kick 承担（⛔ 无自动收敛：漏踢即活到 sess TTL，送达保证走 GM `/admin/kick`，09·G7b）。
- * 返回是否命中账号（false = 无此 uid，调用方不必广播）。
+ * 返回**账号是否存在**（false = 无此 uid，调用方不必踢/广播）。
+ *
+ * ⚠ **⛔ 绝不用 `affectedRows` 表达"账号存在"**：它的语义随连接 flags 翻转 ——
+ * 游戏服池显式 `-FOUND_ROWS`（changed 语义）⇒ **重复封同一账号第二次返回 false**；
+ * WebPlatform 独立进程用 mysql2 默认（**带 FOUND_ROWS** = matched 语义）⇒ 返回 true。
+ * 于是同一份 lib 的返回值**随部署模式变化**，而 GM 规格把 false 解释成"账号不存在→跳过踢人"
+ * ⇒ **失败后的幂等重试会永远跳过踢人**（正是 SOP 要防的）。故显式查存在性，与 flags 解耦。
  */
 export async function banAccount(uid: string): Promise<boolean> {
-  const [r] = await getPool().execute<ResultSetHeader>(
+  await getPool().execute<ResultSetHeader>(
     "UPDATE accounts SET status = 1, token_hash = NULL WHERE user_id = ?", [uid]);
-  return r.affectedRows > 0;
+  return accountExists(uid); // ⚠ ⛔ 不用 affectedRows，见下方说明
 }
 
 /** 踢人/换端：`token_hash=NULL`（status 不变，账号仍可重新登录换发新 token）。返回是否命中账号。 */
 export async function revokeAccount(uid: string): Promise<boolean> {
-  const [r] = await getPool().execute<ResultSetHeader>(
+  await getPool().execute<ResultSetHeader>(
     "UPDATE accounts SET token_hash = NULL WHERE user_id = ?", [uid]);
-  return r.affectedRows > 0;
+  return accountExists(uid); // ⚠ 同上
 }
 
 /** 同步写登录审计（revoke/ban/login/fail 等高危事件不能尽力而为）。 */

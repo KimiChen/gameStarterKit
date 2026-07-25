@@ -39,12 +39,12 @@
 |---|---|
 | 地址 | WebPlatform 服务（缺省端口 **2570**） |
 | 请求 | `Content-Type: application/json`，`{"uid": "u_123"}` |
-| 成功 | `200` `{"banned": true}` = 命中并已封；`{"banned": false}` = **无此账号**（uid 打错），此时⛔ 不必执行第 ② 步 |
+| 成功 | `200` `{"banned": true}` = **账号存在**且已封；`{"banned": false}` = **无此账号**（uid 打错），此时⛔ 不必执行第 ② 步。⚠ **重复封同一账号仍返回 `true`**（返回的是"账号是否存在"，不是"本次是否改动了行"）——失败后重试因此安全 |
 | 语义 | 一条 UPDATE：`status=1` + 作废当前 token。**幂等**：重复调用安全 |
 | 鉴权 | ⚠ **当前无鉴权**（待办 W1，见 §7）——上线前会加共享密钥头，届时本工具需同步带上 |
 
 **强制下线（不封号，账号仍可重新登录）**：`POST {WebPlatform}/revoke`，同形状，返回 `{"revoked": true|false}`；
-第 ② 步的 `reason` 相应传 `"revoked"`。
+第 ② 步的 `reason` 相应传 `"revoked"`。⚠ **返回字段名是 `revoked` 不是 `banned`**。
 
 ### 2.2 踢在线：`POST {node}/admin/kick`
 
@@ -93,12 +93,17 @@ LB 会把请求路由到**任意一个**节点。那个节点若恰好没有该�
 ```pseudo
 function banUser(uid, reason = "banned"):
     # ── ① 写权威（先做，且必须成功）────────────────────────────
-    r = POST webplatform + (reason == "banned" ? "/ban" : "/revoke"), {uid}
+    isBan = (reason == "banned")
+    r = POST webplatform + (isBan ? "/ban" : "/revoke"), {uid}
     if r.status != 200:            abort("权威写入失败，⛔ 不要继续踢")   # 反序会让玩家被踢后又正常登回来
-    if r.body.banned == false:     return "NO_SUCH_ACCOUNT"              # uid 打错，无需踢
+    exists = isBan ? r.body.banned : r.body.revoked     # ⚠ 两个端点字段名不同
+    if exists == false:            return "NO_SUCH_ACCOUNT"              # 账号不存在（uid 打错），无需踢
 
     # ── ② 踢在线（遍历全部在役节点，逐个确认）──────────────────
     nodes      = refreshNodeList()          # ⛔ 不走 LB，见 §3
+    if nodes is empty:                      # ⚠ 清单拿不到 ≠ 没有节点 —— ⛔ 绝不能当成"踢干净了"
+        audit(uid, reason, operator, "NODE_LIST_EMPTY")
+        alert("BAN_NODE_LIST_EMPTY", uid); abort("节点清单为空，无法确认送达")
     kickedAny  = false
     unreachable = []
 
@@ -116,10 +121,11 @@ function banUser(uid, reason = "banned"):
             else:                       log("节点已下线，其上连接已消失，跳过")
 
     # ── 结果判定 ──────────────────────────────────────────────
+    # ⚠ **先审计再返回**：最需要留痕的恰恰是失败/部分成功那次
+    audit(uid, reason, operator, {kickedAny, unreachable})
     if unreachable is not empty:
         alert("BAN_KICK_INCOMPLETE", uid, unreachable)   # 人工介入或稍后重跑
         return "PARTIAL"
-    audit(uid, reason, operator, kickedAny)              # 记录操作人/时间/是否有在线连接被踢
     return "OK"                                          # kickedAny=false 也算成功（玩家本来就不在线）
 ```
 
@@ -174,6 +180,8 @@ function banUser(uid, reason = "banned"):
 - [ ] 该玩家**重新登录**被拒；**重连**大厅/战斗房被拒
 - [ ] 封一个**离线**玩家：全部节点返回 `kicked:false`，工具判定**成功**（不报错）
 - [ ] 封一个**不存在的 uid**：`/ban` 返回 `banned:false`，工具跳过第 ② 步并给出明确提示
+- [ ] **重复封同一账号**：第二次仍返回 `banned:true`，工具照常执行第 ② 步（⛔ 不得因 false 跳过踢人）
+- [ ] **节点清单为空/拿不到**：工具**报错并告警**，⛔ 不得判定成功
 - [ ] **多节点**环境下，玩家连在节点 B：工具遍历 A/B/C，只有 B 返回 `kicked:true`，判定成功
 - [ ] 故意让一个在役节点不可达：工具**告警** `BAN_KICK_INCOMPLETE`，且不谎报成功
 - [ ] 密钥填错：收到 `401`，**不重试**、直接告警

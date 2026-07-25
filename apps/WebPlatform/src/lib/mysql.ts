@@ -18,7 +18,15 @@ export function useServerPool(getter: () => mysql.Pool): void { serverPoolGetter
 /** 惰性单例池（注入了 server 池则用之）。 */
 export function getPool(): mysql.Pool {
   if (serverPoolGetter) { return serverPoolGetter(); }
-  if (!pool) { pool = mysql.createPool(WEBPLATFORM_MYSQL_URL()); }
+  if (!pool) {
+    pool = mysql.createPool({
+      uri: WEBPLATFORM_MYSQL_URL(),
+      // ⚠ 与 apps/server 的池**保持一致**：mysql2 默认带 CLIENT_FOUND_ROWS（matched 语义），
+      // 会让同一份 lib 的 `affectedRows` 判断在「内嵌 vs 独立进程」下给出不同结果（曾致 ban 返回值分叉）。
+      // 显式关掉，恢复 changed 语义（09·DB2 幂等判断的前提）。
+      flags: ["-FOUND_ROWS"],
+    });
+  }
   return pool;
 }
 

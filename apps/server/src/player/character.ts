@@ -1,11 +1,18 @@
 /**
  * 建角（DUAL_MODE §2.6 / M12a）：玩家**首进某区**时创建该区角色。
  *
- * 两件事，⚠ **顺序固定**：
- *  ① `char_registry` 行（durable 区成员标记，F4「本区建过角没」判据 + ul 源）——**先写**；
- *  ② `s{sId}_user` per-zone 玩法档（core createUser，唯一合法建点 09·R2）——后建。
- * 于是「有档 ⇒ 必有 char 行」恒成立（无 false-negative 静默丢档，§2.6）；两步都幂等，
- * 中途崩溃下次进区自愈（char 行 ODKU no-op、createUser 'exists'）。
+ * 两件事，⚠ **顺序固定（M12d 评审后反转，见下）**：
+ *  ① `s{sId}_user` per-zone 玩法档（core createUser，唯一合法建点 09·R2）——**先建**；
+ *  ② `char_registry` 行（durable 区成员标记，F4「本区建过角没」判据 + ul 源）——后写。
+ *
+ * ⚠ **为什么是「档先、char 行后」**（原为反序，是个不可自愈的毒态）：
+ * F4 只在 **ABSENT**（热档与冷档全无）分支查 char_registry。
+ * - 旧序（char 行先）：两步之间崩溃 ⇒ 有 char 行、无档无冷档 ⇒ 下次 `ensureLive` 判 ABSENT + has=true
+ *   ⇒ **永久 `USER_DATA_LOST`**，永远走不到 createUser（注释却写着"下次自愈"，与状态机相反）。
+ * - 新序（档先）：崩溃 ⇒ 有档 ⇒ 状态是 LIVE、F4 根本不参与 ⇒ 下次进区补写 char 行，**自愈**。
+ *   且 F4 判据反而更硬：**有 char 行 ⇒ 曾建过档** ⇒ 现在全无 = 真丢失。
+ * 代价：崩溃窗内该区暂不出现在 `ul`（我的区），下次进区即补——非正确性问题。
+ * 两步都幂等（createUser 'exists'、char 行 ODKU no-op）。
  *
  * ⚠ 建号 vs 建角：登录建的是**基础前缀档**（sId=0，大混服/大厅基线，见 platform/inProcessLogin）；
  * 区服的 per-zone 角色档在此按 sId≥1 建。大混服（sId=0）此处 createUser 命中 'exists'（登录已建），
@@ -32,8 +39,8 @@ export async function ensureCharacter(uid: string, sId: number): Promise<void> {
   // ⚠ ensureLive 内部抢 lock:{uid}——本函数不得在 withUser 锁内调用（onJoin best-effort 调，安全）。
   await zoneCtx.run({ sId }, async () => {
     await ensureLive(uid);                        // 冻结→thaw 恢复；真新→ABSENT(F4 判)；热→无；真丢→抛
-    await account.character.register(uid, sId);   // §2.6：先写 char 行（幂等 ODKU）
     await createUser(uid, zoneCharInit());        // 幂等：热/解冻→'exists'，真新才建（⛔ 不覆盖真档）
+    await account.character.register(uid, sId);   // 后写 char 行（幂等 ODKU）——顺序见下方 ⚠
     await invalidateUserNegcache(uid);            // 建后失效负缓存（09·F4）
   });
 }
