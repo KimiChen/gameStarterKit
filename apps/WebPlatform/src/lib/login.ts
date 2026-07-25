@@ -36,10 +36,21 @@ async function createAccount(openid: string, unionid: string | null): Promise<Ac
       "INSERT INTO accounts (user_id, openid, unionid) VALUES (?,?,?)", [uid, openid, unionid]);
   } catch (e) {
     if ((e as { errno?: number }).errno === 1062) {
-      // 并发建号撞 UNIQUE(openid)：对方赢了，回读复用（发出去的 seq 号作废安全，只需单调）
-      const [rows] = await getPool().query<AccountRow[]>(
+      // 撞唯一键 → 回读复用（发出去的 seq 号作废安全，只需单调）。
+      // ⚠ accounts 有**两个**唯一键，两个都要兜，只兜 openid 会让另一个键的冲突落到下方 throw ⇒ 500：
+      //   `uk_openid`  —— 并发建号对方赢了（常态路径）；
+      //   `uk_unionid` —— 本人已有行但 openid 不同（appid/主体变更、存量导入、微信侧异常）。
+      //     unionid 在同一开放平台主体下标识**同一个人**，复用该行即正确的账号连续性。
+      //     ⛔ 不顺手改写该行 openid：静默重写身份列的风险高于多走一次本恢复路径。
+      // 顺序：openid 更精确故先查；两键皆未命中说明撞的不是这两个键 ⇒ 原样抛，不吞。
+      const [byOpenid] = await getPool().query<AccountRow[]>(
         "SELECT user_id, status FROM accounts WHERE openid = ?", [openid]);
-      if (rows.length > 0) { return rows[0]; }
+      if (byOpenid.length > 0) { return byOpenid[0]; }
+      if (unionid !== null) {
+        const [byUnionid] = await getPool().query<AccountRow[]>(
+          "SELECT user_id, status FROM accounts WHERE unionid = ?", [unionid]);
+        if (byUnionid.length > 0) { return byUnionid[0]; }
+      }
     }
     throw e;
   }
