@@ -53,13 +53,19 @@ export interface IForceLogoutPush {
 }
 
 /**
- * 踢人的 WebSocket 关闭码（4000–4999 自定义区）：**推送兜底**——连接已死推不到时，
- * 客户端仍能从 `onLeave(code)` 判出「这是被踢，不是掉线」并给出正确提示。
+ * 踢人的 WebSocket 关闭码：**推送兜底**——连接已死推不到时，客户端仍能从 `onLeave(code)`
+ * 判出「这是被踢，不是掉线」并给出正确提示。
+ *
+ * ⚠ **必须避开 Colyseus 保留码**（`@colyseus/shared-types` CloseCode）：
+ * `4000 CONSENTED / 4001 SERVER_SHUTDOWN / 4002 WITH_ERROR / 4003 FAILED_TO_RECONNECT / 4010 MAY_TRY_RECONNECT`，
+ * 以及其 ErrorCode 段 `4210–4217`。曾误用 4001–4003 ⇒ **每次优雅重启(4001)都会让全服玩家看到「账号已被封禁」
+ * 并被清 token**、重连耗尽(4003)误判「强制下线」、解码失败(4002)误判「顶号」。
+ * 故取 **49xx**（远离全部保留段）。`kick-close-code.test.ts` 机检不相交。
  */
 export const KICK_CLOSE_CODE: Record<ForceLogoutReasonType, number> = {
-    [ForceLogoutReason.Banned]: 4001,
-    [ForceLogoutReason.Replaced]: 4002,
-    [ForceLogoutReason.Revoked]: 4003,
+    [ForceLogoutReason.Banned]: 4901,
+    [ForceLogoutReason.Replaced]: 4902,
+    [ForceLogoutReason.Revoked]: 4903,
 };
 
 /** 关闭码 → 原因（客户端 onLeave 兜底用；非踢人码返回 null = 普通掉线）。 */

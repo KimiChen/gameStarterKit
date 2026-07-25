@@ -73,7 +73,7 @@ export const kGuildEvtLog = (gid: number) => `${P()}guild:evt:log:{g${gid}}`;
 
 // ── durable 实例 · 全局键（G：不带区前缀，见文件头分类） ────────────────────────
 
-/** 会话 HASH {connId, gwNode, tokenEpoch, loginTs}，TTL 3d。
+/** 组侧会话缓存 HASH {tokenHash, loginTs, connId, gwNode}，TTL 3d。`tokenHash` 是快路径唯一校验位 + 顶号判据（09·G7c）。
  *  ⚠ **全局键**：登录时（无区上下文）写、每 RPC（有区上下文）读，若带区前缀两者不一致 → 鉴权崩（§3.5 分类硬约束）。 */
 export const kSess = (uid: string) => `${G}sess:{${uid}}`;
 /** 幂等占位 · 通用作用域（非 uid，07 `idem:{scope}:{key}`）。全局。 */
@@ -84,8 +84,9 @@ export const kRl = (scope: string) => `${G}rl:${scope}`;
 export const K_STREAM_MATCH = `${G}stream:match`;
 /** 邮件唤醒 STREAM（10·M5，跨节点消费）。可靠流：⛔ 禁 MAXLEN，XTRIM MINID 按已投递位点裁（09·K6）。 */
 export const K_STREAM_MAILWAKE = `${G}stream:mailwake`;
-/** 控制总线踢人流（DUAL_MODE §2.3 / M12d）：账号服务自持 coord Redis 上，广播 `{uid}` 触发各节点自筛踢在线连接。
- *  **best-effort、无 ack**（权威撤销在 `accounts.status/token_hash`；保证送达的踢走 GM `/admin/kick`）。⛔ 禁 MAXLEN，走 XTRIM MINID。 */
+/** 踢人流（DUAL_MODE §2.3 / M12d）：coord Redis 上广播 `{uid, reason[, exceptHash]}` 触发各节点自筛踢在线连接。
+ *  `exceptHash` = 顶号判别位（跳过持新登录态的连接，⛔ 防迟到投递自踢）。
+ *  **best-effort、无 ack**（权威撤销在 `accounts.status/token_hash`；⛔ 漏踢无自动收敛，送达保证走 GM `/admin/kick`）。⛔ 禁 MAXLEN，走 XTRIM MINID。 */
 export const K_STREAM_KICK = `${G}stream:kick`;
 
 /** 活跃索引 ZSET（member=uid, score=lastActiveMs）。hash-tag 是 {bucket} 不是 {uid}。

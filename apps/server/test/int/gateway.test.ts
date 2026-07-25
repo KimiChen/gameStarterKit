@@ -237,6 +237,19 @@ test("GM SOP e2e：POST /admin/kick 踢掉在连用户（ack kicked:true + onLea
   assert.equal((await res.json() as { kicked: boolean }).kicked, true, "ack：本节点命中并踢掉（GM 据此确认送达）");
   assert.equal(await Promise.race([left, sleep(5000).then(() => -1)]), KICK_CLOSE_CODE.banned, "连接被强制下线（语义化关闭码）");
 
+  // reason 参数：revoked → 关闭码/文案随之变（GM 强制下线与封号可区分）
+  const u2 = await makeUser("gmkick2");
+  const room2 = await joinLobby(u2.token);
+  await sleep(100);
+  const left2 = new Promise<number>((resolve) => { room2.onLeave((code: number) => resolve(code)); });
+  const res2 = await fetch("http://127.0.0.1:2568/admin/kick", {
+    method: "POST", headers: { "content-type": "application/json", "x-admin-secret": secret },
+    body: JSON.stringify({ uid: u2.uid, reason: "revoked" }),
+  });
+  assert.equal((await res2.json() as { kicked: boolean }).kicked, true);
+  assert.equal(await Promise.race([left2, sleep(5000).then(() => -1)]), KICK_CLOSE_CODE.revoked,
+    "reason=revoked → 关闭码 revoked（客户端弹「强制下线」而非「封禁」）");
+
   // 幂等：已下线再踢 → kicked:false（GM 遍历节点时的正常返回，非错误）
   await sleep(100);
   const again = await kickReq({ "x-admin-secret": secret });

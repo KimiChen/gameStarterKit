@@ -28,8 +28,9 @@ export default createEndpoint("/account/wx-login", {
     return await wxLogin({ code: ctx.body.code, ip, deviceId: ctx.body.deviceId });
   } catch (e) {
     const code = toErrCode(e);
+    // ⛔ 无 AUTH_EPOCH_STALE 分支：M12d 砍 epoch fence 后服务端不再产出该码（errors.ts 已无映射）
     const http = code === "ACCOUNT_BANNED" ? 403 : code === "RATE_LIMITED" ? 429
-      : code === "AUTH_REQUIRED" || code === "AUTH_EPOCH_STALE" ? 401 : 500;
+      : code === "AUTH_REQUIRED" ? 401 : 500;
     throw ctx.error(http, { error: code });
   }
 });

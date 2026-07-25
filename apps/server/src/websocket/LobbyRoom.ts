@@ -19,6 +19,7 @@ import { loadFields } from "../core/userRecord";
 import { ensureCharacter } from "../player/character";
 import { dispatchRpc, rpcEnvelopeSchema, type RpcCtx, type RpcReply } from "./dispatcher";
 import { registerOnline, setOnlineGuild, startMailWakeLoop, unregisterOnline, type PushSink } from "./push";
+import { tokenHashOf } from "../core/auth/session";
 import { registerAllRoutes } from "./loader";
 
 type LobbyClient = Client<{
@@ -82,20 +83,20 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
     }),
   };
 
-  // 每连接的推送 sink（sessionId→sink）：onLeave 必须按 sink 条件注销——客户端断线重连时,
-  // 旧连接的 onLeave 可能晚于新连接的 onJoin 到达,无条件删 uid 槽位会误删新连接的注册
-  private sinks = new Map<string, PushSink>();
-
   onJoin(client: LobbyClient): void {
     if (!client.auth) { return; }
     const uid = client.auth.userId;
     const sId = client.auth.sId;
     const sink: PushSink = (type, data) => client.send(LOBBY_MSG_PUSH, { type, data });
-    this.sinks.set(client.sessionId, sink);
-    // 强制下线句柄（M12d §2.3）：封号/顶号/强制下线时，push.kickUser 先推 auth.forceLogout{reason}、
-    // 再用**语义化关闭码**关连接（KICK_CLOSE_CODE，客户端 onLeave 兜底判因）。
+    // 按 sessionId 分槽注册（同 uid 可有多条连接）；tokenHash 是顶号判别位（踢时排除新登录态那条）。
+    // 强制下线句柄（M12d §2.3）：kickUser 先推 auth.forceLogout{reason}、再用**语义化关闭码**关连接
+    // （KICK_CLOSE_CODE，客户端 onLeave 兜底判因）。
     // ⛔ 无 allowReconnection：重连即走全新 onAuth，被撤销 token 在此被拒（不构成重连绕过）。
-    registerOnline(uid, sink, (closeCode) => { void client.leave(closeCode); });
+    registerOnline(uid, client.sessionId, {
+      sink,
+      kick: (closeCode) => { void client.leave(closeCode); },
+      tokenHash: tokenHashOf(client.auth.token),
+    });
     // 建角（§2.6 / M12a）：玩家进本区 → 确保该区角色存在（char_registry 行 + s{sId}_user），幂等自愈；
     // 再挂工会在线索引（loadFields 读 s{sId}_user 的 guildId，per-zone → zoneCtx 硬化）。
     // 全程 best-effort：失败只影响工会广播/首帧，不阻塞连接（重连/换会修复）。
@@ -106,8 +107,8 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
   }
 
   onLeave(client: LobbyClient): void {
-    const sink = this.sinks.get(client.sessionId);
-    this.sinks.delete(client.sessionId);
-    if (client.auth) { unregisterOnline(client.auth.userId, sink); }
+    // 按 sessionId 注销：⛔ 不能按 uid 整槽删——同 uid 的其它连接必须保留可踢/可推
+    // （否则 /admin/kick 回 kicked:false 假阴性，破坏 09·G7b 的 ack 语义）。
+    if (client.auth) { unregisterOnline(client.auth.userId, client.sessionId); }
   }
 }

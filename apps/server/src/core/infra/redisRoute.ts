@@ -93,7 +93,7 @@ export function cacheClient(): Redis {
 }
 
 /** 控制总线 Redis（账号服务自持撤销流，DUAL_MODE §2.3）：dev 缺省复用 durable 实例（同 URL → clientOf 复用同连接），
- *  prod-split 指向物理隔离 HA。只承载 stream:revoke（幂等 epoch），⛔ 非路由键（直连单实例）。 */
+ *  prod-split 指向物理隔离 HA。只承载 `stream:kick`（踢人广播，事件仅 {uid,reason[,exceptHash]}、⛔ 无 epoch 无 ack），⛔ 非路由键（直连单实例）。 */
 export function coordClient(): Redis {
   return clientOf(REDIS_COORD_URL());
 }

@@ -54,7 +54,7 @@ npm --workspace @game/server run test:int        # 集成测试（真实 Redis+M
 
 ---
 
-## 2. 目录导览（`src/` 根 = 5 目录 + 入口两文件，每个目录有 README）
+## 2. 目录导览（`src/` 根 = 6 目录 + 入口两文件）
 
 **端点层按传输方式分**：有 Schema 状态同步的实时玩法 → `rooms/`；无状态单次请求-响应 →
 `websocket/`（两者都走 ws，按「有无状态同步」分，不按协议分）。
@@ -65,6 +65,7 @@ npm --workspace @game/server run test:int        # 集成测试（真实 Redis+M
 | `websocket/` | ws-RPC：LobbyRoom（房间 `lobby`）+ dispatcher 中间件链 + 每接口一文件端点 + 集合广播/推送 |
 | `http/` | 真实 HTTP 端点（仅 auth/支付/utility）：`<域>/<接口>.ts` + `index.ts` 静态 spread 装配 |
 | `player/` | 玩家数据日常主战场：`userStore`（readUser/readUserReadonly；加档字段起点） |
+| `platform/` | **账号/门户 plane 接缝**（`AccountClient`）：in-process 直调 `@game/webplatform/lib`、split 走 HTTP。⚠ **本目录 + `core/infra/mysql.ts` 是全 src 唯一允许直调 lib 处**（split 下别处直调 = 打错库，机检 `lib-import-ban.test.ts`；见 [WEBPLATFORM.md](WEBPLATFORM.md)） |
 | `core/` | 服务端底座（横切原语 + infra/auth/economy/archive/match/guild/compute 子模块） |
 | `index.ts` | 进程入口：启动期先 `registerAllRoutes()` 契约校验 + `startInfraMonitors()` 再 `listen` |
 | `app.config.ts` | `defineServer({ rooms, routes, transport, express })` |
@@ -499,7 +500,7 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 | `active:lru:{bucket}` | ZSET | 无 | 活跃索引（找冷用户，bucket 非 uid hash-tag） |
 | `stream:match` | STREAM | 无（XTRIM MINID，K6） | 结算证据链 |
 | mail 唤醒流 | STREAM | 无（XTRIM MINID） | 邮件实时唤醒（权威在 MySQL mail 表，A6） |
-| `stream:kick` | STREAM | 无（XTRIM MINID，K6） | **控制总线踢人流**（M12d §2.3；跑在 coord 实例 `REDIS_COORD_URL`，dev 复用 durable）。广播 `{uid}` 触发各节点自筛踢在线连接；**best-effort**（权威在 accounts，漏踢由 verifiedAt 兜底） |
+| `stream:kick` | STREAM | 无（XTRIM MINID，K6） | **踢人流**（M12d §2.3；coord 实例 `REDIS_COORD_URL`，dev 复用 durable）。广播 `{uid, reason[, exceptHash]}` 触发各节点自筛踢；**best-effort、无 ack**（权威在 `accounts.status/token_hash`；⛔ **漏踢无自动收敛**，送达保证走 GM `/admin/kick`，09·G7b） |
 
 ### Redis key（cache 实例：allkeys-lru，物理独立）
 
@@ -565,6 +566,8 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 | `WX_APPID / WX_SECRET` | env | 微信凭证（KMS 注入，不进代码库） |
 | `REDIS_COORD_URL` | = `REDIS_DURABLE_URL` | 控制总线 coord Redis（撤销流；dev 复用 durable、prod 物理隔离 HA。M12d §2.3） |
 | `KICK_STREAM_TRIM_MS` | 24h | 踢人流 MINID 裁剪窗（踢是即时动作，老事件无价值，M12d） |
+| `ACCOUNT_MODE` | `in-process` | 账号平面实现选择（`in-process` 内嵌 lib / `http` 走 WebPlatform）。⚠ `accountClient` **模块加载期一次性求值**，⛔ 不支持运行期切换。见 [WEBPLATFORM.md](WEBPLATFORM.md) |
+| `WEBPLATFORM_BASE_URL` | `http://localhost:2570` | `ACCOUNT_MODE=http` 时 WebPlatform 地址（httpAccount 每请求现读） |
 | `ADMIN_API_SECRET` | 空（=端点关闭） | GM 内部端点 `/admin/kick` 共享密钥（`x-admin-secret`）。**未配置即 fail-closed**；封号 SOP 第二步依赖它 |
 
 ---

@@ -8,7 +8,10 @@
  */
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
-import { GuildRpc, LOBBY_MSG_RPC, PROTOCOL_VERSION, RoomName, UserRpc } from "../src/shared/index";
+import {
+  ForceLogoutReason, GuildRpc, KICK_CLOSE_CODE, LOBBY_MSG_PUSH, LOBBY_MSG_RPC,
+  LobbyPush, PROTOCOL_VERSION, RoomName, UserRpc,
+} from "../src/shared/index";
 import { RpcError, WebSocketClient } from "../src/net/WebSocketClient";
 
 interface IRpcReplyLite { id: string; ok: boolean; data?: unknown; err?: { code: string; msg: string } }
@@ -17,19 +20,20 @@ interface IRpcReplyLite { id: string; ok: boolean; data?: unknown; err?: { code:
 function makeFakeRoom() {
   const sent: { type: string; data: { id: string; type: string; payload?: any } }[] = [];
   const handlers = new Map<string, (msg: any) => void>();
-  const cbs: { drop?: () => void; leave?: () => void } = {};
+  const cbs: { drop?: () => void; leave?: (code?: number) => void } = {};
   const room = {
     sessionId: "s_fake",
     reconnection: { enabled: true },
     send(type: string, data: any) { sent.push({ type, data }); },
     onMessage(type: string, cb: (msg: any) => void) { handlers.set(type, cb); return () => { handlers.delete(type); }; },
     onDrop(cb: () => void) { cbs.drop = cb; return () => {}; },
-    onLeave(cb: () => void) { cbs.leave = cb; return () => {}; },
+    onLeave(cb: (code?: number) => void) { cbs.leave = cb; return () => {}; },
     leave: async () => true,
     removeAllListeners() { /* noop */ },
   };
   const reply = (r: IRpcReplyLite) => handlers.get(LOBBY_MSG_RPC)?.(r);
-  return { room, sent, reply, cbs };
+  const push = (type: string, data: unknown) => handlers.get(LOBBY_MSG_PUSH)?.({ type, data });
+  return { room, sent, reply, push, cbs };
 }
 
 /** 假 Colyseus.Client + 假房间装进单例，走真 join/doJoin 路径装好全部消息处理器。 */
@@ -139,4 +143,60 @@ test("rpcIdem：非 BUSY 错误立即抛且回填 clientReqId，不重试", asyn
   assert.equal(e.clientReqId, "cr-x", "跨调用重试必须回传同一个 clientReqId（换新 id = 新操作）");
   assert.equal(fake.sent.length, 1, "非 BUSY 不重试");
   await c.leave();
+});
+
+// ── 强制下线（M12d-g）：推送判因 + 关闭码兜底 ───────────────────────────────
+
+/** 订阅 session 的鉴权失效广播，返回收集器（用后即解绑）。 */
+async function collectAuthInvalid(): Promise<{ got: string[]; stop: () => void }> {
+  const { onAuthInvalid, setSession } = await import("../src/net/session");
+  setSession({ userId: "u_1", token: "token-1", isNew: false }); // 必须已登录，否则迟到上报被幂等吞掉
+  const got: string[] = [];
+  const stop = onAuthInvalid((r) => { got.push(r); });
+  return { got, stop };
+}
+
+test("强制下线·推送路径：收到 auth.forceLogout{reason} → 上报对应 FORCE_* 原因", async () => {
+  const fake = makeFakeRoom();
+  await joinWithFakeRoom(fake);
+  const { got, stop } = await collectAuthInvalid();
+  try {
+    fake.push(LobbyPush.ForceLogout, { reason: ForceLogoutReason.Replaced });
+    assert.deepEqual(got, ["FORCE_REPLACED"], "顶号 → FORCE_REPLACED（UI 弹「账号在其他设备登录」）");
+  } finally { stop(); await WebSocketClient.inst.leave().catch(() => {}); }
+});
+
+test("强制下线·关闭码兜底：推送没赶上时 onLeave(code) 仍判出被踢（⛔ 不当成掉线）", async () => {
+  const fake = makeFakeRoom();
+  await joinWithFakeRoom(fake);
+  const { got, stop } = await collectAuthInvalid();
+  try {
+    fake.cbs.leave?.(KICK_CLOSE_CODE[ForceLogoutReason.Banned]); // 只有关闭码、无推送
+    assert.deepEqual(got, ["FORCE_BANNED"], "关闭码兜底判因");
+  } finally { stop(); }
+});
+
+test("⛔ 普通掉线不误判被踢：非踢人关闭码 → connLost（登录态保留）", async () => {
+  const fake = makeFakeRoom();
+  await joinWithFakeRoom(fake);
+  const { onConnLost } = await import("../src/net/session");
+  const { got, stop } = await collectAuthInvalid();
+  let connLost = 0;
+  const stopLost = onConnLost(() => { connLost++; });
+  try {
+    fake.cbs.leave?.(1006); // ABNORMAL_CLOSURE：普通掉线
+    assert.deepEqual(got, [], "⛔ 不报鉴权失效");
+    assert.equal(connLost, 1, "走 connLost（UI 提示重连，登录态不清）");
+  } finally { stop(); stopLost(); }
+});
+
+test("推送先到 + onLeave 随后：只弹一次（notifyAuthInvalid 幂等，⛔ 不重复弹窗）", async () => {
+  const fake = makeFakeRoom();
+  await joinWithFakeRoom(fake);
+  const { got, stop } = await collectAuthInvalid();
+  try {
+    fake.push(LobbyPush.ForceLogout, { reason: ForceLogoutReason.Banned }); // 先推（清会话）
+    fake.cbs.leave?.(KICK_CLOSE_CODE[ForceLogoutReason.Banned]);            // 再关（迟到）
+    assert.deepEqual(got, ["FORCE_BANNED"], "只上报一次");
+  } finally { stop(); }
 });

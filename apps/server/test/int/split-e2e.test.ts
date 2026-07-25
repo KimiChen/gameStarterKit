@@ -114,3 +114,13 @@ test("split 封号全链：banUser → 走接缝远程写权威（⛔ 非本地�
     colyseus.sdk.joinOrCreate(RoomName.Lobby, { v: PROTOCOL_VERSION }), // 同 token 重连
     "封后重连被 onAuth 远程权威拒");
 });
+
+test("split 门控：游戏服自己的登录端点 404（⛔ 防往组库建号 + 签发 WebPlatform 不认的 token）", async () => {
+  for (const path of [ApiPath.DevLogin, ApiPath.WxLogin]) {
+    const res = await fetch(`http://127.0.0.1:2568${path}`, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ devKey: "x", code: "x" }),
+    });
+    assert.equal(res.status, 404, `${path} 在 ACCOUNT_MODE=http 下必须关闭（登录只在 WebPlatform）`);
+  }
+});

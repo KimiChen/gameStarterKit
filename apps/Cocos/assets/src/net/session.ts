@@ -2,11 +2,14 @@
  * 会话状态（纯 TS 无头层）：token/userId 生命周期 + 鉴权失效/连接死亡事件枢纽。
  *
  * 三个真实场景的接线中枢（D1'）：
- *  - **踢线**：任何通道收到 AUTH_EPOCH_STALE / AUTH_REQUIRED / ACCOUNT_BANNED
- *    （tokenEpoch 被 bump = 账号在别处登录/被封）→ notifyAuthInvalid → UI 清态回登录页；
+ *  - **鉴权失效**：RPC 回包 AUTH_REQUIRED / ACCOUNT_BANNED（权威 = accounts.status + token_hash）
+ *    → notifyAuthInvalid → UI 清态回登录页；
+ *  - **强制下线**：服务端主动踢（封禁/顶号/强制下线）——先推 `auth.forceLogout{reason}`，
+ *    连接已死时由 `onLeave(code)` 按 KICK_CLOSE_CODE 兜底判因（M12d §2.3）；
  *  - **掉线**：大厅房 SDK 自动重连；重连最终失败（onLeave）→ notifyConnLost → UI 提示重登；
- *  - **换号**：logout() 清本地会话（token/userId）——房间离开由编排层（view/pages）负责，
- *    服务端旧 sess:{uid} 靠 TTL 自然过期（不 bump epoch：不踢同账号其他设备）。
+ *  - **换号/顶号**：logout() 清本地会话（token/userId）——房间离开由编排层（view/pages）负责。
+ *    ⚠ **单端语义**（09·G7c）：换端登录即顶号——服务端见组 sess 的 tokenHash 变化就踢旧连接
+ *    （reason=replaced）；⛔ 不是"互不影响"。
  *
  * ⛔ 本模块不 import net 客户端类（WebSocketClient/RoomClient 反向调用本模块，防循环依赖）。
  */

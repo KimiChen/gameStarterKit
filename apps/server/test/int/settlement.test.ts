@@ -189,13 +189,15 @@ test("GameRoom 端到端：开局生成 matchId（09·K4）→ 收局 XADD 证�
   const colyseus: ColyseusTestServer = await boot((await import("../../src/app.config")).server);
   const uids: string[] = [];
   try {
-    // 造框架账号会话（绕过 wxLogin——微信侧 M3 已单独测过；GameRoom.onAuth 走 verifyBearer 快路径，
-    // 快路径只查 sess:{uid}，无需 accounts 行）
+    // 造框架账号会话（绕过 wxLogin——微信侧 M3 已单独测过）。⚠ **必须建 accounts 行**：
+    // GameRoom.onAuth 已改 strict（回权威校验 token_hash/status，M12d 评审：快路径准入会让被封账号
+    // 不断开新战斗房打无限局）——无 accounts 行则 issueToken 写不进权威、strict 校验必拒。
     const { issueSession } = await import("./helpers");
     const { createUser } = await import("../../src/core/userRecord");
     const mk = async (name: string) => {
       const uid = testUid(name).slice(0, 32);
       uids.push(uid);
+      await getPool().execute("INSERT INTO accounts (user_id, openid) VALUES (?, ?)", [uid, `op_${uid}`]);
       await createUser(uid);
       const { token } = await issueSession(uid, null);
       return { uid, token };
@@ -256,6 +258,7 @@ test("GameRoom 端到端：开局生成 matchId（09·K4）→ 收局 XADD 证�
   } finally {
     await colyseus.shutdown();
     for (const u of uids) {
+      await getPool().execute("DELETE FROM accounts WHERE user_id = ?", [u]);
       await cleanupUser(u);
       await clientFor(u).unlink(kSess(u));
       const bkt = activeLruBucketOf(u);

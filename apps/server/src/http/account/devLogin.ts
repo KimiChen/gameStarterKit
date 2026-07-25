@@ -2,7 +2,7 @@
  * POST /account/dev-login —— 本地/CI 登录入口（wx.login 接入前的严谨替身）。
  *
  * 只绕过 code2session 一跳：devKey 映射 openid（`dev_<devKey>`），其余**全走真实链路**
- * （限流 → 建号 accounts+MySQL → 不透明 token → sess:{uid} → tokenEpoch 踢线 → 审计）。
+ * （限流 → 建号 accounts → 不透明 token → 写组 sess:{uid}（见 tokenHash 变化即顶号踢旧连接，09·G7c）→ 审计）。
  * 受 AUTH_DEV_ENABLED 控制（默认开发开、生产关；生产显式开启 = config 加载期拒绝启动）。
  * 出参与 wx-login 同契约（shared ILoginRes：userId/token/isNew，09·G8 禁含 openid）。
  */

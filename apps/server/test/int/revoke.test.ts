@@ -9,7 +9,7 @@ import "./env-setup"; // ⚠ 必须第一个 import
  */
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
-import { verifySession, writeGroupSess } from "../../src/core/auth/session";
+import { tokenHashOf, verifySession, writeGroupSess } from "../../src/core/auth/session";
 import { banUser, revokeSessions } from "../../src/core/auth/ban";
 import { verifySessionStrict } from "../../src/platform/inProcessAccount";
 
@@ -63,9 +63,9 @@ test("banUser 写权威：status=1 + token_hash=NULL → 新建连接/重登被�
   const sink: PushSink = (type, data) => {
     if (type === LobbyPush.ForceLogout) { events.push(`push:${(data as { reason: string }).reason}`); }
   };
-  registerOnline(uid, sink, (code) => { events.push(`close:${code}`); }); // 模拟本节点在线连接
+  registerOnline(uid, "s1", { sink, kick: (code) => { events.push(`close:${code}`); }, tokenHash: tokenHashOf(token) }); // 模拟本节点在线连接
   await banUser(uid, "test");
-  unregisterOnline(uid, sink);
+  unregisterOnline(uid, "s1");
 
   const [rows] = await getPool().query<RowDataPacket[]>(
     "SELECT status, token_hash FROM accounts WHERE user_id = ?", [uid]);
@@ -73,7 +73,7 @@ test("banUser 写权威：status=1 + token_hash=NULL → 新建连接/重登被�
   assert.equal(rows[0].token_hash, null, "权威 token_hash=NULL（存量 token 作废）");
   // ⚠ 顺序固定：先推 reason 再关连接（客户端据此弹「账号已被封禁」，而非只看到掉线）
   assert.deepEqual(events, [`push:${ForceLogoutReason.Banned}`, `close:${KICK_CLOSE_CODE.banned}`],
-    "先推 forceLogout{banned} 再用语义化关闭码 4001 关连接");
+    "先推 forceLogout{banned} 再用语义化关闭码关连接");
 
   await assert.rejects(verifySessionStrict(uid, token), AuthRequiredError); // hash=NULL 先命中 → mismatch
   assert.equal(await clientFor(uid).exists(kSess(uid)), 1, "⛔ 不删 sess（TTL 自然过期；在线失效靠踢，§2.3）");
@@ -86,7 +86,7 @@ test("控制总线：XADD stream:kick → 消费者踢本节点在线连接（�
   const sink: PushSink = (type, data) => {
     if (type === LobbyPush.ForceLogout) { gotReason = (data as { reason: string }).reason; }
   };
-  registerOnline(uid, sink, () => { kicked++; });
+  registerOnline(uid, "s1", { sink: sink, kick: () => { kicked++; }, tokenHash: "h-old" });
   startKickConsumer();
   try {
     // "$" 竞态确定化：重试 XADD 直到消费者踢到（首个阻塞 XREAD 建立前的 XADD 会被漏；踢幂等，重发无害）
@@ -101,7 +101,7 @@ test("控制总线：XADD stream:kick → 消费者踢本节点在线连接（�
     assert.equal(gotReason, ForceLogoutReason.Replaced, "reason 经控制总线透传，文案不丢");
   } finally {
     stopKickConsumer();
-    unregisterOnline(uid, sink);
+    unregisterOnline(uid, "s1");
   }
 });
 
@@ -143,14 +143,14 @@ test("顶号（单端语义）：再次登录换发 token → 覆写组 sess + �
   const sink: PushSink = (type, data) => {
     if (type === LobbyPush.ForceLogout) { events.push(`push:${(data as { reason: string }).reason}`); }
   };
-  registerOnline(uid, sink, (code) => { events.push(`close:${code}`); }); // 设备 A 在线
+  registerOnline(uid, "sA", { sink, kick: (code) => { events.push(`close:${code}`); }, tokenHash: tokenHashOf(tokenA) }); // 设备 A 在线
 
   // 设备 B 登录（换发 token → writeGroupSess 覆写；判据 = 组 sess 原有不同的 tokenHash）
   const { token: tokenB } = await issueSession(uid, null);
-  unregisterOnline(uid, sink);
+  unregisterOnline(uid, "sA");
 
   assert.deepEqual(events, [`push:${ForceLogoutReason.Replaced}`, `close:${KICK_CLOSE_CODE.replaced}`],
-    "顶号：先推 forceLogout{replaced} 再关（4002），客户端弹「账号在其他设备登录」");
+    "顶号：先推 forceLogout{replaced} 再关（语义化关闭码），客户端弹「账号在其他设备登录」");
   await assert.rejects(verifySession(uid, tokenA), AuthRequiredError, "A 的旧 token 快路径即失效");
   await verifySession(uid, tokenB); // B 正常
 });
@@ -159,8 +159,62 @@ test("⛔ 断线重连不误判顶号：同 token 重复 writeGroupSess（hash �
   const { uid, token } = await makeUser("rv-reconn");
   let kicked = 0;
   const sink: PushSink = () => {};
-  registerOnline(uid, sink, () => { kicked++; });
+  registerOnline(uid, "s1", { sink: sink, kick: () => { kicked++; }, tokenHash: "h-old" });
   await writeGroupSess(uid, token); // 模拟 split onAuth 懒填/重连复用同一 token
-  unregisterOnline(uid, sink);
+  unregisterOnline(uid, "s1");
   assert.equal(kicked, 0, "hash 相同 = 同一登录态 → ⛔ 不踢（顶号判据精确到「换了登录态」）");
+});
+
+test("多连接：同 uid 两条连接 —— 踢会踢全部；较新连接先离开⛔不抹掉较老连接（否则 /admin/kick 假阴性）", async () => {
+  const uid = testUid("rv-multi").slice(0, 32);
+  let kickedA = 0, kickedB = 0;
+  const noop: PushSink = () => {};
+  registerOnline(uid, "sA", { sink: noop, kick: () => { kickedA++; }, tokenHash: "h" });
+  registerOnline(uid, "sB", { sink: noop, kick: () => { kickedB++; }, tokenHash: "h" });
+  // 较新的 B 先离开：⛔ 不得把仍存活的 A 一起抹掉
+  unregisterOnline(uid, "sB");
+  assert.equal(kickUser(uid, ForceLogoutReason.Banned), true, "A 仍可踢（旧实现这里会 false = GM ack 假阴性）");
+  assert.equal(kickedA, 1);
+  assert.equal(kickedB, 0, "已离开的 B 不再被踢");
+  // 两条都在时：踢全部
+  registerOnline(uid, "sA", { sink: noop, kick: () => { kickedA++; }, tokenHash: "h" });
+  registerOnline(uid, "sB", { sink: noop, kick: () => { kickedB++; }, tokenHash: "h" });
+  kickUser(uid, ForceLogoutReason.Banned);
+  assert.equal(kickedA, 2); assert.equal(kickedB, 1, "同 uid 全部连接都被踢");
+  unregisterOnline(uid, "sA"); unregisterOnline(uid, "sB");
+});
+
+test("⛔ 顶号不自踢：exceptTokenHash 跳过持新登录态的连接（防迟到广播踢掉刚登录的）", async () => {
+  const uid = testUid("rv-noself").slice(0, 32);
+  let oldKicked = 0, newKicked = 0;
+  const noop: PushSink = () => {};
+  registerOnline(uid, "sOld", { sink: noop, kick: () => { oldKicked++; }, tokenHash: "hash-OLD" });
+  registerOnline(uid, "sNew", { sink: noop, kick: () => { newKicked++; }, tokenHash: "hash-NEW" });
+  // 模拟本节点消费者读回自己发的顶号事件（迟到投递，此时新连接已注册）
+  kickLocal(uid, ForceLogoutReason.Replaced, "hash-NEW");
+  assert.equal(oldKicked, 1, "旧登录态被踢");
+  assert.equal(newKicked, 0, "⛔ 新登录态不被自踢（判别位生效）");
+  unregisterOnline(uid, "sOld"); unregisterOnline(uid, "sNew");
+});
+
+test("kickBus reason 容错：缺失/非法值一律兜底按封号（⛔ 不裸 cast 未校验值）", async () => {
+  const uid = testUid("rv-badreason").slice(0, 32);
+  const seen: string[] = [];
+  const sink: PushSink = (type, data) => {
+    if (type === LobbyPush.ForceLogout) { seen.push((data as { reason: string }).reason); }
+  };
+  registerOnline(uid, "s1", { sink, kick: () => {}, tokenHash: "h" });
+  startKickConsumer();
+  try {
+    const deadline = Date.now() + 5000;
+    while (seen.length === 0) {
+      if (Date.now() > deadline) { throw new Error("超时"); }
+      await coordClient().xadd(K_STREAM_KICK, "*", "uid", uid, "reason", "totally-bogus"); // 非法值
+      await sleep(100);
+    }
+    assert.equal(seen[0], ForceLogoutReason.Banned, "非法 reason → 兜底 banned（⛔ 不把脏值当文案下发）");
+  } finally {
+    stopKickConsumer();
+    unregisterOnline(uid, "s1");
+  }
 });

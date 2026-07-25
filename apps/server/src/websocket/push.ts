@@ -20,43 +20,68 @@ import { fieldOf, startStreamConsumer, type StreamConsumer } from "../core/infra
 
 export interface PushSink { (type: string, data: unknown): void }
 
-// 本节点在线用户注册表（uid → 连接推送函数；LobbyRoom onJoin/onLeave 维护）
-const online = new Map<string, PushSink>();
-// 本节点在线连接的强制下线句柄（uid → kick(closeCode)）：撤销自筛踢用（M12d §2.3）。与 sink 同 uid 配对，
-// 由 registerOnline 同写、unregisterOnline 同删（sink 条件删已防 reconnect 竞态误删新连接）。
-const kickers = new Map<string, (closeCode: number) => void>();
+/** 本节点的一条在线连接。`tokenHash` 是**顶号判别位**：踢时可排除「持新登录态的连接」。 */
+interface OnlineConn { sink: PushSink; kick: (closeCode: number) => void; tokenHash: string }
 
-export function registerOnline(uid: string, sink: PushSink, kick?: (closeCode: number) => void): void {
-  online.set(uid, sink);
-  if (kick) { kickers.set(uid, kick); } else { kickers.delete(uid); }
+/**
+ * 本节点在线注册表：**uid → sessionId → 连接**（LobbyRoom onJoin/onLeave 维护）。
+ *
+ * ⚠ 必须按 sessionId 分槽、⛔ 不能一个 uid 只存一条：同一 token 可开多条大厅连接（onAuth 无单连接闸），
+ * 旧实现里「较新连接先离开」会把**仍存活的较老连接**一起抹掉 —— 那条连接从此对 kick/push 完全不可见，
+ * 而 `/admin/kick` 会回 `kicked:false`，让 GM 的 ack（09·G7b）产生**假阴性**（以为踢干净了，其实还在线）。
+ */
+const online = new Map<string, Map<string, OnlineConn>>();
+
+export function registerOnline(uid: string, sessionId: string, conn: OnlineConn): void {
+  let m = online.get(uid);
+  if (!m) { m = new Map(); online.set(uid, m); }
+  m.set(sessionId, conn);
 }
-export function unregisterOnline(uid: string, sink?: PushSink): void {
-  if (!sink || online.get(uid) === sink) {
+export function unregisterOnline(uid: string, sessionId: string): void {
+  const m = online.get(uid);
+  if (!m || !m.delete(sessionId)) { return; }
+  if (m.size === 0) {
     online.delete(uid);
-    kickers.delete(uid);
-    setOnlineGuild(uid, null); // 下线清理（工会在线索引三个维护点之一）
+    setOnlineGuild(uid, null); // 全部下线才清（工会在线索引三个维护点之一）
   }
 }
 
 /**
- * 本节点若有该 uid 在线连接 → 强制下线（撤销自筛踢，§2.3）。不命中本节点直接跳过。返回是否命中。
+ * 本节点该 uid 的在线连接**全部**强制下线（撤销自筛踢，§2.3）。不命中直接跳过。返回是否踢到 ≥1 条。
  *
  * ⚠ 顺序固定：**先推 `auth.forceLogout{reason}` 再关连接**——客户端据此弹正确提示
  * （封禁 / 顶号 / 强制下线），⛔ 否则只看到"连接断开"、绕一圈重连才知道真相。
  * 推送尽力而为（连接已死推不到），故同时用**语义化关闭码**兜底（`KICK_CLOSE_CODE`）。
+ *
+ * @param exceptTokenHash **顶号专用判别位**：跳过持该 hash 的连接（= 新登录态那条）。
+ *   ⚠ 没有它会**自踢**：顶号时 `writeGroupSess` 既同步 kickLocal 又 `broadcastKick`，而本节点的消费者
+ *   会把自己发的事件读回来（流无发布者过滤）；迟到投递时新连接可能已 registerOnline ⇒ 把刚登录的踢掉。
+ *   跨节点同理（新连接可能落在任一节点），故判别位比「发布者自筛」更稳。
  */
-export function kickUser(uid: string, reason: ForceLogoutReasonType = ForceLogoutReason.Banned): boolean {
-  const kick = kickers.get(uid);
-  if (!kick) { return false; }
-  try { pushToUser(uid, LobbyPush.ForceLogout, { reason } satisfies IForceLogoutPush); } catch { /* 推不到就靠关闭码 */ }
-  try { kick(KICK_CLOSE_CODE[reason]); } catch { /* 将死连接，放弃 */ }
-  return true;
+export function kickUser(
+  uid: string, reason: ForceLogoutReasonType = ForceLogoutReason.Banned, exceptTokenHash?: string,
+): boolean {
+  const m = online.get(uid);
+  if (!m) { return false; }
+  let kicked = false;
+  for (const conn of [...m.values()]) {
+    if (exceptTokenHash !== undefined && conn.tokenHash === exceptTokenHash) { continue; } // 新登录态：⛔ 不自踢
+    try { conn.sink(LobbyPush.ForceLogout, { reason } satisfies IForceLogoutPush); } catch { /* 推不到就靠关闭码 */ }
+    try { conn.kick(KICK_CLOSE_CODE[reason]); } catch { /* 将死连接，放弃 */ }
+    kicked = true;
+  }
+  return kicked;
 }
+
+/** 投递给该 uid 在本节点的**全部**连接。返回是否至少送达一条（不在本节点：权威在 MySQL，上线自拉）。 */
 export function pushToUser(uid: string, type: string, data: unknown): boolean {
-  const sink = online.get(uid);
-  if (!sink) { return false; } // 不在本节点：不投递（权威在 MySQL，上线自拉）
-  sink(type, data);
-  return true;
+  const m = online.get(uid);
+  if (!m || m.size === 0) { return false; }
+  let sent = false;
+  for (const conn of [...m.values()]) {
+    try { conn.sink(type, data); sent = true; } catch { /* 单连接失败不影响其它 */ }
+  }
+  return sent;
 }
 
 // ── 工会在线索引 + 集合广播（docs/SERVER.md 2026-07）──────────────────────
@@ -99,8 +124,10 @@ export function pushToGuild(guildId: number, type: string, data: unknown): numbe
 export async function pushToAll(type: string, data: unknown): Promise<number> {
   let n = 0;
   let i = 0;
-  for (const sink of online.values()) {
-    try { sink(type, data); n++; } catch { /* 尽力通道 */ }
+  for (const conns of online.values()) {
+    for (const conn of conns.values()) {
+      try { conn.sink(type, data); n++; } catch { /* 尽力通道 */ }
+    }
     if (++i % PUSH_ALL_CHUNK === 0) { await new Promise<void>((r) => setImmediate(r)); }
   }
   return n;

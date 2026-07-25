@@ -12,7 +12,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SRC = fileURLToPath(new URL("../src", import.meta.url));
@@ -21,7 +21,9 @@ const SRC = fileURLToPath(new URL("../src", import.meta.url));
 const ALLOWED = new Set([
   "core/infra/mysql.ts", // 池注入 useServerPool——接缝本身的前提
 ]);
-const ALLOWED_DIRS = ["platform/"]; // 接缝实现（inProcessAccount 等）
+// ⚠ 白名单是**目录级**豁免：platform/ 下新增文件自动获得直调权。放这里的文件必须是「接缝实现」本身，
+// ⛔ 不得把业务逻辑塞进来蹭豁免（评审提示的旁路：platform/ 里导出的 lib 包装函数被全 src 引用 = 事实上的绕过）。
+const ALLOWED_DIRS = ["platform/"];
 
 function walk(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
@@ -34,9 +36,17 @@ test("`@game/webplatform/lib` 只许在 platform/ 与 infra/mysql.ts 直调（sp
     const rel = file.slice(SRC.length + 1).split("\\").join("/");
     if (ALLOWED.has(rel) || ALLOWED_DIRS.some((d) => rel.startsWith(d))) { continue; }
     const src = readFileSync(file, "utf8");
-    // 只看真实 import/require 语句，⛔ 不误伤注释里提到包名（注释里大量引用它做解释）
-    const re = /^\s*(?:import|export)\b[^;]*?from\s*["']@game\/webplatform\/lib["']|require\(\s*["']@game\/webplatform\/lib["']\s*\)|import\(\s*["']@game\/webplatform\/lib["']\s*\)/gm;
-    if (re.test(src)) { offenders.push(rel); }
+    // 抓真实模块说明符（⛔ 不误伤注释里提到包名——注释里大量引用它做解释）：
+    // import/export … from "X" / import("X") / require("X") / 副作用 import "X"
+    const SPEC = /(?:^\s*(?:import|export)\b[^;]*?from\s*|^\s*import\s+|[\s(]import\(\s*|[\s(]require\(\s*)["']([^"']+)["']/gm;
+    for (const m of src.matchAll(SPEC)) {
+      const spec = m[1];
+      // ① 裸包名（含 /lib 及任何子路径）
+      const bare = spec === "@game/webplatform" || spec.startsWith("@game/webplatform/");
+      // ② 相对路径**解析后落在 apps/WebPlatform/**（绕过裸包名的口子，且能过 tsc）
+      const relPath = spec.startsWith(".") && resolve(dirname(file), spec).includes(`${sep}apps${sep}WebPlatform${sep}`);
+      if (bare || relPath) { offenders.push(`${rel}  ← ${spec}`); break; }
+    }
   }
   assert.deepEqual(offenders, [],
     `以下文件直调 @game/webplatform/lib——split 下会打在组游戏库上（静默错误）。改走 platform/accountClient 的 account.*：\n  ${offenders.join("\n  ")}`);

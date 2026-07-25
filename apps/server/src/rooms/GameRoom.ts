@@ -95,7 +95,10 @@ export class GameRoom extends Room {
             throw new ServerError(ErrorCode.TokenExpired, ErrorMessage[ErrorCode.TokenExpired]);
         }
         try {
-            return { userId: await account.verify(raw, false) };
+            // strict：建连点回权威（token_hash/status）——⛔ 快路径只比对组缓存，被封账号能一直开新战斗房
+            // 打无限局（SOP①「新建连接即拒」正是靠这条）。成本 = 每次进房一条 PK SELECT / 一次远程 verify，
+            // 不在 per-message 路径上。⚠ 已在房内的对局不受影响（打完为止，§2.3 已知边界 + U6 发奖 recheck）。
+            return { userId: await account.verify(raw, true) };
         } catch {
             throw new ServerError(ErrorCode.TokenExpired, ErrorMessage[ErrorCode.TokenExpired]);
         }

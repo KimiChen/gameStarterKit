@@ -60,7 +60,7 @@ export async function verifyToken(uid: string, token: string): Promise<VerifyRes
 /**
  * 封号（M12d 简化模型，09·G7）：**一条 UPDATE** —— `status=1` + `token_hash=NULL`。
  * 语义 = 「下次登不上」（login 签发前查 status；verify 见 hash=NULL/status=1 即拒）；
- * 「踢在线」由业务侧广播 kick 承担（best-effort，漏了有快路径 verifiedAt 兜底）。
+ * 「踢在线」由业务侧广播 kick 承担（⛔ 无自动收敛：漏踢即活到 sess TTL，送达保证走 GM `/admin/kick`，09·G7b）。
  * 返回是否命中账号（false = 无此 uid，调用方不必广播）。
  */
 export async function banAccount(uid: string): Promise<boolean> {

@@ -28,6 +28,8 @@ import { broadcastKick, kickLocal } from "./kickBus";
 import { ForceLogoutReason } from "@game/shared";
 
 const sha256 = (s: string): string => createHash("sha256").update(s).digest("hex");
+/** token → 组 sess 里存的 hash（在线表用它做顶号判别位：踢时排除新登录态那条连接）。 */
+export const tokenHashOf = (token: string): string => sha256(token);
 const safeEqualHex = (a: string, b: string): boolean =>
   a.length === b.length && timingSafeEqual(Buffer.from(a, "hex"), Buffer.from(b, "hex"));
 
@@ -59,8 +61,10 @@ export async function writeGroupSess(uid: string, token: string, gwNode = ""): P
   if (oldHash !== null && oldHash !== newHash) {
     // 顶号：踢旧连接（本节点即时 + 跨节点广播）。⚠ 此刻**新连接尚未注册**——in-process 登录早于连接建立，
     // split 的 onAuth 懒填也早于 onJoin 的 registerOnline，故 ⛔ 不会自踢。
-    kickLocal(uid, ForceLogoutReason.Replaced);
-    await broadcastKick(uid, ForceLogoutReason.Replaced);
+    // ⚠ 带 newHash 判别位：本节点消费者会把这条广播读回来（流无发布者过滤），迟到投递时新连接
+    // 可能已 registerOnline —— 判别位保证**只踢旧登录态**、⛔ 不自踢（跨节点同理）。
+    kickLocal(uid, ForceLogoutReason.Replaced, newHash);
+    await broadcastKick(uid, ForceLogoutReason.Replaced, newHash);
   }
 }
 
