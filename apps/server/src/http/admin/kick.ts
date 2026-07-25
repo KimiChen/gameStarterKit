@@ -11,18 +11,23 @@
  */
 import { createEndpoint } from "@colyseus/core";
 import { z } from "zod";
-import type { RpcErrCode } from "@game/shared";
+import { ForceLogoutReason, type ForceLogoutReasonType, type RpcErrCode } from "@game/shared";
 import { ADMIN_API_SECRET } from "../../core/infra/config";
 import { kickUser } from "../../websocket/push";
 
 export default createEndpoint("/admin/kick", {
   method: "POST",
-  body: z.object({ uid: z.string().min(1).max(32) }),
+  // reason 决定客户端提示文案与关闭码（缺省 banned = GM 封号 SOP 的主用途）
+  body: z.object({
+    uid: z.string().min(1).max(32),
+    reason: z.enum([ForceLogoutReason.Banned, ForceLogoutReason.Revoked]).optional(),
+  }),
 }, async (ctx) => {
   const secret = ADMIN_API_SECRET();
   if (!secret || ctx.headers?.get?.("x-admin-secret") !== secret) {
     throw ctx.error(401, { error: "AUTH_REQUIRED" satisfies RpcErrCode });
   }
   // 只踢本节点（online 表自筛）；GM 遍历全部节点即达成「全网踢干净」并可据 kicked 汇总确认。
-  return { kicked: kickUser(ctx.body.uid) };
+  const reason = (ctx.body.reason ?? ForceLogoutReason.Banned) as ForceLogoutReasonType;
+  return { kicked: kickUser(ctx.body.uid, reason) };
 });

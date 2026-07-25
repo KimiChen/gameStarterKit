@@ -9,7 +9,10 @@
  * - 裁剪 owner：所有网关都只是读者，唤醒流的裁剪走「最老未消费位点」保守裁——雏形阶段
  *   由本模块定期按 now-24h 的 MINID 兜底裁（唤醒的时效价值只有几分钟，24h 已远超）。
  */
-import { LobbyPush } from "@game/shared";
+import {
+  ForceLogoutReason, KICK_CLOSE_CODE, LobbyPush,
+  type ForceLogoutReasonType, type IForceLogoutPush,
+} from "@game/shared";
 import { PUSH_ALL_CHUNK } from "../core/infra/config";
 import { K_STREAM_MAILWAKE } from "../core/infra/keys";
 import { clientForKey } from "../core/infra/redisRoute";
@@ -19,11 +22,11 @@ export interface PushSink { (type: string, data: unknown): void }
 
 // 本节点在线用户注册表（uid → 连接推送函数；LobbyRoom onJoin/onLeave 维护）
 const online = new Map<string, PushSink>();
-// 本节点在线连接的强制下线句柄（uid → kick）：撤销自筛踢用（M12d §2.3）。与 sink 同 uid 配对，
+// 本节点在线连接的强制下线句柄（uid → kick(closeCode)）：撤销自筛踢用（M12d §2.3）。与 sink 同 uid 配对，
 // 由 registerOnline 同写、unregisterOnline 同删（sink 条件删已防 reconnect 竞态误删新连接）。
-const kickers = new Map<string, () => void>();
+const kickers = new Map<string, (closeCode: number) => void>();
 
-export function registerOnline(uid: string, sink: PushSink, kick?: () => void): void {
+export function registerOnline(uid: string, sink: PushSink, kick?: (closeCode: number) => void): void {
   online.set(uid, sink);
   if (kick) { kickers.set(uid, kick); } else { kickers.delete(uid); }
 }
@@ -35,11 +38,18 @@ export function unregisterOnline(uid: string, sink?: PushSink): void {
   }
 }
 
-/** 本节点若有该 uid 在线连接 → 强制下线（撤销自筛踢，§2.3）。不命中本节点直接跳过。返回是否命中。 */
-export function kickUser(uid: string): boolean {
+/**
+ * 本节点若有该 uid 在线连接 → 强制下线（撤销自筛踢，§2.3）。不命中本节点直接跳过。返回是否命中。
+ *
+ * ⚠ 顺序固定：**先推 `auth.forceLogout{reason}` 再关连接**——客户端据此弹正确提示
+ * （封禁 / 顶号 / 强制下线），⛔ 否则只看到"连接断开"、绕一圈重连才知道真相。
+ * 推送尽力而为（连接已死推不到），故同时用**语义化关闭码**兜底（`KICK_CLOSE_CODE`）。
+ */
+export function kickUser(uid: string, reason: ForceLogoutReasonType = ForceLogoutReason.Banned): boolean {
   const kick = kickers.get(uid);
   if (!kick) { return false; }
-  try { kick(); } catch { /* 将死连接，放弃 */ }
+  try { pushToUser(uid, LobbyPush.ForceLogout, { reason } satisfies IForceLogoutPush); } catch { /* 推不到就靠关闭码 */ }
+  try { kick(KICK_CLOSE_CODE[reason]); } catch { /* 将死连接，放弃 */ }
   return true;
 }
 export function pushToUser(uid: string, type: string, data: unknown): boolean {

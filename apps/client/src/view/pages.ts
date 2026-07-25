@@ -24,7 +24,7 @@ import { getBaseUrl, getToken } from "../core/http";
 import { devLogin } from "../net/http/account";
 import { WebSocketClient } from "../net/WebSocketClient";
 import { clearSession, onAuthInvalid, onConnLost, setSession } from "../net/session";
-import { UserRpc, isServerEnterable, type IUserView } from "../shared/index";
+import { ForceLogoutMessage, ForceLogoutReason, UserRpc, isServerEnterable, type IUserView } from "../shared/index";
 import { fetchAreaList } from "../net/http/area";
 import { fetchNotices } from "../net/http/notice";
 import { chooseServer, getCurrentServer, pickDefaultServer, setServerList, getServerList } from "../net/serverSession";
@@ -45,8 +45,12 @@ function wireSessionEvents(reopenLogin: () => void): void {
     void (async () => {
       await WebSocketClient.inst.leave().catch(() => {});
       closeLobby();
-      const text = reason === "ACCOUNT_BANNED" ? "账号已被封禁"
-        : reason === "AUTH_EPOCH_STALE" ? "账号在其他设备登录，已下线" : "登录已过期，请重新登录";
+      // 强制下线（服务端主动踢）文案走 shared 单源 ForceLogoutMessage；其余为 token 失效类
+      const text = reason === "FORCE_BANNED" ? ForceLogoutMessage[ForceLogoutReason.Banned]
+        : reason === "FORCE_REPLACED" ? ForceLogoutMessage[ForceLogoutReason.Replaced]
+        : reason === "FORCE_REVOKED" ? ForceLogoutMessage[ForceLogoutReason.Revoked]
+        : reason === "ACCOUNT_BANNED" ? ForceLogoutMessage[ForceLogoutReason.Banned]
+        : "登录已过期，请重新登录";
       await openConfirm({ title: "提示", content: text, noText: null });
       reopenLogin();
     })();

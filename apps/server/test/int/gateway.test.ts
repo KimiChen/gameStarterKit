@@ -9,7 +9,7 @@ import "./env-setup"; // ⚠ 必须第一个 import（限流放宽）
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
-import { LOBBY_MSG_PUSH, LOBBY_MSG_RPC, PROTOCOL_VERSION, RoomName } from "@game/shared";
+import { KICK_CLOSE_CODE, LOBBY_MSG_PUSH, LOBBY_MSG_RPC, PROTOCOL_VERSION, RoomName } from "@game/shared";
 import { server } from "../../src/app.config";
 import { banUser, issueSession } from "../../src/core/auth/session";
 import { setKickHandler } from "../../src/core/auth/revoke";
@@ -234,7 +234,7 @@ test("GM SOP e2e：POST /admin/kick 踢掉在连用户（ack kicked:true + onLea
   const res = await kickReq({ "x-admin-secret": secret });
   assert.equal(res.status, 200);
   assert.equal((await res.json() as { kicked: boolean }).kicked, true, "ack：本节点命中并踢掉（GM 据此确认送达）");
-  assert.equal(await Promise.race([left, sleep(5000).then(() => -1)]), 4001, "连接被强制下线");
+  assert.equal(await Promise.race([left, sleep(5000).then(() => -1)]), KICK_CLOSE_CODE.banned, "连接被强制下线（语义化关闭码）");
 
   // 幂等：已下线再踢 → kicked:false（GM 遍历节点时的正常返回，非错误）
   await sleep(100);
@@ -251,7 +251,7 @@ test("自筛踢 e2e：在连用户被 banUser → 控制总线 applyRevoke 命�
   setKickHandler(kickUser); // boot 不跑 index.ts，显式挂自筛踢句柄（生产在 index.ts 启动期挂）
   await banUser(u.uid, "test");
   const code = await Promise.race([left, sleep(5000).then(() => -1)]);
-  assert.equal(code, 4001, "被封在连用户被强制下线，onLeave code=4001（M12d §2.3 自筛踢）");
+  assert.equal(code, KICK_CLOSE_CODE.banned, "被封在连用户被强制下线，语义化关闭码 4001（客户端据此判因）");
 });
 
 test("邮件：list / markRead（MySQL 权威，09·A6）+ 唤醒推送（09·K6）", async () => {

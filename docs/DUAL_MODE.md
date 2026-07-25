@@ -16,7 +16,7 @@
 | **M12b** F4 thaw 按区判 | ✅ 落地 | ABSENT 分支 sId=0 用 accounts、sId≥1 用 char_registry；⚠ user_archive per-zone 待 archive 步 |
 | **M12e** `/area/list` ul 接真建角数据 | ✅ 落地 | `getUserRecentServers` → `listCharacterZones`（§2.5） |
 | **M12c** WebPlatform 门户抽出 | ✅ 落地完成（int89+单测20 绿，split 全链 e2e 绿） | 账号原语(verify/token/char/accountExists)迁 `@game/webplatform/lib`✅、auth 改 MySQL 权威✅、createUser→onJoin(ensureLive-first 防丢数据)✅、WebPlatform Fastify 独立进程✅、`ACCOUNT_MODE` http↔inProcess 开关✅、verifiedAt 有界撤销✅、登录编排+code2session 迁 lib(结果码边界)+进程内限流✅、选服目录 `/area/list`(目录+ul best-effort)迁 lib✅、WebPlatform 端点按单源 `ApiPath`(/account/wx-login·/dev-login)+客户端契约✅、客户端 login/area 走门户 `portalUrl`(空=回退游戏服)✅、onAuth 懒填组 sess✅、split 快路径 verifiedAt 陈旧**回远程**重验(⛔ 不打本地组 pool)✅ |
-| **M12d** 撤销 + 踢在线 + GM SOP | 🔧 in-process 落地（int 绿；剩 split 发布端） | `startStreamConsumer` 工厂✅、coord Redis✅、`stream:kick` 广播 + 每节点消费✅、自筛踢(`client.leave(4001)`)✅、权威简化为 status+token_hash(⛔ 去 epoch/outbox/maxEpoch/verifiedAt)✅、**GM `/admin/kick` 端点 + 封号 SOP**✅(e2e 绿)。**剩**：GM 工具实现(运营侧)、split 发布端、发奖 recheck |
+| **M12d** 撤销 + 踢在线 + GM SOP | 🔧 in-process 落地（int101 绿；剩 GM 工具/split 发布端） | 权威简化为 status+token_hash✅、`stream:kick` 总线 + 每节点自筛踢✅、**GM `/admin/kick`**(ack+鉴权 fail-closed)✅、**踢=先推 forceLogout{reason} + 语义化关闭码**✅、**顶号主动踢**(判据=组 sess hash 变化，重连不误判)✅、客户端 onLeave 读码兜底 + 三因文案✅。**剩**：GM 工具实现(运营侧)、split 发布端、发奖 recheck |
 | **archive 步** user_archive 分区 + active:lru/freeze 区化 | ⬜ 待做 | 耦合 M12c；⛔ 补齐前不开「多区 + freeze」 |
 | **M14/M15** 大混服实时横向 + presence/广播 | ⬜ 待做 | §4 |
 | **M16** 物理分组（100 组 × 10 区） | ⬜ 待做 | §5.1 |
@@ -149,6 +149,25 @@ flowchart TB
 > 4. **可观测**：应能查询/告警「已封禁但仍在线」的用户（依赖 presence/M15 或各节点在线查询）。
 > 5. **同样适用于**：强制下线（`revoke`）、注销等一切"需要让在场连接立即失效"的运营动作。
 >
+> ### 单端语义与顶号（换端登录）
+>
+> **单端 = 数据模型锁定**：`accounts.token_hash` 是**一个列** ⇒ 一个账号同时只有一个有效 token。
+> ⚠ **若将来要多端**（手机+平板等同时在线），不是加字段能解决的——必须引入 `sessions` 表（每设备一行），
+> `verify` 从「比对单列」变成「按 token 查行」，撤销/踢都变 per-session。**属数据模型变更，回头改成本高。**
+>
+> **顶号判据（精确到「换了登录态」）**：`writeGroupSess` 发现组 sess 里**原本存着一个不同的 tokenHash**
+> ⇒ 该账号走过一次登录、换发了 token ⇒ 主动踢旧连接（`reason=replaced`）。
+> ⛔ **断线重连不会命中**（复用同一 token，hash 相同，且不经登录）；首次连接/sess 已过期时 `oldHash=null` 也不命中。
+> ⚠ 此刻新连接尚未 `registerOnline`（in-process 登录早于连接建立；split 的 onAuth 懒填早于 onJoin）⇒ **不会自踢**。
+> 该判据对 **in-process 与 split 都成立**：split 的覆写发生在 onAuth 懒填、由持 coord 的游戏服节点执行，
+> ⛔ 无需 WebPlatform 自持 Redis。
+>
+> ### 踢人的客户端可感知性（三种原因不可混淆）
+>
+> 踢 = **先推 `auth.forceLogout{reason}`、再用语义化关闭码关连接**（`KICK_CLOSE_CODE`：4001 封禁 / 4002 顶号 / 4003 强制下线）。
+> 推送先到、文案准确；推送若因连接已死送不到，客户端 `onLeave(code)` 按关闭码兜底判因。
+> ⛔ 缺这层，用户只看到「连接断开」，要点一次重连失败才知道真相。文案单源 `ForceLogoutMessage`（shared）。
+
 > **控制总线 `stream:kick`** 保留为**程序化封号（代码内 `banUser`）的便捷扇出**：一条 `XADD` 让全组各节点
 > 自筛踢。但它 **fire-and-forget、无 ack**，⛔ **不构成送达保证**——保证来自 GM 的 `/admin/kick` 确认。
 >

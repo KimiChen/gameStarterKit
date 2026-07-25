@@ -11,23 +11,24 @@
  * ⚠ 本通道是**程序化封号的便捷扇出，不构成保证**（fire-and-forget、无 ack）：封号 SOP 要求 GM 工具
  * 直连各节点 `/admin/kick` 并按 ack 确认送达（§2.3）。⛔ 缺踢则在场连接可存活至 sess TTL（3d，无自动收敛）。
  */
+import { ForceLogoutReason, type ForceLogoutReasonType } from "@game/shared";
 import { KICK_STREAM_TRIM_MS } from "../infra/config";
 import { K_STREAM_KICK } from "../infra/keys";
 import { coordClient } from "../infra/redisRoute";
 import { fieldOf, startStreamConsumer, type StreamConsumer } from "../infra/streamConsumer";
 
 // 自筛踢句柄：websocket 层（online 表）在启动期注入 kickUser（core/auth ⛔ 不反向依赖 websocket 层）。
-let kickHandler: ((uid: string) => void) | null = null;
+let kickHandler: ((uid: string, reason: ForceLogoutReasonType) => void) | null = null;
 /** 注入本节点强制下线句柄（index.ts 启动期挂 push.kickUser）。 */
-export function setKickHandler(fn: (uid: string) => void): void { kickHandler = fn; }
+export function setKickHandler(fn: (uid: string, reason: ForceLogoutReasonType) => void): void { kickHandler = fn; }
 
-/** 本节点自筛踢：命中本节点在线连接即强制下线；不在本节点直接跳过（§2.3 每节点自筛，⛔ 不查 presence）。 */
-export function kickLocal(uid: string): void { kickHandler?.(uid); }
+/** 本节点自筛踢：命中本节点在线连接即强制下线（先推 reason 再关）；不在本节点直接跳过（§2.3 每节点自筛，⛔ 不查 presence）。 */
+export function kickLocal(uid: string, reason: ForceLogoutReasonType): void { kickHandler?.(uid, reason); }
 
-/** 广播踢人到控制总线（best-effort：Redis 抖动只是漏踢，权威撤销已落 MySQL，由兜底层收敛）。 */
-export async function broadcastKick(uid: string): Promise<void> {
+/** 广播踢人到控制总线（best-effort：Redis 抖动只是漏踢；权威撤销已落 MySQL，送达保证走 GM `/admin/kick`）。 */
+export async function broadcastKick(uid: string, reason: ForceLogoutReasonType): Promise<void> {
   try {
-    await coordClient().xadd(K_STREAM_KICK, "*", "uid", uid);
+    await coordClient().xadd(K_STREAM_KICK, "*", "uid", uid, "reason", reason);
   } catch (e) {
     console.error(`[kick] 广播失败 uid=${uid}（权威已落库；GM 工具的 /admin/kick 才是保证送达的那一步）`, e);
   }
@@ -39,7 +40,9 @@ export function startKickConsumer(): void {
   if (consumer) { return; }
   consumer = startStreamConsumer("kick", coordClient, K_STREAM_KICK, (fields) => {
     const uid = fieldOf(fields, "uid");
-    if (uid) { kickLocal(uid); }
+    // reason 缺省按封号（兼容旧条目/别的发布端只带 uid 的情况）
+    const reason = (fieldOf(fields, "reason") ?? ForceLogoutReason.Banned) as ForceLogoutReasonType;
+    if (uid) { kickLocal(uid, reason); }
   }, { trimMs: KICK_STREAM_TRIM_MS });
 }
 export function stopKickConsumer(): void { consumer?.stop(); consumer = null; }

@@ -13,7 +13,14 @@
 import { setToken, getToken } from "../core/http";
 import type { ILoginRes } from "../shared/index";
 
-export type AuthInvalidReason = "AUTH_EPOCH_STALE" | "AUTH_REQUIRED" | "ACCOUNT_BANNED";
+/**
+ * 鉴权失效原因。两类来源：
+ * - RPC 错误码（快路径/建连校验失败）：`AUTH_REQUIRED` / `ACCOUNT_BANNED` / `AUTH_EPOCH_STALE`（保留码，服务端已不产出）
+ * - **强制下线**（服务端主动踢，先推 `auth.forceLogout{reason}`、关闭码兜底）：`FORCE_BANNED` / `FORCE_REPLACED`（顶号）/ `FORCE_REVOKED`
+ */
+export type AuthInvalidReason =
+    | "AUTH_EPOCH_STALE" | "AUTH_REQUIRED" | "ACCOUNT_BANNED"
+    | "FORCE_BANNED" | "FORCE_REPLACED" | "FORCE_REVOKED";
 
 let userId = "";
 const authInvalidHandlers = new Set<(reason: AuthInvalidReason) => void>();

@@ -13,10 +13,15 @@
  */
 import { notifyAuthInvalid, notifyConnLost, type AuthInvalidReason } from "./session";
 import {
+    ForceLogoutReason,
+    forceLogoutReasonOf,
     LOBBY_MSG_PUSH,
     LOBBY_MSG_RPC,
+    LobbyPush,
     PROTOCOL_VERSION,
     RoomName,
+    type ForceLogoutReasonType,
+    type IForceLogoutPush,
     type IRoomJoinOptions,
     type IRpcEnvelope,
     type IRpcReply,
@@ -37,6 +42,13 @@ const RPC_CLIENT_TIMEOUT_MS = 15_000;
 /** rpcIdem 对 BUSY/STALE_FENCE 的自动重试（07 重试表：同一 clientReqId 短退避重试） */
 const IDEM_RETRY_MAX = 3;
 const IDEM_RETRY_DELAY_MS = 300;
+
+/** 强制下线原因（shared 契约） → session 的 AuthInvalidReason（UI 据此选文案）。 */
+const FORCE_REASON_MAP: Record<ForceLogoutReasonType, AuthInvalidReason> = {
+    [ForceLogoutReason.Banned]: "FORCE_BANNED",
+    [ForceLogoutReason.Replaced]: "FORCE_REPLACED",
+    [ForceLogoutReason.Revoked]: "FORCE_REVOKED",
+};
 
 /** leave 的等待上限：掉线窗口里 LEAVE 帧可能发不出去、onLeave 永不触发，限时后强制本地清理 */
 const LEAVE_TIMEOUT_MS = 5_000;
@@ -150,6 +162,12 @@ export class WebSocketClient {
             }
         });
         room.onMessage(LOBBY_MSG_PUSH, (msg: { type: string; data: unknown }) => {
+            // 强制下线（封号/顶号/强制下线）：服务端**关连接前**先推这条，据此立刻上报正确原因，
+            // ⛔ 不等 onLeave（那只能靠关闭码、且推送更早到）。见 shared LobbyPush.ForceLogout。
+            if (msg.type === LobbyPush.ForceLogout) {
+                const r = (msg.data as IForceLogoutPush | undefined)?.reason;
+                if (r) { notifyAuthInvalid(FORCE_REASON_MAP[r]); }
+            }
             const set = this.pushHandlers.get(msg.type);
             if (!set) return;
             for (const cb of set) {
@@ -165,15 +183,20 @@ export class WebSocketClient {
             if (this.room !== room) return;
             this.rejectAll("CONN_LOST");
         });
-        room.onLeave(() => {
+        room.onLeave((code?: number) => {
             if (this.room !== room) return;
             const wasIntentional = this.leaving;
             this.room = null;
             this.joinedToken = "";
             this.rejectAll("CONN_LOST");
-            // 非主动 leave 的最终死亡（SDK 自动重连耗尽/服务端强断）：通知 session，
-            // UI 层提示后可用原 token 重新 join（登录态未失效）
-            if (!wasIntentional) { notifyConnLost(); }
+            if (wasIntentional) { return; }
+            // **被踢兜底**：服务端用语义化关闭码关连接（KICK_CLOSE_CODE）。若 forceLogout 推送没赶上
+            // （连接已死推不到），仍能在此判出「这是被踢，不是掉线」并给出正确提示——⛔ 否则用户只看到
+            // 「连接断开」，得点重连失败一次才知道真相。
+            const forced = code !== undefined ? forceLogoutReasonOf(code) : null;
+            if (forced) { notifyAuthInvalid(FORCE_REASON_MAP[forced]); return; }
+            // 普通最终死亡（SDK 自动重连耗尽）：登录态未失效，UI 提示后可用原 token 重进
+            notifyConnLost();
         });
     }
 

@@ -4,7 +4,7 @@ Colyseus **0.17** + 公司服务端框架（源自 Arthur M0–M9，已停止回
 tsx 直跑 TS。整体设计意图见 [OVERVIEW.md](OVERVIEW.md)；客户端见 [CLIENT.md](CLIENT.md)。
 
 > **本文含两份「代码引用的活字典」，删改前务必知道**：
-> - [§12 开发约束 61 条规则目录](#12-开发约束61-条规则目录)——服务端 200+ 处 `09·XX` 注释锚定这里；
+> - [§12 开发约束 62 条规则目录](#12-开发约束62-条规则目录)——服务端 200+ 处 `09·XX` 注释锚定这里；
 > - [§13 契约与配置表](#13-契约与配置redis-key--字段--错误码--常量)——新增 key/错误码/常量先进这里再进代码。
 
 ---
@@ -347,7 +347,7 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 
 ---
 
-## 12. 开发约束：61 条规则目录
+## 12. 开发约束：62 条规则目录
 
 > 服务端写路径的 PR 审查清单（01–08 设计的规则收敛），**代码里 `09·XX` 注释锚定这里**。
 > 前缀图例：**A** 数据权威 · **L** 锁与 fence · **I** 幂等 · **X** 跨存储 outbox · **R** Redis 纪律 ·
@@ -437,6 +437,7 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 - **G5** 匿名/optional-auth 的限流与幂等 key 用 sessionId/真实 IP，⛔ 禁 userId=null 塌缩成共享 key。
 - **G6** 未知 type 只回 UNKNOWN_TYPE + 低权重计数，⛔ 不计 flood 不封禁。
 - **G7** 封号 = **账号级「下次登不上」+ 踢在线，两步都必做**（M12d §2.3 SOP）：① 一条 UPDATE 写权威 `status=1` + `token_hash=NULL`（先写 MySQL）→ 新建连接/重登即拒；② **GM 工具逐节点 `POST /admin/kick` 并确认送达** → 在场连接 `leave(4001)`。⛔ 缺 ② 则在场连接可存活至 sess TTL（3d）且**无自动收敛**（快路径纯缓存比对、零回源）；`stream:kick` 只是程序化封号的便捷扇出、无 ack。⛔ 不删 `sess:{uid}`、⛔ 无 epoch fence、⛔ 绝不删 `user:{uid}`；wx-login 签发前必须 SELECT status。
+- **G7b** **单端语义由 `accounts.token_hash` 单列锁定**（一账号同时只有一个有效 token）：换端登录即**顶号**——`writeGroupSess` 见组 sess 的 tokenHash **变化**即踢旧连接（`reason=replaced`；⛔ 断线重连复用同一 token，hash 未变、不命中）。踢一律 **先推 `auth.forceLogout{reason}` 再用语义化关闭码关连接**（`KICK_CLOSE_CODE` 4001 封禁/4002 顶号/4003 强制下线），客户端 `onLeave(code)` 兜底判因。⚠ 要支持**多端同时在线**须引入 `sessions` 表（per-device 行）+ `verify` 改按 token 查行，属**数据模型变更**、非加字段（DUAL_MODE §2.3）。
 - **G8** session_key 仅服务端持有绝不下发；wx-login 出参 ⛔ 禁含 openid/unionid/session_key。
 - **G9** handler 超时用 Promise.race 无法真正取消——关键写副作用必须数据层幂等/CAS（I1/L3），⛔ 不依赖应用层取消。
 
@@ -491,7 +492,7 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 | `applied:{uid}` | ZSET | 无 | 幂等已 apply 集合（member=op_id, score=applyMs，I5 裁剪） |
 | `lock:{uid}` | STRING | 5s | 跨实例用户锁（值=fence，SET NX PX） |
 | `idem:{type}:{uid}:{clientReqId}` | STRING | pending 10s / done 60s | 幂等占位（I1） |
-| `sess:{uid}` | HASH | 3d | 组侧会话缓存（tokenHash/loginTs/connId/gwNode）。快路径**纯 hash 比对、零权威回源**；在线撤销靠 GM 踢（M12d §2.3 SOP），⛔ 不删它 |
+| `sess:{uid}` | HASH | 3d | 组侧会话缓存（tokenHash/loginTs/connId/gwNode）。快路径**纯 hash 比对、零权威回源**；在线撤销靠踢（M12d §2.3 SOP）。⚠ 写入时 tokenHash **变化即顶号** → 踢旧连接；⛔ 不删它 |
 | `guild:evt:seq:{gid}` | STRING | 无 | 工会事件 seq（INCR，§10）。⚠ gid 仅限 `core/guild/catalog`（join 硬校验）——INCR 隐式铸键 + 无 TTL + noeviction，键面必须有硬上限 |
 | `guild:evt:log:{gid}` | LIST | 无（LTRIM 上限） | 工会事件近窗（gid 约束同上） |
 | `active:lru:{bucket}` | ZSET | 无 | 活跃索引（找冷用户，bucket 非 uid hash-tag） |

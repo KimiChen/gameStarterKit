@@ -91,9 +91,10 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
     const sId = client.auth.sId;
     const sink: PushSink = (type, data) => client.send(LOBBY_MSG_PUSH, { type, data });
     this.sinks.set(client.sessionId, sink);
-    // 撤销自筛踢句柄（M12d §2.3）：控制总线撤销到达 → applyRevoke 命中本节点 online 即强制下线（4001）。
+    // 强制下线句柄（M12d §2.3）：封号/顶号/强制下线时，push.kickUser 先推 auth.forceLogout{reason}、
+    // 再用**语义化关闭码**关连接（KICK_CLOSE_CODE，客户端 onLeave 兜底判因）。
     // ⛔ 无 allowReconnection：重连即走全新 onAuth，被撤销 token 在此被拒（不构成重连绕过）。
-    registerOnline(uid, sink, () => { void client.leave(4001); });
+    registerOnline(uid, sink, (closeCode) => { void client.leave(closeCode); });
     // 建角（§2.6 / M12a）：玩家进本区 → 确保该区角色存在（char_registry 行 + s{sId}_user），幂等自愈；
     // 再挂工会在线索引（loadFields 读 s{sId}_user 的 guildId，per-zone → zoneCtx 硬化）。
     // 全程 best-effort：失败只影响工会广播/首帧，不阻塞连接（重连/换会修复）。
