@@ -7,16 +7,28 @@
  */
 import type { IAreaListRes } from "@game/shared";
 import { AuthRequiredError, BannedError } from "../core/errors";
-import { WEBPLATFORM_BASE_URL } from "../core/infra/config";
+import { WEBPLATFORM_BASE_URL, WEBPLATFORM_TIMEOUT_MS } from "../core/infra/config";
 import { verifySession, writeGroupSess } from "../core/auth/session";
 import type { AccountClient } from "./accountClient";
 
+/**
+ * 内部 HTTP 调用（组网关 → WebPlatform）。**必须带超时**：本函数在 `onAuth`（建连）与建角路径上，
+ * ⛔ 无超时时 WebPlatform 黑洞（网络分区/进程僵死）会把每个 join 无限挂住 —— 连接堆积到网关被拖垮。
+ * ⚠ 仍缺：重试/熔断/响应 schema/服务间鉴权（W1 配套）——见 docs/WEBPLATFORM.md §4。
+ */
 async function post<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${WEBPLATFORM_BASE_URL()}${path}`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${WEBPLATFORM_BASE_URL()}${path}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(WEBPLATFORM_TIMEOUT_MS),
+    });
+  } catch (e) {
+    // 超时/连不上：⛔ 不当成"校验失败"（那会把账号服务故障误报成用户 token 无效）
+    throw new Error(`webplatform ${path} 不可达（${WEBPLATFORM_TIMEOUT_MS}ms 超时或连接失败）: ${String(e)}`);
+  }
   if (!res.ok) { throw new Error(`webplatform ${path} → HTTP ${res.status}`); }
   return await res.json() as T;
 }

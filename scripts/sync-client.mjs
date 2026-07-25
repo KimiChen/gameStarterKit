@@ -36,6 +36,8 @@ const BANNER = `# ⚠ 本目录由脚本生成，禁止手改
 `;
 
 /** watch 熔断阈值：单轮孤儿清理 ≥20 个或 ≥30% 视为异常（切分支/大规模 mv 的中间态） */
+/** 显式放行大规模清理（熔断逃生口；只有"有意的重构"才该用）。 */
+const FORCE = process.argv.includes("--force");
 const BREAKER_MIN = 20;
 const BREAKER_RATIO = 0.3;
 
@@ -56,6 +58,14 @@ function generateDevEnv() {
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.writeFileSync(target, content);
     return true;
+}
+
+/** SRC 缺失即拒绝执行：继续会把 DEST 全部生成物与 .meta 判孤儿清空（uuid 全变、场景引用全断）。
+ *  ⚠ 必须在 generateDevEnv **之前**调用——后者会 mkdir -p 重建 SRC，把灾难态伪装成正常态。 */
+function assertSrcPresent() {
+    if (!fs.existsSync(SRC)) {
+        throw new Error(`[sync-client] 源目录不存在: ${SRC}——拒绝执行（继续会清空 ${DEST} 的全部生成物与 .meta）`);
+    }
 }
 
 /** 统一 POSIX 分隔符（git ls-files 与报错信息均以 / 记路径） */
@@ -92,9 +102,7 @@ function diffOnce() {
     // 继续走会把 DEST 全部文件（含 .meta）判孤儿清空——事后恢复同步时 Cocos 重生成 .meta，
     // uuid 全变、场景/prefab 对脚本的引用全断（误删/改名 src、切分支瞬间、
     // watch 运行中 SRC 被 mv 都可能触发）
-    if (!fs.existsSync(SRC)) {
-        throw new Error(`[sync-client] 源目录不存在: ${SRC}——拒绝执行（继续会清空 ${DEST} 的全部生成物与 .meta）`);
-    }
+    assertSrcPresent();
     const srcFiles = collectFiles(SRC);
     // 源目录自带 README.md 时以源文件为准，不再生成警示 banner（避免覆盖与写入抖动）
     const srcHasReadme = srcFiles.includes(BANNER_FILE);
@@ -126,7 +134,12 @@ function diffOnce() {
 }
 
 function syncOnce(fromWatch = false) {
-    generateDevEnv(); // 先生成再 diff，devEnv 随本轮常规同步进 Cocos
+    // ⚠ **必须先校验 SRC 再生成 devEnv**：generateDevEnv 会 mkdir -p 出 SRC/core/，
+    // 若放在前面，它会把「SRC 整个不见了」的灾难态**重建成只有一个文件的目录** ——
+    // diffOnce 里的 `!existsSync(SRC)` fail-fast 就被自己上一行击穿，随后 DEST 全部
+    // 生成物与 .meta 被判孤儿清空（uuid 全变、场景引用全断）。曾真实踩中：69 个 .ts 被删到只剩 1。
+    assertSrcPresent();
+    generateDevEnv(); // devEnv 随本轮常规同步进 Cocos
     const { srcFiles, srcHasReadme, toWrite, toRemove } = diffOnce();
 
     // watch 熔断：切分支/大规模 mv 的中间态会让 SRC 逐文件消失，若此刻防抖触发，
@@ -137,9 +150,12 @@ function syncOnce(fromWatch = false) {
     const removedLogical = new Set(
         toRemove.map((rel) => (rel.endsWith(".meta") ? rel.slice(0, -".meta".length) : rel))
     ).size;
-    if (fromWatch && removedLogical >= BREAKER_MIN && removedLogical >= Math.ceil(srcFiles.length * BREAKER_RATIO)) {
+    // ⚠ 熔断对**手动执行也生效**（原先只在 watch 生效 ⇒ 直接 `npm run sync:client` 可无阻拦清库）。
+    // 真要大规模删除（有意的重构）用 `--force` 显式放行。
+    if (!FORCE && removedLogical >= BREAKER_MIN && removedLogical >= Math.ceil(srcFiles.length * BREAKER_RATIO)) {
         throw new Error(
-            `[sync-client] 本轮要清理 ${removedLogical} 个源文件对应条目（源仅 ${srcFiles.length} 个），疑似分支切换中间态——已熔断，待状态稳定后手动执行 npm run sync:client`
+            `[sync-client] 本轮要清理 ${removedLogical} 个源文件对应条目（源仅 ${srcFiles.length} 个），疑似分支切换/误删中间态——已熔断。` +
+            `确认无误后加 --force 放行（会连同 .meta 一起删，Creator 重开将重铸 uuid）`
         );
     }
 

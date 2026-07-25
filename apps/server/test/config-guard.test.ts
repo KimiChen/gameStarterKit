@@ -78,3 +78,18 @@ test("GROUP_ZONES 合法值与缺省值：正常加载", () => {
   assert.equal(loadConfigWith({ GROUP_ZONES: undefined }).status, 0, "未设置 = 承载全部");
   assert.equal(loadConfigWith({ GROUP_ZONES: "" }).status, 0, "空串 = 承载全部");
 });
+
+test("ACCOUNT_MODE 非法值：config 加载期即 throw（⛔ 不静默回退 in-process = split 下打错库）", () => {
+  for (const bad of ["httpp", "HTTP", "remote", "inprocess", "1"]) {
+    const r = loadConfigWith({ ACCOUNT_MODE: bad });
+    assert.notEqual(r.status, 0, `ACCOUNT_MODE=${bad} 应拒绝启动`);
+    assert.match(r.stderr, /ACCOUNT_MODE 非法/);
+  }
+});
+
+test("ACCOUNT_MODE 合法值与缺省值：正常加载", () => {
+  for (const good of ["in-process", "http"]) {
+    assert.equal(loadConfigWith({ ACCOUNT_MODE: good }).status, 0, `ACCOUNT_MODE=${good} 应正常加载`);
+  }
+  assert.equal(loadConfigWith({ ACCOUNT_MODE: undefined }).status, 0, "缺省（不设）应正常加载");
+});

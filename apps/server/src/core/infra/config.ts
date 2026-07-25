@@ -128,8 +128,20 @@ export const groupAdmitsZone = (sId: number | undefined): boolean =>
 export const MYSQL_URL = () => env("MYSQL_URL", `mysql://root@127.0.0.1:3316/game_${PROJECT_ID}`);
 export const MYSQL_POOL_SIZE = envInt("MYSQL_POOL_SIZE", 20);
 
-/** 账号 plane 接线模式（DUAL_MODE §2.7）：`in-process`（默认，dev/test 内嵌 lib）| `http`（split，走 WebPlatform）。 */
-export const ACCOUNT_MODE = () => env("ACCOUNT_MODE", "in-process");
+/** 账号平面实现选择（DUAL_MODE §2.7）：`in-process` 内嵌 lib / `http` 走 WebPlatform。
+ *  ⚠ **未知值必须 fail-fast**：静默回退 in-process 会在 split 部署下**打错数据库**（账号表在账号库，
+ *  组库里没有）——正是 `AccountClient` 接缝要防的那类静默错误。故与 PROJECT_ID/PORT 同款加载期校验。
+ *  ⚠ 取值由 accountClient 在**模块加载期**求值一次，⛔ 不支持运行期切换。 */
+export const ACCOUNT_MODE = (() => {
+  const v = env("ACCOUNT_MODE", "in-process");
+  if (v !== "in-process" && v !== "http") {
+    throw new Error(
+      `ACCOUNT_MODE 非法：「${v}」——只允许 "in-process"（内嵌 @game/webplatform/lib）或 "http"（走 WebPlatform 进程）。` +
+      `⛔ 不静默回退：split 部署下回退到 in-process 会把账号平面的读写打在组游戏库上（静默错误，见 docs/WEBPLATFORM.md §2）`
+    );
+  }
+  return () => v; // 保持函数形态（调用点 ACCOUNT_MODE() 不变）
+})();
 /** split 模式下 WebPlatform 的 HTTP 基址（httpAccount 用）。 */
 export const WEBPLATFORM_BASE_URL = () => env("WEBPLATFORM_BASE_URL", "http://localhost:2570");
 
@@ -156,6 +168,9 @@ export const IDEM_RESULT_MS = 60_000;
 export const SESS_TTL_S = 259_200;
 /** GM 内部端点（`/admin/kick`）共享密钥。**未配置即端点关闭**（fail-closed；无鉴权的踢人端点 = DoS 面）。
  *  封号 SOP 的第二步靠它（DUAL_MODE §2.3）：GM 工具直连各节点踢在线并确认送达。 */
+/** 组网关 → WebPlatform 的内部 HTTP 超时（在 onAuth/建角路径上；⛔ 无超时 = 黑洞挂死每个 join）。 */
+export const WEBPLATFORM_TIMEOUT_MS = envInt("WEBPLATFORM_TIMEOUT_MS", 3000);
+
 export const ADMIN_API_SECRET = () => process.env.ADMIN_API_SECRET ?? "";
 /** 踢人流 MINID 兜底裁剪窗毫秒（踢是即时动作，老事件无价值；权威撤销在 accounts，M12d §2.3）。 */
 export const KICK_STREAM_TRIM_MS = envInt("KICK_STREAM_TRIM_MS", 24 * 3600 * 1000);

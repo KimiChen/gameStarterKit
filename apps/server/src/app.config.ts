@@ -30,12 +30,12 @@ export const server = defineServer({
 
     express: async (app) => {
 
-        // 房间监控面板：http://localhost:2568/monitor
-        app.use("/monitor", monitor());
-
-        // 开发调试台（非生产环境）：http://localhost:2568/
+        // ⚠ **管理面全部只在非生产挂载**：/monitor 不只是查看页——它带房间管理能力
+        // （列房间/查连接/踢人/销毁房），裸挂生产 = 未鉴权的运维后台。
+        // 生产要用请置于**已鉴权的反向代理之后**并显式开 ADMIN_PANEL_ENABLED（届时另加鉴权，勿直接放开）。
         if (process.env.NODE_ENV !== "production") {
-            app.use("/", playground());
+            app.use("/monitor", monitor());   // 房间监控面板：http://localhost:2568/monitor
+            app.use("/", playground());       // 开发调试台：http://localhost:2568/
         }
     },
 
