@@ -16,7 +16,7 @@
 | **M12b** F4 thaw 按区判 | ✅ 落地 | ABSENT 分支 sId=0 用 accounts、sId≥1 用 char_registry；⚠ user_archive per-zone 待 archive 步 |
 | **M12e** `/area/list` ul 接真建角数据 | ✅ 落地 | `getUserRecentServers` → `listCharacterZones`（§2.5） |
 | **M12c** WebPlatform 门户抽出 | ✅ 落地完成（int89+单测20 绿，split 全链 e2e 绿） | 账号原语(verify/token/char/accountExists)迁 `@game/webplatform/lib`✅、auth 改 MySQL 权威✅、createUser→onJoin(ensureLive-first 防丢数据)✅、WebPlatform Fastify 独立进程✅、`ACCOUNT_MODE` http↔inProcess 开关✅、verifiedAt 有界撤销✅、登录编排+code2session 迁 lib(结果码边界)+进程内限流✅、选服目录 `/area/list`(目录+ul best-effort)迁 lib✅、WebPlatform 端点按单源 `ApiPath`(/account/wx-login·/dev-login)+客户端契约✅、客户端 login/area 走门户 `portalUrl`(空=回退游戏服)✅、onAuth 懒填组 sess✅、split 快路径 verifiedAt 陈旧**回远程**重验(⛔ 不打本地组 pool)✅ |
-| **M12d** 控制总线 + 撤销 A + maxEpoch + 定向踢 | ⬜ 待做 | 会话/安全重设计（§2.3） |
+| **M12d** 控制总线 + 撤销 A + maxEpoch + 定向踢 | 🔧 in-process 核心落地（int95 绿；剩 split 发布端） | `startStreamConsumer` 工厂✅、coord Redis(复用 durable 配置驱动)✅、revocation_log outbox(同事务+relayer+保留窗)✅、每节点消费本地 maxEpoch✅、`verifySession` maxEpoch 快检(移除 del sess)✅、自筛踢(client.leave 4001，WS e2e 绿)✅。**剩**：split 发布端(WebPlatform 侧 relayer + coord Redis)、发奖 recheck(待发奖逻辑) |
 | **archive 步** user_archive 分区 + active:lru/freeze 区化 | ⬜ 待做 | 耦合 M12c；⛔ 补齐前不开「多区 + freeze」 |
 | **M14/M15** 大混服实时横向 + presence/广播 | ⬜ 待做 | §4 |
 | **M16** 物理分组（100 组 × 10 区） | ⬜ 待做 | §5.1 |
