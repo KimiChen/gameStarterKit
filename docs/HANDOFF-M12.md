@@ -143,7 +143,7 @@ npm --workspace @game/server run stack && npm --workspace @game/server run db:bo
 | **W1** | **WebPlatform 端点鉴权分层** | [WEBPLATFORM.md §4](WEBPLATFORM.md) | ⛔ 现状 `/ban`·`/revoke`·`/verify`·`/character/*`·`/account/exists` **全无鉴权**——能连到进程就能封任何人、遍历用户足迹。**上线前必修** |
 | **W2** | split 下封号无审计行 | 同上 | `login_audit` 在账号库，但端点不写、组侧 `auditLogin` 写组库 |
 | **W3/W4** | 补画像端点 / 目录接真实配置 | 同上 | `bindProfile`·`bindPhone`；`lib/area.ts` 目前是 demo 静态表 |
-| **GM 工具** | 运营侧实现 | 规则 `09·G7b` | 契约已定（先权威后踢、遍历全节点、重试到确认+告警、可观测"已封仍在线"） |
+| **GM 工具** | 运营侧实现 | 规则 `09·G7b` + **[GM-TOOL-SPEC.md](GM-TOOL-SPEC.md)**（可直接交付运营） | 契约已定：先权威后踢、遍历全节点（⛔ 不走 LB）、重试到确认+告警、可观测"已封仍在线" |
 | **U6** | 发奖边界 ban recheck | DUAL_MODE §2.4 | 结算当前只落证据、无发奖逻辑；发奖落地时必须加 |
 | **archive 步** | `user_archive` 按区 + `active:lru`/freeze 区化 | DUAL_MODE 进度表 | ⛔ 补齐前不开「多区 + freeze」 |
 

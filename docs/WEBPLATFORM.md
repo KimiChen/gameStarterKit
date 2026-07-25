@@ -47,7 +47,7 @@
 | `POST /ban`·`/revoke` | **特权** | 一条 UPDATE 写权威（`status=1` / `token_hash=NULL`）= **下次登不上**；返回 `{banned}`/`{revoked}` = 是否命中（组侧据此决定是否踢在线；`false`=无此账号则不广播） |
 
 **踢在线不在本服务**：封号 SOP 第二步由 **GM 工具**直连各组节点 `POST /admin/kick` 并按 ack 确认送达
-（规则 [09·G7b](SERVER.md#12-开发约束63-条规则目录)）。本服务**刻意不持 coord Redis、不广播**——
+（规则 [09·G7b](SERVER.md#12-开发约束63-条规则目录)；运营侧实现规格见 [GM-TOOL-SPEC.md](GM-TOOL-SPEC.md)）。本服务**刻意不持 coord Redis、不广播**——
 保证来自 GM 的遍历确认，而非 fire-and-forget 广播（决策见 §5）。
 
 ## 4. 待办（上线前必做）
