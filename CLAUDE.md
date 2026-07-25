@@ -6,6 +6,7 @@
 > - **[docs/SERVER.md](docs/SERVER.md)** —— 服务端目录/ws-RPC/outbox/冷档/广播/**63 条 `09·XX` 规则目录 + 07 契约表**
 > - **[docs/CLIENT.md](docs/CLIENT.md)** —— 客户端目录/视图逻辑二分/viewRegistry/codegen/微信踩坑/首次打开
 > - **[docs/WEBPLATFORM.md](docs/WEBPLATFORM.md)** —— 账号门户（WebPlatform）契约/部署模式/端点清单/**待办账本**
+> - **[docs/HANDOFF-M12.md](docs/HANDOFF-M12.md)** —— M12c/M12d 交接：封号 SOP/单端顶号/部署模式 + **硬约束**与已知边界
 > 每个源码目录另有就近 README（`每个目录有 README` 约定）。根上手页见 [README.md](README.md)。
 
 ## 技术栈（2026-07 定版）
