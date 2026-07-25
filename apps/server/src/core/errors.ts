@@ -4,7 +4,8 @@
  * 客户端按 `code` 分支，⛔ 禁止解析 `msg`（09·G3）。新增错误码必须先加 07 的表。
  */
 
-import type { RpcErrCode } from "@game/shared";
+import { ErrorCode as ColyseusErrorCode, ServerError } from "@colyseus/core";
+import type { ErrorCodeType, RpcErrCode } from "@game/shared";
 
 // 错误码真源在 shared/protocol/lobbyRpc/envelope.ts 的 RPC_ERR_CODES（登记顺序：07 表 → shared → 此处映射）
 export type ErrCode = RpcErrCode;
@@ -110,4 +111,23 @@ export function toErrCode(e: unknown): ErrCode {
     if (code) { return code; }
   }
   return "INTERNAL";
+}
+
+/**
+ * 建连拒绝（`onAuth`/`onJoin`）专用的 `ServerError`。
+ *
+ * ⚠ **`ServerError` 的第一参会被 Colyseus 当 HTTP status 用**
+ * （`@colyseus/core/router/default_routes`: `throw ctx.error(e.code, …)` → `new Response(…, {status})`），
+ * 所以它自己的 `ErrorCode` 全是 **520–526**。⛔ 直接传业务码（2001/3004/3005/…）会让
+ * `new Response` 抛 `RangeError: init["status"] must be in the range of 200 to 599`：
+ * 拒连**仍然发生**（所以只断言"被拒"的测试是假绿），但**业务码到不了客户端**、服务端还刷 SERVER_ERROR 日志。
+ *
+ * 故约定：**status 只用 Colyseus 的 525/526，业务码走 message**（客户端 `Number(msg)` → shared
+ * `ErrorMessage` 取文案，仍是单源）。`errors-http-status.test.ts` 机检不再有越界 status。
+ */
+export function joinRefused(code: ErrorCodeType, kind: "auth" | "app" = "app"): ServerError {
+  return new ServerError(
+    kind === "auth" ? ColyseusErrorCode.AUTH_FAILED : ColyseusErrorCode.APPLICATION_ERROR,
+    String(code),
+  );
 }

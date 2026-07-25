@@ -9,7 +9,7 @@ import "./env-setup"; // ⚠ 必须第一个 import（限流放宽）
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
-import { KICK_CLOSE_CODE, LOBBY_MSG_PUSH, LOBBY_MSG_RPC, PROTOCOL_VERSION, RoomName } from "@game/shared";
+import { ErrorCode as SharedErrorCode, KICK_CLOSE_CODE, LOBBY_MSG_PUSH, LOBBY_MSG_RPC, PROTOCOL_VERSION, RoomName } from "@game/shared";
 import { server } from "../../src/app.config";
 import { banUser } from "../../src/core/auth/ban";
 
@@ -321,7 +321,11 @@ test("断线重连竞态：旧连接晚 leave 不误删新连接的推送注册�
 test("协议版本闸门：v 不匹配在 onAuth 即拒（ProtocolMismatch）；缺省 v 按 1 兼容", async () => {
   const { token } = await makeUser("proto");
   colyseus.sdk.auth.token = token;
-  await assert.rejects(colyseus.sdk.joinOrCreate(RoomName.Lobby, { v: 999 }), "旧协议客户端应被拒");
+  // ⚠ 断言**业务码真的送达**（原先只断言"被拒"＝假绿：越界 status 会让 code 丢失、服务端刷 RangeError）
+  await assert.rejects(
+    colyseus.sdk.joinOrCreate(RoomName.Lobby, { v: 999 }),
+    (e: Error) => e.message.includes(String(SharedErrorCode.ProtocolMismatch)),
+    `旧协议客户端应被拒且带业务码 ${SharedErrorCode.ProtocolMismatch}`);
   const ok = await colyseus.sdk.joinOrCreate(RoomName.Lobby, {}); // 未带 v = 首版客户端
   assert.ok(ok.sessionId, "缺省 v 视为 1，当前版本放行");
   await ok.leave();

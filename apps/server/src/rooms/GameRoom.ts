@@ -30,6 +30,7 @@ import {
 import { GameRoomState, PlayerState } from "./schema/GameRoomState";
 import { groupAdmitsZone } from "../core/infra/config";
 import { account } from "../platform/accountClient";
+import { joinRefused } from "../core/errors";
 import { emitMatchEvidence, MATCH_MODE_CASUAL, newMatchId } from "../core/match/matchConsumer";
 
 // demo 昵称池（原 mock/data，mock 层删除后归本房间私有；真实项目从档案取昵称）
@@ -81,18 +82,18 @@ export class GameRoom extends Room {
         // 协议版本硬闸（缺省按 1 兼容首版客户端）：服务端升协议后旧包 join 即拒——
         // 给出可识别错误码，而不是让旧客户端在 Schema 对不上的畸形状态里挂死
         if ((options?.v ?? 1) !== PROTOCOL_VERSION) {
-            throw new ServerError(ErrorCode.ProtocolMismatch, ErrorMessage[ErrorCode.ProtocolMismatch]);
+            throw joinRefused(ErrorCode.ProtocolMismatch); // ⚠ 业务码走 message（status 必须 200–599）
         }
         // 进服区归属硬闸（docs/DUAL_MODE.md §4.3 / M11）：sId ∉ 本组 GROUP_ZONES 即拒（防串服）；
         // sId 缺省 / GROUP_ZONES 空（单形态/大混服）放行，向后兼容（客户端软判定只改善 UX）。
         if (!groupAdmitsZone(options?.sId)) {
-            throw new ServerError(ErrorCode.WrongServer, ErrorMessage[ErrorCode.WrongServer]);
+            throw joinRefused(ErrorCode.WrongServer);
         }
         // token 严格化（去 mock 后）：⛔ 不再有「伪造/过期静默降游客」——dev-login 让真
         // token 零成本，游客模式失去存在理由；验不过一律拒连（可识别错误码给客户端回登录）
         const raw = options?.token ?? token ?? "";
         if (!FRAMEWORK_TOKEN_RE.test(raw)) {
-            throw new ServerError(ErrorCode.TokenExpired, ErrorMessage[ErrorCode.TokenExpired]);
+            throw joinRefused(ErrorCode.TokenExpired, "auth");
         }
         try {
             // strict：建连点回权威（token_hash/status）——⛔ 快路径只比对组缓存，被封账号能一直开新战斗房
@@ -100,7 +101,7 @@ export class GameRoom extends Room {
             // 不在 per-message 路径上。⚠ 已在房内的对局不受影响（打完为止，§2.3 已知边界 + U6 发奖 recheck）。
             return { userId: await account.verify(raw, true) };
         } catch {
-            throw new ServerError(ErrorCode.TokenExpired, ErrorMessage[ErrorCode.TokenExpired]);
+            throw joinRefused(ErrorCode.TokenExpired, "auth");
         }
     }
 
@@ -146,12 +147,12 @@ export class GameRoom extends Room {
         // 对局已开/已结算的房间不收新客（M8a：参与者集合在开局时固定，中途进人会污染名次与
         // 证据的 09·K5 输入完整性）。撮合层已由开局时的 lock() 挡住，此闸兜底 joinById 直连。
         if (this.state.phase !== GamePhase.Waiting) {
-            throw new ServerError(4002, "对局已开始，无法加入");
+            throw joinRefused(ErrorCode.GameAlreadyStarted); // ⛔ 曾硬编码 4002（越界 status + 与关闭码混淆）
         }
         const auth = client.auth as { userId?: string | null } | undefined;
         // 同一框架账号禁止占双座（对齐 Arthur VersusRoom）：证据里同一 userId 出现两个名次会污染战绩
         if (auth?.userId && [...this.sessionUserId.values()].includes(auth.userId)) {
-            throw new ServerError(4003, "该账号已在本房间");
+            throw joinRefused(ErrorCode.AlreadyInRoom); // ⛔ 曾硬编码 4003
         }
 
         const player = new PlayerState();

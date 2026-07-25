@@ -27,6 +27,8 @@ export const ErrorCode = {
     WrongServer: 3005,
     /** 建角失败（进区时角色注册/创建未成功，M12c D5）——可重试，客户端提示重进（docs/DUAL_MODE.md §2.7） */
     CharCreateFailed: 3006,
+    /** 同一账号已在本对局房（禁占双座：证据里同 userId 出现两个名次会污染战绩） */
+    AlreadyInRoom: 3007,
 } as const;
 
 export type ErrorCodeType = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -44,4 +46,5 @@ export const ErrorMessage: Record<number, string> = {
     [ErrorCode.ProtocolMismatch]: "客户端版本过旧，请更新后再试",
     [ErrorCode.WrongServer]: "该区服不可进入，请重新选服",
     [ErrorCode.CharCreateFailed]: "进入失败，请重试",
+    [ErrorCode.AlreadyInRoom]: "该账号已在本对局中",
 };
