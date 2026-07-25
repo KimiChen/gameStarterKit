@@ -5,6 +5,7 @@
 > - **[docs/OVERVIEW.md](docs/OVERVIEW.md)** —— 双端设计意图、单源契约、机检哲学、玩法概念去处
 > - **[docs/SERVER.md](docs/SERVER.md)** —— 服务端目录/ws-RPC/outbox/冷档/广播/**63 条 `09·XX` 规则目录 + 07 契约表**
 > - **[docs/CLIENT.md](docs/CLIENT.md)** —— 客户端目录/视图逻辑二分/viewRegistry/codegen/微信踩坑/首次打开
+> - **[docs/WEBPLATFORM.md](docs/WEBPLATFORM.md)** —— 账号门户（WebPlatform）契约/部署模式/端点清单/**待办账本**
 > 每个源码目录另有就近 README（`每个目录有 README` 约定）。根上手页见 [README.md](README.md)。
 
 ## 技术栈（2026-07 定版）

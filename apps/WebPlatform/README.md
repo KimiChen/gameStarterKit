@@ -1,6 +1,6 @@
 # apps/WebPlatform — 平台门户服务（MySQL-only）
 
-DUAL_MODE [§2.7](../../docs/DUAL_MODE.md)。**门户 = 目录 + 身份权威 + 只读投影**，zone-aware
+**设计契约 + 待办账本见 [docs/WEBPLATFORM.md](../../docs/WEBPLATFORM.md)**（本文只做代码导览）。DUAL_MODE [§2.7](../../docs/DUAL_MODE.md)。**门户 = 目录 + 身份权威 + 只读投影**，zone-aware
 但不拥有权威玩法态、不跑区逻辑。⛔ **MySQL-only，无 Redis、无缓存**（`verify` 一条 PK SELECT）。
 
 ## 部署模式（deploy-mode，去 big-bang 风险）

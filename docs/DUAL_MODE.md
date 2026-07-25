@@ -237,7 +237,7 @@ F4 的两问：
 **定位精化（覆盖 §2.1 的「三盲」）**：`apps/WebPlatform` 不是「三盲的账号服务」，而是**平台门户 = 目录 + 身份权威 + 只读投影**。它 **zone-aware**（知道有哪些服、按服给角色数据打标签），但**不拥有权威玩法/经济状态、不跑区内逻辑**——这才是准确的边界，`§2.1` 的「三盲」按此读。
 
 **分层**：
-- **WebPlatform（web/门户层，MySQL-only、⛔ 无 Redis 无缓存）**：login/verify/ban、服务器目录（`/area/list` 整体：al/h/wsUrl/isOps）、char_registry（存在性权威 + 展示投影）、character.register/query。**客户端进游戏前的一切（登录 + 选服 + 选角）都打这。**
+- **WebPlatform（web/门户层，MySQL-only、⛔ 无 Redis 无缓存；契约与待办见 [WEBPLATFORM.md](WEBPLATFORM.md)）**：login/verify/ban、服务器目录（`/area/list` 整体：al/h/wsUrl/isOps）、char_registry（存在性权威 + 展示投影）、character.register/query。**客户端进游戏前的一切（登录 + 选服 + 选角）都打这。**
 - **apps/server（游戏层）**：ws 对局、每区经济/玩法、**pay 回调**（唯一留 server 的 HTTP，zone-aware）；组 onAuth 保留**强一致进服硬闸**；（future）向 WebPlatform 投影服务器状态 + 角色展示摘要。
 
 **一致性两级（弱一致门户能安全成立的支点）**：
