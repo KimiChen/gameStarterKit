@@ -28,6 +28,10 @@ export type AuthInvalidReason =
 let userId = "";
 const authInvalidHandlers = new Set<(reason: AuthInvalidReason) => void>();
 const connLostHandlers = new Set<() => void>();
+// 战斗房（GameRoom）连接最终死亡。⚠ 与 connLost（大厅房）**刻意分开**：两者的处置不同——
+// 大厅断线只需提示重进；战斗断线还必须**回滚战斗态**（拆渲染层/输入/ECS + inBattle 复位），
+// 否则 Main 会拿着一个死房间继续驱动渲染，玩家卡在冻结画面里无路可回。
+const battleLostHandlers = new Set<() => void>();
 
 /** 登录成功：记会话（token 进 core/http，后续 HTTP Bearer / 房间 join 都取自它）。 */
 export function setSession(r: ILoginRes): void {
@@ -71,6 +75,19 @@ export function notifyAuthInvalid(reason: AuthInvalidReason): void {
 }
 
 /** 网络层上报大厅连接最终死亡（非鉴权原因）。登录态保留——UI 可提示后用原 token 重连。 */
+/** 订阅战斗房连接最终死亡（Main 回滚战斗态、view 层做导航/提示），返回解绑函数。 */
+export function onBattleLost(cb: () => void): () => void {
+    battleLostHandlers.add(cb);
+    return () => { battleLostHandlers.delete(cb); };
+}
+
+/** 网络层上报战斗房最终死亡（非主动 leave）。登录态不受影响——只是这一局没了。 */
+export function notifyBattleLost(): void {
+    for (const cb of battleLostHandlers) {
+        try { cb(); } catch (e) { console.error("[session] battleLost 处理器异常", e); }
+    }
+}
+
 export function notifyConnLost(): void {
     for (const cb of connLostHandlers) {
         try { cb(); } catch (e) { console.error("[session] connLost 处理器异常", e); }

@@ -23,7 +23,7 @@ import { ConfirmLogic } from "../logic/page/ConfirmLogic";
 import { getBaseUrl, getToken } from "../core/http";
 import { devLogin } from "../net/http/account";
 import { WebSocketClient } from "../net/WebSocketClient";
-import { clearSession, onAuthInvalid, onConnLost, setSession } from "../net/session";
+import { clearSession, onAuthInvalid, onBattleLost, onConnLost, setSession } from "../net/session";
 import { ForceLogoutMessage, ForceLogoutReason, UserRpc, isServerEnterable, type IUserView } from "../shared/index";
 import { fetchAreaList } from "../net/http/area";
 import { fetchNotices } from "../net/http/notice";
@@ -52,6 +52,14 @@ function wireSessionEvents(reopenLogin: () => void): void {
         : reason === "ACCOUNT_BANNED" ? ForceLogoutMessage[ForceLogoutReason.Banned]
         : "登录已过期，请重新登录";
       await openConfirm({ title: "提示", content: text, noText: null });
+      reopenLogin();
+    })();
+  });
+  // 战斗连接最终死亡：战斗态已由 Main 回滚（订阅序在前），此处只管提示 + 导航
+  onBattleLost(() => {
+    void (async () => {
+      closeLobby();
+      await openConfirm({ title: "战斗已结束", content: "与对局的连接已断开", noText: null });
       reopenLogin();
     })();
   });

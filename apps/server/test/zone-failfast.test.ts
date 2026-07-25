@@ -41,3 +41,25 @@ test("硬化 fail-fast：GROUP_ZONES 空（单形态）+ 未建 zoneCtx → 回�
   assert.match(r.stdout, /_user:\{u\}/, `应基础前缀（无 s{sId}_），实际：${r.stdout.slice(0, 200)}`);
   assert.doesNotMatch(r.stdout, /_s\d+_user:/, "单形态不应带区前缀");
 });
+
+// ── 进服区归属闸：区服组下「缺 sId」必须拒（M12d 评审收紧） ─────────────────
+const ADMITS = "const { groupAdmitsZone } = await import('./src/core/infra/config.ts');";
+function admits(groupZones: string | undefined, expr: string): string {
+  const env = { ...process.env } as Record<string, string | undefined>;
+  if (groupZones === undefined) { delete env.GROUP_ZONES; } else { env.GROUP_ZONES = groupZones; }
+  const r = spawnSync(process.execPath,
+    ["--import", "tsx", "--input-type=module", "-e", `${ADMITS} console.log(String(${expr}));`],
+    { cwd: SERVER_ROOT, env: env as NodeJS.ProcessEnv, encoding: "utf8", timeout: 30_000 });
+  return r.stdout.trim();
+}
+
+test("区服组（GROUP_ZONES 非空）：**缺 sId 必须拒**（否则大厅串基础前缀 + GameRoom 绕过 filterBy 混区）", () => {
+  assert.equal(admits("1,2", "groupAdmitsZone(undefined)"), "false", "缺 sId → 拒");
+  assert.equal(admits("1,2", "groupAdmitsZone(1)"), "true", "本组承载的区 → 放行");
+  assert.equal(admits("1,2", "groupAdmitsZone(3)"), "false", "非本组的区 → 拒（防串服）");
+});
+
+test("单形态（GROUP_ZONES 空）：缺 sId 仍放行（向后兼容老客户端）", () => {
+  assert.equal(admits(undefined, "groupAdmitsZone(undefined)"), "true");
+  assert.equal(admits("", "groupAdmitsZone(5)"), "true", "空 = 承载全部");
+});

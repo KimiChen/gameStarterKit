@@ -52,3 +52,36 @@ test("session：connLost 保留登录态（非鉴权死亡，可原 token 重连
   un();
   clearSession();
 });
+
+// ── 战斗连接死亡事件（M12d 评审：GameRoom 断线原先无人上报 → Main 卡 inBattle=true） ──
+
+test("battleLost 与 connLost 是两个独立事件（战斗断线 ⛔ 不当成大厅断线）", async () => {
+  const { onBattleLost, notifyBattleLost, onConnLost, notifyConnLost } = await import("../src/net/session");
+  let battle = 0, conn = 0;
+  const offB = onBattleLost(() => { battle++; });
+  const offC = onConnLost(() => { conn++; });
+  try {
+    notifyBattleLost();
+    assert.deepEqual([battle, conn], [1, 0], "战斗断线只触发 battleLost");
+    notifyConnLost();
+    assert.deepEqual([battle, conn], [1, 1], "大厅断线只触发 connLost");
+  } finally { offB(); offC(); }
+});
+
+test("battleLost 处理器抛错不影响其它订阅者（Main 回滚 + pages 导航互不牵连）", async () => {
+  const { onBattleLost, notifyBattleLost } = await import("../src/net/session");
+  const seen: string[] = [];
+  const off1 = onBattleLost(() => { seen.push("main"); throw new Error("boom"); });
+  const off2 = onBattleLost(() => { seen.push("pages"); });
+  try {
+    notifyBattleLost();
+    assert.deepEqual(seen, ["main", "pages"], "前一个抛错，后一个照常收到");
+  } finally { off1(); off2(); }
+});
+
+test("⛔ battleLost 不清登录态（只是这一局没了，token 仍有效）", async () => {
+  const { setSession, isLoggedIn, notifyBattleLost } = await import("../src/net/session");
+  setSession({ userId: "u_bl", token: "t_bl", isNew: false });
+  notifyBattleLost();
+  assert.equal(isLoggedIn(), true, "登录态保留（与 authInvalid 的区别）");
+});

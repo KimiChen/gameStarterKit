@@ -15,6 +15,7 @@ import { DESIGN_WIDTH, DESIGN_HEIGHT } from "./designSpec";
 import { installWeChatCompat } from "./core/wechat-compat";
 import { getToken, initHttp, initPortal } from "./core/http";
 import { getCurrentServer } from "./net/serverSession";
+import { onAuthInvalid, onBattleLost } from "./net/session";
 import { RoomClient } from "./net/RoomClient";
 import { GameECS } from "./logic/rooms/ballMove/GameECS";
 import { PlayerModel } from "./logic/rooms/ballMove/GameComps";
@@ -85,6 +86,13 @@ export class Main extends Component {
         initHttp(this.effectiveServerUrl);
         initPortal(this.portalUrl); // 留空 = 跟随游戏服（getPortalUrl 回退 baseUrl）；split 时填 WebPlatform 域名
 
+        // ⚠ **必须在 openLogin(→wireSessionEvents) 之前订阅**：处理器按订阅序执行，
+        // 本类先把战斗态拆干净，pages 再做导航——⛔ 否则登录页会叠在仍在跑的战斗上。
+        //  - 鉴权失效（封号/顶号/强制下线）：⛔ 原先只退大厅、战斗房照跑（被封玩家继续打 + UI 错乱）
+        //  - 战斗连接死亡：⛔ 原先无人上报，Main 拿着死房间恒 inBattle=true，玩家卡冻结画面
+        onAuthInvalid(() => { this.teardownBattle(); });
+        onBattleLost(() => { this.teardownBattle(); });
+
         // 大厅壳走 FGUI：动态 import 组合根（铁律 10——fairygui 不进静态依赖图）。
         // 登录页的「进入游戏」经 Home 走到 enterBattle 回调，才拉起 ballMove。
         try {
@@ -116,8 +124,17 @@ export class Main extends Component {
         }
     }
 
-    /** 进战斗失败回滚：拆渲染层/输入/ECS → 复位标志 → 重开大厅（可重试）。 */
-    private abortBattle(): void {
+    /**
+     * **只回滚战斗态**（拆渲染层/输入/ECS + 复位标志 + 退房），⛔ 不做任何导航。
+     * 供三处复用：进战斗失败（abortBattle 再叠导航）、强制下线、战斗连接死亡——
+     * 后两者的导航/提示归 view 层（pages 订阅同一事件），本类只负责「战斗态干净」。
+     * 幂等：不在战斗中直接返回。
+     */
+    private teardownBattle(): void {
+        if (!this.inBattle) { return; }
+        this.inBattle = false;
+        this.started = false;
+        void RoomClient.inst.leave().catch(() => { /* 已死的房退不掉属预期 */ });
         input.off(Input.EventType.TOUCH_START, this.onTouch, this);
         input.off(Input.EventType.TOUCH_MOVE, this.onTouch, this);
         input.off(Input.EventType.TOUCH_END, this.onTouchEnd, this);
@@ -127,7 +144,12 @@ export class Main extends Component {
         this.layerTf = null;
         this.touchTarget = null;
         this.gameECS.clear();
-        this.inBattle = false;
+    }
+
+    /** 进战斗失败回滚：回滚战斗态 → 重开大厅（可重试）。 */
+    private abortBattle(): void {
+        this.inBattle = true;      // teardown 幂等靠此标志；失败路径可能尚未真正入战
+        this.teardownBattle();
         void import("./view/pages")
             .then((pages) => pages.openLogin(() => { void this.enterBattle(); }))
             .catch((e) => console.error("[Main] 回大厅失败：", e));
@@ -141,8 +163,9 @@ export class Main extends Component {
         const endpoint = cur?.wsUrl ? cur.wsUrl.replace(/^ws/, "http") : this.effectiveServerUrl;
         RoomClient.inst.init(endpoint);
         // 区服进服硬闸接线（docs/DUAL_MODE.md §4.3 / M11）：带上选中区服 sId，供服务端 onAuth
-        // 校验 sId ∈ GROUP_ZONES（防串服）。cur 为 null 的单形态路径 → sId undefined →
-        // 服务端 groupAdmitsZone 恒放行，现有行为不变。此处是 Main 已有「区服 wsUrl 路由」的补全。
+        // 校验 sId ∈ GROUP_ZONES（防串服）+ GameRoom 的 filterBy(["sId"]) 按区撮合。
+        // ⚠ cur 为 null（未选服）→ 不带 sId：单形态放行；**区服组会拒**（M12d 收紧——缺 sId 会让
+        // 大厅串基础前缀、且绕过 filterBy 混区），故区服部署下必须先选服再进战斗。
         const room = await RoomClient.inst.joinGame({ token: getToken(), sId: cur?.sId });
         if (this.destroyed) {
             // 连接在途期间组件已销毁（场景重载）：房间立即退掉——否则它永驻并把

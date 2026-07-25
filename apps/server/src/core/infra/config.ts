@@ -120,10 +120,19 @@ export const GROUP_ZONES: readonly number[] = (() => {
   return out;
 })();
 
-/** 进服区归属闸（docs/DUAL_MODE.md §4.3 / M11）：sId 缺省或 GROUP_ZONES 空（单形态/大混服）
- *  = 承载全部，放行；否则要求 sId ∈ GROUP_ZONES。⛔ 客户端软判定只改善 UX，服务端此闸才是真闸。 */
+/**
+ * 进服区归属闸（docs/DUAL_MODE.md §4.3 / M11）。⛔ 客户端软判定只改善 UX，服务端此闸才是真闸。
+ *
+ * - `GROUP_ZONES` 空（单形态/大混服）= 承载全部 → 一律放行（含不带 sId 的老客户端，向后兼容）。
+ * - `GROUP_ZONES` 非空（真区服组）→ **要求 sId 必带且 ∈ 集合**。
+ *
+ * ⚠ **为什么区服下缺 sId 也要拒**（M12d 评审收紧）：放行会造成两处**静默**错误 ——
+ * ① `LobbyRoom` 取 `auth.sId = sId ?? 0` ⇒ 该玩家整局大厅数据落**基础前缀**而非 `s{sId}_`（串前缀）；
+ * ② `GameRoom` 的 `filterBy(["sId"])` 只对**含** sId 的 join 生效 ⇒ 缺 sId 者会被撮合进任意区的房（混区）。
+ * 两者都不会触发 `keys.ts` 的 fail-fast（战斗路径不碰 per-zone 键），只能在此拦。
+ */
 export const groupAdmitsZone = (sId: number | undefined): boolean =>
-  sId === undefined || GROUP_ZONES.length === 0 || GROUP_ZONES.includes(sId);
+  GROUP_ZONES.length === 0 || (sId !== undefined && GROUP_ZONES.includes(sId));
 
 export const MYSQL_URL = () => env("MYSQL_URL", `mysql://root@127.0.0.1:3316/game_${PROJECT_ID}`);
 export const MYSQL_POOL_SIZE = envInt("MYSQL_POOL_SIZE", 20);

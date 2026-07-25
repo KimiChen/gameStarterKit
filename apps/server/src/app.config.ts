@@ -16,7 +16,13 @@ import { routes } from "./http/index";
  */
 export const server = defineServer({
     rooms: {
-        [RoomName.Game]: defineRoom(GameRoom),
+        // ⚠ **区服撮合硬闸**：`filterBy(["sId"])` 让 joinOrCreate 只匹配同 sId 的房
+        //（⛔ 不加则 1 区与 2 区玩家会被撮合进同一场对局 —— 而战斗路径不碰 per-zone 键，
+        //   `keys.ts` 的 fail-fast 逮不到，属**静默混区**）。
+        // ⚠ 必须与 `groupAdmitsZone` 的「缺 sId 收紧」成对：filterBy 只在 options **含** sId 时
+        //   才纳入过滤（`RegisteredHandler.getFilterOptions` 用 hasOwnProperty），缺 sId 的 join
+        //   会绕过过滤匹配到任意房。单形态（不带 sId）两侧都无该键，互相匹配，行为不变。
+        [RoomName.Game]: defineRoom(GameRoom).filterBy(["sId"]),
         // 网关大厅房（框架 M5）：取数/邮件/工会走单一 rpc 消息通道。连接需要框架 token
         //（/account/wx-login 签发），且依赖本地栈（npm --workspace @game/server run stack）；
         // 不需要大厅功能的联调不 join 它即可，不影响 GameRoom。

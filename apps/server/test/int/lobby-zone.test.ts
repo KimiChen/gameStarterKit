@@ -163,3 +163,20 @@ test("缺 sId join：auth.sId=0，大厅建角/写 RPC 落基础前缀（大混�
   assert.equal(await c.exists(s1u), 0, "写路径未串到 s1_");
   await room.leave();
 });
+
+test("GameRoom 撮合按区隔离：不同 sId ⛔ 不共房；同 sId 才合流（filterBy(['sId'])）", async () => {
+  const a = await makeAcct("gz-a"), b = await makeAcct("gz-b"), c = await makeAcct("gz-c");
+  const join = async (token: string, sId: number) => {
+    colyseus.sdk.auth.token = token;
+    return colyseus.sdk.joinOrCreate(RoomName.Game, { v: PROTOCOL_VERSION, sId });
+  };
+  const r1 = await join(a.token, 1);
+  const r2 = await join(b.token, 2);
+  const r3 = await join(c.token, 1);
+  try {
+    assert.notEqual(r1.roomId, r2.roomId, "1 区与 2 区**不得**撮合进同一场对局（⛔ 静默混区）");
+    assert.equal(r3.roomId, r1.roomId, "同区正常合流（撮合未被过度收紧）");
+  } finally {
+    await Promise.all([r1.leave(), r2.leave(), r3.leave()].map((p) => p.catch(() => {})));
+  }
+});
