@@ -133,3 +133,28 @@ test("登录限流：同 IP 超容量 → RATE_LIMITED（独立严格档）", as
     "SELECT user_id FROM accounts WHERE openid = ?", [`op_${run}_grace`]);
   if (rows.length > 0 && !createdUids.includes(rows[0].user_id as string)) { createdUids.push(rows[0].user_id as string); }
 });
+
+test("并发登录定序：N 个同账号登录并发 → 两存储终态一致（⛔ 缓存不被陈旧 hash 覆盖）", async () => {
+  const { createHash } = await import("node:crypto");
+  const N = 6;
+  const results = await Promise.allSettled(
+    Array.from({ length: N }, () => wxLogin({ code: "race", ip: freshIp() })));
+  const won = results.filter((r) => r.status === "fulfilled") as PromiseFulfilledResult<{ userId: string; token: string }>[];
+  assert.ok(won.length >= 1, "至少一个成功");
+  const uid = won[0].value.userId;
+  if (!createdUids.includes(uid)) { createdUids.push(uid); }
+
+  // 核心不变式：MySQL 权威 hash === Redis 组缓存 hash（曾经会分叉：输家覆盖赢家）
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    "SELECT token_hash FROM accounts WHERE user_id = ?", [uid]);
+  const cached = await clientFor(uid).hget(kSess(uid), "tokenHash");
+  assert.equal(cached, rows[0].token_hash, "缓存与权威一致（⛔ 无分叉）");
+
+  // 且那个 hash 必属于某个成功返回的 token（不是幽灵值）
+  const owners = won.filter((r) => createHash("sha256").update(r.value.token).digest("hex") === cached);
+  assert.equal(owners.length, 1, "终态 hash 恰属于其中一个成功登录");
+  // 失败的那些必须是**可重试的 BUSY**（⛔ 不能是 500/内部错）
+  for (const r of results.filter((x) => x.status === "rejected") as PromiseRejectedResult[]) {
+    assert.match(String(r.reason), /BUSY|并发登录|busy/i, `失败必须是可重试 BUSY，实际：${String(r.reason)}`);
+  }
+});

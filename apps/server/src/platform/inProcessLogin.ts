@@ -9,9 +9,11 @@
  * 出参⛔禁含 openid / unionid / session_key（09·G8）。
  * 注：Arthur 的「存量账号绑定」（旧 deviceId → openid 回填）本项目无存量账号，未移植。
  */
-import { devLogin as libDevLogin, wxLogin as libWxLogin, type LoginResult as LibLoginResult } from "@game/webplatform/lib";
-import { AuthRequiredError, BannedError, RateLimitedError, WxUnavailableError } from "../core/errors";
+import { devLogin as libDevLogin, verifyToken, wxLogin as libWxLogin, type LoginResult as LibLoginResult } from "@game/webplatform/lib";
+import { AuthRequiredError, BannedError, BusyError, RateLimitedError, WxUnavailableError } from "../core/errors";
 import { writeGroupSess } from "../core/auth/session";
+import { withUserLock } from "../core/locks";
+import { zoneCtx } from "../core/infra/keys";
 
 export interface WxLoginInput { code: string; ip: string; deviceId?: string }
 
@@ -32,9 +34,31 @@ function loginFail(reason: LoginFailReason): never {
   }
 }
 
-/** 成功：token 已由 lib 签 MySQL 权威 → 写组侧 sess 缓存 → 返回精简出参。 */
+/**
+ * 成功收尾：**回权威确认本次签发仍有效**，再写组侧 sess 缓存。
+ *
+ * ⚠ **并发登录定序**（同 uid 两次登录几乎同时）：MySQL 行锁把两次 `issueToken` 串起来、
+ * 最后落库者是权威赢家；但两次 `writeGroupSess` 各写各的，**晚落地的早登录会用陈旧 hash
+ * 覆盖缓存** ⇒ 缓存与权威分叉：**输家凭缓存继续玩，赢家每条 RPC 401 且被顶号广播踢掉**
+ * （判别位 `exceptHash` 恰好保护的是输家）。
+ *
+ * 修法 = 把「回权威 + 写缓存」放进**同一把 per-uid 锁**串行：
+ * - 锁内 `verifyToken` 识别出输家 ⇒ ⛔ 不写缓存、⛔ 不广播踢，向客户端报**可重试**错误（BUSY）；
+ *   客户端重登即成为新的赢家（正常顶号语义）。
+ * - 无论如何交错，最后一个持锁者读到的都是已结算的 MySQL 状态 ⇒ 两存储终态一致。
+ *
+ * ⚠ 复用**唯一那把** per-uid 锁（09·L1 禁第二把）；它是 per-zone 键、而登录本就与区无关，
+ * 故显式 `sId=0`（区服部署下与各区玩法锁不同键，互不阻塞）。
+ * ⚠ split 不走本路径（登录在 WebPlatform、缓存由 onAuth 回权威后懒填），天然无此竞态。
+ */
 async function finish(r: Extract<LibLoginResult, { ok: true }>): Promise<LoginResult> {
-  await writeGroupSess(r.uid, r.token);
+  await zoneCtx.run({ sId: 0 }, () => withUserLock(r.uid, async () => {
+    const v = await verifyToken(r.uid, r.token);
+    if (!v.ok) {
+      throw new BusyError(`并发登录：本次签发已被更晚的登录取代（${v.reason}），请重试`);
+    }
+    await writeGroupSess(r.uid, r.token);
+  }));
   return { userId: r.uid, token: r.token, isNew: r.isNew };
 }
 

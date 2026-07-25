@@ -30,7 +30,9 @@ export default createEndpoint("/account/wx-login", {
     const code = toErrCode(e);
     // ⛔ 无 AUTH_EPOCH_STALE 分支：M12d 砍 epoch fence 后服务端不再产出该码（errors.ts 已无映射）
     const http = code === "ACCOUNT_BANNED" ? 403 : code === "RATE_LIMITED" ? 429
-      : code === "AUTH_REQUIRED" ? 401 : 500;
+      : code === "AUTH_REQUIRED" ? 401
+      // BUSY = 同 uid 并发登录抢锁失败/本次签发被更晚登录取代 → 409 可重试（⛔ 不是 500）
+      : code === "BUSY" ? 409 : 500;
     throw ctx.error(http, { error: code });
   }
 });

@@ -31,7 +31,9 @@ export default createEndpoint("/account/dev-login", {
     return await devLogin(ctx.body.devKey, ip, ctx.body.deviceId ?? null);
   } catch (e) {
     const code = toErrCode(e);
-    const http = code === "ACCOUNT_BANNED" ? 403 : code === "RATE_LIMITED" ? 429 : 500;
+    // BUSY = 同 uid 并发登录抢锁失败/本次签发被更晚登录取代 → 409 可重试（⛔ 不是 500）
+    const http = code === "ACCOUNT_BANNED" ? 403 : code === "RATE_LIMITED" ? 429
+      : code === "BUSY" ? 409 : 500;
     throw ctx.error(http, { error: code });
   }
 });
