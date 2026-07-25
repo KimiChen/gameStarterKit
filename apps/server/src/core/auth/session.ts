@@ -8,7 +8,8 @@
  *   `token_issued_epoch < token_epoch` 即 stale（AUTH_EPOCH_STALE）。
  * - Redis `sess:{uid}` 退为**组侧缓存**：快路径 tokenHash + freeze-guard 存在性 + connId/gwNode。
  *   2b-1 由 issueSession 暂时双写；2b-2 拆进程后由 onAuth 从 verify 结果懒填（2d 加 verifiedAt）。
- * - 封号/踢人 = **先写 MySQL** token_epoch+1 + token_hash=NULL，再删 sess:{uid}；⛔ 绝不删 user:{uid}（09·G7）。
+ * - 封号/踢人（M12d §2.3）= **先写 MySQL** token_epoch+1 + token_hash=NULL + revocation_log（同事务）→ 控制总线
+ *   广播 epoch → 各节点本地 maxEpoch → 快路径比对即拒 + 自筛踢在线连接；⛔ **不再删 sess**（改由 maxEpoch 快检），⛔ 绝不删 user:{uid}（09·G7）。
  */
 import { createHash, timingSafeEqual } from "node:crypto";
 import { AUTH_REVERIFY_TTL_S, SESS_TTL_S } from "../infra/config";
@@ -68,8 +69,9 @@ export async function writeGroupSess(uid: string, token: string, tokenEpoch: num
 }
 
 /**
- * 快路径校验（每 RPC）：只查 sess:{uid}。封号/踢人会删 sess，所以此路径足以让
- * 存量 token **立即**失效；epoch 双保险见 verifySessionStrict。
+ * 快路径校验（每 RPC）：读 sess:{uid}（tokenHash + tokenEpoch + verifiedAt）。撤销靠**本地 maxEpoch 快检**
+ * （M12d §2.3）——控制总线广播到达即 `sess.tokenEpoch < revokedEpoch(uid)` 拒，下一条 RPC 生效；
+ * verifiedAt 兜底 maxEpoch 漏读；epoch 权威双保险见 verifySessionStrict。
  */
 export async function verifySession(
   uid: string, token: string,

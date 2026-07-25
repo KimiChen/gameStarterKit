@@ -71,7 +71,9 @@ export function buildServer(): FastifyInstance {
     return { exists: await accountExists(req.body.uid) };
   });
 
-  // 撤销（封号 / 踢人）。
+  // 撤销（封号 / 踢人）：lib in-tx 写 accounts.epoch+1 + revocation_log。
+  // ⚠ TODO(M12d split 发布端)：split 下本进程写的 revocation_log 需 **WebPlatform 侧 relayer**（本进程持 coord Redis）
+  //   扫 relayed=0 → XADD 控制总线；游戏服进程的 relayer 够不到本账号库。未接前 split 撤销仅靠组 verifiedAt 60s 兜底。
   app.post<{ Body: { uid: string } }>("/ban", async (req) => {
     await banAccount(req.body.uid);
     return { ok: true };

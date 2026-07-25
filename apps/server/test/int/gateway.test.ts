@@ -12,6 +12,8 @@ import { boot, type ColyseusTestServer } from "@colyseus/testing";
 import { LOBBY_MSG_PUSH, LOBBY_MSG_RPC, PROTOCOL_VERSION, RoomName } from "@game/shared";
 import { server } from "../../src/app.config";
 import { banUser, issueSession } from "../../src/core/auth/session";
+import { setKickHandler } from "../../src/core/auth/revoke";
+import { kickUser } from "../../src/websocket/push";
 import { acquireLease } from "../../src/core/locks";
 import { createUser } from "../../src/core/userRecord";
 import { emitMailWake } from "../../src/core/economy/mailer";
@@ -207,11 +209,22 @@ test("错误码：AUTH_EPOCH_STALE / ACCOUNT_BANNED（复活会话被权威拦�
   await getPool().execute("UPDATE accounts SET token_epoch = token_epoch + 1 WHERE user_id = ?", [a.uid]);
   await assert.rejects(joinLobby(a.token), /AUTH_EPOCH_STALE/);
 
-  // banned：封号后 sess 被删；模拟复活 sess 再 join → 严格校验查 status 拦下
+  // banned（M12d：封号不再删 sess，靠 maxEpoch 快检 + 权威 status）：重签会话再 join → 严格校验查 status=1 拦下
   const b = await makeUser("ban");
   await banUser(b.uid, "test");
   const revived = await issueSession(b.uid, 99, null); // 复活的会话（epoch 假装很新）
   await assert.rejects(joinLobby(revived.token), /ACCOUNT_BANNED/);
+});
+
+test("自筛踢 e2e：在连用户被 banUser → 控制总线 applyRevoke 命中本节点 → 强制下线（onLeave code=4001）", async () => {
+  const u = await makeUser("kick");
+  const room = await joinLobby(u.token);
+  await sleep(100); // 确保 LobbyRoom.onJoin/registerOnline 已注册 kick 句柄
+  const left = new Promise<number>((resolve) => { room.onLeave((code: number) => resolve(code)); });
+  setKickHandler(kickUser); // boot 不跑 index.ts，显式挂自筛踢句柄（生产在 index.ts 启动期挂）
+  await banUser(u.uid, "test");
+  const code = await Promise.race([left, sleep(5000).then(() => -1)]);
+  assert.equal(code, 4001, "被封在连用户被强制下线，onLeave code=4001（M12d §2.3 自筛踢）");
 });
 
 test("邮件：list / markRead（MySQL 权威，09·A6）+ 唤醒推送（09·K6）", async () => {

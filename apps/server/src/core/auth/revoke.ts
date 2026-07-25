@@ -9,7 +9,7 @@
  * 每节点自持 maxEpoch、⛔ 不查 presence；发行幂等（重发 max-wins 无害），崩溃窗由 relayer 兜底扫描收敛。
  * 自筛踢在线连接见 M12d-b（applyRevoke 内追加）。
  */
-import { REVOKE_RELAY_POLL_MS, REVOKE_STREAM_TRIM_MS } from "../infra/config";
+import { REVOKE_RELAY_POLL_MS, REVOKE_RETENTION_MS, REVOKE_STREAM_TRIM_MS } from "../infra/config";
 import { K_STREAM_REVOKE } from "../infra/keys";
 import { coordClient } from "../infra/redisRoute";
 import { getPool } from "../infra/mysql";
@@ -57,11 +57,34 @@ export async function drainRevocations(): Promise<number> {
   return n;
 }
 
+/** 保留窗清理：删已发行（relayed=1）老行（idx_unrelayed 让 relayer 扫始终落在 relayed=0 前缀）。返回删除行数。 */
+export async function sweepRevokeRetention(): Promise<number> {
+  const [r] = await getPool().execute<ResultSetHeader>(
+    "DELETE FROM revocation_log WHERE relayed = 1 AND created_at < NOW(3) - INTERVAL ? SECOND",
+    [Math.floor(REVOKE_RETENTION_MS / 1000)]);
+  return r.affectedRows;
+}
+
 let relayer: ReturnType<typeof setInterval> | null = null;
-/** 撤销发行 relayer（崩溃窗兜底周期扫描；happy path 由撤销源即时 drainRevocations）。幂等，多实例并发无害。 */
+let draining = false;  // 重入护栏：setInterval 不等前次完成，慢 drain 期禁并发
+let lastSweep = 0;
+async function relayTick(): Promise<void> {
+  if (draining) { return; }
+  draining = true;
+  try {
+    await drainRevocations();
+    if (Date.now() - lastSweep > REVOKE_RETENTION_MS / 4) { lastSweep = Date.now(); await sweepRevokeRetention(); }
+  } catch (e) {
+    console.error("[revoke-relayer]", e);
+  } finally {
+    draining = false;
+  }
+}
+
+/** 撤销发行 relayer（崩溃窗兜底周期扫描 + 保留窗清理；happy path 由撤销源即时 drainRevocations）。幂等，多实例并发无害。 */
 export function startRevokeRelayer(): void {
   if (relayer) { return; }
-  relayer = setInterval(() => { void drainRevocations().catch((e) => console.error("[revoke-relayer]", e)); }, REVOKE_RELAY_POLL_MS);
+  relayer = setInterval(() => { void relayTick(); }, REVOKE_RELAY_POLL_MS);
   relayer.unref?.(); // ⛔ 不阻止进程退出
 }
 export function stopRevokeRelayer(): void { if (relayer) { clearInterval(relayer); relayer = null; } }

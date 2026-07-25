@@ -435,7 +435,7 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 - **G4** 大包防护在 ws transport 层设 maxPayload（超限断帧不解码），dispatcher 校验只是兜底。
 - **G5** 匿名/optional-auth 的限流与幂等 key 用 sessionId/真实 IP，⛔ 禁 userId=null 塌缩成共享 key。
 - **G6** 未知 type 只回 UNKNOWN_TYPE + 低权重计数，⛔ 不计 flood 不封禁。
-- **G7** 封号/踢人 = MySQL `token_epoch+1`（先写 MySQL）+ 删 `sess:{uid}`；⛔ 绝不删 `user:{uid}`；wx-login 签发前必须 SELECT status。
+- **G7** 封号/踢人 = MySQL `token_epoch+1` + `revocation_log`（同事务，先写 MySQL）→ 控制总线广播 epoch → 各节点本地 maxEpoch 快检拒 + 自筛踢（M12d §2.3，⛔ 不再删 `sess:{uid}`）；⛔ 绝不删 `user:{uid}`；wx-login 签发前必须 SELECT status。
 - **G8** session_key 仅服务端持有绝不下发；wx-login 出参 ⛔ 禁含 openid/unionid/session_key。
 - **G9** handler 超时用 Promise.race 无法真正取消——关键写副作用必须数据层幂等/CAS（I1/L3），⛔ 不依赖应用层取消。
 
@@ -491,12 +491,13 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 | `applied:{uid}` | ZSET | 无 | 幂等已 apply 集合（member=op_id, score=applyMs，I5 裁剪） |
 | `lock:{uid}` | STRING | 5s | 跨实例用户锁（值=fence，SET NX PX） |
 | `idem:{type}:{uid}:{clientReqId}` | STRING | pending 10s / done 60s | 幂等占位（I1） |
-| `sess:{uid}` | HASH | 3d | 会话（含 tokenEpoch，封号删它 token 立即失效） |
+| `sess:{uid}` | HASH | 3d | 组侧会话缓存（tokenHash/tokenEpoch/verifiedAt/connId/gwNode）。撤销靠**本地 maxEpoch 快检**（M12d §2.3），⛔ 不再删它 |
 | `guild:evt:seq:{gid}` | STRING | 无 | 工会事件 seq（INCR，§10）。⚠ gid 仅限 `core/guild/catalog`（join 硬校验）——INCR 隐式铸键 + 无 TTL + noeviction，键面必须有硬上限 |
 | `guild:evt:log:{gid}` | LIST | 无（LTRIM 上限） | 工会事件近窗（gid 约束同上） |
 | `active:lru:{bucket}` | ZSET | 无 | 活跃索引（找冷用户，bucket 非 uid hash-tag） |
 | `stream:match` | STREAM | 无（XTRIM MINID，K6） | 结算证据链 |
 | mail 唤醒流 | STREAM | 无（XTRIM MINID） | 邮件实时唤醒（权威在 MySQL mail 表，A6） |
+| `stream:revoke` | STREAM | 无（XTRIM MINID，K6） | **控制总线撤销流**（M12d §2.3；跑在 coord 实例 `REDIS_COORD_URL`，dev 复用 durable）。广播 {uid,epoch} max-wins，每节点独立游标消费维护本地 maxEpoch |
 
 ### Redis key（cache 实例：allkeys-lru，物理独立）
 
@@ -560,6 +561,9 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 | `AUTH_DEV_ENABLED` | 开发 1 / 生产 0 | dev-login 开关；生产显式开启 = 加载期拒绝启动（config-guard 同族 fail-fast） |
 | `PORT` | 2568（根 .env 可覆盖） | 开发端口，`index.ts` 显式传 `listen(app, PORT)`；多项目并行时各项目错开；Colyseus 默认 2567 常被占用故不用之。校验纯整数 1–65535，服务端与 devEnv 生成器同一规则、非法即失败（config-guard.test 机检） |
 | `WX_APPID / WX_SECRET` | env | 微信凭证（KMS 注入，不进代码库） |
+| `AUTH_REVERIFY_TTL_S` | 60 | 组本地鉴权缓存兜底窗（快路径超此值未回权威 → 重验；⛔ ≠ SESS_TTL_S。M12d §2.3 / U2） |
+| `REDIS_COORD_URL` | = `REDIS_DURABLE_URL` | 控制总线 coord Redis（撤销流；dev 复用 durable、prod 物理隔离 HA。M12d §2.3） |
+| `REVOKE_RELAY_POLL_MS / REVOKE_STREAM_TRIM_MS / REVOKE_RETENTION_MS` | 1000 / 24h / 3d | 撤销 relayer 兜底扫描间隔 / 撤销流 MINID 裁剪窗 / revocation_log 保留窗（须 > TRIM，M12d） |
 
 ---
 

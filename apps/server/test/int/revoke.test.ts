@@ -12,7 +12,7 @@ import { banUser, issueSession, verifySession } from "../../src/core/auth/sessio
 import { EpochStaleError } from "../../src/core/errors";
 import {
   _resetMaxEpoch, applyRevoke, drainRevocations, revokedEpoch, setKickHandler,
-  startRevokeConsumer, stopRevokeConsumer,
+  startRevokeConsumer, startRevokeRelayer, stopRevokeConsumer, stopRevokeRelayer,
 } from "../../src/core/auth/revoke";
 import { kickUser, registerOnline, unregisterOnline, type PushSink } from "../../src/websocket/push";
 import { K_STREAM_REVOKE, kSess } from "../../src/core/infra/keys";
@@ -78,11 +78,35 @@ test("控制总线消费：XADD stream:revoke → 消费者更新本节点 maxEp
   assert.equal(revokedEpoch(uid), 0);
   startRevokeConsumer();
   try {
-    await sleep(300); // 让消费者建立阻塞 XREAD（"$" 捕获当前末位）后再 XADD，避开 "$" 竞态
-    await coordClient().xadd(K_STREAM_REVOKE, "*", "uid", uid, "epoch", "3"); // 模拟别组/节点撤销
-    await waitFor(() => revokedEpoch(uid) === 3, 3000);
+    // "$" 竞态确定化：重试 XADD 直到消费者把 epoch 落到本地 maxEpoch（首个阻塞 XREAD 建立前的 XADD 会被漏，
+    // 重发经 epoch max-wins 无害，靠重试兜住而非固定 sleep）。模拟别组/节点撤销。
+    const deadline = Date.now() + 5000;
+    while (revokedEpoch(uid) < 3) {
+      if (Date.now() > deadline) { throw new Error("consume 超时"); }
+      await coordClient().xadd(K_STREAM_REVOKE, "*", "uid", uid, "epoch", "3");
+      await sleep(100);
+    }
     assert.equal(revokedEpoch(uid), 3, "消费者把远端撤销 epoch 落到本节点 maxEpoch");
   } finally {
+    stopRevokeConsumer();
+  }
+});
+
+test("relayer 崩溃窗兜底：relayed=0 未即时发行 → relayer 周期扫发行 + relayed=1 + 消费到 maxEpoch", async () => {
+  const uid = testUid("rv-relayer").slice(0, 32);
+  uids.push(uid);
+  // 模拟：banAccount 提交了 relayed=0 行，但进程在即时 drainRevocations 之前崩溃（此处直接 INSERT、不 drain）
+  await getPool().execute<ResultSetHeader>("INSERT INTO revocation_log (user_id, epoch) VALUES (?, 4)", [uid]);
+  assert.equal(revokedEpoch(uid), 0, "未发行前本节点不知情");
+  startRevokeConsumer();
+  startRevokeRelayer(); // setInterval 首扫在 +REVOKE_RELAY_POLL_MS（消费者已先建立 XREAD）
+  try {
+    await waitFor(() => revokedEpoch(uid) === 4, 6000);
+    assert.equal(revokedEpoch(uid), 4, "relayer 兜底把漏发的撤销发行 + 本节点消费到");
+    const [rows] = await getPool().query<RowDataPacket[]>("SELECT relayed FROM revocation_log WHERE user_id = ?", [uid]);
+    assert.equal(Number(rows[0].relayed), 1, "发行后 relayed=1");
+  } finally {
+    stopRevokeRelayer();
     stopRevokeConsumer();
   }
 });

@@ -161,6 +161,8 @@ export const AUTH_REVERIFY_TTL_S = envInt("AUTH_REVERIFY_TTL_S", 60);
 export const REVOKE_RELAY_POLL_MS = envInt("REVOKE_RELAY_POLL_MS", 1000);
 /** 撤销流 MINID 兜底裁剪窗毫秒（epoch max-wins + verify 重设基线 → 老事件无害）。 */
 export const REVOKE_STREAM_TRIM_MS = envInt("REVOKE_STREAM_TRIM_MS", 24 * 3600 * 1000);
+/** revocation_log outbox 保留窗毫秒（relayer 周期删 relayed=1 老行）：⚠ 须 > REVOKE_STREAM_TRIM_MS（默认 3d）。 */
+export const REVOKE_RETENTION_MS = envInt("REVOKE_RETENTION_MS", 3 * 24 * 3600 * 1000);
 /** outbox done 行保留窗（relayer 周期清理；pending/dead ⛔ 不删）。09·I5 窗口不等式的前提。 */
 export const OUTBOX_RETENTION_MS = 86_400_000;
 /** ⚠ 必须 ≥ 2 × OUTBOX_RETENTION_MS（09·I5），否则 relayer 重放老 intent 二次发货。 */
