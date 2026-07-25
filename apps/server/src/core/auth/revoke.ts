@@ -7,8 +7,9 @@
  * 传输：coord Redis 的 `stream:kick`（唯一合法跨组通道；每节点独立游标 XREAD，⛔ 非 Pub/Sub）。
  * 事件只有 `{uid}`——**没有 epoch、没有 outbox**：踢是 **best-effort**，丢了不影响正确性，因为
  *   ① 新建连接 onAuth strict 回权威 verify 即拒；② 重新登录 SELECT status 即拒；
- *   ③ 在连漏踢由快路径 `verifiedAt`（AUTH_REVERIFY_TTL_S=60s）回权威兜底；④ 发钱由结算 recheck 兜（U6）。
- * 四层里只有本通道依赖广播，故 ⛔ 不需要「可证明零漏发」的 outbox/relayer。
+ *   ③ 发钱由结算 recheck 兜（U6）。
+ * ⚠ 本通道是**程序化封号的便捷扇出，不构成保证**（fire-and-forget、无 ack）：封号 SOP 要求 GM 工具
+ * 直连各节点 `/admin/kick` 并按 ack 确认送达（§2.3）。⛔ 缺踢则在场连接可存活至 sess TTL（3d，无自动收敛）。
  */
 import { KICK_STREAM_TRIM_MS } from "../infra/config";
 import { K_STREAM_KICK } from "../infra/keys";
@@ -28,7 +29,7 @@ export async function broadcastKick(uid: string): Promise<void> {
   try {
     await coordClient().xadd(K_STREAM_KICK, "*", "uid", uid);
   } catch (e) {
-    console.error(`[kick] 广播失败 uid=${uid}（权威已落库，靠 verifiedAt 兜底）`, e);
+    console.error(`[kick] 广播失败 uid=${uid}（权威已落库；GM 工具的 /admin/kick 才是保证送达的那一步）`, e);
   }
 }
 

@@ -45,7 +45,7 @@ export function startStreamConsumer(
 
   void (async () => {
     const sub = client().duplicate(); // 阻塞 XREAD 需独享连接（阻塞期不能复用发命令）
-    let cursor = "$"; // 只看启动后的新条目（历史靠各自权威兜底：mail 上线拉、踢人由 verifiedAt 回权威）
+    let cursor = "$"; // 只看启动后的新条目（历史无价值：mail 上线自拉、踢人是即时动作）
     let lastTrim = Date.now();
     try {
       while (!stopFlag) {

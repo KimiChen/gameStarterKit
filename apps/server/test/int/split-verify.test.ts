@@ -6,7 +6,7 @@ import "./env-setup"; // ⚠ 必须第一个 import
  *
  * 直接测 httpAccount（不切 ACCOUNT_MODE 全局）：
  *  1. 登录在 WebPlatform（MySQL token 记录，⛔ 组无 Redis sess）→ httpAccount.verify(strict) 远程 /verify + **懒填组 sess** → 快路径命中
- *  2. verifiedAt 陈旧 → 快路径**回 WebPlatform 权威重验**（⛔ 不打本地组 pool——split 账号库独立，本地无该行会误踢）
+ *  2. 快路径纯组缓存：⛔ 零 WebPlatform 回源（per-message 不打账号服务）
  *  3. 真实封号/踢人（banAccount/revokeAccount → token_hash=NULL）→ strict verify 拒连、⛔ 不建 sess
  *  4. 门户登录路径契约：POST ApiPath.DevLogin → ILoginRes{userId,token,isNew}（对齐客户端 portalRequest，⛔ G8 无 openid）
  */
@@ -70,22 +70,17 @@ test("组 sess 缺席 → verify(strict) 远程校验 + 懒填组 sess → 快�
 
   const hash = await clientFor(uid).hget(kSess(uid), "tokenHash");
   assert.equal(hash, createHash("sha256").update(token).digest("hex"), "组 sess 已懒填 tokenHash");
-  const verifiedAt = await clientFor(uid).hget(kSess(uid), "verifiedAt");
-  assert.ok(verifiedAt && Date.now() - Number(verifiedAt) < 5_000, "verifiedAt 为懒填时刻");
+  assert.ok(await clientFor(uid).hget(kSess(uid), "loginTs"), "组 sess 懒填完整（loginTs 等字段齐）");
 
   assert.equal(await httpAccount.verify(token, false), uid, "快路径命中组缓存");
 });
 
-test("快路径 verifiedAt 陈旧 → 回 WebPlatform 权威重验（⛔ 不打本地 pool）", async () => {
-  const { uid, token } = await makeSplitLogin("sv-reverify");
-  await httpAccount.verify(token, true); // 懒填 sess（verifiedAt=now）
+test("快路径纯组缓存：⛔ 零 WebPlatform 回源（per-message 不打账号服务，§2.7）", async () => {
+  const { token } = await makeSplitLogin("sv-fast");
+  await httpAccount.verify(token, true); // 建连点：远程 /verify + 懒填组 sess
   const c0 = verifyHits;
-  await httpAccount.verify(token, false);
-  assert.equal(verifyHits, c0, "verifiedAt 新鲜：快路径不打 WebPlatform");
-  // 造陈旧 verifiedAt（> AUTH_REVERIFY_TTL_S）→ 快路径应回 WebPlatform 重验（+1 次 /verify）
-  await clientFor(uid).hset(kSess(uid), "verifiedAt", String(Date.now() - 61_000));
-  assert.equal(await httpAccount.verify(token, false), uid);
-  assert.equal(verifyHits, c0 + 1, "verifiedAt 陈旧：快路径回 WebPlatform 远程重验（非本地组 pool）");
+  for (let i = 0; i < 5; i++) { await httpAccount.verify(token, false); }
+  assert.equal(verifyHits, c0, "快路径连打 5 次，WebPlatform /verify 命中数不变");
 });
 
 test("伪造 token → 远程 mismatch → AuthRequiredError，⛔ 不建组 sess", async () => {

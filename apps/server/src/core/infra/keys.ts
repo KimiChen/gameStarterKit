@@ -85,7 +85,7 @@ export const K_STREAM_MATCH = `${G}stream:match`;
 /** 邮件唤醒 STREAM（10·M5，跨节点消费）。可靠流：⛔ 禁 MAXLEN，XTRIM MINID 按已投递位点裁（09·K6）。 */
 export const K_STREAM_MAILWAKE = `${G}stream:mailwake`;
 /** 控制总线踢人流（DUAL_MODE §2.3 / M12d）：账号服务自持 coord Redis 上，广播 `{uid}` 触发各节点自筛踢在线连接。
- *  **best-effort**（权威撤销在 `accounts.status/token_hash`；漏踢由快路径 verifiedAt 60s 兜底）。⛔ 禁 MAXLEN，走 XTRIM MINID。 */
+ *  **best-effort、无 ack**（权威撤销在 `accounts.status/token_hash`；保证送达的踢走 GM `/admin/kick`）。⛔ 禁 MAXLEN，走 XTRIM MINID。 */
 export const K_STREAM_KICK = `${G}stream:kick`;
 
 /** 活跃索引 ZSET（member=uid, score=lastActiveMs）。hash-tag 是 {bucket} 不是 {uid}。

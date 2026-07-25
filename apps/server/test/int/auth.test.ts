@@ -99,7 +99,7 @@ test("同 openid 再登录 → 同一 user_id；无效 code → AUTH_REQUIRED", 
 test("封号 = 下次登不上：权威即拒 + 重新 wx-login 被 403 拒（09·G7 / M12d §2.3）", async () => {
   const s = await login("carol");
   await banUser(s.userId, "test-ban");
-  // ① 权威（status=1 + token_hash=NULL）：建连级 strict 校验即拒（在线连接由踢+verifiedAt 收敛）
+  // ① 权威（status=1 + token_hash=NULL）：建连级 strict 校验即拒（在线连接由 GM 踢收敛，§2.3 SOP）
   await assert.rejects(verifySessionStrict(s.userId, s.token), AuthRequiredError);
   await assert.rejects(login("carol"), BannedError);                        // ② 签发前 SELECT status 拦住
 });
@@ -108,21 +108,19 @@ test("failover 复活会话被权威 token_hash 拦（verifySessionStrict）", a
   const s = await login("frank");
   // 模拟：权威已撤销（token_hash=NULL），但 sess 因 failover 从旧副本复活（未被删）
   await getPool().execute("UPDATE accounts SET token_hash = NULL WHERE user_id = ?", [s.userId]);
-  await verifySession(s.userId, s.token); // 快路径看不出（sess 还在、verifiedAt 新鲜）
+  await verifySession(s.userId, s.token); // 快路径看不出（纯缓存比对，sess 还在）
   await assert.rejects(verifySessionStrict(s.userId, s.token), AuthRequiredError); // 严格路径回权威拦住
 });
 
-test("verifiedAt 兜底：缓存超时重验——有效则刷新、账号侧撤销则拦（§2.3 U2 / 2d）", async () => {
+test("快路径纯缓存：账号侧撤销后组 sess 未清 → 快路径仍放行（故封号 SOP 必须踢，§2.3）", async () => {
   const s = await login("reverify");
-  // ① 造陈旧 verifiedAt（模拟 >AUTH_REVERIFY_TTL_S 未回权威），token 仍有效 → 重验通过 + 刷新
-  await clientFor(s.userId).hset(kSess(s.userId), "verifiedAt", String(Date.now() - 61_000));
   await verifySession(s.userId, s.token);
-  const va = await clientFor(s.userId).hget(kSess(s.userId), "verifiedAt");
-  assert.ok(Date.now() - Number(va) < 5_000, "重验后 verifiedAt 已刷新");
-  // ② 模拟 split：账号侧撤销（token_hash=NULL）但组 sess 未删；再造陈旧 → 快路径重验查 MySQL 拦住
+  // 账号侧撤销（token_hash=NULL）但组 sess 未动：快路径 ⛔ 不回权威，**依然放行**——
+  // 这正是「封号必须由 GM 工具踢在线」的原因（缺踢则在场连接活到 sess TTL，无自动收敛）。
   await getPool().execute("UPDATE accounts SET token_hash = NULL WHERE user_id = ?", [s.userId]);
-  await clientFor(s.userId).hset(kSess(s.userId), "verifiedAt", String(Date.now() - 61_000));
-  await assert.rejects(verifySession(s.userId, s.token), AuthRequiredError);
+  await verifySession(s.userId, s.token);
+  // 权威路径（建连 onAuth / 重新登录）仍即时拒
+  await assert.rejects(verifySessionStrict(s.userId, s.token), AuthRequiredError);
 });
 
 test("登录限流：同 IP 超容量 → RATE_LIMITED（独立严格档）", async () => {

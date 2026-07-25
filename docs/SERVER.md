@@ -150,6 +150,7 @@ C2S: { id, type, payload }  →  S2C: { id, ok, data?, err? }
   仅限 auth / 支付 / utility（通道分工）：`POST /account/wx-login`（wx 登录、不透明 token、
   账号撤销）、`POST /pay/wx-notify`、`GET /version`、`GET /clock/now`、
   `POST /area/list`（选服列表 `{al,ul,isOps,h}`，登录前展示，token 可选回填最近登录区服）、
+  `POST /admin/kick`（**GM 内部**：踢本节点该 uid 在线连接并回 `kicked`，共享密钥鉴权，封号 SOP 第二步）、
   `GET /notice/list`（公告列表，按 at 倒序）。选服/公告是 **config 驱动无 DB**（`http/<域>/catalog.ts`
   demo 数据，无栈即可联调；真实实现从配置表/CMS 读）。客户端 token 走 body 传，服务端 `verifyBearer`
   反查（⛔ 不信客户端传的 userId，G1）。
@@ -435,7 +436,7 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 - **G4** 大包防护在 ws transport 层设 maxPayload（超限断帧不解码），dispatcher 校验只是兜底。
 - **G5** 匿名/optional-auth 的限流与幂等 key 用 sessionId/真实 IP，⛔ 禁 userId=null 塌缩成共享 key。
 - **G6** 未知 type 只回 UNKNOWN_TYPE + 低权重计数，⛔ 不计 flood 不封禁。
-- **G7** 封号 = **账号级「下次登不上」**：一条 UPDATE 写权威 `status=1` + `token_hash=NULL`（先写 MySQL），再经控制总线 `stream:kick` **踢在线**逼其重登（best-effort，漏踢由快路径 `verifiedAt` 60s 回权威兜底）（M12d §2.3，⛔ 不删 `sess:{uid}`、⛔ 无 epoch fence）；⛔ 绝不删 `user:{uid}`；wx-login 签发前必须 SELECT status。
+- **G7** 封号 = **账号级「下次登不上」+ 踢在线，两步都必做**（M12d §2.3 SOP）：① 一条 UPDATE 写权威 `status=1` + `token_hash=NULL`（先写 MySQL）→ 新建连接/重登即拒；② **GM 工具逐节点 `POST /admin/kick` 并确认送达** → 在场连接 `leave(4001)`。⛔ 缺 ② 则在场连接可存活至 sess TTL（3d）且**无自动收敛**（快路径纯缓存比对、零回源）；`stream:kick` 只是程序化封号的便捷扇出、无 ack。⛔ 不删 `sess:{uid}`、⛔ 无 epoch fence、⛔ 绝不删 `user:{uid}`；wx-login 签发前必须 SELECT status。
 - **G8** session_key 仅服务端持有绝不下发；wx-login 出参 ⛔ 禁含 openid/unionid/session_key。
 - **G9** handler 超时用 Promise.race 无法真正取消——关键写副作用必须数据层幂等/CAS（I1/L3），⛔ 不依赖应用层取消。
 
@@ -490,7 +491,7 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 | `applied:{uid}` | ZSET | 无 | 幂等已 apply 集合（member=op_id, score=applyMs，I5 裁剪） |
 | `lock:{uid}` | STRING | 5s | 跨实例用户锁（值=fence，SET NX PX） |
 | `idem:{type}:{uid}:{clientReqId}` | STRING | pending 10s / done 60s | 幂等占位（I1） |
-| `sess:{uid}` | HASH | 3d | 组侧会话缓存（tokenHash/verifiedAt/connId/gwNode）。撤销的在线即时性靠**踢**；`verifiedAt`(60s) 回权威兜底（M12d §2.3），⛔ 不删它 |
+| `sess:{uid}` | HASH | 3d | 组侧会话缓存（tokenHash/loginTs/connId/gwNode）。快路径**纯 hash 比对、零权威回源**；在线撤销靠 GM 踢（M12d §2.3 SOP），⛔ 不删它 |
 | `guild:evt:seq:{gid}` | STRING | 无 | 工会事件 seq（INCR，§10）。⚠ gid 仅限 `core/guild/catalog`（join 硬校验）——INCR 隐式铸键 + 无 TTL + noeviction，键面必须有硬上限 |
 | `guild:evt:log:{gid}` | LIST | 无（LTRIM 上限） | 工会事件近窗（gid 约束同上） |
 | `active:lru:{bucket}` | ZSET | 无 | 活跃索引（找冷用户，bucket 非 uid hash-tag） |
@@ -560,9 +561,9 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 | `AUTH_DEV_ENABLED` | 开发 1 / 生产 0 | dev-login 开关；生产显式开启 = 加载期拒绝启动（config-guard 同族 fail-fast） |
 | `PORT` | 2568（根 .env 可覆盖） | 开发端口，`index.ts` 显式传 `listen(app, PORT)`；多项目并行时各项目错开；Colyseus 默认 2567 常被占用故不用之。校验纯整数 1–65535，服务端与 devEnv 生成器同一规则、非法即失败（config-guard.test 机检） |
 | `WX_APPID / WX_SECRET` | env | 微信凭证（KMS 注入，不进代码库） |
-| `AUTH_REVERIFY_TTL_S` | 60 | 组本地鉴权缓存兜底窗（快路径超此值未回权威 → 重验；⛔ ≠ SESS_TTL_S。M12d §2.3 / U2） |
 | `REDIS_COORD_URL` | = `REDIS_DURABLE_URL` | 控制总线 coord Redis（撤销流；dev 复用 durable、prod 物理隔离 HA。M12d §2.3） |
 | `KICK_STREAM_TRIM_MS` | 24h | 踢人流 MINID 裁剪窗（踢是即时动作，老事件无价值，M12d） |
+| `ADMIN_API_SECRET` | 空（=端点关闭） | GM 内部端点 `/admin/kick` 共享密钥（`x-admin-secret`）。**未配置即 fail-closed**；封号 SOP 第二步依赖它 |
 
 ---
 

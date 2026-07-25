@@ -154,9 +154,9 @@ export const IDEM_PENDING_MS = 10_000;
 export const IDEM_RESULT_MS = 60_000;
 /** sess:{uid} TTL = 3d。 */
 export const SESS_TTL_S = 259_200;
-/** 组本地鉴权缓存 verifiedAt 兜底窗秒（DUAL_MODE §2.3 / U2）：快路径缓存超此值未回权威 → 重验刷新。
- *  ⛔ 与 SESS_TTL_S（会话时长 3d）是两个量。split 模式撤销的有界窗口（M12d 控制总线后近实时）。 */
-export const AUTH_REVERIFY_TTL_S = envInt("AUTH_REVERIFY_TTL_S", 60);
+/** GM 内部端点（`/admin/kick`）共享密钥。**未配置即端点关闭**（fail-closed；无鉴权的踢人端点 = DoS 面）。
+ *  封号 SOP 的第二步靠它（DUAL_MODE §2.3）：GM 工具直连各节点踢在线并确认送达。 */
+export const ADMIN_API_SECRET = () => process.env.ADMIN_API_SECRET ?? "";
 /** 踢人流 MINID 兜底裁剪窗毫秒（踢是即时动作，老事件无价值；权威撤销在 accounts，M12d §2.3）。 */
 export const KICK_STREAM_TRIM_MS = envInt("KICK_STREAM_TRIM_MS", 24 * 3600 * 1000);
 /** outbox done 行保留窗（relayer 周期清理；pending/dead ⛔ 不删）。09·I5 窗口不等式的前提。 */

@@ -216,6 +216,33 @@ test("错误码：AUTH_REQUIRED / ACCOUNT_BANNED（复活会话被权威拦，09
   await assert.rejects(joinLobby(revived.token), /ACCOUNT_BANNED/);
 });
 
+test("GM SOP e2e：POST /admin/kick 踢掉在连用户（ack kicked:true + onLeave 4001）；无密钥 401", async () => {
+  const secret = "test-admin-secret";
+  process.env.ADMIN_API_SECRET = secret; // 端点每请求现读；未配置即关闭（fail-closed）
+  const u = await makeUser("gmkick");
+  const room = await joinLobby(u.token);
+  await sleep(100); // 待 onJoin/registerOnline 注册 kick 句柄
+  setKickHandler(kickUser); // boot 不跑 index.ts，显式挂（生产在 index.ts 启动期挂）
+
+  const kickReq = (hdr?: Record<string, string>) => fetch("http://127.0.0.1:2568/admin/kick", {
+    method: "POST", headers: { "content-type": "application/json", ...hdr }, body: JSON.stringify({ uid: u.uid }),
+  });
+  assert.equal((await kickReq()).status, 401, "⛔ 无密钥拒绝（踢人端点无鉴权 = DoS 面）");
+  assert.equal((await kickReq({ "x-admin-secret": "wrong" })).status, 401, "⛔ 错密钥拒绝");
+
+  const left = new Promise<number>((resolve) => { room.onLeave((code: number) => resolve(code)); });
+  const res = await kickReq({ "x-admin-secret": secret });
+  assert.equal(res.status, 200);
+  assert.equal((await res.json() as { kicked: boolean }).kicked, true, "ack：本节点命中并踢掉（GM 据此确认送达）");
+  assert.equal(await Promise.race([left, sleep(5000).then(() => -1)]), 4001, "连接被强制下线");
+
+  // 幂等：已下线再踢 → kicked:false（GM 遍历节点时的正常返回，非错误）
+  await sleep(100);
+  const again = await kickReq({ "x-admin-secret": secret });
+  assert.equal((await again.json() as { kicked: boolean }).kicked, false, "不在本节点 → kicked:false，可重试幂等");
+  delete process.env.ADMIN_API_SECRET;
+});
+
 test("自筛踢 e2e：在连用户被 banUser → 控制总线 applyRevoke 命中本节点 → 强制下线（onLeave code=4001）", async () => {
   const u = await makeUser("kick");
   const room = await joinLobby(u.token);

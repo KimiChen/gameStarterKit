@@ -42,10 +42,8 @@ export const httpAccount: AccountClient = {
     if (dot <= 0) { throw new AuthRequiredError("token 格式无效"); }
     const uid = token.slice(0, dot);
     if (!strict) {
-      // 快路径：读组 Redis 缓存（per-message 不打 WebPlatform，§2.7）。verifiedAt 陈旧时**回 WebPlatform 权威**重验
-      // ——⛔ 绝不用 verifySession 默认的本地 verifySessionStrict：split 账号库是 WebPlatform 独立库，本地组库
-      // 没有该 accounts 行，本地重验会在 AUTH_REVERIFY_TTL_S 后把每个在连用户误踢。
-      await verifySession(uid, token, async (_u, t) => { await remoteVerify(t); });
+      // 快路径：纯读组 Redis 缓存（per-message ⛔ 不打 WebPlatform，§2.7）。在线撤销由 GM 踢承担（§2.3 SOP）。
+      await verifySession(uid, token);
       return uid;
     }
     // 建连：远程权威校验 → 懒填组 sess:{uid}（§2.7 / 2d：strict 是连接建立点；LobbyRoom.onAuth 是首个 strict 点）。

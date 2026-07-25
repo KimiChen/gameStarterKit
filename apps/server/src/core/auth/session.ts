@@ -5,15 +5,17 @@
  * - **权威 token 记录在 MySQL `accounts`**（token_hash / token_issued_at / session_key）：
  *   `verifySessionStrict` 纯 MySQL 一条 PK 表达（WebPlatform MySQL-only 也能验，DUAL_MODE §2.7）。
  * - 撤销的真相位只有两个：`token_hash`（NULL=已撤销/换发）与 `status`（1=封禁）——⛔ 无 epoch fence（M12d 简化）。
- * - Redis `sess:{uid}` 退为**组侧缓存**：快路径 tokenHash + verifiedAt + freeze-guard 存在性 + connId/gwNode。
+ * - Redis `sess:{uid}` 退为**组侧缓存**：快路径 tokenHash + freeze-guard 存在性 + connId/gwNode。
  *   in-process 登录写；split 拆进程后由 onAuth 从 verify 结果懒填。
- * - **封号 = 账号级「下次登不上」**（M12d §2.3）：一条 UPDATE 写权威（status=1 + token_hash=NULL），
- *   再**踢在线**逼其重走登录（本节点即时 + 控制总线广播其它节点，best-effort）。四层拦截：
- *   ① 新建连接 onAuth strict 回权威 ② 重新登录 SELECT status ③ 在连漏踢由快路径 verifiedAt(60s) 回权威兜底
- *   ④ 发钱由结算 recheck（U6）。⛔ 不删 sess（TTL 自然过期），⛔ 绝不删 user:{uid}（09·G7）。
+ * - **封号 = 账号级「下次登不上」+ 踢在线**（M12d §2.3，两步**都必做**）：
+ *   ① 写权威（一条 UPDATE：status=1 + token_hash=NULL）→ 新建连接/重新登录即拒；
+ *   ② **踢在线**——GM 工具直连各节点 `/admin/kick` 并确认送达（⛔ 缺此步，被封用户在场连接可存活至
+ *      sess TTL 3d，**无自动收敛**：快路径不回权威）。控制总线 `stream:kick` 是程序化封号的便捷扇出，
+ *      但**不构成保证**（fire-and-forget）。发钱另由结算 recheck 兜（U6）。
+ *   ⛔ 不删 sess（TTL 自然过期），⛔ 绝不删 user:{uid}（09·G7）。
  */
 import { createHash, timingSafeEqual } from "node:crypto";
-import { AUTH_REVERIFY_TTL_S, SESS_TTL_S } from "../infra/config";
+import { SESS_TTL_S } from "../infra/config";
 import { kSess } from "../infra/keys";
 import { clientFor } from "../infra/redisRoute";
 import { getPool } from "../infra/mysql";
@@ -58,7 +60,6 @@ export async function writeGroupSess(uid: string, token: string, gwNode = ""): P
     .del(key) // 原子换发：旧会话字段不残留
     .hset(key, {
       tokenHash: sha256(token),
-      verifiedAt: String(Date.now()), // 权威校验时刻（快路径 §2.3 verifiedAt 兜底）
       loginTs: String(Date.now()),
       connId: "",
       gwNode,
@@ -69,26 +70,17 @@ export async function writeGroupSess(uid: string, token: string, gwNode = ""): P
 }
 
 /**
- * 快路径校验（每 RPC）：读 sess:{uid}（tokenHash + verifiedAt）。撤销的**在线即时性由「踢」承担**
- * （控制总线广播 → 关连接）；本快路径的 `verifiedAt`（≤AUTH_REVERIFY_TTL_S）是**漏踢的正确性兜底**：
- * 超时即回权威（MySQL token_hash/status），被撤销者在此被拒。权威校验见 verifySessionStrict。
+ * 快路径校验（每 RPC）：**纯组缓存 hash 比对**，⛔ 零权威回源（per-message 不打账号服务）。
+ *
+ * ⚠ 它**不感知**权威侧的封号——在线撤销由「踢」承担（GM 工具直连各节点 `/admin/kick` 确认送达，
+ * 见 DUAL_MODE §2.3 封号 SOP）。⛔ 缺踢这一步，被封用户的在场连接可存活至 sess TTL（3d），**无自动收敛**。
+ * 换端顶号无需此路径感知：新登录 `writeGroupSess` 覆写 sess，旧 token 下一条即 hash 不符。
+ * 权威校验见 verifySessionStrict（建连点 onAuth 走它）。
  */
-export async function verifySession(
-  uid: string, token: string,
-  // verifiedAt 陈旧时的**权威重验**——按部署模式注入：默认 = 本地 verifySessionStrict（in-process，共享库）；
-  // split 由 httpAccount 传入远程 /verify（⚠ ⛔ 不打本地组 pool——split 账号库是 WebPlatform 独立库，
-  // 本地根本没这行 accounts，用本地重验会把每个连接的用户在 AUTH_REVERIFY_TTL_S 后全部误踢）。
-  reverify: (uid: string, token: string) => Promise<void> = verifySessionStrict,
-): Promise<void> {
-  const [tokenHash, verifiedAtStr] = await clientFor(uid).hmget(kSess(uid), "tokenHash", "verifiedAt");
+export async function verifySession(uid: string, token: string): Promise<void> {
+  const tokenHash = await clientFor(uid).hget(kSess(uid), "tokenHash");
   if (tokenHash === null) { throw new AuthRequiredError("session 不存在或已过期"); }
   if (!safeEqualHex(tokenHash, sha256(token))) { throw new AuthRequiredError("token 不匹配"); }
-  // verifiedAt 兜底（§2.3 U2）：缓存超 AUTH_REVERIFY_TTL_S 未回权威 → 重验 + 刷新。
-  // ⚠ 这是「在线用户被封后漏踢」的**正确性兜底**（踢是 best-effort）：≤60s 内下一条 RPC 必回权威而被拒。
-  if (Date.now() - Number(verifiedAtStr ?? "0") > AUTH_REVERIFY_TTL_S * 1000) {
-    await reverify(uid, token); // 权威；token_hash=NULL / epoch-stale / banned 即抛
-    await clientFor(uid).hset(kSess(uid), "verifiedAt", String(Date.now()));
-  }
 }
 
 /**
@@ -123,7 +115,7 @@ export async function auditLogin(event: string, uid: string | null, reason: stri
 /**
  * 封号（账号级，所有区）：lib 一条 UPDATE 写权威（status=1 + token_hash=NULL = **下次登不上**）
  * → 踢在线（本节点即时 + 广播其它节点），逼其重走登录流程被 status 拦。
- * ⛔ 不删 sess（漏踢由快路径 verifiedAt 60s 回权威兜底）；⛔ 绝不删 user:{uid}（09·G7）。
+ * ⛔ 不删 sess（在线失效靠踢：本节点即时 + 总线扇出 + GM `/admin/kick` 确认）；⛔ 绝不删 user:{uid}（09·G7）。
  */
 export async function banUser(uid: string, reason: string): Promise<void> {
   const hit = await banAccount(uid); // 权威：status=1 + token_hash=NULL（下次登不上）

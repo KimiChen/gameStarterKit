@@ -19,7 +19,8 @@ startInfraMonitors();
 startStreamDepthAlert();
 
 // 控制总线踢人（DUAL_MODE §2.3 / M12d）：本节点独立游标消费 stream:kick → 自筛踢在线连接
-// （权威撤销已落 accounts；踢是 best-effort，漏了由快路径 verifiedAt 60s 回权威兜底）。
+// （权威撤销已落 accounts；本总线是**程序化封号的便捷扇出**，⛔ 不构成保证——封号 SOP 的踢由 GM 工具
+//   直连各节点 /admin/kick 并确认送达，见 DUAL_MODE §2.3）。
 setKickHandler(kickUser);
 startKickConsumer();
 

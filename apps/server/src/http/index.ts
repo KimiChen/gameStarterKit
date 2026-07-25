@@ -17,7 +17,8 @@ import devLogin from "./account/devLogin";
 import wxPayNotify from "./pay/wxNotify";
 import areaList from "./area/list";
 import noticeList from "./notice/list";
+import adminKick from "./admin/kick";
 
 export const routes = createRouter({
-  version, clockNow, healthz, wxLogin, devLogin, wxPayNotify, areaList, noticeList,
+  version, clockNow, healthz, wxLogin, devLogin, wxPayNotify, areaList, noticeList, adminKick,
 });

@@ -5,7 +5,7 @@ import "./env-setup"; // ⚠ 必须第一个 import
  *  1. banUser 写权威（status=1 + token_hash=NULL）→ 新建连接 strict 即拒 + 重新登录被拒；本节点在线即时踢
  *  2. 控制总线：XADD stream:kick → 消费者踢**本节点**在线连接（跨节点范式；不在本节点则跳过）
  *  3. revokeSessions（换端/踢下线）：token_hash=NULL 但 status 不变 → 可重新登录换发新 token
- *  4. best-effort 语义：广播丢失时靠快路径 verifiedAt(60s) 回权威兜底 —— 在连用户被拒
+ *  4. ⚠ 缺踢无自动收敛：只写权威不踢 → 在场连接快路径仍放行（GM SOP 必须踢的反证）
  */
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
@@ -68,7 +68,7 @@ test("banUser 写权威：status=1 + token_hash=NULL → 新建连接/重登被�
   assert.equal(kicked, 1, "本节点在线连接被即时踢");
 
   await assert.rejects(verifySessionStrict(uid, token), AuthRequiredError); // hash=NULL 先命中 → mismatch
-  assert.equal(await clientFor(uid).exists(kSess(uid)), 1, "⛔ 不删 sess（TTL 自然过期；漏踢由 verifiedAt 兜底）");
+  assert.equal(await clientFor(uid).exists(kSess(uid)), 1, "⛔ 不删 sess（TTL 自然过期；在线失效靠踢，§2.3）");
 });
 
 test("控制总线：XADD stream:kick → 消费者踢本节点在线连接（跨节点范式）", async () => {
@@ -112,14 +112,14 @@ test("revokeSessions（换端/踢下线）：token_hash=NULL 但 status 不变 �
   await verifySessionStrict(uid, re.token);
 });
 
-test("best-effort 兜底：广播丢失（不踢）时，在连用户由快路径 verifiedAt 超时回权威被拒", async () => {
-  const { uid, token } = await makeUser("rv-fallback");
-  await verifySession(uid, token); // 快路径通（verifiedAt 新鲜）
-  // 模拟「封号但踢丢了」：只写权威，⛔ 不 kick/不广播、⛔ 不删 sess
+test("⚠ 缺踢无自动收敛：只写权威而不踢 → 在场连接的快路径**依然放行**（封号 SOP 必须踢，§2.3）", async () => {
+  const { uid, token } = await makeUser("rv-nokick");
+  await verifySession(uid, token);
+  // 模拟「写了权威但踢丢了/没踢」：⛔ 不 kick、不广播、不删 sess
   await getPool().execute("UPDATE accounts SET status = 1, token_hash = NULL WHERE user_id = ?", [uid]);
-  await verifySession(uid, token); // verifiedAt 仍新鲜 → 快路径此刻仍放行（best-effort 的已知窗口）
-  await clientFor(uid).hset(kSess(uid), "verifiedAt", String(Date.now() - 61_000)); // 越过 AUTH_REVERIFY_TTL_S
-  // 回权威即拒。⚠ 真实封号同时置 token_hash=NULL，verifyToken 先命中 hash 判据 → AUTH_REQUIRED
-  //（BannedError 只在「hash 仍匹配但 status=1」时出现，如封号后又重新签发 token —— 见 gateway.test）
-  await assert.rejects(verifySession(uid, token), AuthRequiredError);
+  // 快路径是纯缓存 hash 比对、⛔ 零权威回源 → 该连接可一直用到 sess TTL（3d）——
+  // 这是删掉 verifiedAt 兜底后的**已知代价**，由 GM 工具「确认踢到」来承担（本用例即其反证）。
+  await verifySession(uid, token);
+  // 但权威路径（建连 onAuth / 重新登录）不受影响，始终即时拒
+  await assert.rejects(verifySessionStrict(uid, token), AuthRequiredError);
 });
