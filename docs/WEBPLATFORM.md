@@ -5,7 +5,11 @@
 
 ## 1. 定位：门户 = 目录 + 身份权威 + 只读投影
 
-**zone-aware**（serve 服务器列表、按区存角色展示数据），但**不拥有权威玩法态、不跑区逻辑**。
+> **本节是账号平面的唯一口径。** [DUAL_MODE §2.1](DUAL_MODE.md) 的「三盲」是 M12 抽象期的初版框架，
+> 其中 `zone-blind` 已推翻、`project-blind` ⏸ 当前不做（以后另立项，推导在那里保留），一律以本节为准。
+
+**本游戏专属**（跨游戏中心账号服务**以后另立项**，见 §1.1）+ **zone-aware**（serve 服务器列表、按区存角色展示数据），
+但**不拥有权威玩法态、不跑区逻辑**。
 ⛔ **MySQL-only：无 Redis、无缓存**（`verify` 就是一条 PK SELECT）。组侧的 Redis 快路径/组缓存留在 `apps/server`。
 
 | 承载 | 不承载 |
@@ -14,6 +18,34 @@
 | `char_registry`（「uid 在哪些区建过角」的存在性权威 + 展示投影） | 每区经济（`user_currency` 等，组库） |
 | 登录编排（限流 → code2session → 查/建号 → 签发 token） | 组 `sess:{uid}` 缓存、踢在线（组侧 + GM 工具） |
 | 选服目录 `/area/list`（`al`/`wsUrl`/`isOps`/`h` + `ul`） | 控制总线 `stream:kick`（coord Redis 在组侧） |
+
+### 1.1 边界：一游戏一整套栈；中心账号服务**以后另立项**
+
+**当前定案（2026-07-25 用户拍板）**：本服务**只喂本游戏**。「中心账号服务」里的「中心」只指**跨本游戏的
+全部物理组集中**（一份身份权威服务 N 个组），⛔ **不指跨游戏**。同理运营 GM/封号后台也是**每游戏一套**。
+第二个游戏 = 另起一整套栈，**含另起一个 WebPlatform 实例 + 独立账号库**。
+
+⚠ **别把 `PROJECT_ID` 误读成「线上多游戏共栈」的能力**：[SERVER.md §1](SERVER.md) 的「第二个项目改
+`PROJECT_ID` + `PORT`」（Redis 前缀 `<PROJECT_ID>_` + 库名 `game_<PROJECT_ID>`，`WEBPLATFORM_MYSQL_URL`
+缺省同此）服务的是**开发机多项目共用同一套 Redis/MySQL 实例**；**线上不会有第二个游戏跑在同一套实例上**。
+
+#### ⏭ 以后要做中心账号服务的前置改造项（**非当前里程碑**，⛔ 不排期、不进 W 编号）
+
+⛔ **当前不要动 schema、不要预先加游戏维度列**——下表是已核实的清单，存档供以后立项时接续
+（推导背景见 [DUAL_MODE §2.1](DUAL_MODE.md)）。共性：`accounts`/`char_registry`/`login_audit`/`seq`
+四张表**零「游戏/应用」维度**，共用一份门户喂两个小游戏会**静默出错**，每条都是**数据模型变更**、非配置项：
+
+| # | 硬绑定处 | 共用后的后果 | 翻案需要的变更 |
+|---|---|---|---|
+| P1 | `accounts.uk_unionid`（[schema.sql](../apps/server/sql/schema.sql)） | 微信 unionid 是**同主体跨小游戏的同一个人** ⇒ 两游戏塌缩成同一 `user_id`／同一封号态／同一 `token_hash`（**跨游戏互踢**） | `accounts` 加应用维度；`uk_unionid` 降级为非唯一索引（或改 `UNIQUE(app, unionid)`）；[`lib/login.ts`](../apps/WebPlatform/src/lib/login.ts) 的 1062 恢复相应改按 (app,openid)/(app,unionid) 回读 |
+| P2 | `char_registry` PK `(user_id, server_id)` | `sId` 是**全局命名空间**，两游戏区号重叠即互相污染 `ul`／F4 判据 | PK 加应用维度；`character.register/query/has` 全链带应用参数 |
+| P3 | token `{uid}.{hex}` + `/verify` | 无「属于哪个游戏」维度 ⇒ A 游戏签发的 token 可建连 B 游戏网关 | token 绑签发方；`accounts.token_hash` 单列 → per-app 行（同 §5「单端语义」那类模型变更） |
+| P4 | `wxConfig()`（单份 `WX_APPID`/`WX_SECRET`） | 一进程物理上喂不了两个小游戏的 `code2session` | 凭证表/按应用路由，`code2session` 按应用取凭证 |
+| P5 | 封号是**账号级**（`accounts.status`） | 封一个游戏 = **全平台封** | 封号粒度降到「账号×应用」；GM 后台从每游戏一套改为跨游戏共用（同属以后拓展） |
+
+⚠ **`/ban`·`/revoke` 无鉴权不在上表**：它是 **[W1](#4-待办上线前必做)**、**当前就必须做**——它防的是
+**外部越权**（谁能连到本进程就能封任何人），与跨不跨游戏无关。中心化只会把同一个洞的爆炸半径从单游戏放大到跨游戏，
+⛔ **不构成把 W1 推迟到那时的理由**。
 
 ## 2. 部署模式（deploy-mode，去 big-bang 风险）
 
@@ -70,6 +102,10 @@
 | **W2** | **split 下封号无审计** | `login_audit` 在账号库；但 `/ban`·`/revoke` 端点**不写审计**，而组侧 `banUser` 的 `auditLogin` 写的是**组库**（落错地方）⇒ split 下账号库里查不到封号记录 | `/ban`·`/revoke` 端点内用 lib `auditLogin` 写（它用本服务自己的池，天然落对库） |
 | **W3** | 补画像端点 | 未做 | `bindProfile(uid,{nickname,avatar})` / `bindPhone(uid,encryptedData,iv)`（两段式授权，§2.7；手机号用本服务存的 `session_key` 解密） |
 | **W4** | 目录接真实配置 | `lib/area.ts` 是 demo 静态表 | 接配置表/运维后台，按 sId 返回各组实例 `wsUrl` |
+
+⏭ **本表之外另有 P1–P5**：以后做**中心账号服务**（一实例喂多游戏）的前置改造项，见 [§1.1](#11-边界一游戏一整套栈中心账号服务以后另立项)。
+它们**非当前里程碑、不排期、刻意不占 W 编号**——当前定案是本游戏专属，⛔ 别把它们当成上线前必做。
+⚠ 反过来也别把 **W1 归到那边**：W1 防的是外部越权，与跨不跨游戏无关，**当前就必须做**。
 
 ## 5. 决策记录（为什么是现在这样）
 

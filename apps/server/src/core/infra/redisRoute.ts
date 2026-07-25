@@ -92,8 +92,9 @@ export function cacheClient(): Redis {
   return clientOf(loadTable().cacheUrl);
 }
 
-/** 控制总线 Redis（账号服务自持撤销流，DUAL_MODE §2.3）：dev 缺省复用 durable 实例（同 URL → clientOf 复用同连接），
- *  prod-split 指向物理隔离 HA。只承载 `stream:kick`（踢人广播，事件仅 {uid,reason[,exceptHash]}、⛔ 无 epoch 无 ack），⛔ 非路由键（直连单实例）。 */
+/** coord / 踢人控制总线 Redis（**组侧**设施，DUAL_MODE §2.3 / §4.2）：dev 缺省复用 durable 实例（同 URL → clientOf 复用同连接），
+ *  prod-split 指向物理隔离 HA。只承载 `stream:kick`（踢人广播，事件仅 {uid,reason[,exceptHash]}、⛔ 无 epoch 无 ack），⛔ 非路由键（直连单实例）。
+ *  ⛔ **非账号服务自持**：WebPlatform 不持 coord、刻意不广播撤销（WEBPLATFORM.md §5），发布方是本组的 `kickBus.broadcastKick`。 */
 export function coordClient(): Redis {
   return clientOf(REDIS_COORD_URL());
 }

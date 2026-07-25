@@ -5,7 +5,8 @@
  * **封号语义 = 账号级「下次登不上」**：权威真相是 `accounts.status=1` + `token_hash=NULL`（一条 UPDATE），
  * 由 WebPlatform lib 写。本模块只负责第二件事——**把在线连接踢下线，逼其重走登录流程**。
  *
- * 传输：coord Redis 的 `stream:kick`（唯一合法跨组通道；每节点独立游标 XREAD，⛔ 非 Pub/Sub）。
+ * 传输：**本组** coord Redis 的 `stream:kick`（组内跨节点通道；每节点独立游标 XREAD，⛔ 非 Pub/Sub）。
+ * ⚠ coord 按组独占（DUAL_MODE §4.2）⇒ 扇出半径**只到组内**；跨组的撤销送达同样落在 GM 的逐节点 `/admin/kick` 上。
  * 事件只有 `{uid}`——**没有 epoch、没有 outbox**：踢是 **best-effort**，丢了不影响正确性，因为
  *   ① 新建连接 onAuth strict 回权威 verify 即拒；② 重新登录 SELECT status 即拒；
  *   ③ 发钱由结算 recheck 兜（U6）。

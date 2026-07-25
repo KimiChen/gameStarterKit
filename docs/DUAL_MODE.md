@@ -41,24 +41,31 @@ flowchart TB
   subgraph PG["物理组（= 大混服集群『同物种』：爆炸半径 + 开关服单位）"]
     POOL["app 节点池 + RedisDriver / RedisPresence"]
     DUR["durable Redis"]; CAC["cache Redis"]; COO["coord Redis(独占)"]; SQL[("MySQL 8/组 + singleton_lease")]
-    ACB["账号服务控制总线(唯一跨组通道·只走 epoch)"]
+    ACB["踢人控制总线 stream:kick(组侧设施)<br/>best-effort 扇出 · ⛔ 无 epoch · ⛔ 无 ack"]
     POOL --> DUR & CAC & COO & SQL
-    POOL -. 订阅 .- ACB
+    COO -. 承载 .-> ACB
+    ACB -. 每节点独立游标 XREAD 后自筛踢 .-> POOL
     subgraph LZ["组内逻辑区：filterBy:{sId} + per-request s{sId}_"]
       z1["sId 1"]; z2["sId 2"]; zt["… sId 10"]
     end
     POOL --> LZ
   end
 
-  ACCT["中心账号服务(zone/status/project-blind)<br/>身份 · 令牌 · 足迹目录 · 撤销广播"]
-  ACCT --> ACB
   BASE --> PG
 
   PG -. 去过滤 / 前缀退化为常量 gono_ .-> CASUAL["② 大混服：1 大组 · joinOrCreate('game') 无过滤"]
   PG -. 叠加 filterBy + s{sId}_ + 足迹 .-> ZONE["③ 区服：10 区=1组 → 1000 区=100组×10区"]
+
+  ACCT["WebPlatform 门户(本游戏专属 · zone-aware · status-blind)<br/>身份 · 令牌 · 足迹目录 · 撤销权威 status+token_hash<br/>⛔ 不持 coord · ⛔ 不广播撤销"]
+  GM["GM 工具(运营侧)"]
+  POOL -. AccountClient verify/character .-> ACCT
+  GM -. ① ban 写权威 .-> ACCT
+  GM -. ② 逐节点 POST /admin/kick(ack 确认送达) .-> POOL
 ```
 
 关键读法：`app.config.ts` 中被注释的 `driver: RedisDriver() / presence: RedisPresence()` 一旦翻开，单进程即变横向集群——**这就是「物理组」，与「一个大混服集群」是同一物种**。区服不是另一套架构，只是在同物种上叠 `filterBy:{sId}` 与前缀。§9.5 ADR「单区多节点=另一套架构」真正硬的只有「持久跨节点强一致态」，而对局房 `GameRoom` 是 ephemeral（随全员退出 `autoDispose`），彻底绕开它。
+
+**撤销通道的读法（M12d 定案，⚠ 与图中旧版不同）**：`stream:kick` 是**组侧**设施——键承载在本组 coord Redis 上（`REDIS_COORD_URL`，[SERVER.md §13](SERVER.md#13-契约与配置redis-key--字段--错误码--常量)），由组内 `broadcastKick` 发布、每个 app 节点独立游标消费后自筛踢，事件只有 `{uid, reason[, exceptHash]}`：⛔ **无 epoch**、⛔ **无 ack** ⇒ fire-and-forget、**不构成送达保证**。WebPlatform 只写撤销**权威**（`accounts.status` + `token_hash` 一条 UPDATE），⛔ 不持 coord Redis、⛔ 不广播撤销（[WEBPLATFORM.md §1/§5](WEBPLATFORM.md)）。送达保证由 **GM 工具逐节点 `POST /admin/kick` 的 ack** 承担（§2.3 封号 SOP、规则 [09·G7b](SERVER.md#12-开发约束63-条规则目录)）。
 
 ### 1.2 两级分区模型
 
@@ -89,9 +96,30 @@ flowchart TB
 
 ---
 
-## 2. 中心账号服务契约
+## 2. 中心账号服务契约（⚠「中心」= 跨**物理组**集中，⛔ **非**跨游戏；见 §2.1 定案）
 
 ### 2.1 边界与三个「盲」
+
+> **⚑ 最终定案（2026-07-25 用户拍板）**：本节下方的「三盲」是 M12 抽象期的初版框架，其中
+> **`project-blind`（一实例喂多游戏）当前不做、以后另立项**——`apps/WebPlatform` 定为**本游戏专属**。
+> 账号平面的**唯一现行口径**是 [WEBPLATFORM.md §1](WEBPLATFORM.md)（门户 = 目录 + 身份权威 + 只读投影，
+> zone-aware、单游戏）。下方推导**刻意保留**，供以后真做中心账号服务时接续。
+>
+> | 初版「盲」 | 定案 | 依据 |
+> |---|---|---|
+> | `zone-blind`（不知 sId/区/组） | ❌ **推翻** → **zone-aware**：serve 服务器列表、按 sId 存角色展示投影 | M12c，§2.7、[WEBPLATFORM.md §1](WEBPLATFORM.md) |
+> | `status-blind`（不感知区内角色/余额） | ✅ **保留**：`char_registry` 只答「建过角没」，⛔ 不读区内进度/余额 | §2.6、[WEBPLATFORM.md §1](WEBPLATFORM.md) |
+> | `project-blind`（一实例喂多游戏） | ⏸ **当前不做，以后另立项**（从未实现） | 见下「拍板内容」 |
+>
+> **拍板内容（2026-07-25）**：① WebPlatform 本游戏专属，中心账号服务以后另外拓展；② 运营 GM/封号后台
+> **每游戏一套**，跨游戏共用同样以后另外拓展；③ **线上不会有第二个游戏跑在同一套 Redis/MySQL 实例上**——
+> `PROJECT_ID` 命名空间（Redis 前缀 `<PROJECT_ID>_` + 库名 `game_<PROJECT_ID>`，[SERVER.md §1](SERVER.md)）
+> 服务的是**开发机多项目共栈**，不是线上多游戏共享账号平面。故初版「一实例喂多游戏」在当前拓扑下无对应物。
+>
+> **⏭ 以后要接续本推导，前置改造项已核实成清单**，见 [WEBPLATFORM.md §1.1](WEBPLATFORM.md)（5 条硬绑定
+> 逐条给出「共用后的后果 + 翻案需要的变更」：`uk_unionid` 跨游戏塌缩、`char_registry` 的 sId 全局命名空间、
+> token 无游戏维度、单份 `WX_APPID`、封号账号级）。⚠ 全部是**数据模型变更**、非配置项；
+> ⛔ 当前**不要**预先给 schema 加游戏维度列。
 
 账号服务是平台级、业务无关的独立进程，硬约束三盲：**zone-blind**（不知 sId/区/组）、**status-blind**（不感知区里有无角色/多少钱）、**project-blind**（一实例喂多游戏）。它只做三件事：
 
@@ -136,7 +164,7 @@ flowchart TB
 > | 步 | 动作 | 保证 |
 > |---|---|---|
 > | **① 写权威** | WebPlatform `/ban` → `UPDATE accounts SET status=1, token_hash=NULL` | 新建连接（onAuth strict 回权威）与重新登录（`SELECT status`）**即时被拒** |
-> | **② 踢在线** | **GM 工具逐节点** `POST /admin/kick {uid}`（`x-admin-secret`），按返回 `kicked` 汇总确认 | 在场连接被 `client.leave(4001)` 强制下线，逼其重走登录 |
+> | **② 踢在线** | **GM 工具逐节点** `POST /admin/kick {uid}`（`x-admin-secret`），按返回 `kicked` 汇总确认 | 在场连接被 `client.leave(4901)`（`KICK_CLOSE_CODE.banned`）强制下线，逼其重走登录 |
 >
 > **⛔ 只做 ① 不做 ② 的后果**：该用户**已建立的连接可继续游戏至 `sess` TTL（3 天）**——快路径是纯缓存比对、
 > 不回权威，**没有任何自动收敛机制**。这是取消 `verifiedAt` 换来的代价，由 GM 工具的送达确认承担。
@@ -174,29 +202,38 @@ flowchart TB
 > **其余撤销场景不依赖上述任何一条**（已逐项追证）：换端顶号靠新登录 `writeGroupSess` 覆写组 sess；
 > token 过期靠 sess key TTL 与 `token_issued_at` 同锚点；发钱另由结算 recheck 兜（U6）。
 
+**`ban(uid)` / `revoke(uid)` 现行时序（M12d 两步 SOP）**：
+
+```mermaid
+sequenceDiagram
+  participant GM as GM 工具(运营侧)
+  participant WP as WebPlatform(账号权威·MySQL-only)
+  participant N as 组内各 app 节点(逐个遍历)
+  participant C as 在场连接
+  GM->>WP: ① ban / revoke {uid}
+  WP->>WP: 一条 UPDATE —— status=1 + token_hash=NULL(先写权威·G7)
+  WP-->>GM: {banned} 是否命中账号
+  Note over WP,N: ① 一落即「下次登不上」—— 新建连接 onAuth strict 回权威、重登 SELECT status，双双即时拒
+  GM->>N: ② POST /admin/kick {uid} + x-admin-secret(逐节点)
+  N->>N: 自筛本节点 online 表(⛔ 不查 presence)
+  N->>C: 命中即先推 forceLogout{reason} 再 leave(4901 封禁)
+  N-->>GM: {kicked} —— 未命中回 false 属正常(用户只连在一个节点)
+  Note over GM,N: 送达保证在这一步：按 kicked 汇总·幂等可重试·最终仍失败必告警(09·G7b)
+  Note over GM,C: ⛔ 只做 ① 不做 ② —— 在场连接可活到 sess TTL(3d)、无自动收敛
+  Note over GM,C: 代码内 banUser 另走 stream:kick 便捷扇出(组侧 coord·每节点自筛踢)，fire-and-forget 无 ack ⇒ ⛔ 不构成保证
+```
+
+> **⬇ 以下为 M12d 前的历史推导**（epoch 控制总线 / `maxEpoch` / `revocation_log` outbox / TTL 兜底），
+> **保留供追溯**、⛔ **不是现行实现**——现行即上方两步 SOP。其中至今仍成立的只有一条：
+> **每节点自筛踢、⛔ 不查 presence**（下方第 2 点）。
+
 **这是评审对撞后最关键的重写。** 原草稿「账号服务 O(1) 直接读 `presence:{uid}` 定向踢」在 zone-blind 模型下不成立：presence 是带区前缀 `s{sId}_presence:{uid}` 且经组内路由的键，账号服务既不知 sId、也不知落在哪组 durable，拼不出键。同时全拓扑不存在跨组共享 Redis 承载广播。因此定死两条基础设施与降级：
 
 1. **控制总线 = 账号服务自持的 Redis 消息流（U1 定案，⛔ 非 Pub/Sub）**：唯一合法跨组通道，跑在专用小型 HA Redis（与 coord/durable/cache 物理隔离）。各业务组的**每个节点**独立游标 `XREAD`（复用 §4.5 `startStreamConsumer`，非 consumer group——每节点都要看到全部撤销以维护本地 `maxEpoch`）。只走幂等 epoch（max-wins），不承载业务态，不违反「持久跨节点强一致」红线。选流不选 Pub/Sub 的决定性理由：Pub/Sub 发布瞬间没连上的订阅者永久丢事件（每次滚动发版都漏）→ TTL 从异常路径沦为常态；消息流断线按游标补读 + epoch 幂等，TTL 回归真·罕见兜底。可选加固：撤销做成 outbox（epoch+1 同事务写 `revocation_log`，relayer `XADD` 进流）换「可证明零漏发」。裁剪按时间（仿 mailwake `XTRIM MINID`，epoch 单调 + `verify` 重设基线使老事件无害）。
 2. **撤销踢人 = 每节点自筛，不查 presence（U1 附带收益）**：每节点读到撤销事件后更新本地 `maxEpoch[uid]`，并**自筛本地 `online:uid→sink`、命中即踢**（复刻 mailwake「目标不在本节点直接跳过」）。因此**撤销踢人不依赖 presence 的 TTL 新鲜度**，直接消解 §4.4 O1 对撤销路径的影响；presence 目录只留给私聊那种「不广播、定点投递」的场景。量级 O(组数×节点数)，封号低频可忽略。
 
-`ban(uid)` 正常态时序：
-
-```mermaid
-sequenceDiagram
-  participant Op as 运维/风控
-  participant AS as 账号服务
-  participant Bus as 控制总线(Redis 消息流·每节点游标)
-  participant Grp as 各业务组(订阅者)
-  participant GW as gwNode(在场连接)
-  Op->>AS: ban(uid)
-  AS->>AS: ① UPDATE accounts SET status=1, token_epoch+1 (MySQL先行·G7)
-  AS-->>Bus: ② XADD {uid, epoch, status}
-  Bus-->>Grp: 每节点独立游标读
-  Grp->>Grp: ③ 每节点读流更新本地 maxEpoch[uid]; 自筛本地 online 表
-  Grp->>GW: ④ 本节点命中 online:uid 即踢 → 立即断在场连接
-  Note over Grp,GW: 组本地鉴权缓存 TTL(AUTH_REVERIFY_TTL_S=60s) 兜底最坏窗口
-```
-
+（原 epoch 时序图已删：`token_epoch+1` / `XADD {epoch}` / `maxEpoch` / `AUTH_REVERIFY_TTL_S` 均已砍，
+总线也不由账号服务自持；现行时序见本节上方的两步 SOP 图。）历史口径下：
 `epoch` 单调递增→广播天然幂等、容乱序（max-wins，收到更小的丢弃）。扇出量级：跨组 O(组数)、组内每节点自筛 O(节点数)，封号低频可忽略。
 
 **双失窗口收敛（评审 C2/C4）**：快路径 `verifySession` 现状只比对 tokenHash、**从不读 epoch**——若定向踢丢失(presence 过期) + 广播丢失双失，被封用户在场长连接可在整个 TTL 内照常收发 RPC 挣钱花钱。修正：**组本地缓存维护 `maxEpoch`，快路径把 `sess.tokenEpoch < groupMaxEpoch[uid]` 也纳入拒绝**——广播到达即在下一条 RPC 生效（不依赖删键），把窗口压回「下一条消息即时」，与现状 `banUser` 同步 del 语义对齐。**新增常量 `AUTH_REVERIFY_TTL_S=60s`（U2 定案）**——组本地鉴权缓存 TTL = 双失最坏窗口；⛔ 与现有 `SESS_TTL_S=259200`（会话时长 3d）是两个不同的量，**勿同名混用**。正常态 revocation 流保 maxEpoch 新鲜、缓存到期只本地刷新；**re-verify 远调账号服务仅在「流心跳超时」时触发**，避免每 60s 全量回源账号服务（10 万在线 × 1/60s ≈ 1.6k QPS 的无谓负载）。并加端到端时延探针（对齐 `[rpc-budget]` 文化）。
@@ -245,7 +282,7 @@ F4 的两问：
 
 ### 2.7 M12c：WebPlatform 门户抽出（实施计划，M12c 单一参考）
 
-**定位精化（覆盖 §2.1 的「三盲」）**：`apps/WebPlatform` 不是「三盲的账号服务」，而是**平台门户 = 目录 + 身份权威 + 只读投影**。它 **zone-aware**（知道有哪些服、按服给角色数据打标签），但**不拥有权威玩法/经济状态、不跑区内逻辑**——这才是准确的边界，`§2.1` 的「三盲」按此读。
+**定位精化（覆盖 §2.1 的「三盲」）**：`apps/WebPlatform` 不是「三盲的账号服务」，而是**本游戏专属的平台门户 = 目录 + 身份权威 + 只读投影**。它 **zone-aware**（知道有哪些服、按服给角色数据打标签）、**单游戏**（⛔ 非 project-blind，见 §2.1），但**不拥有权威玩法/经济状态、不跑区内逻辑**——这才是准确的边界，`§2.1` 的「三盲」按此读。
 
 **分层**：
 - **WebPlatform（web/门户层，MySQL-only、⛔ 无 Redis 无缓存；契约与待办见 [WEBPLATFORM.md](WEBPLATFORM.md)）**：login/verify/ban、服务器目录（`/area/list` 整体：al/h/wsUrl/isOps）、char_registry（存在性权威 + 展示投影）、character.register/query。**客户端进游戏前的一切（登录 + 选服 + 选角）都打这。**
@@ -414,7 +451,7 @@ for (const row of rows) {
 
 ### 4.2 每组横向底座 + 独立 coord Redis（加载期 fail-fast）
 
-翻开 `app.config.ts` 注释：`presence/driver: RedisConfig(COORD_URL)`、`publicAddress`。coord 承载 Colyseus `roomcaches`/`roomcount`（**固定键、不带前缀、不分 db**）+ `$lobby`/匹配 Pub/Sub，跨组/跨项目共用必**静默错乱**（幽灵房/匹配混淆）。加载期断言：`COORD_URL` 与 durable/cache URL 两两相等即 `throw`。**注意**：控制总线（§2.3）是唯一允许的跨组通道，由账号服务自持，与 coord 物理分开、只走幂等 epoch。
+翻开 `app.config.ts` 注释：`presence/driver: RedisConfig(COORD_URL)`、`publicAddress`。coord 承载 Colyseus `roomcaches`/`roomcount`（**固定键、不带前缀、不分 db**）+ `$lobby`/匹配 Pub/Sub，跨组/跨项目共用必**静默错乱**（幽灵房/匹配混淆）。加载期断言：`COORD_URL` 与 durable/cache URL 两两相等即 `throw`。**注意**：踢人控制总线 `stream:kick`（§2.3）就**承载在本组 coord 上**（`REDIS_COORD_URL`，dev 缺省复用 durable、prod 指向物理隔离 HA），是**组侧**设施：⛔ 非账号服务自持、⛔ 不走 epoch（事件仅 `{uid, reason[, exceptHash]}`）。⚠ 因 coord 本身**按组独占**（见本节上文），该总线的扇出半径也就**只到组内**——跨组的撤销送达由 GM 工具逐节点 `POST /admin/kick` 承担（§2.3 SOP、09·G7b），⛔ 不靠这条流。
 
 ### 4.3 准入硬闸（onAuth 叠加）
 
@@ -427,17 +464,17 @@ for (const row of rows) {
 | 可进入 | `isServerEnterable({t,openTime})`（`t!==9 && openTime>0`） | shared 同源函数，服务端硬闸真源 |
 | 运维/draining | `!isOps` 拒；draining 组拒新客 | 组级开关 |
 | listHash 新鲜度 | `options.listHash === 当前 h` | 陈旧列表逼客户端重拉 |
-| epoch(C3) | `sess.tokenEpoch >= groupMaxEpoch[uid]` | 组本地缓存 |
+| 撤销/封号 | onAuth 走 **strict verify**（`account.verify(token, true)` 回权威 `accounts.status`/`token_hash`） | WebPlatform（经 `AccountClient` 接缝） |
 
-`isServerEnterable` 是硬闸真源，客户端只改善 UX。
+`isServerEnterable` 是硬闸真源，客户端只改善 UX。⚠ M12d 后**没有** epoch / `maxEpoch` 闸（连同组本地 epoch 缓存一并砍）：进房拒被封用户全靠 onAuth 这道 strict 回权威，房内每条 RPC 走**纯缓存 hash 快路径、⛔ 零权威回源**，在场连接的收敛靠踢（§2.3 SOP）。
 
 ### 4.4 网关保留 + 跨进程 presence
 
-`LobbyRoom`（`autoDispose=false`、`maxClients=5000`）不动大结构。`onJoin` 追加：① `HSET sess:{uid} gwNode <PUBLIC_ADDRESS>`（字段已预留）；② 写 `presence:{uid}=gwNode` 到 **durable**（不放 cache——allkeys-lru 会逐出 presence 致误判假离线）。`keys.ts` 新增 `kPresence(uid)=${P()}presence:{uid}`（带区前缀，登记 07 表）。查询走 `pipeline`+`MGET`，⛔ 禁 HGETALL（R1）。本节点 `online:uid→sink` 保留做 socket 真实投递，presence 只答「uid 连在哪个 gwNode」。**O1 补漏**：presence TTL 刷新绑定 LobbyRoom 心跳，`TTL > 心跳间隔`——否则空闲长连接 presence 到期即在正常运行下丢失定向踢。
+`LobbyRoom`（`autoDispose=false`、`maxClients=5000`）不动大结构。`onJoin` 追加：① `HSET sess:{uid} gwNode <PUBLIC_ADDRESS>`（字段已预留）；② 写 `presence:{uid}=gwNode` 到 **durable**（不放 cache——allkeys-lru 会逐出 presence 致误判假离线）。`keys.ts` 新增 `kPresence(uid)=${P()}presence:{uid}`（带区前缀，登记 07 表）。查询走 `pipeline`+`MGET`，⛔ 禁 HGETALL（R1）。本节点 `online:uid→sink` 保留做 socket 真实投递，presence 只答「uid 连在哪个 gwNode」。**O1 补漏**：presence TTL 刷新绑定 LobbyRoom 心跳，`TTL > 心跳间隔`——否则空闲长连接 presence 到期即在正常运行下丢失**定向推送**（私聊/好友，§4.5）。⚠ **踢人不在此列**——M12d 改每节点自筛本地 `online` 表，⛔ 不查 presence（§2.3）。
 
 ### 4.5 跨进程定向推送：mailwake 泛化 + 大混服四件事
 
-把 `push.ts:startMailWakeLoop` 抽成工厂 `startStreamConsumer(streamKey, onEntry)`（保留 `XREAD "$"` 无 group、单节点自筛、`XTRIM MINID` 兜底、循环自愈）。**§2.3 撤销控制总线也是它的一个实例**——每节点起一个消费者读撤销流、更新 maxEpoch + 自筛踢。四件事全部**定向 + 有界 + 自愈**（铁律 11 唤醒式，只推 seq/id、拉权威、限频）：
+把 `push.ts:startMailWakeLoop` 抽成工厂 `startStreamConsumer(streamKey, onEntry)`（保留 `XREAD "$"` 无 group、单节点自筛、`XTRIM MINID` 兜底、循环自愈）。**§2.3 的踢人控制总线 `stream:kick` 也是它的一个实例**（`core/auth/kickBus.ts`）——每节点起一个消费者读踢人流，命中本节点 `online` 表即自筛踢；⛔ 无 `maxEpoch` 更新（M12d 已砍），⛔ 不查 presence。四件事全部**定向 + 有界 + 自愈**（铁律 11 唤醒式，只推 seq/id、拉权威、限频）：
 
 | 事 | 机制 | 自愈 |
 |---|---|---|
@@ -450,7 +487,7 @@ for (const row of rows) {
 
 ### 4.6 presence 启用条件 = 组是否多节点（评审 C2 修正）
 
-原草稿「区服单进程收敛、presence 不需要」只在 **10 区 1 节点起步态**成立。目标拓扑（100 组×10 区、每组 5–10 节点）下**区服连接同样散在多节点**，若区服不写 presence，则区服封号的组内定向踢找不到 gwNode，§2.3 撤销「在线会话即时死」在区服失效。定死：
+原草稿「区服单进程收敛、presence 不需要」只在 **10 区 1 节点起步态**成立。目标拓扑（100 组×10 区、每组 5–10 节点）下**区服连接同样散在多节点**，若区服不写 presence，则区服的**跨节点定向推送**（私聊、好友上下线，§4.5）找不到 gwNode。⚠ **踢人不在此列**——M12d 后踢走「每节点自筛 `online` 表」，⛔ 不依赖 presence（§2.3）。定死：
 
 | 拓扑 | presence/stream |
 |---|---|
@@ -469,7 +506,7 @@ for (const row of rows) {
 | 阶段 | 目标 | 主要改动 | 交付即可用 | §9.5 |
 |---|---|---|---|---|
 | **M11 公共地基** | 零触线接入分区 | `config.ts` 加 `SERVER_ID`/`GROUP_ID`/`GROUP_ZONES`(fail-fast)；onAuth 准入硬闸；`area/catalog` 接 director；`/area/list` 劈 ul↔al/h/isOps | 区服可选区进房 | 不触 |
-| **M12 账号服务抽出** | 身份/令牌/足迹独立 | `core/auth/*`+`http/account/*` 抽独立进程；**控制总线**；业务侧瘦 client(verify→组本地缓存+maxEpoch)；撤销扇出+组内定向踢；足迹目录 | 平台级账号复用 | 不触 |
+| **M12 账号服务抽出** | 身份/令牌/足迹独立 | `core/auth/*`+`http/account/*` 抽独立进程；**控制总线**；业务侧瘦 client(verify→组本地缓存+maxEpoch)；撤销扇出+组内定向踢；足迹目录 | 登录/选服/选角与玩法解耦（**本游戏专属**；跨游戏账号复用**以后另立项**，§2.1 定案） | 不触 |
 | **M13 每区经济** | 身份=(uid,sId) | 六表加 server_id+backfill；deriveOpId 编码 sId；**MySQL 谓词加 server_id**；keys ALS 化(fail-fast)；redisRoute group 路由；worker per-row 全包 | 每区独立钱包/背包/充值 | 不触 |
 | **M14 实时横向** | 大混服/多节点组 | 每组独立 coord+启动断言；打开 driver/presence；`filterBy(['sId'])`；matchmaker 双节点验通 | 10 万并发匹配 | **贴边**(仅 ephemeral) |
 | **M15 presence/广播** | 弱一致定向自愈 | `presence:{uid}=gwNode`(durable+TTL 心跳)；`startStreamConsumer`；私聊/好友定向推 | 大混服+多节点区服大厅 | 不触 |
@@ -490,7 +527,7 @@ Ch1 称大混服「常量前缀」，草稿 `P()` 对缺省 sId 产 `gono_s0_use
 1. **跨区前缀不串**（单测+int）：同 uid 在 sId=1/2 建角，断言 `s1_user` 与 `s2_user` 物理隔离、`deriveOpId(uid,1,..)≠deriveOpId(uid,2,..)`、`UNIQUE(user_id,server_id,idem_key)` 允许两区同 idem_key 并存。
 2. **MySQL 谓词分区断言**：一次 debit 只 affectedRows=1、只扣本区；credit 落对区不落 s0_（守 B1）。
 3. **pool-mode 独立集成套**（`test/int/pool/*`）：起 driver/presence+双 GameRoom 节点，验两段式、`filterBy:{sId}` 隔离、matchmaker 双节点——否则纸面横向必腐烂。
-4. **撤销传播时延探针**：ban→控制总线扇出→各组 maxEpoch 更新+定向踢端到端时延；双失回退到 TTL 的红线告警。
+4. **撤销传播可观测（M12d 口径）**：① ban→`stream:kick` 扇出→各节点自筛踢的端到端时延探针；② GM `/admin/kick` 的**逐节点 ack 汇总**（失败必重试，最终仍失败要告警——送达保证在这一步，§2.3 SOP）；③ **「已封禁但仍在线」红线告警**（⚠ 漏踢**无自动收敛**，可存活至 sess TTL 3d）。⛔ 无 maxEpoch/双失回退 TTL 那套（已砍）。
 5. **coord 隔离断言**：启动期断言每组 driver/presence 指向独立实例、跨组 Pub/Sub 不串。
 6. **fail-fast 断言**：worker 未包 zoneCtx.run 时 `P()` 抛错（守 B3）。
 
@@ -517,8 +554,8 @@ Ch1 称大混服「常量前缀」，草稿 `P()` 对缺省 sId 产 `gono_s0_use
 | 3 | 保留 ws-RPC 网关 | 本地 `online:uid→sink` + `presence:{uid}=gwNode` 跨节点定向；push 泛化 gwNode 定向 |
 | 4 | 大混服四件事弱一致 | 匹配/私聊/邮件/好友上下线，全定向+有界+自愈；⛔ 无全服态 |
 | 5 | 每区独立经济 | 六表加 server_id；**deriveOpId 编码 sId + MySQL 谓词加 server_id**；无跨平面 saga |
-| 6 | 中心账号服务 | zone/status/project-blind；身份+令牌+足迹目录；`/area/list` 劈开；F4 用 durable 区标记非 footprint |
-| 7 | 撤销 A + 每节点自筛踢 | epoch **消息流**广播(max-wins)+组本地 maxEpoch+TTL；**每节点自筛踢**(不依赖 presence)；进房与 RPC 全线 maxEpoch，发奖边界补 ban recheck |
+| 6 | 中心账号服务（**本游戏专属**，跨物理组集中） | **zone-aware** + status-blind（`project-blind` ⏸ 当前不做、以后另立项，§2.1 定案）；身份+令牌+足迹目录；`/area/list` 劈开；F4 用 durable 区标记非 footprint |
+| 7 | 撤销 = 账号级「下次登不上」+ 踢在线（**两步 SOP**，M12d 简化后） | 权威 = `accounts.status`+`token_hash` **一条 UPDATE**（⛔ 无 epoch/`revocation_log` outbox/组本地 maxEpoch/`verifiedAt`，均 M12d 已砍）；`stream:kick`（**组侧** coord）**每节点自筛踢**(不依赖 presence)、best-effort 无 ack ⇒ **送达保证 = GM 逐节点 `/admin/kick` 确认**（09·G7b）；进房 strict verify、房内 RPC 纯缓存快路径，发奖边界补 ban recheck |
 
 ---
 
