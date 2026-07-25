@@ -123,7 +123,8 @@ export async function openLogin(onEnterBattle: () => void): Promise<void> {
     try {
       logic.onProgress(0.6, "正在进入大厅…");
       WebSocketClient.inst.init(getBaseUrl());
-      await WebSocketClient.inst.join(r.token);
+      // 区服形态：透传所选区 sId，令大厅 RPC/建角与战斗房落同一区（否则大厅落 s0、战斗落所选区，档案串区）。
+      await WebSocketClient.inst.join(r.token, { sId: cur.sId });
       logic.onProgress(0.85, "正在加载角色…");
       user = (await WebSocketClient.inst.rpc(UserRpc.GetInfo, {})).user;
     } catch (e) {

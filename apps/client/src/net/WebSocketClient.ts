@@ -17,6 +17,7 @@ import {
     LOBBY_MSG_RPC,
     PROTOCOL_VERSION,
     RoomName,
+    type IRoomJoinOptions,
     type IRpcEnvelope,
     type IRpcReply,
     type LobbyPushMap,
@@ -98,11 +99,15 @@ export class WebSocketClient {
      * 加入大厅房。token 为框架 token（wx-login 签发），经 SDK auth 通道以
      * Authorization: Bearer 头送达服务端 static onAuth（token 反查 uid，09·G1）。
      * 并发调用合流到同一次连接；已在线时用不同 token 调用会抛错（换号必须先 leave()）。
+     *
+     * @param options.sId 所选区服 sId（区服形态）——透传进 onAuth 建区上下文，令大厅 RPC/建角
+     *   落 s{sId}_ 前缀、与战斗房 GameRoom 同区。缺省 = 单形态/大混服（服务端 auth.sId=0）。
+     *   ⚠ 换区同换号：区服=独立实例（wsUrl 不同），切区须先 leave() 再以新 sId join()。
      */
-    async join(token: string): Promise<void> {
+    async join(token: string, options?: { sId?: number }): Promise<void> {
         if (!this.client) throw new Error("[WebSocketClient] 未初始化，请先调用 init(endpoint)");
         if (!this.room && !this.joining) {
-            this.joining = this.doJoin(token);
+            this.joining = this.doJoin(token, options?.sId);
             try {
                 await this.joining;
             } finally {
@@ -116,9 +121,13 @@ export class WebSocketClient {
         }
     }
 
-    private async doJoin(token: string): Promise<void> {
+    private async doJoin(token: string, sId?: number): Promise<void> {
         this.client!.auth.token = token;
-        const room = await this.client!.joinOrCreate(RoomName.Lobby, { v: PROTOCOL_VERSION });
+        // 区服形态：带上所选区 sId，服务端 onAuth 据此建区上下文（大厅每消息 zoneCtx.run + onJoin
+        // ensureCharacter 全落 s{sId}_ 前缀）；缺省不带 = 单形态/大混服（sId=0），服务端不做区归属闸。
+        const joinOpts: IRoomJoinOptions = { v: PROTOCOL_VERSION };
+        if (sId !== undefined) { joinOpts.sId = sId; }
+        const room = await this.client!.joinOrCreate(RoomName.Lobby, joinOpts);
         this.room = room;
         this.joinedToken = token;
 

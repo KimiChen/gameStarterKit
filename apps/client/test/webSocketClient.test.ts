@@ -8,7 +8,7 @@
  */
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
-import { GuildRpc, LOBBY_MSG_RPC, UserRpc } from "../src/shared/index";
+import { GuildRpc, LOBBY_MSG_RPC, PROTOCOL_VERSION, RoomName, UserRpc } from "../src/shared/index";
 import { RpcError, WebSocketClient } from "../src/net/WebSocketClient";
 
 interface IRpcReplyLite { id: string; ok: boolean; data?: unknown; err?: { code: string; msg: string } }
@@ -106,6 +106,27 @@ test("rpcIdem：BUSY/STALE_FENCE 自动重试，全程复用同一 clientReqId",
     assert.equal(m.data.payload.clientReqId, "cr-fixed", "重试必须复用同一 clientReqId（09·I2）");
   }
   await c.leave();
+});
+
+test("join 透传 options.sId 进 joinOrCreate（区服路由）：带 sId 带上、缺省不带", async () => {
+  const calls: { room: string; options: any }[] = [];
+  const fake = makeFakeRoom();
+  const c = WebSocketClient.inst as unknown as { client: unknown };
+  c.client = {
+    auth: { token: "" },
+    joinOrCreate: async (room: string, options: any) => { calls.push({ room, options }); return fake.room; },
+  };
+
+  // 区服形态：带上所选区 sId → onAuth 据此建区上下文（大厅落 s{sId}_ 前缀，与战斗房同区）
+  await WebSocketClient.inst.join("tok-z1", { sId: 1 });
+  assert.equal(calls[0].room, RoomName.Lobby);
+  assert.deepEqual(calls[0].options, { v: PROTOCOL_VERSION, sId: 1 }, "带 sId → join options 带 sId");
+  await WebSocketClient.inst.leave();
+
+  // 缺省不带 sId → 单形态/大混服（服务端 auth.sId=0），向后兼容修复前老客户端
+  await WebSocketClient.inst.join("tok-z0");
+  assert.deepEqual(calls[1].options, { v: PROTOCOL_VERSION }, "缺省 → join options 不含 sId（大混服向后兼容）");
+  await WebSocketClient.inst.leave();
 });
 
 test("rpcIdem：非 BUSY 错误立即抛且回填 clientReqId，不重试", async () => {
