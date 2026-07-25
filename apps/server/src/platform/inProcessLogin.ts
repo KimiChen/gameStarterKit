@@ -10,8 +10,8 @@
  * 注：Arthur 的「存量账号绑定」（旧 deviceId → openid 回填）本项目无存量账号，未移植。
  */
 import { devLogin as libDevLogin, wxLogin as libWxLogin, type LoginResult as LibLoginResult } from "@game/webplatform/lib";
-import { AuthRequiredError, BannedError, RateLimitedError, WxUnavailableError } from "../errors";
-import { writeGroupSess } from "./session";
+import { AuthRequiredError, BannedError, RateLimitedError, WxUnavailableError } from "../core/errors";
+import { writeGroupSess } from "../core/auth/session";
 
 export interface WxLoginInput { code: string; ip: string; deviceId?: string }
 

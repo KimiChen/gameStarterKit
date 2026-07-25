@@ -3,7 +3,7 @@ import app from "./app.config";
 import { PORT } from "./core/infra/config";
 import { startInfraMonitors } from "./core/infra/loopMonitor";
 import { startStreamDepthAlert } from "./core/match/matchConsumer";
-import { setKickHandler, startKickConsumer } from "./core/auth/revoke";
+import { setKickHandler, startKickConsumer } from "./core/auth/kickBus";
 import { kickUser } from "./websocket/push";
 import { registerAllRoutes } from "./websocket/loader";
 

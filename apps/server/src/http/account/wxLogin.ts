@@ -5,7 +5,7 @@
 import { createEndpoint } from "@colyseus/core";
 import { z } from "zod";
 import { toErrCode } from "../../core/errors";
-import { wxLogin } from "../../core/auth/wxLogin";
+import { wxLogin } from "../../platform/inProcessLogin";
 
 export default createEndpoint("/account/wx-login", {
   method: "POST",

@@ -16,12 +16,12 @@
 | **M12b** F4 thaw 按区判 | ✅ 落地 | ABSENT 分支 sId=0 用 accounts、sId≥1 用 char_registry；⚠ user_archive per-zone 待 archive 步 |
 | **M12e** `/area/list` ul 接真建角数据 | ✅ 落地 | `getUserRecentServers` → `listCharacterZones`（§2.5） |
 | **M12c** WebPlatform 门户抽出 | ✅ 落地完成（int89+单测20 绿，split 全链 e2e 绿） | 账号原语(verify/token/char/accountExists)迁 `@game/webplatform/lib`✅、auth 改 MySQL 权威✅、createUser→onJoin(ensureLive-first 防丢数据)✅、WebPlatform Fastify 独立进程✅、`ACCOUNT_MODE` http↔inProcess 开关✅、verifiedAt 有界撤销✅、登录编排+code2session 迁 lib(结果码边界)+进程内限流✅、选服目录 `/area/list`(目录+ul best-effort)迁 lib✅、WebPlatform 端点按单源 `ApiPath`(/account/wx-login·/dev-login)+客户端契约✅、客户端 login/area 走门户 `portalUrl`(空=回退游戏服)✅、onAuth 懒填组 sess✅、split 快路径 verifiedAt 陈旧**回远程**重验(⛔ 不打本地组 pool)✅ |
-| **M12d** 撤销 + 踢在线 + GM SOP | 🔧 in-process 落地（int101 绿；剩 GM 工具/split 发布端） | 权威简化为 status+token_hash✅、`stream:kick` 总线 + 每节点自筛踢✅、**GM `/admin/kick`**(ack+鉴权 fail-closed)✅、**踢=先推 forceLogout{reason} + 语义化关闭码**✅、**顶号主动踢**(判据=组 sess hash 变化，重连不误判)✅、客户端 onLeave 读码兜底 + 三因文案✅。**剩**：GM 工具**实现**（契约已定为规则 [09·G7b](SERVER.md#12-开发约束63-条规则目录)，落地在运营侧）、split 发布端、发奖 recheck |
+| **M12d** 撤销 + 踢在线 + GM SOP | 🔧 落地（int103 绿；剩 GM 工具实现/W1·W2） | 权威简化为 status+token_hash✅、`stream:kick` + 每节点自筛踢✅、GM `/admin/kick`(ack+fail-closed)✅、踢=先推 forceLogout{reason}+语义化关闭码✅、顶号主动踢(判据=组 sess hash 变化)✅、**撤销/目录全走 `AccountClient` 接缝**(split 下直调 lib=打错库，已机检)✅。**剩**：GM 工具实现(运营侧，契约 09·G7b)、WebPlatform W1 鉴权/W2 审计([WEBPLATFORM.md](WEBPLATFORM.md#4-待办上线前必做))、发奖 recheck |
 | **archive 步** user_archive 分区 + active:lru/freeze 区化 | ⬜ 待做 | 耦合 M12c；⛔ 补齐前不开「多区 + freeze」 |
 | **M14/M15** 大混服实时横向 + presence/广播 | ⬜ 待做 | §4 |
 | **M16** 物理分组（100 组 × 10 区） | ⬜ 待做 | §5.1 |
 
-**当前能力**：单进程下大混服（sId=0）完全可跑；一个 `GROUP_ZONES` 配好的区服组，**选服→进服硬闸→建角→每区独立经济→冷档按区判→我的区** 机制完整可玩、经济按区隔离，由 sId≥1 真实栈测试守护（`test/int/perzone.test.ts` 6 用例）。**验证基线**：typecheck 三端 + verify:sync / server 单测 20 / test:int 101 / test:fgui 68 / smoke 13 全绿。⚠ 真开多区（`GROUP_ZONES` 非空）前，`keys.ts` fail-fast 会挡住任何漏包 `zoneCtx.run` 的 per-zone 路径（`test/zone-failfast.test.ts` 守）。
+**当前能力**：单进程下大混服（sId=0）完全可跑；一个 `GROUP_ZONES` 配好的区服组，**选服→进服硬闸→建角→每区独立经济→冷档按区判→我的区** 机制完整可玩、经济按区隔离，由 sId≥1 真实栈测试守护（`test/int/perzone.test.ts` 6 用例）。**验证基线**：typecheck 三端 + verify:sync / server 单测 21 / test:int 103 / test:fgui 68 / smoke 13 全绿。⚠ 真开多区（`GROUP_ZONES` 非空）前，`keys.ts` fail-fast 会挡住任何漏包 `zoneCtx.run` 的 per-zone 路径（`test/zone-failfast.test.ts` 守）。
 
 ---
 

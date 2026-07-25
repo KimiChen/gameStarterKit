@@ -72,15 +72,14 @@ export function buildServer(): FastifyInstance {
   });
 
   // 撤销（封号 / 踢人）：一条 UPDATE 写权威（status=1 / token_hash=NULL）= **下次登不上**。
-  // ⚠ TODO(M12d split 发布端)：split 下还需本进程持 coord Redis 并 `XADD stream:kick {uid}` 才能**踢在线**；
-  //   未接前 split 的在连用户由组侧快路径 verifiedAt(60s) 回权威兜底（新建连接/重登已即时被拒）。
+  // 返回**是否命中**（false = 无此账号）：组侧据此决定要不要踢在线（core/auth/ban.ts）。
+  // ⚠ 本服务**刻意不广播踢人**（不持 coord Redis）：送达保证在 GM 工具的逐节点确认（09·G7b / WEBPLATFORM.md §5）。
+  // ⚠ 待办：本端点无鉴权（W1）、split 下封号无审计行（W2）——见 docs/WEBPLATFORM.md §4。
   app.post<{ Body: { uid: string } }>("/ban", async (req) => {
-    await banAccount(req.body.uid);
-    return { ok: true };
+    return { banned: await banAccount(req.body.uid) };
   });
   app.post<{ Body: { uid: string } }>("/revoke", async (req) => {
-    await revokeAccount(req.body.uid);
-    return { ok: true };
+    return { revoked: await revokeAccount(req.body.uid) };
   });
 
   // 登录（split：客户端 portalRequest 直连 WebPlatform）：路径 = 单源 ApiPath（铁律 6，与 in-process 端点一致）；

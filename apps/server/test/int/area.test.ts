@@ -21,13 +21,13 @@ import { after, before, test } from "node:test";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
 import { server } from "../../src/app.config";
 import { AREA_SERVERS, areaList, areaListHash, characterRegister } from "@game/webplatform/lib";
-import { issueSession } from "../../src/core/auth/session";
+
 import { SESS_TTL_S } from "../../src/core/infra/config";
 import { activeLruBucketOf, kActiveLru, kSess } from "../../src/core/infra/keys";
 import { clientFor, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
 import { closeMysql, getPool } from "../../src/core/infra/mysql";
 import type { ResultSetHeader } from "../../src/core/infra/mysql";
-import { assertRedisUp, testUid } from "./helpers";
+import { assertRedisUp, testUid, issueSession } from "./helpers";
 
 const BASE = "http://127.0.0.1:2568"; // boot(server) 恒监听 2568（@colyseus/testing DEFAULT_TEST_PORT）
 let colyseus: ColyseusTestServer;

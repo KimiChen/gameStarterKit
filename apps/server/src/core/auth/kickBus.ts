@@ -1,5 +1,6 @@
 /**
- * 撤销「踢在线」通道（DUAL_MODE §2.3，M12d 简化模型）。
+ * **踢人通道**（kick bus，DUAL_MODE §2.3 / M12d）。⚠ 本文件只负责「把在线连接踢下线」这一件事——
+ * 撤销的**权威**在 `accounts.status/token_hash`（WebPlatform lib 写，见 core/auth/ban.ts 的编排）。
  *
  * **封号语义 = 账号级「下次登不上」**：权威真相是 `accounts.status=1` + `token_hash=NULL`（一条 UPDATE），
  * 由 WebPlatform lib 写。本模块只负责第二件事——**把在线连接踢下线，逼其重走登录流程**。

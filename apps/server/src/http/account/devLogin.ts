@@ -10,7 +10,7 @@ import { createEndpoint } from "@colyseus/core";
 import { z } from "zod";
 import { AUTH_DEV_ENABLED } from "../../core/infra/config";
 import { toErrCode } from "../../core/errors";
-import { devLogin } from "../../core/auth/wxLogin";
+import { devLogin } from "../../platform/inProcessLogin";
 
 export default createEndpoint("/account/dev-login", {
   method: "POST",

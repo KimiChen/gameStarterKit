@@ -13,7 +13,7 @@ import { after, before, test } from "node:test";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
 import { LOBBY_MSG_PUSH, LOBBY_MSG_RPC, PROTOCOL_VERSION, RoomName } from "@game/shared";
 import { server } from "../../src/app.config";
-import { issueSession } from "../../src/core/auth/session";
+
 import { GUILD_CATALOG } from "../../src/core/guild/catalog";
 import { createUser } from "../../src/core/userRecord";
 import { stopMailWakeLoop } from "../../src/websocket/push";
@@ -23,7 +23,7 @@ import {
 import { clientFor, clientForKey, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
 import { closeMysql, getPool } from "../../src/core/infra/mysql";
 import type { ResultSetHeader } from "../../src/core/infra/mysql";
-import { assertRedisUp, cleanupUser, sleep, testUid } from "./helpers";
+import { assertRedisUp, cleanupUser, sleep, testUid, issueSession } from "./helpers";
 
 let colyseus: ColyseusTestServer;
 const uids: string[] = [];

@@ -11,8 +11,9 @@ import { after, before, test } from "node:test";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
 import { KICK_CLOSE_CODE, LOBBY_MSG_PUSH, LOBBY_MSG_RPC, PROTOCOL_VERSION, RoomName } from "@game/shared";
 import { server } from "../../src/app.config";
-import { banUser, issueSession } from "../../src/core/auth/session";
-import { setKickHandler } from "../../src/core/auth/revoke";
+import { banUser } from "../../src/core/auth/ban";
+
+import { setKickHandler } from "../../src/core/auth/kickBus";
 import { kickUser } from "../../src/websocket/push";
 import { acquireLease } from "../../src/core/locks";
 import { createUser } from "../../src/core/userRecord";
@@ -22,7 +23,7 @@ import { activeLruBucketOf, kActiveLru, kFence, kLock, kSess, kUser } from "../.
 import { clientFor, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
 import { closeMysql, getPool } from "../../src/core/infra/mysql";
 import type { ResultSetHeader, RowDataPacket } from "../../src/core/infra/mysql";
-import { assertRedisUp, cleanupUser, sleep, testUid } from "./helpers";
+import { assertRedisUp, cleanupUser, sleep, testUid, issueSession } from "./helpers";
 
 let colyseus: ColyseusTestServer;
 const uids: string[] = [];

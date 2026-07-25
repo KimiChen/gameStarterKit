@@ -7,7 +7,7 @@
  * 于是「有档 ⇒ 必有 char 行」恒成立（无 false-negative 静默丢档，§2.6）；两步都幂等，
  * 中途崩溃下次进区自愈（char 行 ODKU no-op、createUser 'exists'）。
  *
- * ⚠ 建号 vs 建角：登录建的是**基础前缀档**（sId=0，大混服/大厅基线，见 auth/wxLogin）；
+ * ⚠ 建号 vs 建角：登录建的是**基础前缀档**（sId=0，大混服/大厅基线，见 platform/inProcessLogin）；
  * 区服的 per-zone 角色档在此按 sId≥1 建。大混服（sId=0）此处 createUser 命中 'exists'（登录已建），
  * 仅补一条 char_registry 行（无害，供 ul 统一）。
  */

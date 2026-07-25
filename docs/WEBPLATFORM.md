@@ -32,7 +32,7 @@
 
 > **`AccountClient` 接缝（`platform/accountClient.ts`）的存在就是为了防这个**：游戏服要访问账号/门户平面，
 > **一律走 `account.*`**（in-process → lib、split → HTTP）。⛔ 禁止在 `platform/` 之外 import lib
-> （唯一例外：`core/infra/mysql.ts` 的池注入）。此约束由 `test/lib-import-ban.test.ts` 机检。
+> （唯一例外：`core/infra/mysql.ts` 的池注入）。此约束由 `test/lib-import-ban.test.ts` 机检（白名单：`platform/**` + `core/infra/mysql.ts`）。
 
 ## 3. 端点清单
 
@@ -44,7 +44,7 @@
 | `POST /verify` | 内部（组网关调） | 返回**结果码**，组侧映射错误类；组 `sess` 由组网关 onAuth 懒填 |
 | `POST /character/register`·`/query`·`/has` | 内部 | 建角存在性权威（喂 F4 + `ul`） |
 | `POST /account/exists` | 内部 | F4「是不是真账号」判据（sId=0） |
-| `POST /ban`·`/revoke` | **特权** | 一条 UPDATE 写权威（`status=1` / `token_hash=NULL`）= **下次登不上**；返回是否命中 |
+| `POST /ban`·`/revoke` | **特权** | 一条 UPDATE 写权威（`status=1` / `token_hash=NULL`）= **下次登不上**；返回 `{banned}`/`{revoked}` = 是否命中（组侧据此决定是否踢在线；`false`=无此账号则不广播） |
 
 **踢在线不在本服务**：封号 SOP 第二步由 **GM 工具**直连各组节点 `POST /admin/kick` 并按 ack 确认送达
 （规则 [09·G7b](SERVER.md#12-开发约束63-条规则目录)）。本服务**刻意不持 coord Redis、不广播**——

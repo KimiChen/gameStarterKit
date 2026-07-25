@@ -22,7 +22,7 @@ import { AuthRequiredError } from "../../src/core/errors";
 import { kSess } from "../../src/core/infra/keys";
 import { clientFor, closeRedis } from "../../src/core/infra/redisRoute";
 import { closeMysql, getPool } from "../../src/core/infra/mysql";
-import type { ResultSetHeader } from "../../src/core/infra/mysql";
+import type { ResultSetHeader, RowDataPacket } from "../../src/core/infra/mysql";
 import { assertRedisUp, testUid } from "./helpers";
 
 const uids: string[] = [];
@@ -116,4 +116,25 @@ test("门户登录路径契约：POST ApiPath.DevLogin → ILoginRes{userId,toke
   assert.match(body.userId, /^u_\d+$/);
   assert.ok(/\.[0-9a-f]{48}$/.test(body.token) && typeof body.isNew === "boolean", "ILoginRes 形态");
   assert.equal(body.openid, undefined, "⛔ G8：出参无 openid");
+});
+
+test("split 撤销走接缝：httpAccount.ban/revoke → 远程写权威 + 回报命中（⛔ 不打本地组库）", async () => {
+  const { uid, token } = await makeSplitLogin("sv-ban-seam");
+  // ban：远程 UPDATE accounts（status=1 + token_hash=NULL），返回命中
+  assert.equal(await httpAccount.ban(uid), true, "命中 → true（组侧据此决定是否踢在线）");
+  await assert.rejects(httpAccount.verify(token, true), AuthRequiredError, "封后建连即拒");
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    "SELECT status, token_hash FROM accounts WHERE user_id = ?", [uid]);
+  assert.equal(Number(rows[0].status), 1, "权威落在账号库（本测与游戏服共库，故可直查）");
+  assert.equal(rows[0].token_hash, null);
+
+  // 无此账号 → false（组侧据此**不踢**，避免无谓广播）
+  assert.equal(await httpAccount.ban("u_nonexistent_x"), false, "未命中 → false");
+  assert.equal(await httpAccount.revoke("u_nonexistent_x"), false);
+});
+
+test("split 选服目录走接缝：httpAccount.areaList → 远程 /area/list（⛔ 不打本地组库）", async () => {
+  const r = await httpAccount.areaList(null);
+  assert.ok(r.al.length > 0 && typeof r.h === "string", "远程目录可用");
+  assert.deepEqual(r.ul, [], "匿名 ul 空");
 });

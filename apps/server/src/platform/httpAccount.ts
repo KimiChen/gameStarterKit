@@ -5,6 +5,7 @@
  * ⚠ verify 的**快路径（strict=false）仍读组 Redis 缓存**（per-message 不打 WebPlatform，§2.7）；
  * 只有 strict=true（建连权威校验）走 HTTP。组缓存 onAuth 懒填 = 2d（未做前 split 的 verify 快路径仍依赖登录写 sess）。
  */
+import type { IAreaListRes } from "@game/shared";
 import { AuthRequiredError, BannedError } from "../core/errors";
 import { WEBPLATFORM_BASE_URL } from "../core/infra/config";
 import { verifySession, writeGroupSess } from "../core/auth/session";
@@ -58,4 +59,9 @@ export const httpAccount: AccountClient = {
     async has(uid, sId) { return (await post<{ has: boolean }>("/character/has", { uid, sId })).has; },
   },
   async accountExists(uid) { return (await post<{ exists: boolean }>("/account/exists", { uid })).exists; },
+  // 撤销：远程写权威并回报是否命中；**踢在线不在此处**——由调用方（core/auth/ban.ts）在本组发起
+  // （游戏服持 coord Redis），WebPlatform 刻意不广播（WEBPLATFORM.md §5）。
+  async ban(uid) { return (await post<{ banned: boolean }>("/ban", { uid })).banned; },
+  async revoke(uid) { return (await post<{ revoked: boolean }>("/revoke", { uid })).revoked; },
+  async areaList(token) { return await post<IAreaListRes>("/area/list", { token }); },
 };

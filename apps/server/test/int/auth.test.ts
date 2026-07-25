@@ -10,9 +10,11 @@
 import assert from "node:assert/strict";
 import { createServer, type Server } from "node:http";
 import { after, before, test } from "node:test";
-import { banUser, verifySession, verifySessionStrict } from "../../src/core/auth/session";
+import { verifySession } from "../../src/core/auth/session";
+import { banUser } from "../../src/core/auth/ban";
+import { verifySessionStrict } from "../../src/platform/inProcessAccount";
 import { _resetBreaker } from "@game/webplatform/lib";
-import { wxLogin } from "../../src/core/auth/wxLogin";
+import { wxLogin } from "../../src/platform/inProcessLogin";
 import { AuthRequiredError, BannedError, RateLimitedError } from "../../src/core/errors";
 import { activeLruBucketOf, kActiveLru, kRl, kSess, kUser } from "../../src/core/infra/keys";
 import { clientFor, clientForKey, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";

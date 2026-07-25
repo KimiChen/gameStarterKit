@@ -9,16 +9,19 @@ import "./env-setup"; // ⚠ 必须第一个 import
  */
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
-import { banUser, issueSession, revokeSessions, verifySession, verifySessionStrict, writeGroupSess } from "../../src/core/auth/session";
+import { verifySession, writeGroupSess } from "../../src/core/auth/session";
+import { banUser, revokeSessions } from "../../src/core/auth/ban";
+import { verifySessionStrict } from "../../src/platform/inProcessAccount";
+
 import { AuthRequiredError } from "../../src/core/errors";
-import { broadcastKick, kickLocal, setKickHandler, startKickConsumer, stopKickConsumer } from "../../src/core/auth/revoke";
+import { broadcastKick, kickLocal, setKickHandler, startKickConsumer, stopKickConsumer } from "../../src/core/auth/kickBus";
 import { ForceLogoutReason, KICK_CLOSE_CODE, LobbyPush } from "@game/shared";
 import { kickUser, registerOnline, unregisterOnline, type PushSink } from "../../src/websocket/push";
 import { K_STREAM_KICK, kSess } from "../../src/core/infra/keys";
 import { clientFor, closeRedis, coordClient } from "../../src/core/infra/redisRoute";
 import { closeMysql, getPool } from "../../src/core/infra/mysql";
 import type { ResultSetHeader, RowDataPacket } from "../../src/core/infra/mysql";
-import { assertRedisUp, sleep, testUid } from "./helpers";
+import { assertRedisUp, sleep, testUid, issueSession } from "./helpers";
 
 const uids: string[] = [];
 
