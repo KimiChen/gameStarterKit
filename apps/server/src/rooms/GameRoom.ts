@@ -174,7 +174,15 @@ export class GameRoom extends Room {
             this.departedNames.clear();
             // 撤出撮合池：对局中/结算后 joinOrCreate 都会开新房而不是挤进本房
             //（显式 lock 不会因人数变化被自动解锁；房间随全员退出 autoDispose）
-            this.lock();
+            // ⚠ `lock()` 返回 Promise（@colyseus/core Room.d.ts），此前是**裸调用**（floating promise）：
+            //   ① 它 reject ⇒ Node ≥22 默认 `unhandled-rejections=throw`，**整个网关进程挂**；
+            //   ② 更隐蔽的是玩法层——lock 没成功则本房**仍留在撮合池**，开赛后 `joinOrCreate`
+            //      继续往里塞人，而上面那行注释承诺的正是"撤出撮合池"。
+            //   撮合池状态在 coord Redis（presence），失败即"没退成"，⛔ 不能当没发生：记错误日志。
+            //   ⛔ 别改成 await：本方法在 onJoin 的同步路径上，await 会把入房握手拖在 Redis RTT 上。
+            void this.lock().catch((e: unknown) => {
+                console.error(`[GameRoom] lock 失败——本房仍在撮合池，可能被塞入新玩家 roomId=${this.roomId}`, e);
+            });
         }
 
         const welcome: IWelcomeRes = {
