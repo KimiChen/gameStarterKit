@@ -49,7 +49,11 @@ function loginFail(reason: LoginFailReason): never {
  *
  * ⚠ 复用**唯一那把** per-uid 锁（09·L1 禁第二把）；它是 per-zone 键、而登录本就与区无关，
  * 故显式 `sId=0`（区服部署下与各区玩法锁不同键，互不阻塞）。
- * ⚠ split 不走本路径（登录在 WebPlatform、缓存由 onAuth 回权威后懒填），天然无此竞态。
+ * ⚠ split 不走本路径（登录在 WebPlatform、缓存由 onAuth 回权威后懒填）。
+ * ⛔ **但别读成「split 没有这类竞态」**（此处曾写"天然无此竞态"，是错的）：split 只是没有**本路径**
+ * 这一条，它自己那条在 `platform/httpAccount.ts` —— `remoteVerify` 与 `writeGroupSess` 是**两个 await、
+ * 中间可任意交错且无 fence**，迟到的旧写不仅覆盖缓存，还会因判别位是本次 newHash 而**反手踢掉合法的新登录端**，
+ * 且快路径零回源 ⇒ 旧 token 一路放行到 sess TTL(3d)。登记见 todo.md「split 会话写入无 fence」。
  *
  * ⚠ **已知残留分叉：抢锁失败 / 写缓存失败**（in-process 独有，评审 [10]，决策=可观测不改结构）。
  * token 由 lib 在**进锁之前**就签发落库了，故本函数**非输家路径**上的任何抛错都留下：
@@ -74,7 +78,10 @@ async function finish(r: Extract<LibLoginResult, { ok: true }>): Promise<LoginRe
   } catch (e) {
     if (!lost) {
       // ⛔ 审计失败不能盖掉原错误：那会把可重试的 409 变成 500（客户端不再重登 = 分叉不自愈）
-      await auditLogin("login_diverged", r.uid, `权威已换发但组缓存未更新（客户端未拿到 token）：${String(e).slice(0, 180)}`, null, null)
+      // ⛔ 不在这里裸 slice：`String(e).slice(n)` 按 UTF-16 码元切，切点落在代理对中间会静默变成
+      // U+FFFD（且长度还够不着 clamp 的 255 上限 ⇒ clamp 原样放行，兜不住）。交给 auditLogin
+      // 的 clamp 统一截：它不切代理对，且能多留 ~50 字错误原文——这行审计存在的全部意义就是那段原文。
+      await auditLogin("login_diverged", r.uid, `权威已换发但组缓存未更新（客户端未拿到 token）：${String(e)}`, null, null)
         .catch((ae: unknown) => { console.error("[login] 分叉审计写入失败", r.uid, ae); });
     }
     throw e;

@@ -93,3 +93,26 @@ test("ACCOUNT_MODE 合法值与缺省值：正常加载", () => {
   }
   assert.equal(loadConfigWith({ ACCOUNT_MODE: undefined }).status, 0, "缺省（不设）应正常加载");
 });
+
+/**
+ * FREEZE_ENABLED × GROUP_ZONES 组合断言（评审：此前只是散文）。
+ *
+ * 「⛔ 补齐 archive 步前不开多区 + freeze」以前只写在 DUAL_MODE 里，两个 env **各解析各的**、
+ * 无任何组合校验 ⇒ 同时打开能正常启动，然后在冷档路径上静默串区。⛔ 这条回退就是"能启动"，
+ * 所以用例必须钉住「加载期拒绝」而不是任何运行期行为。
+ */
+test("FREEZE_ENABLED=1 + GROUP_ZONES 非空：加载期即 throw（⛔ 不允许静默启动）", () => {
+  for (const zones of ["1", "1,2", "0,3"]) {
+    const r = loadConfigWith({ FREEZE_ENABLED: "1", GROUP_ZONES: zones });
+    assert.notEqual(r.status, 0, `GROUP_ZONES=「${zones}」+ freeze 应拒绝启动`);
+    assert.match(r.stderr, /FREEZE_ENABLED=1 与 GROUP_ZONES/, `stderr：${r.stderr.slice(0, 300)}`);
+  }
+});
+
+test("FREEZE_ENABLED × GROUP_ZONES 的三种合法组合：正常加载", () => {
+  // 单开任一侧、以及都不开，都必须能起（⛔ 别把断言写成"只要 freeze 就炸"）
+  for (const [freeze, zones] of [["1", ""], ["0", "1,2"], ["1", undefined], ["0", ""]] as const) {
+    const r = loadConfigWith({ FREEZE_ENABLED: freeze, GROUP_ZONES: zones });
+    assert.equal(r.status, 0, `FREEZE_ENABLED=${freeze} GROUP_ZONES=${String(zones)} 应通过，stderr：${r.stderr.slice(0, 300)}`);
+  }
+});

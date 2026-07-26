@@ -22,6 +22,9 @@ import { assertRedisUp, cleanupUser, testUid } from "./helpers";
 // 端点每请求现读 WXPAY_NOTIFY_SECRET（无 import 期缓存），模块级赋值即可
 const SECRET = "test-notify-secret";
 process.env.WXPAY_NOTIFY_SECRET = SECRET;
+// PAY_ENABLED 缺省关（端点 501）——本套件测的是开启后的行为，故显式打开；
+// 「关着时返 501 而不是 401」另有独立用例（见文件末尾）。
+process.env.PAY_ENABLED = "1";
 
 // boot(server) 恒监听 2568（@colyseus/testing DEFAULT_TEST_PORT）
 const BASE = "http://127.0.0.1:2568";
@@ -125,4 +128,24 @@ test("成功发放：created→delivered + 发币到账；同 wxTxnId 重放幂�
   const again = await post({ orderId, wxTxnId: "wx_txn_1", amountFen }, SECRET);
   assert.equal(again.status, 200, "重放仍 ack（already 也回 SUCCESS）");
   assert.equal(await balanceOf(uid), 600, "余额不变，未双发");
+});
+
+test("PAY_ENABLED 关 → 501 NOT_IMPLEMENTED，且**先于**密钥闸（⛔ 不能回 401：那分不清没鉴权 vs 没上线）", async () => {
+  const uid = await makeUser("pay_off");
+  const { orderId, amountFen } = await createOrder(uid, "rc.gold600");
+
+  const saved = process.env.PAY_ENABLED;
+  delete process.env.PAY_ENABLED;
+  try {
+    // 带正确密钥也应 501（证明 501 在密钥闸之前）
+    const withSecret = await post({ orderId, wxTxnId: "wx_off", amountFen }, SECRET);
+    assert.equal(withSecret.status, 501, "带对密钥仍 501 ⇒ 闸序正确");
+    assert.equal(withSecret.json?.error, "NOT_IMPLEMENTED");
+    // 不带密钥同样 501（⛔ 不是 401）
+    assert.equal((await post({ orderId, wxTxnId: "wx_off", amountFen })).status, 501);
+    // ⛔ 订单不能被触动
+    assert.equal(await orderStatus(orderId), PURCHASE_CREATED);
+  } finally {
+    process.env.PAY_ENABLED = saved;
+  }
 });

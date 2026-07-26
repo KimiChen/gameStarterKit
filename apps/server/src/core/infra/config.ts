@@ -154,11 +154,19 @@ export const ACCOUNT_MODE = (() => {
 /** split 模式下 WebPlatform 的 HTTP 基址（httpAccount 用）。 */
 export const WEBPLATFORM_BASE_URL = () => env("WEBPLATFORM_BASE_URL", "http://localhost:2570");
 
+/** 支付链总开关（缺省**关**）：关 ⇒ `/pay/wx-notify` 直接 501「未上线」。
+ *  ⚠ 支付链现在不具备上线条件（无下单端点、共享密钥而非 APIv3 验签、无对账，见 todo.md 支付条目），
+ *  这个开关是**防误开**，⛔ 不是"配上就能收钱"。每请求现读（同 ADMIN_API_SECRET 范式，便于灰度）。 */
+export const PAY_ENABLED = () => process.env.PAY_ENABLED === "1";
+
 /** durable（noeviction + AOF everysec）与 cache（allkeys-lru）是两个物理实例（09·R4）。 */
 export const REDIS_DURABLE_URL = () => env("REDIS_DURABLE_URL", "redis://127.0.0.1:6401");
 export const REDIS_CACHE_URL = () => env("REDIS_CACHE_URL", "redis://127.0.0.1:6402");
 export const REDIS_ROUTE_FILE = () => process.env.REDIS_ROUTE_FILE ?? "";
-/** 控制总线 Redis（账号服务自持踢人消息流，DUAL_MODE §2.3）：专用 HA 实例，唯一合法跨组通道。
+/** 控制总线 Redis（踢人消息流，DUAL_MODE §2.3）：专用 HA 实例。
+ *  ⚠ **扇出半径只到本组**——coord 按组独占（M14 起 driver/presence 也挂它），⛔ 不是跨组通道
+ *  （此处曾写"唯一合法跨组通道"，与 kickBus.ts / redisRoute.ts 已收口的「本组 coord」口径打架）。
+ *  跨组送达保证走 GM 工具逐节点遍历（09·G7b）；跨组顶号的缺口见 todo.md「跨物理组顶号不收敛」。
  *  dev 缺省**复用 durable 实例**（同实例专用流键 K_STREAM_KICK，配置驱动）；prod-split 指向物理隔离 HA Redis。
  *  ⛔ 绝不放 cache（allkeys-lru 会逐出踢人流）。 */
 export const REDIS_COORD_URL = () => env("REDIS_COORD_URL", REDIS_DURABLE_URL());
@@ -202,8 +210,24 @@ export const BAG_SHARDS = 4;
 export const BUCKETS = 16384;
 /** 冷档天数。⚠ 必须 >> max(OUTBOX_RETENTION, APPLIED_RETENTION)，且避开 30 天月度回流周期。 */
 export const COLD_DAYS = 90;
-/** 冻结开关：按内存水位（used_memory/maxmemory > 0.6）启用（09·F5），默认关。 */
-export const FREEZE_ENABLED = process.env.FREEZE_ENABLED === "1";
+/**
+ * 冻结开关：按内存水位（used_memory/maxmemory > 0.6）启用（09·F5），默认关。
+ *
+ * ⚠ **与多区互斥，加载期 fail-fast**：`user_archive` 尚未按区、`active:lru`/freeze 也还没区化
+ * （DUAL_MODE 进度表的 archive 步），此前"⛔ 补齐前不开多区 + freeze"只是**散文**——两个 env
+ * 各解析各的、⛔ 无任何组合断言 ⇒ 同时打开能正常启动，然后在冷档路径上静默串区。
+ * 与 `keys.ts` 的 zoneCtx fail-fast 同范式：让它在**启动时**就炸，⛔ 不留给线上去发现。
+ */
+export const FREEZE_ENABLED = (() => {
+  const on = process.env.FREEZE_ENABLED === "1";
+  if (on && GROUP_ZONES.length > 0) {
+    throw new Error(
+      `FREEZE_ENABLED=1 与 GROUP_ZONES=「${process.env.GROUP_ZONES ?? ""}」不能同时开启——`
+      + "user_archive 未按区、active:lru/freeze 未区化（DUAL_MODE archive 步），多区下冷档会串区。"
+      + "补齐 archive 步之前，多区部署必须 FREEZE_ENABLED=0。");
+  }
+  return on;
+})();
 /** 冻结速率 per-instance（uid/s），峰期 0。 */
 export const FREEZE_RATE = envInt("FREEZE_RATE", 50);
 /** 鲸鱼档字段数阈值：超过用 HSCAN 分块读（09·R1 唯一例外）。 */

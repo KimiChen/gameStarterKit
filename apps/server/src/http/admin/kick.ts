@@ -13,6 +13,7 @@ import { createEndpoint } from "@colyseus/core";
 import { z } from "zod";
 import { ForceLogoutReason, type ForceLogoutReasonType, type RpcErrCode } from "@game/shared";
 import { ADMIN_API_SECRET } from "../../core/infra/config";
+import { safeSecretEqual } from "../../core/auth/session";
 import { kickUser } from "../../websocket/push";
 
 export default createEndpoint("/admin/kick", {
@@ -24,7 +25,7 @@ export default createEndpoint("/admin/kick", {
   }),
 }, async (ctx) => {
   const secret = ADMIN_API_SECRET();
-  if (!secret || ctx.headers?.get?.("x-admin-secret") !== secret) {
+  if (!safeSecretEqual(ctx.headers?.get?.("x-admin-secret"), secret)) { // 恒时；未配 secret 即拒（fail-closed）
     throw ctx.error(401, { error: "AUTH_REQUIRED" satisfies RpcErrCode });
   }
   // 只踢本节点（online 表自筛）；GM 遍历全部节点即达成「全网踢干净」并可据 kicked 汇总确认。
