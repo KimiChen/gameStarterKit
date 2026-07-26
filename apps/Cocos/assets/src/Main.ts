@@ -15,8 +15,9 @@ import { DESIGN_WIDTH, DESIGN_HEIGHT } from "./designSpec";
 import { installWeChatCompat } from "./core/wechat-compat";
 import { getToken, initHttp, initPortal } from "./core/http";
 import { getCurrentServer } from "./net/serverSession";
-import { onAuthInvalid, onBattleLost } from "./net/session";
+import { onAuthInvalid, onBattleLost, onConnLost } from "./net/session";
 import { RoomClient } from "./net/RoomClient";
+import { WebSocketClient } from "./net/WebSocketClient";
 import { GameECS } from "./logic/rooms/ballMove/GameECS";
 import { PlayerModel } from "./logic/rooms/ballMove/GameComps";
 import { S2C, MAP_WIDTH, MAP_HEIGHT, normalize, distance, joinErrText, type IPlayerState } from "./shared/index";
@@ -90,8 +91,12 @@ export class Main extends Component {
         // 本类先把战斗态拆干净，pages 再做导航——⛔ 否则登录页会叠在仍在跑的战斗上。
         //  - 鉴权失效（封号/顶号/强制下线）：⛔ 原先只退大厅、战斗房照跑（被封玩家继续打 + UI 错乱）
         //  - 战斗连接死亡：⛔ 原先无人上报，Main 拿着死房间恒 inBattle=true，玩家卡冻结画面
+        //  - **大厅连接死亡**：大厅 WS 与战斗房各自独立，战斗全程大厅 WS 活着、会**单独死**。
+        //    ⛔ 原先本类没订这条（只有 pages 订了、且它只关面板不碰战斗态）⇒ `inBattle` 恒真、
+        //    继续渲染战斗、还接触摸事件，而登录页已经画在它上面；重进又被幂等早退吞掉 = 玩家卡死。
         onAuthInvalid(() => { this.teardownBattle(); });
         onBattleLost(() => { this.teardownBattle(); });
+        onConnLost(() => { this.teardownBattle(); });
 
         // 大厅壳走 FGUI：动态 import 组合根（铁律 10——fairygui 不进静态依赖图）。
         // 登录页的「进入游戏」经 Home 走到 enterBattle 回调，才拉起 ballMove。
@@ -153,13 +158,23 @@ export class Main extends Component {
         this.gameECS.clear();
     }
 
-    /** 进战斗失败回滚：回滚战斗态 → 重开大厅（可重试）。 */
+    /** 进战斗失败回滚：回滚战斗态 → **退大厅连接** → 重开登录页（可重试）。
+     *  ⚠ 必须 leave 大厅 WS：本路径通向登录页，而重登会换发新 token ⇒ 旧连接不退的话，
+     *  重进要么撞上"已用其他 token 在线"抛错（第二次点才进），要么被新登录当**顶号**踢掉，
+     *  玩家先看到一条误导的「账号已在其他设备登录」。⛔ 这条路径不在上一批修复的三条之列，是漏的。
+     *  ⚠ 登记：回登录页的四条路径（authInvalid/battleLost/connLost/本路径）目前各写各的组合，
+     *  收敛成单一出口见 todo.md「D6 · 客户端『回登录页』收敛成单一出口」。 */
     private abortBattle(): void {
         this.inBattle = true;      // teardown 幂等靠此标志；失败路径可能尚未真正入战
         this.teardownBattle();
-        void import("./view/pages")
-            .then((pages) => pages.openLogin(() => { void this.enterBattle(); }))
-            .catch((e) => console.error("[Main] 回大厅失败：", e));
+        void (async () => {
+            await WebSocketClient.inst.leave().catch(() => {});
+            const pages = await import("./view/pages");
+            // ⚠ 必须 await：openLogin 是 async（内部 `ViewMgr.open("Login")` 在 FGUI 包未就绪时会抛）。
+            // 不 await 的话它的 rejection 逃出下面这个 .catch ⇒ 「进战斗失败又打不开登录页」变成
+            // **静默黑屏**（只剩一条 unhandled rejection，不进本类日志）。
+            await pages.openLogin(() => { void this.enterBattle(); });
+        })().catch((e) => console.error("[Main] 回大厅失败：", e));
     }
 
     /** 连 ballMove 玩法房（token 已在大厅登录时设置；无 token 走游客）。

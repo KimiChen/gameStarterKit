@@ -69,7 +69,15 @@ function wireSessionEvents(reopenLogin: () => void): void {
   });
   onConnLost(() => {
     void (async () => {
-      // 登录态未失效（非鉴权死亡）：提示后回登录页，用户可原路重进
+      // 登录态未失效（非鉴权死亡）：提示后回登录页，用户可原路重进。
+      // ⚠ 战斗态的回滚由 Main 的 onConnLost 负责（订阅序在前），此处只管提示 + 导航。
+      // ⚠ 这句 leave() **在今天是空操作**，⛔ 别把它当成"和另两条一样必要"：`notifyConnLost` 的
+      //   唯一产地是 WebSocketClient 的 `room.onLeave`，而那里在通知之前**已经**把 `this.room`
+      //   与 `joinedToken` 清干净了（WebSocketClient.ts:188-190）⇒ `leave()` 撞 `if (!room) return`
+      //   直接返回。authInvalid/battleLost 两条不同：那两条触发时大厅连接**确实还活着**，必须退。
+      //   保留它纯属防御——万一将来 connLost 多出一个"房还活着就通知"的产地，这里不至于漏。
+      //   ⚠ 收敛成单一出口见 todo.md「D6」；重构时请按这里的事实判断，⛔ 别照抄成"四条都必须 leave"。
+      await WebSocketClient.inst.leave().catch(() => {});
       closeLobby();
       await openConfirm({ title: "连接断开", content: "与服务器的连接已断开，请重新进入", noText: null });
       reopenLogin();
