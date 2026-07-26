@@ -107,6 +107,7 @@
 | `fail` | lib | 登录被拒；`reason` = `banned` / `code2session:<码>` |
 | `ban` / `revoke` | 组侧 `core/auth/ban.ts` | 运营动作（`reason` 为操作理由） |
 | `login_diverged` | 组侧 `platform/inProcessLogin.ts` | ⚠ **仅 in-process**：抢锁失败/写缓存失败，`accounts.token_hash` 已换发成一个**没人持有**的 token、组 `sess` 仍是旧 hash ⇒ 同一 uid 会同时有一行登录成功 + 一行本事件。客户端重登即自愈；出现即说明该号撞上了 freeze/thaw 长持锁（HANDOFF §8.6/§8.7） |
+| `login_dual_account` | lib `loginByOpenid`（`backfillUnionid`） | ⚠ **同一微信身份已落成两个 uid**：老号 unionid 回填撞 `uk_unionid`（该 unionid 已被另一行占用）。⛔ **不自愈**——后续每次登录都撞同一个键；真实资产分叉（首登奖励重发、充值/存档劈成两半）⇒ **需人工合档**。`reason` 只含 unionid **前 8 位**（09·G8：⛔ 不写明文）。登录本身**不受影响**（回填是锦上添花，异常一律吞） |
 
 **踢在线不在本服务**：封号 SOP 第二步由 **GM 工具**直连各组节点 `POST /admin/kick` 并按 ack 确认送达
 （规则 [09·G7b](SERVER.md#12-开发约束63-条规则目录)；运营侧实现规格见 [GM-TOOL-SPEC.md](GM-TOOL-SPEC.md)）。本服务**刻意不持 coord Redis、不广播**——

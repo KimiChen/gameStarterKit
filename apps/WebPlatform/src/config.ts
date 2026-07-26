@@ -13,6 +13,13 @@ export const WEBPLATFORM_MYSQL_URL = (): string =>
 /** prod-split HTTP entry 端口（dev/test 内嵌不起 HTTP，此值不用）。 */
 export const WEBPLATFORM_PORT = Number(process.env.WEBPLATFORM_PORT ?? 2570);
 
+/** 监听网卡。⚠ **缺省回环**：本进程的 `/ban`·`/revoke`·`/character/*`·`/account/exists` 至今
+ *  **全部无鉴权**（待办 W1）——此前硬编码 `0.0.0.0`，谁能连到端口就能封任何人、遍历任意用户足迹。
+ *  评审实测：照 HANDOFF §「本地起 split」跑起来后，从**局域网地址**未鉴权 `POST /ban` 真的把账号
+ *  `status` 改成 1、`token_hash` 置 NULL。缺省绑回环即消灭这一层；真部署时显式设内网网卡地址。
+ *  ⛔ 这**不是** W1 的替代（W1 的鉴权分层照做不误），只是把"开发机顺手敞给整个办公室网段"堵掉。 */
+export const WEBPLATFORM_HOST = process.env.WEBPLATFORM_HOST ?? "127.0.0.1";
+
 /**
  * 是否位于**可信前置代理**之后 —— 为真才采信 `X-Forwarded-For` 取真实 IP。**缺省真**。
  *

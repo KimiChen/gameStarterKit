@@ -9,7 +9,7 @@
 import { pathToFileURL } from "node:url";
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
 import { ApiPath, type ILoginRes } from "@game/shared";
-import { AUTH_DEV_ENABLED, TRUST_PROXY, WEBPLATFORM_PORT } from "./config";
+import { AUTH_DEV_ENABLED, TRUST_PROXY, WEBPLATFORM_HOST, WEBPLATFORM_PORT } from "./config";
 import { getPool } from "./lib/mysql";
 import {
   accountExists, areaList, banAccount, characterHas, characterRegister, characterZones,
@@ -189,11 +189,19 @@ export function buildServer(): FastifyInstance {
 // 直接运行即起独立进程（prod-split）；被 import 时不自启（dev/test 内嵌只用 lib）。
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   buildServer()
-    .listen({ port: WEBPLATFORM_PORT, host: "0.0.0.0" })
+    .listen({ port: WEBPLATFORM_PORT, host: WEBPLATFORM_HOST })
     .then((addr) => {
+      // ⚠ 打 **host 参数本身**，⛔ 别只打 listen 返回的 addr：addr 只是**第一个**绑定地址，
+      // 之前硬编码 0.0.0.0 时它显示 `http://127.0.0.1:2570`，而进程同时在所有网卡上
+      // （pino 那几行才是全的）⇒ 看日志的人以为绑的是回环，**系统性低报暴露面**。
+      console.log(`[webplatform] listening ${addr}（host=${WEBPLATFORM_HOST}）`);
+      if (WEBPLATFORM_HOST !== "127.0.0.1" && WEBPLATFORM_HOST !== "localhost") {
+        console.warn(`[webplatform] ⚠ 监听 ${WEBPLATFORM_HOST}（非回环）而 W1 鉴权尚未落地：`
+          + "/ban·/revoke·/character/*·/account/exists 对**任何能连到本端口的调用方**开放。"
+          + "确保它只在内网网卡上、且被安全组/防火墙限制到游戏服网段。");
+      }
       // ⚠ 把限流的**实际身份来源**打出来：两种取法的失败形态都很隐蔽（一个是限流失效、
       // 一个是全服共桶被限到 12 次/分钟），事后从日志能一眼看出当时是哪种。
-      console.log(`[webplatform] listening ${addr}`);
       console.log(TRUST_PROXY()
         ? "[webplatform] 限流身份 = X-Forwarded-For 最右段（信任前置 LB）。⚠ 本进程必须**不可被直连**，否则该头可伪造 ⇒ 限流失效（防护归 W1：鉴权 + 绑定内网）"
         : "[webplatform] 限流身份 = socket 对端 req.ip（WEBPLATFORM_TRUST_PROXY=0）。⚠ 若位于 LB 之后，全服将塌缩进同一个令牌桶（约 12 次登录/分钟）");

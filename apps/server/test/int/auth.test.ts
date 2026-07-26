@@ -367,3 +367,32 @@ test("并发登录定序：N 个同账号登录并发 → 两存储终态一致�
     assert.match(String(r.reason), /BUSY|并发登录|busy/i, `失败必须是可重试 BUSY，实际：${String(r.reason)}`);
   }
 });
+
+test("unionid 回填撞 uk_unionid：⛔ 不能只留 console —— 必须落 login_dual_account 审计", async () => {
+  // ⚠ 评审逮到的静默分叉：上一版把 backfillUnionid 的异常"一律吞"（为了不把本可成功的登录打成 500），
+  //   连 1062 也吞成了纯 console.warn。而 1062 恰恰意味着**同一微信身份已经落成两个 uid**：
+  //   真实资产分叉（首登奖励重发、充值/存档劈成两半）且**永不自愈**——后续每次登录都撞同一个键。
+  // ⚠ 纯**顺序三步**即可复现，⛔ 不需要并发（同事原话说的是并发竞态，实测顺序就够）。
+  const { loginByOpenid } = await import("@game/webplatform/lib");
+  const tag = `dual${Date.now().toString(36)}`;
+  const uni = `UNI_${tag}`;
+  // ① 甲：一开始就带 unionid 建号 ⇒ 占住 uk_unionid
+  const a = await loginByOpenid(`opA_${tag}`, uni, null, "10.8.2.1", null, "dev_login");
+  assert.ok(a.ok, "甲建号成功");
+  if (a.ok) { createdUids.push(a.uid); }
+  // ② 乙：绑开放平台**之前**注册（unionid=NULL），是另一个 uid
+  const b = await loginByOpenid(`opB_${tag}`, null, null, "10.8.2.2", null, "dev_login");
+  assert.ok(b.ok, "乙建号成功");
+  if (b.ok) { createdUids.push(b.uid); }
+  assert.notEqual(a.ok && a.uid, b.ok && b.uid, "两个 uid（同一个人的两个号，正是要被发现的状态）");
+  // ③ 乙绑定后带着**同一个** unionid 再登：回填 UPDATE 撞甲占住的 uk_unionid → 1062
+  const b2 = await loginByOpenid(`opB_${tag}`, uni, null, "10.8.2.3", null, "dev_login");
+  assert.ok(b2.ok, "⛔ 登录本身必须照常成功（回填是锦上添花，异常一律吞）");
+
+  const [audit] = await getPool().query<RowDataPacket[]>(
+    "SELECT reason FROM login_audit WHERE user_id = ? AND event = 'login_dual_account'",
+    [b.ok ? b.uid : ""]);
+  assert.equal(audit.length, 1, "⛔ 必须留下 login_dual_account 审计行（只 console 在生产等于没有）");
+  assert.match(String(audit[0].reason), /uk_unionid/, "reason 要说清是撞了哪个键");
+  assert.doesNotMatch(String(audit[0].reason), new RegExp(uni), "⛔ 不得写 unionid 明文（09·G8），只留前缀");
+});

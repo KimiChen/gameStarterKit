@@ -118,9 +118,22 @@ async function backfillUnionid(uid: string, unionid: string): Promise<void> {
     // 那条缝是真能走到的：unionid 超 64 字符 → 1406、非 ascii → 1366（列是 VARCHAR(64) ascii），
     // 而这两种情况下账号是 openid 命中的老号、后续步骤根本不碰 unionid，本可正常登录；更糟的是
     // 该列仍为 NULL ⇒ **此后每次登录都再撞一次**，那个用户就永久登不上了。
-    // 常见成因各自的处置都在库外：1062 = 同人双号需人工合档；1406/1366 = 上游给了畸形 unionid。
     const errno = (e as { errno?: number }).errno;
     console.warn(`[login] unionid 回填失败（errno=${String(errno)}，⛔ 不影响本次登录，需人工跟进）`, uid);
+    // ⚠ **1062 必须留 durable 痕迹**（评审逮到：上一版"一律吞"把它也吞成了纯 console）：
+    // 1062 = 该 unionid 已被**另一行**占用 ⇒ 同一个微信身份**确实已经落成两个 uid**（本行 uid 与
+    // 占用者），是真实资产分叉：首登奖励重发、充值/存档劈成两半，且**永不自愈**——后续每次登录
+    // 都走同一条路、撞同一个键、再吞一次。console 在生产里等于没有（E3 观测出口还没做）。
+    // ⛔ 只对 1062 写：1406/1366 是上游给了畸形 unionid（无双号事实），写了只会淹掉真信号。
+    // 形状抄 inProcessLogin 的 login_diverged：`.catch()` 兜住（审计失败⛔不能反过来弄坏登录）、
+    // 长度交给 auditLogin 的 clamp（⛔ 不在这里裸 slice）。
+    // ⛔ 不写 unionid 明文（09·G8 禁出参含 openid/unionid，审计同理）——只留可对账的前 8 位。
+    if (errno === 1062) {
+      await auditLogin("login_dual_account", uid,
+        `unionid 回填撞 uk_unionid：同一微信身份已存在另一个 uid（unionid 前缀 ${unionid.slice(0, 8)}…）`,
+        null, null)
+        .catch((ae: unknown) => { console.error("[login] 双号审计写入失败", uid, ae); });
+    }
   }
 }
 
