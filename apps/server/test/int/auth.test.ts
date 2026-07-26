@@ -211,8 +211,101 @@ test("审计 reason 超长必须钳制：⛔ 不能抛 ER_DATA_TOO_LONG 把封�
     "SELECT CHAR_LENGTH(device_id) AS n FROM login_audit WHERE user_id = ? AND event = 'dev_login'", [s.userId]);
   assert.equal(Number(dev[0].n), 64, "lib 侧 device_id 钳到列宽");
 
-  // ③ ⛔ 不能切断代理对：半个 emoji 是非法 utf8mb4，MySQL 照样拒
+  // ③ ⛔ 不切断代理对。⚠ 理由**不是**"MySQL 会拒"——那句曾被写进注释/文档/commit 当成实测结论，
+  //    实测其实是：孤代理在 Node→MySQL 的 utf8 编码里被替换成 U+FFFD，INSERT **照样成功**。
+  //    所以钳制的失败形态是**静默内容损坏**，不切代理对是为了不产生这种损坏，⛔ 不是为了避免报错。
   await auditLogin("login_diverged", s.userId, "😀".repeat(200), null, null); // 400 个 UTF-16 单元
+});
+
+test("审计 ip 非法必须归一成 NULL：⛔ 不能让 INET6_ATON 抛 1411 把审计整行弄丢", async () => {
+  const s = await login("badip");
+  // ⚠ ip 与 deviceId **同源**（都来自客户端可写的 XFF），但此前只校验了 deviceId。
+  //    `INSERT … INET6_ATON(?)` 在 STRICT_TRANS_TABLES 下遇非法串是**抛 1411**、不是写 NULL，
+  //    而抛点在 issueToken **之后** ⇒ 权威 token_hash 已轮换成没人持有的值 + 客户端 500 + 零审计。
+  //    `X-Forwarded-For: unknown` 就能打；LB 附端口（1.2.3.4:5678）则是部署级必现。
+  // ⚠ 不含 " 1.2.3.4" 与 "1.2.3.4:5678"：前者的前后空白刻意容忍、后者刻意剥端口，两者归一后都是
+  //   **合法 IP** ⇒ 属于"被救回来"而不是"非法"（下面 goodip 段正面钉它们）。判据同表见
+  //   test/auth-primitives.test.ts —— ⛔ 别把"救回来"和"归成 NULL"混进同一个清单。
+  const bad = ["unknown", "for=1.2.3.4", "", "::1%eth0", "1.2.3.4/24", "1.2.3.4, 5.6.7.8"];
+  for (const ip of bad) {
+    await auditLogin("login_diverged", s.userId, `badip:${ip}`, ip, null); // ⛔ 不得抛
+  }
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    "SELECT ip FROM login_audit WHERE user_id = ? AND reason LIKE 'badip:%'", [s.userId]);
+  assert.equal(rows.length, bad.length, "非法 ip 不得让审计整行写不进");
+  assert.ok(rows.every((r) => r.ip === null), "非法 ip 落 NULL（列可空，⛔ 别为了写它而丢整行）");
+
+  // ⛔ 合法 ip 必须原样落库（别把归一写成"一律 NULL"那种假修）
+  await auditLogin("login_diverged", s.userId, "goodip:v4", "203.0.113.9", null);
+  await auditLogin("login_diverged", s.userId, "goodip:v6", "2001:db8::1", null);
+  // 带端口的形态**剥端口后**应当保住真实 IP，⛔ 不是丢成 NULL
+  await auditLogin("login_diverged", s.userId, "goodip:port", "203.0.113.10:443", null);
+  const [good] = await getPool().query<RowDataPacket[]>(
+    "SELECT reason, INET6_NTOA(ip) AS ip FROM login_audit WHERE user_id = ? AND reason LIKE 'goodip:%' ORDER BY id", [s.userId]);
+  assert.deepEqual(good.map((r) => r.ip), ["203.0.113.9", "2001:db8::1", "203.0.113.10"]);
+});
+
+test("unionid 空串 ⛔ 不得当成身份：不同 openid 的人不能串成同一个账号", async () => {
+  const { loginByOpenid } = await import("@game/webplatform/lib");
+  // ⚠ code2session 返回 `unionid: ""` 时，若判据是 `!== null`，第一个人会把空串写进 accounts，
+  //    之后**任何** openid 未命中的玩家都会 `WHERE unionid = ''` 命中那一行 ⇒ 以别人的身份登录
+  //    并把原主人顶下线，且 isNew=false 让它看起来像"老号正常回归"。
+  // ⚠ 用**完整** testUid（含 runId）：`.slice(-8)` 会把唯一前缀整个切掉、只剩固定的名字段，
+  //   于是每次跑都复用同一批 openid ⇒ 一旦某轮中途抛错留下脏行，之后每轮都在读上一轮的残留。
+  const tag = testUid("uniempty");
+  const a = await loginByOpenid(`op_A_${tag}`, "", null, "10.8.0.1", null, "dev_login");
+  if (a.ok) { createdUids.push(a.uid); } // ⛔ 先登记再断言：中途抛错也要能被 after() 清掉
+  const b = await loginByOpenid(`op_B_${tag}`, "", null, "10.8.0.2", null, "dev_login");
+  if (b.ok) { createdUids.push(b.uid); }
+  assert.ok(a.ok && b.ok, "两次登录都应成功");
+  assert.notEqual(a.ok && a.uid, b.ok && b.uid, "⛔ 不同 openid 必须是不同账号（空串不是身份）");
+  assert.equal(b.ok && b.isNew, true, "第二个人是真新号，⛔ 不是「找回」别人的号");
+
+  // ⚠ 更狠的一面：空串还**绝不能写进 accounts**。`uk_unionid` 上只容得下一行空串 ⇒ 第一个人
+  //   写进去之后，之后每个新用户的 INSERT 都 1062，而恢复路径两个键都回读不到 ⇒ 原样抛 ⇒
+  //   **新用户全部登不上**。所以断言落库值必须是 NULL，⛔ 不是 ''。
+  const [accs] = await getPool().query<RowDataPacket[]>(
+    "SELECT unionid FROM accounts WHERE user_id IN (?, ?)", [a.ok ? a.uid : "", b.ok ? b.uid : ""]);
+  assert.equal(accs.length, 2);
+  assert.ok(accs.every((r) => r.unionid === null), "空串必须归一成 NULL 入库（⛔ 不能落 ''）");
+
+  // ⚠ **纯空白串同理**：`accounts.unionid` 是 ascii_bin，MySQL 的 PAD SPACE 语义下 '   ' 与 ''
+  //   在 uk_unionid 上等价 ⇒ 判据若只看 `length > 0`，空白串会把刚堵掉的串号形态原样重演。
+  const c = await loginByOpenid(`op_C_${tag}`, "   ", null, "10.8.0.3", null, "dev_login");
+  if (c.ok) { createdUids.push(c.uid); }
+  assert.ok(c.ok && c.isNew, "空白 unionid 的第三个人仍是新号（⛔ 不得命中前两个）");
+  const [c3] = await getPool().query<RowDataPacket[]>(
+    "SELECT unionid FROM accounts WHERE user_id = ?", [c.ok ? c.uid : ""]);
+  assert.equal(c3[0].unionid, null, "空白串同样必须归一成 NULL");
+});
+
+test("unionid 回填：绑开放平台前建的号，之后 openid 变更仍能找回（⛔ 不产生同人双号）", async () => {
+  const { loginByOpenid } = await import("@game/webplatform/lib");
+  // ⚠ 小游戏的 unionid 只有绑了开放平台才下发，绑定发生在运营中途是常态 ⇒ 绑定前建的号 unionid 恒 NULL。
+  //    只查不回填的话，等这些号 openid 真变了（appid/主体变更——正是按 unionid 找回所针对的场景），
+  //    openid 查不到、unionid 也查不到（旧行是 NULL）⇒ 建第二个号：玩家丢档 + isNew 又变回 true。
+  const tag = testUid("unifill"); // ⚠ 完整 id，理由同上一条用例
+  const uni = `UNI_${tag}`;
+  // ① 首登：还没绑开放平台，无 unionid
+  const first = await loginByOpenid(`op1_${tag}`, null, null, "10.8.1.1", null, "dev_login");
+  if (first.ok) { createdUids.push(first.uid); } // ⛔ 先登记再断言
+  assert.ok(first.ok);
+  // ② 绑定后同 openid 再登：应把 unionid 补进那一行
+  const second = await loginByOpenid(`op1_${tag}`, uni, null, "10.8.1.2", null, "dev_login");
+  assert.ok(second.ok && first.ok && second.uid === first.uid, "同 openid 仍是同一账号");
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    "SELECT unionid FROM accounts WHERE user_id = ?", [first.ok ? first.uid : ""]);
+  assert.equal(rows[0].unionid, uni, "⛔ 回填必须发生，否则下一步的 openid 变更就会丢档");
+  // ③ 主体变更导致 openid 变了：靠回填进去的 unionid 找回同一个号
+  const third = await loginByOpenid(`op2_${tag}`, uni, null, "10.8.1.3", null, "dev_login");
+  assert.ok(third.ok && first.ok && third.uid === first.uid, "openid 变更后仍是同一账号（⛔ 不建第二个号）");
+  assert.equal(third.ok && third.isNew, false, "⛔ isNew 不得再变回 true（首登奖励/首充判据会重复触发）");
+  // ④ 回填是**增量**：⛔ 不覆盖已有值（这与"不改写 openid"是两条不同的纪律，别混）
+  const fourth = await loginByOpenid(`op1_${tag}`, `OTHER_${tag}`, null, "10.8.1.4", null, "dev_login");
+  assert.ok(fourth.ok);
+  const [after] = await getPool().query<RowDataPacket[]>(
+    "SELECT unionid FROM accounts WHERE user_id = ?", [first.ok ? first.uid : ""]);
+  assert.equal(after[0].unionid, uni, "已有 unionid ⛔ 不得被后来的值覆盖");
 });
 
 test("换过 openid 的老号：按 unionid 找回 → isNew=false 且 ⛔ 不烧 seq（评审 P2）", async () => {

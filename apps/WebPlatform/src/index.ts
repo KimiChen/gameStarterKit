@@ -13,7 +13,7 @@ import { AUTH_DEV_ENABLED, TRUST_PROXY, WEBPLATFORM_PORT } from "./config";
 import { getPool } from "./lib/mysql";
 import {
   accountExists, areaList, banAccount, characterHas, characterRegister, characterZones,
-  devLogin, type LoginResult, revokeAccount, verifyToken, wxLogin,
+  devLogin, type LoginResult, normalizeIp, revokeAccount, verifyToken, wxLogin,
 } from "./lib";
 
 /**
@@ -22,11 +22,25 @@ import {
  * 由 `WEBPLATFORM_TRUST_PROXY` 门控，**缺省信**——理由与代价见 config.ts 该项的注释：
  * 本进程只在 split 起，而 split 的流量必经 LB；缺省不信会把全服塌缩进一个令牌桶
  * （12 次登录/分钟）。伪造 XFF 的防护归 **W1（鉴权 + 绑定内网）**，不归本函数。
+ *
+ * ⚠ 本函数的返回值有**两个**下游，需求并不相同：
+ *   ① `rateAllow` 的**令牌桶键** —— 只要求「逐客户端稳定且互异的字符串」，⛔ 不要求是合法 IP；
+ *   ② `auditLogin` 的 `INET6_ATON(?)` —— 要求合法 IP，否则 strict 下抛 1411。
+ * 故这里**只做能提高桶键质量的归一**，合法性交给写入侧那道 `normalizeIp`（它把收不下的写成 NULL）：
+ *   - 归一成功 ⇒ 用归一值：`1.2.3.4:5678` 这种**部署级必现**形态必须剥掉端口，否则每条连接的
+ *     临时端口都换一个桶 ⇒ 限流形同虚设；
+ *   - 归一失败但**段存在** ⇒ ⛔ **用原始段**，绝不退 `req.ip`：本进程只在 split 起、流量必经 LB，
+ *     退 `req.ip` = 所有玩家同一个 LB 地址 ⇒ 全服塌进一个桶（12 次登录/分钟），正是 config.ts
+ *     该项注释里判定为「必然事故 + 09·G5 连坐」的那个状态。原始段至少是逐客户端不同的。
+ *   - 压根没有段 ⇒ 才退 `req.ip`。
+ * ⛔ **不回退去左边找一个合法段**：左侧正是客户端可伪造的部分，那等于按攻击者的输入限流。
+ * ⚠ 伪造 XFF 换桶的问题本函数**不负责**（归 W1：鉴权 + 绑定内网），改前改后一样——⛔ 别在这里补。
  */
 const realIp = (req: FastifyRequest): string => {
   if (!TRUST_PROXY()) { return req.ip; }
   const xff = (req.headers["x-forwarded-for"] as string | undefined) ?? "";
-  return xff.split(",").map((s) => s.trim()).filter(Boolean).pop() ?? req.ip;
+  const rightmost = xff.split(",").map((s) => s.trim()).filter(Boolean).pop();
+  return normalizeIp(rightmost) ?? rightmost ?? req.ip;
 };
 
 /** 非法哨兵：Fastify 的 `Body` 泛型仅编译期，运行期必须自己收敛（同 `/area/list` 的处置）。 */
@@ -45,6 +59,8 @@ const INVALID = Symbol("invalid");
  *  - `devKey` 越界/非 ascii → `dev_<devKey>` 进 `accounts.openid VARCHAR(64) ascii` 报错
  *    （发生在签发之前，是干净的 500，但仍是两模式契约漂移）。
  */
+// ⚠ `null` 与缺省同义（in-process 侧的 zod 已同步改成 `.nullish()`）：两模式必须同语义，
+// 且取**宽**的一侧——非 JS 端的序列化器普遍把空值写成 null，收紧会埋一个只在换端时才炸的坑。
 function pickDeviceId(v: unknown): string | null | typeof INVALID {
   if (v === undefined || v === null) { return null; }
   if (typeof v !== "string" || v.length > 64) { return INVALID; }
@@ -77,6 +93,28 @@ function loginReply(r: LoginResult, reply: FastifyReply): ILoginRes | { error: s
 
 export function buildServer(): FastifyInstance {
   const app = Fastify({ logger: true });
+
+  /**
+   * 兜底错误处理：**任何抛出的异常一律 500 `{error:"INTERNAL"}`**，细节只进服务端日志。
+   *
+   * ⚠ 没有这一层时，Fastify 的默认处理会把 `err.code` 与 `err.message` **原样回给调用方**，
+   * 实测形如 `{"statusCode":500,"code":"ER_WRONG_VALUE_FOR_TYPE","message":"Incorrect string value: … "}`。
+   * 泄漏面不止"看着不专业"：`ER_DUP_ENTRY` 的 message **含重复键值本身**，而 accounts 的两个唯一键
+   * 正是 `openid`/`unionid` ⇒ 与本文件 `loginReply` 上方声明的 **09·G8「出参禁含 openid/unionid」直接冲突**；
+   * 连接失败还会带出 DSN 主机端口。且本进程的 7 个端点当前**全部无鉴权**（W1）。
+   * ⚠ 这条纪律组侧早就有（`apps/server/src/core/errors.ts` 的 `toErrCode`：「未映射的一律 INTERNAL，
+   * ⛔ 不泄漏内部细节」），split 侧此前整个没有 —— 又一次"同一份知识没跨过部署模式边界"。
+   * ⛔ 业务失败**不该走这里**：那些是 `loginReply` 那样的显式结果码映射，本处理器只兜真异常。
+   */
+  app.setErrorHandler((err: unknown, req, reply) => {
+    // 入参校验类（Fastify 自带的 400 族）保留原状态码，但同样不回显内部 message。
+    // ⚠ `err` 按 unknown 取用：⛔ 不假设它是 FastifyError —— 这里收的正是**未映射**的东西
+    //   （驱动错误、字符串、非 Error 抛出物都可能），窄类型断言在这一层是自欺。
+    const code = (err as { statusCode?: unknown } | null)?.statusCode;
+    const status = typeof code === "number" && code >= 400 && code < 500 ? code : 500;
+    req.log.error({ err }, "[webplatform] 未映射异常");
+    void reply.code(status).send({ error: status === 500 ? "INTERNAL" : "INVALID_PAYLOAD" });
+  });
 
   app.get("/healthz", async () => {
     await getPool().query("SELECT 1");

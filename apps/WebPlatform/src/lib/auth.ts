@@ -6,6 +6,7 @@
  * token 是不透明 `{uid}.{hex}`，库只存 sha256（⛔ 非 JWT）。
  */
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { isIP } from "node:net";
 import { SESS_TTL_S, TOKEN_BYTES } from "../config";
 import { getPool } from "./mysql";
 import type { ResultSetHeader, RowDataPacket } from "./mysql";
@@ -96,6 +97,10 @@ const AUDIT_REASON_MAX = 64;
 const AUDIT_DEVICE_MAX = 64;  // ⚠ device_id 来自**客户端输入**，本服务端点无运行期校验时全靠它兜
 const AUDIT_EVENT_MAX = 24;
 
+// ⚠ 截断只保证**不产生孤代理**（半个 emoji）。被切掉的那半个字符在 Node → MySQL 的
+// utf8 编码里会变成 U+FFFD 替换字符，⛔ MySQL **不会**因此拒收整行（曾有注释断言"照样拒"，
+// 实测不成立）。也就是说钳制的失败形态是**静默的内容损坏**，不是报错——真要保内容完整，
+// 得从产地限长，⛔ 别指望这里报警。
 function clamp(s: string | null, max: number): string | null {
   if (s === null || s.length <= max) { return s; }
   const cut = s.slice(0, max);
@@ -103,10 +108,39 @@ function clamp(s: string | null, max: number): string | null {
   return last >= 0xd800 && last <= 0xdbff ? cut.slice(0, -1) : cut; // ⛔ 不切断代理对
 }
 
+/**
+ * XFF 段 / 对端地址 → `INET6_ATON()` 收得下的 IP 字面量；收不下返回 **null**（列可空，审计行照落）。
+ *
+ * ⚠ 这不是洁癖：`ip` 与 `deviceId` **同源**（都来自客户端可写的 `X-Forwarded-For`），而
+ * `INSERT … INET6_ATON(?)` 在 `STRICT_TRANS_TABLES` 下遇非法串是**抛 ER_WRONG_VALUE_FOR_TYPE(1411)、
+ * 不是写 NULL**。抛点在 `issueToken` **之后**（login.ts）⇒ 权威 `token_hash` 已轮换成一个**没人持有**的值、
+ * 客户端拿 500 没有 token、审计一行都没有（连 `login_diverged` 都不会有，因为它也走这条 INSERT）——
+ * 比 deviceId 那条更彻底的登录分叉，而 `X-Forwarded-For: unknown` 就能打。
+ * ⚠ 带端口的 XFF（`1.2.3.4:5678` / `[::1]:5678`）是**部署级必现**形态（部分 LB/网关如此 append）⇒
+ * 全服登录 100% 500，故不是简单判非法，而是**先剥端口再判**。
+ * ⚠ 与组侧 `core/auth/session.ts` 的同名函数是两份实现：lib 跨包不能 import 组网关代码（同 `clamp`）。
+ */
+export function normalizeIp(v: string | null | undefined): string | null {
+  if (v === undefined || v === null) { return null; }
+  const s = v.trim();
+  // ⚠ **zone index 必须先排掉**：`net.isIP("fe80::1%en0")` 返回 6（Node 认），但
+  // `INET6_ATON('fe80::1%en0')` **抛 1411**（MySQL 不认）——两者判据不一致，只信 isIP 会漏。
+  // ⛔ 不是理论情形：Node 给出的链路本地 IPv6 对端地址就带 `%<iface>`。
+  if (s.includes("%")) { return null; }
+  // ⚠ 判据是 `net.isIP`，它比 INET6_ATON **略严**：前导零形式（`010.1.1.1`）MySQL 收得下而它拒。
+  // 这是**刻意**的——八进制/十进制歧义是经典解析差异漏洞面，宁可这一列为 NULL。⛔ 别"放宽对齐"。
+  if (isIP(s) !== 0) { return s; }
+  const v6 = /^\[(.+)\]:\d{1,5}$/.exec(s);          // [::1]:5678
+  if (v6 && isIP(v6[1]) !== 0) { return v6[1]; }
+  const v4 = /^([^:]+):\d{1,5}$/.exec(s);           // 1.2.3.4:5678（裸 IPv6 含 ':' 不会命中）
+  if (v4 && isIP(v4[1]) !== 0) { return v4[1]; }
+  return null;
+}
+
 export async function auditLogin(
   event: string, uid: string | null, reason: string | null, ip: string | null, deviceId: string | null,
 ): Promise<void> {
   await getPool().execute<ResultSetHeader>(
     "INSERT INTO login_audit (user_id, event, reason, ip, device_id) VALUES (?,?,?,INET6_ATON(?),?)",
-    [uid, clamp(event, AUDIT_EVENT_MAX), clamp(reason, AUDIT_REASON_MAX), ip, clamp(deviceId, AUDIT_DEVICE_MAX)]);
+    [uid, clamp(event, AUDIT_EVENT_MAX), clamp(reason, AUDIT_REASON_MAX), normalizeIp(ip), clamp(deviceId, AUDIT_DEVICE_MAX)]);
 }

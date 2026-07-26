@@ -16,6 +16,7 @@
  *   ⛔ 不删 sess（TTL 自然过期），⛔ 绝不删 user:{uid}（09·G7）。
  */
 import { createHash, timingSafeEqual } from "node:crypto";
+import { isIP } from "node:net";
 import { SESS_TTL_S } from "../infra/config";
 import { kSess } from "../infra/keys";
 import { clientFor } from "../infra/redisRoute";
@@ -32,6 +33,17 @@ const sha256 = (s: string): string => createHash("sha256").update(s).digest("hex
 export const tokenHashOf = (token: string): string => sha256(token);
 const safeEqualHex = (a: string, b: string): boolean =>
   a.length === b.length && timingSafeEqual(Buffer.from(a, "hex"), Buffer.from(b, "hex"));
+
+/**
+ * 共享密钥比较（**恒时**）——给 `/admin/kick`、`/pay/wx-notify` 这类头部密钥鉴权用。
+ *
+ * ⚠ 为什么不直接 `!==`：JS 字符串比较逐字符短路，理论上可被计时侧信道逐字节猜。本仓对 token hash
+ * 处处用 `timingSafeEqual`（见上方 `safeEqualHex`、lib/auth.ts 同款），密钥端点⛔不该是例外。
+ * ⚠ 先各自 sha256 再比：`timingSafeEqual` 要求两侧**等长**，直接比会因长度不等而抛错，
+ * 那本身就泄漏了密钥长度；摘要恒 32 字节，长度差异不再可观测。
+ */
+export const safeSecretEqual = (a: string | null | undefined, b: string | null | undefined): boolean =>
+  !!a && !!b && timingSafeEqual(createHash("sha256").update(a).digest(), createHash("sha256").update(b).digest());
 
 
 /**
@@ -110,7 +122,12 @@ const AUDIT_EVENT_MAX = 24;     // login_audit.event（取值是代码字面量�
 // ⚠ device_id 的钳制在本文件是**防御性**的：现有三个调用点（ban/revoke/login_diverged）都传 null，
 // 真正接客户端 deviceId 的是 lib 那份 auditLogin 与端点校验 —— 机检要钉的是那两处，⛔ 别拿这里充数。
 
-/** 钳到 max「字符」：⛔ 不能切断代理对（半个 emoji 会变成非法 utf8mb4，MySQL 照样拒）。 */
+/**
+ * 钳到 max「字符」：⛔ 不切断代理对。
+ * ⚠ 但**别把这理解成"不切就不会坏"**：曾有注释断言"半个 emoji 是非法 utf8mb4，MySQL 照样拒"——
+ * **实测不成立**（mysql2 下孤代理在 Buffer utf8 编码时被替换成 U+FFFD，INSERT 正常成功）。
+ * 故钳制的真实失败形态是**静默的内容损坏**，⛔ 不会报错、不会有人发现。要保内容完整只能从产地限长。
+ */
 function clamp(s: string | null, max: number): string | null {
   if (s === null || s.length <= max) { return s; }
   const cut = s.slice(0, max);
@@ -118,10 +135,36 @@ function clamp(s: string | null, max: number): string | null {
   return last >= 0xd800 && last <= 0xdbff ? cut.slice(0, -1) : cut; // 尾部是高代理 ⇒ 连它一起去掉
 }
 
+/**
+ * XFF 段 / 对端地址 → `INET6_ATON()` 收得下的 IP 字面量；收不下返回 **null**（列可空，审计行照落）。
+ *
+ * ⚠ `INSERT … INET6_ATON(?)` 在 `STRICT_TRANS_TABLES` 下遇非法串是**抛 1411、不是写 NULL**，而
+ * 本文件三个调用点里 `login_diverged` 那条恰恰只在"权威已换发、组缓存没跟上"时才写 ⇒
+ * 非法 ip 会让**唯一能定位该分叉的审计**自己抛掉。产地（`http/account/*.ts` 的 XFF 解析）已经
+ * 先归一一次，这里是第二道：⛔ 别因为"上面已经校验过"就删。
+ * ⚠ 与 `@game/webplatform/lib` 的同名函数是两份实现（跨包不能共享，同 `clamp`）——改一处要改两处。
+ */
+export function normalizeIp(v: string | null | undefined): string | null {
+  if (v === undefined || v === null) { return null; }
+  const s = v.trim();
+  // ⚠ **zone index 必须先排掉**：`net.isIP("fe80::1%en0")` 返回 6（Node 认），但
+  // `INET6_ATON('fe80::1%en0')` **抛 1411**（MySQL 不认）——两者判据不一致，只信 isIP 会漏。
+  // ⛔ 不是理论情形：Node 给出的链路本地 IPv6 对端地址就带 `%<iface>`。
+  if (s.includes("%")) { return null; }
+  // ⚠ 判据是 `net.isIP`，它比 INET6_ATON **略严**：前导零形式（`010.1.1.1`）MySQL 收得下而它拒。
+  // 这是**刻意**的——八进制/十进制歧义是经典解析差异漏洞面，宁可这一列为 NULL。⛔ 别"放宽对齐"。
+  if (isIP(s) !== 0) { return s; }
+  const v6 = /^\[(.+)\]:\d{1,5}$/.exec(s);          // [::1]:5678
+  if (v6 && isIP(v6[1]) !== 0) { return v6[1]; }
+  const v4 = /^([^:]+):\d{1,5}$/.exec(s);           // 1.2.3.4:5678（裸 IPv6 含 ':' 不会命中）
+  if (v4 && isIP(v4[1]) !== 0) { return v4[1]; }
+  return null;
+}
+
 export async function auditLogin(event: string, uid: string | null, reason: string | null, ip: string | null, deviceId: string | null): Promise<void> {
   await getPool().execute<ResultSetHeader>(
     "INSERT INTO login_audit (user_id, event, reason, ip, device_id) VALUES (?,?,?,INET6_ATON(?),?)",
-    [uid, clamp(event, AUDIT_EVENT_MAX), clamp(reason, AUDIT_REASON_MAX), ip, clamp(deviceId, AUDIT_DEVICE_MAX)]);
+    [uid, clamp(event, AUDIT_EVENT_MAX), clamp(reason, AUDIT_REASON_MAX), normalizeIp(ip), clamp(deviceId, AUDIT_DEVICE_MAX)]);
 }
 
 

@@ -160,3 +160,37 @@ test("split 门控：游戏服自己的登录端点 404（⛔ 防往组库建号
     assert.equal(res.status, 404, `${path} 在 ACCOUNT_MODE=http 下必须关闭（登录只在 WebPlatform）`);
   }
 });
+
+test("门户异常一律 500 INTERNAL：⛔ 不得回显 MySQL 错误码/文本（09·G8 出参禁含 openid/unionid）", async () => {
+  // ⚠ 此前 buildServer() 只有 `Fastify({logger:true})`、⛔ 无 setErrorHandler ⇒ 任何抛出的异常
+  //    走 Fastify 默认处理，把 err.code / err.message **原样回给调用方**。泄漏面不止"不专业"：
+  //    ER_DUP_ENTRY 的 message 含**重复键值本身**，而 accounts 的两个唯一键正是 openid/unionid。
+  //    组侧早有这条纪律（core/errors.ts 的 toErrCode：未映射一律 INTERNAL），split 侧整个没有。
+  const r = await fetch(`${portal}/character/register`, {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({}),
+  });
+  // {} ⇒ uid/sId 为 undefined ⇒ mysql2 抛 "Bind parameters must not contain undefined"
+  assert.equal(r.status, 500);
+  const body = await r.json().catch(() => ({})) as Record<string, unknown>;
+  assert.equal(body.error, "INTERNAL", "必须收敛成契约错误码");
+  assert.equal(body.message, undefined, "⛔ 不得回显内部 message");
+  assert.equal(body.code, undefined, "⛔ 不得回显驱动错误码（ER_* / ECONNREFUSED …）");
+  const raw = JSON.stringify(body);
+  assert.ok(!/ER_|undefined|mysql|Bind parameters/i.test(raw), `响应体不得含内部细节：${raw.slice(0, 200)}`);
+});
+
+test("deviceId:null 在 split 侧放行（两模式同语义的 split 那一半）", async () => {
+  // ⚠ **诚实说明覆盖边界**：本文件整进程 `ACCOUNT_MODE=http`，in-process 的三个端点在此是 404
+  //    （见下方「split 门控」用例）⇒ 这里只能钉住 split 这一侧，而 split 侧本来就放行 null。
+  //    真正会因回退而变红的是**另一侧**（zod `.optional()→.nullish()`），钉在
+  //    `test/int/area.test.ts` 的「in-process dev-login：deviceId 为 null…」——⛔ 别以为这条覆盖了它。
+  //    统一取**宽**的一侧（null 与缺省同义）：非 JS 端的序列化器普遍把空值写成 null。
+  const key = testUid("dn").slice(0, 24).replace(/[^a-zA-Z0-9_-]/g, "");
+  const r = await fetch(`${portal}${ApiPath.DevLogin}`, {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ devKey: key, deviceId: null }),
+  });
+  assert.equal(r.status, 200, "deviceId:null 必须与缺省同义（⛔ 不是 400）");
+  const body = await r.json() as { userId?: string };
+  if (body.userId) { uids.push(body.userId); }
+});

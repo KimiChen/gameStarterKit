@@ -10,6 +10,7 @@ import { createEndpoint } from "@colyseus/core";
 import { z } from "zod";
 import { ACCOUNT_MODE, AUTH_DEV_ENABLED } from "../../core/infra/config";
 import { toErrCode } from "../../core/errors";
+import { normalizeIp } from "../../core/auth/session";
 import { devLogin } from "../../platform/inProcessLogin";
 
 export default createEndpoint("/account/dev-login", {
@@ -17,7 +18,7 @@ export default createEndpoint("/account/dev-login", {
   body: z.object({
     // devKey → openid 前缀映射：同 key 恒同账号（换号 = 换 key）
     devKey: z.string().regex(/^[a-zA-Z0-9_-]{1,32}$/),
-    deviceId: z.string().max(64).optional(),
+    deviceId: z.string().max(64).nullish(), // null 视同缺省，与 split 侧同语义（理由见 wxLogin.ts）
   }),
 }, async (ctx) => {
   // ⛔ split（ACCOUNT_MODE=http）下本端点必须关：登录在 WebPlatform（客户端 portalRequest 直连）。
@@ -25,8 +26,11 @@ export default createEndpoint("/account/dev-login", {
   // 同一类隐患，故 fail-closed（docs/WEBPLATFORM.md §2）。
   if (ACCOUNT_MODE() === "http") { throw ctx.error(404, { error: "NOT_FOUND" }); }
   if (!AUTH_DEV_ENABLED) { throw ctx.error(404, { error: "NOT_FOUND" }); }
+  // ⚠ 同 wx-login：只做提高**限流桶键**质量的归一，合法性交给审计写入侧那道 normalizeIp。
+  // ⛔ 归一失败别退 "0.0.0.0"（畸形 XFF 全塞一个桶 = 连坐）——用原始段，理由详见 wxLogin.ts。
   const xff = ctx.headers?.get?.("x-forwarded-for") ?? "";
-  const ip = xff.split(",").map((s: string) => s.trim()).filter(Boolean).pop() ?? "0.0.0.0";
+  const rightmost = xff.split(",").map((s: string) => s.trim()).filter(Boolean).pop();
+  const ip = normalizeIp(rightmost) ?? rightmost ?? "0.0.0.0";
   try {
     return await devLogin(ctx.body.devKey, ip, ctx.body.deviceId ?? null);
   } catch (e) {

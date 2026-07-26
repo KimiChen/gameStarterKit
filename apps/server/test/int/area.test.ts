@@ -27,7 +27,7 @@ import { activeLruBucketOf, kActiveLru, kSess } from "../../src/core/infra/keys"
 import { clientFor, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
 import { closeMysql, getPool } from "../../src/core/infra/mysql";
 import type { ResultSetHeader } from "../../src/core/infra/mysql";
-import { assertRedisUp, testUid, issueSession } from "./helpers";
+import { assertRedisUp, cleanupUser, testUid, issueSession } from "./helpers";
 
 const BASE = "http://127.0.0.1:2568"; // boot(server) 恒监听 2568（@colyseus/testing DEFAULT_TEST_PORT）
 let colyseus: ColyseusTestServer;
@@ -130,4 +130,40 @@ test("HTTP POST /area/list 带 token → 200 + ul 回填（守薄委托 zod+反�
   const { status, json } = await postAreaList({ token });
   assert.equal(status, 200);
   assert.deepEqual(json.ul, [5], "端点透传 token → lib 反查 → ul");
+});
+
+test("in-process 入参对齐 split：token 为 null / 非串一律视同缺省，⛔ 不得 400", async () => {
+  // ⚠ 这条钉的是**in-process 侧**（本文件不设 ACCOUNT_MODE=http，端点真正可达）。
+  //   split 侧的判据在 WebPlatform index.ts：`typeof token === "string" ? token : null` —— 对任何
+  //   非串都收敛后照常返回目录。in-process 侧若用 z.string().optional()/.nullish()，`null` 之外的
+  //   非串仍会 400 ⇒ 同一请求体一边 200 一边 400，正是本仓反复踩的「两模式入参语义不同」。
+  //   ⛔ 别把这条挪去 split-e2e.test.ts：那个文件整进程 ACCOUNT_MODE=http，这三个端点是 404，
+  //   在那里断言等于测了个恒真（本批一度就犯过这个错——测的是没坏的那一侧）。
+  // ⚠ 含 `undefined`（JSON.stringify 会把该键丢掉 ⇒ 等价于匿名 `{}`）：裸 `z.unknown()` 在本版 zod
+  //   下仍要求键存在，漏了 `.optional()` 就会把**最常见的匿名请求**打成 400，⛔ 必须钉住。
+  for (const token of [null, 123, false, [], {}, undefined] as unknown[]) {
+    const { status, json } = await postAreaList({ token });
+    assert.equal(status, 200, `token=${JSON.stringify(token)} 必须 200（best-effort ⛔不抛）`);
+    assert.deepEqual(json.ul, [], "非串 token 视同匿名：ul 空");
+    assert.equal(json.al.length, AREA_SERVERS.length, "目录仍是全集");
+  }
+});
+
+test("in-process dev-login：deviceId 为 null 视同缺省（⛔ 不得 400，与 split 侧同语义）", async () => {
+  // ⚠ 同上：本批把 in-process 的 zod 从 `.optional()`（只收 undefined）改成 `.nullish()`，
+  //   而 split 侧的 pickDeviceId 本来就把 null 当缺省放行 ⇒ 会红的只有**这一侧**。
+  const devKey = `dnull${Date.now().toString(36)}`.slice(0, 24);
+  const res = await fetch(`${BASE}/account/dev-login`, {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ devKey, deviceId: null }),
+  });
+  assert.equal(res.status, 200, "deviceId:null 必须与缺省同义（⛔ 不是 400）");
+  const body = await res.json() as { userId?: string };
+  const uid = String(body.userId ?? "");
+  assert.match(uid, /^u_\d+$/);
+  // 清理：本文件的 uids 清理钩子只认 makeUser 建的号，这个走真实登录链，单独删。
+  const pool = getPool();
+  await pool.execute("DELETE FROM login_audit WHERE user_id = ?", [uid]);
+  await pool.execute("DELETE FROM accounts WHERE user_id = ?", [uid]);
+  await cleanupUser(uid);
 });

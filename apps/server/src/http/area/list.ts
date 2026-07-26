@@ -11,7 +11,15 @@ import { account } from "../../platform/accountClient";
 
 export default createEndpoint("/area/list", {
   method: "POST",
-  body: z.object({ token: z.string().optional() }),
+  // ⚠ 本端点的契约是 **best-effort ⛔不抛**（登录前无鉴权展示，token 只用于回填 ul）。
+  // split 侧（WebPlatform index.ts）对**任何非串**一律收敛成 null 照常返回目录；此处若用
+  // `z.string().optional()`/`.nullish()`，`null` 之外的非串（`123`/`false`/`[]`/`{}`）仍会 400
+  // ⇒ 同一请求体一边 200 一边 400，正是要消灭的「两模式入参语义不同」。故收 `unknown` 后
+  // **就地收敛**，判据与 split 侧逐字同形。⛔ 别改回 z.string()：那是把分叉又装回来。
+  // ⚠ `.optional()` 不能省：本版 zod 下裸 `z.unknown()` 仍要求**键存在**，匿名请求体 `{}` 会被 400
+  //（正是最常见的那个调用形态）。
+  body: z.object({ token: z.unknown().optional() }),
 }, async (ctx) => {
-  return ctx.json(await account.areaList(ctx.body.token ?? null));
+  const token = typeof ctx.body.token === "string" ? ctx.body.token : null;
+  return ctx.json(await account.areaList(token));
 });

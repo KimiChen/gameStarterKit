@@ -39,5 +39,11 @@ export async function code2session(jsCode: string): Promise<WxResult> {
   }
   if (!body.openid || !body.session_key) { recordFailure(); return { ok: false, reason: "wx_unavailable" }; }
   recordSuccess();
-  return { ok: true, openid: body.openid, unionid: body.unionid ?? null, sessionKey: body.session_key };
+  // ⚠ `unionid` 必须走 `|| null` 而 ⛔ 不是 `?? null`：`??` 只收敛 undefined/null，**空串会原样透传**，
+  // 而下游把「unionid 非 null」当成"这是一个可用于找回账号的身份"（login.ts 按 unionid 回读）。
+  // 一旦某次 code2session 返回 `unionid: ""`：第一个人建号写入 `unionid=''`，之后**任何** openid
+  // 未命中的玩家都会 `WHERE unionid = ''` 命中那一行 ⇒ 以别人的 user_id 登录 + 把原主人顶下线，
+  // 且 `isNew=false` 让它看起来像"老号正常回归"，⛔ 无任何告警。上面 openid 本就有空值守卫（`!body.openid`），
+  // 这里的不对称正是漏的那半。
+  return { ok: true, openid: body.openid, unionid: body.unionid || null, sessionKey: body.session_key };
 }
