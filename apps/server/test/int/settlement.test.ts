@@ -7,7 +7,7 @@
  *  3. 常驻消费循环冒烟：startMatchConsumer（独占连接 XREADGROUP BLOCK）自动落库；
  *     stopMatchConsumer 打断阻塞及时退出
  *  4. 房间端到端：@colyseus/testing 起真 GameRoom 打完一局（绑定框架账号）→ state.matchId
- *     开局即生成（09·K4）→ 收局后 stream:match 出现该 matchId 的证据 → 消费落库
+ *     开局即生成（09·K4）→ 收局后 stream:match:v2 出现该 matchId 的证据 → 消费落库
  * 前置：npm --workspace @game/server run stack。清理：XDEL 测试条目 + DELETE 测试行（09·R6）。
  */
 import "./env-setup"; // 必须第一个 import（env 先于 config.ts 模块级读取）
@@ -15,69 +15,79 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
 
-import { C2S, GamePhase, PROTOCOL_VERSION, RoomName } from "@game/shared";
+import { C2S, ErrorCode, GamePhase, PROTOCOL_VERSION, RoomName, type IRoomJoinOptions } from "@game/shared";
 import {
   consumeOnce,
   emitMatchEvidence,
   MATCH_MODE_CASUAL,
+  MATCH_STREAM_SCHEMA_VERSION,
   newMatchId,
   startMatchConsumer,
   stopMatchConsumer,
   type MatchEvidence,
 } from "../../src/core/match/matchConsumer";
-import { activeLruBucketOf, kActiveLru, kSess, K_STREAM_MATCH } from "../../src/core/infra/keys";
+import {
+  activeLruBucketOf, kActiveLru, kSess, K_STREAM_MATCH, K_STREAM_MATCH_V2,
+} from "../../src/core/infra/keys";
 import { closeMysql, getPool, type RowDataPacket } from "../../src/core/infra/mysql";
-import { clientFor, clientForKey, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
+import { bucketOf, clientFor, clientForKey, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
+import { GameRoom } from "../../src/rooms/GameRoom";
 import { assertRedisUp, cleanupUser, sleep, testUid } from "./helpers";
 
 const GROUP = "settle";
-const stream = () => clientForKey(K_STREAM_MATCH);
+const MATCH_STREAM_KEYS = [K_STREAM_MATCH, K_STREAM_MATCH_V2] as const;
+const stream = (key: string = K_STREAM_MATCH_V2) => clientForKey(key);
 
 /** 本轮用过的 matchId / stream 条目 id —— after 里定点清理，不碰别人的数据。 */
 const usedMatchIds: string[] = [];
-const usedStreamIds: string[] = [];
+const usedStreamEntries: { key: string; id: string }[] = [];
+const rememberStreamEntry = (key: string, id: string): void => {
+  usedStreamEntries.push({ key, id });
+};
 
 /** 排干历史遗留（先前测试运行的残余条目/PEL）：ACK + XDEL，⛔ 不落库——避免污染本轮断言。 */
-async function drainStale(): Promise<void> {
-  const c = stream();
+async function drainStale(key: string): Promise<void> {
+  const c = stream(key);
   try {
-    await c.xgroup("CREATE", K_STREAM_MATCH, GROUP, "0", "MKSTREAM");
+    await c.xgroup("CREATE", key, GROUP, "0", "MKSTREAM");
   } catch (e) {
     if (!(e instanceof Error) || !e.message.includes("BUSYGROUP")) { throw e; }
   }
   // 历史 PEL（崩溃进程遗留）：XACK 对任意 owner 的 pending 条目都有效
-  const summary = (await c.xpending(K_STREAM_MATCH, GROUP)) as [number, ...unknown[]];
+  const summary = (await c.xpending(key, GROUP)) as [number, ...unknown[]];
   if (Number(summary?.[0] ?? 0) > 0) {
-    const detail = (await c.call("XPENDING", K_STREAM_MATCH, GROUP, "-", "+", "1000")) as [string, ...unknown[]][];
+    const detail = (await c.call("XPENDING", key, GROUP, "-", "+", "1000")) as [string, ...unknown[]][];
     const ids = detail.map((d) => d[0]);
     if (ids.length > 0) {
-      await c.xack(K_STREAM_MATCH, GROUP, ...ids);
-      await c.xdel(K_STREAM_MATCH, ...ids);
+      await c.xack(key, GROUP, ...ids);
+      await c.xdel(key, ...ids);
     }
   }
   // 未投递的历史条目：用一次性 drain consumer 读走 → ACK → XDEL
   const drainName = `drain_${process.pid}`;
   for (;;) {
     const res = (await c.call(
-      "XREADGROUP", "GROUP", GROUP, drainName, "COUNT", "1000", "STREAMS", K_STREAM_MATCH, ">",
+      "XREADGROUP", "GROUP", GROUP, drainName, "COUNT", "1000", "STREAMS", key, ">",
     )) as [string, [string, string[]][]][] | null;
     const entries = res?.[0]?.[1] ?? [];
     if (entries.length === 0) { break; }
     const ids = entries.map(([id]) => id);
-    await c.xack(K_STREAM_MATCH, GROUP, ...ids);
-    await c.xdel(K_STREAM_MATCH, ...ids);
+    await c.xack(key, GROUP, ...ids);
+    await c.xdel(key, ...ids);
   }
-  await c.xgroup("DELCONSUMER", K_STREAM_MATCH, GROUP, drainName);
+  await c.xgroup("DELCONSUMER", key, GROUP, drainName);
 }
 
 before(async () => {
   await assertRedisUp();
-  await drainStale();
+  for (const key of MATCH_STREAM_KEYS) { await drainStale(key); }
 });
 
 after(async () => {
-  const c = stream();
-  if (usedStreamIds.length > 0) { await c.xdel(K_STREAM_MATCH, ...usedStreamIds); }
+  for (const key of MATCH_STREAM_KEYS) {
+    const ids = usedStreamEntries.filter((entry) => entry.key === key).map((entry) => entry.id);
+    if (ids.length > 0) { await stream(key).xdel(key, ...ids); }
+  }
   if (usedMatchIds.length > 0) {
     const ph = usedMatchIds.map(() => "?").join(",");
     await getPool().query(`DELETE FROM match_results WHERE match_id IN (${ph})`, usedMatchIds);
@@ -104,6 +114,25 @@ function makeEvidence(matchId: string, sId = 0): MatchEvidence {
   };
 }
 
+test("GameRoom sId 只接受 0..65535 整数（网络输入先运行时校验）", async () => {
+  for (const raw of [-1, 65536, 1.5, Number.NaN, Number.POSITIVE_INFINITY, "1", null]) {
+    const options = { v: PROTOCOL_VERSION, sId: raw } as unknown as IRoomJoinOptions;
+    await assert.rejects(
+      GameRoom.onAuth("", options, undefined as never),
+      (e: unknown) => e instanceof Error && e.message.includes(String(ErrorCode.WrongServer)),
+      `非法 sId=${String(raw)} 应按 WrongServer 拒绝`,
+    );
+  }
+});
+
+test("match v2 key 与 legacy 同槽但物理隔离（旧 consumer 永远看不到新消息）", () => {
+  const tag = /\{([^{}]+)\}/.exec(K_STREAM_MATCH_V2)?.[1];
+  assert.equal(tag, K_STREAM_MATCH, "v2 hash-tag 必须精确锚定完整 legacy 运行时 key");
+  assert.equal(bucketOf(tag!), bucketOf(K_STREAM_MATCH), "自定义 Redis 路由桶一致");
+  assert.strictEqual(clientForKey(K_STREAM_MATCH_V2), clientForKey(K_STREAM_MATCH), "两个 key 路由到同一 Redis 实例");
+  assert.notEqual(K_STREAM_MATCH_V2, K_STREAM_MATCH, "但 key 必须物理隔离，旧 consumer 只读 legacy");
+});
+
 async function countRows(table: "match_index" | "match_results", matchId: string): Promise<number> {
   const [rows] = await getPool().query<RowDataPacket[]>(
     `SELECT COUNT(*) AS n FROM ${table} WHERE match_id = ?`, [matchId]);
@@ -112,7 +141,7 @@ async function countRows(table: "match_index" | "match_results", matchId: string
 
 // ── 1. 生产 → 消费闭环：一条证据 → 两表各一行、payload 完整 ─────────────────
 
-test("emitMatchEvidence + consumeOnce：一局(两名玩家)一条证据 → match_index/match_results 各一行，payload 完整", async () => {
+test("emitMatchEvidence 只写 schema v2 流；consumeOnce 落库完整 payload", async () => {
   const m = newMatchId();
   usedMatchIds.push(m);
   // matchId 形制（09·K4/05）：m_ + 时间戳36 + 随机hex，纯 ascii ≤ 40
@@ -120,9 +149,17 @@ test("emitMatchEvidence + consumeOnce：一局(两名玩家)一条证据 → mat
   assert.ok(m.length <= 40, `matchId 长度 ${m.length} ≤ 40`);
 
   const ev = makeEvidence(m);
+  const legacyLenBefore = await stream(K_STREAM_MATCH).xlen(K_STREAM_MATCH);
   const sid = await emitMatchEvidence(ev);
   assert.ok(sid, "XADD 成功返回条目 id");
-  usedStreamIds.push(sid!);
+  rememberStreamEntry(K_STREAM_MATCH_V2, sid!);
+  assert.equal(await stream(K_STREAM_MATCH).xlen(K_STREAM_MATCH), legacyLenBefore, "新 producer ⛔ 不写 legacy 流");
+  const entries = await stream().xrange(K_STREAM_MATCH_V2, sid!, sid!);
+  assert.equal(entries.length, 1, "消息只存在 v2 key");
+  const fields = Object.fromEntries(
+    Array.from({ length: entries[0][1].length / 2 }, (_, i) => entries[0][1].slice(i * 2, i * 2 + 2)),
+  );
+  assert.equal(fields.schemaVersion, String(MATCH_STREAM_SCHEMA_VERSION), "v2 顶层版本字段精确为 2");
 
   const n = await consumeOnce();
   assert.ok(n >= 1, "至少消费到本条证据");
@@ -150,7 +187,8 @@ test("同一 matchId 重复投递 + 重复消费 → match_results 仍只有一�
   const id1 = await emitMatchEvidence(ev);
   const id2 = await emitMatchEvidence(ev);
   assert.ok(id1 && id2 && id1 !== id2, "两条独立的 stream 条目");
-  usedStreamIds.push(id1!, id2!);
+  rememberStreamEntry(K_STREAM_MATCH_V2, id1!);
+  rememberStreamEntry(K_STREAM_MATCH_V2, id2!);
 
   const n = await consumeOnce();
   assert.ok(n >= 2, "两条都被消费（重复者判重跳过但仍 ACK）");
@@ -171,7 +209,7 @@ test("startMatchConsumer 常驻循环：阻塞等待中投递的证据被自动�
     usedMatchIds.push(m);
     const sid = await emitMatchEvidence(makeEvidence(m));
     assert.ok(sid);
-    usedStreamIds.push(sid!);
+    rememberStreamEntry(K_STREAM_MATCH_V2, sid!);
 
     // 循环用独占连接 XREADGROUP BLOCK；给它一点时间取走并落库
     let rows = 0;
@@ -186,33 +224,50 @@ test("startMatchConsumer 常驻循环：阻塞等待中投递的证据被自动�
 
 // ── 4. 房间端到端：真 GameRoom 打一局 → matchId 进 state、证据进流、消费落库 ──
 
-test("GameRoom 端到端：开局生成 matchId（09·K4）→ 收局 XADD 证据 → 消费落库", async () => {
+test("GameRoom 区服端到端：跨区 joinById 拒绝；同区开局 → 收局证据落库", async () => {
   const colyseus: ColyseusTestServer = await boot((await import("../../src/app.config")).server);
-  const uids: string[] = [];
+  const accounts: { uid: string; sId: number }[] = [];
   try {
     // 造框架账号会话（绕过 wxLogin——微信侧 M3 已单独测过）。⚠ **必须建 accounts 行**：
     // GameRoom.onAuth 已改 strict（回权威校验 token_hash/status，M12d 评审：快路径准入会让被封账号
     // 不断开新战斗房打无限局）——无 accounts 行则 issueToken 写不进权威、strict 校验必拒。
     const { issueSession } = await import("./helpers");
     const { createUser } = await import("../../src/core/userRecord");
-    const mk = async (name: string) => {
+    const mk = async (name: string, sId: number) => {
       const uid = testUid(name).slice(0, 32);
-      uids.push(uid);
+      accounts.push({ uid, sId });
       await getPool().execute("INSERT INTO accounts (user_id, openid) VALUES (?, ?)", [uid, `op_${uid}`]);
       await createUser(uid);
-      const { token } = await issueSession(uid, null);
+      const { token } = await issueSession(uid, null, "", sId);
       return { uid, token };
     };
-    const a = await mk("gsA");
-    const b = await mk("gsB");
+
+    // joinById 不经过 filterBy(["sId"])：先由 s1 正常 joinOrCreate，再拿合法 s2 会话指定进该房，
+    // 必须由 GameRoom.onJoin 比较 client.auth.sId 与房级 sId 拒绝。
+    const owner = await mk("joinById-s1-owner", 1);
+    const intruder = await mk("joinById-s2", 2);
+    const roomS1 = await colyseus.sdk.joinOrCreate(RoomName.Game, {
+      token: owner.token, v: PROTOCOL_VERSION, sId: 1,
+    });
+    await assert.rejects(
+      colyseus.sdk.joinById(roomS1.roomId, {
+        token: intruder.token, v: PROTOCOL_VERSION, sId: 2,
+      }),
+      (e: unknown) => e instanceof Error && e.message.includes(String(ErrorCode.WrongServer)),
+      "持 s2 权威会话的玩家不得通过 joinById 进入 s1 房间",
+    );
+    await roomS1.leave();
+
+    const a = await mk("gsA", 7);
+    const b = await mk("gsB", 7);
 
     // ⚠ 带 sId 建房：钉住 `GameRoom.onCreate` 真的读了它（房级区上下文，DUAL_MODE §4.1）——
     //   ⛔ 之前 onCreate 是 `_options` 整个丢弃，证据里的区永远是 0，这条路径无人覆盖。
     const room = await colyseus.createRoom(RoomName.Game, { sId: 7 });
     // ⚠ 带 v：PROTOCOL_VERSION 自 M12e 起为 2，`connectTo` 的 options 会走 GameRoom.onAuth 的版本闸
-    const c1 = await colyseus.connectTo(room, { token: a.token, v: PROTOCOL_VERSION });
+    const c1 = await colyseus.connectTo(room, { token: a.token, v: PROTOCOL_VERSION, sId: 7 });
     assert.equal(room.state.matchId, "", "等人期尚无 matchId");
-    const c2 = await colyseus.connectTo(room, { token: b.token, v: PROTOCOL_VERSION });
+    const c2 = await colyseus.connectTo(room, { token: b.token, v: PROTOCOL_VERSION, sId: 7 });
     c1.onMessage("*", () => { });
     c2.onMessage("*", () => { });
 
@@ -233,15 +288,15 @@ test("GameRoom 端到端：开局生成 matchId（09·K4）→ 收局 XADD 证�
     // 证据是 fire-and-forget XADD：轮询等它到流里（同一 matchId）
     let entryId: string | undefined;
     for (let i = 0; i < 40 && !entryId; i++) {
-      const entries = (await stream().xrange(K_STREAM_MATCH, "-", "+")) as [string, string[]][];
+      const entries = (await stream().xrange(K_STREAM_MATCH_V2, "-", "+")) as [string, string[]][];
       for (const [id, fields] of entries) {
         const idx = fields.indexOf("matchId");
         if (idx >= 0 && fields[idx + 1] === matchId) { entryId = id; break; }
       }
       if (!entryId) { await sleep(50); }
     }
-    assert.ok(entryId, "收局后 stream:match 出现本局证据");
-    usedStreamIds.push(entryId!);
+    assert.ok(entryId, "收局后 stream:match:v2 出现本局证据");
+    rememberStreamEntry(K_STREAM_MATCH_V2, entryId!);
 
     // 消费落库：payload 里两名参与者、userId 齐全、名次正确
     await consumeOnce();
@@ -263,12 +318,12 @@ test("GameRoom 端到端：开局生成 matchId（09·K4）→ 收局 XADD 证�
     assert.equal(payload.loadout, null, "休闲局无归一化 loadout（BYO）");
   } finally {
     await colyseus.shutdown();
-    for (const u of uids) {
-      await getPool().execute("DELETE FROM accounts WHERE user_id = ?", [u]);
-      await cleanupUser(u);
-      await clientFor(u).unlink(kSess(u, 0));
-      const bkt = activeLruBucketOf(u);
-      await indexClientFor(bkt).zrem(kActiveLru(bkt), u);
+    for (const { uid, sId } of accounts) {
+      await getPool().execute("DELETE FROM accounts WHERE user_id = ?", [uid]);
+      await cleanupUser(uid);
+      await clientFor(uid).unlink(kSess(uid, sId));
+      const bkt = activeLruBucketOf(uid);
+      await indexClientFor(bkt).zrem(kActiveLru(bkt), uid);
     }
   }
 });
@@ -278,7 +333,9 @@ test("对局按区：证据的 sId 落进 match_results.server_id（喂运营统
   //   这局属于哪个区就无处可查了。发奖（U6）按区记账依赖它。
   const mid = `m_zone_${Date.now().toString(36)}`;
   usedMatchIds.push(mid);
-  await emitMatchEvidence(makeEvidence(mid, 107));
+  const entryId = await emitMatchEvidence(makeEvidence(mid, 107));
+  assert.ok(entryId);
+  rememberStreamEntry(K_STREAM_MATCH_V2, entryId!);
   await consumeOnce();
 
   const [rows] = await getPool().query<RowDataPacket[]>(
@@ -287,19 +344,77 @@ test("对局按区：证据的 sId 落进 match_results.server_id（喂运营统
   assert.equal(Number(rows[0].server_id), 107, "⛔ server_id 必须是证据里的区，不能恒 0");
 });
 
-test("旧条目（无 sId 字段）⛔ 不得被判结构损坏丢弃 —— 按 0 兜底落库", async () => {
-  // ⚠ 上线本字段的那一刻，流里可能还积压着**没有 sId** 的条目。把它们当损坏丢掉
-  //   等于丢证据；缺省 0（大混服）才是对的。⛔ 别把兜底写成"非法即丢"。
+test("单轮双读：f91 legacy 顶层 sId 保留，v2 同时落库，两流 PEL 各自 ACK", async () => {
+  const legacyMid = `m_f91_${Date.now().toString(36)}`;
+  const v2Mid = `m_v2_${Date.now().toString(36)}`;
+  usedMatchIds.push(legacyMid, v2Mid);
+  const legacyEv = makeEvidence(legacyMid, 107);
+  const legacyId = await stream(K_STREAM_MATCH).xadd(
+    K_STREAM_MATCH, "*",
+    "matchId", legacyMid, "mode", String(legacyEv.mode), "sId", "107", "payload", JSON.stringify(legacyEv),
+  );
+  assert.ok(legacyId);
+  rememberStreamEntry(K_STREAM_MATCH, legacyId!);
+  const v2Id = await emitMatchEvidence(makeEvidence(v2Mid, 8));
+  assert.ok(v2Id);
+  rememberStreamEntry(K_STREAM_MATCH_V2, v2Id!);
+
+  assert.ok(await consumeOnce() >= 2, "同一轮同时读取 legacy 与 v2");
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    "SELECT match_id, server_id, payload FROM match_results WHERE match_id IN (?, ?)", [legacyMid, v2Mid]);
+  const byMid = new Map(rows.map((row) => [String(row.match_id), row]));
+  assert.equal(Number(byMid.get(legacyMid)?.server_id), 107, "f91 legacy 顶层非零 sId 保留");
+  assert.equal(Number(byMid.get(legacyMid)?.payload.sId), 107, "legacy DB JSON 同步为权威顶层 sId");
+  assert.equal(Number(byMid.get(v2Mid)?.server_id), 8, "v2 sId 正常落库");
+  for (const key of MATCH_STREAM_KEYS) {
+    const pending = await stream(key).xpending(key, GROUP) as [number, ...unknown[]];
+    assert.equal(Number(pending[0]), 0, `${key} 的 ACK 必须落回各自来源流`);
+  }
+});
+
+test("真正旧条目（顶层和 payload 都无 sId）规范化为 0 后再存", async () => {
+  // ⚠ pre-f91 消息两处都没有 sId；不能拿新版 makeEvidence 原样 JSON.stringify 冒充旧 fixture。
   const mid = `m_nosid_${Date.now().toString(36)}`;
   usedMatchIds.push(mid);
-  const ev = makeEvidence(mid, 0);
-  await clientForKey(K_STREAM_MATCH).xadd(
-    K_STREAM_MATCH, "*", "matchId", mid, "mode", String(ev.mode), "payload", JSON.stringify(ev),
-  ); // ⛔ 刻意不带 sId 字段
+  const legacyPayload: Record<string, unknown> = { ...makeEvidence(mid, 0) };
+  delete legacyPayload.sId;
+  const entryId = await stream(K_STREAM_MATCH).xadd(
+    K_STREAM_MATCH, "*",
+    "matchId", mid, "mode", String(legacyPayload.mode), "payload", JSON.stringify(legacyPayload),
+  );
+  assert.ok(entryId);
+  rememberStreamEntry(K_STREAM_MATCH, entryId!);
   await consumeOnce();
 
   const [rows] = await getPool().query<RowDataPacket[]>(
-    "SELECT server_id FROM match_results WHERE match_id = ?", [mid]);
+    "SELECT server_id, payload FROM match_results WHERE match_id = ?", [mid]);
   assert.equal(rows.length, 1, "⛔ 旧条目必须照常落库（不得被当结构损坏丢弃）");
   assert.equal(Number(rows[0].server_id), 0, "缺省按大混服 0");
+  assert.equal(Number(rows[0].payload.sId), 0, "DB JSON 也必须补齐数值 sId，满足当前 MatchEvidence");
+});
+
+test("v2 schemaVersion 缺失或非 canonical 值时严格拒绝并 ACK", async () => {
+  const missingMid = `m_v2_nover_${Date.now().toString(36)}`;
+  const nonCanonicalMid = `m_v2_badver_${Date.now().toString(36)}`;
+  usedMatchIds.push(missingMid, nonCanonicalMid);
+  const missingEv = makeEvidence(missingMid, 1);
+  const missingId = await stream().xadd(
+    K_STREAM_MATCH_V2, "*",
+    "matchId", missingMid, "mode", String(missingEv.mode), "sId", "1", "payload", JSON.stringify(missingEv),
+  );
+  const badEv = makeEvidence(nonCanonicalMid, 1);
+  const badId = await stream().xadd(
+    K_STREAM_MATCH_V2, "*",
+    "schemaVersion", "02",
+    "matchId", nonCanonicalMid, "mode", String(badEv.mode), "sId", "1", "payload", JSON.stringify(badEv),
+  );
+  assert.ok(missingId && badId);
+  rememberStreamEntry(K_STREAM_MATCH_V2, missingId!);
+  rememberStreamEntry(K_STREAM_MATCH_V2, badId!);
+
+  assert.ok(await consumeOnce() >= 2, "两条损坏 v2 都被读取并处置");
+  assert.equal(await countRows("match_index", missingMid), 0, "缺 schemaVersion 不得落库");
+  assert.equal(await countRows("match_index", nonCanonicalMid), 0, "非精确字符串 2 不得落库");
+  const pending = await stream().xpending(K_STREAM_MATCH_V2, GROUP) as [number, ...unknown[]];
+  assert.equal(Number(pending[0]), 0, "损坏条目按现有策略告警后 ACK，不得永久卡 PEL");
 });

@@ -17,8 +17,10 @@
  * ⚠ 过渡期：`zoneCtx` 未设置即回退项目前缀（sId=0 语义，行为同现网）；多区硬化步改为
  * fail-fast + 全入口（LobbyRoom.messages / room / worker）`zoneCtx.run` 包裹，开 GROUP_ZONES 前必做。
  *
- * `{...}` 是 Cluster hash-tag：per-user key 用 `{uid}` 同槽（09·R3）；`active:lru` 用 `{bucket}`；
- * 跨用户 key（stream:match）无 hash-tag，⛔ 不与 per-user key 进同一条 Lua。区前缀不含 hash-tag，`{...}` 语义不受影响。
+ * `{...}` 是 Cluster hash-tag：per-user key 用 `{uid}` 同槽（09·R3）；`active:lru` 用 `{bucket}`。
+ * legacy `stream:match` 本身无 hash-tag；它的 v2 后继把**完整 legacy key**放进 hash-tag，使两个版本在
+ * Redis Cluster 与自定义 `clientForKey` 路由下都命中同一实例/slot，才能用一次 XREADGROUP 双读。
+ * 跨用户流 ⛔ 不与 per-user key 进同一条 Lua。区前缀不含 hash-tag，`{...}` 语义不受影响。
  */
 import { AsyncLocalStorage } from "node:async_hooks";
 import { crc32 } from "node:zlib";
@@ -88,8 +90,15 @@ export const kSess = (uid: string, sId: number) => `${G}sess:{${uid}}:s${sId}`;
 export const kIdem = (scope: string, key: string) => `${G}idem:${scope}:${key}`;
 /** 限流令牌桶（07 Lua 清单 `rl:{scope}`）。⚠ **全局**：含登录 by-IP（`login:{ip}`）前置区、匿名走 sessionId/IP（09·G5）。 */
 export const kRl = (scope: string) => `${G}rl:${scope}`;
-/** 对局证据链 STREAM（跨用户/跨区消费）。⛔ XTRIM MINID 按落库位点裁，禁止 MAXLEN（09·K6）。 */
+/** legacy 对局证据链 STREAM：升级后仅供新 consumer 排空；⛔ 新 producer 禁写。 */
 export const K_STREAM_MATCH = `${G}stream:match`;
+/**
+ * v2 对局证据链 STREAM（新 producer 唯一写点，schemaVersion=2）。
+ * hash-tag 内容刻意等于**完整 legacy key**：旧 key 无 tag 时按整个 key 路由，因此两者输入同一串字节，
+ * 在 Redis Cluster slot 与 `clientForKey` 的自定义桶路由下都同实例；⛔ 不得简化成 `{stream:match}`。
+ * 两流均按各自已落库位点 XTRIM MINID，禁止 MAXLEN（09·K6）。
+ */
+export const K_STREAM_MATCH_V2 = `${G}stream:match:v2:{${K_STREAM_MATCH}}`;
 /** 邮件唤醒 STREAM（10·M5，跨节点消费）。可靠流：⛔ 禁 MAXLEN，XTRIM MINID 按已投递位点裁（09·K6）。 */
 export const K_STREAM_MAILWAKE = `${G}stream:mailwake`;
 /** 踢人流（DUAL_MODE §2.3 / M12d）：coord Redis 上广播 `{uid, reason[, exceptHash]}` 触发各节点自筛踢在线连接。

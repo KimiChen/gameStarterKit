@@ -3,12 +3,14 @@
  *
  * 职责：
  *  - `emitMatchEvidence`：对局房（GameRoom）收局时把整局证据（名次 + verifier 重放全部输入，09·K5）
- *    XADD 进 `stream:match`。**一局一条**（同局全部玩家在同一 payload），XADD 失败只告警
- *    ⛔ 不阻塞收局（内部吞错）。
+ *    XADD 进 v2 流。**一局一条**（同局全部玩家在同一 payload），XADD 失败只告警
+ *    ⛔ 不阻塞收局（内部吞错）。legacy `stream:match` 自本版起只排空、不再接收新消息。
  *  - `consumeOnce` / `startMatchConsumer`：consumer group `settle` 把证据落 MySQL——
+ *    同一连接双读 legacy + v2（两 key 同 Redis slot）；v2 强制 `schemaVersion=2`，
+ *    legacy 缺 sId 时规范化为 0 后再存，保证 DB JSON 也符合当前 MatchEvidence；
  *    先过 `match_index` 幂等闸（非分区单列 PK，09·DB4/05·Δ2；ODKU 插入=1/重复=0，
  *    09·DB1 ⛔ INSERT IGNORE），重复 matchId 跳过 `match_results` 但仍 XACK；
- *    周期性按「已 ACK 且已落库」安全位点 XTRIM MINID（09·K6 ⛔ MAXLEN）。
+ *    两条流分别按「已 ACK 且已落库」安全位点 XTRIM MINID（09·K6 ⛔ MAXLEN）。
  *
  * 进程归属（评审收口）：独立 **settle worker**（`npm --workspace @game/server run settle`，
  * 本文件自带进程入口；consumer group 天然支持多实例分工，无需 singleton_lease）。
@@ -19,17 +21,19 @@ import { randomBytes } from "node:crypto";
 import { hostname } from "node:os";
 import type { Redis } from "ioredis";
 
-import { K_STREAM_MATCH } from "../infra/keys";
+import { K_STREAM_MATCH, K_STREAM_MATCH_V2 } from "../infra/keys";
 import { withRcTx, type ResultSetHeader } from "../infra/mysql";
 import { clientForKey } from "../infra/redisRoute";
 
-// ── 常量（⚠ 07 常量表待补条目，先集中在此，⛔ 禁止散落——09 审查流程第 6 条） ──
+// ── 常量（已登记 docs/SERVER.md §13，⛔ 禁止散落——09 审查流程第 6 条） ──
 
 /** `match_results.mode`（TINYINT，05）：0=休闲局，1=排位局。 */
 export const MATCH_MODE_CASUAL = 0;
 export const MATCH_MODE_RANKED = 1;
+/** v2 stream 顶层 schemaVersion；legacy 流无此字段。 */
+export const MATCH_STREAM_SCHEMA_VERSION = 2;
 
-/** consumer group 名（07 全表 `stream:match` 条目：group `settle` 消费落 `match_results`）。 */
+/** 两条 match stream 各自使用同名 group `settle` 消费落 `match_results`。 */
 const GROUP = "settle";
 /** 消费循环空转时 XREADGROUP BLOCK 时长。 */
 const CONSUME_BLOCK_MS = 5000;
@@ -75,7 +79,7 @@ export interface EvidenceInjectWave {
 export interface MatchEvidence {
   matchId: string;
   /**
-   * 本局所属**区**（房级常量：`filterBy(["sId"])` 保证一间房同区，见 GameRoom.onCreate）。0 = 大混服。
+   * 本局所属**区**（房级常量：filterBy 隔离撮合 + onJoin 鉴权区复核，见 GameRoom）。0 = 大混服。
    * ⚠ 证据 XADD 之后房间即 dispose ⇒ 这是**唯一**能把区带出对局的地方，⛔ 丢了就永久查不回。
    * 发奖（U6）按区记账：`deriveOpId(uid, sId, …)` 把它编进幂等键，拿错区 = 钱记错区且重发也修不回。
    */
@@ -109,17 +113,19 @@ export function newMatchId(): string {
  */
 export async function emitMatchEvidence(ev: MatchEvidence): Promise<string | null> {
   try {
-    return await clientForKey(K_STREAM_MATCH).xadd(
-      K_STREAM_MATCH, "*",
+    return await clientForKey(K_STREAM_MATCH_V2).xadd(
+      K_STREAM_MATCH_V2, "*",
+      // v2 key 与显式版本必须一起升级：旧 worker 根本看不到该 key，新 worker 才按 v2 契约解码。
+      "schemaVersion", String(MATCH_STREAM_SCHEMA_VERSION),
       "matchId", ev.matchId,
       "mode", String(ev.mode),
       // ⚠ 提升成**顶层字段**（同 matchId/mode）：消费侧据此落 `match_results.server_id`，
-      // ⛔ 不必去解 payload JSON —— 这正是 matchId/mode 当初也这么放的理由。
+      // 并与 payload 交叉校验，防列值与审计 JSON 分叉。
       "sId", String(ev.sId),
       "payload", JSON.stringify(ev),
     );
   } catch (e) {
-    console.error(`[matchConsumer] 证据链 XADD 失败（matchId=${ev.matchId}），收局不受阻、证据待对账:`, e);
+    console.error(`[matchConsumer] v2 证据链 XADD 失败（matchId=${ev.matchId}），收局不受阻、证据待对账:`, e);
     return null;
   }
 }
@@ -129,20 +135,50 @@ export async function emitMatchEvidence(ev: MatchEvidence): Promise<string | nul
 type StreamEntry = [id: string, fields: string[]];
 type XReadGroupReply = [key: string, entries: StreamEntry[]][] | null;
 
-let groupEnsured = false;
-/** 本消费者最近一次「落库成功且已 XACK」的 stream id——XTRIM 安全位点（09·K6）。 */
-let lastPersistedId: string | null = null;
-let lastTrimMs = 0;
+type MatchStreamKind = "legacy" | "v2";
+interface MatchStreamState {
+  readonly key: string;
+  readonly kind: MatchStreamKind;
+  readonly label: string;
+  groupEnsured: boolean;
+  /** XAUTOCLAIM 下一页游标；到 "0-0" 后下轮从头开启新一轮扫描。 */
+  claimCursor: string;
+  /** 两条流独立节流，避免一条流的 trim 时间戳压住另一条。 */
+  lastTrimMs: number;
+}
 
-/** group 不存在则建（幂等）。起点 "0"：消费者可能晚于生产者上线，组建立前的证据也要落库。 */
-async function ensureGroup(client: Redis): Promise<void> {
-  if (groupEnsured) { return; }
+const LEGACY_STREAM: MatchStreamState = {
+  key: K_STREAM_MATCH,
+  kind: "legacy",
+  label: "stream:match(legacy)",
+  groupEnsured: false,
+  claimCursor: "0-0",
+  lastTrimMs: 0,
+};
+const V2_STREAM: MatchStreamState = {
+  key: K_STREAM_MATCH_V2,
+  kind: "v2",
+  label: "stream:match:v2",
+  groupEnsured: false,
+  claimCursor: "0-0",
+  lastTrimMs: 0,
+};
+const MATCH_STREAMS: readonly MatchStreamState[] = [LEGACY_STREAM, V2_STREAM];
+const MATCH_STREAM_BY_KEY = new Map(MATCH_STREAMS.map((s) => [s.key, s]));
+
+/** 单流 group 不存在则建（幂等）。起点 "0"：组建立前的历史证据也必须落库。 */
+async function ensureGroup(client: Redis, stream: MatchStreamState): Promise<void> {
+  if (stream.groupEnsured) { return; }
   try {
-    await client.xgroup("CREATE", K_STREAM_MATCH, GROUP, "0", "MKSTREAM");
+    await client.xgroup("CREATE", stream.key, GROUP, "0", "MKSTREAM");
   } catch (e) {
     if (!(e instanceof Error) || !e.message.includes("BUSYGROUP")) { throw e; }
   }
-  groupEnsured = true;
+  stream.groupEnsured = true;
+}
+
+async function ensureGroups(client: Redis): Promise<void> {
+  for (const stream of MATCH_STREAMS) { await ensureGroup(client, stream); }
 }
 
 /** [k1,v1,k2,v2,…] → 对象。 */
@@ -150,6 +186,82 @@ function fieldMap(fields: string[]): Record<string, string> {
   const m: Record<string, string> = {};
   for (let i = 0; i + 1 < fields.length; i += 2) { m[fields[i]] = fields[i + 1]; }
   return m;
+}
+
+type JsonObject = Record<string, unknown>;
+interface NormalizedEntry {
+  matchId: string;
+  mode: number;
+  sId: number;
+  /** 已按当前 MatchEvidence 规范化后的 JSON（legacy 至少补齐 number sId）。 */
+  payload: string;
+}
+
+/** Redis 顶层无符号十进制：拒绝空白、指数、负零等非 canonical 形态。 */
+function parseUInt(raw: string | undefined, max: number): number | null {
+  if (raw === undefined || !/^(?:0|[1-9]\d*)$/.test(raw)) { return null; }
+  const n = Number(raw);
+  return Number.isSafeInteger(n) && n <= max ? n : null;
+}
+
+function parsePayload(raw: string | undefined): JsonObject | null {
+  if (!raw) { return null; }
+  try {
+    const value: unknown = JSON.parse(raw);
+    return value !== null && typeof value === "object" && !Array.isArray(value)
+      ? value as JsonObject
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function payloadSId(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 65535
+    ? value
+    : null;
+}
+
+/**
+ * 按来源流解码：
+ * - v2：schemaVersion 必须精确为 "2"，顶层与 payload 的 matchId/mode/sId 必须一致；
+ * - legacy：无顶层 sId 的真旧消息从 payload 取合法值，否则缺失回退 0；f91 顶层 sId 为权威并回填 payload。
+ */
+function normalizeEntry(stream: MatchStreamState, fields: string[]): NormalizedEntry | null {
+  if (stream.kind === "v2") {
+    const allowed = new Set(["schemaVersion", "matchId", "mode", "sId", "payload"]);
+    const seen = new Set<string>();
+    if (fields.length !== allowed.size * 2) { return null; }
+    for (let i = 0; i < fields.length; i += 2) {
+      const name = fields[i];
+      if (!allowed.has(name) || seen.has(name)) { return null; }
+      seen.add(name);
+    }
+  }
+  const f = fieldMap(fields);
+  const matchId = f.matchId ?? "";
+  const mode = parseUInt(f.mode, 255);
+  const payload = parsePayload(f.payload);
+  if (!matchId || matchId.length > 40 || mode === null || !payload) { return null; }
+
+  if (stream.kind === "v2") {
+    const sId = parseUInt(f.sId, 65535);
+    if (f.schemaVersion !== String(MATCH_STREAM_SCHEMA_VERSION) || sId === null
+        || payload.matchId !== matchId || payload.mode !== mode || payload.sId !== sId) {
+      return null;
+    }
+    return { matchId, mode, sId, payload: JSON.stringify(payload) };
+  }
+
+  // f91 legacy 同时有顶层 + payload sId：顶层是落库契约，必须保留；真实 c8 两处都没有则补 0。
+  const topLevelSId = f.sId === undefined ? null : parseUInt(f.sId, 65535);
+  if (f.sId !== undefined && topLevelSId === null) { return null; }
+  const embeddedSId = payload.sId === undefined ? null : payloadSId(payload.sId);
+  if (payload.sId !== undefined && embeddedSId === null) { return null; }
+  if (topLevelSId !== null && embeddedSId !== null && topLevelSId !== embeddedSId) { return null; }
+  const sId = topLevelSId ?? embeddedSId ?? 0;
+  payload.sId = sId;
+  return { matchId, mode, sId, payload: JSON.stringify(payload) };
 }
 
 /**
@@ -161,20 +273,17 @@ function fieldMap(fields: string[]): Record<string, string> {
  * - 结构损坏条目：生产者是我们自己，损坏=bug → 告警后 ACK 丢弃（不 ACK 会永久卡死 PEL）。
  * - DB 故障：**不 ACK** 直接抛——条目留在 PEL，下次 consumeOnce 的 "0" 起点重放，幂等闸兜底。
  */
-async function settleEntry(client: Redis, id: string, fields: string[]): Promise<void> {
-  const f = fieldMap(fields);
-  const matchId = f.matchId ?? "";
-  const mode = Number(f.mode);
-  const payload = f.payload ?? "";
-  // ⚠ 旧条目（本字段上线前 XADD 的）没有 sId ⇒ 缺省 0，⛔ 不能判成结构损坏丢弃：
-  //   那会把重启前积压的证据全部扔掉。非法值才算损坏。
-  const sId = f.sId === undefined ? 0 : Number(f.sId);
-  if (!matchId || matchId.length > 40 || !Number.isInteger(mode) || mode < 0 || mode > 255 || !payload
-      || !Number.isInteger(sId) || sId < 0 || sId > 65535) {
-    console.error(`[matchConsumer] 证据条目结构损坏，ACK 丢弃：id=${id} matchId=${matchId || "?"}`);
-    await client.xack(K_STREAM_MATCH, GROUP, id);
+async function settleEntry(
+  client: Redis, stream: MatchStreamState, id: string, fields: string[],
+): Promise<void> {
+  const normalized = normalizeEntry(stream, fields);
+  if (!normalized) {
+    const matchId = fieldMap(fields).matchId || "?";
+    console.error(`[matchConsumer] ${stream.label} 证据条目结构/版本损坏，ACK 丢弃：id=${id} matchId=${matchId}`);
+    await client.xack(stream.key, GROUP, id);
     return;
   }
+  const { matchId, mode, sId, payload } = normalized;
   await withRcTx(async (conn) => {
     const [r] = await conn.execute<ResultSetHeader>(
       "INSERT INTO match_index (match_id, created_at) VALUES (?, NOW(3)) ON DUPLICATE KEY UPDATE match_id = match_id",
@@ -189,91 +298,168 @@ async function settleEntry(client: Redis, id: string, fields: string[]): Promise
     }
   });
   // 落库（或判重）成功才 ACK；XACK 前崩溃 → PEL 残留 → 重放，幂等闸挡重复
-  await client.xack(K_STREAM_MATCH, GROUP, id);
-  lastPersistedId = id;
+  await client.xack(stream.key, GROUP, id);
 }
 
 export interface ConsumeOptions {
-  /** 单次两趟各最多取多少条。缺省 64。 */
+  /** 每条流、每个阶段最多取多少条。缺省 64。 */
   count?: number;
-  /** 新条目等待时长（仅作用于 ">" 趟）。⚠ BLOCK 占住整条连接，必须配独占 client。 */
+  /** 新条目等待时长（双流共用一次 ">" XREADGROUP）。⚠ BLOCK 占住整条连接，必须配独占 client。 */
   blockMs?: number;
-  /** 缺省 `clientForKey(K_STREAM_MATCH)`（测试直调够用）；消费循环传 duplicate 独占连接。 */
+  /** 缺省 v2/legacy 同槽 client（测试直调够用）；消费循环传 duplicate 独占连接。 */
   client?: Redis;
 }
 
 /**
- * 消费一轮（可单测）：先重放本 consumer 的 PEL 残留（上次落库失败/崩溃未 ACK；
- * XREADGROUP 指定起点 id 只回 PEL、不阻塞），再 XAUTOCLAIM 接管**别的死消费者**
- * 挂 ≥ CLAIM_MIN_IDLE_MS 的 PEL 条目（换主机/改名后的孤儿不再永久滞留），最后取新条目（">"）。
+ * 消费一轮（可单测）：对 legacy/v2 **逐流**重放本 consumer 的 PEL 残留（上次落库失败/崩溃未 ACK；
+ * XREADGROUP 指定起点 id 只回 PEL、不阻塞），再逐流 XAUTOCLAIM 接管**别的死消费者**
+ * 挂 ≥ CLAIM_MIN_IDLE_MS 的 PEL，最后用一次同槽 XREADGROUP 双读两流的新条目（">"）。
  * @returns 本轮处理条数（含判重跳过与损坏丢弃）。
  */
 export async function consumeOnce(opts: ConsumeOptions = {}): Promise<number> {
-  const client = opts.client ?? clientForKey(K_STREAM_MATCH);
+  const client = opts.client ?? clientForKey(K_STREAM_MATCH_V2);
   const count = opts.count ?? 64;
-  await ensureGroup(client);
+  await ensureGroups(client);
   let n = 0;
   try {
-    n += await readBatch(client, "0", count);
-    n += await claimStale(client, count);
-    n += await readBatch(client, ">", count, opts.blockMs);
+    for (const stream of MATCH_STREAMS) {
+      n += await readBatch(client, stream, "0", count);
+      n += await claimStale(client, stream, count);
+    }
+    n += await readNewBatches(client, count, opts.blockMs);
   } catch (e) {
-    // NOGROUP = 组没了（实例重建 / failover 到不含组的空副本）：重置标志，下轮 ensureGroup
-    // 用 MKSTREAM 重建自愈——否则 groupEnsured 卡在 true，消费循环永久 1s 报错直到进程重启
-    if (e instanceof Error && e.message.includes("NOGROUP")) { groupEnsured = false; }
+    // NOGROUP 不一定携带具体 key；保守重置两流，下轮分别 MKSTREAM 自愈。
+    if (e instanceof Error && e.message.includes("NOGROUP")) {
+      for (const stream of MATCH_STREAMS) {
+        stream.groupEnsured = false;
+        stream.claimCursor = "0-0";
+      }
+    }
     throw e;
   }
   return n;
 }
 
 /** XAUTOCLAIM 接管死消费者的 PEL（幂等闸保证重复处理无害）。认领即成为 owner，随后走同一落库+ACK 路径。 */
-async function claimStale(client: Redis, count: number): Promise<number> {
+async function claimStale(client: Redis, stream: MatchStreamState, count: number): Promise<number> {
   const res = (await client.call(
-    "XAUTOCLAIM", K_STREAM_MATCH, GROUP, CONSUMER, String(CLAIM_MIN_IDLE_MS), "0", "COUNT", String(count),
+    "XAUTOCLAIM", stream.key, GROUP, CONSUMER, String(CLAIM_MIN_IDLE_MS), stream.claimCursor,
+    "COUNT", String(count),
   )) as [string, [string, string[] | null][]];
+  const nextCursor = String(res?.[0] ?? "");
+  if (!/^\d+-\d+$/.test(nextCursor)) {
+    throw new Error(`[matchConsumer] ${stream.label} XAUTOCLAIM 返回非法 cursor=${nextCursor || "?"}`);
+  }
+  stream.claimCursor = nextCursor;
   const entries = res?.[1] ?? [];
   let n = 0;
   for (const [id, fields] of entries) {
     // fields=null：条目已被 XTRIM 裁掉只剩 PEL 影子——ACK 清影子即可
-    if (!fields) { await client.xack(K_STREAM_MATCH, GROUP, id); continue; }
-    await settleEntry(client, id, fields);
+    if (!fields) { await client.xack(stream.key, GROUP, id); continue; }
+    await settleEntry(client, stream, id, fields);
     n++;
   }
   return n;
 }
 
-async function readBatch(client: Redis, startId: string, count: number, blockMs?: number): Promise<number> {
+async function readBatch(
+  client: Redis, stream: MatchStreamState, startId: string, count: number,
+): Promise<number> {
   const args: (string | number)[] = ["GROUP", GROUP, CONSUMER, "COUNT", count];
-  if (blockMs !== undefined && startId === ">") { args.push("BLOCK", blockMs); }
-  args.push("STREAMS", K_STREAM_MATCH, startId);
+  args.push("STREAMS", stream.key, startId);
   const res = (await client.call("XREADGROUP", ...args.map(String))) as XReadGroupReply;
   const entries = res?.[0]?.[1] ?? [];
-  for (const [id, fields] of entries) { await settleEntry(client, id, fields); }
+  for (const [id, fields] of entries) { await settleEntry(client, stream, id, fields); }
   return entries.length;
+}
+
+/** 两 key 的 hash 输入相同，故可在一次 BLOCK XREADGROUP 中等待任一流，避免顺序阻塞饿死 v2。 */
+async function readNewBatches(client: Redis, count: number, blockMs?: number): Promise<number> {
+  const args: (string | number)[] = ["GROUP", GROUP, CONSUMER, "COUNT", count];
+  if (blockMs !== undefined) { args.push("BLOCK", blockMs); }
+  args.push(
+    "STREAMS",
+    ...MATCH_STREAMS.map((stream) => stream.key),
+    ...MATCH_STREAMS.map(() => ">"),
+  );
+  const res = (await client.call("XREADGROUP", ...args.map(String))) as XReadGroupReply;
+  let n = 0;
+  for (const [key, entries] of res ?? []) {
+    const stream = MATCH_STREAM_BY_KEY.get(key);
+    if (!stream) { throw new Error(`[matchConsumer] XREADGROUP 返回未知 stream key=${key}`); }
+    for (const [id, fields] of entries) {
+      await settleEntry(client, stream, id, fields);
+      n++;
+    }
+  }
+  return n;
+}
+
+interface GroupProgress {
+  pending: number;
+  /** Redis 7 可返回 null（无法计算）或省略；仅用于深度告警，不参与 trim 安全性。 */
+  lag: number | null;
+  lastDeliveredId: string;
+}
+
+/** 逐流读取 settle group 状态；无组返回 null。 */
+async function readGroupProgress(client: Redis, stream: MatchStreamState): Promise<GroupProgress | null> {
+  const raw = await client.call("XINFO", "GROUPS", stream.key) as unknown;
+  if (!Array.isArray(raw)) { return null; }
+  for (const item of raw) {
+    if (!Array.isArray(item)) { continue; }
+    const row = item as unknown[];
+    const get = (name: string): unknown => {
+      for (let i = 0; i + 1 < row.length; i += 2) {
+        if (String(row[i]) === name) { return row[i + 1]; }
+      }
+      return undefined;
+    };
+    if (String(get("name") ?? "") !== GROUP) { continue; }
+    const pending = Number(get("pending"));
+    const lastDeliveredId = String(get("last-delivered-id") ?? "");
+    const rawLag = get("lag");
+    const lag = rawLag === null || rawLag === undefined ? null : Number(rawLag);
+    if (!Number.isSafeInteger(pending) || pending < 0 || !/^\d+-\d+$/.test(lastDeliveredId)
+        || (lag !== null && (!Number.isSafeInteger(lag) || lag < 0))) {
+      throw new Error(`[matchConsumer] ${stream.label} XINFO GROUPS 返回非法 settle 状态`);
+    }
+    return { pending, lag, lastDeliveredId };
+  }
+  return null;
 }
 
 /**
  * 按「已 ACK 且已落库」安全位点裁剪（09·K6/02·P3：⛔ MAXLEN 按长度无条件删最老条目、
  * 完全不看 PEL/ACK，worker 积压时正好删掉未落库数据）。裁剪 owner = 证据链消费者（07）。
  *
- * 安全论证：`lastPersistedId` 是本消费者最近一次落库成功并 XACK 的 id。当组 PEL 为空时，
- * 组内**已投递**的条目全部已 ACK（经幂等闸落库）；**尚未投递**的条目 id 必然 > 组
- * last-delivered ≥ lastPersistedId——故裁掉 < lastPersistedId 的条目碰不到任何未落库数据。
+ * 安全论证：逐流读取 `XINFO GROUPS` 的 `settle.last-delivered-id`，且仅在该流 group PEL=0 时裁剪。
+ * 此时组内**已投递**的条目全部已 ACK（经幂等闸落库或已判损坏）；**尚未投递**的条目 id 必然
+ * > last-delivered——故裁掉 < last-delivered 的条目碰不到任何未落库数据。安全位点来自 Redis，
+ * 不依赖进程内缓存：worker 重启后，即使 legacy 已没有新消息，也仍能继续收敛旧流。
  * PEL 非空（本组任一消费者还挂着未 ACK 条目）则整轮跳过——宁可流长一点也不冒险（保守；
  * pending 深度告警归 M10）。`~` 近似裁剪只按 rax 节点整块删，只会少裁不会多裁。
  *
  * ⚠ 前提：`settle` 是本流唯一消费组（当前如此）；未来 verifier 组接入后安全位点须取各组
  * 位点的 min（M10 收口）。「7 天前 MINID 兜底」刻意**不做**：证据链是审计数据，积压 7 天
  * 属运维事故，宁可告警人工介入，也不做任何可能删掉未落库条目的无条件裁剪。
- * @returns 实际用作 MINID 的位点；本轮不满足安全条件则 null。
+ * @returns 兼容旧 API：本轮最后一个成功裁剪的 MINID；两流都不满足安全条件则 null。
  */
 export async function trimToSafePoint(client?: Redis): Promise<string | null> {
-  const c = client ?? clientForKey(K_STREAM_MATCH);
-  if (!lastPersistedId) { return null; }
-  const pending = (await c.xpending(K_STREAM_MATCH, GROUP)) as [number, ...unknown[]];
-  if (Number(pending?.[0] ?? 1) !== 0) { return null; }
-  const minId = lastPersistedId;
-  await c.xtrim(K_STREAM_MATCH, "MINID", "~", minId);
+  const c = client ?? clientForKey(K_STREAM_MATCH_V2);
+  let lastTrimmed: string | null = null;
+  for (const stream of MATCH_STREAMS) {
+    const minId = await trimStreamToSafePoint(c, stream);
+    if (minId) { lastTrimmed = minId; }
+  }
+  return lastTrimmed;
+}
+
+async function trimStreamToSafePoint(client: Redis, stream: MatchStreamState): Promise<string | null> {
+  const progress = await readGroupProgress(client, stream);
+  if (!progress || progress.pending !== 0 || progress.lastDeliveredId === "0-0") { return null; }
+  const minId = progress.lastDeliveredId;
+  await client.xtrim(stream.key, "MINID", "~", minId);
   return minId;
 }
 
@@ -287,14 +473,16 @@ let loopClient: Redis | null = null;
 export function startMatchConsumer(): void {
   if (running) { return; }
   running = true;
-  loopClient = clientForKey(K_STREAM_MATCH).duplicate();
+  loopClient = clientForKey(K_STREAM_MATCH_V2).duplicate();
   loopDone = (async () => {
     while (running) {
       try {
         await consumeOnce({ client: loopClient!, blockMs: CONSUME_BLOCK_MS });
-        if (Date.now() - lastTrimMs >= TRIM_INTERVAL_MS) {
-          lastTrimMs = Date.now();
-          await trimToSafePoint(loopClient!);
+        const now = Date.now();
+        for (const stream of MATCH_STREAMS) {
+          if (now - stream.lastTrimMs < TRIM_INTERVAL_MS) { continue; }
+          stream.lastTrimMs = now;
+          await trimStreamToSafePoint(loopClient!, stream);
         }
       } catch (e) {
         if (!running) { break; }
@@ -320,14 +508,27 @@ export async function stopMatchConsumer(): Promise<void> {
 const STREAM_DEPTH_ALERT = 1000;
 const STREAM_DEPTH_CHECK_MS = 60_000;
 
-/** 网关启动时挂上：周期 XLEN，超阈值告警（settle worker 没起/挂了的第一信号）。 */
+/** 未建 group 时用 XLEN；已有 group 时用 lag+pending，避免已 ACK 但尚未 trim 的历史制造假积压。 */
+async function streamBacklog(client: Redis, stream: MatchStreamState): Promise<{ backlog: number; xlen: number }> {
+  const xlen = await client.xlen(stream.key);
+  if (xlen === 0) { return { backlog: 0, xlen: 0 }; }
+  const progress = await readGroupProgress(client, stream);
+  return {
+    backlog: !progress || progress.lag === null ? xlen : progress.lag + progress.pending,
+    xlen,
+  };
+}
+
+/** 网关启动时挂上：两条流分别检查未处理深度，任一超阈值都告警。 */
 export function startStreamDepthAlert(): void {
   const timer = setInterval(() => {
-    void clientForKey(K_STREAM_MATCH).xlen(K_STREAM_MATCH).then((len) => {
-      if (len > STREAM_DEPTH_ALERT) {
-        console.error(`[matchConsumer] ⚠⚠ stream:match 深度 ${len} 超阈值 ${STREAM_DEPTH_ALERT}——settle worker 未运行或积压（npm --workspace @game/server run settle）`);
-      }
-    }).catch(() => { /* Redis 抖动不告警——连接级问题由 infra 监控负责 */ });
+    for (const stream of MATCH_STREAMS) {
+      void streamBacklog(clientForKey(stream.key), stream).then(({ backlog, xlen }) => {
+        if (backlog > STREAM_DEPTH_ALERT) {
+          console.error(`[matchConsumer] ⚠⚠ ${stream.label} 未处理深度 ${backlog}（XLEN=${xlen}）超阈值 ${STREAM_DEPTH_ALERT}——settle worker 未运行或积压（npm --workspace @game/server run settle）`);
+        }
+      }).catch(() => { /* Redis 抖动不告警——连接级问题由 infra 监控负责 */ });
+    }
   }, STREAM_DEPTH_CHECK_MS);
   timer.unref();
 }
@@ -339,7 +540,7 @@ import { fileURLToPath } from "node:url";
 
 const isMain = process.argv[1] && realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1]);
 if (isMain) {
-  console.log(`[settle] 启动（consumer=${CONSUMER}，group=${GROUP}）`);
+  console.log(`[settle] 启动（consumer=${CONSUMER}，group=${GROUP}，streams=legacy+v2）`);
   startMatchConsumer();
   const shutdown = () => {
     void stopMatchConsumer().then(() => process.exit(0));
