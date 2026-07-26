@@ -12,6 +12,7 @@ import { emitGuildEvent } from "../../core/guild/events";
 import { withUser } from "../../core/uow";
 import { pushToGuild, setOnlineGuild } from "../push";
 import { defineRpc } from "../rpc";
+import { currentZoneId } from "../../core/infra/keys";
 
 export default defineRpc(GuildRpc.Join, {
   schema: z.object({
@@ -23,11 +24,12 @@ export default defineRpc(GuildRpc.Join, {
     // 存在性校验先于一切写路径（档/索引/事件键都不许为未知 gid 产生）
     if (!guildExists(p.guildId)) { throw new InvalidPayloadError(`未知工会: ${p.guildId}`); }
     await withUser(ctx.uid, async (uow) => { uow.set("guildId", String(p.guildId)); });
-    setOnlineGuild(ctx.uid, p.guildId); // 换会维护点（工会在线索引三点之一）
+    const sId = currentZoneId(); // ⚠ 公会索引/广播按区分桶（A2）：同 gid 跨区 ⛔ 不得互推
+    setOnlineGuild(ctx.uid, p.guildId, sId); // 换会维护点（工会在线索引三点之一）
     // ⚠ 写档与 emit 非原子：档已提交但 emit 失败时，幂等重试不会补发本条通知
     //（事件非权威、尽力通知的契约所容忍；要求强通知的场景走 outbox/邮件）
     const seq = await emitGuildEvent(p.guildId, "memberJoin", { uid: ctx.uid });
-    pushToGuild(p.guildId, LobbyPush.GuildEvent, { seq, guildId: p.guildId });
+    pushToGuild(p.guildId, LobbyPush.GuildEvent, { seq, guildId: p.guildId }, sId);
     return { ok: true, seq };
   },
 });

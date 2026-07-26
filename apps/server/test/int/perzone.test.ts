@@ -184,3 +184,60 @@ test("建角崩溃窗**可自愈**：有档无 char 行（档先建、崩在写 
   assert.deepEqual(await listCharacterZones(u), [9], "自愈：char 行补上");
   assert.equal(await zoneCtx.run({ sId: 9 }, () => clientFor(u).exists(kUser(u))), 1, "真档未被覆盖");
 });
+
+test("A2 邮件按区隔离：s1 的邮件在 s2 ⛔ 不可见、⛔ 不可领、⛔ 不可标已读", async () => {
+  // ⚠ 评审实证过的跨区串档：`mail` 表有 server_id、写入也落了值，但三处查询侧都只按 user_id
+  //   ⇒ 同账号切到他区就能看到并领走。⛔ 与 GROUP_ZONES 是否非空无关（空 = 承载全部区）。
+  const { sendMail, claimMailAttach } = await import("../../src/core/economy/mailer");
+  const listRpc = (await import("../../src/websocket/mail/list")).default;
+  const markRpc = (await import("../../src/websocket/mail/markRead")).default;
+  const u = uid("a2mail");
+  await zoneCtx.run({ sId: 1 }, () => createUser(u));
+  await zoneCtx.run({ sId: 2 }, () => createUser(u));
+
+  // s1 发一封带附件的邮件
+  const mailId = await zoneCtx.run({ sId: 1 }, () => sendMail(u, "一区奖励", "正文", getShopSku("shop.frag17x10")!.grants));
+
+  // ① 列表：s1 看得到、s2 看不到
+  const inS1 = await zoneCtx.run({ sId: 1 }, () => listRpc.handler({ uid: u } as never, {} as never));
+  const inS2 = await zoneCtx.run({ sId: 2 }, () => listRpc.handler({ uid: u } as never, {} as never));
+  assert.equal((inS1 as { mails: unknown[] }).mails.length, 1, "s1 应看到自己区的邮件");
+  assert.equal((inS2 as { mails: unknown[] }).mails.length, 0, "⛔ s2 不得看到 s1 的邮件");
+
+  // ② 领取：s2 领不到（本条是"领取权限"，比可见性更要紧）
+  await assert.rejects(
+    zoneCtx.run({ sId: 2 }, () => claimMailAttach(u, mailId)),
+    "⛔ s2 不得领走 s1 的附件");
+
+  // ③ 标已读：s2 标不动（UPDATE 幂等返回 ok，故直接查库断言）
+  await zoneCtx.run({ sId: 2 }, () => markRpc.handler({ uid: u } as never, { mailId } as never));
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    "SELECT read_at FROM mail WHERE mail_id = ?", [mailId]);
+  assert.equal(rows[0].read_at, null, "⛔ s2 不得把 s1 的邮件标成已读");
+
+  // ④ 本区仍然完全可用（⛔ 别把闸修成"谁都领不到"）
+  const claimed = await zoneCtx.run({ sId: 1 }, () => claimMailAttach(u, mailId));
+  assert.ok(claimed, "s1 本区领取必须照常成功");
+});
+
+test("A2 公会在线索引按区分桶：同 gid 的 s1 事件 ⛔ 不得推给 s2 的成员", async () => {
+  const push = await import("../../src/websocket/push");
+  const a = uid("a2ga"); const b = uid("a2gb");
+  // 造两个"在线"连接：a 在 s1、b 在 s2，同一个 gid
+  const sent: Array<{ uid: string; type: string }> = [];
+  const fakeConn = (who: string) => ({
+    sink: (type: string) => { sent.push({ uid: who, type }); },
+    kick: () => {}, tokenHash: `h_${who}`,
+  });
+  push.registerOnline(a, `sess_${a}`, fakeConn(a));
+  push.registerOnline(b, `sess_${b}`, fakeConn(b));
+  push.setOnlineGuild(a, 1, 1); // s1 的 1 号公会
+  push.setOnlineGuild(b, 1, 2); // s2 的 1 号公会（同 gid，⛔ 不同区）
+
+  const n = push.pushToGuild(1, "guild.event", { seq: 1 }, 1); // 只推 s1
+  assert.equal(n, 1, "只应送达 s1 的那一个成员");
+  assert.deepEqual(sent.map((s) => s.uid), [a], "⛔ s2 的成员不得收到 s1 的公会事件");
+
+  push.unregisterOnline(a, `sess_${a}`);
+  push.unregisterOnline(b, `sess_${b}`);
+});

@@ -8,6 +8,7 @@ import { emitGuildEvent } from "../../core/guild/events";
 import { withUser } from "../../core/uow";
 import { pushToGuild, setOnlineGuild } from "../push";
 import { defineRpc } from "../rpc";
+import { currentZoneId } from "../../core/infra/keys";
 
 export default defineRpc(GuildRpc.Leave, {
   schema: z.object({ clientReqId: z.string().min(1).max(64) }),
@@ -19,12 +20,12 @@ export default defineRpc(GuildRpc.Leave, {
       if (gid > 0) { uow.set("guildId", "0"); }
       return gid;
     });
-    setOnlineGuild(ctx.uid, null); // 换会维护点
+    setOnlineGuild(ctx.uid, null); // 换会维护点（清除用登记时存的区号，⛔ 无需 sId）
     // ⚠ 同 join：档已提交后 emit 失败，重试读到 guildId=0 不会补发通知（尽力通知契约所容忍）。
     // guildExists 兜底：档里若残留目录外 gid（目录裁撤/脏数据），退会不得为其铸事件键
     if (prevGid > 0 && guildExists(prevGid)) {
       const seq = await emitGuildEvent(prevGid, "memberLeave", { uid: ctx.uid });
-      pushToGuild(prevGid, LobbyPush.GuildEvent, { seq, guildId: prevGid });
+      pushToGuild(prevGid, LobbyPush.GuildEvent, { seq, guildId: prevGid }, currentZoneId()); // ⚠ 按区（A2）
     }
     return { ok: true };
   },

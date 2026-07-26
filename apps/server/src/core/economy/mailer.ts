@@ -56,9 +56,13 @@ interface MailAttachRow extends RowDataPacket {
  */
 export async function claimMailAttach(uid: string, mailId: number): Promise<PurchaseResult> {
   const claim = await withRcTx(async (conn) => {
+    // ⚠ **带 server_id 谓词**（A2）：此前只按 (mail_id, user_id) ⇒ 本区连接**能领走他区的邮件附件**。
+    // ⚠ 措辞要精确：奖励本身仍靠行内 `server_id` 落对区（下方 sId），所以 ⛔ 不是"把钱发错区"，
+    // 串的是**可见性与领取权限**——玩家在 s2 把 s1 的附件领了，货记在 s1，s2 看着像没到账。
+    // ⛔ 别改成读 currentZoneId() 后再比对行内值：那样已领标记 CAS 仍会打在他区的行上。
     const [rows] = await conn.query<MailAttachRow[]>(
-      "SELECT attach_op_id, attach_effect, claimed_at, server_id FROM mail WHERE mail_id = ? AND user_id = ? FOR UPDATE",
-      [mailId, uid]);
+      "SELECT attach_op_id, attach_effect, claimed_at, server_id FROM mail WHERE mail_id = ? AND user_id = ? AND server_id = ? FOR UPDATE",
+      [mailId, uid, currentZoneId()]);
     if (rows.length === 0 || rows[0].attach_op_id === null) {
       throw new InvalidPayloadError("邮件不存在或无附件");
     }

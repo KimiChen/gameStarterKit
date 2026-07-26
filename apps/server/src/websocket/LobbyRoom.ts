@@ -102,7 +102,7 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
     // 全程 best-effort：失败只影响工会广播/首帧，不阻塞连接（重连/换会修复）。
     void ensureCharacter(uid, sId)
       .then(() => zoneCtx.run({ sId }, () => loadFields(uid, ["guildId"])))
-      .then((f) => setOnlineGuild(uid, Number(f.guildId ?? 0) || null))
+      .then((f) => setOnlineGuild(uid, Number(f.guildId ?? 0) || null, sId)) // ⚠ 带 sId：索引按区分桶（A2）
       .catch((e) => {
         // ⛔ 不再静默：建角失败（尤其 char_registry 写失败）会留下「有档无 char 行」——
         // 该态可自愈（下次进区补写），但**期间 09·F4 的丢档告警对该 (uid,sId) 失效**，

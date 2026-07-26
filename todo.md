@@ -94,49 +94,6 @@
   写的是「发奖边界 ban recheck」——两件事，别互相挡。
 - **触发条件**：发奖落地前（与 U6 同期，但可独立先行）。
 
-## A1 · split 会话写入无 fence：旧 token 覆盖新 token 【上线阻断级】
-
-- **现状**：`platform/httpAccount.ts` 的 `remoteVerify` → `writeGroupSess` 是**两个 await**，
-  中间可任意交错、⛔ 无任何 fence。同 uid 两次登录并发时，迟到的旧写会覆盖组 sess 缓存；
-  更糟的是 `core/auth/session.ts` 见 hash 变化就踢、判别位是本次 newHash ⇒ 旧写**反手踢掉
-  合法的新登录端**；而快路径零回源 ⇒ 旧 token 一路放行到 `sess` TTL(3d)。
-- **⛔ 修法（评审推翻了上一版药方，⛔ 别照上一版做）**：上一版写的是「改成单条 Lua，只在 `oldHash`
-  仍等于 verify 时刻读到的值时才覆盖」——**不收敛，已实证**：两个请求都在 H0 时刻读到 `oldHash=H0`，
-  **旧请求先 CAS 成功**（它满足 `oldHash===H0`），真正的赢家反而 CAS 失败被拒 ⇒ 终态是旧 token 胜出，
-  与不加 CAS 的坏结果同类。⛔ 比较-并-设置只能保证"没人踩到别人"，保证不了"新的赢"。
-- **正确方向：单调量比较（只接受更大的）**，⛔ 不是 CAS。
-  ⚠ 上一版还写着「当前没有任何单调量可比」——**不实**：`accounts.token_issued_at DATETIME(3)` 早就存在，
-  `verifyToken` 的 SQL 也已经在读它（只是响应里只回派生的 `age_s`，没把原值带出来）。
-  ⇒ 改动比上一版设想的小得多：`/verify` 响应把 `token_issued_at` 原值带回 → 组侧只在
-  「新值 > 已存值」时才覆盖 sess 缓存。
-  ⚠ 两个真实边界要一并处理：① `DATETIME(3)` 只到毫秒，同毫秒两次登录会**打平** ⇒ 需要次级判据
-  （比 hash 或加计数列）；② 这算不算"部分回滚 M12d 砍 `token_epoch`"要说清楚——**不算**：
-  砍 epoch 砍的是「广播 + 本地 maxEpoch 快检 + outbox」那套控制面，这里只是让**已有**的签发时刻
-  参与比较，⛔ 不引入新的控制总线。上一版把这条写成"要先拍板"，实际是可以直接做的。
-- **同族**：`exceptHash` 非单调栅栏（A6）应复用**同一个**单调量，⛔ 别另造一个。
-- **注**：in-process 侧的同类竞态已由 `c7ab375` 修（锁内回权威再写缓存）；⛔ 那次修的是**另一条路径**，
-  split 这条从来不在它射程内（`inProcessLogin.ts` 曾写"split 天然无此竞态"，已改）。
-- **触发条件**：split 形态启用前**必须**完成。
-
-## A2 · 邮件与公会未按 sId 隔离 【上线阻断级（多区）】
-
-- **现状**：`websocket/mail/` 的 `list`·`markRead`·`claimAttach` **全无 `server_id` 谓词**
-  （`mail` 表有该列、`mailer.ts` 写入时也落了值）；`websocket/push.ts` 的 `guildOf`/`guildOnline`
-  两个内存索引无区维度，而公会 Redis 键是 per-zone ⇒ 同 gid 跨区塌进同一索引。
-- **精确措辞**：串的是**可见性与领取权限**（能看到并领走他区邮件），奖励本身仍靠行内 `server_id`
-  落对区 ⇒ ⛔ 不是"把钱发错区"。
-- **连带**：`DUAL_MODE.md` 曾写「经济按区隔离」属过度承诺，已收窄成「货币/背包按区隔离」。
-- **⛔ 触发条件（评审纠正，上一版写反了）**：**当前缺省配置下已经可触发**，⛔ 与「`GROUP_ZONES` 是否非空」
-  无关——恰恰相反，`GROUP_ZONES` **空 = 承载全部区**（`groupAdmitsZone` 空数组恒 true），是最宽松态；
-  而默认目录下发 s1–s5（其中 s1/s2/s3 可进入），客户端 `pages.ts` 也已透传 `sId`。
-  **端到端实证**：同账号先进 s1 建角发件、再进 s2，s2 连接上 `mail.list` **能看到** s1 的邮件、
-  `mail.claimAttach` **能领走**（货靠行内 `server_id` 落回 s1）；s1 玩家 `guild.join` 的 push
-  **能推到 s2 的玩家**。上一版把触发条件写成「真开多区之前」是**不正确的降级**。
-- ⚠ **唯一的缓冲**：全仓**没有任何生产发件路径**（`sendMail(` 的调用点只在 int 测试里），
-  所以今天玩家的 `mail` 表恒空 ⇒ 邮件那半是「通路已开、无货可漏」。**⛔ 这不是不修的理由，
-  而是硬闸**：任何发件路径（GM/活动/补偿邮件）落地**之前**必须先补 `server_id` 谓词，
-  否则上线第一封邮件就是事故。公会那半今天就在跑（泄漏 seq/guildId 元数据 + 多一次自愈拉取）。
-
 ## A3 · 跨物理组顶号不收敛 【需拍板：修 or 写进已接受边界】
 
 - **现状**：踢人广播的扇出半径**只到本组 coord**（`config.ts` `REDIS_COORD_URL`，M14 起 coord 还要
@@ -179,9 +136,11 @@
   合法登录的赢家踢下线。
 - **⚠ 定级依据（评审复核后收窄）**：流游标从 `$` 起、重启不重放 ⇒ 要出事得消费循环卡顿超过
   「下一次登录 + registerOnline」的窗口；后果是赢家被踢**一次**、重登即恢复，无数据损坏。
-- **要做**：事件带单调量（如 `token_issued_at`）做栅栏，或消费侧丢弃"晚于本地在线表登录时点"的事件。
-  ⚠ 若 A1 的拍板走了「扩 /verify 加单调量」，本条应复用同一个量、⛔ 别另造一个。
-- **触发条件**：与 A1 同批评估（同属"会话写路径缺栅栏"一族）。
+- **要做**：踢人事件带上单调量做栅栏，或消费侧丢弃"早于本地在线表登录时点"的事件。
+  ⚠ **单调量已经有了，⛔ 别再造第二个**：A1 已落地 `accounts.token_issued_at`（同 uid 严格递增，
+  见 lib `issueToken` 的 `GREATEST`），组 sess 里也已存了 `issuedAt` 字段 ⇒ 本条直接复用：
+  `broadcastKick` 带上发起方的 `issuedAtMs`，消费侧与 sess 里的 `issuedAt` 比，**旧的丢弃**。
+- **触发条件**：无（A1 已把前置的单调量铺好，可独立开工）。
 
 ## wx.login 微信侧接入 【小，编号 D5】
 
@@ -300,6 +259,20 @@
 ---
 
 ## 近期已修（不在待办，留档防重复登记）
+
+- ~~**A1** split 会话写入无 fence（旧 token 覆盖新 token）~~ → 权威侧 `issueToken` 用
+  `GREATEST(NOW(3), 上次+1ms)` 保证 `token_issued_at` **同 uid 严格递增**（⛔ 消掉同毫秒打平，
+  那正是"单调量"能成立的前提）；`/verify` 带回 `issuedAtMs`；`writeGroupSess` 改为**单条 Lua**
+  「只接受更大的 issuedAt」，陈旧写直接丢弃且 ⛔ **不触发顶号踢**（旧实现会拿自己的 hash 当判别位
+  把合法的新登录端踢掉）。⚠ 评审推翻的 `oldHash` CAS 药方**没有采用**：两个请求都读到 H0 时
+  旧请求也满足 CAS ⇒ 它先写成功、赢家反被拒。机检：int「A1 组 sess 写入栅栏」（变异测试验证过会红）。
+  ⚠ 未做也不需要做：`sessionVersion` 新列——`token_issued_at` 已是权威侧单调量，⛔ 别再加一个。
+- ~~**A2** 邮件与公会未按 sId 隔离~~ → 邮件三处补 `server_id` 谓词（`mail/list` 查询、`markRead`
+  UPDATE、`mailer.claimMailAttach` 的 `SELECT ... FOR UPDATE`——领取权限那处最要紧）；公会在线索引
+  由 `gid → Set` 改为 `` `${sId}:${gid}` → Set ``，`pushToGuild` 增 `sId` 必填参。
+  ⚠ 索引里**存下区号**而非清理时现取：下线清理（`unregisterOnline`）⛔ 不在 zoneCtx 内，
+  在那里调 `currentZoneId()` 会在 GROUP_ZONES 非空时直接抛。
+  机检：int「A2 邮件按区隔离」「A2 公会在线索引按区分桶」（邮件那条变异测试验证过会红）。
 
 - ~~冷档 ARCHIVE_NEWER + overwrite 重置 fence counter~~ → `f148879`：overwrite 分支保留
   计数器并取 `MAX(counter,hwm)`。旧问题不是绝对不可达：resolve 读完 counter 后，其他实例

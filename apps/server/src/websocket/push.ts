@@ -89,31 +89,48 @@ export function pushToUser(uid: string, type: string, data: unknown): boolean {
 // 异步读档）、下线清理（上面 unregisterOnline）、换会更新（guild 域写端点成功后调用）。
 // 单线程免锁；将来跨服时 pushToGuild/pushToAll 即 Redis Stream 消费侧的本地落地端。
 
-const guildOf = new Map<string, number>();          // uid → guildId
-const guildOnline = new Map<number, Set<string>>(); // guildId → 在线 uid 集合
+// ⚠ **索引键必须带区**（A2）：公会目录的 gid 是全局的，而公会数据的 Redis 键是 per-zone
+// （`kGuildEvtSeq`/`kGuildLog` 走 `P()`）⇒ 只按 gid 建索引会让**同 gid 的不同区塌进同一个集合**，
+// s1 的公会事件推到 s2 的成员身上（实证过）。⛔ 别以为"GROUP_ZONES 为空就没多区"：空 = 承载全部区。
+const zKey = (sId: number, gid: number): string => `${sId}:${gid}`;
+// uid → 该玩家所在的 (区, 公会)。⚠ **存区号而不是清理时现取**：下线清理路径（unregisterOnline）
+// ⛔ 不在 zoneCtx 内，那里调 currentZoneId() 会在 GROUP_ZONES 非空时直接抛（keys.ts fail-fast）。
+const guildOf = new Map<string, { sId: number; gid: number }>();
+const guildOnline = new Map<string, Set<string>>(); // `${sId}:${gid}` → 在线 uid 集合
 
-/** 设置/清除某在线玩家的工会归属（guildId null/0 = 无工会）。玩家不在线时只做清除。 */
-export function setOnlineGuild(uid: string, guildId: number | null): void {
+/**
+ * 设置/清除某在线玩家的工会归属（guildId null/0 = 无工会）。玩家不在线时只做清除。
+ * @param sId 设置时**必填**（玩家所在区）；清除时忽略——用登记时存下的区号，见上方注释。
+ */
+export function setOnlineGuild(uid: string, guildId: number | null, sId?: number): void {
   const old = guildOf.get(uid);
   if (old !== undefined) {
-    const set = guildOnline.get(old);
+    const k = zKey(old.sId, old.gid);
+    const set = guildOnline.get(k);
     set?.delete(uid);
-    if (set !== undefined && set.size === 0) { guildOnline.delete(old); }
+    if (set !== undefined && set.size === 0) { guildOnline.delete(k); }
     guildOf.delete(uid);
   }
   if (guildId !== null && guildId > 0 && online.has(uid)) {
-    guildOf.set(uid, guildId);
-    let set = guildOnline.get(guildId);
-    if (!set) { set = new Set(); guildOnline.set(guildId, set); }
+    if (sId === undefined) {
+      // ⛔ 宁可不挂索引也不挂错区：挂错的后果是跨区推送（A2 要修的正是它）
+      console.error(`[push] setOnlineGuild 缺 sId，⛔ 跳过挂载（uid=${uid} gid=${guildId}）`);
+      return;
+    }
+    guildOf.set(uid, { sId, gid: guildId });
+    const k = zKey(sId, guildId);
+    let set = guildOnline.get(k);
+    if (!set) { set = new Set(); guildOnline.set(k, set); }
     set.add(uid);
   }
 }
 
 /** 工会广播（在线成员量级几十，直推不分片）。返回实际送达连接数；失败即放弃（尽力通道，
- *  可靠性由「唤醒 + seq 自愈拉取」语义承担，见 shared lobbyRpc/guild.ts）。 */
-export function pushToGuild(guildId: number, type: string, data: unknown): number {
+ *  可靠性由「唤醒 + seq 自愈拉取」语义承担，见 shared lobbyRpc/guild.ts）。
+ *  @param sId 公会所在区——⛔ 必填，缺了就会推给同 gid 的**所有区**（A2）。 */
+export function pushToGuild(guildId: number, type: string, data: unknown, sId: number): number {
   let n = 0;
-  for (const uid of guildOnline.get(guildId) ?? []) {
+  for (const uid of guildOnline.get(zKey(sId, guildId)) ?? []) {
     try { if (pushToUser(uid, type, data)) { n++; } } catch { /* 将死连接，放弃 */ }
   }
   return n;

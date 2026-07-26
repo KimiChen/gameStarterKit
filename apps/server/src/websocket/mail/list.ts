@@ -5,6 +5,7 @@
 import { z } from "zod";
 import { MailRpc } from "@game/shared";
 import { getPool } from "../../core/infra/mysql";
+import { currentZoneId } from "../../core/infra/keys";
 import type { RowDataPacket } from "../../core/infra/mysql";
 import { defineRpc } from "../rpc";
 
@@ -22,8 +23,11 @@ export default defineRpc(MailRpc.List, {
     limit: z.number().int().min(1).max(50).optional(),
   }),
   handler: async (ctx, p) => {
-    const args: (string | number)[] = [ctx.uid];
-    let where = "user_id = ?";
+    // ⚠ **必须带 server_id 谓词**（A2）：`mail` 表有该列、`mailer.sendMail` 写入时也落了值，
+    // 但查询侧此前只按 user_id ⇒ 同账号在 s1 收的邮件，切到 s2 也能看到（实证过）。
+    // ⛔ 别以为"GROUP_ZONES 为空就没多区"：空 = **承载全部区**，而默认目录就下发 s1–s5。
+    const args: (string | number)[] = [ctx.uid, currentZoneId()];
+    let where = "user_id = ? AND server_id = ?";
     if (p.before !== undefined) { where += " AND mail_id < ?"; args.push(p.before); }
     args.push(p.limit ?? DEFAULT_LIMIT);
     const [rows] = await getPool().query<MailRow[]>(
