@@ -2,8 +2,10 @@
 -- 幂等：全部 CREATE TABLE IF NOT EXISTS + 预置行 ODKU no-op，可重复执行。
 -- 前置：MySQL ≥ 8.0.19，binlog_format=ROW，sql_mode 含 STRICT_TRANS_TABLES。
 
--- 账号。撤销的真相位只有两个：status（1=封禁，登录/校验即拒）与 token_hash（NULL=已撤销/换发）——
--- 封号 = 账号级「下次登不上」（M12d §2.3 简化：⛔ 无 token_epoch fence；踢在线走控制总线 stream:kick）。
+-- 账号。⚠ **token 已不在本表**（M12e）：单端语义的作用域从「账号」收窄到「(账号, 区)」，
+-- 会话权威搬到 `account_sessions`（每区一行）。本表只留**账号级**真相：`status`（1=封禁，登录/校验即拒）
+-- 与画像/微信凭据。封号仍是**账号级**「下次登不上」= `status=1` + 清掉**全部区**的会话行。
+-- ⛔ 别再往本表加 token 列：两个真相位会让"哪个才算数"变成运行期问题。
 CREATE TABLE IF NOT EXISTS accounts (
   user_id       VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   openid        VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
@@ -11,9 +13,6 @@ CREATE TABLE IF NOT EXISTS accounts (
   status        TINYINT UNSIGNED NOT NULL DEFAULT 0,      -- 0 正常 / 1 封禁 / 2 注销
   created_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   last_login_at DATETIME(3) NULL,
-  -- M12c 2b-1：token 记录改 MySQL 权威（WebPlatform MySQL-only verify）；Redis sess 退为组缓存/freeze-guard
-  token_hash         VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,  -- 当前有效 token 的 sha256（NULL=无/已撤销）
-  token_issued_at    DATETIME(3) NULL,                                        -- 签发时刻（过期判定）
   session_key        VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,  -- 微信 session_key（⛔ 服务端持有 G8；手机号解密）
   nickname           VARCHAR(64) NULL,                                        -- ↓ 推迟授权补画像（§2.7），开局 NULL
   avatar_url         VARCHAR(256) NULL,
@@ -21,6 +20,19 @@ CREATE TABLE IF NOT EXISTS accounts (
   PRIMARY KEY (user_id),
   UNIQUE KEY uk_openid  (openid),
   UNIQUE KEY uk_unionid (unionid)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- 会话权威（M12e）：**每 (账号, 区) 一行**。单端语义的作用域 = `(user_id, server_id)` ——
+-- 同一个区内第二次登录顶掉前一个；**不同区互不影响**（玩家可在 1 区与 107 区各有一个在线角色）。
+-- ⚠ 这样定的直接后果：某个区的全部会话必然落在**承载该区的那一个物理组**内（每组 GROUP_ZONES 固定、
+-- 区的经济/冷档分区也在该组库）⇒ 顶号的踢人**永远不需要跨组送达**（原待办 A3 因此消解，⛔ 不是"修好了"）。
+-- ⚠ 封号仍是账号级：`accounts.status=1` + 删本表该 uid 的**全部**行 ⇒ 各区在线连接仍需 GM 逐节点踢（09·G7b）。
+CREATE TABLE IF NOT EXISTS account_sessions (
+  user_id         VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  server_id       INT UNSIGNED NOT NULL,                                       -- 0 = 大混服/单形态
+  token_hash      VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,  -- 该区当前有效 token 的 sha256
+  token_issued_at DATETIME(3) NOT NULL,                                        -- 签发时刻：过期判定 + 组缓存写入栅栏（A1）
+  PRIMARY KEY (user_id, server_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 角色/足迹注册表（DUAL_MODE §2.5/§2.6，M12）：「uid 在哪些区建过角」的 durable 权威。
