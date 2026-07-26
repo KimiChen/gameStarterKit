@@ -30,5 +30,7 @@ export default createEndpoint("/admin/kick", {
   }
   // 只踢本节点（online 表自筛）；GM 遍历全部节点即达成「全网踢干净」并可据 kicked 汇总确认。
   const reason = (ctx.body.reason ?? ForceLogoutReason.Banned) as ForceLogoutReasonType;
+  // ⚠ **刻意不带 sId** ⇒ 踢该 uid 在本节点的**全部区**。封号/强制下线是**账号级**的
+  // （"这个人不能玩"，⛔ 不是"不能玩这个区"）；按区只适用于顶号（M12e），那条走 stream:kick。
   return { kicked: kickUser(ctx.body.uid, reason) };
 });

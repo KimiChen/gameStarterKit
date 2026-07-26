@@ -77,9 +77,10 @@ after(async () => {
   for (const u of uids) {
     await pool.execute("DELETE FROM mail WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM login_audit WHERE user_id = ?", [u]);
+    await pool.execute("DELETE FROM account_sessions WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM accounts WHERE user_id = ?", [u]);
     await cleanupUser(u);
-    await clientFor(u).unlink(kSess(u));
+    await clientFor(u).unlink(kSess(u, 0));
     const b = activeLruBucketOf(u);
     await indexClientFor(b).zrem(kActiveLru(b), u);
   }
@@ -207,7 +208,7 @@ test("错误码：AUTH_REQUIRED / ACCOUNT_BANNED（复活会话被权威拦，09
   // 撤销后的复活会话（failover 形态）：权威 token_hash 已 NULL 而组 sess 还在 → onAuth strict 回权威即拒
   //（M12d 简化：撤销真相位只剩 token_hash/status，⛔ 无 epoch fence）
   const a = await makeUser("ep");
-  await getPool().execute("UPDATE accounts SET token_hash = NULL WHERE user_id = ?", [a.uid]);
+  await getPool().execute("DELETE FROM account_sessions WHERE user_id = ?", [a.uid]); // M12e：撤销 = 清会话行
   await assert.rejects(joinLobby(a.token), /AUTH_REQUIRED/);
 
   // banned：封号后即便重新签发 token（hash 又匹配了），strict 校验查 status=1 仍拦下 —— 封号 = 下次登不上
@@ -318,7 +319,7 @@ test("断线重连竞态：旧连接晚 leave 不误删新连接的推送注册�
   await newConn.leave();
 });
 
-test("协议版本闸门：v 不匹配在 onAuth 即拒（ProtocolMismatch）；缺省 v 按 1 兼容", async () => {
+test("协议版本闸门：v 不匹配在 onAuth 即拒（ProtocolMismatch）；⛔ 缺省 v(=1) 在 v2 起也被拒", async () => {
   const { token } = await makeUser("proto");
   colyseus.sdk.auth.token = token;
   // ⚠ 断言**业务码真的送达**（原先只断言"被拒"＝假绿：越界 status 会让 code 丢失、服务端刷 RangeError）
@@ -326,7 +327,14 @@ test("协议版本闸门：v 不匹配在 onAuth 即拒（ProtocolMismatch）；
     colyseus.sdk.joinOrCreate(RoomName.Lobby, { v: 999 }),
     (e: Error) => e.message.includes(String(SharedErrorCode.ProtocolMismatch)),
     `旧协议客户端应被拒且带业务码 ${SharedErrorCode.ProtocolMismatch}`);
-  const ok = await colyseus.sdk.joinOrCreate(RoomName.Lobby, {}); // 未带 v = 首版客户端
-  assert.ok(ok.sessionId, "缺省 v 视为 1，当前版本放行");
+  // ⚠ **M12e 起 PROTOCOL_VERSION=2**：不带 v 的首版客户端按 1 处理 ⇒ 现在**必须被拒**。
+  //   这正是 bump 的目的——老包不带 sId 登录会拿到 s0 的 token，进别的区时只会得到一句
+  //   莫名其妙的「登录已过期」；在 join 处明确拒掉才是对的。⛔ 别把这条改回"放行"。
+  await assert.rejects(
+    colyseus.sdk.joinOrCreate(RoomName.Lobby, {}),
+    (e: Error) => e.message.includes(String(SharedErrorCode.ProtocolMismatch)),
+    "不带 v（首版客户端）在 v2 起必须被拒");
+  const ok = await colyseus.sdk.joinOrCreate(RoomName.Lobby, { v: PROTOCOL_VERSION });
+  assert.ok(ok.sessionId, "当前版本放行");
   await ok.leave();
 });

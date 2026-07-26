@@ -75,7 +75,15 @@ export const kGuildEvtLog = (gid: number) => `${P()}guild:evt:log:{g${gid}}`;
 
 /** 组侧会话缓存 HASH {tokenHash, loginTs, connId, gwNode}，TTL 3d。`tokenHash` 是快路径唯一校验位 + 顶号判据（09·G7c）。
  *  ⚠ **全局键**：登录时（无区上下文）写、每 RPC（有区上下文）读，若带区前缀两者不一致 → 鉴权崩（§3.5 分类硬约束）。 */
-export const kSess = (uid: string) => `${G}sess:{${uid}}`;
+/**
+ * 组侧会话缓存键 —— **(uid, 区) 两个身份分量**（M12e：单端语义作用域从账号收窄到 `(账号, 区)`）。
+ *
+ * ⚠ **sId 是显式参数，⛔ 不走 `P()` 的 ambient zoneCtx**：本键有两个**不在 zoneCtx 内**的读者
+ * （`archive/freezeWorker.ts` 的在线判定、`auth/kickBus.ts` 消费侧的栅栏回读），
+ * 用 `P()` 会让它们在 `GROUP_ZONES` 非空时直接撞 `currentZoneId()` 的 fail-fast。
+ * ⚠ 仍挂在**全局**前缀 `G` 下：uid 与 sId 都已在键名里，⛔ 别再叠一层区前缀（会变成 s1_...:s1）。
+ */
+export const kSess = (uid: string, sId: number) => `${G}sess:{${uid}}:s${sId}`;
 /** 幂等占位 · 通用作用域（非 uid，07 `idem:{scope}:{key}`）。全局。 */
 export const kIdem = (scope: string, key: string) => `${G}idem:${scope}:${key}`;
 /** 限流令牌桶（07 Lua 清单 `rl:{scope}`）。⚠ **全局**：含登录 by-IP（`login:{ip}`）前置区、匿名走 sessionId/IP（09·G5）。 */

@@ -46,26 +46,26 @@ function mapVerifyReason(reason: string): never {
 /** ⚠ 连 `issuedAtMs` 一起回：它是 `writeGroupSess` 的写入栅栏判据（A1）。
  *  `?? 0` 兜住"门户是旧版本、响应里还没有这个字段"的滚动升级窗口——0 会被栅栏判成"最旧"，
  *  ⇒ 已有更新值时**不覆盖**（安全侧），首次写入（无已存值）仍照常。 */
-async function remoteVerify(token: string): Promise<{ uid: string; issuedAtMs: number }> {
-  const r = await post<VerifyResp>("/verify", { token });
+async function remoteVerify(token: string, sId: number): Promise<{ uid: string; issuedAtMs: number }> {
+  const r = await post<VerifyResp>("/verify", { token, sId });
   if (r.ok) { return { uid: r.uid, issuedAtMs: Number(r.issuedAtMs ?? 0) }; }
   mapVerifyReason(r.reason);
 }
 
 export const httpAccount: AccountClient = {
-  async verify(token, strict) {
+  async verify(token, strict, sId) {
     const dot = token.lastIndexOf(".");
     if (dot <= 0) { throw new AuthRequiredError("token 格式无效"); }
     const uid = token.slice(0, dot);
     if (!strict) {
       // 快路径：纯读组 Redis 缓存（per-message ⛔ 不打 WebPlatform，§2.7）。在线撤销由 GM 踢承担（§2.3 SOP）。
-      await verifySession(uid, token);
+      await verifySession(uid, token, sId);
       return uid;
     }
     // 建连：远程权威校验 → 懒填组 sess:{uid}（§2.7 / 2d：strict 是连接建立点；LobbyRoom.onAuth 是首个 strict 点）。
     // ⚠ in-process 走 inProcessAccount（登录已写 sess），到不了这。
-    const { uid: vuid, issuedAtMs } = await remoteVerify(token);
-    await writeGroupSess(vuid, token, "", issuedAtMs);
+    const { uid: vuid, issuedAtMs } = await remoteVerify(token, sId);
+    await writeGroupSess(vuid, token, sId, "", issuedAtMs);
     return vuid;
   },
   character: {

@@ -16,8 +16,13 @@ export type RoomNameType = (typeof RoomName)[keyof typeof RoomName];
  * 双端协议版本。房间 onAuth 以此挡「服务端已升协议、旧包还在跑」的旧客户端
  * （灰度/热更混跑期的部署自检）；HTTP /version 也回带它供启动期探测。
  * Schema 字段增删、消息名/语义变更时 +1，双端随 sync:shared 同步。
+ *
+ * ⚠ **2 = M12e「会话按区」**（单端语义作用域从账号收窄到 `(账号, 区)`）。为什么必须 bump：
+ * 老客户端登录时**不带 `sId`** ⇒ 拿到的是 s0 的 token，随后 join `sId=1` 时 onAuth 拿它去比
+ * **s1 的会话**（不存在）⇒ 玩家看到的是「登录已过期」这种莫名其妙的提示。bump 之后旧包在
+ * join 处就被 `ProtocolMismatch` 明确拒掉 —— 正是本常量存在的意义（见 GameRoom.onAuth 注释）。
  */
-export const PROTOCOL_VERSION = 1;
+export const PROTOCOL_VERSION = 2;
 
 /** 房间 join options（client.joinOrCreate 第二参）——双端契约。 */
 export interface IRoomJoinOptions {

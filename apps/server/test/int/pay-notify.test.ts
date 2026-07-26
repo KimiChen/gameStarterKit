@@ -75,6 +75,7 @@ after(async () => {
     await pool.execute("DELETE FROM purchases WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM currency_ledger WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM user_currency WHERE user_id = ?", [u]);
+    await pool.execute("DELETE FROM account_sessions WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM accounts WHERE user_id = ?", [u]);
     await cleanupUser(u);
   }

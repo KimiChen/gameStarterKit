@@ -15,7 +15,11 @@ import { auditLogin, writeGroupSess } from "../core/auth/session";
 import { withUserLock } from "../core/locks";
 import { zoneCtx } from "../core/infra/keys";
 
-export interface WxLoginInput { code: string; ip: string; deviceId?: string }
+export interface WxLoginInput {
+  code: string; ip: string; deviceId?: string;
+  /** 要登录的区（M12e：单端语义作用域 = `(账号, 区)`）。缺省 0 = 大混服/单形态。 */
+  sId?: number;
+}
 
 /** 登录出参（shared ILoginRes 服务端侧）：⛔ 禁含 openid/unionid/session_key（09·G8）。 */
 export interface LoginResult { userId: string; token: string; isNew: boolean }
@@ -47,8 +51,9 @@ function loginFail(reason: LoginFailReason): never {
  *   客户端重登即成为新的赢家（正常顶号语义）。
  * - 无论如何交错，最后一个持锁者读到的都是已结算的 MySQL 状态 ⇒ 两存储终态一致。
  *
- * ⚠ 复用**唯一那把** per-uid 锁（09·L1 禁第二把）；它是 per-zone 键、而登录本就与区无关，
- * 故显式 `sId=0`（区服部署下与各区玩法锁不同键，互不阻塞）。
+ * ⚠ 复用**唯一那把** per-uid 锁（09·L1 禁第二把）；它是 per-zone 键，这里显式跑在 `sId=0` 的锁上
+ * （区服部署下与各区玩法锁不同键，互不阻塞）。⚠ **⛔ 别把这个 0 与会话的 `sId` 混为一谈**：
+ * 前者只是"这把锁用哪个键空间"，后者是"这次登录属于哪个区"（M12e）——两者互不相干。
  * ⚠ split 不走本路径（登录在 WebPlatform、缓存由 onAuth 回权威后懒填）。
  * ⛔ **但别读成「split 没有这类竞态」**（此处曾写"天然无此竞态"，是错的）：split 只是没有**本路径**
  * 这一条，它自己那条在 `platform/httpAccount.ts` —— `remoteVerify` 与 `writeGroupSess` 是**两个 await、
@@ -64,18 +69,18 @@ function loginFail(reason: LoginFailReason): never {
  * 因此这里**补一行 `login_diverged` 审计**——线上出现时能从审计定位，而不是只看到一条成功。
  * ⛔ 输家路径不记（那是正常顶号语义、两存储一致，记了只会在每次顶号竞态刷噪音）。
  */
-async function finish(r: Extract<LibLoginResult, { ok: true }>): Promise<LoginResult> {
+async function finish(r: Extract<LibLoginResult, { ok: true }>, sId: number): Promise<LoginResult> {
   let lost = false; // true = 输家（权威已属更晚的登录）⇒ 无分叉
   try {
     await zoneCtx.run({ sId: 0 }, () => withUserLock(r.uid, async () => {
-      const v = await verifyToken(r.uid, r.token);
+      const v = await verifyToken(r.uid, r.token, sId);
       if (!v.ok) {
         lost = true;
         throw new BusyError(`并发登录：本次签发已被更晚的登录取代（${v.reason}），请重试`);
       }
       // ⚠ 带上权威侧签发时刻做写入栅栏（A1）：in-process 虽有 per-uid 锁定序，但栅栏是**第二道**——
       // 锁只保证同进程/同键的串行，⛔ 保证不了"锁外迟到的写"（如锁超时后旧持有者继续跑完）。
-      await writeGroupSess(r.uid, r.token, "", v.issuedAtMs);
+      await writeGroupSess(r.uid, r.token, sId, "", v.issuedAtMs);
     }));
   } catch (e) {
     if (!lost) {
@@ -93,12 +98,13 @@ async function finish(r: Extract<LibLoginResult, { ok: true }>): Promise<LoginRe
 
 /** wx-login：委托 lib（限流→code2session→查/建号→签发）→ 映射/写组缓存。 */
 export async function wxLogin(input: WxLoginInput): Promise<LoginResult> {
-  const r = await libWxLogin({ code: input.code, ip: input.ip, deviceId: input.deviceId ?? null });
-  return r.ok ? finish(r) : loginFail(r.reason);
+  const sId = input.sId ?? 0;
+  const r = await libWxLogin({ code: input.code, ip: input.ip, deviceId: input.deviceId ?? null, sId });
+  return r.ok ? finish(r, sId) : loginFail(r.reason);
 }
 
 /** dev-login：委托 lib（devKey→openid `dev_<devKey>`，其余同真实链路）→ 映射/写组缓存。 */
-export async function devLogin(devKey: string, ip: string, deviceId: string | null): Promise<LoginResult> {
-  const r = await libDevLogin(devKey, ip, deviceId);
-  return r.ok ? finish(r) : loginFail(r.reason);
+export async function devLogin(devKey: string, ip: string, deviceId: string | null, sId = 0): Promise<LoginResult> {
+  const r = await libDevLogin(devKey, ip, deviceId, sId);
+  return r.ok ? finish(r, sId) : loginFail(r.reason);
 }

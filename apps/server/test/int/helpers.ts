@@ -28,9 +28,11 @@ export const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeou
  * ⚠ 生产登录不走这里——登录编排在 WebPlatform lib，组侧只 `writeGroupSess`（见 platform/inProcessLogin）。
  * ⚠ 直调 lib 仅测试可以（测试恒 in-process、与游戏服共库）；生产代码一律走 `account.*` 接缝。
  */
-export async function issueSession(uid: string, sessionKey: string | null = null, gwNode = ""):
-  Promise<{ userId: string; token: string }> {
-  const { token, issuedAtMs } = await issueToken(uid, sessionKey);
-  await writeGroupSess(uid, token, gwNode, issuedAtMs); // ⚠ 带栅栏值，否则测试造的会话恒被判陈旧（A1）
+export async function issueSession(
+  uid: string, sessionKey: string | null = null, gwNode = "", sId = 0,
+): Promise<{ userId: string; token: string }> {
+  // ⚠ sId 缺省 0（大混服）：绝大多数用例与区无关；按区的用例（perzone/lobby-zone）显式传。
+  const { token, issuedAtMs } = await issueToken(uid, sId, sessionKey);
+  await writeGroupSess(uid, token, sId, gwNode, issuedAtMs); // ⚠ 带栅栏值，否则测试造的会话恒被判陈旧（A1）
   return { userId: uid, token };
 }

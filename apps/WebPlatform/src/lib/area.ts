@@ -7,7 +7,7 @@
  * ⚠ demo 静态配置；真实实现接配置表/运维后台按 sId 返回各区实例地址（同事改此文件）。
  */
 import type { IAreaListRes, IAreaServer } from "@game/shared";
-import { verifyToken } from "./auth";
+import { verifyTokenAnyZone } from "./auth";
 import { characterZones } from "./character";
 
 /** 运维模式（1=灰度/维护中，客户端据此提示）。env AREA_IS_OPS 可覆盖。 */
@@ -45,8 +45,9 @@ export async function areaList(token: string | null): Promise<IAreaListRes> {
     const dot = token.lastIndexOf(".");
     if (dot > 0) {
       const uid = token.slice(0, dot);
-      const r = await verifyToken(uid, token);
-      if (r.ok) { ul = await characterZones(uid); }
+      // ⚠ 用 **AnyZone** 版：本端点在**选区之前**被调用，客户端手上的 token 属于它上次登录的那个区，
+      // ⛔ 无从得知该按哪个区校验。这里只回填展示用的「我的区」、**不授予任何权限**，故任一区匹配即可。
+      if (await verifyTokenAnyZone(uid, token)) { ul = await characterZones(uid); }
     }
   }
   return { isOps: AREA_IS_OPS, al: [...AREA_SERVERS], ul, h: areaListHash() };

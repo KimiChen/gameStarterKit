@@ -21,7 +21,11 @@ import { fieldOf, startStreamConsumer, type StreamConsumer } from "../core/infra
 export interface PushSink { (type: string, data: unknown): void }
 
 /** 本节点的一条在线连接。`tokenHash` 是**顶号判别位**：踢时可排除「持新登录态的连接」。 */
-interface OnlineConn { sink: PushSink; kick: (closeCode: number) => void; tokenHash: string }
+interface OnlineConn {
+  sink: PushSink; kick: (closeCode: number) => void; tokenHash: string;
+  /** 该连接所在的区（M12e）：顶号只踢同区，⛔ 别踢到玩家在别区的另一个在线角色。 */
+  sId: number;
+}
 
 /**
  * 本节点在线注册表：**uid → sessionId → 连接**（LobbyRoom onJoin/onLeave 维护）。
@@ -58,13 +62,19 @@ export function unregisterOnline(uid: string, sessionId: string): void {
  *   会把自己发的事件读回来（流无发布者过滤）；迟到投递时新连接可能已 registerOnline ⇒ 把刚登录的踢掉。
  *   跨节点同理（新连接可能落在任一节点），故判别位比「发布者自筛」更稳。
  */
+/**
+ * @param sId 只踢该区的连接（**顶号**，M12e：单端语义作用域 = `(账号, 区)`）；
+ *   **省略 = 踢该 uid 的全部连接**（封号/撤销：账号级，"这个人不能玩"而非"不能玩这个区"）。
+ */
 export function kickUser(
   uid: string, reason: ForceLogoutReasonType = ForceLogoutReason.Banned, exceptTokenHash?: string,
+  sId?: number,
 ): boolean {
   const m = online.get(uid);
   if (!m) { return false; }
   let kicked = false;
   for (const conn of [...m.values()]) {
+    if (sId !== undefined && conn.sId !== sId) { continue; } // ⛔ 别区的在线角色：顶号不该碰它
     if (exceptTokenHash !== undefined && conn.tokenHash === exceptTokenHash) { continue; } // 新登录态：⛔ 不自踢
     try { conn.sink(LobbyPush.ForceLogout, { reason } satisfies IForceLogoutPush); } catch { /* 推不到就靠关闭码 */ }
     try { conn.kick(KICK_CLOSE_CODE[reason]); } catch { /* 将死连接，放弃 */ }

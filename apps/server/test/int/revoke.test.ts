@@ -40,8 +40,9 @@ after(async () => {
   const pool = getPool();
   for (const u of uids) {
     await pool.execute("DELETE FROM login_audit WHERE user_id = ?", [u]);
+    await pool.execute("DELETE FROM account_sessions WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM accounts WHERE user_id = ?", [u]);
-    await clientFor(u).unlink(kSess(u));
+    await clientFor(u).unlink(kSess(u, 0));
   }
   await closeRedis();
   await closeMysql();
@@ -49,26 +50,26 @@ after(async () => {
 
 test("banUser 写权威：status=1 + token_hash=NULL → 新建连接/重登被拒 + 本节点在线即时踢", async () => {
   const { uid, token } = await makeUser("rv-ban");
-  await verifySessionStrict(uid, token); // 封号前权威校验通
+  await verifySessionStrict(uid, token, 0); // 封号前权威校验通
 
   const events: string[] = [];
   const sink: PushSink = (type, data) => {
     if (type === LobbyPush.ForceLogout) { events.push(`push:${(data as { reason: string }).reason}`); }
   };
-  registerOnline(uid, "s1", { sink, kick: (code) => { events.push(`close:${code}`); }, tokenHash: tokenHashOf(token) }); // 模拟本节点在线连接
+  registerOnline(uid, "s1", { sink, kick: (code) => { events.push(`close:${code}`); }, tokenHash: tokenHashOf(token), sId: 0 }); // 模拟本节点在线连接
   await banUser(uid, "test");
   unregisterOnline(uid, "s1");
 
   const [rows] = await getPool().query<RowDataPacket[]>(
-    "SELECT status, token_hash FROM accounts WHERE user_id = ?", [uid]);
+    "SELECT a.status, s.token_hash FROM accounts a LEFT JOIN account_sessions s ON s.user_id = a.user_id AND s.server_id = 0 WHERE a.user_id = ?", [uid]);
   assert.equal(Number(rows[0].status), 1, "权威 status=1（下次登不上）");
   assert.equal(rows[0].token_hash, null, "权威 token_hash=NULL（存量 token 作废）");
   // ⚠ 顺序固定：先推 reason 再关连接（客户端据此弹「账号已被封禁」，而非只看到掉线）
   assert.deepEqual(events, [`push:${ForceLogoutReason.Banned}`, `close:${KICK_CLOSE_CODE.banned}`],
     "先推 forceLogout{banned} 再用语义化关闭码关连接");
 
-  await assert.rejects(verifySessionStrict(uid, token), AuthRequiredError); // hash=NULL 先命中 → mismatch
-  assert.equal(await clientFor(uid).exists(kSess(uid)), 1, "⛔ 不删 sess（TTL 自然过期；在线失效靠踢，§2.3）");
+  await assert.rejects(verifySessionStrict(uid, token, 0), AuthRequiredError); // hash=NULL 先命中 → mismatch
+  assert.equal(await clientFor(uid).exists(kSess(uid, 0)), 1, "⛔ 不删 sess（TTL 自然过期；在线失效靠踢，§2.3）");
 });
 
 test("控制总线：XADD stream:kick → 消费者踢本节点在线连接（跨节点范式）", async () => {
@@ -78,7 +79,7 @@ test("控制总线：XADD stream:kick → 消费者踢本节点在线连接（�
   const sink: PushSink = (type, data) => {
     if (type === LobbyPush.ForceLogout) { gotReason = (data as { reason: string }).reason; }
   };
-  registerOnline(uid, "s1", { sink: sink, kick: () => { kicked++; }, tokenHash: "h-old" });
+  registerOnline(uid, "s1", { sink: sink, kick: () => { kicked++; }, tokenHash: "h-old", sId: 0 });
   startKickConsumer();
   try {
     // "$" 竞态确定化：重试 XADD 直到消费者踢到（首个阻塞 XREAD 建立前的 XADD 会被漏；踢幂等，重发无害）
@@ -108,25 +109,29 @@ test("revokeSessions（换端/踢下线）：token_hash=NULL 但 status 不变 �
   const { uid, token } = await makeUser("rv-revoke");
   await revokeSessions(uid, "test");
   const [rows] = await getPool().query<RowDataPacket[]>(
-    "SELECT status, token_hash FROM accounts WHERE user_id = ?", [uid]);
+    "SELECT a.status, s.token_hash FROM accounts a LEFT JOIN account_sessions s ON s.user_id = a.user_id AND s.server_id = 0 WHERE a.user_id = ?", [uid]);
   assert.equal(Number(rows[0].status), 0, "status 不变（非封号）");
   assert.equal(rows[0].token_hash, null, "旧 token 作废");
-  await assert.rejects(verifySessionStrict(uid, token), AuthRequiredError);
+  await assert.rejects(verifySessionStrict(uid, token, 0), AuthRequiredError);
   // 重新登录换发新 token（status=0 允许）→ 权威校验通
   const re = await issueSession(uid, null);
-  await verifySessionStrict(uid, re.token);
+  await verifySessionStrict(uid, re.token, 0);
 });
 
 test("⚠ 缺踢无自动收敛：只写权威而不踢 → 在场连接的快路径**依然放行**（封号 SOP 必须踢，§2.3）", async () => {
   const { uid, token } = await makeUser("rv-nokick");
-  await verifySession(uid, token);
+  await verifySession(uid, token, 0);
   // 模拟「写了权威但踢丢了/没踢」：⛔ 不 kick、不广播、不删 sess
-  await getPool().execute("UPDATE accounts SET status = 1, token_hash = NULL WHERE user_id = ?", [uid]);
+  // ⚠ M12e：权威 = `accounts.status` + `account_sessions` 行。⛔ 别再写 `accounts.token_hash`——
+  //   存量库里它还是个**死列**（db-bootstrap 不做破坏性 DROP），写它既不报错也不起作用，
+  //   测试会静默失去意义。
+  await getPool().execute("UPDATE accounts SET status = 1 WHERE user_id = ?", [uid]);
+  await getPool().execute("DELETE FROM account_sessions WHERE user_id = ?", [uid]);
   // 快路径是纯缓存 hash 比对、⛔ 零权威回源 → 该连接可一直用到 sess TTL（3d）——
   // 这是删掉 verifiedAt 兜底后的**已知代价**，由 GM 工具「确认踢到」来承担（本用例即其反证）。
-  await verifySession(uid, token);
+  await verifySession(uid, token, 0);
   // 但权威路径（建连 onAuth / 重新登录）不受影响，始终即时拒
-  await assert.rejects(verifySessionStrict(uid, token), AuthRequiredError);
+  await assert.rejects(verifySessionStrict(uid, token, 0), AuthRequiredError);
 });
 
 test("顶号（单端语义）：再次登录换发 token → 覆写组 sess + 主动踢旧连接（reason=replaced）", async () => {
@@ -135,7 +140,7 @@ test("顶号（单端语义）：再次登录换发 token → 覆写组 sess + �
   const sink: PushSink = (type, data) => {
     if (type === LobbyPush.ForceLogout) { events.push(`push:${(data as { reason: string }).reason}`); }
   };
-  registerOnline(uid, "sA", { sink, kick: (code) => { events.push(`close:${code}`); }, tokenHash: tokenHashOf(tokenA) }); // 设备 A 在线
+  registerOnline(uid, "sA", { sink, kick: (code) => { events.push(`close:${code}`); }, tokenHash: tokenHashOf(tokenA), sId: 0 }); // 设备 A 在线
 
   // 设备 B 登录（换发 token → writeGroupSess 覆写；判据 = 组 sess 原有不同的 tokenHash）
   const { token: tokenB } = await issueSession(uid, null);
@@ -143,16 +148,16 @@ test("顶号（单端语义）：再次登录换发 token → 覆写组 sess + �
 
   assert.deepEqual(events, [`push:${ForceLogoutReason.Replaced}`, `close:${KICK_CLOSE_CODE.replaced}`],
     "顶号：先推 forceLogout{replaced} 再关（语义化关闭码），客户端弹「账号在其他设备登录」");
-  await assert.rejects(verifySession(uid, tokenA), AuthRequiredError, "A 的旧 token 快路径即失效");
-  await verifySession(uid, tokenB); // B 正常
+  await assert.rejects(verifySession(uid, tokenA, 0), AuthRequiredError, "A 的旧 token 快路径即失效");
+  await verifySession(uid, tokenB, 0); // B 正常
 });
 
 test("⛔ 断线重连不误判顶号：同 token 重复 writeGroupSess（hash 未变）→ 不踢", async () => {
   const { uid, token } = await makeUser("rv-reconn");
   let kicked = 0;
   const sink: PushSink = () => {};
-  registerOnline(uid, "s1", { sink: sink, kick: () => { kicked++; }, tokenHash: "h-old" });
-  await writeGroupSess(uid, token); // 模拟 split onAuth 懒填/重连复用同一 token
+  registerOnline(uid, "s1", { sink: sink, kick: () => { kicked++; }, tokenHash: "h-old", sId: 0 });
+  await writeGroupSess(uid, token, 0); // 模拟 split onAuth 懒填/重连复用同一 token
   unregisterOnline(uid, "s1");
   assert.equal(kicked, 0, "hash 相同 = 同一登录态 → ⛔ 不踢（顶号判据精确到「换了登录态」）");
 });
@@ -161,16 +166,16 @@ test("多连接：同 uid 两条连接 —— 踢会踢全部；较新连接先�
   const uid = testUid("rv-multi").slice(0, 32);
   let kickedA = 0, kickedB = 0;
   const noop: PushSink = () => {};
-  registerOnline(uid, "sA", { sink: noop, kick: () => { kickedA++; }, tokenHash: "h" });
-  registerOnline(uid, "sB", { sink: noop, kick: () => { kickedB++; }, tokenHash: "h" });
+  registerOnline(uid, "sA", { sink: noop, kick: () => { kickedA++; }, tokenHash: "h", sId: 0 });
+  registerOnline(uid, "sB", { sink: noop, kick: () => { kickedB++; }, tokenHash: "h", sId: 0 });
   // 较新的 B 先离开：⛔ 不得把仍存活的 A 一起抹掉
   unregisterOnline(uid, "sB");
   assert.equal(kickUser(uid, ForceLogoutReason.Banned), true, "A 仍可踢（旧实现这里会 false = GM ack 假阴性）");
   assert.equal(kickedA, 1);
   assert.equal(kickedB, 0, "已离开的 B 不再被踢");
   // 两条都在时：踢全部
-  registerOnline(uid, "sA", { sink: noop, kick: () => { kickedA++; }, tokenHash: "h" });
-  registerOnline(uid, "sB", { sink: noop, kick: () => { kickedB++; }, tokenHash: "h" });
+  registerOnline(uid, "sA", { sink: noop, kick: () => { kickedA++; }, tokenHash: "h", sId: 0 });
+  registerOnline(uid, "sB", { sink: noop, kick: () => { kickedB++; }, tokenHash: "h", sId: 0 });
   kickUser(uid, ForceLogoutReason.Banned);
   assert.equal(kickedA, 2); assert.equal(kickedB, 1, "同 uid 全部连接都被踢");
   unregisterOnline(uid, "sA"); unregisterOnline(uid, "sB");
@@ -180,8 +185,8 @@ test("⛔ 顶号不自踢：exceptTokenHash 跳过持新登录态的连接（防
   const uid = testUid("rv-noself").slice(0, 32);
   let oldKicked = 0, newKicked = 0;
   const noop: PushSink = () => {};
-  registerOnline(uid, "sOld", { sink: noop, kick: () => { oldKicked++; }, tokenHash: "hash-OLD" });
-  registerOnline(uid, "sNew", { sink: noop, kick: () => { newKicked++; }, tokenHash: "hash-NEW" });
+  registerOnline(uid, "sOld", { sink: noop, kick: () => { oldKicked++; }, tokenHash: "hash-OLD", sId: 0 });
+  registerOnline(uid, "sNew", { sink: noop, kick: () => { newKicked++; }, tokenHash: "hash-NEW", sId: 0 });
   // 模拟本节点消费者读回自己发的顶号事件（迟到投递，此时新连接已注册）
   kickLocal(uid, ForceLogoutReason.Replaced, "hash-NEW");
   assert.equal(oldKicked, 1, "旧登录态被踢");
@@ -195,7 +200,7 @@ test("kickBus reason 容错：缺失/非法值一律兜底按封号（⛔ 不裸
   const sink: PushSink = (type, data) => {
     if (type === LobbyPush.ForceLogout) { seen.push((data as { reason: string }).reason); }
   };
-  registerOnline(uid, "s1", { sink, kick: () => {}, tokenHash: "h" });
+  registerOnline(uid, "s1", { sink, kick: () => {}, tokenHash: "h", sId: 0 });
   startKickConsumer();
   try {
     const deadline = Date.now() + 5000;
@@ -230,19 +235,19 @@ test("A6 单调栅栏：积压的陈旧顶号事件被丢弃，⛔ 不得踢掉�
     if (type === LobbyPush.ForceLogout) { kicked.push((data as { reason: string }).reason); }
   };
   // 在线的是**赢家**：持新登录态 hash-NEW，其 sess.issuedAt = 2000（更晚）
-  registerOnline(uid, "s1", { sink, kick: () => {}, tokenHash: "hash-NEW" });
-  await clientFor(uid).hset(kSess(uid), { tokenHash: "hash-NEW", issuedAt: "2000" });
+  registerOnline(uid, "s1", { sink, kick: () => {}, tokenHash: "hash-NEW", sId: 0 });
+  await clientFor(uid).hset(kSess(uid, 0), { tokenHash: "hash-NEW", issuedAt: "2000" });
   startKickConsumer();
   try {
     // 投递一条**陈旧**的顶号事件：它是更早那次登录（issuedAt=1000）发出的，exceptHash 还是老的
     await coordClient().xadd(K_STREAM_KICK, "*", "uid", uid,
-      "reason", ForceLogoutReason.Replaced, "exceptHash", "hash-OLD", "issuedAt", "1000");
+      "reason", ForceLogoutReason.Replaced, "exceptHash", "hash-OLD", "issuedAt", "1000", "sId", "0");
     await sleep(800); // 给消费循环足够时间；⛔ 断言"没发生"必须等够
     assert.deepEqual(kicked, [], "⛔ 陈旧事件不得踢掉赢家（issuedAt 1000 < 组 sess 2000 ⇒ 整条丢弃）");
 
     // 反例：**当期**事件（issuedAt 与 sess 相等）仍必须正常工作——⛔ 别把闸修成"什么都不踢"
     await coordClient().xadd(K_STREAM_KICK, "*", "uid", uid,
-      "reason", ForceLogoutReason.Replaced, "exceptHash", "hash-OTHER", "issuedAt", "2000");
+      "reason", ForceLogoutReason.Replaced, "exceptHash", "hash-OTHER", "issuedAt", "2000", "sId", "0");
     const deadline = Date.now() + 5000;
     while (kicked.length === 0) {
       if (Date.now() > deadline) { throw new Error("当期事件应当踢人却超时"); }
@@ -252,6 +257,6 @@ test("A6 单调栅栏：积压的陈旧顶号事件被丢弃，⛔ 不得踢掉�
   } finally {
     stopKickConsumer();
     unregisterOnline(uid, "s1");
-    await clientFor(uid).unlink(kSess(uid));
+    await clientFor(uid).unlink(kSess(uid, 0));
   }
 });

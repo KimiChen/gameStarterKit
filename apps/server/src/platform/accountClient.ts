@@ -19,7 +19,11 @@ import { inProcessAccount } from "./inProcessAccount";
 
 export interface AccountClient {
   /** token 反查 uid + 校验（strict=建连回源 MySQL 权威，false=快路径只查组 sess 缓存）。失败抛（09·G1）。 */
-  verify(token: string, strict: boolean): Promise<string>;
+  /**
+   * @param sId 该连接所属的区（M12e：token 只对签发它的那个区有效，单端语义作用域 = `(账号, 区)`）。
+   *   ⛔ 别传 0 当"通配"：0 是**大混服**这个真实的区，传错会让 107 区的连接去比大混服的会话。
+   */
+  verify(token: string, strict: boolean, sId: number): Promise<string>;
   character: {
     /** 建角登记 char_registry 行（存在性权威；⚠ 排序上**后于** Redis 档，见 player/character.ts 文件头）。幂等。 */
     register(uid: string, sId: number): Promise<void>;

@@ -56,9 +56,10 @@ after(async () => {
   for (const u of uids) {
     await pool.execute("DELETE FROM login_audit WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM char_registry WHERE user_id = ?", [u]);
+    await pool.execute("DELETE FROM account_sessions WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM accounts WHERE user_id = ?", [u]);
     await cleanupUser(u); // onJoin ensureCharacter 建的 s0 基础档
-    await clientFor(u).unlink(kSess(u));
+    await clientFor(u).unlink(kSess(u, 0));
     const b = activeLruBucketOf(u);
     await indexClientFor(b).zrem(kActiveLru(b), u);
   }
@@ -111,13 +112,13 @@ test("门户 dev-login → SDK 入大厅（onAuth 懒填组 sess）→ 快路径
   assert.equal(res.status, 200, "门户登录路径命中（ApiPath.DevLogin）");
   const login = await res.json() as { userId: string; token: string };
   uids.push(login.userId);
-  assert.equal(await clientFor(login.userId).exists(kSess(login.userId)), 0, "登录在 WebPlatform，组 sess 尚未建");
+  assert.equal(await clientFor(login.userId).exists(kSess(login.userId, 0)), 0, "登录在 WebPlatform，组 sess 尚未建");
 
   // 2) SDK 入大厅：LobbyRoom.onAuth 走 account=httpAccount.verify(strict) → 远程 /verify → **懒填组 sess**
   colyseus.sdk.auth.token = login.token;
   const room = await colyseus.sdk.joinOrCreate(RoomName.Lobby, { v: PROTOCOL_VERSION });
   try {
-    assert.ok(await clientFor(login.userId).hget(kSess(login.userId), "tokenHash"), "onAuth 已懒填组 sess:{uid}");
+    assert.ok(await clientFor(login.userId).hget(kSess(login.userId, 0), "tokenHash"), "onAuth 已懒填组 sess:{uid}");
 
     // 3) 快路径 RPC（每消息 verifySession 命中懒填的组缓存，不再打 WebPlatform）
     const reply = await rpc(room, "user.getInfo", {});

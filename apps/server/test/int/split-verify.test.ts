@@ -43,8 +43,9 @@ after(async () => {
   const pool = getPool();
   for (const u of uids) {
     await pool.execute("DELETE FROM login_audit WHERE user_id = ?", [u]);
+    await pool.execute("DELETE FROM account_sessions WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM accounts WHERE user_id = ?", [u]);
-    await clientFor(u).unlink(kSess(u));
+    await clientFor(u).unlink(kSess(u, 0));
   }
   await closeRedis();
   await closeMysql();
@@ -56,39 +57,39 @@ async function makeSplitLogin(name: string): Promise<{ uid: string; token: strin
   uids.push(uid);
   await getPool().execute<ResultSetHeader>(
     "INSERT INTO accounts (user_id, openid) VALUES (?, ?)", [uid, `op_${uid}`]);
-  const { token } = await issueToken(uid, null); // 写 accounts token_hash，⛔ 无 Redis
-  await clientFor(uid).unlink(kSess(uid));       // 确保组 sess 缺席
+  const { token } = await issueToken(uid, 0, null); // 写 accounts token_hash，⛔ 无 Redis
+  await clientFor(uid).unlink(kSess(uid, 0));       // 确保组 sess 缺席
   return { uid, token };
 }
 
 test("组 sess 缺席 → verify(strict) 远程校验 + 懒填组 sess → 快路径命中", async () => {
   const { uid, token } = await makeSplitLogin("sv-ok");
-  assert.equal(await clientFor(uid).exists(kSess(uid)), 0, "登录在 WebPlatform，组 sess 缺席");
+  assert.equal(await clientFor(uid).exists(kSess(uid, 0)), 0, "登录在 WebPlatform，组 sess 缺席");
 
-  const got = await httpAccount.verify(token, true); // 建连点：远程 /verify + 懒填
+  const got = await httpAccount.verify(token, true, 0); // 建连点：远程 /verify + 懒填
   assert.equal(got, uid);
 
-  const hash = await clientFor(uid).hget(kSess(uid), "tokenHash");
+  const hash = await clientFor(uid).hget(kSess(uid, 0), "tokenHash");
   assert.equal(hash, createHash("sha256").update(token).digest("hex"), "组 sess 已懒填 tokenHash");
-  assert.ok(await clientFor(uid).hget(kSess(uid), "loginTs"), "组 sess 懒填完整（loginTs 等字段齐）");
+  assert.ok(await clientFor(uid).hget(kSess(uid, 0), "loginTs"), "组 sess 懒填完整（loginTs 等字段齐）");
 
-  assert.equal(await httpAccount.verify(token, false), uid, "快路径命中组缓存");
+  assert.equal(await httpAccount.verify(token, false, 0), uid, "快路径命中组缓存");
 });
 
 test("快路径纯组缓存：⛔ 零 WebPlatform 回源（per-message 不打账号服务，§2.7）", async () => {
   const { token } = await makeSplitLogin("sv-fast");
-  await httpAccount.verify(token, true); // 建连点：远程 /verify + 懒填组 sess
+  await httpAccount.verify(token, true, 0); // 建连点：远程 /verify + 懒填组 sess
   const c0 = verifyHits;
-  for (let i = 0; i < 5; i++) { await httpAccount.verify(token, false); }
+  for (let i = 0; i < 5; i++) { await httpAccount.verify(token, false, 0); }
   assert.equal(verifyHits, c0, "快路径连打 5 次，WebPlatform /verify 命中数不变");
 });
 
 test("伪造 token → 远程 mismatch → AuthRequiredError，⛔ 不建组 sess", async () => {
   const { uid } = await makeSplitLogin("sv-forged");
-  await clientFor(uid).unlink(kSess(uid));
+  await clientFor(uid).unlink(kSess(uid, 0));
   const forged = `${uid}.${"0".repeat(48)}`;
-  await assert.rejects(httpAccount.verify(forged, true), AuthRequiredError);
-  assert.equal(await clientFor(uid).exists(kSess(uid)), 0, "校验失败不建组 sess");
+  await assert.rejects(httpAccount.verify(forged, true, 0), AuthRequiredError);
+  assert.equal(await clientFor(uid).exists(kSess(uid, 0)), 0, "校验失败不建组 sess");
 });
 
 test("真实封号/踢人（banAccount/revokeAccount → token_hash=NULL）→ strict verify 拒连、⛔ 不建 sess", async () => {
@@ -96,13 +97,13 @@ test("真实封号/踢人（banAccount/revokeAccount → token_hash=NULL）→ s
   //   故远程 reason=mismatch → AuthRequiredError（而非 ACCOUNT_BANNED）；封号在登录步另由 status 拦。
   const { uid: u1, token: t1 } = await makeSplitLogin("sv-ban");
   await banAccount(u1); // status=1 + token_hash=NULL
-  await assert.rejects(httpAccount.verify(t1, true), AuthRequiredError);
-  assert.equal(await clientFor(u1).exists(kSess(u1)), 0, "封号不建组 sess");
+  await assert.rejects(httpAccount.verify(t1, true, 0), AuthRequiredError);
+  assert.equal(await clientFor(u1).exists(kSess(u1, 0)), 0, "封号不建组 sess");
 
   const { uid: u2, token: t2 } = await makeSplitLogin("sv-revoke");
   await revokeAccount(u2); // token_hash=NULL（status 不变）
-  await assert.rejects(httpAccount.verify(t2, true), AuthRequiredError);
-  assert.equal(await clientFor(u2).exists(kSess(u2)), 0, "踢人不建组 sess");
+  await assert.rejects(httpAccount.verify(t2, true, 0), AuthRequiredError);
+  assert.equal(await clientFor(u2).exists(kSess(u2, 0)), 0, "踢人不建组 sess");
 });
 
 test("门户登录路径契约：POST ApiPath.DevLogin → ILoginRes{userId,token,isNew}（客户端 portalRequest 打的正是此路径/形态）", async () => {
@@ -122,9 +123,9 @@ test("split 撤销走接缝：httpAccount.ban/revoke → 远程写权威 + 回�
   const { uid, token } = await makeSplitLogin("sv-ban-seam");
   // ban：远程 UPDATE accounts（status=1 + token_hash=NULL），返回命中
   assert.equal(await httpAccount.ban(uid), true, "命中 → true（组侧据此决定是否踢在线）");
-  await assert.rejects(httpAccount.verify(token, true), AuthRequiredError, "封后建连即拒");
+  await assert.rejects(httpAccount.verify(token, true, 0), AuthRequiredError, "封后建连即拒");
   const [rows] = await getPool().query<RowDataPacket[]>(
-    "SELECT status, token_hash FROM accounts WHERE user_id = ?", [uid]);
+    "SELECT a.status, s.token_hash FROM accounts a LEFT JOIN account_sessions s ON s.user_id = a.user_id AND s.server_id = 0 WHERE a.user_id = ?", [uid]);
   assert.equal(Number(rows[0].status), 1, "权威落在账号库（本测与游戏服共库，故可直查）");
   assert.equal(rows[0].token_hash, null);
 

@@ -15,7 +15,7 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
 
-import { C2S, GamePhase, RoomName } from "@game/shared";
+import { C2S, GamePhase, PROTOCOL_VERSION, RoomName } from "@game/shared";
 import {
   consumeOnce,
   emitMatchEvidence,
@@ -206,9 +206,10 @@ test("GameRoom 端到端：开局生成 matchId（09·K4）→ 收局 XADD 证�
     const b = await mk("gsB");
 
     const room = await colyseus.createRoom(RoomName.Game, {});
-    const c1 = await colyseus.connectTo(room, { token: a.token });
+    // ⚠ 带 v：PROTOCOL_VERSION 自 M12e 起为 2，`connectTo` 的 options 会走 GameRoom.onAuth 的版本闸
+    const c1 = await colyseus.connectTo(room, { token: a.token, v: PROTOCOL_VERSION });
     assert.equal(room.state.matchId, "", "等人期尚无 matchId");
-    const c2 = await colyseus.connectTo(room, { token: b.token });
+    const c2 = await colyseus.connectTo(room, { token: b.token, v: PROTOCOL_VERSION });
     c1.onMessage("*", () => { });
     c2.onMessage("*", () => { });
 
@@ -260,7 +261,7 @@ test("GameRoom 端到端：开局生成 matchId（09·K4）→ 收局 XADD 证�
     for (const u of uids) {
       await getPool().execute("DELETE FROM accounts WHERE user_id = ?", [u]);
       await cleanupUser(u);
-      await clientFor(u).unlink(kSess(u));
+      await clientFor(u).unlink(kSess(u, 0));
       const bkt = activeLruBucketOf(u);
       await indexClientFor(bkt).zrem(kActiveLru(bkt), u);
     }

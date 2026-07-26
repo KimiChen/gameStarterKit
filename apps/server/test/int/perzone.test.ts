@@ -18,7 +18,7 @@ import { CUR_GOLD } from "../../src/core/infra/config";
 import { kApplied, kBag, kNegcacheUser, kSess, kUser, zoneCtx } from "../../src/core/infra/keys";
 import { cacheClient, clientFor, closeRedis } from "../../src/core/infra/redisRoute";
 import { closeMysql, getPool, withRcTx } from "../../src/core/infra/mysql";
-import type { RowDataPacket } from "../../src/core/infra/mysql";
+import type { ResultSetHeader, RowDataPacket } from "../../src/core/infra/mysql";
 import { assertRedisUp, cleanupUser, testUid } from "./helpers";
 
 const uids: string[] = [];
@@ -66,9 +66,9 @@ test("per-zone: keys 前缀随 zoneCtx；sess 全局不随区（§3.5 分类硬�
   assert.notEqual(z1, base, "区服键 ≠ 基础键");
   // sess 是全局键：登录（无区）写、每 RPC（有区）读，必须跨区一致，否则鉴权崩
   assert.equal(
-    zoneCtx.run({ sId: 1 }, () => kSess(u)), zoneCtx.run({ sId: 2 }, () => kSess(u)),
+    zoneCtx.run({ sId: 1 }, () => kSess(u, 0)), zoneCtx.run({ sId: 2 }, () => kSess(u, 0)),
     "sess 全局键跨区一致");
-  assert.equal(zoneCtx.run({ sId: 1 }, () => kSess(u)), kSess(u), "sess 不带区前缀");
+  assert.equal(zoneCtx.run({ sId: 1 }, () => kSess(u, 0)), kSess(u, 0), "sess 不带区前缀");
 });
 
 test("per-zone: 每区独立钱包 + 谓词隔离(B1) + 跨区同 idem_key 并存(I4)", async () => {
@@ -227,7 +227,7 @@ test("A2 公会在线索引按区分桶：同 gid 的 s1 事件 ⛔ 不得推给
   const sent: Array<{ uid: string; type: string }> = [];
   const fakeConn = (who: string) => ({
     sink: (type: string) => { sent.push({ uid: who, type }); },
-    kick: () => {}, tokenHash: `h_${who}`,
+    kick: () => {}, tokenHash: `h_${who}`, sId: 0,
   });
   push.registerOnline(a, `sess_${a}`, fakeConn(a));
   push.registerOnline(b, `sess_${b}`, fakeConn(b));
@@ -240,4 +240,36 @@ test("A2 公会在线索引按区分桶：同 gid 的 s1 事件 ⛔ 不得推给
 
   push.unregisterOnline(a, `sess_${a}`);
   push.unregisterOnline(b, `sess_${b}`);
+});
+
+test("M12e 单端语义作用域 = (账号, 区)：同区顶号、⛔ 跨区互不影响", async () => {
+  // ⚠ 这条钉的是本次模型变更的**全部要点**，回退任一半都会红。
+  const { issueToken, verifyToken } = await import("@game/webplatform/lib");
+  const u = uid("m12e");
+  await getPool().execute<ResultSetHeader>(
+    "INSERT INTO accounts (user_id, openid) VALUES (?, ?)", [u, `op_${u}`]);
+
+  // ① 同一个账号分别登录 s1 与 s2 —— 两个 token 并存，各自只对本区有效
+  const t1 = await issueToken(u, 1, null);
+  const t2 = await issueToken(u, 2, null);
+  assert.ok((await verifyToken(u, t1.token, 1)).ok, "s1 的 token 在 s1 有效");
+  assert.ok((await verifyToken(u, t2.token, 2)).ok, "s2 的 token 在 s2 有效");
+  assert.equal((await verifyToken(u, t1.token, 2)).ok, false, "⛔ s1 的 token 在 s2 无效（token 绑区）");
+  assert.equal((await verifyToken(u, t2.token, 1)).ok, false, "⛔ s2 的 token 在 s1 无效");
+
+  // ② **同区**再登录一次 = 顶号：旧 token 作废（单端语义在区内仍然成立）
+  const t1b = await issueToken(u, 1, null);
+  assert.equal((await verifyToken(u, t1.token, 1)).ok, false, "同区第二次登录顶掉前一个（区内仍单端）");
+  assert.ok((await verifyToken(u, t1b.token, 1)).ok, "新 token 有效");
+  // ③ **而 s2 完全不受影响** —— 这正是本次变更的目的（玩家可在两区各有一个在线角色）
+  assert.ok((await verifyToken(u, t2.token, 2)).ok, "⛔ s1 顶号不得影响 s2 的会话");
+
+  // ④ 封号仍是**账号级**：清光全部区
+  const { banAccount } = await import("@game/webplatform/lib");
+  await banAccount(u);
+  assert.equal((await verifyToken(u, t1b.token, 1)).ok, false, "封号后 s1 失效");
+  assert.equal((await verifyToken(u, t2.token, 2)).ok, false, "封号后 s2 也失效（⛔ 封号不按区）");
+
+  await getPool().execute("DELETE FROM account_sessions WHERE user_id = ?", [u]);
+  await getPool().execute("DELETE FROM accounts WHERE user_id = ?", [u]);
 });

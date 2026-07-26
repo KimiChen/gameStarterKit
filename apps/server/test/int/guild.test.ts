@@ -90,9 +90,10 @@ after(async () => {
   await colyseus?.shutdown();
   const pool = getPool();
   for (const u of uids) {
+    await pool.execute("DELETE FROM account_sessions WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM accounts WHERE user_id = ?", [u]);
     await cleanupUser(u);
-    await clientFor(u).unlink(kSess(u));
+    await clientFor(u).unlink(kSess(u, 0));
     const b = activeLruBucketOf(u);
     await indexClientFor(b).zrem(kActiveLru(b), u);
   }

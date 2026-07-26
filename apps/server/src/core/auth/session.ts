@@ -79,9 +79,9 @@ return {1, oldHash or ''}
  *   ⛔ 别传 `Date.now()`：栅栏两侧必须来自同一个时钟（MySQL），否则进程间时钟偏移会让比较失去意义。
  */
 export async function writeGroupSess(
-  uid: string, token: string, gwNode = "", issuedAtMs = 0,
+  uid: string, token: string, sId: number, gwNode = "", issuedAtMs = 0,
 ): Promise<void> {
-  const key = kSess(uid);
+  const key = kSess(uid, sId);
   const newHash = sha256(token);
   // 顶号判据（单端语义）：组 sess 里**原本存着一个不同的 tokenHash** ⇒ 该账号换了登录态（走了一次登录、
   // 换发了 token）⇒ 旧设备的连接要主动踢下线。⚠ 断线重连**不会**命中：重连复用同一 token（hash 相同），
@@ -105,9 +105,9 @@ export async function writeGroupSess(
     // split 的 onAuth 懒填也早于 onJoin 的 registerOnline，故 ⛔ 不会自踢。
     // ⚠ 带 newHash 判别位：本节点消费者会把这条广播读回来（流无发布者过滤），迟到投递时新连接
     // 可能已 registerOnline —— 判别位保证**只踢旧登录态**、⛔ 不自踢（跨节点同理）。
-    kickLocal(uid, ForceLogoutReason.Replaced, newHash);
+    kickLocal(uid, ForceLogoutReason.Replaced, newHash, sId);
     // ⚠ 带上 issuedAtMs（A6）：消费侧据此丢弃陈旧的顶号事件，⛔ 防积压时踢掉赢家
-    await broadcastKick(uid, ForceLogoutReason.Replaced, newHash, issuedAtMs);
+    await broadcastKick(uid, ForceLogoutReason.Replaced, newHash, issuedAtMs, sId);
   }
 }
 
@@ -120,8 +120,8 @@ export async function writeGroupSess(
  * 且当场检测到 hash 变化 → 主动踢旧连接（reason=replaced）。
  * 权威校验见 verifySessionStrict（建连点 onAuth 走它）。
  */
-export async function verifySession(uid: string, token: string): Promise<void> {
-  const tokenHash = await clientFor(uid).hget(kSess(uid), "tokenHash");
+export async function verifySession(uid: string, token: string, sId: number): Promise<void> {
+  const tokenHash = await clientFor(uid).hget(kSess(uid, sId), "tokenHash");
   if (tokenHash === null) { throw new AuthRequiredError("session 不存在或已过期"); }
   if (!safeEqualHex(tokenHash, sha256(token))) { throw new AuthRequiredError("token 不匹配"); }
 }

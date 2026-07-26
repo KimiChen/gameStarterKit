@@ -40,22 +40,28 @@ export async function accountExists(uid: string): Promise<boolean> {
  * 该列同时用于过期判定（`age_s`），漂移方向是"看起来更年轻"，量级远小于 SESS_TTL_S。
  */
 export async function issueToken(
-  uid: string, sessionKey: string | null,
+  uid: string, sId: number, sessionKey: string | null,
 ): Promise<{ token: string; issuedAtMs: number }> {
   const token = `${uid}.${randomBytes(TOKEN_BYTES).toString("hex")}`;
+  // ⚠ 按 (uid, sId) upsert：单端语义的作用域是**区**，⛔ 不是账号——同区第二次登录顶掉前一个，
+  // 不同区互不影响（玩家可在 1 区与 107 区各有一个在线角色）。
   await getPool().execute<ResultSetHeader>(
-    `UPDATE accounts
-        SET token_hash = ?,
-            token_issued_at = GREATEST(NOW(3),
-              COALESCE(token_issued_at, '1970-01-02 00:00:00.000') + INTERVAL 1000 MICROSECOND),
-            session_key = COALESCE(?, session_key)
-      WHERE user_id = ?`,
-    [sha256(token), sessionKey, uid]);
+    `INSERT INTO account_sessions (user_id, server_id, token_hash, token_issued_at)
+     VALUES (?, ?, ?, NOW(3))
+     ON DUPLICATE KEY UPDATE
+       token_hash = VALUES(token_hash),
+       token_issued_at = GREATEST(NOW(3), token_issued_at + INTERVAL 1000 MICROSECOND)`,
+    [uid, sId, sha256(token)]);
+  // session_key 是**账号级**（来自微信 code2session），⛔ 不按区：仍留在 accounts。
+  if (sessionKey !== null) {
+    await getPool().execute<ResultSetHeader>(
+      "UPDATE accounts SET session_key = ? WHERE user_id = ?", [sessionKey, uid]);
+  }
   // 回读权威值：⛔ 不能用 Date.now() 代替——栅栏两侧必须来自**同一个时钟**（MySQL），
   // 否则应用进程间的时钟偏移会让比较失去意义。
   const [rows] = await getPool().query<RowDataPacket[]>(
     `SELECT ROUND(UNIX_TIMESTAMP(token_issued_at) * 1000) AS issued_ms
-       FROM accounts WHERE user_id = ?`, [uid]);
+       FROM account_sessions WHERE user_id = ? AND server_id = ?`, [uid, sId]);
   return { token, issuedAtMs: Number(rows[0]?.issued_ms ?? 0) };
 }
 
@@ -69,19 +75,45 @@ export type VerifyResult =
  * 权威校验（纯 MySQL 一条 PK）：hash → status → 过期。
  * 撤销的两个真相位就是 `token_hash`（NULL=已撤销/换发）与 `status`（1=封禁）——⛔ 无 epoch fence（M12d 简化）。
  */
-export async function verifyToken(uid: string, token: string): Promise<VerifyResult> {
+export async function verifyToken(uid: string, token: string, sId: number): Promise<VerifyResult> {
   const [rows] = await getPool().query<RowDataPacket[]>(
-    `SELECT token_hash, status, TIMESTAMPDIFF(SECOND, token_issued_at, NOW(3)) AS age_s,
-            ROUND(UNIX_TIMESTAMP(token_issued_at) * 1000) AS issued_ms
-       FROM accounts WHERE user_id = ?`, [uid]);
+    `SELECT s.token_hash, a.status,
+            TIMESTAMPDIFF(SECOND, s.token_issued_at, NOW(3)) AS age_s,
+            ROUND(UNIX_TIMESTAMP(s.token_issued_at) * 1000) AS issued_ms
+       FROM accounts a
+       LEFT JOIN account_sessions s ON s.user_id = a.user_id AND s.server_id = ?
+      WHERE a.user_id = ?`, [sId, uid]);
   if (rows.length === 0) { return { ok: false, reason: "not_found" }; }
   const a = rows[0];
+  // ⚠ **判定顺序是刻意的：hash 在 status 之前，⛔ 别调换**（M12e 迁移时一度调换过，是错的）。
+  // 先比 hash ⇒ 拿不出有效 token 的人一律得到 `mismatch`，**问不出这个 uid 是否被封**；
+  // 反过来先判 status 会把封号状态泄漏给任何知道 uid 的人（uid 是 `u_<seq>`，可枚举）。
+  // ⚠ 封号本就会删掉该 uid 的全部会话行 ⇒ 被封者走到这里必然 `token_hash === null` ⇒ mismatch，
+  // 与本次模型变更前的行为**逐字一致**（旧实现靠 `token_hash=NULL` 达到同一效果）。
   if (a.token_hash === null || !safeEqualHex(String(a.token_hash), sha256(token))) { return { ok: false, reason: "mismatch" }; }
   if (Number(a.status) === 1) { return { ok: false, reason: "banned" }; }
   if (Number(a.status) !== 0) { return { ok: false, reason: "deregistered" }; }
   if (a.age_s === null || Number(a.age_s) > SESS_TTL_S) { return { ok: false, reason: "expired" }; }
   // ⚠ 带回 issuedAtMs：调用方（split 的 onAuth 懒填）要拿它当组缓存写入栅栏（A1）
   return { ok: true, status: Number(a.status), issuedAtMs: Number(a.issued_ms ?? 0) };
+}
+
+/**
+ * **best-effort：这个 token 是不是该 uid 在「任意一个区」的有效会话**。
+ *
+ * ⚠ 只给 `/area/list` 回填「我的区」用——那个端点在**选区之前**就被调用，客户端手上的 token
+ * 属于它上一次登录的那个区，⛔ 无从得知该按哪个区校验。它是登录前的展示投影、**不授予任何权限**，
+ * 故"任一区匹配即可"是安全的。⛔ **不要拿它当建连/鉴权判据**——那必须用带 sId 的 `verifyToken`。
+ */
+export async function verifyTokenAnyZone(uid: string, token: string): Promise<boolean> {
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    `SELECT s.token_hash
+       FROM accounts a
+       JOIN account_sessions s ON s.user_id = a.user_id
+      WHERE a.user_id = ? AND a.status = 0
+        AND TIMESTAMPDIFF(SECOND, s.token_issued_at, NOW(3)) <= ?`, [uid, SESS_TTL_S]);
+  const want = sha256(token);
+  return rows.some((r) => safeEqualHex(String(r.token_hash), want));
 }
 
 /**
@@ -97,15 +129,17 @@ export async function verifyToken(uid: string, token: string): Promise<VerifyRes
  * ⇒ **失败后的幂等重试会永远跳过踢人**（正是 SOP 要防的）。故显式查存在性，与 flags 解耦。
  */
 export async function banAccount(uid: string): Promise<boolean> {
-  await getPool().execute<ResultSetHeader>(
-    "UPDATE accounts SET status = 1, token_hash = NULL WHERE user_id = ?", [uid]);
+  // ⚠ 封号是**账号级**（⛔ 不按区）：status 置 1 + 清掉该 uid 在**全部区**的会话行。
+  // ⛔ 别改成"只清某个区"：封号语义是"这个人不能玩"，不是"这个人不能玩这个区"。
+  await getPool().execute<ResultSetHeader>("UPDATE accounts SET status = 1 WHERE user_id = ?", [uid]);
+  await getPool().execute<ResultSetHeader>("DELETE FROM account_sessions WHERE user_id = ?", [uid]);
   return accountExists(uid); // ⚠ ⛔ 不用 affectedRows，见下方说明
 }
 
 /** 踢人/换端：`token_hash=NULL`（status 不变，账号仍可重新登录换发新 token）。返回是否命中账号。 */
 export async function revokeAccount(uid: string): Promise<boolean> {
-  await getPool().execute<ResultSetHeader>(
-    "UPDATE accounts SET token_hash = NULL WHERE user_id = ?", [uid]);
+  // 同样清**全部区**：撤销 = "所有在场会话作废，重新登录换发"（status 不变）。
+  await getPool().execute<ResultSetHeader>("DELETE FROM account_sessions WHERE user_id = ?", [uid]);
   return accountExists(uid); // ⚠ 同上
 }
 

@@ -8,12 +8,16 @@ import { portalRequest } from "../../core/http";
 
 // 登录走**门户**（WebPlatform，DUAL_MODE §2.7）：split 时命中账号服务，dev/内嵌回退游戏服（同址）。
 
+// ⚠ **两个登录都必须带 `sId`**（M12e）：单端语义作用域 = `(账号, 区)`，签发的 token **只对该区有效**。
+// 不带 = 落 s0（大混服）⇒ 随后 join 别的区会被 onAuth 拒（token 不是那个区的）。
+// ⚠ 调用侧天然拿得到：选服（`chooseServer`）发生在登录之前。
+
 /** 本地/CI 登录：devKey → 固定账号（同 key 恒同号，换号 = 换 key）。 */
-export function devLogin(devKey: string, deviceId?: string): Promise<ILoginRes> {
-    return portalRequest<ILoginRes>("POST", ApiPath.DevLogin, { devKey, deviceId });
+export function devLogin(devKey: string, sId: number, deviceId?: string): Promise<ILoginRes> {
+    return portalRequest<ILoginRes>("POST", ApiPath.DevLogin, { devKey, sId, deviceId });
 }
 
 /** 微信正式登录（code 来自 wx.login；本地开发用 devLogin）。 */
-export function wxLogin(code: string, deviceId?: string): Promise<ILoginRes> {
-    return portalRequest<ILoginRes>("POST", ApiPath.WxLogin, { code, deviceId });
+export function wxLogin(code: string, sId: number, deviceId?: string): Promise<ILoginRes> {
+    return portalRequest<ILoginRes>("POST", ApiPath.WxLogin, { code, sId, deviceId });
 }

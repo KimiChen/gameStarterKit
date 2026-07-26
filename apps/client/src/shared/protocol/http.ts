@@ -25,6 +25,14 @@ export interface ILoginReq {
     /** 微信 wx.login 拿到的临时 code */
     code: string;
     deviceId?: string;
+    /**
+     * 要登录的**区** sId（缺省 0 = 大混服/单形态）。
+     *
+     * ⚠ **登录必须带区**（M12e）：单端语义的作用域是 `(账号, 区)` —— 同区第二次登录顶掉前一个，
+     * 不同区互不影响（玩家可在 1 区与 107 区各有一个在线角色）。签发出来的 token **只对该区有效**。
+     * ⚠ 客户端流程天然满足：选服（`chooseServer`）发生在登录之前。
+     */
+    sId?: number;
 }
 
 /** 登录响应（wx 与 dev 同契约）。⛔ 禁含 openid/unionid/session_key（09·G8）。 */

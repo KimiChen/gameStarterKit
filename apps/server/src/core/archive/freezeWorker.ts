@@ -126,7 +126,12 @@ export async function freezeUser(uid: string, lease: SingletonLease): Promise<"f
     const r = clientFor(uid);
 
     // ── 锁内双检（⚠ 锁外查一次不够：候选可能在排队等锁时刚提交 pending 行 / 刚上线，08 约束 2）──
-    if (await r.exists(kSess(uid))) { freezeCounters.skipped++; return "skipped"; }
+    // ⚠ 只查 s0 的会话（M12e：sess 键含区）。**这在 freeze 唯一能跑起来的配置下是完备的**——
+    // `FREEZE_ENABLED` 的加载期闸要求显式 `FREEZE_UNSAFE_S0_ONLY=1`，即部署方声明"全库只有 s0"
+    // （见 core/infra/config.ts 该项）⇒ 不存在 s≥1 的会话。
+    // ⛔ 补齐 archive 步、freeze 支持多区时**必须**改成"该 uid 在任一区在线即跳过"，否则会把
+    // 正在别区玩的人冻掉。⛔ 别在这里用 `currentZoneId()`：本 worker 不在 zoneCtx 内。
+    if (await r.exists(kSess(uid, 0))) { freezeCounters.skipped++; return "skipped"; }
     if (await hasOpenOutbox(uid)) { freezeCounters.skipped++; return "skipped"; } // 09·F2 锁内复查
     if (await lastActiveMs(uid) > Date.now() - COLD_MS) { freezeCounters.skipped++; return "skipped"; }
 

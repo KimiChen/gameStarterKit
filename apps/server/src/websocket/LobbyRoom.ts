@@ -45,7 +45,8 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
       throw joinRefused(SharedErrorCode.WrongServer);
     }
     try {
-      const uid = await account.verify(token, true);
+      // ⚠ 带上本次要进的区：token 只对签发它的那个区有效（M12e）
+      const uid = await account.verify(token, true, options?.sId ?? 0);
       return { userId: uid, token, sId: options?.sId ?? 0 }; // sId 存进 auth，供 messages/onJoin 建区上下文（§3.5）
     } catch (e) {
       throw joinRefusedAuth(toErrCode(e)); // 统一出口（⛔ 禁在此 new ServerError，见 errors-http-status.test）
@@ -69,7 +70,7 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
       // 每消息快路径复验（纯组缓存 hash 比对）：顶号换发后旧 token 下一条即 401；
       // ⚠ 封号**不靠这里**（快路径零权威回源）——靠踢（§2.3 SOP：GM 逐节点 /admin/kick 确认）
       try {
-        await account.verify(auth.token, false);
+        await account.verify(auth.token, false, auth.sId);
       } catch (e) {
         client.send(LOBBY_MSG_RPC, { id: msg.id, ok: false, err: { code: toErrCode(e), msg: "" } } satisfies RpcReply);
         return;
@@ -94,6 +95,8 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
     // ⛔ 无 allowReconnection：重连即走全新 onAuth，被撤销 token 在此被拒（不构成重连绕过）。
     registerOnline(uid, client.sessionId, {
       sink,
+      sId, // ⚠ 顶号只踢同区（M12e）：⛔ 别把玩家在别区的在线角色一起踢了
+
       kick: (closeCode) => { void client.leave(closeCode); },
       tokenHash: tokenHashOf(client.auth.token),
     });

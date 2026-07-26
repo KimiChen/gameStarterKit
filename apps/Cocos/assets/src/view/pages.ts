@@ -129,7 +129,9 @@ export async function openLogin(onEnterBattle: () => void): Promise<void> {
 
   const h = await ViewMgr.open("Login");
   const view = h.view as LoginView;
-  const logic = new LoginLogic({ login: (key) => devLogin(key) });
+  // ⚠ 登录必须带**所选区**（M12e）：token 只对该区有效。`chooseServer` 已在本函数上方执行过，
+  // 故这里 `getCurrentServer()` 拿得到；⛔ 别图省事传 0——那会签出一个进不了所选区的 token。
+  const logic = new LoginLogic({ login: (key) => devLogin(key, getCurrentServer()?.sId ?? 0) });
   logic.onProgress = (ratio, text) => view.setProgress(ratio, text);
 
   view.onEnter = async () => {

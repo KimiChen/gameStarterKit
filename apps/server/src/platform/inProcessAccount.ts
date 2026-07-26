@@ -19,8 +19,8 @@ import type { AccountClient } from "./accountClient";
  * 拦截 Redis failover 后从旧副本「复活」的被撤销会话（02·P1）——权威 hash 已 NULL/换发即拒。
  * lib 返回**结果码**（跨包不抛业务错误），本处做「结果码 → 错误类」映射（07）。
  */
-export async function verifySessionStrict(uid: string, token: string): Promise<void> {
-  const r = await verifyToken(uid, token);
+export async function verifySessionStrict(uid: string, token: string, sId: number): Promise<void> {
+  const r = await verifyToken(uid, token, sId);
   if (r.ok) { return; }
   if (r.reason === "banned") { throw new BannedError(); } // 封号 → ACCOUNT_BANNED（07）
   if (r.reason === "deregistered") { throw new AuthRequiredError("账号已注销"); }
@@ -28,17 +28,17 @@ export async function verifySessionStrict(uid: string, token: string): Promise<v
 }
 
 /** 网关入口：token 反查 uid（09·G1）+ 校验。strict 用于建立连接，快路径用于每 RPC。 */
-export async function verifyBearer(token: string, strict = false): Promise<string> {
+export async function verifyBearer(token: string, strict = false, sId = 0): Promise<string> {
   const dot = token.lastIndexOf(".");
   if (dot <= 0) { throw new AuthRequiredError("token 格式无效"); }
   const uid = token.slice(0, dot);
-  if (strict) { await verifySessionStrict(uid, token); } else { await verifySession(uid, token); }
+  if (strict) { await verifySessionStrict(uid, token, sId); } else { await verifySession(uid, token, sId); }
   return uid;
 }
 
 /** 内嵌实现：全部委托 `@game/webplatform/lib`（与游戏服共库，故直调正确）。 */
 export const inProcessAccount: AccountClient = {
-  verify: (token, strict) => verifyBearer(token, strict),
+  verify: (token, strict, sId) => verifyBearer(token, strict, sId),
   character: {
     register: (uid, sId) => characterRegister(uid, sId),
     query: (uid) => characterZones(uid),

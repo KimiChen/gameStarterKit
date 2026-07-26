@@ -47,6 +47,18 @@ const realIp = (req: FastifyRequest): string => {
 const INVALID = Symbol("invalid");
 
 /**
+ * 登录/校验的**区** sId（M12e：单端语义作用域 = `(账号, 区)`）。缺省 0 = 大混服/单形态。
+ * ⚠ 与 in-process 侧 zod `z.number().int().min(0).max(65535).optional()` 逐字段同契约。
+ * ⛔ 非法值不能悄悄归 0：那会把"登录 107 区"变成"登录大混服"，玩家拿到一个用不了的 token。
+ */
+function pickSId(v: unknown): number | typeof INVALID {
+  if (v === undefined || v === null) { return 0; }
+  if (typeof v !== "number" || !Number.isInteger(v) || v < 0 || v > 65535) { return INVALID; }
+  return v;
+}
+
+
+/**
  * 登录入参就地校验 —— 与 in-process 端点的 zod **逐字段同契约**
  * （`http/account/wxLogin.ts` / `devLogin.ts`）。⛔ 两种部署模式不能有不同的入参语义：
  * 那正是本仓反复踩到的一类 bug，且这次踩得尤其冤——`wxLogin.ts:15` 的 zod 上方**早就写着**
@@ -122,12 +134,16 @@ export function buildServer(): FastifyInstance {
   });
 
   // 校验（token 内嵌 uid = {uid}.{hex}）：返回结果码，业务侧映射错误类（09·G1）。
-  app.post<{ Body: { token: string } }>("/verify", async (req) => {
+  app.post<{ Body: { token: string; sId?: number } }>("/verify", async (req) => {
     const token = typeof req.body?.token === "string" ? req.body.token : ""; // Fastify 泛型仅编译期，运行期防非串
     const dot = token.lastIndexOf(".");
     if (dot <= 0) { return { ok: false as const, reason: "mismatch" as const }; }
+    // ⚠ 校验必须带区（M12e）：token 只对签发它的那个区有效。非法 sId ⛔ 不归 0——
+    // 那会让"拿 107 区的 token 去校验大混服"意外通过/失败，两种都是错的判断。
+    const sId = pickSId(req.body?.sId);
+    if (sId === INVALID) { return { ok: false as const, reason: "mismatch" as const }; }
     const uid = token.slice(0, dot);
-    const r = await verifyToken(uid, token);
+    const r = await verifyToken(uid, token, sId);
     // ⚠ `issuedAtMs` 必须带出去：组侧 `writeGroupSess` 拿它当写入栅栏（A1——两个 await 之间可交错，
     // 迟到的旧写会覆盖新写、还反手踢掉合法的新登录端）。⛔ 别以"出参最小化"为由删掉它：
     // 它不是身份信息（09·G8 禁的是 openid/unionid），只是一个时刻。
@@ -162,19 +178,21 @@ export function buildServer(): FastifyInstance {
 
   // 登录（split：客户端 portalRequest 直连 WebPlatform）：路径 = 单源 ApiPath（铁律 6，与 in-process 端点一致）；
   // lib 全链（限流→code2session→查/建号→签发）→ loginReply 映射成客户端契约。组 sess 由网关 onAuth 懒填（2g）。
-  app.post<{ Body: { code?: string; deviceId?: string } }>(ApiPath.WxLogin, async (req, reply) => {
+  app.post<{ Body: { code?: string; deviceId?: string; sId?: number } }>(ApiPath.WxLogin, async (req, reply) => {
     const d = pickDeviceId(req.body?.deviceId);
     const code = pickWxCode(req.body?.code);
-    if (d === INVALID || code === INVALID) { reply.code(400); return { error: "INVALID_PAYLOAD" }; }
-    const r = await wxLogin({ code, ip: realIp(req), deviceId: d });
+    const sId = pickSId(req.body?.sId);
+    if (d === INVALID || code === INVALID || sId === INVALID) { reply.code(400); return { error: "INVALID_PAYLOAD" }; }
+    const r = await wxLogin({ code, ip: realIp(req), deviceId: d, sId });
     return loginReply(r, reply);
   });
-  app.post<{ Body: { devKey?: string; deviceId?: string } }>(ApiPath.DevLogin, async (req, reply) => {
+  app.post<{ Body: { devKey?: string; deviceId?: string; sId?: number } }>(ApiPath.DevLogin, async (req, reply) => {
     if (!AUTH_DEV_ENABLED) { reply.code(404); return { error: "NOT_FOUND" }; }
     const d = pickDeviceId(req.body?.deviceId);
     const devKey = pickDevKey(req.body?.devKey);
-    if (d === INVALID || devKey === INVALID) { reply.code(400); return { error: "INVALID_PAYLOAD" }; }
-    const r = await devLogin(devKey, realIp(req), d);
+    const sId = pickSId(req.body?.sId);
+    if (d === INVALID || devKey === INVALID || sId === INVALID) { reply.code(400); return { error: "INVALID_PAYLOAD" }; }
+    const r = await devLogin(devKey, realIp(req), d, sId);
     return loginReply(r, reply);
   });
 

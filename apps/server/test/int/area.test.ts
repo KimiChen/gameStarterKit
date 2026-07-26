@@ -59,8 +59,9 @@ after(async () => {
   for (const u of uids) {
     await pool.execute("DELETE FROM char_registry WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM login_audit WHERE user_id = ?", [u]);
+    await pool.execute("DELETE FROM account_sessions WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM accounts WHERE user_id = ?", [u]);
-    await clientFor(u).unlink(kSess(u));
+    await clientFor(u).unlink(kSess(u, 0));
     const b = activeLruBucketOf(u);
     await indexClientFor(b).zrem(kActiveLru(b), u); // issueSession→touchActive 写的活跃索引（R6 清理）
   }
@@ -111,7 +112,7 @@ test("过期 token（age > SESS_TTL_S）→ ul 空（陈旧签不复现「我的
   await characterRegister(uid, 4);
   assert.deepEqual((await areaList(token)).ul, [4], "未过期能读到");
   await getPool().execute(
-    "UPDATE accounts SET token_issued_at = NOW(3) - INTERVAL ? SECOND WHERE user_id = ?",
+    "UPDATE account_sessions SET token_issued_at = NOW(3) - INTERVAL ? SECOND WHERE user_id = ?",
     [SESS_TTL_S + 60, uid]);
   assert.deepEqual((await areaList(token)).ul, [], "过期 → ul 空（verifyToken expired 收敛）");
 });

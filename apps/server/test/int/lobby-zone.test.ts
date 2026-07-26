@@ -34,12 +34,14 @@ let colyseus: ColyseusTestServer;
 const uids: string[] = [];
 
 /** 造号：accounts 行 + 会话（⛔ 不建玩法档——建角交给 onJoin/测试自身，才验得出落对区）。 */
-async function makeAcct(name: string): Promise<{ uid: string; token: string }> {
+async function makeAcct(name: string, sId = 0): Promise<{ uid: string; token: string }> {
   const uid = testUid(name).slice(0, 32);
   uids.push(uid);
   await getPool().execute<ResultSetHeader>(
     "INSERT INTO accounts (user_id, openid) VALUES (?, ?)", [uid, `op_${uid}`]);
-  const { token } = await issueSession(uid, null);
+  // ⚠ **会话按区签发**（M12e）：token 只对签发它的那个区有效 ⇒ 要进 s1 就得有 s1 的会话。
+  //   ⛔ 别再用一个 s0 token 去 join s1——那正是新语义要拒的（AUTH_REQUIRED）。
+  const { token } = await issueSession(uid, null, "", sId);
   return { uid, token };
 }
 
@@ -105,9 +107,10 @@ after(async () => {
   for (const u of uids) {
     await pool.execute("DELETE FROM char_registry WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM login_audit WHERE user_id = ?", [u]);
+    await pool.execute("DELETE FROM account_sessions WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM accounts WHERE user_id = ?", [u]);
     for (const s of [0, 1]) { await zoneCtx.run({ sId: s }, () => cleanupUser(u)).catch(() => {}); }
-    await clientFor(u).unlink(kSess(u));
+    await clientFor(u).unlink(kSess(u, 0));
     const b = activeLruBucketOf(u);
     await indexClientFor(b).zrem(kActiveLru(b), u);
   }
@@ -116,7 +119,7 @@ after(async () => {
 });
 
 test("带 sId=1 join：onJoin 建角落 s1_user + char_registry(uid,1)，⛔ 不落基础前缀 s0", async () => {
-  const { uid, token } = await makeAcct("z1char");
+  const { uid, token } = await makeAcct("z1char", 1); // ⚠ 会话按区：进 s1 就要 s1 的 token（M12e）
   const c = clientFor(uid);
   const s1u = zoneUserKey(uid, 1);
   const base = zoneUserKey(uid, 0);
@@ -132,7 +135,7 @@ test("带 sId=1 join：onJoin 建角落 s1_user + char_registry(uid,1)，⛔ 不
 });
 
 test("带 sId=1 join：大厅写 RPC 落 s1_user；基础前缀全程不受影响（不串 s0）", async () => {
-  const { uid, token } = await makeAcct("z1rpc");
+  const { uid, token } = await makeAcct("z1rpc", 1);
   const c = clientFor(uid);
   const s1u = zoneUserKey(uid, 1);
   const base = zoneUserKey(uid, 0);
@@ -165,7 +168,8 @@ test("缺 sId join：auth.sId=0，大厅建角/写 RPC 落基础前缀（大混�
 });
 
 test("GameRoom 撮合按区隔离：不同 sId ⛔ 不共房；同 sId 才合流（filterBy(['sId'])）", async () => {
-  const a = await makeAcct("gz-a"), b = await makeAcct("gz-b"), c = await makeAcct("gz-c");
+  // ⚠ 各自按要进的区签会话（M12e）：a/c 进 s1、b 进 s2
+  const a = await makeAcct("gz-a", 1), b = await makeAcct("gz-b", 2), c = await makeAcct("gz-c", 1);
   const join = async (token: string, sId: number) => {
     colyseus.sdk.auth.token = token;
     return colyseus.sdk.joinOrCreate(RoomName.Game, { v: PROTOCOL_VERSION, sId });

@@ -20,18 +20,19 @@ import { clientFor, coordClient } from "../infra/redisRoute";
 import { fieldOf, startStreamConsumer, type StreamConsumer } from "../infra/streamConsumer";
 
 // 自筛踢句柄：websocket 层（online 表）在启动期注入 kickUser（core/auth ⛔ 不反向依赖 websocket 层）。
-let kickHandler: ((uid: string, reason: ForceLogoutReasonType, exceptTokenHash?: string) => void) | null = null;
+let kickHandler: ((uid: string, reason: ForceLogoutReasonType, exceptTokenHash?: string, sId?: number) => void) | null = null;
 /** 注入本节点强制下线句柄（index.ts 启动期挂 push.kickUser）。 */
-export function setKickHandler(fn: (uid: string, reason: ForceLogoutReasonType, exceptTokenHash?: string) => void): void { kickHandler = fn; }
+export function setKickHandler(fn: (uid: string, reason: ForceLogoutReasonType, exceptTokenHash?: string, sId?: number) => void): void { kickHandler = fn; }
 
 /** 本节点自筛踢：命中本节点在线连接即强制下线（先推 reason 再关）；不在本节点直接跳过（§2.3 每节点自筛，⛔ 不查 presence）。 */
-export function kickLocal(uid: string, reason: ForceLogoutReasonType, exceptTokenHash?: string): void {
-  kickHandler?.(uid, reason, exceptTokenHash);
+/** @param sId 只踢该区的连接（顶号，M12e）；**省略 = 踢该 uid 在本节点的全部区**（封号/撤销：账号级）。 */
+export function kickLocal(uid: string, reason: ForceLogoutReasonType, exceptTokenHash?: string, sId?: number): void {
+  kickHandler?.(uid, reason, exceptTokenHash, sId);
 }
 
 /** 广播踢人到控制总线（best-effort：Redis 抖动只是漏踢；权威撤销已落 MySQL，送达保证走 GM `/admin/kick`）。 */
 export async function broadcastKick(
-  uid: string, reason: ForceLogoutReasonType, exceptTokenHash?: string, issuedAtMs?: number,
+  uid: string, reason: ForceLogoutReasonType, exceptTokenHash?: string, issuedAtMs?: number, sId?: number,
 ): Promise<void> {
   try {
     await coordClient().xadd(K_STREAM_KICK, "*", "uid", uid, "reason", reason,
@@ -40,7 +41,10 @@ export async function broadcastKick(
       // ⚠ 单调栅栏（A6）：`exceptHash` 是**等值**判据、⛔ 不单调——消费循环卡顿导致事件积压时，
       // 晚到的旧事件拿**旧的** exceptHash 去比**新的**在线表，两者必然不等 ⇒ 把已经合法登录的
       // 赢家踢下线。带上发起方的签发时刻，消费侧即可认出"我已经过期了"。
-      ...(issuedAtMs !== undefined ? ["issuedAt", String(issuedAtMs)] : []));
+      ...(issuedAtMs !== undefined ? ["issuedAt", String(issuedAtMs)] : []),
+      // ⚠ 顶号的作用域是**区**（M12e）：带 sId ⇒ 消费侧只踢该区的连接。
+      // ⛔ 封号/撤销**不带** sId（账号级，要踢光该 uid 的全部区）——两种语义靠"有没有这个字段"区分。
+      ...(sId !== undefined ? ["sId", String(sId)] : []));
   } catch (e) {
     console.error(`[kick] 广播失败 uid=${uid}（权威已落库；GM 工具的 /admin/kick 才是保证送达的那一步）`, e);
   }
@@ -63,15 +67,17 @@ export function startKickConsumer(): void {
     // ⇒ 本条已无事可做，继续处理只会拿过期的 exceptHash 去踢掉赢家。
     // ⛔ **只对带 issuedAt 的事件做这个判断**：封号/撤销（GM 侧）不绑定任何一次登录，必须无条件踢；
     //    旧版本发布端的条目也没有该字段，⛔ 不能因为"没带"就丢弃（那会静默漏踢）。
+    const rawSid = fieldOf(fields, "sId");
+    const sId = rawSid !== undefined && /^\d+$/.test(rawSid) ? Number(rawSid) : undefined;
     const at = fieldOf(fields, "issuedAt");
-    if (at !== undefined) {
-      const stored = await clientFor(uid).hget(kSess(uid), "issuedAt").catch(() => null);
+    if (at !== undefined && sId !== undefined) {
+      const stored = await clientFor(uid).hget(kSess(uid, sId), "issuedAt").catch(() => null);
       if (stored !== null && Number(stored) > Number(at)) {
         console.warn(`[kick] 丢弃陈旧顶号事件 uid=${uid}（事件 issuedAt=${at} < 组 sess ${stored}）`);
         return;
       }
     }
-    kickLocal(uid, reason, fieldOf(fields, "exceptHash"));
+    kickLocal(uid, reason, fieldOf(fields, "exceptHash"), sId);
   }, { trimMs: KICK_STREAM_TRIM_MS });
 }
 export function stopKickConsumer(): void { consumer?.stop(); consumer = null; }

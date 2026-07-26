@@ -110,12 +110,13 @@ after(async () => {
   const pool = getPool();
   for (const u of usedUids) {
     await cleanupUser(u);
-    await clientFor(u).unlink(kSess(u));
+    await clientFor(u).unlink(kSess(u, 0));
     const b = activeLruBucketOf(u);
     await indexClientFor(b).zrem(kActiveLru(b), u);
     await cacheClient().unlink(kNegcacheUser(u));
     await pool.execute("DELETE FROM user_archive WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM gameplay_outbox WHERE user_id = ?", [u]);
+    await pool.execute("DELETE FROM account_sessions WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM accounts WHERE user_id = ?", [u]);
   }
   await expireLease("freeze_worker");
@@ -472,12 +473,12 @@ test("冻结前置闸：pending / dead outbox 行锁内拦下冻结；闸清后�
 test("锁内双检：sess 在线 → skipped 不冻结", async () => {
   const { uid: u } = await seedFullUser("sess");
   await makeCold(u);
-  await clientFor(u).hset(kSess(u), "connId", "c1");
+  await clientFor(u).hset(kSess(u, 0), "connId", "c1");
   try {
     assert.equal(await freezeUser(u, freezeLease), "skipped");
     assert.equal(await archiveRow(u), null);
   } finally {
-    await clientFor(u).unlink(kSess(u));
+    await clientFor(u).unlink(kSess(u, 0));
   }
 });
 

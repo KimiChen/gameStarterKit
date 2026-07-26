@@ -56,9 +56,10 @@ after(async () => {
   const pool = getPool();
   for (const u of createdUids) {
     await pool.execute("DELETE FROM login_audit WHERE user_id = ?", [u]);
+    await pool.execute("DELETE FROM account_sessions WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM accounts WHERE user_id = ?", [u]);
     await cleanupUser(u);
-    await clientFor(u).unlink(kSess(u));
+    await clientFor(u).unlink(kSess(u, 0));
     const b = activeLruBucketOf(u);
     await indexClientFor(b).zrem(kActiveLru(b), u);
   }
@@ -89,8 +90,8 @@ test("新号 wx-login：建号 + 出参只有 userId/token/isNew（09·G8）", a
     "SELECT event FROM login_audit WHERE user_id = ? ORDER BY id DESC LIMIT 1", [s.userId]);
   assert.equal(audit[0].event, "wx_login");
   // token 可验
-  await verifySession(s.userId, s.token);
-  await verifySessionStrict(s.userId, s.token);
+  await verifySession(s.userId, s.token, 0);
+  await verifySessionStrict(s.userId, s.token, 0);
 });
 
 test("同 openid 再登录 → 同一 user_id；无效 code → AUTH_REQUIRED", async () => {
@@ -99,35 +100,35 @@ test("同 openid 再登录 → 同一 user_id；无效 code → AUTH_REQUIRED", 
   assert.equal(a.userId, b.userId);
   await assert.rejects(login("bad_x"), AuthRequiredError);
   // 旧 token 已被轮换（单端互踢，待 M0 多端拍板）
-  await assert.rejects(verifySession(a.userId, a.token), AuthRequiredError);
-  await verifySession(b.userId, b.token);
+  await assert.rejects(verifySession(a.userId, a.token, 0), AuthRequiredError);
+  await verifySession(b.userId, b.token, 0);
 });
 
 test("封号 = 下次登不上：权威即拒 + 重新 wx-login 被 403 拒（09·G7 / M12d §2.3）", async () => {
   const s = await login("carol");
   await banUser(s.userId, "test-ban");
   // ① 权威（status=1 + token_hash=NULL）：建连级 strict 校验即拒（在线连接由 GM 踢收敛，§2.3 SOP）
-  await assert.rejects(verifySessionStrict(s.userId, s.token), AuthRequiredError);
+  await assert.rejects(verifySessionStrict(s.userId, s.token, 0), AuthRequiredError);
   await assert.rejects(login("carol"), BannedError);                        // ② 签发前 SELECT status 拦住
 });
 
 test("failover 复活会话被权威 token_hash 拦（verifySessionStrict）", async () => {
   const s = await login("frank");
   // 模拟：权威已撤销（token_hash=NULL），但 sess 因 failover 从旧副本复活（未被删）
-  await getPool().execute("UPDATE accounts SET token_hash = NULL WHERE user_id = ?", [s.userId]);
-  await verifySession(s.userId, s.token); // 快路径看不出（纯缓存比对，sess 还在）
-  await assert.rejects(verifySessionStrict(s.userId, s.token), AuthRequiredError); // 严格路径回权威拦住
+  await getPool().execute("DELETE FROM account_sessions WHERE user_id = ?", [s.userId]); // M12e：撤销 = 清会话行
+  await verifySession(s.userId, s.token, 0); // 快路径看不出（纯缓存比对，sess 还在）
+  await assert.rejects(verifySessionStrict(s.userId, s.token, 0), AuthRequiredError); // 严格路径回权威拦住
 });
 
 test("快路径纯缓存：账号侧撤销后组 sess 未清 → 快路径仍放行（故封号 SOP 必须踢，§2.3）", async () => {
   const s = await login("reverify");
-  await verifySession(s.userId, s.token);
+  await verifySession(s.userId, s.token, 0);
   // 账号侧撤销（token_hash=NULL）但组 sess 未动：快路径 ⛔ 不回权威，**依然放行**——
   // 这正是「封号必须由 GM 工具踢在线」的原因（缺踢则在场连接活到 sess TTL，无自动收敛）。
-  await getPool().execute("UPDATE accounts SET token_hash = NULL WHERE user_id = ?", [s.userId]);
-  await verifySession(s.userId, s.token);
+  await getPool().execute("DELETE FROM account_sessions WHERE user_id = ?", [s.userId]); // M12e：撤销 = 清会话行
+  await verifySession(s.userId, s.token, 0);
   // 权威路径（建连 onAuth / 重新登录）仍即时拒
-  await assert.rejects(verifySessionStrict(s.userId, s.token), AuthRequiredError);
+  await assert.rejects(verifySessionStrict(s.userId, s.token, 0), AuthRequiredError);
 });
 
 test("抢锁失败 → 权威/缓存分叉，但留下 login_diverged 审计（评审 [10]，决策=可观测不改结构）", async () => {
@@ -143,14 +144,14 @@ test("抢锁失败 → 权威/缓存分叉，但留下 login_diverged 审计（�
 
     // ① 分叉确已发生：token 由 lib 在**进锁之前**签发落库，故权威已换发、组缓存还是旧的
     const [rows] = await getPool().query<RowDataPacket[]>(
-      "SELECT token_hash FROM accounts WHERE user_id = ?", [s1.userId]);
-    const cached = await clientFor(s1.userId).hget(kSess(s1.userId), "tokenHash");
+      "SELECT token_hash FROM account_sessions WHERE user_id = ? AND server_id = 0", [s1.userId]);
+    const cached = await clientFor(s1.userId).hget(kSess(s1.userId, 0), "tokenHash");
     assert.equal(cached, createHash("sha256").update(s1.token).digest("hex"), "组缓存仍是旧 token 的 hash");
     assert.notEqual(rows[0].token_hash, cached, "权威已换发到那个**没人持有**的幽灵 token ⇒ 与缓存分叉");
 
     // ② 后果如文档所述：旧端在场连接（快路径纯缓存）继续放行，但新建连（strict 比权威）被拒
-    await verifySession(s1.userId, s1.token);
-    await assert.rejects(verifySessionStrict(s1.userId, s1.token), AuthRequiredError);
+    await verifySession(s1.userId, s1.token, 0);
+    await assert.rejects(verifySessionStrict(s1.userId, s1.token, 0), AuthRequiredError);
 
     // ③ 因此必须留痕——否则审计里只有一条「登录成功」，线上无从发现
     const [audit] = await getPool().query<RowDataPacket[]>(
@@ -164,8 +165,8 @@ test("抢锁失败 → 权威/缓存分叉，但留下 login_diverged 审计（�
   // ④ 客户端重登即自愈（新登录重新换发 + 写缓存 ⇒ 两存储回到一致）
   const s2 = await login("divergent");
   const [after] = await getPool().query<RowDataPacket[]>(
-    "SELECT token_hash FROM accounts WHERE user_id = ?", [s2.userId]);
-  assert.equal(await clientFor(s2.userId).hget(kSess(s2.userId), "tokenHash"), after[0].token_hash, "重登后一致");
+    "SELECT token_hash FROM account_sessions WHERE user_id = ? AND server_id = 0", [s2.userId]);
+  assert.equal(await clientFor(s2.userId).hget(kSess(s2.userId, 0), "tokenHash"), after[0].token_hash, "重登后一致");
 });
 
 test("输家路径 ⛔ 不记 login_diverged（正常顶号语义、两存储一致，记了只会刷噪音）", async () => {
@@ -253,9 +254,9 @@ test("unionid 空串 ⛔ 不得当成身份：不同 openid 的人不能串成�
   // ⚠ 用**完整** testUid（含 runId）：`.slice(-8)` 会把唯一前缀整个切掉、只剩固定的名字段，
   //   于是每次跑都复用同一批 openid ⇒ 一旦某轮中途抛错留下脏行，之后每轮都在读上一轮的残留。
   const tag = testUid("uniempty");
-  const a = await loginByOpenid(`op_A_${tag}`, "", null, "10.8.0.1", null, "dev_login");
+  const a = await loginByOpenid(`op_A_${tag}`, "", null, "10.8.0.1", null, "dev_login", 0);
   if (a.ok) { createdUids.push(a.uid); } // ⛔ 先登记再断言：中途抛错也要能被 after() 清掉
-  const b = await loginByOpenid(`op_B_${tag}`, "", null, "10.8.0.2", null, "dev_login");
+  const b = await loginByOpenid(`op_B_${tag}`, "", null, "10.8.0.2", null, "dev_login", 0);
   if (b.ok) { createdUids.push(b.uid); }
   assert.ok(a.ok && b.ok, "两次登录都应成功");
   assert.notEqual(a.ok && a.uid, b.ok && b.uid, "⛔ 不同 openid 必须是不同账号（空串不是身份）");
@@ -271,7 +272,7 @@ test("unionid 空串 ⛔ 不得当成身份：不同 openid 的人不能串成�
 
   // ⚠ **纯空白串同理**：`accounts.unionid` 是 ascii_bin，MySQL 的 PAD SPACE 语义下 '   ' 与 ''
   //   在 uk_unionid 上等价 ⇒ 判据若只看 `length > 0`，空白串会把刚堵掉的串号形态原样重演。
-  const c = await loginByOpenid(`op_C_${tag}`, "   ", null, "10.8.0.3", null, "dev_login");
+  const c = await loginByOpenid(`op_C_${tag}`, "   ", null, "10.8.0.3", null, "dev_login", 0);
   if (c.ok) { createdUids.push(c.uid); }
   assert.ok(c.ok && c.isNew, "空白 unionid 的第三个人仍是新号（⛔ 不得命中前两个）");
   const [c3] = await getPool().query<RowDataPacket[]>(
@@ -287,21 +288,21 @@ test("unionid 回填：绑开放平台前建的号，之后 openid 变更仍能�
   const tag = testUid("unifill"); // ⚠ 完整 id，理由同上一条用例
   const uni = `UNI_${tag}`;
   // ① 首登：还没绑开放平台，无 unionid
-  const first = await loginByOpenid(`op1_${tag}`, null, null, "10.8.1.1", null, "dev_login");
+  const first = await loginByOpenid(`op1_${tag}`, null, null, "10.8.1.1", null, "dev_login", 0);
   if (first.ok) { createdUids.push(first.uid); } // ⛔ 先登记再断言
   assert.ok(first.ok);
   // ② 绑定后同 openid 再登：应把 unionid 补进那一行
-  const second = await loginByOpenid(`op1_${tag}`, uni, null, "10.8.1.2", null, "dev_login");
+  const second = await loginByOpenid(`op1_${tag}`, uni, null, "10.8.1.2", null, "dev_login", 0);
   assert.ok(second.ok && first.ok && second.uid === first.uid, "同 openid 仍是同一账号");
   const [rows] = await getPool().query<RowDataPacket[]>(
     "SELECT unionid FROM accounts WHERE user_id = ?", [first.ok ? first.uid : ""]);
   assert.equal(rows[0].unionid, uni, "⛔ 回填必须发生，否则下一步的 openid 变更就会丢档");
   // ③ 主体变更导致 openid 变了：靠回填进去的 unionid 找回同一个号
-  const third = await loginByOpenid(`op2_${tag}`, uni, null, "10.8.1.3", null, "dev_login");
+  const third = await loginByOpenid(`op2_${tag}`, uni, null, "10.8.1.3", null, "dev_login", 0);
   assert.ok(third.ok && first.ok && third.uid === first.uid, "openid 变更后仍是同一账号（⛔ 不建第二个号）");
   assert.equal(third.ok && third.isNew, false, "⛔ isNew 不得再变回 true（首登奖励/首充判据会重复触发）");
   // ④ 回填是**增量**：⛔ 不覆盖已有值（这与"不改写 openid"是两条不同的纪律，别混）
-  const fourth = await loginByOpenid(`op1_${tag}`, `OTHER_${tag}`, null, "10.8.1.4", null, "dev_login");
+  const fourth = await loginByOpenid(`op1_${tag}`, `OTHER_${tag}`, null, "10.8.1.4", null, "dev_login", 0);
   assert.ok(fourth.ok);
   const [after] = await getPool().query<RowDataPacket[]>(
     "SELECT unionid FROM accounts WHERE user_id = ?", [first.ok ? first.uid : ""]);
@@ -355,8 +356,8 @@ test("并发登录定序：N 个同账号登录并发 → 两存储终态一致�
 
   // 核心不变式：MySQL 权威 hash === Redis 组缓存 hash（曾经会分叉：输家覆盖赢家）
   const [rows] = await getPool().query<RowDataPacket[]>(
-    "SELECT token_hash FROM accounts WHERE user_id = ?", [uid]);
-  const cached = await clientFor(uid).hget(kSess(uid), "tokenHash");
+    "SELECT token_hash FROM account_sessions WHERE user_id = ? AND server_id = 0", [uid]);
+  const cached = await clientFor(uid).hget(kSess(uid, 0), "tokenHash");
   assert.equal(cached, rows[0].token_hash, "缓存与权威一致（⛔ 无分叉）");
 
   // 且那个 hash 必属于某个成功返回的 token（不是幽灵值）
@@ -377,16 +378,16 @@ test("unionid 回填撞 uk_unionid：⛔ 不能只留 console —— 必须落 l
   const tag = `dual${Date.now().toString(36)}`;
   const uni = `UNI_${tag}`;
   // ① 甲：一开始就带 unionid 建号 ⇒ 占住 uk_unionid
-  const a = await loginByOpenid(`opA_${tag}`, uni, null, "10.8.2.1", null, "dev_login");
+  const a = await loginByOpenid(`opA_${tag}`, uni, null, "10.8.2.1", null, "dev_login", 0);
   assert.ok(a.ok, "甲建号成功");
   if (a.ok) { createdUids.push(a.uid); }
   // ② 乙：绑开放平台**之前**注册（unionid=NULL），是另一个 uid
-  const b = await loginByOpenid(`opB_${tag}`, null, null, "10.8.2.2", null, "dev_login");
+  const b = await loginByOpenid(`opB_${tag}`, null, null, "10.8.2.2", null, "dev_login", 0);
   assert.ok(b.ok, "乙建号成功");
   if (b.ok) { createdUids.push(b.uid); }
   assert.notEqual(a.ok && a.uid, b.ok && b.uid, "两个 uid（同一个人的两个号，正是要被发现的状态）");
   // ③ 乙绑定后带着**同一个** unionid 再登：回填 UPDATE 撞甲占住的 uk_unionid → 1062
-  const b2 = await loginByOpenid(`opB_${tag}`, uni, null, "10.8.2.3", null, "dev_login");
+  const b2 = await loginByOpenid(`opB_${tag}`, uni, null, "10.8.2.3", null, "dev_login", 0);
   assert.ok(b2.ok, "⛔ 登录本身必须照常成功（回填是锦上添花，异常一律吞）");
 
   const [audit] = await getPool().query<RowDataPacket[]>(
@@ -410,21 +411,21 @@ test("A1 组 sess 写入栅栏：迟到的旧写被丢弃，⛔ 且不得反手�
     "INSERT INTO accounts (user_id, openid) VALUES (?, ?)", [uid, `op_${uid}`]);
 
   // 甲登录（旧）→ 乙登录（新）。issueToken 保证 issuedAtMs 严格递增（⛔ 同毫秒也不打平）
-  const a = await issueToken(uid, null);
-  const b = await issueToken(uid, null);
+  const a = await issueToken(uid, 0, null);
+  const b = await issueToken(uid, 0, null);
   assert.ok(b.issuedAtMs > a.issuedAtMs,
     `签发时刻必须严格递增（⛔ 同毫秒打平会让栅栏失效）：a=${a.issuedAtMs} b=${b.issuedAtMs}`);
 
   // 乙先落地（真实赢家）
-  await writeGroupSess(uid, b.token, "", b.issuedAtMs);
-  const afterWinner = await clientFor(uid).hget(kSess(uid), "tokenHash");
+  await writeGroupSess(uid, b.token, 0, "", b.issuedAtMs);
+  const afterWinner = await clientFor(uid).hget(kSess(uid, 0), "tokenHash");
 
   // 甲的写**迟到**（正是 A1 那条竞态：remoteVerify 与 writeGroupSess 之间可任意交错）
-  await writeGroupSess(uid, a.token, "", a.issuedAtMs);
+  await writeGroupSess(uid, a.token, 0, "", a.issuedAtMs);
 
-  const finalHash = await clientFor(uid).hget(kSess(uid), "tokenHash");
+  const finalHash = await clientFor(uid).hget(kSess(uid, 0), "tokenHash");
   assert.equal(finalHash, afterWinner, "⛔ 迟到的旧写不得覆盖赢家的缓存");
   // 终态可用性：赢家的 token 仍然过得了快路径，输家的过不了
-  await verifySession(uid, b.token);
-  await assert.rejects(verifySession(uid, a.token), AuthRequiredError, "旧 token ⛔ 不得仍被放行");
+  await verifySession(uid, b.token, 0);
+  await assert.rejects(verifySession(uid, a.token, 0), AuthRequiredError, "旧 token ⛔ 不得仍被放行");
 });

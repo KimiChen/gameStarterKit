@@ -142,7 +142,7 @@ async function backfillUnionid(uid: string, unionid: string): Promise<void> {
 /** 按 openid 登录（dev 直连 / wx 经 code2session 后的公共段）。签发前必查 status（G7）。 */
 export async function loginByOpenid(
   openid: string, rawUnionid: string | null, sessionKey: string | null,
-  ip: string, deviceId: string | null, auditKind: string,
+  ip: string, deviceId: string | null, auditKind: string, sId: number,
 ): Promise<LoginResult> {
   // ⚠ **入口处一次性归一，⛔ 不在每个用到的地方各判各的**：空串既不能用来查（会命中别人的号），
   // 也**绝不能写进 accounts** —— `uk_unionid` 上只容得下一行空串，第一个人写进去之后，
@@ -178,14 +178,18 @@ export async function loginByOpenid(
     await auditLogin("fail", account.user_id, "banned", ip, deviceId);
     return { ok: false, reason: "banned" };
   }
-  const { token, issuedAtMs } = await issueToken(account.user_id, sessionKey);
+  const { token, issuedAtMs } = await issueToken(account.user_id, sId, sessionKey);
   await getPool().execute<ResultSetHeader>(
     "UPDATE accounts SET last_login_at = NOW(3) WHERE user_id = ?", [account.user_id]);
   await auditLogin(auditKind, account.user_id, null, ip, deviceId);
   return { ok: true, uid: account.user_id, token, isNew, issuedAtMs };
 }
 
-export interface WxLoginInput { code: string; ip: string; deviceId?: string | null }
+export interface WxLoginInput {
+  code: string; ip: string; deviceId?: string | null;
+  /** 要登录的区（M12e：单端语义作用域 = `(账号, 区)`）。缺省 0 = 大混服/单形态。 */
+  sId?: number;
+}
 
 /** wx-login：限流 → code2session → loginByOpenid。⚠ 限流在 code2session **之前**（否则刷子先烧微信配额，G5）。 */
 export async function wxLogin(input: WxLoginInput): Promise<LoginResult> {
@@ -195,11 +199,11 @@ export async function wxLogin(input: WxLoginInput): Promise<LoginResult> {
     await auditLogin("fail", null, `code2session:${wx.reason}`, input.ip, input.deviceId ?? null);
     return { ok: false, reason: wx.reason };
   }
-  return loginByOpenid(wx.openid, wx.unionid, wx.sessionKey, input.ip, input.deviceId ?? null, "wx_login");
+  return loginByOpenid(wx.openid, wx.unionid, wx.sessionKey, input.ip, input.deviceId ?? null, "wx_login", input.sId ?? 0);
 }
 
 /** dev-login：限流 → devKey 映射 openid（`dev_<devKey>`）→ loginByOpenid。 */
-export async function devLogin(devKey: string, ip: string, deviceId: string | null): Promise<LoginResult> {
+export async function devLogin(devKey: string, ip: string, deviceId: string | null, sId = 0): Promise<LoginResult> {
   if (!rateAllow(ip)) { return { ok: false, reason: "rate_limited" }; }
-  return loginByOpenid(`dev_${devKey}`, null, null, ip, deviceId, "dev_login");
+  return loginByOpenid(`dev_${devKey}`, null, null, ip, deviceId, "dev_login", sId);
 }
