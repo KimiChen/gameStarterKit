@@ -158,6 +158,17 @@ export const WEBPLATFORM_BASE_URL = () => env("WEBPLATFORM_BASE_URL", "http://lo
  *  ⚠ 支付链现在不具备上线条件（无下单端点、共享密钥而非 APIv3 验签、无对账，见 todo.md 支付条目），
  *  这个开关是**防误开**，⛔ 不是"配上就能收钱"。每请求现读（同 ADMIN_API_SECRET 范式，便于灰度）。 */
 export const PAY_ENABLED = () => process.env.PAY_ENABLED === "1";
+/** ⚠ **生产开启 = 配置事故，加载期拒绝启动**（与上面 AUTH_DEV_ENABLED 同款 fail-fast）。
+ *  评审逮到：缺省关只是"软开关"——`NODE_ENV=production PAY_ENABLED=1` 照样能起，然后
+ *  `/pay/wx-notify` 只剩一道**共享密钥占位**（⛔ 非 APIv3 平台证书验签，密钥泄漏即可伪造发货），
+ *  而它后面接的是**真发币**（`purchases.ts`：paid CAS → `currency_ledger` 正向 delta → delivered）。
+ *  ⇒ 在 APIv3 验签 / 下单出口 / 对账三者闭环之前，生产环境**不允许**开启，⛔ 不是"默认关就够了"。
+ *  灰度/联调请在非生产 NODE_ENV 下做。 */
+if (process.env.NODE_ENV === "production" && process.env.PAY_ENABLED === "1") {
+  throw new Error(
+    "PAY_ENABLED=1 在生产环境被显式开启——支付链尚未闭环（无下单端点、共享密钥而非 APIv3 验签、无对账，"
+    + "见 todo.md 支付条目），而 /pay/wx-notify 后面是真发币路径。补齐三项之前生产必须关闭。");
+}
 
 /** durable（noeviction + AOF everysec）与 cache（allkeys-lru）是两个物理实例（09·R4）。 */
 export const REDIS_DURABLE_URL = () => env("REDIS_DURABLE_URL", "redis://127.0.0.1:6401");
@@ -213,18 +224,30 @@ export const COLD_DAYS = 90;
 /**
  * 冻结开关：按内存水位（used_memory/maxmemory > 0.6）启用（09·F5），默认关。
  *
- * ⚠ **与多区互斥，加载期 fail-fast**：`user_archive` 尚未按区、`active:lru`/freeze 也还没区化
- * （DUAL_MODE 进度表的 archive 步），此前"⛔ 补齐前不开多区 + freeze"只是**散文**——两个 env
- * 各解析各的、⛔ 无任何组合断言 ⇒ 同时打开能正常启动，然后在冷档路径上静默串区。
- * 与 `keys.ts` 的 zoneCtx fail-fast 同范式：让它在**启动时**就炸，⛔ 不留给线上去发现。
+ * ⚠ **archive 步补齐前，freeze 在任何配置下都不安全，故加载期 fail-fast**（DUAL_MODE archive 步）。
+ * 判据不是"是否多区"——⛔ **上一版这道闸把判据写成 `GROUP_ZONES.length > 0` 就抛，两边都反了**
+ * （评审逮到）。实测事实：
+ *   - `GROUP_ZONES` **非空** ⇒ freezeWorker 在**运行期**就崩：它不在 `zoneCtx.run` 内（archive/ 全目录
+ *     零 zoneCtx），而 `kUser` 走 `P()` ⇒ `currentZoneId()` 命中 keys.ts 的 fail-fast 抛错。
+ *     所以这一侧 freeze 本来就跑不起来，旧闸拦的是**空档**。
+ *   - `GROUP_ZONES` **空** ⇒ freeze 真能跑，而这一侧才是**唯一会坏数据**的：`kActiveLru` 用**全局**
+ *     前缀 `G`、`kUser` 用**区**前缀 `P()` ⇒ 在 s1 玩过的 uid 出现在全局 LRU 里，worker（sId=0）
+ *     去查 `prefix_user:{uid}` 查不到，于是按 freezeWorker 的**幽灵项**分支把这个**活人**从活跃
+ *     索引里 `ZREM` 掉。旧闸恰恰放行了它，还有绿测试把它钉成"合法组合"。
+ * ⇒ 结论：⛔ 别再试图用「单区/多区」区分安全性。补齐 archive 步（`user_archive` 加 server_id、
+ *   `active:lru` 区化、worker 进 zoneCtx）之前，唯一安全值是 0。
+ * ⚠ 逃生口 `FREEZE_UNSAFE_S0_ONLY=1` 仅给"目录确实不下发任何 s≥1、全库只有 s0"的部署
+ *   （默认目录下发 s1–s5，⛔ 缺省不满足）；命名带 UNSAFE 是刻意的，⛔ 别用它绕过上面的结论。
  */
 export const FREEZE_ENABLED = (() => {
   const on = process.env.FREEZE_ENABLED === "1";
-  if (on && GROUP_ZONES.length > 0) {
+  if (on && process.env.FREEZE_UNSAFE_S0_ONLY !== "1") {
     throw new Error(
-      `FREEZE_ENABLED=1 与 GROUP_ZONES=「${process.env.GROUP_ZONES ?? ""}」不能同时开启——`
-      + "user_archive 未按区、active:lru/freeze 未区化（DUAL_MODE archive 步），多区下冷档会串区。"
-      + "补齐 archive 步之前，多区部署必须 FREEZE_ENABLED=0。");
+      "FREEZE_ENABLED=1 但 archive 步未补齐（DUAL_MODE archive 步）——freeze 目前在任何配置下都不安全："
+      + `GROUP_ZONES 非空（当前「${process.env.GROUP_ZONES ?? ""}」）时 freezeWorker 运行期即崩（keys.ts `
+      + "zoneCtx fail-fast）；GROUP_ZONES 空时 active:lru 是全局键而 user 档是区键 ⇒ 在 s≥1 玩过的活人"
+      + "会被当幽灵项从活跃索引 ZREM 掉。补齐前唯一安全值是 FREEZE_ENABLED=0。"
+      + "（确认本部署只有 s0、目录不下发任何 s≥1，才可加 FREEZE_UNSAFE_S0_ONLY=1 显式放行）");
   }
   return on;
 })();

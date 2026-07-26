@@ -95,24 +95,50 @@ test("ACCOUNT_MODE 合法值与缺省值：正常加载", () => {
 });
 
 /**
- * FREEZE_ENABLED × GROUP_ZONES 组合断言（评审：此前只是散文）。
+ * FREEZE_ENABLED 加载期闸（archive 步补齐前唯一安全值是 0）。
  *
- * 「⛔ 补齐 archive 步前不开多区 + freeze」以前只写在 DUAL_MODE 里，两个 env **各解析各的**、
- * 无任何组合校验 ⇒ 同时打开能正常启动，然后在冷档路径上静默串区。⛔ 这条回退就是"能启动"，
- * 所以用例必须钉住「加载期拒绝」而不是任何运行期行为。
+ * ⚠ **本组用例是对上一版用例的纠正，⛔ 别改回去**：上一版把判据当成「多区才危险」，于是
+ * ①「FREEZE_ENABLED=1 + GROUP_ZONES 非空 → 拒绝」，②「FREEZE_ENABLED=1 + GROUP_ZONES 空 → 合法」。
+ * 两条都反了，而且第二条**把唯一会坏数据的组合钉成了绿契约**——比原来的散文更坏，因为有人会信它。
+ * 实测依据见 config.ts 该项注释：空 GROUP_ZONES 才是 freeze 唯一跑得起来、也唯一会把在 s≥1
+ * 玩过的活人当幽灵项 ZREM 掉的配置；非空那侧 worker 运行期本来就崩（keys.ts zoneCtx fail-fast）。
  */
-test("FREEZE_ENABLED=1 + GROUP_ZONES 非空：加载期即 throw（⛔ 不允许静默启动）", () => {
-  for (const zones of ["1", "1,2", "0,3"]) {
+test("FREEZE_ENABLED=1：加载期即 throw —— ⛔ 空 GROUP_ZONES 也不例外（那侧才会坏数据）", () => {
+  for (const zones of [undefined, "", "0", "1", "1,2", "0,3"]) {
     const r = loadConfigWith({ FREEZE_ENABLED: "1", GROUP_ZONES: zones });
-    assert.notEqual(r.status, 0, `GROUP_ZONES=「${zones}」+ freeze 应拒绝启动`);
-    assert.match(r.stderr, /FREEZE_ENABLED=1 与 GROUP_ZONES/, `stderr：${r.stderr.slice(0, 300)}`);
+    assert.notEqual(r.status, 0, `GROUP_ZONES=「${String(zones)}」+ freeze 必须拒绝启动`);
+    assert.match(r.stderr, /archive 步未补齐/, `stderr：${r.stderr.slice(0, 300)}`);
   }
 });
 
-test("FREEZE_ENABLED × GROUP_ZONES 的三种合法组合：正常加载", () => {
-  // 单开任一侧、以及都不开，都必须能起（⛔ 别把断言写成"只要 freeze 就炸"）
-  for (const [freeze, zones] of [["1", ""], ["0", "1,2"], ["1", undefined], ["0", ""]] as const) {
+test("FREEZE_ENABLED=0（或未设）：任何 GROUP_ZONES 都正常加载", () => {
+  for (const [freeze, zones] of [["0", ""], ["0", "1,2"], [undefined, "0"], [undefined, ""]] as const) {
     const r = loadConfigWith({ FREEZE_ENABLED: freeze, GROUP_ZONES: zones });
-    assert.equal(r.status, 0, `FREEZE_ENABLED=${freeze} GROUP_ZONES=${String(zones)} 应通过，stderr：${r.stderr.slice(0, 300)}`);
+    assert.equal(r.status, 0, `FREEZE_ENABLED=${String(freeze)} GROUP_ZONES=${String(zones)} 应通过，stderr：${r.stderr.slice(0, 300)}`);
+  }
+});
+
+test("逃生口 FREEZE_UNSAFE_S0_ONLY=1：显式放行（⛔ 仅限目录不下发 s≥1 的部署）", () => {
+  const r = loadConfigWith({ FREEZE_ENABLED: "1", FREEZE_UNSAFE_S0_ONLY: "1", GROUP_ZONES: "" });
+  assert.equal(r.status, 0, `显式逃生口应放行，stderr：${r.stderr.slice(0, 300)}`);
+});
+
+/**
+ * PAY_ENABLED 生产 fail-fast（评审：缺省关只是"软开关"）。
+ *
+ * `/pay/wx-notify` 后面接的是真发币（purchases.ts：paid CAS → currency_ledger 正向 delta），
+ * 而当前它只有**共享密钥占位**（⛔ 非 APIv3 平台证书验签）。故生产显式开启 = 配置事故。
+ * 范式与同文件 AUTH_DEV_ENABLED 一致。
+ */
+test("PAY_ENABLED=1 + NODE_ENV=production：加载期即 throw（⛔ 支付链闭环前不许生产开启）", () => {
+  const r = loadConfigWith({ PAY_ENABLED: "1", NODE_ENV: "production" });
+  assert.notEqual(r.status, 0, "生产 + PAY_ENABLED=1 应拒绝启动");
+  assert.match(r.stderr, /PAY_ENABLED=1 在生产环境被显式开启/, `stderr：${r.stderr.slice(0, 300)}`);
+});
+
+test("PAY_ENABLED=1 在非生产：正常加载（联调/灰度留口）", () => {
+  for (const nodeEnv of [undefined, "development", "test"]) {
+    const r = loadConfigWith({ PAY_ENABLED: "1", NODE_ENV: nodeEnv });
+    assert.equal(r.status, 0, `NODE_ENV=${String(nodeEnv)} 应通过，stderr：${r.stderr.slice(0, 300)}`);
   }
 });
