@@ -225,12 +225,12 @@ test("A2 公会在线索引按区分桶：同 gid 的 s1 事件 ⛔ 不得推给
   const a = uid("a2ga"); const b = uid("a2gb");
   // 造两个"在线"连接：a 在 s1、b 在 s2，同一个 gid
   const sent: Array<{ uid: string; type: string }> = [];
-  const fakeConn = (who: string) => ({
+  const fakeConn = (who: string, sId: number) => ({
     sink: (type: string) => { sent.push({ uid: who, type }); },
-    kick: () => {}, tokenHash: `h_${who}`, sId: 0,
+    kick: () => {}, tokenHash: `h_${who}`, sId,
   });
-  push.registerOnline(a, `sess_${a}`, fakeConn(a));
-  push.registerOnline(b, `sess_${b}`, fakeConn(b));
+  push.registerOnline(a, `sess_${a}`, fakeConn(a, 1));
+  push.registerOnline(b, `sess_${b}`, fakeConn(b, 2));
   push.setOnlineGuild(a, 1, 1); // s1 的 1 号公会
   push.setOnlineGuild(b, 1, 2); // s2 的 1 号公会（同 gid，⛔ 不同区）
 
@@ -240,6 +240,80 @@ test("A2 公会在线索引按区分桶：同 gid 的 s1 事件 ⛔ 不得推给
 
   push.unregisterOnline(a, `sess_${a}`);
   push.unregisterOnline(b, `sess_${b}`);
+});
+
+test("A2 公会在线索引以 (uid,sId) 为身份：同账号跨区在线互不覆盖、推送不串连接", async () => {
+  const push = await import("../../src/websocket/push");
+  const u = uid("a2same");
+  const sent: Array<{ sId: number; type: string }> = [];
+  const conn = (sId: number) => ({
+    sink: (type: string) => { sent.push({ sId, type }); },
+    kick: () => {}, tokenHash: `h_${sId}`, sId,
+  });
+  push.registerOnline(u, "sess_s1", conn(1));
+  push.registerOnline(u, "sess_s2", conn(2));
+  push.setOnlineGuild(u, 11, 1);
+  push.setOnlineGuild(u, 22, 2);
+
+  assert.equal(push.pushToGuild(11, "guild.s1", { seq: 1 }, 1), 1);
+  assert.deepEqual(sent, [{ sId: 1, type: "guild.s1" }],
+    "s1 公会事件只到同 uid 的 s1 连接，⛔ 不得经 pushToUser 扇到 s2");
+
+  sent.length = 0;
+  assert.equal(push.pushToGuild(22, "guild.s2", { seq: 2 }, 2), 1);
+  assert.deepEqual(sent, [{ sId: 2, type: "guild.s2" }], "s2 索引未被 s1 覆盖");
+
+  // s1 最后一条连接离开，只清 s1；s2 仍在线、仍在 22 号公会。
+  push.unregisterOnline(u, "sess_s1");
+  sent.length = 0;
+  assert.equal(push.pushToGuild(11, "guild.s1.after", {}, 1), 0);
+  assert.equal(push.pushToGuild(22, "guild.s2.after", {}, 2), 1);
+  assert.deepEqual(sent, [{ sId: 2, type: "guild.s2.after" }]);
+  push.unregisterOnline(u, "sess_s2");
+});
+
+test("A2 公会全清按 uid 定向：批量成员存在时只清目标账号各区，不扰动其它 uid", async () => {
+  const push = await import("../../src/websocket/push");
+  const target = testUid("a2-targeted-clear");
+  const targetZones = Array.from({ length: 12 }, (_, i) => i + 1);
+  const peers = Array.from({ length: 64 }, (_, i) => testUid(`a2-peer-${i}`));
+  const peerGuild = 9_001;
+  const delivered = new Map<string, number>();
+  const conn = (who: string, sId: number) => ({
+    sink: () => { delivered.set(who, (delivered.get(who) ?? 0) + 1); },
+    kick: () => {},
+    tokenHash: `h_${who}_${sId}`,
+    sId,
+  });
+
+  try {
+    // 目标账号横跨多个区；另放一批其它 uid，钉住「全清目标」不能误扫/误删外层其它成员。
+    for (const sId of targetZones) {
+      push.registerOnline(target, `target_s${sId}`, conn(target, sId));
+      push.setOnlineGuild(target, 10_000 + sId, sId);
+    }
+    for (let i = 0; i < peers.length; i++) {
+      const who = peers[i];
+      push.registerOnline(who, `peer_${i}`, conn(who, 1));
+      push.setOnlineGuild(who, peerGuild, 1);
+    }
+
+    push.setOnlineGuild(target, null); // 无 sId = 只遍历该 uid 的 zone→gid 内层表并全清
+    for (const sId of targetZones) {
+      assert.equal(push.pushToGuild(10_000 + sId, "target.after-clear", {}, sId), 0,
+        `目标账号 s${sId} 的索引必须被全清`);
+    }
+    assert.equal(push.pushToGuild(peerGuild, "peers.still-online", {}, 1), peers.length,
+      "目标账号全清不得扰动其它 uid 的公会索引");
+    assert.equal(
+      peers.reduce((n, who) => n + (delivered.get(who) ?? 0), 0),
+      peers.length,
+      "批量其它成员每人仍准确收到一次",
+    );
+  } finally {
+    for (const sId of targetZones) { push.unregisterOnline(target, `target_s${sId}`); }
+    for (let i = 0; i < peers.length; i++) { push.unregisterOnline(peers[i], `peer_${i}`); }
+  }
 });
 
 test("M12e 单端语义作用域 = (账号, 区)：同区顶号、⛔ 跨区互不影响", async () => {

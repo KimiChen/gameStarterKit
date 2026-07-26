@@ -43,10 +43,16 @@ export function registerOnline(uid: string, sessionId: string, conn: OnlineConn)
 }
 export function unregisterOnline(uid: string, sessionId: string): void {
   const m = online.get(uid);
-  if (!m || !m.delete(sessionId)) { return; }
+  const removed = m?.get(sessionId);
+  if (!m || !removed || !m.delete(sessionId)) { return; }
+  // 同 uid 可跨区同时在线：本区最后一条连接离开时只清本区公会索引，⛔ 不能等 uid 全下线，
+  // 更不能把其它区仍在线角色的索引一起清掉。
+  if (![...m.values()].some((conn) => conn.sId === removed.sId)) {
+    setOnlineGuild(uid, null, removed.sId);
+  }
   if (m.size === 0) {
     online.delete(uid);
-    setOnlineGuild(uid, null); // 全部下线才清（工会在线索引三个维护点之一）
+    setOnlineGuild(uid, null); // 防御性清掉该 uid 的全部残留区索引
   }
 }
 
@@ -103,31 +109,50 @@ export function pushToUser(uid: string, type: string, data: unknown): boolean {
 // （`kGuildEvtSeq`/`kGuildLog` 走 `P()`）⇒ 只按 gid 建索引会让**同 gid 的不同区塌进同一个集合**，
 // s1 的公会事件推到 s2 的成员身上（实证过）。⛔ 别以为"GROUP_ZONES 为空就没多区"：空 = 承载全部区。
 const zKey = (sId: number, gid: number): string => `${sId}:${gid}`;
-// uid → 该玩家所在的 (区, 公会)。⚠ **存区号而不是清理时现取**：下线清理路径（unregisterOnline）
-// ⛔ 不在 zoneCtx 内，那里调 currentZoneId() 会在 GROUP_ZONES 非空时直接抛（keys.ts fail-fast）。
-const guildOf = new Map<string, { sId: number; gid: number }>();
+// uid → (sId → gid)。M12e 允许同 uid 跨区同时在线，内层按区隔离；外层按 uid 定向，
+// 令全下线清理只遍历该账号实际在线过的区，⛔ 不在网关断连热路径扫描全服 guildOf。
+// 显式带 sId 而不读 zoneCtx：下线清理不在 ALS 上下文内。
+const guildOf = new Map<string, Map<number, number>>();
 const guildOnline = new Map<string, Set<string>>(); // `${sId}:${gid}` → 在线 uid 集合
 
 /**
  * 设置/清除某在线玩家的工会归属（guildId null/0 = 无工会）。玩家不在线时只做清除。
- * @param sId 设置时**必填**（玩家所在区）；清除时忽略——用登记时存下的区号，见上方注释。
+ * @param sId 设置时**必填**；清除时传 sId = 只清该区，省略 = uid 全下线后的防御性全清。
  */
 export function setOnlineGuild(uid: string, guildId: number | null, sId?: number): void {
-  const old = guildOf.get(uid);
-  if (old !== undefined) {
-    const k = zKey(old.sId, old.gid);
+  const clearOne = (zone: number): void => {
+    const zones = guildOf.get(uid);
+    const oldGid = zones?.get(zone);
+    if (oldGid === undefined) { return; }
+    const k = zKey(zone, oldGid);
     const set = guildOnline.get(k);
     set?.delete(uid);
     if (set !== undefined && set.size === 0) { guildOnline.delete(k); }
-    guildOf.delete(uid);
-  }
-  if (guildId !== null && guildId > 0 && online.has(uid)) {
-    if (sId === undefined) {
-      // ⛔ 宁可不挂索引也不挂错区：挂错的后果是跨区推送（A2 要修的正是它）
-      console.error(`[push] setOnlineGuild 缺 sId，⛔ 跳过挂载（uid=${uid} gid=${guildId}）`);
+    zones!.delete(zone);
+    if (zones!.size === 0) { guildOf.delete(uid); }
+  };
+
+  if (sId === undefined) {
+    if (guildId !== null && guildId > 0) {
+      console.error(`[push] setOnlineGuild 设置公会时缺 sId，⛔ 跳过挂载（uid=${uid} gid=${guildId}）`);
       return;
     }
-    guildOf.set(uid, { sId, gid: guildId });
+    // uid 的全部连接都已下线：清它在所有区的残留索引。
+    // 复杂度只与该 uid 的区数有关，⛔ 不得退化成遍历 guildOf 全表。
+    for (const zone of [...(guildOf.get(uid)?.keys() ?? [])]) {
+      clearOne(zone);
+    }
+    return;
+  }
+
+  clearOne(sId);
+  if (guildId !== null && guildId > 0 && online.has(uid)) {
+    // 只有该区确有在线连接才挂载；同 uid 仅在别区在线不算。
+    const inZone = [...(online.get(uid)?.values() ?? [])].some((conn) => conn.sId === sId);
+    if (!inZone) { return; }
+    let zones = guildOf.get(uid);
+    if (!zones) { zones = new Map(); guildOf.set(uid, zones); }
+    zones.set(sId, guildId);
     const k = zKey(sId, guildId);
     let set = guildOnline.get(k);
     if (!set) { set = new Set(); guildOnline.set(k, set); }
@@ -141,7 +166,12 @@ export function setOnlineGuild(uid: string, guildId: number | null, sId?: number
 export function pushToGuild(guildId: number, type: string, data: unknown, sId: number): number {
   let n = 0;
   for (const uid of guildOnline.get(zKey(sId, guildId)) ?? []) {
-    try { if (pushToUser(uid, type, data)) { n++; } } catch { /* 将死连接，放弃 */ }
+    const conns = online.get(uid);
+    if (!conns) { continue; }
+    for (const conn of [...conns.values()]) {
+      if (conn.sId !== sId) { continue; }
+      try { conn.sink(type, data); n++; } catch { /* 将死连接，放弃 */ }
+    }
   }
   return n;
 }

@@ -20,7 +20,7 @@ export default defineRpc(GuildRpc.Leave, {
       if (gid > 0) { uow.set("guildId", "0"); }
       return gid;
     });
-    setOnlineGuild(ctx.uid, null); // 换会维护点（清除用登记时存的区号，⛔ 无需 sId）
+    setOnlineGuild(ctx.uid, null, currentZoneId()); // 只清本区；同 uid 在其它区的公会在线态必须保留
     // ⚠ 同 join：档已提交后 emit 失败，重试读到 guildId=0 不会补发通知（尽力通知契约所容忍）。
     // guildExists 兜底：档里若残留目录外 gid（目录裁撤/脏数据），退会不得为其铸事件键
     if (prevGid > 0 && guildExists(prevGid)) {
