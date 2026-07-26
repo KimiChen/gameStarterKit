@@ -209,8 +209,8 @@ shared IUserView（protocol/lobbyRpc/user.ts，类型真源）
 - `auth`：wx 登录 / 不透明 token / 撤销（status + token_hash）
 - `economy`：三阶段 outbox / 充值状态机 / relayer 单例进程 / mailer 邮件附件 / catalog
 - `archive`：冷档 freeze/thaw/lazyMigrate/janitor
-- `match`：M8a 结算证据链消费（一局一条 XADD → 幂等闸落库；GameRoom onAuth 严格化后
-  参战者必绑框架账号）
+- `match`：M8a 结算证据链消费（新写只进 schema v2，同槽双读并排空 legacy → 幂等闸落库；
+  GameRoom onAuth 严格化后参战者必绑框架账号）
 - `guild`：工会事件存取（seq + 近窗 list，见 §10）
 - `compute`：worker_threads 计算池（铁律 11 卸载点，见 §11）
 
@@ -410,7 +410,7 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 
 - **R1** ⛔ 禁 HGETALL 大 Hash，读用 HMGET 按需；背包拆 `bag:{uid}:{0..3}`；唯一例外 freeze worker（限速+低峰+鲸鱼档 HSCAN）。
 - **R2** 任何写路径不得隐式创建 `user:{uid}`——casHset/applyEffect 前置 EXISTS，缺失返回 cold；只有建号和 thaw 能创建。
-- **R3** per-user key 一律 `{uid}` hash-tag 同槽；⛔ 跨用户 key（active:lru:{bucket}、stream:match）不进同一条 Lua。
+- **R3** per-user key 一律 `{uid}` hash-tag 同槽；⛔ 跨用户 key（active:lru:{bucket}、match streams）不进同一条 Lua。match v2 的 tag 是完整 legacy key，只用于让双流同实例/slot，绝不表示它能与 per-user key 原子操作。
 - **R4** durable(noeviction) 与 cache(allkeys-lru) 物理分实例；⛔「逻辑库 SELECT n 隔离」是技术错误。
 - **R5** 权威 key（user/bag/fence/applied）无 TTL；协调 key（lock 5s/idem 10s·60s/sess 3d）按 §13 设 TTL；新增 key 必先进 §13。
 - **R6** 删大 key 一律 UNLINK，⛔ 禁同步 DEL。
@@ -437,9 +437,9 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 - **G4** 大包防护在 ws transport 层设 maxPayload（超限断帧不解码），dispatcher 校验只是兜底。
 - **G5** 匿名/optional-auth 的限流与幂等 key 用 sessionId/真实 IP，⛔ 禁 userId=null 塌缩成共享 key。
 - **G6** 未知 type 只回 UNKNOWN_TYPE + 低权重计数，⛔ 不计 flood 不封禁。
-- **G7** 封号 = **账号级「下次登不上」+ 踢在线，两步都必做**（M12d §2.3 SOP）：① 一条 UPDATE 写权威 `status=1` + `token_hash=NULL`（先写 MySQL）→ 新建连接/重登即拒；② **GM 工具逐节点 `POST /admin/kick` 并确认送达** → 在场连接 `leave(4001)`。⛔ 缺 ② 则在场连接可存活至 sess TTL（3d）且**无自动收敛**（快路径纯缓存比对、零回源）；`stream:kick` 只是程序化封号的便捷扇出、无 ack。⛔ 不删 `sess:{uid}`、⛔ 无 epoch fence、⛔ 绝不删 `user:{uid}`；wx-login 签发前必须 SELECT status。
+- **G7** 封号 = **账号级「下次登不上」+ 踢在线，两步都必做**（M12d §2.3 SOP）：① 一条 UPDATE 写权威 `status=1` + 清空该 uid 全部区会话（先写 MySQL）→ 新建连接/重登即拒；② **GM 工具逐节点 `POST /admin/kick` 并确认送达** → 在场连接语义化关闭。⛔ 缺 ② 则在场连接可存活至 sess TTL（3d）且**无自动收敛**（快路径纯缓存比对、零回源）；`stream:kick` 只是程序化封号的便捷扇出、无 ack。⛔ 删除组侧 `sess:{uid}:s{sId}` 不能替代踢、⛔ 无 epoch fence、⛔ 绝不删 `user:{uid}`；wx-login 签发前必须 SELECT status。
 - **G7b** **GM 工具契约（运营侧必须实现；封号 SOP 第二步的送达保证靠它，⛔ 不是可选项）**——封号/强制下线时 GM 工具必须：① **先权威后踢**（先 WebPlatform 写 `status/token_hash` 成功，再踢；反序会让用户在权威写入前被踢、随即正常重连回来）；② **遍历全部在役节点** `POST /admin/kick`（`x-admin-secret`）——用户只连在一个节点，故绝大多数节点返回 `kicked:false` 属**正常**、非错误；③ **重试到确认**（踢幂等，不在线即 no-op），最终仍失败**必须告警**——⚠「节点不可达」通常无害（节点挂了其上连接也没了），真正危险的是「节点活着在服务玩家、但 GM 够不到它」；④ **可观测**：能查询/告警「已封禁但仍在线」的用户（依赖 presence/M15 或各节点在线查询）；⑤ 同样适用于强制下线（`revoke`）/注销等一切「需让在场连接立即失效」的运营动作。⛔ 少了它，被封用户的在场连接可存活至 `sess` TTL（3d）且**无自动收敛**（快路径纯缓存比对、零权威回源）。详见 DUAL_MODE §2.3；**运营侧实现规格见 [GM-TOOL-SPEC.md](GM-TOOL-SPEC.md)**。
-- **G7c** **单端语义的作用域 = `(账号, 区)`**（M12e，⚠ 从"账号"收窄而来）：会话权威在 `account_sessions`（PK `(user_id, server_id)`），token **只对签发它的那个区有效** —— 同区第二次登录顶掉前一个，**不同区互不影响**（玩家可在 1 区与 107 区各有一个在线角色）。`writeGroupSess` 见组 sess 的 tokenHash **变化**即踢旧连接（`reason=replaced`；⛔ 断线重连复用同一 token，hash 未变、不命中），踢只作用于**同区**连接。⚠ 因每个区只由一个物理组承载 ⇒ 顶号的踢**永不需要跨组**（原待办 A3 因此消解）。⛔ **封号仍是账号级**：`status=1` + 清光全部区的会话行 ⇒ 各区在线连接仍靠 GM 逐节点踢（G7b）。踢一律 **先推 `auth.forceLogout{reason}` 再用语义化关闭码关连接**（`KICK_CLOSE_CODE` 4901 封禁/4902 顶号/4903 强制下线（⛔ 避开 Colyseus 保留区 4000–4010/4210–4217）），客户端 `onLeave(code)` 兜底判因。⚠ 要支持**同区多端同时在线**仍须扩模型（per-device 行），属数据模型变更、非加字段。
+- **G7c** **单端语义的作用域 = `(账号, 区)`**（M12e，⚠ 从"账号"收窄而来）：会话权威在 `account_sessions`（PK `(user_id, server_id)`），token **只对签发它的那个区有效** —— 同区第二次登录顶掉前一个，**不同区互不影响**（玩家可在 1 区与 107 区各有一个在线角色）。`writeGroupSess` 用 `account_sessions.token_issued_at` 作单调栅栏并返回 `written/unchanged/stale`：更新登录才 `written`；同 token 同时刻的多连接/重连是合法 `unchanged`；迟到旧登录或同时刻异 hash 是 `stale`，不得覆写、不得踢赢家，strict 建连还必须拒绝该请求。只有 `written` 且旧 tokenHash 不同时才踢旧连接（`reason=replaced`），踢只作用于**同区**。⚠ 因每个区只由一个物理组承载 ⇒ 顶号的踢**永不需要跨组**（原待办 A3 因此消解）。⛔ **封号仍是账号级**：`status=1` + 清光全部区的会话行 ⇒ 各区在线连接仍靠 GM 逐节点踢（G7b）。踢一律 **先推 `auth.forceLogout{reason}` 再用语义化关闭码关连接**（`KICK_CLOSE_CODE` 4901 封禁/4902 顶号/4903 强制下线（⛔ 避开 Colyseus 保留区 4000–4010/4210–4217）），客户端 `onLeave(code)` 兜底判因。⚠ 要支持**同区多端同时在线**仍须扩模型（per-device 行），属数据模型变更、非加字段。
 - **G8** session_key 仅服务端持有绝不下发；wx-login 出参 ⛔ 禁含 openid/unionid/session_key。
 - **G9** handler 超时用 Promise.race 无法真正取消——关键写副作用必须数据层幂等/CAS（I1/L3），⛔ 不依赖应用层取消。
 
@@ -448,11 +448,12 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 > K1–K3 原为排行榜规则，已随排行榜演示一并移除；**编号保留不复用**（代码注释 `09·KX` 锚点不重排）。
 > 消费归属：独立 **settle worker**（`npm --workspace @game/server run settle`，consumer group
 > 多实例天然分工无需 lease；消费者名 per 主机不含 PID——重启接回自身 PEL，跨机死进程 PEL 由
-> XAUTOCLAIM 接管）；网关挂流深度告警（没人消费必须被看见——流禁 MAXLEN，无人消费即无界）。
+> XAUTOCLAIM 接管且游标逐流续扫）；网关按流检查 `lag+pending`（未建组时退回 XLEN），没人消费必须
+> 被看见——流禁 MAXLEN，无人消费即无界。
 
 - **K4** matchId 在 startMatch 生成一次写进 state，结算复用；落库前过 `match_index` 幂等闸。
 - **K5** 回放校验输入必须完整——InjectWave 注入序列（含 nonce/tick）、loadout、mapIndex 都入证据链。
-- **K6** 可靠流（stream:match、mail 唤醒流）⛔ 禁 MAXLEN 裁剪，用基于已落库位点的 `XTRIM MINID`；MAXLEN 仅兜底/纯分析可丢的流。
+- **K6** 可靠流（match streams、mail 唤醒流）⛔ 禁 MAXLEN 裁剪，用基于已落库位点的 `XTRIM MINID`；MAXLEN 仅兜底/纯分析可丢的流。match 滚动升级固定为：legacy `stream:match` **只排空不再写**，新 producer **只写**带 `schemaVersion=2` 的 v2 key，新 consumer 逐流维护 group/PEL/ACK/XAUTOCLAIM/trim 并同槽双读；⛔ 禁双写（缺区的 legacy 副本若先过全局幂等闸，会吞掉正确 v2）。v2 hash-tag 必须等于带项目命名空间的完整 legacy key，保证自定义路由和 Redis Cluster 都同实例/slot。legacy 仅在旧 gateway 全退、`lag=0 && pending=0` 且完整观察窗无新 ID 后，另批 contract 删除。
 
 ### F — 冷档
 
@@ -494,11 +495,12 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 | `applied:{uid}` | ZSET | 无 | 幂等已 apply 集合（member=op_id, score=applyMs，I5 裁剪） |
 | `lock:{uid}` | STRING | 5s | 跨实例用户锁（值=fence，SET NX PX） |
 | `idem:{type}:{uid}:{clientReqId}` | STRING | pending 10s / done 60s | 幂等占位（I1） |
-| `sess:{uid}` | HASH | 3d | 组侧会话缓存（tokenHash/**issuedAt**/loginTs/connId/gwNode）。快路径**纯 hash 比对、零权威回源**；在线撤销靠踢（M12d §2.3 SOP）。⚠ 写入时 tokenHash **变化即顶号** → 踢旧连接；⛔ 不删它。⚠ **`issuedAt` = 写入栅栏**（A1）：`writeGroupSess` 是**单条 Lua**「只接受更大的 issuedAt」，陈旧写整条丢弃且 ⛔ 不触发顶号踢（否则迟到的旧写会反手踢掉合法的新登录端）。值来自权威 `accounts.token_issued_at`（同 uid 严格递增，见 lib `issueToken`）——⛔ 别用 `Date.now()` 顶替：栅栏两侧必须同一个时钟 |
+| `sess:{uid}:s{sId}` | HASH | 3d | 组侧按区会话缓存（tokenHash/**issuedAt**/loginTs/connId/gwNode）。快路径**纯 hash 比对、零权威回源**；在线撤销靠踢（M12d §2.3 SOP）。⚠ **`issuedAt` = 写入栅栏**（A1），来自权威 `account_sessions.token_issued_at`（同 `(uid,sId)` 严格递增），⛔ 别用 `Date.now()` 顶替。`writeGroupSess` 单条 Lua 三态：更大时刻=`written` 并在 hash 变化时顶号；同时刻同 hash=`unchanged`（合法多连接/重连）；更小时刻或同时刻异 hash=`stale`（不覆写、不踢，strict 准入拒绝） |
 | `guild:evt:seq:{gid}` | STRING | 无 | 工会事件 seq（INCR，§10）。⚠ gid 仅限 `core/guild/catalog`（join 硬校验）——INCR 隐式铸键 + 无 TTL + noeviction，键面必须有硬上限 |
 | `guild:evt:log:{gid}` | LIST | 无（LTRIM 上限） | 工会事件近窗（gid 约束同上） |
 | `active:lru:{bucket}` | ZSET | 无 | 活跃索引（找冷用户，bucket 非 uid hash-tag） |
-| `stream:match` | STREAM | 无（XTRIM MINID，K6） | 结算证据链 |
+| `stream:match` | STREAM | 无（XTRIM MINID，K6） | **legacy 结算流，仅排空、禁止新 producer 写**；保留供滚动升级期间新 consumer 兼容 c8/f91 存量 |
+| `stream:match:v2:{<完整 legacy 运行时 key>}` | STREAM | 无（XTRIM MINID，K6） | 新结算证据链，顶层 `schemaVersion=2`；实际 tag 如 `{gono_stream:match}`，刻意锚定完整旧 key 以同实例/slot，⛔ 不得简写成 `{stream:match}` |
 | mail 唤醒流 | STREAM | 无（XTRIM MINID） | 邮件实时唤醒（权威在 MySQL mail 表，A6） |
 | `stream:kick` | STREAM | 无（XTRIM MINID，K6） | **踢人流**（M12d §2.3；coord 实例 `REDIS_COORD_URL`，dev 复用 durable）。广播 `{uid, reason[, exceptHash]}` 触发各节点自筛踢；**best-effort、无 ack**（权威在 `accounts.status/token_hash`；⛔ **漏踢无自动收敛**，送达保证走 GM `/admin/kick`，09·G7b） |
 
@@ -567,6 +569,7 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 | `COLD_DAYS` | 90 | 冷档阈值，>> max(OUTBOX/APPLIED)（F2） |
 | `ACTIVE_LRU_BUCKETS / BUCKETS / BAG_SHARDS` | 256 / 16384 / 4 | 分片数，改即迁移（S2） |
 | `SCHEMA_VERSION` | 1 | 玩法档 schema 版本（S1 懒迁移） |
+| `MATCH_STREAM_SCHEMA_VERSION` | 2 | match v2 stream 顶层证据版本；与客户端 `PROTOCOL_VERSION`、玩法档 `SCHEMA_VERSION` 无关，值非精确十进制 `2` 即拒 |
 | `PROJECT_ID / REDIS_KEY_PREFIX` | 根 .env 的 PROJECT_ID（缺省 gono）/ `<PROJECT_ID>_` | 多项目共用栈的命名空间：Redis 键前缀 + MySQL 库名 `game_<PROJECT_ID>`；校验 `^[a-z][a-z0-9_]{0,31}$`，非法即拒绝启动（config-guard.test 机检） |
 | `AUTH_DEV_ENABLED` | 开发 1 / 生产 0 | dev-login 开关；生产显式开启 = 加载期拒绝启动（config-guard 同族 fail-fast） |
 | `PORT` | 2568（根 .env 可覆盖） | 开发端口，`index.ts` 显式传 `listen(app, PORT)`；多项目并行时各项目错开；Colyseus 默认 2567 常被占用故不用之。校验纯整数 1–65535，服务端与 devEnv 生成器同一规则、非法即失败（config-guard.test 机检） |
@@ -596,7 +599,7 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 | M5 网关 | LobbyRoom + dispatcher 信封/中间件链；user.getInfo/getProfile + 写样板；邮件收件箱；推送雏形 |
 | M6 货币+outbox+充值+邮件附件 | currency 事务 / 三阶段 outbox / 充值状态机 / relayer 独立进程 / claimAttach |
 | M7 排行 | ⚠ **已随排行榜演示移除**（编号保留；需要排行的项目自行实现，或参考 Arthur 源实现） |
-| M8 对局结算 | M8a 休闲（matchId + match_index 幂等闸 + stream:match 证据链） |
+| M8 对局结算 | M8a 休闲（matchId + match_index 幂等闸 + legacy/v2 同槽双读证据链） |
 | M9 冷档冻结层 | resolve(fence 新鲜度) + ensureLive + freezeWorker + janitor；relayer cold stub 换真 ensureLive |
 | M10 运维收口 | 看板 / 例行任务（分区维护、死号清退）/ DR + PITR runbook |
 

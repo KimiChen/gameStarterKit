@@ -4,7 +4,7 @@
 
 > **本文是设计规格 + 实施进度记录。** 它描述「让当前架构同时支持大混服与区服」的目标形态，扩展并部分改写 [SERVER.md §9.5 扩容模型 ADR](SERVER.md)（原 ADR 立场：扩容单位 = 区服实例、单区服多节点不在承诺内）。**核心已落地**（区服进服硬闸 + 每区独立经济 + 建角 + 冷档按区判，见下「实施进度」）；**账号服务独立进程（M12c）落地完成**（账号原语迁 `@game/webplatform/lib` + Fastify 独立进程 + `ACCOUNT_MODE` http/inProcess 开关 + 登录编排/code2session 迁 lib + 选服目录 `/area/list` 迁 lib + 客户端 login/area 走门户 portalUrl + onAuth 懒填组 sess；split 全链 e2e ⚠ **同进程同库**，见下表脚注）；**撤销/踢在线（M12d）落地**（封号 = 账号级「下次登不上」+ **GM 工具确认踢在线**两步 SOP；权威简化为 status+token_hash；撤销/目录全走 `AccountClient` 接缝并机检；剩 GM 工具实现与 [W1/W2](WEBPLATFORM.md#4-待办上线前必做)）。落地按 §5 里程碑推进。
 
-本规格是「同一套 Colyseus 0.17 代码同时承载大混服与区服」的工程落地规格。其结论由 **8 轮技术评审锁定的 7 项决策** 为前提（不再论证「是否该这么做」，只写「怎么落地」），并经 **61 条服务端规则的两份对抗式评审对撞校验**（钱/幂等/跨存储 一份，鉴权/网关/冷档/撤销 一份）后定稿。评审指出的所有阻断级正确性洞（MySQL 谓词分区、ALS-vs-列概念二分、撤销传输层缺失、前缀孤儿化、F4 误判、快路径 epoch 窗口）已在正文改对；当场无法收敛者列入 §9「未决与风险」。本规格与源码逐一核对，文件锚点为仓库相对路径（`apps/server/src/...` 等）。
+本规格是「同一套 Colyseus 0.17 代码同时承载大混服与区服」的工程落地规格。其结论由 **8 轮技术评审锁定的 7 项决策** 为前提（不再论证「是否该这么做」，只写「怎么落地」），并经 **63 条服务端规则的两份对抗式评审对撞校验**（钱/幂等/跨存储 一份，鉴权/网关/冷档/撤销 一份）后定稿。评审指出的所有阻断级正确性洞（MySQL 谓词分区、ALS-vs-列概念二分、撤销传输层缺失、前缀孤儿化、F4 误判、快路径 epoch 窗口）已在正文改对；当场无法收敛者列入 §9「未决与风险」。本规格与源码逐一核对，文件锚点为仓库相对路径（`apps/server/src/...` 等）。
 
 ### 实施进度（截至 2026-07-24）
 
@@ -21,7 +21,7 @@
 | **M14/M15** 大混服实时横向 + presence/广播 | ⬜ 待做 | §4 |
 | **M16** 物理分组（100 组 × 10 区） | ⬜ 待做 | §5.1 |
 
-**当前能力**：单进程下大混服（sId=0）完全可跑；一个 `GROUP_ZONES` 配好的区服组，**选服→进服硬闸→建角→每区独立经济→冷档按区判→我的区** 机制完整可玩，由 sId≥1 真实栈测试守护（`test/int/perzone.test.ts` 6 用例）。⚠ **「经济按区隔离」要收窄成「货币/背包按区隔离」**：邮件（`mail/list`·`markRead`·`claimAttach` 全无 `server_id` 谓词）与公会（`push.ts` 的 `guildOf`/`guildOnline` 无区维度）**尚未按区隔离**，串的是可见性与领取权限（奖励仍靠行内 `server_id` 落对区）——登记见 `todo.md`「邮件/公会未按 sId 隔离」。**验证基线**：见 [CLAUDE.md](../CLAUDE.md) 现状段（⛔ 本行不再重复计数，免得又各写各的过期数字）。⚠ 真开多区（`GROUP_ZONES` 非空）前，`keys.ts` fail-fast 会挡住任何漏包 `zoneCtx.run` 的 per-zone 路径（`test/zone-failfast.test.ts` 守）。
+**当前能力**：单进程下大混服（sId=0）完全可跑；一个 `GROUP_ZONES` 配好的区服组，**选服→进服硬闸→建角→每区独立经济→冷档按区判→我的区** 机制完整可玩，由 sId≥1 真实栈测试守护（`test/int/perzone.test.ts`）。货币、背包、邮件与公会均已按区隔离：邮件读/写/领取带 `server_id`，公会在线身份为 `(uid,sId)` 且广播只投递同区连接；同账号跨区同时在线不会互相覆盖。**验证基线**：见 [CLAUDE.md](../CLAUDE.md) 现状段（⛔ 本行不再重复计数，免得又各写各的过期数字）。⚠ 真开多区（`GROUP_ZONES` 非空）前，`keys.ts` fail-fast 会挡住任何漏包 `zoneCtx.run` 的 per-zone 路径（`test/zone-failfast.test.ts` 守）。
 
 ---
 
@@ -445,9 +445,19 @@ for (const row of rows) {
 
 ## 4. 实时匹配 + 跨进程 presence/广播
 
-### 4.1 匹配：filterBy + join options 塞 sId
+### 4.1 匹配：filterBy + 房内认证区双闸
 
-`shared/protocol/rooms.ts` 的 `IRoomJoinOptions` 增 `sId?`、`listHash?`、复用 `v`。客户端 `RoomClient.joinGame` 由 `serverSession.getCurrentServer().sId` 组 options 传入，`doJoin` 已 `...options` 透传、一行不改。`GameRoom.onCreate` 读 `options.sId` 设房级区上下文（**已落地**：房级常量 + 证据带 `sId` + `match_results.server_id`）；大混服 opts 无 sId、缺省 0。`filterBy(['sId'])` 保证同组内 sId 不同的座位不撮进同一房。
+`shared/protocol/rooms.ts` 的 `IRoomJoinOptions` 带 `sId?`、`listHash?` 并复用 `v`。客户端
+`RoomClient.joinGame` 从 `serverSession.getCurrentServer().sId` 组 options；连接槽的复用身份同时包含
+endpoint/token/sId，旧区连接不得被新区 ownership 静默复用。服务端先把网络输入规范化为
+`0..65535` 整数（仅 `undefined` 缺省为大混服 0，null/字符串/小数/越界值均拒绝），再按该区严格验
+token。`filterBy(['sId'])` 隔离普通 `joinOrCreate`；`joinById` 不经过 filter，故 `GameRoom.onJoin`
+还必须比较 `client.auth.sId` 与房级 `sId`，⛔ 不信第二遍客户端 options。
+
+`GameRoom.onCreate` 保存该房的区常量，收局证据带 `sId` 落 `match_results.server_id`。滚动升级时新
+producer 只写带 `schemaVersion=2` 的 v2 stream；legacy `stream:match` 只由新 consumer 兼容排空，
+两 key 通过完整 legacy key hash-tag 同槽双读。这样旧 worker 根本看不到新证据，不会把新区对局按
+默认 0 落库。
 
 ### 4.2 每组横向底座 + 独立 coord Redis（加载期 fail-fast）
 

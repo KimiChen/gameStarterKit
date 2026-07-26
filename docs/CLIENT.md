@@ -213,8 +213,11 @@ true/false，按钮自带的 `button` 控制器是保留名不挪用。逐组件
 - **WebSocketClient**：`rpc<T>(type, payload)` 按 shared 契约推导返回类型；**写接口一律 `rpcIdem`**
   （clientReqId 生成一次、重试复用，失败回填 `err.clientReqId`）；`onPush` 订阅服务端唤醒式推送。
   join/leave 有掉线窗口保护 + room 身份守卫（防旧连接迟到事件误清新房）。
-- **RoomClient**：join 并发合流、leave 停自动重连 + 超时兜底、onDrop/onLeave 身份守卫、`dropping`
-  状态（掉线窗口暂停心跳/方向上发，防 SDK 重连补发过期包）。
+- **RoomClient**：物理连接槽 + ownership 租约；仅 endpoint/token/sId 等复用身份一致的 join 才合流，
+  旧世代释放只减自己的 owner，最后一个 owner 才关闭精确 room。leave 停自动重连 + 超时兜底，
+  onDrop/onLeave 以 slot+room 守卫；`Main` 的消息/Schema 回调再以 gen+ownership+room 守卫，
+  旧房在 leave 等待窗内的迟到回调不能污染新一轮 ECS/RTT。`dropping` 状态用于掉线窗口暂停
+  心跳/方向上发，防 SDK 重连补发过期包。
 - 消息名/协议类型一律 import 自 `shared`（铁律 6）。
 
 ---

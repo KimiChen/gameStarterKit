@@ -1,7 +1,7 @@
 # CI：把「验证基线」从人肉手跑升级为机器强制（docs/OVERVIEW.md §3.2 机检哲学）。
 # verify job：无栈机检（typecheck+verify:sync / 无头单测 / 字节锁 / 服务端单测）。
 # integration job：真栈集成（docker 起 Redis×2 + MySQL 8.4，形态对齐 dev-stack：
-#   durable=noeviction+AOF、cache=allkeys-lru——61 个含故障注入的最有价值用例从此不再只靠本地手跑）。
+#   durable=noeviction+AOF、cache=allkeys-lru——含故障注入的真实栈用例从此不再只靠本地手跑）。
 # mock 冒烟仍走本地（需 dev server 常驻，见 CLAUDE.md 常用命令）。
 name: ci
 

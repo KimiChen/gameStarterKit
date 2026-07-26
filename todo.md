@@ -127,18 +127,20 @@
 
 ## 结算链 · 从「可运行」到生产闭环 【中】
 
-- **现状**（A 批后）：settle worker 有独立入口（npm run settle）、XAUTOCLAIM 接管死消费者
-  PEL、网关有流深度告警——「可运行」；但尚未生产闭环。
+- **现状**（2026-07 混版本硬化后）：settle worker 有独立入口（npm run settle）；新 producer
+  只写带 `schemaVersion=2` 的同槽 v2 key，legacy `stream:match` 只排空；consumer 对两流逐流维护
+  group/PEL/ACK/XAUTOCLAIM 游标/XTRIM，真旧 payload 缺 sId 会规范化为 0 后再存；网关逐流看
+  `lag+pending`（未建组退回 XLEN）——「可运行」；但尚未生产闭环。
 - **要做**：
+  - **legacy contract 收口**：代码双读不等于生产已排空。仅在所有旧 gateway 已退出、legacy
+    `lag=0 && pending=0` 且完整发布/回滚观察窗内 `last-generated-id` 不再变化后，下一 contract
+    版本才移除 legacy reader，并按 R6 `UNLINK` 旧 key；⛔ 不得仅凭 XLEN（含已 ACK 历史）判断；
   - **DLQ/隔离区**：结构损坏条目现在是「告警 + ACK 丢弃」——改为移入隔离流
     （`stream:match:quarantine` 之类）保留取证；反复失败（非损坏但落库持续报错）的条目
     加 attempts 上限进 DLQ，防单条毒丸卡住消费；
   - **多实例恢复细节**：消费者名 per 主机——同机多 settle 实例会撞名（各领各的 PEL 语义
     失效），需实例序号/env 区分；XAUTOCLAIM min-idle 与处理时长上限的关系写成契约
     （处理慢于 min-idle 会被同伴抢走 → 双处理靠幂等闸兜底，量化验证）；
-  - **XAUTOCLAIM 游标/公平性**：不能每轮固定从 `0` 开始并丢弃返回 cursor；保存下一起点，
-    按有界批次续扫直至 `0-0` 后再开启新一轮，保证 PEL 很大或前段持续活跃时尾部孤儿也能被接管；
-    增加「超过 COUNT 的多页 PEL + 前段未过 min-idle + 尾部已过期」回归用例；
   - **告警消费**：流深度/DLQ 深度接入 E3 的真实告警通道（现仅 console）；
   - **多消费组安全位点**：verifier 组接入后 XTRIM MINID 取各组位点 min（原 M10 项）。
 - **触发条件**：对局战绩/奖励/审计依赖该链路时（= 真实玩法上线前）。
@@ -202,7 +204,7 @@
 
 - 现状：告警全部 console（[rpc-budget]/loopMonitor/流深度/outbox 滞留），无人消费即无告警；
 - 要做：结构化日志（pino 级即可）、metrics 出口（prometheus：事件循环 p99、outbox
-  pending 深度/最老年龄、stream:match 深度、freeze/thaw 速率）、告警接到真实通道；
+  pending 深度/最老年龄、legacy/v2 match stream 的 lag+pending、freeze/thaw 速率）、告警接到真实通道；
 - 顺带：Redis 热档（真源不落库）的 RPO/RTO 明确化——AOF everysec ≈ RPO 1s，写进运维文档
   并给恢复 runbook。
 - **触发条件**：E1 同期（部署了没人看 = 白部署）。
@@ -266,8 +268,9 @@
 ## 近期已修（不在待办，留档防重复登记）
 
 - ~~**GameRoom 房级区上下文**（原 U6 的一半）~~ → `onCreate` 读 `options.sId` 存**房级常量**
-  （`filterBy(["sId"])` 保证一间房同区 ⇒ 区是房级的，⛔ 不必像 LobbyRoom 那样每消息 `zoneCtx.run`）；
-  `MatchEvidence` 加 `sId` 并**提升为 XADD 顶层字段**（同 matchId/mode，消费侧⛔不必解 payload JSON）；
+  （`filterBy(["sId"])` 隔离 joinOrCreate，`onJoin` 再用已验证的 `client.auth.sId` 兜住 joinById；
+  两者共同保证一间房同区 ⇒ 区是房级的，⛔ 不必像 LobbyRoom 那样每消息 `zoneCtx.run`）；
+  `MatchEvidence` 加 `sId` 并提升为 XADD 顶层字段（同 matchId/mode，消费侧与 payload 交叉校验）；
   `match_results` 加 `server_id` + `idx_zone_time`。
   ⚠ **为什么必须在证据里带**：XADD 之后房间即 dispose，那时再问"这局属于哪个区"**无处可查**；
   发奖（U6）按区记账靠 `deriveOpId(uid, sId, …)`，拿错区 = 钱记错区且幂等键错误、重发也修不回。
@@ -275,8 +278,13 @@
   PK 必须含分区列，塞进去会改变分区语义与既有 REORGANIZE 流程（09·DB4）。
   ⚠ **`match_index` 刻意不加区**：它是**全局**去重闸，matchId 本身全局唯一；关区删 `match_results`
   后这里留孤行是**对的**——去重必须永久且全局，否则同一 matchId 重放会重复落库。
-  ⚠ 旧条目（本字段上线前 XADD 的）**缺 sId 按 0 兜底、⛔ 不判结构损坏丢弃**（否则丢证据），已有用例。
-  机检：int 三条（端到端 `createRoom({sId:7})` → 落库 `server_id=7` / 直发证据带区 / 旧条目兜底），
+  ⚠ `db-bootstrap` 已改成查 `INFORMATION_SCHEMA` 后逐步补列/索引：fresh、c8 存量、两步间中断重跑
+  都收敛；同名但类型/顺序/唯一性错误会 fail-fast，⛔ 不再吞 1060/1061 猜“已经迁过”。
+  这只修复本次 shape 升级，**没有**替代 E2 的 migration 版本表与分区轮转。
+  ⚠ match 流已用 v2 key 隔离滚动部署：新写只进 `schemaVersion=2` v2，legacy 只排空；
+  真旧条目顶层/payload 双缺 sId 时按 0 兜底并**把 DB payload 也补成 sId=0**，f91 legacy 顶层非零区保留。
+  机检：v2 key 隔离/版本闸 + 双流同轮消费/逐流 ACK + 真旧 payload 规范化 +
+  端到端 `createRoom({sId:7})` → 落库 `server_id=7` + s2 joinById s1 拒绝，
   **端到端那条做过变异测试**（`onCreate` 不读 sId 即红，用真实 `node --import tsx` loader 验的）。
 
 - ~~**A3** 跨物理组顶号不收敛~~ → **2026-07-26 用户拍板：改模型，⛔ 不重开跨组协调层。**
@@ -290,7 +298,7 @@
   盗号的发现时间从"立即被踢"变成"下次进那个区"。缓解办法（跨区登录给其他区推通知但不踢）未做。
   ⚠ `PROTOCOL_VERSION` 1→2：老包登录不带 `sId` ⇒ 拿 s0 token 进别区只会得到莫名其妙的
   「登录已过期」，bump 后在 join 处明确 `ProtocolMismatch` 拒掉。
-  机检：int「M12e 单端语义作用域 = (账号, 区)」（变异测试验证过会红）+ 既有 130 条全绿。
+  机检：int「M12e 单端语义作用域 = (账号, 区)」（变异测试验证过会红）；全仓数字见根 CLAUDE.md。
 
 - ~~**A5** 客户端连接端点不一致（大厅连 `getBaseUrl()`、战斗连所选 `wsUrl`）~~ →
   大厅 `init()` 改为跟随所选区（`cur.wsUrl` → http，缺 wsUrl 才回退全局，换算与战斗侧同款）；
@@ -314,16 +322,29 @@
 - ~~**A1** split 会话写入无 fence（旧 token 覆盖新 token）~~ → 权威侧 `issueToken` 用
   `GREATEST(NOW(3), 上次+1ms)` 保证 `token_issued_at` **同 uid 严格递增**（⛔ 消掉同毫秒打平，
   那正是"单调量"能成立的前提）；`/verify` 带回 `issuedAtMs`；`writeGroupSess` 改为**单条 Lua**
-  「只接受更大的 issuedAt」，陈旧写直接丢弃且 ⛔ **不触发顶号踢**（旧实现会拿自己的 hash 当判别位
-  把合法的新登录端踢掉）。⚠ 评审推翻的 `oldHash` CAS 药方**没有采用**：两个请求都读到 H0 时
+  三态栅栏：更大时刻=`written`，同时刻同 hash=`unchanged`（合法多连接/重连），更小时刻或同时刻
+  异 hash=`stale`。陈旧写直接丢弃且 ⛔ **不触发顶号踢**；远程 strict verify 与缓存写之间若发生
+  新登录，`stale` 还必须拒绝本次准入，不能只 no-op 后继续放进 GameRoom。⚠ 评审推翻的
+  `oldHash` CAS 药方**没有采用**：两个请求都读到 H0 时
   旧请求也满足 CAS ⇒ 它先写成功、赢家反被拒。机检：int「A1 组 sess 写入栅栏」（变异测试验证过会红）。
   ⚠ 未做也不需要做：`sessionVersion` 新列——`token_issued_at` 已是权威侧单调量，⛔ 别再加一个。
 - ~~**A2** 邮件与公会未按 sId 隔离~~ → 邮件三处补 `server_id` 谓词（`mail/list` 查询、`markRead`
   UPDATE、`mailer.claimMailAttach` 的 `SELECT ... FOR UPDATE`——领取权限那处最要紧）；公会在线索引
-  由 `gid → Set` 改为 `` `${sId}:${gid}` → Set ``，`pushToGuild` 增 `sId` 必填参。
-  ⚠ 索引里**存下区号**而非清理时现取：下线清理（`unregisterOnline`）⛔ 不在 zoneCtx 内，
-  在那里调 `currentZoneId()` 会在 GROUP_ZONES 非空时直接抛。
-  机检：int「A2 邮件按区隔离」「A2 公会在线索引按区分桶」（邮件那条变异测试验证过会红）。
+  身份改成 `uid → (sId → gid)`，广播桶为 `` `${sId}:${gid}` → Set ``，`pushToGuild` 只投递同区
+  连接。⚠ 索引里**存下区号**而非清理时现取：下线清理不在 zoneCtx 内；全下线清理只遍历该 uid
+  的区，⛔ 不能扫描全服索引退化成滚动重启 O(N²)。
+  机检：int「A2 邮件按区隔离」「同账号跨区在线互不覆盖/不串连接」「批量成员下定向全清」。
+
+- ~~**in-process 登录静默签成 s0**~~ → wx/dev 两个 HTTP schema 均显式接收并透传合法 `sId`；
+  WebPlatform 与 in-process 统一为“仅 undefined 缺省 0，null/字符串/小数/越界均 400”。LobbyRoom
+  与 GameRoom 共用运行时 `normalizeSId`，即使 `GROUP_ZONES=[]`（承载全部区）也不会把畸形值带进
+  MySQL 强转或 `zoneCtx` 幽灵前缀。机检覆盖 s7 签发/缓存、两房畸形入参及两部署模式一致性。
+
+- ~~**RoomClient 旧世代释放/回调污染新战斗**~~ → 物理 room 改为 slot + 多 ownership 租约；
+  最后一个 owner 才关闭精确 slot，旧 slot 的 onLeave/onDrop 无权改新 slot。复用 key 包含 endpoint
+  与完整 join options（含 token/sId/v/未来字段），身份不一致 fail-fast，⛔ 不把 s2 ownership
+  静默交给 s1 room。Main 的消息/Schema 回调再逐次核对 gen+ownership+room，旧房 leave 等待窗内
+  的迟到回调不能污染新 ECS/RTT。无头机检覆盖合流、身份冲突、迟到事件及 Main 守卫。
 
 - ~~冷档 ARCHIVE_NEWER + overwrite 重置 fence counter~~ → `f148879`：overwrite 分支保留
   计数器并取 `MAX(counter,hwm)`。旧问题不是绝对不可达：resolve 读完 counter 后，其他实例

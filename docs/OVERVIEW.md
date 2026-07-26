@@ -65,7 +65,7 @@ workspace 直接吃 `@game/shared` 源码，无需复制。
 | `protocolFingerprint.test.ts` | shared/protocol 内容 ⇔ 指纹钉档 ⇔ PROTOCOL_VERSION（协议改动必须显式重钉，防静默漂移） | CI |
 | `vendorLock.test.ts` | vendored 版本五方一致（fetch 钉版 ⇔ 产物 ⇔ lock ⇔ 双端 major.minor ⇔ 文档）+ 产物 sha256 内容锁（vendor.sha256） | CI |
 | `[rpc-budget]` 探针 | handler 同步 CPU 超预算（铁律 11） | 运行时告警 |
-| `docs/server/09` → `09·XX` | 服务端写路径 61 条规则（见 SERVER.md） | PR 审查 + 代码注释锚点 |
+| `docs/server/09` → `09·XX` | 服务端写路径 63 条规则（见 SERVER.md） | PR 审查 + 代码注释锚点 |
 
 这套「约定即机检」的哲学贯穿两端：服务端 loader、客户端 viewRegistry、双端契约测试，都是同一个物种。
 
@@ -138,7 +138,7 @@ workspace 直接吃 `@game/shared` 源码，无需复制。
 5. 客户端只用 `@colyseus/sdk`（全局 `Colyseus`），**禁 import 服务端包** `colyseus`/`@colyseus/core`。
 6. **消息名/协议类型/公式一律 import 自 shared**，不手写不复制。
 7. 双端 Colyseus **版本 major.minor 一致**。
-8. 服务端写路径**对照 09 规则**（见 SERVER.md 的 61 条规则目录；代码注释 `09·XX` 即编号）；新增常量/key/错误码先进 07 表再进 `core/infra`。
+8. 服务端写路径**对照 09 规则**（见 SERVER.md 的 63 条规则目录；代码注释 `09·XX` 即编号）；新增常量/key/错误码先进 07 表再进 `core/infra`。
 9. **客户端视图/逻辑二分**：视图 `view/`（依赖 cc/fairygui）、行为 `logic/`（禁 cc/fairygui，`logic-purity` 机检）。
 10. **FairyGUI 只走动态 import**（`ViewMgr.open`/`import("./view/XxxView")`），fairygui 不进任何常规脚本的静态依赖图。
 11. **网关进程禁重计算**（单线程：同步 CPU 卡一次 = 全服冻结）；重计算卸载到 `core/compute/tasks/`（worker 池）或独立进程。
