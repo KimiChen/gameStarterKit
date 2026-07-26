@@ -19,14 +19,19 @@ import "./env-setup"; // ⚠ 必须第一个 import（限流放宽）
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
-import { LOBBY_MSG_RPC, PROTOCOL_VERSION, RoomName, UserRpc } from "@game/shared";
+import {
+  ErrorCode, LOBBY_MSG_RPC, PROTOCOL_VERSION, RoomName, UserRpc,
+  type IRoomJoinOptions,
+} from "@game/shared";
 import { server } from "../../src/app.config";
 
+import { GROUP_ZONES } from "../../src/core/infra/config";
 import { listCharacterZones } from "../../src/player/character";
 import { activeLruBucketOf, kActiveLru, kSess, kUser, zoneCtx } from "../../src/core/infra/keys";
 import { clientFor, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
 import { closeMysql, getPool } from "../../src/core/infra/mysql";
 import type { ResultSetHeader } from "../../src/core/infra/mysql";
+import { LobbyRoom } from "../../src/websocket/LobbyRoom";
 import { stopMailWakeLoop } from "../../src/websocket/push";
 import { assertRedisUp, cleanupUser, sleep, testUid, issueSession } from "./helpers";
 
@@ -110,12 +115,30 @@ after(async () => {
     await pool.execute("DELETE FROM account_sessions WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM accounts WHERE user_id = ?", [u]);
     for (const s of [0, 1]) { await zoneCtx.run({ sId: s }, () => cleanupUser(u)).catch(() => {}); }
-    await clientFor(u).unlink(kSess(u, 0));
+    await clientFor(u).unlink(kSess(u, 0), kSess(u, 1), kSess(u, 2));
     const b = activeLruBucketOf(u);
     await indexClientFor(b).zrem(kActiveLru(b), u);
   }
   await closeRedis();
   await closeMysql();
+});
+
+test("LobbyRoom sId 先做运行时规范化：承载全部区时畸形值仍拒绝，合法整数正常鉴权", async () => {
+  assert.deepEqual(GROUP_ZONES, [], "本用例必须覆盖 GROUP_ZONES 空（承载全部区）的易漏校验形态");
+  for (const raw of [-1, 65536, 1.5, Number.NaN, Number.POSITIVE_INFINITY, "1", null]) {
+    const options = { v: PROTOCOL_VERSION, sId: raw } as unknown as IRoomJoinOptions;
+    await assert.rejects(
+      LobbyRoom.onAuth("", options, undefined as never),
+      (e: unknown) => e instanceof Error && e.message.includes(String(ErrorCode.WrongServer)),
+      `畸形 sId=${String(raw)} 即使在承载全部区形态也必须按 WrongServer 拒绝`,
+    );
+  }
+
+  const { uid, token } = await makeAcct("lobby-sid-valid", 1);
+  const auth = await LobbyRoom.onAuth(
+    token, { v: PROTOCOL_VERSION, sId: 1 }, undefined as never,
+  );
+  assert.deepEqual(auth, { userId: uid, token, sId: 1 }, "合法整数须按原值完成权威鉴权");
 });
 
 test("带 sId=1 join：onJoin 建角落 s1_user + char_registry(uid,1)，⛔ 不落基础前缀 s0", async () => {

@@ -28,7 +28,7 @@ import {
     type IErrorRes,
 } from "@game/shared";
 import { GameRoomState, PlayerState } from "./schema/GameRoomState";
-import { groupAdmitsZone } from "../core/infra/config";
+import { groupAdmitsZone, normalizeSId } from "../core/infra/config";
 import { account } from "../platform/accountClient";
 import { joinRefused } from "../core/errors";
 import { emitMatchEvidence, MATCH_MODE_CASUAL, newMatchId } from "../core/match/matchConsumer";
@@ -42,6 +42,12 @@ const randomNickname = (rng: SeededRandom): string => `${rng.pick(NICK_PREFIX)}$
  *  形制不符 = 伪造/旧 mock 残余 → 直接拒连（去 mock 后无游客模式）。 */
 const FRAMEWORK_TOKEN_RE = /\.[0-9a-f]{48}$/;
 
+type GameRoomAuth = {
+    userId: string;
+    /** 已由 onAuth 规范化并用对应区会话验证过，onJoin 只信该值。 */
+    sId: number;
+};
+
 /** 非主动断线的重连宽限（秒）。微信小游戏切后台必断 socket，实机常态不是异常——
  *  没有宽限就等于「切个后台 = 弃赛」。回流自 Arthur 三房间标配。 */
 const RECONNECT_GRACE_S = 10;
@@ -51,7 +57,7 @@ const RECONNECT_GRACE_S = 10;
  *  - 玩家进出：随机出生点 + demo 昵称（真实项目从档案取）
  *  - 移动：客户端发方向输入，服务端按逻辑帧积分位置
  *  - 技能：使用 shared 战斗公式结算伤害并广播
- *  - 结算（服务端框架 M8a）：存活 ≤1 → Settle + 证据链 XADD stream:match
+ *  - 结算（服务端框架 M8a）：存活 ≤1 → Settle + 证据链 XADD stream:match:v2
  *    （消费落库见 core/match/matchConsumer）
  */
 export class GameRoom extends Room {
@@ -84,9 +90,14 @@ export class GameRoom extends Room {
         if ((options?.v ?? 1) !== PROTOCOL_VERSION) {
             throw joinRefused(ErrorCode.ProtocolMismatch); // ⚠ 业务码走 message（status 必须 200–599）
         }
+        const sId = normalizeSId(options?.sId);
+        if (sId === null) {
+            throw joinRefused(ErrorCode.WrongServer);
+        }
         // 进服区归属硬闸（docs/DUAL_MODE.md §4.3 / M11）：sId ∉ 本组 GROUP_ZONES 即拒（防串服）；
         // sId 缺省 / GROUP_ZONES 空（单形态/大混服）放行，向后兼容（客户端软判定只改善 UX）。
-        if (!groupAdmitsZone(options?.sId)) {
+        // ⚠ groupAdmitsZone 必须看到原始 undefined：真区服组下缺 sId 仍应拒绝，不能被规范化的 0 绕过。
+        if (!groupAdmitsZone(options?.sId === undefined ? undefined : sId)) {
             throw joinRefused(ErrorCode.WrongServer);
         }
         // token 严格化（去 mock 后）：⛔ 不再有「伪造/过期静默降游客」——dev-login 让真
@@ -100,7 +111,7 @@ export class GameRoom extends Room {
             // 打无限局（SOP①「新建连接即拒」正是靠这条）。成本 = 每次进房一条 PK SELECT / 一次远程 verify，
             // 不在 per-message 路径上。⚠ 已在房内的对局不受影响（打完为止，§2.3 已知边界 + U6 发奖 recheck）。
             // ⚠ 带区：token 只对签发它的那个区有效（M12e）
-            return { userId: await account.verify(raw, true, options?.sId ?? 0) };
+            return { userId: await account.verify(raw, true, sId), sId } satisfies GameRoomAuth;
         } catch {
             throw joinRefused(ErrorCode.TokenExpired, "auth");
         }
@@ -140,19 +151,23 @@ export class GameRoom extends Room {
     };
 
     /**
-     * **房级区上下文**（DUAL_MODE §4.1）：一间房里的所有人必定同区——`filterBy(["sId"])` 保证
-     * 不同 sId 的座位不会撮进同一房，`onAuth` 的 `groupAdmitsZone` 又挡掉不属于本组的区。
+     * **房级区上下文**（DUAL_MODE §4.1）：`filterBy(["sId"])` 隔离常规 joinOrCreate，
+     * `onJoin` 再比较认证区与房间区，兜住不经过撮合筛选的 joinById，保证一间房里的所有人同区。
      * 故区是**房级常量**，⛔ 不需要像 LobbyRoom 那样每消息 `zoneCtx.run`。
      *
      * ⚠ 缺省 0 = 大混服/单形态（老客户端不带 sId）。
-     * ⚠ **为什么现在就要存它，哪怕本房还没有按区的读写**：收局证据一旦 XADD 进 `stream:match`，
+     * ⚠ **为什么现在就要存它，哪怕本房还没有按区的读写**：收局证据一旦 XADD 进 `stream:match:v2`，
      * 房间就 dispose 了 —— 那时再想知道"这局属于哪个区"**无处可查**。发奖（U6）要按区记账
      * （`deriveOpId(uid, sId, …)` 把 sId 编进幂等键），拿错区 = 钱记到别的区且幂等键错误、重发也修不回。
      */
     private sId = 0;
 
     onCreate(options: IRoomJoinOptions | undefined) {
-        this.sId = options?.sId ?? 0;
+        const sId = normalizeSId(options?.sId);
+        if (sId === null) {
+            throw joinRefused(ErrorCode.WrongServer);
+        }
+        this.sId = sId;
         this.setSimulationInterval((dt) => this.update(dt), TICK_MS);
         console.log(`[GameRoom ${this.roomId}] 创建 sId=${this.sId}`);
     }
@@ -163,9 +178,14 @@ export class GameRoom extends Room {
         if (this.state.phase !== GamePhase.Waiting) {
             throw joinRefused(ErrorCode.GameAlreadyStarted); // ⛔ 曾硬编码 4002（越界 status + 与关闭码混淆）
         }
-        const auth = client.auth as { userId?: string | null } | undefined;
+        const auth = client.auth as GameRoomAuth | undefined;
+        // `filterBy(["sId"])` 只约束 joinOrCreate；joinById 可指定任意房间，必须在房内用
+        // onAuth 已验证过的权威区号再闸一次。⛔ 不比较 _options.sId（客户端可伪造/省略）。
+        if (!auth || auth.sId !== this.sId) {
+            throw joinRefused(ErrorCode.WrongServer);
+        }
         // 同一框架账号禁止占双座（对齐 Arthur VersusRoom）：证据里同一 userId 出现两个名次会污染战绩
-        if (auth?.userId && [...this.sessionUserId.values()].includes(auth.userId)) {
+        if ([...this.sessionUserId.values()].includes(auth.userId)) {
             throw joinRefused(ErrorCode.AlreadyInRoom); // ⛔ 曾硬编码 4003
         }
 
@@ -175,7 +195,7 @@ export class GameRoom extends Room {
         player.x = this.rng.nextInt(100, MAP_WIDTH - 100);
         player.y = this.rng.nextInt(100, MAP_HEIGHT - 100);
         this.state.players.set(client.sessionId, player);
-        if (auth?.userId) this.sessionUserId.set(client.sessionId, auth.userId);
+        this.sessionUserId.set(client.sessionId, auth.userId);
 
         if (this.state.phase === GamePhase.Waiting && this.state.players.size >= 2) {
             this.state.phase = GamePhase.Playing;
@@ -309,7 +329,7 @@ export class GameRoom extends Room {
     }
 
     /**
-     * 收局：phase → Settle + 证据链生产（02·P7）。一局一条 XADD `stream:match`，
+     * 收局：phase → Settle + 证据链生产（02·P7）。一局一条 XADD `stream:match:v2`，
      * 含全部名次 + verifier 重放所需输入（seed 等，09·K5）。emitMatchEvidence 内部吞错——
      * XADD 失败只告警，⛔ 不阻塞收局。落库消费见 gameplay/matchConsumer（consumer group `settle`）。
      * 纯游客局（无任何绑定账号）无落库效应、审计无对象 → 不产证据

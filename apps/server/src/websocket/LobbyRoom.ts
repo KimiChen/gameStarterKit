@@ -11,7 +11,7 @@ import {
   LOBBY_MSG_PUSH, LOBBY_MSG_RPC, PROTOCOL_VERSION,
   ErrorCode as SharedErrorCode, type IRoomJoinOptions,
 } from "@game/shared";
-import { groupAdmitsZone } from "../core/infra/config";
+import { groupAdmitsZone, normalizeSId } from "../core/infra/config";
 import { zoneCtx } from "../core/infra/keys";
 import { account } from "../platform/accountClient";
 import { joinRefused, joinRefusedAuth, toErrCode } from "../core/errors";
@@ -39,15 +39,22 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
     if ((options?.v ?? 1) !== PROTOCOL_VERSION) {
       throw joinRefused(SharedErrorCode.ProtocolMismatch); // ⚠ 业务码走 message（status 必须 200–599，见 joinRefused）
     }
+    // options 来自网络：⛔ TS 的 number 标注不能挡 string/null/NaN。尤其 GROUP_ZONES 空 = 承载全部，
+    // 若先调用 groupAdmitsZone 会把所有畸形值放行，并把它们带进 MySQL 强制转换与 zoneCtx 键前缀。
+    const sId = normalizeSId(options?.sId);
+    if (sId === null) {
+      throw joinRefused(SharedErrorCode.WrongServer);
+    }
     // 进服区归属硬闸（docs/DUAL_MODE.md §4.3 / M11）：sId ∉ 本组 GROUP_ZONES 即拒（防串服）。
     // sId 缺省 / GROUP_ZONES 空（单形态）放行，向后兼容。
-    if (!groupAdmitsZone(options?.sId)) {
+    // ⚠ 真区服组下仍要把原始 undefined 交给归属闸：缺 sId 必须拒，不能被规范化后的 0 绕过。
+    if (!groupAdmitsZone(options?.sId === undefined ? undefined : sId)) {
       throw joinRefused(SharedErrorCode.WrongServer);
     }
     try {
       // ⚠ 带上本次要进的区：token 只对签发它的那个区有效（M12e）
-      const uid = await account.verify(token, true, options?.sId ?? 0);
-      return { userId: uid, token, sId: options?.sId ?? 0 }; // sId 存进 auth，供 messages/onJoin 建区上下文（§3.5）
+      const uid = await account.verify(token, true, sId);
+      return { userId: uid, token, sId }; // sId 存进 auth，供 messages/onJoin 建区上下文（§3.5）
     } catch (e) {
       throw joinRefusedAuth(toErrCode(e)); // 统一出口（⛔ 禁在此 new ServerError，见 errors-http-status.test）
     }

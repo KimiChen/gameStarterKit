@@ -121,6 +121,23 @@ export const GROUP_ZONES: readonly number[] = (() => {
 })();
 
 /**
+ * 规范化来自网络/HTTP 边界的区号。缺省表示大混服 s0；其余值必须是 0..65535 整数。
+ *
+ * 返回 `null` 表示非法，而不是在这里直接抛业务错误：GameRoom/LobbyRoom 都要把它映射成
+ * `WrongServer`，配置/工具侧则可以选择自己的错误边界。⛔ TypeScript 的 `number` 标注不是
+ * 运行时校验；尤其 GROUP_ZONES 为空时 `groupAdmitsZone` 会承载全部区，入口必须先走本函数。
+ */
+export const normalizeSId = (raw: unknown): number | null => {
+  if (raw === undefined) { return 0; }
+  return typeof raw === "number"
+    && Number.isInteger(raw)
+    && raw >= 0
+    && raw <= 65535
+    ? raw
+    : null;
+};
+
+/**
  * 进服区归属闸（docs/DUAL_MODE.md §4.3 / M11）。⛔ 客户端软判定只改善 UX，服务端此闸才是真闸。
  *
  * - `GROUP_ZONES` 空（单形态/大混服）= 承载全部 → 一律放行（含不带 sId 的老客户端，向后兼容）。
