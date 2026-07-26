@@ -82,6 +82,11 @@ export class Main extends Component {
 
     /** 已进入 ballMove 玩法（渲染层/ECS/连房已就绪，update 才驱动它们）。 */
     private inBattle = false;
+    /** 进战斗世代号：每次 enterBattle +1。⚠ 与 `inBattle` **不是一回事**——后者是重入锁（拦并发进入），
+     *  本字段用于让**迟到的上一轮**认出自己已过期，⛔ 别让它去回滚新一轮的状态。见 enterBattle 注释。 */
+    private battleGen = 0;
+    /** session 事件订阅的解绑器，onDestroy 统一调用。⛔ 别丢：见 start() 里那三个订阅的注释。 */
+    private readonly unsubs: Array<() => void> = [];
 
     async start() {
         initHttp(this.effectiveServerUrl);
@@ -94,9 +99,15 @@ export class Main extends Component {
         //  - **大厅连接死亡**：大厅 WS 与战斗房各自独立，战斗全程大厅 WS 活着、会**单独死**。
         //    ⛔ 原先本类没订这条（只有 pages 订了、且它只关面板不碰战斗态）⇒ `inBattle` 恒真、
         //    继续渲染战斗、还接触摸事件，而登录页已经画在它上面；重进又被幂等早退吞掉 = 玩家卡死。
-        onAuthInvalid(() => { this.teardownBattle(); });
-        onBattleLost(() => { this.teardownBattle(); });
-        onConnLost(() => { this.teardownBattle(); });
+        // ⚠ **必须存下解绑器并在 onDestroy 里调**：这三个订阅注册进 net/session 的模块级 Set，
+        //   而 Set 持有的闭包引用着 `this` ⇒ 场景重载/换 Main 实例后，旧 Main 连同它的渲染层、
+        //   ECS、房间引用**永远不会被回收**，而且下次事件到达时**每个历史 Main 都会跑一遍**
+        //   teardownBattle（旧实例的 teardown 打在早已失效的对象上）。⛔ 别再写成裸调用丢返回值。
+        this.unsubs.push(
+            onAuthInvalid(() => { this.teardownBattle(); }),
+            onBattleLost(() => { this.teardownBattle(); }),
+            onConnLost(() => { this.teardownBattle(); }),
+        );
 
         // 大厅壳走 FGUI：动态 import 组合根（铁律 10——fairygui 不进静态依赖图）。
         // 登录页的「进入游戏」经 Home 走到 enterBattle 回调，才拉起 ballMove。
@@ -114,16 +125,35 @@ export class Main extends Component {
     private async enterBattle(): Promise<void> {
         if (this.inBattle) return;
         this.inBattle = true;
+        // ⚠ **本次进战斗的世代号**：`inBattle` 只是重入锁，⛔ **拦不住"迟到的上一轮"**。
+        //   真实交错（评审给的）：本轮 await connectRoom() 在途 → 连接死亡/被踢触发 teardownBattle()
+        //   （inBattle=false）→ 玩家再点「进入游戏」→ 新一轮 enterBattle 成功连上 → 这时**上一轮**
+        //   的 connectRoom 才 reject → 它的 catch 调 abortBattle() ⇒ 把**新一轮的活连接**拆掉。
+        //   世代号让迟到者认出"我已经不是当前这轮了"，⛔ 只记日志、不碰任何状态。
+        const gen = ++this.battleGen;
         try {
             const pages = await import("./view/pages");
             pages.closeLobby();
         } catch { /* 关不掉不阻塞进战斗 */ }
+        if (gen !== this.battleGen) { return; }   // 动态 import 期间已被顶掉：⛔ 别再装渲染层
         this.initRenderLayer();
         this.initInput();
         try {
             await this.connectRoom();
+            if (gen !== this.battleGen) {
+                // 连上了但已过期（期间又走了一轮）：本轮的房间由后来者的 teardown/connectRoom 接管，
+                // 这里⛔不能 abortBattle（那是在拆别人的连接），只退掉自己这条多余的连接。
+                console.warn("[Main] 迟到的连接成功（世代已过期），仅退掉自己这条");
+                void RoomClient.inst.leave().catch(() => {});
+                return;
+            }
             this.started = true;
         } catch (err) {
+            if (gen !== this.battleGen) {
+                // ⛔ 关键：迟到的失败**绝不能**调 abortBattle——新一轮可能已经连上了
+                console.warn("[Main] 迟到的连接失败（世代已过期），⛔ 不回滚当前战斗态", err);
+                return;
+            }
             // 拒连的业务码走 message（服务端 joinRefused）→ shared 单源解码，日志里给人看得懂的原因
             console.error(`[Main] 进入战斗失败：${joinErrText((err as Error)?.message, "连接房间失败（请确认已运行 npm run dev）")}`, err);
             this.abortBattle();
@@ -238,6 +268,10 @@ export class Main extends Component {
 
     onDestroy() {
         this.destroyed = true; // 见 connectServer：joinGame 在途返回后据此立即退房
+        this.battleGen++;      // 作废在途的 enterBattle：它醒来时世代已变，⛔ 不会再碰任何状态
+        // ⛔ 必须先解绑再拆状态：否则本实例仍挂在模块级 Set 上，下次事件到达会打在已销毁的对象上
+        for (const off of this.unsubs) { off(); }
+        this.unsubs.length = 0;
         input.off(Input.EventType.TOUCH_START, this.onTouch, this);
         input.off(Input.EventType.TOUCH_MOVE, this.onTouch, this);
         input.off(Input.EventType.TOUCH_END, this.onTouchEnd, this);

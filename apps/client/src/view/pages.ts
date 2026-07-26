@@ -36,9 +36,17 @@ const NOTICE_DONT_REMIND_DATE_KEY = "game.notice.dont-remind-date";
  *  微信侧接入后此处换 wx.login 取 code → wxLogin(code)。 */
 const DEV_LOGIN_KEY = "dev_local";
 
-/** 会话事件接线（踢线/掉线 → 清态回登录页）。整个应用生命周期一次。 */
+/** 会话事件接线（踢线/掉线 → 清态回登录页）。整个应用生命周期一次。
+ *
+ * ⚠ **只接一次是对的**（重复接会让一次事件弹多个框），但**捕获的回调必须可更新**：
+ *   `reopenLogin` 闭包里带着 `onEnterBattle`，而后者绑在**某一个 Main 实例**上。此前把它
+ *   直接闭进 handler ⇒ 场景重载/换 Main 后，掉线回登录页走的仍是**第一个 Main** 的
+ *   `enterBattle`，点「进入游戏」驱动的是早已销毁的渲染层/ECS（且旧 Main 因此永不回收）。
+ *   故存进 `currentReopenLogin`，每次 `openLogin` 覆盖，handler 只在**触发时**读它。 */
 let sessionWired = false;
+let currentReopenLogin: () => void = () => {};
 function wireSessionEvents(reopenLogin: () => void): void {
+  currentReopenLogin = reopenLogin; // ⚠ 每次都刷新（⛔ 别放在 sessionWired 早退之后）
   if (sessionWired) return;
   sessionWired = true;
   onAuthInvalid((reason) => {
@@ -52,7 +60,7 @@ function wireSessionEvents(reopenLogin: () => void): void {
         : reason === "ACCOUNT_BANNED" ? ForceLogoutMessage[ForceLogoutReason.Banned]
         : "登录已过期，请重新登录";
       await openConfirm({ title: "提示", content: text, noText: null });
-      reopenLogin();
+      currentReopenLogin(); // ⚠ 触发时读最新值（⛔ 不用捕获的 reopenLogin：那会锁死第一个 Main）
     })();
   });
   // 战斗连接最终死亡：战斗态已由 Main 回滚（订阅序在前），此处只管提示 + 导航。
@@ -64,7 +72,7 @@ function wireSessionEvents(reopenLogin: () => void): void {
       await WebSocketClient.inst.leave().catch(() => {});
       closeLobby();
       await openConfirm({ title: "战斗已结束", content: "与对局的连接已断开", noText: null });
-      reopenLogin();
+      currentReopenLogin(); // ⚠ 触发时读最新值（⛔ 不用捕获的 reopenLogin：那会锁死第一个 Main）
     })();
   });
   onConnLost(() => {
@@ -80,7 +88,7 @@ function wireSessionEvents(reopenLogin: () => void): void {
       await WebSocketClient.inst.leave().catch(() => {});
       closeLobby();
       await openConfirm({ title: "连接断开", content: "与服务器的连接已断开，请重新进入", noText: null });
-      reopenLogin();
+      currentReopenLogin(); // ⚠ 触发时读最新值（⛔ 不用捕获的 reopenLogin：那会锁死第一个 Main）
     })();
   });
 }
@@ -226,6 +234,14 @@ export async function openConfirm(opts: Omit<IConfirmOptions, "onYes" | "onNo">)
       });
       logic.onClose = () => h.close();
       view.setup(logic);
-    })();
+    })().catch((e: unknown) => {
+      // ⚠ **必须兜住并 resolve**：这个 async IIFE 是 detached 的，`ViewMgr.open("Confirm")` 会抛
+      //   （FGUI 包未加载/扩展没挂）。⛔ 不兜的话 resolve **永远不会被调用** ⇒ 调用方 `await
+      //   openConfirm(...)` **永久悬挂**：本文件里它的调用点全在「掉线/被踢 → 提示后回登录页」
+      //   的链路上 ⇒ 弹不出框就连登录页也回不去，玩家卡死在黑屏，且只有一条 unhandled rejection。
+      //   resolve(false) = 按「取消」处理：⛔ 宁可当用户没确认，也不能把整条导航链挂死。
+      console.error("[pages] 提示框打开失败，按取消处理", e);
+      resolve(false);
+    });
   });
 }
