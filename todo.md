@@ -18,16 +18,34 @@
   从「Main 只保留 cc 组件壳、编排全部下沉」开始。
 - **触发条件**：正式游戏立项 / demo 玩法被替换之前。
 
-## D3 · view 层类型盲区收敛：最小 fairygui 桩 + 契约深解析 【中】
+## D3 · view 层**可无头单测**：最小 fairygui 桩 + 契约深解析 【中】
 
-- **现状**：apps/client/tsconfig.json 排除 Main.ts + 9 个 view 文件（cc 桩测不了 fairygui），
-  Cocos 侧 strict:false——约 700 行视图绑定层只有 Creator 人工验证（tsconfig 内有 TODO）。
-  FGUI 契约（tools/fgui-codegen/parseFgui.ts）只解析根组件直接子项：列表 item、嵌套组件、
-  手工 getChild、已发布 .bin 的新鲜度都不在机检内。
-- **目标**：对齐 cc-stub 做最小 fairygui 桩（GButton/GTextField/GList/GLoader/GRoot/
-  UIPackage/Event 等本仓实际用到的面），把 View 类逐个拉回无头 strict、逐步清空排除清单；
-  parseFgui 扩展嵌套/列表 item 解析 + .bin 与 .fui 的新鲜度校验。
-- **触发条件**：无（随时可做；约一天）。
+> ⚠ **2026-07 重新表述**：本条以前叫「类型盲区收敛」，把目标写成"把 View 类拉回 strict 检查"——
+> **重点是偏的**。类型那一半其实已经有闸了（见下），D3 真正换来的是**能不能写测试**。
+
+- **类型这一半：已覆盖，但只在本地。** `apps/Cocos/tsconfig.json` 曾显式 `strict: false`，
+  已删除（`4517d77`，实测开关两侧皆 0 错），现继承 Creator base 的 `strict: true`；
+  `--listFiles` 确认它真的在检 `Main.ts`/`view/*.ts`，解析的是**真 fairygui d.ts**。
+  ⛔ **但它不是机检**：该 tsconfig `extends` 的 `temp/` 是 Creator 生成物、已 gitignore
+  ⇒ 无头 CI 里 resolve 不了。进 CI 那条路是「微信小游戏真实产物构建 CI」条目，⛔ 不是 D3。
+- **测试这一半：完全空白，这才是 D3 的目标。** `apps/client/tsconfig.json`（无头线，自带 50 行
+  cc 桩）排除 `Main.ts` + 9 个 view 文件——因为 fairygui-cc 的 d.ts 又引真 cc，50 行桩顶不住。
+  排除的真正代价**不是没类型**，而是这些文件**无法被无头 `import`** ⇒ 写不了单测。
+- **⚠ 为什么这很要紧（有实例）**：2026-07 评审打中的四条客户端缺陷（`enterBattle` 无世代号 /
+  订阅解绑器被丢弃 / `openConfirm` detached promise 悬挂 / 连接端点不一致）**全是时序与生命周期
+  问题，类型完全合法** ⇒ strict 一条都抓不到（已实测：修复前后皆 0 类型错误）。
+  能抓住它们的只有针对这些文件的单测，而那正是本条要解锁的东西。
+  ⚠ 反过来也要诚实：`net/session.ts` 的订阅 API **在检查范围内、也有 session.test.ts**，
+  它返回解绑器这件事是对的——**缺陷落在没被测的 `Main.ts` 那一侧**。分界线本身就是风险线。
+- **要做**：① 对齐 cc-stub 做最小 fairygui 桩（GButton/GTextField/GList/GLoader/GRoot/
+  UIPackage/Event 等本仓实际用到的面），把 10 个文件逐个搬出排除清单，**目标是能 import 进单测**，
+  strict 只是顺带；② parseFgui 扩展嵌套/列表 item 解析 + `.bin` 与 `.fui` 的新鲜度校验。
+- **⚠ 工作量存疑**：原写"约一天"，但把 9 个 view 文件拉进无头 strict 大概率炸出一批既有类型错误
+  （Cocos 侧 0 错 ≠ cc 桩侧 0 错，两边的 cc 类型不是同一套）。开工前先估一次真实错误量。
+- **⚠ 可能有更划算的替代**：本仓**完全没有 lint**。typescript-eslint 的 `no-floating-promises`
+  能直接抓住上面第 ③ 类缺陷，且**对全目录生效、不需要 Creator、能进 CI**，覆盖面比桩更宽。
+  两者不互斥，但若只做一件，先评估 lint。
+- **触发条件**：无（随时可做）。
 
 ## ⚠ 支付接入 · 微信小游戏支付方案与全链 【上线阻断级】
 
