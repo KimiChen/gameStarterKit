@@ -522,7 +522,7 @@ Ch1 称大混服「常量前缀」，草稿 `P()` 对缺省 sId 产 `gono_s0_use
 
 ### 5.4 验证扩展
 
-在现基线（typecheck 三端+verify:sync / 单测 15 / test:fgui 67 / 集成 68 / 冒烟 13）上新增：
+在现基线（见 [CLAUDE.md](../CLAUDE.md) 现状段，⛔ 本行不再重复计数）上新增：
 
 1. **跨区前缀不串**（单测+int）：同 uid 在 sId=1/2 建角，断言 `s1_user` 与 `s2_user` 物理隔离、`deriveOpId(uid,1,..)≠deriveOpId(uid,2,..)`、`UNIQUE(user_id,server_id,idem_key)` 允许两区同 idem_key 并存。
 2. **MySQL 谓词分区断言**：一次 debit 只 affectedRows=1、只扣本区；credit 落对区不落 s0_（守 B1）。
