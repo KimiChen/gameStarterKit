@@ -74,6 +74,12 @@ export interface EvidenceInjectWave {
  */
 export interface MatchEvidence {
   matchId: string;
+  /**
+   * 本局所属**区**（房级常量：`filterBy(["sId"])` 保证一间房同区，见 GameRoom.onCreate）。0 = 大混服。
+   * ⚠ 证据 XADD 之后房间即 dispose ⇒ 这是**唯一**能把区带出对局的地方，⛔ 丢了就永久查不回。
+   * 发奖（U6）按区记账：`deriveOpId(uid, sId, …)` 把它编进幂等键，拿错区 = 钱记错区且重发也修不回。
+   */
+  sId: number;
   mode: number; // MATCH_MODE_*
   seed: number;
   mapIndex: number;
@@ -107,6 +113,9 @@ export async function emitMatchEvidence(ev: MatchEvidence): Promise<string | nul
       K_STREAM_MATCH, "*",
       "matchId", ev.matchId,
       "mode", String(ev.mode),
+      // ⚠ 提升成**顶层字段**（同 matchId/mode）：消费侧据此落 `match_results.server_id`，
+      // ⛔ 不必去解 payload JSON —— 这正是 matchId/mode 当初也这么放的理由。
+      "sId", String(ev.sId),
       "payload", JSON.stringify(ev),
     );
   } catch (e) {
@@ -157,7 +166,11 @@ async function settleEntry(client: Redis, id: string, fields: string[]): Promise
   const matchId = f.matchId ?? "";
   const mode = Number(f.mode);
   const payload = f.payload ?? "";
-  if (!matchId || matchId.length > 40 || !Number.isInteger(mode) || mode < 0 || mode > 255 || !payload) {
+  // ⚠ 旧条目（本字段上线前 XADD 的）没有 sId ⇒ 缺省 0，⛔ 不能判成结构损坏丢弃：
+  //   那会把重启前积压的证据全部扔掉。非法值才算损坏。
+  const sId = f.sId === undefined ? 0 : Number(f.sId);
+  if (!matchId || matchId.length > 40 || !Number.isInteger(mode) || mode < 0 || mode > 255 || !payload
+      || !Number.isInteger(sId) || sId < 0 || sId > 65535) {
     console.error(`[matchConsumer] 证据条目结构损坏，ACK 丢弃：id=${id} matchId=${matchId || "?"}`);
     await client.xack(K_STREAM_MATCH, GROUP, id);
     return;
@@ -170,8 +183,8 @@ async function settleEntry(client: Redis, id: string, fields: string[]): Promise
     if (r.affectedRows === 1) {
       // 分区表（RANGE COLUMNS(created_at)，05）；重复已被闸住，此处必然首插
       await conn.execute(
-        "INSERT INTO match_results (match_id, created_at, mode, payload) VALUES (?, NOW(3), ?, ?)",
-        [matchId, mode, payload],
+        "INSERT INTO match_results (match_id, created_at, server_id, mode, payload) VALUES (?, NOW(3), ?, ?, ?)",
+        [matchId, sId, mode, payload],
       );
     }
   });

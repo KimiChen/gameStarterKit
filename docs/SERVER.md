@@ -423,7 +423,7 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 - **DB1** 去重用 `INSERT ... ON DUPLICATE KEY UPDATE id=id`（affectedRows 插入=1/重复=0）；⛔ 禁 INSERT IGNORE。
 - **DB2** 无 RETURNING——自增用 `result.insertId`，CAS 用 affectedRows，要新值同事务内 SELECT；`LAST_INSERT_ID()` 连接局部，seq 表二语句形须同一根连接。
 - **DB3** id/token/hash/idem_key 列一律 `CHARACTER SET ascii COLLATE ascii_bin`。
-- **DB4** 分区键须进 PK → 单列唯一被破坏；match_results 用非分区 `match_index` 做幂等闸；`user_archive` 禁按时间列 RANGE 分区，`PRIMARY KEY(user_id)` 是正确性要求。
+- **DB4** 分区键须进 PK → 单列唯一被破坏；match_results 用非分区 `match_index` 做幂等闸；`user_archive` 禁按时间列 RANGE 分区，`PRIMARY KEY(user_id)` 是正确性要求。⚠ `match_results.server_id`（对局所属区，0=大混服，喂运营统计 + 关区 `DELETE WHERE server_id=N`）**只作普通列 + `idx_zone_time`，⛔ 绝不进 PK** —— 塞进去会改变分区语义与月度 REORGANIZE 流程。⚠ `match_index` **刻意无区**：它是全局去重闸（matchId 全局唯一），关区后留孤行是对的，⛔ 别"顺手"给它加 server_id（去重一旦按区就挡不住跨区重放）。
 - **DB5** 货币/outbox/转账会话切 READ COMMITTED（前提 binlog_format=ROW），写路径主键等值定位，捕获 1213/1205 指数退避重试。
 - **DB6** TINYINT 状态列全用数字常量；默认 sql_mode 含 STRICT_TRANS_TABLES，保持严格模式。
 - **DB7** 多步 DDL 不是一个事务；大表 ALTER 走 gh-ost/pt-osc，小改 ALGORITHM=INSTANT，每步幂等可重入。

@@ -102,16 +102,6 @@
   切分保持现状（Main 拆战斗态、pages 做导航）。
 - **触发条件**：无（随 D2 状态机做最省，但可独立先行）。
 
-## GameRoom 房级区上下文（原 U6 的一半，单排）【小】
-
-- **现状**：`DUAL_MODE.md` §4.1 明文要求「`GameRoom.onCreate` 读 `options.sId` 设房级区上下文」，
-  而 `rooms/GameRoom.ts` 的 `onCreate(_options)` **丢弃 options**（撮合与 onAuth 硬闸那半
-  已由 `908b7e8` 落地：`filterBy(["sId"])` + `groupAdmitsZone(options.sId)`）。
-- **要做**：`onCreate` 建 zoneCtx + `MatchEvidence` 带 `sId`（对局表加 `server_id`）。
-- **注**：此前只登记在 `908b7e8` 的 commit message 里（"A3 随 U6"），而 HANDOFF 的 U6 条目
-  写的是「发奖边界 ban recheck」——两件事，别互相挡。
-- **触发条件**：发奖落地前（与 U6 同期，但可独立先行）。
-
 ## A4 · 部署形态的测试覆盖：CI 只初始化一个库 【中】
 
 - **现状**：split 的 e2e 在**同进程同库**跑（测试进程内起 WebPlatform Fastify、两侧共用一个 MySQL）
@@ -274,6 +264,20 @@
 ---
 
 ## 近期已修（不在待办，留档防重复登记）
+
+- ~~**GameRoom 房级区上下文**（原 U6 的一半）~~ → `onCreate` 读 `options.sId` 存**房级常量**
+  （`filterBy(["sId"])` 保证一间房同区 ⇒ 区是房级的，⛔ 不必像 LobbyRoom 那样每消息 `zoneCtx.run`）；
+  `MatchEvidence` 加 `sId` 并**提升为 XADD 顶层字段**（同 matchId/mode，消费侧⛔不必解 payload JSON）；
+  `match_results` 加 `server_id` + `idx_zone_time`。
+  ⚠ **为什么必须在证据里带**：XADD 之后房间即 dispose，那时再问"这局属于哪个区"**无处可查**；
+  发奖（U6）按区记账靠 `deriveOpId(uid, sId, …)`，拿错区 = 钱记错区且幂等键错误、重发也修不回。
+  ⚠ **`server_id` 只作普通列 + 索引，⛔ 绝不进 PK**：该表按 `created_at` RANGE 分区，
+  PK 必须含分区列，塞进去会改变分区语义与既有 REORGANIZE 流程（09·DB4）。
+  ⚠ **`match_index` 刻意不加区**：它是**全局**去重闸，matchId 本身全局唯一；关区删 `match_results`
+  后这里留孤行是**对的**——去重必须永久且全局，否则同一 matchId 重放会重复落库。
+  ⚠ 旧条目（本字段上线前 XADD 的）**缺 sId 按 0 兜底、⛔ 不判结构损坏丢弃**（否则丢证据），已有用例。
+  机检：int 三条（端到端 `createRoom({sId:7})` → 落库 `server_id=7` / 直发证据带区 / 旧条目兜底），
+  **端到端那条做过变异测试**（`onCreate` 不读 sId 即红，用真实 `node --import tsx` loader 验的）。
 
 - ~~**A3** 跨物理组顶号不收敛~~ → **2026-07-26 用户拍板：改模型，⛔ 不重开跨组协调层。**
   单端语义的作用域从**账号**收窄到 **(账号, 区)**（M12e）：会话权威从 `accounts.token_hash` 单列

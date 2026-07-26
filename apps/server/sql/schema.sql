@@ -124,6 +124,9 @@ CREATE TABLE IF NOT EXISTS purchases (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- match_id 幂等闸：非分区表，match_id 单独唯一（05·Δ2）
+-- ⚠ **刻意不加 server_id**：本表是**全局**去重闸，matchId 本身全局唯一、与区无关。
+-- 关单区 `DELETE FROM match_results WHERE server_id=N` 后这里会留下孤行——**那是对的**：
+-- 去重必须是永久且全局的，否则同一 matchId 被重放时会重复落库。⛔ 别"顺手"给它加区。
 CREATE TABLE IF NOT EXISTS match_index (
   match_id   VARCHAR(40) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   created_at DATETIME(3) NOT NULL,
@@ -134,9 +137,14 @@ CREATE TABLE IF NOT EXISTS match_index (
 CREATE TABLE IF NOT EXISTS match_results (
   match_id   VARCHAR(40) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   created_at DATETIME(3) NOT NULL,
+  -- 本局所属区（0 = 大混服）。⚠ **只作普通列 + 索引，⛔ 绝不进 PK**：本表按 created_at RANGE 分区，
+  -- 分区表 PK 必须含分区列，往 PK 里塞 server_id 会改变分区语义与既有 REORGANIZE 流程（06/09·DB4）。
+  -- 用途：运营按区统计、关单区时 `DELETE WHERE server_id = N` 回收（同其余经济表，U4 定案）。
+  server_id  INT UNSIGNED NOT NULL DEFAULT 0,
   mode       TINYINT UNSIGNED NOT NULL,
   payload    JSON NOT NULL,
-  PRIMARY KEY (match_id, created_at)
+  PRIMARY KEY (match_id, created_at),
+  KEY idx_zone_time (server_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 PARTITION BY RANGE COLUMNS (created_at) (
   PARTITION p2026_07 VALUES LESS THAN ('2026-08-01'),

@@ -139,9 +139,22 @@ export class GameRoom extends Room {
         },
     };
 
-    onCreate(_options: unknown) {
+    /**
+     * **房级区上下文**（DUAL_MODE §4.1）：一间房里的所有人必定同区——`filterBy(["sId"])` 保证
+     * 不同 sId 的座位不会撮进同一房，`onAuth` 的 `groupAdmitsZone` 又挡掉不属于本组的区。
+     * 故区是**房级常量**，⛔ 不需要像 LobbyRoom 那样每消息 `zoneCtx.run`。
+     *
+     * ⚠ 缺省 0 = 大混服/单形态（老客户端不带 sId）。
+     * ⚠ **为什么现在就要存它，哪怕本房还没有按区的读写**：收局证据一旦 XADD 进 `stream:match`，
+     * 房间就 dispose 了 —— 那时再想知道"这局属于哪个区"**无处可查**。发奖（U6）要按区记账
+     * （`deriveOpId(uid, sId, …)` 把 sId 编进幂等键），拿错区 = 钱记到别的区且幂等键错误、重发也修不回。
+     */
+    private sId = 0;
+
+    onCreate(options: IRoomJoinOptions | undefined) {
+        this.sId = options?.sId ?? 0;
         this.setSimulationInterval((dt) => this.update(dt), TICK_MS);
-        console.log(`[GameRoom ${this.roomId}] 创建`);
+        console.log(`[GameRoom ${this.roomId}] 创建 sId=${this.sId}`);
     }
 
     onJoin(client: Client, _options: unknown) {
@@ -321,6 +334,7 @@ export class GameRoom extends Room {
         if (!order.some((o) => this.sessionUserId.has(o.sessionId))) return;
         void emitMatchEvidence({
             matchId: this.state.matchId,
+            sId: this.sId, // ⚠ 房级区（见 onCreate）：证据发出后房间即 dispose，⛔ 此处不带就永久丢失
             mode: MATCH_MODE_CASUAL, // 排位房型接入后按房型切 MATCH_MODE_RANKED
             seed: this.matchSeed,
             mapIndex: 0, // 单地图演示

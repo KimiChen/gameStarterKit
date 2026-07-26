@@ -88,9 +88,10 @@ after(async () => {
 });
 
 /** 造一条两名玩家的完整证据（一局一条：两人名次同 payload，09·K5）。 */
-function makeEvidence(matchId: string): MatchEvidence {
+function makeEvidence(matchId: string, sId = 0): MatchEvidence {
   return {
     matchId,
+    sId,
     mode: MATCH_MODE_CASUAL,
     seed: 305419896,
     mapIndex: 2,
@@ -205,7 +206,9 @@ test("GameRoom 端到端：开局生成 matchId（09·K4）→ 收局 XADD 证�
     const a = await mk("gsA");
     const b = await mk("gsB");
 
-    const room = await colyseus.createRoom(RoomName.Game, {});
+    // ⚠ 带 sId 建房：钉住 `GameRoom.onCreate` 真的读了它（房级区上下文，DUAL_MODE §4.1）——
+    //   ⛔ 之前 onCreate 是 `_options` 整个丢弃，证据里的区永远是 0，这条路径无人覆盖。
+    const room = await colyseus.createRoom(RoomName.Game, { sId: 7 });
     // ⚠ 带 v：PROTOCOL_VERSION 自 M12e 起为 2，`connectTo` 的 options 会走 GameRoom.onAuth 的版本闸
     const c1 = await colyseus.connectTo(room, { token: a.token, v: PROTOCOL_VERSION });
     assert.equal(room.state.matchId, "", "等人期尚无 matchId");
@@ -243,9 +246,11 @@ test("GameRoom 端到端：开局生成 matchId（09·K4）→ 收局 XADD 证�
     // 消费落库：payload 里两名参与者、userId 齐全、名次正确
     await consumeOnce();
     const [rows] = await getPool().query<RowDataPacket[]>(
-      "SELECT mode, payload FROM match_results WHERE match_id = ?", [matchId]);
+      "SELECT mode, server_id, payload FROM match_results WHERE match_id = ?", [matchId]);
     assert.equal(rows.length, 1, "端到端一局一行");
     assert.equal(rows[0].mode, MATCH_MODE_CASUAL, "休闲局 mode=0");
+    // ⚠ 端到端钉住区：建房 options.sId=7 → onCreate 存房级 sId → 收局证据带出 → 落库 server_id
+    assert.equal(Number(rows[0].server_id), 7, "⛔ 建房时的 sId 必须一路带到 match_results.server_id");
     const payload = rows[0].payload as MatchEvidence;
     assert.equal(payload.participants.length, 2);
     const winner = payload.participants.find((p) => p.place === 1);
@@ -266,4 +271,35 @@ test("GameRoom 端到端：开局生成 matchId（09·K4）→ 收局 XADD 证�
       await indexClientFor(bkt).zrem(kActiveLru(bkt), u);
     }
   }
+});
+
+test("对局按区：证据的 sId 落进 match_results.server_id（喂运营统计 + 关区回收）", async () => {
+  // ⚠ 这条钉住「区能从对局里带出来」——证据 XADD 之后房间即 dispose，⛔ 那时再想知道
+  //   这局属于哪个区就无处可查了。发奖（U6）按区记账依赖它。
+  const mid = `m_zone_${Date.now().toString(36)}`;
+  usedMatchIds.push(mid);
+  await emitMatchEvidence(makeEvidence(mid, 107));
+  await consumeOnce();
+
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    "SELECT server_id FROM match_results WHERE match_id = ?", [mid]);
+  assert.equal(rows.length, 1, "证据已落库");
+  assert.equal(Number(rows[0].server_id), 107, "⛔ server_id 必须是证据里的区，不能恒 0");
+});
+
+test("旧条目（无 sId 字段）⛔ 不得被判结构损坏丢弃 —— 按 0 兜底落库", async () => {
+  // ⚠ 上线本字段的那一刻，流里可能还积压着**没有 sId** 的条目。把它们当损坏丢掉
+  //   等于丢证据；缺省 0（大混服）才是对的。⛔ 别把兜底写成"非法即丢"。
+  const mid = `m_nosid_${Date.now().toString(36)}`;
+  usedMatchIds.push(mid);
+  const ev = makeEvidence(mid, 0);
+  await clientForKey(K_STREAM_MATCH).xadd(
+    K_STREAM_MATCH, "*", "matchId", mid, "mode", String(ev.mode), "payload", JSON.stringify(ev),
+  ); // ⛔ 刻意不带 sId 字段
+  await consumeOnce();
+
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    "SELECT server_id FROM match_results WHERE match_id = ?", [mid]);
+  assert.equal(rows.length, 1, "⛔ 旧条目必须照常落库（不得被当结构损坏丢弃）");
+  assert.equal(Number(rows[0].server_id), 0, "缺省按大混服 0");
 });

@@ -447,7 +447,7 @@ for (const row of rows) {
 
 ### 4.1 匹配：filterBy + join options 塞 sId
 
-`shared/protocol/rooms.ts` 的 `IRoomJoinOptions` 增 `sId?`、`listHash?`、复用 `v`。客户端 `RoomClient.joinGame` 由 `serverSession.getCurrentServer().sId` 组 options 传入，`doJoin` 已 `...options` 透传、一行不改。`GameRoom.onCreate` 读 `options.sId` 设房级区上下文；大混服 opts 无 sId、缺省 0。`filterBy(['sId'])` 保证同组内 sId 不同的座位不撮进同一房。
+`shared/protocol/rooms.ts` 的 `IRoomJoinOptions` 增 `sId?`、`listHash?`、复用 `v`。客户端 `RoomClient.joinGame` 由 `serverSession.getCurrentServer().sId` 组 options 传入，`doJoin` 已 `...options` 透传、一行不改。`GameRoom.onCreate` 读 `options.sId` 设房级区上下文（**已落地**：房级常量 + 证据带 `sId` + `match_results.server_id`）；大混服 opts 无 sId、缺省 0。`filterBy(['sId'])` 保证同组内 sId 不同的座位不撮进同一房。
 
 ### 4.2 每组横向底座 + 独立 coord Redis（加载期 fail-fast）
 

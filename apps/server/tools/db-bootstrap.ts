@@ -68,6 +68,11 @@ async function main(): Promise<void> {
     // STRICT_TRANS_TABLES 下超长直接 ER_DATA_TOO_LONG ⇒ 审计丢失、banUser 连带报错。
     // MODIFY 天然幂等（重复执行只是再声明同一类型，⛔ 无需吞错误码）。
     "ALTER TABLE login_audit MODIFY COLUMN reason VARCHAR(255) NULL",
+    // 对局按区（DUAL_MODE §4.1「房级区上下文」）：GameRoom 收局证据带 sId → 消费侧落此列。
+    // ⚠ 存量行缺省 0（= 大混服），与"本字段上线前的条目按 0 处理"一致。
+    // ⛔ 不进 PK：本表按 created_at RANGE 分区，PK 必须含分区列（见 schema.sql 该列注释）。
+    "ALTER TABLE match_results ADD COLUMN server_id INT UNSIGNED NOT NULL DEFAULT 0 AFTER created_at",
+    "ALTER TABLE match_results ADD KEY idx_zone_time (server_id, created_at)",
   ];
   for (const sql of alters) {
     await conn.query(sql).catch((e: { errno?: number }) => {
