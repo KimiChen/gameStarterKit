@@ -34,7 +34,9 @@ export function startStreamConsumer(
   name: string,
   client: () => Redis,
   streamKey: string,
-  onEntry: (fields: string[], id: string) => void,
+  // ⚠ 允许返回 Promise 并**逐条 await**：消费侧可能要回读 Redis 做栅栏判定（如 kick 的陈旧事件丢弃）。
+  // ⛔ 不能改成"发射后不管"：那样 try/catch 兜不住 rejection，且同一 uid 的事件会乱序处理。
+  onEntry: (fields: string[], id: string) => void | Promise<void>,
   opts: StreamConsumerOpts = {},
 ): StreamConsumer {
   const blockMs = opts.blockMs ?? 2000;
@@ -56,7 +58,7 @@ export function startStreamConsumer(
             for (const [, entries] of res) {
               for (const [id, fields] of entries) {
                 cursor = id;
-                try { onEntry(fields, id); } catch (e) { console.error(`[${name}] onEntry 异常 id=${id}`, e); }
+                try { await onEntry(fields, id); } catch (e) { console.error(`[${name}] onEntry 异常 id=${id}`, e); }
               }
             }
           }

@@ -227,3 +227,39 @@ test("封号幂等：重复 ban 同一账号恒返 true（⛔ 不随 affectedRow
   assert.equal(await revokeAccount(uid), true, "revoke 同理");
   assert.equal(await banAccount("u_no_such_account_x"), false, "真不存在才 false");
 });
+
+test("A6 单调栅栏：积压的陈旧顶号事件被丢弃，⛔ 不得踢掉已经合法登录的赢家", async () => {
+  // ⚠ 复现评审说的那条：`exceptHash` 是**等值**判据、不单调。消费循环卡顿时，晚到的旧事件拿
+  //   **旧的** exceptHash 去比**新的**在线表 ⇒ 两者必然不等 ⇒ 把赢家踢下线。
+  //   修法是让事件带上 A1 的单调量（issuedAt），消费侧与组 sess 里的值比，旧的整条丢弃。
+  const uid = testUid("rv-a6").slice(0, 32);
+  const kicked: string[] = [];
+  const sink: PushSink = (type, data) => {
+    if (type === LobbyPush.ForceLogout) { kicked.push((data as { reason: string }).reason); }
+  };
+  // 在线的是**赢家**：持新登录态 hash-NEW，其 sess.issuedAt = 2000（更晚）
+  registerOnline(uid, "s1", { sink, kick: () => {}, tokenHash: "hash-NEW" });
+  await clientFor(uid).hset(kSess(uid), { tokenHash: "hash-NEW", issuedAt: "2000" });
+  startKickConsumer();
+  try {
+    // 投递一条**陈旧**的顶号事件：它是更早那次登录（issuedAt=1000）发出的，exceptHash 还是老的
+    await coordClient().xadd(K_STREAM_KICK, "*", "uid", uid,
+      "reason", ForceLogoutReason.Replaced, "exceptHash", "hash-OLD", "issuedAt", "1000");
+    await sleep(800); // 给消费循环足够时间；⛔ 断言"没发生"必须等够
+    assert.deepEqual(kicked, [], "⛔ 陈旧事件不得踢掉赢家（issuedAt 1000 < 组 sess 2000 ⇒ 整条丢弃）");
+
+    // 反例：**当期**事件（issuedAt 与 sess 相等）仍必须正常工作——⛔ 别把闸修成"什么都不踢"
+    await coordClient().xadd(K_STREAM_KICK, "*", "uid", uid,
+      "reason", ForceLogoutReason.Replaced, "exceptHash", "hash-OTHER", "issuedAt", "2000");
+    const deadline = Date.now() + 5000;
+    while (kicked.length === 0) {
+      if (Date.now() > deadline) { throw new Error("当期事件应当踢人却超时"); }
+      await sleep(100);
+    }
+    assert.equal(kicked[0], ForceLogoutReason.Replaced, "当期顶号事件照常踢");
+  } finally {
+    stopKickConsumer();
+    unregisterOnline(uid, "s1");
+    await clientFor(uid).unlink(kSess(uid));
+  }
+});

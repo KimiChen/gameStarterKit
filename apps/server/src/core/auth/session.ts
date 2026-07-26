@@ -106,7 +106,8 @@ export async function writeGroupSess(
     // ⚠ 带 newHash 判别位：本节点消费者会把这条广播读回来（流无发布者过滤），迟到投递时新连接
     // 可能已 registerOnline —— 判别位保证**只踢旧登录态**、⛔ 不自踢（跨节点同理）。
     kickLocal(uid, ForceLogoutReason.Replaced, newHash);
-    await broadcastKick(uid, ForceLogoutReason.Replaced, newHash);
+    // ⚠ 带上 issuedAtMs（A6）：消费侧据此丢弃陈旧的顶号事件，⛔ 防积压时踢掉赢家
+    await broadcastKick(uid, ForceLogoutReason.Replaced, newHash, issuedAtMs);
   }
 }
 
