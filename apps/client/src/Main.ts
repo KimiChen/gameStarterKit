@@ -16,11 +16,20 @@ import { installWeChatCompat } from "./core/wechat-compat";
 import { getToken, initHttp, initPortal } from "./core/http";
 import { getCurrentServer } from "./net/serverSession";
 import { onAuthInvalid, onBattleLost, onConnLost } from "./net/session";
-import { RoomClient } from "./net/RoomClient";
+import { RoomClient, type GameRoomOwnership } from "./net/RoomClient";
 import { WebSocketClient } from "./net/WebSocketClient";
 import { GameECS } from "./logic/rooms/ballMove/GameECS";
 import { PlayerModel } from "./logic/rooms/ballMove/GameComps";
-import { S2C, MAP_WIDTH, MAP_HEIGHT, normalize, distance, joinErrText, type IPlayerState } from "./shared/index";
+import {
+    S2C,
+    MAP_WIDTH,
+    MAP_HEIGHT,
+    normalize,
+    distance,
+    joinErrText,
+    type IGameRoomState,
+    type IPlayerState,
+} from "./shared/index";
 
 // ⚠ 必须在任何 Colyseus 调用之前安装（模块加载期执行，早于所有组件生命周期）
 installWeChatCompat();
@@ -85,6 +94,11 @@ export class Main extends Component {
     /** 进战斗世代号：每次 enterBattle +1。⚠ 与 `inBattle` **不是一回事**——后者是重入锁（拦并发进入），
      *  本字段用于让**迟到的上一轮**认出自己已过期，⛔ 别让它去回滚新一轮的状态。见 enterBattle 注释。 */
     private battleGen = 0;
+    /**
+     * 当前 enterBattle 世代对战斗房的精确 ownership。
+     * ⛔ 不要退“RoomClient 当前房”：旧世代只能释放自己持有的租约，否则会误关后来者复用/新建的房间。
+     */
+    private battleRoom: GameRoomOwnership | null = null;
     /** session 事件订阅的解绑器，onDestroy 统一调用。⛔ 别丢：见 start() 里那三个订阅的注释。 */
     private readonly unsubs: Array<() => void> = [];
 
@@ -138,20 +152,25 @@ export class Main extends Component {
         if (gen !== this.battleGen) { return; }   // 动态 import 期间已被顶掉：⛔ 别再装渲染层
         this.initRenderLayer();
         this.initInput();
+        let ownership: GameRoomOwnership | null = null;
         try {
-            await this.connectRoom();
-            if (gen !== this.battleGen) {
-                // 连上了但已过期（期间又走了一轮）：本轮的房间由后来者的 teardown/connectRoom 接管，
-                // 这里⛔不能 abortBattle（那是在拆别人的连接），只退掉自己这条多余的连接。
+            ownership = this.connectRoom();
+            this.battleRoom = ownership;
+            const room = await ownership.ready;
+            if (gen !== this.battleGen || this.destroyed || this.battleRoom !== ownership) {
+                // 连上了但本 ownership 已过期：只释放本地捕获的精确租约。若后来者与它合流到
+                // 同一个在途 join，RoomClient 会保留物理房；若后来者已新建槽，也完全不受影响。
                 console.warn("[Main] 迟到的连接成功（世代已过期），仅退掉自己这条");
-                void RoomClient.inst.leave().catch(() => {});
+                this.releaseBattleRoom(ownership);
                 return;
             }
+            this.bindRoom(room, gen, ownership);
             this.started = true;
         } catch (err) {
-            if (gen !== this.battleGen) {
+            if (gen !== this.battleGen || this.destroyed || this.battleRoom !== ownership) {
                 // ⛔ 关键：迟到的失败**绝不能**调 abortBattle——新一轮可能已经连上了
                 console.warn("[Main] 迟到的连接失败（世代已过期），⛔ 不回滚当前战斗态", err);
+                this.releaseBattleRoom(ownership);
                 return;
             }
             // 拒连的业务码走 message（服务端 joinRefused）→ shared 单源解码，日志里给人看得懂的原因
@@ -167,10 +186,13 @@ export class Main extends Component {
      * 幂等：不在战斗中直接返回。
      */
     private teardownBattle(): void {
-        if (!this.inBattle) { return; }
+        if (!this.inBattle && !this.battleRoom) { return; }
+        // 先作废世代、再释放精确 ownership：在途 enterBattle 醒来后只能清理自己的局部租约，
+        // 无权 bind/回滚后来新建的一轮。
+        this.battleGen++;
         this.inBattle = false;
         this.started = false;
-        void RoomClient.inst.leave().catch(() => { /* 已死的房退不掉属预期 */ });
+        this.releaseBattleRoom(this.battleRoom);
         input.off(Input.EventType.TOUCH_START, this.onTouch, this);
         input.off(Input.EventType.TOUCH_MOVE, this.onTouch, this);
         input.off(Input.EventType.TOUCH_END, this.onTouchEnd, this);
@@ -186,6 +208,13 @@ export class Main extends Component {
         this.pingTimer = 0;
         this.rttMs = -1;
         this.gameECS.clear();
+    }
+
+    /** 释放调用方给出的精确战斗房 ownership；仅当它仍是当前值时才清空字段。 */
+    private releaseBattleRoom(ownership: GameRoomOwnership | null): void {
+        if (!ownership) return;
+        if (this.battleRoom === ownership) { this.battleRoom = null; }
+        void ownership.leave().catch(() => { /* 已死的房退不掉属预期 */ });
     }
 
     /** 进战斗失败回滚：回滚战斗态 → **退大厅连接** → 重开登录页（可重试）。
@@ -210,7 +239,7 @@ export class Main extends Component {
     /** 连 ballMove 玩法房（token 已在大厅登录时设置；无 token 走游客）。
      *  区服=实例：连**选中区服的 wsUrl**（大厅选服设的 serverSession），无则回退 serverUrl。
      *  Colyseus Client 收 http(s) 端点自行派生 ws(s)，故把 ws:// 换回 http:// 再传。 */
-    private async connectRoom() {
+    private connectRoom(): GameRoomOwnership {
         const cur = getCurrentServer();
         const endpoint = cur?.wsUrl ? cur.wsUrl.replace(/^ws/, "http") : this.effectiveServerUrl;
         RoomClient.inst.init(endpoint);
@@ -218,32 +247,69 @@ export class Main extends Component {
         // 校验 sId ∈ GROUP_ZONES（防串服）+ GameRoom 的 filterBy(["sId"]) 按区撮合。
         // ⚠ cur 为 null（未选服）→ 不带 sId：单形态放行；**区服组会拒**（M12d 收紧——缺 sId 会让
         // 大厅串基础前缀、且绕过 filterBy 混区），故区服部署下必须先选服再进战斗。
-        const room = await RoomClient.inst.joinGame({ token: getToken(), sId: cur?.sId });
-        if (this.destroyed) {
-            // 连接在途期间组件已销毁（场景重载）：房间立即退掉——否则它永驻并把
-            // state 回调喂给 GameECS 单例，新 Main 再 join 后双房间喂同一 ECS（幽灵 isSelf）
-            void RoomClient.inst.leave();
-            return;
-        }
+        return RoomClient.inst.joinGame({ token: getToken(), sId: cur?.sId });
+    }
+
+    /**
+     * 旧 room 的 leave Promise 落定前，SDK 仍可能派发它已经登记的 message/schema 回调。
+     * 每次回调都必须重新核对「世代 + ownership + 当前物理 room」；⛔ 不能依赖稍后的 removeAllListeners。
+     */
+    private isCurrentBattleBinding(
+        gen: number,
+        ownership: GameRoomOwnership,
+        room: Colyseus.Room<IGameRoomState>,
+    ): boolean {
+        return !this.destroyed
+            && this.inBattle
+            && this.battleGen === gen
+            && this.battleRoom === ownership
+            && RoomClient.inst.room === room;
+    }
+
+    /** 为当前世代已确认拥有的精确 room 绑定消息与状态。过期世代的回调会被逐次身份守卫丢弃。 */
+    private bindRoom(
+        room: Colyseus.Room<IGameRoomState>,
+        gen: number,
+        ownership: GameRoomOwnership,
+    ): void {
+        const isCurrent = () => this.isCurrentBattleBinding(gen, ownership, room);
 
         // 3. 服务端消息
-        RoomClient.inst.onMessage(S2C.Welcome, (msg) => console.log(`[Main] ${msg.motd}（tickRate=${msg.tickRate}）`));
-        RoomClient.inst.onMessage(S2C.Pong, (msg) => {
+        RoomClient.inst.onMessage(room, S2C.Welcome, (msg) => {
+            if (!isCurrent()) { return; }
+            console.log(`[Main] ${msg.motd}（tickRate=${msg.tickRate}）`);
+        });
+        RoomClient.inst.onMessage(room, S2C.Pong, (msg) => {
+            if (!isCurrent()) { return; }
             this.rttMs = Date.now() - msg.clientTime;
             console.log(`[Main] RTT ${this.rttMs}ms`);
         });
-        RoomClient.inst.onMessage(S2C.Chat, (msg) => console.log(`[聊天] ${msg.fromName}: ${msg.text}`));
-        RoomClient.inst.onMessage(S2C.SkillResult, (msg) => console.log(`[战斗] ${msg.casterId} 技能${msg.skillId} 伤害${msg.damage}`));
-        RoomClient.inst.onMessage(S2C.Error, (msg) => console.warn(`[服务端错误] ${msg.code}: ${msg.message}`));
+        RoomClient.inst.onMessage(room, S2C.Chat, (msg) => {
+            if (!isCurrent()) { return; }
+            console.log(`[聊天] ${msg.fromName}: ${msg.text}`);
+        });
+        RoomClient.inst.onMessage(room, S2C.SkillResult, (msg) => {
+            if (!isCurrent()) { return; }
+            console.log(`[战斗] ${msg.casterId} 技能${msg.skillId} 伤害${msg.damage}`);
+        });
+        RoomClient.inst.onMessage(room, S2C.Error, (msg) => {
+            if (!isCurrent()) { return; }
+            console.warn(`[服务端错误] ${msg.code}: ${msg.message}`);
+        });
 
         // 4. 状态同步 → ECS
-        const $ = RoomClient.inst.state$();
+        const $ = RoomClient.inst.state$(room);
         $(room.state).players.onAdd((player: IPlayerState, sessionId: string) => {
+            if (!isCurrent()) { return; }
             this.gameECS.addPlayer(player, sessionId === room.sessionId);
             // 该玩家任意字段变化时，把最新值同步进 ECS
-            $(player).onChange(() => this.gameECS.syncPlayer(player));
+            $(player).onChange(() => {
+                if (!isCurrent()) { return; }
+                this.gameECS.syncPlayer(player);
+            });
         });
         $(room.state).players.onRemove((_player: IPlayerState, sessionId: string) => {
+            if (!isCurrent()) { return; }
             this.gameECS.removePlayer(sessionId);
         });
 
@@ -267,7 +333,7 @@ export class Main extends Component {
     }
 
     onDestroy() {
-        this.destroyed = true; // 见 connectServer：joinGame 在途返回后据此立即退房
+        this.destroyed = true; // joinGame 在途返回后，enterBattle 据此只释放自己的精确 ownership
         this.battleGen++;      // 作废在途的 enterBattle：它醒来时世代已变，⛔ 不会再碰任何状态
         // ⛔ 必须先解绑再拆状态：否则本实例仍挂在模块级 Set 上，下次事件到达会打在已销毁的对象上
         for (const off of this.unsubs) { off(); }
@@ -276,7 +342,7 @@ export class Main extends Component {
         input.off(Input.EventType.TOUCH_MOVE, this.onTouch, this);
         input.off(Input.EventType.TOUCH_END, this.onTouchEnd, this);
         input.off(Input.EventType.TOUCH_CANCEL, this.onTouchEnd, this);
-        void RoomClient.inst.leave();
+        this.releaseBattleRoom(this.battleRoom);
         if (this.inBattle) { this.gameECS.clear(); }
     }
 
