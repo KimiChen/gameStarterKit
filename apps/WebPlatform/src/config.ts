@@ -14,7 +14,8 @@ export const WEBPLATFORM_MYSQL_URL = (): string =>
 export const WEBPLATFORM_PORT = Number(process.env.WEBPLATFORM_PORT ?? 2570);
 
 /** 监听网卡。⚠ **缺省回环**：本进程的 `/ban`·`/revoke`·`/character/*`·`/account/exists` 至今
- *  **全部无鉴权**（待办 W1）——此前硬编码 `0.0.0.0`，谁能连到端口就能封任何人、遍历任意用户足迹。
+ *  **全部无鉴权**（W1；2026-07-26 定案：边界交给 VPC + 安全组，W1 降级到「E1 部署模板落地前」，
+ *  ⛔ 风险是**明确接受**而非消失——见 docs/WEBPLATFORM.md §5）。此前硬编码 `0.0.0.0`，谁能连到端口就能封任何人。
  *  评审实测：照 HANDOFF §「本地起 split」跑起来后，从**局域网地址**未鉴权 `POST /ban` 真的把账号
  *  `status` 改成 1、`token_hash` 置 NULL。缺省绑回环即消灭这一层；真部署时显式设内网网卡地址。
  *  ⛔ 这**不是** W1 的替代（W1 的鉴权分层照做不误），只是把"开发机顺手敞给整个办公室网段"堵掉。 */
@@ -31,7 +32,10 @@ export const WEBPLATFORM_HOST = process.env.WEBPLATFORM_HOST ?? "127.0.0.1";
  *
  * ⚠ **那个安全问题由 W1 负责，不由本开关负责**：直连者能自带任意 XFF（连"最右段"也是他写的），
  * 从而绕过登录限流、烧 code2session 配额、放大审计写入。防它的正确位置是
- * **W1「端点鉴权分层 + 绑定内网」**（docs/WEBPLATFORM.md §4，上线前必做）——即**别让人直连到**。
+ * **W1「端点鉴权分层 + 绑定内网」**（docs/WEBPLATFORM.md §4）——即**别让人直连到**。
+ * ⚠ 2026-07-26 定案后 W1 已**不是上线阻断**（边界交给 VPC + 安全组，触发条件改为 E1 前）；
+ * 绑定内网那半已由本文件的 `WEBPLATFORM_HOST` 缺省回环落地。⛔ 但"直连即可伪造 XFF"这条**依然成立**，
+ * 只是它的防线现在是安全组而不是密钥——见 WEBPLATFORM §5 明确接受的残余风险。
  * 若某部署确实把本进程直接暴露且 W1 尚未落地，显式置 `WEBPLATFORM_TRUST_PROXY=0` 换回严格模式，
  * 但要接受"全服共桶"的代价。每请求现读，便于运维热改。
  */
