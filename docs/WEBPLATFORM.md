@@ -73,7 +73,7 @@
 | `GET /healthz` | 公开 | 进程存活 + MySQL 可达 |
 | `POST /account/wx-login`·`/account/dev-login` | 公开（客户端直连） | 路径 = 单源 `ApiPath`（铁律 6）；出参 shared `ILoginRes`，⛔ 禁含 openid/session_key（09·G8） |
 | `POST /area/list` | 公开（登录前展示） | `{al,ul,isOps,h}`；token 可选、**best-effort** 回填 `ul`（无效/过期一律空，⛔ 不抛） |
-| `POST /verify` | 内部（组网关调） | 返回**结果码**，组侧映射错误类；组 `sess` 由组网关 onAuth 懒填 |
+| `POST /verify` | 内部（组网关调） | 返回**结果码**，组侧映射错误类；组 `sess` 由组网关 onAuth 懒填。⚠ 成功时**必须带 `issuedAtMs`**（= `accounts.token_issued_at`，同 uid 严格递增）：组侧 `writeGroupSess` 拿它当写入栅栏（A1，见 [SERVER.md §13](SERVER.md#13-契约与配置redis-key--字段--错误码--常量) 的 `sess:{uid}`）。⛔ 别以"出参最小化"为由删——它不是身份信息（G8 禁的是 openid/unionid），只是一个时刻；组侧对缺失值兜 `0`（判为最旧、⛔ 不覆盖更新的），仅为滚动升级窗口留的余地 |
 | `POST /character/register`·`/query`·`/has` | 内部 | 建角存在性权威（喂 F4 + `ul`） |
 | `POST /account/exists` | 内部 | F4「是不是真账号」判据（sId=0） |
 | `POST /ban`·`/revoke` | **特权** | 一条 UPDATE 写权威（`status=1` / `token_hash=NULL`）= **下次登不上**；返回 `{banned}`/`{revoked}` = 是否命中（组侧据此决定是否踢在线；`false`=无此账号则不广播） |

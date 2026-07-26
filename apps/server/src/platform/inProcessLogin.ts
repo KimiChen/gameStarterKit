@@ -73,7 +73,9 @@ async function finish(r: Extract<LibLoginResult, { ok: true }>): Promise<LoginRe
         lost = true;
         throw new BusyError(`并发登录：本次签发已被更晚的登录取代（${v.reason}），请重试`);
       }
-      await writeGroupSess(r.uid, r.token);
+      // ⚠ 带上权威侧签发时刻做写入栅栏（A1）：in-process 虽有 per-uid 锁定序，但栅栏是**第二道**——
+      // 锁只保证同进程/同键的串行，⛔ 保证不了"锁外迟到的写"（如锁超时后旧持有者继续跑完）。
+      await writeGroupSess(r.uid, r.token, "", v.issuedAtMs);
     }));
   } catch (e) {
     if (!lost) {

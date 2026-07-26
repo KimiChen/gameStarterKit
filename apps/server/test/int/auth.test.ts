@@ -19,7 +19,7 @@ import { AuthRequiredError, BannedError, RateLimitedError } from "../../src/core
 import { activeLruBucketOf, kActiveLru, kLock, kRl, kSess, kUser, zoneCtx } from "../../src/core/infra/keys";
 import { clientFor, clientForKey, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
 import { closeMysql, getPool } from "../../src/core/infra/mysql";
-import type { RowDataPacket } from "../../src/core/infra/mysql";
+import type { ResultSetHeader, RowDataPacket } from "../../src/core/infra/mysql";
 import { assertRedisUp, cleanupUser, testUid } from "./helpers";
 
 const run = testUid("wx"); // openid 前缀，保证跨运行不撞 UNIQUE(openid)
@@ -395,4 +395,36 @@ test("unionid 回填撞 uk_unionid：⛔ 不能只留 console —— 必须落 l
   assert.equal(audit.length, 1, "⛔ 必须留下 login_dual_account 审计行（只 console 在生产等于没有）");
   assert.match(String(audit[0].reason), /uk_unionid/, "reason 要说清是撞了哪个键");
   assert.doesNotMatch(String(audit[0].reason), new RegExp(uni), "⛔ 不得写 unionid 明文（09·G8），只留前缀");
+});
+
+test("A1 组 sess 写入栅栏：迟到的旧写被丢弃，⛔ 且不得反手踢掉合法的新登录端", async () => {
+  // ⚠ 这条钉的是 A1 的**全部要点**，回退任一半都会红：
+  //   ① 迟到的旧写 ⛔ 不覆盖缓存；② 陈旧写 ⛔ 不触发顶号踢（上一版会拿自己的 hash 当判别位踢掉赢家）。
+  // ⚠ 为什么 oldHash CAS 不够（评审推翻的上一版药方）：两个请求都读到 H0 时旧请求也满足 CAS 条件
+  //   ⇒ 它先写成功、赢家反被拒。所以判据必须是**单调量**而非"值没变过"。
+  const { issueToken } = await import("@game/webplatform/lib");
+  const { writeGroupSess } = await import("../../src/core/auth/session");
+  const uid = `u_fence_${Date.now().toString(36)}`;
+  createdUids.push(uid);
+  await getPool().execute<ResultSetHeader>(
+    "INSERT INTO accounts (user_id, openid) VALUES (?, ?)", [uid, `op_${uid}`]);
+
+  // 甲登录（旧）→ 乙登录（新）。issueToken 保证 issuedAtMs 严格递增（⛔ 同毫秒也不打平）
+  const a = await issueToken(uid, null);
+  const b = await issueToken(uid, null);
+  assert.ok(b.issuedAtMs > a.issuedAtMs,
+    `签发时刻必须严格递增（⛔ 同毫秒打平会让栅栏失效）：a=${a.issuedAtMs} b=${b.issuedAtMs}`);
+
+  // 乙先落地（真实赢家）
+  await writeGroupSess(uid, b.token, "", b.issuedAtMs);
+  const afterWinner = await clientFor(uid).hget(kSess(uid), "tokenHash");
+
+  // 甲的写**迟到**（正是 A1 那条竞态：remoteVerify 与 writeGroupSess 之间可任意交错）
+  await writeGroupSess(uid, a.token, "", a.issuedAtMs);
+
+  const finalHash = await clientFor(uid).hget(kSess(uid), "tokenHash");
+  assert.equal(finalHash, afterWinner, "⛔ 迟到的旧写不得覆盖赢家的缓存");
+  // 终态可用性：赢家的 token 仍然过得了快路径，输家的过不了
+  await verifySession(uid, b.token);
+  await assert.rejects(verifySession(uid, a.token), AuthRequiredError, "旧 token ⛔ 不得仍被放行");
 });

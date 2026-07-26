@@ -27,18 +27,42 @@ export async function accountExists(uid: string): Promise<boolean> {
  * 撤销与换端全靠它；session_key 传 null 保留旧值，G8）。返回 token 明文。
  * ⚠ 无 accounts 行时 UPDATE 命中 0 行（合成会话/测试）——无害，调用方走 Redis 快路径。
  */
-export async function issueToken(uid: string, sessionKey: string | null): Promise<string> {
+/**
+ * 签发 token。返回 `issuedAtMs` = 本次签发时刻（**权威侧单调量**，组缓存的写入栅栏靠它，A1）。
+ *
+ * ⚠ **`GREATEST(...)` 不是花哨写法，是栅栏的正确性前提**：`token_issued_at` 是 `DATETIME(3)`（毫秒），
+ * 直接写 `NOW(3)` 时**同一毫秒内的两次签发会打平**，而打平就意味着 `writeGroupSess` 的
+ * 「只接受更大的」无法判定先后 ⇒ 迟到的旧写可能覆盖新写（正是 A1 要堵的那件事）。
+ * 这里改成「取 `NOW(3)` 与『上一次 + 1ms』的较大者」⇒ **同一 user_id 上严格递增**，⛔ 不会打平。
+ * ⚠ 代价（可接受且自愈）：连续高频签发时该列会短暂**跑到真实时间之前**，每次至多 1ms；
+ * 因 `GREATEST` 带着 `NOW(3)`，一旦签发变慢立即回落到真实时间。登录限流（容量 5 / 补 0.2 每秒）
+ * 决定了单账号不可能持续每秒 1000 次签发 ⇒ 漂移量在毫秒级。
+ * 该列同时用于过期判定（`age_s`），漂移方向是"看起来更年轻"，量级远小于 SESS_TTL_S。
+ */
+export async function issueToken(
+  uid: string, sessionKey: string | null,
+): Promise<{ token: string; issuedAtMs: number }> {
   const token = `${uid}.${randomBytes(TOKEN_BYTES).toString("hex")}`;
   await getPool().execute<ResultSetHeader>(
-    `UPDATE accounts SET token_hash = ?, token_issued_at = NOW(3),
-        session_key = COALESCE(?, session_key) WHERE user_id = ?`,
+    `UPDATE accounts
+        SET token_hash = ?,
+            token_issued_at = GREATEST(NOW(3),
+              COALESCE(token_issued_at, '1970-01-02 00:00:00.000') + INTERVAL 1000 MICROSECOND),
+            session_key = COALESCE(?, session_key)
+      WHERE user_id = ?`,
     [sha256(token), sessionKey, uid]);
-  return token;
+  // 回读权威值：⛔ 不能用 Date.now() 代替——栅栏两侧必须来自**同一个时钟**（MySQL），
+  // 否则应用进程间的时钟偏移会让比较失去意义。
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    `SELECT ROUND(UNIX_TIMESTAMP(token_issued_at) * 1000) AS issued_ms
+       FROM accounts WHERE user_id = ?`, [uid]);
+  return { token, issuedAtMs: Number(rows[0]?.issued_ms ?? 0) };
 }
 
-/** 校验结果码（不抛业务错误，跨包边界由调用方映射）。 */
+/** 校验结果码（不抛业务错误，跨包边界由调用方映射）。
+ *  ⚠ `issuedAtMs`：权威侧签发时刻，组缓存写入栅栏的判据（A1）——⛔ 别在传递链上把它丢了。 */
 export type VerifyResult =
-  | { ok: true; status: number }
+  | { ok: true; status: number; issuedAtMs: number }
   | { ok: false; reason: "not_found" | "mismatch" | "banned" | "deregistered" | "expired" };
 
 /**
@@ -47,7 +71,8 @@ export type VerifyResult =
  */
 export async function verifyToken(uid: string, token: string): Promise<VerifyResult> {
   const [rows] = await getPool().query<RowDataPacket[]>(
-    `SELECT token_hash, status, TIMESTAMPDIFF(SECOND, token_issued_at, NOW(3)) AS age_s
+    `SELECT token_hash, status, TIMESTAMPDIFF(SECOND, token_issued_at, NOW(3)) AS age_s,
+            ROUND(UNIX_TIMESTAMP(token_issued_at) * 1000) AS issued_ms
        FROM accounts WHERE user_id = ?`, [uid]);
   if (rows.length === 0) { return { ok: false, reason: "not_found" }; }
   const a = rows[0];
@@ -55,7 +80,8 @@ export async function verifyToken(uid: string, token: string): Promise<VerifyRes
   if (Number(a.status) === 1) { return { ok: false, reason: "banned" }; }
   if (Number(a.status) !== 0) { return { ok: false, reason: "deregistered" }; }
   if (a.age_s === null || Number(a.age_s) > SESS_TTL_S) { return { ok: false, reason: "expired" }; }
-  return { ok: true, status: Number(a.status) };
+  // ⚠ 带回 issuedAtMs：调用方（split 的 onAuth 懒填）要拿它当组缓存写入栅栏（A1）
+  return { ok: true, status: Number(a.status), issuedAtMs: Number(a.issued_ms ?? 0) };
 }
 
 /**

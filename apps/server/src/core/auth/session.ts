@@ -52,23 +52,53 @@ export const safeSecretEqual = (a: string | null | undefined, b: string | null |
  * ⚠ session_key 权威在 accounts（MySQL），组缓存**不再存**（09·G8：无人从组缓存读它）。
  * 登录薄委托（wxLogin）拿到 lib 已签发的 token 后调此写组缓存；split 拆进程后由 onAuth 从 verify 结果懒填。
  */
-export async function writeGroupSess(uid: string, token: string, gwNode = ""): Promise<void> {
+/**
+ * 组 sess 写入栅栏（A1）：**只接受更新的签发时刻**，读-比-写在一条 Lua 里原子完成。
+ *
+ * ⚠ **⛔ 不能用「比较-并-设置(oldHash CAS)」代替**（评审推翻的上一版药方）：两个请求都在同一时刻
+ * 读到 `oldHash=H0` 时，**迟到的旧请求也满足 `oldHash===H0`** ⇒ 它 CAS 成功、真正的赢家反被拒，
+ * 终态是旧 token 胜出。CAS 只能保证"没人踩到别人"，⛔ 保证不了"新的赢"——那需要**单调量**。
+ *
+ * 返回 `[wrote, oldHash]`：wrote=0 表示本次是陈旧写、已被丢弃（⛔ 此时绝不能踢人——踢的是赢家）。
+ */
+const SESS_FENCE_LUA = `
+local storedAt = redis.call('HGET', KEYS[1], 'issuedAt')
+if storedAt and tonumber(storedAt) and tonumber(ARGV[2]) <= tonumber(storedAt) then
+  return {0, ''}
+end
+local oldHash = redis.call('HGET', KEYS[1], 'tokenHash')
+redis.call('DEL', KEYS[1])
+redis.call('HSET', KEYS[1], 'tokenHash', ARGV[1], 'issuedAt', ARGV[2],
+           'loginTs', ARGV[3], 'connId', '', 'gwNode', ARGV[4])
+redis.call('EXPIRE', KEYS[1], ARGV[5])
+return {1, oldHash or ''}
+`;
+
+/**
+ * @param issuedAtMs 权威侧签发时刻（`accounts.token_issued_at`，**同 uid 严格递增**，见 lib `issueToken`）。
+ *   ⛔ 别传 `Date.now()`：栅栏两侧必须来自同一个时钟（MySQL），否则进程间时钟偏移会让比较失去意义。
+ */
+export async function writeGroupSess(
+  uid: string, token: string, gwNode = "", issuedAtMs = 0,
+): Promise<void> {
   const key = kSess(uid);
   const newHash = sha256(token);
   // 顶号判据（单端语义）：组 sess 里**原本存着一个不同的 tokenHash** ⇒ 该账号换了登录态（走了一次登录、
   // 换发了 token）⇒ 旧设备的连接要主动踢下线。⚠ 断线重连**不会**命中：重连复用同一 token（hash 相同），
   // 且不经登录；首次连接/sess 已过期时 oldHash=null 也不命中。判据精确到「换了登录态」这一件事。
-  const oldHash = await clientFor(uid).hget(key, "tokenHash");
-  await clientFor(uid).multi()
-    .del(key) // 原子换发：旧会话字段不残留
-    .hset(key, {
-      tokenHash: newHash,
-      loginTs: String(Date.now()),
-      connId: "",
-      gwNode,
-    })
-    .expire(key, SESS_TTL_S)
-    .exec();
+  // ⚠ 这一读一写**必须原子**：拆成两步就是 A1 描述的那条竞态（中间可任意交错）。
+  const res = await clientFor(uid).eval(
+    SESS_FENCE_LUA, 1, key, newHash, String(issuedAtMs), String(Date.now()), gwNode, String(SESS_TTL_S),
+  ) as [number, string];
+  const wrote = Number(res?.[0]) === 1;
+  const oldRaw = String(res?.[1] ?? "");
+  const oldHash = oldRaw === "" ? null : oldRaw;
+  if (!wrote) {
+    // 陈旧写（更晚的登录已经写过了）：⛔ 直接返回——既不覆盖缓存，**也绝不踢人**。
+    // 上一版没有这条路径，迟到的旧写不仅覆盖缓存，还会拿自己的 newHash 当判别位把**合法的新登录端**踢掉。
+    console.warn(`[session] 陈旧的组 sess 写入已丢弃（issuedAtMs=${issuedAtMs} ≤ 已存值）`, uid);
+    return;
+  }
   await touchActive(uid);
   if (oldHash !== null && oldHash !== newHash) {
     // 顶号：踢旧连接（本节点即时 + 跨节点广播）。⚠ 此刻**新连接尚未注册**——in-process 登录早于连接建立，

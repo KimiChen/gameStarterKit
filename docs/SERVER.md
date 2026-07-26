@@ -494,7 +494,7 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 | `applied:{uid}` | ZSET | 无 | 幂等已 apply 集合（member=op_id, score=applyMs，I5 裁剪） |
 | `lock:{uid}` | STRING | 5s | 跨实例用户锁（值=fence，SET NX PX） |
 | `idem:{type}:{uid}:{clientReqId}` | STRING | pending 10s / done 60s | 幂等占位（I1） |
-| `sess:{uid}` | HASH | 3d | 组侧会话缓存（tokenHash/loginTs/connId/gwNode）。快路径**纯 hash 比对、零权威回源**；在线撤销靠踢（M12d §2.3 SOP）。⚠ 写入时 tokenHash **变化即顶号** → 踢旧连接；⛔ 不删它 |
+| `sess:{uid}` | HASH | 3d | 组侧会话缓存（tokenHash/**issuedAt**/loginTs/connId/gwNode）。快路径**纯 hash 比对、零权威回源**；在线撤销靠踢（M12d §2.3 SOP）。⚠ 写入时 tokenHash **变化即顶号** → 踢旧连接；⛔ 不删它。⚠ **`issuedAt` = 写入栅栏**（A1）：`writeGroupSess` 是**单条 Lua**「只接受更大的 issuedAt」，陈旧写整条丢弃且 ⛔ 不触发顶号踢（否则迟到的旧写会反手踢掉合法的新登录端）。值来自权威 `accounts.token_issued_at`（同 uid 严格递增，见 lib `issueToken`）——⛔ 别用 `Date.now()` 顶替：栅栏两侧必须同一个时钟 |
 | `guild:evt:seq:{gid}` | STRING | 无 | 工会事件 seq（INCR，§10）。⚠ gid 仅限 `core/guild/catalog`（join 硬校验）——INCR 隐式铸键 + 无 TTL + noeviction，键面必须有硬上限 |
 | `guild:evt:log:{gid}` | LIST | 无（LTRIM 上限） | 工会事件近窗（gid 约束同上） |
 | `active:lru:{bucket}` | ZSET | 无 | 活跃索引（找冷用户，bucket 非 uid hash-tag） |

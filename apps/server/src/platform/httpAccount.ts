@@ -33,7 +33,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return await res.json() as T;
 }
 
-type VerifyResp = { ok: true; uid: string } | { ok: false; reason: string };
+type VerifyResp = { ok: true; uid: string; issuedAtMs?: number } | { ok: false; reason: string };
 
 /** WebPlatform /verify 结果码 → 组网关错误类（与 verifySessionStrict 同映射，09·G1/07）。 */
 function mapVerifyReason(reason: string): never {
@@ -43,9 +43,12 @@ function mapVerifyReason(reason: string): never {
 }
 
 /** 远程权威校验（WebPlatform /verify，MySQL 权威）；ok 返回 uid，否则映射错误类抛。 */
-async function remoteVerify(token: string): Promise<string> {
+/** ⚠ 连 `issuedAtMs` 一起回：它是 `writeGroupSess` 的写入栅栏判据（A1）。
+ *  `?? 0` 兜住"门户是旧版本、响应里还没有这个字段"的滚动升级窗口——0 会被栅栏判成"最旧"，
+ *  ⇒ 已有更新值时**不覆盖**（安全侧），首次写入（无已存值）仍照常。 */
+async function remoteVerify(token: string): Promise<{ uid: string; issuedAtMs: number }> {
   const r = await post<VerifyResp>("/verify", { token });
-  if (r.ok) { return r.uid; }
+  if (r.ok) { return { uid: r.uid, issuedAtMs: Number(r.issuedAtMs ?? 0) }; }
   mapVerifyReason(r.reason);
 }
 
@@ -61,8 +64,8 @@ export const httpAccount: AccountClient = {
     }
     // 建连：远程权威校验 → 懒填组 sess:{uid}（§2.7 / 2d：strict 是连接建立点；LobbyRoom.onAuth 是首个 strict 点）。
     // ⚠ in-process 走 inProcessAccount（登录已写 sess），到不了这。
-    const vuid = await remoteVerify(token);
-    await writeGroupSess(vuid, token);
+    const { uid: vuid, issuedAtMs } = await remoteVerify(token);
+    await writeGroupSess(vuid, token, "", issuedAtMs);
     return vuid;
   },
   character: {

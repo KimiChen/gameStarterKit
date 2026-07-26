@@ -10,7 +10,8 @@ import { auditLogin, issueToken } from "./auth";
 import { code2session } from "./wxClient";
 
 export type LoginResult =
-  | { ok: true; uid: string; token: string; isNew: boolean }
+  // ⚠ `issuedAtMs`：权威侧签发时刻（严格递增），in-process 侧拿它做组缓存写入栅栏（A1）
+  | { ok: true; uid: string; token: string; isNew: boolean; issuedAtMs: number }
   | { ok: false; reason: "banned" | "rate_limited" | "wx_invalid" | "wx_rate_limited" | "wx_unavailable" };
 
 // 进程内登录限流令牌桶（per WebPlatform 实例；规模化靠前置 LB 按 IP，§2.7）。按真实 IP，⛔ 不共享桶连坐（G5）。
@@ -176,11 +177,11 @@ export async function loginByOpenid(
     await auditLogin("fail", account.user_id, "banned", ip, deviceId);
     return { ok: false, reason: "banned" };
   }
-  const token = await issueToken(account.user_id, sessionKey);
+  const { token, issuedAtMs } = await issueToken(account.user_id, sessionKey);
   await getPool().execute<ResultSetHeader>(
     "UPDATE accounts SET last_login_at = NOW(3) WHERE user_id = ?", [account.user_id]);
   await auditLogin(auditKind, account.user_id, null, ip, deviceId);
-  return { ok: true, uid: account.user_id, token, isNew };
+  return { ok: true, uid: account.user_id, token, isNew, issuedAtMs };
 }
 
 export interface WxLoginInput { code: string; ip: string; deviceId?: string | null }

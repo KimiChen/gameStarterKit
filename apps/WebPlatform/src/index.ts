@@ -128,7 +128,10 @@ export function buildServer(): FastifyInstance {
     if (dot <= 0) { return { ok: false as const, reason: "mismatch" as const }; }
     const uid = token.slice(0, dot);
     const r = await verifyToken(uid, token);
-    return r.ok ? { ok: true as const, uid, status: r.status } : r;
+    // ⚠ `issuedAtMs` 必须带出去：组侧 `writeGroupSess` 拿它当写入栅栏（A1——两个 await 之间可交错，
+    // 迟到的旧写会覆盖新写、还反手踢掉合法的新登录端）。⛔ 别以"出参最小化"为由删掉它：
+    // 它不是身份信息（09·G8 禁的是 openid/unionid），只是一个时刻。
+    return r.ok ? { ok: true as const, uid, status: r.status, issuedAtMs: r.issuedAtMs } : r;
   });
 
   // 角色/足迹注册表（存在性权威）。

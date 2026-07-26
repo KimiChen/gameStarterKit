@@ -56,7 +56,7 @@ async function makeSplitLogin(name: string): Promise<{ uid: string; token: strin
   uids.push(uid);
   await getPool().execute<ResultSetHeader>(
     "INSERT INTO accounts (user_id, openid) VALUES (?, ?)", [uid, `op_${uid}`]);
-  const token = await issueToken(uid, null); // 写 accounts token_hash，⛔ 无 Redis
+  const { token } = await issueToken(uid, null); // 写 accounts token_hash，⛔ 无 Redis
   await clientFor(uid).unlink(kSess(uid));       // 确保组 sess 缺席
   return { uid, token };
 }

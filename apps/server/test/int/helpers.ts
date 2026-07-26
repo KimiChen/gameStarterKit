@@ -30,7 +30,7 @@ export const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeou
  */
 export async function issueSession(uid: string, sessionKey: string | null = null, gwNode = ""):
   Promise<{ userId: string; token: string }> {
-  const token = await issueToken(uid, sessionKey);
-  await writeGroupSess(uid, token, gwNode);
+  const { token, issuedAtMs } = await issueToken(uid, sessionKey);
+  await writeGroupSess(uid, token, gwNode, issuedAtMs); // ⚠ 带栅栏值，否则测试造的会话恒被判陈旧（A1）
   return { userId: uid, token };
 }
