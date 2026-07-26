@@ -149,7 +149,9 @@ function syncOnce(fromWatch = false) {
         toRemove.map((rel) => (rel.endsWith(".meta") ? rel.slice(0, -".meta".length) : rel))
     ).size;
     // ⚠ 熔断对**手动执行也生效**（原先只在 watch 生效 ⇒ 直接 `npm run sync:client` 可无阻拦清库）。
-    // 真要大规模删除（有意的重构）用 `--force` 显式放行。
+    // 真要大规模删除（有意的重构）用 `SYNC_FORCE=1` 显式放行。
+    // ⛔ 别写成 `-- --force`：`npm run sync:shared` 是复合命令，npm 把它追加到**整串末尾**，
+    // 只到得了链条里最后一个脚本（放行不了 sync-shared 自己的熔断）。环境变量对每一环都生效。
     if (!FORCE && breakerTripped({ removed: removedLogical, srcCount: srcFiles.length })) {
         throw new Error(breakerMessage("sync-client", removedLogical, srcFiles.length));
     }

@@ -530,7 +530,7 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 | `INVALID_PAYLOAD` | zod 校验失败 | 修参（bug） |
 | `UNKNOWN_TYPE` | 路由表无此 type | 灰度期忽略，⛔ 不封禁（G6） |
 | `INSUFFICIENT_BALANCE` | 余额不足 | 引导充值 |
-| `BUSY` | 抢 `lock:{uid}` 失败 | 同 clientReqId 自动重试。⚠ **登录也产出它**（HTTP 409）：登录与 freeze/thaw 抢同一把锁（L1），而 freeze/thaw 开看门狗可按秒持有、登录只有 `LOCK_RETRY_MAX` 有界重试 ⇒ 客户端 `LoginLogic` 退避重试**一次**后报「系统繁忙」，⛔ 不报「登录失败」（HANDOFF §8.6） |
+| `BUSY` | 抢 `lock:{uid}` 失败 | 同 clientReqId 自动重试。⚠ **登录也产出它**（HTTP 409）：登录与 freeze/thaw 抢同一把锁（L1），而 freeze/thaw 开看门狗可按秒持有、登录只有 `LOCK_RETRY_MAX` 有界重试 ⇒ 客户端 `LoginLogic` 退避重试**一次**后报「系统繁忙」，⛔ 不报「登录失败」（HANDOFF §8.7） |
 | `STALE_FENCE` | fence 被更高值超越 | 同 clientReqId 自动重试 |
 | `IN_PROGRESS` | 幂等 pending 命中 | 短轮询 |
 | `GRANTING` | 发放中（outbox 三阶段） | `shop.queryOp` 轮询，⛔ 不「超时即失败」 |
@@ -538,6 +538,13 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 | `USER_DATA_LOST` | 有号但热/冷档全无（F4） | 报错告警，⛔ 不建空档 |
 | `ORDER_MISMATCH` | 支付回调金额/订单不符 | 400 |
 | `INTERNAL` | 未映射异常 | 通用错误 |
+
+**HTTP-only 错误码**（⛔ **不进** shared `RPC_ERR_CODES`：那是 ws-RPC 信封的联合类型，往里加会 churn 客户端 union 与协议指纹，同 `AUTH_EPOCH_STALE` 保留码的处置理由）：
+
+| 码 | 何时 | HTTP | 客户端处置 |
+|---|---|---|---|
+| `NOT_FOUND` | 端点按部署模式关闭（`ACCOUNT_MODE=http` 下的 in-process 登录端点、`AUTH_DEV_ENABLED=0` 下的 dev-login） | 404 | 走另一形态的入口 |
+| `NOT_IMPLEMENTED` | 功能未上线（`PAY_ENABLED=0` 下的 `/pay/wx-notify`） | 501 | 提示未开放，⛔ 别当鉴权失败重试 |
 
 ### Lua 脚本（R7：EVALSHA + NOSCRIPT 重载）
 
@@ -568,7 +575,9 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 | `KICK_STREAM_TRIM_MS` | 24h | 踢人流 MINID 裁剪窗（踢是即时动作，老事件无价值，M12d） |
 | `ACCOUNT_MODE` | `in-process` | 账号平面实现选择（`in-process` 内嵌 lib / `http` 走 WebPlatform）。⚠ `accountClient` **模块加载期一次性求值**，⛔ 不支持运行期切换。见 [WEBPLATFORM.md](WEBPLATFORM.md) |
 | `WEBPLATFORM_BASE_URL` | `http://localhost:2570` | `ACCOUNT_MODE=http` 时 WebPlatform 地址（httpAccount 每请求现读） |
-| `ADMIN_API_SECRET` | 空（=端点关闭） | GM 内部端点 `/admin/kick` 共享密钥（`x-admin-secret`）。**未配置即 fail-closed**；封号 SOP 第二步依赖它 |
+| `ADMIN_API_SECRET` | 空（=端点关闭） | GM 内部端点 `/admin/kick` 共享密钥（`x-admin-secret`）。**未配置即 fail-closed**；封号 SOP 第二步依赖它。⚠ 比较走恒时 `safeSecretEqual`（`core/auth/session.ts`），⛔ 不用 `!==` |
+| `PAY_ENABLED` | `0`（=端点 501） | `/pay/wx-notify` 总开关。⚠ 支付链尚不具备上线条件（无下单端点、共享密钥而非 APIv3 验签、无对账，见 `todo.md` 支付条目）⇒ 本开关是**防误开**；501 排在密钥闸**之前**，把「功能未上线」与「没鉴权(401)」分开 |
+| `FREEZE_ENABLED` | `0` | 冷档冻结开关（09·F5）。⚠ **与 `GROUP_ZONES` 非空互斥，加载期 fail-fast**：`user_archive` 未按区、`active:lru`/freeze 未区化（DUAL_MODE archive 步），多区下冷档会串区 |
 
 ---
 

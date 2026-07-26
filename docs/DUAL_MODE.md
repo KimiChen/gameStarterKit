@@ -2,7 +2,7 @@
 
 ## 文档状态
 
-> **本文是设计规格 + 实施进度记录。** 它描述「让当前架构同时支持大混服与区服」的目标形态，扩展并部分改写 [SERVER.md §9.5 扩容模型 ADR](SERVER.md)（原 ADR 立场：扩容单位 = 区服实例、单区服多节点不在承诺内）。**核心已落地**（区服进服硬闸 + 每区独立经济 + 建角 + 冷档按区判，见下「实施进度」）；**账号服务独立进程（M12c）落地完成**（账号原语迁 `@game/webplatform/lib` + Fastify 独立进程 + `ACCOUNT_MODE` http/inProcess 开关 + 登录编排/code2session 迁 lib + 选服目录 `/area/list` 迁 lib + 客户端 login/area 走门户 portalUrl + onAuth 懒填组 sess；split 全链 e2e 绿）；**撤销/踢在线（M12d）落地**（封号 = 账号级「下次登不上」+ **GM 工具确认踢在线**两步 SOP；权威简化为 status+token_hash；撤销/目录全走 `AccountClient` 接缝并机检；剩 GM 工具实现与 [W1/W2](WEBPLATFORM.md#4-待办上线前必做)）。落地按 §5 里程碑推进。
+> **本文是设计规格 + 实施进度记录。** 它描述「让当前架构同时支持大混服与区服」的目标形态，扩展并部分改写 [SERVER.md §9.5 扩容模型 ADR](SERVER.md)（原 ADR 立场：扩容单位 = 区服实例、单区服多节点不在承诺内）。**核心已落地**（区服进服硬闸 + 每区独立经济 + 建角 + 冷档按区判，见下「实施进度」）；**账号服务独立进程（M12c）落地完成**（账号原语迁 `@game/webplatform/lib` + Fastify 独立进程 + `ACCOUNT_MODE` http/inProcess 开关 + 登录编排/code2session 迁 lib + 选服目录 `/area/list` 迁 lib + 客户端 login/area 走门户 portalUrl + onAuth 懒填组 sess；split 全链 e2e ⚠ **同进程同库**，见下表脚注）；**撤销/踢在线（M12d）落地**（封号 = 账号级「下次登不上」+ **GM 工具确认踢在线**两步 SOP；权威简化为 status+token_hash；撤销/目录全走 `AccountClient` 接缝并机检；剩 GM 工具实现与 [W1/W2](WEBPLATFORM.md#4-待办上线前必做)）。落地按 §5 里程碑推进。
 
 本规格是「同一套 Colyseus 0.17 代码同时承载大混服与区服」的工程落地规格。其结论由 **8 轮技术评审锁定的 7 项决策** 为前提（不再论证「是否该这么做」，只写「怎么落地」），并经 **61 条服务端规则的两份对抗式评审对撞校验**（钱/幂等/跨存储 一份，鉴权/网关/冷档/撤销 一份）后定稿。评审指出的所有阻断级正确性洞（MySQL 谓词分区、ALS-vs-列概念二分、撤销传输层缺失、前缀孤儿化、F4 误判、快路径 epoch 窗口）已在正文改对；当场无法收敛者列入 §9「未决与风险」。本规格与源码逐一核对，文件锚点为仓库相对路径（`apps/server/src/...` 等）。
 
@@ -15,13 +15,13 @@
 | **M12a** 建角 + `char_registry` | ✅ 落地 | 首进区建 per-zone 档 + 角色注册表（§2.6 排序：**档先建、char 行后写**，M12d 评审后反转） |
 | **M12b** F4 thaw 按区判 | ✅ 落地 | ABSENT 分支 sId=0 用 accounts、sId≥1 用 char_registry；⚠ user_archive per-zone 待 archive 步 |
 | **M12e** `/area/list` ul 接真建角数据 | ✅ 落地 | `getUserRecentServers` → `listCharacterZones`（§2.5） |
-| **M12c** WebPlatform 门户抽出 | ✅ 落地完成（int89+单测20 绿，split 全链 e2e 绿） | 账号原语(verify/token/char/accountExists)迁 `@game/webplatform/lib`✅、auth 改 MySQL 权威✅、createUser→onJoin(ensureLive-first 防丢数据)✅、WebPlatform Fastify 独立进程✅、`ACCOUNT_MODE` http↔inProcess 开关✅、登录编排+code2session 迁 lib(结果码边界)+进程内限流✅、选服目录 `/area/list`(目录+ul best-effort)迁 lib✅、WebPlatform 端点按单源 `ApiPath`(/account/wx-login·/dev-login)+客户端契约✅、客户端 login/area 走门户 `portalUrl`(空=回退游戏服)✅、onAuth 懒填组 sess✅ |
-| **M12d** 撤销 + 踢在线 + GM SOP | 🔧 落地（int108 绿；剩 GM 工具实现/W1·W2） | 权威简化为 status+token_hash✅、`stream:kick` + 每节点自筛踢✅、GM `/admin/kick`(ack+fail-closed)✅、踢=先推 forceLogout{reason}+语义化关闭码✅、顶号主动踢(判据=组 sess hash 变化)✅、**撤销/目录全走 `AccountClient` 接缝**(split 下直调 lib=打错库，已机检)✅。**剩**：GM 工具实现(运营侧，契约 09·G7b)、WebPlatform W1 鉴权/W2 审计([WEBPLATFORM.md](WEBPLATFORM.md#4-待办上线前必做))、发奖 recheck |
+| **M12c** WebPlatform 门户抽出 | ✅ 落地完成（split 全链 e2e ⚠ **同进程同库**——测试在进程内起 WebPlatform Fastify、两侧共用一个 MySQL，故它证的是**接缝正确**，⛔ 证不了真 split 的部署形态：跨进程、独立账号库、LB 之后。真拓扑覆盖登记见 `todo.md`） | 账号原语(verify/token/char/accountExists)迁 `@game/webplatform/lib`✅、auth 改 MySQL 权威✅、createUser→onJoin(ensureLive-first 防丢数据)✅、WebPlatform Fastify 独立进程✅、`ACCOUNT_MODE` http↔inProcess 开关✅、登录编排+code2session 迁 lib(结果码边界)+进程内限流✅、选服目录 `/area/list`(目录+ul best-effort)迁 lib✅、WebPlatform 端点按单源 `ApiPath`(/account/wx-login·/dev-login)+客户端契约✅、客户端 login/area 走门户 `portalUrl`(空=回退游戏服)✅、onAuth 懒填组 sess✅ |
+| **M12d** 撤销 + 踢在线 + GM SOP | 🔧 落地（剩 GM 工具实现/W1·W2） | 权威简化为 status+token_hash✅、`stream:kick` + 每节点自筛踢✅、GM `/admin/kick`(ack+fail-closed)✅、踢=先推 forceLogout{reason}+语义化关闭码✅、顶号主动踢(判据=组 sess hash 变化)✅、**撤销/目录全走 `AccountClient` 接缝**(split 下直调 lib=打错库，已机检)✅。**剩**：GM 工具实现(运营侧，契约 09·G7b)、WebPlatform W1 鉴权/W2 审计([WEBPLATFORM.md](WEBPLATFORM.md#4-待办上线前必做))、发奖 recheck |
 | **archive 步** user_archive 分区 + active:lru/freeze 区化 | ⬜ 待做 | 耦合 M12c；⛔ 补齐前不开「多区 + freeze」 |
 | **M14/M15** 大混服实时横向 + presence/广播 | ⬜ 待做 | §4 |
 | **M16** 物理分组（100 组 × 10 区） | ⬜ 待做 | §5.1 |
 
-**当前能力**：单进程下大混服（sId=0）完全可跑；一个 `GROUP_ZONES` 配好的区服组，**选服→进服硬闸→建角→每区独立经济→冷档按区判→我的区** 机制完整可玩、经济按区隔离，由 sId≥1 真实栈测试守护（`test/int/perzone.test.ts` 6 用例）。**验证基线**：typecheck 三端 + verify:sync / server 单测 22 / test:int 108 / test:fgui 72 / smoke 13 全绿。⚠ 真开多区（`GROUP_ZONES` 非空）前，`keys.ts` fail-fast 会挡住任何漏包 `zoneCtx.run` 的 per-zone 路径（`test/zone-failfast.test.ts` 守）。
+**当前能力**：单进程下大混服（sId=0）完全可跑；一个 `GROUP_ZONES` 配好的区服组，**选服→进服硬闸→建角→每区独立经济→冷档按区判→我的区** 机制完整可玩，由 sId≥1 真实栈测试守护（`test/int/perzone.test.ts` 6 用例）。⚠ **「经济按区隔离」要收窄成「货币/背包按区隔离」**：邮件（`mail/list`·`markRead`·`claimAttach` 全无 `server_id` 谓词）与公会（`push.ts` 的 `guildOf`/`guildOnline` 无区维度）**尚未按区隔离**，串的是可见性与领取权限（奖励仍靠行内 `server_id` 落对区）——登记见 `todo.md`「邮件/公会未按 sId 隔离」。**验证基线**：见 [CLAUDE.md](../CLAUDE.md) 现状段（⛔ 本行不再重复计数，免得又各写各的过期数字）。⚠ 真开多区（`GROUP_ZONES` 非空）前，`keys.ts` fail-fast 会挡住任何漏包 `zoneCtx.run` 的 per-zone 路径（`test/zone-failfast.test.ts` 守）。
 
 ---
 

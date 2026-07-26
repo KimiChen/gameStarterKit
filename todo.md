@@ -71,10 +71,74 @@
 
 - 游戏房（GameRoom）消息缺运行时 zod 校验与独立频控（lobby 有、game 房没有）；
 - 未知 Lobby RPC 在限流**之前**返回 UNKNOWN_TYPE（可被用作零成本探测/刷日志面）。
-- **注**：伪 token 降游客、INTERNAL 泄 message、任意 gid 铸键已在前批修复。
+- **注**：伪 token 降游客、INTERNAL 泄 message、任意 gid 铸键已在前批修复；
+  WebPlatform 侧的同类泄漏（Fastify 默认错误处理回显原始 MySQL 错误码/文本）已补 `setErrorHandler`。
 - **触发条件**：对外可访问的部署（内网 demo 可缓）。
 
-## wx.login 微信侧接入 【小】
+## D6 · 客户端「回登录页」收敛成单一出口 【小】
+
+- **现状**（本批已修三处泄漏后仍在）：回登录页的路径有 authInvalid / battleLost / connLost /
+  abortBattle 四条，各自手写「拆战斗态 + 退大厅 + 开登录页」的组合。这批修复是逐条补齐的，
+  ⛔ 下次再加一条路径大概率还会漏掉其中一步。
+- **要做**：抽一个 `returnToLogin(reason)` 出口，四条路径全部改调它；`Main` 与 `pages` 的职责
+  切分保持现状（Main 拆战斗态、pages 做导航）。
+- **触发条件**：无（随 D2 状态机做最省，但可独立先行）。
+
+## GameRoom 房级区上下文（原 U6 的一半，单排）【小】
+
+- **现状**：`DUAL_MODE.md` §4.1 明文要求「`GameRoom.onCreate` 读 `options.sId` 设房级区上下文」，
+  而 `rooms/GameRoom.ts` 的 `onCreate(_options)` **丢弃 options**（撮合与 onAuth 硬闸那半
+  已由 `908b7e8` 落地：`filterBy(["sId"])` + `groupAdmitsZone(options.sId)`）。
+- **要做**：`onCreate` 建 zoneCtx + `MatchEvidence` 带 `sId`（对局表加 `server_id`）。
+- **注**：此前只登记在 `908b7e8` 的 commit message 里（"A3 随 U6"），而 HANDOFF 的 U6 条目
+  写的是「发奖边界 ban recheck」——两件事，别互相挡。
+- **触发条件**：发奖落地前（与 U6 同期，但可独立先行）。
+
+## A1 · split 会话写入无 fence：旧 token 覆盖新 token 【上线阻断级】
+
+- **现状**：`platform/httpAccount.ts` 的 `remoteVerify` → `writeGroupSess` 是**两个 await**，
+  中间可任意交错、⛔ 无任何 fence。同 uid 两次登录并发时，迟到的旧写会覆盖组 sess 缓存；
+  更糟的是 `core/auth/session.ts` 见 hash 变化就踢、判别位是本次 newHash ⇒ 旧写**反手踢掉
+  合法的新登录端**；而快路径零回源 ⇒ 旧 token 一路放行到 `sess` TTL(3d)。
+- **止血（不改契约）**：`writeGroupSess` 改成单条 Lua，只在 `oldHash` 仍等于 verify 时刻读到的值时
+  才覆盖（比较-并-设置）。⛔ 别先做完整 `sessionVersion` CAS——那需要扩 `/verify` 响应
+  （当前没有任何单调量可比），等于部分回滚 M12d 砍 `token_epoch` 的决策，要先拍板。
+- **注**：in-process 侧的同类竞态已由 `c7ab375` 修（锁内回权威再写缓存）；⛔ 那次修的是**另一条路径**，
+  split 这条从来不在它射程内（`inProcessLogin.ts` 曾写"split 天然无此竞态"，已改）。
+- **触发条件**：split 形态启用前**必须**完成。
+
+## A2 · 邮件与公会未按 sId 隔离 【上线阻断级（多区）】
+
+- **现状**：`websocket/mail/` 的 `list`·`markRead`·`claimAttach` **全无 `server_id` 谓词**
+  （`mail` 表有该列、`mailer.ts` 写入时也落了值）；`websocket/push.ts` 的 `guildOf`/`guildOnline`
+  两个内存索引无区维度，而公会 Redis 键是 per-zone ⇒ 同 gid 跨区塌进同一索引。
+- **精确措辞**：串的是**可见性与领取权限**（能看到并领走他区邮件），奖励本身仍靠行内 `server_id`
+  落对区 ⇒ ⛔ 不是"把钱发错区"。
+- **连带**：`DUAL_MODE.md` 曾写「经济按区隔离」属过度承诺，已收窄成「货币/背包按区隔离」。
+- **触发条件**：`GROUP_ZONES` 非空（真开多区）之前必须完成。
+
+## A3 · 跨物理组顶号不收敛 【需拍板：修 or 写进已接受边界】
+
+- **现状**：踢人广播的扇出半径**只到本组 coord**（`config.ts` `REDIS_COORD_URL`，M14 起 coord 还要
+  每组独占给 driver/presence 用）。旧端连在另一物理组时收不到踢人消息，最长活到 `sess` TTL(3d)。
+- **为什么不能拿旧决策驳回**：M12d 砍掉跨组协调层的理由**全部建立在「有 GM 工具兜底」上，
+  而顶号明确不在 GM 流程内**（`GM-TOOL-SPEC.md` 那句"系统自动完成、不需要 GM 介入"已改成
+  只对单组成立）。⇒ 二选一：M16 前重开跨组协调层，或明确写进刻意接受的边界。
+- **⚠ 约束**：同一个 `REDIS_COORD_URL` 不可能既每组独占又跨组共享——想让 `stream:kick` 跨组
+  必须另开实例。
+- **触发条件**：多物理组部署之前（M16）。
+
+## A4 · 部署形态的测试覆盖：CI 只初始化一个库 【中】
+
+- **现状**：split 的 e2e 在**同进程同库**跑（测试进程内起 WebPlatform Fastify、两侧共用一个 MySQL）
+  ⇒ 它证的是**接缝正确**，⛔ 证不了真 split 的部署形态（跨进程、独立账号库、LB 之后）。
+  docs 里两处「split 全链 e2e 绿」已按此收窄。
+- **⚠ 别读成"集成测试没用"**：现有集成测试对 in-process 形态完全有效，失效的只是**对 split 的推论**。
+- **要做**：CI 起两个库（账号库/组库分开）+ 跨进程拉起 WebPlatform 的一条冒烟；与「两物理组测试拓扑」
+  （DUAL_MODE §5.4/§6.3）可合并排期。
+- **触发条件**：split 形态启用前。
+
+## wx.login 微信侧接入 【小，编号 D5】
 
 - **现状**：服务端 /account/wx-login（code2session 全链）就绪，缺 WX_APPID/WX_SECRET 凭证；
   客户端 net/http/account.wxLogin(code) 函数就绪，pages.ts 现走 devLogin。
@@ -138,9 +202,13 @@
   esbuild 打包服务端到 dist（开发仍 tsx 直跑）；
 - `/monitor` 无鉴权常挂——按 NODE_ENV 收权或加 basic auth（playground 已收）；
 - SIGTERM 优雅停机：排空在途请求 + 房间收尾 + Redis/MySQL 连接关闭（进程不持权威状态，
-  drain 语义见 SERVER.md §3）；
-- readiness（依赖就绪）/liveness 端点（/healthz 目前只是进程活着）；
-- 四进程编排模板：网关 + relayer + freeze-worker + settle（docker compose 起步）。
+  drain 语义见 SERVER.md §3）。
+  **⚠ 网关不是裸奔**——Colyseus 默认注册 SIGTERM→房间收尾；真正空白的是
+  **WebPlatform / relayer / freezeWorker 三个入口**，别把工作量估成四份；
+- readiness（依赖就绪）/liveness 端点。**⚠ 小修正**：WebPlatform 的 `/healthz` 已带 `SELECT 1`，
+  缺的是**游戏服侧**与统一语义（游戏服 `/healthz` 目前只是进程活着）；
+- **五**进程编排模板：网关 + relayer + freeze-worker + settle **+ WebPlatform**（docker compose 起步）。
+  ⚠ 此前本行漏了 WebPlatform（split 形态下它是登录入口，漏了就没有可执行的部署路径）。
 - **触发条件**：第一次真实部署前。
 
 ## E2 · MySQL migration 版本表 + 分区轮转 【中】

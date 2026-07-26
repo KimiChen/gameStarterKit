@@ -7,7 +7,7 @@
 
 同一份账号逻辑，两种跑法：
 
-- **dev/test 内嵌**：`apps/server` 的 `inProcessAccount` 直接 import 本包 `src/lib/`，**不起本进程、不走 HTTP**。74 int 测试不改。
+- **dev/test 内嵌**：`apps/server` 的 `inProcessAccount` 直接 import 本包 `src/lib/`，**不起本进程、不走 HTTP**（既有 int 测试因此无需改动）。
 - **prod split**：本包 `src/index.ts`（Fastify）作独立进程起 HTTP；`apps/server` 的 `httpAccount` 走 HTTP 指向它。
 
 ## 目录

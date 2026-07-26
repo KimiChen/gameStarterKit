@@ -199,4 +199,4 @@ function banUser(uid, reason = "banned"):
 | 踢在线 | `kickUser` → 先推 `auth.forceLogout{reason}`、再用语义化关闭码关连接 |
 | 节点 | 一个游戏服进程（Colyseus app 节点）；同组多节点共享 Redis/MySQL |
 | 会话 TTL | `sess:{uid}` 的 3 天有效期（组侧缓存） |
-| 顶号 | 换端登录导致旧设备被踢（`reason=replaced`）——**系统自动完成，⛔ 不需要 GM 工具介入** |
+| 顶号 | 换端登录导致旧设备被踢（`reason=replaced`）——**单物理组内**系统自动完成，不需要 GM 介入。<br>⚠ **跨物理组不成立**：踢人广播的扇出半径只到本组 coord（`config.ts` `REDIS_COORD_URL`），旧端若连在另一个组，⛔ 收不到踢人消息、最长活到 `sess` TTL(3d)。此前本行写死「系统自动完成」是**多组下的假承诺**。当前无 GM 兜底（顶号不在封号 SOP 内），登记见 `todo.md`「跨物理组顶号不收敛」 |

@@ -2,7 +2,7 @@
 
 > **交接时间**：2026-07-25 ｜ **分支**：`new`（已 push，与 `origin/new` 同步）
 > **状态**：M12c ✅ 完成 · M12d ✅ 完成（剩余项均已入待办账本，见 §7）
-> **验证基线**：typecheck 三端+client + `verify:sync` / `test:int` **108** / 服务端单测 **22** / `test:fgui` **72** —— 全绿
+> **验证基线**：见 [CLAUDE.md](../CLAUDE.md) 现状段（⛔ 本行不再重复计数——曾经六处各写各的，然后集体过期）
 >
 > 设计规格见 [DUAL_MODE.md](DUAL_MODE.md)（§2.3 撤销、§2.7 门户）；门户契约与待办账本见 [WEBPLATFORM.md](WEBPLATFORM.md)；
 > 服务端规则目录见 [SERVER.md §12](SERVER.md)（本轮相关：`09·G7` / `G7b` / `G7c`）。
@@ -21,7 +21,7 @@
 
 | 里程碑 | 内容 |
 |---|---|
-| **M12c** | 账号原语（verify/token/character/accountExists）+ 登录编排 + code2session + 选服目录 `/area/list` 迁 `@game/webplatform/lib`；Fastify 独立进程；`ACCOUNT_MODE` 开关；客户端 login/area 走门户 `portalUrl`；onAuth 懒填组 sess；split 全链 e2e |
+| **M12c** | 账号原语（verify/token/character/accountExists）+ 登录编排 + code2session + 选服目录 `/area/list` 迁 `@game/webplatform/lib`；Fastify 独立进程；`ACCOUNT_MODE` 开关；客户端 login/area 走门户 `portalUrl`；onAuth 懒填组 sess；split 全链 e2e（⚠ **同进程同库**，证接缝不证部署形态——见 DUAL_MODE 进度表脚注） |
 | **M12d** | 封号模型（`status` + `token_hash` 两位权威）；踢人通道 `stream:kick`（每节点自筛）；GM `/admin/kick`（ack + fail-closed）；踢 = 先推 `forceLogout{reason}` + 语义化关闭码；顶号主动踢；撤销/目录全走接缝 + 机检 |
 | 顺带 | 大厅 join 透传所选区 `sId`（`52e290b`，此前区服模式下大厅档会落 `sId=0`） |
 
@@ -119,7 +119,9 @@
 | `WEBPLATFORM_PORT` | `2570` | WebPlatform 监听端口 |
 | `WEBPLATFORM_TRUST_PROXY` | `1`（**信**） | 置 `0` 才改用 socket 对端 `req.ip`。⚠ **缺省信不是疏忽**：本进程只在 split 起，而 split 的流量必经 LB ⇒ 不信 XFF 时所有玩家的 `req.ip` 都是 **LB 地址**，全服塌缩进同一个令牌桶（容量 5 / 补 0.2 每秒 = **全服 12 次登录/分钟**），既是开服即挂也正是 09·G5 禁的连坐。⚠ **伪造 XFF 的防护归 [W1](WEBPLATFORM.md)（鉴权 + 绑定内网），不归本开关**——别让人直连到即可。启动日志会打出当前用的是哪种身份来源 |
 | `REDIS_COORD_URL` | = `REDIS_DURABLE_URL` | 踢人流所在实例（dev 复用 durable；prod 可物理隔离） |
-| `ADMIN_API_SECRET` | 空 = **端点关闭** | `/admin/kick` 共享密钥（fail-closed） |
+| `ADMIN_API_SECRET` | 空 = **端点关闭** | `/admin/kick` 共享密钥（fail-closed；比较走恒时 `safeSecretEqual`） |
+| `PAY_ENABLED` | `0` = **端点 501** | `/pay/wx-notify` 总开关。⚠ 支付链不具备上线条件（无下单端点、共享密钥而非 APIv3 验签、无对账，见 `todo.md`）⇒ 这是**防误开**，501 排在密钥闸之前，把「没上线」与「没鉴权」分开 |
+| `FREEZE_ENABLED` | `0` | 冷档冻结开关。⚠ **与 `GROUP_ZONES` 非空互斥，加载期 fail-fast**（archive 步未按区，多区下冷档串区） |
 | `KICK_STREAM_TRIM_MS` | 24h | 踢人流 `XTRIM MINID` 窗 |
 
 **schema 变更**：`accounts` 现列 = `user_id openid unionid status created_at last_login_at token_hash token_issued_at session_key nickname avatar_url phone`；

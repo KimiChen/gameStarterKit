@@ -27,6 +27,9 @@ npm run fetch:fgui           # 升级 fairygui-cc 运行时（产物已入库,cl
 npm run fetch:colyseus       # 升级 colyseus UMD 插件（产物已入库;同上）
 npm run sync:shared          # 改完 apps/shared/src 后必须执行（→ apps/client/src/shared，并级联 sync:client）
 npm run sync:client          # 改完 apps/client/src 后必须执行（→ apps/Cocos/assets/src）
+SYNC_FORCE=1 npm run sync:shared   # 熔断逃生口：两级同步会在「清理数 ≥20 个 或 ≥30% 源文件」时拒绝执行
+                                   # （防分支切换中间态清库）。⛔ 别用 `-- --force`：npm 只把它追加到
+                                   # 复合命令末尾，到不了链条前段的脚本。
 npm run dev:client           # 双 watcher 常驻：shared→client→Cocos 保存即同步
 npm run dev                  # 启动服务端 http://localhost:2568（tsx watch）
 npm run typecheck            # 三端类型检查 + verify:sync（镜像新鲜度机检）
@@ -72,4 +75,5 @@ net/、dispatcher/loader、Main.ts 永远不碰。分端细节见 docs/SERVER.md
 - 玩法是 demo（`ballMove` 小球移动 + 技能结算）；登录走 dev-login 真实链路（**需本地栈**，
   mock 层已移除；微信 wx.login 侧接入后补）。服务端框架生产级（源自 Arthur M0–M9，
   **已停止回流、独立演进**）。Arthur 专属未移植件（M4 存量迁移、wxLogin 存量账号绑定）本项目 N/A。
-- 验证基线（近期全绿）：typecheck 三端 + verify:sync / 服务端单测 22 / 客户端 test:fgui 72 / 集成测试 108 / 真实链冒烟 13。
+- 验证基线（近期全绿）：typecheck 三端 + verify:sync / 服务端单测 33 / 客户端 test:fgui 79 / 集成测试 125 / 真实链冒烟 13。
+  ⚠ **这是全仓唯一记数字的地方**（其余文档一律写「见 CLAUDE.md」）：曾经六处各写各的，然后集体过期。
