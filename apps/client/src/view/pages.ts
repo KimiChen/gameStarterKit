@@ -154,7 +154,12 @@ export async function openLogin(onEnterBattle: () => void): Promise<void> {
     let user: IUserView | null = null;
     try {
       logic.onProgress(0.6, "正在进入大厅…");
-      WebSocketClient.inst.init(getBaseUrl());
+      // ⚠ **大厅端点必须跟随所选区**（A5）：⛔ 别用全局 `getBaseUrl()`。区服 = 独立实例，
+      // 战斗房早已连 `cur.wsUrl`（Main.connectRoom），大厅却连全局地址 ⇒ 两条连接**各连各的**。
+      // 今天目录静态表里所有区同 wsUrl，所以还看不出来；W4 接真实配置后，玩家选了 2 区、
+      // 大厅却连在默认那台机器上，大厅侧的邮件/公会/背包全落错组（sId 传对了也没用——
+      // 那是**另一台机器上的** s2）。换算与战斗侧同款：ws→http，缺 wsUrl 才回退全局。
+      WebSocketClient.inst.init(cur.wsUrl ? cur.wsUrl.replace(/^ws/, "http") : getBaseUrl());
       // 区服形态：透传所选区 sId，令大厅 RPC/建角与战斗房落同一区（否则大厅落 s0、战斗落所选区，档案串区）。
       await WebSocketClient.inst.join(r.token, { sId: cur.sId });
       logic.onProgress(0.85, "正在加载角色…");

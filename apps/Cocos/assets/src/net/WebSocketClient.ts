@@ -92,6 +92,10 @@ export class WebSocketClient {
     private joining: Promise<void> | null = null;
     /** 当前连接鉴权所用的 token（换号检测） */
     private joinedToken = "";
+    /** 本次 init 的端点 / 本次 join 落定的端点与区——⛔ 与 token 一起构成连接复用判据（A5）。 */
+    private endpoint = "";
+    private joinedEndpoint = "";
+    private joinedSId = 0;
     private pending = new Map<string, IPending>();
     private seq = 0;
     private pushHandlers = new Map<string, Set<(data: unknown) => void>>();
@@ -105,6 +109,7 @@ export class WebSocketClient {
     /** @param endpoint http(s) 地址，如 http://localhost:2568（SDK 自动派生 ws(s)） */
     init(endpoint: string): void {
         this.client = new Colyseus.Client(endpoint);
+        this.endpoint = endpoint;
     }
 
     /**
@@ -131,6 +136,15 @@ export class WebSocketClient {
         if (this.joinedToken !== token) {
             throw new Error("[WebSocketClient] 已用其他 token 在线：换号必须先 leave() 再 join()");
         }
+        // ⚠ **endpoint + sId 也是复用判据**（A5）：⛔ 只比 token 是不够的——同一个玩家用同一个 token
+        // 换区时 token 不变，于是这里会**静默复用旧区的连接** ⇒ 玩家以为进了 2 区，大厅侧的
+        // 邮件/公会/背包全落在 1 区。今天各区 wsUrl 相同，只有 sId 会变；W4 接真实配置后 endpoint 也会变
+        // （那时复用旧连接 = 连在别的机器上）。两者任一变化都必须先 leave()。
+        if (this.joinedEndpoint !== this.endpoint || this.joinedSId !== (options?.sId ?? 0)) {
+            throw new Error(
+                `[WebSocketClient] 已连在 ${this.joinedEndpoint}(s${this.joinedSId})，`
+                + `与本次 ${this.endpoint}(s${options?.sId ?? 0}) 不符：换区/换服必须先 leave() 再 join()`);
+        }
     }
 
     private async doJoin(token: string, sId?: number): Promise<void> {
@@ -142,6 +156,8 @@ export class WebSocketClient {
         const room = await this.client!.joinOrCreate(RoomName.Lobby, joinOpts);
         this.room = room;
         this.joinedToken = token;
+        this.joinedEndpoint = this.endpoint;   // A5：记下本次连接的身份（端点 + 区）
+        this.joinedSId = sId ?? 0;
 
         // 唯一的 RPC 回包处理器：按信封 id 落到 pending；已超时清掉的迟到回包静默丢弃
         room.onMessage(LOBBY_MSG_RPC, (reply: IRpcReply) => {
