@@ -42,9 +42,9 @@
   strict 只是顺带；② parseFgui 扩展嵌套/列表 item 解析 + `.bin` 与 `.fui` 的新鲜度校验。
 - **⚠ 工作量存疑**：原写"约一天"，但把 9 个 view 文件拉进无头 strict 大概率炸出一批既有类型错误
   （Cocos 侧 0 错 ≠ cc 桩侧 0 错，两边的 cc 类型不是同一套）。开工前先估一次真实错误量。
-- **⚠ 可能有更划算的替代**：本仓**完全没有 lint**。typescript-eslint 的 `no-floating-promises`
-  能直接抓住上面第 ③ 类缺陷，且**对全目录生效、不需要 Creator、能进 CI**，覆盖面比桩更宽。
-  两者不互斥，但若只做一件，先评估 lint。
+- **⚠ 那条"先评估 lint"的建议已结案**：见 **E7**（结论不引入；`no-floating-promises` 的能力已由
+  `test/floating-promise.test.ts` 零依赖复刻）。⛔ 别再把 lint 当 D3 的替代——实测它对 D3 范围内的
+  10 个文件**只多抓 1 处**（`ViewMgr.ts`），`Main.ts` 本身 **0 处** ⇒ **两者互补，不能二选一**。
 - **触发条件**：无（随时可做）。
 
 ## ⚠ 支付接入 · 微信小游戏支付方案与全链 【上线阻断级】
@@ -246,6 +246,36 @@
 - 要做：单源（倾向 zod 定义出发）生成 TS 类型 + 服务端校验 + 客户端类型；
   fingerprint 与 PROTOCOL_VERSION 的 bump 规则并入 codegen。
 - **触发条件**：协议进入高频变更期（真实玩法开发启动）。
+
+## E7 · eslint：**已评估、结论暂不引入**（留档，⛔ 别再从零讨论一遍）【存档】
+
+> 2026-07-26 完整评估过一轮。**结论：不引入**，改用「tsc 严格性开关 + 自制机检」两条更划算的路。
+> 本条留档的目的是 ⛔ 防止下次有人重新问一遍「为什么没有 lint」——要重开请先驳掉下面的数字。
+
+- **已落地的替代（评估的直接产出，均零新依赖）**：
+  ① `tsconfig.strict.json` 单源 + 四端 7 个零成本开关 + 清 9 处死代码（`3a93d09`）；
+  ② `test/floating-promise.test.ts` —— 用 TS 编译器 API 复刻 `no-floating-promises`，
+     顺带挖出并修掉 `GameRoom.lock()` 的真 bug（`fd32a51`）；
+  ③ `test/shared-zero-dep.test.ts` —— 铁律 4 的两半此前**完全没有闸**（`e8c0cf5`）。
+     ⚠ 这本是评估认定的「eslint 唯一净增能力」，30 行自制机检拿到了同等覆盖。
+- **不引入的依据（实测）**：
+  - 收益：`no-floating-promises` 全仓真阳性 **2 处**（已修 1，另一处是顶层 `listen`，本就该炸）。
+    `recommended` 规则集的语法类规则在 203 个源文件上只有 3 处命中。
+  - 成本：**87 个包**；4 份 flat config（四个 tsconfig 互不继承）；**104 个 .ts（全仓 35%）**
+    必须 ignore（Cocos 镜像 69 + shared 镜像 23 + bitecs 字节锁 12）；typescript-eslint 想拉
+    TS 6.0.3 而本仓钉 5.9.3（多一条 `vendorLock` 式的版本对齐负担）。
+  - **⛔ 危险项（最该记住的一条）**：`@typescript-eslint/prefer-nullish-coalescing` 的**默认配置
+    会把已修的缺陷种回去** —— `wxClient.ts` 那处修复正是把 `unionid ?? null` 改成 `|| null`
+    （`??` 放行空串 ⇒ 账号串号 + 新用户全登不上），而该规则会报错并建议改回 `??`。
+    ⇒ **通用规则集不知道本仓的教训**；真要引入，必须逐条过一遍本仓的历史缺陷。
+  - `--fix` 与镜像纪律冲突：手滑一次跑在生成物上，同时炸 `verify:sync` 与 `verify:ecs`。
+- **63 条 09·XX ⛔ 不要迁成 eslint 自定义规则**：它们多数是**跨文件集合等式与运行时不变量**
+  （`viewRegistry` 的双向集合相等、`vendorLock` 的五方版本对齐含 .md 正文、`config-guard` 的
+  子进程 env 注入），不是 AST 节点判断。本仓 14 道自制机检已证明这条路更短（30 行 vs 一个 plugin 包）、
+  更强（能读 .md/.mjs/UMD 产物/package-lock）、且自带反例测试。
+- **什么情况下值得重开**：团队规模上来、需要统一代码风格时——⚠ 但那件事的对口工具是
+  **formatter**（Prettier/biome），不是 lint，且同样受那 104 个生成物的 ignore 纪律约束。
+- **触发条件**：无（⛔ 刻意不排期）。
 
 ## E6 · 两种拓扑成本文档化 【小】
 

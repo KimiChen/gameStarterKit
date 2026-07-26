@@ -110,7 +110,6 @@ export async function emitMatchEvidence(ev: MatchEvidence): Promise<string | nul
       "payload", JSON.stringify(ev),
     );
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.error(`[matchConsumer] 证据链 XADD 失败（matchId=${ev.matchId}），收局不受阻、证据待对账:`, e);
     return null;
   }
@@ -159,7 +158,6 @@ async function settleEntry(client: Redis, id: string, fields: string[]): Promise
   const mode = Number(f.mode);
   const payload = f.payload ?? "";
   if (!matchId || matchId.length > 40 || !Number.isInteger(mode) || mode < 0 || mode > 255 || !payload) {
-    // eslint-disable-next-line no-console
     console.error(`[matchConsumer] 证据条目结构损坏，ACK 丢弃：id=${id} matchId=${matchId || "?"}`);
     await client.xack(K_STREAM_MATCH, GROUP, id);
     return;
@@ -287,7 +285,6 @@ export function startMatchConsumer(): void {
         }
       } catch (e) {
         if (!running) { break; }
-        // eslint-disable-next-line no-console
         console.error("[matchConsumer] 消费循环异常，1s 后重试:", e);
         await new Promise((r) => setTimeout(r, 1000));
       }
@@ -315,7 +312,6 @@ export function startStreamDepthAlert(): void {
   const timer = setInterval(() => {
     void clientForKey(K_STREAM_MATCH).xlen(K_STREAM_MATCH).then((len) => {
       if (len > STREAM_DEPTH_ALERT) {
-        // eslint-disable-next-line no-console
         console.error(`[matchConsumer] ⚠⚠ stream:match 深度 ${len} 超阈值 ${STREAM_DEPTH_ALERT}——settle worker 未运行或积压（npm --workspace @game/server run settle）`);
       }
     }).catch(() => { /* Redis 抖动不告警——连接级问题由 infra 监控负责 */ });
