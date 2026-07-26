@@ -18,6 +18,7 @@ import { ApiPath } from "@game/shared";
 import { buildServer } from "@game/webplatform";
 import { banAccount, issueToken, revokeAccount } from "@game/webplatform/lib";
 import { httpAccount } from "../../src/platform/httpAccount";
+import { writeGroupSess } from "../../src/core/auth/session";
 import { AuthRequiredError } from "../../src/core/errors";
 import { kSess } from "../../src/core/infra/keys";
 import { clientFor, closeRedis } from "../../src/core/infra/redisRoute";
@@ -29,11 +30,24 @@ const uids: string[] = [];
 let wp: FastifyInstance;
 let base = "";
 let verifyHits = 0; // WebPlatform /verify 命中数（证明快路径重验走远程，非本地 pool）
+let raceUid: string | null = null;
+let raceWinner: Awaited<ReturnType<typeof issueToken>> | null = null;
 
 before(async () => {
   await assertRedisUp();
   wp = buildServer();
   wp.addHook("onRequest", async (req) => { if (req.url === "/verify") { verifyHits++; } });
+  // 确定性制造 A1 准入竞态：/verify 已生成“旧 token 有效”的响应后、响应抵达网关前，
+  // 权威换发更新 token 并先写组缓存。旧请求随后必须被 writeGroupSess fence 拒绝准入。
+  wp.addHook("onSend", async (req, _reply, payload) => {
+    if (req.url !== "/verify" || raceUid === null) { return payload; }
+    const uid = raceUid;
+    raceUid = null;
+    const winner = await issueToken(uid, 0, null);
+    await writeGroupSess(uid, winner.token, 0, "", winner.issuedAtMs);
+    raceWinner = winner;
+    return payload;
+  });
   base = await wp.listen({ port: 0, host: "127.0.0.1" }); // ephemeral，返回 http://127.0.0.1:<port>
   process.env.WEBPLATFORM_BASE_URL = base; // httpAccount.post 每次现读（函数），指向本测起的 WebPlatform
 });
@@ -73,7 +87,28 @@ test("组 sess 缺席 → verify(strict) 远程校验 + 懒填组 sess → 快�
   assert.equal(hash, createHash("sha256").update(token).digest("hex"), "组 sess 已懒填 tokenHash");
   assert.ok(await clientFor(uid).hget(kSess(uid, 0), "loginTs"), "组 sess 懒填完整（loginTs 等字段齐）");
 
+  assert.equal(await httpAccount.verify(token, true, 0), uid,
+    "同 token + 同 issuedAt 的第二条 strict 连接属于合法 unchanged，⛔ 不得误判 stale");
   assert.equal(await httpAccount.verify(token, false, 0), uid, "快路径命中组缓存");
+});
+
+test("strict 准入栅栏：远程校验后发生新登录，迟到旧 token ⛔ 不得完成进房", async () => {
+  const { uid, token } = await makeSplitLogin("sv-race");
+  raceWinner = null;
+  raceUid = uid;
+
+  await assert.rejects(
+    httpAccount.verify(token, true, 0),
+    AuthRequiredError,
+    "remoteVerify 与缓存写之间被更新的旧 token 必须拒绝，而不是只 no-op 后仍返回 uid",
+  );
+
+  // 赋值发生在 Fastify onSend 异步回调里，TS 控制流看不到该副作用，显式恢复声明类型。
+  const winner = raceWinner as Awaited<ReturnType<typeof issueToken>> | null;
+  assert.ok(winner, "测试钩子已完成权威换发");
+  const hash = await clientFor(uid).hget(kSess(uid, 0), "tokenHash");
+  assert.equal(hash, createHash("sha256").update(winner.token).digest("hex"), "组缓存保持真正赢家");
+  assert.equal(await httpAccount.verify(winner.token, false, 0), uid, "赢家快路径仍可用");
 });
 
 test("快路径纯组缓存：⛔ 零 WebPlatform 回源（per-message 不打账号服务，§2.7）", async () => {

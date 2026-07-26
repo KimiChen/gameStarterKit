@@ -19,6 +19,9 @@ export default createEndpoint("/account/dev-login", {
     // devKey → openid 前缀映射：同 key 恒同账号（换号 = 换 key）
     devKey: z.string().regex(/^[a-zA-Z0-9_-]{1,32}$/),
     deviceId: z.string().max(64).nullish(), // null 视同缺省，与 split 侧同语义（理由见 wxLogin.ts）
+    // M12e：会话权威按 (账号, 区) 存。必须与 WebPlatform.pickSId 逐字段同契约；
+    // ⛔ 若 schema 漏掉此字段，Zod 会把客户端传来的 sId 剥掉，下面默认签成 s0 token。
+    sId: z.number().int().min(0).max(65535).optional(),
   }),
 }, async (ctx) => {
   // ⛔ split（ACCOUNT_MODE=http）下本端点必须关：登录在 WebPlatform（客户端 portalRequest 直连）。
@@ -32,7 +35,7 @@ export default createEndpoint("/account/dev-login", {
   const rightmost = xff.split(",").map((s: string) => s.trim()).filter(Boolean).pop();
   const ip = normalizeIp(rightmost) ?? rightmost ?? "0.0.0.0";
   try {
-    return await devLogin(ctx.body.devKey, ip, ctx.body.deviceId ?? null);
+    return await devLogin(ctx.body.devKey, ip, ctx.body.deviceId ?? null, ctx.body.sId ?? 0);
   } catch (e) {
     const code = toErrCode(e);
     // BUSY = 同 uid 并发登录抢锁失败/本次签发被更晚登录取代 → 409 可重试（⛔ 不是 500）

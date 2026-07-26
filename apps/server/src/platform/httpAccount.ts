@@ -65,7 +65,12 @@ export const httpAccount: AccountClient = {
     // 建连：远程权威校验 → 懒填组 sess:{uid}（§2.7 / 2d：strict 是连接建立点；LobbyRoom.onAuth 是首个 strict 点）。
     // ⚠ in-process 走 inProcessAccount（登录已写 sess），到不了这。
     const { uid: vuid, issuedAtMs } = await remoteVerify(token, sId);
-    await writeGroupSess(vuid, token, sId, "", issuedAtMs);
+    const cached = await writeGroupSess(vuid, token, sId, "", issuedAtMs);
+    // remoteVerify 与缓存写之间可发生新登录。若 fence 发现组缓存已有更新会话，本次 token
+    // 已不再是权威赢家；⛔ 不能仍返回 uid 放行连接（GameRoom 没有 per-message 复验，会一直玩下去）。
+    if (cached === "stale") {
+      throw new AuthRequiredError("登录态已被更新，请重新登录");
+    }
     return vuid;
   },
   character: {

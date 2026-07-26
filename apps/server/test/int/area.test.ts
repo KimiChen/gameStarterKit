@@ -20,7 +20,7 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
 import { server } from "../../src/app.config";
-import { AREA_SERVERS, areaList, areaListHash, characterRegister } from "@game/webplatform/lib";
+import { AREA_SERVERS, areaList, areaListHash, characterRegister, verifyToken } from "@game/webplatform/lib";
 
 import { SESS_TTL_S } from "../../src/core/infra/config";
 import { activeLruBucketOf, kActiveLru, kSess } from "../../src/core/infra/keys";
@@ -61,7 +61,7 @@ after(async () => {
     await pool.execute("DELETE FROM login_audit WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM account_sessions WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM accounts WHERE user_id = ?", [u]);
-    await clientFor(u).unlink(kSess(u, 0));
+    await clientFor(u).unlink(kSess(u, 0), kSess(u, 7));
     const b = activeLruBucketOf(u);
     await indexClientFor(b).zrem(kActiveLru(b), u); // issueSession→touchActive 写的活跃索引（R6 清理）
   }
@@ -167,4 +167,31 @@ test("in-process dev-login：deviceId 为 null 视同缺省（⛔ 不得 400，�
   await pool.execute("DELETE FROM login_audit WHERE user_id = ?", [uid]);
   await pool.execute("DELETE FROM accounts WHERE user_id = ?", [uid]);
   await cleanupUser(uid);
+});
+
+test("in-process dev-login：sId 必须透传到按区会话，非法区值与 split 同样 400", async () => {
+  const devKey = `dsid${Date.now().toString(36)}`.slice(0, 24);
+  const res = await fetch(`${BASE}/account/dev-login`, {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ devKey, sId: 7 }),
+  });
+  assert.equal(res.status, 200);
+  const body = await res.json() as { userId?: string; token?: string };
+  const uid = String(body.userId ?? "");
+  const token = String(body.token ?? "");
+  assert.match(uid, /^u_\d+$/);
+  uids.push(uid);
+  assert.equal((await verifyToken(uid, token, 7)).ok, true, "token 必须签在客户端选择的 s7");
+  assert.equal((await verifyToken(uid, token, 0)).ok, false, "⛔ 同一个 token 不得静默落进 s0");
+  assert.ok(await clientFor(uid).hget(kSess(uid, 7), "tokenHash"), "组缓存也必须写入 s7 会话键");
+  assert.equal(await clientFor(uid).exists(kSess(uid, 0)), 0, "不得留下 s0 影子会话");
+
+  for (const sId of [-1, 1.5, 65536, "7", null]) {
+    const bad = await fetch(`${BASE}/account/dev-login`, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ devKey, sId }),
+    });
+    assert.equal(bad.status, 400, `非法 sId=${JSON.stringify(sId)} 必须 400`);
+  }
+
 });

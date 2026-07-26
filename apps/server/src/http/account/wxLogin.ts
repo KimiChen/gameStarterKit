@@ -19,6 +19,9 @@ export default createEndpoint("/account/wx-login", {
     // 正是本仓反复踩的「两种部署模式入参语义不同」。统一取**宽**的一侧：null 与缺省同义
     // （shared `ILoginReq.deviceId?: string` 本就是可选；且非 JS 端的序列化器普遍把空值写成 null）。
     deviceId: z.string().max(64).nullish(),
+    // M12e：token 只对签发区有效。与 split WebPlatform.pickSId 同契约；
+    // ⛔ 漏字段时 Zod 会剥掉客户端 sId，导致所有 in-process 登录静默签成 s0。
+    sId: z.number().int().min(0).max(65535).optional(),
   }),
 }, async (ctx) => {
   // ⛔ split（ACCOUNT_MODE=http）下本端点必须关：登录在 WebPlatform（客户端 portalRequest 直连）。
@@ -37,7 +40,12 @@ export default createEndpoint("/account/wx-login", {
   const rightmost = xff.split(",").map((s: string) => s.trim()).filter(Boolean).pop();
   const ip = normalizeIp(rightmost) ?? rightmost ?? "0.0.0.0";
   try {
-    return await wxLogin({ code: ctx.body.code, ip, deviceId: ctx.body.deviceId ?? undefined });
+    return await wxLogin({
+      code: ctx.body.code,
+      ip,
+      deviceId: ctx.body.deviceId ?? undefined,
+      sId: ctx.body.sId ?? 0,
+    });
   } catch (e) {
     const code = toErrCode(e);
     // ⛔ 无 AUTH_EPOCH_STALE 分支：M12d 砍 epoch fence 后服务端不再产出该码（errors.ts 已无映射）

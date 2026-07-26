@@ -80,7 +80,12 @@ async function finish(r: Extract<LibLoginResult, { ok: true }>, sId: number): Pr
       }
       // ⚠ 带上权威侧签发时刻做写入栅栏（A1）：in-process 虽有 per-uid 锁定序，但栅栏是**第二道**——
       // 锁只保证同进程/同键的串行，⛔ 保证不了"锁外迟到的写"（如锁超时后旧持有者继续跑完）。
-      await writeGroupSess(r.uid, r.token, sId, "", v.issuedAtMs);
+      const cached = await writeGroupSess(r.uid, r.token, sId, "", v.issuedAtMs);
+      if (cached === "stale") {
+        // verify 与缓存写之间仍可能被不走本进程锁的 split/运维路径换发；fence 已证明本次是输家。
+        lost = true;
+        throw new BusyError("并发登录：本次签发已被更晚的登录取代，请重试");
+      }
     }));
   } catch (e) {
     if (!lost) {

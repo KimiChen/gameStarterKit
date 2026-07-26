@@ -89,7 +89,15 @@ test("门户登录端点：入参越界必须**在签发之前**被 400 拦下�
   assert.equal(okDev.status, 200, "deviceId 恰好 64 是合法值");
   if (okDev.body.userId) { uids.push(okDev.body.userId); }
 
-  // ③ devKey 越界/非法字符：`dev_<devKey>` 会进 accounts.openid VARCHAR(64) **ascii**
+  // ③ sId 与 shared/in-process 契约一致：缺省才是 s0，null/字符串/越界值均不得悄悄归 0。
+  for (const sId of [null, "7", -1, 1.5, 65536]) {
+    const r = await post(ApiPath.DevLogin, { devKey: key(), sId });
+    assert.equal(r.status, 400, `非法 sId=${JSON.stringify(sId)} 必须 400`);
+    assert.equal(r.body.error, "INVALID_PAYLOAD");
+    assert.equal(r.body.userId, undefined, "非法 sId 不得进入签发链");
+  }
+
+  // ④ devKey 越界/非法字符：`dev_<devKey>` 会进 accounts.openid VARCHAR(64) **ascii**
   //    （in-process 侧的 zod 早有 /^[a-zA-Z0-9_-]{1,32}$/，本端点此前裸传 ⇒ 两模式契约漂移）
   for (const bad of ["k".repeat(33), "有中文", "bad key", ""]) {
     const r = await post(ApiPath.DevLogin, { devKey: bad, deviceId: null });

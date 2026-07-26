@@ -52,7 +52,7 @@ const INVALID = Symbol("invalid");
  * ⛔ 非法值不能悄悄归 0：那会把"登录 107 区"变成"登录大混服"，玩家拿到一个用不了的 token。
  */
 function pickSId(v: unknown): number | typeof INVALID {
-  if (v === undefined || v === null) { return 0; }
+  if (v === undefined) { return 0; }
   if (typeof v !== "number" || !Number.isInteger(v) || v < 0 || v > 65535) { return INVALID; }
   return v;
 }

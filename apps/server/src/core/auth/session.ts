@@ -59,12 +59,29 @@ export const safeSecretEqual = (a: string | null | undefined, b: string | null |
  * 读到 `oldHash=H0` 时，**迟到的旧请求也满足 `oldHash===H0`** ⇒ 它 CAS 成功、真正的赢家反被拒，
  * 终态是旧 token 胜出。CAS 只能保证"没人踩到别人"，⛔ 保证不了"新的赢"——那需要**单调量**。
  *
- * 返回 `[wrote, oldHash]`：wrote=0 表示本次是陈旧写、已被丢弃（⛔ 此时绝不能踢人——踢的是赢家）。
+ * 返回三态：
+ * - `written`：本次更新较新，已写缓存；
+ * - `unchanged`：同一签发时刻 + 同一 token（同 token 多连接/重连），无需重复写；
+ * - `stale`：缓存已有更晚签发，或同一时刻却是不同 token，拒绝本次准入。
+ *
+ * ⚠ 不能只返回 boolean：同一 token 的第二条连接会再次 strict verify，issuedAt 与缓存相等，
+ * 这是合法的 `unchanged`；若把所有 no-op 都当 stale，会把多连接/重连误拒。
  */
 const SESS_FENCE_LUA = `
 local storedAt = redis.call('HGET', KEYS[1], 'issuedAt')
-if storedAt and tonumber(storedAt) and tonumber(ARGV[2]) <= tonumber(storedAt) then
-  return {0, ''}
+if storedAt and tonumber(storedAt) then
+  local incomingAt = tonumber(ARGV[2])
+  local currentAt = tonumber(storedAt)
+  local currentHash = redis.call('HGET', KEYS[1], 'tokenHash') or ''
+  if incomingAt < currentAt then
+    return {-1, currentHash}
+  end
+  if incomingAt == currentAt then
+    if currentHash == ARGV[1] then
+      return {0, currentHash}
+    end
+    return {-1, currentHash}
+  end
 end
 local oldHash = redis.call('HGET', KEYS[1], 'tokenHash')
 redis.call('DEL', KEYS[1])
@@ -74,13 +91,15 @@ redis.call('EXPIRE', KEYS[1], ARGV[5])
 return {1, oldHash or ''}
 `;
 
+export type GroupSessWriteResult = "written" | "unchanged" | "stale";
+
 /**
  * @param issuedAtMs 权威侧签发时刻（`accounts.token_issued_at`，**同 uid 严格递增**，见 lib `issueToken`）。
  *   ⛔ 别传 `Date.now()`：栅栏两侧必须来自同一个时钟（MySQL），否则进程间时钟偏移会让比较失去意义。
  */
 export async function writeGroupSess(
   uid: string, token: string, sId: number, gwNode = "", issuedAtMs = 0,
-): Promise<void> {
+): Promise<GroupSessWriteResult> {
   const key = kSess(uid, sId);
   const newHash = sha256(token);
   // 顶号判据（单端语义）：组 sess 里**原本存着一个不同的 tokenHash** ⇒ 该账号换了登录态（走了一次登录、
@@ -90,14 +109,18 @@ export async function writeGroupSess(
   const res = await clientFor(uid).eval(
     SESS_FENCE_LUA, 1, key, newHash, String(issuedAtMs), String(Date.now()), gwNode, String(SESS_TTL_S),
   ) as [number, string];
-  const wrote = Number(res?.[0]) === 1;
+  const status = Number(res?.[0]);
   const oldRaw = String(res?.[1] ?? "");
   const oldHash = oldRaw === "" ? null : oldRaw;
-  if (!wrote) {
+  if (status < 0) {
     // 陈旧写（更晚的登录已经写过了）：⛔ 直接返回——既不覆盖缓存，**也绝不踢人**。
     // 上一版没有这条路径，迟到的旧写不仅覆盖缓存，还会拿自己的 newHash 当判别位把**合法的新登录端**踢掉。
     console.warn(`[session] 陈旧的组 sess 写入已丢弃（issuedAtMs=${issuedAtMs} ≤ 已存值）`, uid);
-    return;
+    return "stale";
+  }
+  if (status === 0) {
+    // 同 token + 同 issuedAt：同一登录态的第二条连接/重连，合法复用，⛔ 不触发顶号。
+    return "unchanged";
   }
   await touchActive(uid);
   if (oldHash !== null && oldHash !== newHash) {
@@ -109,6 +132,7 @@ export async function writeGroupSess(
     // ⚠ 带上 issuedAtMs（A6）：消费侧据此丢弃陈旧的顶号事件，⛔ 防积压时踢掉赢家
     await broadcastKick(uid, ForceLogoutReason.Replaced, newHash, issuedAtMs, sId);
   }
+  return "written";
 }
 
 /**
@@ -197,5 +221,4 @@ export async function auditLogin(event: string, uid: string | null, reason: stri
     "INSERT INTO login_audit (user_id, event, reason, ip, device_id) VALUES (?,?,?,INET6_ATON(?),?)",
     [uid, clamp(event, AUDIT_EVENT_MAX), clamp(reason, AUDIT_REASON_MAX), normalizeIp(ip), clamp(deviceId, AUDIT_DEVICE_MAX)]);
 }
-
 
