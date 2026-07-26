@@ -5,6 +5,10 @@
 > - **[docs/OVERVIEW.md](docs/OVERVIEW.md)** —— 双端设计意图、单源契约、机检哲学、玩法概念去处
 > - **[docs/SERVER.md](docs/SERVER.md)** —— 服务端目录/ws-RPC/outbox/冷档/广播/**63 条 `09·XX` 规则目录 + 07 契约表**
 > - **[docs/CLIENT.md](docs/CLIENT.md)** —— 客户端目录/视图逻辑二分/viewRegistry/codegen/微信踩坑/首次打开
+> - **[docs/WEBPLATFORM.md](docs/WEBPLATFORM.md)** —— 账号门户（WebPlatform）契约/部署模式/端点清单/**待办账本**
+> - **[docs/HANDOFF-M12.md](docs/HANDOFF-M12.md)** —— M12c/M12d 交接：封号 SOP/单端顶号/部署模式 + **硬约束**与已知边界
+> - **[docs/GM-TOOL-SPEC.md](docs/GM-TOOL-SPEC.md)** —— 给运营侧的 GM 工具实现规格（封号两步 SOP 的接口契约/节点遍历/验收清单）
+> - **[docs/REVIEW-2026-07.md](docs/REVIEW-2026-07.md)** —— 2026-07 同事评审的逐条归档（历史留档，⚠ 登记/进度以 todo.md 与各 docs 为准，⛔ 不回写）
 > 每个源码目录另有就近 README（`每个目录有 README` 约定）。根上手页见 [README.md](README.md)。
 
 ## 技术栈（2026-07 定版）
@@ -24,6 +28,9 @@ npm run fetch:fgui           # 升级 fairygui-cc 运行时（产物已入库,cl
 npm run fetch:colyseus       # 升级 colyseus UMD 插件（产物已入库;同上）
 npm run sync:shared          # 改完 apps/shared/src 后必须执行（→ apps/client/src/shared，并级联 sync:client）
 npm run sync:client          # 改完 apps/client/src 后必须执行（→ apps/Cocos/assets/src）
+SYNC_FORCE=1 npm run sync:shared   # 熔断逃生口：两级同步会在「清理数 ≥20 个 或 ≥30% 源文件」时拒绝执行
+                                   # （防分支切换中间态清库）。⛔ 别用 `-- --force`：npm 只把它追加到
+                                   # 复合命令末尾，到不了链条前段的脚本。
 npm run dev:client           # 双 watcher 常驻：shared→client→Cocos 保存即同步
 npm run dev                  # 启动服务端 http://localhost:2568（tsx watch）
 npm run typecheck            # 三端类型检查 + verify:sync（镜像新鲜度机检）
@@ -69,4 +76,5 @@ net/、dispatcher/loader、Main.ts 永远不碰。分端细节见 docs/SERVER.md
 - 玩法是 demo（`ballMove` 小球移动 + 技能结算）；登录走 dev-login 真实链路（**需本地栈**，
   mock 层已移除；微信 wx.login 侧接入后补）。服务端框架生产级（源自 Arthur M0–M9，
   **已停止回流、独立演进**）。Arthur 专属未移植件（M4 存量迁移、wxLogin 存量账号绑定）本项目 N/A。
-- 验证基线（近期全绿）：typecheck 三端 + verify:sync / 服务端单测 22 / 客户端 test:fgui 72 / 集成测试 108 / 真实链冒烟 13。
+- 验证基线（近期全绿）：typecheck 三端 + verify:sync / 服务端单测 33 / 客户端 test:fgui 79 / 集成测试 125 / 真实链冒烟 13。
+  ⚠ **这是全仓唯一记数字的地方**（其余文档一律写「见 CLAUDE.md」）：曾经六处各写各的，然后集体过期。

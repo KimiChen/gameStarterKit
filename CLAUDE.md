@@ -8,6 +8,7 @@
 > - **[docs/WEBPLATFORM.md](docs/WEBPLATFORM.md)** —— 账号门户（WebPlatform）契约/部署模式/端点清单/**待办账本**
 > - **[docs/HANDOFF-M12.md](docs/HANDOFF-M12.md)** —— M12c/M12d 交接：封号 SOP/单端顶号/部署模式 + **硬约束**与已知边界
 > - **[docs/GM-TOOL-SPEC.md](docs/GM-TOOL-SPEC.md)** —— 给运营侧的 GM 工具实现规格（封号两步 SOP 的接口契约/节点遍历/验收清单）
+> - **[docs/REVIEW-2026-07.md](docs/REVIEW-2026-07.md)** —— 2026-07 同事评审的逐条归档（历史留档，⚠ 登记/进度以 todo.md 与各 docs 为准，⛔ 不回写）
 > 每个源码目录另有就近 README（`每个目录有 README` 约定）。根上手页见 [README.md](README.md)。
 
 ## 技术栈（2026-07 定版）

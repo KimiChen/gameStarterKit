@@ -119,7 +119,7 @@
 | **W1** | **端点鉴权分层** | ⛔ **`/ban`·`/revoke`·`/verify`·`/character/*`·`/account/exists` 全部无鉴权**——谁能连到本进程就能封任何人、遍历任意用户足迹 | 按暴露面加共享密钥（范式同 `pay/wxNotify`、`admin/kick`：每请求现读 env + 头比对 + **未配置即拒**）：公开层不动；内部层 + 特权层加密钥（特权层是否独立密钥待定）。⚠ 与之配套：`httpAccount` 调用侧要带上头 |
 | **W2** | **split 下封号无审计** | `login_audit` 在账号库；但 `/ban`·`/revoke` 端点**不写审计**，而组侧 `banUser` 的 `auditLogin` 写的是**组库**（落错地方）⇒ split 下账号库里查不到封号记录 | `/ban`·`/revoke` 端点内用 lib `auditLogin` 写（它用本服务自己的池，天然落对库） |
 | **W3** | 补画像端点 | 未做 | `bindProfile(uid,{nickname,avatar})` / `bindPhone(uid,encryptedData,iv)`（两段式授权，§2.7；手机号用本服务存的 `session_key` 解密） |
-| **W4** | 目录接真实配置 | `lib/area.ts` 是 demo 静态表 | 接配置表/运维后台，按 sId 返回各组实例 `wsUrl` |
+| **W4** | 目录接真实配置 | `lib/area.ts` 是 demo 静态表 | 接配置表/运维后台，按 sId 返回各组实例端点。⚠ **契约要一次定全三类端点**（评审采纳）：`IAreaServer` 目前只有 `wsUrl`，但客户端实际需要 **HTTP(api)/WS(房间)/Portal(账号)** 三类——只发 wsUrl 会把「大厅连错组」（todo.md A5）钉死成结构问题。portal 大概率全局单点、只有 http/ws 按组下发，形状先拍再写（回问 Q7） |
 
 ⏭ **本表之外另有 P1–P5**：以后做**中心账号服务**（一实例喂多游戏）的前置改造项，见 [§1.1](#11-边界一游戏一整套栈中心账号服务以后另立项)。
 它们**非当前里程碑、不排期、刻意不占 W 编号**——当前定案是本游戏专属，⛔ 别把它们当成上线前必做。
