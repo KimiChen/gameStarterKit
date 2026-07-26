@@ -1,11 +1,16 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": ["../../tsconfig.base.json", "../../tsconfig.strict.json"],
   "compilerOptions": {
     "noEmit": true,
     "types": [],
     // 钉死到客户端 tsconfig 的最低 lib（ES2017）：共享代码必须在最保守的消费端也能编译，
     // 否则 shared 这里能过、同步到 Cocos 后报错
-    "lib": ["ES2017"]
+    "lib": ["ES2017"],
+    // ⚠ shared 是双端单源契约（协议 + 公式，改一处两级镜像连锁），是全仓**最该锁死**的一层，
+    // 且实测本来就干净 ⇒ 在共享严格档之上再加三个（四端全开会炸的那两个不在此列）。
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "verbatimModuleSyntax": true
   },
   "include": ["src"]
 }

@@ -20,7 +20,7 @@ import { idemAcquire, idemComplete, idemRelease } from "../../src/core/idem";
 import { deriveOpId, redisApply } from "../../src/core/economy/outbox";
 import { createUser } from "../../src/core/userRecord";
 import { LOCK_TTL_MS } from "../../src/core/infra/config";
-import { kApplied, kBag, kBagAll, kFence, kIdemUser, kLock, kUser } from "../../src/core/infra/keys";
+import { kApplied, kBag, kBagAll, kIdemUser, kLock, kUser } from "../../src/core/infra/keys";
 import { clientFor, closeRedis } from "../../src/core/infra/redisRoute";
 import { CAS_HSET, evalshaWithReload } from "../../src/core/infra/redisScripts";
 import { assertRedisUp, cleanupUser, sleep, testUid } from "./helpers";

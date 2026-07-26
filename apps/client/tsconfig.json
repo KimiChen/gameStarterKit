@@ -1,4 +1,7 @@
 {
+  // 严格性开关走单源；本文件的 target/lib/cc 桩等客户端特有项不受影响。
+  "extends": "../../tsconfig.strict.json",
+
   // 独立的客户端类型检查配置（不 extends Creator 生成的 temp/，可离线/CI 跑；回流自 Arthur）。
   // 用 cc 桩（cc-stub.d.ts）替代真 cc，对 src 做类型/导入路径检查。
   // 跑法：npm run typecheck:client（根 package.json；tsc 来自 server workspace 的依赖提升）。

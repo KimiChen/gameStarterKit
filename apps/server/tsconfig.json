@@ -1,4 +1,8 @@
 {
+  // ⚠ 只继承**严格性**单源（tsconfig.strict.json 里没有 module/target，⛔ 不影响下面那段
+  // 「不继承 base」的理由：Bundler 解析 + 装饰器语义仍由本文件自理）。
+  "extends": "../../tsconfig.strict.json",
+
   // 服务端不继承根 tsconfig.base.json，原因：
   //  - @colyseus/schema v4 需要传统装饰器：experimentalDecorators=true，
   //    且 useDefineForClassFields 必须为 false，否则 @type() 装饰的字段会被类字段语义覆盖而静默失效

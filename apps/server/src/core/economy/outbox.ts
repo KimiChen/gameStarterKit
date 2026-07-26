@@ -16,7 +16,7 @@ import { currentZoneId, kApplied, kBagAll, kUser, zoneCtx } from "../infra/keys"
 import { clientFor } from "../infra/redisRoute";
 import { APPLY_EFFECT, evalshaWithReload } from "../infra/redisScripts";
 import { getPool, withRcTx } from "../infra/mysql";
-import type { PoolConnection, ResultSetHeader, RowDataPacket } from "../infra/mysql";
+import type { ResultSetHeader, RowDataPacket } from "../infra/mysql";
 import { withUser } from "../uow";
 import { debitInTx, getBalance, invalidateBalanceCache } from "./currency";
 import type { ShopSku } from "./catalog";

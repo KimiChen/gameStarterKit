@@ -18,7 +18,9 @@ import type { ArchiveSnapshot } from "./archiveScripts";
  */
 export async function lazyMigrateSchema(
   snapshot: ArchiveSnapshot,
-  fromVersion: number, // eslint-disable-line @typescript-eslint/no-unused-vars -- 首版恒等，签名为真迁移预留
+  // ⚠ `_` 前缀 = 有意未用（TS 的 noUnusedParameters 内置逃生口）：首版恒等，签名为真迁移预留。
+  // ⛔ 别删这个参数——删了将来加迁移要改所有调用点。（原先挂的 eslint-disable 是死注释：本仓无 eslint。）
+  _fromVersion: number,
 ): Promise<ArchiveSnapshot> {
   // SCHEMA_VERSION == 1：唯一存在过的格式，恒等返回（09·S1）。
   // 未来样例：

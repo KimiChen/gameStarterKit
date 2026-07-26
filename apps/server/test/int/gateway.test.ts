@@ -22,7 +22,7 @@ import { stopMailWakeLoop } from "../../src/websocket/push";
 import { activeLruBucketOf, kActiveLru, kFence, kLock, kSess, kUser } from "../../src/core/infra/keys";
 import { clientFor, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
 import { closeMysql, getPool } from "../../src/core/infra/mysql";
-import type { ResultSetHeader, RowDataPacket } from "../../src/core/infra/mysql";
+import type { ResultSetHeader } from "../../src/core/infra/mysql";
 import { assertRedisUp, cleanupUser, sleep, testUid, issueSession } from "./helpers";
 
 let colyseus: ColyseusTestServer;

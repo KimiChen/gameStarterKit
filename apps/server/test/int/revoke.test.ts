@@ -34,14 +34,6 @@ async function makeUser(name: string): Promise<{ uid: string; token: string }> {
   return { uid, token };
 }
 
-const waitFor = async (cond: () => boolean, timeoutMs: number): Promise<void> => {
-  const deadline = Date.now() + timeoutMs;
-  while (!cond()) {
-    if (Date.now() > deadline) { throw new Error("waitFor 超时"); }
-    await sleep(50);
-  }
-};
-
 before(async () => { await assertRedisUp(); setKickHandler(kickUser); });
 
 after(async () => {

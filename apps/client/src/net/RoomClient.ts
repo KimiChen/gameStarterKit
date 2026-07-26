@@ -49,8 +49,6 @@ export class RoomClient {
     private joining: Promise<Colyseus.Room<IGameRoomState>> | null = null;
     /** 掉线重连窗口中（断线期间 SDK 会排队 send、重连后补发过期包——调用方据此暂停心跳/输入上行） */
     private _dropping = false;
-    /** 掉线时用于手动重连兜底（0.17 默认自动重连，一般用不到） */
-    private cachedReconnectionToken = "";
 
     get room(): Colyseus.Room<IGameRoomState> | null {
         return this._room;
@@ -90,7 +88,6 @@ export class RoomClient {
     private async doJoin(options?: Record<string, unknown>): Promise<Colyseus.Room<IGameRoomState>> {
         const room = await this.client!.joinOrCreate<IGameRoomState>(RoomName.Game, { v: PROTOCOL_VERSION, ...options });
         this._room = room;
-        this.cachedReconnectionToken = room.reconnectionToken;
 
         // 回调按 room 身份守卫（同 WebSocketClient）：leave 在途期间重新 joinGame 后，
         // 旧房迟到的 onLeave 不得清掉新房引用/改写 dropping（评审验证探针实证过误清）
@@ -102,7 +99,6 @@ export class RoomClient {
         room.onReconnect(() => {
             if (this._room !== room) return;
             this._dropping = false;
-            this.cachedReconnectionToken = room.reconnectionToken;
             console.log("[RoomClient] 自动重连成功");
         });
         room.onLeave((code, reason) => {

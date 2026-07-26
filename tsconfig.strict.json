@@ -1,0 +1,27 @@
+{
+  // 四端共享的**严格性开关**单源。⛔ 这里只放"严格性"，模块/target/lib 各端自理
+  //（server 要 Bundler+装饰器、client 钉 ES2017+cc 桩、Cocos 由 Creator 生成）——
+  // 那些差异是正当的，混进来会逼各端复制粘贴，正是本仓「六处各写各的然后集体过期」的老毛病。
+  //
+  // 引入依据（2026-07-26 实测，四端逐个 `tsc --noEmit <flag>` 计数）：下列开关四端**全 0 错误**，
+  // 即代价字面为零；`noUnusedLocals/Parameters` 当时报出 9 处，全部是真死代码，已在同批清掉。
+  // ⛔ 实测判定**不要**开的两个（别再来一次）：
+  //   - `noUncheckedIndexedAccess`：167 处，抽读 35 处真 bug 数 0，全是 `.length` 守卫与循环
+  //     不变量穿不过控制流分析；修法只能撒 `!`（比索引访问更危险）或重构已经正确的代码。
+  //   - `noPropertyAccessFromIndexSignature`：232 处，`process.env.X` 与 mysql RowDataPacket
+  //     字段访问，纯风格噪音。
+  // ⚠ `exactOptionalPropertyTypes` 未进本文件：shared 侧 0 错，但 server 有 2 处与 zod 的结构
+  //   冲突（`ZodType` 输出类型不变），要改 shared 协议接口才能开——那是契约决策，见 todo.md。
+  //   shared 单独开（它是双端单源契约，最该锁死），见 apps/shared/tsconfig.json。
+  "compilerOptions": {
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,        // 要保 API 形状的参数加 `_` 前缀即可（TS 内置逃生口）
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    // ⚠ 逐文件转译的三端（client 走 Cocos SystemJS、server/WebPlatform 走 tsx=esbuild）**都必须开**：
+    // 此前它只在 tsconfig.base.json 里，而 base 只有 shared 继承 —— 真正需要它的三端反而漏了。
+    "isolatedModules": true
+  }
+}

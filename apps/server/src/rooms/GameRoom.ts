@@ -1,4 +1,4 @@
-import { Room, Client, CloseCode, ServerError, type AuthContext } from "colyseus";
+import { Room, Client, CloseCode, type AuthContext } from "colyseus";
 import {
     C2S,
     S2C,

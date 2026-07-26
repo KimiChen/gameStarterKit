@@ -28,7 +28,7 @@ import {
 import { activeLruBucketOf, kActiveLru, kSess, K_STREAM_MATCH } from "../../src/core/infra/keys";
 import { closeMysql, getPool, type RowDataPacket } from "../../src/core/infra/mysql";
 import { clientFor, clientForKey, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
-import { assertRedisUp, cleanupUser, sleep, testUid, issueSession } from "./helpers";
+import { assertRedisUp, cleanupUser, sleep, testUid } from "./helpers";
 
 const GROUP = "settle";
 const stream = () => clientForKey(K_STREAM_MATCH);

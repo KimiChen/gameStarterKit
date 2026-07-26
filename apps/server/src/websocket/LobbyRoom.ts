@@ -6,7 +6,7 @@
  * - 每消息快路径复验 sess（**纯组缓存 hash 比对、零权威回源**；在线撤销靠踢，见 §2.3 封号 SOP）。
  * - 大包防护在 transport 层 maxPayload（09·G4，见 app.ts）。
  */
-import { Room, ServerError, validate, type AuthContext, type Client } from "@colyseus/core";
+import { Room, validate, type AuthContext, type Client } from "@colyseus/core";
 import {
   LOBBY_MSG_PUSH, LOBBY_MSG_RPC, PROTOCOL_VERSION,
   ErrorCode as SharedErrorCode, type IRoomJoinOptions,
