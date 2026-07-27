@@ -19,7 +19,7 @@ import { withUserLock } from "../locks";
 import { BusyError, ThawingError, UserDataLostError } from "../errors";
 import { thawRestore, type ArchiveSnapshot } from "./archiveScripts";
 import { lazyMigrateSchema } from "./lazyMigrate";
-import { account } from "../../platform/accountClient";
+import { webPlatformClient } from "../../platform/webPlatformClient";
 
 // ───────────────────── 常量（07 已规定，随 M9 落地） ─────────────────────
 
@@ -32,13 +32,13 @@ const NEGCACHE_TTL_S = 10;
 export const archiveCounters = {
   /** 解冻成功次数（含清理任务的 ARCHIVE_NEWER 修复）。解冻/冻结比接近 1 = COLD_DAYS 定错（08 · 监控）。 */
   thawed: 0,
-  /** ⚠ **必须恒为 0**（08 · 监控）。非 0 = accounts 有号但热档冷档全无 = 真实数据丢失。 */
+  /** ⚠ **必须恒为 0**（08 · 监控）。非 0 = WebPlatform 有角色登记但热档冷档全无 = 真实数据丢失。 */
   userDataLost: 0,
   /** ARCHIVE_NEWER 恢复次数。非 0 说明发生过 PITR 或异常回滚（08 · 监控）。 */
   archiveNewerRestored: 0,
   /** resolve 判 LIVE 时删除的陈旧 archive 残留行（freeze/thaw 中断态收敛）。 */
   staleArchiveDeleted: 0,
-  /** ABSENT 慢路径查 accounts 的次数（负缓存命中则不增——观测负缓存是否生效）。 */
+  /** ABSENT 慢路径查 WebPlatform 角色登记的次数（负缓存命中则不增——观测负缓存是否生效）。 */
   absentAccountChecks: 0,
   /** 负缓存命中次数。 */
   negcacheHits: 0,
@@ -86,7 +86,7 @@ export interface ArchiveRow {
  *
  *   live && !archive → LIVE           正常热档
  *  !live &&  archive → FROZEN         冷档，访问时 thaw
- *  !live && !archive → ABSENT         查 accounts 判「新号」还是「数据丢失」
+ *  !live && !archive → ABSENT         查 WebPlatform 角色登记判「新角」还是「数据丢失」
  *   live &&  archive → 比 fence：hwm 更大 → ARCHIVE_NEWER（PITR）；否则（平局判 LIVE）→ LIVE
  *
  * ⚠ Redis 侧 fence 取 **max(hash 的 fence 字段, fence:{uid} 计数器)**，不是只看 hash 字段：
@@ -172,8 +172,8 @@ const inflight = new Map<string, Promise<void>>();
  *
  * - FROZEN / ARCHIVE_NEWER → thawRestore（慢路径开看门狗 renewMs=LOCK_RENEW_MS，09·L6）
  * - LIVE 且有 archive 残留行 → 删行（freeze/thaw 中断态收敛）
- * - ABSENT：accounts 有号 = **数据丢失，告警 + 拒绝建空档**，抛 UserDataLostError（09·F4）；
- *   无号 = 真新号，写负缓存后**正常返回不抛**——上层见 user 仍不存在自走建号路径
+ * - ABSENT：WebPlatform 有本区角色登记 = **数据丢失，告警 + 拒绝建空档**，抛 UserDataLostError（09·F4）；
+ *   无登记 = 真新角，写负缓存后**正常返回不抛**——上层见 user 仍不存在自走建角路径
  *   （08 原文抛 UserNotFoundError 由建号接住；本实现按 07「Promise<void>」契约与 M9 任务口径
  *   收敛为不抛，语义等价：都不建档、都放行建号）。
  * - THAW_RATE 超限抛 ThawingError（错误码 THAWING，客户端退避比 IN_PROGRESS 更长）。
@@ -214,15 +214,14 @@ async function thawSlowPath(uid: string): Promise<void> {
       }
       case "ABSENT": {
         archiveCounters.absentAccountChecks++;
-        // 「本区建过角没」判据**统一走 char_registry**（DUAL_MODE §2.7 登录编排劈开）：基础档(sId=0)
-        // 现在也在 onJoin 由 ensureCharacter 建 + 写 char_registry(0)，故所有 sId 同一判据（不再按 sId 分）。
-        // 有 char 行 + 热档冷档全无 = 真实数据丢失（拒建空档，09·F4）；无 char 行 = 未在本区建过角 → 放行建角。
-        // ⚠ greenfield(U3)前提：无「老基础档无 char 行」历史包袱（有存量需 backfill char_registry(0)）。
+        // 「本区建过角没」判据统一走 WebPlatform character registry；所有 sId 使用同一语义。
+        // 有登记 + 热档冷档全无 = 真实数据丢失（拒建空档，09·F4）；无登记 = 未在本区建过角 → 放行建角。
         // ⚠ user_archive 尚全局(archive 步再 per-zone 化)，冻结跨区完整正确性待 archive 步（门控多区+freeze）。
         const sId = currentZoneId();
-        if (await account.character.has(uid, sId)) {
+        // WebPlatform 不可达时让异常向上冒泡：F4 不能把基础设施故障猜成「没建过角」。
+        if (await webPlatformClient.hasCharacter(uid, sId)) {
           archiveCounters.userDataLost++;
-          console.error(`[thaw] ☠ USER_DATA_LOST uid=${uid} sId=${sId}：char_registry 有本区角色但 Redis 与 user_archive 全无（≡0 告警线）`);
+          console.error(`[thaw] ☠ USER_DATA_LOST uid=${uid} sId=${sId}：WebPlatform 有本区角色登记但 Redis 与 user_archive 全无（≡0 告警线）`);
           throw new UserDataLostError(uid);
         }
         // 未在本区建过角（真新号/首进区）：负缓存挡重复穿透（per-zone，cache TTL 10s）；建号/建角成功后失效

@@ -6,7 +6,7 @@
  * 业务调用面在 net/http/（真实接口）——本文件只管收发。
  */
 let baseUrl = "http://localhost:2568";
-let portalUrl = "";
+let portalUrl: string | null = null;
 let token = "";
 
 /**
@@ -14,7 +14,8 @@ let token = "";
  *
  * ⚠ 曾经只 reject 一个拼好的 `Error("[http] HTTP 409 …")`：业务层想区分「系统繁忙可重试」
  * 与「登录失败」就只能正则抠 message —— 于是全都被 `.catch(() => null)` 抹平成同一个失败。
- * 端点错误体统一是 `{ error: <ErrCode> }`（见 http/account/*.ts），故这里解出来放 `code`。
+ * WebPlatform v1 错误体是 `{ code, requestId }`；游戏服现有端点仍可能返回 `{ error }`。
+ * 两者都解到同一个 `code` 字段，业务层不需要解析 message。
  */
 export class HttpError extends Error {
     constructor(
@@ -29,10 +30,11 @@ export class HttpError extends Error {
     }
 }
 
-/** 从错误体 `{ error: "BUSY" }` 取码；非 JSON / 无该字段 → 空串（⛔ 不抛，调用方在错误路径上）。 */
+/** 从错误体 `{ code }` / `{ error }` 取码；非 JSON / 无字段 → 空串（⛔ 不抛，调用方在错误路径上）。 */
 function errCodeOf(text: string | undefined): string {
     try {
-        const c = (JSON.parse(text ?? "") as { error?: unknown }).error;
+        const body = JSON.parse(text ?? "") as { code?: unknown; error?: unknown };
+        const c = typeof body.code === "string" ? body.code : body.error;
         return typeof c === "string" ? c : "";
     } catch {
         return "";
@@ -50,17 +52,26 @@ export function getBaseUrl(): string {
 }
 
 /**
- * 初始化**门户地址**（账号服务 WebPlatform：登录 + 选服 /area/list）。DUAL_MODE §2.7：
- * dev/内嵌单机 = 与游戏服同址（留空即回退 baseUrl，行为不变）；prod-split = 独立 WebPlatform 域名。
- * 游戏服 WS（大厅）与区服 WS 仍连各自地址，⛔ 不走门户。
+ * 初始化独立 WebPlatform Public 地址（登录 + 选服）。
+ *
+ * HTTP-only 拆仓后 Portal 是必填启动配置：空值或非 http(s) 地址立即失败，
+ * ⛔ 不再回退游戏服 baseUrl，否则配置遗漏会把账号请求静默打到错误进程。
  */
 export function initPortal(url: string): void {
-    portalUrl = url.replace(/\/+$/, "");
+    portalUrl = null;
+    const normalized = url.trim().replace(/\/+$/, "");
+    if (!/^https?:\/\/[^/]/i.test(normalized)) {
+        throw new Error("[http] WebPlatform portalUrl 必填，且必须是 http(s) 绝对地址");
+    }
+    portalUrl = normalized;
 }
 
-/** 门户地址：留空则跟随游戏服 baseUrl（内嵌单机同址）。 */
+/** 当前 WebPlatform Public 地址；初始化缺失时 fail-fast，绝不猜测游戏服地址。 */
 export function getPortalUrl(): string {
-    return portalUrl || baseUrl;
+    if (!portalUrl) {
+        throw new Error("[http] WebPlatform portalUrl 尚未初始化");
+    }
+    return portalUrl;
 }
 
 /** 保存登录 token（后续请求自动带 Authorization: Bearer 头） */
@@ -82,8 +93,8 @@ export function request<T>(method: "GET" | "POST", path: string, body?: unknown)
 }
 
 /**
- * 门户请求（登录 / 选服 → WebPlatform）。split 部署时命中门户地址，dev/内嵌回退游戏服（同 request）。
- * ⚠ 登录/选服的凭据在 body 内（选服 token、登录无 token），Bearer 头顺带无害（门户端点不读它）。
+ * 门户请求（登录 / 选服 → WebPlatform Public）。选服通过已有 token 自动携带 Bearer；
+ * 登录时本地尚无 token，不会附带 Authorization。
  */
 export function portalRequest<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
     return doRequest(getPortalUrl(), method, path, body);

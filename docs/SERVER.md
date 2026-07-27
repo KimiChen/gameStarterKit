@@ -1,7 +1,8 @@
 # 服务端
 
 Colyseus **0.17** + 公司服务端框架（源自 Arthur M0–M9，已停止回流、独立演进）。Node ≥ 22，
-tsx 直跑 TS。整体设计意图见 [OVERVIEW.md](OVERVIEW.md)；客户端见 [CLIENT.md](CLIENT.md)。
+tsx 直跑 TS。整体设计意图见 [OVERVIEW.md](OVERVIEW.md)；客户端见 [CLIENT.md](CLIENT.md)；
+独立账号门户边界见 [WEBPLATFORM.md](WEBPLATFORM.md)。
 
 > **本文含两份「代码引用的活字典」，删改前务必知道**：
 > - [§12 开发约束 63 条规则目录](#12-开发约束63-条规则目录)——服务端 200+ 处 `09·XX` 注释锚定这里；
@@ -16,13 +17,14 @@ npm install                 # 根目录，装 shared + server
 npm run dev                 # tsx watch 启动，http://localhost:2568（热重载）
 ```
 
-起来后两个网页入口：`/` Playground 调试台、`/monitor` 房间监控。
-**登录走 `/account/dev-login` 真实链路**（建号/token/会话，mock 层已移除）——需先起本地栈
-+ `db:bootstrap`（见下节）；微信 wx.login 侧接入后走 `/account/wx-login`，dev-login 生产自动禁用。
+起来后两个网页入口：`/` Playground 调试台、`/monitor` 房间监控。账号登录与选服不在游戏进程：
+客户端经必填 `portalUrl` 访问独立 `gono-webplatform` 的 Public v1 API；游戏服建连时再经 Internal
+`POST /v1/internal/sessions/verify` 严格验 token。完整本地链路因此还需另仓启动 WebPlatform Public /
+Internal HTTP 和它自己的空账号库。
 
 ### 本地开发栈
 
-真实玩法链路（wx 登录、工会、充值、冷档）需要本地 Redis×2 + MySQL：
+游戏玩法链路（工会、充值、冷档）需要本仓 Redis×2 + 游戏 MySQL：
 
 ```bash
 npm --workspace @game/server run stack           # 起 redis-durable(6401)+redis-cache(6402)+MySQL(3316)
@@ -49,8 +51,10 @@ npm --workspace @game/server run test:int        # 集成测试（真实 Redis+M
   EADDRINUSE 且卡死 test runner。根脚本 `npm run dev` 起的是 tsx watch——kill 要 kill 整棵 watch 进程树。
 - 开发端口默认 **2568**（`config.ts` 的 `PORT` 常量，与 `PROJECT_ID` 同机制——根
   `.env.development` 的 `PORT` 可覆盖）：Colyseus 默认 2567 常被占用。
-  **客户端自动跟随**：`sync:client` 从同一真源生成 `core/devEnv.ts`（新鲜度由 verify:sync
-  机检），场景里 Main 组件 `serverUrl` 留空即自动、填写即覆盖；smoke 用 `SERVER_URL` 覆盖。
+  `sync:client` 会从同一真源生成 `core/devEnv.ts`，作为客户端启动早期的开发游戏地址
+  （新鲜度由 verify:sync 机检；Inspector 的 `serverUrl` 可覆盖，smoke 用 `SERVER_URL` 覆盖）。
+  账号 Public 地址是另一项必填 `portalUrl`；目录加载成功后，实际大厅/战斗连接改用所选区的
+  `gameHttpUrl`，目录失败时不得拿 `serverUrl` 猜区服。
 
 ---
 
@@ -63,9 +67,9 @@ npm --workspace @game/server run test:int        # 集成测试（真实 Redis+M
 |---|---|
 | `rooms/` | 实时玩法房（GameRoom + Schema）。当前 demo：移动积分 20fps、技能结算用 shared 公式 |
 | `websocket/` | ws-RPC：LobbyRoom（房间 `lobby`）+ dispatcher 中间件链 + 每接口一文件端点 + 集合广播/推送 |
-| `http/` | 真实 HTTP 端点（仅 auth/支付/utility）：`<域>/<接口>.ts` + `index.ts` 静态 spread 装配 |
+| `http/` | 游戏 HTTP 端点（支付/utility/公告/节点管理；**不含登录、选服或账号管理**）：`<域>/<接口>.ts` + `index.ts` 静态 spread 装配 |
 | `player/` | 玩家数据日常主战场：`userStore`（readUser/readUserReadonly；加档字段起点） |
-| `platform/` | **账号/门户 plane 接缝**（`AccountClient`）：in-process 直调 `@game/webplatform/lib`、split 走 HTTP。⚠ **本目录 + `core/infra/mysql.ts` 是全 src 唯一允许直调 lib 处**（split 下别处直调 = 打错库，机检 `lib-import-ban.test.ts`；见 [WEBPLATFORM.md](WEBPLATFORM.md)） |
+| `platform/` | **账号 plane 唯一接缝**：`webPlatformClient.ts` 只经带服务身份的 Internal HTTP 调 verify / register character / has character；无本地实现、无账号库连接、无运行期模式切换。源码边界由 `lib-import-ban.test.ts` 机检 |
 | `core/` | 服务端底座（横切原语 + infra/auth/economy/archive/match/guild/compute 子模块） |
 | `index.ts` | 进程入口：启动期先 `registerAllRoutes()` 契约校验 + `startInfraMonitors()` 再 `listen` |
 | `app.config.ts` | `defineServer({ rooms, routes, transport, express })` |
@@ -87,8 +91,10 @@ npm --workspace @game/server run test:int        # 集成测试（真实 Redis+M
 **崩溃最多丢「当前那一条尚未 commit 的请求」**，已提交的全在 Redis / MySQL。
 
 **权威分野（关键，A2/A3/A4）**：
-- **货币 / 账号 / 订单 → MySQL 同步事务**（真源）。Redis 侧只有只读 `cache:currency:{uid}`
+- **货币 / 订单 → 游戏 MySQL 同步事务**（真源）。Redis 侧只有只读 `cache:currency:{uid}`
   （cache 实例、TTL 5m、miss 回源）。⛔ 禁 Redis 对货币做权威增量。
+- **账号 / 权威 session / 角色存在性 → WebPlatform 独立 MySQL**（真源）。游戏服不得持有该库
+  DSN 或直写表，只能经 Internal HTTP 读写约定能力；封号/撤销只能由 GM 经 Admin HTTP 发起。
 - **玩法热档 → Redis**（真源，不落 MySQL）。⛔ 禁 write-behind / dirty flush / user_snapshot 回写。
 - **冷档例外 → MySQL `user_archive`**（N 天未登录）。访问冷 uid 必须先 `ensureLive()`。
 
@@ -96,7 +102,7 @@ npm --workspace @game/server run test:int        # 集成测试（真实 Redis+M
 
 | P | 教训 |
 |---|---|
-| P1 | 货币/账号撤销走权威同步 MySQL 事务，**先写 MySQL 权威**（撤销 = status/token_hash），再踢在线 |
+| P1 | 货币走游戏 MySQL 权威事务；封号/撤销先由 WebPlatform Admin 事务写账号权威，再由 GM 逐游戏节点踢在线 |
 | P4 | 幂等下沉到 `currency_ledger` 的 `UNIQUE(user_id, idem_key)` |
 | P5 | 跨存储重放用**绝对值覆写不重加 delta**；单存储内 op_id 去重 + HINCRBY 本身幂等 |
 | P6 | 续租守卫 `UPDATE(holder+fence_token)` 与业务批写同事务，0 行立即 ROLLBACK 自杀 |
@@ -131,7 +137,7 @@ C2S: { id, type, payload }  →  S2C: { id, ok, data?, err? }
 ③ 建 websocket/<域>/<接口>.ts（defineRpc；只读无 idem，写路径 idem:true + clientReqId）
 ```
 
-⛔ 不改 dispatcher/LobbyRoom。契约测试 `test/lobby-rpc-contract.test.ts` 在 CI 先兜住漏登记。
+⛔ 不改 dispatcher/LobbyRoom。契约测试 `test/lobby-rpc-contract.test.ts`（随服务端单测执行）兜住漏登记。
 
 客户端走 `net/WebSocketClient.ts`（`rpc`/`rpcIdem`/`onPush`）——写接口一律 `rpcIdem`
 （clientReqId 生成一次、重试复用）。
@@ -145,28 +151,34 @@ C2S: { id, type, payload }  →  S2C: { id, ok, data?, err? }
 
 ---
 
-## 5. HTTP 端点
+## 5. HTTP 边界
 
-- **HTTP（`http/`）**：真实端点，Colyseus 0.17 typed router（`createEndpoint`，zod 校验 body）。
-  仅限 auth / 支付 / utility（通道分工）：`POST /account/wx-login`（wx 登录、不透明 token、
-  账号撤销）、`POST /pay/wx-notify`、`GET /version`、`GET /clock/now`、
-  `POST /area/list`（选服列表 `{al,ul,isOps,h}`，登录前展示，token 可选回填最近登录区服）、
-  `POST /admin/kick`（**GM 内部**：踢本节点该 uid 在线连接并回 `kicked`，共享密钥鉴权，封号 SOP 第二步）、
-  `GET /notice/list`（公告列表，按 at 倒序）。公告是 **config 驱动无 DB**（`http/notice/catalog.ts` demo 数据）；
-  **选服目录已迁 WebPlatform**（`@game/webplatform/lib` 的 `area.ts`，端点薄委托 `account.areaList` 接缝）。客户端 token 走 body 传，服务端 `verifyBearer`
-  反查（⛔ 不信客户端传的 userId，G1）。
-  - **区服 = 独立实例**：`IAreaServer.wsUrl` 是**每区服游戏服的连接地址**（`ws(s)://host:port`），客户端
-    选服后连它（Main 把 `ws→http` 传给 Colyseus Client）。demo 全部指向同一 dev server（env
-    `AREA_WS_URL` 覆盖）；真实实现由中心服/调度按 `sId` 返回各实例地址（改 WebPlatform 的 `lib/area.ts` 接配置表即可）。
-  - `h` = serverList 一致性哈希（`areaListHash()` djb2），进服/踢人校验用（对应原项目 `serverList.h`）。
-  - `ul` = 该用户建过角的区（`char_registry`，喂「我的角色」页签）。token 反查出 uid
-    才回填（dev-login 签发的就是真 token，⛔ 无匿名回落——09·G1 不信客户端 sId）。
-- **dev-login（`account/devLogin.ts`）**：本地/CI 登录入口——只绕过 code2session 一跳
-  （devKey → `dev_<devKey>` openid），其余全走真实链路（限流/建号/token/sess/审计），出参与
-  wx-login 同契约（shared `ILoginRes`）。`AUTH_DEV_ENABLED` 控制：默认开发开、生产关，
-  **生产显式开启 = config 加载期拒绝启动**。mock 层已移除（AI 主导开发下假数据层价值 < 维护成本；
-  客户端联调直接跑真栈）。
-- **healthz（`misc/healthz.ts`）**：进程级健康检查（冒烟/探活）；依赖健康另走 smoke:framework。
+游戏进程的 typed router（`http/`，Colyseus 0.17 `createEndpoint` + zod）只装配：
+
+- `POST /pay/wx-notify`：游戏经济回调；当前受 `PAY_ENABLED` 硬闸保护；
+- `GET /version`、`GET /clock/now`、`GET /healthz`：版本、校时与进程探活；
+- `GET /notice/list`：config 驱动公告（`http/notice/catalog.ts` demo 数据，无 DB）；
+- `POST /admin/kick`：GM 直连**当前节点**踢某 uid，使用游戏节点自己的 `ADMIN_API_SECRET`，
+  返回 `{kicked:boolean}`。它不写账号状态，只是封号/撤销 SOP 的第二步。
+
+游戏服**没有**登录、选服、ban/revoke 兼容端点。相应边界如下：
+
+| 调用方 | 服务面 | 当前 v1 |
+|---|---|---|
+| 客户端 | WebPlatform Public HTTPS | `POST /v1/sessions/dev`、`POST /v1/sessions/wechat`、`GET /v1/areas` |
+| 游戏服 | WebPlatform Internal HTTP | `POST /v1/internal/sessions/verify`、`PUT/GET /v1/internal/characters/{userId}/{serverId}` |
+| GM 工具 | WebPlatform Admin HTTP | `POST /v1/admin/accounts/{userId}/ban`、`POST /v1/admin/accounts/{userId}/revoke` |
+
+Public 登录成功返回 `userId/accessToken/isNewAccount`。选服成功返回
+`servers/myServerIds/isOps/hash`；每项使用
+`serverId/name/tag/status/openTime/gameHttpUrl/gameWsUrl`。客户端以必填 `portalUrl` 请求 Public，
+已有 token 时对 `GET /v1/areas` 带 Bearer；选区后分别使用目录给出的 `gameHttpUrl` 与
+`gameWsUrl`，只在 Colyseus join option 边界把 `serverId` 映射成既有 `sId`。
+
+Internal 调用只经 `platform/webPlatformClient.ts`，带
+`x-service-id/x-service-secret`。verify 的 `valid:false` 才是玩家鉴权失败；401/403、超时、5xx、
+熔断和响应契约漂移是配置/基础设施故障，⛔ 不得伪装成 token 过期。账号 API 的完整精确字段、
+错误与健康端点见 [WEBPLATFORM.md §3](WEBPLATFORM.md#3-http-v1-契约)。
 
 ---
 
@@ -182,7 +194,7 @@ shared IUserView（protocol/lobbyRpc/user.ts，类型真源）
 ```
 
 `readUser`（自档）/ `readUserReadonly`（他档冻结视图）/ `loadFields`（HMGET 按需，⛔ 禁 HGETALL R1）。
-建号/活跃索引等框架原语在 `core/userRecord.ts`。
+建角/活跃索引等框架原语在 `core/userRecord.ts`。
 
 ---
 
@@ -200,13 +212,13 @@ shared IUserView（protocol/lobbyRpc/user.ts，类型真源）
 | 卸载重计算任务（铁律 11） | `compute/tasks/<任务>.ts`（纯函数） |
 
 **根层横切原语**：`locks`（两层锁 + fence + 看门狗）· `uow`（UnitOfWork / withUser）·
-`idem`（幂等占位）· `errors`（错误码）· `userRecord`（建号/活跃索引/loadFields）。
+`idem`（幂等占位）· `errors`（错误码）· `userRecord`（建角/活跃索引/loadFields）。
 
 **子模块**：
 - `infra`：双 Redis 桶路由（durable/cache 物理分实例，16384 桶）/ MySQL 池（⚠ 已关
   CLIENT_FOUND_ROWS，affectedRows=changed 语义）/ Lua 注册 + NOSCRIPT 自动重载 / `loopMonitor`
   事件循环「心电图」（index.ts 启动）
-- `auth`：wx 登录 / 不透明 token / 撤销（status + token_hash）
+- `auth`：游戏组 session cache、建连后同区顶号与节点踢人；账号登录/签发/撤销在独立 WebPlatform
 - `economy`：三阶段 outbox / 充值状态机 / relayer 单例进程 / mailer 邮件附件 / catalog
 - `archive`：冷档 freeze/thaw/lazyMigrate/janitor
 - `match`：M8a 结算证据链消费（新写只进 schema v2，同槽双读并排空 legacy → 幂等闸落库；
@@ -262,7 +274,7 @@ shared IUserView（protocol/lobbyRpc/user.ts，类型真源）
 | ✗ | ✓ | FROZEN | thaw |
 | ✓ | ✓ 且 `hwm > redis.fence` | ARCHIVE_NEWER | UNLINK 陈旧 Redis 档，从 archive 恢复（PITR 场景） |
 | ✓ | ✓ 且 `hwm <= redis.fence` | LIVE | 平局判 LIVE（freeze/thaw 中断残留，删 archive 行） |
-| ✗ | ✗ | ABSENT | 查 accounts：有号⇒数据丢失告警拒建空档（USER_DATA_LOST）；无号⇒建号 |
+| ✗ | ✗ | ABSENT | Internal `hasCharacter(userId,serverId)`：有登记⇒数据丢失告警拒建空档（USER_DATA_LOST）；无登记⇒允许建角 |
 
 为什么比 fence 不比存在：Redis 从 2h 前 RDB 恢复，这期间冻结的用户 archive 才最新，按「谁存在」会
 删 archive → 静默回档无报错。
@@ -278,7 +290,7 @@ hash CAS（int 测试「fence 不回退」用例把关）。
 必须单条 Lua 原子（⛔ 禁 pipeline，否则「有 user 无 bag」部分成功被清理任务判 LIVE 删 archive → 背包永久清空）。
 
 **没有任何写路径可隐式创建 `user:{uid}`**（R2）：casHset/applyEffect 前置 `EXISTS`，缺失返回 cold →
-调用方 `ensureLive` 重试。只有「建号」和「thaw」能创建。
+调用方 `ensureLive` 重试。只有「建角」和「thaw」能创建。
 
 **活跃索引**（怎么找冷用户）：`active:lru:{bucket}` ZSET（member=uid, score=lastActiveMs，
 bucket = crc32(uid) % 256）。⚠ hash-tag 是 `{bucket}` 不是 `{uid}`——两次寻址：`indexClientFor(bucket)`
@@ -292,7 +304,8 @@ bucket = crc32(uid) % 256）。⚠ hash-tag 是 `{bucket}` 不是 `{uid}`——�
 ## 9.5 扩容模型 ADR：扩容单位 = 区服实例（⛔ 单区服多节点不在承诺内）
 
 **立场（评审后钉死）**：本框架的水平扩容方式是**加区服实例**——区服 = 进程 = 独立
-Redis 命名空间（`PROJECT_ID`/独立实例），客户端经 `/area/list` 的 `wsUrl` 路由到对应实例。
+Redis 命名空间（`PROJECT_ID`/独立实例），客户端经 WebPlatform Public `GET /v1/areas` 的
+`gameWsUrl` 路由到对应实例（游戏 HTTP 则使用同一目录项的 `gameHttpUrl`）。
 在该模型下，「进程内在线注册表广播」「LobbyRoom 单房 5000 上限」「无 RedisDriver/Presence」
 全部自洽，单进程假设不是债而是设计。
 
@@ -372,7 +385,10 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 ### A — 数据权威与分级
 
 - **A1** 写字段前先查数据分级定真源与写路径，口径「掉了会不会有人投诉/退款」。
-- **A2** 货币/账号/订单真源 = MySQL 同步事务；⛔ 禁 Redis 对货币做权威增量，Redis 只有只读 `cache:currency:{uid}`（TTL 5m miss 回源）。
+- **A2** 货币/订单真源 = 游戏 MySQL 同步事务；账号/session/角色存在性真源 = WebPlatform 独立
+  MySQL，游戏服只能经 Internal HTTP、GM 写操作只能经 Admin HTTP 访问。⛔ 游戏服直连账号库；
+  ⛔ Redis 对货币做权威增量，
+  Redis 只有只读 `cache:currency:{uid}`（TTL 5m miss 回源）。
 - **A3** 玩法热档真源 = Redis，⛔ 不落 MySQL；禁 dirty 集合/flush worker/user_snapshot 任何 write-behind。
 - **A4** 冷档例外——N 天未登录档权威在 MySQL `user_archive`；访问冷 uid 必须先 `ensureLive()`。
 - **A5** `user_snapshot_readonly`/数仓导出 = 非权威、不回写、不参与恢复；GM 改档必走 `withUser`，⛔ 禁旁路直改 Hash。
@@ -381,7 +397,10 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 ### L — 锁与 fence
 
 - **L1** 同一 uid 的玩法写/freeze/thaw/清理全走同一把 `lock:{uid}`（`withUserLock`）；⛔ `thaw:{uid}` 已废弃，禁第二把 per-uid 锁。
-- **L2** 三个 fence 概念禁混用：① per-uid 锁 fence（`fence:{uid}` 计数器 / `user:{uid}.fence` 字段 / `user_currency.last_fence`）② `singleton_lease.fence_token`。（原第三种 `token_epoch` 已随 M12d 简化取消——撤销真相位改为 `status` + `token_hash`。）
+- **L2** fence 概念禁混用：① per-uid 锁 fence（`fence:{uid}` 计数器 /
+  `user:{uid}.fence` 字段 / `user_currency.last_fence`）② `singleton_lease.fence_token`。
+  WebPlatform 返回的 session `issuedAtMs` 是另一条外部单调栅栏，只用于组 session 写入排序，
+  ⛔ 不得与前两者共用计数器或以游戏节点 `Date.now()` 代替。
 - **L3** fence 必须守业务写——MySQL `WHERE last_fence <= :f`，Redis 在 casHset Lua 内 CAS；⛔ 只守租约行不算。
 - **L4** UNLINK/批量恢复 HSET 等不受 fence 守卫的破坏性操作，必须同一条 Lua 内先复检锁归属（`GET lock == myFence`）再执行，返回 lost 即放弃。
 - **L5** 进程内 per-uid 排队用 async mutex（await 队列）；⛔ 禁 `sleep()` 轮询抢锁；跨实例锁有界重试禁无限递归。
@@ -409,7 +428,8 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 ### R — Redis 纪律
 
 - **R1** ⛔ 禁 HGETALL 大 Hash，读用 HMGET 按需；背包拆 `bag:{uid}:{0..3}`；唯一例外 freeze worker（限速+低峰+鲸鱼档 HSCAN）。
-- **R2** 任何写路径不得隐式创建 `user:{uid}`——casHset/applyEffect 前置 EXISTS，缺失返回 cold；只有建号和 thaw 能创建。
+- **R2** 任何写路径不得隐式创建 `user:{uid}`——casHset/applyEffect 前置 EXISTS，缺失返回 cold；
+  只有建角和 thaw 能创建。账号注册属于 WebPlatform，不创建游戏玩法档。
 - **R3** per-user key 一律 `{uid}` hash-tag 同槽；⛔ 跨用户 key（active:lru:{bucket}、match streams）不进同一条 Lua。match v2 的 tag 是完整 legacy key，只用于让双流同实例/slot，绝不表示它能与 per-user key 原子操作。
 - **R4** durable(noeviction) 与 cache(allkeys-lru) 物理分实例；⛔「逻辑库 SELECT n 隔离」是技术错误。
 - **R5** 权威 key（user/bag/fence/applied）无 TTL；协调 key（lock 5s/idem 10s·60s/sess 3d）按 §13 设 TTL；新增 key 必先进 §13。
@@ -437,10 +457,28 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 - **G4** 大包防护在 ws transport 层设 maxPayload（超限断帧不解码），dispatcher 校验只是兜底。
 - **G5** 匿名/optional-auth 的限流与幂等 key 用 sessionId/真实 IP，⛔ 禁 userId=null 塌缩成共享 key。
 - **G6** 未知 type 只回 UNKNOWN_TYPE + 低权重计数，⛔ 不计 flood 不封禁。
-- **G7** 封号 = **账号级「下次登不上」+ 踢在线，两步都必做**（M12d §2.3 SOP）：① 一条 UPDATE 写权威 `status=1` + 清空该 uid 全部区会话（先写 MySQL）→ 新建连接/重登即拒；② **GM 工具逐节点 `POST /admin/kick` 并确认送达** → 在场连接语义化关闭。⛔ 缺 ② 则在场连接可存活至 sess TTL（3d）且**无自动收敛**（快路径纯缓存比对、零回源）；`stream:kick` 只是程序化封号的便捷扇出、无 ack。⛔ 删除组侧 `sess:{uid}:s{sId}` 不能替代踢、⛔ 无 epoch fence、⛔ 绝不删 `user:{uid}`；wx-login 签发前必须 SELECT status。
-- **G7b** **GM 工具契约（运营侧必须实现；封号 SOP 第二步的送达保证靠它，⛔ 不是可选项）**——封号/强制下线时 GM 工具必须：① **先权威后踢**（先 WebPlatform 写 `status/token_hash` 成功，再踢；反序会让用户在权威写入前被踢、随即正常重连回来）；② **遍历全部在役节点** `POST /admin/kick`（`x-admin-secret`）——用户只连在一个节点，故绝大多数节点返回 `kicked:false` 属**正常**、非错误；③ **重试到确认**（踢幂等，不在线即 no-op），最终仍失败**必须告警**——⚠「节点不可达」通常无害（节点挂了其上连接也没了），真正危险的是「节点活着在服务玩家、但 GM 够不到它」；④ **可观测**：能查询/告警「已封禁但仍在线」的用户（依赖 presence/M15 或各节点在线查询）；⑤ 同样适用于强制下线（`revoke`）/注销等一切「需让在场连接立即失效」的运营动作。⛔ 少了它，被封用户的在场连接可存活至 `sess` TTL（3d）且**无自动收敛**（快路径纯缓存比对、零权威回源）。详见 DUAL_MODE §2.3；**运营侧实现规格见 [GM-TOOL-SPEC.md](GM-TOOL-SPEC.md)**。
-- **G7c** **单端语义的作用域 = `(账号, 区)`**（M12e，⚠ 从"账号"收窄而来）：会话权威在 `account_sessions`（PK `(user_id, server_id)`），token **只对签发它的那个区有效** —— 同区第二次登录顶掉前一个，**不同区互不影响**（玩家可在 1 区与 107 区各有一个在线角色）。`writeGroupSess` 用 `account_sessions.token_issued_at` 作单调栅栏并返回 `written/unchanged/stale`：更新登录才 `written`；同 token 同时刻的多连接/重连是合法 `unchanged`；迟到旧登录或同时刻异 hash 是 `stale`，不得覆写、不得踢赢家，strict 建连还必须拒绝该请求。只有 `written` 且旧 tokenHash 不同时才踢旧连接（`reason=replaced`），踢只作用于**同区**。⚠ 因每个区只由一个物理组承载 ⇒ 顶号的踢**永不需要跨组**（原待办 A3 因此消解）。⛔ **封号仍是账号级**：`status=1` + 清光全部区的会话行 ⇒ 各区在线连接仍靠 GM 逐节点踢（G7b）。踢一律 **先推 `auth.forceLogout{reason}` 再用语义化关闭码关连接**（`KICK_CLOSE_CODE` 4901 封禁/4902 顶号/4903 强制下线（⛔ 避开 Colyseus 保留区 4000–4010/4210–4217）），客户端 `onLeave(code)` 兜底判因。⚠ 要支持**同区多端同时在线**仍须扩模型（per-device 行），属数据模型变更、非加字段。
-- **G8** session_key 仅服务端持有绝不下发；wx-login 出参 ⛔ 禁含 openid/unionid/session_key。
+- **G7** 封号 = **账号级「下次登不上」+ 踢在线，两步都必做**：① GM 先调用 WebPlatform Admin
+  `POST /v1/admin/accounts/{userId}/ban`，由账号库事务封禁、作废全部区权威 session 并审计；
+  ② GM 再直连**每个在役游戏节点** `POST /admin/kick` 并确认 HTTP 200。在场连接才会语义化关闭。
+  ⛔ 缺 ② 则连接可存活至组 `sess` TTL（3d），因为消息快路径不回源；⛔ 删除组缓存不能代替踢；
+  ⛔ 绝不因封号删除 `user:{uid}`。
+- **G7b** **GM 工具契约**：Admin 请求带独立的 WebPlatform `x-admin-secret`、
+  `x-operator-id` 与 body `{operationId,reason}`；网络不确定时复用同一 `operationId`。
+  权威成功后刷新在役节点清单，对每个节点使用**另一套** `ADMIN_API_SECRET` 调
+  `POST /admin/kick`，请求 `{uid,reason:"banned"|"revoked"}`。`kicked:false` 只是该节点未命中，
+  属正常；节点活着却不可达才是部分失败，必须保留进度、有限重试并告警。⛔ 不经负载均衡器抽样，
+  ⛔ 不把 best-effort `stream:kick` 当送达证明。完整实现规格见
+  [GM-TOOL-SPEC.md](GM-TOOL-SPEC.md)。
+- **G7c** **单端语义作用域 = `(账号, serverId)`**：权威 `account_sessions` 位于 WebPlatform
+  账号库；同区再次登录替换旧 token，不同区互不影响。strict verify 成功返回的 `issuedAtMs`
+  来自该权威 session，`writeGroupSess` 以它作单调栅栏并返回 `written/unchanged/stale`：
+  更新登录才 `written`；同 token 同时刻的多连接/重连是合法 `unchanged`；迟到旧登录或同时刻异
+  hash 是 `stale`，不得覆写、不得踢赢家，strict 准入必须拒绝。只有 `written` 且旧 tokenHash
+  不同时才踢同区旧连接（`reason=replaced`）。ban/revoke 作废全部区权威 session 后，各区既有连接
+  仍靠 G7b 逐节点踢。踢一律先推 `auth.forceLogout{reason}` 再用语义化关闭码 4901/4902/4903
+  关连接（⛔ 避开 Colyseus 保留区）；同区多设备并存需另扩 per-device 模型。
+- **G8** 微信 `session_key` 仅 WebPlatform 持有，Public 登录响应只返回
+  `userId/accessToken/isNewAccount`，⛔ 下发 `openid/unionid/session_key`。
 - **G9** handler 超时用 Promise.race 无法真正取消——关键写副作用必须数据层幂等/CAS（I1/L3），⛔ 不依赖应用层取消。
 
 ### K — 结算与流
@@ -460,7 +498,9 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 - **F1** 权威判定用 fence 新鲜度（archive.fence_hwm vs user.fence），⛔ 不是「谁存在」；平局判 LIVE。
 - **F2** `COLD_DAYS(90) >> max(OUTBOX_RETENTION, APPLIED_RETENTION)`；冻结前置闸（无 status 0/2 的 outbox 行）锁内复查；applied 成员一并归档。
 - **F3** thaw 恢复必须单条 Lua 原子（⛔ 禁 pipeline）；fence_hwm 同时写计数器和 hash 字段。
-- **F4** ABSENT 时查 accounts——有号 = 数据丢失告警 + 拒建空档（USER_DATA_LOST）；无号才建号；负缓存读点在 EXISTS user 之后，建号成功立即失效。
+- **F4** ABSENT 时经 Internal `GET /v1/internal/characters/{userId}/{serverId}` 查询本区角色登记：
+  `exists=true` = 数据丢失告警 + 拒建空档（USER_DATA_LOST），`false` 才允许建角；WebPlatform
+  不可达时不得猜成 `false`。负缓存读点在 EXISTS user 之后，建角成功立即失效。
 - **F5** FREEZE_ENABLED 按内存水位（>0.6）启用，⛔ 不按注册数；速率 per-instance；PITR 恢复后先停 worker 做 fence 对账。
 
 ### S — Schema 演进
@@ -475,12 +515,13 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 > 新增 key/错误码/常量**先进本节表**再进代码（铁律 8）。错误码的代码家在 shared
 > `protocol/lobbyRpc/envelope.ts` 的 `RPC_ERR_CODES`（双端单源），本节是文档源。
 
-### 三个 fence 概念（禁共用同一计数器，L2）
+### 并发栅栏概念（禁共用同一计数器，L2）
 
-| 概念 | Redis | MySQL | TS |
+| 概念 | Redis | 权威源 | TS |
 |---|---|---|---|
 | per-uid 并发写 fence | `fence:{uid}` 计数器 + `user:{uid}.fence` 字段 | `user_currency.last_fence` | `uow.fence` |
 | 单例任务领导权 fence | — | `singleton_lease.fence_token` | `lease.fenceToken` |
+| WebPlatform session 签发顺序 | `sess:{uid}:s{sId}.issuedAt` 仅作组缓存 | WebPlatform 账号库 `account_sessions.token_issued_at` | Internal verify 的 `issuedAtMs` |
 
 ### Redis key（durable 实例：noeviction + AOF）
 
@@ -495,14 +536,16 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 | `applied:{uid}` | ZSET | 无 | 幂等已 apply 集合（member=op_id, score=applyMs，I5 裁剪） |
 | `lock:{uid}` | STRING | 5s | 跨实例用户锁（值=fence，SET NX PX） |
 | `idem:{type}:{uid}:{clientReqId}` | STRING | pending 10s / done 60s | 幂等占位（I1） |
-| `sess:{uid}:s{sId}` | HASH | 3d | 组侧按区会话缓存（tokenHash/**issuedAt**/loginTs/connId/gwNode）。快路径**纯 hash 比对、零权威回源**；在线撤销靠踢（M12d §2.3 SOP）。⚠ **`issuedAt` = 写入栅栏**（A1），来自权威 `account_sessions.token_issued_at`（同 `(uid,sId)` 严格递增），⛔ 别用 `Date.now()` 顶替。`writeGroupSess` 单条 Lua 三态：更大时刻=`written` 并在 hash 变化时顶号；同时刻同 hash=`unchanged`（合法多连接/重连）；更小时刻或同时刻异 hash=`stale`（不覆写、不踢，strict 准入拒绝） |
+| `sess:{uid}:s{sId}` | HASH | 3d | 组侧按区会话缓存（tokenHash/**issuedAt**/loginTs/connId/gwNode）。快路径**纯 hash 比对、零权威回源**；在线撤销靠 GM 逐节点踢。⚠ **`issuedAt` = 写入栅栏**，只取 Internal verify 返回的 `issuedAtMs`；其权威值在 WebPlatform 账号库 `account_sessions.token_issued_at`（同 `(uid,sId)` 严格递增），游戏服不得查表，⛔ 别用 `Date.now()` 顶替。`writeGroupSess` 单条 Lua 三态：更大时刻=`written` 并在 hash 变化时顶号；同时刻同 hash=`unchanged`（合法多连接/重连）；更小时刻或同时刻异 hash=`stale`（不覆写、不踢，strict 准入拒绝） |
 | `guild:evt:seq:{gid}` | STRING | 无 | 工会事件 seq（INCR，§10）。⚠ gid 仅限 `core/guild/catalog`（join 硬校验）——INCR 隐式铸键 + 无 TTL + noeviction，键面必须有硬上限 |
 | `guild:evt:log:{gid}` | LIST | 无（LTRIM 上限） | 工会事件近窗（gid 约束同上） |
 | `active:lru:{bucket}` | ZSET | 无 | 活跃索引（找冷用户，bucket 非 uid hash-tag） |
 | `stream:match` | STREAM | 无（XTRIM MINID，K6） | **legacy 结算流，仅排空、禁止新 producer 写**；保留供滚动升级期间新 consumer 兼容 c8/f91 存量 |
 | `stream:match:v2:{<完整 legacy 运行时 key>}` | STREAM | 无（XTRIM MINID，K6） | 新结算证据链，顶层 `schemaVersion=2`；实际 tag 如 `{gono_stream:match}`，刻意锚定完整旧 key 以同实例/slot，⛔ 不得简写成 `{stream:match}` |
 | mail 唤醒流 | STREAM | 无（XTRIM MINID） | 邮件实时唤醒（权威在 MySQL mail 表，A6） |
-| `stream:kick` | STREAM | 无（XTRIM MINID，K6） | **踢人流**（M12d §2.3；coord 实例 `REDIS_COORD_URL`，dev 复用 durable）。广播 `{uid, reason[, exceptHash]}` 触发各节点自筛踢；**best-effort、无 ack**（权威在 `accounts.status/token_hash`；⛔ **漏踢无自动收敛**，送达保证走 GM `/admin/kick`，09·G7b） |
+| `stream:kick` | STREAM | 无（XTRIM MINID，K6） | 组内顶号等程序化踢人的控制流（coord 实例 `REDIS_COORD_URL`，dev 复用 durable）。广播 `{uid, reason[, exceptHash]}` 触发节点自筛踢；**best-effort、无 ack**，⛔ 不能代替 GM 对所有在役节点直连 `/admin/kick` 的送达确认（09·G7b） |
+| `repair:character:due:{character-repair}` | ZSET | 无 | WebPlatform 角色登记修复 intent 的 durable 调度真源；member=`JSON [userId,serverId]`，score=`nextAttemptMs`。建档后的 HTTP PUT 失败必须写入；worker **远调成功后才 ZREM**，崩溃或多实例并发最多造成幂等重复 PUT、不得丢 intent |
+| `repair:character:attempts:{character-repair}` | HASH | 无 | 与 due ZSET 同 slot 的失败次数（field=同一 member，value=attempts），用于有界指数退避与告警；成功与 due member 在同一 MULTI 中清除 |
 
 ### Redis key（cache 实例：allkeys-lru，物理独立）
 
@@ -510,9 +553,9 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 |---|---|---|---|
 | `cache:currency:{uid}` | HASH | 5m | 货币只读缓存（真源 MySQL，miss 回源） |
 
-### user:{uid} 字段（建号基线 + 追加）
+### user:{uid} 字段（建角基线 + 追加）
 
-建号基线：`star / maxRound / wins / losses / stamina / ver / fence / schemaVersion`。追加字段：
+建角基线：`star / maxRound / wins / losses / stamina / ver / fence / schemaVersion`。追加字段：
 
 | 字段 | 说明 |
 |---|---|
@@ -525,33 +568,35 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 
 | code | 触发 | 客户端处置 |
 |---|---|---|
-| `AUTH_REQUIRED` | 无 token / token 无效 | 重新登录 |
-| `AUTH_EPOCH_STALE` | *（保留码，M12d 后服务端不再产出——撤销走 AUTH_REQUIRED/ACCOUNT_BANNED）* | 重新登录 |
-| `ACCOUNT_BANNED` | accounts.status=1 | 提示封号 |
+| `AUTH_REQUIRED` | strict verify 返回 token 无效，或组 session 缺失/不匹配 | 重新登录 |
+| `AUTH_EPOCH_STALE` | *保留码；现行服务端不再产出* | 重新登录 |
+| `ACCOUNT_BANNED` | WebPlatform verify 返回 `valid:false, reason:"BANNED"` | 提示封号 |
 | `RATE_LIMITED` | 令牌桶耗尽 | 退避重试 |
 | `INVALID_PAYLOAD` | zod 校验失败 | 修参（bug） |
 | `UNKNOWN_TYPE` | 路由表无此 type | 灰度期忽略，⛔ 不封禁（G6） |
 | `INSUFFICIENT_BALANCE` | 余额不足 | 引导充值 |
-| `BUSY` | 抢 `lock:{uid}` 失败 | 同 clientReqId 自动重试。⚠ **登录也产出它**（HTTP 409）：登录与 freeze/thaw 抢同一把锁（L1），而 freeze/thaw 开看门狗可按秒持有、登录只有 `LOCK_RETRY_MAX` 有界重试 ⇒ 客户端 `LoginLogic` 退避重试**一次**后报「系统繁忙」，⛔ 不报「登录失败」（HANDOFF §8.7） |
+| `BUSY` | 游戏写路径抢 `lock:{uid}` 失败 | 同 clientReqId 有界重试；Public 登录错误属于 WebPlatform HTTP 契约，不走此 ws-RPC 码 |
 | `STALE_FENCE` | fence 被更高值超越 | 同 clientReqId 自动重试 |
 | `IN_PROGRESS` | 幂等 pending 命中 | 短轮询 |
 | `GRANTING` | 发放中（outbox 三阶段） | `shop.queryOp` 轮询，⛔ 不「超时即失败」 |
 | `THAWING` | 冷档解冻中/限流 | 比 IN_PROGRESS 更长退避 |
-| `USER_DATA_LOST` | 有号但热/冷档全无（F4） | 报错告警，⛔ 不建空档 |
+| `USER_DATA_LOST` | WebPlatform 显示本区有角色登记，但热/冷档全无（F4） | 报错告警，⛔ 不建空档 |
 | `ORDER_MISMATCH` | 支付回调金额/订单不符 | 400 |
 | `INTERNAL` | 未映射异常 | 通用错误 |
 
-**HTTP-only 错误码**（⛔ **不进** shared `RPC_ERR_CODES`：那是 ws-RPC 信封的联合类型，往里加会 churn 客户端 union 与协议指纹，同 `AUTH_EPOCH_STALE` 保留码的处置理由）：
+**游戏 HTTP-only 错误码**（⛔ **不进** shared `RPC_ERR_CODES`：那是 ws-RPC 信封的联合类型；
+WebPlatform Public/Internal/Admin 错误另以 `@gono/webplatform-contract` 为准）：
 
 | 码 | 何时 | HTTP | 客户端处置 |
 |---|---|---|---|
-| `NOT_FOUND` | 端点按部署模式关闭（`ACCOUNT_MODE=http` 下的 in-process 登录端点、`AUTH_DEV_ENABLED=0` 下的 dev-login） | 404 | 走另一形态的入口 |
 | `NOT_IMPLEMENTED` | 功能未上线（`PAY_ENABLED=0` 下的 `/pay/wx-notify`） | 501 | 提示未开放，⛔ 别当鉴权失败重试 |
 
 ### Lua 脚本（R7：EVALSHA + NOSCRIPT 重载）
 
 `casHset`（EXISTS 前置 + fence CAS + bump ver）· `applyEffect`（EXISTS + op_id 去重，无 fence）·
-`casDel`（值匹配才 DEL 释放锁）· `tokenBucket`（时钟在 Lua 内 `TIME`）· freeze/thaw 恢复复检锁 Lua。
+`casDel`（值匹配才 DEL 释放锁）· `tokenBucket`（时钟在 Lua 内 `TIME`）·
+`characterRepairReschedule`（due member 存在才原子推进 attempts/有界 nextAttemptMs，防并发成功清理后被失败分支复活）·
+freeze/thaw 恢复复检锁 Lua。
 
 ### 关键常量与环境变量（`core/infra/config.ts`）
 
@@ -571,16 +616,20 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 | `SCHEMA_VERSION` | 1 | 玩法档 schema 版本（S1 懒迁移） |
 | `MATCH_STREAM_SCHEMA_VERSION` | 2 | match v2 stream 顶层证据版本；与客户端 `PROTOCOL_VERSION`、玩法档 `SCHEMA_VERSION` 无关，值非精确十进制 `2` 即拒 |
 | `PROJECT_ID / REDIS_KEY_PREFIX` | 根 .env 的 PROJECT_ID（缺省 gono）/ `<PROJECT_ID>_` | 多项目共用栈的命名空间：Redis 键前缀 + MySQL 库名 `game_<PROJECT_ID>`；校验 `^[a-z][a-z0-9_]{0,31}$`，非法即拒绝启动（config-guard.test 机检） |
-| `AUTH_DEV_ENABLED` | 开发 1 / 生产 0 | dev-login 开关；生产显式开启 = 加载期拒绝启动（config-guard 同族 fail-fast） |
 | `PORT` | 2568（根 .env 可覆盖） | 开发端口，`index.ts` 显式传 `listen(app, PORT)`；多项目并行时各项目错开；Colyseus 默认 2567 常被占用故不用之。校验纯整数 1–65535，服务端与 devEnv 生成器同一规则、非法即失败（config-guard.test 机检） |
-| `WX_APPID / WX_SECRET` | env | 微信凭证（KMS 注入，不进代码库） |
-| `REDIS_COORD_URL` | = `REDIS_DURABLE_URL` | 控制总线 coord Redis（撤销流；dev 复用 durable、prod 物理隔离 HA。M12d §2.3） |
-| `KICK_STREAM_TRIM_MS` | 24h | 踢人流 MINID 裁剪窗（踢是即时动作，老事件无价值，M12d） |
-| `ACCOUNT_MODE` | `in-process` | 账号平面实现选择（`in-process` 内嵌 lib / `http` 走 WebPlatform）。⚠ `accountClient` **模块加载期一次性求值**，⛔ 不支持运行期切换。见 [WEBPLATFORM.md](WEBPLATFORM.md) |
-| `WEBPLATFORM_BASE_URL` | `http://localhost:2570` | `ACCOUNT_MODE=http` 时 WebPlatform 地址（httpAccount 每请求现读） |
+| `REDIS_COORD_URL` | = `REDIS_DURABLE_URL` | 游戏组控制总线 coord Redis（顶号等程序化踢人流；dev 复用 durable、prod 物理隔离 HA） |
+| `KICK_STREAM_TRIM_MS` | 24h | 游戏组踢人流 MINID 裁剪窗（踢是即时动作，老事件无价值） |
+| `WEBPLATFORM_INTERNAL_URL` | `http://127.0.0.1:2571` | 游戏服访问独立 WebPlatform Internal API 的无凭据 http(s) origin；不提供本地账号实现回退 |
+| `WEBPLATFORM_SERVICE_ID / _SECRET` | `game-server` / 非生产 `dev-service-secret` | Internal API 服务身份；生产缺 secret 加载期 fail-fast |
+| `WEBPLATFORM_CONNECT_TIMEOUT_MS / _REQUEST_TIMEOUT_MS` | 200 / 1000 | TCP/TLS 建连预算 / 含一次有限重试的总预算 |
+| `WEBPLATFORM_BREAKER_FAILURES / _OPEN_MS` | 5 / 5000 | 连续基础设施失败阈值 / 熔断打开时间；不得映射成玩家 token 无效 |
+| `CHARACTER_REPAIR_POLL_MS` | 1000 | 网关内角色登记修复 worker 的轮询间隔 |
+| `CHARACTER_REPAIR_BATCH_SIZE / _CONCURRENCY` | 20 / 4 | 单轮最多取数 / HTTP PUT 并发上限；多实例可重复处理，PUT 幂等 |
+| `CHARACTER_REPAIR_BACKOFF_BASE_MS / _MAX_MS` | 1000 / 300000 | 连续失败指数退避的基数 / 上限；intent 无最大重试次数，直至成功 |
+| `CHARACTER_REPAIR_ALERT_ATTEMPTS` | 5 | 达到该失败次数及其整数倍时输出积压告警（不吞 WebPlatform/Redis 异常） |
 | `ADMIN_API_SECRET` | 空（=端点关闭） | GM 内部端点 `/admin/kick` 共享密钥（`x-admin-secret`）。**未配置即 fail-closed**；封号 SOP 第二步依赖它。⚠ 比较走恒时 `safeSecretEqual`（`core/auth/session.ts`），⛔ 不用 `!==` |
 | `PAY_ENABLED` | `0`（=端点 501） | `/pay/wx-notify` 总开关。⚠ 支付链尚不具备上线条件（无下单端点、共享密钥而非 APIv3 验签、无对账，见 `todo.md` 支付条目）⇒ 本开关是**防误开**；501 排在密钥闸**之前**，把「功能未上线」与「没鉴权(401)」分开 |
-| `FREEZE_ENABLED` | `0` | 冷档冻结开关（09·F5）。⚠ **与 `GROUP_ZONES` 非空互斥，加载期 fail-fast**：`user_archive` 未按区、`active:lru`/freeze 未区化（DUAL_MODE archive 步），多区下冷档会串区 |
+| `FREEZE_ENABLED` | `0` | 冷档冻结开关（09·F5）。⚠ **与 `GROUP_ZONES` 非空互斥，加载期 fail-fast**：`user_archive` 未按区、`active:lru`/freeze 未区化；多区启用前必须先完成冷档区化 |
 
 ---
 
@@ -594,7 +643,7 @@ gid ∈ 目录**——事件键是 INCR/LPUSH 隐式创建的无 TTL 键且 dura
 | M0 前置验证 | 三硬闸：Colyseus 0.17 指定节点建房 + RedisDriver/Presence；货币事务 p99 < LOCK_TTL；填验收阈值表 |
 | M1 基础设施 | 双 Redis + MySQL(binlog_format=ROW) + 全 DDL；桶路由；Lua 注册；singleton_lease 预置三行 |
 | M2 核心原语 | locks（两层锁+fence+看门狗）/ 四条 Lua / uow+withUser / idem / userStore（**最重要**） |
-| M3 鉴权 | wx-login → 建号 → 不透明 token → sess；撤销（status/token_hash）；登录限流 |
+| M3 鉴权 | WebPlatform Public 登录签发不透明 token；游戏服 Internal strict verify → 组 sess；Admin 撤销后 GM 逐节点踢 |
 | M4 存量迁移 | ⚠ **Arthur 专属，本项目 N/A**（无旧账号体系，无 SQLite 存量） |
 | M5 网关 | LobbyRoom + dispatcher 信封/中间件链；user.getInfo/getProfile + 写样板；邮件收件箱；推送雏形 |
 | M6 货币+outbox+充值+邮件附件 | currency 事务 / 三阶段 outbox / 充值状态机 / relayer 独立进程 / claimAttach |

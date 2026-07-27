@@ -1,10 +1,10 @@
 /**
- * 选服列表 HTTP 调用面（真实端点，直接返回数据体）。走**门户**（WebPlatform /area/list，DUAL_MODE §2.7）：
- * split 时命中账号服务的目录，dev/内嵌回退游戏服（同址）。token 可选：带上则 best-effort 回填最近登录区服 ul。
+ * WebPlatform Public 选服目录。GET /v1/areas 的用户 token 是可选 Bearer：
+ * core/http 已持有登录 token 时自动带上，用于 best-effort 回填 myServerIds。
  */
-import type { IAreaListRes } from "../../shared/index";
+import { WebPlatformPath, type WebPlatformAreaListResponse } from "../../shared/index";
 import { portalRequest } from "../../core/http";
 
-export function fetchAreaList(token?: string): Promise<IAreaListRes> {
-    return portalRequest<IAreaListRes>("POST", "/area/list", token ? { token } : {});
+export function fetchAreaList(): Promise<WebPlatformAreaListResponse> {
+    return portalRequest<WebPlatformAreaListResponse>("GET", WebPlatformPath.ListAreas);
 }

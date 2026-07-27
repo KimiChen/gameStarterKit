@@ -29,13 +29,13 @@ export class InsufficientBalanceError extends Error {
   constructor(msg = "insufficient balance") { super(msg); this.name = "InsufficientBalanceError"; }
 }
 
-/** accounts.status = 1。 */
+/** WebPlatform verify 返回 BANNED。 */
 export class BannedError extends Error {
   constructor(msg = "account banned") { super(msg); this.name = "BannedError"; }
 }
 
-// EpochStaleError 已随 M12d 简化退休（撤销真相位只剩 status + token_hash，无 epoch fence）：
-// 撤销的存量 token 一律走 AuthRequiredError（hash 不匹配）/ BannedError（status=1）。
+// EpochStaleError 已随 M12d 简化退休（撤销真相位是 accounts.status + account_sessions 行，无 epoch fence）：
+// 撤销的存量 token 走 AuthRequiredError（session 不存在/不匹配），封禁账号走 BannedError（status=1）。
 // shared 的 `AUTH_EPOCH_STALE` 错误码**保留不删**（客户端 union 少动；服务端不再产出）。
 
 /** 无 token / token 无效。 */
@@ -73,7 +73,7 @@ export class ThawingError extends Error {
   constructor(msg = "user thawing") { super(msg); this.name = "ThawingError"; }
 }
 
-/** accounts 有号但热档与冷档全无（09·F4）：⛔ 不建空档，立即告警。 */
+/** WebPlatform 角色登记存在但热档与冷档全无（09·F4）：⛔ 不建空档，立即告警。 */
 export class UserDataLostError extends Error {
   constructor(msg = "user data lost") { super(msg); this.name = "UserDataLostError"; }
 }

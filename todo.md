@@ -102,27 +102,29 @@
   切分保持现状（Main 拆战斗态、pages 做导航）。
 - **触发条件**：无（随 D2 状态机做最省，但可独立先行）。
 
-## A4 · 部署形态的测试覆盖：CI 只初始化一个库 【中】
+## A4 · 独立 WebPlatform 的跨仓部署测试覆盖 【中】
 
-- **现状**：split 的 e2e 在**同进程同库**跑（测试进程内起 WebPlatform Fastify、两侧共用一个 MySQL）
-  ⇒ 它证的是**接缝正确**，⛔ 证不了真 split 的部署形态（跨进程、独立账号库、LB 之后）。
-  docs 里两处「split 全链 e2e 绿」已按此收窄。
-- **⚠ 别读成"集成测试没用"**：现有集成测试对 in-process 形态完全有效，失效的只是**对 split 的推论**。
-- **✅ 目标形态已拍板（2026-07-26）**：**独立进程 + 独立数据库**——即 WebPlatform 单独起进程、
-  账号库与组库**物理分离**。⇒ A4 要覆盖的正是这个形态，⛔ 不必再为"要不要分库"留分支。
-- **要做**：CI 起两个库（账号库/组库分开）+ 跨进程拉起 WebPlatform 的一条冒烟；与「两物理组测试拓扑」
-  （DUAL_MODE §5.4/§6.3）可合并排期。
-- **⚠ 分库后会立刻暴露的既有待办**：**W2**（组侧 `banUser` 的 `auditLogin` 写的是**组库**，
-  分库后封号审计就真的落错库了）；`db-bootstrap` 目前只建一套 schema，需要拆出账号库那半
-  （回问 Q8「哪些表归 WebPlatform 库、由谁提供建库脚本」——这条不定，split 就没有可执行的部署路径）。
-- **触发条件**：split 形态启用前。
+- **现状**：游戏仓已改为 HTTP-only client，游戏库 bootstrap 已拒绝账号表，旧共进程账号测试已删除；
+  但当前 CI 尚不能证明“独立 WebPlatform 进程 + 独立账号库 + 游戏进程无账号库权限”整条部署链成立。
+  游戏仓的 strict onAuth、`ensureCharacter`、F4 用例也缺契约一致的 HTTP test double/client 注入。
+- **要做**：
+  1. 独立仓先跑 migration + 账号领域/契约测试，并产出固定版本镜像与契约包；
+  2. 跨仓 CI 起 `webplatform_gono` 与 `game_gono` 两个物理数据库，分别使用最小权限账号；
+  3. 拉起 WebPlatform Public/Internal 与游戏服两个独立进程，跑
+     `POST /v1/sessions/dev → GET /v1/areas → POST /v1/internal/sessions/verify → 进大厅/战斗` 冒烟；
+  4. 增加负验证：游戏 DSN 查不到账号表、游戏安全身份不能调 Admin、WebPlatform 凭证不能访问游戏库；
+  5. 给游戏集成测试提供契约 HTTP stub 或可 reset 的 `WebPlatformClient` 工厂，⛔ 不重新引入跨仓源码
+     import 或直写账号 SQL。
+- **触发条件**：独立仓首次联调/合入前；生产部署模板启用前必须完成跨进程、分库冒烟。
 
 ## wx.login 微信侧接入 【小，编号 D5】
 
-- **现状**：服务端 /account/wx-login（code2session 全链）就绪，缺 WX_APPID/WX_SECRET 凭证；
-  客户端 net/http/account.wxLogin(code) 函数就绪，pages.ts 现走 devLogin。
-- **要做**：小游戏环境检测 → wx.login 取 code → wxLogin(code)；devLogin 保留为非微信环境
-  （Creator 预览/CI）路径。凭证走 env 注入（KMS，不进代码库）。
+- **现状**：独立 WebPlatform Public `POST /v1/sessions/wechat` 契约已定，客户端
+  `net/http/account.wxLogin(code,serverId)` 已就绪；`pages.ts` 当前仍走
+  `POST /v1/sessions/dev`。微信凭证只归独立仓。
+- **要做**：小游戏环境检测 → `wx.login` 取 code → 带所选 `serverId` 调 `wxLogin`；
+  `devLogin` 只保留 Creator 预览/CI。`WX_APPID/WX_SECRET` 由 WebPlatform 部署通过 KMS 注入，
+  不进入游戏仓或客户端。
 - **触发条件**：拿到微信小游戏凭证。
 
 ## 结算链 · 从「可运行」到生产闭环 【中】
@@ -147,24 +149,26 @@
 
 ## 区服 openTime 服务端硬校验 【小】
 
-- **现状**：客户端三处已统一为 shared `isServerEnterable(s)`（`t!==9 && openTime>0`，
-  protocol/http.ts）：pickDefaultServer 跳过不可进服（全不可进兜底 al[0] 展示位）、
+- **现状**：客户端三处已统一为 `logic/areaDirectory.ts` 的 `isServerEnterable(s)`
+  （`status!=="maintenance" && openTime>0`）：pickDefaultServer 跳过不可进服
+  （全不可进兜底 `servers[0]` 展示位）、
   AreaListLogic.choose 拦截（运维模式 isOps 豁免——维护/未开服的开服前验证可选中）、
   pages.ts onEnter 进服闸（同豁免，文案分「维护中」「未开服」）。**但这些全是 UX**：
   服务端在房间准入上对维护态/openTime 零校验，绕过客户端直连仍可进。
 - **要做**：每个游戏服实例由生产配置注入可信 `SERVER_ID`（当前尚无），启动时从服务端目录
-  解析自身区服，GameRoom/准入层按该目录项的维护态/openTime 做硬校验，**直接复用 shared
-  `isServerEnterable`**（⛔ 不信客户端传入的 sId/t/openTime，客户端值最多用于一致性核对）。
+  或独立 WebPlatform 的可信 Internal 目录投影解析自身区服，GameRoom/准入层按该目录项的
+  `status/openTime` 做硬校验。判据应下沉为游戏服可复用的纯函数
+  （⛔ 不信客户端传入的 `sId/status/openTime`，客户端值最多用于一致性核对）。
   补绕过客户端直接进房的服务端拒绝用例；生产缺失/未知 `SERVER_ID` 应拒绝启动。
 - **触发条件**：部署配置（实例→区服映射的注入方式）确定后。
 
 ## 发布期硬校验 · 生产 URL / HTTPS / 微信合法域名 【小中】
 
-- **现状**：serverUrl/devEnv 全链默认 `http://localhost`；无任何「生产构建禁止 localhost/
-  http/ws 明文」的机检。微信真机要求 https/wss + 后台配置合法域名——现在只能靠人记得。
-- **要做**：构建/发布期校验脚本（生产构建时：serverUrl 与 area catalog 的 wsUrl 必须
-  https/wss、非 localhost/内网段；给出微信后台需登记的域名清单）；服务端生产启动断言
-  已有先例（AUTH_DEV_ENABLED/PROJECT_ID），客户端侧缺同款。
+- **现状**：客户端 `portalUrl` 已必填且不回退，区服目录已拆分 `gameHttpUrl/gameWsUrl`；
+  但仍无“生产构建禁止 localhost、http/ws 明文”的机检。微信真机要求 https/wss + 后台合法域名。
+- **要做**：构建/发布期校验脚本：Public `portalUrl`、每区 `gameHttpUrl`、`gameWsUrl`
+  分别必须是 https/https/wss、非 localhost/内网段，并输出微信后台需登记的完整域名清单；
+  独立 WebPlatform 的 areas 配置加载与客户端生产构建两侧都校验，防单侧漏网。
 - **触发条件**：首次真机/提审前。
 
 ## 微信小游戏真实产物构建 CI 【中】
@@ -184,12 +188,14 @@
 - `/monitor` 无鉴权常挂——按 NODE_ENV 收权或加 basic auth（playground 已收）；
 - SIGTERM 优雅停机：排空在途请求 + 房间收尾 + Redis/MySQL 连接关闭（进程不持权威状态，
   drain 语义见 SERVER.md §3）。
-  **⚠ 网关不是裸奔**——Colyseus 默认注册 SIGTERM→房间收尾；真正空白的是
-  **WebPlatform / relayer / freezeWorker 三个入口**，别把工作量估成四份；
+  **⚠ 网关不是裸奔**——Colyseus 默认注册 SIGTERM→房间收尾；本游戏仓仍需补
+  relayer / freezeWorker / settle 等独立入口。WebPlatform 的优雅停机归独立仓验收；
 - readiness（依赖就绪）/liveness 端点。**⚠ 小修正**：WebPlatform 的 `/healthz` 已带 `SELECT 1`，
-  缺的是**游戏服侧**与统一语义（游戏服 `/healthz` 目前只是进程活着）；
-- **五**进程编排模板：网关 + relayer + freeze-worker + settle **+ WebPlatform**（docker compose 起步）。
-  ⚠ 此前本行漏了 WebPlatform（split 形态下它是登录入口，漏了就没有可执行的部署路径）。
+  已被独立仓 v1 的 `/livez`（纯存活）与 `/readyz`（MySQL + migration）契约取代；
+  游戏服侧仍缺统一语义（当前 `/healthz` 主要证明进程活着）；
+- 编排分成两个发布单元：本仓网关 + relayer + freeze-worker + settle；独立仓
+  WebPlatform Public/Internal + migration job。联调 compose 可以组合两仓镜像，但游戏仓
+  不把 WebPlatform 源码或启动命令重新纳入 workspace。
 - **触发条件**：第一次真实部署前。
 
 ## E2 · MySQL migration 版本表 + 分区轮转 【中】
@@ -288,45 +294,47 @@
   **端到端那条做过变异测试**（`onCreate` 不读 sId 即红，用真实 `node --import tsx` loader 验的）。
 
 - ~~**A3** 跨物理组顶号不收敛~~ → **2026-07-26 用户拍板：改模型，⛔ 不重开跨组协调层。**
-  单端语义的作用域从**账号**收窄到 **(账号, 区)**（M12e）：会话权威从 `accounts.token_hash` 单列
-  搬到新表 `account_sessions`（PK `(user_id, server_id)`），token **只对签发它的那个区有效**。
+  单端语义的作用域从**账号**收窄到 **(账号, 区)**（M12e）：会话权威在独立 WebPlatform 账号库的
+  `account_sessions`（PK `(user_id, server_id)`），token **只对签发它的那个区有效**。
   ⇒ 某个区的全部会话必然落在**承载该区的那一个物理组**内（每组 GROUP_ZONES 固定、区的经济/冷档
   分区也在该组库）⇒ **顶号的踢人永远不需要跨组送达** —— A3 是被**取消**的，⛔ 不是"修好了"。
-  ⚠ **封号不受影响、仍是账号级**（`status=1` + 清光该 uid 全部区的会话行）⇒ 各区在线连接仍靠
-  GM 逐节点 `/admin/kick`（09·G7b）。**跨组踢人这件事本身没有消失**，消失的只是顶号对它的依赖。
+  ⚠ **封号不受影响、仍是账号级**：WebPlatform Admin 事务写 `status=1` 并清空该 uid 全部区的
+  权威 session，随后各区既有连接仍靠 GM 逐节点 `/admin/kick`（09·G7b）。
+  **跨组踢人这件事本身没有消失**，消失的只是顶号对它的依赖。
   ⚠ **明确接受的代价**（用户拍板）：账号被盗时，小偷在别区玩，本人在自己那区**完全无感** ——
   盗号的发现时间从"立即被踢"变成"下次进那个区"。缓解办法（跨区登录给其他区推通知但不踢）未做。
-  ⚠ `PROTOCOL_VERSION` 1→2：老包登录不带 `sId` ⇒ 拿 s0 token 进别区只会得到莫名其妙的
-  「登录已过期」，bump 后在 join 处明确 `ProtocolMismatch` 拒掉。
+  ⚠ 本次按“无线上流量、无旧客户端”的前提直接切到 Public/Internal v1，不保留旧登录兼容入口；
+  `PROTOCOL_VERSION=2` 继续作为房间握手的协议错版硬闸。
   机检：int「M12e 单端语义作用域 = (账号, 区)」（变异测试验证过会红）；全仓数字见根 CLAUDE.md。
 
-- ~~**A5** 客户端连接端点不一致（大厅连 `getBaseUrl()`、战斗连所选 `wsUrl`）~~ →
-  大厅 `init()` 改为跟随所选区（`cur.wsUrl` → http，缺 wsUrl 才回退全局，换算与战斗侧同款）；
+- ~~**A5** 客户端大厅/战斗连接端点不一致~~ →
+  WebPlatform v1 目录把端点拆成 `gameHttpUrl/gameWsUrl`，大厅与战斗均使用所选区明确给出的
+  `gameHttpUrl`；目录缺失或加载失败时清掉旧地址并显式失败，⛔ 不回退全局游戏服地址；
   `endpoint + sId` 纳入连接复用判据（`WebSocketClient` 记 `joinedEndpoint`/`joinedSId`，任一变化即
   要求先 `leave()`）——⛔ 只比 token 拦不住换区：换区时 token 不变，会静默复用旧区连接。
   ⚠ **本条曾有一处口径错误，已更正**：上一版写「大厅连接不带所选 `sId` ⇒ 大厅侧落默认区」——
-  **不实**。`pages.ts` 的 `join(token, { sId: cur.sId })` → `doJoin` → `joinOpts.sId` →
+  **不实**。当前 `pages.ts` 在边界执行 `join(accessToken, {sId: cur.serverId})` →
   `LobbyRoom.onAuth` 读 `options.sId` → `zoneCtx.run`，整条链**早就是通的**（`52e290b` 落地）。
-  A5 真正的缺口**只有端点**：今天各区 `wsUrl` 相同所以看不出来，W4 接真实配置后就是"大厅连在
-  默认那台机器上"（sId 传对了也没用——那是**另一台机器上的** s2）。
-  ⛔ **无机检**：`Main.ts`/`view/pages.ts`/`net/WebSocketClient.ts` 的相关面在 D3 类型盲区内，
-  只能 Creator 人工验证。
+  A5 真正的缺口曾经**只有端点**：sId 传对也救不了“连到另一台物理组”。现有客户端无头测试已覆盖
+  v1 目录字段、Public 路径与端点状态；Creator 侧完整页面/入口时序仍由 D3/真实构建 CI 继续收口。
 
 - ~~**A6** `exceptHash` 不是单调栅栏（积压踢人事件误踢赢家）~~ → 复用 A1 铺好的单调量：
   `broadcastKick` 带上发起方 `issuedAtMs`，消费侧回读组 sess 的 `issuedAt`，**事件更旧即整条丢弃**。
-  ⛔ 只对带 `issuedAt` 的事件做该判断：封号/撤销不绑定任何一次登录，必须无条件踢；旧发布端的
-  条目也没有该字段，因"没带"就丢会静默漏踢。⚠ 顺带把 `startStreamConsumer` 的 `onEntry` 改成
+  该流当前只承载同区顶号等游戏组程序化踢人；封号/撤销的送达由 GM 逐节点 `/admin/kick` 负责，
+  ⛔ 不依赖这条 best-effort 流。⚠ 顺带把 `startStreamConsumer` 的 `onEntry` 改成
   可返回 Promise 并**逐条 await**（消费侧要回读 Redis）——⛔ 不能发射后不管：try/catch 兜不住
   rejection，且同 uid 事件会乱序。机检：int「A6 单调栅栏」（变异测试验证过会红）。
 
-- ~~**A1** split 会话写入无 fence（旧 token 覆盖新 token）~~ → 权威侧 `issueToken` 用
-  `GREATEST(NOW(3), 上次+1ms)` 保证 `token_issued_at` **同 uid 严格递增**（⛔ 消掉同毫秒打平，
+- ~~**A1** Internal verify 后组会话写入无 fence（旧 token 覆盖新 token）~~ → 独立 WebPlatform 权威侧用
+  `GREATEST(NOW(3), 上次+1ms)` 保证 `token_issued_at`
+  **同 `(userId,serverId)` 严格递增**（⛔ 消掉同毫秒打平，
   那正是"单调量"能成立的前提）；`/verify` 带回 `issuedAtMs`；`writeGroupSess` 改为**单条 Lua**
   三态栅栏：更大时刻=`written`，同时刻同 hash=`unchanged`（合法多连接/重连），更小时刻或同时刻
-  异 hash=`stale`。陈旧写直接丢弃且 ⛔ **不触发顶号踢**；远程 strict verify 与缓存写之间若发生
+  异 hash=`stale`。陈旧写直接丢弃且 ⛔ **不触发顶号踢**；Internal strict verify 与缓存写之间若发生
   新登录，`stale` 还必须拒绝本次准入，不能只 no-op 后继续放进 GameRoom。⚠ 评审推翻的
   `oldHash` CAS 药方**没有采用**：两个请求都读到 H0 时
-  旧请求也满足 CAS ⇒ 它先写成功、赢家反被拒。机检：int「A1 组 sess 写入栅栏」（变异测试验证过会红）。
+  旧请求也满足 CAS ⇒ 它先写成功、赢家反被拒。账号侧单调签发测试归独立仓；游戏侧继续测试
+  `writeGroupSess` 三态与 strict 准入。
   ⚠ 未做也不需要做：`sessionVersion` 新列——`token_issued_at` 已是权威侧单调量，⛔ 别再加一个。
 - ~~**A2** 邮件与公会未按 sId 隔离~~ → 邮件三处补 `server_id` 谓词（`mail/list` 查询、`markRead`
   UPDATE、`mailer.claimMailAttach` 的 `SELECT ... FOR UPDATE`——领取权限那处最要紧）；公会在线索引
@@ -334,11 +342,6 @@
   连接。⚠ 索引里**存下区号**而非清理时现取：下线清理不在 zoneCtx 内；全下线清理只遍历该 uid
   的区，⛔ 不能扫描全服索引退化成滚动重启 O(N²)。
   机检：int「A2 邮件按区隔离」「同账号跨区在线互不覆盖/不串连接」「批量成员下定向全清」。
-
-- ~~**in-process 登录静默签成 s0**~~ → wx/dev 两个 HTTP schema 均显式接收并透传合法 `sId`；
-  WebPlatform 与 in-process 统一为“仅 undefined 缺省 0，null/字符串/小数/越界均 400”。LobbyRoom
-  与 GameRoom 共用运行时 `normalizeSId`，即使 `GROUP_ZONES=[]`（承载全部区）也不会把畸形值带进
-  MySQL 强转或 `zoneCtx` 幽灵前缀。机检覆盖 s7 签发/缓存、两房畸形入参及两部署模式一致性。
 
 - ~~**RoomClient 旧世代释放/回调污染新战斗**~~ → 物理 room 改为 slot + 多 ownership 租约；
   最后一个 owner 才关闭精确 slot，旧 slot 的 onLeave/onDrop 无权改新 slot。复用 key 包含 endpoint

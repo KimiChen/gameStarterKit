@@ -1,202 +1,234 @@
-# GM 工具实现规格（运营侧）：封号 / 强制下线
+# GM 工具实现规格：封号 / 撤销会话 / 踢在线
 
-> **面向**：实现运营后台或 GM 命令行工具的同学（不需要读游戏服代码）。
-> **对应规则**：服务端 [`09·G7b`](SERVER.md#12-开发约束63-条规则目录)（GM 工具契约）· [`09·G7`](SERVER.md)（封号两步）。
-> **背景模型**：[DUAL_MODE §2.3](DUAL_MODE.md) · 门户契约 [WEBPLATFORM.md](WEBPLATFORM.md) · 交接说明 [HANDOFF-M12.md](HANDOFF-M12.md)。
->
-> ⚠ **一句话背景**：服务端**刻意**不做「广播即算踢到」的自动收敛——**送达保证由本工具承担**。
-> 工具没做到第 ② 步，被封玩家的在场连接可继续游戏至会话 TTL（**3 天**），且系统**不会自愈**。
+> 面向运营后台、GM CLI 与部署平台实现者。账号权威只在独立 `gono-webplatform`，游戏节点只持在线连接。
+> 对应边界见 [WEBPLATFORM.md](WEBPLATFORM.md)，游戏服规则见
+> [SERVER.md](SERVER.md)。本工具必须完成“写权威 + 逐节点踢在线”，任何一步都不能假装成功。
 
----
+## 1. 两步 SOP（顺序不可颠倒）
 
-## 1. 必须实现的流程（两步，顺序不可颠倒）
+```text
+① 写账号权威
+   POST {WebPlatform Admin}/v1/admin/accounts/{userId}/ban
+   或
+   POST {WebPlatform Admin}/v1/admin/accounts/{userId}/revoke
 
+   成功后：
+   - ban：账号状态封禁 + 全部区权威 session 作废 + Admin 审计
+   - revoke：全部区权威 session 作废 + Admin 审计，账号仍可重新登录
+
+② 踢既有在线连接
+   对每一个在役游戏节点逐个直连：
+   POST {node}/admin/kick
+   汇总每个节点的 HTTP 结果；所有在役节点均确认 200 才算送达完成
 ```
-① 写权威        POST {WebPlatform}/ban      {uid}      → {banned: true|false}
-                （账号级：所有区一起封；写库后「下次登不上」立即生效）
-                     ├→ 新建连接（进大厅/进战斗房）→ 服务端回权威校验 → 拒
-                     └→ 重新登录 → 登录时查 status → 拒
 
-② 踢在线        对【每一个在役游戏服节点】各发一次：
-                POST {node_i}/admin/kick    {uid, reason:"banned"}  → {kicked: true|false}
-                     └→ 命中的节点会：先给客户端推一条强制下线（带原因）→ 再关连接
-                汇总所有节点的 kicked，全部返回成功（HTTP 200）才算「踢干净」
+为什么必须先 ①：先踢后写权威会让玩家立即重新登录。为什么 ① 后仍要 ②：Lobby RPC 快路径只校验
+游戏组缓存，不逐消息回查 WebPlatform；已建立连接不会因为账号库变化自行消失。
+
+`kicked:false` 表示“本节点没有该玩家”，是绝大多数节点的正常响应。成功标准是**所有在役节点可达并
+返回 HTTP 200**，不是“至少有一个 `kicked:true`”。
+
+## 2. 第一步：WebPlatform Admin HTTP
+
+### 2.1 请求
+
+封号：
+
+```http
+POST /v1/admin/accounts/u_123/ban
+x-admin-secret: <WEBPLATFORM_ADMIN_SECRET>
+x-operator-id: ops-alice
+content-type: application/json
+
+{
+  "operationId": "gm-20260727-000001",
+  "reason": "外挂"
+}
 ```
 
-**为什么必须遍历节点**：一个玩家只连在**某一个**节点上，而每个节点只能踢自己内存里的连接。
-因此 `kicked:false` 是**绝大多数节点的正常返回**，⛔ 不是错误。
+仅撤销会话：
 
-**为什么不能只做 ①**：在线连接的每条请求只比对节点本地缓存、**不回查数据库**（这是性能设计），
-所以 ① 对**已经连着的**连接不生效。
+```http
+POST /v1/admin/accounts/u_123/revoke
+```
 
----
+请求头和 body 形状与 ban 相同。`userId` 在路径中，操作者只从经过鉴权的
+`x-operator-id` 取得，⛔ 不允许 body 覆盖。
 
-## 2. 接口契约
+### 2.2 响应
 
-### 2.1 写权威：`POST {WebPlatform}/ban`
+```json
+{ "accountExists": true, "status": "banned" }
+```
 
-| | |
+`status` 只允许：
+
+- `banned`：封号事务成功；
+- `revoked`：撤销事务成功；
+- `not_found`：账号不存在，`accountExists=false`。
+
+账号不存在是 HTTP 200 的业务结果。Admin 事务已包含 session 作废与审计，GM 工具不得直连账号库补写。
+
+### 2.3 幂等与重试
+
+`operationId` 必填且由 GM 工具生成：
+
+- 同一操作号、同一账号、同一动作的重放返回首次结果；
+- 同一操作号用于不同账号或不同动作，返回 `409 OPERATION_CONFLICT`；
+- 超时、连接断开或 5xx 时，使用**相同 operationId**有限重试，不能生成新号猜测第一次没提交；
+- 401/403 是密钥或权限配置错误，409 是调用方幂等键冲突，均应立即失败并告警；
+- `not_found` 应向操作者明确显示，通常无需执行第二步。
+
+## 3. 第二步：逐游戏节点 `POST /admin/kick`
+
+### 3.1 契约
+
+```http
+POST /admin/kick
+x-admin-secret: <GAME_NODE_ADMIN_API_SECRET>
+content-type: application/json
+
+{ "uid": "u_123", "reason": "banned" }
+```
+
+| 项 | 约束 |
 |---|---|
-| 地址 | WebPlatform 服务（缺省端口 **2570**） |
-| 请求 | `Content-Type: application/json`，`{"uid": "u_123"}` |
-| 成功 | `200` `{"banned": true}` = **账号存在**且已封；`{"banned": false}` = **无此账号**（uid 打错），此时⛔ 不必执行第 ② 步。⚠ **重复封同一账号仍返回 `true`**（返回的是"账号是否存在"，不是"本次是否改动了行"）——失败后重试因此安全 |
-| 语义 | 一条 UPDATE：`status=1` + 作废当前 token。**幂等**：重复调用安全 |
-| 鉴权 | ⚠ **当前无鉴权**（待办 W1，见 §7）——上线前会加共享密钥头，届时本工具需同步带上 |
+| `uid` | 1–32 字符 |
+| `reason` | `banned` 或 `revoked`；省略时为 `banned` |
+| `200 {"kicked":true}` | 本节点命中至少一条连接并已踢 |
+| `200 {"kicked":false}` | 本节点没有该账号，正常 |
+| `401` | 游戏节点密钥错误，或节点未配置密钥而关闭端点 |
+| `400` | 参数不合法 |
 
-**强制下线（不封号，账号仍可重新登录）**：`POST {WebPlatform}/revoke`，同形状，返回 `{"revoked": true|false}`；
-第 ② 步的 `reason` 相应传 `"revoked"`。⚠ **返回字段名是 `revoked` 不是 `banned`**。
+踢人时节点先推 `auth.forceLogout{reason}`，再用对应语义化关闭码关闭本节点该 uid 的全部区连接。
+接口幂等；重复踢已离线玩家只会得到 `kicked:false`。
 
-### 2.2 踢在线：`POST {node}/admin/kick`
+WebPlatform Admin 密钥与游戏节点 `ADMIN_API_SECRET` 是**两套不同 secret**，即使请求头同名也不得共用。
 
-| | |
-|---|---|
-| 地址 | **每个游戏服节点自身**的 HTTP 端口（与游戏端口同一个，缺省 **2568**） |
-| 鉴权 | 请求头 `x-admin-secret: <ADMIN_API_SECRET>`（**必填**） |
-| 请求 | `{"uid": "u_123", "reason": "banned"}`<br>`uid`：1–32 字符（必填）<br>`reason`：`"banned"` \| `"revoked"`，可省（省略即 `banned`） |
-| 成功 | `200` `{"kicked": true}` = 本节点有该玩家在线且已踢；`{"kicked": false}` = **本节点没有**（正常） |
-| `401` | `{"error":"AUTH_REQUIRED"}` = 密钥错，**或服务端未配置密钥**（未配置时端点整体关闭）|
-| `400` | 参数不合法（如 uid 超 32 字符、reason 非法值） |
-| 幂等 | **是**。重复踢同一 uid 无副作用（不在线即空操作） |
+### 3.2 节点清单
 
-> `reason` 决定玩家客户端看到的提示（封禁 / 强制下线），务必与第 ① 步用的接口一致。
+⛔ **绝不能通过负载均衡器调用 `/admin/kick`。** LB 只会选一个后端，
+`kicked:false` 无法证明其他节点无人在线。
 
----
+工具必须从可刷新的权威来源取得全部在役节点内网地址，例如：
 
-## 3. 节点清单怎么来（🔴 关键，且需部署侧配合）
+- Kubernetes `EndpointSlice`；
+- Nomad/Consul 等服务发现；
+- CMDB/部署清单；
+- 过渡期由部署流水线生成的静态节点文件。
 
-### ⛔ 绝不能通过负载均衡器（LB）调 `/admin/kick`
+节点已确认退出服务时，其连接已经消失，可以跳过。真正危险的是节点仍在承载玩家，但因为清单过期、
+网络策略或分区而不可达；这种情况必须判为部分失败并告警。
 
-LB 会把请求路由到**任意一个**节点。那个节点若恰好没有该玩家，返回 `kicked:false`——
-**与"全网都没有"完全无法区分**，于是工具会误判"已经踢干净了"，而玩家仍在别的节点上在线。
-
-**必须**逐个直连每个节点的内网地址。
-
-### 节点清单来源（本仓库不提供服务发现，需部署侧给出）
-
-按你们的部署形态选一种,并在工具里做成可刷新的配置：
-
-| 方式 | 适用 |
-|---|---|
-| 容器编排的 endpoints（如 k8s `Endpoints`/`EndpointSlice`、Nomad、Consul） | 有编排平台 |
-| 部署清单 / CMDB 里的静态节点表 | 节点数少且稳定 |
-| 运维脚本生成的清单文件（定期刷新） | 过渡期 |
-
-**节点集合口径**：只需覆盖**在役（活着且在服务玩家）**的节点。
-- ⚠ **节点已挂掉不算漏踢**——进程死了，其上的连接也随之消失，没有可踢的对象。
-- 🔴 **真正危险的是「节点活着在服务玩家，但本工具够不到它」**（网络分区、清单过期、防火墙）。
-  这种情况必须**告警**（见 §5）。
-
----
-
-## 4. 参考实现（伪代码）
+## 4. 参考编排
 
 ```pseudo
-function banUser(uid, reason = "banned"):
-    # ── ① 写权威（先做，且必须成功）────────────────────────────
-    isBan = (reason == "banned")
-    r = POST webplatform + (isBan ? "/ban" : "/revoke"), {uid}
-    if r.status != 200:            abort("权威写入失败，⛔ 不要继续踢")   # 反序会让玩家被踢后又正常登回来
-    exists = isBan ? r.body.banned : r.body.revoked     # ⚠ 两个端点字段名不同
-    if exists == false:            return "NO_SUCH_ACCOUNT"              # 账号不存在（uid 打错），无需踢
+function applyAccountAction(userId, action, reason, operator):
+    operationId = durableOperationId()
 
-    # ── ② 踢在线（遍历全部在役节点，逐个确认）──────────────────
-    nodes      = refreshNodeList()          # ⛔ 不走 LB，见 §3
-    if nodes is empty:                      # ⚠ 清单拿不到 ≠ 没有节点 —— ⛔ 绝不能当成"踢干净了"
-        audit(uid, reason, operator, "NODE_LIST_EMPTY")
-        alert("BAN_NODE_LIST_EMPTY", uid); abort("节点清单为空，无法确认送达")
-    kickedAny  = false
+    # ① 写权威；网络不确定时复用同一 operationId
+    admin = retryIdempotent:
+        POST webplatformAdmin
+             + "/v1/admin/accounts/" + userId + "/" + action
+        headers = {
+            "x-admin-secret": WEBPLATFORM_ADMIN_SECRET,
+            "x-operator-id": operator
+        }
+        body = {operationId, reason}
+
+    if admin.status in [401, 403, 409]:
+        alert("ACCOUNT_ADMIN_REJECTED", userId, operationId)
+        fail
+    if admin.http != 200:
+        alert("ACCOUNT_ADMIN_FAILED", userId, operationId)
+        fail
+    if admin.body.accountExists == false:
+        record("NOT_FOUND", userId, operationId)
+        return NOT_FOUND
+
+    # ② 逐节点确认，⛔ 不走 LB
+    nodes = refreshServingNodeList()
+    if nodes is empty:
+        alert("KICK_NODE_LIST_EMPTY", userId, operationId)
+        return PARTIAL
+
     unreachable = []
-
+    kickedNodes = []
     for node in nodes:
-        ok = retry(times=3, backoff=[1s, 3s, 10s]):
-                 resp = POST node + "/admin/kick",
-                        headers = {"x-admin-secret": SECRET},
-                        body    = {uid, reason},
-                        timeout = 3s
-                 assert resp.status == 200                 # 401/400 立即失败，⛔ 不重试（配置问题）
-                 kickedAny = kickedAny or resp.body.kicked
-                 return true
-        if not ok:
-            if nodeStillAlive(node):    unreachable.append(node)   # 🔴 活着却够不到 → 必须告警
-            else:                       log("节点已下线，其上连接已消失，跳过")
+        result = retryFinite:
+            POST node + "/admin/kick"
+            headers = {"x-admin-secret": GAME_NODE_SECRET}
+            body = {uid: userId, reason: action == "ban" ? "banned" : "revoked"}
+        if result.http == 200:
+            if result.body.kicked: kickedNodes.append(node)
+        else:
+            unreachable.append(node)
 
-    # ── 结果判定 ──────────────────────────────────────────────
-    # ⚠ **先审计再返回**：最需要留痕的恰恰是失败/部分成功那次
-    audit(uid, reason, operator, {kickedAny, unreachable})
-    if unreachable is not empty:
-        alert("BAN_KICK_INCOMPLETE", uid, unreachable)   # 人工介入或稍后重跑
-        return "PARTIAL"
-    return "OK"                                          # kickedAny=false 也算成功（玩家本来就不在线）
+    record(operator, userId, action, operationId, nodes, kickedNodes, unreachable)
+    if unreachable not empty:
+        alert("ACCOUNT_KICK_INCOMPLETE", userId, operationId, unreachable)
+        return PARTIAL
+    return OK   # kickedNodes 为空也可以是成功：玩家本来就离线
 ```
 
-**要点**
-1. **①→② 顺序不可颠倒**：先踢后写权威 ⇒ 玩家被踢后能立刻正常重连回来。
-2. `kicked:false` 不是失败；**HTTP 非 200 才是失败**。
-3. `401`/`400` 属配置/参数错误，**立即失败并告警**，重试无意义。
-4. 判定成功的标准是「**所有在役节点都返回了 200**」，而不是「至少踢到一个」。
+第二步失败后**不要重新执行一个新 Admin 操作**。保留原 operationId 和第一步结果，针对未确认节点继续补踢；
+必要时重放第一步也必须复用同一 operationId。
 
----
+## 5. 可观测与告警
 
-## 5. 可观测与告警（硬性要求）
+工具侧至少记录：
 
-| # | 要求 | 说明 |
-|---|---|---|
-| 1 | **`BAN_KICK_INCOMPLETE` 告警** | 有节点最终不可达且判断其仍在役 ⇒ 该玩家可能仍在线，需人工重跑 |
-| 2 | **操作审计** | 谁、何时、封了谁、原因、②的汇总结果。⚠ 服务端侧的审计有已知缺口（待办 W2），**工具侧务必自留一份** |
-| 3 | **「已封禁但仍在线」巡检** | 这是 `09·G7b④` 的要求。⚠ **当前服务端没有"查某人在线于哪个节点"的接口**（依赖 presence，排期 M15）。<br>过渡做法：封号后隔一段时间**重跑一次第 ② 步**，若仍有节点返回 `kicked:true`，说明此前漏踢 → 告警 |
-| 4 | 批量封号限速 | 逐节点 HTTP 调用量 = 玩家数 × 节点数；批量操作请限速，避免打爆游戏服 |
+- operator、userId、动作、reason、operationId、requestId；
+- WebPlatform Admin 的 HTTP/业务结果；
+- 本次节点清单快照；
+- 每节点耗时、HTTP 状态、`kicked`、重试次数；
+- 最终状态 `OK|NOT_FOUND|PARTIAL|FAILED`。
 
----
+硬告警：
 
-## 6. 常见错误（反模式清单）
-
-| ⛔ 错误做法 | 后果 |
+| 告警 | 条件 |
 |---|---|
-| 只调 `/ban`，不踢 | 在场连接继续游戏至 **3 天**（会话 TTL），系统不自愈 |
-| 通过 LB 调 `/admin/kick` | 只踢到一个节点，`kicked:false` 被误读成"已踢干净"，玩家仍在线 |
-| 把 `kicked:false` 当失败 / 无限重试 | 正常返回被当故障，告警噪音 |
-| 先踢再写权威 | 玩家被踢后立即正常登回来 |
-| 认为"服务端有广播会兜住" | 服务端内部广播是 **fire-and-forget、无 ack**，**刻意**不作为保证 |
-| 遇 `401` 反复重试 | 密钥错或服务端未配置密钥（端点关闭），重试无用，应告警 |
-| 用同一次操作既 `ban` 又 `revoke` | 语义不同（封禁 vs 仅下线），`reason` 与端点必须配套 |
+| `ACCOUNT_ADMIN_FAILED` | 权威写入最终失败或响应契约异常 |
+| `ACCOUNT_ADMIN_REJECTED` | 401/403/409 |
+| `KICK_NODE_LIST_EMPTY` | 无法取得在役节点，⛔ 不能解释成“无人在线” |
+| `ACCOUNT_KICK_INCOMPLETE` | 至少一个仍在役节点未确认 200 |
 
----
+WebPlatform 会持久化 Admin 审计，但 GM 工具仍应保存编排审计：它是唯一能说明第二步遍历范围和送达结果的记录。
+批量操作按“账号数 × 节点数”限速，避免 GM 流量冲击游戏网关。
 
-## 7. 依赖与开放项（需与服务端/部署侧确认后再动工）
+## 6. 反模式
 
-| # | 项 | 现状 | 对本工具的影响 |
-|---|---|---|---|
-| D1 | **WebPlatform 端点鉴权**（待办 W1） | `/ban`·`/revoke` **暂无鉴权** | 上线前会加共享密钥头；工具需预留"可配置鉴权头"的位置，别硬编码"无需鉴权" |
-| D2 | **节点清单来源** | 仓库**不提供**服务发现 | 必须由部署侧给出（§3），否则第 ② 步无法正确执行 |
-| D3 | `ADMIN_API_SECRET` 下发 | 由部署侧注入游戏服；**未配置则 `/admin/kick` 整体关闭（401）** | 工具需要拿到同一份密钥 |
-| D4 | **「查在线」接口** | 无（presence 排期 M15） | §5③ 目前只能用"重跑第 ②步"近似;如需精确巡检，请提需求给服务端 |
-| D5 | **单体部署下的封号入口** | 游戏服**没有**封号端点；写权威只有 WebPlatform 的 `/ban` | 若游戏服跑在内嵌模式（未拆分账号服务），仍需**单独起一个 WebPlatform 进程**当管理 API（它可指向同一个库：`WEBPLATFORM_MYSQL_URL` 缺省即游戏服库）。或提需求给服务端加 `/admin/ban` |
-
----
-
-## 8. 验收清单（建议逐条实测）
-
-- [ ] 封一个**在线**玩家：其客户端立即被断开并显示「账号已被封禁」（不是"连接断开"）
-- [ ] 该玩家**重新登录**被拒；**重连**大厅/战斗房被拒
-- [ ] 封一个**离线**玩家：全部节点返回 `kicked:false`，工具判定**成功**（不报错）
-- [ ] 封一个**不存在的 uid**：`/ban` 返回 `banned:false`，工具跳过第 ② 步并给出明确提示
-- [ ] **重复封同一账号**：第二次仍返回 `banned:true`，工具照常执行第 ② 步（⛔ 不得因 false 跳过踢人）
-- [ ] **节点清单为空/拿不到**：工具**报错并告警**，⛔ 不得判定成功
-- [ ] **多节点**环境下，玩家连在节点 B：工具遍历 A/B/C，只有 B 返回 `kicked:true`，判定成功
-- [ ] 故意让一个在役节点不可达：工具**告警** `BAN_KICK_INCOMPLETE`，且不谎报成功
-- [ ] 密钥填错：收到 `401`，**不重试**、直接告警
-- [ ] 重复执行同一次封号：全程幂等，无异常
-- [ ] `revoke`（强制下线）：玩家被踢且提示为「强制下线」，随后**可以**重新登录
-- [ ] 批量封 N 人：限速生效，游戏服无明显抖动
-
----
-
-## 9. 术语对照
-
-| 本文用词 | 服务端叫法 |
+| ⛔ 做法 | 后果 |
 |---|---|
-| 写权威 | `accounts.status=1` + `token_hash=NULL`（`09·G7` 两位真相） |
-| 踢在线 | `kickUser` → 先推 `auth.forceLogout{reason}`、再用语义化关闭码关连接 |
-| 节点 | 一个游戏服进程（Colyseus app 节点）；同组多节点共享 Redis/MySQL |
-| 会话 TTL | `sess:{uid}:s{sId}` 的 3 天有效期（组侧按区缓存） |
-| 顶号 | 换端登录导致旧设备被踢（`reason=replaced`）——**系统自动完成，不需要 GM 介入**。<br>⚠ **这句在 M12e 之后重新成立了**（此前多物理组下是假承诺）：单端语义的作用域已从**账号**收窄到 **(账号, 区)**，token 只对签发它的那个区有效；而每个区只由**一个**物理组承载 ⇒ 同区的全部会话必在同组内，踢人广播的扇出半径（本组 coord）**恰好够用**，⛔ 不再需要跨组送达。<br>⚠ 别把它读成"跨组踢人已解决"：**封号**仍是账号级、仍需 GM 逐节点遍历（下一行），消失的只是**顶号**对跨组通道的依赖 |
+| 只调 Admin ban/revoke | 已建立连接继续使用组缓存 |
+| 先踢后写权威 | 玩家可立即重新登录 |
+| GM 直写账号库 | 绕过事务、Admin 审计和幂等 |
+| 通过 LB 调 `/admin/kick` | 只触达一个随机节点 |
+| 把 `kicked:false` 当失败 | 正常离线/未命中产生无限重试 |
+| 至少一个节点 `kicked:true` 就判成功 | 其他节点可能仍有连接 |
+| Admin 超时后换 operationId | 第一次可能已提交，造成两条管理操作 |
+| ban 后给节点传 `revoked` | 客户端提示和关闭语义错误 |
+| Internal 与 Admin/节点密钥共用 | 扩大单一密钥泄漏的权限半径 |
+| 依赖游戏内部广播兜底 | 广播无逐节点 ack，不构成送达证明 |
+
+## 7. 验收清单
+
+- [ ] 封在线玩家：Admin 返回 `banned`，全部节点确认 200，命中节点 `kicked:true`，客户端显示封禁原因。
+- [ ] 被封玩家重新登录、重新进大厅或战斗房均被拒。
+- [ ] revoke 在线玩家：被踢后能重新登录，客户端显示强制下线而非封禁。
+- [ ] 离线玩家：所有节点 `kicked:false`，最终仍为 `OK`。
+- [ ] 不存在账号：Admin 返回 `not_found`，工具明确展示且不误报系统故障。
+- [ ] 同一 operationId 重放：返回首次结果；不同动作/账号复用得到 409 并告警。
+- [ ] 模拟 Admin 超时但事务已提交：同 operationId 重试不产生第二条动作。
+- [ ] 多节点环境中玩家只在 B：A/C false、B true，最终成功。
+- [ ] 一个在役节点不可达：最终 `PARTIAL` + `ACCOUNT_KICK_INCOMPLETE`，不谎报成功。
+- [ ] 节点清单为空：失败告警，不判“踢干净”。
+- [ ] 两类密钥错误分别得到 401/403，工具不做无意义重试。
+- [ ] 批量操作限速有效，游戏网关延迟无明显抖动。
+
+## 8. 已知边界
+
+- 游戏节点没有全局“查某人在哪个节点在线”的权威接口；逐节点 kick 的 ack 集合就是当前送达证明。
+- 已进入战斗房的连接是否立即被节点在线表覆盖，以游戏服当前在线表范围为准；高价值发奖边界仍应再次
+  校验账号状态。
+- WebPlatform 不直接访问游戏节点，也不持节点清单；第二步的完整性归 GM/部署平台。

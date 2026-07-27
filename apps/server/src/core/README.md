@@ -15,7 +15,7 @@
 
 - 根层 = 横切原语：`locks`（两层锁+fence）· `uow`（UnitOfWork/withUser）· `idem`（幂等占位）·
   `errors`（错误码）· `userRecord`（建号/活跃索引/按需取字段）
-- 子目录 = 模块：`infra`（双 Redis 路由/MySQL/Lua/租约/loopMonitor 心电图）· `auth`（组侧会话缓存 session / 踢人通道 kickBus / 封号编排 ban；⚠ 登录编排与 token 权威已迁 `platform/` + WebPlatform lib）·
+- 子目录 = 模块：`infra`（双 Redis 路由/MySQL/Lua/租约/loopMonitor 心电图）· `auth`（组侧会话缓存 session / 踢人通道 kickBus；token 权威在独立 WebPlatform，游戏服只走 `platform/webPlatformClient.ts`）·
   `economy`（outbox 三阶段/充值/邮件/relayer）·
   `archive`（冷档 freeze/thaw）· `match`（结算证据链消费）· `guild`（工会事件存取：seq+近窗）·
   `compute`（worker_threads 计算池，铁律 11 卸载点）

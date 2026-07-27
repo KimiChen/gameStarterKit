@@ -164,19 +164,6 @@ async function main(): Promise<void> {
   // 增量列迁移（幂等：1060 重复列即已迁）。CREATE IF NOT EXISTS 不会给存量表加新列
   const alters = [
     "ALTER TABLE mail ADD COLUMN attach_effect JSON NULL AFTER attach_op_id",
-    // M12c 2b-1：accounts 推迟授权画像列
-    // ⚠ **M12e 起 token 不在 accounts**：会话权威搬到 `account_sessions`（每 (uid, 区) 一行），
-    // 单端语义的作用域从「账号」收窄到「(账号, 区)」。`schema.sql` 的 CREATE 已建该表。
-    // ⛔ 这里**不下 DROP COLUMN**：幂等脚本不做破坏性操作（同下方 token_issued_epoch 的处置）。
-    // 存量库里的 accounts.token_hash/token_issued_at 会变成**死列**（无人读写），另出迁移删。
-    "ALTER TABLE accounts ADD COLUMN session_key VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL AFTER last_login_at",
-    "ALTER TABLE accounts ADD COLUMN nickname VARCHAR(64) NULL AFTER session_key",
-    "ALTER TABLE accounts ADD COLUMN avatar_url VARCHAR(256) NULL AFTER nickname",
-    "ALTER TABLE accounts ADD COLUMN phone VARCHAR(20) CHARACTER SET ascii COLLATE ascii_bin NULL AFTER avatar_url",
-    // 评审：login_audit.reason 原 VARCHAR(64) 撑不下运营输入的封号理由/错误原文，
-    // STRICT_TRANS_TABLES 下超长直接 ER_DATA_TOO_LONG ⇒ 审计丢失、banUser 连带报错。
-    // MODIFY 天然幂等（重复执行只是再声明同一类型，⛔ 无需吞错误码）。
-    "ALTER TABLE login_audit MODIFY COLUMN reason VARCHAR(255) NULL",
   ];
   for (const sql of alters) {
     await conn.query(sql).catch((e: { errno?: number }) => {

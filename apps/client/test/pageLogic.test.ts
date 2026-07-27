@@ -10,45 +10,64 @@ import { LoginNoticeLogic } from "../src/logic/page/LoginNoticeLogic";
 import { LoginLogic } from "../src/logic/page/LoginLogic";
 import { ConfirmLogic } from "../src/logic/page/ConfirmLogic";
 import { chooseServer, getCurrentServer, pickDefaultServer, setServerList, getListHash } from "../src/net/serverSession";
-import { isServerEnterable } from "../src/shared/index";
-import type { IAreaListRes, IAreaServer } from "../src/shared/index";
+import { isServerEnterable } from "../src/logic/areaDirectory";
+import { areaStatusIconUrl } from "../src/view/areaPresentation";
+import type { WebPlatformAreaListResponse, WebPlatformAreaServer } from "../src/shared/index";
 
-const srv = (sId: number, t = 0, openTime = t === 9 ? 0 : 1_700_000_000): IAreaServer =>
-  ({ sId, name: `区${sId}`, t, status: 1, openTime, wsUrl: "ws://localhost:2568" });
-const areaRes = (al: IAreaServer[], ul: number[] = [], isOps = 0): IAreaListRes =>
-  ({ isOps, al, ul, h: "hh" });
+const srv = (
+  serverId: number,
+  tag: WebPlatformAreaServer["tag"] = "normal",
+  openTime = tag === "maintenance" ? 0 : 1_700_000_000,
+  status: WebPlatformAreaServer["status"] = tag === "maintenance" ? "maintenance" : "smooth",
+): WebPlatformAreaServer => ({
+  serverId,
+  name: `区${serverId}`,
+  tag,
+  status,
+  openTime,
+  gameHttpUrl: "http://localhost:2568",
+  gameWsUrl: "ws://localhost:2568",
+});
+const areaRes = (
+  servers: WebPlatformAreaServer[],
+  myServerIds: number[] = [],
+  isOps = false,
+): WebPlatformAreaListResponse => ({ isOps, servers, myServerIds, hash: "hh" });
 
 test("AreaList：拉取 + 推荐/我的角色/全部区服页签 + 维护不可进", async () => {
-  const al = [srv(1, 1), srv(2), srv(3, 9), ...Array.from({ length: 9 }, (_, i) => srv(11 + i))];
-  const logic = new AreaListLogic({ fetchAreaList: async () => areaRes(al, [2]) });
+  const servers = [
+    srv(1, "new"),
+    srv(2),
+    srv(3, "maintenance"),
+    ...Array.from({ length: 9 }, (_, i) => srv(11 + i)),
+  ];
+  const logic = new AreaListLogic({ fetchAreaList: async () => areaRes(servers, [2]) });
   const rendered: number[][] = [];
   let tabKeys: string[] = [];
-  logic.onServers = (s) => rendered.push(s.map((x) => x.sId));
+  logic.onServers = (s) => rendered.push(s.map((x) => x.serverId));
   logic.onTabs = (t) => { tabKeys = t.map((x) => x.key); };
   await logic.start();
   assert.equal(logic.isOps, false);
   assert.deepEqual(tabKeys, ["recommend", "my", "all"], "固定展示推荐/我的角色/全部区服");
-  assert.deepEqual(logic.serversOfTab("recommend").map((s) => s.sId), [1], "推荐 = t===1");
-  assert.deepEqual(logic.serversOfTab("my").map((s) => s.sId), [2], "我的 = ul ∩ al");
+  assert.deepEqual(logic.serversOfTab("recommend").map((s) => s.serverId), [1], "推荐 = tag=new");
+  assert.deepEqual(logic.serversOfTab("my").map((s) => s.serverId), [2], "我的 = myServerIds ∩ servers");
   assert.equal(logic.serversOfTab("all").length, 12, "全部");
 
   let chosen = -1;
-  logic.onChoose = (s) => { chosen = s.sId; };
+  logic.onChoose = (s) => { chosen = s.serverId; };
   assert.equal(logic.choose(1), true);
   assert.equal(chosen, 1);
-  assert.equal(logic.choose(3), false, "维护服（t=9）不可进");
+  assert.equal(logic.choose(3), false, "维护服（status=maintenance）不可进");
   assert.equal(logic.choose(999), false, "不存在的服不可进");
 });
 
-test("AreaList：未开服（openTime=0）不可进——含挂新服角标（t=1）的未开服", async () => {
-  // 真实翻车形态：demo catalog 的「五区·新生」t=1/openTime=0——推荐页签展示它，
-  // 但 choose 只拦 t===9 时它可被选中并进服。协议语义 openTime=0 = 未开服，必须双条件拦。
-  const unopened: IAreaServer = { sId: 5, name: "五区", t: 1, status: 1, openTime: 0, wsUrl: "ws://x" };
+test("AreaList：未开服（openTime=0）不可进——含挂 new 角标的未开服", async () => {
+  const unopened = srv(5, "new", 0);
   const logic = new AreaListLogic({ fetchAreaList: async () => areaRes([srv(1), unopened]) });
   await logic.start();
-  assert.deepEqual(logic.serversOfTab("recommend").map((s) => s.sId), [5], "推荐页签可展示未开服（预告位）");
+  assert.deepEqual(logic.serversOfTab("recommend").map((s) => s.serverId), [5], "推荐页签可展示未开服（预告位）");
   let chosen = -1;
-  logic.onChoose = (s) => { chosen = s.sId; };
+  logic.onChoose = (s) => { chosen = s.serverId; };
   assert.equal(logic.choose(5), false, "未开服（openTime=0）不可进，即使挂着新服角标");
   assert.equal(chosen, -1, "onChoose 不得被触发");
   assert.equal(logic.choose(1), true, "正常服不受影响");
@@ -57,43 +76,60 @@ test("AreaList：未开服（openTime=0）不可进——含挂新服角标（t=
 test("AreaList：运维模式（isOps）豁免——维护/未开服的开服前验证可选中", async () => {
   // isOps 是部署环境级开关（服务端 AREA_IS_OPS），非按账号：运维环境下维护服重开前、
   // 新服 openTime 翻正前都要能从选服页选中进入验证；普通环境两者都拦（上两个用例）。
-  const logic = new AreaListLogic({ fetchAreaList: async () => areaRes([srv(3, 9), srv(5, 1, 0)], [], 1) });
+  const logic = new AreaListLogic({
+    fetchAreaList: async () => areaRes([srv(3, "maintenance"), srv(5, "new", 0)], [], true),
+  });
   await logic.start();
   assert.equal(logic.isOps, true);
   let chosen = -1;
-  logic.onChoose = (s) => { chosen = s.sId; };
+  logic.onChoose = (s) => { chosen = s.serverId; };
   assert.equal(logic.choose(3), true, "运维模式：维护服可选（重开前验证）");
   assert.equal(chosen, 3);
   assert.equal(logic.choose(5), true, "运维模式：未开服可选（开服前验证）");
   assert.equal(logic.choose(999), false, "不存在的服运维也不可选");
 });
 
-test("shared：isServerEnterable 判定单源（维护/未开服双条件）", () => {
-  assert.equal(isServerEnterable({ t: 0, openTime: 1_700_000_000 }), true);
-  assert.equal(isServerEnterable({ t: 9, openTime: 1_700_000_000 }), false, "维护不可进");
-  assert.equal(isServerEnterable({ t: 1, openTime: 0 }), false, "未开服不可进——新服角标也一样");
-  assert.equal(isServerEnterable({ t: 9, openTime: 0 }), false);
+test("Area：isServerEnterable 判定单源（维护/未开服双条件）", () => {
+  assert.equal(isServerEnterable({ status: "smooth", openTime: 1_700_000_000 }), true);
+  assert.equal(isServerEnterable({ status: "maintenance", openTime: 1_700_000_000 }), false, "维护不可进");
+  assert.equal(isServerEnterable({ status: "smooth", openTime: 0 }), false, "未开服不可进——新服角标也一样");
+  assert.equal(isServerEnterable({ status: "maintenance", openTime: 0 }), false);
 });
 
-test("serverSession：存列表 + 默认选中（ul 优先，否则首个可进入服）+ 选服", () => {
-  const list = areaRes([srv(1, 9), srv(2), srv(3)], [3]);
+test("serverSession：存列表 + 默认选中（myServerIds 优先，否则首个可进入服）+ 选服", () => {
+  const list = areaRes([srv(1, "maintenance"), srv(2), srv(3)], [3]);
   setServerList(list);
   assert.equal(getListHash(), "hh");
-  assert.equal(pickDefaultServer(list)?.sId, 3, "ul[0]=3 优先");
-  assert.equal(pickDefaultServer(areaRes([srv(1, 9), srv(2)]))?.sId, 2, "无 ul → 首个可进入服（跳过维护）");
+  assert.equal(pickDefaultServer(list)?.serverId, 3, "myServerIds[0]=3 优先");
+  assert.equal(pickDefaultServer(areaRes([srv(1, "maintenance"), srv(2)]))?.serverId, 2,
+    "无 myServerIds → 首个可进入服（跳过维护）");
   chooseServer(srv(2));
-  assert.equal(getCurrentServer()?.sId, 2);
-  assert.equal(getCurrentServer()?.wsUrl, "ws://localhost:2568", "选中服带连接地址");
+  assert.equal(getCurrentServer()?.serverId, 2);
+  assert.equal(getCurrentServer()?.gameHttpUrl, "http://localhost:2568", "选中服带独立 HTTP 地址");
+  assert.equal(getCurrentServer()?.gameWsUrl, "ws://localhost:2568", "选中服带独立 WS 地址");
 });
 
-test("serverSession：默认选中跳过不可进服——ul 顺延 / 兜底扫描跳未开服 / 全不可进兜底 al[0]", () => {
-  // ul[0] 维护中 → 顺延到下一个最近服（旧实现 ul 命中即返回，会默认选中维护服）
-  assert.equal(pickDefaultServer(areaRes([srv(1, 9), srv(2), srv(3)], [1, 3]))?.sId, 3, "ul[0]=1 维护 → 顺延 ul[1]=3");
-  // ul 全不可进 → 兜底扫描；扫描也要跳过未开服（挂新服角标的未开服不落默认位）
-  assert.equal(pickDefaultServer(areaRes([srv(5, 1, 0), srv(2)], [5]))?.sId, 2, "兜底扫描跳过未开服（t=1/openTime=0）");
-  // 全不可进 → al[0] 展示位兜底（进服闸负责拦截，pages.ts onEnter）
-  assert.equal(pickDefaultServer(areaRes([srv(1, 9), srv(5, 1, 0)]))?.sId, 1, "全不可进 → al[0] 展示位兜底");
+test("serverSession：默认选中跳过不可进服——最近服顺延 / 兜底扫描 / 全不可进展示位", () => {
+  assert.equal(
+    pickDefaultServer(areaRes([srv(1, "maintenance"), srv(2), srv(3)], [1, 3]))?.serverId,
+    3,
+    "myServerIds[0]=1 维护 → 顺延下一项 3",
+  );
+  assert.equal(pickDefaultServer(areaRes([srv(5, "new", 0), srv(2)], [5]))?.serverId, 2,
+    "兜底扫描跳过未开服（tag=new/openTime=0）");
+  // 全不可进 → servers[0] 展示位兜底（进服闸负责拦截，pages.ts onEnter）
+  assert.equal(
+    pickDefaultServer(areaRes([srv(1, "maintenance"), srv(5, "new", 0)]))?.serverId,
+    1,
+    "全不可进 → servers[0] 展示位兜底",
+  );
   assert.equal(pickDefaultServer(areaRes([])), null, "空列表 → null");
+});
+
+test("Area 状态展示：Public 字符串枚举稳定映射现有 FGUI 图标", () => {
+  assert.equal(areaStatusIconUrl("smooth"), "ui://Dynamic_Login/login_status_1");
+  assert.equal(areaStatusIconUrl("busy"), "ui://Dynamic_Login/login_status_2");
+  assert.equal(areaStatusIconUrl("maintenance"), "ui://Dynamic_Login/login_status_9");
 });
 
 test("LoginNotice：页签标题最多 4 字 + 默认选中首条正文 + 切标签换正文", async () => {
@@ -135,7 +171,10 @@ test("LoginNotice：页签标题最多 4 字 + 默认选中首条正文 + 切标
 test("Login：进度回调 + 登录幂等（重复点不重复请求）", async () => {
   let calls = 0;
   const logic = new LoginLogic({
-    login: async (key) => { calls++; return { userId: "u_1", token: `u_1.${"a".repeat(48)}-${key}`, isNew: true }; },
+    login: async (key) => {
+      calls++;
+      return { userId: "u_1", accessToken: `u_1.${"a".repeat(48)}-${key}`, isNewAccount: true };
+    },
   });
   const prog: number[] = [];
   logic.onProgress = (r) => prog.push(r);
@@ -144,6 +183,8 @@ test("Login：进度回调 + 登录幂等（重复点不重复请求）", async 
   assert.equal(b?.userId, "u_1", "并发第二发合流拿同一结果（不是 null）");
   assert.equal(calls, 1, "并发重复点只请求一次");
   assert.equal(logic.userId, "u_1");
+  assert.ok(logic.accessToken.startsWith("u_1."));
+  assert.equal(logic.isNewAccount, true);
   assert.ok(prog.includes(0.4), "账号验证成功推进到 0.4（满格由编排层进大厅/拉档案后收口）");
 
   const failLogic = new LoginLogic({ login: async () => null });
@@ -152,43 +193,19 @@ test("Login：进度回调 + 登录幂等（重复点不重复请求）", async 
   assert.equal(await throwLogic.doLogin("dev_a"), null, "登录 reject 也按失败处理（不外抛）");
 });
 
-test("Login：BUSY（登录锁被 freeze/thaw 占住）自动退避重试一次 + 文案区分（评审 [11]）", async () => {
-  // ① 第一发 BUSY、第二发成功 → 用户不该看到任何失败文案
-  let n = 0;
-  const flaky = new LoginLogic({
+test("Login：签发请求失败不自动重试（由用户明确再次发起）", async () => {
+  let calls = 0;
+  const logic = new LoginLogic({
     login: async () => {
-      if (++n === 1) { throw Object.assign(new Error("[http] HTTP 409"), { status: 409, code: "BUSY" }); }
-      return { userId: "u_2", token: `u_2.${"a".repeat(48)}`, isNew: false };
+      calls++;
+      throw Object.assign(new Error("upstream unavailable"), { status: 503, code: "UPSTREAM_UNAVAILABLE" });
     },
   });
   const texts: string[] = [];
-  flaky.onProgress = (_r, t) => texts.push(t);
-  assert.equal((await flaky.doLogin("dev_b"))?.userId, "u_2", "退避重试后登录成功");
-  assert.equal(n, 2, "恰好重试一次");
-  assert.ok(texts.includes("系统繁忙，正在重试…"), "重试期间给出「正在重试」而非失败文案");
-  assert.ok(!texts.includes("登录失败，请重试"), "⛔ BUSY 不得报「登录失败」（会让用户以为账号有问题）");
-
-  // ② 持续 BUSY → 有界（⛔ 不无限重试，否则 freeze/thaw 期变登录风暴）+ 文案是「系统繁忙」
-  let m = 0;
-  const busy = new LoginLogic({
-    login: async () => { m++; throw Object.assign(new Error("busy"), { status: 409, code: "BUSY" }); },
-  });
-  const bt: string[] = [];
-  busy.onProgress = (_r, t) => bt.push(t);
-  assert.equal(await busy.doLogin("dev_c"), null);
-  assert.equal(m, 2, "总共只发 2 次（1 次 + 1 次重试），⛔ 无界重试即红");
-  assert.equal(bt[bt.length - 1], "系统繁忙，请稍后重试");
-
-  // ③ 非 BUSY 失败 ⛔ 不重试（500/401 重试无意义，只会拖长用户等待）
-  let k = 0;
-  const boom = new LoginLogic({
-    login: async () => { k++; throw Object.assign(new Error("500"), { status: 500, code: "INTERNAL" }); },
-  });
-  const kt: string[] = [];
-  boom.onProgress = (_r, t) => kt.push(t);
-  assert.equal(await boom.doLogin("dev_d"), null);
-  assert.equal(k, 1, "非 BUSY 只发一次");
-  assert.equal(kt[kt.length - 1], "登录失败，请重试");
+  logic.onProgress = (_r, text) => texts.push(text);
+  assert.equal(await logic.doLogin("dev_b"), null);
+  assert.equal(calls, 1, "登录会签发/轮换 token，客户端不得盲目自动重试");
+  assert.equal(texts[texts.length - 1], "登录失败，请重试");
 });
 
 test("Confirm：单/双按钮 + 只结算一次", () => {

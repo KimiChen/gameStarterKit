@@ -15,3 +15,4 @@
 export * from "./protocol/index";
 export * from "./constants/index";
 export * from "./logic/index";
+export * from "./generated/webplatform/index";

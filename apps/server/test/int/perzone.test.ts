@@ -11,14 +11,11 @@ import { creditInTx, debitInTx, getBalance, invalidateBalanceCache } from "../..
 import { deriveOpId, purchase } from "../../src/core/economy/outbox";
 import { getShopSku } from "../../src/core/economy/catalog";
 import { createUser } from "../../src/core/userRecord";
-import { ensureCharacter, listCharacterZones } from "../../src/player/character";
-import { ensureLive } from "../../src/core/archive/thaw";
-import { UserDataLostError } from "../../src/core/errors";
 import { CUR_GOLD } from "../../src/core/infra/config";
-import { kApplied, kBag, kNegcacheUser, kSess, kUser, zoneCtx } from "../../src/core/infra/keys";
-import { cacheClient, clientFor, closeRedis } from "../../src/core/infra/redisRoute";
+import { kApplied, kBag, kSess, kUser, zoneCtx } from "../../src/core/infra/keys";
+import { clientFor, closeRedis } from "../../src/core/infra/redisRoute";
 import { closeMysql, getPool, withRcTx } from "../../src/core/infra/mysql";
-import type { ResultSetHeader, RowDataPacket } from "../../src/core/infra/mysql";
+import type { RowDataPacket } from "../../src/core/infra/mysql";
 import { assertRedisUp, cleanupUser, testUid } from "./helpers";
 
 const uids: string[] = [];
@@ -31,7 +28,6 @@ after(async () => {
     await pool.execute("DELETE FROM currency_ledger WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM user_currency WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM gameplay_outbox WHERE user_id = ?", [u]);
-    await pool.execute("DELETE FROM char_registry WHERE user_id = ?", [u]);
     for (const s of [0, 1, 2, 5, 7, 8]) {
       await invalidateBalanceCache(u, s).catch(() => {});
       await zoneCtx.run({ sId: s }, () => cleanupUser(u)).catch(() => {}); // 清各区 user/bag/applied 键
@@ -137,52 +133,6 @@ test("per-zone: purchase 全链落对区（sId=5：钱扣 s5 + Redis apply 落 s
     assert.ok(await c.hget(s5bag, String(item.itemId)), "道具落 s5_bag 前缀");
     assert.equal(await c.hget(kBag(u, item.itemId % 4), String(item.itemId)), null, "基础 bag 无货（未串区）");
   }
-});
-
-test("per-zone: 建角 ensureCharacter —— char_registry 行 + s{sId}_user 建立、幂等、多区（M12a §2.6）", async () => {
-  const u = uid("pz-char");
-  const c = clientFor(u);
-  // 首进 7 区建角
-  await ensureCharacter(u, 7);
-  assert.deepEqual(await listCharacterZones(u), [7], "char_registry 有 (u,7)");
-  assert.equal(await c.exists(zoneCtx.run({ sId: 7 }, () => kUser(u))), 1, "s7_user 已建");
-  assert.equal(await c.exists(kUser(u)), 0, "基础 user 未建（建角只建本区，登录才建基础）");
-
-  // 幂等：重复进区不重复行、不报错
-  await ensureCharacter(u, 7);
-  const [cnt] = await getPool().query<RowDataPacket[]>(
-    "SELECT COUNT(*) c FROM char_registry WHERE user_id = ?", [u]);
-  assert.equal(Number(cnt[0].c), 1, "重复建角不重复 char_registry 行");
-
-  // 另进 8 区 → 第二区角色，两区独立（各自 s{sId}_user）
-  await ensureCharacter(u, 8);
-  assert.deepEqual(await listCharacterZones(u), [7, 8], "两区角色（喂 ul『我的区』）");
-  assert.equal(await c.exists(zoneCtx.run({ sId: 8 }, () => kUser(u))), 1, "s8_user 已建");
-});
-
-test("per-zone: thaw ABSENT 按区判(M12b §2.6) —— sId≥1 用 char_registry（没建角→放行，建过角+档全无→UserDataLost）", async () => {
-  const u = uid("pz-thaw");
-  const c = clientFor(u);
-  // ① 未建角本区 + 热档冷档全无 → ABSENT + 无标记 → 放行（不抛，走建角/建号）
-  await zoneCtx.run({ sId: 5 }, () => ensureLive(u));
-  // ② 建角本区（char_registry(u,5) + s5_user），删 s5_user 模拟热档丢失、清负缓存
-  await ensureCharacter(u, 5);
-  await c.unlink(zoneCtx.run({ sId: 5 }, () => kUser(u)));
-  await cacheClient().unlink(zoneCtx.run({ sId: 5 }, () => kNegcacheUser(u)));
-  // char_registry(u,5) 有、热档冷档全无 → ABSENT + 建过角 → UserDataLost 告警 + 拒建空档（09·F4）
-  await assert.rejects(zoneCtx.run({ sId: 5 }, () => ensureLive(u)), UserDataLostError);
-});
-
-test("建角崩溃窗**可自愈**：有档无 char 行（档先建、崩在写 char 行前）→ 下次进区补写，⛔ 不判数据丢失", async () => {
-  const u = uid("pz-crashwin");
-  // 模拟崩溃窗中间态：档已建、char 行未写（新序 createUser → char_registry 之间断电）
-  await zoneCtx.run({ sId: 9 }, () => createUser(u, { registerTime: String(Date.now()) }));
-  assert.deepEqual(await listCharacterZones(u), [], "崩溃窗：char 行还没写");
-
-  // 下次进区：⛔ 旧序在此会判 ABSENT+has=true 抛 UserDataLost（永久毒态）；新序状态是 LIVE，直接补写
-  await ensureCharacter(u, 9);
-  assert.deepEqual(await listCharacterZones(u), [9], "自愈：char 行补上");
-  assert.equal(await zoneCtx.run({ sId: 9 }, () => clientFor(u).exists(kUser(u))), 1, "真档未被覆盖");
 });
 
 test("A2 邮件按区隔离：s1 的邮件在 s2 ⛔ 不可见、⛔ 不可领、⛔ 不可标已读", async () => {
@@ -314,36 +264,4 @@ test("A2 公会全清按 uid 定向：批量成员存在时只清目标账号各
     for (const sId of targetZones) { push.unregisterOnline(target, `target_s${sId}`); }
     for (let i = 0; i < peers.length; i++) { push.unregisterOnline(peers[i], `peer_${i}`); }
   }
-});
-
-test("M12e 单端语义作用域 = (账号, 区)：同区顶号、⛔ 跨区互不影响", async () => {
-  // ⚠ 这条钉的是本次模型变更的**全部要点**，回退任一半都会红。
-  const { issueToken, verifyToken } = await import("@game/webplatform/lib");
-  const u = uid("m12e");
-  await getPool().execute<ResultSetHeader>(
-    "INSERT INTO accounts (user_id, openid) VALUES (?, ?)", [u, `op_${u}`]);
-
-  // ① 同一个账号分别登录 s1 与 s2 —— 两个 token 并存，各自只对本区有效
-  const t1 = await issueToken(u, 1, null);
-  const t2 = await issueToken(u, 2, null);
-  assert.ok((await verifyToken(u, t1.token, 1)).ok, "s1 的 token 在 s1 有效");
-  assert.ok((await verifyToken(u, t2.token, 2)).ok, "s2 的 token 在 s2 有效");
-  assert.equal((await verifyToken(u, t1.token, 2)).ok, false, "⛔ s1 的 token 在 s2 无效（token 绑区）");
-  assert.equal((await verifyToken(u, t2.token, 1)).ok, false, "⛔ s2 的 token 在 s1 无效");
-
-  // ② **同区**再登录一次 = 顶号：旧 token 作废（单端语义在区内仍然成立）
-  const t1b = await issueToken(u, 1, null);
-  assert.equal((await verifyToken(u, t1.token, 1)).ok, false, "同区第二次登录顶掉前一个（区内仍单端）");
-  assert.ok((await verifyToken(u, t1b.token, 1)).ok, "新 token 有效");
-  // ③ **而 s2 完全不受影响** —— 这正是本次变更的目的（玩家可在两区各有一个在线角色）
-  assert.ok((await verifyToken(u, t2.token, 2)).ok, "⛔ s1 顶号不得影响 s2 的会话");
-
-  // ④ 封号仍是**账号级**：清光全部区
-  const { banAccount } = await import("@game/webplatform/lib");
-  await banAccount(u);
-  assert.equal((await verifyToken(u, t1b.token, 1)).ok, false, "封号后 s1 失效");
-  assert.equal((await verifyToken(u, t2.token, 2)).ok, false, "封号后 s2 也失效（⛔ 封号不按区）");
-
-  await getPool().execute("DELETE FROM account_sessions WHERE user_id = ?", [u]);
-  await getPool().execute("DELETE FROM accounts WHERE user_id = ?", [u]);
 });

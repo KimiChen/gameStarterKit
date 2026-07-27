@@ -15,8 +15,8 @@
  *  ③ 锁易主 → lost 未恢复、重试      │ 「thaw 锁易主」
  *
  * 外加 10·M9 DoD 点名：freeze/玩法写并发 changed、往返全等、旧 fence stale、
- * 旧 op_id dup、cold→ensureLive 重试（relayerTick）、USER_DATA_LOST、singleFlight、
- * 负缓存、outbox 前置闸；以及 ARCHIVE_NEWER（PITR）修复、鲸鱼档 HSCAN。
+ * 旧 op_id dup、cold→ensureLive 重试（relayerTick）、singleFlight、outbox 前置闸；
+ * 以及 ARCHIVE_NEWER（PITR）修复、鲸鱼档 HSCAN。
  *
  * 前置：npm --workspace @game/server run stack
  */
@@ -34,15 +34,13 @@ import { closeMysql, getPool } from "../../src/core/infra/mysql";
 import type { RowDataPacket } from "../../src/core/infra/mysql";
 import { makeHolderId, tryAcquireLease, type SingletonLease } from "../../src/core/infra/lease";
 import { acquireLease, withUserLock } from "../../src/core/locks";
-import { ThawingError, UserDataLostError } from "../../src/core/errors";
+import { ThawingError } from "../../src/core/errors";
 import { withUser } from "../../src/core/uow";
 import { createUser } from "../../src/core/userRecord";
 import { deriveOpId, redisApply } from "../../src/core/economy/outbox";
 import { relayerTick } from "../../src/core/economy/relayer"; // cold 行内部直接走 ensureLive 解冻重试（09·X5）
 import { thawRestore, type ArchiveSnapshot } from "../../src/core/archive/archiveScripts";
-import {
-  archiveCounters, ensureLive, invalidateUserNegcache, resolve, thawLimiter,
-} from "../../src/core/archive/thaw";
+import { archiveCounters, ensureLive, resolve, thawLimiter } from "../../src/core/archive/thaw";
 import { _freezeTestHooks, freezeUser, janitorSweep, sweepOnce } from "../../src/core/archive/freezeWorker";
 import { assertRedisUp, cleanupUser, testUid } from "./helpers";
 
@@ -116,8 +114,6 @@ after(async () => {
     await cacheClient().unlink(kNegcacheUser(u));
     await pool.execute("DELETE FROM user_archive WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM gameplay_outbox WHERE user_id = ?", [u]);
-    await pool.execute("DELETE FROM account_sessions WHERE user_id = ?", [u]);
-    await pool.execute("DELETE FROM accounts WHERE user_id = ?", [u]);
   }
   await expireLease("freeze_worker");
   await expireLease("outbox_relayer");
@@ -398,38 +394,6 @@ test("ARCHIVE_NEWER（PITR）：janitor 持锁修复——UNLINK 陈旧档并从
   assert.equal(await c.hget(kBag(u, 17 % 4), "17"), "8", "背包按快照恢复");
   assert.deepEqual(await c.zrange(kApplied(u), 0, -1, "WITHSCORES"), ["op_x", "1700000000000"]);
   assert.equal(await archiveRow(u), null, "修复后删行");
-});
-
-// ── ABSENT：数据丢失 vs 真新号（09·F4） ─────────────────────────────────────
-
-test("ABSENT + char_registry 有角色 → UserDataLostError 告警 + 拒绝建空档（09·F4）", async () => {
-  const u = uid("lostx");
-  await getPool().execute("INSERT INTO char_registry (user_id, server_id) VALUES (?, 0)", [u]);
-  const lost0 = archiveCounters.userDataLost;
-  await assert.rejects(ensureLive(u), UserDataLostError);
-  assert.equal(archiveCounters.userDataLost, lost0 + 1, "USER_DATA_LOST 计数（≡0 告警线）");
-  assert.equal(await clientFor(u).exists(kUser(u)), 0, "拒绝建空档");
-  assert.equal(await cacheClient().exists(kNegcacheUser(u)), 0, "数据丢失不写负缓存");
-});
-
-test("ABSENT 无号：不抛、允许建号；负缓存二次查询命中；建号后立即失效（09·F4）", async () => {
-  const u = uid("neg");
-  const checks0 = archiveCounters.absentAccountChecks;
-  const hits0 = archiveCounters.negcacheHits;
-
-  await ensureLive(u); // 真新号：不抛
-  assert.equal(archiveCounters.absentAccountChecks, checks0 + 1, "首查打 MySQL accounts");
-  assert.equal(await cacheClient().exists(kNegcacheUser(u)), 1, "负缓存已写（cache 实例，TTL 10s）");
-
-  await ensureLive(u); // 二次查询走负缓存（读点在 EXISTS user 之后）
-  assert.equal(archiveCounters.negcacheHits, hits0 + 1, "负缓存命中");
-  assert.equal(archiveCounters.absentAccountChecks, checks0 + 1, "accounts 未再查");
-
-  assert.equal(await createUser(u), "ok"); // 建号路径
-  await invalidateUserNegcache(u);         // 建号成功立即失效（建号侧接线契约）
-  assert.equal(await cacheClient().exists(kNegcacheUser(u)), 0);
-  await ensureLive(u); // 纯热档快路径
-  assert.equal(await clientFor(u).exists(kUser(u)), 1);
 });
 
 // ── singleFlight（08 · 惊群防护第一道） ─────────────────────────────────────

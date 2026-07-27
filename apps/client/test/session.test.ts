@@ -11,7 +11,11 @@ import {
 } from "../src/net/session";
 import { getToken } from "../src/core/http";
 
-const login = (uid: string) => setSession({ userId: uid, token: `${uid}.${"a".repeat(48)}`, isNew: false });
+const login = (uid: string) => setSession({
+  userId: uid,
+  accessToken: `${uid}.${"a".repeat(48)}`,
+  isNewAccount: false,
+});
 
 test("session：登录入态 / 换号 = clear 后新登", () => {
   login("u_1");
@@ -81,7 +85,7 @@ test("battleLost 处理器抛错不影响其它订阅者（Main 回滚 + pages �
 
 test("⛔ battleLost 不清登录态（只是这一局没了，token 仍有效）", async () => {
   const { setSession, isLoggedIn, notifyBattleLost } = await import("../src/net/session");
-  setSession({ userId: "u_bl", token: "t_bl", isNew: false });
+  setSession({ userId: "u_bl", accessToken: "t_bl", isNewAccount: false });
   notifyBattleLost();
   assert.equal(isLoggedIn(), true, "登录态保留（与 authInvalid 的区别）");
 });

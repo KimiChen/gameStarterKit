@@ -13,6 +13,13 @@ apps/Cocos/build/
 apps/Cocos/profiles/
 apps/Cocos/native/
 
+# apps/client 是纯 TS 工程、不是 Creator 工程；以下四项是被 Creator 误打开后留下的
+# 可再生缓存/扩展副本（extensions 只归 apps/Cocos），勿提交
+apps/client/library/
+apps/client/temp/
+apps/client/profiles/
+apps/client/extensions/
+
 # FairyGUI 编辑器工程缓存(.objs：metas + workspace.json，编辑器可再生，勿提交)；
 # .fairy/assets/settings 是源须提交，仅 .objs 忽略。无路径前缀=匹配任意 FairyGUI 工程。
 .objs/

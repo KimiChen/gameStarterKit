@@ -2,7 +2,7 @@ import "./env-setup"; // ⚠ 必须第一个 import（限流放宽）
 
 /**
  * M5 DoD 集成测试（10·M5）——真实 Colyseus 服务器 + SDK 客户端 + 真实 Redis/MySQL：
- * 错误码联调子集：AUTH_REQUIRED / AUTH_EPOCH_STALE / ACCOUNT_BANNED / RATE_LIMITED /
+ * 错误码联调子集：AUTH_REQUIRED / RATE_LIMITED /
  * INVALID_PAYLOAD / UNKNOWN_TYPE / BUSY / STALE_FENCE / IN_PROGRESS；
  * user.getInfo 压测不产生任何 lock:{uid}；邮件列表/已读 + 唤醒推送。
  */
@@ -11,7 +11,6 @@ import { after, before, test } from "node:test";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
 import { ErrorCode as SharedErrorCode, KICK_CLOSE_CODE, LOBBY_MSG_PUSH, LOBBY_MSG_RPC, PROTOCOL_VERSION, RoomName } from "@game/shared";
 import { server } from "../../src/app.config";
-import { banUser } from "../../src/core/auth/ban";
 
 import { setKickHandler } from "../../src/core/auth/kickBus";
 import { kickUser } from "../../src/websocket/push";
@@ -28,12 +27,10 @@ import { assertRedisUp, cleanupUser, sleep, testUid, issueSession } from "./help
 let colyseus: ColyseusTestServer;
 const uids: string[] = [];
 
-/** 造号：accounts 行 + Redis 档 + 会话。绕过 wxLogin（微信侧 M3 已单独测过）。 */
+/** 造玩法档 + 组缓存会话；strict onAuth 另需 WebPlatform 测试服务。 */
 async function makeUser(name: string): Promise<{ uid: string; token: string }> {
   const uid = testUid(name).slice(0, 32);
   uids.push(uid);
-  await getPool().execute<ResultSetHeader>(
-    "INSERT INTO accounts (user_id, openid) VALUES (?, ?)", [uid, `op_${uid}`]);
   await createUser(uid);
   const { token } = await issueSession(uid, null);
   return { uid, token };
@@ -76,9 +73,6 @@ after(async () => {
   const pool = getPool();
   for (const u of uids) {
     await pool.execute("DELETE FROM mail WHERE user_id = ?", [u]);
-    await pool.execute("DELETE FROM login_audit WHERE user_id = ?", [u]);
-    await pool.execute("DELETE FROM account_sessions WHERE user_id = ?", [u]);
-    await pool.execute("DELETE FROM accounts WHERE user_id = ?", [u]);
     await cleanupUser(u);
     await clientFor(u).unlink(kSess(u, 0));
     const b = activeLruBucketOf(u);
@@ -204,20 +198,6 @@ test("错误码：RATE_LIMITED（per-user 桶）", async () => {
   await room.leave();
 });
 
-test("错误码：AUTH_REQUIRED / ACCOUNT_BANNED（复活会话被权威拦，09·G7）", async () => {
-  // 撤销后的复活会话（failover 形态）：权威 token_hash 已 NULL 而组 sess 还在 → onAuth strict 回权威即拒
-  //（M12d 简化：撤销真相位只剩 token_hash/status，⛔ 无 epoch fence）
-  const a = await makeUser("ep");
-  await getPool().execute("DELETE FROM account_sessions WHERE user_id = ?", [a.uid]); // M12e：撤销 = 清会话行
-  await assert.rejects(joinLobby(a.token), /AUTH_REQUIRED/);
-
-  // banned：封号后即便重新签发 token（hash 又匹配了），strict 校验查 status=1 仍拦下 —— 封号 = 下次登不上
-  const b = await makeUser("ban");
-  await banUser(b.uid, "test");
-  const revived = await issueSession(b.uid, null);
-  await assert.rejects(joinLobby(revived.token), /ACCOUNT_BANNED/);
-});
-
 test("GM SOP e2e：POST /admin/kick 踢掉在连用户（ack kicked:true + onLeave 4001）；无密钥 401", async () => {
   const secret = "test-admin-secret";
   process.env.ADMIN_API_SECRET = secret; // 端点每请求现读；未配置即关闭（fail-closed）
@@ -256,17 +236,6 @@ test("GM SOP e2e：POST /admin/kick 踢掉在连用户（ack kicked:true + onLea
   const again = await kickReq({ "x-admin-secret": secret });
   assert.equal((await again.json() as { kicked: boolean }).kicked, false, "不在本节点 → kicked:false，可重试幂等");
   delete process.env.ADMIN_API_SECRET;
-});
-
-test("自筛踢 e2e：在连用户被 banUser → 控制总线 applyRevoke 命中本节点 → 强制下线（onLeave code=4001）", async () => {
-  const u = await makeUser("kick");
-  const room = await joinLobby(u.token);
-  await sleep(100); // 确保 LobbyRoom.onJoin/registerOnline 已注册 kick 句柄
-  const left = new Promise<number>((resolve) => { room.onLeave((code: number) => resolve(code)); });
-  setKickHandler(kickUser); // boot 不跑 index.ts，显式挂自筛踢句柄（生产在 index.ts 启动期挂）
-  await banUser(u.uid, "test");
-  const code = await Promise.race([left, sleep(5000).then(() => -1)]);
-  assert.equal(code, KICK_CLOSE_CODE.banned, "被封在连用户被强制下线，语义化关闭码 4001（客户端据此判因）");
 });
 
 test("邮件：list / markRead（MySQL 权威，09·A6）+ 唤醒推送（09·K6）", async () => {

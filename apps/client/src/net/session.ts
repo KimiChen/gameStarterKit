@@ -14,7 +14,7 @@
  * ⛔ 本模块不 import net 客户端类（WebSocketClient/RoomClient 反向调用本模块，防循环依赖）。
  */
 import { setToken, getToken } from "../core/http";
-import type { ILoginRes } from "../shared/index";
+import type { WebPlatformLoginResponse } from "../shared/index";
 
 /**
  * 鉴权失效原因。两类来源：
@@ -34,9 +34,9 @@ const connLostHandlers = new Set<() => void>();
 const battleLostHandlers = new Set<() => void>();
 
 /** 登录成功：记会话（token 进 core/http，后续 HTTP Bearer / 房间 join 都取自它）。 */
-export function setSession(r: ILoginRes): void {
+export function setSession(r: WebPlatformLoginResponse): void {
     userId = r.userId;
-    setToken(r.token);
+    setToken(r.accessToken);
 }
 
 export function getUserId(): string {

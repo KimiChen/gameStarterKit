@@ -22,13 +22,13 @@ export type RoomNameType = (typeof RoomName)[keyof typeof RoomName];
  * **s1 的会话**（不存在）⇒ 玩家看到的是「登录已过期」这种莫名其妙的提示。bump 之后旧包在
  * join 处就被 `ProtocolMismatch` 明确拒掉 —— 正是本常量存在的意义（见 GameRoom.onAuth 注释）。
  */
-export const PROTOCOL_VERSION = 2;
+export const PROTOCOL_VERSION = 3;
 
 /** 房间 join options（client.joinOrCreate 第二参）——双端契约。 */
 export interface IRoomJoinOptions {
     /** 协议版本（PROTOCOL_VERSION）。缺省视为 1（首版客户端未带 v）。 */
     v?: number;
-    /** 框架 token（wx-login 签发；mock token / 缺省按游客进玩法房） */
+    /** WebPlatform Public API 签发的不透明 access token；缺失或伪造一律拒绝。 */
     token?: string;
     /**
      * 目标区服 sId（区服形态）。服务端 onAuth 进服硬闸校验 `sId ∈ 本进程/组 GROUP_ZONES`，
@@ -37,7 +37,7 @@ export interface IRoomJoinOptions {
      */
     sId?: number;
     /**
-     * serverList 一致性哈希（/area/list 响应的 `h`）。进服带上供服务端校验选服列表新鲜度
+     * serverList 一致性哈希（WebPlatform `GET /v1/areas` 响应的 `hash`）。进服带上供服务端校验选服列表新鲜度
      * （配置更新后逼客户端重拉，避免用陈旧列表被准入层拒连）。当前为预留字段。
      */
     listHash?: string;

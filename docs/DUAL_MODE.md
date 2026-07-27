@@ -2,7 +2,9 @@
 
 ## 文档状态
 
-> **本文是设计规格 + 实施进度记录。** 它描述「让当前架构同时支持大混服与区服」的目标形态，扩展并部分改写 [SERVER.md §9.5 扩容模型 ADR](SERVER.md)（原 ADR 立场：扩容单位 = 区服实例、单区服多节点不在承诺内）。**核心已落地**（区服进服硬闸 + 每区独立经济 + 建角 + 冷档按区判，见下「实施进度」）；**账号服务独立进程（M12c）落地完成**（账号原语迁 `@game/webplatform/lib` + Fastify 独立进程 + `ACCOUNT_MODE` http/inProcess 开关 + 登录编排/code2session 迁 lib + 选服目录 `/area/list` 迁 lib + 客户端 login/area 走门户 portalUrl + onAuth 懒填组 sess；split 全链 e2e ⚠ **同进程同库**，见下表脚注）；**撤销/踢在线（M12d）落地**（封号 = 账号级「下次登不上」+ **GM 工具确认踢在线**两步 SOP；权威简化为 status+token_hash；撤销/目录全走 `AccountClient` 接缝并机检；剩 GM 工具实现与 [W1/W2](WEBPLATFORM.md#4-待办上线前必做)）。落地按 §5 里程碑推进。
+> **本文现行只负责“大混服 + 区服”的游戏侧分区设计。** 区服进服硬闸、每区独立经济、建角与冷档判据仍以本文 §3–§6 为参考。
+>
+> 2026-07-27 起，WebPlatform 已拆成独立 `gono-webplatform` Git 仓库和独立账号库；客户端走 Public HTTP，游戏服只走 Internal HTTP，GM 走 Admin HTTP。monorepo 内的 `apps/WebPlatform`、`@game/webplatform`、`ACCOUNT_MODE` 和 in-process 实现均已删除。本文 §2 中保留的旧 lib/双模式推导仅用于理解 M12 历史决策，**不是现行接口或部署说明**；现行边界以 [WEBPLATFORM.md](WEBPLATFORM.md) 为准。
 
 本规格是「同一套 Colyseus 0.17 代码同时承载大混服与区服」的工程落地规格。其结论由 **8 轮技术评审锁定的 7 项决策** 为前提（不再论证「是否该这么做」，只写「怎么落地」），并经 **63 条服务端规则的两份对抗式评审对撞校验**（钱/幂等/跨存储 一份，鉴权/网关/冷档/撤销 一份）后定稿。评审指出的所有阻断级正确性洞（MySQL 谓词分区、ALS-vs-列概念二分、撤销传输层缺失、前缀孤儿化、F4 误判、快路径 epoch 窗口）已在正文改对；当场无法收敛者列入 §9「未决与风险」。本规格与源码逐一核对，文件锚点为仓库相对路径（`apps/server/src/...` 等）。
 
@@ -15,8 +17,8 @@
 | **M12a** 建角 + `char_registry` | ✅ 落地 | 首进区建 per-zone 档 + 角色注册表（§2.6 排序：**档先建、char 行后写**，M12d 评审后反转） |
 | **M12b** F4 thaw 按区判 | ✅ 落地 | ABSENT 分支 sId=0 用 accounts、sId≥1 用 char_registry；⚠ user_archive per-zone 待 archive 步 |
 | **M12e** `/area/list` ul 接真建角数据 | ✅ 落地 | `getUserRecentServers` → `listCharacterZones`（§2.5） |
-| **M12c** WebPlatform 门户抽出 | ✅ 落地完成（split 全链 e2e ⚠ **同进程同库**——测试在进程内起 WebPlatform Fastify、两侧共用一个 MySQL，故它证的是**接缝正确**，⛔ 证不了真 split 的部署形态：跨进程、独立账号库、LB 之后。真拓扑覆盖登记见 `todo.md`） | 账号原语(verify/token/char/accountExists)迁 `@game/webplatform/lib`✅、auth 改 MySQL 权威✅、createUser→onJoin(ensureLive-first 防丢数据)✅、WebPlatform Fastify 独立进程✅、`ACCOUNT_MODE` http↔inProcess 开关✅、登录编排+code2session 迁 lib(结果码边界)+进程内限流✅、选服目录 `/area/list`(目录+ul best-effort)迁 lib✅、WebPlatform 端点按单源 `ApiPath`(/account/wx-login·/dev-login)+客户端契约✅、客户端 login/area 走门户 `portalUrl`(空=回退游戏服)✅、onAuth 懒填组 sess✅ |
-| **M12d** 撤销 + 踢在线 + GM SOP | 🔧 落地（剩 GM 工具实现/W1·W2） | 权威简化为 status+token_hash✅、`stream:kick` + 每节点自筛踢✅、GM `/admin/kick`(ack+fail-closed)✅、踢=先推 forceLogout{reason}+语义化关闭码✅、顶号主动踢(判据=组 sess hash 变化)✅、**撤销/目录全走 `AccountClient` 接缝**(split 下直调 lib=打错库，已机检)✅。**剩**：GM 工具实现(运营侧，契约 09·G7b)、WebPlatform W1 鉴权/W2 审计([WEBPLATFORM.md](WEBPLATFORM.md#4-待办上线前必做))、发奖 recheck |
+| **M12c** WebPlatform 独立服务 | ✅ HTTP-only 拆仓完成 | 独立仓、独立账号库、OpenAPI 契约、Public/Internal 双监听；游戏服 strict verify/character 只走 HTTP，客户端 `portalUrl` 必填且不回退 |
+| **M12d** 撤销 + 踢在线 + GM SOP | ✅ 服务边界落地 | WebPlatform Admin ban/revoke 事务写权威；GM 再逐在役游戏节点调用 `/admin/kick`；顶号与组内 kickBus 仍由游戏侧负责 |
 | **archive 步** user_archive 分区 + active:lru/freeze 区化 | ⬜ 待做 | 耦合 M12c；⛔ 补齐前不开「多区 + freeze」 |
 | **M14/M15** 大混服实时横向 + presence/广播 | ⬜ 待做 | §4 |
 | **M16** 物理分组（100 组 × 10 区） | ⬜ 待做 | §5.1 |
@@ -56,9 +58,9 @@ flowchart TB
   PG -. 去过滤 / 前缀退化为常量 gono_ .-> CASUAL["② 大混服：1 大组 · joinOrCreate('game') 无过滤"]
   PG -. 叠加 filterBy + s{sId}_ + 足迹 .-> ZONE["③ 区服：10 区=1组 → 1000 区=100组×10区"]
 
-  ACCT["WebPlatform 门户(本游戏专属 · zone-aware · status-blind)<br/>身份 · 令牌 · 足迹目录 · 撤销权威 status+token_hash<br/>⛔ 不持 coord · ⛔ 不广播撤销"]
+  ACCT["独立 gono-webplatform<br/>Public / Internal / Admin HTTP<br/>独立账号 MySQL · ⛔ 不持游戏 Redis/游戏库"]
   GM["GM 工具(运营侧)"]
-  POOL -. AccountClient verify/character .-> ACCT
+  POOL -. Internal HTTP verify/character .-> ACCT
   GM -. ① ban 写权威 .-> ACCT
   GM -. ② 逐节点 POST /admin/kick(ack 确认送达) .-> POOL
 ```
@@ -96,7 +98,7 @@ flowchart TB
 
 ---
 
-## 2. 中心账号服务契约（⚠「中心」= 跨**物理组**集中，⛔ **非**跨游戏；见 §2.1 定案）
+## 2. 账号服务决策记录（历史推导；现行契约见 WEBPLATFORM.md）
 
 ### 2.1 边界与三个「盲」
 
@@ -280,7 +282,7 @@ F4 的两问：
 
 `character` 注册表既是 `ul` 源、也是 F4 权威判据，**不再是「纯 UX 缓存」**（但仍只存存在性+时间、不存玩法数据，守 A3）。**R2 重锚**：createUser 仍是区内唯一合法建点（另一为 thaw），sId 来自 ALS 而非入参。
 
-### 2.7 M12c：WebPlatform 门户抽出（实施计划，M12c 单一参考）
+### 2.7 M12c 旧版抽取记录（已由 2026-07-27 HTTP-only 拆仓替代）
 
 **定位精化（覆盖 §2.1 的「三盲」）**：`apps/WebPlatform` 不是「三盲的账号服务」，而是**本游戏专属的平台门户 = 目录 + 身份权威 + 只读投影**。它 **zone-aware**（知道有哪些服、按服给角色数据打标签）、**单游戏**（⛔ 非 project-blind，见 §2.1），但**不拥有权威玩法/经济状态、不跑区内逻辑**——这才是准确的边界，`§2.1` 的「三盲」按此读。
 

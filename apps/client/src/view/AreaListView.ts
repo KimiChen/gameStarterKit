@@ -2,7 +2,8 @@
 import { FguiView } from "./FguiView";
 import { Event, GComponent, GObject } from "db://fairygui-cc/fairygui.mjs";
 import type { AreaListLogic, AreaTab } from "../logic/page/AreaListLogic";
-import type { IAreaServer } from "../shared/index";
+import type { WebPlatformAreaServer } from "../shared/index";
+import { areaStatusIconUrl } from "./areaPresentation";
 // #region AUTO IMPORT DONT CHANGE
 import { GButton, GList, GLoader, GTextField } from "db://fairygui-cc/fairygui.mjs";
 // #endregion AUTO IMPORT
@@ -42,7 +43,7 @@ export class AreaListView extends FguiView {
   }
 
   // ── 业务（AUTO 区块外，Creator 侧验证）────────────────────────
-  private servers: IAreaServer[] = [];
+  private servers: WebPlatformAreaServer[] = [];
   private tabs: { key: AreaTab; title: string }[] = [];
   private selectedTabIndex = -1;
 
@@ -72,7 +73,7 @@ export class AreaListView extends FguiView {
       // 虚拟列表：点击给的是渲染子对象，需转成逻辑项索引（滚动后子索引≠项索引）
       const idx = this.lst_server.childIndexToItemIndex(this.lst_server.getChildIndex(obj));
       const s = this.servers[idx];
-      if (s) logic.choose(s.sId);
+      if (s) logic.choose(s.serverId);
     }, this);
   }
 
@@ -105,7 +106,7 @@ export class AreaListView extends FguiView {
     const close = item.getChild("go_close"); if (close) close.visible = !selected;
   }
 
-  private renderServers(servers: IAreaServer[]): void {
+  private renderServers(servers: WebPlatformAreaServer[]): void {
     this.servers = servers;
     this.lst_server.numItems = servers.length;
   }
@@ -115,10 +116,10 @@ export class AreaListView extends FguiView {
     if (!s) return;
     // ⚠ 本 fairygui-cc 版只有 .asCom，无 .asTextField/.asLoader —— 用 getChild<T>(泛型)取类型化子项
     item.getChild<GTextField>("txt_serverName").text = s.name;
-    item.getChild("go_new").visible = s.t === 1;    // 新服角标
-    item.getChild("go_full").visible = s.t === 2;   // 爆满角标
+    item.getChild("go_new").visible = s.tag === "new";
+    item.getChild("go_full").visible = s.tag === "full";
     // 状态图标在 Dynamic_Login 包（同 LoginView；本页 sharedPkgs 已声明该包）
-    item.getChild<GLoader>("ld_status").url = `ui://Dynamic_Login/login_status_${s.status}`;
+    item.getChild<GLoader>("ld_status").url = areaStatusIconUrl(s.status);
     const openTime = item.getChild<GTextField>("txt_openTime");
     openTime.visible = s.openTime > 0;
     if (s.openTime > 0) {

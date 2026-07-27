@@ -49,7 +49,7 @@ export class Main extends Component {
     @property({ tooltip: "服务端 http(s) 地址。留空 = 自动跟随根 .env.development 的 PORT（sync:client 生成 core/devEnv.ts，默认 http://localhost:2568）；填写即覆盖（远程/真机调试，微信真机需 https + 域名白名单）" })
     serverUrl = "";
 
-    @property({ tooltip: "门户（登录 + 选服）http(s) 地址 —— 账号服务 WebPlatform（DUAL_MODE §2.7）。留空 = 跟随服务端地址（dev/内嵌单机同址）；split 部署时填 WebPlatform 域名。游戏服/区服 WS 不走此地址。" })
+    @property({ tooltip: "WebPlatform Public http(s) 地址（登录 + 选服），必填。不会回退游戏服地址；本地开发示例 http://127.0.0.1:2570。" })
     portalUrl = "";
 
     /** 生效的服务端地址：Inspector 填写值优先，留空自动跟随 devEnv（根 .env.development 的 PORT） */
@@ -104,7 +104,7 @@ export class Main extends Component {
 
     async start() {
         initHttp(this.effectiveServerUrl);
-        initPortal(this.portalUrl); // 留空 = 跟随游戏服（getPortalUrl 回退 baseUrl）；split 时填 WebPlatform 域名
+        initPortal(this.portalUrl); // 必填；空值/非法地址立即失败，⛔ 不回退游戏服
 
         // ⚠ **必须在 openLogin(→wireSessionEvents) 之前订阅**：处理器按订阅序执行，
         // 本类先把战斗态拆干净，pages 再做导航——⛔ 否则登录页会叠在仍在跑的战斗上。
@@ -236,18 +236,17 @@ export class Main extends Component {
         })().catch((e) => console.error("[Main] 回大厅失败：", e));
     }
 
-    /** 连 ballMove 玩法房（token 已在大厅登录时设置；无 token 走游客）。
-     *  区服=实例：连**选中区服的 wsUrl**（大厅选服设的 serverSession），无则回退 serverUrl。
-     *  Colyseus Client 收 http(s) 端点自行派生 ws(s)，故把 ws:// 换回 http:// 再传。 */
+    /** 连 ballMove 玩法房（token 已在大厅登录时设置）。
+     * 区服=实例：使用目录明确给出的 gameHttpUrl；无选服状态直接失败，不猜默认游戏服。 */
     private connectRoom(): GameRoomOwnership {
         const cur = getCurrentServer();
-        const endpoint = cur?.wsUrl ? cur.wsUrl.replace(/^ws/, "http") : this.effectiveServerUrl;
-        RoomClient.inst.init(endpoint);
-        // 区服进服硬闸接线（docs/DUAL_MODE.md §4.3 / M11）：带上选中区服 sId，供服务端 onAuth
-        // 校验 sId ∈ GROUP_ZONES（防串服）+ GameRoom 的 filterBy(["sId"]) 按区撮合。
-        // ⚠ cur 为 null（未选服）→ 不带 sId：单形态放行；**区服组会拒**（M12d 收紧——缺 sId 会让
-        // 大厅串基础前缀、且绕过 filterBy 混区），故区服部署下必须先选服再进战斗。
-        return RoomClient.inst.joinGame({ token: getToken(), sId: cur?.sId });
+        if (!cur) {
+            throw new Error("[Main] 尚未选择区服，不能进入战斗");
+        }
+        RoomClient.inst.init(cur.gameHttpUrl);
+        // WebPlatform 对外契约使用 serverId；游戏服房间契约仍保留 sId。
+        // 未选服已在上方明确拒绝，因此这里始终携带选中的 serverId。
+        return RoomClient.inst.joinGame({ token: getToken(), sId: cur.serverId });
     }
 
     /**

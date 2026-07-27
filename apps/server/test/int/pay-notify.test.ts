@@ -15,7 +15,7 @@ import { createUser } from "../../src/core/userRecord";
 import { createOrder } from "../../src/core/economy/purchases";
 import { PURCHASE_CREATED, PURCHASE_DELIVERED } from "../../src/core/infra/config";
 import { closeMysql, getPool } from "../../src/core/infra/mysql";
-import type { ResultSetHeader, RowDataPacket } from "../../src/core/infra/mysql";
+import type { RowDataPacket } from "../../src/core/infra/mysql";
 import { closeRedis } from "../../src/core/infra/redisRoute";
 import { assertRedisUp, cleanupUser, testUid } from "./helpers";
 
@@ -32,12 +32,10 @@ const BASE = "http://127.0.0.1:2568";
 let colyseus: ColyseusTestServer;
 const uids: string[] = [];
 
-/** 造号：accounts 行 + Redis 档（发币链路不依赖档字段，无需会话）。 */
+/** 造游戏侧玩家档（发币链路不依赖账号库或会话）。 */
 async function makeUser(name: string): Promise<string> {
   const uid = testUid(name).slice(0, 32);
   uids.push(uid);
-  await getPool().execute<ResultSetHeader>(
-    "INSERT INTO accounts (user_id, openid) VALUES (?, ?)", [uid, `op_${uid}`]);
   await createUser(uid);
   return uid;
 }
@@ -75,8 +73,6 @@ after(async () => {
     await pool.execute("DELETE FROM purchases WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM currency_ledger WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM user_currency WHERE user_id = ?", [u]);
-    await pool.execute("DELETE FROM account_sessions WHERE user_id = ?", [u]);
-    await pool.execute("DELETE FROM accounts WHERE user_id = ?", [u]);
     await cleanupUser(u);
   }
   await closeRedis();

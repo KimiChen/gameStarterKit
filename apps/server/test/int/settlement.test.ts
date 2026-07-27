@@ -226,17 +226,14 @@ test("startMatchConsumer 常驻循环：阻塞等待中投递的证据被自动�
 
 test("GameRoom 区服端到端：跨区 joinById 拒绝；同区开局 → 收局证据落库", async () => {
   const colyseus: ColyseusTestServer = await boot((await import("../../src/app.config")).server);
-  const accounts: { uid: string; sId: number }[] = [];
+  const players: { uid: string; sId: number }[] = [];
   try {
-    // 造框架账号会话（绕过 wxLogin——微信侧 M3 已单独测过）。⚠ **必须建 accounts 行**：
-    // GameRoom.onAuth 已改 strict（回权威校验 token_hash/status，M12d 评审：快路径准入会让被封账号
-    // 不断开新战斗房打无限局）——无 accounts 行则 issueToken 写不进权威、strict 校验必拒。
+    // 造玩法档 + 组缓存会话。GameRoom strict onAuth 仍需契约一致的 WebPlatform 测试服务。
     const { issueSession } = await import("./helpers");
     const { createUser } = await import("../../src/core/userRecord");
     const mk = async (name: string, sId: number) => {
       const uid = testUid(name).slice(0, 32);
-      accounts.push({ uid, sId });
-      await getPool().execute("INSERT INTO accounts (user_id, openid) VALUES (?, ?)", [uid, `op_${uid}`]);
+      players.push({ uid, sId });
       await createUser(uid);
       const { token } = await issueSession(uid, null, "", sId);
       return { uid, token };
@@ -318,8 +315,7 @@ test("GameRoom 区服端到端：跨区 joinById 拒绝；同区开局 → 收�
     assert.equal(payload.loadout, null, "休闲局无归一化 loadout（BYO）");
   } finally {
     await colyseus.shutdown();
-    for (const { uid, sId } of accounts) {
-      await getPool().execute("DELETE FROM accounts WHERE user_id = ?", [uid]);
+    for (const { uid, sId } of players) {
       await cleanupUser(uid);
       await clientFor(uid).unlink(kSess(uid, sId));
       const bkt = activeLruBucketOf(uid);

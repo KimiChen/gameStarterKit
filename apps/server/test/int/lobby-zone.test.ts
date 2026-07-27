@@ -26,11 +26,9 @@ import {
 import { server } from "../../src/app.config";
 
 import { GROUP_ZONES } from "../../src/core/infra/config";
-import { listCharacterZones } from "../../src/player/character";
 import { activeLruBucketOf, kActiveLru, kSess, kUser, zoneCtx } from "../../src/core/infra/keys";
 import { clientFor, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
-import { closeMysql, getPool } from "../../src/core/infra/mysql";
-import type { ResultSetHeader } from "../../src/core/infra/mysql";
+import { closeMysql } from "../../src/core/infra/mysql";
 import { LobbyRoom } from "../../src/websocket/LobbyRoom";
 import { stopMailWakeLoop } from "../../src/websocket/push";
 import { assertRedisUp, cleanupUser, sleep, testUid, issueSession } from "./helpers";
@@ -38,14 +36,10 @@ import { assertRedisUp, cleanupUser, sleep, testUid, issueSession } from "./help
 let colyseus: ColyseusTestServer;
 const uids: string[] = [];
 
-/** 造号：accounts 行 + 会话（⛔ 不建玩法档——建角交给 onJoin/测试自身，才验得出落对区）。 */
+/** 造组缓存会话（⛔ 不建玩法档——建角交给 onJoin/测试自身，才验得出落对区）。 */
 async function makeAcct(name: string, sId = 0): Promise<{ uid: string; token: string }> {
   const uid = testUid(name).slice(0, 32);
   uids.push(uid);
-  await getPool().execute<ResultSetHeader>(
-    "INSERT INTO accounts (user_id, openid) VALUES (?, ?)", [uid, `op_${uid}`]);
-  // ⚠ **会话按区签发**（M12e）：token 只对签发它的那个区有效 ⇒ 要进 s1 就得有 s1 的会话。
-  //   ⛔ 别再用一个 s0 token 去 join s1——那正是新语义要拒的（AUTH_REQUIRED）。
   const { token } = await issueSession(uid, null, "", sId);
   return { uid, token };
 }
@@ -108,12 +102,7 @@ before(async () => {
 after(async () => {
   stopMailWakeLoop();
   await colyseus?.shutdown();
-  const pool = getPool();
   for (const u of uids) {
-    await pool.execute("DELETE FROM char_registry WHERE user_id = ?", [u]);
-    await pool.execute("DELETE FROM login_audit WHERE user_id = ?", [u]);
-    await pool.execute("DELETE FROM account_sessions WHERE user_id = ?", [u]);
-    await pool.execute("DELETE FROM accounts WHERE user_id = ?", [u]);
     for (const s of [0, 1]) { await zoneCtx.run({ sId: s }, () => cleanupUser(u)).catch(() => {}); }
     await clientFor(u).unlink(kSess(u, 0), kSess(u, 1), kSess(u, 2));
     const b = activeLruBucketOf(u);
@@ -141,19 +130,17 @@ test("LobbyRoom sId 先做运行时规范化：承载全部区时畸形值仍拒
   assert.deepEqual(auth, { userId: uid, token, sId: 1 }, "合法整数须按原值完成权威鉴权");
 });
 
-test("带 sId=1 join：onJoin 建角落 s1_user + char_registry(uid,1)，⛔ 不落基础前缀 s0", async () => {
-  const { uid, token } = await makeAcct("z1char", 1); // ⚠ 会话按区：进 s1 就要 s1 的 token（M12e）
+test("带 sId=1 join：onJoin 建角落 s1_user，⛔ 不落基础前缀 s0", async () => {
+  const { uid, token } = await makeAcct("z1char", 1);
   const c = clientFor(uid);
   const s1u = zoneUserKey(uid, 1);
   const base = zoneUserKey(uid, 0);
   const room = await joinLobby(token, 1);
-  // onJoin → ensureCharacter(uid, 1)：char_registry 行先写、再建 s1_user（fire-and-forget，等其落地）
+  // onJoin → ensureCharacter(uid, 1)：建立 s1_user（fire-and-forget，等其落地）
   await waitFor(async () => (await c.exists(s1u)) === 1, "s1_user 由 onJoin ensureCharacter 建立");
 
   const baseExists = await c.exists(base);
-  const zones = await listCharacterZones(uid);
   assert.equal(baseExists, 0, "基础前缀 user 未建（建角落所选区 s1，非大混服 s0）");
-  assert.deepEqual(zones, [1], "char_registry 记 (uid,1)（喂 ul『我的区』）");
   await room.leave();
 });
 

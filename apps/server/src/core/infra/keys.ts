@@ -103,8 +103,16 @@ export const K_STREAM_MATCH_V2 = `${G}stream:match:v2:{${K_STREAM_MATCH}}`;
 export const K_STREAM_MAILWAKE = `${G}stream:mailwake`;
 /** 踢人流（DUAL_MODE §2.3 / M12d）：coord Redis 上广播 `{uid, reason[, exceptHash]}` 触发各节点自筛踢在线连接。
  *  `exceptHash` = 顶号判别位（跳过持新登录态的连接，⛔ 防迟到投递自踢）。
- *  **best-effort、无 ack**（权威撤销在 `accounts.status/token_hash`；⛔ 漏踢无自动收敛，送达保证走 GM `/admin/kick`）。⛔ 禁 MAXLEN，走 XTRIM MINID。 */
+ *  **best-effort、无 ack**（权威撤销在 WebPlatform；⛔ 漏踢无自动收敛，送达保证走 GM `/admin/kick`）。⛔ 禁 MAXLEN，走 XTRIM MINID。 */
 export const K_STREAM_KICK = `${G}stream:kick`;
+/**
+ * WebPlatform 角色登记修复 intent（GAME-6）：两个 durable key 用固定 hash-tag 同槽，才能用
+ * MULTI 原子维护调度项与失败次数。member 是 `JSON [userId,serverId]`，score 是 nextAttemptMs。
+ *
+ * ⚠ worker 在 HTTP PUT 成功前绝不 ZREM；进程崩溃/多实例竞争最多重复调用幂等 PUT，不会丢 intent。
+ */
+export const K_CHARACTER_REPAIR_DUE = `${G}repair:character:due:{character-repair}`;
+export const K_CHARACTER_REPAIR_ATTEMPTS = `${G}repair:character:attempts:{character-repair}`;
 
 /** 活跃索引 ZSET（member=uid, score=lastActiveMs）。hash-tag 是 {bucket} 不是 {uid}。
  *  ⚠ per-zone 归属留到 archive 步（登录 touchActive 前置区上下文的一致性待解），暂用全局前缀（单形态无差）。 */

@@ -29,18 +29,14 @@ import {
 } from "@game/shared";
 import { GameRoomState, PlayerState } from "./schema/GameRoomState";
 import { groupAdmitsZone, normalizeSId } from "../core/infra/config";
-import { account } from "../platform/accountClient";
-import { joinRefused } from "../core/errors";
+import { verifyAndCacheWebPlatformSession } from "../platform/webPlatformClient";
+import { joinRefused, joinRefusedAuth, toErrCode } from "../core/errors";
 import { emitMatchEvidence, MATCH_MODE_CASUAL, newMatchId } from "../core/match/matchConsumer";
 
 // demo 昵称池（原 mock/data，mock 层删除后归本房间私有；真实项目从档案取昵称）
 const NICK_PREFIX = ["快乐", "无敌", "神秘", "暴走", "咸鱼", "低调", "闪电", "锦鲤"];
 const NICK_SUFFIX = ["小汉字", "词王", "笔画侠", "拼音怪", "部首君", "成语精"];
 const randomNickname = (rng: SeededRandom): string => `${rng.pick(NICK_PREFIX)}${rng.pick(NICK_SUFFIX)}`;
-
-/** 框架不透明 token 形制：`{uid}.{hex}`（auth/session.ts issueSession，TOKEN_BYTES=24 → 48 位 hex）。
- *  形制不符 = 伪造/旧 mock 残余 → 直接拒连（去 mock 后无游客模式）。 */
-const FRAMEWORK_TOKEN_RE = /\.[0-9a-f]{48}$/;
 
 type GameRoomAuth = {
     userId: string;
@@ -81,7 +77,7 @@ export class GameRoom extends Room {
     private matchStartMs = 0;
 
     /**
-     * 账号绑定（M8a）：框架 token（wx/dev-login 签发）反查 uid 存入 client.auth（09·G1
+     * 账号绑定（M8a）：WebPlatform 签发的不透明 token 反查 uid 存入 client.auth（09·G1
      * ⛔ 不信客户端单独传的 userId）。token 缺失/伪造/过期一律拒连（去 mock 后无游客模式）。
      */
     static async onAuth(token: string, options: IRoomJoinOptions | undefined, _context: AuthContext) {
@@ -100,20 +96,25 @@ export class GameRoom extends Room {
         if (!groupAdmitsZone(options?.sId === undefined ? undefined : sId)) {
             throw joinRefused(ErrorCode.WrongServer);
         }
-        // token 严格化（去 mock 后）：⛔ 不再有「伪造/过期静默降游客」——dev-login 让真
-        // token 零成本，游客模式失去存在理由；验不过一律拒连（可识别错误码给客户端回登录）
+        // token 是 WebPlatform 的不透明句柄：本进程只做空值/契约长度防护，
+        // ⛔ 不解析 uid、随机串长度或任何内部格式。
         const raw = options?.token ?? token ?? "";
-        if (!FRAMEWORK_TOKEN_RE.test(raw)) {
+        if (typeof raw !== "string" || raw.length < 1 || raw.length > 256) {
             throw joinRefused(ErrorCode.TokenExpired, "auth");
         }
         try {
-            // strict：建连点回权威（token_hash/status）——⛔ 快路径只比对组缓存，被封账号能一直开新战斗房
-            // 打无限局（SOP①「新建连接即拒」正是靠这条）。成本 = 每次进房一条 PK SELECT / 一次远程 verify，
+            // strict：建连点 HTTP 回权威——⛔ 快路径只比对组缓存，被封账号能一直开新战斗房
+            // 打无限局（SOP①「新建连接即拒」正是靠这条）。成本 = 每次进房一次远程 verify，
             // 不在 per-message 路径上。⚠ 已在房内的对局不受影响（打完为止，§2.3 已知边界 + U6 发奖 recheck）。
             // ⚠ 带区：token 只对签发它的那个区有效（M12e）
-            return { userId: await account.verify(raw, true, sId), sId } satisfies GameRoomAuth;
-        } catch {
-            throw joinRefused(ErrorCode.TokenExpired, "auth");
+            return {
+                userId: await verifyAndCacheWebPlatformSession(raw, sId),
+                sId,
+            } satisfies GameRoomAuth;
+        } catch (e) {
+            // 只有 WebPlatform 的 valid:false 才是玩家身份失败；超时、5xx、服务密钥错误等
+            // 必须保持 INTERNAL，⛔ 不能谎报成 token 过期。
+            throw joinRefusedAuth(toErrCode(e));
         }
     }
 

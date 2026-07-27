@@ -5,21 +5,32 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { request } from "../src/core/http";
+import { getPortalUrl, initHttp, initPortal, request, setToken } from "../src/core/http";
+import { devLogin, wxLogin } from "../src/net/http/account";
+import { fetchAreaList } from "../src/net/http/area";
 
 /** 可编程假 XHR：send 后同步触发 onload，按预设 status/body 回放 */
 class FakeXhr {
   static nextStatus = 200;
   static nextBody = "{}";
+  static lastMethod = "";
+  static lastUrl = "";
+  static lastBody: unknown;
+  static lastHeaders: Record<string, string> = {};
   status = 0;
   responseText = "";
   timeout = 0;
   onload: (() => void) | null = null;
   onerror: (() => void) | null = null;
   ontimeout: (() => void) | null = null;
-  open(_m: string, _u: string): void { /* noop */ }
-  setRequestHeader(_k: string, _v: string): void { /* noop */ }
-  send(_body?: unknown): void {
+  open(method: string, url: string): void {
+    FakeXhr.lastMethod = method;
+    FakeXhr.lastUrl = url;
+    FakeXhr.lastHeaders = {};
+  }
+  setRequestHeader(key: string, value: string): void { FakeXhr.lastHeaders[key] = value; }
+  send(body?: unknown): void {
+    FakeXhr.lastBody = body;
     this.status = FakeXhr.nextStatus;
     this.responseText = FakeXhr.nextBody;
     queueMicrotask(() => this.onload?.());
@@ -53,12 +64,17 @@ test("http：非 2xx 带出可判别的 status/code（业务层靠字段分流�
   const orig = (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest;
   (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = FakeXhr;
   try {
-    // 409 BUSY：LoginLogic 据此做单次退避重试并改文案（评审 [11]）——码必须原样带到业务层
+    // WebPlatform v1 错误码必须原样带到业务层，调用方据此给出可重试提示。
     FakeXhr.nextStatus = 409;
-    FakeXhr.nextBody = `{"error":"BUSY"}`;
+    FakeXhr.nextBody = `{"code":"RATE_LIMITED","requestId":"req-1"}`;
     const e = await request("GET", "/x").then(() => null, (x: unknown) => x) as { status?: number; code?: string };
     assert.equal(e.status, 409);
-    assert.equal(e.code, "BUSY", "端点 { error } 体必须解成 code 字段");
+    assert.equal(e.code, "RATE_LIMITED", "WebPlatform v1 { code } 体必须解成 HttpError.code");
+
+    FakeXhr.nextStatus = 401;
+    FakeXhr.nextBody = `{"error":"AUTH_REQUIRED"}`;
+    const legacy = await request("GET", "/x").then(() => null, (x: unknown) => x) as { code?: string };
+    assert.equal(legacy.code, "AUTH_REQUIRED", "游戏服现有 { error } 体仍需可判别");
 
     // 非 JSON / 无 error 字段的错误体 → code 空串，status 仍可用（⛔ 解析失败不得反过来吃掉错误）
     FakeXhr.nextStatus = 502;
@@ -67,6 +83,48 @@ test("http：非 2xx 带出可判别的 status/code（业务层靠字段分流�
     assert.equal(g.status, 502);
     assert.equal(g.code, "");
   } finally {
+    (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = orig;
+  }
+});
+
+test("WebPlatform Public：portal 必填且不回退；v1 登录/选服方法、字段与 Bearer 正确", async () => {
+  const orig = (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest;
+  (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = FakeXhr;
+  try {
+    initHttp("http://game.invalid:2568");
+    assert.throws(() => initPortal(""), /portalUrl 必填/, "空 Portal 必须启动失败，⛔ 不得跟随游戏服");
+    assert.throws(() => getPortalUrl(), /尚未初始化/);
+    assert.throws(() => initPortal("ws://portal.invalid"), /http\(s\)/);
+
+    initPortal("https://portal.example.com///");
+    assert.equal(getPortalUrl(), "https://portal.example.com", "只规范化尾斜杠，不改写为游戏服地址");
+
+    FakeXhr.nextStatus = 200;
+    FakeXhr.nextBody = `{"userId":"u_1","accessToken":"opaque","isNewAccount":true}`;
+    const login = await devLogin("dev_1", 107, "device-1");
+    assert.deepEqual(login, { userId: "u_1", accessToken: "opaque", isNewAccount: true });
+    assert.equal(FakeXhr.lastMethod, "POST");
+    assert.equal(FakeXhr.lastUrl, "https://portal.example.com/v1/sessions/dev");
+    assert.deepEqual(JSON.parse(String(FakeXhr.lastBody)), {
+      devKey: "dev_1",
+      serverId: 107,
+      deviceId: "device-1",
+    });
+
+    FakeXhr.nextBody = `{"userId":"u_2","accessToken":"opaque2","isNewAccount":false}`;
+    await wxLogin("wx-code", 7);
+    assert.equal(FakeXhr.lastUrl, "https://portal.example.com/v1/sessions/wechat");
+    assert.deepEqual(JSON.parse(String(FakeXhr.lastBody)), { code: "wx-code", serverId: 7 });
+
+    setToken("opaque2");
+    FakeXhr.nextBody = `{"isOps":false,"hash":"h","servers":[],"myServerIds":[]}`;
+    await fetchAreaList();
+    assert.equal(FakeXhr.lastMethod, "GET");
+    assert.equal(FakeXhr.lastUrl, "https://portal.example.com/v1/areas");
+    assert.equal(FakeXhr.lastBody, undefined, "GET /v1/areas 不发送旧版 token body");
+    assert.equal(FakeXhr.lastHeaders.Authorization, "Bearer opaque2");
+  } finally {
+    setToken("");
     (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = orig;
   }
 });

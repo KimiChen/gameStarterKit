@@ -1,10 +1,12 @@
 # gameStarterKit
 
-微信小游戏 monorepo 骨架：**Cocos Creator 3.8.8 客户端 + Colyseus 0.17 服务端 + 零依赖双端共享层**。
+微信小游戏 monorepo 骨架：**Cocos Creator 3.8.8 客户端 + Colyseus 0.17 游戏服 + 零依赖双端共享层**。
+账号、登录与选服由独立 Git 仓 **`gono-webplatform`** 通过 HTTP 提供。
 一套仓库同时给客户端、服务端、共享协议提供类型安全的开发流水线。
 
-> 这是「程序员必读」的最短上手页。设计意图与深入细节见 [`docs/`](docs/) 三篇：
-> [技术总览](docs/OVERVIEW.md) · [客户端](docs/CLIENT.md) · [服务端](docs/SERVER.md)。
+> 这是「程序员必读」的最短上手页。设计意图与深入细节见 [`docs/`](docs/)：
+> [技术总览](docs/OVERVIEW.md) · [客户端](docs/CLIENT.md) · [服务端](docs/SERVER.md) ·
+> [WebPlatform 边界](docs/WEBPLATFORM.md)。
 
 ---
 
@@ -18,28 +20,38 @@ apps/
 ├── server/     Colyseus 0.17 服务端（tsx 直跑 TS）
 ├── shared/     双端共享层（零依赖纯 TS：协议/公式/常量）—— sync 到客户端
 └── art/        FairyGUI 编辑器工程（设计师产 UI 包）
-docs/           技术总览 / 客户端 / 服务端 三篇
+docs/           技术总览 / 客户端 / 服务端 / WebPlatform 边界
 tools/          codegen / excel 导表 / 体积报告等
 ```
 
+WebPlatform **不在本 monorepo 的运行包中**。旧提交中的 `apps/WebPlatform` 只用于拆仓历史追溯，
+不再是 workspace、启动入口或可依赖源码；账号业务、migration、镜像与账号库凭证都归
+`gono-webplatform` 仓。本仓只精确消费 `@gono/webplatform-contract`。
+
 ---
 
-## 三分钟跑起来（真实链路：本地栈 + dev-login）
+## 本地跑起来（游戏栈 + 独立 WebPlatform）
 
 ```bash
-npm install                                  # 安装 shared + server 依赖（client/Cocos 不在 workspaces）
+npm install                                  # 安装 shared + game server；不会安装/启动 WebPlatform 业务服务
 npm run sync:shared                          # shared→client→Cocos 全链同步（生成物已入库，通常无 diff）
 npm --workspace @game/server run stack       # 起本地 Redis×2 + MySQL（一次性；brew redis + mysql@8.4）
-npm --workspace @game/server run db:bootstrap# 建 game_<PROJECT_ID> 库 + 全量 DDL（一次性，幂等）
-npm run dev                                  # 启动服务端 http://localhost:2568
-# 运行时产物（colyseus UMD、fairygui-cc 运行时）已入库，无需任何 fetch；
-# 登录走 /account/dev-login（真实建号/token/会话链路，无微信凭证也严谨可跑；生产自动禁用）
+npm --workspace @game/server run db:bootstrap# 只初始化 game_<PROJECT_ID> 游戏库（不建账号表）
+npm run dev                                  # 启动游戏服 http://localhost:2568
 ```
+
+同时按独立 `gono-webplatform` 仓 README 初始化它的**空账号库**并启动 Public/Internal HTTP
+（本地约定通常为 `http://127.0.0.1:2570` / `http://127.0.0.1:2571`）。游戏服通过
+`WEBPLATFORM_INTERNAL_URL`、`WEBPLATFORM_SERVICE_ID`、`WEBPLATFORM_SERVICE_SECRET`
+访问 Internal API；它没有账号库 DSN，也不会回退到本地实现。
 
 然后打开客户端预览：
 
 1. 用 **Cocos Dashboard 3.8.8** 打开 **`apps/Cocos`** 目录，等首次导入完成；
-2. 编辑器里点 **预览** —— 点「进入游戏」：dev-login 建真实账号 → 进大厅拉档案 → 主界面 →
+2. 在场景 `Main` 组件把必填 `portalUrl` 设为 WebPlatform Public origin
+   （本地例：`http://127.0.0.1:2570`；留空会立即失败，绝不回退游戏服）；
+3. 编辑器里点 **预览** —— 点「进入游戏」：Public `POST /v1/sessions/dev` 建真实账号 →
+   Internal verify 后进大厅拉档案 → 主界面 →
    再点「进入游戏」进房，**按住屏幕可拖动小圆点**。
 
 服务端起来后还带两个网页入口：`/` Playground 调试台、`/monitor` 房间监控。
@@ -56,6 +68,8 @@ npm run dev                                  # 启动服务端 http://localhost:
 |---|---|
 | `npm run dev` | 启动服务端（tsx watch，热重载，端口 2568） |
 | `npm run dev:client` | 双 watcher 常驻：shared→client→Cocos 保存即同步 |
+| `npm run sync:webplatform-contract` | 从精确锁定的契约包刷新 `apps/shared/src/generated/webplatform`，并级联 shared→client→Cocos |
+| `npm run verify:webplatform-contract` | 只读校验契约包版本/hash 与入库生成物一致 |
 | `npm run fetch:fgui` / `fetch:colyseus` | **升级**运行时版本时用（产物已入库；拉新版 + 验完整性后提交 diff） |
 | `npm run sync:shared` | 改完 `apps/shared/src` 后**必须**执行（→ `apps/client/src/shared`，并级联 `sync:client`） |
 | `npm run sync:client` | 改完 `apps/client/src` 后**必须**执行（灌入 `apps/Cocos/assets/src`；生成物连 .meta 入库） |
@@ -66,7 +80,7 @@ npm run dev                                  # 启动服务端 http://localhost:
 | `npm run report:size` | 微信构建体积报告（4MB 主包水位） |
 | `npm run verify:ecs` | 校验 ECS 库（bitECS）12 个文件字节锁定 |
 | `npm --workspace @game/server run test` | 服务端单测 |
-| `npm --workspace @game/server run smoke` | 真实链路冒烟：dev-login→选服→进房→技能（需 stack + db:bootstrap + dev 已起） |
+| `npm --workspace @game/server run smoke` | 真实链路冒烟（需游戏栈、独立 WebPlatform 与其账号库均已就绪） |
 | `npm --workspace @game/server run stack` | 起本地 Redis×2 + MySQL（真实玩法链路用） |
 | `npm --workspace @game/server run test:int` | 集成测试（真实 Redis+MySQL；**跑前先停 npm run dev**） |
 
@@ -79,6 +93,10 @@ npm run dev                                  # 启动服务端 http://localhost:
    `apps/Cocos/assets/src/` 整份是 `sync:client` 生成物，同样禁手改。
 2. **消息名/协议类型/公式一律 `import` 自 shared**，不手写字符串、不复制公式（双端单源）。
 3. **相对导入不带扩展名**（Cocos 编译器要求）——全仓统一，别"顺手"加 `.ts`/`.js`。
+
+账号边界还有一条同等级红线：游戏生产源码不得 import `@game/webplatform` 或旧
+`apps/WebPlatform`，不得恢复 `ACCOUNT_MODE`/进程内实现。客户端只打 Public HTTP，游戏服只打
+Internal HTTP，GM 写权威只打 Admin HTTP。
 
 新功能标准动线、目录职责、服务端写路径铁律（`09·XX`）、FairyGUI 工作流等，分别见
 [技术总览](docs/OVERVIEW.md) / [客户端](docs/CLIENT.md) / [服务端](docs/SERVER.md)。

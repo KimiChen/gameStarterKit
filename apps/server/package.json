@@ -27,7 +27,7 @@
     "@colyseus/tools": "^0.17.19",
     "@colyseus/ws-transport": "^0.17.0",
     "@game/shared": "0.1.0",
-    "@game/webplatform": "0.1.0",
+    "@gono/webplatform-contract": "file:../../vendor/gono-webplatform-contract-1.0.0.tgz",
     "colyseus": "^0.17.10",
     "express": "^5.1.0",
     "ioredis": "^5.11.1",

@@ -18,7 +18,9 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const WATCHERS = ["scripts/sync-shared.mjs", "scripts/sync-client.mjs"];
 
-// 消除启动窗口竞态：shared 先一次性同步到位，client watcher 的初始全量扫描必然看到最新态
+// 外部 WebPlatform HTTP 契约先从钉版 artifact 刷进 shared 真源，再消除启动窗口竞态：
+// shared 一次性同步到位，client watcher 的初始全量扫描必然看到最新态。
+execFileSync(process.execPath, [path.join(ROOT, "scripts/sync-webplatform-contract.mjs")], { cwd: ROOT, stdio: "inherit" });
 execFileSync(process.execPath, [path.join(ROOT, "scripts/sync-shared.mjs")], { cwd: ROOT, stdio: "inherit" });
 
 const children = WATCHERS.map((script) =>

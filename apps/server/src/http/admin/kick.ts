@@ -1,7 +1,8 @@
 /**
  * POST /admin/kick —— **GM 内部端点**：踢掉本节点上该 uid 的在线连接，并回报是否命中（M12d §2.3 封号 SOP 第二步）。
  *
- * 封号是**两步都必做**的操作：① WebPlatform 写权威（status=1 + token_hash=NULL）；② GM 工具**逐节点**调本端点、
+ * 封号是**两步都必做**的操作：① WebPlatform 事务写 `accounts.status=1`、删除全部
+ * `account_sessions` 并记审计；② GM 工具**逐节点**调本端点、
  * 按 `kicked` 确认送达（不命中的节点返回 `kicked:false` 属正常——用户只连在一个节点）。⛔ 缺第二步，
  * 被封用户的在场连接可存活至 sess TTL（3d）且无自动收敛：快路径是纯缓存比对、不回权威。
  *

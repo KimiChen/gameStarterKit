@@ -2,7 +2,7 @@
  * 网关大厅房（10·M5）：客户端 join 后，所有取数/邮件/工会请求走单一 `rpc` 消息通道
  * （Colyseus 的 send/onMessage 无请求配对，信封里的 id 做 correlation，03）。
  *
- * - onAuth：token 反查 uid（09·G1）+ 严格校验（回源 MySQL 权威 token_hash/status）。
+ * - onAuth：token 反查 uid（09·G1）+ 严格校验（HTTP 回源 WebPlatform 权威）。
  * - 每消息快路径复验 sess（**纯组缓存 hash 比对、零权威回源**；在线撤销靠踢，见 §2.3 封号 SOP）。
  * - 大包防护在 transport 层 maxPayload（09·G4，见 app.ts）。
  */
@@ -13,13 +13,13 @@ import {
 } from "@game/shared";
 import { groupAdmitsZone, normalizeSId } from "../core/infra/config";
 import { zoneCtx } from "../core/infra/keys";
-import { account } from "../platform/accountClient";
+import { verifyAndCacheWebPlatformSession } from "../platform/webPlatformClient";
 import { joinRefused, joinRefusedAuth, toErrCode } from "../core/errors";
 import { loadFields } from "../core/userRecord";
 import { ensureCharacter } from "../player/character";
 import { dispatchRpc, rpcEnvelopeSchema, type RpcCtx, type RpcReply } from "./dispatcher";
 import { registerOnline, setOnlineGuild, startMailWakeLoop, unregisterOnline, type PushSink } from "./push";
-import { tokenHashOf } from "../core/auth/session";
+import { tokenHashOf, verifySession } from "../core/auth/session";
 import { registerAllRoutes } from "./loader";
 
 type LobbyClient = Client<{
@@ -53,7 +53,7 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
     }
     try {
       // ⚠ 带上本次要进的区：token 只对签发它的那个区有效（M12e）
-      const uid = await account.verify(token, true, sId);
+      const uid = await verifyAndCacheWebPlatformSession(token, sId);
       return { userId: uid, token, sId }; // sId 存进 auth，供 messages/onJoin 建区上下文（§3.5）
     } catch (e) {
       throw joinRefusedAuth(toErrCode(e)); // 统一出口（⛔ 禁在此 new ServerError，见 errors-http-status.test）
@@ -77,7 +77,9 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
       // 每消息快路径复验（纯组缓存 hash 比对）：顶号换发后旧 token 下一条即 401；
       // ⚠ 封号**不靠这里**（快路径零权威回源）——靠踢（§2.3 SOP：GM 逐节点 /admin/kick 确认）
       try {
-        await account.verify(auth.token, false, auth.sId);
+        // token 对游戏服不透明；uid 来自 onAuth 的 WebPlatform verify 响应。
+        // 快路径直接用已认证 uid 查组缓存，绝不从 token 文本反解身份、也不逐消息回源。
+        await verifySession(auth.userId, auth.token, auth.sId);
       } catch (e) {
         client.send(LOBBY_MSG_RPC, { id: msg.id, ok: false, err: { code: toErrCode(e), msg: "" } } satisfies RpcReply);
         return;
@@ -107,14 +109,14 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
       kick: (closeCode) => { void client.leave(closeCode); },
       tokenHash: tokenHashOf(client.auth.token),
     });
-    // 建角（§2.6 / M12a）：玩家进本区 → 确保该区角色存在（char_registry 行 + s{sId}_user），幂等自愈；
+    // 建角（§2.6 / M12a）：玩家进本区 → 确保该区玩法档 + WebPlatform 角色登记存在，幂等自愈；
     // 再挂工会在线索引（loadFields 读 s{sId}_user 的 guildId，per-zone → zoneCtx 硬化）。
     // 全程 best-effort：失败只影响工会广播/首帧，不阻塞连接（重连/换会修复）。
     void ensureCharacter(uid, sId)
       .then(() => zoneCtx.run({ sId }, () => loadFields(uid, ["guildId"])))
       .then((f) => setOnlineGuild(uid, Number(f.guildId ?? 0) || null, sId)) // ⚠ 带 sId：索引按区分桶（A2）
       .catch((e) => {
-        // ⛔ 不再静默：建角失败（尤其 char_registry 写失败）会留下「有档无 char 行」——
+        // ⛔ 不再静默：建角失败（尤其 HTTP 角色登记失败）会留下「有档无登记」——
         // 该态可自愈（下次进区补写），但**期间 09·F4 的丢档告警对该 (uid,sId) 失效**，
         // 必须可观测。⚠ 仍不阻塞连接（best-effort：重连/换会即修复）。
         console.error(`[lobby] ensureCharacter 失败 uid=${uid} sId=${sId}（有档无 char 行→下次进区自愈；期间 F4 告警对其失效）`, e);

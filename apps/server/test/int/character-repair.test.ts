@@ -1,0 +1,143 @@
+import "./env-setup"; // ⚠ 必须第一个 import
+
+import assert from "node:assert/strict";
+import { after, before, test } from "node:test";
+import {
+  K_CHARACTER_REPAIR_ATTEMPTS,
+  K_CHARACTER_REPAIR_DUE,
+} from "../../src/core/infra/keys";
+import { clientForKey, closeRedis } from "../../src/core/infra/redisRoute";
+import {
+  characterRepairMember,
+  clearCharacterRepairIntent,
+  enqueueCharacterRepairIntent,
+  processCharacterRepairOnce,
+  registerCharacterWithRepair,
+  startCharacterRepairWorker,
+  stopCharacterRepairWorker,
+} from "../../src/player/characterRepair";
+import {
+  assertRedisUp,
+  fakeWebPlatformClient,
+  restoreFakeWebPlatformClient,
+  sleep,
+  testUid,
+} from "./helpers";
+
+const redis = () => clientForKey(K_CHARACTER_REPAIR_DUE);
+const used: { userId: string; serverId: number }[] = [];
+const intent = (name: string, serverId: number) => {
+  const value = { userId: testUid(name).slice(0, 64), serverId };
+  used.push(value);
+  return value;
+};
+
+before(assertRedisUp);
+
+after(async () => {
+  await stopCharacterRepairWorker();
+  for (const item of used) {
+    await clearCharacterRepairIntent(item.userId, item.serverId).catch(() => {});
+  }
+  restoreFakeWebPlatformClient();
+  await closeRedis();
+});
+
+test("PUT 失败：先写 durable intent，再把 WebPlatform 错误显式抛回", async () => {
+  const item = intent("enqueue", 11);
+  const member = characterRepairMember(item.userId, item.serverId);
+  const wpError = new Error("webplatform unavailable");
+
+  await assert.rejects(
+    registerCharacterWithRepair(item.userId, item.serverId, {
+      registerCharacter: async () => { throw wpError; },
+    }),
+    (error: unknown) => error === wpError,
+  );
+
+  assert.ok(await redis().zscore(K_CHARACTER_REPAIR_DUE, member), "失败后 due intent 必须持久化");
+  assert.equal(
+    await redis().hget(K_CHARACTER_REPAIR_ATTEMPTS, member),
+    "1",
+    "同步 PUT 失败计为第一次 attempt",
+  );
+});
+
+test("processOnce：幂等 PUT 成功后同时清除 due 与 attempts", async () => {
+  const item = intent("success", 12);
+  const member = characterRepairMember(item.userId, item.serverId);
+  await enqueueCharacterRepairIntent(item.userId, item.serverId, 0);
+
+  const result = await processCharacterRepairOnce({
+    nowMs: 10_000,
+    client: fakeWebPlatformClient,
+    batchSize: 1,
+    concurrency: 1,
+  });
+  assert.deepEqual(result, { selected: 1, succeeded: 1, failed: 0, malformed: 0 });
+  assert.equal(await redis().zscore(K_CHARACTER_REPAIR_DUE, member), null);
+  assert.equal(await redis().hget(K_CHARACTER_REPAIR_ATTEMPTS, member), null);
+  assert.equal(
+    await fakeWebPlatformClient.hasCharacter(item.userId, item.serverId),
+    true,
+    "worker 调用 fake 的幂等 character register",
+  );
+});
+
+test("多实例竞态：成功清理后，迟到的失败分支不得复活 intent", async () => {
+  const item = intent("race", 13);
+  const member = characterRepairMember(item.userId, item.serverId);
+  await enqueueCharacterRepairIntent(item.userId, item.serverId, 0);
+
+  let arrivals = 0;
+  let release!: () => void;
+  const barrier = new Promise<void>((resolve) => { release = resolve; });
+  const arrive = async (): Promise<void> => {
+    arrivals++;
+    if (arrivals === 2) { release(); }
+    await barrier;
+  };
+
+  const successClient = {
+    registerCharacter: async () => { await arrive(); },
+  };
+  const lateFailureClient = {
+    registerCharacter: async () => {
+      await arrive();
+      await sleep(30);
+      throw new Error("late failure");
+    },
+  };
+
+  const [success, failure] = await Promise.all([
+    processCharacterRepairOnce({
+      nowMs: 10_000, client: successClient, batchSize: 1, concurrency: 1,
+    }),
+    processCharacterRepairOnce({
+      nowMs: 10_000, client: lateFailureClient, batchSize: 1, concurrency: 1,
+    }),
+  ]);
+  assert.equal(success.succeeded, 1);
+  assert.equal(failure.failed, 1);
+  assert.equal(arrivals, 2, "两个实例都可重复取得同一 intent");
+  assert.equal(await redis().zscore(K_CHARACTER_REPAIR_DUE, member), null, "成功后不复活 due");
+  assert.equal(await redis().hget(K_CHARACTER_REPAIR_ATTEMPTS, member), null, "成功后不残留 attempts");
+});
+
+test("网关 worker start/stop：启动即处理到期 intent，stop 可等待当前 pass", async () => {
+  const item = intent("lifecycle", 14);
+  const member = characterRepairMember(item.userId, item.serverId);
+  await enqueueCharacterRepairIntent(item.userId, item.serverId, 0);
+
+  startCharacterRepairWorker();
+  const deadline = Date.now() + 3_000;
+  while (Date.now() < deadline
+    && await redis().zscore(K_CHARACTER_REPAIR_DUE, member) !== null) {
+    await sleep(20);
+  }
+  await stopCharacterRepairWorker();
+
+  assert.equal(await redis().zscore(K_CHARACTER_REPAIR_DUE, member), null);
+  assert.equal(await redis().hget(K_CHARACTER_REPAIR_ATTEMPTS, member), null);
+  assert.equal(await fakeWebPlatformClient.hasCharacter(item.userId, item.serverId), true);
+});

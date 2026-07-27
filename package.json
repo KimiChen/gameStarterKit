@@ -5,10 +5,11 @@
   "description": "微信小游戏 monorepo：Cocos Creator 3.8.8 客户端 + Colyseus 0.17 服务端 + 双端共享包",
   "workspaces": [
     "apps/shared",
-    "apps/server",
-    "apps/WebPlatform"
+    "apps/server"
   ],
   "scripts": {
+    "sync:webplatform-contract": "node scripts/sync-webplatform-contract.mjs && npm run sync:shared",
+    "verify:webplatform-contract": "node scripts/sync-webplatform-contract.mjs --check",
     "sync:shared": "node scripts/sync-shared.mjs && node scripts/sync-client.mjs",
     "sync:client": "node scripts/sync-client.mjs",
     "sync:client:watch": "node scripts/sync-client.mjs --watch",
@@ -18,7 +19,7 @@
     "dev:client": "node scripts/dev-client.mjs",
     "dev": "npm --workspace @game/server run dev",
     "start:server": "npm --workspace @game/server run start",
-    "typecheck": "npm --workspace @game/shared run typecheck && npm --workspace @game/server run typecheck && npm --workspace @game/webplatform run typecheck && npm run typecheck:client && npm run verify:sync",
+    "typecheck": "npm run verify:webplatform-contract && npm --workspace @game/shared run typecheck && npm --workspace @game/server run typecheck && npm run typecheck:client && npm run verify:sync",
     "verify:sync": "node scripts/sync-shared.mjs --check && node scripts/sync-client.mjs --check",
     "verify:ecs": "node scripts/verify-ecs.mjs",
     "fetch:fgui": "node scripts/fetch-fgui.mjs",
@@ -32,6 +33,7 @@
     "node": ">=22"
   },
   "devDependencies": {
+    "@gono/webplatform-contract": "file:vendor/gono-webplatform-contract-1.0.0.tgz",
     "xlsx": "^0.18.5"
   }
 }

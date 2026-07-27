@@ -52,8 +52,7 @@ const envFloat = (name: string, dflt: number): number => {
   return v ? Number.parseFloat(v) : dflt;
 };
 
-// 微信凭证 / code2session / 登录限流配置随登录 orchestration 迁至 WebPlatform（apps/WebPlatform/src/config.ts，
-// M12c / DUAL_MODE §2.7）：wxConfig / WX_TIMEOUT_MS / WX_BREAKER_* / LOGIN_RATE_* / TOKEN_BYTES 皆在彼侧。
+// 微信凭证 / code2session / 登录限流属于独立 WebPlatform，游戏进程不读取这些配置。
 
 /** 项目标识（根 .env.development 的 PROJECT_ID，缺省 gono）：多项目共用同一套本地
  *  Redis/MySQL 实例时的命名空间——Redis 键前缀 `<PROJECT_ID>_`（keys.ts 统一拼接）、
@@ -71,14 +70,6 @@ export const PROJECT_ID = (() => {
 })();
 /** 全部 Redis key 的运行时前缀（07 全表登记的是逻辑键名，存储时带本前缀）。 */
 export const REDIS_KEY_PREFIX = `${PROJECT_ID}_`;
-
-/** dev-login 开关（07 §13）：POST /account/dev-login——绕过 code2session、其余全走真实
- *  账号链路（建号/token/sess/审计）的本地登录入口。默认开发开、生产关；
- *  生产环境显式开启 = 配置事故，加载期直接拒绝启动（与 PROJECT_ID 校验同款 fail-fast）。 */
-export const AUTH_DEV_ENABLED = env("AUTH_DEV_ENABLED", process.env.NODE_ENV === "production" ? "0" : "1") === "1";
-if (process.env.NODE_ENV === "production" && AUTH_DEV_ENABLED) {
-  throw new Error("AUTH_DEV_ENABLED=1 在生产环境被显式开启——dev-login 无微信凭证即可拿真 token，生产必须关闭");
-}
 
 /** 开发端口（根 .env.development 的 PORT 可覆盖；与 PROJECT_ID 同一套加载机制）。
  *  默认 2568：本机 2567（Colyseus 默认）常被其他项目占用；多项目并行时各项目在根
@@ -154,22 +145,92 @@ export const groupAdmitsZone = (sId: number | undefined): boolean =>
 export const MYSQL_URL = () => env("MYSQL_URL", `mysql://root@127.0.0.1:3316/game_${PROJECT_ID}`);
 export const MYSQL_POOL_SIZE = envInt("MYSQL_POOL_SIZE", 20);
 
-/** 账号平面实现选择（DUAL_MODE §2.7）：`in-process` 内嵌 lib / `http` 走 WebPlatform。
- *  ⚠ **未知值必须 fail-fast**：静默回退 in-process 会在 split 部署下**打错数据库**（账号表在账号库，
- *  组库里没有）——正是 `AccountClient` 接缝要防的那类静默错误。故与 PROJECT_ID/PORT 同款加载期校验。
- *  ⚠ 取值由 accountClient 在**模块加载期**求值一次，⛔ 不支持运行期切换。 */
-export const ACCOUNT_MODE = (() => {
-  const v = env("ACCOUNT_MODE", "in-process");
-  if (v !== "in-process" && v !== "http") {
+/**
+ * 游戏服只通过 WebPlatform Internal HTTP 访问账号权威。这里没有模式开关，也没有账号库 DSN：
+ * URL/服务身份任一配错都应明确失败，绝不能回退到进程内实现或游戏库。
+ */
+export const WEBPLATFORM_INTERNAL_URL = (() => {
+  const raw = env("WEBPLATFORM_INTERNAL_URL", "http://127.0.0.1:2571");
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new Error(`WEBPLATFORM_INTERNAL_URL 非法：「${raw}」`);
+  }
+  if ((url.protocol !== "http:" && url.protocol !== "https:")
+    || url.username !== "" || url.password !== ""
+    || url.search !== "" || url.hash !== ""
+    || (url.pathname !== "" && url.pathname !== "/")) {
     throw new Error(
-      `ACCOUNT_MODE 非法：「${v}」——只允许 "in-process"（内嵌 @game/webplatform/lib）或 "http"（走 WebPlatform 进程）。` +
-      `⛔ 不静默回退：split 部署下回退到 in-process 会把账号平面的读写打在组游戏库上（静默错误，见 docs/WEBPLATFORM.md §2）`
+      "WEBPLATFORM_INTERNAL_URL 必须是无凭据、无 path/query/hash 的 http(s) origin"
+      + `，实际「${raw}」`,
     );
   }
-  return () => v; // 保持函数形态（调用点 ACCOUNT_MODE() 不变）
+  return url.origin;
 })();
-/** split 模式下 WebPlatform 的 HTTP 基址（httpAccount 用）。 */
-export const WEBPLATFORM_BASE_URL = () => env("WEBPLATFORM_BASE_URL", "http://localhost:2570");
+
+export const WEBPLATFORM_SERVICE_ID = (() => {
+  const v = env("WEBPLATFORM_SERVICE_ID", "game-server");
+  if (!/^[a-zA-Z0-9_.:-]{1,64}$/.test(v)) {
+    throw new Error(`WEBPLATFORM_SERVICE_ID 非法：「${v}」`);
+  }
+  return v;
+})();
+
+export const WEBPLATFORM_SERVICE_SECRET = (() => {
+  const v = env(
+    "WEBPLATFORM_SERVICE_SECRET",
+    process.env.NODE_ENV === "production" ? undefined : "dev-service-secret",
+  );
+  if (v.length > 512) {
+    throw new Error("WEBPLATFORM_SERVICE_SECRET 过长（上限 512 字符）");
+  }
+  return v;
+})();
+
+const webPlatformPositiveInt = (name: string, dflt: number, max: number): number => {
+  const raw = env(name, String(dflt));
+  if (!/^\d+$/.test(raw)) {
+    throw new Error(`${name} 非法：「${raw}」——须为正整数`);
+  }
+  const n = Number(raw);
+  if (!Number.isSafeInteger(n) || n < 1 || n > max) {
+    throw new Error(`${name} 非法：「${raw}」——须在 1..${max}`);
+  }
+  return n;
+};
+
+/** TCP/TLS 建连与整次逻辑调用（含一次重试）的预算。 */
+export const WEBPLATFORM_CONNECT_TIMEOUT_MS =
+  webPlatformPositiveInt("WEBPLATFORM_CONNECT_TIMEOUT_MS", 200, 30_000);
+export const WEBPLATFORM_REQUEST_TIMEOUT_MS =
+  webPlatformPositiveInt("WEBPLATFORM_REQUEST_TIMEOUT_MS", 1_000, 60_000);
+if (WEBPLATFORM_CONNECT_TIMEOUT_MS > WEBPLATFORM_REQUEST_TIMEOUT_MS) {
+  throw new Error("WEBPLATFORM_CONNECT_TIMEOUT_MS 不得大于 WEBPLATFORM_REQUEST_TIMEOUT_MS");
+}
+
+/** 连续基础设施失败达到阈值后短暂打开；半开期只允许一个探测请求。 */
+export const WEBPLATFORM_BREAKER_FAILURES =
+  webPlatformPositiveInt("WEBPLATFORM_BREAKER_FAILURES", 5, 1_000);
+export const WEBPLATFORM_BREAKER_OPEN_MS =
+  webPlatformPositiveInt("WEBPLATFORM_BREAKER_OPEN_MS", 5_000, 300_000);
+
+/** WebPlatform 角色登记 durable repair（GAME-6）：网关内轻量 IO worker，多实例允许幂等重复。 */
+export const CHARACTER_REPAIR_POLL_MS =
+  webPlatformPositiveInt("CHARACTER_REPAIR_POLL_MS", 1_000, 300_000);
+export const CHARACTER_REPAIR_BATCH_SIZE =
+  webPlatformPositiveInt("CHARACTER_REPAIR_BATCH_SIZE", 20, 1_000);
+export const CHARACTER_REPAIR_CONCURRENCY =
+  webPlatformPositiveInt("CHARACTER_REPAIR_CONCURRENCY", 4, 100);
+export const CHARACTER_REPAIR_BACKOFF_BASE_MS =
+  webPlatformPositiveInt("CHARACTER_REPAIR_BACKOFF_BASE_MS", 1_000, 300_000);
+export const CHARACTER_REPAIR_BACKOFF_MAX_MS =
+  webPlatformPositiveInt("CHARACTER_REPAIR_BACKOFF_MAX_MS", 300_000, 86_400_000);
+if (CHARACTER_REPAIR_BACKOFF_BASE_MS > CHARACTER_REPAIR_BACKOFF_MAX_MS) {
+  throw new Error("CHARACTER_REPAIR_BACKOFF_BASE_MS 不得大于 CHARACTER_REPAIR_BACKOFF_MAX_MS");
+}
+export const CHARACTER_REPAIR_ALERT_ATTEMPTS =
+  webPlatformPositiveInt("CHARACTER_REPAIR_ALERT_ATTEMPTS", 5, 1_000_000);
 
 /** 支付链总开关（缺省**关**）：关 ⇒ `/pay/wx-notify` 直接 501「未上线」。
  *  ⚠ 支付链现在不具备上线条件（无下单端点、共享密钥而非 APIv3 验签、无对账，见 todo.md 支付条目），
@@ -213,11 +274,8 @@ export const IDEM_RESULT_MS = 60_000;
 export const SESS_TTL_S = 259_200;
 /** GM 内部端点（`/admin/kick`）共享密钥。**未配置即端点关闭**（fail-closed；无鉴权的踢人端点 = DoS 面）。
  *  封号 SOP 的第二步靠它（DUAL_MODE §2.3）：GM 工具直连各节点踢在线并确认送达。 */
-/** 组网关 → WebPlatform 的内部 HTTP 超时（在 onAuth/建角路径上；⛔ 无超时 = 黑洞挂死每个 join）。 */
-export const WEBPLATFORM_TIMEOUT_MS = envInt("WEBPLATFORM_TIMEOUT_MS", 3000);
-
 export const ADMIN_API_SECRET = () => process.env.ADMIN_API_SECRET ?? "";
-/** 踢人流 MINID 兜底裁剪窗毫秒（踢是即时动作，老事件无价值；权威撤销在 accounts，M12d §2.3）。 */
+/** 踢人流 MINID 兜底裁剪窗毫秒（踢是即时动作，老事件无价值；权威撤销在 WebPlatform）。 */
 export const KICK_STREAM_TRIM_MS = envInt("KICK_STREAM_TRIM_MS", 24 * 3600 * 1000);
 /** outbox done 行保留窗（relayer 周期清理；pending/dead ⛔ 不删）。09·I5 窗口不等式的前提。 */
 export const OUTBOX_RETENTION_MS = 86_400_000;
@@ -292,11 +350,6 @@ export const PURCHASE_PAID = 1;
 export const PURCHASE_DELIVERED = 2;
 export const PURCHASE_REFUNDED = 3;
 export const PURCHASE_CLOSED = 4;
-
-/** accounts.status（05）。 */
-export const ACCOUNT_OK = 0;
-export const ACCOUNT_BANNED_STATUS = 1;
-export const ACCOUNT_DELETED = 2;
 
 /** user_currency.currency（SMALLINT）。现阶段仅 gold。 */
 export const CUR_GOLD = 1;

@@ -125,6 +125,22 @@ async function assertZoneShape(dbName: string): Promise<void> {
   }
 }
 
+async function assertAccountTablesAbsent(dbName: string): Promise<void> {
+  const conn = await mysql.createConnection(connectionOptions(dbName));
+  try {
+    const [rows] = await conn.query<mysql.RowDataPacket[]>(
+      `SELECT TABLE_NAME
+         FROM information_schema.TABLES
+        WHERE TABLE_SCHEMA = ?
+          AND TABLE_NAME IN ('accounts','account_sessions','char_registry','login_audit','seq')`,
+      [dbName],
+    );
+    assert.deepEqual(rows, [], "游戏库不得创建 WebPlatform 所有的账号表");
+  } finally {
+    await conn.end();
+  }
+}
+
 test("db:bootstrap 对 fresh/c8 存量均幂等，并拒绝同名错定义索引", { timeout: 120_000 }, async () => {
   const suffix = `${process.pid}_${Date.now().toString(36)}`;
   const freshDb = `game_boot_${suffix}_fresh`;
@@ -144,8 +160,10 @@ test("db:bootstrap 对 fresh/c8 存量均幂等，并拒绝同名错定义索引
     // fresh schema 自带目标列/索引：首次不能因重复 ADD KEY(1061) 失败，第二次也必须幂等。
     assertBootstrapOk(freshDb, "fresh 首次 bootstrap");
     await assertZoneShape(freshDb);
+    await assertAccountTablesAbsent(freshDb);
     assertBootstrapOk(freshDb, "fresh 重复 bootstrap");
     await assertZoneShape(freshDb);
+    await assertAccountTablesAbsent(freshDb);
 
     // c8 旧表：没有 server_id / idx_zone_time，且已有历史行。
     await admin.query(`CREATE DATABASE ${quoteDatabase(legacyDb)} DEFAULT CHARSET utf8mb4`);

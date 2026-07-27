@@ -1,7 +1,7 @@
 /**
  * M1 DoD 连通性冒烟（10·M1）：
  *  1. 连 durable + cache 两个 Redis，校验 maxmemory-policy 形态（09·R4）
- *  2. 连 MySQL，SHOW TABLES 与 schema.sql 清单齐全 + seq / singleton_lease 预置行在
+ *  2. 连 MySQL，SHOW TABLES 与 schema.sql 清单齐全 + singleton_lease 预置行在
  *  3. EVALSHA 走通 NOSCRIPT 重载路径（先 SCRIPT FLUSH 再调用，必须自动 SCRIPT LOAD 成功）
  * 用法: npm --workspace @game/server run smoke:framework
  */
@@ -12,10 +12,11 @@ import type { RowDataPacket } from "../src/core/infra/mysql";
 import { kLock, kRl } from "../src/core/infra/keys";
 
 const EXPECTED_TABLES = [
-  "accounts", "user_currency", "currency_ledger", "gameplay_outbox", "singleton_lease",
-  "purchases", "match_index", "match_results", "mail", "login_audit", "seq",
+  "user_currency", "currency_ledger", "gameplay_outbox", "singleton_lease",
+  "purchases", "match_index", "match_results", "mail",
   "user_archive", "user_snapshot_readonly",
 ];
+const FORBIDDEN_ACCOUNT_TABLES = ["accounts", "account_sessions", "char_registry", "login_audit", "seq"];
 const EXPECTED_LEASES = ["outbox_relayer", "freeze_worker"];
 
 let failed = false;
@@ -42,8 +43,7 @@ async function main(): Promise<void> {
   const [tables] = await pool.query<RowDataPacket[]>("SHOW TABLES");
   const names = new Set(tables.map((r) => String(Object.values(r)[0])));
   for (const t of EXPECTED_TABLES) { check(`表 ${t}`, names.has(t)); }
-  const [seqRows] = await pool.query<RowDataPacket[]>("SELECT val FROM seq WHERE name = 'user_id'");
-  check("seq('user_id') 预置行", seqRows.length === 1);
+  for (const t of FORBIDDEN_ACCOUNT_TABLES) { check(`账号表 ${t} 不属于游戏库`, !names.has(t)); }
   const [leases] = await pool.query<RowDataPacket[]>("SELECT lease_name FROM singleton_lease");
   const leaseNames = new Set(leases.map((r) => r.lease_name as string));
   for (const l of EXPECTED_LEASES) { check(`singleton_lease('${l}')`, leaseNames.has(l)); }

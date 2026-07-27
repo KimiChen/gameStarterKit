@@ -6,6 +6,11 @@ import { startStreamDepthAlert } from "./core/match/matchConsumer";
 import { setKickHandler, startKickConsumer } from "./core/auth/kickBus";
 import { kickUser } from "./websocket/push";
 import { registerAllRoutes } from "./websocket/loader";
+import {
+  startCharacterRepairWorker,
+  stopCharacterRepairWorker,
+} from "./player/characterRepair";
+import { closeWebPlatformClient } from "./platform/webPlatformClient";
 
 // RPC 契约校验前置到启动期：shared 声明与 websocket/<域>/<接口>.ts 不齐 → 进程直接退出
 // （否则要等第一个玩家 joinOrCreate("lobby") 才炸，部署看起来是绿的）。
@@ -19,10 +24,16 @@ startInfraMonitors();
 startStreamDepthAlert();
 
 // 控制总线踢人（DUAL_MODE §2.3 / M12d）：本节点独立游标消费 stream:kick → 自筛踢在线连接
-// （权威撤销已落 accounts；本总线是**程序化封号的便捷扇出**，⛔ 不构成保证——封号 SOP 的踢由 GM 工具
+// （权威撤销已落 WebPlatform；本总线是顶号等程序化踢人的便捷扇出，⛔ 不构成封号送达保证——封号 SOP 由 GM 工具
 //   直连各节点 /admin/kick 并确认送达，见 DUAL_MODE §2.3）。
 setKickHandler(kickUser);
 startKickConsumer();
+
+// 角色档已创建但 WebPlatform PUT 登记失败的 durable 修复：网关多实例可重复处理，远端 PUT 幂等；
+// worker 只在成功后清 intent，故崩溃不丢。优雅停服先停止新一轮调度并等待当前有界 pass。
+startCharacterRepairWorker();
+app.onBeforeShutdown(stopCharacterRepairWorker);
+app.onBeforeShutdown(closeWebPlatformClient);
 
 // 端口统一走 config.PORT（根 .env.development 可覆盖，默认 2568）——⛔ 不依赖
 // @colyseus/tools 的 process.env.PORT || 2567 隐式默认

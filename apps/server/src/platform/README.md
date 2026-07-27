@@ -1,22 +1,15 @@
-# platform/ — 账号/门户 plane 接缝
+# platform/ —— 外部服务接缝
 
-游戏服要访问账号平面（身份/token/角色注册表/撤销/选服目录）**一律走 `account.*`**。
-契约与部署模式见 [docs/WEBPLATFORM.md](../../../../docs/WEBPLATFORM.md)、[DUAL_MODE §2.7](../../../../docs/DUAL_MODE.md)。
+本目录只保留游戏服到独立 WebPlatform 的 Internal HTTP 接缝：
 
 | 文件 | 职责 |
 |---|---|
-| `accountClient.ts` | `AccountClient` 接口 + 按 `ACCOUNT_MODE` 选实现（`in-process` / `http`） |
-| `inProcessAccount.ts` | **内嵌实现**：直调 `@game/webplatform/lib`（与游戏服共库）；含 `verifySessionStrict`/`verifyBearer` |
-| `httpAccount.ts` | **split 实现**：HTTP 指向 apps/WebPlatform；strict verify 后**懒填组 sess** |
-| `inProcessLogin.ts` | 登录编排薄委托（**in-process 专用**；split 下客户端直连 WebPlatform，游戏服登录端点 404 门控） |
+| `webPlatformClient.ts` | strict session verify、角色登记与角色存在性查询；服务鉴权、超时、有限重试、熔断和响应校验 |
 
-## ⚠ 本目录是 lib 直调的唯一合法处（除 `core/infra/mysql.ts` 的池注入）
+硬约束：
 
-split 下 lib 被注入**游戏服的池**，在别处直调 = 把账号平面的读写打在**组游戏库**上——
-故障形态是**静默错误**（`affectedRows=0`、空集），不是报错。机检：`test/lib-import-ban.test.ts`。
-
-## 踢在线不在本目录
-
-撤销的**权威**由本接缝写（`account.ban/revoke`）；**踢**由 `core/auth/ban.ts` 在组侧发起
-（`core/auth/kickBus.ts`：本节点即时 + 控制总线广播，best-effort）。**送达保证**在 GM 工具逐节点
-`POST /admin/kick` 的 ack 确认（规则 09·G7b）。
+- 不存在 in-process 实现或运行期模式开关。
+- 不导入 WebPlatform 业务源码，不持有账号库 DSN。
+- token 是不透明句柄；身份只信 verify 返回的 `userId`。
+- HTTP 401/403、超时、5xx 和非法响应均属于服务/基础设施故障，不能伪装成玩家 token 无效。
+- 每消息鉴权只查游戏组 Redis session cache；只有建连 strict auth 回源 WebPlatform。

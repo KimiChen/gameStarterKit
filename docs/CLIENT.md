@@ -1,7 +1,8 @@
 # 客户端
 
 Cocos Creator **3.8.8** 微信小游戏工程 + FairyGUI（fairygui-cc 1.2.2）+ bitECS（数据导向 ECS）。
-整体设计意图见 [OVERVIEW.md](OVERVIEW.md)；服务端见 [SERVER.md](SERVER.md)。
+整体设计意图见 [OVERVIEW.md](OVERVIEW.md)；游戏服见 [SERVER.md](SERVER.md)；
+账号 Public HTTP 边界见 [WEBPLATFORM.md](WEBPLATFORM.md)。
 
 > 引擎壳与游戏代码分离（对标 sect）：**代码全在 `apps/client/src/`（纯 TS 工程，源码唯一真相）**；
 > `apps/Cocos` 是 Creator 工程壳（**不在 npm workspaces**），`npm run sync:client` 把代码灌入
@@ -28,8 +29,11 @@ npm run sync:client    # apps/client/src → apps/Cocos/assets/src（已入库�
 2. 菜单「扩展 → 扩展管理器 → 已安装扩展」确认 **fairygui-cc** 已启用
    （挂载只读 `db://fairygui-cc/fairygui.mjs`）；
 3. 新建场景（含 Canvas），把 `Main.ts` 挂到 Canvas 节点，保存；
-4. 仓库根 `npm run dev`（http://localhost:2568）；
-5. 编辑器 **预览**：点「进入游戏」走 dev-login 真实登录（需本地栈 + db:bootstrap）→ 大厅拉档案
+4. 启动独立 `gono-webplatform` 的 Public/Internal HTTP 与空账号库，再在本仓运行
+   `npm run dev`（游戏服，http://localhost:2568）；
+5. 场景 `Main` 组件的 `portalUrl` **必须填写** WebPlatform Public origin
+   （本地例 `http://127.0.0.1:2570`）。空值或非 http(s) 地址立即失败，⛔ 不回退游戏服；
+6. 编辑器 **预览**：点「进入游戏」走 Public `/v1/sessions/dev` 真实登录 → 大厅拉档案
    → 主界面 → 进房，**按住屏幕可拖动小圆点**。
 
 > `.meta` 由编辑器生成后**连同资源一起提交**（uuid 不稳会丢引用）。
@@ -49,7 +53,7 @@ npm run sync:client    # apps/client/src → apps/Cocos/assets/src（已入库�
 
 | 条目 | 职责 |
 |---|---|
-| `Main.ts` | 入口组件（挂 Canvas）：微信补丁 → 大厅（dev-login 真实登录）→ 进房 → 状态同步 → 渲染演示 → 触摸输入 |
+| `Main.ts` | 入口组件（挂 Canvas）：微信补丁 → 校验必填 portalUrl → 大厅登录 → 进房 → 状态同步 → 渲染演示 → 触摸输入 |
 | `designSpec.ts` | 设计分辨率真源（750×1624，见 §6） |
 | `view/` | **视图层**（依赖 cc/fairygui-cc，只搬数据）：FguiView/ViewMgr 机械件 + 每页面 XxxView.ts + 双登记点 |
 | `logic/` | **逻辑层**（⛔ 禁 import cc/fairygui，无头单测）：`page/` 页面行为 + `rooms/<玩法>/` 局内 ECS |
@@ -60,19 +64,29 @@ npm run sync:client    # apps/client/src → apps/Cocos/assets/src（已入库�
 
 **命名规则**：目录一律小写；导出类的文件 PascalCase 与类同名；纯函数/配置模块 camelCase。
 
-**大厅壳页面（迁移自 sect 项目，走 FGUI）**：登录 `Login` → 选服 `AreaList`（HTTP `/area/list`）/
+**大厅壳页面（迁移自 sect 项目，走 FGUI）**：登录 `Login` → 选服 `AreaList`
+（WebPlatform Public `GET /v1/areas`）/
 公告 `LoginNotice`（HTTP `/notice/list`）→ 主界面 `Home`（点「进入游戏」→ ballMove 玩法房）；
 `Confirm` 通用提示框（多实例）。组合根在 `view/pages.ts`（ViewMgr + Logic + net 依赖 + 导航接线，
 Main.ts 走动态 import 调 `openLogin`）。各页 logic 在 `logic/page/`（纯 TS，`test/pageLogic.test.ts` 无头测）。
 
-**选服链路（区服 = 独立实例，对齐原项目）**：`openLogin` 开机拉 `/area/list` 存 `net/serverSession.ts`
-（当前选中服 `currentServer` + 列表 + 哈希 `h`）并 `pickDefaultServer` 默认选中（最近登录服 `ul` 顺延优先，
-否则首个**可进入**服；可进入判定单源 shared `isServerEnterable`：非维护 `t!==9` 且已开服 `openTime>0`，
-全不可进兜底 `al[0]` 展示位）→ Login 显示当前服（`showCurrentServer`：名 + `login_status_{status}` 图标）→ 点选服进
-`AreaList`（页签：推荐 `t===1` / 我的角色 `ul∩al` / 全部 / `1-10区` 分组）选服改 `currentServer` 并刷新 Login
-（`choose` 拦不可进服；运维模式 `isOps` 豁免——维护/未开服的开服前验证可选中）→
-「进入游戏」经进服闸（无服 / 不可进且非运维不进，文案分「维护中」「未开服」）登录 → Home →「进入游戏」时 **Main 连 `currentServer.wsUrl`**
-（`ws→http` 传 Colyseus Client，非固定 `serverUrl`）。`serverSession` 是纯状态模块（只 import shared，无 cc/fairygui）。
+**选服链路（区服 = 独立实例）**：`openLogin` 开机从必填 `portalUrl` 拉 `GET /v1/areas`，响应
+`{servers,myServerIds,isOps,hash}` 存入 `net/serverSession.ts`。每个区服使用明确字段
+`{serverId,name,tag,status,openTime,gameHttpUrl,gameWsUrl}`；旧压缩字段与单一连接地址字段不再接受。
+`pickDefaultServer` 按 `myServerIds` 顺序优先选最近且可进入的服，否则取第一个可进入服；
+可进入判定在 `logic/areaDirectory.ts`：`status !== "maintenance" && openTime > 0`，全不可进时仅用
+`servers[0]` 做展示位。Login 用 `name` 和集中映射后的 `login_status_{1|2|9}` 图标展示当前服。
+
+`AreaList` 固定页签为推荐（`tag==="new"`）、我的角色（`myServerIds∩servers`）、全部；选择时使用
+`serverId`，非运维模式拦维护/未开服，`isOps` 允许开服前验证。登录请求显式携带所选 `serverId`，
+成功响应为 `{userId,accessToken,isNewAccount}`；客户端保存 `accessToken`，进入游戏服边界时再把
+`serverId` 转成现有 Colyseus join option `sId`。大厅和战斗都使用目录明确给出的
+`currentServer.gameHttpUrl` 初始化 Colyseus，`gameWsUrl` 作为明确 WS 地址保存在状态中，不从旧 URL
+互相猜测。目录首次加载失败会清掉旧地址并提示重试，绝不沿用未知拓扑。
+
+`GET /v1/areas` 在已有登录态时由 HTTP 底座自动附带 `Authorization: Bearer <accessToken>`，
+用于 best-effort 回填 `myServerIds`；无 token 或无效 token 仍应返回目录。客户端状态只是 UX，
+真正的区服准入仍由游戏服 `onAuth` 硬闸。
 ⚠ FGUI 包源已迁进 `apps/art/fairygui/assets`（12 包闭包），但 **`.bin` 需在 FairyGUI 编辑器发布到
 `apps/Cocos/assets/resources/ui/`**、新 `.ts` 需 `sync:client` 灌入后开一次 Cocos 生成 `.meta`——见本文件末尾「迁移页面的一次性手动步骤」。
 
@@ -187,7 +201,7 @@ movieclip。无识别前缀的元素不生成字段（同宗 kimi 规范包另�
 `FguiView.safeTopInset()`。
 
 **设计师侧**：只碰 `apps/art/fairygui`（`FairyGUI.fairy`），调排版/字号/颜色随意；⛔ **别改元素命名**
-（命名 = 契约，改了 CI 契约测红）；⛔ **XML 只在编辑器里改**（手编文本会破坏编辑器内部 id 一致性，
+（命名 = 契约，改了 `test:fgui` 契约测红）；⛔ **XML 只在编辑器里改**（手编文本会破坏编辑器内部 id 一致性，
 无法机检）。**控制器命名约定**：主状态控制器统一名 `view`、page 小驼峰英文，布尔控制器 page 用
 true/false，按钮自带的 `button` 控制器是保留名不挪用。逐组件出图 checklist 见
 [apps/art/fairygui/README.md](../apps/art/fairygui/README.md)。改完**发布 `.bin` + 图集到 `apps/Cocos/assets/resources/ui/`**——
@@ -207,8 +221,9 @@ true/false，按钮自带的 `button` 控制器是保留名不挪用。逐组件
 |---|---|---|
 | `RoomClient.ts` | `rooms/`（GameRoom） | 实时房：join / 移动输入 / 状态同步（fire-and-forget） |
 | `WebSocketClient.ts` | `websocket/`（ws-RPC） | 单次请求-响应：`rpc` / `rpcIdem` / `onPush`（信封 id 配对） |
-| `http/<域>.ts` | `http/`（真实 HTTP） | XHR（`area.ts` 选服 / `notice.ts` 公告等真实调用面） |
-| `serverSession.ts` | （无，纯客户端状态） | 当前选中区服 + 列表 + 哈希；大厅写、Main 进房读 `currentServer.wsUrl` |
+| `http/account.ts` / `area.ts` | 独立 WebPlatform Public HTTP | 必填 `portalUrl`；v1 登录 + GET 选服目录，Bearer 自动附加 |
+| `http/notice.ts` 等 | 游戏服 `http/` | 游戏业务 HTTP；跟随所选服 `gameHttpUrl` |
+| `serverSession.ts` | （无，纯客户端状态） | 当前区服 + `servers/myServerIds/hash`；大厅写，Main 读 `gameHttpUrl` |
 
 - **WebSocketClient**：`rpc<T>(type, payload)` 按 shared 契约推导返回类型；**写接口一律 `rpcIdem`**
   （clientReqId 生成一次、重试复用，失败回填 `err.clientReqId`）；`onPush` 订阅服务端唤醒式推送。
@@ -219,6 +234,8 @@ true/false，按钮自带的 `button` 控制器是保留名不挪用。逐组件
   旧房在 leave 等待窗内的迟到回调不能污染新一轮 ECS/RTT。`dropping` 状态用于掉线窗口暂停
   心跳/方向上发，防 SDK 重连补发过期包。
 - 消息名/协议类型一律 import 自 `shared`（铁律 6）。
+- WebPlatform 路径与类型来自 `shared/generated/webplatform`（源为精确锁定的
+  `@gono/webplatform-contract`）；生成目录禁手改，升级后跑 `npm run sync:webplatform-contract`。
 
 ---
 

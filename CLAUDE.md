@@ -5,8 +5,8 @@
 > - **[docs/OVERVIEW.md](docs/OVERVIEW.md)** —— 双端设计意图、单源契约、机检哲学、玩法概念去处
 > - **[docs/SERVER.md](docs/SERVER.md)** —— 服务端目录/ws-RPC/outbox/冷档/广播/**63 条 `09·XX` 规则目录 + 07 契约表**
 > - **[docs/CLIENT.md](docs/CLIENT.md)** —— 客户端目录/视图逻辑二分/viewRegistry/codegen/微信踩坑/首次打开
-> - **[docs/WEBPLATFORM.md](docs/WEBPLATFORM.md)** —— 账号门户（WebPlatform）契约/部署模式/端点清单/**待办账本**
-> - **[docs/HANDOFF-M12.md](docs/HANDOFF-M12.md)** —— M12c/M12d 交接：封号 SOP/单端顶号/部署模式 + **硬约束**与已知边界
+> - **[docs/WEBPLATFORM.md](docs/WEBPLATFORM.md)** —— 独立 `gono-webplatform` 仓边界、Public/Internal/Admin HTTP 契约与账号库归属
+> - **[docs/HANDOFF-M12.md](docs/HANDOFF-M12.md)** —— WebPlatform 拆仓交接：游戏仓接缝、配置、验证与历史方案退役说明
 > - **[docs/GM-TOOL-SPEC.md](docs/GM-TOOL-SPEC.md)** —— 给运营侧的 GM 工具实现规格（封号两步 SOP 的接口契约/节点遍历/验收清单）
 > - **[docs/REVIEW-2026-07.md](docs/REVIEW-2026-07.md)** —— 2026-07 同事评审的逐条归档（历史留档，⚠ 登记/进度以 todo.md 与各 docs 为准，⛔ 不回写）
 > 每个源码目录另有就近 README（`每个目录有 README` 约定）。根上手页见 [README.md](README.md)。
@@ -17,6 +17,8 @@
 - 布局：**引擎壳与游戏代码分离**（对标 sect）——`apps/client` 纯 TS 游戏代码（源码唯一真相）、
   `apps/Cocos` Creator 工程壳（`sync:client` 灌入 `assets/src`）、`apps/Unity` Unity 骨架
 - 服务端：Colyseus **0.17**（Node ≥ 22，tsx 直跑 TS）+ 公司服务端框架（双 Redis + MySQL 8）
+- 账号门户：独立 Git 仓 `gono-webplatform`（HTTP-only + 独立 MySQL）；本仓只消费精确锁定的
+  `@gono/webplatform-contract`，⛔ 不依赖其业务源码
 - 客户端网络：`@colyseus/sdk` 0.17.43 UMD 插件（全局 `Colyseus`）
 - 双端共享：`apps/shared`（零依赖纯 TS，`npm run sync:shared` 复制进客户端）
 
@@ -24,6 +26,8 @@
 
 ```bash
 npm install                  # 装 shared + server（client/Cocos 不在 workspaces）
+npm run sync:webplatform-contract  # 契约包 → shared 生成物 → client → Cocos（升级契约后执行）
+npm run verify:webplatform-contract # 只读校验安装包版本/hash 与入库生成物一致
 npm run fetch:fgui           # 升级 fairygui-cc 运行时（产物已入库,clone 即可用;升级后提交 diff）
 npm run fetch:colyseus       # 升级 colyseus UMD 插件（产物已入库;同上）
 npm run sync:shared          # 改完 apps/shared/src 后必须执行（→ apps/client/src/shared，并级联 sync:client）
@@ -39,7 +43,7 @@ npm run test:fgui            # FairyGUI 结构契约 + 客户端无头单测
 npm run codegen:fgui -- <Pkg> <Comp>   # 生成/幂等重写 view/XxxView.ts
 npm run verify:ecs           # 校验 ECS 库（bitECS）12 文件字节锁定
 npm --workspace @game/server run test        # 服务端单测
-npm --workspace @game/server run smoke       # 真实链冒烟：dev-login→进房→技能（需 stack+db:bootstrap+dev 已起）
+npm --workspace @game/server run smoke       # 真实链冒烟（另需独立 WebPlatform Public/Internal + 账号库）
 npm --workspace @game/server run stack       # 起本地 Redis×2 + MySQL
 npm --workspace @game/server run settle      # 结算 worker（v2 新流 + legacy 排空；多实例可并行）
 npm --workspace @game/server run test:int    # 集成测试（真实栈；跑前先停 npm run dev）
@@ -50,7 +54,7 @@ npm --workspace @game/server run test:int    # 集成测试（真实栈；跑前
 1. **`apps/client/src/lib/bitecs/` 12 个 .ts 禁改**（字节锁定，与上游偏差仅两处：各文件首行 ts-nocheck 注释 + Relation.ts 的 `./index` 自指导入改写，见 lib README；`verify:ecs`；基线 tag `0.4.0` commit `efacc63`）。
 2. **`apps/client/src/shared/` 禁手改**——`sync:shared` 生成物；改 `apps/shared/src` 再同步。
    **`apps/Cocos/assets/src/` 整份禁手改**——`sync:client` 生成物，连 `.meta` 提交（uuid 稳定）。
-   两级镜像由 `verify:sync` 机检（挂在 `typecheck` 尾部 + CI）：漂移/孤儿/入库文件缺 `.meta` 即红。
+   两级镜像由 `verify:sync` 机检（挂在 `typecheck` 尾部；CI 定义已移除，当前仅本地执行）：漂移/孤儿/入库文件缺 `.meta` 即红。
 3. **相对导入不带扩展名**（Cocos 要求；服务端因此用 `moduleResolution: Bundler` + tsx，别改回 NodeNext）。
 4. **shared 零依赖**：只用 TS 语言 + ES 标准库；禁 npm 包/Node API/cc/wx/DOM；禁 `const enum`；lib 钉 ES2017。
 5. 客户端只用 `@colyseus/sdk`（全局 `Colyseus`），**禁 import 服务端包** `colyseus`/`@colyseus/core`。
@@ -60,6 +64,10 @@ npm --workspace @game/server run test:int    # 集成测试（真实栈；跑前
 9. **客户端视图/逻辑二分**：视图 `view/`（依赖 cc/fairygui，只搬数据）、行为 `logic/`（⛔ 禁 import cc/fairygui，`logic-purity.test.ts` 机检）；FGUI 命名元素登记 `view/fguiContracts.ts`；跨包公司库在 viewRegistry `sharedPkgs` 声明。详见 [docs/CLIENT.md](docs/CLIENT.md)。
 10. **FairyGUI 只走动态 import**（`ViewMgr.open`/`import("./view/XxxView")`）：fairygui 不进任何常规脚本的静态依赖图——扩展没挂时会连锁炸掉整个 root 脚本。
 11. **网关进程禁重计算**（单线程：同步 CPU 卡一次 = 全服冻结）：handler 同步预算开发 20ms/生产 100ms（`[rpc-budget]` 探针告警）；全服/全会员/全榜级计算卸载到 `core/compute/tasks/`（worker 池）或独立进程；四类关键词：结算模拟/全量重算/批量发放/离线补算。详见 [docs/SERVER.md §11](docs/SERVER.md#11-事件循环防阻塞铁律-11)。
+12. **账号边界只走 HTTP**：WebPlatform 业务源码和账号库只归独立 `gono-webplatform` 仓。
+    游戏服只经 `platform/webPlatformClient.ts` 调 Internal API；客户端只经必填 `portalUrl` 调 Public API；
+    GM 写权威只调 Admin API。生产源码禁止 `@game/webplatform`、`apps/WebPlatform`、`ACCOUNT_MODE`、
+    `useServerPool`，由 `lib-import-ban.test.ts` 机检。
 
 ## 新功能标准动线
 
@@ -71,10 +79,14 @@ shared 契约 → npm run sync:shared → 服务端端点文件（websocket/http
 
 net/、dispatcher/loader、Main.ts 永远不碰。分端细节见 docs/SERVER.md、docs/CLIENT.md。
 
+WebPlatform API 变更走另一条跨仓动线：独立仓修改 OpenAPI → 发布精确版本
+`@gono/webplatform-contract` → 本仓升级依赖 → `npm run sync:webplatform-contract` → 双端实现与验证。
+⛔ `apps/WebPlatform` 即使在旧提交或临时工作树中仍可见，也只是拆仓历史素材，不是代码入口。
+
 ## 现状
 
-- 玩法是 demo（`ballMove` 小球移动 + 技能结算）；登录走 dev-login 真实链路（**需本地栈**，
-  mock 层已移除；微信 wx.login 侧接入后补）。服务端框架生产级（源自 Arthur M0–M9，
+- 玩法是 demo（`ballMove` 小球移动 + 技能结算）；登录走独立 WebPlatform Public
+  `POST /v1/sessions/dev`（本地）或 `/v1/sessions/wechat`（微信），客户端 `portalUrl` **必填**。
+  游戏服建连经 Internal verify；mock 层已移除。服务端框架生产级（源自 Arthur M0–M9，
   **已停止回流、独立演进**）。Arthur 专属未移植件（M4 存量迁移、wxLogin 存量账号绑定）本项目 N/A。
-- 验证基线（近期全绿）：typecheck 三端 + verify:sync / 服务端单测 41 / 客户端 test:fgui 89 / 集成测试 143 / 真实链冒烟 13。
-  ⚠ **这是全仓唯一记数字的地方**（其余文档一律写「见 CLAUDE.md」）：曾经六处各写各的，然后集体过期。
+- 验证基线以当前命令输出为准（CI 定义已移除，仅剩本地命令链），⛔ 文档不再钉易过期的用例数字。

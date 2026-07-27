@@ -1,160 +1,266 @@
-# WebPlatform：平台门户服务（账号 plane）
+# WebPlatform：独立账号门户服务边界
 
-> **本文是 WebPlatform 的设计契约 + 待办账本。** 代码导览见就近 [apps/WebPlatform/README.md](../apps/WebPlatform/README.md)；
-> 它在双形态架构中的位置见 [DUAL_MODE §2.7](DUAL_MODE.md)；组网关侧的规则见 [SERVER.md §12](SERVER.md)。
+> 本文描述**现行架构**。WebPlatform 的业务源码、OpenAPI、账号库 migration、测试、镜像和运行手册
+> 归独立 Git 仓 **`gono-webplatform`**；本游戏仓只保存消费边界与精确锁定的契约生成物。
+> 游戏服规则见 [SERVER.md](SERVER.md)，客户端接入见 [CLIENT.md](CLIENT.md)，GM 流程见
+> [GM-TOOL-SPEC.md](GM-TOOL-SPEC.md)。
 
-## 1. 定位：门户 = 目录 + 身份权威 + 只读投影
+## 1. 定位与拓扑
 
-> **本节是账号平面的唯一口径。** [DUAL_MODE §2.1](DUAL_MODE.md) 的「三盲」是 M12 抽象期的初版框架，
-> 其中 `zone-blind` 已推翻、`project-blind` ⏸ 当前不做（以后另立项，推导在那里保留），一律以本节为准。
+WebPlatform 是本游戏专属的账号 plane：一游戏一实例集群、一游戏一套独立账号库。它负责身份、
+会话权威、角色存在性登记和选服目录，不拥有玩法档、经济、房间或游戏 Redis。
 
-**本游戏专属**（跨游戏中心账号服务**以后另立项**，见 §1.1）+ **zone-aware**（serve 服务器列表、按区存角色展示数据），
-但**不拥有权威玩法态、不跑区逻辑**。
-⛔ **MySQL-only：无 Redis、无缓存**（`verify` 就是一条 PK SELECT）。组侧的 Redis 快路径/组缓存留在 `apps/server`。
+```mermaid
+flowchart LR
+    C["微信小游戏客户端"] -->|"公网 HTTPS\nPublic API"| WP["gono-webplatform"]
+    G["游戏服节点"] -->|"私网 HTTP\nInternal API"| WP
+    GM["GM 后台/工具"] -->|"私网 HTTP\nAdmin API"| WP
+    WP --> ADB[("WebPlatform MySQL")]
+    G --> GDB[("游戏组 MySQL")]
+    G --> GR[("游戏组 Redis")]
+    GM -->|"逐节点 POST /admin/kick\n确认在线踢除"| G
+```
 
-| 承载 | 不承载 |
+边界铁律：
+
+- 客户端只访问 WebPlatform **Public HTTP**；`portalUrl` 是必填启动配置，不回退游戏服。
+- 游戏服只访问 WebPlatform **Internal HTTP**，且只经
+  `apps/server/src/platform/webPlatformClient.ts`。
+- GM 工具只经 **Admin HTTP** 写账号权威；写成功后仍须逐个直连游戏节点踢在线。
+- 游戏进程没有账号库 DSN；WebPlatform 没有游戏库或游戏 Redis 凭证。
+- WebPlatform 保持 MySQL-only，不持游戏 coord Redis，也不把广播当作踢人送达保证。
+- 当前不建设跨游戏中心账号。第二个游戏应另起 WebPlatform 与账号库。
+
+## 2. 数据所有权
+
+| 独立 WebPlatform 账号库 | 游戏组 |
 |---|---|
-| `accounts`（openid→uid、status、token 记录、画像列）、`seq`、`login_audit` | 玩法档（Redis `user:{uid}`，组侧真源） |
-| `char_registry`（「uid 在哪些区建过角」的存在性权威 + 展示投影） | 每区经济（`user_currency` 等，组库） |
-| 登录编排（限流 → code2session → 查/建号 → 签发 token） | 组 `sess:{uid}:s{sId}` 缓存、踢在线（组侧 + GM 工具） |
-| 选服目录 `/area/list`（`al`/`wsUrl`/`isOps`/`h` + `ul`） | 控制总线 `stream:kick`（coord Redis 在组侧） |
+| `accounts`：微信身份、账号状态、画像 | Redis 玩法档、组侧 session cache |
+| `account_sessions`：`(user_id, server_id)` 会话权威 | `user_currency`、ledger、订单、邮件、战绩等玩法/经济表 |
+| `char_registry`：账号在某区是否建过角色 | 角色的等级、背包、进度等权威玩法态 |
+| `login_audit`：登录与 Admin 操作审计 | 在线连接表、组内顶号与游戏节点 `/admin/kick` |
+| `seq`、`schema_migrations` | 游戏库自己的 migration/bootstrap |
 
-### 1.1 边界：一游戏一整套栈；中心账号服务**以后另立项**
+账号库从空库由 `gono-webplatform` migration 初始化。本仓
+`npm --workspace @game/server run db:bootstrap` **只建游戏库**，并应断言上述账号表不存在。
+没有旧数据迁移、双写、CDC 或共库回退路径。
 
-**当前定案（2026-07-25 用户拍板）**：本服务**只喂本游戏**。「中心账号服务」里的「中心」只指**跨本游戏的
-全部物理组集中**（一份身份权威服务 N 个组），⛔ **不指跨游戏**。同理运营 GM/封号后台也是**每游戏一套**。
-第二个游戏 = 另起一整套栈，**含另起一个 WebPlatform 实例 + 独立账号库**。
+会话单端语义作用域是 `(账号, serverId)`：同区再次登录替换旧 token，不同区互不影响；
+封号仍是账号级，Admin ban 会作废该账号全部区的权威 session。
 
-⚠ **别把 `PROJECT_ID` 误读成「线上多游戏共栈」的能力**：[SERVER.md §1](SERVER.md) 的「第二个项目改
-`PROJECT_ID` + `PORT`」（Redis 前缀 `<PROJECT_ID>_` + 库名 `game_<PROJECT_ID>`，`WEBPLATFORM_MYSQL_URL`
-缺省同此）服务的是**开发机多项目共用同一套 Redis/MySQL 实例**；**线上不会有第二个游戏跑在同一套实例上**。
+## 3. HTTP v1 契约
 
-#### ⏭ 以后要做中心账号服务的前置改造项（**非当前里程碑**，⛔ 不排期、不进 W 编号）
+OpenAPI 唯一真源在独立仓。所有 JSON 错误使用：
 
-⛔ **当前不要动 schema、不要预先加游戏维度列**——下表是已核实的清单，存档供以后立项时接续
-（推导背景见 [DUAL_MODE §2.1](DUAL_MODE.md)）。共性：`accounts`/`char_registry`/`login_audit`/`seq`
-四张表**零「游戏/应用」维度**，共用一份门户喂两个小游戏会**静默出错**，每条都是**数据模型变更**、非配置项：
+```json
+{ "code": "INVALID_PAYLOAD", "requestId": "01J..." }
+```
 
-| # | 硬绑定处 | 共用后的后果 | 翻案需要的变更 |
-|---|---|---|---|
-| P1 | `accounts.uk_unionid`（[schema.sql](../apps/server/sql/schema.sql)） | 微信 unionid 是**同主体跨小游戏的同一个人** ⇒ 两游戏塌缩成同一 `user_id`／同一封号态／同一 `token_hash`（**跨游戏互踢**） | `accounts` 加应用维度；`uk_unionid` 降级为非唯一索引（或改 `UNIQUE(app, unionid)`）；[`lib/login.ts`](../apps/WebPlatform/src/lib/login.ts) 的 1062 恢复相应改按 (app,openid)/(app,unionid) 回读 |
-| P2 | `char_registry` PK `(user_id, server_id)` | `sId` 是**全局命名空间**，两游戏区号重叠即互相污染 `ul`／F4 判据 | PK 加应用维度；`character.register/query/has` 全链带应用参数 |
-| P3 | token `{uid}.{hex}` + `/verify` | 无「属于哪个游戏」维度 ⇒ A 游戏签发的 token 可建连 B 游戏网关 | token 绑签发方；`accounts.token_hash` 单列 → per-app 行（同 §5「单端语义」那类模型变更） |
-| P4 | `wxConfig()`（单份 `WX_APPID`/`WX_SECRET`） | 一进程物理上喂不了两个小游戏的 `code2session` | 凭证表/按应用路由，`code2session` 按应用取凭证 |
-| P5 | 封号是**账号级**（`accounts.status`） | 封一个游戏 = **全平台封** | 封号粒度降到「账号×应用」；GM 后台从每游戏一套改为跨游戏共用（同属以后拓展） |
+token 对客户端和游戏服都是不透明字符串。响应不得泄露 `openid`、`unionid`、`session_key`、
+DSN 或内部异常文本。
 
-⚠ **`/ban`·`/revoke` 无鉴权不在上表**：它是 **[W1](#4-待办上线前必做)**，与跨不跨游戏无关——中心化只会把
-同一个洞的爆炸半径从单游戏放大到跨游戏，⛔ **不构成把 W1 推迟到那时的理由**。
-⚠ **2026-07-26 定案后本段口径已变**：W1 **不再是上线阻断**（边界交给 VPC + 安全组，见 §5 决策记录），
-触发条件改为 **E1 部署模板落地前**。⛔ 但这**不等于取消**，也 ⛔ 不改变"它与中心账号服务无关"这个判断。
+### 3.1 Public API
 
-## 2. 部署模式（deploy-mode，去 big-bang 风险）
+| 方法与路径 | 用途 |
+|---|---|
+| `POST /v1/sessions/wechat` | 微信 `code` + `serverId` 登录 |
+| `POST /v1/sessions/dev` | 非生产本地登录；生产启用必须拒绝启动 |
+| `GET /v1/areas` | 选服目录；可选 Bearer 用于回填我的区 |
 
-同一份账号逻辑两种跑法，由组网关的 `ACCOUNT_MODE` 选择：
+登录成功固定返回：
 
-| 模式 | 账号逻辑在哪 | 库 | 客户端登录/选服打谁 |
-|---|---|---|---|
-| `in-process`（dev/test 缺省） | `apps/server` 直接 import `@game/webplatform/lib`，⛔ 不起本进程 | 与游戏服**共库** | 游戏服（`portalUrl` 留空回退） |
-| `http`（prod split） | 本包 `src/index.ts`（Fastify）独立进程 | **独立账号库** `WEBPLATFORM_MYSQL_URL` | WebPlatform（客户端 `portalUrl`） |
+```json
+{
+  "userId": "u_10001",
+  "accessToken": "opaque-token",
+  "isNewAccount": true
+}
+```
 
-### ⚠ split 的第一性约束：游戏服进程里**直调 lib 就是打错库**
+两种登录请求都必须携带 `serverId`；微信入口还带 `code`，开发入口带 `devKey`，`deviceId` 可选。
+客户端保存字段 `accessToken`，不得继续读取旧字段或猜 token 结构。
 
-`apps/server/src/core/infra/mysql.ts` 无条件把**游戏服的池**注入给 lib（`useServerPool`）。
-所以 split 下，游戏服进程里任何对 `@game/webplatform/lib` 的直接调用都会打在**组游戏库**上——
-那里没有 `accounts`/`char_registry`，结果是**静默错误**（`affectedRows=0`、查询空集），而非报错。
+`GET /v1/areas` 在已有登录态时使用：
 
-> **`AccountClient` 接缝（`platform/accountClient.ts`）的存在就是为了防这个**：游戏服要访问账号/门户平面，
-> **一律走 `account.*`**（in-process → lib、split → HTTP）。⛔ 禁止在 `platform/` 之外 import lib
-> （唯一例外：`core/infra/mysql.ts` 的池注入）。此约束由 `test/lib-import-ban.test.ts` 机检（白名单：`platform/**` + `core/infra/mysql.ts`）。
+```text
+Authorization: Bearer <accessToken>
+```
 
-## 3. 端点清单
+无 token 或 token 无效仍返回目录，只是 `myServerIds=[]`。成功响应：
 
-| 端点 | 暴露面 | 说明 |
-|---|---|---|
-| `GET /healthz` | 公开 | 进程存活 + MySQL 可达 |
-| `POST /account/wx-login`·`/account/dev-login` | 公开（客户端直连） | 路径 = 单源 `ApiPath`（铁律 6）；出参 shared `ILoginRes`，⛔ 禁含 openid/session_key（09·G8） |
-| `POST /area/list` | 公开（登录前展示） | `{al,ul,isOps,h}`；token 可选、**best-effort** 回填 `ul`（无效/过期一律空，⛔ 不抛） |
-| `POST /verify` | 内部（组网关调） | 返回**结果码**，组侧映射错误类；组 `sess` 由组网关 onAuth 懒填。⚠ 成功时**必须带 `issuedAtMs`**（= 对应 `account_sessions.token_issued_at`，同 `(uid,sId)` 严格递增）：组侧 `writeGroupSess` 拿它当写入栅栏（A1，见 [SERVER.md §13](SERVER.md#13-契约与配置redis-key--字段--错误码--常量) 的 `sess:{uid}:s{sId}`）。写入返回 `written/unchanged/stale` 三态：同 token 同时刻的多连接是合法 `unchanged`；若远程 verify 后发生了更新登录而得到 `stale`，本次 strict 准入必须拒绝，⛔ 不能只 no-op 后仍放玩家进房。别以"出参最小化"为由删 `issuedAtMs`——它不是身份信息（G8 禁的是 openid/unionid），只是一个时刻；组侧对缺失值兜 `0`（判为最旧、⛔ 不覆盖更新的），仅为滚动升级窗口留的余地 |
-| `POST /character/register`·`/query`·`/has` | 内部 | 建角存在性权威（喂 F4 + `ul`） |
-| `POST /account/exists` | 内部 | F4「是不是真账号」判据（sId=0） |
-| `POST /ban`·`/revoke` | **特权** | 一条 UPDATE 写权威（`status=1` / `token_hash=NULL`）= **下次登不上**；返回 `{banned}`/`{revoked}` = 是否命中（组侧据此决定是否踢在线；`false`=无此账号则不广播） |
+```json
+{
+  "isOps": false,
+  "hash": "8fd1a4",
+  "servers": [
+    {
+      "serverId": 1,
+      "name": "一区·启程",
+      "tag": "normal",
+      "status": "smooth",
+      "openTime": 1700000000,
+      "gameHttpUrl": "https://s1-api.example.com",
+      "gameWsUrl": "wss://s1-ws.example.com"
+    }
+  ],
+  "myServerIds": [1]
+}
+```
 
-### `login_audit.event` 取值（新增事件先进本表，铁律 8）
+`openTime` 是 Unix 秒；`tag` 为 `normal|new|full|maintenance`，`status` 为
+`smooth|busy|maintenance`。`gameHttpUrl` 与 `gameWsUrl` 不互相推导，`portalUrl` 是客户端全局
+配置，不进入区服条目。目录状态只改善 UX，真正的进服准入仍由游戏服硬闸。
 
-⚠ 表在**账号库**，但写入方**两侧都有**：WebPlatform lib 写登录类，组侧 `apps/server` 写运营/异常类
-（in-process 同库；split 下组侧那几个会落进**组库** ⇒ 见待办 **W2**）。
+### 3.2 Internal API
 
-⚠ **`reason`/`device_id`/`event` 必须在写入前钳到列宽**，且**宽度按各自实际写入的那个库分侧取**（⛔ 不是一刀切）：组侧 `core/auth/session.ts` 写**组库** → `255/64/24`；lib 侧 `lib/auth.ts` 可能写**独立账号库** → `64/64/24`。它有两个不受控来源——`ban`/`revoke` 是**运营输入**、
-`login_diverged` 含错误原文；MySQL 在 `STRICT_TRANS_TABLES` 下超长是**抛 `ER_DATA_TOO_LONG`(1406) 而非截断**，
-后果是 ① 审计整行写不进（`login_diverged` 恰在它唯一该起作用的场景下失效）② `banUser` 末尾那句 `auditLogin`
-无 catch ⇒ **权威已写、人已踢，接口却报失败**，运营会以为没封上。两处 `auditLogin`（组侧 `core/auth/session.ts` 与 lib `lib/auth.ts`）各有一份 `clamp`：⛔ 不切断代理对。
+Internal 调用必须带独立服务身份：
 
-⚠ **为什么分侧而不是一刀切**：lib 侧在 split 连的是**独立账号库**，而那个库**尚无自己的 bootstrap**（见 §4），
-很可能仍是加宽前的 `VARCHAR(64)` ⇒ 钳到 255 对它**毫无保护**（65–255 照样 1406）；账号库 migration 被强制
-执行之后才可放宽。组侧则相反：它用 `MYSQL_URL` 的**组库**、⛔ 从不写账号库（那正是 **W2** 描述的事），
-组库必然跑过 `db-bootstrap`（幂等 `MODIFY reason VARCHAR(255)`）⇒ 列**在任何部署下都是 255**。
-⚠ 曾一度把组侧也收到 64，理由抄的是账号库那条——**对组侧是假的**，净效果只有数据损失（运营封号理由被砍、
-`login_diverged` 的错误原文只剩前 64 字、去掉固定前缀后仅余约 38 字）。改口径时务必分侧想。
+```text
+x-service-id: game-server
+x-service-secret: <WEBPLATFORM_SERVICE_SECRET>
+```
 
-⚠ **`device_id` 尤其要钳**：它来自**客户端输入**，而 Fastify 的 `Body` 泛型仅编译期、本服务登录端点
-（`ApiPath.WxLogin`/`DevLogin`）原先直接透传。未钳时后果比 `reason` 更糟——`loginByOpenid` 里 token
-**已经签发轮换**才走到 `auditLogin`，抛 1406 ⇒ **客户端收 500 拿不到新 token、审计也没有**，是一条比
-`login_diverged` 更彻底的登录分叉。现两端点已就地校验（与 in-process 的 zod `string().max(64)` 同契约，
-超长 400 `INVALID_PAYLOAD`），钳制作为第二道。
+| 方法与路径 | 用途 |
+|---|---|
+| `POST /v1/internal/sessions/verify` | 校验 `accessToken + serverId` |
+| `PUT /v1/internal/characters/{userId}/{serverId}` | 幂等登记角色存在性 |
+| `GET /v1/internal/characters/{userId}/{serverId}` | F4 判据：该区是否曾建角 |
 
-| event | 写入方 | 含义 |
-|---|---|---|
-| `wx_login` / `dev_login` | lib `loginByOpenid` | 登录成功（`auditKind` 由入口传入） |
-| `fail` | lib | 登录被拒；`reason` = `banned` / `code2session:<码>` |
-| `ban` / `revoke` | 组侧 `core/auth/ban.ts` | 运营动作（`reason` 为操作理由） |
-| `login_diverged` | 组侧 `platform/inProcessLogin.ts` | ⚠ **仅 in-process**：抢锁失败/写缓存失败，`accounts.token_hash` 已换发成一个**没人持有**的 token、组 `sess` 仍是旧 hash ⇒ 同一 uid 会同时有一行登录成功 + 一行本事件。客户端重登即自愈；出现即说明该号撞上了 freeze/thaw 长持锁（HANDOFF §8.6/§8.7） |
-| `login_dual_account` | lib `loginByOpenid`（`backfillUnionid`） | ⚠ **同一微信身份已落成两个 uid**：老号 unionid 回填撞 `uk_unionid`（该 unionid 已被另一行占用）。⛔ **不自愈**——后续每次登录都撞同一个键；真实资产分叉（首登奖励重发、充值/存档劈成两半）⇒ **需人工合档**。`reason` 只含 unionid **前 8 位**（09·G8：⛔ 不写明文）。登录本身**不受影响**（回填是锦上添花，异常一律吞） |
+verify 身份无效使用 HTTP 200 + 结果枚举，而不是把玩家问题与服务故障混在一起：
 
-**踢在线不在本服务**：封号 SOP 第二步由 **GM 工具**直连各组节点 `POST /admin/kick` 并按 ack 确认送达
-（规则 [09·G7b](SERVER.md#12-开发约束63-条规则目录)；运营侧实现规格见 [GM-TOOL-SPEC.md](GM-TOOL-SPEC.md)）。本服务**刻意不持 coord Redis、不广播**——
-保证来自 GM 的遍历确认，而非 fire-and-forget 广播（决策见 §5）。
+```json
+{ "valid": false, "reason": "MISMATCH" }
+```
 
-## 4. 待办（上线前必做）
+`reason` 只允许 `NOT_FOUND|MISMATCH|BANNED|DEREGISTERED|EXPIRED`。成功：
 
-| # | 项 | 现状 | 要做 |
-|---|---|---|---|
-| **W1** | 端点鉴权分层 | ⛔ `/ban`·`/revoke`·`/verify`·`/character/*`·`/account/exists` **全部无鉴权** ⇒ 谁能连到本进程就能封任何人、遍历任意用户足迹 | **✅ 2026-07-26 定案：⛔ 不再是上线阻断** —— 边界控制改由**云上 VPC + 安全组**承担（阿里云/腾讯云私网，外部租户不可达），本进程只监听内网网卡（`WEBPLATFORM_HOST`，缺省回环）。⚠ **明确接受的残余风险**见 [§5 决策记录](#5-决策记录为什么是现在这样)：VPC 内是**扁平信任区**（任一机器被拿下即可封任何人）、安全组误配无第二道防线、且无鉴权 ⇒ **无法区分调用方**（故 **W2 审计升为必做**，见下行）。**仍要做，触发条件改为 E1 部署模板落地前**（那时 WebPlatform 首次被自动拉起，危害从"未来的"变成"当下的"）：按暴露面加共享密钥（范式同 `pay/wxNotify`、`admin/kick`：每请求现读 env + 头比对 + 未配置即拒），`httpAccount` 调用侧配套带头 |
-| **W2** | **split 下封号无审计** | `login_audit` 在账号库；但 `/ban`·`/revoke` 端点**不写审计**，而组侧 `banUser` 的 `auditLogin` 写的是**组库**（落错地方）⇒ split 下账号库里查不到封号记录 | ⚠ **2026-07-26 升级为必做**（原与 W1 并列，现因 W1 定案而**加重**）：W1 既然接受"VPC 内不鉴权"，审计就是**唯一**能回答"这个号是谁封的"的东西——两者同时缺失 = 封号既无门禁也无痕迹。⇒ `/ban`·`/revoke` 端点内用 lib `auditLogin` 写（它用本服务自己的池，天然落对库）。⚠ A4 已定案**独立进程 + 独立数据库**，分库后组侧那条 `auditLogin` 就真的落错库了 ⇒ ⛔ 别拖到分库之后 | **触发条件**：与 W1 同批（E1 前），⛔ 不得晚于 split 启用 |
-| **W3** | 补画像端点 | 未做 | `bindProfile(uid,{nickname,avatar})` / `bindPhone(uid,encryptedData,iv)`（两段式授权，§2.7；手机号用本服务存的 `session_key` 解密） |
-| **W4** | 目录接真实配置 | `lib/area.ts` 是 demo 静态表 | 接配置表/运维后台，按 sId 返回各组实例端点。⚠ **契约要一次定全三类端点**（评审采纳）：`IAreaServer` 目前只有 `wsUrl`，但客户端实际需要 **HTTP(api)/WS(房间)/Portal(账号)** 三类——只发 wsUrl 会把「大厅连错组」（todo.md A5）钉死成结构问题。portal 大概率全局单点、只有 http/ws 按组下发，形状先拍再写（回问 Q7） |
+```json
+{ "valid": true, "userId": "u_10001", "issuedAtMs": 1780000000000 }
+```
 
-⏭ **本表之外另有 P1–P5**：以后做**中心账号服务**（一实例喂多游戏）的前置改造项，见 [§1.1](#11-边界一游戏一整套栈中心账号服务以后另立项)。
-它们**非当前里程碑、不排期、刻意不占 W 编号**——当前定案是本游戏专属，⛔ 别把它们当成上线前必做。
-⚠ 反过来也别把 **W1 归到那边**：W1 防的是外部越权，与跨不跨游戏无关，**当前就必须做**。
+`issuedAtMs` 来自账号库 `account_sessions.token_issued_at`，是游戏服
+`writeGroupSess` 的单调栅栏。Internal 的 401/403 是服务身份配置错误，5xx/超时是账号服务故障；
+游戏服不得把它们谎报成玩家 token 过期。仅 `valid:false` 映射玩家鉴权失败。
 
-## 5. 决策记录（为什么是现在这样）
+角色登记返回 `{registered:true}`，查询返回 `{exists:boolean}`；这里只表达存在性，不传玩法数据。
 
-### ⚑ 2026-07-26 定案：VPC 内不做端点鉴权（W1 降级 + 明确接受的残余风险）
+### 3.3 Admin API
 
-**决定**：内部/特权端点的边界控制**由云上 VPC + 安全组承担**（阿里云/腾讯云私网，其他租户不可达），
-⛔ 不把"加共享密钥"当作上线阻断项。W1 保留在账本上，触发条件改为 **E1 部署模板落地前**。
+Admin 使用与 Internal 不同的凭证：
 
-**依据**：VPC 隔离是真实且足够强的外部边界；而本进程在缺省 `ACCOUNT_MODE=in-process` 下**根本不启动**，
-仓库里也没有任何自动拉起它的产物 ⇒ 当前的"无鉴权"没有对外暴露面。
+```text
+x-admin-secret: <WEBPLATFORM_ADMIN_SECRET>
+x-operator-id: <operator>
+```
 
-**⚠ 明确接受的残余风险（⛔ 不要当成"已解决"）**：
-1. **VPC 内是扁平信任区**：同一 VPC 里的任意机器（Web 服务、CI runner、跳板机）被拿下，
-   即可无凭证封任何人、遍历任意用户足迹、伪造 `char_registry` 制造首进区永久毒态。
-2. **误配无第二道防线**：安全组开错一条 / EIP 绑错一次 / LB 挂错后端 ⇒ 直接公网，⛔ 没有兜底。
-3. **无法区分调用方**：无鉴权 ⇒ 运维、外包、脚本调 `/ban` 在日志里完全相同。
-   ⇒ **因此 [W2](#4-待办上线前必做)（封号审计落对库）从"并列待办"升级为必做**：
-   审计是这个模型下**唯一**能回答"这个号是谁封的"的东西。两者同时缺失 = 封号既无门禁也无痕迹。
+| 方法与路径 | 事务语义 |
+|---|---|
+| `POST /v1/admin/accounts/{userId}/ban` | `status=1` + 删除全部区 session + 写 `ban` 审计 |
+| `POST /v1/admin/accounts/{userId}/revoke` | 删除全部区 session + 写 `revoke` 审计，不封账号 |
 
-**⚠ 已同批落地的最小硬化（⛔ 不是 W1 的替代）**：`WEBPLATFORM_HOST` 缺省 `127.0.0.1`
-（此前硬编码 `0.0.0.0`，评审实测可从局域网未鉴权改库），真部署时显式绑内网网卡；
-启动横幅打 host 参数本身并在非回环时告警。
+请求固定为：
 
+```json
+{ "operationId": "gm-20260727-000001", "reason": "外挂" }
+```
 
-- **只用 MySQL、不引 Redis**：门户的读写量级小、`verify` 是一条 PK；引 Redis 等于多一套失效/一致性问题。
-  ⇒ 连"发一条踢人广播"也不做（本可只加一个 client + 一条 XADD），把送达保证放在 GM 工具的**遍历确认**上——
-  因为 fire-and-forget 广播**本来就不构成保证**，两者并存只会让人误以为有保证。
-- **登录编排下沉 lib（返回结果码）**：lib 跨包不能 import 组网关的错误类 ⇒ 一律返回 `{ok:false,reason}`，
-  由调用侧（组网关 / 本服务端点）映射成错误类或 HTTP 码。这也正是 split HTTP 边界需要的形态。
-- **`character` 归本服务**（U5）：`server_id` 列名务实，但对本服务**语义不透明**（不知 sId 含义、不感知区内进度）。
-- **单端语义**：`accounts.token_hash` 单列 ⇒ 一账号一有效 token，换端即顶号。多端同时在线需引入
-  `sessions` 表（per-device 行）+ `verify` 改按 token 查行，属**数据模型变更**（规则 09·G7c）。
+`operationId` 是 Admin 操作幂等键。同一操作号、动作、账号的重放返回首次结果；复用到不同动作或账号
+返回 `409 OPERATION_CONFLICT`。响应：
+
+```json
+{ "accountExists": true, "status": "banned" }
+```
+
+`status` 为 `banned|revoked|not_found`。账号不存在也返回 HTTP 200 与
+`{accountExists:false,status:"not_found"}`，方便 GM 明确区分输入错误与基础设施失败。
+
+Admin 写权威只保证“下次登录/新建连接被拒”。已建立连接的游戏 RPC 走组缓存快路径，因此 ban/revoke
+成功后必须继续执行 [GM 两步 SOP](GM-TOOL-SPEC.md) 的逐节点 kick。
+
+### 3.4 System API
+
+| 路径 | 语义 |
+|---|---|
+| `GET /livez` | 只证明进程与事件循环可响应，不访问外部依赖 |
+| `GET /readyz` | 检查 MySQL 与 migration 版本；未就绪返回 503 |
+| `GET /version` | 服务版本、契约版本、schema 版本与 git SHA |
+
+## 4. 契约在本仓的消费方式
+
+独立仓从 OpenAPI 生成并发布零依赖 `@gono/webplatform-contract`。它只能包含路径/方法常量、请求响应
+类型、错误码与版本信息，不包含 HTTP server、MySQL 或领域实现。
+
+本仓精确锁定一个版本，并把它镜像到 Cocos 可消费的普通 TS：
+
+```bash
+npm run sync:webplatform-contract
+npm run verify:webplatform-contract
+```
+
+生成目录：
+
+```text
+apps/shared/src/generated/webplatform/
+```
+
+该目录禁手改；manifest 记录契约版本和内容 hash。同步会级联
+`shared → apps/client/src/shared → apps/Cocos/assets/src`，`typecheck` 先执行只读漂移校验。
+服务端可直接 import 契约包，客户端从 shared 生成物 import。
+
+跨仓升级顺序：
+
+1. 独立仓修改 OpenAPI、实现和契约测试。
+2. 发布新的精确契约版本。
+3. 本仓升级锁定依赖并执行 `sync:webplatform-contract`。
+4. 适配游戏服 Internal client 与客户端 Public 调用。
+5. 两仓 contract test、typecheck 和集成冒烟全部通过后部署。
+
+## 5. 游戏仓配置与失败语义
+
+游戏服只持 HTTP client 配置：
+
+| 环境变量 | 说明 |
+|---|---|
+| `WEBPLATFORM_INTERNAL_URL` | 无凭据、无 path/query/hash 的 Internal http(s) origin |
+| `WEBPLATFORM_SERVICE_ID` | Internal 调用方标识 |
+| `WEBPLATFORM_SERVICE_SECRET` | Internal 服务密钥；生产缺失拒启 |
+| `WEBPLATFORM_CONNECT_TIMEOUT_MS` | TCP/TLS 建连预算 |
+| `WEBPLATFORM_REQUEST_TIMEOUT_MS` | 单次逻辑调用总预算（含有限重试） |
+| `WEBPLATFORM_BREAKER_FAILURES` | 熔断阈值 |
+| `WEBPLATFORM_BREAKER_OPEN_MS` | 熔断打开时长 |
+
+游戏服没有 `WEBPLATFORM_MYSQL_URL` 或任何账号库凭证。Internal client 对 verify 只做有限幂等重试；
+超时、5xx、响应超限、非 JSON/形状漂移分别保留为基础设施或契约错误，不降级本地实现。
+
+客户端 `Main.portalUrl` 必填 Public origin；本地例 `http://127.0.0.1:2570`，生产必须 HTTPS 并加入
+微信合法域名。区服选择后，游戏业务 HTTP/Colyseus 使用目录的 `gameHttpUrl`，而不是 portal origin。
+
+## 6. 部署与安全
+
+- Public 与 Internal/Admin 必须分监听面或等价的网络策略；Public 只经公网 LB/WAF，Internal/Admin
+  只允许游戏服与 GM 后端网段。
+- Internal 与 Admin 使用不同密钥，生产缺失相应密钥时对应监听面拒绝启动；密钥走 KMS/Secret Manager。
+- WebPlatform MySQL 只允许 WebPlatform 实例和 migration job 访问；游戏服安全组不得访问账号库。
+- 只信任明确配置的代理 CIDR；日志脱敏 token、微信身份、session_key 与密钥。
+- WebPlatform 独立发布、独立 migration job、独立 Docker 镜像；应用启动只校验 schema 版本。
+- WebPlatform 不直接踢游戏连接。GM 工具对全部在役节点逐个确认 `/admin/kick` 的 HTTP 200，
+  才能声明在线踢除完成。
+
+## 7. 退役方案（历史说明，不是可选部署模式）
+
+以下均为拆仓前的过渡实现，已经退役：
+
+- monorepo 内 `apps/WebPlatform` 业务包与 `@game/webplatform` 源码依赖；
+- 游戏进程内嵌账号逻辑、运行期 `ACCOUNT_MODE` 切换与 MySQL pool 注入；
+- 客户端 portal 地址留空后回退游戏服；
+- 游戏服承载登录、选服、账号管理兼容端点；
+- 游戏库创建或修改账号表。
+
+这些内容只可在 Git 历史/评审留档中出现，不能作为当前代码入口、部署选项或测试捷径。
+生产源码边界由 `apps/server/test/lib-import-ban.test.ts` 无白名单机检。
+
+## 8. 非目标与后续
+
+拆仓当前不包含跨游戏中心账号、多设备同区并存、账号 Redis、WebPlatform 自持游戏 coord Redis、
+动态服务发现、完整运营目录后台、账号画像完整产品接入或支付迁移。这些能力若立项，应在独立仓
+扩展 OpenAPI/migration，并按 §4 的跨仓契约流程演进，不能重新把领域逻辑搬回游戏仓。

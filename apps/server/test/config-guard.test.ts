@@ -79,19 +79,31 @@ test("GROUP_ZONES 合法值与缺省值：正常加载", () => {
   assert.equal(loadConfigWith({ GROUP_ZONES: "" }).status, 0, "空串 = 承载全部");
 });
 
-test("ACCOUNT_MODE 非法值：config 加载期即 throw（⛔ 不静默回退 in-process = split 下打错库）", () => {
-  for (const bad of ["httpp", "HTTP", "remote", "inprocess", "1"]) {
-    const r = loadConfigWith({ ACCOUNT_MODE: bad });
-    assert.notEqual(r.status, 0, `ACCOUNT_MODE=${bad} 应拒绝启动`);
-    assert.match(r.stderr, /ACCOUNT_MODE 非法/);
+test("WEBPLATFORM_INTERNAL_URL 只接受无凭据、无路径参数的 http(s) origin", () => {
+  for (const bad of [
+    "not-a-url",
+    "ftp://127.0.0.1:2571",
+    "http://user:pass@127.0.0.1:2571",
+    "http://127.0.0.1:2571/internal",
+    "http://127.0.0.1:2571?x=1",
+    "http://127.0.0.1:2571#frag",
+  ]) {
+    const r = loadConfigWith({ WEBPLATFORM_INTERNAL_URL: bad });
+    assert.notEqual(r.status, 0, `WEBPLATFORM_INTERNAL_URL=${bad} 应拒绝启动`);
+    assert.match(r.stderr, /WEBPLATFORM_INTERNAL_URL/);
+  }
+  for (const good of ["http://127.0.0.1:2571", "https://wp.example.test", "http://localhost:2571/"]) {
+    const r = loadConfigWith({ WEBPLATFORM_INTERNAL_URL: good });
+    assert.equal(r.status, 0, `WEBPLATFORM_INTERNAL_URL=${good} 应通过，stderr：${r.stderr.slice(0, 200)}`);
   }
 });
 
-test("ACCOUNT_MODE 合法值与缺省值：正常加载", () => {
-  for (const good of ["in-process", "http"]) {
-    assert.equal(loadConfigWith({ ACCOUNT_MODE: good }).status, 0, `ACCOUNT_MODE=${good} 应正常加载`);
+test("WEBPLATFORM_SERVICE_ID 非法值加载期拒绝", () => {
+  for (const bad of ["含中文", "has space", "x".repeat(65), "/"]) {
+    const r = loadConfigWith({ WEBPLATFORM_SERVICE_ID: bad });
+    assert.notEqual(r.status, 0, `WEBPLATFORM_SERVICE_ID=${bad} 应拒绝启动`);
+    assert.match(r.stderr, /WEBPLATFORM_SERVICE_ID 非法/);
   }
-  assert.equal(loadConfigWith({ ACCOUNT_MODE: undefined }).status, 0, "缺省（不设）应正常加载");
 });
 
 /**
@@ -131,7 +143,11 @@ test("逃生口 FREEZE_UNSAFE_S0_ONLY=1：显式放行（⛔ 仅限目录不下�
  * 范式与同文件 AUTH_DEV_ENABLED 一致。
  */
 test("PAY_ENABLED=1 + NODE_ENV=production：加载期即 throw（⛔ 支付链闭环前不许生产开启）", () => {
-  const r = loadConfigWith({ PAY_ENABLED: "1", NODE_ENV: "production" });
+  const r = loadConfigWith({
+    PAY_ENABLED: "1",
+    NODE_ENV: "production",
+    WEBPLATFORM_SERVICE_SECRET: "test-service-secret",
+  });
   assert.notEqual(r.status, 0, "生产 + PAY_ENABLED=1 应拒绝启动");
   assert.match(r.stderr, /PAY_ENABLED=1 在生产环境被显式开启/, `stderr：${r.stderr.slice(0, 300)}`);
 });

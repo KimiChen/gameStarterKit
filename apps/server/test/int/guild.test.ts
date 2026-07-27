@@ -21,8 +21,7 @@ import {
   activeLruBucketOf, kActiveLru, kGuildEvtLog, kGuildEvtSeq, kSess, kUser,
 } from "../../src/core/infra/keys";
 import { clientFor, clientForKey, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
-import { closeMysql, getPool } from "../../src/core/infra/mysql";
-import type { ResultSetHeader } from "../../src/core/infra/mysql";
+import { closeMysql } from "../../src/core/infra/mysql";
 import { assertRedisUp, cleanupUser, sleep, testUid, issueSession } from "./helpers";
 
 let colyseus: ColyseusTestServer;
@@ -39,12 +38,10 @@ const newGid = (): number => {
   return entry.gid;
 };
 
-/** 造号：accounts 行 + Redis 档 + 会话（同 gateway.test 模式，绕过 wxLogin）。 */
+/** 造玩法档 + 组缓存会话；strict onAuth 另需 WebPlatform 测试服务。 */
 async function makeUser(name: string): Promise<{ uid: string; token: string }> {
   const uid = testUid(name).slice(0, 32);
   uids.push(uid);
-  await getPool().execute<ResultSetHeader>(
-    "INSERT INTO accounts (user_id, openid) VALUES (?, ?)", [uid, `op_${uid}`]);
   await createUser(uid);
   const { token } = await issueSession(uid, null);
   return { uid, token };
@@ -88,10 +85,7 @@ before(async () => {
 after(async () => {
   stopMailWakeLoop();
   await colyseus?.shutdown();
-  const pool = getPool();
   for (const u of uids) {
-    await pool.execute("DELETE FROM account_sessions WHERE user_id = ?", [u]);
-    await pool.execute("DELETE FROM accounts WHERE user_id = ?", [u]);
     await cleanupUser(u);
     await clientFor(u).unlink(kSess(u, 0));
     const b = activeLruBucketOf(u);

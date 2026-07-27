@@ -5,8 +5,8 @@
  * 铁律 10：ViewMgr 静态依赖 fairygui，只在 view/ 内部这样静态 import；对外由 Main 走
  * 动态 import 闭包（`const p = await import("./view/pages")`）调用。
  *
- * 选服链路（对齐原项目）：openLogin 时拉 /area/list 存 serverSession + 默认选中服 →
- * Login 显示当前服 → 选服改 currentServer → 进入游戏 Main 连 currentServer.wsUrl（区服=实例）。
+ * 选服链路：openLogin 时拉 WebPlatform GET /v1/areas 存 serverSession + 默认选中服 →
+ * Login 显示当前服 → 选服改 currentServer → 游戏连接使用 currentServer.gameHttpUrl。
  */
 import { ViewMgr } from "./ViewMgr";
 import { sys } from "cc";
@@ -20,15 +20,23 @@ import { AreaListLogic } from "../logic/page/AreaListLogic";
 import { LoginNoticeLogic } from "../logic/page/LoginNoticeLogic";
 import type { IConfirmOptions } from "../logic/page/ConfirmLogic";
 import { ConfirmLogic } from "../logic/page/ConfirmLogic";
-import { getBaseUrl, getToken } from "../core/http";
+import { initHttp } from "../core/http";
 import { devLogin } from "../net/http/account";
 import { WebSocketClient } from "../net/WebSocketClient";
 import { clearSession, onAuthInvalid, onBattleLost, onConnLost, setSession } from "../net/session";
-import { ForceLogoutMessage, ForceLogoutReason, UserRpc, isServerEnterable, joinErrText, type IUserView } from "../shared/index";
+import { ForceLogoutMessage, ForceLogoutReason, UserRpc, joinErrText, type IUserView } from "../shared/index";
+import { isServerEnterable } from "../logic/areaDirectory";
 import { fetchAreaList } from "../net/http/area";
 import { fetchNotices } from "../net/http/notice";
-import { chooseServer, getCurrentServer, pickDefaultServer, setServerList, getServerList } from "../net/serverSession";
-import type { IAreaServer } from "../shared/index";
+import {
+  chooseServer,
+  clearServerList,
+  getCurrentServer,
+  pickDefaultServer,
+  setServerList,
+  getServerList,
+} from "../net/serverSession";
+import type { WebPlatformAreaServer } from "../shared/index";
 
 const NOTICE_DONT_REMIND_DATE_KEY = "game.notice.dont-remind-date";
 
@@ -117,13 +125,21 @@ function writeDontRemindToday(value: boolean): void {
 
 /** 登录页：拉选服列表 + 默认选中 → 显示当前服；按钮通往选服/公告；进入游戏走维护闸 + 登录 → 主界面。 */
 export async function openLogin(onEnterBattle: () => void): Promise<void> {
-  // 拉一次选服列表（对齐原项目 init 时机），存 session + 默认选中服
+  // 每次回登录页都从独立 Portal 重拉；失败时先清旧目录，禁止沿用未知旧地址。
+  clearServerList();
+  let areaLoadFailed = false;
   try {
-    const list = await fetchAreaList(getToken() || undefined);
+    const list = await fetchAreaList();
     setServerList(list);
     const def = pickDefaultServer(list);
-    if (def) chooseServer(def);
-  } catch { /* 拉取失败不阻塞登录界面（无栈/离线仍能看到登录页） */ }
+    if (def) {
+      chooseServer(def);
+      initHttp(def.gameHttpUrl);
+    }
+  } catch (e) {
+    areaLoadFailed = true;
+    console.error("[pages] WebPlatform 区服目录加载失败：", e);
+  }
 
   wireSessionEvents(() => { void openLogin(onEnterBattle); });
 
@@ -131,17 +147,35 @@ export async function openLogin(onEnterBattle: () => void): Promise<void> {
   const view = h.view as LoginView;
   // ⚠ 登录必须带**所选区**（M12e）：token 只对该区有效。`chooseServer` 已在本函数上方执行过，
   // 故这里 `getCurrentServer()` 拿得到；⛔ 别图省事传 0——那会签出一个进不了所选区的 token。
-  const logic = new LoginLogic({ login: (key) => devLogin(key, getCurrentServer()?.sId ?? 0) });
+  const logic = new LoginLogic({ login: (key) => devLogin(key, getCurrentServer()?.serverId ?? 0) });
   logic.onProgress = (ratio, text) => view.setProgress(ratio, text);
 
   view.onEnter = async () => {
+    // Portal 首次不可达时，用户点「进入游戏」即显式重试目录；仍失败则给出可重试提示。
+    if (areaLoadFailed) {
+      try {
+        const list = await fetchAreaList();
+        setServerList(list);
+        const def = pickDefaultServer(list);
+        if (def) {
+          chooseServer(def);
+          initHttp(def.gameHttpUrl);
+          view.showCurrentServer(def);
+        }
+        areaLoadFailed = false;
+      } catch (e) {
+        console.error("[pages] WebPlatform 区服目录重试失败：", e);
+        await openConfirm({ title: "连接失败", content: "账号服务暂不可用，请稍后重试", noText: null });
+        return;
+      }
+    }
     const cur = getCurrentServer();
     // 进服闸（判定单源 isServerEnterable，对齐原项目 waitLogin）：无服 / 不可进（维护 or 未开服）
     // 且非运维模式不进。isOps 是部署环境级开关（服务端 AREA_IS_OPS），豁免覆盖两种不可进态——
     // 维护服重开前与新服开服前的验证是同一运维形态。⛔ 此闸只是 UX，真闸在服务端准入层。
     if (!cur) { await openConfirm({ title: "提示", content: "暂无可用区服", noText: null }); return; }
-    if (!isServerEnterable(cur) && (getServerList()?.isOps ?? 0) <= 0) {
-      const unopened = cur.openTime === 0 && cur.t !== 9;
+    if (!isServerEnterable(cur) && !(getServerList()?.isOps ?? false)) {
+      const unopened = cur.openTime === 0 && cur.status !== "maintenance";
       await openConfirm({
         title: unopened ? "未开服" : "维护中",
         content: unopened ? "该区服尚未开放，敬请期待" : "区服维护中，请稍候再试",
@@ -156,14 +190,10 @@ export async function openLogin(onEnterBattle: () => void): Promise<void> {
     let user: IUserView | null = null;
     try {
       logic.onProgress(0.6, "正在进入大厅…");
-      // ⚠ **大厅端点必须跟随所选区**（A5）：⛔ 别用全局 `getBaseUrl()`。区服 = 独立实例，
-      // 战斗房早已连 `cur.wsUrl`（Main.connectRoom），大厅却连全局地址 ⇒ 两条连接**各连各的**。
-      // 今天目录静态表里所有区同 wsUrl，所以还看不出来；W4 接真实配置后，玩家选了 2 区、
-      // 大厅却连在默认那台机器上，大厅侧的邮件/公会/背包全落错组（sId 传对了也没用——
-      // 那是**另一台机器上的** s2）。换算与战斗侧同款：ws→http，缺 wsUrl 才回退全局。
-      WebSocketClient.inst.init(cur.wsUrl ? cur.wsUrl.replace(/^ws/, "http") : getBaseUrl());
-      // 区服形态：透传所选区 sId，令大厅 RPC/建角与战斗房落同一区（否则大厅落 s0、战斗落所选区，档案串区）。
-      await WebSocketClient.inst.join(r.token, { sId: cur.sId });
+      // 区服 = 独立实例：直接使用目录明确给出的 gameHttpUrl，不再从 WS URL 猜 HTTP 地址。
+      WebSocketClient.inst.init(cur.gameHttpUrl);
+      // WebPlatform 契约叫 serverId；游戏服现有 Colyseus join option 仍叫 sId，在边界显式转换。
+      await WebSocketClient.inst.join(r.accessToken, { sId: cur.serverId });
       logic.onProgress(0.85, "正在加载角色…");
       user = (await WebSocketClient.inst.rpc(UserRpc.GetInfo, {})).user;
     } catch (e) {
@@ -187,7 +217,7 @@ export async function openLogin(onEnterBattle: () => void): Promise<void> {
   view.showCurrentServer(getCurrentServer());
 }
 
-/** 主界面：展示真实账号/档案摘要，「进入游戏」→ ballMove（onEnterBattle 由 Main 注入，连 currentServer.wsUrl）。 */
+/** 主界面：展示真实账号/档案摘要，「进入游戏」→ ballMove（使用 currentServer.gameHttpUrl）。 */
 export async function openHome(onEnterBattle: () => void, userId = "", user: IUserView | null = null): Promise<void> {
   const h = await ViewMgr.open("Home");
   const view = h.view as HomeView;
@@ -199,18 +229,25 @@ export async function openHome(onEnterBattle: () => void, userId = "", user: IUs
 }
 
 /** 选服列表（HTTP）：选服 → 存 currentServer + 回调刷新登录页 → 关闭。 */
-export async function openAreaList(onChosen?: (server: IAreaServer) => void): Promise<void> {
+export async function openAreaList(onChosen?: (server: WebPlatformAreaServer) => void): Promise<void> {
   const h = await ViewMgr.open("AreaList");
   const view = h.view as AreaListView;
   const logic = new AreaListLogic({ fetchAreaList });
   logic.onChoose = (server) => {
     chooseServer(server);       // 区服=实例：记住选中服，进入游戏时连它
+    initHttp(server.gameHttpUrl);
     onChosen?.(server);         // 刷新登录页 btn_server
     h.close();
   };
   view.onClose = () => h.close();  // 右上角关闭：不选服直接关面板
   view.setup(logic);
-  await logic.start(getToken() || undefined);
+  try {
+    await logic.start();
+  } catch (e) {
+    console.error("[pages] WebPlatform 区服目录加载失败：", e);
+    h.close();
+    await openConfirm({ title: "连接失败", content: "区服列表加载失败，请稍后重试", noText: null });
+  }
 }
 
 /** 公告（HTTP）：顶部 CompTab 标签（每条公告一个）+ txt_content 正文，选标签内联切换（对齐源项目最新版）。 */

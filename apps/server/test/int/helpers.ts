@@ -2,13 +2,61 @@
  * 集成测试公共件：真实 Redis（⛔ 不 mock，10·M2 DoD），先 `npm run stack`（apps/server）起本地栈。
  * uid 带运行期前缀隔离，跑完 UNLINK 清理（09·R6）。
  */
-import { issueToken } from "@game/webplatform/lib";
 import { writeGroupSess } from "../../src/core/auth/session";
 import { kApplied, kBagAll, kFence, kLock, kUser } from "../../src/core/infra/keys";
 import { clientFor } from "../../src/core/infra/redisRoute";
+import { AuthRequiredError } from "../../src/core/errors";
+import {
+  installWebPlatformClientForTests,
+  type WebPlatformClient,
+} from "../../src/platform/webPlatformClient";
 
 const runId = `t${Date.now().toString(36)}_${process.pid}`;
 export const testUid = (name: string): string => `${runId}_${name}`;
+
+interface FakeSession {
+  userId: string;
+  serverId: number;
+  issuedAtMs: number;
+}
+
+const fakeSessions = new Map<string, FakeSession>();
+const latestToken = new Map<string, string>();
+const fakeCharacters = new Map<string, Set<number>>();
+const userServerKey = (userId: string, serverId: number): string =>
+  JSON.stringify([userId, serverId]);
+
+/**
+ * 集成测试的内存 WebPlatform 权威替身。它只通过明确 test delegate 接缝安装，不进入生产默认路径：
+ * - token 按 `(userId,serverId)` 保持最后签发者胜；
+ * - character register/has 对应独立 WebPlatform 的幂等 PUT/GET 语义。
+ */
+export const fakeWebPlatformClient: WebPlatformClient = {
+  async verify(accessToken, serverId) {
+    const session = fakeSessions.get(accessToken);
+    if (!session
+      || session.serverId !== serverId
+      || latestToken.get(userServerKey(session.userId, serverId)) !== accessToken) {
+      throw new AuthRequiredError("fake WebPlatform token 无效");
+    }
+    return { userId: session.userId, issuedAtMs: session.issuedAtMs };
+  },
+  async registerCharacter(userId, serverId) {
+    let zones = fakeCharacters.get(userId);
+    if (!zones) {
+      zones = new Set<number>();
+      fakeCharacters.set(userId, zones);
+    }
+    zones.add(serverId);
+  },
+  async hasCharacter(userId, serverId) {
+    return fakeCharacters.get(userId)?.has(serverId) ?? false;
+  },
+};
+
+/** 本 helper 所在测试进程的 facade 安装；进程级隔离结束即销毁，显式句柄供专测恢复语义。 */
+export const restoreFakeWebPlatformClient =
+  installWebPlatformClientForTests(fakeWebPlatformClient);
 
 export async function assertRedisUp(): Promise<void> {
   const ping = clientFor("probe").ping();
@@ -19,20 +67,35 @@ export async function assertRedisUp(): Promise<void> {
 
 export async function cleanupUser(uid: string): Promise<void> {
   await clientFor(uid).unlink(kUser(uid), kFence(uid), kApplied(uid), kLock(uid), ...kBagAll(uid));
+  fakeCharacters.delete(uid);
+  for (const [token, session] of fakeSessions) {
+    if (session.userId === uid) { fakeSessions.delete(token); }
+  }
+  for (const key of latestToken.keys()) {
+    const parsed = JSON.parse(key) as [string, number];
+    if (parsed[0] === uid) { latestToken.delete(key); }
+  }
 }
 
 export const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
+let lastIssuedAtMs = 0;
+
 /**
- * 造合成会话（**测试专用**）：lib 签发 token 写 MySQL 权威 + 写组 sess 缓存。
- * ⚠ 生产登录不走这里——登录编排在 WebPlatform lib，组侧只 `writeGroupSess`（见 platform/inProcessLogin）。
- * ⚠ 直调 lib 仅测试可以（测试恒 in-process、与游戏服共库）；生产代码一律走 `account.*` 接缝。
+ * 造完整测试会话：同一不透明 token 同步写入内存 WebPlatform fake 与游戏组 sess cache，
+ * 因而既能通过 LobbyRoom/GameRoom strict onAuth，也能覆盖每消息本地快路径。
  */
 export async function issueSession(
-  uid: string, sessionKey: string | null = null, gwNode = "", sId = 0,
+  uid: string, _sessionKey: string | null = null, gwNode = "", sId = 0,
 ): Promise<{ userId: string; token: string }> {
-  // ⚠ sId 缺省 0（大混服）：绝大多数用例与区无关；按区的用例（perzone/lobby-zone）显式传。
-  const { token, issuedAtMs } = await issueToken(uid, sId, sessionKey);
-  await writeGroupSess(uid, token, sId, gwNode, issuedAtMs); // ⚠ 带栅栏值，否则测试造的会话恒被判陈旧（A1）
+  lastIssuedAtMs = Math.max(Date.now(), lastIssuedAtMs + 1);
+  const issuedAtMs = lastIssuedAtMs;
+  const token = `test_${uid}_${sId}_${issuedAtMs}`;
+  const cached = await writeGroupSess(uid, token, sId, gwNode, issuedAtMs);
+  if (cached === "stale") {
+    throw new Error(`测试会话 issuedAt 栅栏拒绝 uid=${uid} sId=${sId}`);
+  }
+  fakeSessions.set(token, { userId: uid, serverId: sId, issuedAtMs });
+  latestToken.set(userServerKey(uid, sId), token);
   return { userId: uid, token };
 }

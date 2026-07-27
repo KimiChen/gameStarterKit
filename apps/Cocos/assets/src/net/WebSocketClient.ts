@@ -8,7 +8,7 @@
  * 使用约定：
  *  - 错误处理只按 RpcError.code 分支，⛔ 禁止解析 msg（09·G3）
  *  - 写接口一律走 rpcIdem：clientReqId 每个逻辑操作生成一次，重试复用同一个（09·I2）
- *  - join 需要框架 token（POST /account/wx-login 或 /account/dev-login 签发）
+ *  - join 需要 WebPlatform Public `/v1/sessions/*` 签发的 accessToken
  *  - 鉴权类错误码（踢线/过期/封号）统一上报 net/session.notifyAuthInvalid，UI 从 session 订阅
  */
 import { notifyAuthInvalid, notifyConnLost, type AuthInvalidReason } from "./session";
