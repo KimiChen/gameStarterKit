@@ -665,8 +665,16 @@ export class RoomClient {
      * 也必须更新 desired；重连回调会按 seq 重新 reconcile，避免“松手”丢失。
      */
     move(dirX: number, dirY: number): void {
-        if (!Number.isFinite(dirX) || !Number.isFinite(dirY)) return;
-        this.desiredInput = { dirX, dirY, seq: ++this.inputSeq };
+        let payload: IMoveReq;
+        try {
+            // Validate before recording desired state. Otherwise an out-of-range
+            // direction would remain queued and be retried on every reconnect.
+            payload = validateC2SPayload(C2S.Move, { dirX, dirY });
+        } catch (error) {
+            warnInvalidWire(`C2S ${String(C2S.Move)}`, error);
+            return;
+        }
+        this.desiredInput = { dirX: payload.dirX, dirY: payload.dirY, seq: ++this.inputSeq };
         const slot = this.slot;
         if (slot && slot.room && !slot.dropping && !slot.cancelled) this.reconcileInput(slot);
     }

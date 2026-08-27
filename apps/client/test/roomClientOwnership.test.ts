@@ -181,7 +181,7 @@ test("slot 连接 key：endpoint/token/sId/其它 option 任一不同均 fail-fa
   }
 });
 
-test("slot 连接 key：完整 options 递归稳定比较，键顺序/对象 undefined 不造成误拒", async () => {
+test("slot 连接 key：契约允许字段稳定比较，键顺序/undefined 不造成误拒", async () => {
   const join = deferred<unknown>();
   const fake = makeFakeRoom("stable-key");
   const client = makeClient(join);
@@ -189,11 +189,9 @@ test("slot 连接 key：完整 options 递归稳定比较，键顺序/对象 und
     token: "same",
     sId: 3,
     listHash: "h",
-    nested: { z: [1, 2], a: { y: true, x: "x" } },
     omitted: undefined,
   });
   const second = client.joinGame({
-    nested: { a: { x: "x", y: true }, z: [1, 2] },
     listHash: "h",
     sId: 3,
     token: "same",
@@ -207,6 +205,14 @@ test("slot 连接 key：完整 options 递归稳定比较，键顺序/对象 und
   assert.equal(fake.leaveCalls, 0);
   await second.leave();
   assert.equal(fake.leaveCalls, 1);
+});
+
+test("slot 连接 key：未知 join option 在发送前拒绝", () => {
+  const client = makeClient();
+  assert.throws(
+    () => client.joinGame({ token: "same", sId: 3, nested: { x: 1 } }),
+    /未知字段|unknown|options/i,
+  );
 });
 
 test("旧 room 的迟到 onLeave 不得清除/上报后来创建的新 room", async () => {

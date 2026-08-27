@@ -164,7 +164,7 @@ test("rpcIdem：非 BUSY 错误立即抛且回填 clientReqId，不重试", asyn
 /** 订阅 session 的鉴权失效广播，返回收集器（用后即解绑）。 */
 async function collectAuthInvalid(): Promise<{ got: string[]; stop: () => void }> {
   const { onAuthInvalid, setSession } = await import("../src/net/session");
-  setSession({ userId: "u_1", token: "token-1", isNew: false }); // 必须已登录，否则迟到上报被幂等吞掉
+  setSession({ userId: "u_1", accessToken: "token-1", isNewAccount: false }); // 必须已登录，否则迟到上报被幂等吞掉
   const got: string[] = [];
   const stop = onAuthInvalid((r) => { got.push(r); });
   return { got, stop };
