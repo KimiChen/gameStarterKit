@@ -8,6 +8,7 @@ import { test } from "node:test";
 import { getPortalUrl, initHttp, initPortal, request, setToken } from "../src/core/http";
 import { devLogin, wxLogin } from "../src/net/http/account";
 import { fetchAreaList } from "../src/net/http/area";
+import { ApiPath } from "../src/shared/index";
 
 /** 可编程假 XHR：send 后同步触发 onload，按预设 status/body 回放 */
 class FakeXhr {
@@ -42,19 +43,19 @@ test("http：2xx resolve、非 2xx reject（错误 JSON 体不得伪装成功）
   (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = FakeXhr;
   try {
     FakeXhr.nextStatus = 200;
-    FakeXhr.nextBody = `{"code":0,"data":{"ok":1}}`;
-    assert.deepEqual(await request("GET", "/x"), { code: 0, data: { ok: 1 } });
+    FakeXhr.nextBody = `{"status":"ok","serverTime":1,"version":"3"}`;
+    assert.deepEqual(await request("GET", ApiPath.Health), { status: "ok", serverTime: 1, version: "3" });
 
     for (const bad of [401, 403, 429, 500]) {
       FakeXhr.nextStatus = bad;
       FakeXhr.nextBody = `{"error":"boom"}`; // 合法 JSON 的错误体——正是曾被误吞的形态
-      await assert.rejects(request("GET", "/x"), new RegExp(`HTTP ${bad}`),
+      await assert.rejects(request("GET", ApiPath.Health), new RegExp(`HTTP ${bad}`),
         `${bad} 应 reject 而非把错误体当数据`);
     }
 
     FakeXhr.nextStatus = 200;
     FakeXhr.nextBody = "not-json";
-    await assert.rejects(request("GET", "/x"), /解析失败/);
+    await assert.rejects(request("GET", ApiPath.Health), /解析失败/);
   } finally {
     (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = orig;
   }
@@ -67,19 +68,19 @@ test("http：非 2xx 带出可判别的 status/code（业务层靠字段分流�
     // WebPlatform v1 错误码必须原样带到业务层，调用方据此给出可重试提示。
     FakeXhr.nextStatus = 409;
     FakeXhr.nextBody = `{"code":"RATE_LIMITED","requestId":"req-1"}`;
-    const e = await request("GET", "/x").then(() => null, (x: unknown) => x) as { status?: number; code?: string };
+    const e = await request("GET", ApiPath.Health).then(() => null, (x: unknown) => x) as { status?: number; code?: string };
     assert.equal(e.status, 409);
     assert.equal(e.code, "RATE_LIMITED", "WebPlatform v1 { code } 体必须解成 HttpError.code");
 
     FakeXhr.nextStatus = 401;
     FakeXhr.nextBody = `{"error":"AUTH_REQUIRED"}`;
-    const legacy = await request("GET", "/x").then(() => null, (x: unknown) => x) as { code?: string };
+    const legacy = await request("GET", ApiPath.Health).then(() => null, (x: unknown) => x) as { code?: string };
     assert.equal(legacy.code, "AUTH_REQUIRED", "游戏服现有 { error } 体仍需可判别");
 
     // 非 JSON / 无 error 字段的错误体 → code 空串，status 仍可用（⛔ 解析失败不得反过来吃掉错误）
     FakeXhr.nextStatus = 502;
     FakeXhr.nextBody = "<html>bad gateway</html>";
-    const g = await request("GET", "/x").then(() => null, (x: unknown) => x) as { status?: number; code?: string };
+    const g = await request("GET", ApiPath.Health).then(() => null, (x: unknown) => x) as { status?: number; code?: string };
     assert.equal(g.status, 502);
     assert.equal(g.code, "");
   } finally {
@@ -123,6 +124,50 @@ test("WebPlatform Public：portal 必填且不回退；v1 登录/选服方法、
     assert.equal(FakeXhr.lastUrl, "https://portal.example.com/v1/areas");
     assert.equal(FakeXhr.lastBody, undefined, "GET /v1/areas 不发送旧版 token body");
     assert.equal(FakeXhr.lastHeaders.Authorization, "Bearer opaque2");
+  } finally {
+    setToken("");
+    (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = orig;
+  }
+});
+
+test("HTTP runtime contract：2xx 缺字段/多字段/非法 URL 与未登记 endpoint 均在发包前失败", async () => {
+  const orig = (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest;
+  (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = FakeXhr;
+  try {
+    initHttp("http://game.invalid:2568");
+    initPortal("https://portal.example.com");
+    setToken("stale-token");
+
+    FakeXhr.nextStatus = 200;
+    FakeXhr.nextBody = `{"userId":"u1","accessToken":"t1"}`; // 缺 isNewAccount
+    const missing = await devLogin("dev", 1).then(() => null, (e: unknown) => e) as { code?: string };
+    assert.equal(missing.code, "INVALID_RESPONSE");
+    assert.equal(FakeXhr.lastHeaders.Authorization, undefined, "登录请求不得携带旧 Bearer");
+
+    FakeXhr.nextBody = `{"userId":"u1","accessToken":"t1","isNewAccount":false,"extra":1}`;
+    const extra = await devLogin("dev", 1).then(() => null, (e: unknown) => e) as { code?: string };
+    assert.equal(extra.code, "INVALID_RESPONSE");
+
+    FakeXhr.nextBody = JSON.stringify({
+      hash: "h1", isOps: false, myServerIds: [1],
+      servers: [{ serverId: 1, name: "一区", status: "smooth", tag: "normal", openTime: 0,
+        gameHttpUrl: "https://game.example.com:2568", gameWsUrl: "wss://game.example.com:2568" }],
+    });
+    const areas = await fetchAreaList();
+    assert.equal(areas.servers[0]?.serverId, 1);
+
+    FakeXhr.nextBody = JSON.stringify({
+      hash: "h1", isOps: false, myServerIds: [],
+      servers: [{ serverId: 1, name: "一区", status: "smooth", tag: "normal", openTime: 0,
+        gameHttpUrl: "https://game.example.com/path", gameWsUrl: "wss://game.example.com:2568" }],
+    });
+    const badUrl = await fetchAreaList().then(() => null, (e: unknown) => e) as { code?: string };
+    assert.equal(badUrl.code, "INVALID_RESPONSE");
+
+    await assert.rejects(request("GET", "/unknown"), /未登记/);
+    await assert.rejects(devLogin("", 1), /请求契约非法/);
+    assert.throws(() => initHttp("https://game.example.com/game"), /origin/);
+    assert.throws(() => initPortal("file:///tmp/portal"), /origin/);
   } finally {
     setToken("");
     (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = orig;

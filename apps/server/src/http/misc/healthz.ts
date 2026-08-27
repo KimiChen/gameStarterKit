@@ -4,8 +4,8 @@
  * 未来的 readiness（M10）。冒烟与负载均衡探活用。
  */
 import { createEndpoint } from "@colyseus/core";
-import { PROTOCOL_VERSION, type IHealthRes } from "@game/shared";
+import { ApiPath, PROTOCOL_VERSION, type IHealthRes } from "@game/shared";
 
-export default createEndpoint("/healthz", { method: "GET" }, async (): Promise<IHealthRes> => {
+export default createEndpoint(ApiPath.Health, { method: "GET" }, async (): Promise<IHealthRes> => {
   return { status: "ok", serverTime: Date.now(), version: String(PROTOCOL_VERSION) };
 });

@@ -13,13 +13,16 @@ import {
 } from "node:http";
 import { Agent as HttpsAgent, request as httpsRequest } from "node:https";
 import {
-  WebPlatformMethod,
-  WebPlatformPath,
+  WebPlatformHttpContractMap,
+  validateWebPlatformHasCharacterResponse,
+  validateWebPlatformRegisterCharacterResponse,
+  validateWebPlatformVerifySessionRequest,
+  validateWebPlatformVerifySessionResponse,
   type HasCharacterResponse,
   type RegisterCharacterResponse,
   type VerifySessionRequest,
   type VerifySessionResponse,
-} from "@gono/webplatform-contract";
+} from "@game/shared";
 import { AuthRequiredError, BannedError } from "../core/errors";
 import {
   WEBPLATFORM_BREAKER_FAILURES,
@@ -33,7 +36,6 @@ import {
 import { writeGroupSess } from "../core/auth/session";
 
 const MAX_RESPONSE_BYTES = 64 * 1024;
-const VERIFY_REASONS = new Set(["NOT_FOUND", "MISMATCH", "BANNED", "DEREGISTERED", "EXPIRED"]);
 const httpAgent = new HttpAgent({ keepAlive: true });
 const httpsAgent = new HttpsAgent({ keepAlive: true });
 
@@ -67,52 +69,28 @@ interface HttpResult {
   body: unknown;
 }
 
-const isRecord = (v: unknown): v is Record<string, unknown> =>
-  typeof v === "object" && v !== null && !Array.isArray(v);
-
-const hasExactKeys = (
-  v: Record<string, unknown>,
-  keys: readonly string[],
-): boolean => {
-  const actual = Object.keys(v).sort();
-  const expected = [...keys].sort();
-  return actual.length === expected.length && actual.every((key, i) => key === expected[i]);
-};
-
 function parseVerifyResponse(v: unknown): VerifySessionResponse {
-  if (!isRecord(v) || typeof v.valid !== "boolean") {
-    throw new WebPlatformContractError("verify 响应形状无效");
+  try {
+    return validateWebPlatformVerifySessionResponse(v);
+  } catch (error) {
+    throw new WebPlatformContractError(`verify 响应形状无效: ${error instanceof Error ? error.message : String(error)}`);
   }
-  if (v.valid) {
-    if (!hasExactKeys(v, ["valid", "userId", "issuedAtMs"])
-      || typeof v.userId !== "string"
-      || typeof v.issuedAtMs !== "number"
-      || !Number.isSafeInteger(v.issuedAtMs)
-      || v.issuedAtMs < 0) {
-      throw new WebPlatformContractError("verify 成功响应形状无效");
-    }
-    return v as VerifySessionResponse;
-  }
-  if (!hasExactKeys(v, ["valid", "reason"])
-    || typeof v.reason !== "string"
-    || !VERIFY_REASONS.has(v.reason)) {
-    throw new WebPlatformContractError("verify 失败响应形状无效");
-  }
-  return v as VerifySessionResponse;
 }
 
 function parseRegisterResponse(v: unknown): RegisterCharacterResponse {
-  if (!isRecord(v) || !hasExactKeys(v, ["registered"]) || v.registered !== true) {
-    throw new WebPlatformContractError("character register 响应形状无效");
+  try {
+    return validateWebPlatformRegisterCharacterResponse(v);
+  } catch (error) {
+    throw new WebPlatformContractError(`character register 响应形状无效: ${error instanceof Error ? error.message : String(error)}`);
   }
-  return v as RegisterCharacterResponse;
 }
 
 function parseHasResponse(v: unknown): HasCharacterResponse {
-  if (!isRecord(v) || !hasExactKeys(v, ["exists"]) || typeof v.exists !== "boolean") {
-    throw new WebPlatformContractError("character has 响应形状无效");
+  try {
+    return validateWebPlatformHasCharacterResponse(v);
+  } catch (error) {
+    throw new WebPlatformContractError(`character has 响应形状无效: ${error instanceof Error ? error.message : String(error)}`);
   }
-  return v as HasCharacterResponse;
 }
 
 class CircuitBreaker {
@@ -335,7 +313,7 @@ const characterPath = (userId: string, serverId: number): string => {
   if (userId.length < 1 || userId.length > 128) {
     throw new WebPlatformServiceError("非法 userId");
   }
-  return WebPlatformPath.RegisterCharacter
+  return WebPlatformHttpContractMap.RegisterCharacter.path
     .replace("{userId}", encodeURIComponent(userId))
     .replace("{serverId}", String(serverId));
 };
@@ -350,13 +328,19 @@ export interface WebPlatformClient {
 const httpWebPlatformClient: WebPlatformClient = {
   async verify(accessToken, serverId) {
     assertServerId(serverId);
-    if (accessToken.length < 1 || accessToken.length > 256) {
+    if (typeof accessToken !== "string" || accessToken.length < 1 || accessToken.length > 256) {
       throw new AuthRequiredError("token 无效");
     }
-    const request: VerifySessionRequest = { accessToken, serverId };
+    let request: VerifySessionRequest;
+    try {
+      request = validateWebPlatformVerifySessionRequest({ accessToken, serverId });
+    } catch (error) {
+      throw new WebPlatformServiceError(`verify 请求形状无效: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    const contract = WebPlatformHttpContractMap.VerifySession;
     const response = await call(
-      WebPlatformPath.VerifySession,
-      WebPlatformMethod.VerifySession,
+      contract.path,
+      contract.method,
       request,
       parseVerifyResponse,
     );
@@ -371,18 +355,30 @@ const httpWebPlatformClient: WebPlatformClient = {
   },
 
   async registerCharacter(userId, serverId) {
+    const contract = WebPlatformHttpContractMap.RegisterCharacter;
+    try {
+      contract.request({});
+    } catch (error) {
+      throw new WebPlatformServiceError(`character register 请求形状无效: ${error instanceof Error ? error.message : String(error)}`);
+    }
     await call(
       characterPath(userId, serverId),
-      WebPlatformMethod.RegisterCharacter,
+      contract.method,
       undefined,
       parseRegisterResponse,
     );
   },
 
   async hasCharacter(userId, serverId) {
+    const contract = WebPlatformHttpContractMap.HasCharacter;
+    try {
+      contract.request({});
+    } catch (error) {
+      throw new WebPlatformServiceError(`character has 请求形状无效: ${error instanceof Error ? error.message : String(error)}`);
+    }
     const response = await call(
       characterPath(userId, serverId),
-      WebPlatformMethod.HasCharacter,
+      contract.method,
       undefined,
       parseHasResponse,
     );

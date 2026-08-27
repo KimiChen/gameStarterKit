@@ -5,6 +5,15 @@
  * （wx.request），XHR 在 Web 预览 / 微信 / 原生三端行为一致。
  * 业务调用面在 net/http/（真实接口）——本文件只管收发。
  */
+import {
+    gameHttpContract,
+    validateHttpOrigin,
+    webPlatformHttpContract,
+    type HttpAuthClass,
+    type HttpMethod,
+    type RuntimeValidator,
+} from "../shared/index";
+
 let baseUrl = "http://localhost:2568";
 let portalUrl: string | null = null;
 let token = "";
@@ -43,7 +52,11 @@ function errCodeOf(text: string | undefined): string {
 
 /** 初始化服务器地址，如 https://game.example.com（尾部斜杠自动去除） */
 export function initHttp(url: string): void {
-    baseUrl = url.replace(/\/+$/, "");
+    try {
+        baseUrl = validateHttpOrigin(url, "gameBaseUrl").replace(/\/+$/, "");
+    } catch {
+        throw new Error("[http] gameBaseUrl 必须是无 path/query 的 http(s) origin");
+    }
 }
 
 /** 当前服务器地址（WebSocketClient 等复用同一 endpoint，不各自持有配置） */
@@ -59,11 +72,11 @@ export function getBaseUrl(): string {
  */
 export function initPortal(url: string): void {
     portalUrl = null;
-    const normalized = url.trim().replace(/\/+$/, "");
-    if (!/^https?:\/\/[^/]/i.test(normalized)) {
-        throw new Error("[http] WebPlatform portalUrl 必填，且必须是 http(s) 绝对地址");
+    try {
+        portalUrl = validateHttpOrigin(url, "portalUrl").replace(/\/+$/, "");
+    } catch {
+        throw new Error("[http] WebPlatform portalUrl 必填，且必须是无 path/query 的 http(s) origin");
     }
-    portalUrl = normalized;
 }
 
 /** 当前 WebPlatform Public 地址；初始化缺失时 fail-fast，绝不猜测游戏服地址。 */
@@ -88,25 +101,51 @@ export function getToken(): string {
  * 真实端点直接返回数据体，用 `request<数据体类型>`（契约 import 自 shared）。
  * 非 2xx / 响应解析失败 / 网络错误 / 超时一律 reject。
  */
-export function request<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
-    return doRequest(baseUrl, method, path, body);
+export function request<T>(method: HttpMethod, path: string, body?: unknown): Promise<T> {
+    const contract = gameHttpContract(method, path);
+    if (!contract) {
+        return Promise.reject(new HttpError(`[http] 未登记的游戏服 endpoint ${method} ${path}`, 0, "INVALID_ENDPOINT"));
+    }
+    return doRequest(baseUrl, method, path, body, contract.auth, contract.request, contract.response as RuntimeValidator<T>);
 }
 
 /**
  * 门户请求（登录 / 选服 → WebPlatform Public）。只要本地已存有 token 就会附带 `Authorization: Bearer`——
  * 包括从 `Main.abortBattle` 或 connLost 回到登录页后再次发起的登录请求（这两条路径不清会话）。
  */
-export function portalRequest<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
-    return doRequest(getPortalUrl(), method, path, body);
+export function portalRequest<T>(method: HttpMethod, path: string, body?: unknown): Promise<T> {
+    const contract = webPlatformHttpContract(method, path);
+    if (!contract) {
+        return Promise.reject(new HttpError(`[http] 未登记的 WebPlatform endpoint ${method} ${path}`, 0, "INVALID_ENDPOINT"));
+    }
+    return doRequest(getPortalUrl(), method, path, body, contract.auth, contract.request, contract.response as RuntimeValidator<T>);
 }
 
-function doRequest<T>(base: string, method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
+function doRequest<T>(
+    base: string,
+    method: HttpMethod,
+    path: string,
+    body: unknown,
+    auth: HttpAuthClass,
+    requestValidator: RuntimeValidator<unknown>,
+    responseValidator: RuntimeValidator<T>,
+): Promise<T> {
+    let wireBody: unknown;
+    try {
+        // GET contracts use an exact empty object; POST contracts validate their required fields.
+        wireBody = requestValidator(body === undefined ? {} : body);
+    } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error);
+        return Promise.reject(new HttpError(`[http] 请求契约非法 ${method} ${path}: ${detail}`, 0, "INVALID_REQUEST"));
+    }
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open(method, base + path);
         xhr.timeout = 10000;
         xhr.setRequestHeader("Content-Type", "application/json");
-        if (token) {
+        // Login has auth="portal" and intentionally omits any stale token. Only contracts
+        // that explicitly permit a bearer receive one.
+        if (token && (auth === "game" || auth === "portalOptional")) {
             xhr.setRequestHeader("Authorization", `Bearer ${token}`);
         }
         xhr.onload = () => {
@@ -119,13 +158,14 @@ function doRequest<T>(base: string, method: "GET" | "POST", path: string, body?:
                 return;
             }
             try {
-                resolve(JSON.parse(xhr.responseText) as T);
+                const parsed: unknown = JSON.parse(xhr.responseText);
+                resolve(responseValidator(parsed));
             } catch (e) {
-                reject(new HttpError(`[http] 响应解析失败 ${method} ${path}: ${xhr.responseText?.slice(0, 200)}`, xhr.status, ""));
+                reject(new HttpError(`[http] 响应契约/解析失败 ${method} ${path}: ${xhr.responseText?.slice(0, 200)}`, xhr.status, "INVALID_RESPONSE"));
             }
         };
         xhr.onerror = () => reject(new HttpError(`[http] 请求失败 ${method} ${path} (status=${xhr.status})`, 0, ""));
         xhr.ontimeout = () => reject(new HttpError(`[http] 请求超时 ${method} ${path}`, 0, ""));
-        xhr.send(body != null ? JSON.stringify(body) : undefined);
+        xhr.send(body !== undefined ? JSON.stringify(wireBody) : undefined);
     });
 }

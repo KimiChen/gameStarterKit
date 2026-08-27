@@ -12,18 +12,18 @@
  */
 import { createEndpoint } from "@colyseus/core";
 import { z } from "zod";
-import { ForceLogoutReason, type ForceLogoutReasonType, type RpcErrCode } from "@game/shared";
+import { ApiPath, ForceLogoutReason, type ForceLogoutReasonType, type RpcErrCode } from "@game/shared";
 import { ADMIN_API_SECRET } from "../../core/infra/config";
 import { safeSecretEqual } from "../../core/auth/session";
 import { kickUser } from "../../websocket/push";
 
-export default createEndpoint("/admin/kick", {
+export default createEndpoint(ApiPath.AdminKick, {
   method: "POST",
   // reason 决定客户端提示文案与关闭码（缺省 banned = GM 封号 SOP 的主用途）
   body: z.object({
     uid: z.string().min(1).max(32),
     reason: z.enum([ForceLogoutReason.Banned, ForceLogoutReason.Revoked]).optional(),
-  }),
+  }).strict(),
 }, async (ctx) => {
   const secret = ADMIN_API_SECRET();
   if (!safeSecretEqual(ctx.headers?.get?.("x-admin-secret"), secret)) { // 恒时；未配 secret 即拒（fail-closed）

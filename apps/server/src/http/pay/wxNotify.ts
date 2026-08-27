@@ -9,17 +9,17 @@
  */
 import { createEndpoint } from "@colyseus/core";
 import { z } from "zod";
-import type { RpcErrCode } from "@game/shared";
+import { ApiPath, type RpcErrCode } from "@game/shared";
 import { PAY_ENABLED } from "../../core/infra/config";
 import { safeSecretEqual } from "../../core/auth/session";
 
-export default createEndpoint("/pay/wx-notify", {
+export default createEndpoint(ApiPath.PayWxNotify, {
   method: "POST",
   body: z.object({
     orderId: z.string().min(1).max(64),
     wxTxnId: z.string().min(1).max(64),
     amountFen: z.number().int().positive(),
-  }),
+  }).strict(),
 }, async (ctx) => {
   if (!PAY_ENABLED()) { throw ctx.error(501, { error: "NOT_IMPLEMENTED" }); }
   const secret = process.env.WXPAY_NOTIFY_SECRET ?? "";
