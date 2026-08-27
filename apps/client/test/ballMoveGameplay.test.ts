@@ -1,0 +1,218 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { GameplayRegistry, RoomController, type RoomCapability } from "../src/logic/gameplay/index";
+import {
+    BALL_MOVE_GAMEPLAY_ID,
+    BallMoveGameplay,
+    registerBallMoveGameplay,
+    type BallMoveInput,
+    type BallMovePlayerObserver,
+    type BallMovePresentation,
+    type BallMoveRenderWorld,
+    type BallMoveRoom,
+} from "../src/logic/rooms/ballMove/BallMoveGameplay";
+import { GameECS } from "../src/logic/rooms/ballMove/GameECS";
+import type {
+    IChatRes,
+    IErrorRes,
+    IPlayerState,
+    IPongRes,
+    ISkillResultRes,
+    IWelcomeRes,
+} from "../src/shared/index";
+
+class FakePresentation implements BallMovePresentation {
+    mounts = 0;
+    unmounts = 0;
+    renders = 0;
+    lastPlayerCount = 0;
+
+    mount(): void { this.mounts++; }
+    render(world: BallMoveRenderWorld): void {
+        this.renders++;
+        let count = 0;
+        world.forEachPlayer(() => { count++; });
+        this.lastPlayerCount = count;
+    }
+    unmount(): void { this.unmounts++; }
+}
+
+class CountingGameECS extends GameECS {
+    clears = 0;
+    override clear(): void {
+        this.clears++;
+        super.clear();
+    }
+}
+
+class FakeBallMoveRoom implements BallMoveRoom {
+    readonly roomId = "room-exact";
+    readonly sessionId = "self";
+    dropping = false;
+    readonly moves: Array<{ x: number; y: number }> = [];
+    pings = 0;
+    clears = 0;
+    observer: BallMovePlayerObserver | null = null;
+    observerOffs = 0;
+    listenerOffs = 0;
+
+    onWelcome(callback: (message: IWelcomeRes) => void): () => void {
+        return this.listener(() => callback({ sessionId: "self", tickRate: 20, motd: "hello" }));
+    }
+    onPong(_callback: (message: IPongRes) => void): () => void { return this.listener(); }
+    onChat(_callback: (message: IChatRes) => void): () => void { return this.listener(); }
+    onSkillResult(_callback: (message: ISkillResultRes) => void): () => void { return this.listener(); }
+    onError(_callback: (message: IErrorRes) => void): () => void { return this.listener(); }
+    observePlayers(observer: BallMovePlayerObserver): () => void {
+        this.observer = observer;
+        let active = true;
+        return () => {
+            if (!active) return;
+            active = false;
+            this.observer = null;
+            this.observerOffs++;
+        };
+    }
+    move(dirX: number, dirY: number): void { this.moves.push({ x: dirX, y: dirY }); }
+    clearMove(): void { this.clears++; }
+    ping(): void { this.pings++; }
+
+    private listener(invoke?: () => void): () => void {
+        invoke?.();
+        let active = true;
+        return () => {
+            if (!active) return;
+            active = false;
+            this.listenerOffs++;
+        };
+    }
+}
+
+class FailingListenerRoom extends FakeBallMoveRoom {
+    override onChat(_callback: (message: IChatRes) => void): () => void {
+        throw new Error("chat listener failed");
+    }
+}
+
+const player = (id: string, x: number, y: number): IPlayerState => ({
+    id,
+    name: id,
+    x,
+    y,
+    hp: 100,
+    maxHp: 100,
+    alive: true,
+});
+
+test("ballMove plugin：registry 装配后由精确 room 驱动监听、输入、tick/渲染与清理", async () => {
+    const ecs = new CountingGameECS();
+    const presentation = new FakePresentation();
+    const room = new FakeBallMoveRoom();
+    let leaveCalls = 0;
+    const capability: RoomCapability<BallMoveRoom> = {
+        ready: Promise.resolve(room),
+        async leave() { leaveCalls++; },
+    };
+    const registry = new GameplayRegistry<BallMoveRoom, BallMoveInput>();
+    registerBallMoveGameplay(registry, { presentation, ecs, now: () => 1_100 });
+    const controller = new RoomController<BallMoveRoom, BallMoveInput>({
+        join: () => capability,
+    });
+
+    assert.deepEqual(registry.list(), [BALL_MOVE_GAMEPLAY_ID]);
+    assert.deepEqual(await controller.startRegistered(registry, BALL_MOVE_GAMEPLAY_ID), {
+        status: "started",
+        generation: 1,
+        pluginId: BALL_MOVE_GAMEPLAY_ID,
+    });
+    assert.equal(presentation.mounts, 1);
+    assert.ok(room.observer, "plugin start 必须在精确 room 上登记状态观察器");
+
+    room.observer?.add(player("self", 100, 100), true);
+    assert.equal(await controller.input({ type: "target", x: 200, y: 100 }), true);
+    assert.equal(await controller.tick(1 / 60), true);
+    assert.equal(presentation.renders, 1);
+    assert.equal(presentation.lastPlayerCount, 1);
+    assert.ok((room.moves.at(-1)?.x ?? 0) > 0.99);
+    assert.ok(Math.abs(room.moves.at(-1)?.y ?? 1) < 1e-9);
+
+    assert.equal(await controller.input({ type: "release" }), true);
+    assert.deepEqual(room.moves.at(-1), { x: 0, y: 0 });
+    await controller.tick(5);
+    assert.equal(room.pings, 1);
+    room.dropping = true;
+    await controller.tick(5);
+    assert.equal(room.pings, 1, "掉线窗口不得累计并补发过期 ping");
+
+    await controller.stop({ kind: "manual" });
+    await controller.stop({ kind: "manual" });
+    assert.equal(leaveCalls, 1);
+    assert.equal(room.clears, 1);
+    assert.equal(room.listenerOffs, 5);
+    assert.equal(room.observerOffs, 1);
+    assert.equal(room.observer, null);
+    assert.equal(presentation.unmounts, 1);
+    assert.equal(ecs.clears, 2, "start 前复位一次，stop/dispose 共用的一次 teardown 再清一次");
+    let remaining = 0;
+    ecs.forEachPlayer(() => { remaining++; });
+    assert.equal(remaining, 0);
+});
+
+test("ballMove plugin：非法 target fail-closed，越界 target 在玩法边界收敛", async () => {
+    const ecs = new GameECS();
+    const room = new FakeBallMoveRoom();
+    const registry = new GameplayRegistry<BallMoveRoom, BallMoveInput>();
+    registerBallMoveGameplay(registry, { presentation: new FakePresentation(), ecs });
+    const controller = new RoomController<BallMoveRoom, BallMoveInput>({
+        join: () => ({ ready: Promise.resolve(room), async leave() {} }),
+    });
+    const plugin = registry.create(BALL_MOVE_GAMEPLAY_ID);
+    assert.equal((await controller.start(plugin)).status, "started");
+    room.observer?.add(player("self", 10, 10), true);
+
+    await controller.input({ type: "target", x: Number.NaN, y: 10 });
+    await controller.tick(1 / 60);
+    assert.equal(room.moves.length, 0);
+    await controller.input({ type: "target", x: Number.MAX_VALUE, y: Number.MAX_VALUE });
+    await controller.tick(1 / 60);
+    assert.equal(room.moves.length, 1);
+    assert.ok(Number.isFinite(room.moves[0].x));
+    assert.ok(Number.isFinite(room.moves[0].y));
+    await controller.dispose();
+});
+
+test("ballMove plugin：启动半失败会回滚已登记监听、展示层与 room 输入", async () => {
+    const room = new FailingListenerRoom();
+    const presentation = new FakePresentation();
+    const ecs = new CountingGameECS();
+    const plugin = new (class extends BallMoveGameplay {
+        constructor() { super({ presentation, ecs }); }
+    })();
+    const controller = new RoomController<BallMoveRoom, BallMoveInput>({
+        join: () => ({ ready: Promise.resolve(room), async leave() {} }),
+    });
+
+    const result = await controller.start(plugin);
+    assert.equal(result.status, "failed");
+    assert.equal(room.listenerOffs, 2, "Chat 注册前已登记的消息监听必须回滚");
+    assert.equal(room.clears, 1, "半失败启动也必须清掉本局输入意图");
+    assert.equal(presentation.unmounts, 1);
+    assert.equal(ecs.clears, 2, "start 与 rollback 各清一次 ECS");
+    await controller.dispose();
+});
+
+test("ballMove plugin：直接 dispose 也会清理 room 输入与展示层", async () => {
+    const room = new FakeBallMoveRoom();
+    const presentation = new FakePresentation();
+    const plugin = new (class extends BallMoveGameplay {
+        constructor() { super({ presentation }); }
+    })();
+    const controller = new RoomController<BallMoveRoom, BallMoveInput>({
+        join: () => ({ ready: Promise.resolve(room), async leave() {} }),
+    });
+    assert.equal((await controller.start(plugin)).status, "started");
+    plugin.dispose();
+    assert.equal(room.clears, 1);
+    assert.equal(presentation.unmounts, 1);
+    await controller.dispose();
+});

@@ -1,6 +1,6 @@
 /**
  * 游戏 ECS 世界：bitECS world + 玩家实体管理。
- * 由 Main.ts 每帧调用 update(dt)；由网络层的状态回调调用 add/sync/remove。
+ * 由 BallMoveGameplay 驱动 update(dt) 与网络状态同步；渲染端只读组件数据。
  */
 import { createWorld, addEntity, addComponent, removeEntity, type World } from "../../../lib/bitecs/index";
 import type { IPlayerState } from "../../../shared/index";
@@ -9,7 +9,7 @@ import { playerLerpSystem } from "./GameSystems";
 
 export class GameECS {
     // 单例：world 与 sessionId→eid 表挂在模块级单例上——场景重载若新建实例，
-    // 旧房间回调会继续喂旧 world（幽灵 isSelf），见 Main.ts connectRoom 的竞态处理
+    // 单例跨场景复用；旧房间回调由 BallMoveRoom + GameplayContext identity guard 拒绝。
     private static _inst: GameECS | null = null;
     static get inst(): GameECS {
         if (!this._inst) this._inst = new GameECS();

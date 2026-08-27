@@ -3,14 +3,15 @@
  *  1. 两代 enterBattle 合流同一个在途 join 时，旧代释放只减自己的 owner，不能关闭共享 room
  *  2. 旧 room 主动 leave 的迟到 onLeave 不能清掉后来创建的新 room，也不能误报 battleLost
  *  3. 当前 room 的非主动 onLeave 仍会失效 ownership 并上报 battleLost
- *  4. Main 的每个旧房业务回调都必须通过 gen + ownership + room 当前性守卫
+ *  4. BallMoveRoom 的消息、Schema 与发送必须绑定捕获 room，Main 只做 controller 装配
  *  5. endpoint / token / sId / 未来 join 字段不同均不得合流到旧 slot
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { C2S, RoomName, PROTOCOL_VERSION } from "../src/shared/index";
+import { C2S, RoomName, PROTOCOL_VERSION, S2C, type IGameRoomState, type IPlayerState } from "../src/shared/index";
 import { RoomClient } from "../src/net/RoomClient";
+import { createBallMoveRoom } from "../src/net/rooms/BallMoveRoom";
 import { onBattleLost } from "../src/net/session";
 
 interface Deferred<T> {
@@ -283,24 +284,129 @@ test("当前 room 非主动 onLeave：失效 owner、清当前槽并且只上报
   }
 });
 
-test("Main：每个旧房 message/schema 回调都经过 gen + ownership + room 当前性守卫", () => {
+test("BallMoveRoom：消息、Schema 与发送都绑定捕获的物理 room", () => {
+  const source = readFileSync(new URL("../src/net/rooms/BallMoveRoom.ts", import.meta.url), "utf8");
+  assert.match(source, /const isCurrent = \(\) => client\.room === room/,
+    "capability 必须核对捕获 room，不能把操作发给全局后来者");
+  assert.match(source, /client\.onMessage\(room, type/,
+    "消息监听必须登记在捕获 room 上");
+  assert.match(source, /if \(isCurrent\(\)\) callback\(message\)/,
+    "所有消息回调必须经过统一 current-room 守卫");
+  const stateSection = source.slice(source.indexOf("function observePlayers("));
+  assert.equal((stateSection.match(/if \(!isActive\(\)\) return;/g) ?? []).length, 2,
+    "players add/remove 入口必须拒绝旧 room");
+  assert.match(stateSection, /if \(isActive\(\)\) observer\.change\(player\)/,
+    "player change 的迟到回调也必须拒绝旧 room");
+  assert.equal((source.match(/if \(isCurrent\(\)\) client\.(?:move|ping)/g) ?? []).length, 2,
+    "move/ping 必须核对捕获 room");
+  assert.match(source, /const inputGeneration = client\.inputGeneration/);
+  assert.match(source, /client\.clearDesiredMove\(inputGeneration\)/,
+    "stop 发生在 leave 摘槽后，clear 必须按输入世代精确生效");
+});
+
+test("BallMoveRoom capability：切到后来 room 后，迟到消息/Schema/发送全部失效", () => {
+  const captured = {
+    roomId: "captured",
+    sessionId: "self",
+    state: {},
+  } as unknown as Colyseus.Room<IGameRoomState>;
+  const later = {
+    roomId: "later",
+    sessionId: "later-self",
+    state: {},
+  } as unknown as Colyseus.Room<IGameRoomState>;
+  let current: Colyseus.Room<IGameRoomState> | null = captured;
+  const messages = new Map<string, (payload: unknown) => void>();
+  const playerCallbacks: {
+    add?: (player: IPlayerState, sessionId: string) => void;
+    remove?: (player: IPlayerState, sessionId: string) => void;
+    change?: () => void;
+  } = {};
+  const moves: Array<[number, number]> = [];
+  const clears: number[] = [];
+  let pings = 0;
+  const transport = {
+    get room() { return current; },
+    dropping: false,
+    inputGeneration: 17,
+    onMessage(_room: unknown, type: string, callback: (payload: unknown) => void) {
+      messages.set(type, callback);
+      return () => { messages.delete(type); };
+    },
+    state$() {
+      return (target: unknown) => target === captured.state
+        ? {
+            players: {
+              onAdd(callback: NonNullable<typeof playerCallbacks.add>) {
+                playerCallbacks.add = callback;
+                return () => { delete playerCallbacks.add; };
+              },
+              onRemove(callback: NonNullable<typeof playerCallbacks.remove>) {
+                playerCallbacks.remove = callback;
+                return () => { delete playerCallbacks.remove; };
+              },
+            },
+          }
+        : {
+            onChange(callback: () => void) {
+              playerCallbacks.change = callback;
+              return () => { delete playerCallbacks.change; };
+            },
+          };
+    },
+    move(x: number, y: number) { moves.push([x, y]); },
+    clearDesiredMove(generation: number) { clears.push(generation); return true; },
+    ping() { pings++; },
+  } as unknown as RoomClient;
+  const capability = createBallMoveRoom(captured, transport);
+  let welcomes = 0;
+  let adds = 0;
+  let changes = 0;
+  let removes = 0;
+  const offMessage = capability.onWelcome(() => { welcomes++; });
+  const offPlayers = capability.observePlayers({
+    add: () => { adds++; },
+    change: () => { changes++; },
+    remove: () => { removes++; },
+  });
+  const self: IPlayerState = {
+    id: "self", name: "self", x: 1, y: 2, hp: 100, maxHp: 100, alive: true,
+  };
+
+  messages.get(S2C.Welcome)?.({ sessionId: "self", tickRate: 20, motd: "ok" });
+  playerCallbacks.add?.(self, "self");
+  playerCallbacks.change?.();
+  capability.move(1, 0);
+  capability.ping();
+  assert.deepEqual({ welcomes, adds, changes, removes, moves, pings }, {
+    welcomes: 1, adds: 1, changes: 1, removes: 0, moves: [[1, 0]], pings: 1,
+  });
+
+  current = later;
+  messages.get(S2C.Welcome)?.({ sessionId: "self", tickRate: 20, motd: "late" });
+  playerCallbacks.add?.(self, "self");
+  playerCallbacks.change?.();
+  playerCallbacks.remove?.(self, "self");
+  capability.move(0, 1);
+  capability.ping();
+  capability.clearMove();
+  assert.deepEqual({ welcomes, adds, changes, removes, moves, pings }, {
+    welcomes: 1, adds: 1, changes: 1, removes: 0, moves: [[1, 0]], pings: 1,
+  });
+  assert.deepEqual(clears, [17], "leave 已摘槽时仍按捕获的 input generation 清理");
+  offMessage();
+  offPlayers();
+  assert.equal(messages.size, 0);
+  assert.deepEqual(playerCallbacks, {});
+});
+
+test("Main：只装配 registry/controller，不再内联 RoomClient、ECS 或玩法回调", () => {
   const source = readFileSync(new URL("../src/Main.ts", import.meta.url), "utf8");
-  const helperStart = source.indexOf("    private isCurrentBattleBinding(");
-  const bindStart = source.indexOf("    private bindRoom(", helperStart);
-  const bindEnd = source.indexOf("\n    update(dt:", bindStart);
-  assert.ok(helperStart >= 0 && bindStart > helperStart && bindEnd > bindStart, "Main 必须保留精确房绑定守卫与 bindRoom");
-
-  const helper = source.slice(helperStart, bindStart);
-  assert.match(helper, /this\.battleGen === gen/, "守卫必须核对 enterBattle 世代");
-  assert.match(helper, /this\.battleRoom === ownership/, "守卫必须核对精确 ownership");
-  assert.match(helper, /RoomClient\.inst\.room === room/, "守卫必须核对当前物理 room");
-
-  const bind = source.slice(bindStart, bindEnd);
-  assert.match(bind, /const isCurrent = \(\) => this\.isCurrentBattleBinding\(gen, ownership, room\)/);
-  const callbackCount = (bind.match(/\.(?:onMessage|onAdd|onChange|onRemove)\(/g) ?? []).length;
-  const guardCount = (bind.match(/if \(!isCurrent\(\)\) \{ return; \}/g) ?? []).length;
-  assert.equal(callbackCount, 8, "新增/删除异步 room 回调时必须同步审计守卫");
-  assert.equal(guardCount, callbackCount, "每个 message/schema 回调入口都必须先拒绝旧世代");
+  assert.doesNotMatch(source, /\bRoomClient\b|\bGameECS\b|\bPlayerModel\b|bindRoom\(/);
+  assert.match(source, /controller\.startRegistered\(registry, BALL_MOVE_GAMEPLAY_ID, signal\)/);
+  assert.match(source, /controller\.tick\(dt\)/);
+  assert.match(source, /roomController\?\.stop\(\{ kind \}\)/);
+  assert.doesNotMatch(source, /\bidle\b/i, "第二个 idle fixture 不应要求修改 Main");
 });
 
 test("掉线输入 reconcile：松手后的 stop/最新方向成为重连后的第一条有效输入", async () => {
