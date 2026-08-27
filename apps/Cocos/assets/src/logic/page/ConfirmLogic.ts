@@ -11,8 +11,9 @@ export interface IConfirmOptions {
     yesText?: string;
     /** 取消按钮文案，缺省「取消」；传 null 则隐藏取消按钮（单按钮提示） */
     noText?: string | null;
-    onYes?: () => void | Promise<void>;
-    onNo?: () => void | Promise<void>;
+    /** 返回值不参与业务判定；允许同步 handler 返回任意值，同时观察其 Promise rejection。 */
+    onYes?: () => unknown | Promise<unknown>;
+    onNo?: () => unknown | Promise<unknown>;
 }
 
 export class ConfirmLogic {
@@ -22,7 +23,7 @@ export class ConfirmLogic {
     /** null = 单按钮模式（无取消） */
     readonly noText: string | null;
     /** view 关闭本弹窗的回调（yes/no 后调用） */
-    onClose: () => void | Promise<void> = () => {};
+    onClose: () => unknown | Promise<unknown> = () => {};
 
     private settled = false;
 
@@ -51,7 +52,7 @@ export class ConfirmLogic {
         this.invoke(this.onClose, "onClose");
     }
 
-    private invoke(action: (() => void | Promise<void>) | undefined, label: string): void {
+    private invoke(action: (() => unknown | Promise<unknown>) | undefined, label: string): void {
         if (!action) return;
         try {
             const result = action();

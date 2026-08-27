@@ -62,8 +62,10 @@ type ViewSetup = (view: FguiView, context: ViewLifecycleContext) => unknown | Pr
 
 function ensureLayers(): void {
   // GRoot 可能随场景重载销毁：容器失效则整体重建（缓存视图同批死亡，计数一并归零）
-  const probe = layerRoots.get(VIEW_LAYERS[0]);
-  if (probe && probe.node && probe.node.isValid === false) {
+  const stale = layerRoots.size > 0
+    && (layerRoots.size !== VIEW_LAYERS.length
+      || [...layerRoots.values()].some((root) => root.node && root.node.isValid === false));
+  if (stale) {
     rootGeneration++;
     for (const rec of pendingAll) {
       rec.cancelled = true;
@@ -85,7 +87,7 @@ function ensureLayers(): void {
     interactiveCount = 0;
     FguiView.setInputEnabled(false);
   }
-  if (layerRoots.size > 0) { return; }
+  if (layerRoots.size === VIEW_LAYERS.length) { return; }
   FguiView.ensureRoot();
   const built: GComponent[] = [];
   try {
