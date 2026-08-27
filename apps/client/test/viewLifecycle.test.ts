@@ -69,6 +69,44 @@ test("AreaListLogic：重进页面时只接受最新世代结果", async () => {
   assert.deepEqual(hashes, ["s2"]);
 });
 
+test("AreaListLogic：拉取边界取得独立快照，外部/回调突变不会污染后续选服", async () => {
+  const response = area(3);
+  const logic = new AreaListLogic({ fetchAreaList: async () => response });
+  await logic.start();
+
+  // The dependency may retain and mutate its response after the await.  The
+  // logic must own a validated copy before publishing it to the view.
+  response.servers[0].name = "外部突变";
+  assert.equal(logic.serversOfTab("all")[0]?.name, "s3");
+
+  const exposed = logic.serversOfTab("all");
+  exposed[0].name = "视图突变";
+  assert.equal(logic.serversOfTab("all")[0]?.name, "s3");
+
+  logic.onChoose = (server) => { server.name = "回调突变"; };
+  assert.equal(logic.choose(3), true);
+  assert.equal(logic.serversOfTab("all")[0]?.name, "s3");
+});
+
+test("AreaListLogic：恶意 response 在发布前拒绝且不触发页面回调", async () => {
+  // Promise resolution probes `then`; keep that property benign so the
+  // hostile shape reaches the validator instead of failing in native await.
+  const hostile = new Proxy(area(4), {
+    get(target, key, receiver) {
+      if (key === "then") return undefined;
+      return Reflect.get(target, key, receiver);
+    },
+    getPrototypeOf() { throw new Error("hostile prototype"); },
+  });
+  const logic = new AreaListLogic({
+    fetchAreaList: async () => hostile as never,
+  });
+  let callbacks = 0;
+  logic.onTabs = () => { callbacks++; };
+  await assert.rejects(logic.start(), /WIRE_KEYS|WIRE_OBJECT/);
+  assert.equal(callbacks, 0);
+});
+
 test("LoginNoticeLogic：stop 后迟到公告不更新正文", async () => {
   const pending = deferred<{ list: [{ id: number; category: "notice"; title: string; desc: string; content: string; at: number }] }>();
   const logic = new LoginNoticeLogic({

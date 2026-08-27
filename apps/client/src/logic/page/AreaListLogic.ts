@@ -5,7 +5,11 @@
  * 固定页签：recommend=推荐(tag=new)、my=我的角色(myServerIds∩servers)、all=全部区服。
  */
 import { isServerEnterable } from "../areaDirectory";
-import type { WebPlatformAreaListResponse, WebPlatformAreaServer } from "../../shared/index";
+import {
+    validateWebPlatformAreaListResponse,
+    type WebPlatformAreaListResponse,
+    type WebPlatformAreaServer,
+} from "../../shared/index";
 
 /** 选服页固定展示的三个分类。 */
 export type AreaTab = "recommend" | "my" | "all";
@@ -77,7 +81,13 @@ export class AreaListLogic {
             return;
         }
         try {
-            const next = await this.deps.fetchAreaList(controller.signal);
+            // Treat injected/network data as untrusted at this boundary too.
+            // The validator returns fresh arrays/records, so a caller retaining
+            // or mutating its response cannot split this page's snapshot after
+            // the atomic assignment below.
+            const next = validateWebPlatformAreaListResponse(
+                await this.deps.fetchAreaList(controller.signal),
+            );
             if (!this.isCurrent(generation, controller)) return;
             this.data = next;
             this.onTabs(this.buildTabs());
@@ -120,12 +130,14 @@ export class AreaListLogic {
 
     /** 当前页签下应展示的区服（纯函数，单测锚点，对齐原项目 getAreaListByTab）。 */
     serversOfTab(tab: AreaTab = this.tab): WebPlatformAreaServer[] {
-        if (tab === "recommend") return this.data.servers.filter((s) => s.tag === "new");
+        if (tab === "recommend") return this.data.servers
+            .filter((s) => s.tag === "new")
+            .map(cloneServer);
         if (tab === "my") {
             const recent = new Set(this.data.myServerIds);
-            return this.data.servers.filter((s) => recent.has(s.serverId));
+            return this.data.servers.filter((s) => recent.has(s.serverId)).map(cloneServer);
         }
-        return this.data.servers;
+        return this.data.servers.map(cloneServer);
     }
 
     /** 选服：不可进（status=maintenance / openTime=0）→ 返回 false 由 view 提示。
@@ -135,7 +147,9 @@ export class AreaListLogic {
         if (!this.active) return false;
         const s = this.data.servers.find((a) => a.serverId === serverId);
         if (!s || (!this.isOps && !isServerEnterable(s))) return false;
-        this.invoke(this.onChoose, s);
+        // `onChoose` belongs to the View layer; hand it a copy so a UI adapter
+        // cannot mutate the logic snapshot used by a later tab/selection.
+        this.invoke(this.onChoose, cloneServer(s));
         return true;
     }
 
@@ -157,4 +171,8 @@ export class AreaListLogic {
             console.error("[AreaListLogic] onChoose exception", e);
         }
     }
+}
+
+function cloneServer(server: WebPlatformAreaServer): WebPlatformAreaServer {
+    return { ...server };
 }

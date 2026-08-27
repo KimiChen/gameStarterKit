@@ -2,14 +2,36 @@
  * FguiView — FairyGUI 视图薄基类（三层模型的"绑定层"）。子类由 `tools/fgui-codegen` 从 `.fui` 生成：
  * `bind()` 里按 AUTO 区块 `getChild<T>` 绑定命名元素；业务 `apply(presenter 输出)` / `onClick` 写 AUTO 外。
  *
- * ⚠ 本文件及 view/ 下依赖 fairygui-cc 的页面视图（其 d.ts 引真 cc）由 Cocos Creator 自带
- *   tsconfig（真 cc + 扩展）在编辑器里 typecheck，**Creator 侧验证**——每个这类文件都要在
- *   apps/client/tsconfig.json 的 exclude 里显式列出（fguiContracts.ts 是纯数据，保持在检）。
- *   行为层（logic/）与结构契约（fgui-codegen）在无头测试里跑（npm run test:fgui）；
+ * ⚠ `apps/client/tsconfig.json` 是 Creator 兼容 legacy 配置，故本文件及其他 fairygui 绑定件在其
+ *   exclude 中显式列出；完整 `npm run typecheck:client` 使用 `client-test-stubs.d.ts` 对它们做 Node
+ *   strict 编译，Creator 真 cc + 扩展仍负责编辑器侧验证。
+ *   行为层（logic/）与结构契约（fgui-codegen）在无头测试里跑（分别是 npm run test:client 与
+ *   npm run test:fgui）；
  *   本层只做"取组件 + 搬数据"。见 docs/CLIENT.md §3。
  */
 import { Canvas, director, sys, view } from "cc";
 import { GComponent, GObject, GRoot, RelationType, UIPackage } from "db://fairygui-cc/fairygui.mjs";
+import {
+  FguiPackageCancelledError,
+  FguiPackageLoader,
+  type FguiPackageLoadOptions,
+  type FguiPackageLoaderConfig,
+} from "./packageLoader";
+export {
+  DEFAULT_FGUI_PACKAGE_DEADLINE_MS,
+  FguiPackageCancelledError,
+  FguiPackageLoadError,
+  FguiPackageMissingError,
+  FguiPackageTimeoutError,
+  isFguiPackageLoadError,
+} from "./packageLoader";
+export type {
+  FguiPackageErrorCode,
+  FguiPackageLoadOptions,
+  FguiPackageLoaderConfig,
+  FguiPackageRuntime,
+  FguiPackageScheduler,
+} from "./packageLoader";
 
 /**
  * 一次页面打开的生命周期上下文。
@@ -71,6 +93,7 @@ export abstract class FguiView {
   protected readonly root: GComponent;
   private lifecycle: LifecycleState | null = null;
   private created = false;
+  private createFlight: Promise<void> | null = null;
   private disposed = false;
 
   constructor(root: GComponent) {
@@ -98,8 +121,10 @@ export abstract class FguiView {
     if (this.disposed) throw new Error("[FguiView] 已销毁的 View 不能重新打开");
     const previous = this.lifecycle;
     if (previous?.active) {
-      previous.active = false;
-      previous.controller.abort();
+      // Replacing an active generation is a close as well as an abort.  Keep
+      // the hook tied to the old state so a permanent view cannot skip cleanup
+      // when it is reopened from an asynchronous transition.
+      this.startClose(previous);
     }
     const controller = new AbortController();
     let state!: LifecycleState;
@@ -115,15 +140,35 @@ export abstract class FguiView {
 
   /** 运行 onCreate；永久页面重挂时不会重复执行。 */
   async runCreate(context: ViewLifecycleContext): Promise<void> {
-    if (this.created) return;
+    if (this.created) {
+      this.assertCurrent(context);
+      return;
+    }
     this.assertCurrent(context);
-    this.created = true;
-    try {
+    // A first open can be superseded while onCreate is awaiting. Share that
+    // attempt with a concurrent generation, then retry only if it did not
+    // complete successfully; this avoids duplicate setup and stale failure
+    // clobbering a newer successful attempt.
+    if (this.createFlight) {
+      try { await this.createFlight; } catch { /* the current generation may retry */ }
+      if (this.created) {
+        this.assertCurrent(context);
+        return;
+      }
+      this.assertCurrent(context);
+    }
+    const attempt = (async (): Promise<void> => {
       await this.onCreate(context);
       this.assertCurrent(context);
-    } catch (e) {
-      this.created = false;
-      throw e;
+      this.created = true;
+    })();
+    this.createFlight = attempt;
+    // runCreate's caller observes the attempt; this defensive handler prevents
+    // a superseded generation from creating an unhandled rejection.
+    attempt.catch(() => undefined);
+    try { await attempt; }
+    finally {
+      if (this.createFlight === attempt) this.createFlight = null;
     }
   }
 
@@ -141,6 +186,10 @@ export abstract class FguiView {
   closeLifecycle(): Promise<void> {
     const state = this.lifecycle;
     if (!state) return Promise.resolve();
+    return this.startClose(state);
+  }
+
+  private startClose(state: LifecycleState): Promise<void> {
     if (state.closePromise) return state.closePromise;
     state.active = false;
     state.controller.abort();
@@ -308,19 +357,9 @@ export abstract class FguiView {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
-    const state = this.lifecycle;
-    if (state?.active) {
-      state.active = false;
-      state.controller.abort();
-    }
-    // onClose 可能是 async；root 仍按同步语义立即销毁，Promise rejection 已由 closeLifecycle 观察。
-    if (state && !state.closePromise) {
-      let result: void | Promise<void>;
-      try { result = this.invokeCloseHook(state.context); }
-      catch (e) { result = Promise.reject(e); }
-      state.closePromise = Promise.resolve(result).then(() => undefined);
-      state.closePromise.catch((e) => console.error("[FguiView] dispose/onClose 回调异常", e));
-    }
+    // closeLifecycle owns abort/hook idempotence; disposal of the component
+    // tree remains synchronous and does not wait for an async hook.
+    if (this.lifecycle) this.startClose(this.lifecycle);
     try { this.root.removeFromParent(); } catch (e) {
       console.error("[FguiView] removeFromParent 异常", e);
     }
@@ -329,66 +368,74 @@ export abstract class FguiView {
     }
   }
 
-  /** 包加载在途合流表（评审修复）：`loadPackage` 无在途保护、`getByName` 只挡**已完成**的加载——
-   *  并发 ensurePackages/create（启动期同时开 HUD+首屏页是常态）会双双穿过预检，重下资源、
-   *  覆盖注册表、泄漏旧包纹理。按包路径全进程合流；value = loadPackage 的 err（null=成功）。 */
-  private static pkgInflight = new Map<string, Promise<unknown>>();
+  /**
+   * 包加载器只持有 FairyGUI 运行时适配，不持有页面引用：成功包按进程常驻，
+   * 页面关闭时只释放组件树。这样共享包不会因某个页面关闭被 removePackage，
+   * 而缺包/超时仍可由下一次 open 重试。
+   */
+  private static readonly packageLoader = new FguiPackageLoader({
+    getByName: (name) => UIPackage.getByName(name),
+    loadPackage: (path, callback) => UIPackage.loadPackage(path, callback),
+  });
 
-  private static loadPackageOnce(pkgPath: string): Promise<unknown> {
-    const inflight = FguiView.pkgInflight.get(pkgPath);
-    if (inflight) { return inflight; }
-    const p = new Promise<unknown>((resolve) => {
-      UIPackage.loadPackage(pkgPath, (err: unknown) => {
-        FguiView.pkgInflight.delete(pkgPath);
-        resolve(err ?? null);
-      });
-    });
-    FguiView.pkgInflight.set(pkgPath, p);
-    return p;
+  /** 默认包 deadline，供开发诊断和测试配置读取。 */
+  static get packageLoadDeadlineMs(): number {
+    return FguiView.packageLoader.defaultDeadlineMs;
   }
 
   /**
-   * 预加载**跨包依赖**（共享库包）。跨包组件在 createObject 时惰性解析,fairygui **不会**自动从依赖表加载,
-   * 缺失则静默降级成空占位。故引用了公司标准库（`Original` 包）组件的视图,须在 create 前先 ensurePackages 把
-   * 那些包加载好（且发布成各自的 .bin 到 resources/ui）。缺失只 warn 不阻塞——面板照开,跨包件为空占位。
-   * 共享库包加载后别 removePackage（其他视图也用),整个 app 生命周期常驻。
+   * 配置统一包加载 deadline/测试时钟。生产代码通常只设置 deadlineMs；无头测试
+   * 可注入 scheduler，避免依赖真实时间。调用不会清理已完成或在途的共享包。
    */
-  static ensurePackages(paths: string[]): Promise<void> {
-    return Promise.all(paths.map(async (p) => {
-      const name = p.substring(p.lastIndexOf("/") + 1); // "ui/Original" → "Original"
-      if (UIPackage.getByName(name)) { return; } // 已加载:复用(loadPackage 无幂等保护)
-      const err = await FguiView.loadPackageOnce(p);
-      if (err) { console.warn(`[fgui] 共享库包 ${p} 未加载（发布 ${name}.bin 到 resources/ui 了吗？）:`, err); }
-      // 不 reject:缺失则跨包组件降级空占位,面板仍开
-    })).then(() => undefined);
+  static configurePackageLoading(config: FguiPackageLoaderConfig): void {
+    FguiView.packageLoader.configure(config);
+  }
+
+  /** 固定默认值，便于宿主在热重载/测试 teardown 后恢复开发期配置。 */
+  static resetPackageLoading(): void {
+    FguiView.packageLoader.reset();
+  }
+
+  /**
+   * 预加载**跨包依赖**（共享库包）。跨包组件在 createObject 时惰性解析，fairygui **不会**自动从依赖表加载，
+   * 故引用了标准库组件的视图须在 create 前先 ensurePackages 把那些包加载好（并发布成各自的 .bin）。
+   * 缺失或超时会抛 `FguiPackageLoadError`（`retryable=true`），阻止页面创建；共享包成功后不 remove，
+   * 按进程常驻以供其他视图复用。调用方应把本次 View 的 AbortSignal 传入，关闭/场景重载时立即取消等待。
+   */
+  static ensurePackages(paths: readonly string[], options?: FguiPackageLoadOptions): Promise<void> {
+    return FguiView.packageLoader.ensure(paths, options);
   }
 
   /**
    * 便捷工厂：加载包 → 创建组件 → new View（构造里 bind）。
    * `pkgPath` 是**发布到 `assets/resources/` 下**的包路径（如 `ui/Versus` ← `resources/ui/Versus.bin`）：
    * `UIPackage.loadPackage(path)` 无 bundle 参数时固定走 resources bundle（fairygui.mjs `bundle = bundle || resources`），
-   * FGUI 编辑器发布路径须配 `.../assets/resources/ui`。已加载过的包直接复用（loadPackage 无幂等保护，
-   * 重复调用会重下资源并覆盖注册表、泄漏旧包纹理——评审实证）。
+   * FGUI 编辑器发布路径须配 `.../assets/resources/ui`。包加载经过统一 loader：已加载包直接复用，
+   * 在途请求按路径合流，并受 deadline/AbortSignal 约束；失败会抛可判别的 `FguiPackageLoadError`。
    */
   static create<V extends FguiView>(
     viewCtor: new (root: GComponent) => V, pkgPath: string, pkg: string, comp: string,
+    options?: FguiPackageLoadOptions,
   ): Promise<V> {
-    const build = (resolve: (v: V) => void, reject: (e: Error) => void): void => {
-      try {
-        const obj = UIPackage.createObject(pkg, comp);
-        if (!obj) { reject(new Error(`FairyGUI 组件不存在: ui://${pkg}/${comp}`)); return; }
-        resolve(FguiView.fromComponent(viewCtor, obj.asCom)); // 构造后 bind——getChild 缺元素会抛,try/catch 兜住转 reject
-      } catch (e) {
-        reject(e instanceof Error ? e : new Error(String(e)));
+    const build = (): V => {
+      if (options?.signal?.aborted) {
+        const reason = (options.signal as AbortSignal & { reason?: unknown }).reason;
+        throw new FguiPackageCancelledError(pkgPath, reason);
       }
+      const obj = UIPackage.createObject(pkg, comp);
+      if (!obj) throw new Error(`FairyGUI 组件不存在: ui://${pkg}/${comp}`);
+      // 构造后 bind——getChild 缺元素会抛，fromComponent 会释放组件树。
+      return FguiView.fromComponent(viewCtor, obj.asCom);
     };
-    return new Promise<V>((resolve, reject) => {
-      if (UIPackage.getByName(pkg)) { build(resolve, reject); return; } // 已加载:直接建,防重载/泄漏
-      void FguiView.loadPackageOnce(pkgPath).then((err) => {
-        // 合流后包可能由他方先行加载完成；createObject 幂等，直接建
-        if (err) { reject(err instanceof Error ? err : new Error(String(err))); return; }
-        build(resolve, reject);
-      });
-    });
+    return (async (): Promise<V> => {
+      if (options?.signal?.aborted) {
+        const reason = (options.signal as AbortSignal & { reason?: unknown }).reason;
+        throw new FguiPackageCancelledError(pkgPath, reason);
+      }
+      if (!UIPackage.getByName(pkg)) {
+        await FguiView.packageLoader.load(pkgPath, options);
+      }
+      return build();
+    })();
   }
 }

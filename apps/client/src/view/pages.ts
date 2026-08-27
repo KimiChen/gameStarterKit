@@ -6,8 +6,7 @@
  * 动态 import 闭包（`const p = await import("./view/pages")`）调用。
  * 
  * 选服链路：openLogin 时拉 WebPlatform GET /v1/areas 存 serverSession + 默认选中服 →
- * Login 显示当前服 → 选服改 currentServer → HTTP 使用 gameHttpUrl、Colyseus 使用 gameWsUrl，
- * 并在两类 join 中携带同一份 listHash。
+ * Login 显示当前服 → 选服改 currentServer → HTTP 使用 gameHttpUrl、Colyseus 使用 gameWsUrl。
  */
 import { ViewMgr, ViewOpenCancelledError, type ViewHandle } from "./ViewMgr";
 import { sys } from "cc";
@@ -40,7 +39,6 @@ import {
   getCurrentServer,
   setServerList,
   getServerList,
-  getListHash,
 } from "../net/serverSession";
 import type { WebPlatformAreaServer } from "../shared/index";
 
@@ -326,7 +324,7 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
             // WebPlatform 契约叫 serverId；游戏服现有 Colyseus join option 仍叫 sId，在边界显式转换。
             await WebSocketClient.inst.join(
               response.accessToken,
-              { sId: cur.serverId, listHash: getListHash() },
+              { sId: cur.serverId },
               context.signal,
             );
             if (flight.invalidated || !context.isActive() || getSessionGeneration() !== flowSessionGen) { flowFailed = true; return; }
@@ -462,8 +460,11 @@ export async function openConfirm(opts: Omit<IConfirmOptions, "onYes" | "onNo">)
     const task = (async () => {
       handle = await ViewMgr.open("Confirm");
       const h = handle;
-      const onAbort = () => finish(false);
-      if (h.signal.aborted) { finish(false); return; }
+      // An abort can come from a scene/root teardown before the caller sees the
+      // handle.  Always close through the handle so the interactive lease is
+      // returned even when no button callback ran.
+      const onAbort = () => { h.close(); finish(false); };
+      if (h.signal.aborted) { h.close(); finish(false); return; }
       h.signal.addEventListener("abort", onAbort, { once: true });
       removeAbortListener = () => h.signal.removeEventListener("abort", onAbort);
       const view = h.view as ConfirmView;

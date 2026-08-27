@@ -12,14 +12,21 @@
 4. 在 `viewRegistry.ts` 添加 `defineView`（layer/fullscreen/onlyOne/permanent/interactive/load/sharedPkgs）。
 5. 在 `view/pages.ts` 增加 `openXxx` 组合根：打开页面、构造 Logic、注入 net 依赖与导航回调
    （Main 与业务层只调这里，不直接调 `ViewMgr`）。
-6. 当前新 View 仍需加入 `apps/client/tsconfig.json` 的显式排除清单；这是待收口的类型盲区，不是目标架构。
-7. 运行 `npm run sync:client`，再运行 `npm run test:fgui`、`npm run verify:sync` 并在 Creator 本地预览。
+6. 新 View 会由 `apps/client/tsconfig.test.json` 的 `src/**/*.ts` glob 自动纳入 Node strict 探针；若
+   使用新的引擎 API，先补齐 `client-test-stubs.d.ts`，再由 Creator 工程验证真实类型和资源。
+7. 运行 `npm run sync:client`，再运行 `npm run typecheck:client`、`npm run test:client`、
+   `npm run test:fgui`、`npm run verify:sync` 并在 Creator 本地预览。
 
 打开 = `ViewMgr.open("Xxx")`（只接受页面名，返回句柄；数据与回调在 `pages.ts` 经 `view.setup(...)` 注入）；
 关闭 = `handle.close()`，onlyOne/permanent 页也可用 `ViewMgr.close("Xxx")`——⚠ 对多实例页
 （`onlyOne=false` 且 `permanent=false`，当前只有 Confirm）该调用是空操作，只能用句柄关。
 ⛔ 不直调 `view.dispose()`——交互输入的恢复挂在关闭路径上，直调会永久吞掉游戏触摸。
 ensurePackages/挂载/分层/单例/常驻/交互输入全部由注册表元数据接管。
+`ensurePackages` 与页面自身包均经统一可测 loader：缺失/超时抛 `FguiPackageLoadError`（缺失与超时
+`retryable=true`），不会继续创建空占位。默认 deadline 为 15 秒，可在宿主通过
+`FguiView.configurePackageLoading({ deadlineMs })` 调整；`ViewMgr` 贯通 open 的 `AbortSignal`，关闭或
+场景/root 世代切换会取消当前等待。FairyGUI 无法取消底层请求，迟到回调会被观察；成功共享包保持常驻，
+页面关闭只释放组件树。
 `test/viewRegistry.test.ts` 会检查 View/registry/Logic/契约集合、AUTO 区块、包依赖闭包和
 `XxxView.ts` 内的 `ui://<Pkg>` 字面量（`areaPresentation.ts` 等其他 view/ 文件不在扫描内）；
 它不会检查设计源是否已重新导出为 `.bin`、relation 或列表 item 配置。
@@ -46,10 +53,10 @@ fairygui 只有一个全局 InputProcessor：**启用 = 全屏捕获（页面可
 ## 其他约定
 
 - 机械件：`FguiView.ts`（挂载/包管理原语）· `ViewMgr.ts`（生命周期）——日常不动；
-- 纯数据（无头 typecheck 在检）：`fguiContracts.ts` · `defineView.ts` · `layers.ts`；
-  依赖 fairygui 的文件（FguiView/ViewMgr/viewRegistry/各 XxxView）在 apps/client/tsconfig.json
-  排除清单里，Creator 侧验证；
+- 纯数据与全部 View 绑定均由 `tsconfig.test.json` 的 Node strict 探针检查（依赖 fairygui 的文件使用
+  `client-test-stubs.d.ts`）；`apps/client/tsconfig.json` 的排除清单仅属于 Creator 兼容 legacy 配置，
+  真实引擎侧仍需验证；
 - fairygui 不得进任何常规脚本的静态依赖图（铁律 10）：页面加载只走 viewRegistry 的
   load 动态 import 闭包。
-- 当前严格类型检查排除 `ViewMgr`、`viewRegistry`、`pages` 与具体 View；准确范围和收口任务见
-  根 `docs/CLIENT.md` 的“本地检查”一节及根 `plan.md`。
+- 当前 Node strict 类型检查覆盖 `ViewMgr`、`viewRegistry`、`pages` 与具体 View；覆盖守门测试位于
+  `apps/client/test/clientTypecheckConfig.test.ts`。Creator 兼容 legacy 配置的排除清单不代表 CI 探针盲区。

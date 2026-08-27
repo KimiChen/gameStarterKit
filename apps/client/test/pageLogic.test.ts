@@ -15,7 +15,6 @@ import {
   getServerList,
   pickDefaultServer,
   setServerList,
-  getListHash,
 } from "../src/net/serverSession";
 import { isServerEnterable } from "../src/logic/areaDirectory";
 import { areaStatusIconUrl } from "../src/view/areaPresentation";
@@ -106,7 +105,6 @@ test("Area：isServerEnterable 判定单源（维护/未开服双条件）", () 
 test("serverSession：存列表 + 默认选中（myServerIds 优先，否则首个可进入服）+ 选服", () => {
   const list = areaRes([srv(1, "maintenance"), srv(2), srv(3)], [3]);
   setServerList(list);
-  assert.equal(getListHash(), "hh");
   assert.equal(pickDefaultServer(list)?.serverId, 3, "myServerIds[0]=3 优先");
   assert.equal(pickDefaultServer(areaRes([srv(1, "maintenance"), srv(2)]))?.serverId, 2,
     "无 myServerIds → 首个可进入服（跳过维护）");
@@ -144,7 +142,6 @@ test("serverSession：目录刷新保留当前区，区消失才回退默认，�
   setServerList(refreshed);
   assert.equal(getCurrentServer()?.serverId, 20);
   assert.equal(getCurrentServer()?.gameWsUrl, "ws://zone20-v2");
-  assert.equal(getListHash(), "h2");
 
   // 当前区不在新目录：按 myServerIds/可进入规则选择默认区。
   const removed = { ...areaRes([srv(30), srv(40)], [40]), hash: "h3" };
@@ -154,7 +151,6 @@ test("serverSession：目录刷新保留当前区，区消失才回退默认，�
 
   // 模拟拉取失败：调用方不执行 setServerList，旧快照必须原样可用。
   assert.equal(getCurrentServer()?.serverId, 40);
-  assert.equal(getListHash(), "h3");
   assert.deepEqual(getServerList(), removed);
 });
 
@@ -166,7 +162,6 @@ test("serverSession：目录输入和 getter 都是隔离副本，不会拆散 l
   input.hash = "mutated";
   input.myServerIds[0] = 80;
   input.servers[0].gameHttpUrl = "http://tampered";
-  assert.equal(getListHash(), "owned");
   assert.equal(getCurrentServer()?.serverId, 70);
   assert.equal(getServerList()?.servers[0].gameHttpUrl, "http://localhost:2568");
 
@@ -176,7 +171,6 @@ test("serverSession：目录输入和 getter 都是隔离副本，不会拆散 l
   exposed.hash = "getter-tampered";
   exposed.servers.reverse();
   exposed.servers[0].gameWsUrl = "ws://tampered";
-  assert.equal(getListHash(), "owned");
   assert.equal(getCurrentServer()?.serverId, 70);
   assert.deepEqual(getServerList()?.servers.map((server) => server.serverId), [70, 80]);
 });

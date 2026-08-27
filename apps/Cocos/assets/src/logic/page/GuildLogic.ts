@@ -87,8 +87,21 @@ export class GuildLogic {
             this.stop();
             throw e;
         }
+        // `onPush` is an injected boundary and may synchronously re-enter
+        // `stop()`/`start()`. In that case stop ran before the returned
+        // unsubscribe handle was assigned to `this.unbind`; release the handle
+        // here instead of leaving a dead-page subscription behind.
+        if (!this.isCurrent(generation, controller)) {
+            try { unbind?.(); } catch (unbindError) {
+                console.error("[GuildLogic] 失效订阅解绑异常", unbindError);
+            }
+            detach?.();
+            return;
+        }
         this.unbind = () => {
-            unbind?.();
+            const currentUnbind = unbind;
+            unbind = null;
+            currentUnbind?.();
             detach?.();
         };
         await this.pull(generation, controller);

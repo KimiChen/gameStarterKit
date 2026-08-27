@@ -28,7 +28,14 @@ export interface ViewHandle {
   run<T>(action: (view: FguiView, context: ViewLifecycleContext) => T | Promise<T>): Promise<T>;
 }
 
-interface Entry { view: FguiView; mounted: boolean; meta: ViewMeta; handle: ViewHandle }
+interface Entry {
+  view: FguiView;
+  mounted: boolean;
+  meta: ViewMeta;
+  handle: ViewHandle;
+  /** The mount lease owns both the parent attachment and interactive count. */
+  releaseMount: (() => void) | null;
+}
 
 /** 在途 open 记录：双击竞态合流 + 在途期间 close 的取消标记（mount 前拦截，防幽灵页面）。 */
 interface PendingOpen {
@@ -74,7 +81,9 @@ function ensureLayers(): void {
     pending.clear();
     for (const entry of cache.values()) {
       entry.mounted = false;
-      closeEffects(entry.meta);
+      const release = entry.releaseMount;
+      entry.releaseMount = null;
+      release?.();
       try { entry.view.dispose(); } catch (e) { console.error("[ViewMgr] 场景重载 dispose 异常", e); }
     }
     for (const root of layerRoots.values()) {
@@ -117,6 +126,9 @@ function ensureLayers(): void {
 function mount(view: FguiView, meta: ViewMeta): () => void {
   ensureLayers();
   FguiView.healRoot(); // 尺寸/置顶自愈：老路径 mountFullScreen 每次挂载都做，这里保持等价
+  // A non-cacheable handle may outlive a scene/root reload.  Its release must
+  // never decrement the interactive lease belonging to the replacement root.
+  const leaseRootGeneration = rootGeneration;
   const parent = layerRoots.get(meta.layer);
   if (!parent) { throw new Error(`[ViewMgr] 未知层级: ${meta.layer}`); }
   let mounted = false;
@@ -132,7 +144,7 @@ function mount(view: FguiView, meta: ViewMeta): () => void {
     return () => {
       if (leased) {
         leased = false;
-        closeEffects(meta);
+        if (leaseRootGeneration === rootGeneration) closeEffects(meta);
       }
       if (mounted) {
         mounted = false;
@@ -161,8 +173,9 @@ function makeHandle(
   meta: ViewMeta,
   context: ViewLifecycleContext,
   cacheable: boolean,
+  releaseMount: (() => void) | null,
 ): { handle: ViewHandle; setContext(next: ViewLifecycleContext): void } {
-  const state = { context, closed: false };
+  const state = { context, closed: false, releaseMount };
   const handle: ViewHandle = {
     view,
     get signal() { return state.context.signal; },
@@ -172,11 +185,17 @@ function makeHandle(
       if (state.closed && !meta.permanent) return;
       if (cacheable) {
         const entry = cache.get(name);
+        // A permanent view gets a fresh handle for every remount.  An old
+        // caller may still invoke close() after a newer generation is active;
+        // it must not close that newer generation by name.
         if (entry?.handle !== handle) { state.closed = true; return; }
         close(name);
+        state.closed = true;
       } else {
         state.closed = true;
-        closeEffects(meta);
+        const release = state.releaseMount;
+        state.releaseMount = null;
+        release?.();
         void view.closeLifecycle().catch((e) => console.error("[ViewMgr] onClose 回调异常", e));
         view.dispose();
       }
@@ -212,11 +231,14 @@ function rollbackEntry(name: string, entry: Entry): void {
   if (cache.get(name) !== entry) return;
   if (entry.mounted) {
     entry.mounted = false;
-    closeEffects(entry.meta);
   }
+  const release = entry.releaseMount;
+  entry.releaseMount = null;
+  release?.();
   void entry.view.closeLifecycle().catch((e) => console.error("[ViewMgr] rollback onClose 异常", e));
   if (entry.meta.permanent) {
-    try { entry.view.unmount(); } catch (e) { console.error("[ViewMgr] rollback unmount 异常", e); }
+    // releaseMount already detaches the root; permanent instances remain
+    // cached for the next generation.
   } else {
     entry.view.dispose();
     cache.delete(name);
@@ -243,15 +265,18 @@ async function open(name: string, setup?: ViewSetup): Promise<ViewHandle> {
     }
     const context = entry.view.beginLifecycle(++nextGeneration);
     try {
-      mount(entry.view, meta); // permanent 重挂秒开
+      const releaseMount = mount(entry.view, meta); // permanent 重挂秒开
+      entry.releaseMount = releaseMount;
       entry.mounted = true;
-      // makeHandle 的 setContext 由 openNew 保存到弱表；未找到时 context 仍可从 view 读取。
-      const refresh = handleContexts.get(entry.handle);
-      refresh?.(context);
+      // Every remount receives a fresh handle.  Reusing the original object
+      // would let a stale caller close or run setup against this generation.
+      const made = makeHandle(name, entry.view, meta, context, true, releaseMount);
+      entry.handle = made.handle;
+      handleContexts.set(made.handle, made.setContext);
       await entry.view.runOpen(context);
       ensureContextActive(context, name);
-      if (setup) await entry.handle.run(setup);
-      return entry.handle;
+      if (setup) await made.handle.run(setup);
+      return made.handle;
     } catch (e) {
       // The same permanent Entry can be reopened while an async onOpen/setup is pending;
       // do not roll back the newer lifecycle that replaced this context.
@@ -288,12 +313,23 @@ async function open(name: string, setup?: ViewSetup): Promise<ViewHandle> {
     let cancelLifecycle: (() => void) | null = null;
     try {
       if (meta.sharedPkgs && meta.sharedPkgs.length > 0) {
-        await FguiView.ensurePackages([...meta.sharedPkgs]);
+        // Pass the pending open's signal through the package boundary. FairyGUI
+        // cannot abort its underlying request, but this releases this waiter
+        // immediately when close() or a root/scene generation change occurs.
+        ensurePendingActive(rec);
+        await FguiView.ensurePackages([...meta.sharedPkgs], { signal: rec.controller.signal });
       }
       ensurePendingActive(rec);
       // load 闭包 = 铁律 10 的动态 import 边界，也是将来分包的加载点；构造器真实类型在此收敛
       const ctor = (await meta.load()) as new (root: GComponent) => FguiView;
-      view = await FguiView.create(ctor, `ui/${meta.contract.pkg}`, meta.contract.pkg, meta.contract.comp);
+      ensurePendingActive(rec);
+      view = await FguiView.create(
+        ctor,
+        `ui/${meta.contract.pkg}`,
+        meta.contract.pkg,
+        meta.contract.comp,
+        { signal: rec.controller.signal },
+      );
       ensurePendingActive(rec);
       context = view.beginLifecycle(rec.generation);
       // close(name)/root 重载可能发生在 setup 或 onOpen 等后续 await 期间；把 pending
@@ -305,11 +341,14 @@ async function open(name: string, setup?: ViewSetup): Promise<ViewHandle> {
       await view.runCreate(context);
       ensurePendingActive(rec);
       lease = mount(view, meta);
-      const made = makeHandle(name, view, meta, context, cacheable);
+      const made = makeHandle(name, view, meta, context, cacheable, lease);
       handleContexts.set(made.handle, made.setContext);
       if (cacheable) {
-        entry = { view, mounted: true, meta, handle: made.handle };
+        entry = { view, mounted: true, meta, handle: made.handle, releaseMount: lease };
         cache.set(name, entry);
+        // The cache entry now owns the mount lease.  A failed/superseded open
+        // will release it through rollbackEntry exactly once.
+        lease = null;
       }
       await view.runOpen(context);
       ensureContextActive(context, name);
@@ -362,10 +401,12 @@ function close(name: string): void {
   const entry = cache.get(name);
   if (!entry || !entry.mounted) { return; }
   entry.mounted = false;
-  closeEffects(entry.meta);
+  const release = entry.releaseMount;
+  entry.releaseMount = null;
+  release?.();
   void entry.view.closeLifecycle().catch((e) => console.error("[ViewMgr] onClose 回调异常", e));
   if (entry.meta.permanent) {
-    entry.view.unmount(); // 摘下不销毁，下次 open 秒开
+    // releaseMount detaches the permanent view without destroying it.
   } else {
     entry.view.dispose();
     cache.delete(name);
