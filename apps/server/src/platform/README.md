@@ -8,7 +8,7 @@
 
 硬约束：
 
-- 不存在 in-process 实现或运行期模式开关。
+- 不存在 in-process 实现或动态模式开关。
 - 不导入 WebPlatform 业务源码，不持有账号库 DSN。
 - token 是不透明句柄；身份只信 verify 返回的 `userId`。
 - HTTP 401/403、超时、5xx 和非法响应均属于服务/基础设施故障，不能伪装成玩家 token 无效。

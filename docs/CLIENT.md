@@ -1,291 +1,224 @@
-# 客户端
+# 客户端开发
 
-Cocos Creator **3.8.8** 微信小游戏工程 + FairyGUI（fairygui-cc 1.2.2）+ bitECS（数据导向 ECS）。
-整体设计意图见 [OVERVIEW.md](OVERVIEW.md)；游戏服见 [SERVER.md](SERVER.md)；
-账号 Public HTTP 边界见 [WEBPLATFORM.md](WEBPLATFORM.md)。
+> 本文只描述 Cocos 客户端在开发阶段的源码组织、页面接入、本地预览和测试方式；完整范围见
+> [根 README](../README.md#项目边界)。
 
-> 引擎壳与游戏代码分离（对标 sect）：**代码全在 `apps/client/src/`（纯 TS 工程，源码唯一真相）**；
-> `apps/Cocos` 是 Creator 工程壳（**不在 npm workspaces**），`npm run sync:client` 把代码灌入
-> `apps/Cocos/assets/src/` 后由编辑器编译。第三方库以源码/UMD 形式直接放在 `assets/` 内。
-> Unity 壳（`apps/Unity`）是骨架，规划消费 TS 的引擎无关子集（logic/shared/bitecs，见其 README）。
+## 1. 首次打开
 
----
-
-## 首次打开（一次性配置）
+在仓库根目录执行：
 
 ```bash
-# 仓库根目录先跑（运行时产物——colyseus UMD、fairygui-cc 运行时——已入库，无需 fetch）：
-npm run sync:shared    # apps/shared/src → apps/client/src/shared，并级联 sync:client
-npm run sync:client    # apps/client/src → apps/Cocos/assets/src（已入库；上一步已级联，单改 client 时用）
+npm install
+npm run sync:shared
 ```
 
-> 日常迭代建议常驻 `npm run dev:client`（双 watcher：shared→client→Cocos 全链自动级联，
-> 保存即同步）；忘跑同步有机检兜底——`npm run typecheck` 尾部挂了 `verify:sync`
-> （`--check` 只读校验：镜像漂移/孤儿/入库文件缺 `.meta` 都会红）。
+随后使用 Cocos Dashboard 3.8.8 打开 `apps/Cocos`，等待资源导入完成。游戏代码来自
+`apps/client/src`，由 `sync:client` 复制到 `apps/Cocos/assets/src`。
 
-然后在 Cocos 里：
+第三方技术依赖已经锁定并入库：
 
-1. 用 **Cocos Dashboard 3.8.8** 打开 `apps/Cocos`，等首次导入（生成 `temp/`、`library/`、`.meta`）；
-2. 菜单「扩展 → 扩展管理器 → 已安装扩展」确认 **fairygui-cc** 已启用
-   （挂载只读 `db://fairygui-cc/fairygui.mjs`）；
-3. 新建场景（含 Canvas），把 `Main.ts` 挂到 Canvas 节点，保存；
-4. 启动独立 `gono-webplatform` 的 Public/Internal HTTP 与空账号库，再在本仓运行
-   `npm run dev`（游戏服，http://localhost:2568）；
-5. 场景 `Main` 组件的 `portalUrl` **必须填写** WebPlatform Public origin
-   （本地例 `http://127.0.0.1:2570`）。空值或非 http(s) 地址立即失败，⛔ 不回退游戏服；
-6. 编辑器 **预览**：点「进入游戏」走 Public `/v1/sessions/dev` 真实登录 → 大厅拉档案
-   → 主界面 → 进房，**按住屏幕可拖动小圆点**。
+- `apps/client/src/lib/colyseus/colyseus.js`
+- `apps/Cocos/extensions/fairygui-cc/runtime/`
+- `apps/client/src/lib/bitecs/`
 
-> `.meta` 由编辑器生成后**连同资源一起提交**（uuid 不稳会丢引用）。
-> 运行时产物**已入库**（colyseus.js×2、fairygui-cc/runtime/），版本钉死——fgui 1.2.2、
-> colyseus 0.17.43（⛔ 不飘 latest 免各机分叉）。升级 = 改 `scripts/fetch-*` 顶部版本号与
-> integrity 哈希，跑 `npm run fetch:fgui` / `fetch:colyseus`（拉新版 + 验 sha512）后提交 diff。
+`fetch:colyseus` 和 `fetch:fgui` 只用于显式更新依赖，不是首次打开步骤。
 
-**常见卡点**：`db://fairygui-cc` 不出现→扩展没启用/没重启；`import fairygui.mjs` 报红→无头 typecheck
-排除的正常现象（Creator 自带 tsconfig 能解析，运行时以预览为准）；图不显示→图片导入类型设 RAW/BufferAsset；
-`Call GRoot.create first!`→GRoot 未在 Canvas 就绪后调（`Main.ts` 的 `setupFairyGUI()` 已接线自动找 Canvas）。
+本地预览需要：
 
----
+1. 场景中存在挂载 `Main` 的节点。
+2. FairyGUI 扩展已由工程加载。
+3. `portalUrl` 指向与当前契约匹配的本地开发服务。
+4. shared/client 镜像保持新鲜。
 
-## 2. 目录导览（`apps/client/src/` 根 = 入口两文件 + 6 目录，每目录有 README）
+## 2. 源码与工程壳
 
-**根层文件 = 入口与全局真源；目录 = 层/域**（与服务端同构）。
+```text
+apps/client/src/
+├── Main.ts             Cocos 组件入口与 Demo 编排
+├── core/               ViewMgr、HTTP 底座、宿主环境桥
+├── lib/                锁定的第三方技术依赖
+├── logic/              引擎无关页面与玩法行为
+├── net/                Room、RPC 与 HTTP 适配
+├── shared/             apps/shared 的生成镜像
+└── view/               Cocos/FairyGUI 视图绑定
 
-| 条目 | 职责 |
-|---|---|
-| `Main.ts` | 入口组件（挂 Canvas）：微信补丁 → 校验必填 portalUrl → 大厅登录 → 进房 → 状态同步 → 渲染演示 → 触摸输入 |
-| `designSpec.ts` | 设计分辨率真源（750×1624，见 §6） |
-| `view/` | **视图层**（依赖 cc/fairygui-cc，只搬数据）：FguiView/ViewMgr 机械件 + 每页面 XxxView.ts + 双登记点 |
-| `logic/` | **逻辑层**（⛔ 禁 import cc/fairygui，无头单测）：`page/` 页面行为 + `rooms/<玩法>/` 局内 ECS |
-| `net/` | 通道面：RoomClient / WebSocketClient / session（会话与踢线/掉线事件）/ http/ |
-| `core/` | 平台与基建桥（日常不动）：`http.ts`（XHR+token）· `wechat-compat.ts`（微信补丁，必须最先导入） |
-| `lib/` | 第三方锁定区：`bitecs/`（12 文件字节锁）· `colyseus/`（UMD 插件）——⛔ 不可手改 |
-| `shared/` | `sync:shared` 生成物——⛔ 不可手改（改 `apps/shared/src` 再同步） |
-
-**命名规则**：目录一律小写；导出类的文件 PascalCase 与类同名；纯函数/配置模块 camelCase。
-
-**大厅壳页面（迁移自 sect 项目，走 FGUI）**：登录 `Login` → 选服 `AreaList`
-（WebPlatform Public `GET /v1/areas`）/
-公告 `LoginNotice`（HTTP `/notice/list`）→ 主界面 `Home`（点「进入游戏」→ ballMove 玩法房）；
-`Confirm` 通用提示框（多实例）。组合根在 `view/pages.ts`（ViewMgr + Logic + net 依赖 + 导航接线，
-Main.ts 走动态 import 调 `openLogin`）。各页 logic 在 `logic/page/`（纯 TS，`test/pageLogic.test.ts` 无头测）。
-
-**选服链路（区服 = 独立实例）**：`openLogin` 开机从必填 `portalUrl` 拉 `GET /v1/areas`，响应
-`{servers,myServerIds,isOps,hash}` 存入 `net/serverSession.ts`。每个区服使用明确字段
-`{serverId,name,tag,status,openTime,gameHttpUrl,gameWsUrl}`；旧压缩字段与单一连接地址字段不再接受。
-`pickDefaultServer` 按 `myServerIds` 顺序优先选最近且可进入的服，否则取第一个可进入服；
-可进入判定在 `logic/areaDirectory.ts`：`status !== "maintenance" && openTime > 0`，全不可进时仅用
-`servers[0]` 做展示位。Login 用 `name` 和集中映射后的 `login_status_{1|2|9}` 图标展示当前服。
-
-`AreaList` 固定页签为推荐（`tag==="new"`）、我的角色（`myServerIds∩servers`）、全部；选择时使用
-`serverId`，非运维模式拦维护/未开服，`isOps` 允许开服前验证。登录请求显式携带所选 `serverId`，
-成功响应为 `{userId,accessToken,isNewAccount}`；客户端保存 `accessToken`，进入游戏服边界时再把
-`serverId` 转成现有 Colyseus join option `sId`。大厅和战斗都使用目录明确给出的
-`currentServer.gameHttpUrl` 初始化 Colyseus，`gameWsUrl` 作为明确 WS 地址保存在状态中，不从旧 URL
-互相猜测。目录首次加载失败会清掉旧地址并提示重试，绝不沿用未知拓扑。
-
-`GET /v1/areas` 在已有登录态时由 HTTP 底座自动附带 `Authorization: Bearer <accessToken>`，
-用于 best-effort 回填 `myServerIds`；无 token 或无效 token 仍应返回目录。客户端状态只是 UX，
-真正的区服准入仍由游戏服 `onAuth` 硬闸。
-⚠ FGUI 包源已迁进 `apps/art/fairygui/assets`（12 包闭包），但 **`.bin` 需在 FairyGUI 编辑器发布到
-`apps/Cocos/assets/resources/ui/`**、新 `.ts` 需 `sync:client` 灌入后开一次 Cocos 生成 `.meta`——见本文件末尾「迁移页面的一次性手动步骤」。
-
-**客户端登记点四处**：页面注册 → `view/viewRegistry.ts`；FGUI 命名元素 → `view/fguiContracts.ts`；
-分辨率/适配 → `designSpec.ts`；微信兼容 → `core/wechat-compat.ts`（只加补丁不删）。
-
----
-
-## 3. 视图 / 逻辑二分（铁律 9）
-
-核心洞察：无头测只测**结构 + 行为**，不测「好不好看」。三层职责：
-
-| 层 | 谁负责 | 落点 | 验证 |
-|---|---|---|---|
-| 视觉排版 | **设计师** | FairyGUI 编辑器工程 `apps/art/fairygui`（`.fui`/`.bin`） | 预览/人看 |
-| 结构契约 | 程序定/设计师满足 | `view/fguiContracts.ts` 的 `FGUI_CONTRACTS`（命名元素→类型，提交版事实源） | 解析 FGUI XML 断言（无头） |
-| 行为/数据 | 程序 | `logic/`（⛔ 禁 cc/fairygui，`logic-purity.test.ts` 机检） | 无头单测 |
-
-- **视图 `view/`**：依赖 cc/fairygui-cc，只做「取组件 + 搬数据」，Creator 侧验证。
-- **行为 `logic/`**：纯 TS 无头可测。`page/XxxLogic.ts` 页面行为（与 `view/XxxView.ts` 同名前缀配对）、
-  `rooms/<玩法>/` 局内玩法域 ↔ 服务端 `rooms/`（`ballMove/` 是 demo 玩法名，fork 后改名）。
-- `logic-purity.test.ts` 机检 `logic/` 全目录禁 import `cc`/`fairygui-cc`/`db://fairygui-cc`，
-  以及**经 `view/` 间接引入**（view 静态依赖 fairygui，间接引入同等违规）。
-
----
-
-## 4. 页面生命周期：defineView + viewRegistry + ViewMgr
-
-页面**声明式注册**（借鉴 Sect-TsProject 的 initWidget）——元数据挂在注册表，`ViewMgr` 按元数据接管
-生命周期。业务层 ⛔ 不手工 `mountFullScreen`/`ensurePackages`/`setInputEnabled`。
-
-**新页面四步动线**：
-
-```
-① FairyGUI 编辑器出图 → 发布 bin 到 apps/Cocos/assets/resources/ui
-② npm run codegen:fgui -- <Pkg> <Comp>   生成 view/XxxView.ts（四个 AUTO 区块）
-   契约条目加进 fguiContracts.FGUI_CONTRACTS；新 View 加进 apps/client/tsconfig.json 排除清单
-   （⚠ 已知类型盲区：排除清单 + Cocos 侧 strict:false，视图绑定层只有 Creator 人工验证；
-   规划做最小 fairygui 桩逐步缩小清单，见 tsconfig 内 TODO）
-③ logic/page/XxxLogic.ts   写行为（同名前缀配对，无头单测）
-④ viewRegistry.ts   加一条 defineView（layer/fullscreen/onlyOne/permanent/interactive + load 闭包）
-⑤ npm run sync:client   灌入 apps/Cocos/assets/src，开一次 Creator 生成新 .ts 的 .meta
+apps/Cocos/
+├── assets/src/         apps/client/src 的生成镜像
+├── assets/resources/   场景与本地资源
+├── extensions/         Cocos 编辑器扩展
+└── settings/           工程设置
 ```
 
-打开 = `ViewMgr.open("Xxx")`（返回句柄）；关闭 = `handle.close()` 或 `ViewMgr.close("Xxx")`，
-⛔ **不直调 `view.dispose()`**（交互输入的恢复挂在关闭路径，直调会永久吞掉游戏触摸）。ensurePackages/
-挂载/分层/单例/常驻/交互输入全由注册表元数据接管；依赖包在条目 `sharedPkgs` 声明，`ViewMgr.open`
-前自动 ensurePackages（共享库全程常驻、⛔ 不许 removePackage）。
-⚠ **`sharedPkgs` 必须是页面 art 依赖的传递闭包**——fairygui 不自动加载依赖包，少一个跨包元素就**空白不
-渲染**（典型：`btn_login` 图标 `login_enterGame` 在 L10n_zh_hans，漏声明按钮就消失）；清单由 art XML 的
-`pkg=`/`ui://` 引用推导，`viewRegistry.test` 机检 `sharedPkgs ⊇ 闭包`。
+修改规则：
 
-守门 `viewRegistry.test.ts`：① 页面文件 ⇔ 注册表键；② 注册表 contract ⇔ FGUI_CONTRACTS 双向相等；
-③ Logic 配对文件存在；④ AUTO 区块与 `.fui` 同步；⑤ `sharedPkgs ⊇ art 依赖传递闭包。漏任何一步测试红。
+- `apps/client/src` 是源码真相。
+- `apps/client/src/shared` 禁止手改；改 `apps/shared/src`。
+- `apps/Cocos/assets/src` 整体禁止手改；运行 `npm run sync:client`。
+- `.meta` 与镜像一起提交，保持 UUID 稳定。
 
-### `interactive` 语义（引擎现实，选错必出事）
+## 3. View 与 Logic 分层
 
-fairygui 只有**一个全局 InputProcessor**：启用 = 全屏捕获（页面可点、但**背后游戏触摸被挡**）；
-禁用 = 整棵 FGUI 树无输入。所以 `interactive` 的判据是「页面有没有可点的东西」：
+### Logic
 
-- 有按钮/输入 → `interactive: true`（想「不挡游戏」做不到，这是引擎约束不是配置问题）；
-- 纯展示 HUD、要与战斗拖拽共存 → `interactive: false`（页面自身也收不到点击）。
+`logic/` 只能依赖 TypeScript、ES 标准库、shared 和显式注入的 port：
 
-### FairyGUI 常用 API 陷阱（无头 typecheck 抓不到，view/ 只 Creator 侧验）
+- 不 import `cc`。
+- 不 import `fairygui-cc`。
+- 不直接读写节点。
+- 不自行创建网络单例。
 
-- **列表项点击注册用 `list.on(Event.CLICK_ITEM, (item, evt) => {…}, this)`**（`Event` import 自
-  `db://fairygui-cc/fairygui.mjs`，回调首参 = 被点子项 `GObject`）。⛔ `list.onClickItem(cb, this)` 是**内部
-  处理器不是注册方法**——直接调它会走 `GObject.cast(evt.currentTarget)`，`evt` 变成你传的回调、`currentTarget`
-  为 `undefined`，运行时炸 `Cannot read properties of undefined (reading '$gobj')`。
-- 按钮点击才用 `btn.onClick(cb, this)`（这个是对的）；解绑对应 `off(Event.CLICK_ITEM, …)` / `offClick`。
-- **本 fairygui-cc 版只有 `.asCom` 一个类型转换 getter**，⛔ 没有 `.asTextField`/`.asList`/`.asLoader`/
-  `.asButton`/`.asRichTextField`…（读它们得 `undefined`，再 `.text`/`.url` 就崩，或 `&&` 短路成静默不渲染）。
-  取类型化子项用**泛型** `getChild<GTextField>("txt_x").text = …` / `getChild<GLoader>("ld_x").url = …`
-  （与 codegen AUTO BIND 同款，getChild 运行时返回的就是真实子类实例）。
-- **虚拟列表（`setVirtual()`）点项取索引**：`Event.CLICK_ITEM` 回调里 `getChildIndex(obj)` 是**渲染子索引**，
-  滚动后 ≠ 逻辑项索引——必须 `childIndexToItemIndex(getChildIndex(obj))` 转换后再索引数据数组。非虚拟列表无此问题。
+页面行为通过依赖注入连接 HTTP/RPC/View port，因此可在 Node 环境无头测试。
 
-### 铁律 10：FairyGUI 只走动态 import
+### View
 
-ViewMgr/FguiView 静态依赖 fairygui。`ViewMgr.open` 只允许在 `view/` 内部或动态 import 闭包
-（`const { ViewMgr } = await import("./view/ViewMgr")`）里调用；`logic/` 禁（logic-purity 机检），
-cc 场景组件也不许静态 import ViewMgr——否则把 fairygui 拉进 root 脚本静态依赖图，扩展没挂时连锁炸掉整个启动。
+`view/` 允许依赖 Cocos 与 FairyGUI，但职责受限：
 
----
+- 查找命名元素。
+- 绑定点击和列表回调。
+- 把展示数据搬进组件。
+- 把用户动作转发给 Logic。
 
-## 5. codegen：四个 AUTO 区块幂等重写
+业务判定、排序、时间规则、错误分支和网络编排不进入 View。
 
-`tools/fgui-codegen`（纯 Node 零依赖，无 fairygui-cc 运行时）：`parseFgui.ts` 解析组件 XML →
-`binding.ts` 按命名前缀生成绑定。
+## 4. 页面定义与生命周期
 
-**命名前缀 → fairygui-cc 类型**（真源 `binding.ts`）：`btn_`/`tge_`→GButton · `txt_`→GTextField ·
-`ld_`→GLoader · `ld3_`→GLoader3D · `lst_`→GList · `img_`→GImage · `pg_`→GProgressBar（extention=
-ProgressBar 组件引用）· `jb_`→GComponent（嵌套自定义组件，kit 无 UIObjectFactory 扩展机制，运行时
-就是 GComponent）；标签直接映射 text/richtext/image/loader/loader3D/list/graph(GGraph)/group(GGroup)/
-movieclip。无识别前缀的元素不生成字段（同宗 kimi 规范包另有 `sdr_/cb_/it_` 三前缀，等真用到再补齐）。
+页面由三部分组成：
 
-**四个 AUTO 区块**：`// #region AUTO <IMPORT|REQUIRED|FIELD|BIND> DONT CHANGE` …
-`// #endregion AUTO <KIND>`（结束标记带 KIND——通用 `#endregion` 会与业务代码折叠标记混淆而误吞代码）。
-区块内 = codegen 领地（`.fui` 变更后 `npm run codegen:fgui` 幂等重写，⛔ 手改）；区块外 = 业务代码
-领地（重写一字不动）。手改生成区或忘跑 codegen → `viewRegistry.test.ts` 恒等断言红。
+1. `fguiContracts.ts`：登记命名元素契约。
+2. `view/XxxView.ts`：结构绑定与手写接线。
+3. `viewRegistry.ts`：动态加载入口、包名、组件名、共享依赖和实例策略。
 
-命令：`npm run codegen:fgui -- <Pkg> <Comp> [ViewClass]`。测试：`npm run test:fgui`。
+打开页面：
 
----
+```ts
+await ViewMgr.open("Home", params);
+```
 
-## 6. 设计分辨率与设计师工作流
+不要从普通脚本静态 import `fairygui-cc` 或具体 View。所有 View 都通过 registry 的动态 import
+进入加载链，避免编辑器扩展尚未就绪时污染根脚本。
 
-**设计分辨率 750×1624 竖屏 + FIXED_WIDTH**（宽恒铺满、高随机型浮动 ≈1334~1730，全机型无黑边）。
-真源 `designSpec.ts`，与 `apps/Cocos/settings/v2/packages/project.json` 的 designResolution（fitWidth=true 烘焙值）、
-`Main.ts` 的 `setDesignResolutionSize` **三处必须一致**；⛔ 视图层禁写 640/1386、960×640 等旧稿魔法数。
-全屏 FGUI 页在 viewRegistry 声明 `fullscreen: true`（高浮动由 relation 吸收），贴顶 HUD 加
-`FguiView.safeTopInset()`。
+页面开发应遵守：
 
-**设计师侧**：只碰 `apps/art/fairygui`（`FairyGUI.fairy`），调排版/字号/颜色随意；⛔ **别改元素命名**
-（命名 = 契约，改了 `test:fgui` 契约测红）；⛔ **XML 只在编辑器里改**（手编文本会破坏编辑器内部 id 一致性，
-无法机检）。**控制器命名约定**：主状态控制器统一名 `view`、page 小驼峰英文，布尔控制器 page 用
-true/false，按钮自带的 `button` 控制器是保留名不挪用。逐组件出图 checklist 见
-[apps/art/fairygui/README.md](../apps/art/fairygui/README.md)。改完**发布 `.bin` + 图集到 `apps/Cocos/assets/resources/ui/`**——
-必须在 `resources/` 下（`UIPackage.loadPackage("ui/<Pkg>")` 无 bundle 参数固定走 resources bundle）。
-发布后先开一次 Creator 生成 `.meta`，连产物一起提交。公司标准组件库发布为 `ui/Original`，跨包用
-在 viewRegistry 条目 `sharedPkgs: ["ui/Original"]` 声明。引入旧稿坐标系的 FGUI 包源时先等比迁 750 系再发布 bin。
+- onlyOne 页面只创建一个实例。
+- 事件接线应幂等，关闭时释放监听和异步上下文。
+- 数据刷新与第一次 setup 分离。
+- detached Promise 必须显式处理错误。
+- 关闭页面后，迟到的 HTTP/RPC 结果不得继续更新 View。
 
-**FairyGUI 固定成本**（采购/升级须知）：官方对 Cocos 3.8 淡维护（`ccc3.0` 分支停在 2024-05），生产建议
-自维一份打了社区 3.8 补丁的 fork（mask 渲染/文本输入偏移/无扩展名 GLoader 等）；无官方小游戏支持声明，
-须早测真机；分辨率自适应直接吃 Cocos 的，⛔ 别用 `Director.setContentScaleFactor`（破 FGUI 布局）。
+### `interactive` 的含义
 
----
+- `interactive: true`：根组件参与命中测试，适合模态页和整屏页面。
+- `interactive: false`：根组件不阻挡背后的输入，适合纯展示层。
 
-## 7. 网络通道面（`net/`，两端映射）
+这不是视觉属性。选择错误会导致点击穿透或玩法输入被整屏 UI 吞掉。
 
-| 客户端 | 服务端 | 语义 |
-|---|---|---|
-| `RoomClient.ts` | `rooms/`（GameRoom） | 实时房：join / 移动输入 / 状态同步（fire-and-forget） |
-| `WebSocketClient.ts` | `websocket/`（ws-RPC） | 单次请求-响应：`rpc` / `rpcIdem` / `onPush`（信封 id 配对） |
-| `http/account.ts` / `area.ts` | 独立 WebPlatform Public HTTP | 必填 `portalUrl`；v1 登录 + GET 选服目录，Bearer 自动附加 |
-| `http/notice.ts` 等 | 游戏服 `http/` | 游戏业务 HTTP；跟随所选服 `gameHttpUrl` |
-| `serverSession.ts` | （无，纯客户端状态） | 当前区服 + `servers/myServerIds/hash`；大厅写，Main 读 `gameHttpUrl` |
+## 5. FairyGUI codegen
 
-- **WebSocketClient**：`rpc<T>(type, payload)` 按 shared 契约推导返回类型；**写接口一律 `rpcIdem`**
-  （clientReqId 生成一次、重试复用，失败回填 `err.clientReqId`）；`onPush` 订阅服务端唤醒式推送。
-  join/leave 有掉线窗口保护 + room 身份守卫（防旧连接迟到事件误清新房）。
-- **RoomClient**：物理连接槽 + ownership 租约；仅 endpoint/token/sId 等复用身份一致的 join 才合流，
-  旧世代释放只减自己的 owner，最后一个 owner 才关闭精确 room。leave 停自动重连 + 超时兜底，
-  onDrop/onLeave 以 slot+room 守卫；`Main` 的消息/Schema 回调再以 gen+ownership+room 守卫，
-  旧房在 leave 等待窗内的迟到回调不能污染新一轮 ECS/RTT。`dropping` 状态用于掉线窗口暂停
-  心跳/方向上发，防 SDK 重连补发过期包。
-- 消息名/协议类型一律 import 自 `shared`（铁律 6）。
-- WebPlatform 路径与类型来自 `shared/generated/webplatform`（源为精确锁定的
-  `@gono/webplatform-contract`）；生成目录禁手改，升级后跑 `npm run sync:webplatform-contract`。
+命令：
 
----
+```bash
+npm run codegen:fgui -- <Package> <Component>
+```
 
-## 8. 微信小游戏踩坑实录（均已实机验证并修复，改动前先读）
+生成器只改 View 中的四个 AUTO 区块：
 
-兼容补丁集中在 `core/wechat-compat.ts`（上游依据 colyseus/colyseus#945；⚠ import 顺序敏感——
-必须先于 Colyseus SDK 首次使用执行，`Main.ts` 里保持最前）：
+- import
+- 字段
+- bind
+- apply
 
-1. **SDK 在插件求值阶段就捕获了 `globalThis.WebSocket`**（插件脚本先于一切项目脚本），事后替换全局
-   WebSocket 对 SDK 无效。构造签名修复必须打在 **`wx.connectSocket` 层**（清洗 protocols，否则 SDK 的
-   Node 签名 options 对象会被适配层当子协议传给 wx，握手静默失败）。
-2. **微信开发者工具把全局 `WebSocket` 设为只读**，严格模式下直接赋值抛 TypeError 炸掉启动。所有全局
-   写入必须走 `setGlobal()` 容错，关键补丁（send 原型转换）排在可能失败的操作之前。
-3. 微信缺 fetch/Headers/URL/URLSearchParams/TextEncoder/Blob，补丁已提供；⛔ 不要用 npm 的
-   url-polyfill（依赖 DOM，小游戏里报 `a.checkValidity is not a function`）。
-4. `WebSocket.prototype.send` 补丁里 `data.slice().buffer` 的 `slice()` 不能省——Uint8Array 可能是带
-   byteOffset 的视图，直接取 `.buffer` 会发错数据。
-5. 兼容层里 ⛔ 不用 `flatMap`（ES2019，超 ES2017 下限，铁律 4）——老 JSCore 会在建连路径的兼容层自身抛错。
-6. 开发者工具报 `webapi_getwxaasyncsecinfo:fail -80002` 是**工具自身噪音**（测试 appid 后台查询失败），忽略。
-7. 连 localhost 需关开发者工具的合法域名校验。该开关在**构建产物**的 `project.private.config.json` 里，
-   重新构建会重置——已用构建模板 `apps/Cocos/build-templates/wechatgame/project.private.config.json`（urlCheck:false）
-   每次构建自动拷入。真机要求 wss/https 且域名过白名单。
+AUTO 区块外是手写区。重复执行应得到稳定结果。
 
----
+命名元素必须先进入 `view/fguiContracts.ts`。跨包组件依赖通过 `viewRegistry.sharedPkgs` 声明，
+不要在页面中临时加载隐式依赖。
 
-## 9. 构建与其他
+常见约束：
 
-- **微信构建**：构建面板选「微信小游戏」，appid 在面板填（存本机 `profiles/`，不进仓库）。
-- **主包 4MB 限制**：`colyseus.js` 约 440KB。`npm run report:size` 出主包/分包体积报告（3.5MB 触发水位
-  提示走资源分包）。
-- **ECS 单例**：`GameECS.inst` 持有 bitECS world 与 sessionId→eid 表；场景重载重复建实例会让旧房间回调喂旧 world（幽灵 isSelf）。
-- **程序化渲染节点**：Cocos `new Node()` 默认 DEFAULT layer 且不继承父 layer，UI 相机会剔除它——
-  必须手动设 `node.layer`，否则画面空白无报错。
+- `GLoader` 使用 `url`，不是引擎 Sprite API。
+- Controller 切页使用约定的 page name。
+- 列表 item、loader URL、relation 和命名元素都属于结构契约。
+- FGUI 自身包是 required；加载失败应返回可见的开发错误，而不是继续生成半空页面。
 
----
+## 6. 设计分辨率与资源导出
 
-## 10. 迁移页面的一次性手动步骤（FGUI 发布 + Cocos 导入）
+设计分辨率在三处保持一致：
 
-登录/选服/公告/Home/Confirm 的**代码、契约、服务端、logic/单测已就绪并全绿**，但两件必须在编辑器里做
-（`.bin` 是 FairyGUI 编辑器编译产物、`.meta` 由 Cocos 生成，无法脚本化）：
+- shared 常量。
+- Cocos 项目设置。
+- FairyGUI 工程设置。
 
-1. **FairyGUI 编辑器**：打开 `apps/art/fairygui/FairyGUI.fairy`，把这 12 个包发布 `.bin`+图集到
-   `apps/Cocos/assets/resources/ui/`：`View_AreaList_Login`/`View_AreaList_AreaList`/
-   `View_AreaList_LoginNotice`/`View_Home_Home`/`View_SharedWidget_Confirm` + 依赖库
-   `Common_Btn`/`Common_ComboBox`/`Common_Component`/`Common_RGBA`/`Dynamic_Login`/`Dynamic_Spine`/
-   `L10n_zh_hans`。✅ `View_AreaList_LoginNotice` 的 `jb_tabbar` 已同步源项目最新版：改用**本包内建**
-   `CompTab`/`CompTabItem`（+`RGBA/b6_png`、`b7_png`），不再依赖缺失的外部 `GameTabBar1`；公告页改为
-   **顶部标签（每条公告一个）+ `txt_content` 正文内联切换**（原 `lst_notice` 列表已废弃）。
-2. **Cocos Creator**：先 `npm run sync:client` 灌入 `apps/Cocos/assets/src`，再打开 `apps/Cocos` 生成新 `.ts` 的 `.meta`（view/logic/net 下的迁移文件已手工建 meta，
-   编辑器若微调 uuid，diff 确认后提交即可）；把默认场景的 Canvas 挂 `Main.ts`（Main 现以 **Home 为默认**
-   起大厅流程，登录→选服→Home，Home 点「进入游戏」进 ballMove demo 房）。
+资源动线：
 
-发布前无 `.bin` 时，`ViewMgr.open` 会 warn「包未加载」并降级空占位（面板不炸，其余功能不受影响，铁律 10）。
+```text
+apps/art/fairygui 中修改设计源
+  → 在 FairyGUI 编辑器中导出 .bin 与图集
+  → 输出到 apps/Cocos/assets/resources/ui
+  → 打开 Cocos 生成或复用 .meta
+  → 运行 codegen 和本地契约测试
+```
+
+“导出”在本文中只指把设计源转换为本地开发资源。
+
+## 7. 网络层
+
+### RoomClient
+
+负责有状态房间：
+
+- join 与连接复用。
+- ownership/generation 守卫。
+- 输入发送。
+- Schema 状态监听。
+- drop/reconnect/leave 事件。
+
+复用判据必须包含 endpoint 和完整 join options；旧连接的迟到事件无权修改新 slot。
+
+### WebSocketClient
+
+负责 Lobby RPC：
+
+- `rpc` / `rpcIdem`。
+- timeout 与 pending 清理。
+- push 分发。
+- session 错误归类。
+
+写请求的 `clientReqId` 只生成一次，重试复用同一个 ID。
+
+### HTTP
+
+HTTP 底座在 `core/http.ts`，业务调用在 `net/http/`。外部返回值必须在边界校验，不能把
+`JSON.parse(...) as T` 当成数据可信证明。
+
+外部身份示例只使用开发契约。
+
+## 8. 本地检查
+
+```bash
+npm run typecheck
+npm run verify:sync
+npm run test:fgui
+npm run verify:ecs
+```
+
+- `typecheck` 检查 shared/server/client 与镜像。
+- `verify:sync` 检查漂移、孤儿和 `.meta`。
+- `test:fgui` 检查 FGUI 结构、registry、Logic purity 和客户端无头行为。
+- `verify:ecs` 检查 vendored bitECS 文件。
+
+Creator 编辑器预览用于补充验证引擎绑定、资源导入和页面交互；它仍然是开发活动。
+
+## 9. 新页面开发清单
+
+1. 在 FairyGUI 编辑器中修改并导出组件。
+2. 更新 `fguiContracts.ts`。
+3. 运行 `codegen:fgui`。
+4. 在 View 手写区接入必要事件。
+5. 在 Logic 中实现行为并注入依赖。
+6. 登记 viewRegistry 与共享包依赖。
+7. 增加无头测试。
+8. 运行 `sync:client`。
+9. 在 Cocos 中本地预览。
+
+## 10. 范围
+
+现有场景、开发账号、兼容代码和演示页面只用于本地开发；完整项目边界见根 README。

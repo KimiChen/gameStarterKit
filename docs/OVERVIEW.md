@@ -1,184 +1,156 @@
 # 技术总览
 
-本项目的整体设计意图——把客户端、游戏服、共享层以及外部账号服务边界放在一起看，说清「为什么这样搭」。
-分端细节见 [CLIENT.md](CLIENT.md)、[SERVER.md](SERVER.md) 与 [WEBPLATFORM.md](WEBPLATFORM.md)；
-最短上手见根 [README.md](../README.md)。
+> 本文只描述 gameStarterKit 在**开发阶段**提供的代码结构、契约和本地验证方式；完整范围见
+> [根 README](../README.md#项目边界)。
 
----
+## 1. 定位
 
-## 1. 一句话定位
+gameStarterKit 是客户端、服务端和 shared 共同演进的 TypeScript 游戏开发骨架：
 
-一个可以直接 fork 的**微信小游戏骨架**：Cocos Creator 3.8.8 客户端 + Colyseus 0.17 游戏服 +
-零依赖双端共享层，账号/登录/选服依赖独立 `gono-webplatform` HTTP 服务。骨架自带一套
-「类型安全 + 机检守门」的开发流水线——协议、公式、错误码单源，
-新增功能有固定动线，约定尽量用机器（测试/启动校验/类型系统）而不是口头纪律来保证。
+- Cocos Creator 工程负责编辑器、场景和资源。
+- `apps/client` 负责客户端游戏代码。
+- `apps/server` 负责 Colyseus 房间、RPC 和示例数据逻辑。
+- `apps/shared` 负责两端共同使用的协议、错误码、公式和常量。
+- `apps/art` 负责 FairyGUI 设计源。
+- 外部身份服务只通过锁定的 HTTP 契约参与本地示例链路。
 
-当前玩法是 **demo**（小球移动 + 技能结算），服务端框架是**生产级**（源自公司 Arthur 项目 M0–M9，
-已停止回流、独立演进）。fork 后把 demo 换成真实玩法即可。
+当前 `ballMove` 是演示玩法，不是通用玩法实现。框架的可复用部分是目录边界、同步工具、契约、
+网络接缝、视图组织和服务端一致性原语。
 
----
+## 2. 目录与源码真相
 
-## 2. 本仓包与外部服务（引擎壳与游戏代码分离，对标 sect）
+| 路径 | 角色 | 修改方式 |
+| --- | --- | --- |
+| `apps/shared/src` | shared 源码真相 | 直接修改后运行 `sync:shared` |
+| `apps/client/src` | 客户端源码真相 | 直接修改后运行 `sync:client` |
+| `apps/client/src/shared` | shared 的客户端镜像 | 禁止手改 |
+| `apps/Cocos/assets/src` | client 的 Cocos 镜像 | 禁止手改 |
+| `apps/Cocos/assets/resources` | Cocos 本地资源 | 由编辑器或资源工具生成 |
+| `apps/art/fairygui` | FairyGUI 设计源 | 在 FairyGUI 编辑器中修改并导出 |
+| `apps/server/src` | 服务端源码 | 按目录登记点扩展 |
 
-| 包 | 是什么 | 运行/构建方式 |
-|---|---|---|
-| `apps/shared` | 双端共享层：协议类型、纯公式、常量 | **零依赖纯 TS**；`npm run sync:shared` 复制进客户端 |
-| `apps/server` | Colyseus 0.17 服务端 | tsx 直跑 TS（Node ≥ 22），workspace 直接依赖 shared 源码 |
-| `apps/client` | 纯 TS 游戏代码工程（源码唯一真相；logic/shared/bitecs 引擎无关，view/Main/net 绑 cc·fairygui·wx·Colyseus） | `npm run sync:client` 灌入 `apps/Cocos`；无头 typecheck/单测 |
-| `apps/Cocos` | Cocos Creator 3.8.8 工程壳 | 编辑器构建；**不在 npm workspaces**（Cocos 要自己的目录结构） |
-| `apps/Unity` | Unity 工程（骨架） | 待建，规划走 pyts 类路线消费 `apps/client` 的引擎无关子集 |
-| `apps/art/fairygui` | FairyGUI 编辑器工程 | 设计师产 UI 包，发布 `.bin` 到 `Cocos/assets/resources/ui` |
+两级同步链：
 
-`gono-webplatform` 是**独立 Git 仓、独立镜像、独立账号库**，不算本仓 workspace。它对客户端提供
-Public HTTP，对游戏服提供 Internal HTTP，对 GM 工具提供 Admin HTTP；本仓只精确锁定并消费
-`@gono/webplatform-contract`。旧 `apps/WebPlatform` 不是运行或开发入口，也不得被源码 import。
+```text
+apps/shared/src
+  → apps/client/src/shared
+  → apps/Cocos/assets/src/shared
 
-**为什么共享代码用「复制同步」而不是 npm 包 / 符号链接 / import map：** 符号链接有 Cocos 编辑器
-确认的资源刷新 bug、且会把 `.meta` 写进共享源码目录；import map 是实验特性，对 assets 外目标和
-小游戏构建行为未文档化。复制同步后是普通项目脚本，**任何平台构建 100% 兼容**。服务端则通过
-workspace 直接吃 `@game/shared` 源码，无需复制。
-
----
-
-## 3. 贯穿全项目的设计原则
-
-### 3.1 单一真源 + 双端契约
-
-**消息名、协议类型、玩法公式、错误码，全部在 shared 定义一次，两端 import 使用。**⛔ 不手写协议
-字符串、不复制公式。这是「铁律 6」的核心，避免的是双端协议悄悄漂移。
-
-- **ws-RPC 契约**：`shared/protocol/lobbyRpc/`——路由名（`as const` 表）+ 每接口 Req/Res 接口 +
-  计算键 Map（名字与类型物理绑定）。信封 `IRpcEnvelope`/`IRpcReply`、错误码 `RPC_ERR_CODES` 也在这里，
-  服务端 `dispatcher`/`errors` **直接别名引用**（Arthur 停回流后单源合一，无镜像可漂移）。
-- **房间协议**：`shared/protocol/messages.ts`（C2S/S2C 枚举 + payload 接口）、`state.ts`
-  （`IGameRoomState` 纯接口，镜像服务端 Schema——保持 shared 零依赖，客户端靠反射握手解码）。
-- **玩法公式**：`shared/logic/`（伤害/体力/随机数/时间——双端同源，服务端权威、客户端预表现同一套）。
-- **WebPlatform HTTP 契约**：独立仓 OpenAPI 生成 `@gono/webplatform-contract`；本仓
-  `sync:webplatform-contract` 将零依赖类型/路径常量镜像到 `shared/generated/webplatform/`，
-  再沿现有同步链进入客户端。⛔ 不在本仓复制账号领域实现或手写第二份路径。
-
-### 3.2 机检优先于口头纪律
-
-能让机器抓的约定，就不靠人自觉。全项目的守门机制：
-
-| 守门 | 抓什么 | 时机 |
-|---|---|---|
-| ws-RPC loader 启动校验 | 端点文件集合 ⇔ shared 路由全集 ⇔ 文件路径 三方相等 | 服务端启动即 throw |
-| `lobby-rpc-contract.test.ts` | 同上 + idem 路由必带 clientReqId | CI |
-| `logic-purity.test.ts` | 客户端 `logic/` 全目录禁 import cc/fairygui | CI |
-| `viewRegistry.test.ts` | 页面文件 ⇔ 注册表 ⇔ 契约 ⇔ AUTO 区块 四重相等 | CI |
-| `defineRpc` 类型胶水 | schema/handler 与 shared 契约不符不过编译；idem⇔clientReqId | typecheck |
-| `verify:ecs` | ECS 库（bitECS）12 文件字节锁定 | 手动/CI |
-| `verify:sync` | 两级镜像新鲜度：漂移/孤儿/入库文件缺 `.meta` | typecheck 尾部 + CI |
-| `serverImportBan.test.ts` | 客户端 `src/` 全目录禁 import colyseus npm 包（铁律 5） | CI |
-| `protocolFingerprint.test.ts` | shared/protocol 内容 ⇔ 指纹钉档 ⇔ PROTOCOL_VERSION（协议改动必须显式重钉，防静默漂移） | CI |
-| `vendorLock.test.ts` | vendored 版本五方一致（fetch 钉版 ⇔ 产物 ⇔ lock ⇔ 双端 major.minor ⇔ 文档）+ 产物 sha256 内容锁（vendor.sha256） | CI |
-| `lib-import-ban.test.ts` | 游戏服生产源码禁旧 WebPlatform 包/源码目录/运行期模式开关/池注入 | CI |
-| `verify:webplatform-contract` | 已安装契约包版本/hash ⇔ shared 入库生成物 | typecheck 前置 + CI |
-| `[rpc-budget]` 探针 | handler 同步 CPU 超预算（铁律 11） | 运行时告警 |
-| `docs/server/09` → `09·XX` | 服务端写路径 63 条规则（见 SERVER.md） | PR 审查 + 代码注释锚点 |
-
-> ⚠ CI 定义（`.github/workflows/ci.yml`）已随 M12 拆仓提交移除：上表标「CI」的守门目前只在
-> 本地命令/测试链执行（`typecheck`、`test:fgui`、服务端 `test`/`test:int` 等）。
-> 恢复 CI 时从 git 历史捞回 `ci.yml` 挂回即可。
-
-这套「约定即机检」的哲学贯穿两端：服务端 loader、客户端 viewRegistry、双端契约测试，都是同一个物种。
-
-### 3.3 玩法概念的去处（两端对称）
-
-一个玩法功能拆到哪，两端各有一张固定映射：
-
-| 概念 | 服务端 | 客户端 |
-|---|---|---|
-| 公式（双端同源） | `shared/logic/` | `shared/logic/`（生成物） |
-| 无状态单次请求-响应 | `websocket/<域>/<接口>.ts`（ws-RPC） | `net/WebSocketClient.ts` |
-| 有状态实时玩法（Schema 同步） | `rooms/`（GameRoom + Schema） | `net/RoomClient.ts` + `logic/rooms/<玩法>/` |
-| 账号 Public HTTP（登录/选服） | 独立 `gono-webplatform` | `net/http/account.ts` / `area.ts`（必填 `portalUrl`） |
-| 游戏服 HTTP（支付/utility） | `http/<域>/<接口>.ts` | `net/http/<域>.ts` |
-| 玩家数据 | `player/userStore` | — |
-| UI 页面 | — | `view/XxxView.ts` + `logic/page/XxxLogic.ts` |
-
-**端点层的分界判据**：都走 websocket，但**有 Schema 状态同步的实时玩法 → `rooms/`；无状态单次
-请求-响应 → `websocket/`**（按「有无状态同步」分，不按协议分）。
-
-### 3.4 目录语法两端同构
-
-两端都遵循**「根层文件 = 入口与全局真源；子目录 = 层/域」**，且都区分「不可动区 / 少动区 / 日常区」：
-
-- 服务端 `src/` 根 = `rooms/ websocket/ http/ player/ core/` 五目录 + 入口两文件；
-- 客户端 `apps/client/src/` 根 = `view/ logic/ net/ core/ lib/ shared/` 六目录 + `Main.ts`/`designSpec.ts`
-  （`sync:client` 灌入 `apps/Cocos/assets/src/` 后由 Creator 编译）；
-- 两端的 `lib/`+`shared/`（客户端）、`core/`（两端）是"少动/不可动"区，其余是日常主战场。
-
----
-
-## 4. 一个功能从零到通的标准动线
-
-以「加一个 ws-RPC 接口」为例（最高频的一类）：
-
-```
-① shared/protocol/lobbyRpc/<域>.ts  加路由名 + Req/Res + Map 条目
-② npm run sync:shared   生成物同步进客户端（已级联 sync:client，连 .meta 提交）
-③ 服务端建端点文件 websocket/<域>/<接口>.ts（defineRpc 包装，loader 自动注册）
-④ 登记点（若需）：docs 07 表 → core/infra/config·keys → shared RPC_ERR_CODES
-⑤ 客户端调用 WebSocketClient.rpc(域Rpc.接口, payload)   —— 类型自动推导
+apps/client/src
+  → apps/Cocos/assets/src
 ```
 
-**net/、dispatcher/loader、Main.ts 永远不碰。** 详细分端动线见各自文档。
+同步脚本检查漂移、孤儿、`.meta` 和异常大批删除。镜像存在的目的，是让纯 TypeScript 代码可无头
+验证，同时让 Cocos 工程持有稳定 UUID。
 
-若改的是 WebPlatform API，动线是：
+## 3. 设计原则
 
+### 3.1 单一真源
+
+- 消息名、请求/响应类型、状态镜像、错误码和公式进入 shared。
+- 服务端与客户端从 shared import，不复制字符串或接口。
+- 外部身份 HTTP 类型来自锁定的 `@gono/webplatform-contract` 生成物。
+- Colyseus state 字段改变时，同步更新 shared state 镜像与协议指纹。
+
+### 3.2 约束可执行
+
+| 约束 | 本地检查 |
+| --- | --- |
+| shared/client/Cocos 镜像一致 | `npm run verify:sync` |
+| shared 零依赖与客户端 Logic 纯净 | `npm run typecheck`、相关单测 |
+| bitECS 源码保持锁定 | `npm run verify:ecs` |
+| FGUI 元素、registry 与异步边界 | `npm run test:fgui` |
+| 服务端路由、协议与一致性规则 | `npm --workspace @game/server run test` |
+| 外部身份契约版本与生成物一致 | `npm run verify:webplatform-contract` |
+
+这些命令是本地开发验证入口。
+
+### 3.3 视图与行为分离
+
+客户端分成：
+
+- `view/`：允许依赖 `cc` 和 `fairygui-cc`，只做节点绑定、事件转发和数据搬运。
+- `logic/`：不依赖引擎/UI，承载页面行为和玩法规则，便于无头测试。
+- `net/`：房间、RPC 和 HTTP 的传输适配。
+- `core/`：ViewMgr、HTTP 底座和宿主环境桥。
+
+新增页面通过 `defineView + viewRegistry + ViewMgr.open` 接入，不向通用入口堆静态 import。
+
+### 3.4 数据正确性优先
+
+服务端示例坚持：
+
+- MySQL 与 Redis 的权威边界明确。
+- 同一用户写入串行化，并使用 lock/fence 防止过期持有者提交。
+- 可重试写入使用稳定幂等 ID。
+- 跨存储修改使用 outbox/补偿接缝，避免裸双写。
+- Redis key 与 MySQL 查询显式携带区上下文。
+- 大规模同步计算不放在网关 handler 中。
+
+这些是开发实现应保持的不变量。
+
+## 4. 标准开发动线
+
+### 4.1 双端功能
+
+```text
+1. 在 apps/shared/src 定义协议、错误码或公式
+2. npm run sync:shared
+3. 在 apps/server/src/websocket 或 http 增加 endpoint
+4. 更新服务端登记点、key/config 与测试
+5. 在 apps/client/src/logic 增加行为
+6. 需要页面时通过 codegen 创建 View 并登记 viewRegistry
+7. npm run sync:client
+8. 运行本地类型检查和相关测试
 ```
-独立仓 OpenAPI/实现/契约测试 → 发布精确版本 @gono/webplatform-contract
-→ 本仓升级依赖 → npm run sync:webplatform-contract
-→ game HTTP client / client Public 调用适配 → typecheck + 双仓 contract test
+
+### 4.2 FairyGUI 页面
+
+```text
+FairyGUI 编辑设计源
+  → 导出 .bin 与图集到 Cocos resources
+  → codegen View AUTO 区块
+  → 编写 Logic 和手写绑定区
+  → 本地契约测试与 Creator 预览
 ```
 
-账号 schema/migration 只在独立仓演进；本仓 `db:bootstrap` 永远只初始化游戏库。
+### 4.3 外部身份契约
 
----
+```text
+更新精确锁定的契约依赖
+  → npm run sync:webplatform-contract
+  → 检查生成物 diff
+  → 更新本仓 HTTP 消费代码和本地测试
+```
 
-## 5. Colyseus 0.17 与旧资料的差异（网上教程大多是 0.16，别照抄）
+外部契约的生成、服务实现和渠道身份能力不属于本仓。
 
-- 服务端入口是 `defineServer({ rooms, express })` + `defineRoom(RoomClass)`；
-  `initializeGameServer`/`initializeExpress`/`gameServer.define()` 是 0.16 API，已废弃。
-- Room 状态用类属性 `state = new MyState()`（不再是 `Room<State>` 泛型 + `setState`）；创建后禁整体重赋值。
-- 消息处理用 `messages = { [C2S.Xxx]: (client, msg) => {} }` 属性。
-- `onLeave(client, code)` 第二参是数字关闭码（不是 0.16 的 consented 布尔），用 `code === CloseCode.CONSENTED` 判断。
-- 客户端包已从 `colyseus.js` 更名为 `@colyseus/sdk`（colyseus.js 止步 0.16.22 已归档，与 0.17 服务端不兼容）。
-- schema v4 仍用传统 `@type` 装饰器：服务端 tsconfig 必须 `experimentalDecorators: true` 且
-  **`useDefineForClassFields: false`**（否则装饰字段静默失效，状态不同步且无报错）。
-- 双端 Colyseus 版本 major.minor 必须一致（当前 0.17.x）。
+## 5. Colyseus 0.17 约定
 
----
+- 客户端使用 `@colyseus/sdk` UMD 全局 `Colyseus`，不得 import 服务端包。
+- 服务端使用 Colyseus 0.17 与 `moduleResolution: Bundler`。
+- 两端 Colyseus major.minor 保持一致。
+- Room 用于状态同步；Lobby websocket endpoint 用于显式 RPC。
+- 客户端连接复用必须同时核对 endpoint、区号、token 和完整 join options。
+- 相对 import 不带 `.ts` / `.js` 扩展名。
 
-## 6. 全仓库铁律速查（12 条）
+`@colyseus/sdk` 是通用游戏网络库。
 
-违反会出隐蔽问题。分端细节在各文档，这里是索引：
+## 6. 开发边界速查
 
-1. `apps/client/src/lib/bitecs/` 12 个 .ts **禁改**（字节锁定，`verify:ecs`；偏差见 lib README）。
-2. `apps/client/src/shared/` 是 `sync:shared` 生成物，**禁手改**（改 `apps/shared/src` 再同步；
-   `apps/Cocos/assets/src/` 整份是 `sync:client` 生成物，连 `.meta` 提交）。
-3. **相对导入不带扩展名**（Cocos 要求；服务端因此用 `moduleResolution: Bundler` + tsx）。
-4. **shared 零依赖**：只用 TS 语言 + ES 标准库；禁 npm 包/Node API/cc/wx/DOM；禁 `const enum`；lib 钉 ES2017。
-5. 客户端只用 `@colyseus/sdk`（全局 `Colyseus`），**禁 import 服务端包** `colyseus`/`@colyseus/core`。
-6. **消息名/协议类型/公式一律 import 自 shared**，不手写不复制。
-7. 双端 Colyseus **版本 major.minor 一致**。
-8. 服务端写路径**对照 09 规则**（见 SERVER.md 的 63 条规则目录；代码注释 `09·XX` 即编号）；新增常量/key/错误码先进 07 表再进 `core/infra`。
-9. **客户端视图/逻辑二分**：视图 `view/`（依赖 cc/fairygui）、行为 `logic/`（禁 cc/fairygui，`logic-purity` 机检）。
-10. **FairyGUI 只走动态 import**（`ViewMgr.open`/`import("./view/XxxView")`），fairygui 不进任何常规脚本的静态依赖图。
-11. **网关进程禁重计算**（单线程：同步 CPU 卡一次 = 全服冻结）；重计算卸载到 `core/compute/tasks/`（worker 池）或独立进程。
-12. **WebPlatform HTTP-only**：游戏服无账号库凭证、无本地账号实现；客户端 `portalUrl` 必填且不回退；
-    GM 写账号权威走 Admin HTTP，踢在线再逐游戏节点确认。
+1. bitECS 锁定目录不修改。
+2. shared/client/Cocos 生成镜像不手改。
+3. shared 不依赖 Node、DOM、引擎或渠道平台对象。
+4. 消息、类型、公式和错误码来自 shared。
+5. View/Logic 保持分层。
+6. FairyGUI 只通过动态 import 进入页面打开链。
+7. 服务端写路径遵守 lock/fence/idempotency/outbox 约束。
+8. 外部身份服务只通过 HTTP 契约消费，不导入业务源码。
 
----
+## 7. 当前状态
 
-## 7. 现状与边界
-
-- **玩法是 demo**：`ballMove`（小球移动）+ 技能结算；本地登录走独立 WebPlatform
-  `POST /v1/sessions/dev`，微信登录走 `/v1/sessions/wechat`，mock 层已移除。完整本地链路需要
-  游戏栈与 WebPlatform 空账号库同时就绪。
-- **服务端框架是生产级**但部分能力**代码就绪、水位/里程碑未全启用**（如冷档冻结按内存水位启用）。
-  排行榜演示已移除（M7 编号保留）。里程碑地图见 SERVER.md。
-- **Arthur 专属未移植件**：M4 存量迁移 ETL、wxLogin 存量账号绑定协议——本项目无旧账号体系，N/A。
-- **验证基线**（近期全绿）：见 [CLAUDE.md](../CLAUDE.md) 现状段（⛔ 本行不再重复计数）。
+- 本仓包含可本地运行的 Lobby、GameRoom、ballMove、技能结算、页面和数据读写示例。
+- 本地开发账号通过外部服务的 dev session 契约创建。
+- Unity 目录只是研究占位。
+- 所有演示 endpoint、配置和页面只用于开发与验证。
+- 完整项目边界以根 README 为准。

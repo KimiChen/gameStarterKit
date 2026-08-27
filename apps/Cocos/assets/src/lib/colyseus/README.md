@@ -6,8 +6,7 @@
 ## 为什么用 UMD 插件而不是 npm 导入
 
 `@colyseus/sdk` 的 ESM 构建（build/index.mjs）含裸导入 `ws`、`@colyseus/shared-types` 等，
-Cocos 的构建管线（尤其微信小游戏）解析不可靠；自包含 UMD 是 Colyseus 官方文档推荐的
-Cocos 集成方式（维护者确认：不再有 Cocos 专用构建，直接用 dist 包）。
+Cocos 工程对这些裸依赖的解析不稳定；因此使用自包含 UMD，并通过手写全局声明限制调用面。
 参考：https://docs.colyseus.io/getting-started/cocos
 
 ## 产物已入库，升级用 `npm run fetch:colyseus`
@@ -23,8 +22,4 @@ Cocos 集成方式（维护者确认：不再有 Cocos 专用构建，直接用 
 升级 = 改 `scripts/fetch-colyseus.mjs` 顶部版本号与 integrity 哈希（连同服务端依赖）
 再跑一次，然后把 diff 提交入库。
 
-## 微信小游戏注意
-
-微信环境缺少 Headers / URL / URLSearchParams / TextEncoder，且 wx 的 WebSocket
-只接受 string | ArrayBuffer——这些兼容补丁在 `src/core/wechat-compat.ts`
-中统一处理（必须在任何 Colyseus 调用之前导入），参考 colyseus/colyseus#945。
+`@colyseus/sdk` 在本仓中只作为通用网络客户端库使用。

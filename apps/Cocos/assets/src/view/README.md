@@ -4,7 +4,7 @@
 
 ## 新页面四步动线
 
-1. FairyGUI 编辑器出图（`apps/art/fairygui`），发布 bin 到 `assets/resources/ui`
+1. FairyGUI 编辑器出图（`apps/art/fairygui`），导出 bin 到 `assets/resources/ui`
 2. `npm run codegen:fgui -- <Pkg> <Comp>` 生成 `XxxView.ts`（四个 AUTO 区块）；
    契约条目加进 `fguiContracts.FGUI_CONTRACTS`；新 View 文件加进 apps/client/tsconfig.json 排除清单
 3. `logic/page/XxxLogic.ts` 写行为（同名前缀配对，无头单测）
@@ -40,4 +40,4 @@ fairygui 只有一个全局 InputProcessor：**启用 = 全屏捕获（页面可
   依赖 fairygui 的文件（FguiView/ViewMgr/viewRegistry/各 XxxView）在 apps/client/tsconfig.json
   排除清单里，Creator 侧验证；
 - fairygui 不得进任何常规脚本的静态依赖图（铁律 10）：页面加载只走 viewRegistry 的
-  load 动态 import 闭包（它同时是将来分包的加载点，docs/CLIENT.md 方案 4）。
+  load 动态 import 闭包。

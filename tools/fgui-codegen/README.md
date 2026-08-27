@@ -1,6 +1,6 @@
 # fgui-codegen — FairyGUI 结构契约 + 视图脚手架工具（无头）
 
-FairyGUI 方案里"**结构契约无头测**"的核心（见 [docs/CLIENT.md](docs/CLIENT.md) §4）。
+FairyGUI 方案里"**结构契约无头测**"的核心（见 [docs/CLIENT.md](../../docs/CLIENT.md) §4）。
 纯 Node、零依赖、无 `fairygui-cc` 运行时——只**解析 FairyGUI 编辑器的组件 XML**（`apps/art/fairygui/assets/<Pkg>/<Comp>.xml`）：
 
 - `parseFgui.ts` — 组件 XML → displayList 直接子元素清单（list 的 item/relation 等嵌套不计）。

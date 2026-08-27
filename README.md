@@ -1,111 +1,133 @@
 # gameStarterKit
 
-微信小游戏 monorepo 骨架：**Cocos Creator 3.8.8 客户端 + Colyseus 0.17 游戏服 + 零依赖双端共享层**。
-账号、登录与选服由独立 Git 仓 **`gono-webplatform`** 通过 HTTP 提供。
-一套仓库同时给客户端、服务端、共享协议提供类型安全的开发流水线。
+基于 **Cocos Creator 3.8.8 + Colyseus 0.17 + TypeScript** 的游戏开发期 monorepo 骨架。
+仓库提供客户端、服务端和共享层的代码组织、契约同步、示例玩法、本地调试与本地测试基础。
 
-> 这是「程序员必读」的最短上手页。设计意图与深入细节见 [`docs/`](docs/)：
-> [技术总览](docs/OVERVIEW.md) · [客户端](docs/CLIENT.md) · [服务端](docs/SERVER.md) ·
-> [WebPlatform 边界](docs/WEBPLATFORM.md)。
+账号与选服示例通过 HTTP 消费独立 `gono-webplatform` 的开发契约。本仓只使用精确锁定的
+`@gono/webplatform-contract`，不包含该服务的业务源码。
 
----
+深入说明见：
 
-## 目录一览
+- [技术总览](docs/OVERVIEW.md)
+- [客户端开发](docs/CLIENT.md)
+- [服务端开发](docs/SERVER.md)
+- [外部身份服务开发边界](docs/WEBPLATFORM.md)
 
-```
+## 目录
+
+```text
 apps/
-├── client/     纯 TS 游戏代码工程（源码唯一真相，无头可测；logic/shared 引擎无关，view/Main 绑 cc+fairygui）
-├── Cocos/      Cocos Creator 3.8.8 工程壳（不在 npm workspaces；代码由 sync:client 灌入 assets/src/）
-├── Unity/      Unity 工程（骨架，规划消费 apps/client 的引擎无关子集：logic/shared/bitecs）
-├── server/     Colyseus 0.17 服务端（tsx 直跑 TS）
-├── shared/     双端共享层（零依赖纯 TS：协议/公式/常量）—— sync 到客户端
-└── art/        FairyGUI 编辑器工程（设计师产 UI 包）
-docs/           技术总览 / 客户端 / 服务端 / WebPlatform 边界
-tools/          codegen / excel 导表 / 体积报告等
+├── client/     纯 TypeScript 游戏代码，源码唯一真相
+├── Cocos/      Cocos Creator 工程壳，代码由 sync:client 写入 assets/src
+├── Unity/      Unity 方向的研究占位，不是可用客户端
+├── server/     Colyseus 服务端开发工程
+├── shared/     双端共享协议、公式与常量
+├── art/        FairyGUI 编辑器工程
+└── website/    项目说明站点源码
+docs/           当前开发架构说明
+tools/          codegen、配置转换和本地检查工具
 ```
 
-WebPlatform **不在本 monorepo 的运行包中**。旧提交中的 `apps/WebPlatform` 只用于拆仓历史追溯，
-不再是 workspace、启动入口或可依赖源码；账号业务、migration、镜像与账号库凭证都归
-`gono-webplatform` 仓。本仓只精确消费 `@gono/webplatform-contract`。
+`apps/client/src/shared/` 和 `apps/Cocos/assets/src/` 是生成镜像，不是源码入口。
+WebPlatform 不属于本 monorepo；旧提交中的 `apps/WebPlatform` 仅用于历史追溯。
 
----
+## 本地开发
 
-## 本地跑起来（游戏栈 + 独立 WebPlatform）
+安装与同步：
 
 ```bash
-npm install                                  # 安装 shared + game server；不会安装/启动 WebPlatform 业务服务
-npm run sync:shared                          # shared→client→Cocos 全链同步（生成物已入库，通常无 diff）
-npm --workspace @game/server run stack       # 起本地 Redis×2 + MySQL（一次性；brew redis + mysql@8.4）
-npm --workspace @game/server run db:bootstrap# 只初始化 game_<PROJECT_ID> 游戏库（不建账号表）
-npm run dev                                  # 启动游戏服 http://localhost:2568
+npm install
+npm run sync:shared
 ```
 
-同时按独立 `gono-webplatform` 仓 README 初始化它的**空账号库**并启动 Public/Internal HTTP
-（本地约定通常为 `http://127.0.0.1:2570` / `http://127.0.0.1:2571`）。游戏服通过
-`WEBPLATFORM_INTERNAL_URL`、`WEBPLATFORM_SERVICE_ID`、`WEBPLATFORM_SERVICE_SECRET`
-访问 Internal API；它没有账号库 DSN，也不会回退到本地实现。
+启动服务端本地依赖与开发进程：
 
-然后打开客户端预览：
+```bash
+npm --workspace @game/server run stack
+npm --workspace @game/server run db:bootstrap
+npm run dev
+```
 
-1. 用 **Cocos Dashboard 3.8.8** 打开 **`apps/Cocos`** 目录，等首次导入完成；
-2. 在场景 `Main` 组件把必填 `portalUrl` 设为 WebPlatform Public origin
-   （本地例：`http://127.0.0.1:2570`；留空会立即失败，绝不回退游戏服）；
-3. 编辑器里点 **预览** —— 点「进入游戏」：Public `POST /v1/sessions/dev` 建真实账号 →
-   Internal verify 后进大厅拉档案 → 主界面 →
-   再点「进入游戏」进房，**按住屏幕可拖动小圆点**。
+账号示例需要另行启动与当前契约匹配的 `gono-webplatform` 本地开发服务。默认开发约定通常为：
 
-服务端起来后还带两个网页入口：`/` Playground 调试台、`/monitor` 房间监控。
+- Public HTTP：`http://127.0.0.1:2570`
+- Internal HTTP：`http://127.0.0.1:2571`
 
-> 首次打开客户端还有几步一次性配置（fairygui 运行时、colyseus 插件、场景挂 Main）——
-> 见 [docs/CLIENT.md · 首次打开](docs/CLIENT.md#首次打开一次性配置)。服务端跑真实玩法链路（登录/工会/充值）
-> 需本地 Redis + MySQL，见 [docs/SERVER.md · 本地开发栈](docs/SERVER.md#本地开发栈)。
+客户端预览：
 
----
+1. 用 Cocos Dashboard 3.8.8 打开 `apps/Cocos`。
+2. 等待首次资源导入完成。
+3. 在场景 `Main` 组件中设置本地 WebPlatform Public origin。
+4. 在编辑器中预览，使用开发会话进入 Lobby 和 ballMove 示例房间。
 
-## 常用命令
+这里的启动脚本、开发会话与调试页面只用于本地开发和代码验证。
+
+## 常用开发命令
 
 | 命令 | 作用 |
-|---|---|
-| `npm run dev` | 启动服务端（tsx watch，热重载，端口 2568） |
-| `npm run dev:client` | 双 watcher 常驻：shared→client→Cocos 保存即同步 |
-| `npm run sync:webplatform-contract` | 从精确锁定的契约包刷新 `apps/shared/src/generated/webplatform`，并级联 shared→client→Cocos |
-| `npm run verify:webplatform-contract` | 只读校验契约包版本/hash 与入库生成物一致 |
-| `npm run fetch:fgui` / `fetch:colyseus` | **升级**运行时版本时用（产物已入库；拉新版 + 验完整性后提交 diff） |
-| `npm run sync:shared` | 改完 `apps/shared/src` 后**必须**执行（→ `apps/client/src/shared`，并级联 `sync:client`） |
-| `npm run sync:client` | 改完 `apps/client/src` 后**必须**执行（灌入 `apps/Cocos/assets/src`；生成物连 .meta 入库） |
-| `npm run typecheck` | 三端类型检查 + `verify:sync`（镜像新鲜度机检） |
-| `npm run verify:sync` | 只读校验两级镜像：漂移/孤儿/入库文件缺 .meta 即红 |
-| `npm run test:fgui` | FairyGUI 结构契约 + 客户端无头单测 |
-| `npm run codegen:fgui -- <Pkg> <Comp>` | 从 FairyGUI 组件生成/幂等重写 `view/XxxView.ts` |
-| `npm run report:size` | 微信构建体积报告（4MB 主包水位） |
-| `npm run verify:ecs` | 校验 ECS 库（bitECS）12 个文件字节锁定 |
-| `npm --workspace @game/server run test` | 服务端单测 |
-| `npm --workspace @game/server run smoke` | 真实链路冒烟（需游戏栈、独立 WebPlatform 与其账号库均已就绪） |
-| `npm --workspace @game/server run stack` | 起本地 Redis×2 + MySQL（真实玩法链路用） |
-| `npm --workspace @game/server run test:int` | 集成测试（真实 Redis+MySQL；**跑前先停 npm run dev**） |
+| --- | --- |
+| `npm run dev` | 启动服务端开发进程 |
+| `npm run dev:client` | 监听 shared/client 改动并同步到 Cocos 工程 |
+| `npm run sync:webplatform-contract` | 刷新外部身份服务契约生成物并级联同步 |
+| `npm run verify:webplatform-contract` | 本地校验契约版本、hash 与生成物 |
+| `npm run fetch:fgui` | 更新锁定的 FairyGUI 技术依赖 |
+| `npm run fetch:colyseus` | 更新锁定的 Colyseus 客户端库 |
+| `npm run sync:shared` | shared → client → Cocos |
+| `npm run sync:client` | client → Cocos |
+| `npm run typecheck` | shared/server/client 类型检查及镜像校验 |
+| `npm run verify:sync` | 检查镜像漂移、孤儿和 `.meta` |
+| `npm run test:fgui` | FGUI 结构契约及客户端无头测试 |
+| `npm run codegen:fgui -- <Pkg> <Comp>` | 生成或更新 View 的 AUTO 区块 |
+| `npm run verify:ecs` | 校验锁定的 bitECS 文件 |
+| `npm --workspace @game/server run test` | 服务端单元测试 |
+| `npm --workspace @game/server run smoke` | 本地功能链路冒烟 |
+| `npm --workspace @game/server run test:int` | 使用本地 Redis/MySQL 的集成测试 |
 
----
+## 开发红线
 
-## 三条最容易踩的红线（详见各文档）
+1. **不要手改生成区**：
+   - 改 `apps/shared/src` 后运行 `npm run sync:shared`。
+   - 改 `apps/client/src` 后运行 `npm run sync:client`。
+   - `apps/Cocos/assets/src` 整体由同步脚本生成。
+2. **不要修改锁定的 bitECS 源码**：`apps/client/src/lib/bitecs/` 的 12 个 TypeScript 文件由
+   `npm run verify:ecs` 校验。
+3. **协议、消息名、错误码和公式从 shared 导入**，不要在两端复制。
+4. **相对导入不带扩展名**，以兼容 Cocos 编译链。
+5. **shared 保持零依赖**：不得使用 npm 包、Node API、DOM 或渠道平台全局对象。
+6. **View 与 Logic 分离**：`logic/` 不导入 `cc` 或 `fairygui-cc`；View 只负责绑定和数据搬运。
+7. **FairyGUI 只通过动态 import 进入 View 打开链**，避免进入普通脚本的静态依赖图。
+8. **外部身份服务只走契约化 HTTP 边界**，本仓不得重新导入其业务源码或账号数据库实现。
 
-1. **`apps/client/src/shared/` 与 `lib/bitecs/` 是生成物/字节锁区，禁手改**——改共享代码去
-   `apps/shared/src` 再 `npm run sync:shared`；ECS 库字节锁定（verify:ecs）。
-   `apps/Cocos/assets/src/` 整份是 `sync:client` 生成物，同样禁手改。
-2. **消息名/协议类型/公式一律 `import` 自 shared**，不手写字符串、不复制公式（双端单源）。
-3. **相对导入不带扩展名**（Cocos 编译器要求）——全仓统一，别"顺手"加 `.ts`/`.js`。
+新功能的推荐开发顺序：
 
-账号边界还有一条同等级红线：游戏生产源码不得 import `@game/webplatform` 或旧
-`apps/WebPlatform`，不得恢复 `ACCOUNT_MODE`/进程内实现。客户端只打 Public HTTP，游戏服只打
-Internal HTTP，GM 写权威只打 Admin HTTP。
+```text
+shared 契约
+  → npm run sync:shared
+  → 服务端 endpoint
+  → 客户端 Logic + View + viewRegistry
+  → npm run sync:client
+  → 本地类型检查与测试
+```
 
-新功能标准动线、目录职责、服务端写路径铁律（`09·XX`）、FairyGUI 工作流等，分别见
-[技术总览](docs/OVERVIEW.md) / [客户端](docs/CLIENT.md) / [服务端](docs/SERVER.md)。
+## 技术栈
 
----
+- 客户端：Cocos Creator 3.8.8、FairyGUI 1.2.2、bitECS 0.4。
+- 服务端：Colyseus 0.17、Node.js 22+、TypeScript、Redis、MySQL 8。
+- 客户端网络：`@colyseus/sdk` 0.17.43 UMD，是通用网络客户端库。
+- 共享层：`apps/shared`，零依赖纯 TypeScript。
 
-## 技术栈定版（2026-07）
+## 项目边界
 
-- 客户端：Cocos Creator **3.8.8**（微信小游戏）+ FairyGUI（fairygui-cc 1.2.2）+ bitECS 0.4（字节锁）
-- 服务端：Colyseus **0.17**（Node ≥ 22，tsx 直跑 TS）+ 公司服务端框架（双 Redis + MySQL 8）
-- 客户端网络：`@colyseus/sdk` 0.17.43 UMD 插件（全局 `Colyseus`）
-- 共享层：`apps/shared`（零依赖纯 TS，`npm run sync:shared` 复制进客户端）
+本仓库定位为游戏项目的**开发期基础框架**，仅提供客户端、服务端和共享代码的工程骨架，以及
+本地开发、调试与验证所需的示例实现；它不是面向生产环境的一站式交付方案。
+
+本仓库不提供，也不对以下能力作实现承诺：
+
+- 生产环境部署、持续集成或持续交付、扩缩容、监控告警、备份恢复及其他生产运行与运维保障；
+- 支付、订单、退款、对账等商业化能力；
+- 微信、抖音等渠道平台的账号、登录、支付、广告、分享或其他 SDK/API 接入；
+- 渠道包构建、上架审核、灰度、热更新、合规办理、发行及运营能力。
+
+仓库中的本地启动脚本、调试页面、开发会话、测试命令，以及 `@colyseus/sdk`、FairyGUI、bitECS
+等通用技术依赖，仅用于开发和本地验证，不代表具备上述生产、渠道或发行能力。使用者应根据目标
+平台和实际环境，在本仓库之外自行设计、接入并验证相关系统。

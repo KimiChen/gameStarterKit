@@ -9,7 +9,7 @@
 ```bash
 npm i -D xlsx@^0.18.5                          # 首次使用先装依赖（根 package.json）
 node tools/excel-to-json.mjs                   # 导表：双写服务端 + 客户端 JSON
-node tools/excel-to-json.mjs --check           # 只校验不写文件；出错 exit 1，可直接进 CI
+node tools/excel-to-json.mjs --check           # 只校验不写文件；出错 exit 1，用于本地检查
 node tools/excel-to-json.mjs --input=<目录>    # 覆盖输入目录（默认本目录）
 node tools/excel-to-json.mjs --assets-root=<目录>   # 开启 icon 资源存在性校验（缺省跳过）
 ```

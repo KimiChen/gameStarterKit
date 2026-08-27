@@ -84,11 +84,6 @@ await copyFile(
   join(projectRoot, "deploy/static-site.js"),
   join(outputDir, "static-site.js"),
 );
-await copyFile(
-  join(projectRoot, "DEPLOY.md"),
-  join(outputDir, "DEPLOY.md"),
-);
-
 await Promise.all([
   access(join(outputDir, "index.html")),
   access(join(outputDir, stylesheetHref)),

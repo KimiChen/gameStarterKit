@@ -6,7 +6,7 @@ Cocos Creator 工程壳在 [../Cocos](../Cocos)，代码经同步脚本灌入 `a
 
 **「纯 TS」≠「引擎无关」**——引擎无关的只有 `logic/` + `shared/` + `lib/bitecs/`
 （`logic-purity.test.ts` 机检禁 cc/fairygui）；`Main.ts` 与 `view/` 绑 cc + fairygui-cc、
-`core/` 绑 wx/XHR、`net/` 绑全局 Colyseus UMD，跨引擎复用时这些层需按目标引擎重写。
+`core/` 负责宿主环境桥与 XHR、`net/` 依赖全局 Colyseus UMD；跨引擎复用时这些层需按目标引擎重写。
 
 ## 同步链
 

@@ -1,13 +1,13 @@
 # apps/Unity — Unity 客户端工程（骨架）
 
 对标 sect 的 `Unity/`：与 `apps/Cocos` 平行的另一个引擎壳，消费 `apps/client` 中
-**引擎无关的子集**（`logic/` + `shared/` + `lib/bitecs/`；`Main.ts`/`view/` 绑
-cc+fairygui、`core/` 绑 wx、`net/` 绑全局 Colyseus UMD，均需按 Unity 生态重写/适配）。
+**引擎无关的子集**（`logic/` + `shared/` + `lib/bitecs/`；`Main.ts`/`view/` 依赖
+cc+fairygui，`core/` 与 `net/` 也需要按 Unity 生态重写/适配）。
 sect 的路线是用 **pyts** 把 TS 转译为 C#（`Assets/PytsCore` + `Assets/Game`）。
 
 ## 现状
 
-最小骨架，尚未接入任何构建管线：
+当前只是目录占位，尚不能作为可用 Unity 客户端：
 
 - `Assets/` —— Unity 资源与脚本（待建）
 - `Packages/` —— Unity 包清单（待建）
