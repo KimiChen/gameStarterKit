@@ -29,8 +29,11 @@ npm --workspace @game/server run stack:stop
 apps/server/tools/dev-stack.sh status
 ```
 
-`stack:stop` 会对配置端口上的两个 Redis 与 MySQL 发停止指令；`status` 只打印三者的可达性（当前没有对应的
-npm script）。多项目默认共用同一套 6401/6402/3316 实例，停止前请确认没有其他项目在用。
+`stack:stop` 只会停止由本脚本登记且身份仍匹配的实例：它会核对持久化的 instance 标识、PID、进程启动时间、
+二进制、监听端口和实际数据目录；端口被其他进程占用、owner 元数据缺失或身份不一致时会跳过并返回失败，
+不会向未知 Redis/MySQL 发送停止指令。`status` 只打印三者的可达性和 instance 标识（当前没有对应的 npm
+script）。多项目默认共用同一套 6401/6402/3316 实例，停止前请确认没有其他项目在用；首次升级前启动一次
+`stack` 以生成 `$GAME_DEV_DATA/.game-dev-stack-id` 和各服务的 `.owner` 元数据。
 另：`npm run dev` 是 watch 模式；不需要 watch 时可用 `npm run start:server`（等价于 `@game/server`
 的 `start`）。
 
