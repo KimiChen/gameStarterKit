@@ -21,6 +21,12 @@ export interface StreamConsumerOpts {
 
 export interface StreamConsumer { stop(): Promise<void> }
 
+// A stopping consumer remains registered until its blocking XREAD has actually
+// unwound.  Use an instance suffix so a restart can register concurrently with
+// that final unwind; otherwise LifecycleRegistry's name de-duplication would
+// silently drop the new consumer's cleanup handle.
+let consumerRegistrationSeq = 0;
+
 /** 平铺 fields 数组（XADD `*` k v k v…）取某字段值。 */
 export function fieldOf(fields: string[], key: string): string | undefined {
   const i = fields.indexOf(key);
@@ -106,6 +112,7 @@ export function startStreamConsumer(
     return stopPromise;
   };
   const handle: StreamConsumer = { stop };
-  unregister = defaultLifecycle.register(`stream:${name}`, stop);
+  const registrationName = `stream:${name}:${++consumerRegistrationSeq}`;
+  unregister = defaultLifecycle.register(registrationName, stop);
   return handle;
 }
