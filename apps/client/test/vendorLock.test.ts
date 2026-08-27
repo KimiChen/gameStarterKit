@@ -8,11 +8,17 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = fileURLToPath(new URL("../../..", import.meta.url));
 const read = (rel: string) => readFileSync(join(ROOT, rel), "utf8");
+
+const VENDOR_LOCKED_FILES = [
+  "apps/Cocos/extensions/fairygui-cc/runtime/fairygui.mjs",
+  "apps/Cocos/extensions/fairygui-cc/runtime/fairygui.d.ts",
+  "apps/client/src/lib/colyseus/colyseus.js",
+] as const;
 
 function pin(file: string, re: RegExp): string {
   const m = re.exec(read(file));
@@ -53,14 +59,42 @@ test("vendor 内容锁：产物 sha256 与 scripts/vendor.sha256 逐一相符", 
   // fairygui 运行时不内嵌版本串、又在 verify:sync 镜像域之外——内容锁是它唯一的守门；
   // colyseus.js 锁内容防「同版本号但内容被改」。升级经 fetch 脚本自动重钉；
   // 给 fairygui 打社区补丁后手动 node scripts/vendor-lock.mjs 重钉并连锁文件一起提交。
-  const lock = read("scripts/vendor.sha256").trim().split("\n");
-  assert.ok(lock.length >= 3, "vendor.sha256 至少应锁 3 个产物");
+  const lock = read("scripts/vendor.sha256").trim().split(/\r?\n/).filter(Boolean);
+  const actualPaths = new Set<string>();
   for (const line of lock) {
     const m = /^([0-9a-f]{64})  (.+)$/.exec(line);
     assert.ok(m, `锁行格式非法：${line}`);
+    assert.ok(!actualPaths.has(m![2]), `vendor.sha256 存在重复路径：${m![2]}`);
+    actualPaths.add(m![2]);
     const actual = createHash("sha256").update(readFileSync(join(ROOT, m![2]))).digest("hex");
     assert.equal(actual, m![1],
       `${m![2]} 内容与锁不符——非预期改动请还原；升级/打补丁后跑 node scripts/vendor-lock.mjs 重钉并提交`);
+  }
+  assert.deepEqual([...actualPaths].sort(), [...VENDOR_LOCKED_FILES].sort(),
+    "vendor.sha256 必须恰好覆盖预期的 fairygui/colyseus 产物集合（不能漏锁或引入孤儿锁）");
+});
+
+test("WebPlatform 本地 tarball：package-lock integrity 与入库字节一致", () => {
+  const lock = JSON.parse(read("package-lock.json")) as {
+    packages?: Record<string, { resolved?: string; integrity?: string } | undefined>;
+  };
+  const entries = Object.entries(lock.packages ?? {}).filter(([, entry]) =>
+    entry?.resolved === "file:vendor/gono-webplatform-contract-1.0.0.tgz",
+  );
+  assert.ok(entries.length > 0, "package-lock 未登记本地 @gono/webplatform-contract tarball");
+  for (const [key, entry] of entries) {
+    const marker = "/node_modules/";
+    const markerIndex = key.indexOf(marker);
+    const base = markerIndex >= 0 ? join(ROOT, key.slice(0, markerIndex)) : ROOT;
+    const tarball = resolve(base, entry!.resolved!.slice("file:".length));
+    const withinRepo = relative(ROOT, tarball);
+    assert.ok(withinRepo !== ".." && !withinRepo.startsWith(".." + "/"),
+      `${key} 的本地 tarball 路径越出仓库`);
+    const integrity = entry?.integrity ?? "";
+    const m = /^(sha(?:256|384|512))-(.+)$/.exec(integrity);
+    assert.ok(m, `${key} 缺少可验证的 sha integrity`);
+    const actual = createHash(m![1]).update(readFileSync(tarball)).digest("base64");
+    assert.equal(actual, m![2], `${key} 的本地 tarball integrity 不符`);
   }
 });
 

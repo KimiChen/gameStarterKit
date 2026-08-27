@@ -21,18 +21,27 @@
     "typecheck": "npm run verify:webplatform-contract && npm --workspace @game/shared run typecheck && npm --workspace @game/server run typecheck && npm run typecheck:client && npm run verify:sync",
     "verify:sync": "node scripts/sync-shared.mjs --check && node scripts/sync-client.mjs --check",
     "verify:ecs": "node scripts/verify-ecs.mjs",
+    "verify:fgui": "node scripts/fgui-manifest.mjs --check",
+    "verify:inventory": "node scripts/verify-inventory.mjs",
     "fetch:fgui": "node scripts/fetch-fgui.mjs",
     "fetch:colyseus": "node scripts/fetch-colyseus.mjs",
-    "test:fgui": "cd apps/server && node --import tsx --test ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/*.test.ts",
     "config:excel-to-json": "node tools/excel-to-json.mjs",
     "config:excel-to-json:check": "node tools/excel-to-json.mjs --check",
-    "typecheck:client": "tsc -p apps/client/tsconfig.json"
+    "typecheck:client": "tsc -p apps/client/tsconfig.test.json --noEmit",
+    "typecheck:client:legacy": "tsc -p apps/client/tsconfig.json --noEmit",
+    "test:client": "cd apps/server && node --import tsx --test ../client/test/*.test.ts",
+    "test:fgui": "cd apps/server && node --import tsx --test ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/fguiContract.test.ts ../client/test/viewRegistry.test.ts",
+    "verify:core": "npm run typecheck && npm run verify:ecs && npm run verify:fgui && npm run verify:inventory",
+    "verify:all": "npm run verify:core && npm run test:client && npm --workspace @game/server run test"
   },
   "engines": {
     "node": ">=22"
   },
   "devDependencies": {
     "@gono/webplatform-contract": "file:vendor/gono-webplatform-contract-1.0.0.tgz",
+    "@types/node": "^22.13.14",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
     "xlsx": "^0.18.5"
   }
 }

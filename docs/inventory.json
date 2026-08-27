@@ -1,0 +1,142 @@
+{
+  "version": 1,
+  "purpose": "核心能力、默认入口、真源、运行时边界、验证命令和权威文档的可检查清单",
+  "capabilities": [
+    {
+      "id": "shared-contract",
+      "category": "core",
+      "defaultEntry": "apps/shared/src/index.ts",
+      "sourceOfTruth": "apps/shared/src",
+      "wireBoundary": "apps/shared/src/protocol",
+      "verification": [{ "kind": "root", "script": "typecheck" }, { "kind": "root", "script": "verify:sync" }],
+      "docs": ["docs/OVERVIEW.md", "AGENTS.md"]
+    },
+    {
+      "id": "client-session-and-navigation",
+      "category": "core",
+      "defaultEntry": "apps/client/src/Main.ts",
+      "sourceOfTruth": "apps/client/src/net/session.ts",
+      "wireBoundary": "apps/client/src/net",
+      "verification": [{ "kind": "root", "script": "test:client" }],
+      "docs": ["plan.md", "docs/CLIENT.md"]
+    },
+    {
+      "id": "game-room-runtime",
+      "category": "core",
+      "defaultEntry": "apps/server/src/rooms/GameRoom.ts",
+      "sourceOfTruth": "apps/server/src/rooms/GameRoom.ts",
+      "wireBoundary": "apps/shared/src/protocol/rooms.ts",
+      "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test" }],
+      "docs": ["plan.md", "docs/SERVER.md"]
+    },
+    {
+      "id": "asset-effect-and-zone-isolation",
+      "category": "core",
+      "defaultEntry": "apps/server/src/core/economy/relayer.ts",
+      "sourceOfTruth": "apps/server/src/core/infra/redisScripts.ts",
+      "wireBoundary": "apps/shared/src/protocol/lobbyRpc/economy.ts",
+      "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test:int" }],
+      "docs": ["plan.md", "docs/SERVER.md", "docs/DUAL_MODE.md"]
+    },
+    {
+      "id": "character-ready",
+      "category": "core",
+      "defaultEntry": "apps/server/src/websocket/LobbyRoom.ts",
+      "sourceOfTruth": "apps/server/src/player/character.ts",
+      "wireBoundary": "apps/shared/src/protocol/lobbyRpc/user.ts",
+      "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test:int" }],
+      "docs": ["plan.md", "docs/SERVER.md"]
+    },
+    {
+      "id": "process-lifecycle",
+      "category": "core",
+      "defaultEntry": "apps/server/src/index.ts",
+      "sourceOfTruth": "apps/server/src/core/infra/lifecycle.ts",
+      "wireBoundary": "apps/server/src/index.ts",
+      "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test" }],
+      "docs": ["plan.md", "docs/SERVER.md"]
+    },
+    {
+      "id": "gameplay-boundary",
+      "category": "core",
+      "defaultEntry": "apps/client/src/logic/gameplay/GameplayRegistry.ts",
+      "sourceOfTruth": "apps/client/src/logic/gameplay",
+      "wireBoundary": "apps/client/src/net/RoomClient.ts",
+      "verification": [{ "kind": "root", "script": "test:client" }],
+      "docs": ["plan.md", "docs/CLIENT.md"]
+    },
+    {
+      "id": "view-logic-lifecycle",
+      "category": "core",
+      "defaultEntry": "apps/client/src/view/ViewMgr.ts",
+      "sourceOfTruth": "apps/client/src/view",
+      "wireBoundary": "apps/client/src/view/pages.ts",
+      "verification": [{ "kind": "root", "script": "test:fgui" }, { "kind": "root", "script": "typecheck:client" }],
+      "docs": ["plan.md", "docs/CLIENT.md"]
+    },
+    {
+      "id": "wire-runtime-contract",
+      "category": "core",
+      "defaultEntry": "apps/client/src/net/WebSocketClient.ts",
+      "sourceOfTruth": "apps/shared/src/protocol",
+      "wireBoundary": "apps/shared/src/protocol/http.ts",
+      "verification": [{ "kind": "root", "script": "test:client" }, { "kind": "workspace", "workspace": "@game/server", "script": "test" }],
+      "docs": ["plan.md", "docs/SERVER.md", "docs/CLIENT.md"]
+    },
+    {
+      "id": "fgui-resource-contract",
+      "category": "core",
+      "defaultEntry": "tools/fgui-codegen/cli.ts",
+      "sourceOfTruth": "apps/art/fairygui",
+      "wireBoundary": "apps/client/src/view",
+      "verification": [{ "kind": "root", "script": "test:fgui" }, { "kind": "root", "script": "verify:fgui" }],
+      "docs": ["plan.md", "tools/fgui-codegen/README.md", "apps/art/fairygui/README.md"]
+    },
+    {
+      "id": "server-infrastructure-boundaries",
+      "category": "core",
+      "defaultEntry": "apps/server/src/core/infra/config.ts",
+      "sourceOfTruth": "apps/server/src/core/infra",
+      "wireBoundary": "apps/server/src/core/infra/redisRoute.ts",
+      "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test" }, { "kind": "workspace", "workspace": "@game/server", "script": "smoke:framework" }],
+      "docs": ["plan.md", "docs/SERVER.md"]
+    },
+    {
+      "id": "area-directory-determinism",
+      "category": "core",
+      "defaultEntry": "apps/client/src/net/serverSession.ts",
+      "sourceOfTruth": "apps/client/src/net/serverSession.ts",
+      "wireBoundary": "apps/shared/src/protocol/http.ts",
+      "verification": [{ "kind": "root", "script": "test:client" }],
+      "docs": ["plan.md", "docs/CLIENT.md", "docs/WEBPLATFORM.md"]
+    },
+    {
+      "id": "verification-and-locks",
+      "category": "core",
+      "defaultEntry": "scripts/verify-ecs.mjs",
+      "sourceOfTruth": "scripts",
+      "wireBoundary": "scripts/protocol.fingerprint",
+      "verification": [{ "kind": "root", "script": "verify:core" }],
+      "docs": ["plan.md", "README.md"]
+    },
+    {
+      "id": "project-extras",
+      "category": "extra",
+      "defaultEntry": "apps/website/package.json",
+      "sourceOfTruth": "docs/EXTRAFEATURES.md",
+      "wireBoundary": "apps/website",
+      "verification": [{ "kind": "root", "script": "config:excel-to-json:check" }],
+      "docs": ["docs/EXTRAFEATURES.md", "apps/website/README.md"]
+    }
+  ],
+  "defaultModules": [
+    { "entry": "apps/server/src/index.ts", "docs": ["docs/SERVER.md", "docs/OVERVIEW.md"] },
+    { "entry": "apps/client/src/Main.ts", "docs": ["docs/CLIENT.md", "docs/OVERVIEW.md"] },
+    { "entry": "apps/shared/src/index.ts", "docs": ["docs/OVERVIEW.md"] },
+    { "entry": "apps/Cocos/assets/scene.scene", "docs": ["docs/CLIENT.md"] }
+  ],
+  "routeOfTruth": {
+    "corePlan": "plan.md",
+    "extraCapabilities": "docs/EXTRAFEATURES.md"
+  }
+}

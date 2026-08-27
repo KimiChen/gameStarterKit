@@ -1,0 +1,28 @@
+{
+  "extends": "../../tsconfig.strict.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "strict": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM"],
+    "types": ["node"],
+    // AUTO binding fields are a structural contract: a page may intentionally
+    // expose a designer control before its behavior is enabled. Keep all type
+    // errors strict while allowing those contract-only private fields.
+    "noUnusedLocals": false,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": false
+  },
+  "include": [
+    "client-test-stubs.d.ts",
+    "src/**/*.ts",
+    "test/**/*.ts",
+    "../../tools/fgui-codegen/**/*.ts"
+  ],
+  "exclude": ["**/*.meta", "temp/**"]
+}
