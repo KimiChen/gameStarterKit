@@ -6,13 +6,13 @@ export class HomeLogic {
     /** 当前展示的用户 id */
     userId = "";
     /** 点「进入游戏」按钮回调——view 层据此进入 ballMove 玩法 */
-    onEnterBattle: () => void = () => {};
+    onEnterBattle: () => void | Promise<void> = () => {};
 
     setUserId(uid: string): void {
         this.userId = uid;
     }
 
-    enterBattle(): void {
-        this.onEnterBattle();
+    enterBattle(): void | Promise<void> {
+        return this.onEnterBattle();
     }
 }

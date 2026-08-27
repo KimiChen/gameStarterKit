@@ -27,14 +27,23 @@ export class HomeView extends FguiView {
 
   // ── 业务（AUTO 区块外，Creator 侧验证）────────────────────────
   /** 「进入游戏」回调（Main 注入：退大厅壳、进 ballMove 玩法房）。 */
-  onEnterBattle: () => void = () => {};
+  onEnterBattle: () => void | Promise<void> = () => {};
+  private logic: HomeLogic | null = null;
+  private setupWired = false;
+
+  private readonly handleEnter = (): void => {
+    this.observeAsync(() => this.logic?.enterBattle(), "enter-battle");
+  };
 
   /** 渲染 + 接线（opener 调用）：展示用户 id，按钮走 HomeLogic → onEnterBattle。 */
   setup(uid: string): void {
     this.txt_userId.text = uid;
-    const logic = new HomeLogic();
-    logic.setUserId(uid);
-    logic.onEnterBattle = () => this.onEnterBattle();
-    this.btn_enter.onClick(() => logic.enterBattle(), this);
+    if (!this.logic) this.logic = new HomeLogic();
+    this.logic.setUserId(uid);
+    this.logic.onEnterBattle = () => this.onEnterBattle();
+    if (!this.setupWired) {
+      this.setupWired = true;
+      this.btn_enter.onClick(this.handleEnter, this);
+    }
   }
 }

@@ -14,7 +14,7 @@ export function formatNoticeTabTitle(title: string): string {
 }
 
 export interface ILoginNoticeDeps {
-    fetchNotices(): Promise<INoticeListRes>;
+    fetchNotices(signal?: AbortSignal): Promise<INoticeListRes>;
     readDontRemindToday(): boolean;
     writeDontRemindToday(value: boolean): void;
 }
@@ -23,6 +23,10 @@ export class LoginNoticeLogic {
     private list: INoticeItem[] = [];
     private selectedId = 0;
     private _dontRemindToday: boolean;
+    /** 页面进入世代；旧公告请求即使不能被底层取消，也不得回调已关闭 View。 */
+    private generation = 0;
+    private controller: AbortController | null = null;
+    private active = false;
 
     /** 标签集变化回调（拉取完成）——view 刷新 CompTab，每个标题最多 4 个字符 */
     onTabs: (titles: string[]) => void = () => {};
@@ -44,12 +48,55 @@ export class LoginNoticeLogic {
         this.deps.writeDontRemindToday(value);
     }
 
-    /** 进入页面：拉取公告 → 标签 = 各条标题前 4 个字符，默认选中首条 */
-    async start(): Promise<void> {
-        const res = await this.deps.fetchNotices();
-        this.list = res.list;
-        this.onTabs(this.list.map((n) => formatNoticeTabTitle(n.title)));
-        if (this.list.length > 0) this.select(this.list[0].id);
+    /** 进入页面：拉取公告 → 标签 = 各条标题前 4 个字符，默认选中首条。 */
+    async start(signal?: AbortSignal): Promise<void> {
+        this.stop();
+        const generation = ++this.generation;
+        const controller = new AbortController();
+        this.controller = controller;
+        this.active = true;
+        let detach: (() => void) | null = null;
+        if (signal) {
+            const abort = () => {
+                if (this.controller !== controller) return;
+                controller.abort();
+                this.generation++;
+                this.controller = null;
+                this.active = false;
+            };
+            if (signal.aborted) abort();
+            else {
+                signal.addEventListener("abort", abort, { once: true });
+                detach = () => signal.removeEventListener("abort", abort);
+            }
+        }
+        if (controller.signal.aborted) {
+            detach?.();
+            return;
+        }
+        try {
+            const res = await this.deps.fetchNotices(controller.signal);
+            if (!this.isCurrent(generation, controller)) return;
+            this.list = res.list;
+            this.selectedId = 0;
+            this.onTabs(this.list.map((n) => formatNoticeTabTitle(n.title)));
+            if (!this.isCurrent(generation, controller)) return;
+            if (this.list.length > 0) this.selectCurrent(this.list[0].id, generation, controller);
+        } catch (e) {
+            if (this.isCurrent(generation, controller)) throw e;
+        } finally {
+            detach?.();
+            if (this.controller === controller) this.controller = null;
+        }
+    }
+
+    /** 离开页面：取消当前请求并使迟到结果失效。 */
+    stop(): void {
+        this.active = false;
+        this.generation++;
+        const controller = this.controller;
+        this.controller = null;
+        controller?.abort();
     }
 
     get items(): readonly INoticeItem[] {
@@ -58,6 +105,7 @@ export class LoginNoticeLogic {
 
     /** 选中某条公告（展示正文 + 高亮对应标签） */
     select(id: number): void {
+        if (!this.active) return;
         const index = this.list.findIndex((n) => n.id === id);
         if (index < 0) return;
         this.selectedId = id;
@@ -66,5 +114,17 @@ export class LoginNoticeLogic {
 
     get selected(): INoticeItem | undefined {
         return this.list.find((n) => n.id === this.selectedId);
+    }
+
+    private isCurrent(generation: number, controller: AbortController): boolean {
+        return this.controller === controller && this.generation === generation && !controller.signal.aborted;
+    }
+
+    private selectCurrent(id: number, generation: number, controller: AbortController): void {
+        if (!this.isCurrent(generation, controller)) return;
+        const index = this.list.findIndex((n) => n.id === id);
+        if (index < 0 || !this.isCurrent(generation, controller)) return;
+        this.selectedId = id;
+        this.onContent(this.list[index], index);
     }
 }

@@ -64,11 +64,19 @@ export class LoginView extends FguiView {
 
   // ── 业务（AUTO 区块外，Creator 侧验证）────────────────────────
   /** 「进入游戏」按钮回调（opener 注入：登录 → 打开选服/主界面） */
-  onEnter: () => void = () => {};
+  onEnter: () => void | Promise<void> = () => {};
   /** 「公告」按钮回调（opener 注入：打开公告页） */
-  onNotice: () => void = () => {};
+  onNotice: () => void | Promise<void> = () => {};
   /** 「选服」按钮回调（opener 注入：打开选服列表） */
-  onSelectServer: () => void = () => {};
+  onSelectServer: () => void | Promise<void> = () => {};
+  private setupWired = false;
+
+  /** 事件系统不会等待 Promise；这些稳定 wrapper 让重复 setup 只注册一次且观察 rejection。 */
+  private readonly handleEnter = (): void => { this.observeAsync(() => this.onEnter(), "login"); };
+  private readonly handleNotice = (): void => { this.observeAsync(() => this.onNotice(), "notice"); };
+  private readonly handleSelectServer = (): void => {
+    this.observeAsync(() => this.onSelectServer(), "select-server");
+  };
 
   /** 接线（opener 调用）：把主要按钮连到注入回调；进度条走 setProgress。 */
   setup(): void {
@@ -76,11 +84,15 @@ export class LoginView extends FguiView {
     // 必须代码装载。图在 L10n_zh_hans 包（本页 sharedPkgs 已预加载；跨包写错包名不报错、
     // 运行时空白，靠 viewRegistry.test 的「代码内 ui:// ⊆ 闭包」机检把关）。
     this.ld_logo.url = "ui://L10n_zh_hans/login_logo";
-    this.btn_login.onClick(() => this.onEnter(), this);
-    this.btn_notice.onClick(() => this.onNotice(), this);
-    // btn_select / btn_server 都指向选服（源项目历史遗留双入口）
-    this.btn_select.onClick(() => this.onSelectServer(), this);
-    this.btn_server.onClick(() => this.onSelectServer(), this);
+    if (!this.setupWired) {
+      this.setupWired = true;
+      this.btn_login.onClick(this.handleEnter, this);
+      this.btn_notice.onClick(this.handleNotice, this);
+      // btn_select / btn_server 都指向选服（源项目历史遗留双入口）
+      this.btn_select.onClick(this.handleSelectServer, this);
+      this.btn_server.onClick(this.handleSelectServer, this);
+      this.markUnusedControlsAsPlaceholders();
+    }
   }
 
   /** 显示当前选中区服（Public API 字符串 status 映射到现有 login_status_{1|2|9} 资源）。 */
@@ -92,7 +104,28 @@ export class LoginView extends FguiView {
   }
 
   /** 登录进度（0~1 + 文案）——LoginLogic.onProgress 回调驱动。 */
-  setProgress(_ratio: number, text: string): void {
+  setProgress(ratio: number, text: string): void {
+    const bounded = Number.isFinite(ratio) ? Math.max(0, Math.min(1, ratio)) : 0;
+    const min = Number.isFinite(this.pg_loading.min) ? this.pg_loading.min : 0;
+    const max = Number.isFinite(this.pg_loading.max) && this.pg_loading.max > min
+      ? this.pg_loading.max : 100;
+    this.pg_loading.value = min + bounded * (max - min);
     this.txt_progress.text = text;
+  }
+
+  /**
+   * Login 设计仍保留一批渠道/调试控件，但本仓当前没有对应业务能力。
+   * 明确标成展示占位，避免 required contract 被误读为「已有可用接线」。
+   */
+  private markUnusedControlsAsPlaceholders(): void {
+    for (const button of [
+      this.btn_copy, this.btn_ageTip, this.btn_musicon, this.btn_musicoff,
+      this.btn_account, this.btn_test, this.btn_clearDataCache,
+    ]) {
+      button.touchable = false;
+      button.grayed = true;
+    }
+    this.ld3_testAnim.visible = false;
+    // txt_privacy 与 ld_logo 是纯展示元素，保留可见但不伪造交互能力。
   }
 }

@@ -7,6 +7,7 @@ import { test } from "node:test";
 import { AreaListLogic } from "../src/logic/page/AreaListLogic";
 import { LoginNoticeLogic } from "../src/logic/page/LoginNoticeLogic";
 import { GuildLogic } from "../src/logic/page/GuildLogic";
+import type { WebPlatformAreaListResponse } from "../src/shared/index";
 
 function deferred<T>(): { promise: Promise<T>; resolve(value: T): void } {
   let resolve!: (value: T) => void;
@@ -14,10 +15,18 @@ function deferred<T>(): { promise: Promise<T>; resolve(value: T): void } {
   return { promise, resolve };
 }
 
-const area = (id: number) => ({
+const area = (id: number): WebPlatformAreaListResponse => ({
   isOps: false,
   hash: `h${id}`,
-  servers: [{ serverId: id, name: `s${id}`, status: "smooth" as const, tag: "", openTime: 1 }],
+  servers: [{
+    serverId: id,
+    name: `s${id}`,
+    status: "smooth",
+    tag: "normal",
+    openTime: 1,
+    gameHttpUrl: "http://game.example",
+    gameWsUrl: "ws://game.example",
+  }],
   myServerIds: [],
 });
 
@@ -109,10 +118,13 @@ test("Area/Notice：stop 后主动事件也不再触发旧 View 回调", async (
 
 test("GuildLogic：stop 后迟到 pull 结果不触发 events/error/gap", async () => {
   const pending = deferred<{ events: never[]; latestSeq: number; guildId: number }>();
-  let push: ((data: { seq: number; guildId: number }) => void) | null = null;
+  const pushRef: { current: ((data: { seq: number; guildId: number }) => void) | null } = { current: null };
   const logic = new GuildLogic({
     getEvents: async () => pending.promise,
-    onPush: (_type, cb) => { push = cb; return () => { push = null; }; },
+    onPush: (_type, cb) => {
+      pushRef.current = cb;
+      return () => { pushRef.current = null; };
+    },
   });
   let events = 0;
   let errors = 0;
@@ -121,7 +133,7 @@ test("GuildLogic：stop 后迟到 pull 结果不触发 events/error/gap", async 
   logic.onPullError = () => { errors++; };
   logic.onGapRefresh = () => { gaps++; };
   const started = logic.start(0, 7);
-  push?.({ seq: 1, guildId: 7 });
+  pushRef.current?.({ seq: 1, guildId: 7 });
   logic.stop();
   pending.resolve({ events: [], latestSeq: 1, guildId: 7 });
   await started;

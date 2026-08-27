@@ -36,31 +36,50 @@ export class LoginNoticeView extends FguiView {
 
   // ── 业务（AUTO 区块外，Creator 侧验证）────────────────────────
   // 源项目最新版：jb_tabbar 已换成本包内建 CompTab（顶部标签栏，每条公告一个标签），选标签换 txt_content 正文。
-  private logic!: LoginNoticeLogic;
+  private logic: LoginNoticeLogic | null = null;
   private titles: string[] = [];
   private selectedIndex = -1;
   /** jb_tabbar(CompTab) 内部的标签列表 lst_jb（defaultItem = CompTabItem）。 */
   private tabList!: GList;
   /** 「关闭」按钮回调，由页面打开方注入。 */
-  onClose: () => void = () => {};
+  onClose: () => void | Promise<void> = () => {};
+  private setupWired = false;
+  private setupGeneration = 0;
+
+  private readonly handleClose = (): void => { this.observeAsync(() => this.onClose(), "notice-close"); };
+  private readonly handleTipChanged = (): void => {
+    const logic = this.logic;
+    if (logic) this.observeAsync(() => logic.setDontRemindToday(this.tge_tip.selected), "notice-tip");
+  };
+  private readonly handleTabClick = (obj: GObject): void => {
+    const logic = this.logic;
+    if (!logic) return;
+    const idx = this.tabList.getChildIndex(obj);
+    const it = logic.items[idx];
+    if (it) this.observeAsync(() => logic.select(it.id), "notice-select");
+  };
+
+  /** 关闭/场景切换时让公告请求失效；按钮 onClose 字段由外部导航单独处理。 */
+  protected onCloseLifecycle(): void {
+    this.logic?.stop();
+  }
 
   /** 接线 LoginNoticeLogic：公告标签、正文及“今日不再提醒”状态。 */
   setup(logic: LoginNoticeLogic): void {
+    if (this.logic && this.logic !== logic) this.logic.stop();
+    const generation = ++this.setupGeneration;
     this.logic = logic;
-    this.btn_mask.onClick(() => this.onClose(), this);
-    this.btn_close.onClick(() => this.onClose(), this);
     this.tge_tip.selected = logic.dontRemindToday;
-    this.tge_tip.on(Event.STATUS_CHANGED, () => {
-      logic.setDontRemindToday(this.tge_tip.selected);
-    }, this);
     // ⚠ 本 fairygui-cc 版只有 .asCom，无 .asList —— 用 getChild<GList>(泛型)取类型化子项
-    this.tabList = this.jb_tabbar.getChild<GList>("lst_jb");
+    if (!this.tabList) this.tabList = this.jb_tabbar.getChild<GList>("lst_jb");
     logic.onTabs = (titles) => {
+      if (this.logic !== logic || this.setupGeneration !== generation) return;
       this.titles = titles;
       this.tabList.itemRenderer = (idx, obj) => this.renderTab(idx, obj as GComponent);
       this.tabList.numItems = titles.length;
     };
     logic.onContent = (item, index) => {
+      if (this.logic !== logic || this.setupGeneration !== generation) return;
       this.txt_content.text = item.content;
       this.selectedIndex = index;
       // 非虚拟列表：逐标签刷新选中态（CompTabItem 的 on/off 底图 + 文字）
@@ -68,12 +87,13 @@ export class LoginNoticeView extends FguiView {
         this.applyTabState(this.tabList.getChildAt(i).asCom, i === index);
       }
     };
+    if (this.setupWired) return;
+    this.setupWired = true;
+    this.btn_mask.onClick(this.handleClose, this);
+    this.btn_close.onClick(this.handleClose, this);
+    this.tge_tip.on(Event.STATUS_CHANGED, this.handleTipChanged, this);
     // ⚠ fairygui-cc 注册项点击用 on(Event.CLICK_ITEM,...)；onClickItem 是内部处理器（直接调会崩）
-    this.tabList.on(Event.CLICK_ITEM, (obj: GObject) => {
-      const idx = this.tabList.getChildIndex(obj);
-      const it = this.logic.items[idx];
-      if (it) this.logic.select(it.id);
-    }, this);
+    this.tabList.on(Event.CLICK_ITEM, this.handleTabClick, this);
   }
 
   /** 渲染单个标签（CompTabItem：txt_off/txt_on 双态文字 + img_off/img_on 双态底图）。 */

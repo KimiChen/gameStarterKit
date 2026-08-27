@@ -11,8 +11,8 @@ export interface IConfirmOptions {
     yesText?: string;
     /** 取消按钮文案，缺省「取消」；传 null 则隐藏取消按钮（单按钮提示） */
     noText?: string | null;
-    onYes?: () => void;
-    onNo?: () => void;
+    onYes?: () => void | Promise<void>;
+    onNo?: () => void | Promise<void>;
 }
 
 export class ConfirmLogic {
@@ -22,7 +22,7 @@ export class ConfirmLogic {
     /** null = 单按钮模式（无取消） */
     readonly noText: string | null;
     /** view 关闭本弹窗的回调（yes/no 后调用） */
-    onClose: () => void = () => {};
+    onClose: () => void | Promise<void> = () => {};
 
     private settled = false;
 
@@ -40,14 +40,26 @@ export class ConfirmLogic {
     yes(): void {
         if (this.settled) return;
         this.settled = true;
-        this.opts.onYes?.();
-        this.onClose();
+        this.invoke(this.opts.onYes, "onYes");
+        this.invoke(this.onClose, "onClose");
     }
 
     no(): void {
         if (this.settled) return;
         this.settled = true;
-        this.opts.onNo?.();
-        this.onClose();
+        this.invoke(this.opts.onNo, "onNo");
+        this.invoke(this.onClose, "onClose");
+    }
+
+    private invoke(action: (() => void | Promise<void>) | undefined, label: string): void {
+        if (!action) return;
+        try {
+            const result = action();
+            if (result && typeof (result as { then?: unknown }).then === "function") {
+                Promise.resolve(result).catch((e) => console.error(`[ConfirmLogic] ${label} rejection`, e));
+            }
+        } catch (e) {
+            console.error(`[ConfirmLogic] ${label} exception`, e);
+        }
     }
 }

@@ -127,7 +127,10 @@ export class Main extends Component {
         // 登录页的「进入游戏」经 Home 走到 enterBattle 回调，才拉起 ballMove。
         try {
             const pages = await import("./view/pages");
-            await pages.openLogin(() => { void this.enterBattle(); });
+            // HomeView/FguiView observes the returned Promise; do not detach the
+            // battle transition with `void`, otherwise an unexpected rejection
+            // escapes the event boundary as an unhandled rejection.
+            await pages.openLogin(() => this.enterBattle());
         } catch (err) {
             console.error("[Main] 大厅初始化失败（FairyGUI 扩展/资源包是否就绪？）：", err);
         }

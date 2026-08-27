@@ -28,18 +28,27 @@ export class ConfirmView extends FguiView {
 
   // ── 业务（AUTO 区块外，Creator 侧验证）────────────────────────
   // title/content/yesBtn/noBtn 无识别前缀（codegen 不绑）——业务侧 getChild 直取。
+  private logic: ConfirmLogic | null = null;
+  private setupWired = false;
+  private readonly handleYes = (): void => { this.observeAsync(() => this.logic?.yes(), "confirm-yes"); };
+  private readonly handleNo = (): void => { this.observeAsync(() => this.logic?.no(), "confirm-no"); };
+
   /** 用 ConfirmLogic 渲染并接线：填标题/正文，wire 确定/取消，单按钮时隐藏取消组。 */
   setup(logic: ConfirmLogic): void {
+    this.logic = logic;
     this.getChild<GTextField>("title").text = logic.title;
     this.getChild<GRichTextField>("content").text = logic.content;
     const yes = this.getChild<GButton>("yesBtn");
     const no = this.getChild<GButton>("noBtn");
     yes.title = logic.yesText;
-    yes.onClick(() => logic.yes(), this);
     this.go_noBtn.visible = logic.hasCancel;
     if (logic.hasCancel && logic.noText) {
       no.title = logic.noText;
-      no.onClick(() => logic.no(), this);
+    }
+    if (!this.setupWired) {
+      this.setupWired = true;
+      yes.onClick(this.handleYes, this);
+      no.onClick(this.handleNo, this);
     }
   }
 }

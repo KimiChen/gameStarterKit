@@ -46,35 +46,61 @@ export class AreaListView extends FguiView {
   private servers: WebPlatformAreaServer[] = [];
   private tabs: { key: AreaTab; title: string }[] = [];
   private selectedTabIndex = -1;
+  private logic: AreaListLogic | null = null;
+  private setupWired = false;
+  private setupGeneration = 0;
 
   /** 「关闭」按钮或遮罩回调（opener 注入：关闭选服面板不选服）。 */
-  onClose: () => void = () => {};
+  onClose: () => void | Promise<void> = () => {};
+
+  private readonly handleClose = (): void => { this.observeAsync(() => this.onClose(), "area-close"); };
+  private readonly handleTabClick = (item: GObject): void => {
+    const logic = this.logic;
+    if (!logic) return;
+    const idx = this.jb_tabbar.getChildIndex(item);
+    const tab = this.tabs[idx];
+    if (tab) {
+      logic.setTab(tab.key);
+      this.selectTab(idx);
+    }
+  };
+  private readonly handleServerClick = (obj: GObject): void => {
+    const logic = this.logic;
+    if (!logic) return;
+    const idx = this.lst_server.childIndexToItemIndex(this.lst_server.getChildIndex(obj));
+    const s = this.servers[idx];
+    if (s) this.observeAsync(() => logic.choose(s.serverId), "area-choose");
+  };
+
+  /** 关闭/场景切换时让在途区服请求失效；按钮 onClose 字段由外部导航单独处理。 */
+  protected onCloseLifecycle(): void {
+    this.logic?.stop();
+  }
 
   /** 接线 AreaListLogic：固定页签 + 虚拟列表；点区服走 logic.choose；按钮或遮罩关闭走 onClose。 */
   setup(logic: AreaListLogic): void {
-    logic.onTabs = (tabs) => this.renderTabs(tabs, logic.currentTab);
-    logic.onServers = (servers) => this.renderServers(servers);
-    this.btn_mask.onClick(() => this.onClose(), this);
-    this.btn_close.onClick(() => this.onClose(), this);
+    if (this.logic && this.logic !== logic) this.logic.stop();
+    const generation = ++this.setupGeneration;
+    this.logic = logic;
+    logic.onTabs = (tabs) => {
+      if (this.logic !== logic || this.setupGeneration !== generation) return;
+      this.renderTabs(tabs, logic.currentTab);
+    };
+    logic.onServers = (servers) => {
+      if (this.logic !== logic || this.setupGeneration !== generation) return;
+      this.renderServers(servers);
+    };
+    if (this.setupWired) return;
+    this.setupWired = true;
+    this.btn_mask.onClick(this.handleClose, this);
+    this.btn_close.onClick(this.handleClose, this);
     // 页签 jb_tabbar（本包内 GList）：点项切换推荐/我的角色/全部区服
     // ⚠ fairygui-cc 注册项点击用 on(Event.CLICK_ITEM,...)；onClickItem 是内部处理器（直接调会 GObject.cast(undefined) 崩）
-    this.jb_tabbar.on(Event.CLICK_ITEM, (item: GObject) => {
-      const idx = this.jb_tabbar.getChildIndex(item);
-      const tab = this.tabs[idx];
-      if (tab) {
-        logic.setTab(tab.key);
-        this.selectTab(idx);
-      }
-    }, this);
+    this.jb_tabbar.on(Event.CLICK_ITEM, this.handleTabClick, this);
     // 区服虚拟列表：itemRenderer 填每项 AreaItem，点项 choose
     this.lst_server.setVirtual();
     this.lst_server.itemRenderer = (idx, obj) => this.renderItem(idx, obj as GComponent);
-    this.lst_server.on(Event.CLICK_ITEM, (obj: GObject) => {
-      // 虚拟列表：点击给的是渲染子对象，需转成逻辑项索引（滚动后子索引≠项索引）
-      const idx = this.lst_server.childIndexToItemIndex(this.lst_server.getChildIndex(obj));
-      const s = this.servers[idx];
-      if (s) logic.choose(s.serverId);
-    }, this);
+    this.lst_server.on(Event.CLICK_ITEM, this.handleServerClick, this);
   }
 
   private renderTabs(tabs: { key: AreaTab; title: string }[], selected: AreaTab): void {
