@@ -1,5 +1,5 @@
 import { GamePhase, MAX_PLAYERS, type GamePhaseType } from "../constants/game";
-import { assertExactKeys, boundedString, finiteInteger, finiteNumber, isPlainRecord, type PlainRecord, WireValidationError } from "./http";
+import { assertExactKeys, boundedString, finiteInteger, finiteNumber, guardWire, isPlainRecord, type PlainRecord, WireValidationError } from "./http";
 
 /**
  * 房间状态的纯数据镜像接口 —— 双端共享。
@@ -45,20 +45,22 @@ function stateRecord(input: unknown, path: string): PlainRecord {
 }
 
 export function validatePlayerState(input: unknown, path = "player"): IPlayerState {
-    const value = stateRecord(input, path);
-    assertExactKeys(value, ["id", "name", "x", "y", "hp", "maxHp", "alive"], [], path);
-    if (typeof value.alive !== "boolean") throw new WireValidationError("STATE_BOOLEAN", `${path}.alive`);
-    const maxHp = finiteNumber(value.maxHp, `${path}.maxHp`, 0, Number.MAX_SAFE_INTEGER);
-    const hp = finiteNumber(value.hp, `${path}.hp`, 0, maxHp);
-    return {
-        id: boundedString(value.id, `${path}.id`, 1, 64),
-        name: boundedString(value.name, `${path}.name`, 1, 128),
-        x: finiteNumber(value.x, `${path}.x`, -Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER),
-        y: finiteNumber(value.y, `${path}.y`, -Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER),
-        hp,
-        maxHp,
-        alive: value.alive as boolean,
-    };
+    return guardWire(path, () => {
+        const value = stateRecord(input, path);
+        assertExactKeys(value, ["id", "name", "x", "y", "hp", "maxHp", "alive"], [], path);
+        if (typeof value.alive !== "boolean") throw new WireValidationError("STATE_BOOLEAN", `${path}.alive`);
+        const maxHp = finiteNumber(value.maxHp, `${path}.maxHp`, 0, Number.MAX_SAFE_INTEGER);
+        const hp = finiteNumber(value.hp, `${path}.hp`, 0, maxHp);
+        return {
+            id: boundedString(value.id, `${path}.id`, 1, 64),
+            name: boundedString(value.name, `${path}.name`, 1, 128),
+            x: finiteNumber(value.x, `${path}.x`, -Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER),
+            y: finiteNumber(value.y, `${path}.y`, -Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER),
+            hp,
+            maxHp,
+            alive: value.alive as boolean,
+        };
+    });
 }
 
 function entriesOfPlayers(input: unknown, path: string): Array<[string, unknown]> {
@@ -106,27 +108,29 @@ function entriesOfPlayers(input: unknown, path: string): Array<[string, unknown]
 
 /** Colyseus state 反射后的纯数据校验；未知字段或非法 phase 不得进入渲染/玩法回调。 */
 export function validateGameRoomState(input: unknown): IGameRoomState {
-    const value = stateRecord(input, "state");
-    assertExactKeys(value, ["tick", "phase", "matchId", "players"], [], "state");
-    const phase = value.phase;
-    if (phase !== GamePhase.Waiting && phase !== GamePhase.Playing && phase !== GamePhase.Settle) {
-        throw new WireValidationError("STATE_PHASE", "state.phase");
-    }
-    const entries = entriesOfPlayers(value.players, "state.players");
-    if (entries.length > MAX_PLAYERS) throw new WireValidationError("STATE_PLAYERS", "state.players");
-    const players = new Map<string, IPlayerState>();
-    for (const [id, player] of entries) {
-        if (typeof id !== "string" || id.length < 1 || id.length > 64 || players.has(id)) {
-            throw new WireValidationError("STATE_PLAYER_ID", "state.players");
+    return guardWire("state", () => {
+        const value = stateRecord(input, "state");
+        assertExactKeys(value, ["tick", "phase", "matchId", "players"], [], "state");
+        const phase = value.phase;
+        if (phase !== GamePhase.Waiting && phase !== GamePhase.Playing && phase !== GamePhase.Settle) {
+            throw new WireValidationError("STATE_PHASE", "state.phase");
         }
-        const parsed = validatePlayerState(player, `state.players.${id}`);
-        if (parsed.id !== id) throw new WireValidationError("STATE_PLAYER_ID", `state.players.${id}.id`);
-        players.set(id, parsed);
-    }
-    return {
-        tick: finiteInteger(value.tick, "state.tick", 0),
-        phase: phase as GamePhaseType,
-        matchId: boundedString(value.matchId, "state.matchId", 0, 128),
-        players,
-    };
+        const entries = entriesOfPlayers(value.players, "state.players");
+        if (entries.length > MAX_PLAYERS) throw new WireValidationError("STATE_PLAYERS", "state.players");
+        const players = new Map<string, IPlayerState>();
+        for (const [id, player] of entries) {
+            if (typeof id !== "string" || id.length < 1 || id.length > 64 || players.has(id)) {
+                throw new WireValidationError("STATE_PLAYER_ID", "state.players");
+            }
+            const parsed = validatePlayerState(player, `state.players.${id}`);
+            if (parsed.id !== id) throw new WireValidationError("STATE_PLAYER_ID", `state.players.${id}.id`);
+            players.set(id, parsed);
+        }
+        return {
+            tick: finiteInteger(value.tick, "state.tick", 0),
+            phase: phase as GamePhaseType,
+            matchId: boundedString(value.matchId, "state.matchId", 0, 128),
+            players,
+        };
+    });
 }

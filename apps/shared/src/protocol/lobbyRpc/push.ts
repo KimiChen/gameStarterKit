@@ -1,4 +1,4 @@
-import { assertExactKeys, boundedString, finiteInteger, isPlainRecord, type PlainRecord, WireValidationError } from "../http";
+import { assertExactKeys, boundedString, finiteInteger, guardWire, isPlainRecord, type PlainRecord, WireValidationError } from "../http";
 
 /**
  * LobbyRoom 服务端主动推送（LOBBY_MSG_PUSH 信封 {type,data}）的类型化契约 —— 真源。
@@ -133,12 +133,14 @@ export type LobbyPushEnvelope = {
 
 /** 主动推送 envelope（{type,data}）的 exact runtime validator。 */
 export function validateLobbyPush(input: unknown): LobbyPushEnvelope {
-    const value = pushRecord(input, "push");
-    assertExactKeys(value, ["type", "data"], [], "push");
-    const type = value.type;
-    if (type !== LobbyPush.MailNew && type !== LobbyPush.GuildEvent
-        && type !== LobbyPush.ServerNotice && type !== LobbyPush.ForceLogout) {
-        throw new WireValidationError("PUSH_TYPE", "push.type");
-    }
-    return { type, data: validatePushData(type, value.data) } as LobbyPushEnvelope;
+    return guardWire("push", () => {
+        const value = pushRecord(input, "push");
+        assertExactKeys(value, ["type", "data"], [], "push");
+        const type = value.type;
+        if (type !== LobbyPush.MailNew && type !== LobbyPush.GuildEvent
+            && type !== LobbyPush.ServerNotice && type !== LobbyPush.ForceLogout) {
+            throw new WireValidationError("PUSH_TYPE", "push.type");
+        }
+        return { type, data: validatePushData(type, value.data) } as LobbyPushEnvelope;
+    });
 }

@@ -35,6 +35,7 @@ import {
   validateWebPlatformVerifySessionResponse,
   hasExactKeys,
   isPlainRecord,
+  normalizeEffect,
   validateEffect,
   validateGrant,
   type LobbyRpcType,
@@ -170,6 +171,39 @@ test("wire helpers：revoked/throwing Proxy 按非法 shape 处理，不泄漏�
     },
   });
   assertInvalid(() => validateWebPlatformAreaListResponse(throwingRevoked), "WIRE_DATA_CORRUPT");
+});
+
+test("所有公开 wire validator：hostile getter/iterator 统一转为可判别错误", () => {
+  const getter = (value: Record<string, unknown>, key: string): Record<string, unknown> =>
+    new Proxy(value, { get(target, property, receiver) {
+      if (property === key) throw new Error(`hostile ${key}`);
+      return Reflect.get(target, property, receiver);
+    } });
+
+  assertInvalid(() => validateRoomJoinOptions(getter({ token: "t" }, "token")), "WIRE_DATA_CORRUPT");
+  assertInvalid(() => validateC2SPayload(C2S.Move, getter({ dirX: 0, dirY: 0 }, "dirX")), "WIRE_DATA_CORRUPT");
+  assertInvalid(() => validateS2CPayload(S2C.Pong, getter({ clientTime: 1, serverTime: 2 }, "serverTime")), "WIRE_DATA_CORRUPT");
+  assertInvalid(() => validateRpcEnvelope(getter({ id: "r1", type: "user.getInfo" }, "id")), "WIRE_DATA_CORRUPT");
+  assertInvalid(() => validateRpcReply(getter({ id: "r1", ok: true, data: {} }, "data")), "WIRE_DATA_CORRUPT");
+  assertInvalid(() => validateLobbyPush(getter({ type: LobbyPush.MailNew, data: { mailId: 1 } }, "data")), "WIRE_DATA_CORRUPT");
+  assertInvalid(() => validateGameRoomState(getter({ tick: 0, phase: GamePhase.Waiting, matchId: "", players: {} }, "players")), "WIRE_DATA_CORRUPT");
+  assertInvalid(() => validateLobbyRpcRequest("user.getProfile", getter({ uid: "u1" }, "uid")), "WIRE_DATA_CORRUPT");
+  assertInvalid(() => validateLobbyRpcResponse("mail.list", getter({ mails: [] }, "mails")), "WIRE_DATA_CORRUPT");
+
+  const revokedList = Proxy.revocable([], {});
+  revokedList.revoke();
+  assertInvalid(() => validateLobbyRpcResponse("mail.list", { mails: revokedList.proxy }), "WIRE_DATA_CORRUPT");
+
+  const throwingEntries = {
+    entries() { throw new Error("hostile iterator"); },
+  };
+  assertInvalid(() => validateGameRoomState({
+    tick: 0, phase: GamePhase.Waiting, matchId: "", players: throwingEntries,
+  }), "STATE_PLAYERS");
+
+  const revokedEffectArray = Proxy.revocable([], {});
+  revokedEffectArray.revoke();
+  assertInvalid(() => normalizeEffect(revokedEffectArray.proxy), "EFFECT_DATA_CORRUPT");
 });
 
 const requestFixtures: Record<LobbyRpcType, unknown> = {

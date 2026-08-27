@@ -116,15 +116,29 @@ const fail = (code: string, path: string, detail?: string): never => {
  * must see the same discriminated validation error as any other malformed
  * payload, never an engine-specific TypeError.
  */
-function guardWire<T>(path: string, fn: () => T): T {
+/**
+ * Execute a wire validator inside one exception boundary.  Accessing a field
+ * on a structurally valid object can still invoke an arbitrary getter/Proxy
+ * trap; callers must receive a stable protocol error instead of a native
+ * TypeError (or a rejected thenable leaking out of an adapter).
+ */
+export function guardWire<T>(path: string, fn: () => T): T {
     try {
         return fn();
     } catch (error) {
         // Even the thrown value can be a hostile/revoked Proxy; keep the
         // instanceof check isolated so it cannot leak another native throw.
-        let isWireError = false;
-        try { isWireError = error instanceof WireValidationError; } catch { /* fail closed */ }
-        if (isWireError) throw error;
+        let isKnownValidationError = false;
+        try {
+            isKnownValidationError = error instanceof WireValidationError
+                // The economy validator deliberately owns a more specific
+                // error class but is consumed by the RPC validators too.  Keep
+                // that discriminant intact while still normalizing arbitrary
+                // native errors from hostile getters.
+                || (error instanceof Error
+                    && (error as { name?: unknown }).name === "EffectValidationError");
+        } catch { /* fail closed */ }
+        if (isKnownValidationError) throw error;
         throw new WireValidationError("WIRE_DATA_CORRUPT", path);
     }
 }

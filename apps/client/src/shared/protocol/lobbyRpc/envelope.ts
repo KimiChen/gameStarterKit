@@ -1,4 +1,4 @@
-import { assertExactKeys, boundedString, isPlainRecord, type PlainRecord, type RuntimeValidator, WireValidationError } from "../http";
+import { assertExactKeys, boundedString, guardWire, isPlainRecord, type PlainRecord, type RuntimeValidator, WireValidationError } from "../http";
 
 /**
  * LobbyRoom ws-RPC 信封与错误码 —— 双端共享的**类型真源**。
@@ -63,12 +63,14 @@ function envelopeRecord(input: unknown, path: string): PlainRecord {
 
 /** 信封 runtime validator；validated value 是新的 plain object，未知字段不被静默剥离。 */
 export function validateRpcEnvelope(input: unknown): IRpcEnvelope {
-    const value = envelopeRecord(input, "rpc");
-    assertExactKeys(value, ["id", "type"], ["payload"], "rpc");
-    const id = boundedString(value.id, "rpc.id", 1, RPC_ID_MAX);
-    const type = boundedString(value.type, "rpc.type", 1, RPC_ID_MAX);
-    if (!Object.prototype.hasOwnProperty.call(value, "payload") || value.payload === undefined) return { id, type };
-    return { id, type, payload: value.payload };
+    return guardWire("rpc", () => {
+        const value = envelopeRecord(input, "rpc");
+        assertExactKeys(value, ["id", "type"], ["payload"], "rpc");
+        const id = boundedString(value.id, "rpc.id", 1, RPC_ID_MAX);
+        const type = boundedString(value.type, "rpc.type", 1, RPC_ID_MAX);
+        if (!Object.prototype.hasOwnProperty.call(value, "payload") || value.payload === undefined) return { id, type };
+        return { id, type, payload: value.payload };
+    });
 }
 
 function isRpcErrCode(value: unknown): value is RpcErrCode {
@@ -77,21 +79,23 @@ function isRpcErrCode(value: unknown): value is RpcErrCode {
 
 /** RPC response runtime validator，按 ok 判别联合严格拒绝 data/err 混用。 */
 export function validateRpcReply(input: unknown): IRpcReply {
-    const value = envelopeRecord(input, "reply");
-    assertExactKeys(value, ["id", "ok"], ["data", "err"], "reply");
-    const id = boundedString(value.id, "reply.id", 1, RPC_ID_MAX);
-    if (typeof value.ok !== "boolean") throw new WireValidationError("RPC_OK", "reply.ok");
-    const hasData = Object.prototype.hasOwnProperty.call(value, "data");
-    const hasErr = Object.prototype.hasOwnProperty.call(value, "err");
-    if (value.ok) {
-        if (hasErr) throw new WireValidationError("RPC_REPLY_SHAPE", "reply.err");
-        return hasData ? { id, ok: true, data: value.data } : { id, ok: true };
-    }
-    if (!hasErr || hasData) throw new WireValidationError("RPC_REPLY_SHAPE", "reply");
-    const err = envelopeRecord(value.err, "reply.err");
-    assertExactKeys(err, ["code", "msg"], [], "reply.err");
-    if (!isRpcErrCode(err.code)) throw new WireValidationError("RPC_ERR_CODE", "reply.err.code");
-    return { id, ok: false, err: { code: err.code, msg: boundedString(err.msg, "reply.err.msg", 0, 2048) } };
+    return guardWire("reply", () => {
+        const value = envelopeRecord(input, "reply");
+        assertExactKeys(value, ["id", "ok"], ["data", "err"], "reply");
+        const id = boundedString(value.id, "reply.id", 1, RPC_ID_MAX);
+        if (typeof value.ok !== "boolean") throw new WireValidationError("RPC_OK", "reply.ok");
+        const hasData = Object.prototype.hasOwnProperty.call(value, "data");
+        const hasErr = Object.prototype.hasOwnProperty.call(value, "err");
+        if (value.ok) {
+            if (hasErr) throw new WireValidationError("RPC_REPLY_SHAPE", "reply.err");
+            return hasData ? { id, ok: true, data: value.data } : { id, ok: true };
+        }
+        if (!hasErr || hasData) throw new WireValidationError("RPC_REPLY_SHAPE", "reply");
+        const err = envelopeRecord(value.err, "reply.err");
+        assertExactKeys(err, ["code", "msg"], [], "reply.err");
+        if (!isRpcErrCode(err.code)) throw new WireValidationError("RPC_ERR_CODE", "reply.err.code");
+        return { id, ok: false, err: { code: err.code, msg: boundedString(err.msg, "reply.err.msg", 0, 2048) } };
+    });
 }
 
 /** 便于 adapter 在收到任意信封时统一判定，而无需 try/catch 每个字段。 */

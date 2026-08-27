@@ -3,6 +3,7 @@ import {
     boundedString,
     finiteInteger,
     finiteNumber,
+    guardWire,
     isPlainRecord,
     type PlainRecord,
     type RuntimeValidator,
@@ -167,32 +168,39 @@ function validateError(input: unknown): IErrorRes {
 }
 
 /** C2S runtime validators. Values are copied so callers cannot mutate a validated payload. */
+const guardMessageValidator = <T>(validator: RuntimeValidator<T>): RuntimeValidator<T> =>
+    (input: unknown) => guardWire("payload", () => validator(input));
+
 export const C2S_RUNTIME_VALIDATORS: { [K in C2SType]: RuntimeValidator<C2SPayloadMap[K]> } = {
-    [C2S.Ping]: validatePing,
-    [C2S.Move]: validateMove,
-    [C2S.CastSkill]: validateCastSkill,
-    [C2S.Chat]: validateChat,
+    [C2S.Ping]: guardMessageValidator(validatePing),
+    [C2S.Move]: guardMessageValidator(validateMove),
+    [C2S.CastSkill]: guardMessageValidator(validateCastSkill),
+    [C2S.Chat]: guardMessageValidator(validateChat),
 };
 
 /** S2C runtime validators. Client state/message adapters must validate before dispatching callbacks. */
 export const S2C_RUNTIME_VALIDATORS: { [K in S2CType]: RuntimeValidator<S2CPayloadMap[K]> } = {
-    [S2C.Pong]: validatePong,
-    [S2C.Welcome]: validateWelcome,
-    [S2C.SkillResult]: validateSkillResult,
-    [S2C.Chat]: validateChatResult,
-    [S2C.Error]: validateError,
+    [S2C.Pong]: guardMessageValidator(validatePong),
+    [S2C.Welcome]: guardMessageValidator(validateWelcome),
+    [S2C.SkillResult]: guardMessageValidator(validateSkillResult),
+    [S2C.Chat]: guardMessageValidator(validateChatResult),
+    [S2C.Error]: guardMessageValidator(validateError),
 };
 
 export function validateC2SPayload<T extends C2SType>(type: T, input: unknown): C2SPayload<T> {
-    const validator = C2S_RUNTIME_VALIDATORS[type] as RuntimeValidator<C2SPayload<T>> | undefined;
-    if (!validator) throw new WireValidationError("MESSAGE_TYPE", `type:${String(type)}`);
-    return validator(input);
+    return guardWire("payload", () => {
+        const validator = C2S_RUNTIME_VALIDATORS[type] as RuntimeValidator<C2SPayload<T>> | undefined;
+        if (!validator) throw new WireValidationError("MESSAGE_TYPE", "type");
+        return validator(input);
+    });
 }
 
 export function validateS2CPayload<T extends S2CType>(type: T, input: unknown): S2CPayload<T> {
-    const validator = S2C_RUNTIME_VALIDATORS[type] as RuntimeValidator<S2CPayload<T>> | undefined;
-    if (!validator) throw new WireValidationError("MESSAGE_TYPE", `type:${String(type)}`);
-    return validator(input);
+    return guardWire("payload", () => {
+        const validator = S2C_RUNTIME_VALIDATORS[type] as RuntimeValidator<S2CPayload<T>> | undefined;
+        if (!validator) throw new WireValidationError("MESSAGE_TYPE", "type");
+        return validator(input);
+    });
 }
 
 // ---------------- 网关大厅房（服务端框架 M5，docs/SERVER.md §4 Lobby RPC） ----------------

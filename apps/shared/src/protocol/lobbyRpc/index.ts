@@ -10,7 +10,7 @@ import { MailRpc, type IMailClaimAttachReq, type IMailListReq, type IMailListRes
 import { ShopRpc, type IShopPurchaseReq, type IShopQueryOpReq, type ShopRpcMap } from "./shop";
 import { UserRpc, type IGetInfoRes, type IPublicUserView, type IUpdateProfileReq, type IUserView, type UserRpcMap } from "./user";
 import type { IGuildEvent, IGuildGetEventsReq, IGuildGetEventsRes, IGuildJoinReq, IGuildLeaveReq } from "./guild";
-import { assertExactKeys, boundedString, finiteInteger, isPlainRecord, type PlainRecord, type RuntimeValidator, WireValidationError } from "../http";
+import { assertExactKeys, boundedString, finiteInteger, guardWire, isPlainRecord, type PlainRecord, type RuntimeValidator, WireValidationError } from "../http";
 import { validateGrant } from "./economy";
 import type { IGrant, IPurchaseResult } from "./economy";
 
@@ -223,46 +223,54 @@ const validateEventsRes: RuntimeValidator<IGuildGetEventsRes> = (input) => {
     return { events: value.events.map((event, i) => validateGuildEvent(event, i)), latestSeq: finiteInteger(value.latestSeq, "response.latestSeq", 0), guildId: finiteInteger(value.guildId, "response.guildId", 0) };
 };
 
+/** Keep direct consumers of the exported validator maps inside the same wire boundary. */
+const guardRpcValidator = <T>(path: string, validator: RuntimeValidator<T>): RuntimeValidator<T> =>
+    (input: unknown) => guardWire(path, () => validator(input));
+
 /** Route request validators: exact fields + finite/range checks, shared by client and server adapters. */
 export const LOBBY_RPC_REQUEST_VALIDATORS = {
-    [UserRpc.GetUserId]: validateGetUserIdReq,
-    [UserRpc.GetInfo]: validateGetInfoReq,
-    [UserRpc.GetProfile]: validateGetProfileReq,
-    [UserRpc.UpdateProfile]: validateUpdateProfileReq,
-    [MailRpc.List]: validateMailListReq,
-    [MailRpc.ClaimAttach]: validateMailClaimReq,
-    [MailRpc.MarkRead]: validateMailMarkReq,
-    [ShopRpc.Purchase]: validateShopPurchaseReq,
-    [ShopRpc.QueryOp]: validateShopQueryReq,
-    [GuildRpc.Join]: validateGuildJoinReq,
-    [GuildRpc.Leave]: validateGuildLeaveReq,
-    [GuildRpc.GetEvents]: validateGuildEventsReq,
+    [UserRpc.GetUserId]: guardRpcValidator("payload", validateGetUserIdReq),
+    [UserRpc.GetInfo]: guardRpcValidator("payload", validateGetInfoReq),
+    [UserRpc.GetProfile]: guardRpcValidator("payload", validateGetProfileReq),
+    [UserRpc.UpdateProfile]: guardRpcValidator("payload", validateUpdateProfileReq),
+    [MailRpc.List]: guardRpcValidator("payload", validateMailListReq),
+    [MailRpc.ClaimAttach]: guardRpcValidator("payload", validateMailClaimReq),
+    [MailRpc.MarkRead]: guardRpcValidator("payload", validateMailMarkReq),
+    [ShopRpc.Purchase]: guardRpcValidator("payload", validateShopPurchaseReq),
+    [ShopRpc.QueryOp]: guardRpcValidator("payload", validateShopQueryReq),
+    [GuildRpc.Join]: guardRpcValidator("payload", validateGuildJoinReq),
+    [GuildRpc.Leave]: guardRpcValidator("payload", validateGuildLeaveReq),
+    [GuildRpc.GetEvents]: guardRpcValidator("payload", validateGuildEventsReq),
 } as const;
 
 /** Route response validators. */
 export const LOBBY_RPC_RESPONSE_VALIDATORS = {
-    [UserRpc.GetUserId]: validateGetUserIdRes,
-    [UserRpc.GetInfo]: validateGetInfoRes,
-    [UserRpc.GetProfile]: validateProfileRes,
-    [UserRpc.UpdateProfile]: validateUpdateRes,
-    [MailRpc.List]: validateMailListRes,
-    [MailRpc.ClaimAttach]: validatePurchaseResult,
-    [MailRpc.MarkRead]: validateOkRes,
-    [ShopRpc.Purchase]: validatePurchaseResult,
-    [ShopRpc.QueryOp]: validatePurchaseResult,
-    [GuildRpc.Join]: validateJoinRes,
-    [GuildRpc.Leave]: validateOkRes,
-    [GuildRpc.GetEvents]: validateEventsRes,
+    [UserRpc.GetUserId]: guardRpcValidator("response", validateGetUserIdRes),
+    [UserRpc.GetInfo]: guardRpcValidator("response", validateGetInfoRes),
+    [UserRpc.GetProfile]: guardRpcValidator("response", validateProfileRes),
+    [UserRpc.UpdateProfile]: guardRpcValidator("response", validateUpdateRes),
+    [MailRpc.List]: guardRpcValidator("response", validateMailListRes),
+    [MailRpc.ClaimAttach]: guardRpcValidator("response", validatePurchaseResult),
+    [MailRpc.MarkRead]: guardRpcValidator("response", validateOkRes),
+    [ShopRpc.Purchase]: guardRpcValidator("response", validatePurchaseResult),
+    [ShopRpc.QueryOp]: guardRpcValidator("response", validatePurchaseResult),
+    [GuildRpc.Join]: guardRpcValidator("response", validateJoinRes),
+    [GuildRpc.Leave]: guardRpcValidator("response", validateOkRes),
+    [GuildRpc.GetEvents]: guardRpcValidator("response", validateEventsRes),
 } as const;
 
 export function validateLobbyRpcRequest<T extends LobbyRpcType>(type: T, input: unknown): RpcReq<T> {
-    const validator = LOBBY_RPC_REQUEST_VALIDATORS[type] as RuntimeValidator<RpcReq<T>> | undefined;
-    if (!validator) throw new WireValidationError("RPC_TYPE", `type:${String(type)}`);
-    return validator(input);
+    return guardWire("payload", () => {
+        const validator = LOBBY_RPC_REQUEST_VALIDATORS[type] as RuntimeValidator<RpcReq<T>> | undefined;
+        if (!validator) throw new WireValidationError("RPC_TYPE", "type");
+        return validator(input);
+    });
 }
 
 export function validateLobbyRpcResponse<T extends LobbyRpcType>(type: T, input: unknown): RpcRes<T> {
-    const validator = LOBBY_RPC_RESPONSE_VALIDATORS[type] as RuntimeValidator<RpcRes<T>> | undefined;
-    if (!validator) throw new WireValidationError("RPC_TYPE", `type:${String(type)}`);
-    return validator(input);
+    return guardWire("response", () => {
+        const validator = LOBBY_RPC_RESPONSE_VALIDATORS[type] as RuntimeValidator<RpcRes<T>> | undefined;
+        if (!validator) throw new WireValidationError("RPC_TYPE", "type");
+        return validator(input);
+    });
 }

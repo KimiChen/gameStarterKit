@@ -76,6 +76,11 @@ export class EffectValidationError extends Error {
     }
 }
 
+const isEffectValidationError = (error: unknown): error is EffectValidationError => {
+    try { return error instanceof EffectValidationError; }
+    catch { return false; }
+};
+
 type RecordLike = Record<string, unknown>;
 
 const isRecord = (value: unknown): value is RecordLike => {
@@ -158,7 +163,7 @@ export function validateGrant(input: unknown, path = "grant"): IGrant {
         }
         return fail("EFFECT_UNKNOWN_KIND", `${path}.kind`);
     } catch (error) {
-        if (error instanceof EffectValidationError) throw error;
+        if (isEffectValidationError(error)) throw error;
         return fail("EFFECT_DATA_CORRUPT", path);
     }
 }
@@ -195,22 +200,29 @@ export function validateEffect(input: unknown): IEffect {
         }
         return { schemaVersion: EFFECT_SCHEMA_VERSION, grants };
     } catch (error) {
-        if (error instanceof EffectValidationError) throw error;
+        if (isEffectValidationError(error)) throw error;
         return fail("EFFECT_DATA_CORRUPT", "effect");
     }
 }
 
 /** 兼容历史 outbox/mail JSON 数组；所有新写入在返回后都使用 envelope。 */
 export function normalizeEffect(input: unknown): IEffect {
-    let value = input;
-    if (typeof value === "string") {
-        try { value = JSON.parse(value) as unknown; }
-        catch { fail("EFFECT_NOT_OBJECT", "effect"); }
+    try {
+        let value = input;
+        if (typeof value === "string") {
+            try { value = JSON.parse(value) as unknown; }
+            catch { fail("EFFECT_NOT_OBJECT", "effect"); }
+        }
+        // Keep Array.isArray and any array Proxy trap inside the same effect
+        // error boundary as the rest of normalization.
+        if (Array.isArray(value)) {
+            return validateEffect({ schemaVersion: EFFECT_SCHEMA_VERSION, grants: value });
+        }
+        return validateEffect(value);
+    } catch (error) {
+        if (isEffectValidationError(error)) throw error;
+        return fail("EFFECT_DATA_CORRUPT", "effect");
     }
-    if (Array.isArray(value)) {
-        return validateEffect({ schemaVersion: EFFECT_SCHEMA_VERSION, grants: value });
-    }
-    return validateEffect(value);
 }
 
 /** 仅在需要返回旧版 API 形状时取 grants；仍先经过完整校验。 */

@@ -1,4 +1,4 @@
-import { assertExactKeys, boundedString, finiteInteger, isPlainRecord, type PlainRecord, WireValidationError } from "./http";
+import { assertExactKeys, boundedString, finiteInteger, guardWire, isPlainRecord, type PlainRecord, WireValidationError } from "./http";
 
 /**
  * 房间名定义 —— 双端共享。
@@ -48,20 +48,22 @@ export interface IRoomJoinOptions {
  * interface；未知字段、NaN/Infinity、越界区号及空 token 必须在进入连接流程前拒绝。
  */
 export function validateRoomJoinOptions(input: unknown): IRoomJoinOptions {
-    if (input === undefined) return {};
-    if (!isPlainRecord(input)) throw new WireValidationError("ROOM_OPTIONS_OBJECT", "options");
-    const value = input as PlainRecord;
-    assertExactKeys(value, [], ["v", "token", "sId"], "options");
+    return guardWire("options", () => {
+        if (input === undefined) return {};
+        if (!isPlainRecord(input)) throw new WireValidationError("ROOM_OPTIONS_OBJECT", "options");
+        const value = input as PlainRecord;
+        assertExactKeys(value, [], ["v", "token", "sId"], "options");
 
-    const out: IRoomJoinOptions = {};
-    if (Object.prototype.hasOwnProperty.call(value, "v") && value.v !== undefined) {
-        out.v = finiteInteger(value.v, "options.v", 1, 0xffff);
-    }
-    if (Object.prototype.hasOwnProperty.call(value, "token") && value.token !== undefined) {
-        out.token = boundedString(value.token, "options.token", 1, 256);
-    }
-    if (Object.prototype.hasOwnProperty.call(value, "sId") && value.sId !== undefined) {
-        out.sId = finiteInteger(value.sId, "options.sId", 0, 0xffff);
-    }
-    return out;
+        const out: IRoomJoinOptions = {};
+        if (Object.prototype.hasOwnProperty.call(value, "v") && value.v !== undefined) {
+            out.v = finiteInteger(value.v, "options.v", 1, 0xffff);
+        }
+        if (Object.prototype.hasOwnProperty.call(value, "token") && value.token !== undefined) {
+            out.token = boundedString(value.token, "options.token", 1, 256);
+        }
+        if (Object.prototype.hasOwnProperty.call(value, "sId") && value.sId !== undefined) {
+            out.sId = finiteInteger(value.sId, "options.sId", 0, 0xffff);
+        }
+        return out;
+    });
 }
