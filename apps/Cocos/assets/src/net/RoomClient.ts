@@ -11,7 +11,9 @@ import {
     C2S,
     S2C,
     PROTOCOL_VERSION,
+    type C2SPayloadMap,
     type IGameRoomState,
+    type IRoomJoinOptions,
     type IPingReq,
     type IMoveReq,
     type ICastSkillReq,
@@ -21,6 +23,11 @@ import {
     type ISkillResultRes,
     type IChatRes,
     type IErrorRes,
+    isPlainRecord,
+    validateC2SPayload,
+    validateGameRoomState,
+    validateRoomJoinOptions,
+    validateS2CPayload,
 } from "../shared/index";
 import { notifyBattleLost } from "./session";
 
@@ -106,7 +113,7 @@ function stableJson(value: unknown, ancestors = new Set<object>()): string | und
 }
 
 /** endpoint + 实际发送的完整 join options 共同定义一个可安全合流的物理连接。 */
-function connectionKey(endpoint: string, options: Record<string, unknown>): string {
+function connectionKey(endpoint: string, options: unknown): string {
     return stableJson([endpoint, options])!;
 }
 
@@ -185,6 +192,147 @@ function waitMsFor(control: JoinControl): number {
         return Number.isFinite(raw) ? Math.max(0, raw) : 0;
     }
     return 15_000;
+}
+
+function wireErrorText(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+}
+
+function warnInvalidWire(scope: string, error: unknown): void {
+    // Payloads may contain user text or account identifiers; log only the
+    // validator's stable code/path, never the rejected packet itself.
+    console.warn(`[RoomClient] 丢弃非法 ${scope}: ${wireErrorText(error)}`);
+}
+
+/**
+ * Colyseus exposes Schema instances for the root and players, while the shared
+ * validator intentionally accepts dependency-free plain data. Project only the
+ * wire fields for class instances and retain exact keys for plain fixtures so
+ * unknown fields are still rejected. MapSchema-like collections are copied to a
+ * native Map, preserving the structural `entries()` contract of the validator.
+ */
+function projectPlayerForValidation(input: unknown): unknown {
+    if (isPlainRecord(input)) return input;
+    if (typeof input !== "object" || input === null) return input;
+    const value = input as Record<string, unknown>;
+    return {
+        id: value.id,
+        name: value.name,
+        x: value.x,
+        y: value.y,
+        hp: value.hp,
+        maxHp: value.maxHp,
+        alive: value.alive,
+    };
+}
+
+function projectPlayersForValidation(input: unknown): unknown {
+    if (input instanceof Map) {
+        const out = new Map<unknown, unknown>();
+        for (const [key, value] of input.entries()) out.set(key, projectPlayerForValidation(value));
+        return out;
+    }
+    if (typeof input === "object" && input !== null) {
+        const entries = (input as { entries?: unknown }).entries;
+        if (typeof entries === "function") {
+            try {
+                const out = new Map<unknown, unknown>();
+                const iterable = (entries as () => Iterable<unknown>).call(input);
+                for (const pair of iterable) {
+                    if (!Array.isArray(pair) || pair.length !== 2) return input;
+                    out.set(pair[0], projectPlayerForValidation(pair[1]));
+                }
+                return out;
+            } catch {
+                return input;
+            }
+        }
+    }
+    if (isPlainRecord(input)) {
+        const out: Record<string, unknown> = {};
+        for (const key of Object.keys(input)) out[key] = projectPlayerForValidation(input[key]);
+        return out;
+    }
+    return input;
+}
+
+function projectStateForValidation(input: unknown): unknown {
+    if (isPlainRecord(input)) {
+        return { ...input, players: projectPlayersForValidation(input.players) };
+    }
+    if (typeof input !== "object" || input === null) return input;
+    const value = input as Record<string, unknown>;
+    return {
+        tick: value.tick,
+        phase: value.phase,
+        matchId: value.matchId,
+        players: projectPlayersForValidation(value.players),
+    };
+}
+
+function validatedStateSnapshot(room: Colyseus.Room<IGameRoomState>): IGameRoomState | null {
+    try {
+        return validateGameRoomState(projectStateForValidation(room.state));
+    } catch (error) {
+        warnInvalidWire("GameRoom state", error);
+        return null;
+    }
+}
+
+const CALLBACK_ARG_INDEX: Record<string, number> = {
+    listen: 1,
+    onAdd: 0,
+    onRemove: 0,
+    onChange: 0,
+};
+
+function noopStateProxy(): any {
+    // A callable recursive proxy lets callers retain the usual `$(state).players`
+    // shape even while a malformed snapshot is being dropped.
+    return new Proxy(() => undefined, {
+        get: () => noopStateProxy(),
+        apply: () => noopStateProxy(),
+    });
+}
+
+function guardStateCallbacks(
+    proxy: any,
+    room: Colyseus.Room<IGameRoomState>,
+    cache = new WeakMap<object, any>(),
+): any {
+    if ((typeof proxy !== "object" && typeof proxy !== "function") || proxy === null) return proxy;
+    const cached = cache.get(proxy);
+    if (cached) return cached;
+    const guarded = new Proxy(proxy, {
+        apply(target, thisArg, args) {
+            if (!validatedStateSnapshot(room)) return noopStateProxy();
+            const result = Reflect.apply(target, thisArg, args);
+            return guardStateCallbacks(result, room, cache);
+        },
+        get(target, property, receiver) {
+            const value = Reflect.get(target, property, receiver);
+            if (typeof value === "function" && typeof property === "string") {
+                const callbackIndex = CALLBACK_ARG_INDEX[property];
+                if (callbackIndex !== undefined) {
+                    return (...args: unknown[]) => {
+                        const callback = args[callbackIndex];
+                        if (typeof callback !== "function") return value.apply(target, args);
+                        args[callbackIndex] = (...callbackArgs: unknown[]) => {
+                            if (!validatedStateSnapshot(room)) return undefined;
+                            return callback(...callbackArgs);
+                        };
+                        return value.apply(target, args);
+                    };
+                }
+            }
+            if (value !== null && (typeof value === "object" || typeof value === "function")) {
+                return guardStateCallbacks(value, room, cache);
+            }
+            return value;
+        },
+    });
+    cache.set(proxy, guarded);
+    return guarded;
 }
 
 /**
@@ -290,7 +438,9 @@ export class RoomClient {
             throw new Error("[RoomClient] 未初始化，请先调用 init(endpoint)");
         }
         const split = splitJoinControl(options, control);
-        const joinOptions = cloneJson({ ...split.options, v: PROTOCOL_VERSION });
+        const joinOptions = validateRoomJoinOptions(
+            cloneJson({ ...split.options, v: PROTOCOL_VERSION }),
+        );
         const endpoint = this.endpoint;
         const client = this.client;
         const key = connectionKey(endpoint, joinOptions);
@@ -389,7 +539,7 @@ export class RoomClient {
     private async doJoin(
         slot: RoomSlot,
         client: Colyseus.Client,
-        joinOptions: Record<string, unknown>,
+        joinOptions: IRoomJoinOptions,
     ): Promise<Colyseus.Room<IGameRoomState>> {
         let room: Colyseus.Room<IGameRoomState>;
         try {
@@ -515,8 +665,16 @@ export class RoomClient {
      * 也必须更新 desired；重连回调会按 seq 重新 reconcile，避免“松手”丢失。
      */
     move(dirX: number, dirY: number): void {
-        if (!Number.isFinite(dirX) || !Number.isFinite(dirY)) return;
-        this.desiredInput = { dirX, dirY, seq: ++this.inputSeq };
+        let payload: IMoveReq;
+        try {
+            // Validate before recording desired state. Otherwise an out-of-range
+            // direction would remain queued and be retried on every reconnect.
+            payload = validateC2SPayload(C2S.Move, { dirX, dirY });
+        } catch (error) {
+            warnInvalidWire(`C2S ${String(C2S.Move)}`, error);
+            return;
+        }
+        this.desiredInput = { dirX: payload.dirX, dirY: payload.dirY, seq: ++this.inputSeq };
         const slot = this.slot;
         if (slot && slot.room && !slot.dropping && !slot.cancelled) this.reconcileInput(slot);
     }
@@ -540,8 +698,9 @@ export class RoomClient {
             dirX: this.desiredInput.dirX,
             dirY: this.desiredInput.dirY,
         };
-        slot.room.send(C2S.Move, payload);
-        slot.lastInputSeq = this.desiredInput.seq;
+        if (this.sendC2S(C2S.Move, payload, slot.room)) {
+            slot.lastInputSeq = this.desiredInput.seq;
+        }
     }
 
     /**
@@ -550,7 +709,9 @@ export class RoomClient {
      *   $(room.state).players.onAdd((player, id) => { $(player).listen("x", cb); });
      */
     state$(room: Colyseus.Room<IGameRoomState>): any {
-        return Colyseus.getStateCallbacks(room);
+        const callbacks = Colyseus.getStateCallbacks(room);
+        if (!callbacks) return noopStateProxy();
+        return guardStateCallbacks(callbacks, room);
     }
 
     /** 在精确 room 上注册服务端消息处理器，返回解绑函数。 */
@@ -559,23 +720,51 @@ export class RoomClient {
         type: K,
         callback: (payload: S2CPayloadMap[K]) => void,
     ): () => void {
-        return room.onMessage(type as string, callback);
+        return room.onMessage(type as string, (raw: unknown) => {
+            let payload: S2CPayloadMap[K];
+            try {
+                payload = validateS2CPayload(type, raw);
+            } catch (error) {
+                warnInvalidWire(`S2C ${String(type)}`, error);
+                return;
+            }
+            callback(payload);
+        });
     }
 
     // ---------------- 类型安全的消息发送 ----------------
 
     ping(): void {
         const payload: IPingReq = { clientTime: Date.now() };
-        this.room?.send(C2S.Ping, payload);
+        this.sendC2S(C2S.Ping, payload);
     }
 
     castSkill(skillId: number, targetId?: string): void {
         const payload: ICastSkillReq = { skillId, targetId };
-        this.room?.send(C2S.CastSkill, payload);
+        this.sendC2S(C2S.CastSkill, payload);
     }
 
     chat(text: string): void {
         const payload: IChatReq = { text };
-        this.room?.send(C2S.Chat, payload);
+        this.sendC2S(C2S.Chat, payload);
+    }
+
+    /** Validate every client-originated payload immediately before it crosses the wire. */
+    private sendC2S<K extends keyof C2SPayloadMap>(
+        type: K,
+        payload: C2SPayloadMap[K],
+        targetRoom: Colyseus.Room<IGameRoomState> | null = this.room,
+    ): boolean {
+        const room = targetRoom;
+        if (!room) return false;
+        let wirePayload: C2SPayloadMap[K];
+        try {
+            wirePayload = validateC2SPayload(type, payload);
+        } catch (error) {
+            warnInvalidWire(`C2S ${String(type)}`, error);
+            return false;
+        }
+        room.send(type as string, wirePayload);
+        return true;
     }
 }
