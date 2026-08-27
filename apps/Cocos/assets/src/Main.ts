@@ -14,10 +14,9 @@ import { DEV_SERVER_URL } from "./core/devEnv";
 import { DESIGN_WIDTH, DESIGN_HEIGHT } from "./designSpec";
 import { installWeChatCompat } from "./core/wechat-compat";
 import { getToken, initHttp, initPortal } from "./core/http";
-import { getCurrentServer } from "./net/serverSession";
+import { getCurrentServer, getListHash } from "./net/serverSession";
 import { onAuthInvalid, onBattleLost, onConnLost, returnToLogin } from "./net/session";
 import { RoomClient, type GameRoomOwnership } from "./net/RoomClient";
-import { WebSocketClient } from "./net/WebSocketClient";
 import { GameECS } from "./logic/rooms/ballMove/GameECS";
 import { PlayerModel } from "./logic/rooms/ballMove/GameComps";
 import {
@@ -238,16 +237,16 @@ export class Main extends Component {
     }
 
     /** 连 ballMove 玩法房（token 已在大厅登录时设置）。
-     * 区服=实例：使用目录明确给出的 gameHttpUrl；无选服状态直接失败，不猜默认游戏服。 */
+     * 区服=实例：Colyseus 使用目录明确给出的 gameWsUrl；HTTP 底座仍使用 gameHttpUrl。 */
     private connectRoom(): GameRoomOwnership {
         const cur = getCurrentServer();
         if (!cur) {
             throw new Error("[Main] 尚未选择区服，不能进入战斗");
         }
-        RoomClient.inst.init(cur.gameHttpUrl);
+        RoomClient.inst.init(cur.gameWsUrl);
         // WebPlatform 对外契约使用 serverId；游戏服房间契约仍保留 sId。
         // 未选服已在上方明确拒绝，因此这里始终携带选中的 serverId。
-        return RoomClient.inst.joinGame({ token: getToken(), sId: cur.serverId });
+        return RoomClient.inst.joinGame({ token: getToken(), sId: cur.serverId, listHash: getListHash() });
     }
 
     /**

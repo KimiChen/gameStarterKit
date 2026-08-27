@@ -9,7 +9,14 @@ import { AreaListLogic } from "../src/logic/page/AreaListLogic";
 import { LoginNoticeLogic } from "../src/logic/page/LoginNoticeLogic";
 import { LoginLogic } from "../src/logic/page/LoginLogic";
 import { ConfirmLogic } from "../src/logic/page/ConfirmLogic";
-import { chooseServer, getCurrentServer, pickDefaultServer, setServerList, getListHash } from "../src/net/serverSession";
+import {
+  chooseServer,
+  getCurrentServer,
+  getServerList,
+  pickDefaultServer,
+  setServerList,
+  getListHash,
+} from "../src/net/serverSession";
 import { isServerEnterable } from "../src/logic/areaDirectory";
 import { areaStatusIconUrl } from "../src/view/areaPresentation";
 import type { WebPlatformAreaListResponse, WebPlatformAreaServer } from "../src/shared/index";
@@ -124,6 +131,31 @@ test("serverSession：默认选中跳过不可进服——最近服顺延 / 兜�
     "全不可进 → servers[0] 展示位兜底",
   );
   assert.equal(pickDefaultServer(areaRes([])), null, "空列表 → null");
+});
+
+test("serverSession：目录刷新保留当前区，区消失才回退默认，失败保留完整旧快照", () => {
+  const first = { ...areaRes([srv(10), srv(20)], [10]), hash: "h1" };
+  setServerList(first);
+  chooseServer(first.servers[1]);
+  assert.equal(getCurrentServer()?.serverId, 20);
+
+  // 新目录仍含 20：地址、hash 与列表一起替换，但用户选择不被默认值覆盖。
+  const refreshed = { ...areaRes([srv(10), { ...srv(20), gameWsUrl: "ws://zone20-v2" }], [10]), hash: "h2" };
+  setServerList(refreshed);
+  assert.equal(getCurrentServer()?.serverId, 20);
+  assert.equal(getCurrentServer()?.gameWsUrl, "ws://zone20-v2");
+  assert.equal(getListHash(), "h2");
+
+  // 当前区不在新目录：按 myServerIds/可进入规则选择默认区。
+  const removed = { ...areaRes([srv(30), srv(40)], [40]), hash: "h3" };
+  setServerList(removed);
+  assert.equal(getCurrentServer()?.serverId, 40);
+  assert.equal(getServerList()?.hash, "h3");
+
+  // 模拟拉取失败：调用方不执行 setServerList，旧快照必须原样可用。
+  assert.equal(getCurrentServer()?.serverId, 40);
+  assert.equal(getListHash(), "h3");
+  assert.strictEqual(getServerList(), removed);
 });
 
 test("Area 状态展示：Public 字符串枚举稳定映射现有 FGUI 图标", () => {

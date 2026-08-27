@@ -38,9 +38,12 @@ npm run sync:shared
 
 `Main` 组件另有一个可留空的 `serverUrl`：留空时使用 `sync:client` 生成的 `core/devEnv.ts`（跟随根
 `.env.development` 的 `PORT`，默认 `http://localhost:2568`），填写即覆盖。它只是区服目录加载前的默认
-游戏服 HTTP 地址——登录页拉到目录后会用所选区的 `gameHttpUrl` 重新初始化 HTTP 底座，战斗房连接也只使用
-`gameHttpUrl`。`portalUrl` 留空或不是 http(s) 绝对地址时（见
+游戏服 HTTP 地址——登录页拉到目录后会用所选区的 `gameHttpUrl` 重新初始化 HTTP 底座。`portalUrl` 留空或不是 http(s) 绝对地址时（见
 [外部身份服务开发边界](WEBPLATFORM.md) §5）`Main.start()` 直接抛错，后续的会话事件订阅与登录页都不会执行。
+
+目录中的 `gameHttpUrl` 与 `gameWsUrl` 是两个独立、不可互相推导的端点：前者用于游戏 HTTP 请求，后者
+直接传给 Colyseus `Client`。Lobby/Game join 同时携带当前目录 `listHash`，服务端可以拒绝陈旧目录。
+目录刷新成功后保留仍存在的当前 `serverId`；当前区消失才按默认规则回退，刷新失败则保留完整旧快照。
 
 ## 2. 源码与工程壳
 

@@ -4,9 +4,10 @@
  *
  * 铁律 10：ViewMgr 静态依赖 fairygui，只在 view/ 内部这样静态 import；对外由 Main 走
  * 动态 import 闭包（`const p = await import("./view/pages")`）调用。
- *
+ * 
  * 选服链路：openLogin 时拉 WebPlatform GET /v1/areas 存 serverSession + 默认选中服 →
- * Login 显示当前服 → 选服改 currentServer → 游戏连接使用 currentServer.gameHttpUrl。
+ * Login 显示当前服 → 选服改 currentServer → HTTP 使用 gameHttpUrl、Colyseus 使用 gameWsUrl，
+ * 并在两类 join 中携带同一份 listHash。
  */
 import { ViewMgr, ViewOpenCancelledError, type ViewHandle } from "./ViewMgr";
 import { sys } from "cc";
@@ -37,9 +38,9 @@ import { fetchNotices } from "../net/http/notice";
 import {
   chooseServer,
   getCurrentServer,
-  pickDefaultServer,
   setServerList,
   getServerList,
+  getListHash,
 } from "../net/serverSession";
 import type { WebPlatformAreaServer } from "../shared/index";
 
@@ -139,7 +140,7 @@ function writeDontRemindToday(value: boolean): void {
 let openLoginInFlight: Promise<void> | null = null;
 
 /** 登录页整段加载只保留一个在途事务；失效事件再次触发时会复用同一 Promise。 */
-export function openLogin(onEnterBattle: () => void): Promise<void> {
+export function openLogin(onEnterBattle: () => void | Promise<void>): Promise<void> {
   if (openLoginInFlight) return openLoginInFlight;
   const p = openLoginImpl(onEnterBattle);
   openLoginInFlight = p;
@@ -150,17 +151,16 @@ export function openLogin(onEnterBattle: () => void): Promise<void> {
   return p;
 }
 
-async function openLoginImpl(onEnterBattle: () => void): Promise<void> {
+async function openLoginImpl(onEnterBattle: () => void | Promise<void>): Promise<void> {
   // 每次回登录页都从独立 Portal 重拉；setServerList 只在成功后原子替换快照，
   // 这样刷新失败时仍可使用上一份已知目录（并保留当前选服）重试。
   let areaLoadFailed = false;
   try {
     const list = await fetchAreaList();
     setServerList(list);
-    const def = pickDefaultServer(list);
-    if (def) {
-      chooseServer(def);
-      initHttp(def.gameHttpUrl);
+    const current = getCurrentServer();
+    if (current) {
+      initHttp(current.gameHttpUrl);
     }
   } catch (e) {
     areaLoadFailed = true;
@@ -171,8 +171,8 @@ async function openLoginImpl(onEnterBattle: () => void): Promise<void> {
 
   const h = await ViewMgr.open("Login");
   const view = h.view as LoginView;
-  // ⚠ 登录必须带**所选区**（M12e）：token 只对该区有效。`chooseServer` 已在本函数上方执行过，
-  // 故这里 `getCurrentServer()` 拿得到；⛔ 别图省事传 0——那会签出一个进不了所选区的 token。
+  // ⚠ 登录必须带**所选区**（M12e）：token 只对该区有效。setServerList 已在成功拉取后
+  // 原子建立当前选区，后续用户选服也会更新它；⛔ 别图省事传 0。
   const logic = new LoginLogic({ login: (key) => devLogin(key, getCurrentServer()?.serverId ?? 0) });
   let enterInFlight: Promise<void> | null = null;
   await h.run((_openedView, context) => {
@@ -191,11 +191,10 @@ async function openLoginImpl(onEnterBattle: () => void): Promise<void> {
             const list = await fetchAreaList();
             if (!context.isActive()) return;
             setServerList(list);
-            const def = pickDefaultServer(list);
-            if (def) {
-              chooseServer(def);
-              initHttp(def.gameHttpUrl);
-              view.showCurrentServer(def);
+            const current = getCurrentServer();
+            if (current) {
+              initHttp(current.gameHttpUrl);
+              view.showCurrentServer(current);
             }
             areaLoadFailed = false;
           } catch (e) {
@@ -232,10 +231,14 @@ async function openLoginImpl(onEnterBattle: () => void): Promise<void> {
           flowSessionGen = getSessionGeneration();
           try {
             logic.onProgress(0.6, "正在进入大厅…");
-            // 区服 = 独立实例：直接使用目录明确给出的 gameHttpUrl，不再从 WS URL 猜 HTTP 地址。
-            WebSocketClient.inst.init(cur.gameHttpUrl);
+            // 区服 = 独立实例：HTTP 与 Colyseus 端点分别消费目录字段，不做地址猜测。
+            WebSocketClient.inst.init(cur.gameWsUrl);
             // WebPlatform 契约叫 serverId；游戏服现有 Colyseus join option 仍叫 sId，在边界显式转换。
-            await WebSocketClient.inst.join(response.accessToken, { sId: cur.serverId }, context.signal);
+            await WebSocketClient.inst.join(
+              response.accessToken,
+              { sId: cur.serverId, listHash: getListHash() },
+              context.signal,
+            );
             if (!context.isActive() || getSessionGeneration() !== flowSessionGen) { flowFailed = true; return; }
             logic.onProgress(0.85, "正在加载角色…");
             user = (await WebSocketClient.inst.rpc(UserRpc.GetInfo, {})).user;
@@ -277,8 +280,10 @@ async function openLoginImpl(onEnterBattle: () => void): Promise<void> {
   });
 }
 
-/** 主界面：展示真实账号/档案摘要，「进入游戏」→ ballMove（使用 currentServer.gameHttpUrl）。 */
-export async function openHome(onEnterBattle: () => void, userId = "", user: IUserView | null = null): Promise<void> {
+/** 主界面：展示真实账号/档案摘要，「进入游戏」→ ballMove。 */
+export async function openHome(
+  onEnterBattle: () => void | Promise<void>, userId = "", user: IUserView | null = null,
+): Promise<void> {
   const h = await ViewMgr.open("Home");
   const view = h.view as HomeView;
   await h.run((_openedView, context) => {

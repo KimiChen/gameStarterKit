@@ -8,39 +8,50 @@
 import { isServerEnterable } from "../logic/areaDirectory";
 import type { WebPlatformAreaListResponse, WebPlatformAreaServer } from "../shared/index";
 
-let current: WebPlatformAreaServer | null = null;
-let listHash = "";
-let serverList: WebPlatformAreaListResponse | null = null;
+interface ServerSnapshot {
+  readonly list: WebPlatformAreaListResponse | null;
+  readonly current: WebPlatformAreaServer | null;
+  readonly hash: string;
+}
+
+// Keep the list, hash, and selection in one replaceable snapshot.  Consumers
+// must never observe a freshly fetched list paired with an old hash/selection.
+let snapshot: ServerSnapshot = { list: null, current: null, hash: "" };
 
 /** 存 serverList（拉取后）+ 记录一致性哈希（连服/踢人校验用）。 */
 export function setServerList(list: WebPlatformAreaListResponse): void {
-  serverList = list;
-  listHash = list.hash;
+  const previousId = snapshot.current?.serverId;
+  const current = (previousId === undefined
+    ? null
+    : list.servers.find((server) => server.serverId === previousId))
+    ?? pickDefaultServer(list);
+  snapshot = { list, current, hash: list.hash };
 }
 
 export function getServerList(): WebPlatformAreaListResponse | null {
-  return serverList;
+  return snapshot.list;
 }
 
 /** 目录重拉前清掉旧地址；失败时绝不静默沿用未知的新旧拓扑。 */
 export function clearServerList(): void {
-  current = null;
-  listHash = "";
-  serverList = null;
+  snapshot = { list: null, current: null, hash: "" };
 }
 
 /** WebPlatform 目录一致性 hash（进服时可随连接参数带上）。 */
 export function getListHash(): string {
-  return listHash;
+  return snapshot.hash;
 }
 
 /** 选服（选服界面点区服 / 默认选中时调用）。 */
 export function chooseServer(server: WebPlatformAreaServer): void {
-  current = server;
+  // Store the canonical object from the current snapshot when possible.  This
+  // prevents a caller retaining a stale server record after a refresh.
+  const canonical = snapshot.list?.servers.find((item) => item.serverId === server.serverId) ?? server;
+  snapshot = { ...snapshot, current: canonical };
 }
 
 export function getCurrentServer(): WebPlatformAreaServer | null {
-  return current;
+  return snapshot.current;
 }
 
 /**

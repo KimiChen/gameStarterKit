@@ -16,7 +16,7 @@ declare namespace Colyseus {
     }
 
     class Client {
-        /** endpoint 传 http(s) 地址（如 http://localhost:2568），SDK 自动派生 ws(s) */
+        /** endpoint 可传明确的 http(s) 或 ws(s) origin；SDK 按协议构造 matchmaking/room URL */
         constructor(endpoint: string);
         /** 认证模块：设置 token 后，后续 matchmaking 请求带 Authorization: Bearer 头（服务端 static onAuth 第一参） */
         readonly auth: { token: string | null };

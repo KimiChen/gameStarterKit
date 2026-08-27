@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
     recomputeStamina, spendStamina, staminaInfo, STAMINA_MAX, STAMINA_REGEN_MS,
-    SeededRandom, hashStr, isNewNaturalDay,
+    SeededRandom, hashStr, isNewNaturalDay, naturalDayIndex,
 } from "@game/shared";
 
 test("recomputeStamina：进位保留余数、满则计时归 now", () => {
@@ -49,8 +49,17 @@ test("SeededRandom.stream：同 (seed,name) 可复现，异名子流互相独立
 });
 
 test("isNewNaturalDay：同日 false / 跨午夜 true / 首次(0) false", () => {
-    const d = (y: number, m: number, day: number, h: number): number => new Date(y, m - 1, day, h).getTime();
-    assert.equal(isNewNaturalDay(d(2026, 7, 13, 9), d(2026, 7, 13, 23)), false);
-    assert.equal(isNewNaturalDay(d(2026, 7, 13, 23), d(2026, 7, 14, 0)), true);
-    assert.equal(isNewNaturalDay(0, d(2026, 7, 13, 9)), false);
+    const d = (y: number, m: number, day: number, h: number): number => Date.UTC(y, m - 1, day, h);
+    assert.equal(isNewNaturalDay(d(2026, 7, 13, 9), d(2026, 7, 13, 23), 0), false);
+    assert.equal(isNewNaturalDay(d(2026, 7, 13, 23), d(2026, 7, 14, 0), 0), true);
+    assert.equal(isNewNaturalDay(0, d(2026, 7, 13, 9), 0), false);
+});
+
+test("naturalDayIndex：显式 UTC 偏移，不随宿主 TZ 漂移", () => {
+    const beforeUtcMidnight = Date.UTC(2026, 6, 13, 23, 59);
+    const afterUtcMidnight = Date.UTC(2026, 6, 14, 0, 1);
+    assert.equal(isNewNaturalDay(beforeUtcMidnight, afterUtcMidnight, 0), true);
+    // 同一瞬间在 UTC+8 仍属于 7 月 14 日同一天。
+    assert.equal(naturalDayIndex(Date.UTC(2026, 6, 13, 16), 480), naturalDayIndex(Date.UTC(2026, 6, 14, 1), 480));
+    assert.throws(() => naturalDayIndex(afterUtcMidnight, 1441), /offset/);
 });
