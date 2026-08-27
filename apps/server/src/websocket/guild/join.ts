@@ -4,21 +4,17 @@
  * gid 必须在 core/guild/catalog 目录内——铸键权归目录，⛔ 任意 gid 放行 = 恶意
  * 遍历可无限创建无 TTL 事件键（durable noeviction，写满即全服故障），见 catalog 头注释。
  */
-import { z } from "zod";
 import { GuildRpc, LobbyPush } from "@game/shared";
 import { InvalidPayloadError } from "../../core/errors";
 import { guildExists } from "../../core/guild/catalog";
 import { emitGuildEvent } from "../../core/guild/events";
 import { withUser } from "../../core/uow";
 import { pushToGuild, setOnlineGuild } from "../push";
-import { defineRpc } from "../rpc";
+import { defineRpc, sharedRpcSchema } from "../rpc";
 import { currentZoneId } from "../../core/infra/keys";
 
 export default defineRpc(GuildRpc.Join, {
-  schema: z.object({
-    clientReqId: z.string().min(1).max(64),
-    guildId: z.number().int().positive().max(999_999_999),
-  }).strict(),
+  schema: sharedRpcSchema(GuildRpc.Join),
   idem: true,
   handler: async (ctx, p) => {
     // 存在性校验先于一切写路径（档/索引/事件键都不许为未知 gid 产生）

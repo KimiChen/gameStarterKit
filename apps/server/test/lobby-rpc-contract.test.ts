@@ -12,8 +12,11 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   ALL_LOBBY_RPC_TYPES, GuildRpc, MailRpc, ShopRpc, UserRpc,
+  LOBBY_RPC_REQUEST_VALIDATORS,
+  validateLobbyRpcRequest,
 } from "@game/shared";
 import { collectEndpoints } from "../src/websocket/loader";
+import { defineRpc, sharedRpcSchema } from "../src/websocket/rpc";
 
 test("端点全集与 shared 声明集合相等，路由名与文件路径一致", async () => {
   const defs = await collectEndpoints(); // 内部已做双向集合校验 + 路径一致校验
@@ -67,4 +70,33 @@ test("schema 要求 clientReqId 的路由必须开 idem: true（09·I1 反向；
       assert.equal(d.idem, true, `${d.type} 的 schema 要求 clientReqId 但未开 idem——占位/结果缓存整条链失效`);
     }
   }
+});
+
+test("服务端 schema 与 shared request validator 逐路由保持同一规范化结果", async () => {
+  const defs = await collectEndpoints();
+  for (const d of defs) {
+    const fixture = validPayloads[d.type];
+    assert.ok(fixture, `${d.type} 缺少 valid payload fixture`);
+    const shared = validateLobbyRpcRequest(d.type, fixture);
+    assert.deepEqual(d.schema.parse(fixture), shared, `${d.type} schema 不得偏离 shared validator 输出`);
+
+    // The two boundaries must reject the same representative malformed input.
+    const malformed = { ...fixture, __extra: true };
+    assert.throws(() => d.schema.parse(malformed), `${d.type} server schema 接受了 extra key`);
+    assert.throws(() => validateLobbyRpcRequest(d.type, malformed), `${d.type} shared validator 接受了 extra key`);
+  }
+  assert.deepEqual(new Set(Object.keys(LOBBY_RPC_REQUEST_VALIDATORS)), new Set(ALL_LOBBY_RPC_TYPES));
+});
+
+test("defineRpc 在发送前校验 handler response，禁止 malformed reply 穿过服务端边界", async () => {
+  const def = defineRpc(UserRpc.GetUserId, {
+    schema: sharedRpcSchema(UserRpc.GetUserId),
+    // Extra properties are structurally assignable in TypeScript; runtime
+    // response validation is what makes the wire boundary exact.
+    handler: async () => ({ uid: "u1", extra: true }),
+  });
+  await assert.rejects(
+    def.handler({ uid: "u1", sessionId: "s1", push: () => {} }, {}),
+    /WIRE_KEYS/,
+  );
 });

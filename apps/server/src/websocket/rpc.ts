@@ -2,15 +2,20 @@
  * ws-RPC 类型胶水（项目级，⛔ 不属于 Arthur 回流件）：把 shared 的 lobbyRpc 契约
  * 钉到 dispatcher registerRoute 的 def 形状上。dispatcher.ts / core/errors.ts 保持零改动。
  *
- * 评审规则：schema 属性上禁止 `as` 断言。类型对齐的真实边界（zod ZodType 对 Output 协变）：
- *  - 能拦：字段类型写错、schema 漏掉 shared req 的必填字段、handler 返回值形状不符
- *  - 拦不住：schema 多出必填字段（合法客户端请求会被误拒 INVALID_PAYLOAD）；
- *    schema 漏掉 shared req 的可选字段（z.object 剥离未知键→客户端传值被静默丢弃）
- *  —— 因此评审新端点时必须对照 shared req 逐键核对 schema 字段集，类型系统兜不住这两种漂移。
+ * 所有端点的 request schema 必须使用下方 sharedRpcSchema 适配器；它直接调用
+ * shared 的 exact/range validator，避免本地 Zod object 漏字段或静默剥离未知键。
+ * response 也在 defineRpc 包装层校验，保证直接调用 handler 与 dispatcher 路径具有相同边界。
  */
 import { performance } from "node:perf_hooks";
-import type { ZodType } from "zod";
-import type { LobbyRpcIdemType, LobbyRpcType, RpcReq, RpcRes } from "@game/shared";
+import { z, type ZodType } from "zod";
+import {
+  validateLobbyRpcRequest,
+  validateLobbyRpcResponse,
+  type LobbyRpcIdemType,
+  type LobbyRpcType,
+  type RpcReq,
+  type RpcRes,
+} from "@game/shared";
 import { RPC_BUDGET_PROD_SAMPLE, RPC_BUDGET_WARN_INTERVAL_MS, RPC_SYNC_BUDGET_MS } from "../core/infra/config";
 import type { RpcCtx } from "./dispatcher";
 
@@ -21,6 +26,25 @@ export interface LobbyRpcDef<T extends LobbyRpcType> {
   /** 幂等占位（09·I1）；开了则 req 必须含 clientReqId——defineRpc 重载在编译期强制 */
   idem?: boolean;
   handler: (ctx: RpcCtx, payload: RpcReq<T>) => Promise<RpcRes<T>>;
+}
+
+/**
+ * Adapt the shared zero-dependency request validator to the dispatcher's Zod
+ * port.  Keeping this adapter in one place prevents each endpoint from
+ * maintaining a second (and potentially looser) object schema.
+ */
+export function sharedRpcSchema<T extends LobbyRpcType>(type: T): ZodType<RpcReq<T>> {
+  return z.unknown().transform((input, ctx) => {
+    try {
+      return validateLobbyRpcRequest(type, input);
+    } catch (error) {
+      ctx.addIssue({
+        code: "custom",
+        message: error instanceof Error ? error.message : "invalid payload",
+      });
+      return z.NEVER;
+    }
+  });
 }
 
 /** 全端点联合（loader 的收集元素类型） */
@@ -39,7 +63,14 @@ export function defineRpc<T extends Exclude<LobbyRpcType, LobbyRpcIdemType>>(typ
   handler: (ctx: RpcCtx, payload: RpcReq<T>) => Promise<RpcRes<T>>;
 }): LobbyRpcDef<T>;
 export function defineRpc<T extends LobbyRpcType>(type: T, def: Omit<LobbyRpcDef<T>, "type">): LobbyRpcDef<T> {
-  return { type, ...def, handler: withSyncBudget(type, def.handler) };
+  const budgeted = withSyncBudget(type, def.handler);
+  return {
+    type,
+    ...def,
+    // Validate responses before dispatcher serialization and idem caching.
+    handler: async (ctx, payload): Promise<RpcRes<T>> =>
+      validateLobbyRpcResponse(type, await budgeted(ctx, payload)),
+  };
 }
 
 // ── rpc-budget：handler 同步预算守门（铁律 11 的机检面，docs/SERVER.md 2026-07）──────

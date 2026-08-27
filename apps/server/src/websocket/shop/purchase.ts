@@ -3,18 +3,14 @@
  * 真正的 exactly-once 在数据层（ledger UNIQUE + applied op_id，09·I1 双层）——
  * 两层用同一个 clientReqId 派生（09·I2/I3）。
  */
-import { z } from "zod";
 import { ShopRpc } from "@game/shared";
 import { InvalidPayloadError } from "../../core/errors";
 import { getShopSku } from "../../core/economy/catalog";
 import { purchase } from "../../core/economy/outbox";
-import { defineRpc } from "../rpc";
+import { defineRpc, sharedRpcSchema } from "../rpc";
 
 export default defineRpc(ShopRpc.Purchase, {
-  schema: z.object({
-    clientReqId: z.string().min(1).max(64),
-    sku: z.string().min(1).max(64),
-  }).strict(),
+  schema: sharedRpcSchema(ShopRpc.Purchase),
   idem: true,
   handler: async (ctx, p) => {
     const sku = getShopSku(p.sku);

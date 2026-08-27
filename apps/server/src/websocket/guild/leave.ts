@@ -1,18 +1,17 @@
 /**
  * 退出工会（写路径 + 在线索引清除；事件通知留在原工会频道）。
  */
-import { z } from "zod";
 import { GuildRpc, LobbyPush } from "@game/shared";
 import { guildExists } from "../../core/guild/catalog";
 import { emitGuildEvent } from "../../core/guild/events";
 import { withUser } from "../../core/uow";
 import { pushToGuild, setOnlineGuild } from "../push";
-import { defineRpc } from "../rpc";
+import { defineRpc, sharedRpcSchema } from "../rpc";
 import { currentZoneId } from "../../core/infra/keys";
 import { optionalStoredInt } from "../../core/infra/numbers";
 
 export default defineRpc(GuildRpc.Leave, {
-  schema: z.object({ clientReqId: z.string().min(1).max(64) }).strict(),
+  schema: sharedRpcSchema(GuildRpc.Leave),
   idem: true,
   handler: async (ctx) => {
     const prevGid = await withUser(ctx.uid, async (uow) => {

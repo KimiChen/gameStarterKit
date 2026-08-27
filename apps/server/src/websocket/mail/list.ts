@@ -2,12 +2,11 @@
  * 收件箱列表（游标分页：before = 上一页最小 mail_id）。
  * 投递状态以 MySQL mail 表为唯一权威（09·A6）；客户端按 mailId 去重（至少一次投递）。
  */
-import { z } from "zod";
 import { MailRpc } from "@game/shared";
 import { getPool } from "../../core/infra/mysql";
 import { currentZoneId } from "../../core/infra/keys";
 import type { RowDataPacket } from "../../core/infra/mysql";
-import { defineRpc } from "../rpc";
+import { defineRpc, sharedRpcSchema } from "../rpc";
 
 interface MailRow extends RowDataPacket {
   mail_id: number; title: string; body: string;
@@ -18,10 +17,7 @@ interface MailRow extends RowDataPacket {
 const DEFAULT_LIMIT = 20;
 
 export default defineRpc(MailRpc.List, {
-  schema: z.object({
-    before: z.number().int().positive().optional(),
-    limit: z.number().int().min(1).max(50).optional(),
-  }).strict(),
+  schema: sharedRpcSchema(MailRpc.List),
   handler: async (ctx, p) => {
     // ⚠ **必须带 server_id 谓词**（A2）：`mail` 表有该列、`mailer.sendMail` 写入时也落了值，
     // 但查询侧此前只按 user_id ⇒ 同账号在 s1 收的邮件，切到 s2 也能看到（实证过）。
