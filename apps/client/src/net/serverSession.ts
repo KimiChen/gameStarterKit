@@ -18,18 +18,44 @@ interface ServerSnapshot {
 // must never observe a freshly fetched list paired with an old hash/selection.
 let snapshot: ServerSnapshot = { list: null, current: null, hash: "" };
 
+/**
+ * The directory response crosses an async/network boundary.  Keep an owned
+ * copy so a view retaining the response (or mutating a getter result) cannot
+ * split `list`, `current`, and `hash` into a mixed-generation snapshot.
+ */
+function cloneServer(server: WebPlatformAreaServer): WebPlatformAreaServer {
+  return { ...server };
+}
+
+function cloneList(list: WebPlatformAreaListResponse): WebPlatformAreaListResponse {
+  return {
+    ...list,
+    servers: list.servers.map(cloneServer),
+    myServerIds: [...list.myServerIds],
+  };
+}
+
+function cloneSnapshotList(list: WebPlatformAreaListResponse | null): WebPlatformAreaListResponse | null {
+  return list ? cloneList(list) : null;
+}
+
 /** 存 serverList（拉取后）+ 记录一致性哈希（连服/踢人校验用）。 */
 export function setServerList(list: WebPlatformAreaListResponse): void {
+  const ownedList = cloneList(list);
   const previousId = snapshot.current?.serverId;
   const current = (previousId === undefined
     ? null
-    : list.servers.find((server) => server.serverId === previousId))
-    ?? pickDefaultServer(list);
-  snapshot = { list, current, hash: list.hash };
+    : ownedList.servers.find((server) => server.serverId === previousId))
+    ?? pickDefaultServer(ownedList);
+  snapshot = {
+    list: ownedList,
+    current: current ? cloneServer(current) : null,
+    hash: ownedList.hash,
+  };
 }
 
 export function getServerList(): WebPlatformAreaListResponse | null {
-  return snapshot.list;
+  return cloneSnapshotList(snapshot.list);
 }
 
 /** 目录重拉前清掉旧地址；失败时绝不静默沿用未知的新旧拓扑。 */
@@ -47,11 +73,11 @@ export function chooseServer(server: WebPlatformAreaServer): void {
   // Store the canonical object from the current snapshot when possible.  This
   // prevents a caller retaining a stale server record after a refresh.
   const canonical = snapshot.list?.servers.find((item) => item.serverId === server.serverId) ?? server;
-  snapshot = { ...snapshot, current: canonical };
+  snapshot = { ...snapshot, current: cloneServer(canonical) };
 }
 
 export function getCurrentServer(): WebPlatformAreaServer | null {
-  return snapshot.current;
+  return snapshot.current ? cloneServer(snapshot.current) : null;
 }
 
 /**

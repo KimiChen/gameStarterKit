@@ -155,7 +155,30 @@ test("serverSession：目录刷新保留当前区，区消失才回退默认，�
   // 模拟拉取失败：调用方不执行 setServerList，旧快照必须原样可用。
   assert.equal(getCurrentServer()?.serverId, 40);
   assert.equal(getListHash(), "h3");
-  assert.strictEqual(getServerList(), removed);
+  assert.deepEqual(getServerList(), removed);
+});
+
+test("serverSession：目录输入和 getter 都是隔离副本，不会拆散 list/hash/current 快照", () => {
+  const input = { ...areaRes([srv(70), srv(80)], [70]), hash: "owned" };
+  setServerList(input);
+
+  // The caller may reuse/mutate the network response after publishing it.
+  input.hash = "mutated";
+  input.myServerIds[0] = 80;
+  input.servers[0].gameHttpUrl = "http://tampered";
+  assert.equal(getListHash(), "owned");
+  assert.equal(getCurrentServer()?.serverId, 70);
+  assert.equal(getServerList()?.servers[0].gameHttpUrl, "http://localhost:2568");
+
+  // A view may also sort/edit the returned list; that must not alter the
+  // session used by the next join.
+  const exposed = getServerList()!;
+  exposed.hash = "getter-tampered";
+  exposed.servers.reverse();
+  exposed.servers[0].gameWsUrl = "ws://tampered";
+  assert.equal(getListHash(), "owned");
+  assert.equal(getCurrentServer()?.serverId, 70);
+  assert.deepEqual(getServerList()?.servers.map((server) => server.serverId), [70, 80]);
 });
 
 test("Area 状态展示：Public 字符串枚举稳定映射现有 FGUI 图标", () => {
