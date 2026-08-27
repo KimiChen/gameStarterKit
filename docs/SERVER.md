@@ -129,6 +129,10 @@ tsx 直接执行和运行时文件系统扫描，不是打包产物装载器。
   `(uid,sId)` 的有界首角色 initializer，只有角色档与 WebPlatform 登记 ready 后才公开 seat。初始化失败
   以 `CharCreateFailed` 结束本次 join，不能进入“已登录但 `GetInfo.user=null`”的半状态；迟到的底层幂等
   操作仍由 repair/下一次 join 收敛。
+- 默认进程的监控、流消费者、repair worker、外部 HTTP agent、MySQL 与 Redis 通过
+  `core/infra/lifecycle.ts` 的单一 registry 注册；Colyseus 只绑定一个 `onBeforeShutdown` 聚合器。
+  释放按启动逆序、可等待且幂等，单个组件失败不会跳过其余组件。大厅按需启动的 mail wake 也注册到
+  同一 registry，启动半失败会走相同 cleanup 路径。
   Lobby 当前是 `autoDispose = false`、`maxClients = 5000` 的共享房，且注册时没有 `filterBy(["sId"])`：
   不同区的连接可能落在同一间房，区隔离依赖 `auth.sId` 与 `zoneCtx`，不依赖撮合。客户端用
   `joinOrCreate`，满员后由 matchmaker 另开一间大厅房；多节点分摊连接的形态尚未确定。

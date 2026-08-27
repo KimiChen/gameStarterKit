@@ -6,6 +6,7 @@
  * Redis 抖动退避重试；`XTRIM MINID` 兜底裁剪（⛔ 禁 MAXLEN，09·K6）。阻塞 XREAD 独享 `duplicate()` 连接。
  */
 import type Redis from "ioredis";
+import { defaultLifecycle } from "./lifecycle";
 
 export interface StreamConsumerOpts {
   /** XREAD BLOCK 毫秒（默认 2000）。 */
@@ -18,7 +19,7 @@ export interface StreamConsumerOpts {
   trimEveryMs?: number;
 }
 
-export interface StreamConsumer { stop(): void }
+export interface StreamConsumer { stop(): Promise<void> }
 
 /** 平铺 fields 数组（XADD `*` k v k v…）取某字段值。 */
 export function fieldOf(fields: string[], key: string): string | undefined {
@@ -44,9 +45,11 @@ export function startStreamConsumer(
   const trimMs = opts.trimMs ?? 24 * 3600 * 1000;
   const trimEveryMs = opts.trimEveryMs ?? 3600 * 1000;
   let stopFlag = false;
+  let wakeStop: (() => void) | null = null;
+  let sub: Redis | null = null;
 
-  void (async () => {
-    const sub = client().duplicate(); // 阻塞 XREAD 需独享连接（阻塞期不能复用发命令）
+  const loopDone = (async () => {
+    sub = client().duplicate(); // 阻塞 XREAD 需独享连接（阻塞期不能复用发命令）
     let cursor = "$"; // 只看启动后的新条目（历史无价值：mail 上线自拉、踢人是即时动作）
     let lastTrim = Date.now();
     try {
@@ -69,13 +72,40 @@ export function startStreamConsumer(
         } catch (e) {
           if (stopFlag) { break; }
           console.error(`[${name}] 消费循环异常，1s 后重试`, e);
-          await new Promise((r) => setTimeout(r, 1000)); // ioredis 自动重连，这里只退避
+          // 退避也可被 stop 立即唤醒；否则停服要额外等待整个 1s。
+          await new Promise<void>((resolve) => {
+            const timer = setTimeout(() => {
+              wakeStop = null;
+              resolve();
+            }, 1000);
+            wakeStop = () => {
+              clearTimeout(timer);
+              wakeStop = null;
+              resolve();
+            };
+          }); // ioredis 自动重连，这里只退避
         }
       }
     } finally {
-      sub.disconnect();
+      sub?.disconnect();
+      sub = null;
     }
   })();
 
-  return { stop() { stopFlag = true; } };
+  let stopPromise: Promise<void> | null = null;
+  let unregister = (): void => {};
+  const stop = (): Promise<void> => {
+    if (stopPromise) { return stopPromise; }
+    stopFlag = true;
+    wakeStop?.();
+    // disconnect 打断阻塞中的 XREAD；finally 会再次 disconnect，操作本身幂等。
+    sub?.disconnect();
+    stopPromise = loopDone.catch((error) => {
+      console.error(`[${name}] 停止消费循环时异常`, error);
+    }).finally(() => { unregister(); });
+    return stopPromise;
+  };
+  const handle: StreamConsumer = { stop };
+  unregister = defaultLifecycle.register(`stream:${name}`, stop);
+  return handle;
 }

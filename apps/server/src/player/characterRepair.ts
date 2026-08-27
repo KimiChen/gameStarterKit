@@ -25,6 +25,7 @@ import {
   webPlatformClient,
   type WebPlatformClient,
 } from "../platform/webPlatformClient";
+import { defaultLifecycle } from "../core/infra/lifecycle";
 
 export interface CharacterRepairIntent {
   userId: string;
@@ -299,6 +300,7 @@ export async function processCharacterRepairOnce(
 let workerStarted = false;
 let workerTimer: NodeJS.Timeout | null = null;
 let workerPass: Promise<CharacterRepairPassResult> | null = null;
+let workerUnregister: (() => void) | null = null;
 
 const scheduleWorkerPass = (delayMs: number): void => {
   if (!workerStarted || workerTimer) { return; }
@@ -323,6 +325,7 @@ export function startCharacterRepairWorker(): void {
   if (workerStarted) { return; }
   workerStarted = true;
   scheduleWorkerPass(0);
+  workerUnregister = defaultLifecycle.register("character-repair", () => stopCharacterRepairWorker());
 }
 
 /** 测试/优雅停服：停止调度并等待当前有界 HTTP pass 收尾。 */
@@ -336,4 +339,6 @@ export async function stopCharacterRepairWorker(): Promise<void> {
   if (pass) {
     await pass.catch(() => { /* 循环侧已告警；stop 只负责等待退出 */ });
   }
+  workerUnregister?.();
+  workerUnregister = null;
 }

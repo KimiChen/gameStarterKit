@@ -7,20 +7,22 @@
 import { monitorEventLoopDelay } from "node:perf_hooks";
 import { EVENT_LOOP_ALERT_MS, MYSQL_QUEUE_ALERT } from "./config";
 import { getPoolIfCreated } from "./mysql";
+import { defaultLifecycle } from "./lifecycle";
 
-let started = false;
+let activeStop: (() => Promise<void>) | null = null;
 
-export function startInfraMonitors(intervalMs = 10_000): void {
-  if (started) { return; }
-  started = true;
+export function startInfraMonitors(intervalMs = 10_000): () => Promise<void> {
+  if (activeStop) { return activeStop; }
 
   const h = monitorEventLoopDelay({ resolution: 20 });
   h.enable();
 
   let enqueued = 0;
   let poolHooked = false;
+  let poolEmitter: NodeJS.EventEmitter | null = null;
+  const onEnqueue = (): void => { enqueued++; };
 
-  setInterval(() => {
+  const timer = setInterval(() => {
     // 告警看 max 不看 p99：一次全循环冻结只贡献 ~1 个直方图样本，10s 窗口 ~500 样本下
     // p99 对「稀发但严重」的卡顿（如 300ms 冻结每分钟几次）完全失明——实测 3×300ms
     // 冻结 p99 仍 ~21ms 而 max=317ms。单线程模型里一次 100ms+ 冻结就值得知道。
@@ -38,7 +40,8 @@ export function startInfraMonitors(intervalMs = 10_000): void {
       const pool = getPoolIfCreated();
       if (pool) {
         poolHooked = true;
-        (pool.pool as unknown as NodeJS.EventEmitter).on("enqueue", () => { enqueued++; });
+        poolEmitter = pool.pool as unknown as NodeJS.EventEmitter;
+        poolEmitter.on("enqueue", onEnqueue);
       }
     } else {
       if (enqueued > MYSQL_QUEUE_ALERT) {
@@ -47,5 +50,22 @@ export function startInfraMonitors(intervalMs = 10_000): void {
       }
       enqueued = 0;
     }
-  }, intervalMs).unref();
+  }, intervalMs);
+  timer.unref();
+
+  let stopped = false;
+  let unregister = (): void => {};
+  const stop = async (): Promise<void> => {
+    if (stopped) { return; }
+    stopped = true;
+    clearInterval(timer);
+    h.disable();
+    poolEmitter?.removeListener("enqueue", onEnqueue);
+    poolEmitter = null;
+    if (activeStop === stop) { activeStop = null; }
+    unregister();
+  };
+  activeStop = stop;
+  unregister = defaultLifecycle.register("infra-monitors", stop);
+  return stop;
 }

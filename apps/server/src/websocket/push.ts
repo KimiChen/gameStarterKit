@@ -17,6 +17,7 @@ import { PUSH_ALL_CHUNK } from "../core/infra/config";
 import { K_STREAM_MAILWAKE } from "../core/infra/keys";
 import { clientForKey } from "../core/infra/redisRoute";
 import { fieldOf, startStreamConsumer, type StreamConsumer } from "../core/infra/streamConsumer";
+import { defaultLifecycle } from "../core/infra/lifecycle";
 
 export interface PushSink { (type: string, data: unknown): void }
 
@@ -192,6 +193,7 @@ export async function pushToAll(type: string, data: unknown): Promise<number> {
 }
 
 let mailwake: StreamConsumer | null = null;
+let mailwakeUnregister: (() => void) | null = null;
 
 /** 消费循环（每网关节点一个）：XREAD 阻塞读 stream:mailwake → 在线则 push mail.new（通用工厂 §4.5）。 */
 export function startMailWakeLoop(): void {
@@ -202,6 +204,13 @@ export function startMailWakeLoop(): void {
     // 目标不在本节点：pushToUser 返回 false 直接跳过（权威在 MySQL，上线自拉，09·A6）
     if (uid && mailId !== undefined) { pushToUser(uid, LobbyPush.MailNew, { mailId: Number(mailId) }); }
   });
+  mailwakeUnregister = defaultLifecycle.register("mailwake", () => stopMailWakeLoop());
 }
 
-export function stopMailWakeLoop(): void { mailwake?.stop(); mailwake = null; }
+export async function stopMailWakeLoop(): Promise<void> {
+  const current = mailwake;
+  mailwake = null;
+  mailwakeUnregister?.();
+  mailwakeUnregister = null;
+  await current?.stop();
+}

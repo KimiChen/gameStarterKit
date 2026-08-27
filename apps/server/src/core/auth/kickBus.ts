@@ -18,6 +18,7 @@ import { KICK_STREAM_TRIM_MS } from "../infra/config";
 import { K_STREAM_KICK, kSess } from "../infra/keys";
 import { clientFor, coordClient } from "../infra/redisRoute";
 import { fieldOf, startStreamConsumer, type StreamConsumer } from "../infra/streamConsumer";
+import { defaultLifecycle } from "../infra/lifecycle";
 
 // 自筛踢句柄：websocket 层（online 表）在启动期注入 kickUser（core/auth ⛔ 不反向依赖 websocket 层）。
 let kickHandler: ((uid: string, reason: ForceLogoutReasonType, exceptTokenHash?: string, sId?: number) => void) | null = null;
@@ -51,6 +52,7 @@ export async function broadcastKick(
 }
 
 let consumer: StreamConsumer | null = null;
+let consumerUnregister: (() => void) | null = null;
 /** 控制总线消费（每节点一个，独立游标）：读 stream:kick → 本节点在线即踢。 */
 export function startKickConsumer(): void {
   if (consumer) { return; }
@@ -79,5 +81,12 @@ export function startKickConsumer(): void {
     }
     kickLocal(uid, reason, fieldOf(fields, "exceptHash"), sId);
   }, { trimMs: KICK_STREAM_TRIM_MS });
+  consumerUnregister = defaultLifecycle.register("kick", () => stopKickConsumer());
 }
-export function stopKickConsumer(): void { consumer?.stop(); consumer = null; }
+export async function stopKickConsumer(): Promise<void> {
+  const current = consumer;
+  consumer = null;
+  consumerUnregister?.();
+  consumerUnregister = null;
+  await current?.stop();
+}

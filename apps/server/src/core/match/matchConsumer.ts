@@ -24,6 +24,7 @@ import type { Redis } from "ioredis";
 import { K_STREAM_MATCH, K_STREAM_MATCH_V2 } from "../infra/keys";
 import { withRcTx, type ResultSetHeader } from "../infra/mysql";
 import { clientForKey } from "../infra/redisRoute";
+import { defaultLifecycle } from "../infra/lifecycle";
 
 // ── 常量（已登记 docs/SERVER.md §13，⛔ 禁止散落——09 审查流程第 6 条） ──
 
@@ -507,6 +508,9 @@ export async function stopMatchConsumer(): Promise<void> {
 /** 深度阈值（⚠ 07 常量表待补条目）：超过即告警（约 = 高峰每分对局数 × 可容忍积压分钟数）。 */
 const STREAM_DEPTH_ALERT = 1000;
 const STREAM_DEPTH_CHECK_MS = 60_000;
+let streamDepthTimer: NodeJS.Timeout | null = null;
+let streamDepthChecks = new Set<Promise<void>>();
+let streamDepthUnregister: (() => void) | null = null;
 
 /** 未建 group 时用 XLEN；已有 group 时用 lag+pending，避免已 ACK 但尚未 trim 的历史制造假积压。 */
 async function streamBacklog(client: Redis, stream: MatchStreamState): Promise<{ backlog: number; xlen: number }> {
@@ -521,16 +525,32 @@ async function streamBacklog(client: Redis, stream: MatchStreamState): Promise<{
 
 /** 网关启动时挂上：两条流分别检查未处理深度，任一超阈值都告警。 */
 export function startStreamDepthAlert(): void {
-  const timer = setInterval(() => {
-    for (const stream of MATCH_STREAMS) {
-      void streamBacklog(clientForKey(stream.key), stream).then(({ backlog, xlen }) => {
-        if (backlog > STREAM_DEPTH_ALERT) {
-          console.error(`[matchConsumer] ⚠⚠ ${stream.label} 未处理深度 ${backlog}（XLEN=${xlen}）超阈值 ${STREAM_DEPTH_ALERT}——settle worker 未运行或积压（npm --workspace @game/server run settle）`);
-        }
-      }).catch(() => { /* Redis 抖动不告警——连接级问题由 infra 监控负责 */ });
-    }
+  if (streamDepthTimer) { return; }
+  streamDepthTimer = setInterval(() => {
+    const check: Promise<void> = Promise.all(MATCH_STREAMS.map(async (stream) => {
+      const { backlog, xlen } = await streamBacklog(clientForKey(stream.key), stream);
+      if (backlog > STREAM_DEPTH_ALERT) {
+        console.error(`[matchConsumer] ⚠⚠ ${stream.label} 未处理深度 ${backlog}（XLEN=${xlen}）超阈值 ${STREAM_DEPTH_ALERT}——settle worker 未运行或积压（npm --workspace @game/server run settle）`);
+      }
+    })).then(() => undefined).catch(() => { /* Redis 抖动不告警——连接级问题由 infra 监控负责 */ });
+    streamDepthChecks.add(check);
+    void check.finally(() => { streamDepthChecks.delete(check); });
   }, STREAM_DEPTH_CHECK_MS);
-  timer.unref();
+  streamDepthTimer.unref();
+  streamDepthUnregister = defaultLifecycle.register("stream-depth-alert", () => stopStreamDepthAlert());
+}
+
+/** 停止深度告警并等待已经发出的回读完成。 */
+export async function stopStreamDepthAlert(): Promise<void> {
+  if (streamDepthTimer) {
+    clearInterval(streamDepthTimer);
+    streamDepthTimer = null;
+  }
+  streamDepthUnregister?.();
+  streamDepthUnregister = null;
+  const checks = [...streamDepthChecks];
+  await Promise.all(checks);
+  streamDepthChecks.clear();
 }
 
 // ── 独立 settle worker 进程入口（consumer group 多实例天然分工，无需 singleton_lease） ──
