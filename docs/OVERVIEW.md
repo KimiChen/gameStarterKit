@@ -102,7 +102,9 @@ apps/client/src
 1. 在 apps/shared/src 定义协议、错误码或公式
 2. npm run sync:shared
 3. 若改动落在 apps/shared/src/protocol/**，运行 node scripts/protocol-fingerprint.mjs 重钉协议指纹，
-   并确认是否需要 bump PROTOCOL_VERSION（不重钉则 npm run test:fgui 中的 protocolFingerprint 测试失败）
+   并确认是否需要 bump PROTOCOL_VERSION（不重钉则 npm run test:fgui 中的 protocolFingerprint 测试失败）。
+   指纹脚本只接受 `rooms.ts` 中唯一的顶层 export 声明，并会忽略注释，避免文档示例中的旧版本
+   误导版本闸。
 4. 在 apps/server/src/websocket 或 http 增加 endpoint
 5. 更新服务端登记点、key/config 与测试
 6. 在 apps/client/src/logic 增加行为

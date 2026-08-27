@@ -16,12 +16,31 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PROTO_DIR = path.join(ROOT, "apps/shared/src/protocol");
 export const FINGERPRINT_FILE = path.join(ROOT, "scripts", "protocol.fingerprint");
 
-/** 读当前 PROTOCOL_VERSION（真源 shared/protocol/rooms.ts）。 */
+/**
+ * 从 rooms.ts 源文读取协议版本。
+ *
+ * 只接受唯一的顶层 `export const PROTOCOL_VERSION = <integer>;` 声明；
+ * 先移除注释，避免评审文字里的旧版本形态架空指纹闸。多处声明也直接报错，
+ * 防止脚本悄悄取到第一处匹配。
+ */
+export function parseProtocolVersion(src) {
+    const uncommented = src
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/\/\/[^\r\n]*/g, "");
+    const matches = [...uncommented.matchAll(/^\s*export\s+const\s+PROTOCOL_VERSION\s*=\s*(\d+)\s*;\s*$/gm)];
+    if (matches.length !== 1) {
+        throw new Error(`shared/protocol/rooms.ts 必须有且仅有一个 PROTOCOL_VERSION 导出声明（找到 ${matches.length} 个）`);
+    }
+    const version = Number(matches[0][1]);
+    if (!Number.isSafeInteger(version) || version < 1) {
+        throw new Error(`PROTOCOL_VERSION 非法：${matches[0][1]}`);
+    }
+    return version;
+}
+
 export function readProtocolVersion() {
     const src = fs.readFileSync(path.join(PROTO_DIR, "rooms.ts"), "utf8");
-    const m = /PROTOCOL_VERSION\s*=\s*(\d+)/.exec(src);
-    if (!m) { throw new Error("shared/protocol/rooms.ts 里找不到 PROTOCOL_VERSION"); }
-    return Number(m[1]);
+    return parseProtocolVersion(src);
 }
 
 /** 计算协议目录指纹（路径排序 + 逐文件 path+content 入 hash，跨平台稳定）。 */

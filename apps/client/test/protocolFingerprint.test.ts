@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { readFileSync } from "node:fs";
 // 脚本域 .mjs（不进 Cocos，不受「相对导入不带扩展名」铁律约束）
-import { computeFingerprint, readProtocolVersion, FINGERPRINT_FILE } from "../../../scripts/protocol-fingerprint.mjs";
+import { computeFingerprint, parseProtocolVersion, readProtocolVersion, FINGERPRINT_FILE } from "../../../scripts/protocol-fingerprint.mjs";
 
 test("协议指纹：shared/protocol 内容 ⇔ 钉档一致；PROTOCOL_VERSION ⇔ 钉档一致", () => {
   const pinned = readFileSync(FINGERPRINT_FILE, "utf8").trim();
@@ -18,4 +18,13 @@ test("协议指纹：shared/protocol 内容 ⇔ 钉档一致；PROTOCOL_VERSION 
     "PROTOCOL_VERSION 与钉档不一致——bump 版本后跑 node scripts/protocol-fingerprint.mjs 重钉");
   assert.equal(computeFingerprint(), m![2],
     "shared/protocol 内容与指纹不符——协议被改动：确认变更（必要时 bump PROTOCOL_VERSION）后跑 node scripts/protocol-fingerprint.mjs 重钉并连指纹一起提交");
+});
+
+test("协议版本解析：注释中的旧声明不能遮蔽真实 export，重复声明必须失败", () => {
+  const source = `/* export const PROTOCOL_VERSION = 2; */\nexport const PROTOCOL_VERSION = 7;\n`;
+  assert.equal(parseProtocolVersion(source), 7);
+  assert.throws(
+    () => parseProtocolVersion("export const PROTOCOL_VERSION = 1;\nexport const PROTOCOL_VERSION = 2;\n"),
+    /有且仅有一个/,
+  );
 });
