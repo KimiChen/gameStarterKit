@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const INVENTORY_FILE = path.join(ROOT, "docs", "inventory.json");
+const ROOT_REAL = fs.realpathSync(ROOT);
 const readJson = (file) => JSON.parse(fs.readFileSync(file, "utf8"));
 const inventory = readJson(INVENTORY_FILE);
 const rootPackage = readJson(path.join(ROOT, "package.json"));
@@ -20,6 +21,14 @@ const repoPath = (rel) => {
   const resolved = path.resolve(ROOT, rel);
   const relative = path.relative(ROOT, resolved);
   if (relative === ".." || relative.startsWith(`..${path.sep}`)) return null;
+  // Inventory is a review boundary, so a symlink must not smuggle a path
+  // outside the checkout past the lexical check above.
+  if (fs.existsSync(resolved)) {
+    const real = fs.realpathSync(resolved);
+    const realRelative = path.relative(ROOT_REAL, real);
+    if (realRelative === ".." || realRelative.startsWith(`..${path.sep}`)) return null;
+    return real;
+  }
   return resolved;
 };
 const exists = (rel) => {
@@ -40,11 +49,17 @@ if (defaultModules.length === 0) fail("defaultModules 不能为空数组");
 
 const ids = new Set();
 const allEntries = new Set();
+const capabilityEntries = new Map();
 for (const [index, capability] of capabilities.entries()) {
   if (!capability || typeof capability !== "object") { fail(`capabilities[${index}] 必须是 object`); continue; }
   for (const key of ["id", "category", "defaultEntry", "sourceOfTruth", "wireBoundary"]) requireString(capability[key], `capabilities[${index}].${key}`);
   if (ids.has(capability.id)) fail(`能力 id 重复：${capability.id}`);
   ids.add(capability.id);
+  if (typeof capability.defaultEntry === "string") {
+    const previous = capabilityEntries.get(capability.defaultEntry);
+    if (previous) fail(`能力 defaultEntry 重复：${capability.defaultEntry}（${previous} 与 ${capability.id}）`);
+    else capabilityEntries.set(capability.defaultEntry, capability.id);
+  }
   if (capability.category !== "core" && capability.category !== "extra") fail(`能力 ${capability.id} category 必须为 core/extra`);
   for (const key of ["defaultEntry", "sourceOfTruth", "wireBoundary"]) {
     if (!exists(capability[key])) fail(`能力 ${capability.id} 路径不存在：${capability[key]}`);
@@ -57,16 +72,24 @@ for (const [index, capability] of capabilities.entries()) {
   }
   if (!Array.isArray(capability.verification) || capability.verification.length === 0) fail(`能力 ${capability.id} 缺少 verification 命令`);
   for (const command of capability.verification ?? []) checkCommand(command, `能力 ${capability.id}`);
+  if (capability.category === "extra"
+    && !(capability.docs ?? []).some((doc) => doc === "docs/EXTRAFEATURES.md")) {
+    fail(`额外能力 ${capability.id} 必须引用 docs/EXTRAFEATURES.md 作为权威边界`);
+  }
 }
 
 const registeredDefaults = new Set();
+const defaultDocs = new Set();
 for (const [index, module] of defaultModules.entries()) {
   if (!module || typeof module !== "object") { fail(`defaultModules[${index}] 必须是 object`); continue; }
   requireString(module.entry, `defaultModules[${index}].entry`);
   if (!exists(module.entry)) fail(`默认入口不存在：${module.entry}`);
+  if (registeredDefaults.has(module.entry)) fail(`默认入口重复：${module.entry}`);
   registeredDefaults.add(module.entry);
   if (!Array.isArray(module.docs) || module.docs.length === 0) fail(`默认入口 ${module.entry} 缺少文档`);
   for (const doc of module.docs ?? []) {
+    if (defaultDocs.has(`${module.entry}\u0000${doc}`)) fail(`默认入口文档重复：${module.entry} → ${doc}`);
+    defaultDocs.add(`${module.entry}\u0000${doc}`);
     if (!exists(doc)) fail(`默认入口 ${module.entry} 文档不存在：${doc}`);
     else checkMarkdownLinks(doc);
   }
@@ -137,15 +160,68 @@ function checkMarkdownLinks(doc) {
   const docPath = repoPath(doc);
   if (!docPath) return;
   const text = fs.readFileSync(docPath, "utf8");
+  const anchors = markdownAnchors(text);
   for (const match of text.matchAll(/\]\(([^)]+)\)/g)) {
-    const target = match[1].trim().split(/[?#]/, 1)[0];
-    if (!target || target.startsWith("http:") || target.startsWith("https:") || target.startsWith("mailto:") || target.startsWith("#") || target.startsWith("//")) continue;
+    const raw = match[1].trim();
+    if (!raw) continue;
+    const hash = raw.indexOf("#");
+    const query = raw.indexOf("?");
+    const splitAt = hash >= 0 && query >= 0 ? Math.min(hash, query) : Math.max(hash, query);
+    const target = (splitAt >= 0 ? raw.slice(0, splitAt) : raw).trim();
+    const fragment = hash >= 0 ? raw.slice(hash + 1).split("?", 1)[0] : "";
+    if (target.startsWith("http:") || target.startsWith("https:") || target.startsWith("mailto:") || target.startsWith("//")) continue;
+    if (!target && fragment) {
+      if (!anchors.has(normalizeAnchor(fragment))) fail(`文档 ${doc} 的锚点不存在：#${fragment}`);
+      continue;
+    }
+    if (!target) continue;
     const resolved = path.resolve(path.dirname(docPath), target);
     const relative = path.relative(ROOT, resolved);
     if (relative === ".." || relative.startsWith(`..${path.sep}`) || !fs.existsSync(resolved)) {
       fail(`文档 ${doc} 的链接不存在：${target}`);
+      continue;
+    }
+    if (fragment && path.extname(resolved).toLowerCase() === ".md") {
+      const targetText = fs.readFileSync(resolved, "utf8");
+      if (!markdownAnchors(targetText).has(normalizeAnchor(fragment))) {
+        fail(`文档 ${doc} 的锚点不存在：${target}#${fragment}`);
+      }
     }
   }
+}
+
+/** GitHub-style heading slug, including the CJK headings used in this repo. */
+function normalizeAnchor(value) {
+  let decoded = value;
+  try { decoded = decodeURIComponent(value); } catch { /* retain malformed fragment for a useful error */ }
+  return decoded
+    .trim()
+    .toLowerCase()
+    .replace(/<[^>]*>/g, "")
+    // Keep letters/numbers (including CJK), spaces, hyphens and underscores;
+    // GitHub drops punctuation such as `、`, `—`, and `§` from heading slugs.
+    .replace(/[^\p{Letter}\p{Number}\p{Mark}\s_-]+/gu, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+}
+
+function markdownAnchors(text) {
+  const anchors = new Set();
+  const counts = new Map();
+  for (const line of text.split(/\r?\n/)) {
+    const match = /^\s{0,3}#{1,6}\s+(.+?)\s*#*\s*$/.exec(line);
+    if (!match) continue;
+    const base = normalizeAnchor(match[1]);
+    if (!base) continue;
+    const count = counts.get(base) ?? 0;
+    counts.set(base, count + 1);
+    anchors.add(count === 0 ? base : `${base}-${count}`);
+  }
+  // Explicit HTML anchors are common in generated/reference docs.
+  for (const match of text.matchAll(/<(?:a|[^>]+)\s+(?:id|name)=["']([^"']+)["'][^>]*>/gi)) {
+    anchors.add(normalizeAnchor(match[1]));
+  }
+  return anchors;
 }
 
 /**
