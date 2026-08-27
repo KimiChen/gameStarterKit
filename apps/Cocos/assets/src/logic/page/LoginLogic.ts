@@ -13,9 +13,13 @@ export interface ILoginDeps {
     login(key: string): Promise<WebPlatformLoginResponse | null>;
 }
 
+export type LoginContinuation = (response: WebPlatformLoginResponse) => Promise<void> | void;
+
 export class LoginLogic {
     /** 进行中的登录（并发重复点合流到同一次请求，双方拿同一结果） */
     private inflight: Promise<WebPlatformLoginResponse | null> | null = null;
+    /** 覆盖登录后置步骤（Lobby/GetInfo/Home）的整段事务锁。 */
+    private flowInflight: Promise<WebPlatformLoginResponse | null> | null = null;
     private result: WebPlatformLoginResponse | null = null;
 
     /** 进度回调（0~1 + 文案）——view 刷新进度条/txt_progress */
@@ -37,11 +41,31 @@ export class LoginLogic {
 
     /** 点「进入游戏」：登录。并发重复点合流（同一结果）。成功 resolve response，失败 resolve null。 */
     doLogin(key: string): Promise<WebPlatformLoginResponse | null> {
+        // 外层 flow 已进入 Lobby/档案/导航时，任何旧调用面也复用整段事务，
+        // 不允许在 HTTP 已完成但后置步骤仍等待的窗口再签发第二个 token。
+        if (this.flowInflight) return this.flowInflight;
         if (this.inflight) return this.inflight;
         const p = this.run(key);
         this.inflight = p;
         // ⛔ 不用 .finally：客户端 lib 钉 ES2017（铁律 4），finally 是 ES2018
         const clear = () => { if (this.inflight === p) this.inflight = null; };
+        p.then(clear, clear);
+        return p;
+    }
+
+    /**
+     * 运行完整登录事务：HTTP 签发、会话入态及调用方提供的 Lobby/档案/导航 continuation
+     * 共享同一把锁。这样 HTTP 完成后的 await 边界不会让重复点击再次执行后半段。
+     */
+    doLoginFlow(key: string, continuation: LoginContinuation): Promise<WebPlatformLoginResponse | null> {
+        if (this.flowInflight) return this.flowInflight;
+        const p = (async () => {
+            const response = await this.doLogin(key);
+            if (response) await continuation(response);
+            return response;
+        })();
+        this.flowInflight = p;
+        const clear = () => { if (this.flowInflight === p) this.flowInflight = null; };
         p.then(clear, clear);
         return p;
     }

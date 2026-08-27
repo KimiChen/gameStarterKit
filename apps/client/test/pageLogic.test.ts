@@ -208,6 +208,33 @@ test("Login：签发请求失败不自动重试（由用户明确再次发起）
   assert.equal(texts[texts.length - 1], "登录失败，请重试");
 });
 
+test("Login：完整 flow 锁覆盖 HTTP 之后的 continuation", async () => {
+  let loginCalls = 0;
+  let continuationCalls = 0;
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  const response = { userId: "u_flow", accessToken: "u_flow.token", isNewAccount: false };
+  const logic = new LoginLogic({
+    login: async () => {
+      loginCalls++;
+      return response;
+    },
+  });
+  const first = logic.doLoginFlow("dev", async () => {
+    continuationCalls++;
+    await gate;
+  });
+  const second = logic.doLoginFlow("dev", async () => {
+    continuationCalls++;
+  });
+  assert.strictEqual(first, second, "重复点击必须复用整段事务 Promise");
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  assert.equal(loginCalls, 1);
+  assert.equal(continuationCalls, 1, "HTTP 完成后也不能再执行第二套后置流程");
+  release();
+  assert.equal((await first)?.userId, "u_flow");
+});
+
 test("Confirm：单/双按钮 + 只结算一次", () => {
   let yes = 0, closed = 0;
   const two = new ConfirmLogic({ content: "确定吗", onYes: () => yes++ });

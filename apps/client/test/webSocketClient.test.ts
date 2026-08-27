@@ -12,15 +12,29 @@ import {
   ForceLogoutReason, GuildRpc, KICK_CLOSE_CODE, LOBBY_MSG_PUSH, LOBBY_MSG_RPC,
   LobbyPush, PROTOCOL_VERSION, RoomName, UserRpc,
 } from "../src/shared/index";
-import { RpcError, WebSocketClient } from "../src/net/WebSocketClient";
+import { JoinError, RpcError, WebSocketClient } from "../src/net/WebSocketClient";
 
 interface IRpcReplyLite { id: string; ok: boolean; data?: unknown; err?: { code: string; msg: string } }
+
+interface Deferred<T> {
+  readonly promise: Promise<T>;
+  resolve(value: T): void;
+  reject(reason?: unknown): void;
+}
+
+function deferred<T>(): Deferred<T> {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => { resolve = res; reject = rej; });
+  return { promise, resolve, reject };
+}
 
 /** 假房间：捕获 send 与回包处理器，测试手动驱动回包/连接事件。 */
 function makeFakeRoom() {
   const sent: { type: string; data: { id: string; type: string; payload?: any } }[] = [];
   const handlers = new Map<string, (msg: any) => void>();
   const cbs: { drop?: () => void; leave?: (code?: number) => void } = {};
+  let leaveCalls = 0;
   const room = {
     sessionId: "s_fake",
     reconnection: { enabled: true },
@@ -28,12 +42,12 @@ function makeFakeRoom() {
     onMessage(type: string, cb: (msg: any) => void) { handlers.set(type, cb); return () => { handlers.delete(type); }; },
     onDrop(cb: () => void) { cbs.drop = cb; return () => {}; },
     onLeave(cb: (code?: number) => void) { cbs.leave = cb; return () => {}; },
-    leave: async () => true,
+    leave: async () => { leaveCalls++; return true; },
     removeAllListeners() { /* noop */ },
   };
   const reply = (r: IRpcReplyLite) => handlers.get(LOBBY_MSG_RPC)?.(r);
   const push = (type: string, data: unknown) => handlers.get(LOBBY_MSG_PUSH)?.({ type, data });
-  return { room, sent, reply, push, cbs };
+  return { room, sent, reply, push, cbs, get leaveCalls() { return leaveCalls; } };
 }
 
 /** 假 Colyseus.Client + 假房间装进单例，走真 join/doJoin 路径装好全部消息处理器。 */
@@ -199,4 +213,88 @@ test("推送先到 + onLeave 随后：只弹一次（notifyAuthInvalid 幂等，
     fake.cbs.leave?.(KICK_CLOSE_CODE[ForceLogoutReason.Banned]);            // 再关（迟到）
     assert.deepEqual(got, ["FORCE_BANNED"], "只上报一次");
   } finally { stop(); }
+});
+
+test("join 在途固定 client/endpoint：A 被取消后迟到 room 只释放 A，不会污染 B", async () => {
+  await WebSocketClient.inst.leave().catch(() => {});
+  const aJoin = deferred<ReturnType<typeof makeFakeRoom>["room"]>();
+  const bJoin = deferred<ReturnType<typeof makeFakeRoom>["room"]>();
+  const a = makeFakeRoom();
+  const b = makeFakeRoom();
+  const calls: Array<{ endpoint: string; options: unknown }> = [];
+  const clientA = {
+    auth: { token: "" },
+    joinOrCreate: async (_name: string, options: unknown) => { calls.push({ endpoint: "A", options }); return aJoin.promise; },
+  };
+  const clientB = {
+    auth: { token: "" },
+    joinOrCreate: async (_name: string, options: unknown) => { calls.push({ endpoint: "B", options }); return bJoin.promise; },
+  };
+  const internals = WebSocketClient.inst as unknown as { client: unknown; endpoint: string };
+  internals.endpoint = "http://game-a.example";
+  internals.client = clientA;
+  const ownerA = WebSocketClient.inst.joinOwned("token-a", { sId: 1 });
+  const stale = assert.rejects(ownerA.ready, /ownership 已释放/);
+
+  // 切换端点前释放 A；leave 必须不等待黑洞握手。随后 B 只能使用 B client/endpoint。
+  await ownerA.leave();
+  internals.endpoint = "http://game-b.example";
+  internals.client = clientB;
+  const ownerB = WebSocketClient.inst.joinOwned("token-b", { sId: 2 });
+  assert.deepEqual(calls, [
+    { endpoint: "A", options: { v: PROTOCOL_VERSION, sId: 1 } },
+    { endpoint: "B", options: { v: PROTOCOL_VERSION, sId: 2 } },
+  ]);
+
+  aJoin.resolve(a.room);
+  await stale;
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(a.leaveCalls, 1, "迟到 A room 必须物理释放");
+  bJoin.resolve(b.room);
+  assert.equal(await ownerB.ready, undefined);
+  assert.equal(WebSocketClient.inst.room, b.room);
+  await ownerB.leave();
+  assert.equal(b.leaveCalls, 1);
+});
+
+test("join 黑洞：timeout/cancel 立即结束 ownership，迟到 room 在后台释放", async () => {
+  await WebSocketClient.inst.leave().catch(() => {});
+  const pending = deferred<ReturnType<typeof makeFakeRoom>["room"]>();
+  const fake = makeFakeRoom();
+  const internals = WebSocketClient.inst as unknown as { client: unknown; endpoint: string };
+  internals.endpoint = "http://game-timeout.example";
+  internals.client = {
+    auth: { token: "" },
+    joinOrCreate: async () => pending.promise,
+  };
+  const owner = WebSocketClient.inst.joinOwned("token-timeout", undefined, { timeoutMs: 10 });
+  await assert.rejects(owner.ready, (e: unknown) => e instanceof JoinError && e.code === "TIMEOUT");
+  assert.equal(WebSocketClient.inst.connected, false);
+  await owner.leave();
+
+  pending.resolve(fake.room);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(fake.leaveCalls, 1, "超时后迟到 room 不能成为无主连接");
+
+  const cancelled = deferred<ReturnType<typeof makeFakeRoom>["room"]>();
+  const fakeCancelled = makeFakeRoom();
+  internals.endpoint = "http://game-cancel.example";
+  internals.client = { auth: { token: "" }, joinOrCreate: async () => cancelled.promise };
+  const controller = new AbortController();
+  const cancelledOwner = WebSocketClient.inst.joinOwned("token-cancel", undefined, controller.signal);
+  controller.abort();
+  await assert.rejects(cancelledOwner.ready, (e: unknown) => e instanceof JoinError && e.code === "CANCELLED");
+  await cancelledOwner.leave();
+  cancelled.resolve(fakeCancelled.room);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(fakeCancelled.leaveCalls, 1, "取消后迟到 room 也必须释放");
+});
+
+test("主动 leave 立即拒绝旧 slot 的 pending RPC", async () => {
+  const fake = makeFakeRoom();
+  const c = await joinWithFakeRoom(fake);
+  const pending = c.rpc(UserRpc.GetUserId, {});
+  const leaving = c.leave();
+  await assert.rejects(pending, (e: unknown) => e instanceof RpcError && e.code === "CONN_LOST");
+  await leaving;
 });

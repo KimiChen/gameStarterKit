@@ -23,14 +23,19 @@ import { ConfirmLogic } from "../logic/page/ConfirmLogic";
 import { initHttp } from "../core/http";
 import { devLogin } from "../net/http/account";
 import { WebSocketClient } from "../net/WebSocketClient";
-import { clearSession, onAuthInvalid, onBattleLost, onConnLost, setSession } from "../net/session";
+import {
+  clearSession,
+  getSessionGeneration,
+  registerReturnToLogin,
+  setSession,
+  type ReturnToLoginReason,
+} from "../net/session";
 import { ForceLogoutMessage, ForceLogoutReason, UserRpc, joinErrText, type IUserView } from "../shared/index";
 import { isServerEnterable } from "../logic/areaDirectory";
 import { fetchAreaList } from "../net/http/area";
 import { fetchNotices } from "../net/http/notice";
 import {
   chooseServer,
-  clearServerList,
   getCurrentServer,
   pickDefaultServer,
   setServerList,
@@ -52,52 +57,43 @@ const DEV_LOGIN_KEY = "dev_local";
  *   `enterBattle`，点「进入游戏」驱动的是早已销毁的渲染层/ECS（且旧 Main 因此永不回收）。
  *   故存进 `currentReopenLogin`，每次 `openLogin` 覆盖，handler 只在**触发时**读它。 */
 let sessionWired = false;
-let currentReopenLogin: () => void = () => {};
-function wireSessionEvents(reopenLogin: () => void): void {
-  currentReopenLogin = reopenLogin; // ⚠ 每次都刷新（⛔ 别放在 sessionWired 早退之后）
+let currentReopenLogin: () => Promise<void> | void = () => {};
+function wireSessionEvents(reopenLogin: () => Promise<void> | void): void {
+  currentReopenLogin = reopenLogin; // ⚠ 每次都刷新（⛔ 不放在 sessionWired 早退之后）
   if (sessionWired) return;
   sessionWired = true;
-  onAuthInvalid((reason) => {
-    void (async () => {
-      await WebSocketClient.inst.leave().catch(() => {});
-      closeLobby();
-      // 强制下线（服务端主动踢）文案走 shared 单源 ForceLogoutMessage；其余为 token 失效类
-      const text = reason === "FORCE_BANNED" ? ForceLogoutMessage[ForceLogoutReason.Banned]
-        : reason === "FORCE_REPLACED" ? ForceLogoutMessage[ForceLogoutReason.Replaced]
-        : reason === "FORCE_REVOKED" ? ForceLogoutMessage[ForceLogoutReason.Revoked]
-        : reason === "ACCOUNT_BANNED" ? ForceLogoutMessage[ForceLogoutReason.Banned]
+  registerReturnToLogin(async (reason: ReturnToLoginReason) => {
+    // session.returnToLogin 已先 clearSession；这里按统一顺序释放大厅、关闭壳、提示，
+    // 最后读取最新 Main 的 reopen 回调。所有 await 都在同一个可观察 Promise 内。
+    const transitionGen = getSessionGeneration();
+    await WebSocketClient.inst.leave().catch(() => {});
+    if (getSessionGeneration() !== transitionGen) return;
+    closeLobby();
+    let title = "提示";
+    let content = "登录已过期，请重新登录";
+    if (reason.kind === "AUTH_INVALID") {
+      const auth = reason.reason;
+      content = auth === "FORCE_BANNED" ? ForceLogoutMessage[ForceLogoutReason.Banned]
+        : auth === "FORCE_REPLACED" ? ForceLogoutMessage[ForceLogoutReason.Replaced]
+        : auth === "FORCE_REVOKED" ? ForceLogoutMessage[ForceLogoutReason.Revoked]
+        : auth === "ACCOUNT_BANNED" ? ForceLogoutMessage[ForceLogoutReason.Banned]
         : "登录已过期，请重新登录";
-      await openConfirm({ title: "提示", content: text, noText: null });
-      currentReopenLogin(); // ⚠ 触发时读最新值（⛔ 不用捕获的 reopenLogin：那会锁死第一个 Main）
-    })();
-  });
-  // 战斗连接最终死亡：战斗态已由 Main 回滚（订阅序在前），此处只管提示 + 导航。
-  // ⚠ **必须先退大厅房**：战斗房死掉不影响大厅房，而 `closeLobby()` 只关 FGUI 面板、从不 leave；
-  // 若不退，回登录页后重登会拿到**新 token** → `WebSocketClient.join` 撞上"已用其他 token 在线"
-  // 而抛错（换号必须先 leave），玩家再也进不去。authInvalid 那条早就这么做了，此处对齐。
-  onBattleLost(() => {
-    void (async () => {
-      await WebSocketClient.inst.leave().catch(() => {});
-      closeLobby();
-      await openConfirm({ title: "战斗已结束", content: "与对局的连接已断开", noText: null });
-      currentReopenLogin(); // ⚠ 触发时读最新值（⛔ 不用捕获的 reopenLogin：那会锁死第一个 Main）
-    })();
-  });
-  onConnLost(() => {
-    void (async () => {
-      // 登录态未失效（非鉴权死亡）：提示后回登录页，用户可原路重进。
-      // ⚠ 战斗态的回滚由 Main 的 onConnLost 负责（订阅序在前），此处只管提示 + 导航。
-      // ⚠ 这句 leave() **在今天是空操作**，⛔ 别把它当成"和另两条一样必要"：`notifyConnLost` 的
-      //   唯一产地是 WebSocketClient 的 `room.onLeave`，而那里在通知之前**已经**把 `this.room`
-      //   与 `joinedToken` 清干净了（WebSocketClient.ts:188-190）⇒ `leave()` 撞 `if (!room) return`
-      //   直接返回。authInvalid/battleLost 两条不同：那两条触发时大厅连接**确实还活着**，必须退。
-      //   保留它纯属防御——万一将来 connLost 多出一个"房还活着就通知"的产地，这里不至于漏。
-      //   ⚠ 收敛成单一出口见 plan.md P0-01；重构时请按这里的事实判断，⛔ 别照抄成"四条都必须 leave"。
-      await WebSocketClient.inst.leave().catch(() => {});
-      closeLobby();
-      await openConfirm({ title: "连接断开", content: "与服务器的连接已断开，请重新进入", noText: null });
-      currentReopenLogin(); // ⚠ 触发时读最新值（⛔ 不用捕获的 reopenLogin：那会锁死第一个 Main）
-    })();
+    } else if (reason.kind === "BATTLE_LOST") {
+      title = "战斗已结束";
+      content = "与对局的连接已断开";
+    } else if (reason.kind === "CONN_LOST") {
+      title = "连接断开";
+      content = "与服务器的连接已断开，请重新进入";
+    } else if (reason.kind === "BATTLE_JOIN_FAILED") {
+      title = "进入失败";
+      content = "进入对局失败，请重试";
+    }
+    await openConfirm({ title, content, noText: null });
+    if (getSessionGeneration() !== transitionGen) return;
+    const reopen = currentReopenLogin();
+    // 失效事件可能正好发生在当前 openLogin 事务内；等待自身会形成死锁，当前事务
+    // 已经持有 Login 句柄时直接复用即可。
+    if (reopen && reopen !== openLoginInFlight) await reopen;
   });
 }
 
@@ -124,9 +120,23 @@ function writeDontRemindToday(value: boolean): void {
 }
 
 /** 登录页：拉选服列表 + 默认选中 → 显示当前服；按钮通往选服/公告；进入游戏走维护闸 + 登录 → 主界面。 */
-export async function openLogin(onEnterBattle: () => void): Promise<void> {
-  // 每次回登录页都从独立 Portal 重拉；失败时先清旧目录，禁止沿用未知旧地址。
-  clearServerList();
+let openLoginInFlight: Promise<void> | null = null;
+
+/** 登录页整段加载只保留一个在途事务；失效事件再次触发时会复用同一 Promise。 */
+export function openLogin(onEnterBattle: () => void): Promise<void> {
+  if (openLoginInFlight) return openLoginInFlight;
+  const p = openLoginImpl(onEnterBattle);
+  openLoginInFlight = p;
+  p.then(
+    () => { if (openLoginInFlight === p) openLoginInFlight = null; },
+    () => { if (openLoginInFlight === p) openLoginInFlight = null; },
+  );
+  return p;
+}
+
+async function openLoginImpl(onEnterBattle: () => void): Promise<void> {
+  // 每次回登录页都从独立 Portal 重拉；setServerList 只在成功后原子替换快照，
+  // 这样刷新失败时仍可使用上一份已知目录（并保留当前选服）重试。
   let areaLoadFailed = false;
   try {
     const list = await fetchAreaList();
@@ -141,7 +151,7 @@ export async function openLogin(onEnterBattle: () => void): Promise<void> {
     console.error("[pages] WebPlatform 区服目录加载失败：", e);
   }
 
-  wireSessionEvents(() => { void openLogin(onEnterBattle); });
+  wireSessionEvents(() => openLogin(onEnterBattle));
 
   const h = await ViewMgr.open("Login");
   const view = h.view as LoginView;
@@ -150,7 +160,10 @@ export async function openLogin(onEnterBattle: () => void): Promise<void> {
   const logic = new LoginLogic({ login: (key) => devLogin(key, getCurrentServer()?.serverId ?? 0) });
   logic.onProgress = (ratio, text) => view.setProgress(ratio, text);
 
-  view.onEnter = async () => {
+  let enterInFlight: Promise<void> | null = null;
+  view.onEnter = () => {
+    if (enterInFlight) return enterInFlight;
+    const p = (async () => {
     // Portal 首次不可达时，用户点「进入游戏」即显式重试目录；仍失败则给出可重试提示。
     if (areaLoadFailed) {
       try {
@@ -183,32 +196,49 @@ export async function openLogin(onEnterBattle: () => void): Promise<void> {
       });
       return;
     }
-    // 真实链路：dev-login（本地身份）→ 会话入 session → join 大厅房 → 拉真实档案
-    const r = await logic.doLogin(DEV_LOGIN_KEY);
-    if (!r) return; // 进度条已显示失败文案，可重点
-    setSession(r);
+    // 真实链路：dev-login（本地身份）→ 会话入 session → join 大厅房 → 拉真实档案。
+    // continuation 由 LoginLogic 的整段 flow 锁保护，重复点击不会在 HTTP 完成后再开一套 Lobby。
     let user: IUserView | null = null;
-    try {
-      logic.onProgress(0.6, "正在进入大厅…");
-      // 区服 = 独立实例：直接使用目录明确给出的 gameHttpUrl，不再从 WS URL 猜 HTTP 地址。
-      WebSocketClient.inst.init(cur.gameHttpUrl);
-      // WebPlatform 契约叫 serverId；游戏服现有 Colyseus join option 仍叫 sId，在边界显式转换。
-      await WebSocketClient.inst.join(r.accessToken, { sId: cur.serverId });
-      logic.onProgress(0.85, "正在加载角色…");
-      user = (await WebSocketClient.inst.rpc(UserRpc.GetInfo, {})).user;
-    } catch (e) {
-      // 大厅/档案失败即整体失败（严谨：不带半截会话进主界面）；清态可重试
-      // 业务码走 message（服务端 joinRefused）：用 shared 单源解码器取文案，⛔ 别把 "3004" 甩给玩家
-      console.error("[pages] 进入大厅失败：", e);
-      const why = joinErrText((e as Error)?.message, "进入大厅失败，请重试");
-      clearSession();
-      await WebSocketClient.inst.leave().catch(() => {});
-      logic.onProgress(0, why);
-      return;
-    }
+    let flowFailed = false;
+    let flowSessionGen = -1;
+    const r = await logic.doLoginFlow(DEV_LOGIN_KEY, async (response) => {
+      setSession(response);
+      flowSessionGen = getSessionGeneration();
+      try {
+        logic.onProgress(0.6, "正在进入大厅…");
+        // 区服 = 独立实例：直接使用目录明确给出的 gameHttpUrl，不再从 WS URL 猜 HTTP 地址。
+        WebSocketClient.inst.init(cur.gameHttpUrl);
+        // WebPlatform 契约叫 serverId；游戏服现有 Colyseus join option 仍叫 sId，在边界显式转换。
+        await WebSocketClient.inst.join(response.accessToken, { sId: cur.serverId });
+        if (getSessionGeneration() !== flowSessionGen) { flowFailed = true; return; }
+        logic.onProgress(0.85, "正在加载角色…");
+        user = (await WebSocketClient.inst.rpc(UserRpc.GetInfo, {})).user;
+        if (getSessionGeneration() !== flowSessionGen) { flowFailed = true; return; }
+      } catch (e) {
+        // 大厅/档案失败即整体失败（严谨：不带半截会话进主界面）；清态可重试
+        // 业务码走 message（服务端 joinRefused）：用 shared 单源解码器取文案，⛔ 别把 "3004" 甩给玩家
+        console.error("[pages] 进入大厅失败：", e);
+        const why = joinErrText((e as Error)?.message, "进入大厅失败，请重试");
+        clearSession();
+        await WebSocketClient.inst.leave().catch(() => {});
+        logic.onProgress(0, why);
+        flowFailed = true;
+      }
+    });
+    if (!r || flowFailed || getSessionGeneration() !== flowSessionGen) return; // 进度条已显示失败文案，可重点
     logic.onProgress(1, "登录成功");
     h.close();
     await openHome(onEnterBattle, r.userId, user);
+    // Home 的动态加载也有 await；期间若收到失效事件，handler 会关闭大厅并重开
+    // Login。这里再核对一次，避免迟到的 Home 把新登录页覆盖回来。
+    if (getSessionGeneration() !== flowSessionGen) ViewMgr.close("Home");
+    })();
+    enterInFlight = p;
+    p.then(
+      () => { if (enterInFlight === p) enterInFlight = null; },
+      () => { if (enterInFlight === p) enterInFlight = null; },
+    );
+    return p;
   };
   view.onNotice = () => { void openNotice(); };
   view.onSelectServer = () => { void openAreaList((s) => view.showCurrentServer(s)); };
@@ -232,7 +262,14 @@ export async function openHome(onEnterBattle: () => void, userId = "", user: IUs
 export async function openAreaList(onChosen?: (server: WebPlatformAreaServer) => void): Promise<void> {
   const h = await ViewMgr.open("AreaList");
   const view = h.view as AreaListView;
-  const logic = new AreaListLogic({ fetchAreaList });
+  // 选服页与登录页共用同一份目录快照：只有 HTTP 成功才写入，失败不抹掉旧拓扑。
+  const logic = new AreaListLogic({
+    fetchAreaList: async () => {
+      const list = await fetchAreaList();
+      setServerList(list);
+      return list;
+    },
+  });
   logic.onChoose = (server) => {
     chooseServer(server);       // 区服=实例：记住选中服，进入游戏时连它
     initHttp(server.gameHttpUrl);

@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   clearSession, getUserId, isLoggedIn, notifyAuthInvalid, notifyConnLost,
-  onAuthInvalid, onConnLost, setSession,
+  onAuthInvalid, onConnLost, registerReturnToLogin, returnToLogin, setSession,
 } from "../src/net/session";
 import { getToken } from "../src/core/http";
 
@@ -88,4 +88,59 @@ test("⛔ battleLost 不清登录态（只是这一局没了，token 仍有效�
   setSession({ userId: "u_bl", accessToken: "t_bl", isNewAccount: false });
   notifyBattleLost();
   assert.equal(isLoggedIn(), true, "登录态保留（与 authInvalid 的区别）");
+});
+
+test("returnToLogin：并发失效事件共享一个可等待 Promise，并先清 Bearer", async () => {
+  let calls = 0;
+  let seen: string | undefined;
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  const off = registerReturnToLogin(async (reason) => {
+    calls++;
+    seen = reason.kind;
+    await gate;
+  });
+  try {
+    login("u_transition");
+    const first = returnToLogin({ kind: "CONN_LOST" });
+    const second = returnToLogin({ kind: "BATTLE_LOST" });
+    assert.strictEqual(first, second, "同一会话的并发失效必须合流");
+    assert.equal(isLoggedIn(), false, "transition 建立时立即清 user/token");
+    await Promise.resolve();
+    assert.equal(calls, 1);
+    assert.equal(seen, "CONN_LOST", "迟到原因不覆盖第一次 transition");
+    release();
+    await first;
+    await returnToLogin({ kind: "AUTH_INVALID", reason: "AUTH_REQUIRED" });
+    assert.equal(calls, 1, "完成后的迟到事件必须幂等吞掉");
+  } finally {
+    off();
+    clearSession();
+  }
+});
+
+test("returnToLogin：新会话建立后旧 transition 不得与新事件合流", async () => {
+  const reasons: string[] = [];
+  let releaseOld!: () => void;
+  const oldGate = new Promise<void>((resolve) => { releaseOld = resolve; });
+  const off = registerReturnToLogin(async (reason) => {
+    reasons.push(reason.kind);
+    if (reason.kind === "CONN_LOST") await oldGate;
+  });
+  try {
+    login("u_old");
+    const old = returnToLogin({ kind: "CONN_LOST" });
+    await Promise.resolve();
+    login("u_new"); // reset transition epoch while old handler is still awaiting
+    const fresh = returnToLogin({ kind: "BATTLE_LOST" });
+    assert.notStrictEqual(fresh, old, "新会话不能复用旧 transition Promise");
+    await fresh;
+    assert.equal(isLoggedIn(), false, "新事件仍会清理新会话");
+    releaseOld();
+    await old;
+    assert.deepEqual(reasons, ["CONN_LOST", "BATTLE_LOST"]);
+  } finally {
+    off();
+    clearSession();
+  }
 });

@@ -25,7 +25,20 @@ export type AuthInvalidReason =
     | "AUTH_EPOCH_STALE" | "AUTH_REQUIRED" | "ACCOUNT_BANNED"
     | "FORCE_BANNED" | "FORCE_REPLACED" | "FORCE_REVOKED";
 
+/**
+ * 导航层使用的统一回登录原因。网络层只负责发出事件，不依赖 View；注册了
+ * `registerReturnToLogin` 后，三类失效事件会被串行送进同一个 transition。
+ */
+export type ReturnToLoginReason =
+    | { kind: "AUTH_INVALID"; reason: AuthInvalidReason }
+    | { kind: "CONN_LOST" }
+    | { kind: "BATTLE_LOST" }
+    | { kind: "BATTLE_JOIN_FAILED" };
+
+export type ReturnToLoginHandler = (reason: ReturnToLoginReason) => Promise<void> | void;
+
 let userId = "";
+let sessionGeneration = 0;
 const authInvalidHandlers = new Set<(reason: AuthInvalidReason) => void>();
 const connLostHandlers = new Set<() => void>();
 // 战斗房（GameRoom）连接最终死亡。⚠ 与 connLost（大厅房）**刻意分开**：两者的处置不同——
@@ -33,10 +46,15 @@ const connLostHandlers = new Set<() => void>();
 // 否则 Main 会拿着一个死房间继续驱动渲染，玩家卡在冻结画面里无路可回。
 const battleLostHandlers = new Set<() => void>();
 
+/** 当前页面组合根提供的唯一回登录实现。模块级是刻意的：session 不反向依赖 View。 */
+let returnToLoginHandler: ReturnToLoginHandler | null = null;
+
 /** 登录成功：记会话（token 进 core/http，后续 HTTP Bearer / 房间 join 都取自它）。 */
 export function setSession(r: WebPlatformLoginResponse): void {
     userId = r.userId;
     setToken(r.accessToken);
+    sessionGeneration++;
+    sessionTransition.reset();
 }
 
 export function getUserId(): string {
@@ -51,6 +69,87 @@ export function isLoggedIn(): boolean {
 export function clearSession(): void {
     userId = "";
     setToken("");
+    sessionGeneration++;
+}
+
+/** 当前会话世代；异步登录/导航在每个 await 后用它拒绝迟到结果。 */
+export function getSessionGeneration(): number {
+    return sessionGeneration;
+}
+
+/**
+ * 可独立测试的会话 transition：同一世代内并发事件共享 Promise，完成后吞掉旧事件；
+ * `reset()` 由下一次 setSession 调用，开启新的会话世代。
+ */
+export class SessionTransition {
+    private inFlight: { promise: Promise<void>; epoch: number } | null = null;
+    private handled = false;
+    private epoch = 0;
+
+    constructor(private readonly resolveHandler: () => ReturnToLoginHandler | null = () => returnToLoginHandler) {}
+
+    reset(): void {
+        // 新会话开始后，旧 transition 的 Promise 仍可由其调用方等待，但不能再和
+        // 新会话的失效事件合流，也不能在旧 Promise 完成时覆盖新的 handled 状态。
+        this.epoch++;
+        this.inFlight = null;
+        this.handled = false;
+    }
+
+    run(reason: ReturnToLoginReason): Promise<void> {
+        if (this.inFlight) return this.inFlight.promise;
+        if (this.handled) return Promise.resolve();
+        // notifyAuthInvalid 的兼容广播在进入这里前已经清过一次；避免重复递增
+        // generation，同时保证直接调用 returnToLogin 仍会清掉残留 user/token。
+        if (userId !== "" || getToken() !== "") clearSession();
+        const epoch = this.epoch;
+        const generation = sessionGeneration;
+        const handler = this.resolveHandler();
+        const p = Promise.resolve().then(() => {
+            // setSession() 可能在 handler 开始前建立了新会话；旧事件只需结束，
+            // 不能把新会话再次导航回登录页。
+            if (this.epoch !== epoch || sessionGeneration !== generation) return;
+            return handler?.(reason);
+        }).then(() => undefined);
+        const record = { promise: p, epoch };
+        this.inFlight = record;
+        p.then(
+            () => {
+                if (this.inFlight === record) {
+                    this.inFlight = null;
+                    this.handled = true;
+                }
+            },
+            () => {
+                if (this.inFlight === record) {
+                    this.inFlight = null;
+                    this.handled = true;
+                }
+            },
+        );
+        return p;
+    }
+}
+
+const sessionTransition = new SessionTransition();
+
+/**
+ * 注册应用唯一的回登录出口。重复注册只替换实现，不会增加事件订阅；返回解绑器供
+ * 场景/测试清理。处理器本身必须观察所有 Promise rejection。
+ */
+export function registerReturnToLogin(handler: ReturnToLoginHandler): () => void {
+    returnToLoginHandler = handler;
+    return () => {
+        if (returnToLoginHandler === handler) returnToLoginHandler = null;
+    };
+}
+
+/**
+ * 统一、可等待、幂等的回登录队列。第一次调用会立即清本地会话，保证之后的 Portal
+ * 登录请求不会携带旧 Bearer；并发/迟到事件共享同一个 Promise。
+ */
+export function returnToLogin(reason: ReturnToLoginReason): Promise<void> {
+    return sessionTransition.run(reason);
 }
 
 /** 订阅鉴权失效（踢线/token 过期/封号），返回解绑函数。 */
@@ -72,6 +171,7 @@ export function notifyAuthInvalid(reason: AuthInvalidReason): void {
     for (const cb of authInvalidHandlers) {
         try { cb(reason); } catch (e) { console.error("[session] authInvalid 处理器异常", e); }
     }
+    dispatchReturnToLogin({ kind: "AUTH_INVALID", reason });
 }
 
 /** 网络层上报大厅连接最终死亡（非鉴权原因）。登录态保留——UI 可提示后用原 token 重连。 */
@@ -86,10 +186,20 @@ export function notifyBattleLost(): void {
     for (const cb of battleLostHandlers) {
         try { cb(); } catch (e) { console.error("[session] battleLost 处理器异常", e); }
     }
+    dispatchReturnToLogin({ kind: "BATTLE_LOST" });
 }
 
 export function notifyConnLost(): void {
     for (const cb of connLostHandlers) {
         try { cb(); } catch (e) { console.error("[session] connLost 处理器异常", e); }
     }
+    dispatchReturnToLogin({ kind: "CONN_LOST" });
+}
+
+/** 事件 API 保持同步；已注册的异步 transition 在后台运行且 rejection 已被观察。 */
+function dispatchReturnToLogin(reason: ReturnToLoginReason): void {
+    if (!returnToLoginHandler) return;
+    void returnToLogin(reason).catch((e) => {
+        console.error("[session] returnToLogin 处理器异常", e);
+    });
 }

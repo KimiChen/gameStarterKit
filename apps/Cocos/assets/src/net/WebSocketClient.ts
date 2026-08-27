@@ -3,13 +3,7 @@
  *
  * 与 RoomClient（GameRoom：fire-and-forget + 状态同步）职责分离：本类只管 lobby 房的
  * `rpc`（信封 {id,type,payload} ⇄ {id,ok,data,err}，按 id 配对）与 `push`（{type,data}）两个消息。
- * 路由名与 req/res 类型全部来自 shared/protocol/lobbyRpc（铁律 6：⛔ 不手写消息名字符串）。
- *
- * 使用约定：
- *  - 错误处理只按 RpcError.code 分支，⛔ 禁止解析 msg（09·G3）
- *  - 写接口一律走 rpcIdem：clientReqId 每个逻辑操作生成一次，重试复用同一个（09·I2）
- *  - join 需要 WebPlatform Public `/v1/sessions/*` 签发的 accessToken
- *  - 鉴权类错误码（踢线/过期/封号）统一上报 net/session.notifyAuthInvalid，UI 从 session 订阅
+ * 路由名与 req/res 类型全部来自 shared/protocol/lobbyRpc（铁律 6）。
  */
 import { notifyAuthInvalid, notifyConnLost, type AuthInvalidReason } from "./session";
 import {
@@ -33,50 +27,182 @@ import {
     type RpcRes,
 } from "../shared/index";
 
-/**
- * 客户端等待上限：服务端 handler 超时 10s（infra/config HANDLER_TIMEOUT_MS）+ RTT 余量。
- * 超时后该 id 的迟到回包直接静默丢弃（不是协议错误）。
- */
 const RPC_CLIENT_TIMEOUT_MS = 15_000;
-
-/** rpcIdem 对 BUSY/STALE_FENCE 的自动重试（07 重试表：同一 clientReqId 短退避重试） */
 const IDEM_RETRY_MAX = 3;
 const IDEM_RETRY_DELAY_MS = 300;
+const LEAVE_TIMEOUT_MS = 5_000;
 
-/** 强制下线原因（shared 契约） → session 的 AuthInvalidReason（UI 据此选文案）。 */
+/** join 的本地生命周期控制；这些字段不会进入 Lobby matchmaking options。 */
+export interface JoinControl {
+    signal?: AbortSignal;
+    timeoutMs?: number;
+    deadlineMs?: number;
+    timeout?: number;
+    deadline?: number;
+}
+
+export type JoinFailureCode = "TIMEOUT" | "CANCELLED";
+
+export class JoinError extends Error {
+    constructor(readonly code: JoinFailureCode, message: string = code) {
+        super(message);
+        this.name = "JoinError";
+    }
+}
+
+export interface LobbyConnectionOwnership {
+    readonly ready: Promise<void>;
+    leave(): Promise<void>;
+}
+
+/** 客户端本地错误码（刻意不在 shared RPC_ERR_CODES 里）。 */
+export type LocalErrCode = "CONN_LOST" | "TIMEOUT";
+
+/** RPC 失败统一异常：调用方只按 code 分支。 */
+export class RpcError extends Error {
+    clientReqId?: string;
+
+    constructor(readonly code: RpcErrCode | LocalErrCode, msg = "") {
+        super(msg);
+        this.name = "RpcError";
+    }
+}
+
+function cloneJson<T>(value: T, ancestors = new Set<object>()): T {
+    if (value === null || typeof value !== "object") {
+        if (typeof value === "number" && !Number.isFinite(value)) {
+            throw new TypeError("[WebSocketClient] join options 不能包含 NaN/Infinity");
+        }
+        if (typeof value === "bigint") {
+            throw new TypeError("[WebSocketClient] join options 不支持 BigInt");
+        }
+        return value;
+    }
+    const object = value as unknown as object;
+    if (ancestors.has(object)) throw new TypeError("[WebSocketClient] join options 不支持循环引用");
+    ancestors.add(object);
+    try {
+        if (Array.isArray(value)) return value.map((item) => cloneJson(item, ancestors)) as unknown as T;
+        const out: Record<string, unknown> = {};
+        for (const key of Object.keys(value as Record<string, unknown>)) {
+            const item = (value as Record<string, unknown>)[key];
+            if (item === undefined || typeof item === "function" || typeof item === "symbol") continue;
+            out[key] = cloneJson(item, ancestors);
+        }
+        return out as T;
+    } finally {
+        ancestors.delete(object);
+    }
+}
+
+function stableJson(value: unknown, ancestors = new Set<object>()): string | undefined {
+    if (value === null) return "null";
+    switch (typeof value) {
+        case "string": return JSON.stringify(value);
+        case "boolean": return value ? "true" : "false";
+        case "number": return JSON.stringify(value);
+        case "undefined":
+        case "function":
+        case "symbol": return undefined;
+        case "bigint": throw new TypeError("[WebSocketClient] join options 不支持 BigInt");
+        case "object": break;
+    }
+    const object = value as object;
+    if (ancestors.has(object)) throw new TypeError("[WebSocketClient] join options 不支持循环引用");
+    ancestors.add(object);
+    try {
+        if (Array.isArray(object)) {
+            return `[${object.map((item) => stableJson(item, ancestors) ?? "null").join(",")}]`;
+        }
+        const fields: string[] = [];
+        for (const key of Object.keys(object).sort()) {
+            const encoded = stableJson((object as Record<string, unknown>)[key], ancestors);
+            if (encoded !== undefined) fields.push(`${JSON.stringify(key)}:${encoded}`);
+        }
+        return `{${fields.join(",")}}`;
+    } finally {
+        ancestors.delete(object);
+    }
+}
+
+function splitJoinControl(
+    options: Record<string, unknown> | undefined,
+    explicit: JoinControl | AbortSignal | undefined,
+): { options: Record<string, unknown>; control: JoinControl } {
+    const source = options ?? {};
+    const wire: Record<string, unknown> = { ...source };
+    const embedded = source as Record<string, unknown> & Partial<JoinControl>;
+    const explicitControl: JoinControl | undefined = explicit && "aborted" in explicit
+        ? { signal: explicit as AbortSignal }
+        : explicit as JoinControl | undefined;
+    const control: JoinControl = explicitControl ?? {
+        signal: embedded.signal,
+        timeoutMs: embedded.timeoutMs,
+        deadlineMs: embedded.deadlineMs,
+        timeout: embedded.timeout,
+        deadline: embedded.deadline,
+    };
+    delete wire.signal;
+    delete wire.timeoutMs;
+    delete wire.deadlineMs;
+    delete wire.timeout;
+    delete wire.deadline;
+    return { options: wire, control };
+}
+
+function waitMsFor(control: JoinControl): number {
+    const now = Date.now();
+    if (control.deadlineMs !== undefined) {
+        const raw = Number(control.deadlineMs);
+        if (!Number.isFinite(raw)) return 0;
+        return Math.max(0, (raw < 1e11 ? now + raw : raw) - now);
+    }
+    if (control.timeoutMs !== undefined) {
+        const raw = Number(control.timeoutMs);
+        return Number.isFinite(raw) ? Math.max(0, raw) : 0;
+    }
+    if (control.timeout !== undefined) {
+        const raw = Number(control.timeout);
+        return Number.isFinite(raw) ? Math.max(0, raw) : 0;
+    }
+    return 15_000;
+}
+
 const FORCE_REASON_MAP: Record<ForceLogoutReasonType, AuthInvalidReason> = {
     [ForceLogoutReason.Banned]: "FORCE_BANNED",
     [ForceLogoutReason.Replaced]: "FORCE_REPLACED",
     [ForceLogoutReason.Revoked]: "FORCE_REVOKED",
 };
 
-/** leave 的等待上限：掉线窗口里 LEAVE 帧可能发不出去、onLeave 永不触发，限时后强制本地清理 */
-const LEAVE_TIMEOUT_MS = 5_000;
+interface LobbySlot {
+    readonly connectionKey: string;
+    readonly generation: number;
+    readonly client: Colyseus.Client;
+    readonly endpoint: string;
+    readonly token: string;
+    readonly options: IRoomJoinOptions;
+    room: Colyseus.Room | null;
+    ready: Promise<void>;
+    closing: Promise<void> | null;
+    physicalClose: Promise<void> | null;
+    cancelled: boolean;
+    dropping: boolean;
+    readonly owners: Set<LobbyOwner>;
+}
 
-/** 客户端本地错误码（刻意不在 shared `RPC_ERR_CODES` 里）：连接断开 / 本地等待超时 */
-export type LocalErrCode = "CONN_LOST" | "TIMEOUT";
-
-/** RPC 失败统一异常：调用方只按 code 分支。 */
-export class RpcError extends Error {
-    /**
-     * rpcIdem 抛出时回填本次使用的幂等 id。money 路径重试**必须**回传同一个——
-     * `rpcIdem(type, payload, err.clientReqId)`；换新 id 等于发起新操作（可能重复扣费）。
-     */
-    clientReqId?: string;
-
-    constructor(
-        readonly code: RpcErrCode | LocalErrCode,
-        msg = "",
-    ) {
-        super(msg);
-        this.name = "RpcError";
-    }
+interface LobbyOwner {
+    active: boolean;
+    readonly slot: LobbySlot;
+    readonly ready: Promise<void>;
+    cancel(reason: Error): void;
+    disposeControl(): void;
 }
 
 interface IPending {
     resolve: (data: unknown) => void;
     reject: (e: RpcError) => void;
     timer: ReturnType<typeof setTimeout>;
+    readonly slot: LobbySlot;
 }
 
 export class WebSocketClient {
@@ -87,23 +213,21 @@ export class WebSocketClient {
     }
 
     private client: Colyseus.Client | null = null;
-    private room: Colyseus.Room | null = null;
-    /** 进行中的 join（并发调用合流，防双击开出两条 ws——孤儿连接会双份收推送） */
-    private joining: Promise<void> | null = null;
-    /** 当前连接鉴权所用的 token（换号检测） */
-    private joinedToken = "";
-    /** 本次 init 的端点 / 本次 join 落定的端点与区——⛔ 与 token 一起构成连接复用判据（A5）。 */
+    /** 最近一次 init 的端点；在途槽使用自身固化的 endpoint/client。 */
     private endpoint = "";
-    private joinedEndpoint = "";
-    private joinedSId = 0;
+    private slot: LobbySlot | null = null;
+    private generation = 0;
+    private readonly implicitOwners = new Set<LobbyConnectionOwnership>();
     private pending = new Map<string, IPending>();
     private seq = 0;
     private pushHandlers = new Map<string, Set<(data: unknown) => void>>();
-    /** 主动 leave 进行中的标志：区分「用户登出/换号」与「连接意外死亡」（后者才通知 connLost） */
-    private leaving = false;
 
     get connected(): boolean {
-        return this.room != null;
+        return this.slot?.room != null;
+    }
+
+    get room(): Colyseus.Room | null {
+        return this.slot?.room ?? null;
     }
 
     /** @param endpoint http(s) 地址，如 http://localhost:2568（SDK 自动派生 ws(s)） */
@@ -113,64 +237,151 @@ export class WebSocketClient {
     }
 
     /**
-     * 加入大厅房。token 为框架 token（wx-login 签发），经 SDK auth 通道以
-     * Authorization: Bearer 头送达服务端 static onAuth（token 反查 uid，09·G1）。
-     * 并发调用合流到同一次连接；已在线时用不同 token 调用会抛错（换号必须先 leave()）。
-     *
-     * @param options.sId 所选区服 sId（区服形态）——透传进 onAuth 建区上下文，令大厅 RPC/建角
-     *   落 s{sId}_ 前缀、与战斗房 GameRoom 同区。缺省 = 单形态/大混服（服务端 auth.sId=0）。
-     *   ⚠ 换区同换号：区服=独立实例（wsUrl 不同），切区须先 leave() 再以新 sId join()。
+     * 兼容旧调用面的隐式 ownership join。client、endpoint、token 和完整 options 在槽创建时
+     * 固化；后续 init(B) 不会把等待中的物理 A 记成 B。调用 leave() 释放全部隐式 owner。
      */
-    async join(token: string, options?: { sId?: number }): Promise<void> {
-        if (!this.client) throw new Error("[WebSocketClient] 未初始化，请先调用 init(endpoint)");
-        if (!this.room && !this.joining) {
-            this.joining = this.doJoin(token, options?.sId);
-            try {
-                await this.joining;
-            } finally {
-                this.joining = null;
-            }
-            return;
-        }
-        if (this.joining) await this.joining;
-        if (this.joinedToken !== token) {
-            throw new Error("[WebSocketClient] 已用其他 token 在线：换号必须先 leave() 再 join()");
-        }
-        // ⚠ **endpoint + sId 也是复用判据**（A5）：⛔ 只比 token 是不够的——同一个玩家用同一个 token
-        // 换区时 token 不变，于是这里会**静默复用旧区的连接** ⇒ 玩家以为进了 2 区，大厅侧的
-        // 邮件/公会/背包全落在 1 区。今天各区 wsUrl 相同，只有 sId 会变；W4 接真实配置后 endpoint 也会变
-        // （那时复用旧连接 = 连在别的机器上）。两者任一变化都必须先 leave()。
-        if (this.joinedEndpoint !== this.endpoint || this.joinedSId !== (options?.sId ?? 0)) {
-            throw new Error(
-                `[WebSocketClient] 已连在 ${this.joinedEndpoint}(s${this.joinedSId})，`
-                + `与本次 ${this.endpoint}(s${options?.sId ?? 0}) 不符：换区/换服必须先 leave() 再 join()`);
+    async join(token: string, options?: Record<string, unknown>, control?: JoinControl | AbortSignal): Promise<void> {
+        const owner = this.joinOwned(token, options, control);
+        this.implicitOwners.add(owner);
+        try {
+            await owner.ready;
+        } catch (e) {
+            this.implicitOwners.delete(owner);
+            await owner.leave().catch(() => {});
+            throw e;
         }
     }
 
-    private async doJoin(token: string, sId?: number): Promise<void> {
-        this.client!.auth.token = token;
-        // 区服形态：带上所选区 sId，服务端 onAuth 据此建区上下文（大厅每消息 zoneCtx.run + onJoin
-        // ensureCharacter 全落 s{sId}_ 前缀）；缺省不带 = 单形态/大混服（sId=0），服务端不做区归属闸。
-        const joinOpts: IRoomJoinOptions = { v: PROTOCOL_VERSION };
-        if (sId !== undefined) { joinOpts.sId = sId; }
-        const room = await this.client!.joinOrCreate(RoomName.Lobby, joinOpts);
-        this.room = room;
-        this.joinedToken = token;
-        this.joinedEndpoint = this.endpoint;   // A5：记下本次连接的身份（端点 + 区）
-        this.joinedSId = sId ?? 0;
+    /** Lobby 连接的显式 ownership 入口，供可取消/可替换的编排层使用。 */
+    joinOwned(
+        token: string,
+        options?: Record<string, unknown>,
+        control?: JoinControl | AbortSignal,
+    ): LobbyConnectionOwnership {
+        if (!this.client) throw new Error("[WebSocketClient] 未初始化，请先调用 init(endpoint)");
+        const split = splitJoinControl(options, control);
+        const joinOptions = cloneJson({ ...split.options, v: PROTOCOL_VERSION }) as IRoomJoinOptions;
+        const endpoint = this.endpoint;
+        const client = this.client;
+        const key = stableJson([endpoint, token, joinOptions])!;
+        let slot = this.slot;
+        if (slot && slot.connectionKey !== key) {
+            throw new Error("[WebSocketClient] 当前大厅连接参数与本次 join 不一致，请先 leave() 再 join()");
+        }
+        if (!slot) {
+            slot = {
+                connectionKey: key,
+                generation: ++this.generation,
+                client,
+                endpoint,
+                token,
+                options: joinOptions,
+                room: null,
+                ready: null as unknown as Promise<void>,
+                closing: null,
+                physicalClose: null,
+                cancelled: false,
+                dropping: false,
+                owners: new Set<LobbyOwner>(),
+            };
+            this.slot = slot;
+            slot.ready = this.doJoin(slot);
+            slot.ready.catch(() => {});
+        }
 
-        // 唯一的 RPC 回包处理器：按信封 id 落到 pending；已超时清掉的迟到回包静默丢弃
+        let rejectCancelled!: (reason: Error) => void;
+        const cancelled = new Promise<void>((_resolve, reject) => { rejectCancelled = reject; });
+        const ready = Promise.race([slot.ready, cancelled]);
+        ready.catch(() => {});
+        const owner: LobbyOwner = {
+            active: true,
+            slot,
+            ready,
+            cancel: (reason) => rejectCancelled(reason),
+            disposeControl: () => {},
+        };
+        slot.owners.add(owner);
+        let timer: ReturnType<typeof setTimeout> | null = null;
+        let abortListener: (() => void) | null = null;
+        const dispose = () => {
+            if (timer !== null) { clearTimeout(timer); timer = null; }
+            if (abortListener && split.control.signal) {
+                split.control.signal.removeEventListener("abort", abortListener);
+                abortListener = null;
+            }
+        };
+        owner.disposeControl = dispose;
+        const cancelOwner = (error: JoinError | Error) => {
+            if (!owner.active) return;
+            owner.active = false;
+            dispose();
+            slot!.owners.delete(owner);
+            owner.cancel(error);
+            if (slot!.owners.size === 0) void this.closeSlot(slot!).catch(() => {});
+        };
+        const signal = split.control.signal;
+        const waitMs = waitMsFor(split.control);
+        if (signal?.aborted) cancelOwner(new JoinError("CANCELLED", "[WebSocketClient] join 已取消"));
+        else if (waitMs <= 0) cancelOwner(new JoinError("TIMEOUT", "[WebSocketClient] join 超时"));
+        else if (signal) {
+            timer = setTimeout(() => cancelOwner(new JoinError("TIMEOUT", "[WebSocketClient] join 超时")), waitMs);
+            abortListener = () => cancelOwner(new JoinError("CANCELLED", "[WebSocketClient] join 已取消"));
+            signal.addEventListener("abort", abortListener, { once: true });
+        } else {
+            timer = setTimeout(() => cancelOwner(new JoinError("TIMEOUT", "[WebSocketClient] join 超时")), waitMs);
+        }
+        ready.then(dispose, dispose);
+        return {
+            ready,
+            leave: () => {
+                if (owner.active) cancelOwner(new Error("[WebSocketClient] ownership 已释放"));
+                if (slot!.owners.size === 0) {
+                    if (slot!.closing) return slot!.closing;
+                    if (!slot!.room && slot!.cancelled) return Promise.resolve();
+                    return this.closeSlot(slot!);
+                }
+                return Promise.resolve();
+            },
+        };
+    }
+
+    private async doJoin(slot: LobbySlot): Promise<void> {
+        let room: Colyseus.Room;
+        try {
+            slot.client.auth.token = slot.token;
+            room = await slot.client.joinOrCreate(RoomName.Lobby, slot.options);
+        } catch (e) {
+            if (this.slot === slot) this.slot = null;
+            slot.cancelled = true;
+            // 连接失败后槽已不可再复用；同步失效所有 ownership，避免显式 owner
+            // 忘记调用 leave() 时把失败槽和 abort/timer listener 长期留在集合里。
+            for (const owner of slot.owners) {
+                owner.active = false;
+                owner.disposeControl();
+                owner.cancel(e instanceof Error ? e : new Error(String(e)));
+            }
+            slot.owners.clear();
+            throw e;
+        }
+        if (slot.cancelled || this.slot !== slot || slot.owners.size === 0) {
+            await this.closePhysicalRoom(slot, room);
+            throw new JoinError("CANCELLED", "[WebSocketClient] join 结果已过期");
+        }
+        slot.room = room;
+        this.bindRoom(slot, room);
+    }
+
+    private bindRoom(slot: LobbySlot, room: Colyseus.Room): void {
+        const current = () => this.slot === slot && slot.room === room && !slot.cancelled;
         room.onMessage(LOBBY_MSG_RPC, (reply: IRpcReply) => {
+            if (!current()) return;
             const p = this.pending.get(reply.id);
-            if (!p) return;
+            if (!p || p.slot !== slot) return;
             this.pending.delete(reply.id);
             clearTimeout(p.timer);
-            if (reply.ok) {
-                p.resolve(reply.data);
-            } else {
+            if (reply.ok) p.resolve(reply.data);
+            else {
                 const code = (reply.err?.code ?? "INTERNAL") as RpcErrCode;
-                // 踢线/过期/封号：dispatcher 每消息复验 tokenEpoch，命中即上报 session
-                //（清会话 + 广播）——调用方仍收到原样 RpcError 以终止自身流程
                 if (code === "AUTH_EPOCH_STALE" || code === "AUTH_REQUIRED" || code === "ACCOUNT_BANNED") {
                     notifyAuthInvalid(code as AuthInvalidReason);
                 }
@@ -178,11 +389,10 @@ export class WebSocketClient {
             }
         });
         room.onMessage(LOBBY_MSG_PUSH, (msg: { type: string; data: unknown }) => {
-            // 强制下线（封号/顶号/强制下线）：服务端**关连接前**先推这条，据此立刻上报正确原因，
-            // ⛔ 不等 onLeave（那只能靠关闭码、且推送更早到）。见 shared LobbyPush.ForceLogout。
+            if (!current()) return;
             if (msg.type === LobbyPush.ForceLogout) {
                 const r = (msg.data as IForceLogoutPush | undefined)?.reason;
-                if (r) { notifyAuthInvalid(FORCE_REASON_MAP[r]); }
+                if (r) notifyAuthInvalid(FORCE_REASON_MAP[r]);
             }
             const set = this.pushHandlers.get(msg.type);
             if (!set) return;
@@ -190,86 +400,90 @@ export class WebSocketClient {
                 try { cb(msg.data); } catch (e) { console.error("[WebSocketClient] push 处理器异常", e); }
             }
         });
-
-        // 掉线/离开：在途请求的回包可能已在断开窗口丢失，全部判 CONN_LOST 由调用方决定重试
-        //（0.17 自动重连保留本 room 实例与消息监听，重连后新请求直接可用；
-        //  幂等写接口重试必须复用同一 clientReqId——rpcIdem 已封装）。
-        // 回调按 room 身份守卫：迟到的旧连接事件不得影响重新 join 后的新连接
         room.onDrop(() => {
-            if (this.room !== room) return;
-            this.rejectAll("CONN_LOST");
+            if (!current()) return;
+            slot.dropping = true;
+            this.rejectAll("CONN_LOST", slot);
         });
         room.onLeave((code?: number) => {
-            if (this.room !== room) return;
-            const wasIntentional = this.leaving;
-            this.room = null;
-            this.joinedToken = "";
-            this.rejectAll("CONN_LOST");
-            if (wasIntentional) { return; }
-            // **被踢兜底**：服务端用语义化关闭码关连接（KICK_CLOSE_CODE）。若 forceLogout 推送没赶上
-            // （连接已死推不到），仍能在此判出「这是被踢，不是掉线」并给出正确提示——⛔ 否则用户只看到
-            // 「连接断开」，得点重连失败一次才知道真相。
+            if (!current()) return;
+            this.slot = null;
+            slot.cancelled = true;
+            slot.room = null;
+            slot.dropping = false;
+            this.rejectAll("CONN_LOST", slot);
+            for (const owner of slot.owners) { owner.active = false; owner.disposeControl(); }
+            slot.owners.clear();
+            room.removeAllListeners();
             const forced = code !== undefined ? forceLogoutReasonOf(code) : null;
-            if (forced) { notifyAuthInvalid(FORCE_REASON_MAP[forced]); return; }
-            // 普通最终死亡（SDK 自动重连耗尽）：登录态未失效，UI 提示后可用原 token 重进
-            notifyConnLost();
+            if (forced) notifyAuthInvalid(FORCE_REASON_MAP[forced]);
+            else notifyConnLost();
         });
     }
 
-    /**
-     * 主动离开大厅房。join 在途时先等落定再清理（取消不了进行中的握手，完成后离开，
-     * 不留「服务端已 registerOnline 客户端却以为没连上」的幽灵在线——且之后换新 token
-     * join 不会再被「换号必须先 leave()」误伤）。掉线重连窗口里调用也安全：先停自动
-     * 重连（防 LEAVE 帧丢失后连接复活成幽灵会话），限时等待 onLeave，超时则强制本地清理。
-     */
+    /** 主动离开不等待黑洞 join；迟到 room 由 closeSlot 的后台清理释放。 */
     async leave(): Promise<void> {
-        if (this.joining) { await this.joining.catch(() => {}); }
-        const room = this.room;
-        if (!room) return;
-        this.leaving = true; // 主动离开：onLeave 不得当成意外死亡广播 connLost
-        try {
-            this.room = null; // 先摘引用：leave 期间新发起的 rpc 直接 CONN_LOST，不发往将死的连接
-            this.joinedToken = "";
-            this.rejectAll("CONN_LOST");
-            room.reconnection.enabled = false;
-            await Promise.race([
-                room.leave(true).catch(() => { /* 掉线窗口发不出 LEAVE 帧属预期 */ }),
-                new Promise<void>((r) => setTimeout(r, LEAVE_TIMEOUT_MS)),
-            ]);
-            room.removeAllListeners();
-        } finally {
-            this.leaving = false;
+        const slot = this.slot;
+        if (!slot) return;
+        this.implicitOwners.clear();
+        for (const owner of slot.owners) {
+            owner.active = false;
+            owner.disposeControl();
+            owner.cancel(new Error("[WebSocketClient] ownership 已释放"));
         }
+        slot.owners.clear();
+        await this.closeSlot(slot);
     }
 
-    /**
-     * 单次请求（HTTP 式语义）：发出 → 服务端读 Redis/MySQL → 一次回包 → 请求结束。
-     * 返回类型由 shared 契约推导；失败抛 RpcError（只按 code 分支）。
-     *
-     *   const { uid } = await WebSocketClient.inst.rpc(UserRpc.GetUserId, {});
-     */
+    private closeSlot(slot: LobbySlot): Promise<void> {
+        if (slot.closing) return slot.closing;
+        if (this.slot === slot) this.slot = null;
+        slot.cancelled = true;
+        // 主动释放也要立即结束该 slot 的 RPC；否则 room.leave() 黑洞时调用方会被
+        // RPC_CLIENT_TIMEOUT_MS 拖住，且迟到回包可能落到一个已无主的 pending。
+        this.rejectAll("CONN_LOST", slot);
+        slot.dropping = false;
+        if (!slot.room) {
+            slot.closing = Promise.resolve();
+            void slot.ready.then(() => {
+                if (slot.room) return this.closePhysicalRoom(slot, slot.room);
+                return undefined;
+            }).catch(() => {});
+            return slot.closing;
+        }
+        slot.closing = this.closePhysicalRoom(slot, slot.room);
+        return slot.closing;
+    }
+
+    private closePhysicalRoom(slot: LobbySlot, room: Colyseus.Room): Promise<void> {
+        if (slot.physicalClose) return slot.physicalClose;
+        room.reconnection.enabled = false;
+        let timer: ReturnType<typeof setTimeout> | null = null;
+        const timeout = new Promise<void>((resolve) => { timer = setTimeout(resolve, LEAVE_TIMEOUT_MS); });
+        const leave = Promise.resolve().then(() => room.leave(true)).catch(() => {}).then(() => undefined);
+        slot.physicalClose = Promise.race([leave, timeout]).then(() => {
+            if (timer !== null) { clearTimeout(timer); timer = null; }
+            room.removeAllListeners();
+        });
+        return slot.physicalClose;
+    }
+
     rpc<T extends LobbyRpcType>(type: T, payload: RpcReq<T>): Promise<RpcRes<T>> {
-        const room = this.room;
-        if (!room) return Promise.reject(new RpcError("CONN_LOST", "未加入大厅房"));
-        const id = `r${++this.seq}`; // 仅本连接内配对；断线时 pending 全清，不跨连接复用
+        const slot = this.slot;
+        const room = slot?.room;
+        if (!room || !slot) return Promise.reject(new RpcError("CONN_LOST", "未加入大厅房"));
+        const id = `r${++this.seq}`;
         return new Promise<RpcRes<T>>((resolve, reject) => {
             const timer = setTimeout(() => {
                 this.pending.delete(id);
                 reject(new RpcError("TIMEOUT", type));
             }, RPC_CLIENT_TIMEOUT_MS);
-            this.pending.set(id, { resolve: resolve as (data: unknown) => void, reject, timer });
+            this.pending.set(id, { resolve: resolve as (data: unknown) => void, reject, timer, slot });
             const envelope: IRpcEnvelope = { id, type, payload };
             room.send(LOBBY_MSG_RPC, envelope);
         });
     }
 
-    /**
-     * 幂等写请求：clientReqId 本次逻辑操作生成一次并在重试间复用（09·I2）。
-     * BUSY / STALE_FENCE 自动短退避重试；其余错误抛 RpcError 且**回填 err.clientReqId**——
-     * 调用方跨调用重试（TIMEOUT / CONN_LOST / IN_PROGRESS 短轮询等）必须回传同一个 id：
-     *   `rpcIdem(type, payload, err.clientReqId)`
-     * 换新 id 等于发起新操作（money 路径会重复扣费）。
-     */
     async rpcIdem<T extends LobbyRpcIdemType>(
         type: T,
         payload: Omit<RpcReq<T>, "clientReqId">,
@@ -282,15 +496,14 @@ export class WebSocketClient {
             } catch (e) {
                 const retriable = e instanceof RpcError && (e.code === "BUSY" || e.code === "STALE_FENCE");
                 if (!retriable || attempt >= IDEM_RETRY_MAX) {
-                    if (e instanceof RpcError) { e.clientReqId = clientReqId; }
+                    if (e instanceof RpcError) e.clientReqId = clientReqId;
                     throw e;
                 }
-                await new Promise((r) => setTimeout(r, IDEM_RETRY_DELAY_MS));
+                await new Promise((resolve) => setTimeout(resolve, IDEM_RETRY_DELAY_MS));
             }
         }
     }
 
-    /** 订阅服务端主动推送（如 LobbyPush.MailNew），返回解绑函数。 */
     onPush<K extends keyof LobbyPushMap>(type: K, callback: (data: LobbyPushMap[K]) => void): () => void {
         let set = this.pushHandlers.get(type);
         if (!set) {
@@ -302,16 +515,16 @@ export class WebSocketClient {
         return () => { this.pushHandlers.get(type)?.delete(cb); };
     }
 
-    /** 幂等操作 id：跨会话唯一即可（时间基 36 进制 + 随机尾），≤64 字符（信封约束）。 */
     static newClientReqId(): string {
         return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
     }
 
-    private rejectAll(code: LocalErrCode): void {
-        for (const p of this.pending.values()) {
+    private rejectAll(code: LocalErrCode, slot?: LobbySlot): void {
+        for (const [id, p] of this.pending) {
+            if (slot && p.slot !== slot) continue;
             clearTimeout(p.timer);
             p.reject(new RpcError(code));
+            this.pending.delete(id);
         }
-        this.pending.clear();
     }
 }

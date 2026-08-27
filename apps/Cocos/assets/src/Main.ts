@@ -15,7 +15,7 @@ import { DESIGN_WIDTH, DESIGN_HEIGHT } from "./designSpec";
 import { installWeChatCompat } from "./core/wechat-compat";
 import { getToken, initHttp, initPortal } from "./core/http";
 import { getCurrentServer } from "./net/serverSession";
-import { onAuthInvalid, onBattleLost, onConnLost } from "./net/session";
+import { onAuthInvalid, onBattleLost, onConnLost, returnToLogin } from "./net/session";
 import { RoomClient, type GameRoomOwnership } from "./net/RoomClient";
 import { WebSocketClient } from "./net/WebSocketClient";
 import { GameECS } from "./logic/rooms/ballMove/GameECS";
@@ -201,6 +201,7 @@ export class Main extends Component {
         this.graphics = null;
         this.layerTf = null;
         this.touchTarget = null;
+        RoomClient.inst.clearDesiredMove();
         // ⚠ 方向/心跳也必须复位：本函数现在也跑在「打过一局才断线」的路径上（battleLost/authInvalid），
         // lastDir 会停在断线瞬间的非零值上；⛔ 不复位则下一局同方向的第一次输入被 sendDir 的去重早退吞掉。
         this.lastDirX = 0;
@@ -226,14 +227,11 @@ export class Main extends Component {
     private abortBattle(): void {
         this.inBattle = true;      // teardown 幂等靠此标志；失败路径可能尚未真正入战
         this.teardownBattle();
-        void (async () => {
-            await WebSocketClient.inst.leave().catch(() => {});
-            const pages = await import("./view/pages");
-            // ⚠ 必须 await：openLogin 是 async（内部 `ViewMgr.open("Login")` 在 FGUI 包未就绪时会抛）。
-            // 不 await 的话它的 rejection 逃出下面这个 .catch ⇒ 「进战斗失败又打不开登录页」变成
-            // **静默黑屏**（只剩一条 unhandled rejection，不进本类日志）。
-            await pages.openLogin(() => { void this.enterBattle(); });
-        })().catch((e) => console.error("[Main] 回大厅失败：", e));
+        // 进战斗失败也走 session 的唯一回登录队列；它负责清 Bearer、退大厅、提示与导航，
+        // 与 authInvalid/connLost/battleLost 共用同一幂等出口。
+        void returnToLogin({ kind: "BATTLE_JOIN_FAILED" }).catch((e) => {
+            console.error("[Main] 回大厅失败：", e);
+        });
     }
 
     /** 连 ballMove 玩法房（token 已在大厅登录时设置）。
@@ -416,7 +414,9 @@ export class Main extends Component {
 
     /** 每帧调用：朝按住的目标点修正移动方向 */
     private steerToTarget() {
-        if (!this.touchTarget || !RoomClient.inst.connected) return;
+        // dropping/未连接期间也计算并保存 desired；RoomClient 会在重连后按最新 seq
+        // reconcile，特别是松手后的 stop 不能因为断线而丢掉。
+        if (!this.touchTarget) return;
         const me = this.gameECS.getSelfPlayer();
         if (me === null) return;
 
@@ -428,9 +428,8 @@ export class Main extends Component {
         this.sendDir(dir.x, dir.y);
     }
 
-    /** 方向有实质变化才发包，避免逐帧刷屏；掉线窗口不发（SDK 会排队补发过期方向包） */
+    /** 方向有实质变化才更新 desired；RoomClient 决定当前是否可写及何时重放。 */
     private sendDir(x: number, y: number) {
-        if (!RoomClient.inst.connected || RoomClient.inst.dropping) return;
         if (Math.abs(x - this.lastDirX) < 0.02 && Math.abs(y - this.lastDirY) < 0.02) return;
         this.lastDirX = x;
         this.lastDirY = y;

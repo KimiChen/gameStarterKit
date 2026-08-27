@@ -9,7 +9,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { RoomName, PROTOCOL_VERSION } from "../src/shared/index";
+import { C2S, RoomName, PROTOCOL_VERSION } from "../src/shared/index";
 import { RoomClient } from "../src/net/RoomClient";
 import { onBattleLost } from "../src/net/session";
 
@@ -38,6 +38,7 @@ type RoomCallbacks = {
 
 function makeFakeRoom(name: string, leaveResult: Promise<boolean> = Promise.resolve(true)) {
   const callbacks: RoomCallbacks = {};
+  const sent: Array<{ type: string; data: unknown }> = [];
   let leaveCalls = 0;
   let removeAllCalls = 0;
   const room = {
@@ -50,7 +51,7 @@ function makeFakeRoom(name: string, leaveResult: Promise<boolean> = Promise.reso
     onLeave(cb: RoomCallbacks["leave"]) { callbacks.leave = cb; return () => {}; },
     onError(cb: RoomCallbacks["error"]) { callbacks.error = cb; return () => {}; },
     onMessage() { return () => {}; },
-    send() { /* noop */ },
+    send(type: string, data: unknown) { sent.push({ type, data }); },
     leave() {
       leaveCalls++;
       return leaveResult;
@@ -60,6 +61,7 @@ function makeFakeRoom(name: string, leaveResult: Promise<boolean> = Promise.reso
   return {
     room,
     callbacks,
+    sent,
     get leaveCalls() { return leaveCalls; },
     get removeAllCalls() { return removeAllCalls; },
   };
@@ -293,4 +295,51 @@ test("Main：每个旧房 message/schema 回调都经过 gen + ownership + room 
   const guardCount = (bind.match(/if \(!isCurrent\(\)\) \{ return; \}/g) ?? []).length;
   assert.equal(callbackCount, 8, "新增/删除异步 room 回调时必须同步审计守卫");
   assert.equal(guardCount, callbackCount, "每个 message/schema 回调入口都必须先拒绝旧世代");
+});
+
+test("掉线输入 reconcile：松手后的 stop/最新方向成为重连后的第一条有效输入", async () => {
+  const join = deferred<unknown>();
+  const fake = makeFakeRoom("input-reconcile");
+  const client = makeClient(join);
+  const owner = client.joinGame();
+  join.resolve(fake.room);
+  await owner.ready;
+
+  // join 建立时会先对账一次初始 stop；后续断线断言只关注本段输入。
+  fake.sent.length = 0;
+  client.move(1, 0);
+  assert.deepEqual(fake.sent.at(-1), { type: C2S.Move, data: { dirX: 1, dirY: 0 } });
+  fake.callbacks.drop?.(1006, "temporary");
+
+  // dropping 窗口中不发旧方向，但必须更新 desired seq；用户随后松手写入 stop。
+  client.move(0, 0);
+  assert.equal(fake.sent.length, 1, "掉线期间不应把输入排进旧连接");
+  fake.callbacks.reconnect?.();
+  assert.deepEqual(fake.sent.at(-1), { type: C2S.Move, data: { dirX: 0, dirY: 0 } });
+
+  await owner.leave();
+});
+
+test("RoomClient join 黑洞：超时/AbortSignal 不阻塞 leave，迟到 room 会被释放", async () => {
+  const pending = deferred<unknown>();
+  const late = makeFakeRoom("late-game");
+  const client = makeClient(pending);
+  const owner = client.joinGame(undefined, { timeoutMs: 10 });
+  await assert.rejects(owner.ready, (e: unknown) => (e as { code?: string })?.code === "TIMEOUT");
+  await owner.leave();
+  pending.resolve(late.room);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(late.leaveCalls, 1);
+
+  const pendingCancel = deferred<unknown>();
+  const lateCancel = makeFakeRoom("late-game-cancel");
+  const controller = new AbortController();
+  const client2 = makeClient(pendingCancel);
+  const owner2 = client2.joinGame(undefined, controller.signal);
+  controller.abort();
+  await assert.rejects(owner2.ready, (e: unknown) => (e as { code?: string })?.code === "CANCELLED");
+  await owner2.leave();
+  pendingCancel.resolve(lateCancel.room);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(lateCancel.leaveCalls, 1);
 });
