@@ -5,6 +5,25 @@ node_modules/
 # 构建产物
 dist/
 
+# 环境配置
+.env
+!.env.development
+
+# IDE / 编辑器
+.idea/
+.vscode/
+.settings/
+.project
+.classpath
+*.swp
+*.swo
+*~
+
+# 操作系统
+.DS_Store
+Thumbs.db
+Desktop.ini
+
 # Cocos Creator（apps/Cocos）——编辑器可再生目录
 apps/Cocos/library/
 apps/Cocos/temp/
@@ -23,9 +42,6 @@ apps/client/extensions/
 # FairyGUI 编辑器工程缓存(.objs：metas + workspace.json，编辑器可再生，勿提交)；
 # .fairy/assets/settings 是源须提交，仅 .objs 忽略。无路径前缀=匹配任意 FairyGUI 工程。
 .objs/
-
-# 系统
-.DS_Store
 
 # 说明：
 #  - apps/Cocos/assets/src/ 是 sync:client 从 apps/client/src 同步的生成物，但需要提交
