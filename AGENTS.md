@@ -6,6 +6,7 @@
 > - [docs/SERVER.md](docs/SERVER.md)：服务端目录、RPC、数据一致性与开发约束
 > - [docs/CLIENT.md](docs/CLIENT.md)：客户端目录、View/Logic、FGUI 与本地预览
 > - [docs/WEBPLATFORM.md](docs/WEBPLATFORM.md)：外部身份服务的开发契约边界
+> - [docs/EXTRAFEATURES.md](docs/EXTRAFEATURES.md)：可选额外功能、现有实现与非承诺说明
 >
 > 每个源码目录另有就近 README。根上手页见 [README.md](README.md)。
 
@@ -88,4 +89,5 @@ shared 契约
 
 - 当前玩法是 `ballMove` + 技能结算 Demo。
 - 本地账号示例只使用外部服务提供的开发会话契约。
-- 本仓是开发期基础框架，详细范围见根 [README.md](README.md#项目边界)。
+- 本仓核心是开发期基础框架，详细范围见根 [README.md](README.md#项目边界)；仓库中的可选额外功能
+  见 [docs/EXTRAFEATURES.md](docs/EXTRAFEATURES.md)，不构成核心能力承诺或项目约束。
