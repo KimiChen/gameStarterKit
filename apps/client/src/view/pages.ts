@@ -66,23 +66,87 @@ function isOpenCancelled(error: unknown): boolean {
   return error instanceof ViewOpenCancelledError;
 }
 
-/** 会话事件接线（踢线/掉线 → 清态回登录页）。整个应用生命周期一次。
- *
- * ⚠ **只接一次是对的**（重复接会让一次事件弹多个框），但**捕获的回调必须可更新**：
- *   `reopenLogin` 闭包里带着 `onEnterBattle`，而后者绑在**某一个 Main 实例**上。此前把它
- *   直接闭进 handler ⇒ 场景重载/换 Main 后，掉线回登录页走的仍是**第一个 Main** 的
- *   `enterBattle`，点「进入游戏」驱动的是早已销毁的渲染层/ECS（且旧 Main 因此永不回收）。
- *   故存进 `currentReopenLogin`，每次 `openLogin` 覆盖，handler 只在**触发时**读它。 */
+type EnterBattleHandler = () => void | Promise<void>;
+
+/**
+ * 登录页的一次完整打开事务。Promise 本身不足以做身份判断：在 settle 的微任务窗口里，
+ * `openLoginInFlight` 可能已经切换到下一代，回登录处理器若只比较 Promise 就会自等或
+ * 把旧 Main 的回调带进新页面。这里把身份、失效状态和最新回调绑在同一条记录上。
+ */
+interface LoginFlight {
+  readonly id: number;
+  readonly startedSessionGeneration: number;
+  onEnterBattle: EnterBattleHandler;
+  promise: Promise<void>;
+  settled: boolean;
+  invalidated: boolean;
+  reopenTicket: number | null;
+  reopenPromise: Promise<void> | null;
+}
+
 let sessionWired = false;
-let currentReopenLogin: () => Promise<void> | void = () => {};
-function wireSessionEvents(reopenLogin: () => Promise<void> | void): void {
-  currentReopenLogin = reopenLogin; // ⚠ 每次都刷新（⛔ 不放在 sessionWired 早退之后）
+let nextLoginFlightId = 0;
+let nextTransitionId = 0;
+let openLoginInFlight: LoginFlight | null = null;
+let latestOnEnterBattle: EnterBattleHandler | null = null;
+
+/**
+ * 在旧登录事务结束后再开新事务。关键约束是：绝不 await `observedFlight.promise` 本身，
+ * 而是挂一个一次性的 ticket；其 settle 回调执行时旧 flight 已被清出 active 槽，才可创建
+ * 下一代。若期间已有后来 flight，则直接等待后来者，避免重复加载 Login。
+ */
+function reopenLoginAfterTransition(
+  transitionId: number,
+  transitionGen: number,
+  observedFlight: LoginFlight | null,
+): Promise<void> {
+  if (getSessionGeneration() !== transitionGen) return Promise.resolve();
+
+  const current = openLoginInFlight;
+  if (current && current === observedFlight && !current.settled) {
+    if (current.reopenTicket === transitionId && current.reopenPromise) {
+      return current.reopenPromise;
+    }
+    const continueReopen = (): Promise<void> => {
+      // 清掉 ticket 后再递归，防止极端同步 then 实现把同一个 Promise 返回给自己。
+      if (current.reopenTicket === transitionId) {
+        current.reopenTicket = null;
+        current.reopenPromise = null;
+      }
+      return reopenLoginAfterTransition(transitionId, transitionGen, current);
+    };
+    const scheduled = current.promise.then(continueReopen, continueReopen);
+    current.reopenTicket = transitionId;
+    current.reopenPromise = scheduled;
+    return scheduled;
+  }
+
+  // A newer caller may already have started a flight while the confirmation was open.
+  // It is safe to await it because it is not the observed flight that called us.
+  if (current && current !== observedFlight && !current.settled) return current.promise;
+  if (current?.settled && openLoginInFlight === current) openLoginInFlight = null;
+
+  const callback = latestOnEnterBattle ?? observedFlight?.onEnterBattle;
+  if (!callback) return Promise.resolve();
+  const next = ensureLoginFlight(callback);
+  // Defensive identity check: a transition must never await the exact flight it observed.
+  return next === observedFlight ? Promise.resolve() : next.promise;
+}
+
+/** 会话事件接线（踢线/掉线 → 清态回登录页），整个应用生命周期只注册一次。 */
+function wireSessionEvents(): void {
   if (sessionWired) return;
   sessionWired = true;
   registerReturnToLogin(async (reason: ReturnToLoginReason) => {
-    // session.returnToLogin 已先 clearSession；这里按统一顺序释放大厅、关闭壳、提示，
-    // 最后读取最新 Main 的 reopen 回调。所有 await 都在同一个可观察 Promise 内。
+    // 捕获并标记触发事件时的具体 flight；它可能仍在 fetch/ViewMgr.open 中，不能被处理器
+    // 直接 await，否则 openLogin 与回登录 transition 会互相等待。
     const transitionGen = getSessionGeneration();
+    const observedFlight = openLoginInFlight;
+    if (observedFlight) observedFlight.invalidated = true;
+    const transitionId = ++nextTransitionId;
+
+    // session.returnToLogin 已先 clearSession；这里按统一顺序释放大厅、关闭壳、提示，
+    // 最后在旧 flight settle 后调度最新 Main 的登录页。所有 await 都在同一个可观察 Promise 内。
     await WebSocketClient.inst.leave().catch(() => {});
     if (getSessionGeneration() !== transitionGen) return;
     closeLobby();
@@ -107,10 +171,7 @@ function wireSessionEvents(reopenLogin: () => Promise<void> | void): void {
     }
     await openConfirm({ title, content, noText: null });
     if (getSessionGeneration() !== transitionGen) return;
-    const reopen = currentReopenLogin();
-    // 失效事件可能正好发生在当前 openLogin 事务内；等待自身会形成死锁，当前事务
-    // 已经持有 Login 句柄时直接复用即可。
-    if (reopen && reopen !== openLoginInFlight) await reopen;
+    await reopenLoginAfterTransition(transitionId, transitionGen, observedFlight);
   });
 }
 
@@ -136,27 +197,54 @@ function writeDontRemindToday(value: boolean): void {
   } catch { /* 存储不可用时不影响公告浏览 */ }
 }
 
-/** 登录页：拉选服列表 + 默认选中 → 显示当前服；按钮通往选服/公告；进入游戏走维护闸 + 登录 → 主界面。 */
-let openLoginInFlight: Promise<void> | null = null;
+/** 创建或复用登录 flight；复用时只更新回调，不另起一套页面加载。 */
+function ensureLoginFlight(onEnterBattle: EnterBattleHandler): LoginFlight {
+  latestOnEnterBattle = onEnterBattle;
+  const current = openLoginInFlight;
+  if (current && !current.settled) {
+    current.onEnterBattle = onEnterBattle;
+    return current;
+  }
+  if (current?.settled && openLoginInFlight === current) openLoginInFlight = null;
 
-/** 登录页整段加载只保留一个在途事务；失效事件再次触发时会复用同一 Promise。 */
-export function openLogin(onEnterBattle: () => void | Promise<void>): Promise<void> {
-  if (openLoginInFlight) return openLoginInFlight;
-  const p = openLoginImpl(onEnterBattle);
-  openLoginInFlight = p;
-  p.then(
-    () => { if (openLoginInFlight === p) openLoginInFlight = null; },
-    () => { if (openLoginInFlight === p) openLoginInFlight = null; },
+  const flight: LoginFlight = {
+    id: ++nextLoginFlightId,
+    startedSessionGeneration: getSessionGeneration(),
+    onEnterBattle,
+    promise: Promise.resolve(),
+    settled: false,
+    invalidated: false,
+    reopenTicket: null,
+    reopenPromise: null,
+  };
+  openLoginInFlight = flight;
+  // Register before starting the first await so a transport event cannot race the initial load.
+  wireSessionEvents();
+  flight.promise = openLoginImpl(flight);
+  flight.promise.then(
+    () => finishLoginFlight(flight),
+    () => finishLoginFlight(flight),
   );
-  return p;
+  return flight;
 }
 
-async function openLoginImpl(onEnterBattle: () => void | Promise<void>): Promise<void> {
+function finishLoginFlight(flight: LoginFlight): void {
+  flight.settled = true;
+  if (openLoginInFlight === flight) openLoginInFlight = null;
+}
+
+/** 登录页整段加载只保留一个在途事务；重复调用只更新最新 Main 的战斗回调。 */
+export function openLogin(onEnterBattle: EnterBattleHandler): Promise<void> {
+  return ensureLoginFlight(onEnterBattle).promise;
+}
+
+async function openLoginImpl(flight: LoginFlight): Promise<void> {
   // 每次回登录页都从独立 Portal 重拉；setServerList 只在成功后原子替换快照，
   // 这样刷新失败时仍可使用上一份已知目录（并保留当前选服）重试。
   let areaLoadFailed = false;
   try {
     const list = await fetchAreaList();
+    if (flight.invalidated) return;
     setServerList(list);
     const current = getCurrentServer();
     if (current) {
@@ -167,21 +255,23 @@ async function openLoginImpl(onEnterBattle: () => void | Promise<void>): Promise
     console.error("[pages] WebPlatform 区服目录加载失败：", e);
   }
 
-  wireSessionEvents(() => openLogin(onEnterBattle));
+  if (flight.invalidated) return;
 
   const h = await ViewMgr.open("Login");
+  if (flight.invalidated) { h.close(); return; }
   const view = h.view as LoginView;
   // ⚠ 登录必须带**所选区**（M12e）：token 只对该区有效。setServerList 已在成功拉取后
   // 原子建立当前选区，后续用户选服也会更新它；⛔ 别图省事传 0。
   const logic = new LoginLogic({ login: (key) => devLogin(key, getCurrentServer()?.serverId ?? 0) });
   let enterInFlight: Promise<void> | null = null;
   await h.run((_openedView, context) => {
+    if (flight.invalidated) { h.close(); return; }
     logic.onProgress = (ratio, text) => {
       if (context.isActive()) view.setProgress(ratio, text);
     };
 
     view.onEnter = () => {
-      if (!context.isActive()) return;
+      if (flight.invalidated || !context.isActive()) return;
       if (enterInFlight) return enterInFlight;
       const p = (async () => {
         if (!context.isActive()) return;
@@ -189,7 +279,7 @@ async function openLoginImpl(onEnterBattle: () => void | Promise<void>): Promise
         if (areaLoadFailed) {
           try {
             const list = await fetchAreaList();
-            if (!context.isActive()) return;
+            if (flight.invalidated || !context.isActive()) return;
             setServerList(list);
             const current = getCurrentServer();
             if (current) {
@@ -198,13 +288,13 @@ async function openLoginImpl(onEnterBattle: () => void | Promise<void>): Promise
             }
             areaLoadFailed = false;
           } catch (e) {
-            if (!context.isActive()) return;
+            if (flight.invalidated || !context.isActive()) return;
             console.error("[pages] WebPlatform 区服目录重试失败：", e);
             await openConfirm({ title: "连接失败", content: "账号服务暂不可用，请稍后重试", noText: null });
             return;
           }
         }
-        if (!context.isActive()) return;
+        if (flight.invalidated || !context.isActive()) return;
         const cur = getCurrentServer();
         // 进服闸（判定单源 isServerEnterable，对齐原项目 waitLogin）：无服 / 不可进（维护 or 未开服）
         // 且非运维模式不进。isOps 是部署环境级开关（服务端 AREA_IS_OPS），豁免覆盖两种不可进态——
@@ -219,14 +309,14 @@ async function openLoginImpl(onEnterBattle: () => void | Promise<void>): Promise
           });
           return;
         }
-        if (!context.isActive()) return;
+        if (flight.invalidated || !context.isActive()) return;
         // 真实链路：dev-login（本地身份）→ 会话入 session → join 大厅房 → 拉真实档案。
         // continuation 由 LoginLogic 的整段 flow 锁保护，重复点击不会在 HTTP 完成后再开一套 Lobby。
         let user: IUserView | null = null;
         let flowFailed = false;
         let flowSessionGen = -1;
         const r = await logic.doLoginFlow(DEV_LOGIN_KEY, async (response) => {
-          if (!context.isActive()) { flowFailed = true; return; }
+          if (flight.invalidated || !context.isActive()) { flowFailed = true; return; }
           setSession(response);
           flowSessionGen = getSessionGeneration();
           try {
@@ -239,12 +329,12 @@ async function openLoginImpl(onEnterBattle: () => void | Promise<void>): Promise
               { sId: cur.serverId, listHash: getListHash() },
               context.signal,
             );
-            if (!context.isActive() || getSessionGeneration() !== flowSessionGen) { flowFailed = true; return; }
+            if (flight.invalidated || !context.isActive() || getSessionGeneration() !== flowSessionGen) { flowFailed = true; return; }
             logic.onProgress(0.85, "正在加载角色…");
             user = (await WebSocketClient.inst.rpc(UserRpc.GetInfo, {})).user;
-            if (!context.isActive() || getSessionGeneration() !== flowSessionGen) { flowFailed = true; return; }
+            if (flight.invalidated || !context.isActive() || getSessionGeneration() !== flowSessionGen) { flowFailed = true; return; }
           } catch (e) {
-            if (!context.isActive()) { flowFailed = true; return; }
+            if (flight.invalidated || !context.isActive()) { flowFailed = true; return; }
             // 大厅/档案失败即整体失败（严谨：不带半截会话进主界面）；清态可重试
             // 业务码走 message（服务端 joinRefused）：用 shared 单源解码器取文案，⛔ 别把 "3004" 甩给玩家
             console.error("[pages] 进入大厅失败：", e);
@@ -255,10 +345,10 @@ async function openLoginImpl(onEnterBattle: () => void | Promise<void>): Promise
             flowFailed = true;
           }
         });
-        if (!context.isActive() || !r || flowFailed || getSessionGeneration() !== flowSessionGen) return;
+        if (flight.invalidated || !context.isActive() || !r || flowFailed || getSessionGeneration() !== flowSessionGen) return;
         logic.onProgress(1, "登录成功");
         h.close();
-        await openHome(onEnterBattle, r.userId, user);
+        await openHome(() => flight.onEnterBattle(), r.userId, user);
         // Home 的动态加载也有 await；期间若收到失效事件，handler 会关闭大厅并重开
         // Login。这里再核对一次，避免迟到的 Home 把新登录页覆盖回来。
         if (getSessionGeneration() !== flowSessionGen) ViewMgr.close("Home");
@@ -277,7 +367,8 @@ async function openLoginImpl(onEnterBattle: () => void | Promise<void>): Promise
 
     view.setup();
     view.showCurrentServer(getCurrentServer());
-  });
+    });
+  if (flight.invalidated) h.close();
 }
 
 /** 主界面：展示真实账号/档案摘要，「进入游戏」→ ballMove。 */

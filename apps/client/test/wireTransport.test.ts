@@ -101,7 +101,7 @@ test("WebSocketClient：RPC/push 在业务回调前做 envelope、route shape �
   }
 });
 
-function makeGameRoom(state: unknown) {
+function makeGameRoom(state: unknown, onSend?: (type: string, data: unknown) => void) {
   const handlers = new Map<string, Handler>();
   const sent: Array<{ type: string; data: unknown }> = [];
   let leaveCalls = 0;
@@ -110,7 +110,10 @@ function makeGameRoom(state: unknown) {
     sessionId: "game-session",
     state,
     reconnection: { enabled: true },
-    send(type: string, data: unknown) { sent.push({ type, data }); },
+    send(type: string, data: unknown) {
+      if (onSend) { onSend(type, data); return; }
+      sent.push({ type, data });
+    },
     onMessage(type: string, callback: Handler) {
       handlers.set(type, callback);
       return () => { if (handlers.get(type) === callback) handlers.delete(type); };
@@ -175,6 +178,54 @@ test("RoomClient：C2S/S2C 发送与回调均经过 runtime validator", async ()
     assert.deepEqual(fake.sent.map((item) => item.type), [C2S.Move, C2S.Chat]);
     await owner.leave();
   } finally {
+    (globalThis as { Colyseus?: unknown }).Colyseus = oldColyseus;
+  }
+});
+
+test("RoomClient：room.send 同步异常不穿透，reconcile 不误记已发送 seq", async () => {
+  let failSend = true;
+  const fake = makeGameRoom(validState(), (type, data) => {
+    if (failSend) throw new Error(`adapter rejected ${type} ${JSON.stringify(data)}`);
+    fake.sent.push({ type, data });
+  });
+  const oldColyseus = (globalThis as { Colyseus?: unknown }).Colyseus;
+  class FakeClient {
+    constructor(_endpoint: string) {}
+    auth = { token: "" };
+    async joinOrCreate() { return fake.room; }
+  }
+  (globalThis as { Colyseus?: unknown }).Colyseus = {
+    Client: FakeClient,
+    getStateCallbacks: () => undefined,
+  };
+  const oldWarn = console.warn;
+  const warnings: unknown[][] = [];
+  console.warn = (...args: unknown[]) => { warnings.push(args); };
+  try {
+    const client = new RoomClient();
+    client.init("http://game.example");
+    const owner = client.joinGame();
+    await owner.ready;
+
+    assert.doesNotThrow(() => {
+      client.move(1, 0);
+      client.ping();
+      client.castSkill(1);
+      client.chat("hello");
+    }, "fire-and-forget C2S API 不得把 adapter 的同步异常抛给调用方");
+    assert.deepEqual(client.desiredMove, { dirX: 1, dirY: 0, seq: 1 });
+    assert.equal(fake.sent.length, 0, "同步失败的 send 不得记为已发包");
+    assert.equal(warnings.length, 4);
+    assert.ok(warnings.every((args) => !String(args[0]).includes("adapter rejected")),
+      "发送失败日志不得回显 adapter/packet 错误内容");
+
+    failSend = false;
+    client.reconcileInput();
+    assert.deepEqual(fake.sent, [{ type: C2S.Move, data: { dirX: 1, dirY: 0 } }],
+      "send 失败后 lastInputSeq 必须保持未确认，恢复时应重发最新 desired");
+    await owner.leave();
+  } finally {
+    console.warn = oldWarn;
     (globalThis as { Colyseus?: unknown }).Colyseus = oldColyseus;
   }
 });

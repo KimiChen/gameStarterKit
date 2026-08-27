@@ -204,6 +204,12 @@ function warnInvalidWire(scope: string, error: unknown): void {
     console.warn(`[RoomClient] 丢弃非法 ${scope}: ${wireErrorText(error)}`);
 }
 
+/** Colyseus `room.send` is allowed to throw synchronously (closed socket, bad adapter, etc.).
+ * Keep that transport failure inside the fire-and-forget API and avoid echoing packet contents. */
+function warnSendFailure(scope: string): void {
+    console.warn(`[RoomClient] C2S ${scope} 发送失败`);
+}
+
 /**
  * Colyseus exposes Schema instances for the root and players, while the shared
  * validator intentionally accepts dependency-free plain data. Project only the
@@ -679,11 +685,17 @@ export class RoomClient {
         if (slot && slot.room && !slot.dropping && !slot.cancelled) this.reconcileInput(slot);
     }
 
-    /** 清空当前意图；下一房间首包会是 stop，且不会被旧局方向污染。 */
-    clearDesiredMove(): void {
+    /**
+     * 清空当前意图；下一房间首包会是 stop，且不会被旧局方向污染。
+     * 传入 generation 时仅允许对应输入租约清理：旧插件 stop 的迟到清理
+     * 不得覆盖后来房间已经写入的新方向。
+     */
+    clearDesiredMove(expectedGeneration?: number): boolean {
+        if (expectedGeneration !== undefined && expectedGeneration !== this.inputLease) return false;
         this.desiredInput = { dirX: 0, dirY: 0, seq: ++this.inputSeq };
         const slot = this.slot;
         if (slot && slot.room && !slot.dropping && !slot.cancelled) this.reconcileInput(slot);
+        return true;
     }
 
     /** 主动触发当前槽的输入对账（测试/外部恢复编排可调用）。 */
@@ -764,7 +776,14 @@ export class RoomClient {
             warnInvalidWire(`C2S ${String(type)}`, error);
             return false;
         }
-        room.send(type as string, wirePayload);
+        try {
+            room.send(type as string, wirePayload);
+        } catch {
+            // A failed send must not advance reconcile's lastInputSeq: the latest desired
+            // input remains queued and can be retried by a reconnect/join callback.
+            warnSendFailure(String(type));
+            return false;
+        }
         return true;
     }
 }
