@@ -19,3 +19,7 @@ Cocos Dashboard 3.8.8 打开本目录，等首次导入（生成 `temp/`、`libr
 首次使用前先在仓库根目录跑 `npm install && npm run sync:shared`
 （`sync:shared` 已级联 `sync:client`；运行时产物——colyseus UMD、fairygui-cc 运行时和锁定的
  bitECS 源码——已入库，无需 fetch。依赖抓取脚本只用于框架维护团队显式升级。）
+
+当前无头类型检查不覆盖 `Main.ts` 和 9 个依赖 FairyGUI/Cocos 的 View 文件，因此 Creator 本地预览仍是
+入口装配、资源导入和页面交互的必要开发验证。准确范围见[客户端文档](../../docs/CLIENT.md#8-本地检查)，
+核心/额外能力边界见[根 README](../../README.md#项目边界)。

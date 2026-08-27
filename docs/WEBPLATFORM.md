@@ -1,77 +1,94 @@
 # 外部身份服务：开发契约边界
 
-> `gono-webplatform` 是独立代码库。本文件只说明 gameStarterKit 在本地开发中如何消费它的 HTTP
-> 契约；完整项目边界见 [根 README](../README.md#项目边界)。
+> `gono-webplatform` 是独立代码库。本文只说明 gameStarterKit 在本地开发中如何消费其锁定 HTTP 契约；
+> 渠道登录、账号管理等生成契约中的额外 operation 见
+> [EXTRAFEATURES](EXTRAFEATURES.md)，不属于核心框架承诺。
 
 ## 1. 定位
 
-本仓通过精确锁定的 `@gono/webplatform-contract` 使用外部身份服务，目的只有两个：
+核心开发链只需要：
 
-1. 给本地 Demo 提供开发会话和区目录。
-2. 让游戏服务端通过 HTTP 验证会话并登记角色存在性。
+1. 客户端通过 Public HTTP 创建开发会话并读取区目录。
+2. 游戏服务端通过 Internal HTTP 验证会话、登记和查询角色存在性。
 
 ```text
-Cocos 开发预览
-  └─ HTTP → WebPlatform 开发 Public 接口
+Cocos 本地预览
+  └─ HTTP → WebPlatform Public 开发接口
 
-Game server 开发进程
-  └─ HTTP → WebPlatform 开发 Internal 接口
+Game server 本地进程
+  └─ HTTP → WebPlatform Internal 开发接口
 
 gameStarterKit
-  └─ 只消费 @gono/webplatform-contract
+  └─ 只消费精确锁定的 @gono/webplatform-contract
 ```
 
-本仓不包含 WebPlatform 业务源码、账号表、migration 或进程内替代实现。
+本仓不包含 WebPlatform 业务源码、账号表、migration 或进程内账号实现，也不生成或交付外部服务。
 
 ## 2. 数据所有权
 
-| 数据 | 开发边界 |
+| 数据 | 当前所有者 |
 | --- | --- |
-| 开发账号与会话 | 外部身份服务 |
-| 角色是否在某区存在 | 外部身份服务的目录索引 |
-| 玩家玩法档、背包、货币示例 | 游戏仓 |
+| 开发账号、账号状态与会话 | 外部 WebPlatform |
+| 某账号在某区是否存在角色 | 外部 WebPlatform 的目录索引 |
+| 玩家玩法档、背包、货币 Demo | gameStarterKit 游戏数据层 |
 | 房间状态 | 游戏服务端内存与 shared Schema |
 
-游戏库不能重新创建账号表，游戏源码不能 import 外部服务业务包。跨边界信息只通过契约化 HTTP
-传输。
+游戏库不能重新创建账号表，游戏源码不能 import 外部服务业务包。跨边界信息只通过契约化 HTTP 传输。
 
-## 3. 本地使用的契约
+## 3. 核心开发链实际使用的契约
 
-路径常量来自契约包，调用方不得复制字符串。下列只是开发链中实际使用的语义摘要；字段真相以
-锁定契约生成物为准。
+路径与 method 常量来自生成物 `WebPlatformPath` / `WebPlatformMethod`，字段真相来自锁定的
+`types.generated.ts`。下列是当前代码实际消费的摘要。
 
-### Public 开发接口
+### Public：创建开发会话
 
-#### 创建开发会话
+客户端 `POST /v1/sessions/dev`，请求：
 
-客户端提交开发 key 与所选区号，得到：
+```ts
+{ devKey: string; serverId: number; deviceId?: string | null }
+```
 
-- `accessToken`
-- `isNewAccount`
-- `gameHttpUrl`
-- `gameWsUrl`
+响应只有：
 
-开发 key 只用于本地示例。
+```ts
+{ accessToken: string; isNewAccount: boolean; userId: string }
+```
 
-#### 获取区目录
+`gameHttpUrl` 与 `gameWsUrl` 不在登录响应里。开发 key 只用于本地示例。
 
-客户端读取可选择的开发区列表与当前账号的示例角色足迹，用于 AreaList 页面和本地连接选择。
+### Public：读取区目录
 
-### Internal 开发接口
+客户端 `GET /v1/areas`，已有 token 时自动携带 Bearer。响应包含：
 
-#### 验证会话
+- `hash`、`isOps`、`myServerIds`。
+- `servers[]`；每项包含 `serverId`、`name`、`status`、`tag`、`openTime`、`gameHttpUrl`、
+  `gameWsUrl`。
 
-LobbyRoom/GameRoom 把 token、serverId 和 strict 语义交给
-`apps/server/src/platform/webPlatformClient.ts`，响应包含规范化 userId 与会话时间信息。
+游戏连接地址来自所选 `servers[]` 项，不能从 dev-login 响应猜测。
 
-#### 角色存在性
+### Internal：验证会话
 
-游戏服在创建本地玩家档后登记角色存在性，并可查询某账号在某区是否已有角色。这个目录只表达
-“存在/不存在”，不拥有玩法档案。
+LobbyRoom/GameRoom 经 `platform/webPlatformClient.ts` 发送：
+
+```ts
+{ accessToken: string; serverId: number }
+```
+
+成功响应是 `{ valid: true, userId, issuedAtMs }`；失败响应是 `{ valid: false, reason }`，其中 reason
+受生成契约枚举约束。只有 `valid:false` 属于玩家身份结论；网络、超时、5xx、服务身份错误或非法响应
+不能伪装成 token 无效。
+
+### Internal：角色存在性
+
+游戏服对 `/v1/internal/characters/{userId}/{serverId}` 使用幂等 PUT 登记，并用 GET 查询。该目录只表示
+“存在/不存在”，不拥有或返回玩法档案。
+
+生成契约还包含核心开发链未使用或只作为额外参考的 operation。生成物存在不等于本仓已经实现对应业务；
+范围统一见 EXTRAFEATURES。
 
 ## 4. 契约同步
 
-本仓锁定契约包版本、tarball integrity 与 manifest hash。
+本仓锁定契约包版本、tarball integrity 与 manifest hash：
 
 ```bash
 npm run sync:webplatform-contract
@@ -81,55 +98,81 @@ npm run verify:webplatform-contract
 同步链：
 
 ```text
-锁定的 contract package
+vendor/gono-webplatform-contract-*.tgz
   → apps/shared/src/generated/webplatform
   → apps/client/src/shared
   → apps/Cocos/assets/src/shared
 ```
 
-生成目录禁止手改。契约发生变化时，应先更新锁定依赖，再运行同步并检查生成物 diff；外部仓如何
-生成或交付该契约不属于本项目文档范围。
+生成目录禁止手改。变更时先更新锁定依赖，再运行同步、检查 diff，并更新本仓消费代码和本地测试。
+外部仓如何生成和交付契约不属于本项目文档范围。
 
 ## 5. 客户端边界
 
-- `portalUrl` 只是本地开发服务 origin。
-- HTTP 请求通过 `core/http.ts`，业务封装放在 `net/http/`。
-- 返回值在边界做运行时校验，再进入 session 或 area state。
-- 请求失败必须显式显示开发错误或返回登录页，不能回退到游戏服内置账号逻辑。
-- 客户端不得持有外部服务密钥或直接访问其数据库。
+当前实现：
+
+- `Main.portalUrl` 初始化独立 Public origin；空值或非 http(s) 绝对地址立即失败，不回退游戏服 URL。
+- `net/http/account.ts` 使用生成路径封装 dev session；`net/http/area.ts` 封装区目录。
+- `core/http.ts` 统一 XHR、10 秒超时、Bearer 和结构化 `HttpError(status, code)`。
+- 非 2xx、网络失败、超时或非 JSON 2xx 会 reject。
+
+当前缺口：`core/http.ts` 对 2xx 只执行 `JSON.parse(...) as T`，没有运行时字段校验。`devLogin` 与
+`fetchAreaList` 的 wrapper 也没有 validator。因此旧文档中“Public 返回值已在客户端边界做 shape 校验”
+不是事实；非法字段、缺字段和多字段目前可能进入 session/area logic。
+
+客户端不得持有 Internal 服务密钥或访问外部数据库。业务失败应显示开发错误或回到登录/选区流程，不能
+回退到游戏服内置账号逻辑。
 
 ## 6. 服务端边界
 
-- 只有 `platform/webPlatformClient.ts` 访问外部 Internal HTTP。
-- Room/handler 不直接拼路径、header 或响应 shape。
-- 连接、总超时、响应大小、错误映射和字段校验集中在 client adapter。
-- 外部不可达与 token 无效是不同错误，不能混为一类。
-- 角色登记失败可以通过本地 durable intent 样例重试，但不能回退为直写账号库。
+`apps/server/src/platform/webPlatformClient.ts` 是游戏服访问 Internal HTTP 的唯一入口。它当前提供：
 
-## 7. 本地配置
+- keep-alive HTTP/HTTPS agent、独立建连与总超时、64 KiB 响应上限。
+- 网络类失败和 502/503 的一次有限重试，共享同一总预算与 request ID。
+- 连续基础设施失败熔断与单探针 half-open。
+- verify/register/has 三类 2xx 响应的 exact-key runtime validation。
+- 传输不可用、服务/调用配置错误、契约 shape 错误与玩家身份失败的不同异常类型。
+- 停止时销毁 keep-alive agent 的 `closeWebPlatformClient`。
 
-开发时按外部仓说明提供与契约匹配的 Public/Internal 地址和本地服务身份。示例配置只服务于本地
-联调，不是环境交付模板。
+Room/handler 不直接拼 Internal path、header 或响应 shape。每次 Lobby/GameRoom 建连使用 strict HTTP
+verify；Lobby 每消息只复核本地 Redis session cache，不逐消息回源。角色登记失败会尝试写本地 durable intent，
+若 intent 写入也失败则抛出聚合错误；成功持久化的 intent 由默认开发进程中的 repair loop 重试。这仍是
+本地补偿样例，不改变外部服务的数据所有权。
 
-游戏仓不得出现：
+## 7. 测试替身边界
 
-- 外部账号数据库 DSN。
-- 外部服务业务源码依赖。
-- `ACCOUNT_MODE` 一类进程内/HTTP 双模式开关。
-- 绕过 HTTP 的测试注入进入普通源码。
+普通运行时默认 delegate 始终是 HTTP client，不存在 `ACCOUNT_MODE` 或 in-process 账号模式。
 
-## 8. 本地测试
+源码确实导出了 `installWebPlatformClientForTests`：它只用于无头测试替换三个 Internal 调用，要求逆序恢复，
+并在 `NODE_ENV=production` 时直接拒绝安装。文档应允许这一显式 test seam，不能写成“普通源码内完全没有
+测试注入”；真正的红线是把它演化为运行期模式开关或业务 fallback。
 
-应覆盖：
+## 8. 本地配置
 
-- 开发会话成功与失败。
-- 区目录 shape 校验。
-- strict verify 成功、无效、超时和错误映射。
-- 角色登记幂等。
-- 外部返回缺字段、多字段、错误枚举或非法 URL 时在边界失败。
-- 游戏数据库不包含账号表。
-- 源码 import ban 已泛化为本仓源码边界检查。
+游戏服务端从根 `.env.development` 或显式环境变量读取：
 
-## 9. 范围
+- `WEBPLATFORM_INTERNAL_URL`
+- `WEBPLATFORM_SERVICE_ID`
+- `WEBPLATFORM_SERVICE_SECRET`
+- connect/request timeout 与 breaker 参数
 
-这里记录的只有开发期 HTTP 接缝和代码所有权；完整项目边界见根 README。
+Public URL 由客户端场景配置。游戏仓不得出现外部账号数据库 DSN、外部业务源码依赖或进程内账号替代实现。
+这些值只用于本地联调，不是环境交付模板。
+
+## 9. 本地测试现状
+
+- `apps/server/test/webplatform-client.test.ts` 覆盖 Internal header、路径编码、重试、超时、错误分类和
+  exact-key response validation。
+- `apps/client/test/httpStatus.test.ts` 覆盖 Public origin、method/path/body、Bearer、状态码和非 JSON；
+  它没有证明 Public 成功响应做了 runtime shape validation。
+- `apps/server/test/smoke.ts` 需要外部 Public/Internal 与运行中的游戏服，覆盖真实拆分链路；其中额外账号
+  operation 与 kick 不属于核心开发验收。
+- 游戏库不得包含账号表，由 `smoke:framework` 和相关源码边界测试检查。
+
+新增或修改契约消费时，至少补齐成功、失败、超时、错误枚举、缺字段、多字段、非法数值/URL 与服务错误
+的本地测试；不能只依赖 TypeScript 类型。
+
+## 10. 范围
+
+本文只记录开发期 HTTP 接缝与代码所有权。总体边界见[根 README](../README.md#项目边界)，额外 operation
+及其非承诺说明见 [EXTRAFEATURES](EXTRAFEATURES.md)。

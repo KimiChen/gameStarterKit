@@ -3,7 +3,8 @@
 用 FairyGUI 编辑器打开本目录的 `FairyGUI.fairy`。改完后**导出本地资源**（编辑器菜单名为“发布”，
 输出目标已配好：`.bin` + 图集落 `apps/Cocos/assets/resources/ui/`），再开一次 Creator 生成 `.meta`
 并连同导出物一起提交。
-代码侧约定与联调动线见 [docs/CLIENT.md §6](../../../docs/CLIENT.md)。
+这里的“发布”只表示生成 Cocos 本地开发资源，不表示渠道打包、商店发行或线上发布。代码侧约定与联调动线
+见[客户端资源导出说明](../../../docs/CLIENT.md#6-设计分辨率与资源导出)。
 
 ## 铁律
 
@@ -13,13 +14,14 @@
   （`btn_`/`txt_`/`img_`/`ld_`/`ld3_`/`lst_`/`pg_`/`tge_`/`go_`/`jb_`，词表真源
   `tools/fgui-codegen/binding.ts`），无前缀 = 纯装饰、代码永远不碰。
 - 设计分辨率 **750×1624 竖屏 + MatchWidth**（编辑器 Adaptation 已配好，与代码 `designSpec.ts`
-  有机检比对）；⛔ 新组件别照抄旧稿的 1136×640/750×1334 尺寸。
+  有机检比对）；Cocos `project.json` 尚未被这项测试读取，完整缺口见[根 plan](../../../plan.md)。
+  ⛔ 新组件别照抄旧稿的 1136×640/750×1334 尺寸。
 
 ## 出图 checklist（每个组件导出前过一遍）
 
 ```
 □ 需代码访问的元素都有类型前缀；纯装饰元素不带前缀（别留 n0/n1 这种要代码碰的无名节点）
-□ 每个 lst_* 列表设置了 defaultItem，且 autoClearItems="true"
+□ 由代码重复填充的 lst_* 配置了 defaultItem，并按组件复用语义确认是否需要 autoClearItems
 □ 全屏/贴边元素配了 relation（宽高随屏；高度差由 relation 吸收）
 □ 九宫图在资源属性里标了 scale9grid；平铺图标 tile
 □ 代码需要换图或动态加载的图放包内并标「导出」（不导出会导致加载失败）
@@ -28,11 +30,16 @@
 □ loader 的 clearOnPublish 只给"代码负责装载"的占位图用——勾了它而代码不装载 = 运行时空白
 ```
 
-## 常用公共组件（assets/Original）
+现有结构测试只解析 `displayList` 的命名直接子元素，不检查 relation、列表 item/defaultItem、
+`autoClearItems` 或设计源到已导出 `.bin` 的新鲜度；checklist 仍需在 FairyGUI 编辑器和 Creator 预览中人工确认。
 
-- `CommonSpine` —— 需要动态生成 spine 时，实例化这个预制体
-- `CommonEmptyButton` —— 只需要点击响应、没有对应按钮外观时用
-- `CommonCompEmpty` —— 空节点：需要动态生成到 view 上的组件，先放一个空节点做容器
-- `BtnBackgroundClose60` —— 全屏黑色遮罩按钮，点击自动关闭当前界面
-- `assets/Original/icons` —— 图标从这里找
-- `assets/Original/bgs` —— 背景从这里找，都是九宫格可拉伸的
+## 当前包目录
+
+- 基础包：`Common_Btn`、`Common_ComboBox`、`Common_Component`、`Common_RGBA`
+- 动态资源样例：`Dynamic_Login`、`Dynamic_Spine`
+- 文本资源：`L10n_zh_hans`
+- 页面包：`View_AreaList_AreaList`、`View_AreaList_Login`、`View_AreaList_LoginNotice`、
+  `View_Home_Home`、`View_SharedWidget_Confirm`
+
+包名和组件名会进入 `fguiContracts.ts` 与 `viewRegistry.ts`，以当前 `assets/` 目录和契约登记为准，
+不要沿用仓库中不存在的旧 `assets/Original` 路径。

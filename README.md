@@ -24,7 +24,7 @@ apps/
 ├── server/     Colyseus 服务端开发工程
 ├── shared/     双端共享协议、公式与常量
 ├── art/        FairyGUI 编辑器工程
-└── website/    项目说明站点源码
+└── website/    独立安装的项目说明站源码（额外功能）
 docs/           当前开发架构说明
 tools/          codegen、配置转换和本地检查工具
 ```
@@ -75,14 +75,22 @@ npm run dev
 | `npm run verify:webplatform-contract` | 本地校验契约版本、hash 与生成物 |
 | `npm run sync:shared` | shared → client → Cocos |
 | `npm run sync:client` | client → Cocos |
-| `npm run typecheck` | shared/server/client 类型检查及镜像校验 |
+| `npm run typecheck` | 外部契约校验、shared/server/client 已纳入范围的类型检查及镜像校验 |
 | `npm run verify:sync` | 检查镜像漂移、孤儿和 `.meta` |
 | `npm run test:fgui` | FGUI 结构契约及客户端无头测试 |
 | `npm run codegen:fgui -- <Pkg> <Comp>` | 生成或更新 View 的 AUTO 区块 |
 | `npm run verify:ecs` | 校验锁定的 bitECS 文件 |
 | `npm --workspace @game/server run test` | 服务端单元测试 |
-| `npm --workspace @game/server run smoke` | 本地功能链路冒烟 |
+| `npm --workspace @game/server run smoke:framework` | 已启动并初始化的本地 Redis/MySQL 连通性检查 |
+| `npm --workspace @game/server run smoke` | 需要外部 WebPlatform 与运行中游戏服的完整开发链路冒烟；GM kick 分支可选 |
 | `npm --workspace @game/server run test:int` | 使用本地 Redis/MySQL 的集成测试 |
+
+当前客户端无头类型检查并不覆盖 `Main.ts`、9 个依赖 FairyGUI/Cocos 的 View 文件或
+`apps/client/test`。这些文件仍需通过 `npm run test:fgui`、同步检查和 Creator 本地预览补充验证；
+已知缺口与收口计划见 [plan.md](plan.md)。
+
+`apps/website` 不在根 npm workspaces 中，拥有独立的 `package-lock.json`。如需修改说明站，请在该目录
+单独安装和运行本地检查，具体见 [站点 README](apps/website/README.md)。
 
 ### 框架维护团队的依赖更新
 
@@ -130,7 +138,7 @@ shared 契约
 
 仓库还可能包含部署运行、商业化、渠道接入和发行运营等额外功能或参考实现。它们不属于核心框架的能力、
 稳定性或长期维护承诺，也不作为项目架构和后续演进的强制约束；是否采用及如何完善由实际项目决定。
-具体分类、当前实现和使用原则见 [额外功能说明](docs/EXTRAFEATURES.md)。
+具体分类、当前实现和使用原则见 [额外功能与参考实现](docs/EXTRAFEATURES.md)。
 
 仓库中的本地启动脚本、调试页面、开发会话、测试命令，以及 `@colyseus/sdk`、FairyGUI、bitECS
 等通用技术依赖，仍属于核心框架的本地开发和验证基础。

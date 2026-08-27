@@ -17,7 +17,7 @@ const architecture = [
     label: "客户端",
     title: "引擎壳与游戏代码分离",
     description:
-      "Cocos 只负责承载运行时，纯 TS 游戏代码保留为唯一真源。逻辑层无头可测，视图层专注 FairyGUI 与引擎交互。",
+      "Cocos 负责承载运行时，纯 TS 游戏代码保留为唯一真源。核心逻辑子集可无头验证，视图层专注 FairyGUI 与引擎交互。",
     tree: [
       ["apps/client/src/logic", "玩法与页面行为"],
       ["apps/client/src/view", "FairyGUI 视图"],
@@ -82,14 +82,14 @@ const principles = [
   {
     index: "02",
     tag: "ENGINE READY",
-    title: "代码不困在引擎里",
-    body: "纯 TS 源码与 Cocos 工程壳解耦，logic/shared/bitecs 保持引擎无关，也为后续 Unity 消费预留边界。",
+    title: "逻辑与引擎接缝分层",
+    body: "纯 TS 真源与 Cocos 工程壳解耦，核心 logic/shared 可在 TypeScript 环境验证。apps/Unity 仍是研究占位，不提供可用 Unity 工程或跨语言生成链。",
   },
   {
     index: "03",
     tag: "GUARDRAILS",
     title: "约定交给机器守",
-    body: "类型检查、协议指纹、目录纯度、镜像新鲜度和依赖字节锁，让隐蔽漂移尽量在提交前被抓住。",
+    body: "已纳入范围的类型检查、协议指纹、目录纯度、镜像新鲜度和依赖字节锁，让隐蔽漂移尽量在提交前被抓住。",
   },
   {
     index: "04",
@@ -104,7 +104,7 @@ const workflow = [
   ["同步镜像", "一条命令同步 shared → client → Cocos。"],
   ["双端实现", "按固定目录新增服务端端点与客户端逻辑。"],
   ["规则登记", "Key、配置、错误码进入明确的契约表。"],
-  ["全链验证", "typecheck、单测与同步校验共同守门。"],
+  ["分层验证", "typecheck、单测与同步校验按各自覆盖范围共同守门。"],
 ];
 
 export default function Home() {
@@ -287,7 +287,7 @@ export default function Home() {
           <div className="wsk-hero-copy">
             <p className="wsk-kicker">
               <span className="wsk-status-dot" />
-              OPEN SOURCE · BASELINE 2026.07
+              SOURCE AVAILABLE · DEVELOPMENT BASELINE
             </p>
             <h1>
               把第一天的工程纪律，
@@ -295,7 +295,7 @@ export default function Home() {
               留给每一次玩法迭代。
             </h1>
             <p className="wsk-hero-lead">
-              一个可以直接 fork 的游戏开发期脚手架：
+              一个代码公开可审阅的游戏开发期脚手架：
               Cocos Creator、Colyseus 与零依赖共享层，从协议到本地验证站在同一条开发链上。
             </p>
             <div className="wsk-hero-actions">
@@ -305,7 +305,7 @@ export default function Home() {
                 target="_blank"
                 rel="noreferrer"
               >
-                开始构建 <span aria-hidden="true">↗</span>
+                查看仓库 <span aria-hidden="true">↗</span>
               </a>
               <a
                 className="wsk-button wsk-secondary"
@@ -326,8 +326,8 @@ export default function Home() {
                 <dd>工程铁律</dd>
               </div>
               <div>
-                <dt>63</dt>
-                <dd>服务端规则目录</dd>
+                <dt>09·</dt>
+                <dd>服务端规则可追溯</dd>
               </div>
             </dl>
           </div>
@@ -384,7 +384,7 @@ export default function Home() {
             <div className="wsk-terminal-line">
               <span aria-hidden="true">$</span>
               <code>npm run typecheck</code>
-              <b>ALL GREEN</b>
+              <b>CORE SCOPE</b>
             </div>
           </aside>
         </section>
@@ -510,8 +510,8 @@ export default function Home() {
             <p className="wsk-kicker">MACHINE-CHECKED</p>
             <h2>把“记得这样做”，变成“不这样做就过不了”。</h2>
             <p>
-              loader、类型系统、单测与同步校验覆盖同一份工程契约。规则不是散落在口头经验里，而是能被本地检查
-              识别的项目资产。
+              loader、类型系统、单测与同步校验分别守住已经纳入覆盖的工程契约。当前根 typecheck 不覆盖
+              Main.ts、部分 FairyGUI View 和客户端测试源码，其余边界以对应本地检查为准。
             </p>
             <a
               className="wsk-text-link"
@@ -630,8 +630,8 @@ export default function Home() {
               <li>
                 <span>03</span>
                 <div>
-                  <strong>面向多端开发</strong>
-                  <small>以 Cocos Creator 为当前示例，保留 shared 与多引擎演进边界</small>
+                  <strong>当前以 Cocos 为准</strong>
+                  <small>shared 保持纯 TypeScript；Unity 仍是研究占位，不是可用接入</small>
                 </div>
               </li>
             </ul>
@@ -647,7 +647,7 @@ export default function Home() {
             <details>
               <summary>这是完整游戏模板吗？</summary>
               <p>
-                不是。它是可直接 fork 的工程脚手架，内置最小 Demo 用于验证登录、选服、房间与状态同步链路；真实玩法由你替换。
+                不是。它是面向开发期的工程脚手架，内置最小 Demo 用于验证登录、选服、房间与状态同步链路；真实玩法由你替换。
               </p>
             </details>
             <details>
@@ -662,6 +662,24 @@ export default function Home() {
                 不在。账号门户独立为 gono-webplatform，拥有独立仓库与账号库；游戏仓只消费精确锁定的 HTTP 契约。
               </p>
             </details>
+            <details>
+              <summary>本地验证覆盖所有源码吗？</summary>
+              <p>
+                不覆盖。根 typecheck 当前覆盖 shared、server 与客户端核心纯 TS 子集，并检查生成镜像；Main.ts、部分 FairyGUI View、客户端测试和独立 website 需各自验证。
+              </p>
+            </details>
+            <details>
+              <summary>它提供生产部署、支付或渠道发行吗？</summary>
+              <p>
+                不提供。核心只覆盖开发期框架和本地验证；仓库里的托管适配、支付、GM 和渠道接缝只是额外参考，不构成部署、商业化、微信或抖音 SDK 接入、发行或生产运行承诺。
+              </p>
+            </details>
+            <details>
+              <summary>这是开源项目吗？</summary>
+              <p>
+                仓库目前未提供 LICENSE，因此页面只陈述源码可查看，不声明开源授权；采用、修改或再分发前需先确认许可。
+              </p>
+            </details>
           </div>
         </section>
 
@@ -670,7 +688,7 @@ export default function Home() {
           <p className="wsk-kicker">BUILD ON A SOLID BASE</p>
           <h2>先把底座搭稳，<br />再把时间花在游戏上。</h2>
           <p>
-            从本地 Demo 开始，沿固定工程动线长成你的项目。
+            从本地 Demo 开始，沿已验证的本地开发动线长成你的项目。
           </p>
           <div className="wsk-hero-actions">
             <a
@@ -679,7 +697,7 @@ export default function Home() {
               target="_blank"
               rel="noreferrer"
             >
-              Fork gameStarterKit <span aria-hidden="true">↗</span>
+              查看 gameStarterKit <span aria-hidden="true">↗</span>
             </a>
             <a
               className="wsk-button wsk-secondary"
@@ -702,7 +720,7 @@ export default function Home() {
             <small>游戏开发期基础框架</small>
           </p>
         </div>
-        <p>Open source · Cocos Creator + Colyseus + TypeScript</p>
+        <p>Source available · Cocos Creator + Colyseus + TypeScript</p>
         <a href={repositoryUrl} target="_blank" rel="noreferrer">
           GitHub ↗
         </a>

@@ -1,15 +1,16 @@
 # Excel 配置表输入目录
 
-策划维护的 xlsx 配置表放在本目录（`tools/excel-config/*.xlsx`），由
-`tools/excel-to-json.mjs` 转换为游戏可直接读取的 JSON（工具收编自 Arthur
-项目的导表通用核，玩法表已替换为示例道具表）。
+本目录保存 `items.xlsx` 示例和输入约定，`tools/excel-to-json.mjs` 展示把 xlsx 转成服务端/客户端
+两份 JSON 的通用解析方式。它当前是
+[额外功能中的配表参考](../../docs/EXTRAFEATURES.md#38-配表负载与-unity-实验)：默认输出尚未入库，
+也没有正式运行时消费者，不能描述成游戏已经直接读取的配置链。
 
 ## 命令
 
 ```bash
-npm i -D xlsx@^0.18.5                          # 首次使用先装依赖（根 package.json）
-node tools/excel-to-json.mjs                   # 导表：双写服务端 + 客户端 JSON
-node tools/excel-to-json.mjs --check           # 只校验不写文件；出错 exit 1，用于本地检查
+npm install                                    # xlsx 已在根 package.json / lock 中声明
+npm run config:excel-to-json                   # 示例导表：写服务端 + 客户端 JSON
+npm run config:excel-to-json:check             # 解析并校验源表，不写文件
 node tools/excel-to-json.mjs --input=<目录>    # 覆盖输入目录（默认本目录）
 node tools/excel-to-json.mjs --assets-root=<目录>   # 开启 icon 资源存在性校验（缺省跳过）
 ```
@@ -19,6 +20,8 @@ node tools/excel-to-json.mjs --assets-root=<目录>   # 开启 icon 资源存在
 
 找不到任何 xlsx 时（包括 `--check` 模式）脚本会**明确报错并 exit 1**，不会静默成功。
 Excel 打开表格时产生的 `~$xxx.xlsx` 锁文件会被忽略。
+`--check` 会读取、构造并校验源数据，但不会生成临时输出后与默认 JSON 比较；因此它不能发现输出文件
+缺失或陈旧。
 
 ## 三行表头约定（每张表通用）
 
@@ -53,15 +56,19 @@ Excel 中前四行看起来像这样：
 | 道具ID | 道具名称 | 道具描述 | 图标路径 | 售价 | 标签列表 | 使用奖励 |
 | 1001 | 回血药水 | 使用后恢复少量生命 | icons/potion_hp.png | 100 | 1_3 | 2001&10 |
 
-## 输出（双输出语义）
+## 候选输出（当前未接入运行时）
 
 | 输出 | 路径 | 内容 |
 | --- | --- | --- |
 | 服务端权威配置 | `apps/server/data/items.config.json` | 全量字段（含 `price` 等结算依据） |
-| 客户端展示配置 | `apps/Cocos/assets/resources/config/items.json` | 裁掉服务端敏感字段（示例中裁 `price`），防抓包改包、避免展示值被误当结算值 |
+| 客户端展示配置 | `apps/Cocos/assets/resources/config/items.json` | 裁掉仅服务端字段（示例中裁 `price`）；展示值不得作为结算依据 |
 
-两份 JSON 均带 `schemaVersion`（运行时兼容判断）与 `sourceFiles`（来源溯源）；
-导表成功后终端打印各表行数 summary。**只要有任何错误，两份文件都不会写入**。
+若显式运行写入命令，两份 JSON 均带 `schemaVersion`（供采用方做兼容判断）与 `sourceFiles`（来源溯源）；
+导表成功后终端打印各表行数 summary。源数据校验失败会在写文件前退出；当前写入不是跨文件事务，I/O
+异常时仍可能只写出其中一份。
+
+客户端裁掉 `price` 只演示“客户端展示数据不能成为结算权威”的分层方式，并不提供防篡改保证；实际项目
+接入前仍需实现消费方、产物新鲜度检查和服务端权威校验。
 
 ## 接入真实玩法表
 

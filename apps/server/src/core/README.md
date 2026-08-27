@@ -1,21 +1,35 @@
-# core/ —— 服务端底座（源自 Arthur M0–M9，已停止回流、独立演进）
+# core/ —— 服务端数据与并发原语
 
-端点层（websocket/ http/ rooms/）调用这里；日常开发**不修改**本目录的逻辑，
-但以下**登记式追加**是进 core 的合法理由（改逻辑前先读 docs/SERVER.md §12 规则）：
+`websocket/`、`http/` 和 `rooms/` 通过本目录访问锁、档案、Redis/MySQL、幂等与领域数据。它不是不可修改
+的 vendor 目录；新增框架原语或修复正确性问题时应在这里改，但普通 endpoint 优先复用现有入口，避免绕过
+锁、fence、事务和登记点。
 
-| 要做的事 | 登记点 |
-|---|---|
-| 加常量 / 环境变量 | `infra/config.ts`（先进 docs/SERVER.md §13 表，铁律 8） |
-| 加 Redis key | `infra/keys.ts`（同上） |
-| 加错误码 | `errors.ts` + shared `RPC_ERR_CODES`（先进 07 错误码表） |
-| 加示例资产配置 | `economy/catalog.ts`（将来由 Excel 导表取代） |
-| 加 demo 工会 | `guild/catalog.ts`（join 校验 gid ∈ 目录——铸键权归目录，防任意 gid 刷键） |
-| 玩家档字段跨版本迁移 | `archive/lazyMigrate.ts`（字段本身在 ../player/userStore.ts） |
-| 卸载重计算任务（铁律 11） | `compute/tasks/<任务>.ts`（default 导出纯函数；判据见 compute/README.md） |
+常见修改入口：
 
-- 根层 = 横切原语：`locks`（两层锁+fence）· `uow`（UnitOfWork/withUser）· `idem`（幂等占位）·
-  `errors`（错误码）· `userRecord`（建号/活跃索引/按需取字段）
-- 子目录 = 模块：`infra`（双 Redis 路由/MySQL/Lua/租约/loopMonitor 心电图）· `auth`（组侧会话缓存 session / 踢人通道 kickBus；token 权威在独立 WebPlatform，游戏服只走 `platform/webPlatformClient.ts`）·
-  `economy`（outbox 三阶段/资产示例/邮件/relayer）·
-  `archive`（冷档 freeze/thaw）· `match`（结算证据链消费）· `guild`（工会事件存取：seq+近窗）·
-  `compute`（worker_threads 计算池，铁律 11 卸载点）
+| 要做的事 | 当前真源 |
+| --- | --- |
+| 增加跨模块配置或环境变量 | `infra/config.ts`；同时更新 `docs/SERVER.md` 的登记点与本地配置说明 |
+| 增加 Redis key | `infra/keys.ts`；明确 global/per-zone、实例与 hash-tag |
+| 增加 RPC 错误码 | 先改 shared `protocol/lobbyRpc/envelope.ts` 的 `RPC_ERR_CODES`，再改 `errors.ts` 映射 |
+| 修改 Demo 商品或资产配置 | `economy/catalog.ts`；它目前是手工 TypeScript 配置，没有接入 Excel 产物 |
+| 修改 Demo guild 目录 | `guild/catalog.ts` |
+| 增加玩家档字段 | shared 视图类型 + `../player/userStore.ts` 字段读取；需要跨版本时再设计 reader/migration |
+| 增加请求触发的纯 CPU 任务 | `compute/tasks/<task>.ts`；适用边界见 `compute/README.md` |
+
+目录概览：
+
+- 根层：`locks`（本地 mutex + Redis lock/fence）、`uow`（dirty commit）、`idem`（RPC 占位/结果缓存）、
+  `errors`、`userRecord`。
+- `infra/`：配置、key、Redis 路由/Lua、MySQL、lease、stream consumer 与本地 loop monitor。
+- `auth/`：游戏组 session cache 和 best-effort kick 接缝；账号权威仍在外部 WebPlatform。
+- `economy/`：软货币、ledger、shop/outbox 与显式 relayer 样例。
+- `guild/`：Demo 目录与事件近窗。
+- `match/`：match evidence stream 的生产/消费样例。
+- `compute/`：worker_threads 纯计算池。
+- `archive/`：已接入 thaw、但 freeze 默认关闭的实验模块。
+
+额外后台、冷档和商业化参考的准确状态见
+[`docs/EXTRAFEATURES.md`](../../../../docs/EXTRAFEATURES.md)。当前已知实现偏差（payload hash、effect
+预验证、relayer 事务外 I/O、热档 schemaVersion 等）见
+[`docs/SERVER.md`](../../../../docs/SERVER.md#12-开发约束索引)，不要用历史里程碑或已不存在的“07 表”
+替代当前源码与测试。

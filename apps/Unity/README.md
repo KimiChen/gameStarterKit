@@ -1,22 +1,20 @@
-# apps/Unity — Unity 客户端工程（骨架）
+# apps/Unity — Unity 方向研究占位
 
-对标 sect 的 `Unity/`：与 `apps/Cocos` 平行的另一个引擎壳，消费 `apps/client` 中
-**引擎无关的子集**（`logic/` + `shared/` + `lib/bitecs/`；`Main.ts`/`view/` 依赖
-cc+fairygui，`core/` 与 `net/` 也需要按 Unity 生态重写/适配）。
-sect 的路线是用 **pyts** 把 TS 转译为 C#（`Assets/PytsCore` + `Assets/Game`）。
+本目录不是可用的 Unity 客户端，也不是当前核心框架的第二引擎交付。它只保留目录形状，供以后单独评估
+跨引擎复用；准确分类见[额外功能与参考实现](../../docs/EXTRAFEATURES.md#38-配表负载与-unity-实验)。
 
 ## 现状
 
-当前只是目录占位，尚不能作为可用 Unity 客户端：
+当前只有三个空目录及其 `.gitkeep`：
 
 - `Assets/` —— Unity 资源与脚本（待建）
 - `Packages/` —— Unity 包清单（待建）
 - `ProjectSettings/` —— Unity 工程配置（待建）
 
-## 后续路线（规划，未实施）
+仓库没有 Unity 版本、`Packages/manifest.json`、`ProjectSettings/ProjectVersion.txt` 或其他有效工程配置，
+也没有 C# 生成物、pyts/TS→C# 管线、运行入口或测试闭环。
+`apps/client` 的 `logic/`、`shared/`、`lib/bitecs/` 也尚未证明可被 Unity 直接消费。
 
-1. 确定 Unity 版本与渲染管线，用 Unity Hub 在本目录初始化真实工程（替换本骨架）。
-2. 引入 pyts 类 TS→C# 转译管线，消费 `apps/client/src` 的引擎无关子集（logic/shared/bitecs
-   优先；⚠ 投入前先拿 `logic/rooms/ballMove` + `lib/bitecs` 做一次转译 spike——bitECS 的
-   TypedArray/SoA 布局与 12 文件字节锁约束下的可行性未验证过）。
-3. 与 `apps/Cocos` 共用 `apps/shared` 契约与 `apps/art` 的 FairyGUI 源。
+如果实际项目另行立项，应先用 `logic/rooms/ballMove`、shared 契约与 bitECS 的 TypedArray/SoA 用法做
+最小可行性实验，再决定重写 adapter 还是引入转换工具；这项实验不构成 gameStarterKit 的路线承诺或
+[核心 plan](../../plan.md) 的验收项。

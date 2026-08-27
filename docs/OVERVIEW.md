@@ -1,7 +1,8 @@
 # 技术总览
 
 > 本文只描述 gameStarterKit 在**开发阶段**提供的代码结构、契约和本地验证方式；完整范围见
-> [根 README](../README.md#项目边界)。
+> [根 README](../README.md#项目边界)，非核心参考实现见
+> [额外功能与参考实现](EXTRAFEATURES.md)。
 
 ## 1. 定位
 
@@ -59,11 +60,13 @@ apps/client/src
 | shared/client/Cocos 镜像一致 | `npm run verify:sync` |
 | shared 零依赖与客户端 Logic 纯净 | `npm run typecheck`、相关单测 |
 | bitECS 源码保持锁定 | `npm run verify:ecs` |
-| FGUI 元素、registry 与异步边界 | `npm run test:fgui` |
+| FGUI 直接命名元素、registry、codegen 与客户端无头行为 | `npm run test:fgui` |
 | 服务端路由、协议与一致性规则 | `npm --workspace @game/server run test` |
 | 外部身份契约版本与生成物一致 | `npm run verify:webplatform-contract` |
 
-这些命令是本地开发验证入口。
+这些命令是本地开发验证入口，不表示所有真实边界都已覆盖。特别是客户端 `Main.ts` 与 9 个
+FairyGUI/Cocos View 文件不在当前严格类型检查内，FGUI 测试也不验证 Creator 中的完整 View 生命周期或
+设计源到已导出 `.bin` 的新鲜度；已知缺口见 [plan.md](../plan.md)。
 
 ### 3.3 视图与行为分离
 
@@ -72,13 +75,14 @@ apps/client/src
 - `view/`：允许依赖 `cc` 和 `fairygui-cc`，只做节点绑定、事件转发和数据搬运。
 - `logic/`：不依赖引擎/UI，承载页面行为和玩法规则，便于无头测试。
 - `net/`：房间、RPC 和 HTTP 的传输适配。
-- `core/`：ViewMgr、HTTP 底座和宿主环境桥。
+- `core/`：HTTP 底座、生成的本地开发配置和宿主环境兼容桥。
+- `view/ViewMgr.ts`：页面加载、分层、缓存和交互输入生命周期。
 
 新增页面通过 `defineView + viewRegistry + ViewMgr.open` 接入，不向通用入口堆静态 import。
 
 ### 3.4 数据正确性优先
 
-服务端示例坚持：
+服务端代码以这些不变量为目标：
 
 - MySQL 与 Redis 的权威边界明确。
 - 同一用户写入串行化，并使用 lock/fence 防止过期持有者提交。
@@ -87,7 +91,8 @@ apps/client/src
 - Redis key 与 MySQL 查询显式携带区上下文。
 - 大规模同步计算不放在网关 handler 中。
 
-这些是开发实现应保持的不变量。
+这些是开发实现应保持的不变量，不是对当前所有路径已经完成证明的声明。现有 effect 原子性、跨区回读、
+后台生命周期等确定缺口及其验收标准统一记录在 [plan.md](../plan.md)。
 
 ## 4. 标准开发动线
 
@@ -153,4 +158,6 @@ FairyGUI 编辑设计源
 - 本地开发账号通过外部服务的 dev session 契约创建。
 - Unity 目录只是研究占位。
 - 所有演示 endpoint、配置和页面只用于开发与验证。
+- 核心改进状态以 [plan.md](../plan.md) 为准；可选模块的准确状态见
+  [额外功能与参考实现](EXTRAFEATURES.md)。
 - 完整项目边界以根 README 为准。

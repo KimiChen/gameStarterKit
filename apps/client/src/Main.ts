@@ -222,7 +222,7 @@ export class Main extends Component {
      *  重进要么撞上"已用其他 token 在线"抛错（第二次点才进），要么被新登录当**顶号**踢掉，
      *  玩家先看到一条误导的「账号已在其他设备登录」。⛔ 这条路径不在上一批修复的三条之列，是漏的。
      *  ⚠ 登记：回登录页的四条路径（authInvalid/battleLost/connLost/本路径）目前各写各的组合，
-     *  收敛成单一出口见 todo.md「D6 · 客户端『回登录页』收敛成单一出口」。 */
+     *  收敛成单一出口见 plan.md「P0-01 收口客户端会话、连接、导航与输入竞态」。 */
     private abortBattle(): void {
         this.inBattle = true;      // teardown 幂等靠此标志；失败路径可能尚未真正入战
         this.teardownBattle();

@@ -233,7 +233,7 @@ export const CHARACTER_REPAIR_ALERT_ATTEMPTS =
   webPlatformPositiveInt("CHARACTER_REPAIR_ALERT_ATTEMPTS", 5, 1_000_000);
 
 /** 支付链总开关（缺省**关**）：关 ⇒ `/pay/wx-notify` 直接 501「未上线」。
- *  ⚠ 支付链现在不具备上线条件（无下单端点、共享密钥而非 APIv3 验签、无对账，见 todo.md 支付条目），
+ *  ⚠ 支付链现在不具备上线条件（无下单端点、共享密钥而非 APIv3 验签、无对账，见 docs/EXTRAFEATURES.md §3.4），
  *  这个开关是**防误开**，⛔ 不是"配上就能收钱"。每请求现读（同 ADMIN_API_SECRET 范式，便于灰度）。 */
 export const PAY_ENABLED = () => process.env.PAY_ENABLED === "1";
 /** ⚠ **生产开启 = 配置事故，加载期拒绝启动**（与上面 AUTH_DEV_ENABLED 同款 fail-fast）。
@@ -245,7 +245,7 @@ export const PAY_ENABLED = () => process.env.PAY_ENABLED === "1";
 if (process.env.NODE_ENV === "production" && process.env.PAY_ENABLED === "1") {
   throw new Error(
     "PAY_ENABLED=1 在生产环境被显式开启——支付链尚未闭环（无下单端点、共享密钥而非 APIv3 验签、无对账，"
-    + "见 todo.md 支付条目），而 /pay/wx-notify 后面是真发币路径。补齐三项之前生产必须关闭。");
+    + "见 docs/EXTRAFEATURES.md §3.4），而 /pay/wx-notify 后面是真发币路径。补齐三项之前生产必须关闭。");
 }
 
 /** durable（noeviction + AOF everysec）与 cache（allkeys-lru）是两个物理实例（09·R4）。 */
@@ -255,7 +255,7 @@ export const REDIS_ROUTE_FILE = () => process.env.REDIS_ROUTE_FILE ?? "";
 /** 控制总线 Redis（踢人消息流，DUAL_MODE §2.3）：专用 HA 实例。
  *  ⚠ **扇出半径只到本组**——coord 按组独占（M14 起 driver/presence 也挂它），⛔ 不是跨组通道
  *  （此处曾写"唯一合法跨组通道"，与 kickBus.ts / redisRoute.ts 已收口的「本组 coord」口径打架）。
- *  跨组送达保证走 GM 工具逐节点遍历（09·G7b）；跨组顶号的缺口见 todo.md「跨物理组顶号不收敛」。
+ *  跨组送达与顶号限制见 docs/EXTRAFEATURES.md §3.2；当前 kick bus 不提供跨组送达保证。
  *  dev 缺省**复用 durable 实例**（同实例专用流键 K_STREAM_KICK，配置驱动）；prod-split 指向物理隔离 HA Redis。
  *  ⛔ 绝不放 cache（allkeys-lru 会逐出踢人流）。 */
 export const REDIS_COORD_URL = () => env("REDIS_COORD_URL", REDIS_DURABLE_URL());

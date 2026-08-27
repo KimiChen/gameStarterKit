@@ -92,7 +92,7 @@ function wireSessionEvents(reopenLogin: () => void): void {
       //   与 `joinedToken` 清干净了（WebSocketClient.ts:188-190）⇒ `leave()` 撞 `if (!room) return`
       //   直接返回。authInvalid/battleLost 两条不同：那两条触发时大厅连接**确实还活着**，必须退。
       //   保留它纯属防御——万一将来 connLost 多出一个"房还活着就通知"的产地，这里不至于漏。
-      //   ⚠ 收敛成单一出口见 todo.md「D6」；重构时请按这里的事实判断，⛔ 别照抄成"四条都必须 leave"。
+      //   ⚠ 收敛成单一出口见 plan.md P0-01；重构时请按这里的事实判断，⛔ 别照抄成"四条都必须 leave"。
       await WebSocketClient.inst.leave().catch(() => {});
       closeLobby();
       await openConfirm({ title: "连接断开", content: "与服务器的连接已断开，请重新进入", noText: null });

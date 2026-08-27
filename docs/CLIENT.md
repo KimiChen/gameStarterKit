@@ -41,16 +41,17 @@ npm run sync:shared
 ```text
 apps/client/src/
 ├── Main.ts             Cocos 组件入口与 Demo 编排
-├── core/               ViewMgr、HTTP 底座、宿主环境桥
+├── core/               HTTP 底座、生成的开发配置与宿主环境桥
 ├── lib/                锁定的第三方技术依赖
 ├── logic/              引擎无关页面与玩法行为
 ├── net/                Room、RPC 与 HTTP 适配
 ├── shared/             apps/shared 的生成镜像
-└── view/               Cocos/FairyGUI 视图绑定
+└── view/               Cocos/FairyGUI 视图绑定与 ViewMgr
 
 apps/Cocos/
 ├── assets/src/         apps/client/src 的生成镜像
-├── assets/resources/   场景与本地资源
+├── assets/resources/   FGUI 导出物等本地资源
+├── assets/scene.scene  启动场景
 ├── extensions/         Cocos 编辑器扩展
 └── settings/           工程设置
 ```
@@ -113,10 +114,14 @@ await ViewMgr.open("Home", params);
 
 ### `interactive` 的含义
 
-- `interactive: true`：根组件参与命中测试，适合模态页和整屏页面。
-- `interactive: false`：根组件不阻挡背后的输入，适合纯展示层。
+FairyGUI 在当前 Cocos 运行时只有一个全局 InputProcessor，`interactive` 因此是全局输入租约，不是单个
+根组件的命中测试属性：
 
-这不是视觉属性。选择错误会导致点击穿透或玩法输入被整屏 UI 吞掉。
+- `interactive: true`：页面打开期间增加租约并启用整棵 FGUI 树输入；页面可点击，但背后的玩法触摸会被挡住。
+- `interactive: false`：页面本身不增加租约；没有其他交互页时整棵 FGUI 树都收不到输入，适合纯展示 HUD。
+
+只要还有任一交互页打开，全局处理器就保持启用，`interactive: false` 页面也不是独立的输入隔离区。
+关闭必须走 `ViewHandle.close()` 或 `ViewMgr.close()`，否则租约无法恢复。
 
 ## 5. FairyGUI codegen
 
@@ -128,10 +133,10 @@ npm run codegen:fgui -- <Package> <Component>
 
 生成器只改 View 中的四个 AUTO 区块：
 
-- import
-- 字段
-- bind
-- apply
+- `IMPORT`：FairyGUI 类型导入。
+- `REQUIRED`：包名、组件名和契约常量。
+- `FIELD`：字段声明。
+- `BIND`：`getChild` 绑定。
 
 AUTO 区块外是手写区。重复执行应得到稳定结果。
 
@@ -142,16 +147,23 @@ AUTO 区块外是手写区。重复执行应得到稳定结果。
 
 - `GLoader` 使用 `url`，不是引擎 Sprite API。
 - Controller 切页使用约定的 page name。
-- 列表 item、loader URL、relation 和命名元素都属于结构契约。
-- FGUI 自身包是 required；加载失败应返回可见的开发错误，而不是继续生成半空页面。
+- 当前 XML parser 只读取组件 `displayList` 中有名字的直接子元素；列表 item、relation 和设计源到
+  已导出 `.bin` 的新鲜度不在现有结构契约覆盖内。
+- 测试还会检查导出组件、页面包依赖闭包、registry/Logic 配对及源码中的 `ui://<Pkg>` 引用。
+- 页面自身包加载失败会直接抛错；`sharedPkgs` 由 `ensurePackages` 预载，但当前共享包失败路径只记录警告
+  后继续。不要把两种失败语义描述成同一个强保证。
 
 ## 6. 设计分辨率与资源导出
 
-设计分辨率在三处保持一致：
+当前竖屏设计基线为 750×1624 / `FIXED_WIDTH`，对应位置是：
 
-- shared 常量。
-- Cocos 项目设置。
-- FairyGUI 工程设置。
+- 代码数值真源：`apps/client/src/designSpec.ts`。
+- 运行时适配策略：`apps/client/src/Main.ts`。
+- Cocos 设置：`apps/Cocos/settings/v2/packages/project.json`。
+- FairyGUI 设置：`apps/art/fairygui/settings/Adaptation.json`。
+
+现有测试会核对代码常量、Main 策略和 FairyGUI 设置，但尚未读取 Cocos `project.json`；四处当前一致，
+仍可能在以后发生未被测试发现的漂移，收口项见 [plan.md](../plan.md)。
 
 资源动线：
 
@@ -206,9 +218,11 @@ npm run test:fgui
 npm run verify:ecs
 ```
 
-- `typecheck` 检查 shared/server/client 与镜像。
+- `typecheck` 先校验外部身份契约，再检查 shared、server、client tsconfig 已纳入的源码与镜像；客户端
+  `Main.ts`、9 个 FairyGUI/Cocos View 文件和 `apps/client/test` 当前不在严格类型检查内。
 - `verify:sync` 检查漂移、孤儿和 `.meta`。
-- `test:fgui` 检查 FGUI 结构、registry、Logic purity 和客户端无头行为。
+- `test:fgui` 实际运行 codegen 测试和全部客户端无头测试，检查 FGUI 源码结构、registry、Logic purity
+  与客户端无头行为；它通过 `tsx` 运行测试，不补足上述严格类型检查盲区。
 - `verify:ecs` 检查 vendored bitECS 文件。
 
 Creator 编辑器预览用于补充验证引擎绑定、资源导入和页面交互；它仍然是开发活动。
@@ -227,4 +241,6 @@ Creator 编辑器预览用于补充验证引擎绑定、资源导入和页面交
 
 ## 10. 范围
 
-现有场景、开发账号、兼容代码和演示页面只用于本地开发；完整项目边界见根 README。
+现有场景、开发账号和演示页面只用于本地开发。微信小游戏兼容层等渠道接缝属于
+[额外功能与参考实现](EXTRAFEATURES.md)，不构成核心能力承诺；完整项目边界见根 README，已知客户端
+缺口见 [plan.md](../plan.md)。

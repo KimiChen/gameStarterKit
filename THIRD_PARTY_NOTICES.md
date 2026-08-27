@@ -2,13 +2,13 @@
 
 本仓库把以下第三方运行时**直接提交入库**（版本钉死、clone 即可用）。首次打开和普通开发
 不需要抓取这些运行时；Colyseus/FairyGUI 的 fetch 脚本仅由框架维护团队在显式升级时使用，
-bitECS 则由维护团队按上游版本手工更新并提交完整锁定变更。npm 安装的常规依赖
-（apps/server、apps/shared 的 node_modules）不在此列——其许可证随各包分发，见
-`package-lock.json` 与各包自带 LICENSE。
+bitECS 则由维护团队按上游版本手工更新并提交完整锁定变更。通过 npm 安装、没有直接提交运行时文件的
+常规依赖不在此表内；根工程/workspaces 见 `package-lock.json`，独立说明站见
+`apps/website/package-lock.json`，许可证随对应包分发。
 
 | 组件 | 版本 | 许可证 | 入库位置 | 升级工具 |
 |---|---|---|---|---|
-| [bitECS](https://github.com/NateTheGreatt/bitECS)（NateTheGreatt） | 0.4.0（tag，commit `efacc63`） | **MPL-2.0**（文件级 copyleft：改动须保持 MPL 并公开——本仓库因此字节锁定不改逻辑，见 `lib/bitecs/README.md` 的两处兼容性偏差记录） | `apps/client/src/lib/bitecs/`（含 LICENSE 原文）+ Cocos 镜像 | 维护团队手工替换 12 个锁定文件并重算 `scripts/bitecs.sha256`；开发者运行 `npm run verify:ecs` |
+| [bitECS](https://github.com/NateTheGreatt/bitECS)（NateTheGreatt） | 0.4.0（tag，commit `efacc63`） | **MPL-2.0**（文件级 copyleft：改动须保持 MPL 并公开——本仓库因此字节锁定不改逻辑，见 [bitECS 客户端说明](apps/client/src/lib/bitecs/README.md) 的两处兼容性偏差记录） | `apps/client/src/lib/bitecs/`（含 LICENSE 原文）+ Cocos 镜像 | 维护团队手工替换 12 个锁定文件并重算 `scripts/bitecs.sha256`；开发者运行 `npm run verify:ecs` |
 | [@colyseus/sdk](https://github.com/colyseus/colyseus)（Endel Dreyer / Colyseus） | 0.17.43 | MIT | `apps/client/src/lib/colyseus/colyseus.js` + Cocos 镜像（UMD 构建原样，未修改） | 维护团队显式升级时运行 `npm run fetch:colyseus`（固定版本 + registry sha512） |
 | [fairygui-cc](https://github.com/fairygui/FairyGUI-cocoscreator)（Guzhu / FairyGUI） | 1.2.2 | MIT | `apps/Cocos/extensions/fairygui-cc/runtime/`（fairygui.mjs + fairygui.d.ts，npm dist 原样；如打社区 3.8 补丁，diff 由 git 追踪） | 维护团队显式升级时运行 `npm run fetch:fgui`（固定版本 + registry sha512） |
 
