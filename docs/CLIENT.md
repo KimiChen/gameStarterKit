@@ -109,19 +109,23 @@ apps/Cocos/
 
 ```ts
 const handle = await ViewMgr.open("Home");
+await handle.run((_view, context) => {
+  // pages.ts 在这里注入 view.setup(...)，并把 context.signal 传给异步 Logic。
+});
 ```
 
-`ViewMgr.open` 只接受页面名，不接受打开参数；页面数据与回调在拿到句柄后由 `view/pages.ts` 经
-`view.setup(...)` 注入。
+`ViewMgr.open` 接受页面名和可选的 setup 回调，不把业务参数塞进 registry。返回句柄带有本次打开的
+`signal` 与 `generation`；页面数据、回调和异步首拉应在 `handle.run(...)` 内注入。setup/render 或
+`onCreate/onOpen` 失败会自动走同一条关闭、交互租约回收和实例销毁路径。
 
 不要从普通脚本静态 import `fairygui-cc` 或具体 View。所有 View 都通过 registry 的动态 import
 进入加载链，避免编辑器扩展尚未就绪时污染根脚本。
 
-ViewMgr 已有的生命周期语义：onlyOne 或 permanent 页面的在途 open 会合流到同一个加载 Promise；加载期间
-close 会打取消标记并在 mount 前拦截；场景重载时经 layerRoots 探针整体重建并清零输入租约计数。多实例页
-（`onlyOne=false` 且 `permanent=false`，当前只有 Confirm）不进在途表：既不合流，加载期间也无法取消。
-FguiView 在首个视图挂载时才懒建 GRoot 且默认关闭全局输入（避免全屏 InputProcessor 吞掉玩法触摸），
-包加载按全进程在途合流防重复加载。
+ViewMgr 的生命周期语义：onlyOne/permanent 页面的在途 open 会合流到同一个加载 Promise；所有页面（包括
+多实例 Confirm）的在途 open 都可通过句柄/按名关闭取消，并在 mount 前拦截。场景/root generation 变化时
+旧 pending 会失效；mount、setup 或渲染失败统一回滚。permanent 页面只运行一次 `onCreate`，每次重开
+生成新的 `signal/generation` 并运行 `onOpen`；关闭会使旧异步上下文失效。FguiView 在首个视图挂载时才
+懒建 GRoot 且默认关闭全局输入（避免全屏 InputProcessor 吞掉玩法触摸），包加载按全进程在途合流防重复加载。
 
 页面开发应遵守：
 

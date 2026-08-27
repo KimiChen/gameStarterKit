@@ -11,6 +11,26 @@
 import { Canvas, director, sys, view } from "cc";
 import { GComponent, GObject, GRoot, RelationType, UIPackage } from "db://fairygui-cc/fairygui.mjs";
 
+/**
+ * 一次页面打开的生命周期上下文。
+ *
+ * `signal` 供 HTTP/RPC 等依赖取消；`generation` 用于在依赖不支持 AbortSignal 时做迟到结果隔离。
+ * `isActive()` 比单看 signal 更严格：同一个 View permanent 重开时，旧上下文会立即失效。
+ */
+export interface ViewLifecycleContext {
+  readonly generation: number;
+  readonly signal: AbortSignal;
+  isActive(): boolean;
+}
+
+type LifecycleState = {
+  readonly generation: number;
+  readonly controller: AbortController;
+  readonly context: ViewLifecycleContext;
+  active: boolean;
+  closePromise: Promise<void> | null;
+};
+
 export abstract class FguiView {
   /**
    * 懒启动 GRoot：**只在第一个 FairyGUI 视图真正挂载时**才建，没用 FairyGUI 时它绝不常驻（避免全屏
@@ -49,6 +69,9 @@ export abstract class FguiView {
 
   /** FairyGUI 组件根（由 `UIPackage.createObject(...).asCom` 传入）。 */
   protected readonly root: GComponent;
+  private lifecycle: LifecycleState | null = null;
+  private created = false;
+  private disposed = false;
 
   constructor(root: GComponent) {
     this.root = root;
@@ -57,14 +80,122 @@ export abstract class FguiView {
     //   （见 `create`/`fromComponent`）。
   }
 
+  /** 页面实例创建后只调用一次；子类可在这里初始化与页面实例同寿命的资源。 */
+  protected onCreate(_context: ViewLifecycleContext): void | Promise<void> {}
+
+  /** 每次挂载/打开调用一次；抛错会由 ViewMgr 统一回滚。 */
+  protected onOpen(_context: ViewLifecycleContext): void | Promise<void> {}
+
+  /** 每次关闭调用一次；返回的 Promise 由 ViewMgr 观察，不能阻塞输入租约回收。
+   *
+   * 页面现有公开 API 也使用 `onClose` 作为按钮回调，因此生命周期实现采用这个不冲突的
+   * 内部 hook；若子类没有同名实例属性，仍会兼容调用其自定义 `onClose(context)` 方法。
+   */
+  protected onCloseLifecycle(_context: ViewLifecycleContext): void | Promise<void> {}
+
+  /** 构造一个新的打开世代。仅 ViewMgr 应调用。 */
+  beginLifecycle(generation: number): ViewLifecycleContext {
+    if (this.disposed) throw new Error("[FguiView] 已销毁的 View 不能重新打开");
+    const previous = this.lifecycle;
+    if (previous?.active) {
+      previous.active = false;
+      previous.controller.abort();
+    }
+    const controller = new AbortController();
+    let state!: LifecycleState;
+    const context: ViewLifecycleContext = {
+      generation,
+      signal: controller.signal,
+      isActive: () => this.lifecycle === state && state.active && !controller.signal.aborted && !this.disposed,
+    };
+    state = { generation, controller, context, active: true, closePromise: null };
+    this.lifecycle = state;
+    return context;
+  }
+
+  /** 运行 onCreate；永久页面重挂时不会重复执行。 */
+  async runCreate(context: ViewLifecycleContext): Promise<void> {
+    if (this.created) return;
+    this.assertCurrent(context);
+    this.created = true;
+    try {
+      await this.onCreate(context);
+      this.assertCurrent(context);
+    } catch (e) {
+      this.created = false;
+      throw e;
+    }
+  }
+
+  /** 运行本次打开 hook。 */
+  async runOpen(context: ViewLifecycleContext): Promise<void> {
+    this.assertCurrent(context);
+    await this.onOpen(context);
+    this.assertCurrent(context);
+  }
+
+  /**
+   * 使本次打开世代失效并运行 onClose。调用幂等；返回 Promise 便于测试/宿主等待，
+   * 但关闭路径本身不依赖它完成（输入租约须立即释放）。
+   */
+  closeLifecycle(): Promise<void> {
+    const state = this.lifecycle;
+    if (!state) return Promise.resolve();
+    if (state.closePromise) return state.closePromise;
+    state.active = false;
+    state.controller.abort();
+    let result: void | Promise<void>;
+    try { result = this.invokeCloseHook(state.context); }
+    catch (e) { result = Promise.reject(e); }
+    state.closePromise = Promise.resolve(result).then(() => undefined);
+    // 调用方可能使用同步 handle.close()；这里先挂 rejection 观察器避免 unhandledRejection。
+    state.closePromise.catch((e) => console.error("[FguiView] onClose 回调异常", e));
+    return state.closePromise;
+  }
+
+  /** 当前打开世代（仅供装配层传递给 Logic）。 */
+  get lifecycleContext(): ViewLifecycleContext | null {
+    return this.lifecycle?.context ?? null;
+  }
+
+  get isDisposed(): boolean {
+    return this.disposed;
+  }
+
+  private assertCurrent(context: ViewLifecycleContext): void {
+    if (this.lifecycle?.context !== context || !context.isActive()) {
+      throw new Error("[FguiView] 页面打开世代已失效");
+    }
+  }
+
+  private invokeCloseHook(context: ViewLifecycleContext): void | Promise<void> {
+    // 兼容测试/业务子类直接实现 protected onClose(context)，同时避开页面按钮字段 onClose。
+    const own = Object.prototype.hasOwnProperty.call(this, "onClose");
+    if (!own) {
+      const candidate = (this as unknown as { onClose?: unknown }).onClose;
+      if (typeof candidate === "function") {
+        return (candidate as (ctx: ViewLifecycleContext) => void | Promise<void>).call(this, context);
+      }
+    }
+    return this.onCloseLifecycle(context);
+  }
+
   /** 子类实现（codegen 生成）：按 AUTO BIND 用 `getChild` 绑定字段。构造完成后由工厂调一次。 */
   protected abstract bind(): void;
 
   /** 用已建好的 FairyGUI 组件根构造并绑定（构造后调 bind，避开字段声明覆盖）。 */
   static fromComponent<V extends FguiView>(viewCtor: new (root: GComponent) => V, root: GComponent): V {
-    const v = new viewCtor(root);
-    v.bind();
-    return v;
+    try {
+      const v = new viewCtor(root);
+      v.bind();
+      return v;
+    } catch (e) {
+      // bind/constructor 失败时对象还未交给 ViewMgr，必须在这里释放组件树，避免资源泄漏。
+      try { root.dispose(); } catch (disposeError) {
+        console.error("[FguiView] 构造失败后的 root dispose 异常", disposeError);
+      }
+      throw e;
+    }
   }
 
   /** 按名取子组件（codegen 生成的 bind 用）。缺失即抛清晰错误（列出实际有哪些子元素），
@@ -80,8 +211,20 @@ export abstract class FguiView {
   }
 
   /** 点击绑定（写在子类 registerEvent 里）。 */
-  protected onClick(obj: GObject, cb: () => void): void {
-    obj.onClick(cb, this);
+  protected onClick(obj: GObject, cb: () => unknown): void {
+    obj.onClick(() => this.observeAsync(cb, "click"), this);
+  }
+
+  /** 事件系统不会 await handler；统一观察同步异常和 Promise rejection。 */
+  protected observeAsync(action: () => unknown, label = "event"): void {
+    try {
+      const result = action();
+      if (result && typeof (result as { then?: unknown }).then === "function") {
+        Promise.resolve(result).catch((e) => console.error(`[FguiView] ${label} handler rejection`, e));
+      }
+    } catch (e) {
+      console.error(`[FguiView] ${label} handler exception`, e);
+    }
   }
 
   /** 挂到 GRoot（或指定父容器）。GRoot 懒启动：此时才建（若还没建）。 */
@@ -163,8 +306,27 @@ export abstract class FguiView {
 
   /** 销毁：从父移除 + dispose FairyGUI 对象树。 */
   dispose(): void {
-    this.root.removeFromParent();
-    this.root.dispose();
+    if (this.disposed) return;
+    this.disposed = true;
+    const state = this.lifecycle;
+    if (state?.active) {
+      state.active = false;
+      state.controller.abort();
+    }
+    // onClose 可能是 async；root 仍按同步语义立即销毁，Promise rejection 已由 closeLifecycle 观察。
+    if (state && !state.closePromise) {
+      let result: void | Promise<void>;
+      try { result = this.invokeCloseHook(state.context); }
+      catch (e) { result = Promise.reject(e); }
+      state.closePromise = Promise.resolve(result).then(() => undefined);
+      state.closePromise.catch((e) => console.error("[FguiView] dispose/onClose 回调异常", e));
+    }
+    try { this.root.removeFromParent(); } catch (e) {
+      console.error("[FguiView] removeFromParent 异常", e);
+    }
+    try { this.root.dispose(); } catch (e) {
+      console.error("[FguiView] root dispose 异常", e);
+    }
   }
 
   /** 包加载在途合流表（评审修复）：`loadPackage` 无在途保护、`getByName` 只挡**已完成**的加载——

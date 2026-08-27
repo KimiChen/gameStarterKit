@@ -8,7 +8,7 @@
  * 选服链路：openLogin 时拉 WebPlatform GET /v1/areas 存 serverSession + 默认选中服 →
  * Login 显示当前服 → 选服改 currentServer → 游戏连接使用 currentServer.gameHttpUrl。
  */
-import { ViewMgr } from "./ViewMgr";
+import { ViewMgr, ViewOpenCancelledError, type ViewHandle } from "./ViewMgr";
 import { sys } from "cc";
 import type { LoginView } from "./LoginView";
 import type { AreaListView } from "./AreaListView";
@@ -48,6 +48,22 @@ const NOTICE_DONT_REMIND_DATE_KEY = "game.notice.dont-remind-date";
 /** 本地开发登录身份（dev-login 的 devKey：同 key 恒同账号，换号 = 换 key）。
  *  微信侧接入后此处换 wx.login 取 code → wxLogin(code)。 */
 const DEV_LOGIN_KEY = "dev_local";
+
+/** 事件系统不会等待页面导航 Promise；组合根入口统一观察同步异常与 rejection。 */
+function observePageAction(action: () => unknown, label: string): void {
+  try {
+    const result = action();
+    if (result && typeof (result as { then?: unknown }).then === "function") {
+      Promise.resolve(result).catch((e) => console.error(`[pages] ${label} rejection`, e));
+    }
+  } catch (e) {
+    console.error(`[pages] ${label} exception`, e);
+  }
+}
+
+function isOpenCancelled(error: unknown): boolean {
+  return error instanceof ViewOpenCancelledError;
+}
 
 /** 会话事件接线（踢线/掉线 → 清态回登录页）。整个应用生命周期一次。
  *
@@ -158,104 +174,123 @@ async function openLoginImpl(onEnterBattle: () => void): Promise<void> {
   // ⚠ 登录必须带**所选区**（M12e）：token 只对该区有效。`chooseServer` 已在本函数上方执行过，
   // 故这里 `getCurrentServer()` 拿得到；⛔ 别图省事传 0——那会签出一个进不了所选区的 token。
   const logic = new LoginLogic({ login: (key) => devLogin(key, getCurrentServer()?.serverId ?? 0) });
-  logic.onProgress = (ratio, text) => view.setProgress(ratio, text);
-
   let enterInFlight: Promise<void> | null = null;
-  view.onEnter = () => {
-    if (enterInFlight) return enterInFlight;
-    const p = (async () => {
-    // Portal 首次不可达时，用户点「进入游戏」即显式重试目录；仍失败则给出可重试提示。
-    if (areaLoadFailed) {
-      try {
-        const list = await fetchAreaList();
-        setServerList(list);
-        const def = pickDefaultServer(list);
-        if (def) {
-          chooseServer(def);
-          initHttp(def.gameHttpUrl);
-          view.showCurrentServer(def);
-        }
-        areaLoadFailed = false;
-      } catch (e) {
-        console.error("[pages] WebPlatform 区服目录重试失败：", e);
-        await openConfirm({ title: "连接失败", content: "账号服务暂不可用，请稍后重试", noText: null });
-        return;
-      }
-    }
-    const cur = getCurrentServer();
-    // 进服闸（判定单源 isServerEnterable，对齐原项目 waitLogin）：无服 / 不可进（维护 or 未开服）
-    // 且非运维模式不进。isOps 是部署环境级开关（服务端 AREA_IS_OPS），豁免覆盖两种不可进态——
-    // 维护服重开前与新服开服前的验证是同一运维形态。⛔ 此闸只是 UX，真闸在服务端准入层。
-    if (!cur) { await openConfirm({ title: "提示", content: "暂无可用区服", noText: null }); return; }
-    if (!isServerEnterable(cur) && !(getServerList()?.isOps ?? false)) {
-      const unopened = cur.openTime === 0 && cur.status !== "maintenance";
-      await openConfirm({
-        title: unopened ? "未开服" : "维护中",
-        content: unopened ? "该区服尚未开放，敬请期待" : "区服维护中，请稍候再试",
-        noText: null,
-      });
-      return;
-    }
-    // 真实链路：dev-login（本地身份）→ 会话入 session → join 大厅房 → 拉真实档案。
-    // continuation 由 LoginLogic 的整段 flow 锁保护，重复点击不会在 HTTP 完成后再开一套 Lobby。
-    let user: IUserView | null = null;
-    let flowFailed = false;
-    let flowSessionGen = -1;
-    const r = await logic.doLoginFlow(DEV_LOGIN_KEY, async (response) => {
-      setSession(response);
-      flowSessionGen = getSessionGeneration();
-      try {
-        logic.onProgress(0.6, "正在进入大厅…");
-        // 区服 = 独立实例：直接使用目录明确给出的 gameHttpUrl，不再从 WS URL 猜 HTTP 地址。
-        WebSocketClient.inst.init(cur.gameHttpUrl);
-        // WebPlatform 契约叫 serverId；游戏服现有 Colyseus join option 仍叫 sId，在边界显式转换。
-        await WebSocketClient.inst.join(response.accessToken, { sId: cur.serverId });
-        if (getSessionGeneration() !== flowSessionGen) { flowFailed = true; return; }
-        logic.onProgress(0.85, "正在加载角色…");
-        user = (await WebSocketClient.inst.rpc(UserRpc.GetInfo, {})).user;
-        if (getSessionGeneration() !== flowSessionGen) { flowFailed = true; return; }
-      } catch (e) {
-        // 大厅/档案失败即整体失败（严谨：不带半截会话进主界面）；清态可重试
-        // 业务码走 message（服务端 joinRefused）：用 shared 单源解码器取文案，⛔ 别把 "3004" 甩给玩家
-        console.error("[pages] 进入大厅失败：", e);
-        const why = joinErrText((e as Error)?.message, "进入大厅失败，请重试");
-        clearSession();
-        await WebSocketClient.inst.leave().catch(() => {});
-        logic.onProgress(0, why);
-        flowFailed = true;
-      }
-    });
-    if (!r || flowFailed || getSessionGeneration() !== flowSessionGen) return; // 进度条已显示失败文案，可重点
-    logic.onProgress(1, "登录成功");
-    h.close();
-    await openHome(onEnterBattle, r.userId, user);
-    // Home 的动态加载也有 await；期间若收到失效事件，handler 会关闭大厅并重开
-    // Login。这里再核对一次，避免迟到的 Home 把新登录页覆盖回来。
-    if (getSessionGeneration() !== flowSessionGen) ViewMgr.close("Home");
-    })();
-    enterInFlight = p;
-    p.then(
-      () => { if (enterInFlight === p) enterInFlight = null; },
-      () => { if (enterInFlight === p) enterInFlight = null; },
-    );
-    return p;
-  };
-  view.onNotice = () => { void openNotice(); };
-  view.onSelectServer = () => { void openAreaList((s) => view.showCurrentServer(s)); };
+  await h.run((_openedView, context) => {
+    logic.onProgress = (ratio, text) => {
+      if (context.isActive()) view.setProgress(ratio, text);
+    };
 
-  view.setup();
-  view.showCurrentServer(getCurrentServer());
+    view.onEnter = () => {
+      if (!context.isActive()) return;
+      if (enterInFlight) return enterInFlight;
+      const p = (async () => {
+        if (!context.isActive()) return;
+        // Portal 首次不可达时，用户点「进入游戏」即显式重试目录；仍失败则给出可重试提示。
+        if (areaLoadFailed) {
+          try {
+            const list = await fetchAreaList();
+            if (!context.isActive()) return;
+            setServerList(list);
+            const def = pickDefaultServer(list);
+            if (def) {
+              chooseServer(def);
+              initHttp(def.gameHttpUrl);
+              view.showCurrentServer(def);
+            }
+            areaLoadFailed = false;
+          } catch (e) {
+            if (!context.isActive()) return;
+            console.error("[pages] WebPlatform 区服目录重试失败：", e);
+            await openConfirm({ title: "连接失败", content: "账号服务暂不可用，请稍后重试", noText: null });
+            return;
+          }
+        }
+        if (!context.isActive()) return;
+        const cur = getCurrentServer();
+        // 进服闸（判定单源 isServerEnterable，对齐原项目 waitLogin）：无服 / 不可进（维护 or 未开服）
+        // 且非运维模式不进。isOps 是部署环境级开关（服务端 AREA_IS_OPS），豁免覆盖两种不可进态——
+        // 维护服重开前与新服开服前的验证是同一运维形态。⛔ 此闸只是 UX，真闸在服务端准入层。
+        if (!cur) { await openConfirm({ title: "提示", content: "暂无可用区服", noText: null }); return; }
+        if (!isServerEnterable(cur) && !(getServerList()?.isOps ?? false)) {
+          const unopened = cur.openTime === 0 && cur.status !== "maintenance";
+          await openConfirm({
+            title: unopened ? "未开服" : "维护中",
+            content: unopened ? "该区服尚未开放，敬请期待" : "区服维护中，请稍候再试",
+            noText: null,
+          });
+          return;
+        }
+        if (!context.isActive()) return;
+        // 真实链路：dev-login（本地身份）→ 会话入 session → join 大厅房 → 拉真实档案。
+        // continuation 由 LoginLogic 的整段 flow 锁保护，重复点击不会在 HTTP 完成后再开一套 Lobby。
+        let user: IUserView | null = null;
+        let flowFailed = false;
+        let flowSessionGen = -1;
+        const r = await logic.doLoginFlow(DEV_LOGIN_KEY, async (response) => {
+          if (!context.isActive()) { flowFailed = true; return; }
+          setSession(response);
+          flowSessionGen = getSessionGeneration();
+          try {
+            logic.onProgress(0.6, "正在进入大厅…");
+            // 区服 = 独立实例：直接使用目录明确给出的 gameHttpUrl，不再从 WS URL 猜 HTTP 地址。
+            WebSocketClient.inst.init(cur.gameHttpUrl);
+            // WebPlatform 契约叫 serverId；游戏服现有 Colyseus join option 仍叫 sId，在边界显式转换。
+            await WebSocketClient.inst.join(response.accessToken, { sId: cur.serverId }, context.signal);
+            if (!context.isActive() || getSessionGeneration() !== flowSessionGen) { flowFailed = true; return; }
+            logic.onProgress(0.85, "正在加载角色…");
+            user = (await WebSocketClient.inst.rpc(UserRpc.GetInfo, {})).user;
+            if (!context.isActive() || getSessionGeneration() !== flowSessionGen) { flowFailed = true; return; }
+          } catch (e) {
+            if (!context.isActive()) { flowFailed = true; return; }
+            // 大厅/档案失败即整体失败（严谨：不带半截会话进主界面）；清态可重试
+            // 业务码走 message（服务端 joinRefused）：用 shared 单源解码器取文案，⛔ 别把 "3004" 甩给玩家
+            console.error("[pages] 进入大厅失败：", e);
+            const why = joinErrText((e as Error)?.message, "进入大厅失败，请重试");
+            clearSession();
+            await WebSocketClient.inst.leave().catch(() => {});
+            logic.onProgress(0, why);
+            flowFailed = true;
+          }
+        });
+        if (!context.isActive() || !r || flowFailed || getSessionGeneration() !== flowSessionGen) return;
+        logic.onProgress(1, "登录成功");
+        h.close();
+        await openHome(onEnterBattle, r.userId, user);
+        // Home 的动态加载也有 await；期间若收到失效事件，handler 会关闭大厅并重开
+        // Login。这里再核对一次，避免迟到的 Home 把新登录页覆盖回来。
+        if (getSessionGeneration() !== flowSessionGen) ViewMgr.close("Home");
+      })();
+      enterInFlight = p;
+      p.then(
+        () => { if (enterInFlight === p) enterInFlight = null; },
+        () => { if (enterInFlight === p) enterInFlight = null; },
+      );
+      return p;
+    };
+    view.onNotice = () => { observePageAction(() => openNotice(), "openNotice"); };
+    view.onSelectServer = () => {
+      observePageAction(() => openAreaList((s) => view.showCurrentServer(s)), "openAreaList");
+    };
+
+    view.setup();
+    view.showCurrentServer(getCurrentServer());
+  });
 }
 
 /** 主界面：展示真实账号/档案摘要，「进入游戏」→ ballMove（使用 currentServer.gameHttpUrl）。 */
 export async function openHome(onEnterBattle: () => void, userId = "", user: IUserView | null = null): Promise<void> {
   const h = await ViewMgr.open("Home");
   const view = h.view as HomeView;
-  view.onEnterBattle = onEnterBattle;
-  const cur = getCurrentServer();
-  const who = userId || "未登录";
-  const summary = user ? ` · 体力 ${user.stamina} · ${user.wins}胜${user.losses}负` : "";
-  view.setup(`${cur ? `${cur.name} · ` : ""}${who}${summary}`);
+  await h.run((_openedView, context) => {
+    view.onEnterBattle = () => {
+      if (!context.isActive()) return;
+      return onEnterBattle();
+    };
+    const cur = getCurrentServer();
+    const who = userId || "未登录";
+    const summary = user ? ` · 体力 ${user.stamina} · ${user.wins}胜${user.losses}负` : "";
+    view.setup(`${cur ? `${cur.name} · ` : ""}${who}${summary}`);
+  });
 }
 
 /** 选服列表（HTTP）：选服 → 存 currentServer + 回调刷新登录页 → 关闭。 */
@@ -270,17 +305,21 @@ export async function openAreaList(onChosen?: (server: WebPlatformAreaServer) =>
       return list;
     },
   });
-  logic.onChoose = (server) => {
-    chooseServer(server);       // 区服=实例：记住选中服，进入游戏时连它
-    initHttp(server.gameHttpUrl);
-    onChosen?.(server);         // 刷新登录页 btn_server
-    h.close();
-  };
-  view.onClose = () => h.close();  // 右上角关闭：不选服直接关面板
-  view.setup(logic);
   try {
-    await logic.start();
+    await h.run(async (_openedView, context) => {
+      logic.onChoose = (server) => {
+        if (!context.isActive()) return;
+        chooseServer(server);       // 区服=实例：记住选中服，进入游戏时连它
+        initHttp(server.gameHttpUrl);
+        try { onChosen?.(server); }  // 刷新登录页 btn_server
+        finally { h.close(); }
+      };
+      view.onClose = () => h.close();  // 右上角关闭：不选服直接关面板
+      view.setup(logic);
+      await logic.start(context.signal);
+    });
   } catch (e) {
+    if (isOpenCancelled(e)) return;
     console.error("[pages] WebPlatform 区服目录加载失败：", e);
     h.close();
     await openConfirm({ title: "连接失败", content: "区服列表加载失败，请稍后重试", noText: null });
@@ -292,9 +331,18 @@ export async function openNotice(): Promise<void> {
   const h = await ViewMgr.open("LoginNotice");
   const view = h.view as LoginNoticeView;
   const logic = new LoginNoticeLogic({ fetchNotices, readDontRemindToday, writeDontRemindToday });
-  view.onClose = () => h.close();
-  view.setup(logic);
-  await logic.start();
+  try {
+    await h.run(async (_openedView, context) => {
+      view.onClose = () => h.close();
+      view.setup(logic);
+      await logic.start(context.signal);
+    });
+  } catch (e) {
+    if (isOpenCancelled(e)) return;
+    console.error("[pages] 公告加载失败：", e);
+    h.close();
+    await openConfirm({ title: "连接失败", content: "公告加载失败，请稍后重试", noText: null });
+  }
 }
 
 /** 关闭全部大厅壳页面（进入 ballMove 前调用，让出 GL 画布给玩法渲染）。 */
@@ -305,24 +353,40 @@ export function closeLobby(): void {
 /** 通用提示框（多实例，句柄自关）。返回 Promise，resolve(true=确定/false=取消)。 */
 export async function openConfirm(opts: Omit<IConfirmOptions, "onYes" | "onNo">): Promise<boolean> {
   return new Promise<boolean>((resolve) => {
-    void (async () => {
-      const h = await ViewMgr.open("Confirm");
+    let handle: ViewHandle | null = null;
+    let settled = false;
+    let removeAbortListener: (() => void) | null = null;
+    const finish = (value: boolean): void => {
+      if (settled) return;
+      settled = true;
+      removeAbortListener?.();
+      removeAbortListener = null;
+      resolve(value);
+    };
+    const task = (async () => {
+      handle = await ViewMgr.open("Confirm");
+      const h = handle;
+      const onAbort = () => finish(false);
+      if (h.signal.aborted) { finish(false); return; }
+      h.signal.addEventListener("abort", onAbort, { once: true });
+      removeAbortListener = () => h.signal.removeEventListener("abort", onAbort);
       const view = h.view as ConfirmView;
-      const logic = new ConfirmLogic({
-        ...opts,
-        onYes: () => resolve(true),
-        onNo: () => resolve(false),
+      await h.run((_openedView, _context) => {
+        const logic = new ConfirmLogic({
+          ...opts,
+          onYes: () => finish(true),
+          onNo: () => finish(false),
+        });
+        logic.onClose = () => h.close();
+        view.setup(logic);
       });
-      logic.onClose = () => h.close();
-      view.setup(logic);
-    })().catch((e: unknown) => {
-      // ⚠ **必须兜住并 resolve**：这个 async IIFE 是 detached 的，`ViewMgr.open("Confirm")` 会抛
-      //   （FGUI 包未加载/扩展没挂）。⛔ 不兜的话 resolve **永远不会被调用** ⇒ 调用方 `await
-      //   openConfirm(...)` **永久悬挂**：本文件里它的调用点全在「掉线/被踢 → 提示后回登录页」
-      //   的链路上 ⇒ 弹不出框就连登录页也回不去，玩家卡死在黑屏，且只有一条 unhandled rejection。
-      //   resolve(false) = 按「取消」处理：⛔ 宁可当用户没确认，也不能把整条导航链挂死。
+    })();
+    void task.catch((e: unknown) => {
+      // ⚠ **必须兜住并 resolve**：这个 detached task 可能因 FGUI 包/组件/ setup 失败而 reject。
+      //   句柄一旦已创建，先走统一 close 回滚 interactive 租约，再按取消处理，避免调用方永久悬挂。
+      handle?.close();
       console.error("[pages] 提示框打开失败，按取消处理", e);
-      resolve(false);
+      finish(false);
     });
   });
 }

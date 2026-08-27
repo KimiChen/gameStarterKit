@@ -12,7 +12,7 @@
  * 在途去重：onlyOne/permanent 页面加载期间的重复 open（双击竞态）合流到同一 Promise。
  */
 import { GComponent, GRoot, RelationType } from "db://fairygui-cc/fairygui.mjs";
-import { FguiView } from "./FguiView";
+import { FguiView, type ViewLifecycleContext } from "./FguiView";
 import { VIEW_LAYERS, type ViewLayer } from "./layers";
 import type { ViewMeta } from "./defineView";
 import { VIEW_REGISTRY } from "./viewRegistry";
@@ -20,48 +20,131 @@ import { VIEW_REGISTRY } from "./viewRegistry";
 /** open 的返回句柄：关闭唯一入口（幂等）。 */
 export interface ViewHandle {
   readonly view: FguiView;
+  /** 本次打开的取消信号与世代；可传给 Area/Notice/Guild 等异步 Logic。 */
+  readonly signal: AbortSignal;
+  readonly generation: number;
   close(): void;
+  /** 在打开事务内运行 setup/render；失败会自动关闭并回滚页面。 */
+  run<T>(action: (view: FguiView, context: ViewLifecycleContext) => T | Promise<T>): Promise<T>;
 }
 
 interface Entry { view: FguiView; mounted: boolean; meta: ViewMeta; handle: ViewHandle }
 
 /** 在途 open 记录：双击竞态合流 + 在途期间 close 的取消标记（mount 前拦截，防幽灵页面）。 */
-interface PendingOpen { promise: Promise<ViewHandle>; cancelled: boolean }
+interface PendingOpen {
+  name: string;
+  promise: Promise<ViewHandle>;
+  cancelled: boolean;
+  readonly controller: AbortController;
+  readonly generation: number;
+  readonly rootGeneration: number;
+  readonly cacheable: boolean;
+}
 
 const layerRoots = new Map<ViewLayer, GComponent>();
 const cache = new Map<string, Entry>();                 // onlyOne/permanent 单例缓存
-const pending = new Map<string, PendingOpen>();         // 在途去重/取消
+const pending = new Map<string, PendingOpen>();          // onlyOne/permanent 在途去重
+const pendingAll = new Set<PendingOpen>();               // 所有在途加载（含多实例页，可取消）
 let interactiveCount = 0;
+let rootGeneration = 0;
+let nextGeneration = 0;
 
-function ensureLayers(): void {
-  // GRoot 可能随场景重载销毁：容器失效则整体重建（缓存视图同批死亡，计数一并归零）
-  const probe = layerRoots.get(VIEW_LAYERS[0]);
-  if (probe && !probe.node.isValid) {
-    layerRoots.clear();
-    cache.clear();
-    interactiveCount = 0;
-  }
-  if (layerRoots.size > 0) { return; }
-  FguiView.ensureRoot();
-  for (const l of VIEW_LAYERS) {
-    const c = new GComponent();
-    c.node.name = `layer_${l}`;
-    GRoot.inst.addChild(c);
-    c.setSize(GRoot.inst.width, GRoot.inst.height);
-    c.addRelation(GRoot.inst, RelationType.Size);
-    layerRoots.set(l, c);
+/** 打开在途期间被关闭或场景重载时的可判别错误。 */
+export class ViewOpenCancelledError extends Error {
+  readonly code = "VIEW_OPEN_CANCELLED" as const;
+  constructor(name: string) {
+    super(`[ViewMgr] 页面打开已取消: ${name}`);
+    this.name = "ViewOpenCancelledError";
   }
 }
 
-function mount(view: FguiView, meta: ViewMeta): void {
+type ViewSetup = (view: FguiView, context: ViewLifecycleContext) => unknown | Promise<unknown>;
+
+function ensureLayers(): void {
+  // GRoot 可能随场景重载销毁：容器失效则整体重建（缓存视图同批死亡，计数一并归零）
+  const stale = layerRoots.size > 0
+    && (layerRoots.size !== VIEW_LAYERS.length
+      || [...layerRoots.values()].some((root) => root.node && root.node.isValid === false));
+  if (stale) {
+    rootGeneration++;
+    for (const rec of pendingAll) {
+      rec.cancelled = true;
+      rec.controller.abort();
+    }
+    pending.clear();
+    for (const entry of cache.values()) {
+      entry.mounted = false;
+      closeEffects(entry.meta);
+      try { entry.view.dispose(); } catch (e) { console.error("[ViewMgr] 场景重载 dispose 异常", e); }
+    }
+    for (const root of layerRoots.values()) {
+      try { root.removeFromParent(); root.dispose(); } catch (e) {
+        console.error("[ViewMgr] 旧层容器释放异常", e);
+      }
+    }
+    layerRoots.clear();
+    cache.clear();
+    interactiveCount = 0;
+    FguiView.setInputEnabled(false);
+  }
+  if (layerRoots.size === VIEW_LAYERS.length) { return; }
+  FguiView.ensureRoot();
+  const built: GComponent[] = [];
+  try {
+    for (const l of VIEW_LAYERS) {
+      const c = new GComponent();
+      // Track the component before any attach/size/relation call: each of those can
+      // throw in a partially initialized Creator scene and must be cleaned up below.
+      built.push(c);
+      c.node.name = `layer_${l}`;
+      GRoot.inst.addChild(c);
+      c.setSize(GRoot.inst.width, GRoot.inst.height);
+      c.addRelation(GRoot.inst, RelationType.Size);
+      layerRoots.set(l, c);
+    }
+  } catch (e) {
+    for (const c of built) {
+      try { c.removeFromParent(); c.dispose(); } catch (disposeError) {
+        console.error("[ViewMgr] 层容器回滚异常", disposeError);
+      }
+    }
+    layerRoots.clear();
+    throw e;
+  }
+}
+
+/** 挂载并返回可回滚的 lease；任何中途异常都会摘下组件且归还 interactive 租约。 */
+function mount(view: FguiView, meta: ViewMeta): () => void {
   ensureLayers();
   FguiView.healRoot(); // 尺寸/置顶自愈：老路径 mountFullScreen 每次挂载都做，这里保持等价
   const parent = layerRoots.get(meta.layer);
   if (!parent) { throw new Error(`[ViewMgr] 未知层级: ${meta.layer}`); }
-  if (meta.fullscreen) { view.mountFullScreenTo(parent); } else { view.mountTo(parent); }
-  if (meta.interactive) {
-    interactiveCount++;
-    FguiView.setInputEnabled(true);
+  let mounted = false;
+  let leased = false;
+  try {
+    if (meta.fullscreen) { view.mountFullScreenTo(parent); } else { view.mountTo(parent); }
+    mounted = true;
+    if (meta.interactive) {
+      interactiveCount++;
+      leased = true;
+      FguiView.setInputEnabled(true);
+    }
+    return () => {
+      if (leased) {
+        leased = false;
+        closeEffects(meta);
+      }
+      if (mounted) {
+        mounted = false;
+        try { view.unmount(); } catch (e) { console.error("[ViewMgr] mount lease 回滚异常", e); }
+      }
+    };
+  } catch (e) {
+    if (leased) closeEffects(meta);
+    try { view.unmount(); } catch (unmountError) {
+      console.error("[ViewMgr] mount 失败后的摘除异常", unmountError);
+    }
+    throw e;
   }
 }
 
@@ -72,21 +155,81 @@ function closeEffects(meta: ViewMeta): void {
   }
 }
 
-/** 非缓存页（多实例）：句柄自带幂等 close。 */
-function uncachedHandle(view: FguiView, meta: ViewMeta): ViewHandle {
-  let closed = false;
-  return {
+function makeHandle(
+  name: string,
+  view: FguiView,
+  meta: ViewMeta,
+  context: ViewLifecycleContext,
+  cacheable: boolean,
+): { handle: ViewHandle; setContext(next: ViewLifecycleContext): void } {
+  const state = { context, closed: false };
+  const handle: ViewHandle = {
     view,
+    get signal() { return state.context.signal; },
+    get generation() { return state.context.generation; },
     close(): void {
-      if (closed) { return; }
-      closed = true;
-      closeEffects(meta);
-      view.dispose();
+      // permanent 实例可再次打开，句柄本身保持可复用；其它句柄关闭后永久失效。
+      if (state.closed && !meta.permanent) return;
+      if (cacheable) {
+        const entry = cache.get(name);
+        if (entry?.handle !== handle) { state.closed = true; return; }
+        close(name);
+      } else {
+        state.closed = true;
+        closeEffects(meta);
+        void view.closeLifecycle().catch((e) => console.error("[ViewMgr] onClose 回调异常", e));
+        view.dispose();
+      }
+    },
+    async run<T>(action: (v: FguiView, c: ViewLifecycleContext) => T | Promise<T>): Promise<T> {
+      // 捕获启动时的 context：permanent 页面重开会刷新 state.context，旧 setup 不能
+      // 在 await 之后误认新世代为自己的，也不能把新世代一并关闭。
+      const context = state.context;
+      if (state.closed || !context.isActive()) {
+        throw new ViewOpenCancelledError(name);
+      }
+      try {
+        const result = await action(view, context);
+        if (state.context !== context || !context.isActive()) throw new ViewOpenCancelledError(name);
+        return result;
+      } catch (e) {
+        // setup/render 与 onOpen 使用同一回滚入口；调用方仍收到原始错误。
+        if (state.context === context && !state.closed) handle.close();
+        throw e;
+      }
+    },
+  };
+  return {
+    handle,
+    setContext(next: ViewLifecycleContext): void {
+      state.context = next;
+      state.closed = false;
     },
   };
 }
 
-async function open(name: string): Promise<ViewHandle> {
+function rollbackEntry(name: string, entry: Entry): void {
+  if (cache.get(name) !== entry) return;
+  if (entry.mounted) {
+    entry.mounted = false;
+    closeEffects(entry.meta);
+  }
+  void entry.view.closeLifecycle().catch((e) => console.error("[ViewMgr] rollback onClose 异常", e));
+  if (entry.meta.permanent) {
+    try { entry.view.unmount(); } catch (e) { console.error("[ViewMgr] rollback unmount 异常", e); }
+  } else {
+    entry.view.dispose();
+    cache.delete(name);
+  }
+}
+
+function ensurePendingActive(rec: PendingOpen): void {
+  if (rec.cancelled || rec.controller.signal.aborted || rec.rootGeneration !== rootGeneration) {
+    throw new ViewOpenCancelledError(rec.name);
+  }
+}
+
+async function open(name: string, setup?: ViewSetup): Promise<ViewHandle> {
   const meta = VIEW_REGISTRY[name];
   if (!meta) { throw new Error(`[ViewMgr] 未注册页面: ${name}（view/viewRegistry.ts 加一条）`); }
 
@@ -95,52 +238,106 @@ async function open(name: string): Promise<ViewHandle> {
   if (entry) {
     if (entry.mounted) {
       entry.view.bringToFront();
+      if (setup) await entry.handle.run(setup);
       return entry.handle;
     }
-    mount(entry.view, meta); // permanent 重挂秒开
-    entry.mounted = true;
-    return entry.handle;
+    const context = entry.view.beginLifecycle(++nextGeneration);
+    try {
+      mount(entry.view, meta); // permanent 重挂秒开
+      entry.mounted = true;
+      // makeHandle 的 setContext 由 openNew 保存到弱表；未找到时 context 仍可从 view 读取。
+      const refresh = handleContexts.get(entry.handle);
+      refresh?.(context);
+      await entry.view.runOpen(context);
+      ensureContextActive(context, name);
+      if (setup) await entry.handle.run(setup);
+      return entry.handle;
+    } catch (e) {
+      // The same permanent Entry can be reopened while an async onOpen/setup is pending;
+      // do not roll back the newer lifecycle that replaced this context.
+      const ownsLifecycle = entry.view.lifecycleContext === context;
+      if (ownsLifecycle) rollbackEntry(name, entry);
+      if (!ownsLifecycle || !context.isActive()) throw new ViewOpenCancelledError(name);
+      throw e;
+    }
   }
 
   const cacheable = meta.onlyOne || meta.permanent;
   if (cacheable) {
     const inflight = pending.get(name);
-    if (inflight) {
-      inflight.cancelled = false; // 在途期间先 close 又 open：后到达者赢，取消作废
+    if (inflight && !inflight.cancelled) {
       return inflight.promise;    // 双击竞态：加载期间的重复 open 合流
     }
   }
 
-  const rec: PendingOpen = { promise: null as unknown as Promise<ViewHandle>, cancelled: false };
+  const rec: PendingOpen = {
+    name,
+    promise: null as unknown as Promise<ViewHandle>,
+    cancelled: false,
+    controller: new AbortController(),
+    generation: ++nextGeneration,
+    rootGeneration,
+    cacheable,
+  };
+  pendingAll.add(rec);
   const p = (async (): Promise<ViewHandle> => {
+    let view: FguiView | null = null;
+    let lease: (() => void) | null = null;
+    let entry: Entry | null = null;
+    let context: ViewLifecycleContext | null = null;
+    let cancelLifecycle: (() => void) | null = null;
     try {
       if (meta.sharedPkgs && meta.sharedPkgs.length > 0) {
         await FguiView.ensurePackages([...meta.sharedPkgs]);
       }
+      ensurePendingActive(rec);
       // load 闭包 = 铁律 10 的动态 import 边界，也是将来分包的加载点；构造器真实类型在此收敛
       const ctor = (await meta.load()) as new (root: GComponent) => FguiView;
-      const view = await FguiView.create(ctor, `ui/${meta.contract.pkg}`, meta.contract.pkg, meta.contract.comp);
-      if (rec.cancelled) {
-        // 在途期间被 close(name)：不挂载（微信真机载包窗口百 ms~秒级，取消/切场景防幽灵弹出），
-        // 建好的视图直接销毁；交互计数从未加过，无需恢复
-        view.dispose();
-        throw new Error(`[ViewMgr] 页面在加载期间被关闭: ${name}`);
-      }
-      mount(view, meta);
+      view = await FguiView.create(ctor, `ui/${meta.contract.pkg}`, meta.contract.pkg, meta.contract.comp);
+      ensurePendingActive(rec);
+      context = view.beginLifecycle(rec.generation);
+      // close(name)/root 重载可能发生在 setup 或 onOpen 等后续 await 期间；把 pending
+      // cancellation 直接桥接到 View context，让迟到逻辑立刻看到 aborted。
+      cancelLifecycle = () => {
+        void view!.closeLifecycle().catch((e) => console.error("[ViewMgr] 取消打开 onClose 异常", e));
+      };
+      rec.controller.signal.addEventListener("abort", cancelLifecycle, { once: true });
+      await view.runCreate(context);
+      ensurePendingActive(rec);
+      lease = mount(view, meta);
+      const made = makeHandle(name, view, meta, context, cacheable);
+      handleContexts.set(made.handle, made.setContext);
       if (cacheable) {
-        const handle: ViewHandle = {
-          view,
-          close: () => {
-            // 防陈旧句柄：页面销毁重开后，旧句柄不得关掉新实例（句柄幂等，跨实例失效）
-            if (cache.get(name)?.handle === handle) { close(name); }
-          },
-        };
-        cache.set(name, { view, mounted: true, meta, handle });
-        return handle;
+        entry = { view, mounted: true, meta, handle: made.handle };
+        cache.set(name, entry);
       }
-      return uncachedHandle(view, meta);
+      await view.runOpen(context);
+      ensureContextActive(context, name);
+      ensurePendingActive(rec);
+      if (setup) await made.handle.run(setup);
+      ensurePendingActive(rec);
+      return made.handle;
+    } catch (e) {
+      // permanent 实例可能在本次 await 期间被 close 后重开；只有仍属于本次
+      // context 的实例才允许回滚，避免迟到的旧 open 拆掉新世代页面。
+      const ownsLifecycle = !context || view?.lifecycleContext === context;
+      if (entry && ownsLifecycle) rollbackEntry(name, entry);
+      else if (view && !view.isDisposed && ownsLifecycle) {
+        lease?.();
+        void view.closeLifecycle().catch((closeError) => console.error("[ViewMgr] open 失败 onClose 异常", closeError));
+        view.dispose();
+      }
+      if (rec.cancelled || rec.controller.signal.aborted || rec.rootGeneration !== rootGeneration) {
+        throw new ViewOpenCancelledError(name);
+      }
+      throw e;
     } finally {
-      pending.delete(name);
+      if (cancelLifecycle) {
+        rec.controller.signal.removeEventListener("abort", cancelLifecycle);
+        cancelLifecycle = null;
+      }
+      pendingAll.delete(rec);
+      if (pending.get(name) === rec) pending.delete(name);
     }
   })();
   rec.promise = p;
@@ -152,11 +349,21 @@ async function open(name: string): Promise<ViewHandle> {
  *  在途中的 open 则标记取消（mount 前拦截）。 */
 function close(name: string): void {
   const inflight = pending.get(name);
-  if (inflight) { inflight.cancelled = true; return; }
+  if (inflight) {
+    inflight.cancelled = true;
+    inflight.controller.abort();
+  }
+  for (const rec of pendingAll) {
+    if (rec.name === name) {
+      rec.cancelled = true;
+      rec.controller.abort();
+    }
+  }
   const entry = cache.get(name);
   if (!entry || !entry.mounted) { return; }
   entry.mounted = false;
   closeEffects(entry.meta);
+  void entry.view.closeLifecycle().catch((e) => console.error("[ViewMgr] onClose 回调异常", e));
   if (entry.meta.permanent) {
     entry.view.unmount(); // 摘下不销毁，下次 open 秒开
   } else {
@@ -169,5 +376,12 @@ function close(name: string): void {
 function isOpen(name: string): boolean {
   return cache.get(name)?.mounted === true;
 }
+
+function ensureContextActive(context: ViewLifecycleContext, name: string): void {
+  if (!context.isActive()) throw new ViewOpenCancelledError(name);
+}
+
+/** handle → context 刷新器；仅用于 permanent 页面重挂，避免扩展公开状态对象。 */
+const handleContexts = new WeakMap<ViewHandle, (context: ViewLifecycleContext) => void>();
 
 export const ViewMgr = { open, close, isOpen } as const;

@@ -22,7 +22,7 @@ import {
 
 export interface IGuildLogicDeps {
     /** 拉增量：生产 = (s) => WebSocketClient.inst.rpc(GuildRpc.GetEvents, { sinceSeq: s }) */
-    getEvents(sinceSeq: number): Promise<IGuildGetEventsRes>;
+    getEvents(sinceSeq: number, signal?: AbortSignal): Promise<IGuildGetEventsRes>;
     /** 订阅推送：生产 = (cb) => WebSocketClient.inst.onPush(LobbyPush.GuildEvent, cb)，返回解绑 */
     onPush(type: typeof LobbyPush.GuildEvent, cb: (data: IGuildEventPush) => void): () => void;
 }
@@ -31,8 +31,12 @@ export class GuildLogic {
     private latestSeq = 0;
     /** 本地水位所属的工会（0 = 未知/无工会）。seq 是工会内命名空间——换会必须重置水位 */
     private guildId = 0;
-    private pulling = false;
-    private pendingWake = false;
+    /** 当前 pull 所属世代；旧世代响应不能修改新页面状态。 */
+    private pullingGeneration: number | null = null;
+    private pendingWakeGeneration: number | null = null;
+    private generation = 0;
+    private active = false;
+    private controller: AbortController | null = null;
     private unbind: (() => void) | null = null;
 
     /** 新事件回调（seq 升序、去重后）——view 层在这里搬数据 */
@@ -47,34 +51,77 @@ export class GuildLogic {
     /** 进入页面：订阅推送 + 首拉（本地缓存的进度按 guildId 配对传入；无缓存传 0,0）。
      *  重复 start（无 stop 重进页面）安全：先解上一次订阅，⛔ 不叠订阅（旧订阅会让死页面
      *  继续收 onWake→pull→onEvents 回调）。 */
-    async start(sinceSeq = 0, guildId = 0): Promise<void> {
+    async start(sinceSeq = 0, guildId = 0, signal?: AbortSignal): Promise<void> {
         this.stop();
+        const generation = ++this.generation;
+        this.active = true;
+        const controller = new AbortController();
+        this.controller = controller;
         this.latestSeq = sinceSeq;
         this.guildId = guildId;
-        this.unbind = this.deps.onPush(LobbyPush.GuildEvent, (p) => { void this.onWake(p); });
-        await this.pull();
+        let detach: (() => void) | null = null;
+        if (signal) {
+            const abort = () => {
+                if (this.controller !== controller || this.generation !== generation) return;
+                this.stop();
+            };
+            if (signal.aborted) abort();
+            else {
+                signal.addEventListener("abort", abort, { once: true });
+                detach = () => signal.removeEventListener("abort", abort);
+            }
+        }
+        if (!this.isCurrent(generation, controller)) {
+            detach?.();
+            return;
+        }
+        let unbind: (() => void) | null = null;
+        try {
+            unbind = this.deps.onPush(LobbyPush.GuildEvent, (p) => {
+                // Push dispatch is fire-and-forget; always observe the async branch.
+                void this.onWake(p, generation, controller).catch((e) => {
+                    if (this.isCurrent(generation, controller)) this.reportPullError(e);
+                });
+            });
+        } catch (e) {
+            this.stop();
+            throw e;
+        }
+        this.unbind = () => {
+            unbind?.();
+            detach?.();
+        };
+        await this.pull(generation, controller);
     }
 
     /** 离开页面：解绑推送 + 清 pendingWake（stop 后在途 pull 结束不得再补拉并回调已关闭页面） */
     stop(): void {
+        this.active = false;
+        this.generation++;
         this.unbind?.();
         this.unbind = null;
-        this.pendingWake = false;
+        this.pendingWakeGeneration = null;
+        const controller = this.controller;
+        this.controller = null;
+        controller?.abort();
     }
 
     get seq(): number {
         return this.latestSeq;
     }
 
-    private async onWake(p: { seq: number; guildId: number }): Promise<void> {
+    private async onWake(
+        p: { seq: number; guildId: number }, generation: number, controller: AbortController,
+    ): Promise<void> {
+        if (!this.isCurrent(generation, controller)) return;
         // 换会信号：水位跨会无意义，先归零再拉（防「高 seq 会 → 低 seq 会」后唤醒全被当迟到）
         if (p.guildId !== this.guildId) {
             this.resetForGuild(p.guildId);
-            await this.pull();
+            await this.pull(generation, controller);
             return;
         }
         if (p.seq <= this.latestSeq) return; // 迟到/重复唤醒（至少一次投递语义下正常）
-        await this.pull();
+        await this.pull(generation, controller);
     }
 
     private resetForGuild(guildId: number): void {
@@ -84,40 +131,63 @@ export class GuildLogic {
         if (hadState) this.onGapRefresh();
     }
 
-    /** 拉增量；拉取中再来唤醒 → 合流（结束后补一轮，不并发拉）；失败走 onPullError 不抛出 */
-    private async pull(): Promise<void> {
-        if (this.pulling) {
-            this.pendingWake = true;
+    /** 拉增量；拉取中再来唤醒 → 合流（结束后补一轮，不并发拉）；失败走 onPullError 不抛出。 */
+    private async pull(generation: number, controller: AbortController): Promise<void> {
+        if (!this.isCurrent(generation, controller)) return;
+        if (this.pullingGeneration === generation) {
+            this.pendingWakeGeneration = generation;
             return;
         }
-        this.pulling = true;
+        this.pullingGeneration = generation;
         try {
-            const res = await this.deps.getEvents(this.latestSeq);
+            const res = await this.deps.getEvents(this.latestSeq, controller.signal);
+            if (!this.isCurrent(generation, controller)) return;
             if (res.guildId !== this.guildId) {
                 // 服务端视角的工会与本地不一致（本设备换会未重建 logic / 他端换会）：
                 // 重置水位后立刻按新会补拉一轮
                 this.resetForGuild(res.guildId);
-                if (res.guildId !== 0) this.pendingWake = true;
+                if (res.guildId !== 0) this.pendingWakeGeneration = generation;
                 return;
             }
             const fresh = res.events.filter((e) => e.seq > this.latestSeq);
             if (fresh.length > 0) {
                 // 首拉（latestSeq=0）不算跳号；此后最老一条不衔接 = 窗口外
-                if (this.latestSeq > 0 && fresh[0].seq > this.latestSeq + 1) this.onGapRefresh();
+                if (this.latestSeq > 0 && fresh[0].seq > this.latestSeq + 1) {
+                    if (!this.isCurrent(generation, controller)) return;
+                    this.onGapRefresh();
+                }
+                if (!this.isCurrent(generation, controller)) return;
                 this.latestSeq = fresh[fresh.length - 1].seq;
                 this.onEvents(fresh);
             }
+            if (!this.isCurrent(generation, controller)) return;
             if (res.latestSeq > this.latestSeq) this.latestSeq = res.latestSeq; // seq 空洞（坏行）容忍
         } catch (e) {
             // 断线/超时属常态（ws 通道）：吞掉并回调，水位不动——下次唤醒或页面重进自愈。
             // ⛔ 不能任由 rejection 逃逸（wake 路径是 fire-and-forget，会成为 unhandledRejection）
-            this.onPullError(e);
+            if (this.isCurrent(generation, controller)) this.reportPullError(e);
         } finally {
-            this.pulling = false;
-            if (this.pendingWake) {
-                this.pendingWake = false;
-                void this.pull();
+            if (this.pullingGeneration !== generation) return;
+            this.pullingGeneration = null;
+            if (this.pendingWakeGeneration === generation) {
+                this.pendingWakeGeneration = null;
+                if (this.isCurrent(generation, controller)) {
+                    void this.pull(generation, controller).catch((e) => {
+                        if (this.isCurrent(generation, controller)) this.reportPullError(e);
+                    });
+                }
             }
+        }
+    }
+
+    private isCurrent(generation: number, controller: AbortController): boolean {
+        return this.active && this.generation === generation && this.controller === controller
+            && !controller.signal.aborted;
+    }
+
+    private reportPullError(e: unknown): void {
+        try { this.onPullError(e); } catch (callbackError) {
+            console.error("[GuildLogic] onPullError 回调异常", callbackError);
         }
     }
 }
