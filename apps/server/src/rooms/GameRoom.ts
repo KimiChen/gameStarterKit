@@ -29,6 +29,7 @@ import {
     type ISkillResultRes,
     type IChatRes,
     type IErrorRes,
+    type ErrorCodeType,
 } from "@game/shared";
 import { GameRoomState, PlayerState } from "./schema/GameRoomState";
 import { groupAdmitsZone, normalizeSId } from "../core/infra/config";
@@ -351,7 +352,7 @@ export class GameRoom extends Room {
         return false;
     }
 
-    private sendError(client: Client, code: number): void {
+    private sendError(client: Client, code: ErrorCodeType): void {
         const error: IErrorRes = { code, message: ErrorMessage[code] ?? ErrorMessage[ErrorCode.Unknown] };
         // Fake clients used by deterministic tests may not implement send; a malformed
         // packet must still be a no-op rather than throw into the room loop.

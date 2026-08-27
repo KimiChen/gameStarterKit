@@ -15,16 +15,22 @@ import {
     PROTOCOL_VERSION,
     RoomName,
     type ForceLogoutReasonType,
-    type IForceLogoutPush,
     type IRoomJoinOptions,
     type IRpcEnvelope,
     type IRpcReply,
+    type LobbyPushEnvelope,
     type LobbyPushMap,
     type LobbyRpcIdemType,
     type LobbyRpcType,
     type RpcErrCode,
     type RpcReq,
     type RpcRes,
+    validateLobbyPush,
+    validateLobbyRpcRequest,
+    validateLobbyRpcResponse,
+    validateRpcEnvelope,
+    validateRpcReply,
+    validateRoomJoinOptions,
 } from "../shared/index";
 
 const RPC_CLIENT_TIMEOUT_MS = 15_000;
@@ -203,6 +209,18 @@ interface IPending {
     reject: (e: RpcError) => void;
     timer: ReturnType<typeof setTimeout>;
     readonly slot: LobbySlot;
+    readonly type: LobbyRpcType;
+}
+
+function wireErrorText(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+}
+
+function warnInvalidWire(scope: string, error: unknown): void {
+    // Do not print the packet itself: RPC payloads can contain account data and
+    // join options can contain bearer tokens. The validator path is enough for
+    // local diagnostics while keeping logs free of secrets.
+    console.warn(`[WebSocketClient] 丢弃非法 ${scope}: ${wireErrorText(error)}`);
 }
 
 export class WebSocketClient {
@@ -260,7 +278,11 @@ export class WebSocketClient {
     ): LobbyConnectionOwnership {
         if (!this.client) throw new Error("[WebSocketClient] 未初始化，请先调用 init(endpoint)");
         const split = splitJoinControl(options, control);
-        const joinOptions = cloneJson({ ...split.options, v: PROTOCOL_VERSION }) as IRoomJoinOptions;
+        // Matchmaking options cross the websocket boundary verbatim. Validate a
+        // cloned copy so callers cannot mutate the identity after join starts.
+        const joinOptions = validateRoomJoinOptions(
+            cloneJson({ ...split.options, v: PROTOCOL_VERSION }),
+        ) as IRoomJoinOptions;
         const endpoint = this.endpoint;
         const client = this.client;
         const key = stableJson([endpoint, token, joinOptions])!;
@@ -373,26 +395,47 @@ export class WebSocketClient {
 
     private bindRoom(slot: LobbySlot, room: Colyseus.Room): void {
         const current = () => this.slot === slot && slot.room === room && !slot.cancelled;
-        room.onMessage(LOBBY_MSG_RPC, (reply: IRpcReply) => {
+        room.onMessage(LOBBY_MSG_RPC, (raw: unknown) => {
             if (!current()) return;
+            let reply: IRpcReply;
+            try {
+                reply = validateRpcReply(raw);
+            } catch (error) {
+                warnInvalidWire("Lobby RPC reply", error);
+                this.rejectMalformedReply(slot, raw, error);
+                return;
+            }
             const p = this.pending.get(reply.id);
             if (!p || p.slot !== slot) return;
             this.pending.delete(reply.id);
             clearTimeout(p.timer);
-            if (reply.ok) p.resolve(reply.data);
-            else {
+            if (reply.ok) {
+                try {
+                    const data = validateLobbyRpcResponse(p.type, reply.data);
+                    p.resolve(data);
+                } catch (error) {
+                    warnInvalidWire(`Lobby RPC response ${p.type}`, error);
+                    p.reject(this.invalidPayloadError(`response ${p.type}`, error));
+                }
+            } else {
                 const code = (reply.err?.code ?? "INTERNAL") as RpcErrCode;
                 if (code === "AUTH_EPOCH_STALE" || code === "AUTH_REQUIRED" || code === "ACCOUNT_BANNED") {
                     notifyAuthInvalid(code as AuthInvalidReason);
                 }
-                p.reject(new RpcError(code, reply.err?.msg ?? ""));
+                p.reject(new RpcError(code, reply.err.msg));
             }
         });
-        room.onMessage(LOBBY_MSG_PUSH, (msg: { type: string; data: unknown }) => {
+        room.onMessage(LOBBY_MSG_PUSH, (raw: unknown) => {
             if (!current()) return;
+            let msg: LobbyPushEnvelope;
+            try {
+                msg = validateLobbyPush(raw);
+            } catch (error) {
+                warnInvalidWire("Lobby push", error);
+                return;
+            }
             if (msg.type === LobbyPush.ForceLogout) {
-                const r = (msg.data as IForceLogoutPush | undefined)?.reason;
-                if (r) notifyAuthInvalid(FORCE_REASON_MAP[r]);
+                notifyAuthInvalid(FORCE_REASON_MAP[msg.data.reason]);
             }
             const set = this.pushHandlers.get(msg.type);
             if (!set) return;
@@ -473,14 +516,34 @@ export class WebSocketClient {
         const room = slot?.room;
         if (!room || !slot) return Promise.reject(new RpcError("CONN_LOST", "未加入大厅房"));
         const id = `r${++this.seq}`;
+        let wirePayload: RpcReq<T>;
+        let envelope: IRpcEnvelope;
+        try {
+            wirePayload = validateLobbyRpcRequest(type, payload);
+            envelope = validateRpcEnvelope({ id, type, payload: wirePayload });
+        } catch (error) {
+            warnInvalidWire(`Lobby RPC request ${String(type)}`, error);
+            return Promise.reject(this.invalidPayloadError(`request ${String(type)}`, error));
+        }
         return new Promise<RpcRes<T>>((resolve, reject) => {
             const timer = setTimeout(() => {
                 this.pending.delete(id);
                 reject(new RpcError("TIMEOUT", type));
             }, RPC_CLIENT_TIMEOUT_MS);
-            this.pending.set(id, { resolve: resolve as (data: unknown) => void, reject, timer, slot });
-            const envelope: IRpcEnvelope = { id, type, payload };
-            room.send(LOBBY_MSG_RPC, envelope);
+            this.pending.set(id, {
+                resolve: resolve as (data: unknown) => void,
+                reject,
+                timer,
+                slot,
+                type,
+            });
+            try {
+                room.send(LOBBY_MSG_RPC, envelope);
+            } catch (error) {
+                clearTimeout(timer);
+                this.pending.delete(id);
+                reject(new RpcError("CONN_LOST", wireErrorText(error)));
+            }
         });
     }
 
@@ -526,5 +589,22 @@ export class WebSocketClient {
             p.reject(new RpcError(code));
             this.pending.delete(id);
         }
+    }
+
+    private invalidPayloadError(scope: string, error: unknown): RpcError {
+        return new RpcError("INVALID_PAYLOAD", `${scope}: ${wireErrorText(error)}`);
+    }
+
+    /** Reject a pending request when a malformed reply carries a usable id. */
+    private rejectMalformedReply(slot: LobbySlot, raw: unknown, error: unknown): void {
+        if (typeof raw !== "object" || raw === null) return;
+        let id: unknown;
+        try { id = (raw as { id?: unknown }).id; } catch { return; }
+        if (typeof id !== "string") return;
+        const pending = this.pending.get(id);
+        if (!pending || pending.slot !== slot) return;
+        this.pending.delete(id);
+        clearTimeout(pending.timer);
+        pending.reject(this.invalidPayloadError("reply", error));
     }
 }
