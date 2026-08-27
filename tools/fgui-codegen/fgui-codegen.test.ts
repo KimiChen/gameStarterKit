@@ -2,9 +2,9 @@
 // 运行: npm run test:fgui
 import assert from "node:assert";
 import { test } from "node:test";
-import { parseFguiComponent } from "./parseFgui";
+import { findFguiElement, parseFguiComponent } from "./parseFgui";
 import {
-  bindingFields, emitAutoFieldBlock, emitFguiViewScaffold, checkContract, tsTypeOf, type BindingField,
+  bindingFields, nestedBindingFields, emitAutoFieldBlock, emitFguiViewScaffold, checkContract, tsTypeOf, type BindingField,
 } from "./binding";
 
 // 仿真 FairyGUI 组件 XML(OpponentHud):标题文本 + 虚拟列表 + 按钮 + loader + 普通 group + graph。
@@ -97,6 +97,47 @@ test("契约校验:把 GList 名安到 loader 上 → mismatched 报红(前缀/�
   assert.strictEqual(r.ok, false);
   assert.strictEqual(r.mismatched.length, 1);
   assert.ok(r.mismatched[0].includes("期望 GList，实际 GLoader"));
+});
+
+test("递归结构契约:嵌套元素按 path、列表模板/资源和 controller/relation 可检", () => {
+  const xml = `<component><controller name="mode" pages="0,a,1,b" selected="1"/><displayList>`
+    + `<component name="jb_panel"><text name="txt_title"/><list name="lst_rows" defaultItem="ui://pkg/item">`
+    + `<item url="ui://pkg/item"/><relation target="jb_panel" sidePair="width-width"/></list></component>`
+    + `</displayList></component>`;
+  const comp = parseFguiComponent(xml);
+  assert.equal(findFguiElement(comp, "jb_panel.txt_title")?.tag, "text");
+  assert.equal(comp.elements[0].children?.[0].path, "jb_panel.txt_title");
+  assert.equal(comp.elements[0].children?.[1].itemCount, 1);
+  assert.deepEqual(comp.elements[0].children?.[1].itemUrls, ["ui://pkg/item"]);
+  assert.deepEqual(comp.controllers, [{ name: "mode", pages: "0,a,1,b", selected: 1 }]);
+  assert.deepEqual(comp.relations, [{ target: "jb_panel", sidePair: "width-width" }]);
+  assert.deepEqual(comp.assetReferences.map((r) => r.url), ["ui://pkg/item", "ui://pkg/item"]);
+  assert.deepEqual(nestedBindingFields(comp), [
+    { name: "txt_title", path: "jb_panel.txt_title", tsType: "GTextField" },
+    { name: "lst_rows", path: "jb_panel.lst_rows", tsType: "GList" },
+  ]);
+  assert.equal(checkContract(comp, [{ name: "txt_title", path: "jb_panel.txt_title", tsType: "GTextField" }]).ok, true);
+});
+
+test("XML tokenizer:属性值含 `>`、单引号和注释不会截断结构", () => {
+  const comp = parseFguiComponent(`<!-- comment --><component><displayList><text name="txt_x" text="a > b"/><text name='txt_ignored'/></displayList></component>`);
+  assert.deepEqual(comp.elements.map((e) => e.name), ["txt_x", "txt_ignored"]);
+});
+
+test("解析:省略 displayList 时仍读取根 component 的直接元素", () => {
+  const comp = parseFguiComponent(`<component><text name="txt_root"/><children><component name="jb_panel"><text name="txt_nested"/></component></children></component>`);
+  assert.deepEqual(comp.elements.map((e) => e.name), ["txt_root", "jb_panel"]);
+  assert.deepEqual(comp.nestedElements.map((e) => e.path), ["jb_panel.txt_nested"]);
+});
+
+test("嵌套契约必须显式使用 path，不能用同名子元素满足直接字段", () => {
+  const comp = parseFguiComponent(`<component><displayList><component name="jb_panel"><text name="txt_title"/></component></displayList></component>`);
+  assert.deepEqual(checkContract(comp, [{ name: "txt_title", tsType: "GTextField" }]), {
+    ok: false, missing: ["txt_title"], mismatched: [],
+  });
+  assert.deepEqual(checkContract(comp, [{ name: "txt_title", path: "jb_panel.txt_title", tsType: "GTextField" }]), {
+    ok: true, missing: [], mismatched: [],
+  });
 });
 
 // ── AUTO 区块幂等重写（docs/CLIENT.md §5）────────────────────────────

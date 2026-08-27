@@ -1,0 +1,1861 @@
+{
+  "version": 1,
+  "sourceRoot": "apps/art/fairygui/assets",
+  "exportRoot": "apps/Cocos/assets/resources/ui",
+  "packages": [
+    {
+      "name": "Common_Btn",
+      "id": "qdouwnr2",
+      "source": [
+        {
+          "path": "apps/art/fairygui/assets/Common_Btn/BtnCloseFullScreen.xml",
+          "sha256": "49d5148740bb4e4e05d0ac3c21534572421dfb13f59a680761fd23bd31286168"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_Btn/BtnCommon.xml",
+          "sha256": "e4c6381ae25e9250831e2263ff2e84e5a2bd0c590df6db2a82dedaa957355586"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_Btn/BtnCommon1.xml",
+          "sha256": "898116a59121779261b80035292233670ea56f65da3789f3d56fad0cdd4f4bcd"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_Btn/BtnCommon210x70.xml",
+          "sha256": "f8ac866538023d2f427045703fffc298e55c6f1b044e238c86648e93e1321ede"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_Btn/BtnCopy.xml",
+          "sha256": "da12a023fa4c522852ad3bf01cc0b87a4ff033dd746a152d3eb8436c18e9f86b"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_Btn/BtnEmpty.xml",
+          "sha256": "942d0516fe00ce876d577513f5240571624610efdd51536538a28630ed407c61"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_Btn/BtnPlus1.xml",
+          "sha256": "bdb94f89b21e9d9d9271bd31d54af217313d3214c9d99687d7a2cf28a2b8bfe0"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_Btn/BtnPurple210x70.xml",
+          "sha256": "b3c03e48da0dceebb24941ece062898b8c4b513620df8055872c643a580940c4"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_Btn/ButtonClose.xml",
+          "sha256": "e38eac9100dbdd26da4808e43cbe389d732e53e14ff8f1005fd5609d1729f1cf"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_Btn/Checkbox.xml",
+          "sha256": "1506b1897d2e33027d82544e8d6d18410300974f8eee2fb6622ac06d3206b222"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_Btn/package.xml",
+          "sha256": "de5c1054950d726ab3fc964993df20b7a6572d8e20afd710d99d6762b387c618"
+        }
+      ],
+      "components": [
+        {
+          "name": "BtnCloseFullScreen.xml",
+          "exported": true
+        },
+        {
+          "name": "BtnCommon.xml",
+          "exported": true
+        },
+        {
+          "name": "BtnCommon1.xml",
+          "exported": true
+        },
+        {
+          "name": "BtnCommon210x70.xml",
+          "exported": true
+        },
+        {
+          "name": "BtnCopy.xml",
+          "exported": true
+        },
+        {
+          "name": "BtnEmpty.xml",
+          "exported": true
+        },
+        {
+          "name": "BtnPlus1.xml",
+          "exported": true
+        },
+        {
+          "name": "BtnPurple210x70.xml",
+          "exported": true
+        },
+        {
+          "name": "ButtonClose.xml",
+          "exported": true
+        },
+        {
+          "name": "Checkbox.xml",
+          "exported": true
+        }
+      ],
+      "resources": [
+        {
+          "kind": "component",
+          "id": "i8eo0",
+          "name": "BtnCommon.xml",
+          "exported": true
+        },
+        {
+          "kind": "component",
+          "id": "uzey29",
+          "name": "BtnEmpty.xml",
+          "exported": true
+        },
+        {
+          "kind": "component",
+          "id": "vjb22f",
+          "name": "BtnCommon210x70.xml",
+          "exported": true
+        },
+        {
+          "kind": "component",
+          "id": "bazm2j",
+          "name": "Checkbox.xml",
+          "exported": true
+        },
+        {
+          "kind": "component",
+          "id": "k3os2o",
+          "name": "BtnPurple210x70.xml",
+          "exported": true
+        },
+        {
+          "kind": "component",
+          "id": "hjuc2u",
+          "name": "BtnPlus1.xml",
+          "exported": true
+        },
+        {
+          "kind": "component",
+          "id": "n9ab2w",
+          "name": "BtnCloseFullScreen.xml",
+          "exported": true
+        },
+        {
+          "kind": "component",
+          "id": "bdm02z",
+          "name": "BtnCopy.xml",
+          "exported": true
+        },
+        {
+          "kind": "component",
+          "id": "r72w74k",
+          "name": "BtnCommon1.xml",
+          "exported": true
+        },
+        {
+          "kind": "component",
+          "id": "it9774l",
+          "name": "ButtonClose.xml",
+          "exported": true
+        }
+      ],
+      "outputs": [
+        {
+          "path": "apps/Cocos/assets/resources/ui/Common_Btn.bin",
+          "sha256": "914c206aaac3f7e4a0a159d2eba278f15738299129ba5229a62b06a09f6d3495"
+        }
+      ]
+    },
+    {
+      "name": "Common_ComboBox",
+      "id": "lxjdkhpj",
+      "source": [
+        {
+          "path": "apps/art/fairygui/assets/Common_ComboBox/ComboBoxCommon2.xml",
+          "sha256": "ab54421e5f529e14bde4b415a71914eabc5dd64b3d4df08c665a9aeb7b0c470e"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_ComboBox/RGBA/btn_close.png",
+          "sha256": "5cedf390e7a024cd710596308d6ad47b8ff9963bec79023a0cab5065636e1d45"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_ComboBox/RGBA/btn_open.png",
+          "sha256": "51a524fc943a3a0f38662d3188f22456a53fef459c1b5f4fb82aa0b77db4470e"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_ComboBox/package.xml",
+          "sha256": "9165a24865b642b28a769b6d1d2da7e3909651e0570518cd899243ff0d3a243b"
+        }
+      ],
+      "components": [
+        {
+          "name": "ComboBoxCommon2.xml",
+          "exported": true
+        }
+      ],
+      "resources": [
+        {
+          "kind": "image",
+          "id": "c7kqq",
+          "name": "btn_close.png",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "c7kqr",
+          "name": "btn_open.png",
+          "exported": false
+        },
+        {
+          "kind": "component",
+          "id": "e7rkw",
+          "name": "ComboBoxCommon2.xml",
+          "exported": true
+        }
+      ],
+      "outputs": [
+        {
+          "path": "apps/Cocos/assets/resources/ui/Common_ComboBox.bin",
+          "sha256": "53914db761e92a4892b4ef081e461aa0a564300e09fb4a2de178612637d7fe2c"
+        }
+      ]
+    },
+    {
+      "name": "Common_Component",
+      "id": "fx542vng",
+      "source": [
+        {
+          "path": "apps/art/fairygui/assets/Common_Component/GoContainer.xml",
+          "sha256": "59328fe76efcd0412973e5788ff945c1386a5075279bc02a71e17fa16b7cd557"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_Component/Progress.xml",
+          "sha256": "989266541566d8938963a4cf228f42590b6180349051a34fe0df63cfe17d691e"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_Component/package.xml",
+          "sha256": "7f3d64166ede755c2ab7c90208962ac64873d64e71cff4ee012aaf1e38f3d348"
+        }
+      ],
+      "components": [
+        {
+          "name": "GoContainer.xml",
+          "exported": true
+        },
+        {
+          "name": "Progress.xml",
+          "exported": true
+        }
+      ],
+      "resources": [
+        {
+          "kind": "component",
+          "id": "vf7ev",
+          "name": "GoContainer.xml",
+          "exported": true
+        },
+        {
+          "kind": "component",
+          "id": "y121x",
+          "name": "Progress.xml",
+          "exported": true
+        }
+      ],
+      "outputs": [
+        {
+          "path": "apps/Cocos/assets/resources/ui/Common_Component.bin",
+          "sha256": "87c949b3001b596465fab141820f36fb53d062205cfe5119713aeda68e98629c"
+        }
+      ]
+    },
+    {
+      "name": "Common_RGBA",
+      "id": "egjqb8zp",
+      "source": [
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/Arrow/bg_guide_talk_arrow.png",
+          "sha256": "accc0b26cb790748015bea82e51bcf6eb32cc0d83d153fe096937dd30d1e5c77"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/Arrow/icon_arrow.png",
+          "sha256": "6ae25d366565f9fc43cc36b91360c166588cada99f5656a3cdbc6c85ba902404"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/Arrow/icon_arrow_red.png",
+          "sha256": "d5ef65bbe07951dac9d70961acc20200ce0a4fd17f6f0b5e8cc2e04a025d4369"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/Arrow/icon_arrow_up_green.png",
+          "sha256": "0e1d067bcd7d800f6f4c174c1805f9ef693d5dcbf476ed111b5d5b4f99ca8415"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/Arrow/icon_red_arrow.png",
+          "sha256": "8c7461c4dd07fa0b29f6cbf9ae0ce318c43a00693fa7a06b7d1a5c80b8bb030d"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/ChatBar/chatbar_friend.png",
+          "sha256": "029bb70352e358827b383644cd348df50acd0787b9f87b2eaf368882f8bfe1de"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/ChatBar/chatbar_mail.png",
+          "sha256": "feb0db964d182e90767a97ed4f9e13e839cb9fa4b394688d69634cd0e7747a02"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/ChatBar/chatbar_system.png",
+          "sha256": "6bc98a0ecb5d4a63cae52115ebba482ce846a2843c50317dd2c7eea92b2c3534"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/Overlay/bg_overlay_bottom.png",
+          "sha256": "7261a79572ac15167fbb311384a94dc3531b755754a442d09b87fc61a5ff3f02"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/Overlay/nav_bonus_1.png",
+          "sha256": "88c7361734534479b7fb8196b2eda20f1923486dfba381bd9e6c471910f924ff"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/Overlay/nav_bonus_2.png",
+          "sha256": "2aa79b58d1d9a8252f8b4c9451b3fce2d6726aff68b99219d0b2055c0dbcfa0d"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/Overlay/nav_equip_1.png",
+          "sha256": "2b5fd912c6ab59e01f6a8dac196b6bbf18886ad490ebd587d3f7b06f3a8c7504"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/Overlay/nav_equip_2.png",
+          "sha256": "799e816872363017458773be13a5fae489ef69ac5fc9d7058a127c2d94d55bb4"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/Overlay/nav_fabao_1.png",
+          "sha256": "b85067423389a28e37d994700508b2eb1a7038db97e7dd958e6dd4d81fd698fc"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/Overlay/nav_fabao_2.png",
+          "sha256": "ad9acbcee9782f9fcbf1838f8738de1216a57beff84bac4c71547876053ca25e"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/Overlay/nav_gongfa_1.png",
+          "sha256": "86a5d36d358a999999083070e73d60585c3d13fb681d8db46d9d0e66549bb838"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/Overlay/nav_gongfa_2.png",
+          "sha256": "765f1a32deee4fcf4b2fb67c030447dd1becb8338de611f11da05b228f306174"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/Overlay/nav_guild_1.png",
+          "sha256": "df8c490e4997694ba86e57471c749d3c9f126a2953785c3b9e2f9e18f1ec0a84"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/Overlay/nav_guild_2.png",
+          "sha256": "c28f43730b21d5cad827ca3d7f619e76877a87541e912118136851f5b0ee7dcd"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/Overlay/nav_kui_1.png",
+          "sha256": "3bac0ac5d9c6f452c123369c15a23178a30190c76eeb4dcf274d7b01088f7d7d"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/Overlay/nav_lilian_1.png",
+          "sha256": "04b172af524066d6cbb912ee630e11610f372d45acd5727c0f4bd5cab9271d67"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/Overlay/nav_lilian_2.png",
+          "sha256": "5f686188c2af7ab540905f264e9defc294683017b869f59d252eacc500a93a93"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/Overlay/nav_selected.png",
+          "sha256": "28d7585195548cc62cb3f3bc3cf3cb654c99214d17d7b49fdd5793fc57132e3d"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/Overlay/nav_unselected.png",
+          "sha256": "05b3231d0e125d6dc138a1a431ddd338661c151121b03d8ea18282a8a521f6cc"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/Overlay/nav_xiulian_1.png",
+          "sha256": "a0f2a98aec4d2248c35e3b8c1c511c4168e2c52f4ee15eb07d1617ef5e88ffdd"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/Overlay/nav_xiulian_2.png",
+          "sha256": "e6c4c53e29c04ea345f1149cd4beed17bfe854d436ccdd84b77f4ce9ec14a9fb"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/ProgressBar/Style1/bg_progress_style1_green.png",
+          "sha256": "b666c76bc87f4b64cf806b8f5329f6d8d8f95f59afcf4b49564c6d4ce0869867"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/ProgressBar/Style1/bg_progress_style1_red.png",
+          "sha256": "35206349f511d1e484582d5fdb3377e4b0d728ea17d1f2472fe15a93f78a9e3f"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/ProgressBar/Style1/bg_progress_style1_yellow.png",
+          "sha256": "c1c11a691bbc413e1922a40581cbf4f8ab9babb350d8d20aec63720c2d478158"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/ProgressBar/StyleBg/bg_progress_style_1.png",
+          "sha256": "4f6dc4b525861679c5b7dcd28458dd00dd04776fe3400409f838a7458b0fab10"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/ProgressBar/StyleBg/bg_progress_style_2.png",
+          "sha256": "6eca1df70b9e7ab74262d4015bceb765d969b2550416edcbd21bb560f71d0a92"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/ProgressBar/StyleBg/bg_progress_style_3.png",
+          "sha256": "ed7ec044374c19bc65a32ed3ae71738e859292dfd5ba3c4674e14da00b9123dc"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/ProgressBar/StyleBg/bg_progress_style_4.png",
+          "sha256": "9824300e7d9ae4dd4fd553d0f63c0a23ae4d4af8f02d85efa1568d30477c17af"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/bg_cbox.png",
+          "sha256": "954e203faae93a1ce72ce0408165016a5cc8ae2f4cfb39b9350fe1b5d4ad0ce8"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/bg_chat.png",
+          "sha256": "283d88c355dda0b2d916525d6bd8baf86a3cf63ecca9dd55c27f602c74b19a18"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/bg_pro1.png",
+          "sha256": "bc833d98c5f461fbafbfa7025dc09372aaa5f48b27fa8ac310dcb4b24158da7d"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/bg_tab_dark1.png",
+          "sha256": "8ba84ef4c43e775df4889bc2bf38ce2515b2fbf2b6b07f61902369a129ec1e7f"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/bg_tab_light1.png",
+          "sha256": "2665976397b2ddf3f3815d4fb91bc47afd4060cafce1594cfe52ab616a3916b9"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/bg_top_title_purple.png",
+          "sha256": "816f5f33fd341181b67183dce09bc3c05e6f0c93426153222a1e9257fafcf073"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/bot_bg_fix.png",
+          "sha256": "e7a4d52ee472259889ff9e359bd45d7cef2263372affa68eb9b0271f6f24dd18"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/btn_back.png",
+          "sha256": "8d6db9b9b5070c126a10979fb251fa6a7a31976d9cb2da66a74e11a997c7254a"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/btn_close.png",
+          "sha256": "453c6a276c7b75e90c2d530ff3f2f4f6be25e5983df48aefff90bec622dc4091"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/btn_com_disabled.png",
+          "sha256": "5904f6acdcf3766ffa49738d31ba8d1679956e2f43b99a6f34e9710530b3e9e5"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/btn_copy.png",
+          "sha256": "4250a4529a3895950f2caeb6671e1aa2c601bfe594e39d6fadeb2c368c4f46cd"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/btn_green.png",
+          "sha256": "a8b400f0b699d212978a387b406dbb19cfd7d0f997b77122dd4584f0b4f5fe77"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/btn_plus.png",
+          "sha256": "cb550dd81eb86766c7c0707c086d3513e884e1c336f51b147807aeed90a4f61c"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/btn_plus_disabled.png",
+          "sha256": "389961f423c2b21eb158ba6dd4d96a06b942cc4b9d5d55063f112956f337b2e0"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/btn_purple.png",
+          "sha256": "d35d7ad16229d7eac599903351d76e83f6bf657f65a0892bf9f84b6087a8ac10"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/btn_red.png",
+          "sha256": "7a64b9a10da3dcd9374beed02bd1f1e2df7f5bf5c3b939f2498cb2f417598cb3"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/chatbar_icon.desc",
+          "sha256": "7ec6fd525fcff74f7b215162366ad8f272df9a3924d7dadc546d874abe65ea17"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/dialog_bg.png",
+          "sha256": "dc36772a6ea25a62005600aad38a7852a1941732af43f4205380865fcf0eb2cf"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/dialog_content.png",
+          "sha256": "4e14e1d22f495d3d20426f4ab5f751b5b2174090c7dd28af977c80f803ac18a5"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/icon_cbox_selected.png",
+          "sha256": "cd3b64d562669b7ff9d6c2c74d8dd4ee8cf891e64048f8555fc3141411c81f20"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/icon_chat.png",
+          "sha256": "faf84c064538b38f7934ac708f3f21ffe9ed09ca372c986918711d0af44a533c"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/icon_help.png",
+          "sha256": "05498c6e99887dcb040124dd8e70966c9727d022c413dbf74317f7331138f932"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/icon_prop_mask.png",
+          "sha256": "1df9e484b2169173911b5deb1c49c677e82e96f5ed965acbf605060f885c5fe8"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/icon_red_dot2.png",
+          "sha256": "421f1b9e21b144403094273fe65996e6da551bc4665f343dfa1c5cf4be16bdc2"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/icon_spin.png",
+          "sha256": "9e9db291cf5fb1757f354a835a23ecf20608ce7d41aced55c0ea3a6e9f8ddc52"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/img_content.png",
+          "sha256": "f3e5534d4fd53e23a9fcb73c60cf1bbe7abad1e038bd2618995f4cdd7f53bd3f"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/img_toggle.png",
+          "sha256": "ef711398ab263888072b5401eb2d12772fcdf514eeab14a0d01a62fa7c145768"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/mask.png",
+          "sha256": "1992a5a728c6413f6cd22d95800ddfffd58061bd8fbe35ae3757e9dc4cad6809"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/nav_overlay.desc",
+          "sha256": "da9f0e73a0d7498b3eb8091d0cc9336305e32043d6587ff4b530f592d8ec90a6"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/nav_selected.desc",
+          "sha256": "67fa35117fbffdfd0f64f7d9465292352782816b60b2abc38e5b079ddd87b16b"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/overlay_bottom_bg.png",
+          "sha256": "30624a2361461f392bc0834f0bfa4618a8b891af1217ddd6ee8042f0423693ce"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/package.xml",
+          "sha256": "b9f91f1fc7eaa7557097448f4e88c3f7b62559371281ce1e59c2f7c36d3ed9bb"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Common_RGBA/prop_label_icon.desc",
+          "sha256": "b9abaa1a9f286a6aca2bb4ca540066952f43615c95beffb6592589c40697610a"
+        }
+      ],
+      "components": [],
+      "resources": [
+        {
+          "kind": "image",
+          "id": "pjz8i",
+          "name": "btn_purple.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "pjz8j",
+          "name": "btn_red.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "pjz81d",
+          "name": "bg_pro1.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "pjz81n",
+          "name": "icon_arrow.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "em771o",
+          "name": "btn_plus.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "wla11u",
+          "name": "btn_green.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "rhop27",
+          "name": "icon_help.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "wegn29",
+          "name": "dialog_bg.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "wegn2a",
+          "name": "dialog_content.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "wegn2b",
+          "name": "btn_close.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "wegn2c",
+          "name": "mask.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "dkzf2d",
+          "name": "btn_com_disabled.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "bazm2p",
+          "name": "bg_cbox.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "bazm2q",
+          "name": "icon_cbox_selected.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "oknk3k",
+          "name": "icon_arrow_red.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "i5av3k",
+          "name": "bg_tab_dark1.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "i5av3l",
+          "name": "bg_tab_light1.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "bdm03v",
+          "name": "btn_copy.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "bdm030",
+          "name": "btn_plus_disabled.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "rze123",
+          "name": "bg_chat.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "pjz819",
+          "name": "icon_chat.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "pjz8s",
+          "name": "nav_equip_1.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "pjz81h",
+          "name": "nav_equip_2.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "pjz81k",
+          "name": "nav_fabao_1.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "pjz81e",
+          "name": "nav_fabao_2.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "t4o744",
+          "name": "nav_gongfa_1.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "pjz89",
+          "name": "nav_gongfa_2.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "oq626a",
+          "name": "nav_kui_1.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "pjz8y",
+          "name": "nav_lilian_1.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "pjz813",
+          "name": "nav_lilian_2.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "pjz817",
+          "name": "nav_selected.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "pjz87",
+          "name": "nav_unselected.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "pjz810",
+          "name": "nav_xiulian_1.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "pjz816",
+          "name": "nav_xiulian_2.png",
+          "exported": true
+        },
+        {
+          "kind": "misc",
+          "id": "vvlx1s",
+          "name": "nav_overlay.desc",
+          "exported": false
+        },
+        {
+          "kind": "misc",
+          "id": "i8ep6d",
+          "name": "nav_selected.desc",
+          "exported": false
+        },
+        {
+          "kind": "misc",
+          "id": "ba1mc60",
+          "name": "prop_label_icon.desc",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "uguqc5y",
+          "name": "icon_red_arrow.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "p3ll4z",
+          "name": "bg_progress_style1_green.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "p3ll50",
+          "name": "bg_progress_style1_yellow.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "wla11v",
+          "name": "bg_progress_style_1.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "7qam3i",
+          "name": "bg_progress_style_2.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "babndi3",
+          "name": "bg_progress_style_3.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "mxn1czg",
+          "name": "icon_arrow_up_green.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "qc3c5z",
+          "name": "img_content.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "rqbrdip",
+          "name": "icon_red_dot2.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "smlbdjq",
+          "name": "nav_bonus_2.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "smlbdjr",
+          "name": "nav_bonus_1.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "e994djx",
+          "name": "overlay_bottom_bg.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "e994djy",
+          "name": "chatbar_system.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "e994djz",
+          "name": "chatbar_friend.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "e994dk0",
+          "name": "chatbar_mail.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "79gld",
+          "name": "bg_guide_talk_arrow.png",
+          "exported": true
+        },
+        {
+          "kind": "misc",
+          "id": "f1mrdka",
+          "name": "chatbar_icon.desc",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "pf3fe",
+          "name": "icon_spin.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "e7rkv",
+          "name": "img_toggle.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "jsc79",
+          "name": "bg_top_title_purple.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "jkdpdl7",
+          "name": "btn_back.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "yikicq",
+          "name": "icon_prop_mask.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "na834z",
+          "name": "bg_overlay_bottom.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "mp25awrsi",
+          "name": "nav_guild_1.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "mp25awrsj",
+          "name": "nav_guild_2.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "q3irawrsx",
+          "name": "bg_progress_style1_red.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "kvyzawrt0",
+          "name": "bg_progress_style_4.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "qr3w6awrtf",
+          "name": "bot_bg_fix.png",
+          "exported": true
+        }
+      ],
+      "outputs": [
+        {
+          "path": "apps/Cocos/assets/resources/ui/Common_RGBA.bin",
+          "sha256": "9e06a419a4d6ecfbafe00190069f4e5163c466bb721989408b5d6d4fccd20b5e"
+        },
+        {
+          "path": "apps/Cocos/assets/resources/ui/Common_RGBA_atlas0.png",
+          "sha256": "033913709a59f8945de25478aff83f2151966b6413ad5d7bfaa1357f327f85c6"
+        }
+      ]
+    },
+    {
+      "name": "Dynamic_Login",
+      "id": "2qj3aviv",
+      "source": [
+        {
+          "path": "apps/art/fairygui/assets/Dynamic_Login/ServerStatus/login_status_1.png",
+          "sha256": "4fa1b04802ae24479636564079ddc433efddc103ea2f17af1e1a67d885f00b00"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Dynamic_Login/ServerStatus/login_status_10.png",
+          "sha256": "34e2b14199834e9278fe3b4edf1f84f1e09e5b9f058532b705d702ebcbaf0d6e"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Dynamic_Login/ServerStatus/login_status_2.png",
+          "sha256": "4e0d91b0d827829f2523b116e12c5a2d4290509d45f1d9059ed3b3a51fdf987b"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Dynamic_Login/ServerStatus/login_status_9.png",
+          "sha256": "1578bdef06b33178a008756661b6929a7c295d7f480f04772543e11bd4d1108d"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Dynamic_Login/package.xml",
+          "sha256": "4bd93772e3cb7aacb7923590c4492b5079ac5d7475b9c9c5f6c7d1207666ab32"
+        }
+      ],
+      "components": [],
+      "resources": [
+        {
+          "kind": "image",
+          "id": "ugqr0",
+          "name": "login_status_1.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "ugqr1",
+          "name": "login_status_10.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "ugqr2",
+          "name": "login_status_2.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "ugqr3",
+          "name": "login_status_9.png",
+          "exported": true
+        }
+      ],
+      "outputs": [
+        {
+          "path": "apps/Cocos/assets/resources/ui/Dynamic_Login.bin",
+          "sha256": "dc7fe75e1a9d2605fd4ebdc0c45ffa3b14ebb86d1b61fd100898205dca4706e5"
+        },
+        {
+          "path": "apps/Cocos/assets/resources/ui/Dynamic_Login_atlas0.png",
+          "sha256": "15e0866e2c87a9aea3cae758f7e0f2e2fb17bcd86eba9d95e3394e2825d0177b"
+        }
+      ]
+    },
+    {
+      "name": "Dynamic_Spine",
+      "id": "y58q4zu3",
+      "source": [
+        {
+          "path": "apps/art/fairygui/assets/Dynamic_Spine/Login/1/loading_animals.atlas.txt",
+          "sha256": "94a5f6cc7ca2dd350157a26c01d8cbe0c95df602ebbd96bf53894dc5c040b57c"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Dynamic_Spine/Login/1/loading_animals.png",
+          "sha256": "df21297b910ab82f9948324314eda87ff227f48d8b0636d7db0f2872ab72c0a2"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Dynamic_Spine/Login/1/loading_animals.skel",
+          "sha256": "8efc27b15c71dcee9385cda084643d43b9c96455a8f2c3e8cd73a53d64218f6b"
+        },
+        {
+          "path": "apps/art/fairygui/assets/Dynamic_Spine/package.xml",
+          "sha256": "c2ee3403be71be30b4577cc28c5af9b5e9137c299b15f2ffe02115dafa1aec3f"
+        }
+      ],
+      "components": [],
+      "resources": [
+        {
+          "kind": "misc",
+          "id": "r9po1a7kmz5",
+          "name": "loading_animals.atlas.txt",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "r9po1a7kmz6",
+          "name": "loading_animals.png",
+          "exported": false
+        },
+        {
+          "kind": "spine",
+          "id": "r9po1a7kmz4",
+          "name": "loading_animals.skel",
+          "exported": true
+        }
+      ],
+      "outputs": [
+        {
+          "path": "apps/Cocos/assets/resources/ui/Dynamic_Spine.bin",
+          "sha256": "d9e161b8c0a29f1705fb4a05f31a66af622fb0d8d214a5d9f33e768c0aac350f"
+        },
+        {
+          "path": "apps/Cocos/assets/resources/ui/loading_animals.atlas.txt",
+          "sha256": "94a5f6cc7ca2dd350157a26c01d8cbe0c95df602ebbd96bf53894dc5c040b57c"
+        },
+        {
+          "path": "apps/Cocos/assets/resources/ui/loading_animals.png",
+          "sha256": "df21297b910ab82f9948324314eda87ff227f48d8b0636d7db0f2872ab72c0a2"
+        },
+        {
+          "path": "apps/Cocos/assets/resources/ui/loading_animals.skel",
+          "sha256": "8efc27b15c71dcee9385cda084643d43b9c96455a8f2c3e8cd73a53d64218f6b"
+        }
+      ]
+    },
+    {
+      "name": "L10n_zh_hans",
+      "id": "15js40c9",
+      "source": [
+        {
+          "path": "apps/art/fairygui/assets/L10n_zh_hans/Font/siyuanheitiCNRegular.ttf",
+          "sha256": "1846353947485b97808030078b5856b7be22e1b270e3231d907a0798bfd0ff14"
+        },
+        {
+          "path": "apps/art/fairygui/assets/L10n_zh_hans/Image/Login/login_ageTip.png",
+          "sha256": "bc998c598a03f7b5848841f6b413da0df038d33facc43bd9344ba3e53e71ef53"
+        },
+        {
+          "path": "apps/art/fairygui/assets/L10n_zh_hans/Image/Login/login_enterGame.png",
+          "sha256": "4c4025829cebfec153262be2aca5230d02389b2153a3bf28c02803b198256504"
+        },
+        {
+          "path": "apps/art/fairygui/assets/L10n_zh_hans/Image/Login/login_logo.png",
+          "sha256": "67f2320992c29aef7deb88d184653a016f69e15a78b428168d9174b1cc9270eb"
+        },
+        {
+          "path": "apps/art/fairygui/assets/L10n_zh_hans/package.xml",
+          "sha256": "61d72f26cd4acf6a97f990358e9a0cb4f6795e2408915f1867a422cc0991f6f6"
+        }
+      ],
+      "components": [],
+      "resources": [
+        {
+          "kind": "image",
+          "id": "e6t9j",
+          "name": "login_ageTip.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "tm4bc8z",
+          "name": "login_enterGame.png",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "p4gccbj",
+          "name": "login_logo.png",
+          "exported": true
+        },
+        {
+          "kind": "font",
+          "id": "kj3ocbk",
+          "name": "siyuanheitiCNRegular.ttf",
+          "exported": false
+        }
+      ],
+      "outputs": [
+        {
+          "path": "apps/Cocos/assets/resources/ui/L10n_zh_hans.bin",
+          "sha256": "4c070d4b15376f31c15cc49755354853fd8de04a029bd8352fda5451df1dfea8"
+        },
+        {
+          "path": "apps/Cocos/assets/resources/ui/L10n_zh_hans_atlas10.png",
+          "sha256": "cbd1e5a697679d166dafe47f1f68c2eb19c563f98c1e78eab1da9673014e690f"
+        }
+      ]
+    },
+    {
+      "name": "View_AreaList_AreaList",
+      "id": "fk4x5zk1",
+      "source": [
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_AreaList/AreaItem.xml",
+          "sha256": "e032c32751abf58d6ce44c08af8d61071845d80580b432228dd15f461c51f6f3"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_AreaList/AreaList.xml",
+          "sha256": "a857e1c914b1c96efb635ef6d397d58054c1dfd6dcbf65c79f42d9dafc7ec3da"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_AreaList/AreaMyItem.xml",
+          "sha256": "404f8d9b72096a375e2ed9578ec0ae5ec4660dfcdc3cbfd91fa200392882a2be"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_AreaList/AreaTabItem.xml",
+          "sha256": "3f27f02769c3e62f4a75f43e3173f8a31266f15be8f55c8b40981c17f52f5e2d"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_AreaList/RGBA/bg_area_item.png",
+          "sha256": "34156961e1dcd3beb7ac3ed79ba4f709f3c3c65f882b6dcfb3ad682bebbbc03a"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_AreaList/RGBA/bg_tab_server_dark.png",
+          "sha256": "3f385b9800742684bd0f1b9123250bdf98795eb971cb46c2f55a5105b7c07196"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_AreaList/RGBA/bg_tab_server_light.png",
+          "sha256": "6ce6b572424a96559db09ab1e6026268a812fe0c72912e484192656795166702"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_AreaList/RGBA/icon_server_status_full.png",
+          "sha256": "ce5ae5475951aa6a4f3ca7b57bee4afd7849ab635971feeec3d1c9975552b603"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_AreaList/RGBA/icon_server_status_new.png",
+          "sha256": "59497e72e51f05dcaee76179306e8a1fece3e4b29e919fe5093c2e4f9f3966fc"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_AreaList/RGBA/头像2.png",
+          "sha256": "bfcbd44d672f4bc095996296f53f4d699ed7fff3bdd94a73e4b2d03f052fa1fd"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_AreaList/package.xml",
+          "sha256": "7fc403186f4238bf0589a0ef10384abe25a3ccd8498ab5ac071804f4381a8ff8"
+        }
+      ],
+      "components": [
+        {
+          "name": "AreaItem.xml",
+          "exported": false
+        },
+        {
+          "name": "AreaList.xml",
+          "exported": true
+        },
+        {
+          "name": "AreaMyItem.xml",
+          "exported": false
+        },
+        {
+          "name": "AreaTabItem.xml",
+          "exported": false
+        }
+      ],
+      "resources": [
+        {
+          "kind": "component",
+          "id": "q87g0",
+          "name": "AreaList.xml",
+          "exported": true
+        },
+        {
+          "kind": "component",
+          "id": "lsnn1",
+          "name": "AreaItem.xml",
+          "exported": false
+        },
+        {
+          "kind": "component",
+          "id": "lsnn2",
+          "name": "AreaTabItem.xml",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "e6t9q",
+          "name": "icon_server_status_full.png",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "e6t9p",
+          "name": "icon_server_status_new.png",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "e6t9g",
+          "name": "bg_tab_server_light.png",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "e6t9e",
+          "name": "bg_tab_server_dark.png",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "e6t9r",
+          "name": "头像2.png",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "e6t9d",
+          "name": "bg_area_item.png",
+          "exported": false
+        },
+        {
+          "kind": "component",
+          "id": "th7va",
+          "name": "AreaMyItem.xml",
+          "exported": false
+        }
+      ],
+      "outputs": [
+        {
+          "path": "apps/Cocos/assets/resources/ui/View_AreaList_AreaList.bin",
+          "sha256": "87250424ff60203b4f9478f7a514e4d0a6c990709f4c499d7b208d491a0ee47a"
+        },
+        {
+          "path": "apps/Cocos/assets/resources/ui/View_AreaList_AreaList_atlas0.png",
+          "sha256": "11f8ec8e30ed717f3595e71e6bb933971e82c789459bcf8e72b514bac446b5a9"
+        }
+      ]
+    },
+    {
+      "name": "View_AreaList_Login",
+      "id": "c3yvjaqg",
+      "source": [
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/Button1.xml",
+          "sha256": "ae2c6ea0d991fa767a0f318c0dd70c96ec8e4abd699ff295f8ba854877da424f"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/Button2.xml",
+          "sha256": "2d2916bbd6a6e6e0d2174b8d0088fb4500f05eaf38bc0d8dd3d4f416c4a70b3c"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/Button3.xml",
+          "sha256": "0c1a5a73dd033e664c58f3b41353fbf0127560abe0364113e734d699d329e18d"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/ButtonServer.xml",
+          "sha256": "ac897745554e04d6a649fb47508e45cf277c9f8b39456f14b91499e76f490fd7"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/Login.xml",
+          "sha256": "ecd3938eb325329fd593f480b34b046399a0b090a1ae84b64d649ea78858fda2"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/ProgressBarLoading.xml",
+          "sha256": "ad76b077e6c2667fda809c90b02565b83319addd9462762be2b043670f7ba1aa"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/RGB/bg_login.jpg",
+          "sha256": "7f7382f6f10bf23d9691d080ccf2b1c3f70ad897e250e192f1e239d5854d10e8"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/RGBA/bg_btn_server.png",
+          "sha256": "26b8be9f2d8857b7b36bc2437fffc698da640818a1c9a3d06a7fdd9b8e959a2d"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/RGBA/bg_cbox.png",
+          "sha256": "954e203faae93a1ce72ce0408165016a5cc8ae2f4cfb39b9350fe1b5d4ad0ce8"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/RGBA/bg_cover.png",
+          "sha256": "1cc9eb01a20d460a54d3283090601b3ef2f5f172cf8d973ad2f6db3b776a4016"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/RGBA/bg_loading_text.png",
+          "sha256": "36a75983051ef1cc42f1fff25bdc27cf5c13fcc188da1ba16d606cef6c57ab98"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/RGBA/bg_login_btn.png",
+          "sha256": "4aaa15731f2e62543ffb514f7c6582819d6f19bb250fe1f0ce587ae8f5d8ef65"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/RGBA/btn_login_account.png",
+          "sha256": "32bc7ef3d2de0cb5614335cb3f8bfeba0f830c32e6cf0ff7ebbb3917a122f9c5"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/RGBA/btn_login_notice.png",
+          "sha256": "f34306d1913b392ff07f70966afe0d023d332067f40e6e264b5480753a8d10e8"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/RGBA/btn_music_off.png",
+          "sha256": "0a8417b26e209dec7dcc4897f73e2965ca25197141b131347b5041baa50f080a"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/RGBA/btn_music_on.png",
+          "sha256": "785d0c4aa1b9cae4f5aba27d45d99ce62ce23be5956051fbc00540b0ea53465a"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/RGBA/btn_server_change.png",
+          "sha256": "9a5e968f667ec92eefd09ec5d0f93df9d3ee65723b28ab697478ede9a30884ae"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/RGBA/icon_progress_fox.png",
+          "sha256": "c9dd85ff3d7766af194b0db9add5d535d9ed9a15ec09649f9147629a064da5c5"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/RGBA/progress_loading_bar.png",
+          "sha256": "6e0a498943eca72ea81078878610cfbae4abc8763cd17c05b29fd308fd33a6df"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/RGBA/progress_loading_bg.png",
+          "sha256": "10d05c921b1b72cb2f1af26600d833774d968fe893496c72f3b12aa9f3a8c9de"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/RGBA/tge_checkbox_autoFight.png",
+          "sha256": "d66428820230b51fcdd6ab2e0477e06151456e0d1e1530d2afd2ecc4a50deccb"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/RGBA/页签亮色_13.png",
+          "sha256": "279a6b8f0357480ab1a33ef270ec4e966dfd8ca381474ccec2409ee91f217f85"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/RGBA/页签深色_20.png",
+          "sha256": "dfa71a6948646e9e5c0c97a348e37dc90cb80bec209cbd7672fbea0d4f331c9b"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/RGBA/黑色信息底.png",
+          "sha256": "70e37a41533223a4bce316cac26ec954aa87b25f40fdfda2162c5ed39349d889"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/package.xml",
+          "sha256": "c3fa8cdfc02dc7e101695d3e28e572b2bc74b64d7ef3a3b589ed90774c5952af"
+        }
+      ],
+      "components": [
+        {
+          "name": "Button1.xml",
+          "exported": false
+        },
+        {
+          "name": "Button2.xml",
+          "exported": false
+        },
+        {
+          "name": "Button3.xml",
+          "exported": false
+        },
+        {
+          "name": "ButtonServer.xml",
+          "exported": false
+        },
+        {
+          "name": "Login.xml",
+          "exported": true
+        },
+        {
+          "name": "ProgressBarLoading.xml",
+          "exported": false
+        }
+      ],
+      "resources": [
+        {
+          "kind": "component",
+          "id": "nofd0",
+          "name": "Login.xml",
+          "exported": true
+        },
+        {
+          "kind": "component",
+          "id": "nofd1",
+          "name": "Button1.xml",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "e6t94",
+          "name": "黑色信息底.png",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "e6t9a",
+          "name": "bg_loading_text.png",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "e6t9b",
+          "name": "页签深色_20.png",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "e6t9c",
+          "name": "页签亮色_13.png",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "e6t9f",
+          "name": "progress_loading_bar.png",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "e6t9k",
+          "name": "bg_login_btn.png",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "e6t9l",
+          "name": "btn_login_account.png",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "e6t9m",
+          "name": "btn_login_notice.png",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "e6t9n",
+          "name": "btn_server_change.png",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "e6t9o",
+          "name": "bg_btn_server.png",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "e6t9s",
+          "name": "progress_loading_bg.png",
+          "exported": false
+        },
+        {
+          "kind": "component",
+          "id": "e6t914",
+          "name": "Button2.xml",
+          "exported": false
+        },
+        {
+          "kind": "component",
+          "id": "e6t917",
+          "name": "Button3.xml",
+          "exported": false
+        },
+        {
+          "kind": "component",
+          "id": "e6t919",
+          "name": "ButtonServer.xml",
+          "exported": false
+        },
+        {
+          "kind": "component",
+          "id": "e6t91a",
+          "name": "ProgressBarLoading.xml",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "p1eh1b",
+          "name": "btn_music_on.png",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "p1eh1c",
+          "name": "btn_music_off.png",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "tm4b1d",
+          "name": "icon_progress_fox.png",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "h8l61m",
+          "name": "bg_login.jpg",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "h0d01o",
+          "name": "tge_checkbox_autoFight.png",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "h0d0dir",
+          "name": "bg_cbox.png",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "slmediz",
+          "name": "bg_cover.png",
+          "exported": false
+        }
+      ],
+      "outputs": [
+        {
+          "path": "apps/Cocos/assets/resources/ui/View_AreaList_Login.bin",
+          "sha256": "c784c51cb6796fb3301d868b6cf628bb3d5eef6eaf4594972c62706e14802a6b"
+        },
+        {
+          "path": "apps/Cocos/assets/resources/ui/View_AreaList_Login_atlas1.png",
+          "sha256": "e4e74a081113b2df16267fc1e68b3fa35b77b2474c30dc90eeb70dba490c6365"
+        },
+        {
+          "path": "apps/Cocos/assets/resources/ui/View_AreaList_Login_atlas_h8l61m.jpg",
+          "sha256": "7f7382f6f10bf23d9691d080ccf2b1c3f70ad897e250e192f1e239d5854d10e8"
+        }
+      ]
+    },
+    {
+      "name": "View_AreaList_LoginNotice",
+      "id": "22ylet4n",
+      "source": [
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_LoginNotice/CompTab.xml",
+          "sha256": "85d8c8ccf4eca5d2d63162c1356f60b30d77d1375ee9ec6afcbb087fdba9d54c"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_LoginNotice/CompTabItem.xml",
+          "sha256": "6cc967bfb02c447c97c1aa98dd7d0de3de4101ec45e7b107e501be4dba757b5b"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_LoginNotice/LoginNotice.xml",
+          "sha256": "f715de011d2cfa92f3a2357cd8921a1aac1af7d9bd6f9b98af1189b5caabb4e7"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_LoginNotice/LoginNoticeItem.xml",
+          "sha256": "7c308b923dee85ca8ebe4e7bebf29d9fe408f2fde98bd8c6741f44804376479c"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_LoginNotice/RGBA/b6_png.png",
+          "sha256": "44876685b07f3c23e3b55e6222cb80ed984b0216d510c2d64b32c01ad8f08ed7"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_LoginNotice/RGBA/b7_png.png",
+          "sha256": "3e7a54fcad5547fd06eb14e6328e60f5b83a7d50f812d016c1913a8d54ab86eb"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_AreaList_LoginNotice/package.xml",
+          "sha256": "c4c1487dbf12b99c0440858f3e53bf1e2758e15b13b6322305e13e1e74221009"
+        }
+      ],
+      "components": [
+        {
+          "name": "CompTab.xml",
+          "exported": false
+        },
+        {
+          "name": "CompTabItem.xml",
+          "exported": false
+        },
+        {
+          "name": "LoginNotice.xml",
+          "exported": true
+        },
+        {
+          "name": "LoginNoticeItem.xml",
+          "exported": false
+        }
+      ],
+      "resources": [
+        {
+          "kind": "component",
+          "id": "lsnn0",
+          "name": "LoginNotice.xml",
+          "exported": true
+        },
+        {
+          "kind": "component",
+          "id": "lsnn3",
+          "name": "LoginNoticeItem.xml",
+          "exported": false
+        },
+        {
+          "kind": "component",
+          "id": "ph1yh",
+          "name": "CompTab.xml",
+          "exported": false
+        },
+        {
+          "kind": "component",
+          "id": "ph1yi",
+          "name": "CompTabItem.xml",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "p9k53",
+          "name": "b6_png.png",
+          "exported": false
+        },
+        {
+          "kind": "image",
+          "id": "p9k51",
+          "name": "b7_png.png",
+          "exported": false
+        }
+      ],
+      "outputs": [
+        {
+          "path": "apps/Cocos/assets/resources/ui/View_AreaList_LoginNotice.bin",
+          "sha256": "86801134b0ca2c48b7669d6f4ae2d0aa225427789c203b641b37cd88f69a3ca7"
+        }
+      ]
+    },
+    {
+      "name": "View_Home_Home",
+      "id": "c7xkol55",
+      "source": [
+        {
+          "path": "apps/art/fairygui/assets/View_Home_Home/Home.xml",
+          "sha256": "8dce475f1239bec5fe339d6640e5bc97812ac51175be40aebb1cfc7070f44cda"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_Home_Home/package.xml",
+          "sha256": "7cb13182c66afdee78a22c44da0cad5957b8ff252a9266986236a924aaf229bb"
+        }
+      ],
+      "components": [
+        {
+          "name": "Home.xml",
+          "exported": true
+        }
+      ],
+      "resources": [
+        {
+          "kind": "component",
+          "id": "ly621",
+          "name": "Home.xml",
+          "exported": true
+        }
+      ],
+      "outputs": [
+        {
+          "path": "apps/Cocos/assets/resources/ui/View_Home_Home.bin",
+          "sha256": "c35de6ed5e82224fda2fca92251b781f9476319db13c476c3771274faf717f54"
+        }
+      ]
+    },
+    {
+      "name": "View_SharedWidget_Confirm",
+      "id": "3qmj2d6g",
+      "source": [
+        {
+          "path": "apps/art/fairygui/assets/View_SharedWidget_Confirm/Confirm.xml",
+          "sha256": "f87bf06d18847197f204610462153c6856ad4bd585f4a0e3c15b2fb718726c31"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_SharedWidget_Confirm/RGBA/frame_hint_small_base_plate_hint_small_base_plate.png",
+          "sha256": "134199b9c36cce1a4948fcbf9cc1618c73a18aa2e68d19c858afc9686da36e6c"
+        },
+        {
+          "path": "apps/art/fairygui/assets/View_SharedWidget_Confirm/package.xml",
+          "sha256": "61e9003e1548f4a3f485e599211693182de2eee5665a55dcdb6f5d231f13b68a"
+        }
+      ],
+      "components": [
+        {
+          "name": "Confirm.xml",
+          "exported": true
+        }
+      ],
+      "resources": [
+        {
+          "kind": "component",
+          "id": "sdsm0",
+          "name": "Confirm.xml",
+          "exported": true
+        },
+        {
+          "kind": "image",
+          "id": "cbox3",
+          "name": "frame_hint_small_base_plate_hint_small_base_plate.png",
+          "exported": true
+        }
+      ],
+      "outputs": [
+        {
+          "path": "apps/Cocos/assets/resources/ui/View_SharedWidget_Confirm.bin",
+          "sha256": "bbf395db3013cf86bd8d9fb8a55aef350407175ce124b1929bd7e6a63b074a04"
+        },
+        {
+          "path": "apps/Cocos/assets/resources/ui/View_SharedWidget_Confirm_atlas0.png",
+          "sha256": "6013bb66e06ed8d2f86424557a48e2508b90de35946c392ac68506103459bdbf"
+        }
+      ]
+    }
+  ],
+  "exports": [
+    {
+      "path": "apps/Cocos/assets/resources/ui/Common_Btn.bin",
+      "sha256": "914c206aaac3f7e4a0a159d2eba278f15738299129ba5229a62b06a09f6d3495"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/ui/Common_ComboBox.bin",
+      "sha256": "53914db761e92a4892b4ef081e461aa0a564300e09fb4a2de178612637d7fe2c"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/ui/Common_Component.bin",
+      "sha256": "87c949b3001b596465fab141820f36fb53d062205cfe5119713aeda68e98629c"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/ui/Common_RGBA.bin",
+      "sha256": "9e06a419a4d6ecfbafe00190069f4e5163c466bb721989408b5d6d4fccd20b5e"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/ui/Common_RGBA_atlas0.png",
+      "sha256": "033913709a59f8945de25478aff83f2151966b6413ad5d7bfaa1357f327f85c6"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/ui/Dynamic_Login.bin",
+      "sha256": "dc7fe75e1a9d2605fd4ebdc0c45ffa3b14ebb86d1b61fd100898205dca4706e5"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/ui/Dynamic_Login_atlas0.png",
+      "sha256": "15e0866e2c87a9aea3cae758f7e0f2e2fb17bcd86eba9d95e3394e2825d0177b"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/ui/Dynamic_Spine.bin",
+      "sha256": "d9e161b8c0a29f1705fb4a05f31a66af622fb0d8d214a5d9f33e768c0aac350f"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/ui/L10n_zh_hans.bin",
+      "sha256": "4c070d4b15376f31c15cc49755354853fd8de04a029bd8352fda5451df1dfea8"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/ui/L10n_zh_hans_atlas10.png",
+      "sha256": "cbd1e5a697679d166dafe47f1f68c2eb19c563f98c1e78eab1da9673014e690f"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/ui/View_AreaList_AreaList.bin",
+      "sha256": "87250424ff60203b4f9478f7a514e4d0a6c990709f4c499d7b208d491a0ee47a"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/ui/View_AreaList_AreaList_atlas0.png",
+      "sha256": "11f8ec8e30ed717f3595e71e6bb933971e82c789459bcf8e72b514bac446b5a9"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/ui/View_AreaList_Login.bin",
+      "sha256": "c784c51cb6796fb3301d868b6cf628bb3d5eef6eaf4594972c62706e14802a6b"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/ui/View_AreaList_LoginNotice.bin",
+      "sha256": "86801134b0ca2c48b7669d6f4ae2d0aa225427789c203b641b37cd88f69a3ca7"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/ui/View_AreaList_Login_atlas1.png",
+      "sha256": "e4e74a081113b2df16267fc1e68b3fa35b77b2474c30dc90eeb70dba490c6365"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/ui/View_AreaList_Login_atlas_h8l61m.jpg",
+      "sha256": "7f7382f6f10bf23d9691d080ccf2b1c3f70ad897e250e192f1e239d5854d10e8"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/ui/View_Home_Home.bin",
+      "sha256": "c35de6ed5e82224fda2fca92251b781f9476319db13c476c3771274faf717f54"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/ui/View_SharedWidget_Confirm.bin",
+      "sha256": "bbf395db3013cf86bd8d9fb8a55aef350407175ce124b1929bd7e6a63b074a04"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/ui/View_SharedWidget_Confirm_atlas0.png",
+      "sha256": "6013bb66e06ed8d2f86424557a48e2508b90de35946c392ac68506103459bdbf"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/ui/loading_animals.atlas.txt",
+      "sha256": "94a5f6cc7ca2dd350157a26c01d8cbe0c95df602ebbd96bf53894dc5c040b57c"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/ui/loading_animals.png",
+      "sha256": "df21297b910ab82f9948324314eda87ff227f48d8b0636d7db0f2872ab72c0a2"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/ui/loading_animals.skel",
+      "sha256": "8efc27b15c71dcee9385cda084643d43b9c96455a8f2c3e8cd73a53d64218f6b"
+    }
+  ],
+  "views": [
+    {
+      "path": "apps/client/src/view/AreaListView.ts",
+      "pkg": "View_AreaList_AreaList",
+      "comp": "AreaList",
+      "generatedHash": "5922f61fb1122bf81916b41253b9c96f8ca3488df81d670dd7a29757d0c41cbb"
+    },
+    {
+      "path": "apps/client/src/view/ConfirmView.ts",
+      "pkg": "View_SharedWidget_Confirm",
+      "comp": "Confirm",
+      "generatedHash": "5dc703299cd528f6a1f737f72e3990c307b165ce7188a44ac748bd9ef908e02c"
+    },
+    {
+      "path": "apps/client/src/view/HomeView.ts",
+      "pkg": "View_Home_Home",
+      "comp": "Home",
+      "generatedHash": "fb86230f9c1319aae4e796d16add1aaf91d77a8a726932faa2696d43389dfded"
+    },
+    {
+      "path": "apps/client/src/view/LoginNoticeView.ts",
+      "pkg": "View_AreaList_LoginNotice",
+      "comp": "LoginNotice",
+      "generatedHash": "ce4fe339ff109b70a70a9fe1de64888f034d44b4334ab1e444d892a73f39e293"
+    },
+    {
+      "path": "apps/client/src/view/LoginView.ts",
+      "pkg": "View_AreaList_Login",
+      "comp": "Login",
+      "generatedHash": "af097a047f6b313785ce3c9bf6fb6af6e58c506ac4f225bfa5747c6d17c4939c"
+    }
+  ]
+}

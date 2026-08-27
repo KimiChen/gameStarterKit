@@ -30,8 +30,11 @@
 □ loader 的 clearOnPublish 只给"代码负责装载"的占位图用——勾了它而代码不装载 = 运行时空白
 ```
 
-现有结构测试只解析 `displayList` 的命名直接子元素，不检查 relation、列表 item/defaultItem、
-`autoClearItems` 或设计源到已导出 `.bin` 的新鲜度；checklist 仍需在 FairyGUI 编辑器和 Creator 预览中人工确认。
+结构契约测试保留 `displayList` 的命名直接子元素作为 AUTO 绑定真源，同时检查嵌套组件/list item 的
+显式路径、relation/controller、`defaultItem` 和 `ui://` 资源引用。`npm run verify:fgui` 还会钉住设计源、
+package 资源声明及 Cocos `.bin`/图集导出物哈希；设计源重新发布后先运行
+`node scripts/fgui-manifest.mjs --write`。`autoClearItems` 等编辑器行为仍需在 FairyGUI 编辑器和
+Creator 预览中人工确认。
 
 ## 当前包目录
 

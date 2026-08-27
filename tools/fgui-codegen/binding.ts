@@ -8,11 +8,13 @@
  * - `checkContract`：给 View 声明的必需字段，断言 `.fui` 组件是否满足（缺失/类型不符）——**结构契约无头把关**。
  * 方案见 docs/CLIENT.md §3（View 职责）/§5（codegen）；CLI 入口 cli.ts（npm run codegen:fgui）。
  */
-import type { FguiComponent, FguiElement } from "./parseFgui";
+import { findFguiElement, type FguiComponent, type FguiElement } from "./parseFgui";
 
 export interface BindingField {
   name: string;
   tsType: string; // fairygui-cc 类名（GButton/GTextField/...）
+  /** 嵌套元素的稳定路径；直接元素省略。仅用于显式契约，不改变 AUTO 输出。 */
+  path?: string;
 }
 
 /** name 前缀 → 生成绑定字段（普通 group 等无识别前缀者不绑，与源项目 genTs.js 一致；
@@ -58,6 +60,20 @@ export function bindingFields(comp: FguiComponent): BindingField[] {
   for (const el of comp.elements) {
     const t = tsTypeOf(el);
     if (t) { out.push({ name: el.name, tsType: t }); }
+  }
+  return out;
+}
+
+/**
+ * 计算嵌套元素的显式绑定契约。默认 AUTO 区块仍只生成直接子项，避免
+ * 改动既有 View 文件；需要手写 `getChild`/列表 item 的页面可把这些字段
+ * 放入其 FguiContract.required，并以 `path` 区分同名子项。
+ */
+export function nestedBindingFields(comp: FguiComponent): BindingField[] {
+  const out: BindingField[] = [];
+  for (const el of comp.nestedElements) {
+    const tsType = tsTypeOf(el);
+    if (tsType) out.push({ name: el.name, path: el.path, tsType });
   }
   return out;
 }
@@ -171,15 +187,23 @@ export interface ContractResult {
 }
 
 /** 结构契约校验：`.fui` 组件是否满足 View 声明的必需字段。缺失/类型不符即违约（设计师改坏 → 测试红）。 */
-export function checkContract(comp: FguiComponent, required: readonly BindingField[]): ContractResult {
-  const byName = new Map(comp.elements.map((e) => [e.name, e]));
+export function checkContract(
+  comp: FguiComponent,
+  required: readonly (BindingField & { path?: string })[],
+): ContractResult {
   const missing: string[] = [];
   const mismatched: string[] = [];
   for (const r of required) {
-    const el = byName.get(r.name);
-    if (!el) { missing.push(r.name); continue; }
+    const lookup = r.path ?? r.name;
+    // Keep the legacy contract strict: a field without an explicit path must
+    // be a direct displayList child. Nested fields are opt-in via `path`, so a
+    // renamed/relocated child cannot accidentally satisfy an old View contract.
+    const el = r.path
+      ? findFguiElement(comp, r.path)
+      : comp.elements.find((element) => element.name === r.name);
+    if (!el) { missing.push(lookup); continue; }
     const actual = elementTsType(el);
-    if (actual !== r.tsType) { mismatched.push(`${r.name}: 期望 ${r.tsType}，实际 ${actual}`); }
+    if (actual !== r.tsType) { mismatched.push(`${lookup}: 期望 ${r.tsType}，实际 ${actual}`); }
   }
   return { ok: missing.length === 0 && mismatched.length === 0, missing, mismatched };
 }
