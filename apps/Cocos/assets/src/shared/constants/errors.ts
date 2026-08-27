@@ -34,7 +34,8 @@ export const ErrorCode = {
 export type ErrorCodeType = (typeof ErrorCode)[keyof typeof ErrorCode];
 
 /** 错误码对应的默认文案（客户端可覆盖为多语言） */
-export const ErrorMessage: Record<number, string> = {
+/** 穷尽映射：新增 ErrorCode 后若未登记文案，shared 类型检查会直接失败。 */
+export const ErrorMessage: { [K in ErrorCodeType]: string } = {
     [ErrorCode.Ok]: "成功",
     [ErrorCode.Unknown]: "未知错误",
     [ErrorCode.BadRequest]: "参数非法",
@@ -48,6 +49,17 @@ export const ErrorMessage: Record<number, string> = {
     [ErrorCode.CharCreateFailed]: "进入失败，请重试",
     [ErrorCode.AlreadyInRoom]: "该账号已在本对局中",
 };
+
+export const ERROR_CODE_VALUES: readonly ErrorCodeType[] = Object.values(ErrorCode);
+
+export function isErrorCode(value: unknown): value is ErrorCodeType {
+    return typeof value === "number" && Number.isSafeInteger(value)
+        && (ERROR_CODE_VALUES as readonly number[]).includes(value);
+}
+
+export function errorMessageOf(code: ErrorCodeType): string {
+    return ErrorMessage[code];
+}
 
 // ── 进房/建连拒绝的 message 编码（双端单源） ──────────────────────────────
 //
@@ -66,5 +78,5 @@ export function joinErrCodeOf(msg: string | undefined): number | null {
 /** join 失败 message → 可展示文案（业务码查表；鉴权码/未知一律回退通用文案）。 */
 export function joinErrText(msg: string | undefined, fallback = "进入失败，请重试"): string {
     const code = joinErrCodeOf(msg);
-    return (code !== null ? ErrorMessage[code] : undefined) ?? fallback;
+    return (code !== null && isErrorCode(code) ? ErrorMessage[code] : undefined) ?? fallback;
 }

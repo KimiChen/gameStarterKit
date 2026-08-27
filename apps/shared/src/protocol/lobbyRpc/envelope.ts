@@ -1,3 +1,5 @@
+import { assertExactKeys, boundedString, isPlainRecord, type PlainRecord, type RuntimeValidator, WireValidationError } from "../http";
+
 /**
  * LobbyRoom ws-RPC 信封与错误码 —— 双端共享的**类型真源**。
  *
@@ -14,13 +16,22 @@ export interface IRpcEnvelope {
     payload?: unknown;
 }
 
-/** S2C 响应信封：原样回带请求 id。客户端只按 err.code 分支，⛔ 禁止解析 msg（09·G3）。 */
-export interface IRpcReply {
+/** S2C 成功响应信封。 */
+export interface IRpcSuccessReply {
     id: string;
-    ok: boolean;
+    ok: true;
     data?: unknown;
-    err?: { code: string; msg: string };
 }
+
+/** S2C 失败响应信封；客户端只按 err.code 分支，⛔ 禁止解析 msg（09·G3）。 */
+export interface IRpcErrorReply {
+    id: string;
+    ok: false;
+    err: { code: RpcErrCode; msg: string };
+}
+
+/** 判别联合让 data/err 混用在编译期和 runtime 都不可行。 */
+export type IRpcReply = IRpcSuccessReply | IRpcErrorReply;
 
 /** 服务端错误码全集（码全集真源；服务端 ErrCode 即此联合类型）。 */
 export const RPC_ERR_CODES = [
@@ -42,3 +53,55 @@ export const RPC_ERR_CODES = [
 ] as const;
 
 export type RpcErrCode = (typeof RPC_ERR_CODES)[number];
+
+const RPC_ID_MAX = 64;
+
+function envelopeRecord(input: unknown, path: string): PlainRecord {
+    if (!isPlainRecord(input)) throw new WireValidationError("RPC_OBJECT", path);
+    return input;
+}
+
+/** 信封 runtime validator；validated value 是新的 plain object，未知字段不被静默剥离。 */
+export function validateRpcEnvelope(input: unknown): IRpcEnvelope {
+    const value = envelopeRecord(input, "rpc");
+    assertExactKeys(value, ["id", "type"], ["payload"], "rpc");
+    const id = boundedString(value.id, "rpc.id", 1, RPC_ID_MAX);
+    const type = boundedString(value.type, "rpc.type", 1, RPC_ID_MAX);
+    if (!Object.prototype.hasOwnProperty.call(value, "payload") || value.payload === undefined) return { id, type };
+    return { id, type, payload: value.payload };
+}
+
+function isRpcErrCode(value: unknown): value is RpcErrCode {
+    return typeof value === "string" && (RPC_ERR_CODES as readonly string[]).includes(value);
+}
+
+/** RPC response runtime validator，按 ok 判别联合严格拒绝 data/err 混用。 */
+export function validateRpcReply(input: unknown): IRpcReply {
+    const value = envelopeRecord(input, "reply");
+    assertExactKeys(value, ["id", "ok"], ["data", "err"], "reply");
+    const id = boundedString(value.id, "reply.id", 1, RPC_ID_MAX);
+    if (typeof value.ok !== "boolean") throw new WireValidationError("RPC_OK", "reply.ok");
+    const hasData = Object.prototype.hasOwnProperty.call(value, "data");
+    const hasErr = Object.prototype.hasOwnProperty.call(value, "err");
+    if (value.ok) {
+        if (hasErr) throw new WireValidationError("RPC_REPLY_SHAPE", "reply.err");
+        return hasData ? { id, ok: true, data: value.data } : { id, ok: true };
+    }
+    if (!hasErr || hasData) throw new WireValidationError("RPC_REPLY_SHAPE", "reply");
+    const err = envelopeRecord(value.err, "reply.err");
+    assertExactKeys(err, ["code", "msg"], [], "reply.err");
+    if (!isRpcErrCode(err.code)) throw new WireValidationError("RPC_ERR_CODE", "reply.err.code");
+    return { id, ok: false, err: { code: err.code, msg: boundedString(err.msg, "reply.err.msg", 0, 2048) } };
+}
+
+/** 便于 adapter 在收到任意信封时统一判定，而无需 try/catch 每个字段。 */
+export function isValidRpcEnvelope(input: unknown): input is IRpcEnvelope {
+    try { validateRpcEnvelope(input); return true; } catch { return false; }
+}
+
+export function isValidRpcReply(input: unknown): input is IRpcReply {
+    try { validateRpcReply(input); return true; } catch { return false; }
+}
+
+// Re-exported type alias keeps the validator map declaration readable for consumers.
+export type RpcValidator<T> = RuntimeValidator<T>;

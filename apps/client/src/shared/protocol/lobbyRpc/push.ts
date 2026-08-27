@@ -1,3 +1,5 @@
+import { assertExactKeys, boundedString, finiteInteger, isPlainRecord, type PlainRecord, WireValidationError } from "../http";
+
 /**
  * LobbyRoom 服务端主动推送（LOBBY_MSG_PUSH 信封 {type,data}）的类型化契约 —— 真源。
  * 服务端 websocket/push.ts 与客户端 WebSocketClient.onPush 都直接 import 本表。
@@ -89,4 +91,54 @@ export interface LobbyPushMap {
     [LobbyPush.GuildEvent]: IGuildEventPush;
     [LobbyPush.ServerNotice]: IServerNoticePush;
     [LobbyPush.ForceLogout]: IForceLogoutPush;
+}
+
+function pushRecord(input: unknown, path: string): PlainRecord {
+    if (!isPlainRecord(input)) throw new WireValidationError("PUSH_OBJECT", path);
+    return input;
+}
+
+function validatePushData<K extends LobbyPushType>(type: K, input: unknown): LobbyPushMap[K] {
+    const value = pushRecord(input, "push.data");
+    switch (type) {
+        case LobbyPush.MailNew:
+            assertExactKeys(value, ["mailId"], [], "push.data");
+            return { mailId: finiteInteger(value.mailId, "push.data.mailId", 1) } as LobbyPushMap[K];
+        case LobbyPush.GuildEvent:
+            assertExactKeys(value, ["seq", "guildId"], [], "push.data");
+            return {
+                seq: finiteInteger(value.seq, "push.data.seq", 0),
+                guildId: finiteInteger(value.guildId, "push.data.guildId", 0),
+            } as LobbyPushMap[K];
+        case LobbyPush.ServerNotice:
+            assertExactKeys(value, ["text"], [], "push.data");
+            return { text: boundedString(value.text, "push.data.text", 1, 4096) } as LobbyPushMap[K];
+        case LobbyPush.ForceLogout:
+            assertExactKeys(value, ["reason"], [], "push.data");
+            if (value.reason !== ForceLogoutReason.Banned
+                && value.reason !== ForceLogoutReason.Replaced
+                && value.reason !== ForceLogoutReason.Revoked) {
+                throw new WireValidationError("PUSH_REASON", "push.data.reason");
+            }
+            return { reason: value.reason as ForceLogoutReasonType } as LobbyPushMap[K];
+    }
+}
+
+export type LobbyPushType = keyof LobbyPushMap;
+
+/** Discriminated push envelope; narrowing `type` also narrows `data`. */
+export type LobbyPushEnvelope = {
+    [K in LobbyPushType]: { type: K; data: LobbyPushMap[K] };
+}[LobbyPushType];
+
+/** 主动推送 envelope（{type,data}）的 exact runtime validator。 */
+export function validateLobbyPush(input: unknown): LobbyPushEnvelope {
+    const value = pushRecord(input, "push");
+    assertExactKeys(value, ["type", "data"], [], "push");
+    const type = value.type;
+    if (type !== LobbyPush.MailNew && type !== LobbyPush.GuildEvent
+        && type !== LobbyPush.ServerNotice && type !== LobbyPush.ForceLogout) {
+        throw new WireValidationError("PUSH_TYPE", "push.type");
+    }
+    return { type, data: validatePushData(type, value.data) } as LobbyPushEnvelope;
 }

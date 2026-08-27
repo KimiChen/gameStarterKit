@@ -1,3 +1,15 @@
+import {
+    assertExactKeys,
+    boundedString,
+    finiteInteger,
+    finiteNumber,
+    isPlainRecord,
+    type PlainRecord,
+    type RuntimeValidator,
+    WireValidationError,
+} from "./http";
+import { isErrorCode, type ErrorCodeType } from "../constants/errors";
+
 /**
  * 房间内消息协议 —— 双端共享。
  *
@@ -36,6 +48,152 @@ export const S2C = {
 
 export type C2SType = (typeof C2S)[keyof typeof C2S];
 export type S2CType = (typeof S2C)[keyof typeof S2C];
+
+/** 消息名 → payload 类型，供两端 adapter 和 fixture 共享。 */
+export interface C2SPayloadMap {
+    [C2S.Ping]: IPingReq;
+    [C2S.Move]: IMoveReq;
+    [C2S.CastSkill]: ICastSkillReq;
+    [C2S.Chat]: IChatReq;
+}
+
+export interface S2CPayloadMap {
+    [S2C.Pong]: IPongRes;
+    [S2C.Welcome]: IWelcomeRes;
+    [S2C.SkillResult]: ISkillResultRes;
+    [S2C.Chat]: IChatRes;
+    [S2C.Error]: IErrorRes;
+}
+
+export type C2SPayload<T extends C2SType> = C2SPayloadMap[T];
+export type S2CPayload<T extends S2CType> = S2CPayloadMap[T];
+
+const MAX_MESSAGE_ID = 64;
+const MAX_CHAT_TEXT = 100;
+const MAX_MESSAGE_TICK_RATE = 240;
+
+function messageRecord(input: unknown, path: string): PlainRecord {
+    if (!isPlainRecord(input)) throw new WireValidationError("MESSAGE_OBJECT", path);
+    return input;
+}
+
+function optionalMessageString(value: PlainRecord, key: string, path: string, max: number): string | undefined {
+    if (!Object.prototype.hasOwnProperty.call(value, key) || value[key] === undefined) return undefined;
+    return boundedString(value[key], `${path}.${key}`, 1, max);
+}
+
+function validatePing(input: unknown): IPingReq {
+    const value = messageRecord(input, "payload");
+    assertExactKeys(value, ["clientTime"], [], "payload");
+    return { clientTime: finiteInteger(value.clientTime, "payload.clientTime", 0) };
+}
+
+function validateMove(input: unknown): IMoveReq {
+    const value = messageRecord(input, "payload");
+    assertExactKeys(value, ["dirX", "dirY"], [], "payload");
+    return {
+        dirX: finiteNumber(value.dirX, "payload.dirX", -1, 1),
+        dirY: finiteNumber(value.dirY, "payload.dirY", -1, 1),
+    };
+}
+
+function validateCastSkill(input: unknown): ICastSkillReq {
+    const value = messageRecord(input, "payload");
+    assertExactKeys(value, ["skillId"], ["targetId"], "payload");
+    const targetId = optionalMessageString(value, "targetId", "payload", MAX_MESSAGE_ID);
+    const skillId = finiteInteger(value.skillId, "payload.skillId", 0, 0xffff);
+    return targetId === undefined ? { skillId } : { skillId, targetId };
+}
+
+function validateChat(input: unknown): IChatReq {
+    const value = messageRecord(input, "payload");
+    assertExactKeys(value, ["text"], [], "payload");
+    const text = boundedString(value.text, "payload.text", 1, MAX_CHAT_TEXT);
+    if (text.trim().length === 0) throw new WireValidationError("MESSAGE_TEXT", "payload.text");
+    return { text };
+}
+
+function validatePong(input: unknown): IPongRes {
+    const value = messageRecord(input, "payload");
+    assertExactKeys(value, ["clientTime", "serverTime"], [], "payload");
+    return {
+        clientTime: finiteInteger(value.clientTime, "payload.clientTime", 0),
+        serverTime: finiteInteger(value.serverTime, "payload.serverTime", 0),
+    };
+}
+
+function validateWelcome(input: unknown): IWelcomeRes {
+    const value = messageRecord(input, "payload");
+    assertExactKeys(value, ["sessionId", "tickRate", "motd"], [], "payload");
+    return {
+        sessionId: boundedString(value.sessionId, "payload.sessionId", 1, MAX_MESSAGE_ID),
+        tickRate: finiteInteger(value.tickRate, "payload.tickRate", 1, MAX_MESSAGE_TICK_RATE),
+        motd: boundedString(value.motd, "payload.motd", 0, 1024),
+    };
+}
+
+function validateSkillResult(input: unknown): ISkillResultRes {
+    const value = messageRecord(input, "payload");
+    assertExactKeys(value, ["casterId", "skillId", "damage"], ["targetId"], "payload");
+    const targetId = optionalMessageString(value, "targetId", "payload", MAX_MESSAGE_ID);
+    const result = {
+        casterId: boundedString(value.casterId, "payload.casterId", 1, MAX_MESSAGE_ID),
+        skillId: finiteInteger(value.skillId, "payload.skillId", 0, 0xffff),
+        damage: finiteNumber(value.damage, "payload.damage", 0, Number.MAX_SAFE_INTEGER),
+    };
+    return targetId === undefined ? result : { ...result, targetId };
+}
+
+function validateChatResult(input: unknown): IChatRes {
+    const value = messageRecord(input, "payload");
+    assertExactKeys(value, ["fromId", "fromName", "text", "time"], [], "payload");
+    return {
+        fromId: boundedString(value.fromId, "payload.fromId", 1, MAX_MESSAGE_ID),
+        fromName: boundedString(value.fromName, "payload.fromName", 1, 128),
+        text: boundedString(value.text, "payload.text", 1, MAX_CHAT_TEXT),
+        time: finiteInteger(value.time, "payload.time", 0),
+    };
+}
+
+function validateError(input: unknown): IErrorRes {
+    const value = messageRecord(input, "payload");
+    assertExactKeys(value, ["code", "message"], [], "payload");
+    const code = finiteInteger(value.code, "payload.code", 0, 0xfffff);
+    if (!isErrorCode(code)) throw new WireValidationError("MESSAGE_ERROR_CODE", "payload.code");
+    return {
+        code,
+        message: boundedString(value.message, "payload.message", 0, 1024),
+    };
+}
+
+/** C2S runtime validators. Values are copied so callers cannot mutate a validated payload. */
+export const C2S_RUNTIME_VALIDATORS: { [K in C2SType]: RuntimeValidator<C2SPayloadMap[K]> } = {
+    [C2S.Ping]: validatePing,
+    [C2S.Move]: validateMove,
+    [C2S.CastSkill]: validateCastSkill,
+    [C2S.Chat]: validateChat,
+};
+
+/** S2C runtime validators. Client state/message adapters must validate before dispatching callbacks. */
+export const S2C_RUNTIME_VALIDATORS: { [K in S2CType]: RuntimeValidator<S2CPayloadMap[K]> } = {
+    [S2C.Pong]: validatePong,
+    [S2C.Welcome]: validateWelcome,
+    [S2C.SkillResult]: validateSkillResult,
+    [S2C.Chat]: validateChatResult,
+    [S2C.Error]: validateError,
+};
+
+export function validateC2SPayload<T extends C2SType>(type: T, input: unknown): C2SPayload<T> {
+    const validator = C2S_RUNTIME_VALIDATORS[type] as RuntimeValidator<C2SPayload<T>> | undefined;
+    if (!validator) throw new WireValidationError("MESSAGE_TYPE", `type:${String(type)}`);
+    return validator(input);
+}
+
+export function validateS2CPayload<T extends S2CType>(type: T, input: unknown): S2CPayload<T> {
+    const validator = S2C_RUNTIME_VALIDATORS[type] as RuntimeValidator<S2CPayload<T>> | undefined;
+    if (!validator) throw new WireValidationError("MESSAGE_TYPE", `type:${String(type)}`);
+    return validator(input);
+}
 
 // ---------------- 网关大厅房（服务端框架 M5，docs/SERVER.md §4 Lobby RPC） ----------------
 
@@ -102,6 +260,6 @@ export interface IChatRes {
 }
 
 export interface IErrorRes {
-    code: number;
+    code: ErrorCodeType;
     message: string;
 }

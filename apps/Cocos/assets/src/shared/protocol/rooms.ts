@@ -1,3 +1,5 @@
+import { assertExactKeys, boundedString, finiteInteger, isPlainRecord, type PlainRecord, WireValidationError } from "./http";
+
 /**
  * 房间名定义 —— 双端共享。
  * 服务端 gameServer.define(RoomName.Game, ...) 与客户端 client.joinOrCreate(RoomName.Game)
@@ -43,4 +45,30 @@ export interface IRoomJoinOptions {
      * （配置更新后逼客户端重拉，避免用陈旧列表被准入层拒连）。当前为预留字段。
      */
     listHash?: string;
+}
+
+/**
+ * Join options 的运行时校验。Colyseus 会把它们直接交给 onAuth，不能只依赖 TS
+ * interface；未知字段、NaN/Infinity、越界区号及空 token 必须在进入连接流程前拒绝。
+ */
+export function validateRoomJoinOptions(input: unknown): IRoomJoinOptions {
+    if (input === undefined) return {};
+    if (!isPlainRecord(input)) throw new WireValidationError("ROOM_OPTIONS_OBJECT", "options");
+    const value = input as PlainRecord;
+    assertExactKeys(value, [], ["v", "token", "sId", "listHash"], "options");
+
+    const out: IRoomJoinOptions = {};
+    if (Object.prototype.hasOwnProperty.call(value, "v") && value.v !== undefined) {
+        out.v = finiteInteger(value.v, "options.v", 1, 0xffff);
+    }
+    if (Object.prototype.hasOwnProperty.call(value, "token") && value.token !== undefined) {
+        out.token = boundedString(value.token, "options.token", 1, 256);
+    }
+    if (Object.prototype.hasOwnProperty.call(value, "sId") && value.sId !== undefined) {
+        out.sId = finiteInteger(value.sId, "options.sId", 0, 0xffff);
+    }
+    if (Object.prototype.hasOwnProperty.call(value, "listHash") && value.listHash !== undefined) {
+        out.listHash = boundedString(value.listHash, "options.listHash", 1, 256);
+    }
+    return out;
 }
