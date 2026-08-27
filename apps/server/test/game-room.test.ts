@@ -6,6 +6,8 @@ import {
     GamePhase,
     PROTOCOL_VERSION,
     PLAYER_INIT_HP,
+    S2C,
+    TICK_MS,
     type IRoomJoinOptions,
 } from "@game/shared";
 import {
@@ -49,6 +51,39 @@ function runtime(seed: number, now = 0): GameRoomRuntimeOptions {
     return { seed, clock: () => now, fixedStepMs: 50 };
 }
 
+test("GameRoom S2C 出站 payload 先经 shared runtime validator，再交给 transport", () => {
+    const room = new GameRoom(runtime(10));
+    const client = fakeClient("s1");
+    const sent: Array<[string, unknown]> = [];
+    client.send = (type, payload) => { sent.push([type, payload]); };
+    const sendS2C = (room as unknown as {
+        sendS2C: (client: unknown, type: string, payload: unknown) => void;
+    }).sendS2C.bind(room);
+
+    sendS2C(client, S2C.Pong, { clientTime: 1, serverTime: 2 });
+    assert.deepEqual(sent, [[S2C.Pong, { clientTime: 1, serverTime: 2 }]]);
+    assert.throws(
+        () => sendS2C(client, S2C.Pong, { clientTime: 1, serverTime: 2, extra: true }),
+        /WIRE_KEYS/,
+    );
+    assert.equal(sent.length, 1, "非法 payload 不得进入 client.send");
+
+    const broadcasted: Array<[string, unknown]> = [];
+    (room as unknown as { broadcast: (type: string, payload: unknown) => void }).broadcast = (type, payload) => {
+        broadcasted.push([type, payload]);
+    };
+    const broadcastS2C = (room as unknown as {
+        broadcastS2C: (type: string, payload: unknown) => void;
+    }).broadcastS2C.bind(room);
+    broadcastS2C(S2C.Chat, { fromId: "s1", fromName: "甲", text: "hi", time: 3 });
+    assert.equal(broadcasted.length, 1);
+    assert.throws(
+        () => broadcastS2C(S2C.Chat, { fromId: "s1", fromName: "甲", text: "hi", time: Number.NaN }),
+        /WIRE_INTEGER/,
+    );
+    assert.equal(broadcasted.length, 1, "非法 payload 不得进入 room.broadcast");
+});
+
 test("GameRoom C2S exact runtime schema rejects NaN/range/length/unknown keys", async () => {
     const room = new GameRoom(runtime(11));
     installLock(room);
@@ -74,6 +109,69 @@ test("GameRoom C2S exact runtime schema rejects NaN/range/length/unknown keys", 
     const cast = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.CastSkill];
     cast(a, { skillId: 1, targetId: "" });
     assert.ok(a.sent.some(([, payload]) => (payload as { code?: number }).code === ErrorCode.BadRequest));
+});
+
+test("GameRoom C2S rejects non-plain and symbol-keyed direct handler payloads", async () => {
+    const room = new GameRoom(runtime(110));
+    installLock(room);
+    const a = fakeClient("a", "ua");
+    await join(room, a);
+    const b = fakeClient("b", "ub");
+    await join(room, b);
+    const move = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Move];
+    const player = room.state.players.get("a")!;
+    const before = { x: player.x, y: player.y, dirX: player.dirX, dirY: player.dirY };
+    class MovePayload {
+        dirX = 1;
+        dirY = 0;
+    }
+    const nonEnumerable = { dirX: 0, dirY: 1 };
+    Object.defineProperty(nonEnumerable, "extra", { value: true, enumerable: false });
+    const symbolPayload = { dirX: 1, dirY: 0, [Symbol("extra")]: true };
+    move(a, new MovePayload());
+    move(a, nonEnumerable);
+    move(a, symbolPayload);
+    assert.deepEqual(
+        { x: player.x, y: player.y, dirX: player.dirX, dirY: player.dirY },
+        before,
+        "带隐藏字段或 symbol 字段的移动不能进入玩法状态",
+    );
+    assert.equal(a.sent.filter(([, payload]) => (payload as { code?: number }).code === ErrorCode.BadRequest).length, 3);
+});
+
+test("rejected skills do not enter the accepted input sequence", async () => {
+    const room = new GameRoom(runtime(111));
+    installLock(room);
+    const a = fakeClient("a", "ua");
+    const b = fakeClient("b", "ub");
+    await join(room, a);
+    await join(room, b);
+    const cast = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.CastSkill];
+
+    // The wire shape is valid, but the skill id is not in the server skill table.
+    cast(a, { skillId: 0xffff, targetId: b.sessionId });
+    assert.equal(room.getAcceptedInputs().length, 0);
+
+    // A real cast is recorded exactly once; an immediate retry is rejected by cooldown.
+    cast(a, { skillId: 1, targetId: b.sessionId });
+    assert.equal(room.getAcceptedInputs().length, 1);
+    cast(a, { skillId: 1, targetId: b.sessionId });
+    assert.equal(room.getAcceptedInputs().length, 1);
+
+    // Replay/injected inputs use the same post-application rule.
+    const replayRoom = new GameRoom(runtime(112));
+    installLock(replayRoom);
+    await join(replayRoom, fakeClient("a", "ua"));
+    await join(replayRoom, fakeClient("b", "ub"));
+    assert.equal(replayRoom.injectInput({ type: "castSkill", sessionId: "a", skillId: 0xffff }), true);
+    replayRoom.stepFixed();
+    assert.equal(replayRoom.getAcceptedInputs().length, 0);
+    assert.equal(replayRoom.injectInput({ type: "castSkill", sessionId: "a", skillId: 1 }), true);
+    replayRoom.stepFixed();
+    assert.equal(replayRoom.getAcceptedInputs().length, 1);
+    assert.equal(replayRoom.injectInput({ type: "castSkill", sessionId: "a", skillId: 1 }), true);
+    replayRoom.stepFixed();
+    assert.equal(replayRoom.getAcceptedInputs().length, 1);
 });
 
 test("Waiting/Settle phase whitelist prevents simulation input and update", async () => {
@@ -226,6 +324,261 @@ test("input source is fail-closed and respects declared ticks", async () => {
     assert.doesNotThrow(() => (room as unknown as { stepFixed: () => void }).stepFixed());
     assert.doesNotThrow(() => (room as unknown as { stepFixed: () => void }).stepFixed());
     assert.equal(room.getAcceptedInputs().length, 0);
+});
+
+test("hostile injected proxies and iterators are dropped without breaking the next frame", async () => {
+    const room = new GameRoom({ seed: 20, fixedStepMs: 50 });
+    installLock(room);
+    await join(room, fakeClient("a", "ua"));
+    await join(room, fakeClient("b", "ub"));
+    const player = room.state.players.get("a")!;
+
+    const revocable = Proxy.revocable({
+        type: "move",
+        sessionId: "a",
+        dirX: 1,
+        dirY: 0,
+    }, {});
+    revocable.revoke();
+    assert.doesNotThrow(() => assert.equal(room.injectInput(revocable.proxy as never), false));
+
+    let calls = 0;
+    const throwingItem = new Proxy({
+        type: "move",
+        sessionId: "a",
+        dirX: 1,
+        dirY: 0,
+    }, {
+            get() { throw new Error("hostile getter"); },
+        });
+    assert.doesNotThrow(() => assert.equal(room.injectInput(throwingItem as never), false));
+    const validItem = { type: "move", sessionId: "a", dirX: 1, dirY: 0 } as const;
+    room.setInputSource(() => {
+        calls++;
+        if (calls === 1) {
+            const broken = [throwingItem] as unknown[];
+            Object.defineProperty(broken, Symbol.iterator, {
+                configurable: true,
+                get() { throw new Error("hostile iterator"); },
+            });
+            return broken as never;
+        }
+        return [validItem];
+    });
+
+    assert.doesNotThrow(() => room.stepFixed());
+    assert.equal(player.dirX, 0, "坏迭代器/字段不能半应用本帧");
+    assert.doesNotThrow(() => room.stepFixed());
+    assert.equal(player.dirX, 1, "下一帧仍可应用合法输入");
+    assert.equal(room.getAcceptedInputs().length, 1);
+});
+
+test("dispose invalidates a pending match start and prevents a late lock from publishing Playing", async () => {
+    let release!: () => void;
+    const pendingLock = new Promise<void>((resolve) => { release = resolve; });
+    const room = new GameRoom({ seed: 21, fixedStepMs: 50, startLockTimeoutMs: 1000 });
+    installLock(room, () => pendingLock);
+    const a = fakeClient("a", "ua");
+    await join(room, a);
+    const pendingJoin = join(room, fakeClient("b", "ub"));
+    await Promise.resolve();
+    assert.equal(room.state.phase, GamePhase.Waiting);
+
+    room.onDispose();
+    release();
+    await assert.rejects(pendingJoin);
+    assert.equal(room.state.phase, GamePhase.Waiting);
+    assert.equal(room.state.matchId, "");
+    assert.equal(await room.startMatch(), false, "销毁后的房间不能重新开局");
+});
+
+test("a timed-out lock gates retries until its late unlock settles", async () => {
+    let resolveLock!: () => void;
+    let resolveUnlock!: () => void;
+    let lockCalls = 0;
+    let unlockCalls = 0;
+    let locked = false;
+    const room = new GameRoom({ seed: 26, fixedStepMs: 50, startLockTimeoutMs: 5 });
+    // The real Room.lock() flips this private bit before awaiting its driver;
+    // model that transition explicitly in this pure unit test.
+    Object.defineProperty(room, "locked", { configurable: true, get: () => locked });
+    (room as unknown as { lock: () => Promise<void> }).lock = () => {
+        lockCalls++;
+        locked = true;
+        if (lockCalls === 1) return new Promise<void>((resolve) => { resolveLock = resolve; });
+        return Promise.resolve();
+    };
+    (room as unknown as { unlock: () => Promise<void> }).unlock = () => {
+        unlockCalls++;
+        return new Promise<void>((resolve) => {
+            resolveUnlock = () => { locked = false; resolve(); };
+        });
+    };
+
+    await join(room, fakeClient("a", "ua"));
+    await assert.rejects(join(room, fakeClient("b", "ub")));
+    // The late lock has not settled yet; a new join must not start a second
+    // attempt that could later be unlocked by the first attempt's callback.
+    await assert.rejects(join(room, fakeClient("c", "uc")));
+    resolveLock();
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    assert.equal(unlockCalls, 1);
+    await assert.rejects(join(room, fakeClient("d", "ud")), "迟到 unlock 未完成前继续拒绝重试");
+    resolveUnlock();
+    await new Promise<void>((resolve) => setImmediate(resolve));
+
+    await join(room, fakeClient("e", "ue"));
+    assert.equal(room.state.phase, GamePhase.Playing);
+    assert.equal(lockCalls, 2, "释放旧锁后才允许新的开局 lock");
+    assert.equal(unlockCalls, 1, "旧锁只释放一次");
+});
+
+test("dispose still best-effort releases a late lock", async () => {
+    let resolveLock!: () => void;
+    let unlockCalls = 0;
+    let locked = false;
+    const room = new GameRoom({ seed: 27, fixedStepMs: 50, startLockTimeoutMs: 5 });
+    Object.defineProperty(room, "locked", { configurable: true, get: () => locked });
+    (room as unknown as { lock: () => Promise<void> }).lock = () => {
+        locked = true;
+        return new Promise<void>((resolve) => { resolveLock = resolve; });
+    };
+    (room as unknown as { unlock: () => Promise<void> }).unlock = async () => {
+        unlockCalls++;
+        locked = false;
+    };
+    await join(room, fakeClient("a", "ua"));
+    await assert.rejects(join(room, fakeClient("b", "ub")));
+    room.onDispose();
+    resolveLock();
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    assert.equal(unlockCalls, 1, "销毁后迟到成功仍应释放外部锁");
+    assert.equal(locked, false);
+});
+
+test("dispose before timeout also releases a lock that settles late", async () => {
+    let resolveLock!: () => void;
+    let unlockCalls = 0;
+    let locked = false;
+    const room = new GameRoom({ seed: 271, fixedStepMs: 50, startLockTimeoutMs: 1000 });
+    Object.defineProperty(room, "locked", { configurable: true, get: () => locked });
+    (room as unknown as { lock: () => Promise<void> }).lock = () => {
+        locked = true;
+        return new Promise<void>((resolve) => { resolveLock = resolve; });
+    };
+    (room as unknown as { unlock: () => Promise<void> }).unlock = async () => {
+        unlockCalls++;
+        locked = false;
+    };
+
+    await join(room, fakeClient("a", "ua"));
+    const pendingJoin = join(room, fakeClient("b", "ub"));
+    await Promise.resolve();
+    room.onDispose();
+    resolveLock();
+    await assert.rejects(pendingJoin);
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    assert.equal(unlockCalls, 1, "dispose 触发的 abort 后迟到 lock 也必须释放");
+    assert.equal(locked, false);
+});
+
+test("disposed rooms ignore late leave callbacks, messages, ticks, and injected input", async () => {
+    const room = new GameRoom(runtime(29));
+    installLock(room);
+    const a = fakeClient("a", "ua");
+    await join(room, a);
+    await join(room, fakeClient("b", "ub"));
+    const player = room.state.players.get("a")!;
+    const before = { x: player.x, dirX: player.dirX, tick: room.state.tick, sent: a.sent.length };
+
+    room.onDispose();
+    const move = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Move];
+    const ping = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Ping];
+    assert.doesNotThrow(() => move(a, { dirX: 1, dirY: 0 }));
+    assert.doesNotThrow(() => ping(a, { clientTime: 0 }));
+    assert.doesNotThrow(() => room.injectInput({ type: "move", sessionId: "a", dirX: 1, dirY: 0 }));
+    (room as unknown as { update: (dt: number) => void }).update(1000);
+    room.stepFixed();
+    await room.onLeave(a as never, 4000);
+
+    assert.deepEqual(
+        { x: player.x, dirX: player.dirX, tick: room.state.tick, sent: a.sent.length },
+        before,
+        "销毁后的房间不得继续推进、处理消息或发送回包",
+    );
+    assert.equal(room.state.players.has("a"), true, "迟到 onLeave 不得二次清理已销毁状态");
+});
+
+test("onLeave does not mutate a room after reconnection await resolves post-dispose", async () => {
+    const room = new GameRoom(runtime(30));
+    installLock(room);
+    const a = fakeClient("a", "ua");
+    await join(room, a);
+    let release!: () => void;
+    (room as unknown as { allowReconnection: () => Promise<void> }).allowReconnection = () =>
+        new Promise<void>((resolve) => { release = resolve; });
+    const pendingLeave = room.onLeave(a as never, 4001);
+    await Promise.resolve();
+    room.onDispose();
+    release();
+    await pendingLeave;
+    assert.equal(room.state.players.has("a"), true);
+});
+
+test("match start lock has a bounded deadline and rolls back without hanging the join", async () => {
+    const room = new GameRoom({ seed: 22, fixedStepMs: 50, startLockTimeoutMs: 5 });
+    installLock(room, () => new Promise<void>(() => undefined));
+    await join(room, fakeClient("a", "ua"));
+    await assert.rejects(join(room, fakeClient("b", "ub")));
+    assert.equal(room.state.phase, GamePhase.Waiting);
+    assert.equal(room.state.matchId, "");
+    assert.equal(room.state.players.size, 1);
+});
+
+test("startMatch returning false is treated as a failed join and does not send welcome", async () => {
+    const room = new GameRoom(runtime(23));
+    installLock(room);
+    const first = fakeClient("a", "ua");
+    await join(room, first);
+    (room as unknown as { startMatch: () => Promise<boolean> }).startMatch = async () => false;
+    const second = fakeClient("b", "ub");
+    await assert.rejects(join(room, second));
+    assert.equal(room.state.players.size, 1);
+    assert.equal(second.sent.length, 0, "未进入 Playing 不得发送 welcome");
+});
+
+test("faulty clocks and enormous dt stay finite and keep the room loop alive", async () => {
+    let clockMode: "throw" | "fraction" = "throw";
+    const room = new GameRoom({
+        seed: 24,
+        fixedStepMs: 50,
+        clock: () => clockMode === "throw" ? (() => { throw new Error("clock unavailable"); })() : 12.75,
+    });
+    installLock(room);
+    const a = fakeClient("a", "ua");
+    await join(room, a);
+    await join(room, fakeClient("b", "ub"));
+    const update = (room as unknown as { update: (dt: number) => void }).update.bind(room);
+    assert.doesNotThrow(() => update(Number.MAX_VALUE));
+    assert.ok(Number.isSafeInteger(room.state.tick));
+    assert.ok(room.state.tick <= 121, "catch-up 必须受上限约束");
+
+    const ping = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Ping];
+    assert.doesNotThrow(() => ping(a, { clientTime: 0 }));
+    clockMode = "fraction";
+    assert.doesNotThrow(() => ping(a, { clientTime: 0 }));
+    const pongs = a.sent.filter(([type]) => type === S2C.Pong);
+    assert.equal(pongs.at(-1)?.[1] && (pongs.at(-1)![1] as { serverTime: number }).serverTime, 12);
+});
+
+test("fixed-step options cannot produce an invalid Welcome tick rate", async () => {
+    const room = new GameRoom({ seed: 28, fixedStepMs: 1 });
+    installLock(room);
+    const a = fakeClient("a", "ua");
+    await join(room, a);
+    assert.equal(room.fixedStep, TICK_MS, "过高 tickRate 的步长应回退默认值");
+    const welcome = a.sent.find(([type]) => type === S2C.Welcome)?.[1] as { tickRate: number } | undefined;
+    assert.equal(welcome?.tickRate, 20);
 });
 
 test("per-client message budget is finite and independent", async () => {

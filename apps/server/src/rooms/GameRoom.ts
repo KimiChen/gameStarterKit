@@ -18,10 +18,14 @@ import {
     calcDamage,
     SeededRandom,
     PROTOCOL_VERSION,
+    PROJECT_DISPLAY_NAME,
+    DEMO_BRAND,
     validateRoomJoinOptions,
+    validateS2CPayload,
     WireValidationError,
     type IRoomJoinOptions,
     type C2SType,
+    type S2CType,
     type IPingReq,
     type IMoveReq,
     type ICastSkillReq,
@@ -65,6 +69,12 @@ const MAX_TARGET_ID_LENGTH = 64;
 const MAX_CLIENT_TIME = Number.MAX_SAFE_INTEGER;
 const MAX_SKILL_ID = 0xffff;
 const MAX_CATCH_UP_STEPS = 120;
+/** Keep the advertised rate inside shared S2C.Welcome's runtime contract. */
+const MAX_WELCOME_TICK_RATE = 240;
+/** A stalled room lock must not hold a matchmaking seat forever. */
+export const GAME_ROOM_START_LOCK_TIMEOUT_MS = 10_000;
+/** Bound replay input work before entering the synchronous simulation loop. */
+const MAX_INPUTS_PER_SOURCE = 256;
 
 /** 可替换的单调时间源。默认使用 Colyseus room clock。 */
 export type GameRoomClock = (() => number) | { now?: () => number; currentTime?: number };
@@ -90,6 +100,8 @@ export interface GameRoomRuntimeOptions {
     input?: GameRoomInputSource;
     /** 可选的 match id 工厂；测试可注入确定值，生产默认使用 newMatchId()。 */
     matchId?: () => string;
+    /** 开局 lock 的最大等待时间；测试可缩短，生产使用有界默认值。 */
+    startLockTimeoutMs?: number;
 }
 
 export type AcceptedGameInput = GameRoomInput & {
@@ -113,9 +125,29 @@ function normalizeSeed(seed: number | undefined): number {
 }
 
 function normalizeFixedStep(step: number | undefined): number {
-    return typeof step === "number" && Number.isFinite(step) && step >= 1 && step <= 1000
+    return typeof step === "number"
+        && Number.isFinite(step)
+        && step >= 1
+        && step <= 1000
+        && Math.round(1000 / step) <= MAX_WELCOME_TICK_RATE
         ? step
         : TICK_MS;
+}
+
+function normalizeStartLockTimeout(timeoutMs: number | undefined): number {
+    return typeof timeoutMs === "number"
+        && Number.isSafeInteger(timeoutMs)
+        && timeoutMs >= 0
+        && timeoutMs <= 60_000
+        ? timeoutMs
+        : GAME_ROOM_START_LOCK_TIMEOUT_MS;
+}
+
+class GameRoomStartLockTimeoutError extends Error {
+    constructor() {
+        super("GameRoom start lock timed out");
+        this.name = "GameRoomStartLockTimeoutError";
+    }
 }
 
 /** Zod 的 strict object 是运行时 exact-key 闸；不要改成普通 z.object。 */
@@ -137,12 +169,137 @@ const C2S_RUNTIME_SCHEMA = {
     }).strict(),
 } as const;
 
+/**
+ * Zod's strict object check enumerates with Object.keys(), so a direct handler
+ * call could otherwise smuggle a non-enumerable extra field past the wire
+ * contract. Keep the own-key allowlist explicit and inspect it with
+ * Reflect.ownKeys() before parsing.
+ */
+const C2S_REQUIRED_KEYS: Record<C2SType, readonly string[]> = {
+    [C2S.Ping]: ["clientTime"],
+    [C2S.Move]: ["dirX", "dirY"],
+    [C2S.CastSkill]: ["skillId"],
+    [C2S.Chat]: ["text"],
+};
+
+const C2S_OPTIONAL_KEYS: Record<C2SType, readonly string[]> = {
+    [C2S.Ping]: [],
+    [C2S.Move]: [],
+    [C2S.CastSkill]: ["targetId"],
+    [C2S.Chat]: [],
+};
+
 /** Exported for contract tests; production handlers still call acceptMessage(). */
 export const GAME_ROOM_C2S_SCHEMAS = C2S_RUNTIME_SCHEMA;
 
 type RuntimeSchema<T> = {
     safeParse(input: unknown): { success: true; data: T } | { success: false };
 };
+
+/**
+ * Zod's object schemas intentionally accept class instances and inherited
+ * properties.  A Colyseus wire payload is plain JSON, so reject those shapes
+ * before parsing; this also keeps symbol keys out of the direct-handler path.
+ */
+function isPlainMessageRecord(input: unknown): input is Record<string, unknown> {
+    try {
+        if (typeof input !== "object" || input === null || Array.isArray(input)) return false;
+        const proto = Object.getPrototypeOf(input);
+        if (proto !== Object.prototype && proto !== null) return false;
+        return Reflect.ownKeys(input).every((key) => typeof key === "string");
+    } catch {
+        return false;
+    }
+}
+
+function hasExactMessageKeys(input: Record<string, unknown>, messageType: C2SType): boolean {
+    try {
+        const allowed = new Set([...C2S_REQUIRED_KEYS[messageType], ...C2S_OPTIONAL_KEYS[messageType]]);
+        const actual = Reflect.ownKeys(input);
+        if (actual.some((key) => typeof key !== "string" || !allowed.has(key))) return false;
+        return C2S_REQUIRED_KEYS[messageType].every((key) => Object.prototype.hasOwnProperty.call(input, key));
+    } catch {
+        return false;
+    }
+}
+
+const INJECTED_MOVE_KEYS = ["type", "sessionId", "dirX", "dirY"] as const;
+const INJECTED_CAST_KEYS = ["type", "sessionId", "skillId"] as const;
+const INJECTED_MOVE_OPTIONAL_KEYS = ["tick"] as const;
+const INJECTED_CAST_OPTIONAL_KEYS = ["targetId", "tick"] as const;
+
+/**
+ * `injectInput()` and replay adapters are test/server boundaries rather than a
+ * JSON transport.  Keep their values just as defensive as wire payloads:
+ * inspect a hostile object once, then return a fresh plain-data snapshot.
+ * Every reflective/property operation is deliberately inside the catch so a
+ * revoked Proxy or throwing getter is treated as a dropped input.
+ */
+function snapshotInjectedInput(input: unknown): GameRoomInput | undefined {
+    try {
+        if (typeof input !== "object" || input === null || Array.isArray(input)) return undefined;
+        const proto = Object.getPrototypeOf(input);
+        if (proto !== Object.prototype && proto !== null) return undefined;
+
+        const names = Object.getOwnPropertyNames(input);
+        if (Object.getOwnPropertySymbols(input).length > 0) return undefined;
+        const record = input as Record<string, unknown>;
+        const type = record.type;
+        const required = type === "move" ? INJECTED_MOVE_KEYS : type === "castSkill" ? INJECTED_CAST_KEYS : undefined;
+        const optional = type === "move"
+            ? INJECTED_MOVE_OPTIONAL_KEYS
+            : type === "castSkill"
+                ? INJECTED_CAST_OPTIONAL_KEYS
+                : undefined;
+        if (!required || !optional) return undefined;
+        const allowed = new Set<string>([...required, ...optional]);
+        if (names.length < required.length || names.some((name) => !allowed.has(name))) return undefined;
+        if (required.some((name) => !names.includes(name))) return undefined;
+        if (names.length !== required.length
+            + names.filter((name) => (optional as readonly string[]).includes(name)).length) {
+            return undefined;
+        }
+
+        const sessionId = record.sessionId;
+        if (typeof sessionId !== "string" || sessionId.length < 1 || sessionId.length > MAX_TARGET_ID_LENGTH) {
+            return undefined;
+        }
+        const rawTick: unknown = names.includes("tick") ? record.tick : undefined;
+        let tick: number | undefined;
+        if (rawTick !== undefined) {
+            if (typeof rawTick !== "number" || !Number.isSafeInteger(rawTick) || rawTick < 0) return undefined;
+            tick = rawTick;
+        }
+
+        if (type === "move") {
+            const schema = C2S_RUNTIME_SCHEMA[C2S.Move];
+            const parsed = schema.safeParse({ dirX: record.dirX, dirY: record.dirY });
+            if (!parsed.success) return undefined;
+            const data = parsed.data as IMoveReq;
+            return tick === undefined
+                ? { type: "move", sessionId, dirX: data.dirX, dirY: data.dirY }
+                : { type: "move", sessionId, dirX: data.dirX, dirY: data.dirY, tick };
+        }
+
+        const targetId = names.includes("targetId") ? record.targetId : undefined;
+        const schema = C2S_RUNTIME_SCHEMA[C2S.CastSkill];
+        const parsed = schema.safeParse({
+            skillId: record.skillId,
+            ...(targetId === undefined ? {} : { targetId }),
+        });
+        if (!parsed.success) return undefined;
+        const data = parsed.data as ICastSkillReq;
+        return tick === undefined
+            ? (data.targetId === undefined
+                ? { type: "castSkill", sessionId, skillId: data.skillId }
+                : { type: "castSkill", sessionId, skillId: data.skillId, targetId: data.targetId })
+            : (data.targetId === undefined
+                ? { type: "castSkill", sessionId, skillId: data.skillId, tick }
+                : { type: "castSkill", sessionId, skillId: data.skillId, targetId: data.targetId, tick });
+    } catch {
+        return undefined;
+    }
+}
 
 /**
  * 主玩法房间（玩法逻辑仍为演示/假数据，用于跑通链路）：
@@ -169,6 +326,7 @@ export class GameRoom extends Room {
     private rng: SeededRandom;
     /** fixed-step 累加器；wall clock/dt 只决定要跑几步，不直接进入公式。 */
     private readonly fixedStepMs: number;
+    private readonly startLockTimeoutMs: number;
     private simulationAccumulatorMs = 0;
     private simulationTimeMs = 0;
     private readonly runtimeClock: () => number;
@@ -178,7 +336,13 @@ export class GameRoom extends Room {
     private readonly acceptedInputSequence: AcceptedGameInput[] = [];
     private readonly messageBudget = new Map<string, { windowStart: number; count: number }>();
     private startPromise: Promise<boolean> | null = null;
+    private startAbort: { generation: number; reject: (reason: unknown) => void } | null = null;
+    /** A timed-out lock may still complete later; block a retry until it is released. */
+    private lateLockPending = false;
     private starting = false;
+    /** Invalidates asynchronous start continuations after room disposal. */
+    private lifecycleGeneration = 0;
+    private disposed = false;
 
     /** sessionId → 框架账号 uid（M8a 证据链 userId 来源；onAuth 严格化后必有值） */
     private sessionUserId = new Map<string, string>();
@@ -200,6 +364,7 @@ export class GameRoom extends Room {
         this.admissionRng = SeededRandom.stream(this.configuredSeed, "admission");
         this.rng = SeededRandom.stream(this.configuredSeed, "match");
         this.fixedStepMs = normalizeFixedStep(options.fixedStepMs);
+        this.startLockTimeoutMs = normalizeStartLockTimeout(options.startLockTimeoutMs);
         this.runtimeClock = this.makeClock(options.clock);
         this.inputSource = options.input;
         this.matchIdFactory = options.matchId ?? newMatchId;
@@ -216,8 +381,24 @@ export class GameRoom extends Room {
     }
 
     private now(): number {
-        const value = this.runtimeClock();
-        return Number.isFinite(value) ? value : 0;
+        let value: unknown;
+        try {
+            value = this.runtimeClock();
+        } catch {
+            // A test/replay clock is an injected boundary.  A broken clock must
+            // not turn a heartbeat or simulation callback into an uncaught throw.
+            return 0;
+        }
+        // S2C timestamps are non-negative safe integers.  Floor fractional
+        // monotonic clocks (for example performance.now()) while rejecting
+        // values that could overflow Schema/JSON numeric contracts.
+        if (typeof value !== "number"
+            || !Number.isFinite(value)
+            || value < 0
+            || value > Number.MAX_SAFE_INTEGER) {
+            return 0;
+        }
+        return Math.floor(value);
     }
 
     /**
@@ -292,7 +473,7 @@ export class GameRoom extends Room {
             const msg = this.acceptMessage(client, C2S.Ping, raw, C2S_RUNTIME_SCHEMA[C2S.Ping]);
             if (!msg) return;
             const res: IPongRes = { clientTime: msg.clientTime, serverTime: this.now() };
-            client.send(S2C.Pong, res);
+            this.sendS2C(client, S2C.Pong, res);
         },
 
         [C2S.Move]: (client: Client, raw: IMoveReq) => {
@@ -316,13 +497,14 @@ export class GameRoom extends Room {
             if (!msg) return;
             const player = this.state.players.get(client.sessionId);
             if (!player || !player.alive) return;
+            const accepted = this.handleCastSkill(client, msg);
+            if (!accepted) return;
             this.recordInput({
                 type: "castSkill",
                 sessionId: client.sessionId,
                 skillId: msg.skillId,
                 ...(msg.targetId === undefined ? {} : { targetId: msg.targetId }),
             });
-            this.handleCastSkill(client, msg);
         },
 
         [C2S.Chat]: (client: Client, raw: IChatReq) => {
@@ -337,7 +519,7 @@ export class GameRoom extends Room {
                 text,
                 time: this.now(),
             };
-            this.broadcast(S2C.Chat, res);
+            this.broadcastS2C(S2C.Chat, res);
         },
     };
 
@@ -374,9 +556,23 @@ export class GameRoom extends Room {
 
     private sendError(client: Client, code: ErrorCodeType): void {
         const error: IErrorRes = { code, message: ErrorMessage[code] ?? ErrorMessage[ErrorCode.Unknown] };
+        this.sendS2C(client, S2C.Error, error);
+    }
+
+    /** Validate every server-to-client payload before handing it to Colyseus transport. */
+    private sendS2C(client: Client | undefined, type: S2CType, payload: unknown): void {
+        if (this.disposed) return;
+        const wire = validateS2CPayload(type, payload);
         // Fake clients used by deterministic tests may not implement send; a malformed
         // packet must still be a no-op rather than throw into the room loop.
-        try { client.send?.(S2C.Error, error); } catch { /* connection may be closing */ }
+        try { client?.send?.(type, wire); } catch { /* connection may be closing */ }
+    }
+
+    /** Validate before broadcast so no malformed payload enters the room fan-out queue. */
+    private broadcastS2C(type: S2CType, payload: unknown): void {
+        if (this.disposed) return;
+        const wire = validateS2CPayload(type, payload);
+        this.broadcast(type, wire);
     }
 
     private acceptMessage<T>(
@@ -385,7 +581,16 @@ export class GameRoom extends Room {
         raw: unknown,
         schema: RuntimeSchema<T>,
     ): T | undefined {
+        if (this.disposed) return undefined;
         if (!this.consumeMessageBudget(client)) return undefined;
+        if (!isPlainMessageRecord(raw)) {
+            this.sendError(client, ErrorCode.BadRequest);
+            return undefined;
+        }
+        if (!hasExactMessageKeys(raw, messageType)) {
+            this.sendError(client, ErrorCode.BadRequest);
+            return undefined;
+        }
         let parsed: { success: true; data: T } | { success: false };
         try {
             parsed = schema.safeParse(raw);
@@ -417,6 +622,7 @@ export class GameRoom extends Room {
     private sId = 0;
 
     onCreate(options: IRoomJoinOptions | undefined) {
+        if (this.disposed) return;
         const sId = normalizeSId(options?.sId);
         if (sId === null) {
             throw joinRefused(ErrorCode.WrongServer);
@@ -429,7 +635,7 @@ export class GameRoom extends Room {
     async onJoin(client: Client, _options: unknown) {
         // 对局已开/已结算的房间不收新客（M8a：参与者集合在开局时固定，中途进人会污染名次与
         // 证据的 09·K5 输入完整性）。撮合层已由开局时的 lock() 挡住，此闸兜底 joinById 直连。
-        if (this.state.phase !== GamePhase.Waiting || this.starting) {
+        if (this.disposed || this.state.phase !== GamePhase.Waiting || this.starting || this.lateLockPending) {
             throw joinRefused(ErrorCode.GameAlreadyStarted); // ⛔ 曾硬编码 4002（越界 status + 与关闭码混淆）
         }
         const auth = client.auth as GameRoomAuth | undefined;
@@ -464,7 +670,8 @@ export class GameRoom extends Room {
             try {
                 // startMatch 先 await lock，再把 phase 切到 Playing；锁失败时不会公开一个
                 // 仍可被撮合/直连塞人的 Playing 房。
-                await this.startMatch();
+                const started = await this.startMatch();
+                if (!started) throw new Error("match did not start");
             } catch (error) {
                 this.removePlayer(client.sessionId, true);
                 console.error(`[GameRoom] 开局失败，回滚到 Waiting roomId=${this.roomId}`, error);
@@ -475,18 +682,19 @@ export class GameRoom extends Room {
         const welcome: IWelcomeRes = {
             sessionId: client.sessionId,
             tickRate: Math.round(1000 / this.fixedStepMs),
-            motd: "欢迎来到 game（dev 服务端）",
+            motd: `欢迎来到 ${PROJECT_DISPLAY_NAME} · ${DEMO_BRAND}`,
         };
         // onJoin 里同步 send 是安全的：@colyseus/ws-transport 在客户端 JOIN ack 之前
         //（state !== JOINED）把所有 send 缓冲进 _enqueuedMessages，ack 后先发全量 state
         // 再 flush——Welcome 不可能先于客户端 joinOrCreate 的 resolve 到达，⛔ 不需要
         // 延迟一拍（曾误诊为竞态；int 日志里的 's2c.welcome' 告警实为 settlement 测试
         // 未注册 Welcome 处理器所致，延迟也消不掉）。
-        client.send(S2C.Welcome, welcome);
+        this.sendS2C(client, S2C.Welcome, welcome);
         console.log(`[GameRoom ${this.roomId}] ${player.name}(${client.sessionId}) 加入，当前 ${this.state.players.size} 人`);
     }
 
     async onLeave(client: Client, code: number) {
+        if (this.disposed) return;
         const consented = code === CloseCode.CONSENTED;
         if (!consented) {
             try {
@@ -501,6 +709,7 @@ export class GameRoom extends Room {
                 // 宽限到期未归 → 按真离开走下方清理
             }
         }
+        if (this.disposed) return;
         const player = this.state.players.get(client.sessionId);
         if (player && this.state.phase === GamePhase.Playing) {
             // 结算证据还需要退房者的名字——无论死活都先快照（state.players 马上要删）
@@ -516,9 +725,19 @@ export class GameRoom extends Room {
     }
 
     onDispose() {
+        // A lock/start continuation may resume after Colyseus has disposed the
+        // room.  Advance the generation before clearing state so its late
+        // continuation can only observe a stale token and exit.
+        if (this.disposed) return;
+        this.disposed = true;
+        this.lifecycleGeneration++;
+        this.startAbort?.reject(new Error("room disposed during match start"));
+        this.startAbort = null;
+        this.lateLockPending = false;
         this.messageBudget.clear();
         this.injectedInputs.length = 0;
         this.acceptedInputSequence.length = 0;
+        this.inputSource = undefined;
         this.sessionUserId.clear();
         this.userSessionId.clear();
         this.participantUserId.clear();
@@ -532,26 +751,40 @@ export class GameRoom extends Room {
      * 也可由 deterministic test/replay harness 直接调用。
      */
     async startMatch(): Promise<boolean> {
+        if (this.disposed) return false;
         if (this.state.phase === GamePhase.Playing) return true;
         if (this.state.phase !== GamePhase.Waiting || this.state.players.size < 2) return false;
         if (this.startPromise) return this.startPromise;
+        // A previous timed-out Room.lock() can still mutate the listing.  Do
+        // not start another match until its late completion has been observed
+        // and any acquired lock has been released.
+        if (this.lateLockPending) return false;
 
-        this.startPromise = this.performStartMatch();
+        const generation = this.lifecycleGeneration;
+        const promise = this.performStartMatch(generation);
+        this.startPromise = promise;
         try {
-            return await this.startPromise;
+            return await promise;
         } finally {
-            this.startPromise = null;
+            if (this.startPromise === promise) this.startPromise = null;
         }
     }
 
-    private async performStartMatch(): Promise<boolean> {
+    private async performStartMatch(generation: number): Promise<boolean> {
         this.starting = true;
+        let rejectAbort!: (reason: unknown) => void;
+        const abort = new Promise<never>((_, reject) => { rejectAbort = reject; });
+        this.startAbort = { generation, reject: rejectAbort };
         const wasLocked = this.locked;
         const startingSessions = new Set<string>();
         this.state.players.forEach((_player, sessionId) => startingSessions.add(sessionId));
         try {
             // lock() 可能需要访问 Redis/driver；在它完成前不公开 Playing。
-            await this.lock();
+            if (!this.isGenerationActive(generation)) throw new Error("room disposed before match start");
+            await this.lockWithDeadline(abort, wasLocked);
+            // The room may have been disposed while the external lock was in
+            // flight.  Never publish a stale match after that boundary.
+            if (!this.isGenerationActive(generation)) throw new Error("room disposed during match start");
             // 等待外部 lock 时可能有玩家离开；不能把只剩一人的房间切成 Playing。
             let participantsUnchanged = this.state.players.size >= 2;
             if (participantsUnchanged) {
@@ -567,10 +800,13 @@ export class GameRoom extends Room {
             this.state.phase = GamePhase.Playing;
             return true;
         } catch (error) {
-            this.rollbackMatchState();
+            if (this.isGenerationActive(generation)) this.rollbackMatchState();
             // Colyseus 的 lock() 先改内存再持久化；持久化失败时尽量恢复撮合状态。
             // 若 unlock 也失败，关闭房间是唯一不会继续接客的终态。
-            if (!wasLocked && this.locked) {
+            if (this.isGenerationActive(generation)
+                && !(error instanceof GameRoomStartLockTimeoutError)
+                && !wasLocked
+                && this.locked) {
                 try {
                     await this.unlock();
                 } catch (unlockError) {
@@ -580,7 +816,82 @@ export class GameRoom extends Room {
             }
             throw error;
         } finally {
+            if (this.startAbort?.generation === generation) this.startAbort = null;
             this.starting = false;
+        }
+    }
+
+    private isGenerationActive(generation: number): boolean {
+        return !this.disposed && generation === this.lifecycleGeneration;
+    }
+
+    /**
+     * Bound the external room lock.  Promise.race observes the lock promise's
+     * eventual rejection; the late completion handler also releases a lock
+     * acquired after a timeout while the generation is still live.
+     */
+    private async lockWithDeadline(abort: Promise<never>, wasLocked = false): Promise<void> {
+        let timer: NodeJS.Timeout | undefined;
+        let timedOut = false;
+        let aborted = false;
+        let lockPromise: Promise<void>;
+        try {
+            lockPromise = Promise.resolve(this.lock());
+        } catch (error) {
+            lockPromise = Promise.reject(error);
+        }
+
+        // `onDispose()` rejects this abort promise before an in-flight
+        // `Room.lock()` necessarily settles.  Colyseus flips its local locked
+        // bit before awaiting the driver, so a late successful lock must be
+        // released even when the start was cancelled by disposal rather than
+        // by the timeout branch below.
+        void abort.catch(() => { aborted = true; });
+
+        const releaseLateLock = async () => {
+            if (!timedOut && !aborted) return;
+            // Disposal invalidates state publication, but a Room.lock() that
+            // already flipped the local/listing bit can still settle later.
+            // Release that stale lock even after disposal; the best-effort call
+            // is harmless when the matchmaker has already removed the room.
+            // An already-locked room is owned by the caller that preceded this
+            // start attempt.  Never release that lock as part of our late
+            // cancellation cleanup.
+            if (wasLocked || !this.locked) {
+                this.lateLockPending = false;
+                return;
+            }
+            // `unlock()` is normally an async Room method.  Keep this callback
+            // fail-closed even when a unit-test adapter replaces it with a
+            // synchronous function or a throwing stub.
+            try {
+                const unlockResult = this.unlock();
+                await Promise.resolve(unlockResult);
+            } catch (error) {
+                console.error(`[GameRoom] lock 取消/超时后的迟到 unlock 失败 roomId=${this.roomId}`, error);
+                try { await this.disconnect(CloseCode.WITH_ERROR); } catch { /* 手动单测可能尚未 __init */ }
+            } finally {
+                this.lateLockPending = false;
+            }
+        };
+        // Attach handlers before racing so an eventual rejection is always observed.
+        void lockPromise.then(releaseLateLock, releaseLateLock).catch((error) => {
+            // The callback above is intentionally defensive; retain an
+            // observation point if a future adapter still violates that rule.
+            console.error(`[GameRoom] lock 超时回调异常 roomId=${this.roomId}`, error);
+        });
+
+        const timeout = new Promise<never>((_, reject) => {
+            timer = setTimeout(() => {
+                timedOut = true;
+                this.lateLockPending = true;
+                reject(new GameRoomStartLockTimeoutError());
+            }, this.startLockTimeoutMs);
+        });
+        try {
+            await Promise.race([lockPromise, timeout, abort]);
+        } finally {
+            if (timer) clearTimeout(timer);
         }
     }
 
@@ -644,7 +955,7 @@ export class GameRoom extends Room {
 
     /** 公开一个固定步推进点，供回放/无头测试使用。 */
     stepFixed(): void {
-        if (this.state.phase !== GamePhase.Playing) return;
+        if (this.disposed || this.state.phase !== GamePhase.Playing) return;
         this.applyInjectedInputs(this.state.tick);
         if (this.state.phase !== GamePhase.Playing) return;
         this.state.tick++;
@@ -660,9 +971,17 @@ export class GameRoom extends Room {
 
     /** 逻辑帧：dt 只进入 fixed-step 累加器；Waiting/Settle 完全不推进。 */
     private update(dt: number) {
-        if (this.state.phase !== GamePhase.Playing) return;
+        if (this.disposed || this.state.phase !== GamePhase.Playing) return;
         if (!Number.isFinite(dt) || dt <= 0) return;
-        this.simulationAccumulatorMs += dt;
+        // Keep a finite, bounded backlog even when a host/adapter reports an
+        // enormous elapsed interval.  Without this cap, `Infinity % step`
+        // turns the accumulator into NaN and permanently stalls later frames.
+        const maxBacklog = this.fixedStepMs * (MAX_CATCH_UP_STEPS + 1);
+        const currentBacklog = Number.isFinite(this.simulationAccumulatorMs)
+            && this.simulationAccumulatorMs >= 0
+            ? this.simulationAccumulatorMs
+            : 0;
+        this.simulationAccumulatorMs = Math.min(maxBacklog, currentBacklog + Math.min(dt, maxBacklog));
         let steps = 0;
         while (this.simulationAccumulatorMs >= this.fixedStepMs && steps < MAX_CATCH_UP_STEPS) {
             this.simulationAccumulatorMs -= this.fixedStepMs;
@@ -701,26 +1020,15 @@ export class GameRoom extends Room {
 
     /** 注入一条已经过调用方验证的输入；非法输入直接拒绝，不进入 replay 序列。 */
     injectInput(input: GameRoomInput): boolean {
-        if (!input || typeof input !== "object" || (input.type !== "move" && input.type !== "castSkill")) return false;
-        const allowedKeys = input.type === "move"
-            ? new Set(["type", "sessionId", "dirX", "dirY", "tick"])
-            : new Set(["type", "sessionId", "skillId", "targetId", "tick"]);
-        if (Object.keys(input as object).some((key) => !allowedKeys.has(key))) return false;
-        const schema = input.type === "move"
-            ? C2S_RUNTIME_SCHEMA[C2S.Move]
-            : C2S_RUNTIME_SCHEMA[C2S.CastSkill];
-        const payload = input.type === "move"
-            ? { dirX: input.dirX, dirY: input.dirY }
-            : { skillId: input.skillId, ...(input.targetId === undefined ? {} : { targetId: input.targetId }) };
-        if (!schema.safeParse(payload).success) return false;
-        if (typeof input.sessionId !== "string" || input.sessionId.length < 1 || input.sessionId.length > MAX_TARGET_ID_LENGTH) return false;
-        if (input.tick !== undefined && (!Number.isInteger(input.tick) || input.tick < 0)) return false;
-        this.injectedInputs.push({ ...input });
+        if (this.disposed || this.state.phase !== GamePhase.Playing) return false;
+        const snapshot = snapshotInjectedInput(input);
+        if (!snapshot) return false;
+        this.injectedInputs.push(snapshot);
         return true;
     }
 
     setInputSource(source: GameRoomInputSource | undefined): void {
-        this.inputSource = source;
+        this.inputSource = this.disposed ? undefined : source;
     }
 
     /** 只读副本，避免测试/回放调用方改写房内输入历史。 */
@@ -742,51 +1050,83 @@ export class GameRoom extends Room {
     }
 
     private applyInjectedInputs(tick: number): void {
+        if (this.disposed) return;
         // 丢弃已经错过的定时输入，避免坏回放数据无限滞留。
         for (let i = this.injectedInputs.length - 1; i >= 0; i--) {
-            const queuedTick = this.injectedInputs[i].tick;
-            if (queuedTick !== undefined && queuedTick < tick) this.injectedInputs.splice(i, 1);
+            try {
+                const queuedTick = this.injectedInputs[i].tick;
+                if (queuedTick !== undefined && queuedTick < tick) this.injectedInputs.splice(i, 1);
+            } catch {
+                // The queue is normally made only of snapshots.  If a test or
+                // adapter has tampered with it, discard the hostile entry.
+                this.injectedInputs.splice(i, 1);
+            }
         }
-        const queued = this.injectedInputs.filter((input) => input.tick === undefined || input.tick === tick);
+        const queued: GameRoomInput[] = [];
+        for (let i = 0; i < this.injectedInputs.length; i++) {
+            try {
+                const input = this.injectedInputs[i];
+                if (input.tick === undefined || input.tick === tick) queued.push(input);
+            } catch {
+                this.injectedInputs.splice(i, 1);
+                i--;
+            }
+        }
         if (queued.length > 0) {
-            for (const input of queued) this.applyInjectedInput(input);
+            for (const input of queued) {
+                try { this.applyInjectedInput(input); } catch { /* drop this input */ }
+            }
             for (const input of queued) {
                 const index = this.injectedInputs.indexOf(input);
                 if (index >= 0) this.injectedInputs.splice(index, 1);
             }
         }
-        let sourced: readonly GameRoomInput[] = [];
-        try {
-            const candidate = this.inputSource?.(tick);
-            if (Array.isArray(candidate)) sourced = candidate;
-        } catch {
-            // Replay/input adapters are outside the room boundary. A faulty adapter
-            // must not abort the simulation callback or leave a half-applied frame.
-            sourced = [];
-        }
+        const sourced = this.readInputSource(tick);
         for (const input of sourced) {
-            if (!this.validateInjectedInput(input)) continue;
-            if (input.tick !== undefined && input.tick !== tick) continue;
-            this.applyInjectedInput(input);
+            // `readInputSource` has already copied the value, so no hostile
+            // getter can run during application.  Keep an item-level catch as
+            // a final guard around injected gameplay/adapters.
+            try { this.applyInjectedInput(input); } catch { /* drop this input */ }
         }
     }
 
-    private validateInjectedInput(input: GameRoomInput): boolean {
-        if (!input || typeof input !== "object" || (input.type !== "move" && input.type !== "castSkill")) return false;
-        const schema = input.type === "move"
-            ? C2S_RUNTIME_SCHEMA[C2S.Move]
-            : C2S_RUNTIME_SCHEMA[C2S.CastSkill];
-        const payload = input.type === "move"
-            ? { dirX: input.dirX, dirY: input.dirY }
-            : { skillId: input.skillId, ...(input.targetId === undefined ? {} : { targetId: input.targetId }) };
-        return typeof input.sessionId === "string"
-            && input.sessionId.length >= 1
-            && input.sessionId.length <= MAX_TARGET_ID_LENGTH
-            && (input.tick === undefined || (Number.isInteger(input.tick) && input.tick >= 0))
-            && schema.safeParse(payload).success;
+    private readInputSource(tick: number): GameRoomInput[] {
+        if (this.disposed) return [];
+        try {
+            const candidate = this.inputSource?.(tick);
+            if (!Array.isArray(candidate)) return [];
+            // Read and validate the complete iterator before applying anything;
+            // a broken iterator therefore cannot leave a half-applied frame.
+            const length = candidate.length;
+            if (!Number.isSafeInteger(length) || length < 0 || length > MAX_INPUTS_PER_SOURCE) return [];
+            const iteratorFactory = (candidate as unknown as { [Symbol.iterator]?: unknown })[Symbol.iterator];
+            if (typeof iteratorFactory !== "function") return [];
+            const iterator = (iteratorFactory as () => Iterator<unknown>).call(candidate);
+            const values: unknown[] = [];
+            for (;;) {
+                const step = iterator.next();
+                if (!step || typeof step !== "object") return [];
+                if (step.done) break;
+                values.push(step.value);
+                if (values.length > MAX_INPUTS_PER_SOURCE) return [];
+            }
+
+            const valid: GameRoomInput[] = [];
+            for (const value of values) {
+                const snapshot = snapshotInjectedInput(value);
+                if (!snapshot || (snapshot.tick !== undefined && snapshot.tick !== tick)) continue;
+                valid.push(snapshot);
+            }
+            return valid;
+        } catch {
+            // Replay/input adapters are outside the room boundary. A faulty
+            // callback, iterator, or property must not abort the room loop.
+            return [];
+        }
     }
 
     private applyInjectedInput(input: GameRoomInput): void {
+        if (this.disposed) return;
         const player = this.state.players.get(input.sessionId);
         if (!player || !player.alive || this.state.phase !== GamePhase.Playing) return;
         if (input.type === "move") {
@@ -796,6 +1136,9 @@ export class GameRoom extends Room {
             player.dirY = dir.y;
             return;
         }
+        const client = this.clients.find((candidate) => candidate.sessionId === input.sessionId);
+        const accepted = this.handleCastSkill(client, input, input.sessionId);
+        if (!accepted) return;
         this.recordInput({
             type: "castSkill",
             sessionId: input.sessionId,
@@ -803,29 +1146,27 @@ export class GameRoom extends Room {
             ...(input.targetId === undefined ? {} : { targetId: input.targetId }),
             ...(input.tick === undefined ? {} : { tick: input.tick }),
         });
-        const client = this.clients.find((candidate) => candidate.sessionId === input.sessionId);
-        this.handleCastSkill(client, input, input.sessionId);
     }
 
-    private handleCastSkill(client: Client | undefined, msg: ICastSkillReq, sessionIdOverride?: string) {
+    private handleCastSkill(client: Client | undefined, msg: ICastSkillReq, sessionIdOverride?: string): boolean {
         // 只有 Playing 能改变模拟；入口 handler 已做 phase 闸，注入/replay 也必须兜底。
-        if (this.state.phase !== GamePhase.Playing) return;
+        if (this.disposed || this.state.phase !== GamePhase.Playing) return false;
         const sessionId = client?.sessionId ?? sessionIdOverride;
-        if (!sessionId) return;
+        if (!sessionId) return false;
         const caster = this.state.players.get(sessionId);
-        if (!caster || !caster.alive) return;
+        if (!caster || !caster.alive) return false;
 
         const skill = getSkillDef(msg?.skillId ?? -1);
         if (!skill) {
             const err: IErrorRes = { code: ErrorCode.SkillUnavailable, message: ErrorMessage[ErrorCode.SkillUnavailable] };
-            client?.send?.(S2C.Error, err);
-            return;
+            this.sendS2C(client, S2C.Error, err);
+            return false;
         }
 
         // 冷却检查（服务端内部字段，不同步）
         const now = this.simulationTimeMs;
         const lastAt = caster.lastCastAt[skill.id];
-        if (lastAt !== undefined && now - lastAt < skill.cooldownMs) return;
+        if (lastAt !== undefined && now - lastAt < skill.cooldownMs) return false;
         caster.lastCastAt[skill.id] = now;
 
         // 用双端共享公式结算伤害
@@ -846,15 +1187,16 @@ export class GameRoom extends Room {
             targetId: msg.targetId,
             damage,
         };
-        this.broadcast(S2C.SkillResult, res);
+        this.broadcastS2C(S2C.SkillResult, res);
         this.maybeSettle();
+        return true;
     }
 
     // ---------------- 结算 + 证据链（服务端框架 M8a） ----------------
 
     /** 结算条件：对局中存活 ≤1。 */
     private maybeSettle() {
-        if (this.state.phase !== GamePhase.Playing) return;
+        if (this.disposed || this.state.phase !== GamePhase.Playing) return;
         let alive = 0;
         this.state.players.forEach((p) => { if (p.alive) alive++; });
         if (alive <= 1) this.settle();
@@ -868,7 +1210,7 @@ export class GameRoom extends Room {
      * （也让纯 mock 联调的房间路径不隐性依赖 Redis）。
      */
     private settle() {
-        if (this.state.phase !== GamePhase.Playing) return;
+        if (this.disposed || this.state.phase !== GamePhase.Playing) return;
         this.state.phase = GamePhase.Settle;
         // 结算耗时取 fixed-step 逻辑时钟，而不是 wall-clock/dt；注入同一 seed、步长和
         // accepted inputs 的回放会得到完全相同的 elapsedMs。
