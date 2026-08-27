@@ -1,4 +1,4 @@
-import type { GameplayContext, GameplayPlugin, GameplayStopReason } from "../../gameplay";
+import type { GameplayContext, GameplayPlugin, GameplayStopReason } from "../../gameplay/index";
 import type { GameplayRegistry } from "../../gameplay/GameplayRegistry";
 
 /** 第二个最小玩法 fixture：只记录输入与逻辑步，不依赖 room、cc 或 FGUI。 */
