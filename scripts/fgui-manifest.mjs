@@ -59,8 +59,15 @@ function attrs(source) {
   return out;
 }
 
+function withoutXmlComments(xml) {
+  // Package XML is small and intentionally parsed without a DOM dependency.
+  // Remove comments first so an example snippet in a designer comment cannot
+  // become a false resource/package declaration.
+  return xml.replace(/<!--[\s\S]*?-->/g, "");
+}
+
 function packageDescription(xml) {
-  const match = /<packageDescription\b([^>]*)>/i.exec(xml);
+  const match = /<packageDescription\b([^>]*)>/i.exec(withoutXmlComments(xml));
   if (!match) throw new Error("package.xml 缺少 packageDescription");
   const id = attrs(match[1]).id;
   if (!id) throw new Error("package.xml 缺少 packageDescription.id");
@@ -69,7 +76,8 @@ function packageDescription(xml) {
 
 function componentDeclarations(xml) {
   const out = [];
-  for (const match of xml.matchAll(/<component\b([^>]*)\/?>(?:<\/component>)?/gi)) {
+  const body = /<resources\b[^>]*>([\s\S]*?)<\/resources>/i.exec(withoutXmlComments(xml))?.[1] ?? "";
+  for (const match of body.matchAll(/<component\b([^>]*)\/?>(?:<\/component>)?/gi)) {
     const a = attrs(match[1]);
     if (a.name) out.push({ name: a.name, exported: a.exported === "true" });
   }
@@ -79,11 +87,19 @@ function componentDeclarations(xml) {
 /** package.xml 中所有可由 ui:// URL 指向的资源（不仅是组件）。 */
 function resourceDeclarations(xml) {
   const out = [];
-  for (const match of xml.matchAll(/<(component|image|spine|misc|font)\b([^>]*)>/gi)) {
+  const body = /<resources\b[^>]*>([\s\S]*?)<\/resources>/i.exec(withoutXmlComments(xml))?.[1] ?? "";
+  // FairyGUI has added resource kinds over time (movieclip/sound/video,
+  // dragonBones, ...).  Treat every named resource entry as addressable while
+  // excluding `folder`, which is an editor grouping rather than a ui:// item.
+  // This keeps the closure check forward-compatible without silently changing
+  // the existing manifest for editor-only folders.
+  for (const match of body.matchAll(/<([A-Za-z_][\w:.-]*)\b([^>]*)>/g)) {
+    const kind = match[1].toLowerCase();
+    if (kind === "folder" || kind === "resources") continue;
     const a = attrs(match[2]);
     if (!a.id || !a.name) continue;
     out.push({
-      kind: match[1].toLowerCase(),
+      kind,
       id: a.id,
       name: a.name,
       exported: a.exported === "true",
@@ -173,9 +189,12 @@ function packageMaps(infos, errors) {
     if (byName.has(info.name)) errors.push(`package 名称重复 ${info.name}`);
     else byName.set(info.name, info);
     const resourceIds = new Set();
+    const resourceNames = new Set();
     for (const resource of info.resources ?? []) {
       if (resourceIds.has(resource.id)) errors.push(`${info.name}: resource id 重复 ${resource.id}`);
       resourceIds.add(resource.id);
+      if (resourceNames.has(resource.name)) errors.push(`${info.name}: resource name 重复 ${resource.name}`);
+      resourceNames.add(resource.name);
     }
   }
   return { byId, byName };
@@ -317,8 +336,22 @@ function compareRecords(label, expected, actual, problems) {
     problems.push(`${label}: 记录不是数组`);
     return;
   }
-  const expectedMap = new Map(expected.map((item) => [item.path, item.sha256]));
-  const actualMap = new Map(actual.map((item) => [item.path, item.sha256]));
+  const toMap = (records, side) => {
+    const map = new Map();
+    for (const [index, item] of records.entries()) {
+      if (!item || typeof item !== "object" || typeof item.path !== "string"
+        || item.path.trim() === "" || typeof item.sha256 !== "string"
+        || !/^[0-9a-f]{64}$/i.test(item.sha256)) {
+        problems.push(`${label}: ${side}[${index}] 记录结构非法`);
+        continue;
+      }
+      if (map.has(item.path)) problems.push(`${label}: ${side} 重复记录 ${item.path}`);
+      else map.set(item.path, item.sha256);
+    }
+    return map;
+  };
+  const expectedMap = toMap(expected, "manifest");
+  const actualMap = toMap(actual, "当前");
   for (const [file, hash] of expectedMap) {
     if (!actualMap.has(file)) problems.push(`${label}: 缺失 ${file}`);
     else if (actualMap.get(file) !== hash) problems.push(`${label}: 哈希不符 ${file}`);
@@ -335,19 +368,24 @@ function checkManifest() {
     || !Array.isArray(expected.exports) || !Array.isArray(expected.views)) {
     throw new Error(`manifest 版本/结构非法（期望 version=${VERSION}）`);
   }
+  const packageNames = new Set();
+  const packageIds = new Set();
   for (const [index, pkg] of expected.packages.entries()) {
     if (!pkg || typeof pkg.name !== "string" || typeof pkg.id !== "string"
       || !Array.isArray(pkg.source) || !Array.isArray(pkg.components)
       || !Array.isArray(pkg.resources) || !Array.isArray(pkg.outputs)) {
       throw new Error(`manifest packages[${index}] 结构非法`);
     }
+    if (packageNames.has(pkg.name)) throw new Error(`manifest package 名称重复：${pkg.name}`);
+    if (packageIds.has(pkg.id)) throw new Error(`manifest package id 重复：${pkg.id}`);
+    packageNames.add(pkg.name);
+    packageIds.add(pkg.id);
   }
   const actual = currentManifest();
   const problems = [];
   if (expected.sourceRoot !== actual.sourceRoot || expected.exportRoot !== actual.exportRoot) {
     problems.push("manifest root 与当前工程不一致");
   }
-  compareRecords("FGUI source", expected.packages.flatMap((p) => p.source), actual.packages.flatMap((p) => p.source), problems);
   compareRecords("Cocos export", expected.exports, actual.exports, problems);
   const expectedPackages = new Map(expected.packages.map((p) => [p.name, p]));
   const actualPackages = new Map(actual.packages.map((p) => [p.name, p]));
@@ -355,11 +393,30 @@ function checkManifest() {
     const got = actualPackages.get(name);
     if (!got) { problems.push(`package 缺失 ${name}`); continue; }
     if (pkg.id !== got.id) problems.push(`${name}: package id 变化`);
+    compareRecords(`${name} source`, pkg.source, got.source, problems);
     if (JSON.stringify(pkg.components) !== JSON.stringify(got.components)) problems.push(`${name}: package.xml 组件/导出声明变化`);
     if (JSON.stringify(pkg.resources) !== JSON.stringify(got.resources)) problems.push(`${name}: package.xml 资源声明变化`);
     compareRecords(`${name} export`, pkg.outputs, got.outputs, problems);
+
+    const sourceRoot = path.posix.join(expected.sourceRoot, name) + "/";
+    for (const item of pkg.source) {
+      if (item && typeof item.path === "string" && !posix(item.path).startsWith(sourceRoot)) {
+        problems.push(`${name} source: 路径越界 ${item.path}`);
+      }
+    }
   }
   for (const name of actualPackages.keys()) if (!expectedPackages.has(name)) problems.push(`package 多余 ${name}`);
+
+  // A generated asset must have one owner.  Ambiguous ownership would let one
+  // package's export drift while another package's record keeps the check green.
+  const owners = new Map();
+  for (const pkg of actual.packages) {
+    for (const output of pkg.outputs) {
+      const previous = owners.get(output.path);
+      if (previous && previous !== pkg.name) problems.push(`Cocos export: ${output.path} 同时归属 ${previous}/${pkg.name}`);
+      else owners.set(output.path, pkg.name);
+    }
+  }
   const expectedViews = new Map(expected.views.map((v) => [v.path, v]));
   const actualViews = new Map(actual.views.map((v) => [v.path, v]));
   for (const [file, view] of expectedViews) {
@@ -379,10 +436,22 @@ function checkManifest() {
   console.log("✔ FGUI manifest、源资源闭包和导出物一致");
 }
 
-if (process.argv.includes("--write")) {
-  const manifest = currentManifest();
-  fs.writeFileSync(MANIFEST, `${JSON.stringify(manifest, null, 2)}\n`);
-  console.log(`✔ 已写入 ${rel(ROOT, MANIFEST)}（${manifest.packages.length} 个包，${manifest.exports.length} 个导出文件）`);
-} else {
-  checkManifest();
+const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isMain) {
+  if (process.argv.includes("--write")) {
+    const manifest = currentManifest();
+    fs.writeFileSync(MANIFEST, `${JSON.stringify(manifest, null, 2)}\n`);
+    console.log(`✔ 已写入 ${rel(ROOT, MANIFEST)}（${manifest.packages.length} 个包，${manifest.exports.length} 个导出文件）`);
+  } else {
+    checkManifest();
+  }
 }
+
+export {
+  componentDeclarations,
+  compareRecords,
+  currentManifest,
+  packageDescription,
+  resourceDeclarations,
+  validateUiUrl,
+};
