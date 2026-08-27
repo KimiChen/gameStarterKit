@@ -1,7 +1,7 @@
 /**
- * 异常类型 + 错误码映射（[07 · 错误码表](docs/SERVER.md)）。
+ * 异常类型 + 错误码映射（错误码真源在 shared `RPC_ERR_CODES`，登记点见 docs/SERVER.md §13）。
  *
- * 客户端按 `code` 分支，⛔ 禁止解析 `msg`（09·G3）。新增错误码必须先加 07 的表。
+ * 客户端按 `code` 分支，⛔ 禁止解析 `msg`（09·G3）。新增错误码必须先加 shared 契约与文档登记。
  */
 
 import { ErrorCode as ColyseusErrorCode, ServerError } from "@colyseus/core";

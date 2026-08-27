@@ -1,5 +1,5 @@
 /**
- * 幂等占位（[07 · 幂等占位的两个状态](docs/SERVER.md)）。
+ * 幂等占位（规则见 docs/SERVER.md §12 I 组）。
  *
  * 幂等 = **执行前**原子占位（SET NX PX，pending 短租约 10s）+ **数据层 UNIQUE 兜底**（09·I1）。
  * ⛔ 禁止「成功后 SET」——并发双发会双双执行；⛔ 禁止 pending 用长 TTL（24h 毒丸卡死用户）。

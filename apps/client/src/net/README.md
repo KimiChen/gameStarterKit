@@ -7,6 +7,7 @@
 | 外部 WebPlatform Public HTTP | `http/account.ts`（开发登录）/ `http/area.ts`（选服） | `logic/page/` |
 | 游戏服 HTTP | `http/notice.ts`（公告） | `logic/page/` |
 | （无，纯客户端状态） | `serverSession.ts`（当前选中区服、列表、`isOps` 与哈希） | 页面写入，Lobby/GameRoom 读取 `gameHttpUrl` |
+| （无，纯客户端状态） | `session.ts`（登录态 token/userId 与 authInvalid/connLost/battleLost 事件枢纽；未登录态的迟到失效事件幂等忽略） | 编排层订阅 |
 
 注意：RoomClient 与 WebSocketClient 都走 websocket 协议——按「有无状态同步」区分，不按协议区分。
 XHR 底座与 token 在 `core/http.ts`；Lobby 写接口应使用 `rpcIdem`（`clientReqId` 生成一次、重试复用）。

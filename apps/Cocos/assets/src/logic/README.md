@@ -4,6 +4,7 @@
 客户端严格类型检查，代码可在无引擎环境测试；这不表示每个 Logic 已有完整行为用例。
 
 - `page/`：UI 页面行为，`XxxLogic.ts` ↔ `view/XxxView.ts` 同名配对
+- `areaDirectory.ts`：区服目录的展示/准入判定（维护态与 openTime 闸）；真正的进服准入仍由游戏服 onAuth 决定
 - `rooms/<玩法>/`：实时玩法域，对应服务端 `rooms/`；`ballMove/` 是 demo 玩法（小球移动）的域名，
   fork 本 kit 后按真实玩法改名/新增（如 `rooms/fishing/`）
 - 只放 UI 行为与玩法模拟；双端共享公式在 `shared/logic/`，渲染在 `view/` 与 `Main.ts`

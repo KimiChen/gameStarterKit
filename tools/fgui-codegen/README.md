@@ -6,7 +6,7 @@ FairyGUI 方案里“**结构契约无头测**”的核心（见[客户端 codeg
 
 - `parseFgui.ts` — 组件 XML → displayList 直接子元素清单（list 的 item/relation 等嵌套不计）。
 - `binding.ts`：
-  - `bindingFields(comp)` — 按命名前缀约定（`btn_/tge_/txt_/ld_/lst_/img_/go_/jb_`）算绑定字段。
+  - `bindingFields(comp)` — 按命名前缀约定（`btn_/tge_/txt_/ld_/ld3_/lst_/img_/go_/jb_/pg_`）算绑定字段。
   - **四个 AUTO 区块**（docs/CLIENT.md §5）：`IMPORT`（fairygui 类导入）/ `REQUIRED`（PKG/COMP/契约常量）/
     `FIELD`（字段声明）/ `BIND`（getChild 绑定）。标记语法
     `// #region AUTO <KIND> DONT CHANGE` … `// #endregion AUTO <KIND>`（结束标记带 KIND——

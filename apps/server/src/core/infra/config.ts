@@ -1,7 +1,7 @@
 /**
- * 全部服务端常量与环境变量（[07 · 接口契约与配置](docs/SERVER.md)）。
+ * 全部服务端常量与环境变量（登记点与开发约束见 docs/SERVER.md §12–§13）。
  *
- * ⛔ 常量禁止散落在业务代码里（09 审查流程第 6 条）：新增常量/key/错误码必须先进 07 再进本文件。
+ * ⛔ 常量禁止散落在业务代码里：新增常量/key/错误码必须先更新契约与登记点，再进本文件。
  */
 
 // ───────────────────────── 环境变量 ─────────────────────────
@@ -68,7 +68,7 @@ export const PROJECT_ID = (() => {
   }
   return v;
 })();
-/** 全部 Redis key 的运行时前缀（07 全表登记的是逻辑键名，存储时带本前缀）。 */
+/** 全部 Redis key 的运行时前缀（文档登记的是逻辑键名，存储时带本前缀）。 */
 export const REDIS_KEY_PREFIX = `${PROJECT_ID}_`;
 
 /** 开发端口（根 .env.development 的 PORT 可覆盖；与 PROJECT_ID 同一套加载机制）。
@@ -260,7 +260,7 @@ export const REDIS_ROUTE_FILE = () => process.env.REDIS_ROUTE_FILE ?? "";
  *  ⛔ 绝不放 cache（allkeys-lru 会逐出踢人流）。 */
 export const REDIS_COORD_URL = () => env("REDIS_COORD_URL", REDIS_DURABLE_URL());
 
-// ───────────────────────── 常量（07 全表） ─────────────────────────
+// ───────────────────────── 常量 ─────────────────────────
 
 /** 锁 TTL。必须 > 货币事务 p99（M0 压测定数，见 docs/SERVER.md §14）。 */
 export const LOCK_TTL_MS = 5000;

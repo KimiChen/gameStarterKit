@@ -41,6 +41,7 @@ npm run sync:shared
 ```text
 apps/client/src/
 ├── Main.ts             Cocos 组件入口与 Demo 编排
+├── designSpec.ts       设计分辨率数值真源（750×1624）
 ├── core/               HTTP 底座、生成的开发配置与宿主环境桥
 ├── lib/                锁定的第三方技术依赖
 ├── logic/              引擎无关页面与玩法行为
@@ -103,6 +104,11 @@ await ViewMgr.open("Home", params);
 
 不要从普通脚本静态 import `fairygui-cc` 或具体 View。所有 View 都通过 registry 的动态 import
 进入加载链，避免编辑器扩展尚未就绪时污染根脚本。
+
+ViewMgr 已有的生命周期语义：同一 onlyOne 页面的在途 open 会合流到同一个加载 Promise；加载期间 close
+会打取消标记并在 mount 前拦截；场景重载时经 layerRoots 探针整体重建并清零输入租约计数。FguiView 在
+首个视图挂载时才懒建 GRoot 且默认关闭全局输入（避免全屏 InputProcessor 吞掉玩法触摸），包加载按
+全进程在途合流防重复加载。
 
 页面开发应遵守：
 
@@ -189,7 +195,8 @@ apps/art/fairygui 中修改设计源
 - Schema 状态监听。
 - drop/reconnect/leave 事件。
 
-复用判据必须包含 endpoint 和完整 join options；旧连接的迟到事件无权修改新 slot。
+复用判据必须包含 endpoint 和完整 join options；旧连接的迟到事件无权修改新 slot。战斗房另有应用层
+心跳：`Main` 每 5 秒发一次 ping 测算 RTT，掉线窗口内暂停发送。
 
 ### WebSocketClient
 
@@ -200,7 +207,10 @@ apps/art/fairygui 中修改设计源
 - push 分发。
 - session 错误归类。
 
-写请求的 `clientReqId` 只生成一次，重试复用同一个 ID。
+写请求的 `clientReqId` 只生成一次，重试复用同一个 ID。join 复用判据包含 endpoint、区号与 token，
+不符即抛错而非静默复用；onDrop 会立即把全部在途 RPC 判为 CONN_LOST，room 实例与监听在 SDK 自动重连后
+继续存活。`net/session.ts` 是登录态与 authInvalid/connLost/battleLost 三类会话事件的枢纽，未登录态的
+迟到失效事件被幂等忽略。
 
 ### HTTP
 
@@ -219,7 +229,8 @@ npm run verify:ecs
 ```
 
 - `typecheck` 先校验外部身份契约，再检查 shared、server、client tsconfig 已纳入的源码与镜像；客户端
-  `Main.ts`、9 个 FairyGUI/Cocos View 文件和 `apps/client/test` 当前不在严格类型检查内。
+  tsconfig 排除了 `Main.ts` 与 `view/` 下 9 个文件（5 个页面 View 及 ViewMgr/FguiView/viewRegistry/pages
+  装配件），`apps/client/test` 也不在任何 tsconfig 的 include 内——两者当前都不被严格类型检查覆盖。
 - `verify:sync` 检查漂移、孤儿和 `.meta`。
 - `test:fgui` 实际运行 codegen 测试和全部客户端无头测试，检查 FGUI 源码结构、registry、Logic purity
   与客户端无头行为；它通过 `tsx` 运行测试，不补足上述严格类型检查盲区。

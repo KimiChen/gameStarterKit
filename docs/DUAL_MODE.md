@@ -9,6 +9,9 @@
 账号和会话状态的权威在外部 WebPlatform。游戏服 strict join 回源验证，Lobby 消息只校验本地
 `sess:{uid}:s{sId}` cache；会话变化后需要让客户端重新读取权威状态。
 
+组 sess 缓存写入携带 `issuedAtMs` 单调栅栏（written/unchanged/stale 三态 Lua），迟到的旧登录结果不会
+覆写新会话；踢人广播携带 exceptHash 与 issuedAt，消费侧回读 sess 后丢弃陈旧或指向自己的事件。
+
 `stream:kick` 只是组内 best-effort 的本地开发接缝：每节点从启动后的新条目开始读，没有 outbox 或送达
 确认；在线表也只登记 Lobby 连接，不包含 GameRoom。不能把它描述为全节点、全房间立即下线能力。相关
 额外功能边界见 [EXTRAFEATURES §3.2](EXTRAFEATURES.md#32-gm账号管理与强制下线参考)。
@@ -21,7 +24,8 @@ MySQL 保存该区的玩法数据。完整边界见 [SERVER §3](SERVER.md#3-数
 
 ## 2.7 角色登记接缝
 
-本地建档后，只能通过外部 Internal HTTP 契约幂等登记角色，不能直写账号库。Lobby 的 `ensureCharacter`
+本地建档后，只能通过外部 Internal HTTP 契约幂等登记角色，不能直写账号库。建档顺序是先写本地玩法
+档案、再登记外部角色行——反序会留下“登记存在但档案缺失”的不可自愈状态。Lobby 的 `ensureCharacter`
 是 detached 调用；HTTP 失败时会尝试留下 durable repair intent，若 Redis 也失败则以 `AggregateError` 暴露，
 最终都由 detached 调用方记录。因此一次 join 成功不等于登记已经完成。
 适配器边界见 [WEBPLATFORM §6](WEBPLATFORM.md#6-服务端边界)。
@@ -94,6 +98,8 @@ durable 与 cache 是两个物理 Redis，分别通过 `clientFor*` 和 `cacheCl
 - match settle 走 Redis consumer group：处理本 consumer 的 PEL、`XAUTOCLAIM` 接管死 consumer，再读新
   条目；落 MySQL 后 ACK，并在 PEL 为空时按安全位点 trim。当前坏 shape 会记日志后 ACK 丢弃，是已知
   缺口。
+- match 流本身是 legacy+v2 双流转制：v2 把完整 legacy key 编入 hash-tag 同槽双读，强制
+  `schemaVersion=2` 并交叉校验顶层与 payload 字段。
 
 不要把“每节点独立游标”写成所有 stream 的共同规则，也不要把其中任一种描述为外部送达保证。
 

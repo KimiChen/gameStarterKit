@@ -85,9 +85,9 @@ npm run dev
 | `npm --workspace @game/server run smoke` | 需要外部 WebPlatform 与运行中游戏服的完整开发链路冒烟；GM kick 分支可选 |
 | `npm --workspace @game/server run test:int` | 使用本地 Redis/MySQL 的集成测试 |
 
-当前客户端无头类型检查并不覆盖 `Main.ts`、9 个依赖 FairyGUI/Cocos 的 View 文件或
-`apps/client/test`。这些文件仍需通过 `npm run test:fgui`、同步检查和 Creator 本地预览补充验证；
-已知缺口与收口计划见 [plan.md](plan.md)。
+当前客户端严格类型检查排除了 `Main.ts` 与 `view/` 下 9 个文件（5 个页面 View 及 ViewMgr/FguiView/
+viewRegistry/pages 装配件），`apps/client/test` 也未被任何 tsconfig 纳入。这些文件仍需通过
+`npm run test:fgui`、同步检查和 Creator 本地预览补充验证；已知缺口与收口计划见 [plan.md](plan.md)。
 
 `apps/website` 不在根 npm workspaces 中，拥有独立的 `package-lock.json`。如需修改说明站，请在该目录
 单独安装和运行本地检查，具体见 [站点 README](apps/website/README.md)。

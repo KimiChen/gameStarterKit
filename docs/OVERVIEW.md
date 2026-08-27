@@ -64,9 +64,9 @@ apps/client/src
 | 服务端路由、协议与一致性规则 | `npm --workspace @game/server run test` |
 | 外部身份契约版本与生成物一致 | `npm run verify:webplatform-contract` |
 
-这些命令是本地开发验证入口，不表示所有真实边界都已覆盖。特别是客户端 `Main.ts` 与 9 个
-FairyGUI/Cocos View 文件不在当前严格类型检查内，FGUI 测试也不验证 Creator 中的完整 View 生命周期或
-设计源到已导出 `.bin` 的新鲜度；已知缺口见 [plan.md](../plan.md)。
+这些命令是本地开发验证入口，不表示所有真实边界都已覆盖。特别是客户端 `Main.ts` 与 `view/` 下 9 个
+文件（页面 View 及 ViewMgr/FguiView 等装配件）不在当前严格类型检查内，FGUI 测试也不验证 Creator 中的
+完整 View 生命周期或设计源到已导出 `.bin` 的新鲜度；已知缺口见 [plan.md](../plan.md)。
 
 ### 3.3 视图与行为分离
 

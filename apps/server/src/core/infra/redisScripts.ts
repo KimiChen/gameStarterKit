@@ -1,8 +1,8 @@
 /**
  * Lua 脚本注册 + `EVALSHA` / `NOSCRIPT` 自动重载（09·R7）。
  *
- * 脚本清单与返回值契约见 [07 · Lua 脚本清单](docs/SERVER.md)。
- * freezeCommit / thawRestore 属 M9 冷档，随 archive/ 交付（08）。
+ * 脚本清单与返回值契约的登记点见 docs/SERVER.md §13。
+ * freezeCommit / thawRestore 属冷档模块，随 archive/ 交付。
  *
  * ⚠ 返回值 `cold` = `user:{uid}` 不存在。任何写路径不得隐式创建档（09·R2），
  *   只有建号与 thaw 能创建。收到 `cold` → `ensureLive(uid)` → 重试。

@@ -2,7 +2,7 @@
  * user 域 ws-RPC 契约。
  *
  * 全域通用约定：
- *  - 路由名 `<域>.<接口>` 必须与服务端 handlers/<域>/<接口>.ts 的目录/文件名一致（loader 启动校验）
+ *  - 路由名 `<域>.<接口>` 必须与服务端 websocket/<域>/<接口>.ts 的目录/文件名一致（loader 启动校验）
  *  - `as const` 不可省——键宽化成 string 后 keyof 塌掉，客户端类型推导全部静默失效
  *  - 写接口的 req 必须含 clientReqId（09·I2；客户端重试复用同一个，走 WebSocketClient.rpcIdem）
  */

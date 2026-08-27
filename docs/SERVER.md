@@ -105,8 +105,10 @@ tsx 直接执行和运行时文件系统扫描，不是打包产物装载器。
 职责边界：
 
 - `LobbyRoom`：连接级 strict auth、每消息 session cache 复验、区上下文与回复发送。
-- `loader` / `rpc.ts`：路径登记、shared 类型绑定和启动期全集校验。
-- `dispatcher`：路由查找、令牌桶、Zod 解析、可选幂等占位、超时 race 与错误码规约。
+- `loader` / `rpc.ts`：路径登记、shared 类型绑定和启动期全集校验；`index.ts` 在 `listen` 前
+  `await registerAllRoutes()`，契约不齐时进程直接退出。
+- `dispatcher`：路由查找、令牌桶、Zod 解析、可选幂等占位、超时 race 与错误码规约；
+  `NODE_ENV=production` 时 INTERNAL 错误的 message 被替换为固定串，不向客户端泄漏内部细节。
 - handler 与 core：通过 `withUser`、MySQL 事务或具体领域原语实现写入串行化；dispatcher 本身不提供
   全局 per-user 串行化。
 
@@ -137,6 +139,7 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
 - `filterBy(["sId"])` 的撮合隔离及房内再次校验。
 - Colyseus Schema 状态、服务端逻辑帧移动、技能公式、聊天和重连宽限。
 - 两名玩家后进入 Playing、收局后 best-effort 写 match evidence。
+- onCreate 拒绝非法区号（WrongServer），同一 userId 禁止重复入座（AlreadyInRoom）。
 
 它不是通用玩法层，且有以下当前限制：
 
@@ -205,7 +208,8 @@ applied marker 最后才写；Lua 运行时错误也不会自动回滚此前 Red
 
 `core/archive` 展示 freeze/thaw、archive fence 与 lazy migrate。`ensureLive`/thaw 已被部分热档路径引用，
 但 freeze worker 默认关闭；设置 `FREEZE_ENABLED=1` 会在加载期失败，除非再显式使用命名为 unsafe 的
-s0-only escape hatch。当前问题包括 archive 表无 `server_id`、active LRU 全局化和 worker 缺区上下文。
+s0-only escape hatch（`FREEZE_UNSAFE_S0_ONLY`）。当前问题包括 archive 表无 `server_id`、active LRU
+全局化和 worker 缺区上下文。
 
 它不能作为容量、备份或长期存储方案。完整分类见
 [EXTRAFEATURES §3.6](EXTRAFEATURES.md#36-多区分片扩展与冷档参考)。
@@ -219,6 +223,8 @@ s0-only escape hatch。当前问题包括 archive 表无 `server_id`、active LR
 - 在线表只登记 Lobby 连接，并按区维护 guild 索引。
 - mailwake/kick 的通用 consumer 使用每节点独立 XREAD 游标；match settle 使用 consumer group，不能把
   两种消费语义混写成同一种。
+- match evidence 为 legacy+v2 双流转制：v2 key 把完整 legacy key 编入 hash-tag 保证同槽，consumer
+  一次 XREADGROUP 双读两条流；v2 条目强制 `schemaVersion=2` 并做顶层与 payload 交叉校验。
 
 这些是本地事件接缝，不是外部消息系统或送达承诺。
 

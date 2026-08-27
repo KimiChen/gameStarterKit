@@ -35,7 +35,8 @@ gameStarterKit 的核心定位是**开发期游戏基础框架**：客户端、�
 
 `apps/website` 是独立安装域中的项目说明站，不在根 npm workspaces 内。仓库包含：
 
-- `vite.config.ts`、`worker/index.ts`、`build/sites-vite-plugin.ts` 和 `.openai/hosting.json`；
+- `vite.config.ts`、`worker/index.ts`、`build/sites-vite-plugin.ts` 和 `.openai/hosting.json`
+  （含托管平台的真实项目标识，采用方自行托管时应替换或移除）；
 - Cloudflare Vite/Wrangler 与 Sites 元数据适配；
 - `scripts/export-static.mjs` 与 `deploy/static-site.js` 的纯静态导出路径；
 - 本地 build、lint 和 rendered-HTML 测试。
@@ -219,7 +220,8 @@ relayer 持事务等待外部 I/O、evidence 不足以确定性重放、坏 stre
 - `docs/DUAL_MODE.md` 的多区/双形态历史规则索引；
 - `redis-route.example.yaml` 和 Redis bucket routing；
 - RedisPresence/RedisDriver 依赖与探针；默认 `app.config.ts` 并未启用它们；
-- `core/archive` 的 freeze 路径和独立 worker。
+- `core/archive` 的 freeze 路径和独立 worker（worker 内含每小时 janitor：锁内归档解析、陈旧行清理与
+  PITR 后 ARCHIVE_NEWER 修复）。
 
 其中 `ensureLive`/thaw 已被当前角色读取和写入链引用，不能机械删除；但 freeze worker 默认关闭，且现有
 guard 明确要求 unsafe escape hatch。仓库不承诺横向扩展、分片迁移、容量管理或冷数据存储方案。

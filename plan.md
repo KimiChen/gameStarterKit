@@ -2,11 +2,15 @@
 
 > 审阅日期：2026-08-27
 >
-> 代码基线：分支 `new`，HEAD `09909b2`；该提交只改文档，源码与 `ff5a328` 相同
+> 代码基线：分支 `new`，HEAD `b5757ad`（在 `09909b2` 之上做全面文档校准；源码改动仅限注释/文案，
+> 并删除已被本文件取代的 `todo.md` 与素材进度记录 `pic.md`）；逻辑源码与 `ff5a328` 相同
 >
 > 文档状态：`plan.md` 已纳入 Git，本文件是核心改进优先级的唯一真相
 >
 > 评估范围：开发期游戏基础框架的正确性、可测试性、可替换性和本地开发体验
+>
+> 复核记录：2026-08-27 已完成一轮逐条「文档 vs 代码」一致性核查（服务端/客户端/工具链约 60 条声明），
+> 剩余漂移已修；§3 基线数字（服务端 46、客户端侧 91）当日重跑复现
 
 ## 1. 计划边界
 
@@ -38,7 +42,7 @@ GameRoom ownership、Lobby RPC 登记、外部身份 HTTP 边界，以及 lock/f
 
 | 验证项 | 结果 | 实际覆盖与限制 |
 | --- | --- | --- |
-| `npm run typecheck` | 通过 | 覆盖 shared/server/client 子集及镜像；客户端排除 `Main.ts` 和 9 个 FairyGUI/View 文件，也不编译 client tests |
+| `npm run typecheck` | 通过 | 覆盖 shared/server/client 子集及镜像；客户端 tsconfig 排除 `Main.ts` 与 `view/` 下 9 个文件（含装配件），client tests 不在任何 tsconfig include 内 |
 | `npm --workspace @game/server run test` | 46/46 通过 | 服务端单元测试；不等于 Redis/MySQL/WebPlatform 集成链已验证 |
 | `npm run test:fgui` | 91/91 通过 | 实际运行 codegen 测试和全部客户端无头测试，命令名已不能准确表达范围 |
 | `npm run verify:ecs` | 12/12 通过 | 当前 hash 清单中的 bitECS 文件通过；尚未核对应锁文件集合是否完整 |
@@ -165,7 +169,8 @@ shared 的 `GetInfo` 当前允许 `user: null`，因此代码与客户端需要�
 
 **证据**
 
-- `src/index.ts` 连续注册两次 `app.onBeforeShutdown`；当前 Colyseus 实现只有单回调槽，后一次覆盖前一次。
+- `src/index.ts` 连续注册两次 `app.onBeforeShutdown`；当前 Colyseus 实现只有单回调槽，后一次覆盖前一次
+  ——实际被覆盖丢失的是 `stopCharacterRepairWorker`，停服时 repair worker 没有停止入口。
 - 默认启动 loop monitor、stream-depth timer、kick consumer、character repair；Lobby 创建还启动 mail wake。
   多个组件没有统一 stop handle，`StreamConsumer.stop()` 也不等待阻塞 read 完成。
 - 因为这些额外样例进入默认进程，它们的残留 handle 会影响核心本地启停，即使其业务完整度不属于核心承诺。
@@ -203,7 +208,9 @@ capability，不通过全局“当前房”发送。`GameECS.addPlayer` 必须�
 2. 每次打开持有 AbortSignal/generation；Area/Notice HTTP、Guild pull 等迟到结果在 close/stop 后不得回调。
 3. 场景/root generation 变化时取消旧 pending load；mount 失败时回滚并 dispose 已创建实例。
 4. Login/Home/AreaList/Notice 的重复 `setup()` 不得追加相同监听。
-5. `LoginView.setProgress` 实际更新 ratio；未使用控件明确为展示占位或从 required contract 移除。
+5. `LoginView.setProgress` 实际更新 ratio；Login 契约中一批 required 控件当前无任何接线
+   （`btn_test`、`btn_clearDataCache`、`btn_account`、`btn_copy`、`btn_ageTip`、`btn_musicon`/`btn_musicoff`、
+   `ld3_testAnim`、`txt_privacy`），未使用控件应明确为展示占位或从 required contract 移除。
 6. 事件入口必须观察 async 错误，不留下 `void openLogin(...)` 的 unhandled rejection。
 
 **完成标准**：页面开关 100 次只触发一次 action；关闭后 deferred 完成产生 0 次 UI/Logic 回调。
@@ -252,8 +259,9 @@ controller、loader URL 并未全部进入契约。源 XML 与导出的 `.bin`/a
 
 ### P1-07 收敛区目录和跨端确定性语义
 
-- `openAreaList` 刷新目录后没有原子更新 `serverSession`，新选择会与旧 `isOps/hash/servers` 混用；成功刷新
-  应一次替换 list/hash/selection，失败保持完整旧快照。
+- `openAreaList` 刷新到的新目录只进入 `AreaListLogic.data`，不回写 `serverSession`；后者是三个分步写入的
+  模块变量，新选择会与旧 `isOps/hash/servers` 混用。成功刷新应原子替换 list/hash/selection，失败保持完整
+  旧快照。
 - `gameWsUrl` 被保存但 Colyseus 实际消费 `gameHttpUrl`，`listHash` 未用于一致性判断；通过 consumer facade
   明确消费或删除死字段，不能让字段名暗示不存在的语义。
 - shared `logic/time.ts` 使用宿主本地时区计算自然日；改为显式 reset offset/timezone 或 UTC+配置偏移，

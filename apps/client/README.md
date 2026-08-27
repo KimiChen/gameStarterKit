@@ -10,8 +10,9 @@ Cocos Creator 工程壳在 [../Cocos](../Cocos)，代码经同步脚本灌入 `a
 （`logic-purity.test.ts` 机检 Logic 禁 cc/fairygui）。`Main.ts` 与多数 View 绑定 cc + fairygui-cc，
 `core/` 负责宿主环境桥与 XHR，`net/` 依赖全局 Colyseus UMD；跨引擎复用时这些层需按目标引擎重写。
 
-`npm run typecheck:client` 当前排除 `Main.ts` 及 9 个依赖 FairyGUI/Cocos 的 View 文件；
-`apps/client/test` 由 `npm run test:fgui` 通过 `tsx` 执行，也不在该严格编译范围内。Creator 预览、
+`npm run typecheck:client` 当前排除 `Main.ts` 及 `view/` 下 9 个文件（5 个页面 View 与
+ViewMgr/FguiView/viewRegistry/pages 装配件）；`apps/client/test` 由 `npm run test:fgui` 通过 `tsx`
+执行，也不在任何 tsconfig 的严格编译范围内。Creator 预览、
 同步检查和无头行为测试是必要补充，类型盲区的收口计划见 [根 plan](../../plan.md)。
 
 ## 同步链
