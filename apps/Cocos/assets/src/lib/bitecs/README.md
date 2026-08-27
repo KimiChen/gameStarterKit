@@ -48,7 +48,25 @@ removeEntity(world, eid);
 2. `Relation.ts` 的 `from '.'` 改为 `from './index'`：`.` 自指目录导入 Cocos 的 SystemJS
    packer 解析不了（编辑器报「无效的模块说明符：.」），显式 `./index` 语义相同。
 
-**升级流程**：拉上游新文件 → 每文件首行补 ts-nocheck 注释、检查 `from '.'` → 重算 `scripts/bitecs.sha256`。
+## 升级流程（仅框架维护团队）
+
+本仓库没有 bitECS 的自动抓取或更新命令，这是有意的：这里锁定的是经过 Cocos
+SystemJS 与严格 TypeScript 约束适配的源码副本，而不是可直接替换的 npm dist。普通开发者
+直接使用仓库已入库的 12 个文件，禁止在此目录做功能修改。
+
+需要升级时，由框架维护团队按上游 tag/commit 手工执行以下流程：
+
+1. 从上游 `src/core/`（含 `utils/`）取得与目标版本对应的 12 个文件，记录版本、commit
+   和许可证信息。
+2. 只替换 `apps/client/src/lib/bitecs/` 中的源码真相，不直接编辑 Cocos 镜像；完成后运行
+   `npm run sync:client` 同步 `apps/Cocos/assets/src/lib/bitecs/`。
+3. 对每个文件保留首行 `// @ts-nocheck` 兼容注释，并将 `Relation.ts` 中的 `from '.'`
+   改为 `from './index'`；除这两处适配外不改上游逻辑。
+4. 按更新后的 12 个文件重算 `scripts/bitecs.sha256`，然后运行 `npm run verify:ecs`、
+   `npm run verify:sync` 及相关类型检查和测试。
+
+只有上述校验通过后，才把源码、Cocos 镜像、锁文件和版本记录作为同一变更提交。维护团队
+也应在升级评审中确认新版本仍满足本仓库的 ES2017、运行时和许可证约束。
 
 ## 文件清单（SHA-256，锁基线 = 上游文件 + 上述两处偏差）
 

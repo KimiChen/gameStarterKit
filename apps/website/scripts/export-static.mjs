@@ -2,7 +2,6 @@ import {
   access,
   copyFile,
   mkdir,
-  readFile,
   readdir,
   writeFile,
 } from "node:fs/promises";

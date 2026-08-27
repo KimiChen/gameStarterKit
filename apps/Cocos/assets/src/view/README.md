@@ -27,7 +27,7 @@ fairygui 只有一个全局 InputProcessor：**启用 = 全屏捕获（页面可
 - 有按钮/输入 → `interactive: true`（想「不挡游戏」是做不到的，这是引擎约束不是配置问题）；
 - 纯展示 HUD、要与战斗拖拽共存 → `interactive: false`（页面自身也收不到点击）。
 
-## AUTO 区块纪律（docs/CLIENT.md 方案 2）
+## AUTO 区块纪律（docs/CLIENT.md §5）
 
 `// #region AUTO <IMPORT|REQUIRED|FIELD|BIND> DONT CHANGE` … `// #endregion AUTO <KIND>`：
 区块内 = codegen 领地（`.fui` 变更后 `npm run codegen:fgui` 幂等重写，⛔ 手改）；

@@ -3,7 +3,7 @@
 -- 前置：MySQL ≥ 8.0.19，binlog_format=ROW，sql_mode 含 STRICT_TRANS_TABLES。
 
 -- 货币余额【权威】。复合 PK 走主键等值锁；CHECK 只是兜底，SQL 内必须 WHERE balance >= ?
--- 每区独立经济（docs/DUAL_MODE.md §3.2）：server_id 进 PK；⚠ 写路径谓词必须带 server_id（§3.3 B1，M13 代码步补）。
+-- 每区独立经济（docs/DUAL_MODE.md §3.3）：server_id 进 PK；⚠ 写路径谓词必须带 server_id。
 CREATE TABLE IF NOT EXISTS user_currency (
   user_id    VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   server_id  SMALLINT UNSIGNED NOT NULL DEFAULT 0,   -- 0=大混服/单形态；区服取 1..N

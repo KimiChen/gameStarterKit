@@ -1,5 +1,5 @@
 /**
- * 页面元数据定义（docs/CLIENT.md 方案 1，借鉴 Sect-TsProject 的 initWidget 声明式注册）。
+ * 页面元数据定义（docs/CLIENT.md §4，借鉴 Sect-TsProject 的 initWidget 声明式注册）。
  *
  * 纯类型 + 构造器，无头 typecheck 在检。⛔ 本文件不得 import FguiView/fairygui——
  * 会把 fairygui 类型拖进无头检查（View 构造器用下方不透明形状表达，真实类型在
@@ -33,7 +33,7 @@ export interface ViewMeta {
     interactive: boolean;
     /** 跨包共享库依赖（如 ["ui/Original"]）：open 前 ensurePackages，常驻不卸载 */
     sharedPkgs?: readonly string[];
-    /** 动态 import 闭包（铁律 10：fairygui 不进静态依赖图）；也是将来分包的加载点（docs/CLIENT.md 方案 4） */
+    /** 动态 import 闭包（铁律 10：fairygui 不进静态依赖图）；也是后续资源拆分的加载点 */
     load: () => Promise<ViewCtorLike>;
 }
 

@@ -1,5 +1,5 @@
 /**
- * 页面注册表（登记点，docs/CLIENT.md 方案 1）——每页面一条 defineView 元数据，ViewMgr 按此接管
+ * 页面注册表（登记点，docs/CLIENT.md §4）——每页面一条 defineView 元数据，ViewMgr 按此接管
  * 生命周期。守门：test/viewRegistry.test.ts 校验「view/*View.ts 文件集合 ⇔ 注册表键」与
  * 「注册表契约 ⇔ FGUI_CONTRACTS」双向相等 + AUTO 区块与 .fui 同步 + Logic 配对。
  *

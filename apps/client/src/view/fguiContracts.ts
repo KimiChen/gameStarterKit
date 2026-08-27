@@ -5,7 +5,7 @@
  * - 无头契约测（`test/viewRegistry.test.ts`）解析 `apps/art/fairygui/assets/<Pkg>/<Comp>.xml`：
  *   注册表 contract ⇔ 本表 ⇔ View 内嵌 REQUIRED 三处字段级相等（改一处漏改另一处即红）。
  * - `view/<View>.ts`（Creator 侧）的 static REQUIRED 由 codegen 生成，须与此处 required 一致。
- * 方案见 docs/CLIENT.md §4。
+ * 方案见 docs/CLIENT.md §5。
  *
  * ⚠ 契约必须与 viewRegistry 条目**成对出现**（只加一边必红）；required 由 codegen 决定，
  *   `.fui` 变更后 `npm run codegen:fgui` 重跑并同步此处。

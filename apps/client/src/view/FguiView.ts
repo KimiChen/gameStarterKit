@@ -6,7 +6,7 @@
  *   tsconfig（真 cc + 扩展）在编辑器里 typecheck，**Creator 侧验证**——每个这类文件都要在
  *   apps/client/tsconfig.json 的 exclude 里显式列出（fguiContracts.ts 是纯数据，保持在检）。
  *   行为层（logic/）与结构契约（fgui-codegen）在无头测试里跑（npm run test:fgui）；
- *   本层只做"取组件 + 搬数据"。见 docs/CLIENT.md §5。
+ *   本层只做"取组件 + 搬数据"。见 docs/CLIENT.md §3。
  */
 import { Canvas, director, sys, view } from "cc";
 import { GComponent, GObject, GRoot, RelationType, UIPackage } from "db://fairygui-cc/fairygui.mjs";

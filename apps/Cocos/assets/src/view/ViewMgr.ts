@@ -1,5 +1,5 @@
 /**
- * 页面生命周期管理（机械件，docs/CLIENT.md 方案 1）：ViewMgr.open/close 按 viewRegistry 元数据接管
+ * 页面生命周期管理（机械件，docs/CLIENT.md §4）：ViewMgr.open/close 按 viewRegistry 元数据接管
  * ensurePackages / 动态加载 / 分层挂载 / 单例 / 常驻 / 交互输入。业务层 ⛔ 不手工
  * mountFullScreen / ensurePackages / setInputEnabled，⛔ 不直调 view.dispose()——
  * 关闭一律走 handle.close() 或 ViewMgr.close(name)（交互计数/输入恢复挂在关闭路径上，

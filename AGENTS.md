@@ -25,8 +25,6 @@
 npm install
 npm run sync:webplatform-contract
 npm run verify:webplatform-contract
-npm run fetch:fgui
-npm run fetch:colyseus
 npm run sync:shared
 npm run sync:client
 npm run dev:client
@@ -43,6 +41,8 @@ npm --workspace @game/server run test:int
 ```
 
 上述命令仅用于本地开发、调试和验证。
+
+`fetch:colyseus` 和 `fetch:fgui` 仍保留为框架维护团队显式升级锁定依赖时使用的工具，不是首次打开或普通开发步骤。这里的“手动更新”是维护团队人工决定版本、调整版本与完整性哈希、运行并审核脚本；脚本负责可重复的下载、校验和镜像更新。bitECS 没有自动更新命令；其 12 个锁定源文件和 `scripts/bitecs.sha256` 由维护团队按上游版本手动维护，并在更新后运行 `npm run verify:ecs`。普通开发者直接使用仓库已入库的版本。
 
 ## 铁律
 
@@ -82,7 +82,7 @@ shared 契约
 `net/`、dispatcher/loader 和 `Main.ts` 属于框架接缝，新增普通功能时优先通过登记点扩展。
 
 外部身份契约变更时，本仓只更新精确锁定的契约依赖并运行
-`npm run sync:webplatform-contract`；契约的生成、渠道身份实现和外部服务交付不属于本仓。
+`npm run sync:webplatform-contract`；契约生成与外部服务交付不属于本仓。
 
 ## 当前范围
 

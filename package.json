@@ -2,7 +2,7 @@
   "name": "game",
   "version": "0.1.0",
   "private": true,
-  "description": "微信小游戏 monorepo：Cocos Creator 3.8.8 客户端 + Colyseus 0.17 服务端 + 双端共享包",
+  "description": "游戏开发期 monorepo：Cocos Creator 3.8.8 客户端 + Colyseus 0.17 服务端 + 双端共享包",
   "workspaces": [
     "apps/shared",
     "apps/server"
@@ -13,7 +13,6 @@
     "sync:shared": "node scripts/sync-shared.mjs && node scripts/sync-client.mjs",
     "sync:client": "node scripts/sync-client.mjs",
     "sync:client:watch": "node scripts/sync-client.mjs --watch",
-    "report:size": "node tools/build-size-report.mjs",
     "codegen:fgui": "node --import tsx tools/fgui-codegen/cli.ts",
     "sync:shared:watch": "node scripts/sync-shared.mjs --watch",
     "dev:client": "node scripts/dev-client.mjs",

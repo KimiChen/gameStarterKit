@@ -45,9 +45,9 @@ const architecture = [
     id: "server",
     eyebrow: "SERVER",
     label: "服务端",
-    title: "从 Demo 起步，也能向生产演进",
+    title: "从 Demo 起步，沿开发期边界迭代",
     description:
-      "Colyseus 0.17 游戏服配合双 Redis、MySQL 8、outbox、结算 worker 与冷档能力。重计算与网关线程边界明确。",
+      "Colyseus 0.17 游戏服配合双 Redis、MySQL 8、outbox、结算示例与可测试的代码边界。重计算与网关线程边界明确。",
     tree: [
       ["websocket", "类型安全 RPC 端点"],
       ["rooms", "实时状态同步"],
@@ -62,11 +62,10 @@ const architecture = [
     label: "平台边界",
     title: "账号与游戏域，物理拆分",
     description:
-      "账号门户独立为 gono-webplatform。本仓只消费精确锁定的 HTTP 契约，客户端、游戏服与 GM 各走明确边界。",
+      "账号门户独立为 gono-webplatform。本仓只消费精确锁定的 HTTP 开发契约，客户端与游戏服通过明确边界协作。",
     tree: [
       ["Public HTTP", "登录与选服"],
       ["Internal HTTP", "游戏服验票"],
-      ["Admin HTTP", "GM 权威操作"],
       ["contract package", "精确版本锁定"],
     ],
     chips: ["HTTP-only", "独立账号库", "契约包同步"],
@@ -94,9 +93,9 @@ const principles = [
   },
   {
     index: "04",
-    tag: "PRODUCTION PATH",
-    title: "为长期运营留出路径",
-    body: "认证、选服、实时房间、档案、经济与结算职责清晰；Demo 可替换，底层演进路线不需要推倒重来。",
+    tag: "DEVELOPMENT PATH",
+    title: "为持续开发留出清晰边界",
+    body: "认证、选服、实时房间、档案、经济与结算职责清晰；Demo 可替换，开发期演进路线不需要推倒重来。",
   },
 ];
 
@@ -118,6 +117,8 @@ export default function Home() {
   useEffect(() => {
     const current =
       document.documentElement.dataset.theme === "light" ? "light" : "dark";
+    // The layout script selects the theme before hydration; mirror that value once for the toggle UI.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(current);
   }, []);
 
@@ -212,7 +213,7 @@ export default function Home() {
           </span>
           <span className="wsk-brand-copy">
             <strong>gameStarterKit</strong>
-            <small>WECHAT GAME MONOREPO</small>
+            <small>GAME DEVELOPMENT MONOREPO</small>
           </span>
         </a>
 
@@ -294,8 +295,8 @@ export default function Home() {
               留给每一次玩法迭代。
             </h1>
             <p className="wsk-hero-lead">
-              一个可以直接 fork 的微信小游戏脚手架：
-              Cocos Creator、Colyseus 与零依赖共享层，从协议到运行时站在同一条开发链上。
+              一个可以直接 fork 的游戏开发期脚手架：
+              Cocos Creator、Colyseus 与零依赖共享层，从协议到本地验证站在同一条开发链上。
             </p>
             <div className="wsk-hero-actions">
               <a
@@ -509,7 +510,7 @@ export default function Home() {
             <p className="wsk-kicker">MACHINE-CHECKED</p>
             <h2>把“记得这样做”，变成“不这样做就过不了”。</h2>
             <p>
-              loader、类型系统、单测与同步校验覆盖同一份工程契约。规则不是散落在口头经验里，而是能被 CI
+              loader、类型系统、单测与同步校验覆盖同一份工程契约。规则不是散落在口头经验里，而是能被本地检查
               识别的项目资产。
             </p>
             <a
@@ -587,7 +588,7 @@ export default function Home() {
             <div className="wsk-demo-window">
               <div className="wsk-demo-toolbar">
                 <span>IMPLEMENTATION DEMO</span>
-                <b>RUNNING</b>
+                <b>LOCAL PREVIEW</b>
               </div>
               <div className="wsk-demo-stage">
                 <div className="wsk-demo-grid-floor" aria-hidden="true" />
@@ -629,8 +630,8 @@ export default function Home() {
               <li>
                 <span>03</span>
                 <div>
-                  <strong>从微信小游戏开始</strong>
-                  <small>竖屏 750 × 1624，保留多引擎演进边界</small>
+                  <strong>面向多端开发</strong>
+                  <small>以 Cocos Creator 为当前示例，保留 shared 与多引擎演进边界</small>
                 </div>
               </li>
             </ul>
@@ -652,7 +653,7 @@ export default function Home() {
             <details>
               <summary>为什么 shared 使用复制同步？</summary>
               <p>
-                为了兼容 Cocos 资源刷新与小游戏构建。服务端直接消费 workspace 源码，客户端通过可校验的两级同步获得普通项目脚本。
+                为了兼容 Cocos 资源刷新与本地预览。服务端直接消费 workspace 源码，客户端通过可校验的两级同步获得普通项目脚本。
               </p>
             </details>
             <details>
@@ -669,7 +670,7 @@ export default function Home() {
           <p className="wsk-kicker">BUILD ON A SOLID BASE</p>
           <h2>先把底座搭稳，<br />再把时间花在游戏上。</h2>
           <p>
-            从可运行 Demo 开始，沿固定工程动线长成你的项目。
+            从本地 Demo 开始，沿固定工程动线长成你的项目。
           </p>
           <div className="wsk-hero-actions">
             <a
@@ -698,7 +699,7 @@ export default function Home() {
           </span>
           <p>
             <strong>gameStarterKit</strong>
-            <small>微信小游戏工程脚手架</small>
+            <small>游戏开发期基础框架</small>
           </p>
         </div>
         <p>Open source · Cocos Creator + Colyseus + TypeScript</p>

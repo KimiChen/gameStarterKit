@@ -128,7 +128,7 @@ npm run verify:webplatform-contract
 - 角色登记幂等。
 - 外部返回缺字段、多字段、错误枚举或非法 URL 时在边界失败。
 - 游戏数据库不包含账号表。
-- 生产源码 import ban 已泛化为本仓源码边界检查。
+- 源码 import ban 已泛化为本仓源码边界检查。
 
 ## 9. 范围
 

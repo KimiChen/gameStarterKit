@@ -32,4 +32,4 @@ apps/client/extensions/
 #    （连同 .meta，保证 uuid 稳定、新 checkout 可直接打开工程）
 #  - apps/Cocos/settings/ 需要提交（工程配置）
 #  - 运行时产物（colyseus.js×2、fairygui-cc/runtime/）**入库**：版本钉死、新机 clone 即可用；
-#    升级用 `npm run fetch:colyseus` / `fetch:fgui`（拉新版 + 验完整性）后提交 diff
+#    仅框架维护团队显式升级时运行 `npm run fetch:colyseus` / `fetch:fgui`（拉新版 + 验完整性）后提交 diff

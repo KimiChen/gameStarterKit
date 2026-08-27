@@ -99,7 +99,7 @@ test("契约校验:把 GList 名安到 loader 上 → mismatched 报红(前缀/�
   assert.ok(r.mismatched[0].includes("期望 GList，实际 GLoader"));
 });
 
-// ── AUTO 区块幂等重写（docs/CLIENT.md 方案 2）────────────────────────────
+// ── AUTO 区块幂等重写（docs/CLIENT.md §5）────────────────────────────
 
 import { emitAutoRegion, regenerateViewSource, replaceAutoRegion } from "./binding";
 

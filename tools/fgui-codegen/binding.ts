@@ -4,9 +4,9 @@
  *
  * - `bindingFields` / `emitAutoFieldBlock`：按命名前缀约定生成 TS 绑定字段（只取有识别前缀者，普通 group 不声明）。
  * - `emitFguiViewScaffold`：首次生成 `FguiView` 子类脚手架（IMPORT/REQUIRED/FIELD/BIND 四个 AUTO 区块）。
- * - `regenerateViewSource`：幂等区块重写——`.fui` 变更后重跑，区块内覆盖、区块外业务代码不动（docs/CLIENT.md 方案 2）。
+ * - `regenerateViewSource`：幂等区块重写——`.fui` 变更后重跑，区块内覆盖、区块外业务代码不动（docs/CLIENT.md §5）。
  * - `checkContract`：给 View 声明的必需字段，断言 `.fui` 组件是否满足（缺失/类型不符）——**结构契约无头把关**。
- * 方案见 docs/CLIENT.md §3/§4；CLI 入口 cli.ts（npm run codegen:fgui）。
+ * 方案见 docs/CLIENT.md §3（View 职责）/§5（codegen）；CLI 入口 cli.ts（npm run codegen:fgui）。
  */
 import type { FguiComponent, FguiElement } from "./parseFgui";
 
@@ -74,7 +74,7 @@ export interface ScaffoldOpts {
   comp: string;      // FairyGUI 组件名
 }
 
-// ── AUTO 区块机械件（docs/CLIENT.md 方案 2：幂等区块重写，借鉴 Sect-TsProject region 纪律）──
+// ── AUTO 区块机械件（docs/CLIENT.md §5：幂等区块重写，借鉴 Sect-TsProject region 纪律）──
 // 语法：`// #region AUTO <KIND> DONT CHANGE` … `// #endregion`。区块内容 = codegen 领地
 //（重跑即覆盖，⛔ 手改）；区块外 = 业务代码领地（重跑一字不动）。
 

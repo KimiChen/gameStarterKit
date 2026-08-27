@@ -36,7 +36,7 @@ test("server-renders the gameStarterKit landing page", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>gameStarterKit — 微信小游戏工程脚手架<\/title>/i);
+  assert.match(html, /<title>gameStarterKit — 游戏开发期基础框架<\/title>/i);
   assert.match(html, /把第一天的工程纪律/);
   assert.match(html, /MONOREPO ARCHITECTURE/);
   assert.match(html, /REPLACEABLE DEMO/);

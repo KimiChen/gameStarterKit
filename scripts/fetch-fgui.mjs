@@ -2,14 +2,16 @@
  * 升级 Cocos Creator 的 fairygui-cc 扩展运行时（fairygui.mjs + fairygui.d.ts）。
  *
  * 运行时**已入库**（连同扩展外壳 package.json/browser.js），新机 clone 即可用——本脚本只在
- * **升级版本**时跑：拉 npm 包、验完整性、覆盖运行时、重钉内容锁，然后把 diff 提交入库。
+ * **升级版本**时跑，且仅供框架维护团队执行：拉 npm 包、验完整性、覆盖运行时、重钉内容锁，
+ * 然后把 diff 提交入库。普通开发者首次打开或日常开发不需要运行本脚本。
  * node 实现（原 bash 版依赖 bash/openssl，Windows 跑不了；与 fetch-colyseus.mjs 同构）。
  *
- * ⚠ 官方对 3.8 淡维护：生产建议在此基础上打社区 3.8 补丁（mask/输入偏移/GLoader/位图字体，
- *   见 docs/CLIENT.md §4 与 Cocos 论坛 topic 153699）——补丁直接改入库的运行时文件并提交，
+ * ⚠ 官方对 3.8 淡维护：如本地开发需要，可在此基础上打社区 3.8 兼容补丁
+ *   （mask/输入偏移/GLoader/位图字体，见 Cocos 论坛 topic 153699）——
+ *   补丁直接改入库的运行时文件并提交，
  *   git 追踪补丁演进（⚠ 打过补丁后勿再裸跑本脚本，会用干净的上游版覆盖补丁）。
  *   补丁后跑 `node scripts/vendor-lock.mjs` 重钉内容锁（否则 vendorLock.test 红）。
- * 用法: npm run fetch:fgui
+ * 用法（维护团队升级时）: npm run fetch:fgui
  */
 import { execFileSync } from "node:child_process";
 import crypto from "node:crypto";
@@ -52,4 +54,4 @@ try {
 }
 
 console.log(`✅ fairygui-cc 运行时 ${FGUI_VERSION} 就绪（代码里用 import * as fgui from "db://fairygui-cc/fairygui.mjs"）`);
-console.log(`   ⚠ 3.8 需打社区补丁（docs/CLIENT.md §4）；并在 Creator 扩展管理器里启用 fairygui-cc。`);
+console.log(`   ⚠ 如需 3.8 兼容性补丁，请按维护记录重新应用；并在 Creator 扩展管理器里启用 fairygui-cc。`);

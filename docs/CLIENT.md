@@ -21,7 +21,13 @@ npm run sync:shared
 - `apps/Cocos/extensions/fairygui-cc/runtime/`
 - `apps/client/src/lib/bitecs/`
 
-`fetch:colyseus` 和 `fetch:fgui` 只用于显式更新依赖，不是首次打开步骤。
+上述依赖已随仓库锁定并入库，首次打开或普通开发不需要抓取。`fetch:colyseus` 和
+`fetch:fgui` 仍保留为框架维护团队在需要显式升级对应依赖时使用的工具；它们会校验下载内容并更新
+仓库内的运行时镜像。若运行时存在针对 Cocos 3.8 的社区补丁，升级后必须重新应用补丁并重算
+`scripts/vendor.sha256`，不能把裸抓取结果直接视为最终版本。bitECS 没有自动抓取命令，其
+`apps/client/src/lib/bitecs/` 下的 12 个锁定源文件及 `scripts/bitecs.sha256` 由维护团队按上游版本
+手动更新，保留项目补丁后运行 `npm run sync:client`、`npm run verify:ecs` 和 `npm run verify:sync`。
+普通开发者直接使用已入库版本，并运行校验命令确认依赖未漂移。
 
 本地预览需要：
 

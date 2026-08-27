@@ -136,7 +136,7 @@ authInvalid、battleLost、connLost 等复合事件进入单一串行出口，�
 5. transient/permanent 错误分类与退避逻辑可由 fake clock 测试。
 6. `applied:{uid}` 裁剪算法必须可证明不会删除未完成 intent 的 marker。
 
-这些内容用于验证代码一致性算法，不代表本仓提供后台任务运行保障。
+这些内容只用于验证代码一致性算法，暂不纳入本框架实现。
 
 ## D9 · HTTP 与外部契约单源
 
@@ -185,7 +185,7 @@ validateJoin
 - Connection/Reconcile：连接恢复后主动 pull 当前领域状态。
 - Performance：缓存 ECS query/self eid，减少每帧临时对象和全量重画。
 
-这些 service 通过接口注入，不绑定具体渠道 API。
+这些 service 通过接口注入，不绑定具体宿主 API。
 
 ## D13 · Starter Kit 初始化与文档一致性
 

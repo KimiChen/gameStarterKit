@@ -10,10 +10,12 @@ Cocos 客户端开发工程（引擎、资源与编辑器壳）。**游戏代码
 - `assets/resources/` —— FGUI 本地导出物等资源（见 [docs/CLIENT.md](../../docs/CLIENT.md)）
 - `assets/scene.scene` —— 启动场景
 - `settings/` —— 工程配置（提交入库）
-- `extensions/fairygui-cc/` —— fairygui-cc 扩展（外壳 + 运行库均入库；升级用 `npm run fetch:fgui`）
+- `extensions/fairygui-cc/` —— fairygui-cc 扩展（外壳 + 运行库均入库；仅框架维护团队显式升级时运行
+  `npm run fetch:fgui`，普通开发无需抓取）
 
 ## 打开方式
 
 Cocos Dashboard 3.8.8 打开本目录，等首次导入（生成 `temp/`、`library/`，均已 gitignore）。
 首次使用前先在仓库根目录跑 `npm install && npm run sync:shared`
-（`sync:shared` 已级联 `sync:client`；运行时产物——colyseus UMD、fairygui-cc 运行时——已入库，无需 fetch）。
+（`sync:shared` 已级联 `sync:client`；运行时产物——colyseus UMD、fairygui-cc 运行时和锁定的
+ bitECS 源码——已入库，无需 fetch。依赖抓取脚本只用于框架维护团队显式升级。）

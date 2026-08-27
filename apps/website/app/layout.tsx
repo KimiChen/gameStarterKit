@@ -10,9 +10,9 @@ export async function generateMetadata(): Promise<Metadata> {
     requestHeaders.get("x-forwarded-proto") ??
     (host?.startsWith("localhost") ? "http" : "https");
   const origin = host ? `${protocol}://${host}` : "http://localhost:3000";
-  const title = "gameStarterKit — 微信小游戏工程脚手架";
+  const title = "gameStarterKit — 游戏开发期基础框架";
   const description =
-    "可直接 fork 的微信小游戏 monorepo：Cocos Creator 3.8.8、Colyseus 0.17、零依赖共享层与可机检的工程约束。";
+    "面向客户端、服务端与共享层的开发期 monorepo：Cocos Creator 3.8.8、Colyseus 0.17、零依赖共享层与可机检的工程约束。";
   const socialImage = new URL("/og.png", origin).toString();
 
   return {
@@ -29,7 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
           url: socialImage,
           width: 1672,
           height: 941,
-          alt: "gameStarterKit 微信小游戏工程脚手架",
+          alt: "gameStarterKit 游戏开发期基础框架",
         },
       ],
     },

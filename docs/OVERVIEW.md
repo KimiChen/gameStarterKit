@@ -123,7 +123,7 @@ FairyGUI 编辑设计源
   → 更新本仓 HTTP 消费代码和本地测试
 ```
 
-外部契约的生成、服务实现和渠道身份能力不属于本仓。
+外部契约的生成和服务实现不属于本仓。
 
 ## 5. Colyseus 0.17 约定
 
@@ -140,7 +140,7 @@ FairyGUI 编辑设计源
 
 1. bitECS 锁定目录不修改。
 2. shared/client/Cocos 生成镜像不手改。
-3. shared 不依赖 Node、DOM、引擎或渠道平台对象。
+3. shared 不依赖 Node、DOM、引擎或宿主平台对象。
 4. 消息、类型、公式和错误码来自 shared。
 5. View/Logic 保持分层。
 6. FairyGUI 只通过动态 import 进入页面打开链。
@@ -149,7 +149,7 @@ FairyGUI 编辑设计源
 
 ## 7. 当前状态
 
-- 本仓包含可本地运行的 Lobby、GameRoom、ballMove、技能结算、页面和数据读写示例。
+- 本仓包含用于本地验证的 Lobby、GameRoom、ballMove、技能结算、页面和数据读写示例。
 - 本地开发账号通过外部服务的 dev session 契约创建。
 - Unity 目录只是研究占位。
 - 所有演示 endpoint、配置和页面只用于开发与验证。

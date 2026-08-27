@@ -40,6 +40,8 @@ npm install
 npm run sync:shared
 ```
 
+Colyseus、FairyGUI 和 bitECS 的锁定版本及运行时文件已随仓库入库；首次打开或日常开发不需要执行依赖抓取命令。
+
 启动服务端本地依赖与开发进程：
 
 ```bash
@@ -70,8 +72,6 @@ npm run dev
 | `npm run dev:client` | 监听 shared/client 改动并同步到 Cocos 工程 |
 | `npm run sync:webplatform-contract` | 刷新外部身份服务契约生成物并级联同步 |
 | `npm run verify:webplatform-contract` | 本地校验契约版本、hash 与生成物 |
-| `npm run fetch:fgui` | 更新锁定的 FairyGUI 技术依赖 |
-| `npm run fetch:colyseus` | 更新锁定的 Colyseus 客户端库 |
 | `npm run sync:shared` | shared → client → Cocos |
 | `npm run sync:client` | client → Cocos |
 | `npm run typecheck` | shared/server/client 类型检查及镜像校验 |
@@ -82,6 +82,12 @@ npm run dev
 | `npm --workspace @game/server run test` | 服务端单元测试 |
 | `npm --workspace @game/server run smoke` | 本地功能链路冒烟 |
 | `npm --workspace @game/server run test:int` | 使用本地 Redis/MySQL 的集成测试 |
+
+### 框架维护团队的依赖更新
+
+`npm run fetch:colyseus` 和 `npm run fetch:fgui` 仍保留为框架维护团队在需要显式升级锁定依赖时使用的工具，不属于首次打开或普通开发流程。这里的“维护团队手动更新”是人工决定版本、修改版本与完整性哈希、运行并审核脚本；脚本负责把下载、完整性校验和运行时镜像更新固化为可重复步骤。完成后应按维护流程复核同步结果并运行相关测试。
+
+bitECS 没有自动抓取命令。其 `apps/client/src/lib/bitecs/` 下的 12 个锁定源文件由框架维护团队按上游版本手动更新，同时更新 `scripts/bitecs.sha256`，保留项目兼容性补丁并运行 `npm run verify:ecs`。普通开发者直接使用仓库已入库的依赖，并通过 `verify:ecs` 检查文件完整性。
 
 ## 开发红线
 
