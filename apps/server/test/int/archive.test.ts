@@ -26,7 +26,7 @@ import {
   COLD_DAYS, OUTBOX_DEAD, OUTBOX_DONE, OUTBOX_PENDING, WHALE_FIELDS,
 } from "../../src/core/infra/config";
 import {
-  activeLruBucketOf, kActiveLru, kApplied, kBag, kBagAll, kFence, kLock, kNegcacheUser, kSess, kUser,
+  activeLruBucketOf, kActiveLru, kApplied, kAppliedPayload, kBag, kBagAll, kFence, kLock, kNegcacheUser, kSess, kUser,
 } from "../../src/core/infra/keys";
 import { cacheClient, clientFor, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
 import { CAS_HSET, evalshaWithReload } from "../../src/core/infra/redisScripts";
@@ -77,7 +77,13 @@ async function makeCold(u: string): Promise<void> {
   await indexClientFor(b).zadd(kActiveLru(b), old, u);
 }
 
-interface Dump { user: Record<string, string>; bags: Record<string, string>[]; applied: string[]; counter: string | null }
+interface Dump {
+  user: Record<string, string>;
+  bags: Record<string, string>[];
+  applied: string[];
+  appliedPayload: Record<string, string>;
+  counter: string | null;
+}
 /** 测试专用全量 dump（生产代码 ⛔ HGETALL，测试断言豁免）。 */
 async function dumpAll(u: string): Promise<Dump> {
   const c = clientFor(u);
@@ -85,6 +91,7 @@ async function dumpAll(u: string): Promise<Dump> {
     user: await c.hgetall(kUser(u)),
     bags: await Promise.all(kBagAll(u).map((k) => c.hgetall(k))),
     applied: await c.zrange(kApplied(u), 0, -1, "WITHSCORES"),
+    appliedPayload: await c.hgetall(kAppliedPayload(u)),
     counter: await c.get(kFence(u)),
   };
 }
@@ -154,7 +161,7 @@ test("完整往返：字段/背包/applied 全等；fence ≥ 冻结前；旧 fe
   // 冻结后：user/bag/applied UNLINK；fence 计数器**保留**（评审修正，偏离 08 原文——
   // 「永不重置」契约：删除会让冷档期重新计数，若反超 hwm 则 thaw 绝对写回 = 计数回退，
   // 滞留 writer 的大号 fence 可穿过 hash CAS）
-  for (const k of [kUser(u), kApplied(u), ...kBagAll(u)]) {
+  for (const k of [kUser(u), kApplied(u), kAppliedPayload(u), ...kBagAll(u)]) {
     assert.equal(await c.exists(k), 0, `${k} 应已 UNLINK`);
   }
   assert.equal(await c.exists(kFence(u)), 1, "fence 计数器保留（永不重置契约）");
@@ -183,6 +190,7 @@ test("完整往返：字段/背包/applied 全等；fence ≥ 冻结前；旧 fe
   assert.deepEqual(cmpAfter, cmpBefore, "user 全字段等值（除 fence 语义变更外，09·F3）");
   assert.deepEqual(after.bags, before.bags, "背包全等");
   assert.deepEqual(after.applied, before.applied, "applied 全等（09·F2）");
+  assert.deepEqual(after.appliedPayload, before.appliedPayload, "applied payload 绑定全等（P0-03）");
   assert.ok(Number(after.counter) >= f0, "fence 计数器 ≥ 冻结前（僵尸写仍被拦）");
   assert.equal(await archiveRow(u), null, "thaw 最后一步删 archive 行（08）");
 
@@ -191,7 +199,9 @@ test("完整往返：字段/背包/applied 全等；fence ≥ 冻结前；旧 fe
   assert.equal(await c.hget(kUser(u), "f"), null, "僵尸写零破坏");
 
   // applied 归档恢复后旧 op_id 重放 → dup（09·F2 二次发货防线，含 dead 行人工重放场景）
-  assert.equal(await redisApply(u, seedOp, [{ kind: "item", itemId: 5, count: 3 }]), "dup");
+  assert.equal(await redisApply(u, seedOp, [
+    { kind: "item", itemId: 5, count: 3 }, { kind: "item", itemId: 6, count: 2 }, { kind: "star", delta: 4 },
+  ]), "dup");
   assert.equal(await c.hget(kBag(u, 5 % 4), "5"), "3", "重放未二次发货");
 });
 

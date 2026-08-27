@@ -53,16 +53,17 @@ export async function relayerTick(lease: SingletonLease): Promise<number> {
           }
           if (r !== "ok" && r !== "dup") { throw new Error(`apply=${r}`); }
           await conn.execute<ResultSetHeader>(
-            "UPDATE gameplay_outbox SET status = ? WHERE op_id = ?", [OUTBOX_DONE, row.op_id]);
-          if (Math.random() < 0.01) { await trimApplied(row.user_id).catch(() => {}); } // 顺路裁剪（09·I5）
+            "UPDATE gameplay_outbox SET status = ? WHERE op_id = ? AND server_id = ?",
+            [OUTBOX_DONE, row.op_id, row.server_id]);
+          if (Math.random() < 0.01) { await trimApplied(row.user_id, row.server_id).catch(() => {}); } // 顺路裁剪（09·I5）
         });
       } catch (e) {
         // 真失败（Redis 连不上 / Lua 报错 / effect 非法）才累加；超限进死信
         const attempts = row.attempts + 1;
         const dead = attempts > OUTBOX_MAX_ATTEMPTS;
         await conn.execute<ResultSetHeader>(
-          "UPDATE gameplay_outbox SET attempts = ?, last_error = ?, status = ? WHERE op_id = ?",
-          [attempts, String(e).slice(0, 255), dead ? OUTBOX_DEAD : OUTBOX_PENDING, row.op_id]);
+          "UPDATE gameplay_outbox SET attempts = ?, last_error = ?, status = ? WHERE op_id = ? AND server_id = ?",
+          [attempts, String(e).slice(0, 255), dead ? OUTBOX_DEAD : OUTBOX_PENDING, row.op_id, row.server_id]);
         if (dead) { console.error(`[relayer] ☠ 死信 op=${row.op_id} uid=${row.user_id}: ${String(e)}`); }
       }
     }

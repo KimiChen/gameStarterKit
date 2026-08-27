@@ -83,7 +83,7 @@ apps/server/
 | --- | --- | --- |
 | 开发账号、会话、角色存在性 | 外部 WebPlatform | 本仓只通过锁定的 HTTP 契约验证或登记 |
 | 货币、ledger、outbox、邮件、对局结果 | MySQL | 事务、唯一键和显式状态约束 |
-| 玩家热档、背包、fence、applied marker | durable Redis | hash/Lua/lock；不能被 cache 替代 |
+| 玩家热档、背包、fence、applied marker/payload binding | durable Redis | hash/Lua/lock；不能被 cache 替代 |
 | 余额缓存 | cache Redis | 可重建，失败不能改变 MySQL 权威结果 |
 | Room state、进程内 Map、计时器 | 进程内临时状态 | 不作为持久真源 |
 
@@ -93,9 +93,9 @@ apps/server/
 
 按区数据必须显式传播区上下文：
 
-- `user_currency`、`currency_ledger`、`mail`、`match_results` 的按区查询携带 `server_id`；
-  `gameplay_outbox` 创建时会写区号，但 `readBack` 目前仍只按 `op_id + user_id` 查询，属于
-  [核心计划 P0-03](../plan.md) 的已知隔离缺口。
+- `user_currency`、`currency_ledger`、`mail`、`match_results`、`gameplay_outbox` 的按区查询与写入均携带
+  `server_id`；`readBack`、relayer/replayDead 和邮件领取会把区谓词一路带到状态回读与标记更新。
+  仅 `outboxStats` 与保留期清理是有意的全局聚合/清理操作。
 - per-zone Redis key 只由 `core/infra/keys.ts` 构造，并在 `zoneCtx.run` 中解析区前缀。
 - 派生幂等 ID 编入区号；GameRoom/LobbyRoom 同时核对 `sId`、本组配置与认证结果。
 - `match_index` 与 `singleton_lease` 刻意是全局表；不能机械添加 `server_id`。
@@ -234,9 +234,11 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
 由显式 relayer 命令重试。稳定的 `clientReqId` / `op_id` 必须在调用方重试中复用。
 
 目标不变量是“effect 在任何写入前完整校验，再由单个 Lua 原子应用；未知 kind/version 不得成功”。当前
-实现尚未达到这个目标：`APPLY_EFFECT` 在遍历时直接写、未知 `kind` 被忽略、`setField` 可写任意字段，且
-applied marker 最后才写；Lua 运行时错误也不会自动回滚此前 Redis 写入。不能把现有实现描述成已完成的
-通用 effect 执行器。
+实现已由 shared effect envelope（`schemaVersion=1`）与零依赖 validator 统一约束 exact keys、整数范围、
+数量上限和 `setField` 白名单；`APPLY_EFFECT` 在 Lua 内再做完整 validate pass，随后才批量写入。校验失败返回
+稳定的 `err:EFFECT_*`，不会改动 user/bag/ver/applied。`applied:payload:{uid}` 绑定规范化 JSON，相同
+`op_id` 仅在 payload 相同才返回 `dup`，缺绑定或 payload 不同均返回冲突并映射 `INVALID_PAYLOAD`。
+冻结快照同时保存该绑定，避免冷档往返丢失幂等证据。
 
 `setField` 是绝对值写，与 item/star 增量不同不可交换：旧 intent 被 relayer 迟到重放时会把旧值盖回。
 `core/economy/outbox.ts` 的 `drainPendingFor` 是为此预留的前置吸干函数，但当前没有任何生产写路径调用它，
@@ -347,8 +349,8 @@ loop monitor 只是本地诊断信号。
 - **09·F1–F5 / S1–S2**：freeze/thaw 核对 fence；写路径不绕过在线保护；角色存在性不靠猜；
   reader/migrator/version 与需迁移常量的边界显式化。
 
-当前已确认的主要偏差是：I4 未做 payload hash、relayer 在持锁事务内等待 Redis/`ensureLive`/清理查询、
-effect 未在写入前预验证、G4 在 GameRoom C2S 和客户端 Public HTTP 上不完整、G5 的未知路由在限流前返回、
+当前已确认的主要偏差是：relayer 在持锁事务内等待 Redis/`ensureLive`/清理查询、
+G4 在 GameRoom C2S 和客户端 Public HTTP 上不完整、G5 的未知路由在限流前返回、
 K 的坏 match entry 会被 ACK 丢弃、S1 的热档 reader 不看 schemaVersion。其中前两条在源码中没有对应编号
 标签，⛔ 不要用 09·X2 / 09·X3 指代它们。不要用规则编号掩盖这些事实。
 
@@ -364,6 +366,7 @@ R7/R9 的 SHA + `NOSCRIPT` 兜底覆盖除登录外的全部 Lua：`core/auth/se
 | RPC 错误码 | `apps/shared/src/protocol/lobbyRpc/envelope.ts` 的 `RPC_ERR_CODES`（15 个）；异常→码映射在 `core/errors.ts` 的 `ERR_MAP`（覆盖 11 个，其余落 `INTERNAL` 兜底）。其中 `GRANTING` 当前没有任何产出点，`AUTH_EPOCH_STALE` 服务端已停产、只保留客户端分支，`ORDER_MISMATCH` 只由可选的 `http/pay/wxNotify.ts` 直接返回，不经 `ERR_MAP` |
 | Colyseus state 纯数据镜像 | `apps/shared/src/protocol/state.ts`；运行时 Schema 在 `rooms/schema` |
 | Redis key | `apps/server/src/core/infra/keys.ts` |
+| Asset effect schema/validator | `apps/shared/src/protocol/lobbyRpc/economy.ts`；Lua 镜像在 `apps/server/src/core/infra/redisScripts.ts` |
 | 跨模块服务端配置 | `apps/server/src/core/infra/config.ts`；少量模块私有常量仍在实现文件内 |
 | Lua | `apps/server/src/core/infra/redisScripts.ts` 与模块专属 script 文件；`core/auth/session.ts` 的 `SESS_FENCE_LUA` 目前是例外，未经 `defineScript` 登记 |
 | MySQL DDL | `apps/server/sql/schema.sql`；兼容升级逻辑在 `tools/db-bootstrap.ts` |

@@ -66,6 +66,8 @@ export const kBagAll = (uid: string) => Array.from({ length: BAG_SHARDS }, (_, i
 export const kFence = (uid: string) => `${P()}fence:{${uid}}`;
 /** 幂等已 apply 集合 ZSET（member=op_id, score=applyTs），无 TTL、按窗口裁剪。member=op_id 已编码 sId（§3.4）。 */
 export const kApplied = (uid: string) => `${P()}applied:{${uid}}`;
+/** applied payload 绑定 HASH（field=op_id, value=规范化 effect JSON）。与 applied 同槽，防同 ID 换 payload。 */
+export const kAppliedPayload = (uid: string) => `${P()}applied:payload:{${uid}}`;
 /** per-uid 锁 STRING（值=fence），PX 5s。⛔ thaw:{uid} 已废弃，禁止第二把 per-uid 锁（09·L1）。 */
 export const kLock = (uid: string) => `${P()}lock:{${uid}}`;
 /** 幂等占位 · user 作用域（09·I1；带 `{uid}` hash-tag 与档同实例，per-zone 隔离跨区同 clientReqId）。 */

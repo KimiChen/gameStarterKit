@@ -12,7 +12,7 @@ import {
   APPLIED_RETENTION_MS, BAG_SHARDS, OP_ID_NAMESPACE, OUTBOX_DONE, OUTBOX_PENDING,
   OUTBOX_RETENTION_MS,
 } from "../infra/config";
-import { currentZoneId, kApplied, kBagAll, kUser, zoneCtx } from "../infra/keys";
+import { currentZoneId, kApplied, kAppliedPayload, kBagAll, kUser, zoneCtx } from "../infra/keys";
 import { clientFor } from "../infra/redisRoute";
 import { APPLY_EFFECT, evalshaWithReload } from "../infra/redisScripts";
 import { getPool, withRcTx } from "../infra/mysql";
@@ -20,7 +20,10 @@ import type { ResultSetHeader, RowDataPacket } from "../infra/mysql";
 import { withUser } from "../uow";
 import { debitInTx, getBalance, invalidateBalanceCache } from "./currency";
 import type { ShopSku } from "./catalog";
-import type { IGrant, IPurchaseResult } from "@game/shared";
+import {
+  EffectValidationError, normalizeEffect, type IEffect, type IGrant, type IPurchaseResult,
+} from "@game/shared";
+import { EffectConflictError, InvalidEffectError } from "../errors";
 
 /**
  * 一次 intent 的全部玩法副作用。货币不在此（走 MySQL，09·A2）。
@@ -29,6 +32,20 @@ import type { IGrant, IPurchaseResult } from "@game/shared";
  */
 export type Grant = IGrant;
 export type Effect = IGrant[];
+export type VersionedEffect = IEffect;
+export type EffectInput = Effect | VersionedEffect;
+
+/** 所有进入 durable/Redis 边界的 effect 都先走 shared validator。 */
+export function canonicalizeEffect(input: unknown): VersionedEffect {
+  try {
+    return normalizeEffect(input);
+  } catch (e) {
+    if (e instanceof EffectValidationError) { throw new InvalidEffectError(e.code); }
+    throw e;
+  }
+}
+
+const canonicalEffect = canonicalizeEffect;
 
 /**
  * op_id 服务端派生（09·I2）：同一 (uid, sId, type, clientReqId) 永远同一个 op_id，
@@ -47,19 +64,23 @@ export function deriveOpId(uid: string, sId: number, type: string, clientReqId: 
  * ⛔ 绝不在缺失 hash 上造残档（09·R2/X5）。
  * effect 若来自 MySQL JSON 列，mysql2 已解析成对象——stringify 统一在这里做（09·DB8）。
  */
-export async function redisApply(uid: string, opId: string, effect: Effect): Promise<"ok" | "dup" | "cold"> {
-  if (effect.length > 0 && BAG_SHARDS < 1) { throw new Error("BAG_SHARDS 配置非法"); }
-  const keys = [kUser(uid), kApplied(uid), ...kBagAll(uid)];
+export async function redisApply(uid: string, opId: string, effect: EffectInput): Promise<"ok" | "dup" | "cold"> {
+  const canonical = canonicalEffect(effect);
+  if (canonical.grants.length > 0 && BAG_SHARDS < 1) { throw new Error("BAG_SHARDS 配置非法"); }
+  const keys = [kUser(uid), kApplied(uid), kAppliedPayload(uid), ...kBagAll(uid)];
   const r = await evalshaWithReload(
     clientFor(uid), APPLY_EFFECT, keys,
-    [opId, String(Date.now()), JSON.stringify(effect)],
+    [opId, String(Date.now()), JSON.stringify(canonical)],
   ) as string;
   if (r.startsWith("ok:")) {
     // 负数下溢已在 Lua 内回补到 0（09·X8），这里记异常供对账/告警
     console.warn(`[outbox] clawback 下溢回补 uid=${uid} op=${opId} ${r.slice(3)}`);
     return "ok";
   }
-  return r as "ok" | "dup" | "cold";
+  if (r === "conflict") { throw new EffectConflictError(); }
+  if (r.startsWith("err:")) { throw new InvalidEffectError(r.slice(4)); }
+  if (r === "ok" || r === "dup" || r === "cold") { return r; }
+  throw new InvalidEffectError("EFFECT_SCRIPT_RESULT");
 }
 
 // ───────────────────── MySQL 侧（M6） ─────────────────────
@@ -75,13 +96,27 @@ export type PurchaseResult = IPurchaseResult;
 export async function purchaseTx(
   uid: string, sId: number, fence: number, sku: ShopSku, opId: string,
 ): Promise<"DUP" | "OK"> {
+  // Validate before opening the transaction: an invalid grant must not debit money or
+  // leave a durable ledger row that the relayer can never apply.
+  const canonical = canonicalEffect(sku.grants);
   const outcome = await withRcTx(async (conn) => {
     const debit = await debitInTx(conn, uid, sId, sku.currency, sku.price, fence, opId, "shop.purchase");
-    if (debit === "DUP") { return "DUP" as const; }
+    if (debit === "DUP") {
+      // A unique ledger hit is only a true retry when the existing durable intent has
+      // the same canonical payload. Otherwise surface a deterministic conflict rather
+      // than silently treating a changed request as delivered.
+      const [rows] = await conn.query<RowDataPacket[]>(
+        "SELECT effect FROM gameplay_outbox WHERE op_id = ? AND user_id = ? AND server_id = ? FOR UPDATE",
+        [opId, uid, sId]);
+      if (rows.length === 0) { throw new EffectConflictError(); }
+      const existing = canonicalEffect(rows[0].effect);
+      if (JSON.stringify(existing) !== JSON.stringify(canonical)) { throw new EffectConflictError(); }
+      return "DUP" as const;
+    }
     await conn.execute<ResultSetHeader>(
       `INSERT INTO gameplay_outbox (op_id, user_id, server_id, effect, status)
        VALUES (?,?,?,CAST(? AS JSON),?)`,
-      [opId, uid, sId, JSON.stringify(sku.grants), OUTBOX_PENDING]);
+      [opId, uid, sId, JSON.stringify(canonical), OUTBOX_PENDING]);
     return "OK" as const;
   });
   if (outcome === "OK") { await invalidateBalanceCache(uid, sId); }
@@ -89,22 +124,23 @@ export async function purchaseTx(
 }
 
 /** 阶段 3：best-effort 标记完成（04：崩了也无碍，relayer 重放判 dup 后补标）。 */
-export async function markOutboxDone(opId: string): Promise<void> {
+export async function markOutboxDone(opId: string, sId = currentZoneId()): Promise<void> {
   await getPool().execute<ResultSetHeader>(
-    "UPDATE gameplay_outbox SET status = ? WHERE op_id = ?", [OUTBOX_DONE, opId]);
+    "UPDATE gameplay_outbox SET status = ? WHERE op_id = ? AND server_id = ?", [OUTBOX_DONE, opId, sId]);
 }
 
 /** relayer 真失败（Redis 连不上 / Lua 报错 / effect 非法）时累加 attempts。 */
-export async function bumpAttempts(opId: string, err: string): Promise<void> {
+export async function bumpAttempts(opId: string, err: string, sId = currentZoneId()): Promise<void> {
   await getPool().execute<ResultSetHeader>(
-    "UPDATE gameplay_outbox SET attempts = attempts + 1, last_error = ? WHERE op_id = ?",
-    [err.slice(0, 255), opId]);
+    "UPDATE gameplay_outbox SET attempts = attempts + 1, last_error = ? WHERE op_id = ? AND server_id = ?",
+    [err.slice(0, 255), opId, sId]);
 }
 
 /** 回读操作状态（shop.queryOp / purchase 返回值共用）。 */
 export async function readBack(uid: string, sId: number, opId: string): Promise<PurchaseResult> {
   const [rows] = await getPool().query<RowDataPacket[]>(
-    "SELECT status, effect FROM gameplay_outbox WHERE op_id = ? AND user_id = ?", [opId, uid]);
+    "SELECT status, effect FROM gameplay_outbox WHERE op_id = ? AND user_id = ? AND server_id = ?",
+    [opId, uid, sId]);
   const balance = await getBalance(uid, sId);
   if (rows.length === 0) { return { opId, status: "dead", balance }; } // 不存在的 op 按 dead 报
   const status = Number(rows[0].status);
@@ -113,7 +149,7 @@ export async function readBack(uid: string, sId: number, opId: string): Promise<
     status: status === OUTBOX_DONE ? "done" : status === OUTBOX_PENDING ? "granting" : "dead",
     balance,
     // mysql2 已把 JSON 列解析成对象（09·DB8）
-    granted: status === OUTBOX_DONE ? rows[0].effect as Effect : undefined,
+    granted: status === OUTBOX_DONE ? canonicalEffect(rows[0].effect).grants : undefined,
   };
 }
 
@@ -132,7 +168,7 @@ export async function purchase(uid: string, sku: ShopSku, clientReqId: string): 
     try {
       const r = await redisApply(uid, opId, sku.grants);           // 阶段 2：幂等 apply（无 fence；Redis 键 per-zone via zoneCtx）
       if (r === "ok" || r === "dup") {
-        await markOutboxDone(opId);                                 // 阶段 3：best-effort
+        await markOutboxDone(opId, sId);                             // 阶段 3：best-effort
       }
       // cold（罕见：档刚被冻结）→ 留 pending 给 relayer→ensureLive（09·X5）
     } catch { /* 阶段 2/3 失败留给 relayer 收敛（04 崩溃窗口分析） */ }
@@ -161,7 +197,7 @@ export async function drainPendingFor(uid: string, sId: number): Promise<number>
     for (const row of rows) {
       const r = await redisApply(uid, row.op_id as string, row.effect as Effect);
       if (r === "cold") { throw new Error(`drainPendingFor: 档已冻结 uid=${uid}`); }
-      await markOutboxDone(row.op_id as string);
+      await markOutboxDone(row.op_id as string, sId);
       applied++;
     }
     return applied;
@@ -176,42 +212,50 @@ export async function drainPendingFor(uid: string, sId: number): Promise<number>
  * done 行本身由 sweepOutboxRetention 按窗清理；不在 outbox 表里的候选（done 已清）安全可裁。
  * （APPLIED_RETENTION ≥ 2 × OUTBOX_RETENTION 仍在 config 固化，作为第一道窗口不等式。）
  */
-export async function trimApplied(uid: string): Promise<number> {
-  const redis = clientFor(uid);
-  const candidates = await redis.zrangebyscore(kApplied(uid), "-inf", `(${Date.now() - APPLIED_RETENTION_MS}`);
-  if (candidates.length === 0) { return 0; }
-  const keep = new Set<string>();
-  for (let i = 0; i < candidates.length; i += 500) {
-    const chunk = candidates.slice(i, i + 500);
-    const [rows] = await getPool().query<RowDataPacket[]>(
-      `SELECT op_id FROM gameplay_outbox WHERE user_id = ? AND status != ? AND op_id IN (${chunk.map(() => "?").join(",")})`,
-      [uid, OUTBOX_DONE, ...chunk]);
-    for (const r of rows) { keep.add(r.op_id as string); }
-  }
-  const removable = candidates.filter((id) => !keep.has(id));
-  if (keep.size > 0) {
-    console.warn(`[outbox] ⚠ applied 裁剪跳过 ${keep.size} 个未完结 op（uid=${uid}）——outbox 行滞留 pending/dead，需人工关注`);
-  }
-  if (removable.length === 0) { return 0; }
-  let removed = 0;
-  for (let i = 0; i < removable.length; i += 500) {
-    removed += await redis.zrem(kApplied(uid), ...removable.slice(i, i + 500));
-  }
-  return removed;
+export async function trimApplied(uid: string, sId = currentZoneId()): Promise<number> {
+  return zoneCtx.run({ sId }, async () => {
+    const redis = clientFor(uid);
+    const candidates = await redis.zrangebyscore(kApplied(uid), "-inf", `(${Date.now() - APPLIED_RETENTION_MS}`);
+    if (candidates.length === 0) { return 0; }
+    const keep = new Set<string>();
+    for (let i = 0; i < candidates.length; i += 500) {
+      const chunk = candidates.slice(i, i + 500);
+      const [rows] = await getPool().query<RowDataPacket[]>(
+        `SELECT op_id FROM gameplay_outbox
+          WHERE user_id = ? AND server_id = ? AND status != ?
+            AND op_id IN (${chunk.map(() => "?").join(",")})`,
+        [uid, sId, OUTBOX_DONE, ...chunk]);
+      for (const r of rows) { keep.add(r.op_id as string); }
+    }
+    const removable = candidates.filter((id) => !keep.has(id));
+    if (keep.size > 0) {
+      console.warn(`[outbox] ⚠ applied 裁剪跳过 ${keep.size} 个未完结 op（uid=${uid}, sId=${sId}）——outbox 行滞留 pending/dead，需人工关注`);
+    }
+    if (removable.length === 0) { return 0; }
+    let removed = 0;
+    for (let i = 0; i < removable.length; i += 500) {
+      const chunk = removable.slice(i, i + 500);
+      removed += await redis.zrem(kApplied(uid), ...chunk);
+      // payload 绑定是 applied 的伴随元数据，必须与 ZSET 一起清理，避免无界增长。
+      await redis.hdel(kAppliedPayload(uid), ...chunk);
+    }
+    return removed;
+  });
 }
 
 /**
  * 死信人工处置（09·X6）：**必须走重放**（redisApply 由 applied 去重），
  * ⛔ 禁止手改 status = done。成功后才标 done。
  */
-export async function replayDead(opId: string): Promise<"ok" | "dup" | "cold" | "missing"> {
+export async function replayDead(opId: string, sId = currentZoneId()): Promise<"ok" | "dup" | "cold" | "missing"> {
   const [rows] = await getPool().query<RowDataPacket[]>(
-    "SELECT user_id, server_id, effect FROM gameplay_outbox WHERE op_id = ?", [opId]);
+    "SELECT user_id, server_id, effect FROM gameplay_outbox WHERE op_id = ? AND server_id = ?", [opId, sId]);
   if (rows.length === 0) { return "missing"; }
   // 后台重放无请求上下文（§3.6 B4）：从行的 server_id 重建区上下文，redisApply 才落对区 Redis 前缀。
-  const r = await zoneCtx.run({ sId: Number(rows[0].server_id) }, () =>
+  const rowSId = Number(rows[0].server_id);
+  const r = await zoneCtx.run({ sId: rowSId }, () =>
     redisApply(rows[0].user_id as string, opId, rows[0].effect as Effect));
-  if (r === "ok" || r === "dup") { await markOutboxDone(opId); }
+  if (r === "ok" || r === "dup") { await markOutboxDone(opId, rowSId); }
   return r;
 }
 

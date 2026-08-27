@@ -22,7 +22,7 @@ import {
   LOCK_RENEW_MS, OUTBOX_DEAD, OUTBOX_PENDING, SCHEMA_VERSION, WHALE_FIELDS,
 } from "../infra/config";
 import {
-  activeLruBucketOf, kActiveLru, kApplied, kBagAll, kFence, kSess, kUser,
+  activeLruBucketOf, kActiveLru, kApplied, kAppliedPayload, kBagAll, kFence, kSess, kUser,
 } from "../infra/keys";
 import { clientFor, indexClientFor } from "../infra/redisRoute";
 import { getPool } from "../infra/mysql";
@@ -146,7 +146,8 @@ export async function freezeUser(uid: string, lease: SingletonLease): Promise<"f
     const bag: Record<string, string>[] = [];
     for (const k of kBagAll(uid)) { bag.push(await readHashSafe(r, k)); }
     const applied = await r.zrange(kApplied(uid), 0, -1, "WITHSCORES");
-    const snapshot: ArchiveSnapshot = { user, bag, applied };
+    const appliedPayload = await readHashSafe(r, kAppliedPayload(uid));
+    const snapshot: ArchiveSnapshot = { user, bag, applied, appliedPayload };
 
     const verAtRead = user.ver ?? "0";
     // fence 高水位读自计数器（含本次抢锁的 INCR，恒 ≥ 一切已发出的 fence）：thaw 恢复到它

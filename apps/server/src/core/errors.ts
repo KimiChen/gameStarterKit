@@ -58,6 +58,24 @@ export class InvalidPayloadError extends Error {
   constructor(msg = "invalid payload") { super(msg); this.name = "InvalidPayloadError"; }
 }
 
+/** Effect 在 durable intent 或 Redis apply 前未通过 shared 运行时契约。 */
+export class InvalidEffectError extends InvalidPayloadError {
+  readonly effectCode: string;
+  constructor(effectCode: string, msg = `invalid effect: ${effectCode}`) {
+    super(msg);
+    this.name = "InvalidEffectError";
+    this.effectCode = effectCode;
+  }
+}
+
+/** 同一 op_id 携带了不同 effect；不能把幂等键静默当成第二笔交易。 */
+export class EffectConflictError extends InvalidPayloadError {
+  constructor(msg = "effect conflicts with existing operation") {
+    super(msg);
+    this.name = "EffectConflictError";
+  }
+}
+
 /** 路由表无此 type（⛔ 不计 flood 不封禁，09·G6）。 */
 export class UnknownTypeError extends Error {
   constructor(msg = "unknown rpc type") { super(msg); this.name = "UnknownTypeError"; }
@@ -95,6 +113,8 @@ const ERR_MAP = new Map<Function, ErrCode>([
   [AuthRequiredError, "AUTH_REQUIRED"],
   [RateLimitedError, "RATE_LIMITED"],
   [InvalidPayloadError, "INVALID_PAYLOAD"],
+  [InvalidEffectError, "INVALID_PAYLOAD"],
+  [EffectConflictError, "INVALID_PAYLOAD"],
   [UnknownTypeError, "UNKNOWN_TYPE"],
   [InProgressError, "IN_PROGRESS"],
   [ThawingError, "THAWING"],

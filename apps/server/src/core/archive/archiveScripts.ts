@@ -9,13 +9,14 @@
  *
  * KEYS 全部带 `{uid}` hash-tag 同槽（09·R3），单条 Lua 才能原子操作。
  */
-import { kApplied, kBagAll, kFence, kLock, kUser } from "../infra/keys";
+import { kApplied, kAppliedPayload, kBagAll, kFence, kLock, kUser } from "../infra/keys";
 import { clientFor } from "../infra/redisRoute";
 import { defineScript, evalshaWithReload } from "../infra/redisScripts";
 
 /**
  * `user_archive.snapshot` 的 JSON 形状（08 · user_archive 表）：
- * user 全字段 + 所有 bag 分片 + **applied 成员集合**（09·F2：pre-freeze op_id 重放仍被去重）。
+ * user 全字段 + 所有 bag 分片 + **applied 成员集合及 payload 绑定**（09·F2：pre-freeze op_id
+ * 重放仍被去重，且严格阻止同一 op_id 换 effect）。
  * 全部值保持 Redis 原始字符串——cjson 不动它们，恢复时按原样写回。
  */
 export interface ArchiveSnapshot {
@@ -25,6 +26,8 @@ export interface ArchiveSnapshot {
   bag: Record<string, string>[];
   /** applied:{uid} 的 `ZRANGE 0 -1 WITHSCORES` 平铺数组 [member, score, ...]。 */
   applied: string[];
+  /** applied:payload:{uid} 的 field→规范化 effect JSON；旧快照可能缺失该字段。 */
+  appliedPayload?: Record<string, string>;
 }
 
 /**
@@ -40,13 +43,13 @@ export interface ArchiveSnapshot {
  */
 export const FREEZE_COMMIT = defineScript("freezeCommit", `
 -- KEYS[1]=lock:{uid}  KEYS[2]=user:{uid}  KEYS[3]=fence:{uid}
--- KEYS[4]=applied:{uid}  KEYS[5..]=bag:{uid}:0..N-1
+-- KEYS[4]=applied:{uid}  KEYS[5]=applied:payload:{uid}  KEYS[6..]=bag:{uid}:0..N-1
 -- ARGV[1]=myFence  ARGV[2]=verAtRead
 if redis.call('GET', KEYS[1]) ~= ARGV[1] then return 'lost' end
 if redis.call('HGET', KEYS[2], 'ver') ~= ARGV[2] then return 'changed' end
 -- ⛔ KEYS[3]=fence 计数器不删（永不重置契约；防冷档期重新计数导致 thaw 后计数回退）
-redis.call('UNLINK', KEYS[2], KEYS[4])
-for i = 5, #KEYS do redis.call('UNLINK', KEYS[i]) end
+redis.call('UNLINK', KEYS[2], KEYS[4], KEYS[5])
+for i = 6, #KEYS do redis.call('UNLINK', KEYS[i]) end
 return 'ok'
 `);
 
@@ -62,7 +65,8 @@ return 'ok'
  * 返回 'ok' | 'lost'。
  */
 export const THAW_RESTORE = defineScript("thawRestore", `
--- KEYS[1]=lock:{uid} KEYS[2]=user:{uid} KEYS[3]=fence:{uid} KEYS[4]=applied:{uid} KEYS[5..]=bag
+-- KEYS[1]=lock:{uid} KEYS[2]=user:{uid} KEYS[3]=fence:{uid} KEYS[4]=applied:{uid}
+-- KEYS[5]=applied:payload:{uid} KEYS[6..]=bag
 -- ARGV[1]=myFence ARGV[2]=fenceHwm ARGV[3]=snapshotJson ARGV[4]=overwrite('1' 时先删陈旧档)
 if redis.call('GET', KEYS[1]) ~= ARGV[1] then return 'lost' end
 if ARGV[4] == '1' then
@@ -70,20 +74,27 @@ if ARGV[4] == '1' then
   -- acquireLease 是「先 INCR 再抢锁」，抢锁**失败**者也推计数器：resolve 读完计数器到
   -- 本 Lua 执行之间（TOCTOU），并发失败抢锁可把计数推过 hwm——删除后按 hwm 恢复
   -- = 计数回退、已发号被复用（评审修正，与 freezeCommit 同一契约：计数器永不重置）
-  redis.call('UNLINK', KEYS[2], KEYS[4])
-  for i = 5, #KEYS do redis.call('UNLINK', KEYS[i]) end
+  redis.call('UNLINK', KEYS[2], KEYS[4], KEYS[5])
+  for i = 6, #KEYS do redis.call('UNLINK', KEYS[i]) end
 end
 local s = cjson.decode(ARGV[3])
 -- 恢复 user 全字段（值是 Redis 原始字符串，原样写回）
 for f, v in pairs(s.user) do
   redis.call('HSET', KEYS[2], f, v)
 end
--- 恢复 bag：s.bag[i]（Lua 1 起）对应 KEYS[4+i] = shard i-1（与 kBagAll 顺序一致）
+-- 恢复 bag：s.bag[i]（Lua 1 起）对应 KEYS[5+i] = shard i-1（与 kBagAll 顺序一致）
 if s.bag then
   for i, shard in ipairs(s.bag) do
     for f, v in pairs(shard) do
-      redis.call('HSET', KEYS[4 + i], f, v)
+      redis.call('HSET', KEYS[5 + i], f, v)
     end
+  end
+end
+-- Restore payload bindings when present.  Older snapshots omit this optional member;
+-- their applied markers intentionally remain unbound and therefore fail closed on retry.
+if s.appliedPayload then
+  for op, payload in pairs(s.appliedPayload) do
+    redis.call('HSET', KEYS[5], op, payload)
   end
 end
 -- 恢复 applied（WITHSCORES 平铺 [member, score, ...]）——pre-freeze op_id 重放仍判 dup（09·F2）
@@ -105,7 +116,7 @@ return 'ok'
 
 /** freeze/thaw 共用的 KEYS 排列（两条脚本注释里的顺序，⛔ 不要改动次序）。 */
 const archiveKeys = (uid: string): string[] =>
-  [kLock(uid), kUser(uid), kFence(uid), kApplied(uid), ...kBagAll(uid)];
+  [kLock(uid), kUser(uid), kFence(uid), kApplied(uid), kAppliedPayload(uid), ...kBagAll(uid)];
 
 /** freezeCommit 包装：'changed' = 快照期间有玩法写（如 relayer applyEffect），放弃本轮。 */
 export async function freezeCommit(

@@ -34,9 +34,8 @@ MySQL 保存该区的玩法数据。完整边界见 [SERVER §3](SERVER.md#3-数
 
 ## 3.3 MySQL 区谓词
 
-当前 `user_currency`、`currency_ledger`、`mail` 与 `match_results` 的按区读写谓词携带 `server_id`；
-`gameplay_outbox` 的创建路径会写入 `server_id`，但 `readBack` 仍只按 `op_id + user_id` 查询，这是
-[核心计划 P0-03](../plan.md) 已登记的隔离缺口。`match_index` 是全局 match ID 去重闸，
+当前 `user_currency`、`currency_ledger`、`mail`、`match_results` 与 `gameplay_outbox` 的按区读写谓词均携带
+`server_id`；`readBack`、邮件领取和后台重放都会按区回读/更新。`match_index` 是全局 match ID 去重闸，
 `singleton_lease` 是全局任务租约，二者刻意不带区。
 
 `user_archive` 与 `user_snapshot_readonly` 当前也没有 `server_id`，但这不是可复用先例：前者正因区隔离
@@ -45,8 +44,8 @@ MySQL 保存该区的玩法数据。完整边界见 [SERVER §3](SERVER.md#3-数
 ## 3.4 幂等 ID
 
 按区操作的 `op_id` 派生输入包含用户、区号、业务域和稳定 `clientReqId`。调用方重试必须复用同一个
-`clientReqId`；换区或换业务域必须派生不同 ID。当前通用 RPC 幂等缓存尚未绑定 payload hash，已知缺口
-见 [SERVER §4](SERVER.md#4-lobby-rpc) 与 [SERVER §12 I](SERVER.md#i--幂等)。
+`clientReqId`；换区或换业务域必须派生不同 ID。asset effect 的 `applied` marker 另有同槽 payload
+绑定：同一 ID 携带不同 effect 会稳定报冲突；不应与仍按 ID 去重的通用 RPC 占位混淆。
 
 ## 3.5 区上下文
 

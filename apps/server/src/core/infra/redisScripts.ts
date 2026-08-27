@@ -9,6 +9,11 @@
  */
 import { createHash } from "node:crypto";
 import type Redis from "ioredis";
+import {
+  EFFECT_FIELD_ALLOWLIST, EFFECT_MAX_COUNT, EFFECT_MAX_DELTA, EFFECT_MAX_FIELD_LENGTH,
+  EFFECT_MAX_GRANTS, EFFECT_MAX_ITEM_ID, EFFECT_MAX_QUANTITY, EFFECT_MAX_VALUE_LENGTH,
+  EFFECT_RESERVED_FIELDS, EFFECT_SCHEMA_VERSION,
+} from "@game/shared";
 
 export interface RedisScript { readonly name: string; readonly lua: string; readonly sha: string }
 
@@ -40,36 +45,168 @@ return 'ok'
  * 下溢时返回 'ok:<明细>'，wrapper 记异常后仍视作 'ok'。
  * ARGV[2] now_ms 仅作 applied 的 ZADD score、不参与判定（04 既定契约，不违反 09·R7）。
  */
+/**
+ * 共享 effect 契约的 Lua 侧镜像。这里不能只依赖 TypeScript validator：relayer 可能直接
+ * 从 MySQL 读取历史 JSON，且所有字段写入必须在同一 Redis 脚本内完成。
+ * KEYS = [user, applied, appliedPayload, bag0..bagN]。
+ */
+const luaSet = (values: readonly string[]): string =>
+  `{${values.map((value) => `[${JSON.stringify(value)}]=true`).join(",")}}`;
+const LUA_EFFECT_FIELDS = luaSet(EFFECT_FIELD_ALLOWLIST);
+const LUA_EFFECT_RESERVED = luaSet(EFFECT_RESERVED_FIELDS);
+const LUA_EFFECT_VERSION = String(EFFECT_SCHEMA_VERSION);
+const LUA_MAX_GRANTS = String(EFFECT_MAX_GRANTS);
+const LUA_MAX_QUANTITY = String(EFFECT_MAX_QUANTITY);
+const LUA_MAX_ITEM_ID = String(EFFECT_MAX_ITEM_ID);
+const LUA_MAX_COUNT = String(EFFECT_MAX_COUNT);
+const LUA_MAX_DELTA = String(EFFECT_MAX_DELTA);
+const LUA_MAX_FIELD_LENGTH = String(EFFECT_MAX_FIELD_LENGTH);
+const LUA_MAX_VALUE_LENGTH = String(EFFECT_MAX_VALUE_LENGTH);
+
 export const APPLY_EFFECT = script("applyEffect", `
-if redis.call('EXISTS', KEYS[1]) == 0   then return 'cold' end
-if redis.call('ZSCORE', KEYS[2], ARGV[1]) then return 'dup' end
+-- Return a stable domain error without touching any key. The caller maps err:* to InvalidEffectError.
+local function invalid(code) return 'err:' .. code end
+local function exact(tbl, expected, expectedCount)
+  if type(tbl) ~= 'table' then return false end
+  local count = 0
+  for key, _ in pairs(tbl) do
+    count = count + 1
+    if expected[key] ~= true then return false end
+  end
+  if count ~= expectedCount then return false end
+  for key, _ in pairs(expected) do
+    if tbl[key] == nil then return false end
+  end
+  return true
+end
+local function intIn(value, min, max)
+  return type(value) == 'number' and value == math.floor(value) and value >= min and value <= max
+end
 
-local N     = #KEYS - 2
-local eff   = cjson.decode(ARGV[3])
+-- A missing user is a normal cold result, but malformed effects are rejected before this script
+-- can create any applied/bag key. The three first keys are user/applied/payload-hash.
+if redis.call('EXISTS', KEYS[1]) == 0 then return 'cold' end
+local decoded, eff = pcall(cjson.decode, ARGV[3])
+if not decoded or type(eff) ~= 'table' then return invalid('EFFECT_NOT_OBJECT') end
+if not exact(eff, { schemaVersion = true, grants = true }, 2) then return invalid('EFFECT_KEYS') end
+if eff.schemaVersion ~= ${LUA_EFFECT_VERSION} then return invalid('EFFECT_SCHEMA_VERSION') end
+if type(eff.grants) ~= 'table' then return invalid('EFFECT_GRANTS') end
+
+local N = #KEYS - 3
+if N < 1 then return invalid('EFFECT_DATA_CORRUPT') end
+local grantCount = #eff.grants
+if grantCount > ${LUA_MAX_GRANTS} then return invalid('EFFECT_TOO_LARGE') end
+-- cjson arrays must be dense and must not carry named properties.
+local seenCount = 0
+for key, _ in pairs(eff.grants) do
+  if type(key) ~= 'number' or key ~= math.floor(key) or key < 1 or key > grantCount then
+    return invalid('EFFECT_GRANTS')
+  end
+  seenCount = seenCount + 1
+end
+if seenCount ~= grantCount then return invalid('EFFECT_GRANTS') end
+
+local allowFields = ${LUA_EFFECT_FIELDS}
+local reservedFields = ${LUA_EFFECT_RESERVED}
+local itemDeltas = {}
+local itemShards = {}
+local starDelta = 0
+local hasStar = false
+local setFields = {}
 local under = {}
+local quantity = 0
 
-for _, g in ipairs(eff) do
+for i = 1, grantCount do
+  local g = eff.grants[i]
+  if type(g) ~= 'table' or type(g.kind) ~= 'string' then
+    return invalid('EFFECT_UNKNOWN_KIND')
+  end
   if g.kind == 'item' then
+    if not exact(g, { kind = true, itemId = true, count = true }, 3) then return invalid('EFFECT_GRANT_KEYS') end
+    if not intIn(g.itemId, 1, ${LUA_MAX_ITEM_ID}) then return invalid('EFFECT_ITEM_ID') end
+    if not intIn(g.count, -${LUA_MAX_COUNT}, ${LUA_MAX_COUNT}) or g.count == 0 then return invalid('EFFECT_COUNT') end
+    quantity = quantity + math.abs(g.count)
+    if quantity > ${LUA_MAX_QUANTITY} then return invalid('EFFECT_QUANTITY') end
     local field = tostring(g.itemId)
-    local shard = g.itemId % N
-    local v = redis.call('HINCRBY', KEYS[3 + shard], field, g.count)
-    if v < 0 then
-      redis.call('HSET', KEYS[3 + shard], field, 0)
-      under[#under + 1] = 'item:' .. field
-    end
+    itemDeltas[field] = (itemDeltas[field] or 0) + g.count
+    itemShards[field] = g.itemId % N
   elseif g.kind == 'star' then
-    local v = redis.call('HINCRBY', KEYS[1], 'star', g.delta)
-    if v < 0 then
-      redis.call('HSET', KEYS[1], 'star', 0)
-      under[#under + 1] = 'star'
-    end
+    if not exact(g, { kind = true, delta = true }, 2) then return invalid('EFFECT_GRANT_KEYS') end
+    if not intIn(g.delta, -${LUA_MAX_DELTA}, ${LUA_MAX_DELTA}) or g.delta == 0 then return invalid('EFFECT_DELTA') end
+    quantity = quantity + math.abs(g.delta)
+    if quantity > ${LUA_MAX_QUANTITY} then return invalid('EFFECT_QUANTITY') end
+    starDelta = starDelta + g.delta
+    hasStar = true
   elseif g.kind == 'setField' then
-    redis.call('HSET', KEYS[1], g.field, g.value)
+    if not exact(g, { kind = true, field = true, value = true }, 3) then return invalid('EFFECT_GRANT_KEYS') end
+    if type(g.field) ~= 'string' or #g.field < 1 or #g.field > ${LUA_MAX_FIELD_LENGTH}
+      or not string.match(g.field, '^[A-Za-z][A-Za-z0-9_]*$') then
+      return invalid('EFFECT_FIELD')
+    end
+    if reservedFields[g.field] == true then return invalid('EFFECT_RESERVED_FIELD') end
+    if allowFields[g.field] ~= true then return invalid('EFFECT_FIELD') end
+    if type(g.value) ~= 'string' or #g.value > ${LUA_MAX_VALUE_LENGTH} then return invalid('EFFECT_VALUE') end
+    -- Last setField in the same effect wins, matching the deterministic array order in TS.
+    setFields[g.field] = g.value
+  else
+    return invalid('EFFECT_UNKNOWN_KIND')
   end
 end
 
-redis.call('HINCRBY', KEYS[1], 'ver', 1)
-redis.call('ZADD',    KEYS[2], ARGV[2], ARGV[1])
+-- The applied ZSET is the exactly-once marker. Bind it to the canonical payload so reusing an
+-- op-id for a different payload is a stable conflict instead of a silent duplicate.
+if redis.call('ZSCORE', KEYS[2], ARGV[1]) then
+  local previous = redis.call('HGET', KEYS[3], ARGV[1])
+  -- A marker without a payload binding is legacy/partial state.  It cannot prove that
+  -- this retry carries the same effect, so fail closed instead of silently accepting
+  -- a potentially different payload as a duplicate.
+  if previous == ARGV[3] then return 'dup' end
+  return 'conflict'
+end
+
+-- Validate every current numeric value before the first write. HSET (rather than HINCRBY) in the
+-- apply pass means a malformed pre-existing hash cannot fail half way through the effect.
+local verRaw = redis.call('HGET', KEYS[1], 'ver') or '0'
+local ver = tonumber(verRaw)
+if not intIn(ver, 0, 9007199254740991) then return invalid('EFFECT_DATA_CORRUPT') end
+local itemValues = {}
+for field, delta in pairs(itemDeltas) do
+  local shard = itemShards[field]
+  local currentRaw = redis.call('HGET', KEYS[4 + shard], field) or '0'
+  local current = tonumber(currentRaw)
+  if not intIn(current, 0, 9007199254740991) then return invalid('EFFECT_DATA_CORRUPT') end
+  local nextValue = current + delta
+  if nextValue < 0 then
+    nextValue = 0
+    under[#under + 1] = 'item:' .. field
+  end
+  if not intIn(nextValue, 0, 9007199254740991) then return invalid('EFFECT_DATA_CORRUPT') end
+  itemValues[field] = nextValue
+end
+local starValue = nil
+if hasStar then
+  local currentRaw = redis.call('HGET', KEYS[1], 'star') or '0'
+  local current = tonumber(currentRaw)
+  if not intIn(current, 0, 9007199254740991) then return invalid('EFFECT_DATA_CORRUPT') end
+  starValue = current + starDelta
+  if starValue < 0 then
+    starValue = 0
+    under[#under + 1] = 'star'
+  end
+  if not intIn(starValue, 0, 9007199254740991) then return invalid('EFFECT_DATA_CORRUPT') end
+end
+
+-- Apply pass: all shape/range/current-value checks above have completed successfully.
+for field, value in pairs(itemValues) do
+  redis.call('HSET', KEYS[4 + itemShards[field]], field, tostring(value))
+end
+if starValue ~= nil then redis.call('HSET', KEYS[1], 'star', tostring(starValue)) end
+for field, value in pairs(setFields) do
+  redis.call('HSET', KEYS[1], field, value)
+end
+redis.call('HSET', KEYS[1], 'ver', tostring(ver + 1))
+redis.call('ZADD', KEYS[2], ARGV[2], ARGV[1])
+redis.call('HSET', KEYS[3], ARGV[1], ARGV[3])
 if #under > 0 then return 'ok:' .. table.concat(under, ',') end
 return 'ok'
 `);

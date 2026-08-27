@@ -13,7 +13,8 @@ import type { ResultSetHeader, RowDataPacket } from "../infra/mysql";
 import { clientForKey } from "../infra/redisRoute";
 import { InvalidPayloadError } from "../errors";
 import {
-  deriveOpId, markOutboxDone, readBack, redisApply, type Effect, type PurchaseResult,
+  canonicalizeEffect, deriveOpId, markOutboxDone, readBack, redisApply,
+  type EffectInput, type PurchaseResult,
 } from "./outbox";
 
 /**
@@ -25,17 +26,19 @@ export async function emitMailWake(uid: string, mailId: number): Promise<void> {
 }
 
 /** 发件（GM/系统调用）。attach 为空 = 纯文本邮件。落库后发实时唤醒（流仅唤醒，09·K6）。 */
-export async function sendMail(uid: string, title: string, body: string, attach?: Effect, sId = currentZoneId()): Promise<number> {
+export async function sendMail(uid: string, title: string, body: string, attach?: EffectInput, sId = currentZoneId()): Promise<number> {
   // sId = 收件人经济区（§3.4，评审 C2）：自发链路默认当前区；⚠ GM/系统跨区发件**必须显式传收件人区**，
   // 否则 ambient=0 时附件 intent 落 s0 影子背包、玩家在本区看不到货。
-  const attachOpId = attach && attach.length > 0
+  // 先验证再落 mail.attach_effect；否则坏 effect 会变成永久 durable 垃圾，领取时才失败。
+  const canonicalAttach = attach === undefined || attach === null ? null : canonicalizeEffect(attach);
+  const attachOpId = canonicalAttach && canonicalAttach.grants.length > 0
     ? deriveOpId(uid, sId, "mail.attach", randomUUID()) // 发件时固化 op_id：领取幂等的锚点（09·I3）
     : null;
   const mailId = await withRcTx(async (conn) => {
     const [r] = await conn.execute<ResultSetHeader>(
       `INSERT INTO mail (user_id, server_id, title, body, attach_op_id, attach_effect)
        VALUES (?,?,?,?,?,${attachOpId ? "CAST(? AS JSON)" : "?"})`,
-      [uid, sId, title, body, attachOpId, attachOpId ? JSON.stringify(attach) : null]);
+      [uid, sId, title, body, attachOpId, attachOpId ? JSON.stringify(canonicalAttach) : null]);
     return r.insertId;
   });
   await emitMailWake(uid, mailId).catch(() => {}); // 唤醒是尽力而为：丢了客户端上线自拉
@@ -44,7 +47,7 @@ export async function sendMail(uid: string, title: string, body: string, attach?
 
 interface MailAttachRow extends RowDataPacket {
   attach_op_id: string | null;
-  attach_effect: Effect | null;
+  attach_effect: unknown;
   claimed_at: Date | null;
   server_id: number;
 }
@@ -66,13 +69,15 @@ export async function claimMailAttach(uid: string, mailId: number): Promise<Purc
     if (rows.length === 0 || rows[0].attach_op_id === null) {
       throw new InvalidPayloadError("邮件不存在或无附件");
     }
-    const { attach_op_id: opId, attach_effect: effect } = rows[0];
+    const { attach_op_id: opId, attach_effect: rawEffect } = rows[0];
     const sId = Number(rows[0].server_id); // 邮件所属区（§3.4/§3.6）：outbox intent + apply 落对区
+    if (rawEffect === null || rawEffect === undefined) { throw new InvalidPayloadError("邮件附件数据缺失"); }
+    const effect = canonicalizeEffect(rawEffect);
     if (rows[0].claimed_at !== null) { return { opId, effect, sId, fresh: false }; } // 已领：幂等回读
 
     const [upd] = await conn.execute<ResultSetHeader>(
-      "UPDATE mail SET claimed_at = NOW(3), read_at = COALESCE(read_at, NOW(3)) WHERE mail_id = ? AND claimed_at IS NULL",
-      [mailId]);
+      "UPDATE mail SET claimed_at = NOW(3), read_at = COALESCE(read_at, NOW(3)) WHERE mail_id = ? AND user_id = ? AND server_id = ? AND claimed_at IS NULL",
+      [mailId, uid, sId]);
     if (upd.affectedRows === 0) { return { opId, effect, sId, fresh: false }; } // 并发双击输家
 
     await conn.execute<ResultSetHeader>(
@@ -87,7 +92,7 @@ export async function claimMailAttach(uid: string, mailId: number): Promise<Purc
   if (claim.fresh && claim.effect) {
     try {
       const r = await zoneCtx.run({ sId: claim.sId }, () => redisApply(uid, claim.opId, claim.effect!)); // 阶段 2（无 fence，09·X3）
-      if (r === "ok" || r === "dup") { await markOutboxDone(claim.opId); }
+      if (r === "ok" || r === "dup") { await markOutboxDone(claim.opId, claim.sId); }
       // cold → 留给 relayer→ensureLive（09·X5）
     } catch { /* relayer 收敛 */ }
   }
