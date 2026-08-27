@@ -6,6 +6,7 @@
 import { z } from "zod";
 import { UserRpc } from "@game/shared";
 import { ensureLive } from "../../core/archive/thaw";
+import { UserDataLostError } from "../../core/errors";
 import { readUser } from "../../player/userStore";
 import { defineRpc } from "../rpc";
 
@@ -17,6 +18,9 @@ export default defineRpc(UserRpc.GetInfo, {
       await ensureLive(ctx.uid);
       user = await readUser(ctx.uid);
     }
+    // LobbyRoom 的 onJoin 已经完成有界首角色 initializer；这里仍保留
+    // 二次保护，防止会话中途档案被删除时把 nullable 半状态传播给客户端。
+    if (!user) { throw new UserDataLostError("角色 ready 后档案仍不存在"); }
     return { user };
   },
 });

@@ -21,6 +21,7 @@ import { zoneCtx } from "../core/infra/keys";
 import { createUser } from "../core/userRecord";
 import { ensureLive, invalidateUserNegcache } from "../core/archive/thaw";
 import { registerCharacterWithRepair } from "./characterRepair";
+import { CHARACTER_READY_TIMEOUT_MS } from "../core/infra/config";
 
 /** 首进区角色初始字段（与登录建号一致；缺 musicOn/sfxOn = 读侧默认开，07 字段表）。 */
 const zoneCharInit = (): Record<string, string> => ({
@@ -41,4 +42,57 @@ export async function ensureCharacter(uid: string, sId: number): Promise<void> {
     await registerCharacterWithRepair(uid, sId);  // 后写登记；失败 durable 留 intent 后仍向上抛
     await invalidateUserNegcache(uid);            // 建后失效负缓存（09·F4）
   });
+}
+
+/**
+ * 同一 `(uid, sId)` 的首进请求共享一个有界 initializer。
+ *
+ * `ensureCharacter` 的底层写入本身是幂等的，但把整个 ready 流程合并仍然很重要：
+ * 首次大厅 join 不会同时发起多次外部登记，也不会让多个连接各自看到不同的
+ *「已建档/未登记」中间态。超时只结束本次等待；迟到的底层 promise 仍被观察，
+ * 其幂等结果可由 repair/下一次 join 收敛，不会产生 unhandled rejection。
+ */
+const readyFlights = new Map<string, Promise<void>>();
+
+export function ensureCharacterReady(
+  uid: string,
+  sId: number,
+  timeoutMs = CHARACTER_READY_TIMEOUT_MS,
+): Promise<void> {
+  const key = `${uid}\u0000${sId}`;
+  const existing = readyFlights.get(key);
+  if (existing) { return existing; }
+
+  const work = ensureCharacter(uid, sId);
+  // 即使调用方超时，仍消费底层 promise 的 rejection；迟到成功只会完成幂等建角。
+  void work.catch(() => {});
+  const bounded = new Promise<void>((resolve, reject) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) { return; }
+      settled = true;
+      reject(new Error(`角色初始化超时 uid=${uid} sId=${sId}`));
+    }, timeoutMs);
+    timer.unref?.();
+    work.then(() => {
+      if (settled) { return; }
+      settled = true;
+      clearTimeout(timer);
+      resolve();
+    }, (error: unknown) => {
+      if (settled) { return; }
+      settled = true;
+      clearTimeout(timer);
+      reject(error);
+    });
+  }).finally(() => {
+    if (readyFlights.get(key) === bounded) { readyFlights.delete(key); }
+  });
+  readyFlights.set(key, bounded);
+  return bounded;
+}
+
+/** 测试/停服：不再接受新的 ready 等待，并让现有 flight 自然收敛。 */
+export function clearCharacterReadyFlights(): void {
+  readyFlights.clear();
 }

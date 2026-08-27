@@ -232,6 +232,13 @@ if (CHARACTER_REPAIR_BACKOFF_BASE_MS > CHARACTER_REPAIR_BACKOFF_MAX_MS) {
 export const CHARACTER_REPAIR_ALERT_ATTEMPTS =
   webPlatformPositiveInt("CHARACTER_REPAIR_ALERT_ATTEMPTS", 5, 1_000_000);
 
+/**
+ * 首次进区建角的有界 ready 预算。建角包含 Redis/SQL 冷档判定和 WebPlatform
+ * 登记，不能让一个失联的外部服务把大厅 seat 永久卡在半状态。
+ */
+export const CHARACTER_READY_TIMEOUT_MS =
+  webPlatformPositiveInt("CHARACTER_READY_TIMEOUT_MS", 10_000, 120_000);
+
 /** 支付链总开关（缺省**关**）：关 ⇒ `/pay/wx-notify` 直接 501「未上线」。
  *  ⚠ 支付链现在不具备上线条件（无下单端点、共享密钥而非 APIv3 验签、无对账，见 docs/EXTRAFEATURES.md §3.4），
  *  这个开关是**防误开**，⛔ 不是"配上就能收钱"。每请求现读（同 ADMIN_API_SECRET 范式，便于灰度）。 */

@@ -57,8 +57,8 @@ export interface IGetUserIdRes {
 
 export interface IGetInfoReq {}
 export interface IGetInfoRes {
-    /** null = 档不存在（可能冷档） */
-    user: IUserView | null;
+    /** Lobby ready 契约：成功 join 后必须有角色档，不能传播 nullable 半状态。 */
+    user: IUserView;
 }
 
 export interface IGetProfileReq {

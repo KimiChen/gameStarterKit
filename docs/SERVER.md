@@ -125,7 +125,10 @@ tsx 直接执行和运行时文件系统扫描，不是打包产物装载器。
 
 职责边界：
 
-- `LobbyRoom`：连接级 strict auth、每消息 session cache 复验、区上下文与回复发送。
+- `LobbyRoom`：连接级 strict auth、每消息 session cache 复验、区上下文与回复发送；`onJoin` 会等待同一
+  `(uid,sId)` 的有界首角色 initializer，只有角色档与 WebPlatform 登记 ready 后才公开 seat。初始化失败
+  以 `CharCreateFailed` 结束本次 join，不能进入“已登录但 `GetInfo.user=null`”的半状态；迟到的底层幂等
+  操作仍由 repair/下一次 join 收敛。
   Lobby 当前是 `autoDispose = false`、`maxClients = 5000` 的共享房，且注册时没有 `filterBy(["sId"])`：
   不同区的连接可能落在同一间房，区隔离依赖 `auth.sId` 与 `zoneCtx`，不依赖撮合。客户端用
   `joinOrCreate`，满员后由 matchmaker 另开一间大厅房；多节点分摊连接的形态尚未确定。

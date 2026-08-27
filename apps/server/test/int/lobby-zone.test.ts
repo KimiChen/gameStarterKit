@@ -160,6 +160,21 @@ test("带 sId=1 join：大厅写 RPC 落 s1_user；基础前缀全程不受影�
   await room.leave();
 });
 
+test("首进空库：join 完成即满足 character ready，并发 join 共享同一 initializer", async () => {
+  const { uid, token } = await makeAcct("ready-concurrent", 1);
+  const [roomA, roomB] = await Promise.all([joinLobby(token, 1), joinLobby(token, 1)]);
+  try {
+    // 这里故意不轮询 Redis：若 onJoin 仍是 detached，任一立即 GetInfo 都会暴露 null/半状态。
+    const [a, b] = await Promise.all([rpc(roomA, UserRpc.GetInfo, {}), rpc(roomB, UserRpc.GetInfo, {})]);
+    assert.equal(a.ok, true, JSON.stringify(a));
+    assert.equal(b.ok, true, JSON.stringify(b));
+    assert.equal(a.data.user.uid, uid);
+    assert.equal(b.data.user.uid, uid);
+  } finally {
+    await Promise.all([roomA.leave(), roomB.leave()].map((p) => p.catch(() => {})));
+  }
+});
+
 test("缺 sId join：auth.sId=0，大厅建角/写 RPC 落基础前缀（大混服向后兼容，修复前老客户端行为保持）", async () => {
   const { uid, token } = await makeAcct("z0");
   const c = clientFor(uid);

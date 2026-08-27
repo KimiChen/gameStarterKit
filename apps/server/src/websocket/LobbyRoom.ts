@@ -16,7 +16,7 @@ import { zoneCtx } from "../core/infra/keys";
 import { verifyAndCacheWebPlatformSession } from "../platform/webPlatformClient";
 import { joinRefused, joinRefusedAuth, toErrCode } from "../core/errors";
 import { loadFields } from "../core/userRecord";
-import { ensureCharacter } from "../player/character";
+import { ensureCharacterReady } from "../player/character";
 import { dispatchRpc, rpcEnvelopeSchema, type RpcCtx, type RpcReply } from "./dispatcher";
 import { registerOnline, setOnlineGuild, startMailWakeLoop, unregisterOnline, type PushSink } from "./push";
 import { tokenHashOf, verifySession } from "../core/auth/session";
@@ -93,10 +93,21 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
     }),
   };
 
-  onJoin(client: LobbyClient): void {
+  async onJoin(client: LobbyClient): Promise<void> {
     if (!client.auth) { return; }
     const uid = client.auth.userId;
     const sId = client.auth.sId;
+
+    // Colyseus 会等待 onJoin 完成后才把 seat 公开为已加入。把首角色初始化
+    // 放在这个边界内，GetInfo/写 RPC 就不会看到「已登录但 user=null」的半状态。
+    // 失败时不注册在线连接，避免 kick/push 表残留；调用方可用同一 token 重试。
+    try {
+      await ensureCharacterReady(uid, sId);
+    } catch (error) {
+      console.error(`[lobby] 首角色未就绪 uid=${uid} sId=${sId}`, error);
+      throw joinRefused(SharedErrorCode.CharCreateFailed);
+    }
+
     const sink: PushSink = (type, data) => client.send(LOBBY_MSG_PUSH, { type, data });
     // 按 sessionId 分槽注册（同 uid 可有多条连接）；tokenHash 是顶号判别位（踢时排除新登录态那条）。
     // 强制下线句柄（M12d §2.3）：kickUser 先推 auth.forceLogout{reason}、再用**语义化关闭码**关连接
@@ -112,15 +123,10 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
     // 建角（§2.6 / M12a）：玩家进本区 → 确保该区玩法档 + WebPlatform 角色登记存在，幂等自愈；
     // 再挂工会在线索引（loadFields 读 s{sId}_user 的 guildId，per-zone → zoneCtx 硬化）。
     // 全程 best-effort：失败只影响工会广播/首帧，不阻塞连接（重连/换会修复）。
-    void ensureCharacter(uid, sId)
-      .then(() => zoneCtx.run({ sId }, () => loadFields(uid, ["guildId"])))
-      .then((f) => setOnlineGuild(uid, Number(f.guildId ?? 0) || null, sId)) // ⚠ 带 sId：索引按区分桶（A2）
-      .catch((e) => {
-        // ⛔ 不再静默：建角失败（尤其 HTTP 角色登记失败）会留下「有档无登记」——
-        // 该态可自愈（下次进区补写），但**期间 09·F4 的丢档告警对该 (uid,sId) 失效**，
-        // 必须可观测。⚠ 仍不阻塞连接（best-effort：重连/换会即修复）。
-        console.error(`[lobby] ensureCharacter 失败 uid=${uid} sId=${sId}（有档无 char 行→下次进区自愈；期间 F4 告警对其失效）`, e);
-      });
+    // 角色已 ready；这里只做轻量在线公会索引，失败不会破坏角色契约。
+    void zoneCtx.run({ sId }, () => loadFields(uid, ["guildId"]))
+      .then((f) => setOnlineGuild(uid, Number(f.guildId ?? 0) || null, sId))
+      .catch((e) => console.error(`[lobby] 在线公会索引初始化失败 uid=${uid} sId=${sId}`, e));
   }
 
   onLeave(client: LobbyClient): void {
