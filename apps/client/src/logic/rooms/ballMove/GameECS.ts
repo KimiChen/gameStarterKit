@@ -25,6 +25,16 @@ export class GameECS {
 
     /** 服务端 players.onAdd → 创建实体 */
     addPlayer(state: IPlayerState, isSelf: boolean): number {
+        // Colyseus can replay an onAdd during a reconnect/bootstrap race.  The
+        // collection key is the session id, so adding it twice must update the
+        // existing entity instead of leaking a second bitECS entity that the
+        // Map can no longer reach (and that clear() cannot remove).
+        const existing = this.players.get(state.id);
+        if (existing !== undefined) {
+            this.syncPlayer(state);
+            PlayerModel.isSelf[existing] = isSelf;
+            return existing;
+        }
         const eid = addEntity(this.world);
         addComponent(this.world, eid, PlayerModel);
         PlayerModel.id[eid] = state.id;

@@ -81,3 +81,21 @@ test("eid 复用防残值：addPlayer 必须全量覆写 PlayerModel 每个字�
   assert.equal(PlayerModel.x[second], 50, "渲染坐标未按新实体重置");
   ecs.clear();
 });
+
+test("ballMove ECS：重复 sessionId add 幂等，不遗留幽灵 entity", () => {
+  const ecs = GameECS.inst;
+  ecs.clear();
+  const first = ecs.addPlayer(player("duplicate", 1, 2), true);
+  const second = ecs.addPlayer({ ...player("duplicate", 9, 10), hp: 33 }, false);
+  assert.equal(second, first, "重复 collection key 应复用同一 eid");
+  assert.equal(PlayerModel.hp[first], 33);
+  assert.equal(PlayerModel.targetX[first], 9);
+  assert.equal(PlayerModel.isSelf[first], false);
+  let count = 0;
+  ecs.forEachPlayer(() => count++);
+  assert.equal(count, 1, "Map 与 bitECS entity 数量保持一致");
+  ecs.clear();
+  count = 0;
+  ecs.forEachPlayer(() => count++);
+  assert.equal(count, 0, "clear 后不得残留重复 entity");
+});
