@@ -110,8 +110,8 @@ export function request<T>(method: HttpMethod, path: string, body?: unknown): Pr
 }
 
 /**
- * 门户请求（登录 / 选服 → WebPlatform Public）。只要本地已存有 token 就会附带 `Authorization: Bearer`——
- * 包括从 `Main.abortBattle` 或 connLost 回到登录页后再次发起的登录请求（这两条路径不清会话）。
+ * 门户请求（登录 / 选服 → WebPlatform Public）。只要本地已存有 token 就会附带 `Authorization: Bearer`。
+ * 统一 returnToLogin 出口会在回登录前清理旧 token；登录页首次请求因此不会携带上一会话凭证。
  */
 export function portalRequest<T>(method: HttpMethod, path: string, body?: unknown): Promise<T> {
     const contract = webPlatformHttpContract(method, path);

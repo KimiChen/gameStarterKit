@@ -126,7 +126,7 @@ test("合流同一在途 join：旧 owner 释放不关闭后来者共享的 room
 });
 
 test("slot 连接 key：endpoint/token/sId/其它 option 任一不同均 fail-fast，且不破坏原 owner", async (t) => {
-  const base = { token: "token-a", sId: 7, listHash: "list-a" };
+  const base = { token: "token-a", sId: 7 };
   const cases = [
     {
       name: "endpoint 不同",
@@ -142,11 +142,6 @@ test("slot 连接 key：endpoint/token/sId/其它 option 任一不同均 fail-fa
       name: "sId 不同",
       prepare(_client: RoomClient) { /* endpoint 不变 */ },
       options: { ...base, sId: 8 },
-    },
-    {
-      name: "未来其它协议字段不同",
-      prepare(_client: RoomClient) { /* endpoint 不变 */ },
-      options: { ...base, listHash: "list-b" },
     },
   ];
 
@@ -189,11 +184,9 @@ test("slot 连接 key：契约允许字段稳定比较，键顺序/undefined 不
   const first = client.joinGame({
     token: "same",
     sId: 3,
-    listHash: "h",
     omitted: undefined,
   });
   const second = client.joinGame({
-    listHash: "h",
     sId: 3,
     token: "same",
   });
@@ -214,6 +207,110 @@ test("slot 连接 key：未知 join option 在发送前拒绝", () => {
     () => client.joinGame({ token: "same", sId: 3, nested: { x: 1 } }),
     /未知字段|unknown|options/i,
   );
+});
+
+test("非法 join control 在分配 slot 前失败，不遗留 owner", async () => {
+  const join = deferred<unknown>();
+  const client = makeClient(join);
+  assert.throws(
+    () => client.joinGame({ token: "same", sId: 3 }, { timeoutMs: 1.5 } as never),
+    /安全整数/,
+  );
+  assert.equal(joinCalls.length, 0, "非法 timeout 不应启动底层 join");
+
+  const owner = client.joinGame({ token: "same", sId: 3 });
+  assert.equal(joinCalls.length, 1, "失败调用不得占住后续合法 join 的 slot");
+  const room = makeFakeRoom("after-invalid");
+  join.resolve(room.room);
+  await owner.ready;
+  await owner.leave();
+});
+
+test("hostile AbortSignal：读取 aborted 在分配 slot 前失败", () => {
+  const join = deferred<unknown>();
+  const client = makeClient(join);
+  const signal = new Proxy({
+    aborted: false,
+    addEventListener() { /* noop */ },
+    removeEventListener() { /* noop */ },
+  }, {
+    get(target, property, receiver) {
+      if (property === "aborted") throw new Error("hostile aborted getter");
+      return Reflect.get(target, property, receiver);
+    },
+  });
+
+  assert.throws(
+    () => client.joinGame({ token: "same", sId: 3 }, signal as never),
+    /有效的 AbortSignal/,
+  );
+  assert.equal(joinCalls.length, 0, "signal shape failure must precede transport slot allocation");
+  assert.equal(client.room, null);
+});
+
+test("hostile AbortSignal：addEventListener 抛错时 owner/slot 清理，迟到 room 释放", async () => {
+  const join = deferred<unknown>();
+  const client = makeClient(join);
+  const fake = makeFakeRoom("late-after-signal");
+  const signal = {
+    aborted: false,
+    addEventListener() { throw new Error("hostile add listener"); },
+    removeEventListener() { /* noop */ },
+  } as unknown as AbortSignal;
+
+  assert.throws(
+    () => client.joinGame({ token: "same", sId: 3 }, signal),
+    /hostile add listener/,
+  );
+  assert.equal((client as unknown as { slot: unknown }).slot, null);
+  join.resolve(fake.room);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(fake.leaveCalls, 1, "迟到 room must be physically released after signal setup failure");
+});
+
+test("hostile AbortSignal：removeEventListener 抛错不阻断成功 join/leave", async () => {
+  const join = deferred<unknown>();
+  const client = makeClient(join);
+  const fake = makeFakeRoom("remove-throws");
+  const signal = {
+    aborted: false,
+    addEventListener() { /* noop */ },
+    removeEventListener() { throw new Error("hostile remove listener"); },
+  } as unknown as AbortSignal;
+  const owner = client.joinGame({ token: "same", sId: 3 }, signal);
+  join.resolve(fake.room);
+  assert.equal(await owner.ready, fake.room);
+  await owner.leave();
+  assert.equal(fake.leaveCalls, 1);
+});
+
+test("joinOrCreate 同步抛错：迟到 owner 立即失败并释放失败槽", async () => {
+  const client = makeClient();
+  const failure = new Error("sync game join failure");
+  const internals = client as unknown as {
+    client: { joinOrCreate: (...args: unknown[]) => Promise<unknown> };
+    slot: unknown;
+    closeSlot: (slot: unknown) => Promise<void>;
+  };
+  internals.client = { joinOrCreate() { throw failure; } };
+  const originalCloseSlot = internals.closeSlot;
+  let closeCalls = 0;
+  internals.closeSlot = (slot) => {
+    closeCalls++;
+    return originalCloseSlot.call(client, slot);
+  };
+
+  try {
+    // A long timeout makes a leaked control timer observable as a hanging test;
+    // the failed slot must cancel before installing it.
+    const owner = client.joinGame(undefined, { timeoutMs: 60_000 });
+    await assert.rejects(owner.ready, (error: unknown) => error === failure);
+    assert.equal(internals.slot, null, "同步失败后当前 slot 必须摘除");
+    assert.equal(closeCalls, 1, "迟到 owner 必须触发失败槽清理");
+    await owner.leave();
+  } finally {
+    internals.closeSlot = originalCloseSlot;
+  }
 });
 
 test("旧 room 的迟到 onLeave 不得清除/上报后来创建的新 room", async () => {
@@ -430,6 +527,36 @@ test("掉线输入 reconcile：松手后的 stop/最新方向成为重连后的�
   assert.deepEqual(fake.sent.at(-1), { type: C2S.Move, data: { dirX: 0, dirY: 0 } });
 
   await owner.leave();
+});
+
+test("输入 generation：leave 摘槽后本局可清零，旧局迟到 stop 不覆盖新局方向", async () => {
+  const firstJoin = deferred<unknown>();
+  const firstRoom = makeFakeRoom("input-generation-old");
+  const client = makeClient(firstJoin);
+  const oldOwner = client.joinGame();
+  firstJoin.resolve(firstRoom.room);
+  await oldOwner.ready;
+  client.move(1, 0);
+  const oldInputGeneration = client.inputGeneration;
+  await oldOwner.leave();
+
+  assert.equal(client.clearDesiredMove(oldInputGeneration), true,
+    "RoomController 先 leave 再 stop plugin 时，本局 generation 仍应能清零 desired");
+  assert.deepEqual(client.desiredMove, { dirX: 0, dirY: 0, seq: 2 });
+
+  const nextJoin = deferred<unknown>();
+  const nextRoom = makeFakeRoom("input-generation-new");
+  joinQueue.push(nextJoin);
+  const newOwner = client.joinGame();
+  nextJoin.resolve(nextRoom.room);
+  await newOwner.ready;
+  client.move(0, 1);
+  const desired = client.desiredMove;
+  assert.equal(client.clearDesiredMove(oldInputGeneration), false,
+    "旧插件迟到清理必须被新 input generation 拒绝");
+  assert.strictEqual(client.desiredMove, desired);
+  assert.deepEqual(client.desiredMove, { dirX: 0, dirY: 1, seq: 3 });
+  await newOwner.leave();
 });
 
 test("RoomClient join 黑洞：超时/AbortSignal 不阻塞 leave，迟到 room 会被释放", async () => {

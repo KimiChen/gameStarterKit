@@ -41,10 +41,33 @@ let userId = "";
 let sessionGeneration = 0;
 const authInvalidHandlers = new Set<(reason: AuthInvalidReason) => void>();
 const connLostHandlers = new Set<() => void>();
-// 战斗房（GameRoom）连接最终死亡。⚠ 与 connLost（大厅房）**刻意分开**：两者的处置不同——
-// 大厅断线只需提示重进；战斗断线还必须**回滚战斗态**（拆渲染层/输入/ECS + inBattle 复位），
-// 否则 Main 会拿着一个死房间继续驱动渲染，玩家卡在冻结画面里无路可回。
+// 战斗房（GameRoom）连接最终死亡。⚠ 与 connLost（大厅房）**刻意分开**：两者的来源和
+// 本地回滚不同——大厅断线要回收大厅 RPC，战斗断线还必须**回滚战斗态**（拆渲染层/输入/ECS
+// + inBattle 复位）。两者最终都通过已注册的 returnToLogin 编排回登录并清理 bearer；这里的
+// 事件回调只负责通知订阅者，不应把 transport 死亡误当成鉴权原因。
 const battleLostHandlers = new Set<() => void>();
+
+/** Event subscribers are invoked by transport callbacks and are not awaited by
+ * the caller. Observe returned thenables as well as synchronous exceptions so
+ * a detached session transition cannot create an unhandled rejection. */
+function observeSubscriber(scope: string, invoke: () => unknown): void {
+    let result: unknown;
+    try {
+        result = invoke();
+    } catch {
+        console.error(`[session] ${scope} 处理器异常`);
+        return;
+    }
+    try {
+        if (result !== null
+            && (typeof result === "object" || typeof result === "function")
+            && typeof (result as { then?: unknown }).then === "function") {
+            Promise.resolve(result).catch(() => console.error(`[session] ${scope} 处理器 rejection`));
+        }
+    } catch {
+        console.error(`[session] ${scope} 处理器 rejection`);
+    }
+}
 
 /** 当前页面组合根提供的唯一回登录实现。模块级是刻意的：session 不反向依赖 View。 */
 let returnToLoginHandler: ReturnToLoginHandler | null = null;
@@ -123,7 +146,9 @@ export class SessionTransition {
             () => {
                 if (this.inFlight === record) {
                     this.inFlight = null;
-                    this.handled = true;
+                    // A rejected navigation did not complete the transition;
+                    // keep the gate open so an explicit retry can recover.
+                    this.handled = false;
                 }
             },
         );
@@ -168,32 +193,47 @@ export function onConnLost(cb: () => void): () => void {
 export function notifyAuthInvalid(reason: AuthInvalidReason): void {
     if (!isLoggedIn()) return;
     clearSession();
+    const eventGeneration = sessionGeneration;
     for (const cb of authInvalidHandlers) {
-        try { cb(reason); } catch (e) { console.error("[session] authInvalid 处理器异常", e); }
+        observeSubscriber("authInvalid", () => cb(reason));
     }
-    dispatchReturnToLogin({ kind: "AUTH_INVALID", reason });
+    // A subscriber may synchronously establish a replacement session.  The
+    // stale invalidation must not clear or navigate that newer session.
+    if (sessionGeneration === eventGeneration) {
+        dispatchReturnToLogin({ kind: "AUTH_INVALID", reason });
+    }
 }
 
-/** 网络层上报大厅连接最终死亡（非鉴权原因）。登录态保留——UI 可提示后用原 token 重连。 */
+/** 网络层上报大厅连接最终死亡（非鉴权原因）。注册导航出口后会统一回登录并清理 bearer。 */
 /** 订阅战斗房连接最终死亡（Main 回滚战斗态、view 层做导航/提示），返回解绑函数。 */
 export function onBattleLost(cb: () => void): () => void {
     battleLostHandlers.add(cb);
     return () => { battleLostHandlers.delete(cb); };
 }
 
-/** 网络层上报战斗房最终死亡（非主动 leave）。登录态不受影响——只是这一局没了。 */
+/** 网络层上报战斗房最终死亡（非主动 leave）。注册导航出口后会统一回登录并清理 bearer。 */
 export function notifyBattleLost(): void {
+    const hadSession = isLoggedIn();
+    const eventGeneration = sessionGeneration;
     for (const cb of battleLostHandlers) {
-        try { cb(); } catch (e) { console.error("[session] battleLost 处理器异常", e); }
+        observeSubscriber("battleLost", cb);
     }
-    dispatchReturnToLogin({ kind: "BATTLE_LOST" });
+    // Always broadcast so gameplay state can roll back, but do not open a
+    // login transition for a stale transport callback after logout.
+    if (hadSession && sessionGeneration === eventGeneration) {
+        dispatchReturnToLogin({ kind: "BATTLE_LOST" });
+    }
 }
 
 export function notifyConnLost(): void {
+    const hadSession = isLoggedIn();
+    const eventGeneration = sessionGeneration;
     for (const cb of connLostHandlers) {
-        try { cb(); } catch (e) { console.error("[session] connLost 处理器异常", e); }
+        observeSubscriber("connLost", cb);
     }
-    dispatchReturnToLogin({ kind: "CONN_LOST" });
+    if (hadSession && sessionGeneration === eventGeneration) {
+        dispatchReturnToLogin({ kind: "CONN_LOST" });
+    }
 }
 
 /** 事件 API 保持同步；已注册的异步 transition 在后台运行且 rejection 已被观察。 */

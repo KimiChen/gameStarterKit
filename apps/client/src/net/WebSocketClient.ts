@@ -7,6 +7,12 @@
  */
 import { notifyAuthInvalid, notifyConnLost, type AuthInvalidReason } from "./session";
 import {
+    looksLikeJoinSignal,
+    normalizeJoinSignal,
+    observeJoinControlResult,
+    waitMsForJoin,
+} from "./joinControl";
+import {
     ForceLogoutReason,
     forceLogoutReasonOf,
     LOBBY_MSG_PUSH,
@@ -30,6 +36,7 @@ import {
     validateLobbyRpcResponse,
     validateRpcEnvelope,
     validateRpcReply,
+    validateOrigin,
     validateRoomJoinOptions,
 } from "../shared/index";
 
@@ -42,6 +49,7 @@ const LEAVE_TIMEOUT_MS = 5_000;
 export interface JoinControl {
     signal?: AbortSignal;
     timeoutMs?: number;
+    /** Unix epoch milliseconds; relative durations are rejected. */
     deadlineMs?: number;
     timeout?: number;
     deadline?: number;
@@ -136,17 +144,35 @@ function splitJoinControl(
     explicit: JoinControl | AbortSignal | undefined,
 ): { options: Record<string, unknown>; control: JoinControl } {
     const source = options ?? {};
-    const wire: Record<string, unknown> = { ...source };
-    const embedded = source as Record<string, unknown> & Partial<JoinControl>;
-    const explicitControl: JoinControl | undefined = explicit && "aborted" in explicit
-        ? { signal: explicit as AbortSignal }
-        : explicit as JoinControl | undefined;
-    const control: JoinControl = explicitControl ?? {
-        signal: embedded.signal,
-        timeoutMs: embedded.timeoutMs,
-        deadlineMs: embedded.deadlineMs,
-        timeout: embedded.timeout,
-        deadline: embedded.deadline,
+    const wire: Record<string, unknown> = {};
+    try {
+        for (const key of Reflect.ownKeys(source)) {
+            if (typeof key !== "string") {
+                throw new TypeError("[WebSocketClient] join options 不得包含 symbol key");
+            }
+            wire[key] = source[key];
+        }
+    } catch {
+        throw new TypeError("[WebSocketClient] join options 无法读取");
+    }
+    let explicitIsSignal = false;
+    if (explicit !== undefined && explicit !== null) {
+        try { explicitIsSignal = looksLikeJoinSignal(explicit); }
+        catch { throw new TypeError("[WebSocketClient] join control 无法读取"); }
+    }
+    // Snapshot controls before allocating a slot so hostile getters/methods
+    // cannot fail later in an owner cleanup callback.
+    const controlSource = explicitIsSignal ? undefined : (explicit ?? source) as Partial<JoinControl>;
+    const readControl = (key: keyof JoinControl): unknown => {
+        try { return controlSource?.[key]; }
+        catch { throw new TypeError(`[WebSocketClient] join control 字段 ${String(key)} 无法读取`); }
+    };
+    const control: JoinControl = {
+        signal: normalizeJoinSignal(explicitIsSignal ? explicit : readControl("signal")),
+        timeoutMs: readControl("timeoutMs") as number | undefined,
+        deadlineMs: readControl("deadlineMs") as number | undefined,
+        timeout: readControl("timeout") as number | undefined,
+        deadline: readControl("deadline") as number | undefined,
     };
     delete wire.signal;
     delete wire.timeoutMs;
@@ -154,24 +180,6 @@ function splitJoinControl(
     delete wire.timeout;
     delete wire.deadline;
     return { options: wire, control };
-}
-
-function waitMsFor(control: JoinControl): number {
-    const now = Date.now();
-    if (control.deadlineMs !== undefined) {
-        const raw = Number(control.deadlineMs);
-        if (!Number.isFinite(raw)) return 0;
-        return Math.max(0, (raw < 1e11 ? now + raw : raw) - now);
-    }
-    if (control.timeoutMs !== undefined) {
-        const raw = Number(control.timeoutMs);
-        return Number.isFinite(raw) ? Math.max(0, raw) : 0;
-    }
-    if (control.timeout !== undefined) {
-        const raw = Number(control.timeout);
-        return Number.isFinite(raw) ? Math.max(0, raw) : 0;
-    }
-    return 15_000;
 }
 
 const FORCE_REASON_MAP: Record<ForceLogoutReasonType, AuthInvalidReason> = {
@@ -192,6 +200,8 @@ interface LobbySlot {
     closing: Promise<void> | null;
     physicalClose: Promise<void> | null;
     cancelled: boolean;
+    /** Synchronous/asynchronous join failure observed before all owners attach. */
+    failure: Error | null;
     dropping: boolean;
     readonly owners: Set<LobbyOwner>;
 }
@@ -213,7 +223,23 @@ interface IPending {
 }
 
 function wireErrorText(error: unknown): string {
-    return error instanceof Error ? error.message : String(error);
+    try {
+        if (error instanceof Error) {
+            const message = error.message;
+            return typeof message === "string" ? message : "";
+        }
+        return typeof error === "string" ? error : "";
+    } catch {
+        return "";
+    }
+}
+
+function safeError(error: unknown, fallback: string): Error {
+    try {
+        if (error instanceof Error) return error;
+    } catch { /* hostile/revoked error proxy */ }
+    const text = wireErrorText(error);
+    return new Error(text || fallback);
 }
 
 function warnInvalidWire(scope: string, error: unknown): void {
@@ -221,6 +247,34 @@ function warnInvalidWire(scope: string, error: unknown): void {
     // join options can contain bearer tokens. The validator path is enough for
     // local diagnostics while keeping logs free of secrets.
     console.warn(`[WebSocketClient] 丢弃非法 ${scope}: ${wireErrorText(error)}`);
+}
+
+/** Push handlers are SDK event callbacks, so callers cannot be expected to
+ * await them. Observe both sync exceptions and returned thenables without
+ * printing the push payload (which may contain user/account data). */
+function reportPushFailure(kind: "exception" | "rejection"): void {
+    console.error(`[WebSocketClient] push 处理器 ${kind}`);
+}
+
+function invokePushHandler(callback: (data: unknown) => unknown, data: unknown): void {
+    let result: unknown;
+    try {
+        result = callback(data);
+    } catch {
+        reportPushFailure("exception");
+        return;
+    }
+    try {
+        if (result !== null
+            && (typeof result === "object" || typeof result === "function")
+            && typeof (result as { then?: unknown }).then === "function") {
+            Promise.resolve(result).catch(() => reportPushFailure("rejection"));
+        }
+    } catch {
+        // A thenable may throw while its `then` property is inspected or
+        // assimilated. It is still an observed callback failure.
+        reportPushFailure("rejection");
+    }
 }
 
 export class WebSocketClient {
@@ -238,7 +292,7 @@ export class WebSocketClient {
     private readonly implicitOwners = new Set<LobbyConnectionOwnership>();
     private pending = new Map<string, IPending>();
     private seq = 0;
-    private pushHandlers = new Map<string, Set<(data: unknown) => void>>();
+    private pushHandlers = new Map<string, Set<(data: unknown) => unknown>>();
 
     get connected(): boolean {
         return this.slot?.room != null;
@@ -250,8 +304,10 @@ export class WebSocketClient {
 
     /** @param endpoint http(s) 地址，如 http://localhost:2568（SDK 自动派生 ws(s)） */
     init(endpoint: string): void {
-        this.client = new Colyseus.Client(endpoint);
-        this.endpoint = endpoint;
+        const validated = validateOrigin(endpoint, ["http", "https", "ws", "wss"], "endpoint");
+        const client = new Colyseus.Client(validated);
+        this.client = client;
+        this.endpoint = validated;
     }
 
     /**
@@ -278,6 +334,9 @@ export class WebSocketClient {
     ): LobbyConnectionOwnership {
         if (!this.client) throw new Error("[WebSocketClient] 未初始化，请先调用 init(endpoint)");
         const split = splitJoinControl(options, control);
+        // Resolve/validate the local wait policy before creating a slot or
+        // owner. Invalid control values must not strand an owner in-flight.
+        const waitMs = waitMsForJoin(split.control);
         // Matchmaking options cross the websocket boundary verbatim. Validate a
         // cloned copy so callers cannot mutate the identity after join starts.
         const joinOptions = validateRoomJoinOptions(
@@ -303,6 +362,7 @@ export class WebSocketClient {
                 closing: null,
                 physicalClose: null,
                 cancelled: false,
+                failure: null,
                 dropping: false,
                 owners: new Set<LobbyOwner>(),
             };
@@ -325,11 +385,20 @@ export class WebSocketClient {
         slot.owners.add(owner);
         let timer: ReturnType<typeof setTimeout> | null = null;
         let abortListener: (() => void) | null = null;
+        const signal = split.control.signal;
+        let disposed = false;
         const dispose = () => {
+            if (disposed) return;
+            disposed = true;
             if (timer !== null) { clearTimeout(timer); timer = null; }
-            if (abortListener && split.control.signal) {
-                split.control.signal.removeEventListener("abort", abortListener);
-                abortListener = null;
+            const listener = abortListener;
+            abortListener = null;
+            if (listener && signal) {
+                try {
+                    observeJoinControlResult(signal.removeEventListener("abort", listener));
+                } catch {
+                    // Cleanup is best-effort and must not strand the slot.
+                }
             }
         };
         owner.disposeControl = dispose;
@@ -341,18 +410,34 @@ export class WebSocketClient {
             owner.cancel(error);
             if (slot!.owners.size === 0) void this.closeSlot(slot!).catch(() => {});
         };
-        const signal = split.control.signal;
-        const waitMs = waitMsFor(split.control);
-        if (signal?.aborted) cancelOwner(new JoinError("CANCELLED", "[WebSocketClient] join 已取消"));
-        else if (waitMs <= 0) cancelOwner(new JoinError("TIMEOUT", "[WebSocketClient] join 超时"));
-        else if (signal) {
-            timer = setTimeout(() => cancelOwner(new JoinError("TIMEOUT", "[WebSocketClient] join 超时")), waitMs);
-            abortListener = () => cancelOwner(new JoinError("CANCELLED", "[WebSocketClient] join 已取消"));
-            signal.addEventListener("abort", abortListener, { once: true });
-        } else {
-            timer = setTimeout(() => cancelOwner(new JoinError("TIMEOUT", "[WebSocketClient] join 超时")), waitMs);
+        // `joinOrCreate()` may throw before the async owner setup below runs.
+        // The join catch then has no owner to cancel, so replay that failure for
+        // this late-attached owner and avoid installing a dangling timer/listener.
+        if (slot.cancelled && slot.failure) {
+            cancelOwner(slot.failure);
         }
-        ready.then(dispose, dispose);
+        try {
+            let alreadyAborted = false;
+            if (owner.active && signal) alreadyAborted = signal.aborted;
+            if (owner.active && alreadyAborted) {
+                cancelOwner(new JoinError("CANCELLED", "[WebSocketClient] join 已取消"));
+            } else if (owner.active && waitMs <= 0) {
+                cancelOwner(new JoinError("TIMEOUT", "[WebSocketClient] join 超时"));
+            } else if (owner.active && signal) {
+                timer = setTimeout(() => cancelOwner(new JoinError("TIMEOUT", "[WebSocketClient] join 超时")), waitMs);
+                // Set the callback before invoking a non-standard adapter: it
+                // may synchronously report an already-aborted signal.
+                abortListener = () => cancelOwner(new JoinError("CANCELLED", "[WebSocketClient] join 已取消"));
+                observeJoinControlResult(signal.addEventListener("abort", abortListener, { once: true }));
+            } else if (owner.active) {
+                timer = setTimeout(() => cancelOwner(new JoinError("TIMEOUT", "[WebSocketClient] join 超时")), waitMs);
+            }
+        } catch (error) {
+            const failure = safeError(error, "[WebSocketClient] join control failed");
+            cancelOwner(failure);
+            throw failure;
+        }
+        ready.then(dispose, dispose).catch(() => {});
         return {
             ready,
             leave: () => {
@@ -375,12 +460,14 @@ export class WebSocketClient {
         } catch (e) {
             if (this.slot === slot) this.slot = null;
             slot.cancelled = true;
+            const failure = safeError(e, "[WebSocketClient] join failed");
+            slot.failure = failure;
             // 连接失败后槽已不可再复用；同步失效所有 ownership，避免显式 owner
             // 忘记调用 leave() 时把失败槽和 abort/timer listener 长期留在集合里。
             for (const owner of slot.owners) {
                 owner.active = false;
                 owner.disposeControl();
-                owner.cancel(e instanceof Error ? e : new Error(String(e)));
+                owner.cancel(failure);
             }
             slot.owners.clear();
             throw e;
@@ -390,7 +477,23 @@ export class WebSocketClient {
             throw new JoinError("CANCELLED", "[WebSocketClient] join 结果已过期");
         }
         slot.room = room;
-        this.bindRoom(slot, room);
+        try {
+            this.bindRoom(slot, room);
+        } catch (error) {
+            if (this.slot === slot) this.slot = null;
+            slot.room = null;
+            slot.cancelled = true;
+            const failure = safeError(error, "[WebSocketClient] room setup failed");
+            slot.failure = failure;
+            for (const owner of slot.owners) {
+                owner.active = false;
+                owner.disposeControl();
+                owner.cancel(failure);
+            }
+            slot.owners.clear();
+            await this.closePhysicalRoom(slot, room);
+            throw error;
+        }
     }
 
     private bindRoom(slot: LobbySlot, room: Colyseus.Room): void {
@@ -440,7 +543,7 @@ export class WebSocketClient {
             const set = this.pushHandlers.get(msg.type);
             if (!set) return;
             for (const cb of set) {
-                try { cb(msg.data); } catch (e) { console.error("[WebSocketClient] push 处理器异常", e); }
+                invokePushHandler(cb, msg.data);
             }
         });
         room.onDrop(() => {
@@ -457,7 +560,7 @@ export class WebSocketClient {
             this.rejectAll("CONN_LOST", slot);
             for (const owner of slot.owners) { owner.active = false; owner.disposeControl(); }
             slot.owners.clear();
-            room.removeAllListeners();
+            try { room.removeAllListeners(); } catch { /* malformed adapter */ }
             const forced = code !== undefined ? forceLogoutReasonOf(code) : null;
             if (forced) notifyAuthInvalid(FORCE_REASON_MAP[forced]);
             else notifyConnLost();
@@ -500,13 +603,21 @@ export class WebSocketClient {
 
     private closePhysicalRoom(slot: LobbySlot, room: Colyseus.Room): Promise<void> {
         if (slot.physicalClose) return slot.physicalClose;
-        room.reconnection.enabled = false;
         let timer: ReturnType<typeof setTimeout> | null = null;
         const timeout = new Promise<void>((resolve) => { timer = setTimeout(resolve, LEAVE_TIMEOUT_MS); });
-        const leave = Promise.resolve().then(() => room.leave(true)).catch(() => {}).then(() => undefined);
+        const leave = Promise.resolve().then(() => {
+            try {
+                const reconnection = (room as unknown as { reconnection?: { enabled?: boolean } }).reconnection;
+                if (reconnection && typeof reconnection === "object") reconnection.enabled = false;
+            } catch { /* malformed adapter: continue with best-effort leave */ }
+            try {
+                const fn = (room as unknown as { leave?: unknown }).leave;
+                return typeof fn === "function" ? fn.call(room, true) : undefined;
+            } catch { return undefined; }
+        }).catch(() => {}).then(() => undefined);
         slot.physicalClose = Promise.race([leave, timeout]).then(() => {
             if (timer !== null) { clearTimeout(timer); timer = null; }
-            room.removeAllListeners();
+            try { room.removeAllListeners(); } catch { /* malformed adapter */ }
         });
         return slot.physicalClose;
     }
@@ -567,13 +678,13 @@ export class WebSocketClient {
         }
     }
 
-    onPush<K extends keyof LobbyPushMap>(type: K, callback: (data: LobbyPushMap[K]) => void): () => void {
+    onPush<K extends keyof LobbyPushMap>(type: K, callback: (data: LobbyPushMap[K]) => unknown): () => void {
         let set = this.pushHandlers.get(type);
         if (!set) {
             set = new Set();
             this.pushHandlers.set(type, set);
         }
-        const cb = callback as (data: unknown) => void;
+        const cb = callback as (data: unknown) => unknown;
         set.add(cb);
         return () => { this.pushHandlers.get(type)?.delete(cb); };
     }

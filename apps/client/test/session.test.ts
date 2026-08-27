@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  clearSession, getUserId, isLoggedIn, notifyAuthInvalid, notifyConnLost,
+  clearSession, getUserId, isLoggedIn, notifyAuthInvalid, notifyBattleLost, notifyConnLost,
   onAuthInvalid, onConnLost, registerReturnToLogin, returnToLogin, setSession,
 } from "../src/net/session";
 import { getToken } from "../src/core/http";
@@ -46,13 +46,13 @@ test("session：踢线先清态再广播；未登录时的迟到上报吞掉（�
   clearSession();
 });
 
-test("session：connLost 保留登录态（非鉴权死亡，可原 token 重连）", () => {
+test("session：没有导航出口时 connLost 仅广播，不直接改登录态", () => {
   let lost = 0;
   const un = onConnLost(() => { lost++; });
   login("u_net");
   notifyConnLost();
   assert.equal(lost, 1);
-  assert.equal(isLoggedIn(), true, "连接死亡 ≠ 鉴权失效，登录态保留");
+  assert.equal(isLoggedIn(), true, "transport 事件本身不清会话；是否回登录由统一出口决定");
   un();
   clearSession();
 });
@@ -83,11 +83,102 @@ test("battleLost 处理器抛错不影响其它订阅者（Main 回滚 + pages �
   } finally { off1(); off2(); }
 });
 
-test("⛔ battleLost 不清登录态（只是这一局没了，token 仍有效）", async () => {
+test("session 广播观察异步订阅 rejection，不产生 unhandledRejection", async () => {
+  const { onAuthInvalid, onConnLost, onBattleLost, notifyAuthInvalid, notifyConnLost, notifyBattleLost } =
+    await import("../src/net/session");
+  const unhandled: unknown[] = [];
+  const onUnhandled = (reason: unknown) => unhandled.push(reason);
+  process.on("unhandledRejection", onUnhandled);
+  const offAuth = onAuthInvalid(async () => { throw new Error("auth async"); });
+  const offConn = onConnLost(async () => { throw new Error("conn async"); });
+  const offBattle = onBattleLost(async () => { throw new Error("battle async"); });
+  try {
+    login("u_async_events");
+    notifyAuthInvalid("AUTH_REQUIRED");
+    login("u_async_events_2");
+    notifyConnLost();
+    notifyBattleLost();
+    await Promise.resolve();
+    await Promise.resolve();
+    assert.deepEqual(unhandled, []);
+  } finally {
+    offAuth(); offConn(); offBattle();
+    process.off("unhandledRejection", onUnhandled);
+    clearSession();
+  }
+});
+
+test("没有导航出口时 battleLost 仅广播，不直接改登录态", async () => {
   const { setSession, isLoggedIn, notifyBattleLost } = await import("../src/net/session");
   setSession({ userId: "u_bl", accessToken: "t_bl", isNewAccount: false });
   notifyBattleLost();
-  assert.equal(isLoggedIn(), true, "登录态保留（与 authInvalid 的区别）");
+  assert.equal(isLoggedIn(), true, "transport 事件本身不清会话；是否回登录由统一出口决定");
+});
+
+test("connLost/battleLost：统一 returnToLogin 出口回登录前清理旧 bearer", async () => {
+  const reasons: string[] = [];
+  const off = registerReturnToLogin((reason) => { reasons.push(reason.kind); });
+  try {
+    login("u_conn_transition");
+    notifyConnLost();
+    assert.equal(isLoggedIn(), false, "connLost 进入统一回登录出口后应立即清理 token");
+    await Promise.resolve();
+    assert.deepEqual(reasons, ["CONN_LOST"]);
+
+    // setSession resets the transition epoch, so the next transport death is
+    // an independent, observable transition rather than a handled duplicate.
+    login("u_battle_transition");
+    notifyBattleLost();
+    assert.equal(isLoggedIn(), false, "battleLost 进入统一回登录出口后应立即清理 token");
+    await Promise.resolve();
+    assert.deepEqual(reasons, ["CONN_LOST", "BATTLE_LOST"]);
+  } finally {
+    off();
+    clearSession();
+  }
+});
+
+test("迟到 transport 事件：会话已主动清理时只广播、不幽灵打开回登录 transition", async () => {
+  const reasons: string[] = [];
+  const off = registerReturnToLogin((reason) => { reasons.push(reason.kind); });
+  try {
+    clearSession();
+    notifyConnLost();
+    notifyBattleLost();
+    await Promise.resolve();
+    assert.deepEqual(reasons, []);
+  } finally {
+    off();
+    clearSession();
+  }
+});
+
+test("失效广播期间同步重登：旧 transport 事件不得覆盖新会话", async () => {
+  const reasons: string[] = [];
+  const offLost = onConnLost(() => { login("u_replaced"); });
+  const offTransition = registerReturnToLogin((reason) => { reasons.push(reason.kind); });
+  try {
+    login("u_before");
+    notifyConnLost();
+    await Promise.resolve();
+    assert.equal(isLoggedIn(), true, "订阅者同步建立的新会话必须保留");
+    assert.deepEqual(reasons, [], "旧事件不应为新会话启动回登录");
+  } finally {
+    offLost();
+    offTransition();
+    clearSession();
+  }
+});
+
+test("SessionTransition：处理器 rejection 不锁死 handled，显式再次运行可恢复", async () => {
+  let calls = 0;
+  const transition = new (await import("../src/net/session")).SessionTransition(() => async () => {
+    calls++;
+    if (calls === 1) throw new Error("temporary navigation failure");
+  });
+  await assert.rejects(transition.run({ kind: "CONN_LOST" }), /temporary navigation failure/);
+  await transition.run({ kind: "CONN_LOST" });
+  assert.equal(calls, 2);
 });
 
 test("returnToLogin：并发失效事件共享一个可等待 Promise，并先清 Bearer", async () => {

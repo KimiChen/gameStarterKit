@@ -18,6 +18,11 @@ import { RoomClient } from "../src/net/RoomClient";
 
 type Handler = (...values: unknown[]) => void;
 
+async function flushMicrotasks(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
+}
+
 function makeLobbyRoom() {
   const handlers = new Map<string, Handler>();
   const sent: Array<{ type: string; data: unknown }> = [];
@@ -262,5 +267,108 @@ test("RoomClient state$：MapSchema-like entries 可校验，坏快照不触发 
     assert.equal(called, 1, "坏状态快照后的 deferred callback 必须丢弃");
   } finally {
     (globalThis as { Colyseus?: unknown }).Colyseus = oldColyseus;
+  }
+});
+
+test("RoomClient：S2C callback 的同步异常与 Promise rejection 都被观察", async () => {
+  const fake = makeGameRoom(validState());
+  const oldColyseus = (globalThis as { Colyseus?: unknown }).Colyseus;
+  class FakeClient {
+    constructor(_endpoint: string) {}
+    auth = { token: "" };
+    async joinOrCreate() { return fake.room; }
+  }
+  (globalThis as { Colyseus?: unknown }).Colyseus = {
+    Client: FakeClient,
+    getStateCallbacks: () => undefined,
+  };
+  const unhandled: unknown[] = [];
+  const onUnhandled = (reason: unknown) => unhandled.push(reason);
+  process.on("unhandledRejection", onUnhandled);
+  try {
+    const client = new RoomClient();
+    client.init("http://game.example");
+    const owner = client.joinGame();
+    await owner.ready;
+    let calls = 0;
+    client.onMessage(fake.room as never, S2C.Pong, () => {
+      calls++;
+      if (calls === 1) throw new Error("sync callback failure");
+      return Promise.reject(new Error("async callback failure"));
+    });
+    assert.doesNotThrow(() => fake.emit(S2C.Pong, { clientTime: 1, serverTime: 2 }));
+    assert.doesNotThrow(() => fake.emit(S2C.Pong, { clientTime: 1, serverTime: 2 }));
+    await flushMicrotasks();
+    assert.equal(calls, 2);
+    assert.deepEqual(unhandled, []);
+    await owner.leave();
+  } finally {
+    process.off("unhandledRejection", onUnhandled);
+    (globalThis as { Colyseus?: unknown }).Colyseus = oldColyseus;
+  }
+});
+
+test("RoomClient state$：注册方法/回调异常均不穿透，也不产生 unhandled rejection", async () => {
+  const state: any = validState();
+  const fake = makeGameRoom(state);
+  const oldColyseus = (globalThis as { Colyseus?: unknown }).Colyseus;
+  let deferredCallback: ((player: unknown, id: string) => unknown) | undefined;
+  const callbacks = (instance: unknown) => {
+    if (instance !== state) return undefined;
+    return {
+      players: {
+        onAdd(_callback: unknown) { throw new Error("registration failure"); },
+        onRemove(callback: (player: unknown, id: string) => unknown) {
+          deferredCallback = callback;
+          return () => {};
+        },
+      },
+    };
+  };
+  (globalThis as { Colyseus?: unknown }).Colyseus = { getStateCallbacks: () => callbacks };
+  const unhandled: unknown[] = [];
+  const onUnhandled = (reason: unknown) => unhandled.push(reason);
+  process.on("unhandledRejection", onUnhandled);
+  try {
+    const client = new RoomClient();
+    const guarded = client.state$(fake.room as never);
+    assert.doesNotThrow(() => guarded(state).players.onAdd(() => { throw new Error("ignored"); }));
+    assert.doesNotThrow(() => guarded(state).players.onRemove(() => Promise.reject(new Error("async"))));
+    assert.doesNotThrow(() => deferredCallback?.(state.players.get("game-session"), "game-session"));
+    await flushMicrotasks();
+    assert.deepEqual(unhandled, []);
+  } finally {
+    process.off("unhandledRejection", onUnhandled);
+    (globalThis as { Colyseus?: unknown }).Colyseus = oldColyseus;
+  }
+});
+
+test("WebSocketClient：push handler 的同步异常与 Promise rejection 都被观察", async () => {
+  const fake = makeLobbyRoom();
+  const client = await setupLobby(fake);
+  const unhandled: unknown[] = [];
+  const onUnhandled = (reason: unknown) => unhandled.push(reason);
+  process.on("unhandledRejection", onUnhandled);
+  try {
+    let calls = 0;
+    client.onPush(LobbyPush.ServerNotice, () => {
+      calls++;
+      if (calls === 1) throw new Error("sync push failure");
+      return Promise.reject(new Error("async push failure"));
+    });
+    assert.doesNotThrow(() => fake.emit(LOBBY_MSG_PUSH, {
+      type: LobbyPush.ServerNotice,
+      data: { text: "notice" },
+    }));
+    assert.doesNotThrow(() => fake.emit(LOBBY_MSG_PUSH, {
+      type: LobbyPush.ServerNotice,
+      data: { text: "notice" },
+    }));
+    await flushMicrotasks();
+    assert.equal(calls, 2);
+    assert.deepEqual(unhandled, []);
+  } finally {
+    process.off("unhandledRejection", onUnhandled);
+    await client.leave();
   }
 });

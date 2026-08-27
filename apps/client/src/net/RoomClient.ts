@@ -24,12 +24,19 @@ import {
     type IChatRes,
     type IErrorRes,
     isPlainRecord,
+    validateOrigin,
     validateC2SPayload,
     validateGameRoomState,
     validateRoomJoinOptions,
     validateS2CPayload,
 } from "../shared/index";
 import { notifyBattleLost } from "./session";
+import {
+    looksLikeJoinSignal,
+    normalizeJoinSignal,
+    observeJoinControlResult,
+    waitMsForJoin,
+} from "./joinControl";
 
 /** 服务端 → 客户端各消息的 payload 类型映射 */
 export interface S2CPayloadMap {
@@ -47,9 +54,9 @@ const LEAVE_TIMEOUT_MS = 5_000;
 export interface JoinControl {
     /** 取消本次 ownership；SDK 握手不可中断时，迟到 room 会在后台被释放。 */
     signal?: AbortSignal;
-    /** 从调用时刻起的最长等待时间。 */
+    /** 从调用时刻起的最长等待时间（安全非负整数）。 */
     timeoutMs?: number;
-    /** 绝对截止时间（Unix ms）；小于 1e11 的值也接受为相对毫秒，便于测试。 */
+    /** 绝对截止时间（Unix ms）；不接受相对时间或字符串。 */
     deadlineMs?: number;
     /** aliases accepted by adapters/tests; deadline is absolute when epoch-sized. */
     timeout?: number;
@@ -154,18 +161,37 @@ function splitJoinControl(
     explicit: JoinControl | AbortSignal | undefined,
 ): { options: Record<string, unknown>; control: JoinControl } {
     const source = options ?? {};
-    const wire: Record<string, unknown> = { ...source };
+    const wire: Record<string, unknown> = {};
+    try {
+        for (const key of Reflect.ownKeys(source)) {
+            if (typeof key !== "string") {
+                throw new TypeError("[RoomClient] join options 不得包含 symbol key");
+            }
+            wire[key] = source[key];
+        }
+    } catch {
+        throw new TypeError("[RoomClient] join options 无法读取");
+    }
     // 支持把控制字段放在第二参的兼容写法，同时不让它们进入 matchmaking payload。
-    const embedded = source as Record<string, unknown> & Partial<JoinControl>;
-    const explicitControl: JoinControl | undefined = explicit && "aborted" in explicit
-        ? { signal: explicit as AbortSignal }
-        : explicit as JoinControl | undefined;
-    const control: JoinControl = explicitControl ?? {
-        signal: embedded.signal,
-        timeoutMs: embedded.timeoutMs,
-        deadlineMs: embedded.deadlineMs,
-        timeout: embedded.timeout,
-        deadline: embedded.deadline,
+    let explicitIsSignal = false;
+    if (explicit !== undefined && explicit !== null) {
+        try { explicitIsSignal = looksLikeJoinSignal(explicit); }
+        catch { throw new TypeError("[RoomClient] join control 无法读取"); }
+    }
+    // Snapshot every control field before allocating a slot.  Besides making
+    // the lifetime deterministic, this prevents a getter/Proxy from throwing
+    // later in a timer or leave callback.
+    const controlSource = explicitIsSignal ? undefined : (explicit ?? source) as Partial<JoinControl>;
+    const readControl = (key: keyof JoinControl): unknown => {
+        try { return controlSource?.[key]; }
+        catch { throw new TypeError(`[RoomClient] join control 字段 ${String(key)} 无法读取`); }
+    };
+    const control: JoinControl = {
+        signal: normalizeJoinSignal(explicitIsSignal ? explicit : readControl("signal")),
+        timeoutMs: readControl("timeoutMs") as number | undefined,
+        deadlineMs: readControl("deadlineMs") as number | undefined,
+        timeout: readControl("timeout") as number | undefined,
+        deadline: readControl("deadline") as number | undefined,
     };
     delete wire.signal;
     delete wire.timeoutMs;
@@ -175,27 +201,35 @@ function splitJoinControl(
     return { options: wire, control };
 }
 
-function waitMsFor(control: JoinControl): number {
-    const now = Date.now();
-    if (control.deadlineMs !== undefined) {
-        const raw = Number(control.deadlineMs);
-        if (!Number.isFinite(raw)) return 0;
-        const deadline = raw < 1e11 ? now + raw : raw;
-        return Math.max(0, deadline - now);
+function wireErrorText(error: unknown): string {
+    try {
+        if (error instanceof Error) {
+            const message = error.message;
+            return typeof message === "string" ? message : "";
+        }
+        return typeof error === "string" ? error : "";
+    } catch {
+        return "";
     }
-    if (control.timeoutMs !== undefined) {
-        const raw = Number(control.timeoutMs);
-        return Number.isFinite(raw) ? Math.max(0, raw) : 0;
-    }
-    if (control.timeout !== undefined) {
-        const raw = Number(control.timeout);
-        return Number.isFinite(raw) ? Math.max(0, raw) : 0;
-    }
-    return 15_000;
 }
 
-function wireErrorText(error: unknown): string {
-    return error instanceof Error ? error.message : String(error);
+function safeError(error: unknown, fallback: string): Error {
+    try {
+        if (error instanceof Error) return error;
+    } catch { /* hostile/revoked error proxy */ }
+    const text = wireErrorText(error);
+    return new Error(text || fallback);
+}
+
+/** Diagnostic values come from the SDK callback and may be hostile at runtime. */
+function safeDiagnostic(value: unknown): string {
+    try {
+        if (typeof value === "string") return value.slice(0, 256);
+        if (typeof value === "number" && Number.isFinite(value)) return String(value);
+        return "";
+    } catch {
+        return "";
+    }
 }
 
 function warnInvalidWire(scope: string, error: unknown): void {
@@ -208,6 +242,47 @@ function warnInvalidWire(scope: string, error: unknown): void {
  * Keep that transport failure inside the fire-and-forget API and avoid echoing packet contents. */
 function warnSendFailure(scope: string): void {
     console.warn(`[RoomClient] C2S ${scope} 发送失败`);
+}
+
+/**
+ * State/message callbacks are invoked by the SDK rather than by an awaited
+ * caller.  Keep both synchronous exceptions and returned thenables inside the
+ * transport boundary; in particular, do not log callback arguments (they may
+ * contain chat/account data).
+ */
+function reportCallbackFailure(scope: string, kind: "exception" | "rejection"): void {
+    console.error(`[RoomClient] ${scope} callback ${kind}`);
+}
+
+function isThenable(value: unknown): value is PromiseLike<unknown> {
+    if (value === null || (typeof value !== "object" && typeof value !== "function")) return false;
+    try {
+        return typeof (value as { then?: unknown }).then === "function";
+    } catch {
+        return false;
+    }
+}
+
+function observeCallbackResult(scope: string, result: unknown): unknown {
+    if (!isThenable(result)) return result;
+    try {
+        // Attaching a rejection handler is enough to mark the original Promise
+        // observed, while returning the original value preserves SDK semantics.
+        Promise.resolve(result).catch(() => reportCallbackFailure(scope, "rejection"));
+    } catch {
+        // A hostile thenable may throw while Promise.resolve assimilates it.
+        reportCallbackFailure(scope, "rejection");
+    }
+    return result;
+}
+
+function invokeObserved(scope: string, callback: () => unknown): unknown {
+    try {
+        return observeCallbackResult(scope, callback());
+    } catch {
+        reportCallbackFailure(scope, "exception");
+        return undefined;
+    }
 }
 
 /**
@@ -312,22 +387,39 @@ function guardStateCallbacks(
     const guarded = new Proxy(proxy, {
         apply(target, thisArg, args) {
             if (!validatedStateSnapshot(room)) return noopStateProxy();
-            const result = Reflect.apply(target, thisArg, args);
+            let result: unknown;
+            try {
+                result = Reflect.apply(target, thisArg, args);
+            } catch {
+                reportCallbackFailure("state proxy", "exception");
+                return noopStateProxy();
+            }
+            observeCallbackResult("state proxy", result);
+            // Promise methods rely on their receiver being the original Promise;
+            // proxying one would make `then`/`catch` throw in some runtimes.
+            if (isThenable(result)) return result;
             return guardStateCallbacks(result, room, cache);
         },
         get(target, property, receiver) {
-            const value = Reflect.get(target, property, receiver);
+            let value: unknown;
+            try { value = Reflect.get(target, property, receiver); }
+            catch {
+                reportCallbackFailure(`state ${String(property)}`, "exception");
+                return noopStateProxy();
+            }
             if (typeof value === "function" && typeof property === "string") {
                 const callbackIndex = CALLBACK_ARG_INDEX[property];
                 if (callbackIndex !== undefined) {
                     return (...args: unknown[]) => {
                         const callback = args[callbackIndex];
-                        if (typeof callback !== "function") return value.apply(target, args);
+                        if (typeof callback !== "function") {
+                            return invokeObserved(`state ${property}`, () => value.apply(target, args));
+                        }
                         args[callbackIndex] = (...callbackArgs: unknown[]) => {
                             if (!validatedStateSnapshot(room)) return undefined;
-                            return callback(...callbackArgs);
+                            return invokeObserved(`state ${property}`, () => callback(...callbackArgs));
                         };
-                        return value.apply(target, args);
+                        return invokeObserved(`state ${property}`, () => value.apply(target, args));
                     };
                 }
             }
@@ -373,6 +465,8 @@ interface RoomSlot {
     closing: Promise<void> | null;
     physicalClose: Promise<void> | null;
     cancelled: boolean;
+    /** Synchronous/asynchronous join failure observed before all owners attach. */
+    failure: Error | null;
     dropping: boolean;
     lastInputSeq: number;
     readonly owners: Set<RoomOwner>;
@@ -426,9 +520,10 @@ export class RoomClient {
 
     /** @param endpoint http(s) 地址，如 http://localhost:2568，SDK 自动派生 ws(s) */
     init(endpoint: string): void {
-        const client = new Colyseus.Client(endpoint);
+        const validated = validateOrigin(endpoint, ["http", "https", "ws", "wss"], "endpoint");
+        const client = new Colyseus.Client(validated);
         this.client = client;
-        this.endpoint = endpoint;
+        this.endpoint = validated;
     }
 
     /**
@@ -444,6 +539,10 @@ export class RoomClient {
             throw new Error("[RoomClient] 未初始化，请先调用 init(endpoint)");
         }
         const split = splitJoinControl(options, control);
+        // Validate the local wait policy before allocating a slot/owner.  A bad
+        // timeout must fail atomically; otherwise an exception here would leave
+        // an owner in the slot with no timer or abort listener to release it.
+        const waitMs = waitMsForJoin(split.control);
         const joinOptions = validateRoomJoinOptions(
             cloneJson({ ...split.options, v: PROTOCOL_VERSION }),
         );
@@ -465,6 +564,7 @@ export class RoomClient {
                 closing: null,
                 physicalClose: null,
                 cancelled: false,
+                failure: null,
                 dropping: false,
                 lastInputSeq: -1,
                 owners: new Set<RoomOwner>(),
@@ -494,11 +594,21 @@ export class RoomClient {
         slot.owners.add(owner);
         let timer: ReturnType<typeof setTimeout> | null = null;
         let abortListener: (() => void) | null = null;
+        const signal = split.control.signal;
+        let disposed = false;
         const dispose = () => {
+            if (disposed) return;
+            disposed = true;
             if (timer !== null) { clearTimeout(timer); timer = null; }
-            if (abortListener && split.control.signal) {
-                split.control.signal.removeEventListener("abort", abortListener);
-                abortListener = null;
+            const listener = abortListener;
+            abortListener = null;
+            if (listener && signal) {
+                try {
+                    observeJoinControlResult(signal.removeEventListener("abort", listener));
+                } catch {
+                    // Cleanup is best-effort; it must never break owner or
+                    // transport failure handling.
+                }
             }
         };
         owner.disposeControl = dispose;
@@ -510,21 +620,39 @@ export class RoomClient {
             owner.cancel(error);
             if (slot.owners.size === 0) void this.closeSlot(slot).catch(() => {});
         };
-        const signal = split.control.signal;
-        const waitMs = waitMsFor(split.control);
-        if (signal?.aborted) {
-            cancelOwner(new JoinError("CANCELLED", "[RoomClient] join 已取消"));
-        } else if (waitMs <= 0) {
-            cancelOwner(new JoinError("TIMEOUT", "[RoomClient] join 超时"));
-        } else if (signal) {
-            timer = setTimeout(() => cancelOwner(new JoinError("TIMEOUT", "[RoomClient] join 超时")), waitMs);
-            abortListener = () => cancelOwner(new JoinError("CANCELLED", "[RoomClient] join 已取消"));
-            signal.addEventListener("abort", abortListener, { once: true });
-        } else {
-            timer = setTimeout(() => cancelOwner(new JoinError("TIMEOUT", "[RoomClient] join 超时")), waitMs);
+        // `joinOrCreate()` may throw before the async owner setup below runs.
+        // The join catch then has no owner to cancel, so replay that failure for
+        // this late-attached owner and avoid installing a dangling timer/listener.
+        if (slot.cancelled && slot.failure) {
+            cancelOwner(slot.failure);
+        }
+        try {
+            let alreadyAborted = false;
+            if (owner.active && signal) {
+                // `normalizeJoinSignal` checked the shape before slot creation,
+                // but a hostile getter can still change/throw between reads.
+                alreadyAborted = signal.aborted;
+            }
+            if (owner.active && alreadyAborted) {
+                cancelOwner(new JoinError("CANCELLED", "[RoomClient] join 已取消"));
+            } else if (owner.active && waitMs <= 0) {
+                cancelOwner(new JoinError("TIMEOUT", "[RoomClient] join 超时"));
+            } else if (owner.active && signal) {
+                timer = setTimeout(() => cancelOwner(new JoinError("TIMEOUT", "[RoomClient] join 超时")), waitMs);
+                // Install the callback reference before calling an adapter: a
+                // non-standard signal may invoke it synchronously.
+                abortListener = () => cancelOwner(new JoinError("CANCELLED", "[RoomClient] join 已取消"));
+                observeJoinControlResult(signal.addEventListener("abort", abortListener, { once: true }));
+            } else if (owner.active) {
+                timer = setTimeout(() => cancelOwner(new JoinError("TIMEOUT", "[RoomClient] join 超时")), waitMs);
+            }
+        } catch (error) {
+            const failure = safeError(error, "[RoomClient] join control failed");
+            cancelOwner(failure);
+            throw failure;
         }
         // ready 落定后清理本 owner 的 timer/listener；Promise.then 的 rejection 被显式观察。
-        ready.then(dispose, dispose);
+        ready.then(dispose, dispose).catch(() => {});
         return {
             ready,
             leave: () => {
@@ -554,10 +682,12 @@ export class RoomClient {
             // 失败槽不再接纳后来调用；既有 owner 仍从各自 ready 收到原始连接错误。
             if (this.slot === slot) { this.slot = null; }
             slot.cancelled = true;
+            const failure = safeError(e, "[RoomClient] join failed");
+            slot.failure = failure;
             for (const owner of slot.owners) {
                 owner.active = false;
                 owner.disposeControl();
-                owner.cancel(e instanceof Error ? e : new Error(String(e)));
+                owner.cancel(failure);
             }
             slot.owners.clear();
             throw e;
@@ -571,20 +701,21 @@ export class RoomClient {
         slot.room = room;
 
         // 回调按 **slot + room** 双身份守卫：旧槽迟到的事件不得清掉新槽或改写其 dropping。
-        room.onDrop((code, reason) => {
+        try {
+            room.onDrop((code, reason) => {
             if (this.slot !== slot || slot.room !== room) return;
             slot.dropping = true;
             // 服务端未必收到掉线前最后一个输入；恢复时强制发送当前 desired state。
             slot.lastInputSeq = -1;
-            console.warn(`[RoomClient] 连接掉线（自动重连中） code=${code} reason=${reason ?? ""}`);
-        });
-        room.onReconnect(() => {
+            console.warn(`[RoomClient] 连接掉线（自动重连中） code=${safeDiagnostic(code)} reason=${safeDiagnostic(reason)}`);
+            });
+            room.onReconnect(() => {
             if (this.slot !== slot || slot.room !== room) return;
             slot.dropping = false;
             this.reconcileInput(slot);
             console.log("[RoomClient] 自动重连成功");
-        });
-        room.onLeave((code, reason) => {
+            });
+            room.onLeave((code, reason) => {
             if (this.slot !== slot || slot.room !== room) return;
             this.slot = null;
             slot.room = null;
@@ -594,23 +725,39 @@ export class RoomClient {
             for (const owner of slot.owners) { owner.active = false; }
             for (const owner of slot.owners) { owner.disposeControl(); }
             slot.owners.clear();
-            room.removeAllListeners();
-            console.log(`[RoomClient] 已离开房间 code=${code} reason=${reason ?? ""}`);
+            try { room.removeAllListeners(); } catch { /* malformed adapter */ }
+            console.log(`[RoomClient] 已离开房间 code=${safeDiagnostic(code)} reason=${safeDiagnostic(reason)}`);
             // **非主动离开 = 这一局没了**（重连耗尽/服务端强断/房间销毁）：必须上报，
             // ⛔ 否则 Main 永远不知道连接已死，会拿着死房间继续驱动渲染（inBattle 恒 true，
-            // 玩家卡在冻结的战斗画面且回不去大厅）。登录态不受影响，故走 battleLost 而非 authInvalid。
+            // 玩家卡在冻结的战斗画面且回不去大厅）。这不是鉴权判定，故走 battleLost；
+            // 已注册的 session 导航出口随后统一回登录并清理 bearer。
             //
             // ⚠ 主动 leave **不会**走到这里：最后一个 owner 释放时先摘掉 `this.slot`，本回调
             // 开头即 return。无需全局 `_leaving` 标志（它无法区分旧槽 leave 与新槽意外死亡）。
             notifyBattleLost();
-        });
+            });
 
-        // join 前已经记录的 desired input（例如触摸按下后才完成握手）在首个有效
-        // room 上只发送一次；seq/lease 防止旧槽迟到回调重放到新槽。
-        this.reconcileInput(slot);
-        room.onError((code, message) => {
-            console.error(`[RoomClient] 房间错误 code=${code} message=${message ?? ""}`);
-        });
+            // join 前已经记录的 desired input（例如触摸按下后才完成握手）在首个有效
+            // room 上只发送一次；seq/lease 防止旧槽迟到回调重放到新槽。
+            this.reconcileInput(slot);
+            room.onError((code, message) => {
+            console.error(`[RoomClient] 房间错误 code=${safeDiagnostic(code)} message=${safeDiagnostic(message)}`);
+            });
+        } catch (error) {
+            if (this.slot === slot) this.slot = null;
+            slot.room = null;
+            slot.cancelled = true;
+            const failure = safeError(error, "[RoomClient] room setup failed");
+            slot.failure = failure;
+            for (const owner of slot.owners) {
+                owner.active = false;
+                owner.disposeControl();
+                owner.cancel(failure);
+            }
+            slot.owners.clear();
+            await this.closePhysicalRoom(slot, room);
+            throw error;
+        }
 
         return room;
     }
@@ -650,18 +797,26 @@ export class RoomClient {
     /** 精确 room 的有界关闭；无论 leave 成功、失败或超时都清理 timer/listener。 */
     private closePhysicalRoom(slot: RoomSlot, room: Colyseus.Room<IGameRoomState>): Promise<void> {
         if (slot.physicalClose) return slot.physicalClose;
-        room.reconnection.enabled = false;
         let timer: ReturnType<typeof setTimeout> | null = null;
         const timeout = new Promise<void>((resolve) => {
             timer = setTimeout(resolve, LEAVE_TIMEOUT_MS);
         });
         const leave = Promise.resolve()
-            .then(() => room.leave(true))
+            .then(() => {
+                try {
+                    const reconnection = (room as unknown as { reconnection?: { enabled?: boolean } }).reconnection;
+                    if (reconnection && typeof reconnection === "object") reconnection.enabled = false;
+                } catch { /* malformed adapter: continue with best-effort leave */ }
+                try {
+                    const fn = (room as unknown as { leave?: unknown }).leave;
+                    return typeof fn === "function" ? fn.call(room, true) : undefined;
+                } catch { return undefined; }
+            })
             .catch(() => { /* 掉线窗口发不出 LEAVE 帧属预期 */ })
             .then(() => undefined);
         slot.physicalClose = Promise.race([leave, timeout]).then(() => {
             if (timer !== null) { clearTimeout(timer); timer = null; }
-            room.removeAllListeners();
+            try { room.removeAllListeners(); } catch { /* malformed adapter */ }
         });
         return slot.physicalClose;
     }
@@ -730,7 +885,7 @@ export class RoomClient {
     onMessage<K extends keyof S2CPayloadMap>(
         room: Colyseus.Room<IGameRoomState>,
         type: K,
-        callback: (payload: S2CPayloadMap[K]) => void,
+        callback: (payload: S2CPayloadMap[K]) => unknown,
     ): () => void {
         return room.onMessage(type as string, (raw: unknown) => {
             let payload: S2CPayloadMap[K];
@@ -740,7 +895,7 @@ export class RoomClient {
                 warnInvalidWire(`S2C ${String(type)}`, error);
                 return;
             }
-            callback(payload);
+            invokeObserved(`S2C ${String(type)}`, () => callback(payload));
         });
     }
 

@@ -290,6 +290,139 @@ test("join 黑洞：timeout/cancel 立即结束 ownership，迟到 room 在后�
   assert.equal(fakeCancelled.leaveCalls, 1, "取消后迟到 room 也必须释放");
 });
 
+test("非法 join control 在分配大厅 slot 前失败，不遗留 owner", async () => {
+  const client = WebSocketClient.inst as unknown as {
+    client: { auth: { token: string }; joinOrCreate: () => Promise<unknown> } | null;
+    endpoint: string;
+    slot: unknown;
+  };
+  await WebSocketClient.inst.leave().catch(() => {});
+  let calls = 0;
+  client.endpoint = "http://lobby.example";
+  client.client = {
+    auth: { token: "" },
+    joinOrCreate: async () => { calls++; return makeFakeRoom().room; },
+  };
+  assert.throws(
+    () => WebSocketClient.inst.joinOwned("token-1", undefined, { timeoutMs: 1.5 } as never),
+    /安全整数/,
+  );
+  assert.equal(calls, 0);
+  assert.equal(client.slot, null, "非法 control 不得留下大厅 slot");
+});
+
+test("hostile AbortSignal：读取 aborted 在分配大厅 slot 前失败", async () => {
+  const client = WebSocketClient.inst as unknown as {
+    client: { auth: { token: string }; joinOrCreate: () => Promise<unknown> } | null;
+    endpoint: string;
+    slot: unknown;
+  };
+  await WebSocketClient.inst.leave().catch(() => {});
+  let calls = 0;
+  client.endpoint = "http://lobby-hostile-signal.example";
+  client.client = {
+    auth: { token: "" },
+    joinOrCreate: async () => { calls++; return makeFakeRoom().room; },
+  };
+  const signal = new Proxy({
+    aborted: false,
+    addEventListener() { /* noop */ },
+    removeEventListener() { /* noop */ },
+  }, {
+    get(target, property, receiver) {
+      if (property === "aborted") throw new Error("hostile aborted getter");
+      return Reflect.get(target, property, receiver);
+    },
+  });
+  assert.throws(
+    () => WebSocketClient.inst.joinOwned("token-hostile", undefined, signal as never),
+    /有效的 AbortSignal/,
+  );
+  assert.equal(calls, 0);
+  assert.equal(client.slot, null);
+});
+
+test("hostile AbortSignal：addEventListener 抛错时大厅 owner/slot 清理，迟到 room 释放", async () => {
+  await WebSocketClient.inst.leave().catch(() => {});
+  const pending = deferred<ReturnType<typeof makeFakeRoom>["room"]>();
+  const fake = makeFakeRoom();
+  const internals = WebSocketClient.inst as unknown as {
+    client: unknown;
+    endpoint: string;
+    slot: unknown;
+  };
+  internals.endpoint = "http://lobby-add-hostile.example";
+  internals.client = { auth: { token: "" }, joinOrCreate: async () => pending.promise };
+  const signal = {
+    aborted: false,
+    addEventListener() { throw new Error("hostile add listener"); },
+    removeEventListener() { /* noop */ },
+  } as unknown as AbortSignal;
+
+  assert.throws(
+    () => WebSocketClient.inst.joinOwned("token-add-hostile", undefined, signal),
+    /hostile add listener/,
+  );
+  assert.equal(internals.slot, null);
+  pending.resolve(fake.room);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(fake.leaveCalls, 1);
+});
+
+test("hostile AbortSignal：removeEventListener 抛错不阻断大厅成功 leave", async () => {
+  await WebSocketClient.inst.leave().catch(() => {});
+  const pending = deferred<ReturnType<typeof makeFakeRoom>["room"]>();
+  const fake = makeFakeRoom();
+  const internals = WebSocketClient.inst as unknown as {
+    client: unknown;
+    endpoint: string;
+  };
+  internals.endpoint = "http://lobby-remove-hostile.example";
+  internals.client = { auth: { token: "" }, joinOrCreate: async () => pending.promise };
+  const signal = {
+    aborted: false,
+    addEventListener() { /* noop */ },
+    removeEventListener() { throw new Error("hostile remove listener"); },
+  } as unknown as AbortSignal;
+  const owner = WebSocketClient.inst.joinOwned("token-remove-hostile", undefined, signal);
+  pending.resolve(fake.room);
+  await owner.ready;
+  await owner.leave();
+  assert.equal(fake.leaveCalls, 1);
+});
+
+test("joinOrCreate 同步抛错：迟到大厅 owner 立即失败并释放失败槽", async () => {
+  const internals = WebSocketClient.inst as unknown as {
+    client: { auth: { token: string }; joinOrCreate: (...args: unknown[]) => Promise<unknown> } | null;
+    endpoint: string;
+    slot: unknown;
+    closeSlot: (slot: unknown) => Promise<void>;
+  };
+  await WebSocketClient.inst.leave().catch(() => {});
+  const failure = new Error("sync lobby join failure");
+  internals.endpoint = "http://lobby-sync-failure.example";
+  internals.client = {
+    auth: { token: "" },
+    joinOrCreate() { throw failure; },
+  };
+  const originalCloseSlot = internals.closeSlot;
+  let closeCalls = 0;
+  internals.closeSlot = (slot) => {
+    closeCalls++;
+    return originalCloseSlot.call(WebSocketClient.inst, slot);
+  };
+
+  try {
+    const owner = WebSocketClient.inst.joinOwned("token-sync-failure", undefined, { timeoutMs: 60_000 });
+    await assert.rejects(owner.ready, (error: unknown) => error === failure);
+    assert.equal(internals.slot, null, "同步失败后大厅 slot 必须摘除");
+    assert.equal(closeCalls, 1, "迟到 owner 必须触发失败槽清理");
+    await owner.leave();
+  } finally {
+    internals.closeSlot = originalCloseSlot;
+  }
+});
+
 test("主动 leave 立即拒绝旧 slot 的 pending RPC", async () => {
   const fake = makeFakeRoom();
   const c = await joinWithFakeRoom(fake);
