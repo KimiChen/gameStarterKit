@@ -141,6 +141,75 @@ test("Lua validate-then-apply：首条合法、后续非法时 Redis/applied/pay
   assert.deepEqual(await dump(user), before, "wrapper 拒绝 NaN 时也不得写 Redis");
 });
 
+test("Lua apply 预检 Redis key 类型与键集合：污染时不发生部分写入", async () => {
+  const bagUser = await seed("wrong-bag-type");
+  await zoneCtx.run({ sId: 0 }, async () => {
+    const redis = clientFor(bagUser);
+    const userBefore = await redis.hgetall(kUser(bagUser));
+    const bagKey = kBagAll(bagUser)[0];
+    await redis.set(bagKey, "not-a-hash");
+
+    const result = await luaApplyRaw(
+      bagUser,
+      deriveOpId(bagUser, 0, "effect.corrupt", "bag"),
+      JSON.stringify({ schemaVersion: 1, grants: [{ kind: "item", itemId: 8, count: 1 }] }),
+    );
+    assert.equal(result, "err:EFFECT_DATA_CORRUPT");
+    assert.deepEqual(await redis.hgetall(kUser(bagUser)), userBefore, "key 类型错误不得改 user/ver");
+    assert.equal(await redis.get(bagKey), "not-a-hash", "污染 key 不得被覆盖");
+    assert.equal(await redis.exists(kApplied(bagUser)), 0, "失败不得写 applied marker");
+    assert.equal(await redis.exists(kAppliedPayload(bagUser)), 0, "失败不得写 payload marker");
+  });
+
+  const appliedUser = await seed("wrong-applied-type");
+  await zoneCtx.run({ sId: 0 }, async () => {
+    const redis = clientFor(appliedUser);
+    const userBefore = await redis.hgetall(kUser(appliedUser));
+    const appliedKey = kApplied(appliedUser);
+    await redis.set(appliedKey, "not-a-zset");
+    const result = await luaApplyRaw(
+      appliedUser,
+      deriveOpId(appliedUser, 0, "effect.corrupt", "applied"),
+      JSON.stringify({ schemaVersion: 1, grants: [{ kind: "star", delta: 1 }] }),
+    );
+    assert.equal(result, "err:EFFECT_DATA_CORRUPT");
+    assert.deepEqual(await redis.hgetall(kUser(appliedUser)), userBefore);
+    assert.equal(await redis.get(appliedKey), "not-a-zset");
+  });
+});
+
+test("Lua apply 拒绝 ver/余额安全整数上界溢出，且不写 marker", async () => {
+  const user = await seed("overflow");
+  await zoneCtx.run({ sId: 0 }, async () => {
+    const redis = clientFor(user);
+    const before = await dump(user);
+    await redis.hset(kUser(user), "ver", String(Number.MAX_SAFE_INTEGER));
+    const result = await luaApplyRaw(
+      user,
+      deriveOpId(user, 0, "effect.overflow", "ver"),
+      JSON.stringify({ schemaVersion: 1, grants: [{ kind: "star", delta: 1 }] }),
+    );
+    assert.equal(result, "err:EFFECT_DATA_CORRUPT");
+    const afterVer = await dump(user);
+    assert.equal(afterVer.user.ver, String(Number.MAX_SAFE_INTEGER));
+    assert.deepEqual(afterVer.bags, before.bags);
+    assert.deepEqual(afterVer.applied, before.applied);
+    assert.deepEqual(afterVer.payload, before.payload);
+
+    await redis.hset(kUser(user), "ver", "0");
+    const bagKey = kBagAll(user)[7 % 4];
+    await redis.hset(bagKey, "7", String(Number.MAX_SAFE_INTEGER));
+    const beforeBag = await dump(user);
+    const itemResult = await luaApplyRaw(
+      user,
+      deriveOpId(user, 0, "effect.overflow", "item"),
+      JSON.stringify({ schemaVersion: 1, grants: [{ kind: "item", itemId: 7, count: 1 }] }),
+    );
+    assert.equal(itemResult, "err:EFFECT_DATA_CORRUPT");
+    assert.deepEqual(await dump(user), beforeBag, "item 计数器溢出不得产生部分写");
+  });
+});
+
 test("同 op-id 并发只应用一次；不同 canonical payload 返回冲突且状态不变", async () => {
   const user = await seed("idem");
   const opId = deriveOpId(user, 0, "effect.idem", "same");

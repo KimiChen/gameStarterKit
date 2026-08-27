@@ -14,6 +14,7 @@ import {
   EFFECT_MAX_GRANTS, EFFECT_MAX_ITEM_ID, EFFECT_MAX_QUANTITY, EFFECT_MAX_VALUE_LENGTH,
   EFFECT_RESERVED_FIELDS, EFFECT_SCHEMA_VERSION,
 } from "@game/shared";
+import { BAG_SHARDS } from "./config";
 
 export interface RedisScript { readonly name: string; readonly lua: string; readonly sha: string }
 
@@ -62,6 +63,8 @@ const LUA_MAX_COUNT = String(EFFECT_MAX_COUNT);
 const LUA_MAX_DELTA = String(EFFECT_MAX_DELTA);
 const LUA_MAX_FIELD_LENGTH = String(EFFECT_MAX_FIELD_LENGTH);
 const LUA_MAX_VALUE_LENGTH = String(EFFECT_MAX_VALUE_LENGTH);
+const LUA_MAX_SAFE_INTEGER = String(Number.MAX_SAFE_INTEGER);
+const LUA_KEY_COUNT = String(3 + BAG_SHARDS);
 
 export const APPLY_EFFECT = script("applyEffect", `
 -- Return a stable domain error without touching any key. The caller maps err:* to InvalidEffectError.
@@ -86,6 +89,29 @@ end
 -- A missing user is a normal cold result, but malformed effects are rejected before this script
 -- can create any applied/bag key. The three first keys are user/applied/payload-hash.
 if redis.call('EXISTS', KEYS[1]) == 0 then return 'cold' end
+if #KEYS ~= ${LUA_KEY_COUNT} then return invalid('EFFECT_DATA_CORRUPT') end
+-- Redis Lua does not roll back writes when a later command raises a WRONGTYPE error.
+-- Check every target up front; missing bag/applied keys are valid because HSET/ZADD
+-- creates them during the apply pass. No other client can change a key type while
+-- this script is running, so the preflight remains valid through all writes.
+local function expectedType(key, expected)
+  local kind = redis.call('TYPE', key)
+  local actual = kind.ok
+  return actual == 'none' or actual == expected
+end
+for i = 1, #KEYS do
+  for j = i + 1, #KEYS do
+    if KEYS[i] == KEYS[j] then return invalid('EFFECT_DATA_CORRUPT') end
+  end
+end
+if not expectedType(KEYS[1], 'hash')
+  or not expectedType(KEYS[2], 'zset')
+  or not expectedType(KEYS[3], 'hash') then
+  return invalid('EFFECT_DATA_CORRUPT')
+end
+for i = 4, #KEYS do
+  if not expectedType(KEYS[i], 'hash') then return invalid('EFFECT_DATA_CORRUPT') end
+end
 local decoded, eff = pcall(cjson.decode, ARGV[3])
 if not decoded or type(eff) ~= 'table' then return invalid('EFFECT_NOT_OBJECT') end
 if not exact(eff, { schemaVersion = true, grants = true }, 2) then return invalid('EFFECT_KEYS') end
@@ -94,6 +120,8 @@ if type(eff.grants) ~= 'table' then return invalid('EFFECT_GRANTS') end
 
 local N = #KEYS - 3
 if N < 1 then return invalid('EFFECT_DATA_CORRUPT') end
+local applyAt = tonumber(ARGV[2])
+if not intIn(applyAt, 0, ${LUA_MAX_SAFE_INTEGER}) then return invalid('EFFECT_DATA_CORRUPT') end
 local grantCount = #eff.grants
 if grantCount > ${LUA_MAX_GRANTS} then return invalid('EFFECT_TOO_LARGE') end
 -- cjson arrays must be dense and must not carry named properties.
@@ -168,32 +196,34 @@ end
 -- apply pass means a malformed pre-existing hash cannot fail half way through the effect.
 local verRaw = redis.call('HGET', KEYS[1], 'ver') or '0'
 local ver = tonumber(verRaw)
-if not intIn(ver, 0, 9007199254740991) then return invalid('EFFECT_DATA_CORRUPT') end
+if not intIn(ver, 0, ${LUA_MAX_SAFE_INTEGER}) or ver >= ${LUA_MAX_SAFE_INTEGER} then return invalid('EFFECT_DATA_CORRUPT') end
 local itemValues = {}
 for field, delta in pairs(itemDeltas) do
   local shard = itemShards[field]
   local currentRaw = redis.call('HGET', KEYS[4 + shard], field) or '0'
   local current = tonumber(currentRaw)
-  if not intIn(current, 0, 9007199254740991) then return invalid('EFFECT_DATA_CORRUPT') end
+  if not intIn(current, 0, ${LUA_MAX_SAFE_INTEGER}) then return invalid('EFFECT_DATA_CORRUPT') end
+  if delta > 0 and current > ${LUA_MAX_SAFE_INTEGER} - delta then return invalid('EFFECT_DATA_CORRUPT') end
   local nextValue = current + delta
   if nextValue < 0 then
     nextValue = 0
     under[#under + 1] = 'item:' .. field
   end
-  if not intIn(nextValue, 0, 9007199254740991) then return invalid('EFFECT_DATA_CORRUPT') end
+  if not intIn(nextValue, 0, ${LUA_MAX_SAFE_INTEGER}) then return invalid('EFFECT_DATA_CORRUPT') end
   itemValues[field] = nextValue
 end
 local starValue = nil
 if hasStar then
   local currentRaw = redis.call('HGET', KEYS[1], 'star') or '0'
   local current = tonumber(currentRaw)
-  if not intIn(current, 0, 9007199254740991) then return invalid('EFFECT_DATA_CORRUPT') end
+  if not intIn(current, 0, ${LUA_MAX_SAFE_INTEGER}) then return invalid('EFFECT_DATA_CORRUPT') end
+  if starDelta > 0 and current > ${LUA_MAX_SAFE_INTEGER} - starDelta then return invalid('EFFECT_DATA_CORRUPT') end
   starValue = current + starDelta
   if starValue < 0 then
     starValue = 0
     under[#under + 1] = 'star'
   end
-  if not intIn(starValue, 0, 9007199254740991) then return invalid('EFFECT_DATA_CORRUPT') end
+  if not intIn(starValue, 0, ${LUA_MAX_SAFE_INTEGER}) then return invalid('EFFECT_DATA_CORRUPT') end
 end
 
 -- Apply pass: all shape/range/current-value checks above have completed successfully.
@@ -205,7 +235,7 @@ for field, value in pairs(setFields) do
   redis.call('HSET', KEYS[1], field, value)
 end
 redis.call('HSET', KEYS[1], 'ver', tostring(ver + 1))
-redis.call('ZADD', KEYS[2], ARGV[2], ARGV[1])
+redis.call('ZADD', KEYS[2], applyAt, ARGV[1])
 redis.call('HSET', KEYS[3], ARGV[1], ARGV[3])
 if #under > 0 then return 'ok:' .. table.concat(under, ',') end
 return 'ok'
