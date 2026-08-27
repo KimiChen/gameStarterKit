@@ -18,6 +18,8 @@ import {
     calcDamage,
     SeededRandom,
     PROTOCOL_VERSION,
+    validateRoomJoinOptions,
+    WireValidationError,
     type IRoomJoinOptions,
     type C2SType,
     type IPingReq,
@@ -223,24 +225,42 @@ export class GameRoom extends Room {
      * ⛔ 不信客户端单独传的 userId）。token 缺失/伪造/过期一律拒连（去 mock 后无游客模式）。
      */
     static async onAuth(token: string, options: IRoomJoinOptions | undefined, _context: AuthContext) {
+        let joinOptions: IRoomJoinOptions;
+        try {
+            // Colyseus forwards untrusted JSON here; validate the complete object before
+            // any field-level checks so extra keys cannot silently alter admission semantics.
+            joinOptions = validateRoomJoinOptions(options);
+        } catch (error) {
+            if (!(error instanceof WireValidationError)) throw error;
+            if (error.path === "options.sId") {
+                throw joinRefused(ErrorCode.WrongServer);
+            }
+            if (error.path === "options.v") {
+                throw joinRefused(ErrorCode.ProtocolMismatch);
+            }
+            if (error.path === "options.token") {
+                throw joinRefused(ErrorCode.TokenExpired, "auth");
+            }
+            throw joinRefused(ErrorCode.BadRequest);
+        }
         // 协议版本硬闸（缺省按 1 兼容首版客户端）：服务端升协议后旧包 join 即拒——
         // 给出可识别错误码，而不是让旧客户端在 Schema 对不上的畸形状态里挂死
-        if ((options?.v ?? 1) !== PROTOCOL_VERSION) {
+        if ((joinOptions.v ?? 1) !== PROTOCOL_VERSION) {
             throw joinRefused(ErrorCode.ProtocolMismatch); // ⚠ 业务码走 message（status 必须 200–599）
         }
-        const sId = normalizeSId(options?.sId);
+        const sId = normalizeSId(joinOptions.sId);
         if (sId === null) {
             throw joinRefused(ErrorCode.WrongServer);
         }
         // 进服区归属硬闸（docs/DUAL_MODE.md §4.3 / M11）：sId ∉ 本组 GROUP_ZONES 即拒（防串服）；
         // sId 缺省 / GROUP_ZONES 空（单形态/大混服）放行，向后兼容（客户端软判定只改善 UX）。
         // ⚠ groupAdmitsZone 必须看到原始 undefined：真区服组下缺 sId 仍应拒绝，不能被规范化的 0 绕过。
-        if (!groupAdmitsZone(options?.sId === undefined ? undefined : sId)) {
+        if (!groupAdmitsZone(joinOptions.sId === undefined ? undefined : sId)) {
             throw joinRefused(ErrorCode.WrongServer);
         }
         // token 是 WebPlatform 的不透明句柄：本进程只做空值/契约长度防护，
         // ⛔ 不解析 uid、随机串长度或任何内部格式。
-        const raw = options?.token ?? token ?? "";
+        const raw = joinOptions.token ?? token ?? "";
         if (typeof raw !== "string" || raw.length < 1 || raw.length > 256) {
             throw joinRefused(ErrorCode.TokenExpired, "auth");
         }

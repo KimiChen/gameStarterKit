@@ -123,6 +123,20 @@ test("GameRoom sId 只接受 0..65535 整数（网络输入先运行时校验）
       `非法 sId=${String(raw)} 应按 WrongServer 拒绝`,
     );
   }
+
+  // 入口必须先走 shared room-options contract，未知键和预留字段的非法值不能静默放行。
+  const malformed: readonly [unknown, number][] = [
+    [{ v: PROTOCOL_VERSION, extra: true }, ErrorCode.BadRequest],
+    [{ v: PROTOCOL_VERSION, listHash: "" }, ErrorCode.BadRequest],
+    [{ v: PROTOCOL_VERSION, token: "" }, ErrorCode.TokenExpired],
+  ];
+  for (const [options, code] of malformed) {
+    await assert.rejects(
+      GameRoom.onAuth("", options as IRoomJoinOptions, undefined as never),
+      (e: unknown) => e instanceof Error && e.message.includes(String(code)),
+      `非法 join options 应按 ${code} 拒绝：${JSON.stringify(options)}`,
+    );
+  }
 });
 
 test("match v2 key 与 legacy 同槽但物理隔离（旧 consumer 永远看不到新消息）", () => {

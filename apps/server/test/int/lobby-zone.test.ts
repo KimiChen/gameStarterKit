@@ -123,9 +123,23 @@ test("LobbyRoom sId 先做运行时规范化：承载全部区时畸形值仍拒
     );
   }
 
+  // 房间入口必须使用 shared exact-key/runtime contract，而不是只挑几个字段读取。
+  const malformed: readonly [unknown, number][] = [
+    [{ v: PROTOCOL_VERSION, extra: true }, ErrorCode.BadRequest],
+    [{ v: PROTOCOL_VERSION, listHash: "" }, ErrorCode.BadRequest],
+    [{ v: PROTOCOL_VERSION, token: "" }, ErrorCode.TokenExpired],
+  ];
+  for (const [options, code] of malformed) {
+    await assert.rejects(
+      LobbyRoom.onAuth("", options as IRoomJoinOptions, undefined as never),
+      (e: unknown) => e instanceof Error && e.message.includes(String(code)),
+      `非法 join options 应按 ${code} 拒绝：${JSON.stringify(options)}`,
+    );
+  }
+
   const { uid, token } = await makeAcct("lobby-sid-valid", 1);
   const auth = await LobbyRoom.onAuth(
-    token, { v: PROTOCOL_VERSION, sId: 1 }, undefined as never,
+    token, { v: PROTOCOL_VERSION, sId: 1, listHash: "areas-hash" }, undefined as never,
   );
   assert.deepEqual(auth, { userId: uid, token, sId: 1 }, "合法整数须按原值完成权威鉴权");
 });

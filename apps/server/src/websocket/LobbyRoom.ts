@@ -9,7 +9,8 @@
 import { Room, validate, type AuthContext, type Client } from "@colyseus/core";
 import {
   LOBBY_MSG_PUSH, LOBBY_MSG_RPC, PROTOCOL_VERSION,
-  ErrorCode as SharedErrorCode, type IRoomJoinOptions,
+  ErrorCode as SharedErrorCode, validateRoomJoinOptions, WireValidationError,
+  type IRoomJoinOptions,
 } from "@game/shared";
 import { groupAdmitsZone, normalizeSId } from "../core/infra/config";
 import { zoneCtx } from "../core/infra/keys";
@@ -36,20 +37,38 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
 
   /** token 反查 uid + 严格校验（连接级）。⛔ 不接受客户端单独传 userId（09·G1）。 */
   static async onAuth(token: string, options: IRoomJoinOptions | undefined, _context: AuthContext) {
+    let joinOptions: IRoomJoinOptions;
+    try {
+      // Colyseus forwards untrusted JSON here; validate the complete object before
+      // any field-level checks so extra keys cannot silently alter admission semantics.
+      joinOptions = validateRoomJoinOptions(options);
+    } catch (error) {
+      if (!(error instanceof WireValidationError)) throw error;
+      if (error.path === "options.sId") {
+        throw joinRefused(SharedErrorCode.WrongServer);
+      }
+      if (error.path === "options.v") {
+        throw joinRefused(SharedErrorCode.ProtocolMismatch);
+      }
+      if (error.path === "options.token") {
+        throw joinRefused(SharedErrorCode.TokenExpired, "auth");
+      }
+      throw joinRefused(SharedErrorCode.BadRequest);
+    }
     // 协议版本硬闸（缺省按 1 兼容首版客户端）——语义同 GameRoom.onAuth，见 shared/protocol/rooms.ts
-    if ((options?.v ?? 1) !== PROTOCOL_VERSION) {
+    if ((joinOptions.v ?? 1) !== PROTOCOL_VERSION) {
       throw joinRefused(SharedErrorCode.ProtocolMismatch); // ⚠ 业务码走 message（status 必须 200–599，见 joinRefused）
     }
     // options 来自网络：⛔ TS 的 number 标注不能挡 string/null/NaN。尤其 GROUP_ZONES 空 = 承载全部，
     // 若先调用 groupAdmitsZone 会把所有畸形值放行，并把它们带进 MySQL 强制转换与 zoneCtx 键前缀。
-    const sId = normalizeSId(options?.sId);
+    const sId = normalizeSId(joinOptions.sId);
     if (sId === null) {
       throw joinRefused(SharedErrorCode.WrongServer);
     }
     // 进服区归属硬闸（docs/DUAL_MODE.md §4.3 / M11）：sId ∉ 本组 GROUP_ZONES 即拒（防串服）。
     // sId 缺省 / GROUP_ZONES 空（单形态）放行，向后兼容。
     // ⚠ 真区服组下仍要把原始 undefined 交给归属闸：缺 sId 必须拒，不能被规范化后的 0 绕过。
-    if (!groupAdmitsZone(options?.sId === undefined ? undefined : sId)) {
+    if (!groupAdmitsZone(joinOptions.sId === undefined ? undefined : sId)) {
       throw joinRefused(SharedErrorCode.WrongServer);
     }
     try {
