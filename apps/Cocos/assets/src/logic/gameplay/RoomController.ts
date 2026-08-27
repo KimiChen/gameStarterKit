@@ -236,6 +236,11 @@ export class RoomController<TRoom = unknown, TInput = unknown> {
         this.lastStatus = "stopped";
     }
 
+    /** stop 的语义别名，供场景/路由取消当前 transition。 */
+    cancel(): Promise<void> {
+        return this.stop({ kind: "cancelled" });
+    }
+
     /** 永久销毁控制器；之后的 start 返回 disposed。 */
     async dispose(): Promise<void> {
         if (this.disposed) return;
