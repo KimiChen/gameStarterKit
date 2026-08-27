@@ -9,6 +9,7 @@
 深入说明见：
 
 - [技术总览](docs/OVERVIEW.md)
+- [项目初始化与元数据](docs/PROJECT.md)
 - [客户端开发](docs/CLIENT.md)
 - [服务端开发](docs/SERVER.md)
 - [外部身份服务开发边界](docs/WEBPLATFORM.md)
@@ -42,6 +43,9 @@ WebPlatform 不属于本 monorepo；旧提交中的 `apps/WebPlatform` 仅用于
 npm install
 npm run sync:shared
 ```
+
+从本 Starter 派生新项目时，先运行 `npm run init:project -- --help` 查看幂等初始化参数；项目身份、包名、
+生成区和第三方来源统一登记在 [project.metadata.json](project.metadata.json)，不要在各端复制项目名常量。
 
 Colyseus、FairyGUI 和 bitECS 的锁定版本及运行时文件已随仓库入库；首次打开或日常开发不需要执行依赖抓取命令。
 
@@ -81,18 +85,28 @@ npm run dev
 | `npm run sync:shared:watch` / `npm run sync:client:watch` | 单侧常驻 watcher；`dev:client` 是两者的组合入口 |
 | `npm run typecheck` | 外部契约校验、shared/server/client 已纳入范围的类型检查及镜像校验 |
 | `npm run typecheck:client` | 只跑客户端 tsconfig 的类型检查 |
+| `npm run perf:client` | 在 Node 无头环境运行 ballMove ECS/快照分配/Graphics 命令性能基线（默认 100/500 entity）；用 `npm run --silent perf:client -- --json --output <file>` 保存纯 JSON 结果 |
+| `npm run verify:project` | 校验项目元数据、生成区和第三方来源登记 |
 | `npm run verify:sync` | 检查镜像漂移、孤儿和 `.meta` |
-| `npm run test:fgui` | FGUI 结构契约及客户端无头测试 |
+| `npm run verify:fgui` | 校验 FairyGUI 设计源、导出物和 View AUTO 区块 manifest |
+| `npm run verify:inventory` | 校验能力清单、默认入口、文档和验证命令登记 |
+| `npm run test:client` | 客户端全部无头行为测试（Node/tsx） |
+| `npm run test:fgui` | FGUI codegen、结构契约与 registry 专项测试 |
+| `npm run test:faults` | 运行核心 fault-matrix（默认不连接本地栈；集成版用 `test:faults:int`） |
 | `npm run codegen:fgui -- <Pkg> <Comp>` | 生成或更新 View 的 AUTO 区块 |
 | `npm run verify:ecs` | 校验锁定的 bitECS 文件 |
 | `npm --workspace @game/server run test` | 服务端单元测试 |
 | `npm --workspace @game/server run smoke:framework` | 已启动并初始化的本地 Redis/MySQL 连通性检查 |
 | `npm --workspace @game/server run smoke` | 需要外部 WebPlatform 与运行中游戏服的完整开发链路冒烟；GM kick 分支可选 |
 | `npm --workspace @game/server run test:int` | 使用本地 Redis/MySQL 的集成测试 |
+| `npm run verify:core` | 依次运行项目元数据、类型、依赖、FGUI、inventory 核验 |
+| `npm run verify:all` | `verify:core` 加客户端和服务端单元测试 |
 
-当前客户端严格类型检查排除了 `Main.ts` 与 `view/` 下 9 个文件（5 个页面 View 及 ViewMgr/FguiView/
-viewRegistry/pages 装配件），`apps/client/test` 也未被任何 tsconfig 纳入。这些文件仍需通过
-`npm run test:fgui`、同步检查和 Creator 本地预览补充验证；已知缺口与收口计划见 [plan.md](plan.md)。
+客户端的无头 strict 探针由 `apps/client/tsconfig.test.json` 提供，覆盖 `apps/client/src/**/*.ts`、
+`apps/client/test/**/*.ts`，包括 `Main.ts`、所有 View、`pages.ts` 和 ViewMgr；Node 侧使用最小
+`cc`/FairyGUI 声明桩。`apps/client/tsconfig.json` 仍是 Creator 兼容的 legacy 配置，保留引擎绑定文件
+排除项；Creator 编辑器预览仍负责真实引擎、资源导入和页面交互验证。`npm run typecheck:client` 会运行
+无头探针，`npm run test:client` 运行全部客户端测试，`npm run test:fgui` 只运行 FGUI 专项测试。
 
 同步脚本带大规模清理熔断：单轮需要清理的孤儿文件达到 20 个、或达到源文件数的 30% 时，`sync:shared` /
 `sync:client` 会直接失败而不删除镜像（防切分支中间态连同入库 `.meta` 一起被删）；只读的 `verify:sync` 不受此闸影响。

@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "projectId": "gono",
+  "name": "gameStarterKit",
+  "displayName": "gameStarterKit",
+  "scope": "@game",
+  "brand": "ballMove",
+  "license": "MIT",
+  "packages": {
+    "root": "@game/gameStarterKit",
+    "shared": "@game/shared",
+    "server": "@game/server",
+    "website": "@game/website",
+    "client": "gameStarterKit-client"
+  },
+  "generated": {
+    "shared": {
+      "source": "apps/shared/src",
+      "mirrors": [
+        "apps/client/src/shared",
+        "apps/Cocos/assets/src/shared"
+      ]
+    },
+    "client": {
+      "source": "apps/client/src",
+      "mirrors": [
+        "apps/Cocos/assets/src"
+      ]
+    }
+  },
+  "thirdParty": [
+    {
+      "id": "bitecs",
+      "package": "bitECS",
+      "version": "0.4.0",
+      "license": "MPL-2.0",
+      "source": "https://github.com/NateTheGreatt/bitECS",
+      "paths": [
+        "apps/client/src/lib/bitecs",
+        "apps/Cocos/assets/src/lib/bitecs"
+      ],
+      "notice": "THIRD_PARTY_NOTICES.md"
+    },
+    {
+      "id": "colyseus-sdk",
+      "package": "@colyseus/sdk",
+      "version": "0.17.43",
+      "license": "MIT",
+      "source": "https://github.com/colyseus/colyseus",
+      "paths": [
+        "apps/client/src/lib/colyseus/colyseus.js",
+        "apps/Cocos/assets/src/lib/colyseus/colyseus.js"
+      ],
+      "notice": "THIRD_PARTY_NOTICES.md"
+    },
+    {
+      "id": "fairygui-cc",
+      "package": "fairygui-cc",
+      "version": "1.2.2",
+      "license": "MIT",
+      "source": "https://github.com/fairygui/FairyGUI-cocoscreator",
+      "paths": [
+        "apps/Cocos/extensions/fairygui-cc/runtime/fairygui.mjs",
+        "apps/Cocos/extensions/fairygui-cc/runtime/fairygui.d.ts"
+      ],
+      "notice": "THIRD_PARTY_NOTICES.md"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 {
-  "name": "game",
+  "name": "@game/gameStarterKit",
   "version": "0.1.0",
   "private": true,
   "description": "游戏开发期 monorepo：Cocos Creator 3.8.8 客户端 + Colyseus 0.17 服务端 + 双端共享包",
@@ -14,12 +14,15 @@
     "sync:client": "node scripts/sync-client.mjs",
     "sync:client:watch": "node scripts/sync-client.mjs --watch",
     "codegen:fgui": "node --import tsx tools/fgui-codegen/cli.ts",
+    "init:project": "node scripts/init-project.mjs",
+    "perf:client": "node --import tsx tools/client-perf-baseline.ts",
     "sync:shared:watch": "node scripts/sync-shared.mjs --watch",
     "dev:client": "node scripts/dev-client.mjs",
     "dev": "npm --workspace @game/server run dev",
     "start:server": "npm --workspace @game/server run start",
     "typecheck": "npm run verify:webplatform-contract && npm --workspace @game/shared run typecheck && npm --workspace @game/server run typecheck && npm run typecheck:client && npm run verify:sync",
     "verify:sync": "node scripts/sync-shared.mjs --check && node scripts/sync-client.mjs --check",
+    "verify:project": "node scripts/verify-project-metadata.mjs",
     "verify:ecs": "node scripts/verify-ecs.mjs",
     "verify:fgui": "node scripts/fgui-manifest.mjs --check",
     "verify:inventory": "node scripts/verify-inventory.mjs",
@@ -31,7 +34,9 @@
     "typecheck:client:legacy": "tsc -p apps/client/tsconfig.json --noEmit",
     "test:client": "cd apps/server && node --import tsx --test ../client/test/*.test.ts",
     "test:fgui": "cd apps/server && node --import tsx --test ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/fguiContract.test.ts ../client/test/viewRegistry.test.ts",
-    "verify:core": "npm run typecheck && npm run verify:ecs && npm run verify:fgui && npm run verify:inventory",
+    "test:faults": "node scripts/fault-matrix.mjs",
+    "test:faults:int": "node scripts/fault-matrix.mjs --integration",
+    "verify:core": "npm run verify:project && npm run typecheck && npm run verify:ecs && npm run verify:fgui && npm run verify:inventory",
     "verify:all": "npm run verify:core && npm run test:client && npm --workspace @game/server run test"
   },
   "engines": {
