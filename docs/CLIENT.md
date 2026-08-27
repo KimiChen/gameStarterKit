@@ -174,8 +174,12 @@ AUTO 区块外是手写区。重复执行应得到稳定结果。
 
 - `GLoader` 使用 `url`，不是引擎 Sprite API。
 - Controller 切页使用约定的 page name。
-- 当前 XML parser 只读取组件 `displayList` 中有名字的直接子元素；列表 item、relation 和设计源到
-  已导出 `.bin` 的新鲜度不在现有结构契约覆盖内。
+- XML parser 保留 `displayList` 直接元素作为 AUTO 绑定真源，同时递归记录嵌套组件/list item 的
+  `children`/`nestedElements`、`path`、`defaultItem`/模板数量、relation、controller 和 `ui://` 资源引用；
+  手写嵌套 `getChild` 契约必须显式声明 `path`，避免同名元素误匹配。
+- `scripts/fgui-manifest.mjs --check`（`npm run verify:fgui`）钉住每个 package 的 XML/资源声明与哈希、
+  `ui://` 包及资源 ID 闭包、Cocos `.bin`/图集/Spine 等导出物和 View 四个 AUTO 区块哈希；设计源或
+  package 导出物变化后必须重新导出并执行 `--write`，否则本地闸失败。
 - 测试还会检查导出组件、页面包依赖闭包、registry/Logic 配对，以及 `view/<Pkg>View.ts` 内的
   `ui://<Pkg>` 字面量；`view/` 下其他文件（如集中状态图标 URL 的 `areaPresentation.ts`）不在该扫描
   范围内，那里的包名写错不会被本地测试发现。
