@@ -11,7 +11,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { VIEW_LAYERS } from "../src/view/layers";
 import { FGUI_CONTRACTS } from "../src/view/fguiContracts";
@@ -60,27 +60,49 @@ test("注册表契约 ⇔ FGUI_CONTRACTS 双向相等（键 + required 字段级
   }
 });
 
+function xmlFilesUnder(dir: string): string[] {
+  if (!existsSync(dir)) return [];
+  const files: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) files.push(...xmlFilesUnder(full));
+    else if (entry.name.endsWith(".xml")) files.push(full);
+  }
+  return files;
+}
+
 /** id→包名（扫每个包 package.xml 的 packageDescription id） */
 function buildPkgIdMap(): Map<string, string> {
   const id2name = new Map<string, string>();
   for (const pkg of readdirSync(ART_DIR)) {
     const px = join(ART_DIR, pkg, "package.xml");
     if (!existsSync(px)) continue;
-    const m = /packageDescription id="([^"]+)"/.exec(readFileSync(px, "utf8"));
-    if (m) id2name.set(m[1], pkg);
+    const m = /<packageDescription\b[^>]*\bid\s*=\s*(["'])([^"']+)\1/i.exec(readFileSync(px, "utf8"));
+    if (m) id2name.set(m[2], pkg);
   }
   return id2name;
 }
 
-/** 某包直接引用的外部包名集合（扫其组件 XML 的 pkg="…" 属性 + ui://<8位包id> 引用） */
+/** 某包直接引用的外部包名集合（扫递归 XML 的 pkg/ui:// 引用）。 */
 function directDeps(pkg: string, id2name: Map<string, string>): Set<string> {
   const own = [...id2name.entries()].find(([, n]) => n === pkg)?.[0];
   const ids = new Set<string>();
-  for (const f of readdirSync(join(ART_DIR, pkg))) {
-    if (!f.endsWith(".xml") || f === "package.xml") continue;
-    const s = readFileSync(join(ART_DIR, pkg, f), "utf8");
-    for (const m of s.matchAll(/pkg="([^"]+)"/g)) ids.add(m[1]);
-    for (const m of s.matchAll(/ui:\/\/([0-9a-z]{8})/g)) ids.add(m[1]);
+  for (const file of xmlFilesUnder(join(ART_DIR, pkg))) {
+    if (basename(file) === "package.xml") continue;
+    const s = readFileSync(file, "utf8").replace(/<!--[\s\S]*?-->/g, "");
+    for (const m of s.matchAll(/\bpkg\s*=\s*(["'])([^"']+)\1/gi)) ids.add(m[2]);
+    // Named URLs are common in hand-authored XML; binary URLs concatenate the
+    // package id and resource id, whose length is not a stable API.
+    for (const m of s.matchAll(/ui:\/\/([^\s"'<>|&]+)/gi)) {
+      const raw = m[1].replace(/[),.;\]}]+$/g, "");
+      const slash = raw.indexOf("/");
+      if (slash >= 0) ids.add(raw.slice(0, slash));
+      else {
+        const id = [...id2name.keys()].filter((candidate) => raw.startsWith(candidate))
+          .sort((a, b) => b.length - a.length)[0];
+        if (id) ids.add(id);
+      }
+    }
   }
   const names = new Set<string>();
   for (const id of ids) { if (id !== own && id2name.has(id)) names.add(id2name.get(id)!); }
@@ -118,7 +140,7 @@ test("代码内 ui://Pkg/ 引用 ⊆ 本页包 ∪ sharedPkgs（写错包名不�
     const src = readFileSync(viewFile, "utf8");
     const allowed = new Set([meta.contract.pkg, ...(meta.sharedPkgs ?? []).map((p) => p.replace(/^ui\//, ""))]);
     const bad = new Set<string>();
-    for (const m of src.matchAll(/ui:\/\/([A-Za-z0-9_]+)\//g)) {
+    for (const m of src.matchAll(/ui:\/\/([^\s"'<>|/]+)\//g)) {
       if (!allowed.has(m[1])) bad.add(m[1]);
     }
     assert.deepEqual([...bad].sort(), [],
