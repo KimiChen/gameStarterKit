@@ -26,7 +26,9 @@ apps/
 ├── art/        FairyGUI 编辑器工程
 └── website/    独立安装的项目说明站源码（额外功能）
 docs/           当前开发架构说明
-tools/          codegen、配置转换和本地检查工具
+scripts/        同步、校验、依赖抓取与协议指纹脚本，及其锁文件基线（bitecs/vendor/protocol）
+tools/          FairyGUI codegen 与 Excel 配表转换工具
+vendor/         精确锁定的外部身份契约 tarball（`@gono/webplatform-contract`，由 package.json 以 file: 引用）
 ```
 
 `apps/client/src/shared/` 和 `apps/Cocos/assets/src/` 是生成镜像，不是源码入口。
@@ -70,12 +72,15 @@ npm run dev
 | 命令 | 作用 |
 | --- | --- |
 | `npm run dev` | 启动服务端开发进程 |
-| `npm run dev:client` | 监听 shared/client 改动并同步到 Cocos 工程 |
+| `npm run start:server` | 非 watch 方式启动服务端，等价于 `@game/server` 的 `start` |
+| `npm run dev:client` | 启动时先按锁定契约重生成 `apps/shared/src/generated/webplatform`、再全量同步一次 shared，然后常驻监听 shared/client 改动并同步到 Cocos 工程；需先 `npm install`（契约刷新读 `node_modules/@gono/webplatform-contract`，缺失则在起 watcher 前退出） |
 | `npm run sync:webplatform-contract` | 刷新外部身份服务契约生成物并级联同步 |
 | `npm run verify:webplatform-contract` | 本地校验契约版本、hash 与生成物 |
 | `npm run sync:shared` | shared → client → Cocos |
 | `npm run sync:client` | client → Cocos |
+| `npm run sync:shared:watch` / `npm run sync:client:watch` | 单侧常驻 watcher；`dev:client` 是两者的组合入口 |
 | `npm run typecheck` | 外部契约校验、shared/server/client 已纳入范围的类型检查及镜像校验 |
+| `npm run typecheck:client` | 只跑客户端 tsconfig 的类型检查 |
 | `npm run verify:sync` | 检查镜像漂移、孤儿和 `.meta` |
 | `npm run test:fgui` | FGUI 结构契约及客户端无头测试 |
 | `npm run codegen:fgui -- <Pkg> <Comp>` | 生成或更新 View 的 AUTO 区块 |
@@ -89,6 +94,14 @@ npm run dev
 viewRegistry/pages 装配件），`apps/client/test` 也未被任何 tsconfig 纳入。这些文件仍需通过
 `npm run test:fgui`、同步检查和 Creator 本地预览补充验证；已知缺口与收口计划见 [plan.md](plan.md)。
 
+同步脚本带大规模清理熔断：单轮需要清理的孤儿文件达到 20 个、或达到源文件数的 30% 时，`sync:shared` /
+`sync:client` 会直接失败而不删除镜像（防切分支中间态连同入库 `.meta` 一起被删）；只读的 `verify:sync` 不受此闸影响。
+确认无误后用环境变量放行：`SYNC_FORCE=1 npm run sync:shared`。不要用 `-- --force`：npm 会把它追加到复合命令末尾，
+只到得了链条里最后一个脚本。放行会连同入库的 `.meta` 一起删除，Creator 重开将重铸 uuid。
+
+`npm run config:excel-to-json` 与 `npm run config:excel-to-json:check` 是 Excel 配表转换与只读校验，属额外功能，
+见 [额外功能与参考实现](docs/EXTRAFEATURES.md#38-配表负载与-unity-实验) 与 [配表工具 README](tools/excel-config/README.md)。
+
 `apps/website` 不在根 npm workspaces 中，拥有独立的 `package-lock.json`。如需修改说明站，请在该目录
 单独安装和运行本地检查，具体见 [站点 README](apps/website/README.md)。
 
@@ -101,6 +114,7 @@ bitECS 没有自动抓取命令。其 `apps/client/src/lib/bitecs/` 下的 12 �
 ## 开发红线
 
 1. **不要手改生成区**：
+   - `apps/shared/src/generated/webplatform` 由 `npm run sync:webplatform-contract` 从锁定契约包生成。
    - 改 `apps/shared/src` 后运行 `npm run sync:shared`。
    - 改 `apps/client/src` 后运行 `npm run sync:client`。
    - `apps/Cocos/assets/src` 整体由同步脚本生成。
@@ -118,6 +132,7 @@ bitECS 没有自动抓取命令。其 `apps/client/src/lib/bitecs/` 下的 12 �
 ```text
 shared 契约
   → npm run sync:shared
+  → node scripts/protocol-fingerprint.mjs（仅改动 protocol/ 时）
   → 服务端 endpoint
   → 客户端 Logic + View + viewRegistry
   → npm run sync:client

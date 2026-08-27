@@ -3,7 +3,8 @@
  *
  * 服务端 websocket/dispatcher.ts（RpcEnvelope/RpcReply）与 core/errors.ts（ErrCode）
  * 直接别名引用本文件（Arthur 停回流后单源合一，不存在镜像漂移）。
- * 登记新错误码顺序：docs/server/07 错误码表 → 此处 RPC_ERR_CODES → 服务端 ERR_MAP 映射。
+ * 登记新错误码顺序：此处 RPC_ERR_CODES（码全集真源）→ 服务端 core/errors.ts 的 ERR_MAP 映射
+ * → 按 docs/SERVER.md §13 登记点复核。
  */
 
 /** C2S 请求信封（room.send(LOBBY_MSG_RPC, envelope)）。id 为客户端生成的配对串（1~64 字符）。 */
@@ -21,7 +22,7 @@ export interface IRpcReply {
     err?: { code: string; msg: string };
 }
 
-/** 服务端错误码全集（07 错误码表的机器实体；服务端 ErrCode 即此联合类型）。 */
+/** 服务端错误码全集（码全集真源；服务端 ErrCode 即此联合类型）。 */
 export const RPC_ERR_CODES = [
     "AUTH_REQUIRED",
     "AUTH_EPOCH_STALE",

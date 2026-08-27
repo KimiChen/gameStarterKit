@@ -9,7 +9,7 @@ import { routes } from "./http/index";
 /**
  * Colyseus 0.17 服务端配置。
  *  - rooms：房间定义，房间名来自双端共享的 RoomName 常量
- *  - routes：服务端框架的真实 HTTP 端点（M3 wx-login / M6 支付回调，见 routes/index.ts）
+ *  - routes：游戏服自己的真实 HTTP 端点（健康检查、版本、对时、公告，以及可选的 kick 与支付回调，见 http/index.ts）
  *  - express：挂载开发工具（monitor / playground）
  *
  * `export const server` 供测试直接 boot(server)（@colyseus/testing），监听入口在 index.ts。

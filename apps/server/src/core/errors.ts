@@ -7,7 +7,7 @@
 import { ErrorCode as ColyseusErrorCode, ServerError } from "@colyseus/core";
 import { ErrorMessage, type ErrorCodeType, type RpcErrCode } from "@game/shared";
 
-// 错误码真源在 shared/protocol/lobbyRpc/envelope.ts 的 RPC_ERR_CODES（登记顺序：07 表 → shared → 此处映射）
+// 错误码真源在 shared/protocol/lobbyRpc/envelope.ts 的 RPC_ERR_CODES（登记顺序：shared RPC_ERR_CODES → 此处 ERR_MAP 映射 → docs/SERVER.md §13 登记点）
 export type ErrCode = RpcErrCode;
 
 /** 抢 lock:{uid} 失败（客户端同一 clientReqId 自动重试）。 */
@@ -86,7 +86,7 @@ export class ColdUserError extends Error {
   constructor(msg = "user cold") { super(msg); this.name = "ColdUserError"; }
 }
 
-/** 异常 → 错误码（07 ERR_MAP + 全量错误码）。 */
+/** 异常 → 错误码（异常类 → shared RPC_ERR_CODES；未列出的一律 INTERNAL）。 */
 const ERR_MAP = new Map<Function, ErrCode>([
   [BusyError, "BUSY"],
   [StaleFenceError, "STALE_FENCE"],

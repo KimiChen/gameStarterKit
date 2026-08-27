@@ -236,7 +236,7 @@ export const CHARACTER_REPAIR_ALERT_ATTEMPTS =
  *  ⚠ 支付链现在不具备上线条件（无下单端点、共享密钥而非 APIv3 验签、无对账，见 docs/EXTRAFEATURES.md §3.4），
  *  这个开关是**防误开**，⛔ 不是"配上就能收钱"。每请求现读（同 ADMIN_API_SECRET 范式，便于灰度）。 */
 export const PAY_ENABLED = () => process.env.PAY_ENABLED === "1";
-/** ⚠ **生产开启 = 配置事故，加载期拒绝启动**（与上面 AUTH_DEV_ENABLED 同款 fail-fast）。
+/** ⚠ **生产开启 = 配置事故，加载期拒绝启动**（与本文件 FREEZE_ENABLED 同款：缺省关 + 生产显式开启即加载期拒绝启动）。
  *  评审逮到：缺省关只是"软开关"——`NODE_ENV=production PAY_ENABLED=1` 照样能起，然后
  *  `/pay/wx-notify` 只剩一道**共享密钥占位**（⛔ 非 APIv3 平台证书验签，密钥泄漏即可伪造发货），
  *  而它后面接的是**真发币**（`purchases.ts`：paid CAS → `currency_ledger` 正向 delta → delivered）。
@@ -262,7 +262,7 @@ export const REDIS_COORD_URL = () => env("REDIS_COORD_URL", REDIS_DURABLE_URL())
 
 // ───────────────────────── 常量 ─────────────────────────
 
-/** 锁 TTL。必须 > 货币事务 p99（M0 压测定数，见 docs/SERVER.md §14）。 */
+/** 锁 TTL。必须 > 货币事务 p99（M0 压测定数，见 apps/server/tools/m0/currency-txn-bench.ts）。 */
 export const LOCK_TTL_MS = 5000;
 /** 跨实例抢锁有界重试次数（09·L5：禁止无限递归）。 */
 export const LOCK_RETRY_MAX = 3;
@@ -362,7 +362,7 @@ export const OP_ID_NAMESPACE = "7c9e6679-7425-40de-944b-e07fc1f90ae7";
 
 // ── M3 鉴权：WX_*/LOGIN_RATE_*/TOKEN_BYTES 已迁 WebPlatform config（见上方面包屑，M12c）──────
 
-// ── M5 网关（⚠ 07 表待补条目） ────────────────────────────────
+// ── M5 网关（登记点见 docs/SERVER.md §13） ────────────────────────────────
 
 /** ws transport 层硬上限：超限断帧不解码（09·G4；dispatcher 校验只是兜底）。 */
 export const MAX_WS_PAYLOAD_BYTES = 64 * 1024;
@@ -373,7 +373,7 @@ export const RPC_RATE_REFILL_PER_S = envFloat("RPC_RATE_REFILL_PER_S", 10);
  *  关键写副作用必须靠数据层幂等/CAS 兜底，⛔ 不依赖应用层取消。 */
 export const HANDLER_TIMEOUT_MS = 10_000;
 
-// ── 广播/事件系统 + 事件循环防阻塞（docs/SERVER.md 2026-07，07 表已登记） ──
+// ── 广播/事件系统 + 事件循环防阻塞（见 docs/SERVER.md §10 广播与事件、§11 计算任务） ──
 
 /** 工会事件近窗长度（capped list；窗口外客户端全量刷新，见 shared lobbyRpc/guild.ts） */
 export const GUILD_EVT_LOG_MAX = envInt("GUILD_EVT_LOG_MAX", 100);

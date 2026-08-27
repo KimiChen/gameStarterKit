@@ -2,15 +2,17 @@
 
 > 审阅日期：2026-08-27
 >
-> 代码基线：分支 `new`，HEAD `b5757ad`（在 `09909b2` 之上做全面文档校准；源码改动仅限注释/文案，
-> 并删除已被本文件取代的 `todo.md` 与素材进度记录 `pic.md`）；逻辑源码与 `ff5a328` 相同
+> 代码基线：分支 `new`，HEAD `cb61806`（在 `b5757ad` 之上做第二轮文档校准：改动为 7 个真源 `.ts` 的注释
+> 及其 2 个同步镜像，以及由 shared 注释变动触发的 `scripts/protocol.fingerprint` 重算；`b5757ad` 在
+> `09909b2` 之上做全面文档校准，源码改动仅限注释/文案，并删除已被本文件取代的 `todo.md` 与素材进度
+> 记录 `pic.md`）；逻辑源码与 `ff5a328` 相同
 >
 > 文档状态：`plan.md` 已纳入 Git，本文件是核心改进优先级的唯一真相
 >
 > 评估范围：开发期游戏基础框架的正确性、可测试性、可替换性和本地开发体验
 >
 > 复核记录：2026-08-27 已完成一轮逐条「文档 vs 代码」一致性核查（服务端/客户端/工具链约 60 条声明），
-> 剩余漂移已修；§3 基线数字（服务端 46、客户端侧 91）当日重跑复现
+> 剩余漂移已修；§3 全部验证项已于 2026-08-27 在 `cb61806` 上重跑复现（服务端 46、客户端侧 91）
 
 ## 1. 计划边界
 
@@ -42,14 +44,15 @@ GameRoom ownership、Lobby RPC 登记、外部身份 HTTP 边界，以及 lock/f
 
 | 验证项 | 结果 | 实际覆盖与限制 |
 | --- | --- | --- |
-| `npm run typecheck` | 通过 | 覆盖 shared/server/client 子集及镜像；客户端 tsconfig 排除 `Main.ts` 与 `view/` 下 9 个文件（含装配件），client tests 不在任何 tsconfig include 内 |
+| `npm run typecheck` | 通过 | 含 `verify:webplatform-contract` 契约镜像一致、shared/server/client 三段 `tsc`、`verify:sync` 两段镜像一致且入库 `.meta` 齐全；客户端 tsconfig 仍排除 `Main.ts` 与 `view/` 下 9 个文件（含装配件），client tests 不在任何 tsconfig include 内 |
 | `npm --workspace @game/server run test` | 46/46 通过 | 服务端单元测试；不等于 Redis/MySQL/WebPlatform 集成链已验证 |
 | `npm run test:fgui` | 91/91 通过 | 实际运行 codegen 测试和全部客户端无头测试，命令名已不能准确表达范围 |
-| `npm run verify:ecs` | 12/12 通过 | 当前 hash 清单中的 bitECS 文件通过；尚未核对应锁文件集合是否完整 |
-| `npm run config:excel-to-json:check` | 通过 | 读取并校验 3 条 item；不会比较缺失或陈旧的生成 JSON |
+| `npm run verify:ecs` | 12/12 通过 | 当前 hash 清单中的 bitECS 文件通过；本轮另行核对 `scripts/bitecs.sha256` 条目数（12）与 `apps/client/src/lib/bitecs/` 下实际 `.ts` 文件数（12）相等，但校验脚本本身仍不比对集合 |
+| `npm run config:excel-to-json:check` | 通过 | 读取并校验 3 条 item，warnings 0；不会比较缺失或陈旧的生成 JSON |
 | `npm --prefix apps/website test` | build 通过，3/3 通过 | 说明站独立安装域；属于额外功能，不阻塞核心 |
 | `npm --prefix apps/website run lint` | 通过 | 只覆盖说明站 |
-| client tests 严格编译探针 | 失败 | `webSocketClient.test.ts:153` 仍使用旧 `token/isNew`，实际字段为 `accessToken/isNewAccount`；同时暴露 View/FGUI/cc 类型盲区 |
+| client tests 严格编译探针 | 仍失败 | `apps/client/test/webSocketClient.test.ts:153` 仍写 `setSession({ userId, token, isNew })`，而 `net/session.ts:37` 的入参类型是 `WebPlatformLoginResponse`（`accessToken`/`isNewAccount`/`userId`）；运行时因 JS 不校验而恰好不红。同时暴露 View/FGUI/cc 类型盲区 |
+| 全仓 Markdown 内部链接与锚点 | 通过 | 机检 41 个 `.md` 的全部相对链接与 `#` 锚点，0 处失效 |
 
 本轮未启动本地 Redis/MySQL 与外部 WebPlatform，因此没有把 `test:int` 或端到端 smoke 写成已通过证据。
 
@@ -80,6 +83,10 @@ GameRoom ownership、Lobby RPC 登记、外部身份 HTTP 边界，以及 lock/f
   后续请求错误复用 A；该交错已用探针复现。
 - `WebSocketClient.leaving` 是跨 room 的布尔值，leave timeout 成功后也不清 timer。
 - authInvalid、battleLost、connLost 和 `Main.abortBattle` 是四套 detached 回登录路径，可能重复弹窗、清理和导航。
+- 回登录路径不清会话，下一次登录请求会带上一次会话的 Bearer：`core/http.ts:109-111` 只要模块级 token 非空
+  就无条件设 `Authorization`，而 `Main.abortBattle`（`Main.ts:226-237`）与 pages 的 onConnLost 处置
+  （`view/pages.ts:86-101`）只 `leave()` + 重开登录页、不 `clearSession()`；于是 `doLogin → devLogin →
+  portalRequest(POST, DevLogin)` 携带旧凭证，与 `core/http.ts:95-98` 自身注释「登录时本地尚无 token」矛盾。
 - 掉线时 `Main.sendDir` 在记录 desired state 前返回；断线期间松手后重连不会发送 stop，服务端可延续旧方向。
 
 **改进**
@@ -87,7 +94,8 @@ GameRoom ownership、Lobby RPC 登记、外部身份 HTTP 边界，以及 lock/f
 1. 建立单一 `SessionTransition`，完整覆盖登录、setSession、Lobby、character ready、首页导航与失败回滚。
 2. join 固化 client、endpoint、完整 options 和 generation，增加统一 deadline、取消和迟到结果释放。
 3. Lobby 连接也使用 per-slot ownership；leave 的 timer 必须在先完成分支清理，主动离开状态按精确 room 归属。
-4. 所有失效事件进入一个可等待、幂等的 `returnToLogin(reason)` 队列，不再使用散落 IIFE。
+4. 所有失效事件进入一个可等待、幂等的 `returnToLogin(reason)` 队列，不再使用散落 IIFE；该出口统一
+   `clearSession()`，与 authInvalid 路径（`net/session.ts:69-71`）对齐，使回登录页后不残留旧 Bearer。
 5. 输入保存 desired direction + monotonic seq/lease；断线仍更新 desired，恢复后先 reconcile 并重放或发送 stop。
 
 **验收**
@@ -206,7 +214,11 @@ capability，不通过全局“当前房”发送。`GameECS.addPlayer` 必须�
 
 1. `onCreate/onOpen/onClose/dispose`，永久接线只能执行一次。
 2. 每次打开持有 AbortSignal/generation；Area/Notice HTTP、Guild pull 等迟到结果在 close/stop 后不得回调。
-3. 场景/root generation 变化时取消旧 pending load；mount 失败时回滚并 dispose 已创建实例。
+3. 场景/root generation 变化时取消旧 pending load；mount 失败时回滚并 dispose 已创建实例；open 成功后
+   setup/渲染抛错也必须走同一条回滚路径——当前 `view/pages.ts:269-291` 的 `openConfirm` catch 只
+   `resolve(false)`，不关闭已挂载面板（`ViewMgr.ts:62-65` 在 mount 成功时已 `interactiveCount++` 并
+   `setInputEnabled(true)`，Confirm 又是 `viewRegistry.ts:48` 的 onlyOne=false 多实例页），interactive
+   租约不回收，全局输入不再恢复。
 4. Login/Home/AreaList/Notice 的重复 `setup()` 不得追加相同监听。
 5. `LoginView.setProgress` 实际更新 ratio；Login 契约中一批 required 控件当前无任何接线
    （`btn_test`、`btn_clearDataCache`、`btn_account`、`btn_copy`、`btn_ageTip`、`btn_musicon`/`btn_musicoff`、
@@ -235,6 +247,13 @@ exact keys、枚举、finite number 和 URL/origin。服务端 route 与客户�
 同时收紧 `IGameRoomState.phase`、RPC reply 判别联合、ErrorCode→message 的穷尽映射和协议 golden vectors。
 协议修改流程要显式运行 `node scripts/protocol-fingerprint.mjs`，不能只改类型后手写版本。
 
+同时修掉版本闸自身的读取漏洞：`scripts/protocol-fingerprint.mjs:20-25` 的 `readProtocolVersion()` 用
+`/PROTOCOL_VERSION\s*=\s*(\d+)/` 对 `protocol/rooms.ts` 全文首次匹配、不剥注释；若注释里出现
+`PROTOCOL_VERSION = 2` 形态，脚本读到的就是注释值而非导出常量，写出的钉档版本与实际导出不符，而
+`apps/client/test/protocolFingerprint.test.ts:17` 用同一函数比对，测试仍全绿——该闸被静默架空。
+当前 `rooms.ts` 未出现该形态，故尚未触发。正则应锚定到 export 声明形态并对多处匹配报错，并补一个
+「注释含旧版本、声明为新版本」的反例用例。
+
 ### P1-05 补齐 FairyGUI 结构和资源闭包
 
 当前 codegen 只解析组件 XML 的 displayList 直接命名子项；手写 `getChild`、列表 item 内字段、relation、
@@ -256,6 +275,16 @@ controller、loader URL 并未全部进入契约。源 XML 与导出的 `.bin`/a
    最大执行窗口，或引入 owner token/cancellation，避免迟到写与立即重试并发。
 4. Redis/MySQL 数字读取统一做 finite/integer/range/schema 校验，坏值不能以 NaN 进入领域和协议。
 5. Zod object 对需要 exact 的边界使用 strict 语义；unknown message 也先经过有界限流。
+6. redis-route 装载校验补 url：`core/infra/redisRoute.ts:37-47` 只校验 `buckets` 与 durable range 无缝覆盖，
+   不校验 url；`clientOf`（`:52-58`）拿到 `undefined` 也直接 `new Redis(url)`，退回 ioredis 默认
+   `127.0.0.1:6379`。于是 `cache: {}` 或键名写错会 fail-open——在「多项目共用一套本地 Redis」的前提下，
+   本项目 cache 流量会静默写到另一个实例。应与 range 校验同风格，在装载期对每个 durable 条目与 cache
+   做 `redis(s)://` 存在性校验并抛错。
+7. freeze janitor 的收敛范围被 200 行硬钉：`core/archive/freezeWorker.ts:242-247` 每轮
+   `SELECT user_id FROM user_archive ORDER BY frozen_at LIMIT 200` 且无 OFFSET/游标，正常冷档行经无锁
+   EXISTS 预筛 `continue` 不删行、长期占据 `frozen_at` 升序前段；冷档行数超过 200 后，排在其后的陈旧残留行
+   与 PITR 后的 ARCHIVE_NEWER 行永远扫不到，而 janitor 正是文档为这两种中断态承诺的收敛机制。
+   ⚠ freeze worker 默认硬关闭（`FREEZE_ENABLED`），默认配置下不触发；补齐分页或跳过条件后再启用。
 
 ### P1-07 收敛区目录和跨端确定性语义
 
@@ -274,6 +303,12 @@ controller、loader URL 并未全部进入契约。源 XML 与导出的 `.bin`/a
 2. 将 `test:fgui` 拆成准确的 `test:client` 与 FGUI 专项命令；新增分层 `verify:core`/`verify:all`。
 3. root 显式拥有 `tsx/tsc` 等脚本依赖，不依赖 server workspace 偶然 hoist；固定推荐 Node 22.x 文件。
 4. bitECS/vendor lock 校验“实际文件集合 = 应锁集合”，并校验 vendored WebPlatform tgz 自身 integrity。
+   同时补齐换行钉：`.gitattributes:6-13` 的「机检域钉 LF」段不覆盖 `apps/Cocos/extensions/`，
+   `git check-attr text eol` 对 `apps/Cocos/extensions/fairygui-cc/runtime/fairygui.mjs` 与 `fairygui.d.ts`
+   返回 unspecified，而这两个文件正是 `scripts/vendor.sha256:1-2` 的字节锁对象；`apps/art/fairygui/assets/**`
+   同样 unspecified。在 `core.autocrlf=true` 的 Windows 上，它们被检出为 CRLF 会让 `vendorLock.test.ts`
+   的 sha256 比对与 `viewRegistry.test.ts` 的 regenerateViewSource 恒等断言假红，且现有提示文案
+   「内容与锁不符——非预期改动请还原」会误导。
 5. `dev-stack.sh` 通过 PID/实例标识/数据目录确认所有权，不能对同端口任意 Redis/MySQL 发 shutdown；
    `smoke.ts` 不对共享实例无条件 `SCRIPT FLUSH`。
 6. 当前失效的 loadtest 与未闭合的 Excel 生成链继续归额外功能；只有完成身份准备、consumer 和产物 freshness

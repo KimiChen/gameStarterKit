@@ -13,6 +13,27 @@ npm --workspace @game/server run db:bootstrap
 npm run dev
 ```
 
+本地配置真源是仓库根的 `.env.development`（已入库，唯一 env 文件；`infra/config.ts` 只填 `process.env` 中
+没有的键，显式环境变量优先）。其中两项在模块加载期严格校验、非法即拒绝启动：
+
+- `PROJECT_ID`（缺省 `gono`，须匹配 `^[a-z][a-z0-9_]{0,31}$`）：同时用作 Redis 键前缀 `<PROJECT_ID>_`
+  与 MySQL 库名 `game_<PROJECT_ID>`，是多项目共用同一套本地栈时的命名空间。
+- `PORT`（缺省 2568，须为 1–65535 纯整数；文件中当前为注释状态，取缺省值）：服务端口；`sync:client`
+  由同一真源生成客户端 `core/devEnv.ts`，两侧使用同一规则以免端口静默脑裂，显式环境变量覆盖时
+  config.ts 会打印分叉告警。
+
+停止与查看本地栈：
+
+```bash
+npm --workspace @game/server run stack:stop
+apps/server/tools/dev-stack.sh status
+```
+
+`stack:stop` 会对配置端口上的两个 Redis 与 MySQL 发停止指令；`status` 只打印三者的可达性（当前没有对应的
+npm script）。多项目默认共用同一套 6401/6402/3316 实例，停止前请确认没有其他项目在用。
+另：`npm run dev` 是 watch 模式；不需要 watch 时可用 `npm run start:server`（等价于 `@game/server`
+的 `start`）。
+
 仓库现有 `stack` 脚本直接使用 Homebrew 的 Redis 与 `mysql@8.4`，因此它是 macOS 本地开发便利脚本，
 不是跨平台环境交付方案。默认启动两个物理 Redis 和一个 MySQL：
 
@@ -40,7 +61,7 @@ coord/kick 通过独立 accessor 和 key 表达协调语义，但本地默认 UR
 ```text
 apps/server/
 ├── sql/schema.sql       MySQL DDL 真源
-├── tools/               本地栈、建库与 framework smoke
+├── tools/               本地栈、建库、framework smoke 与 m0/ 一次性压测探针
 ├── test/                单元、完整 smoke 与集成测试
 └── src/
     ├── app.config.ts    Colyseus 房间、HTTP router、transport 与开发界面装配
@@ -105,6 +126,9 @@ tsx 直接执行和运行时文件系统扫描，不是打包产物装载器。
 职责边界：
 
 - `LobbyRoom`：连接级 strict auth、每消息 session cache 复验、区上下文与回复发送。
+  Lobby 当前是 `autoDispose = false`、`maxClients = 5000` 的共享房，且注册时没有 `filterBy(["sId"])`：
+  不同区的连接可能落在同一间房，区隔离依赖 `auth.sId` 与 `zoneCtx`，不依赖撮合。客户端用
+  `joinOrCreate`，满员后由 matchmaker 另开一间大厅房；多节点分摊连接的形态尚未确定。
 - `loader` / `rpc.ts`：路径登记、shared 类型绑定和启动期全集校验；`index.ts` 在 `listen` 前
   `await registerAllRoutes()`，契约不齐时进程直接退出。
 - `dispatcher`：路由查找、令牌桶、Zod 解析、可选幂等占位、超时 race 与错误码规约；
@@ -130,6 +154,10 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
   不会被识别为冲突。
 - 未知路由在令牌桶之前返回 `UNKNOWN_TYPE`，因此“未知消息也被同一限流约束”目前不成立。
 - `Promise.race` 超时不会取消 handler；迟到副作用仍须依靠数据层幂等/CAS 收敛。
+- 信封校验发生在 dispatcher 之前：`LobbyRoom` 用 Colyseus `validate(rpcEnvelopeSchema, ...)` 注册 `rpc`
+  消息，`id`/`type` 必须是 1–64 字符字符串。信封不合法时 Colyseus 直接以 `WITH_ERROR` 关闭该连接，
+  不会返回带错误码的 reply，该连接上在途 RPC 的配对全部落空；dispatcher 的错误码规约只覆盖信封合法
+  之后的路径。
 
 ## 5. GameRoom
 
@@ -185,7 +213,10 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
 原则：
 
 1. `withUser` callback 在极端 cold 重试中可能再次执行；UoW 之外的副作用必须幂等或后置。
-2. Redis lock 只提供互斥窗口，提交时的 fence 才阻止过期持有者写入。
+2. Redis lock 只提供互斥窗口，提交时的 fence 才阻止过期持有者写入；但 fence 校验发生在写入时刻，
+   锁过期后、新持有者尚未发生第一次业务写之前，旧持有者的写仍会被接受。当前缓解是 `LOCK_TTL_MS`
+   （5s）远大于业务 p99，且抢锁必然消耗 fence 号，使新持有者的号恒更高——这不是消除窗口，触发需要
+   超过 TTL 的停顿叠加跨实例换主。
 3. 按需 `HMGET` 并只写 dirty 字段；禁止 `HGETALL` 后整档覆盖。
 4. `schemaVersion` 当前由建档和 thaw 写入，但热档 `readUser` 只以 `ver` 判断存在，没有校验或迁移
    `schemaVersion`；文档不能宣称热读已完成 N/N-1 兼容。
@@ -200,9 +231,19 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
 applied marker 最后才写；Lua 运行时错误也不会自动回滚此前 Redis 写入。不能把现有实现描述成已完成的
 通用 effect 执行器。
 
+`setField` 是绝对值写，与 item/star 增量不同不可交换：旧 intent 被 relayer 迟到重放时会把旧值盖回。
+`core/economy/outbox.ts` 的 `drainPendingFor` 是为此预留的前置吸干函数，但当前没有任何生产写路径调用它，
+示例 SKU 也只使用 item 类 grant。新增含 `setField` 的写路径前必须先接线该约定，否则序反转不会被任何
+机制拦住。
+
 显式 `relayer` 当前在持有 `FOR UPDATE` 行锁的 MySQL 事务内等待 Redis、`ensureLive` 和部分清理查询，
 与“事务内不等待外部 I/O”的目标约束不一致。该后台样例及其成熟度见 EXTRAFEATURES；是否修复及其
 优先级由实际采用方决定，不进入核心 `plan.md`。
+
+relayer 重试超过 `OUTBOX_MAX_ATTEMPTS` 后会把 intent 行标记为 dead（status=2）。dead 行既不会被保留期
+清理删除，也会让对应 `applied` 标记永远跳过裁剪。当前仓库只提供 `core/economy/outbox.ts` 的
+`replayDead(opId)` 实现，没有调用它的命令、HTTP endpoint 或后台任务，因此死信处置需要采用方自行接入
+入口。
 
 ## 9. 实验性冷档模块
 
@@ -220,6 +261,10 @@ s0-only escape hatch（`FREEZE_UNSAFE_S0_ONLY`）。当前问题包括 archive �
 
 - MySQL mail 是权威，`stream:mailwake` 只唤醒在线连接重新 pull。
 - Guild 事件保留 seq 与有限近窗；窗口外由调用方做完整刷新。
+- Guild 事件的 seq 由 `INCR` 单独发号，事件体在随后的 `LPUSH` 才写入；读取端也是先取 seq 再 `LRANGE`。
+  两者之间存在交错窗口：已发号但尚未入表的事件会以 `latestSeq` 形式返回，客户端按 `latestSeq` 抬水位后
+  不会再拉到该条，跳号刷新也不会触发。事件流只作尽力通知，权威状态必须能靠全量刷新自愈，⛔ 不能当作
+  不丢的增量通道。
 - 在线表只登记 Lobby 连接，并按区维护 guild 索引。
 - mailwake/kick 的通用 consumer 使用每节点独立 XREAD 游标；match settle 使用 consumer group，不能把
   两种消费语义混写成同一种。
@@ -237,6 +282,11 @@ structured-clone、无 IO、无副作用的纯 CPU 工作。周期任务、批�
 池提供惰性 worker、排队/执行共用超时、worker 死亡替换和 `destroyPool`。当前 queue 没有容量上限或
 admission/backpressure；测试覆盖 round-trip、并发和未知任务，但没有覆盖队列饱和。`[rpc-budget]` 与
 loop monitor 只是本地诊断信号。
+
+`[rpc-budget]` 的同步预算取 `RPC_SYNC_BUDGET_MS`（非生产 20ms、生产 100ms，env 可覆盖）；生产按
+`RPC_BUDGET_PROD_SAMPLE`（默认 1%）采样，并按路由以 `RPC_BUDGET_WARN_INTERVAL_MS`（60s）节流告警，
+开发环境全量且不节流。loop monitor 每 10s 窗口以事件循环最长冻结（max，非 p99）与 `EVENT_LOOP_ALERT_MS`
+（默认 100ms）比较。两者都只是控制台诊断信号，不构成阈值契约。
 
 ## 12. 开发约束索引
 
@@ -259,8 +309,11 @@ loop monitor 只是本地诊断信号。
 
 ### X — 跨存储
 
-- **09·X1–X8**：MySQL 权威事务先落 intent；持锁事务内不等待网络/Redis；effect 先验证再原子应用；
-  损坏 payload、dead letter、lease 丢失和数值下溢必须可判别。
+- **09·X1–X8**：MySQL 权威事务先落 intent（X1）；只改 Redis 的请求不引入 outbox（X2）；已提交 intent
+  的 apply 无 fence CAS，以 op_id 幂等收敛（X3）；outbox status 全代码用数字（X4）；后台重放不走
+  `withUser`，冷档先 `ensureLive`（X5）；死信须走 `replayDead` 重放（X6）；单例 lease 守卫与业务写同
+  事务（X7）；数值下溢回补并上报（X8）。“持锁事务内不等待外部 I/O”“effect 先验证再原子应用”是 §8
+  正文的目标规则，源码内没有对应的 09·X 编号。
 
 ### R — Redis
 
@@ -287,9 +340,13 @@ loop monitor 只是本地诊断信号。
 - **09·F1–F5 / S1–S2**：freeze/thaw 核对 fence；写路径不绕过在线保护；角色存在性不靠猜；
   reader/migrator/version 与需迁移常量的边界显式化。
 
-当前已确认的主要偏差是：I4 未做 payload hash、X2 被 relayer 违反、X3 的 effect 未预验证、G4 在
-GameRoom C2S 和客户端 Public HTTP 上不完整、G5 的未知路由在限流前返回、K 的坏 match entry 会被 ACK
-丢弃、S1 的热档 reader 不看 schemaVersion。不要用规则编号掩盖这些事实。
+当前已确认的主要偏差是：I4 未做 payload hash、relayer 在持锁事务内等待 Redis/`ensureLive`/清理查询、
+effect 未在写入前预验证、G4 在 GameRoom C2S 和客户端 Public HTTP 上不完整、G5 的未知路由在限流前返回、
+K 的坏 match entry 会被 ACK 丢弃、S1 的热档 reader 不看 schemaVersion。其中前两条在源码中没有对应编号
+标签，⛔ 不要用 09·X2 / 09·X3 指代它们。不要用规则编号掩盖这些事实。
+
+R7/R9 的 SHA + `NOSCRIPT` 兜底覆盖除登录外的全部 Lua：`core/auth/session.ts` 的组 sess 写入栅栏脚本仍用
+裸 `EVAL` 内联下发，未登记到 `redisScripts.ts`。
 
 ## 13. 登记点
 
@@ -297,17 +354,18 @@ GameRoom C2S 和客户端 Public HTTP 上不完整、G5 的未知路由在限流
 | --- | --- |
 | Room 名、C2S/S2C、join options | `apps/shared/src/protocol/rooms.ts`、`messages.ts` |
 | Lobby RPC 请求/响应/消息全集 | `apps/shared/src/protocol/lobbyRpc` |
-| RPC 错误码 | `apps/shared/src/protocol/lobbyRpc/envelope.ts` 的 `RPC_ERR_CODES`；映射在 `core/errors.ts` |
+| RPC 错误码 | `apps/shared/src/protocol/lobbyRpc/envelope.ts` 的 `RPC_ERR_CODES`（15 个）；异常→码映射在 `core/errors.ts` 的 `ERR_MAP`（覆盖 11 个，其余落 `INTERNAL` 兜底）。其中 `GRANTING` 当前没有任何产出点，`AUTH_EPOCH_STALE` 服务端已停产、只保留客户端分支，`ORDER_MISMATCH` 只由可选的 `http/pay/wxNotify.ts` 直接返回，不经 `ERR_MAP` |
 | Colyseus state 纯数据镜像 | `apps/shared/src/protocol/state.ts`；运行时 Schema 在 `rooms/schema` |
 | Redis key | `apps/server/src/core/infra/keys.ts` |
 | 跨模块服务端配置 | `apps/server/src/core/infra/config.ts`；少量模块私有常量仍在实现文件内 |
-| Lua | `apps/server/src/core/infra/redisScripts.ts` 与模块专属 script 文件 |
+| Lua | `apps/server/src/core/infra/redisScripts.ts` 与模块专属 script 文件；`core/auth/session.ts` 的 `SESS_FENCE_LUA` 目前是例外，未经 `defineScript` 登记 |
 | MySQL DDL | `apps/server/sql/schema.sql`；兼容升级逻辑在 `tools/db-bootstrap.ts` |
 | RPC endpoint | `apps/server/src/websocket/<domain>/<method>.ts`；装载规则在 `loader.ts` |
 | HTTP endpoint | `apps/server/src/http/<domain>/<method>.ts`；装配在 `http/index.ts` |
 | 外部身份契约 | 锁定的 `@gono/webplatform-contract` 与 `apps/shared/src/generated/webplatform` |
-| 协议指纹 | `scripts/protocol.fingerprint`；更新命令 `node scripts/protocol-fingerprint.mjs` |
+| 协议指纹 | `scripts/protocol.fingerprint`；更新命令 `node scripts/protocol-fingerprint.mjs`。当前只覆盖 `apps/shared/src/protocol/**` 与 `PROTOCOL_VERSION`，由 `npm run test:fgui` 中的 `protocolFingerprint.test.ts` 校验；`constants/errors.ts` 的 `ErrorCode` 数值、`constants/game.ts` 的 `GamePhase` 与帧率等常量、`logic/battle.ts` 的技能表与伤害公式同为双端契约，但不在该闸内 |
 | 计算任务 | `apps/server/src/core/compute/tasks` |
+| 本地环境变量与项目命名空间 | 根 `.env.development`；加载与校验在 `apps/server/src/core/infra/config.ts`（`PROJECT_ID` / `PORT` 加载期 fail-fast） |
 
 新增能力时先更新契约和登记点，再实现调用方；不要依赖历史“07 表”等已不存在的文档作为真源。
 
@@ -325,6 +383,12 @@ npm --workspace @game/server run test
 
 按改动覆盖重复请求、锁过期与 fence、依赖超时、事务中断、非法 payload、未知版本和同 uid 跨区隔离。
 当前 `loadtest/bot.ts` 缺少严格鉴权所需 token/sId，不能作为可用验证入口；其状态见 EXTRAFEATURES。
+
+`apps/server/tools/m0/` 保留两个一次性探测脚本，不进入常规验证命令：`currency-txn-bench.ts` 测货币同步
+事务 p99（`core/infra/config.ts` 的 `LOCK_TTL_MS = 5000` 必须罩住该值），`colyseus-redis-probe.ts` 实测
+RedisDriver/RedisPresence 下的跨进程建房与定向建房。它们没有 npm 入口，运行时会占用额外端口、写 Redis
+db 9 或向 MySQL 写压测行；是当时定数用的本地实验，不是可复用的性能基线工具，文件头注释里的历史章节号
+（如“04 · 阶段 1”）已失效；重新调整锁 TTL 或启用 Redis 驱动前应重跑并自行复核结论。仓库未保存基线结果。
 
 ## 15. 范围
 

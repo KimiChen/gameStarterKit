@@ -23,6 +23,9 @@ loader 依赖 tsx 直接运行、文件系统扫描和动态 import；它不是�
 - 未知 route 在 rate check 前返回；未知消息尚未受同一 token bucket 约束。
 - 通用 idem key 没有 payload hash，相同 `clientReqId` 携带不同 payload 不会报冲突。
 - handler timeout 是不可取消的 `Promise.race`，迟到写入必须由数据层收敛。
+- 信封校验发生在 dispatcher 之前：`LobbyRoom` 用 Colyseus `validate(rpcEnvelopeSchema, ...)` 注册 `rpc`
+  消息，`id`/`type` 必须是 1–64 字符字符串。信封不合法时 Colyseus 直接以 `WITH_ERROR` 关闭该连接，不会
+  返回带错误码的 reply，该连接上在途 RPC 的配对全部落空。
 
 完整流程和正确性规则见
 [`docs/SERVER.md §4`](../../../../docs/SERVER.md#4-lobby-rpc)。

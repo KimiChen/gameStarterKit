@@ -12,7 +12,7 @@ import { getPool } from "../infra/mysql";
 import type { PoolConnection, ResultSetHeader, RowDataPacket } from "../infra/mysql";
 import { InsufficientBalanceError, StaleFenceError } from "../errors";
 
-const CACHE_TTL_S = 300; // 5m（07 key 全表）
+const CACHE_TTL_S = 300; // 5m（模块私有常量；key 分类真源见 core/infra/keys.ts）
 
 /** 读余额：cache 命中直接回；miss 回源 MySQL 并回填（09·A2）。 */
 export async function getBalance(uid: string, sId: number, currency = CUR_GOLD): Promise<number> {

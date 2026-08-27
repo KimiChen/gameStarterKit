@@ -65,8 +65,8 @@ apps/client/src
 | 外部身份契约版本与生成物一致 | `npm run verify:webplatform-contract` |
 
 这些命令是本地开发验证入口，不表示所有真实边界都已覆盖。特别是客户端 `Main.ts` 与 `view/` 下 9 个
-文件（页面 View 及 ViewMgr/FguiView 等装配件）不在当前严格类型检查内，FGUI 测试也不验证 Creator 中的
-完整 View 生命周期或设计源到已导出 `.bin` 的新鲜度；已知缺口见 [plan.md](../plan.md)。
+文件（5 个页面 View 及 ViewMgr/FguiView/viewRegistry/pages 装配件）不在当前严格类型检查内，FGUI 测试也
+不验证 Creator 中的完整 View 生命周期或设计源到已导出 `.bin` 的新鲜度；已知缺口见 [plan.md](../plan.md)。
 
 ### 3.3 视图与行为分离
 
@@ -101,12 +101,14 @@ apps/client/src
 ```text
 1. 在 apps/shared/src 定义协议、错误码或公式
 2. npm run sync:shared
-3. 在 apps/server/src/websocket 或 http 增加 endpoint
-4. 更新服务端登记点、key/config 与测试
-5. 在 apps/client/src/logic 增加行为
-6. 需要页面时通过 codegen 创建 View 并登记 viewRegistry
-7. npm run sync:client
-8. 运行本地类型检查和相关测试
+3. 若改动落在 apps/shared/src/protocol/**，运行 node scripts/protocol-fingerprint.mjs 重钉协议指纹，
+   并确认是否需要 bump PROTOCOL_VERSION（不重钉则 npm run test:fgui 中的 protocolFingerprint 测试失败）
+4. 在 apps/server/src/websocket 或 http 增加 endpoint
+5. 更新服务端登记点、key/config 与测试
+6. 在 apps/client/src/logic 增加行为
+7. 需要页面时通过 codegen 创建 View 并登记 viewRegistry
+8. npm run sync:client
+9. 运行本地类型检查和相关测试
 ```
 
 ### 4.2 FairyGUI 页面
@@ -158,6 +160,9 @@ FairyGUI 编辑设计源
 - 本地开发账号通过外部服务的 dev session 契约创建。
 - Unity 目录只是研究占位。
 - 所有演示 endpoint、配置和页面只用于开发与验证。
+- `apps/shared/src/logic` 的体力（stamina）、自然日（time）与命名 RNG 子流（`SeededRandom.stream`）当前
+  只有单测覆盖，没有服务端或客户端调用点；被实际消费的是 logic 中的 math 工具与技能表/伤害公式，以及
+  constants 中的 join 错误码工具。
 - 核心改进状态以 [plan.md](../plan.md) 为准；可选模块的准确状态见
   [额外功能与参考实现](EXTRAFEATURES.md)。
 - 完整项目边界以根 README 为准。

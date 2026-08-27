@@ -5,7 +5,8 @@
  *  - 事件流是**增量通知载体**（近 GUILD_EVT_LOG_MAX 条窗口），⛔ 不是权威存储——
  *    各玩法系统的权威在自己的库表，事件 data 只放小对象/引用；
  *  - seq 用 INCR 单调发号；INCR 与 LPUSH 非原子，崩溃窗口可能产生 seq 空洞——
- *    客户端只认「收到的最大 seq」，空洞无害（⛔ 不要按连号消费）；
+ *    客户端同时会按响应里的 `latestSeq` 抬水位（见 client GuildLogic），因此 INCR 与 LPUSH 之间的
+ *    交错可能让某条已发号事件被永久跳过；⛔ 不要按连号消费，也不要把本流当作不丢通道；
  *  - 推送侧在调用方组合（端点先 emitGuildEvent 再 pushToGuild），本模块不 import
  *    websocket/（分层方向：websocket → core，不反向）。
  */

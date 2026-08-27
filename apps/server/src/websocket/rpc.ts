@@ -85,7 +85,7 @@ function withSyncBudget<T extends LobbyRpcType>(
         if (!throttled) {
           lastWarnAt.set(type, now);
           console.warn(`[rpc-budget] ${type} 期间事件循环最长阻塞 ~${maxGapMs.toFixed(1)}ms（预算 ${RPC_SYNC_BUDGET_MS}ms）`
-            + "——重计算应卸载到 core/compute/tasks/（判据与四类清单见 CLAUDE.md 铁律 11）");
+            + "——重计算应卸载到 core/compute/tasks/（判据与四类清单见 docs/SERVER.md §11）");
         }
       }
     }

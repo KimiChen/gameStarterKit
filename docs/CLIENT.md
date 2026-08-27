@@ -36,6 +36,12 @@ npm run sync:shared
 3. `portalUrl` 指向与当前契约匹配的本地开发服务。
 4. shared/client 镜像保持新鲜。
 
+`Main` 组件另有一个可留空的 `serverUrl`：留空时使用 `sync:client` 生成的 `core/devEnv.ts`（跟随根
+`.env.development` 的 `PORT`，默认 `http://localhost:2568`），填写即覆盖。它只是区服目录加载前的默认
+游戏服 HTTP 地址——登录页拉到目录后会用所选区的 `gameHttpUrl` 重新初始化 HTTP 底座，战斗房连接也只使用
+`gameHttpUrl`。`portalUrl` 留空或不是 http(s) 绝对地址时（见
+[外部身份服务开发边界](WEBPLATFORM.md) §5）`Main.start()` 直接抛错，后续的会话事件订阅与登录页都不会执行。
+
 ## 2. 源码与工程壳
 
 ```text
@@ -96,19 +102,26 @@ apps/Cocos/
 2. `view/XxxView.ts`：结构绑定与手写接线。
 3. `viewRegistry.ts`：动态加载入口、包名、组件名、共享依赖和实例策略。
 
+页面的对外入口在 `view/pages.ts`：`openXxx` 负责组合 ViewMgr、Logic、net 依赖与导航接线，`Main` 通过
+动态 import 调用它。
+
 打开页面：
 
 ```ts
-await ViewMgr.open("Home", params);
+const handle = await ViewMgr.open("Home");
 ```
+
+`ViewMgr.open` 只接受页面名，不接受打开参数；页面数据与回调在拿到句柄后由 `view/pages.ts` 经
+`view.setup(...)` 注入。
 
 不要从普通脚本静态 import `fairygui-cc` 或具体 View。所有 View 都通过 registry 的动态 import
 进入加载链，避免编辑器扩展尚未就绪时污染根脚本。
 
-ViewMgr 已有的生命周期语义：同一 onlyOne 页面的在途 open 会合流到同一个加载 Promise；加载期间 close
-会打取消标记并在 mount 前拦截；场景重载时经 layerRoots 探针整体重建并清零输入租约计数。FguiView 在
-首个视图挂载时才懒建 GRoot 且默认关闭全局输入（避免全屏 InputProcessor 吞掉玩法触摸），包加载按
-全进程在途合流防重复加载。
+ViewMgr 已有的生命周期语义：onlyOne 或 permanent 页面的在途 open 会合流到同一个加载 Promise；加载期间
+close 会打取消标记并在 mount 前拦截；场景重载时经 layerRoots 探针整体重建并清零输入租约计数。多实例页
+（`onlyOne=false` 且 `permanent=false`，当前只有 Confirm）不进在途表：既不合流，加载期间也无法取消。
+FguiView 在首个视图挂载时才懒建 GRoot 且默认关闭全局输入（避免全屏 InputProcessor 吞掉玩法触摸），
+包加载按全进程在途合流防重复加载。
 
 页面开发应遵守：
 
@@ -127,7 +140,8 @@ FairyGUI 在当前 Cocos 运行时只有一个全局 InputProcessor，`interacti
 - `interactive: false`：页面本身不增加租约；没有其他交互页时整棵 FGUI 树都收不到输入，适合纯展示 HUD。
 
 只要还有任一交互页打开，全局处理器就保持启用，`interactive: false` 页面也不是独立的输入隔离区。
-关闭必须走 `ViewHandle.close()` 或 `ViewMgr.close()`，否则租约无法恢复。
+关闭必须走 open 返回的 `ViewHandle.close()`；onlyOne/permanent 页也可用 `ViewMgr.close(name)`，对多实例页
+该调用是空操作。直调 `view.dispose()` 会让 `interactive` 租约无法恢复。
 
 ## 5. FairyGUI codegen
 
@@ -155,7 +169,9 @@ AUTO 区块外是手写区。重复执行应得到稳定结果。
 - Controller 切页使用约定的 page name。
 - 当前 XML parser 只读取组件 `displayList` 中有名字的直接子元素；列表 item、relation 和设计源到
   已导出 `.bin` 的新鲜度不在现有结构契约覆盖内。
-- 测试还会检查导出组件、页面包依赖闭包、registry/Logic 配对及源码中的 `ui://<Pkg>` 引用。
+- 测试还会检查导出组件、页面包依赖闭包、registry/Logic 配对，以及 `view/<Pkg>View.ts` 内的
+  `ui://<Pkg>` 字面量；`view/` 下其他文件（如集中状态图标 URL 的 `areaPresentation.ts`）不在该扫描
+  范围内，那里的包名写错不会被本地测试发现。
 - 页面自身包加载失败会直接抛错；`sharedPkgs` 由 `ensurePackages` 预载，但当前共享包失败路径只记录警告
   后继续。不要把两种失败语义描述成同一个强保证。
 
@@ -208,9 +224,12 @@ apps/art/fairygui 中修改设计源
 - session 错误归类。
 
 写请求的 `clientReqId` 只生成一次，重试复用同一个 ID。join 复用判据包含 endpoint、区号与 token，
-不符即抛错而非静默复用；onDrop 会立即把全部在途 RPC 判为 CONN_LOST，room 实例与监听在 SDK 自动重连后
-继续存活。`net/session.ts` 是登录态与 authInvalid/connLost/battleLost 三类会话事件的枢纽，未登录态的
-迟到失效事件被幂等忽略。
+不符即抛错而非静默复用；但 `doJoin` 当前没有冻结本次 `client`/`endpoint`——join 在途期间调用 `init()`
+换端点时，物理连接可能被记成新端点并在之后被错误复用，收口项见 [plan.md](../plan.md) P0-01。onDrop 会立即
+把全部在途 RPC 判为 CONN_LOST，room 实例与监听在 SDK 自动重连后继续存活。
+`net/session.ts` 是登录态与 authInvalid/connLost/battleLost 三类会话事件的枢纽；其中只有
+authInvalid 做登录态判断——未登录时的迟到上报被幂等吞掉，connLost 与 battleLost 不判断登录态、一律
+广播，订阅方需自行保证重复处置安全。
 
 ### HTTP
 
@@ -246,9 +265,11 @@ Creator 编辑器预览用于补充验证引擎绑定、资源导入和页面交
 4. 在 View 手写区接入必要事件。
 5. 在 Logic 中实现行为并注入依赖。
 6. 登记 viewRegistry 与共享包依赖。
-7. 增加无头测试。
-8. 运行 `sync:client`。
-9. 在 Cocos 中本地预览。
+7. 在 `view/pages.ts` 增加 `openXxx` 组合根：打开页面、构造 Logic、注入 net 依赖与导航回调（`Main`
+   与业务层只调这里，不直接调 ViewMgr）。
+8. 增加无头测试。
+9. 运行 `sync:client`。
+10. 在 Cocos 中本地预览。
 
 ## 10. 范围
 

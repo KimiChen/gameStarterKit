@@ -21,9 +21,10 @@ import { thawRestore, type ArchiveSnapshot } from "./archiveScripts";
 import { lazyMigrateSchema } from "./lazyMigrate";
 import { webPlatformClient } from "../../platform/webPlatformClient";
 
-// ───────────────────── 常量（07 已规定，随 M9 落地） ─────────────────────
+// ───────────────────── 常量（模块私有；跨模块配置见 core/infra/config.ts） ─────────────────────
 
-/** negcache:user:{uid} TTL（07 key 全表：10s）。TODO(M10)：随 07 表补条目提升进 config.ts。 */
+/** negcache:user:{uid} TTL（10s）。⚠ 模块私有常量，尚未提升进 `core/infra/config.ts`——
+ *  docs/SERVER.md §13 登记表已注明「少量模块私有常量仍在实现文件内」，本条即其一。 */
 const NEGCACHE_TTL_S = 10;
 
 // ───────────────────── 核心告警计数（10·M9：随本里程碑交付） ─────────────────────
@@ -133,8 +134,8 @@ async function archiveRowExists(uid: string): Promise<boolean> {
 }
 
 /**
- * 建号成功后立即失效负缓存（09·F4）。⛔ M9 不改 auth 已有文件——建号路径（createUser 调用方）
- * 接线本函数是遗留 TODO，见交付说明；负缓存 TTL 10s 兜底了未接线窗口。
+ * 建号成功后立即失效负缓存（09·F4）。建档路径已接线：`player/character.ts` 是 createUser 的唯一调用点，
+ * 在 createUser + 角色登记之后调用本函数。负缓存 TTL 10s 仍是兜底，不再是唯一保护。
  */
 export async function invalidateUserNegcache(uid: string): Promise<void> {
   await cacheClient().unlink(kNegcacheUser(uid));

@@ -1,12 +1,14 @@
 /**
  * 体力系统纯函数 —— 双端共享（回流自 Arthur，核心算法原样；包装改按字段档模型）。
  *
- * 档字段（user:{uid}，见 docs/server/07）：
+ * 档字段（user:{uid}，见 docs/SERVER.md §7 玩家档案）：
  *   stamina             当前体力（建号即满，wxLogin 初始化）
  *   lastStaminaRecoverAt 恢复计时起点（ms）；0 = 满体力/未开始恢复
  *
- * 客户端用同一份函数做本地展示与倒计时，服务端为唯一真源；
- * nowMs 一律传服务端权威时间（房间内用服务端时钟，HTTP 侧配 GET /clock/now 对时）。
+ * ⚠ 当前状态：本文件三个函数在服务端与客户端源码中均无调用点，只有
+ * apps/server/test/shared-logic.test.ts 的公式回归在用；shared 常量中只有 STAMINA_MAX 被建号写入初值。
+ * 接入时服务端为唯一真源，nowMs 一律传服务端权威时间
+ * （房间内用服务端时钟，HTTP 侧配 GET /clock/now 对时）。
  */
 import { STAMINA_COST, STAMINA_MAX, STAMINA_REGEN_MS } from "../constants/game";
 

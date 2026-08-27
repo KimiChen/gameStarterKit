@@ -6,7 +6,12 @@
  * 端点直接返回数据体（非 2xx 时 core/http.ts reject），⛔ 无 IApiResponse 包裹层。
  */
 
-/** HTTP 接口路径（真实端点单源；服务端路由与客户端调用都 import 它） */
+/**
+ * HTTP 接口路径常量。⚠ 当前只登记 `/healthz`，且仅 `apps/server/test/smoke.ts` 引用；
+ * `/version`、`/clock/now`、`/notice/list` 的路径仍由 endpoint 文件与客户端 wrapper 各自硬编码
+ * （现状见 docs/SERVER.md §6，收敛计划见 plan.md P1-03）。
+ * 新增核心 endpoint 时先在此补 path 真源，再让两端 import。
+ */
 export const ApiPath = {
     /** 进程级健康检查（GET） */
     Health: "/healthz",

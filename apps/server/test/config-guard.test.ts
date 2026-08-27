@@ -140,7 +140,7 @@ test("逃生口 FREEZE_UNSAFE_S0_ONLY=1：显式放行（⛔ 仅限目录不下�
  *
  * `/pay/wx-notify` 后面接的是真发币（purchases.ts：paid CAS → currency_ledger 正向 delta），
  * 而当前它只有**共享密钥占位**（⛔ 非 APIv3 平台证书验签）。故生产显式开启 = 配置事故。
- * 范式与同文件 AUTH_DEV_ENABLED 一致。
+ * 范式与同文件 FREEZE_ENABLED 用例一致。
  */
 test("PAY_ENABLED=1 + NODE_ENV=production：加载期即 throw（⛔ 支付链闭环前不许生产开启）", () => {
   const r = loadConfigWith({

@@ -181,7 +181,10 @@ server {
 
 状态：**显式启用 / 不完整参考代码**。
 
-- `apps/server/src/http/pay/wxNotify.ts` 的通知路由始终登记，但 `PAY_ENABLED` 缺省关闭并返回 501；
+- `apps/server/src/http/pay/wxNotify.ts` 的通知路由始终登记，但 `PAY_ENABLED` 缺省关闭并返回
+  `501 {error:"NOT_IMPLEMENTED"}`——该串不在 shared `RPC_ERR_CODES` 内，按 shared 错误码分支的客户端
+  接不住它；开启后的鉴权用 `WXPAY_NOTIFY_SECRET` 头部共享密钥，该变量由端点直接读 `process.env`，
+  仓库中只在 `.env.development` 以注释形式出现；
 - 当前配置对 `NODE_ENV=production` 与 `PAY_ENABLED=1` 组合直接 fail-fast；
 - `core/economy/purchases.ts`、充值 SKU、`purchases` 表和集成测试展示了局部订单状态与发货样例；
 - `createOrder` 只是内部函数，没有对外下单 endpoint。
@@ -201,7 +204,7 @@ server {
 | kick consumer | 默认 `src/index.ts` | 组内 best-effort 样例，见 §3.2 |
 | character repair worker | 默认 `src/index.ts` | 外部角色登记失败的本地补偿样例 |
 | mail wake loop | 首次 LobbyRoom 创建时启动，进程内单例 | 只做“有变化后重新 pull”的唤醒样例 |
-| outbox relayer | `npm --workspace @game/server run relayer` | 独立命令，不随 `dev` 启动 |
+| outbox relayer | `npm --workspace @game/server run relayer` | 独立命令，不随 `dev` 启动；死信（status=2）无自动或人工处置入口，需自行接线 `replayDead` |
 | match settle consumer | `npm --workspace @game/server run settle` | 独立命令，不随 `dev` 启动 |
 | freeze worker | `npm --workspace @game/server run freeze-worker` | 默认硬关闭；当前实现明确标为 unsafe |
 | Colyseus playground/monitor | 非 `production` 的 app config | 本地开发管理界面，不是外部管理后台 |
@@ -221,7 +224,9 @@ relayer 持事务等待外部 I/O、evidence 不足以确定性重放、坏 stre
 - `redis-route.example.yaml` 和 Redis bucket routing；
 - RedisPresence/RedisDriver 依赖与探针；默认 `app.config.ts` 并未启用它们；
 - `core/archive` 的 freeze 路径和独立 worker（worker 内含每小时 janitor：锁内归档解析、陈旧行清理与
-  PITR 后 ARCHIVE_NEWER 修复）。
+  PITR 后 ARCHIVE_NEWER 修复）。janitor 每轮固定取 `user_archive` 中 `frozen_at` 最老的 200 行且无
+  游标，正常冷档行不会被删除，因此冷档行数超过该批量后，排在其后的陈旧残留行与 ARCHIVE_NEWER 行
+  不会被扫描到。启用 freeze 前需要先补齐分页或跳过条件。
 
 其中 `ensureLive`/thaw 已被当前角色读取和写入链引用，不能机械删除；但 freeze worker 默认关闭，且现有
 guard 明确要求 unsafe escape hatch。仓库不承诺横向扩展、分片迁移、容量管理或冷数据存储方案。
@@ -232,7 +237,9 @@ guard 明确要求 unsafe escape hatch。仓库不承诺横向扩展、分片迁
 
 - `ballMove`、技能伤害与 GameRoom 是当前可运行的示例玩法；
 - notice 展示页面，以及 mail/guild/shop/outbox 的 Logic、RPC、事件或领域接缝；
-- Guild 当前只有 Logic/服务端样例，没有完整页面；部分页面控件也只是结构绑定。
+- Guild 当前只有 Logic/服务端样例，没有完整页面；部分页面控件也只是结构绑定。其事件流的 `INCR` 发号与
+  `LPUSH` 入表非原子，读侧可能拿到「已发号未入表」的 `latestSeq` 并据此抬水位，从而永久跳过该条事件
+  （见 [SERVER §10](SERVER.md#10-广播与事件)）；权威状态必须能靠全量刷新自愈。
 
 这些内容用于说明如何扩展框架，不是通用玩法、完整经济、社交或运营系统。采用方可以替换或删除业务内容，
 但保留的代码仍应通过对应本地测试。

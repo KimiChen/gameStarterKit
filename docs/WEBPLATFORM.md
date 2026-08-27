@@ -37,8 +37,9 @@ gameStarterKit
 
 ## 3. 核心开发链实际使用的契约
 
-路径与 method 常量来自生成物 `WebPlatformPath` / `WebPlatformMethod`，字段真相来自锁定的
-`types.generated.ts`。下列是当前代码实际消费的摘要。
+路径常量来自生成物 `WebPlatformPath`，字段真相来自锁定的 `types.generated.ts`。`WebPlatformMethod`
+目前只被服务端 Internal 客户端（`platform/webPlatformClient.ts`）消费，客户端 Public 调用的 method
+仍是 `net/http/account.ts`、`net/http/area.ts` 里的字面量。下列是当前代码实际消费的摘要。
 
 ### Public：创建开发会话
 
@@ -94,6 +95,9 @@ LobbyRoom/GameRoom 经 `platform/webPlatformClient.ts` 发送：
 npm run sync:webplatform-contract
 npm run verify:webplatform-contract
 ```
+
+`npm run dev:client` 启动时也会执行同一次契约同步（删除并重写 `apps/shared/src/generated/webplatform`），
+本地开发过程中该目录可能被自动刷新。
 
 同步链：
 
@@ -162,7 +166,8 @@ Public URL 由客户端场景配置。游戏仓不得出现外部账号数据库
 ## 9. 本地测试现状
 
 - `apps/server/test/webplatform-client.test.ts` 覆盖 Internal header、路径编码、重试、超时、错误分类和
-  exact-key response validation。
+  exact-key response validation；它把 `WEBPLATFORM_BREAKER_FAILURES` 设为 100 以关闭熔断，因此熔断阈值、
+  half-open 单探针和探针成功/失败后的状态复位当前没有本地测试覆盖。
 - `apps/client/test/httpStatus.test.ts` 覆盖 Public origin、method/path/body、Bearer、状态码和非 JSON；
   它没有证明 Public 成功响应做了 runtime shape validation。
 - `apps/server/test/smoke.ts` 需要外部 Public/Internal 与运行中的游戏服，覆盖真实拆分链路；其中额外账号

@@ -176,7 +176,8 @@ export function pushToGuild(guildId: number, type: string, data: unknown, sId: n
   return n;
 }
 
-/** 全服广播：每 PUSH_ALL_CHUNK 个连接 setImmediate 让出事件循环（单线程版「丢给 task 进程」）。
+/** 全服广播：每 PUSH_ALL_CHUNK 个**在线 uid** setImmediate 让出一次事件循环（单线程版「丢给 task 进程」）；
+ *  同一 uid 的多条连接在同一片内一次推完，故单片实际连接数可大于该值。当前无调用方，属预留通道。
  *  片间让出期间 Map 允许增删（JS Map 迭代语义安全）；期间上/下线的玩家收不收到属可接受抖动。 */
 export async function pushToAll(type: string, data: unknown): Promise<number> {
   let n = 0;

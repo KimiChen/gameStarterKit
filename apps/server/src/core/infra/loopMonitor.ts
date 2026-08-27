@@ -28,7 +28,7 @@ export function startInfraMonitors(intervalMs = 10_000): void {
     const p99 = h.percentile(99) / 1e6;
     if (maxMs > EVENT_LOOP_ALERT_MS) {
       console.warn(`[loop-monitor] 事件循环最长冻结 ${maxMs.toFixed(1)}ms（阈值 ${EVENT_LOOP_ALERT_MS}ms，`
-        + `p99=${p99.toFixed(1)}ms）——结合 [rpc-budget] 告警定位路由；卸载判据见 CLAUDE.md 铁律 11`);
+        + `p99=${p99.toFixed(1)}ms）——结合 [rpc-budget] 告警定位路由；卸载判据见 docs/SERVER.md §11`);
     }
     h.reset();
 

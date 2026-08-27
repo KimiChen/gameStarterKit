@@ -3,7 +3,7 @@
  *
  * - token 是 WebPlatform 签发的**不透明字符串**；游戏服只在组缓存保存 sha256。
  * - strict auth 通过 platform/webPlatformClient HTTP 回权威，成功后用 issuedAtMs 懒填本缓存。
- * - Redis `sess:{uid}` 退为**组侧缓存**：快路径 tokenHash + freeze-guard 存在性 + connId/gwNode。
+ * - Redis `sess:{uid}` 退为**组侧缓存**：快路径 tokenHash + freeze-guard 存在性 + issuedAt 栅栏（connId/gwNode 为暂无读点的预留字段）。
  *   每消息校验只读本缓存，不逐消息回源。
  * - **封号 = 账号级「下次登不上」+ 踢在线**（M12d §2.3，两步**都必做**）：
  *   ① WebPlatform 在一个事务内写 `accounts.status=1`、删除全部 `account_sessions` 并记审计

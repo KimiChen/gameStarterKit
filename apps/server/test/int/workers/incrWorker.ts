@@ -1,7 +1,7 @@
 /**
  * 跨实例串行测试的子进程 worker：对同一 uid 做 N 次 read-modify-write 自增。
  * 用法: node --import tsx incrWorker.ts <uid> <count>
- * BUSY 按客户端契约处理：同一操作退避重试（07 错误码表）。
+ * BUSY 按客户端契约处理：同一操作退避重试（错误码真源见 shared `RPC_ERR_CODES`）。
  */
 import { BusyError } from "../../../src/core/errors";
 import { withUser } from "../../../src/core/uow";

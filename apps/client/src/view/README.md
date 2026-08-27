@@ -10,14 +10,19 @@
    条目加入 `fguiContracts.FGUI_CONTRACTS`。
 3. 在 `logic/page/XxxLogic.ts` 写行为与无头测试，以同名前缀配对。
 4. 在 `viewRegistry.ts` 添加 `defineView`（layer/fullscreen/onlyOne/permanent/interactive/load/sharedPkgs）。
-5. 当前新 View 仍需加入 `apps/client/tsconfig.json` 的显式排除清单；这是待收口的类型盲区，不是目标架构。
-6. 运行 `npm run sync:client`，再运行 `npm run test:fgui`、`npm run verify:sync` 并在 Creator 本地预览。
+5. 在 `view/pages.ts` 增加 `openXxx` 组合根：打开页面、构造 Logic、注入 net 依赖与导航回调
+   （Main 与业务层只调这里，不直接调 `ViewMgr`）。
+6. 当前新 View 仍需加入 `apps/client/tsconfig.json` 的显式排除清单；这是待收口的类型盲区，不是目标架构。
+7. 运行 `npm run sync:client`，再运行 `npm run test:fgui`、`npm run verify:sync` 并在 Creator 本地预览。
 
-打开 = `ViewMgr.open("Xxx")`（返回句柄）；关闭 = `handle.close()` 或 `ViewMgr.close("Xxx")`，
+打开 = `ViewMgr.open("Xxx")`（只接受页面名，返回句柄；数据与回调在 `pages.ts` 经 `view.setup(...)` 注入）；
+关闭 = `handle.close()`，onlyOne/permanent 页也可用 `ViewMgr.close("Xxx")`——⚠ 对多实例页
+（`onlyOne=false` 且 `permanent=false`，当前只有 Confirm）该调用是空操作，只能用句柄关。
 ⛔ 不直调 `view.dispose()`——交互输入的恢复挂在关闭路径上，直调会永久吞掉游戏触摸。
 ensurePackages/挂载/分层/单例/常驻/交互输入全部由注册表元数据接管。
-`test/viewRegistry.test.ts` 会检查 View/registry/Logic/契约集合、AUTO 区块、包依赖闭包和源码中的
-`ui://<Pkg>` 引用；它不会检查设计源是否已重新导出为 `.bin`、relation 或列表 item 配置。
+`test/viewRegistry.test.ts` 会检查 View/registry/Logic/契约集合、AUTO 区块、包依赖闭包和
+`XxxView.ts` 内的 `ui://<Pkg>` 字面量（`areaPresentation.ts` 等其他 view/ 文件不在扫描内）；
+它不会检查设计源是否已重新导出为 `.bin`、relation 或列表 item 配置。
 
 > ⚠ **调用方约束**：ViewMgr 静态依赖 fairygui——`ViewMgr.open` 只允许在 view/ 内部
 > 或动态 import 闭包（`const { ViewMgr } = await import("./view/ViewMgr")`）里调用；

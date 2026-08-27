@@ -93,8 +93,8 @@ export function request<T>(method: "GET" | "POST", path: string, body?: unknown)
 }
 
 /**
- * 门户请求（登录 / 选服 → WebPlatform Public）。选服通过已有 token 自动携带 Bearer；
- * 登录时本地尚无 token，不会附带 Authorization。
+ * 门户请求（登录 / 选服 → WebPlatform Public）。只要本地已存有 token 就会附带 `Authorization: Bearer`——
+ * 包括从 `Main.abortBattle` 或 connLost 回到登录页后再次发起的登录请求（这两条路径不清会话）。
  */
 export function portalRequest<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
     return doRequest(getPortalUrl(), method, path, body);

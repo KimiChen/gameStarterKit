@@ -53,7 +53,7 @@ const FORCE_REASON_MAP: Record<ForceLogoutReasonType, AuthInvalidReason> = {
 /** leave 的等待上限：掉线窗口里 LEAVE 帧可能发不出去、onLeave 永不触发，限时后强制本地清理 */
 const LEAVE_TIMEOUT_MS = 5_000;
 
-/** 客户端本地错误码（刻意不在服务端 07 错误码表里）：连接断开 / 本地等待超时 */
+/** 客户端本地错误码（刻意不在 shared `RPC_ERR_CODES` 里）：连接断开 / 本地等待超时 */
 export type LocalErrCode = "CONN_LOST" | "TIMEOUT";
 
 /** RPC 失败统一异常：调用方只按 code 分支。 */

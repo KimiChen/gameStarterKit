@@ -19,7 +19,7 @@ export const UserRpc = {
     UpdateProfile: "user.updateProfile",
 } as const;
 
-/** 自档视图（真源；服务端 player/userStore.ts 别名引用）。加字段流程见该文件头；字段表见 docs/server/07。 */
+/** 自档视图（真源；服务端 player/userStore.ts 别名引用）。加字段流程见该文件头；档字段入口见 docs/SERVER.md §7 玩家档案。 */
 export interface IUserView {
     uid: string;
     /** 段位星数（源 curStar） */

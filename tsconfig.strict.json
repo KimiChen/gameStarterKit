@@ -20,8 +20,9 @@
     "noFallthroughCasesInSwitch": true,
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
-    // ⚠ 逐文件转译的三端（client 走 Cocos SystemJS、server/WebPlatform 走 tsx=esbuild）**都必须开**：
+    // ⚠ 逐文件转译的各端（client 走 Cocos SystemJS、server 走 tsx=esbuild）**都必须开**：
     // 此前它只在 tsconfig.base.json 里，而 base 只有 shared 继承 —— 真正需要它的三端反而漏了。
+    //（当时的第三端 WebPlatform 已移出本仓，见 README「WebPlatform 不属于本 monorepo」。）
     "isolatedModules": true
   }
 }

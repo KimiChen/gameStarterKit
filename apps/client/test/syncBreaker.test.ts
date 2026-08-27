@@ -15,8 +15,9 @@ import {
 } from "../../../scripts/lib/sync-breaker.mjs";
 
 test("熔断判据：两闸取「或」——任一达标即熔断（⛔ 取「且」即红）", () => {
-    // ① 曾经漏网的那个洞：apps/shared/src 现有 23 个源文件，删 9 个 = 39%
+    // ① 曾经漏网的那个洞：以 23 个源文件为例，删 9 个 = 39%
     //    → 超比例闸(ceil(23*0.3)=7)但够不到固定闸(20) ⇒ 取「且」时不熔断，镜像被清
+    //    （23 是本用例固定的表驱动输入，不随 apps/shared/src 实际文件数变化；该目录当前为 27 个文件）
     assert.equal(breakerTripped({ removed: 9, srcCount: 23 }), true,
         "小目录删 39% 必须熔断（取「且」会漏掉，正是丢 .meta 的那条路径）");
 

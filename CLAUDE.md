@@ -9,7 +9,9 @@
 > - [docs/EXTRAFEATURES.md](docs/EXTRAFEATURES.md)：可选额外功能、现有实现与非承诺说明
 > - [plan.md](plan.md)：当前代码已确认的缺口与核心改进优先级
 >
-> 每个源码目录另有就近 README。根上手页见 [README.md](README.md)。
+> 多数源码目录另有就近 README，但尚未覆盖全部：`apps/shared`、`apps/server` 根、`apps/server/src/player/`
+> 与 `core/` 下除 `compute/` 外的子目录目前没有，其约束分别见铁律 4/6 与 [docs/SERVER.md](docs/SERVER.md)；
+> 收口计划见 [plan.md](plan.md) P1-09。根上手页见 [README.md](README.md)。
 
 ## 技术栈
 
@@ -40,17 +42,20 @@ npm --workspace @game/server run test
 npm --workspace @game/server run smoke:framework
 npm --workspace @game/server run smoke
 npm --workspace @game/server run stack
+npm --workspace @game/server run db:bootstrap
 npm --workspace @game/server run test:int
 ```
 
 上述命令仅用于本地开发、调试和验证。
 
-`smoke:framework` 只检查已启动并初始化的本地 Redis/MySQL；`smoke` 还要求外部 WebPlatform
-Public/Internal 与游戏服已经运行，额外的 GM kick 分支仅在显式配置 secret 时执行。
+`stack` 启动本地 Redis/MySQL，`db:bootstrap` 建库并执行 `sql/schema.sql`（幂等）；`smoke:framework` 只检查
+已启动并初始化的本地 Redis/MySQL；`smoke` 还要求外部 WebPlatform Public/Internal 与游戏服已经运行，
+额外的 GM kick 分支仅在显式配置 secret 时执行。
 
-`npm run typecheck` 只覆盖当前 tsconfig 纳入的源码。客户端 `Main.ts`、9 个依赖
-FairyGUI/Cocos 的 View 文件及 `apps/client/test` 仍在严格类型检查范围外，必须结合
-`npm run test:fgui`、同步检查与 Creator 本地预览验证；不得把命令通过解释为完整客户端已被类型检查。
+`npm run typecheck` 只覆盖当前 tsconfig 纳入的源码。客户端 `Main.ts`、`view/` 下 9 个文件
+（5 个页面 View 及 ViewMgr/FguiView/viewRegistry/pages 装配件）及 `apps/client/test` 仍在严格类型检查
+范围外，必须结合 `npm run test:fgui`、同步检查与 Creator 本地预览验证；不得把命令通过解释为完整客户端
+已被类型检查。
 
 `fetch:colyseus` 和 `fetch:fgui` 仍保留为框架维护团队显式升级锁定依赖时使用的工具，不是首次打开或普通开发步骤。这里的“手动更新”是维护团队人工决定版本、调整版本与完整性哈希、运行并审核脚本；脚本负责可重复的下载、校验和镜像更新。bitECS 没有自动更新命令；其 12 个锁定源文件和 `scripts/bitecs.sha256` 由维护团队按上游版本手动维护，并在更新后运行 `npm run verify:ecs`。普通开发者直接使用仓库已入库的版本。
 
@@ -59,6 +64,8 @@ FairyGUI/Cocos 的 View 文件及 `apps/client/test` 仍在严格类型检查范
 1. **`apps/client/src/lib/bitecs/` 的 12 个 TypeScript 文件禁改。**
    它们由 `npm run verify:ecs` 按字节校验。
 2. **生成镜像禁手改。**
+   - `apps/shared/src/generated/webplatform/` 来自锁定的 `@gono/webplatform-contract`，用
+     `sync:webplatform-contract` 刷新。
    - `apps/client/src/shared/` 来自 `apps/shared/src`。
    - `apps/Cocos/assets/src/` 来自 `apps/client/src`，包括随目录提交的 `.meta`。
    - 修改真源后使用 `sync:shared` / `sync:client`。
@@ -83,6 +90,7 @@ FairyGUI/Cocos 的 View 文件及 `apps/client/test` 仍在严格类型检查范
 ```text
 shared 契约
   → npm run sync:shared
+  → node scripts/protocol-fingerprint.mjs（仅改动 protocol/ 时）
   → 服务端 websocket/http endpoint
   → 客户端 Logic + View + viewRegistry
   → npm run sync:client
