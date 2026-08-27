@@ -4,7 +4,13 @@
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
 import { destroyPool, runInPool } from "../src/core/compute/pool";
-import type { IBattleSimInput, IBattleSimResult } from "../src/core/compute/tasks/battleSim";
+import {
+  BATTLE_SIM_MAX_ATTACKER_LEVEL,
+  BATTLE_SIM_MAX_ITERATIONS,
+  validateBattleSimInput,
+  type IBattleSimInput,
+  type IBattleSimResult,
+} from "../src/core/compute/tasks/battleSim";
 
 after(async () => { await destroyPool(); });
 
@@ -27,4 +33,47 @@ test("未知任务名：错误传播为 reject（不炸 worker 池）", async ()
   // 池仍可用
   const r = await runInPool<IBattleSimInput, IBattleSimResult>("battleSim", { iterations: 10, attackerLevel: 1 });
   assert.equal(r.iterations, 10);
+});
+
+test("battleSim 输入校验：拒绝非对象、未知字段和非有限/越界数字", () => {
+  const invalid: readonly unknown[] = [
+    null,
+    [],
+    { iterations: 1, attackerLevel: 1, extra: true },
+    { iterations: Number.NaN, attackerLevel: 1 },
+    { iterations: Number.POSITIVE_INFINITY, attackerLevel: 1 },
+    { iterations: 1.5, attackerLevel: 1 },
+    { iterations: -1, attackerLevel: 1 },
+    { iterations: BATTLE_SIM_MAX_ITERATIONS + 1, attackerLevel: 1 },
+    { iterations: 1, attackerLevel: 0 },
+    { iterations: 1, attackerLevel: 1.5 },
+    { iterations: 1, attackerLevel: BATTLE_SIM_MAX_ATTACKER_LEVEL + 1 },
+    { iterations: 1, attackerLevel: Number.NaN },
+  ];
+  for (const value of invalid) {
+    assert.throws(() => validateBattleSimInput(value), /battleSim|finite|range/i);
+  }
+});
+
+test("battleSim 输入校验：保留边界合法值并复制成干净输入", () => {
+  const input = { iterations: BATTLE_SIM_MAX_ITERATIONS, attackerLevel: BATTLE_SIM_MAX_ATTACKER_LEVEL };
+  const valid = validateBattleSimInput(input);
+  assert.deepEqual(valid, input);
+  assert.notEqual(valid, input, "校验器应返回副本，避免任务依赖调用方可变对象");
+  assert.deepEqual(validateBattleSimInput({ iterations: 0, attackerLevel: 1 }), {
+    iterations: 0,
+    attackerLevel: 1,
+  });
+});
+
+test("battleSim worker：非法输入受控 reject，后续合法任务仍完成", async () => {
+  await assert.rejects(
+    runInPool("battleSim", { iterations: Number.NaN, attackerLevel: 1 }),
+    /battleSim\.iterations|finite safe integer/i,
+  );
+  const result = await runInPool<IBattleSimInput, IBattleSimResult>("battleSim", {
+    iterations: 0,
+    attackerLevel: 1,
+  });
+  assert.deepEqual(result, { iterations: 0, totalDamage: 0 });
 });
