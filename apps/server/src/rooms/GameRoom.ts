@@ -1,4 +1,5 @@
 import { Room, Client, CloseCode, type AuthContext } from "colyseus";
+import { z } from "zod";
 import {
     C2S,
     S2C,
@@ -10,6 +11,7 @@ import {
     MAP_WIDTH,
     MAP_HEIGHT,
     PLAYER_MOVE_SPEED,
+    PLAYER_INIT_HP,
     clamp,
     normalize,
     getSkillDef,
@@ -17,6 +19,7 @@ import {
     SeededRandom,
     PROTOCOL_VERSION,
     type IRoomJoinOptions,
+    type C2SType,
     type IPingReq,
     type IMoveReq,
     type ICastSkillReq,
@@ -49,6 +52,96 @@ type GameRoomAuth = {
 const RECONNECT_GRACE_S = 10;
 
 /**
+ * 房间消息的应用层预算。Colyseus 也会在 transport 层按这个值做一次计数，
+ * 这里保留一份房内计数是为了让直接调用 handler（以及未来的非 websocket transport）
+ * 也拥有相同的边界。输入频率不是玩法契约，故只在本文件登记。
+ */
+export const GAME_ROOM_MAX_MESSAGES_PER_SECOND = 60;
+const MAX_CHAT_LENGTH = 100;
+const MAX_TARGET_ID_LENGTH = 64;
+const MAX_CLIENT_TIME = Number.MAX_SAFE_INTEGER;
+const MAX_SKILL_ID = 0xffff;
+const MAX_CATCH_UP_STEPS = 120;
+
+/** 可替换的单调时间源。默认使用 Colyseus room clock。 */
+export type GameRoomClock = (() => number) | { now?: () => number; currentTime?: number };
+
+/**
+ * 测试/回放可注入的输入。tick 为空时在当前逻辑帧应用；有值时只在指定帧应用。
+ * 网络消息经过同一套 runtime schema 后也会落入 accepted input 序列。
+ */
+export type GameRoomInput =
+    | { type: "move"; sessionId: string; dirX: number; dirY: number; tick?: number }
+    | { type: "castSkill"; sessionId: string; skillId: number; targetId?: string; tick?: number };
+
+export type GameRoomInputSource = (tick: number) => readonly GameRoomInput[] | undefined;
+
+export interface GameRoomRuntimeOptions {
+    /** 固定的对局种子；未提供时每个房间生成一个单调不重复的 seed。 */
+    seed?: number;
+    /** 可替换的 wall/monotonic clock，仅用于时间戳与开局基准。 */
+    clock?: GameRoomClock;
+    /** 固定逻辑步长，默认 shared TICK_MS。 */
+    fixedStepMs?: number;
+    /** 可选的回放输入源，在每个 fixed step 开始前读取。 */
+    input?: GameRoomInputSource;
+    /** 可选的 match id 工厂；测试可注入确定值，生产默认使用 newMatchId()。 */
+    matchId?: () => string;
+}
+
+export type AcceptedGameInput = GameRoomInput & {
+    /** 接受该输入时的逻辑帧。 */
+    acceptedTick: number;
+};
+
+let seedSequence = 0;
+
+function nextRoomSeed(): number {
+    // Date.now() 单独使用会在同毫秒创建的房间间碰撞；序列号只用于避免碰撞，
+    // 不改变注入 seed 的确定性。
+    seedSequence = (seedSequence + 1) >>> 0;
+    return ((Date.now() >>> 0) ^ seedSequence) >>> 0;
+}
+
+function normalizeSeed(seed: number | undefined): number {
+    return typeof seed === "number" && Number.isFinite(seed) && Number.isInteger(seed)
+        ? seed >>> 0
+        : nextRoomSeed();
+}
+
+function normalizeFixedStep(step: number | undefined): number {
+    return typeof step === "number" && Number.isFinite(step) && step >= 1 && step <= 1000
+        ? step
+        : TICK_MS;
+}
+
+/** Zod 的 strict object 是运行时 exact-key 闸；不要改成普通 z.object。 */
+const C2S_RUNTIME_SCHEMA = {
+    [C2S.Ping]: z.object({
+        clientTime: z.number().finite().int().min(0).max(MAX_CLIENT_TIME),
+    }).strict(),
+    [C2S.Move]: z.object({
+        dirX: z.number().finite().min(-1).max(1),
+        dirY: z.number().finite().min(-1).max(1),
+    }).strict(),
+    [C2S.CastSkill]: z.object({
+        skillId: z.number().finite().int().min(0).max(MAX_SKILL_ID),
+        targetId: z.string().min(1).max(MAX_TARGET_ID_LENGTH).optional(),
+    }).strict(),
+    [C2S.Chat]: z.object({
+        text: z.string().min(1).max(MAX_CHAT_LENGTH)
+            .refine((value) => value.trim().length > 0),
+    }).strict(),
+} as const;
+
+/** Exported for contract tests; production handlers still call acceptMessage(). */
+export const GAME_ROOM_C2S_SCHEMAS = C2S_RUNTIME_SCHEMA;
+
+type RuntimeSchema<T> = {
+    safeParse(input: unknown): { success: true; data: T } | { success: false };
+};
+
+/**
  * 主玩法房间（玩法逻辑仍为演示/假数据，用于跑通链路）：
  *  - 玩家进出：随机出生点 + demo 昵称（真实项目从档案取）
  *  - 移动：客户端发方向输入，服务端按逻辑帧积分位置
@@ -58,23 +151,71 @@ const RECONNECT_GRACE_S = 10;
  */
 export class GameRoom extends Room {
     maxClients = MAX_PLAYERS;
+    /** Colyseus transport 层的每客户端消息闸；handler 还会做一次本地预算检查。 */
+    maxMessagesPerSecond = GAME_ROOM_MAX_MESSAGES_PER_SECOND;
     state = new GameRoomState();
     /** 状态快照下发间隔（ms），默认 50ms/20fps */
     patchRate = 50;
 
-    /** 本局种子（进证据链供 verifier 重放，09·K5）；正式项目应同步给客户端做确定性表现 */
-    private matchSeed = Date.now() >>> 0;
-    /** 确定性随机源，以对局种子初始化 */
-    private rng = new SeededRandom(this.matchSeed);
+    /** 本局种子（进证据链供 verifier 重放，09·K5）。 */
+    private readonly configuredSeed: number;
+    private matchSeed: number;
+    /** 开局前昵称/展示出生点使用独立流，等待期不会消耗正式对局 RNG。 */
+    private admissionRng: SeededRandom;
+    /** 正式对局确定性随机源，以 matchSeed 初始化。 */
+    private rng: SeededRandom;
+    /** fixed-step 累加器；wall clock/dt 只决定要跑几步，不直接进入公式。 */
+    private readonly fixedStepMs: number;
+    private simulationAccumulatorMs = 0;
+    private simulationTimeMs = 0;
+    private readonly runtimeClock: () => number;
+    private readonly matchIdFactory: () => string;
+    private inputSource?: GameRoomInputSource;
+    private readonly injectedInputs: GameRoomInput[] = [];
+    private readonly acceptedInputSequence: AcceptedGameInput[] = [];
+    private readonly messageBudget = new Map<string, { windowStart: number; count: number }>();
+    private startPromise: Promise<boolean> | null = null;
+    private starting = false;
 
     /** sessionId → 框架账号 uid（M8a 证据链 userId 来源；onAuth 严格化后必有值） */
     private sessionUserId = new Map<string, string>();
+    /** uid → sessionId 的反向活动索引；离开时必须与 sessionUserId 同步删除。 */
+    private userSessionId = new Map<string, string>();
+    /** 当前对局参与者快照；活动索引清理后仍供结算证据查 uid。 */
+    private participantUserId = new Map<string, string>();
     /** 死亡顺序（sessionId，先死在前）；结算名次 = 存活者优先、其余按死亡逆序 */
     private deathOrder: string[] = [];
     /** 中途退房者的昵称快照（state.players 里已删，结算证据还需要名字） */
     private departedNames = new Map<string, string>();
     /** 开局时刻（clock 毫秒），证据 elapsedMs 用 */
     private matchStartMs = 0;
+
+    constructor(options: GameRoomRuntimeOptions = {}) {
+        super();
+        this.configuredSeed = normalizeSeed(options.seed);
+        this.matchSeed = this.configuredSeed;
+        this.admissionRng = SeededRandom.stream(this.configuredSeed, "admission");
+        this.rng = SeededRandom.stream(this.configuredSeed, "match");
+        this.fixedStepMs = normalizeFixedStep(options.fixedStepMs);
+        this.runtimeClock = this.makeClock(options.clock);
+        this.inputSource = options.input;
+        this.matchIdFactory = options.matchId ?? newMatchId;
+    }
+
+    private makeClock(clock: GameRoomClock | undefined): () => number {
+        if (typeof clock === "function") return () => clock();
+        if (clock && typeof clock.now === "function") {
+            const now = clock.now;
+            return () => now.call(clock);
+        }
+        if (clock && typeof clock.currentTime === "number") return () => clock.currentTime as number;
+        return () => this.clock.currentTime;
+    }
+
+    private now(): number {
+        const value = this.runtimeClock();
+        return Number.isFinite(value) ? value : 0;
+    }
 
     /**
      * 账号绑定（M8a）：WebPlatform 签发的不透明 token 反查 uid 存入 client.auth（09·G1
@@ -118,38 +259,129 @@ export class GameRoom extends Room {
         }
     }
 
-    /** Colyseus 0.17 消息处理表，消息名来自双端共享的 C2S 常量 */
+    /**
+     * Colyseus 0.17 消息处理表，消息名来自双端共享的 C2S 常量。
+     *
+     * 这里保留函数形态（而不是只依赖 Room.onMessage 的 validator），因为测试、
+     * replay adapter 和未来的非 websocket transport 可能直接调用 handler；每个入口
+     * 都必须经过同一个 `acceptMessage()` exact runtime schema 与预算闸。
+     */
     messages = {
-        [C2S.Ping]: (client: Client, msg: IPingReq) => {
-            const res: IPongRes = { clientTime: msg?.clientTime ?? 0, serverTime: Date.now() };
+        [C2S.Ping]: (client: Client, raw: IPingReq) => {
+            const msg = this.acceptMessage(client, C2S.Ping, raw, C2S_RUNTIME_SCHEMA[C2S.Ping]);
+            if (!msg) return;
+            const res: IPongRes = { clientTime: msg.clientTime, serverTime: this.now() };
             client.send(S2C.Pong, res);
         },
 
-        [C2S.Move]: (client: Client, msg: IMoveReq) => {
+        [C2S.Move]: (client: Client, raw: IMoveReq) => {
+            const msg = this.acceptMessage(client, C2S.Move, raw, C2S_RUNTIME_SCHEMA[C2S.Move]);
+            if (!msg) return;
             const player = this.state.players.get(client.sessionId);
             if (!player || !player.alive) return;
-            const dir = normalize(msg?.dirX ?? 0, msg?.dirY ?? 0);
+            const dir = normalize(msg.dirX, msg.dirY);
+            this.recordInput({
+                type: "move",
+                sessionId: client.sessionId,
+                dirX: dir.x,
+                dirY: dir.y,
+            });
             player.dirX = dir.x;
             player.dirY = dir.y;
         },
 
-        [C2S.CastSkill]: (client: Client, msg: ICastSkillReq) => {
+        [C2S.CastSkill]: (client: Client, raw: ICastSkillReq) => {
+            const msg = this.acceptMessage(client, C2S.CastSkill, raw, C2S_RUNTIME_SCHEMA[C2S.CastSkill]);
+            if (!msg) return;
+            const player = this.state.players.get(client.sessionId);
+            if (!player || !player.alive) return;
+            this.recordInput({
+                type: "castSkill",
+                sessionId: client.sessionId,
+                skillId: msg.skillId,
+                ...(msg.targetId === undefined ? {} : { targetId: msg.targetId }),
+            });
             this.handleCastSkill(client, msg);
         },
 
-        [C2S.Chat]: (client: Client, msg: IChatReq) => {
+        [C2S.Chat]: (client: Client, raw: IChatReq) => {
+            const msg = this.acceptMessage(client, C2S.Chat, raw, C2S_RUNTIME_SCHEMA[C2S.Chat]);
+            if (!msg) return;
             const player = this.state.players.get(client.sessionId);
-            const text = (msg?.text ?? "").trim().slice(0, 100);
-            if (!player || !text) return;
+            if (!player) return;
+            const text = msg.text.trim();
             const res: IChatRes = {
                 fromId: client.sessionId,
                 fromName: player.name,
                 text,
-                time: Date.now(),
+                time: this.now(),
             };
             this.broadcast(S2C.Chat, res);
         },
     };
+
+    private phaseAllows(messageType: C2SType): boolean {
+        // Ping 是连接级心跳，结算阶段也允许；聊天只在房间仍可互动时开放；
+        // Move/CastSkill 是正式模拟输入，绝不在 Waiting/Settle 改状态。
+        switch (messageType) {
+            case C2S.Ping:
+                return this.state.phase === GamePhase.Waiting
+                    || this.state.phase === GamePhase.Playing
+                    || this.state.phase === GamePhase.Settle;
+            case C2S.Chat:
+                return this.state.phase === GamePhase.Waiting || this.state.phase === GamePhase.Playing;
+            case C2S.Move:
+            case C2S.CastSkill:
+                return this.state.phase === GamePhase.Playing;
+            default:
+                return false;
+        }
+    }
+
+    private consumeMessageBudget(client: Client): boolean {
+        const now = this.now();
+        const previous = this.messageBudget.get(client.sessionId);
+        const windowStart = previous && now >= previous.windowStart && now - previous.windowStart < 1000
+            ? previous.windowStart
+            : now;
+        const count = previous && windowStart === previous.windowStart ? previous.count + 1 : 1;
+        this.messageBudget.set(client.sessionId, { windowStart, count });
+        if (count <= GAME_ROOM_MAX_MESSAGES_PER_SECOND) return true;
+        this.sendError(client, ErrorCode.BadRequest);
+        return false;
+    }
+
+    private sendError(client: Client, code: number): void {
+        const error: IErrorRes = { code, message: ErrorMessage[code] ?? ErrorMessage[ErrorCode.Unknown] };
+        // Fake clients used by deterministic tests may not implement send; a malformed
+        // packet must still be a no-op rather than throw into the room loop.
+        try { client.send?.(S2C.Error, error); } catch { /* connection may be closing */ }
+    }
+
+    private acceptMessage<T>(
+        client: Client,
+        messageType: C2SType,
+        raw: unknown,
+        schema: RuntimeSchema<T>,
+    ): T | undefined {
+        if (!this.consumeMessageBudget(client)) return undefined;
+        let parsed: { success: true; data: T } | { success: false };
+        try {
+            parsed = schema.safeParse(raw);
+        } catch {
+            this.sendError(client, ErrorCode.BadRequest);
+            return undefined;
+        }
+        if (!parsed.success) {
+            this.sendError(client, ErrorCode.BadRequest);
+            return undefined;
+        }
+        if (!this.phaseAllows(messageType)) {
+            this.sendError(client, ErrorCode.BadRequest);
+            return undefined;
+        }
+        return parsed.data;
+    }
 
     /**
      * **房级区上下文**（DUAL_MODE §4.1）：`filterBy(["sId"])` 隔离常规 joinOrCreate，
@@ -169,60 +401,59 @@ export class GameRoom extends Room {
             throw joinRefused(ErrorCode.WrongServer);
         }
         this.sId = sId;
-        this.setSimulationInterval((dt) => this.update(dt), TICK_MS);
+        this.setSimulationInterval((dt) => this.update(dt), this.fixedStepMs);
         console.log(`[GameRoom ${this.roomId}] 创建 sId=${this.sId}`);
     }
 
-    onJoin(client: Client, _options: unknown) {
+    async onJoin(client: Client, _options: unknown) {
         // 对局已开/已结算的房间不收新客（M8a：参与者集合在开局时固定，中途进人会污染名次与
         // 证据的 09·K5 输入完整性）。撮合层已由开局时的 lock() 挡住，此闸兜底 joinById 直连。
-        if (this.state.phase !== GamePhase.Waiting) {
+        if (this.state.phase !== GamePhase.Waiting || this.starting) {
             throw joinRefused(ErrorCode.GameAlreadyStarted); // ⛔ 曾硬编码 4002（越界 status + 与关闭码混淆）
         }
         const auth = client.auth as GameRoomAuth | undefined;
         // `filterBy(["sId"])` 只约束 joinOrCreate；joinById 可指定任意房间，必须在房内用
         // onAuth 已验证过的权威区号再闸一次。⛔ 不比较 _options.sId（客户端可伪造/省略）。
-        if (!auth || auth.sId !== this.sId) {
+        if (!auth || typeof auth.userId !== "string" || auth.userId.length < 1 || auth.sId !== this.sId) {
             throw joinRefused(ErrorCode.WrongServer);
         }
-        // 同一框架账号禁止占双座（对齐 Arthur VersusRoom）：证据里同一 userId 出现两个名次会污染战绩
-        if ([...this.sessionUserId.values()].includes(auth.userId)) {
+        if (this.state.players.size >= MAX_PLAYERS) {
+            throw joinRefused(ErrorCode.RoomFull);
+        }
+        // 同一框架账号禁止占双座（对齐 Arthur VersusRoom）：证据里同一 userId 出现两个名次会污染战绩。
+        // 反向索引使该检查与离开清理保持 O(1) 且不会遗漏 stale session。
+        if (this.userSessionId.has(auth.userId) || [...this.sessionUserId.values()].includes(auth.userId)) {
             throw joinRefused(ErrorCode.AlreadyInRoom); // ⛔ 曾硬编码 4003
+        }
+        if (this.state.players.has(client.sessionId) || this.sessionUserId.has(client.sessionId)) {
+            throw joinRefused(ErrorCode.AlreadyInRoom);
         }
 
         const player = new PlayerState();
         player.id = client.sessionId;
-        player.name = randomNickname(this.rng);
-        player.x = this.rng.nextInt(100, MAP_WIDTH - 100);
-        player.y = this.rng.nextInt(100, MAP_HEIGHT - 100);
+        player.name = randomNickname(this.admissionRng);
+        player.x = this.admissionRng.nextInt(100, MAP_WIDTH - 100);
+        player.y = this.admissionRng.nextInt(100, MAP_HEIGHT - 100);
         this.state.players.set(client.sessionId, player);
         this.sessionUserId.set(client.sessionId, auth.userId);
+        this.userSessionId.set(auth.userId, client.sessionId);
+        this.participantUserId.set(client.sessionId, auth.userId);
 
         if (this.state.phase === GamePhase.Waiting && this.state.players.size >= 2) {
-            this.state.phase = GamePhase.Playing;
-            // M8a：matchId 开局生成一次写进 state（09·K4），结算/证据链/去重全部复用同一 id——
-            // ⛔ 结算处重新生成会让重跑产生新 id，战绩重复计数。
-            this.state.matchId = newMatchId();
-            this.matchStartMs = this.clock.currentTime;
-            // 开局前（等人期自娱自乐）的死亡记录不属于本局，清掉再开赛
-            this.deathOrder = [];
-            this.departedNames.clear();
-            // 撤出撮合池：对局中/结算后 joinOrCreate 都会开新房而不是挤进本房
-            //（显式 lock 不会因人数变化被自动解锁；房间随全员退出 autoDispose）
-            // ⚠ `lock()` 返回 Promise（@colyseus/core Room.d.ts），此前是**裸调用**（floating promise）：
-            //   ① 它 reject ⇒ Node ≥22 默认 `unhandled-rejections=throw`，**整个网关进程挂**；
-            //   ② 更隐蔽的是玩法层——lock 没成功则本房**仍留在撮合池**，开赛后 `joinOrCreate`
-            //      继续往里塞人，而上面那行注释承诺的正是"撤出撮合池"。
-            //   撮合池状态在 coord Redis（presence），失败即"没退成"，⛔ 不能当没发生：记错误日志。
-            //   ⛔ 别改成 await：本方法在 onJoin 的同步路径上，await 会把入房握手拖在 Redis RTT 上。
-            void this.lock().catch((e: unknown) => {
-                console.error(`[GameRoom] lock 失败——本房仍在撮合池，可能被塞入新玩家 roomId=${this.roomId}`, e);
-            });
+            try {
+                // startMatch 先 await lock，再把 phase 切到 Playing；锁失败时不会公开一个
+                // 仍可被撮合/直连塞人的 Playing 房。
+                await this.startMatch();
+            } catch (error) {
+                this.removePlayer(client.sessionId, true);
+                console.error(`[GameRoom] 开局失败，回滚到 Waiting roomId=${this.roomId}`, error);
+                throw joinRefused(ErrorCode.Unknown);
+            }
         }
 
         const welcome: IWelcomeRes = {
             sessionId: client.sessionId,
-            tickRate: Math.round(1000 / TICK_MS),
+            tickRate: Math.round(1000 / this.fixedStepMs),
             motd: "欢迎来到 game（dev 服务端）",
         };
         // onJoin 里同步 send 是安全的：@colyseus/ws-transport 在客户端 JOIN ack 之前
@@ -254,47 +485,326 @@ export class GameRoom extends Room {
             // 结算证据还需要退房者的名字——无论死活都先快照（state.players 马上要删）
             this.departedNames.set(client.sessionId, player.name);
             // 活着退房视为阵亡（M8a：名次/证据完整性要求每个参与者都有归宿）；已死者已在 deathOrder
-            if (player.alive) this.deathOrder.push(client.sessionId);
+            if (player.alive) this.recordDeath(client.sessionId);
         }
-        this.state.players.delete(client.sessionId);
+        // Waiting 离开没有结算证据需求，参与者快照也必须删除；Playing/Settle
+        // 则保留 participantUserId，供退房者的最终名次回读 uid。
+        this.removePlayer(client.sessionId, this.state.phase === GamePhase.Waiting);
         console.log(`[GameRoom ${this.roomId}] ${client.sessionId} 离开（${consented ? "主动" : `code=${code}，宽限已过`}），剩余 ${this.state.players.size} 人`);
         this.maybeSettle();
     }
 
     onDispose() {
+        this.messageBudget.clear();
+        this.injectedInputs.length = 0;
+        this.acceptedInputSequence.length = 0;
+        this.sessionUserId.clear();
+        this.userSessionId.clear();
+        this.participantUserId.clear();
+        this.deathOrder = [];
+        this.departedNames.clear();
         console.log(`[GameRoom ${this.roomId}] 销毁`);
     }
 
-    /** 逻辑帧：位置积分 */
-    private update(dt: number) {
+    /**
+     * 等待撮合锁成功后才开始正式对局。该方法是唯一的 Waiting → Playing 入口，
+     * 也可由 deterministic test/replay harness 直接调用。
+     */
+    async startMatch(): Promise<boolean> {
+        if (this.state.phase === GamePhase.Playing) return true;
+        if (this.state.phase !== GamePhase.Waiting || this.state.players.size < 2) return false;
+        if (this.startPromise) return this.startPromise;
+
+        this.startPromise = this.performStartMatch();
+        try {
+            return await this.startPromise;
+        } finally {
+            this.startPromise = null;
+        }
+    }
+
+    private async performStartMatch(): Promise<boolean> {
+        this.starting = true;
+        const wasLocked = this.locked;
+        const startingSessions = new Set<string>();
+        this.state.players.forEach((_player, sessionId) => startingSessions.add(sessionId));
+        try {
+            // lock() 可能需要访问 Redis/driver；在它完成前不公开 Playing。
+            await this.lock();
+            // 等待外部 lock 时可能有玩家离开；不能把只剩一人的房间切成 Playing。
+            let participantsUnchanged = this.state.players.size >= 2;
+            if (participantsUnchanged) {
+                this.state.players.forEach((_player, sessionId) => {
+                    if (!startingSessions.has(sessionId)) participantsUnchanged = false;
+                });
+                for (const sessionId of startingSessions) {
+                    if (!this.state.players.has(sessionId)) participantsUnchanged = false;
+                }
+            }
+            if (!participantsUnchanged) throw new Error("match participants changed while locking");
+            this.initializeMatchState();
+            this.state.phase = GamePhase.Playing;
+            return true;
+        } catch (error) {
+            this.rollbackMatchState();
+            // Colyseus 的 lock() 先改内存再持久化；持久化失败时尽量恢复撮合状态。
+            // 若 unlock 也失败，关闭房间是唯一不会继续接客的终态。
+            if (!wasLocked && this.locked) {
+                try {
+                    await this.unlock();
+                } catch (unlockError) {
+                    console.error(`[GameRoom] lock 回滚失败，关闭房间 roomId=${this.roomId}`, unlockError);
+                    try { await this.disconnect(CloseCode.WITH_ERROR); } catch { /* 手动单测可能尚未 __init */ }
+                }
+            }
+            throw error;
+        } finally {
+            this.starting = false;
+        }
+    }
+
+    /** 开局一次性复位所有会污染正式模拟的字段。 */
+    private initializeMatchState(): void {
+        this.state.tick = 0;
+        this.state.matchId = this.matchIdFactory();
+        this.matchStartMs = this.now();
+        this.simulationAccumulatorMs = 0;
+        this.simulationTimeMs = 0;
+        this.deathOrder = [];
+        this.departedNames.clear();
+        this.messageBudget.clear();
+        this.acceptedInputSequence.length = 0;
+        this.injectedInputs.length = 0;
+        this.rng = SeededRandom.stream(this.matchSeed, "match");
+
+        // 只保留本次正式参与者的 uid 快照；活动双向索引由 onJoin/onLeave 维护，
+        // 这里再做一次收口可避免测试或恢复流程注入孤儿 session。
+        for (const sessionId of this.participantUserId.keys()) {
+            if (!this.state.players.has(sessionId)) this.participantUserId.delete(sessionId);
+        }
+
+        // 出生点在正式 RNG 流中重新生成，因而等待期的展示 RNG/历史不会改变本局初始状态。
+        this.state.players.forEach((player, sessionId) => {
+            player.id = sessionId;
+            player.hp = PLAYER_INIT_HP;
+            player.maxHp = PLAYER_INIT_HP;
+            player.alive = true;
+            player.dirX = 0;
+            player.dirY = 0;
+            player.lastCastAt = {};
+            player.level = 1;
+            player.x = this.rng.nextInt(100, Math.max(101, MAP_WIDTH - 100));
+            player.y = this.rng.nextInt(100, Math.max(101, MAP_HEIGHT - 100));
+        });
+    }
+
+    private rollbackMatchState(): void {
+        this.state.phase = GamePhase.Waiting;
+        this.state.matchId = "";
+        this.state.tick = 0;
+        this.matchStartMs = 0;
+        this.simulationAccumulatorMs = 0;
+        this.simulationTimeMs = 0;
+        this.deathOrder = [];
+        this.departedNames.clear();
+        this.messageBudget.clear();
+        this.acceptedInputSequence.length = 0;
+        this.injectedInputs.length = 0;
+        this.state.players.forEach((player) => {
+            player.hp = PLAYER_INIT_HP;
+            player.maxHp = PLAYER_INIT_HP;
+            player.alive = true;
+            player.dirX = 0;
+            player.dirY = 0;
+            player.lastCastAt = {};
+            player.level = 1;
+        });
+    }
+
+    /** 公开一个固定步推进点，供回放/无头测试使用。 */
+    stepFixed(): void {
+        if (this.state.phase !== GamePhase.Playing) return;
+        this.applyInjectedInputs(this.state.tick);
+        if (this.state.phase !== GamePhase.Playing) return;
         this.state.tick++;
-        const seconds = dt / 1000;
+        const seconds = this.fixedStepMs / 1000;
         this.state.players.forEach((player) => {
             if (!player.alive) return;
             if (player.dirX === 0 && player.dirY === 0) return;
             player.x = clamp(player.x + player.dirX * PLAYER_MOVE_SPEED * seconds, 0, MAP_WIDTH);
             player.y = clamp(player.y + player.dirY * PLAYER_MOVE_SPEED * seconds, 0, MAP_HEIGHT);
         });
+        this.simulationTimeMs += this.fixedStepMs;
     }
 
-    private handleCastSkill(client: Client, msg: ICastSkillReq) {
-        // 相位闸：结算后技能不再结算（否则 deathOrder 在终态无界增长且永不触发二次结算）。
-        // Waiting 期放行——单人房自娱自乐是演示路径（smoke 依赖），开局时会清死亡记录。
-        if (this.state.phase === GamePhase.Settle) return;
-        const caster = this.state.players.get(client.sessionId);
+    /** 逻辑帧：dt 只进入 fixed-step 累加器；Waiting/Settle 完全不推进。 */
+    private update(dt: number) {
+        if (this.state.phase !== GamePhase.Playing) return;
+        if (!Number.isFinite(dt) || dt <= 0) return;
+        this.simulationAccumulatorMs += dt;
+        let steps = 0;
+        while (this.simulationAccumulatorMs >= this.fixedStepMs && steps < MAX_CATCH_UP_STEPS) {
+            this.simulationAccumulatorMs -= this.fixedStepMs;
+            this.stepFixed();
+            steps++;
+        }
+        // 丢弃极端停顿的过量 backlog，避免单个 wall-clock gap 卡死事件循环；
+        // 正常固定步与注入 clock 不受此上限影响。
+        if (steps === MAX_CATCH_UP_STEPS && this.simulationAccumulatorMs >= this.fixedStepMs) {
+            this.simulationAccumulatorMs %= this.fixedStepMs;
+        }
+    }
+
+    /** 活动 session/uid 双向索引的唯一删除点。 */
+    private removePlayer(sessionId: string, removeParticipant: boolean): void {
+        this.state.players.delete(sessionId);
+        const userId = this.sessionUserId.get(sessionId);
+        this.sessionUserId.delete(sessionId);
+        if (userId !== undefined && this.userSessionId.get(userId) === sessionId) {
+            this.userSessionId.delete(userId);
+        }
+        if (removeParticipant) this.participantUserId.delete(sessionId);
+        this.messageBudget.delete(sessionId);
+    }
+
+    private recordDeath(sessionId: string): void {
+        if (!this.deathOrder.includes(sessionId)) this.deathOrder.push(sessionId);
+    }
+
+    private recordInput(input: GameRoomInput): void {
+        this.acceptedInputSequence.push({
+            ...input,
+            acceptedTick: this.state.tick,
+        });
+    }
+
+    /** 注入一条已经过调用方验证的输入；非法输入直接拒绝，不进入 replay 序列。 */
+    injectInput(input: GameRoomInput): boolean {
+        if (!input || typeof input !== "object" || (input.type !== "move" && input.type !== "castSkill")) return false;
+        const allowedKeys = input.type === "move"
+            ? new Set(["type", "sessionId", "dirX", "dirY", "tick"])
+            : new Set(["type", "sessionId", "skillId", "targetId", "tick"]);
+        if (Object.keys(input as object).some((key) => !allowedKeys.has(key))) return false;
+        const schema = input.type === "move"
+            ? C2S_RUNTIME_SCHEMA[C2S.Move]
+            : C2S_RUNTIME_SCHEMA[C2S.CastSkill];
+        const payload = input.type === "move"
+            ? { dirX: input.dirX, dirY: input.dirY }
+            : { skillId: input.skillId, ...(input.targetId === undefined ? {} : { targetId: input.targetId }) };
+        if (!schema.safeParse(payload).success) return false;
+        if (typeof input.sessionId !== "string" || input.sessionId.length < 1 || input.sessionId.length > MAX_TARGET_ID_LENGTH) return false;
+        if (input.tick !== undefined && (!Number.isInteger(input.tick) || input.tick < 0)) return false;
+        this.injectedInputs.push({ ...input });
+        return true;
+    }
+
+    setInputSource(source: GameRoomInputSource | undefined): void {
+        this.inputSource = source;
+    }
+
+    /** 只读副本，避免测试/回放调用方改写房内输入历史。 */
+    getAcceptedInputs(): readonly AcceptedGameInput[] {
+        return this.acceptedInputSequence.map((input) => ({ ...input }));
+    }
+
+    /** 回放适配器的只读别名，避免直接暴露内部数组。 */
+    get acceptedInputs(): readonly AcceptedGameInput[] {
+        return this.getAcceptedInputs();
+    }
+
+    get seedForReplay(): number {
+        return this.matchSeed;
+    }
+
+    get fixedStep(): number {
+        return this.fixedStepMs;
+    }
+
+    private applyInjectedInputs(tick: number): void {
+        // 丢弃已经错过的定时输入，避免坏回放数据无限滞留。
+        for (let i = this.injectedInputs.length - 1; i >= 0; i--) {
+            const queuedTick = this.injectedInputs[i].tick;
+            if (queuedTick !== undefined && queuedTick < tick) this.injectedInputs.splice(i, 1);
+        }
+        const queued = this.injectedInputs.filter((input) => input.tick === undefined || input.tick === tick);
+        if (queued.length > 0) {
+            for (const input of queued) this.applyInjectedInput(input);
+            for (const input of queued) {
+                const index = this.injectedInputs.indexOf(input);
+                if (index >= 0) this.injectedInputs.splice(index, 1);
+            }
+        }
+        let sourced: readonly GameRoomInput[] = [];
+        try {
+            const candidate = this.inputSource?.(tick);
+            if (Array.isArray(candidate)) sourced = candidate;
+        } catch {
+            // Replay/input adapters are outside the room boundary. A faulty adapter
+            // must not abort the simulation callback or leave a half-applied frame.
+            sourced = [];
+        }
+        for (const input of sourced) {
+            if (!this.validateInjectedInput(input)) continue;
+            if (input.tick !== undefined && input.tick !== tick) continue;
+            this.applyInjectedInput(input);
+        }
+    }
+
+    private validateInjectedInput(input: GameRoomInput): boolean {
+        if (!input || typeof input !== "object" || (input.type !== "move" && input.type !== "castSkill")) return false;
+        const schema = input.type === "move"
+            ? C2S_RUNTIME_SCHEMA[C2S.Move]
+            : C2S_RUNTIME_SCHEMA[C2S.CastSkill];
+        const payload = input.type === "move"
+            ? { dirX: input.dirX, dirY: input.dirY }
+            : { skillId: input.skillId, ...(input.targetId === undefined ? {} : { targetId: input.targetId }) };
+        return typeof input.sessionId === "string"
+            && input.sessionId.length >= 1
+            && input.sessionId.length <= MAX_TARGET_ID_LENGTH
+            && (input.tick === undefined || (Number.isInteger(input.tick) && input.tick >= 0))
+            && schema.safeParse(payload).success;
+    }
+
+    private applyInjectedInput(input: GameRoomInput): void {
+        const player = this.state.players.get(input.sessionId);
+        if (!player || !player.alive || this.state.phase !== GamePhase.Playing) return;
+        if (input.type === "move") {
+            const dir = normalize(input.dirX, input.dirY);
+            this.recordInput({ type: "move", sessionId: input.sessionId, dirX: dir.x, dirY: dir.y, ...(input.tick === undefined ? {} : { tick: input.tick }) });
+            player.dirX = dir.x;
+            player.dirY = dir.y;
+            return;
+        }
+        this.recordInput({
+            type: "castSkill",
+            sessionId: input.sessionId,
+            skillId: input.skillId,
+            ...(input.targetId === undefined ? {} : { targetId: input.targetId }),
+            ...(input.tick === undefined ? {} : { tick: input.tick }),
+        });
+        const client = this.clients.find((candidate) => candidate.sessionId === input.sessionId);
+        this.handleCastSkill(client, input, input.sessionId);
+    }
+
+    private handleCastSkill(client: Client | undefined, msg: ICastSkillReq, sessionIdOverride?: string) {
+        // 只有 Playing 能改变模拟；入口 handler 已做 phase 闸，注入/replay 也必须兜底。
+        if (this.state.phase !== GamePhase.Playing) return;
+        const sessionId = client?.sessionId ?? sessionIdOverride;
+        if (!sessionId) return;
+        const caster = this.state.players.get(sessionId);
         if (!caster || !caster.alive) return;
 
         const skill = getSkillDef(msg?.skillId ?? -1);
         if (!skill) {
             const err: IErrorRes = { code: ErrorCode.SkillUnavailable, message: ErrorMessage[ErrorCode.SkillUnavailable] };
-            client.send(S2C.Error, err);
+            client?.send?.(S2C.Error, err);
             return;
         }
 
         // 冷却检查（服务端内部字段，不同步）
-        const now = Date.now();
-        const lastAt = caster.lastCastAt[skill.id] ?? 0;
-        if (now - lastAt < skill.cooldownMs) return;
+        const now = this.simulationTimeMs;
+        const lastAt = caster.lastCastAt[skill.id];
+        if (lastAt !== undefined && now - lastAt < skill.cooldownMs) return;
         caster.lastCastAt[skill.id] = now;
 
         // 用双端共享公式结算伤害
@@ -305,12 +815,12 @@ export class GameRoom extends Room {
             target.hp = clamp(target.hp - damage, 0, target.maxHp);
             if (target.hp <= 0) {
                 target.alive = false;
-                this.deathOrder.push(target.id);
+                this.recordDeath(target.id);
             }
         }
 
         const res: ISkillResultRes = {
-            casterId: client.sessionId,
+            casterId: sessionId,
             skillId: skill.id,
             targetId: msg.targetId,
             damage,
@@ -337,8 +847,13 @@ export class GameRoom extends Room {
      * （也让纯 mock 联调的房间路径不隐性依赖 Redis）。
      */
     private settle() {
+        if (this.state.phase !== GamePhase.Playing) return;
         this.state.phase = GamePhase.Settle;
-        const elapsedMs = this.matchStartMs > 0 ? Math.max(0, this.clock.currentTime - this.matchStartMs) : 0;
+        // 结算耗时取 fixed-step 逻辑时钟，而不是 wall-clock/dt；注入同一 seed、步长和
+        // accepted inputs 的回放会得到完全相同的 elapsedMs。
+        const elapsedMs = this.now() >= this.matchStartMs
+            ? Math.max(0, this.simulationTimeMs)
+            : 0;
 
         // 名次：存活者在前，其余按死亡逆序（后死名次高）
         const order: { sessionId: string; name: string; survived: boolean }[] = [];
@@ -352,7 +867,7 @@ export class GameRoom extends Room {
         }
         console.log(`[GameRoom ${this.roomId}] 收局 matchId=${this.state.matchId}：${order.map((o, i) => `#${i + 1} ${o.name}`).join("，")}`);
 
-        if (!order.some((o) => this.sessionUserId.has(o.sessionId))) return;
+        if (!order.some((o) => this.participantUserId.has(o.sessionId))) return;
         void emitMatchEvidence({
             matchId: this.state.matchId,
             sId: this.sId, // ⚠ 房级区（见 onCreate）：证据发出后房间即 dispose，⛔ 此处不带就永久丢失
@@ -363,7 +878,7 @@ export class GameRoom extends Room {
             injectWaves: [], // 本作暂无服务端注入事件；有则仿 Arthur VersusRoom 记 injectLog
             participants: order.map((o, i) => ({
                 sessionId: o.sessionId,
-                userId: this.sessionUserId.get(o.sessionId) ?? null, // 游客 null
+                userId: this.participantUserId.get(o.sessionId) ?? null, // 游客 null
                 name: o.name,
                 place: i + 1,
                 round: 0, // 本作无波次概念
