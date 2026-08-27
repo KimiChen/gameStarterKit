@@ -70,10 +70,6 @@ function entriesOfPlayers(input: unknown, path: string): Array<[string, unknown]
         }
         return entries;
     }
-    if (isPlainRecord(input)) {
-        return Object.keys(input).map((key) => [key, input[key]]);
-    }
-
     // Colyseus decodes map fields as MapSchema, which deliberately has a custom
     // prototype but exposes the standard `entries()` iterator. Keep the shared
     // package dependency-free by using this narrow structural adapter instead of
@@ -101,6 +97,9 @@ function entriesOfPlayers(input: unknown, path: string): Array<[string, unknown]
                 throw new WireValidationError("STATE_PLAYERS", path);
             }
         }
+    }
+    if (isPlainRecord(input)) {
+        return Object.keys(input).map((key) => [key, input[key]]);
     }
     throw new WireValidationError("STATE_PLAYERS", path);
 }
