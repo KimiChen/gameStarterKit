@@ -28,3 +28,26 @@ test("协议版本解析：注释中的旧声明不能遮蔽真实 export，重�
     /有且仅有一个/,
   );
 });
+
+test("协议版本解析：只接受顶层精确 export，字符串和嵌套声明不应伪造版本", () => {
+  const source = [
+    'const quoted = "export const PROTOCOL_VERSION = 99;";',
+    "const templated = `// export const PROTOCOL_VERSION = 98;`;",
+    "namespace Legacy { export const PROTOCOL_VERSION = 2; }",
+    "export const PROTOCOL_VERSION = 7;",
+  ].join("\n");
+  assert.equal(parseProtocolVersion(source), 7);
+
+  for (const invalid of [
+    "export const PROTOCOL_VERSION = 7",
+    "export const PROTOCOL_VERSION: number = 7;",
+    "export const PROTOCOL_VERSION = 7 as const;",
+    "namespace Legacy { export const PROTOCOL_VERSION = 7; }",
+  ]) {
+    assert.throws(
+      () => parseProtocolVersion(invalid),
+      /PROTOCOL_VERSION|声明/,
+      `应拒绝非精确或非顶层声明：${invalid}`,
+    );
+  }
+});

@@ -11,6 +11,7 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import ts from "typescript";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PROTO_DIR = path.join(ROOT, "apps/shared/src/protocol");
@@ -19,21 +20,59 @@ export const FINGERPRINT_FILE = path.join(ROOT, "scripts", "protocol.fingerprint
 /**
  * 从 rooms.ts 源文读取协议版本。
  *
- * 只接受唯一的顶层 `export const PROTOCOL_VERSION = <integer>;` 声明；
- * 先移除注释，避免评审文字里的旧版本形态架空指纹闸。多处声明也直接报错，
- * 防止脚本悄悄取到第一处匹配。
+ * 使用 TypeScript 的语法树而不是文本正则：注释、字符串和模板中的旧示例不
+ * 会伪造声明，命名空间/函数体内的同名变量也不会被当成顶层导出。这里刻意
+ * 只接受唯一且精确的 `export const PROTOCOL_VERSION = <integer>;` 形态；放宽
+ * 形态会让版本闸在重构时静默读到另一种语义。
  */
 export function parseProtocolVersion(src) {
-    const uncommented = src
-        .replace(/\/\*[\s\S]*?\*\//g, "")
-        .replace(/\/\/[^\r\n]*/g, "");
-    const matches = [...uncommented.matchAll(/^\s*export\s+const\s+PROTOCOL_VERSION\s*=\s*(\d+)\s*;\s*$/gm)];
-    if (matches.length !== 1) {
-        throw new Error(`shared/protocol/rooms.ts 必须有且仅有一个 PROTOCOL_VERSION 导出声明（找到 ${matches.length} 个）`);
+    if (typeof src !== "string") {
+        throw new TypeError("shared/protocol/rooms.ts 源文必须是字符串");
     }
-    const version = Number(matches[0][1]);
+    const sourceFile = ts.createSourceFile(
+        "rooms.ts",
+        src,
+        ts.ScriptTarget.Latest,
+        true,
+        ts.ScriptKind.TS,
+    );
+    if (sourceFile.parseDiagnostics.length > 0) {
+        throw new Error("shared/protocol/rooms.ts 语法无效，无法读取 PROTOCOL_VERSION");
+    }
+
+    const candidates = [];
+    for (const statement of sourceFile.statements) {
+        if (!ts.isVariableStatement(statement)) continue;
+        const modifiers = statement.modifiers ?? [];
+        const isExactExport = modifiers.length === 1 && modifiers[0].kind === ts.SyntaxKind.ExportKeyword;
+        if (!isExactExport || statement.declarationList.flags !== ts.NodeFlags.Const) continue;
+        for (const declaration of statement.declarationList.declarations) {
+            if (ts.isIdentifier(declaration.name) && declaration.name.text === "PROTOCOL_VERSION") {
+                candidates.push({ statement, declaration });
+            }
+        }
+    }
+    if (candidates.length !== 1) {
+        throw new Error(`shared/protocol/rooms.ts 必须有且仅有一个 PROTOCOL_VERSION 导出声明（找到 ${candidates.length} 个）`);
+    }
+
+    const { statement, declaration } = candidates[0];
+    // A declaration list with another binding, a type annotation, or an
+    // omitted semicolon is intentionally outside the locked source shape.
+    const hasSemicolon = statement.getLastToken()?.kind === ts.SyntaxKind.SemicolonToken;
+    const initializer = declaration.initializer;
+    if (statement.declarationList.declarations.length !== 1
+        || declaration.type !== undefined
+        || !hasSemicolon
+        || !initializer
+        || !ts.isNumericLiteral(initializer)
+        || !/^\d+$/.test(initializer.text)) {
+        throw new Error("PROTOCOL_VERSION 导出声明必须精确为 `export const PROTOCOL_VERSION = <integer>;`");
+    }
+
+    const version = Number(initializer.text);
     if (!Number.isSafeInteger(version) || version < 1) {
-        throw new Error(`PROTOCOL_VERSION 非法：${matches[0][1]}`);
+        throw new Error(`PROTOCOL_VERSION 非法：${initializer.text}`);
     }
     return version;
 }
