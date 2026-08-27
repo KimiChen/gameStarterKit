@@ -11,6 +11,7 @@ import { randomBytes } from "node:crypto";
 import { LEASE_TTL_S } from "./config";
 import { getPool, withRcTx } from "./mysql";
 import type { PoolConnection, ResultSetHeader, RowDataPacket } from "./mysql";
+import { storedInt } from "./numbers";
 
 /** 实例标识：主机+pid+随机，重启后是新 holder。 */
 export const makeHolderId = (): string =>
@@ -35,7 +36,8 @@ export async function tryAcquireLease(leaseName: string, holder: string, ttlS = 
   // MySQL 无 RETURNING（09·DB2）——回读 fence_token
   const [rows] = await pool.query<RowDataPacket[]>(
     "SELECT fence_token FROM singleton_lease WHERE lease_name = ?", [leaseName]);
-  return { leaseName, holder, fenceToken: Number(rows[0].fence_token) };
+  if (rows.length === 0) { throw new Error(`singleton_lease 不存在：${leaseName}`); }
+  return { leaseName, holder, fenceToken: storedInt(rows[0].fence_token, "lease.fence_token", { min: 1 }) };
 }
 
 /**
@@ -53,7 +55,7 @@ export async function renewLeaseGuard(conn: PoolConnection, lease: SingletonLeas
       WHERE lease_name = ? AND holder = ? AND fence_token = ?`,
     [ttlS, lease.leaseName, lease.holder, lease.fenceToken]);
   const matched = /Rows matched:\s*(\d+)/.exec(r.info ?? "");
-  return matched !== null && Number(matched[1]) === 1;
+  return matched !== null && storedInt(matched[1], "lease.rowsMatched", { min: 0, max: 1 }) === 1;
 }
 
 /** 僵尸自杀异常：守卫 0 行时抛出，worker 主循环捕获后退出进程。 */

@@ -18,7 +18,7 @@ export default defineRpc(GuildRpc.Join, {
   schema: z.object({
     clientReqId: z.string().min(1).max(64),
     guildId: z.number().int().positive().max(999_999_999),
-  }),
+  }).strict(),
   idem: true,
   handler: async (ctx, p) => {
     // 存在性校验先于一切写路径（档/索引/事件键都不许为未知 gid 产生）

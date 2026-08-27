@@ -24,6 +24,7 @@ import {
   EffectValidationError, normalizeEffect, type IEffect, type IGrant, type IPurchaseResult,
 } from "@game/shared";
 import { EffectConflictError, InvalidEffectError } from "../errors";
+import { storedFinite, storedInt } from "../infra/numbers";
 
 /**
  * 一次 intent 的全部玩法副作用。货币不在此（走 MySQL，09·A2）。
@@ -143,7 +144,7 @@ export async function readBack(uid: string, sId: number, opId: string): Promise<
     [opId, uid, sId]);
   const balance = await getBalance(uid, sId);
   if (rows.length === 0) { return { opId, status: "dead", balance }; } // 不存在的 op 按 dead 报
-  const status = Number(rows[0].status);
+  const status = storedInt(rows[0].status, "outbox.status", { min: 0, max: 2 });
   return {
     opId,
     status: status === OUTBOX_DONE ? "done" : status === OUTBOX_PENDING ? "granting" : "dead",
@@ -252,7 +253,7 @@ export async function replayDead(opId: string, sId = currentZoneId()): Promise<"
     "SELECT user_id, server_id, effect FROM gameplay_outbox WHERE op_id = ? AND server_id = ?", [opId, sId]);
   if (rows.length === 0) { return "missing"; }
   // 后台重放无请求上下文（§3.6 B4）：从行的 server_id 重建区上下文，redisApply 才落对区 Redis 前缀。
-  const rowSId = Number(rows[0].server_id);
+  const rowSId = storedInt(rows[0].server_id, "outbox.server_id", { min: 0, max: 65535 });
   const r = await zoneCtx.run({ sId: rowSId }, () =>
     redisApply(rows[0].user_id as string, opId, rows[0].effect as Effect));
   if (r === "ok" || r === "dup") { await markOutboxDone(opId, rowSId); }
@@ -268,10 +269,15 @@ export async function outboxStats(): Promise<{ pending: number; oldestPendingMs:
        TIMESTAMPDIFF(MICROSECOND, MIN(CASE WHEN status = 0 THEN created_at END), NOW(3)) / 1000 AS oldest_ms
      FROM gameplay_outbox`);
   return {
-    pending: Number(rows[0].pending ?? 0),
-    dead: Number(rows[0].dead ?? 0),
-    oldestPendingMs: rows[0].oldest_ms === null ? 0 : Number(rows[0].oldest_ms),
+    pending: optionalCount(rows[0].pending, "outbox.pending"),
+    dead: optionalCount(rows[0].dead, "outbox.dead"),
+    oldestPendingMs: rows[0].oldest_ms === null || rows[0].oldest_ms === undefined
+      ? 0 : storedFinite(rows[0].oldest_ms, "outbox.oldest_ms", { min: 0 }),
   };
+}
+
+function optionalCount(raw: unknown, name: string): number {
+  return raw === null || raw === undefined ? 0 : storedInt(raw, name, { min: 0, max: Number.MAX_SAFE_INTEGER });
 }
 
 /**

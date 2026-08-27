@@ -7,12 +7,13 @@ import { GuildRpc } from "@game/shared";
 import { readGuildEvents } from "../../core/guild/events";
 import { loadFields } from "../../core/userRecord";
 import { defineRpc } from "../rpc";
+import { optionalStoredInt } from "../../core/infra/numbers";
 
 export default defineRpc(GuildRpc.GetEvents, {
-  schema: z.object({ sinceSeq: z.number().int().min(0) }),
+  schema: z.object({ sinceSeq: z.number().int().min(0) }).strict(),
   handler: async (ctx, p) => {
     const f = await loadFields(ctx.uid, ["guildId"]);
-    const gid = Number(f.guildId ?? 0);
+    const gid = optionalStoredInt(f.guildId, 0, "guildId", { min: 0 });
     if (!(gid > 0)) { return { events: [], latestSeq: 0, guildId: 0 }; }
     const r = await readGuildEvents(gid, p.sinceSeq);
     return { ...r, guildId: gid }; // guildId 必带：客户端据此识别换会并重置 seq 水位

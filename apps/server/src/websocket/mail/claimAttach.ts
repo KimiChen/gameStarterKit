@@ -10,7 +10,7 @@ export default defineRpc(MailRpc.ClaimAttach, {
   schema: z.object({
     clientReqId: z.string().min(1).max(64),
     mailId: z.number().int().positive(),
-  }),
+  }).strict(),
   idem: true,
   handler: async (ctx, p) => claimMailAttach(ctx.uid, p.mailId),
 });

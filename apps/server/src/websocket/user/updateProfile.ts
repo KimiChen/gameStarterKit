@@ -16,7 +16,7 @@ export default defineRpc(UserRpc.UpdateProfile, {
     // 音频偏好字段级上云：覆写 last-write-wins；读侧在 user.getInfo（缺失=默认开，07 字段表）
     musicOn: z.boolean().optional(),
     sfxOn: z.boolean().optional(),
-  }),
+  }).strict(),
   idem: true,
   handler: async (ctx, p) =>
     withUser(ctx.uid, async (uow) => {

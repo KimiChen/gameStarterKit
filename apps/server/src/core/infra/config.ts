@@ -44,12 +44,28 @@ const env = (name: string, dflt?: string): string => {
 };
 const envInt = (name: string, dflt: number): number => {
   const v = process.env[name];
-  return v ? Number.parseInt(v, 10) : dflt;
+  if (v === undefined || v === "") { return dflt; }
+  if (!/^\d+$/.test(v)) {
+    throw new Error(`${name} 非法：「${v}」——须为非负整数`);
+  }
+  const n = Number(v);
+  if (!Number.isSafeInteger(n)) {
+    throw new Error(`${name} 非法：「${v}」——超出安全整数范围`);
+  }
+  return n;
 };
-// 速率类常量必须用它：parseInt 会把 '0.5' 截成 0，令牌桶 rate=0 语义完全变掉
+// 速率类常量必须用它：宽松 parseFloat 会把尾随垃圾截掉并制造静默配置分叉
 const envFloat = (name: string, dflt: number): number => {
   const v = process.env[name];
-  return v ? Number.parseFloat(v) : dflt;
+  if (v === undefined || v === "") { return dflt; }
+  if (!/^\d+(?:\.\d+)?$/.test(v)) {
+    throw new Error(`${name} 非法：「${v}」——须为非负十进制数`);
+  }
+  const n = Number(v);
+  if (!Number.isFinite(n)) {
+    throw new Error(`${name} 非法：「${v}」——必须是有限数`);
+  }
+  return n;
 };
 
 // 微信凭证 / code2session / 登录限流属于独立 WebPlatform，游戏进程不读取这些配置。
@@ -273,8 +289,8 @@ export const REDIS_COORD_URL = () => env("REDIS_COORD_URL", REDIS_DURABLE_URL())
 export const LOCK_TTL_MS = 5000;
 /** 跨实例抢锁有界重试次数（09·L5：禁止无限递归）。 */
 export const LOCK_RETRY_MAX = 3;
-/** 幂等 pending 哨兵短租约（09·I1：⛔ 禁止 24h 长 TTL 毒丸）。 */
-export const IDEM_PENDING_MS = 10_000;
+/** 幂等 pending 哨兵短租约；必须显著覆盖 handler 的最大执行窗口，避免迟到写与立即重试并发。 */
+export const IDEM_PENDING_MS = 30_000;
 /** 幂等结果缓存。 */
 export const IDEM_RESULT_MS = 60_000;
 /** sess:{uid} TTL = 3d。 */
@@ -402,3 +418,6 @@ export const MYSQL_QUEUE_ALERT = envInt("MYSQL_QUEUE_ALERT", 5);
 export const COMPUTE_POOL_SIZE = envInt("COMPUTE_POOL_SIZE", 2);
 /** 计算池单任务超时：超时 reject 并终止换新 worker（线程无法安全打断，只能弃车） */
 export const COMPUTE_TASK_TIMEOUT_MS = envInt("COMPUTE_TASK_TIMEOUT_MS", 30_000);
+/** 计算池最多保留的排队任务数；满载时以稳定 overload 错误快速拒绝。 */
+export const COMPUTE_QUEUE_CAPACITY =
+  webPlatformPositiveInt("COMPUTE_QUEUE_CAPACITY", 100, 100_000);

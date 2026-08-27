@@ -25,6 +25,7 @@ import { K_STREAM_MATCH, K_STREAM_MATCH_V2 } from "../infra/keys";
 import { withRcTx, type ResultSetHeader } from "../infra/mysql";
 import { clientForKey } from "../infra/redisRoute";
 import { defaultLifecycle } from "../infra/lifecycle";
+import { storedInt } from "../infra/numbers";
 
 // ── 常量（已登记 docs/SERVER.md §13，⛔ 禁止散落——09 审查流程第 6 条） ──
 
@@ -417,12 +418,17 @@ async function readGroupProgress(client: Redis, stream: MatchStreamState): Promi
       return undefined;
     };
     if (String(get("name") ?? "") !== GROUP) { continue; }
-    const pending = Number(get("pending"));
+    const pending = (() => {
+      try { return storedInt(get("pending"), "match XINFO pending", { min: 0 }); }
+      catch { throw new Error(`[matchConsumer] ${stream.label} XINFO GROUPS pending 非法`); }
+    })();
     const lastDeliveredId = String(get("last-delivered-id") ?? "");
     const rawLag = get("lag");
-    const lag = rawLag === null || rawLag === undefined ? null : Number(rawLag);
-    if (!Number.isSafeInteger(pending) || pending < 0 || !/^\d+-\d+$/.test(lastDeliveredId)
-        || (lag !== null && (!Number.isSafeInteger(lag) || lag < 0))) {
+    const lag = rawLag === null || rawLag === undefined ? null : (() => {
+      try { return storedInt(rawLag, "match XINFO lag", { min: 0 }); }
+      catch { throw new Error(`[matchConsumer] ${stream.label} XINFO GROUPS lag 非法`); }
+    })();
+    if (!/^\d+-\d+$/.test(lastDeliveredId)) {
       throw new Error(`[matchConsumer] ${stream.label} XINFO GROUPS 返回非法 settle 状态`);
     }
     return { pending, lag, lastDeliveredId };

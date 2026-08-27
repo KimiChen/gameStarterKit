@@ -11,7 +11,7 @@ import { readUser } from "../../player/userStore";
 import { defineRpc } from "../rpc";
 
 export default defineRpc(UserRpc.GetInfo, {
-  schema: z.object({}),
+  schema: z.object({}).strict(),
   handler: async (ctx) => {
     let user = await readUser(ctx.uid);
     if (!user) {

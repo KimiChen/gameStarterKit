@@ -18,6 +18,7 @@ import { K_STREAM_MAILWAKE } from "../core/infra/keys";
 import { clientForKey } from "../core/infra/redisRoute";
 import { fieldOf, startStreamConsumer, type StreamConsumer } from "../core/infra/streamConsumer";
 import { defaultLifecycle } from "../core/infra/lifecycle";
+import { storedInt } from "../core/infra/numbers";
 
 export interface PushSink { (type: string, data: unknown): void }
 
@@ -202,7 +203,14 @@ export function startMailWakeLoop(): void {
     const uid = fieldOf(fields, "uid");
     const mailId = fieldOf(fields, "mailId");
     // 目标不在本节点：pushToUser 返回 false 直接跳过（权威在 MySQL，上线自拉，09·A6）
-    if (uid && mailId !== undefined) { pushToUser(uid, LobbyPush.MailNew, { mailId: Number(mailId) }); }
+    if (uid && mailId !== undefined) {
+      try {
+        const id = storedInt(mailId, "mailwake.mailId", { min: 1, max: Number.MAX_SAFE_INTEGER });
+        pushToUser(uid, LobbyPush.MailNew, { mailId: id });
+      } catch {
+        console.warn(`[push] 丢弃非法 mailwake 条目 uid=${uid}`);
+      }
+    }
   });
   mailwakeUnregister = defaultLifecycle.register("mailwake", () => stopMailWakeLoop());
 }

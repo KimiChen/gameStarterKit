@@ -19,6 +19,7 @@ import { K_STREAM_KICK, kSess } from "../infra/keys";
 import { clientFor, coordClient } from "../infra/redisRoute";
 import { fieldOf, startStreamConsumer, type StreamConsumer } from "../infra/streamConsumer";
 import { defaultLifecycle } from "../infra/lifecycle";
+import { storedInt } from "../infra/numbers";
 
 // 自筛踢句柄：websocket 层（online 表）在启动期注入 kickUser（core/auth ⛔ 不反向依赖 websocket 层）。
 let kickHandler: ((uid: string, reason: ForceLogoutReasonType, exceptTokenHash?: string, sId?: number) => void) | null = null;
@@ -70,11 +71,24 @@ export function startKickConsumer(): void {
     // ⛔ **只对带 issuedAt 的事件做这个判断**：封号/撤销（GM 侧）不绑定任何一次登录，必须无条件踢；
     //    旧版本发布端的条目也没有该字段，⛔ 不能因为"没带"就丢弃（那会静默漏踢）。
     const rawSid = fieldOf(fields, "sId");
-    const sId = rawSid !== undefined && /^\d+$/.test(rawSid) ? Number(rawSid) : undefined;
+    // Malformed optional fields are rejected for the stale-event check, but a
+    // legacy event with no sId keeps its account-wide kick semantics.
+    const sId = rawSid === undefined ? undefined : (() => {
+      try { return storedInt(rawSid, "kick.sId", { min: 0, max: 65535 }); }
+      catch { return undefined; }
+    })();
     const at = fieldOf(fields, "issuedAt");
     if (at !== undefined && sId !== undefined) {
       const stored = await clientFor(uid).hget(kSess(uid, sId), "issuedAt").catch(() => null);
-      if (stored !== null && Number(stored) > Number(at)) {
+      const eventAt = (() => {
+        try { return storedInt(at, "kick.issuedAt", { min: 0, max: Number.MAX_SAFE_INTEGER }); }
+        catch { return null; }
+      })();
+      const storedAt = stored === null ? null : (() => {
+        try { return storedInt(stored, "session.issuedAt", { min: 0, max: Number.MAX_SAFE_INTEGER }); }
+        catch { return null; }
+      })();
+      if (eventAt !== null && storedAt !== null && storedAt > eventAt) {
         console.warn(`[kick] 丢弃陈旧顶号事件 uid=${uid}（事件 issuedAt=${at} < 组 sess ${stored}）`);
         return;
       }

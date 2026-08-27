@@ -18,6 +18,7 @@ import { joinRefused, joinRefusedAuth, toErrCode } from "../core/errors";
 import { loadFields } from "../core/userRecord";
 import { ensureCharacterReady } from "../player/character";
 import { dispatchRpc, rpcEnvelopeSchema, type RpcCtx, type RpcReply } from "./dispatcher";
+import { optionalStoredInt } from "../core/infra/numbers";
 import { registerOnline, setOnlineGuild, startMailWakeLoop, unregisterOnline, type PushSink } from "./push";
 import { tokenHashOf, verifySession } from "../core/auth/session";
 import { registerAllRoutes } from "./loader";
@@ -125,7 +126,10 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
     // 全程 best-effort：失败只影响工会广播/首帧，不阻塞连接（重连/换会修复）。
     // 角色已 ready；这里只做轻量在线公会索引，失败不会破坏角色契约。
     void zoneCtx.run({ sId }, () => loadFields(uid, ["guildId"]))
-      .then((f) => setOnlineGuild(uid, Number(f.guildId ?? 0) || null, sId))
+      .then((f) => {
+        const gid = optionalStoredInt(f.guildId, 0, "guildId", { min: 0 });
+        setOnlineGuild(uid, gid > 0 ? gid : null, sId);
+      })
       .catch((e) => console.error(`[lobby] 在线公会索引初始化失败 uid=${uid} sId=${sId}`, e));
   }
 

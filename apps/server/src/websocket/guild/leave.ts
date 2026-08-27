@@ -9,14 +9,15 @@ import { withUser } from "../../core/uow";
 import { pushToGuild, setOnlineGuild } from "../push";
 import { defineRpc } from "../rpc";
 import { currentZoneId } from "../../core/infra/keys";
+import { optionalStoredInt } from "../../core/infra/numbers";
 
 export default defineRpc(GuildRpc.Leave, {
-  schema: z.object({ clientReqId: z.string().min(1).max(64) }),
+  schema: z.object({ clientReqId: z.string().min(1).max(64) }).strict(),
   idem: true,
   handler: async (ctx) => {
     const prevGid = await withUser(ctx.uid, async (uow) => {
       const f = await uow.loadFields(["guildId"]);
-      const gid = Number(f.guildId ?? 0);
+      const gid = optionalStoredInt(f.guildId, 0, "guildId", { min: 0 });
       if (gid > 0) { uow.set("guildId", "0"); }
       return gid;
     });

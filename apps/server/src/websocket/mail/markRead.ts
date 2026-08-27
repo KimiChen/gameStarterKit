@@ -9,7 +9,7 @@ import type { ResultSetHeader } from "../../core/infra/mysql";
 import { defineRpc } from "../rpc";
 
 export default defineRpc(MailRpc.MarkRead, {
-  schema: z.object({ mailId: z.number().int().positive() }),
+  schema: z.object({ mailId: z.number().int().positive() }).strict(),
   handler: async (ctx, p) => {
     await getPool().execute<ResultSetHeader>(
       // ⚠ 带 server_id（A2）：⛔ 不能让本区连接把他区邮件标成已读

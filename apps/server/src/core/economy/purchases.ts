@@ -7,7 +7,7 @@
  */
 import { randomBytes } from "node:crypto";
 import {
-  PURCHASE_CREATED, PURCHASE_DELIVERED, PURCHASE_PAID, CUR_GOLD,
+  PURCHASE_CREATED, PURCHASE_DELIVERED, PURCHASE_PAID, PURCHASE_CLOSED, CUR_GOLD,
 } from "../infra/config";
 import { currentZoneId } from "../infra/keys";
 import { withRcTx } from "../infra/mysql";
@@ -15,6 +15,7 @@ import type { ResultSetHeader, RowDataPacket } from "../infra/mysql";
 import { getRechargeSku } from "./catalog";
 import { creditInTx, invalidateBalanceCache } from "./currency";
 import { deriveOpId } from "./outbox";
+import { storedInt } from "../infra/numbers";
 
 /** 下单：客户端拉起支付前调用。order_id 服务端生成。 */
 export async function createOrder(uid: string, sku: string): Promise<{ orderId: string; amountFen: number }> {
@@ -49,13 +50,15 @@ export async function handleWxPayNotify(n: WxPayNotify): Promise<"ok" | "already
       "SELECT user_id, server_id, sku, amount_fen, status FROM purchases WHERE order_id = ? FOR UPDATE", [n.orderId]);
     if (rows.length === 0) { return "mismatch" as const; }
     const order = rows[0];
-    if (Number(order.status) !== PURCHASE_CREATED) { return "already" as const; } // 重放：直接 ack
-    if (Number(order.amount_fen) !== n.amountFen) { return "mismatch" as const; } // 金额不符 → 人工
+    const status = storedInt(order.status, "purchase.status", { min: PURCHASE_CREATED, max: PURCHASE_CLOSED });
+    if (status !== PURCHASE_CREATED) { return "already" as const; } // 重放：直接 ack
+    const amountFen = storedInt(order.amount_fen, "purchase.amount_fen", { min: 0, max: Number.MAX_SAFE_INTEGER });
+    if (amountFen !== n.amountFen) { return "mismatch" as const; } // 金额不符 → 人工
 
     const product = getRechargeSku(order.sku as string);
     if (!product) { return "mismatch" as const; }
     const uid = order.user_id as string;
-    const sId = Number(order.server_id);                           // 充值落哪个区钱包（§3.7；回调无 ALS，从订单读）
+    const sId = storedInt(order.server_id, "purchase.server_id", { min: 0, max: 65535 }); // 充值落哪个区钱包（§3.7；回调无 ALS，从订单读）
     const opId = deriveOpId(uid, sId, "recharge.deliver", n.orderId); // 订单号即幂等源
 
     // created → paid（含 wx_txn_id 落库；同 txn 撞 uk_wx_txn 由外层 1062 拒掉）

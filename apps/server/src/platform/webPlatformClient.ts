@@ -86,8 +86,9 @@ function parseVerifyResponse(v: unknown): VerifySessionResponse {
   if (v.valid) {
     if (!hasExactKeys(v, ["valid", "userId", "issuedAtMs"])
       || typeof v.userId !== "string"
+      || typeof v.issuedAtMs !== "number"
       || !Number.isSafeInteger(v.issuedAtMs)
-      || Number(v.issuedAtMs) < 0) {
+      || v.issuedAtMs < 0) {
       throw new WebPlatformContractError("verify 成功响应形状无效");
     }
     return v as VerifySessionResponse;

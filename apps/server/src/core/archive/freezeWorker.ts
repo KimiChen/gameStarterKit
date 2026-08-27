@@ -33,6 +33,7 @@ import {
 import { withUserLock } from "../locks";
 import { freezeCommit, type ArchiveSnapshot } from "./archiveScripts";
 import { archiveCounters, InProcTokenBucket, resolve, restoreFromArchive } from "./thaw";
+import { optionalStoredInt } from "../infra/numbers";
 
 const COLD_MS = COLD_DAYS * 86_400_000;
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
@@ -107,7 +108,10 @@ async function lastActiveMs(uid: string): Promise<number> {
     clientFor(uid).hget(kUser(uid), "lastActiveAt"),
     indexClientFor(bucket).zscore(kActiveLru(bucket), uid),
   ]);
-  return Math.max(Number(hashTs ?? 0), Number(score ?? 0));
+  return Math.max(
+    optionalStoredInt(hashTs, 0, "user.lastActiveAt", { min: 0, max: Number.MAX_SAFE_INTEGER }),
+    optionalStoredInt(score, 0, "active:lru score", { min: 0, max: Number.MAX_SAFE_INTEGER }),
+  );
 }
 
 async function zremIndex(uid: string): Promise<void> {
@@ -152,7 +156,7 @@ export async function freezeUser(uid: string, lease: SingletonLease): Promise<"f
     const verAtRead = user.ver ?? "0";
     // fence 高水位读自计数器（含本次抢锁的 INCR，恒 ≥ 一切已发出的 fence）：thaw 恢复到它
     // 之后，任何 pre-freeze 滞留 writer 的 casHset 都会 'stale'（08 约束 3）
-    const fenceHwm = Number(await r.get(kFence(uid)) ?? 0);
+    const fenceHwm = optionalStoredInt(await r.get(kFence(uid)), 0, "fence counter", { min: 0, max: Number.MAX_SAFE_INTEGER });
 
     if (_freezeTestHooks.afterSnapshot) { await _freezeTestHooks.afterSnapshot(uid); }
 
@@ -165,7 +169,7 @@ export async function freezeUser(uid: string, lease: SingletonLease): Promise<"f
            snapshot = new.snapshot, schema_version = new.schema_version,
            fence_hwm = GREATEST(user_archive.fence_hwm, new.fence_hwm),
            frozen_at = NOW(3)`,
-        [uid, JSON.stringify(snapshot), Number(user.schemaVersion ?? SCHEMA_VERSION), fenceHwm]);
+        [uid, JSON.stringify(snapshot), optionalStoredInt(user.schemaVersion, SCHEMA_VERSION, "user.schemaVersion", { min: 1 }), fenceHwm]);
       // -FOUND_ROWS 下 ODKU：插入=1 / 更新=2 / 完全未变=0——frozen_at=NOW(3) 恒变，0 即异常
       if (w.affectedRows === 0) { throw new Error(`user_archive upsert 0 行 uid=${uid}`); }
     });
@@ -240,28 +244,45 @@ export async function sweepOnce(lease: SingletonLease, perBucket = 100): Promise
  */
 export async function janitorSweep(lease: SingletonLease, batch = 200): Promise<{ scanned: number; deleted: number; repaired: number }> {
   const out = { scanned: 0, deleted: 0, repaired: 0 };
-  const [rows] = await getPool().query<RowDataPacket[]>(
-    `SELECT user_id FROM user_archive ORDER BY frozen_at LIMIT ${Math.floor(batch)}`);
-  for (const row of rows) {
-    const uid = String(row.user_id);
-    out.scanned++;
-    if ((await clientFor(uid).exists(kUser(uid))) === 0) { continue; } // 正常冷档：无锁预筛跳过
-    await withUserLock(uid, async (fence) => {
-      const st = await resolve(uid); // 锁内复判（09·F1）
-      if (st.kind === "LIVE" && st.row) {
-        await withLeaseTx(lease, async (conn) => { // 业务删行与续租守卫同事务（09·X7）
-          await conn.execute<ResultSetHeader>("DELETE FROM user_archive WHERE user_id = ?", [uid]);
-        });
-        freezeCounters.janitorDeleted++;
-        out.deleted++;
-      } else if (st.kind === "ARCHIVE_NEWER") {
-        // PITR 修复：UNLINK 陈旧 Redis 档 → 从 archive 恢复（Lua 原子，overwrite=1）
-        await restoreFromArchive(uid, fence, st.row!, true);
-        freezeCounters.janitorRepaired++;
-        out.repaired++;
-      }
-      // FROZEN（预筛后被并发 freeze 变冷）→ 什么都不做，留给 thaw
-    }, { renewMs: LOCK_RENEW_MS });
+  const pageSize = Math.max(1, Math.floor(batch));
+  // 使用 (frozen_at,user_id) keyset 分页，而不是每轮 LIMIT 200 从头开始。
+  // 正常 FROZEN 行会长期占据最前段；游标保证后面的陈旧/ARCHIVE_NEWER 行最终也能被扫到。
+  let cursorAt: Date | string | null = null;
+  let cursorUid = "";
+  for (;;) {
+    const where = cursorAt === null
+      ? ""
+      : "WHERE (frozen_at > ? OR (frozen_at = ? AND user_id > ?))";
+    const params: unknown[] = cursorAt === null
+      ? [pageSize]
+      : [cursorAt, cursorAt, cursorUid, pageSize];
+    const [rows] = await getPool().query<RowDataPacket[]>(
+      `SELECT user_id, frozen_at FROM user_archive ${where} ORDER BY frozen_at, user_id LIMIT ?`, params);
+    if (rows.length === 0) { break; }
+    for (const row of rows) {
+      const uid = String(row.user_id);
+      const frozenAt = row.frozen_at as Date | string;
+      out.scanned++;
+      cursorAt = frozenAt;
+      cursorUid = uid;
+      if ((await clientFor(uid).exists(kUser(uid))) === 0) { continue; } // 正常冷档：无锁预筛跳过
+      await withUserLock(uid, async (fence) => {
+        const st = await resolve(uid); // 锁内复判（09·F1）
+        if (st.kind === "LIVE" && st.row) {
+          await withLeaseTx(lease, async (conn) => { // 业务删行与续租守卫同事务（09·X7）
+            await conn.execute<ResultSetHeader>("DELETE FROM user_archive WHERE user_id = ?", [uid]);
+          });
+          freezeCounters.janitorDeleted++;
+          out.deleted++;
+        } else if (st.kind === "ARCHIVE_NEWER") {
+          // PITR 修复：UNLINK 陈旧 Redis 档 → 从 archive 恢复（Lua 原子，overwrite=1）
+          await restoreFromArchive(uid, fence, st.row!, true);
+          freezeCounters.janitorRepaired++;
+          out.repaired++;
+        }
+        // FROZEN（预筛后被并发 freeze 变冷）→ 什么都不做，留给 thaw
+      }, { renewMs: LOCK_RENEW_MS });
+    }
   }
   return out;
 }

@@ -11,6 +11,7 @@
  */
 import type { IPublicUserView, IUserView } from "@game/shared";
 import { loadFields } from "../core/userRecord";
+import { optionalStoredInt } from "../core/infra/numbers";
 
 /** 自己可见的档视图 —— 类型真源在 shared/protocol/lobbyRpc/user.ts 的 IUserView（双端同一定义）。 */
 export type UserView = IUserView;
@@ -18,7 +19,8 @@ export type UserView = IUserView;
 /** 他档公开视图 —— 真源 IPublicUserView，⛔ 不含私有字段（体力/设置等）。 */
 export type PublicUserView = IPublicUserView;
 
-const num = (v: string | null, dflt = 0): number => (v === null ? dflt : Number(v));
+const num = (v: string | null, dflt = 0, field = "user field"): number =>
+  optionalStoredInt(v, dflt, field, { min: Number.MIN_SAFE_INTEGER, max: Number.MAX_SAFE_INTEGER });
 /** 布尔偏好读侧兜底：字段缺失 = 默认值（"缺失即默认"模式，存量档零迁移）。 */
 const flag = (v: string | null, dflt = true): boolean => (v === null ? dflt : v === "1");
 
@@ -30,11 +32,11 @@ export async function readUser(uid: string): Promise<UserView | null> {
   if (f.ver === null) { return null; } // 建号必写 ver=0，ver 缺失 ⇒ 档不存在
   return {
     uid,
-    star: num(f.star), maxRound: num(f.maxRound), wins: num(f.wins), losses: num(f.losses),
-    stamina: num(f.stamina), lastStaminaRecoverAt: num(f.lastStaminaRecoverAt),
+    star: num(f.star, 0, "star"), maxRound: num(f.maxRound, 0, "maxRound"), wins: num(f.wins, 0, "wins"), losses: num(f.losses, 0, "losses"),
+    stamina: num(f.stamina, 0, "stamina"), lastStaminaRecoverAt: num(f.lastStaminaRecoverAt, 0, "lastStaminaRecoverAt"),
     musicOn: flag(f.musicOn), sfxOn: flag(f.sfxOn),
-    guildId: num(f.guildId), // 缺失 = 0 = 无工会（缺失即默认，⛔ 不回填）
-    ver: num(f.ver),
+    guildId: num(f.guildId, 0, "guildId"), // 缺失 = 0 = 无工会（缺失即默认，⛔ 不回填）
+    ver: num(f.ver, 0, "ver"),
   };
 }
 
@@ -44,7 +46,7 @@ export async function readUserReadonly(targetUid: string): Promise<PublicUserVie
   if (f.ver === null) { return null; }
   return Object.freeze({
     uid: targetUid,
-    nickname: f.nickname ?? "", avatarId: num(f.avatarId, -1), province: f.province ?? "",
-    star: num(f.star), maxRound: num(f.maxRound), wins: num(f.wins), losses: num(f.losses),
+    nickname: f.nickname ?? "", avatarId: num(f.avatarId, -1, "avatarId"), province: f.province ?? "",
+    star: num(f.star, 0, "star"), maxRound: num(f.maxRound, 0, "maxRound"), wins: num(f.wins, 0, "wins"), losses: num(f.losses, 0, "losses"),
   });
 }

@@ -21,7 +21,7 @@ export default defineRpc(MailRpc.List, {
   schema: z.object({
     before: z.number().int().positive().optional(),
     limit: z.number().int().min(1).max(50).optional(),
-  }),
+  }).strict(),
   handler: async (ctx, p) => {
     // ⚠ **必须带 server_id 谓词**（A2）：`mail` 表有该列、`mailer.sendMail` 写入时也落了值，
     // 但查询侧此前只按 user_id ⇒ 同账号在 s1 收的邮件，切到 s2 也能看到（实证过）。

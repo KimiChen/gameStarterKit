@@ -14,7 +14,7 @@ export default defineRpc(ShopRpc.Purchase, {
   schema: z.object({
     clientReqId: z.string().min(1).max(64),
     sku: z.string().min(1).max(64),
-  }),
+  }).strict(),
   idem: true,
   handler: async (ctx, p) => {
     const sku = getShopSku(p.sku);

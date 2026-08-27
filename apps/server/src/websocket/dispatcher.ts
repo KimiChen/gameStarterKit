@@ -30,7 +30,7 @@ export const rpcEnvelopeSchema = z.object({
   id: z.string().min(1).max(64),
   type: z.string().min(1).max(64),
   payload: z.unknown().optional(),
-});
+}).strict();
 
 export interface RpcCtx {
   /** 已鉴权 uid（09·G1：token 反查，⛔ 不信客户端传参）。 */
@@ -89,12 +89,15 @@ async function runIdem(ctx: RpcCtx, type: string, clientReqId: string, run: () =
 /** 单条 RPC 处理。永不 throw——一切异常规约成 {ok:false, err}（09·G3 按 code 分支）。 */
 export async function dispatchRpc(ctx: RpcCtx, msg: RpcEnvelope): Promise<RpcReply> {
   try {
+    // Apply the same per-principal budget before route lookup.  Unknown or
+    // future message names must not bypass the limiter and become an unbounded
+    // CPU/log counter during a probing flood.
+    await rateCheck(ctx.uid || ctx.sessionId);
     const def = routeTable.get(msg.type);
     if (!def) {
       unknownTypeCount++;
       throw new UnknownTypeError();
     }
-    await rateCheck(ctx.uid || ctx.sessionId); // 匿名回退 sessionId（09·G5）
 
     let payload: unknown;
     try {
@@ -113,10 +116,17 @@ export async function dispatchRpc(ctx: RpcCtx, msg: RpcEnvelope): Promise<RpcRep
     };
 
     // 超时兜底（09·G9）：race 不取消 handler，数据层幂等保证迟到首跑无害
-    const timeout = new Promise<never>((_, rej) =>
-      setTimeout(() => rej(new Error(`handler 超时: ${msg.type}`)), HANDLER_TIMEOUT_MS).unref());
-    const data = await Promise.race([invoke(), timeout]);
-    return { id: msg.id, ok: true, data };
+    let timeoutHandle: NodeJS.Timeout | null = null;
+    const timeout = new Promise<never>((_, rej) => {
+      timeoutHandle = setTimeout(() => rej(new Error(`handler 超时: ${msg.type}`)), HANDLER_TIMEOUT_MS);
+      timeoutHandle.unref();
+    });
+    try {
+      const data = await Promise.race([invoke(), timeout]);
+      return { id: msg.id, ok: true, data };
+    } finally {
+      if (timeoutHandle) { clearTimeout(timeoutHandle); }
+    }
   } catch (e) {
     const code = toErrCode(e);
     if (code === "INTERNAL") { console.error(`[rpc] INTERNAL type=${msg.type}`, e); }

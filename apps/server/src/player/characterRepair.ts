@@ -26,6 +26,7 @@ import {
   type WebPlatformClient,
 } from "../platform/webPlatformClient";
 import { defaultLifecycle } from "../core/infra/lifecycle";
+import { storedInt } from "../core/infra/numbers";
 
 export interface CharacterRepairIntent {
   userId: string;
@@ -95,11 +96,12 @@ export function parseCharacterRepairMember(member: string): CharacterRepairInten
       || userId.length < 1
       || userId.length > 128
       || !Number.isInteger(serverId)
-      || Number(serverId) < 0
-      || Number(serverId) > 65535) {
+      || serverId < 0
+      || serverId > 65535
+      || !Number.isSafeInteger(serverId)) {
       return null;
     }
-    return { userId, serverId: Number(serverId) };
+    return { userId, serverId };
   } catch {
     return null;
   }
@@ -189,8 +191,8 @@ async function rescheduleCharacterRepairMember(
       CHARACTER_REPAIR_BACKOFF_MAX_MS,
     ],
   ) as [number | string, number | string];
-  const attempts = Number(raw?.[0] ?? 0);
-  const nextAttemptMs = Number(raw?.[1] ?? 0);
+  const attempts = storedInt(raw?.[0] ?? 0, "character repair attempts", { min: 0, max: Number.MAX_SAFE_INTEGER });
+  const nextAttemptMs = storedInt(raw?.[1] ?? 0, "character repair nextAttemptMs", { min: 0, max: Number.MAX_SAFE_INTEGER });
   return { active: attempts > 0, attempts, nextAttemptMs };
 }
 

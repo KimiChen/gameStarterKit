@@ -7,6 +7,6 @@ import { readUserReadonly } from "../../player/userStore";
 import { defineRpc } from "../rpc";
 
 export default defineRpc(UserRpc.GetProfile, {
-  schema: z.object({ uid: z.string().min(1).max(32) }),
+  schema: z.object({ uid: z.string().min(1).max(32) }).strict(),
   handler: async (_ctx, p) => ({ profile: await readUserReadonly(p.uid) }),
 });

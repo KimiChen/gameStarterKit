@@ -12,6 +12,7 @@ import { withRcTx } from "../infra/mysql";
 import type { ResultSetHeader, RowDataPacket } from "../infra/mysql";
 import { clientForKey } from "../infra/redisRoute";
 import { InvalidPayloadError } from "../errors";
+import { storedInt } from "../infra/numbers";
 import {
   canonicalizeEffect, deriveOpId, markOutboxDone, readBack, redisApply,
   type EffectInput, type PurchaseResult,
@@ -70,7 +71,7 @@ export async function claimMailAttach(uid: string, mailId: number): Promise<Purc
       throw new InvalidPayloadError("邮件不存在或无附件");
     }
     const { attach_op_id: opId, attach_effect: rawEffect } = rows[0];
-    const sId = Number(rows[0].server_id); // 邮件所属区（§3.4/§3.6）：outbox intent + apply 落对区
+    const sId = storedInt(rows[0].server_id, "mail.server_id", { min: 0, max: 65535 }); // 邮件所属区（§3.4/§3.6）：outbox intent + apply 落对区
     if (rawEffect === null || rawEffect === undefined) { throw new InvalidPayloadError("邮件附件数据缺失"); }
     const effect = canonicalizeEffect(rawEffect);
     if (rows[0].claimed_at !== null) { return { opId, effect, sId, fresh: false }; } // 已领：幂等回读

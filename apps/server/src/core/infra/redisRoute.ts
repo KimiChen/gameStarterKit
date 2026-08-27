@@ -22,34 +22,82 @@ interface RouteTable { durable: RouteEntry[]; cacheUrl: string }
 let table: RouteTable | null = null;
 const clients = new Map<string, Redis>();
 
+/**
+ * Validate a route URL before any ioredis client is constructed.  Keeping this
+ * pure/exported makes the fail-closed rule testable without opening sockets.
+ */
+export function validateRedisUrl(raw: unknown, label: string): string {
+  if (typeof raw !== "string" || raw.trim() === "") {
+    throw new Error(`redis-route: ${label}.url 缺失`);
+  }
+  const value = raw.trim();
+  let parsed: URL;
+  try { parsed = new URL(value); } catch {
+    throw new Error(`redis-route: ${label}.url 非法：「${raw}」`);
+  }
+  if (parsed.protocol !== "redis:" && parsed.protocol !== "rediss:") {
+    throw new Error(`redis-route: ${label}.url 必须使用 redis:// 或 rediss://：「${raw}」`);
+  }
+  if (!parsed.hostname) {
+    throw new Error(`redis-route: ${label}.url 缺少 host：「${raw}」`);
+  }
+  return value;
+}
+
 function loadTable(): RouteTable {
   if (table) { return table; }
   const file = REDIS_ROUTE_FILE();
   if (!file) {
-    table = { durable: [{ url: REDIS_DURABLE_URL(), range: [0, BUCKETS - 1] }], cacheUrl: REDIS_CACHE_URL() };
+    table = {
+      durable: [{ url: validateRedisUrl(REDIS_DURABLE_URL(), "durable[0]"), range: [0, BUCKETS - 1] }],
+      cacheUrl: validateRedisUrl(REDIS_CACHE_URL(), "cache"),
+    };
     return table;
   }
-  const doc = parseYaml(readFileSync(file, "utf8")) as {
-    buckets: number;
-    durable: { url: string; range: [number, number] }[];
-    cache: { url: string };
-  };
-  if (doc.buckets !== BUCKETS) {
-    throw new Error(`redis-route: buckets=${doc.buckets} ≠ ${BUCKETS}（BUCKETS 永不改，09·S2）`);
+  const doc = parseYaml(readFileSync(file, "utf8")) as unknown;
+  if (!doc || typeof doc !== "object") {
+    throw new Error("redis-route: 配置必须是 YAML object");
   }
+  const raw = doc as { buckets?: unknown; durable?: unknown; cache?: unknown };
+  if (raw.buckets !== BUCKETS) {
+    throw new Error(`redis-route: buckets=${String(raw.buckets)} ≠ ${BUCKETS}（BUCKETS 永不改，09·S2）`);
+  }
+  if (!Array.isArray(raw.durable) || raw.durable.length === 0) {
+    throw new Error("redis-route: durable 必须是非空数组");
+  }
+  if (!raw.cache || typeof raw.cache !== "object") {
+    throw new Error("redis-route: cache 配置缺失");
+  }
+  const cache = raw.cache as { url?: unknown };
+  const entries: RouteEntry[] = raw.durable.map((value, index) => {
+    if (!value || typeof value !== "object") {
+      throw new Error(`redis-route: durable[${index}] 必须是 object`);
+    }
+    const entry = value as { url?: unknown; range?: unknown };
+    if (!Array.isArray(entry.range) || entry.range.length !== 2
+      || !Number.isSafeInteger(entry.range[0]) || !Number.isSafeInteger(entry.range[1])
+      || entry.range[0] < 0 || entry.range[1] >= BUCKETS || entry.range[0] > entry.range[1]) {
+      throw new Error(`redis-route: durable[${index}].range 非法：${JSON.stringify(entry.range)}`);
+    }
+    return {
+      url: validateRedisUrl(entry.url, `durable[${index}]`),
+      range: [entry.range[0], entry.range[1]],
+    };
+  });
   // 范围必须无缝覆盖 [0, BUCKETS)，装载时校验，别等运行期路由黑洞
-  const sorted = [...doc.durable].sort((a, b) => a.range[0] - b.range[0]);
+  const sorted = [...entries].sort((a, b) => a.range[0] - b.range[0]);
   let next = 0;
   for (const e of sorted) {
     if (e.range[0] !== next) { throw new Error(`redis-route: 桶 ${next} 未覆盖`); }
     next = e.range[1] + 1;
   }
   if (next !== BUCKETS) { throw new Error(`redis-route: 桶 ${next}..${BUCKETS - 1} 未覆盖`); }
-  table = { durable: sorted, cacheUrl: doc.cache.url };
+  table = { durable: sorted, cacheUrl: validateRedisUrl(cache.url, "cache") };
   return table;
 }
 
 function clientOf(url: string): Redis {
+  validateRedisUrl(url, "client");
   let c = clients.get(url);
   if (!c) {
     c = new Redis(url, { lazyConnect: false });

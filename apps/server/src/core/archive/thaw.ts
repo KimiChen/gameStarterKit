@@ -20,6 +20,7 @@ import { BusyError, ThawingError, UserDataLostError } from "../errors";
 import { thawRestore, type ArchiveSnapshot } from "./archiveScripts";
 import { lazyMigrateSchema } from "./lazyMigrate";
 import { webPlatformClient } from "../../platform/webPlatformClient";
+import { optionalStoredInt, storedInt } from "../infra/numbers";
 
 // ───────────────────── 常量（模块私有；跨模块配置见 core/infra/config.ts） ─────────────────────
 
@@ -105,8 +106,8 @@ export async function resolve(uid: string): Promise<{ kind: UserState; row?: Arc
   const row: ArchiveRow | undefined = rows.length > 0
     ? {
         snapshot: rows[0].snapshot as ArchiveSnapshot,
-        schemaVersion: Number(rows[0].schema_version),
-        fenceHwm: Number(rows[0].fence_hwm),
+        schemaVersion: storedInt(rows[0].schema_version, "user_archive.schema_version", { min: 1 }),
+        fenceHwm: storedInt(rows[0].fence_hwm, "user_archive.fence_hwm", { min: 0 }),
       }
     : undefined;
 
@@ -115,7 +116,10 @@ export async function resolve(uid: string): Promise<{ kind: UserState; row?: Arc
   if (!live && !row) { return { kind: "ABSENT" }; }
 
   const [hashFence, counter] = await Promise.all([r.hget(kUser(uid), "fence"), r.get(kFence(uid))]);
-  const redisFence = Math.max(Number(hashFence ?? 0), Number(counter ?? 0));
+  const redisFence = Math.max(
+    optionalStoredInt(hashFence, 0, "user.fence", { min: 0 }),
+    optionalStoredInt(counter, 0, "fence counter", { min: 0 }),
+  );
   // 平局（==）判 LIVE：freeze 写完 archive 没来得及 UNLINK、或 thaw 恢复完没来得及删行的
   // 中断态，两边数据相同，删 archive 行即可（08）
   return row!.fenceHwm > redisFence ? { kind: "ARCHIVE_NEWER", row } : { kind: "LIVE", row };

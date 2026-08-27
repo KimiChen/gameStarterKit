@@ -10,7 +10,9 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { ALL_LOBBY_RPC_TYPES } from "@game/shared";
+import {
+  ALL_LOBBY_RPC_TYPES, GuildRpc, MailRpc, ShopRpc, UserRpc,
+} from "@game/shared";
 import { collectEndpoints } from "../src/websocket/loader";
 
 test("端点全集与 shared 声明集合相等，路由名与文件路径一致", async () => {
@@ -19,27 +21,48 @@ test("端点全集与 shared 声明集合相等，路由名与文件路径一致
   assert.equal(new Set(defs.map((d) => d.type)).size, defs.length, "路由名不得重复");
 });
 
-// 除 clientReqId 外把各写路由的必填字段都喂满——失败必须只因缺 clientReqId。
-// ⚠ 新增写路由时把它的必填字段补进来（不补的话下面第一条测试会替你报错）
-const probe = { mailId: 1, sku: "x", opId: "x", guildId: 1 };
+// 每条路由的最小合法 payload。严格 schema 不再接受「把所有字段塞在一起」的旧 probe；
+// 这张表也让新增路由漏写测试样例时在 CI 立即暴露。
+const validPayloads: Record<string, Record<string, unknown>> = {
+  [UserRpc.GetUserId]: {},
+  [UserRpc.GetInfo]: {},
+  [UserRpc.GetProfile]: { uid: "u_test" },
+  [UserRpc.UpdateProfile]: { clientReqId: "c1" },
+  [MailRpc.List]: {},
+  [MailRpc.ClaimAttach]: { clientReqId: "c1", mailId: 1 },
+  [MailRpc.MarkRead]: { mailId: 1 },
+  [ShopRpc.Purchase]: { clientReqId: "c1", sku: "x" },
+  [ShopRpc.QueryOp]: { opId: "x" },
+  [GuildRpc.Join]: { clientReqId: "c1", guildId: 1 },
+  [GuildRpc.Leave]: { clientReqId: "c1" },
+  [GuildRpc.GetEvents]: { sinceSeq: 0 },
+};
 
 test("idem 路由的 schema 必须强制 clientReqId（09·I2）", async () => {
   const defs = await collectEndpoints();
   const idemDefs = defs.filter((d) => d.idem === true);
   assert.ok(idemDefs.length >= 3, "幂等写路由至少含 updateProfile/claimAttach/purchase");
   for (const d of idemDefs) {
-    assert.equal(d.schema.safeParse(probe).success, false,
+    const valid = validPayloads[d.type];
+    assert.ok(valid, `${d.type} 缺少 valid payload fixture`);
+    const { clientReqId: _id, ...withoutId } = valid;
+    assert.equal(d.schema.safeParse(withoutId).success, false,
       `${d.type} 的 schema 必须拒绝缺 clientReqId 的 payload`);
-    assert.equal(d.schema.safeParse({ ...probe, clientReqId: "c1" }).success, true,
-      `${d.type} 的 schema 补上 clientReqId 后应通过（probe 字段不全则补全 probe）`);
+    assert.equal(d.schema.safeParse(valid).success, true,
+      `${d.type} 的 schema 使用最小合法 payload 应通过`);
+    assert.equal(d.schema.safeParse({ ...valid, __extra: true }).success, false,
+      `${d.type} 的 schema 必须拒绝未知字段`);
   }
 });
 
 test("schema 要求 clientReqId 的路由必须开 idem: true（09·I1 反向；defineRpc 重载在编译期挡，这里兜运行时）", async () => {
   const defs = await collectEndpoints();
   for (const d of defs) {
-    const needsReqId = !d.schema.safeParse(probe).success
-      && d.schema.safeParse({ ...probe, clientReqId: "c1" }).success;
+    const valid = validPayloads[d.type];
+    assert.ok(valid, `${d.type} 缺少 valid payload fixture`);
+    const { clientReqId: _id, ...withoutId } = valid;
+    const needsReqId = !d.schema.safeParse(withoutId).success
+      && d.schema.safeParse(valid).success;
     if (needsReqId) {
       assert.equal(d.idem, true, `${d.type} 的 schema 要求 clientReqId 但未开 idem——占位/结果缓存整条链失效`);
     }

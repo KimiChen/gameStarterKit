@@ -9,6 +9,6 @@ import { UserRpc } from "@game/shared";
 import { defineRpc } from "../rpc";
 
 export default defineRpc(UserRpc.GetUserId, {
-  schema: z.object({}),
+  schema: z.object({}).strict(),
   handler: async (ctx) => ({ uid: ctx.uid }),
 });

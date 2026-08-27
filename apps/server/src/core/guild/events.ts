@@ -14,6 +14,7 @@ import type { IGuildEvent } from "@game/shared";
 import { GUILD_EVT_LOG_MAX } from "../infra/config";
 import { kGuildEvtLog, kGuildEvtSeq } from "../infra/keys";
 import { clientForKey } from "../infra/redisRoute";
+import { optionalStoredInt } from "../infra/numbers";
 
 /** 发一条工会事件，返回其 seq。调用方随后 pushToGuild(gid, LobbyPush.GuildEvent, { seq })。 */
 export async function emitGuildEvent(guildId: number, kind: string, data?: unknown): Promise<number> {
@@ -33,7 +34,7 @@ export async function readGuildEvents(
   guildId: number, sinceSeq: number,
 ): Promise<{ events: IGuildEvent[]; latestSeq: number }> {
   const client = clientForKey(kGuildEvtSeq(guildId));
-  const latestSeq = Number((await client.get(kGuildEvtSeq(guildId))) ?? "0");
+  const latestSeq = optionalStoredInt(await client.get(kGuildEvtSeq(guildId)), 0, "guild event seq", { min: 0 });
   if (latestSeq <= sinceSeq) { return { events: [], latestSeq }; }
   const raw = await client.lrange(kGuildEvtLog(guildId), 0, GUILD_EVT_LOG_MAX - 1);
   const events: IGuildEvent[] = [];

@@ -11,6 +11,7 @@ import { cacheClient } from "../infra/redisRoute";
 import { getPool } from "../infra/mysql";
 import type { PoolConnection, ResultSetHeader, RowDataPacket } from "../infra/mysql";
 import { InsufficientBalanceError, StaleFenceError } from "../errors";
+import { storedInt } from "../infra/numbers";
 
 const CACHE_TTL_S = 300; // 5m（模块私有常量；key 分类真源见 core/infra/keys.ts）
 
@@ -22,10 +23,14 @@ export async function getBalance(uid: string, sId: number, currency = CUR_GOLD):
     const cache = cacheClient();
     const key = kCacheCurrency(uid);
     const hit = await cache.hget(key, String(currency));
-    if (hit !== null) { return Number(hit); }
+    if (hit !== null) {
+      return storedInt(hit, "currency cache balance", { min: 0, max: Number.MAX_SAFE_INTEGER });
+    }
     const [rows] = await getPool().query<RowDataPacket[]>(
       "SELECT balance FROM user_currency WHERE user_id = ? AND server_id = ? AND currency = ?", [uid, sId, currency]);
-    const balance = rows.length > 0 ? Number(rows[0].balance) : 0;
+    const balance = rows.length > 0
+      ? storedInt(rows[0].balance, "user_currency.balance", { min: 0, max: Number.MAX_SAFE_INTEGER })
+      : 0;
     await cache.multi().hset(key, String(currency), String(balance)).expire(key, CACHE_TTL_S).exec();
     return balance;
   });
@@ -66,14 +71,17 @@ export async function debitInTx(
   if (upd.affectedRows === 0) {
     const [rows] = await conn.query<RowDataPacket[]>(
       "SELECT balance FROM user_currency WHERE user_id = ? AND server_id = ? AND currency = ?", [uid, sId, currency]);
-    const bal = rows.length > 0 ? Number(rows[0].balance) : 0;
+    const bal = rows.length > 0
+      ? storedInt(rows[0].balance, "user_currency.balance", { min: 0, max: Number.MAX_SAFE_INTEGER })
+      : 0;
     if (bal >= amount) { throw new StaleFenceError(); } // 余额够 → 是 fence 被抬高（P6 僵尸写被拦）
     throw new InsufficientBalanceError();
   }
 
   const [after] = await conn.query<RowDataPacket[]>(
     "SELECT balance FROM user_currency WHERE user_id = ? AND server_id = ? AND currency = ?", [uid, sId, currency]);
-  const newBalance = Number(after[0].balance);
+  if (after.length === 0) { throw new Error("user_currency 更新后余额缺失"); }
+  const newBalance = storedInt(after[0].balance, "user_currency.balance", { min: 0, max: Number.MAX_SAFE_INTEGER });
   await conn.execute<ResultSetHeader>(
     "UPDATE currency_ledger SET balance_after = ? WHERE user_id = ? AND server_id = ? AND idem_key = ?",
     [newBalance, uid, sId, opId]);
@@ -104,7 +112,8 @@ export async function creditInTx(
     [uid, sId, currency, amount]); // 行别名 AS new 需 8.0.19+（05；VALUES() 已弃用）
   const [after] = await conn.query<RowDataPacket[]>(
     "SELECT balance FROM user_currency WHERE user_id = ? AND server_id = ? AND currency = ?", [uid, sId, currency]);
-  const newBalance = Number(after[0].balance);
+  if (after.length === 0) { throw new Error("user_currency 入账后余额缺失"); }
+  const newBalance = storedInt(after[0].balance, "user_currency.balance", { min: 0, max: Number.MAX_SAFE_INTEGER });
   await conn.execute<ResultSetHeader>(
     "UPDATE currency_ledger SET balance_after = ? WHERE user_id = ? AND server_id = ? AND idem_key = ?",
     [newBalance, uid, sId, opId]);

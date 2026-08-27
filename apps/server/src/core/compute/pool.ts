@@ -23,7 +23,15 @@
  */
 import { Worker } from "node:worker_threads";
 import { fileURLToPath } from "node:url";
-import { COMPUTE_POOL_SIZE, COMPUTE_TASK_TIMEOUT_MS } from "../infra/config";
+import { COMPUTE_POOL_SIZE, COMPUTE_QUEUE_CAPACITY, COMPUTE_TASK_TIMEOUT_MS } from "../infra/config";
+
+/** 队列达到 admission 上限时返回的稳定错误类型，调用方可退避而不是无限堆积。 */
+export class ComputeOverloadedError extends Error {
+  constructor(message = "compute queue overloaded") {
+    super(message);
+    this.name = "ComputeOverloadedError";
+  }
+}
 
 interface Job {
   id: number;
@@ -45,6 +53,7 @@ const workers = new Set<Worker>();
 const idle: Worker[] = [];
 const queue: Job[] = [];
 const running = new Map<Worker, Job>();
+const respawnTimers = new Set<NodeJS.Timeout>();
 
 /** 死亡统一出口：出列（含 idle 尸体）、在途任务立即失败、退避重生。 */
 function reap(w: Worker, cause: Error): void {
@@ -60,9 +69,12 @@ function reap(w: Worker, cause: Error): void {
   }
   if (!destroyed && workers.size < SIZE) {
     // 退避重生：防持久性启动失败演成重生风暴（评审实测无退避时 ~146 次/秒）
-    setTimeout(() => {
+    const timer = setTimeout(() => {
+      respawnTimers.delete(timer);
       if (!destroyed && workers.size < SIZE) { idle.push(spawn()); drain(); }
-    }, RESPAWN_DELAY_MS).unref();
+    }, RESPAWN_DELAY_MS);
+    timer.unref();
+    respawnTimers.add(timer);
   }
 }
 
@@ -151,6 +163,14 @@ function start(w: Worker, job: Job): void {
 /** 提交计算任务（task = core/compute/tasks/ 下的文件名，不含扩展名）。 */
 export function runInPool<TIn, TOut>(task: string, input: TIn): Promise<TOut> {
   if (destroyed) { return Promise.reject(new Error("compute 池已销毁")); }
+  // Admission counts both queued and running jobs.  Counting only `queue` lets
+  // a burst fill every worker and then enqueue another full capacity behind it.
+  // The caller sees one stable overload boundary regardless of worker timing.
+  if (queue.length + running.size >= COMPUTE_QUEUE_CAPACITY) {
+    return Promise.reject(new ComputeOverloadedError(
+      `compute queue overloaded (capacity=${COMPUTE_QUEUE_CAPACITY})`,
+    ));
+  }
   return new Promise<TOut>((resolve, reject) => {
     const job: Job = {
       id: ++jobSeq, task, input,
@@ -169,6 +189,8 @@ export function runInPool<TIn, TOut>(task: string, input: TIn): Promise<TOut> {
 /** 销毁池（测试收尾用；生产随进程退出）。 */
 export async function destroyPool(): Promise<void> {
   destroyed = true;
+  for (const timer of respawnTimers) { clearTimeout(timer); }
+  respawnTimers.clear();
   const all = [...workers];
   workers.clear();
   idle.length = 0;

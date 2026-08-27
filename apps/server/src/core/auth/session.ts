@@ -20,6 +20,7 @@ import { kSess } from "../infra/keys";
 import { clientFor } from "../infra/redisRoute";
 import { AuthRequiredError } from "../errors";
 import { touchActive } from "../userRecord";
+import { storedInt } from "../infra/numbers";
 // 踢人通道（§2.3）：同区顶号时主动踢旧连接；账号封禁/撤销由 WebPlatform 管理面负责。
 import { broadcastKick, kickLocal } from "./kickBus";
 import { ForceLogoutReason } from "@game/shared";
@@ -104,7 +105,7 @@ export async function writeGroupSess(
   const res = await clientFor(uid).eval(
     SESS_FENCE_LUA, 1, key, newHash, String(issuedAtMs), String(Date.now()), gwNode, String(SESS_TTL_S),
   ) as [number, string];
-  const status = Number(res?.[0]);
+  const status = storedInt(res?.[0], "session fence status", { min: -1, max: 1 });
   const oldRaw = String(res?.[1] ?? "");
   const oldHash = oldRaw === "" ? null : oldRaw;
   if (status < 0) {
