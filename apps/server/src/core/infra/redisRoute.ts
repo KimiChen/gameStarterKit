@@ -30,7 +30,13 @@ export function validateRedisUrl(raw: unknown, label: string): string {
   if (typeof raw !== "string" || raw.trim() === "") {
     throw new Error(`redis-route: ${label}.url 缺失`);
   }
-  const value = raw.trim();
+  // Configuration whitespace is almost always an interpolation/secret-file
+  // mistake.  Reject it instead of silently changing the configured endpoint
+  // and making route files differ from what operators inspected.
+  if (raw !== raw.trim()) {
+    throw new Error(`redis-route: ${label}.url 不得含前后空白：「${raw}」`);
+  }
+  const value = raw;
   let parsed: URL;
   try { parsed = new URL(value); } catch {
     throw new Error(`redis-route: ${label}.url 非法：「${raw}」`);
@@ -141,7 +147,7 @@ export function cacheClient(): Redis {
 }
 
 /** coord / 踢人控制总线 Redis（**组侧**设施，DUAL_MODE §2.3 / §4.2）：dev 缺省复用 durable 实例（同 URL → clientOf 复用同连接），
- *  prod-split 指向物理隔离 HA。只承载 `stream:kick`（踢人广播，事件仅 {uid,reason[,exceptHash]}、⛔ 无 epoch 无 ack），⛔ 非路由键（直连单实例）。
+ *  prod-split 指向物理隔离 HA。只承载 `stream:kick`（踢人广播 `{uid,reason[,exceptHash,issuedAt,sId]}`、⛔ 无 epoch 无 ack），⛔ 非路由键（直连单实例）。
  *  ⛔ **非账号服务自持**：WebPlatform 不持 coord、刻意不广播撤销（WEBPLATFORM.md §5），发布方是本组的 `kickBus.broadcastKick`。 */
 export function coordClient(): Redis {
   return clientOf(REDIS_COORD_URL());

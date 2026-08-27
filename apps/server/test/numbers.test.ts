@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { optionalStoredInt, storedFinite, storedInt } from "../src/core/infra/numbers";
+import {
+  optionalStoredBool, optionalStoredInt, storedBool, storedFinite, storedInt,
+} from "../src/core/infra/numbers";
 
 test("storedInt accepts finite safe integer storage values and rejects coercion", () => {
   assert.equal(storedInt("42", "n", { min: 0, max: 100 }), 42);
@@ -21,4 +23,15 @@ test("optionalStoredInt only defaults missing fields; malformed present data fai
   assert.equal(optionalStoredInt(null, 7, "n", { min: 0 }), 7);
   assert.equal(optionalStoredInt(undefined, 7, "n", { min: 0 }), 7);
   assert.throws(() => optionalStoredInt("bad", 7, "n", { min: 0 }), /n/);
+});
+
+test("storedBool accepts only the persisted 0/1 encoding and rejects corrupt values", () => {
+  assert.equal(storedBool("1", "musicOn"), true);
+  assert.equal(storedBool("0", "musicOn"), false);
+  for (const bad of ["", "true", "false", "2", " 1 ", 1, 0, true, false, null, undefined]) {
+    assert.throws(() => storedBool(bad, "musicOn"), /musicOn/);
+  }
+  assert.equal(optionalStoredBool(null, true, "musicOn"), true, "缺失值仍使用默认开关状态");
+  assert.equal(optionalStoredBool(undefined, false, "musicOn"), false);
+  assert.throws(() => optionalStoredBool("corrupt", true, "musicOn"), /musicOn/);
 });

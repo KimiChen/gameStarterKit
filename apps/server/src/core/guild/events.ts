@@ -14,13 +14,13 @@ import type { IGuildEvent } from "@game/shared";
 import { GUILD_EVT_LOG_MAX } from "../infra/config";
 import { kGuildEvtLog, kGuildEvtSeq } from "../infra/keys";
 import { clientForKey } from "../infra/redisRoute";
-import { optionalStoredInt } from "../infra/numbers";
+import { optionalStoredInt, storedInt } from "../infra/numbers";
 
 /** 发一条工会事件，返回其 seq。调用方随后 pushToGuild(gid, LobbyPush.GuildEvent, { seq })。 */
 export async function emitGuildEvent(guildId: number, kind: string, data?: unknown): Promise<number> {
   const seqKey = kGuildEvtSeq(guildId);
   const client = clientForKey(seqKey); // seq/log 同 hash-tag 同实例
-  const seq = await client.incr(seqKey);
+  const seq = storedInt(await client.incr(seqKey), "guild event seq", { min: 1, max: Number.MAX_SAFE_INTEGER });
   const evt: IGuildEvent = { seq, kind, at: Date.now(), ...(data !== undefined ? { data } : {}) };
   await client.multi()
     .lpush(kGuildEvtLog(guildId), JSON.stringify(evt))
@@ -40,7 +40,15 @@ export async function readGuildEvents(
   const events: IGuildEvent[] = [];
   for (const s of raw) {
     try {
-      const e = JSON.parse(s) as IGuildEvent;
+      const value: unknown = JSON.parse(s);
+      if (!value || typeof value !== "object" || Array.isArray(value)) { continue; }
+      const row = value as Record<string, unknown>;
+      if (typeof row.kind !== "string" || row.kind.length < 1 || row.kind.length > 64) { continue; }
+      const seq = storedInt(row.seq, "guild event.seq", { min: 1, max: Number.MAX_SAFE_INTEGER });
+      const at = storedInt(row.at, "guild event.at", { min: 0, max: Number.MAX_SAFE_INTEGER });
+      const e: IGuildEvent = Object.prototype.hasOwnProperty.call(row, "data")
+        ? { seq, kind: row.kind, at, data: row.data }
+        : { seq, kind: row.kind, at };
       if (e.seq > sinceSeq) { events.push(e); }
     } catch { /* 坏行跳过（seq 空洞无害语义） */ }
   }

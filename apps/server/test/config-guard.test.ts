@@ -60,6 +60,18 @@ test("PORT 合法值与缺省值：正常加载", () => {
   assert.equal(loadConfigWith({ PORT: "" }).status, 0, "空串 = 未设置走默认");
 });
 
+test("CHARACTER_READY_TIMEOUT_MS：环境配置必须是 1..120000 的安全整数", () => {
+  for (const bad of ["0", "-1", "1.5", "NaN", "Infinity", "120001", "9007199254740992"]) {
+    const r = loadConfigWith({ CHARACTER_READY_TIMEOUT_MS: bad });
+    assert.notEqual(r.status, 0, `CHARACTER_READY_TIMEOUT_MS=${bad} 应拒绝启动`);
+    assert.match(r.stderr, /CHARACTER_READY_TIMEOUT_MS 非法/, `stderr：${r.stderr.slice(0, 240)}`);
+  }
+  for (const good of ["1", "120000"]) {
+    const r = loadConfigWith({ CHARACTER_READY_TIMEOUT_MS: good });
+    assert.equal(r.status, 0, `CHARACTER_READY_TIMEOUT_MS=${good} 应通过，stderr：${r.stderr.slice(0, 240)}`);
+  }
+});
+
 // GROUP_ZONES：本进程/组承载的区服 sId 集合（进服硬闸单源，docs/DUAL_MODE.md §5.1 M11）。
 // 空=承载全部；非法（非「逗号分隔的非负整数」）加载期即 throw。
 test("GROUP_ZONES 非法值：config 加载期即 throw（防区归属闸配错）", () => {

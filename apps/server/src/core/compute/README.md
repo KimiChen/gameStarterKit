@@ -23,8 +23,8 @@
 const result = await runInPool<Input, Output>("battleSim", input);
 ```
 
-当前 queue 没有容量上限、拒绝策略或 backpressure。超时能最终移除排队任务，但不能防止超时前瞬时堆积；
-在接入高频或不可信请求前必须先补 admission 与饱和测试。现有 `compute-pool.test.ts` 覆盖 round-trip、
-并发与未知任务，不覆盖队列饱和。
+queue 有 `COMPUTE_QUEUE_CAPACITY` 总 admission 上限（运行中和排队中的任务合计）；达到上限时以
+`ComputeOverloadedError` fail-fast，调用方应退避或把任务转入独立批处理。每个任务仍有排队/执行共用
+超时，避免 worker 启动失败时无限等待；测试覆盖 worker 池的并发和故障恢复，以及容量边界。
 
 完整边界见 [`docs/SERVER.md §11`](../../../../../docs/SERVER.md#11-计算任务)。

@@ -63,3 +63,20 @@ export function optionalStoredFinite(
 ): number {
   return raw === null || raw === undefined ? fallback : storedFinite(raw, name, options);
 }
+
+/**
+ * 严格解析 Redis/MySQL 中的布尔编码。
+ *
+ * 存储层约定只写入字符串 `"0"`/`"1"`；其它值（包括数字、布尔值和
+ * 看似接近的文本）都表示损坏数据，不能被静默解释成 false。
+ */
+export function storedBool(raw: unknown, name: string): boolean {
+  if (raw === "1") { return true; }
+  if (raw === "0") { return false; }
+  throw new Error(`${name} 不是合法布尔编码：${String(raw)}`);
+}
+
+/** 可选存储布尔字段：只有缺失值使用默认值，显式损坏值必须失败。 */
+export function optionalStoredBool(raw: unknown, fallback: boolean, name: string): boolean {
+  return raw === null || raw === undefined ? fallback : storedBool(raw, name);
+}

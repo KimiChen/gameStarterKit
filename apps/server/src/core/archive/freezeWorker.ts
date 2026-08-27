@@ -242,49 +242,137 @@ export async function sweepOnce(lease: SingletonLease, perBucket = 100): Promise
  * 无锁 EXISTS 只是**预筛**（跳过海量正常冷档 FROZEN 行，不给它们上锁）；
  * 判决一律在锁内 resolve 重做。
  */
-export async function janitorSweep(lease: SingletonLease, batch = 200): Promise<{ scanned: number; deleted: number; repaired: number }> {
-  const out = { scanned: 0, deleted: 0, repaired: 0 };
-  const pageSize = Math.max(1, Math.floor(batch));
-  // 使用 (frozen_at,user_id) keyset 分页，而不是每轮 LIMIT 200 从头开始。
-  // 正常 FROZEN 行会长期占据最前段；游标保证后面的陈旧/ARCHIVE_NEWER 行最终也能被扫到。
-  let cursorAt: Date | string | null = null;
-  let cursorUid = "";
-  for (;;) {
-    const where = cursorAt === null
-      ? ""
-      : "WHERE (frozen_at > ? OR (frozen_at = ? AND user_id > ?))";
-    const params: unknown[] = cursorAt === null
-      ? [pageSize]
-      : [cursorAt, cursorAt, cursorUid, pageSize];
-    const [rows] = await getPool().query<RowDataPacket[]>(
-      `SELECT user_id, frozen_at FROM user_archive ${where} ORDER BY frozen_at, user_id LIMIT ?`, params);
-    if (rows.length === 0) { break; }
-    for (const row of rows) {
-      const uid = String(row.user_id);
-      const frozenAt = row.frozen_at as Date | string;
-      out.scanned++;
-      cursorAt = frozenAt;
-      cursorUid = uid;
-      if ((await clientFor(uid).exists(kUser(uid))) === 0) { continue; } // 正常冷档：无锁预筛跳过
-      await withUserLock(uid, async (fence) => {
-        const st = await resolve(uid); // 锁内复判（09·F1）
-        if (st.kind === "LIVE" && st.row) {
-          await withLeaseTx(lease, async (conn) => { // 业务删行与续租守卫同事务（09·X7）
-            await conn.execute<ResultSetHeader>("DELETE FROM user_archive WHERE user_id = ?", [uid]);
-          });
-          freezeCounters.janitorDeleted++;
-          out.deleted++;
-        } else if (st.kind === "ARCHIVE_NEWER") {
-          // PITR 修复：UNLINK 陈旧 Redis 档 → 从 archive 恢复（Lua 原子，overwrite=1）
-          await restoreFromArchive(uid, fence, st.row!, true);
-          freezeCounters.janitorRepaired++;
-          out.repaired++;
-        }
-        // FROZEN（预筛后被并发 freeze 变冷）→ 什么都不做，留给 thaw
-      }, { renewMs: LOCK_RENEW_MS });
+export interface JanitorSweepResult { scanned: number; deleted: number; repaired: number }
+export interface JanitorCursor { frozenAt: Date | string; userId: string }
+
+// janitor 是单例 worker，但测试/嵌入式宿主可能并发调用入口；用一个可等待的
+// flight 保证游标与每轮预算不会被两个扫描同时推进。游标刻意只存在本模块：
+// 重启后从头开始扫描仍然安全，且不会把数据库引入额外的协调状态。
+let janitorCursor: JanitorCursor | null = null;
+let janitorFlight: Promise<JanitorSweepResult> | null = null;
+
+/** 测试/嵌入式重启时清空本进程 janitor 游标。 */
+export function resetJanitorCursor(): void { janitorCursor = null; }
+
+/** `batch` 是单次 sweep 的总预算，而不是仅用于 SQL 分页的提示值。 */
+export function normalizeJanitorBudget(batch: number): number {
+  if (!Number.isFinite(batch)) {
+    throw new RangeError(`janitor batch 非法：「${String(batch)}」`);
+  }
+  const n = Math.floor(batch);
+  if (!Number.isSafeInteger(n)) {
+    throw new RangeError(`janitor batch 超出安全整数范围：「${String(batch)}」`);
+  }
+  return Math.max(1, n);
+}
+
+/**
+ * 统一校验 MySQL DATETIME 的 driver 形态。mysql2 默认返回 Date，但
+ * `dateStrings`/自定义 typeCast 可返回日期字符串；纯数字字符串不接受，
+ * 避免 `Date.parse("1")` 这类实现相关的伪日期穿过游标边界。
+ */
+export function normalizeJanitorFrozenAt(raw: unknown): Date | string {
+  if (raw instanceof Date) {
+    if (Number.isNaN(raw.getTime())) {
+      throw new Error(`user_archive.frozen_at 非法：「${String(raw)}」`);
+    }
+    return new Date(raw.getTime());
+  }
+  if (typeof raw === "string") {
+    const text = raw.trim();
+    // Require a date-shaped year/month/day prefix before consulting the
+    // permissive JS parser (`Date.parse("123junk")` is surprisingly valid on
+    // some runtimes and resolves to a year in the 1st century).
+    const dateShaped = /^\d{4}-\d{2}-\d{2}(?:[T ][0-9]{2}:[0-9]{2}(?::[0-9]{2}(?:\.\d{1,9})?)?(?:Z|[+-][0-9]{2}:?[0-9]{2})?)?$/;
+    if (dateShaped.test(text) && Number.isFinite(Date.parse(text))) {
+      return raw;
     }
   }
+  throw new Error(`user_archive.frozen_at 非法：「${String(raw)}」`);
+}
+
+function janitorCursorOf(row: RowDataPacket): JanitorCursor {
+  const frozenAt = normalizeJanitorFrozenAt(row.frozen_at);
+  // Do not stringify malformed driver values: String(null) would create a
+  // plausible-looking cursor and silently skip the real row on later pages.
+  if (typeof row.user_id !== "string" || row.user_id.length === 0) {
+    throw new Error(`user_archive.user_id 非法：「${String(row.user_id)}」`);
+  }
+  const userId = row.user_id;
+  return { frozenAt, userId };
+}
+
+async function runJanitorSweep(lease: SingletonLease, batch: number): Promise<JanitorSweepResult> {
+  const out = { scanned: 0, deleted: 0, repaired: 0 };
+  const budget = normalizeJanitorBudget(batch);
+  // 每次调用只取一页；正常 FROZEN 行会长期占据前段，模块级游标保证后面的
+  // 陈旧/ARCHIVE_NEWER 行在后续小时轮次也能被扫到，同时不让单轮扫描无界增长。
+  const cursor = janitorCursor;
+  const where = cursor === null
+    ? ""
+    : "WHERE (frozen_at > ? OR (frozen_at = ? AND user_id > ?))";
+  const params: unknown[] = cursor === null
+    ? [budget]
+    : [cursor.frozenAt, cursor.frozenAt, cursor.userId, budget];
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    `SELECT user_id, frozen_at FROM user_archive ${where} ORDER BY frozen_at, user_id LIMIT ?`, params);
+  if (rows.length === 0) {
+    // Cursor reached the end (or rows were removed between calls): begin a new
+    // cycle next time instead of permanently pinning the end-of-table position.
+    janitorCursor = null;
+    return out;
+  }
+
+  for (const row of rows) {
+    const point = janitorCursorOf(row);
+    const uid = point.userId;
+    out.scanned++;
+    if ((await clientFor(uid).exists(kUser(uid))) === 0) {
+      janitorCursor = point;
+      continue; // 正常冷档：无锁预筛跳过
+    }
+    await withUserLock(uid, async (fence) => {
+      const st = await resolve(uid); // 锁内复判（09·F1）
+      if (st.kind === "LIVE" && st.row) {
+        await withLeaseTx(lease, async (conn) => { // 业务删行与续租守卫同事务（09·X7）
+          await conn.execute<ResultSetHeader>("DELETE FROM user_archive WHERE user_id = ?", [uid]);
+        });
+        freezeCounters.janitorDeleted++;
+        out.deleted++;
+      } else if (st.kind === "ARCHIVE_NEWER") {
+        // PITR 修复：UNLINK 陈旧 Redis 档 → 从 archive 恢复（Lua 原子，overwrite=1）
+        await restoreFromArchive(uid, fence, st.row!, true);
+        freezeCounters.janitorRepaired++;
+        out.repaired++;
+      }
+      // FROZEN（预筛后被并发 freeze 变冷）→ 什么都不做，留给 thaw
+    }, { renewMs: LOCK_RENEW_MS });
+    // Advance only after the row's lock/reconciliation work succeeds.  If it
+    // throws, the next bounded invocation retries this row instead of skipping it.
+    janitorCursor = point;
+  }
+
+  // A short page proves that this keyset cycle is exhausted.  For an exact
+  // multiple of `budget`, the next invocation performs an empty query and
+  // resets the cursor via the branch above.
+  if (rows.length < budget) { janitorCursor = null; }
   return out;
+}
+
+/**
+ * 执行一轮有界 janitor。并发调用共享同一个结果 Promise，避免总预算被叠加。
+ */
+export function janitorSweep(lease: SingletonLease, batch = 200): Promise<JanitorSweepResult> {
+  if (janitorFlight) { return janitorFlight; }
+  const run = runJanitorSweep(lease, batch);
+  janitorFlight = run;
+  // Observe both fulfillment and rejection while clearing the guard; the
+  // caller still receives the original promise/rejection unchanged.
+  void run.then(
+    () => { if (janitorFlight === run) { janitorFlight = null; } },
+    () => { if (janitorFlight === run) { janitorFlight = null; } },
+  );
+  return run;
 }
 
 // ───────────────────── 主循环（独立进程） ─────────────────────
