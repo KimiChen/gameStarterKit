@@ -100,7 +100,7 @@ before(async () => {
 });
 
 after(async () => {
-  stopMailWakeLoop();
+  await stopMailWakeLoop();
   await colyseus?.shutdown();
   for (const u of uids) {
     for (const s of [0, 1]) { await zoneCtx.run({ sId: s }, () => cleanupUser(u)).catch(() => {}); }

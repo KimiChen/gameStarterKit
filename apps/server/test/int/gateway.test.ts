@@ -68,7 +68,7 @@ before(async () => {
 });
 
 after(async () => {
-  stopMailWakeLoop();
+  await stopMailWakeLoop();
   await colyseus?.shutdown();
   const pool = getPool();
   for (const u of uids) {

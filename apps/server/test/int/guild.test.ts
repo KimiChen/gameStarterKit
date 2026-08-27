@@ -83,7 +83,7 @@ before(async () => {
 });
 
 after(async () => {
-  stopMailWakeLoop();
+  await stopMailWakeLoop();
   await colyseus?.shutdown();
   for (const u of uids) {
     await cleanupUser(u);
