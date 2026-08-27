@@ -79,15 +79,25 @@ export class EffectValidationError extends Error {
 type RecordLike = Record<string, unknown>;
 
 const isRecord = (value: unknown): value is RecordLike => {
-    if (typeof value !== "object" || value === null || Array.isArray(value)) { return false; }
-    const proto = Object.getPrototypeOf(value);
-    return proto === Object.prototype || proto === null;
+    try {
+        if (typeof value !== "object" || value === null || Array.isArray(value)) { return false; }
+        const proto = Object.getPrototypeOf(value);
+        return proto === Object.prototype || proto === null;
+    } catch {
+        return false;
+    }
 };
 
 const exactKeys = (value: RecordLike, expected: readonly string[]): boolean => {
-    const actual = Object.keys(value).sort();
-    const wanted = [...expected].sort();
-    return actual.length === wanted.length && actual.every((key, i) => key === wanted[i]);
+    try {
+        const actual = Reflect.ownKeys(value);
+        if (actual.some((key) => typeof key !== "string")) return false;
+        const actualStrings = (actual as string[]).sort();
+        const wanted = [...expected].sort();
+        return actualStrings.length === wanted.length && actualStrings.every((key, i) => key === wanted[i]);
+    } catch {
+        return false;
+    }
 };
 
 const fail = (code: EffectErrorCode, path: string, detail?: string): never => {
@@ -104,30 +114,15 @@ const asciiField = (value: unknown): value is string =>
     && /^[A-Za-z][A-Za-z0-9_]*$/.test(value);
 
 /**
- * 严格校验带版本的 effect envelope，并返回防止调用方后续 mutate 的规范化副本。
- * ⛔ 这里刻意不接受裸数组；存量数组由 normalizeEffect 显式升格到当前版本。
+ * Validate one grant using the same limits as the durable effect envelope.
+ * Response payloads (purchase/query) expose grants too, so keeping this
+ * primitive public prevents the response validator from accepting a weaker
+ * shape than the write path.
  */
-export function validateEffect(input: unknown): IEffect {
-    if (!isRecord(input)) { fail("EFFECT_NOT_OBJECT", "effect"); }
-    const effect = input as RecordLike;
-    if (!exactKeys(effect, ["schemaVersion", "grants"])) { fail("EFFECT_KEYS", "effect"); }
-    if (effect.schemaVersion !== EFFECT_SCHEMA_VERSION) {
-        fail("EFFECT_SCHEMA_VERSION", "effect.schemaVersion");
-    }
-    const grantList = effect.grants;
-    if (!Array.isArray(grantList)) { fail("EFFECT_GRANTS", "effect.grants"); }
-    const grantsInput = grantList as unknown[];
-    if (grantsInput.length > EFFECT_MAX_GRANTS) {
-        fail("EFFECT_TOO_LARGE", "effect.grants");
-    }
-
-    let quantity = 0;
-    const grants: IGrant[] = [];
-    for (let i = 0; i < grantsInput.length; i++) {
-        const raw = grantsInput[i];
-        const path = `effect.grants[${i}]`;
-        if (!isRecord(raw)) { fail("EFFECT_GRANT_NOT_OBJECT", path); }
-        const grant = raw as RecordLike;
+export function validateGrant(input: unknown, path = "grant"): IGrant {
+    try {
+        if (!isRecord(input)) { fail("EFFECT_GRANT_NOT_OBJECT", path); }
+        const grant = input as RecordLike;
         if (typeof grant.kind !== "string") { fail("EFFECT_UNKNOWN_KIND", `${path}.kind`); }
 
         if (grant.kind === "item") {
@@ -138,37 +133,71 @@ export function validateEffect(input: unknown): IEffect {
             if (!finiteIntegerIn(grant.count, -EFFECT_MAX_COUNT, EFFECT_MAX_COUNT) || grant.count === 0) {
                 fail("EFFECT_COUNT", `${path}.count`);
             }
-            quantity += Math.abs(grant.count as number);
-            grants.push({ kind: "item", itemId: grant.itemId as number, count: grant.count as number });
-        } else if (grant.kind === "star") {
+            return { kind: "item", itemId: grant.itemId as number, count: grant.count as number };
+        }
+        if (grant.kind === "star") {
             if (!exactKeys(grant, ["kind", "delta"])) { fail("EFFECT_GRANT_KEYS", path); }
             if (!finiteIntegerIn(grant.delta, -EFFECT_MAX_DELTA, EFFECT_MAX_DELTA) || grant.delta === 0) {
                 fail("EFFECT_DELTA", `${path}.delta`);
             }
-            quantity += Math.abs(grant.delta as number);
-            grants.push({ kind: "star", delta: grant.delta as number });
-        } else if (grant.kind === "setField") {
+            return { kind: "star", delta: grant.delta as number };
+        }
+        if (grant.kind === "setField") {
             if (!exactKeys(grant, ["kind", "field", "value"])) { fail("EFFECT_GRANT_KEYS", path); }
             if (EFFECT_RESERVED_FIELDS.includes(grant.field as (typeof EFFECT_RESERVED_FIELDS)[number])) {
                 fail("EFFECT_RESERVED_FIELD", `${path}.field`);
             }
-            if (!asciiField(grant.field)) {
-                fail("EFFECT_FIELD", `${path}.field`);
-            }
+            if (!asciiField(grant.field)) { fail("EFFECT_FIELD", `${path}.field`); }
             if (!EFFECT_FIELD_ALLOWLIST.includes(grant.field as (typeof EFFECT_FIELD_ALLOWLIST)[number])) {
                 fail("EFFECT_FIELD", `${path}.field`);
             }
             if (typeof grant.value !== "string" || grant.value.length > EFFECT_MAX_VALUE_LENGTH) {
                 fail("EFFECT_VALUE", `${path}.value`);
             }
-            grants.push({ kind: "setField", field: grant.field as string, value: grant.value as string });
-        } else {
-            fail("EFFECT_UNKNOWN_KIND", `${path}.kind`);
+            return { kind: "setField", field: grant.field as string, value: grant.value as string };
+        }
+        return fail("EFFECT_UNKNOWN_KIND", `${path}.kind`);
+    } catch (error) {
+        if (error instanceof EffectValidationError) throw error;
+        return fail("EFFECT_DATA_CORRUPT", path);
+    }
+}
+
+/**
+ * 严格校验带版本的 effect envelope，并返回防止调用方后续 mutate 的规范化副本。
+ * ⛔ 这里刻意不接受裸数组；存量数组由 normalizeEffect 显式升格到当前版本。
+ */
+export function validateEffect(input: unknown): IEffect {
+    try {
+        if (!isRecord(input)) { fail("EFFECT_NOT_OBJECT", "effect"); }
+        const effect = input as RecordLike;
+        if (!exactKeys(effect, ["schemaVersion", "grants"])) { fail("EFFECT_KEYS", "effect"); }
+        if (effect.schemaVersion !== EFFECT_SCHEMA_VERSION) {
+            fail("EFFECT_SCHEMA_VERSION", "effect.schemaVersion");
+        }
+        const grantList = effect.grants;
+        if (!Array.isArray(grantList)) { fail("EFFECT_GRANTS", "effect.grants"); }
+        const grantsInput = grantList as unknown[];
+        if (grantsInput.length > EFFECT_MAX_GRANTS) {
+            fail("EFFECT_TOO_LARGE", "effect.grants");
         }
 
-        if (quantity > EFFECT_MAX_QUANTITY) { fail("EFFECT_QUANTITY", "effect.grants"); }
+        let quantity = 0;
+        const grants: IGrant[] = [];
+        for (let i = 0; i < grantsInput.length; i++) {
+            const raw = grantsInput[i];
+            const path = `effect.grants[${i}]`;
+            const grant = validateGrant(raw, path);
+            if (grant.kind === "item") quantity += Math.abs(grant.count);
+            else if (grant.kind === "star") quantity += Math.abs(grant.delta);
+            grants.push(grant);
+            if (quantity > EFFECT_MAX_QUANTITY) { fail("EFFECT_QUANTITY", "effect.grants"); }
+        }
+        return { schemaVersion: EFFECT_SCHEMA_VERSION, grants };
+    } catch (error) {
+        if (error instanceof EffectValidationError) throw error;
+        return fail("EFFECT_DATA_CORRUPT", "effect");
     }
-    return { schemaVersion: EFFECT_SCHEMA_VERSION, grants };
 }
 
 /** 兼容历史 outbox/mail JSON 数组；所有新写入在返回后都使用 envelope。 */

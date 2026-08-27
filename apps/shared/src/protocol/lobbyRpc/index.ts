@@ -11,6 +11,7 @@ import { ShopRpc, type IShopPurchaseReq, type IShopQueryOpReq, type ShopRpcMap }
 import { UserRpc, type IGetInfoRes, type IPublicUserView, type IUpdateProfileReq, type IUserView, type UserRpcMap } from "./user";
 import type { IGuildEvent, IGuildGetEventsReq, IGuildGetEventsRes, IGuildJoinReq, IGuildLeaveReq } from "./guild";
 import { assertExactKeys, boundedString, finiteInteger, isPlainRecord, type PlainRecord, type RuntimeValidator, WireValidationError } from "../http";
+import { validateGrant } from "./economy";
 import type { IGrant, IPurchaseResult } from "./economy";
 
 export * from "./envelope";
@@ -99,23 +100,6 @@ function validatePublicUser(input: unknown, path = "response.profile"): IPublicU
         wins: finiteInteger(value.wins, `${path}.wins`, 0),
         losses: finiteInteger(value.losses, `${path}.losses`, 0),
     };
-}
-
-function validateGrant(input: unknown, path: string): IGrant {
-    const value = rpcRecord(input, path);
-    if (value.kind === "item") {
-        assertExactKeys(value, ["kind", "itemId", "count"], [], path);
-        return { kind: "item", itemId: finiteInteger(value.itemId, `${path}.itemId`, 1), count: finiteInteger(value.count, `${path}.count`) };
-    }
-    if (value.kind === "star") {
-        assertExactKeys(value, ["kind", "delta"], [], path);
-        return { kind: "star", delta: finiteInteger(value.delta, `${path}.delta`) };
-    }
-    if (value.kind === "setField") {
-        assertExactKeys(value, ["kind", "field", "value"], [], path);
-        return { kind: "setField", field: boundedString(value.field, `${path}.field`, 1, 64), value: boundedString(value.value, `${path}.value`, 0, 1024) };
-    }
-    throw new WireValidationError("RPC_GRANT_KIND", `${path}.kind`);
 }
 
 function validatePurchaseResult(input: unknown, path = "response"): IPurchaseResult {

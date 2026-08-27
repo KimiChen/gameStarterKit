@@ -19,6 +19,7 @@ import {
   WebPlatformHttpContractMap,
   validateC2SPayload,
   validateGameRoomState,
+  validateHttpOrigin,
   validateLobbyPush,
   validateLobbyRpcRequest,
   validateLobbyRpcResponse,
@@ -32,6 +33,10 @@ import {
   validateWebPlatformRegisterCharacterResponse,
   validateWebPlatformVerifySessionRequest,
   validateWebPlatformVerifySessionResponse,
+  hasExactKeys,
+  isPlainRecord,
+  validateEffect,
+  validateGrant,
   type LobbyRpcType,
 } from "@game/shared";
 
@@ -56,10 +61,19 @@ test("HTTP contract map：路径/方法唯一且响应 validator 拒绝 extra、
   assertInvalid(() => validateWebPlatformLoginResponse({ userId: "u", accessToken: "t", isNewAccount: false, extra: 1 }), "WIRE_KEYS");
 });
 
+test("HTTP/WS origin：拒绝非 canonical 空白、非法 DNS label 与多重尾斜杠", () => {
+  assert.equal(validateHttpOrigin("https://example.test"), "https://example.test");
+  assert.equal(validateHttpOrigin("https://example.test/"), "https://example.test/");
+  assertInvalid(() => validateHttpOrigin(" https://example.test "), "WIRE_URL");
+  assertInvalid(() => validateHttpOrigin("https://-evil.example"), "WIRE_URL_HOST");
+  assertInvalid(() => validateHttpOrigin("https://foo.-bar.example"), "WIRE_URL_HOST");
+  assertInvalid(() => validateHttpOrigin("https://example.test//"), "WIRE_URL_PATH");
+});
+
 test("join/RPC envelope：exact keys、有限数值和错误码联合严格收口", () => {
-  assert.deepEqual(validateRoomJoinOptions({ v: 3, token: "t", sId: 1, listHash: "h" }), { v: 3, token: "t", sId: 1, listHash: "h" });
+  assert.deepEqual(validateRoomJoinOptions({ v: 4, token: "t", sId: 1 }), { v: 4, token: "t", sId: 1 });
   assertInvalid(() => validateRoomJoinOptions({ sId: Number.POSITIVE_INFINITY }), "WIRE_INTEGER");
-  assertInvalid(() => validateRoomJoinOptions({ sId: 1, unknown: true }), "WIRE_KEYS");
+  assertInvalid(() => validateRoomJoinOptions({ sId: 1, listHash: "h" }), "WIRE_KEYS");
 
   assert.deepEqual(validateRpcEnvelope({ id: "r1", type: "user.getInfo", payload: {} }), { id: "r1", type: "user.getInfo", payload: {} });
   assertInvalid(() => validateRpcEnvelope({ id: "r1", type: "user.getInfo", extra: 1 }), "WIRE_KEYS");
@@ -81,6 +95,81 @@ test("C2S/S2C：每个消息都有 exact runtime validator，坏包不进入回�
   assertInvalid(() => validateS2CPayload("s2c.unknown" as never, {}), "MESSAGE_TYPE");
   assert.equal(Object.keys(C2S_RUNTIME_VALIDATORS).length, 4);
   assert.equal(Object.keys(S2C_RUNTIME_VALIDATORS).length, 5);
+});
+
+test("wire helpers：revoked/throwing Proxy 按非法 shape 处理，不泄漏原生 Proxy 异常", () => {
+  const revoked = Proxy.revocable({}, {});
+  const hostileRevoked = revoked.proxy;
+  revoked.revoke();
+  assert.equal(isPlainRecord(hostileRevoked), false);
+  assert.equal(hasExactKeys(hostileRevoked as never, [], []), false);
+  assertInvalid(() => validateRpcEnvelope(hostileRevoked), "RPC_OBJECT");
+
+  const throwingPrototype = new Proxy({}, {
+    getPrototypeOf() { throw new Error("hostile prototype"); },
+  });
+  assert.equal(isPlainRecord(throwingPrototype), false);
+  // `hasExactKeys` assumes its caller already established record-ness; the
+  // public assertion helper combines both checks and fails closed.
+  assert.equal(hasExactKeys(throwingPrototype as never, [], []), true);
+  assertInvalid(() => validateRpcEnvelope(throwingPrototype), "RPC_OBJECT");
+
+  const throwingKeys = new Proxy({}, {
+    ownKeys() { throw new Error("hostile keys"); },
+  });
+  // The prototype check succeeds, but exact-key enumeration still fails closed.
+  assert.equal(isPlainRecord(throwingKeys), true);
+  assert.equal(hasExactKeys(throwingKeys as never, [], []), false);
+  assertInvalid(() => validateRpcEnvelope(throwingKeys), "WIRE_KEYS");
+
+  const symbolKey = Symbol("hidden");
+  const withSymbol = { id: "r1", type: "user.getInfo", payload: {} } as Record<PropertyKey, unknown>;
+  withSymbol[symbolKey] = true;
+  assert.equal(hasExactKeys(withSymbol as never, ["id", "type", "payload"]), false);
+
+  const throwingGrant = new Proxy({ kind: "item", itemId: 1, count: 1 }, {
+    get(_target, property) {
+      if (property === "kind") throw new Error("hostile getter");
+      return Reflect.get(_target, property);
+    },
+  });
+  assertInvalid(() => validateGrant(throwingGrant), "EFFECT_DATA_CORRUPT");
+  const throwingEffect = new Proxy({ schemaVersion: 1, grants: [] }, {
+    get(_target, property) {
+      if (property === "grants") throw new Error("hostile getter");
+      return Reflect.get(_target, property);
+    },
+  });
+  assertInvalid(() => validateEffect(throwingEffect), "EFFECT_DATA_CORRUPT");
+
+  const throwingAreaHash = new Proxy({
+    hash: "h",
+    isOps: false,
+    myServerIds: [],
+    servers: [],
+  }, {
+    get(target, property, receiver) {
+      if (property === "hash") throw new Error("hostile hash getter");
+      return Reflect.get(target, property, receiver);
+    },
+  });
+  assertInvalid(() => validateWebPlatformAreaListResponse(throwingAreaHash), "WIRE_DATA_CORRUPT");
+
+  const thrown = Proxy.revocable({}, {});
+  const revokedError = thrown.proxy;
+  thrown.revoke();
+  const throwingRevoked = new Proxy({
+    hash: "h",
+    isOps: false,
+    myServerIds: [],
+    servers: [],
+  }, {
+    get(target, property, receiver) {
+      if (property === "hash") throw revokedError;
+      return Reflect.get(target, property, receiver);
+    },
+  });
+  assertInvalid(() => validateWebPlatformAreaListResponse(throwingRevoked), "WIRE_DATA_CORRUPT");
 });
 
 const requestFixtures: Record<LobbyRpcType, unknown> = {

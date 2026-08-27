@@ -61,9 +61,17 @@ export type PlainRecord = Record<string, unknown>;
 
 /** 只接受普通 JSON object；数组、类实例和 null 原型对象以外的值均拒绝。 */
 export function isPlainRecord(value: unknown): value is PlainRecord {
-    if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
-    const proto = Object.getPrototypeOf(value);
-    return proto === Object.prototype || proto === null;
+    // A revoked or otherwise hostile Proxy can throw from both Array.isArray
+    // and Object.getPrototypeOf.  Runtime validators must turn that into a
+    // normal "not a record" result so their caller can emit a stable wire
+    // validation error rather than leaking an engine-specific TypeError.
+    try {
+        if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+        const proto = Object.getPrototypeOf(value);
+        return proto === Object.prototype || proto === null;
+    } catch {
+        return false;
+    }
 }
 
 /** exact-key 检查：required 必须存在，optional 可选，除此之外一律拒绝。 */
@@ -72,10 +80,19 @@ export function hasExactKeys(
     required: readonly string[],
     optional: readonly string[] = [],
 ): boolean {
-    const allowed = new Set([...required, ...optional]);
-    const actual = Object.keys(value);
-    if (actual.some((key) => !allowed.has(key))) return false;
-    return required.every((key) => Object.prototype.hasOwnProperty.call(value, key));
+    try {
+        const allowed = new Set([...required, ...optional]);
+        // Reflect.ownKeys includes non-enumerable and symbol properties. A
+        // symbol-keyed extra is still an extra wire field; Object.keys would
+        // silently omit it and let an object with hidden state through.
+        const actual = Reflect.ownKeys(value);
+        if (actual.some((key) => typeof key !== "string" || !allowed.has(key))) return false;
+        return required.every((key) => Object.prototype.hasOwnProperty.call(value, key));
+    } catch {
+        // ownKeys/getOwnPropertyDescriptor traps (including revoked proxies)
+        // are treated as an invalid shape, never as a transport crash.
+        return false;
+    }
 }
 
 export function assertExactKeys(
@@ -92,6 +109,25 @@ export function assertExactKeys(
 const fail = (code: string, path: string, detail?: string): never => {
     throw new WireValidationError(code, path, detail);
 };
+
+/**
+ * Keep hostile getters/Proxy traps inside the wire boundary.  A record can
+ * pass the prototype/key checks and still throw when a field is read; callers
+ * must see the same discriminated validation error as any other malformed
+ * payload, never an engine-specific TypeError.
+ */
+function guardWire<T>(path: string, fn: () => T): T {
+    try {
+        return fn();
+    } catch (error) {
+        // Even the thrown value can be a hostile/revoked Proxy; keep the
+        // instanceof check isolated so it cannot leak another native throw.
+        let isWireError = false;
+        try { isWireError = error instanceof WireValidationError; } catch { /* fail closed */ }
+        if (isWireError) throw error;
+        throw new WireValidationError("WIRE_DATA_CORRUPT", path);
+    }
+}
 
 export function finiteNumber(value: unknown, path: string, min = -Infinity, max = Infinity): number {
     if (typeof value !== "number" || !Number.isFinite(value) || value < min || value > max) {
@@ -134,7 +170,12 @@ function optionalString(value: PlainRecord, key: string, path: string, max: numb
  * 一个刻意保守的绝对-origin解析器：禁止 userinfo、path、query、fragment 和非法端口。
  */
 export function validateOrigin(value: unknown, protocols: readonly ("http" | "https" | "ws" | "wss")[], path = "url"): string {
-    const raw = boundedString(value, path, 1, 2048).trim();
+    // Do not silently canonicalize user supplied endpoints.  A value with
+    // surrounding whitespace is almost always a configuration mistake and
+    // accepting it makes the validated string differ from the original wire
+    // value used by other clients.
+    const raw = boundedString(value, path, 1, 2048);
+    if (raw !== raw.trim()) fail("WIRE_URL", path);
     const match = /^([a-z][a-z0-9+.-]*):\/\/([^/?#]+)(\/[^?#]*)?(\?[^#]*)?(#.*)?$/i.exec(raw);
     if (!match) throw new WireValidationError("WIRE_URL", path);
     const parsedMatch = match;
@@ -144,7 +185,7 @@ export function validateOrigin(value: unknown, protocols: readonly ("http" | "ht
     if (!authority || authority.includes("@") || /[\\\s]/.test(authority)) fail("WIRE_URL_HOST", path);
     // A trailing slash is presentation-only; any other path would make the
     // directory response point at an unexpected gateway endpoint.
-    if (parsedMatch[3] && !/^\/+$/u.test(parsedMatch[3])) fail("WIRE_URL_PATH", path);
+    if (parsedMatch[3] && parsedMatch[3] !== "/") fail("WIRE_URL_PATH", path);
     if (parsedMatch[4] || parsedMatch[5]) fail("WIRE_URL_PATH", path);
 
     let host = authority;
@@ -167,6 +208,14 @@ export function validateOrigin(value: unknown, protocols: readonly ("http" | "ht
         }
         if (!host || !/^[A-Za-z0-9.-]+$/.test(host)) fail("WIRE_URL_HOST", path);
         if (host.startsWith(".") || host.endsWith(".") || host.includes("..")) fail("WIRE_URL_HOST", path);
+        // Validate DNS labels instead of only checking the aggregate host.
+        // This rejects labels beginning/ending with '-' while retaining
+        // localhost and IPv4 literals used by local development.
+        const labels = host.split(".");
+        if (labels.some((label) => label.length === 0 || label.length > 63
+            || !/^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/.test(label))) {
+            fail("WIRE_URL_HOST", path);
+        }
     }
     if (port !== undefined) {
         if (!/^[0-9]+$/.test(port)) fail("WIRE_URL_PORT", path);
@@ -374,7 +423,7 @@ function validateDevKey(value: unknown, path: string): string {
     return devKey;
 }
 
-export function validateWebPlatformDevLoginRequest(input: unknown): { devKey: string; serverId: number; deviceId?: string | null } {
+function validateWebPlatformDevLoginRequestImpl(input: unknown): { devKey: string; serverId: number; deviceId?: string | null } {
     const value = objectAt(input, "request");
     assertExactKeys(value, ["devKey", "serverId"], ["deviceId"], "request");
     const deviceId = validateDeviceId(value.deviceId, "request.deviceId");
@@ -385,7 +434,11 @@ export function validateWebPlatformDevLoginRequest(input: unknown): { devKey: st
     };
 }
 
-export function validateWebPlatformWxLoginRequest(input: unknown): { code: string; serverId: number; deviceId?: string | null } {
+export function validateWebPlatformDevLoginRequest(input: unknown): { devKey: string; serverId: number; deviceId?: string | null } {
+    return guardWire("request", () => validateWebPlatformDevLoginRequestImpl(input));
+}
+
+function validateWebPlatformWxLoginRequestImpl(input: unknown): { code: string; serverId: number; deviceId?: string | null } {
     const value = objectAt(input, "request");
     assertExactKeys(value, ["code", "serverId"], ["deviceId"], "request");
     const deviceId = validateDeviceId(value.deviceId, "request.deviceId");
@@ -396,8 +449,12 @@ export function validateWebPlatformWxLoginRequest(input: unknown): { code: strin
     };
 }
 
+export function validateWebPlatformWxLoginRequest(input: unknown): { code: string; serverId: number; deviceId?: string | null } {
+    return guardWire("request", () => validateWebPlatformWxLoginRequestImpl(input));
+}
+
 /** WebPlatform Internal session verification request (server-to-server only). */
-export function validateWebPlatformVerifySessionRequest(input: unknown): VerifySessionRequest {
+function validateWebPlatformVerifySessionRequestImpl(input: unknown): VerifySessionRequest {
     const value = objectAt(input, "request");
     assertExactKeys(value, ["accessToken", "serverId"], [], "request");
     return {
@@ -406,7 +463,11 @@ export function validateWebPlatformVerifySessionRequest(input: unknown): VerifyS
     };
 }
 
-export function validateWebPlatformLoginResponse(input: unknown): WebPlatformLoginResponse {
+export function validateWebPlatformVerifySessionRequest(input: unknown): VerifySessionRequest {
+    return guardWire("request", () => validateWebPlatformVerifySessionRequestImpl(input));
+}
+
+function validateWebPlatformLoginResponseImpl(input: unknown): WebPlatformLoginResponse {
     const value = objectAt(input, "response");
     assertExactKeys(value, ["userId", "accessToken", "isNewAccount"], [], "response");
     if (typeof value.isNewAccount !== "boolean") fail("HTTP_BOOLEAN", "response.isNewAccount");
@@ -415,6 +476,10 @@ export function validateWebPlatformLoginResponse(input: unknown): WebPlatformLog
         accessToken: boundedString(value.accessToken, "response.accessToken", 1, 256),
         isNewAccount: value.isNewAccount as boolean,
     };
+}
+
+export function validateWebPlatformLoginResponse(input: unknown): WebPlatformLoginResponse {
+    return guardWire("response", () => validateWebPlatformLoginResponseImpl(input));
 }
 
 const WEBPLATFORM_VERIFY_REASONS = [
@@ -427,7 +492,7 @@ const WEBPLATFORM_VERIFY_REASONS = [
 type WebPlatformVerifyReason = (typeof WEBPLATFORM_VERIFY_REASONS)[number];
 
 /** WebPlatform Internal verify response; valid=true/false are intentionally disjoint. */
-export function validateWebPlatformVerifySessionResponse(input: unknown): VerifySessionResponse {
+function validateWebPlatformVerifySessionResponseImpl(input: unknown): VerifySessionResponse {
     const value = objectAt(input, "response");
     if (value.valid === true) {
         assertExactKeys(value, ["valid", "userId", "issuedAtMs"], [], "response");
@@ -447,20 +512,32 @@ export function validateWebPlatformVerifySessionResponse(input: unknown): Verify
     return fail("HTTP_VERIFY_VALID", "response.valid");
 }
 
+export function validateWebPlatformVerifySessionResponse(input: unknown): VerifySessionResponse {
+    return guardWire("response", () => validateWebPlatformVerifySessionResponseImpl(input));
+}
+
 /** Internal character registration response. */
-export function validateWebPlatformRegisterCharacterResponse(input: unknown): RegisterCharacterResponse {
+function validateWebPlatformRegisterCharacterResponseImpl(input: unknown): RegisterCharacterResponse {
     const value = objectAt(input, "response");
     assertExactKeys(value, ["registered"], [], "response");
     if (value.registered !== true) fail("HTTP_REGISTERED", "response.registered");
     return { registered: true };
 }
 
+export function validateWebPlatformRegisterCharacterResponse(input: unknown): RegisterCharacterResponse {
+    return guardWire("response", () => validateWebPlatformRegisterCharacterResponseImpl(input));
+}
+
 /** Internal character existence response. */
-export function validateWebPlatformHasCharacterResponse(input: unknown): HasCharacterResponse {
+function validateWebPlatformHasCharacterResponseImpl(input: unknown): HasCharacterResponse {
     const value = objectAt(input, "response");
     assertExactKeys(value, ["exists"], [], "response");
     if (typeof value.exists !== "boolean") fail("HTTP_BOOLEAN", "response.exists");
     return { exists: value.exists as boolean };
+}
+
+export function validateWebPlatformHasCharacterResponse(input: unknown): HasCharacterResponse {
+    return guardWire("response", () => validateWebPlatformHasCharacterResponseImpl(input));
 }
 
 function validateWebPlatformAreaServer(input: unknown, index: number): WebPlatformAreaServer {
@@ -484,7 +561,7 @@ function validateWebPlatformAreaServer(input: unknown, index: number): WebPlatfo
     };
 }
 
-export function validateWebPlatformAreaListResponse(input: unknown): WebPlatformAreaListResponse {
+function validateWebPlatformAreaListResponseImpl(input: unknown): WebPlatformAreaListResponse {
     const value = objectAt(input, "response");
     assertExactKeys(value, ["hash", "isOps", "myServerIds", "servers"], [], "response");
     if (typeof value.isOps !== "boolean") fail("HTTP_BOOLEAN", "response.isOps");
@@ -505,19 +582,31 @@ export function validateWebPlatformAreaListResponse(input: unknown): WebPlatform
     };
 }
 
+export function validateWebPlatformAreaListResponse(input: unknown): WebPlatformAreaListResponse {
+    return guardWire("response", () => validateWebPlatformAreaListResponseImpl(input));
+}
+
 /** WebPlatform `/livez`、`/readyz` 的小型公共响应校验，供健康探针复用。 */
-export function validateWebPlatformLiveResponse(input: unknown): { ok: true } {
+function validateWebPlatformLiveResponseImpl(input: unknown): { ok: true } {
     const value = objectAt(input, "response");
     assertExactKeys(value, ["ok"], [], "response");
     if (value.ok !== true) fail("HTTP_HEALTH", "response.ok");
     return { ok: true };
 }
 
-export function validateWebPlatformReadyResponse(input: unknown): { ready: boolean } {
+export function validateWebPlatformLiveResponse(input: unknown): { ok: true } {
+    return guardWire("response", () => validateWebPlatformLiveResponseImpl(input));
+}
+
+function validateWebPlatformReadyResponseImpl(input: unknown): { ready: boolean } {
     const value = objectAt(input, "response");
     assertExactKeys(value, ["ready"], [], "response");
     if (typeof value.ready !== "boolean") fail("HTTP_BOOLEAN", "response.ready");
     return { ready: value.ready as boolean };
+}
+
+export function validateWebPlatformReadyResponse(input: unknown): { ready: boolean } {
+    return guardWire("response", () => validateWebPlatformReadyResponseImpl(input));
 }
 
 // ---------------- contract maps ----------------
@@ -535,12 +624,12 @@ export interface HttpContract<TRequest = unknown, TResponse = unknown> {
 
 /** 游戏服 HTTP 的唯一运行时契约表。 */
 export const GameHttpContractMap = {
-    Health: { method: "GET", path: ApiPath.Health, auth: "none", request: validateNoBody, response: validateHealthResponse },
-    Version: { method: "GET", path: ApiPath.Version, auth: "none", request: validateNoBody, response: validateVersionResponse },
-    ClockNow: { method: "GET", path: ApiPath.ClockNow, auth: "none", request: validateNoBody, response: validateClockResponse },
-    NoticeList: { method: "GET", path: ApiPath.NoticeList, auth: "none", request: validateNoBody, response: validateNoticeListResponse },
-    AdminKick: { method: "POST", path: ApiPath.AdminKick, auth: "internal", request: validateAdminKickRequest, response: validateAdminKickResponse },
-    PayWxNotify: { method: "POST", path: ApiPath.PayWxNotify, auth: "internal", request: validatePayWxNotifyRequest, response: validatePayWxNotifyResponse },
+    Health: { method: "GET", path: ApiPath.Health, auth: "none", request: validateNoBody, response: (input: unknown) => guardWire("response", () => validateHealthResponse(input)) },
+    Version: { method: "GET", path: ApiPath.Version, auth: "none", request: validateNoBody, response: (input: unknown) => guardWire("response", () => validateVersionResponse(input)) },
+    ClockNow: { method: "GET", path: ApiPath.ClockNow, auth: "none", request: validateNoBody, response: (input: unknown) => guardWire("response", () => validateClockResponse(input)) },
+    NoticeList: { method: "GET", path: ApiPath.NoticeList, auth: "none", request: validateNoBody, response: (input: unknown) => guardWire("response", () => validateNoticeListResponse(input)) },
+    AdminKick: { method: "POST", path: ApiPath.AdminKick, auth: "internal", request: (input: unknown) => guardWire("request", () => validateAdminKickRequest(input)), response: (input: unknown) => guardWire("response", () => validateAdminKickResponse(input)) },
+    PayWxNotify: { method: "POST", path: ApiPath.PayWxNotify, auth: "internal", request: (input: unknown) => guardWire("request", () => validatePayWxNotifyRequest(input)), response: (input: unknown) => guardWire("response", () => validatePayWxNotifyResponse(input)) },
 } as const;
 
 export type GameHttpContractKey = keyof typeof GameHttpContractMap;

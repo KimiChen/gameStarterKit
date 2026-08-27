@@ -41,8 +41,14 @@ export function parseProtocolVersion(src) {
     }
 
     const candidates = [];
+    const topLevelDeclarations = [];
     for (const statement of sourceFile.statements) {
         if (!ts.isVariableStatement(statement)) continue;
+        for (const declaration of statement.declarationList.declarations) {
+            if (ts.isIdentifier(declaration.name) && declaration.name.text === "PROTOCOL_VERSION") {
+                topLevelDeclarations.push({ statement, declaration });
+            }
+        }
         const modifiers = statement.modifiers ?? [];
         const isExactExport = modifiers.length === 1 && modifiers[0].kind === ts.SyntaxKind.ExportKeyword;
         if (!isExactExport || statement.declarationList.flags !== ts.NodeFlags.Const) continue;
@@ -52,8 +58,8 @@ export function parseProtocolVersion(src) {
             }
         }
     }
-    if (candidates.length !== 1) {
-        throw new Error(`shared/protocol/rooms.ts 必须有且仅有一个 PROTOCOL_VERSION 导出声明（找到 ${candidates.length} 个）`);
+    if (candidates.length !== 1 || topLevelDeclarations.length !== 1) {
+        throw new Error(`shared/protocol/rooms.ts 必须有且仅有一个顶层 PROTOCOL_VERSION 导出声明（找到 ${candidates.length} 个导出、${topLevelDeclarations.length} 个顶层声明）`);
     }
 
     const { statement, declaration } = candidates[0];
@@ -61,18 +67,23 @@ export function parseProtocolVersion(src) {
     // omitted semicolon is intentionally outside the locked source shape.
     const hasSemicolon = statement.getLastToken()?.kind === ts.SyntaxKind.SemicolonToken;
     const initializer = declaration.initializer;
+    // TypeScript normalizes NumericLiteral#text (for example `0x3`, `3_000`
+    // and `3.0` all become a decimal string). Read the original source slice so
+    // the lock really enforces a plain decimal integer literal.
+    const literalText = initializer?.getText(sourceFile);
     if (statement.declarationList.declarations.length !== 1
         || declaration.type !== undefined
         || !hasSemicolon
         || !initializer
         || !ts.isNumericLiteral(initializer)
-        || !/^\d+$/.test(initializer.text)) {
+        || !literalText
+        || !/^\d+$/.test(literalText)) {
         throw new Error("PROTOCOL_VERSION 导出声明必须精确为 `export const PROTOCOL_VERSION = <integer>;`");
     }
 
-    const version = Number(initializer.text);
+    const version = Number(literalText);
     if (!Number.isSafeInteger(version) || version < 1) {
-        throw new Error(`PROTOCOL_VERSION 非法：${initializer.text}`);
+        throw new Error(`PROTOCOL_VERSION 非法：${literalText}`);
     }
     return version;
 }
@@ -103,7 +114,19 @@ export function computeFingerprint() {
     return h.digest("hex");
 }
 
-const isMain = process.argv[1] && fs.realpathSync(fileURLToPath(import.meta.url)) === fs.realpathSync(process.argv[1]);
+// `node -` uses a synthetic argv[1] (`-`) that is not a filesystem path.  A
+// failed realpath lookup must not make importing this helper fail in probes or
+// tests; it simply means the module was imported rather than run directly.
+const isMain = (() => {
+    const entry = process.argv[1];
+    if (!entry) return false;
+    try {
+        return fs.realpathSync(fileURLToPath(import.meta.url)) === fs.realpathSync(entry);
+    }
+    catch {
+        return false;
+    }
+})();
 if (isMain) {
     const v = readProtocolVersion();
     const fp = computeFingerprint();

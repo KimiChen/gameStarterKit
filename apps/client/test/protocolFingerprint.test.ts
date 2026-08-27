@@ -42,6 +42,14 @@ test("协议版本解析：只接受顶层精确 export，字符串和嵌套声�
     "export const PROTOCOL_VERSION = 7",
     "export const PROTOCOL_VERSION: number = 7;",
     "export const PROTOCOL_VERSION = 7 as const;",
+    "export const PROTOCOL_VERSION = 0x7;",
+    "export const PROTOCOL_VERSION = 07;",
+    "export const PROTOCOL_VERSION = 7_0;",
+    "export const PROTOCOL_VERSION = 7.0;",
+    "export const PROTOCOL_VERSION = 0;",
+    "export const PROTOCOL_VERSION = 9007199254740992;",
+    "export declare const PROTOCOL_VERSION: number;\nexport const PROTOCOL_VERSION = 7;",
+    "const PROTOCOL_VERSION = 6;\nexport const PROTOCOL_VERSION = 7;",
     "namespace Legacy { export const PROTOCOL_VERSION = 7; }",
   ]) {
     assert.throws(
