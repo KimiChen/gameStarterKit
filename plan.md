@@ -2,9 +2,14 @@
 
 > 审阅日期：2026-08-28
 >
-> 实现基线：分支 `new`，HEAD `940b3c9`（P0-01 至 P0-05、P1-01 至 P1-09、P2-01 至 P2-03 均已完成）。
-> 说明站已迁出本仓，`apps/website/` 的受控文件数为 0；相关项目元数据、初始化/验证工具链和文档登记均已
-> 清理。当前 inventory 仍登记 14 项能力（13 项 core + 1 项 extra relayer）和 5 个默认入口。
+> 实现基线：分支 `new`，最后一个含源码改动的提交 `940b3c9`（P0-01 至 P0-05、P1-01 至 P1-09、P2-01 至
+> P2-03 均已完成）；其后的 `6c00606`、`368d99e` 只改动文档与仓库元数据，当前 HEAD 为 `368d99e`。
+> 说明站的页面源码、托管元数据、独立 package、构建/预览/部署脚本与站点测试已从本仓删除，相关项目元数据、
+> 初始化/验证工具链和文档登记均已清理；但 `368d99e` 在删掉 `.gitignore` 中 `apps/website/` 忽略行的同时，
+> 把 `apps/website` 作为一条 gitlink（mode 160000，subproject `e19737e`）提交进索引，而仓库没有
+> `.gitmodules`——该路径下没有受控页面源码，却仍有一条索引条目（`git ls-files apps/website` 返回 1 条，
+> 不是 0），处置见 P1-09「说明站迁出未闭合（⏳）」。当前 inventory 仍登记 14 项能力（13 项 core +
+> 1 项 extra relayer）和 5 个默认入口。
 >
 > 文档状态：`plan.md` 已纳入 Git，本文件是核心改进优先级的唯一真相
 >
@@ -16,23 +21,33 @@
 > 共 92 条裁决：45 条完成声明经独立复核成立、47 条需要回填（含 10 条 plan.md 未登记的代码缺陷）。
 > 第三轮（2026-08-28，实现基线 `940b3c9`）逐项复核 17 个计划条目及第二轮回填点；所有计划内可执行缺口
 > 均已闭合，保留边界只涉及本文明确列出的额外功能、人工 Creator 验证和完整外部 smoke。
+> ⚠ 该末句已被第五轮修订：保留边界现另含 3 个 ⏳ 待收口项（P0-03 的 setField 长度单位分歧、
+> P1-09 的说明站 gitlink 与文档树登记缺口），它们都不属于「额外功能 / Creator / 外部 smoke」任何一类。
 > 第四轮（2026-08-28，HEAD `6c00606`）对第三轮后的 12 个收口提交逐 commit 独立复核（约 20 条裁决）：
 > 各 commit 的实质声称与各条目文字均同代码/测试一致；`verify:all`、`test:fgui`（45/45）、`test:int`
 > （99/99）与 `test:faults:int`（4 组 fault point 全部实测执行）在本轮重跑复现。两处提交归属备注：
 > effect「ledger 重复+异 payload」专项用例实际由 `11cd22f` 引入（`3583dae` 闭合的是 trimApplied 原子
 > 清理断言）；Area/Notice「迟到结果 0 回调」断言由 `15e93fd` 引入（非本轮三提交）。两者均不影响缝隙
 > 已在当前树闭合的结论。
+> 第五轮（2026-08-28，HEAD `368d99e`）对第四轮后的 47 个提交按子系统分 8 组并行复核、每组配独立怀疑者
+> 做对抗式验证，共 69 条裁决：50 条「上一轮缺陷已修复且有测试锁定」、1 条 claim-holds、18 条需要回填。
+> 上一轮登记的 10 条缺陷（D1–D10）与 5 处「仅等价覆盖」缺口基本全部闭合；新登记 2 条代码缺陷
+> （`apps/website` 无 `.gitmodules` 的 gitlink、`setField` text 值域的 UTF-16/UTF-8 单位分歧）和
+> 1 条文档树登记缺口，并据此把 P1-09 降级为 ◐。§3 基线已在该 HEAD 上全量重跑复现。
 > 各轮结论一致的部分不重复记录；新增差异统一写进各条目的「复核备注」。
 > 真实 Creator 预览和完整 smoke 仍不纳入 Node/本地栈测试的通过声明。
 
 ## 1. 计划边界
 
 本计划只给核心框架排优先级。托管、真实支付、渠道、GM、运行辅助、冷档、多区拓扑、Unity、配表和
-项目特定业务样例的现状统一记录在 [docs/EXTRAFEATURES.md](docs/EXTRAFEATURES.md)。额外功能不构成
-核心完成门槛；但已经进入默认入口的可选代码仍必须可停止、可隔离，不能破坏核心构建和本地调试。
+项目特定业务样例的现状统一记录在 [docs/EXTRAFEATURES.md](docs/EXTRAFEATURES.md)；`docs/undergroundIdle/`
+的玩法策划案同属额外内容，其状态应由该文件统一记录（当前尚未登记，见 P1-09）。额外功能不构成核心完成
+门槛；但已经进入默认入口的可选代码仍必须可停止、可隔离，不能破坏核心构建和本地调试。
 
 P0 表示继续扩展核心玩法前应先修复的确定性问题；P1 表示把现有 Demo 接缝收敛为可复用框架；P2 表示
-在正确性稳定后再做的增强。`✅` 表示当前基线已完成并有测试/门禁证据，`◐` 表示核心接缝已完成但保留
+在正确性稳定后再做的增强。条目内的三类小标题含义不同：「复核备注（已收口）」＝有测试/门禁证据的结论，
+「保留边界」＝已知且当前不打算做的范围限制，「⏳」＝已确认、待收口的缺陷。
+`✅` 表示当前基线已完成并有测试/门禁证据，`◐` 表示核心接缝已完成但保留
 明确限制，`⏳` 表示尚未承诺完成。本文同时保留原审阅证据，避免把 Demo 的边界误写成线上能力。
 
 ## 2. 总体结论
@@ -48,11 +63,17 @@ schema 迁移仍待补齐，Game HTTP request schema 尚未直接由 shared vali
 不足以重放完整输入序列。以上限制不影响本轮已完成的核心验收，但不能把
 当前 Demo 描述成通用生产框架。
 
+第五轮复核另确认 3 个 ⏳ 待收口项，它们**不属于**上述「未承诺的扩展边界」，而是落在核心射程内：
+`apps/website` 迁出后在索引里留下一条无 `.gitmodules` 登记的 gitlink（新 clone 拿不到、该路径下的本地
+文件对 git 不可见）、`docs/undergroundIdle/` 未进入任何索引或能力登记（两条均见 P1-09，本条目已因此降为
+◐），以及 `setField` text 值域在 TS 与 Lua 使用不同长度单位（见 P0-03「已知边界」，当前无生产调用方，
+不可触发）。
+
 ## 3. 本轮验证基线
 
 | 验证项 | 结果 | 实际覆盖与限制 |
 | --- | --- | --- |
-| `npm run typecheck` | 通过 | 含 `verify:webplatform-contract` 契约镜像一致、shared/server 与客户端两套 `tsc`、`verify:sync` 两段镜像一致且入库 `.meta` 齐全；客户端无头探针以最小 cc/FairyGUI 桩严格覆盖 `src/**/*.ts`、`test/**/*.ts`，legacy 探针另以 ES2017 lib 检查可离线编译的源码 |
+| `npm run typecheck` | 通过 | 含 `verify:webplatform-contract` 契约镜像一致、shared/server 与客户端两套 `tsc`、`verify:sync` 两段镜像一致且入库 `.meta` 齐全；客户端无头探针以最小 cc/FairyGUI 桩严格覆盖 `src/**/*.ts`、`test/**/*.ts`，legacy 探针另以 ES2017 lib 检查 `apps/client/tsconfig.json` include 白名单内的可离线源码（白名单不含 `src/gameplay/`，且 `src/Main.ts` 与 9 个引擎绑定 View 被显式排除） |
 | `npm --workspace @game/server run test` | 196/196 通过 | 服务端单元测试；不等于真实外部服务或 Creator 集成已验证 |
 | `npm --workspace @game/server run test:int` | 99/99 通过 | 使用本地 Redis/MySQL 的集成测试；外部 WebPlatform 边界使用契约兼容测试替身 |
 | `npm run test:client` | 213/213 通过 | 客户端无头行为、运行时 wire/生命周期、生产页面/渲染接缝、vendor lock integrity 和 strict include 守门 |
@@ -112,6 +133,11 @@ stop 均被观察且不会阻断 `BATTLE_JOIN_FAILED` 恢复，而回登录自�
 TypeScript 与 gameplay 类型，不导入 `cc`、FairyGUI、View 或网络单例。战斗 transition 另捕获所属 session
 generation，并在动态页面加载、room start、失败 stop 之后统一复核 Main 实例、AbortSignal 与 generation；
 旧 Main 的迟到清理只能停止自己的 controller，不会清掉后来建立的新会话。
+
+保留边界：`Main` 侧的 generation / destroyed / AbortSignal 复核（`Main.ts:150-172`）目前只有
+`loginFlight.test.ts:41-44`、`roomClientOwnership.test.ts:591-598` 的源码正则守门；抽出的
+`recoverGameplayStartFailure` 接缝有 `gameplayStartRecovery.test.ts` 的行为覆盖，但 `startGameplay` 的
+「迟到 start 结果只停自己的 controller」这一段尚无行为用例。
 
 复核备注（已收口）：`WebSocketClient.forgetImplicitOwners` 按 slot 身份回收隐式 ownership，并覆盖 join
 失败/迟到、room 绑定失败、物理 `onLeave`、`closeSlot` 以及 `leave()` 的空 slot 提前返回路径。
@@ -203,7 +229,7 @@ move 与消费随机数的技能帧，钉住 admission/match RNG 隔离（展示
 执行 `claimMailAttach`，断言 mail/read/claimed、outbox、Redis effect/applied 均不产生半状态。
 
 复核备注（已收口）：shared 为每个 `setField` allowlist 字段登记 text/integer/flag 值域，
-`wire-contract.test.ts` 直接覆盖数字垃圾、越界整数、非规范开关和超长文本，Lua 仍保留同规则的 durable
+`wire-contract.test.ts` 直接覆盖数字垃圾、越界整数、非规范开关和超长文本，Lua 保留同结构的 durable
 防御。`trimApplied` 通过单个 `TRIM_APPLIED` Lua 同时删除 ZSET marker 与 payload hash 字段；经济集成用例
 断言 pending 时二者均保留、done 后二者同时清除，不再产生无法枚举的孤儿绑定。
 
@@ -230,6 +256,21 @@ move 与消费随机数的技能帧，钉住 admission/match RNG 隔离（展示
 - 相同 op-id 并发或重试只生效一次；同 ID 不同 payload 可判别冲突。
 - s1 的 operation 不能从 s2 查询或影响响应。
 
+已知边界（⏳ 待收口）：`setField` 的 text 值域在两侧用了不同长度单位——TS 侧
+`apps/shared/src/protocol/lobbyRpc/economy.ts:160` 用 `text.length`（UTF-16 码元）比 `rule.maxLength`，
+由同源投影出的 Lua（投影点 `apps/server/src/core/infra/redisScripts.ts:58-64`，判定在 `:194`）用
+`#g.value`（UTF-8 字节）比 `rule.max`。规则表 `nickname` 上限 128、`province` 上限 64
+（`economy.ts:48`/`:50`），因此 ≥43 个 CJK 字符的 nickname、≥22 个的 province 会「TS 判合法、Lua 判
+`EFFECT_VALUE`」。这类值一旦落成 durable intent，每次重放都失败，`relayer.ts:81-85` 只累加 attempts 直到
+`OUTBOX_DEAD`，击穿 `outbox.ts:100-101` 写明的「不得留下 relayer 永远无法 apply 的 durable ledger 行」
+不变量。当前 `apps/server/src` 与 `apps/shared/src` 内没有 `setField` grant 的生产调用方
+（`core/economy/catalog.ts:25-26` 只有 item grants），故非在线风险；现有长度用例也只有 ASCII
+（`wire-contract.test.ts:199` 的 `"x".repeat(129)`）。接入 GM 发件或运营配置表这类 `setField` 生产者之前，
+需把 text 规则统一到字节口径（TS 侧改用 `TextEncoder` 计字节或显式声明 `maxBytes`），并补一条非 ASCII 的
+TS↔Lua parity 用例。⚠ 信封级上限同样分歧：TS `economy.ts:153` 用 `value.length > EFFECT_MAX_VALUE_LENGTH`
+（1024，UTF-16），Lua `redisScripts.ts:184` 用 `#g.value > 1024`（字节）；1024 远大于 128/64 不改变上述
+结论，但 `drainProbe` 的上限就是 `EFFECT_MAX_VALUE_LENGTH`，只统一 per-field 规则会漏掉它。
+
 ### P0-04 明确 Lobby 首角色 ready 契约 ✅
 
 状态：已完成。`LobbyRoom.onJoin` 等待有界的 `ensureCharacterReady` flight，初始化失败/超时拒绝本次
@@ -242,7 +283,8 @@ initializer，不触外部依赖）；空库首登与并发 join 由 `apps/serve
 仍完整收敛。客户端 `pageLogic.test.ts` 直接覆盖 join/GetInfo 任一失败时清 session + leave、null profile
 同样拒绝导航，以及成功取得具体角色后才保留会话。
 
-已知限制：`ensureCharacter`（`apps/server/src/player/character.ts:35-45`）每次 join 都同步调用 WebPlatform
+已知限制：`ensureCharacter`（`apps/server/src/player/character.ts:57-76`，编排函数与公开入口；同步 PUT
+落点在 `:68`）每次 join 都同步调用 WebPlatform
 `registerCharacter`（PUT，`platform/webPlatformClient.ts:357-370`，无本地缓存/短路），登记失败即拒绝本次
 join（`characterRepair.ts:154-173` 落 durable intent 后仍向上抛）；已有完整 `s{sId}_user` 热档的回访玩家
 同样受影响，外部登记不可用时表现为全量 Lobby join 被拒。durable repair intent 只补齐登记，不解除该阻塞。
@@ -275,7 +317,8 @@ shared 的 `GetInfo` 当前允许 `user: null`，因此代码与客户端需要�
 阻塞 consumer、重复关闭和迟到登记有 `lifecycle.test.ts`，启动半失败同时有 registry 级故障注入和真实
 `index.ts` 子进程用例。
 
-复核备注（已收口）：`shutdown-aggregator.test.ts` 直接执行生产装配，断言只占用一对 before/shutdown
+复核备注（已收口）：`shutdown-aggregator.test.ts` 以 fake host + fake deps 执行抽出的 `shutdown.ts`
+顺序契约，断言只占用一对 before/shutdown
 槽位、before 同步关闸并把 producer drain 交给 Colyseus 等待、最终资源清理不提前；
 `index-startup-lifecycle.test.ts` 在隔离子进程触发真实顶层启动失败，证明 `index.ts` 的 catch 会等待已登记
 cleanup 后以原始异常退出。`loop-monitor.test.ts` 覆盖重复 start/幂等 stop、停服 admission、关闭 registry
@@ -301,11 +344,21 @@ cleanup 后以原始异常退出。`loop-monitor.test.ts` 覆盖重复 start/幂
 
 **验收（已通过）**
 
-- 正常关闭、重复关闭和启动半失败时，每个资源恰好释放一次。
+- 重复关闭与启动半失败时，每个资源恰好释放一次（registry 级 `lifecycle.test.ts:16`/`:33`，真实入口子进程
+  用例 `index-startup-lifecycle.test.ts:21`，故障注入 `fault-mutation.test.ts:361`）；「正常关闭」目前只验证到
+  `shutdown.ts` 的 aggregator 顺序契约与 registry 级恰好一次释放，进程级停服未覆盖（见下方保留边界）。
 - XREAD（`lifecycle.test.ts`）与 repair worker（`int/character-repair.test.ts`）的连续 start/stop 有直接
   用例；存储入口有「停服后不复活新连接、显式 reset 后可重建」的用例（`lifecycle.test.ts:280`，断言的是
   `AdmissionClosedError` 而非 handle 计数）。loop monitor 与 stream depth alert 另有 timer/listener 残留、
-  重复关闭、关闸拒绝和显式重启用例；顶层 shutdown 顺序与启动失败 cleanup 也有生产接缝测试。
+  重复关闭、关闸拒绝和显式重启用例；顶层 shutdown 顺序有抽出接缝测试，启动失败 cleanup 有真实入口子进程用例。
+
+保留边界：`index.ts:105-110` 把真实 deps 接到 `app` 的装配语句只在启动成功路径执行，无用例覆盖；
+`stopBackgroundProducers` 的停止列表（`index.ts:36-42`）与 `finishShutdown` 的清理次序（`index.ts:66-68`）
+虽在启动失败子进程用例中被真实执行，但成员与顺序没有断言——停止列表少一项或次序被调换不会让现有用例
+变红；仓库也没有门禁阻止在 `index.ts` 中再注册第二个 `app.onBeforeShutdown`（上一轮
+`stopCharacterRepairWorker` 被静默覆盖即属此类）。此外 `listen(app, PORT)`（`index.ts:114`）的监听句柄
+start/stop 残留、以及经 `Server.gracefullyShutdown` 触发真实 aggregator 的进程级正常停服仍无用例——集成
+用例走 `@colyseus/testing` 的 `boot(server)`，按 `app.config.ts:18` 不加载 `index.ts`。
 
 ## 6. P1：稳定框架接缝
 
@@ -321,9 +374,14 @@ cleanup 后以原始异常退出。`loop-monitor.test.ts` 覆盖重复 start/幂
 
 `idle` 已通过服务端 `modes/catalog.ts`、客户端 `gameplay/catalog.ts` 和真实 `GameRoomTransport` 接入生产装配，
 同区同 mode 可合流、不同 mode 必隔离；它不依赖 `ballMove` factory，也不会写入 ballMove casual evidence。
-因此新增玩法只需增加 shared mode id、双端 mode/plugin 模块、room adapter 与各自 catalog 登记，不需要修改
-`Main`、`RoomClient`、`RoomController` 或通用 `GameRoom` transport。`GameECS.addPlayer` 对重复 collection key
-幂等，`clear()` 不遗留 bitECS entity。
+因此新增**无 presentation** 玩法只需增加 shared mode id、双端 mode/plugin 模块、room adapter 与各自
+catalog 登记，不需要修改 `Main`、`RoomClient`、`RoomController` 或通用 `GameRoom` transport；自带 View 的
+玩法在当前 presentation 注入接缝下仍需在 `gameplay/catalog.ts` 的 `GameplayCatalogContext` 增加对应
+presentation 字段（`ballMovePresentation` 目前是必填，`catalog.ts:20`），并由 `Main.configureGameplay`
+（`Main.ts:118-124`）用场景 Node 构造它。`Main` 侧守门用例自 `eca64c9` 起只断言 `Main` 不直接引用第二
+玩法的 joiner/登记函数（`roomClientOwnership.test.ts:598-599`），不再断言 `Main` 源码完全不出现玩法名
+——`Main.ts:35` 的属性提示文案已写入 `idle`。`GameECS.addPlayer` 对重复 collection key 幂等，
+`clear()` 不遗留 bitECS entity。
 
 保留边界：共享的 `GameRoomState`、Waiting/Playing/Settle 相位、两人开局与部分 reset/settle 仍以 ballMove
 Demo 为基线；`idle` 只是无 presentation 的最小 multi-mode 证明，不代表已交付完整第二玩法 UI 或通用多玩法
@@ -339,7 +397,9 @@ Demo 为基线；`idle` 只是无 presentation 的最小 multi-mode 证明，不
 cacheable 页面 mount/onOpen/setup/render 四段打开失败回滚、输入租约计数与恢复、具体 View 的
 `closeLifecycle → logic.stop`、重复 setup 100 次不叠监听、进度归一化和占位控件置灰。事件层 `observeAsync`
 与页面组合层 `observePageAction` 的 rejection 都有 `unhandledRejection` 实证，并守住 Login 两个真实导航
-调用点；未被读取的 `handleContexts`/`setContext` 死接缝已删除。
+调用点；未被读取的 `handleContexts`/`setContext` 死接缝已删除。`ViewMgr.ts:264-265` 仍留有 setContext
+时代的注释与 `!meta.permanent` 豁免分支（句柄实际每次重挂都新建、`state.closed` 不再被重置，二次 `close`
+的幂等由 `:499` 的 `!entry.mounted` 保证），属无行为影响的残留，待后续清理。
 
 已实施的生命周期边界：
 
@@ -399,6 +459,11 @@ shared exact validators、RPC/HTTP contract map、Colyseus state mirror、fixtur
 记录缺失或多余、路径越界、导出物多重归属、manifest 结构非法、重复 package name/id、非法 `ui://`
 引用和 package.xml 伪声明；另保留对真实仓库资源闭包的只读正例。
 
+保留边界：当前反例只覆盖抽出的纯校验函数（`assertManifestShape` / `compareRecords` / `sourcePathProblems` /
+`outputOwnershipProblems`）；编排入口 `checkManifest`（`scripts/fgui-manifest.mjs:426-473`）未导出也无用例，
+其 root 不一致、package 缺失/多余/id 变化、package.xml 声明变化、View 缺失/多余/AUTO 区过期等分支与非零
+退出码仍无反例，端到端漂移捕获依赖这段未被测试的接线。
+
 **完成标准**：设计源变更未重新导出、嵌套字段改名、加载中关闭或 required 包缺失都被本地检查稳定捕获。
 
 ### P1-06 收紧服务端配置、任务和存储防腐层 ✅
@@ -445,15 +510,16 @@ running + queued 饱和；`dispatcher-idem.test.ts` 直接执行 deadline helper
   快照对账层；大厅房也未注册 `onReconnect`，`net/WebSocketClient.ts:205` 的 `slot.dropping` 当前无消费方。
 
 复核备注（已收口）：两个 `gameWsUrl` 消费点（`view/pages.ts` 的大厅 join、
-`net/rooms/BallMoveRoom.ts` 的战斗 join）分别由 `pageLogic.test.ts` 直接执行生产
-`joinSelectedServerLobby` helper、`roomClientOwnership.test.ts` 直接执行 `createBallMoveRoomJoiner`，均断言
-明确 WS endpoint；页面 HTTP consumer 的 `gameHttpUrl` 仍在 `openAreaList` 选服接线中直接传给 `initHttp`。
+`net/rooms/GameRoomTransport.ts:14` 的玩法 join——`createBallMoveRoomJoiner` 与 `createIdleRoomJoiner`
+共用同一 transport）分别由 `pageLogic.test.ts:341` 直接执行生产 `joinSelectedServerLobby` helper、
+`roomClientOwnership.test.ts:515`/`:551` 直接执行对应 joiner，均断言明确 WS endpoint；页面 HTTP
+consumer 的 `gameHttpUrl` 仍在 `openAreaList` 选服接线中直接传给 `initHttp`。
 公告存储日期已改用 shared `naturalDayIndex`（UTC+8），`pageLogic.test.ts` 直接执行生产纯函数并钉住跨自然日
 边界；无生产调用方的 `clearServerList()` 公共写入点已删除，测试用合法空目录响应复位状态。
 
 ### P1-08 闭合本地验证与依赖锁 ✅
 
-状态：已完成。客户端完整无头 strict 探针与 ES2017 legacy 探针均可独立通过，后者已进入根 `typecheck`
+状态：已完成（ES2017 闸门的覆盖范围见本条末尾「保留边界」）。客户端完整无头 strict 探针与 ES2017 legacy 探针均可独立通过，后者已进入根 `typecheck`
 以及上层 `verify:core` / `verify:all` 聚合链。失效的 loadtest、Excel 产物链和真实 Creator 预览仍按
 额外/人工验证边界处理。
 
@@ -478,15 +544,28 @@ running + queued 饱和；`dispatcher-idem.test.ts` 直接执行 deadline helper
 7. `d96186b` 已补齐 legacy `cc-stub.d.ts` 中 BallMoveView 使用的 `Color`、`EventTouch`、`Graphics`、
    `Input`、`UITransform`、`input` 与 `Vec3.set`，`npm run typecheck:client:legacy` 可独立通过；根
    `typecheck` 明确串行执行完整 ES2022 无头探针和 ES2017 legacy 探针，因此 `verify:core` / `verify:all`
-   也会守住客户端运行时下限。`clientTypecheckConfig.test.ts` 注入 `Object.fromEntries` 与
-   `Promise.allSettled` 反例，断言 legacy 配置拒绝它们，并守门根聚合命令不得移除 legacy 探针。
+   会在 legacy 探针的 include 白名单范围内守住客户端运行时下限（范围见下方保留边界）。
+   `clientTypecheckConfig.test.ts` 注入 `Object.fromEntries` 与 `Promise.allSettled` 反例，断言 legacy
+   配置拒绝它们，并守门根聚合命令不得移除 legacy 探针。
 8. `apps/client/tsconfig.json`、`cc-stub.d.ts`、根/客户端/Cocos README 与 CLIENT/OVERVIEW 文档均已区分
-   `typecheck:client`（完整源码与测试、ES2022 桩）和 `typecheck:client:legacy`（可离线源码、ES2017 下限），
-   并明确根 `typecheck` 同时运行两者。
+   `typecheck:client`（完整源码与测试、ES2022 桩）和 `typecheck:client:legacy`（include 白名单内的
+   可离线源码、ES2017 下限），并明确根 `typecheck` 同时运行两者。
 
-### P1-09 建立能力—代码—测试—文档清单 ✅
+保留边界：ES2017 legacy 闸门按 `apps/client/tsconfig.json:26-36` 的 include 白名单生效
+（`cc-stub.d.ts`、`src/designSpec.ts`、`src/{lib,net,core,view,logic,shared}/**`）；实测把
+`Object.fromEntries`/`Promise.allSettled` 放进 `src/logic/` 会被拦下（TS2550），放进 `src/` 根目录则
+**不会**被检查。生产组合目录 `src/gameplay/`（`catalog.ts` 只被已 exclude 的 `Main.ts:20` 与测试引用）
+不进入该程序，`src/Main.ts` 与 9 个引擎绑定 View 按 `:37-55` 显式排除，今后新增的 `src/` 顶层文件或新
+目录默认同样不被检查且不会红灯，其 ES2017 下限仍依赖 Creator 侧验证。当前也没有测试锁定 legacy 程序的
+文件集合：`clientTypecheckConfig.test.ts:98-140` 的反例以额外 rootName 注入，只验证 target/lib 与根命令
+串接，`:66-96` 的必含文件清单只作用于 `tsconfig.test.json`。收口方向：对 legacy 的 `fileNames` 增加同类
+必含断言，或把 include 改为 `src/**` 加显式 exclude。
 
-状态：已完成。`docs/inventory.json` 登记能力、默认入口、真源、wire/runtime 边界、验证命令和权威文档，
+### P1-09 建立能力—代码—测试—文档清单 ◐
+
+状态：清单与门禁能力已完成，但保留两条待收口项（见本条末尾两个 ⏳）：`apps/website` 迁出在仓库路径层面
+未闭合，`docs/undergroundIdle/` 未进入任何索引或登记——后者正是本条自述契约的反例，故本轮由 ✅ 降为 ◐。
+`docs/inventory.json` 登记能力、默认入口、真源、wire/runtime 边界、验证命令和权威文档，
 `verify:inventory` 会检查路径、命令、链接、默认模块与能力归类。
 
 每个核心能力必须能定位到活跃入口、真源、运行时边界和测试；每个默认活跃模块也必须在 OVERVIEW/就近
@@ -503,13 +582,36 @@ workspace main、`app.config.ts` 组合根、Creator scene 压缩 UUID 对应的
 文件，避免反例测试首次入库前发生自举假红。
 
 清单语义也已纠正：核心资产 effect 指向真实 purchase 入口；独立 relayer 单列为 extra，并校验 workspace
-launch 命令确实启动登记入口。已迁出的说明站不再作为笼统 `project-extras` 能力根。默认入口从 workspace
-main 的直接静态组合 import 与默认 scene 脚本 UUID 独立发现，不再依赖清单自报 `sceneClass`。
+launch 命令确实启动登记入口。已迁出的说明站不再作为笼统 `project-extras` 能力根（该路径的 gitlink
+残留见下方「说明站迁出未闭合（⏳）」）。默认入口从 workspace main 的直接静态组合 import 与默认 scene
+脚本 UUID 独立发现，不再依赖清单自报 `sceneClass`。
 
 AGENTS/CLAUDE 现在除空白外全文一致，并另锁定镜像、shared、View/Logic、FGUI、外部身份和 inventory
 命令等必要条款；缺少就近 README 的现状仍如实写明，但不再误指向已完成的 P1-09。README 命令表已补
 vendor、inventory 反例和 perf 门禁。保留边界：组合根发现不声称构建完整 TypeScript import graph，scene
 发现不扫描动态 prefab，Markdown 检查守住登记链接与锚点而不是通用语法解析。
+
+说明站迁出未闭合（⏳）：`368d99e` 在删掉 `.gitignore` 中 `apps/website/` 忽略行的同时，把 `apps/website`
+作为 gitlink 提交进索引（`git ls-files -s apps/website` → `160000 e19737ea…`），而仓库没有 `.gitmodules`。
+实测后果：全新 clone 只得到一个空的 `apps/website/`；`git submodule status` 与
+`git submodule update --init` 均以 `fatal: no submodule mapping found in .gitmodules for path
+'apps/website'`（exit 128）失败，仓库内任何 `git submodule` 子命令同样失败；`e19737e` 没有任何 URL 登记，
+事实上不可恢复——`git cat-file -t e19737ea…` 在本仓报 `could not get object info`。更实际的危害是**静默
+黑洞**：`368d99e` 删掉忽略行后，`apps/website/` 下的本地文件既不被跟踪、也不出现在 untracked 列表里
+（实测 `git ls-files -o --exclude-standard apps/website` 为空、`git add -An` 完全看不见该路径下的遗留
+`dist/`），因此本地产物会无声堆积且无法被 `git add -A` 发现或清理。旁证：`scripts/verify-inventory.test.mjs:37` 对 `apps/website` 的硬编码跳过
+（`efe0318` 引入时是死代码）现已成为建 fixture 的必要防护。收口二选一：`git rm --cached apps/website`
+摘掉索引条目并恢复被删除的 `.gitignore` 忽略行，或补 `.gitmodules` 正式登记该 submodule 的 URL 与分支。
+在此之前不把说明站迁出记为已闭合。
+
+文档树登记缺口（⏳）：`docs/undergroundIdle/`（8 个文件、1972 行的《Underground Idle》玩法策划案，
+由 `428a5eb`/`a976ed8` 加入，后者原路径为 `docs/undergroundGuild/`、随前者归并）目前不在
+README / AGENTS / CLAUDE 的文档索引内，也不在 `docs/inventory.json`
+与 `docs/EXTRAFEATURES.md` 的额外内容枚举内——全仓对它的引用只存在于该目录内部。它是设计草案
+（其 README 自述为「0.1（方案草案）」且声明非运营/商业化/生产部署承诺），不构成核心能力或路线图承诺，
+但未登记与本条「每个能力都能定位到真源与权威文档」的约定不一致。收口动作：在 `docs/EXTRAFEATURES.md`
+§3 下新增一节（状态取 §2 已定义的「未实现」），并在 README 与 AGENTS/CLAUDE 的入口索引各补一条链接
+——注意 AGENTS.md 与 CLAUDE.md 必须保持除空白外全文一致（由 `scripts/verify-inventory.mjs:355` 机检）。
 
 ## 7. P2：正确性稳定后的增强
 
@@ -570,7 +672,7 @@ mount 并执行真实 `BallMoveView`，将完整有序 trace 同无头路径及�
 阶段 C：开发体验收口（已完成当前核心范围）
   P1-07 区目录与确定性
   P1-08 验证与锁定
-  P1-09 文档真相
+  P1-09 文档真相 ◐（说明站 gitlink 与文档树登记两处待收口）
   P2-01/P2-02/P2-03 已完成
 ```
 
@@ -594,7 +696,7 @@ mount 并执行真实 `BallMoveView`，将完整有序 trace 同无头路径及�
 
 本轮核心条目按以下定义完成并已由对应测试/门禁核对：
 
-1. 真源、生成镜像、登记表和就近文档一致，不手改生成目录。
+1. 真源、生成镜像、登记表和就近文档一致，不手改生成目录（当前例外：`docs/undergroundIdle/` 未登记，见 P1-09）。
 2. 外部/wire 边界有 malformed、extra-key、NaN、timeout 和过大输入测试。
 3. 竞态由 deferred promise/fake clock 稳定复现，并断言最终领域状态而非仅调用次数。
 4. timer/listener/room/worker/request 都有明确 ownership、cancel 和 dispose 语义。
@@ -610,5 +712,5 @@ mount 并执行真实 `BallMoveView`，将完整有序 trace 同无头路径及�
 - client shell、session、navigation、room、gameplay 与 View 生命周期可取消、可替换、可无头测试；
 - GameRoom 和数据原语在坏输入、并发与故障测试下保持明确不变量；
 - FGUI、镜像与锁定依赖能判断“是否来自当前真源”；
-- 新增玩法主要扩展 GameMode/GameplayPlugin 和登记点，不修改通用接缝；
+- 新增玩法主要扩展 GameMode/GameplayPlugin 和登记点，不修改通用接缝（自带 View 的玩法仍需扩 presentation 注入，见 P1-01）；
 - 核心计划与额外功能各有唯一文档，不再互相制造隐含承诺。
