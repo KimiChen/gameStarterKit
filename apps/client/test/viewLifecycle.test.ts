@@ -896,3 +896,511 @@ test("page navigation boundary observes rejected async actions without unhandled
     process.off("unhandledRejection", onUnhandled);
   }
 });
+
+test("pages login flight：重复打开与重复进入只完成一次 Home 导航", async () => {
+  const runtime = await loadViewRuntime();
+  const pages = await import("../src/view/pages");
+  const { initPortal } = await import("../src/core/http");
+  const { clearSession } = await import("../src/net/session");
+  const { WebSocketClient } = await import("../src/net/WebSocketClient");
+
+  class LoginFlowXhr {
+    static readonly requests: Array<{ method: string; url: string; body: unknown }> = [];
+    private method = "";
+    private url = "";
+    status = 0;
+    responseText = "";
+    timeout = 0;
+    onload: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+    ontimeout: (() => void) | null = null;
+
+    open(method: string, url: string): void {
+      this.method = method;
+      this.url = url;
+    }
+
+    setRequestHeader(): void {}
+
+    send(body?: unknown): void {
+      LoginFlowXhr.requests.push({ method: this.method, url: this.url, body });
+      this.status = 200;
+      this.responseText = JSON.stringify(this.url.endsWith("/v1/areas") ? {
+        hash: "login-flight-directory",
+        isOps: false,
+        myServerIds: [],
+        servers: [{
+          serverId: 7,
+          name: "区7",
+          status: "smooth",
+          tag: "normal",
+          openTime: 1,
+          gameHttpUrl: "https://game-7.example",
+          gameWsUrl: "wss://game-7.example",
+        }],
+      } : {
+        userId: "login-flight-user",
+        accessToken: "login-flight-access-token",
+        isNewAccount: false,
+      });
+      queueMicrotask(() => this.onload?.());
+    }
+  }
+
+  const originalXhr = (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest;
+  const mgr = runtime.ViewMgr as any;
+  const originalMgr = {
+    open: mgr.open,
+    close: mgr.close,
+    disposeViewRoot: mgr.disposeViewRoot,
+  };
+  const socket = WebSocketClient.inst as any;
+  const originalSocket = {
+    init: socket.init,
+    join: socket.join,
+    rpc: socket.rpc,
+    leave: socket.leave,
+  };
+  const joinGate = deferred<void>();
+  let joinCalls = 0;
+  let rpcCalls = 0;
+  let loginOpens = 0;
+  let homeOpens = 0;
+  let loginCloses = 0;
+  let loginActive = true;
+  let firstBattle = 0;
+  let latestBattle = 0;
+  let postSetupBattle = 0;
+  const loginView: any = {
+    onEnter: null,
+    onNotice: null,
+    onSelectServer: null,
+    setProgress: () => {},
+    setup: () => {},
+    showCurrentServer: () => {},
+  };
+  const homeView: any = { onEnterBattle: null, setup: () => {} };
+  const loginController = new AbortController();
+  const loginContext = {
+    signal: loginController.signal,
+    generation: 1,
+    isActive: () => loginActive,
+  };
+  const homeContext = {
+    signal: new AbortController().signal,
+    generation: 2,
+    isActive: () => true,
+  };
+  const handle = (view: any, context: any, close: () => void): any => ({
+    view,
+    signal: context.signal,
+    generation: context.generation,
+    close,
+    run: async (action: (opened: any, activeContext: any) => unknown) => action(view, context),
+  });
+  const scope = (() => {
+    (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = LoginFlowXhr;
+    initPortal("https://portal.example");
+    clearSession();
+    socket.init = () => {};
+    socket.join = async () => { joinCalls++; await joinGate.promise; };
+    socket.rpc = async () => {
+      rpcCalls++;
+      return {
+        user: {
+          uid: "login-flight-user",
+          star: 0,
+          maxRound: 0,
+          wins: 0,
+          losses: 0,
+          stamina: 100,
+          lastStaminaRecoverAt: 0,
+          musicOn: true,
+          sfxOn: true,
+          guildId: 0,
+          ver: 1,
+        },
+      };
+    };
+    socket.leave = async () => {};
+    mgr.open = async (name: string) => {
+      if (name === "Login") {
+        loginOpens++;
+        return handle(loginView, loginContext, () => {
+          if (!loginActive) return;
+          loginActive = false;
+          loginCloses++;
+          loginController.abort();
+        });
+      }
+      if (name === "Home") {
+        homeOpens++;
+        return handle(homeView, homeContext, () => {});
+      }
+      throw new Error(`unexpected page ${name}`);
+    };
+    mgr.close = () => {};
+    mgr.disposeViewRoot = () => {};
+    return pages.createPageSessionScope();
+  })();
+
+  try {
+    const loadingFirst = pages.openLogin(() => { firstBattle++; }, scope);
+    const loadingLatest = pages.openLogin(() => { latestBattle++; }, scope);
+    assert.strictEqual(loadingLatest, loadingFirst, "重复 openLogin 必须合流同一 flight");
+    await loadingFirst;
+    assert.equal(loginOpens, 1);
+    assert.equal(LoginFlowXhr.requests.filter((request) => request.url.endsWith("/v1/areas")).length, 1);
+
+    const enter = loginView.onEnter as () => Promise<void>;
+    assert.equal(typeof enter, "function");
+    const enteringFirst = enter();
+    const enteringAgain = enter();
+    assert.strictEqual(enteringAgain, enteringFirst, "重复点击进入必须合流完整登录 continuation");
+    for (let spin = 0; spin < 20 && joinCalls === 0; spin++) await Promise.resolve();
+    assert.equal(joinCalls, 1);
+    const reopenedAfterSetup = pages.openLogin(() => { postSetupBattle++; }, scope);
+    assert.strictEqual(reopenedAfterSetup, loadingFirst,
+      "Login setup 已完成但 Enter 仍在途时也必须复用同一 active flight");
+    assert.strictEqual(loginView.onEnter?.(), enteringFirst,
+      "setup 后重复 openLogin 不得换掉在途 LoginLogic continuation");
+    assert.equal(loginOpens, 1);
+    joinGate.resolve(undefined);
+    await enteringFirst;
+
+    assert.equal(LoginFlowXhr.requests.filter((request) => request.method === "POST").length, 1,
+      "完整 flow 只能签发一次开发会话");
+    assert.equal(rpcCalls, 1);
+    assert.equal(loginCloses, 1, "成功登录只关闭一次 Login");
+    assert.equal(loginActive, false, "假句柄必须复现真实 close 的同步 context 失效");
+    assert.equal(homeOpens, 1, "关闭 Login 后仍必须且只能导航一次 Home");
+
+    await homeView.onEnterBattle?.();
+    assert.equal(firstBattle, 0, "合流 flight 不得保留旧 Main 回调");
+    assert.equal(latestBattle, 0, "setup 前的回调必须继续允许后续 openLogin 覆盖");
+    assert.equal(postSetupBattle, 1, "Home 必须绑定 Enter 在途期间最新一次 openLogin 的回调");
+  } finally {
+    scope.dispose();
+    clearSession();
+    mgr.open = originalMgr.open;
+    mgr.close = originalMgr.close;
+    mgr.disposeViewRoot = originalMgr.disposeViewRoot;
+    socket.init = originalSocket.init;
+    socket.join = originalSocket.join;
+    socket.rpc = originalSocket.rpc;
+    socket.leave = originalSocket.leave;
+    (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = originalXhr;
+  }
+});
+
+type PageFlowHomeFailure = "open" | "setup";
+
+interface PageFlowHarnessOptions {
+  homeFailure?: PageFlowHomeFailure;
+  homeGate?: Deferred<void>;
+}
+
+async function waitForPageFlow(predicate: () => boolean, message: string): Promise<void> {
+  for (let spin = 0; spin < 100; spin++) {
+    if (predicate()) return;
+    await Promise.resolve();
+  }
+  assert.fail(message);
+}
+
+async function createPageFlowHarness(runtime: ViewRuntime, options: PageFlowHarnessOptions = {}) {
+  const pages = await import("../src/view/pages");
+  const http = await import("../src/core/http");
+  const session = await import("../src/net/session");
+  const { WebSocketClient } = await import("../src/net/WebSocketClient");
+
+  const requests: Array<{ method: string; url: string; body: unknown }> = [];
+  let loginResponses = 0;
+  class PageFlowXhr {
+    private method = "";
+    private url = "";
+    status = 0;
+    responseText = "";
+    timeout = 0;
+    onload: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+    ontimeout: (() => void) | null = null;
+
+    open(method: string, url: string): void {
+      this.method = method;
+      this.url = url;
+    }
+
+    setRequestHeader(): void {}
+
+    send(body?: unknown): void {
+      requests.push({ method: this.method, url: this.url, body });
+      this.status = 200;
+      if (this.url.endsWith("/v1/areas")) {
+        this.responseText = JSON.stringify({
+          hash: "page-flow-directory",
+          isOps: false,
+          myServerIds: [],
+          servers: [{
+            serverId: 9,
+            name: "区9",
+            status: "smooth",
+            tag: "normal",
+            openTime: 1,
+            gameHttpUrl: "https://game-9.example",
+            gameWsUrl: "wss://game-9.example",
+          }],
+        });
+      } else {
+        const generation = ++loginResponses;
+        this.responseText = JSON.stringify({
+          userId: `page-flow-user-${generation}`,
+          accessToken: `page-flow-access-token-${generation}`,
+          isNewAccount: false,
+        });
+      }
+      queueMicrotask(() => this.onload?.());
+    }
+  }
+
+  const mgr = runtime.ViewMgr as any;
+  const originalMgr = {
+    open: mgr.open,
+    close: mgr.close,
+    disposeViewRoot: mgr.disposeViewRoot,
+  };
+  const socket = WebSocketClient.inst as any;
+  const originalSocket = {
+    init: socket.init,
+    join: socket.join,
+    rpc: socket.rpc,
+    leave: socket.leave,
+  };
+  const originalXhr = (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest;
+
+  let nextViewGeneration = 0;
+  const makeLifecycle = () => {
+    const controller = new AbortController();
+    let active = true;
+    const context = {
+      signal: controller.signal,
+      generation: ++nextViewGeneration,
+      isActive: () => active && !controller.signal.aborted,
+    };
+    return {
+      context,
+      isActive: context.isActive,
+      close: () => {
+        if (!active) return;
+        active = false;
+        controller.abort();
+      },
+    };
+  };
+  const makeHandle = (view: any, lifecycle = makeLifecycle()): any => {
+    let handle: any;
+    handle = {
+      view,
+      signal: lifecycle.context.signal,
+      generation: lifecycle.context.generation,
+      close: lifecycle.close,
+      run: async (action: (opened: any, context: any) => unknown) => {
+        if (!lifecycle.isActive()) throw new Error("page flow fake handle is inactive");
+        try {
+          const result = await action(view, lifecycle.context);
+          if (!lifecycle.isActive()) throw new Error("page flow fake handle was closed during run");
+          return result;
+        } catch (error) {
+          handle.close();
+          throw error;
+        }
+      },
+      isActive: lifecycle.isActive,
+    };
+    return handle;
+  };
+
+  const loginHandles: any[] = [];
+  const homeHandles: any[] = [];
+  const confirmLogics: any[] = [];
+  const namedCloses: string[] = [];
+  const currentHandles = new Map<string, any>();
+  let homeAttempts = 0;
+  let joinCalls = 0;
+  let rpcCalls = 0;
+  let leaveCalls = 0;
+  let rootDisposals = 0;
+
+  socket.init = () => {};
+  socket.join = async () => { joinCalls++; };
+  socket.rpc = async () => {
+    rpcCalls++;
+    return {
+      user: {
+        uid: `page-flow-user-${loginResponses}`,
+        star: 0,
+        maxRound: 0,
+        wins: 0,
+        losses: 0,
+        stamina: 100,
+        lastStaminaRecoverAt: 0,
+        musicOn: true,
+        sfxOn: true,
+        guildId: 0,
+        ver: 1,
+      },
+    };
+  };
+  socket.leave = async () => { leaveCalls++; };
+
+  mgr.open = async (name: string) => {
+    if (name === "Login") {
+      const view: any = {
+        onEnter: null,
+        onNotice: null,
+        onSelectServer: null,
+        setProgress: () => {},
+        setup: () => {},
+        showCurrentServer: () => {},
+      };
+      const handle = makeHandle(view);
+      loginHandles.push(handle);
+      currentHandles.set(name, handle);
+      return handle;
+    }
+    if (name === "Home") {
+      homeAttempts++;
+      if (homeAttempts === 1 && options.homeFailure === "open") {
+        throw new Error("Home open failed");
+      }
+      const failSetup = homeAttempts === 1 && options.homeFailure === "setup";
+      const view: any = {
+        onEnterBattle: null,
+        setup: () => {
+          if (failSetup) throw new Error("Home setup failed");
+        },
+      };
+      const handle = makeHandle(view);
+      homeHandles.push(handle);
+      currentHandles.set(name, handle);
+      if (homeAttempts === 1 && options.homeGate) await options.homeGate.promise;
+      return handle;
+    }
+    if (name === "Confirm") {
+      const view = { setup: (logic: unknown) => { confirmLogics.push(logic); } };
+      return makeHandle(view);
+    }
+    throw new Error(`unexpected page ${name}`);
+  };
+  mgr.close = (name: string) => {
+    namedCloses.push(name);
+    currentHandles.get(name)?.close();
+  };
+  // Keep pending Home independent from the fake root so a non-cancellable load
+  // can report a late success after the production page scope has been disposed.
+  mgr.disposeViewRoot = () => { rootDisposals++; };
+
+  (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = PageFlowXhr;
+  http.initPortal("https://portal.example");
+  session.clearSession();
+  const scope = pages.createPageSessionScope();
+
+  return {
+    pages,
+    http,
+    session,
+    scope,
+    requests,
+    loginHandles,
+    homeHandles,
+    confirmLogics,
+    namedCloses,
+    get homeAttempts() { return homeAttempts; },
+    get joinCalls() { return joinCalls; },
+    get rpcCalls() { return rpcCalls; },
+    get leaveCalls() { return leaveCalls; },
+    get rootDisposals() { return rootDisposals; },
+    cleanup: () => {
+      scope.dispose();
+      session.clearSession();
+      mgr.open = originalMgr.open;
+      mgr.close = originalMgr.close;
+      mgr.disposeViewRoot = originalMgr.disposeViewRoot;
+      socket.init = originalSocket.init;
+      socket.join = originalSocket.join;
+      socket.rpc = originalSocket.rpc;
+      socket.leave = originalSocket.leave;
+      (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = originalXhr;
+    },
+  };
+}
+
+test("pages Home open/setup 失败：清理会话与 Lobby 后提示并重开可用 Login", async () => {
+  const runtime = await loadViewRuntime();
+  for (const failure of ["open", "setup"] as const) {
+    const harness = await createPageFlowHarness(runtime, { homeFailure: failure });
+    try {
+      await harness.pages.openLogin(() => {}, harness.scope);
+      const firstLogin = harness.loginHandles[0];
+      assert.equal(typeof firstLogin?.view.onEnter, "function");
+
+      const entering = firstLogin.view.onEnter() as Promise<void>;
+      await waitForPageFlow(() => harness.confirmLogics.length === 1,
+        `${failure}: Home 失败后必须进入可确认的回登录提示`);
+
+      assert.equal(harness.session.isLoggedIn(), false, `${failure}: 提示前必须已清理会话`);
+      assert.equal(harness.session.getUserId(), "", `${failure}: 不得保留旧 userId`);
+      assert.equal(harness.http.getToken(), "", `${failure}: 不得保留旧 bearer`);
+      assert.equal(harness.leaveCalls, 1, `${failure}: 必须释放已建立的 Lobby`);
+      assert.equal(harness.loginHandles.length, 1, `${failure}: 确认提示前不应提前重开 Login`);
+      assert.equal(harness.confirmLogics[0].title, "进入失败");
+      assert.equal(harness.confirmLogics[0].content, "进入对局失败，请重试");
+
+      harness.confirmLogics[0].yes();
+      await entering;
+
+      assert.equal(harness.loginHandles.length, 2, `${failure}: 确认后必须重开 Login`);
+      const reopened = harness.loginHandles[1];
+      assert.equal(reopened.isActive(), true, `${failure}: 重开 Login 必须拥有活动 context`);
+      assert.equal(typeof reopened.view.onEnter, "function", `${failure}: 重开 Login 必须可再次进入`);
+
+      await reopened.view.onEnter();
+      assert.equal(harness.homeAttempts, 2, `${failure}: 重试必须能完成新的 Home 导航`);
+      assert.equal(harness.homeHandles.at(-1)?.isActive(), true, `${failure}: 重试后 Home 必须保持打开`);
+      assert.equal(harness.session.isLoggedIn(), true, `${failure}: 新登录会话必须可用`);
+      assert.equal(harness.joinCalls, 2);
+      assert.equal(harness.rpcCalls, 2);
+    } finally {
+      harness.cleanup();
+    }
+  }
+});
+
+test("pages Home 迟到成功：scope/session 失效后只关闭旧 Home handle", async () => {
+  const runtime = await loadViewRuntime();
+  for (const invalidation of ["scope", "session"] as const) {
+    const homeGate = deferred<void>();
+    const harness = await createPageFlowHarness(runtime, { homeGate });
+    try {
+      await harness.pages.openLogin(() => {}, harness.scope);
+      const entering = harness.loginHandles[0].view.onEnter() as Promise<void>;
+      await waitForPageFlow(() => harness.homeAttempts === 1,
+        `${invalidation}: Home open Promise 必须进入在途状态`);
+      assert.equal(harness.homeHandles[0]?.isActive(), true);
+
+      if (invalidation === "scope") harness.scope.dispose();
+      else harness.session.clearSession();
+      homeGate.resolve(undefined);
+      await entering;
+
+      assert.equal(harness.namedCloses.filter((name: string) => name === "Home").length, 0,
+        `${invalidation}: 旧 continuation 不得按名误关可能属于新世代的 Home`);
+      assert.equal(harness.homeHandles[0].isActive(), false,
+        `${invalidation}: 迟到 Home 必须通过自己的 handle 关闭`);
+      assert.equal(harness.confirmLogics.length, 0, `${invalidation}: 过期成功不应误报进入失败`);
+    } finally {
+      homeGate.resolve(undefined);
+      harness.cleanup();
+    }
+  }
+});

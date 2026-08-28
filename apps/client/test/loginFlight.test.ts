@@ -1,7 +1,7 @@
 /**
- * pages.ts is intentionally not imported here: its composition root binds Cocos/FairyGUI modules
- * that are unavailable in the headless runner. Keep a small source-level regression for the
- * identity rule that prevents a session transition from awaiting its own openLogin promise.
+ * Keep a source-level identity regression for the exact continuation shape that prevents a
+ * session transition from awaiting its own openLogin promise. The production pages runtime is
+ * exercised with engine stubs in viewLifecycle.test.ts; this probe complements that behavior test.
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -38,4 +38,8 @@ test("pages login transition：按 flight identity 延后重开，不能 await �
     "Main 必须为每个页面组合根取得 owner scope");
   assert.match(main, /pages\.openLogin\(\(\) => this\.enterBattle\(\), scope\)/,
     "Main 必须把 owner scope 传给 openLogin");
+  assert.match(main, /const sessionGeneration = getSessionGeneration\(\)/,
+    "Main 的 gameplay transition 必须捕获所属会话世代");
+  assert.match(main, /const isCurrent = \(\): boolean => !this\.destroyed[\s\S]*getSessionGeneration\(\) === sessionGeneration/,
+    "Main 在迟到 stop 后回登录前必须复核实例、取消信号与会话世代");
 });

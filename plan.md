@@ -106,12 +106,22 @@ schema 迁移仍待补齐，Game HTTP request schema 尚未直接由 shared vali
 状态：已完成。`SessionTransition`、join deadline/cancel、slot ownership、统一回登录清理和掉线输入
 reconcile 已落地；客户端 session/transport 测试覆盖重复导航、迟到 room、旧 bearer 与 desired stop。
 
-复核备注：登录整段 flow 锁（一个 session、一次 Lobby join）由 `test/pageLogic.test.ts` 的「Login：完整
-flow 锁覆盖 HTTP 之后的 continuation」与「Login：进度回调 + 登录幂等」覆盖；`view/pages.ts` 的 flight
-合流（`:122-169` `reopenLoginAfterTransition`、`:334-370` `ensureLoginFlight`、`:378-383` `openLogin`）与
-「一次最终导航」（`enterInFlight` `:410`/`:417-419`、`openHome` `:497`）目前只有 `test/loginFlight.test.ts`
-的源码正则守门——`pages.ts` 绑定 Cocos/FairyGUI，无头 runner 无法导入——没有行为用例，需在 Creator 侧
-人工验证。`Main.handleGameplayStartFailure` 自身也无用例，它只是对已测 `returnToLogin` 的调用。
+复核备注（已收口）：登录整段 flow 锁（一个 session、一次 Lobby join）由 `pageLogic.test.ts` 覆盖；
+`viewLifecycle.test.ts` 进一步以最小引擎桩动态执行生产 `pages.ts`，直接验证重复 `openLogin` 与重复 Enter
+共享同一完整 continuation；active flight 在 Login setup Promise 完成后继续覆盖 Enter/Home continuation，
+该窗口再次 `openLogin` 仍只签发一个开发会话、执行一次 Lobby join/GetInfo/Home 导航，并保留最新的
+`onEnterBattle` 回调。该用例复现了真实 `ViewHandle.close()` 会同步使 Login context 失效；生产实现关闭
+Login 后改由仍有效的 page flight 与 session generation 守卫 Home 导航，scope/session 失效后迟到成功的
+Home 只通过原 `ViewHandle` 关闭，不会按名误伤后来世代。Home 的 open 或 setup 失败则走统一
+return-to-login transition，运行时测试直接验证
+清 session/bearer、leave Lobby、提示、重开可用 Login，并能再次登录成功，不再留下“有会话但无页面”半状态。
+
+复核备注（已收口）：`Main.handleGameplayStartFailure` 调用 Logic 层的
+`recoverGameplayStartFailure`；专项测试直接验证 `plugin-error` stop 先于统一回登录、同步抛出或异步拒绝的
+stop 均被观察且不会阻断 `BATTLE_JOIN_FAILED` 恢复，而回登录自身的失败仍向调用方传播。该接缝只依赖
+TypeScript 与 gameplay 类型，不导入 `cc`、FairyGUI、View 或网络单例。战斗 transition 另捕获所属 session
+generation，并在动态页面加载、room start、失败 stop 之后统一复核 Main 实例、AbortSignal 与 generation；
+旧 Main 的迟到清理只能停止自己的 controller，不会清掉后来建立的新会话。
 
 复核备注（已收口）：`WebSocketClient.forgetImplicitOwners` 按 slot 身份回收隐式 ownership，并覆盖 join
 失败/迟到、room 绑定失败、物理 `onLeave`、`closeSlot` 以及 `leave()` 的空 slot 提前返回路径。

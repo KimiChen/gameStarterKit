@@ -9,11 +9,11 @@ import { initHttp, initPortal } from "./core/http";
 import { installWeChatCompat } from "./core/wechat-compat";
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from "./designSpec";
 import { GameplayRegistry } from "./logic/gameplay/GameplayRegistry";
-import { RoomController } from "./logic/gameplay/RoomController";
+import { recoverGameplayStartFailure, RoomController } from "./logic/gameplay/RoomController";
 import {
     BALL_MOVE_GAMEPLAY_ID,
 } from "./logic/rooms/ballMove/BallMoveGameplay";
-import { onAuthInvalid, onBattleLost, onConnLost, returnToLogin } from "./net/session";
+import { getSessionGeneration, onAuthInvalid, onBattleLost, onConnLost, returnToLogin } from "./net/session";
 import { joinErrText } from "./shared/index";
 import type { GameplayStartResult } from "./logic/gameplay/RoomController";
 import { BallMoveView } from "./view/rooms/ballMove/BallMoveView";
@@ -147,33 +147,49 @@ export class Main extends Component {
         const controller = this.roomController;
         const registry = this.gameplayRegistry;
         if (!controller || !registry || signal.aborted || controller.status === "running") return;
+        const sessionGeneration = getSessionGeneration();
+        const isCurrent = (): boolean => !this.destroyed
+            && !signal.aborted
+            && getSessionGeneration() === sessionGeneration;
 
         try {
             const pages = await import("./view/pages");
-            if (this.destroyed || signal.aborted) return;
+            if (!isCurrent()) return;
             pages.closeLobby();
         } catch {
-            if (this.destroyed || signal.aborted) return;
+            if (!isCurrent()) return;
         }
 
         const requestedId = typeof this.gameplayId === "string" && this.gameplayId.trim().length > 0
             ? this.gameplayId.trim()
             : BALL_MOVE_GAMEPLAY_ID;
         const result = await controller.startRegistered(registry, requestedId, signal);
+        if (!isCurrent()) {
+            await controller.stop({ kind: "cancelled" }).catch((error) => {
+                console.error("[Main] 迟到 gameplay transition 清理失败：", error);
+            });
+            return;
+        }
         if (result.status === "started" || result.status === "already-running") return;
         if (result.status === "cancelled" || result.status === "disposed") return;
-        await this.handleGameplayStartFailure(result);
+        await this.handleGameplayStartFailure(result, isCurrent);
     }
 
-    private async handleGameplayStartFailure(result: GameplayStartResult): Promise<void> {
-        if (this.destroyed || result.status === "busy") return;
+    private async handleGameplayStartFailure(result: GameplayStartResult, isCurrent: () => boolean): Promise<void> {
+        if (!isCurrent() || result.status === "busy") return;
         const error = result.status === "failed"
             ? result.error
             : new Error(`unexpected gameplay result: ${result.status}`);
         const message = error instanceof Error ? error.message : String(error);
         console.error(`[Main] 进入战斗失败：${joinErrText(message, "连接房间失败（请确认已运行 npm run dev）")}`, error);
-        await this.roomController?.stop({ kind: "plugin-error", error });
-        await returnToLogin({ kind: "BATTLE_JOIN_FAILED" });
+        await recoverGameplayStartFailure(error, {
+            stop: (reason) => this.roomController?.stop(reason),
+            isCurrent,
+            reportStopError: (stopError) => {
+                console.error("[Main] 进入战斗失败后的 gameplay stop 失败：", stopError);
+            },
+            returnToLogin: () => returnToLogin({ kind: "BATTLE_JOIN_FAILED" }),
+        });
     }
 
     private stopGameplay(kind: "cancelled" | "room-lost"): void {

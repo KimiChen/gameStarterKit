@@ -27,6 +27,31 @@ export interface GameplayRoomJoiner<TRoom = unknown> {
     join(signal: AbortSignal): RoomCapability<TRoom>;
 }
 
+export interface GameplayStartFailureRecovery {
+    stop(reason: GameplayStopReason): void | Promise<void>;
+    isCurrent(): boolean;
+    returnToLogin(): void | Promise<void>;
+    reportStopError?(error: unknown): void;
+}
+
+/** Tear down a failed gameplay generation before returning to the login flow. */
+export async function recoverGameplayStartFailure(
+    error: unknown,
+    recovery: GameplayStartFailureRecovery,
+): Promise<void> {
+    try {
+        await recovery.stop({ kind: "plugin-error", error });
+    } catch (stopError) {
+        try {
+            recovery.reportStopError?.(stopError);
+        } catch {
+            // Diagnostics must not prevent the required navigation fallback.
+        }
+    }
+    if (!recovery.isCurrent()) return;
+    await recovery.returnToLogin();
+}
+
 interface ActiveGameplay<TRoom, TInput> {
     readonly generation: number;
     readonly plugin: GameplayPlugin<TRoom, TInput>;

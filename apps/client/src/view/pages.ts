@@ -31,6 +31,7 @@ import {
   clearSession,
   getSessionGeneration,
   registerReturnToLogin,
+  returnToLogin,
   setSession,
   type ReturnToLoginReason,
 } from "../net/session";
@@ -98,7 +99,8 @@ export interface PageSessionScope {
 }
 
 /**
- * 登录页的一次完整打开事务。Promise 本身不足以做身份判断：在 settle 的微任务窗口里，
+ * 登录页及其 authenticated continuation 的一次完整 ownership。Promise 只表示页面打开完成，
+ * 不能独自表示 flight 是否仍活动：在 settle 的微任务窗口里，
  * `openLoginInFlight` 可能已经切换到下一代，回登录处理器若只比较 Promise 就会自等或
  * 把旧 Main 的回调带进新页面。这里把身份、失效状态和最新回调绑在同一条记录上。
  */
@@ -171,8 +173,18 @@ function reopenLoginAfterTransition(
   }
 
   // A newer caller may already have started a flight while the confirmation was open.
-  // It is safe to await it because it is not the observed flight that called us.
-  if (current && current !== observedFlight && !current.settled) return current.promise;
+  // It is safe to await/reuse it because it is not the observed flight that called us.
+  if (current && current !== observedFlight && !current.invalidated) return current.promise;
+  if (current && current !== observedFlight && current.invalidated && !current.settled) {
+    const continueReopen = (): Promise<void> => reopenLoginAfterTransition(
+      transitionId,
+      transitionGen,
+      observedFlight,
+      transitionPageGeneration,
+      transitionOwner,
+    );
+    return current.promise.then(continueReopen, continueReopen);
+  }
   if (current?.settled && openLoginInFlight === current) openLoginInFlight = null;
 
   const callback = latestOnEnterBattle ?? observedFlight?.onEnterBattle;
@@ -337,22 +349,22 @@ function isFlightActive(flight: LoginFlight): boolean {
     && pageLifecycleGeneration === flight.owner.generation;
 }
 
-/** 创建或复用登录 flight；复用时只更新回调，不另起一套页面加载。 */
+/** 创建或复用登录 flight；页面已打开但 Enter continuation 尚活动时也必须复用。 */
 function ensureLoginFlight(onEnterBattle: EnterBattleHandler, owner = ensurePageOwner()): LoginFlight {
   latestOnEnterBattle = onEnterBattle;
   const current = openLoginInFlight;
-  if (current && !current.settled && !current.invalidated && current.owner === owner) {
+  if (current && !current.invalidated && current.owner === owner) {
     current.onEnterBattle = onEnterBattle;
     return current;
   }
-  if (current && !current.settled && current.owner !== owner) {
+  if (current && current.owner !== owner) {
     // A new scene owner must never reuse an old scene's Login callback/flight.
     current.invalidated = true;
     current.reopenTicket = null;
     current.reopenPromise = null;
     if (openLoginInFlight === current) openLoginInFlight = null;
   }
-  if (current?.settled && openLoginInFlight === current) openLoginInFlight = null;
+  if (current?.invalidated && current.settled && openLoginInFlight === current) openLoginInFlight = null;
 
   const flight: LoginFlight = {
     id: ++nextLoginFlightId,
@@ -370,15 +382,16 @@ function ensureLoginFlight(onEnterBattle: EnterBattleHandler, owner = ensurePage
   wireSessionEvents(owner);
   flight.promise = openLoginImpl(flight);
   flight.promise.then(
-    () => finishLoginFlight(flight),
-    () => finishLoginFlight(flight),
+    () => settleLoginOpen(flight, false),
+    () => settleLoginOpen(flight, true),
   );
   return flight;
 }
 
-function finishLoginFlight(flight: LoginFlight): void {
+function settleLoginOpen(flight: LoginFlight, failed: boolean): void {
   flight.settled = true;
-  if (openLoginInFlight === flight) openLoginInFlight = null;
+  if (failed) flight.invalidated = true;
+  if (flight.invalidated && openLoginInFlight === flight) openLoginInFlight = null;
 }
 
 /** 登录页整段加载只保留一个在途事务；重复调用只更新最新 Main 的战斗回调。 */
@@ -516,12 +529,22 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
         if (!isFlightActive(flight) || !context.isActive() || !r || flowFailed || getSessionGeneration() !== flowSessionGen) return;
         logic.onProgress(1, "登录成功");
         h.close();
-        if (!isFlightActive(flight) || !context.isActive()) return;
-        await openHome(() => flight.onEnterBattle(), r.userId, user);
+        // Closing Login synchronously invalidates its lifecycle context.  From
+        // this point the page flight and session generation own the navigation;
+        // consulting the closed context would make Home unreachable.
+        if (!isFlightActive(flight) || getSessionGeneration() !== flowSessionGen) return;
+        let homeHandle: ViewHandle;
+        try {
+          homeHandle = await openHome(() => flight.onEnterBattle(), r.userId, user);
+        } catch (e) {
+          if (!isFlightActive(flight) || getSessionGeneration() !== flowSessionGen) return;
+          console.error("[pages] Home 打开失败，回滚登录事务：", e);
+          await returnToLogin({ kind: "BATTLE_JOIN_FAILED" });
+          return;
+        }
         // Home 的动态加载也有 await；期间若收到失效事件，handler 会关闭大厅并重开
         // Login。这里再核对一次，避免迟到的 Home 把新登录页覆盖回来。
-        if (!isFlightActive(flight) || !context.isActive()
-          || getSessionGeneration() !== flowSessionGen) ViewMgr.close("Home");
+        if (!isFlightActive(flight) || getSessionGeneration() !== flowSessionGen) homeHandle.close();
       })();
       enterInFlight = p;
       p.then(
@@ -544,7 +567,7 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
 /** 主界面：展示真实账号/档案摘要，「进入游戏」→ ballMove。 */
 export async function openHome(
   onEnterBattle: () => void | Promise<void>, userId = "", user: IUserView | null = null,
-): Promise<void> {
+): Promise<ViewHandle> {
   const h = await ViewMgr.open("Home");
   const view = h.view as HomeView;
   await h.run((_openedView, context) => {
@@ -557,6 +580,7 @@ export async function openHome(
     const summary = user ? ` · 体力 ${user.stamina} · ${user.wins}胜${user.losses}负` : "";
     view.setup(`${cur ? `${cur.name} · ` : ""}${who}${summary}`);
   });
+  return h;
 }
 
 /** 选服列表（HTTP）：选服 → 存 currentServer + 回调刷新登录页 → 关闭。 */
