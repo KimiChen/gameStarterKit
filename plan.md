@@ -42,9 +42,8 @@ P0 表示继续扩展核心玩法前应先修复的确定性问题；P1 表示�
 GameRoom ownership、Lobby RPC 登记、外部身份 HTTP 边界，以及 lock/fence/UoW/outbox 等服务端原语。
 现有本地单元测试整体稳定。
 
-截至该基线，P0/P1 的核心收口和 P2-01/P2-02/P2-03 已完成，其中 P1-08 本轮降级为 ◐（客户端 ES2017 下限的
-本地闸门已丢失，且承载它的 `typecheck:client:legacy` 探针自身在基线上失败，详见该条第 7 项）；其余剩余
-风险集中在明确未承诺的扩展边界：relayer
+截至当前分支，P0/P1 的核心收口和 P2-01/P2-02/P2-03 已完成。基线复核时 P1-08 暴露的客户端 ES2017
+闸门缺口已由 `d96186b` 修复；其余剩余风险集中在明确未承诺的扩展边界：relayer
 仍在持锁事务内等待外部 I/O，archive 表缺少完整区隔离与容量方案，坏 stream entry 的处置和热档
 schema 迁移仍待补齐，Game HTTP request schema 尚未直接由 shared validator 生成，match evidence 也
 不足以重放完整输入序列。以上限制不影响本轮已完成的核心验收，但不能把
@@ -477,20 +476,22 @@ localStorage key，未使用 shared 的 `naturalDayIndex`；该值纯本机、�
 不一致。另 `net/serverSession.ts:68` 的 `clearServerList()` 在 `apps/client/src` 与测试中均无调用方，属未
 使用的公开写入点。
 
-### P1-08 闭合本地验证与依赖锁 ◐
+### P1-08 闭合本地验证与依赖锁 ✅
 
-状态：本地门禁与依赖锁的计划内条目已落地，但保留一条明确限制：客户端 ES2017 下限的闸门在本轮已经
-丢失，且承载它的兜底探针 `typecheck:client:legacy` 自身在基线上就是红的（详见下方第 7 条）。失效的
-loadtest、Excel 产物链和真实 Creator 预览仍按额外/人工验证边界处理。
+状态：已完成。客户端完整无头 strict 探针与 ES2017 legacy 探针均可独立通过，后者已进入根 `typecheck`
+以及上层 `verify:core` / `verify:all` 聚合链。失效的 loadtest、Excel 产物链和真实 Creator 预览仍按
+额外/人工验证边界处理。
 
 1. 独立 client-test tsconfig（Node 22 lib + 最小 cc/FGUI stubs）已纳入 Main/View/tests，旧字段已修复。
 2. `test:fgui` 已拆成准确的 `test:client` 与 FGUI 专项命令，并提供分层 `verify:core`/`verify:all`。
-   ⚠ 两级聚合都只含 `verify:fgui`（`scripts/fgui-manifest.mjs --check` 的 manifest/hash 机检），不含
-   `test:fgui` 的 37 个 codegen/registry 用例——它仍需单独执行；`verify:all`（`package.json:43`）目前会
-   重复跑一次 `verify:core` 已包含的 `test:client`。
+   `verify:core` 同时执行 manifest 正向检查与 `test:fgui` 反例/registry 契约；`verify:all` 只继承一次
+   `verify:core` 再追加服务端单元测试，不再重复执行客户端测试。
 3. root 显式拥有 `tsx/tsc` 等脚本依赖，不依赖 server workspace 偶然 hoist；推荐 Node 22.x 约束已写入
-   工具链与文档。该约束目前只落在 `package.json` 的 devDependencies/engines 与 `.node-version` 文件本身，
-   无脚本或用例机检其存在与一致性（`verify-project-metadata.mjs` 只读 server 的依赖声明，不看 engines）。
+   工具链与文档。无第三方依赖的 `verify-toolchain.mjs` 作为 `verify:core` 首闸，检查 `.node-version`、根与
+   server engines、`@types/node`/`tsx`/`typescript` 直接声明、lockfile 投影及解析版本；并精确锁定
+   `typecheck`、`verify:sync`、`verify:core`、`verify:all` 的命令集合/顺序和三类负向测试入口。
+   `toolchainContract.test.ts` 会逐项删除聚合命令、漂移依赖/lock 声明、弱化测试入口或删除自身，确保
+   verifier 不会因脚本或反例测试被移除而自举放行。
 4. bitECS/vendor lock 现在校验实际文件集合与应锁集合相等；vendored WebPlatform tgz integrity 也有
    `vendorLock.test.ts` 覆盖。`.gitattributes` 已为 `apps/Cocos/extensions/**`、`apps/art/fairygui/assets/**`
    等机检域钉 `eol=lf`，避免字节锁在不同平台误报。
@@ -499,26 +500,14 @@ loadtest、Excel 产物链和真实 Creator 预览仍按额外/人工验证边�
    nonce），不对共享 Redis 执行无条件 `SCRIPT FLUSH`（全仓无任何 `SCRIPT FLUSH` 调用）；端到端的
    `apps/server/test/smoke.ts`（`smoke`）不触碰 SCRIPT 缓存。
 6. 失效的 loadtest 与未闭合的 Excel 生成链继续归额外功能；它们不进入 `verify:core` 的核心门禁。
-7. ⚠ 保留限制（本条降级为 ◐ 的原因）：本轮把 `typecheck:client` 改指 `apps/client/tsconfig.test.json`
-   （target/lib ES2022）后，客户端 ES2017 下限只剩 `typecheck:client:legacy`（`package.json:36`）承载，而它
-   不在 `typecheck`（`:24`）/`verify:core`（`:42`）/`verify:all`（`:43`）任何一条聚合命令里。该闸门丢失已被
-   实证：在 `apps/client/src` 放入使用 `Object.fromEntries` 与 `Promise.allSettled` 的探针文件后，
-   `npm run typecheck:client`（即 `typecheck` → `verify:core` → `verify:all` 走的那条）**通过**，未被拦下
-   （探针文件测完即删，工作树已复原）。这正是 `apps/client/tsconfig.json:11-12` 注释点名要防的场景；
-   shared 自身的 ES2017 下限仍由 `apps/shared/tsconfig.json:8` 与 shared workspace typecheck 执行。当前
-   `apps/client/src` grep 不到这类 API，属闸门丢失而非已发生的破坏。
-   更进一步：兜底探针自身在基线 `8e07c3b` 上**本来就是失败的**——`npm run typecheck:client:legacy` 报 7 个
-   错误，全在 `apps/client/src/view/rooms/ballMove/BallMoveView.ts`：`TS2305` 缺 `Color`/`EventTouch`/
-   `Graphics`/`Input`/`UITransform`/`input` 六个 `cc` 导出，以及 `:130` 的
-   `TS2339 Property 'set' does not exist on type 'Vec3'`。根因是 legacy 配置用旧桩
-   `apps/client/cc-stub.d.ts`（2108 字节，未声明这些成员），新配置用 `apps/client/client-test-stubs.d.ts`
-   （6731 字节，已声明）；`BallMoveView.ts` 由提交 `fc38cc3`（P1-01）引入时只扩了新桩、没扩旧桩，而旧探针
-   已不在门禁里，所以无人发现。因此修复不是「把 legacy 串回 `typecheck`」一步即可——必须先补旧桩或让
-   legacy 改用新桩，否则串回去立刻红。可选修法：补齐/合并桩后把 legacy 探针串回 `typecheck`，或给
-   `tsconfig.test.json` 钉回 `lib: ["ES2017", "DOM"]`。
-8. 待修文案：`apps/client/tsconfig.json:7` 与 `apps/client/cc-stub.d.ts:2` 的「跑法：`npm run typecheck:client`」
-   指向的命令已不再加载这两个文件，应改为 `npm run typecheck:client:legacy` 并注明该命令当前不在任何聚合
-   门禁中。
+7. `d96186b` 已补齐 legacy `cc-stub.d.ts` 中 BallMoveView 使用的 `Color`、`EventTouch`、`Graphics`、
+   `Input`、`UITransform`、`input` 与 `Vec3.set`，`npm run typecheck:client:legacy` 可独立通过；根
+   `typecheck` 明确串行执行完整 ES2022 无头探针和 ES2017 legacy 探针，因此 `verify:core` / `verify:all`
+   也会守住客户端运行时下限。`clientTypecheckConfig.test.ts` 注入 `Object.fromEntries` 与
+   `Promise.allSettled` 反例，断言 legacy 配置拒绝它们，并守门根聚合命令不得移除 legacy 探针。
+8. `apps/client/tsconfig.json`、`cc-stub.d.ts`、根/客户端/Cocos README 与 CLIENT/OVERVIEW 文档均已区分
+   `typecheck:client`（完整源码与测试、ES2022 桩）和 `typecheck:client:legacy`（可离线源码、ES2017 下限），
+   并明确根 `typecheck` 同时运行两者。
 
 ### P1-09 建立能力—代码—测试—文档清单 ✅
 
@@ -598,9 +587,9 @@ vendor、inventory 反例和 perf 门禁。保留边界：组合根发现不声�
   P1-03/P1-04 wire contract 与 schema-first
   P1-05/P1-06 FGUI、配置、任务与存储防腐
 
-阶段 C：开发体验收口（P1-07/P1-09/P2-03 已完成）
+阶段 C：开发体验收口（已完成当前核心范围）
   P1-07 区目录与确定性
-  P1-08 验证与锁定 ◐ 保留限制：客户端 ES2017 闸门已丢失，legacy 兜底探针自身在基线上失败
+  P1-08 验证与锁定
   P1-09 文档真相
   P2-01/P2-02/P2-03 已完成
 ```

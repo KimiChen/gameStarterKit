@@ -104,8 +104,8 @@ npm run dev
 | `npm --workspace @game/server run smoke:framework` | 已启动并初始化的本地 Redis/MySQL 连通性检查 |
 | `npm --workspace @game/server run smoke` | 需要外部 WebPlatform 与运行中游戏服的完整开发链路冒烟；GM kick 分支可选 |
 | `npm --workspace @game/server run test:int` | 使用本地 Redis/MySQL 的集成测试 |
-| `npm run verify:core` | 依次运行项目元数据、类型、bitECS/vendor/FGUI/inventory/perf 核验及客户端测试 |
-| `npm run verify:all` | `verify:core` 加客户端和服务端单元测试 |
+| `npm run verify:core` | 校验工具链图、项目元数据、类型、bitECS/vendor/FGUI/inventory/perf，并运行专项与客户端测试 |
+| `npm run verify:all` | `verify:core` 加服务端单元测试 |
 
 客户端的无头 strict 探针由 `apps/client/tsconfig.test.json` 提供，覆盖 `apps/client/src/**/*.ts`、
 `apps/client/test/**/*.ts`，包括 `Main.ts`、所有 View、`pages.ts` 和 ViewMgr；Node 侧使用最小
