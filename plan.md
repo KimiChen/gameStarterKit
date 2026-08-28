@@ -2,18 +2,9 @@
 
 > 审阅日期：2026-08-28
 >
-> 代码基线：分支 `new`，HEAD `8e07c3b`（P0/P1 核心收口以及 P2-01/P2-02/P2-03 已完成）。该提交包含说明站
-> 由 Next/Vite 改写为原生静态站，以及 `docs/EXTRAFEATURES.md` §3.1 的同步修正状态（见 P1-09 复核备注）
->
-> 基线之后的改动（复核结束后仍在推进，未纳入本轮逐条复核）：
-> `b2fb873` 落库了说明站相关修正（重新引入 og.png + §3.1 文档追平原生静态站），P1-09 中登记的
-> `apps/website/README.md` 反引号转义与 `docs/EXTRAFEATURES.md` §3.1 陈旧描述两处即由它修复；此后分支继续
-> 推进（卡片布局与部署脚本、本地启动步骤文案、SSH 主机指纹登记等）。
-> **说明站移除正在进行中**：`project.metadata.json` 的 `packages.website`、`docs/inventory.json` 的
-> `project-extras` 条目，以及 init/verify 工具链、元数据测试与 README/EXTRAFEATURES/PROJECT/
-> THIRD_PARTY_NOTICES 的相关登记已在工作树中删除，但 `apps/website/` 目录本身此刻仍有 15 个文件在版本
-> 控制内、且有未提交改动——⚠ 该项落库前不要把「说明站已迁出本仓」写成既成事实。移除完成后需整体复跑
-> §3 并更新本表（`project-extras` 删除后 `verify:inventory` 的能力条目数由 14 变为 13）
+> 实现基线：分支 `new`，HEAD `940b3c9`（P0-01 至 P0-05、P1-01 至 P1-09、P2-01 至 P2-03 均已完成）。
+> 说明站已迁出本仓，`apps/website/` 的受控文件数为 0；相关项目元数据、初始化/验证工具链和文档登记均已
+> 清理。当前 inventory 仍登记 14 项能力（13 项 core + 1 项 extra relayer）和 5 个默认入口。
 >
 > 文档状态：`plan.md` 已纳入 Git，本文件是核心改进优先级的唯一真相
 >
@@ -21,9 +12,11 @@
 >
 > 复核记录（过程记录，非代码证据；代码侧结论一律以各条目内的 file:line 为准）：
 > 第一轮（2026-08-28，实施方自查，落库于 `a54b791`）逐条核对「完成声明 vs 代码」约 60 条并重跑 §3 基线。
-> 第二轮（2026-08-28，本轮，基线 `8e07c3b`）按子系统分 8 组并行复核、每组配一名独立怀疑者做对抗式验证，
+> 第二轮（2026-08-28，历史基线 `8e07c3b`）按子系统分 8 组并行复核、每组配一名独立怀疑者做对抗式验证，
 > 共 92 条裁决：45 条完成声明经独立复核成立、47 条需要回填（含 10 条 plan.md 未登记的代码缺陷）。
-> 两轮结论一致的部分不重复记录；本轮新增的差异统一写进各条目的「复核备注」。
+> 第三轮（2026-08-28，实现基线 `940b3c9`）逐项复核 17 个计划条目及第二轮回填点；所有计划内可执行缺口
+> 均已闭合，保留边界只涉及本文明确列出的额外功能、人工 Creator 验证和完整外部 smoke。
+> 各轮结论一致的部分不重复记录；新增差异统一写进各条目的「复核备注」。
 > 真实 Creator 预览和完整 smoke 仍不纳入 Node/本地栈测试的通过声明。
 
 ## 1. 计划边界
@@ -53,35 +46,26 @@ schema 迁移仍待补齐，Game HTTP request schema 尚未直接由 shared vali
 
 | 验证项 | 结果 | 实际覆盖与限制 |
 | --- | --- | --- |
-| `npm run typecheck` | 通过 | 含 `verify:webplatform-contract` 契约镜像一致、shared/server/client 三段 `tsc`、`verify:sync` 两段镜像一致且入库 `.meta` 齐全；客户端阶段使用 `apps/client/tsconfig.test.json`，以最小 cc/FairyGUI 桩严格覆盖 `src/**/*.ts`、`test/**/*.ts`，包括 Main/View/装配件与测试 |
-| `npm --workspace @game/server run test` | 160/160 通过 | 服务端单元测试；不等于真实外部服务或 Creator 集成已验证 |
-| `npm run test:client` | 161/161 通过 | 客户端无头行为测试、运行时 wire/生命周期测试、vendor lock integrity 和客户端 strict include 守门 |
-| `npm run test:fgui` | 37/37 通过 | FGUI codegen、registry 与结构契约专项测试 |
-| `npm run verify:core` | 通过 | 项目元数据、typecheck、同步、bitECS/vendor/FGUI/inventory/perf 和 client tests 聚合门禁 |
-| `npm run verify:all` | 通过 | `verify:core` 加客户端与服务端单元测试 |
+| `npm run typecheck` | 通过 | 含 `verify:webplatform-contract` 契约镜像一致、shared/server 与客户端两套 `tsc`、`verify:sync` 两段镜像一致且入库 `.meta` 齐全；客户端无头探针以最小 cc/FairyGUI 桩严格覆盖 `src/**/*.ts`、`test/**/*.ts`，legacy 探针另以 ES2017 lib 检查可离线编译的源码 |
+| `npm --workspace @game/server run test` | 196/196 通过 | 服务端单元测试；不等于真实外部服务或 Creator 集成已验证 |
+| `npm --workspace @game/server run test:int` | 99/99 通过 | 使用本地 Redis/MySQL 的集成测试；外部 WebPlatform 边界使用契约兼容测试替身 |
+| `npm run test:client` | 213/213 通过 | 客户端无头行为、运行时 wire/生命周期、生产页面/渲染接缝、vendor lock integrity 和 strict include 守门 |
+| `npm run test:fgui` | 45/45 通过 | FGUI codegen、registry 与结构契约专项测试 |
+| `npm run verify:core` | 通过 | toolchain、项目元数据、typecheck/sync、bitECS/vendor、FGUI manifest + 专项测试、inventory + 12 个正反例、perf 和 client tests 聚合门禁 |
+| `npm run verify:all` | 通过 | 完整执行一次 `verify:core`，再追加服务端 196 个单元测试；不重复客户端测试 |
 | `npm run verify:ecs` | 12/12 通过 | bitECS 哈希及“实际 TypeScript 文件集合 = 锁定集合”均校验 |
 | `npm run verify:vendor` | 3/3 通过 | vendored runtime 的内容锁、实际文件集合和本地 WebPlatform tarball integrity 均有测试 |
-| `npm run verify:perf` | 2/2 cases 通过 | 固定 seed/input 的 checksum、渲染命令数、snapshot 估算和 sink checksum；计时/heap 不作门禁 |
-| `npm run test:faults` / `npm run test:faults:int` | 2 组 98 例 / 4 组 118 例通过 | `test:faults` 跑 unit 两组（server-boundaries 56 例、client-transitions 42 例；共 7 个 fault point）；`test:faults:int` 是其超集，额外跑 Redis/MySQL 集成两组（storage-effects 8 例、character-ready 12 例；共 13 个 fault point）。故障覆盖点必须实际执行并 fail-closed |
+| `npm run verify:perf` | 2/2 cases 通过 | 固定 seed/input checksum、生产共享渲染命令数、render/frame/aggregate/sink checksum 与 snapshot 估算；真实 View trace 由 client tests 守门，计时/heap 不作门禁 |
+| `npm run test:faults` / `npm run test:faults:int` | 2 组 118 例 / 4 组 140 例通过 | unit 两组为 server-boundaries 62 例 + client-transitions 56 例（7 个 fault point）；集成超集再加 storage-effects 10 例 + character-ready 12 例（合计 13 个 fault point），全部要求实际执行并 fail-closed |
 | `npm run config:excel-to-json:check` | 通过 | 读取并校验 3 条 item，warnings 0；不会比较缺失或陈旧的生成 JSON |
 | client tests 严格编译探针 | 通过 | `apps/client/tsconfig.test.json` 纳入 Main、全部 View、`pages.ts`/ViewMgr 与客户端 tests；Node 桩只证明 TypeScript/API 形状，真实 Creator 类型与资源仍需编辑器验证 |
-| 全仓 Markdown 内部链接与锚点 | 通过 | 机检 41 个 `.md` 的全部相对链接与 `#` 锚点，0 处失效 |
+| `npm run verify:inventory` / `npm run test:inventory` | 14 项能力、5 个默认入口 / 12/12 通过 | 校验登记/权威文档及其中的相对链接与锚点；仓库有 48 个受控 Markdown 文件，但该工具不是通用全仓 Markdown 语法或链接扫描器 |
 
-本轮（2026-08-28）已在 HEAD `8e07c3b` 上全量重跑上表全部命令，结果与表中一致；其中在本地 Redis/MySQL
-上复跑的是 `npm --workspace @game/server run test:int`（97/97）与 `npm run test:faults:int`（4 组、13 个
-声明的 fault point 全部实测执行）。端到端 `smoke` 仍需要外部 WebPlatform 与运行中的游戏服，未把它写成
-已通过证据。
-
-在 `7ece9ab` + 上述未提交在制品的工作树上另做过一次抽查：`typecheck`、`verify:core`、`verify:all`、
-`test:int`（97/97）、服务端 160/160、`test:client`（连跑 5 次均 161/161）、`test:fgui`（37/37）均通过；
-说明站自身用例已由 3 例增至 5 例。抽查期间曾出现一次 `test:client` 2 例失败与 `verify:core` 失败，
-复跑不复现——原因是当时 `project.metadata.json`、`docs/inventory.json` 等文件正被并行编辑，属对移动
-工作树取样，不是产品侧 flaky。⚠ 因此 §3 表格仍以 `8e07c3b` 为准；说明站摘除完成后需整体复跑并更新
-本表（`project-extras` 一旦从 `docs/inventory.json` 删除，`verify:inventory` 的能力条目数会由 14 变为 13）。
-
-复核备注：`test:fgui` 的 37 个 codegen/registry 用例是独立基线行，不被 `verify:core` 或 `verify:all` 任何
-一条聚合命令包含，需单独执行；`verify:all`（`package.json:43`）在 `verify:core` 已含 `test:client` 的前提
-下会重复运行一次 `test:client`。
+最终收口（2026-08-28）已在实现 HEAD `940b3c9` 上执行 `verify:all`、`test:int`、`test:faults`、
+`test:faults:int` 与配置检查，结果与表中一致；集成故障矩阵的 4 组、13 个声明 fault point 均实际执行。
+`test:fgui` 和 `test:client` 已各由 `verify:core` 执行一次，`verify:all` 仅在其后追加服务端单元测试。
+真实 Creator 预览和目标设备性能采样仍是人工边界；端到端 `smoke` 仍需要外部 WebPlatform 与运行中的
+游戏服，本轮未把它们写成已通过证据。
 
 ## 4. 已具备且应保留的设计
 
@@ -282,18 +266,16 @@ shared 的 `GetInfo` 当前允许 `user: null`，因此代码与客户端需要�
 ### P0-05 统一本地默认进程的生命周期 ✅
 
 状态：已完成。默认进程使用单一 `LifecycleRegistry` 和 shutdown aggregator，组件 dispose 可等待、幂等；
-阻塞 consumer 与重复关闭有测试（`apps/server/test/lifecycle.test.ts`），启动半失败在 registry 层有测试
-（`apps/server/test/fault-mutation.test.ts` 的 `lifecycle-startup-half-failure`），但进程入口
-`apps/server/src/index.ts` 的顶层 catch 无运行时用例。
+阻塞 consumer、重复关闭和迟到登记有 `lifecycle.test.ts`，启动半失败同时有 registry 级故障注入和真实
+`index.ts` 子进程用例。
 
-复核备注：`src/index.ts` 的 shutdown aggregator 装配（`index.ts:104-114`，全仓唯一一处
-`app.onBeforeShutdown`）与停止顺序（`index.ts:54-68`、`:79-81`）不被任何测试导入（int 测试一律 boot
-`src/app.config`），单一 `onBeforeShutdown` 目前靠静态审阅保证，无回归门禁。
-
-已知缺口：`apps/server/src/core/infra/loopMonitor.ts` 的 `startInfraMonitors` 未做 `assertAdmissionOpen()`
-与已关闭 registry 的显式 reset（对比 streamConsumer / characterRepair / matchConsumer），同进程重启
-（`disposeAll()` 完成后再启动）时会被 registry 的终态迟到释放路径立即停掉（clearInterval + disable），此后
-静默不运行且无告警；该文件目前无任何测试。生产入口只启动一次，影响限于嵌入式/测试重启。
+复核备注（已收口）：`shutdown-aggregator.test.ts` 直接执行生产装配，断言只占用一对 before/shutdown
+槽位、before 同步关闸并把 producer drain 交给 Colyseus 等待、最终资源清理不提前；
+`index-startup-lifecycle.test.ts` 在隔离子进程触发真实顶层启动失败，证明 `index.ts` 的 catch 会等待已登记
+cleanup 后以原始异常退出。`loop-monitor.test.ts` 覆盖重复 start/幂等 stop、停服 admission、关闭 registry
+显式重启以及两代 MySQL enqueue listener 均被卸载；生产 `startInfraMonitors` 已执行
+`assertAdmissionOpen()` 并在显式重开 admission 后 reset 终态 registry。`stream-depth-lifecycle.test.ts` 同样
+覆盖 timer 的 start/stop/restart 与停服关闸，不再存在原复核记录中的生命周期测试缺口。
 
 **原审阅证据（已收口）**
 
@@ -316,8 +298,8 @@ shared 的 `GetInfo` 当前允许 `user: null`，因此代码与客户端需要�
 - 正常关闭、重复关闭和启动半失败时，每个资源恰好释放一次。
 - XREAD（`lifecycle.test.ts`）与 repair worker（`int/character-repair.test.ts`）的连续 start/stop 有直接
   用例；存储入口有「停服后不复活新连接、显式 reset 后可重建」的用例（`lifecycle.test.ts:280`，断言的是
-  `AdmissionClosedError` 而非 handle 计数）。loop monitor / stream depth alert 的 timer 与监听端口没有
-  start/stop 残留用例，属已知测试缺口。
+  `AdmissionClosedError` 而非 handle 计数）。loop monitor 与 stream depth alert 另有 timer/listener 残留、
+  重复关闭、关闸拒绝和显式重启用例；顶层 shutdown 顺序与启动失败 cleanup 也有生产接缝测试。
 
 ## 6. P1：稳定框架接缝
 
@@ -504,7 +486,7 @@ running + queued 饱和；`dispatcher-idem.test.ts` 直接执行 deadline helper
 每个核心能力必须能定位到活跃入口、真源、运行时边界和测试；每个默认活跃模块也必须在 OVERVIEW/就近
 README 标明。`plan.md` 是核心优先级真相，`docs/EXTRAFEATURES.md` 是额外能力真相，不再维护第二套路线图。
 
-本轮已同步修正 AGENTS/CLAUDE、CLIENT/SERVER/WEBPLATFORM、第三方依赖域、说明站能力文案和失效链接，
+本轮已同步修正 AGENTS/CLAUDE、CLIENT/SERVER/WEBPLATFORM、第三方依赖域、已迁出说明站的登记和失效链接，
 并把能力归类、默认入口、真源、wire/runtime 边界、验证命令和权威文档固化到 `docs/inventory.json`。
 `verify:inventory` 会检查默认活跃模块未漏记、命令/链接存在、两份助手指令口径一致以及核心计划与
 额外功能没有重新分叉。根 `LICENSE`、项目身份和第三方来源登记均由项目元数据契约统一校验。
@@ -547,7 +529,8 @@ mount 并执行真实 `BallMoveView`，将完整有序 trace 同无头路径及�
 （`server-boundaries`、`client-transitions`）和 2 个 Redis/MySQL integration 组
 （`storage-effects`、`character-ready`）；`test:faults` 与 `test:faults:int` 均要求每个 fault point 实际
 执行并由 coverage 证明 fail-closed。它是定向故障/变异矩阵，不是自动源码 mutation 或全局覆盖率指标，
-集成组需要本地 Redis/MySQL 与外部开发契约。
+集成组需要本地 Redis/MySQL；WebPlatform 登记故障使用契约兼容的本地测试替身，不要求外部 WebPlatform
+进程在线。
 
 复核备注（已收口）：`fault-mutation.test.ts` 使用真实 Worker 分别触发 `error` 与 exit-only 死亡，直接断言
 在途任务拒绝、尸体 reap、1 秒退避后只补一个健康 worker，并覆盖故障前已排队与故障后才入队两种时序。
