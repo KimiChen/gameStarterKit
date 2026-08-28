@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "benchmark": "client-ballMove",
   "workload": {
     "seed": 1367272865,
@@ -14,24 +14,28 @@
     {
       "entityCount": 100,
       "input": {
-        "checksum": 3650735649,
+        "checksum": 1815038151,
         "values": 60000
       },
-      "renderOpsPerFrame": 603,
+      "renderOpsPerFrame": 905,
       "snapshotAllocationsPerFrame": 101,
       "snapshotBytesEstimatePerFrame": 6464,
-      "sinkChecksum": 1266027312
+      "renderChecksum": 2267663493,
+      "frameRenderChecksum": 1740023289,
+      "sinkChecksum": 1322847283
     },
     {
       "entityCount": 500,
       "input": {
-        "checksum": 3627785249,
+        "checksum": 1448112793,
         "values": 300000
       },
-      "renderOpsPerFrame": 3003,
+      "renderOpsPerFrame": 4505,
       "snapshotAllocationsPerFrame": 501,
       "snapshotBytesEstimatePerFrame": 32064,
-      "sinkChecksum": 4187726608
+      "renderChecksum": 1867194493,
+      "frameRenderChecksum": 2521688593,
+      "sinkChecksum": 4141854656
     }
   ]
 }

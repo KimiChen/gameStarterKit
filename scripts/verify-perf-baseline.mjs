@@ -16,7 +16,7 @@ import { spawnSync } from "node:child_process";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_ARTIFACT = path.join(ROOT, "docs", "perf", "client-ballMove-baseline.json");
 const TOOL = path.join(ROOT, "tools", "client-perf-baseline.ts");
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 const BENCHMARK = "client-ballMove";
 const MAX_INTEGER = 10_000;
 const MAX_UINT32 = 0xffff_ffff;
@@ -130,6 +130,8 @@ function validateArtifact(value) {
       "renderOpsPerFrame",
       "snapshotAllocationsPerFrame",
       "snapshotBytesEstimatePerFrame",
+      "renderChecksum",
+      "frameRenderChecksum",
       "sinkChecksum",
     ];
     for (const [index, item] of value.cases.entries()) {
@@ -157,7 +159,7 @@ function validateArtifact(value) {
         }
       }
       if (countValid) {
-        const expectedOps = 3 + 6 * count;
+        const expectedOps = 5 + 9 * count;
         if (item.renderOpsPerFrame !== expectedOps) errors.push(`${label}.renderOpsPerFrame 应为 ${expectedOps}`);
         if (item.snapshotAllocationsPerFrame !== count + 1) {
           errors.push(`${label}.snapshotAllocationsPerFrame 应为 ${count + 1}`);
@@ -175,6 +177,8 @@ function validateArtifact(value) {
       if (!Number.isSafeInteger(item.snapshotBytesEstimatePerFrame) || item.snapshotBytesEstimatePerFrame < 0) {
         errors.push(`${label}.snapshotBytesEstimatePerFrame 必须是非负整数`);
       }
+      safeUint32(item.renderChecksum, `${label}.renderChecksum`, errors);
+      safeUint32(item.frameRenderChecksum, `${label}.frameRenderChecksum`, errors);
       safeUint32(item.sinkChecksum, `${label}.sinkChecksum`, errors);
     }
   }
@@ -215,6 +219,8 @@ function deterministicProjection(result) {
       renderOpsPerFrame: item.renderOpsPerFrame,
       snapshotAllocationsPerFrame: item.snapshotAllocationsPerFrame,
       snapshotBytesEstimatePerFrame: item.snapshotBytesEstimatePerFrame,
+      renderChecksum: item.renderChecksum,
+      frameRenderChecksum: item.frameRenderChecksum,
       sinkChecksum: item.sinkChecksum,
     })),
   };

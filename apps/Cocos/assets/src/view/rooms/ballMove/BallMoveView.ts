@@ -13,7 +13,7 @@ import type {
     BallMovePresentation,
     BallMoveRenderWorld,
 } from "../../../logic/rooms/ballMove/BallMoveGameplay";
-import { PlayerModel } from "../../../logic/rooms/ballMove/GameComps";
+import { renderBallMoveWorld } from "../../../logic/rooms/ballMove/BallMoveGameplay";
 import { MAP_HEIGHT, MAP_WIDTH } from "../../../shared/index";
 
 const COLOR_BORDER = new Color(120, 120, 120, 255);
@@ -22,6 +22,14 @@ const COLOR_SELF = new Color(60, 200, 120, 255);
 const COLOR_OTHER = new Color(240, 150, 60, 255);
 const COLOR_HP_BG = new Color(40, 40, 40, 255);
 const COLOR_HP = new Color(220, 60, 60, 255);
+const RENDER_PALETTE = {
+    border: COLOR_BORDER,
+    dead: COLOR_DEAD,
+    self: COLOR_SELF,
+    other: COLOR_OTHER,
+    hpBackground: COLOR_HP_BG,
+    hp: COLOR_HP,
+};
 
 /** Cocos adapter for the ballMove presentation port. */
 export class BallMoveView implements BallMovePresentation {
@@ -79,34 +87,7 @@ export class BallMoveView implements BallMovePresentation {
     render(world: BallMoveRenderWorld): void {
         const graphics = this.graphics;
         if (!this.mounted || !graphics) return;
-        graphics.clear();
-
-        const offsetX = -MAP_WIDTH / 2;
-        const offsetY = -MAP_HEIGHT / 2;
-        graphics.lineWidth = 2;
-        graphics.strokeColor = COLOR_BORDER;
-        graphics.rect(offsetX, offsetY, MAP_WIDTH, MAP_HEIGHT);
-        graphics.stroke();
-
-        world.forEachPlayer((eid) => {
-            const x = offsetX + PlayerModel.x[eid];
-            const y = offsetY + PlayerModel.y[eid];
-            graphics.fillColor = !PlayerModel.alive[eid]
-                ? COLOR_DEAD
-                : PlayerModel.isSelf[eid] ? COLOR_SELF : COLOR_OTHER;
-            graphics.circle(x, y, 20);
-            graphics.fill();
-
-            const ratio = PlayerModel.maxHp[eid] > 0
-                ? PlayerModel.hp[eid] / PlayerModel.maxHp[eid]
-                : 0;
-            graphics.fillColor = COLOR_HP_BG;
-            graphics.rect(x - 25, y + 28, 50, 6);
-            graphics.fill();
-            graphics.fillColor = COLOR_HP;
-            graphics.rect(x - 25, y + 28, 50 * ratio, 6);
-            graphics.fill();
-        });
+        renderBallMoveWorld(world, graphics, RENDER_PALETTE);
     }
 
     unmount(): void {

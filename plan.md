@@ -518,19 +518,18 @@ vendor、inventory 反例和 perf 门禁。保留边界：组合根发现不声�
 ### P2-01 建立可重复的性能基线 ✅
 
 状态：已完成当前开发期基线。`tools/client-perf-baseline.ts` 使用固定 seed、Float64 input tape 和
-100/500 entity workload，记录 tick、self lookup，以及 snapshot 分配与 Graphics 命令路径的无头镜像估算；
-结构投影写入 `docs/perf/client-ballMove-baseline.json`，`npm run verify:perf` 会重跑并比较 checksum、
-命令数和估算值。计时分布、heap delta 与 Node/平台信息仅用于同机趋势观察，不构成 Cocos/GPU 性能阈值。
+100/500 entity workload，记录 tick、self lookup、snapshot 分配以及生产渲染命令路径；schema v2 的结构
+投影写入 `docs/perf/client-ballMove-baseline.json`，`npm run verify:perf` 会重跑并比较输入、命令数、
+`renderChecksum`、`frameRenderChecksum`、聚合 checksum 和分配估算值。计时分布、heap delta 与
+Node/平台信息仅用于同机趋势观察，不构成 Cocos/GPU 性能阈值。
 
-复核备注：渲染与快照两项是无头镜像探针（`tools/client-perf-baseline.ts:291-330` 的 `drawHeadless`、
-`:276` 的 `snapshotPlayers`），与生产 `apps/client/src/view/rooms/ballMove/BallMoveView.ts:79-110` 的
-`render` 之间没有任何一致性断言或 codegen 关联（`apps/client/test/` 无一处引用 `BallMoveView`）；
-`verify:perf` 能锁定 ECS tick/self lookup 与输入 tape 的回归，但改动 `BallMoveView.render`（增删命令、改
-血条几何）不会让门禁失败。
-
-复核备注：`tools/client-perf-baseline.ts`（`:6`、`:273`、`:291`、`:309`）与 `docs/CLIENT.md` §8.1
-（`:280`、`:282`）仍以 `Main.draw()` 指代渲染路径，该方法已不存在（`Main.ts` 全文 183 行无 draw/graphics
-符号），实际实现是 `BallMoveView.render`，文案待改名。
+复核备注（已收口）：`BallMoveGameplay.ts` 中的 `renderBallMoveWorld` 是生产渲染命令序列的单一实现，
+`BallMoveView.render` 与无头性能 sink 均调用该函数。`performanceBaseline.test.ts` 通过最小 `cc` 桩动态加载、
+mount 并执行真实 `BallMoveView`，将完整有序 trace 同无头路径及显式命令字面量比较，覆盖 self/other/dead、
+`maxHp=0`、全部颜色和几何分支。摘要按唯一 opcode 与固定小端 Float64 全字节流式计算，setter、颜色、线宽、
+命令顺序和每个参数均在契约内；反例直接锁定整数几何、参数换位、opcode、顺序与样式变异。`snapshotPlayers`
+仍是用于比较临时快照分配代价的独立探针，不表示生产渲染会构造该快照；真实 Creator/GPU 阈值继续由本地
+预览和目标设备采样承担。
 
 ### P2-02 风险加权的故障与变异测试 ✅
 

@@ -2,8 +2,8 @@
  * Headless client performance baseline for the ballMove ECS/render path.
  *
  * The Cocos Graphics implementation cannot be loaded in Node, so the render
- * phase uses a deliberately allocation-free Graphics-shaped sink and mirrors
- * Main.draw's clear + border + per-player circle/health-bar command sequence.
+ * phase uses a deliberately allocation-free Graphics-shaped sink through the
+ * same `renderBallMoveWorld` function called by BallMoveView.render.
  * The ECS tick and self lookup call the production GameECS implementation.
  *
  * The workload is deterministic (seeded player state and Float64 input tape),
@@ -16,10 +16,15 @@ import { basename } from "node:path";
 import { writeFileSync } from "node:fs";
 import { GameECS } from "../apps/client/src/logic/rooms/ballMove/GameECS";
 import { PlayerModel } from "../apps/client/src/logic/rooms/ballMove/GameComps";
+import {
+    renderBallMoveWorld,
+    type BallMoveGraphicsSink,
+    type BallMoveRenderPalette,
+} from "../apps/client/src/logic/rooms/ballMove/BallMoveGameplay";
 import type { IPlayerState } from "../apps/client/src/shared/protocol/state";
 import { MAP_HEIGHT, MAP_WIDTH } from "../apps/client/src/shared/constants/game";
 
-export const PERF_SCHEMA_VERSION = 1 as const;
+export const PERF_SCHEMA_VERSION = 2 as const;
 export const DEFAULT_PERF_SEED = 0x51_7e_eda1;
 export const DEFAULT_PERF_FRAMES = 240;
 export const DEFAULT_PERF_WARMUP_FRAMES = 60;
@@ -63,6 +68,8 @@ export interface BaselineCase {
     readonly snapshotAllocationsPerFrame: number;
     readonly snapshotBytesEstimatePerFrame: number;
     readonly heapDeltaBytes: number | null;
+    readonly renderChecksum: number;
+    readonly frameRenderChecksum: number;
     readonly sinkChecksum: number;
 }
 
@@ -96,6 +103,8 @@ export interface DeterministicBaselineCase {
     readonly renderOpsPerFrame: number;
     readonly snapshotAllocationsPerFrame: number;
     readonly snapshotBytesEstimatePerFrame: number;
+    readonly renderChecksum: number;
+    readonly frameRenderChecksum: number;
     readonly sinkChecksum: number;
 }
 
@@ -128,6 +137,8 @@ export function projectDeterministicBaseline(result: PerformanceBaseline): Perfo
             renderOpsPerFrame: item.renderOpsPerFrame,
             snapshotAllocationsPerFrame: item.snapshotAllocationsPerFrame,
             snapshotBytesEstimatePerFrame: item.snapshotBytesEstimatePerFrame,
+            renderChecksum: item.renderChecksum,
+            frameRenderChecksum: item.frameRenderChecksum,
             sinkChecksum: item.sinkChecksum,
         })),
     };
@@ -210,10 +221,63 @@ function elapsedMs(start: bigint): number {
     return Number(process.hrtime.bigint() - start) / 1e6;
 }
 
-function checksumStep(checksum: number, value: number): number {
-    // Keep the checksum in uint32 space so it is stable across JS engines.
-    const quantized = Math.floor(value * 0x1_0000_0000) >>> 0;
-    return Math.imul(checksum ^ quantized, 0x45d9f3b) >>> 0;
+const CHECKSUM_OFFSET_BASIS = 0x811c9dc5;
+const CHECKSUM_PRIME = 0x01000193;
+
+const ChecksumOpcode = {
+    GraphicsClear: 1,
+    GraphicsLineWidth: 2,
+    GraphicsStrokeColor: 3,
+    GraphicsFillColor: 4,
+    GraphicsRect: 5,
+    GraphicsCircle: 6,
+    GraphicsStroke: 7,
+    GraphicsFill: 8,
+    InputX: 9,
+    InputY: 10,
+    SelfLookup: 11,
+    SnapshotLength: 12,
+    FrameSelfLookup: 13,
+    ProbeRender: 64,
+    ProbeSelf: 65,
+    ProbeSnapshot: 66,
+    ProbeFrameRender: 67,
+    ProbeFrameSelf: 68,
+} as const;
+
+/** FNV-1a over tagged events and canonical little-endian Float64 arguments. */
+class StreamChecksum {
+    private current = CHECKSUM_OFFSET_BASIS;
+    private readonly bytes = new Uint8Array(8);
+    private readonly view = new DataView(this.bytes.buffer);
+
+    get value(): number {
+        return this.current >>> 0;
+    }
+
+    writeOpcode(opcode: number): void {
+        this.writeByte(opcode);
+    }
+
+    writeFloat64(value: number): void {
+        this.view.setFloat64(0, value, true);
+        for (let index = 0; index < this.bytes.length; index++) this.writeByte(this.bytes[index]);
+    }
+
+    private writeByte(value: number): void {
+        this.current = Math.imul(this.current ^ (value & 0xff), CHECKSUM_PRIME) >>> 0;
+    }
+}
+
+function writeNumberEvent(checksum: StreamChecksum, opcode: number, value: number): void {
+    checksum.writeOpcode(opcode);
+    checksum.writeFloat64(value);
+}
+
+function combineProbeChecksums(parts: ReadonlyArray<readonly [number, number]>): number {
+    const checksum = new StreamChecksum();
+    for (const [opcode, value] of parts) writeNumberEvent(checksum, opcode, value);
+    return checksum.value;
 }
 
 interface BenchWorld {
@@ -242,7 +306,7 @@ function buildWorld(entityCount: number, seed: number, totalFrames: number): Ben
     }
 
     const inputs = new Float64Array(totalFrames * entityCount * 2);
-    let inputChecksum = 0x811c9dc5;
+    const inputChecksum = new StreamChecksum();
     for (let frame = 0; frame < totalFrames; frame++) {
         for (let i = 0; i < entityCount; i++) {
             const offset = (frame * entityCount + i) * 2;
@@ -250,11 +314,11 @@ function buildWorld(entityCount: number, seed: number, totalFrames: number): Ben
             const y = rng.next() * MAP_HEIGHT;
             inputs[offset] = x;
             inputs[offset + 1] = y;
-            inputChecksum = checksumStep(inputChecksum, x);
-            inputChecksum = checksumStep(inputChecksum, y);
+            writeNumberEvent(inputChecksum, ChecksumOpcode.InputX, x);
+            writeNumberEvent(inputChecksum, ChecksumOpcode.InputY, y);
         }
     }
-    return { ecs, states, inputs, inputChecksum: inputChecksum >>> 0 };
+    return { ecs, states, inputs, inputChecksum: inputChecksum.value };
 }
 
 function applyInput(world: BenchWorld, frame: number): void {
@@ -270,7 +334,7 @@ function applyInput(world: BenchWorld, frame: number): void {
 
 /**
  * Allocation probe for a temporary per-frame player snapshot.
- * Main.draw currently iterates the ECS directly; this probe keeps the
+ * BallMoveView.render currently iterates the ECS directly; this probe keeps the
  * allocation cost visible when evaluating a snapshot/cache optimization.
  */
 export function snapshotPlayers(ecs: GameECS): Array<{ x: number; y: number; hp: number; maxHp: number; alive: boolean; isSelf: boolean }> {
@@ -288,42 +352,76 @@ export function snapshotPlayers(ecs: GameECS): Array<{ x: number; y: number; hp:
     return snapshot;
 }
 
-/** Minimal Graphics-shaped sink used to count the exact Main.draw command pattern. */
-export class GraphicsSink {
+/** Minimal Graphics-shaped sink used by the production render command function. */
+export class GraphicsSink implements BallMoveGraphicsSink<number> {
     operations = 0;
-    checksum = 0;
+    private readonly digest = new StreamChecksum();
+    private currentLineWidth = 0;
+    private currentStrokeColor = 0;
+    private currentFillColor = 0;
 
-    clear(): void { this.operations++; }
+    get checksum(): number { return this.digest.value; }
+
+    get lineWidth(): number { return this.currentLineWidth; }
+    set lineWidth(value: number) {
+        this.currentLineWidth = value;
+        this.begin(ChecksumOpcode.GraphicsLineWidth);
+        this.digest.writeFloat64(value);
+    }
+
+    get strokeColor(): number { return this.currentStrokeColor; }
+    set strokeColor(value: number) {
+        this.currentStrokeColor = value;
+        this.begin(ChecksumOpcode.GraphicsStrokeColor);
+        this.digest.writeFloat64(value);
+    }
+
+    get fillColor(): number { return this.currentFillColor; }
+    set fillColor(value: number) {
+        this.currentFillColor = value;
+        this.begin(ChecksumOpcode.GraphicsFillColor);
+        this.digest.writeFloat64(value);
+    }
+
+    clear(): void { this.begin(ChecksumOpcode.GraphicsClear); }
     rect(x: number, y: number, width: number, height: number): void {
-        this.operations++;
-        this.checksum = checksumStep(this.checksum, x + y + width + height);
+        this.begin(ChecksumOpcode.GraphicsRect);
+        this.digest.writeFloat64(x);
+        this.digest.writeFloat64(y);
+        this.digest.writeFloat64(width);
+        this.digest.writeFloat64(height);
     }
     circle(x: number, y: number, radius: number): void {
-        this.operations++;
-        this.checksum = checksumStep(this.checksum, x + y + radius);
+        this.begin(ChecksumOpcode.GraphicsCircle);
+        this.digest.writeFloat64(x);
+        this.digest.writeFloat64(y);
+        this.digest.writeFloat64(radius);
     }
-    stroke(): void { this.operations++; }
-    fill(): void { this.operations++; }
+    stroke(): void { this.begin(ChecksumOpcode.GraphicsStroke); }
+    fill(): void { this.begin(ChecksumOpcode.GraphicsFill); }
+
+    private begin(opcode: number): void {
+        this.operations++;
+        this.digest.writeOpcode(opcode);
+    }
 }
 
-/** Mirrors Main.draw geometry while remaining runnable without the Cocos runtime. */
-export function drawHeadless(ecs: GameECS, gfx: GraphicsSink): void {
-    gfx.clear();
-    const ox = -MAP_WIDTH / 2;
-    const oy = -MAP_HEIGHT / 2;
-    gfx.rect(ox, oy, MAP_WIDTH, MAP_HEIGHT);
-    gfx.stroke();
-    ecs.forEachPlayer((eid) => {
-        const px = ox + PlayerModel.x[eid];
-        const py = oy + PlayerModel.y[eid];
-        gfx.circle(px, py, 20);
-        gfx.fill();
-        const ratio = PlayerModel.maxHp[eid] > 0 ? PlayerModel.hp[eid] / PlayerModel.maxHp[eid] : 0;
-        gfx.rect(px - 25, py + 28, 50, 6);
-        gfx.fill();
-        gfx.rect(px - 25, py + 28, 50 * ratio, 6);
-        gfx.fill();
-    });
+function rgba(r: number, g: number, b: number, a: number): number {
+    return (((r * 256) + g) * 256 + b) * 256 + a;
+}
+
+const HEADLESS_PALETTE: BallMoveRenderPalette<number> = {
+    border: rgba(120, 120, 120, 255),
+    dead: rgba(100, 100, 100, 255),
+    self: rgba(60, 200, 120, 255),
+    other: rgba(240, 150, 60, 255),
+    hpBackground: rgba(40, 40, 40, 255),
+    hp: rgba(220, 60, 60, 255),
+};
+
+/** Execute BallMoveView.render's production geometry without loading Cocos. */
+export function renderBallMoveHeadless(ecs: GameECS, graphics: BallMoveGraphicsSink<number>): void {
+    renderBallMoveWorld(ecs, graphics, HEADLESS_PALETTE);
 }
 
 function runMeasured(
@@ -367,20 +465,20 @@ function runCase(entityCount: number, options: ReturnType<typeof normalizeOption
     tickWorld.ecs.clear();
 
     const selfWorld = build();
-    let selfSink = 0;
+    const selfSink = new StreamChecksum();
     const selfLookup = runMeasured(options.frames, options.warmupFrames,
         (frame) => applyInput(selfWorld, frame), () => {
-            selfSink ^= selfWorld.ecs.getSelfPlayer() ?? 0;
+            writeNumberEvent(selfSink, ChecksumOpcode.SelfLookup, selfWorld.ecs.getSelfPlayer() ?? -1);
         });
     selfWorld.ecs.clear();
 
     const snapshotWorld = build();
-    let snapshotSink = 0;
+    const snapshotSink = new StreamChecksum();
     maybeGc();
     const heapBefore = process.memoryUsage().heapUsed;
     const snapshot = runMeasured(options.frames, options.warmupFrames,
         (frame) => applyInput(snapshotWorld, frame), () => {
-            snapshotSink += snapshotPlayers(snapshotWorld.ecs).length;
+            writeNumberEvent(snapshotSink, ChecksumOpcode.SnapshotLength, snapshotPlayers(snapshotWorld.ecs).length);
         });
     maybeGc();
     const heapAfter = process.memoryUsage().heapUsed;
@@ -389,23 +487,32 @@ function runCase(entityCount: number, options: ReturnType<typeof normalizeOption
     const renderWorld = build();
     const gfx = new GraphicsSink();
     const render = runMeasured(options.frames, options.warmupFrames,
-        (frame) => applyInput(renderWorld, frame), () => drawHeadless(renderWorld.ecs, gfx));
+        (frame) => applyInput(renderWorld, frame), () => renderBallMoveHeadless(renderWorld.ecs, gfx));
     const renderOpsPerFrame = gfx.operations / totalFrames;
-    const sinkChecksum = (gfx.checksum ^ selfSink ^ snapshotSink) >>> 0;
+    const renderChecksum = gfx.checksum;
     renderWorld.ecs.clear();
 
     const frameWorld = build();
     const frameGfx = new GraphicsSink();
-    let frameSelfSink = 0;
+    const frameSelfSink = new StreamChecksum();
     const frame = runMeasured(options.frames, options.warmupFrames, () => {}, (frameIndex) => {
         applyInput(frameWorld, frameIndex);
         frameWorld.ecs.update(1 / 60);
-        frameSelfSink ^= frameWorld.ecs.getSelfPlayer() ?? 0;
+        writeNumberEvent(frameSelfSink, ChecksumOpcode.FrameSelfLookup, frameWorld.ecs.getSelfPlayer() ?? -1);
         // Keep the lookup and full rebuild in the same sample without changing
         // the production ECS state or allocating a second snapshot.
-        drawHeadless(frameWorld.ecs, frameGfx);
+        renderBallMoveHeadless(frameWorld.ecs, frameGfx);
     });
+    const frameRenderChecksum = frameGfx.checksum;
     frameWorld.ecs.clear();
+
+    const sinkChecksum = combineProbeChecksums([
+        [ChecksumOpcode.ProbeRender, renderChecksum],
+        [ChecksumOpcode.ProbeSelf, selfSink.value],
+        [ChecksumOpcode.ProbeSnapshot, snapshotSink.value],
+        [ChecksumOpcode.ProbeFrameRender, frameRenderChecksum],
+        [ChecksumOpcode.ProbeFrameSelf, frameSelfSink.value],
+    ]);
 
     // The sync metric is intentionally retained in the JSON as an explicit
     // input/update baseline, even though the plan's primary comparisons are
@@ -428,7 +535,9 @@ function runCase(entityCount: number, options: ReturnType<typeof normalizeOption
         // estimate for comparisons, not a V8 allocator guarantee.
         snapshotBytesEstimatePerFrame: (entityCount + 1) * 64,
         heapDeltaBytes: heapAfter - heapBefore,
-        sinkChecksum: (sinkChecksum ^ frameSelfSink) >>> 0,
+        renderChecksum,
+        frameRenderChecksum,
+        sinkChecksum,
     };
 }
 

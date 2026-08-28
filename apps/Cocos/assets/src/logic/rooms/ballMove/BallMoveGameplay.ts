@@ -32,6 +32,66 @@ export interface BallMoveRenderWorld {
     forEachPlayer(callback: (eid: number) => void): void;
 }
 
+/** Graphics subset shared by the Cocos view and the headless performance probe. */
+export interface BallMoveGraphicsSink<TColor> {
+    lineWidth: number;
+    strokeColor: TColor;
+    fillColor: TColor;
+    clear(): void;
+    rect(x: number, y: number, width: number, height: number): void;
+    circle(x: number, y: number, radius: number): void;
+    stroke(): void;
+    fill(): void;
+}
+
+export interface BallMoveRenderPalette<TColor> {
+    readonly border: TColor;
+    readonly dead: TColor;
+    readonly self: TColor;
+    readonly other: TColor;
+    readonly hpBackground: TColor;
+    readonly hp: TColor;
+}
+
+/**
+ * Production render command sequence. BallMoveView supplies Cocos Graphics;
+ * the performance baseline supplies a counting sink, so geometry cannot drift.
+ */
+export function renderBallMoveWorld<TColor>(
+    world: BallMoveRenderWorld,
+    graphics: BallMoveGraphicsSink<TColor>,
+    palette: BallMoveRenderPalette<TColor>,
+): void {
+    graphics.clear();
+
+    const offsetX = -MAP_WIDTH / 2;
+    const offsetY = -MAP_HEIGHT / 2;
+    graphics.lineWidth = 2;
+    graphics.strokeColor = palette.border;
+    graphics.rect(offsetX, offsetY, MAP_WIDTH, MAP_HEIGHT);
+    graphics.stroke();
+
+    world.forEachPlayer((eid) => {
+        const x = offsetX + PlayerModel.x[eid];
+        const y = offsetY + PlayerModel.y[eid];
+        graphics.fillColor = !PlayerModel.alive[eid]
+            ? palette.dead
+            : PlayerModel.isSelf[eid] ? palette.self : palette.other;
+        graphics.circle(x, y, 20);
+        graphics.fill();
+
+        const ratio = PlayerModel.maxHp[eid] > 0
+            ? PlayerModel.hp[eid] / PlayerModel.maxHp[eid]
+            : 0;
+        graphics.fillColor = palette.hpBackground;
+        graphics.rect(x - 25, y + 28, 50, 6);
+        graphics.fill();
+        graphics.fillColor = palette.hp;
+        graphics.rect(x - 25, y + 28, 50 * ratio, 6);
+        graphics.fill();
+    });
+}
+
 /** Engine-facing port. Implementations belong in view/, never in this logic module. */
 export interface BallMovePresentation {
     mount(): void;

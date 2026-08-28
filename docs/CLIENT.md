@@ -289,15 +289,17 @@ npm run verify:perf
 玩家，分别记录输入同步、ECS tick、self entity 查找、快照分配探针、渲染命令探针以及组合帧的
 `p50/p95/p99/max/mean`。这是开发期比较工具，不是 Cocos/GPU 性能承诺：
 
-- `render` 使用 `GraphicsSink` 模拟 `Main.draw()` 的 `clear + 边框 + 每玩家圆形/血条` 命令路径，
-  不会加载 Cocos，也不测真实 GPU、批次或材质。
-- `snapshot` 是显式的临时对象数组分配探针；当前 `Main.draw()` 直接遍历 ECS，因此该指标用于评估
+- `render` 使用 `GraphicsSink` 调用与 `BallMoveView.render` 相同的 `renderBallMoveWorld`，覆盖
+  `clear + 边框 + 每玩家圆形/血条` 的样式、命令与几何；sink 以唯一 opcode 和固定小端 Float64
+  参数流摘要颜色、线宽与完整命令顺序。它不会加载 Cocos，也不测真实 GPU、批次或材质。
+- `snapshot` 是显式的临时对象数组分配探针；当前 `BallMoveView.render` 直接遍历 ECS，因此该指标用于评估
   是否值得引入缓存快照，而不是声称当前帧已经分配了这些对象。
 - `snapshotBytesEstimatePerFrame` 是按 `(entityCount + 1) * 64` 的比较用估算，`heapDeltaBytes` 受
   V8 垃圾回收和宿主进程影响；有条件时可用 `NODE_OPTIONS=--expose-gc` 重跑，但不要把 heap 数值当作
   稳定阈值。
 - 计时样本先经过 warmup；`frame` 样本把输入同步计入计时，其余单项把输入同步放在计时外。固定
-  seed/input checksum、渲染命令数和分配估算由无头测试锁定，timing 只用于同机趋势比较。
+  seed/input checksum、渲染命令数、独立 `renderChecksum` / `frameRenderChecksum` 和分配估算由无头
+  测试锁定，timing 只用于同机趋势比较。
 
 保存 JSON 结果（文件不含时间戳，便于版本间 diff）：
 
@@ -307,7 +309,8 @@ npm run --silent perf:client -- --json --output /tmp/client-baseline.json
 
 仓库入库的结构基线位于 `docs/perf/client-ballMove-baseline.json`。运行
 `npm run verify:perf` 会按该文件的 seed、帧数和实体数重跑探针，并校验输入 checksum、渲染命令数、
-快照分配估算和几何 sink checksum；计时、堆占用和 Node/平台信息只作观察，不参与门禁。需要生成或更新
+快照分配估算、单项/组合帧渲染 checksum 与带标签的聚合 sink checksum；计时、堆占用和 Node/平台信息
+只作观察，不参与门禁。需要生成或更新
 结构投影时使用 `--deterministic`：
 
 ```bash
