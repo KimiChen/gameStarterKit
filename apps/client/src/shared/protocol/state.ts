@@ -51,10 +51,17 @@ function stateRecord(input: unknown, path: string): PlainRecord {
     // rejected, preserving the exact-key contract for ordinary wire objects.
     if (typeof input === "object" && input !== null) {
         try {
-            const serializer = (input as { toJSON?: unknown }).toJSON;
-            if (typeof serializer === "function") {
-                const projected = serializer.call(input);
-                if (isPlainRecord(projected)) return projected;
+            // `~changes`/`~refId` are the non-enumerable bookkeeping markers
+            // installed by @colyseus/schema's Schema.initialize(). Requiring
+            // them keeps an arbitrary application class that happens to expose
+            // toJSON() outside this wire boundary.
+            if (Object.prototype.hasOwnProperty.call(input, "~changes")
+                && Object.prototype.hasOwnProperty.call(input, "~refId")) {
+                const serializer = (input as { toJSON?: unknown }).toJSON;
+                if (typeof serializer === "function") {
+                    const projected = serializer.call(input);
+                    if (isPlainRecord(projected)) return projected;
+                }
             }
         } catch {
             // Keep hostile getters/serializers inside the wire error domain.
