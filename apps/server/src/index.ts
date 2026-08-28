@@ -21,6 +21,7 @@ import {
 import { clearCharacterReadyFlights, drainCharacterReadyFlights } from "./player/character";
 import { closeWebPlatformClient } from "./platform/webPlatformClient";
 import { stopMailWakeLoop } from "./websocket/push";
+import { installShutdownAggregator } from "./shutdown";
 
 let infraMonitorStop: (() => Promise<void>) | null = null;
 let backgroundStopPromise: Promise<void> | null = null;
@@ -101,16 +102,11 @@ try {
 
   // Colyseus 只注册一次 shutdown aggregator；组件自己的 start 函数会把动态资源
   //（例如 Lobby 首次创建时才启动的 mail wake）追加到同一 registry。
-  app.onBeforeShutdown(() => {
-    // This callback runs before matchMaker disposes rooms. Flip the admission
-    // gate synchronously, then stop producers; dependency clients stay alive
-    // until onShutdown so room disposal and in-flight RPCs remain valid.
-    beginShutdown();
-    clearCharacterReadyFlights();
-    return stopBackgroundProducers();
-  });
-  app.onShutdown(async () => {
-    await finishShutdown();
+  installShutdownAggregator(app, {
+    beginShutdown,
+    clearCharacterReadyFlights,
+    stopBackgroundProducers,
+    finishShutdown,
   });
 
   // 端口统一走 config.PORT（根 .env.development 可覆盖，默认 2568）——⛔ 不依赖
