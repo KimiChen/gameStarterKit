@@ -10,6 +10,7 @@ import {
   onAuthInvalid, onConnLost, registerReturnToLogin, returnToLogin, setSession,
 } from "../src/net/session";
 import { getToken } from "../src/core/http";
+import { markFaultPoint } from "./faultMatrix";
 
 const login = (uid: string) => setSession({
   userId: uid,
@@ -179,6 +180,7 @@ test("SessionTransition：处理器 rejection 不锁死 handled，显式再次�
   await assert.rejects(transition.run({ kind: "CONN_LOST" }), /temporary navigation failure/);
   await transition.run({ kind: "CONN_LOST" });
   assert.equal(calls, 2);
+  markFaultPoint("session-transition");
 });
 
 test("returnToLogin：并发失效事件共享一个可等待 Promise，并先清 Bearer", async () => {

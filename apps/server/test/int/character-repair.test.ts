@@ -23,6 +23,7 @@ import {
   sleep,
   testUid,
 } from "./helpers";
+import { exerciseFaultPoint } from "../faultMatrix";
 
 const redis = () => clientForKey(K_CHARACTER_REPAIR_DUE);
 const used: { userId: string; serverId: number }[] = [];
@@ -44,23 +45,25 @@ after(async () => {
 });
 
 test("PUT 失败：先写 durable intent，再把 WebPlatform 错误显式抛回", async () => {
-  const item = intent("enqueue", 11);
-  const member = characterRepairMember(item.userId, item.serverId);
-  const wpError = new Error("webplatform unavailable");
+  await exerciseFaultPoint("webplatform-register", async () => {
+    const item = intent("enqueue", 11);
+    const member = characterRepairMember(item.userId, item.serverId);
+    const wpError = new Error("webplatform unavailable");
 
-  await assert.rejects(
-    registerCharacterWithRepair(item.userId, item.serverId, {
-      registerCharacter: async () => { throw wpError; },
-    }),
-    (error: unknown) => error === wpError,
-  );
+    await assert.rejects(
+      registerCharacterWithRepair(item.userId, item.serverId, {
+        registerCharacter: async () => { throw wpError; },
+      }),
+      (error: unknown) => error === wpError,
+    );
 
-  assert.ok(await redis().zscore(K_CHARACTER_REPAIR_DUE, member), "失败后 due intent 必须持久化");
-  assert.equal(
-    await redis().hget(K_CHARACTER_REPAIR_ATTEMPTS, member),
-    "1",
-    "同步 PUT 失败计为第一次 attempt",
-  );
+    assert.ok(await redis().zscore(K_CHARACTER_REPAIR_DUE, member), "失败后 due intent 必须持久化");
+    assert.equal(
+      await redis().hget(K_CHARACTER_REPAIR_ATTEMPTS, member),
+      "1",
+      "同步 PUT 失败计为第一次 attempt",
+    );
+  });
 });
 
 test("processOnce：幂等 PUT 成功后同时清除 due 与 attempts", async () => {
@@ -140,4 +143,37 @@ test("网关 worker start/stop：启动即处理到期 intent，stop 可等待�
   assert.equal(await redis().zscore(K_CHARACTER_REPAIR_DUE, member), null);
   assert.equal(await redis().hget(K_CHARACTER_REPAIR_ATTEMPTS, member), null);
   assert.equal(await fakeWebPlatformClient.hasCharacter(item.userId, item.serverId), true);
+});
+
+test("fault matrix：repair intent Redis wrong-type 失败被显式暴露", async () => {
+  await exerciseFaultPoint("redis-repair-intent", async () => {
+    const item = intent("redis-fault", 15);
+    const member = characterRepairMember(item.userId, item.serverId);
+    const client = redis();
+    const backup = `${K_CHARACTER_REPAIR_DUE}:fault-backup:${process.pid}:${Date.now()}`;
+    const hadDue = (await client.exists(K_CHARACTER_REPAIR_DUE)) === 1;
+    if (hadDue) await client.rename(K_CHARACTER_REPAIR_DUE, backup);
+    try {
+      await client.set(K_CHARACTER_REPAIR_DUE, "wrong-type");
+      const webPlatformError = new Error("injected WebPlatform outage");
+      await assert.rejects(
+        registerCharacterWithRepair(item.userId, item.serverId, {
+          registerCharacter: async () => { throw webPlatformError; },
+        }),
+        (error: unknown) => {
+          assert.ok(error instanceof AggregateError);
+          assert.ok(error.errors.some((entry) => entry === webPlatformError));
+          assert.ok(error.errors.some((entry) => /WRONGTYPE/i.test(String(entry))));
+          return true;
+        },
+      );
+      assert.equal(await client.get(K_CHARACTER_REPAIR_DUE), "wrong-type");
+    } finally {
+      await client.del(K_CHARACTER_REPAIR_DUE);
+      await client.hdel(K_CHARACTER_REPAIR_ATTEMPTS, member);
+      if (hadDue) await client.rename(backup, K_CHARACTER_REPAIR_DUE);
+    }
+    // The injected type violation must not leave an untracked intent behind.
+    assert.equal(await client.zscore(K_CHARACTER_REPAIR_DUE, member), null);
+  });
 });

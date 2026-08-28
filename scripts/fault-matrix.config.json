@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "unitGroups": [
+    {
+      "id": "server-boundaries",
+      "cwd": "apps/server",
+      "files": [
+        "apps/server/test/fault-mutation.test.ts",
+        "apps/server/test/lifecycle.test.ts",
+        "apps/server/test/character-ready.test.ts",
+        "apps/server/test/compute-pool.test.ts",
+        "apps/server/test/game-room.test.ts",
+        "apps/server/test/lobby-message-boundary.test.ts"
+      ],
+      "faultPoints": [
+        "wire-mutation",
+        "character-ready-deferred",
+        "lifecycle-startup-half-failure",
+        "worker-replacement"
+      ]
+    },
+    {
+      "id": "client-transitions",
+      "cwd": ".",
+      "files": [
+        "apps/client/test/session.test.ts",
+        "apps/client/test/webSocketClient.test.ts",
+        "apps/client/test/viewLifecycle.test.ts",
+        "apps/client/test/wireTransport.test.ts"
+      ],
+      "faultPoints": [
+        "session-transition",
+        "view-close-deferred",
+        "transport-reconcile"
+      ]
+    }
+  ],
+  "integrationGroups": [
+    {
+      "id": "storage-effects",
+      "cwd": "apps/server",
+      "files": [
+        "apps/server/test/int/effect-atomic.test.ts"
+      ],
+      "faultPoints": [
+        "redis-script",
+        "redis-wrongtype",
+        "mysql-transaction"
+      ]
+    },
+    {
+      "id": "character-ready",
+      "cwd": "apps/server",
+      "files": [
+        "apps/server/test/int/character-repair.test.ts",
+        "apps/server/test/int/lobby-zone.test.ts"
+      ],
+      "faultPoints": [
+        "redis-repair-intent",
+        "webplatform-register",
+        "character-ready-timeout"
+      ]
+    }
+  ]
+}

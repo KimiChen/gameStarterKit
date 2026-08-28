@@ -18,11 +18,12 @@ import { CUR_GOLD, OUTBOX_DONE } from "../../src/core/infra/config";
 import {
   kApplied, kAppliedPayload, kBagAll, kUser, zoneCtx,
 } from "../../src/core/infra/keys";
-import { APPLY_EFFECT, evalshaWithReload } from "../../src/core/infra/redisScripts";
-import { clientFor, closeRedis } from "../../src/core/infra/redisRoute";
-import { closeMysql, getPool } from "../../src/core/infra/mysql";
+import { APPLY_EFFECT, defineScript, evalshaWithReload } from "../../src/core/infra/redisScripts";
+import { clientFor, clientForKey, closeRedis } from "../../src/core/infra/redisRoute";
+import { closeMysql, getPool, withTx } from "../../src/core/infra/mysql";
 import type { RowDataPacket } from "../../src/core/infra/mysql";
 import { assertRedisUp, cleanupUser, testUid } from "./helpers";
+import { exerciseFaultPoint } from "../faultMatrix";
 
 const users: string[] = [];
 const uid = (name: string): string => {
@@ -142,39 +143,41 @@ test("Lua validate-then-apply：首条合法、后续非法时 Redis/applied/pay
 });
 
 test("Lua apply 预检 Redis key 类型与键集合：污染时不发生部分写入", async () => {
-  const bagUser = await seed("wrong-bag-type");
-  await zoneCtx.run({ sId: 0 }, async () => {
-    const redis = clientFor(bagUser);
-    const userBefore = await redis.hgetall(kUser(bagUser));
-    const bagKey = kBagAll(bagUser)[0];
-    await redis.set(bagKey, "not-a-hash");
+  await exerciseFaultPoint("redis-wrongtype", async () => {
+    const bagUser = await seed("wrong-bag-type");
+    await zoneCtx.run({ sId: 0 }, async () => {
+      const redis = clientFor(bagUser);
+      const userBefore = await redis.hgetall(kUser(bagUser));
+      const bagKey = kBagAll(bagUser)[0];
+      await redis.set(bagKey, "not-a-hash");
 
-    const result = await luaApplyRaw(
-      bagUser,
-      deriveOpId(bagUser, 0, "effect.corrupt", "bag"),
-      JSON.stringify({ schemaVersion: 1, grants: [{ kind: "item", itemId: 8, count: 1 }] }),
-    );
-    assert.equal(result, "err:EFFECT_DATA_CORRUPT");
-    assert.deepEqual(await redis.hgetall(kUser(bagUser)), userBefore, "key 类型错误不得改 user/ver");
-    assert.equal(await redis.get(bagKey), "not-a-hash", "污染 key 不得被覆盖");
-    assert.equal(await redis.exists(kApplied(bagUser)), 0, "失败不得写 applied marker");
-    assert.equal(await redis.exists(kAppliedPayload(bagUser)), 0, "失败不得写 payload marker");
-  });
+      const result = await luaApplyRaw(
+        bagUser,
+        deriveOpId(bagUser, 0, "effect.corrupt", "bag"),
+        JSON.stringify({ schemaVersion: 1, grants: [{ kind: "item", itemId: 8, count: 1 }] }),
+      );
+      assert.equal(result, "err:EFFECT_DATA_CORRUPT");
+      assert.deepEqual(await redis.hgetall(kUser(bagUser)), userBefore, "key 类型错误不得改 user/ver");
+      assert.equal(await redis.get(bagKey), "not-a-hash", "污染 key 不得被覆盖");
+      assert.equal(await redis.exists(kApplied(bagUser)), 0, "失败不得写 applied marker");
+      assert.equal(await redis.exists(kAppliedPayload(bagUser)), 0, "失败不得写 payload marker");
+    });
 
-  const appliedUser = await seed("wrong-applied-type");
-  await zoneCtx.run({ sId: 0 }, async () => {
-    const redis = clientFor(appliedUser);
-    const userBefore = await redis.hgetall(kUser(appliedUser));
-    const appliedKey = kApplied(appliedUser);
-    await redis.set(appliedKey, "not-a-zset");
-    const result = await luaApplyRaw(
-      appliedUser,
-      deriveOpId(appliedUser, 0, "effect.corrupt", "applied"),
-      JSON.stringify({ schemaVersion: 1, grants: [{ kind: "star", delta: 1 }] }),
-    );
-    assert.equal(result, "err:EFFECT_DATA_CORRUPT");
-    assert.deepEqual(await redis.hgetall(kUser(appliedUser)), userBefore);
-    assert.equal(await redis.get(appliedKey), "not-a-zset");
+    const appliedUser = await seed("wrong-applied-type");
+    await zoneCtx.run({ sId: 0 }, async () => {
+      const redis = clientFor(appliedUser);
+      const userBefore = await redis.hgetall(kUser(appliedUser));
+      const appliedKey = kApplied(appliedUser);
+      await redis.set(appliedKey, "not-a-zset");
+      const result = await luaApplyRaw(
+        appliedUser,
+        deriveOpId(appliedUser, 0, "effect.corrupt", "applied"),
+        JSON.stringify({ schemaVersion: 1, grants: [{ kind: "star", delta: 1 }] }),
+      );
+      assert.equal(result, "err:EFFECT_DATA_CORRUPT");
+      assert.deepEqual(await redis.hgetall(kUser(appliedUser)), userBefore);
+      assert.equal(await redis.get(appliedKey), "not-a-zset");
+    });
   });
 });
 
@@ -303,4 +306,48 @@ test("readBack 严格按 server_id：s1 查询不到 s2 operation，正确区返
   assert.equal(rightZone.status, "done");
   assert.equal(rightZone.balance, 100);
   assert.deepEqual(rightZone.granted, effect.grants);
+});
+
+test("fault matrix：Redis script cache miss 自动 reload", async () => {
+  await exerciseFaultPoint("redis-script", async () => {
+    // Use a per-run source that cannot already be cached.  This reproduces the
+    // NOSCRIPT path seen after a Redis restart/failover without flushing scripts
+    // used by neighboring tests.
+    const expected = `reloaded-${process.pid}-${Date.now()}-${Math.random()}`;
+    const probe = defineScript("fault-matrix-reload", `return ${JSON.stringify(expected)}`);
+    const redis = clientForKey("fault-matrix-script");
+    const result = await evalshaWithReload(
+      redis,
+      probe,
+      [],
+      [],
+    );
+    assert.equal(result, expected);
+  });
+});
+
+test("fault matrix：事务回调失败时 MySQL 原子回滚", async () => {
+  await exerciseFaultPoint("mysql-transaction", async () => {
+    const user = await seed("tx-rollback", 321);
+    const before = await getPool().query<RowDataPacket[]>(
+      "SELECT balance FROM user_currency WHERE user_id = ? AND server_id = ? AND currency = ?",
+      [user, 0, CUR_GOLD],
+    );
+    const injected = new Error("fault-matrix mysql transaction");
+    await assert.rejects(
+      withTx(async (conn) => {
+        await conn.execute(
+          "UPDATE user_currency SET balance = balance + ? WHERE user_id = ? AND server_id = ? AND currency = ?",
+          [999, user, 0, CUR_GOLD],
+        );
+        throw injected;
+      }),
+      (error: unknown) => error === injected,
+    );
+    const after = await getPool().query<RowDataPacket[]>(
+      "SELECT balance FROM user_currency WHERE user_id = ? AND server_id = ? AND currency = ?",
+      [user, 0, CUR_GOLD],
+    );
+    assert.equal(Number(after[0][0].balance), Number(before[0][0].balance));
+  });
 });
