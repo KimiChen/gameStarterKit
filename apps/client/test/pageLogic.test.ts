@@ -6,8 +6,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { AreaListLogic } from "../src/logic/page/AreaListLogic";
-import { LoginNoticeLogic } from "../src/logic/page/LoginNoticeLogic";
-import { LoginLogic, runAuthenticatedLoginFlow } from "../src/logic/page/LoginLogic";
+import { LoginNoticeLogic, noticeDateStamp } from "../src/logic/page/LoginNoticeLogic";
+import {
+  joinSelectedServerLobby,
+  LoginLogic,
+  runAuthenticatedLoginFlow,
+} from "../src/logic/page/LoginLogic";
 import { ConfirmLogic } from "../src/logic/page/ConfirmLogic";
 import {
   chooseServer,
@@ -17,7 +21,6 @@ import {
   pickDefaultServer,
   setServerList,
 } from "../src/net/serverSession";
-import { naturalDayIndex } from "../src/shared/index";
 import { isServerEnterable } from "../src/logic/areaDirectory";
 import { areaStatusIconUrl } from "../src/view/areaPresentation";
 import type { WebPlatformAreaListResponse, WebPlatformAreaServer } from "../src/shared/index";
@@ -335,11 +338,32 @@ test("serverSession：WS accessor 只取当前快照，空目录后拒绝建立�
   assert.throws(() => getCurrentGameWsUrl(), /尚未选择区服/);
 });
 
-test("公告日期键：使用 shared UTC+8 naturalDayIndex，不随宿主本地时区漂移", () => {
-  const beforeMidnightUtc = new Date("2026-08-28T15:59:59.999Z");
-  const atMidnightUtc8 = new Date("2026-08-28T16:00:00.000Z");
-  assert.equal(naturalDayIndex(beforeMidnightUtc.getTime(), 480), 20693);
-  assert.equal(naturalDayIndex(atMidnightUtc8.getTime(), 480), 20694);
+test("Login 大厅接缝：同一份当前目录快照提供 gameWsUrl 与 sId", async () => {
+  const selected = {
+    ...srv(92),
+    gameHttpUrl: "https://http-zone-92.example",
+    gameWsUrl: "wss://ws-zone-92.example",
+  };
+  setServerList(areaRes([selected]));
+  const current = getCurrentServer();
+  assert.ok(current);
+  const calls: unknown[] = [];
+  const controller = new AbortController();
+
+  await joinSelectedServerLobby(current, "zone-92-token", {
+    init: (endpoint) => { calls.push(["init", endpoint]); },
+    join: async (token, options, signal) => { calls.push(["join", token, options, signal]); },
+  }, controller.signal);
+
+  assert.deepEqual(calls, [
+    ["init", "wss://ws-zone-92.example"],
+    ["join", "zone-92-token", { sId: 92 }, controller.signal],
+  ]);
+});
+
+test("公告日期键：生产纯函数锁定 UTC+8 自然日边界", () => {
+  assert.equal(noticeDateStamp(Date.parse("2026-08-28T15:59:59.999Z")), "20693");
+  assert.equal(noticeDateStamp(Date.parse("2026-08-28T16:00:00.000Z")), "20694");
 });
 
 test("Area 状态展示：Public 字符串枚举稳定映射现有 FGUI 图标", () => {

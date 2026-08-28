@@ -6,7 +6,7 @@
  * 进度 0~1 驱动登录页进度条与文案。
  * 登录会签发/轮换 token，客户端不得自动重试；失败后由用户明确再次发起。
  */
-import type { WebPlatformLoginResponse } from "../../shared/index";
+import type { WebPlatformAreaServer, WebPlatformLoginResponse } from "../../shared/index";
 
 export interface ILoginDeps {
     /** 生产 = (key) => devLogin(key)（或 wxLogin(code)）；失败 reject/返回 null 均按失败处理 */
@@ -29,6 +29,29 @@ export interface AuthenticatedLoginFlowDeps<TUser> {
     leave(): Promise<void> | void;
     /** Return false when a newer page/session owns the state; skip rollback. */
     shouldRollback?: () => boolean;
+}
+
+/** Narrow transport port for joining the Lobby advertised by one directory row. */
+export interface SelectedServerLobbyPort {
+    init(endpoint: string): void;
+    join(accessToken: string, options: { sId: number }, signal?: AbortSignal): Promise<void>;
+}
+
+/**
+ * Join Lobby using one selected-directory snapshot.  Reading both the endpoint
+ * and server id before the first await prevents a concurrent directory change
+ * from combining one zone's token/id with another zone's websocket endpoint.
+ */
+export async function joinSelectedServerLobby(
+    server: Pick<WebPlatformAreaServer, "serverId" | "gameWsUrl">,
+    accessToken: string,
+    port: SelectedServerLobbyPort,
+    signal?: AbortSignal,
+): Promise<void> {
+    const endpoint = server.gameWsUrl;
+    const sId = server.serverId;
+    port.init(endpoint);
+    await port.join(accessToken, { sId }, signal);
 }
 
 /**

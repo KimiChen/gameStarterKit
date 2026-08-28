@@ -4,9 +4,15 @@
  * 对齐源项目最新 LoginNotice（内建 CompTab 标签栏）：顶部每条公告一个标签，选标签 → txt_content 显示其正文。
  * 数据源经依赖注入（生产接 net/http/notice.fetchNotices）；导航/渲染在 view 层。
  */
-import type { INoticeItem, INoticeListRes } from "../../shared/index";
+import { naturalDayIndex, type INoticeItem, type INoticeListRes } from "../../shared/index";
 
 const NOTICE_TAB_TITLE_MAX_LENGTH = 4;
+const NOTICE_TIMEZONE_OFFSET_MINUTES = 8 * 60;
+
+/** Stable storage stamp for the notice page's UTC+8 business day. */
+export function noticeDateStamp(nowMs: number): string {
+    return String(naturalDayIndex(nowMs, NOTICE_TIMEZONE_OFFSET_MINUTES));
+}
 
 /** 公告页签固定最多显示 4 个 Unicode 字符，完整标题仍保留在公告数据中。 */
 export function formatNoticeTabTitle(title: string): string {
@@ -41,7 +47,7 @@ export class LoginNoticeLogic {
         return this._dontRemindToday;
     }
 
-    /** 保存“今日不再提醒”；存储层负责按本地日期跨页面恢复、跨天失效。 */
+    /** 保存“今日不再提醒”；存储层负责按 UTC+8 业务自然日跨页面恢复、跨天失效。 */
     setDontRemindToday(value: boolean): void {
         if (value === this._dontRemindToday) return;
         this._dontRemindToday = value;

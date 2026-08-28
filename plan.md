@@ -467,14 +467,12 @@ running + queued 饱和；`dispatcher-idem.test.ts` 直接执行 deadline helper
   `notifyConnLost` → `returnToLogin` 后整段重新登录来重建 session 与角色快照，目前没有独立的 session/角色
   快照对账层；大厅房也未注册 `onReconnect`，`net/WebSocketClient.ts:205` 的 `slot.dropping` 当前无消费方。
 
-复核备注：`gameWsUrl` 的两个消费点（`view/pages.ts:469`、`net/rooms/BallMoveRoom.ts:66`）没有直接用例
-（`createBallMoveRoomJoiner` 全仓无测试引用，`pages.ts` 无头不可测），测试覆盖的是 join options 白名单与
-目录字段校验这一等价机制。
-
-复核备注：`view/pages.ts:288-292` 的 `localDateStamp()` 仍用宿主本地时区生成「今日不再提示」的
-localStorage key，未使用 shared 的 `naturalDayIndex`；该值纯本机、不跨端，但与本条「跨端确定性单源用法」
-不一致。另 `net/serverSession.ts:68` 的 `clearServerList()` 在 `apps/client/src` 与测试中均无调用方，属未
-使用的公开写入点。
+复核备注（已收口）：两个 `gameWsUrl` 消费点（`view/pages.ts` 的大厅 join、
+`net/rooms/BallMoveRoom.ts` 的战斗 join）分别由 `pageLogic.test.ts` 直接执行生产
+`joinSelectedServerLobby` helper、`roomClientOwnership.test.ts` 直接执行 `createBallMoveRoomJoiner`，均断言
+明确 WS endpoint；页面 HTTP consumer 的 `gameHttpUrl` 仍在 `openAreaList` 选服接线中直接传给 `initHttp`。
+公告存储日期已改用 shared `naturalDayIndex`（UTC+8），`pageLogic.test.ts` 直接执行生产纯函数并钉住跨自然日
+边界；无生产调用方的 `clearServerList()` 公共写入点已删除，测试用合法空目录响应复位状态。
 
 ### P1-08 闭合本地验证与依赖锁 ✅
 

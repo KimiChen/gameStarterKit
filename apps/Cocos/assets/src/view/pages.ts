@@ -15,9 +15,13 @@ import type { AreaListView } from "./AreaListView";
 import type { LoginNoticeView } from "./LoginNoticeView";
 import type { HomeView } from "./HomeView";
 import type { ConfirmView } from "./ConfirmView";
-import { LoginLogic, runAuthenticatedLoginFlow } from "../logic/page/LoginLogic";
+import {
+  joinSelectedServerLobby,
+  LoginLogic,
+  runAuthenticatedLoginFlow,
+} from "../logic/page/LoginLogic";
 import { AreaListLogic } from "../logic/page/AreaListLogic";
-import { LoginNoticeLogic } from "../logic/page/LoginNoticeLogic";
+import { LoginNoticeLogic, noticeDateStamp } from "../logic/page/LoginNoticeLogic";
 import type { IConfirmOptions } from "../logic/page/ConfirmLogic";
 import { ConfirmLogic } from "../logic/page/ConfirmLogic";
 import { initHttp } from "../core/http";
@@ -35,7 +39,6 @@ import {
   ForceLogoutReason,
   UserRpc,
   joinErrText,
-  naturalDayIndex,
   type IUserView,
 } from "../shared/index";
 import { isServerEnterable } from "../logic/areaDirectory";
@@ -43,7 +46,6 @@ import { fetchAreaList } from "../net/http/area";
 import { fetchNotices } from "../net/http/notice";
 import {
   chooseServer,
-  getCurrentGameWsUrl,
   getCurrentServer,
   setServerList,
   getServerList,
@@ -51,7 +53,6 @@ import {
 import type { WebPlatformAreaServer } from "../shared/index";
 
 const NOTICE_DONT_REMIND_DATE_KEY = "game.notice.dont-remind-date";
-const BUSINESS_TIMEZONE_OFFSET_MINUTES = 8 * 60;
 
 /** 本地开发登录身份（dev-login 的 devKey：同 key 恒同账号，换号 = 换 key）。
  *  微信侧接入后此处换 wx.login 取 code → wxLogin(code)。 */
@@ -303,19 +304,15 @@ export function createPageSessionScope(): PageSessionScope {
 
 function readDontRemindToday(): boolean {
   try {
-    return sys.localStorage.getItem(NOTICE_DONT_REMIND_DATE_KEY) === localDateStamp();
+    return sys.localStorage.getItem(NOTICE_DONT_REMIND_DATE_KEY) === noticeDateStamp(Date.now());
   } catch {
     return false;
   }
 }
 
-function localDateStamp(date = new Date()): string {
-  return String(naturalDayIndex(date.getTime(), BUSINESS_TIMEZONE_OFFSET_MINUTES));
-}
-
 function writeDontRemindToday(value: boolean): void {
   try {
-    if (value) sys.localStorage.setItem(NOTICE_DONT_REMIND_DATE_KEY, localDateStamp());
+    if (value) sys.localStorage.setItem(NOTICE_DONT_REMIND_DATE_KEY, noticeDateStamp(Date.now()));
     else sys.localStorage.removeItem(NOTICE_DONT_REMIND_DATE_KEY);
   } catch { /* 存储不可用时不影响公告浏览 */ }
 }
@@ -479,10 +476,13 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
               },
               join: async (accessToken, signal) => {
                 logic.onProgress(0.6, "正在进入大厅…");
-                // 区服 = 独立实例：HTTP 与 Colyseus 端点分别消费目录字段，不做地址猜测。
-                WebSocketClient.inst.init(getCurrentGameWsUrl());
-                // WebPlatform 契约叫 serverId；游戏服现有 Colyseus join option 仍叫 sId，在边界显式转换。
-                await WebSocketClient.inst.join(accessToken, { sId: cur.serverId }, signal);
+                // 同一份目录快照同时提供 endpoint 与 sId，不能跨 await 混入后续选服结果。
+                await joinSelectedServerLobby(cur, accessToken, {
+                  init: (endpoint) => WebSocketClient.inst.init(endpoint),
+                  // WebPlatform 的 serverId 在 Colyseus join 边界显式转换为 sId。
+                  join: (token, options, joinSignal) =>
+                    WebSocketClient.inst.join(token, options, joinSignal),
+                }, signal);
                 if (!isFlightActive(flight) || !context.isActive()
                   || getSessionGeneration() !== flowSessionGen) {
                   throw new Error("登录事务已失效");
