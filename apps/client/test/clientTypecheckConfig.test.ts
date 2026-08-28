@@ -7,15 +7,17 @@
  * Main/View/page/test cannot silently fall out of strict compilation.
  */
 import assert from "node:assert/strict";
-import { readdirSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { tmpdir } from "node:os";
 import ts from "typescript";
 import { test } from "node:test";
 
 const ROOT = resolve(fileURLToPath(new URL("../../..", import.meta.url)));
 const CLIENT_ROOT = join(ROOT, "apps/client");
 const CONFIG_PATH = join(CLIENT_ROOT, "tsconfig.test.json");
+const LEGACY_CONFIG_PATH = join(CLIENT_ROOT, "tsconfig.json");
 
 function collectTypeScriptFiles(directory: string): string[] {
   const files: string[] = [];
@@ -30,20 +32,23 @@ function collectTypeScriptFiles(directory: string): string[] {
   return files;
 }
 
-function parseClientConfig(): { readonly fileNames: readonly string[]; readonly options: ts.CompilerOptions } {
-  const loaded = ts.readConfigFile(CONFIG_PATH, ts.sys.readFile);
-  assert.equal(loaded.error, undefined, `无法读取 ${relative(ROOT, CONFIG_PATH)}`);
+function parseClientConfig(configPath = CONFIG_PATH): {
+  readonly fileNames: readonly string[];
+  readonly options: ts.CompilerOptions;
+} {
+  const loaded = ts.readConfigFile(configPath, ts.sys.readFile);
+  assert.equal(loaded.error, undefined, `无法读取 ${relative(ROOT, configPath)}`);
   const parsed = ts.parseJsonConfigFileContent(
     loaded.config,
     ts.sys,
     CLIENT_ROOT,
     undefined,
-    CONFIG_PATH,
+    configPath,
   );
   assert.equal(
     parsed.errors.length,
     0,
-    `解析 ${relative(ROOT, CONFIG_PATH)} 失败: ${ts.flattenDiagnosticMessageText(
+    `解析 ${relative(ROOT, configPath)} 失败: ${ts.flattenDiagnosticMessageText(
       parsed.errors.map((error) => error.messageText).join("; "),
       " | ",
     )}`,
@@ -52,6 +57,10 @@ function parseClientConfig(): { readonly fileNames: readonly string[]; readonly 
     fileNames: parsed.fileNames.map((file) => resolve(file)),
     options: parsed.options,
   };
+}
+
+function diagnosticText(diagnostic: ts.Diagnostic): string {
+  return ts.flattenDiagnosticMessageText(diagnostic.messageText, " ");
 }
 
 test("client headless tsconfig strictly includes all source and test TypeScript files", () => {
@@ -83,5 +92,49 @@ test("client headless tsconfig strictly includes all source and test TypeScript 
     "src/view/ConfirmView.ts",
   ]) {
     assert.ok(included.has(resolve(CLIENT_ROOT, required)), `${required} 未纳入 client strict probe`);
+  }
+});
+
+test("client legacy probe enforces the ES2017 API floor", () => {
+  const fixtureRoot = mkdtempSync(join(tmpdir(), "client-legacy-typecheck-"));
+  const probe = join(fixtureRoot, "modern-api-probe.ts");
+  try {
+    writeFileSync(probe, [
+      "export const entries = Object.fromEntries([[\"score\", 1]]);",
+      "export const settled = Promise.allSettled([Promise.resolve(1)]);",
+      "",
+    ].join("\n"));
+
+    const legacy = parseClientConfig(LEGACY_CONFIG_PATH);
+    assert.equal(legacy.options.target, ts.ScriptTarget.ES2017, "legacy probe 必须钉 ES2017 target");
+    assert.deepEqual(legacy.options.lib, ["lib.es2017.d.ts", "lib.dom.d.ts"]);
+    const legacyProgram = ts.createProgram([...legacy.fileNames, probe], legacy.options);
+    const legacyDiagnostics = ts.getPreEmitDiagnostics(legacyProgram)
+      .filter((diagnostic) => diagnostic.file?.fileName === probe)
+      .map(diagnosticText);
+    assert.ok(
+      legacyDiagnostics.some((message) => message.includes("fromEntries")),
+      `legacy probe 必须拒绝 Object.fromEntries：${legacyDiagnostics.join(" | ")}`,
+    );
+    assert.ok(
+      legacyDiagnostics.some((message) => message.includes("allSettled")),
+      `legacy probe 必须拒绝 Promise.allSettled：${legacyDiagnostics.join(" | ")}`,
+    );
+
+    const modern = parseClientConfig(CONFIG_PATH);
+    const modernProgram = ts.createProgram([...modern.fileNames, probe], modern.options);
+    const modernDiagnostics = ts.getPreEmitDiagnostics(modernProgram)
+      .filter((diagnostic) => diagnostic.file?.fileName === probe)
+      .map(diagnosticText);
+    assert.deepEqual(modernDiagnostics, [], `现代 client probe 不应拒绝探针：${modernDiagnostics.join(" | ")}`);
+
+    const rootPackage = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as {
+      scripts?: Record<string, string>;
+    };
+    assert.equal(rootPackage.scripts?.["typecheck:client:legacy"], "tsc -p apps/client/tsconfig.json --noEmit");
+    assert.match(rootPackage.scripts?.typecheck ?? "", /npm run typecheck:client:legacy/,
+      "根 typecheck 必须串入 ES2017 legacy 门禁");
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
   }
 });

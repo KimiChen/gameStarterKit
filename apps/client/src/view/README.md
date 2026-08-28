@@ -14,7 +14,7 @@
    （Main 与业务层只调这里，不直接调 `ViewMgr`）。
 6. 新 View 会由 `apps/client/tsconfig.test.json` 的 `src/**/*.ts` glob 自动纳入 Node strict 探针；若
    使用新的引擎 API，先补齐 `client-test-stubs.d.ts`，再由 Creator 工程验证真实类型和资源。
-7. 运行 `npm run sync:client`，再运行 `npm run typecheck:client`、`npm run test:client`、
+7. 运行 `npm run sync:client`，再运行 `npm run typecheck:client`、`npm run typecheck:client:legacy`、`npm run test:client`、
    `npm run test:fgui`、`npm run verify:sync` 并在 Creator 本地预览。
 
 打开 = `ViewMgr.open("Xxx")`（只接受页面名，返回句柄；数据与回调在 `pages.ts` 经 `view.setup(...)` 注入）；

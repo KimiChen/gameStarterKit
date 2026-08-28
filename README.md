@@ -84,8 +84,9 @@ npm run dev
 | `npm run sync:shared` | shared → client → Cocos |
 | `npm run sync:client` | client → Cocos |
 | `npm run sync:shared:watch` / `npm run sync:client:watch` | 单侧常驻 watcher；`dev:client` 是两者的组合入口 |
-| `npm run typecheck` | 外部契约校验、shared/server/client 已纳入范围的类型检查及镜像校验 |
-| `npm run typecheck:client` | 只跑客户端 tsconfig 的类型检查 |
+| `npm run typecheck` | 外部契约校验、shared/server/client 两套类型检查及镜像校验（含 ES2017 下限） |
+| `npm run typecheck:client` | 客户端 Node 无头 strict 类型检查（完整 src/test，ES2022 桩） |
+| `npm run typecheck:client:legacy` | 客户端 Creator 兼容 legacy 类型检查（ES2017 下限） |
 | `npm run perf:client` | 在 Node 无头环境运行 ballMove ECS/快照分配/Graphics 命令性能基线（默认 100/500 entity）；用 `npm run --silent perf:client -- --json --output <file>` 保存纯 JSON 结果 |
 | `npm run verify:project` | 校验项目元数据、生成区和第三方来源登记 |
 | `npm run verify:sync` | 检查镜像漂移、孤儿和 `.meta` |
@@ -107,7 +108,9 @@ npm run dev
 `apps/client/test/**/*.ts`，包括 `Main.ts`、所有 View、`pages.ts` 和 ViewMgr；Node 侧使用最小
 `cc`/FairyGUI 声明桩。`apps/client/tsconfig.json` 仍是 Creator 兼容的 legacy 配置，保留引擎绑定文件
 排除项；Creator 编辑器预览仍负责真实引擎、资源导入和页面交互验证。`npm run typecheck:client` 会运行
-无头探针，`npm run test:client` 运行全部客户端测试，`npm run test:fgui` 只运行 FGUI 专项测试。
+完整无头探针，`npm run typecheck:client:legacy` 会以 ES2017 lib 检查 legacy 配置可覆盖的源码；根
+`npm run typecheck` 会依次运行两者。`npm run test:client` 运行全部客户端测试，`npm run test:fgui` 只运行
+FGUI 专项测试。
 
 同步脚本带大规模清理熔断：单轮需要清理的孤儿文件达到 20 个、或达到源文件数的 30% 时，`sync:shared` /
 `sync:client` 会直接失败而不删除镜像（防切分支中间态连同入库 `.meta` 一起被删）；只读的 `verify:sync` 不受此闸影响。

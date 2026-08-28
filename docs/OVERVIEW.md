@@ -61,7 +61,8 @@ apps/client/src
 | shared 零依赖与客户端 Logic 纯净 | `npm run typecheck`、相关单测 |
 | bitECS 源码保持锁定 | `npm run verify:ecs` |
 | 项目身份、生成区和第三方来源登记 | `npm run verify:project` |
-| 客户端源码/测试 strict 类型探针 | `npm run typecheck:client` |
+| 客户端源码/测试 strict 类型探针（Node/ES2022 桩） | `npm run typecheck:client` |
+| 客户端 ES2017 运行时下限探针（Creator legacy 配置） | `npm run typecheck:client:legacy` |
 | FGUI 设计源、导出物和 registry/codegen 契约 | `npm run verify:fgui`、`npm run test:fgui` |
 | 能力清单与默认入口登记 | `npm run verify:inventory` |
 | 服务端路由、协议与一致性规则 | `npm --workspace @game/server run test` |
@@ -74,8 +75,10 @@ apps/client/src
 `npm run verify:core` / `verify:all` 是上述检查的聚合入口，改动合入前至少应通过 `verify:core`。
 
 这些命令是本地开发验证入口，不表示所有真实边界都已覆盖。客户端 `typecheck:client` 通过
-`apps/client/tsconfig.test.json` 和最小引擎桩严格编译全部 `src/**/*.ts` 与 `test/**/*.ts`；Creator
-真实引擎类型、资源导入和完整 View 生命周期仍需编辑器预览。`test:fgui` 侧重 codegen/registry 行为，
+`apps/client/tsconfig.test.json` 和最小引擎桩严格编译全部 `src/**/*.ts` 与 `test/**/*.ts`；
+`typecheck:client:legacy` 再以 `apps/client/tsconfig.json` 的 ES2017 lib 检查可离线编译的源码，
+防止现代 API 越过运行时下限。Creator 真实引擎类型、资源导入和完整 View 生命周期仍需编辑器预览。
+`test:fgui` 侧重 codegen/registry 行为，
 设计源到已导出 `.bin` 的新鲜度由 `verify:fgui` 的 manifest 检查；已知边界见 [plan.md](../plan.md)。
 
 ### 3.3 视图与行为分离

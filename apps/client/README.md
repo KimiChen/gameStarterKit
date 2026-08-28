@@ -11,8 +11,10 @@ Cocos Creator 工程壳在 [../Cocos](../Cocos)，代码经同步脚本灌入 `a
 `core/` 负责宿主环境桥与 XHR，`net/` 依赖全局 Colyseus UMD；跨引擎复用时这些层需按目标引擎重写。
 
 `npm run typecheck:client` 使用 `tsconfig.test.json` 和 Node 侧最小 `cc`/FairyGUI 桩，严格编译
-`Main.ts`、全部 View/`pages.ts`/ViewMgr 以及客户端测试；`tsconfig.json` 是 Creator 兼容的 legacy
-配置，仍保留引擎绑定排除项。`npm run test:client` 运行全部客户端无头测试，
+`Main.ts`、全部 View/`pages.ts`/ViewMgr 以及客户端测试；`npm run typecheck:client:legacy` 使用
+`tsconfig.json` 的 Creator 兼容配置和 ES2017 lib，检查可离线编译的客户端源码及其引擎桩。根
+`npm run typecheck` 会依次运行这两个探针，前者覆盖完整源码，后者守住 ES2017 运行时下限。
+`tsconfig.json` 仍保留引擎绑定排除项。`npm run test:client` 运行全部客户端无头测试，
 `npm run test:fgui` 只运行 FGUI codegen/registry/契约专项测试。Creator 预览、同步检查和无头行为测试
 仍是完整验收的一部分。
 

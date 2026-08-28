@@ -4,7 +4,7 @@
 
   // Creator 兼容 legacy 配置（不 extends Creator 生成的 temp/，可离线检查有限源码范围）。
   // 完整 Node/CI strict 探针使用同目录的 tsconfig.test.json 与 client-test-stubs.d.ts；
-  // 跑法：npm run typecheck:client（根 package.json）。
+  // 跑法：npm run typecheck:client:legacy（根 package.json）；根 typecheck 会自动串行调用它。
   "compilerOptions": {
     "strict": true,
     "noEmit": true,

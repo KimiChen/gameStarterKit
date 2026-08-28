@@ -21,7 +21,8 @@ Cocos Dashboard 3.8.8 打开本目录，等首次导入（生成 `temp/`、`libr
  bitECS 源码——已入库，无需 fetch。依赖抓取脚本只用于框架维护团队显式升级。）
 
 Node 无头 strict 探针（`npm run typecheck:client`）已经覆盖 `Main.ts`、全部 View、`pages.ts`、
-ViewMgr 和客户端测试，使用 `apps/client/tsconfig.test.json` 的最小引擎桩。Creator 本地预览仍是
-真实入口装配、引擎类型、资源导入和页面交互的必要验证；Cocos 工程自身的 `tsconfig.json` 只负责
-编辑器侧兼容编译。准确范围见[客户端文档](../../docs/CLIENT.md#8-本地检查)，核心/额外能力边界见
+ViewMgr 和客户端测试，使用 `apps/client/tsconfig.test.json` 的最小引擎桩；`npm run typecheck:client:legacy`
+再以 ES2017 lib 检查 Creator 兼容配置可覆盖的源码。Creator 本地预览仍是真实入口装配、引擎类型、
+资源导入和页面交互的必要验证；Cocos 工程自身的 `tsconfig.json` 只负责编辑器侧兼容编译。准确范围见
+[客户端文档](../../docs/CLIENT.md#8-本地检查)，核心/额外能力边界见
 [根 README](../../README.md#项目边界)。
