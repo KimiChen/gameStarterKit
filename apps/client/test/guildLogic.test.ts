@@ -36,6 +36,17 @@ function makeDeps(pages: IGuildEvent[][], latestSeqOf: (call: number) => number,
 const evt = (seq: number): IGuildEvent => ({ seq, kind: "memberJoin", at: 1000 + seq });
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
+interface Deferred<T> {
+  promise: Promise<T>;
+  resolve(value: T): void;
+}
+
+function deferred<T>(): Deferred<T> {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((res) => { resolve = res; });
+  return { promise, resolve };
+}
+
 test("首拉 + 推送唤醒增量 + 迟到唤醒忽略", async () => {
   const f = makeDeps([[evt(1), evt(2)], [evt(3)]], (c) => (c === 0 ? 2 : 3));
   const logic = new GuildLogic(f.deps);
@@ -133,6 +144,51 @@ test("重复 start 不叠订阅：先解旧订阅；stop 后清空（防死页�
   assert.equal(cbs.size, 1, "重复 start 不得叠订阅");
   logic.stop();
   assert.equal(cbs.size, 0, "stop 后订阅清空");
+});
+
+test("生命周期：stop 后迟到 pull 结果不触发 events/error/gap", async () => {
+  const pending = deferred<{ events: never[]; latestSeq: number; guildId: number }>();
+  const pushRef: { current: ((data: { seq: number; guildId: number }) => void) | null } = { current: null };
+  const logic = new GuildLogic({
+    getEvents: async () => pending.promise,
+    onPush: (_type, cb) => {
+      pushRef.current = cb;
+      return () => { pushRef.current = null; };
+    },
+  });
+  let events = 0;
+  let errors = 0;
+  let gaps = 0;
+  logic.onEvents = () => { events++; };
+  logic.onPullError = () => { errors++; };
+  logic.onGapRefresh = () => { gaps++; };
+  const started = logic.start(0, GID);
+  pushRef.current?.({ seq: 1, guildId: GID });
+  logic.stop();
+  pending.resolve({ events: [], latestSeq: 1, guildId: GID });
+  await started;
+  assert.equal(events, 0);
+  assert.equal(errors, 0);
+  assert.equal(gaps, 0);
+});
+
+test("生命周期：旧世代 pull 在途时新首拉不被旧 pulling 状态阻塞", async () => {
+  const old = deferred<{ events: never[]; latestSeq: number; guildId: number }>();
+  let call = 0;
+  const logic = new GuildLogic({
+    getEvents: async () => {
+      if (call++ === 0) return old.promise;
+      return { events: [], latestSeq: 0, guildId: 9 };
+    },
+    onPush: (_type, _cb) => () => {},
+  });
+  const first = logic.start(0, GID);
+  const second = logic.start(0, 9);
+  await second;
+  assert.equal(call, 2);
+  old.resolve({ events: [], latestSeq: 99, guildId: GID });
+  await first;
+  assert.equal(logic.seq, 0, "旧世代响应不得覆盖新页面水位");
 });
 
 test("stop 清 pendingWake：在途 pull 结束后不再补拉（防回调已关闭页面）", async () => {

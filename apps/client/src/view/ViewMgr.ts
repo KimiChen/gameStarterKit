@@ -230,9 +230,33 @@ function makeHandle(
   cacheable: boolean,
   releaseMount: (() => void) | null,
   onClosed?: () => void,
-): { handle: ViewHandle; setContext(next: ViewLifecycleContext): void } {
+): {
+  handle: ViewHandle;
+  runDuringOpen<T>(action: (view: FguiView, context: ViewLifecycleContext) => T | Promise<T>): Promise<T>;
+} {
   const state = { context, closed: false, releaseMount };
-  const handle: ViewHandle = {
+  let handle!: ViewHandle;
+  const runAction = async <T>(
+    action: (view: FguiView, context: ViewLifecycleContext) => T | Promise<T>,
+    closeOnFailure: boolean,
+  ): Promise<T> => {
+    const activeContext = state.context;
+    if (state.closed || !activeContext.isActive()) {
+      throw new ViewOpenCancelledError(name);
+    }
+    try {
+      const result = await action(view, activeContext);
+      if (state.context !== activeContext || !activeContext.isActive()) throw new ViewOpenCancelledError(name);
+      return result;
+    } catch (e) {
+      // A public run owns its rollback. During open/remount the surrounding
+      // transaction must roll back without marking its own pending record as a
+      // user cancellation, so the caller still receives the original error.
+      if (closeOnFailure && state.context === activeContext && !state.closed) handle.close();
+      throw e;
+    }
+  };
+  handle = {
     view,
     get signal() { return state.context.signal; },
     get generation() { return state.context.generation; },
@@ -264,29 +288,12 @@ function makeHandle(
       }
     },
     async run<T>(action: (v: FguiView, c: ViewLifecycleContext) => T | Promise<T>): Promise<T> {
-      // 捕获启动时的 context：permanent 页面重开会刷新 state.context，旧 setup 不能
-      // 在 await 之后误认新世代为自己的，也不能把新世代一并关闭。
-      const context = state.context;
-      if (state.closed || !context.isActive()) {
-        throw new ViewOpenCancelledError(name);
-      }
-      try {
-        const result = await action(view, context);
-        if (state.context !== context || !context.isActive()) throw new ViewOpenCancelledError(name);
-        return result;
-      } catch (e) {
-        // setup/render 与 onOpen 使用同一回滚入口；调用方仍收到原始错误。
-        if (state.context === context && !state.closed) handle.close();
-        throw e;
-      }
+      return runAction(action, true);
     },
   };
   return {
     handle,
-    setContext(next: ViewLifecycleContext): void {
-      state.context = next;
-      state.closed = false;
-    },
+    runDuringOpen: (action) => runAction(action, false),
   };
 }
 
@@ -339,17 +346,17 @@ async function open(name: string, setup?: ViewSetup): Promise<ViewHandle> {
       // would let a stale caller close or run setup against this generation.
       const made = makeHandle(name, entry.view, meta, context, true, releaseMount);
       entry.handle = made.handle;
-      handleContexts.set(made.handle, made.setContext);
       await entry.view.runOpen(context);
       ensureContextActive(context, name);
-      if (setup) await made.handle.run(setup);
+      if (setup) await made.runDuringOpen(setup);
       return made.handle;
     } catch (e) {
       // The same permanent Entry can be reopened while an async onOpen/setup is pending;
       // do not roll back the newer lifecycle that replaced this context.
       const ownsLifecycle = entry.view.lifecycleContext === context;
+      const wasActive = context.isActive();
       if (ownsLifecycle) rollbackEntry(name, entry);
-      if (!ownsLifecycle || !context.isActive()) throw new ViewOpenCancelledError(name);
+      if (!ownsLifecycle || !wasActive) throw new ViewOpenCancelledError(name);
       throw e;
     }
   }
@@ -420,7 +427,6 @@ async function open(name: string, setup?: ViewSetup): Promise<ViewHandle> {
           if (uncachedHandle) activeUncached.delete(uncachedHandle);
         },
       );
-      handleContexts.set(made.handle, made.setContext);
       if (cacheable) {
         entry = { view, mounted: true, meta, handle: made.handle, releaseMount: lease };
         cache.set(name, entry);
@@ -436,7 +442,7 @@ async function open(name: string, setup?: ViewSetup): Promise<ViewHandle> {
       await view.runOpen(context);
       ensureContextActive(context, name);
       ensurePendingActive(rec);
-      if (setup) await made.handle.run(setup);
+      if (setup) await made.runDuringOpen(setup);
       ensurePendingActive(rec);
       return made.handle;
     } catch (e) {
@@ -526,9 +532,6 @@ function isOpen(name: string): boolean {
 function ensureContextActive(context: ViewLifecycleContext, name: string): void {
   if (!context.isActive()) throw new ViewOpenCancelledError(name);
 }
-
-/** handle → context 刷新器；仅用于 permanent 页面重挂，避免扩展公开状态对象。 */
-const handleContexts = new WeakMap<ViewHandle, (context: ViewLifecycleContext) => void>();
 
 export { disposeViewRoot };
 

@@ -57,8 +57,12 @@ const BUSINESS_TIMEZONE_OFFSET_MINUTES = 8 * 60;
  *  微信侧接入后此处换 wx.login 取 code → wxLogin(code)。 */
 const DEV_LOGIN_KEY = "dev_local";
 
-/** 事件系统不会等待页面导航 Promise；组合根入口统一观察同步异常与 rejection。 */
-function observePageAction(action: () => unknown, label: string): void {
+/**
+ * Observe a page event action that the FairyGUI dispatcher cannot await.
+ * Exported so the headless lifecycle probe can exercise the same boundary used
+ * by Login/AreaList navigation handlers.
+ */
+export function observePageAction(action: () => unknown, label: string): void {
   try {
     const result = action();
     if (result && typeof (result as { then?: unknown }).then === "function") {

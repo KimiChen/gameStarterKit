@@ -357,29 +357,13 @@ Demo 为基线；`idle` 只是无 presentation 的最小 multi-mode 证明，不
 
 状态：已完成 Node 可测试边界。View lifecycle hook、AbortSignal/generation、open 失败回滚、交互租约和
 迟到异步结果均已收口；真实 Creator 引擎行为仍需编辑器预览。
-复核备注：本轮 P1-02 提交（`7c9a54f`）重写 `viewLifecycle.test.ts` 时删除了原有 8 条逻辑层生命周期用例
-（AreaListLogic 4 条、LoginNoticeLogic 1 条、Area/Notice 合并 1 条、GuildLogic 2 条）且未迁移到
-`pageLogic.test.ts` / `guildLogic.test.ts`，该文件现在只剩 4 条用例。因此「stop 后迟到结果 0 回调」现已无
-任何专门断言（Guild 的那条也在删除之列），AreaListLogic 的世代隔离、拉取边界快照隔离、恶意 response
-拒绝，以及 GuildLogic「旧世代 pull 在途时新首拉不被阻塞」同样无用例；实现仍在
-（`AreaListLogic.ts:88` `validateWebPlatformAreaListResponse`、`:140`/`:152` `cloneServer`、`:160-162`
-`isCurrent`），当前只靠代码审读。完成标准「开关 100 次只触发一次 action」由等价幂等用例覆盖，非字面值
-压测。
-
-复核备注：第 3 条的失败回滚只有关闭路径（`viewLifecycle.test.ts:283`）与 root teardown（`:319`）用例；打开
-事务中 mount/setup/render 抛错后的回滚与 interactive 租约归还尚无专门用例，也未断言输入捕获恢复
-（`FakeGRoot.inputProcessor` 存在但从未被断言），当前靠代码审读。
-
-复核备注：第 4、5 条（重复 setup 不叠监听、`setProgress` 归一化、未接线控件置灰）目前无行为用例；5 个具体
-View 类只进入 `apps/client/tsconfig.test.json` 的严格编译探针（见 `clientTypecheckConfig.test.ts:79-83` 的
-include 列表），行为仅靠代码审读与 Creator 预览。
-
-复核备注：第 6 条目前只有 `loginFlight.test.ts` 的源码正则断言，没有针对 `observeAsync`/`observePageAction`
-的 unhandledRejection 实证用例（对比 `guildLogic.test.ts:156` 的实证写法）。
-
-复核备注：`ViewMgr` 的 `handleContexts`/`setContext`（`ViewMgr.ts:233`、`:286-289`、`:342`、`:423`、`:531`）
-为未被读取的死代码（全仓无 `.get`），permanent 重挂实际走的是 `ViewMgr.ts:340` 新建 handle 的路径；
-`ViewMgr.ts:267-268` 的注释与该路径不符，建议后续清理，不影响当前行为。
+复核缺口已收口：`pageLogic.test.ts` 与 `guildLogic.test.ts` 恢复并扩展逻辑层生命周期用例，直接覆盖 stop 后
+迟到结果零回调、AreaList 世代/快照/恶意响应隔离、LoginNotice 迟到响应，以及旧 Guild pull 不阻塞新世代。
+`viewLifecycle.test.ts` 通过最小 cc/FairyGUI 运行时桩动态加载真实 `FguiView`、`ViewMgr` 和具体 View，覆盖
+cacheable 页面 mount/onOpen/setup/render 四段打开失败回滚、输入租约计数与恢复、具体 View 的
+`closeLifecycle → logic.stop`、重复 setup 100 次不叠监听、进度归一化和占位控件置灰。事件层 `observeAsync`
+与页面组合层 `observePageAction` 的 rejection 都有 `unhandledRejection` 实证，并守住 Login 两个真实导航
+调用点；未被读取的 `handleContexts`/`setContext` 死接缝已删除。
 
 已实施的生命周期边界：
 
@@ -391,7 +375,8 @@ include 列表），行为仅靠代码审读与 Creator 预览。
 5. `LoginView.setProgress` 更新 ratio；未参与行为的 Login 控件在契约中保持为明确的展示/占位字段。
 6. 事件入口必须观察 async 错误，不留下 `void openLogin(...)` 的 unhandled rejection。
 
-**完成标准**：页面开关 100 次只触发一次 action；关闭后 deferred 完成产生 0 次 UI/Logic 回调。
+**完成标准**：同一 View 重复 `setup()` 100 次后一次事件只触发一次 action；关闭后 deferred 完成产生 0 次
+UI/Logic 回调。真实 Creator 输入与资源行为仍由编辑器预览确认。
 
 ### P1-03 建立完整 wire runtime contract ✅
 

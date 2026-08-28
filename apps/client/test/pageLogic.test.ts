@@ -43,6 +43,17 @@ const areaRes = (
   isOps = false,
 ): WebPlatformAreaListResponse => ({ isOps, servers, myServerIds, hash: "hh" });
 
+interface Deferred<T> {
+  promise: Promise<T>;
+  resolve(value: T): void;
+}
+
+function deferred<T>(): Deferred<T> {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((res) => { resolve = res; });
+  return { promise, resolve };
+}
+
 test("AreaList：拉取 + 推荐/我的角色/全部区服页签 + 维护不可进", async () => {
   const servers = [
     srv(1, "new"),
@@ -96,6 +107,126 @@ test("AreaList：运维模式（isOps）豁免——维护/未开服的开服前
   assert.equal(chosen, 3);
   assert.equal(logic.choose(5), true, "运维模式：未开服可选（开服前验证）");
   assert.equal(logic.choose(999), false, "不存在的服运维也不可选");
+});
+
+test("AreaList 生命周期：stop 后迟到 HTTP 不触发 tabs/list 回调", async () => {
+  const pending = deferred<WebPlatformAreaListResponse>();
+  let receivedSignal: AbortSignal | undefined;
+  const logic = new AreaListLogic({
+    fetchAreaList: async (signal) => {
+      receivedSignal = signal;
+      return pending.promise;
+    },
+  });
+  let tabs = 0;
+  let servers = 0;
+  logic.onTabs = () => { tabs++; };
+  logic.onServers = () => { servers++; };
+  const started = logic.start();
+  logic.stop();
+  assert.equal(receivedSignal?.aborted, true, "stop 应向依赖发出 abort");
+  pending.resolve(areaRes([srv(101)]));
+  await started;
+  assert.equal(tabs, 0);
+  assert.equal(servers, 0);
+});
+
+test("AreaList 生命周期：重进页面时只接受最新世代结果", async () => {
+  const first = deferred<WebPlatformAreaListResponse>();
+  const second = deferred<WebPlatformAreaListResponse>();
+  let call = 0;
+  const logic = new AreaListLogic({
+    fetchAreaList: async () => (call++ === 0 ? first.promise : second.promise),
+  });
+  const names: string[] = [];
+  logic.onTabs = () => { names.push(logic.serversOfTab("all")[0]?.name ?? ""); };
+  const oldStart = logic.start();
+  const newStart = logic.start();
+  first.resolve(areaRes([srv(102)]));
+  second.resolve(areaRes([srv(103)]));
+  await Promise.all([oldStart, newStart]);
+  assert.deepEqual(names, ["区103"]);
+});
+
+test("AreaList 生命周期：拉取边界和回调均使用独立快照", async () => {
+  const response = areaRes([srv(104)]);
+  const logic = new AreaListLogic({ fetchAreaList: async () => response });
+  await logic.start();
+
+  // The dependency may retain and mutate its response after the await.
+  response.servers[0].name = "外部突变";
+  assert.equal(logic.serversOfTab("all")[0]?.name, "区104");
+
+  const exposed = logic.serversOfTab("all");
+  exposed[0].name = "视图突变";
+  assert.equal(logic.serversOfTab("all")[0]?.name, "区104");
+
+  logic.onChoose = (server) => { server.name = "回调突变"; };
+  assert.equal(logic.choose(104), true);
+  assert.equal(logic.serversOfTab("all")[0]?.name, "区104");
+});
+
+test("AreaList 生命周期：恶意 response 在发布前拒绝且不触发页面回调", async () => {
+  const known = areaRes([srv(105)]);
+  // Promise resolution probes `then`; keep that property benign so the
+  // hostile shape reaches the wire validator instead of native await.
+  const hostile = new Proxy(known, {
+    get(target, key, receiver) {
+      if (key === "then") return undefined;
+      return Reflect.get(target, key, receiver);
+    },
+    getPrototypeOf() { throw new Error("hostile prototype"); },
+  });
+  const logic = new AreaListLogic({ fetchAreaList: async () => hostile as never });
+  let callbacks = 0;
+  logic.onTabs = () => { callbacks++; };
+  await assert.rejects(logic.start(), /WIRE_KEYS|WIRE_OBJECT|WIRE/i);
+  assert.equal(callbacks, 0);
+});
+
+test("Area/Notice 生命周期：stop 后主动事件也不再触发旧 View 回调", async () => {
+  const areaLogic = new AreaListLogic({ fetchAreaList: async () => areaRes([srv(106)]) });
+  let areaServers = 0;
+  let areaChosen = 0;
+  areaLogic.onServers = () => { areaServers++; };
+  areaLogic.onChoose = () => { areaChosen++; };
+  await areaLogic.start();
+  areaLogic.stop();
+  areaLogic.setTab("recommend");
+  areaLogic.choose(106);
+  assert.equal(areaServers, 1, "stop 前首拉应有一次列表回调");
+  assert.equal(areaChosen, 0, "stop 后 choose 不应触发旧回调");
+
+  const noticeLogic = new LoginNoticeLogic({
+    fetchNotices: async () => ({ list: [{ id: 1, category: "notice" as const, title: "x", desc: "", content: "c", at: 1 }] }),
+    readDontRemindToday: () => false,
+    writeDontRemindToday: () => {},
+  });
+  let contentCalls = 0;
+  noticeLogic.onContent = () => { contentCalls++; };
+  await noticeLogic.start();
+  noticeLogic.stop();
+  noticeLogic.select(1);
+  assert.equal(contentCalls, 1, "stop 前首拉应有一次正文回调");
+});
+
+test("LoginNotice 生命周期：stop 后迟到公告不更新正文", async () => {
+  const pending = deferred<{ list: [{ id: number; category: "notice"; title: string; desc: string; content: string; at: number }] }>();
+  const logic = new LoginNoticeLogic({
+    fetchNotices: async () => pending.promise,
+    readDontRemindToday: () => false,
+    writeDontRemindToday: () => {},
+  });
+  let tabCalls = 0;
+  let contentCalls = 0;
+  logic.onTabs = () => { tabCalls++; };
+  logic.onContent = () => { contentCalls++; };
+  const started = logic.start();
+  logic.stop();
+  pending.resolve({ list: [{ id: 2, category: "notice", title: "x", desc: "", content: "late", at: 1 }] });
+  await started;
+  assert.equal(tabCalls, 0);
+  assert.equal(contentCalls, 0);
 });
 
 test("Area：isServerEnterable 判定单源（维护/未开服双条件）", () => {
