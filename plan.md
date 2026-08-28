@@ -598,11 +598,9 @@ Markdown 正确性，故门禁放行。该 README 已随 `b2fb873` 修复、`pro
 状态：已完成当前 Starter 范围。幂等 `init:project`、项目身份/包名推导、生成区标识、根 MIT `LICENSE`
 和第三方来源登记已落地并纳入 `verify:project`。Unity、托管、渠道与商业化不进入该命令的必选项。
 
-复核备注：`init:project` 的幂等性目前只有实现层保证（`scripts/init-project.mjs:159-176` 的
-`writeTextIfChanged`、`:182` 的 `writeJsonIfChanged`、`:464-467` `replaceTextInTree` 的
-`oldName !== newName` 过滤）；`apps/client/test/projectMetadata.test.ts` 的 5 个用例中涉及 init 的两个都是
-单次 `spawnSync`，没有「相同参数连续运行两次、第二次 0 变更」的用例；`docs/PROJECT.md:33` 的幂等承诺尚未
-被测试锁定。
+复核备注（已收口）：`projectMetadata.test.ts` 现以相同参数连续运行两次真实 `init-project.mjs`，断言第二次
+明确报告「已更新 0 个文件」，并递归比较第一次运行后的完整 fixture 文本快照，确保没有隐蔽改写或新增；
+`docs/PROJECT.md` 的幂等承诺已进入客户端核心测试门禁。
 
 ## 8. 实施顺序与收口状态
 
