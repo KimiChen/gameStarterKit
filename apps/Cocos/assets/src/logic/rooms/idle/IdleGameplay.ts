@@ -1,5 +1,6 @@
-import type { GameplayContext, GameplayPlugin, GameplayStopReason } from "../../gameplay/index";
+import type { GameplayContext, GameplayPlugin, GameplayStopReason, GameplayRoomJoiner } from "../../gameplay/index";
 import type { GameplayRegistry } from "../../gameplay/GameplayRegistry";
+import { GameplayModeId } from "../../../shared/index";
 
 /** 第二个最小玩法 fixture：只记录输入与逻辑步，不依赖 room、cc 或 FGUI。 */
 export interface IdleInput {
@@ -7,12 +8,22 @@ export interface IdleInput {
     readonly value?: number;
 }
 
+export const IDLE_GAMEPLAY_ID = GameplayModeId.Idle;
+
 export interface IdleRoom {
-    readonly kind: "idle-fixture";
+    /** `idle-fixture` is retained for pure unit tests; `idle` is the real room adapter. */
+    readonly kind: "idle-fixture" | "idle";
+    readonly roomId?: string;
+    readonly sessionId?: string;
+}
+
+export interface IdleGameplayOptions {
+    /** Optional production transport; omitted when testing the pure plugin. */
+    readonly joiner?: GameplayRoomJoiner<IdleRoom>;
 }
 
 export class IdleGameplay implements GameplayPlugin<IdleRoom, IdleInput> {
-    readonly id = "idle";
+    readonly id = IDLE_GAMEPLAY_ID;
     started = false;
     stopped = false;
     disposed = false;
@@ -57,6 +68,7 @@ export function createIdleGameplay(): IdleGameplay {
 /** 玩法模块自己的登记函数；调用方无需修改通用 loader 或 Main。 */
 export function registerIdleGameplay(
     registry: GameplayRegistry<IdleRoom, IdleInput>,
+    options: IdleGameplayOptions = {},
 ): () => void {
-    return registry.register("idle", createIdleGameplay);
+    return registry.register(IDLE_GAMEPLAY_ID, createIdleGameplay, options.joiner ? { joiner: options.joiner } : {});
 }

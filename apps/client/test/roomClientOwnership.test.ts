@@ -9,9 +9,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { C2S, RoomName, PROTOCOL_VERSION, S2C, type IGameRoomState, type IPlayerState } from "../src/shared/index";
+import { C2S, GameplayModeId, RoomName, PROTOCOL_VERSION, S2C, type IGameRoomState, type IPlayerState } from "../src/shared/index";
 import { RoomClient } from "../src/net/RoomClient";
 import { createBallMoveRoom, createBallMoveRoomJoiner } from "../src/net/rooms/BallMoveRoom";
+import { createIdleRoomJoiner } from "../src/net/rooms/IdleRoom";
 import { setServerList } from "../src/net/serverSession";
 import { onBattleLost } from "../src/net/session";
 import type { WebPlatformAreaListResponse } from "../src/shared/index";
@@ -111,7 +112,7 @@ test("合流同一在途 join：旧 owner 释放不关闭后来者共享的 room
   assert.deepEqual(joinCalls[0], {
     endpoint: "http://game.example",
     roomName: RoomName.Game,
-    options: { v: PROTOCOL_VERSION, token: "same-session", sId: 7 },
+    options: { v: PROTOCOL_VERSION, token: "same-session", sId: 7, mode: GameplayModeId.BallMove },
   });
   assert.equal(
     (client as unknown as { client: FakeColyseusClient }).client.auth.token,
@@ -151,6 +152,11 @@ test("slot 连接 key：endpoint/token/sId/其它 option 任一不同均 fail-fa
       name: "sId 不同",
       prepare(_client: RoomClient) { /* endpoint 不变 */ },
       options: { ...base, sId: 8 },
+    },
+    {
+      name: "mode 不同",
+      prepare(_client: RoomClient) { /* endpoint 不变 */ },
+      options: { ...base, mode: GameplayModeId.Idle },
     },
   ];
 
@@ -535,20 +541,62 @@ test("BallMoveRoom joiner：连接端点直接取当前区的 gameWsUrl", async 
     const ownership = createBallMoveRoomJoiner(fakeClient).join(new AbortController().signal);
     assert.equal((await ownership.ready).roomId, "room-92");
     assert.equal(calls.endpoint, "wss://ws-zone-92.example");
-    assert.deepEqual(calls.options, { token: "", sId: 92 });
+    assert.deepEqual(calls.options, { token: "", sId: 92, mode: GameplayModeId.BallMove });
     await ownership.leave();
   } finally {
     setServerList({ isOps: false, hash: "reset", myServerIds: [], servers: [] });
   }
 });
 
-test("Main：只装配 registry/controller，不再内联 RoomClient、ECS 或玩法回调", () => {
+test("IdleRoom joiner：复用同一区服 transport 并显式选择 idle mode", async () => {
+  const directory: WebPlatformAreaListResponse = {
+    isOps: false,
+    hash: "idle-ws-contract",
+    myServerIds: [93],
+    servers: [{
+      serverId: 93,
+      name: "区93",
+      tag: "normal",
+      status: "smooth",
+      openTime: 1,
+      gameHttpUrl: "https://http-zone-93.example",
+      gameWsUrl: "wss://ws-zone-93.example",
+    }],
+  };
+  setServerList(directory);
+  const calls: { endpoint?: string; options?: Record<string, unknown> } = {};
+  const physical = { roomId: "idle-room-93", sessionId: "idle-self-93" };
+  const fakeClient = {
+    init(endpoint: string) { calls.endpoint = endpoint; },
+    joinGame(options: Record<string, unknown>) {
+      calls.options = options;
+      return { ready: Promise.resolve(physical), leave: async () => {} };
+    },
+  } as unknown as RoomClient;
+  try {
+    const ownership = createIdleRoomJoiner(fakeClient).join(new AbortController().signal);
+    assert.deepEqual(await ownership.ready, {
+      kind: "idle",
+      roomId: "idle-room-93",
+      sessionId: "idle-self-93",
+    });
+    assert.equal(calls.endpoint, "wss://ws-zone-93.example");
+    assert.deepEqual(calls.options, { token: "", sId: 93, mode: GameplayModeId.Idle });
+    await ownership.leave();
+  } finally {
+    setServerList({ isOps: false, hash: "reset", myServerIds: [], servers: [] });
+  }
+});
+
+test("Main：只装配 registry/controller/catalog，不再内联 RoomClient、ECS 或玩法回调", () => {
   const source = readFileSync(new URL("../src/Main.ts", import.meta.url), "utf8");
   assert.doesNotMatch(source, /\bRoomClient\b|\bGameECS\b|\bPlayerModel\b|bindRoom\(/);
-  assert.match(source, /controller\.startRegistered\(registry, BALL_MOVE_GAMEPLAY_ID, signal\)/);
+  assert.match(source, /registerDefaultGameplays\(registry,/);
+  assert.match(source, /controller\.startRegistered\(registry, requestedId, signal\)/);
   assert.match(source, /controller\.tick\(dt\)/);
   assert.match(source, /roomController\?\.stop\(\{ kind \}\)/);
-  assert.doesNotMatch(source, /\bidle\b/i, "第二个 idle fixture 不应要求修改 Main");
+  assert.doesNotMatch(source, /createIdleRoomJoiner|registerIdleGameplay/,
+    "第二玩法的 joiner/登记应归 catalog，而不是重新侵入 Main");
 });
 
 test("掉线输入 reconcile：松手后的 stop/最新方向成为重连后的第一条有效输入", async () => {

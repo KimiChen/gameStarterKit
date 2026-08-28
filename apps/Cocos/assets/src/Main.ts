@@ -12,15 +12,12 @@ import { GameplayRegistry } from "./logic/gameplay/GameplayRegistry";
 import { RoomController } from "./logic/gameplay/RoomController";
 import {
     BALL_MOVE_GAMEPLAY_ID,
-    registerBallMoveGameplay,
-    type BallMoveInput,
-    type BallMoveRoom,
 } from "./logic/rooms/ballMove/BallMoveGameplay";
-import { createBallMoveRoomJoiner } from "./net/rooms/BallMoveRoom";
 import { onAuthInvalid, onBattleLost, onConnLost, returnToLogin } from "./net/session";
 import { joinErrText } from "./shared/index";
 import type { GameplayStartResult } from "./logic/gameplay/RoomController";
 import { BallMoveView } from "./view/rooms/ballMove/BallMoveView";
+import { registerDefaultGameplays, type AppGameplayRegistry } from "./gameplay/catalog";
 
 // Must run before the first Colyseus operation. Imported network modules do not
 // connect during evaluation; RoomController starts the join only from enterBattle.
@@ -35,9 +32,11 @@ export class Main extends Component {
 
     @property({ tooltip: "WebPlatform Public http(s) 地址（登录 + 选服），必填。" })
     portalUrl = "";
+    @property({ tooltip: "要进入的已登记玩法 id；默认 ballMove，可替换为 idle。" })
+    gameplayId = BALL_MOVE_GAMEPLAY_ID;
 
-    private gameplayRegistry: GameplayRegistry<BallMoveRoom, BallMoveInput> | null = null;
-    private roomController: RoomController<BallMoveRoom, BallMoveInput> | null = null;
+    private gameplayRegistry: AppGameplayRegistry | null = null;
+    private roomController: RoomController<any, any> | null = null;
     private unregisterGameplay: (() => void) | null = null;
     private disposePages: (() => void) | null = null;
     private battleTransition: Promise<void> | null = null;
@@ -114,15 +113,15 @@ export class Main extends Component {
     }
 
     private configureGameplay(): void {
-        const registry = new GameplayRegistry<BallMoveRoom, BallMoveInput>();
-        const controller = new RoomController<BallMoveRoom, BallMoveInput>(createBallMoveRoomJoiner());
+        const registry = new GameplayRegistry<any, any>();
+        const controller = new RoomController<any, any>();
         const presentation = new BallMoveView(this.node, (action) => {
             if (!this.roomController) return;
             void this.roomController.input(action).catch((error) => {
                 console.error("[Main] gameplay input 失败：", error);
             });
         });
-        this.unregisterGameplay = registerBallMoveGameplay(registry, { presentation });
+        this.unregisterGameplay = registerDefaultGameplays(registry, { ballMovePresentation: presentation });
         this.gameplayRegistry = registry;
         this.roomController = controller;
     }
@@ -157,7 +156,10 @@ export class Main extends Component {
             if (this.destroyed || signal.aborted) return;
         }
 
-        const result = await controller.startRegistered(registry, BALL_MOVE_GAMEPLAY_ID, signal);
+        const requestedId = typeof this.gameplayId === "string" && this.gameplayId.trim().length > 0
+            ? this.gameplayId.trim()
+            : BALL_MOVE_GAMEPLAY_ID;
+        const result = await controller.startRegistered(registry, requestedId, signal);
         if (result.status === "started" || result.status === "already-running") return;
         if (result.status === "cancelled" || result.status === "disposed") return;
         await this.handleGameplayStartFailure(result);

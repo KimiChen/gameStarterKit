@@ -11,6 +11,7 @@ import {
   C2S_RUNTIME_VALIDATORS,
   GameHttpContractMap,
   GamePhase,
+  GameplayModeId,
   LobbyPush,
   LOBBY_RPC_REQUEST_VALIDATORS,
   LOBBY_RPC_RESPONSE_VALIDATORS,
@@ -23,6 +24,8 @@ import {
   validateLobbyPush,
   validateLobbyRpcRequest,
   validateLobbyRpcResponse,
+  validateLobbyRoomJoinOptions,
+  validateGameRoomJoinOptions,
   validateRoomJoinOptions,
   validateRpcEnvelope,
   validateRpcReply,
@@ -72,7 +75,15 @@ test("HTTP/WS origin：拒绝非 canonical 空白、非法 DNS label 与多重�
 });
 
 test("join/RPC envelope：exact keys、有限数值和错误码联合严格收口", () => {
-  assert.deepEqual(validateRoomJoinOptions({ v: 4, token: "t", sId: 1 }), { v: 4, token: "t", sId: 1 });
+  assert.deepEqual(validateLobbyRoomJoinOptions({ v: 5, token: "t", sId: 1 }), { v: 5, token: "t", sId: 1 });
+  assertInvalid(() => validateLobbyRoomJoinOptions({ v: 5, mode: GameplayModeId.Idle }), "WIRE_KEYS");
+  assert.deepEqual(
+    validateGameRoomJoinOptions({ v: 5, token: "t", sId: 1, mode: GameplayModeId.Idle }),
+    { v: 5, token: "t", sId: 1, mode: GameplayModeId.Idle },
+  );
+  assertInvalid(() => validateGameRoomJoinOptions({ v: 5 }), "WIRE_KEYS");
+  assertInvalid(() => validateGameRoomJoinOptions({ mode: "" }), "WIRE_STRING");
+  assertInvalid(() => validateGameRoomJoinOptions({ mode: " idle " }), "ROOM_MODE");
   assertInvalid(() => validateRoomJoinOptions({ sId: Number.POSITIVE_INFINITY }), "WIRE_INTEGER");
   assertInvalid(() => validateRoomJoinOptions({ sId: 1, listHash: "h" }), "WIRE_KEYS");
 
@@ -196,6 +207,10 @@ test("所有公开 wire validator：hostile getter/iterator 统一转为可判�
     } });
 
   assertInvalid(() => validateRoomJoinOptions(getter({ token: "t" }, "token")), "WIRE_DATA_CORRUPT");
+  assertInvalid(
+    () => validateGameRoomJoinOptions(getter({ mode: GameplayModeId.BallMove }, "mode")),
+    "WIRE_DATA_CORRUPT",
+  );
   assertInvalid(() => validateC2SPayload(C2S.Move, getter({ dirX: 0, dirY: 0 }, "dirX")), "WIRE_DATA_CORRUPT");
   assertInvalid(() => validateS2CPayload(S2C.Pong, getter({ clientTime: 1, serverTime: 2 }, "serverTime")), "WIRE_DATA_CORRUPT");
   assertInvalid(() => validateRpcEnvelope(getter({ id: "r1", type: "user.getInfo" }, "id")), "WIRE_DATA_CORRUPT");

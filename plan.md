@@ -335,21 +335,23 @@ shared 的 `GetInfo` 当前允许 `user: null`，因此代码与客户端需要�
 
 ### P1-01 拆分 App/Session/Scene/Room/Gameplay 生命周期 ✅
 
-状态：已完成当前 Demo 所需的可替换接缝。`Main` 已收缩为 shell，服务端/客户端玩法分别通过
-`GameMode`、`GameplayRegistry` 和精确 room capability 装配；重复 ECS entity 会被幂等清理。
+状态：已完成当前 Demo 所需的可替换接缝。`Main` 已收缩为 shell；服务端/客户端玩法分别通过
+`GameMode` catalog、`GameplayRegistry` catalog 和精确 room capability 装配；重复 ECS entity 会被幂等清理。
 
-原审阅目标已实施：`Main` 现在主要负责 Cocos shell 与组合，服务端玩法通过 `GameMode`、客户端玩法通过
-`GameplayRegistry`/`RoomController` 登记；玩法实例持有精确 room capability。`GameECS.addPlayer` 对重复
-collection key 幂等，`clear()` 不遗留 bitECS entity。
+复核缺口已收口：shared 提供 canonical `GameplayModeId` 与 validator，Game join 强制显式 `mode` 并按
+`sId + mode` 隔离撮合；服务端只在 `onCreate` 验证后实例化对应 mode，等待型 lifecycle hook 可观察，开局
+回滚与 dispose 均 exactly-once 清理。客户端 registration 同时拥有 factory/joiner，`RoomController` 在所有
+接管、拒绝、取消和失败路径等待同一个 dispose Promise，畸形 capability 也会释放可用的 leave ownership。
 
-复核备注：`apps/client/src/logic/rooms/idle/IdleGameplay.ts` 是只被 `apps/client/test/gameplayLifecycle.test.ts`
-使用的接缝 fixture（`IdleRoom` 为 `{ readonly kind: "idle-fixture" }` 字面量，不 join 任何房间），
-`apps/client/src` 内无引用，不参与运行时装配，不能作为「第二个玩法可接入」的端到端证明。
+`idle` 已通过服务端 `modes/catalog.ts`、客户端 `gameplay/catalog.ts` 和真实 `GameRoomTransport` 接入生产装配，
+同区同 mode 可合流、不同 mode 必隔离；它不依赖 `ballMove` factory，也不会写入 ballMove casual evidence。
+因此新增玩法只需增加 shared mode id、双端 mode/plugin 模块、room adapter 与各自 catalog 登记，不需要修改
+`Main`、`RoomClient`、`RoomController` 或通用 `GameRoom` transport。`GameECS.addPlayer` 对重复 collection key
+幂等，`clear()` 不遗留 bitECS entity。
 
-**完成标准**：新玩法自带 register 函数即可接入 `GameplayRegistry`/`RoomController`，不需要改 `RoomClient`
-或通用 loader；玩法 id、room joiner 与展示层仍在 `Main` 的组合根装配（`Main.ts:117-125`、`:160`），服务端
-`GameMode` 也只能由构造参数注入（`app.config.ts:25` 的 `defineRoom` 未传构造参数），因此接入第二个可进入
-的玩法仍需改 `Main` 与房间定义。重复 add 后 clear 的 world entity 为 0。
+保留边界：共享的 `GameRoomState`、Waiting/Playing/Settle 相位、两人开局与部分 reset/settle 仍以 ballMove
+Demo 为基线；`idle` 只是无 presentation 的最小 multi-mode 证明，不代表已交付完整第二玩法 UI 或通用多玩法
+状态模型。接入不同房间状态/结算语义的玩法仍需先扩展相应 shared Schema 与 mode 契约。
 
 ### P1-02 补齐 View、Logic 和异步页面生命周期 ✅
 

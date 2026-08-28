@@ -1,9 +1,9 @@
-import { getToken } from "../../core/http";
 import type { GameplayRoomJoiner } from "../../logic/gameplay/RoomController";
 import type {
     BallMovePlayerObserver,
     BallMoveRoom,
 } from "../../logic/rooms/ballMove/BallMoveGameplay";
+import { BALL_MOVE_GAMEPLAY_ID } from "../../logic/rooms/ballMove/BallMoveGameplay";
 import {
     S2C,
     type IGameRoomState,
@@ -11,7 +11,7 @@ import {
     type S2CPayloadMap,
 } from "../../shared/index";
 import { RoomClient } from "../RoomClient";
-import { getCurrentGameWsUrl, getCurrentServer } from "../serverSession";
+import { joinGameRoom } from "./GameRoomTransport";
 
 type MessageOff = () => void;
 
@@ -61,13 +61,7 @@ export function createBallMoveRoomJoiner(
 ): GameplayRoomJoiner<BallMoveRoom> {
     return {
         join(signal) {
-            const server = getCurrentServer();
-            if (!server) throw new Error("[ballMove] 尚未选择区服，不能进入战斗");
-            client.init(getCurrentGameWsUrl());
-            const ownership = client.joinGame({
-                token: getToken(),
-                sId: server.serverId,
-            }, signal);
+            const ownership = joinGameRoom(client, BALL_MOVE_GAMEPLAY_ID, signal);
             return {
                 ready: ownership.ready.then((room) => createBallMoveRoom(room, client)),
                 leave: () => ownership.leave(),

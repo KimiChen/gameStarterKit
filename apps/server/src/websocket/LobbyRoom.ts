@@ -9,10 +9,10 @@
 import { Room, type AuthContext, type Client } from "@colyseus/core";
 import {
   LOBBY_MSG_PUSH, LOBBY_MSG_RPC, PROTOCOL_VERSION,
-  ErrorCode as SharedErrorCode, isPlainRecord, validateLobbyPush, validateRoomJoinOptions,
+  ErrorCode as SharedErrorCode, isPlainRecord, validateLobbyPush, validateLobbyRoomJoinOptions,
   validateRpcEnvelope, validateRpcReply, WireValidationError,
   type IRpcEnvelope, type RpcErrCode,
-  type IRoomJoinOptions,
+  type ILobbyRoomJoinOptions,
 } from "@game/shared";
 import { groupAdmitsZone, normalizeSId } from "../core/infra/config";
 import { zoneCtx } from "../core/infra/keys";
@@ -180,12 +180,12 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
   }
 
   /** token 反查 uid + 严格校验（连接级）。⛔ 不接受客户端单独传 userId（09·G1）。 */
-  static async onAuth(token: string, options: IRoomJoinOptions | undefined, _context: AuthContext) {
-    let joinOptions: IRoomJoinOptions;
+  static async onAuth(token: string, options: ILobbyRoomJoinOptions | undefined, _context: AuthContext) {
+    let joinOptions: ILobbyRoomJoinOptions;
     try {
       // Colyseus forwards untrusted JSON here; validate the complete object before
       // any field-level checks so extra keys cannot silently alter admission semantics.
-      joinOptions = validateRoomJoinOptions(options);
+      joinOptions = validateLobbyRoomJoinOptions(options);
     } catch (error) {
       // A getter/Proxy failure is still malformed join input.  Normalize it
       // to the same bounded refusal instead of allowing a native TypeError to

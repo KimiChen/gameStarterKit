@@ -39,7 +39,7 @@ interface ActiveGameplay<TRoom, TInput> {
     context?: GameplayContext<TRoom>;
     startHookEntered: boolean;
     stopHookCalled: boolean;
-    disposeCalled: boolean;
+    disposePromise: Promise<void> | null;
     detachSignal: (() => void) | null;
     startPromise: Promise<GameplayStartResult>;
 }
@@ -56,9 +56,10 @@ export class RoomController<TRoom = unknown, TInput = unknown> {
     private generation = 0;
     private disposed = false;
     private lastStatus: GameplayControllerStatus = "idle";
+    private readonly disposedPlugins = new WeakMap<object, Promise<void>>();
 
-    constructor(private readonly joiner: GameplayRoomJoiner<TRoom>) {
-        if (!joiner || typeof joiner.join !== "function") {
+    constructor(private readonly joiner?: GameplayRoomJoiner<TRoom>) {
+        if (joiner !== undefined && (!joiner || typeof joiner.join !== "function")) {
             throw new TypeError("[RoomController] joiner.join 必须是函数");
         }
     }
@@ -76,18 +77,25 @@ export class RoomController<TRoom = unknown, TInput = unknown> {
     }
 
     /** 启动一个玩法；同一插件的并发启动合流，不同插件必须先 stop。 */
-    start(plugin: GameplayPlugin<TRoom, TInput>, signal?: AbortSignal): Promise<GameplayStartResult> {
+    start(
+        plugin: GameplayPlugin<TRoom, TInput>,
+        signal?: AbortSignal,
+        joinerOverride?: GameplayRoomJoiner<TRoom>,
+    ): Promise<GameplayStartResult> {
         if (!plugin || typeof plugin !== "object" || typeof plugin.start !== "function") {
-            return Promise.resolve({
+            const result: GameplayStartResult = {
                 status: "failed",
                 generation: this.generation,
                 pluginId: "",
                 error: new TypeError("[RoomController] 无效的 GameplayPlugin"),
-            });
+            };
+            return plugin && typeof plugin === "object"
+                ? this.rejectPlugin(plugin, result)
+                : Promise.resolve(result);
         }
         const id = plugin.id;
         if (typeof id !== "string" || id.trim().length === 0) {
-            return Promise.resolve({
+            return this.rejectPlugin(plugin, {
                 status: "failed",
                 generation: this.generation,
                 pluginId: String(id ?? ""),
@@ -96,14 +104,32 @@ export class RoomController<TRoom = unknown, TInput = unknown> {
         }
         const current = this.active;
         if (this.disposed) {
-            return Promise.resolve({ status: "disposed", generation: this.generation, pluginId: id });
+            return this.rejectPlugin(plugin, {
+                status: "disposed",
+                generation: this.generation,
+                pluginId: id,
+            });
         }
         if (current) {
             if (current.plugin === plugin && current.status === "starting") return current.startPromise;
             if (current.plugin === plugin && current.status === "running") {
                 return Promise.resolve({ status: "already-running", generation: current.generation, pluginId: id });
             }
-            return Promise.resolve({ status: "busy", generation: current.generation, pluginId: id });
+            return this.rejectPlugin(plugin, {
+                status: "busy",
+                generation: current.generation,
+                pluginId: id,
+            });
+        }
+
+        const joiner = joinerOverride ?? this.joiner;
+        if (!joiner || typeof joiner.join !== "function") {
+            return this.rejectPlugin(plugin, {
+                status: "failed",
+                generation: this.generation,
+                pluginId: id,
+                error: new TypeError("[RoomController] 未提供玩法 room joiner"),
+            });
         }
 
         const controller = new AbortController();
@@ -117,7 +143,7 @@ export class RoomController<TRoom = unknown, TInput = unknown> {
             cancelled: false,
             startHookEntered: false,
             stopHookCalled: false,
-            disposeCalled: false,
+            disposePromise: null,
             detachSignal: null,
             startPromise: undefined as unknown as Promise<GameplayStartResult>,
         };
@@ -146,18 +172,32 @@ export class RoomController<TRoom = unknown, TInput = unknown> {
         }
         let lease: RoomCapability<TRoom>;
         try {
-            lease = this.joiner.join(controller.signal);
-            if (!lease || typeof lease.leave !== "function" || !lease.ready || typeof lease.ready.then !== "function") {
+            const candidate = joiner.join(controller.signal) as unknown;
+            if (candidate && typeof candidate === "object"
+                && typeof (candidate as { leave?: unknown }).leave === "function") {
+                // Even a malformed capability may already own a physical room.
+                // Capture its usable leave hook before validating `ready` so the
+                // rejection path cannot leak that transport.
+                active.lease = candidate as RoomCapability<TRoom>;
+            }
+            if (!candidate || typeof candidate !== "object"
+                || typeof (candidate as { leave?: unknown }).leave !== "function"
+                || !(candidate as { ready?: unknown }).ready
+                || typeof (candidate as { ready?: { then?: unknown } }).ready?.then !== "function") {
                 throw new TypeError("[RoomController] joiner 必须返回带 ready/leave 的 room capability");
             }
+            lease = candidate as RoomCapability<TRoom>;
         } catch (error) {
             detachSignal();
             active.detachSignal = null;
             active.status = "failed";
             this.lastStatus = "failed";
             this.active = null;
-            void this.disposePlugin(active);
-            return Promise.resolve({ status: "failed", generation: active.generation, pluginId: id, error });
+            return (async (): Promise<GameplayStartResult> => {
+                await this.leaveActive(active);
+                await this.disposePlugin(active);
+                return { status: "failed", generation: active.generation, pluginId: id, error };
+            })();
         }
         active.lease = lease;
         const promise = this.runStart(active, detachSignal);
@@ -172,7 +212,8 @@ export class RoomController<TRoom = unknown, TInput = unknown> {
         signal?: AbortSignal,
     ): Promise<GameplayStartResult> {
         try {
-            return this.start(registry.create(id), signal);
+            const resolved = registry.resolveForStart(id);
+            return this.start(resolved.plugin, signal, resolved.joiner);
         } catch (error) {
             return Promise.resolve({
                 status: "failed",
@@ -334,13 +375,34 @@ export class RoomController<TRoom = unknown, TInput = unknown> {
     }
 
     private async disposePlugin(active: ActiveGameplay<TRoom, TInput>): Promise<void> {
-        if (active.disposeCalled || !active.plugin.dispose) return;
-        active.disposeCalled = true;
-        try {
-            await active.plugin.dispose();
-        } catch (error) {
-            console.error(`[RoomController] 插件 ${active.plugin.id} dispose 失败`, error);
-        }
+        if (!active.disposePromise) active.disposePromise = this.disposePluginInstance(active.plugin);
+        await active.disposePromise;
+    }
+
+    private async rejectPlugin(
+        plugin: GameplayPlugin<TRoom, TInput>,
+        result: GameplayStartResult,
+    ): Promise<GameplayStartResult> {
+        await this.disposePluginInstance(plugin);
+        return result;
+    }
+
+    private disposePluginInstance(plugin: GameplayPlugin<TRoom, TInput>): Promise<void> {
+        const existing = this.disposedPlugins.get(plugin);
+        if (existing) return existing;
+        // Install the shared promise before invoking extension code. A
+        // synchronous re-entry or a concurrent stop/runStart cleanup must wait
+        // for the same disposal rather than merely observing a boolean flag.
+        const disposal = Promise.resolve().then(async () => {
+            if (!plugin.dispose) return;
+            try {
+                await plugin.dispose();
+            } catch (error) {
+                console.error(`[RoomController] 插件 ${plugin.id} dispose 失败`, error);
+            }
+        });
+        this.disposedPlugins.set(plugin, disposal);
+        return disposal;
     }
 }
 

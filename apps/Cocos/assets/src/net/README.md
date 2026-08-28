@@ -2,7 +2,7 @@
 
 | 服务端 | 客户端通道 | 客户端逻辑 |
 |---|---|---|
-| `rooms/GameRoom` | `RoomClient.ts`（join / 输入上行 / 状态同步） | `logic/rooms/ballMove/` |
+| `rooms/GameRoom` | `RoomClient.ts` + `rooms/GameRoomTransport.ts` + mode adapter | `gameplay/catalog.ts` → `logic/rooms/<mode>/` |
 | `websocket/<域>/<接口>` | `WebSocketClient.ts`（rpc / rpcIdem / onPush） | 调用方在 page / rooms 皆可 |
 | 外部 WebPlatform Public HTTP | `http/account.ts`（开发登录）/ `http/area.ts`（选服） | `logic/page/` |
 | 游戏服 HTTP | `http/notice.ts`（公告） | `logic/page/` |
@@ -11,6 +11,8 @@
 
 注意：RoomClient 与 WebSocketClient 都走 websocket 协议——按「有无状态同步」区分，不按协议区分。
 XHR 底座与 token 在 `core/http.ts`；Lobby 写接口应使用 `rpcIdem`（`clientReqId` 生成一次、重试复用）。
+Lobby join 禁止 `mode`；Game join 必须显式携带 shared canonical `mode`。通用 transport 只持有物理 room
+ownership，各 mode adapter 再暴露自己的消息、状态和输入能力，默认登记集中在 `gameplay/catalog.ts`。
 
 区服 = 独立实例：目录返回的 `gameWsUrl` 是 Colyseus Client 的明确连接端点（SDK 会由它派生
 matchmaking HTTP URL），`gameHttpUrl` 仍只用于 Portal/游戏 HTTP 请求。目录响应中的 `hash` 只属于

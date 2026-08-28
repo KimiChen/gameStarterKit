@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { ErrorCode, PROTOCOL_VERSION } from "@game/shared";
+import { ErrorCode, GameplayModeId, PROTOCOL_VERSION } from "@game/shared";
 import { GameRoom } from "../src/rooms/GameRoom";
 import { LobbyRoom } from "../src/websocket/LobbyRoom";
 
@@ -16,6 +16,7 @@ for (const [standardToken, optionToken, label] of invalidTokenCases) {
         v: PROTOCOL_VERSION,
         sId: 0,
         token: optionToken,
+        mode: GameplayModeId.BallMove,
       }, undefined as never),
       (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.TokenExpired)),
     );
@@ -32,3 +33,14 @@ for (const [standardToken, optionToken, label] of invalidTokenCases) {
     );
   });
 }
+
+test("LobbyRoom auth：拒绝只属于 GameRoom 的 mode 撮合字段", async () => {
+  await assert.rejects(
+    LobbyRoom.onAuth("", {
+      v: PROTOCOL_VERSION,
+      sId: 0,
+      mode: GameplayModeId.Idle,
+    } as never, undefined as never),
+    (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.BadRequest)),
+  );
+});

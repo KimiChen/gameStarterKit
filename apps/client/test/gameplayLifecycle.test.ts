@@ -4,8 +4,10 @@ import {
     GameplayRegistry,
     RoomController,
     type GameplayPlugin,
+    type GameplayRoomJoiner,
     type RoomCapability,
 } from "../src/logic/gameplay";
+import type { BallMoveRoom } from "../src/logic/rooms/ballMove/BallMoveGameplay";
 import {
     createIdleGameplay,
     IdleGameplay,
@@ -13,6 +15,7 @@ import {
     type IdleInput,
     type IdleRoom,
 } from "../src/logic/rooms/idle/IdleGameplay";
+import { registerDefaultGameplays } from "../src/gameplay/catalog";
 
 interface Deferred<T> {
     readonly promise: Promise<T>;
@@ -38,6 +41,24 @@ function lease(ready: Promise<IdleRoom>): RoomCapability<IdleRoom> & { leaveCall
 
 const room = (): IdleRoom => ({ kind: "idle-fixture" });
 
+function trackedGameplay(
+    id = "idle",
+    disposal: Promise<void> = Promise.resolve(),
+): { plugin: GameplayPlugin<IdleRoom, IdleInput>; state: { disposeCalls: number } } {
+    const state = { disposeCalls: 0 };
+    return {
+        state,
+        plugin: {
+            id,
+            start() {},
+            async dispose() {
+                state.disposeCalls++;
+                await disposal;
+            },
+        },
+    };
+}
+
 test("GameplayRegistry：新增 idle 玩法只需登记 factory，id 与解绑具有 ownership", () => {
     const registry = new GameplayRegistry<IdleRoom, IdleInput>();
     const off = registerIdleGameplay(registry);
@@ -48,6 +69,177 @@ test("GameplayRegistry：新增 idle 玩法只需登记 factory，id 与解绑�
     off();
     assert.equal(registry.has("idle"), false);
     assert.throws(() => registry.create("idle"), /未登记/);
+});
+
+test("GameplayRegistry：玩法自带 joiner 可由无默认 transport 的 RoomController 启动", async () => {
+    const actualRoom: IdleRoom = { kind: "idle", roomId: "idle-room", sessionId: "idle-self" };
+    const capability = lease(Promise.resolve(actualRoom));
+    let joins = 0;
+    const registry = new GameplayRegistry<IdleRoom, IdleInput>();
+    registerIdleGameplay(registry, {
+        joiner: { join: () => { joins++; return capability; } },
+    });
+    const controller = new RoomController<IdleRoom, IdleInput>();
+
+    assert.deepEqual(await controller.startRegistered(registry, "idle"), {
+        status: "started",
+        generation: 1,
+        pluginId: "idle",
+    });
+    assert.equal(joins, 1);
+    assert.equal(controller.pluginId, "idle");
+    await controller.dispose();
+    assert.equal(capability.leaveCalls, 1);
+});
+
+test("GameplayRegistry：replace 使用 registration ownership，旧 disposer 不删除同 factory 新登记", () => {
+    const registry = new GameplayRegistry<IdleRoom, IdleInput>();
+    const firstJoiner = { join: () => lease(Promise.resolve(room())) };
+    const secondJoiner = { join: () => lease(Promise.resolve(room())) };
+    const oldOff = registry.register("idle", createIdleGameplay, { joiner: firstJoiner });
+    const newOff = registry.register("idle", createIdleGameplay, { replace: true, joiner: secondJoiner });
+
+    oldOff();
+    assert.equal(registry.has("idle"), true);
+    assert.strictEqual(registry.getJoiner("idle"), secondJoiner);
+    newOff();
+    assert.equal(registry.has("idle"), false);
+});
+
+test("GameplayRegistry：factory 重入 replace 时仍返回同一 registration 的 plugin/joiner 快照", () => {
+    const registry = new GameplayRegistry<IdleRoom, IdleInput>();
+    const oldJoiner = { join: () => lease(Promise.resolve(room())) };
+    const newJoiner = { join: () => lease(Promise.resolve(room())) };
+    registry.register("idle", () => {
+        registry.register("idle", createIdleGameplay, { replace: true, joiner: newJoiner });
+        return createIdleGameplay();
+    }, { joiner: oldJoiner });
+
+    const resolved = registry.resolveForStart("idle");
+    assert.strictEqual(resolved.joiner, oldJoiner, "plugin 与 joiner 必须来自 factory 调用前的同一快照");
+    assert.strictEqual(registry.getJoiner("idle"), newJoiner, "重入 replacement 仍成为后续登记");
+});
+
+test("RoomController：登记缺 joiner 时不构造无主 plugin", async () => {
+    let factoryCalls = 0;
+    const registry = new GameplayRegistry<IdleRoom, IdleInput>();
+    registry.register("idle", () => { factoryCalls++; return createIdleGameplay(); });
+    const controller = new RoomController<IdleRoom, IdleInput>({
+        join: () => lease(Promise.resolve(room())),
+    });
+
+    const result = await controller.startRegistered(registry, "idle");
+    assert.equal(result.status, "failed");
+    assert.equal(factoryCalls, 0, "startRegistered 不得回退到 controller 默认 joiner 或泄漏 plugin");
+});
+
+test("RoomController：所有未接管插件的拒绝路径都等待 exactly-once dispose", async () => {
+    const disposeGate = deferred<void>();
+    const missingJoiner = new RoomController<IdleRoom, IdleInput>();
+    const shared = trackedGameplay("idle", disposeGate.promise);
+    let firstSettled = false;
+    const first = missingJoiner.start(shared.plugin).then((result) => {
+        firstSettled = true;
+        return result;
+    });
+    const second = missingJoiner.start(shared.plugin);
+    await Promise.resolve();
+    assert.equal(shared.state.disposeCalls, 1, "并发拒绝必须合流到同一次 dispose");
+    assert.equal(firstSettled, false, "start 结果不得早于异步 dispose");
+    disposeGate.resolve();
+    assert.equal((await first).status, "failed");
+    assert.equal((await second).status, "failed");
+    assert.equal(shared.state.disposeCalls, 1);
+
+    const activeLease = lease(Promise.resolve(room()));
+    const busyController = new RoomController<IdleRoom, IdleInput>({ join: () => activeLease });
+    const active = createIdleGameplay();
+    await busyController.start(active);
+    const busy = trackedGameplay("other");
+    assert.equal((await busyController.start(busy.plugin)).status, "busy");
+    assert.equal(busy.state.disposeCalls, 1);
+    assert.equal(active.disposed, false, "busy 拒绝不能清理当前运行插件");
+    await busyController.dispose();
+
+    const disposedController = new RoomController<IdleRoom, IdleInput>();
+    await disposedController.dispose();
+    const registry = new GameplayRegistry<IdleRoom, IdleInput>();
+    const rejected = trackedGameplay();
+    registry.register("idle", () => rejected.plugin, {
+        joiner: { join: () => lease(Promise.resolve(room())) },
+    });
+    assert.equal((await disposedController.startRegistered(registry, "idle")).status, "disposed");
+    assert.equal(rejected.state.disposeCalls, 1);
+
+    const throwing = trackedGameplay();
+    const throwingController = new RoomController<IdleRoom, IdleInput>({
+        join: () => { throw new Error("join failed"); },
+    });
+    assert.equal((await throwingController.start(throwing.plugin)).status, "failed");
+    assert.equal(throwing.state.disposeCalls, 1, "同步 join 异常返回前必须完成 dispose");
+
+    let malformedLeaves = 0;
+    const malformed = trackedGameplay();
+    const malformedController = new RoomController<IdleRoom, IdleInput>({
+        join: () => ({
+            ready: null,
+            async leave() { malformedLeaves++; },
+        }) as never,
+    });
+    assert.equal((await malformedController.start(malformed.plugin)).status, "failed");
+    assert.equal(malformedLeaves, 1, "shape 校验失败仍必须释放已返回的 transport capability");
+    assert.equal(malformed.state.disposeCalls, 1);
+});
+
+test("gameplay catalog：后续模块登记失败会回滚先前登记", () => {
+    const registry = new GameplayRegistry<any, any>();
+    const idleJoiner = { join: () => lease(Promise.resolve(room())) };
+    const existingIdleOff = registry.register("idle", createIdleGameplay, { joiner: idleJoiner });
+    const ballJoiner = {
+        join: () => lease(Promise.resolve({} as never)),
+    } as unknown as GameplayRoomJoiner<BallMoveRoom>;
+    const presentation = { mount() {}, render() {}, unmount() {} };
+
+    assert.throws(
+        () => registerDefaultGameplays(registry, {
+            ballMovePresentation: presentation,
+            ballMoveJoiner: ballJoiner,
+            idleJoiner,
+        }),
+        /已登记/,
+    );
+    assert.equal(registry.has("ballMove"), false, "idle 登记失败后必须撤销本次 ballMove");
+    assert.equal(registry.has("idle"), true, "失败回滚不得删除调用前已有的 idle");
+    existingIdleOff();
+});
+
+test("gameplay catalog：默认模块可登记并由无默认 transport 的 controller 启动 idle", async () => {
+    const registry = new GameplayRegistry<any, any>();
+    const idleCapability = lease(Promise.resolve({ kind: "idle", roomId: "idle-real", sessionId: "self" }));
+    const idleJoiner = { join: () => idleCapability };
+    const ballJoiner = {
+        join: () => lease(Promise.resolve({} as never)),
+    } as unknown as GameplayRoomJoiner<BallMoveRoom>;
+    const unregister = registerDefaultGameplays(registry, {
+        ballMovePresentation: { mount() {}, render() {}, unmount() {} },
+        ballMoveJoiner: ballJoiner,
+        idleJoiner,
+    });
+    const controller = new RoomController<any, any>();
+
+    assert.deepEqual(registry.list(), ["ballMove", "idle"]);
+    assert.equal((await controller.startRegistered(registry, "idle")).status, "started");
+    assert.equal(controller.pluginId, "idle");
+    await controller.dispose();
+    assert.equal(idleCapability.leaveCalls, 1);
+    unregister();
+    assert.deepEqual(registry.list(), []);
+});
+
+test("GameplayRegistry：玩法 id 必须是 canonical wire identity", () => {
+    const registry = new GameplayRegistry<IdleRoom, IdleInput>();
+    assert.throws(() => registry.register(" idle ", createIdleGameplay), /规范/);
+    assert.throws(() => registry.register("idle/path", createIdleGameplay), /规范/);
 });
 
 test("RoomController：精确 room context、并发启动合流、输入/tick 与幂等 stop", async () => {

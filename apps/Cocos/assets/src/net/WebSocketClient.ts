@@ -21,7 +21,7 @@ import {
     PROTOCOL_VERSION,
     RoomName,
     type ForceLogoutReasonType,
-    type IRoomJoinOptions,
+    type ILobbyRoomJoinOptions,
     type IRpcEnvelope,
     type IRpcReply,
     type LobbyPushEnvelope,
@@ -37,7 +37,7 @@ import {
     validateRpcEnvelope,
     validateRpcReply,
     validateOrigin,
-    validateRoomJoinOptions,
+    validateLobbyRoomJoinOptions,
 } from "../shared/index";
 
 const RPC_CLIENT_TIMEOUT_MS = 15_000;
@@ -194,7 +194,7 @@ interface LobbySlot {
     readonly client: Colyseus.Client;
     readonly endpoint: string;
     readonly token: string;
-    readonly options: IRoomJoinOptions;
+    readonly options: ILobbyRoomJoinOptions;
     room: Colyseus.Room | null;
     ready: Promise<void>;
     closing: Promise<void> | null;
@@ -358,9 +358,9 @@ export class WebSocketClient {
         const waitMs = waitMsForJoin(split.control);
         // Matchmaking options cross the websocket boundary verbatim. Validate a
         // cloned copy so callers cannot mutate the identity after join starts.
-        const joinOptions = validateRoomJoinOptions(
+        const joinOptions = validateLobbyRoomJoinOptions(
             cloneJson({ ...split.options, v: PROTOCOL_VERSION }),
-        ) as IRoomJoinOptions;
+        ) as ILobbyRoomJoinOptions;
         const endpoint = this.endpoint;
         const client = this.client;
         const key = stableJson([endpoint, token, joinOptions])!;

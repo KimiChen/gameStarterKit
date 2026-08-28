@@ -14,12 +14,21 @@ export const RoomName = {
 
 export type RoomNameType = (typeof RoomName)[keyof typeof RoomName];
 
+/** Starter 中已装配的玩法 mode id；作为 join/matchmaking wire 值的双端单源。 */
+export const GameplayModeId = {
+    BallMove: "ballMove",
+    Idle: "idle",
+} as const;
+
+export type GameplayModeIdType = (typeof GameplayModeId)[keyof typeof GameplayModeId];
+
 /**
  * 双端协议版本。房间 onAuth 以此挡「服务端已升协议、旧包还在跑」的旧客户端
  * （灰度/热更混跑期的部署自检）；HTTP /version 也回带它供启动期探测。
  * Schema 字段增删、消息名/语义变更时 +1，双端随 sync:shared 同步。
  *
  * 版本流水（新版本在上）：
+ *   5 = join options 增加受校验的玩法 mode；同一 GameRoom 按 mode 隔离撮合并选择注册的 GameMode。
  *   4 = 删除未被服务端验证的可选 `listHash` join 字段；目录 hash 仍保留在 HTTP 响应中，但不伪装成进服闸。
  *   3 = WebPlatform 拆为独立 HTTP 服务：会话由外部 Public 契约签发，游戏服只做 Internal verify（提交 01fcbf5）。
  *   2 = M12e「会话按区」：单端语义作用域从账号收窄到 `(账号, 区)`。老包登录不带 `sId` ⇒ 拿到 s0 的 token，
@@ -27,9 +36,9 @@ export type RoomNameType = (typeof RoomName)[keyof typeof RoomName];
  *       被 `ProtocolMismatch` 明确拒掉（见 GameRoom.onAuth 注释）。
  *   1 = 首版。
  */
-export const PROTOCOL_VERSION = 4;
+export const PROTOCOL_VERSION = 5;
 
-/** 房间 join options（client.joinOrCreate 第二参）——双端契约。 */
+/** 两类房间共享的 join options 字段。 */
 export interface IRoomJoinOptions {
     /** 协议版本（PROTOCOL_VERSION）。缺省视为 1（首版客户端未带 v）。 */
     v?: number;
@@ -43,27 +52,66 @@ export interface IRoomJoinOptions {
     sId?: number;
 }
 
+/** Lobby 不分玩法；mode 对它是非法字段。 */
+export interface ILobbyRoomJoinOptions extends IRoomJoinOptions {}
+
+/** GameRoom 必须显式携带 mode，供 Colyseus 在 onAuth 前完成撮合隔离。 */
+export interface IGameRoomJoinOptions extends IRoomJoinOptions {
+    mode: string;
+}
+
 /**
  * Join options 的运行时校验。Colyseus 会把它们直接交给 onAuth，不能只依赖 TS
  * interface；未知字段、NaN/Infinity、越界区号及空 token 必须在进入连接流程前拒绝。
  */
-export function validateRoomJoinOptions(input: unknown): IRoomJoinOptions {
-    return guardWire("options", () => {
-        if (input === undefined) return {};
-        if (!isPlainRecord(input)) throw new WireValidationError("ROOM_OPTIONS_OBJECT", "options");
-        const value = input as PlainRecord;
-        assertExactKeys(value, [], ["v", "token", "sId"], "options");
+function validateRoomJoinBase(value: PlainRecord): IRoomJoinOptions {
+    const out: IRoomJoinOptions = {};
+    if (Object.prototype.hasOwnProperty.call(value, "v") && value.v !== undefined) {
+        out.v = finiteInteger(value.v, "options.v", 1, 0xffff);
+    }
+    if (Object.prototype.hasOwnProperty.call(value, "token") && value.token !== undefined) {
+        out.token = boundedString(value.token, "options.token", 1, 256);
+    }
+    if (Object.prototype.hasOwnProperty.call(value, "sId") && value.sId !== undefined) {
+        out.sId = finiteInteger(value.sId, "options.sId", 0, 0xffff);
+    }
+    return out;
+}
 
-        const out: IRoomJoinOptions = {};
-        if (Object.prototype.hasOwnProperty.call(value, "v") && value.v !== undefined) {
-            out.v = finiteInteger(value.v, "options.v", 1, 0xffff);
-        }
-        if (Object.prototype.hasOwnProperty.call(value, "token") && value.token !== undefined) {
-            out.token = boundedString(value.token, "options.token", 1, 256);
-        }
-        if (Object.prototype.hasOwnProperty.call(value, "sId") && value.sId !== undefined) {
-            out.sId = finiteInteger(value.sId, "options.sId", 0, 0xffff);
-        }
-        return out;
+function roomOptionsRecord(input: unknown): PlainRecord {
+    if (input === undefined) return {};
+    if (!isPlainRecord(input)) throw new WireValidationError("ROOM_OPTIONS_OBJECT", "options");
+    return input as PlainRecord;
+}
+
+export function validateGameplayModeId(value: unknown, path = "options.mode"): string {
+    const mode = boundedString(value, path, 1, 64);
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(mode)) {
+        throw new WireValidationError("ROOM_MODE", path);
+    }
+    return mode;
+}
+
+/** Shared/common validator retained for callers that intentionally handle only base keys. */
+export function validateRoomJoinOptions(input: unknown): IRoomJoinOptions {
+    return validateLobbyRoomJoinOptions(input);
+}
+
+export function validateLobbyRoomJoinOptions(input: unknown): ILobbyRoomJoinOptions {
+    return guardWire("options", () => {
+        const value = roomOptionsRecord(input);
+        assertExactKeys(value, [], ["v", "token", "sId"], "options");
+        return validateRoomJoinBase(value);
+    });
+}
+
+export function validateGameRoomJoinOptions(input: unknown): IGameRoomJoinOptions {
+    return guardWire("options", () => {
+        const value = roomOptionsRecord(input);
+        assertExactKeys(value, ["mode"], ["v", "token", "sId"], "options");
+        return {
+            ...validateRoomJoinBase(value),
+            mode: validateGameplayModeId(value.mode),
+        };
     });
 }

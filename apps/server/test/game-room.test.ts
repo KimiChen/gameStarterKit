@@ -8,7 +8,7 @@ import {
     PLAYER_INIT_HP,
     S2C,
     TICK_MS,
-    type IRoomJoinOptions,
+    type IGameRoomJoinOptions,
 } from "@game/shared";
 import {
     GameRoom,
@@ -16,10 +16,11 @@ import {
     MAX_ACCEPTED_INPUTS,
     type GameRoomRuntimeOptions,
 } from "../src/rooms/GameRoom";
+import { BALL_MOVE_GAME_MODE_ID } from "../src/rooms/GameMode";
 
 type FakeClient = {
     sessionId: string;
-    auth: { userId: string; sId: number };
+    auth: { userId: string; sId: number; mode: string };
     sent: Array<[string, unknown]>;
     send: (type: string, payload: unknown) => void;
 };
@@ -27,15 +28,15 @@ type FakeClient = {
 function fakeClient(sessionId: string, userId = sessionId, sId = 0): FakeClient {
     const client: FakeClient = {
         sessionId,
-        auth: { userId, sId },
+        auth: { userId, sId, mode: BALL_MOVE_GAME_MODE_ID },
         sent: [],
         send(type, payload) { this.sent.push([type, payload]); },
     };
     return client;
 }
 
-function options(): IRoomJoinOptions {
-    return { v: PROTOCOL_VERSION, sId: 0 };
+function options(): IGameRoomJoinOptions {
+    return { v: PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID };
 }
 
 function installLock(room: GameRoom, lock: () => Promise<void> = async () => undefined): void {
@@ -82,7 +83,7 @@ function simulationSnapshot(room: GameRoom): unknown {
 }
 
 test("GameRoom auth 只信标准 token，options.token 只能逐字匹配", async () => {
-    const base = { v: PROTOCOL_VERSION, sId: 0 };
+    const base = { v: PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID };
     await assert.rejects(
         GameRoom.onAuth("", { ...base, token: "options-only" }, undefined as never),
         (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.TokenExpired)),
@@ -500,7 +501,7 @@ test("dispose invalidates a pending match start and prevents a late lock from pu
     await Promise.resolve();
     assert.equal(room.state.phase, GamePhase.Waiting);
 
-    room.onDispose();
+    await room.onDispose();
     release();
     await assert.rejects(pendingJoin);
     assert.equal(room.state.phase, GamePhase.Waiting);
@@ -565,7 +566,7 @@ test("dispose still best-effort releases a late lock", async () => {
     };
     await join(room, fakeClient("a", "ua"));
     await assert.rejects(join(room, fakeClient("b", "ub")));
-    room.onDispose();
+    await room.onDispose();
     resolveLock();
     await new Promise<void>((resolve) => setImmediate(resolve));
     assert.equal(unlockCalls, 1, "销毁后迟到成功仍应释放外部锁");
@@ -590,7 +591,7 @@ test("dispose before timeout also releases a lock that settles late", async () =
     await join(room, fakeClient("a", "ua"));
     const pendingJoin = join(room, fakeClient("b", "ub"));
     await Promise.resolve();
-    room.onDispose();
+    await room.onDispose();
     resolveLock();
     await assert.rejects(pendingJoin);
     await new Promise<void>((resolve) => setImmediate(resolve));
@@ -607,7 +608,7 @@ test("disposed rooms ignore late leave callbacks, messages, ticks, and injected 
     const player = room.state.players.get("a")!;
     const before = { x: player.x, dirX: player.dirX, tick: room.state.tick, sent: a.sent.length };
 
-    room.onDispose();
+    await room.onDispose();
     const move = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Move];
     const ping = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Ping];
     assert.doesNotThrow(() => move(a, { dirX: 1, dirY: 0 }));
@@ -635,7 +636,7 @@ test("onLeave does not mutate a room after reconnection await resolves post-disp
         new Promise<void>((resolve) => { release = resolve; });
     const pendingLeave = room.onLeave(a as never, 4001);
     await Promise.resolve();
-    room.onDispose();
+    await room.onDispose();
     release();
     await pendingLeave;
     assert.equal(room.state.players.has("a"), true);

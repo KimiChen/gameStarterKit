@@ -15,7 +15,15 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
 
-import { C2S, ErrorCode, GamePhase, PROTOCOL_VERSION, RoomName, type IRoomJoinOptions } from "@game/shared";
+import {
+  C2S,
+  ErrorCode,
+  GamePhase,
+  GameplayModeId,
+  PROTOCOL_VERSION,
+  RoomName,
+  type IGameRoomJoinOptions,
+} from "@game/shared";
 import {
   consumeOnce,
   emitMatchEvidence,
@@ -116,7 +124,11 @@ function makeEvidence(matchId: string, sId = 0): MatchEvidence {
 
 test("GameRoom sId 只接受 0..65535 整数（网络输入先运行时校验）", async () => {
   for (const raw of [-1, 65536, 1.5, Number.NaN, Number.POSITIVE_INFINITY, "1", null]) {
-    const options = { v: PROTOCOL_VERSION, sId: raw } as unknown as IRoomJoinOptions;
+    const options = {
+      v: PROTOCOL_VERSION,
+      sId: raw,
+      mode: GameplayModeId.BallMove,
+    } as unknown as IGameRoomJoinOptions;
     await assert.rejects(
       GameRoom.onAuth("", options, undefined as never),
       (e: unknown) => e instanceof Error && e.message.includes(String(ErrorCode.WrongServer)),
@@ -126,13 +138,14 @@ test("GameRoom sId 只接受 0..65535 整数（网络输入先运行时校验）
 
   // 入口必须先走 shared room-options contract，未知键和预留字段的非法值不能静默放行。
   const malformed: readonly [unknown, number][] = [
-    [{ v: PROTOCOL_VERSION, extra: true }, ErrorCode.BadRequest],
-    [{ v: PROTOCOL_VERSION, unexpected: true }, ErrorCode.BadRequest],
-    [{ v: PROTOCOL_VERSION, token: "" }, ErrorCode.TokenExpired],
+    [{ v: PROTOCOL_VERSION, mode: GameplayModeId.BallMove, extra: true }, ErrorCode.BadRequest],
+    [{ v: PROTOCOL_VERSION, mode: GameplayModeId.BallMove, unexpected: true }, ErrorCode.BadRequest],
+    [{ v: PROTOCOL_VERSION, mode: GameplayModeId.BallMove, token: "" }, ErrorCode.TokenExpired],
+    [{ v: PROTOCOL_VERSION, sId: 0 }, ErrorCode.BadRequest],
   ];
   for (const [options, code] of malformed) {
     await assert.rejects(
-      GameRoom.onAuth("", options as IRoomJoinOptions, undefined as never),
+      GameRoom.onAuth("", options as IGameRoomJoinOptions, undefined as never),
       (e: unknown) => e instanceof Error && e.message.includes(String(code)),
       `非法 join options 应按 ${code} 拒绝：${JSON.stringify(options)}`,
     );
@@ -253,18 +266,18 @@ test("GameRoom 区服端到端：跨区 joinById 拒绝；同区开局 → 收�
       return { uid, token };
     };
 
-    // joinById 不经过 filterBy(["sId"])：先由 s1 正常 joinOrCreate，再拿合法 s2 会话指定进该房，
+    // joinById 不经过 filterBy(["sId", "mode"])：先由 s1 正常 joinOrCreate，再拿合法 s2 会话指定进该房，
     // 必须由 GameRoom.onJoin 比较 client.auth.sId 与房级 sId 拒绝。
     const owner = await mk("joinById-s1-owner", 1);
     const intruder = await mk("joinById-s2", 2);
     colyseus.sdk.auth.token = owner.token;
     const roomS1 = await colyseus.sdk.joinOrCreate(RoomName.Game, {
-      token: owner.token, v: PROTOCOL_VERSION, sId: 1,
+      token: owner.token, v: PROTOCOL_VERSION, sId: 1, mode: GameplayModeId.BallMove,
     });
     colyseus.sdk.auth.token = intruder.token;
     await assert.rejects(
       colyseus.sdk.joinById(roomS1.roomId, {
-        token: intruder.token, v: PROTOCOL_VERSION, sId: 2,
+        token: intruder.token, v: PROTOCOL_VERSION, sId: 2, mode: GameplayModeId.BallMove,
       }),
       (e: unknown) => e instanceof Error && e.message.includes(String(ErrorCode.WrongServer)),
       "持 s2 权威会话的玩家不得通过 joinById 进入 s1 房间",
@@ -276,13 +289,21 @@ test("GameRoom 区服端到端：跨区 joinById 拒绝；同区开局 → 收�
 
     // ⚠ 带 sId 建房：钉住 `GameRoom.onCreate` 真的读了它（房级区上下文，DUAL_MODE §4.1）——
     //   ⛔ 之前 onCreate 是 `_options` 整个丢弃，证据里的区永远是 0，这条路径无人覆盖。
-    const room = await colyseus.createRoom(RoomName.Game, { sId: 7 });
+    const room = await colyseus.createRoom(RoomName.Game, {
+      v: PROTOCOL_VERSION,
+      sId: 7,
+      mode: GameplayModeId.BallMove,
+    });
     // ⚠ 带 v：PROTOCOL_VERSION 自 M12e 起为 2，`connectTo` 的 options 会走 GameRoom.onAuth 的版本闸
     colyseus.sdk.auth.token = a.token;
-    const c1 = await colyseus.connectTo(room, { token: a.token, v: PROTOCOL_VERSION, sId: 7 });
+    const c1 = await colyseus.connectTo(room, {
+      token: a.token, v: PROTOCOL_VERSION, sId: 7, mode: GameplayModeId.BallMove,
+    });
     assert.equal(room.state.matchId, "", "等人期尚无 matchId");
     colyseus.sdk.auth.token = b.token;
-    const c2 = await colyseus.connectTo(room, { token: b.token, v: PROTOCOL_VERSION, sId: 7 });
+    const c2 = await colyseus.connectTo(room, {
+      token: b.token, v: PROTOCOL_VERSION, sId: 7, mode: GameplayModeId.BallMove,
+    });
     c1.onMessage("*", () => { });
     c2.onMessage("*", () => { });
 

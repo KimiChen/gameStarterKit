@@ -59,7 +59,7 @@
     {
       "id": "gameplay-boundary",
       "category": "core",
-      "defaultEntry": "apps/client/src/logic/gameplay/GameplayRegistry.ts",
+      "defaultEntry": "apps/client/src/gameplay/catalog.ts",
       "sourceOfTruth": "apps/client/src/logic/gameplay",
       "wireBoundary": "apps/client/src/net/RoomClient.ts",
       "verification": [{ "kind": "root", "script": "test:client" }],

@@ -20,7 +20,7 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
 import {
-  ErrorCode, LOBBY_MSG_RPC, PROTOCOL_VERSION, RoomName, UserRpc,
+  ErrorCode, GameplayModeId, LOBBY_MSG_RPC, PROTOCOL_VERSION, RoomName, UserRpc,
   type IRoomJoinOptions,
 } from "@game/shared";
 import { server } from "../../src/app.config";
@@ -207,21 +207,30 @@ test("缺 sId join：auth.sId=0，大厅建角/写 RPC 落基础前缀（大混�
   await room.leave();
 });
 
-test("GameRoom 撮合按区隔离：不同 sId ⛔ 不共房；同 sId 才合流（filterBy(['sId'])）", async () => {
-  // ⚠ 各自按要进的区签会话（M12e）：a/c 进 s1、b 进 s2
-  const a = await makeAcct("gz-a", 1), b = await makeAcct("gz-b", 2), c = await makeAcct("gz-c", 1);
-  const join = async (token: string, sId: number) => {
+test("GameRoom 撮合按区和 mode 隔离：同区同玩法才合流", async () => {
+  // ⚠ 各自按要进的区签会话（M12e）：a/c/d/e 进 s1、b 进 s2。
+  const a = await makeAcct("gz-a", 1);
+  const b = await makeAcct("gz-b", 2);
+  const c = await makeAcct("gz-c", 1);
+  const d = await makeAcct("gz-d-idle", 1);
+  const e = await makeAcct("gz-e-idle", 1);
+  const join = async (token: string, sId: number, mode: string) => {
     colyseus.sdk.auth.token = token;
-    return colyseus.sdk.joinOrCreate(RoomName.Game, { v: PROTOCOL_VERSION, sId });
+    return colyseus.sdk.joinOrCreate(RoomName.Game, { v: PROTOCOL_VERSION, sId, mode });
   };
-  const r1 = await join(a.token, 1);
-  const r2 = await join(b.token, 2);
-  const r3 = await join(c.token, 1);
+  const joined: Awaited<ReturnType<typeof join>>[] = [];
   try {
+    const r1 = await join(a.token, 1, GameplayModeId.BallMove); joined.push(r1);
+    const r4 = await join(d.token, 1, GameplayModeId.Idle); joined.push(r4);
+    assert.notEqual(r4.roomId, r1.roomId, "两个未满房同区不同玩法也不得共享 GameRoom");
+    const r3 = await join(c.token, 1, GameplayModeId.BallMove); joined.push(r3);
+    const r5 = await join(e.token, 1, GameplayModeId.Idle); joined.push(r5);
+    const r2 = await join(b.token, 2, GameplayModeId.BallMove); joined.push(r2);
     assert.notEqual(r1.roomId, r2.roomId, "1 区与 2 区**不得**撮合进同一场对局（⛔ 静默混区）");
     assert.equal(r3.roomId, r1.roomId, "同区正常合流（撮合未被过度收紧）");
+    assert.equal(r5.roomId, r4.roomId, "同区 idle 也必须命中自己的未满房");
   } finally {
-    await Promise.all([r1.leave(), r2.leave(), r3.leave()].map((p) => p.catch(() => {})));
+    await Promise.all(joined.map((room) => room.leave().catch(() => {})));
   }
 });
 

@@ -11,9 +11,10 @@ import {
     C2S,
     S2C,
     PROTOCOL_VERSION,
+    GameplayModeId,
     type C2SPayloadMap,
     type IGameRoomState,
-    type IRoomJoinOptions,
+    type IGameRoomJoinOptions,
     type IPingReq,
     type IMoveReq,
     type ICastSkillReq,
@@ -27,7 +28,7 @@ import {
     validateOrigin,
     validateC2SPayload,
     validateGameRoomState,
-    validateRoomJoinOptions,
+    validateGameRoomJoinOptions,
     validateS2CPayload,
 } from "../shared/index";
 import { notifyBattleLost } from "./session";
@@ -543,8 +544,8 @@ export class RoomClient {
         // timeout must fail atomically; otherwise an exception here would leave
         // an owner in the slot with no timer or abort listener to release it.
         const waitMs = waitMsForJoin(split.control);
-        const joinOptions = validateRoomJoinOptions(
-            cloneJson({ ...split.options, v: PROTOCOL_VERSION }),
+        const joinOptions = validateGameRoomJoinOptions(
+            cloneJson({ mode: GameplayModeId.BallMove, ...split.options, v: PROTOCOL_VERSION }),
         );
         const endpoint = this.endpoint;
         const client = this.client;
@@ -673,7 +674,7 @@ export class RoomClient {
     private async doJoin(
         slot: RoomSlot,
         client: Colyseus.Client,
-        joinOptions: IRoomJoinOptions,
+        joinOptions: IGameRoomJoinOptions,
     ): Promise<Colyseus.Room<IGameRoomState>> {
         let room: Colyseus.Room<IGameRoomState>;
         try {

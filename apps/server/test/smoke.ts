@@ -17,6 +17,7 @@ import {
     ApiPath,
     C2S,
     ForceLogoutReason,
+    GameplayModeId,
     PROTOCOL_VERSION,
     RoomName,
     S2C,
@@ -160,6 +161,7 @@ async function main(): Promise<void> {
             v: PROTOCOL_VERSION,
             token: "forged-opaque-token",
             sId: serverId,
+            mode: GameplayModeId.BallMove,
         });
     } catch {
         forgedRejected = true;
@@ -184,6 +186,7 @@ async function main(): Promise<void> {
         v: PROTOCOL_VERSION,
         token: login.accessToken,
         sId: serverId,
+        mode: GameplayModeId.BallMove,
     });
     check("strict join GameRoom", room.sessionId.length > 0, room.roomId);
 
@@ -262,6 +265,7 @@ async function main(): Promise<void> {
             v: PROTOCOL_VERSION,
             token: login.accessToken,
             sId: serverId,
+            mode: GameplayModeId.BallMove,
         });
     } catch {
         oldTokenRejected = true;
@@ -283,6 +287,7 @@ async function main(): Promise<void> {
             v: PROTOCOL_VERSION,
             token: revokeLogin.accessToken,
             sId: serverId,
+            mode: GameplayModeId.BallMove,
         });
     } catch {
         revokedTokenRejected = true;

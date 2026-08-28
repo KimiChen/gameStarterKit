@@ -152,7 +152,7 @@ export const normalizeSId = (raw: unknown): number | null => {
  *
  * ⚠ **为什么区服下缺 sId 也要拒**（M12d 评审收紧）：放行会造成两处**静默**错误 ——
  * ① `LobbyRoom` 取 `auth.sId = sId ?? 0` ⇒ 该玩家整局大厅数据落**基础前缀**而非 `s{sId}_`（串前缀）；
- * ② `GameRoom` 的 `filterBy(["sId"])` 只对**含** sId 的 join 生效 ⇒ 缺 sId 者会被撮合进任意区的房（混区）。
+ * ② `GameRoom` 的 `filterBy(["sId", "mode"])` 只对**含** sId 的 join 生效 ⇒ 缺 sId 者会被撮合进任意区的房（混区）。
  * 两者都不会触发 `keys.ts` 的 fail-fast（战斗路径不碰 per-zone 键），只能在此拦。
  */
 export const groupAdmitsZone = (sId: number | undefined): boolean =>

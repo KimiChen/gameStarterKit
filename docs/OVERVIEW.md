@@ -15,8 +15,9 @@ gameStarterKit 是客户端、服务端和 shared 共同演进的 TypeScript 游
 - `apps/art` 负责 FairyGUI 设计源。
 - 外部身份服务只通过锁定的 HTTP 契约参与本地示例链路。
 
-当前 `ballMove` 是演示玩法，不是通用玩法实现。框架的可复用部分是目录边界、同步工具、契约、
-网络接缝、视图组织和服务端一致性原语。
+当前 `ballMove` 是默认演示玩法，不是通用玩法实现；`idle` 是复用真实房间 transport/lifecycle 的最小第二
+mode 证明，不包含完整 UI 或玩法规则。框架的可复用部分是目录边界、同步工具、契约、网络接缝、视图组织
+和服务端一致性原语。
 
 ## 2. 目录与源码真相
 
@@ -86,6 +87,7 @@ apps/client/src
 客户端分成：
 
 - `view/`：允许依赖 `cc` 和 `fairygui-cc`，只做节点绑定、事件转发和数据搬运。
+- `gameplay/`：默认玩法 catalog；把每个玩法自己的 factory、room joiner 与 presentation 组合登记。
 - `logic/`：不依赖引擎/UI，承载页面行为和玩法规则，便于无头测试。
 - `net/`：房间、RPC 和 HTTP 的传输适配。
 - `core/`：HTTP 底座、生成的本地开发配置和宿主环境兼容桥。
@@ -127,7 +129,21 @@ stream 坏条目处置和热档 schema 迁移等剩余缺口及其验收标准�
 9. 运行本地类型检查和相关测试
 ```
 
-### 4.2 FairyGUI 页面
+### 4.2 新玩法
+
+```text
+shared 登记 canonical mode id
+  → server modes/<Mode> + modes/catalog.ts
+  → client logic/rooms/<mode> + net/rooms/<Mode>Room.ts
+  → client gameplay/catalog.ts
+  → sync:shared / sync:client + 双端 mode/lifecycle 测试
+```
+
+`GameplayRegistry` 让 factory 与 mode-owned joiner 同属一个 registration；`RoomController` 只接管一次启动的
+精确 room capability。服务端 `GameRoom` 按已验证的 `mode` 延迟创建对应 `GameMode`，撮合同时按 `sId` 和
+`mode` 隔离。新增玩法不应改通用 RoomClient、RoomController 或 GameRoom transport。
+
+### 4.3 FairyGUI 页面
 
 ```text
 FairyGUI 编辑设计源
@@ -137,7 +153,7 @@ FairyGUI 编辑设计源
   → 本地契约测试与 Creator 预览
 ```
 
-### 4.3 外部身份契约
+### 4.4 外部身份契约
 
 ```text
 更新精确锁定的契约依赖

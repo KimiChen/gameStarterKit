@@ -42,8 +42,8 @@ npm run sync:shared
 [外部身份服务开发边界](WEBPLATFORM.md) §5）`Main.start()` 直接抛错，后续的会话事件订阅与登录页都不会执行。
 
 目录中的 `gameHttpUrl` 与 `gameWsUrl` 是两个独立、不可互相推导的端点：前者用于游戏 HTTP 请求，后者
-直接传给 Colyseus `Client`。Lobby/Game join 只携带协议版本、会话 token 和目标区号；目录响应中的
-`hash` 不会被伪装成服务端准入校验。
+直接传给 Colyseus `Client`。Lobby join 只允许 `v/token/sId`；Game join 还必须携带 shared 定义的 canonical
+`mode`，用于撮合隔离和玩法选择。目录响应中的 `hash` 不会被伪装成服务端准入校验。
 目录刷新成功后保留仍存在的当前 `serverId`；当前区消失才按默认规则回退，刷新失败则保留完整旧快照。
 
 ## 2. 源码与工程壳
@@ -53,6 +53,7 @@ apps/client/src/
 ├── Main.ts             Cocos 组件入口与 Demo 编排
 ├── designSpec.ts       设计分辨率数值真源（750×1624）
 ├── core/               HTTP 底座、生成的开发配置与宿主环境桥
+├── gameplay/           默认玩法 catalog 与组合登记
 ├── lib/                锁定的第三方技术依赖
 ├── logic/              引擎无关页面与玩法行为
 ├── net/                Room、RPC 与 HTTP 适配
@@ -86,6 +87,12 @@ apps/Cocos/
 - 不自行创建网络单例。
 
 页面行为通过依赖注入连接 HTTP/RPC/View port，因此可在 Node 环境无头测试。
+
+玩法通过 `logic/gameplay/GameplayRegistry` 登记 factory 与该玩法自己的 room joiner，
+`RoomController.startRegistered` 取得同一 registration 的快照后接管精确 room capability。默认组合点是
+`gameplay/catalog.ts`：`ballMove` 带 Cocos presentation，`idle` 是无 presentation 的最小真实
+transport/lifecycle 证明。新增玩法应扩展自己的 logic、room adapter 和 catalog 登记，不修改通用
+`RoomClient`、`RoomController` 或 `Main` 的启动流程。
 
 ### View
 
@@ -219,6 +226,10 @@ apps/art/fairygui 中修改设计源
 “导出”在本文中只指把设计源转换为本地开发资源。
 
 ## 7. 网络层
+
+GameRoom 的通用 join/leave ownership 位于 `net/rooms/GameRoomTransport.ts`；`BallMoveRoom.ts`、
+`IdleRoom.ts` 只把一个已捕获的物理 room 适配成各玩法能力。`Main.gameplayId` 选择 catalog 中的玩法，
+adapter 必须把对应 `mode` 传给 Game join，不能依赖服务端默认值。
 
 ### RoomClient
 

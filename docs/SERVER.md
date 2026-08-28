@@ -174,12 +174,14 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
 
 ## 5. GameRoom
 
-`GameRoom` 是 `ballMove` + 技能伤害的开发 Demo，当前展示：
+`GameRoom` 是以 `ballMove` Schema/phase 为基线的实时房间 shell。生产 catalog 已登记默认 `ballMove` 与最小
+`idle` mode；前者运行移动/技能 Demo，后者用于证明同一 transport/lifecycle 可选择第二个真实玩法。当前展示：
 
 - WebPlatform strict session verify、协议版本与区号复核。
-- `filterBy(["sId"])` 的撮合隔离及房内再次校验。
+- `filterBy(["sId", "mode"])` 的撮合隔离及房内再次校验；Game join 的 `mode` 必填且由 shared 校验。
 - Colyseus Schema 状态、服务端逻辑帧移动、技能公式、聊天和重连宽限。
-- 两名玩家后进入 Playing、收局后 best-effort 写 match evidence。
+- 两名玩家后进入 Playing；只有显式声明兼容通用 casual evidence 的 mode 才在收局后 best-effort 写证据，
+  `idle` 不会污染 `ballMove` 战绩。
 - onCreate 拒绝非法区号（WrongServer），同一 userId 禁止重复入座（AlreadyInRoom）。
 
 它不是通用玩法层。当前 Demo 已收口以下边界：
@@ -191,11 +193,13 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
   与 fixed-step 时钟。
 - Waiting → Playing 的锁定是 awaited 的；失败会回滚状态并尝试 `unlock()`，连回滚也失败时关闭房间，不会
   留着一个已公开但未持锁的 Playing 房。
+- mode 在 `onCreate` 验证 options 后才实例化；`onMatchStart`、`onLeave`、`onDispose` 可等待且失败被观察，
+  admission 后开局失败会 exactly-once 归还该 client 的 mode 资源。
 - session → user 双向索引在加入、离开和 Waiting 回滚路径统一维护；断线宽限成功不会提前记入死亡序。
 
 仍有以下明确限制：
 
-- evidence 的写入是 fire-and-forget；Redis 失败返回 `null`，不会阻止收局。
+- `ballMove` evidence 的写入是受进程任务跟踪的 detached best-effort 操作；Redis 失败返回 `null`，不会阻止收局。
 - accepted input 序列目前只保存在房间内存中，未随 match evidence 发出；现有 evidence 字段不足以宣称可
   确定性重放整局。
 

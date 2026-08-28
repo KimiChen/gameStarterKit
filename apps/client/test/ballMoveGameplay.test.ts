@@ -114,10 +114,13 @@ test("ballMove plugin：registry 装配后由精确 room 驱动监听、输入�
         async leave() { leaveCalls++; },
     };
     const registry = new GameplayRegistry<BallMoveRoom, BallMoveInput>();
-    registerBallMoveGameplay(registry, { presentation, ecs, now: () => 1_100 });
-    const controller = new RoomController<BallMoveRoom, BallMoveInput>({
-        join: () => capability,
+    registerBallMoveGameplay(registry, {
+        presentation,
+        ecs,
+        now: () => 1_100,
+        joiner: { join: () => capability },
     });
+    const controller = new RoomController<BallMoveRoom, BallMoveInput>();
 
     assert.deepEqual(registry.list(), [BALL_MOVE_GAMEPLAY_ID]);
     assert.deepEqual(await controller.startRegistered(registry, BALL_MOVE_GAMEPLAY_ID), {

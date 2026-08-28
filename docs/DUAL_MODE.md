@@ -76,8 +76,8 @@ freeze worker 没有完整的区枚举和 `zoneCtx`，archive 表也缺 `server_
 
 ## 4.1 GameRoom 区隔离
 
-`app.config.ts` 用 `filterBy(["sId"])` 隔离常规 `joinOrCreate`；`GameRoom.onAuth` 规范化并校验区号，
-`onJoin` 再比较认证区和房级 `sId`，兜住 `joinById`。房间把该值作为常量写入 match evidence。
+`app.config.ts` 用 `filterBy(["sId", "mode"])` 隔离常规 `joinOrCreate`；`GameRoom.onAuth` 规范化并校验区号
+与玩法，`onJoin` 再比较认证值和房级 `sId`/`mode`，兜住 `joinById`。房间把区号写入 match evidence。
 
 这只保证当前 Demo 的房间内不静默混区，不代表本项目提供多区拓扑或容量能力。GameRoom 的其他限制见
 [SERVER §5](SERVER.md#5-gameroom)。

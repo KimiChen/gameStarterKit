@@ -2,11 +2,13 @@ import type {
     GameplayContext,
     GameplayPlugin,
     GameplayStopReason,
+    GameplayRoomJoiner,
 } from "../../gameplay/index";
 import type { GameplayRegistry } from "../../gameplay/GameplayRegistry";
 import {
     MAP_HEIGHT,
     MAP_WIDTH,
+    GameplayModeId,
     distance,
     normalize,
     type IChatRes,
@@ -19,7 +21,7 @@ import {
 import { GameECS } from "./GameECS";
 import { PlayerModel } from "./GameComps";
 
-export const BALL_MOVE_GAMEPLAY_ID = "ballMove";
+export const BALL_MOVE_GAMEPLAY_ID = GameplayModeId.BallMove;
 
 export type BallMoveInput =
     | { readonly type: "target"; readonly x: number; readonly y: number }
@@ -66,6 +68,8 @@ export interface BallMoveGameplayOptions {
     readonly presentation: BallMovePresentation;
     readonly ecs?: GameECS;
     readonly now?: () => number;
+    /** Optional module-owned transport registration for app composition. */
+    readonly joiner?: GameplayRoomJoiner<BallMoveRoom>;
 }
 
 const ARRIVE_RADIUS = 24;
@@ -277,5 +281,9 @@ export function registerBallMoveGameplay(
     registry: GameplayRegistry<BallMoveRoom, BallMoveInput>,
     options: BallMoveGameplayOptions,
 ): () => void {
-    return registry.register(BALL_MOVE_GAMEPLAY_ID, () => createBallMoveGameplay(options));
+    return registry.register(
+        BALL_MOVE_GAMEPLAY_ID,
+        () => createBallMoveGameplay(options),
+        options.joiner ? { joiner: options.joiner } : {},
+    );
 }
