@@ -39,6 +39,9 @@ apps/client/temp/
 apps/client/profiles/
 apps/client/extensions/
 
+# 说明站已迁移到独立仓库；本地 Sites checkout 可以留在原路径，但不属于本 monorepo
+apps/website/
+
 # FairyGUI 编辑器工程缓存(.objs：metas + workspace.json，编辑器可再生，勿提交)；
 # .fairy/assets/settings 是源须提交，仅 .objs 忽略。无路径前缀=匹配任意 FairyGUI 工程。
 .objs/
