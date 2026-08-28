@@ -1831,31 +1831,31 @@
       "path": "apps/client/src/view/AreaListView.ts",
       "pkg": "View_AreaList_AreaList",
       "comp": "AreaList",
-      "generatedHash": "5922f61fb1122bf81916b41253b9c96f8ca3488df81d670dd7a29757d0c41cbb"
+      "generatedHash": "6887a32400f9e7a03c8f27913809adae8382c400c049ce4bd6a077477c43892f"
     },
     {
       "path": "apps/client/src/view/ConfirmView.ts",
       "pkg": "View_SharedWidget_Confirm",
       "comp": "Confirm",
-      "generatedHash": "5dc703299cd528f6a1f737f72e3990c307b165ce7188a44ac748bd9ef908e02c"
+      "generatedHash": "c7018a9f070b662ae166e3d2dc7a8a4aeed5d00e3fb63892eb64fd94c82d4314"
     },
     {
       "path": "apps/client/src/view/HomeView.ts",
       "pkg": "View_Home_Home",
       "comp": "Home",
-      "generatedHash": "fb86230f9c1319aae4e796d16add1aaf91d77a8a726932faa2696d43389dfded"
+      "generatedHash": "5484fe55ff8476946aa84cef63c4a84db74eb21ba0a06cf3295d909e9563ef00"
     },
     {
       "path": "apps/client/src/view/LoginNoticeView.ts",
       "pkg": "View_AreaList_LoginNotice",
       "comp": "LoginNotice",
-      "generatedHash": "ce4fe339ff109b70a70a9fe1de64888f034d44b4334ab1e444d892a73f39e293"
+      "generatedHash": "add78fc68cdad498de7415411c34a11916da975aa1faf11e6f816e0341eaf3c6"
     },
     {
       "path": "apps/client/src/view/LoginView.ts",
       "pkg": "View_AreaList_Login",
       "comp": "Login",
-      "generatedHash": "af097a047f6b313785ce3c9bf6fb6af6e58c506ac4f225bfa5747c6d17c4939c"
+      "generatedHash": "c3bbfd3329096a579fec46eb38c4301e9ef1eae9bd3bb47e82aac7fa2c007848"
     }
   ]
 }
