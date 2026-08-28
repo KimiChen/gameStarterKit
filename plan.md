@@ -156,24 +156,17 @@ owner」的注释在该路径下不成立。
 
 状态：已完成。`GameRoom` 的 C2S/S2C runtime validator、phase gate、awaited start lock、全量 reset、
 fixed-step clock 和双向身份索引均已落地；`game-room.test.ts` 覆盖故障与确定性 fixture。
-复核备注：默认播种仍带 `Date.now()` 分量（同毫秒碰撞已由 seed 序列消除、seed 写入证据、测试可注入）；
-「同毫秒建房有确定结果」由机制保证，暂无专项用例。
 
-复核备注：「任意等待历史后开局状态完全一致」由 admission/match 双 RNG 流与 `initializeMatchState()`
-（`GameRoom.ts:956-988`）全量复位保证，且只覆盖模拟相关字段——`player.name` 取自 admission 流
-（`GameRoom.ts:710`）且开局不重置，不同等待历史下会不同；现有用例只有单房字段复位（不含 x/y）与同等待
-历史的两房对照，尚无「不同等待历史 → 相同开局状态」的对照用例。
+复核备注（已收口）：默认播种用 `Date.now()` 与进程内单调序列组合；专项测试冻结同一毫秒连续构造 8 个
+真实 `GameRoom`，断言 seed 逐一推进、互不重复，并把输出 seed 重新注入构造器验证可精确回放。不同等待历史
+的对照测试则在一侧额外执行 observer join/ping/leave，随后比较相同 seed 下的完整正式模拟快照，并继续执行
+move 与消费随机数的技能帧，钉住 admission/match RNG 隔离（展示昵称不属于正式模拟快照）。
 
-复核备注：每客户端消息预算已实现（`GameRoom.ts:583-594`，按 sessionId 分桶；上限常量
-`GAME_ROOM_MAX_MESSAGES_PER_SECOND = 60`，`GameRoom.ts:73`）；现有用例（`game-room.test.ts:598`）只用单
-客户端打满 60 条，其断言仅检查回包数量增长，未区分受控错误与正常 Pong，也无跨客户端隔离断言——
-「每客户端」与「超预算被拒」目前均由实现保证。
-
-已知边界：accepted input 序列只在开局（`GameRoom.ts:965`）、回滚（`:1000`）与 dispose（`:793`）清空，单局
-内没有长度上限（对比 `MAX_INPUTS_PER_SOURCE=256`、`MAX_CATCH_UP_STEPS=120`）；收局条件为存活 ≤1 且无
-对局时长上限，两名玩家只移动不放技能的对局不会结算，房间可长期存活并让该数组按每客户端 60 条/秒持续
-增长。`getAcceptedInputs()`（`:1099-1101`）每次全量深拷贝，成本随之放大（该入口在 `apps/server/src` 内无
-生产调用点）。后续需要给 `recordInput` 加上界或改为分段落盘。
+复核备注（已收口）：消息预算测试直接验证同一 session 前 60 条均为正常 Pong、第 61 条只返回受控
+`BadRequest`、另一 session 不受影响且下一秒窗口恢复。accepted input evidence 使用生产上限
+`MAX_ACCEPTED_INPUTS = 16_384`；测试覆写为 1 后断言第二条输入既不增长 evidence，也不产生玩法副作用并
+返回 `BadRequest`，因此长期房间不会再无界增长该数组。玩法本身是否增加对局时长上限仍是规则设计决策，
+不属于本条内存有界性缺陷。
 
 **原审阅证据（已收口）**
 

@@ -373,6 +373,28 @@ test("same seed + fixed steps + injected inputs produce identical state", async 
     assert.equal(left.getAcceptedInputs().length, 1);
 });
 
+test("default seed sequence keeps rooms created in the same millisecond distinct and replayable", (t) => {
+    const fixedNow = 0x12345678;
+    t.mock.method(Date, "now", () => fixedNow);
+
+    // Exercise the production constructor path: no injected seed means every
+    // room must consume the module-level sequence even when wall time is equal.
+    const seeds = Array.from({ length: 8 }, () => new GameRoom().seedForReplay);
+    assert.equal(new Set(seeds).size, seeds.length, "same-millisecond rooms must not share a seed");
+
+    const sequence = seeds.map((seed) => (seed ^ fixedNow) >>> 0);
+    for (let index = 1; index < sequence.length; index++) {
+        assert.equal(
+            sequence[index],
+            (sequence[0] + index) >>> 0,
+            "default seed must consume one deterministic sequence value per room",
+        );
+    }
+
+    const replay = new GameRoom({ seed: seeds[0] });
+    assert.equal(replay.seedForReplay, seeds[0], "emitted seed must reproduce through the injected replay path");
+});
+
 test("same seed keeps formal match state deterministic across different waiting histories", async () => {
     const make = async (withWaitingHistory: boolean): Promise<GameRoom> => {
         const room = new GameRoom({
