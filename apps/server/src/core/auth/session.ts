@@ -28,8 +28,27 @@ import { ForceLogoutReason } from "@game/shared";
 const sha256 = (s: string): string => createHash("sha256").update(s).digest("hex");
 /** token → 组 sess 里存的 hash（在线表用它做顶号判别位：踢时排除新登录态那条连接）。 */
 export const tokenHashOf = (token: string): string => sha256(token);
-const safeEqualHex = (a: string, b: string): boolean =>
-  a.length === b.length && timingSafeEqual(Buffer.from(a, "hex"), Buffer.from(b, "hex"));
+const TOKEN_HASH_RE = /^[0-9a-f]{64}$/;
+
+/** Compare persisted token hashes without letting corrupt hex escape as RangeError. */
+export const safeEqualHex = (a: string, b: string): boolean => {
+  // Redis is an externalized storage boundary.  Buffer.from(..., "hex")
+  // silently truncates at malformed input, and timingSafeEqual throws when
+  // the resulting buffers differ in length; both behaviours are wrong for an
+  // authentication predicate.  Reject anything outside tokenHashOf's exact
+  // lowercase SHA-256 representation before comparing.
+  if (typeof a !== "string" || typeof b !== "string"
+    || !TOKEN_HASH_RE.test(a) || !TOKEN_HASH_RE.test(b)) {
+    return false;
+  }
+  try {
+    const left = Buffer.from(a, "hex");
+    const right = Buffer.from(b, "hex");
+    return left.length === right.length && timingSafeEqual(left, right);
+  } catch {
+    return false;
+  }
+};
 
 /**
  * 共享密钥比较（**恒时**）——给 `/admin/kick`、`/pay/wx-notify` 这类头部密钥鉴权用。

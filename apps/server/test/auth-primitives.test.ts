@@ -1,7 +1,17 @@
 /** 游戏服仍持有的认证原语纯函数守门（无 Redis/MySQL）。 */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { safeSecretEqual } from "../src/core/auth/session";
+import { safeEqualHex, safeSecretEqual } from "../src/core/auth/session";
+
+test("safeEqualHex：损坏的等长 hash fail-closed 且不得抛 RangeError", () => {
+  const hash = "a".repeat(64);
+  assert.equal(safeEqualHex(hash, hash), true);
+  assert.equal(safeEqualHex(hash, "b".repeat(64)), false);
+  for (const bad of ["g".repeat(64), "a".repeat(63), "A".repeat(64), "", "not-a-hash"]) {
+    assert.doesNotThrow(() => safeEqualHex(hash, bad));
+    assert.equal(safeEqualHex(hash, bad), false);
+  }
+});
 
 test("safeSecretEqual：长度不等 ⛔ 不得抛（timingSafeEqual 直接比会因不等长抛错 = 泄漏长度）", () => {
   // 这是改用恒时比较时最容易踩的坑：node 的 timingSafeEqual 要求两侧等长，
