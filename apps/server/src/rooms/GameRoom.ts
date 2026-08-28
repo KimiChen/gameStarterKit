@@ -42,6 +42,13 @@ import { groupAdmitsZone, normalizeSId } from "../core/infra/config";
 import { verifyAndCacheWebPlatformSession } from "../platform/webPlatformClient";
 import { joinRefused, joinRefusedAuth, toErrCode } from "../core/errors";
 import { emitMatchEvidence, MATCH_MODE_CASUAL, newMatchId } from "../core/match/matchConsumer";
+import { trackTask } from "../core/infra/lifecycle";
+import {
+    BALL_MOVE_GAME_MODE_ID,
+    gameModeRegistry,
+    type GameMode,
+    type GameModeContext,
+} from "./GameMode";
 
 // demo 昵称池（原 mock/data，mock 层删除后归本房间私有；真实项目从档案取昵称）
 const NICK_PREFIX = ["快乐", "无敌", "神秘", "暴走", "咸鱼", "低调", "闪电", "锦鲤"];
@@ -102,6 +109,8 @@ export interface GameRoomRuntimeOptions {
     matchId?: () => string;
     /** 开局 lock 的最大等待时间；测试可缩短，生产使用有界默认值。 */
     startLockTimeoutMs?: number;
+    /** Optional ruleset; transport/admission remains owned by GameRoom. */
+    mode?: GameMode<GameRoomState>;
 }
 
 export type AcceptedGameInput = GameRoomInput & {
@@ -331,6 +340,7 @@ export class GameRoom extends Room {
     private simulationTimeMs = 0;
     private readonly runtimeClock: () => number;
     private readonly matchIdFactory: () => string;
+    private readonly mode: GameMode<GameRoomState>;
     private inputSource?: GameRoomInputSource;
     private readonly injectedInputs: GameRoomInput[] = [];
     private readonly acceptedInputSequence: AcceptedGameInput[] = [];
@@ -368,6 +378,7 @@ export class GameRoom extends Room {
         this.runtimeClock = this.makeClock(options.clock);
         this.inputSource = options.input;
         this.matchIdFactory = options.matchId ?? newMatchId;
+        this.mode = options.mode ?? gameModeRegistry.create(BALL_MOVE_GAME_MODE_ID);
     }
 
     private makeClock(clock: GameRoomClock | undefined): () => number {
@@ -399,6 +410,26 @@ export class GameRoom extends Room {
             return 0;
         }
         return Math.floor(value);
+    }
+
+    private modeContext(): GameModeContext<GameRoomState> {
+        return {
+            state: this.state,
+            roomId: this.roomId,
+            sId: this.sId,
+            fixedStepMs: this.fixedStepMs,
+        };
+    }
+
+    private modeMessage(type: C2SType, client: Client, payload: unknown): boolean {
+        if (!this.mode.onMessage) return false;
+        try {
+            return this.mode.onMessage({ type, client, payload, context: this.modeContext() }) === true;
+        } catch (error) {
+            console.error(`[GameRoom ${this.roomId}] mode ${this.mode.id} 消息钩子失败`, error);
+            this.sendError(client, ErrorCode.Unknown);
+            return true;
+        }
     }
 
     /**
@@ -439,10 +470,14 @@ export class GameRoom extends Room {
         if (!groupAdmitsZone(joinOptions.sId === undefined ? undefined : sId)) {
             throw joinRefused(ErrorCode.WrongServer);
         }
+        // Colyseus 的标准 auth token 参数是连接凭证的唯一权威来源。
+        // `options.token` 只为旧客户端保留兼容占位，若存在必须与标准凭证逐字相等；
+        // 不能让 join options 覆盖/替换 HTTP Authorization 解析出的 token。
         // token 是 WebPlatform 的不透明句柄：本进程只做空值/契约长度防护，
         // ⛔ 不解析 uid、随机串长度或任何内部格式。
-        const raw = joinOptions.token ?? token ?? "";
-        if (typeof raw !== "string" || raw.length < 1 || raw.length > 256) {
+        const standardToken = typeof token === "string" ? token : "";
+        if (standardToken.length < 1 || standardToken.length > 256
+            || (joinOptions.token !== undefined && joinOptions.token !== standardToken)) {
             throw joinRefused(ErrorCode.TokenExpired, "auth");
         }
         try {
@@ -451,7 +486,7 @@ export class GameRoom extends Room {
             // 不在 per-message 路径上。⚠ 已在房内的对局不受影响（打完为止，§2.3 已知边界 + U6 发奖 recheck）。
             // ⚠ 带区：token 只对签发它的那个区有效（M12e）
             return {
-                userId: await verifyAndCacheWebPlatformSession(raw, sId),
+                userId: await verifyAndCacheWebPlatformSession(standardToken, sId),
                 sId,
             } satisfies GameRoomAuth;
         } catch (e) {
@@ -472,6 +507,7 @@ export class GameRoom extends Room {
         [C2S.Ping]: (client: Client, raw: IPingReq) => {
             const msg = this.acceptMessage(client, C2S.Ping, raw, C2S_RUNTIME_SCHEMA[C2S.Ping]);
             if (!msg) return;
+            if (this.modeMessage(C2S.Ping, client, msg)) return;
             const res: IPongRes = { clientTime: msg.clientTime, serverTime: this.now() };
             this.sendS2C(client, S2C.Pong, res);
         },
@@ -479,6 +515,7 @@ export class GameRoom extends Room {
         [C2S.Move]: (client: Client, raw: IMoveReq) => {
             const msg = this.acceptMessage(client, C2S.Move, raw, C2S_RUNTIME_SCHEMA[C2S.Move]);
             if (!msg) return;
+            if (this.modeMessage(C2S.Move, client, msg)) return;
             const player = this.state.players.get(client.sessionId);
             if (!player || !player.alive) return;
             const dir = normalize(msg.dirX, msg.dirY);
@@ -495,6 +532,7 @@ export class GameRoom extends Room {
         [C2S.CastSkill]: (client: Client, raw: ICastSkillReq) => {
             const msg = this.acceptMessage(client, C2S.CastSkill, raw, C2S_RUNTIME_SCHEMA[C2S.CastSkill]);
             if (!msg) return;
+            if (this.modeMessage(C2S.CastSkill, client, msg)) return;
             const player = this.state.players.get(client.sessionId);
             if (!player || !player.alive) return;
             const accepted = this.handleCastSkill(client, msg);
@@ -510,6 +548,7 @@ export class GameRoom extends Room {
         [C2S.Chat]: (client: Client, raw: IChatReq) => {
             const msg = this.acceptMessage(client, C2S.Chat, raw, C2S_RUNTIME_SCHEMA[C2S.Chat]);
             if (!msg) return;
+            if (this.modeMessage(C2S.Chat, client, msg)) return;
             const player = this.state.players.get(client.sessionId);
             if (!player) return;
             const text = msg.text.trim();
@@ -644,6 +683,16 @@ export class GameRoom extends Room {
         if (!auth || typeof auth.userId !== "string" || auth.userId.length < 1 || auth.sId !== this.sId) {
             throw joinRefused(ErrorCode.WrongServer);
         }
+        if (this.mode.onAdmission) {
+            let admitted = true;
+            try {
+                admitted = this.mode.onAdmission({ ...this.modeContext(), client }) !== false;
+            } catch (error) {
+                console.error(`[GameRoom ${this.roomId}] mode ${this.mode.id} admission hook failed`, error);
+                admitted = false;
+            }
+            if (!admitted) throw joinRefused(ErrorCode.BadRequest);
+        }
         if (this.state.players.size >= MAX_PLAYERS) {
             throw joinRefused(ErrorCode.RoomFull);
         }
@@ -720,6 +769,11 @@ export class GameRoom extends Room {
         // Waiting 离开没有结算证据需求，参与者快照也必须删除；Playing/Settle
         // 则保留 participantUserId，供退房者的最终名次回读 uid。
         this.removePlayer(client.sessionId, this.state.phase === GamePhase.Waiting);
+        try {
+            this.mode.onLeave?.({ ...this.modeContext(), client });
+        } catch (error) {
+            console.error(`[GameRoom ${this.roomId}] mode ${this.mode.id} leave hook failed`, error);
+        }
         console.log(`[GameRoom ${this.roomId}] ${client.sessionId} 离开（${consented ? "主动" : `code=${code}，宽限已过`}），剩余 ${this.state.players.size} 人`);
         this.maybeSettle();
     }
@@ -797,6 +851,9 @@ export class GameRoom extends Room {
             }
             if (!participantsUnchanged) throw new Error("match participants changed while locking");
             this.initializeMatchState();
+            // The mode sees a fully reset state but the phase is published only
+            // after its start hook succeeds, keeping Waiting -> Playing atomic.
+            this.mode.onMatchStart?.(this.modeContext());
             this.state.phase = GamePhase.Playing;
             return true;
         } catch (error) {
@@ -967,6 +1024,13 @@ export class GameRoom extends Room {
             player.y = clamp(player.y + player.dirY * PLAYER_MOVE_SPEED * seconds, 0, MAP_HEIGHT);
         });
         this.simulationTimeMs += this.fixedStepMs;
+        try {
+            this.mode.onStep?.({ ...this.modeContext(), dtMs: this.fixedStepMs });
+        } catch (error) {
+            // Mode hooks are extension code. A faulty ruleset must not escape
+            // into Colyseus' interval callback and kill the room loop.
+            console.error(`[GameRoom ${this.roomId}] mode ${this.mode.id} step hook failed`, error);
+        }
     }
 
     /** 逻辑帧：dt 只进入 fixed-step 累加器；Waiting/Settle 完全不推进。 */
@@ -1212,6 +1276,11 @@ export class GameRoom extends Room {
     private settle() {
         if (this.disposed || this.state.phase !== GamePhase.Playing) return;
         this.state.phase = GamePhase.Settle;
+        try {
+            this.mode.onFinish?.(this.modeContext());
+        } catch (error) {
+            console.error(`[GameRoom ${this.roomId}] mode ${this.mode.id} finish hook failed`, error);
+        }
         // 结算耗时取 fixed-step 逻辑时钟，而不是 wall-clock/dt；注入同一 seed、步长和
         // accepted inputs 的回放会得到完全相同的 elapsedMs。
         const elapsedMs = this.now() >= this.matchStartMs
@@ -1231,7 +1300,7 @@ export class GameRoom extends Room {
         console.log(`[GameRoom ${this.roomId}] 收局 matchId=${this.state.matchId}：${order.map((o, i) => `#${i + 1} ${o.name}`).join("，")}`);
 
         if (!order.some((o) => this.participantUserId.has(o.sessionId))) return;
-        void emitMatchEvidence({
+        void trackTask("game:match-evidence", emitMatchEvidence({
             matchId: this.state.matchId,
             sId: this.sId, // ⚠ 房级区（见 onCreate）：证据发出后房间即 dispose，⛔ 此处不带就永久丢失
             mode: MATCH_MODE_CASUAL, // 排位房型接入后按房型切 MATCH_MODE_RANKED
@@ -1248,6 +1317,6 @@ export class GameRoom extends Room {
                 elapsedMs,
                 survived: o.survived,
             })),
-        });
+        }));
     }
 }

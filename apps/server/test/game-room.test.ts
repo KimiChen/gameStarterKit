@@ -51,6 +51,20 @@ function runtime(seed: number, now = 0): GameRoomRuntimeOptions {
     return { seed, clock: () => now, fixedStepMs: 50 };
 }
 
+test("GameRoom auth 只信标准 token，options.token 只能逐字匹配", async () => {
+    const base = { v: PROTOCOL_VERSION, sId: 0 };
+    await assert.rejects(
+        GameRoom.onAuth("", { ...base, token: "options-only" }, undefined as never),
+        (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.TokenExpired)),
+        "缺失 Colyseus 标准 token 时不能仅凭 options.token 建连",
+    );
+    await assert.rejects(
+        GameRoom.onAuth("standard-token", { ...base, token: "different-token" }, undefined as never),
+        (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.TokenExpired)),
+        "options.token 与标准 token 不一致时必须拒绝",
+    );
+});
+
 test("GameRoom S2C 出站 payload 先经 shared runtime validator，再交给 transport", () => {
     const room = new GameRoom(runtime(10));
     const client = fakeClient("s1");
