@@ -15,6 +15,60 @@ export interface ILoginDeps {
 
 export type LoginContinuation = (response: WebPlatformLoginResponse) => Promise<void> | void;
 
+/**
+ * Dependencies for the post-authentication boundary.  The composition root
+ * supplies the real WebSocket client and session module; keeping the ports
+ * here makes the failure/rollback contract testable without importing Cocos
+ * or FairyGUI into the logic layer.
+ */
+export interface AuthenticatedLoginFlowDeps<TUser> {
+    setSession(response: WebPlatformLoginResponse): void;
+    join(accessToken: string, signal?: AbortSignal): Promise<void>;
+    getInfo(): Promise<{ user: TUser | null | undefined }>;
+    clearSession(): void;
+    leave(): Promise<void> | void;
+    /** Return false when a newer page/session owns the state; skip rollback. */
+    shouldRollback?: () => boolean;
+}
+
+/**
+ * Complete the session after the Portal has issued a token.  A successful
+ * result always contains a concrete user profile.  Any join/GetInfo failure
+ * rolls back both the bearer/session state and the physical lobby connection,
+ * so callers can never navigate with a half-established session.
+ */
+export async function runAuthenticatedLoginFlow<TUser>(
+    response: WebPlatformLoginResponse,
+    deps: AuthenticatedLoginFlowDeps<TUser>,
+    signal?: AbortSignal,
+): Promise<TUser> {
+    try {
+        deps.setSession(response);
+        await deps.join(response.accessToken, signal);
+        const info = await deps.getInfo();
+        if (!info || info.user === null || info.user === undefined) {
+            throw new Error("登录成功但角色档案为空");
+        }
+        return info.user;
+    } catch (error) {
+        let shouldRollback = true;
+        try { shouldRollback = deps.shouldRollback?.() ?? true; } catch {
+            // A stale/disposed page must not let a hostile lifecycle probe make
+            // us clear a newer session; still release the physical room below.
+            shouldRollback = false;
+        }
+        if (shouldRollback) {
+            // Rollback is best-effort, but the original join/GetInfo failure is
+            // the useful error for progress/UI and must remain observable.
+            try { deps.clearSession(); } catch { /* preserve original failure */ }
+            try { await deps.leave(); } catch { /* connection cleanup is best-effort */ }
+        }
+        // Without an ownership token, an invalidated page must not call the
+        // global leave() at all: it may now refer to a newer session's slot.
+        throw error;
+    }
+}
+
 export class LoginLogic {
     /** 进行中的登录（并发重复点合流到同一次请求，双方拿同一结果） */
     private inflight: Promise<WebPlatformLoginResponse | null> | null = null;

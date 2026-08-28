@@ -18,6 +18,10 @@ test("pages login transition：按 flight identity 延后重开，不能 await �
     "当前 flight 未完成时必须挂 settle 后的一次性重开 continuation");
   assert.match(source, /current\.onEnterBattle = onEnterBattle/,
     "合流调用必须更新到最新 Main 的 enterBattle 回调");
+  assert.match(source, /runAuthenticatedLoginFlow\(response/,
+    "页面登录必须经统一的 setSession→join→GetInfo 回滚编排");
+  assert.match(source, /shouldRollback: \(\) =>/,
+    "旧页面世代失败时必须按 owner/session 世代跳过全局清理");
   assert.match(source, /!current\.invalidated && current\.owner === owner/,
     "已失效的旧 flight 不得被同一页面世代重新复用");
   assert.doesNotMatch(source, /if \(reopen && reopen !== openLoginInFlight\)/,

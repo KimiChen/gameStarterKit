@@ -31,17 +31,48 @@ const zoneCharInit = (): Record<string, string> => ({
   avatarId: "-1",
 });
 
-/** 幂等建角：**先建 `s{sId}_user`，再 HTTP 登记角色**（顺序理由见文件头）。失败不抛给连接（调用方 best-effort，重连自愈）。 */
-export async function ensureCharacter(uid: string, sId: number): Promise<void> {
+/** 幂等建角：**先建 `s{sId}_user`，再 HTTP 登记角色**（顺序理由见文件头）。任一阶段失败都会向上抛，拒绝本次 join；repair intent 供后续重试收敛。 */
+export interface CharacterInitializerDependencies {
+  /** ensureLive 代表 Redis 快路径及必要时的 MySQL archive 判定/thaw。 */
+  ensureLive(uid: string, sId: number): Promise<void>;
+  /** createUser 是 Redis 建档的原子写入。 */
+  createUser(uid: string, initFields: Record<string, string>): Promise<"ok" | "exists">;
+  /** registerCharacterWithRepair 代表 WebPlatform PUT 与 durable repair 落点。 */
+  registerCharacterWithRepair(uid: string, sId: number): Promise<void>;
+  /** 建角成功后的 Redis 负缓存失效。 */
+  invalidateUserNegcache(uid: string): Promise<void>;
+}
+
+const defaultCharacterInitializerDependencies: CharacterInitializerDependencies = {
+  ensureLive,
+  createUser,
+  registerCharacterWithRepair,
+  invalidateUserNegcache,
+};
+
+/**
+ * 建角编排的显式依赖边界。生产调用走默认实现；测试可以在任一外部阶段注入
+ * deferred/rejection，验证 Lobby ready gate 的超时和短路语义，而不伪造模块缓存。
+ */
+export async function ensureCharacterWithDependencies(
+  uid: string,
+  sId: number,
+  deps: CharacterInitializerDependencies = defaultCharacterInitializerDependencies,
+): Promise<void> {
   // ⚠ **ensureLive 先于 createUser**：冻结回流用户先 thaw 恢复真档，
   // ⛔ 绝不在冻结档上 createUser 建空档（空档上先发生写会致 archive 被删、真档永久丢失）。
   // ⚠ ensureLive 内部抢 lock:{uid}——本函数不得在 withUser 锁内调用（onJoin best-effort 调，安全）。
   await zoneCtx.run({ sId }, async () => {
-    await ensureLive(uid, sId);                   // 冻结→thaw 恢复；真新→ABSENT(F4 判)；热→无；真丢→抛
-    await createUser(uid, zoneCharInit());        // 幂等：热/解冻→'exists'，真新才建（⛔ 不覆盖真档）
-    await registerCharacterWithRepair(uid, sId);  // 后写登记；失败 durable 留 intent 后仍向上抛
-    await invalidateUserNegcache(uid);            // 建后失效负缓存（09·F4）
+    await deps.ensureLive(uid, sId);                   // 冻结→thaw 恢复；真新→ABSENT(F4 判)；热→无；真丢→抛
+    await deps.createUser(uid, zoneCharInit());         // 幂等：热/解冻→'exists'，真新才建（⛔ 不覆盖真档）
+    await deps.registerCharacterWithRepair(uid, sId);   // 后写登记；失败 durable 留 intent 后仍向上抛
+    await deps.invalidateUserNegcache(uid);             // 建后失效负缓存（09·F4）
   });
+}
+
+/** 生产默认建角入口；保留独立函数名供 Lobby/其他调用方使用。 */
+export function ensureCharacter(uid: string, sId: number): Promise<void> {
+  return ensureCharacterWithDependencies(uid, sId);
 }
 
 export const CHARACTER_READY_CLOSED_CODE = "CHARACTER_READY_CLOSED" as const;

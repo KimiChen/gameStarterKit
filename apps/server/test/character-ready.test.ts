@@ -9,6 +9,7 @@ import {
   CharacterReadyClosedError,
   clearCharacterReadyFlights,
   ensureCharacterReady,
+  ensureCharacterWithDependencies,
   isCharacterReadyAdmissionOpen,
   resetCharacterReadyFlights,
   validateCharacterReadyTimeoutMs,
@@ -98,6 +99,52 @@ test("character ready keeps the underlying flight after one caller times out", a
   assert.deepEqual(calls, [["u-race", 7], ["u-race", 7]]);
   secondWork.resolve();
   await third;
+});
+
+test("character initializer：MySQL/Redis/WebPlatform 任一慢阶段超时都拒绝 ready，且按顺序短路", async () => {
+  // ensureLive covers the Redis existence check plus the MySQL archive/resolve
+  // path; createUser is the Redis atomic write; registerCharacterWithRepair is
+  // the WebPlatform PUT + durable repair boundary.  Injecting these explicit
+  // ports keeps the test deterministic without replacing module caches or
+  // requiring a live external service.
+  const cases = [
+    { stage: "ensureLive", expected: ["ensureLive"] },
+    { stage: "createUser", expected: ["ensureLive", "createUser"] },
+    { stage: "registerCharacterWithRepair", expected: ["ensureLive", "createUser", "registerCharacterWithRepair"] },
+  ] as const;
+
+  for (const current of cases) {
+    const calls: string[] = [];
+    const gate = deferred<void>();
+    const waitAt = async (stage: string): Promise<void> => {
+      calls.push(stage);
+      if (stage === current.stage) await gate.promise;
+    };
+    const coordinator = new CharacterReadyCoordinator(
+      (uid, sId) => ensureCharacterWithDependencies(uid, sId, {
+        ensureLive: async () => waitAt("ensureLive"),
+        createUser: async () => {
+          await waitAt("createUser");
+          return "ok";
+        },
+        registerCharacterWithRepair: async () => waitAt("registerCharacterWithRepair"),
+        invalidateUserNegcache: async () => waitAt("invalidateUserNegcache"),
+      }),
+    );
+
+    const ready = coordinator.ensure(`u-stage-${current.stage}`, 7, 0);
+    await assert.rejects(ready, /角色初始化超时/);
+    assert.deepEqual(calls, current.expected,
+      `${current.stage} 超时前不得越过未完成阶段`);
+
+    // A caller timeout does not abandon ownership: release the injected
+    // dependency and wait for the same underlying flight to settle.
+    gate.resolve();
+    await coordinator.drain();
+    assert.deepEqual(calls, [
+      "ensureLive", "createUser", "registerCharacterWithRepair", "invalidateUserNegcache",
+    ], `${current.stage} 放行后底层 flight 应完整收敛`);
+  }
 });
 
 test("character ready observes a late underlying rejection and reuses it across reset", async () => {

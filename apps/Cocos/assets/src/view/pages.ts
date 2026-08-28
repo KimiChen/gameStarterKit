@@ -15,7 +15,7 @@ import type { AreaListView } from "./AreaListView";
 import type { LoginNoticeView } from "./LoginNoticeView";
 import type { HomeView } from "./HomeView";
 import type { ConfirmView } from "./ConfirmView";
-import { LoginLogic } from "../logic/page/LoginLogic";
+import { LoginLogic, runAuthenticatedLoginFlow } from "../logic/page/LoginLogic";
 import { AreaListLogic } from "../logic/page/AreaListLogic";
 import { LoginNoticeLogic } from "../logic/page/LoginNoticeLogic";
 import type { IConfirmOptions } from "../logic/page/ConfirmLogic";
@@ -461,30 +461,43 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
         let flowSessionGen = -1;
         const r = await logic.doLoginFlow(DEV_LOGIN_KEY, async (response) => {
           if (!isFlightActive(flight) || !context.isActive()) { flowFailed = true; return; }
-          setSession(response);
-          flowSessionGen = getSessionGeneration();
           try {
-            logic.onProgress(0.6, "正在进入大厅…");
-            // 区服 = 独立实例：HTTP 与 Colyseus 端点分别消费目录字段，不做地址猜测。
-            WebSocketClient.inst.init(cur.gameWsUrl);
-            // WebPlatform 契约叫 serverId；游戏服现有 Colyseus join option 仍叫 sId，在边界显式转换。
-            await WebSocketClient.inst.join(
-              response.accessToken,
-              { sId: cur.serverId },
-              context.signal,
-            );
-            if (!isFlightActive(flight) || !context.isActive() || getSessionGeneration() !== flowSessionGen) { flowFailed = true; return; }
-            logic.onProgress(0.85, "正在加载角色…");
-            user = (await WebSocketClient.inst.rpc(UserRpc.GetInfo, {})).user;
-            if (!isFlightActive(flight) || !context.isActive() || getSessionGeneration() !== flowSessionGen) { flowFailed = true; return; }
+            user = await runAuthenticatedLoginFlow(response, {
+              setSession: (next) => {
+                setSession(next);
+                flowSessionGen = getSessionGeneration();
+              },
+              join: async (accessToken, signal) => {
+                logic.onProgress(0.6, "正在进入大厅…");
+                // 区服 = 独立实例：HTTP 与 Colyseus 端点分别消费目录字段，不做地址猜测。
+                WebSocketClient.inst.init(cur.gameWsUrl);
+                // WebPlatform 契约叫 serverId；游戏服现有 Colyseus join option 仍叫 sId，在边界显式转换。
+                await WebSocketClient.inst.join(accessToken, { sId: cur.serverId }, signal);
+                if (!isFlightActive(flight) || !context.isActive()
+                  || getSessionGeneration() !== flowSessionGen) {
+                  throw new Error("登录事务已失效");
+                }
+              },
+              getInfo: async () => {
+                logic.onProgress(0.85, "正在加载角色…");
+                const info = await WebSocketClient.inst.rpc(UserRpc.GetInfo, {});
+                if (!isFlightActive(flight) || !context.isActive()
+                  || getSessionGeneration() !== flowSessionGen) {
+                  throw new Error("登录事务已失效");
+                }
+                return info;
+              },
+              clearSession,
+              leave: () => WebSocketClient.inst.leave(),
+              shouldRollback: () => isFlightActive(flight) && context.isActive()
+                && getSessionGeneration() === flowSessionGen,
+            }, context.signal);
           } catch (e) {
             if (!isFlightActive(flight) || !context.isActive()) { flowFailed = true; return; }
             // 大厅/档案失败即整体失败（严谨：不带半截会话进主界面）；清态可重试
             // 业务码走 message（服务端 joinRefused）：用 shared 单源解码器取文案，⛔ 别把 "3004" 甩给玩家
             console.error("[pages] 进入大厅失败：", e);
             const why = joinErrText((e as Error)?.message, "进入大厅失败，请重试");
-            clearSession();
-            await WebSocketClient.inst.leave().catch(() => {});
             if (!isFlightActive(flight) || !context.isActive()) { flowFailed = true; return; }
             logic.onProgress(0, why);
             flowFailed = true;

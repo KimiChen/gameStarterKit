@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { AreaListLogic } from "../src/logic/page/AreaListLogic";
 import { LoginNoticeLogic } from "../src/logic/page/LoginNoticeLogic";
-import { LoginLogic } from "../src/logic/page/LoginLogic";
+import { LoginLogic, runAuthenticatedLoginFlow } from "../src/logic/page/LoginLogic";
 import { ConfirmLogic } from "../src/logic/page/ConfirmLogic";
 import {
   chooseServer,
@@ -19,6 +19,7 @@ import {
 import { isServerEnterable } from "../src/logic/areaDirectory";
 import { areaStatusIconUrl } from "../src/view/areaPresentation";
 import type { WebPlatformAreaListResponse, WebPlatformAreaServer } from "../src/shared/index";
+import { clearSession, isLoggedIn, setSession } from "../src/net/session";
 
 const srv = (
   serverId: number,
@@ -269,6 +270,115 @@ test("Login：签发请求失败不自动重试（由用户明确再次发起）
   assert.equal(await logic.doLogin("dev_b"), null);
   assert.equal(calls, 1, "登录会签发/轮换 token，客户端不得盲目自动重试");
   assert.equal(texts[texts.length - 1], "登录失败，请重试");
+});
+
+test("Login：join/GetInfo 任一失败都清会话并释放大厅，不进入半状态", async () => {
+  const response = {
+    userId: "u_ready",
+    accessToken: "u_ready.access-token",
+    isNewAccount: false,
+  };
+  const user = {
+    uid: response.userId,
+    star: 0,
+    maxRound: 0,
+    wins: 0,
+    losses: 0,
+    stamina: 100,
+    lastStaminaRecoverAt: 0,
+    musicOn: true,
+    sfxOn: true,
+    guildId: 0,
+    ver: 1,
+  };
+
+  for (const failureStage of ["join", "getInfo"] as const) {
+    clearSession();
+    const events: string[] = [];
+    const failure = new Error(`${failureStage} failed`);
+    await assert.rejects(
+      runAuthenticatedLoginFlow(response, {
+        setSession: (next) => { events.push("setSession"); setSession(next); },
+        join: async () => {
+          events.push("join");
+          if (failureStage === "join") throw failure;
+        },
+        getInfo: async () => {
+          events.push("getInfo");
+          if (failureStage === "getInfo") throw failure;
+          return { user };
+        },
+        clearSession: () => { events.push("clearSession"); clearSession(); },
+        leave: () => { events.push("leave"); },
+      }),
+      (error: unknown) => error === failure,
+    );
+    assert.deepEqual(
+      events,
+      failureStage === "join"
+        ? ["setSession", "join", "clearSession", "leave"]
+        : ["setSession", "join", "getInfo", "clearSession", "leave"],
+      `${failureStage} 失败必须先清态再释放大厅，且不得继续导航`,
+    );
+    assert.equal(isLoggedIn(), false, `${failureStage} 失败后不得残留 bearer/session`);
+  }
+  clearSession();
+});
+
+test("Login：GetInfo 返回空档案也拒绝导航；成功路径保留完整会话", async () => {
+  const response = { userId: "u_empty", accessToken: "u_empty.access-token", isNewAccount: false };
+  clearSession();
+  let clears = 0;
+  let leaves = 0;
+  await assert.rejects(
+    runAuthenticatedLoginFlow(response, {
+      setSession,
+      join: async () => {},
+      getInfo: async () => ({ user: null }),
+      clearSession: () => { clears++; clearSession(); },
+      leave: () => { leaves++; },
+    }),
+    /角色档案为空/,
+  );
+  assert.equal(clears, 1);
+  assert.equal(leaves, 1);
+  assert.equal(isLoggedIn(), false);
+
+  clearSession();
+  const profile = { ...response, userId: "u_success" };
+  const successUser = { uid: profile.userId };
+  clears = 0;
+  leaves = 0;
+  const result = await runAuthenticatedLoginFlow(profile, {
+    setSession,
+    join: async () => {},
+    getInfo: async () => ({ user: successUser }),
+    clearSession: () => { clears++; clearSession(); },
+    leave: () => { leaves++; },
+  });
+  assert.strictEqual(result, successUser);
+  assert.equal(clears, 0);
+  assert.equal(leaves, 0);
+  assert.equal(isLoggedIn(), true, "成功拿到具体角色后会话保持，才允许导航");
+  clearSession();
+});
+
+test("Login：旧页面世代失败不清理或关闭新会话的连接", async () => {
+  const response = { userId: "u_old", accessToken: "u_old.access-token", isNewAccount: false };
+  const events: string[] = [];
+  await assert.rejects(
+    runAuthenticatedLoginFlow(response, {
+      setSession,
+      join: async () => { throw new Error("stale join"); },
+      getInfo: async () => ({ user: null }),
+      clearSession: () => { events.push("clear"); clearSession(); },
+      leave: () => { events.push("leave"); },
+      shouldRollback: () => false,
+    }),
+    /stale join/,
+  );
+  assert.deepEqual(events, [], "旧世代不得触碰新世代 session/slot");
+  clearSession();
 });
 
 test("Login：完整 flow 锁覆盖 HTTP 之后的 continuation", async () => {
