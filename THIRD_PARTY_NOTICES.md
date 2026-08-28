@@ -19,6 +19,6 @@ sha512，并更新各自负责的入库产物。`fetch:colyseus` 还会维护 Co
 
 维护团队升级后必须人工同步 FGUI 扩展壳版本，以及 Colyseus 服务端依赖和根
 `package-lock.json`，并复核服务端/客户端 Colyseus major.minor、类型声明和社区补丁；再由本地
-`npm run test:fgui` 等校验确认版本、产物内容、`package-lock` 与镜像一致。FairyGUI 若有社区
+`npm run test:client` / `npm run test:fgui` 等校验确认版本、产物内容、`package-lock` 与镜像一致。FairyGUI 若有社区
 3.8 补丁，重新抓取会覆盖补丁；补丁必须重新应用，并手动运行 `node scripts/vendor-lock.mjs`
 重钉后与相关文件一起提交。

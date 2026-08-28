@@ -12,8 +12,9 @@
   并运行协议指纹更新与相关测试。
 
 GameRoom 当前包含 strict auth、协议/区号复核、撮合区隔离、聊天、重连宽限和 best-effort match evidence。
-它不是通用玩法层，且明确存在：C2S payload 无 runtime schema、Waiting 技能状态可能污染开局、异步
-`lock()` 失败只记日志、evidence 不记录完整输入且写失败不阻止收局等限制。
+C2S/S2C payload 已经过 strict runtime schema，phase gate、全量开局 reset、fixed-step 时钟和 awaited
+`lock()` 也有对应测试；Waiting 离开会同步清理双向身份索引。它仍不是通用玩法层，match evidence 不记录
+完整 accepted input，且 evidence 写失败不阻止收局。
 
 新增玩法前先阅读 [`docs/SERVER.md §5`](../../../../docs/SERVER.md#5-gameroom)，不要把 Demo 的相位、
 重连、结算或证据 shape 当作框架承诺。

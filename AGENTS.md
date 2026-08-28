@@ -35,6 +35,7 @@ npm run dev:client
 npm run dev
 npm run typecheck
 npm run verify:sync
+npm run test:client
 npm run test:fgui
 npm run codegen:fgui -- <Pkg> <Comp>
 npm run verify:ecs
@@ -52,10 +53,10 @@ npm --workspace @game/server run test:int
 已启动并初始化的本地 Redis/MySQL；`smoke` 还要求外部 WebPlatform Public/Internal 与游戏服已经运行，
 额外的 GM kick 分支仅在显式配置 secret 时执行。
 
-`npm run typecheck` 只覆盖当前 tsconfig 纳入的源码。客户端 `Main.ts`、`view/` 下 9 个文件
-（5 个页面 View 及 ViewMgr/FguiView/viewRegistry/pages 装配件）及 `apps/client/test` 仍在严格类型检查
-范围外，必须结合 `npm run test:fgui`、同步检查与 Creator 本地预览验证；不得把命令通过解释为完整客户端
-已被类型检查。
+`npm run typecheck` 的客户端阶段使用 `apps/client/tsconfig.test.json`，在 Node 侧最小 cc/FairyGUI 桩下
+严格覆盖 `apps/client/src/**/*.ts`、`apps/client/test/**/*.ts`，包括 `Main.ts`、全部 View、装配件和测试。
+`apps/client/tsconfig.json` 仍是 Creator 兼容 legacy 配置，排除引擎绑定文件；这不代表 CI 探针盲区。
+仍必须结合 `npm run test:client`、`npm run test:fgui`、同步检查与 Creator 本地预览验证真实引擎和资源。
 
 `fetch:colyseus` 和 `fetch:fgui` 仍保留为框架维护团队显式升级锁定依赖时使用的工具，不是首次打开或普通开发步骤。这里的“手动更新”是维护团队人工决定版本、调整版本与完整性哈希、运行并审核脚本；脚本负责可重复的下载、校验和镜像更新。bitECS 没有自动更新命令；其 12 个锁定源文件和 `scripts/bitecs.sha256` 由维护团队按上游版本手动维护，并在更新后运行 `npm run verify:ecs`。普通开发者直接使用仓库已入库的版本。
 

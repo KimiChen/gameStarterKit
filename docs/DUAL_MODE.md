@@ -12,7 +12,9 @@
 `sess:{uid}:s{sId}` cache；会话变化后需要让客户端重新读取权威状态。
 
 组 sess 缓存写入携带 `issuedAtMs` 单调栅栏（written/unchanged/stale 三态 Lua），迟到的旧登录结果不会
-覆写新会话；踢人广播携带 exceptHash 与 issuedAt，消费侧回读 sess 后丢弃陈旧或指向自己的事件。
+覆写新会话；顶号踢人广播携带 `exceptHash`、`issuedAt` 和 `sId`，消费侧严格校验字段并回读对应区的
+sess，丢弃陈旧或指向自己的事件。封号/撤销事件缺省 `sId`，保持账号级踢人语义；显式损坏字段不会降级
+成账号级操作。
 
 `stream:kick` 只是组内 best-effort 的本地开发接缝：每节点从启动后的新条目开始读，没有 outbox 或送达
 确认；在线表也只登记 Lobby 连接，不包含 GameRoom。不能把它描述为全节点、全房间立即下线能力。相关
@@ -27,10 +29,10 @@ MySQL 保存该区的玩法数据。完整边界见 [SERVER §3](SERVER.md#3-数
 ## 2.7 角色登记接缝
 
 本地建档后，只能通过外部 Internal HTTP 契约幂等登记角色，不能直写账号库。建档顺序是先写本地玩法
-档案、再登记外部角色行——反序会留下“登记存在但档案缺失”的不可自愈状态。Lobby 的 `ensureCharacter`
-是 detached 调用；HTTP 失败时会尝试留下 durable repair intent，若 Redis 也失败则以 `AggregateError` 暴露，
-最终都由 detached 调用方记录。因此一次 join 成功不等于登记已经完成。
-适配器边界见 [WEBPLATFORM §6](WEBPLATFORM.md#6-服务端边界)。
+档案、再登记外部角色行——反序会留下“登记存在但档案缺失”的不可自愈状态。Lobby `onJoin` 会等待
+`ensureCharacterReady(uid,sId)` 的有界 flight；初始化失败或超时会拒绝本次 join，不会公开一个未 ready 的
+seat。底层 flight 的迟到结果仍会被观察，并由 repair/下一次 join 收敛；ready 后的在线工会索引仍是
+best-effort。适配器边界见 [WEBPLATFORM §6](WEBPLATFORM.md#6-服务端边界)。
 
 ## 3.3 MySQL 区谓词
 

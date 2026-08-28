@@ -60,13 +60,17 @@ apps/client/src
 | shared/client/Cocos 镜像一致 | `npm run verify:sync` |
 | shared 零依赖与客户端 Logic 纯净 | `npm run typecheck`、相关单测 |
 | bitECS 源码保持锁定 | `npm run verify:ecs` |
-| FGUI 直接命名元素、registry、codegen 与客户端无头行为 | `npm run test:fgui` |
+| 项目身份、生成区和第三方来源登记 | `npm run verify:project` |
+| 客户端源码/测试 strict 类型探针 | `npm run typecheck:client` |
+| FGUI 设计源、导出物和 registry/codegen 契约 | `npm run verify:fgui`、`npm run test:fgui` |
+| 能力清单与默认入口登记 | `npm run verify:inventory` |
 | 服务端路由、协议与一致性规则 | `npm --workspace @game/server run test` |
 | 外部身份契约版本与生成物一致 | `npm run verify:webplatform-contract` |
 
-这些命令是本地开发验证入口，不表示所有真实边界都已覆盖。特别是客户端 `Main.ts` 与 `view/` 下 9 个
-文件（5 个页面 View 及 ViewMgr/FguiView/viewRegistry/pages 装配件）不在当前严格类型检查内，FGUI 测试也
-不验证 Creator 中的完整 View 生命周期或设计源到已导出 `.bin` 的新鲜度；已知缺口见 [plan.md](../plan.md)。
+这些命令是本地开发验证入口，不表示所有真实边界都已覆盖。客户端 `typecheck:client` 通过
+`apps/client/tsconfig.test.json` 和最小引擎桩严格编译全部 `src/**/*.ts` 与 `test/**/*.ts`；Creator
+真实引擎类型、资源导入和完整 View 生命周期仍需编辑器预览。`test:fgui` 侧重 codegen/registry 行为，
+设计源到已导出 `.bin` 的新鲜度由 `verify:fgui` 的 manifest 检查；已知边界见 [plan.md](../plan.md)。
 
 ### 3.3 视图与行为分离
 
@@ -91,8 +95,9 @@ apps/client/src
 - Redis key 与 MySQL 查询显式携带区上下文。
 - 大规模同步计算不放在网关 handler 中。
 
-这些是开发实现应保持的不变量，不是对当前所有路径已经完成证明的声明。后台生命周期等仍在跟踪的缺口
-及其验收标准统一记录在 [plan.md](../plan.md)；asset effect 原子性与经济操作的跨区回读已按 P0-03 收口。
+这些是开发实现应保持的不变量，不是对当前所有路径已经完成证明的声明。relayer 事务边界、archive 隔离、
+stream 坏条目处置和热档 schema 迁移等剩余缺口及其验收标准统一记录在 [plan.md](../plan.md)；asset effect
+原子性与经济操作的跨区回读已按 P0-03 收口。
 
 ## 4. 标准开发动线
 
@@ -102,7 +107,7 @@ apps/client/src
 1. 在 apps/shared/src 定义协议、错误码或公式
 2. npm run sync:shared
 3. 若改动落在 apps/shared/src/protocol/**，运行 node scripts/protocol-fingerprint.mjs 重钉协议指纹，
-   并确认是否需要 bump PROTOCOL_VERSION（不重钉则 npm run test:fgui 中的 protocolFingerprint 测试失败）。
+   并确认是否需要 bump PROTOCOL_VERSION（不重钉则 npm run test:client 中的 protocolFingerprint 测试失败）。
    指纹脚本只接受 `rooms.ts` 中唯一的顶层 export 声明，并会忽略注释，避免文档示例中的旧版本
    误导版本闸。
 4. 在 apps/server/src/websocket 或 http 增加 endpoint

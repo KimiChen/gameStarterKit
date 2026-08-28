@@ -140,7 +140,8 @@ server {
    body: { uid, reason: "banned" | "revoked" }
 ```
 
-当前游戏节点端点要求 `uid` 为 1–32 字符，`reason` 只允许 `banned`/`revoked` 且缺省为 `banned`。
+当前游戏节点端点要求 `uid` 为 1–128 字符（与 shared/WebPlatform user-id 上限一致），`reason` 只允许
+`banned`/`revoked` 且缺省为 `banned`。
 命中 Lobby 在线表后，节点会先尽力推送 `auth.forceLogout{reason}`，再使用对应语义关闭码断开该连接；
 关闭码只作为推送未送达时的兜底，不扩大在线表覆盖范围。
 
@@ -209,9 +210,10 @@ server {
 | freeze worker | `npm --workspace @game/server run freeze-worker` | 默认硬关闭；当前实现明确标为 unsafe |
 | Colyseus playground/monitor | 非 `production` 的 app config | 本地开发管理界面，不是外部管理后台 |
 
-这些组件没有形成统一生命周期、长期进程编排、指标采集或故障值守能力。当前代码还存在关闭回调覆盖、
+这些组件没有形成长期进程编排、指标采集或故障值守能力。默认进程现在通过单一 lifecycle registry 聚合
+关闭，按逆序、可等待且幂等地释放资源；启动半失败和 Lobby 按需 mail wake 也走同一 cleanup 路径。仍存在
 relayer 持事务等待外部 I/O、evidence 不足以确定性重放、坏 stream entry 会被 ACK 等已知问题；如果实际
-项目选择采用，应先完成隔离、故障测试和生命周期修复。它们的不完整不阻塞核心框架验收。
+项目选择采用，应继续完成隔离、故障测试和运维接线。它们的不完整不阻塞核心框架验收。
 
 ### 3.6 多区、分片、扩展与冷档参考
 
@@ -224,9 +226,10 @@ relayer 持事务等待外部 I/O、evidence 不足以确定性重放、坏 stre
 - `redis-route.example.yaml` 和 Redis bucket routing；
 - RedisPresence/RedisDriver 依赖与探针；默认 `app.config.ts` 并未启用它们；
 - `core/archive` 的 freeze 路径和独立 worker（worker 内含每小时 janitor：锁内归档解析、陈旧行清理与
-  PITR 后 ARCHIVE_NEWER 修复）。janitor 每轮固定取 `user_archive` 中 `frozen_at` 最老的 200 行且无
-  游标，正常冷档行不会被删除，因此冷档行数超过该批量后，排在其后的陈旧残留行与 ARCHIVE_NEWER 行
-  不会被扫描到。启用 freeze 前需要先补齐分页或跳过条件。
+  PITR 后 ARCHIVE_NEWER 修复）。janitor 每轮以 `batch` 作为**总扫描预算**，按
+  `(frozen_at,user_id)` keyset 游标跨轮续扫；正常冷档行会被无锁预筛跳过，但不会长期卡住后面的
+  陈旧残留或 ARCHIVE_NEWER 行。游标只保存在 worker 进程内，重启后从头开始仍保持幂等安全。启用
+  freeze 前仍需完成 archive 的区隔离与容量评估。
 
 其中 `ensureLive`/thaw 已被当前角色读取和写入链引用，不能机械删除；但 freeze worker 默认关闭，且现有
 guard 明确要求 unsafe escape hatch。仓库不承诺横向扩展、分片迁移、容量管理或冷数据存储方案。

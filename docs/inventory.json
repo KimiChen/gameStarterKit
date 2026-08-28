@@ -116,7 +116,15 @@
       "defaultEntry": "scripts/verify-ecs.mjs",
       "sourceOfTruth": "scripts",
       "wireBoundary": "scripts/protocol.fingerprint",
-      "verification": [{ "kind": "root", "script": "verify:core" }],
+      "verification": [{
+        "kind": "root",
+        "script": "verify:core",
+        "requires": [
+          { "kind": "root", "script": "verify:vendor" },
+          { "kind": "root", "script": "verify:inventory" },
+          { "kind": "root", "script": "test:client" }
+        ]
+      }],
       "docs": ["plan.md", "README.md"]
     },
     {
@@ -130,11 +138,29 @@
     }
   ],
   "defaultModules": [
-    { "entry": "apps/server/src/index.ts", "docs": ["docs/SERVER.md", "docs/OVERVIEW.md"] },
-    { "entry": "apps/client/src/Main.ts", "docs": ["docs/CLIENT.md", "docs/OVERVIEW.md"] },
-    { "entry": "apps/shared/src/index.ts", "docs": ["docs/OVERVIEW.md"] },
-    { "entry": "apps/Cocos/assets/scene.scene", "docs": ["docs/CLIENT.md"] }
+    {
+      "entry": "apps/server/src/index.ts",
+      "capabilities": ["process-lifecycle", "game-room-runtime", "character-ready", "server-infrastructure-boundaries"],
+      "docs": ["docs/SERVER.md", "docs/OVERVIEW.md"]
+    },
+    {
+      "entry": "apps/client/src/Main.ts",
+      "sceneClass": "Main",
+      "capabilities": ["client-session-and-navigation", "gameplay-boundary", "view-logic-lifecycle", "wire-runtime-contract", "area-directory-determinism"],
+      "docs": ["docs/CLIENT.md", "docs/OVERVIEW.md"]
+    },
+    {
+      "entry": "apps/shared/src/index.ts",
+      "capabilities": ["shared-contract"],
+      "docs": ["docs/OVERVIEW.md"]
+    },
+    {
+      "entry": "apps/Cocos/assets/scene.scene",
+      "capabilities": ["client-session-and-navigation", "gameplay-boundary"],
+      "docs": ["docs/CLIENT.md"]
+    }
   ],
+  "defaultScene": "apps/Cocos/assets/scene.scene",
   "routeOfTruth": {
     "corePlan": "plan.md",
     "extraCapabilities": "docs/EXTRAFEATURES.md"

@@ -120,9 +120,11 @@ vendor/gono-webplatform-contract-*.tgz
 - `core/http.ts` 统一 XHR、10 秒超时、Bearer 和结构化 `HttpError(status, code)`。
 - 非 2xx、网络失败、超时或非 JSON 2xx 会 reject。
 
-当前缺口：`core/http.ts` 对 2xx 只执行 `JSON.parse(...) as T`，没有运行时字段校验。`devLogin` 与
-`fetchAreaList` 的 wrapper 也没有 validator。因此旧文档中“Public 返回值已在客户端边界做 shape 校验”
-不是事实；非法字段、缺字段和多字段目前可能进入 session/area logic。
+Public response 现在通过 shared `WebPlatformHttpContractMap` 在 `core/http.ts` 的统一 `portalRequest`
+边界做 exact/range/URL runtime validation；`devLogin`、`wxLogin` 与 `fetchAreaList` 只传 contract key
+对应的 method/path，非法字段、缺字段、多字段或非法 origin 会在进入 session/area logic 前 reject。
+服务端 Internal verify/register/has 仍在 `platform/webPlatformClient.ts` 额外包一层错误分类，便于区分玩家
+身份失败、服务不可用和契约损坏。
 
 客户端不得持有 Internal 服务密钥或访问外部数据库。业务失败应显示开发错误或回到登录/选区流程，不能
 回退到游戏服内置账号逻辑。
@@ -168,8 +170,8 @@ Public URL 由客户端场景配置。游戏仓不得出现外部账号数据库
 - `apps/server/test/webplatform-client.test.ts` 覆盖 Internal header、路径编码、重试、超时、错误分类和
   exact-key response validation；它把 `WEBPLATFORM_BREAKER_FAILURES` 设为 100 以关闭熔断，因此熔断阈值、
   half-open 单探针和探针成功/失败后的状态复位当前没有本地测试覆盖。
-- `apps/client/test/httpStatus.test.ts` 覆盖 Public origin、method/path/body、Bearer、状态码和非 JSON；
-  它没有证明 Public 成功响应做了 runtime shape validation。
+- `apps/client/test/httpStatus.test.ts` 覆盖 Public origin、method/path/body、Bearer、状态码、非 JSON 和
+  success response runtime shape validation（缺字段、未知字段、非法 URL/枚举）。
 - `apps/server/test/smoke.ts` 需要外部 Public/Internal 与运行中的游戏服，覆盖真实拆分链路；其中额外账号
   operation 与 kick 不属于核心开发验收。
 - 游戏库不得包含账号表，由 `smoke:framework` 和相关源码边界测试检查。

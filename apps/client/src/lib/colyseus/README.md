@@ -23,7 +23,7 @@ Cocos 工程对这些裸依赖的解析不稳定；因此使用自包含 UMD，�
 
 维护团队升级时，需同时核对服务端 Colyseus 依赖与客户端 major.minor；修改
 `scripts/fetch-colyseus.mjs` 顶部版本号和 integrity 哈希后运行脚本，再人工对照同目录
-`colyseus.d.ts` 与上游类型、运行 `npm run verify:sync` / `npm run test:fgui` 等相关校验，
+`colyseus.d.ts` 与上游类型、运行 `npm run verify:sync` / `npm run test:client` 等相关校验，
 确认生成的镜像、`.meta` 与 `scripts/vendor.sha256` 一并提交。脚本只更新已锁定的通用网络库，
 不会扩展本仓库的项目范围。
 

@@ -1,5 +1,7 @@
 # gameStarterKit
 
+本项目正式名称为 gono，诠释为 Go Non-blocking。
+
 基于 **Cocos Creator 3.8.8 + Colyseus 0.17 + TypeScript** 的游戏开发期 monorepo 骨架。
 仓库提供客户端、服务端和共享层的代码组织、契约同步、示例玩法、本地调试与本地测试基础。
 

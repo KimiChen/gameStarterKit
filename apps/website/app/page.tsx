@@ -510,8 +510,8 @@ export default function Home() {
             <p className="wsk-kicker">MACHINE-CHECKED</p>
             <h2>把“记得这样做”，变成“不这样做就过不了”。</h2>
             <p>
-              loader、类型系统、单测与同步校验分别守住已经纳入覆盖的工程契约。当前根 typecheck 不覆盖
-              Main.ts、部分 FairyGUI View 和客户端测试源码，其余边界以对应本地检查为准。
+              loader、类型系统、单测与同步校验分别守住已经纳入覆盖的工程契约。客户端严格无头探针已纳入
+              Main、全部 View、装配件与客户端测试源码；真实 Creator 类型与资源仍以编辑器预览为准。
             </p>
             <a
               className="wsk-text-link"
@@ -665,7 +665,7 @@ export default function Home() {
             <details>
               <summary>本地验证覆盖所有源码吗？</summary>
               <p>
-                不覆盖。根 typecheck 当前覆盖 shared、server 与客户端核心纯 TS 子集，并检查生成镜像；Main.ts、部分 FairyGUI View、客户端测试和独立 website 需各自验证。
+                覆盖开发期契约。根 typecheck 会检查 shared、server、客户端严格无头探针与生成镜像；真实 Creator 类型、资源预览和独立 website 仍需各自验证。
               </p>
             </details>
             <details>

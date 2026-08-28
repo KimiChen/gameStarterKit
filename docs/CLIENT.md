@@ -42,7 +42,8 @@ npm run sync:shared
 [外部身份服务开发边界](WEBPLATFORM.md) §5）`Main.start()` 直接抛错，后续的会话事件订阅与登录页都不会执行。
 
 目录中的 `gameHttpUrl` 与 `gameWsUrl` 是两个独立、不可互相推导的端点：前者用于游戏 HTTP 请求，后者
-直接传给 Colyseus `Client`。Lobby/Game join 同时携带当前目录 `listHash`，服务端可以拒绝陈旧目录。
+直接传给 Colyseus `Client`。Lobby/Game join 只携带协议版本、会话 token 和目标区号；目录响应中的
+`hash` 不会被伪装成服务端准入校验。
 目录刷新成功后保留仍存在的当前 `serverId`；当前区消失才按默认规则回退，刷新失败则保留完整旧快照。
 
 ## 2. 源码与工程壳
@@ -176,15 +177,21 @@ AUTO 区块外是手写区。重复执行应得到稳定结果。
 - Controller 切页使用约定的 page name。
 - XML parser 保留 `displayList` 直接元素作为 AUTO 绑定真源，同时递归记录嵌套组件/list item 的
   `children`/`nestedElements`、`path`、`defaultItem`/模板数量、relation、controller 和 `ui://` 资源引用；
-  手写嵌套 `getChild` 契约必须显式声明 `path`，避免同名元素误匹配。
+  手写嵌套 `getChild` 契约必须显式声明 `path`，避免同名元素误匹配。`fguiContracts.ts` 中的
+  `required` 只由 codegen 维护；未加前缀的手写字段使用 `manualRequired`，外部组件和列表模板分别使用
+  `nested`/`listItems`，并由无头测试按 `ui://` 资源实际解析后校验字段、controller 与 `defaultItem`。
 - `scripts/fgui-manifest.mjs --check`（`npm run verify:fgui`）钉住每个 package 的 XML/资源声明与哈希、
   `ui://` 包及资源 ID 闭包、Cocos `.bin`/图集/Spine 等导出物和 View 四个 AUTO 区块哈希；设计源或
   package 导出物变化后必须重新导出并执行 `--write`，否则本地闸失败。
 - 测试还会检查导出组件、页面包依赖闭包、registry/Logic 配对，以及 `view/<Pkg>View.ts` 内的
   `ui://<Pkg>` 字面量；`view/` 下其他文件（如集中状态图标 URL 的 `areaPresentation.ts`）不在该扫描
   范围内，那里的包名写错不会被本地测试发现。
-- 页面自身包加载失败会直接抛错；`sharedPkgs` 由 `ensurePackages` 预载，但当前共享包失败路径只记录警告
-  后继续。不要把两种失败语义描述成同一个强保证。
+- 页面自身包和 `sharedPkgs` 都必须在创建前成功加载；失败不会降级为空占位，而会抛出
+  `FguiPackageLoadError`（`code=FGUI_PACKAGE_MISSING`，`retryable=true`）。FairyGUI 的底层回调没有取消
+  API，因此关闭页面或场景/root 世代变化时只取消当前等待者；迟到回调会被观察，成功共享包仍留在进程缓存中。
+- 包加载使用统一 deadline，默认 `15000ms`，可由宿主调用 `FguiView.configurePackageLoading({ deadlineMs })`
+  调整；超时抛 `FGUI_PACKAGE_TIMEOUT`（可重试）。`ViewMgr` 会把每次 open 的 `AbortSignal` 传给共享包和
+  页面包加载，关闭/场景重载不会让旧 Promise 在之后挂载页面。
 
 ## 6. 设计分辨率与资源导出
 
@@ -222,8 +229,8 @@ apps/art/fairygui 中修改设计源
 - Schema 状态监听。
 - drop/reconnect/leave 事件。
 
-复用判据必须包含 endpoint 和完整 join options；旧连接的迟到事件无权修改新 slot。战斗房另有应用层
-心跳：`Main` 每 5 秒发一次 ping 测算 RTT，掉线窗口内暂停发送。
+复用判据必须包含 endpoint 和完整 join options；旧连接的迟到事件无权修改新 slot。ballMove gameplay
+插件每 5 秒发一次 ping 测算 RTT，掉线窗口内暂停发送；网络层只负责发送与回调边界。
 
 ### WebSocketClient
 
@@ -234,13 +241,13 @@ apps/art/fairygui 中修改设计源
 - push 分发。
 - session 错误归类。
 
-写请求的 `clientReqId` 只生成一次，重试复用同一个 ID。join 复用判据包含 endpoint、区号与 token，
-不符即抛错而非静默复用；但 `doJoin` 当前没有冻结本次 `client`/`endpoint`——join 在途期间调用 `init()`
-换端点时，物理连接可能被记成新端点并在之后被错误复用，收口项见 [plan.md](../plan.md) P0-01。onDrop 会立即
-把全部在途 RPC 判为 CONN_LOST，room 实例与监听在 SDK 自动重连后继续存活。
-`net/session.ts` 是登录态与 authInvalid/connLost/battleLost 三类会话事件的枢纽；其中只有
-authInvalid 做登录态判断——未登录时的迟到上报被幂等吞掉，connLost 与 battleLost 不判断登录态、一律
-广播，订阅方需自行保证重复处置安全。
+写请求的 `clientReqId` 只生成一次，重试复用同一个 ID。join 复用判据包含 endpoint、区号、token 和完整
+options，不符即抛错而非静默复用；本次 `client`/`endpoint`/options/generation 会在 join 开始时冻结，
+`init()` 换端点不会污染在途连接。join timeout 或 AbortSignal 会立即结束本地 ownership，SDK 迟到的 room
+仍在后台释放。onDrop 会立即把全部在途 RPC 判为 CONN_LOST，room 实例与监听在 SDK 自动重连后继续存活。
+`net/session.ts` 是登录态与 authInvalid/connLost/battleLost 三类会话事件的枢纽；authInvalid 在未登录时
+幂等吞掉迟到上报，三类事件均由统一 `returnToLogin` 出口串行编排。注册该出口后，回登录前会清理旧 bearer；
+transport 事件本身仍只广播给订阅者，订阅方需自行保证回滚操作幂等。
 
 ### HTTP
 
@@ -253,17 +260,53 @@ HTTP 底座在 `core/http.ts`，业务调用在 `net/http/`。外部返回值必
 
 ```bash
 npm run typecheck
-npm run verify:sync
+npm run typecheck:client
+npm run test:client
 npm run test:fgui
+npm run verify:sync
 npm run verify:ecs
+npm run verify:perf
 ```
 
-- `typecheck` 先校验外部身份契约，再检查 shared、server、client tsconfig 已纳入的源码与镜像；客户端
-  tsconfig 排除了 `Main.ts` 与 `view/` 下 9 个文件（5 个页面 View 及 ViewMgr/FguiView/viewRegistry/pages
-  装配件），`apps/client/test` 也不在任何 tsconfig 的 include 内——两者当前都不被严格类型检查覆盖。
+### 8.1 客户端性能基线
+
+`npm run perf:client` 在 Node 无头环境运行固定 seed 和 Float64 输入 tape，默认覆盖 100 与 500 个
+玩家，分别记录输入同步、ECS tick、self entity 查找、快照分配探针、渲染命令探针以及组合帧的
+`p50/p95/p99/max/mean`。这是开发期比较工具，不是 Cocos/GPU 性能承诺：
+
+- `render` 使用 `GraphicsSink` 模拟 `Main.draw()` 的 `clear + 边框 + 每玩家圆形/血条` 命令路径，
+  不会加载 Cocos，也不测真实 GPU、批次或材质。
+- `snapshot` 是显式的临时对象数组分配探针；当前 `Main.draw()` 直接遍历 ECS，因此该指标用于评估
+  是否值得引入缓存快照，而不是声称当前帧已经分配了这些对象。
+- `snapshotBytesEstimatePerFrame` 是按 `(entityCount + 1) * 64` 的比较用估算，`heapDeltaBytes` 受
+  V8 垃圾回收和宿主进程影响；有条件时可用 `NODE_OPTIONS=--expose-gc` 重跑，但不要把 heap 数值当作
+  稳定阈值。
+- 计时样本先经过 warmup；`frame` 样本把输入同步计入计时，其余单项把输入同步放在计时外。固定
+  seed/input checksum、渲染命令数和分配估算由无头测试锁定，timing 只用于同机趋势比较。
+
+保存 JSON 结果（文件不含时间戳，便于版本间 diff）：
+
+```bash
+npm run --silent perf:client -- --json --output /tmp/client-baseline.json
+```
+
+仓库入库的结构基线位于 `docs/perf/client-ballMove-baseline.json`。运行
+`npm run verify:perf` 会按该文件的 seed、帧数和实体数重跑探针，并校验输入 checksum、渲染命令数、
+快照分配估算和几何 sink checksum；计时、堆占用和 Node/平台信息只作观察，不参与门禁。需要生成或更新
+结构投影时使用 `--deterministic`：
+
+```bash
+npm run --silent perf:client -- --json --deterministic --output docs/perf/client-ballMove-baseline.json
+```
+
+可用 `--seed`、`--frames`、`--warmup` 和 `--entities 100,500` 调整工作负载；比较时应保持 Node
+版本、平台、实体数和帧数一致，并同时查看 `input.checksum` 与 `sinkChecksum` 确认 tape/几何路径未漂移。
+
+- `typecheck` 先校验外部身份契约，再检查 shared、server 和客户端无头 strict probe，并校验镜像；客户端
+  probe 的覆盖由 `apps/client/test/clientTypecheckConfig.test.ts` 守门，防止新增源码或测试脱离 include。
 - `verify:sync` 检查漂移、孤儿和 `.meta`。
-- `test:fgui` 实际运行 codegen 测试和全部客户端无头测试，检查 FGUI 源码结构、registry、Logic purity
-  与客户端无头行为；它通过 `tsx` 运行测试，不补足上述严格类型检查盲区。
+- `test:client` 运行全部客户端无头行为测试；`test:fgui` 只运行 codegen/registry/结构契约专项测试，
+  两者都通过 `tsx` 执行。
 - `verify:ecs` 检查 vendored bitECS 文件。
 
 Creator 编辑器预览用于补充验证引擎绑定、资源导入和页面交互；它仍然是开发活动。

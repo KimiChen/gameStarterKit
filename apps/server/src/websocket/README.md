@@ -19,13 +19,14 @@ loader 依赖 tsx 直接运行、文件系统扫描和动态 import；它不是�
 
 当前已知边界：
 
-- Zod 类型对齐不能证明 shared 与 schema 的 exact 字段集合；普通 object 会剥离未知字段。
-- 未知 route 在 rate check 前返回；未知消息尚未受同一 token bucket 约束。
+- 已登记 route 通过 `defineRpc` + shared validator 做 exact/range 校验；loader 仍只校验路由全集，未来端点
+  若绕过该构造器仍可能自带一套 schema。
+- 未知 route 现在先经过与已知 route 相同的 per-principal token bucket，再返回低权重 `UNKNOWN_TYPE`；
+  它不会触发 flood 封禁。
 - 通用 idem key 没有 payload hash，相同 `clientReqId` 携带不同 payload 不会报冲突。
 - handler timeout 是不可取消的 `Promise.race`，迟到写入必须由数据层收敛。
-- 信封校验发生在 dispatcher 之前：`LobbyRoom` 用 Colyseus `validate(rpcEnvelopeSchema, ...)` 注册 `rpc`
-  消息，`id`/`type` 必须是 1–64 字符字符串。信封不合法时 Colyseus 直接以 `WITH_ERROR` 关闭该连接，不会
-  返回带错误码的 reply，该连接上在途 RPC 的配对全部落空。
+- `LobbyRoom` transport callback 与 dispatcher 共用 `validateRpcEnvelope`；畸形信封会尽力返回带可用 id 的
+  `INVALID_PAYLOAD` reply，关闭中的 socket 只丢弃发送。dispatcher 仍会再次校验信封。
 
 完整流程和正确性规则见
 [`docs/SERVER.md §4`](../../../../docs/SERVER.md#4-lobby-rpc)。

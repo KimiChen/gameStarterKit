@@ -8,4 +8,5 @@
 - `rooms/<玩法>/`：实时玩法域，对应服务端 `rooms/`；`ballMove/` 是 demo 玩法（小球移动）的域名，
   fork 本 kit 后按真实玩法改名/新增（如 `rooms/fishing/`）
 - 只放 UI 行为与玩法模拟；双端共享公式在 `shared/logic/`，引擎渲染适配在 `view/`
-- 异步结果必须在关闭/换页后可失效，当前已确认的页面生命周期缺口见根 `plan.md`
+- 异步结果必须在关闭/换页后可失效；Node strict/lifecycle tests 已覆盖当前页面接缝，真实 Creator 引擎
+  的资源导入和交互仍需编辑器预览，边界与后续限制见根 `plan.md`

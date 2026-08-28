@@ -20,7 +20,8 @@ Cocos Dashboard 3.8.8 打开本目录，等首次导入（生成 `temp/`、`libr
 （`sync:shared` 已级联 `sync:client`；运行时产物——colyseus UMD、fairygui-cc 运行时和锁定的
  bitECS 源码——已入库，无需 fetch。依赖抓取脚本只用于框架维护团队显式升级。）
 
-当前严格类型检查排除了 `Main.ts` 与 `view/` 下 9 个文件（5 个页面 View 及
-ViewMgr/FguiView/viewRegistry/pages 装配件），
-因此 Creator 本地预览仍是入口装配、资源导入和页面交互的必要开发验证。准确范围见
-[客户端文档](../../docs/CLIENT.md#8-本地检查)，核心/额外能力边界见[根 README](../../README.md#项目边界)。
+Node 无头 strict 探针（`npm run typecheck:client`）已经覆盖 `Main.ts`、全部 View、`pages.ts`、
+ViewMgr 和客户端测试，使用 `apps/client/tsconfig.test.json` 的最小引擎桩。Creator 本地预览仍是
+真实入口装配、引擎类型、资源导入和页面交互的必要验证；Cocos 工程自身的 `tsconfig.json` 只负责
+编辑器侧兼容编译。准确范围见[客户端文档](../../docs/CLIENT.md#8-本地检查)，核心/额外能力边界见
+[根 README](../../README.md#项目边界)。

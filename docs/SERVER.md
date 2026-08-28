@@ -104,9 +104,11 @@ apps/server/
 - `match_index` 与 `singleton_lease` 刻意是全局表；不能机械添加 `server_id`。
 - `user_archive` 与 `user_snapshot_readonly` 当前没有 `server_id`，这是 archive 不能安全启用的原因之一。
 
-持久写原则上应在请求完成前提交到真源，不依赖进程退出时 flush。当前仍有明确的 best-effort 例外：
-Lobby `ensureCharacter` 和 GameRoom evidence 都是 detached 调用，失败只记录或留待样例补偿；使用方不能把
-它们当作已确认完成的同步结果。
+持久写原则上应在请求完成前提交到真源，不依赖进程退出时 flush。Lobby 首角色初始化现在位于
+`onJoin` 的 awaited ready 边界：超时或失败会拒绝本次 join，不会公开一个“已登录但角色为空”的 seat；
+底层同一 `(uid,sId)` flight 仍会被观察并由 repair/下一次 join 收敛。当前仍有明确的 best-effort 例外：
+GameRoom match evidence 和 ready 之后的在线工会索引是 detached 调用，失败只记录或留待样例补偿；使用方
+不能把它们当作已确认完成的同步结果。
 
 ## 4. Lobby RPC
 
@@ -159,15 +161,16 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
 
 当前边界仍有缺口：
 
-- `z.object(...)` 默认会剥离未知字段，类型绑定也不能证明 schema 与 shared 的字段集合完全相等。
+- 当前已登记端点通过 `defineRpc` + `sharedRpcSchema` 使用 shared 的 exact/range validator，未知字段不会被
+  静默剥离；loader 目前只校验路由全集，尚未在运行时阻止未来端点绕过该构造器自带一套 Zod schema。
 - 通用幂等占位只按 `(type, uid, clientReqId)` 缓存结果，没有绑定 payload hash；相同 ID 携带不同 payload
   不会被识别为冲突。
-- 未知路由在令牌桶之前返回 `UNKNOWN_TYPE`，因此“未知消息也被同一限流约束”目前不成立。
+- 未知路由现在先经过与已知路由相同的 per-principal 令牌桶，再返回低权重 `UNKNOWN_TYPE` 计数；它不会绕过
+  限流，但仍不触发 flood 封禁。
 - `Promise.race` 超时不会取消 handler；迟到副作用仍须依靠数据层幂等/CAS 收敛。
-- 信封校验发生在 dispatcher 之前：`LobbyRoom` 用 Colyseus `validate(rpcEnvelopeSchema, ...)` 注册 `rpc`
-  消息，`id`/`type` 必须是 1–64 字符字符串。信封不合法时 Colyseus 直接以 `WITH_ERROR` 关闭该连接，
-  不会返回带错误码的 reply，该连接上在途 RPC 的配对全部落空；dispatcher 的错误码规约只覆盖信封合法
-  之后的路径。
+- `LobbyRoom` 的 rpc transport callback 现在在已观察的异步链内调用 shared `validateRpcEnvelope`；畸形信封会尽力
+  返回带可用 id 的 `INVALID_PAYLOAD` reply，关闭中的 socket 只丢弃发送。dispatcher 仍会再次校验信封，因而
+  直接调用 dispatcher 与真实 Lobby transport 共享同一边界。
 
 ## 5. GameRoom
 
@@ -179,16 +182,25 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
 - 两名玩家后进入 Playing、收局后 best-effort 写 match evidence。
 - onCreate 拒绝非法区号（WrongServer），同一 userId 禁止重复入座（AlreadyInRoom）。
 
-它不是通用玩法层，且有以下当前限制：
+它不是通用玩法层。当前 Demo 已收口以下边界：
 
-- Ping/Move/CastSkill/Chat 只使用 TypeScript 类型与局部兜底，没有 C2S runtime schema。
-- Waiting 阶段允许释放技能以服务单人 smoke；开局只清死亡顺序，没有复位已改变的 HP、alive、方向和
-  cooldown，因此等待期状态可能污染正式 Playing。
-- `lock()` 失败只记录日志，房间已经进入 Playing，仍可能留在撮合池。
+- Ping/Move/CastSkill/Chat 先经过 strict C2S runtime schema（exact keys、finite/range/length）和每客户端
+  消息预算；S2C payload 也在发送/广播前验证。非法值不会进入 Schema state 或玩法逻辑。
+- phase 白名单只允许 Playing 接受移动/技能；Waiting/Settle 不推进正式模拟。唯一的 `startMatch()` 会在
+  `lock()` 成功且参与者集合未变化后一次性复位 hp/alive/方向/cooldown/tick，并使用独立 admission/match RNG
+  与 fixed-step 时钟。
+- Waiting → Playing 的锁定是 awaited 的；失败会回滚状态并尝试 `unlock()`，连回滚也失败时关闭房间，不会
+  留着一个已公开但未持锁的 Playing 房。
+- session → user 双向索引在加入、离开和 Waiting 回滚路径统一维护；断线宽限成功不会提前记入死亡序。
+
+仍有以下明确限制：
+
 - evidence 的写入是 fire-and-forget；Redis 失败返回 `null`，不会阻止收局。
-- evidence 没有记录移动与技能输入序列，不能据现有字段宣称可确定性重放整局。
+- accepted input 序列目前只保存在房间内存中，未随 match evidence 发出；现有 evidence 字段不足以宣称可
+  确定性重放整局。
 
-正式玩法应先补齐 admission、phase、input validation、reset/settle 和 evidence 契约，再复用该房间模式。
+正式玩法扩展仍需在该 Demo 边界之上补齐 admission、phase、input validation、reset/settle 和 evidence
+契约，再复用该房间模式；当前 Demo 的运行时闸不等于通用玩法层已经交付。
 
 ## 6. HTTP 开发边界
 
@@ -196,19 +208,20 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
 
 | Method / path | 当前用途 | 契约状态 |
 | --- | --- | --- |
-| `GET /healthz` | 进程存活与协议版本 | shared 有匹配 path/response，但 endpoint 仍重复路径字面量；不检查 Redis/MySQL |
-| `GET /version` | 服务名与协议版本 | response 在 shared，path 仍是 endpoint 字面量 |
-| `GET /clock/now` | Demo 对时 | response 在 shared，path 仍是 endpoint 字面量 |
-| `GET /notice/list` | 静态公告 Demo | response 在 shared，path 仍是 endpoint 字面量 |
+| `GET /healthz` | 进程存活与协议版本 | `GameHttpContractMap.Health` 派生 path/method，并在响应序列化前做 exact validator；不检查 Redis/MySQL |
+| `GET /version` | 服务名与协议版本 | `GameHttpContractMap.Version` 派生 path/method，并验证响应 shape |
+| `GET /clock/now` | Demo 对时 | `GameHttpContractMap.ClockNow` 派生 path/method，并验证响应 shape |
+| `GET /notice/list` | 静态公告 Demo | `GameHttpContractMap.NoticeList` 派生 path/method，并验证响应及公告项 shape |
 | `POST /admin/kick` | 可选强制下线参考 | 见 [EXTRAFEATURES](EXTRAFEATURES.md#32-gm账号管理与强制下线参考) |
 | `POST /pay/wx-notify` | 默认关闭的可选参考 | 见 [EXTRAFEATURES](EXTRAFEATURES.md#34-真实货币支付参考) |
 
-因此“所有 method/path/请求/响应都来自 shared”不是当前事实：`ApiPath` 目前只登记 `/healthz`，其余路径
-由 endpoint 文件和装配表共同决定。新增核心 HTTP endpoint 时应先补齐 shared 契约和 path 真源，再在
-`http/index.ts` 登记。
+`GameHttpContractMap` 现在登记全部六个游戏服 endpoint；`createGameEndpoint` 从 contract key 派生 path、
+校验 method，并在 handler 返回值序列化前运行 shared response validator。请求 body 仍由 endpoint options 中的
+strict Zod schema 交给 better-call 校验，当前 contract tests 会对关键字段的接受集合做 shared 对照；新增核心
+endpoint 时仍应先补齐 shared request/response/path，再在 `http/index.ts` 登记。
 
-当前 router 对带 body 的样例使用 Zod，但没有统一的应用层 body 大小上限，且普通 `z.object` 不是 exact-key
-校验。HTTP handler 不得泄漏原始异常、SQL 或密钥，也不得绕过 player/core 写路径直接修改权威数据。
+当前 router 对带 body 的样例使用 strict Zod，但没有统一的应用层 body 大小上限。HTTP handler 不得泄漏原始
+异常、SQL 或密钥，也不得绕过 player/core 写路径直接修改权威数据。
 外部身份请求只能经 `platform/webPlatformClient.ts`。
 
 ## 7. 玩家档案
@@ -291,9 +304,10 @@ s0-only escape hatch（`FREEZE_UNSAFE_S0_ONLY`）。当前问题包括 archive �
 structured-clone、无 IO、无副作用的纯 CPU 工作。周期任务、批处理和跨用户写由其他进程或领域编排，
 不进入请求计算池。
 
-池提供惰性 worker、排队/执行共用超时、worker 死亡替换和 `destroyPool`。当前 queue 没有容量上限或
-admission/backpressure；测试覆盖 round-trip、并发和未知任务，但没有覆盖队列饱和。`[rpc-budget]` 与
-loop monitor 只是本地诊断信号。
+池提供惰性 worker、排队/执行共用超时、worker 死亡替换和 `destroyPool`。`COMPUTE_QUEUE_CAPACITY`
+对运行中与排队中的任务执行总 admission；达到上限时抛出稳定的 `ComputeOverloadedError`，由调用方
+退避或转入独立批处理。测试覆盖 round-trip、并发、未知任务、容量边界和 worker 故障恢复。
+`[rpc-budget]` 与 loop monitor 只是本地诊断信号。
 
 `[rpc-budget]` 的同步预算取 `RPC_SYNC_BUDGET_MS`（非生产 20ms、生产 100ms，env 可覆盖）；生产按
 `RPC_BUDGET_PROD_SAMPLE`（默认 1%）采样，并按路由以 `RPC_BUDGET_WARN_INTERVAL_MS`（60s）节流告警，
@@ -352,10 +366,11 @@ loop monitor 只是本地诊断信号。
 - **09·F1–F5 / S1–S2**：freeze/thaw 核对 fence；写路径不绕过在线保护；角色存在性不靠猜；
   reader/migrator/version 与需迁移常量的边界显式化。
 
-当前已确认的主要偏差是：relayer 在持锁事务内等待 Redis/`ensureLive`/清理查询、
-G4 在 GameRoom C2S 和客户端 Public HTTP 上不完整、G5 的未知路由在限流前返回、
-K 的坏 match entry 会被 ACK 丢弃、S1 的热档 reader 不看 schemaVersion。其中前两条在源码中没有对应编号
-标签，⛔ 不要用 09·X2 / 09·X3 指代它们。不要用规则编号掩盖这些事实。
+当前已确认的主要偏差是：relayer 在持锁事务内等待 Redis/`ensureLive`/清理查询、Game HTTP request schema
+仍由 endpoint options 维护（shared request validator 目前通过接受集合测试对照而非直接注入）、K 的坏 match
+entry 会被 ACK 丢弃、S1 的热档 reader 不看 schemaVersion。其中前两条在源码中没有对应编号标签，⛔ 不要用
+09·X2 / 09·X3 指代它们。GameRoom C2S、Lobby RPC envelope、Public WebPlatform response 和未知路由限流
+已分别有 runtime/contract 守门，不应继续列作当前偏差。不要用规则编号掩盖剩余事实。
 
 R7/R9 的 SHA + `NOSCRIPT` 兜底覆盖除登录外的全部 Lua：`core/auth/session.ts` 的组 sess 写入栅栏脚本仍用
 裸 `EVAL` 内联下发，未登记到 `redisScripts.ts`。
@@ -376,7 +391,7 @@ R7/R9 的 SHA + `NOSCRIPT` 兜底覆盖除登录外的全部 Lua：`core/auth/se
 | RPC endpoint | `apps/server/src/websocket/<domain>/<method>.ts`；装载规则在 `loader.ts` |
 | HTTP endpoint | `apps/server/src/http/<domain>/<method>.ts`；装配在 `http/index.ts` |
 | 外部身份契约 | 锁定的 `@gono/webplatform-contract` 与 `apps/shared/src/generated/webplatform` |
-| 协议指纹 | `scripts/protocol.fingerprint`；更新命令 `node scripts/protocol-fingerprint.mjs`。当前只覆盖 `apps/shared/src/protocol/**` 与 `PROTOCOL_VERSION`，由 `npm run test:fgui` 中的 `protocolFingerprint.test.ts` 校验；`constants/errors.ts` 的 `ErrorCode` 数值、`constants/game.ts` 的 `GamePhase` 与帧率等常量、`logic/battle.ts` 的技能表与伤害公式同为双端契约，但不在该闸内 |
+| 协议指纹 | `scripts/protocol.fingerprint`；更新命令 `node scripts/protocol-fingerprint.mjs`。当前只覆盖 `apps/shared/src/protocol/**` 与 `PROTOCOL_VERSION`，由 `npm run test:client` 中的 `protocolFingerprint.test.ts` 校验；`constants/errors.ts` 的 `ErrorCode` 数值、`constants/game.ts` 的 `GamePhase` 与帧率等常量、`logic/battle.ts` 的技能表与伤害公式同为双端契约，但不在该闸内 |
 | 计算任务 | `apps/server/src/core/compute/tasks` |
 | 本地环境变量与项目命名空间 | 根 `.env.development`；加载与校验在 `apps/server/src/core/infra/config.ts`（`PROJECT_ID` / `PORT` 加载期 fail-fast） |
 
