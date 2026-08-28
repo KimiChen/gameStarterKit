@@ -9,6 +9,7 @@ import {
   ApiPath,
   C2S,
   C2S_RUNTIME_VALIDATORS,
+  EFFECT_MAX_VALUE_BYTES,
   GameHttpContractMap,
   GamePhase,
   GameplayModeId,
@@ -39,6 +40,7 @@ import {
   hasExactKeys,
   isPlainRecord,
   normalizeEffect,
+  utf8ByteLength,
   validateEffect,
   validateGrant,
   type LobbyRpcType,
@@ -197,6 +199,41 @@ test("setField：按字段值域拒绝数字垃圾、越界值和非规范开关
   assertInvalid(() => validateGrant({ kind: "setField", field: "musicOn", value: "true" }), "EFFECT_VALUE");
   assertInvalid(() => validateGrant({ kind: "setField", field: "guildId", value: "9007199254740992" }), "EFFECT_VALUE");
   assertInvalid(() => validateGrant({ kind: "setField", field: "nickname", value: "x".repeat(129) }), "EFFECT_VALUE");
+});
+
+test("setField：文本上限统一按 UTF-8 字节，含信封级上限和代理字符", () => {
+  const nicknameAtLimit = "中".repeat(42); // 126 bytes <= nickname's 128-byte rule
+  const nicknameOverLimit = "中".repeat(43); // 129 bytes > nickname's 128-byte rule
+  const provinceAtLimit = "中".repeat(21); // 63 bytes <= province's 64-byte rule
+  const provinceOverLimit = "中".repeat(22); // 66 bytes > province's 64-byte rule
+  const emojiAtLimit = "🙂".repeat(32); // 128 bytes, despite 64 UTF-16 code units
+  const drainAtLimit = "中".repeat(341); // 1023 bytes <= the shared value ceiling
+  const drainOverLimit = "中".repeat(342); // 1026 bytes > the shared value ceiling
+
+  assert.equal(utf8ByteLength(nicknameAtLimit), 126);
+  assert.equal(utf8ByteLength(emojiAtLimit), 128);
+  assert.equal(utf8ByteLength(drainAtLimit), 1023);
+  assert.equal(EFFECT_MAX_VALUE_BYTES, 1024);
+  assert.deepEqual(validateGrant({ kind: "setField", field: "nickname", value: nicknameAtLimit }), {
+    kind: "setField", field: "nickname", value: nicknameAtLimit,
+  });
+  assert.deepEqual(validateGrant({ kind: "setField", field: "province", value: provinceAtLimit }), {
+    kind: "setField", field: "province", value: provinceAtLimit,
+  });
+  assert.deepEqual(validateGrant({ kind: "setField", field: "nickname", value: emojiAtLimit }), {
+    kind: "setField", field: "nickname", value: emojiAtLimit,
+  });
+  assert.deepEqual(validateGrant({ kind: "setField", field: "drainProbe", value: drainAtLimit }), {
+    kind: "setField", field: "drainProbe", value: drainAtLimit,
+  });
+  assertInvalid(() => validateGrant({ kind: "setField", field: "nickname", value: nicknameOverLimit }), "EFFECT_VALUE");
+  assertInvalid(() => validateGrant({ kind: "setField", field: "province", value: provinceOverLimit }), "EFFECT_VALUE");
+  assertInvalid(() => validateGrant({ kind: "setField", field: "drainProbe", value: drainOverLimit }), "EFFECT_VALUE");
+
+  // Redis cjson rejects lone UTF-16 surrogates; reject them before a durable intent
+  // can be written so the shared and Lua boundaries fail closed consistently.
+  const loneSurrogate = String.fromCharCode(0xd800);
+  assertInvalid(() => validateGrant({ kind: "setField", field: "nickname", value: loneSurrogate }), "EFFECT_VALUE");
 });
 
 test("所有公开 wire validator：hostile getter/iterator 统一转为可判别错误", () => {

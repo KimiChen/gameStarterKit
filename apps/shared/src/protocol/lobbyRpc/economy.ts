@@ -22,7 +22,10 @@ export const EFFECT_MAX_ITEM_ID = 1_000_000;
 export const EFFECT_MAX_COUNT = 1_000_000;
 export const EFFECT_MAX_DELTA = 1_000_000;
 export const EFFECT_MAX_FIELD_LENGTH = 64;
-export const EFFECT_MAX_VALUE_LENGTH = 1024;
+/** Maximum UTF-8 byte length of one setField value (including drainProbe). */
+export const EFFECT_MAX_VALUE_BYTES = 1024;
+/** @deprecated Use EFFECT_MAX_VALUE_BYTES; retained for source compatibility. */
+export const EFFECT_MAX_VALUE_LENGTH = EFFECT_MAX_VALUE_BYTES;
 
 /** setField 允许写入的玩法字段。系统/路由/幂等字段不在此表内。 */
 export const EFFECT_FIELD_ALLOWLIST = [
@@ -37,17 +40,17 @@ type EffectField = (typeof EFFECT_FIELD_ALLOWLIST)[number];
 /**
  * setField 的值域也属于 durable effect 契约，不能只靠调用方的 TypeScript 类型。
  * 数值和开关字段以 Redis hash 字符串持久化，因此这里明确规定其字符串编码；文本字段
- * 复用用户视图的边界，避免一个坏值把后续所有读路径变成数据损坏。
+ * 以 UTF-8 字节为单位复用用户视图的边界，避免一个坏值把后续所有读路径变成数据损坏。
  */
 export type EffectFieldValueRule =
-    | { readonly kind: "text"; readonly maxLength: number }
+    | { readonly kind: "text"; readonly maxBytes: number }
     | { readonly kind: "integer"; readonly min: number; readonly max: number }
     | { readonly kind: "flag" };
 
 export const EFFECT_FIELD_VALUE_RULES: { readonly [K in EffectField]: EffectFieldValueRule } = {
-    nickname: { kind: "text", maxLength: 128 },
+    nickname: { kind: "text", maxBytes: 128 },
     avatarId: { kind: "integer", min: -1, max: 999 },
-    province: { kind: "text", maxLength: 64 },
+    province: { kind: "text", maxBytes: 64 },
     star: { kind: "integer", min: 0, max: Number.MAX_SAFE_INTEGER },
     maxRound: { kind: "integer", min: 0, max: Number.MAX_SAFE_INTEGER },
     wins: { kind: "integer", min: 0, max: Number.MAX_SAFE_INTEGER },
@@ -57,7 +60,7 @@ export const EFFECT_FIELD_VALUE_RULES: { readonly [K in EffectField]: EffectFiel
     musicOn: { kind: "flag" },
     sfxOn: { kind: "flag" },
     guildId: { kind: "integer", min: 0, max: Number.MAX_SAFE_INTEGER },
-    drainProbe: { kind: "text", maxLength: EFFECT_MAX_VALUE_LENGTH },
+    drainProbe: { kind: "text", maxBytes: EFFECT_MAX_VALUE_BYTES },
 };
 
 /** 即使未来扩展 allowlist，也不能写入这些跨域元数据字段。 */
@@ -148,16 +151,67 @@ const asciiField = (value: unknown): value is string =>
 
 const decimalInteger = /^-?[0-9]+$/;
 
-/** Validate the field-specific string encoding used by setField. */
+/**
+ * Count the bytes a JavaScript string occupies when encoded as UTF-8.
+ * This is deliberately implemented without TextEncoder so shared stays ES2017-only.
+ * Well-formed strings follow the same encoding as TextEncoder; an unpaired surrogate
+ * is counted as the replacement character and rejected separately by the validator,
+ * because Redis cjson cannot decode it from a JSON envelope.
+ */
+export function utf8ByteLength(value: string): number {
+    let bytes = 0;
+    for (let i = 0; i < value.length; i++) {
+        const code = value.charCodeAt(i);
+        if (code <= 0x7f) {
+            bytes += 1;
+        } else if (code <= 0x7ff) {
+            bytes += 2;
+        } else if (code >= 0xd800 && code <= 0xdbff) {
+            const next = value.charCodeAt(i + 1);
+            if (next >= 0xdc00 && next <= 0xdfff) {
+                bytes += 4;
+                i++;
+            } else {
+                bytes += 3;
+            }
+        } else {
+            // BMP code points and an unpaired low surrogate both encode to three
+            // bytes under replacement-character UTF-8 encoding.
+            bytes += 3;
+        }
+    }
+    return bytes;
+}
+
+const isWellFormedUnicode = (value: string): boolean => {
+    for (let i = 0; i < value.length; i++) {
+        const code = value.charCodeAt(i);
+        if (code >= 0xd800 && code <= 0xdbff) {
+            const next = value.charCodeAt(i + 1);
+            if (next >= 0xdc00 && next <= 0xdfff) {
+                i++;
+                continue;
+            }
+            return false;
+        }
+        if (code >= 0xdc00 && code <= 0xdfff) return false;
+    }
+    return true;
+};
+
+/** Validate the field-specific UTF-8 string encoding used by setField. */
 export function validateEffectFieldValue(field: string, value: unknown, path = "grant.value"): string {
-    if (typeof value !== "string" || value.length > EFFECT_MAX_VALUE_LENGTH) {
+    if (typeof value !== "string") {
         fail("EFFECT_VALUE", path);
     }
+    const text = value as string;
+    if (!isWellFormedUnicode(text)) { fail("EFFECT_VALUE", path); }
+    const byteLength = utf8ByteLength(text);
+    if (byteLength > EFFECT_MAX_VALUE_BYTES) { fail("EFFECT_VALUE", path); }
     const rule = (EFFECT_FIELD_VALUE_RULES as Record<string, EffectFieldValueRule | undefined>)[field];
     if (rule === undefined) { return fail("EFFECT_FIELD", `${path}.field`); }
-    const text = value as string;
     if (rule.kind === "text") {
-        if (text.length > rule.maxLength) { fail("EFFECT_VALUE", path); }
+        if (byteLength > rule.maxBytes) { fail("EFFECT_VALUE", path); }
     } else if (rule.kind === "flag") {
         if (text !== "0" && text !== "1") { fail("EFFECT_VALUE", path); }
     } else {

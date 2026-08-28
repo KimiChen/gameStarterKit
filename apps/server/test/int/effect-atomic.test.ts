@@ -25,6 +25,7 @@ import { APPLY_EFFECT, defineScript, evalshaWithReload } from "../../src/core/in
 import { clientFor, clientForKey, closeRedis } from "../../src/core/infra/redisRoute";
 import { closeMysql, getPool, withTx } from "../../src/core/infra/mysql";
 import type { RowDataPacket } from "../../src/core/infra/mysql";
+import { validateGrant } from "@game/shared";
 import { assertRedisUp, cleanupUser, testUid } from "./helpers";
 import { exerciseFaultPoint } from "../faultMatrix";
 
@@ -154,6 +155,44 @@ test("Lua validate-then-apply：首条合法、后续非法时 Redis/applied/pay
     (error: unknown) => error instanceof InvalidEffectError && error.effectCode === "EFFECT_COUNT",
   );
   assert.deepEqual(await dump(user), before, "wrapper 拒绝 NaN 时也不得写 Redis");
+});
+
+test("shared/Lua setField：非 ASCII 文本边界按同一 UTF-8 字节单位判定", async () => {
+  const cases: readonly { field: string; value: string; accepted: boolean }[] = [
+    { field: "nickname", value: "中".repeat(42), accepted: true },
+    { field: "nickname", value: "中".repeat(43), accepted: false },
+    { field: "province", value: "中".repeat(21), accepted: true },
+    { field: "province", value: "中".repeat(22), accepted: false },
+    { field: "nickname", value: "🙂".repeat(32), accepted: true },
+    { field: "nickname", value: "🙂".repeat(33), accepted: false },
+    { field: "drainProbe", value: "中".repeat(341), accepted: true },
+    { field: "drainProbe", value: "中".repeat(342), accepted: false },
+  ];
+
+  for (let i = 0; i < cases.length; i++) {
+    const item = cases[i];
+    const user = await seed(`utf8-${i}`);
+    const grant = { kind: "setField" as const, field: item.field, value: item.value };
+    let sharedAccepted = true;
+    try { validateGrant(grant); }
+    catch { sharedAccepted = false; }
+    assert.equal(sharedAccepted, item.accepted, `shared 预期 ${item.field} case=${i}`);
+
+    const before = await dump(user);
+    const result = await luaApplyRaw(
+      user,
+      deriveOpId(user, 0, "effect.utf8-boundary", String(i)),
+      JSON.stringify({ schemaVersion: 1, grants: [grant] }),
+    );
+    if (item.accepted) {
+      assert.equal(result, "ok", `Lua 应接受 ${item.field} case=${i}`);
+      const after = await dump(user);
+      assert.equal(after.user[item.field], item.value, `${item.field} 应按原字节序列落盘`);
+    } else {
+      assert.equal(result, "err:EFFECT_VALUE", `Lua 应拒绝 ${item.field} case=${i}`);
+      assert.deepEqual(await dump(user), before, `${item.field} 越界不得产生部分写入`);
+    }
+  }
 });
 
 test("Lua apply 预检 Redis key 类型与键集合：污染时不发生部分写入", async () => {

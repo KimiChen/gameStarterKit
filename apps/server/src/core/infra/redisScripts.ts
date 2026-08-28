@@ -11,7 +11,7 @@ import { createHash } from "node:crypto";
 import type Redis from "ioredis";
 import {
   EFFECT_FIELD_ALLOWLIST, EFFECT_MAX_COUNT, EFFECT_MAX_DELTA, EFFECT_MAX_FIELD_LENGTH,
-  EFFECT_MAX_GRANTS, EFFECT_MAX_ITEM_ID, EFFECT_MAX_QUANTITY, EFFECT_MAX_VALUE_LENGTH,
+  EFFECT_MAX_GRANTS, EFFECT_MAX_ITEM_ID, EFFECT_MAX_QUANTITY, EFFECT_MAX_VALUE_BYTES,
   EFFECT_FIELD_VALUE_RULES, EFFECT_RESERVED_FIELDS, EFFECT_SCHEMA_VERSION,
 } from "@game/shared";
 import { BAG_SHARDS } from "./config";
@@ -60,7 +60,7 @@ const LUA_EFFECT_FIELD_RULES = `{${Object.entries(EFFECT_FIELD_VALUE_RULES).map(
   if (rule.kind === "integer") {
     return `[${JSON.stringify(field)}]={kind='integer',min=${rule.min},max=${rule.max}}`;
   }
-  return `[${JSON.stringify(field)}]={kind='text',max=${rule.maxLength}}`;
+  return `[${JSON.stringify(field)}]={kind='text',max=${rule.maxBytes}}`;
 }).join(",")}}`;
 const LUA_EFFECT_VERSION = String(EFFECT_SCHEMA_VERSION);
 const LUA_MAX_GRANTS = String(EFFECT_MAX_GRANTS);
@@ -69,7 +69,7 @@ const LUA_MAX_ITEM_ID = String(EFFECT_MAX_ITEM_ID);
 const LUA_MAX_COUNT = String(EFFECT_MAX_COUNT);
 const LUA_MAX_DELTA = String(EFFECT_MAX_DELTA);
 const LUA_MAX_FIELD_LENGTH = String(EFFECT_MAX_FIELD_LENGTH);
-const LUA_MAX_VALUE_LENGTH = String(EFFECT_MAX_VALUE_LENGTH);
+const LUA_MAX_VALUE_BYTES = String(EFFECT_MAX_VALUE_BYTES);
 const LUA_MAX_SAFE_INTEGER = String(Number.MAX_SAFE_INTEGER);
 const LUA_KEY_COUNT = String(3 + BAG_SHARDS);
 
@@ -181,7 +181,9 @@ for i = 1, grantCount do
     end
     if reservedFields[g.field] == true then return invalid('EFFECT_RESERVED_FIELD') end
     if allowFields[g.field] ~= true then return invalid('EFFECT_FIELD') end
-    if type(g.value) ~= 'string' or #g.value > ${LUA_MAX_VALUE_LENGTH} then return invalid('EFFECT_VALUE') end
+    -- Redis Lua strings are byte sequences; #g.value is the UTF-8 byte length
+    -- used by the shared validator as well.
+    if type(g.value) ~= 'string' or #g.value > ${LUA_MAX_VALUE_BYTES} then return invalid('EFFECT_VALUE') end
     local rule = fieldRules[g.field]
     if rule == nil then return invalid('EFFECT_FIELD') end
     if rule.kind == 'flag' then
