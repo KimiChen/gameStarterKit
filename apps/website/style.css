@@ -849,9 +849,20 @@
   .wsk-footer a {
     align-items: center;
     color: inherit;
-    display: flex;
+    display: inline-flex;
     gap: .3rem;
     text-decoration: none;
+  }
+
+  .wsk-footer-inner p {
+    margin: 0;
+  }
+
+  .wsk-footer-inner p .wsk-icp-link {
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    vertical-align: baseline;
   }
 
   .wsk-footer a:hover {

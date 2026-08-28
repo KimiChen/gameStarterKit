@@ -69,3 +69,11 @@ test("provides a scoped rsync deployment script", async () => {
   assert.match(script, /StrictHostKeyChecking=accept-new/);
   assert.doesNotMatch(script, /--delete/);
 });
+
+test("shows the ICP filing link after the footer label", async () => {
+  const html = await read("index.html");
+  assert.match(html, /闽ICP备20003902号-8/);
+  assert.match(html, /href="https:\/\/beian\.miit\.gov\.cn\/"/);
+  assert.match(html, /class="wsk-icp-link"[^>]*target="_blank"/);
+  assert.match(html, /rel="noopener noreferrer"/);
+});
