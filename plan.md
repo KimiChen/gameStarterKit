@@ -2,16 +2,15 @@
 
 > 审阅日期：2026-08-28
 >
-> 代码基线：分支 `new`，HEAD `223993c`（已完成 P0/P1 核心收口以及 P2-01/P2-02/P2-03；本轮仅校准文档
-> 与验证基线）。
+> 代码基线：分支 `new`，HEAD `ae61513`（P0/P1 核心收口以及 P2-01/P2-02/P2-03 已完成）
 >
 > 文档状态：`plan.md` 已纳入 Git，本文件是核心改进优先级的唯一真相
 >
 > 评估范围：开发期游戏基础框架的正确性、可测试性、可替换性和本地开发体验
 >
-> 复核记录：2026-08-28 已完成一轮逐条「文档 vs 代码」一致性核查（服务端/客户端/工具链约 60 条声明），
-> §3 的单元、集成、故障矩阵和 deterministic 性能门禁均按当前基线重跑；真实 Creator 预览和完整 smoke
-> 仍不纳入 Node/本地栈测试的通过声明。
+> 复核记录：2026-08-28 已完成一轮独立的逐条「完成声明 vs 代码」复核（约 60 条裁决，覆盖全部 ✅ 条目）
+> 并重跑 §3 基线；完成标记总体可信，各条目内以「复核备注」标注测试面与措辞的剩余缝隙。真实 Creator
+> 预览和完整 smoke 仍不纳入 Node/本地栈测试的通过声明。
 
 ## 1. 计划边界
 
@@ -55,9 +54,10 @@ schema 迁移仍待补齐，Game HTTP request schema 尚未直接由 shared vali
 | client tests 严格编译探针 | 通过 | `apps/client/tsconfig.test.json` 纳入 Main、全部 View、`pages.ts`/ViewMgr 与客户端 tests；Node 桩只证明 TypeScript/API 形状，真实 Creator 类型与资源仍需编辑器验证 |
 | 全仓 Markdown 内部链接与锚点 | 通过 | 机检 41 个 `.md` 的全部相对链接与 `#` 锚点，0 处失效 |
 
-本轮已在本地 Redis/MySQL 上运行 `npm --workspace @game/server run test:int`（97/97）和
-`npm run test:faults:int`（4/4 组）；端到端 `smoke` 仍需要外部 WebPlatform 与运行中的游戏服，未把它
-写成已通过证据。
+本轮及 2026-08-28 复核均在本地 Redis/MySQL 复跑通过：`npm --workspace @game/server run test:int`
+（97/97）与 `npm run test:faults:int`（4/4 组，全部声明的 fault point 实际执行）；端到端 `smoke` 仍需要
+外部 WebPlatform 与运行中的游戏服，未把它写成已通过证据。注意 `verify:core` 以 `apps/website` 存在为
+前提（`verify:project` 校验其 package.json），移除说明站须同步更新项目元数据。
 
 ## 4. 已具备且应保留的设计
 
@@ -118,6 +118,8 @@ reconcile 已落地；客户端 session/transport 测试覆盖重复导航、迟
 
 状态：已完成。`GameRoom` 的 C2S/S2C runtime validator、phase gate、awaited start lock、全量 reset、
 fixed-step clock 和双向身份索引均已落地；`game-room.test.ts` 覆盖故障与确定性 fixture。
+复核备注：默认播种仍带 `Date.now()` 分量（同毫秒碰撞已由 seed 序列消除、seed 写入证据、测试可注入）；
+「同毫秒建房有确定结果」由机制保证，暂无专项用例。
 
 **原审阅证据（已收口）**
 
@@ -149,6 +151,8 @@ fixed-step clock 和双向身份索引均已落地；`game-room.test.ts` 覆盖�
 
 状态：已完成。effect 入口先做 shared/runtime validate，Lua 采用 validate-then-apply，保留字段和跨区
 `server_id` 谓词均有守门测试；非法批次不会留下 Redis、applied 或 durable 业务结果。
+复核备注：purchaseTx 的「ledger 重复且 payload 不同」分支无专项用例，由 Lua 层 applied↔payload 绑定
+等价覆盖。
 
 **原审阅证据（已收口）**
 
@@ -177,6 +181,8 @@ fixed-step clock 和双向身份索引均已落地；`game-room.test.ts` 覆盖�
 
 状态：已完成。`LobbyRoom.onJoin` 等待有界的 `ensureCharacterReady` flight，初始化失败/超时拒绝本次
 join；并发、空库、repair 和外部登记故障由 character-ready 测试覆盖。
+复核备注：join 期间 MySQL 单点故障无专用注入用例，由「initializer 任意失败即拒 join」的通用用例
+间接覆盖。
 
 **原审阅证据（已收口）**
 
@@ -242,6 +248,8 @@ collection key 幂等，`clear()` 不遗留 bitECS entity。
 
 状态：已完成 Node 可测试边界。View lifecycle hook、AbortSignal/generation、open 失败回滚、交互租约和
 迟到异步结果均已收口；真实 Creator 引擎行为仍需编辑器预览。
+复核备注：「stop 后迟到结果 0 回调」目前只有 Guild 有专门断言，Area/Notice 的同型机制靠实现审读保证；
+完成标准「开关 100 次只触发一次 action」由等价幂等用例覆盖，非字面值压测。
 
 已实施的生命周期边界：
 
@@ -264,6 +272,8 @@ response 均有 runtime validator 与 malformed/extra-key 测试；未来新增 
 WebPlatform consumer facade 共同守住 method/path/request/response、exact keys、枚举、finite number 与
 安全 origin；服务端 route 与客户端 wrapper 的核心 endpoint 从 contract key 派生。仍保留的边界是 Game
 HTTP request schema 还由 endpoint options 维护，尚未完全生成化。
+复核备注：WebPlatform consumer map 还登记了仓内未调用的 Livez/Readyz 两个契约，属 consumer 子集而非
+生成全集，当前无实际暴露面。
 
 **完成标准**：畸形 2xx/RPC/S2C、未知字段和非法 endpoint 在状态写入或连接前失败；任一侧 path/shape 漂移本地测试失败。
 
@@ -292,6 +302,8 @@ shared exact validators、RPC/HTTP contract map、Colyseus state mirror、fixtur
 
 状态：已完成计划内边界。数字 parser、compute admission、dispatcher timer、strict request、Redis route
 URL、freeze keyset 和坏值校验已落地；relayer 事务边界、archive 隔离和热档迁移仍列为明确限制。
+复核备注：compute 达到容量上限的饱和路径暂无专项用例（docs/SERVER.md §11 已同步改为如实表述）；
+freeze janitor 的 `batch ≤ 0` 按钳到 1 处理而非拒绝（测试已钉死该语义）。
 
 1. 完整数字 parser 拒绝尾随垃圾、NaN、负值和越界组合。
 2. compute pool 有总队列容量、admission policy 和稳定 overload 错误；周期任务不进入请求池。

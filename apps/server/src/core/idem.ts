@@ -1,7 +1,7 @@
 /**
  * 幂等占位（规则见 docs/SERVER.md §12 I 组）。
  *
- * 幂等 = **执行前**原子占位（SET NX PX，pending 短租约 10s）+ **数据层 UNIQUE 兜底**（09·I1）。
+ * 幂等 = **执行前**原子占位（SET NX PX，pending 短租约 30s）+ **数据层 UNIQUE 兜底**（09·I1）。
  * ⛔ 禁止「成功后 SET」——并发双发会双双执行；⛔ 禁止 pending 用长 TTL（24h 毒丸卡死用户）。
  * pending 租约崩溃后自然失效，可被后续请求安全抢占；数据层（ledger UNIQUE / applied ZSET）
  * 保证抢占后的重复执行也 exactly-once。
@@ -38,7 +38,7 @@ export async function idemComplete(client: Redis, key: string, resultJson: strin
   await client.set(key, resultJson, "PX", IDEM_RESULT_MS);
 }
 
-/** 业务失败（干净失败，可重试）→ 释放自己的 pending，让客户端立即重试而不用等 10s。 */
+/** 业务失败（干净失败，可重试）→ 释放自己的 pending，让客户端立即重试而不用等 30s。 */
 export async function idemRelease(client: Redis, key: string, holderId: string): Promise<void> {
   // CAS：只删自己的 pending，绝不误删别人的占位或已写入的结果
   await evalshaWithReload(client, CAS_DEL, [key], [PENDING_PREFIX + holderId]);

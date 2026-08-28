@@ -65,7 +65,13 @@ apps/client/src
 | FGUI 设计源、导出物和 registry/codegen 契约 | `npm run verify:fgui`、`npm run test:fgui` |
 | 能力清单与默认入口登记 | `npm run verify:inventory` |
 | 服务端路由、协议与一致性规则 | `npm --workspace @game/server run test` |
+| 客户端无头行为、wire 与生命周期 | `npm run test:client` |
+| vendored runtime 内容与文件集合锁 | `npm run verify:vendor`、`npm run test:vendor` |
+| 客户端性能基线（结构门禁） | `npm run verify:perf` |
+| 定向故障矩阵 fail-closed | `npm run test:faults`（集成组 `test:faults:int`） |
 | 外部身份契约版本与生成物一致 | `npm run verify:webplatform-contract` |
+
+`npm run verify:core` / `verify:all` 是上述检查的聚合入口，改动合入前至少应通过 `verify:core`。
 
 这些命令是本地开发验证入口，不表示所有真实边界都已覆盖。客户端 `typecheck:client` 通过
 `apps/client/tsconfig.test.json` 和最小引擎桩严格编译全部 `src/**/*.ts` 与 `test/**/*.ts`；Creator

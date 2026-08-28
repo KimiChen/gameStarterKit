@@ -148,8 +148,9 @@ FairyGUI 在当前 Cocos 运行时只有一个全局 InputProcessor，`interacti
 - `interactive: false`：页面本身不增加租约；没有其他交互页时整棵 FGUI 树都收不到输入，适合纯展示 HUD。
 
 只要还有任一交互页打开，全局处理器就保持启用，`interactive: false` 页面也不是独立的输入隔离区。
-关闭必须走 open 返回的 `ViewHandle.close()`；onlyOne/permanent 页也可用 `ViewMgr.close(name)`，对多实例页
-该调用是空操作。直调 `view.dispose()` 会让 `interactive` 租约无法恢复。
+关闭必须走 open 返回的 `ViewHandle.close()`；onlyOne/permanent 页也可用 `ViewMgr.close(name)`——它会
+取消该名字下的在途 open，但对已挂载的多实例实例是空操作。直调 `view.dispose()` 会让 `interactive`
+租约无法恢复。
 
 ## 5. FairyGUI codegen
 
@@ -243,11 +244,13 @@ apps/art/fairygui 中修改设计源
 
 写请求的 `clientReqId` 只生成一次，重试复用同一个 ID。join 复用判据包含 endpoint、区号、token 和完整
 options，不符即抛错而非静默复用；本次 `client`/`endpoint`/options/generation 会在 join 开始时冻结，
-`init()` 换端点不会污染在途连接。join timeout 或 AbortSignal 会立即结束本地 ownership，SDK 迟到的 room
-仍在后台释放。onDrop 会立即把全部在途 RPC 判为 CONN_LOST，room 实例与监听在 SDK 自动重连后继续存活。
-`net/session.ts` 是登录态与 authInvalid/connLost/battleLost 三类会话事件的枢纽；authInvalid 在未登录时
-幂等吞掉迟到上报，三类事件均由统一 `returnToLogin` 出口串行编排。注册该出口后，回登录前会清理旧 bearer；
-transport 事件本身仍只广播给订阅者，订阅方需自行保证回滚操作幂等。
+`init()` 换端点不会污染在途连接。join 的 deadline/cancel 契约由 `net/joinControl.ts` 定义，RoomClient
+与 WebSocketClient 共用；timeout 或 AbortSignal 会立即结束本地 ownership，SDK 迟到的 room 仍在后台释放。
+onDrop 会立即把全部在途 RPC 判为 CONN_LOST，room 实例与监听在 SDK 自动重连后继续存活。
+`net/session.ts` 是登录态与 authInvalid/connLost/battleLost 三类 transport 事件的枢纽；authInvalid 在
+未登录时幂等吞掉迟到上报。三类事件与 Main 的进房失败（BATTLE_JOIN_FAILED）都由统一 `returnToLogin`
+出口串行编排；注册该出口后，回登录前会清理旧 bearer。transport 事件本身仍只广播给订阅者，订阅方需
+自行保证回滚操作幂等。
 
 ### HTTP
 
