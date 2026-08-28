@@ -10,7 +10,6 @@ import { LoginNoticeLogic } from "../src/logic/page/LoginNoticeLogic";
 import { LoginLogic, runAuthenticatedLoginFlow } from "../src/logic/page/LoginLogic";
 import { ConfirmLogic } from "../src/logic/page/ConfirmLogic";
 import {
-  clearServerList,
   chooseServer,
   getCurrentGameWsUrl,
   getCurrentServer,
@@ -193,12 +192,14 @@ test("serverSession：写入点拒绝恶意目录且保留上一份完整快照"
   assert.deepEqual(getCurrentServer(), selectedBefore, "非法刷新不得改变当前区");
 });
 
-test("serverSession：WS accessor 只取当前快照，清理入口可恢复空态", () => {
+test("serverSession：WS accessor 只取当前快照，空目录后拒绝建立连接", () => {
   const list = areaRes([{ ...srv(91), gameWsUrl: "wss://zone-91.example" }]);
   setServerList(list);
   assert.equal(getCurrentGameWsUrl(), "wss://zone-91.example");
-  clearServerList();
-  assert.equal(getServerList(), null);
+  // 生产代码只在成功拉取后发布快照；测试用合法空目录模拟无可选区服，
+  // 不暴露一个没有生产调用方的公共 reset 写入点。
+  setServerList(areaRes([]));
+  assert.deepEqual(getServerList()?.servers, []);
   assert.equal(getCurrentServer(), null);
   assert.throws(() => getCurrentGameWsUrl(), /尚未选择区服/);
 });

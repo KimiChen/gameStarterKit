@@ -12,7 +12,7 @@ import { test } from "node:test";
 import { C2S, RoomName, PROTOCOL_VERSION, S2C, type IGameRoomState, type IPlayerState } from "../src/shared/index";
 import { RoomClient } from "../src/net/RoomClient";
 import { createBallMoveRoom, createBallMoveRoomJoiner } from "../src/net/rooms/BallMoveRoom";
-import { clearServerList, setServerList } from "../src/net/serverSession";
+import { setServerList } from "../src/net/serverSession";
 import { onBattleLost } from "../src/net/session";
 import type { WebPlatformAreaListResponse } from "../src/shared/index";
 
@@ -538,7 +538,7 @@ test("BallMoveRoom joiner：连接端点直接取当前区的 gameWsUrl", async 
     assert.deepEqual(calls.options, { token: "", sId: 92 });
     await ownership.leave();
   } finally {
-    clearServerList();
+    setServerList({ isOps: false, hash: "reset", myServerIds: [], servers: [] });
   }
 });
 

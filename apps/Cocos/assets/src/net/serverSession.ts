@@ -64,11 +64,6 @@ export function getServerList(): WebPlatformAreaListResponse | null {
   return cloneSnapshotList(snapshot.list);
 }
 
-/** 目录重拉前清掉旧地址；失败时绝不静默沿用未知的新旧拓扑。 */
-export function clearServerList(): void {
-  snapshot = { list: null, current: null };
-}
-
 /** 选服（选服界面点区服 / 默认选中时调用）。 */
 export function chooseServer(server: WebPlatformAreaServer): void {
   // Store the canonical object from the current snapshot when possible.  This
