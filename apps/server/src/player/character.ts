@@ -21,7 +21,7 @@ import { zoneCtx } from "../core/infra/keys";
 import { createUser } from "../core/userRecord";
 import { ensureLive, invalidateUserNegcache } from "../core/archive/thaw";
 import { registerCharacterWithRepair } from "./characterRepair";
-import { CHARACTER_READY_TIMEOUT_MS } from "../core/infra/config";
+import { CHARACTER_READY_TIMEOUT_MAX_MS, CHARACTER_READY_TIMEOUT_MS } from "../core/infra/config";
 
 /** 首进区角色初始字段（与登录建号一致；缺 musicOn/sfxOn = 读侧默认开，07 字段表）。 */
 const zoneCharInit = (): Record<string, string> => ({
@@ -37,62 +37,220 @@ export async function ensureCharacter(uid: string, sId: number): Promise<void> {
   // ⛔ 绝不在冻结档上 createUser 建空档（空档上先发生写会致 archive 被删、真档永久丢失）。
   // ⚠ ensureLive 内部抢 lock:{uid}——本函数不得在 withUser 锁内调用（onJoin best-effort 调，安全）。
   await zoneCtx.run({ sId }, async () => {
-    await ensureLive(uid);                        // 冻结→thaw 恢复；真新→ABSENT(F4 判)；热→无；真丢→抛
+    await ensureLive(uid, sId);                   // 冻结→thaw 恢复；真新→ABSENT(F4 判)；热→无；真丢→抛
     await createUser(uid, zoneCharInit());        // 幂等：热/解冻→'exists'，真新才建（⛔ 不覆盖真档）
     await registerCharacterWithRepair(uid, sId);  // 后写登记；失败 durable 留 intent 后仍向上抛
     await invalidateUserNegcache(uid);            // 建后失效负缓存（09·F4）
   });
 }
 
+export const CHARACTER_READY_CLOSED_CODE = "CHARACTER_READY_CLOSED" as const;
+
+export class CharacterReadyClosedError extends Error {
+  readonly code = CHARACTER_READY_CLOSED_CODE;
+
+  constructor() {
+    super("角色初始化已停止：服务正在关闭");
+    this.name = "CharacterReadyClosedError";
+  }
+}
+
 /**
- * 同一 `(uid, sId)` 的首进请求共享一个有界 initializer。
- *
- * `ensureCharacter` 的底层写入本身是幂等的，但把整个 ready 流程合并仍然很重要：
- * 首次大厅 join 不会同时发起多次外部登记，也不会让多个连接各自看到不同的
- *「已建档/未登记」中间态。超时只结束本次等待；迟到的底层 promise 仍被观察，
- * 其幂等结果可由 repair/下一次 join 收敛，不会产生 unhandled rejection。
+ * Validate the caller-provided deadline before creating a flight or arming a
+ * timer.  Node clamps NaN, Infinity and values above its timer range to a
+ * near-immediate timeout, which would otherwise turn a caller bug into a
+ * misleading ready failure.
  */
-const readyFlights = new Map<string, Promise<void>>();
+export function validateCharacterReadyTimeoutMs(timeoutMs: unknown): number {
+  if (typeof timeoutMs !== "number"
+    || !Number.isSafeInteger(timeoutMs)
+    || timeoutMs < 0
+    || timeoutMs > CHARACTER_READY_TIMEOUT_MAX_MS) {
+    throw new RangeError(
+      `角色初始化 timeoutMs 非法：「${String(timeoutMs)}」——须为 0..${CHARACTER_READY_TIMEOUT_MAX_MS} 的安全整数`,
+    );
+  }
+  return timeoutMs;
+}
+
+/** A caller-supplied initializer makes the ownership/race contract deterministic in tests. */
+export type CharacterReadyInitializer =
+  (uid: string, sId: number) => void | PromiseLike<void>;
+
+interface CharacterReadyFlight {
+  readonly work: Promise<void>;
+}
+
+/**
+ * Coalesces the underlying character initializer while giving every caller
+ * its own bounded wait.
+ *
+ * The map deliberately owns `work`, rather than a timeout-wrapped promise.
+ * A caller timing out must not release ownership while Redis/MySQL/WebPlatform
+ * writes are still in progress: a second join during that interval must await
+ * the same work.  The entry is removed only after the underlying work settles.
+ */
+export class CharacterReadyCoordinator {
+  private readonly flights = new Map<string, CharacterReadyFlight>();
+  private admissionOpen = true;
+  private draining: Promise<void> | null = null;
+
+  constructor(
+    private readonly initializer: CharacterReadyInitializer = ensureCharacter,
+  ) {}
+
+  ensure(
+    uid: string,
+    sId: number,
+    timeoutMs = CHARACTER_READY_TIMEOUT_MS,
+  ): Promise<void> {
+    const deadlineMs = validateCharacterReadyTimeoutMs(timeoutMs);
+    if (!this.admissionOpen) {
+      // Keep the Promise-returning API stable for LobbyRoom's `await` boundary;
+      // callers can map this to their normal join/availability error.
+      return Promise.reject(new CharacterReadyClosedError());
+    }
+
+    const key = `${uid}\u0000${sId}`;
+    const existing = this.flights.get(key);
+    const flight = existing ?? this.startFlight(key, uid, sId);
+    return this.waitForFlight(flight.work, uid, sId, deadlineMs);
+  }
+
+  /** Stop admitting new work while allowing already-started work to settle. */
+  clear(): void {
+    this.admissionOpen = false;
+  }
+
+  /** Re-open admission without duplicating a flight that is still in progress. */
+  reset(): void {
+    this.admissionOpen = true;
+  }
+
+  isAdmissionOpen(): boolean {
+    return this.admissionOpen;
+  }
+
+  /**
+   * Close admission and wait until every underlying initializer has settled.
+   * The drain intentionally resolves after rejected work too: shutdown must
+   * continue to close Redis/MySQL/WebPlatform, while the caller-specific wait
+   * promises still receive the original initializer error.
+   */
+  drain(): Promise<void> {
+    this.admissionOpen = false;
+    if (this.draining) { return this.draining; }
+
+    const run = (async () => {
+      // A reset is useful in embedded test runners.  Re-check the map after
+      // each batch so a flight that was already admitted before `clear()` is
+      // never left behind, even if it settles during the first snapshot.
+      while (this.flights.size > 0) {
+        const flights = [...new Set(this.flights.values())];
+        await Promise.allSettled(flights.map((flight) => flight.work));
+        await Promise.resolve();
+      }
+    })();
+    let draining!: Promise<void>;
+    draining = run.finally(() => {
+      if (this.draining === draining) { this.draining = null; }
+    });
+    this.draining = draining;
+    return draining;
+  }
+
+  private startFlight(key: string, uid: string, sId: number): CharacterReadyFlight {
+    // Install the flight before invoking user/injected code.  This makes
+    // re-entrant calls share the same work while still starting the initializer
+    // immediately (rather than adding an avoidable microtask delay).  A
+    // synchronously thrown initializer is converted to the same observed
+    // rejected promise as an async failure.
+    let resolveWork!: () => void;
+    let rejectWork!: (error: unknown) => void;
+    const work = new Promise<void>((resolve, reject) => {
+      resolveWork = resolve;
+      rejectWork = reject;
+    });
+    const flight: CharacterReadyFlight = { work };
+    this.flights.set(key, flight);
+
+    // Observe both outcomes independently of caller timeouts.  The rejection
+    // handler intentionally does not rethrow, so this observer can never become
+    // an unhandled rejection; callers still receive the original `work` error.
+    void work.then(
+      () => { this.finishFlight(key, flight); },
+      () => { this.finishFlight(key, flight); },
+    );
+    try {
+      Promise.resolve(this.initializer(uid, sId)).then(resolveWork, rejectWork);
+    } catch (error) {
+      rejectWork(error);
+    }
+    return flight;
+  }
+
+  private finishFlight(key: string, flight: CharacterReadyFlight): void {
+    if (this.flights.get(key) === flight) {
+      this.flights.delete(key);
+    }
+  }
+
+  private waitForFlight(
+    work: Promise<void>,
+    uid: string,
+    sId: number,
+    timeoutMs: number,
+  ): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (settled) { return; }
+        settled = true;
+        reject(new Error(`角色初始化超时 uid=${uid} sId=${sId}`));
+      }, timeoutMs);
+      timer.unref?.();
+
+      work.then(() => {
+        if (settled) { return; }
+        settled = true;
+        clearTimeout(timer);
+        resolve();
+      }, (error: unknown) => {
+        if (settled) { return; }
+        settled = true;
+        clearTimeout(timer);
+        reject(error);
+      });
+    });
+  }
+}
+
+const characterReadyCoordinator = new CharacterReadyCoordinator();
 
 export function ensureCharacterReady(
   uid: string,
   sId: number,
   timeoutMs = CHARACTER_READY_TIMEOUT_MS,
 ): Promise<void> {
-  const key = `${uid}\u0000${sId}`;
-  const existing = readyFlights.get(key);
-  if (existing) { return existing; }
-
-  const work = ensureCharacter(uid, sId);
-  // 即使调用方超时，仍消费底层 promise 的 rejection；迟到成功只会完成幂等建角。
-  void work.catch(() => {});
-  const bounded = new Promise<void>((resolve, reject) => {
-    let settled = false;
-    const timer = setTimeout(() => {
-      if (settled) { return; }
-      settled = true;
-      reject(new Error(`角色初始化超时 uid=${uid} sId=${sId}`));
-    }, timeoutMs);
-    timer.unref?.();
-    work.then(() => {
-      if (settled) { return; }
-      settled = true;
-      clearTimeout(timer);
-      resolve();
-    }, (error: unknown) => {
-      if (settled) { return; }
-      settled = true;
-      clearTimeout(timer);
-      reject(error);
-    });
-  }).finally(() => {
-    if (readyFlights.get(key) === bounded) { readyFlights.delete(key); }
-  });
-  readyFlights.set(key, bounded);
-  return bounded;
+  return characterReadyCoordinator.ensure(uid, sId, timeoutMs);
 }
 
-/** 测试/停服：不再接受新的 ready 等待，并让现有 flight 自然收敛。 */
+/** 停服时关闭 admission；未完成的底层 work 保留合流所有权，直到真正 settle。 */
 export function clearCharacterReadyFlights(): void {
-  readyFlights.clear();
+  characterReadyCoordinator.clear();
+}
+
+/** 停服边界：在关闭 Redis/MySQL/WebPlatform 前等待已接纳的建角 work 收尾。 */
+export function drainCharacterReadyFlights(): Promise<void> {
+  return characterReadyCoordinator.drain();
+}
+
+/** 测试/同进程重启：重开 admission，但不复制仍在执行的底层 initializer。 */
+export function resetCharacterReadyFlights(): void {
+  characterReadyCoordinator.reset();
+}
+
+/** 当前是否仍接受新的 ready 请求（启动/停服诊断与 focused tests 使用）。 */
+export function isCharacterReadyAdmissionOpen(): boolean {
+  return characterReadyCoordinator.isAdmissionOpen();
 }

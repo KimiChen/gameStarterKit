@@ -7,6 +7,7 @@ import { UserRpc } from "@game/shared";
 import { ensureLive } from "../../core/archive/thaw";
 import { UserDataLostError } from "../../core/errors";
 import { readUser } from "../../player/userStore";
+import { currentZoneId } from "../../core/infra/keys";
 import { defineRpc, sharedRpcSchema } from "../rpc";
 
 export default defineRpc(UserRpc.GetInfo, {
@@ -14,7 +15,7 @@ export default defineRpc(UserRpc.GetInfo, {
   handler: async (ctx) => {
     let user = await readUser(ctx.uid);
     if (!user) {
-      await ensureLive(ctx.uid);
+      await ensureLive(ctx.uid, currentZoneId());
       user = await readUser(ctx.uid);
     }
     // LobbyRoom 的 onJoin 已经完成有界首角色 initializer；这里仍保留
