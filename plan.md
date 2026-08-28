@@ -16,6 +16,12 @@
 > 共 92 条裁决：45 条完成声明经独立复核成立、47 条需要回填（含 10 条 plan.md 未登记的代码缺陷）。
 > 第三轮（2026-08-28，实现基线 `940b3c9`）逐项复核 17 个计划条目及第二轮回填点；所有计划内可执行缺口
 > 均已闭合，保留边界只涉及本文明确列出的额外功能、人工 Creator 验证和完整外部 smoke。
+> 第四轮（2026-08-28，HEAD `6c00606`）对第三轮后的 12 个收口提交逐 commit 独立复核（约 20 条裁决）：
+> 各 commit 的实质声称与各条目文字均同代码/测试一致；`verify:all`、`test:fgui`（45/45）、`test:int`
+> （99/99）与 `test:faults:int`（4 组 fault point 全部实测执行）在本轮重跑复现。两处提交归属备注：
+> effect「ledger 重复+异 payload」专项用例实际由 `11cd22f` 引入（`3583dae` 闭合的是 trimApplied 原子
+> 清理断言）；Area/Notice「迟到结果 0 回调」断言由 `15e93fd` 引入（非本轮三提交）。两者均不影响缝隙
+> 已在当前树闭合的结论。
 > 各轮结论一致的部分不重复记录；新增差异统一写进各条目的「复核备注」。
 > 真实 Creator 预览和完整 smoke 仍不纳入 Node/本地栈测试的通过声明。
 
@@ -135,7 +141,7 @@ generation，并在动态页面加载、room start、失败 stop 之后统一复
 3. Lobby 连接也使用 per-slot ownership；leave 的 timer 必须在先完成分支清理，主动离开状态按精确 room 归属。
 4. 所有失效事件进入一个可等待、幂等的 `returnToLogin(reason)` 队列，不再使用散落 IIFE；该出口统一
    `clearSession()`（`net/session.ts:127`，进入 transition 即清态），与 authInvalid 路径
-   （`net/session.ts:193-195`，先清态再广播）对齐，使回登录页后不残留旧 Bearer。
+   （`net/session.ts:195-199`，先清态再广播）对齐，使回登录页后不残留旧 Bearer。
 5. 输入保存 desired direction + monotonic seq/lease；断线仍更新 desired，恢复后先 reconcile 并重放或发送 stop。
 
 **验收（已通过）**
@@ -433,7 +439,7 @@ running + queued 饱和；`dispatcher-idem.test.ts` 直接执行 deadline helper
 - 页面 HTTP consumer 与房间 joiner 分别消费 `gameHttpUrl`、`gameWsUrl`；目录响应中的 `hash` 不进入 join
   options，因而不会暗示不存在的陈旧目录准入语义。
 - shared `logic/time.ts` 使用显式 UTC/configured offset 计算自然日，并有跨时区 golden tests。
-- `GameRoom` 的 transport 重连只做 desired input 对账（`net/RoomClient.ts:720-725`、`:865-879`，用例见
+- `GameRoom` 的 transport 重连只做 desired input 对账（`net/RoomClient.ts:721-726`、`:865-879`，用例见
   `test/roomClientOwnership.test.ts` 的「掉线输入 reconcile」），不当作业务恢复；大厅连接最终死亡统一走
   `notifyConnLost` → `returnToLogin` 后整段重新登录来重建 session 与角色快照，目前没有独立的 session/角色
   快照对账层；大厅房也未注册 `onReconnect`，`net/WebSocketClient.ts:205` 的 `slot.dropping` 当前无消费方。
