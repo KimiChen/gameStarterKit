@@ -1,9 +1,15 @@
 // FGUI manifest 的校验分支测试；失败 fixture 不写入或修改仓库内的资源。
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 
 import {
   assertManifestShape,
+  checkManifest,
   compareRecords,
   componentDeclarations,
   currentManifest,
@@ -13,6 +19,9 @@ import {
   sourcePathProblems,
   validateUiUrl,
 } from "./fgui-manifest.mjs";
+
+const ROOT = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
+const SCRIPT = path.join(ROOT, "scripts/fgui-manifest.mjs");
 
 const HASH_A = "a".repeat(64);
 const HASH_B = "b".repeat(64);
@@ -163,6 +172,53 @@ test("currentManifest:只读构建当前资源闭包，不写回 manifest", () =
   assert.ok(manifest.packages.length > 0);
   assert.ok(manifest.exports.length > 0);
   assert.ok(manifest.views.length > 0);
+});
+
+test("checkManifest 编排:root/package/component/View AUTO 漂移均被报告", () => {
+  const current = currentManifest();
+  const silent = { log() {}, error() {} };
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "fgui-manifest-test-"));
+  try {
+    const cases = [
+      ["root", (manifest) => { manifest.sourceRoot = "apps/art/other"; }, /manifest root 与当前工程不一致/],
+      ["package", (manifest) => { manifest.packages[0].id = "drifted"; }, /Common_Btn: package id 变化/],
+      ["component", (manifest) => { manifest.packages[0].components[0].exported = false; }, /Common_Btn: package\.xml 组件\/导出声明变化/],
+      ["View", (manifest) => { manifest.views[0].pkg = "View_Home_Home"; }, /View AUTO 生成区过期/],
+      ["AUTO", (manifest) => { manifest.views[0].generatedHash = "0".repeat(64); }, /View AUTO 生成区过期/],
+    ];
+    for (const [label, mutate, expected] of cases) {
+      const manifest = structuredClone(current);
+      mutate(manifest);
+      const manifestPath = path.join(tempRoot, `${label}.json`);
+      fs.writeFileSync(manifestPath, `${JSON.stringify(manifest)}\n`);
+      const result = checkManifest({ manifestPath, buildCurrent: () => current, logger: silent });
+      assert.equal(result.ok, false, `${label} drift should fail`);
+      assert.match(result.problems.join("\n"), expected);
+    }
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("fgui-manifest CLI:漂移返回非零，--check 不会隐式改写 manifest", () => {
+  const current = currentManifest();
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "fgui-manifest-cli-"));
+  const manifestPath = path.join(tempRoot, "manifest.json");
+  try {
+    current.exportRoot = "apps/Cocos/assets/resources/drifted";
+    const before = `${JSON.stringify(current, null, 2)}\n`;
+    fs.writeFileSync(manifestPath, before);
+    const result = spawnSync(process.execPath, [SCRIPT, "--check"], {
+      cwd: ROOT,
+      env: { ...process.env, FGUI_MANIFEST_PATH: manifestPath },
+      encoding: "utf8",
+    });
+    assert.equal(result.status, 1);
+    assert.match(`${result.stdout}${result.stderr}`, /manifest root 与当前工程不一致/);
+    assert.equal(fs.readFileSync(manifestPath, "utf8"), before);
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
 });
 
 test("package.xml declarations:注释和 resources 外的伪声明不会进入闭包", () => {

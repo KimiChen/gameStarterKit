@@ -423,13 +423,17 @@ function outputOwnershipProblems(packages) {
   return problems;
 }
 
-function checkManifest() {
-  if (!fs.existsSync(MANIFEST)) throw new Error(`manifest 不存在: ${rel(ROOT, MANIFEST)}（先运行 --write）`);
+function checkManifest({
+  manifestPath = process.env.FGUI_MANIFEST_PATH || MANIFEST,
+  buildCurrent = currentManifest,
+  logger = console,
+} = {}) {
+  if (!fs.existsSync(manifestPath)) throw new Error(`manifest 不存在: ${rel(ROOT, manifestPath)}（先运行 --write）`);
   let expected;
-  try { expected = JSON.parse(fs.readFileSync(MANIFEST, "utf8")); }
+  try { expected = JSON.parse(fs.readFileSync(manifestPath, "utf8")); }
   catch (error) { throw new Error(`manifest JSON 无法解析: ${error.message}`); }
   assertManifestShape(expected);
-  const actual = currentManifest();
+  const actual = buildCurrent();
   const problems = [];
   if (expected.sourceRoot !== actual.sourceRoot || expected.exportRoot !== actual.exportRoot) {
     problems.push("manifest root 与当前工程不一致");
@@ -464,12 +468,12 @@ function checkManifest() {
   }
   for (const file of actualViews.keys()) if (!expectedViews.has(file)) problems.push(`View 多余 ${file}`);
   if (problems.length) {
-    console.error(`✘ FGUI manifest ${problems.length} 处不一致：`);
-    for (const problem of problems) console.error(`  - ${problem}`);
-    process.exitCode = 1;
-    return;
+    logger.error(`✘ FGUI manifest ${problems.length} 处不一致：`);
+    for (const problem of problems) logger.error(`  - ${problem}`);
+    return { ok: false, problems };
   }
-  console.log("✔ FGUI manifest、源资源闭包和导出物一致");
+  logger.log("✔ FGUI manifest、源资源闭包和导出物一致");
+  return { ok: true, problems: [] };
 }
 
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
@@ -479,12 +483,14 @@ if (isMain) {
     fs.writeFileSync(MANIFEST, `${JSON.stringify(manifest, null, 2)}\n`);
     console.log(`✔ 已写入 ${rel(ROOT, MANIFEST)}（${manifest.packages.length} 个包，${manifest.exports.length} 个导出文件）`);
   } else {
-    checkManifest();
+    const result = checkManifest();
+    if (!result.ok) process.exitCode = 1;
   }
 }
 
 export {
   assertManifestShape,
+  checkManifest,
   componentDeclarations,
   compareRecords,
   currentManifest,
