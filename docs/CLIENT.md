@@ -321,8 +321,9 @@ npm run --silent perf:client -- --json --deterministic --output docs/perf/client
 版本、平台、实体数和帧数一致，并同时查看 `input.checksum` 与 `sinkChecksum` 确认 tape/几何路径未漂移。
 
 - `typecheck` 先校验外部身份契约，再检查 shared、server、客户端无头 strict probe 和 ES2017 legacy probe，
-  并校验镜像；完整客户端 probe 的覆盖由 `apps/client/test/clientTypecheckConfig.test.ts` 守门，防止新增源码
-  或测试脱离 include。legacy probe 另外守住 Creator 运行时的 ES2017 API 下限。
+  并校验镜像；`apps/client/test/clientTypecheckConfig.test.ts` 分别守门两套配置的文件集合，防止新增源码或
+  测试脱离 include。legacy 配置以递归 `src/**/*.ts` 覆盖 Main、全部 View 和 gameplay，并另外守住 Creator
+  运行时的 ES2017 API 下限。
 - `verify:sync` 检查漂移、孤儿和 `.meta`。
 - `test:client` 运行全部客户端无头行为测试；`test:fgui` 只运行 codegen/registry/结构契约专项测试，
   两者都通过 `tsx` 执行。

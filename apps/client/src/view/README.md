@@ -53,10 +53,10 @@ fairygui 只有一个全局 InputProcessor：**启用 = 全屏捕获（页面可
 ## 其他约定
 
 - 机械件：`FguiView.ts`（挂载/包管理原语）· `ViewMgr.ts`（生命周期）——日常不动；
-- 纯数据与全部 View 绑定均由 `tsconfig.test.json` 的 Node strict 探针检查（依赖 fairygui 的文件使用
-  `client-test-stubs.d.ts`）；`apps/client/tsconfig.json` 的排除清单仅属于 Creator 兼容 legacy 配置，
-  真实引擎侧仍需验证；
+- 纯数据与全部 View 绑定由 `tsconfig.test.json` 的 Node strict 探针检查（依赖 fairygui 的文件使用
+  `client-test-stubs.d.ts`），同时由 `apps/client/tsconfig.json` 的递归 `src/**/*.ts` include 以 ES2017
+  `cc-stub.d.ts` 做运行时下限检查；真实引擎侧仍需验证；
 - fairygui 不得进任何常规脚本的静态依赖图（铁律 10）：页面加载只走 viewRegistry 的
   load 动态 import 闭包。
-- 当前 Node strict 类型检查覆盖 `ViewMgr`、`viewRegistry`、`pages` 与具体 View；覆盖守门测试位于
-  `apps/client/test/clientTypecheckConfig.test.ts`。Creator 兼容 legacy 配置的排除清单不代表 CI 探针盲区。
+- 当前 Node strict 与 legacy 类型检查都覆盖 `ViewMgr`、`viewRegistry`、`pages` 与具体 View；两套覆盖守门
+  测试位于 `apps/client/test/clientTypecheckConfig.test.ts`。

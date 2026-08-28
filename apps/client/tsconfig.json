@@ -2,12 +2,15 @@
   // 严格性开关走单源；本文件的 target/lib/cc 桩等客户端特有项不受影响。
   "extends": "../../tsconfig.strict.json",
 
-  // Creator 兼容 legacy 配置（不 extends Creator 生成的 temp/，可离线检查有限源码范围）。
+  // Creator 兼容 legacy 配置（不 extends Creator 生成的 temp/，可离线检查全部客户端源码）。
   // 完整 Node/CI strict 探针使用同目录的 tsconfig.test.json 与 client-test-stubs.d.ts；
   // 跑法：npm run typecheck:client:legacy（根 package.json）；根 typecheck 会自动串行调用它。
   "compilerOptions": {
     "strict": true,
     "noEmit": true,
+    // FGUI codegen may bind a designer control before its behavior is enabled;
+    // keep those private contract fields type-checked without dead-field noise.
+    "noUnusedLocals": false,
     // 钉 ES2017（铁律 4：客户端下限）——⛔ 不放宽到 ES2020：无头 CI 会放行 Creator 侧标红、
     // 老 JSCore 运行时才崩的 API（Object.fromEntries / Promise.allSettled / matchAll…）
     "target": "ES2017",
@@ -25,32 +28,9 @@
   },
   "include": [
     "cc-stub.d.ts",
-    "src/designSpec.ts",
-    "src/lib/**/*.ts",
-    "src/lib/**/*.d.ts",
-    "src/net/**/*.ts",
-    "src/core/**/*.ts",
-    "src/view/**/*.ts",
-    "src/logic/**/*.ts",
-    "src/shared/**/*.ts"
+    "src/**/*.ts"
   ],
   "exclude": [
-    // 以下排除项只作用于本 legacy 配置；完整无头探针在 tsconfig.test.json 中使用最小 cc/FairyGUI 桩，
-    // 会编译这些文件，Creator 仍负责真实引擎验证。
-    "src/Main.ts",
-    // FairyGUI 绑定层机械件：依赖 fairygui-cc（其 d.ts 引真 cc），cc 桩下测不了；
-    // fguiContracts/defineView/layers 是纯数据保持在检；viewRegistry 因 load 闭包解析 View
-    // 模块类型、ViewMgr 因静态 import FguiView 一并排除（Creator 侧验证 + viewRegistry 守门测试）。
-    // 行为层（logic/）与结构契约在无头 CI 里测；完整客户端源码/测试由 tsconfig.test.json 检查。
-    "src/view/FguiView.ts",
-    "src/view/ViewMgr.ts",
-    "src/view/viewRegistry.ts",
-    "src/view/pages.ts",
-    "src/view/LoginView.ts",
-    "src/view/AreaListView.ts",
-    "src/view/LoginNoticeView.ts",
-    "src/view/HomeView.ts",
-    "src/view/ConfirmView.ts",
     "**/*.meta"
   ]
 }

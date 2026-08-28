@@ -110,10 +110,11 @@ npm run dev
 
 客户端的无头 strict 探针由 `apps/client/tsconfig.test.json` 提供，覆盖 `apps/client/src/**/*.ts`、
 `apps/client/test/**/*.ts`，包括 `Main.ts`、所有 View、`pages.ts` 和 ViewMgr；Node 侧使用最小
-`cc`/FairyGUI 声明桩。`apps/client/tsconfig.json` 仍是 Creator 兼容的 legacy 配置，保留引擎绑定文件
-排除项；Creator 编辑器预览仍负责真实引擎、资源导入和页面交互验证。`npm run typecheck:client` 会运行
-完整无头探针，`npm run typecheck:client:legacy` 会以 ES2017 lib 检查 legacy 配置可覆盖的源码；根
-`npm run typecheck` 会依次运行两者。`npm run test:client` 运行全部客户端测试，`npm run test:fgui` 只运行
+`cc`/FairyGUI 声明桩。`apps/client/tsconfig.json` 是 Creator 兼容的 legacy 配置，使用本地桩递归覆盖
+全部 `src/**/*.ts`（含 Main/View/gameplay），并以 ES2017 lib 守住运行时下限；Creator 编辑器预览仍负责
+真实引擎、资源导入和页面交互验证。`npm run typecheck:client` 会运行完整无头探针，
+`npm run typecheck:client:legacy` 会检查完整客户端源码；根 `npm run typecheck` 会依次运行两者。
+`npm run test:client` 运行全部客户端测试，`npm run test:fgui` 只运行
 FGUI 专项测试。
 
 同步脚本带大规模清理熔断：单轮需要清理的孤儿文件达到 20 个、或达到源文件数的 30% 时，`sync:shared` /

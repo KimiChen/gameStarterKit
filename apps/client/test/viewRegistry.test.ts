@@ -2,7 +2,7 @@
  * 页面注册表守门（docs/CLIENT.md §4/§5）——与服务端 loader 启动校验同哲学，客户端在测试期做：
  *  1. view/*View.ts 文件集合 ⇔ VIEW_REGISTRY 键集合 双向相等（漏登记/漏文件都红）
  *  2. 注册表引用的契约 ⇔ fguiContracts.FGUI_CONTRACTS 双向相等（合流靠测试而非 import 方向——
- *     registry 因 load 闭包被排除在无头 typecheck 外，契约文件必须保持纯数据可检）
+ *     registry 的 load 闭包会解析 View，现由两套最小引擎桩纳入无头 typecheck）
  *  3. 每个已注册页面的 View 文件 AUTO 区块与 .fui 当前结构同步且未被手改
  *     （regenerateViewSource 恒等断言 = 「忘跑 codegen」与「手改生成区」双向漂移一次兜住）
  *  4. 每个页面的 sharedPkgs ⊇ 其 art 依赖**传递闭包**（fairygui 不自动加载依赖包——少一个

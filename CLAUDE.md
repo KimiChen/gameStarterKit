@@ -61,7 +61,9 @@ npm --workspace @game/server run test:int
 
 `npm run typecheck` 的客户端阶段使用 `apps/client/tsconfig.test.json`，在 Node 侧最小 cc/FairyGUI 桩下
 严格覆盖 `apps/client/src/**/*.ts`、`apps/client/test/**/*.ts`，包括 `Main.ts`、全部 View、装配件和测试。
-`apps/client/tsconfig.json` 仍是 Creator 兼容 legacy 配置，排除引擎绑定文件；这不代表 CI 探针盲区。
+`apps/client/tsconfig.json` 仍是 Creator 兼容 legacy 配置，使用本地 cc/FairyGUI 桩递归覆盖
+`apps/client/src/**/*.ts`（含 Main、全部 View 与 gameplay）；`clientTypecheckConfig.test.ts` 守门文件集合，
+防止新增目录静默逃逸。这不代表 CI 探针或 Creator 真实引擎验证的盲区。
 仍必须结合 `npm run test:client`、`npm run test:fgui`、同步检查与 Creator 本地预览验证真实引擎和资源。
 
 `fetch:colyseus` 和 `fetch:fgui` 仍保留为框架维护团队显式升级锁定依赖时使用的工具，不是首次打开或普通开发步骤。这里的“手动更新”是维护团队人工决定版本、调整版本与完整性哈希、运行并审核脚本；脚本负责可重复的下载、校验和镜像更新。bitECS 没有自动更新命令；其 12 个锁定源文件和 `scripts/bitecs.sha256` 由维护团队按上游版本手动维护，并在更新后运行 `npm run verify:ecs`。普通开发者直接使用仓库已入库的版本。

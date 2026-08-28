@@ -12,9 +12,10 @@ Cocos Creator 工程壳在 [../Cocos](../Cocos)，代码经同步脚本灌入 `a
 
 `npm run typecheck:client` 使用 `tsconfig.test.json` 和 Node 侧最小 `cc`/FairyGUI 桩，严格编译
 `Main.ts`、全部 View/`pages.ts`/ViewMgr 以及客户端测试；`npm run typecheck:client:legacy` 使用
-`tsconfig.json` 的 Creator 兼容配置和 ES2017 lib，检查可离线编译的客户端源码及其引擎桩。根
-`npm run typecheck` 会依次运行这两个探针，前者覆盖完整源码，后者守住 ES2017 运行时下限。
-`tsconfig.json` 仍保留引擎绑定排除项。`npm run test:client` 运行全部客户端无头测试，
+`tsconfig.json` 的 Creator 兼容配置、`cc-stub.d.ts` 和 ES2017 lib，递归检查全部 `src/**/*.ts`（含
+`Main.ts`、View、`gameplay/`）。根 `npm run typecheck` 会依次运行这两个探针，前者覆盖完整源码与测试，
+后者守住完整客户端源码的 ES2017 运行时下限。
+`npm run test:client` 运行全部客户端无头测试，
 `npm run test:fgui` 只运行 FGUI codegen/registry/契约专项测试。Creator 预览、同步检查和无头行为测试
 仍是完整验收的一部分。
 
@@ -36,4 +37,4 @@ apps/shared/src ──npm run sync:shared──▶ apps/client/src/shared ──
 - `client-test-stubs.d.ts` —— `tsconfig.test.json` 使用的 Node 侧 cc/FairyGUI/Colyseus 最小声明桩
 - `cc-stub.d.ts` —— Creator 兼容 legacy 配置使用的 cc 声明桩
 - `tsconfig.test.json` —— Node 无头 strict 配置，覆盖全部客户端源码和测试（不 extends Creator 的 temp/）
-- `tsconfig.json` —— Creator 兼容 legacy 配置，保留引擎绑定排除清单
+- `tsconfig.json` —— Creator 兼容 legacy 配置，递归覆盖全部 `src/**/*.ts`（仅排除非 TS `.meta`）

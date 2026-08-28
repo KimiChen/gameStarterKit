@@ -138,12 +138,14 @@ export class Main extends Component {
         const transition = this.startGameplay(abort.signal);
         this.battleAbort = abort;
         this.battleTransition = transition;
-        void transition.finally(() => {
+        const settle = (): void => {
             if (this.battleTransition === transition) {
                 this.battleTransition = null;
                 this.battleAbort = null;
             }
-        }).catch(() => {});
+        };
+        // Promise.finally is ES2018; keep the Creator legacy probe at ES2017.
+        void transition.then(settle, settle);
         return transition;
     }
 

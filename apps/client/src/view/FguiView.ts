@@ -2,9 +2,9 @@
  * FguiView — FairyGUI 视图薄基类（三层模型的"绑定层"）。子类由 `tools/fgui-codegen` 从 `.fui` 生成：
  * `bind()` 里按 AUTO 区块 `getChild<T>` 绑定命名元素；业务 `apply(presenter 输出)` / `onClick` 写 AUTO 外。
  *
- * ⚠ `apps/client/tsconfig.json` 是 Creator 兼容 legacy 配置，故本文件及其他 fairygui 绑定件在其
- *   exclude 中显式列出；完整 `npm run typecheck:client` 使用 `client-test-stubs.d.ts` 对它们做 Node
- *   strict 编译，Creator 真 cc + 扩展仍负责编辑器侧验证。
+ * `apps/client/tsconfig.json` 是 Creator 兼容 legacy 配置；本文件及其他 fairygui 绑定件由本地
+ *   `cc-stub.d.ts` 的最小 API 面递归纳入 ES2017 检查。完整 `npm run typecheck:client` 另使用
+ *   `client-test-stubs.d.ts` 做 Node strict 编译，Creator 真 cc + 扩展仍负责编辑器侧验证。
  *   行为层（logic/）与结构契约（fgui-codegen）在无头测试里跑（分别是 npm run test:client 与
  *   npm run test:fgui）；
  *   本层只做"取组件 + 搬数据"。见 docs/CLIENT.md §3。

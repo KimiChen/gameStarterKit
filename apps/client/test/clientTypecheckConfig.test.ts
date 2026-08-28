@@ -1,14 +1,14 @@
 /**
  * Client strict-typecheck coverage guard.
  *
- * `apps/client/tsconfig.json` remains the Creator-oriented legacy probe and
- * intentionally excludes engine-bound files. The headless probe is
- * `tsconfig.test.json`; keep its glob coverage broad enough that a newly added
- * Main/View/page/test cannot silently fall out of strict compilation.
+ * `apps/client/tsconfig.json` is the Creator-oriented ES2017 probe and covers
+ * every source file with the local engine stubs. The headless probe is
+ * `tsconfig.test.json`; keep both file sets explicit so a newly added
+ * Main/View/page/gameplay module cannot silently fall out of compilation.
  */
 import assert from "node:assert/strict";
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
 import ts from "typescript";
@@ -35,6 +35,7 @@ function collectTypeScriptFiles(directory: string): string[] {
 function parseClientConfig(configPath = CONFIG_PATH): {
   readonly fileNames: readonly string[];
   readonly options: ts.CompilerOptions;
+  readonly config: Record<string, unknown>;
 } {
   const loaded = ts.readConfigFile(configPath, ts.sys.readFile);
   assert.equal(loaded.error, undefined, `无法读取 ${relative(ROOT, configPath)}`);
@@ -56,6 +57,7 @@ function parseClientConfig(configPath = CONFIG_PATH): {
   return {
     fileNames: parsed.fileNames.map((file) => resolve(file)),
     options: parsed.options,
+    config: loaded.config as Record<string, unknown>,
   };
 }
 
@@ -92,6 +94,44 @@ test("client headless tsconfig strictly includes all source and test TypeScript 
     "src/view/ConfirmView.ts",
   ]) {
     assert.ok(included.has(resolve(CLIENT_ROOT, required)), `${required} 未纳入 client strict probe`);
+  }
+});
+
+test("client legacy tsconfig covers every source TypeScript file", () => {
+  const legacy = parseClientConfig(LEGACY_CONFIG_PATH);
+  assert.equal(legacy.options.strict, true, "legacy probe 不得关闭 strict");
+  assert.equal(legacy.options.noEmit, true, "legacy probe 必须保持 noEmit");
+  assert.equal(legacy.options.noUnusedLocals, false,
+    "legacy probe 只允许关闭 FGUI AUTO 字段的 noUnusedLocals 噪声");
+
+  const include = legacy.config.include;
+  assert.ok(Array.isArray(include) && include.includes("src/**/*.ts"),
+    "legacy probe 必须使用递归 src/**/*.ts include，防止新增目录静默逃逸");
+
+  const sourceFiles = collectTypeScriptFiles(join(CLIENT_ROOT, "src"));
+  const included = new Set(legacy.fileNames);
+  const missing = sourceFiles
+    .filter((file) => !included.has(file))
+    .map((file) => relative(ROOT, file));
+  assert.deepEqual(missing, [], "legacy probe 漏掉客户端源码文件");
+
+  // A future source-targeted exclude must fail this test rather than silently
+  // reducing the ES2017 API-floor coverage.
+  const sourceRoot = resolve(join(CLIENT_ROOT, "src")) + sep;
+  const unexpected = [...included]
+    .filter((file) => file.startsWith(sourceRoot) && !sourceFiles.includes(file))
+    .map((file) => relative(ROOT, file));
+  assert.deepEqual(unexpected, [], "legacy probe 纳入了不受文件集合守门的源码路径");
+
+  for (const required of [
+    "src/Main.ts",
+    "src/gameplay/catalog.ts",
+    "src/view/FguiView.ts",
+    "src/view/ViewMgr.ts",
+    "src/view/viewRegistry.ts",
+    "src/view/rooms/ballMove/BallMoveView.ts",
+  ]) {
+    assert.ok(included.has(resolve(CLIENT_ROOT, required)), `${required} 未纳入 legacy probe`);
   }
 });
 

@@ -3,7 +3,7 @@
  *
  * Creator 运行时用真 cc；这里只声明**客户端实际用到**的 cc API 面，让 tsc 能离线对
  * apps/client/src 做类型/导入路径检查（CI 不开 Creator 也能跑）。这是 legacy 配置的桩；完整
- * `npm run typecheck:client` 探针使用 `client-test-stubs.d.ts`，会覆盖 Main/View/tests；根
+ * `npm run typecheck:client` 探针使用 `client-test-stubs.d.ts`，还会覆盖客户端 tests；根
  * `npm run typecheck` 会同时运行两个探针。
  * 新用到的 cc API 若报「没有该成员」，在相应桩中补一行即可；真实引擎仍由 Creator 侧把关。
  *
@@ -43,9 +43,13 @@ declare module "cc" {
         layer: number;
         active: boolean;
         parent: Node | null;
+        children: Node[];
+        isValid: boolean;
         addChild(child: Node): void;
         destroy(): boolean;
+        setSiblingIndex(index: number): void;
         getComponent<T>(type: new (...args: never[]) => T): T | null;
+        getComponentInChildren<T>(type: new (...args: never[]) => T): T | null;
         addComponent<T>(type: new (...args: never[]) => T): T;
     }
 
@@ -54,6 +58,19 @@ declare module "cc" {
         enabled: boolean;
         destroy(): boolean;
     }
+
+    export class Canvas extends Component {}
+
+    export const director: { getScene(): Node | null };
+    export const view: {
+        setDesignResolutionSize(width: number, height: number, policy: unknown): void;
+        getVisibleSize(): { width: number; height: number };
+    };
+    export const ResolutionPolicy: { FIXED_WIDTH: unknown };
+    export const sys: {
+        getSafeAreaRect(): { x: number; y: number; width: number; height: number };
+        localStorage: Storage;
+    };
 
     export const Layers: { Enum: { UI_2D: number; DEFAULT: number; [k: string]: number } };
 
@@ -76,6 +93,81 @@ declare module "cc" {
         ccclass(name?: string): ClassDecorator;
         property(opts?: unknown): PropertyDecorator;
         [k: string]: (...args: never[]) => unknown;
+    };
+}
+
+/**
+ * Minimal FairyGUI declarations for the legacy probe. The Creator extension
+ * supplies the runtime and its full declarations; keeping this small surface
+ * local lets the ES2017 probe type-check every view without importing Creator's
+ * generated `cc` declarations.
+ */
+declare module "db://fairygui-cc/fairygui.mjs" {
+    import type { Node } from "cc";
+
+    export class GObject {
+        name: string;
+        parent: GComponent | null;
+        node: Node;
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+        visible: boolean;
+        touchable: boolean;
+        grayed: boolean;
+        enabled: boolean;
+        title: string;
+        icon: string;
+        onClick(callback: (...args: any[]) => unknown, target?: unknown): void;
+        on(type: unknown, callback: (...args: any[]) => unknown, target?: unknown): void;
+        off(type: unknown, callback: (...args: any[]) => unknown, target?: unknown): void;
+        removeFromParent(): void;
+        dispose(): void;
+        readonly asCom: GComponent;
+    }
+
+    export class GComponent extends GObject {
+        static inst: GComponent;
+        numChildren: number;
+        width: number;
+        height: number;
+        addChild(child: GObject): GObject;
+        setChildIndex(child: GObject, index: number): void;
+        getChild<T extends GObject = GObject>(name: string): T;
+        getChildAt<T extends GObject = GObject>(index: number): T;
+        setSize(width: number, height: number): void;
+        addRelation(target: GObject, relation: number): void;
+        getController(name: string): { selectedIndex: number };
+    }
+
+    export class GRoot extends GComponent {
+        static inst: GRoot;
+        inputProcessor: { enabled: boolean };
+        onWinResize(): void;
+    }
+
+    export class GButton extends GComponent { selected: boolean; }
+    export class GList extends GComponent {
+        numItems: number;
+        itemRenderer: ((index: number, object: GObject) => void) | null;
+        getChildIndex(object: GObject): number;
+        childIndexToItemIndex(index: number): number;
+        setVirtual(): void;
+    }
+    export class GLoader extends GObject { url: string; }
+    export class GLoader3D extends GLoader {}
+    export class GTextField extends GObject { text: string; }
+    export class GRichTextField extends GTextField {}
+    export class GGroup extends GObject {}
+    export class GProgressBar extends GComponent { min: number; max: number; value: number; }
+
+    export const Event: { CLICK_ITEM: string; STATUS_CHANGED: string };
+    export const RelationType: { Size: number };
+    export const UIPackage: {
+        getByName(name: string): unknown;
+        loadPackage(path: string, callback: (error: unknown) => void): void;
+        createObject(pkg: string, comp: string): GObject | null;
     };
 }
 

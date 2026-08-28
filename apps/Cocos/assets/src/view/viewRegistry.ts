@@ -3,8 +3,8 @@
  * 生命周期。守门：test/viewRegistry.test.ts 校验「view/*View.ts 文件集合 ⇔ 注册表键」与
  * 「注册表契约 ⇔ FGUI_CONTRACTS」双向相等 + AUTO 区块与 .fui 同步 + Logic 配对。
  *
- * ⚠ 本文件的 load 闭包会让 tsc 解析 View 模块类型（依赖 fairygui），故与 ViewMgr 一起
- *   排除在无头 typecheck 外（apps/client/tsconfig.json），Creator 侧验证。
+ * 本文件的 load 闭包会让 tsc 解析 View 模块类型（依赖 fairygui）；legacy 与 Node strict 探针都
+ *   使用各自的最小声明桩纳入检查，Creator 侧仍负责真实引擎与资源验证。
  *
  * ⚠ 调用方约束（铁律 10）：`ViewMgr.open` 只允许 view/ 内部或动态 import 闭包里调用；
  *   页面的组合根（Logic + 注入 net 依赖 + 导航接线）在 view/pages.ts。
