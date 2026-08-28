@@ -9,7 +9,11 @@ import { initHttp, initPortal } from "./core/http";
 import { installWeChatCompat } from "./core/wechat-compat";
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from "./designSpec";
 import { GameplayRegistry } from "./logic/gameplay/GameplayRegistry";
-import { recoverGameplayStartFailure, RoomController } from "./logic/gameplay/RoomController";
+import {
+    recoverGameplayStartFailure,
+    reconcileGameplayStartResult,
+    RoomController,
+} from "./logic/gameplay/RoomController";
 import {
     BALL_MOVE_GAMEPLAY_ID,
 } from "./logic/rooms/ballMove/BallMoveGameplay";
@@ -163,13 +167,16 @@ export class Main extends Component {
         const requestedId = typeof this.gameplayId === "string" && this.gameplayId.trim().length > 0
             ? this.gameplayId.trim()
             : BALL_MOVE_GAMEPLAY_ID;
-        const result = await controller.startRegistered(registry, requestedId, signal);
-        if (!isCurrent()) {
-            await controller.stop({ kind: "cancelled" }).catch((error) => {
-                console.error("[Main] 迟到 gameplay transition 清理失败：", error);
-            });
-            return;
-        }
+        const result = await reconcileGameplayStartResult(
+            controller.startRegistered(registry, requestedId, signal),
+            {
+                stop: (reason) => controller.stop(reason).catch((error) => {
+                    console.error("[Main] 迟到 gameplay transition 清理失败：", error);
+                }),
+            },
+            isCurrent,
+        );
+        if (result === undefined) return;
         if (result.status === "started" || result.status === "already-running") return;
         if (result.status === "cancelled" || result.status === "disposed") return;
         await this.handleGameplayStartFailure(result, isCurrent);

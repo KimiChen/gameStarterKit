@@ -34,6 +34,30 @@ export interface GameplayStartFailureRecovery {
     reportStopError?(error: unknown): void;
 }
 
+/**
+ * The owner captured by one gameplay transition.  Keeping this as a tiny
+ * structural seam lets callers reconcile a late result without looking up a
+ * newer controller from mutable composition-root state.
+ */
+export interface GameplayStartOwner {
+    stop(reason: GameplayStopReason): void | Promise<void>;
+}
+
+/**
+ * Await a gameplay start result and clean up only the owner that issued it if
+ * the transition became stale while the room join was pending.
+ */
+export async function reconcileGameplayStartResult(
+    resultPromise: Promise<GameplayStartResult>,
+    owner: GameplayStartOwner,
+    isCurrent: () => boolean,
+): Promise<GameplayStartResult | undefined> {
+    const result = await resultPromise;
+    if (isCurrent()) return result;
+    await owner.stop({ kind: "cancelled" });
+    return undefined;
+}
+
 /** Tear down a failed gameplay generation before returning to the login flow. */
 export async function recoverGameplayStartFailure(
     error: unknown,
