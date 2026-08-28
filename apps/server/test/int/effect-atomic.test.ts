@@ -6,6 +6,7 @@
  * validator, so the Lua validate pass must provide the same fail-closed guarantee.
  */
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { after, before, test } from "node:test";
 import { EffectConflictError, InvalidEffectError } from "../../src/core/errors";
 import { acquireLease } from "../../src/core/locks";
@@ -29,7 +30,14 @@ import { exerciseFaultPoint } from "../faultMatrix";
 
 const users: string[] = [];
 const uid = (name: string): string => {
-  const value = testUid(`effect-${name}`).slice(0, 32);
+  // Keep the database VARCHAR(32) limit without truncating the distinguishing
+  // case name (which previously made `purchase-invalid` and
+  // `purchase-conflict` collide).  The run id and case name are both hashed so
+  // parallel test processes still get isolated, stable-length identities.
+  const value = `e${createHash("sha256")
+    .update(`${testUid("effect")}:${name}`)
+    .digest("hex")
+    .slice(0, 31)}`;
   users.push(value);
   return value;
 };
@@ -327,16 +335,22 @@ test("purchaseTx：同 op-id 的不同 effect payload 判冲突且不重复写 l
 test("邮件附件：非法 effect 在 send/claim 两条 durable 路径均不落业务状态", async () => {
   const user = await seed("mail-invalid", 0);
   const [before] = await getPool().query<RowDataPacket[]>(
-    "SELECT COUNT(*) AS n FROM mail WHERE user_id = ? AND server_id = ?", [user, 0],
+    `SELECT
+       (SELECT COUNT(*) FROM mail WHERE user_id = ? AND server_id = ?) AS mail_count,
+       (SELECT COUNT(*) FROM gameplay_outbox WHERE user_id = ? AND server_id = ?) AS outbox_count`,
+    [user, 0, user, 0],
   );
   await assert.rejects(
     sendMail(user, "坏附件", "不应入库", [{ kind: "star", delta: "bad" } as never]),
     InvalidEffectError,
   );
   const [afterSend] = await getPool().query<RowDataPacket[]>(
-    "SELECT COUNT(*) AS n FROM mail WHERE user_id = ? AND server_id = ?", [user, 0],
+    `SELECT
+       (SELECT COUNT(*) FROM mail WHERE user_id = ? AND server_id = ?) AS mail_count,
+       (SELECT COUNT(*) FROM gameplay_outbox WHERE user_id = ? AND server_id = ?) AS outbox_count`,
+    [user, 0, user, 0],
   );
-  assert.equal(Number(afterSend[0].n), Number(before[0].n), "sendMail 非法附件不得写 mail");
+  assert.deepEqual(afterSend[0], before[0], "sendMail 非法附件不得写 mail 或 outbox intent");
 
   const opId = deriveOpId(user, 0, "mail.attach", "corrupt-row");
   const badEffect = { schemaVersion: 1, grants: [{ kind: "setField", field: "star", value: "oops" }] };
@@ -346,17 +360,20 @@ test("邮件附件：非法 effect 在 send/claim 两条 durable 路径均不落
     [user, 0, "历史坏附件", "应拒绝领取", opId, JSON.stringify(badEffect)],
   ) as [{ insertId: number }, unknown];
   const mailId = inserted.insertId;
+  const beforeClaimRedis = await dump(user);
   await assert.rejects(claimMailAttach(user, mailId), InvalidEffectError);
   const [mailRows] = await getPool().query<RowDataPacket[]>(
-    "SELECT claimed_at FROM mail WHERE mail_id = ? AND user_id = ? AND server_id = ?",
+    "SELECT claimed_at, read_at FROM mail WHERE mail_id = ? AND user_id = ? AND server_id = ?",
     [mailId, user, 0],
   );
   assert.equal(mailRows[0].claimed_at, null, "非法附件不得先标 claimed");
+  assert.equal(mailRows[0].read_at, null, "非法附件不得先标 read");
   const [outboxRows] = await getPool().query<RowDataPacket[]>(
-    "SELECT COUNT(*) AS n FROM gameplay_outbox WHERE user_id = ? AND server_id = ? AND op_id = ?",
-    [user, 0, opId],
+    "SELECT COUNT(*) AS n FROM gameplay_outbox WHERE user_id = ? AND server_id = ?",
+    [user, 0],
   );
-  assert.equal(Number(outboxRows[0].n), 0, "非法附件不得写 outbox intent");
+  assert.equal(Number(outboxRows[0].n), Number(before[0].outbox_count), "非法附件不得写 outbox intent");
+  assert.deepEqual(await dump(user), beforeClaimRedis, "非法附件不得触碰 Redis effect/applied 状态");
 });
 
 test("readBack 严格按 server_id：s1 查询不到 s2 operation，正确区返回本区余额", async () => {
