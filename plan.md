@@ -430,10 +430,11 @@ cacheable 页面 mount/onOpen/setup/render 四段打开失败回滚、输入租�
 与页面组合层 `observePageAction` 的 rejection 都有 `unhandledRejection` 实证，并守住 Login 两个真实导航
 调用点；未被读取的旧上下文接缝已删除。句柄每次重挂都新建，`state.closed` 一旦
 置位即保持失效，重复 `close` 与旧世代句柄均不会触碰当前页面。
-覆盖面：陈旧句柄的两道门中，`state.closed` 幂等门有用例（`viewLifecycle.test.ts:645-647`）；「未关闭的旧
-世代句柄不得按名字关掉新重挂世代」的身份门（`ViewMgr.ts:271`）尚无定向用例——`viewLifecycle.test.ts:665`
-的同名断言实际由 `state.closed` 早退满足，误删该行仍会通过。要真正覆盖需构造「从未 close 过的旧句柄在
-`close(name)` + 重新 open 之后才调用 close」的场景。
+覆盖面：陈旧句柄的两道门均有定向用例。`state.closed` 幂等门由
+`viewLifecycle.test.ts:645-647` 覆盖；新增的
+`ViewMgr permanent stale handle cannot close a remounted same-name generation` 先经
+`ViewMgr.close(name)` 重挂同名 permanent 页，再调用从未关闭过的旧句柄，直接锁定
+`ViewMgr.ts:271` 的身份门不会关闭新世代。
 
 已实施的生命周期边界：
 

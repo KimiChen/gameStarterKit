@@ -671,6 +671,55 @@ test("ViewMgr permanent remount preserves setup errors and remains retryable", a
   }
 });
 
+test("ViewMgr permanent stale handle cannot close a remounted same-name generation", async () => {
+  const runtime = await loadViewRuntime();
+  const name = "__permanent_identity_probe__";
+  let closeCalls = 0;
+  class ProbeView extends runtime.FguiView {
+    protected bind(): void {}
+    protected onCloseLifecycle(): void { closeCalls++; }
+  }
+  runtime.VIEW_REGISTRY[name] = {
+    name,
+    contract: { pkg: "PermanentIdentityProbe", comp: "Root", required: [] },
+    layer: "top",
+    fullscreen: false,
+    onlyOne: true,
+    permanent: true,
+    interactive: true,
+    load: async () => ProbeView,
+  };
+  let first: any = null;
+  let reopened: any = null;
+  try {
+    runtime.ViewMgr.disposeViewRoot();
+    first = await runtime.ViewMgr.open(name);
+    // Close through the manager so the old handle remains apparently live;
+    // this is the identity-only path, independent of state.closed idempotence.
+    runtime.ViewMgr.close(name);
+    assert.equal(runtime.ViewMgr.isOpen(name), false);
+
+    reopened = await runtime.ViewMgr.open(name);
+    assert.notEqual(reopened, first);
+    assert.equal(runtime.ViewMgr.isOpen(name), true);
+    const closeCountBeforeStale = closeCalls;
+
+    first.close();
+
+    assert.equal(runtime.ViewMgr.isOpen(name), true,
+      "未关闭的旧句柄不得按名称关闭新重挂世代");
+    assert.equal(closeCalls, closeCountBeforeStale,
+      "旧句柄调用 close 不得触发新世代 onClose");
+    reopened.close();
+    assert.equal(closeCalls, closeCountBeforeStale + 1);
+  } finally {
+    first?.close();
+    reopened?.close();
+    runtime.ViewMgr.disposeViewRoot();
+    delete runtime.VIEW_REGISTRY[name];
+  }
+});
+
 test("ViewMgr interactive lease stays enabled until the last view closes, then restores input", async () => {
   const runtime = await loadViewRuntime();
   const firstName = "__lease_first__";
