@@ -348,7 +348,6 @@ function collectIdentityConflicts(root, current, candidate, values) {
     ["package.json", "root"],
     ["apps/shared/package.json", "shared"],
     ["apps/server/package.json", "server"],
-    ["apps/website/package.json", "website"],
     ["apps/Cocos/package.json", "client"],
   ];
   for (const [relative, key] of packageFiles) {
@@ -471,14 +470,14 @@ function replaceTextInTree(root, oldNames, newNames, changes) {
   // Tooling itself is deliberately excluded: rewriting this initializer (or
   // a sync/verify script) while it is running would make the migration
   // self-modifying and could change the semantics of the next invocation.
-  const roots = ["README.md", "AGENTS.md", "CLAUDE.md", "docs", "apps/server", "apps/shared", "apps/client/src", "apps/client/test", "apps/website"];
+  const roots = ["README.md", "AGENTS.md", "CLAUDE.md", "docs", "apps/server", "apps/shared", "apps/client/src", "apps/client/test"];
   const skip = ["apps/client/src/shared", "apps/Cocos", "node_modules", ".git", "apps/client/temp"];
   const files = [];
   const visit = (absolute) => {
     if (!fs.existsSync(absolute)) return;
     const relative = path.relative(root, absolute).split(path.sep).join("/");
     // `node_modules` also occurs below workspace roots (for example
-    // apps/website/node_modules); skip by path segment so npm's .bin symlinks
+    // apps/server/node_modules); skip by path segment so npm's .bin symlinks
     // are never traversed and dependency trees are not rewritten.
     const segments = relative.split("/");
     if (segments.includes("node_modules") || skip.some((prefix) => relative === prefix || relative.startsWith(`${prefix}/`))) return;
@@ -544,7 +543,6 @@ function buildChanges(root, current, candidate, metadata, changes) {
     root: "package.json",
     shared: "apps/shared/package.json",
     server: "apps/server/package.json",
-    website: "apps/website/package.json",
     client: "apps/Cocos/package.json",
   };
   for (const [key, relative] of Object.entries(packagePathByKey)) {
@@ -557,7 +555,6 @@ function buildChanges(root, current, candidate, metadata, changes) {
     ["package.json", "root"],
     ["apps/shared/package.json", "shared"],
     ["apps/server/package.json", "server"],
-    ["apps/website/package.json", "website"],
     ["apps/Cocos/package.json", "client"],
   ];
   const packageReplacements = new Map();
@@ -565,7 +562,7 @@ function buildChanges(root, current, candidate, metadata, changes) {
   // tokens.  Replacing them inside arbitrary script strings would turn the
   // `game` part of `@game/server` into `@@scope/name/server`; only workspace
   // package names need substring replacement in package JSON.
-  for (const key of ["shared", "server", "website"]) {
+  for (const key of ["shared", "server"]) {
     if (oldPackageNames[key] !== nextPackageNames[key]) packageReplacements.set(oldPackageNames[key], nextPackageNames[key]);
   }
   for (const [relative, key] of packageFiles) {
@@ -601,17 +598,8 @@ function buildChanges(root, current, candidate, metadata, changes) {
     const nextLock = renameLockPackageRefs(lock, replacements);
     writeJsonIfChanged(lockFile, nextLock, changes, lockRelative);
   }
-  const websiteLockRelative = "apps/website/package-lock.json";
-  const websiteLock = path.join(root, websiteLockRelative);
-  if (fs.existsSync(websiteLock)) {
-    assertNoSymlinkComponents(root, websiteLock);
-    const lock = readJson(websiteLock);
-    const replacements = new Map([[oldPackageNames.website, nextPackageNames.website]]);
-    writeJsonIfChanged(websiteLock, renameLockPackageRefs(lock, replacements), changes, websiteLockRelative);
-  }
-
-  const oldNames = [oldPackageNames.shared, oldPackageNames.server, oldPackageNames.website];
-  const newNames = [nextPackageNames.shared, nextPackageNames.server, nextPackageNames.website];
+  const oldNames = [oldPackageNames.shared, oldPackageNames.server];
+  const newNames = [nextPackageNames.shared, nextPackageNames.server];
   replaceTextInTree(root, oldNames, newNames, changes);
 
   const envFile = path.join(root, ".env.development");

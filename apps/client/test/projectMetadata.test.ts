@@ -44,7 +44,6 @@ function createValidFixture(): string {
     "apps/shared/src/index.ts",
     "apps/shared/src/project.ts",
     "apps/server/package.json",
-    "apps/website/package.json",
     "apps/Cocos/package.json",
   ]) copyFixtureFile(root, relative);
   for (const relative of [
@@ -67,7 +66,7 @@ function createValidFixture(): string {
 }
 
 test("project package identity rejects workspace name collisions", () => {
-  for (const name of ["shared", "Shared", "server", "website"]) {
+  for (const name of ["shared", "Shared", "server"]) {
     const metadata = { name, scope: null, packages: packageNames({ name, scope: null }) };
     assert.throws(
       () => assertPackageNames(metadata),
@@ -172,7 +171,6 @@ test("project initializer rewrites bare package module specifiers when adding a 
       delete pkg.dependencies["@game/shared"];
       pkg.dependencies.shared = "0.1.0";
     });
-    editJson("apps/website/package.json", (pkg) => { pkg.name = "website"; });
     editJson("apps/Cocos/package.json", (pkg) => { pkg.name = "game-client"; });
     editJson("project.metadata.json", (metadata) => {
       metadata.name = "game";
@@ -185,7 +183,6 @@ test("project initializer rewrites bare package module specifiers when adding a 
     writeFileSync(source, [
       'import { sharedValue } from "shared";',
       "export { serverValue } from 'server/subpath';",
-      'const loaded = require("website");',
       'const dynamic = import(`shared/feature`);',
       'const ordinary = "shared";',
       'const localPath = "./shared";',
@@ -212,7 +209,6 @@ test("project initializer rewrites bare package module specifiers when adding a 
     const migrated = readTextForTest(source);
     assert.match(migrated, /from "@example\/shared"/);
     assert.match(migrated, /from '@example\/server\/subpath'/);
-    assert.match(migrated, /require\("@example\/website"\)/);
     assert.match(migrated, /import\(`@example\/shared\/feature`\)/);
     assert.match(migrated, /const ordinary = "shared"/);
     assert.match(migrated, /const localPath = "\.\/shared"/);

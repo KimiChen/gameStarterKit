@@ -23,7 +23,6 @@ export function packageNames({ name, scope }) {
     root: scoped(name),
     shared: scoped("shared"),
     server: scoped("server"),
-    website: scoped("website"),
     client: `${name}-client`,
   };
 }

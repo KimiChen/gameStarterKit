@@ -126,15 +126,6 @@
         ]
       }],
       "docs": ["plan.md", "README.md"]
-    },
-    {
-      "id": "project-extras",
-      "category": "extra",
-      "defaultEntry": "apps/website/package.json",
-      "sourceOfTruth": "docs/EXTRAFEATURES.md",
-      "wireBoundary": "apps/website",
-      "verification": [{ "kind": "root", "script": "config:excel-to-json:check" }],
-      "docs": ["docs/EXTRAFEATURES.md", "apps/website/README.md"]
     }
   ],
   "defaultModules": [

@@ -181,7 +181,7 @@ function validateMetadata(metadata, errors) {
   if (!isPlainObject(metadata.packages)) {
     errors.push("metadata.packages 必须是 object");
   } else {
-    const packageKeys = ["root", "shared", "server", "website", "client"];
+    const packageKeys = ["root", "shared", "server", "client"];
     for (const key of Object.keys(metadata.packages)) {
       if (!packageKeys.includes(key)) errors.push(`metadata.packages 含未知字段：${key}`);
     }
@@ -305,7 +305,6 @@ function verifyPackages(root, metadata, errors) {
     ["package.json", "root"],
     ["apps/shared/package.json", "shared"],
     ["apps/server/package.json", "server"],
-    ["apps/website/package.json", "website"],
     ["apps/Cocos/package.json", "client"],
   ];
   const parsed = new Map();
@@ -366,19 +365,6 @@ function verifyPackages(root, metadata, errors) {
         errors.push(`package-lock.json apps/server 未登记 ${metadata.packages.shared}@0.1.0`);
       }
     }
-  }
-
-  const websiteLockRelative = "apps/website/package-lock.json";
-  const websiteLock = pathWithoutSymlinkComponents(root, websiteLockRelative, errors);
-  let websiteLockStat;
-  try { websiteLockStat = websiteLock ? fs.lstatSync(websiteLock) : null; } catch { websiteLockStat = null; }
-  if (websiteLockStat && !websiteLockStat.isSymbolicLink() && websiteLockStat.isFile()) {
-    const lock = readJson(websiteLock, errors, websiteLockRelative);
-    if (lock && (lock.name !== metadata.packages.website || lock.packages?.[""]?.name !== metadata.packages.website)) {
-      errors.push(`${websiteLockRelative} 根包名不一致：应为 ${metadata.packages.website}`);
-    }
-  } else if (websiteLockStat) {
-    errors.push(`${websiteLockRelative} 必须是普通文件（不得是符号链接）`);
   }
 }
 

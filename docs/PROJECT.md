@@ -43,10 +43,9 @@ npm run init:project -- \
 | `packages.root` | 根 `package.json` | `<scope>/<name>`，无 scope 时为 `<name>` |
 | `packages.shared` | `apps/shared/package.json` | `<scope>/shared` |
 | `packages.server` | `apps/server/package.json` | `<scope>/server` |
-| `packages.website` | `apps/website/package.json` | `<scope>/website` |
 | `packages.client` | `apps/Cocos/package.json` | `<name>-client`（Cocos 工程包不使用 npm scope） |
 
-初始化器会同步根 `package-lock.json`、说明站 lockfile、server 对 shared 的依赖和源码中的 workspace
+初始化器会同步根 `package-lock.json`、server 对 shared 的依赖和源码中的 workspace
 导入；不会改写外部身份包 `@gono/webplatform-contract`。`apps/shared/src/project.ts` 由元数据生成，
 通过 `apps/shared/src/index.ts` 导出，服务端/客户端可安全读取这些无依赖常量。
 

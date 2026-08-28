@@ -19,6 +19,7 @@ sources=(
   "$site_dir/index.html"
   "$site_dir/style.css"
   "$site_dir/script.js"
+  "$site_dir/favicon.ico"
 )
 
 for source in "${sources[@]}"; do
@@ -28,7 +29,7 @@ for source in "${sources[@]}"; do
   fi
 done
 
-printf '部署三份核心文件到 %s\n' "$remote"
+printf '部署三份核心文件和 favicon 到 %s\n' "$remote"
 rsync \
   --archive \
   --human-readable \

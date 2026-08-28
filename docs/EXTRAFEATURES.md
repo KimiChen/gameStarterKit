@@ -29,72 +29,9 @@ gameStarterKit 的核心定位是**开发期游戏基础框架**：客户端、�
 
 ## 3. 当前仓库中的额外内容
 
-### 3.1 项目说明站、静态导出与托管适配
+### 3.1 项目说明站
 
-状态：**显式启用 / 参考代码**。
-
-`apps/website` 是独立安装域中的原生静态项目说明站，不在根 npm workspaces 内。页面按
-[Web Standard Kit](https://github.com/KimiChen/wheels/tree/main/web-standard-kit) 的令牌和
-[wheel.do](https://wheel.do) 的卡片网格组织信息；它只使用 `index.html`、`style.css` 和
-`script.js`，不再包含旧版 React、Next、Vinext、Vite 或 Worker 应用目录。`.openai/hosting.json`
-仅保留 Sites 项目标识，采用方自行托管时应替换或移除。
-
-站点脚本与输出边界如下：
-
-- `scripts/dev.mjs`：零依赖 Node 本地静态预览服务器；
-- `scripts/build.mjs`：将三份页面源码复制到 `dist/client`，并生成最小的
-  `dist/server/index.js` 与 `dist/wrangler.json` 供 Sites/Cloudflare Worker 适配；
-- `scripts/export-static.mjs`：把已构建的 `dist/client` 导出到一个空目录；
-- `scripts/lint.mjs` 与 `tests/site.test.mjs`：检查架构边界、页面内容和构建文件。
-
-本地验证：
-
-```bash
-cd apps/website
-npm install
-npm test
-npm run lint
-```
-
-需要检查静态导出时，先 build，再给出一个**空目录**：
-
-```bash
-cd apps/website
-npm run build
-npm run export:static -- /absolute/path/to/empty-output
-```
-
-导出结果包含 `index.html`、`style.css`、`script.js` 和 `_headers`，可直接作为域名根路径的静态
-站点。仓库没有为说明站或游戏系统承诺域名、证书、服务器、发布流程、可用性或持续维护；说明站
-本身也不构成部署、商业化承诺。
-
-如果采用方自行托管纯静态导出物，可把下面内容作为**非绑定配置参考**，而不是本仓交付的部署方案：
-
-1. 将导出目录中的文件完整复制到静态站点根目录，确认文件与 `index.html` 同级；
-2. 当前页面使用相对资源路径，放入子目录前仍应先验证 base path 和刷新行为；
-3. 更新时整体替换导出结果；`index.html` 不应长期缓存，静态资源可按采用方策略缓存；
-4. Apache、宝塔或 1Panel 一类静态站点入口只需把 document root 指向导出目录；这份单页输出本身
-   不要求 PHP、数据库或 Node.js 常驻进程。
-
-以下 Nginx 片段只演示静态文件入口，域名、目录、HTTPS、安全头、访问日志和变更流程均由采用方按
-自己的环境负责：
-
-```nginx
-server {
-    listen 80;
-    server_name example.com;
-    root /srv/game-starter-kit-site;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-}
-```
-
-采用该示例前至少应自行检查配置语法、根路径资源、刷新后的 HTML 缓存和不存在资源的 404；这些检查
-不进入核心框架验收。
-
+`apps/website` 是独立安装域的原生静态项目说明站
 ### 3.2 GM、账号管理与强制下线参考
 
 状态：**参考代码；部分默认接入**。

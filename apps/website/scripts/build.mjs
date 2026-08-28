@@ -11,7 +11,7 @@ await rm(dist, { recursive: true, force: true });
 await mkdir(client, { recursive: true });
 await mkdir(server, { recursive: true });
 
-for (const file of ["index.html", "style.css", "script.js"]) {
+for (const file of ["index.html", "style.css", "script.js", "favicon.ico"]) {
   await cp(join(root, file), join(client, file));
 }
 await cp(join(root, "public", "og.png"), join(client, "og.png"));

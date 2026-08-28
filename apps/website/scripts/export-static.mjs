@@ -19,4 +19,5 @@ await access(join(output, "index.html"));
 await access(join(output, "style.css"));
 await access(join(output, "script.js"));
 await access(join(output, "og.png"));
+await access(join(output, "favicon.ico"));
 console.log(output);

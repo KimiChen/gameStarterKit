@@ -54,6 +54,7 @@ test("builds the static client and Worker entry", async () => {
   await access(join(root, "dist", "client", "index.html"));
   await access(join(root, "dist", "client", "style.css"));
   await access(join(root, "dist", "client", "script.js"));
+  await access(join(root, "dist", "client", "favicon.ico"));
   await access(join(root, "dist", "client", "og.png"));
   await access(join(root, "dist", ".openai", "hosting.json"));
 });
@@ -66,8 +67,14 @@ test("provides a scoped rsync deployment script", async () => {
   assert.match(script, /index\.html/);
   assert.match(script, /style\.css/);
   assert.match(script, /script\.js/);
+  assert.match(script, /favicon\.ico/);
   assert.match(script, /StrictHostKeyChecking=accept-new/);
   assert.doesNotMatch(script, /--delete/);
+});
+
+test("registers the favicon in the document head", async () => {
+  const html = await read("index.html");
+  assert.match(html, /<link rel="icon" href="favicon\.ico"[^>]*type="image\/x-icon"/);
 });
 
 test("shows the ICP filing link after the footer label", async () => {

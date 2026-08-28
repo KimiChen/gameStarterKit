@@ -3,8 +3,7 @@
 本仓库把以下第三方运行时**直接提交入库**（版本钉死、clone 即可用）。首次打开和普通开发
 不需要抓取这些运行时；Colyseus/FairyGUI 的 fetch 脚本仅由框架维护团队在显式升级时使用，
 bitECS 则由维护团队按上游版本手工更新并提交完整锁定变更。通过 npm 安装、没有直接提交运行时文件的
-常规依赖不在此表内；根工程/workspaces 见 `package-lock.json`，独立说明站见
-`apps/website/package-lock.json`，许可证随对应包分发。
+常规依赖不在此表内；根工程/workspaces 见 `package-lock.json`，许可证随对应包分发。
 
 | 组件 | 版本 | 许可证 | 入库位置 | 升级工具 |
 |---|---|---|---|---|

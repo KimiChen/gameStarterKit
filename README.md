@@ -26,8 +26,7 @@ apps/
 ├── Unity/      Unity 方向的研究占位，不是可用客户端
 ├── server/     Colyseus 服务端开发工程
 ├── shared/     双端共享协议、公式与常量
-├── art/        FairyGUI 编辑器工程
-└── website/    独立安装的项目说明站源码（额外功能）
+└── art/        FairyGUI 编辑器工程
 docs/           当前开发架构说明
 scripts/        同步、校验、依赖抓取与协议指纹脚本，及其锁文件基线（bitecs/vendor/protocol）
 tools/          FairyGUI codegen 与 Excel 配表转换工具
@@ -117,9 +116,6 @@ npm run dev
 
 `npm run config:excel-to-json` 与 `npm run config:excel-to-json:check` 是 Excel 配表转换与只读校验，属额外功能，
 见 [额外功能与参考实现](docs/EXTRAFEATURES.md#38-配表负载与-unity-实验) 与 [配表工具 README](tools/excel-config/README.md)。
-
-`apps/website` 不在根 npm workspaces 中，拥有独立的 `package-lock.json`。如需修改说明站，请在该目录
-单独安装和运行本地检查，具体见 [站点 README](apps/website/README.md)。
 
 ### 框架维护团队的依赖更新
 

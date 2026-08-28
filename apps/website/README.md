@@ -31,12 +31,12 @@ npm run build
 npm run export:static -- /absolute/path/to/empty-output
 ```
 
-静态导出目录包含 `index.html`、`style.css`、`script.js`、`og.png` 和 `_headers`，可直接作为域名
+静态导出目录包含 `index.html`、`style.css`、`script.js`、`favicon.ico`、`og.png` 和 `_headers`，可直接作为域名
 根路径的静态站点。`.openai/hosting.json` 只保留 Sites 项目标识，不属于页面内容。
 
 ## 服务器部署
 
-`deploy.sh` 只同步页面的三份核心文件（`index.html`、`style.css`、`script.js`），目标为
+`deploy.sh` 同步页面的三份核心文件（`index.html`、`style.css`、`script.js`）和 `favicon.ico`，目标为
 `root@129.211.70.96:/www/wwwroot/gono.games/`，使用 `~/.ssh/id_rsa_nopassword`：
 
 ```bash

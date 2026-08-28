@@ -10,7 +10,6 @@
     "root": "@game/gameStarterKit",
     "shared": "@game/shared",
     "server": "@game/server",
-    "website": "@game/website",
     "client": "gameStarterKit-client"
   },
   "generated": {
