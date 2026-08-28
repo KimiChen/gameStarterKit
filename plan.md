@@ -413,10 +413,10 @@ presentation，因此 `Main` 不持有或命名具体玩法 View。新增无 pre
 Demo 为基线；`idle` 只是无 presentation 的最小 multi-mode 证明，不代表已交付完整第二玩法 UI 或通用多玩法
 状态模型。接入不同房间状态/结算语义的玩法仍需先扩展相应 shared Schema 与 mode 契约。
 
-保留边界：presentation 的覆盖面——现有用例只锁定「idle 不创建 `BallMoveView`」与「缺 host 时 ballMove
-fail-closed 并释放 lease」两条反例；经 catalog `presentationFactory` 真实解析动态 import 并挂载/卸载适配器
-的正向链路仍只由 Creator 预览确认，尚无 Node 用例——相对路径或分块在 Creator 侧解析失败时，Node 侧全绿
-也发现不了。
+复核备注（已收口）：`gameplayPresentation.test.ts` 在最小 Cocos 桩下执行 catalog 的真实动态
+`presentationFactory`，直接观察 `BallMoveView` layer/四个触摸监听的 mount、输入转发和 stop 时的
+unmount/room lease 释放；与 idle 无 presentation、缺 host fail-closed 的反例共同锁定正反路径。真实
+Creator 资源导入与目标设备行为仍保留为编辑器预览边界。
 
 ### P1-02 补齐 View、Logic 和异步页面生命周期 ✅
 
