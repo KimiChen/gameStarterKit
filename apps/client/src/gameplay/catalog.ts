@@ -1,8 +1,8 @@
+import type { Node } from "cc";
 import type { GameplayRegistry, GameplayRoomJoiner } from "../logic/gameplay/index";
 import {
     registerBallMoveGameplay,
     type BallMoveInput,
-    type BallMovePresentation,
     type BallMoveRoom,
 } from "../logic/rooms/ballMove/BallMoveGameplay";
 import {
@@ -16,8 +16,14 @@ import { createBallMoveRoomJoiner } from "../net/rooms/BallMoveRoom";
 /** Inputs/rooms are intentionally erased at the app composition boundary. */
 export type AppGameplayRegistry = GameplayRegistry<any, any>;
 
+/** Engine host passed once to the catalog; each entry owns its adapter creation. */
+export interface GameplayPresentationHost {
+    readonly node: Node;
+    readonly dispatchInput: (input: unknown) => void;
+}
+
 export interface GameplayCatalogContext {
-    readonly ballMovePresentation: BallMovePresentation;
+    readonly presentationHost?: GameplayPresentationHost;
     readonly ballMoveJoiner?: GameplayRoomJoiner<BallMoveRoom>;
     readonly idleJoiner?: GameplayRoomJoiner<IdleRoom>;
 }
@@ -34,7 +40,17 @@ export function registerDefaultGameplays(
     const ballMoveOff = registerBallMoveGameplay(
         registry as unknown as GameplayRegistry<BallMoveRoom, BallMoveInput>,
         {
-            presentation: context.ballMovePresentation,
+            // The adapter is constructed by the ballMove entry, only when a
+            // ballMove plugin starts. Other registrations (notably idle) do
+            // not allocate or touch BallMoveView.
+            ...(context.presentationHost ? {
+                presentationFactory: async () => {
+                    const host = context.presentationHost;
+                    if (!host) return undefined;
+                    const { BallMoveView } = await import("../view/rooms/ballMove/BallMoveView");
+                    return new BallMoveView(host.node, (input) => host.dispatchInput(input));
+                },
+            } : {}),
             joiner: context.ballMoveJoiner ?? createBallMoveRoomJoiner(),
         },
     );

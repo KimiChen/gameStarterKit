@@ -198,11 +198,8 @@ test("gameplay catalog：后续模块登记失败会回滚先前登记", () => {
     const ballJoiner = {
         join: () => lease(Promise.resolve({} as never)),
     } as unknown as GameplayRoomJoiner<BallMoveRoom>;
-    const presentation = { mount() {}, render() {}, unmount() {} };
-
     assert.throws(
         () => registerDefaultGameplays(registry, {
-            ballMovePresentation: presentation,
             ballMoveJoiner: ballJoiner,
             idleJoiner,
         }),
@@ -221,7 +218,6 @@ test("gameplay catalog：默认模块可登记并由无默认 transport 的 cont
         join: () => lease(Promise.resolve({} as never)),
     } as unknown as GameplayRoomJoiner<BallMoveRoom>;
     const unregister = registerDefaultGameplays(registry, {
-        ballMovePresentation: { mount() {}, render() {}, unmount() {} },
         ballMoveJoiner: ballJoiner,
         idleJoiner,
     });
@@ -234,6 +230,58 @@ test("gameplay catalog：默认模块可登记并由无默认 transport 的 cont
     assert.equal(idleCapability.leaveCalls, 1);
     unregister();
     assert.deepEqual(registry.list(), []);
+});
+
+test("gameplay catalog：idle 不创建 BallMove presentation，缺失 presentation 只影响 ballMove 并完整回滚", async () => {
+    const registry = new GameplayRegistry<any, any>();
+    let nodeReads = 0;
+    const host = {
+        get node(): any {
+            nodeReads++;
+            return {};
+        },
+        dispatchInput() {},
+    };
+    let idleLeaves = 0;
+    const idleJoiner = {
+        join: () => ({
+            ready: Promise.resolve({ kind: "idle" as const, roomId: "idle", sessionId: "self" }),
+            async leave() { idleLeaves++; },
+        }),
+    };
+    const ballJoiner = {
+        join: () => ({
+            ready: Promise.resolve({} as never),
+            async leave() { ballLeaves++; },
+        }),
+    };
+    let ballLeaves = 0;
+    const unregister = registerDefaultGameplays(registry, {
+        presentationHost: host,
+        idleJoiner,
+        ballMoveJoiner: ballJoiner,
+    });
+    const controller = new RoomController<any, any>();
+
+    assert.deepEqual(await controller.startRegistered(registry, "idle"), {
+        status: "started", generation: 1, pluginId: "idle",
+    });
+    assert.equal(nodeReads, 0, "启动无 presentation 的 idle 不得读取/构造 BallMoveView");
+    await controller.stop();
+    assert.equal(idleLeaves, 1);
+
+    unregister();
+
+    const missingRegistry = new GameplayRegistry<any, any>();
+    registerDefaultGameplays(missingRegistry, {
+        idleJoiner,
+        ballMoveJoiner: ballJoiner,
+    });
+    const failed = await controller.startRegistered(missingRegistry, "ballMove");
+    assert.equal(failed.status, "failed");
+    assert.match(String((failed as { error?: unknown }).error), /presentation adapter/);
+    assert.equal(nodeReads, 0, "缺 presentation 时不得构造 BallMoveView");
+    assert.equal(ballLeaves, 1, "缺 presentation 的失败启动必须释放 room capability");
 });
 
 test("GameplayRegistry：玩法 id 必须是 canonical wire identity", () => {

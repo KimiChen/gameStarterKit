@@ -125,7 +125,10 @@ export interface BallMoveRoom {
 }
 
 export interface BallMoveGameplayOptions {
-    readonly presentation: BallMovePresentation;
+    /** A pre-built adapter kept for callers that already own the view. */
+    readonly presentation?: BallMovePresentation;
+    /** Build the adapter only when this gameplay actually starts. */
+    readonly presentationFactory?: () => BallMovePresentation | undefined | Promise<BallMovePresentation | undefined>;
     readonly ecs?: GameECS;
     readonly now?: () => number;
     /** Optional module-owned transport registration for app composition. */
@@ -140,7 +143,8 @@ export class BallMoveGameplay implements GameplayPlugin<BallMoveRoom, BallMoveIn
     readonly id = BALL_MOVE_GAMEPLAY_ID;
 
     private readonly ecs: GameECS;
-    private readonly presentation: BallMovePresentation;
+    private readonly presentationFactory: () => BallMovePresentation | undefined | Promise<BallMovePresentation | undefined>;
+    private presentation: BallMovePresentation | null = null;
     private readonly now: () => number;
     private room: BallMoveRoom | null = null;
     private target: { x: number; y: number } | null = null;
@@ -156,16 +160,25 @@ export class BallMoveGameplay implements GameplayPlugin<BallMoveRoom, BallMoveIn
 
     constructor(options: BallMoveGameplayOptions) {
         this.ecs = options.ecs ?? GameECS.inst;
-        this.presentation = options.presentation;
+        this.presentationFactory = options.presentationFactory
+            ?? (() => options.presentation);
         this.now = options.now ?? Date.now;
     }
 
-    start(context: GameplayContext<BallMoveRoom>): void {
+    async start(context: GameplayContext<BallMoveRoom>): Promise<void> {
         if (this.started || this.disposed) return;
+        const presentation = await this.presentationFactory();
+        if (!presentation
+            || typeof presentation.mount !== "function"
+            || typeof presentation.render !== "function"
+            || typeof presentation.unmount !== "function") {
+            throw new TypeError("[ballMove] 需要有效的 presentation adapter");
+        }
         this.started = true;
         this.tornDown = false;
         this.room = context.room;
         this.context = context;
+        this.presentation = presentation;
         try {
             this.ecs.clear();
             this.resetInput();
@@ -238,7 +251,7 @@ export class BallMoveGameplay implements GameplayPlugin<BallMoveRoom, BallMoveIn
         if (!Number.isFinite(dt) || dt < 0) return;
         this.ecs.update(dt);
         this.steerToTarget(context.room);
-        this.presentation.render(this.ecs);
+        this.presentation?.render(this.ecs);
 
         if (!context.room.dropping) {
             this.pingTimer += dt;
@@ -303,14 +316,16 @@ export class BallMoveGameplay implements GameplayPlugin<BallMoveRoom, BallMoveIn
         const room = this.room;
         this.room = null;
         this.context = null;
+        const presentation = this.presentation;
+        this.presentation = null;
         const cleanupErrors: Array<{ readonly resource: string; readonly error: unknown }> = [];
         if (room) this.runCleanup("room input", () => room.clearMove(), cleanupErrors);
         for (const unsubscribe of this.unsubscribers.splice(0)) {
             this.runCleanup("room listener", unsubscribe, cleanupErrors);
         }
-        if (this.presentationMounted) {
+        if (this.presentationMounted && presentation) {
             this.presentationMounted = false;
-            this.runCleanup("presentation", () => this.presentation.unmount(), cleanupErrors);
+            this.runCleanup("presentation", () => presentation.unmount(), cleanupErrors);
         }
         this.runCleanup("ecs", () => this.ecs.clear(), cleanupErrors);
         this.resetInput();

@@ -14,13 +14,9 @@ import {
     reconcileGameplayStartResult,
     RoomController,
 } from "./logic/gameplay/RoomController";
-import {
-    BALL_MOVE_GAMEPLAY_ID,
-} from "./logic/rooms/ballMove/BallMoveGameplay";
 import { getSessionGeneration, onAuthInvalid, onBattleLost, onConnLost, returnToLogin } from "./net/session";
-import { joinErrText } from "./shared/index";
+import { GameplayModeId, joinErrText } from "./shared/index";
 import type { GameplayStartResult } from "./logic/gameplay/RoomController";
-import { BallMoveView } from "./view/rooms/ballMove/BallMoveView";
 import { registerDefaultGameplays, type AppGameplayRegistry } from "./gameplay/catalog";
 
 // Must run before the first Colyseus operation. Imported network modules do not
@@ -37,7 +33,7 @@ export class Main extends Component {
     @property({ tooltip: "WebPlatform Public http(s) 地址（登录 + 选服），必填。" })
     portalUrl = "";
     @property({ tooltip: "要进入的已登记玩法 id；默认 ballMove，可替换为 idle。" })
-    gameplayId = BALL_MOVE_GAMEPLAY_ID;
+    gameplayId = GameplayModeId.BallMove;
 
     private gameplayRegistry: AppGameplayRegistry | null = null;
     private roomController: RoomController<any, any> | null = null;
@@ -119,13 +115,18 @@ export class Main extends Component {
     private configureGameplay(): void {
         const registry = new GameplayRegistry<any, any>();
         const controller = new RoomController<any, any>();
-        const presentation = new BallMoveView(this.node, (action) => {
-            if (!this.roomController) return;
-            void this.roomController.input(action).catch((error) => {
-                console.error("[Main] gameplay input 失败：", error);
-            });
+        const presentationHost = {
+            node: this.node,
+            dispatchInput: (input: unknown): void => {
+                if (!this.roomController) return;
+                void this.roomController.input(input).catch((error) => {
+                    console.error("[Main] gameplay input 失败：", error);
+                });
+            },
+        };
+        this.unregisterGameplay = registerDefaultGameplays(registry, {
+            presentationHost,
         });
-        this.unregisterGameplay = registerDefaultGameplays(registry, { ballMovePresentation: presentation });
         this.gameplayRegistry = registry;
         this.roomController = controller;
     }
@@ -168,7 +169,7 @@ export class Main extends Component {
 
         const requestedId = typeof this.gameplayId === "string" && this.gameplayId.trim().length > 0
             ? this.gameplayId.trim()
-            : BALL_MOVE_GAMEPLAY_ID;
+            : GameplayModeId.BallMove;
         const result = await reconcileGameplayStartResult(
             controller.startRegistered(registry, requestedId, signal),
             {

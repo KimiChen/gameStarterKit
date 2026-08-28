@@ -591,7 +591,10 @@ test("IdleRoom joiner：复用同一区服 transport 并显式选择 idle mode",
 test("Main：只装配 registry/controller/catalog，不再内联 RoomClient、ECS 或玩法回调", () => {
   const source = readFileSync(new URL("../src/Main.ts", import.meta.url), "utf8");
   assert.doesNotMatch(source, /\bRoomClient\b|\bGameECS\b|\bPlayerModel\b|bindRoom\(/);
+  assert.doesNotMatch(source, /\bBallMoveView\b|ballMovePresentation/,
+    "presentation adapter 应由 gameplay catalog entry 归属，Main 只提供通用 host");
   assert.match(source, /registerDefaultGameplays\(registry,/);
+  assert.match(source, /presentationHost/);
   assert.match(source, /controller\.startRegistered\(registry, requestedId, signal\)/);
   assert.match(source, /controller\.tick\(dt\)/);
   assert.match(source, /roomController\?\.stop\(\{ kind \}\)/);
