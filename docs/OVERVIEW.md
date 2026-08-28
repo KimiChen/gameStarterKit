@@ -64,6 +64,7 @@ apps/client/src
 | 项目身份、生成区和第三方来源登记 | `npm run verify:project` |
 | 客户端源码/测试 strict 类型探针（Node/ES2022 桩） | `npm run typecheck:client` |
 | 客户端 ES2017 运行时下限探针（Creator legacy 配置） | `npm run typecheck:client:legacy` |
+| 工具链版本与聚合命令图 | `npm run verify:core` 首闸（`scripts/verify-toolchain.mjs`） |
 | FGUI 设计源、导出物和 registry/codegen 契约 | `npm run verify:fgui`、`npm run test:fgui` |
 | 能力清单与默认入口登记 | `npm run verify:inventory`、`npm run test:inventory` |
 | 服务端路由、协议与一致性规则 | `npm --workspace @game/server run test` |

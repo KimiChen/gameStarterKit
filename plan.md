@@ -30,6 +30,24 @@
 > 此前的 `apps/website` 索引残留、`setField` UTF-16/UTF-8 单位分歧和文档树登记缺口。
 > 第六轮（2026-08-28，本轮收口）复核上述修复：角色 ready marker/legacy fallback、默认进程正常停服、
 > 会话 fence 的 Lua SHA/NOSCRIPT、FGUI `checkManifest` 编排反例及 legacy 全源类型闸门均有定向测试；当前计划内缺口已全部闭合。
+> 第七轮（2026-08-29，HEAD `ca8251c`）对 `368d99e..ca8251c` 的 14 个提交逐 commit 独立复核（客户端 4 件、
+> 服务端 4 件、文档 4 件、仓库元数据 1 件 `6aea37f`、构建脚本 1 件 `808fcc3`；其中 `9884f26` 仅含本文件的
+> 第五轮复核记录，`ca8251c` 含第六轮记录与 `docs/EXTRAFEATURES.md` 的站点登记更新，约 25 条裁决）：
+> 机制与测试均真实落地。`verify:all`（服务端 203/203、客户端 217/217）与 `test:fgui`（47/47）有实测支撑；
+> `test:int`（102/102）与 `test:faults:int`（四组故障矩阵、共 13 个 fault point 全部实测执行）由实施方在本地 Redis/MySQL 栈上
+> 执行，复核方核对了新增用例增量（99+3=102、196+7=203、213+4=217、45+2=47）与 §3 一致。本轮修正三处条目
+> 文字（P0-01 测试文件归因、P0-04 marker 语义与覆盖面、P1-01 catalog 装配口径）、图例的小标题定义及
+> `◐` 当前无条目使用的注记。两处判断性备注：`0bfa70f` 实为接缝抽取＋语义钉住而非行为修复——其新增用例
+> 真正锁定的是「陈旧续体返回 undefined 且只对自己捕获的 owner 调用一次 `stop({kind:'cancelled'})`」，而
+> `freshStops`/`currentController` 两条断言因新 controller 从未进入被测函数而恒真；`9dff8f9` 收紧了 wire
+> 接受域但未 bump `PROTOCOL_VERSION`（仍 v5，开发期无线上客户端可接受，首个有线上兼容义务的版本前应留意）。
+>
+> 第八轮（2026-08-29，HEAD `ca8251c`）按子系统分 5 组并行复核、每组配独立怀疑者做对抗式验证，共 49 条裁决：
+> 33 条「上一轮缺陷/保留边界已闭合且有测试锁定」，16 条需要回填（含 4 条新登记的代码/门禁缺口）。上一轮
+> 3 条缺陷（`apps/website` gitlink、`setField` UTF-16/UTF-8 单位分歧、`docs/undergroundIdle` 未登记）经
+> 只读 clone、`utf8ByteLength` 与 Node `Buffer.byteLength` 的差分测试（14 定例 + 5000 随机串全一致）、
+> 登记链路核对，确认全部闭合；P1-08 的 legacy include 盲区亦经定位探针复验闭合（上一轮的逃逸点
+> `apps/client/src/` 根目录现在会被 TS2550 拦下）。
 > 各轮结论一致的部分不重复记录；新增差异统一写进各条目的「复核备注」。
 > 真实 Creator 预览和完整 smoke 仍不纳入 Node/本地栈测试的通过声明。
 
@@ -41,9 +59,11 @@
 门槛；但已经进入默认入口的可选代码仍必须可停止、可隔离，不能破坏核心构建和本地调试。
 
 P0 表示继续扩展核心玩法前应先修复的确定性问题；P1 表示把现有 Demo 接缝收敛为可复用框架；P2 表示
-在正确性稳定后再做的增强。条目内的三类小标题含义不同：「复核备注（已收口）」＝有测试/门禁证据的结论，
-「保留边界」＝已知且当前不打算做的范围限制。
-`✅` 表示当前基线已完成并有测试/门禁证据，`◐` 表示核心接缝已完成但保留明确限制。
+在正确性稳定后再做的增强。条目内的四类小标题含义不同：「复核备注（已收口）」＝有测试/门禁证据的结论；
+「原审阅证据（已收口）」＝实现前的复现记录，仅说明改动动机，不代表当前基线仍存在这些缺陷；「保留
+边界」＝已知且当前不打算做的范围限制；「已知语义回退（待闭合）」＝为达成本条目标而付出的运行行为代价，
+已识别闭合方案但尚未实施（与「保留边界」区别在于它改变了行为，而非只是测得不够）。
+`✅` 表示当前基线已完成并有测试/门禁证据，`◐` 表示核心接缝已完成但保留明确限制（当前无条目使用）。
 本文同时保留原审阅证据，避免把 Demo 的边界误写成线上能力。
 
 ## 2. 总体结论
@@ -60,6 +80,12 @@ schema 迁移仍待补齐，Game HTTP request schema 尚未直接由 shared vali
 
 `apps/website/` 与 `docs/undergroundIdle/` 的仓库登记状态现已明确：前者是被忽略、保留在本机的新设计站点
 checkout，后者是已受控的未实现玩法策划案；两者都不伪装成核心运行能力，也不再构成计划缺口。
+
+本轮改变运行语义的取舍有两处：`9dff8f9` 把 `setField` 文本的接受域从 UTF-16 码元收紧为 UTF-8 字节
+（CJK 值的可写长度实际缩到约 1/3，未 bump `PROTOCOL_VERSION`，见第七轮记录）；以及 P0-04 的热档回访改为
+信任本地 `ready` marker、不再每次 join 幂等重申外部角色行——它换来「外部登记不可用时不再拒绝全量 join」，
+代价是移除了一条既有自愈属性，详见 P0-04 的「已知语义回退（待闭合）」（含对 09·F4 数据丢失判据的削弱）。
+其余本轮新登记项均为测试覆盖面与门禁口径，不改变运行行为。
 
 ## 3. 本轮验证基线
 
@@ -129,10 +155,17 @@ TypeScript 与 gameplay 类型，不导入 `cc`、FairyGUI、View 或网络单�
 generation，并在动态页面加载、room start、失败 stop 之后统一复核 Main 实例、AbortSignal 与 generation；
 旧 Main 的迟到清理只能停止自己的 controller，不会清掉后来建立的新会话。
 
-复核备注（已收口）：`roomClientOwnership.test.ts` 的 gameplay continuation 用 deferred AbortSignal 与
-session-generation 两组行为用例直接执行生产启动接缝，验证迟到结果只停止自己的旧 controller；旧实例的
-清理不会触碰后来建立的会话。源码正则守门仍作为 `Main.ts` 接线的补充证据，真实 Creator 生命周期继续由
+复核备注（已收口）：`gameplayStartRecovery.test.ts` 用 deferred AbortSignal 与 session-generation 两组
+行为用例直接执行生产启动接缝（`RoomController.reconcileGameplayStartResult`），验证迟到结果只停止自己的
+旧 controller；旧实例的清理不会触碰后来建立的会话。`roomClientOwnership.test.ts:591` 的源码正则只守
+`Main.ts` 的装配接线（registry/controller/catalog 与 `presentationHost`）；真实 Creator 生命周期继续由
 编辑器预览承担。
+
+保留边界：`reconcileGameplayStartResult` 之外的启动判据没有执行级用例——`Main.startGameplay`
+（`Main.ts:157-160`）对 `destroyed`、`AbortSignal` 与 `getSessionGeneration()` 的三元组复核只由
+`loginFlight.test.ts:41-43` 的源码正则锁定；该正则要求源码出现 `getSessionGeneration() === sessionGeneration`
+字面形态，因此真正能逃逸的是「在调用点把 `isCurrent()` 的结果先缓存成布尔再复用」这类保留字面量、语义已破的
+改写，不会被现有测试拦下。
 
 复核备注（已收口）：`WebSocketClient.forgetImplicitOwners` 按 slot 身份回收隐式 ownership，并覆盖 join
 失败/迟到、room 绑定失败、物理 `onLeave`、`closeSlot` 以及 `leave()` 的空 slot 提前返回路径。
@@ -272,8 +305,22 @@ initializer，不触外部依赖）；空库首登与并发 join 由 `apps/serve
 复核备注（已收口）：新建档在 Redis 原子写入 `characterRegistration=pending`，外部登记成功后再以单 Lua
 操作把已有档标为 `ready`；`ready` 热档回访跳过 WebPlatform PUT。legacy 无 marker 档先调用
 `hasCharacter`：远端已有登记时只补 marker，未登记时执行带 durable repair 的幂等 PUT；存在性查询失败会
-持久化 repair intent 并拒绝 ready。repair worker 成功 PUT 后补 marker，且 marker CAS 在档已被删除时不会
-重新创建 hash。`character-ready.test.ts` 与 `lobby-zone.test.ts` 覆盖这些转移和按区隔离语义。
+持久化 repair intent 并拒绝 ready。repair worker 成功 PUT 后补 marker，且 marker 写入带 EXISTS 守卫，
+在档已被删除时不会重新创建 hash。`character-ready.test.ts` 与 `lobby-zone.test.ts` 覆盖其余状态转移；
+marker 的区维度目前只由「s1 marker 落 `s1_user`、s1 回访不建 s2 档」间接覆盖，「s1 已 ready 不得短路 s2
+首次登记」这一方向尚无用例；「repair worker 成功 PUT 后补 marker」这一转移由生产代码路径保证，暂无直接断言。
+
+已知语义回退（待闭合）：`ready` marker 一经写入即被永久信任（`character.ts:95-98` 直接 return，无 TTL、无周期重探、
+无再次 PUT/`hasCharacter` 路径）。这是本次修复唯一改变线上语义的取舍——它正是「外部登记不可用时不再拒绝
+全量 join」的手段，但同时移除了「每次 join 幂等重申外部角色行」这条既有自愈属性：外部目录若单方面丢行，
+游戏侧不再有恢复路径，并会削弱 `core/archive/thaw.ts:210` 的 09·F4 判据（ABSENT + 外部有本区登记 = 数据
+丢失）——热/冷档若随后也丢失，会被判成真新角而非 `UserDataLostError`，`thaw.ts:37-38` 声明「必须恒为 0」的
+`userDataLost` 计数可能静默不报。若要闭合，可给 marker 加低频重探（按 marker 写入时间或 `lastActiveAt`
+做 N 天一次 `hasCharacter` 复核）。
+另：新增的档字段 `characterRegistration` 不在 `apps/shared/src/protocol/lobbyRpc/economy.ts` 的
+`EFFECT_RESERVED_FIELDS` 内。当前不可利用（`EFFECT_FIELD_ALLOWLIST` 未收录该字段，且值规则对 allowlist
+穷尽，扩表必须同时补规则），且其它 `CREATE_USER` 写入的字段（如 `registerTime`）同样不在保留表内，故不是
+与现有习惯的不一致；区别只在后果——叠加上面的永久信任语义后不可自愈。
 
 **原审阅证据（已收口）**
 
@@ -332,14 +379,21 @@ cleanup 后以原始异常退出。`loop-monitor.test.ts` 覆盖重复 start/幂
 - 重复关闭与启动半失败时，每个资源恰好释放一次（registry 级 `lifecycle.test.ts`，真实入口子进程
   用例 `index-startup-lifecycle.test.ts`，故障注入 `fault-mutation.test.ts`）；`shutdown-aggregator.test.ts`
   另以声明式 producer 列表验证顺序、异常隔离和幂等。
-- 默认入口的真实依赖装配、唯一 aggregator 注册、`listen(app, PORT)` 句柄以及真实 Colyseus
-  `gracefullyShutdown(false)` 均有定向证据；最终 cleanup 固定按
+- 默认入口的真实依赖装配、`listen(app, PORT)` 以及「只注册一处 aggregator」这件事本身，由
+  `index-startup-lifecycle.test.ts:81` 的**源码级断言**守门（该用例不执行 `index.ts`）；而「同一 Server
+  禁止注册第二个 `onBeforeShutdown`」的机制有行为用例（`shutdown-aggregator.test.ts:145` 以
+  `assert.throws` 锁定）；真实 Colyseus
+  `gracefullyShutdown(false)` 释放监听句柄与 `shutdown.ts` 的停止/清理次序才是行为用例，最终 cleanup 固定按
   `character-ready → detached-tasks → registered-resources` 执行。XREAD、repair worker、loop monitor、
   stream depth alert 和存储入口仍有连续 start/stop 与停服关闸用例。
 
 保留边界：完整外部 Redis/MySQL/WebPlatform smoke、真实 Creator 预览和目标设备采样仍不在 Node 证据内；
 默认进程的真实启动依赖这些本地/外部服务，测试中的 Colyseus 句柄证据只验证框架停服语义，不等于生产拓扑
 或第三方服务可用性承诺。
+`index.ts` 的装配语义也没有执行级用例：等价改写（换别名、把 `startKickConsumer` 移到未被 await 的分支、
+在保留字面量的前提下调整实际执行顺序）可继续通过源码断言，纯格式化则会误红。默认进程「启动成功 → 收到
+停服信号 → 按序释放 → 正常退出」同样仍无端到端用例——现有证据是源码断言、抽出接缝的行为用例与裸
+Colyseus 句柄用例三段拼接，进程级正常停服继续由本地 `smoke` 承担。
 
 ## 6. P1：稳定框架接缝
 
@@ -355,16 +409,22 @@ cleanup 后以原始异常退出。`loop-monitor.test.ts` 覆盖重复 start/幂
 
 `idle` 已通过服务端 `modes/catalog.ts`、客户端 `gameplay/catalog.ts` 和真实 `GameRoomTransport` 接入生产装配，
 同区同 mode 可合流、不同 mode 必隔离；它不依赖 `ballMove` factory，也不会写入 ballMove casual evidence。
-客户端 catalog entry 同时拥有自己的 factory/joiner；`registerDefaultGameplays` 只接收通用的
-`GameplayPresentationHost`，由具体 entry 按需创建 presentation，因此 `Main` 不持有或命名具体玩法 View。
-新增无 presentation 或自带 presentation 的玩法只需增加 shared mode id、双端 mode/plugin、room adapter 与
-catalog 登记；需要引擎宿主时消费该通用 host，不修改 `RoomClient`、`RoomController` 或通用 `GameRoom`
-transport。`Main` 侧守门用例只断言它不直接引用玩法 joiner/登记函数，并保留 `idle` 属性配置；
+客户端 catalog entry 同时拥有自己的 factory/joiner；catalog 装配的通用参数是
+`GameplayPresentationHost`（context 另带可选的玩法 joiner 字段），由具体 entry 按需动态 import 并创建
+presentation，因此 `Main` 不持有或命名具体玩法 View。新增无 presentation 或自带 presentation 的玩法只需
+增加 shared mode id、双端 mode/plugin、room adapter 与 catalog 登记；需要引擎宿主时消费该通用 host，
+不修改 `RoomClient`、`RoomController` 或通用 `GameRoom` transport。`Main` 侧守门用例断言它不直接引用
+玩法 joiner/登记函数与具体 presentation 模块（`BallMoveView`/`ballMovePresentation` 等）；
 `GameECS.addPlayer` 对重复 collection key 幂等，`clear()` 不遗留 bitECS entity。
 
 保留边界：共享的 `GameRoomState`、Waiting/Playing/Settle 相位、两人开局与部分 reset/settle 仍以 ballMove
 Demo 为基线；`idle` 只是无 presentation 的最小 multi-mode 证明，不代表已交付完整第二玩法 UI 或通用多玩法
 状态模型。接入不同房间状态/结算语义的玩法仍需先扩展相应 shared Schema 与 mode 契约。
+
+保留边界：presentation 的覆盖面——现有用例只锁定「idle 不创建 `BallMoveView`」与「缺 host 时 ballMove
+fail-closed 并释放 lease」两条反例；经 catalog `presentationFactory` 真实解析动态 import 并挂载/卸载适配器
+的正向链路仍只由 Creator 预览确认，尚无 Node 用例——相对路径或分块在 Creator 侧解析失败时，Node 侧全绿
+也发现不了。
 
 ### P1-02 补齐 View、Logic 和异步页面生命周期 ✅
 
@@ -378,6 +438,10 @@ cacheable 页面 mount/onOpen/setup/render 四段打开失败回滚、输入租�
 与页面组合层 `observePageAction` 的 rejection 都有 `unhandledRejection` 实证，并守住 Login 两个真实导航
 调用点；未被读取的旧上下文接缝已删除。句柄每次重挂都新建，`state.closed` 一旦
 置位即保持失效，重复 `close` 与旧世代句柄均不会触碰当前页面。
+覆盖面：陈旧句柄的两道门中，`state.closed` 幂等门有用例（`viewLifecycle.test.ts:645-647`）；「未关闭的旧
+世代句柄不得按名字关掉新重挂世代」的身份门（`ViewMgr.ts:271`）尚无定向用例——`viewLifecycle.test.ts:665`
+的同名断言实际由 `state.closed` 早退满足，误删该行仍会通过。要真正覆盖需构造「从未 close 过的旧句柄在
+`close(name)` + 重新 open 之后才调用 close」的场景。
 
 已实施的生命周期边界：
 
@@ -438,6 +502,17 @@ shared exact validators、RPC/HTTP contract map、Colyseus state mirror、fixtur
 name/id、非法 `ui://` 引用和 package.xml 伪声明。CLI 子进程用漂移 manifest 确认退出码为 1，并确认
 `--check` 不会隐式改写 manifest；另保留对真实仓库资源闭包的只读正例。
 
+保留边界：`checkManifest` 编排层仍有 package 缺失/多余、package.xml 资源声明变化、View 缺失/多余五类分支
+没有反例，只由 `compareRecords`、`sourcePathProblems`、`outputOwnershipProblems` 等纯校验单测间接覆盖；
+manifest 不存在与 JSON 无法解析两条 throw 路径也无用例。现有编排用例对真实仓库资源顺序有隐式依赖
+（`packages[0].name === "Common_Btn"`、`views[0].pkg !== "View_Home_Home"`），资源重排会让断言以误导性
+信息失败。另：`checkManifest` 的 `manifestPath` 默认读 `FGUI_MANIFEST_PATH`
+（`scripts/fgui-manifest.mjs:427`），该 env 对生产 CLI 同样生效——`verify:fgui`（经 `verify:core`/
+`verify:all`）会改为与该变量指定的文件比对且不提示真源被替换（指向不存在的路径会显式报错；指向**与当前工程一致的异源副本**——例如刚 `--write` 出来的临时文件或
+另一分支的同步副本——则会报绿、门禁静默失效，而真正陈旧的副本反而会报红），而 `--write` 分支（`:481-484`）硬编码写回 `MANIFEST`、完全
+忽略该 env。正式门禁必须在未设置该变量的环境运行；收敛方向是把子进程用例改为传显式 `--manifest <path>`，
+或在 `manifestPath !== MANIFEST` 时打印一行显式告警。
+
 **完成标准**：设计源变更未重新导出、嵌套字段改名、加载中关闭或 required 包缺失都被本地检查稳定捕获。
 
 ### P1-06 收紧服务端配置、任务和存储防腐层 ✅
@@ -469,7 +544,10 @@ running + queued 饱和；`dispatcher-idem.test.ts` 直接执行 deadline helper
    且 archive 的区隔离/容量方案仍不属于当前核心承诺。
 8. 认证组 sess fence 也纳入统一脚本登记：`core/auth/session.ts` 以 `defineScript` 声明
    `SESS_FENCE_LUA`，写入经 `evalshaWithReload` 执行；集成用例注入一次 `NOSCRIPT` 并验证自动
-   `SCRIPT LOAD` 重试，同时锁定 `written`/`unchanged`/`stale` 语义。
+   `SCRIPT LOAD` 重试，同时锁定 `written`/`unchanged`/`stale` 语义。该用例注入的是伪造的含
+   `NOSCRIPT` 文本的 Error，只验证会话写路径确实经过 `evalshaWithReload`；真实 Redis 的 NOSCRIPT
+   报文形状由 `int/effect-atomic.test.ts` 的 fault matrix 用例（每次运行唯一、必然未缓存的探针脚本）
+   覆盖，两者合起来才完整。
 
 ### P1-07 收敛区目录和跨端确定性语义 ✅
 
@@ -518,8 +596,12 @@ consumer 的 `gameHttpUrl` 仍在 `openAreaList` 选服接线中直接传给 `in
    nonce），不对共享 Redis 执行无条件 `SCRIPT FLUSH`（全仓无任何 `SCRIPT FLUSH` 调用）；端到端的
    `apps/server/test/smoke.ts`（`smoke`）不触碰 SCRIPT 缓存。
 6. 失效的 loadtest 与未闭合的 Excel 生成链继续归额外功能；它们不进入 `verify:core` 的核心门禁。
-7. `d96186b` 已补齐 legacy `cc-stub.d.ts` 中 BallMoveView 使用的 `Color`、`EventTouch`、`Graphics`、
-   `Input`、`UITransform`、`input` 与 `Vec3.set`，`npm run typecheck:client:legacy` 可独立通过；根
+7. `d96186b` 先补齐了 legacy `cc-stub.d.ts` 的 `Color`、`EventTouch`、`Graphics`、`Input`、`UITransform`、
+   `input` 与 `Vec3.set`，使当时 include 白名单范围内的 legacy 探针可独立通过；`10cf94d` 再把
+   `apps/client/tsconfig.json` 的 include 收敛为递归 `src/**/*.ts`（exclude 只剩 `**/*.meta`）并补齐 Main 与
+   全部 View 所需的 cc/FairyGUI 声明桩，`npm run typecheck:client:legacy` 才覆盖全部客户端源码（该覆盖面换来
+一处严格性放宽：legacy 配置新增 `noUnusedLocals: false`，以容纳 FGUI codegen 生成的绑定字段，其余严格项
+不变）；根
    `typecheck` 明确串行执行完整 ES2022 无头探针和 ES2017 legacy 探针，因此 `verify:core` / `verify:all`
    会守住全部客户端源码的运行时下限。`clientTypecheckConfig.test.ts` 递归收集并断言每个
    `apps/client/src/**/*.ts` 都在 legacy program 中，同时注入 `Object.fromEntries` 与 `Promise.allSettled`
@@ -558,6 +640,13 @@ FGUI、外部身份和 inventory 命令等必要条款；README 命令表已补 
 忽略，不进入 Git 索引、workspace、能力清单或核心验证；本仓不恢复 gitlink/submodule，也不删除该物理目录。
 额外文档边界也已闭合：`docs/undergroundIdle/` 已在 README、AGENTS/CLAUDE 和
 `docs/EXTRAFEATURES.md` 登记为未实现的玩法策划案，不伪装成活跃能力或默认入口。
+
+保留边界：`apps/client/src/gameplay/` 是 inventory 登记的 `gameplay-boundary.defaultEntry`，`91fdf02` 后
+允许依赖 `cc` 与动态 import `view/`（`catalog.ts:1` 的 `import type { Node } from "cc"`、`:50` 的动态
+import），且不在 `logic-purity.test.ts` 的 `LOGIC_DIR` 覆盖范围内；但它当前没有就近 README——是
+`apps/client/src` 下唯一「自身含源码文件却没有就近 README」的顶层目录——CLAUDE/AGENTS 的 README 缺口
+枚举也未列它。后续应补 README 或把该目录加入枚举；`docs/OVERVIEW.md` 已提及该目录，故不违反本条的
+「默认活跃模块须在 OVERVIEW/就近 README 标明」，`verify:inventory` 也不会因此变红。
 
 保留边界：组合根发现不声称构建完整 TypeScript import graph，scene 发现不扫描动态 prefab，Markdown
 检查守住登记链接与锚点而不是通用语法解析。
