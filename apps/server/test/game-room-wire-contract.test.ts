@@ -3,12 +3,14 @@ import { test } from "node:test";
 import {
     C2S,
     C2S_RUNTIME_VALIDATORS,
+    ErrorCode,
     GamePhase,
+    S2C,
     validateGameRoomState,
     validatePlayerState,
     type C2SType,
 } from "@game/shared";
-import { GAME_ROOM_C2S_SCHEMAS } from "../src/rooms/GameRoom";
+import { GameRoom, GAME_ROOM_C2S_SCHEMAS } from "../src/rooms/GameRoom";
 import { GameRoomState, PlayerState } from "../src/rooms/schema/GameRoomState";
 
 type Vector = {
@@ -23,6 +25,37 @@ function acceptedBy(validator: (value: unknown) => unknown, value: unknown): { a
     } catch {
         return { accepted: false };
     }
+}
+
+function handledByGameRoom(type: C2SType, value: unknown): {
+    captured: Array<{ type: C2SType; payload: unknown }>;
+    sent: Array<[string, unknown]>;
+} {
+    const captured: Array<{ type: C2SType; payload: unknown }> = [];
+    const sent: Array<[string, unknown]> = [];
+    const room = new GameRoom({
+        seed: 1,
+        clock: () => 0,
+        mode: {
+            id: "wire-contract-probe",
+            onMessage(message) {
+                captured.push({ type: message.type, payload: message.payload });
+                return true;
+            },
+        },
+    });
+    room.state.phase = type === C2S.Move || type === C2S.CastSkill
+        ? GamePhase.Playing
+        : GamePhase.Waiting;
+    const client = {
+        sessionId: "wire-client",
+        send(sentType: string, payload: unknown) {
+            sent.push([sentType, payload]);
+        },
+    };
+    const handlers = room.messages as Record<C2SType, (client: unknown, payload: unknown) => void>;
+    handlers[type](client, value);
+    return { captured, sent };
 }
 
 function symbolExtra(value: Record<string, unknown>): Record<string, unknown> {
@@ -99,10 +132,16 @@ const c2sVectors: Record<C2SType, readonly Vector[]> = {
 };
 
 test("GameRoom C2S boundary is sourced from shared validators", () => {
+    const room = new GameRoom({ seed: 1, clock: () => 0 });
     assert.deepEqual(
         Object.keys(GAME_ROOM_C2S_SCHEMAS).sort(),
         Object.keys(C2S_RUNTIME_VALIDATORS).sort(),
         "server and shared must register the same C2S message set",
+    );
+    assert.deepEqual(
+        Object.keys(room.messages).sort(),
+        Object.keys(C2S_RUNTIME_VALIDATORS).sort(),
+        "actual GameRoom handlers and shared must register the same C2S message set",
     );
 
     for (const [rawType, vectors] of Object.entries(c2sVectors)) {
@@ -121,6 +160,25 @@ test("GameRoom C2S boundary is sourced from shared validators", () => {
             );
             if (sharedResult.accepted && serverResult.success) {
                 assert.deepEqual(serverResult.data, sharedResult.data, `${type} normalized result drift: ${vector.label}`);
+            }
+
+            const handled = handledByGameRoom(type, vector.value);
+            if (sharedResult.accepted) {
+                assert.deepEqual(
+                    handled.captured,
+                    [{ type, payload: sharedResult.data }],
+                    `${type} actual handler normalization drift: ${vector.label}`,
+                );
+                assert.deepEqual(handled.sent, [], `${type} valid payload emitted an error: ${vector.label}`);
+            } else {
+                assert.deepEqual(handled.captured, [], `${type} malformed payload reached gameplay: ${vector.label}`);
+                assert.equal(handled.sent.length, 1, `${type} malformed payload reply count: ${vector.label}`);
+                assert.equal(handled.sent[0][0], S2C.Error, `${type} malformed payload reply type: ${vector.label}`);
+                assert.equal(
+                    (handled.sent[0][1] as { code?: unknown }).code,
+                    ErrorCode.BadRequest,
+                    `${type} malformed payload error code: ${vector.label}`,
+                );
             }
         }
     }
