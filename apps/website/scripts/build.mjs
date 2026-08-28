@@ -14,6 +14,7 @@ await mkdir(server, { recursive: true });
 for (const file of ["index.html", "style.css", "script.js"]) {
   await cp(join(root, file), join(client, file));
 }
+await cp(join(root, "public", "og.png"), join(client, "og.png"));
 
 await writeFile(
   join(client, "_headers"),
@@ -21,14 +22,12 @@ await writeFile(
 );
 
 const workerSource = [
-  'const missing = new Response("Not found", { status: 404 });',
-  "",
   "export default {",
   "  async fetch(request, env) {",
   '    if (env && env.ASSETS && typeof env.ASSETS.fetch === "function") {',
   "      return env.ASSETS.fetch(request);",
   "    }",
-  "    return missing;",
+  '    return new Response("Not found", { status: 404 });',
   "  },",
   "};",
   "",

@@ -9,6 +9,7 @@ const mime = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
+  ".png": "image/png",
 };
 const requestedPort = Number(process.env.PORT || 3000);
 
@@ -30,20 +31,25 @@ function serveFile(request, response) {
 
   const relative = pathname === "/" ? "index.html" : pathname.replace(/^\/+/, "");
   const file = resolve(join(root, relative));
-  if (!file.startsWith(root + "/") && file !== root) {
+  const publicFile = resolve(join(root, "public", relative));
+  const isInsideRoot = file.startsWith(root + "/") || file === root;
+  const isInsidePublic = publicFile.startsWith(join(root, "public") + "/") || publicFile === join(root, "public");
+  if (!isInsideRoot || !isInsidePublic) {
     response.writeHead(403);
     response.end("Forbidden");
     return;
   }
 
   access(file)
-    .then(() => {
+    .catch(() => access(publicFile).then(() => publicFile))
+    .then((resolvedFile) => {
+      const servedFile = typeof resolvedFile === "string" ? resolvedFile : file;
       response.writeHead(200, {
-        "Content-Type": mime[extname(file)] || "application/octet-stream",
+        "Content-Type": mime[extname(servedFile)] || "application/octet-stream",
         "Cache-Control": "no-cache",
       });
       if (request.method === "HEAD") response.end();
-      else createReadStream(file).pipe(response);
+      else createReadStream(servedFile).pipe(response);
     })
     .catch(() => {
       response.writeHead(404);

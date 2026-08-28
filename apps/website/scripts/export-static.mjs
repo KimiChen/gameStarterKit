@@ -18,4 +18,5 @@ await cp(join(root, "dist", "client"), output, { recursive: true });
 await access(join(output, "index.html"));
 await access(join(output, "style.css"));
 await access(join(output, "script.js"));
+await access(join(output, "og.png"));
 console.log(output);

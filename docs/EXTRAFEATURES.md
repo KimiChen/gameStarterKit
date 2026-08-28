@@ -33,13 +33,19 @@ gameStarterKit 的核心定位是**开发期游戏基础框架**：客户端、�
 
 状态：**显式启用 / 参考代码**。
 
-`apps/website` 是独立安装域中的项目说明站，不在根 npm workspaces 内。仓库包含：
+`apps/website` 是独立安装域中的原生静态项目说明站，不在根 npm workspaces 内。页面按
+[Web Standard Kit](https://github.com/KimiChen/wheels/tree/main/web-standard-kit) 的令牌和
+[wheel.do](https://wheel.do) 的卡片网格组织信息；它只使用 `index.html`、`style.css` 和
+`script.js`，不再包含旧版 React、Next、Vinext、Vite 或 Worker 应用目录。`.openai/hosting.json`
+仅保留 Sites 项目标识，采用方自行托管时应替换或移除。
 
-- `vite.config.ts`、`worker/index.ts`、`build/sites-vite-plugin.ts` 和 `.openai/hosting.json`
-  （含托管平台的真实项目标识，采用方自行托管时应替换或移除）；
-- Cloudflare Vite/Wrangler 与 Sites 元数据适配；
-- `scripts/export-static.mjs` 与 `deploy/static-site.js` 的纯静态导出路径；
-- 本地 build、lint 和 rendered-HTML 测试。
+站点脚本与输出边界如下：
+
+- `scripts/dev.mjs`：零依赖 Node 本地静态预览服务器；
+- `scripts/build.mjs`：将三份页面源码复制到 `dist/client`，并生成最小的
+  `dist/server/index.js` 与 `dist/wrangler.json` 供 Sites/Cloudflare Worker 适配；
+- `scripts/export-static.mjs`：把已构建的 `dist/client` 导出到一个空目录；
+- `scripts/lint.mjs` 与 `tests/site.test.mjs`：检查架构边界、页面内容和构建文件。
 
 本地验证：
 
@@ -58,23 +64,20 @@ npm run build
 npm run export:static -- /absolute/path/to/empty-output
 ```
 
-导出结果包含 `index.html`、`assets/`、`og.png` 和 `static-site.js`，其中资源使用根路径，不能据此推断
-任意子路径托管都可用。仓库没有为说明站或游戏系统承诺域名、证书、服务器、发布流程、可用性或持续维护。
-历史路径 `apps/website/DEPLOY.md` 仅保留为本节索引。
+导出结果包含 `index.html`、`style.css`、`script.js` 和 `_headers`，可直接作为域名根路径的静态
+站点。仓库没有为说明站或游戏系统承诺域名、证书、服务器、发布流程、可用性或持续维护；说明站
+本身也不构成部署、商业化承诺。
 
 如果采用方自行托管纯静态导出物，可把下面内容作为**非绑定配置参考**，而不是本仓交付的部署方案：
 
-1. 将上述四类导出物完整复制到静态站点根目录，确认 `index.html` 与 `assets/`、`og.png`、
-   `static-site.js` 同级；
-2. 由于页面引用 `/assets/...`、`/og.png` 和 `/static-site.js`，当前产物应挂在域名根路径；放入
-   `/some-subdirectory/` 前必须先改造并重新验证 base path；
-3. 更新时整体替换导出结果。仅对带内容 hash 的 asset 使用长期 immutable 缓存，`index.html` 不应
-   长期缓存；
+1. 将导出目录中的文件完整复制到静态站点根目录，确认文件与 `index.html` 同级；
+2. 当前页面使用相对资源路径，放入子目录前仍应先验证 base path 和刷新行为；
+3. 更新时整体替换导出结果；`index.html` 不应长期缓存，静态资源可按采用方策略缓存；
 4. Apache、宝塔或 1Panel 一类静态站点入口只需把 document root 指向导出目录；这份单页输出本身
    不要求 PHP、数据库或 Node.js 常驻进程。
 
-以下 Nginx 片段只演示上述静态文件和缓存语义，域名、目录、HTTPS、安全头、访问日志和变更流程均由
-采用方按自己的环境负责：
+以下 Nginx 片段只演示静态文件入口，域名、目录、HTTPS、安全头、访问日志和变更流程均由采用方按
+自己的环境负责：
 
 ```nginx
 server {
@@ -82,12 +85,6 @@ server {
     server_name example.com;
     root /srv/game-starter-kit-site;
     index index.html;
-
-    location /assets/ {
-        try_files $uri =404;
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
 
     location / {
         try_files $uri $uri/ /index.html;

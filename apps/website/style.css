@@ -342,7 +342,7 @@
     --tone-b: var(--surface-soft);
     --tone-border: var(--border);
     --tone: var(--accent);
-    background: var(--tone-a);
+    background: linear-gradient(140deg, var(--tone-a), var(--tone-b));
     border: 1px solid var(--tone-border);
     border-radius: var(--radius-lg);
     color: var(--text);
@@ -820,7 +820,7 @@
   }
 
   [data-theme="dark"] .wsk-project-card {
-    background: var(--tone-a);
+    background: linear-gradient(140deg, var(--tone-a), var(--tone-b));
   }
 
   [data-theme="dark"] .wsk-tone-indigo { --tone-a: #171b36; --tone-b: #22284f; --tone-border: #3f4781; --tone: #a5b4fc; }

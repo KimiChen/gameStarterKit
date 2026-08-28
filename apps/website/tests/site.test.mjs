@@ -41,5 +41,6 @@ test("builds the static client and Worker entry", async () => {
   await access(join(root, "dist", "client", "index.html"));
   await access(join(root, "dist", "client", "style.css"));
   await access(join(root, "dist", "client", "script.js"));
+  await access(join(root, "dist", "client", "og.png"));
   await access(join(root, "dist", ".openai", "hosting.json"));
 });
