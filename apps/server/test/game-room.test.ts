@@ -13,6 +13,7 @@ import {
 import {
     GameRoom,
     GAME_ROOM_MAX_MESSAGES_PER_SECOND,
+    MAX_ACCEPTED_INPUTS,
     type GameRoomRuntimeOptions,
 } from "../src/rooms/GameRoom";
 
@@ -186,6 +187,31 @@ test("rejected skills do not enter the accepted input sequence", async () => {
     assert.equal(replayRoom.injectInput({ type: "castSkill", sessionId: "a", skillId: 1 }), true);
     replayRoom.stepFixed();
     assert.equal(replayRoom.getAcceptedInputs().length, 1);
+});
+
+test("accepted input evidence has a bounded capacity and rejects later side effects", async () => {
+    const room = new GameRoom({ ...runtime(113), maxAcceptedInputs: 1 });
+    installLock(room);
+    const a = fakeClient("a", "ua");
+    await join(room, a);
+    await join(room, fakeClient("b", "ub"));
+    const move = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Move];
+    const player = room.state.players.get("a")!;
+
+    move(a, { dirX: 1, dirY: 0 });
+    assert.equal(room.getAcceptedInputs().length, 1);
+    assert.equal(player.dirX, 1);
+    const errorsBefore = a.sent.filter(([, payload]) => (payload as { code?: number }).code === ErrorCode.BadRequest).length;
+
+    move(a, { dirX: -1, dirY: 0 });
+    assert.equal(room.getAcceptedInputs().length, 1, "达到上限后证据序列不得继续增长");
+    assert.equal(player.dirX, 1, "证据容量耗尽时不得半应用新的移动");
+    assert.equal(
+        a.sent.filter(([, payload]) => (payload as { code?: number }).code === ErrorCode.BadRequest).length,
+        errorsBefore + 1,
+    );
+
+    assert.ok(MAX_ACCEPTED_INPUTS > 1, "生产上限应大于测试覆盖的小容量覆写");
 });
 
 test("Waiting/Settle phase whitelist prevents simulation input and update", async () => {

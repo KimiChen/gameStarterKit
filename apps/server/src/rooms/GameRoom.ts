@@ -82,6 +82,12 @@ const MAX_WELCOME_TICK_RATE = 240;
 export const GAME_ROOM_START_LOCK_TIMEOUT_MS = 10_000;
 /** Bound replay input work before entering the synchronous simulation loop. */
 const MAX_INPUTS_PER_SOURCE = 256;
+/**
+ * Bound the in-memory accepted-input evidence retained for one match.  A room
+ * must fail closed once the cap is reached rather than silently dropping an
+ * input that would make the replay evidence incomplete.
+ */
+export const MAX_ACCEPTED_INPUTS = 16_384;
 
 /** 可替换的单调时间源。默认使用 Colyseus room clock。 */
 export type GameRoomClock = (() => number) | { now?: () => number; currentTime?: number };
@@ -111,6 +117,8 @@ export interface GameRoomRuntimeOptions {
     startLockTimeoutMs?: number;
     /** Optional ruleset; transport/admission remains owned by GameRoom. */
     mode?: GameMode<GameRoomState>;
+    /** Test/replay override for the accepted-input evidence cap. */
+    maxAcceptedInputs?: number;
 }
 
 export type AcceptedGameInput = GameRoomInput & {
@@ -150,6 +158,15 @@ function normalizeStartLockTimeout(timeoutMs: number | undefined): number {
         && timeoutMs <= 60_000
         ? timeoutMs
         : GAME_ROOM_START_LOCK_TIMEOUT_MS;
+}
+
+function normalizeAcceptedInputLimit(limit: number | undefined): number {
+    return typeof limit === "number"
+        && Number.isSafeInteger(limit)
+        && limit >= 1
+        && limit <= MAX_ACCEPTED_INPUTS
+        ? limit
+        : MAX_ACCEPTED_INPUTS;
 }
 
 class GameRoomStartLockTimeoutError extends Error {
@@ -336,6 +353,7 @@ export class GameRoom extends Room {
     /** fixed-step 累加器；wall clock/dt 只决定要跑几步，不直接进入公式。 */
     private readonly fixedStepMs: number;
     private readonly startLockTimeoutMs: number;
+    private readonly maxAcceptedInputs: number;
     private simulationAccumulatorMs = 0;
     private simulationTimeMs = 0;
     private readonly runtimeClock: () => number;
@@ -375,6 +393,7 @@ export class GameRoom extends Room {
         this.rng = SeededRandom.stream(this.configuredSeed, "match");
         this.fixedStepMs = normalizeFixedStep(options.fixedStepMs);
         this.startLockTimeoutMs = normalizeStartLockTimeout(options.startLockTimeoutMs);
+        this.maxAcceptedInputs = normalizeAcceptedInputLimit(options.maxAcceptedInputs);
         this.runtimeClock = this.makeClock(options.clock);
         this.inputSource = options.input;
         this.matchIdFactory = options.matchId ?? newMatchId;
@@ -519,12 +538,16 @@ export class GameRoom extends Room {
             const player = this.state.players.get(client.sessionId);
             if (!player || !player.alive) return;
             const dir = normalize(msg.dirX, msg.dirY);
-            this.recordInput({
+            const recorded = this.recordInput({
                 type: "move",
                 sessionId: client.sessionId,
                 dirX: dir.x,
                 dirY: dir.y,
             });
+            if (!recorded) {
+                this.sendError(client, ErrorCode.BadRequest);
+                return;
+            }
             player.dirX = dir.x;
             player.dirY = dir.y;
         },
@@ -535,6 +558,10 @@ export class GameRoom extends Room {
             if (this.modeMessage(C2S.CastSkill, client, msg)) return;
             const player = this.state.players.get(client.sessionId);
             if (!player || !player.alive) return;
+            if (!this.hasInputCapacity()) {
+                this.sendError(client, ErrorCode.BadRequest);
+                return;
+            }
             const accepted = this.handleCastSkill(client, msg);
             if (!accepted) return;
             this.recordInput({
@@ -1075,11 +1102,22 @@ export class GameRoom extends Room {
         if (!this.deathOrder.includes(sessionId)) this.deathOrder.push(sessionId);
     }
 
-    private recordInput(input: GameRoomInput): void {
+    private hasInputCapacity(): boolean {
+        return this.acceptedInputSequence.length < this.maxAcceptedInputs;
+    }
+
+    private recordInput(input: GameRoomInput): boolean {
+        if (!this.hasInputCapacity()) {
+            // Do not mutate the input object or gameplay state after evidence
+            // storage is exhausted. Callers perform this check before any
+            // side effects; the guard remains here for replay adapters.
+            return false;
+        }
         this.acceptedInputSequence.push({
             ...input,
             acceptedTick: this.state.tick,
         });
+        return true;
     }
 
     /** 注入一条已经过调用方验证的输入；非法输入直接拒绝，不进入 replay 序列。 */
@@ -1195,11 +1233,12 @@ export class GameRoom extends Room {
         if (!player || !player.alive || this.state.phase !== GamePhase.Playing) return;
         if (input.type === "move") {
             const dir = normalize(input.dirX, input.dirY);
-            this.recordInput({ type: "move", sessionId: input.sessionId, dirX: dir.x, dirY: dir.y, ...(input.tick === undefined ? {} : { tick: input.tick }) });
+            if (!this.recordInput({ type: "move", sessionId: input.sessionId, dirX: dir.x, dirY: dir.y, ...(input.tick === undefined ? {} : { tick: input.tick }) })) return;
             player.dirX = dir.x;
             player.dirY = dir.y;
             return;
         }
+        if (!this.hasInputCapacity()) return;
         const client = this.clients.find((candidate) => candidate.sessionId === input.sessionId);
         const accepted = this.handleCastSkill(client, input, input.sessionId);
         if (!accepted) return;
