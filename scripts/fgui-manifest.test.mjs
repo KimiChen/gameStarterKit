@@ -14,8 +14,10 @@ import {
   componentDeclarations,
   currentManifest,
   outputOwnershipProblems,
+  parseCliArgs,
   packageDescription,
   resourceDeclarations,
+  resolveManifestPath,
   sourcePathProblems,
   validateUiUrl,
 } from "./fgui-manifest.mjs";
@@ -174,24 +176,66 @@ test("currentManifest:只读构建当前资源闭包，不写回 manifest", () =
   assert.ok(manifest.views.length > 0);
 });
 
-test("checkManifest 编排:root/package/component/View AUTO 漂移均被报告", () => {
+test("checkManifest 编排:五类集合/声明漂移均被直接报告", () => {
   const current = currentManifest();
   const silent = { log() {}, error() {} };
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "fgui-manifest-test-"));
   try {
+    const packageFixture = current.packages.find((pkg) => pkg.components.length > 0);
+    const viewFixture = current.views.find((view) => typeof view.path === "string");
+    assert.ok(packageFixture, "当前 manifest 至少需要一个 package fixture");
+    assert.ok(viewFixture, "当前 manifest 至少需要一个 View fixture");
+    assert.ok(packageFixture.components.length > 0, "当前 manifest package fixture 至少需要一个 component");
+    const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const cases = [
       ["root", (manifest) => { manifest.sourceRoot = "apps/art/other"; }, /manifest root 与当前工程不一致/],
-      ["package", (manifest) => { manifest.packages[0].id = "drifted"; }, /Common_Btn: package id 变化/],
-      ["component", (manifest) => { manifest.packages[0].components[0].exported = false; }, /Common_Btn: package\.xml 组件\/导出声明变化/],
-      ["View", (manifest) => { manifest.views[0].pkg = "View_Home_Home"; }, /View AUTO 生成区过期/],
-      ["AUTO", (manifest) => { manifest.views[0].generatedHash = "0".repeat(64); }, /View AUTO 生成区过期/],
+      ["package", (manifest) => {
+        manifest.packages.find((pkg) => pkg.name === packageFixture.name).id = "drifted";
+      }, new RegExp(`${escapeRegex(packageFixture.name)}: package id 变化`)],
+      ["resource", (manifest) => {
+        const pkg = manifest.packages.find((entry) => entry.name === packageFixture.name);
+        pkg.resources = [...pkg.resources, {
+          kind: "image", id: "fixture-resource", name: "fixture.png", exported: true,
+        }];
+      }, new RegExp(`${escapeRegex(packageFixture.name)}: package\\.xml 资源声明变化`)],
+      ["package-missing", (manifest) => {
+        // Keep the recorded package and remove it from the freshly built side.
+      }, new RegExp(`package 缺失 ${escapeRegex(packageFixture.name)}`), (actual) => ({
+        ...actual,
+        packages: actual.packages.filter((pkg) => pkg.name !== packageFixture.name),
+      })],
+      ["package-extra", (manifest) => {
+        manifest.packages = manifest.packages.filter((pkg) => pkg.name !== packageFixture.name);
+      }, new RegExp(`package 多余 ${escapeRegex(packageFixture.name)}`)],
+      ["view-missing", (manifest) => {
+        // Keep the recorded View and remove it from the freshly built side.
+      }, new RegExp(`View 缺失 ${escapeRegex(viewFixture.path)}`), (actual) => ({
+        ...actual,
+        views: actual.views.filter((view) => view.path !== viewFixture.path),
+      })],
+      ["view-extra", (manifest) => {
+        manifest.views = manifest.views.filter((view) => view.path !== viewFixture.path);
+      }, new RegExp(`View 多余 ${escapeRegex(viewFixture.path)}`)],
+      ["component", (manifest) => {
+        manifest.packages.find((pkg) => pkg.name === packageFixture.name).components[0].exported = false;
+      }, new RegExp(`${escapeRegex(packageFixture.name)}: package\\.xml 组件/导出声明变化`)],
+      ["View", (manifest) => {
+        manifest.views.find((view) => view.path === viewFixture.path).pkg = "View_Home_Home";
+      }, /View AUTO 生成区过期/],
+      ["AUTO", (manifest) => {
+        manifest.views.find((view) => view.path === viewFixture.path).generatedHash = "0".repeat(64);
+      }, /View AUTO 生成区过期/],
     ];
-    for (const [label, mutate, expected] of cases) {
+    for (const [label, mutate, expected, actualFactory] of cases) {
       const manifest = structuredClone(current);
       mutate(manifest);
       const manifestPath = path.join(tempRoot, `${label}.json`);
       fs.writeFileSync(manifestPath, `${JSON.stringify(manifest)}\n`);
-      const result = checkManifest({ manifestPath, buildCurrent: () => current, logger: silent });
+      const result = checkManifest({
+        manifestPath,
+        buildCurrent: () => actualFactory ? actualFactory(current) : current,
+        logger: silent,
+      });
       assert.equal(result.ok, false, `${label} drift should fail`);
       assert.match(result.problems.join("\n"), expected);
     }
@@ -200,7 +244,43 @@ test("checkManifest 编排:root/package/component/View AUTO 漂移均被报告",
   }
 });
 
-test("fgui-manifest CLI:漂移返回非零，--check 不会隐式改写 manifest", () => {
+test("checkManifest:manifest 缺失与 JSON 解析失败均给出可诊断错误", () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "fgui-manifest-errors-"));
+  try {
+    const missing = path.join(tempRoot, "missing.json");
+    assert.throws(
+      () => checkManifest({ manifestPath: missing, buildCurrent: () => baseManifest(), logger: { log() {}, error() {} } }),
+      /manifest 不存在: .*missing\.json/,
+    );
+    const malformed = path.join(tempRoot, "malformed.json");
+    fs.writeFileSync(malformed, "{not-json");
+    assert.throws(
+      () => checkManifest({ manifestPath: malformed, buildCurrent: () => baseManifest(), logger: { log() {}, error() {} } }),
+      /manifest JSON 无法解析:/,
+    );
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("manifest CLI 参数:显式路径统一用于 check/write，并拒绝歧义参数", () => {
+  assert.deepEqual(parseCliArgs([]), {
+    mode: "check",
+    manifestPath: path.join(ROOT, "scripts/fgui.manifest.json"),
+  });
+  assert.deepEqual(parseCliArgs(["--write", "--manifest", "tmp/manifest.json"]), {
+    mode: "write",
+    manifestPath: path.join(ROOT, "tmp/manifest.json"),
+  });
+  assert.equal(resolveManifestPath("/tmp/fgui-manifest.json"), "/tmp/fgui-manifest.json");
+  assert.throws(() => parseCliArgs(["--check", "--write"]), /只能选择一个/);
+  assert.throws(() => parseCliArgs(["--manifest"]), /需要非空路径/);
+  assert.throws(() => parseCliArgs(["--manifest", "--check"]), /需要非空路径/);
+  assert.throws(() => parseCliArgs(["--manifest", "a.json", "--manifest", "b.json"]), /只能指定一次/);
+  assert.throws(() => parseCliArgs(["--unknown"]), /未知参数/);
+});
+
+test("fgui-manifest CLI:漂移返回非零，--check 不会隐式改写显式 manifest", () => {
   const current = currentManifest();
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "fgui-manifest-cli-"));
   const manifestPath = path.join(tempRoot, "manifest.json");
@@ -208,14 +288,41 @@ test("fgui-manifest CLI:漂移返回非零，--check 不会隐式改写 manifest
     current.exportRoot = "apps/Cocos/assets/resources/drifted";
     const before = `${JSON.stringify(current, null, 2)}\n`;
     fs.writeFileSync(manifestPath, before);
-    const result = spawnSync(process.execPath, [SCRIPT, "--check"], {
+    const result = spawnSync(process.execPath, [SCRIPT, "--check", "--manifest", manifestPath], {
       cwd: ROOT,
-      env: { ...process.env, FGUI_MANIFEST_PATH: manifestPath },
+      env: { ...process.env, FGUI_MANIFEST_PATH: undefined },
       encoding: "utf8",
     });
     assert.equal(result.status, 1);
     assert.match(`${result.stdout}${result.stderr}`, /manifest root 与当前工程不一致/);
     assert.equal(fs.readFileSync(manifestPath, "utf8"), before);
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("fgui-manifest CLI:--write 写入显式 manifest 路径，环境变量不能静默改道", () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "fgui-manifest-write-"));
+  const manifestPath = path.join(tempRoot, "manifest.json");
+  const canonicalPath = path.join(ROOT, "scripts/fgui.manifest.json");
+  const canonicalBefore = fs.readFileSync(canonicalPath, "utf8");
+  try {
+    const writeResult = spawnSync(process.execPath, [SCRIPT, "--write", "--manifest", manifestPath], {
+      cwd: ROOT,
+      env: { ...process.env, FGUI_MANIFEST_PATH: undefined },
+      encoding: "utf8",
+    });
+    assert.equal(writeResult.status, 0, `${writeResult.stdout}${writeResult.stderr}`);
+    assert.equal(fs.readFileSync(manifestPath, "utf8"), `${JSON.stringify(currentManifest(), null, 2)}\n`);
+    assert.equal(fs.readFileSync(canonicalPath, "utf8"), canonicalBefore);
+
+    const rejected = spawnSync(process.execPath, [SCRIPT, "--check", "--manifest", manifestPath], {
+      cwd: ROOT,
+      env: { ...process.env, FGUI_MANIFEST_PATH: path.join(tempRoot, "other.json") },
+      encoding: "utf8",
+    });
+    assert.equal(rejected.status, 2);
+    assert.match(`${rejected.stdout}${rejected.stderr}`, /FGUI_MANIFEST_PATH 已禁用/);
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true });
   }

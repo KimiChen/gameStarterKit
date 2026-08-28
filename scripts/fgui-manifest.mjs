@@ -2,8 +2,8 @@
 /**
  * FairyGUI 资源闭包与生成物新鲜度检查。
  *
- * `--write` 在确认 FairyGUI 已导出后重建 scripts/fgui.manifest.json；
- * `--check` 是只读闸，检查：
+ * `--write [--manifest <path>]` 在确认 FairyGUI 已导出后重建 manifest；
+ * `--check [--manifest <path>]` 是只读闸，检查（默认使用仓库内 manifest）：
  *   1. art 包/XML/资源集合与记录的字节哈希一致；
  *   2. 每个包有 package.xml 声明的导出组件和对应 Cocos .bin；
  *   3. XML 中的跨包 pkg/ui:// 引用都能解析到已知包；
@@ -12,6 +12,7 @@
  *
  * FairyGUI 的二进制发布格式不是可逆的，故 manifest 不尝试“从 XML 推导 bin”；
  * 它把导出动作本身钉成可审计的输入/输出闭包。设计源变化后必须重新导出并显式 --write。
+ * `FGUI_MANIFEST_PATH` 不参与 CLI 解析，避免环境变量把正式门禁静默改到异源副本。
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -424,7 +425,7 @@ function outputOwnershipProblems(packages) {
 }
 
 function checkManifest({
-  manifestPath = process.env.FGUI_MANIFEST_PATH || MANIFEST,
+  manifestPath = MANIFEST,
   buildCurrent = currentManifest,
   logger = console,
 } = {}) {
@@ -476,15 +477,62 @@ function checkManifest({
   return { ok: true, problems: [] };
 }
 
+function resolveManifestPath(value) {
+  if (typeof value !== "string" || value.trim() === "") {
+    throw new Error("--manifest 需要非空路径");
+  }
+  return path.isAbsolute(value) ? path.normalize(value) : path.resolve(ROOT, value);
+}
+
+/** Parse the standalone CLI so check/write always use one explicit target. */
+function parseCliArgs(argv = process.argv.slice(2)) {
+  let mode = null;
+  let manifestPath = MANIFEST;
+  let sawManifest = false;
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === "--check" || arg === "--write") {
+      const nextMode = arg.slice(2);
+      if (mode !== null) {
+        throw new Error("--check 与 --write 只能选择一个");
+      }
+      mode = nextMode;
+      continue;
+    }
+    if (arg === "--manifest") {
+      if (sawManifest) throw new Error("--manifest 只能指定一次");
+      const value = argv[index + 1];
+      if (value === undefined || value.startsWith("--")) {
+        throw new Error("--manifest 需要非空路径");
+      }
+      manifestPath = resolveManifestPath(value);
+      sawManifest = true;
+      index += 1;
+      continue;
+    }
+    throw new Error(`未知参数：${arg}`);
+  }
+  return { mode: mode ?? "check", manifestPath };
+}
+
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) {
-  if (process.argv.includes("--write")) {
-    const manifest = currentManifest();
-    fs.writeFileSync(MANIFEST, `${JSON.stringify(manifest, null, 2)}\n`);
-    console.log(`✔ 已写入 ${rel(ROOT, MANIFEST)}（${manifest.packages.length} 个包，${manifest.exports.length} 个导出文件）`);
-  } else {
-    const result = checkManifest();
-    if (!result.ok) process.exitCode = 1;
+  try {
+    if (process.env.FGUI_MANIFEST_PATH) {
+      throw new Error("FGUI_MANIFEST_PATH 已禁用，请改用显式 --manifest <path>");
+    }
+    const options = parseCliArgs();
+    if (options.mode === "write") {
+      const manifest = currentManifest();
+      fs.writeFileSync(options.manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+      console.log(`✔ 已写入 ${rel(ROOT, options.manifestPath)}（${manifest.packages.length} 个包，${manifest.exports.length} 个导出文件）`);
+    } else {
+      const result = checkManifest({ manifestPath: options.manifestPath });
+      if (!result.ok) process.exitCode = 1;
+    }
+  } catch (error) {
+    console.error(`✘ ${error instanceof Error ? error.message : String(error)}`);
+    process.exitCode = 2;
   }
 }
 
@@ -495,8 +543,10 @@ export {
   compareRecords,
   currentManifest,
   outputOwnershipProblems,
+  parseCliArgs,
   packageDescription,
   resourceDeclarations,
+  resolveManifestPath,
   sourcePathProblems,
   validateUiUrl,
 };
