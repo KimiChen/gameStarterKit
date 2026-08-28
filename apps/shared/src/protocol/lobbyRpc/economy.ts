@@ -32,6 +32,34 @@ export const EFFECT_FIELD_ALLOWLIST = [
     "drainProbe",
 ] as const;
 
+type EffectField = (typeof EFFECT_FIELD_ALLOWLIST)[number];
+
+/**
+ * setField 的值域也属于 durable effect 契约，不能只靠调用方的 TypeScript 类型。
+ * 数值和开关字段以 Redis hash 字符串持久化，因此这里明确规定其字符串编码；文本字段
+ * 复用用户视图的边界，避免一个坏值把后续所有读路径变成数据损坏。
+ */
+export type EffectFieldValueRule =
+    | { readonly kind: "text"; readonly maxLength: number }
+    | { readonly kind: "integer"; readonly min: number; readonly max: number }
+    | { readonly kind: "flag" };
+
+export const EFFECT_FIELD_VALUE_RULES: { readonly [K in EffectField]: EffectFieldValueRule } = {
+    nickname: { kind: "text", maxLength: 128 },
+    avatarId: { kind: "integer", min: -1, max: 999 },
+    province: { kind: "text", maxLength: 64 },
+    star: { kind: "integer", min: 0, max: Number.MAX_SAFE_INTEGER },
+    maxRound: { kind: "integer", min: 0, max: Number.MAX_SAFE_INTEGER },
+    wins: { kind: "integer", min: 0, max: Number.MAX_SAFE_INTEGER },
+    losses: { kind: "integer", min: 0, max: Number.MAX_SAFE_INTEGER },
+    stamina: { kind: "integer", min: 0, max: Number.MAX_SAFE_INTEGER },
+    lastStaminaRecoverAt: { kind: "integer", min: 0, max: Number.MAX_SAFE_INTEGER },
+    musicOn: { kind: "flag" },
+    sfxOn: { kind: "flag" },
+    guildId: { kind: "integer", min: 0, max: Number.MAX_SAFE_INTEGER },
+    drainProbe: { kind: "text", maxLength: EFFECT_MAX_VALUE_LENGTH },
+};
+
 /** 即使未来扩展 allowlist，也不能写入这些跨域元数据字段。 */
 export const EFFECT_RESERVED_FIELDS = [
     "uid", "userId", "serverId", "sId", "schemaVersion", "version", "ver", "fence",
@@ -118,6 +146,30 @@ const asciiField = (value: unknown): value is string =>
     && value.length <= EFFECT_MAX_FIELD_LENGTH
     && /^[A-Za-z][A-Za-z0-9_]*$/.test(value);
 
+const decimalInteger = /^-?[0-9]+$/;
+
+/** Validate the field-specific string encoding used by setField. */
+export function validateEffectFieldValue(field: string, value: unknown, path = "grant.value"): string {
+    if (typeof value !== "string" || value.length > EFFECT_MAX_VALUE_LENGTH) {
+        fail("EFFECT_VALUE", path);
+    }
+    const rule = (EFFECT_FIELD_VALUE_RULES as Record<string, EffectFieldValueRule | undefined>)[field];
+    if (rule === undefined) { return fail("EFFECT_FIELD", `${path}.field`); }
+    const text = value as string;
+    if (rule.kind === "text") {
+        if (text.length > rule.maxLength) { fail("EFFECT_VALUE", path); }
+    } else if (rule.kind === "flag") {
+        if (text !== "0" && text !== "1") { fail("EFFECT_VALUE", path); }
+    } else {
+        if (!decimalInteger.test(text)) { fail("EFFECT_VALUE", path); }
+        const numeric = Number(text);
+        if (!Number.isSafeInteger(numeric) || numeric < rule.min || numeric > rule.max) {
+            fail("EFFECT_VALUE", path);
+        }
+    }
+    return text;
+}
+
 /**
  * Validate one grant using the same limits as the durable effect envelope.
  * Response payloads (purchase/query) expose grants too, so keeping this
@@ -156,10 +208,8 @@ export function validateGrant(input: unknown, path = "grant"): IGrant {
             if (!EFFECT_FIELD_ALLOWLIST.includes(grant.field as (typeof EFFECT_FIELD_ALLOWLIST)[number])) {
                 fail("EFFECT_FIELD", `${path}.field`);
             }
-            if (typeof grant.value !== "string" || grant.value.length > EFFECT_MAX_VALUE_LENGTH) {
-                fail("EFFECT_VALUE", `${path}.value`);
-            }
-            return { kind: "setField", field: grant.field as string, value: grant.value as string };
+            const value = validateEffectFieldValue(grant.field as string, grant.value, `${path}.value`);
+            return { kind: "setField", field: grant.field as string, value };
         }
         return fail("EFFECT_UNKNOWN_KIND", `${path}.kind`);
     } catch (error) {

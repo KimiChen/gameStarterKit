@@ -12,7 +12,7 @@ import type Redis from "ioredis";
 import {
   EFFECT_FIELD_ALLOWLIST, EFFECT_MAX_COUNT, EFFECT_MAX_DELTA, EFFECT_MAX_FIELD_LENGTH,
   EFFECT_MAX_GRANTS, EFFECT_MAX_ITEM_ID, EFFECT_MAX_QUANTITY, EFFECT_MAX_VALUE_LENGTH,
-  EFFECT_RESERVED_FIELDS, EFFECT_SCHEMA_VERSION,
+  EFFECT_FIELD_VALUE_RULES, EFFECT_RESERVED_FIELDS, EFFECT_SCHEMA_VERSION,
 } from "@game/shared";
 import { BAG_SHARDS } from "./config";
 
@@ -55,6 +55,13 @@ const luaSet = (values: readonly string[]): string =>
   `{${values.map((value) => `[${JSON.stringify(value)}]=true`).join(",")}}`;
 const LUA_EFFECT_FIELDS = luaSet(EFFECT_FIELD_ALLOWLIST);
 const LUA_EFFECT_RESERVED = luaSet(EFFECT_RESERVED_FIELDS);
+const LUA_EFFECT_FIELD_RULES = `{${Object.entries(EFFECT_FIELD_VALUE_RULES).map(([field, rule]) => {
+  if (rule.kind === "flag") return `[${JSON.stringify(field)}]={kind='flag'}`;
+  if (rule.kind === "integer") {
+    return `[${JSON.stringify(field)}]={kind='integer',min=${rule.min},max=${rule.max}}`;
+  }
+  return `[${JSON.stringify(field)}]={kind='text',max=${rule.maxLength}}`;
+}).join(",")}}`;
 const LUA_EFFECT_VERSION = String(EFFECT_SCHEMA_VERSION);
 const LUA_MAX_GRANTS = String(EFFECT_MAX_GRANTS);
 const LUA_MAX_QUANTITY = String(EFFECT_MAX_QUANTITY);
@@ -136,6 +143,7 @@ if seenCount ~= grantCount then return invalid('EFFECT_GRANTS') end
 
 local allowFields = ${LUA_EFFECT_FIELDS}
 local reservedFields = ${LUA_EFFECT_RESERVED}
+local fieldRules = ${LUA_EFFECT_FIELD_RULES}
 local itemDeltas = {}
 local itemShards = {}
 local starDelta = 0
@@ -174,6 +182,19 @@ for i = 1, grantCount do
     if reservedFields[g.field] == true then return invalid('EFFECT_RESERVED_FIELD') end
     if allowFields[g.field] ~= true then return invalid('EFFECT_FIELD') end
     if type(g.value) ~= 'string' or #g.value > ${LUA_MAX_VALUE_LENGTH} then return invalid('EFFECT_VALUE') end
+    local rule = fieldRules[g.field]
+    if rule == nil then return invalid('EFFECT_FIELD') end
+    if rule.kind == 'flag' then
+      if g.value ~= '0' and g.value ~= '1' then return invalid('EFFECT_VALUE') end
+    elseif rule.kind == 'integer' then
+      if not string.match(g.value, '^-?[0-9]+$') then return invalid('EFFECT_VALUE') end
+      local numeric = tonumber(g.value)
+      if numeric == nil or not intIn(numeric, rule.min, rule.max) then return invalid('EFFECT_VALUE') end
+    elseif rule.kind == 'text' then
+      if #g.value > rule.max then return invalid('EFFECT_VALUE') end
+    else
+      return invalid('EFFECT_DATA_CORRUPT')
+    end
     -- Last setField in the same effect wins, matching the deterministic array order in TS.
     setFields[g.field] = g.value
   else
@@ -239,6 +260,22 @@ redis.call('ZADD', KEYS[2], applyAt, ARGV[1])
 redis.call('HSET', KEYS[3], ARGV[1], ARGV[3])
 if #under > 0 then return 'ok:' .. table.concat(under, ',') end
 return 'ok'
+`);
+
+/**
+ * Remove applied markers and their payload bindings as one Redis transaction.
+ * The database eligibility check happens in the caller; once an op is selected,
+ * this script keeps the two Redis structures from diverging if a process dies
+ * between individual commands.
+ */
+export const TRIM_APPLIED = script("trimApplied", `
+if #KEYS ~= 2 then return 0 end
+local removed = 0
+for i = 1, #ARGV do
+  if redis.call('ZREM', KEYS[1], ARGV[i]) == 1 then removed = removed + 1 end
+  redis.call('HDEL', KEYS[2], ARGV[i])
+end
+return removed
 `);
 
 /** 释放锁：值（=fence）匹配才 DEL。返回 1 | 0。 */

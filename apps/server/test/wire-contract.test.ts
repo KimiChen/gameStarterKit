@@ -173,6 +173,21 @@ test("wire helpers：revoked/throwing Proxy 按非法 shape 处理，不泄漏�
   assertInvalid(() => validateWebPlatformAreaListResponse(throwingRevoked), "WIRE_DATA_CORRUPT");
 });
 
+test("setField：按字段值域拒绝数字垃圾、越界值和非规范开关", () => {
+  assert.deepEqual(validateGrant({ kind: "setField", field: "star", value: "42" }), {
+    kind: "setField", field: "star", value: "42",
+  });
+  assert.deepEqual(validateGrant({ kind: "setField", field: "musicOn", value: "0" }), {
+    kind: "setField", field: "musicOn", value: "0",
+  });
+  assertInvalid(() => validateGrant({ kind: "setField", field: "star", value: "1e3" }), "EFFECT_VALUE");
+  assertInvalid(() => validateGrant({ kind: "setField", field: "star", value: "-1" }), "EFFECT_VALUE");
+  assertInvalid(() => validateGrant({ kind: "setField", field: "avatarId", value: "1000" }), "EFFECT_VALUE");
+  assertInvalid(() => validateGrant({ kind: "setField", field: "musicOn", value: "true" }), "EFFECT_VALUE");
+  assertInvalid(() => validateGrant({ kind: "setField", field: "guildId", value: "9007199254740992" }), "EFFECT_VALUE");
+  assertInvalid(() => validateGrant({ kind: "setField", field: "nickname", value: "x".repeat(129) }), "EFFECT_VALUE");
+});
+
 test("所有公开 wire validator：hostile getter/iterator 统一转为可判别错误", () => {
   const getter = (value: Record<string, unknown>, key: string): Record<string, unknown> =>
     new Proxy(value, { get(target, property, receiver) {

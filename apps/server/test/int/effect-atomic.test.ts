@@ -9,10 +9,12 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { EffectConflictError, InvalidEffectError } from "../../src/core/errors";
 import { acquireLease } from "../../src/core/locks";
+import { getShopSku } from "../../src/core/economy/catalog";
 import type { ShopSku } from "../../src/core/economy/catalog";
 import {
   deriveOpId, purchaseTx, readBack, redisApply,
 } from "../../src/core/economy/outbox";
+import { claimMailAttach, sendMail } from "../../src/core/economy/mailer";
 import { createUser } from "../../src/core/userRecord";
 import { CUR_GOLD, OUTBOX_DONE } from "../../src/core/infra/config";
 import {
@@ -114,6 +116,10 @@ test("Lua validate-then-apply：首条合法、后续非法时 Redis/applied/pay
     {
       code: "EFFECT_COUNT",
       grants: [legal, { kind: "item", itemId: 8, count: 0 }],
+    },
+    {
+      code: "EFFECT_VALUE",
+      grants: [legal, { kind: "setField", field: "star", value: "1e3" }],
     },
   ];
 
@@ -285,6 +291,72 @@ test("非法 purchaseTx 在事务前拒绝：余额、ledger、outbox 均不变"
   assert.equal(Number(rows[0].ledger_count), 0);
   assert.equal(Number(rows[0].outbox_count), 0);
   assert.deepEqual(await dump(user), beforeRedis, "非法 purchase 不得产生 Redis effect marker");
+});
+
+test("purchaseTx：同 op-id 的不同 effect payload 判冲突且不重复写 ledger", async () => {
+  const user = await seed("purchase-conflict", 500);
+  const original = getShopSku("shop.frag17x10")!;
+  const changed: ShopSku = {
+    ...original,
+    grants: [{ kind: "item", itemId: 18, count: 10 }],
+  };
+  const lease = await acquireLease(user);
+  const opId = deriveOpId(user, 0, "shop.purchase", "same-payload");
+  try {
+    assert.equal(await purchaseTx(user, 0, lease.fence, original, opId), "OK");
+    await assert.rejects(
+      purchaseTx(user, 0, lease.fence, changed, opId),
+      EffectConflictError,
+    );
+  } finally {
+    await lease.release();
+  }
+  const [ledger] = await getPool().query<RowDataPacket[]>(
+    "SELECT COUNT(*) AS n FROM currency_ledger WHERE user_id = ? AND server_id = ? AND idem_key = ?",
+    [user, 0, opId],
+  );
+  assert.equal(Number(ledger[0].n), 1, "冲突重放不得新增 ledger");
+  const [outbox] = await getPool().query<RowDataPacket[]>(
+    "SELECT effect FROM gameplay_outbox WHERE user_id = ? AND server_id = ? AND op_id = ?",
+    [user, 0, opId],
+  );
+  assert.equal(outbox.length, 1);
+  assert.deepEqual(outbox[0].effect, { schemaVersion: 1, grants: original.grants });
+});
+
+test("邮件附件：非法 effect 在 send/claim 两条 durable 路径均不落业务状态", async () => {
+  const user = await seed("mail-invalid", 0);
+  const [before] = await getPool().query<RowDataPacket[]>(
+    "SELECT COUNT(*) AS n FROM mail WHERE user_id = ? AND server_id = ?", [user, 0],
+  );
+  await assert.rejects(
+    sendMail(user, "坏附件", "不应入库", [{ kind: "star", delta: "bad" } as never]),
+    InvalidEffectError,
+  );
+  const [afterSend] = await getPool().query<RowDataPacket[]>(
+    "SELECT COUNT(*) AS n FROM mail WHERE user_id = ? AND server_id = ?", [user, 0],
+  );
+  assert.equal(Number(afterSend[0].n), Number(before[0].n), "sendMail 非法附件不得写 mail");
+
+  const opId = deriveOpId(user, 0, "mail.attach", "corrupt-row");
+  const badEffect = { schemaVersion: 1, grants: [{ kind: "setField", field: "star", value: "oops" }] };
+  const [inserted] = await getPool().execute(
+    `INSERT INTO mail (user_id, server_id, title, body, attach_op_id, attach_effect)
+     VALUES (?,?,?,?,?,CAST(? AS JSON))`,
+    [user, 0, "历史坏附件", "应拒绝领取", opId, JSON.stringify(badEffect)],
+  ) as [{ insertId: number }, unknown];
+  const mailId = inserted.insertId;
+  await assert.rejects(claimMailAttach(user, mailId), InvalidEffectError);
+  const [mailRows] = await getPool().query<RowDataPacket[]>(
+    "SELECT claimed_at FROM mail WHERE mail_id = ? AND user_id = ? AND server_id = ?",
+    [mailId, user, 0],
+  );
+  assert.equal(mailRows[0].claimed_at, null, "非法附件不得先标 claimed");
+  const [outboxRows] = await getPool().query<RowDataPacket[]>(
+    "SELECT COUNT(*) AS n FROM gameplay_outbox WHERE user_id = ? AND server_id = ? AND op_id = ?",
+    [user, 0, opId],
+  );
+  assert.equal(Number(outboxRows[0].n), 0, "非法附件不得写 outbox intent");
 });
 
 test("readBack 严格按 server_id：s1 查询不到 s2 operation，正确区返回本区余额", async () => {

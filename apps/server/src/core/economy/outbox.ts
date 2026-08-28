@@ -14,7 +14,7 @@ import {
 } from "../infra/config";
 import { currentZoneId, kApplied, kAppliedPayload, kBagAll, kUser, zoneCtx } from "../infra/keys";
 import { clientFor } from "../infra/redisRoute";
-import { APPLY_EFFECT, evalshaWithReload } from "../infra/redisScripts";
+import { APPLY_EFFECT, evalshaWithReload, TRIM_APPLIED } from "../infra/redisScripts";
 import { getPool, withRcTx } from "../infra/mysql";
 import type { ResultSetHeader, RowDataPacket } from "../infra/mysql";
 import { withUser } from "../uow";
@@ -236,9 +236,14 @@ export async function trimApplied(uid: string, sId = currentZoneId()): Promise<n
     let removed = 0;
     for (let i = 0; i < removable.length; i += 500) {
       const chunk = removable.slice(i, i + 500);
-      removed += await redis.zrem(kApplied(uid), ...chunk);
-      // payload 绑定是 applied 的伴随元数据，必须与 ZSET 一起清理，避免无界增长。
-      await redis.hdel(kAppliedPayload(uid), ...chunk);
+      // payload 绑定是 applied 的伴随元数据；同一 Lua 调用保证两者不会
+      // 因进程在 zrem/hdel 之间退出而永久分叉。
+      removed += Number(await evalshaWithReload(
+        redis,
+        TRIM_APPLIED,
+        [kApplied(uid), kAppliedPayload(uid)],
+        chunk,
+      ));
     }
     return removed;
   });
