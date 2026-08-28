@@ -25,7 +25,7 @@ import {
   webPlatformClient,
   type WebPlatformClient,
 } from "../platform/webPlatformClient";
-import { defaultLifecycle } from "../core/infra/lifecycle";
+import { assertAdmissionOpen, defaultLifecycle } from "../core/infra/lifecycle";
 import { storedInt } from "../core/infra/numbers";
 
 export interface CharacterRepairIntent {
@@ -299,48 +299,92 @@ export async function processCharacterRepairOnce(
   return result;
 }
 
-let workerStarted = false;
-let workerTimer: NodeJS.Timeout | null = null;
-let workerPass: Promise<CharacterRepairPassResult> | null = null;
-let workerUnregister: (() => void) | null = null;
+interface CharacterRepairWorkerState {
+  readonly generation: number;
+  started: boolean;
+  timer: NodeJS.Timeout | null;
+  pass: Promise<CharacterRepairPassResult> | null;
+  unregister: (() => void) | null;
+  stopPromise: Promise<void> | null;
+}
 
-const scheduleWorkerPass = (delayMs: number): void => {
-  if (!workerStarted || workerTimer) { return; }
-  workerTimer = setTimeout(() => {
-    workerTimer = null;
-    if (!workerStarted) { return; }
+let workerGeneration = 0;
+let activeWorker: CharacterRepairWorkerState | null = null;
+
+const scheduleWorkerPass = (state: CharacterRepairWorkerState, delayMs: number): void => {
+  if (!state.started || state.timer || activeWorker !== state) { return; }
+  state.timer = setTimeout(() => {
+    state.timer = null;
+    // A newer generation may have started while an older stop awaited its pass.
+    if (!state.started || activeWorker !== state) { return; }
     const pass = processCharacterRepairOnce();
-    workerPass = pass;
+    state.pass = pass;
     void pass.catch((error) => {
       console.error("[character-repair] worker 本轮失败；intent 保留，下轮继续", error);
     }).finally(() => {
-      if (workerPass === pass) { workerPass = null; }
-      scheduleWorkerPass(CHARACTER_REPAIR_POLL_MS);
+      if (state.pass === pass) { state.pass = null; }
+      if (state.started && activeWorker === state) {
+        scheduleWorkerPass(state, CHARACTER_REPAIR_POLL_MS);
+      }
     });
   }, delayMs);
   // worker 属网关附属任务，不应单独阻止测试/停服进程退出。
-  workerTimer.unref();
+  state.timer.unref();
 };
+
+async function stopWorkerState(state: CharacterRepairWorkerState): Promise<void> {
+  if (state.stopPromise) { return state.stopPromise; }
+  state.started = false;
+  if (state.timer) {
+    clearTimeout(state.timer);
+    state.timer = null;
+  }
+  // Detach this generation immediately. A restart can now install a new
+  // state while the old HTTP pass is still awaiting external I/O.
+  if (activeWorker === state) { activeWorker = null; }
+  const pass = state.pass;
+  const unregister = state.unregister;
+  state.stopPromise = (async () => {
+    if (pass) {
+      await pass.catch(() => { /* 循环侧已告警；stop 只负责等待退出 */ });
+    }
+    // Always unregister the captured generation. Never consult the mutable
+    // global active state here, or an old stop can unregister a new worker.
+    unregister?.();
+    state.unregister = null;
+  })();
+  return state.stopPromise;
+}
 
 /** 网关启动入口；幂等，多次调用只保留一个本进程循环。 */
 export function startCharacterRepairWorker(): void {
-  if (workerStarted) { return; }
-  workerStarted = true;
-  scheduleWorkerPass(0);
-  workerUnregister = defaultLifecycle.register("character-repair", () => stopCharacterRepairWorker());
+  if (activeWorker?.started) { return; }
+  if (defaultLifecycle.isClosed) {
+    // A real shutdown is terminal; an embedded test can reopen explicitly via
+    // resetAdmission before asking a worker to start again.
+    assertAdmissionOpen();
+    defaultLifecycle.reset();
+  }
+  if (!defaultLifecycle.isClosed) { assertAdmissionOpen(); }
+  const state: CharacterRepairWorkerState = {
+    generation: ++workerGeneration,
+    started: true,
+    timer: null,
+    pass: null,
+    unregister: null,
+    stopPromise: null,
+  };
+  activeWorker = state;
+  state.unregister = defaultLifecycle.register(
+    `character-repair:${state.generation}`,
+    () => stopWorkerState(state),
+  );
+  scheduleWorkerPass(state, 0);
 }
 
 /** 测试/优雅停服：停止调度并等待当前有界 HTTP pass 收尾。 */
 export async function stopCharacterRepairWorker(): Promise<void> {
-  workerStarted = false;
-  if (workerTimer) {
-    clearTimeout(workerTimer);
-    workerTimer = null;
-  }
-  const pass = workerPass;
-  if (pass) {
-    await pass.catch(() => { /* 循环侧已告警；stop 只负责等待退出 */ });
-  }
-  workerUnregister?.();
-  workerUnregister = null;
+  const state = activeWorker;
+  if (!state) { return; }
+  await stopWorkerState(state);
 }

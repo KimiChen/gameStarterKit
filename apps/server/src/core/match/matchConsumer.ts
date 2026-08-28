@@ -24,7 +24,7 @@ import type { Redis } from "ioredis";
 import { K_STREAM_MATCH, K_STREAM_MATCH_V2 } from "../infra/keys";
 import { withRcTx, type ResultSetHeader } from "../infra/mysql";
 import { clientForKey } from "../infra/redisRoute";
-import { defaultLifecycle } from "../infra/lifecycle";
+import { assertAdmissionOpen, defaultLifecycle } from "../infra/lifecycle";
 import { storedInt } from "../infra/numbers";
 
 // ── 常量（已登记 docs/SERVER.md §13，⛔ 禁止散落——09 审查流程第 6 条） ──
@@ -472,41 +472,75 @@ async function trimStreamToSafePoint(client: Redis, stream: MatchStreamState): P
 
 // ── 常驻消费循环（进程归属待 M10 收口；现由网关进程可选启动） ──
 
-let running = false;
-let loopDone: Promise<void> | null = null;
-let loopClient: Redis | null = null;
+interface MatchConsumerState {
+  readonly generation: number;
+  readonly client: Redis;
+  running: boolean;
+  done: Promise<void>;
+  stopPromise: Promise<void> | null;
+}
+
+let consumerGeneration = 0;
+let activeConsumer: MatchConsumerState | null = null;
 
 /** 启动常驻消费循环（幂等）。XREADGROUP BLOCK 占连接 → duplicate 独占，⛔ 不占共享 client。 */
 export function startMatchConsumer(): void {
-  if (running) { return; }
-  running = true;
-  loopClient = clientForKey(K_STREAM_MATCH_V2).duplicate();
-  loopDone = (async () => {
-    while (running) {
+  if (activeConsumer?.running) { return; }
+  assertAdmissionOpen();
+  const client = clientForKey(K_STREAM_MATCH_V2).duplicate();
+  const state = {
+    generation: ++consumerGeneration,
+    client,
+    running: true,
+    done: undefined as unknown as Promise<void>,
+    stopPromise: null,
+  } satisfies MatchConsumerState;
+  activeConsumer = state;
+  state.done = (async () => {
+    while (state.running) {
       try {
-        await consumeOnce({ client: loopClient!, blockMs: CONSUME_BLOCK_MS });
+        await consumeOnce({ client: state.client, blockMs: CONSUME_BLOCK_MS });
         const now = Date.now();
         for (const stream of MATCH_STREAMS) {
           if (now - stream.lastTrimMs < TRIM_INTERVAL_MS) { continue; }
           stream.lastTrimMs = now;
-          await trimStreamToSafePoint(loopClient!, stream);
+          await trimStreamToSafePoint(state.client, stream);
         }
       } catch (e) {
-        if (!running) { break; }
-        console.error("[matchConsumer] 消费循环异常，1s 后重试:", e);
+        if (!state.running) { break; }
+        console.error(`[matchConsumer] 消费循环异常（generation=${state.generation}），1s 后重试:`, e);
         await new Promise((r) => setTimeout(r, 1000));
       }
     }
   })();
+  // A loop failure must be observed even when no stop caller is waiting.
+  void state.done.catch((error) => {
+    console.error(`[matchConsumer] 消费循环终止（generation=${state.generation}）`, error);
+  });
+}
+
+async function stopMatchConsumerState(state: MatchConsumerState): Promise<void> {
+  if (state.stopPromise) { return state.stopPromise; }
+  state.running = false;
+  try {
+    // disconnect 打断阻塞中的 XREADGROUP；旧 generation 只触碰自己的连接。
+    state.client.disconnect();
+  } catch {
+    // The loop's catch/finally still observes adapter failures; stop remains
+    // idempotent and must not clear a newer generation's state.
+  }
+  if (activeConsumer === state) { activeConsumer = null; }
+  state.stopPromise = (async () => {
+    await state.done.catch(() => { /* 循环收尾异常无需上抛 */ });
+  })();
+  return state.stopPromise;
 }
 
 /** 停止消费循环并释放独占连接（disconnect 打断阻塞中的 XREADGROUP）。 */
 export async function stopMatchConsumer(): Promise<void> {
-  running = false;
-  loopClient?.disconnect();
-  await loopDone?.catch(() => { /* 循环收尾异常无需上抛 */ });
-  loopClient = null;
-  loopDone = null;
+  const state = activeConsumer;
+  if (!state) { return; }
+  await stopMatchConsumerState(state);
 }
 
 // ── 网关侧流深度告警（没人消费时流无界增长必须被看见——⛔ 禁 MAXLEN 兜底，09·K6） ──
@@ -514,9 +548,16 @@ export async function stopMatchConsumer(): Promise<void> {
 /** 深度阈值（⚠ 07 常量表待补条目）：超过即告警（约 = 高峰每分对局数 × 可容忍积压分钟数）。 */
 const STREAM_DEPTH_ALERT = 1000;
 const STREAM_DEPTH_CHECK_MS = 60_000;
-let streamDepthTimer: NodeJS.Timeout | null = null;
-let streamDepthChecks = new Set<Promise<void>>();
-let streamDepthUnregister: (() => void) | null = null;
+interface StreamDepthState {
+  readonly generation: number;
+  timer: NodeJS.Timeout | null;
+  checks: Set<Promise<void>>;
+  unregister: (() => void) | null;
+  active: boolean;
+  stopPromise: Promise<void> | null;
+}
+let streamDepthGeneration = 0;
+let activeStreamDepth: StreamDepthState | null = null;
 
 /** 未建 group 时用 XLEN；已有 group 时用 lag+pending，避免已 ACK 但尚未 trim 的历史制造假积压。 */
 async function streamBacklog(client: Redis, stream: MatchStreamState): Promise<{ backlog: number; xlen: number }> {
@@ -531,32 +572,65 @@ async function streamBacklog(client: Redis, stream: MatchStreamState): Promise<{
 
 /** 网关启动时挂上：两条流分别检查未处理深度，任一超阈值都告警。 */
 export function startStreamDepthAlert(): void {
-  if (streamDepthTimer) { return; }
-  streamDepthTimer = setInterval(() => {
+  if (activeStreamDepth?.active) { return; }
+  assertAdmissionOpen();
+  if (defaultLifecycle.isClosed) { defaultLifecycle.reset(); }
+  const state: StreamDepthState = {
+    generation: ++streamDepthGeneration,
+    timer: null,
+    checks: new Set(),
+    unregister: null,
+    active: true,
+    stopPromise: null,
+  };
+  activeStreamDepth = state;
+  state.timer = setInterval(() => {
+    if (!state.active || activeStreamDepth !== state) { return; }
     const check: Promise<void> = Promise.all(MATCH_STREAMS.map(async (stream) => {
       const { backlog, xlen } = await streamBacklog(clientForKey(stream.key), stream);
       if (backlog > STREAM_DEPTH_ALERT) {
         console.error(`[matchConsumer] ⚠⚠ ${stream.label} 未处理深度 ${backlog}（XLEN=${xlen}）超阈值 ${STREAM_DEPTH_ALERT}——settle worker 未运行或积压（npm --workspace @game/server run settle）`);
       }
     })).then(() => undefined).catch(() => { /* Redis 抖动不告警——连接级问题由 infra 监控负责 */ });
-    streamDepthChecks.add(check);
-    void check.finally(() => { streamDepthChecks.delete(check); });
+    state.checks.add(check);
+    void check.then(
+      () => { state.checks.delete(check); },
+      () => { state.checks.delete(check); },
+    );
   }, STREAM_DEPTH_CHECK_MS);
-  streamDepthTimer.unref();
-  streamDepthUnregister = defaultLifecycle.register("stream-depth-alert", () => stopStreamDepthAlert());
+  state.timer.unref();
+  state.unregister = defaultLifecycle.register(
+    `stream-depth-alert:${state.generation}`,
+    () => stopStreamDepthState(state),
+  );
+}
+
+async function stopStreamDepthState(state: StreamDepthState): Promise<void> {
+  if (state.stopPromise) { return state.stopPromise; }
+  state.active = false;
+  if (state.timer) {
+    clearInterval(state.timer);
+    state.timer = null;
+  }
+  if (activeStreamDepth === state) { activeStreamDepth = null; }
+  const checks = [...state.checks];
+  const unregister = state.unregister;
+  state.stopPromise = (async () => {
+    await Promise.all(checks);
+    state.checks.clear();
+    // Capture this generation's unregister handle. A restart can register a
+    // newer state while these Redis reads are still pending.
+    unregister?.();
+    state.unregister = null;
+  })();
+  return state.stopPromise;
 }
 
 /** 停止深度告警并等待已经发出的回读完成。 */
 export async function stopStreamDepthAlert(): Promise<void> {
-  if (streamDepthTimer) {
-    clearInterval(streamDepthTimer);
-    streamDepthTimer = null;
-  }
-  streamDepthUnregister?.();
-  streamDepthUnregister = null;
-  const checks = [...streamDepthChecks];
-  await Promise.all(checks);
-  streamDepthChecks.clear();
+  const state = activeStreamDepth;
+  if (!state) { return; }
+  await stopStreamDepthState(state);
 }
 
 // ── 独立 settle worker 进程入口（consumer group 多实例天然分工，无需 singleton_lease） ──

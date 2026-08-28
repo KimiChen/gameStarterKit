@@ -17,10 +17,15 @@ import { PUSH_ALL_CHUNK } from "../core/infra/config";
 import { K_STREAM_MAILWAKE } from "../core/infra/keys";
 import { clientForKey } from "../core/infra/redisRoute";
 import { fieldOf, startStreamConsumer, type StreamConsumer } from "../core/infra/streamConsumer";
-import { defaultLifecycle } from "../core/infra/lifecycle";
+import { defaultLifecycle, isAdmissionOpen } from "../core/infra/lifecycle";
 import { storedInt } from "../core/infra/numbers";
 
 export interface PushSink { (type: string, data: unknown): void }
+
+/** Opaque identity for one online registration, used to make late cleanup exact. */
+export interface OnlineRegistration {
+  readonly token: symbol;
+}
 
 /** 本节点的一条在线连接。`tokenHash` 是**顶号判别位**：踢时可排除「持新登录态的连接」。 */
 interface OnlineConn {
@@ -28,6 +33,12 @@ interface OnlineConn {
   /** 该连接所在的区（M12e）：顶号只踢同区，⛔ 别踢到玩家在别区的另一个在线角色。 */
   sId: number;
 }
+
+// Keep the registration token separate from the connection payload.  A
+// sessionId is only a map key; a reconnect/replacement can reuse that key in a
+// test adapter or during a late callback, so uid + sessionId alone is not an
+// ownership proof.
+const registrationByConn = new WeakMap<OnlineConn, OnlineRegistration>();
 
 /**
  * 本节点在线注册表：**uid → sessionId → 连接**（LobbyRoom onJoin/onLeave 维护）。
@@ -38,15 +49,29 @@ interface OnlineConn {
  */
 const online = new Map<string, Map<string, OnlineConn>>();
 
-export function registerOnline(uid: string, sessionId: string, conn: OnlineConn): void {
+export function registerOnline(
+  uid: string,
+  sessionId: string,
+  conn: OnlineConn,
+): OnlineRegistration {
   let m = online.get(uid);
   if (!m) { m = new Map(); online.set(uid, m); }
   m.set(sessionId, conn);
+  const registration: OnlineRegistration = Object.freeze({ token: Symbol("online-registration") });
+  registrationByConn.set(conn, registration);
+  return registration;
 }
-export function unregisterOnline(uid: string, sessionId: string): void {
+export function unregisterOnline(
+  uid: string,
+  sessionId: string,
+  expected?: OnlineRegistration,
+): void {
   const m = online.get(uid);
   const removed = m?.get(sessionId);
-  if (!m || !removed || !m.delete(sessionId)) { return; }
+  if (!m || !removed) { return; }
+  if (expected !== undefined && registrationByConn.get(removed) !== expected) { return; }
+  if (!m.delete(sessionId)) { return; }
+  registrationByConn.delete(removed);
   // 同 uid 可跨区同时在线：本区最后一条连接离开时只清本区公会索引，⛔ 不能等 uid 全下线，
   // 更不能把其它区仍在线角色的索引一起清掉。
   if (![...m.values()].some((conn) => conn.sId === removed.sId)) {
@@ -56,6 +81,21 @@ export function unregisterOnline(uid: string, sessionId: string): void {
     online.delete(uid);
     setOnlineGuild(uid, null); // 防御性清掉该 uid 的全部残留区索引
   }
+}
+
+/**
+ * Check that an opaque registration still owns the `(uid, sessionId)` slot.
+ * A client-local WeakMap is insufficient when two adapter objects reuse the
+ * same key: an old client's deferred callback could otherwise overwrite the
+ * replacement's guild index.
+ */
+export function isOnlineRegistrationCurrent(
+  uid: string,
+  sessionId: string,
+  registration: OnlineRegistration,
+): boolean {
+  const conn = online.get(uid)?.get(sessionId);
+  return conn !== undefined && registrationByConn.get(conn) === registration;
 }
 
 /**
@@ -85,8 +125,12 @@ export function kickUser(
     if (sId !== undefined && conn.sId !== sId) { continue; } // ⛔ 别区的在线角色：顶号不该碰它
     if (exceptTokenHash !== undefined && conn.tokenHash === exceptTokenHash) { continue; } // 新登录态：⛔ 不自踢
     try { conn.sink(LobbyPush.ForceLogout, { reason } satisfies IForceLogoutPush); } catch { /* 推不到就靠关闭码 */ }
-    try { conn.kick(KICK_CLOSE_CODE[reason]); } catch { /* 将死连接，放弃 */ }
-    kicked = true;
+    try {
+      conn.kick(KICK_CLOSE_CODE[reason]);
+      // `/admin/kick` uses this boolean as its delivery acknowledgement. A
+      // stale online entry whose close throws was matched, but not delivered.
+      kicked = true;
+    } catch { /* 将死连接，放弃 */ }
   }
   return kicked;
 }
@@ -199,19 +243,31 @@ let mailwakeUnregister: (() => void) | null = null;
 /** 消费循环（每网关节点一个）：XREAD 阻塞读 stream:mailwake → 在线则 push mail.new（通用工厂 §4.5）。 */
 export function startMailWakeLoop(): void {
   if (mailwake) { return; } // 单例护栏（多 LobbyRoom.onCreate 只起一个）
-  mailwake = startStreamConsumer("mailwake", () => clientForKey(K_STREAM_MAILWAKE), K_STREAM_MAILWAKE, (fields) => {
-    const uid = fieldOf(fields, "uid");
-    const mailId = fieldOf(fields, "mailId");
-    // 目标不在本节点：pushToUser 返回 false 直接跳过（权威在 MySQL，上线自拉，09·A6）
-    if (uid && mailId !== undefined) {
-      try {
-        const id = storedInt(mailId, "mailwake.mailId", { min: 1, max: Number.MAX_SAFE_INTEGER });
-        pushToUser(uid, LobbyPush.MailNew, { mailId: id });
-      } catch {
-        console.warn(`[push] 丢弃非法 mailwake 条目 uid=${uid}`);
+  // A room can be created by a late callback while Colyseus is already
+  // draining rooms.  Do not let that callback create a new Redis connection
+  // after the process admission gate has closed.
+  if (!isAdmissionOpen()) { return; }
+  try {
+    mailwake = startStreamConsumer("mailwake", () => clientForKey(K_STREAM_MAILWAKE), K_STREAM_MAILWAKE, (fields) => {
+      const uid = fieldOf(fields, "uid");
+      const mailId = fieldOf(fields, "mailId");
+      // 目标不在本节点：pushToUser 返回 false 直接跳过（权威在 MySQL，上线自拉，09·A6）
+      if (uid && mailId !== undefined) {
+        try {
+          const id = storedInt(mailId, "mailwake.mailId", { min: 1, max: Number.MAX_SAFE_INTEGER });
+          pushToUser(uid, LobbyPush.MailNew, { mailId: id });
+        } catch {
+          console.warn(`[push] 丢弃非法 mailwake 条目 uid=${uid}`);
+        }
       }
-    }
-  });
+    });
+  } catch (error) {
+    // The gate can close between the check above and startStreamConsumer's
+    // assertion.  Treat that narrow shutdown race as a no-op; real startup
+    // failures still surface to the caller for diagnosis.
+    if (!isAdmissionOpen()) { return; }
+    throw error;
+  }
   mailwakeUnregister = defaultLifecycle.register("mailwake", () => stopMailWakeLoop());
 }
 

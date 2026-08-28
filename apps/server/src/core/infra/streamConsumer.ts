@@ -6,7 +6,7 @@
  * Redis 抖动退避重试；`XTRIM MINID` 兜底裁剪（⛔ 禁 MAXLEN，09·K6）。阻塞 XREAD 独享 `duplicate()` 连接。
  */
 import type Redis from "ioredis";
-import { defaultLifecycle } from "./lifecycle";
+import { assertAdmissionOpen, defaultLifecycle } from "./lifecycle";
 
 export interface StreamConsumerOpts {
   /** XREAD BLOCK 毫秒（默认 2000）。 */
@@ -46,23 +46,58 @@ export function startStreamConsumer(
   onEntry: (fields: string[], id: string) => void | Promise<void>,
   opts: StreamConsumerOpts = {},
 ): StreamConsumer {
+  assertAdmissionOpen();
+  // A test/embedded process may intentionally restart after a completed
+  // registry disposal. Production shutdown never reopens admission, but this
+  // explicit start boundary is the one place where reopening is meaningful.
+  if (defaultLifecycle.isClosed) { defaultLifecycle.reset(); }
   const blockMs = opts.blockMs ?? 2000;
   const count = opts.count ?? 100;
   const trimMs = opts.trimMs ?? 24 * 3600 * 1000;
   const trimEveryMs = opts.trimEveryMs ?? 3600 * 1000;
   let stopFlag = false;
   let wakeStop: (() => void) | null = null;
+  let wakeRead: (() => void) | null = null;
   let sub: Redis | null = null;
+  let disconnectError: unknown = null;
+
+  // ioredis' disconnect is normally idempotent, but adapters and test doubles
+  // may throw synchronously.  Capture that failure so stop() can report it
+  // without losing the ownership/unregister cleanup path.
+  const disconnectSub = (): void => {
+    if (!sub) { return; }
+    try {
+      sub.disconnect();
+    } catch (error) {
+      disconnectError ??= error;
+    }
+  };
 
   const loopDone = (async () => {
-    sub = client().duplicate(); // 阻塞 XREAD 需独享连接（阻塞期不能复用发命令）
     let cursor = "$"; // 只看启动后的新条目（历史无价值：mail 上线自拉、踢人是即时动作）
     let lastTrim = Date.now();
     try {
       while (!stopFlag) {
         try {
-          const res = await sub.xread("COUNT", count, "BLOCK", blockMs, "STREAMS", streamKey, cursor) as
-            [string, [string, string[]][]][] | null;
+          // Connection creation belongs to the retry boundary too. `ioredis`
+          // `duplicate()` can throw synchronously while a client is being
+          // replaced, and that must not reject the long-lived loop before its
+          // stop handle has a chance to observe it.
+          if (sub === null) {
+            sub = client().duplicate(); // 阻塞 XREAD 需独享连接（阻塞期不能复用发命令）
+          }
+          const readClient = sub;
+          type ReadResult = [string, [string, string[]][]][] | null;
+          // A disconnect should wake a blocked read even when the adapter's
+          // disconnect method fails.  Promise.race observes the underlying
+          // read rejection as well, so a late failure cannot become unhandled.
+          const interrupt = new Promise<ReadResult>((resolve) => {
+            wakeRead = () => resolve(null);
+          });
+          const read = readClient.xread("COUNT", count, "BLOCK", blockMs, "STREAMS", streamKey, cursor) as
+            Promise<ReadResult>;
+          const res = await Promise.race<ReadResult>([read, interrupt]);
+          wakeRead = null;
           if (res) {
             for (const [, entries] of res) {
               for (const [id, fields] of entries) {
@@ -93,10 +128,18 @@ export function startStreamConsumer(
         }
       }
     } finally {
-      sub?.disconnect();
+      disconnectSub();
       sub = null;
+      wakeRead = null;
     }
   })();
+
+  // Attach an observer immediately: a failure outside the retry boundary
+  // (for example, an unexpected disconnect error in `finally`) must never
+  // become an unhandled rejection in the process-wide consumer.
+  void loopDone.catch((error) => {
+    console.error(`[${name}] 消费循环终止`, error);
+  });
 
   let stopPromise: Promise<void> | null = null;
   let unregister = (): void => {};
@@ -104,11 +147,30 @@ export function startStreamConsumer(
     if (stopPromise) { return stopPromise; }
     stopFlag = true;
     wakeStop?.();
+    wakeRead?.();
+    wakeRead = null;
     // disconnect 打断阻塞中的 XREAD；finally 会再次 disconnect，操作本身幂等。
-    sub?.disconnect();
-    stopPromise = loopDone.catch((error) => {
-      console.error(`[${name}] 停止消费循环时异常`, error);
-    }).finally(() => { unregister(); });
+    disconnectSub();
+    // Establish ownership of the stop promise before awaiting anything or
+    // invoking user/adaptor code.  A synchronous disconnect failure must not
+    // make a second stop start another cleanup attempt.
+    stopPromise = (async () => {
+      const errors: unknown[] = [];
+      try {
+        await loopDone;
+      } catch (error) {
+        errors.push(error);
+      }
+      try {
+        unregister();
+      } catch (error) {
+        errors.push(error);
+      }
+      if (disconnectError !== null) errors.unshift(disconnectError);
+      if (errors.length > 0) {
+        throw new AggregateError(errors, `[${name}] 停止消费循环失败`);
+      }
+    })();
     return stopPromise;
   };
   const handle: StreamConsumer = { stop };

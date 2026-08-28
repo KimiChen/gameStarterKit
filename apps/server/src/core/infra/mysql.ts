@@ -9,27 +9,36 @@
 import mysql from "mysql2/promise";
 import type { Pool, PoolConnection, ResultSetHeader, RowDataPacket } from "mysql2/promise";
 import { MYSQL_POOL_SIZE, MYSQL_URL } from "./config";
+import { assertAdmissionOpen } from "./lifecycle";
 
 export type { PoolConnection, ResultSetHeader, RowDataPacket };
 
 let pool: Pool | null = null;
+let mysqlClosing = false;
+let mysqlClosePromise: Promise<void> | null = null;
 
 /** 监控用：仅返回已创建的池（⛔ 不触发建池——无栈环境下监控不应拉起连接）。 */
 export function getPoolIfCreated(): Pool | null { return pool; }
 
 export function getPool(): Pool {
-  if (!pool) {
-    pool = mysql.createPool({
-      uri: MYSQL_URL(),
-      connectionLimit: MYSQL_POOL_SIZE,
-      // JSON 列会被自动解析成对象（09·DB8）——传 Lua 前必须 stringify，统一在 redisApply 内做
-      supportBigNumbers: true,
-      bigNumberStrings: false,
-      // ⚠ mysql2 默认带 CLIENT_FOUND_ROWS：ODKU 命中重复也报 affectedRows=1（matched 语义），
-      // 会击穿全部「插入=1/重复=0」幂等判断（09·DB2 / 05）。显式关掉，恢复 changed 语义
-      flags: ["-FOUND_ROWS"],
-    });
+  if (pool) { return pool; }
+  if (mysqlClosing) {
+    throw new Error("mysql: 连接池正在关闭，拒绝获取新连接池");
   }
+  // A late handler may finish against an existing pool while rooms drain,
+  // but after that pool is detached it must not create a new generation once
+  // process admission has closed.
+  assertAdmissionOpen();
+  pool = mysql.createPool({
+    uri: MYSQL_URL(),
+    connectionLimit: MYSQL_POOL_SIZE,
+    // JSON 列会被自动解析成对象（09·DB8）——传 Lua 前必须 stringify，统一在 redisApply 内做
+    supportBigNumbers: true,
+    bigNumberStrings: false,
+    // ⚠ mysql2 默认带 CLIENT_FOUND_ROWS：ODKU 命中重复也报 affectedRows=1（matched 语义），
+    // 会击穿全部「插入=1/重复=0」幂等判断（09·DB2 / 05）。显式关掉，恢复 changed 语义
+    flags: ["-FOUND_ROWS"],
+  });
   return pool;
 }
 
@@ -84,7 +93,26 @@ export async function retryOnContention<T>(fn: () => Promise<T>, attempts = 3): 
 }
 
 /** 测试/停服。 */
-export async function closeMysql(): Promise<void> {
-  await pool?.end();
+export function closeMysql(): Promise<void> {
+  if (mysqlClosePromise) { return mysqlClosePromise; }
+  const closingPool = pool;
+  // Detach before awaiting end(); callers after the shutdown boundary cannot
+  // accidentally receive a pool whose sockets are already being drained.
   pool = null;
+  mysqlClosing = true;
+  const run = (async () => {
+    await closingPool?.end();
+    // A future generation may have installed another pool through an explicit
+    // lifecycle reset; never clobber it here.
+    if (pool === closingPool) { pool = null; }
+  })();
+  let closePromise!: Promise<void>;
+  closePromise = run.finally(() => {
+    if (mysqlClosePromise === closePromise) {
+      mysqlClosePromise = null;
+      mysqlClosing = false;
+    }
+  });
+  mysqlClosePromise = closePromise;
+  return closePromise;
 }
