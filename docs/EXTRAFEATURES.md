@@ -198,6 +198,29 @@ guard 明确要求 unsafe escape hatch。仓库不承诺横向扩展、分片迁
 
 这些实验不进入核心验证命令，也不构成未来必须实现的路线图。
 
+### 3.9 《Underground Idle》玩法策划案
+
+状态：**未实现**。
+
+`docs/undergroundIdle/` 是面向框架演示的 0.1 玩法方案草案，不是当前可运行的游戏模块。它没有对应的
+客户端页面、服务端 endpoint、默认入口、workspace package 或验证命令，因此不会登记为
+`docs/inventory.json` 的活跃能力，也不改变核心框架的完成定义。方案本身明确不构成线上运营、商业化或生产
+部署承诺；真正实现时仍须按当前 shared 契约、Lobby WS-RPC、玩家档案、锁/fence、幂等和 View/Logic 约束
+重新评审，不能把文档中的接口规划当成已交付协议。
+
+策划案入口与文档分工如下：
+
+| 文档 | 内容 |
+| --- | --- |
+| [`README.md`](undergroundIdle/README.md) | 方案摘要、阅读导航和首版取舍 |
+| [`01-product-and-gameplay.md`](undergroundIdle/01-product-and-gameplay.md) | 产品定位、核心循环与功能范围 |
+| [`02-economy-and-mine.md`](undergroundIdle/02-economy-and-mine.md) | 资源经济、生产链、离线结算与建筑 |
+| [`03-workers-and-expeditions.md`](undergroundIdle/03-workers-and-expeditions.md) | 矿工、岗位、远征和新手流程 |
+| [`04-client-and-rpc.md`](undergroundIdle/04-client-and-rpc.md) | 页面体验、客户端边界和 WS-RPC 规划 |
+| [`05-data-and-server.md`](undergroundIdle/05-data-and-server.md) | 数据模型、服务端一致性和内容配置 |
+| [`06-testing-and-roadmap.md`](undergroundIdle/06-testing-and-roadmap.md) | 指标、测试矩阵、阶段路线和完成定义 |
+| [`07-art-direction.md`](undergroundIdle/07-art-direction.md) | 美术方向、界面结构、资产与验收标准 |
+
 ## 4. 明确不提供的能力
 
 以下内容只作为额外功能分类，不代表仓库当前实现，也不构成未来承诺或项目约束：

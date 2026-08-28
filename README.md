@@ -16,6 +16,7 @@
 - [服务端开发](docs/SERVER.md)
 - [外部身份服务开发边界](docs/WEBPLATFORM.md)
 - [额外功能说明](docs/EXTRAFEATURES.md)
+- [《Underground Idle》玩法策划案（未实现）](docs/undergroundIdle/README.md)
 
 ## 目录
 

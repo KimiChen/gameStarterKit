@@ -7,6 +7,7 @@
 > - [docs/CLIENT.md](docs/CLIENT.md)：客户端目录、View/Logic、FGUI 与本地预览
 > - [docs/WEBPLATFORM.md](docs/WEBPLATFORM.md)：外部身份服务的开发契约边界
 > - [docs/EXTRAFEATURES.md](docs/EXTRAFEATURES.md)：可选额外功能、现有实现与非承诺说明
+> - [docs/undergroundIdle/README.md](docs/undergroundIdle/README.md)：未实现的玩法策划案与扩展草案
 > - [plan.md](plan.md)：当前代码已确认的缺口与核心改进优先级
 >
 > 多数源码目录另有就近 README，但尚未覆盖全部：`apps/shared`、`apps/server` 根、`apps/server/src/player/`
