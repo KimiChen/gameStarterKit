@@ -7,12 +7,18 @@
 import { monitorEventLoopDelay } from "node:perf_hooks";
 import { EVENT_LOOP_ALERT_MS, MYSQL_QUEUE_ALERT } from "./config";
 import { getPoolIfCreated } from "./mysql";
-import { defaultLifecycle } from "./lifecycle";
+import { assertAdmissionOpen, defaultLifecycle } from "./lifecycle";
 
 let activeStop: (() => Promise<void>) | null = null;
 
 export function startInfraMonitors(intervalMs = 10_000): () => Promise<void> {
+  // A late startup callback must not resurrect a monitor after shutdown has
+  // sealed process admission.  Embedded/test processes may explicitly reopen
+  // admission; in that case reset the terminal registry before registering the
+  // new generation below.
+  assertAdmissionOpen();
   if (activeStop) { return activeStop; }
+  if (defaultLifecycle.isClosed) { defaultLifecycle.reset(); }
 
   const h = monitorEventLoopDelay({ resolution: 20 });
   h.enable();
