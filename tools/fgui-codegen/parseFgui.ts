@@ -15,6 +15,8 @@ export interface FguiElement {
   tag: string;         // text/richtext/image/loader/list/graph/group/component/movieclip
   fileName?: string;   // component/loader 引用的资源文件(如 Button.xml → 判 Button/自定义类型)
   pkg?: string;
+  /** component/loader resource id (the `src` attribute), when present. */
+  src?: string;
   /** 直接子元素的递归结构；旧调用方只读取 name/tag，不受影响。 */
   children?: FguiElement[];
   /** 从当前组件根开始的稳定路径（例如 `lst_rows.txt_title`）。 */
@@ -209,6 +211,7 @@ function toElement(node: XmlNode, parentPath: string): FguiElement | undefined {
     tag: node.tag,
     ...(node.attrs.fileName === undefined ? {} : { fileName: node.attrs.fileName }),
     ...(node.attrs.pkg === undefined ? {} : { pkg: node.attrs.pkg }),
+    ...(node.attrs.src === undefined ? {} : { src: node.attrs.src }),
     ...(children.length === 0 ? {} : { children }),
     path,
     ...(node.attrs.defaultItem === undefined ? {} : { defaultItem: node.attrs.defaultItem }),

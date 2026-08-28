@@ -4,7 +4,7 @@ import assert from "node:assert";
 import { test } from "node:test";
 import { findFguiElement, parseFguiComponent } from "./parseFgui";
 import {
-  bindingFields, nestedBindingFields, emitAutoFieldBlock, emitFguiViewScaffold, checkContract, tsTypeOf, type BindingField,
+  bindingFields, nestedBindingFields, emitAutoFieldBlock, emitFguiViewScaffold, checkContract, elementTsType, tsTypeOf, type BindingField,
 } from "./binding";
 
 // 仿真 FairyGUI 组件 XML(OpponentHud):标题文本 + 虚拟列表 + 按钮 + loader + 普通 group + graph。
@@ -30,6 +30,7 @@ test("解析:只取 displayList 直接子元素(list 的 item/relation 不计)",
   assert.deepStrictEqual(names, ["btn_ready", "frameGroup", "go_border", "ld_icon", "lst_rows", "txt_title"]);
   assert.strictEqual(comp.elements.find((e) => e.name === "lst_rows")?.tag, "list");
   assert.strictEqual(comp.elements.find((e) => e.name === "btn_ready")?.fileName, "Button.xml");
+  assert.strictEqual(comp.elements.find((e) => e.name === "btn_ready")?.src, "x0y1z2");
 });
 
 test("类型推断:fairygui-cc 类名;tge_ 是 GButton;jb_ 是 GComponent;无前缀不绑定", () => {
@@ -46,6 +47,10 @@ test("类型推断:fairygui-cc 类名;tge_ 是 GButton;jb_ 是 GComponent;无前
   assert.strictEqual(tsTypeOf({ name: "spineDecor", tag: "loader3D" }), undefined, "无前缀 loader3D 不绑定");
   assert.strictEqual(tsTypeOf({ name: "jb_seal", tag: "component", fileName: "CompSeal.xml" }), "GComponent",
     "jb_ 嵌套组件无 UIObjectFactory 扩展机制，运行时就是 GComponent");
+  assert.strictEqual(tsTypeOf({ name: "yesBtn", tag: "component", fileName: "BtnCommon.xml" }), undefined,
+    "无前缀手写组件不进入 AUTO 绑定；显式契约由 elementTsType 判断其 Button 扩展");
+  assert.strictEqual(elementTsType({ name: "yesBtn", tag: "component", fileName: "BtnCommon.xml" }), "GButton",
+    "无前缀但引用 BtnCommon 的手写字段按 FairyGUI Button 扩展校验为 GButton");
   assert.strictEqual(tsTypeOf({ name: "frameGroup", tag: "group" }), undefined, "无识别前缀 → 不生成字段");
 });
 

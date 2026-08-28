@@ -42,6 +42,19 @@ export function elementTsType(el: FguiElement): string {
     const p = prefixOf(el.name);
     if (p === "btn" || p === "tge") { return "GButton"; }
     if (p === "pg") { return "GProgressBar"; } // extention="ProgressBar" 组件引用（如 Login 的 pg_loading）
+    // Preserve the established prefix semantics for named component fields
+    // (notably `jb_`): the filename fallback below is only for truly
+    // unprefixed/manual bindings.
+    if (p) { return "GComponent"; }
+    // A hand-written/manual binding may intentionally omit the `btn_` prefix
+    // (for example Confirm's yesBtn/noBtn).  FairyGUI stores the extension on
+    // the referenced component XML rather than on the instance node, so use
+    // the conventional resource filename as a conservative fallback.  This
+    // keeps the explicit contract type aligned with the runtime GButton API
+    // without changing AUTO prefix rules.
+    const file = el.fileName?.split("/").pop()?.toLowerCase() ?? "";
+    if (file.includes("button") || file.startsWith("btn")) { return "GButton"; }
+    if (file.includes("progressbar")) { return "GProgressBar"; }
     return "GComponent";
   }
   return TAG_TYPE[el.tag] ?? el.tag;

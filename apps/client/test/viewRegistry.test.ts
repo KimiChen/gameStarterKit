@@ -51,12 +51,31 @@ test("注册表契约 ⇔ FGUI_CONTRACTS 双向相等（键 + required 字段级
   const declared = FGUI_CONTRACTS.map(keyOf).sort();
   assert.deepEqual(fromRegistry, declared,
     "每个注册页面的 contract 必须同时列进 FGUI_CONTRACTS（契约测试的遍历入口），反之亦然");
-  // 字段级：两处副本只键级比对会漏 required 内容漂移（如一边加了元素另一边没加）
+  // 字段级：两处副本只键级比对会漏 required/手写/嵌套内容漂移（如一边加了元素另一边没加）
   const byKey = new Map(FGUI_CONTRACTS.map((c) => [keyOf(c), c]));
   for (const meta of Object.values(VIEW_REGISTRY)) {
     const entry = byKey.get(keyOf(meta.contract));
-    assert.deepEqual([...meta.contract.required], [...(entry?.required ?? [])],
-      `${keyOf(meta.contract)}: 注册表与 FGUI_CONTRACTS 的 required 内容不一致`);
+    assert.deepEqual(
+      {
+        required: [...meta.contract.required],
+        manualRequired: [...(meta.contract.manualRequired ?? [])],
+        nested: [...(meta.contract.nested ?? [])],
+        listItems: [...(meta.contract.listItems ?? [])],
+        controllers: [...(meta.contract.controllers ?? [])],
+        relations: [...(meta.contract.relations ?? [])],
+        assetUrls: [...(meta.contract.assetUrls ?? [])],
+      },
+      {
+        required: [...(entry?.required ?? [])],
+        manualRequired: [...(entry?.manualRequired ?? [])],
+        nested: [...(entry?.nested ?? [])],
+        listItems: [...(entry?.listItems ?? [])],
+        controllers: [...(entry?.controllers ?? [])],
+        relations: [...(entry?.relations ?? [])],
+        assetUrls: [...(entry?.assetUrls ?? [])],
+      },
+      `${keyOf(meta.contract)}: 注册表与 FGUI_CONTRACTS 的结构契约内容不一致`,
+    );
   }
 });
 
