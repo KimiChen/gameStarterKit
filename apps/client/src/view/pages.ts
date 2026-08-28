@@ -490,7 +490,7 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
               clearSession,
               leave: () => WebSocketClient.inst.leave(),
               shouldRollback: () => isFlightActive(flight) && context.isActive()
-                && getSessionGeneration() === flowSessionGen,
+                && (flowSessionGen < 0 || getSessionGeneration() === flowSessionGen),
             }, context.signal);
           } catch (e) {
             if (!isFlightActive(flight) || !context.isActive()) { flowFailed = true; return; }
