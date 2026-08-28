@@ -113,11 +113,10 @@ flow 锁覆盖 HTTP 之后的 continuation」与「Login：进度回调 + 登录
 的源码正则守门——`pages.ts` 绑定 Cocos/FairyGUI，无头 runner 无法导入——没有行为用例，需在 Creator 侧
 人工验证。`Main.handleGameplayStartFailure` 自身也无用例，它只是对已测 `returnToLogin` 的调用。
 
-复核备注：`WebSocketClient.implicitOwners`（`net/WebSocketClient.ts:292`）只在 `leave()`（`:574`）里清空，
-而 `leave()` 在 `room.onLeave` 已摘槽（`:556`）后于 `:573` 直接 return；连接被动死亡（onLeave →
-notifyConnLost）后条目不会回收，每轮「掉线→重登」累积一条，并让闭包持有旧 slot 的 token
-（`:441-452`）。该集合当前从不被遍历，无功能影响，待收口；`:316-317`「调用 `leave()` 释放全部隐式
-owner」的注释在该路径下不成立。
+复核备注（已收口）：`WebSocketClient.forgetImplicitOwners` 按 slot 身份回收隐式 ownership，并覆盖 join
+失败/迟到、room 绑定失败、物理 `onLeave`、`closeSlot` 以及 `leave()` 的空 slot 提前返回路径。
+`webSocketClient.test.ts` 三条专项用例直接验证重复「掉线→重登」不累积闭包、旧 room 迟到回调不清新代，
+以及主动 leave 后迟到 join 只释放旧物理 room、不回填记录；客户端与 Cocos 镜像保持一致。
 
 **原审阅证据（已收口）**
 
