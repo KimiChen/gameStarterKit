@@ -677,7 +677,7 @@ export default function Home() {
             <details>
               <summary>这是开源项目吗？</summary>
               <p>
-                仓库目前未提供 LICENSE，因此页面只陈述源码可查看，不声明开源授权；采用、修改或再分发前需先确认许可。
+                是。仓库根目录提供 MIT LICENSE；第三方运行时的许可证和来源请查看 THIRD_PARTY_NOTICES.md。
               </p>
             </details>
           </div>

@@ -50,7 +50,8 @@ test("server-renders the gameStarterKit landing page", async () => {
   assert.match(html, /服务端规则可追溯/);
   assert.match(html, /CORE SCOPE/);
   assert.match(html, /Unity 仍是研究占位/);
-  assert.match(html, /仓库目前未提供 LICENSE/);
+  assert.match(html, /MIT LICENSE/);
+  assert.match(html, /THIRD_PARTY_NOTICES\.md/);
   assert.match(html, /不构成部署、商业化/);
   assert.doesNotMatch(html, /OPEN SOURCE|ALL GREEN/i);
   assert.doesNotMatch(html, /<dt>63<\/dt>/);
