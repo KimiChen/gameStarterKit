@@ -10,7 +10,6 @@ import {
   beginShutdown,
   defaultLifecycle,
   drainTasks,
-  type Dispose,
 } from "./core/infra/lifecycle";
 import { closeMysql } from "./core/infra/mysql";
 import { closeRedis } from "./core/infra/redisRoute";
@@ -21,51 +20,35 @@ import {
 import { clearCharacterReadyFlights, drainCharacterReadyFlights } from "./player/character";
 import { closeWebPlatformClient } from "./platform/webPlatformClient";
 import { stopMailWakeLoop } from "./websocket/push";
-import { installShutdownAggregator } from "./shutdown";
+import {
+  createOrderedProducerStopper,
+  installShutdownAggregator,
+  runShutdownCleanup,
+} from "./shutdown";
 
 let infraMonitorStop: (() => Promise<void>) | null = null;
-let backgroundStopPromise: Promise<void> | null = null;
 
 /**
  * Stop producers before Colyseus starts disposing rooms.  Each stop is kept
  * best-effort so one broken adapter cannot prevent the remaining consumers and
  * timers from being released.
  */
-function stopBackgroundProducers(): Promise<void> {
-  if (backgroundStopPromise) { return backgroundStopPromise; }
-  const stops: Array<[string, Dispose]> = [
-    ["infra-monitors", async () => { await infraMonitorStop?.(); }],
-    ["stream-depth-alert", stopStreamDepthAlert],
-    ["kick-consumer", stopKickConsumer],
-    ["character-repair", stopCharacterRepairWorker],
-    ["mailwake", stopMailWakeLoop],
-  ];
-  backgroundStopPromise = (async () => {
-    for (const [name, stop] of stops) {
-      try {
-        await stop();
-      } catch (error) {
-        console.error(`[lifecycle] 停止 ${name} 失败，继续释放其余资源`, error);
-      }
-    }
-  })();
-  return backgroundStopPromise;
-}
+const stopBackgroundProducers = createOrderedProducerStopper([
+  { name: "infra-monitors", stop: async () => { await infraMonitorStop?.(); } },
+  { name: "stream-depth-alert", stop: stopStreamDepthAlert },
+  { name: "kick-consumer", stop: stopKickConsumer },
+  { name: "character-repair", stop: stopCharacterRepairWorker },
+  { name: "mailwake", stop: stopMailWakeLoop },
+]);
 
 async function finishShutdown(): Promise<void> {
-  await stopBackgroundProducers();
-  const cleanup = async (name: string, work: () => Promise<void>): Promise<void> => {
-    try {
-      await work();
-    } catch (error) {
-      console.error(`[lifecycle] ${name} 清理失败，继续后续清理`, error);
-    }
-  };
   // Rooms have already gone through onLeave/onDispose when this callback runs;
   // only now is it safe to await detached work that can touch their stores.
-  await cleanup("character-ready", drainCharacterReadyFlights);
-  await cleanup("detached-tasks", drainTasks);
-  await cleanup("registered-resources", () => defaultLifecycle.disposeAll());
+  await runShutdownCleanup(stopBackgroundProducers, [
+    { name: "character-ready", work: drainCharacterReadyFlights },
+    { name: "detached-tasks", work: drainTasks },
+    { name: "registered-resources", work: () => defaultLifecycle.disposeAll() },
+  ]);
 }
 
 /**

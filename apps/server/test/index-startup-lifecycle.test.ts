@@ -77,3 +77,41 @@ test("index 顶层启动失败：进程退出前等待 lifecycle cleanup，并�
     rmSync(sandbox, { recursive: true, force: true });
   }
 });
+
+test("index 默认入口：真实依赖装配、停服列表与 listen(app, PORT) 均有显式接缝", () => {
+  const source = readFileSync(join(SERVER_ROOT, "src/index.ts"), "utf8");
+  for (const registration of [
+    'defaultLifecycle.register("redis", closeRedis)',
+    'defaultLifecycle.register("mysql", closeMysql)',
+    'defaultLifecycle.register("webplatform", closeWebPlatformClient)',
+    'infraMonitorStop = startInfraMonitors()',
+    'startStreamDepthAlert()',
+    'setKickHandler(kickUser)',
+    'startKickConsumer()',
+    'startCharacterRepairWorker()',
+  ]) {
+    assert.ok(source.includes(registration), `默认入口缺少真实依赖装配：${registration}`);
+  }
+
+  const stopBlock = source.match(/const stopBackgroundProducers = createOrderedProducerStopper\(\[([\s\S]*?)\]\);/)?.[1];
+  assert.ok(stopBlock, "默认入口必须通过有序 producer stopper 汇总停止项");
+  const stopNames = [...stopBlock.matchAll(/name: "([^"]+)"/g)].map((match) => match[1]);
+  assert.deepEqual(stopNames, [
+    "infra-monitors",
+    "stream-depth-alert",
+    "kick-consumer",
+    "character-repair",
+    "mailwake",
+  ]);
+
+  const cleanupBlock = source.match(/await runShutdownCleanup\(stopBackgroundProducers, \[([\s\S]*?)\]\);/)?.[1];
+  assert.ok(cleanupBlock, "默认入口必须通过最终 cleanup 编排器收口");
+  const cleanupNames = [...cleanupBlock.matchAll(/name: "([^"]+)"/g)].map((match) => match[1]);
+  assert.deepEqual(cleanupNames, ["character-ready", "detached-tasks", "registered-resources"]);
+  assert.match(source, /await listen\(app, PORT\)/, "端口必须由 config.PORT 传入 listen");
+  assert.equal(
+    (source.match(/installShutdownAggregator\(app/g) ?? []).length,
+    1,
+    "默认入口不得再次注册第二个 shutdown aggregator",
+  );
+});

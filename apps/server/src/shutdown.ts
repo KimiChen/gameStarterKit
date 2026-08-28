@@ -22,6 +22,59 @@ export interface ShutdownAggregatorDependencies {
   finishShutdown: () => Promise<void>;
 }
 
+export interface ShutdownStop {
+  readonly name: string;
+  readonly stop: () => void | Promise<void>;
+}
+
+/** Build an idempotent, best-effort producer drain in declared order. */
+export function createOrderedProducerStopper(
+  stops: readonly ShutdownStop[],
+  reportError: (name: string, error: unknown) => void = (name, error) => {
+    console.error(`[lifecycle] 停止 ${name} 失败，继续释放其余资源`, error);
+  },
+): () => Promise<void> {
+  let draining: Promise<void> | null = null;
+  return () => {
+    if (draining) return draining;
+    draining = (async () => {
+      for (const { name, stop } of stops) {
+        try {
+          await stop();
+        } catch (error) {
+          reportError(name, error);
+        }
+      }
+    })();
+    return draining;
+  };
+}
+
+export interface ShutdownCleanup {
+  readonly name: string;
+  readonly work: () => void | Promise<void>;
+}
+
+/** Run post-room cleanup in order while preserving best-effort semantics. */
+export async function runShutdownCleanup(
+  stopBackgroundProducers: () => Promise<void>,
+  cleanups: readonly ShutdownCleanup[],
+  reportError: (name: string, error: unknown) => void = (name, error) => {
+    console.error(`[lifecycle] ${name} 清理失败，继续后续清理`, error);
+  },
+): Promise<void> {
+  await stopBackgroundProducers();
+  for (const { name, work } of cleanups) {
+    try {
+      await work();
+    } catch (error) {
+      reportError(name, error);
+    }
+  }
+}
+
+const installedHosts = new WeakSet<object>();
+
 /**
  * Register the sole pair of process shutdown callbacks.
  *
@@ -33,6 +86,10 @@ export function installShutdownAggregator(
   host: ShutdownHost,
   deps: ShutdownAggregatorDependencies,
 ): void {
+  if (installedHosts.has(host)) {
+    throw new Error("shutdown aggregator 已在该 Server 上注册");
+  }
+  installedHosts.add(host);
   host.onBeforeShutdown(() => {
     deps.beginShutdown();
     deps.clearCharacterReadyFlights();
