@@ -34,7 +34,7 @@ rsync \
   --human-readable \
   --protect-args \
   --verbose \
-  -e "ssh -i $ssh_key -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=15" \
+  -e "ssh -i $ssh_key -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15" \
   "${sources[@]}" \
   "$remote"
 

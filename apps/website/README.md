@@ -42,3 +42,6 @@ npm run export:static -- /absolute/path/to/empty-output
 ```bash
 ./deploy.sh
 ```
+
+首次运行会把服务器主机 key 写入本机 `~/.ssh/known_hosts`；之后如果主机指纹发生变化，SSH 会继续拒绝连接，
+不会静默跳过校验。

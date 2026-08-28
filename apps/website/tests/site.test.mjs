@@ -66,5 +66,6 @@ test("provides a scoped rsync deployment script", async () => {
   assert.match(script, /index\.html/);
   assert.match(script, /style\.css/);
   assert.match(script, /script\.js/);
+  assert.match(script, /StrictHostKeyChecking=accept-new/);
   assert.doesNotMatch(script, /--delete/);
 });
