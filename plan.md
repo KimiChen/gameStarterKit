@@ -351,14 +351,14 @@ README 标明。`plan.md` 是核心优先级真相，`docs/EXTRAFEATURES.md` 是
 
 ## 7. P2：正确性稳定后的增强
 
-### P2-01 建立可重复的性能基线
+### P2-01 建立可重复的性能基线 ✅
 
 状态：已完成当前开发期基线。`tools/client-perf-baseline.ts` 使用固定 seed、Float64 input tape 和
 100/500 entity workload，记录 tick、self lookup、snapshot 分配估算及 Graphics 命令路径；结构投影写入
 `docs/perf/client-ballMove-baseline.json`，`npm run verify:perf` 会重跑并比较 checksum、命令数和估算值。
 计时分布、heap delta 与 Node/平台信息仅用于同机趋势观察，不构成 Cocos/GPU 性能阈值。
 
-### P2-02 风险加权的故障与变异测试
+### P2-02 风险加权的故障与变异测试 ✅
 
 状态：已完成当前风险矩阵。`scripts/fault-matrix.config.json` 登记 2 个 unit 组
 （`server-boundaries`、`client-transitions`）和 2 个 Redis/MySQL integration 组
