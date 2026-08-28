@@ -10,8 +10,8 @@
  * ⚠ ensureLive 内部会抢 `lock:{uid}`：调用方**不得已持有同 uid 的锁**（withUser 体内禁止调用，
  * 否则 localMutex 自等死锁）。relayer 不走 withUser（09·X5），是合法调用方。
  */
-import { LOCK_RENEW_MS, THAW_RATE } from "../infra/config";
-import { currentZoneId, kFence, kNegcacheUser, kUser } from "../infra/keys";
+import { LOCK_RENEW_MS, THAW_RATE, normalizeSId } from "../infra/config";
+import { currentZoneId, kFence, kNegcacheUser, kUser, zoneCtx } from "../infra/keys";
 import { cacheClient, clientFor } from "../infra/redisRoute";
 import { getPool } from "../infra/mysql";
 import type { ResultSetHeader, RowDataPacket } from "../infra/mysql";
@@ -169,8 +169,38 @@ export async function restoreFromArchive(
 
 // ───────────────────── ensureLive（07 契约） ─────────────────────
 
-/** 进程内 singleFlight：同 uid 并发 thaw 合并成一次（08 · 惊群防护第一道）。 */
-const inflight = new Map<string, Promise<void>>();
+/**
+ * 进程内按 `(sId, uid)` 合并慢路径。仅按 uid 做 key 会把第一个区的
+ * AsyncLocalStorage 上下文借给另一个区，进而读错 Redis 前缀或
+ * WebPlatform 角色登记；这里同时固定 key 和执行上下文。
+ */
+export class ZoneSingleFlight<T> {
+  private readonly flights = new Map<string, Promise<T>>();
+
+  run(uid: string, sId: number, task: () => Promise<T>): Promise<T> {
+    // JSON tuple avoids delimiter collisions if a future uid validator permits
+    // control characters.
+    const key = JSON.stringify([sId, uid]);
+    const existing = this.flights.get(key);
+    if (existing) { return existing; }
+
+    // Install the promise before invoking user code. Starting on a microtask
+    // keeps the map visible to re-entrant calls while preserving ALS context.
+    const work = Promise.resolve().then(() => zoneCtx.run({ sId }, task));
+    this.flights.set(key, work);
+    const settle = (): void => {
+      if (this.flights.get(key) === work) { this.flights.delete(key); }
+    };
+    // Observe both outcomes so an ignored/timeout caller cannot turn a failed
+    // underlying flight into an unhandled rejection.
+    void work.then(settle, settle);
+    return work;
+  }
+
+  get size(): number { return this.flights.size; }
+}
+
+const ensureLiveFlights = new ZoneSingleFlight<void>();
 
 /**
  * 确保 user:{uid} 在 Redis 中可用；必要时 thaw（07 契约）。收到 Lua 的 `cold` 后调用。
@@ -183,31 +213,39 @@ const inflight = new Map<string, Promise<void>>();
  *   收敛为不抛，语义等价：都不建档、都放行建号）。
  * - THAW_RATE 超限抛 ThawingError（错误码 THAWING，客户端退避比 IN_PROGRESS 更长）。
  */
-export async function ensureLive(uid: string): Promise<void> {
-  const r = clientFor(uid);
-  if ((await r.exists(kUser(uid))) === 1) {
-    if (!(await archiveRowExists(uid))) { return; } // 快路径：纯热档
-    // live && archive 并存（中断残留或 PITR）→ 掉进慢路径锁内 resolve
-  } else {
-    // 负缓存读点必须在 EXISTS user **之后**（09·F4）：先 EXISTS 保证刚建号的用户
-    // 绝不会被残留负缓存误判成不存在
-    if ((await cacheClient().exists(kNegcacheUser(uid))) === 1) {
-      archiveCounters.negcacheHits++;
-      return; // 已知不存在：跳过锁与 MySQL，语义同 ABSENT-无号（不抛、放行建号）
-    }
+export async function ensureLive(uid: string, sId?: number): Promise<void> {
+  // Legacy callers may omit sId while already inside an ALS request. Explicit
+  // callers (character/relayer paths) never rely on ambient state.
+  const zone = sId === undefined ? currentZoneId() : normalizeSId(sId);
+  if (zone === null) {
+    throw new RangeError(`ensureLive sId 非法：「${String(sId)}」`);
   }
 
-  // singleFlight（同进程同 uid 合并）→ withUserLock（跨实例同 uid 串行）→ 锁内 resolve
-  let p = inflight.get(uid);
-  if (!p) {
-    p = thawSlowPath(uid).finally(() => { inflight.delete(uid); });
-    inflight.set(uid, p);
-  }
-  return p;
+  // Keep the complete fast path in the explicit zone context too. This is
+  // required for callers such as relayer that have no request ALS store.
+  return zoneCtx.run({ sId: zone }, async () => {
+    const r = clientFor(uid);
+    if ((await r.exists(kUser(uid))) === 1) {
+      if (!(await archiveRowExists(uid))) { return; } // 快路径：纯热档
+      // live && archive 并存（中断残留或 PITR）→ 掉进慢路径锁内 resolve
+    } else {
+      // 负缓存读点必须在 EXISTS user **之后**（09·F4）：先 EXISTS 保证刚建号的用户
+      // 绝不会被残留负缓存误判成不存在
+      if ((await cacheClient().exists(kNegcacheUser(uid))) === 1) {
+        archiveCounters.negcacheHits++;
+        return; // 已知不存在：跳过锁与 MySQL，语义同 ABSENT-无号（不抛、放行建号）
+      }
+    }
+
+    // singleFlight（同区同 uid 合并）→ withUserLock（跨实例同 uid 串行）→ 锁内 resolve
+    return ensureLiveFlights.run(uid, zone, () => thawSlowPath(uid, zone));
+  });
 }
 
-async function thawSlowPath(uid: string): Promise<void> {
-  await withUserLock(uid, async (fence) => {
+async function thawSlowPath(uid: string, sId: number): Promise<void> {
+  // `ensureLiveFlights` already wraps this callback, but retaining an explicit
+  // run here makes the invariant hold for future internal callers as well.
+  await zoneCtx.run({ sId }, () => withUserLock(uid, async (fence) => {
     const st = await resolve(uid); // 锁内判定（08）
     switch (st.kind) {
       case "LIVE": {
@@ -222,7 +260,6 @@ async function thawSlowPath(uid: string): Promise<void> {
         // 「本区建过角没」判据统一走 WebPlatform character registry；所有 sId 使用同一语义。
         // 有登记 + 热档冷档全无 = 真实数据丢失（拒建空档，09·F4）；无登记 = 未在本区建过角 → 放行建角。
         // ⚠ user_archive 尚全局(archive 步再 per-zone 化)，冻结跨区完整正确性待 archive 步（门控多区+freeze）。
-        const sId = currentZoneId();
         // WebPlatform 不可达时让异常向上冒泡：F4 不能把基础设施故障猜成「没建过角」。
         if (await webPlatformClient.hasCharacter(uid, sId)) {
           archiveCounters.userDataLost++;
@@ -242,5 +279,5 @@ async function thawSlowPath(uid: string): Promise<void> {
         return;
       }
     }
-  }, { renewMs: LOCK_RENEW_MS }); // thaw 是全系统最慢操作之一，5s 锁盖不住：开看门狗（09·L6）
+  }, { renewMs: LOCK_RENEW_MS })); // thaw 是全系统最慢操作之一，5s 锁盖不住：开看门狗（09·L6）
 }

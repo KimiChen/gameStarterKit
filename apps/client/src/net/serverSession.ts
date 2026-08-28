@@ -1,27 +1,30 @@
 /**
- * 选服会话状态（对应原项目 launcher.serverList/currentServer）——当前选中区服 + serverList 哈希。
+ * 选服会话状态（对应原项目 launcher.serverList/currentServer）——当前选中区服。
  *
  * 大厅（登录/选服，view 层）写、Main（进房）读；纯状态模块，只 import shared 类型（无 cc/fairygui）。
  * ⚠ 区服 = 独立实例：游戏 HTTP/Colyseus 连接使用目录返回的 gameHttpUrl，
  * gameWsUrl 作为明确的 WS 地址一并保存在会话中，不再从旧 wsUrl 推导。
  */
 import { isServerEnterable } from "../logic/areaDirectory";
-import type { WebPlatformAreaListResponse, WebPlatformAreaServer } from "../shared/index";
+import {
+  validateWebPlatformAreaListResponse,
+  type WebPlatformAreaListResponse,
+  type WebPlatformAreaServer,
+} from "../shared/index";
 
 interface ServerSnapshot {
   readonly list: WebPlatformAreaListResponse | null;
   readonly current: WebPlatformAreaServer | null;
-  readonly hash: string;
 }
 
-// Keep the list, hash, and selection in one replaceable snapshot.  Consumers
-// must never observe a freshly fetched list paired with an old hash/selection.
-let snapshot: ServerSnapshot = { list: null, current: null, hash: "" };
+// Keep the list and selection in one replaceable snapshot. Consumers must
+// never observe a freshly fetched list paired with an old selection.
+let snapshot: ServerSnapshot = { list: null, current: null };
 
 /**
  * The directory response crosses an async/network boundary.  Keep an owned
  * copy so a view retaining the response (or mutating a getter result) cannot
- * split `list`, `current`, and `hash` into a mixed-generation snapshot.
+ * split `list`, `current`, and the selected server into a mixed-generation snapshot.
  */
 function cloneServer(server: WebPlatformAreaServer): WebPlatformAreaServer {
   return { ...server };
@@ -39,9 +42,13 @@ function cloneSnapshotList(list: WebPlatformAreaListResponse | null): WebPlatfor
   return list ? cloneList(list) : null;
 }
 
-/** 存 serverList（拉取后）+ 记录一致性哈希（连服/踢人校验用）。 */
-export function setServerList(list: WebPlatformAreaListResponse): void {
-  const ownedList = cloneList(list);
+/** 原子替换 serverList 与当前选中区（拉取成功后调用）。 */
+export function setServerList(input: unknown): void {
+  // Keep this module's public write boundary defensive even when a caller has
+  // a static `WebPlatformAreaListResponse` type. The validator returns an owned
+  // normalized copy; assignment happens only after validation succeeds, so a
+  // malformed refresh cannot poison the previous known-good snapshot.
+  const ownedList = validateWebPlatformAreaListResponse(input);
   const previousId = snapshot.current?.serverId;
   const current = (previousId === undefined
     ? null
@@ -50,7 +57,6 @@ export function setServerList(list: WebPlatformAreaListResponse): void {
   snapshot = {
     list: ownedList,
     current: current ? cloneServer(current) : null,
-    hash: ownedList.hash,
   };
 }
 
@@ -60,12 +66,7 @@ export function getServerList(): WebPlatformAreaListResponse | null {
 
 /** 目录重拉前清掉旧地址；失败时绝不静默沿用未知的新旧拓扑。 */
 export function clearServerList(): void {
-  snapshot = { list: null, current: null, hash: "" };
-}
-
-/** WebPlatform 目录一致性 hash（进服时可随连接参数带上）。 */
-export function getListHash(): string {
-  return snapshot.hash;
+  snapshot = { list: null, current: null };
 }
 
 /** 选服（选服界面点区服 / 默认选中时调用）。 */

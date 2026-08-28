@@ -11,7 +11,7 @@ import {
     type S2CPayloadMap,
 } from "../../shared/index";
 import { RoomClient } from "../RoomClient";
-import { getCurrentServer, getListHash } from "../serverSession";
+import { getCurrentServer } from "../serverSession";
 
 type MessageOff = () => void;
 
@@ -67,7 +67,6 @@ export function createBallMoveRoomJoiner(
             const ownership = client.joinGame({
                 token: getToken(),
                 sId: server.serverId,
-                listHash: getListHash(),
             }, signal);
             return {
                 ready: ownership.ready.then((room) => createBallMoveRoom(room, client)),

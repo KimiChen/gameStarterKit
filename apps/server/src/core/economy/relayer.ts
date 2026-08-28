@@ -113,7 +113,7 @@ export async function relayerTick(lease: SingletonLease): Promise<number> {
         await zoneCtx.run({ sId: serverId }, async () => {
           let r = await redisApply(row.user_id, row.op_id, row.effect); // stringify 在 redisApply 内（09·DB8）
           if (r === "cold") {
-            await ensureLive(row.user_id);                              // 先解冻再重试（09·X5）
+            await ensureLive(row.user_id, serverId);                    // 先解冻再重试（09·X5）
             r = await redisApply(row.user_id, row.op_id, row.effect);
           }
           if (r !== "ok" && r !== "dup") { throw new Error(`apply=${r}`); }

@@ -105,8 +105,10 @@ export const K_STREAM_MATCH = `${G}stream:match`;
 export const K_STREAM_MATCH_V2 = `${G}stream:match:v2:{${K_STREAM_MATCH}}`;
 /** 邮件唤醒 STREAM（10·M5，跨节点消费）。可靠流：⛔ 禁 MAXLEN，XTRIM MINID 按已投递位点裁（09·K6）。 */
 export const K_STREAM_MAILWAKE = `${G}stream:mailwake`;
-/** 踢人流（DUAL_MODE §2.3 / M12d）：coord Redis 上广播 `{uid, reason[, exceptHash]}` 触发各节点自筛踢在线连接。
- *  `exceptHash` = 顶号判别位（跳过持新登录态的连接，⛔ 防迟到投递自踢）。
+/** 踢人流（DUAL_MODE §2.3 / M12d）：coord Redis 上广播
+ * `{uid, reason[, exceptHash, issuedAt, sId]}` 触发各节点自筛踢在线连接。
+ *  `exceptHash` = 顶号判别位（tokenHashOf 生成的 64 位小写 hex，跳过持新登录态的连接，⛔ 防迟到投递自踢）；
+ *  `issuedAt` + `sId` 是顶号事件的单调栅栏。缺 `sId` 的封号/撤销事件保持账号级踢人语义。
  *  **best-effort、无 ack**（权威撤销在 WebPlatform；⛔ 漏踢无自动收敛，送达保证走 GM `/admin/kick`）。⛔ 禁 MAXLEN，走 XTRIM MINID。 */
 export const K_STREAM_KICK = `${G}stream:kick`;
 /**

@@ -32,6 +32,7 @@ import { closeMysql } from "../../src/core/infra/mysql";
 import { LobbyRoom } from "../../src/websocket/LobbyRoom";
 import { stopMailWakeLoop } from "../../src/websocket/push";
 import { assertRedisUp, cleanupUser, sleep, testUid, issueSession } from "./helpers";
+import { exerciseFaultPoint } from "../faultMatrix";
 
 let colyseus: ColyseusTestServer;
 const uids: string[] = [];
@@ -126,7 +127,7 @@ test("LobbyRoom sId 先做运行时规范化：承载全部区时畸形值仍拒
   // 房间入口必须使用 shared exact-key/runtime contract，而不是只挑几个字段读取。
   const malformed: readonly [unknown, number][] = [
     [{ v: PROTOCOL_VERSION, extra: true }, ErrorCode.BadRequest],
-    [{ v: PROTOCOL_VERSION, listHash: "" }, ErrorCode.BadRequest],
+    [{ v: PROTOCOL_VERSION, unexpected: true }, ErrorCode.BadRequest],
     [{ v: PROTOCOL_VERSION, token: "" }, ErrorCode.TokenExpired],
   ];
   for (const [options, code] of malformed) {
@@ -139,7 +140,7 @@ test("LobbyRoom sId 先做运行时规范化：承载全部区时畸形值仍拒
 
   const { uid, token } = await makeAcct("lobby-sid-valid", 1);
   const auth = await LobbyRoom.onAuth(
-    token, { v: PROTOCOL_VERSION, sId: 1, listHash: "areas-hash" }, undefined as never,
+    token, { v: PROTOCOL_VERSION, sId: 1 }, undefined as never,
   );
   assert.deepEqual(auth, { userId: uid, token, sId: 1 }, "合法整数须按原值完成权威鉴权");
 });
@@ -222,4 +223,31 @@ test("GameRoom 撮合按区隔离：不同 sId ⛔ 不共房；同 sId 才合流
   } finally {
     await Promise.all([r1.leave(), r2.leave(), r3.leave()].map((p) => p.catch(() => {})));
   }
+});
+
+test("fault matrix：character ready 超时在 onJoin 边界拒绝并注销在线登记", async () => {
+  await exerciseFaultPoint("character-ready-timeout", async () => {
+    let unregistered = 0;
+    const room = new LobbyRoom({
+      ensureCharacterReady: async () => { throw new Error("injected character-ready timeout"); },
+      verifySession: async () => {},
+      registerOnline: () => ({ token: Symbol("fault-registration") }),
+      unregisterOnline: () => { unregistered++; },
+      tokenHashOf: () => "fault-token-hash",
+      loadFields: async () => ({}),
+      setOnlineGuild: () => {},
+      isOnlineRegistrationCurrent: () => true,
+    } as any);
+    const client = {
+      auth: { userId: "fault-ready", token: "fault-token", sId: 1 },
+      sessionId: "fault-session",
+      leave: () => {},
+    } as any;
+
+    await assert.rejects(
+      room.onJoin(client),
+      (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.CharCreateFailed)),
+    );
+    assert.equal(unregistered, 1, "ready 失败必须注销本次在线登记");
+  });
 });

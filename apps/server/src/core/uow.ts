@@ -5,7 +5,7 @@
  * 改写，把 A 的改动 flush 进 B；⛔ 也不用 Proxy 魔术拦截——`set()` 显式记脏。
  * `lock → load → mutate → commit / rollback` 是单一提交边界：没 commit 就没写，天然不落。
  */
-import { kUser } from "./infra/keys";
+import { currentZoneId, kUser } from "./infra/keys";
 import { clientFor } from "./infra/redisRoute";
 import { CAS_HSET, evalshaWithReload } from "./infra/redisScripts";
 import { ColdUserError, StaleFenceError } from "./errors";
@@ -61,7 +61,7 @@ export async function withUser<T>(uid: string, fn: (uow: UnitOfWork) => Promise<
   } catch (e) {
     if (!(e instanceof ColdUserError)) { throw e; }
     const { ensureLive } = await import("./archive/thaw"); // 动态 import 斩静态环（thaw→locks→…）
-    await ensureLive(uid);
+    await ensureLive(uid, currentZoneId());
     return withUserAttempt(uid, fn);
   }
 }

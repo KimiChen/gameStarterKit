@@ -175,6 +175,20 @@ test("serverSession：目录输入和 getter 都是隔离副本，不会拆散 l
   assert.deepEqual(getServerList()?.servers.map((server) => server.serverId), [70, 80]);
 });
 
+test("serverSession：写入点拒绝恶意目录且保留上一份完整快照", () => {
+  const known = areaRes([srv(81), srv(82)], [82]);
+  setServerList(known);
+  const before = getServerList();
+  const selectedBefore = getCurrentServer();
+
+  assert.throws(
+    () => setServerList({ ...known, servers: [{ ...srv(81), gameHttpUrl: "javascript:alert(1)" }] }),
+    /WIRE|HTTP|URL|response/i,
+  );
+  assert.deepEqual(getServerList(), before, "非法刷新不得替换目录快照");
+  assert.deepEqual(getCurrentServer(), selectedBefore, "非法刷新不得改变当前区");
+});
+
 test("Area 状态展示：Public 字符串枚举稳定映射现有 FGUI 图标", () => {
   assert.equal(areaStatusIconUrl("smooth"), "ui://Dynamic_Login/login_status_1");
   assert.equal(areaStatusIconUrl("busy"), "ui://Dynamic_Login/login_status_2");

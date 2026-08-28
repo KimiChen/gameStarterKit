@@ -15,12 +15,15 @@ import { crc32 } from "node:zlib";
 import Redis from "ioredis";
 import { parse as parseYaml } from "yaml";
 import { BUCKETS, REDIS_CACHE_URL, REDIS_COORD_URL, REDIS_DURABLE_URL, REDIS_ROUTE_FILE } from "./config";
+import { assertAdmissionOpen } from "./lifecycle";
 
 interface RouteEntry { url: string; range: [number, number] }
 interface RouteTable { durable: RouteEntry[]; cacheUrl: string }
 
 let table: RouteTable | null = null;
-const clients = new Map<string, Redis>();
+let clients = new Map<string, Redis>();
+let redisClosing = false;
+let redisClosePromise: Promise<void> | null = null;
 
 /**
  * Validate a route URL before any ioredis client is constructed.  Keeping this
@@ -52,6 +55,13 @@ export function validateRedisUrl(raw: unknown, label: string): string {
 
 function loadTable(): RouteTable {
   if (table) { return table; }
+  if (redisClosing) {
+    throw new Error("redis-route: Redis 正在关闭，拒绝创建新路由");
+  }
+  // Once process admission is closed, a late handler may still read through
+  // an already-created route, but it must not create a fresh route generation
+  // after the current one has been drained.
+  assertAdmissionOpen();
   const file = REDIS_ROUTE_FILE();
   if (!file) {
     table = {
@@ -105,10 +115,16 @@ function loadTable(): RouteTable {
 function clientOf(url: string): Redis {
   validateRedisUrl(url, "client");
   let c = clients.get(url);
-  if (!c) {
-    c = new Redis(url, { lazyConnect: false });
-    clients.set(url, c);
+  if (c) { return c; }
+  if (redisClosing) {
+    throw new Error("redis-route: Redis 正在关闭，拒绝创建新连接");
   }
+  // Existing clients remain usable while rooms wind down.  Only creation of
+  // a new client is gated, so a late operation cannot resurrect Redis after
+  // the shutdown close has completed.
+  assertAdmissionOpen();
+  c = new Redis(url, { lazyConnect: false });
+  clients.set(url, c);
   return c;
 }
 
@@ -154,8 +170,42 @@ export function coordClient(): Redis {
 }
 
 /** 测试/停服：断开全部连接并重置路由表（下次按新 env 重建）。 */
-export async function closeRedis(): Promise<void> {
-  await Promise.all([...clients.values()].map((c) => c.quit().catch(() => c.disconnect())));
-  clients.clear();
+export function closeRedis(): Promise<void> {
+  if (redisClosePromise) { return redisClosePromise; }
+
+  // Detach this generation before awaiting network I/O. Any future restart
+  // (after an explicit lifecycle reset) gets a different map/table identity,
+  // so this close can never clear those resources on completion.
+  const closingClients = clients;
+  const closingTable = table;
+  clients = new Map<string, Redis>();
   table = null;
+  redisClosing = true;
+
+  const run = (async () => {
+    await Promise.all([...closingClients.values()].map(async (c) => {
+      // Keep the fallback inside an async try/catch: adapters and test doubles
+      // are allowed to throw synchronously from `quit()`, which must not abort
+      // the close pass before the remaining clients are visited.
+      try {
+        await c.quit();
+      } catch {
+        c.disconnect();
+      }
+    }));
+    closingClients.clear();
+    // Keep the identity guard even though normal callers are gated above; it
+    // protects embedded test harnesses that deliberately reopen during close.
+    if (clients === closingClients) { clients.clear(); }
+    if (table === closingTable) { table = null; }
+  })();
+  let closePromise!: Promise<void>;
+  closePromise = run.finally(() => {
+    if (redisClosePromise === closePromise) {
+      redisClosePromise = null;
+      redisClosing = false;
+    }
+  });
+  redisClosePromise = closePromise;
+  return closePromise;
 }
