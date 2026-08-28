@@ -15,26 +15,26 @@ export class LoginView extends FguiView {
   // #endregion AUTO REQUIRED
 
   // #region AUTO FIELD DONT CHANGE
-  private ld_logo!: GLoader;
-  private btn_copy!: GButton;
-  private btn_ageTip!: GButton;
-  private btn_musicon!: GButton;
-  private btn_musicoff!: GButton;
-  private btn_notice!: GButton;
-  private btn_account!: GButton;
-  private go_topBtns!: GGroup;
-  private go_top!: GGroup;
-  private txt_progress!: GTextField;
-  private pg_loading!: GProgressBar;
-  private go_bottom!: GGroup;
-  private go_container!: GComponent;
-  private txt_privacy!: GRichTextField;
-  private btn_select!: GButton;
-  private ld3_testAnim!: GLoader3D;
-  private btn_login!: GButton;
-  private btn_server!: GButton;
-  private btn_test!: GButton;
-  private btn_clearDataCache!: GButton;
+  protected ld_logo!: GLoader;
+  protected btn_copy!: GButton;
+  protected btn_ageTip!: GButton;
+  protected btn_musicon!: GButton;
+  protected btn_musicoff!: GButton;
+  protected btn_notice!: GButton;
+  protected btn_account!: GButton;
+  protected go_topBtns!: GGroup;
+  protected go_top!: GGroup;
+  protected txt_progress!: GTextField;
+  protected pg_loading!: GProgressBar;
+  protected go_bottom!: GGroup;
+  protected go_container!: GComponent;
+  protected txt_privacy!: GRichTextField;
+  protected btn_select!: GButton;
+  protected ld3_testAnim!: GLoader3D;
+  protected btn_login!: GButton;
+  protected btn_server!: GButton;
+  protected btn_test!: GButton;
+  protected btn_clearDataCache!: GButton;
   // #endregion AUTO FIELD
 
   protected bind(): void {

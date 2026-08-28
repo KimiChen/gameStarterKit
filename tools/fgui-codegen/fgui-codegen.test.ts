@@ -57,11 +57,11 @@ test("类型推断:fairygui-cc 类名;tge_ 是 GButton;jb_ 是 GComponent;无前
 test("codegen:AUTO FIELD 块只含有前缀的元素(普通 group 跳过)", () => {
   const block = emitAutoFieldBlock(bindingFields(parseFguiComponent(OPPONENT_HUD_XML)));
   assert.ok(block.includes("// #region AUTO FIELD DONT CHANGE"));
-  assert.ok(block.includes("private txt_title!: GTextField;"));
-  assert.ok(block.includes("private lst_rows!: GList;"));
-  assert.ok(block.includes("private btn_ready!: GButton;"));
-  assert.ok(block.includes("private ld_icon!: GLoader;"));
-  assert.ok(block.includes("private go_border!: GGraph;"));
+  assert.ok(block.includes("protected txt_title!: GTextField;"));
+  assert.ok(block.includes("protected lst_rows!: GList;"));
+  assert.ok(block.includes("protected btn_ready!: GButton;"));
+  assert.ok(block.includes("protected ld_icon!: GLoader;"));
+  assert.ok(block.includes("protected go_border!: GGraph;"));
   assert.ok(!block.includes("frameGroup"), "普通 group 不声明字段");
 });
 
@@ -174,7 +174,7 @@ test("region 重写:契约变更时区块更新、区块外业务代码一字不
   const regen = regenerateViewSource(withBiz, parseFguiComponent(xml2), HUD_OPTS);
   assert.ok(regen.includes("apply(rows: string[]): void"), "手写业务方法保全");
   assert.ok(regen.includes('this.txt_score = this.getChild<GTextField>("txt_score");'), "新元素进 BIND 区块");
-  assert.ok(regen.includes("private txt_score!: GTextField;"), "新元素进 FIELD 区块");
+  assert.ok(regen.includes("protected txt_score!: GTextField;"), "新元素进 FIELD 区块");
   assert.ok(regen.includes('"name":"txt_score"'), "新元素进 REQUIRED 契约");
   // 再跑一遍仍幂等
   assert.strictEqual(regenerateViewSource(regen, parseFguiComponent(xml2), HUD_OPTS), regen);

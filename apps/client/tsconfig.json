@@ -8,9 +8,9 @@
   "compilerOptions": {
     "strict": true,
     "noEmit": true,
-    // FGUI codegen may bind a designer control before its behavior is enabled;
-    // keep those private contract fields type-checked without dead-field noise.
-    "noUnusedLocals": false,
+    // FGUI AUTO fields are protected by codegen, so the legacy probe can keep
+    // the shared strict noUnusedLocals contract for all source code.
+    "noUnusedLocals": true,
     // 钉 ES2017（铁律 4：客户端下限）——⛔ 不放宽到 ES2020：无头 CI 会放行 Creator 侧标红、
     // 老 JSCore 运行时才崩的 API（Object.fromEntries / Promise.allSettled / matchAll…）
     "target": "ES2017",

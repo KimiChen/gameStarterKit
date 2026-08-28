@@ -14,8 +14,8 @@ export class HomeView extends FguiView {
   // #endregion AUTO REQUIRED
 
   // #region AUTO FIELD DONT CHANGE
-  private txt_userId!: GTextField;
-  private btn_enter!: GButton;
+  protected txt_userId!: GTextField;
+  protected btn_enter!: GButton;
   // #endregion AUTO FIELD
 
   protected bind(): void {

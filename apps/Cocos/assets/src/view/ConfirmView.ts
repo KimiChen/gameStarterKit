@@ -15,8 +15,8 @@ export class ConfirmView extends FguiView {
   // #endregion AUTO REQUIRED
 
   // #region AUTO FIELD DONT CHANGE
-  private go_noBtn!: GGroup;
-  private go_yesBtn!: GGroup;
+  protected go_noBtn!: GGroup;
+  protected go_yesBtn!: GGroup;
   // #endregion AUTO FIELD
 
   protected bind(): void {

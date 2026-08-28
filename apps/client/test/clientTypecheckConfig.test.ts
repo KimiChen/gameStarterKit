@@ -101,8 +101,8 @@ test("client legacy tsconfig covers every source TypeScript file", () => {
   const legacy = parseClientConfig(LEGACY_CONFIG_PATH);
   assert.equal(legacy.options.strict, true, "legacy probe 不得关闭 strict");
   assert.equal(legacy.options.noEmit, true, "legacy probe 必须保持 noEmit");
-  assert.equal(legacy.options.noUnusedLocals, false,
-    "legacy probe 只允许关闭 FGUI AUTO 字段的 noUnusedLocals 噪声");
+  assert.equal(legacy.options.noUnusedLocals, true,
+    "legacy probe 必须保持 noUnusedLocals，FGUI 字段由 codegen 的 protected 声明隔离");
 
   const include = legacy.config.include;
   assert.ok(Array.isArray(include) && include.includes("src/**/*.ts"),

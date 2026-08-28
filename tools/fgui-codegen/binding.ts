@@ -91,9 +91,13 @@ export function nestedBindingFields(comp: FguiComponent): BindingField[] {
   return out;
 }
 
-/** 产出 AUTO FIELD 块（codegen 管理区，人勿手改）。 */
+/**
+ * 产出 AUTO FIELD 块（codegen 管理区，人勿手改）。字段用 protected 而非
+ * private：设计稿可以包含当前页面暂未使用的结构契约字段，同时保持
+ * noUnusedLocals 对业务代码的严格检查，并允许 View 子类扩展这些绑定。
+ */
 export function emitAutoFieldBlock(fields: BindingField[]): string {
-  const lines = fields.map((f) => `  private ${f.name}!: ${f.tsType};`);
+  const lines = fields.map((f) => `  protected ${f.name}!: ${f.tsType};`);
   return ["  // #region AUTO FIELD DONT CHANGE", ...lines, "  // #endregion AUTO FIELD"].join("\n");
 }
 

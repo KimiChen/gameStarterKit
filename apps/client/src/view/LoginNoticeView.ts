@@ -15,12 +15,12 @@ export class LoginNoticeView extends FguiView {
   // #endregion AUTO REQUIRED
 
   // #region AUTO FIELD DONT CHANGE
-  private btn_mask!: GButton;
-  private txt_title!: GTextField;
-  private jb_tabbar!: GComponent;
-  private txt_content!: GTextField;
-  private tge_tip!: GButton;
-  private btn_close!: GButton;
+  protected btn_mask!: GButton;
+  protected txt_title!: GTextField;
+  protected jb_tabbar!: GComponent;
+  protected txt_content!: GTextField;
+  protected tge_tip!: GButton;
+  protected btn_close!: GButton;
   // #endregion AUTO FIELD
 
   protected bind(): void {

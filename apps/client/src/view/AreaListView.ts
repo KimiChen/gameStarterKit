@@ -17,15 +17,15 @@ export class AreaListView extends FguiView {
   // #endregion AUTO REQUIRED
 
   // #region AUTO FIELD DONT CHANGE
-  private btn_mask!: GButton;
-  private lst_server!: GList;
-  private lst_my!: GList;
-  private jb_tabbar!: GList;
-  private ld_status2!: GLoader;
-  private ld_status1!: GLoader;
-  private ld_status9!: GLoader;
-  private txt_title!: GTextField;
-  private btn_close!: GButton;
+  protected btn_mask!: GButton;
+  protected lst_server!: GList;
+  protected lst_my!: GList;
+  protected jb_tabbar!: GList;
+  protected ld_status2!: GLoader;
+  protected ld_status1!: GLoader;
+  protected ld_status9!: GLoader;
+  protected txt_title!: GTextField;
+  protected btn_close!: GButton;
   // #endregion AUTO FIELD
 
   protected bind(): void {

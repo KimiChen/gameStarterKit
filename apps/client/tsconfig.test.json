@@ -8,10 +8,9 @@
     "moduleResolution": "Bundler",
     "lib": ["ES2022", "DOM"],
     "types": ["node"],
-    // AUTO binding fields are a structural contract: a page may intentionally
-    // expose a designer control before its behavior is enabled. Keep all type
-    // errors strict while allowing those contract-only private fields.
-    "noUnusedLocals": false,
+    // AUTO binding fields are protected by codegen; retain the strict unused
+    // declaration check for business code as well as the structural contract.
+    "noUnusedLocals": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
