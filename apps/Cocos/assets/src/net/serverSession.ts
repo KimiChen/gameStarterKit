@@ -81,6 +81,13 @@ export function getCurrentServer(): WebPlatformAreaServer | null {
   return snapshot.current ? cloneServer(snapshot.current) : null;
 }
 
+/** Return the explicitly advertised WS endpoint for the selected zone. */
+export function getCurrentGameWsUrl(): string {
+  const current = snapshot.current;
+  if (!current) throw new Error("[serverSession] 尚未选择区服，不能建立 WS 连接");
+  return current.gameWsUrl;
+}
+
 /**
  * 默认选中区服（对应原项目 init 后 currentServer 的默认值）：
  * 最近登录服（ul 顺序，且仍在 al 中、可进入）优先，否则第一个可进入服（isServerEnterable：

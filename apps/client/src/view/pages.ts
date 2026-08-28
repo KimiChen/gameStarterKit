@@ -30,12 +30,20 @@ import {
   setSession,
   type ReturnToLoginReason,
 } from "../net/session";
-import { ForceLogoutMessage, ForceLogoutReason, UserRpc, joinErrText, type IUserView } from "../shared/index";
+import {
+  ForceLogoutMessage,
+  ForceLogoutReason,
+  UserRpc,
+  joinErrText,
+  naturalDayIndex,
+  type IUserView,
+} from "../shared/index";
 import { isServerEnterable } from "../logic/areaDirectory";
 import { fetchAreaList } from "../net/http/area";
 import { fetchNotices } from "../net/http/notice";
 import {
   chooseServer,
+  getCurrentGameWsUrl,
   getCurrentServer,
   setServerList,
   getServerList,
@@ -43,6 +51,7 @@ import {
 import type { WebPlatformAreaServer } from "../shared/index";
 
 const NOTICE_DONT_REMIND_DATE_KEY = "game.notice.dont-remind-date";
+const BUSINESS_TIMEZONE_OFFSET_MINUTES = 8 * 60;
 
 /** 本地开发登录身份（dev-login 的 devKey：同 key 恒同账号，换号 = 换 key）。
  *  微信侧接入后此处换 wx.login 取 code → wxLogin(code)。 */
@@ -288,19 +297,16 @@ export function createPageSessionScope(): PageSessionScope {
   return scope;
 }
 
-function localDateStamp(date = new Date()): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 function readDontRemindToday(): boolean {
   try {
     return sys.localStorage.getItem(NOTICE_DONT_REMIND_DATE_KEY) === localDateStamp();
   } catch {
     return false;
   }
+}
+
+function localDateStamp(date = new Date()): string {
+  return String(naturalDayIndex(date.getTime(), BUSINESS_TIMEZONE_OFFSET_MINUTES));
 }
 
 function writeDontRemindToday(value: boolean): void {
@@ -470,7 +476,7 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
               join: async (accessToken, signal) => {
                 logic.onProgress(0.6, "正在进入大厅…");
                 // 区服 = 独立实例：HTTP 与 Colyseus 端点分别消费目录字段，不做地址猜测。
-                WebSocketClient.inst.init(cur.gameWsUrl);
+                WebSocketClient.inst.init(getCurrentGameWsUrl());
                 // WebPlatform 契约叫 serverId；游戏服现有 Colyseus join option 仍叫 sId，在边界显式转换。
                 await WebSocketClient.inst.join(accessToken, { sId: cur.serverId }, signal);
                 if (!isFlightActive(flight) || !context.isActive()

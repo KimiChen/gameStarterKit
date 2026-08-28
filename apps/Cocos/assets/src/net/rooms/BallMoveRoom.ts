@@ -11,7 +11,7 @@ import {
     type S2CPayloadMap,
 } from "../../shared/index";
 import { RoomClient } from "../RoomClient";
-import { getCurrentServer } from "../serverSession";
+import { getCurrentGameWsUrl, getCurrentServer } from "../serverSession";
 
 type MessageOff = () => void;
 
@@ -63,7 +63,7 @@ export function createBallMoveRoomJoiner(
         join(signal) {
             const server = getCurrentServer();
             if (!server) throw new Error("[ballMove] 尚未选择区服，不能进入战斗");
-            client.init(server.gameWsUrl);
+            client.init(getCurrentGameWsUrl());
             const ownership = client.joinGame({
                 token: getToken(),
                 sId: server.serverId,

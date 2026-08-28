@@ -10,12 +10,15 @@ import { LoginNoticeLogic } from "../src/logic/page/LoginNoticeLogic";
 import { LoginLogic, runAuthenticatedLoginFlow } from "../src/logic/page/LoginLogic";
 import { ConfirmLogic } from "../src/logic/page/ConfirmLogic";
 import {
+  clearServerList,
   chooseServer,
+  getCurrentGameWsUrl,
   getCurrentServer,
   getServerList,
   pickDefaultServer,
   setServerList,
 } from "../src/net/serverSession";
+import { naturalDayIndex } from "../src/shared/index";
 import { isServerEnterable } from "../src/logic/areaDirectory";
 import { areaStatusIconUrl } from "../src/view/areaPresentation";
 import type { WebPlatformAreaListResponse, WebPlatformAreaServer } from "../src/shared/index";
@@ -188,6 +191,23 @@ test("serverSession：写入点拒绝恶意目录且保留上一份完整快照"
   );
   assert.deepEqual(getServerList(), before, "非法刷新不得替换目录快照");
   assert.deepEqual(getCurrentServer(), selectedBefore, "非法刷新不得改变当前区");
+});
+
+test("serverSession：WS accessor 只取当前快照，清理入口可恢复空态", () => {
+  const list = areaRes([{ ...srv(91), gameWsUrl: "wss://zone-91.example" }]);
+  setServerList(list);
+  assert.equal(getCurrentGameWsUrl(), "wss://zone-91.example");
+  clearServerList();
+  assert.equal(getServerList(), null);
+  assert.equal(getCurrentServer(), null);
+  assert.throws(() => getCurrentGameWsUrl(), /尚未选择区服/);
+});
+
+test("公告日期键：使用 shared UTC+8 naturalDayIndex，不随宿主本地时区漂移", () => {
+  const beforeMidnightUtc = new Date("2026-08-28T15:59:59.999Z");
+  const atMidnightUtc8 = new Date("2026-08-28T16:00:00.000Z");
+  assert.equal(naturalDayIndex(beforeMidnightUtc.getTime(), 480), 20693);
+  assert.equal(naturalDayIndex(atMidnightUtc8.getTime(), 480), 20694);
 });
 
 test("Area 状态展示：Public 字符串枚举稳定映射现有 FGUI 图标", () => {

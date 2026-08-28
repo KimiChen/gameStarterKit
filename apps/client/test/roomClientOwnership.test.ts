@@ -11,8 +11,10 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { C2S, RoomName, PROTOCOL_VERSION, S2C, type IGameRoomState, type IPlayerState } from "../src/shared/index";
 import { RoomClient } from "../src/net/RoomClient";
-import { createBallMoveRoom } from "../src/net/rooms/BallMoveRoom";
+import { createBallMoveRoom, createBallMoveRoomJoiner } from "../src/net/rooms/BallMoveRoom";
+import { clearServerList, setServerList } from "../src/net/serverSession";
 import { onBattleLost } from "../src/net/session";
+import type { WebPlatformAreaListResponse } from "../src/shared/index";
 
 interface Deferred<T> {
   readonly promise: Promise<T>;
@@ -502,6 +504,42 @@ test("BallMoveRoom capability：切到后来 room 后，迟到消息/Schema/发�
   offPlayers();
   assert.equal(messages.size, 0);
   assert.deepEqual(playerCallbacks, {});
+});
+
+test("BallMoveRoom joiner：连接端点直接取当前区的 gameWsUrl", async () => {
+  const directory: WebPlatformAreaListResponse = {
+    isOps: false,
+    hash: "ws-contract",
+    myServerIds: [92],
+    servers: [{
+      serverId: 92,
+      name: "区92",
+      tag: "normal",
+      status: "smooth",
+      openTime: 1,
+      gameHttpUrl: "https://http-zone-92.example",
+      gameWsUrl: "wss://ws-zone-92.example",
+    }],
+  };
+  setServerList(directory);
+  const calls: { endpoint?: string; options?: Record<string, unknown> } = {};
+  const room = { roomId: "room-92", sessionId: "self-92" };
+  const fakeClient = {
+    init(endpoint: string) { calls.endpoint = endpoint; },
+    joinGame(options: Record<string, unknown>) {
+      calls.options = options;
+      return { ready: Promise.resolve(room), leave: async () => {} };
+    },
+  } as unknown as RoomClient;
+  try {
+    const ownership = createBallMoveRoomJoiner(fakeClient).join(new AbortController().signal);
+    assert.equal((await ownership.ready).roomId, "room-92");
+    assert.equal(calls.endpoint, "wss://ws-zone-92.example");
+    assert.deepEqual(calls.options, { token: "", sId: 92 });
+    await ownership.leave();
+  } finally {
+    clearServerList();
+  }
 });
 
 test("Main：只装配 registry/controller，不再内联 RoomClient、ECS 或玩法回调", () => {
