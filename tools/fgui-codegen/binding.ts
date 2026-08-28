@@ -172,8 +172,8 @@ export function regenerateViewSource(source: string, comp: FguiComponent, opts: 
 /**
  * 生成一个 `FguiView` 子类脚手架：四个 AUTO 区块 + bind() 骨架。
  * 业务逻辑（apply/onEvent）写在 AUTO 区块外；此后结构变更一律走 regenerateViewSource
- * 幂等重写，⛔ 不重新生成整文件覆盖业务代码。生成物放 typecheck 排除清单（依赖
- * fairygui-cc，Creator 侧验）。
+ * 幂等重写，⛔ 不重新生成整文件覆盖业务代码。生成物由两个 typecheck probe
+ * 通过各自的最小 FairyGUI 桩自动纳入；真实引擎仍由 Creator 侧验。
  */
 export function emitFguiViewScaffold(comp: FguiComponent, opts: ScaffoldOpts): string {
   return [

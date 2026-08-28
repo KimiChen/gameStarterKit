@@ -34,6 +34,7 @@ npm run codegen:fgui -- <Pkg> <Comp>       # 生成/幂等重写 view/<Comp>View
 `scripts/fgui.manifest.json` 记录的 XML/资源、包导出声明、Cocos `.bin`/图集以及 View AUTO 生成区哈希；
 FairyGUI 重新导出后先运行 `node scripts/fgui-manifest.mjs --write` 再提交 manifest。
 `test:fgui` 通过 `tsx` 执行 FGUI 专项测试；客户端入口/View 的 Node strict 类型检查由
-`npm run typecheck:client`（`apps/client/tsconfig.test.json`）负责，真实引擎接线仍需 Creator 预览。
+`npm run typecheck:client`（`apps/client/tsconfig.test.json`）负责，`npm run typecheck:client:legacy` 以
+ES2017 lib 递归检查全部 `apps/client/src/**/*.ts`；真实引擎接线仍需 Creator 预览。
 
 > 运行时绑定（`FguiView.bind/apply`、`getChild`）需 `fairygui-cc`，属 Creator 侧接线。

@@ -8,8 +8,8 @@
     // strict:true，这里曾显式关掉；2026-07 实测**开关两侧都是 0 错误**，关着纯属历史遗留。
     // ⚠ 这道闸**只对本机装了 Creator 的人生效**：本文件 extends 的 temp/ 是 Creator 生成物、
     // 已 gitignore（入库 0 文件）⇒ 无头 CI 里 resolve 不了，⛔ 不要把它当成机检。
-    // 无头那条线走 apps/client/tsconfig.json（自带 cc 桩、不 extends temp/），但它排除了
-    // Main.ts + 9 个 view 文件——**那 10 个文件唯一的类型闸就是这里**，故 strict 必须开着。
+    // 无头那条线走 apps/client/tsconfig.json（自带 cc/FairyGUI 桩、不 extends temp/），递归覆盖
+    // apps/client/src/**/*.ts（含 Main、全部 View 与 gameplay）；本配置只负责 Creator 编辑器侧编译。
     // ⚠ 用 CLI 直跑本配置需 `--module esnext`：base 里 module=ES2015 不支持动态 import
     // （铁律 10 全仓靠它加载 FairyGUI），会误报一片 TS1323；Creator 自身的构建管线不走裸 tsc。
     "esModuleInterop": true,
