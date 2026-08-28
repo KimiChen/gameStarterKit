@@ -22,6 +22,19 @@ test("renders the wheel.do-style project card map", async () => {
   assert.match(html, /不构成部署、商业化/);
 });
 
+test("keeps setup, client, and server as three equal small cards", async () => {
+  const [html, css] = await Promise.all([read("index.html"), read("style.css")]);
+  assert.match(html, /<span class="wsk-project-count">9 张卡片<\/span>/);
+  assert.equal((html.match(/<article class="wsk-project-card/g) || []).length, 9);
+  assert.equal((html.match(/class="wsk-project-card wsk-card-small/g) || []).length, 3);
+  assert.match(html, /wsk-card-icon" aria-hidden="true">06<\/span>/);
+  assert.match(html, /wsk-card-icon" aria-hidden="true">07<\/span>/);
+  assert.match(html, /wsk-card-icon" aria-hidden="true">08<\/span>/);
+  assert.doesNotMatch(html, /平台边界/);
+  assert.doesNotMatch(html, /wsk-card-icon" aria-hidden="true">09<\/span>/);
+  assert.match(css, /\.wsk-card-small\s*\{\s*grid-column: span 4;\s*min-height: 13\.5rem;/);
+});
+
 test("uses the Web Standard Kit foundations without the former app tree", async () => {
   const [css, script, packageJson] = await Promise.all([
     read("style.css"),
@@ -43,4 +56,15 @@ test("builds the static client and Worker entry", async () => {
   await access(join(root, "dist", "client", "script.js"));
   await access(join(root, "dist", "client", "og.png"));
   await access(join(root, "dist", ".openai", "hosting.json"));
+});
+
+test("provides a scoped rsync deployment script", async () => {
+  const script = await read("deploy.sh");
+  assert.match(script, /rsync/);
+  assert.match(script, /root@129\.211\.70\.96:\/www\/wwwroot\/gono\.games\//);
+  assert.match(script, /id_rsa_nopassword/);
+  assert.match(script, /index\.html/);
+  assert.match(script, /style\.css/);
+  assert.match(script, /script\.js/);
+  assert.doesNotMatch(script, /--delete/);
 });

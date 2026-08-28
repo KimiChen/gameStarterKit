@@ -60,7 +60,7 @@
           </span>
         </a>
         <div class="wsk-topbar-actions">
-          <span class="wsk-project-count">10 张卡片</span>
+          <span class="wsk-project-count">9 张卡片</span>
           <a class="wsk-header-link" href="#projects">项目地图</a>
           <a
             class="wsk-header-link"
@@ -177,43 +177,49 @@
             <div class="wsk-card-footer"><span class="wsk-status">LOCAL BASELINE</span><span class="wsk-card-link">12 guardrails</span></div>
           </article>
 
-          <article class="wsk-project-card wsk-card-wide wsk-tone-slate">
+          <article class="wsk-project-card wsk-card-small wsk-tone-slate">
             <div class="wsk-card-primary">
-              <div class="wsk-card-kicker"><span class="wsk-card-icon" aria-hidden="true">06</span><span>LOCAL QUICK START</span></div>
-              <h2>从 clone 到 Cocos 预览</h2>
-              <p>依赖、数据栈、服务端和编辑器按固定顺序进入开发循环。</p>
+              <div class="wsk-card-kicker"><span class="wsk-card-icon" aria-hidden="true">06</span><span>QUICK START</span></div>
+              <h2>四步进入本地预览</h2>
+              <p>安装依赖、同步 shared、启动本地栈，再打开 Cocos 工程。</p>
             </div>
-            <ol class="wsk-step-row">
-              <li><b>01</b><code>npm install</code></li><li><b>02</b><code>sync:shared</code></li><li><b>03</b><code>server stack</code></li><li><b>04</b><code>Cocos 3.8.8</code></li>
-            </ol>
-            <div class="wsk-card-footer"><button class="wsk-inline-action" type="button" data-copy-command="git clone https://github.com/KimiChen/gameStarterKit.git">复制 clone 命令</button><span class="wsk-card-link">开发动线 <span aria-hidden="true">→</span></span></div>
+            <ul class="wsk-card-facts" aria-label="本地启动步骤">
+              <li><b>INSTALL</b><code>npm install</code><span>安装依赖</span></li>
+              <li><b>SYNC</b><code>sync:shared</code><span>刷新双端镜像</span></li>
+              <li><b>STACK</b><code>stack + db</code><span>Redis / MySQL</span></li>
+              <li><b>OPEN</b><code>Cocos 3.8.8</code><span>进入编辑器</span></li>
+            </ul>
+            <div class="wsk-card-footer"><button class="wsk-inline-action" type="button" data-copy-command="git clone https://github.com/KimiChen/gameStarterKit.git">复制 clone 命令</button><span class="wsk-card-link">4 steps <span aria-hidden="true">→</span></span></div>
           </article>
 
           <article class="wsk-project-card wsk-card-small wsk-tone-rose">
             <div class="wsk-card-primary">
               <div class="wsk-card-kicker"><span class="wsk-card-icon" aria-hidden="true">07</span><span>客户端</span></div>
-              <h2>View / Logic</h2>
-              <p>View 绑定引擎；Logic 保持纯 TypeScript；FairyGUI 走动态加载。</p>
+              <h2>View / Logic 分层</h2>
+              <p>View 绑定 Cocos/FairyGUI；Logic 保持纯 TypeScript，页面按需动态加载。</p>
             </div>
-            <div class="wsk-card-footer"><span class="wsk-status">Cocos · FairyGUI</span><span class="wsk-card-link" aria-hidden="true">↗</span></div>
+            <ul class="wsk-card-facts" aria-label="客户端分层">
+              <li><b>SOURCE</b><code>apps/client/src</code><span>源码真相</span></li>
+              <li><b>VIEW</b><code>Cocos + FairyGUI</code><span>绑定与渲染</span></li>
+              <li><b>LOGIC</b><code>TypeScript</code><span>行为与编排</span></li>
+              <li><b>UI LOAD</b><code>dynamic import</code><span>按需加载</span></li>
+            </ul>
+            <div class="wsk-card-footer"><span class="wsk-status">CLIENT BOUNDARY</span><span class="wsk-card-link">750 × 1624</span></div>
           </article>
 
           <article class="wsk-project-card wsk-card-small wsk-tone-green">
             <div class="wsk-card-primary">
               <div class="wsk-card-kicker"><span class="wsk-card-icon" aria-hidden="true">08</span><span>服务端</span></div>
-              <h2>Room / RPC</h2>
-              <p>Colyseus 0.17、Redis、MySQL 8，以及 lock / fence / outbox 原语。</p>
+              <h2>Room / RPC 与写入原语</h2>
+              <p>Colyseus 0.17 承载房间与 RPC；lock、fence、outbox 约束写入。</p>
             </div>
-            <div class="wsk-card-footer"><span class="wsk-status">SERVER RULES</span><span class="wsk-card-link" aria-hidden="true">↗</span></div>
-          </article>
-
-          <article class="wsk-project-card wsk-card-small wsk-tone-orange">
-            <div class="wsk-card-primary">
-              <div class="wsk-card-kicker"><span class="wsk-card-icon" aria-hidden="true">09</span><span>平台边界</span></div>
-              <h2>HTTP-only</h2>
-              <p>gono-webplatform 独立维护，本仓只消费精确锁定的契约包。</p>
-            </div>
-            <div class="wsk-card-footer"><span class="wsk-status">BOUNDARY</span><span class="wsk-card-link" aria-hidden="true">↗</span></div>
+            <ul class="wsk-card-facts" aria-label="服务端组成">
+              <li><b>ROOM</b><code>Colyseus 0.17</code><span>Lobby + Game</span></li>
+              <li><b>RPC</b><code>typed routes</code><span>契约校验</span></li>
+              <li><b>DATA</b><code>Redis / MySQL</code><span>热档与权威数据</span></li>
+              <li><b>GUARDS</b><code>lock · fence · outbox</code><span>写入一致性</span></li>
+            </ul>
+            <div class="wsk-card-footer"><span class="wsk-status">SERVER RULES</span><span class="wsk-card-link">LOCAL STACK</span></div>
           </article>
 
           <article class="wsk-project-card wsk-card-banner wsk-tone-blue">

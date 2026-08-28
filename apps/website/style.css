@@ -402,7 +402,7 @@
 
   .wsk-card-small {
     grid-column: span 4;
-    min-height: 10.5rem;
+    min-height: 13.5rem;
   }
 
   .wsk-card-featured .wsk-card-body,
@@ -690,30 +690,32 @@
     width: 5px;
   }
 
-  .wsk-step-row {
+  .wsk-card-facts {
     border-top: 1px solid color-mix(in srgb, var(--tone) 25%, transparent);
     display: grid;
-    gap: .45rem;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .7rem .8rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     list-style: none;
     margin-top: 1rem;
     padding: .85rem 0 0;
   }
 
-  .wsk-step-row li {
+  .wsk-card-facts li {
     display: grid;
-    gap: .3rem;
+    gap: .2rem;
+    min-width: 0;
   }
 
-  .wsk-step-row b {
+  .wsk-card-facts b {
     color: var(--tone);
     font-family: var(--mono);
     font-size: .56rem;
   }
 
-  .wsk-step-row code {
+  .wsk-card-facts code,
+  .wsk-card-facts span {
     color: var(--muted);
-    font-size: .57rem;
+    font-size: .59rem;
     overflow-wrap: anywhere;
   }
 
@@ -805,13 +807,6 @@
     --tone: #166534;
   }
 
-  .wsk-tone-orange {
-    --tone-a: #fff7ed;
-    --tone-b: #ffedd5;
-    --tone-border: #fed7aa;
-    --tone: #9a3412;
-  }
-
   .wsk-tone-blue {
     --tone-a: #eff6ff;
     --tone-b: #dbeafe;
@@ -831,7 +826,6 @@
   [data-theme="dark"] .wsk-tone-slate { --tone-a: #151b25; --tone-b: #1e2633; --tone-border: #384457; --tone: #cbd5e1; }
   [data-theme="dark"] .wsk-tone-rose { --tone-a: #2b1723; --tone-b: #3a1d2d; --tone-border: #63304a; --tone: #f9a8d4; }
   [data-theme="dark"] .wsk-tone-green { --tone-a: #10261c; --tone-b: #153425; --tone-border: #28563d; --tone: #86efac; }
-  [data-theme="dark"] .wsk-tone-orange { --tone-a: #2d1d12; --tone-b: #3b2614; --tone-border: #634225; --tone: #fdba74; }
   [data-theme="dark"] .wsk-tone-blue { --tone-a: #101f35; --tone-b: #142b49; --tone-border: #294a76; --tone: #93c5fd; }
 
   .wsk-footer {
@@ -879,8 +873,7 @@
       grid-column: 1 / -1;
     }
 
-    .wsk-card-wide,
-    .wsk-card-small {
+    .wsk-card-wide {
       grid-column: span 6;
     }
 
@@ -937,6 +930,10 @@
 
     .wsk-project-card {
       padding: 1.1rem;
+    }
+
+    .wsk-card-facts {
+      gap: .6rem .7rem;
     }
 
     .wsk-card-featured .wsk-card-body,
