@@ -7,7 +7,10 @@
  * 不依赖 Redis/MySQL，因而可作为每次提交的快速故障闸。
  */
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { dirname, join } from "node:path";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 import {
   C2S,
   S2C,
@@ -123,16 +126,198 @@ test("风险加权 wire/effect 变异：每个单点变异均 fail-closed", asyn
   });
 });
 
-test("故障注入：compute structured-clone 失败后 worker 池仍可用", async () => {
-  await exerciseFaultPoint("worker-replacement", async () => {
-    // postMessage 的 DataCloneError 发生在 worker 之前；pool 必须归还健康 worker，
-    // 不能把异常冒进为 uncaught exception，也不能让下一项任务永久排队。
-    await assert.rejects(runInPool("battleSim", (() => "not-cloneable") as unknown as IBattleSimInput));
-    const result = await runInPool<IBattleSimInput, IBattleSimResult>("battleSim", {
-      iterations: 8,
-      attackerLevel: 1,
-    });
-    assert.equal(result.iterations, 8);
+test("故障注入：compute structured-clone 失败后健康 worker 仍可复用", async () => {
+  // postMessage 的 DataCloneError 发生在 worker 之前；pool 必须归还健康 worker，
+  // 不能把异常冒进为 uncaught exception，也不能让下一项任务永久排队。
+  await assert.rejects(runInPool("battleSim", (() => "not-cloneable") as unknown as IBattleSimInput));
+  const result = await runInPool<IBattleSimInput, IBattleSimResult>("battleSim", {
+    iterations: 8,
+    attackerLevel: 1,
+  });
+  assert.equal(result.iterations, 8);
+});
+
+test("故障注入：真实 worker error/exit 会 reap 并退避补位", async () => {
+  await exerciseFaultPoint("worker-replacement", () => {
+    const serverRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+    const faultWorkerSource = `
+      import { parentPort, workerData } from "node:worker_threads";
+      parentPort.once("message", () => {
+        if (workerData.mode === "error") {
+          throw new Error("injected compute worker error");
+        }
+        process.exit(23);
+      });
+    `;
+    const script = `
+      import assert from "node:assert/strict";
+      import { Worker } from "node:worker_threads";
+      import { _computePoolTestHooks, destroyPool, runInPool } from "./src/core/compute/pool.ts";
+
+      const source = ${JSON.stringify(faultWorkerSource)};
+      const nativeSetTimeout = globalThis.setTimeout;
+      const respawnTimers = [];
+      globalThis.setTimeout = (callback, delay, ...args) => {
+        const timer = nativeSetTimeout(callback, delay, ...args);
+        if (delay === 1000) respawnTimers.push(timer);
+        return timer;
+      };
+
+      async function exercise(mode) {
+        await destroyPool();
+        let spawnCount = 0;
+        _computePoolTestHooks.setWorkerFactory((createDefaultWorker) => {
+          spawnCount += 1;
+          return spawnCount === 1
+            ? new Worker(new URL("data:text/javascript," + encodeURIComponent(source)), {
+                workerData: { mode },
+              })
+            : createDefaultWorker();
+        });
+
+        // Pool size is one in this child.  Queue recovery before the first worker
+        // dies, so only reap's delayed respawn can dispatch the second job.
+        const startedAt = performance.now();
+        const crashed = runInPool("battleSim", { iterations: 1, attackerLevel: 1 });
+        const recovery = runInPool("battleSim", { iterations: 7, attackerLevel: 2 });
+        if (mode === "error") {
+          await assert.rejects(crashed, /injected compute worker error/);
+        } else {
+          await assert.rejects(crashed, /compute worker .*code=23/);
+        }
+        const respawnTimer = respawnTimers.at(-1);
+        assert.ok(respawnTimer, mode + " must schedule a replacement timer");
+        assert.equal(respawnTimer.hasRef(), true, "queued recovery must keep respawn alive");
+        const result = await recovery;
+        assert.equal(result.iterations, 7);
+        assert.equal(spawnCount, 2, mode + " must create exactly one replacement worker");
+        assert.ok(
+          performance.now() - startedAt >= 900,
+          mode + " replacement must preserve the one-second respawn backoff",
+        );
+
+        await destroyPool();
+        _computePoolTestHooks.setWorkerFactory(null);
+      }
+
+      async function exerciseLateQueue() {
+        await destroyPool();
+        let spawnCount = 0;
+        _computePoolTestHooks.setWorkerFactory((createDefaultWorker) => {
+          spawnCount += 1;
+          return spawnCount === 1
+            ? new Worker(new URL("data:text/javascript," + encodeURIComponent(source)), {
+                workerData: { mode: "error" },
+              })
+            : createDefaultWorker();
+        });
+
+        const crashed = runInPool("battleSim", { iterations: 1, attackerLevel: 1 });
+        await assert.rejects(crashed, /injected compute worker error/);
+        const respawnTimer = respawnTimers.at(-1);
+        assert.ok(respawnTimer, "idle failure must schedule a replacement timer");
+        assert.equal(respawnTimer.hasRef(), false, "idle replacement must not keep the process alive");
+
+        const queuedAt = performance.now();
+        const recovery = runInPool("battleSim", { iterations: 9, attackerLevel: 2 });
+        assert.equal(spawnCount, 1, "late queue must not bypass an already scheduled backoff");
+        assert.equal(respawnTimer.hasRef(), true, "late queue must re-ref the existing respawn timer");
+        const result = await recovery;
+        assert.equal(result.iterations, 9);
+        assert.equal(spawnCount, 2);
+        assert.ok(performance.now() - queuedAt >= 850, "late queue must wait for the original backoff");
+
+        await destroyPool();
+        _computePoolTestHooks.setWorkerFactory(null);
+      }
+
+      await exercise("error");
+      await exercise("exit");
+      await exerciseLateQueue();
+      console.log("compute-worker-lifecycle-ok");
+    `;
+    const result = spawnSync(
+      process.execPath,
+      ["--import", "tsx", "--input-type=module", "-e", script],
+      {
+        cwd: serverRoot,
+        env: {
+          ...process.env,
+          COMPUTE_POOL_SIZE: "1",
+          COMPUTE_QUEUE_CAPACITY: "4",
+          COMPUTE_TASK_TIMEOUT_MS: "5000",
+        },
+        encoding: "utf8",
+        timeout: 20_000,
+      },
+    );
+    assert.equal(
+      result.status,
+      0,
+      `worker 生命周期故障子进程失败：${result.error?.message ?? result.stderr.slice(0, 1000)}`,
+    );
+    assert.match(result.stdout, /compute-worker-lifecycle-ok/);
+
+    const timeoutScript = `
+      import assert from "node:assert/strict";
+      import { Worker } from "node:worker_threads";
+      import { _computePoolTestHooks, runInPool } from "./src/core/compute/pool.ts";
+
+      const source = ${JSON.stringify(faultWorkerSource)};
+      const nativeSetTimeout = globalThis.setTimeout;
+      const respawnTimers = [];
+      globalThis.setTimeout = (callback, delay, ...args) => {
+        const timer = nativeSetTimeout(callback, delay, ...args);
+        if (delay === 1000) respawnTimers.push(timer);
+        return timer;
+      };
+
+      let spawnCount = 0;
+      _computePoolTestHooks.setWorkerFactory((createDefaultWorker) => {
+        spawnCount += 1;
+        return spawnCount === 1
+          ? new Worker(new URL("data:text/javascript," + encodeURIComponent(source)), {
+              workerData: { mode: "exit" },
+            })
+          : createDefaultWorker();
+      });
+
+      await assert.rejects(
+        runInPool("battleSim", { iterations: 1, attackerLevel: 1 }),
+        /compute worker .*code=23/,
+      );
+      const respawnTimer = respawnTimers.at(-1);
+      assert.ok(respawnTimer);
+      assert.equal(respawnTimer.hasRef(), false);
+
+      const queued = runInPool("battleSim", { iterations: 5, attackerLevel: 1 });
+      assert.equal(spawnCount, 1, "queued task must reserve the delayed replacement");
+      assert.equal(respawnTimer.hasRef(), true);
+      await assert.rejects(queued, /compute 任务排队超时/);
+      assert.equal(respawnTimer.hasRef(), false, "empty queue must unref the delayed replacement");
+      console.log("compute-worker-timeout-unref-ok");
+    `;
+    const timeoutResult = spawnSync(
+      process.execPath,
+      ["--import", "tsx", "--input-type=module", "-e", timeoutScript],
+      {
+        cwd: serverRoot,
+        env: {
+          ...process.env,
+          COMPUTE_POOL_SIZE: "1",
+          COMPUTE_QUEUE_CAPACITY: "4",
+          COMPUTE_TASK_TIMEOUT_MS: "250",
+        },
+        encoding: "utf8",
+        timeout: 5_000,
+      },
+    );
+    assert.equal(
+      timeoutResult.status,
+      0,
+      `worker 排队超时子进程失败：${timeoutResult.error?.message ?? timeoutResult.stderr.slice(0, 1000)}`,
+    );
+    assert.match(timeoutResult.stdout, /compute-worker-timeout-unref-ok/);
   });
 });
 

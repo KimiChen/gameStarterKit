@@ -47,6 +47,15 @@ const WORKER_PATH = fileURLToPath(new URL("./worker-boot.mjs", import.meta.url))
 const SIZE = Math.max(1, COMPUTE_POOL_SIZE);
 const RESPAWN_DELAY_MS = 1_000;
 
+type WorkerFactory = () => Worker;
+type WorkerFactoryOverride = (createDefaultWorker: WorkerFactory) => Worker;
+
+function createDefaultWorker(): Worker {
+  return new Worker(WORKER_PATH, { execArgv: [] });
+}
+
+let workerFactoryOverride: WorkerFactoryOverride | null = null;
+
 let jobSeq = 0;
 let destroyed = false;
 const workers = new Set<Worker>();
@@ -54,6 +63,21 @@ const idle: Worker[] = [];
 const queue: Job[] = [];
 const running = new Map<Worker, Job>();
 const respawnTimers = new Set<NodeJS.Timeout>();
+
+/**
+ * A delayed replacement reserves one worker slot.  Keep its timer alive only
+ * while a queued caller actually depends on it; otherwise spare-capacity
+ * repair must not keep an idle process running.
+ */
+function refreshRespawnTimerRefs(): void {
+  for (const timer of respawnTimers) {
+    if (queue.length > 0) { timer.ref(); } else { timer.unref(); }
+  }
+}
+
+function hasUnreservedWorkerSlot(): boolean {
+  return workers.size + respawnTimers.size < SIZE;
+}
 
 /** 死亡统一出口：出列（含 idle 尸体）、在途任务立即失败、退避重生。 */
 function reap(w: Worker, cause: Error): void {
@@ -67,14 +91,14 @@ function reap(w: Worker, cause: Error): void {
     if (job.timer) { clearTimeout(job.timer); }
     job.reject(cause);
   }
-  if (!destroyed && workers.size < SIZE) {
+  if (!destroyed && hasUnreservedWorkerSlot()) {
     // 退避重生：防持久性启动失败演成重生风暴（评审实测无退避时 ~146 次/秒）
     const timer = setTimeout(() => {
       respawnTimers.delete(timer);
-      if (!destroyed && workers.size < SIZE) { idle.push(spawn()); drain(); }
+      if (!destroyed && hasUnreservedWorkerSlot()) { idle.push(spawn()); drain(); }
     }, RESPAWN_DELAY_MS);
-    timer.unref();
     respawnTimers.add(timer);
+    refreshRespawnTimerRefs();
   }
 }
 
@@ -82,7 +106,9 @@ function spawn(): Worker {
   // 入口是 worker-boot.mjs 引导壳（线程内程序化注册 tsx 后再载 worker.ts）：
   // Node 22 的 worker 里 execArgv 传 --import tsx 钩子不生效（见 worker-boot.mjs 注释）。
   // execArgv 显式清空：不继承父进程的 --test 等测试期 flag。
-  const w = new Worker(WORKER_PATH, { execArgv: [] });
+  const w = workerFactoryOverride
+    ? workerFactoryOverride(createDefaultWorker)
+    : createDefaultWorker();
   w.unref(); // 空闲不阻止进程退出；接任务时 ref()（见 start）
   workers.add(w);
   w.on("message", (msg: WorkerReply) => {
@@ -104,6 +130,7 @@ function spawn(): Worker {
 function dispatch(w: Worker): void {
   if (destroyed || !workers.has(w)) { return; }
   const job = queue.shift();
+  refreshRespawnTimerRefs();
   if (!job) { w.unref(); idle.push(w); return; }
   start(w, job);
 }
@@ -116,6 +143,7 @@ function drain(): void {
     const job = queue.shift();
     if (job) { start(w, job); }
   }
+  refreshRespawnTimerRefs();
 }
 
 /**
@@ -127,6 +155,7 @@ function onJobTimeout(job: Job): void {
   const qi = queue.indexOf(job);
   if (qi >= 0) {
     queue.splice(qi, 1);
+    refreshRespawnTimerRefs();
     job.reject(new Error(`compute 任务排队超时（${COMPUTE_TASK_TIMEOUT_MS}ms 未分配到 worker）: ${job.task}`));
     return;
   }
@@ -179,9 +208,12 @@ export function runInPool<TIn, TOut>(task: string, input: TIn): Promise<TOut> {
     // 超时从入队算起（排队+执行全程一个窗口）：worker 持久性起不来时排队任务也有失败出口
     job.timer = setTimeout(() => onJobTimeout(job), COMPUTE_TASK_TIMEOUT_MS);
     job.timer.unref();
-    // 惰性建池：首个任务才起线程（测试/无计算负载的进程零开销）
-    while (workers.size < SIZE) { idle.push(spawn()); }
     queue.push(job);
+    // A pending respawn owns its slot: a request arriving during backoff must
+    // wait for that timer rather than bypassing the delay with an eager spawn.
+    refreshRespawnTimerRefs();
+    // 惰性建池：首个任务才起线程（测试/无计算负载的进程零开销）
+    while (hasUnreservedWorkerSlot()) { idle.push(spawn()); }
     drain();
   });
 }
@@ -206,3 +238,22 @@ export async function destroyPool(): Promise<void> {
   await Promise.all(all.map((w) => w.terminate()));
   destroyed = false; // 允许测试后重建
 }
+
+/**
+ * 仅供故障测试替换首个真实 Worker 入口；补位仍可调用默认 factory，因而会经过
+ * 与生产完全相同的 spawn / error / exit / reap / respawn 路径。
+ */
+export const _computePoolTestHooks = {
+  setWorkerFactory(factory: WorkerFactoryOverride | null): void {
+    if (
+      workers.size > 0
+      || idle.length > 0
+      || queue.length > 0
+      || running.size > 0
+      || respawnTimers.size > 0
+    ) {
+      throw new Error("compute worker factory 只能在空池状态切换");
+    }
+    workerFactoryOverride = factory;
+  },
+};

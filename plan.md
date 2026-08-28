@@ -540,6 +540,11 @@ vendor、inventory 反例和 perf 门禁。保留边界：组合根发现不声�
 执行并由 coverage 证明 fail-closed。它是定向故障/变异矩阵，不是自动源码 mutation 或全局覆盖率指标，
 集成组需要本地 Redis/MySQL 与外部开发契约。
 
+复核备注（已收口）：`fault-mutation.test.ts` 使用真实 Worker 分别触发 `error` 与 exit-only 死亡，直接断言
+在途任务拒绝、尸体 reap、1 秒退避后只补一个健康 worker，并覆盖故障前已排队与故障后才入队两种时序。
+待补位 timer 计入池容量，后到请求不能 eager spawn 绕过 backoff；队列非空时 timer 保活，排队任务先超时并
+清空队列后恢复 unref。structured-clone 与任务级异常仍分别验证健康 worker 可复用、后续任务可继续完成。
+
 ### P2-03 Starter 初始化与项目元数据 ✅
 
 状态：已完成当前 Starter 范围。幂等 `init:project`、项目身份/包名推导、生成区标识、根 MIT `LICENSE`
