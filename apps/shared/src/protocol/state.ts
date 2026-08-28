@@ -40,8 +40,35 @@ export interface IGameRoomState {
 }
 
 function stateRecord(input: unknown, path: string): PlainRecord {
-    if (!isPlainRecord(input)) throw new WireValidationError("STATE_OBJECT", path);
-    return input;
+    if (isPlainRecord(input)) return input;
+
+    // The server owns the @colyseus/schema classes, while this package must
+    // remain dependency-free.  Schema instances expose a JSON projection that
+    // contains only their decorated wire fields (and omits internal `~`/`_`
+    // bookkeeping).  Accept that explicit projection here so a server-side
+    // state can be checked by the same validator used at the client boundary.
+    // Arbitrary class instances without a plain-data `toJSON()` result remain
+    // rejected, preserving the exact-key contract for ordinary wire objects.
+    if (typeof input === "object" && input !== null) {
+        try {
+            // `~changes`/`~refId` are the non-enumerable bookkeeping markers
+            // installed by @colyseus/schema's Schema.initialize(). Requiring
+            // them keeps an arbitrary application class that happens to expose
+            // toJSON() outside this wire boundary.
+            if (Object.prototype.hasOwnProperty.call(input, "~changes")
+                && Object.prototype.hasOwnProperty.call(input, "~refId")) {
+                const serializer = (input as { toJSON?: unknown }).toJSON;
+                if (typeof serializer === "function") {
+                    const projected = serializer.call(input);
+                    if (isPlainRecord(projected)) return projected;
+                }
+            }
+        } catch {
+            // Keep hostile getters/serializers inside the wire error domain.
+            throw new WireValidationError("WIRE_DATA_CORRUPT", path);
+        }
+    }
+    throw new WireValidationError("STATE_OBJECT", path);
 }
 
 export function validatePlayerState(input: unknown, path = "player"): IPlayerState {

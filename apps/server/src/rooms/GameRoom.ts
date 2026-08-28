@@ -1,5 +1,4 @@
 import { Room, Client, CloseCode, type AuthContext } from "colyseus";
-import { z } from "zod";
 import {
     C2S,
     S2C,
@@ -21,10 +20,12 @@ import {
     PROJECT_DISPLAY_NAME,
     DEMO_BRAND,
     validateRoomJoinOptions,
+    validateC2SPayload,
     validateS2CPayload,
     WireValidationError,
     type IRoomJoinOptions,
     type C2SType,
+    type C2SPayload,
     type S2CType,
     type IPingReq,
     type IMoveReq,
@@ -71,10 +72,8 @@ const RECONNECT_GRACE_S = 10;
  * 也拥有相同的边界。输入频率不是玩法契约，故只在本文件登记。
  */
 export const GAME_ROOM_MAX_MESSAGES_PER_SECOND = 60;
-const MAX_CHAT_LENGTH = 100;
-const MAX_TARGET_ID_LENGTH = 64;
-const MAX_CLIENT_TIME = Number.MAX_SAFE_INTEGER;
-const MAX_SKILL_ID = 0xffff;
+/** Internal envelope bound for replay/session identifiers (payload bounds live in shared). */
+const MAX_INPUT_SESSION_ID_LENGTH = 64;
 const MAX_CATCH_UP_STEPS = 120;
 /** Keep the advertised rate inside shared S2C.Welcome's runtime contract. */
 const MAX_WELCOME_TICK_RATE = 240;
@@ -176,78 +175,36 @@ class GameRoomStartLockTimeoutError extends Error {
     }
 }
 
-/** Zod 的 strict object 是运行时 exact-key 闸；不要改成普通 z.object。 */
-const C2S_RUNTIME_SCHEMA = {
-    [C2S.Ping]: z.object({
-        clientTime: z.number().finite().int().min(0).max(MAX_CLIENT_TIME),
-    }).strict(),
-    [C2S.Move]: z.object({
-        dirX: z.number().finite().min(-1).max(1),
-        dirY: z.number().finite().min(-1).max(1),
-    }).strict(),
-    [C2S.CastSkill]: z.object({
-        skillId: z.number().finite().int().min(0).max(MAX_SKILL_ID),
-        targetId: z.string().min(1).max(MAX_TARGET_ID_LENGTH).optional(),
-    }).strict(),
-    [C2S.Chat]: z.object({
-        text: z.string().min(1).max(MAX_CHAT_LENGTH)
-            .refine((value) => value.trim().length > 0),
-    }).strict(),
-} as const;
-
-/**
- * Zod's strict object check enumerates with Object.keys(), so a direct handler
- * call could otherwise smuggle a non-enumerable extra field past the wire
- * contract. Keep the own-key allowlist explicit and inspect it with
- * Reflect.ownKeys() before parsing.
- */
-const C2S_REQUIRED_KEYS: Record<C2SType, readonly string[]> = {
-    [C2S.Ping]: ["clientTime"],
-    [C2S.Move]: ["dirX", "dirY"],
-    [C2S.CastSkill]: ["skillId"],
-    [C2S.Chat]: ["text"],
-};
-
-const C2S_OPTIONAL_KEYS: Record<C2SType, readonly string[]> = {
-    [C2S.Ping]: [],
-    [C2S.Move]: [],
-    [C2S.CastSkill]: ["targetId"],
-    [C2S.Chat]: [],
-};
-
-/** Exported for contract tests; production handlers still call acceptMessage(). */
-export const GAME_ROOM_C2S_SCHEMAS = C2S_RUNTIME_SCHEMA;
-
 type RuntimeSchema<T> = {
     safeParse(input: unknown): { success: true; data: T } | { success: false };
 };
 
 /**
- * Zod's object schemas intentionally accept class instances and inherited
- * properties.  A Colyseus wire payload is plain JSON, so reject those shapes
- * before parsing; this also keeps symbol keys out of the direct-handler path.
+ * Keep the server's historical `safeParse` export shape while making shared
+ * validators the only source of C2S payload domains and exact-key semantics.
+ * The wrapper intentionally drops the error object: GameRoom maps every wire
+ * failure to its stable BadRequest protocol error.
  */
-function isPlainMessageRecord(input: unknown): input is Record<string, unknown> {
-    try {
-        if (typeof input !== "object" || input === null || Array.isArray(input)) return false;
-        const proto = Object.getPrototypeOf(input);
-        if (proto !== Object.prototype && proto !== null) return false;
-        return Reflect.ownKeys(input).every((key) => typeof key === "string");
-    } catch {
-        return false;
-    }
+function sharedC2SSchema<T extends C2SType>(messageType: T): RuntimeSchema<C2SPayload<T>> {
+    return {
+        safeParse(input: unknown) {
+            try {
+                return { success: true as const, data: validateC2SPayload(messageType, input) };
+            } catch {
+                return { success: false as const };
+            }
+        },
+    };
 }
 
-function hasExactMessageKeys(input: Record<string, unknown>, messageType: C2SType): boolean {
-    try {
-        const allowed = new Set([...C2S_REQUIRED_KEYS[messageType], ...C2S_OPTIONAL_KEYS[messageType]]);
-        const actual = Reflect.ownKeys(input);
-        if (actual.some((key) => typeof key !== "string" || !allowed.has(key))) return false;
-        return C2S_REQUIRED_KEYS[messageType].every((key) => Object.prototype.hasOwnProperty.call(input, key));
-    } catch {
-        return false;
-    }
-}
+export const GAME_ROOM_C2S_SCHEMAS: {
+    [K in C2SType]: RuntimeSchema<C2SPayload<K>>;
+} = {
+    [C2S.Ping]: sharedC2SSchema(C2S.Ping),
+    [C2S.Move]: sharedC2SSchema(C2S.Move),
+    [C2S.CastSkill]: sharedC2SSchema(C2S.CastSkill),
+    [C2S.Chat]: sharedC2SSchema(C2S.Chat),
+};
 
 const INJECTED_MOVE_KEYS = ["type", "sessionId", "dirX", "dirY"] as const;
 const INJECTED_CAST_KEYS = ["type", "sessionId", "skillId"] as const;
@@ -287,7 +244,7 @@ function snapshotInjectedInput(input: unknown): GameRoomInput | undefined {
         }
 
         const sessionId = record.sessionId;
-        if (typeof sessionId !== "string" || sessionId.length < 1 || sessionId.length > MAX_TARGET_ID_LENGTH) {
+        if (typeof sessionId !== "string" || sessionId.length < 1 || sessionId.length > MAX_INPUT_SESSION_ID_LENGTH) {
             return undefined;
         }
         const rawTick: unknown = names.includes("tick") ? record.tick : undefined;
@@ -298,7 +255,7 @@ function snapshotInjectedInput(input: unknown): GameRoomInput | undefined {
         }
 
         if (type === "move") {
-            const schema = C2S_RUNTIME_SCHEMA[C2S.Move];
+            const schema = GAME_ROOM_C2S_SCHEMAS[C2S.Move];
             const parsed = schema.safeParse({ dirX: record.dirX, dirY: record.dirY });
             if (!parsed.success) return undefined;
             const data = parsed.data as IMoveReq;
@@ -308,7 +265,7 @@ function snapshotInjectedInput(input: unknown): GameRoomInput | undefined {
         }
 
         const targetId = names.includes("targetId") ? record.targetId : undefined;
-        const schema = C2S_RUNTIME_SCHEMA[C2S.CastSkill];
+        const schema = GAME_ROOM_C2S_SCHEMAS[C2S.CastSkill];
         const parsed = schema.safeParse({
             skillId: record.skillId,
             ...(targetId === undefined ? {} : { targetId }),
@@ -524,7 +481,7 @@ export class GameRoom extends Room {
      */
     messages = {
         [C2S.Ping]: (client: Client, raw: IPingReq) => {
-            const msg = this.acceptMessage(client, C2S.Ping, raw, C2S_RUNTIME_SCHEMA[C2S.Ping]);
+            const msg = this.acceptMessage(client, C2S.Ping, raw, GAME_ROOM_C2S_SCHEMAS[C2S.Ping]);
             if (!msg) return;
             if (this.modeMessage(C2S.Ping, client, msg)) return;
             const res: IPongRes = { clientTime: msg.clientTime, serverTime: this.now() };
@@ -532,7 +489,7 @@ export class GameRoom extends Room {
         },
 
         [C2S.Move]: (client: Client, raw: IMoveReq) => {
-            const msg = this.acceptMessage(client, C2S.Move, raw, C2S_RUNTIME_SCHEMA[C2S.Move]);
+            const msg = this.acceptMessage(client, C2S.Move, raw, GAME_ROOM_C2S_SCHEMAS[C2S.Move]);
             if (!msg) return;
             if (this.modeMessage(C2S.Move, client, msg)) return;
             const player = this.state.players.get(client.sessionId);
@@ -553,7 +510,7 @@ export class GameRoom extends Room {
         },
 
         [C2S.CastSkill]: (client: Client, raw: ICastSkillReq) => {
-            const msg = this.acceptMessage(client, C2S.CastSkill, raw, C2S_RUNTIME_SCHEMA[C2S.CastSkill]);
+            const msg = this.acceptMessage(client, C2S.CastSkill, raw, GAME_ROOM_C2S_SCHEMAS[C2S.CastSkill]);
             if (!msg) return;
             if (this.modeMessage(C2S.CastSkill, client, msg)) return;
             const player = this.state.players.get(client.sessionId);
@@ -573,7 +530,7 @@ export class GameRoom extends Room {
         },
 
         [C2S.Chat]: (client: Client, raw: IChatReq) => {
-            const msg = this.acceptMessage(client, C2S.Chat, raw, C2S_RUNTIME_SCHEMA[C2S.Chat]);
+            const msg = this.acceptMessage(client, C2S.Chat, raw, GAME_ROOM_C2S_SCHEMAS[C2S.Chat]);
             if (!msg) return;
             if (this.modeMessage(C2S.Chat, client, msg)) return;
             const player = this.state.players.get(client.sessionId);
@@ -649,14 +606,6 @@ export class GameRoom extends Room {
     ): T | undefined {
         if (this.disposed) return undefined;
         if (!this.consumeMessageBudget(client)) return undefined;
-        if (!isPlainMessageRecord(raw)) {
-            this.sendError(client, ErrorCode.BadRequest);
-            return undefined;
-        }
-        if (!hasExactMessageKeys(raw, messageType)) {
-            this.sendError(client, ErrorCode.BadRequest);
-            return undefined;
-        }
         let parsed: { success: true; data: T } | { success: false };
         try {
             parsed = schema.safeParse(raw);
