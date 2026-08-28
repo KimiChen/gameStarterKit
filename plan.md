@@ -236,20 +236,17 @@ move 与消费随机数的技能帧，钉住 admission/match RNG 隔离（展示
 join；并发合流、超时语义与 admission 开关由 `apps/server/test/character-ready.test.ts` 覆盖（注入假
 initializer，不触外部依赖）；空库首登与并发 join 由 `apps/server/test/int/lobby-zone.test.ts` 覆盖；登记
 失败与 repair intent 由 `apps/server/test/int/character-repair.test.ts` 覆盖。
-复核备注：join 期间 MySQL、Redis 与 WebPlatform 登记超时均无专用注入用例，由
-`int/character-repair.test.ts`（登记失败本身）与 `int/lobby-zone.test.ts` 的「initializer 任意失败即拒
-join」两侧分别间接覆盖；两半未在同一用例内串接。
-
-复核备注：客户端侧「join/GetInfo 失败即清会话、不留半状态」只有实现（`apps/client/src/view/pages.ts:478-490`
-的登录 flow 失败分支），无客户端用例覆盖。
+复核备注（已收口）：`character-ready.test.ts` 通过生产 `ensureCharacterWithDependencies` 接缝逐一挂起
+`ensureLive`（Redis/MySQL archive 路径）、`createUser`（Redis 写入）与 `registerCharacterWithRepair`
+（WebPlatform PUT + repair），直接断言每个慢阶段均有界拒绝 ready、不会越过未完成阶段，底层 flight 放行后
+仍完整收敛。客户端 `pageLogic.test.ts` 直接覆盖 join/GetInfo 任一失败时清 session + leave、null profile
+同样拒绝导航，以及成功取得具体角色后才保留会话。
 
 已知限制：`ensureCharacter`（`apps/server/src/player/character.ts:35-45`）每次 join 都同步调用 WebPlatform
 `registerCharacter`（PUT，`platform/webPlatformClient.ts:357-370`，无本地缓存/短路），登记失败即拒绝本次
 join（`characterRepair.ts:154-173` 落 durable intent 后仍向上抛）；已有完整 `s{sId}_user` 热档的回访玩家
 同样受影响，外部登记不可用时表现为全量 Lobby join 被拒。durable repair intent 只补齐登记，不解除该阻塞。
-另需修正 `apps/server/src/player/character.ts:34` 头部「失败不抛给连接（调用方 best-effort，重连自愈）」
-的陈旧注释：它与同文件 `:41` 自身注释「失败 durable 留 intent 后仍向上抛」以及 `LobbyRoom.ts:384` 的
-`await` 相矛盾，现行为是向上抛并拒绝 join。
+`apps/server/src/player/character.ts` 已明确记录任一阶段失败都会向上抛并拒绝本次 join，与生产行为一致。
 
 **原审阅证据（已收口）**
 
