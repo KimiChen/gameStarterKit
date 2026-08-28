@@ -19,6 +19,7 @@ import { withUser } from "../../src/core/uow";
 import { idemAcquire, idemComplete, idemRelease } from "../../src/core/idem";
 import { deriveOpId, redisApply } from "../../src/core/economy/outbox";
 import { createUser } from "../../src/core/userRecord";
+import { writeGroupSess } from "../../src/core/auth/session";
 import { LOCK_TTL_MS } from "../../src/core/infra/config";
 import { kApplied, kBag, kBagAll, kIdemUser, kLock, kUser } from "../../src/core/infra/keys";
 import { clientFor, closeRedis } from "../../src/core/infra/redisRoute";
@@ -190,4 +191,31 @@ test("idem：pending 互斥、done 回缓存、release 后立即可重占", asyn
   await idemRelease(c, key2, "h1"); // 干净失败释放
   assert.deepEqual(await idemAcquire(c, key2, "h4"), { kind: "acquired" }); // 不用等 10s
   await c.unlink(key, key2);
+});
+
+test("session fence：脚本缓存丢失时自动 NOSCRIPT reload，状态语义保持不变", async () => {
+  const u = uid("session-script-reload");
+  const c = clientFor(u);
+  // Inject one NOSCRIPT response on this client only. This models a Redis
+  // restart/failover without flushing the shared script cache used by other
+  // tests; evalshaWithReload must SCRIPT LOAD and retry transparently.
+  const redisWithEvalsha = c as unknown as {
+    evalsha: (...args: unknown[]) => Promise<unknown>;
+  };
+  const originalEvalsha = redisWithEvalsha.evalsha;
+  let injected = true;
+  redisWithEvalsha.evalsha = async (...args: unknown[]) => {
+    if (injected) {
+      injected = false;
+      throw new Error("NOSCRIPT injected for session fence test");
+    }
+    return originalEvalsha.apply(c, args);
+  };
+  try {
+    assert.equal(await writeGroupSess(u, "session-token", 1, "", 100), "written");
+    assert.equal(await writeGroupSess(u, "session-token", 1, "", 100), "unchanged");
+    assert.equal(await writeGroupSess(u, "older-token", 1, "", 99), "stale");
+  } finally {
+    redisWithEvalsha.evalsha = originalEvalsha;
+  }
 });

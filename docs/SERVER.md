@@ -377,9 +377,6 @@ entry 会被 ACK 丢弃、S1 的热档 reader 不看 schemaVersion。其中前�
 09·X2 / 09·X3 指代它们。GameRoom C2S、Lobby RPC envelope、Public WebPlatform response 和未知路由限流
 已分别有 runtime/contract 守门，不应继续列作当前偏差。不要用规则编号掩盖剩余事实。
 
-R7/R9 的 SHA + `NOSCRIPT` 兜底覆盖除登录外的全部 Lua：`core/auth/session.ts` 的组 sess 写入栅栏脚本仍用
-裸 `EVAL` 内联下发，未登记到 `redisScripts.ts`。
-
 ## 13. 登记点
 
 | 内容 | 当前真源 |
@@ -391,7 +388,7 @@ R7/R9 的 SHA + `NOSCRIPT` 兜底覆盖除登录外的全部 Lua：`core/auth/se
 | Redis key | `apps/server/src/core/infra/keys.ts` |
 | Asset effect schema/validator | `apps/shared/src/protocol/lobbyRpc/economy.ts`；Lua 镜像在 `apps/server/src/core/infra/redisScripts.ts` |
 | 跨模块服务端配置 | `apps/server/src/core/infra/config.ts`；少量模块私有常量仍在实现文件内 |
-| Lua | `apps/server/src/core/infra/redisScripts.ts` 与模块专属 script 文件；`core/auth/session.ts` 的 `SESS_FENCE_LUA` 目前是例外，未经 `defineScript` 登记 |
+| Lua | `apps/server/src/core/infra/redisScripts.ts` 与模块专属 script 文件；认证组 sess fence 在 `core/auth/session.ts` 以 `defineScript` 登记，并统一经 `evalshaWithReload` 执行 |
 | MySQL DDL | `apps/server/sql/schema.sql`；兼容升级逻辑在 `tools/db-bootstrap.ts` |
 | RPC endpoint | `apps/server/src/websocket/<domain>/<method>.ts`；装载规则在 `loader.ts` |
 | HTTP endpoint | `apps/server/src/http/<domain>/<method>.ts`；装配在 `http/index.ts` |

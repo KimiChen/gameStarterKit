@@ -21,6 +21,7 @@ import { clientFor } from "../infra/redisRoute";
 import { AuthRequiredError } from "../errors";
 import { touchActive } from "../userRecord";
 import { storedInt } from "../infra/numbers";
+import { defineScript, evalshaWithReload } from "../infra/redisScripts";
 // 踢人通道（§2.3）：同区顶号时主动踢旧连接；账号封禁/撤销由 WebPlatform 管理面负责。
 import { broadcastKick, kickLocal } from "./kickBus";
 import { ForceLogoutReason } from "@game/shared";
@@ -82,7 +83,7 @@ export const safeSecretEqual = (a: string | null | undefined, b: string | null |
  * ⚠ 不能只返回 boolean：同一 token 的第二条连接会再次 strict verify，issuedAt 与缓存相等，
  * 这是合法的 `unchanged`；若把所有 no-op 都当 stale，会把多连接/重连误拒。
  */
-const SESS_FENCE_LUA = `
+export const SESS_FENCE_LUA = defineScript("sessionFence", `
 local storedAt = redis.call('HGET', KEYS[1], 'issuedAt')
 if storedAt and tonumber(storedAt) then
   local incomingAt = tonumber(ARGV[2])
@@ -104,7 +105,7 @@ redis.call('HSET', KEYS[1], 'tokenHash', ARGV[1], 'issuedAt', ARGV[2],
            'loginTs', ARGV[3], 'connId', '', 'gwNode', ARGV[4])
 redis.call('EXPIRE', KEYS[1], ARGV[5])
 return {1, oldHash or ''}
-`;
+`);
 
 export type GroupSessWriteResult = "written" | "unchanged" | "stale";
 
@@ -121,8 +122,11 @@ export async function writeGroupSess(
   // 换发了 token）⇒ 旧设备的连接要主动踢下线。⚠ 断线重连**不会**命中：重连复用同一 token（hash 相同），
   // 且不经登录；首次连接/sess 已过期时 oldHash=null 也不命中。判据精确到「换了登录态」这一件事。
   // ⚠ 这一读一写**必须原子**：拆成两步就是 A1 描述的那条竞态（中间可任意交错）。
-  const res = await clientFor(uid).eval(
-    SESS_FENCE_LUA, 1, key, newHash, String(issuedAtMs), String(Date.now()), gwNode, String(SESS_TTL_S),
+  const res = await evalshaWithReload(
+    clientFor(uid),
+    SESS_FENCE_LUA,
+    [key],
+    [newHash, String(issuedAtMs), String(Date.now()), gwNode, String(SESS_TTL_S)],
   ) as [number, string];
   const status = storedInt(res?.[0], "session fence status", { min: -1, max: 1 });
   const oldRaw = String(res?.[1] ?? "");
