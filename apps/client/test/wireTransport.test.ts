@@ -15,6 +15,7 @@ import {
 } from "../src/shared/index";
 import { RpcError, WebSocketClient } from "../src/net/WebSocketClient";
 import { RoomClient } from "../src/net/RoomClient";
+import { markFaultPoint } from "./faultMatrix";
 
 type Handler = (...values: unknown[]) => void;
 
@@ -228,6 +229,7 @@ test("RoomClient：room.send 同步异常不穿透，reconcile 不误记已发�
     client.reconcileInput();
     assert.deepEqual(fake.sent, [{ type: C2S.Move, data: { dirX: 1, dirY: 0 } }],
       "send 失败后 lastInputSeq 必须保持未确认，恢复时应重发最新 desired");
+    markFaultPoint("transport-reconcile");
     await owner.leave();
   } finally {
     console.warn = oldWarn;

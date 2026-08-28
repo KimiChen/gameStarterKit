@@ -126,9 +126,19 @@ const ERR_MAP = new Map<Function, ErrCode>([
 
 /** 把任意异常规约成 RpcReply.err。未映射的一律 INTERNAL（不泄漏内部细节）。 */
 export function toErrCode(e: unknown): ErrCode {
-  if (e && typeof e === "object") {
-    const code = ERR_MAP.get((e as object).constructor);
-    if (code) { return code; }
+  // Error values can cross adapter boundaries as revoked/hostile Proxies.
+  // Reading `.constructor` is observable and may throw; error normalization
+  // must never turn an original failure into a second uncaught exception.
+  try {
+    if (e && (typeof e === "object" || typeof e === "function")) {
+      const constructor = (e as { readonly constructor?: unknown }).constructor;
+      if (typeof constructor === "function") {
+        const code = ERR_MAP.get(constructor);
+        if (code) { return code; }
+      }
+    }
+  } catch {
+    // Fall through to the deliberately opaque INTERNAL code.
   }
   return "INTERNAL";
 }

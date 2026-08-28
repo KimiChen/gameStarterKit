@@ -54,6 +54,9 @@ export function assertGameHttpRoutes(
   const seen = new Set<string>();
   for (const [key, contract] of expected) {
     const endpoint = definitions[key];
+    if (!endpoint || (typeof endpoint !== "object" && typeof endpoint !== "function")) {
+      throw new Error(`[http-contract] ${key} 缺少 endpoint 定义`);
+    }
     const method = endpoint.options?.method;
     const methods = Array.isArray(method) ? method : [method];
     const routeKey = `${String(method)} ${String(endpoint.path)}`;

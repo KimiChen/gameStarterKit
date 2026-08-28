@@ -1,0 +1,209 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import vm from "node:vm";
+import { WireValidationError } from "@game/shared";
+import { z } from "zod";
+import {
+  createGameEndpoint,
+  validateGameHttpRequest,
+  validateGameHttpResponse,
+} from "../src/http/contract";
+
+function assertStableWireError(run: () => unknown): void {
+  assert.throws(run, (error: unknown) => {
+    assert.ok(error instanceof WireValidationError);
+    assert.doesNotMatch(error.message, /hostile/);
+    return true;
+  });
+}
+
+test("HTTP response adapter validates plain handler output before serialization", async () => {
+  const endpoint = createGameEndpoint("Health", { method: "GET" }, async () => ({
+    status: "ok",
+    serverTime: 1,
+    version: "1",
+    extra: true,
+  }));
+
+  await assert.rejects(() => endpoint({}), /WIRE_KEYS/);
+  assert.deepEqual(
+    validateGameHttpResponse("Health", { status: "ok", serverTime: 1, version: "1" }),
+    { status: "ok", serverTime: 1, version: "1" },
+  );
+});
+
+test("HTTP response adapter validates ctx.json body and keeps Better-Call marker", async () => {
+  const malformed = createGameEndpoint("ClockNow", { method: "GET" }, async (ctx) =>
+    ctx.json({ serverTime: Number.NaN }));
+  await assert.rejects(() => malformed({ asResponse: true }), /WIRE_INTEGER/);
+
+  const endpoint = createGameEndpoint("ClockNow", { method: "GET" }, async (ctx) =>
+    ctx.json({ serverTime: 42 }));
+
+  const response = await endpoint({ asResponse: true });
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { serverTime: 42 });
+});
+
+test("HTTP response adapter preserves a Better-Call Response override while validating JSON", async () => {
+  const routerResponse = new Response("custom body", {
+    status: 202,
+    headers: { "x-contract-test": "ok" },
+  });
+  const endpoint = createGameEndpoint("ClockNow", { method: "GET" }, async (ctx) =>
+    ctx.json({ serverTime: 42 }, routerResponse));
+
+  const response = await endpoint({ asResponse: true });
+  assert.equal(response, routerResponse, "Better-Call should return the supplied Response instance");
+  assert.equal(response.status, 202);
+  assert.equal(response.headers.get("x-contract-test"), "ok");
+  assert.equal(await response.text(), "custom body");
+
+  const malformed = createGameEndpoint("ClockNow", { method: "GET" }, async (ctx) =>
+    ctx.json({ serverTime: Number.NaN }, new Response("ignored", { status: 202 })));
+  await assert.rejects(() => malformed({ asResponse: true }), /WIRE_INTEGER/);
+});
+
+test("HTTP response adapter preserves a cross-realm Response override", async () => {
+  // A browser iframe/worker has a different Response prototype.  Construct a
+  // Response-shaped object in a separate VM realm so this test does not rely
+  // on the host realm's `instanceof` behavior.
+  const foreignResponse = vm.runInNewContext(`(() => {
+    const body = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode("foreign body"));
+        controller.close();
+      },
+    });
+    return {
+      body,
+      headers: new Headers([["x-contract-test", "foreign"]]),
+      status: 203,
+      statusText: "Non-Authoritative Information",
+      text() { return Promise.resolve("foreign body"); },
+      [Symbol.toStringTag]: "Response",
+    };
+  })()`, { Headers, ReadableStream, TextEncoder });
+
+  assert.equal(foreignResponse instanceof Response, false);
+  const endpoint = createGameEndpoint("ClockNow", { method: "GET" }, async (ctx) =>
+    ctx.json({ serverTime: 42 }, foreignResponse));
+
+  const response = await endpoint({ asResponse: true });
+  assert.equal(response.status, 203);
+  assert.equal(response.statusText, "Non-Authoritative Information");
+  assert.equal(response.headers.get("x-contract-test"), "foreign");
+  assert.equal(await response.text(), "foreign body");
+});
+
+test("HTTP response adapter passes returned APIError through unchanged", async () => {
+  const endpoint = createGameEndpoint("Health", { method: "GET" }, async (ctx) =>
+    ctx.error(401, { code: "AUTH_REQUIRED" }));
+
+  const result = await endpoint({});
+  assert.equal(result.name, "APIError");
+  assert.equal(result.statusCode, 401);
+  assert.deepEqual(result.body, { code: "AUTH_REQUIRED" });
+});
+
+test("HTTP response adapter contains hostile marker and APIError probes", () => {
+  const hostileName = {};
+  Object.defineProperty(hostileName, "name", {
+    get(): never { throw new Error("hostile name getter"); },
+  });
+  assertStableWireError(() => validateGameHttpResponse("Health", hostileName));
+
+  const hostileFlag = {};
+  Object.defineProperty(hostileFlag, "_flag", {
+    get(): never { throw new Error("hostile flag getter"); },
+  });
+  assertStableWireError(() => validateGameHttpResponse("Health", hostileFlag));
+
+  const hostileBody = { _flag: "json" };
+  Object.defineProperty(hostileBody, "body", {
+    enumerable: true,
+    get(): never { throw new Error("hostile body getter"); },
+  });
+  assertStableWireError(() => validateGameHttpResponse("Health", hostileBody));
+
+  const hostileSpread = {
+    _flag: "json",
+    body: { status: "ok", serverTime: 1, version: "1" },
+  };
+  Object.defineProperty(hostileSpread, "extra", {
+    enumerable: true,
+    get(): never { throw new Error("hostile spread getter"); },
+  });
+  assert.deepEqual(validateGameHttpResponse("Health", hostileSpread), {
+    _flag: "json",
+    body: { status: "ok", serverTime: 1, version: "1" },
+  });
+
+  assertStableWireError(() => validateGameHttpResponse("Health", {
+    name: "APIError",
+    statusCode: 200,
+    body: { arbitrary: true },
+  }));
+  const fakeError = Object.assign(new Error("fake"), {
+    name: "APIError",
+    statusCode: 200,
+    body: { arbitrary: true },
+  });
+  assertStableWireError(() => validateGameHttpResponse("Health", fakeError));
+});
+
+test("HTTP endpoint executes the shared request contract before its handler", async () => {
+  assert.deepEqual(validateGameHttpRequest("AdminKick", { uid: "u1" }), { uid: "u1" });
+
+  let called = false;
+  const endpoint = createGameEndpoint("AdminKick", {
+    method: "POST",
+    // Deliberately wider than the contract: the adapter must remain the final
+    // authority even if a future local schema drifts.
+    body: z.object({ uid: z.string() }).passthrough(),
+  }, async () => {
+    called = true;
+    return { kicked: false };
+  });
+
+  await assert.rejects(
+    () => endpoint({ body: { uid: "u1", extra: true } }),
+    /WIRE_KEYS at request/,
+  );
+  assert.equal(called, false);
+  assert.deepEqual(await endpoint({ body: { uid: "u1" } }), { kicked: false });
+  assert.equal(called, true);
+});
+
+test("HTTP endpoint validates the raw request before local strip/coercion transforms", async () => {
+  let called = false;
+  const stripped = createGameEndpoint("AdminKick", {
+    method: "POST",
+    // A route-local object schema without passthrough would otherwise hide
+    // the extra field before the shared exact-key validator sees it.
+    body: z.object({ uid: z.string() }),
+  }, async () => {
+    called = true;
+    return { kicked: false };
+  });
+
+  await assert.rejects(
+    () => stripped({ body: { uid: "u1", extra: true } }),
+    /WIRE_KEYS at request/,
+  );
+  assert.equal(called, false);
+
+  const coerced = createGameEndpoint("PayWxNotify", {
+    method: "POST",
+    body: z.object({
+      orderId: z.string(),
+      wxTxnId: z.string(),
+      amountFen: z.coerce.number(),
+    }),
+  }, async () => ({ code: "SUCCESS" }));
+
+  await assert.rejects(
+    () => coerced({ body: { orderId: "o", wxTxnId: "w", amountFen: "1" } }),
+    /WIRE_INTEGER at request.amountFen/,
+  );
+});

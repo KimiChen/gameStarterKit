@@ -97,8 +97,13 @@ test("WebPlatform Public：portal 必填且不回退；v1 登录/选服方法、
     assert.throws(() => getPortalUrl(), /尚未初始化/);
     assert.throws(() => initPortal("ws://portal.invalid"), /http\(s\)/);
 
-    initPortal("https://portal.example.com///");
-    assert.equal(getPortalUrl(), "https://portal.example.com", "只规范化尾斜杠，不改写为游戏服地址");
+    assert.throws(
+      () => initPortal("https://portal.example.com///"),
+      /portalUrl 必填/,
+      "多重尾斜杠必须被拒绝，避免不同端点规范化规则分叉",
+    );
+    initPortal("https://portal.example.com/");
+    assert.equal(getPortalUrl(), "https://portal.example.com", "单尾斜杠可规范化，不改写为游戏服地址");
 
     FakeXhr.nextStatus = 200;
     FakeXhr.nextBody = `{"userId":"u_1","accessToken":"opaque","isNewAccount":true}`;
