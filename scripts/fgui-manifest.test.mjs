@@ -1,4 +1,4 @@
-// FGUI manifest 的纯校验分支测试；不读写仓库内的设计源或导出物。
+// FGUI manifest 的校验分支测试；失败 fixture 不写入或修改仓库内的资源。
 import assert from "node:assert/strict";
 import { test } from "node:test";
 

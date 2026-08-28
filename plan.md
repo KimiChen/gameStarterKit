@@ -418,10 +418,10 @@ shared exact validators、RPC/HTTP contract map、Colyseus state mirror、fixtur
 区仍由单源生成。required/shared package 缺失或超时会返回可重试错误，View open 贯通 deadline/generation，
 `verify:fgui` 维护 XML、`.bin`、图集和生成绑定的 manifest/hash。
 
-复核备注：`scripts/fgui-manifest.mjs` 无任何单元测试（其末尾导出的 6 个辅助函数全仓无 import），也不在
-`scripts/fault-matrix.config.json` 的故障点内，`npm run test:fgui` 亦不包含它；门禁的失败分支
-（source/export 哈希不符、记录缺失或多余、路径越界、导出物多重归属、manifest 结构非法、非法 `ui://`
-引用）目前只有「对真实仓库跑一遍为绿」这一个正例，尚未被反例验证。
+复核备注（已收口）：`141d13d` 已把 `scripts/fgui-manifest.mjs` 的纯校验辅助函数直接纳入
+`scripts/fgui-manifest.test.mjs`，并由 `npm run test:fgui` 执行。反例逐项覆盖 source/export 哈希不符、
+记录缺失或多余、路径越界、导出物多重归属、manifest 结构非法、重复 package name/id、非法 `ui://`
+引用和 package.xml 伪声明；另保留对真实仓库资源闭包的只读正例。
 
 **完成标准**：设计源变更未重新导出、嵌套字段改名、加载中关闭或 required 包缺失都被本地检查稳定捕获。
 
