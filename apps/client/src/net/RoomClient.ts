@@ -677,6 +677,14 @@ export class RoomClient {
     ): Promise<Colyseus.Room<IGameRoomState>> {
         let room: Colyseus.Room<IGameRoomState>;
         try {
+            // Colyseus authenticates the connection from its standard auth token
+            // field. Keep it aligned with the slot snapshot before the SDK
+            // starts the handshake; options.token remains only a compatibility
+            // field validated by the server for exact equality.
+            // Clear a stale SDK auth value as well: omitting the compatibility
+            // field must never accidentally reuse the previous account's
+            // bearer. A real server will reject the resulting empty token.
+            client.auth.token = joinOptions.token ?? "";
             room = await client.joinOrCreate<IGameRoomState>(RoomName.Game, joinOptions);
         } catch (e) {
             // 失败槽不再接纳后来调用；既有 owner 仍从各自 ready 收到原始连接错误。

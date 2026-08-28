@@ -74,6 +74,8 @@ const joinCalls: Array<{ endpoint: string; roomName: string; options: Record<str
 class FakeColyseusClient {
   constructor(private readonly endpoint: string) {}
 
+  auth = { token: "" };
+
   joinOrCreate(roomName: string, options: Record<string, unknown>): Promise<unknown> {
     const next = joinQueue.shift();
     assert.ok(next, "测试必须先准备 join 结果");
@@ -109,6 +111,11 @@ test("合流同一在途 join：旧 owner 释放不关闭后来者共享的 room
     roomName: RoomName.Game,
     options: { v: PROTOCOL_VERSION, token: "same-session", sId: 7 },
   });
+  assert.equal(
+    (client as unknown as { client: FakeColyseusClient }).client.auth.token,
+    "same-session",
+    "战斗 join 必须把固化 token 写入 SDK 标准 auth 字段",
+  );
 
   // 先挂 rejection 断言，避免 resolve join 后旧 ownership 的预期 rejection 成为 unhandled。
   const oldReadyRejected = assert.rejects(oldGeneration.ready, /ownership 已释放/);
@@ -288,11 +295,11 @@ test("joinOrCreate 同步抛错：迟到 owner 立即失败并释放失败槽", 
   const client = makeClient();
   const failure = new Error("sync game join failure");
   const internals = client as unknown as {
-    client: { joinOrCreate: (...args: unknown[]) => Promise<unknown> };
+    client: { auth: { token: string }; joinOrCreate: (...args: unknown[]) => Promise<unknown> };
     slot: unknown;
     closeSlot: (slot: unknown) => Promise<void>;
   };
-  internals.client = { joinOrCreate() { throw failure; } };
+  internals.client = { auth: { token: "" }, joinOrCreate() { throw failure; } };
   const originalCloseSlot = internals.closeSlot;
   let closeCalls = 0;
   internals.closeSlot = (slot) => {
