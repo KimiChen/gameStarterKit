@@ -621,7 +621,11 @@ test("ViewMgr cacheable open transaction rolls back mount/onOpen/setup/render fa
 test("ViewMgr permanent remount preserves setup errors and remains retryable", async () => {
   const runtime = await loadViewRuntime();
   const name = "__permanent_remount_probe__";
-  class ProbeView extends runtime.FguiView { protected bind(): void {} }
+  let closeCalls = 0;
+  class ProbeView extends runtime.FguiView {
+    protected bind(): void {}
+    protected onCloseLifecycle(): void { closeCalls++; }
+  }
   runtime.VIEW_REGISTRY[name] = {
     name,
     contract: { pkg: "PermanentRemountProbe", comp: "Root", required: [] },
@@ -639,6 +643,8 @@ test("ViewMgr permanent remount preserves setup errors and remains retryable", a
     first = await runtime.ViewMgr.open(name);
     const ownedView = first.view;
     first.close();
+    first.close();
+    assert.equal(closeCalls, 1, "同一 permanent 句柄二次 close 只能执行一次 onClose");
     assert.equal(ownedView.isDisposed, false, "permanent close 只卸载、不销毁实例");
 
     await assert.rejects(
@@ -648,11 +654,15 @@ test("ViewMgr permanent remount preserves setup errors and remains retryable", a
     assert.equal(runtime.ViewMgr.isOpen(name), false);
     assert.equal(runtime.getInputEnabled(), false);
     assert.equal(ownedView.isDisposed, false, "失败回滚后 permanent 实例仍可重试");
+    assert.equal(closeCalls, 2, "失败的重挂事务也必须只关闭其自身世代");
 
     reopened = await runtime.ViewMgr.open(name);
     assert.equal(reopened.view, ownedView);
     assert.notEqual(reopened, first, "每次重挂必须获得新世代句柄");
     reopened.close();
+    reopened.close();
+    first.close();
+    assert.equal(closeCalls, 3, "旧世代句柄不得关闭新重挂世代");
   } finally {
     first?.close();
     reopened?.close();
@@ -665,7 +675,9 @@ test("ViewMgr interactive lease stays enabled until the last view closes, then r
   const runtime = await loadViewRuntime();
   const firstName = "__lease_first__";
   const secondName = "__lease_second__";
-  class ProbeView extends runtime.FguiView { protected bind(): void {} }
+  class ProbeView extends runtime.FguiView {
+    protected bind(): void {}
+  }
   for (const name of [firstName, secondName]) {
     runtime.VIEW_REGISTRY[name] = {
       name,

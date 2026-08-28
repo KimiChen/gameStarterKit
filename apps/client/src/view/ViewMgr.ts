@@ -225,7 +225,6 @@ function closeEffects(meta: ViewMeta): void {
 function makeHandle(
   name: string,
   view: FguiView,
-  meta: ViewMeta,
   context: ViewLifecycleContext,
   cacheable: boolean,
   releaseMount: (() => void) | null,
@@ -261,8 +260,9 @@ function makeHandle(
     get signal() { return state.context.signal; },
     get generation() { return state.context.generation; },
     close(): void {
-      // permanent 实例可再次打开，句柄本身保持可复用；其它句柄关闭后永久失效。
-      if (state.closed && !meta.permanent) return;
+      // Every handle belongs to one lifecycle generation. A permanent view is
+      // remounted with a fresh handle, so an old handle must stay inert too.
+      if (state.closed) return;
       if (cacheable) {
         const entry = cache.get(name);
         // A permanent view gets a fresh handle for every remount.  An old
@@ -344,7 +344,7 @@ async function open(name: string, setup?: ViewSetup): Promise<ViewHandle> {
       entry.mounted = true;
       // Every remount receives a fresh handle.  Reusing the original object
       // would let a stale caller close or run setup against this generation.
-      const made = makeHandle(name, entry.view, meta, context, true, releaseMount);
+      const made = makeHandle(name, entry.view, context, true, releaseMount);
       entry.handle = made.handle;
       await entry.view.runOpen(context);
       ensureContextActive(context, name);
@@ -419,7 +419,6 @@ async function open(name: string, setup?: ViewSetup): Promise<ViewHandle> {
       const made = makeHandle(
         name,
         view,
-        meta,
         context,
         cacheable,
         lease,
