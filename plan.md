@@ -429,17 +429,11 @@ shared exact validators、RPC/HTTP contract map、Colyseus state mirror、fixtur
 
 状态：已完成计划内边界。数字 parser、compute admission、dispatcher timer、strict request、Redis route
 URL、freeze keyset 和坏值校验已落地；relayer 事务边界、archive 隔离和热档迁移仍列为明确限制。
-复核备注：compute 达到容量上限的饱和路径暂无专项用例（docs/SERVER.md §11 已同步改为如实表述）；
-freeze janitor 的 `batch ≤ 0` 按钳到 1 处理而非拒绝（测试已钉死该语义）。
-
-复核备注：dispatcher 的 timer clear/unref（`dispatcher.ts:293-307`）与 `IDEM_PENDING_MS`(30_000) >
-`HANDLER_TIMEOUT_MS`(10_000)（`config.ts:294`/`:398`）的窗口不等式当前只有代码约束，无用例与加载期断言；
-`dispatcher-idem.test.ts` 只覆盖幂等状态机与错误码映射，不经过 `dispatchRpc` 本身。
-
-复核备注：freeze janitor 的边界拒绝（`normalizeJanitorBudget` / `normalizeJanitorFrozenAt`）有专项用例；
-`(frozen_at,user_id)` 游标本身的跨调用续扫、失败行不推进（`freezeWorker.ts:350-352`）、短页/空页重置
-（`:319-323`/`:358`）三条不变量无用例——`int/archive.test.ts` 的五次 `janitorSweep` 调用只断言
-deleted/repaired 计数与存储终态。
+复核备注（已收口）：`03515e2` 已补生产接缝测试。`compute-pool.test.ts` 用独立进程和最小容量稳定触发
+running + queued 饱和；`dispatcher-idem.test.ts` 直接执行 deadline helper，覆盖成功/超时两支的 timer
+`unref/clear`，`config-guard.test.ts` 另锁定 `IDEM_PENDING_MS > HANDLER_TIMEOUT_MS`。freeze janitor 测试覆盖
+`(frozen_at,user_id)` 游标跨调用续扫、失败行不推进及短页/空页重置；`batch ≤ 0` 继续按兼容语义钳到 1，
+并由测试钉死。
 
 1. 完整数字 parser 拒绝尾随垃圾、指数写法、NaN/Infinity 和非安全整数；负值与上下界由调用方传入的
    min/max 选项拒绝（parser 本身不内置非负约束，`numbers.ts:16`/`:36` 的正则显式允许前导 `-`），当前 65
@@ -450,9 +444,8 @@ deleted/repaired 计数与存储终态。
 4. Redis/MySQL 数字读取统一做 finite/integer/range/schema 校验，坏值不会进入领域和协议。
 5. 需要 exact 的 Zod 边界使用 strict 语义；unknown message 先经过有界 per-principal 限流。
 6. redis-route 在装载期校验每个 durable/cache URL 和 bucket 覆盖，错误配置 fail-fast，不回退到 ioredis
-   默认地址。测试面仅覆盖导出的 `validateRedisUrl` 纯函数（`redis-route.test.ts:5`）；`loadTable` 的 route
-   file 解析分支——每条 durable 条目校验、buckets 常量比对、range 合法性与桶无缝覆盖 `[0,BUCKETS)`——本地
-   门禁中没有用例执行过（全仓无测试设置 `REDIS_ROUTE_FILE`）。
+   默认地址。`redis-route.test.ts` 通过临时 YAML 和真实 `REDIS_ROUTE_FILE` loader 覆盖解析、排序、每条
+   durable/cache URL、buckets 常量、range 合法性、桶无缝覆盖 `[0,BUCKETS)` 与缺文件 fallback。
 7. freeze janitor 已收口为有界 keyset 扫描：`core/archive/freezeWorker.ts` 每轮把 `batch` 作为总扫描
    预算，按 `(frozen_at,user_id)` 游标跨调用续扫。正常冷档行经无锁 EXISTS 预筛 `continue` 不删行，
    但不会长期占据排序前段，后面的陈旧残留行与 PITR 后的 ARCHIVE_NEWER 行可在后续轮次被扫描；游标
