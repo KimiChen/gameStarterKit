@@ -302,20 +302,58 @@ function janitorCursorOf(row: RowDataPacket): JanitorCursor {
   return { frozenAt, userId };
 }
 
-async function runJanitorSweep(lease: SingletonLease, batch: number): Promise<JanitorSweepResult> {
+export type JanitorVisitResult = "unchanged" | "deleted" | "repaired";
+
+/** Narrow I/O seam for the keyset algorithm; production supplies the functions below. */
+export interface JanitorSweepDependencies {
+  query: (cursor: JanitorCursor | null, budget: number) => Promise<readonly RowDataPacket[]>;
+  visit: (uid: string, lease: SingletonLease) => Promise<JanitorVisitResult>;
+}
+
+const productionJanitorDependencies: JanitorSweepDependencies = {
+  query: async (cursor, budget) => {
+    const where = cursor === null
+      ? ""
+      : "WHERE (frozen_at > ? OR (frozen_at = ? AND user_id > ?))";
+    const params: unknown[] = cursor === null
+      ? [budget]
+      : [cursor.frozenAt, cursor.frozenAt, cursor.userId, budget];
+    const [rows] = await getPool().query<RowDataPacket[]>(
+      `SELECT user_id, frozen_at FROM user_archive ${where} ORDER BY frozen_at, user_id LIMIT ?`, params);
+    return rows;
+  },
+  visit: async (uid, lease) => {
+    if ((await clientFor(uid).exists(kUser(uid))) === 0) { return "unchanged"; }
+    return withUserLock(uid, async (fence): Promise<JanitorVisitResult> => {
+      const st = await resolve(uid); // 锁内复判（09·F1）
+      if (st.kind === "LIVE" && st.row) {
+        await withLeaseTx(lease, async (conn) => { // 业务删行与续租守卫同事务（09·X7）
+          await conn.execute<ResultSetHeader>("DELETE FROM user_archive WHERE user_id = ?", [uid]);
+        });
+        return "deleted";
+      }
+      if (st.kind === "ARCHIVE_NEWER") {
+        // PITR 修复：UNLINK 陈旧 Redis 档 → 从 archive 恢复（Lua 原子，overwrite=1）
+        await restoreFromArchive(uid, fence, st.row!, true);
+        return "repaired";
+      }
+      // FROZEN（预筛后被并发 freeze 变冷）→ 什么都不做，留给 thaw
+      return "unchanged";
+    }, { renewMs: LOCK_RENEW_MS });
+  },
+};
+
+async function runJanitorSweep(
+  lease: SingletonLease,
+  batch: number,
+  deps: JanitorSweepDependencies = productionJanitorDependencies,
+): Promise<JanitorSweepResult> {
   const out = { scanned: 0, deleted: 0, repaired: 0 };
   const budget = normalizeJanitorBudget(batch);
   // 每次调用只取一页；正常 FROZEN 行会长期占据前段，模块级游标保证后面的
   // 陈旧/ARCHIVE_NEWER 行在后续小时轮次也能被扫到，同时不让单轮扫描无界增长。
   const cursor = janitorCursor;
-  const where = cursor === null
-    ? ""
-    : "WHERE (frozen_at > ? OR (frozen_at = ? AND user_id > ?))";
-  const params: unknown[] = cursor === null
-    ? [budget]
-    : [cursor.frozenAt, cursor.frozenAt, cursor.userId, budget];
-  const [rows] = await getPool().query<RowDataPacket[]>(
-    `SELECT user_id, frozen_at FROM user_archive ${where} ORDER BY frozen_at, user_id LIMIT ?`, params);
+  const rows = await deps.query(cursor, budget);
   if (rows.length === 0) {
     // Cursor reached the end (or rows were removed between calls): begin a new
     // cycle next time instead of permanently pinning the end-of-table position.
@@ -327,26 +365,14 @@ async function runJanitorSweep(lease: SingletonLease, batch: number): Promise<Ja
     const point = janitorCursorOf(row);
     const uid = point.userId;
     out.scanned++;
-    if ((await clientFor(uid).exists(kUser(uid))) === 0) {
-      janitorCursor = point;
-      continue; // 正常冷档：无锁预筛跳过
+    const result = await deps.visit(uid, lease);
+    if (result === "deleted") {
+      freezeCounters.janitorDeleted++;
+      out.deleted++;
+    } else if (result === "repaired") {
+      freezeCounters.janitorRepaired++;
+      out.repaired++;
     }
-    await withUserLock(uid, async (fence) => {
-      const st = await resolve(uid); // 锁内复判（09·F1）
-      if (st.kind === "LIVE" && st.row) {
-        await withLeaseTx(lease, async (conn) => { // 业务删行与续租守卫同事务（09·X7）
-          await conn.execute<ResultSetHeader>("DELETE FROM user_archive WHERE user_id = ?", [uid]);
-        });
-        freezeCounters.janitorDeleted++;
-        out.deleted++;
-      } else if (st.kind === "ARCHIVE_NEWER") {
-        // PITR 修复：UNLINK 陈旧 Redis 档 → 从 archive 恢复（Lua 原子，overwrite=1）
-        await restoreFromArchive(uid, fence, st.row!, true);
-        freezeCounters.janitorRepaired++;
-        out.repaired++;
-      }
-      // FROZEN（预筛后被并发 freeze 变冷）→ 什么都不做，留给 thaw
-    }, { renewMs: LOCK_RENEW_MS });
     // Advance only after the row's lock/reconciliation work succeeds.  If it
     // throws, the next bounded invocation retries this row instead of skipping it.
     janitorCursor = point;
@@ -363,8 +389,25 @@ async function runJanitorSweep(lease: SingletonLease, batch: number): Promise<Ja
  * 执行一轮有界 janitor。并发调用共享同一个结果 Promise，避免总预算被叠加。
  */
 export function janitorSweep(lease: SingletonLease, batch = 200): Promise<JanitorSweepResult> {
+  return startJanitorSweep(lease, batch, productionJanitorDependencies);
+}
+
+/** Test-only entry point that exercises the production keyset state machine with injected I/O. */
+export function janitorSweepWithDependencies(
+  lease: SingletonLease,
+  batch: number,
+  deps: JanitorSweepDependencies,
+): Promise<JanitorSweepResult> {
+  return startJanitorSweep(lease, batch, deps);
+}
+
+function startJanitorSweep(
+  lease: SingletonLease,
+  batch: number,
+  deps: JanitorSweepDependencies,
+): Promise<JanitorSweepResult> {
   if (janitorFlight) { return janitorFlight; }
-  const run = runJanitorSweep(lease, batch);
+  const run = runJanitorSweep(lease, batch, deps);
   janitorFlight = run;
   // Observe both fulfillment and rejection while clearing the guard; the
   // caller still receives the original promise/rejection unchanged.

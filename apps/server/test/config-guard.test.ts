@@ -12,17 +12,20 @@ import { fileURLToPath } from "node:url";
 
 const SERVER_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-function loadConfigWith(vars: Record<string, string | undefined>): { status: number | null; stderr: string } {
+function loadConfigWith(
+  vars: Record<string, string | undefined>,
+  source = "await import('./src/core/infra/config.ts')",
+): { status: number | null; stderr: string; stdout: string } {
   const env = { ...process.env };
   for (const [k, v] of Object.entries(vars)) {
     if (v === undefined) { delete env[k]; } else { env[k] = v; }
   }
   const r = spawnSync(
     process.execPath,
-    ["--import", "tsx", "--input-type=module", "-e", "await import('./src/core/infra/config.ts')"],
+    ["--import", "tsx", "--input-type=module", "-e", source],
     { cwd: SERVER_ROOT, env, encoding: "utf8", timeout: 30_000 },
   );
-  return { status: r.status, stderr: r.stderr };
+  return { status: r.status, stderr: r.stderr, stdout: r.stdout };
 }
 
 test("PROJECT_ID 非法值：config 加载期即 throw（服务端拒绝启动）", () => {
@@ -169,4 +172,11 @@ test("PAY_ENABLED=1 在非生产：正常加载（联调/灰度留口）", () =>
     const r = loadConfigWith({ PAY_ENABLED: "1", NODE_ENV: nodeEnv });
     assert.equal(r.status, 0, `NODE_ENV=${String(nodeEnv)} 应通过，stderr：${r.stderr.slice(0, 300)}`);
   }
+});
+
+test("幂等 pending 租约窗口必须覆盖 handler timeout", () => {
+  const r = loadConfigWith({},
+    "const c = await import('./src/core/infra/config.ts'); if (!(c.IDEM_PENDING_MS > c.HANDLER_TIMEOUT_MS)) throw new Error('window invariant');",
+  );
+  assert.equal(r.status, 0, `配置窗口不满足不等式：${r.stderr.slice(0, 300)}`);
 });

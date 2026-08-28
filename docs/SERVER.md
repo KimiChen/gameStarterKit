@@ -306,8 +306,8 @@ structured-clone、无 IO、无副作用的纯 CPU 工作。周期任务、批�
 
 池提供惰性 worker、排队/执行共用超时、worker 死亡替换和 `destroyPool`。`COMPUTE_QUEUE_CAPACITY`
 对运行中与排队中的任务执行总 admission；达到上限时抛出稳定的 `ComputeOverloadedError`，由调用方
-退避或转入独立批处理。测试覆盖 round-trip、并发、未知任务和 worker 故障恢复；达到容量上限的队列
-饱和路径目前无专项用例。
+退避或转入独立批处理。测试覆盖 round-trip、并发、未知任务、worker 故障恢复，以及运行中与排队任务
+共同达到容量上限时的稳定 overload 拒绝。
 `[rpc-budget]` 与 loop monitor 只是本地诊断信号。
 
 `[rpc-budget]` 的同步预算取 `RPC_SYNC_BUDGET_MS`（非生产 20ms、生产 100ms，env 可覆盖）；生产按

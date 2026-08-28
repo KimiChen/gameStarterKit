@@ -17,10 +17,10 @@ import { parse as parseYaml } from "yaml";
 import { BUCKETS, REDIS_CACHE_URL, REDIS_COORD_URL, REDIS_DURABLE_URL, REDIS_ROUTE_FILE } from "./config";
 import { assertAdmissionOpen } from "./lifecycle";
 
-interface RouteEntry { url: string; range: [number, number] }
-interface RouteTable { durable: RouteEntry[]; cacheUrl: string }
+export interface RedisRouteEntry { url: string; range: [number, number] }
+export interface RedisRouteTable { durable: RedisRouteEntry[]; cacheUrl: string }
 
-let table: RouteTable | null = null;
+let table: RedisRouteTable | null = null;
 let clients = new Map<string, Redis>();
 let redisClosing = false;
 let redisClosePromise: Promise<void> | null = null;
@@ -53,25 +53,9 @@ export function validateRedisUrl(raw: unknown, label: string): string {
   return value;
 }
 
-function loadTable(): RouteTable {
-  if (table) { return table; }
-  if (redisClosing) {
-    throw new Error("redis-route: Redis 正在关闭，拒绝创建新路由");
-  }
-  // Once process admission is closed, a late handler may still read through
-  // an already-created route, but it must not create a fresh route generation
-  // after the current one has been drained.
-  assertAdmissionOpen();
-  const file = REDIS_ROUTE_FILE();
-  if (!file) {
-    table = {
-      durable: [{ url: validateRedisUrl(REDIS_DURABLE_URL(), "durable[0]"), range: [0, BUCKETS - 1] }],
-      cacheUrl: validateRedisUrl(REDIS_CACHE_URL(), "cache"),
-    };
-    return table;
-  }
-  const doc = parseYaml(readFileSync(file, "utf8")) as unknown;
-  if (!doc || typeof doc !== "object") {
+/** Parse and validate a route-file document without opening any Redis connection. */
+export function parseRedisRouteDocument(doc: unknown): RedisRouteTable {
+  if (!doc || typeof doc !== "object" || Array.isArray(doc)) {
     throw new Error("redis-route: 配置必须是 YAML object");
   }
   const raw = doc as { buckets?: unknown; durable?: unknown; cache?: unknown };
@@ -85,7 +69,7 @@ function loadTable(): RouteTable {
     throw new Error("redis-route: cache 配置缺失");
   }
   const cache = raw.cache as { url?: unknown };
-  const entries: RouteEntry[] = raw.durable.map((value, index) => {
+  const entries: RedisRouteEntry[] = raw.durable.map((value, index) => {
     if (!value || typeof value !== "object") {
       throw new Error(`redis-route: durable[${index}] 必须是 object`);
     }
@@ -108,7 +92,28 @@ function loadTable(): RouteTable {
     next = e.range[1] + 1;
   }
   if (next !== BUCKETS) { throw new Error(`redis-route: 桶 ${next}..${BUCKETS - 1} 未覆盖`); }
-  table = { durable: sorted, cacheUrl: validateRedisUrl(cache.url, "cache") };
+  return { durable: sorted, cacheUrl: validateRedisUrl(cache.url, "cache") };
+}
+
+function loadTable(): RedisRouteTable {
+  if (table) { return table; }
+  if (redisClosing) {
+    throw new Error("redis-route: Redis 正在关闭，拒绝创建新路由");
+  }
+  // Once process admission is closed, a late handler may still read through
+  // an already-created route, but it must not create a fresh route generation
+  // after the current one has been drained.
+  assertAdmissionOpen();
+  const file = REDIS_ROUTE_FILE();
+  if (!file) {
+    table = {
+      durable: [{ url: validateRedisUrl(REDIS_DURABLE_URL(), "durable[0]"), range: [0, BUCKETS - 1] }],
+      cacheUrl: validateRedisUrl(REDIS_CACHE_URL(), "cache"),
+    };
+    return table;
+  }
+  const doc = parseYaml(readFileSync(file, "utf8")) as unknown;
+  table = parseRedisRouteDocument(doc);
   return table;
 }
 
@@ -209,3 +214,9 @@ export function closeRedis(): Promise<void> {
   redisClosePromise = closePromise;
   return closePromise;
 }
+
+/** Test seam for exercising the real REDIS_ROUTE_FILE loader without clients. */
+export const _redisRouteTestHooks = {
+  loadTable,
+  resetTable: (): void => { table = null; },
+};

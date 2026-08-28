@@ -397,6 +397,17 @@ export const RPC_RATE_REFILL_PER_S = envFloat("RPC_RATE_REFILL_PER_S", 10);
  *  关键写副作用必须靠数据层幂等/CAS 兜底，⛔ 不依赖应用层取消。 */
 export const HANDLER_TIMEOUT_MS = 10_000;
 
+/**
+ * A pending idempotency lease must outlive the complete handler execution
+ * window.  Keep this as a load-time invariant so changing either constant
+ * cannot silently re-enable a concurrent retry after a timed-out first run.
+ */
+if (IDEM_PENDING_MS <= HANDLER_TIMEOUT_MS) {
+  throw new Error(
+    `IDEM_PENDING_MS (${IDEM_PENDING_MS}) 必须大于 HANDLER_TIMEOUT_MS (${HANDLER_TIMEOUT_MS})`,
+  );
+}
+
 // ── 广播/事件系统 + 事件循环防阻塞（见 docs/SERVER.md §10 广播与事件、§11 计算任务） ──
 
 /** 工会事件近窗长度（capped list；窗口外客户端全量刷新，见 shared lobbyRpc/guild.ts） */

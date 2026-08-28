@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { HANDLER_TIMEOUT_MS } from "../src/core/infra/config";
 import { UserRpc, WireValidationError } from "@game/shared";
-import { _dispatcherTestHooks } from "../src/websocket/dispatcher";
+import { _dispatcherTestHooks, type DispatcherTimerApi } from "../src/websocket/dispatcher";
 
 test("idem only caches contract-valid responses and releases malformed attempts", async () => {
   let pending = false;
@@ -119,4 +120,67 @@ test("inbound wire errors stay INVALID_PAYLOAD while malformed done cache is INT
       return true;
     },
   );
+});
+
+test("dispatcher handler deadline unrefs its timer and clears it on success", async () => {
+  interface FakeHandle {
+    unrefCalls: number;
+    cleared: boolean;
+    fire: () => void;
+  }
+  const handles: FakeHandle[] = [];
+  const timers: DispatcherTimerApi = {
+    setTimeout: (callback, delay) => {
+      assert.equal(delay, HANDLER_TIMEOUT_MS);
+      const handle: FakeHandle = { unrefCalls: 0, cleared: false, fire: callback };
+      handles.push(handle);
+      return Object.assign(handle, {
+        unref: () => { handle.unrefCalls++; },
+      }) as unknown as ReturnType<typeof setTimeout>;
+    },
+    clearTimeout: (raw) => {
+      const handle = raw as unknown as FakeHandle;
+      assert.equal(handles.includes(handle), true, "必须清理 setTimeout 返回的同一句柄");
+      handle.cleared = true;
+    },
+  };
+
+  let resolve!: (value: string) => void;
+  const pending = new Promise<string>((r) => { resolve = r; });
+  const result = _dispatcherTestHooks.runWithHandlerTimeout("test", () => pending, timers);
+  assert.equal(handles.length, 1);
+  assert.equal(handles[0].unrefCalls, 1, "deadline timer 必须 unref");
+  resolve("ok");
+  assert.equal(await result, "ok");
+  assert.equal(handles[0].cleared, true, "handler 成功后必须清理 deadline timer");
+});
+
+test("dispatcher handler deadline rejects on timeout and still clears its timer", async () => {
+  interface FakeHandle {
+    unrefCalls: number;
+    cleared: boolean;
+    fire: () => void;
+  }
+  const handles: FakeHandle[] = [];
+  const timers: DispatcherTimerApi = {
+    setTimeout: (callback, delay) => {
+      assert.equal(delay, HANDLER_TIMEOUT_MS);
+      const handle: FakeHandle = { unrefCalls: 0, cleared: false, fire: callback };
+      handles.push(handle);
+      return Object.assign(handle, {
+        unref: () => { handle.unrefCalls++; },
+      }) as unknown as ReturnType<typeof setTimeout>;
+    },
+    clearTimeout: (raw) => {
+      const handle = raw as unknown as FakeHandle;
+      assert.equal(handles.includes(handle), true, "必须清理 setTimeout 返回的同一句柄");
+      handle.cleared = true;
+    },
+  };
+  const result = _dispatcherTestHooks.runWithHandlerTimeout("slow", () => new Promise<never>(() => {}), timers);
+  assert.equal(handles.length, 1);
+  handles[0].fire();
+  await assert.rejects(result, /handler 超时: slow/);
+  assert.equal(handles[0].unrefCalls, 1);
+  assert.equal(handles[0].cleared, true, "超时分支也必须清理 deadline timer");
 });

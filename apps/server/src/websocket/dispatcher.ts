@@ -173,6 +173,45 @@ interface RpcIdemStore {
 }
 
 /**
+ * Timer boundary for the handler deadline. Keeping the tiny adapter
+ * injectable lets the lifecycle contract be tested without waiting ten
+ * seconds or monkey-patching process-wide timer state.
+ */
+export interface DispatcherTimerApi {
+  setTimeout: (callback: () => void, delay: number) => ReturnType<typeof setTimeout>;
+  clearTimeout: (handle: ReturnType<typeof setTimeout>) => void;
+}
+
+const dispatcherTimers: DispatcherTimerApi = {
+  setTimeout: (callback, delay) => setTimeout(callback, delay),
+  clearTimeout: (handle) => clearTimeout(handle),
+};
+
+/** Promise.race deadline used by dispatchRpc; the handler is intentionally not cancelled. */
+async function runWithHandlerTimeout<T>(
+  type: string,
+  invoke: () => Promise<T>,
+  timers: DispatcherTimerApi = dispatcherTimers,
+): Promise<T> {
+  let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutHandle = timers.setTimeout(
+      () => reject(new Error(`handler 超时: ${type}`)),
+      HANDLER_TIMEOUT_MS,
+    );
+    // An idle handler deadline must not keep a draining process alive. The
+    // optional shape also supports browser-like adapters used by tests.
+    const unref = (timeoutHandle as unknown as { unref?: () => void }).unref;
+    if (typeof unref === "function") { unref.call(timeoutHandle); }
+  });
+  try {
+    return await Promise.race([invoke(), timeout]);
+  } finally {
+    if (timeoutHandle !== null) { timers.clearTimeout(timeoutHandle); }
+  }
+}
+
+/**
  * 幂等状态机：pending 命中 → IN_PROGRESS；done 命中 → 回已校验缓存；首次执行只有通过
  * shared response contract 后才能从 pending 提升为 done。校验/执行失败会立即释放自己的占位。
  */
@@ -248,7 +287,7 @@ function rpcErrorCode(error: unknown): RpcErrCode {
 }
 
 /** Narrow unit-test seam; production callers use dispatchRpc. */
-export const _dispatcherTestHooks = { runValidatedIdem, rpcErrorCode };
+export const _dispatcherTestHooks = { runValidatedIdem, rpcErrorCode, runWithHandlerTimeout };
 
 /** 单条 RPC 处理。永不 throw——一切异常规约成 {ok:false, err}（09·G3 按 code 分支）。 */
 export async function dispatchRpc(ctx: RpcCtx, msg: RpcEnvelope): Promise<RpcReply> {
@@ -290,21 +329,12 @@ export async function dispatchRpc(ctx: RpcCtx, msg: RpcEnvelope): Promise<RpcRep
     };
 
     // 超时兜底（09·G9）：race 不取消 handler，数据层幂等保证迟到首跑无害
-    let timeoutHandle: NodeJS.Timeout | null = null;
-    const timeout = new Promise<never>((_, rej) => {
-      timeoutHandle = setTimeout(() => rej(new Error(`handler 超时: ${envelope.type}`)), HANDLER_TIMEOUT_MS);
-      timeoutHandle.unref();
+    const data = await runWithHandlerTimeout(envelope.type, invoke);
+    return validateReplyForServer({
+      id: envelope.id,
+      ok: true,
+      data: validateResponseForServer(envelope.type as LobbyRpcType, data),
     });
-    try {
-      const data = await Promise.race([invoke(), timeout]);
-      return validateReplyForServer({
-        id: envelope.id,
-        ok: true,
-        data: validateResponseForServer(envelope.type as LobbyRpcType, data),
-      });
-    } finally {
-      if (timeoutHandle) { clearTimeout(timeoutHandle); }
-    }
   } catch (e) {
     // Shared wire errors are client input failures, not internal outages.
     // Preserve that distinction before mapping the rest of the domain errors.

@@ -2,7 +2,10 @@
  * compute 池单测：worker_threads + tsx 加载 .ts 任务文件的全链路（不需要 Redis/MySQL）。
  */
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { dirname, join } from "node:path";
 import { after, test } from "node:test";
+import { fileURLToPath } from "node:url";
 import { destroyPool, runInPool } from "../src/core/compute/pool";
 import {
   BATTLE_SIM_MAX_ATTACKER_LEVEL,
@@ -76,4 +79,41 @@ test("battleSim worker：非法输入受控 reject，后续合法任务仍完成
     attackerLevel: 1,
   });
   assert.deepEqual(result, { iterations: 0, totalDamage: 0 });
+});
+
+test("compute admission：运行中 + 排队任务达到总容量时稳定返回 overload", () => {
+  // Use a fresh process with a tiny configured capacity.  The first task is
+  // synchronously moved to `running` and the second remains queued before the
+  // third submission, so this exercises the real admission boundary without
+  // depending on worker speed or a long-running fixture task.
+  const serverRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+  const script = `
+    import { ComputeOverloadedError, destroyPool, runInPool } from "./src/core/compute/pool.ts";
+    const first = runInPool("battleSim", { iterations: 0, attackerLevel: 1 });
+    const second = runInPool("battleSim", { iterations: 0, attackerLevel: 1 });
+    let overloaded = false;
+    try { await runInPool("battleSim", { iterations: 0, attackerLevel: 1 }); }
+    catch (error) { overloaded = error instanceof ComputeOverloadedError; }
+    await Promise.allSettled([first, second]);
+    await destroyPool();
+    if (!overloaded) { throw new Error("expected ComputeOverloadedError"); }
+    console.log("compute-overload-ok");
+  `;
+  const result = spawnSync(
+    process.execPath,
+    ["--import", "tsx", "--input-type=module", "-e", script],
+    {
+      cwd: serverRoot,
+      env: {
+        ...process.env,
+        COMPUTE_POOL_SIZE: "1",
+        COMPUTE_QUEUE_CAPACITY: "2",
+        COMPUTE_TASK_TIMEOUT_MS: "1000",
+      },
+      encoding: "utf8",
+      timeout: 30_000,
+    },
+  );
+  assert.equal(result.status, 0, `饱和子进程失败：${result.stderr.slice(0, 500)}`);
+  assert.match(result.stdout, /compute-overload-ok/);
 });
