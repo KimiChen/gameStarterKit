@@ -157,7 +157,9 @@ test("character initializer：已有热档按登记 marker/hasCharacter 短路 W
   ) => ({
     ensureLive: async () => {},
     createUser: async () => created,
-    readCharacterRegistration: async () => state,
+    readCharacterRegistration: async () => state === "ready"
+      ? { state, checkedAtMs: 100 }
+      : state,
     hasCharacter: async () => {
       calls.push("has");
       if (remoteError) { throw remoteError; }
@@ -166,6 +168,8 @@ test("character initializer：已有热档按登记 marker/hasCharacter 短路 W
     enqueueCharacterRepairIntent: async () => { calls.push("enqueue"); },
     registerCharacterWithRepair: async () => { calls.push("register"); },
     markCharacterRegistrationReady: async () => { calls.push("mark-ready"); },
+    nowMs: () => 100,
+    registrationRecheckMs: 1_000,
     invalidateUserNegcache: async () => { calls.push("negcache"); },
   });
 
@@ -199,6 +203,86 @@ test("character initializer：已有热档按登记 marker/hasCharacter 短路 W
   await ensureCharacterWithDependencies("first-character", 1, makeDeps("ok", "pending"));
   assert.deepEqual(calls, ["register", "mark-ready", "negcache"],
     "首次建档必须完成外部登记后才 ready");
+});
+
+test("character initializer：ready marker 按区隔离，s1 的 ready 不得短路 s2 首次登记", async () => {
+  const calls: Array<{ stage: string; sId: number }> = [];
+  const deps = {
+    ensureLive: async (_uid: string, sId: number) => {
+      calls.push({ stage: "ensureLive", sId });
+    },
+    createUser: async (_uid: string, _fields: Record<string, string>) => {
+      calls.push({ stage: "createUser", sId: currentSId });
+      return "exists" as const;
+    },
+    readCharacterRegistration: async (_uid: string, sId: number) => {
+      calls.push({ stage: "read-marker", sId });
+      // Simulate a user with a ready marker in s1 only.  The marker lookup
+      // must use the explicit zone argument rather than ambient/shared state.
+      return sId === 1 ? { state: "ready" as const, checkedAtMs: 100 } : null;
+    },
+    hasCharacter: async (_uid: string, sId: number) => {
+      calls.push({ stage: "has-character", sId });
+      return false;
+    },
+    registerCharacterWithRepair: async (_uid: string, sId: number) => {
+      calls.push({ stage: "register-character", sId });
+    },
+    markCharacterRegistrationReady: async (_uid: string, sId: number) => {
+      calls.push({ stage: "mark-ready", sId });
+    },
+    invalidateUserNegcache: async (_uid: string) => {
+      calls.push({ stage: "negcache", sId: currentSId });
+    },
+    nowMs: () => 100,
+    registrationRecheckMs: 1_000,
+  };
+  // createUser/invalidateUserNegcache intentionally have no sId parameter in
+  // their production ports; this variable records the ALS zone visible while
+  // the orchestrator invokes them, catching accidental cross-zone reuse.
+  let currentSId = 0;
+  const run = async (sId: number): Promise<void> => {
+    currentSId = sId;
+    await ensureCharacterWithDependencies("same-user", sId, deps);
+  };
+
+  await run(1);
+  await run(2);
+
+  assert.deepEqual(calls, [
+    { stage: "ensureLive", sId: 1 },
+    { stage: "createUser", sId: 1 },
+    { stage: "read-marker", sId: 1 },
+    { stage: "negcache", sId: 1 },
+    { stage: "ensureLive", sId: 2 },
+    { stage: "createUser", sId: 2 },
+    { stage: "read-marker", sId: 2 },
+    { stage: "has-character", sId: 2 },
+    { stage: "register-character", sId: 2 },
+    { stage: "mark-ready", sId: 2 },
+    { stage: "negcache", sId: 2 },
+  ]);
+});
+
+test("character initializer：过期 ready marker 重新探测外部登记并可自愈", async () => {
+  const calls: string[] = [];
+  await ensureCharacterWithDependencies("expired-ready", 3, {
+    ensureLive: async () => {},
+    createUser: async () => "exists",
+    readCharacterRegistration: async () => ({ state: "ready", checkedAtMs: 100 }),
+    hasCharacter: async () => {
+      calls.push("has");
+      return false;
+    },
+    registerCharacterWithRepair: async () => { calls.push("register"); },
+    markCharacterRegistrationReady: async (_uid, _sId, checkedAtMs) => {
+      calls.push(`mark:${checkedAtMs}`);
+    },
+    invalidateUserNegcache: async () => { calls.push("negcache"); },
+    nowMs: () => 1_101,
+    registrationRecheckMs: 1_000,
+  });
+  assert.deepEqual(calls, ["has", "register", "mark:1101", "negcache"]);
 });
 
 test("character ready observes a late underlying rejection and reuses it across reset", async () => {

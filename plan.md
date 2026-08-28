@@ -303,20 +303,12 @@ initializer，不触外部依赖）；空库首登与并发 join 由 `apps/serve
 同样拒绝导航，以及成功取得具体角色后才保留会话。
 
 复核备注（已收口）：新建档在 Redis 原子写入 `characterRegistration=pending`，外部登记成功后再以单 Lua
-操作把已有档标为 `ready`；`ready` 热档回访跳过 WebPlatform PUT。legacy 无 marker 档先调用
-`hasCharacter`：远端已有登记时只补 marker，未登记时执行带 durable repair 的幂等 PUT；存在性查询失败会
-持久化 repair intent 并拒绝 ready。repair worker 成功 PUT 后补 marker，且 marker 写入带 EXISTS 守卫，
-在档已被删除时不会重新创建 hash。`character-ready.test.ts` 与 `lobby-zone.test.ts` 覆盖其余状态转移；
-marker 的区维度目前只由「s1 marker 落 `s1_user`、s1 回访不建 s2 档」间接覆盖，「s1 已 ready 不得短路 s2
-首次登记」这一方向尚无用例；「repair worker 成功 PUT 后补 marker」这一转移由生产代码路径保证，暂无直接断言。
-
-已知语义回退（待闭合）：`ready` marker 一经写入即被永久信任（`character.ts:95-98` 直接 return，无 TTL、无周期重探、
-无再次 PUT/`hasCharacter` 路径）。这是本次修复唯一改变线上语义的取舍——它正是「外部登记不可用时不再拒绝
-全量 join」的手段，但同时移除了「每次 join 幂等重申外部角色行」这条既有自愈属性：外部目录若单方面丢行，
-游戏侧不再有恢复路径，并会削弱 `core/archive/thaw.ts:210` 的 09·F4 判据（ABSENT + 外部有本区登记 = 数据
-丢失）——热/冷档若随后也丢失，会被判成真新角而非 `UserDataLostError`，`thaw.ts:37-38` 声明「必须恒为 0」的
-`userDataLost` 计数可能静默不报。若要闭合，可给 marker 加低频重探（按 marker 写入时间或 `lastActiveAt`
-做 N 天一次 `hasCharacter` 复核）。
+操作把已有档标为 `ready`，并记录最近一次权威成功时间；`ready` 热档回访只在默认 24 小时复核窗口内跳过
+WebPlatform。legacy 无 marker、时间戳缺失或窗口过期时先调用 `hasCharacter`：远端已有登记时只补 marker，
+未登记时执行带 durable repair 的幂等 PUT；存在性查询失败会持久化 repair intent 并拒绝 ready。repair worker
+成功 PUT 后补 marker 与时间戳，且 marker 写入带 EXISTS 守卫，在档已被删除时不会重新创建 hash。
+`character-ready.test.ts` 直接覆盖 s1 ready 不得短路 s2 首次登记、过期 marker 自愈；`character-repair.test.ts`
+直接断言 worker 的 marker/时间戳写入和 intent 清理；`lobby-zone.test.ts` 覆盖真实首登状态转移。
 另：新增的档字段 `characterRegistration` 不在 `apps/shared/src/protocol/lobbyRpc/economy.ts` 的
 `EFFECT_RESERVED_FIELDS` 内。当前不可利用（`EFFECT_FIELD_ALLOWLIST` 未收录该字段，且值规则对 allowlist
 穷尽，扩表必须同时补规则），且其它 `CREATE_USER` 写入的字段（如 `registerTime`）同样不在保留表内，故不是

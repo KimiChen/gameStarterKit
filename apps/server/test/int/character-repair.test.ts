@@ -5,8 +5,11 @@ import { after, before, test } from "node:test";
 import {
   K_CHARACTER_REPAIR_ATTEMPTS,
   K_CHARACTER_REPAIR_DUE,
+  kUser,
 } from "../../src/core/infra/keys";
-import { clientForKey, closeRedis } from "../../src/core/infra/redisRoute";
+import { clientFor, clientForKey, closeRedis } from "../../src/core/infra/redisRoute";
+import { createUser } from "../../src/core/userRecord";
+import { zoneCtx } from "../../src/core/infra/keys";
 import {
   characterRepairMember,
   clearCharacterRepairIntent,
@@ -85,6 +88,37 @@ test("processOnce：幂等 PUT 成功后同时清除 due 与 attempts", async ()
     true,
     "worker 调用 fake 的幂等 character register",
   );
+});
+
+test("processOnce：远端 PUT 成功后只把对应区的 profile marker 补为 ready", async () => {
+  const item = intent("success-marker", 16);
+  const member = characterRepairMember(item.userId, item.serverId);
+  const profileKey = zoneCtx.run({ sId: item.serverId }, () => kUser(item.userId));
+  const profileClient = clientFor(item.userId);
+  try {
+    await zoneCtx.run({ sId: item.serverId }, () => createUser(item.userId, {
+      characterRegistration: "pending",
+    }));
+    await enqueueCharacterRepairIntent(item.userId, item.serverId, 0);
+
+    const result = await processCharacterRepairOnce({
+      nowMs: 10_000,
+      client: fakeWebPlatformClient,
+      batchSize: 1,
+      concurrency: 1,
+    });
+    assert.deepEqual(result, { selected: 1, succeeded: 1, failed: 0, malformed: 0 });
+    assert.equal(await profileClient.hget(profileKey, "characterRegistration"), "ready",
+      "repair worker 必须在远端 PUT 成功后补写本区 marker");
+    assert.equal(await profileClient.hget(profileKey, "characterRegistrationCheckedAt"), "10000",
+      "repair worker 必须把本轮权威成功时间写入 marker");
+    assert.equal(await profileClient.exists(profileKey), 1,
+      "marker 更新不得删除或重建错误的 profile");
+    assert.equal(await redis().zscore(K_CHARACTER_REPAIR_DUE, member), null);
+    assert.equal(await redis().hget(K_CHARACTER_REPAIR_ATTEMPTS, member), null);
+  } finally {
+    await profileClient.unlink(profileKey).catch(() => {});
+  }
 });
 
 test("多实例竞态：成功清理后，迟到的失败分支不得复活 intent", async () => {

@@ -25,21 +25,30 @@ import { enqueueCharacterRepairIntent, registerCharacterWithRepair } from "./cha
 import {
   markCharacterRegistrationReady,
   readCharacterRegistration,
+  type CharacterRegistrationInfo,
   type CharacterRegistrationState,
 } from "./characterState";
-import { CHARACTER_READY_TIMEOUT_MAX_MS, CHARACTER_READY_TIMEOUT_MS } from "../core/infra/config";
+import {
+  CHARACTER_READY_TIMEOUT_MAX_MS,
+  CHARACTER_READY_TIMEOUT_MS,
+  CHARACTER_REGISTRATION_RECHECK_MS,
+} from "../core/infra/config";
 
 /** 首进区角色初始字段（与登录建号一致；缺 musicOn/sfxOn = 读侧默认开，07 字段表）。 */
-const zoneCharInit = (): Record<string, string> => ({
-  registerTime: String(Date.now()),
-  stamina: String(STAMINA_MAX),
-  lastStaminaRecoverAt: "0", // 满体力：恢复计时未开始
-  avatarId: "-1",
-  // The marker is written atomically with the Redis profile.  A crash between
-  // createUser and the external PUT therefore leaves an observable pending
-  // state that the next join can repair.
-  characterRegistration: "pending",
-});
+const zoneCharInit = (): Record<string, string> => {
+  const now = Date.now();
+  return {
+    registerTime: String(now),
+    stamina: String(STAMINA_MAX),
+    lastStaminaRecoverAt: "0", // 满体力：恢复计时未开始
+    avatarId: "-1",
+    // The marker is written atomically with the Redis profile.  A crash between
+    // createUser and the external PUT therefore leaves an observable pending
+    // state that the next join can repair.
+    characterRegistration: "pending",
+    characterRegistrationCheckedAt: "0",
+  };
+};
 
 /** 幂等建角：**先建 `s{sId}_user`，再 HTTP 登记角色**（顺序理由见文件头）。任一阶段失败都会向上抛，拒绝本次 join；repair intent 供后续重试收敛。 */
 export interface CharacterInitializerDependencies {
@@ -54,8 +63,13 @@ export interface CharacterInitializerDependencies {
   /** Persist a repair intent when the legacy existence probe itself is unavailable. */
   enqueueCharacterRepairIntent?(uid: string, sId: number): Promise<void>;
   /** Durable local marker used to avoid an external PUT on every hot-profile join. */
-  readCharacterRegistration?(uid: string, sId: number): Promise<CharacterRegistrationState>;
-  markCharacterRegistrationReady?(uid: string, sId: number): Promise<void>;
+  readCharacterRegistration?(uid: string, sId: number):
+    Promise<CharacterRegistrationInfo | CharacterRegistrationState>;
+  markCharacterRegistrationReady?(uid: string, sId: number, checkedAtMs?: number): Promise<void>;
+  /** Test clock; production defaults to Date.now. */
+  nowMs?(): number;
+  /** How long a ready marker may bypass the external authority. */
+  registrationRecheckMs?: number;
   /** 建角成功后的 Redis 负缓存失效。 */
   invalidateUserNegcache(uid: string): Promise<void>;
 }
@@ -68,8 +82,44 @@ const defaultCharacterInitializerDependencies: CharacterInitializerDependencies 
   enqueueCharacterRepairIntent,
   readCharacterRegistration,
   markCharacterRegistrationReady,
+  nowMs: () => Date.now(),
+  registrationRecheckMs: CHARACTER_REGISTRATION_RECHECK_MS,
   invalidateUserNegcache,
 };
+
+const normalizeRegistration = (
+  value: CharacterRegistrationInfo | CharacterRegistrationState,
+): CharacterRegistrationInfo => {
+  if (value !== null && typeof value === "object" && "state" in value) {
+    const info = value as CharacterRegistrationInfo;
+    return {
+      state: info.state === "pending" || info.state === "ready" ? info.state : null,
+      checkedAtMs: Number.isSafeInteger(info.checkedAtMs) && (info.checkedAtMs as number) >= 0
+        ? info.checkedAtMs
+        : null,
+    };
+  }
+  // A legacy test/injected reader that only knows the marker state has no
+  // freshness proof, so it deliberately falls through to an authority probe.
+  return { state: value, checkedAtMs: null };
+};
+
+const readClock = (deps: CharacterInitializerDependencies): number => {
+  const now = deps.nowMs ? deps.nowMs() : Date.now();
+  if (!Number.isSafeInteger(now) || now < 0) {
+    throw new RangeError(`character registration clock 非法：${String(now)}`);
+  }
+  return now;
+};
+
+const isFreshReadyMarker = (
+  info: CharacterRegistrationInfo,
+  nowMs: number,
+  recheckMs: number,
+): boolean => info.state === "ready"
+  && info.checkedAtMs !== null
+  && nowMs >= info.checkedAtMs
+  && nowMs - info.checkedAtMs < recheckMs;
 
 /**
  * 建角编排的显式依赖边界。生产调用走默认实现；测试可以在任一外部阶段注入
@@ -80,24 +130,30 @@ export async function ensureCharacterWithDependencies(
   sId: number,
   deps: CharacterInitializerDependencies = defaultCharacterInitializerDependencies,
 ): Promise<void> {
+  const recheckMs = deps.registrationRecheckMs ?? CHARACTER_REGISTRATION_RECHECK_MS;
+  if (!Number.isSafeInteger(recheckMs) || recheckMs < 1) {
+    throw new RangeError(`character registration recheck window 非法：${String(recheckMs)}`);
+  }
   // ⚠ **ensureLive 先于 createUser**：冻结回流用户先 thaw 恢复真档，
   // ⛔ 绝不在冻结档上 createUser 建空档（空档上先发生写会致 archive 被删、真档永久丢失）。
   // ⚠ ensureLive 内部抢 lock:{uid}——本函数不得在 withUser 锁内调用（onJoin best-effort 调，安全）。
   await zoneCtx.run({ sId }, async () => {
     await deps.ensureLive(uid, sId);                   // 冻结→thaw 恢复；真新→ABSENT(F4 判)；热→无；真丢→抛
     const created = await deps.createUser(uid, zoneCharInit()); // 幂等：热/解冻→'exists'，真新才建
-    const registration = deps.readCharacterRegistration
+    const registration = normalizeRegistration(deps.readCharacterRegistration
       ? await deps.readCharacterRegistration(uid, sId)
-      : null;
+      : null);
+    const nowMs = readClock(deps);
     // New profiles carry `pending` atomically.  A ready marker is the local
-    // fast path; legacy profiles must consult the external authority once so
-    // a pre-marker crash window can still self-heal.
-    if (created === "exists" && registration === "ready") {
+    // fast path only inside the recheck window.  Legacy profiles and expired
+    // markers consult the external authority so a pre-marker crash or an
+    // external deletion can still self-heal.
+    if (created === "exists" && isFreshReadyMarker(registration, nowMs, recheckMs)) {
       await deps.invalidateUserNegcache(uid);           // 建后失效负缓存（09·F4）
       return;
     }
 
-    if (created === "exists" && registration === null) {
+    if (created === "exists" && (registration.state === null || registration.state === "ready")) {
       let registered: boolean;
       try {
         registered = deps.hasCharacter ? await deps.hasCharacter(uid, sId) : false;
@@ -114,7 +170,7 @@ export async function ensureCharacterWithDependencies(
       }
       if (registered) {
         if (deps.markCharacterRegistrationReady) {
-          await deps.markCharacterRegistrationReady(uid, sId);
+          await deps.markCharacterRegistrationReady(uid, sId, readClock(deps));
         }
         await deps.invalidateUserNegcache(uid);
         return;
@@ -123,7 +179,7 @@ export async function ensureCharacterWithDependencies(
 
     await deps.registerCharacterWithRepair(uid, sId);   // pending/新档：失败 durable 留 intent 后仍向上抛
     if (deps.markCharacterRegistrationReady) {
-      await deps.markCharacterRegistrationReady(uid, sId);
+      await deps.markCharacterRegistrationReady(uid, sId, readClock(deps));
     }
     await deps.invalidateUserNegcache(uid);             // 建后失效负缓存（09·F4）
   });

@@ -254,7 +254,7 @@ async function processMember(
   }
 
   // 远端成功之后才删；若这里崩溃/Redis 失败，intent 保留，下轮仅重复幂等 PUT。
-  await markCharacterRegistrationReady(intent.userId, intent.serverId);
+  await markCharacterRegistrationReady(intent.userId, intent.serverId, nowMs);
   await clearCharacterRepairMember(member);
   return "succeeded";
 }

@@ -256,6 +256,13 @@ export const CHARACTER_READY_TIMEOUT_MAX_MS = 120_000;
 export const CHARACTER_READY_TIMEOUT_MS =
   webPlatformPositiveInt("CHARACTER_READY_TIMEOUT_MS", 10_000, CHARACTER_READY_TIMEOUT_MAX_MS);
 
+/**
+ * Ready marker 的外部登记低频复核窗口。热档 join 在窗口内不触碰 WebPlatform；
+ * 窗口过期（或旧档没有时间戳）时重新读取权威登记，避免 marker 永久信任掩盖外部删档。
+ */
+export const CHARACTER_REGISTRATION_RECHECK_MS =
+  webPlatformPositiveInt("CHARACTER_REGISTRATION_RECHECK_MS", 86_400_000, 30 * 86_400_000);
+
 /** 支付链总开关（缺省**关**）：关 ⇒ `/pay/wx-notify` 直接 501「未上线」。
  *  ⚠ 支付链现在不具备上线条件（无下单端点、共享密钥而非 APIv3 验签、无对账，见 docs/EXTRAFEATURES.md §3.4），
  *  这个开关是**防误开**，⛔ 不是"配上就能收钱"。每请求现读（同 ADMIN_API_SECRET 范式，便于灰度）。 */
