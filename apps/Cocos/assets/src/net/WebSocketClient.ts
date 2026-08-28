@@ -290,6 +290,7 @@ export class WebSocketClient {
     private slot: LobbySlot | null = null;
     private generation = 0;
     private readonly implicitOwners = new Set<LobbyConnectionOwnership>();
+    private readonly ownershipSlots = new WeakMap<LobbyConnectionOwnership, LobbySlot>();
     private pending = new Map<string, IPending>();
     private seq = 0;
     private pushHandlers = new Map<string, Set<(data: unknown) => unknown>>();
@@ -310,17 +311,35 @@ export class WebSocketClient {
         this.endpoint = validated;
     }
 
+    /** Remove one hidden ownership and its private slot association. */
+    private forgetImplicitOwner(ownership: LobbyConnectionOwnership): void {
+        this.implicitOwners.delete(ownership);
+        this.ownershipSlots.delete(ownership);
+    }
+
+    /** Retire all hidden ownerships belonging to one slot (or all slots). */
+    private forgetImplicitOwners(slot?: LobbySlot): void {
+        for (const ownership of this.implicitOwners) {
+            if (slot === undefined || this.ownershipSlots.get(ownership) === slot) {
+                this.implicitOwners.delete(ownership);
+                this.ownershipSlots.delete(ownership);
+            }
+        }
+    }
+
     /**
      * 兼容旧调用面的隐式 ownership join。client、endpoint、token 和完整 options 在槽创建时
-     * 固化；后续 init(B) 不会把等待中的物理 A 记成 B。调用 leave() 释放全部隐式 owner。
+     * 固化；后续 init(B) 不会把等待中的物理 A 记成 B。主动 leave() 或物理 onLeave 都会
+     * 释放对应的隐式 ownership；旧 slot 的迟到回调只清理自己的代际。
      */
     async join(token: string, options?: Record<string, unknown>, control?: JoinControl | AbortSignal): Promise<void> {
         const owner = this.joinOwned(token, options, control);
-        this.implicitOwners.add(owner);
+        const slot = this.ownershipSlots.get(owner);
+        if (slot && !slot.cancelled && this.slot === slot) this.implicitOwners.add(owner);
         try {
             await owner.ready;
         } catch (e) {
-            this.implicitOwners.delete(owner);
+            this.forgetImplicitOwner(owner);
             await owner.leave().catch(() => {});
             throw e;
         }
@@ -438,9 +457,10 @@ export class WebSocketClient {
             throw failure;
         }
         ready.then(dispose, dispose).catch(() => {});
-        return {
+        const ownership: LobbyConnectionOwnership = {
             ready,
             leave: () => {
+                this.forgetImplicitOwner(ownership);
                 if (owner.active) cancelOwner(new Error("[WebSocketClient] ownership 已释放"));
                 if (slot!.owners.size === 0) {
                     if (slot!.closing) return slot!.closing;
@@ -450,6 +470,8 @@ export class WebSocketClient {
                 return Promise.resolve();
             },
         };
+        this.ownershipSlots.set(ownership, slot);
+        return ownership;
     }
 
     private async doJoin(slot: LobbySlot): Promise<void> {
@@ -460,6 +482,7 @@ export class WebSocketClient {
         } catch (e) {
             if (this.slot === slot) this.slot = null;
             slot.cancelled = true;
+            this.forgetImplicitOwners(slot);
             const failure = safeError(e, "[WebSocketClient] join failed");
             slot.failure = failure;
             // 连接失败后槽已不可再复用；同步失效所有 ownership，避免显式 owner
@@ -473,6 +496,7 @@ export class WebSocketClient {
             throw e;
         }
         if (slot.cancelled || this.slot !== slot || slot.owners.size === 0) {
+            this.forgetImplicitOwners(slot);
             await this.closePhysicalRoom(slot, room);
             throw new JoinError("CANCELLED", "[WebSocketClient] join 结果已过期");
         }
@@ -483,6 +507,7 @@ export class WebSocketClient {
             if (this.slot === slot) this.slot = null;
             slot.room = null;
             slot.cancelled = true;
+            this.forgetImplicitOwners(slot);
             const failure = safeError(error, "[WebSocketClient] room setup failed");
             slot.failure = failure;
             for (const owner of slot.owners) {
@@ -552,6 +577,9 @@ export class WebSocketClient {
             this.rejectAll("CONN_LOST", slot);
         });
         room.onLeave((code?: number) => {
+            // Handle stale callbacks as well as the current room. Filtering by
+            // slot identity prevents an old room from clearing a replacement.
+            this.forgetImplicitOwners(slot);
             if (!current()) return;
             this.slot = null;
             slot.cancelled = true;
@@ -569,9 +597,11 @@ export class WebSocketClient {
 
     /** 主动离开不等待黑洞 join；迟到 room 由 closeSlot 的后台清理释放。 */
     async leave(): Promise<void> {
+        // Clear hidden ownership before checking `slot`: a prior passive
+        // onLeave may already have detached the current slot.
+        this.forgetImplicitOwners();
         const slot = this.slot;
         if (!slot) return;
-        this.implicitOwners.clear();
         for (const owner of slot.owners) {
             owner.active = false;
             owner.disposeControl();
@@ -582,6 +612,7 @@ export class WebSocketClient {
     }
 
     private closeSlot(slot: LobbySlot): Promise<void> {
+        this.forgetImplicitOwners(slot);
         if (slot.closing) return slot.closing;
         if (this.slot === slot) this.slot = null;
         slot.cancelled = true;

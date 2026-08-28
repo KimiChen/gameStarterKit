@@ -50,6 +50,10 @@ function makeFakeRoom() {
   return { room, sent, reply, push, cbs, get leaveCalls() { return leaveCalls; } };
 }
 
+function implicitOwnerCount(): number {
+  return (WebSocketClient.inst as unknown as { implicitOwners: Set<unknown> }).implicitOwners.size;
+}
+
 /** 假 Colyseus.Client + 假房间装进单例，走真 join/doJoin 路径装好全部消息处理器。 */
 async function joinWithFakeRoom(fake: ReturnType<typeof makeFakeRoom>): Promise<WebSocketClient> {
   const c = WebSocketClient.inst as unknown as { client: unknown };
@@ -104,6 +108,113 @@ test("onLeave：在途请求全判 CONN_LOST，之后 rpc 立即拒（未加入�
   await assert.rejects(p, (e: unknown) => e instanceof RpcError && e.code === "CONN_LOST");
   await assert.rejects(c.rpc(UserRpc.GetUserId, {}),
     (e: unknown) => e instanceof RpcError && e.code === "CONN_LOST");
+});
+
+test("隐式 ownership：被动 onLeave 后清理，重复掉线/重登不累积旧闭包", async () => {
+  await WebSocketClient.inst.leave().catch(() => {});
+  const first = makeFakeRoom();
+  const second = makeFakeRoom();
+  const third = makeFakeRoom();
+  let active = first;
+  const internals = WebSocketClient.inst as unknown as {
+    client: unknown;
+    endpoint: string;
+    slot: unknown;
+    implicitOwners: Set<unknown>;
+  };
+  internals.endpoint = "http://implicit-owner-cleanup.example";
+  internals.client = {
+    auth: { token: "" },
+    joinOrCreate: async () => active.room,
+  };
+
+  await WebSocketClient.inst.join("token-first");
+  assert.equal(internals.implicitOwners.size, 1);
+  const firstLeave = first.cbs.leave;
+  firstLeave?.(1006);
+  firstLeave?.(1006); // SDK adapters can duplicate a terminal callback.
+  assert.equal(internals.slot, null, "被动死亡必须摘掉当前 slot");
+  assert.equal(implicitOwnerCount(), 0, "被动 onLeave 必须释放隐式 ownership");
+  await WebSocketClient.inst.leave(); // no current slot: cleanup must still be a no-op and stay clean.
+  assert.equal(implicitOwnerCount(), 0);
+
+  active = second;
+  await WebSocketClient.inst.join("token-second");
+  assert.equal(implicitOwnerCount(), 1, "重登只应登记新一代 ownership");
+  second.cbs.leave?.(1006);
+  assert.equal(implicitOwnerCount(), 0, "第二代掉线也必须清理");
+
+  active = third;
+  await WebSocketClient.inst.join("token-third");
+  assert.equal(implicitOwnerCount(), 1);
+  await WebSocketClient.inst.leave();
+  assert.equal(implicitOwnerCount(), 0, "主动 leave 必须清理当前隐式 ownership");
+  assert.equal(first.leaveCalls, 0, "被动死亡的旧 room 不应被主动 leave 再次关闭");
+  assert.equal(second.leaveCalls, 0, "被动死亡的旧 room 不应被主动 leave 再次关闭");
+  assert.equal(third.leaveCalls, 1, "主动 leave 只关闭当前 room");
+});
+
+test("隐式 ownership：替换后旧 room 的迟到 onLeave 不得清掉新一代", async () => {
+  await WebSocketClient.inst.leave().catch(() => {});
+  const oldRoom = makeFakeRoom();
+  const newRoom = makeFakeRoom();
+  let active = oldRoom;
+  const internals = WebSocketClient.inst as unknown as {
+    client: unknown;
+    endpoint: string;
+    slot: unknown;
+    implicitOwners: Set<unknown>;
+    closeSlot: (slot: unknown) => Promise<void>;
+  };
+  internals.endpoint = "http://implicit-owner-replace.example";
+  internals.client = {
+    auth: { token: "" },
+    joinOrCreate: async () => active.room,
+  };
+
+  await WebSocketClient.inst.join("token-old");
+  const oldSlot = internals.slot;
+  const oldLeave = oldRoom.cbs.leave;
+  assert.equal(implicitOwnerCount(), 1);
+  await internals.closeSlot.call(WebSocketClient.inst, oldSlot);
+  assert.equal(implicitOwnerCount(), 0, "替换旧 slot 时必须先摘除隐式 ownership");
+
+  active = newRoom;
+  await WebSocketClient.inst.join("token-new");
+  assert.equal(implicitOwnerCount(), 1);
+  oldLeave?.(1006); // 迟到旧回调：current() 为 false，但仍会命中旧 slot 过滤。
+  assert.equal(implicitOwnerCount(), 1, "旧回调不得清掉新 slot 的 ownership");
+  assert.equal(WebSocketClient.inst.room, newRoom.room);
+  await WebSocketClient.inst.leave();
+  assert.equal(implicitOwnerCount(), 0);
+});
+
+test("隐式 ownership：主动 leave 后迟到 join 结果只释放旧 room，不回填记录", async () => {
+  await WebSocketClient.inst.leave().catch(() => {});
+  const lateRoom = makeFakeRoom();
+  const pending = deferred<typeof lateRoom.room>();
+  const internals = WebSocketClient.inst as unknown as {
+    client: unknown;
+    endpoint: string;
+    implicitOwners: Set<unknown>;
+  };
+  internals.endpoint = "http://implicit-owner-late.example";
+  internals.client = {
+    auth: { token: "" },
+    joinOrCreate: async () => pending.promise,
+  };
+
+  const joining = WebSocketClient.inst.join("token-late");
+  const rejected = assert.rejects(joining, /ownership 已释放/);
+  assert.equal(internals.implicitOwners.size, 1, "在途 join 应先登记本代 ownership");
+  await WebSocketClient.inst.leave();
+  assert.equal(implicitOwnerCount(), 0);
+  await rejected;
+
+  pending.resolve(lateRoom.room);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(implicitOwnerCount(), 0, "迟到 ready continuation 不得重新登记旧 ownership");
+  assert.equal(lateRoom.leaveCalls, 1, "迟到 room 必须物理释放一次");
 });
 
 test("rpcIdem：BUSY/STALE_FENCE 自动重试，全程复用同一 clientReqId", async () => {
