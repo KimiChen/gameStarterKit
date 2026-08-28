@@ -145,31 +145,32 @@ export abstract class FguiView {
       return;
     }
     this.assertCurrent(context);
-    // A first open can be superseded while onCreate is awaiting. Share that
-    // attempt with a concurrent generation, then retry only if it did not
-    // complete successfully; this avoids duplicate setup and stale failure
-    // clobbering a newer successful attempt.
-    if (this.createFlight) {
-      try { await this.createFlight; } catch { /* the current generation may retry */ }
-      if (this.created) {
-        this.assertCurrent(context);
-        return;
-      }
-      this.assertCurrent(context);
+    // The create hook belongs to the view instance, not to one open
+    // generation.  Defer invocation by one microtask before publishing the
+    // promise so even a synchronously re-entrant runCreate() shares it.  If
+    // the first generation is closed while the hook awaits, a successful hook
+    // still marks the instance created; only the stale caller's final
+    // assertCurrent() fails, and a permanent remount will not run the hook a
+    // second time.
+    let attempt = this.createFlight;
+    if (!attempt) {
+      attempt = Promise.resolve()
+        .then(() => this.onCreate(context))
+        .then(() => { this.created = true; });
+      this.createFlight = attempt;
+      // The caller observes the attempt; this defensive handler prevents a
+      // superseded generation from creating an unhandled rejection.
+      attempt.catch(() => undefined);
     }
-    const attempt = (async (): Promise<void> => {
-      await this.onCreate(context);
-      this.assertCurrent(context);
-      this.created = true;
-    })();
-    this.createFlight = attempt;
-    // runCreate's caller observes the attempt; this defensive handler prevents
-    // a superseded generation from creating an unhandled rejection.
-    attempt.catch(() => undefined);
-    try { await attempt; }
-    finally {
-      if (this.createFlight === attempt) this.createFlight = null;
+    try {
+      await attempt;
+    } catch (error) {
+      // A failed hook can be retried on a later open.  Keep a successful
+      // flight forever, even if its original context was superseded.
+      if (this.createFlight === attempt && !this.created) this.createFlight = null;
+      throw error;
     }
+    this.assertCurrent(context);
   }
 
   /** 运行本次打开 hook。 */
@@ -191,15 +192,55 @@ export abstract class FguiView {
 
   private startClose(state: LifecycleState): Promise<void> {
     if (state.closePromise) return state.closePromise;
+
+    // Publish the close promise before aborting or invoking user code. Both
+    // operations can synchronously re-enter closeLifecycle (for example an
+    // AbortSignal listener may call back into the view, or a cleanup hook may
+    // defensively call dispose()). Without this placeholder every re-entry
+    // would invoke onClose again and can recurse indefinitely.
+    let resolveClose!: () => void;
+    let rejectClose!: (reason?: unknown) => void;
+    const closePromise = new Promise<void>((resolve, reject) => {
+      resolveClose = resolve;
+      rejectClose = reject;
+    });
+    state.closePromise = closePromise;
+    // Callers are allowed to use synchronous handle.close(); keep a rejection
+    // observer attached even when no caller awaits the returned Promise.
+    closePromise.catch((e) => console.error("[FguiView] onClose 回调异常", e));
+
     state.active = false;
-    state.controller.abort();
+    let abortError: unknown = null;
+    try { state.controller.abort(); } catch (e) {
+      // AbortController implementations normally report listener failures
+      // asynchronously, but a host/polyfill may throw synchronously. Continue
+      // cleanup and surface the error through the close Promise.
+      abortError = e;
+    }
     let result: void | Promise<void>;
     try { result = this.invokeCloseHook(state.context); }
-    catch (e) { result = Promise.reject(e); }
-    state.closePromise = Promise.resolve(result).then(() => undefined);
-    // 调用方可能使用同步 handle.close()；这里先挂 rejection 观察器避免 unhandledRejection。
-    state.closePromise.catch((e) => console.error("[FguiView] onClose 回调异常", e));
-    return state.closePromise;
+    catch (e) {
+      rejectClose(e);
+      return closePromise;
+    }
+
+    // A hook returning closeLifecycle() would otherwise create a promise that
+    // waits on itself. Treat that self-reference as an already-completed close;
+    // the hook has synchronously run and all future calls are idempotent.
+    if (result === closePromise) {
+      if (abortError) rejectClose(abortError);
+      else resolveClose();
+      return closePromise;
+    }
+
+    Promise.resolve(result).then(
+      () => {
+        if (abortError) rejectClose(abortError);
+        else resolveClose();
+      },
+      (error) => rejectClose(error),
+    );
+    return closePromise;
   }
 
   /** 当前打开世代（仅供装配层传递给 Logic）。 */

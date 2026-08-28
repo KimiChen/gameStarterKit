@@ -52,9 +52,14 @@ const layerRoots = new Map<ViewLayer, GComponent>();
 const cache = new Map<string, Entry>();                 // onlyOne/permanent 单例缓存
 const pending = new Map<string, PendingOpen>();          // onlyOne/permanent 在途去重
 const pendingAll = new Set<PendingOpen>();               // 所有在途加载（含多实例页，可取消）
+// Multi-instance views (currently Confirm) are intentionally absent from the
+// name cache. Keep their live handles here so a scene/root teardown can still
+// abort their lifecycle and release the global interactive lease.
+const activeUncached = new Set<ViewHandle>();
 let interactiveCount = 0;
 let rootGeneration = 0;
 let nextGeneration = 0;
+let tearingDownRoot = false;
 
 /** 打开在途期间被关闭或场景重载时的可判别错误。 */
 export class ViewOpenCancelledError extends Error {
@@ -67,34 +72,78 @@ export class ViewOpenCancelledError extends Error {
 
 type ViewSetup = (view: FguiView, context: ViewLifecycleContext) => unknown | Promise<unknown>;
 
+/**
+ * Invalidate the current FGUI root and every page owned by it. This is used
+ * both by lazy stale-root detection and by the scene composition root during
+ * destruction. Registries are cleared before user hooks run so a re-entrant
+ * stale handle cannot close or mutate a replacement entry.
+ */
+function teardownRoot(): void {
+  if (tearingDownRoot) return;
+  tearingDownRoot = true;
+  try {
+    rootGeneration++;
+
+    const pendingRecords = [...pendingAll];
+    pendingAll.clear();
+    pending.clear();
+    for (const rec of pendingRecords) {
+      rec.cancelled = true;
+      try { rec.controller.abort(); } catch (e) {
+        console.error("[ViewMgr] 取消在途页面失败", e);
+      }
+    }
+
+    const cachedEntries = [...cache.values()];
+    cache.clear();
+    for (const entry of cachedEntries) {
+      entry.mounted = false;
+      const release = entry.releaseMount;
+      entry.releaseMount = null;
+      try { release?.(); } catch (e) {
+        console.error("[ViewMgr] 场景重载释放页面挂载异常", e);
+      }
+      try { entry.view.dispose(); } catch (e) {
+        console.error("[ViewMgr] 场景重载 dispose 异常", e);
+      }
+    }
+
+    const uncachedHandles = [...activeUncached];
+    activeUncached.clear();
+    for (const handle of uncachedHandles) {
+      try { handle.close(); } catch (e) {
+        // A close hook must not prevent the remaining views/root from being
+        // released. The handle itself observes async hook failures.
+        console.error("[ViewMgr] 场景重载关闭多实例页面异常", e);
+      }
+    }
+
+    const roots = [...layerRoots.values()];
+    layerRoots.clear();
+    for (const root of roots) {
+      try { root.removeFromParent(); root.dispose(); } catch (e) {
+        console.error("[ViewMgr] 旧层容器释放异常", e);
+      }
+    }
+    interactiveCount = 0;
+    try { FguiView.setInputEnabled(false); } catch (e) {
+      // Root teardown must finish even if a disposed InputProcessor rejects the
+      // final disable call (some Creator versions do this during scene changes).
+      console.error("[ViewMgr] 场景重载恢复输入失败", e);
+    }
+  } finally {
+    tearingDownRoot = false;
+  }
+}
+
 function ensureLayers(): void {
+  if (tearingDownRoot) throw new ViewOpenCancelledError("__root__");
   // GRoot 可能随场景重载销毁：容器失效则整体重建（缓存视图同批死亡，计数一并归零）
   const stale = layerRoots.size > 0
     && (layerRoots.size !== VIEW_LAYERS.length
       || [...layerRoots.values()].some((root) => root.node && root.node.isValid === false));
   if (stale) {
-    rootGeneration++;
-    for (const rec of pendingAll) {
-      rec.cancelled = true;
-      rec.controller.abort();
-    }
-    pending.clear();
-    for (const entry of cache.values()) {
-      entry.mounted = false;
-      const release = entry.releaseMount;
-      entry.releaseMount = null;
-      release?.();
-      try { entry.view.dispose(); } catch (e) { console.error("[ViewMgr] 场景重载 dispose 异常", e); }
-    }
-    for (const root of layerRoots.values()) {
-      try { root.removeFromParent(); root.dispose(); } catch (e) {
-        console.error("[ViewMgr] 旧层容器释放异常", e);
-      }
-    }
-    layerRoots.clear();
-    cache.clear();
-    interactiveCount = 0;
-    FguiView.setInputEnabled(false);
+    teardownRoot();
   }
   if (layerRoots.size === VIEW_LAYERS.length) { return; }
   FguiView.ensureRoot();
@@ -163,7 +212,13 @@ function mount(view: FguiView, meta: ViewMeta): () => void {
 function closeEffects(meta: ViewMeta): void {
   if (meta.interactive) {
     interactiveCount = Math.max(0, interactiveCount - 1);
-    if (interactiveCount === 0) { FguiView.setInputEnabled(false); }
+    if (interactiveCount === 0) {
+      try { FguiView.setInputEnabled(false); } catch (e) {
+        // Input cleanup is best-effort; the mount lease still has to detach
+        // its component and release the logical count.
+        console.error("[ViewMgr] 关闭页面后恢复输入失败", e);
+      }
+    }
   }
 }
 
@@ -174,6 +229,7 @@ function makeHandle(
   context: ViewLifecycleContext,
   cacheable: boolean,
   releaseMount: (() => void) | null,
+  onClosed?: () => void,
 ): { handle: ViewHandle; setContext(next: ViewLifecycleContext): void } {
   const state = { context, closed: false, releaseMount };
   const handle: ViewHandle = {
@@ -195,9 +251,16 @@ function makeHandle(
         state.closed = true;
         const release = state.releaseMount;
         state.releaseMount = null;
-        release?.();
+        try { release?.(); } catch (e) {
+          console.error("[ViewMgr] 关闭页面挂载释放异常", e);
+        }
+        try { onClosed?.(); } catch (e) {
+          console.error("[ViewMgr] 关闭页面登记清理异常", e);
+        }
         void view.closeLifecycle().catch((e) => console.error("[ViewMgr] onClose 回调异常", e));
-        view.dispose();
+        try { view.dispose(); } catch (e) {
+          console.error("[ViewMgr] 关闭页面 dispose 异常", e);
+        }
       }
     },
     async run<T>(action: (v: FguiView, c: ViewLifecycleContext) => T | Promise<T>): Promise<T> {
@@ -234,13 +297,17 @@ function rollbackEntry(name: string, entry: Entry): void {
   }
   const release = entry.releaseMount;
   entry.releaseMount = null;
-  release?.();
+  try { release?.(); } catch (e) {
+    console.error("[ViewMgr] 回滚页面挂载释放异常", e);
+  }
   void entry.view.closeLifecycle().catch((e) => console.error("[ViewMgr] rollback onClose 异常", e));
   if (entry.meta.permanent) {
     // releaseMount already detaches the root; permanent instances remain
     // cached for the next generation.
   } else {
-    entry.view.dispose();
+    try { entry.view.dispose(); } catch (e) {
+      console.error("[ViewMgr] 回滚页面 dispose 异常", e);
+    }
     cache.delete(name);
   }
 }
@@ -309,6 +376,7 @@ async function open(name: string, setup?: ViewSetup): Promise<ViewHandle> {
     let view: FguiView | null = null;
     let lease: (() => void) | null = null;
     let entry: Entry | null = null;
+    let uncachedHandle: ViewHandle | null = null;
     let context: ViewLifecycleContext | null = null;
     let cancelLifecycle: (() => void) | null = null;
     try {
@@ -341,7 +409,17 @@ async function open(name: string, setup?: ViewSetup): Promise<ViewHandle> {
       await view.runCreate(context);
       ensurePendingActive(rec);
       lease = mount(view, meta);
-      const made = makeHandle(name, view, meta, context, cacheable, lease);
+      const made = makeHandle(
+        name,
+        view,
+        meta,
+        context,
+        cacheable,
+        lease,
+        cacheable ? undefined : () => {
+          if (uncachedHandle) activeUncached.delete(uncachedHandle);
+        },
+      );
       handleContexts.set(made.handle, made.setContext);
       if (cacheable) {
         entry = { view, mounted: true, meta, handle: made.handle, releaseMount: lease };
@@ -349,6 +427,11 @@ async function open(name: string, setup?: ViewSetup): Promise<ViewHandle> {
         // The cache entry now owns the mount lease.  A failed/superseded open
         // will release it through rollbackEntry exactly once.
         lease = null;
+      } else {
+        // Register before onOpen/setup so an explicit scene disposer can close
+        // a multi-instance page even while its opening transaction is awaiting.
+        uncachedHandle = made.handle;
+        activeUncached.add(made.handle);
       }
       await view.runOpen(context);
       ensureContextActive(context, name);
@@ -357,6 +440,10 @@ async function open(name: string, setup?: ViewSetup): Promise<ViewHandle> {
       ensurePendingActive(rec);
       return made.handle;
     } catch (e) {
+      if (uncachedHandle) {
+        activeUncached.delete(uncachedHandle);
+        uncachedHandle = null;
+      }
       // permanent 实例可能在本次 await 期间被 close 后重开；只有仍属于本次
       // context 的实例才允许回滚，避免迟到的旧 open 拆掉新世代页面。
       const ownsLifecycle = !context || view?.lifecycleContext === context;
@@ -390,12 +477,16 @@ function close(name: string): void {
   const inflight = pending.get(name);
   if (inflight) {
     inflight.cancelled = true;
-    inflight.controller.abort();
+    try { inflight.controller.abort(); } catch (e) {
+      console.error("[ViewMgr] 取消页面打开失败", e);
+    }
   }
   for (const rec of pendingAll) {
     if (rec.name === name) {
       rec.cancelled = true;
-      rec.controller.abort();
+      try { rec.controller.abort(); } catch (e) {
+        console.error("[ViewMgr] 取消页面打开失败", e);
+      }
     }
   }
   const entry = cache.get(name);
@@ -403,14 +494,28 @@ function close(name: string): void {
   entry.mounted = false;
   const release = entry.releaseMount;
   entry.releaseMount = null;
-  release?.();
+  try { release?.(); } catch (e) {
+    console.error("[ViewMgr] 关闭页面挂载释放异常", e);
+  }
   void entry.view.closeLifecycle().catch((e) => console.error("[ViewMgr] onClose 回调异常", e));
   if (entry.meta.permanent) {
     // releaseMount detaches the permanent view without destroying it.
   } else {
-    entry.view.dispose();
+    try { entry.view.dispose(); } catch (e) {
+      console.error("[ViewMgr] 关闭页面 dispose 异常", e);
+    }
     cache.delete(name);
   }
+}
+
+/**
+ * Explicitly release the current scene's FGUI ownership. Cocos destroys the
+ * node tree during a scene transition, but that does not notify detached
+ * multi-instance handles (for example Confirm); callers owning the page
+ * composition root should invoke this from their disposer.
+ */
+function disposeViewRoot(): void {
+  teardownRoot();
 }
 
 /** 页面是否处于打开状态（onlyOne/permanent 缓存范围内）。 */
@@ -425,4 +530,6 @@ function ensureContextActive(context: ViewLifecycleContext, name: string): void 
 /** handle → context 刷新器；仅用于 permanent 页面重挂，避免扩展公开状态对象。 */
 const handleContexts = new WeakMap<ViewHandle, (context: ViewLifecycleContext) => void>();
 
-export const ViewMgr = { open, close, isOpen } as const;
+export { disposeViewRoot };
+
+export const ViewMgr = { open, close, isOpen, disposeViewRoot } as const;

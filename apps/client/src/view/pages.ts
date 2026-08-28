@@ -67,6 +67,23 @@ function isOpenCancelled(error: unknown): boolean {
 type EnterBattleHandler = () => void | Promise<void>;
 
 /**
+ * Ownership token for one Cocos scene's page composition root.  The token is
+ * deliberately opaque to callers; a stale Main instance can only dispose its
+ * own scope and cannot tear down a newer scene's listener/root.
+ */
+interface PageSessionOwner {
+  readonly id: symbol;
+  generation: number;
+  disposed: boolean;
+}
+
+export interface PageSessionScope {
+  readonly generation: number;
+  isActive(): boolean;
+  dispose(): void;
+}
+
+/**
  * 登录页的一次完整打开事务。Promise 本身不足以做身份判断：在 settle 的微任务窗口里，
  * `openLoginInFlight` 可能已经切换到下一代，回登录处理器若只比较 Promise 就会自等或
  * 把旧 Main 的回调带进新页面。这里把身份、失效状态和最新回调绑在同一条记录上。
@@ -74,6 +91,7 @@ type EnterBattleHandler = () => void | Promise<void>;
 interface LoginFlight {
   readonly id: number;
   readonly startedSessionGeneration: number;
+  readonly owner: PageSessionOwner;
   onEnterBattle: EnterBattleHandler;
   promise: Promise<void>;
   settled: boolean;
@@ -83,6 +101,14 @@ interface LoginFlight {
 }
 
 let sessionWired = false;
+let unregisterSessionEvents: (() => void) | null = null;
+let wiredSessionOwner: PageSessionOwner | null = null;
+// A dynamically imported composition root can outlive its Cocos scene.  Keep
+// a local lifecycle generation so an in-flight return-to-login transition from
+// the old scene cannot reopen pages or capture callbacks from a new scene.
+let pageLifecycleGeneration = 0;
+let activePageOwner: PageSessionOwner | null = null;
+const scopeOwners = new WeakMap<PageSessionScope, PageSessionOwner>();
 let nextLoginFlightId = 0;
 let nextTransitionId = 0;
 let openLoginInFlight: LoginFlight | null = null;
@@ -97,10 +123,15 @@ function reopenLoginAfterTransition(
   transitionId: number,
   transitionGen: number,
   observedFlight: LoginFlight | null,
+  transitionPageGeneration: number,
+  transitionOwner: PageSessionOwner,
 ): Promise<void> {
+  if (activePageOwner !== transitionOwner || transitionOwner.disposed) return Promise.resolve();
+  if (pageLifecycleGeneration !== transitionPageGeneration) return Promise.resolve();
   if (getSessionGeneration() !== transitionGen) return Promise.resolve();
 
   const current = openLoginInFlight;
+  if (current && current.owner !== transitionOwner) return Promise.resolve();
   if (current && current === observedFlight && !current.settled) {
     if (current.reopenTicket === transitionId && current.reopenPromise) {
       return current.reopenPromise;
@@ -111,7 +142,13 @@ function reopenLoginAfterTransition(
         current.reopenTicket = null;
         current.reopenPromise = null;
       }
-      return reopenLoginAfterTransition(transitionId, transitionGen, current);
+      return reopenLoginAfterTransition(
+        transitionId,
+        transitionGen,
+        current,
+        transitionPageGeneration,
+        transitionOwner,
+      );
     };
     const scheduled = current.promise.then(continueReopen, continueReopen);
     current.reopenTicket = transitionId;
@@ -126,16 +163,25 @@ function reopenLoginAfterTransition(
 
   const callback = latestOnEnterBattle ?? observedFlight?.onEnterBattle;
   if (!callback) return Promise.resolve();
-  const next = ensureLoginFlight(callback);
+  const next = ensureLoginFlight(callback, transitionOwner);
   // Defensive identity check: a transition must never await the exact flight it observed.
   return next === observedFlight ? Promise.resolve() : next.promise;
 }
 
-/** 会话事件接线（踢线/掉线 → 清态回登录页），整个应用生命周期只注册一次。 */
-function wireSessionEvents(): void {
-  if (sessionWired) return;
+/** 会话事件接线（踢线/掉线 → 清态回登录页），每个页面生命周期只注册一次。 */
+function wireSessionEvents(owner: PageSessionOwner): void {
+  if (sessionWired && wiredSessionOwner === owner) return;
+  if (sessionWired) {
+    unregisterSessionEvents?.();
+    unregisterSessionEvents = null;
+    sessionWired = false;
+    wiredSessionOwner = null;
+  }
   sessionWired = true;
-  registerReturnToLogin(async (reason: ReturnToLoginReason) => {
+  wiredSessionOwner = owner;
+  const wiredPageGeneration = pageLifecycleGeneration;
+  unregisterSessionEvents = registerReturnToLogin(async (reason: ReturnToLoginReason) => {
+    if (activePageOwner !== owner || owner.disposed || pageLifecycleGeneration !== wiredPageGeneration) return;
     // 捕获并标记触发事件时的具体 flight；它可能仍在 fetch/ViewMgr.open 中，不能被处理器
     // 直接 await，否则 openLogin 与回登录 transition 会互相等待。
     const transitionGen = getSessionGeneration();
@@ -146,7 +192,8 @@ function wireSessionEvents(): void {
     // session.returnToLogin 已先 clearSession；这里按统一顺序释放大厅、关闭壳、提示，
     // 最后在旧 flight settle 后调度最新 Main 的登录页。所有 await 都在同一个可观察 Promise 内。
     await WebSocketClient.inst.leave().catch(() => {});
-    if (getSessionGeneration() !== transitionGen) return;
+    if (activePageOwner !== owner || owner.disposed
+      || pageLifecycleGeneration !== wiredPageGeneration || getSessionGeneration() !== transitionGen) return;
     closeLobby();
     let title = "提示";
     let content = "登录已过期，请重新登录";
@@ -168,9 +215,77 @@ function wireSessionEvents(): void {
       content = "进入对局失败，请重试";
     }
     await openConfirm({ title, content, noText: null });
-    if (getSessionGeneration() !== transitionGen) return;
-    await reopenLoginAfterTransition(transitionId, transitionGen, observedFlight);
+    if (activePageOwner !== owner || owner.disposed
+      || pageLifecycleGeneration !== wiredPageGeneration || getSessionGeneration() !== transitionGen) return;
+    await reopenLoginAfterTransition(
+      transitionId,
+      transitionGen,
+      observedFlight,
+      wiredPageGeneration,
+      owner,
+    );
   });
+}
+
+/**
+ * Release the page composition root when its Cocos scene is destroyed.
+ *
+ * The session module intentionally has no View dependency, so pages owns the
+ * corresponding unregister handle.  Invalidating the active flight prevents
+ * deferred area loads, confirms, and login continuations from touching the
+ * next scene; clearing the active pointer lets a later scene create a fresh
+ * flight instead of reusing an invalidated one.  The operation is idempotent.
+ */
+export function disposePageSessionEvents(owner?: PageSessionOwner): void {
+  if (owner && activePageOwner !== owner) return;
+  const disposedOwner = activePageOwner;
+  if (disposedOwner) disposedOwner.disposed = true;
+  activePageOwner = null;
+  pageLifecycleGeneration++;
+  const flight = openLoginInFlight;
+  if (flight) {
+    flight.invalidated = true;
+    flight.reopenTicket = null;
+    flight.reopenPromise = null;
+  }
+  openLoginInFlight = null;
+  latestOnEnterBattle = null;
+  unregisterSessionEvents?.();
+  unregisterSessionEvents = null;
+  wiredSessionOwner = null;
+  sessionWired = false;
+  // ViewMgr owns the actual FGUI leases, including uncached Confirm handles;
+  // release them together with this composition root so no promise survives a
+  // scene transition.
+  try {
+    ViewMgr.disposeViewRoot();
+  } catch (e) {
+    // A host-specific FairyGUI teardown failure must not leave the session
+    // owner/listener installed or let an old Main throw from onDestroy.
+    console.error("[pages] 页面根释放异常", e);
+  }
+}
+
+/**
+ * Claim page/session ownership for a new Cocos scene. Claiming supersedes the
+ * previous scope and invalidates its async transitions before returning.
+ */
+export function createPageSessionScope(): PageSessionScope {
+  disposePageSessionEvents();
+  const owner: PageSessionOwner = {
+    id: Symbol("page-session"),
+    generation: pageLifecycleGeneration,
+    disposed: false,
+  };
+  activePageOwner = owner;
+  const scope: PageSessionScope = {
+    generation: owner.generation,
+    isActive: () => activePageOwner === owner && !owner.disposed
+      && pageLifecycleGeneration === owner.generation,
+    dispose: () => disposePageSessionEvents(owner),
+  };
+  scopeOwners.set(scope, owner);
+  return scope;
 }
 
 function localDateStamp(date = new Date()): string {
@@ -195,19 +310,47 @@ function writeDontRemindToday(value: boolean): void {
   } catch { /* 存储不可用时不影响公告浏览 */ }
 }
 
+function ensurePageOwner(): PageSessionOwner {
+  if (activePageOwner && !activePageOwner.disposed) return activePageOwner;
+  // Keep the standalone pages API usable in tests/tools that call openLogin
+  // without a Cocos Main scope. A later Main scope will supersede this owner.
+  const owner: PageSessionOwner = {
+    id: Symbol("page-session-implicit"),
+    generation: ++pageLifecycleGeneration,
+    disposed: false,
+  };
+  activePageOwner = owner;
+  return owner;
+}
+
+function isFlightActive(flight: LoginFlight): boolean {
+  return !flight.invalidated
+    && !flight.owner.disposed
+    && activePageOwner === flight.owner
+    && pageLifecycleGeneration === flight.owner.generation;
+}
+
 /** 创建或复用登录 flight；复用时只更新回调，不另起一套页面加载。 */
-function ensureLoginFlight(onEnterBattle: EnterBattleHandler): LoginFlight {
+function ensureLoginFlight(onEnterBattle: EnterBattleHandler, owner = ensurePageOwner()): LoginFlight {
   latestOnEnterBattle = onEnterBattle;
   const current = openLoginInFlight;
-  if (current && !current.settled) {
+  if (current && !current.settled && !current.invalidated && current.owner === owner) {
     current.onEnterBattle = onEnterBattle;
     return current;
+  }
+  if (current && !current.settled && current.owner !== owner) {
+    // A new scene owner must never reuse an old scene's Login callback/flight.
+    current.invalidated = true;
+    current.reopenTicket = null;
+    current.reopenPromise = null;
+    if (openLoginInFlight === current) openLoginInFlight = null;
   }
   if (current?.settled && openLoginInFlight === current) openLoginInFlight = null;
 
   const flight: LoginFlight = {
     id: ++nextLoginFlightId,
     startedSessionGeneration: getSessionGeneration(),
+    owner,
     onEnterBattle,
     promise: Promise.resolve(),
     settled: false,
@@ -217,7 +360,7 @@ function ensureLoginFlight(onEnterBattle: EnterBattleHandler): LoginFlight {
   };
   openLoginInFlight = flight;
   // Register before starting the first await so a transport event cannot race the initial load.
-  wireSessionEvents();
+  wireSessionEvents(owner);
   flight.promise = openLoginImpl(flight);
   flight.promise.then(
     () => finishLoginFlight(flight),
@@ -232,8 +375,11 @@ function finishLoginFlight(flight: LoginFlight): void {
 }
 
 /** 登录页整段加载只保留一个在途事务；重复调用只更新最新 Main 的战斗回调。 */
-export function openLogin(onEnterBattle: EnterBattleHandler): Promise<void> {
-  return ensureLoginFlight(onEnterBattle).promise;
+export function openLogin(onEnterBattle: EnterBattleHandler, scope?: PageSessionScope): Promise<void> {
+  if (scope && !scope.isActive()) return Promise.resolve();
+  const owner = scope ? scopeOwners.get(scope) : ensurePageOwner();
+  if (!owner || owner.disposed || activePageOwner !== owner) return Promise.resolve();
+  return ensureLoginFlight(onEnterBattle, owner).promise;
 }
 
 async function openLoginImpl(flight: LoginFlight): Promise<void> {
@@ -242,7 +388,7 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
   let areaLoadFailed = false;
   try {
     const list = await fetchAreaList();
-    if (flight.invalidated) return;
+    if (!isFlightActive(flight)) return;
     setServerList(list);
     const current = getCurrentServer();
     if (current) {
@@ -253,31 +399,31 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
     console.error("[pages] WebPlatform 区服目录加载失败：", e);
   }
 
-  if (flight.invalidated) return;
+  if (!isFlightActive(flight)) return;
 
   const h = await ViewMgr.open("Login");
-  if (flight.invalidated) { h.close(); return; }
+  if (!isFlightActive(flight)) { h.close(); return; }
   const view = h.view as LoginView;
   // ⚠ 登录必须带**所选区**（M12e）：token 只对该区有效。setServerList 已在成功拉取后
   // 原子建立当前选区，后续用户选服也会更新它；⛔ 别图省事传 0。
   const logic = new LoginLogic({ login: (key) => devLogin(key, getCurrentServer()?.serverId ?? 0) });
   let enterInFlight: Promise<void> | null = null;
   await h.run((_openedView, context) => {
-    if (flight.invalidated) { h.close(); return; }
+    if (!isFlightActive(flight)) { h.close(); return; }
     logic.onProgress = (ratio, text) => {
       if (context.isActive()) view.setProgress(ratio, text);
     };
 
     view.onEnter = () => {
-      if (flight.invalidated || !context.isActive()) return;
+      if (!isFlightActive(flight) || !context.isActive()) return;
       if (enterInFlight) return enterInFlight;
       const p = (async () => {
-        if (!context.isActive()) return;
+        if (!isFlightActive(flight) || !context.isActive()) return;
         // Portal 首次不可达时，用户点「进入游戏」即显式重试目录；仍失败则给出可重试提示。
         if (areaLoadFailed) {
           try {
             const list = await fetchAreaList();
-            if (flight.invalidated || !context.isActive()) return;
+            if (!isFlightActive(flight) || !context.isActive()) return;
             setServerList(list);
             const current = getCurrentServer();
             if (current) {
@@ -286,13 +432,13 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
             }
             areaLoadFailed = false;
           } catch (e) {
-            if (flight.invalidated || !context.isActive()) return;
+            if (!isFlightActive(flight) || !context.isActive()) return;
             console.error("[pages] WebPlatform 区服目录重试失败：", e);
             await openConfirm({ title: "连接失败", content: "账号服务暂不可用，请稍后重试", noText: null });
             return;
           }
         }
-        if (flight.invalidated || !context.isActive()) return;
+        if (!isFlightActive(flight) || !context.isActive()) return;
         const cur = getCurrentServer();
         // 进服闸（判定单源 isServerEnterable，对齐原项目 waitLogin）：无服 / 不可进（维护 or 未开服）
         // 且非运维模式不进。isOps 是部署环境级开关（服务端 AREA_IS_OPS），豁免覆盖两种不可进态——
@@ -307,14 +453,14 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
           });
           return;
         }
-        if (flight.invalidated || !context.isActive()) return;
+        if (!isFlightActive(flight) || !context.isActive()) return;
         // 真实链路：dev-login（本地身份）→ 会话入 session → join 大厅房 → 拉真实档案。
         // continuation 由 LoginLogic 的整段 flow 锁保护，重复点击不会在 HTTP 完成后再开一套 Lobby。
         let user: IUserView | null = null;
         let flowFailed = false;
         let flowSessionGen = -1;
         const r = await logic.doLoginFlow(DEV_LOGIN_KEY, async (response) => {
-          if (flight.invalidated || !context.isActive()) { flowFailed = true; return; }
+          if (!isFlightActive(flight) || !context.isActive()) { flowFailed = true; return; }
           setSession(response);
           flowSessionGen = getSessionGeneration();
           try {
@@ -327,29 +473,32 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
               { sId: cur.serverId },
               context.signal,
             );
-            if (flight.invalidated || !context.isActive() || getSessionGeneration() !== flowSessionGen) { flowFailed = true; return; }
+            if (!isFlightActive(flight) || !context.isActive() || getSessionGeneration() !== flowSessionGen) { flowFailed = true; return; }
             logic.onProgress(0.85, "正在加载角色…");
             user = (await WebSocketClient.inst.rpc(UserRpc.GetInfo, {})).user;
-            if (flight.invalidated || !context.isActive() || getSessionGeneration() !== flowSessionGen) { flowFailed = true; return; }
+            if (!isFlightActive(flight) || !context.isActive() || getSessionGeneration() !== flowSessionGen) { flowFailed = true; return; }
           } catch (e) {
-            if (flight.invalidated || !context.isActive()) { flowFailed = true; return; }
+            if (!isFlightActive(flight) || !context.isActive()) { flowFailed = true; return; }
             // 大厅/档案失败即整体失败（严谨：不带半截会话进主界面）；清态可重试
             // 业务码走 message（服务端 joinRefused）：用 shared 单源解码器取文案，⛔ 别把 "3004" 甩给玩家
             console.error("[pages] 进入大厅失败：", e);
             const why = joinErrText((e as Error)?.message, "进入大厅失败，请重试");
             clearSession();
             await WebSocketClient.inst.leave().catch(() => {});
+            if (!isFlightActive(flight) || !context.isActive()) { flowFailed = true; return; }
             logic.onProgress(0, why);
             flowFailed = true;
           }
         });
-        if (flight.invalidated || !context.isActive() || !r || flowFailed || getSessionGeneration() !== flowSessionGen) return;
+        if (!isFlightActive(flight) || !context.isActive() || !r || flowFailed || getSessionGeneration() !== flowSessionGen) return;
         logic.onProgress(1, "登录成功");
         h.close();
+        if (!isFlightActive(flight) || !context.isActive()) return;
         await openHome(() => flight.onEnterBattle(), r.userId, user);
         // Home 的动态加载也有 await；期间若收到失效事件，handler 会关闭大厅并重开
         // Login。这里再核对一次，避免迟到的 Home 把新登录页覆盖回来。
-        if (getSessionGeneration() !== flowSessionGen) ViewMgr.close("Home");
+        if (!isFlightActive(flight) || !context.isActive()
+          || getSessionGeneration() !== flowSessionGen) ViewMgr.close("Home");
       })();
       enterInFlight = p;
       p.then(
@@ -366,7 +515,7 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
     view.setup();
     view.showCurrentServer(getCurrentServer());
     });
-  if (flight.invalidated) h.close();
+  if (!isFlightActive(flight)) h.close();
 }
 
 /** 主界面：展示真实账号/档案摘要，「进入游戏」→ ballMove。 */

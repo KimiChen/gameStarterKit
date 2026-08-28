@@ -1,200 +1,363 @@
 /**
- * 页面异步生命周期无头回归：底层请求即使忽略 AbortSignal，关闭/重进后的旧结果也不能
- * 触发页面回调。View 层的 FairyGUI 绑定在 Creator 侧验证，这里只钉住 Logic 世代语义。
+ * Runtime lifecycle probes for the FairyGUI shell.  The production view files
+ * are Creator modules, so these tests install a deliberately small in-memory
+ * cc/FGUI adapter before importing them.  This keeps the assertions focused
+ * on cancellation and lease cleanup rather than on editor/runtime boot.
  */
 import assert from "node:assert/strict";
+import { createRequire } from "node:module";
 import { test } from "node:test";
-import { AreaListLogic } from "../src/logic/page/AreaListLogic";
-import { LoginNoticeLogic } from "../src/logic/page/LoginNoticeLogic";
-import { GuildLogic } from "../src/logic/page/GuildLogic";
-import type { WebPlatformAreaListResponse } from "../src/shared/index";
+import { markFaultPoint } from "./faultMatrix";
 
-function deferred<T>(): { promise: Promise<T>; resolve(value: T): void } {
+type LoaderModule = {
+  _load: (request: string, parent: unknown, isMain: boolean) => unknown;
+};
+
+interface Deferred<T> {
+  promise: Promise<T>;
+  resolve(value: T): void;
+}
+
+function deferred<T>(): Deferred<T> {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>((r) => { resolve = r; });
+  const promise = new Promise<T>((res) => { resolve = res; });
   return { promise, resolve };
 }
 
-const area = (id: number): WebPlatformAreaListResponse => ({
-  isOps: false,
-  hash: `h${id}`,
-  servers: [{
-    serverId: id,
-    name: `s${id}`,
-    status: "smooth",
-    tag: "normal",
-    openTime: 1,
-    gameHttpUrl: "http://game.example",
-    gameWsUrl: "ws://game.example",
-  }],
-  myServerIds: [],
-});
+/** Install enough of the Cocos/FairyGUI surface for FguiView + ViewMgr. */
+async function loadViewRuntime(): Promise<{
+  FguiView: any;
+  ViewMgr: any;
+  VIEW_REGISTRY: Record<string, any>;
+}> {
+  class FakeNode {
+    name = "node";
+    layer = 0;
+    active = true;
+    isValid = true;
+    parent: FakeNode | null = null;
+    children: FakeNode[] = [];
 
-test("AreaListLogic：stop 后迟到 HTTP 不触发 tabs/list 回调", async () => {
-  const pending = deferred<ReturnType<typeof area>>();
-  let receivedSignal: AbortSignal | undefined;
-  const logic = new AreaListLogic({
-    fetchAreaList: async (signal) => {
-      receivedSignal = signal;
-      return pending.promise;
+    constructor(name = "node") { this.name = name; }
+
+    addChild(child: FakeNode): void {
+      child.parent?.removeChild(child);
+      this.children.push(child);
+      child.parent = this;
+    }
+
+    removeChild(child: FakeNode): void {
+      const index = this.children.indexOf(child);
+      if (index >= 0) this.children.splice(index, 1);
+      if (child.parent === this) child.parent = null;
+    }
+
+    setSiblingIndex(index: number): void {
+      if (!this.parent) return;
+      const siblings = this.parent.children;
+      const old = siblings.indexOf(this);
+      if (old < 0) return;
+      siblings.splice(old, 1);
+      siblings.splice(Math.max(0, Math.min(index, siblings.length)), 0, this);
+    }
+  }
+
+  class FakeGObject {
+    readonly node = new FakeNode();
+    parent: FakeGComponent | null = null;
+    name = "";
+    width = 0;
+    height = 0;
+    visible = true;
+    touchable = true;
+    grayed = false;
+    enabled = true;
+    title = "";
+    icon = "";
+    disposed = false;
+
+    onClick(): void {}
+    on(): void {}
+    off(): void {}
+
+    removeFromParent(): void {
+      this.parent?.removeChild(this);
+    }
+
+    dispose(): void {
+      this.removeFromParent();
+      this.disposed = true;
+      this.node.isValid = false;
+    }
+
+    get asCom(): FakeGComponent { return this as unknown as FakeGComponent; }
+  }
+
+  class FakeGComponent extends FakeGObject {
+    private readonly childrenList: FakeGObject[] = [];
+
+    get numChildren(): number { return this.childrenList.length; }
+
+    addChild(child: FakeGObject): FakeGObject {
+      child.parent?.removeChild(child);
+      this.childrenList.push(child);
+      child.parent = this;
+      this.node.addChild(child.node);
+      return child;
+    }
+
+    removeChild(child: FakeGObject): void {
+      const index = this.childrenList.indexOf(child);
+      if (index >= 0) this.childrenList.splice(index, 1);
+      if (child.parent === this) child.parent = null;
+      this.node.removeChild(child.node);
+    }
+
+    setChildIndex(child: FakeGObject, index: number): void {
+      const old = this.childrenList.indexOf(child);
+      if (old < 0) return;
+      this.childrenList.splice(old, 1);
+      this.childrenList.splice(Math.max(0, Math.min(index, this.childrenList.length)), 0, child);
+    }
+
+    getChild<T extends FakeGObject = FakeGObject>(_name: string): T {
+      return undefined as unknown as T;
+    }
+
+    getChildAt<T extends FakeGObject = FakeGObject>(index: number): T {
+      return this.childrenList[index] as T;
+    }
+
+    setSize(width: number, height: number): void {
+      this.width = width;
+      this.height = height;
+    }
+
+    addRelation(): void {}
+
+    getController(): { selectedIndex: number } {
+      return { selectedIndex: 0 };
+    }
+  }
+
+  class FakeGRoot extends FakeGComponent {
+    static _inst: FakeGRoot | undefined;
+    readonly inputProcessor = { enabled: false };
+
+    static get inst(): FakeGRoot {
+      if (!FakeGRoot._inst) FakeGRoot._inst = new FakeGRoot();
+      return FakeGRoot._inst;
+    }
+
+    constructor() {
+      super();
+      this.node.name = "GRoot";
+    }
+
+    onWinResize(): void {
+      this.width = 750;
+      this.height = 1334;
+    }
+  }
+
+  const packages = new Map<string, object>();
+  const fakeFgui = {
+    GObject: FakeGObject,
+    GComponent: FakeGComponent,
+    GRoot: FakeGRoot,
+    GButton: class extends FakeGComponent {},
+    GList: class extends FakeGComponent {},
+    GLoader: class extends FakeGObject {},
+    GLoader3D: class extends FakeGObject {},
+    GTextField: class extends FakeGObject {},
+    GRichTextField: class extends FakeGObject {},
+    GGroup: class extends FakeGObject {},
+    GProgressBar: class extends FakeGComponent {},
+    RelationType: { Size: 1 },
+    Event: { CLICK_ITEM: "clickItem", STATUS_CHANGED: "statusChanged" },
+    UIPackage: {
+      getByName(name: string): object | undefined { return packages.get(name); },
+      loadPackage(path: string, callback: (error: unknown, pkg?: object) => void): void {
+        const name = path.slice(path.lastIndexOf("/") + 1);
+        const pkg = {};
+        packages.set(name, pkg);
+        callback(null, pkg);
+      },
+      createObject(): FakeGComponent { return new FakeGComponent(); },
     },
-  });
-  let tabs = 0;
-  let servers = 0;
-  logic.onTabs = () => { tabs++; };
-  logic.onServers = () => { servers++; };
-  const started = logic.start();
-  logic.stop();
-  assert.equal(receivedSignal?.aborted, true, "stop 应向依赖发出 abort");
-  pending.resolve(area(1));
-  await started;
-  assert.equal(tabs, 0);
-  assert.equal(servers, 0);
-});
-
-test("AreaListLogic：重进页面时只接受最新世代结果", async () => {
-  const first = deferred<ReturnType<typeof area>>();
-  const second = deferred<ReturnType<typeof area>>();
-  let call = 0;
-  const logic = new AreaListLogic({
-    fetchAreaList: async () => (call++ === 0 ? first.promise : second.promise),
-  });
-  const hashes: string[] = [];
-  logic.onTabs = () => { hashes.push(logic.serversOfTab("all")[0]?.name ?? ""); };
-  const oldStart = logic.start();
-  const newStart = logic.start();
-  first.resolve(area(1));
-  second.resolve(area(2));
-  await Promise.all([oldStart, newStart]);
-  assert.deepEqual(hashes, ["s2"]);
-});
-
-test("AreaListLogic：拉取边界取得独立快照，外部/回调突变不会污染后续选服", async () => {
-  const response = area(3);
-  const logic = new AreaListLogic({ fetchAreaList: async () => response });
-  await logic.start();
-
-  // The dependency may retain and mutate its response after the await.  The
-  // logic must own a validated copy before publishing it to the view.
-  response.servers[0].name = "外部突变";
-  assert.equal(logic.serversOfTab("all")[0]?.name, "s3");
-
-  const exposed = logic.serversOfTab("all");
-  exposed[0].name = "视图突变";
-  assert.equal(logic.serversOfTab("all")[0]?.name, "s3");
-
-  logic.onChoose = (server) => { server.name = "回调突变"; };
-  assert.equal(logic.choose(3), true);
-  assert.equal(logic.serversOfTab("all")[0]?.name, "s3");
-});
-
-test("AreaListLogic：恶意 response 在发布前拒绝且不触发页面回调", async () => {
-  // Promise resolution probes `then`; keep that property benign so the
-  // hostile shape reaches the validator instead of failing in native await.
-  const hostile = new Proxy(area(4), {
-    get(target, key, receiver) {
-      if (key === "then") return undefined;
-      return Reflect.get(target, key, receiver);
+  };
+  const canvasNode = new FakeNode("Canvas");
+  const cc = {
+    Canvas: class { readonly node = canvasNode; },
+    director: {
+      getScene(): { getComponentInChildren(): { node: FakeNode } } {
+        return { getComponentInChildren: () => ({ node: canvasNode }) };
+      },
     },
-    getPrototypeOf() { throw new Error("hostile prototype"); },
-  });
-  const logic = new AreaListLogic({
-    fetchAreaList: async () => hostile as never,
-  });
-  let callbacks = 0;
-  logic.onTabs = () => { callbacks++; };
-  await assert.rejects(logic.start(), /WIRE_KEYS|WIRE_OBJECT/);
-  assert.equal(callbacks, 0);
-});
-
-test("LoginNoticeLogic：stop 后迟到公告不更新正文", async () => {
-  const pending = deferred<{ list: [{ id: number; category: "notice"; title: string; desc: string; content: string; at: number }] }>();
-  const logic = new LoginNoticeLogic({
-    fetchNotices: async () => pending.promise,
-    readDontRemindToday: () => false,
-    writeDontRemindToday: () => {},
-  });
-  let tabCalls = 0;
-  let contentCalls = 0;
-  logic.onTabs = () => { tabCalls++; };
-  logic.onContent = () => { contentCalls++; };
-  const started = logic.start();
-  logic.stop();
-  pending.resolve({ list: [{ id: 1, category: "notice", title: "x", desc: "", content: "late", at: 1 }] });
-  await started;
-  assert.equal(tabCalls, 0);
-  assert.equal(contentCalls, 0);
-});
-
-test("Area/Notice：stop 后主动事件也不再触发旧 View 回调", async () => {
-  const areaLogic = new AreaListLogic({
-    fetchAreaList: async () => area(1),
-  });
-  let areaServers = 0;
-  let areaChosen = 0;
-  areaLogic.onServers = () => { areaServers++; };
-  areaLogic.onChoose = () => { areaChosen++; };
-  await areaLogic.start();
-  areaLogic.stop();
-  areaLogic.setTab("recommend");
-  areaLogic.choose(1);
-  assert.equal(areaServers, 1, "stop 前首拉应有一次列表回调");
-  assert.equal(areaChosen, 0, "stop 后 choose 不应触发旧回调");
-
-  const noticeLogic = new LoginNoticeLogic({
-    fetchNotices: async () => ({ list: [{ id: 1, category: "notice", title: "x", desc: "", content: "c", at: 1 }] }),
-    readDontRemindToday: () => false,
-    writeDontRemindToday: () => {},
-  });
-  let contentCalls = 0;
-  noticeLogic.onContent = () => { contentCalls++; };
-  await noticeLogic.start();
-  noticeLogic.stop();
-  noticeLogic.select(1);
-  assert.equal(contentCalls, 1, "stop 前首拉应有一次正文回调");
-});
-
-test("GuildLogic：stop 后迟到 pull 结果不触发 events/error/gap", async () => {
-  const pending = deferred<{ events: never[]; latestSeq: number; guildId: number }>();
-  const pushRef: { current: ((data: { seq: number; guildId: number }) => void) | null } = { current: null };
-  const logic = new GuildLogic({
-    getEvents: async () => pending.promise,
-    onPush: (_type, cb) => {
-      pushRef.current = cb;
-      return () => { pushRef.current = null; };
+    sys: {
+      getSafeAreaRect: () => ({ x: 0, y: 0, width: 750, height: 1334 }),
+      localStorage: {},
     },
-  });
-  let events = 0;
-  let errors = 0;
-  let gaps = 0;
-  logic.onEvents = () => { events++; };
-  logic.onPullError = () => { errors++; };
-  logic.onGapRefresh = () => { gaps++; };
-  const started = logic.start(0, 7);
-  pushRef.current?.({ seq: 1, guildId: 7 });
-  logic.stop();
-  pending.resolve({ events: [], latestSeq: 1, guildId: 7 });
-  await started;
-  assert.equal(events, 0);
-  assert.equal(errors, 0);
-  assert.equal(gaps, 0);
+    view: { getVisibleSize: () => ({ width: 750, height: 1334 }) },
+  };
+
+  const require = createRequire(import.meta.url);
+  const moduleApi = require("node:module") as LoaderModule;
+  const originalLoad = moduleApi._load;
+  moduleApi._load = function patchedLoad(request, parent, isMain): unknown {
+    if (request === "cc") return cc;
+    if (request === "db://fairygui-cc/fairygui.mjs") return fakeFgui;
+    return originalLoad.call(this, request, parent, isMain);
+  };
+  try {
+    const [{ FguiView }, { ViewMgr }, { VIEW_REGISTRY }] = await Promise.all([
+      import("../src/view/FguiView"),
+      import("../src/view/ViewMgr"),
+      import("../src/view/viewRegistry"),
+    ]);
+    return { FguiView, ViewMgr, VIEW_REGISTRY: VIEW_REGISTRY as Record<string, any> };
+  } finally {
+    moduleApi._load = originalLoad;
+  }
+}
+
+test("FguiView closeLifecycle publishes its promise before synchronous re-entry", async () => {
+  const { FguiView } = await loadViewRuntime();
+  let closeCalls = 0;
+  let view: any;
+  class ReentrantView extends FguiView {
+    constructor(root: any) { super(root); }
+
+    protected bind(): void {}
+
+    protected onCloseLifecycle(): void {
+      closeCalls += 1;
+      // Both paths synchronously re-enter the close boundary. They must see
+      // the already-published promise and avoid invoking the hook recursively.
+      view.closeLifecycle();
+      view.dispose();
+    }
+  }
+  const root = { removeFromParent(): void {}, dispose(): void {} } as any;
+  view = new ReentrantView(root);
+  const context = view.beginLifecycle(1);
+  const close = view.closeLifecycle();
+  assert.equal(context.isActive(), false);
+  await close;
+  await view.closeLifecycle();
+  assert.equal(closeCalls, 1);
+  assert.equal(view.isDisposed, true);
 });
 
-test("GuildLogic：旧世代 pull 在途时重进页面，新的首拉不被旧 pulling 状态阻塞", async () => {
-  const old = deferred<{ events: never[]; latestSeq: number; guildId: number }>();
-  let call = 0;
-  const logic = new GuildLogic({
-    getEvents: async () => {
-      if (call++ === 0) return old.promise;
-      return { events: [], latestSeq: 0, guildId: 9 };
-    },
-    onPush: (_type, _cb) => () => {},
-  });
-  const first = logic.start(0, 7);
-  const second = logic.start(0, 9);
-  await second;
-  assert.equal(call, 2);
-  old.resolve({ events: [], latestSeq: 99, guildId: 7 });
-  await first;
-  assert.equal(logic.seq, 0, "旧世代响应不得覆盖新页面水位");
+test("FguiView runs an instance create hook once across a cancelled generation", async () => {
+  const { FguiView } = await loadViewRuntime();
+  const gate = deferred<void>();
+  let creates = 0;
+  class TestView extends FguiView {
+    constructor(root: any) { super(root); }
+
+    protected bind(): void {}
+
+    protected onCreate(): Promise<void> {
+      creates += 1;
+      return gate.promise;
+    }
+  }
+  const root = { removeFromParent(): void {}, dispose(): void {} } as any;
+  const view = new TestView(root);
+  const first = view.beginLifecycle(1);
+  const firstRun = view.runCreate(first);
+  await Promise.resolve();
+  view.closeLifecycle();
+  const second = view.beginLifecycle(2);
+  const secondRun = view.runCreate(second);
+  assert.equal(creates, 1, "the second generation must share the first create flight");
+  gate.resolve();
+  await assert.rejects(firstRun, /页面打开世代已失效/);
+  await secondRun;
+  assert.equal(creates, 1, "a successful cancelled-generation hook must not rerun");
+  markFaultPoint("view-close-deferred");
+  view.dispose();
+});
+
+test("ViewMgr detaches a view when disabling input throws", async () => {
+  const { FguiView, ViewMgr, VIEW_REGISTRY } = await loadViewRuntime();
+  class TestView extends FguiView {
+    protected bind(): void {}
+  }
+  const name = "__cleanup_probe__";
+  VIEW_REGISTRY[name] = {
+    name,
+    contract: { pkg: "TestCleanup", comp: "Root", required: [] },
+    layer: "top",
+    fullscreen: false,
+    onlyOne: false,
+    permanent: false,
+    interactive: true,
+    load: async () => TestView,
+  };
+  const originalSetInputEnabled = FguiView.setInputEnabled;
+  let throwOnDisable = false;
+  FguiView.setInputEnabled = ((enabled: boolean): void => {
+    if (!enabled && throwOnDisable) throw new Error("input processor disposed");
+    originalSetInputEnabled.call(FguiView, enabled);
+  }) as typeof FguiView.setInputEnabled;
+  let handle: any = null;
+  try {
+    handle = await ViewMgr.open(name);
+    throwOnDisable = true;
+    assert.doesNotThrow(() => handle.close());
+    assert.equal(handle.view.isDisposed, true);
+    assert.equal(ViewMgr.isOpen(name), false);
+  } finally {
+    handle?.close();
+    FguiView.setInputEnabled = originalSetInputEnabled;
+    delete VIEW_REGISTRY[name];
+  }
+});
+
+test("ViewMgr teardown closes active uncached views and permits a fresh root", async () => {
+  const { FguiView, ViewMgr, VIEW_REGISTRY } = await loadViewRuntime();
+  const name = "__uncached_teardown_probe__";
+  let closeCalls = 0;
+  class TestView extends FguiView {
+    constructor(root: any) { super(root); }
+
+    protected bind(): void {}
+
+    protected onCloseLifecycle(): void {
+      closeCalls += 1;
+    }
+  }
+  VIEW_REGISTRY[name] = {
+    name,
+    contract: { pkg: "TestUncachedTeardown", comp: "Root", required: [] },
+    layer: "top",
+    fullscreen: false,
+    onlyOne: false,
+    permanent: false,
+    interactive: true,
+    load: async () => TestView,
+  };
+  let first: any = null;
+  let second: any = null;
+  try {
+    first = await ViewMgr.open(name);
+    assert.equal(first.signal.aborted, false);
+    ViewMgr.disposeViewRoot();
+    assert.equal(first.signal.aborted, true);
+    assert.equal(first.view.isDisposed, true);
+    assert.equal(closeCalls, 1);
+
+    second = await ViewMgr.open(name);
+    assert.notEqual(second, first);
+    second.close();
+    assert.equal(second.view.isDisposed, true);
+    assert.equal(closeCalls, 2);
+  } finally {
+    first?.close();
+    second?.close();
+    ViewMgr.disposeViewRoot();
+    delete VIEW_REGISTRY[name];
+  }
 });

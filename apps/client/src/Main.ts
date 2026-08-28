@@ -39,6 +39,7 @@ export class Main extends Component {
     private gameplayRegistry: GameplayRegistry<BallMoveRoom, BallMoveInput> | null = null;
     private roomController: RoomController<BallMoveRoom, BallMoveInput> | null = null;
     private unregisterGameplay: (() => void) | null = null;
+    private disposePages: (() => void) | null = null;
     private battleTransition: Promise<void> | null = null;
     private battleAbort: AbortController | null = null;
     private destroyed = false;
@@ -67,7 +68,20 @@ export class Main extends Component {
 
         try {
             const pages = await import("./view/pages");
-            if (!this.destroyed) await pages.openLogin(() => this.enterBattle());
+            if (this.destroyed) {
+                return;
+            }
+            // Claim ownership only after the dynamic import has resolved and
+            // this instance is still alive. A stale Main must not install a
+            // disposer that can tear down a newer scene's page root.
+            const scope = pages.createPageSessionScope();
+            this.disposePages = scope.dispose;
+            if (this.destroyed) {
+                scope.dispose();
+                this.disposePages = null;
+                return;
+            }
+            await pages.openLogin(() => this.enterBattle(), scope);
         } catch (error) {
             console.error("[Main] 大厅初始化失败（FairyGUI 扩展/资源包是否就绪？）：", error);
         }
@@ -84,6 +98,8 @@ export class Main extends Component {
     onDestroy(): void {
         if (this.destroyed) return;
         this.destroyed = true;
+        this.disposePages?.();
+        this.disposePages = null;
         this.battleAbort?.abort();
         this.battleAbort = null;
         for (const unsubscribe of this.unsubs.splice(0)) unsubscribe();
