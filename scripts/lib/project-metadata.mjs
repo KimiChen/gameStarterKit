@@ -96,7 +96,19 @@ export function validateText(value, flag, max = 128) {
 export function assertPackageNames(metadata) {
   const expected = packageNames(metadata);
   const actual = metadata.packages;
+  const seen = new Map();
   for (const key of Object.keys(expected)) {
+    const name = expected[key];
+    // npm package identities are effectively case-insensitive across the
+    // registry and on common developer filesystems.  Keep the starter's
+    // existing allowance for uppercase names, but reject collisions such as
+    // `Shared` vs `shared` before npm creates an ambiguous workspace graph.
+    const identity = name.toLowerCase();
+    const previous = seen.get(identity);
+    if (previous !== undefined) {
+      throw new Error(`packages.${key} 与 packages.${previous} 重名：${name}；请更换 name，避免 workspace 包名碰撞`);
+    }
+    seen.set(identity, key);
     if (!actual || actual[key] !== expected[key]) {
       throw new Error(`packages.${key} 与项目身份不一致：应为 ${expected[key]}，实际为 ${actual?.[key] ?? "<missing>"}`);
     }

@@ -132,4 +132,7 @@ declare module "*.mjs" {
   export function breakerTripped(args: { removed: number; srcCount: number }): boolean;
   export function forceRequested(argv?: string[]): boolean;
   export function breakerMessage(tag: string, removed: number, srcCount: number): string;
+  export function packageNames(args: { name: string; scope?: string | null }): Record<string, string>;
+  export function assertPackageNames(metadata: { name: string; scope?: string | null; packages?: Record<string, string> }): void;
+  export function verifyProjectMetadata(root: string): { ok: boolean; errors: string[]; metadata?: unknown };
 }

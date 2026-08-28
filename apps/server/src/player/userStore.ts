@@ -11,7 +11,7 @@
  */
 import type { IPublicUserView, IUserView } from "@game/shared";
 import { loadFields } from "../core/userRecord";
-import { optionalStoredInt } from "../core/infra/numbers";
+import { optionalStoredBool, optionalStoredInt } from "../core/infra/numbers";
 
 /** 自己可见的档视图 —— 类型真源在 shared/protocol/lobbyRpc/user.ts 的 IUserView（双端同一定义）。 */
 export type UserView = IUserView;
@@ -21,8 +21,11 @@ export type PublicUserView = IPublicUserView;
 
 const num = (v: string | null, dflt = 0, field = "user field"): number =>
   optionalStoredInt(v, dflt, field, { min: Number.MIN_SAFE_INTEGER, max: Number.MAX_SAFE_INTEGER });
-/** 布尔偏好读侧兜底：字段缺失 = 默认值（"缺失即默认"模式，存量档零迁移）。 */
-const flag = (v: string | null, dflt = true): boolean => (v === null ? dflt : v === "1");
+/**
+ * 布尔偏好读侧兜底：字段缺失 = 默认值（"缺失即默认"模式，存量档零迁移）。
+ * 显式值必须是存储层约定的 0/1 编码；损坏值抛错，⛔ 不静默变成 false。
+ */
+const flag = (v: string | null, field: string, dflt = true): boolean => optionalStoredBool(v, dflt, field);
 
 /** 只读自档。档不存在（可能冷档）返回 null——上层决定 ensureLive 还是 404。 */
 export async function readUser(uid: string): Promise<UserView | null> {
@@ -34,7 +37,7 @@ export async function readUser(uid: string): Promise<UserView | null> {
     uid,
     star: num(f.star, 0, "star"), maxRound: num(f.maxRound, 0, "maxRound"), wins: num(f.wins, 0, "wins"), losses: num(f.losses, 0, "losses"),
     stamina: num(f.stamina, 0, "stamina"), lastStaminaRecoverAt: num(f.lastStaminaRecoverAt, 0, "lastStaminaRecoverAt"),
-    musicOn: flag(f.musicOn), sfxOn: flag(f.sfxOn),
+    musicOn: flag(f.musicOn, "musicOn"), sfxOn: flag(f.sfxOn, "sfxOn"),
     guildId: num(f.guildId, 0, "guildId"), // 缺失 = 0 = 无工会（缺失即默认，⛔ 不回填）
     ver: num(f.ver, 0, "ver"),
   };

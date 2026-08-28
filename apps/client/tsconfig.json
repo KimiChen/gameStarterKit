@@ -2,9 +2,9 @@
   // 严格性开关走单源；本文件的 target/lib/cc 桩等客户端特有项不受影响。
   "extends": "../../tsconfig.strict.json",
 
-  // 独立的客户端类型检查配置（不 extends Creator 生成的 temp/，可离线/CI 跑；回流自 Arthur）。
-  // 用 cc 桩（cc-stub.d.ts）替代真 cc，对 src 做类型/导入路径检查。
-  // 跑法：npm run typecheck:client（根 package.json；tsc 来自 server workspace 的依赖提升）。
+  // Creator 兼容 legacy 配置（不 extends Creator 生成的 temp/，可离线检查有限源码范围）。
+  // 完整 Node/CI strict 探针使用同目录的 tsconfig.test.json 与 client-test-stubs.d.ts；
+  // 跑法：npm run typecheck:client（根 package.json）。
   "compilerOptions": {
     "strict": true,
     "noEmit": true,
@@ -35,15 +35,13 @@
     "src/shared/**/*.ts"
   ],
   "exclude": [
-    // Main.ts 引 cc 运行时（组件装配/动态 import FairyGUI 视图），cc 桩下测不了；由 Creator 验。
+    // 以下排除项只作用于本 legacy 配置；完整无头探针在 tsconfig.test.json 中使用最小 cc/FairyGUI 桩，
+    // 会编译这些文件，Creator 仍负责真实引擎验证。
     "src/Main.ts",
     // FairyGUI 绑定层机械件：依赖 fairygui-cc（其 d.ts 引真 cc），cc 桩下测不了；
     // fguiContracts/defineView/layers 是纯数据保持在检；viewRegistry 因 load 闭包解析 View
     // 模块类型、ViewMgr 因静态 import FguiView 一并排除（Creator 侧验证 + viewRegistry 守门测试）。
-    // 行为层（logic/）与结构契约在无头 CI 里测（npm run test:fgui）。
-    // TODO(类型盲区收敛)：本清单 + Cocos 侧 strict:false 意味着入口装配/视图绑定只有 Creator
-    // 人工验证——后续做一个对齐 cc-stub 的最小 fairygui 桩（GButton/GTextField/GList/GRoot/
-    // UIPackage/Event 等本仓实际用到的面），把 View 类逐个拉回无头 strict 检查、逐步缩短本清单。
+    // 行为层（logic/）与结构契约在无头 CI 里测；完整客户端源码/测试由 tsconfig.test.json 检查。
     "src/view/FguiView.ts",
     "src/view/ViewMgr.ts",
     "src/view/viewRegistry.ts",

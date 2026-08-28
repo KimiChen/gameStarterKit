@@ -2,10 +2,11 @@
  * vendored 运行时版本一致性机检（THIRD_PARTY_NOTICES.md 的执行面）：
  * fetch 脚本钉的版本是唯一真源，与入库产物内容、package-lock、双端 major.minor（铁律 7）、
  * CLAUDE.md 技术栈声明五方对齐——升级时改漏任何一处本测试当场红。
- * 随 npm run test:fgui / CI 跑（bitECS 的一致性由 verify:ecs 字节锁另行把关）。
+ * 随 npm run test:client / CI 跑（bitECS 的一致性由 verify:ecs 字节锁另行把关）。
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
@@ -72,6 +73,17 @@ test("vendor 内容锁：产物 sha256 与 scripts/vendor.sha256 逐一相符", 
   }
   assert.deepEqual([...actualPaths].sort(), [...VENDOR_LOCKED_FILES].sort(),
     "vendor.sha256 必须恰好覆盖预期的 fairygui/colyseus 产物集合（不能漏锁或引入孤儿锁）");
+});
+
+test("vendor-lock --check：只读校验并拒绝静默重钉", () => {
+  const lockPath = join(ROOT, "scripts/vendor.sha256");
+  const before = readFileSync(lockPath);
+  const result = spawnSync(process.execPath, [join(ROOT, "scripts/vendor-lock.mjs"), "--check"], {
+    cwd: ROOT,
+    encoding: "utf8",
+  });
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+  assert.deepEqual(readFileSync(lockPath), before, "--check 不得改写 vendor.sha256");
 });
 
 test("WebPlatform 本地 tarball：package-lock integrity 与入库字节一致", () => {

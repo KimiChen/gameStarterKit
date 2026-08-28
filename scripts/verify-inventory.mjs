@@ -40,12 +40,98 @@ const requireString = (value, label) => {
   if (typeof value !== "string" || value.trim() === "") fail(`${label} 必须是非空字符串`);
 };
 
+function workspaceLocation(item) {
+  return typeof item === "string" ? item : item?.location;
+}
+
+function normalizeRepoPath(value) {
+  return value.split(path.sep).join("/").replace(/^\.\//, "");
+}
+
+/** Resolve package `main` files into repository-relative active entry points. */
+function discoverWorkspaceEntries() {
+  const entries = [];
+  for (const item of rootPackage.workspaces ?? []) {
+    const location = workspaceLocation(item);
+    if (typeof location !== "string" || location.trim() === "") continue;
+    const packageFile = path.join(ROOT, location, "package.json");
+    let pkg;
+    try { pkg = readJson(packageFile); } catch { continue; }
+    if (typeof pkg.main !== "string" || pkg.main.trim() === "") continue;
+    entries.push(normalizeRepoPath(path.posix.join(normalizeRepoPath(location), pkg.main)));
+  }
+  return entries;
+}
+
+/**
+ * Cocos stores script references as UUIDs in scene files. Resolve those UUIDs
+ * back to source `.ts` paths so a newly mounted default component cannot be
+ * omitted from the inventory silently.
+ */
+function discoverSceneScriptEntries(scene) {
+  if (typeof scene !== "string") return [];
+  const scenePath = repoPath(scene);
+  if (!scenePath || !fs.existsSync(scenePath)) return [];
+  let sceneText;
+  try { sceneText = fs.readFileSync(scenePath, "utf8"); } catch { return []; }
+  const sourceRoot = path.join(ROOT, "apps", "Cocos", "assets", "src");
+  const result = [];
+  const walk = (directory) => {
+    let children;
+    try { children = fs.readdirSync(directory, { withFileTypes: true }); } catch { return; }
+    for (const child of children) {
+      const full = path.join(directory, child.name);
+      if (child.isDirectory()) { walk(full); continue; }
+      if (!child.isFile() || !child.name.endsWith(".ts.meta")) continue;
+      let meta;
+      try { meta = readJson(full); } catch { continue; }
+      if (typeof meta.uuid !== "string" || !sceneText.includes(meta.uuid)) continue;
+      result.push(normalizeRepoPath(path.relative(ROOT, full.slice(0, -".meta".length))));
+    }
+  };
+  walk(sourceRoot);
+  // Cocos serializes custom script UUIDs in a compressed form that is not the
+  // UUID text from `.meta`.  For explicitly declared scene bootstrap classes,
+  // verify the source decorator and the presence of a custom component token
+  // in the scene; this keeps the check deterministic without reimplementing
+  // the editor's UUID compression algorithm.
+  if (/"__type__"\s*:\s*"(?!cc\.)[^"]+"/.test(sceneText)) {
+    for (const module of defaultModules) {
+      if (typeof module?.sceneClass !== "string" || typeof module.entry !== "string") continue;
+      const source = repoPath(module.entry);
+      if (!source || !fs.existsSync(source)) continue;
+      let sourceText;
+      try { sourceText = fs.readFileSync(source, "utf8"); } catch { continue; }
+      const escaped = module.sceneClass.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      if (new RegExp(`@ccclass\\(\\s*["']${escaped}["']\\s*\\)`).test(sourceText)) {
+        result.push(normalizeRepoPath(module.entry));
+      }
+    }
+  }
+  return result;
+}
+
+function discoverDefaultEntries() {
+  const discovered = new Set(discoverWorkspaceEntries());
+  const scene = inventory?.defaultScene ?? "apps/Cocos/assets/scene.scene";
+  if (typeof scene === "string" && exists(scene)) {
+    discovered.add(normalizeRepoPath(scene));
+    for (const entry of discoverSceneScriptEntries(scene)) discovered.add(entry);
+  }
+  return discovered;
+}
+
 if (!inventory || typeof inventory !== "object") fail("inventory 必须是 JSON object");
 if (inventory?.version !== 1) fail(`inventory.version 必须为 1（实际 ${String(inventory?.version)}）`);
 const capabilities = Array.isArray(inventory?.capabilities) ? inventory.capabilities : [];
 const defaultModules = Array.isArray(inventory?.defaultModules) ? inventory.defaultModules : [];
 if (capabilities.length === 0) fail("capabilities 不能为空数组");
 if (defaultModules.length === 0) fail("defaultModules 不能为空数组");
+if (typeof inventory?.defaultScene !== "string" || inventory.defaultScene.trim() === "") {
+  fail("defaultScene 必须是非空路径");
+} else if (!exists(inventory.defaultScene)) {
+  fail(`defaultScene 不存在：${inventory.defaultScene}`);
+}
 
 const ids = new Set();
 const allEntries = new Set();
@@ -86,6 +172,18 @@ for (const [index, module] of defaultModules.entries()) {
   if (!exists(module.entry)) fail(`默认入口不存在：${module.entry}`);
   if (registeredDefaults.has(module.entry)) fail(`默认入口重复：${module.entry}`);
   registeredDefaults.add(module.entry);
+  if (!Array.isArray(module.capabilities) || module.capabilities.length === 0) {
+    fail(`默认入口 ${module.entry} 缺少 capabilities 映射`);
+  } else {
+    const seenCapabilities = new Set();
+    for (const capabilityId of module.capabilities) {
+      if (typeof capabilityId !== "string" || !ids.has(capabilityId)) {
+        fail(`默认入口 ${module.entry} 引用了未知能力：${String(capabilityId)}`);
+      }
+      if (seenCapabilities.has(capabilityId)) fail(`默认入口 ${module.entry} 能力重复：${capabilityId}`);
+      seenCapabilities.add(capabilityId);
+    }
+  }
   if (!Array.isArray(module.docs) || module.docs.length === 0) fail(`默认入口 ${module.entry} 缺少文档`);
   for (const doc of module.docs ?? []) {
     if (defaultDocs.has(`${module.entry}\u0000${doc}`)) fail(`默认入口文档重复：${module.entry} → ${doc}`);
@@ -95,9 +193,15 @@ for (const [index, module] of defaultModules.entries()) {
   }
 }
 
-// These are the active roots wired by the default server/client/shared launchers.
-for (const entry of ["apps/server/src/index.ts", "apps/client/src/Main.ts", "apps/shared/src/index.ts"]) {
+// Derive active roots from package metadata and the default Cocos scene.  A
+// fixed allow-list here would silently go stale when a workspace entry point
+// or a scene-mounted script changes.
+const discoveredDefaults = discoverDefaultEntries();
+for (const entry of discoveredDefaults) {
   if (!registeredDefaults.has(entry)) fail(`默认活跃入口未登记：${entry}`);
+}
+for (const entry of registeredDefaults) {
+  if (!discoveredDefaults.has(entry)) fail(`清单登记了非默认活跃入口：${entry}`);
 }
 for (const entry of allEntries) if (!registeredDefaults.has(entry) && entry.startsWith("apps/")) {
   // A capability's defaultEntry can be a component rather than a process root;
@@ -133,26 +237,107 @@ function packageName(packageFile) {
   try { return readJson(packageFile).name; } catch { return undefined; }
 }
 
-function checkCommand(command, owner) {
+function commandKey(command) {
+  if (command?.kind === "root") return `root:${command.script}`;
+  if (command?.kind === "workspace") return `workspace:${command.workspace}#${command.script}`;
+  return null;
+}
+
+function resolveWorkspace(command) {
+  return (rootPackage.workspaces ?? []).find((item) => {
+    const packagePath = workspaceLocation(item);
+    return packagePath && packageName(path.join(ROOT, packagePath, "package.json")) === command.workspace;
+  });
+}
+
+function commandScript(command) {
+  if (command?.kind === "root") return rootPackage.scripts?.[command.script];
+  if (command?.kind === "workspace") {
+    const workspace = resolveWorkspace(command);
+    if (!workspace) return undefined;
+    const packagePath = workspaceLocation(workspace);
+    return packageScripts(path.join(ROOT, packagePath, "package.json"))[command.script];
+  }
+  return undefined;
+}
+
+function commandReferences(command) {
+  const script = commandScript(command);
+  if (typeof script !== "string") return [];
+  const references = [];
+  // npm accepts both `--workspace <name>` and `-w <name>`; support the forms
+  // used by this repository and ignore arbitrary shell commands.
+  const workspaceRe = /npm\s+(?:--workspace|-w)\s+([^\s]+)\s+run\s+([A-Za-z0-9:_-]+)/g;
+  for (const match of script.matchAll(workspaceRe)) {
+    references.push({ kind: "workspace", workspace: match[1], script: match[2] });
+  }
+  const rootRe = /npm\s+run\s+([A-Za-z0-9:_-]+)/g;
+  for (const match of script.matchAll(rootRe)) {
+    references.push({ kind: "root", script: match[1] });
+  }
+  return references;
+}
+
+function commandExists(command) {
+  if (!command || typeof command !== "object") return false;
+  if (command.kind === "root") return typeof command.script === "string" && !!rootPackage.scripts?.[command.script];
+  if (command.kind === "workspace") {
+    if (typeof command.workspace !== "string" || typeof command.script !== "string") return false;
+    const workspace = resolveWorkspace(command);
+    if (!workspace) return false;
+    const packagePath = workspaceLocation(workspace);
+    return !!packageScripts(path.join(ROOT, packagePath, "package.json"))[command.script];
+  }
+  return false;
+}
+
+function commandCovers(command, target, seen = new Set()) {
+  const targetKey = commandKey(target);
+  const currentKey = commandKey(command);
+  if (!targetKey || !currentKey || !commandExists(command) || !commandExists(target)) return false;
+  if (currentKey === targetKey) return true;
+  if (seen.has(currentKey)) return false;
+  seen.add(currentKey);
+  return commandReferences(command).some((reference) => commandCovers(reference, target, seen));
+}
+
+function checkCommand(command, owner, stack = new Set()) {
   if (!command || typeof command !== "object") { fail(`${owner} verification 项必须是 object`); return; }
   if (command.kind === "root") {
     requireString(command.script, `${owner}.root.script`);
     if (!rootPackage.scripts?.[command.script]) fail(`${owner} 根命令不存在：${command.script}`);
-    return;
-  }
-  if (command.kind === "workspace") {
+  } else if (command.kind === "workspace") {
     requireString(command.workspace, `${owner}.workspace`);
     requireString(command.script, `${owner}.workspace.script`);
-    const workspace = (rootPackage.workspaces ?? []).find((item) => {
-      const packagePath = typeof item === "string" ? item : item?.location;
-      return packagePath && packageName(path.join(ROOT, packagePath, "package.json")) === command.workspace;
-    });
-    if (!workspace) { fail(`${owner} workspace 不存在：${command.workspace}`); return; }
-    const packagePath = typeof workspace === "string" ? workspace : workspace.location;
-    if (!packageScripts(path.join(ROOT, packagePath, "package.json"))[command.script]) fail(`${owner} workspace 命令不存在：${command.workspace}#${command.script}`);
+    const workspace = resolveWorkspace(command);
+    if (!workspace) fail(`${owner} workspace 不存在：${command.workspace}`);
+    else {
+      const packagePath = workspaceLocation(workspace);
+      if (!packageScripts(path.join(ROOT, packagePath, "package.json"))[command.script]) {
+        fail(`${owner} workspace 命令不存在：${command.workspace}#${command.script}`);
+      }
+    }
+  } else {
+    fail(`${owner} verification.kind 必须为 root/workspace`);
     return;
   }
-  fail(`${owner} verification.kind 必须为 root/workspace`);
+
+  if (command.requires === undefined) return;
+  if (!Array.isArray(command.requires)) {
+    fail(`${owner}.requires 必须是命令数组`);
+    return;
+  }
+  const currentKey = commandKey(command);
+  if (currentKey && stack.has(currentKey)) return;
+  const nextStack = new Set(stack);
+  if (currentKey) nextStack.add(currentKey);
+  for (const [index, requirement] of command.requires.entries()) {
+    const label = `${owner}.requires[${index}]`;
+    checkCommand(requirement, label, nextStack);
+    if (commandExists(requirement) && !commandCovers(command, requirement)) {
+      fail(`${owner} 未实际覆盖声明的验证命令：${commandKey(requirement)}`);
+    }
+  }
 }
 
 function checkMarkdownLinks(doc) {

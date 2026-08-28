@@ -3,7 +3,7 @@
  *
  * logic/（page 页面行为 + rooms/<玩法> 局内模拟）的架构承诺是「纯 TS、无头可测」——
  * 渲染归 view/ 与场景组件。此约定靠本测试机检，不靠口头纪律（同哲学：服务端 loader 启动校验）。
- * 随 npm run test:fgui 一起跑（root package.json 的 glob 自动纳入本文件）。
+ * 随 npm run test:client 一起跑（root package.json 的 glob 自动纳入本文件）。
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";

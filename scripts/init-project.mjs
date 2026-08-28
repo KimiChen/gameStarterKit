@@ -464,10 +464,9 @@ function escapeRegExp(value) {
 function replaceTextInTree(root, oldNames, newNames, changes) {
   const replacements = oldNames
     .map((oldName, index) => [oldName, newNames[index]])
-    // Bare names such as `shared` are ambiguous in prose, paths and script
-    // identifiers.  Manifest dependency maps are handled structurally above;
-    // only scoped package tokens are safe to rewrite in free-form text.
-    .filter(([oldName, newName]) => oldName?.startsWith("@") && oldName && newName && oldName !== newName);
+    .filter(([oldName, newName]) => oldName && newName && oldName !== newName);
+  const scopedReplacements = replacements.filter(([oldName]) => oldName.startsWith("@"));
+  const bareReplacements = replacements.filter(([oldName]) => !oldName.startsWith("@"));
   if (replacements.length === 0) return;
   // Tooling itself is deliberately excluded: rewriting this initializer (or
   // a sync/verify script) while it is running would make the migration
@@ -497,13 +496,38 @@ function replaceTextInTree(root, oldNames, newNames, changes) {
   };
   for (const relative of roots) visit(path.join(root, relative));
   for (const file of files) {
+    const relative = path.relative(root, file).split(path.sep).join("/");
     let text;
     const pending = pendingChange(file, changes);
     try { text = pending ? pending.content : fs.readFileSync(file, "utf8"); } catch { continue; }
     let next = text;
-    for (const [from, to] of replacements) {
+    // Scoped package names are unambiguous outside structured manifests, so
+    // update prose, comments and command snippets as well.  A bare name such
+    // as `shared` is deliberately narrower: replacing every token would
+    // corrupt paths (`apps/shared`) and ordinary prose.  Source files get
+    // only static module specifiers, while all text files get exact npm
+    // workspace selectors.
+    for (const [from, to] of scopedReplacements) {
       const token = new RegExp(`(^|[^A-Za-z0-9._-])${escapeRegExp(from)}(?=$|[^A-Za-z0-9._-])`, "g");
       next = next.replace(token, `$1${to}`);
+    }
+    if (/\.(?:ts|tsx|js|mjs|cjs)$/.test(relative)) {
+      for (const [from, to] of bareReplacements) {
+        // Match `from "pkg"`, side-effect `import "pkg"`, dynamic
+        // `import("pkg")`, and `require("pkg")`, including package
+        // subpaths.  The captured prefix includes the quote so replacement
+        // preserves the source's quote style without touching unrelated
+        // string literals.
+        const moduleSpecifier = new RegExp(
+          `(\\bfrom\\s*["'\\x60]|\\b(?:import|require)\\s*\\(\\s*["'\\x60]|\\bimport\\s+["'\\x60])${escapeRegExp(from)}(?=(?:/[^"'\\x60\\r\\n]*)?["'\\x60])`,
+          "g",
+        );
+        next = next.replace(moduleSpecifier, (match) => match.slice(0, match.length - from.length) + to);
+      }
+    }
+    for (const [from, to] of bareReplacements) {
+      const workspace = new RegExp(`(--workspace(?:=|\\s+))${escapeRegExp(from)}(?=$|\\s)`, "g");
+      next = next.replace(workspace, `$1${to}`);
     }
     if (next !== text) writeTextIfChanged(file, next, changes, path.relative(root, file));
   }
@@ -610,7 +634,13 @@ function buildChanges(root, current, candidate, metadata, changes) {
     }
   }
 
-  writeJsonIfChanged(path.join(root, "project.metadata.json"), metadata, changes, "project.metadata.json");
+  // Metadata is the identity source and must be a real file even when its
+  // contents already match.  Otherwise --skip-verify could silently accept a
+  // symlink and a later identity migration would partially write other files
+  // before discovering it in the output loop.
+  const metadataFile = path.join(root, "project.metadata.json");
+  assertNoSymlinkComponents(root, metadataFile);
+  writeJsonIfChanged(metadataFile, metadata, changes, "project.metadata.json");
 }
 
 function runCommand(root, command, args) {
@@ -663,6 +693,11 @@ function main() {
     const metadata = metadataFor(candidate, current);
     const changes = [];
     buildChanges(root, current, candidate, metadata, changes);
+    // Validate every destination before the first write.  The write loop keeps
+    // its per-file check as a TOCTOU defense, but this preflight prevents a
+    // pre-existing symlink (especially project.metadata.json) from leaving a
+    // partially migrated checkout.
+    for (const change of changes) assertNoSymlinkComponents(root, change.file);
     if (flags.has("dry-run")) {
       console.log(`[init:project] dry-run：${changes.length} 个文件将被更新`);
       for (const change of changes) console.log(`  - ${change.label}`);

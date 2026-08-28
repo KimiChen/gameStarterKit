@@ -2,9 +2,9 @@
  * cc 引擎类型桩（仅供 `npm run typecheck:client` 用，不入 Cocos 运行时/构建；回流自 Arthur）。
  *
  * Creator 运行时用真 cc；这里只声明**客户端实际用到**的 cc API 面，让 tsc 能离线对
- * apps/client/src 做类型/导入路径检查（CI 不开 Creator 也能跑）。
- * 新用到的 cc API 若报「没有该成员」，在此补一行即可；引擎重度文件（Main.ts、FairyGUI
- * 绑定层）在 apps/client/tsconfig.json 里排除，由 Creator 侧把关。
+ * apps/client/src 做类型/导入路径检查（CI 不开 Creator 也能跑）。这是 legacy 配置的桩；完整
+ * `npm run typecheck:client` 探针使用 `client-test-stubs.d.ts`，会覆盖 Main/View/tests。
+ * 新用到的 cc API 若报「没有该成员」，在相应桩中补一行即可；真实引擎仍由 Creator 侧把关。
  *
  * ⚠ 不要给 Component 声明生命周期（onLoad/start/update…）：子类以 protected/public 自由
  *   覆写，框架靠鸭子类型调用，声明了反而与子类覆写修饰符冲突（Arthur 实测教训）。

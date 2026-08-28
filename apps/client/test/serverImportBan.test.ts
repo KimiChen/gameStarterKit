@@ -6,7 +6,7 @@
  * apps/client 无独立 package.json，依赖借 server workspace 提升到根 node_modules，
  * 违规导入在无头 typecheck（moduleResolution bundler）与 tsx 单测下都能解析通过，
  * 只会在 Creator/小游戏构建时才炸。此约定此前只有口头铁律，本测试补上机检。
- * 随 npm run test:fgui 一起跑（root package.json 的 glob 自动纳入本文件）。
+ * 随 npm run test:client 一起跑（root package.json 的 glob 自动纳入本文件）。
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";

@@ -41,8 +41,12 @@ function parseArgs(argv) {
     const arg = argv[i];
     if (arg === "--root") {
       if (i + 1 >= argv.length) throw new Error("--root 需要目录参数");
-      root = argv[++i];
+      if (root !== undefined) throw new Error("参数重复：--root");
+      const value = argv[++i];
+      if (value === "") throw new Error("--root 需要非空目录参数");
+      root = value;
     } else if (arg.startsWith("--root=")) {
+      if (root !== undefined) throw new Error("参数重复：--root");
       root = arg.slice("--root=".length);
       if (!root) throw new Error("--root 需要目录参数");
     } else if (arg === "--json") {
@@ -75,8 +79,43 @@ function readText(file, errors, label = file) {
   }
 }
 
+/**
+ * Resolve a metadata-declared path only when every component below the
+ * selected checkout is a real directory/file.  Checking just the final
+ * lstat() is insufficient: an `apps` symlink would otherwise make the
+ * verifier read an arbitrary tree outside --root while appearing valid.
+ */
+function pathWithoutSymlinkComponents(root, relative, errors, label = relative) {
+  const rootAbsolute = path.resolve(root);
+  const absolute = path.resolve(rootAbsolute, relative);
+  const relation = path.relative(rootAbsolute, absolute);
+  if (relation === "" || relation.startsWith(`..${path.sep}`) || path.isAbsolute(relation)) {
+    errors.push(`${label} 路径越出项目根`);
+    return null;
+  }
+  let cursor = rootAbsolute;
+  for (const component of relation.split(path.sep)) {
+    if (!component) continue;
+    cursor = path.join(cursor, component);
+    let stat;
+    try {
+      stat = fs.lstatSync(cursor);
+    } catch (error) {
+      if (error?.code === "ENOENT") break;
+      errors.push(`${label} 路径无法检查：${error instanceof Error ? error.message : String(error)}`);
+      return null;
+    }
+    if (stat.isSymbolicLink()) {
+      errors.push(`${label} 路径组件不得是符号链接：${path.relative(rootAbsolute, cursor)}`);
+      return null;
+    }
+  }
+  return absolute;
+}
+
 function requireFile(root, relative, errors) {
-  const file = path.join(root, relative);
+  const file = pathWithoutSymlinkComponents(root, relative, errors);
+  if (!file) return false;
   let stat;
   try { stat = fs.lstatSync(file); } catch { stat = null; }
   if (!stat || stat.isSymbolicLink() || !stat.isFile()) {
@@ -87,7 +126,8 @@ function requireFile(root, relative, errors) {
 }
 
 function requireDir(root, relative, errors) {
-  const file = path.join(root, relative);
+  const file = pathWithoutSymlinkComponents(root, relative, errors);
+  if (!file) return false;
   let stat;
   try { stat = fs.lstatSync(file); } catch { stat = null; }
   if (!stat || stat.isSymbolicLink() || !stat.isDirectory()) {
@@ -270,7 +310,8 @@ function verifyPackages(root, metadata, errors) {
   ];
   const parsed = new Map();
   for (const [relative, key] of packageFiles) {
-    const file = path.join(root, relative);
+    const file = pathWithoutSymlinkComponents(root, relative, errors);
+    if (!file) continue;
     if (!requireFile(root, relative, errors)) continue;
     const pkg = readJson(file, errors, relative);
     if (!pkg) continue;
@@ -301,9 +342,9 @@ function verifyPackages(root, metadata, errors) {
     }
   }
 
-  const lockFile = path.join(root, "package-lock.json");
   if (requireFile(root, "package-lock.json", errors)) {
-    const lock = readJson(lockFile, errors, "package-lock.json");
+    const lockFile = pathWithoutSymlinkComponents(root, "package-lock.json", errors);
+    const lock = lockFile ? readJson(lockFile, errors, "package-lock.json") : null;
     if (lock) {
       if (lock.name !== metadata.packages.root) errors.push(`package-lock.json.name 不一致：应为 ${metadata.packages.root}`);
       const rootEntry = lock.packages?.[""];
@@ -328,10 +369,11 @@ function verifyPackages(root, metadata, errors) {
   }
 
   const websiteLockRelative = "apps/website/package-lock.json";
+  const websiteLock = pathWithoutSymlinkComponents(root, websiteLockRelative, errors);
   let websiteLockStat;
-  try { websiteLockStat = fs.lstatSync(path.join(root, websiteLockRelative)); } catch { websiteLockStat = null; }
+  try { websiteLockStat = websiteLock ? fs.lstatSync(websiteLock) : null; } catch { websiteLockStat = null; }
   if (websiteLockStat && !websiteLockStat.isSymbolicLink() && websiteLockStat.isFile()) {
-    const lock = readJson(path.join(root, websiteLockRelative), errors, websiteLockRelative);
+    const lock = readJson(websiteLock, errors, websiteLockRelative);
     if (lock && (lock.name !== metadata.packages.website || lock.packages?.[""]?.name !== metadata.packages.website)) {
       errors.push(`${websiteLockRelative} 根包名不一致：应为 ${metadata.packages.website}`);
     }
@@ -354,17 +396,17 @@ function verifyGenerated(root, metadata, errors) {
     }
   }
   const identityRelative = "apps/shared/src/project.ts";
-  const identityFile = path.join(root, identityRelative);
+  const identityFile = pathWithoutSymlinkComponents(root, identityRelative, errors);
   if (requireFile(root, identityRelative, errors)) {
-    const actual = readText(identityFile, errors, identityRelative);
+    const actual = identityFile ? readText(identityFile, errors, identityRelative) : null;
     if (actual !== null && actual !== projectSourceContent(metadata)) {
       errors.push(`${identityRelative} 与 project.metadata.json 不一致，请运行 npm run init:project`);
     }
   }
   const sharedIndexRelative = "apps/shared/src/index.ts";
-  const sharedIndex = path.join(root, sharedIndexRelative);
+  const sharedIndex = pathWithoutSymlinkComponents(root, sharedIndexRelative, errors);
   let sharedIndexStat;
-  try { sharedIndexStat = fs.lstatSync(sharedIndex); } catch { sharedIndexStat = null; }
+  try { sharedIndexStat = sharedIndex ? fs.lstatSync(sharedIndex) : null; } catch { sharedIndexStat = null; }
   if (sharedIndexStat?.isSymbolicLink()) {
     errors.push(`${sharedIndexRelative} 不得是符号链接`);
   } else if (sharedIndexStat?.isFile()) {
@@ -382,7 +424,8 @@ function verifyThirdParty(root, metadata, errors) {
     if (!isPlainObject(record)) continue;
     for (const relative of (Array.isArray(record.paths) ? record.paths : [])) {
       if (!isSafeRelativePath(relative)) continue;
-      const absolute = path.join(root, relative);
+      const absolute = pathWithoutSymlinkComponents(root, relative, errors);
+      if (!absolute) continue;
       let stat;
       try { stat = fs.lstatSync(absolute); } catch { stat = null; }
       if (!stat) {
@@ -396,7 +439,8 @@ function verifyThirdParty(root, metadata, errors) {
     noticeFiles.add(notice);
   }
   for (const relative of noticeFiles) {
-    const noticeFile = path.join(root, relative);
+    const noticeFile = pathWithoutSymlinkComponents(root, relative, errors);
+    if (!noticeFile) continue;
     let noticeStat;
     try { noticeStat = fs.lstatSync(noticeFile); } catch { noticeStat = null; }
     if (!noticeStat || noticeStat.isSymbolicLink() || !noticeStat.isFile()) {
@@ -428,30 +472,31 @@ export function verifyProjectMetadata(root) {
   if (!requireFile(root, metadataRelative, errors)) {
     return { ok: false, errors };
   }
-  const metadata = readJson(path.join(root, metadataRelative), errors, metadataRelative);
+  const metadataFile = pathWithoutSymlinkComponents(root, metadataRelative, errors);
+  const metadata = metadataFile ? readJson(metadataFile, errors, metadataRelative) : null;
   if (!metadata) return { ok: false, errors };
   validateMetadata(metadata, errors);
   if (metadata && isPlainObject(metadata)) {
     if (isPlainObject(metadata.packages)) verifyPackages(root, metadata, errors);
-    const envFile = path.join(root, ".env.development");
+    const envFile = pathWithoutSymlinkComponents(root, ".env.development", errors);
     let envStat;
-    try { envStat = fs.lstatSync(envFile); } catch { envStat = null; }
+    try { envStat = envFile ? fs.lstatSync(envFile) : null; } catch { envStat = null; }
     const envText = envStat?.isSymbolicLink()
       ? (errors.push(".env.development 不得是符号链接"), null)
-      : readText(envFile, errors, ".env.development");
+      : envFile ? readText(envFile, errors, ".env.development") : null;
     if (envText !== null && firstEnvValue(envText, "PROJECT_ID") !== metadata.projectId) {
       errors.push(`.env.development 首个 PROJECT_ID 不一致：应为 ${metadata.projectId}`);
     }
     verifyGenerated(root, metadata, errors);
     verifyThirdParty(root, metadata, errors);
   }
-  const licenseFile = path.join(root, "LICENSE");
+  const licenseFile = pathWithoutSymlinkComponents(root, "LICENSE", errors);
   let licenseStat;
-  try { licenseStat = fs.lstatSync(licenseFile); } catch { licenseStat = null; }
+  try { licenseStat = licenseFile ? fs.lstatSync(licenseFile) : null; } catch { licenseStat = null; }
   if (!licenseStat || licenseStat.isSymbolicLink() || !licenseStat.isFile()) {
     errors.push("根 LICENSE 缺失或不得是符号链接（P2-03 要求项目自身许可证）");
   } else {
-    const license = readText(path.join(root, "LICENSE"), errors, "LICENSE");
+    const license = readText(licenseFile, errors, "LICENSE");
     if (license !== null && !/MIT License|Permission is hereby granted/i.test(license)) {
       errors.push("根 LICENSE 未能识别为已登记的 MIT 许可证文本");
     }
