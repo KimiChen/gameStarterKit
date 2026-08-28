@@ -385,24 +385,19 @@ response 均有 runtime validator 与 malformed/extra-key 测试；未来新增 
 
 当前实现由 `GameHttpContractMap`、shared zero-dependency validators、Lobby/Game transport validators 和
 WebPlatform consumer facade 共同守住 method/path/request/response、exact keys、枚举、finite number 与
-安全 origin；服务端 route 与客户端 wrapper 的核心 endpoint 从 contract key 派生。仍保留的边界有两处：
-Game HTTP request schema 由 endpoint options 维护（但 `composeRequestSchema` 已在本地 schema 前后各夹一次
-shared validator，`contract.ts:242`/`:258`，并有 route/shared 接受集合漂移用例
-`http-route-contract.test.ts:41`）；服务端 Game C2S 的权威闸仍是 `GameRoom.ts` 本地 Zod strict schema
-（`:163-177`）、手抄上界（`:74-77`）与手工 own-key 白名单（`:187-199`）三份并行来源，未从 shared
-`C2S_RUNTIME_VALIDATORS` 派生（后者不在服务端入站生产路径上，`apps/server/src` 全无引用），也没有等价性
-用例。
+安全 origin；服务端 route 与客户端 wrapper 的核心 endpoint 从 contract key 派生。仍保留的边界是 Game
+HTTP request schema 由 endpoint options 维护，但 `composeRequestSchema` 已在本地 schema 前后各夹一次
+shared validator，并有 route/shared 接受集合漂移用例。Game C2S 生产 schema 已包装 shared
+`validateC2SPayload`；`game-room-wire-contract.test.ts` 同时锁定 shared validator、服务端 schema、真实
+`room.messages` handler 的消息集合、接受域、归一化结果和非法请求错误，单个字段上界漂移也会失败。
 复核备注：WebPlatform consumer map 还登记了仓内未调用的 Livez/Readyz 两个契约，属 consumer 子集而非
 生成全集，当前无实际暴露面。
 
 **完成标准**：畸形 2xx/RPC/S2C、未知字段和非法 endpoint 在状态写入或连接前失败；HTTP path/method、HTTP
-request 域与 Lobby RPC request shape 的任一侧漂移本地测试失败。⚠ 尚未机检的漂移面：服务端 Colyseus
-`GameRoomState`/`PlayerState`（`rooms/schema/GameRoomState.ts:30-42`）与 shared `IGameRoomState`
-（`protocol/state.ts:28-40`）仍只靠注释同步（无测试把真实 Schema 实例喂给 `validateGameRoomState`），字段
-改名/删除只会在客户端运行期让 `validatedStateSnapshot` 返回 `null` 并静默丢弃全部 state 回调；服务端
-Game C2S 的 Zod schema 与 shared `C2S_RUNTIME_VALIDATORS` 无等价性用例，`GAME_ROOM_C2S_SCHEMAS`
-（`GameRoom.ts:202`）目前没有引用方，且 `game-room.test.ts:122-126` 对 chat 超长/targetId 空串只有一次
-合并断言，放宽单个上界不会失败。
+request 域、Lobby RPC request shape、Game C2S 和 Schema wire 投影的任一侧漂移均使本地测试失败。真实
+`GameRoomState`/`PlayerState` 实例会直接进入 shared validator；测试还锁定 `state.toJSON()` 的顶层与玩家
+精确字段集合、内部字段不外泄，并断言序列化投影和实例得到相同的 shared 校验结果。因此 Schema 字段改名、
+删除、新增或误暴露不再只到客户端运行期才被发现。
 
 ### P1-04 渐进推进 schema-first 协议 ✅
 

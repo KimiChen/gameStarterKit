@@ -205,6 +205,30 @@ test("real Colyseus GameRoomState and PlayerState instances satisfy the shared s
     player.lastCastAt = { 1: 1234 };
     state.players.set(player.id, player);
 
+    // Assert the actual Schema projection, rather than only validating a
+    // hand-written plain fixture.  This makes a decorated field rename,
+    // removal, addition, or accidental exposure of an internal field fail at
+    // the server/shared contract boundary.
+    const serialized = state.toJSON() as {
+        tick: unknown;
+        phase: unknown;
+        matchId: unknown;
+        players: Record<string, Record<string, unknown>>;
+    };
+    assert.deepEqual(Object.keys(serialized).sort(), ["matchId", "phase", "players", "tick"]);
+    assert.deepEqual(
+        Object.keys(serialized.players["session-a"]).sort(),
+        ["alive", "hp", "id", "maxHp", "name", "x", "y"],
+    );
+    assert.equal("dirX" in serialized.players["session-a"], false);
+    assert.equal("dirY" in serialized.players["session-a"], false);
+    assert.equal("level" in serialized.players["session-a"], false);
+    assert.deepEqual(
+        validateGameRoomState(serialized),
+        validateGameRoomState(state),
+        "shared validator must accept the exact projection emitted by Colyseus",
+    );
+
     assert.deepEqual(validatePlayerState(player), {
         id: "session-a",
         name: "A",
