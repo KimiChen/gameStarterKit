@@ -52,6 +52,35 @@ function runtime(seed: number, now = 0): GameRoomRuntimeOptions {
     return { seed, clock: () => now, fixedStepMs: 50 };
 }
 
+/**
+ * Snapshot only the formal simulation state.  `PlayerState.name` belongs to
+ * the admission/display stream and is intentionally excluded: an extra
+ * waiting-room join consumes admission RNG without changing the match RNG.
+ */
+function simulationSnapshot(room: GameRoom): unknown {
+    const players: Record<string, unknown> = {};
+    for (const [sessionId, player] of room.state.players.entries()) {
+        players[sessionId] = {
+            id: player.id,
+            x: player.x,
+            y: player.y,
+            hp: player.hp,
+            maxHp: player.maxHp,
+            alive: player.alive,
+            dirX: player.dirX,
+            dirY: player.dirY,
+            lastCastAt: { ...player.lastCastAt },
+            level: player.level,
+        };
+    }
+    return {
+        tick: room.state.tick,
+        phase: room.state.phase,
+        matchId: room.state.matchId,
+        players,
+    };
+}
+
 test("GameRoom auth 只信标准 token，options.token 只能逐字匹配", async () => {
     const base = { v: PROTOCOL_VERSION, sId: 0 };
     await assert.rejects(
@@ -343,6 +372,53 @@ test("same seed + fixed steps + injected inputs produce identical state", async 
     assert.equal(left.getAcceptedInputs().length, 1);
 });
 
+test("same seed keeps formal match state deterministic across different waiting histories", async () => {
+    const make = async (withWaitingHistory: boolean): Promise<GameRoom> => {
+        const room = new GameRoom({
+            ...runtime(0x2468ace0),
+            matchId: () => "m_waiting_history",
+        });
+        installLock(room);
+
+        if (withWaitingHistory) {
+            // This player joins while the room is still Waiting, exercises the
+            // admission/display RNG, and leaves before the actual participants
+            // arrive.  The extra history must not perturb formal match state.
+            const observer = fakeClient("observer", "u-observer");
+            await join(room, observer);
+            const ping = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Ping];
+            ping(observer, { clientTime: 1 });
+            await room.onLeave(observer as never, 4000);
+        }
+
+        await join(room, fakeClient("a", "ua"));
+        await join(room, fakeClient("b", "ub"));
+        return room;
+    };
+
+    const quiet = await make(false);
+    const noisy = await make(true);
+    assert.equal(quiet.state.phase, GamePhase.Playing);
+    assert.equal(noisy.state.phase, GamePhase.Playing);
+    assert.deepEqual(
+        simulationSnapshot(quiet),
+        simulationSnapshot(noisy),
+        "等待期入退场和消息不能改变正式对局的初始模拟状态（昵称不属于该快照）",
+    );
+
+    // Compare a later frame too, including a random-consuming skill, so the
+    // assertion covers the match RNG stream and not just spawn coordinates.
+    assert.equal(quiet.injectInput({ type: "move", sessionId: "a", dirX: 1, dirY: 0 }), true);
+    assert.equal(noisy.injectInput({ type: "move", sessionId: "a", dirX: 1, dirY: 0 }), true);
+    quiet.stepFixed();
+    noisy.stepFixed();
+    assert.equal(quiet.injectInput({ type: "castSkill", sessionId: "a", skillId: 1, targetId: "b" }), true);
+    assert.equal(noisy.injectInput({ type: "castSkill", sessionId: "a", skillId: 1, targetId: "b" }), true);
+    quiet.stepFixed();
+    noisy.stepFixed();
+    assert.deepEqual(simulationSnapshot(quiet), simulationSnapshot(noisy));
+});
+
 test("input source is fail-closed and respects declared ticks", async () => {
     let calls = 0;
     const room = new GameRoom({
@@ -621,14 +697,57 @@ test("fixed-step options cannot produce an invalid Welcome tick rate", async () 
     assert.equal(welcome?.tickRate, 20);
 });
 
-test("per-client message budget is finite and independent", async () => {
-    const room = new GameRoom(runtime(16));
+test("per-client message budget returns controlled errors and stays isolated by session", async () => {
+    let now = 0;
+    const room = new GameRoom({ seed: 16, clock: () => now, fixedStepMs: 50 });
     installLock(room);
     const a = fakeClient("a", "ua");
+    const b = fakeClient("b", "ub");
     await join(room, a);
+    await join(room, b);
     const ping = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Ping];
-    for (let i = 0; i < GAME_ROOM_MAX_MESSAGES_PER_SECOND; i++) ping(a, { clientTime: 0 });
-    const before = a.sent.length;
-    ping(a, { clientTime: 0 });
-    assert.ok(a.sent.length > before, "超预算仍返回受控错误，不进入业务逻辑");
+    assert.equal(room.maxMessagesPerSecond, GAME_ROOM_MAX_MESSAGES_PER_SECOND);
+
+    for (let i = 0; i < GAME_ROOM_MAX_MESSAGES_PER_SECOND; i++) {
+        ping(a, { clientTime: i });
+    }
+    assert.equal(a.sent.filter(([type]) => type === S2C.Pong).length, GAME_ROOM_MAX_MESSAGES_PER_SECOND);
+    assert.equal(
+        a.sent.filter(([type, payload]) => type === S2C.Error
+            && (payload as { code?: number }).code === ErrorCode.BadRequest).length,
+        0,
+        "预算内的合法 Ping 必须全部得到正常 Pong",
+    );
+
+    ping(a, { clientTime: GAME_ROOM_MAX_MESSAGES_PER_SECOND });
+    assert.equal(
+        a.sent.filter(([type]) => type === S2C.Pong).length,
+        GAME_ROOM_MAX_MESSAGES_PER_SECOND,
+        "超预算的 Ping 不得伪装成 Pong",
+    );
+    assert.equal(
+        a.sent.filter(([type, payload]) => type === S2C.Error
+            && (payload as { code?: number }).code === ErrorCode.BadRequest).length,
+        1,
+        "超预算只返回一个可识别的受控 BadRequest",
+    );
+
+    // A separate session has its own bucket and remains able to receive Pong.
+    ping(b, { clientTime: 7 });
+    assert.equal(b.sent.filter(([type]) => type === S2C.Pong).length, 1);
+    assert.equal(
+        b.sent.filter(([type, payload]) => type === S2C.Error
+            && (payload as { code?: number }).code === ErrorCode.BadRequest).length,
+        0,
+        "A 超预算不能消耗 B 的消息预算",
+    );
+
+    // The same client gets a fresh allowance in the next one-second window.
+    now = 1_000;
+    ping(a, { clientTime: 1_001 });
+    assert.equal(
+        a.sent.filter(([type]) => type === S2C.Pong).length,
+        GAME_ROOM_MAX_MESSAGES_PER_SECOND + 1,
+        "新时间窗应恢复该客户端的正常 Pong 配额",
+    );
 });
