@@ -90,8 +90,11 @@ npm run dev
 | `npm run perf:client` | 在 Node 无头环境运行 ballMove ECS/快照分配/Graphics 命令性能基线（默认 100/500 entity）；用 `npm run --silent perf:client -- --json --output <file>` 保存纯 JSON 结果 |
 | `npm run verify:project` | 校验项目元数据、生成区和第三方来源登记 |
 | `npm run verify:sync` | 检查镜像漂移、孤儿和 `.meta` |
+| `npm run verify:vendor` | 校验锁定的第三方运行时内容、文件集合和本地契约 tarball 完整性 |
 | `npm run verify:fgui` | 校验 FairyGUI 设计源、导出物和 View AUTO 区块 manifest |
 | `npm run verify:inventory` | 校验能力清单、默认入口、文档和验证命令登记 |
+| `npm run test:inventory` | 在临时 checkout fixture 中验证能力清单漂移会被拒绝 |
+| `npm run verify:perf` | 校验固定输入下的客户端性能基线结构和 checksum |
 | `npm run test:client` | 客户端全部无头行为测试（Node/tsx） |
 | `npm run test:fgui` | FGUI codegen、结构契约与 registry 专项测试 |
 | `npm run test:faults` | 运行核心 fault-matrix（默认不连接本地栈；集成版用 `test:faults:int`） |
@@ -101,7 +104,7 @@ npm run dev
 | `npm --workspace @game/server run smoke:framework` | 已启动并初始化的本地 Redis/MySQL 连通性检查 |
 | `npm --workspace @game/server run smoke` | 需要外部 WebPlatform 与运行中游戏服的完整开发链路冒烟；GM kick 分支可选 |
 | `npm --workspace @game/server run test:int` | 使用本地 Redis/MySQL 的集成测试 |
-| `npm run verify:core` | 依次运行项目元数据、类型、依赖、FGUI、inventory 核验 |
+| `npm run verify:core` | 依次运行项目元数据、类型、bitECS/vendor/FGUI/inventory/perf 核验及客户端测试 |
 | `npm run verify:all` | `verify:core` 加客户端和服务端单元测试 |
 
 客户端的无头 strict 探针由 `apps/client/tsconfig.test.json` 提供，覆盖 `apps/client/src/**/*.ts`、

@@ -533,38 +533,19 @@ README 标明。`plan.md` 是核心优先级真相，`docs/EXTRAFEATURES.md` 是
 `verify:inventory` 会检查默认活跃模块未漏记、命令/链接存在、两份助手指令口径一致以及核心计划与
 额外功能没有重新分叉。根 `LICENSE`、项目身份和第三方来源登记均由项目元数据契约统一校验。
 
-复核备注：`verify:inventory` 目前只有仓库自身通过这一条正向证据，没有反向用例证明清单漂移（漏记默认
-入口、命令消失、文档链接失效、两份助手指令分叉）时门禁会失败（对比有配套反向用例的
-`scripts/vendor-lock.test.mjs`）。
+复核备注（已收口）：`scripts/verify-inventory.test.mjs` 在隔离 checkout 中提供 12 个正反例，覆盖漏记
+workspace main、`app.config.ts` 组合根、Creator scene 压缩 UUID 对应的 `Main.ts`、命令消失、文档链接
+失效/越界、AGENTS/CLAUDE 分叉或共同删除关键条款，以及 verifier 参数边界；fixture 会纳入未忽略的未跟踪
+文件，避免反例测试首次入库前发生自举假红。
 
-复核备注：`docs/inventory.json` 曾把全部额外能力合并为单条 `project-extras`（defaultEntry =
-`apps/website/package.json`、wireBoundary = `apps/website`），该条目已在工作树中删除（未提交，目录本身仍在版本控制内）；
-`verify-inventory.mjs` 对能力条目只校验「路径存在」「命令存在」，无法发现登记内容与真实能力不匹配——
-这一校验深度缺口对清单中其余条目仍然存在。额外能力的权威边界在 `docs/EXTRAFEATURES.md`（登记
-GM/kick、relayer、archive、配表、Unity 等互不相干的能力；§3.1 为说明站的移除记录）。
+清单语义也已纠正：核心资产 effect 指向真实 purchase 入口；独立 relayer 单列为 extra，并校验 workspace
+launch 命令确实启动登记入口。已迁出的说明站不再作为笼统 `project-extras` 能力根。默认入口从 workspace
+main 的直接静态组合 import 与默认 scene 脚本 UUID 独立发现，不再依赖清单自报 `sceneClass`。
 
-复核备注：`CLAUDE.md:12-14` 与 `AGENTS.md:12-14` 仍把「`apps/shared`、`apps/server` 根、
-`apps/server/src/player/`、`core/` 下除 `compute/` 外子目录缺少就近 README」的收口计划指向本条，但本条
-已完成且正文不含该项；实测这些 README 仍未补齐（`core/` 下只有 `core/README.md` 与
-`core/compute/README.md`）。需要另立条目或改写两份助手指令的指向。
-
-复核备注：HEAD `8e07c3b` 重写说明站为原生静态站后，`docs/EXTRAFEATURES.md` §3.1 仍描述已删除的
-`vite.config.ts`、`worker/index.ts`、`build/sites-vite-plugin.ts`、`deploy/static-site.js`、`DEPLOY.md`，
-以及当时不再产生的 `assets/`、`og.png`、`static-site.js` 导出物（在 `8e07c3b` 上 `scripts/export-static.mjs`
-只处理 index.html/style.css/script.js）；该修正在复核时只存在于未提交的工作树，现已随 `b2fb873` 落库，
-`b2fb873` 同时重新加入了 `public/og.png` 与对应的导出断言。
-
-复核备注：HEAD `8e07c3b` 入库的 `apps/website/README.md` 全文反引号都被写成了反斜杠转义形态（坏
-Markdown，行内代码与代码围栏均不成立），而它当时是 `docs/inventory.json` 中 `project-extras.docs`
-登记的权威文档——`verify:inventory` 的 `checkMarkdownLinks` 只校验链接与锚点、不校验被登记文档的
-Markdown 正确性，故门禁放行。该 README 已随 `b2fb873` 修复、`project-extras` 登记已在工作树中删除（未提交），但
-「被登记文档的 Markdown 正确性无门禁」这一缺口对其余登记文档仍然存在。
-
-复核备注：`README.md:104` 对 `verify:core` 的描述漏记 `verify:perf` 与 `test:client`（本文 §3 写全），命令
-表也未收录 `npm run verify:perf` 与 `npm run verify:vendor`。另：清单以能力为粒度，未覆盖 npm script
-全集；实测根 `package.json` 33 个与 `@game/server` 14 个 script 中，只有 `typecheck:client:legacy`
-（`package.json:36`）与 `loadtest`（`apps/server/package.json:22`）未被任何 `.md` 收录，其余命令均至少被
-一份文档记载。
+AGENTS/CLAUDE 现在除空白外全文一致，并另锁定镜像、shared、View/Logic、FGUI、外部身份和 inventory
+命令等必要条款；缺少就近 README 的现状仍如实写明，但不再误指向已完成的 P1-09。README 命令表已补
+vendor、inventory 反例和 perf 门禁。保留边界：组合根发现不声称构建完整 TypeScript import graph，scene
+发现不扫描动态 prefab，Markdown 检查守住登记链接与锚点而不是通用语法解析。
 
 ## 7. P2：正确性稳定后的增强
 

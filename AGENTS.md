@@ -10,8 +10,8 @@
 > - [plan.md](plan.md)：当前代码已确认的缺口与核心改进优先级
 >
 > 多数源码目录另有就近 README，但尚未覆盖全部：`apps/shared`、`apps/server` 根、`apps/server/src/player/`
-> 与 `core/` 下除 `compute/` 外的子目录目前没有，其约束分别见铁律 4/6 与 [docs/SERVER.md](docs/SERVER.md)；
-> 收口计划见 [plan.md](plan.md) P1-09。根上手页见 [README.md](README.md)。
+> 与 `core/` 下除 `compute/` 外的子目录目前没有；这些目录的约束分别见铁律 4/6 与
+> [docs/SERVER.md](docs/SERVER.md)。根上手页见 [README.md](README.md)。
 
 ## 技术栈
 
@@ -39,6 +39,11 @@ npm run test:client
 npm run test:fgui
 npm run codegen:fgui -- <Pkg> <Comp>
 npm run verify:ecs
+npm run verify:vendor
+npm run verify:fgui
+npm run verify:inventory
+npm run test:inventory
+npm run verify:perf
 npm --workspace @game/server run test
 npm --workspace @game/server run smoke:framework
 npm --workspace @game/server run smoke
@@ -111,7 +116,7 @@ shared 契约
   见 [docs/EXTRAFEATURES.md](docs/EXTRAFEATURES.md)，不构成核心能力承诺或项目约束。
 
 ## Git 约定
- 
+
 - 默认 git 是个私密 git，不会对外公开
 - 用户已要求：以后每次改动后，按改动范围自己 先 `git pull`、`git add` 和 `git commit`，然后 `git push`，需要的 PrivateKey 路径 和 Passphrase 在 .env 文件中
 - 提交只包含本轮相关文件，不要把无关生成物混进去。

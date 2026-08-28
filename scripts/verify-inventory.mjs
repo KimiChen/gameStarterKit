@@ -8,9 +8,46 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const SCRIPT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+/**
+ * `--root` is intentionally a read-only fixture seam.  It lets the inventory
+ * contract be tested against a copied checkout without mutating the real
+ * repository (and keeps the verifier independent of the caller's cwd).
+ */
+function parseRoot(argv) {
+  let root = SCRIPT_ROOT;
+  let seenRoot = false;
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === "--root") {
+      if (seenRoot) throw new Error("参数重复：--root");
+      if (index + 1 >= argv.length) throw new Error("--root 需要目录参数");
+      root = argv[++index];
+      if (!root) throw new Error("--root 需要非空目录参数");
+      seenRoot = true;
+    } else if (arg.startsWith("--root=")) {
+      if (seenRoot) throw new Error("参数重复：--root");
+      root = arg.slice("--root=".length);
+      if (!root) throw new Error("--root 需要目录参数");
+      seenRoot = true;
+    } else if (arg === "--help" || arg === "-h") {
+      console.log("用法：node scripts/verify-inventory.mjs [--root <目录>]");
+      return null;
+    } else {
+      throw new Error(`未知参数：${arg}`);
+    }
+  }
+  return path.resolve(process.cwd(), root);
+}
+
+const parsedRoot = parseRoot(process.argv.slice(2));
+if (parsedRoot === null) process.exit(0);
+// Normalize macOS `/var` aliases (and other mount aliases) once so relative
+// link checks compare paths in the same namespace as `realpathSync`.
+const ROOT = fs.realpathSync(parsedRoot);
 const INVENTORY_FILE = path.join(ROOT, "docs", "inventory.json");
-const ROOT_REAL = fs.realpathSync(ROOT);
+const ROOT_REAL = ROOT;
 const readJson = (file) => JSON.parse(fs.readFileSync(file, "utf8"));
 const inventory = readJson(INVENTORY_FILE);
 const rootPackage = readJson(path.join(ROOT, "package.json"));
@@ -48,6 +85,43 @@ function normalizeRepoPath(value) {
   return value.split(path.sep).join("/").replace(/^\.\//, "");
 }
 
+const TS_MODULE_EXTENSIONS = [".ts", ".tsx", ".mts", ".cts", ".js", ".mjs", ".cjs"];
+
+function resolveLocalModule(importer, specifier) {
+  if (typeof specifier !== "string" || (!specifier.startsWith("./") && !specifier.startsWith("../"))) {
+    return null;
+  }
+  const importerPath = repoPath(importer);
+  if (!importerPath) return null;
+  const base = path.resolve(path.dirname(importerPath), specifier);
+  const candidates = [base];
+  if (!TS_MODULE_EXTENSIONS.includes(path.extname(base))) {
+    for (const extension of TS_MODULE_EXTENSIONS) candidates.push(`${base}${extension}`);
+    for (const extension of TS_MODULE_EXTENSIONS) candidates.push(path.join(base, `index${extension}`));
+  }
+  for (const candidate of candidates) {
+    if (!fs.existsSync(candidate) || !fs.statSync(candidate).isFile()) continue;
+    const relative = path.relative(ROOT, fs.realpathSync(candidate));
+    if (relative === ".." || relative.startsWith(`..${path.sep}`)) return null;
+    return normalizeRepoPath(relative);
+  }
+  return null;
+}
+
+function discoverLocalImports(entry) {
+  const file = repoPath(entry);
+  if (!file || !fs.existsSync(file)) return [];
+  let source;
+  try { source = fs.readFileSync(file, "utf8"); } catch { return []; }
+  const imports = [];
+  const pattern = /(?:^|\n)\s*(?:import|export)\s+(?:type\s+)?(?:[^"'`;]*?\s+from\s*)?["']([^"']+)["']/g;
+  for (const match of source.matchAll(pattern)) {
+    const resolved = resolveLocalModule(entry, match[1]);
+    if (resolved) imports.push(resolved);
+  }
+  return imports;
+}
+
 /** Resolve package `main` files into repository-relative active entry points. */
 function discoverWorkspaceEntries() {
   const entries = [];
@@ -64,6 +138,52 @@ function discoverWorkspaceEntries() {
 }
 
 /**
+ * A workspace main file can delegate registration to an imported composition
+ * module. Keep those roots visible: package.main alone would miss the Colyseus
+ * room/router assembly in app.config.ts.
+ */
+function discoverWorkspaceCompositionEntries(workspaceEntries) {
+  const entries = [];
+  for (const workspaceEntry of workspaceEntries) {
+    for (const imported of discoverLocalImports(workspaceEntry)) {
+      const importedPath = repoPath(imported);
+      if (!importedPath) continue;
+      let source = "";
+      try { source = fs.readFileSync(importedPath, "utf8"); } catch { continue; }
+      if (/(?:^|\/)app\.config\.[cm]?[jt]sx?$/.test(imported) || /\bdefineServer\s*\(/.test(source)) {
+        entries.push(imported);
+      }
+    }
+  }
+  return entries;
+}
+
+const UUID_BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+/** Creator keeps five UUID hex digits and packs the remaining nibbles in base64. */
+function compressCreatorUuid(uuid) {
+  if (typeof uuid !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uuid)) {
+    return null;
+  }
+  const hex = uuid.replaceAll("-", "").toLowerCase();
+  let compressed = hex.slice(0, 5);
+  for (let index = 5; index < hex.length; index += 3) {
+    const value = Number.parseInt(hex.slice(index, index + 3), 16);
+    compressed += UUID_BASE64[value >> 6] + UUID_BASE64[value & 0x3f];
+  }
+  return compressed;
+}
+
+function canonicalSceneScriptEntry(metaFile, sourceRoot) {
+  const cocosEntry = normalizeRepoPath(path.relative(ROOT, metaFile.slice(0, -".meta".length)));
+  const suffix = path.relative(sourceRoot, metaFile.slice(0, -".meta".length));
+  const clientEntry = path.join(ROOT, "apps", "client", "src", suffix);
+  return fs.existsSync(clientEntry)
+    ? normalizeRepoPath(path.relative(ROOT, clientEntry))
+    : cocosEntry;
+}
+
+/**
  * Cocos stores script references as UUIDs in scene files. Resolve those UUIDs
  * back to source `.ts` paths so a newly mounted default component cannot be
  * omitted from the inventory silently.
@@ -74,6 +194,9 @@ function discoverSceneScriptEntries(scene) {
   if (!scenePath || !fs.existsSync(scenePath)) return [];
   let sceneText;
   try { sceneText = fs.readFileSync(scenePath, "utf8"); } catch { return []; }
+  const serializedTypes = new Set(
+    [...sceneText.matchAll(/"__type__"\s*:\s*"([^"]+)"/g)].map((match) => match[1]),
+  );
   const sourceRoot = path.join(ROOT, "apps", "Cocos", "assets", "src");
   const result = [];
   const walk = (directory) => {
@@ -85,34 +208,20 @@ function discoverSceneScriptEntries(scene) {
       if (!child.isFile() || !child.name.endsWith(".ts.meta")) continue;
       let meta;
       try { meta = readJson(full); } catch { continue; }
-      if (typeof meta.uuid !== "string" || !sceneText.includes(meta.uuid)) continue;
-      result.push(normalizeRepoPath(path.relative(ROOT, full.slice(0, -".meta".length))));
+      const compressed = compressCreatorUuid(meta.uuid);
+      if (typeof meta.uuid !== "string"
+        || (!serializedTypes.has(meta.uuid) && (!compressed || !serializedTypes.has(compressed)))) continue;
+      result.push(canonicalSceneScriptEntry(full, sourceRoot));
     }
   };
   walk(sourceRoot);
-  // Cocos serializes custom script UUIDs in a compressed form that is not the
-  // UUID text from `.meta`.  For explicitly declared scene bootstrap classes,
-  // verify the source decorator and the presence of a custom component token
-  // in the scene; this keeps the check deterministic without reimplementing
-  // the editor's UUID compression algorithm.
-  if (/"__type__"\s*:\s*"(?!cc\.)[^"]+"/.test(sceneText)) {
-    for (const module of defaultModules) {
-      if (typeof module?.sceneClass !== "string" || typeof module.entry !== "string") continue;
-      const source = repoPath(module.entry);
-      if (!source || !fs.existsSync(source)) continue;
-      let sourceText;
-      try { sourceText = fs.readFileSync(source, "utf8"); } catch { continue; }
-      const escaped = module.sceneClass.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      if (new RegExp(`@ccclass\\(\\s*["']${escaped}["']\\s*\\)`).test(sourceText)) {
-        result.push(normalizeRepoPath(module.entry));
-      }
-    }
-  }
   return result;
 }
 
 function discoverDefaultEntries() {
-  const discovered = new Set(discoverWorkspaceEntries());
+  const workspaceEntries = discoverWorkspaceEntries();
+  const discovered = new Set(workspaceEntries);
+  for (const entry of discoverWorkspaceCompositionEntries(workspaceEntries)) discovered.add(entry);
   const scene = inventory?.defaultScene ?? "apps/Cocos/assets/scene.scene";
   if (typeof scene === "string" && exists(scene)) {
     discovered.add(normalizeRepoPath(scene));
@@ -158,9 +267,23 @@ for (const [index, capability] of capabilities.entries()) {
   }
   if (!Array.isArray(capability.verification) || capability.verification.length === 0) fail(`能力 ${capability.id} 缺少 verification 命令`);
   for (const command of capability.verification ?? []) checkCommand(command, `能力 ${capability.id}`);
-  if (capability.category === "extra"
-    && !(capability.docs ?? []).some((doc) => doc === "docs/EXTRAFEATURES.md")) {
+  const hasExtraTruth = (capability.docs ?? []).some((doc) => doc === "docs/EXTRAFEATURES.md");
+  if (capability.category === "extra" && !hasExtraTruth) {
     fail(`额外能力 ${capability.id} 必须引用 docs/EXTRAFEATURES.md 作为权威边界`);
+  }
+  if (capability.category === "core" && hasExtraTruth) {
+    fail(`核心能力 ${capability.id} 不得把 docs/EXTRAFEATURES.md 登记为权威能力文档`);
+  }
+  if (capability.launch !== undefined) {
+    if (capability.category !== "extra") {
+      fail(`能力 ${capability.id} 的独立 launch 只能登记为 extra`);
+    }
+    checkCommand(capability.launch, `能力 ${capability.id}.launch`);
+    if (typeof capability.defaultEntry === "string"
+      && commandExists(capability.launch)
+      && !commandInvokesEntry(capability.launch, capability.defaultEntry)) {
+      fail(`能力 ${capability.id}.launch 未实际启动 defaultEntry：${capability.defaultEntry}`);
+    }
   }
 }
 
@@ -222,12 +345,33 @@ else {
   if (/^##\s+路线图/m.test(extraText)) fail("EXTRAFEATURES.md 不得维护第二套路线图");
 }
 
-// Keep the two assistant instruction files aligned on the rules that affect code generation and verification.
+// Keep the two assistant entry documents semantically identical while allowing
+// harmless wrapping/trailing-space differences. Required clauses also prevent
+// a synchronized edit from deleting the repository's critical invariants.
 const agents = fs.readFileSync(path.join(ROOT, "AGENTS.md"), "utf8");
 const claude = fs.readFileSync(path.join(ROOT, "CLAUDE.md"), "utf8");
-for (const marker of ["shared 零依赖", "生成镜像", "bitECS", "View/Logic", "FairyGUI", "外部身份服务"]) {
-  if (!agents.includes(marker) || !claude.includes(marker)) fail(`AGENTS.md/CLAUDE.md 缺少共同关键指令：${marker}`);
+const normalizeInstructionText = (text) => text.replace(/\s+/gu, " ").trim();
+if (normalizeInstructionText(agents) !== normalizeInstructionText(claude)) {
+  fail("AGENTS.md/CLAUDE.md 除空白外必须保持一致");
 }
+const assistantRequirements = [
+  ["bitECS 锁定目录", "`apps/client/src/lib/bitecs/` 的 12 个 TypeScript 文件禁改"],
+  ["生成镜像禁手改", "生成镜像禁手改"],
+  ["shared 零依赖", "shared 零依赖"],
+  ["相对导入无扩展名", "相对导入不带扩展名"],
+  ["View/Logic 分离", "客户端 View/Logic 分离"],
+  ["FairyGUI 动态导入", "FairyGUI 只走动态 import"],
+  ["外部身份 HTTP 边界", "外部身份服务只走 HTTP 契约边界"],
+  ["inventory 正向校验", "npm run verify:inventory"],
+  ["inventory 反例测试", "npm run test:inventory"],
+];
+for (const [label, requirement] of assistantRequirements) {
+  if (!agents.includes(requirement) || !claude.includes(requirement)) {
+    fail(`AGENTS.md/CLAUDE.md 缺少共同关键指令：${label}`);
+  }
+}
+checkMarkdownLinks("AGENTS.md");
+checkMarkdownLinks("CLAUDE.md");
 
 function packageScripts(packageFile) {
   try { return readJson(packageFile).scripts ?? {}; } catch { return {}; }
@@ -259,6 +403,26 @@ function commandScript(command) {
     return packageScripts(path.join(ROOT, packagePath, "package.json"))[command.script];
   }
   return undefined;
+}
+
+function commandBase(command) {
+  if (command?.kind === "root") return ROOT;
+  if (command?.kind === "workspace") {
+    const workspace = resolveWorkspace(command);
+    const location = workspaceLocation(workspace);
+    return location ? path.join(ROOT, location) : null;
+  }
+  return null;
+}
+
+function commandInvokesEntry(command, entry) {
+  const script = commandScript(command);
+  const base = commandBase(command);
+  const target = repoPath(entry);
+  if (typeof script !== "string" || !base || !target) return false;
+  const relativeTarget = normalizeRepoPath(path.relative(base, target));
+  const escaped = relativeTarget.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?:^|[\\s;&|])(?:\\./)?${escaped}(?=$|[\\s;&|])`).test(script);
 }
 
 function commandReferences(command) {
@@ -366,8 +530,21 @@ function checkMarkdownLinks(doc) {
       fail(`文档 ${doc} 的链接不存在：${target}`);
       continue;
     }
+    // A lexical in-tree link can still resolve through a symlink to bytes
+    // outside the checkout. Treat that as an invalid link instead of allowing
+    // an external document to satisfy the inventory contract.
+    let realResolved;
+    try { realResolved = fs.realpathSync(resolved); } catch {
+      fail(`文档 ${doc} 的链接不可解析：${target}`);
+      continue;
+    }
+    const realRelative = path.relative(ROOT_REAL, realResolved);
+    if (realRelative === ".." || realRelative.startsWith(`..${path.sep}`)) {
+      fail(`文档 ${doc} 的链接越出项目根：${target}`);
+      continue;
+    }
     if (fragment && path.extname(resolved).toLowerCase() === ".md") {
-      const targetText = fs.readFileSync(resolved, "utf8");
+      const targetText = fs.readFileSync(realResolved, "utf8");
       if (!markdownAnchors(targetText).has(normalizeAnchor(fragment))) {
         fail(`文档 ${doc} 的锚点不存在：${target}#${fragment}`);
       }

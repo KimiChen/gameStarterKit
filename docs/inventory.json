@@ -32,11 +32,21 @@
     {
       "id": "asset-effect-and-zone-isolation",
       "category": "core",
-      "defaultEntry": "apps/server/src/core/economy/relayer.ts",
+      "defaultEntry": "apps/server/src/websocket/shop/purchase.ts",
       "sourceOfTruth": "apps/server/src/core/infra/redisScripts.ts",
       "wireBoundary": "apps/shared/src/protocol/lobbyRpc/economy.ts",
       "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test:int" }],
       "docs": ["plan.md", "docs/SERVER.md", "docs/DUAL_MODE.md"]
+    },
+    {
+      "id": "outbox-relayer",
+      "category": "extra",
+      "defaultEntry": "apps/server/src/core/economy/relayer.ts",
+      "sourceOfTruth": "apps/server/src/core/economy/relayer.ts",
+      "wireBoundary": "apps/server/src/core/economy/outbox.ts",
+      "launch": { "kind": "workspace", "workspace": "@game/server", "script": "relayer" },
+      "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test:int" }],
+      "docs": ["docs/EXTRAFEATURES.md", "docs/SERVER.md"]
     },
     {
       "id": "character-ready",
@@ -122,6 +132,7 @@
         "requires": [
           { "kind": "root", "script": "verify:vendor" },
           { "kind": "root", "script": "verify:inventory" },
+          { "kind": "root", "script": "test:inventory" },
           { "kind": "root", "script": "test:client" }
         ]
       }],
@@ -131,12 +142,16 @@
   "defaultModules": [
     {
       "entry": "apps/server/src/index.ts",
-      "capabilities": ["process-lifecycle", "game-room-runtime", "character-ready", "server-infrastructure-boundaries"],
+      "capabilities": ["process-lifecycle", "game-room-runtime", "asset-effect-and-zone-isolation", "character-ready", "server-infrastructure-boundaries"],
+      "docs": ["docs/SERVER.md", "docs/OVERVIEW.md"]
+    },
+    {
+      "entry": "apps/server/src/app.config.ts",
+      "capabilities": ["game-room-runtime", "character-ready", "wire-runtime-contract", "server-infrastructure-boundaries"],
       "docs": ["docs/SERVER.md", "docs/OVERVIEW.md"]
     },
     {
       "entry": "apps/client/src/Main.ts",
-      "sceneClass": "Main",
       "capabilities": ["client-session-and-navigation", "gameplay-boundary", "view-logic-lifecycle", "wire-runtime-contract", "area-directory-determinism"],
       "docs": ["docs/CLIENT.md", "docs/OVERVIEW.md"]
     },
