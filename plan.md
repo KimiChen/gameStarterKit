@@ -197,25 +197,15 @@ move 与消费随机数的技能帧，钉住 admission/match RNG 隔离（展示
 
 状态：已完成。effect 入口先做 shared/runtime validate，Lua 采用 validate-then-apply，保留字段和跨区
 `server_id` 谓词均有守门测试；非法批次不会留下 Redis、applied 或 durable 业务结果。
-复核备注：purchaseTx 的「ledger 重复且 payload 不同」分支无专项用例，由 Lua 层 applied↔payload 绑定
-等价覆盖。
 
-复核备注：`sendMail` / `claimMailAttach` 的 durable 附件路径同样先经 shared validator（`mailer.ts:34`、
-`:76`），但只有合法附件用例，缺「非法 attach 不落 mail 行 / 不落 outbox intent」的专项测试，目前由
-purchase 分支与 Lua 校验等价覆盖。
+复核备注（已收口）：`effect-atomic.test.ts` 直接执行同 op-id、不同 canonical effect 的两次 `purchaseTx`，
+断言稳定冲突且 ledger/outbox 仍各只有原始一行；同文件还分别向 `sendMail` 传非法附件、构造历史坏附件后
+执行 `claimMailAttach`，断言 mail/read/claimed、outbox、Redis effect/applied 均不产生半状态。
 
-已知边界：`setField` 只做字段名 allowlist，未做 per-field 值域校验——allowlist 中的数值/布尔字段（star、
-wins、losses、stamina、guildId、musicOn 等）仍接受任意 ≤1024 的字符串。若写入非整数值，该用户此后任何
-含 star 的 effect 会永久返回 `EFFECT_DATA_CORRUPT`（`redisScripts.ts:217-219`），durable 行经 relayer 累加
-attempts 至死信；`readUser` 也会抛错（`userStore.ts:38` → `numbers.ts:36-38`）。当前 `apps/server/src` 与
-`apps/shared/src` 内没有任何 setField grant 生产者（catalog 只有 item grant，`sendMail` 在 src 内无调用
-方），不构成在线风险；接入 GM 发件或运营配置表前须补 per-field 值域。
-
-已知边界：applied↔payload 绑定 hash（`applied:payload:{uid}`）的按字段清理只有 `trimApplied` 一处，且
-`zrem` 与 `hdel` 两步非原子（`outbox.ts:239`/`:241`）；若在两步之间失败，孤儿字段不会再被枚举（候选只取
-自 applied ZSET，`outbox.ts:219`），无兜底回收。freeze/thaw 虽会整键 UNLINK（`archiveScripts.ts:51`/`:77`），
-但快照先存后恢复（`freezeWorker.ts:153`、`archiveScripts.ts:95-98`），孤儿只是随档搬运而非清理。绑定值存
-完整 canonical JSON 而非摘要（`redisScripts.ts:239`），容量按 64 grants × 1KB 估。
+复核备注（已收口）：shared 为每个 `setField` allowlist 字段登记 text/integer/flag 值域，
+`wire-contract.test.ts` 直接覆盖数字垃圾、越界整数、非规范开关和超长文本，Lua 仍保留同规则的 durable
+防御。`trimApplied` 通过单个 `TRIM_APPLIED` Lua 同时删除 ZSET marker 与 payload hash 字段；经济集成用例
+断言 pending 时二者均保留、done 后二者同时清除，不再产生无法枚举的孤儿绑定。
 
 **原审阅证据（已收口）**
 

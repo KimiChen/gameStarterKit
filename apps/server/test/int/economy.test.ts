@@ -19,7 +19,7 @@ import {
 import { createOrder, handleWxPayNotify } from "../../src/core/economy/purchases";
 import { createUser } from "../../src/core/userRecord";
 import { APPLIED_RETENTION_MS, CUR_GOLD, OUTBOX_PENDING } from "../../src/core/infra/config";
-import { kApplied, kBag, kCacheCurrency, kUser } from "../../src/core/infra/keys";
+import { kApplied, kAppliedPayload, kBag, kCacheCurrency, kUser } from "../../src/core/infra/keys";
 import { cacheClient, clientFor, closeRedis } from "../../src/core/infra/redisRoute";
 import { closeMysql, getPool } from "../../src/core/infra/mysql";
 import type { RowDataPacket } from "../../src/core/infra/mysql";
@@ -186,6 +186,7 @@ test("applied 裁剪与 coordinator 联动：pending/dead 的 op 标记超窗也
 
   assert.equal(await trimApplied(u), 0, "行仍 pending：标记超窗也不许裁");
   assert.ok(await c.zscore(kApplied(u), stuckOp), "标记还在");
+  assert.ok(await c.hget(kAppliedPayload(u), stuckOp), "pending op 的 payload 绑定也必须保留");
   // 关键红线：此刻 relayer 重放这条 pending，applied 必须还判 dup（否则二次发货）
   assert.equal(await redisApply(u, stuckOp, [{ kind: "item", itemId: 9, count: 1 }]), "dup");
 
@@ -193,4 +194,5 @@ test("applied 裁剪与 coordinator 联动：pending/dead 的 op 标记超窗也
   await markOutboxDone(stuckOp);
   assert.equal(await trimApplied(u), 1, "done 且超窗：裁掉");
   assert.equal(await c.zscore(kApplied(u), stuckOp), null);
+  assert.equal(await c.hget(kAppliedPayload(u), stuckOp), null, "marker 与 payload 绑定必须由同一 Lua 原子清理");
 });
