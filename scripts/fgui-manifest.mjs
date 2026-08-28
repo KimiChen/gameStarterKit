@@ -359,18 +359,19 @@ function compareRecords(label, expected, actual, problems) {
   for (const file of actualMap.keys()) if (!expectedMap.has(file)) problems.push(`${label}: 多余 ${file}`);
 }
 
-function checkManifest() {
-  if (!fs.existsSync(MANIFEST)) throw new Error(`manifest 不存在: ${rel(ROOT, MANIFEST)}（先运行 --write）`);
-  let expected;
-  try { expected = JSON.parse(fs.readFileSync(MANIFEST, "utf8")); }
-  catch (error) { throw new Error(`manifest JSON 无法解析: ${error.message}`); }
-  if (!expected || expected.version !== VERSION || !Array.isArray(expected.packages)
-    || !Array.isArray(expected.exports) || !Array.isArray(expected.views)) {
-    throw new Error(`manifest 版本/结构非法（期望 version=${VERSION}）`);
+/**
+ * Validate the part of a manifest that can be checked without touching the
+ * current workspace.  Keeping this as a pure assertion makes malformed
+ * manifests testable without replacing the checked-in FGUI assets.
+ */
+function assertManifestShape(manifest, version = VERSION) {
+  if (!manifest || manifest.version !== version || !Array.isArray(manifest.packages)
+    || !Array.isArray(manifest.exports) || !Array.isArray(manifest.views)) {
+    throw new Error(`manifest 版本/结构非法（期望 version=${version}）`);
   }
   const packageNames = new Set();
   const packageIds = new Set();
-  for (const [index, pkg] of expected.packages.entries()) {
+  for (const [index, pkg] of manifest.packages.entries()) {
     if (!pkg || typeof pkg.name !== "string" || typeof pkg.id !== "string"
       || !Array.isArray(pkg.source) || !Array.isArray(pkg.components)
       || !Array.isArray(pkg.resources) || !Array.isArray(pkg.outputs)) {
@@ -381,6 +382,53 @@ function checkManifest() {
     packageNames.add(pkg.name);
     packageIds.add(pkg.id);
   }
+  return manifest;
+}
+
+/** Return manifest source records that escape their declared package root. */
+function sourcePathProblems(packageName, sourceRoot, sourceRecords) {
+  const problems = [];
+  if (!Array.isArray(sourceRecords)) return problems;
+  const packageRoot = path.posix.normalize(path.posix.join(
+    String(sourceRoot).replaceAll("\\", "/"),
+    String(packageName).replaceAll("\\", "/"),
+  ));
+  for (const item of sourceRecords) {
+    if (!item || typeof item.path !== "string") continue;
+    const candidate = item.path.replaceAll("\\", "/");
+    const relative = path.posix.relative(packageRoot, candidate);
+    if (relative === "" || relative === ".." || relative.startsWith("../") || path.posix.isAbsolute(relative)) {
+      problems.push(`${packageName} source: 路径越界 ${item.path}`);
+    }
+  }
+  return problems;
+}
+
+/** Return errors for generated files claimed by more than one package. */
+function outputOwnershipProblems(packages) {
+  const problems = [];
+  const owners = new Map();
+  for (const pkg of packages ?? []) {
+    if (!pkg || typeof pkg.name !== "string" || !Array.isArray(pkg.outputs)) continue;
+    for (const output of pkg.outputs) {
+      if (!output || typeof output.path !== "string") continue;
+      const previous = owners.get(output.path);
+      if (previous && previous !== pkg.name) {
+        problems.push(`Cocos export: ${output.path} 同时归属 ${previous}/${pkg.name}`);
+      } else if (!previous) {
+        owners.set(output.path, pkg.name);
+      }
+    }
+  }
+  return problems;
+}
+
+function checkManifest() {
+  if (!fs.existsSync(MANIFEST)) throw new Error(`manifest 不存在: ${rel(ROOT, MANIFEST)}（先运行 --write）`);
+  let expected;
+  try { expected = JSON.parse(fs.readFileSync(MANIFEST, "utf8")); }
+  catch (error) { throw new Error(`manifest JSON 无法解析: ${error.message}`); }
+  assertManifestShape(expected);
   const actual = currentManifest();
   const problems = [];
   if (expected.sourceRoot !== actual.sourceRoot || expected.exportRoot !== actual.exportRoot) {
@@ -398,25 +446,13 @@ function checkManifest() {
     if (JSON.stringify(pkg.resources) !== JSON.stringify(got.resources)) problems.push(`${name}: package.xml 资源声明变化`);
     compareRecords(`${name} export`, pkg.outputs, got.outputs, problems);
 
-    const sourceRoot = path.posix.join(expected.sourceRoot, name) + "/";
-    for (const item of pkg.source) {
-      if (item && typeof item.path === "string" && !posix(item.path).startsWith(sourceRoot)) {
-        problems.push(`${name} source: 路径越界 ${item.path}`);
-      }
-    }
+    problems.push(...sourcePathProblems(name, expected.sourceRoot, pkg.source));
   }
   for (const name of actualPackages.keys()) if (!expectedPackages.has(name)) problems.push(`package 多余 ${name}`);
 
   // A generated asset must have one owner.  Ambiguous ownership would let one
   // package's export drift while another package's record keeps the check green.
-  const owners = new Map();
-  for (const pkg of actual.packages) {
-    for (const output of pkg.outputs) {
-      const previous = owners.get(output.path);
-      if (previous && previous !== pkg.name) problems.push(`Cocos export: ${output.path} 同时归属 ${previous}/${pkg.name}`);
-      else owners.set(output.path, pkg.name);
-    }
-  }
+  problems.push(...outputOwnershipProblems(actual.packages));
   const expectedViews = new Map(expected.views.map((v) => [v.path, v]));
   const actualViews = new Map(actual.views.map((v) => [v.path, v]));
   for (const [file, view] of expectedViews) {
@@ -448,10 +484,13 @@ if (isMain) {
 }
 
 export {
+  assertManifestShape,
   componentDeclarations,
   compareRecords,
   currentManifest,
+  outputOwnershipProblems,
   packageDescription,
   resourceDeclarations,
+  sourcePathProblems,
   validateUiUrl,
 };
