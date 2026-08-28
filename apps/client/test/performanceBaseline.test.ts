@@ -4,12 +4,22 @@
  * scheduling and garbage collection make exact numbers unsuitable for tests.
  */
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
     PERF_SCHEMA_VERSION,
+    projectDeterministicBaseline,
     runClientPerformanceBaseline,
+    type PerformanceBaselineArtifact,
     type TimingSummary,
 } from "../../../tools/client-perf-baseline";
+
+const CHECKED_IN_ARTIFACT = resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    "../../../docs/perf/client-ballMove-baseline.json",
+);
 
 const OPTIONS = {
     seed: 12_345,
@@ -38,14 +48,7 @@ function assertTimingSummary(summary: TimingSummary, frames: number): void {
 }
 
 function stableProjection(result: ReturnType<typeof runClientPerformanceBaseline>): unknown {
-    return result.cases.map((item) => ({
-        entityCount: item.entityCount,
-        input: item.input,
-        renderOpsPerFrame: item.renderOpsPerFrame,
-        snapshotAllocationsPerFrame: item.snapshotAllocationsPerFrame,
-        snapshotBytesEstimatePerFrame: item.snapshotBytesEstimatePerFrame,
-        sinkChecksum: item.sinkChecksum,
-    }));
+    return projectDeterministicBaseline(result).cases;
 }
 
 test("client baseline：固定 seed/input 的结构结果可重复，且覆盖 ECS/渲染/分配探针", () => {
@@ -86,4 +89,10 @@ test("client baseline：不同 seed 会改变输入 tape 校验和", () => {
     const first = runClientPerformanceBaseline({ ...OPTIONS, seed: 1, entityCounts: [2] });
     const second = runClientPerformanceBaseline({ ...OPTIONS, seed: 2, entityCounts: [2] });
     assert.notEqual(first.cases[0].input.checksum, second.cases[0].input.checksum);
+});
+
+test("client baseline：入库 deterministic artifact 与当前探针一致", () => {
+    const artifact = JSON.parse(readFileSync(CHECKED_IN_ARTIFACT, "utf8")) as PerformanceBaselineArtifact;
+    const result = runClientPerformanceBaseline(artifact.workload);
+    assert.deepEqual(projectDeterministicBaseline(result), artifact);
 });

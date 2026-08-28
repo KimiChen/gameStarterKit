@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "client-ballMove",
+  "workload": {
+    "seed": 1367272865,
+    "frames": 240,
+    "warmupFrames": 60,
+    "entityCounts": [
+      100,
+      500
+    ]
+  },
+  "cases": [
+    {
+      "entityCount": 100,
+      "input": {
+        "checksum": 3650735649,
+        "values": 60000
+      },
+      "renderOpsPerFrame": 603,
+      "snapshotAllocationsPerFrame": 101,
+      "snapshotBytesEstimatePerFrame": 6464,
+      "sinkChecksum": 1266027312
+    },
+    {
+      "entityCount": 500,
+      "input": {
+        "checksum": 3627785249,
+        "values": 300000
+      },
+      "renderOpsPerFrame": 3003,
+      "snapshotAllocationsPerFrame": 501,
+      "snapshotBytesEstimatePerFrame": 32064,
+      "sinkChecksum": 4187726608
+    }
+  ]
+}

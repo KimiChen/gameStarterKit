@@ -81,6 +81,58 @@ export interface PerformanceBaseline {
     readonly cases: readonly BaselineCase[];
 }
 
+/**
+ * The checked-in baseline deliberately contains only deterministic observations.
+ * Host-dependent timing distributions and heap measurements remain available in
+ * `PerformanceBaseline`, but are excluded from this projection so verification
+ * does not become a machine-specific performance gate.
+ */
+export interface DeterministicBaselineCase {
+    readonly entityCount: number;
+    readonly input: {
+        readonly checksum: number;
+        readonly values: number;
+    };
+    readonly renderOpsPerFrame: number;
+    readonly snapshotAllocationsPerFrame: number;
+    readonly snapshotBytesEstimatePerFrame: number;
+    readonly sinkChecksum: number;
+}
+
+export interface PerformanceBaselineArtifact {
+    readonly schemaVersion: typeof PERF_SCHEMA_VERSION;
+    readonly benchmark: "client-ballMove";
+    readonly workload: {
+        readonly seed: number;
+        readonly frames: number;
+        readonly warmupFrames: number;
+        readonly entityCounts: readonly number[];
+    };
+    readonly cases: readonly DeterministicBaselineCase[];
+}
+
+/** Project a run onto fields that are expected to be stable across hosts. */
+export function projectDeterministicBaseline(result: PerformanceBaseline): PerformanceBaselineArtifact {
+    return {
+        schemaVersion: result.schemaVersion,
+        benchmark: result.benchmark,
+        workload: {
+            seed: result.seed,
+            frames: result.frames,
+            warmupFrames: result.warmupFrames,
+            entityCounts: [...result.entityCounts],
+        },
+        cases: result.cases.map((item) => ({
+            entityCount: item.entityCount,
+            input: { ...item.input },
+            renderOpsPerFrame: item.renderOpsPerFrame,
+            snapshotAllocationsPerFrame: item.snapshotAllocationsPerFrame,
+            snapshotBytesEstimatePerFrame: item.snapshotBytesEstimatePerFrame,
+            sinkChecksum: item.sinkChecksum,
+        })),
+    };
+}
+
 /** Small deterministic PRNG; zero is a valid input seed but never an internal state. */
 class SeededInput {
     private state: number;
@@ -422,6 +474,7 @@ export async function runCli(argv = process.argv.slice(2)): Promise<void> {
             warmup: { type: "string", default: String(DEFAULT_PERF_WARMUP_FRAMES) },
             entities: { type: "string", default: DEFAULT_ENTITY_COUNTS.join(",") },
             json: { type: "boolean", default: false },
+            deterministic: { type: "boolean", default: false },
             output: { type: "string" },
         },
         allowPositionals: false,
@@ -432,7 +485,8 @@ export async function runCli(argv = process.argv.slice(2)): Promise<void> {
         warmupFrames: Number(values.warmup),
         entityCounts: parseEntityCounts(values.entities),
     });
-    const json = `${JSON.stringify(result, null, 2)}\n`;
+    const payload = values.deterministic ? projectDeterministicBaseline(result) : result;
+    const json = `${JSON.stringify(payload, null, 2)}\n`;
     if (values.output) writeFileSync(values.output, json, "utf8");
     if (values.json) process.stdout.write(json);
     else printHuman(result);
