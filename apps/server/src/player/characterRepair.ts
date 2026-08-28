@@ -27,6 +27,7 @@ import {
 } from "../platform/webPlatformClient";
 import { assertAdmissionOpen, defaultLifecycle } from "../core/infra/lifecycle";
 import { storedInt } from "../core/infra/numbers";
+import { markCharacterRegistrationReady } from "./characterState";
 
 export interface CharacterRepairIntent {
   userId: string;
@@ -253,6 +254,7 @@ async function processMember(
   }
 
   // 远端成功之后才删；若这里崩溃/Redis 失败，intent 保留，下轮仅重复幂等 PUT。
+  await markCharacterRegistrationReady(intent.userId, intent.serverId);
   await clearCharacterRepairMember(member);
   return "succeeded";
 }

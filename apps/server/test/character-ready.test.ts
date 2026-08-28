@@ -147,6 +147,60 @@ test("character initializer：MySQL/Redis/WebPlatform 任一慢阶段超时都�
   }
 });
 
+test("character initializer：已有热档按登记 marker/hasCharacter 短路 WebPlatform PUT，pending 才修复", async () => {
+  const calls: string[] = [];
+  const makeDeps = (
+    created: "ok" | "exists",
+    state: "pending" | "ready" | null,
+    remote = false,
+    remoteError?: Error,
+  ) => ({
+    ensureLive: async () => {},
+    createUser: async () => created,
+    readCharacterRegistration: async () => state,
+    hasCharacter: async () => {
+      calls.push("has");
+      if (remoteError) { throw remoteError; }
+      return remote;
+    },
+    enqueueCharacterRepairIntent: async () => { calls.push("enqueue"); },
+    registerCharacterWithRepair: async () => { calls.push("register"); },
+    markCharacterRegistrationReady: async () => { calls.push("mark-ready"); },
+    invalidateUserNegcache: async () => { calls.push("negcache"); },
+  });
+
+  await ensureCharacterWithDependencies("hot-ready", 1, makeDeps("exists", "ready"));
+  assert.deepEqual(calls, ["negcache"], "ready 热档不得调用 WebPlatform PUT");
+
+  calls.length = 0;
+  await ensureCharacterWithDependencies("hot-legacy", 1, makeDeps("exists", null));
+  assert.deepEqual(calls, ["has", "register", "mark-ready", "negcache"],
+    "无 marker 且远端不存在时必须登记并补 marker");
+
+  calls.length = 0;
+  await ensureCharacterWithDependencies("hot-legacy-registered", 1, makeDeps("exists", null, true));
+  assert.deepEqual(calls, ["has", "mark-ready", "negcache"],
+    "无 marker 但远端已登记时只补 marker，不重复 PUT");
+
+  calls.length = 0;
+  const probeError = new Error("webplatform unavailable");
+  await assert.rejects(
+    ensureCharacterWithDependencies("hot-legacy-probe-error", 1, makeDeps("exists", null, false, probeError)),
+    (error: unknown) => error === probeError,
+  );
+  assert.deepEqual(calls, ["has", "enqueue"], "hasCharacter 抖动必须留下 repair intent 并拒绝 ready");
+
+  calls.length = 0;
+  await ensureCharacterWithDependencies("crash-pending", 1, makeDeps("exists", "pending"));
+  assert.deepEqual(calls, ["register", "mark-ready", "negcache"],
+    "Redis 档已创建但外部登记未完成时，pending 必须走修复并落 ready marker");
+
+  calls.length = 0;
+  await ensureCharacterWithDependencies("first-character", 1, makeDeps("ok", "pending"));
+  assert.deepEqual(calls, ["register", "mark-ready", "negcache"],
+    "首次建档必须完成外部登记后才 ready");
+});
+
 test("character ready observes a late underlying rejection and reuses it across reset", async () => {
   const work = deferred<void>();
   const retryWork = deferred<void>();

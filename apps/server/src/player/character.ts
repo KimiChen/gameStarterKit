@@ -20,7 +20,13 @@ import { STAMINA_MAX } from "@game/shared";
 import { zoneCtx } from "../core/infra/keys";
 import { createUser } from "../core/userRecord";
 import { ensureLive, invalidateUserNegcache } from "../core/archive/thaw";
-import { registerCharacterWithRepair } from "./characterRepair";
+import { webPlatformClient } from "../platform/webPlatformClient";
+import { enqueueCharacterRepairIntent, registerCharacterWithRepair } from "./characterRepair";
+import {
+  markCharacterRegistrationReady,
+  readCharacterRegistration,
+  type CharacterRegistrationState,
+} from "./characterState";
 import { CHARACTER_READY_TIMEOUT_MAX_MS, CHARACTER_READY_TIMEOUT_MS } from "../core/infra/config";
 
 /** 首进区角色初始字段（与登录建号一致；缺 musicOn/sfxOn = 读侧默认开，07 字段表）。 */
@@ -29,6 +35,10 @@ const zoneCharInit = (): Record<string, string> => ({
   stamina: String(STAMINA_MAX),
   lastStaminaRecoverAt: "0", // 满体力：恢复计时未开始
   avatarId: "-1",
+  // The marker is written atomically with the Redis profile.  A crash between
+  // createUser and the external PUT therefore leaves an observable pending
+  // state that the next join can repair.
+  characterRegistration: "pending",
 });
 
 /** 幂等建角：**先建 `s{sId}_user`，再 HTTP 登记角色**（顺序理由见文件头）。任一阶段失败都会向上抛，拒绝本次 join；repair intent 供后续重试收敛。 */
@@ -39,6 +49,13 @@ export interface CharacterInitializerDependencies {
   createUser(uid: string, initFields: Record<string, string>): Promise<"ok" | "exists">;
   /** registerCharacterWithRepair 代表 WebPlatform PUT 与 durable repair 落点。 */
   registerCharacterWithRepair(uid: string, sId: number): Promise<void>;
+  /** Authoritative fallback for legacy profiles without a local marker. */
+  hasCharacter?(uid: string, sId: number): Promise<boolean>;
+  /** Persist a repair intent when the legacy existence probe itself is unavailable. */
+  enqueueCharacterRepairIntent?(uid: string, sId: number): Promise<void>;
+  /** Durable local marker used to avoid an external PUT on every hot-profile join. */
+  readCharacterRegistration?(uid: string, sId: number): Promise<CharacterRegistrationState>;
+  markCharacterRegistrationReady?(uid: string, sId: number): Promise<void>;
   /** 建角成功后的 Redis 负缓存失效。 */
   invalidateUserNegcache(uid: string): Promise<void>;
 }
@@ -47,6 +64,10 @@ const defaultCharacterInitializerDependencies: CharacterInitializerDependencies 
   ensureLive,
   createUser,
   registerCharacterWithRepair,
+  hasCharacter: (uid, sId) => webPlatformClient.hasCharacter(uid, sId),
+  enqueueCharacterRepairIntent,
+  readCharacterRegistration,
+  markCharacterRegistrationReady,
   invalidateUserNegcache,
 };
 
@@ -64,8 +85,46 @@ export async function ensureCharacterWithDependencies(
   // ⚠ ensureLive 内部抢 lock:{uid}——本函数不得在 withUser 锁内调用（onJoin best-effort 调，安全）。
   await zoneCtx.run({ sId }, async () => {
     await deps.ensureLive(uid, sId);                   // 冻结→thaw 恢复；真新→ABSENT(F4 判)；热→无；真丢→抛
-    await deps.createUser(uid, zoneCharInit());         // 幂等：热/解冻→'exists'，真新才建（⛔ 不覆盖真档）
-    await deps.registerCharacterWithRepair(uid, sId);   // 后写登记；失败 durable 留 intent 后仍向上抛
+    const created = await deps.createUser(uid, zoneCharInit()); // 幂等：热/解冻→'exists'，真新才建
+    const registration = deps.readCharacterRegistration
+      ? await deps.readCharacterRegistration(uid, sId)
+      : null;
+    // New profiles carry `pending` atomically.  A ready marker is the local
+    // fast path; legacy profiles must consult the external authority once so
+    // a pre-marker crash window can still self-heal.
+    if (created === "exists" && registration === "ready") {
+      await deps.invalidateUserNegcache(uid);           // 建后失效负缓存（09·F4）
+      return;
+    }
+
+    if (created === "exists" && registration === null) {
+      let registered: boolean;
+      try {
+        registered = deps.hasCharacter ? await deps.hasCharacter(uid, sId) : false;
+      } catch (error) {
+        try {
+          await deps.enqueueCharacterRepairIntent?.(uid, sId);
+        } catch (repairError) {
+          throw new AggregateError(
+            [error, repairError],
+            `WebPlatform 角色存在性查询失败且 durable repair intent 写入失败 uid=${uid} sId=${sId}`,
+          );
+        }
+        throw error;
+      }
+      if (registered) {
+        if (deps.markCharacterRegistrationReady) {
+          await deps.markCharacterRegistrationReady(uid, sId);
+        }
+        await deps.invalidateUserNegcache(uid);
+        return;
+      }
+    }
+
+    await deps.registerCharacterWithRepair(uid, sId);   // pending/新档：失败 durable 留 intent 后仍向上抛
+    if (deps.markCharacterRegistrationReady) {
+      await deps.markCharacterRegistrationReady(uid, sId);
+    }
     await deps.invalidateUserNegcache(uid);             // 建后失效负缓存（09·F4）
   });
 }

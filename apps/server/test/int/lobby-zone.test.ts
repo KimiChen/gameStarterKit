@@ -31,7 +31,15 @@ import { clientFor, closeRedis, indexClientFor } from "../../src/core/infra/redi
 import { closeMysql } from "../../src/core/infra/mysql";
 import { LobbyRoom } from "../../src/websocket/LobbyRoom";
 import { stopMailWakeLoop } from "../../src/websocket/push";
-import { assertRedisUp, cleanupUser, sleep, testUid, issueSession } from "./helpers";
+import {
+  assertRedisUp,
+  cleanupUser,
+  fakeWebPlatformClient,
+  issueSession,
+  sleep,
+  testUid,
+} from "./helpers";
+import { installWebPlatformClientForTests } from "../../src/platform/webPlatformClient";
 import { exerciseFaultPoint } from "../faultMatrix";
 
 let colyseus: ColyseusTestServer;
@@ -157,6 +165,31 @@ test("带 sId=1 join：onJoin 建角落 s1_user，⛔ 不落基础前缀 s0", as
   const baseExists = await c.exists(base);
   assert.equal(baseExists, 0, "基础前缀 user 未建（建角落所选区 s1，非大混服 s0）");
   await room.leave();
+});
+
+test("已有完整热档回访：登记 marker 短路 WebPlatform 抖动，且按区隔离", async () => {
+  const { uid, token } = await makeAcct("ready-hot", 1);
+  const c = clientFor(uid);
+  const s1u = zoneUserKey(uid, 1);
+  const s2u = zoneUserKey(uid, 2);
+  const first = await joinLobby(token, 1);
+  await waitField(c, s1u, "characterRegistration", "ready", "首进完成外部登记并落 ready marker");
+  await first.leave();
+
+  const restore = installWebPlatformClientForTests({
+    verify: fakeWebPlatformClient.verify,
+    registerCharacter: async () => { throw new Error("simulated WebPlatform outage"); },
+    hasCharacter: async () => { throw new Error("simulated WebPlatform outage"); },
+  });
+  try {
+    const returning = await joinLobby(token, 1);
+    await returning.leave();
+  } finally {
+    restore();
+  }
+
+  assert.equal(await c.exists(s2u), 0, "s2 不得因 s1 回访创建跨区角色档");
+  assert.equal(await hfield(c, s1u, "characterRegistration"), "ready");
 });
 
 test("带 sId=1 join：大厅写 RPC 落 s1_user；基础前缀全程不受影响（不串 s0）", async () => {
