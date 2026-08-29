@@ -32,7 +32,7 @@
     "fetch:fgui": "node scripts/fetch-fgui.mjs",
     "fetch:colyseus": "node scripts/fetch-colyseus.mjs",
     "config:excel-to-json": "node tools/excel-to-json.mjs",
-    "config:excel-to-json:check": "node tools/excel-to-json.mjs --check",
+    "config:excel-to-json:check": "node tools/excel-to-json.mjs --check && node --test tools/excel-to-json.test.mjs",
     "typecheck:client": "tsc -p apps/client/tsconfig.test.json --noEmit",
     "typecheck:client:legacy": "tsc -p apps/client/tsconfig.json --noEmit",
     "test:client": "cd apps/server && node --import tsx --test ../client/test/*.test.ts ../../scripts/vendor-lock.test.mjs",

@@ -106,7 +106,7 @@ npm run dev
 | `npm run codegen:fgui -- <Pkg> <Comp>` | 生成或更新 View 的 AUTO 区块 |
 | `npm run verify:ecs` | 校验锁定的 bitECS 文件 |
 | `npm run fetch:fgui` / `npm run fetch:colyseus` | 维护团队显式升级锁定客户端依赖并重钉内容锁；普通开发不运行 |
-| `npm run config:excel-to-json` / `npm run config:excel-to-json:check` | 写出 Excel 示例配表双端 JSON，或只读校验源表；均属额外功能 |
+| `npm run config:excel-to-json` / `npm run config:excel-to-json:check` | 写出 Excel 示例配表双端 JSON，或只读校验源表与入库生成物；均属额外功能 |
 | `npm --workspace @game/server run test` | 服务端单元测试 |
 | `npm --workspace @game/server run smoke:framework` | 已启动并初始化的本地 Redis/MySQL 连通性检查 |
 | `npm --workspace @game/server run smoke` | 需要外部 WebPlatform 与运行中游戏服的完整开发链路冒烟；GM kick 分支可选 |
@@ -128,7 +128,7 @@ FGUI 专项测试。
 确认无误后用环境变量放行：`SYNC_FORCE=1 npm run sync:shared`。不要用 `-- --force`：npm 会把它追加到复合命令末尾，
 只到得了链条里最后一个脚本。放行会连同入库的 `.meta` 一起删除，Creator 重开将重铸 uuid。
 
-`npm run config:excel-to-json` 与 `npm run config:excel-to-json:check` 是 Excel 配表转换与只读校验，属额外功能，
+`npm run config:excel-to-json` 与 `npm run config:excel-to-json:check` 是 Excel 配表转换与生成物新鲜度校验，属额外功能，
 见 [额外功能与参考实现](docs/EXTRAFEATURES.md#38-配表负载与-unity-实验) 与 [配表工具 README](tools/excel-config/README.md)。
 
 ### 框架维护团队的依赖更新

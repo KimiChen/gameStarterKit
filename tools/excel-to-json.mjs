@@ -11,7 +11,7 @@
  *  - 三行表头约定读取（第 1 行字段名、第 2 行类型、第 3 行中文说明，第 4 行起数据）
  *  - 字段助手：text / numberValue / getField（字段别名兜底）
  *  - 复合字段解析：parseDelimitedNumbers（a_b_c 数字列表）、parsePairs（id&value_id&value）
- *  - --check 模式：只校验不写文件，出错 exit 1，可直接进 CI
+ *  - --check 模式：校验源表并逐字节比较双端 JSON，不写文件，出错 exit 1，可直接进 CI
  *  - 双输出：服务端权威配置（apps/server/data）+ 客户端展示配置（resources/config，
  *    裁掉服务端敏感字段——权重/价格绝不能只在客户端，服务端权威是抽卡/结算的前提）
  *  - 输出带 schemaVersion + sourceFiles 溯源，结束时打印行数 summary
@@ -22,7 +22,7 @@
  *
  * 用法：
  *  node tools/excel-to-json.mjs                    # 读 tools/excel-config/*.xlsx，双写 JSON
- *  node tools/excel-to-json.mjs --check            # 只校验不写文件（CI 用）
+ *  node tools/excel-to-json.mjs --check            # 校验源表和双端 JSON freshness，不写文件（CI 用）
  *  node tools/excel-to-json.mjs --input=<目录>     # 覆盖输入目录
  *  node tools/excel-to-json.mjs --output=<文件>    # 覆盖服务端输出路径
  *  node tools/excel-to-json.mjs --client-output=<文件> / --no-client-output
@@ -293,10 +293,41 @@ function toClientData(data) {
     };
 }
 
+// 写入与 freshness 检查共用唯一序列化入口，避免 writer/checker 自己形成两份格式契约。
+function serializeJson(data) {
+    return `${JSON.stringify(data, null, 2)}\n`;
+}
+
 // 输出 JSON 固定 UTF-8 + 两空格缩进 + 末尾换行，便于版本比对和人工排查。
 async function writeJson(outputFile, data) {
     await fs.mkdir(path.dirname(outputFile), { recursive: true });
-    await fs.writeFile(outputFile, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+    await fs.writeFile(outputFile, serializeJson(data), "utf8");
+}
+
+function displayPath(filePath) {
+    const relative = path.relative(ROOT, filePath);
+    return relative && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative)
+        ? toSlash(relative)
+        : filePath;
+}
+
+async function checkJson(outputFile, data, errors) {
+    const expected = serializeJson(data);
+    const label = displayPath(outputFile);
+    let actual;
+    try {
+        actual = await fs.readFile(outputFile, "utf8");
+    } catch (error) {
+        if (error?.code === "ENOENT") {
+            errors.push(`生成物缺失：${label}`);
+            return;
+        }
+        throw error;
+    }
+
+    if (actual !== expected) {
+        errors.push(`生成物陈旧：${label}`);
+    }
 }
 
 // 主流程保持「读取 → 解析 → 校验 → 输出」的顺序；出现错误就中断（不写任何文件），警告不阻塞导出。
@@ -345,7 +376,19 @@ async function run() {
         process.exit(1);
     }
 
-    if (!args.checkOnly) {
+    if (args.checkOnly) {
+        const outputErrors = [];
+        await checkJson(args.outputFile, data, outputErrors);
+        if (args.syncClient) {
+            await checkJson(args.clientOutputFile, toClientData(data), outputErrors);
+        }
+        if (outputErrors.length > 0) {
+            console.error("[excel-to-json] 生成物检查失败：");
+            for (const error of outputErrors) console.error(`- ${error}`);
+            console.error("  请运行 npm run config:excel-to-json 重新生成后提交结果。");
+            process.exit(1);
+        }
+    } else {
         await writeJson(args.outputFile, data);
         if (args.syncClient) {
             await writeJson(args.clientOutputFile, toClientData(data));
@@ -355,8 +398,8 @@ async function run() {
     const summary = {
         checkOnly: args.checkOnly,
         inputDir: toSlash(path.relative(ROOT, args.inputDir)),
-        outputFile: args.checkOnly ? null : toSlash(path.relative(ROOT, args.outputFile)),
-        clientOutputFile: args.syncClient && !args.checkOnly ? toSlash(path.relative(ROOT, args.clientOutputFile)) : null,
+        outputFile: displayPath(args.outputFile),
+        clientOutputFile: args.syncClient ? displayPath(args.clientOutputFile) : null,
         rows: Object.fromEntries(Object.entries(tables).map(([name, rows]) => [name, rows.length])),
         warnings: warnings.length,
     };

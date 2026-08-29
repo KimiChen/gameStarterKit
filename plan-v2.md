@@ -186,14 +186,19 @@
 
 ### P1-08 本地验证边界
 
-- `[不阻塞·有意保留]` 失效的 loadtest、未闭合的 Excel 生成链和真实 Creator 预览仍被归为额外或人工
-  验证边界。
+- `[不阻塞·有意保留]` 失效的 loadtest、尚无运行时消费方的 Excel 示例链和真实 Creator 预览仍被归为
+  额外或人工验证边界。
 - `[不阻塞·有意保留]` legacy probe 使用本地引擎声明桩，不能替代真实 Creator 引擎、资源导入、运行时
   交互和目标设备验证。
 - `[不阻塞·有意保留]` 客户端 strict 编译探针（`apps/client/tsconfig.test.json`，覆盖 Main、全部 View、
   `pages.ts`/ViewMgr 与客户端 tests）同样只在 Node 最小 cc/FairyGUI 桩下运行，其「通过」只证明
   TypeScript/API 形状，真实 Creator 类型与资源仍需编辑器验证。
-- `[不阻塞·待补齐]` `config:excel-to-json:check` 只读取并校验源表，不比较缺失或陈旧的生成 JSON。
+- `[已完成]` Excel writer/checker 共用唯一 canonical serializer；默认双端 JSON 已入库，
+  `config:excel-to-json:check` 只读逐字节比较服务端与客户端输出，分别报告任一缺失或陈旧结果，且
+  `--no-client-output` 仍只约束服务端输出。验收证据：五个真实 xlsx 正反例覆盖 canonical 通过且不改写、
+  双缺失、单缺失、双陈旧与 server-only；Cocos Creator 3.8.8 生成资源目录及 JSON `.meta`；
+  `npm run config:excel-to-json:check` 5/5、`node scripts/verify-toolchain.mjs`、
+  `npm run verify:inventory` 与 `npm run verify:project` 通过。
 - `[不阻塞·有意保留]` `test:int` / `test:faults:int` 依赖本地 Redis/MySQL 与当前 Node/Colyseus 运行时；
   环境中触发的既有 schema decorator 兼容错误按约定记录为环境边界，不得误写成新回归。
 

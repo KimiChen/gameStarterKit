@@ -195,8 +195,8 @@ guard 明确要求 unsafe escape hatch。仓库不承诺横向扩展、分片迁
 
 状态：**参考代码 / 研究占位**。
 
-- Excel 转换器能校验 `items.xlsx` 并生成双端 JSON，但当前 `--check` 只验证源表，预期输出未入库，
-  也没有正式消费方；
+- Excel 转换器以同一 canonical serializer 生成双端 JSON；预期输出已经入库，`--check` 会只读逐字节比较
+  两份生成物并分别拒绝缺失或陈旧结果，但仍没有正式运行时消费方；
 - `apps/server/loadtest/bot.ts` 仍使用过期的入房参数，当前严格鉴权下不能视为可用工具；
 - `apps/Unity` 只有说明和空目录占位，没有 Unity version、`Packages/manifest.json`、
   `ProjectSettings/ProjectVersion.txt`、C# 生成或测试闭环。
@@ -295,7 +295,8 @@ FGUI `.bin` 导出、`.meta` uuid 集合和 Cocos 场景序列化都属于这一
 旧待办中不属于核心缺陷的候选方向在此统一保留，但不形成路线图承诺：
 
 - 按玩法实际需要提供可注入的 Audio、Localization、SafeArea 和更多 Input adapter；
-- 在 Excel 样例真正有双端消费方后，再补 deterministic generate、产物 freshness 和引用校验；
+- 在 Excel 样例真正有双端消费方后，再补双端 loader、shared schema/version/hash 与引用校验；当前示例已
+  覆盖 deterministic generate 和双端产物 freshness；
 - 修复 loadtest 的身份准备与入房参数后，再决定是否保留为可用工具；
 - 对 settle、relayer、freeze、GM、托管等额外链路，只在实际项目采用时补完整生命周期和故障测试；
 - Unity 只允许先做限时可行性 spike，不因占位目录推导必须支持；
