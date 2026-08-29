@@ -119,7 +119,11 @@ function exactJsonKeys(value: JsonObject, expected: readonly string[]): boolean 
 }
 
 function evidenceInt(value: unknown, min: number, max = Number.MAX_SAFE_INTEGER): value is number {
-  return typeof value === "number" && Number.isSafeInteger(value) && value >= min && value <= max;
+  return typeof value === "number"
+    && Number.isSafeInteger(value)
+    && !Object.is(value, -0)
+    && value >= min
+    && value <= max;
 }
 
 function evidenceString(value: unknown, min: number, max: number): value is string {
@@ -139,7 +143,7 @@ function isCanonicalJsonValue(
 ): boolean {
   if (--state.remaining < 0 || depth > 16) return false;
   if (value === null || typeof value === "string" || typeof value === "boolean") return true;
-  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value === "number") return Number.isFinite(value) && !Object.is(value, -0);
   if (typeof value !== "object" || state.seen.has(value)) return false;
   const proto = Object.getPrototypeOf(value);
   if (proto !== Object.prototype && proto !== null && proto !== Array.prototype) return false;
@@ -150,8 +154,11 @@ function isCanonicalJsonValue(
       const names = Object.getOwnPropertyNames(value);
       if (names.length !== value.length + 1 || names[names.length - 1] !== "length") return false;
       for (let index = 0; index < value.length; index++) {
+        const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
         if (names[index] !== String(index)
-            || !isCanonicalJsonValue(value[index], depth + 1, state)) return false;
+            || !descriptor?.enumerable
+            || !("value" in descriptor)
+            || !isCanonicalJsonValue(descriptor.value, depth + 1, state)) return false;
       }
       return true;
     }
@@ -176,7 +183,9 @@ function isMatchEvidencePayload(payload: JsonObject): payload is JsonObject & Ma
       || (payload.mode !== MATCH_MODE_CASUAL && payload.mode !== MATCH_MODE_RANKED)
       || !evidenceInt(payload.seed, 0, 0xffff_ffff)
       || !evidenceInt(payload.mapIndex, 0, 65_535)
-      || !isCanonicalJsonValue(payload.loadout)
+      || (payload.mode === MATCH_MODE_CASUAL
+        ? payload.loadout !== null
+        : !isCanonicalJsonValue(payload.loadout))
       || !Array.isArray(payload.injectWaves)
       || payload.injectWaves.length > MAX_EVIDENCE_INJECT_WAVES
       || !Array.isArray(payload.participants)

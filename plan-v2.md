@@ -34,8 +34,8 @@
   已声明值域校验，opaque loadout 也须为 canonical JSON，legacy 保持历史兼容域。同主机 worker 使用进程
   唯一 consumer，崩溃 PEL 由 `XAUTOCLAIM` 接管。quarantine 禁止自动裁剪，
   非空及 key 类型/权限错误均独立告警；`docs/SERVER.md` 登记了修复重投、确认落库后再删除的处置顺序。
-  验收证据：`int/settlement.test.ts` 12/12 覆盖完整 payload 反例、ranked opaque loadout 保真、隔离副本、
-  来源 ACK、普通 trim 不触碰 quarantine 与 quarantine WRONGTYPE 时保留 PEL；
+  验收证据：`int/settlement.test.ts` 12/12 覆盖完整 payload 反例、casual/ranked loadout 值域与 JSON
+  保真、隔离副本、来源 ACK、普通 trim 不触碰 quarantine 与 quarantine WRONGTYPE 时保留 PEL；
   `stream-depth-lifecycle.test.ts` 3/3 覆盖独立告警；
   `npm --workspace @game/server run typecheck`、服务端单测 215/215、全量集成 106/106 与
   `npm run verify:inventory` 通过。
