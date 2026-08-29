@@ -959,3 +959,21 @@ test("inventory verifier rejects documentedIn pointing at a directory instead of
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("inventory verifier rejects an npx-launched entry", () => {
+  const root = createFixture();
+  try {
+    // 用 npx tsx 而非 npx echo：被启动物是真解释器，红绿只可能由 npx 这一个 token
+    // 决定，杜绝后人「给 echo 再加个特判」的误修。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "npx tsx src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

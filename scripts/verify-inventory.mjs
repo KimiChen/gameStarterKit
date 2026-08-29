@@ -704,7 +704,11 @@ function commandBase(command) {
  * 只有 segment 的首个 token 才被当作实际执行的命令。
  *
  * 边界（失败关闭，不猜）：`FOO=1 npm …`、`npx`、子 shell `( … )` 等形态今天仓内不存在，
- * 会被判为「未覆盖」而不是放行，逼调用方显式决策。短路操作符右侧（`false && npm …`）与
+ * 会被判为「未覆盖」而不是放行，逼调用方显式决策。`npx` 刻意不在启动器白名单里：接受它
+ * 就得判 `npx <pkg>` 的 `<pkg>` 是不是解释器，那意味着引入 registry/下载语义，与本仓
+ * 「依赖必须入库并按哈希校验」的路线冲突。
+ * 白名单只判 segment 的**首 token**，不判启动器的参数语义，也不判其后的注释文本——
+ * `npm exec cowsay <entry>`、`node --check <entry>`、`bash -c 'true' # <entry>` 仍会放行。短路操作符右侧（`false && npm …`）与
  * `exit` 之后的死代码不做可达性判定——shell 可达性静态不可判定。
  */
 function executableSegments(script) {
@@ -727,7 +731,7 @@ function commandInvokesEntry(command, entry) {
   return executableSegments(script).some((segment) => {
     if (!mention.test(segment)) return false;
     // 新增启动器必须显式加入这张表（内联而非模块级 const：驱动段先于此处初始化执行）。
-    return segmentLeadsWith(segment, ["node", "npm", "npx", "tsx", "sh", "bash"])
+    return segmentLeadsWith(segment, ["node", "npm", "tsx", "sh", "bash"])
       || segmentLeadsWith(segment, [relativeTarget, `./${relativeTarget}`]);
   });
 }
