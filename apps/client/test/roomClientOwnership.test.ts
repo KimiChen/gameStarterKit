@@ -93,6 +93,8 @@ function makeFakeRoom(
     sessionId: `${name}-session`,
     state,
     reconnection,
+    // 与 SDK 一致：socket 判定挂在 room.connection.isOpen 上，随 connectionOpen 变化。
+    connection: { get isOpen() { return connectionOpen; } },
     onDrop(cb: RoomCallbacks["drop"]) { callbacks.drop = cb; return () => {}; },
     onReconnect(cb: RoomCallbacks["reconnect"]) { callbacks.reconnect = cb; return () => {}; },
     onLeave(cb: RoomCallbacks["leave"]) { callbacks.leave = cb; return () => {}; },
@@ -1122,4 +1124,38 @@ test("RoomClient join 黑洞：超时/AbortSignal 不阻塞 leave，迟到 room 
   pendingCancel.resolve(lateCancel.room);
   await new Promise((resolve) => setTimeout(resolve, 0));
   assert.equal(lateCancel.leaveCalls, 1);
+});
+
+test("发送屏障：socket 已关而 onDrop 未到达时 send 必须返回 false", async () => {
+  const join = deferred<unknown>();
+  const fake = makeFakeRoom("closed-socket-send");
+  const client = makeClient(join);
+  const owner = joinBall(client);
+  join.resolve(fake.room);
+  const ballRoom = await owner.ready;
+
+  // 正例先钉住极性：socket 开着时确实跨 wire 且返回 true。
+  assert.equal(client.ping(), true, "socket 开启时 ping() 必须返回 true");
+  assert.equal(fake.sent.length, 1, "socket 开启时必须真的跨 wire");
+
+  // 竞态窗口：底层 socket 已关，但 onDrop 尚未回调，本地 dropping 闸还没合上。
+  fake.setConnectionOpen(false);
+  assert.equal(client.ping(), false, "socket 已关时 ping() 不得对被丢弃的包报 true");
+  assert.equal(ballRoom.send(C2S.Move, { dirX: 1, dirY: 0 }), false,
+    "socket 已关时 typed send 同样必须返回 false");
+  assert.equal(fake.sent.length, 1, "窗口内不得有新包跨 wire");
+  assert.equal(fake.room.reconnection.enqueuedMessages.length, 0,
+    "窗口内的包也不得留在 SDK 队列里");
+  await owner.leave();
+});
+
+test("SDK 升级绊线：读不到 socket 状态时 join 必须失败而不是静默哑火", async () => {
+  const join = deferred<unknown>();
+  const fake = makeFakeRoom("missing-connection");
+  delete (fake.room as { connection?: unknown }).connection;
+  const client = makeClient(join);
+  const owner = joinBall(client);
+  join.resolve(fake.room);
+  await assert.rejects(owner.ready, /无法读取 SDK socket 状态/);
+  await owner.leave();
 });

@@ -353,6 +353,29 @@ function safeDiagnostic(value: unknown): string {
 }
 
 /**
+ * SDK 升级绊线：socket 判定挂在 SDK 未声明的内部字段上。一旦它不再是 boolean，
+ * 宁可让 join 大声失败，也不能让全部上行发送静默变成 no-op 而测试还全绿。
+ */
+function sdkSocketProbeReady(room: Colyseus.Room<unknown>): boolean {
+    try {
+        const connection = (room as unknown as { connection?: { isOpen?: unknown } }).connection;
+        return !!connection && typeof connection.isOpen === "boolean";
+    } catch {
+        return false;
+    }
+}
+
+/** 失败关闭的 socket 判定：读不到或不是 true 一律当成已关闭。 */
+function sdkSocketOpen(room: Colyseus.Room<unknown>): boolean {
+    try {
+        const connection = (room as unknown as { connection?: { isOpen?: unknown } }).connection;
+        return !!connection && connection.isOpen === true;
+    } catch {
+        return false;
+    }
+}
+
+/**
  * The 0.17 SDK buffers `room.send()` while its socket is closed and flushes
  * that queue immediately after reconnect JOIN_ROOM, before the next full
  * ROOM_STATE. Our mode/state barrier owns replay, so the SDK queue must stay
@@ -805,6 +828,9 @@ export class RoomClient {
             if (!disableSdkOutboundReplay(room)) {
                 throw new Error("[RoomClient] 无法禁用 SDK 离线消息队列");
             }
+            if (!sdkSocketProbeReady(room)) {
+                throw new Error("[RoomClient] 无法读取 SDK socket 状态");
+            }
             typedRoom = this.createTypedRoom(slot, room);
             slot.typedRoom = typedRoom;
             let initialStateSettled = false;
@@ -1133,6 +1159,13 @@ export class RoomClient {
             wirePayload = validateC2SPayload(type, payload);
         } catch (error) {
             warnInvalidWire(`C2S ${String(type)}`, error);
+            return false;
+        }
+        // socket 已关时 SDK 的 send() 静默入队（我们又把队列上限钉成 0，等于直接丢弃）
+        // 且**不抛**，所以下面的 catch 接不到这条路径。返回值是契约，不能对一个已证明
+        // 被丢弃的包报 true——紧贴 send 判定，把 TOCTOU 压进同一个同步块。
+        if (!sdkSocketOpen(room)) {
+            warnSendFailure(String(type));
             return false;
         }
         try {

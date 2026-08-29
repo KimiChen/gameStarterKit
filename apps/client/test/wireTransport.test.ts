@@ -119,6 +119,7 @@ function makeGameRoom(state: unknown, onSend?: (type: string, data: unknown) => 
     sessionId: "game-session",
     state,
     reconnection: { enabled: true },
+    connection: { isOpen: true },
     send(type: string, data: unknown) {
       if (onSend) { onSend(type, data); return; }
       sent.push({ type, data });
