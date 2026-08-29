@@ -59,7 +59,7 @@
 > 服务端 207/207、客户端 222/222、FGUI 50/50、集成 103/103；故障矩阵 unit 122/122、integration 147/147，四组共 13 个
 > fault point 均实际执行并 fail-closed。`apps/website/` 再次确认物理目录存在、被 `.gitignore` 忽略且未进入索引。
 > 各轮结论一致的部分不重复记录；新增差异统一写进各条目的「复核备注」。
-> 第十轮（2026-08-29，复核时 HEAD `1c1a728`，当前树 HEAD 为 `0ea018c`）对与第九轮同范围的 12 个提交做独立逐 commit 复核（约 25 条裁决）：
+> 第十轮（2026-08-29，复核时 HEAD `1c1a728`）对与第九轮同范围的 12 个提交做独立逐 commit 复核（约 25 条裁决）：
 > 全部声称成立——`mainGameplay.test.ts` 动态加载真实 `Main` 并断言三类失效终态（上一轮「计数/身份层」
 > 的限定已解除）、`df5d8d6` 的 ready marker 低频权威复核机制与「repair worker PUT 后补 marker」的直接
 > 断言、SIGTERM 正常停服的子进程执行证据、`efbd628` 恢复 `noUnusedLocals` 且双 typecheck 实测通过、
