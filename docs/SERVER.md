@@ -275,7 +275,7 @@ endpoint 时仍应先补齐 shared request/response/path，再在 `http/index.ts
 
 显式 `relayer` 当前在持有 `FOR UPDATE` 行锁的 MySQL 事务内等待 Redis、`ensureLive` 和部分清理查询，
 与“事务内不等待外部 I/O”的目标约束不一致。该后台样例及其成熟度见 EXTRAFEATURES；是否修复及其
-优先级由实际采用方决定，不进入核心 `plan.md`。
+优先级由实际采用方决定；当前收口状态见核心 `plan-v2.md`。
 
 relayer 重试超过 `OUTBOX_MAX_ATTEMPTS` 后会把 intent 行标记为 dead（status=2）。dead 行既不会被保留期
 清理删除，也会让对应 `applied` 标记永远跳过裁剪。当前仓库只提供 `core/economy/outbox.ts` 的
@@ -330,7 +330,7 @@ structured-clone、无 IO、无副作用的纯 CPU 工作。周期任务、批�
 ## 12. 开发约束索引
 
 以下 `09·XX` 编号为源码中的历史正确性标签，表达目标规则，不等于当前实现已经全部满足。代码与测试是
-现状真源，已知偏差在本节末尾及 `plan.md` 跟踪。
+现状真源，已知偏差在本节末尾及 `plan-v2.md` 跟踪。
 
 ### A — 数据权威
 

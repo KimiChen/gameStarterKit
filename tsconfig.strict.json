@@ -11,7 +11,7 @@
   //   - `noPropertyAccessFromIndexSignature`：232 处，`process.env.X` 与 mysql RowDataPacket
   //     字段访问，纯风格噪音。
   // ⚠ `exactOptionalPropertyTypes` 未进本文件：shared 侧 0 错，但 server 有 2 处与 zod 的结构
-  //   冲突（`ZodType` 输出类型不变），要改 shared 协议接口才能开——契约收敛计划见 plan.md P1-04。
+  //   冲突（`ZodType` 输出类型不变），要改 shared 协议接口才能开——契约收敛状态见 plan-v2.md P1-04。
   //   shared 单独开（它是双端单源契约，最该锁死），见 apps/shared/tsconfig.json。
   "compilerOptions": {
     "noUnusedLocals": true,

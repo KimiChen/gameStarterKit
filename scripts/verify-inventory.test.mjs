@@ -135,7 +135,7 @@ test("inventory verifier rejects a standalone relayer classified as core", () =>
     const inventory = readInventory(root);
     const relayer = inventory.capabilities.find((capability) => capability.id === "outbox-relayer");
     relayer.category = "core";
-    relayer.docs = ["plan.md", "docs/SERVER.md"];
+    relayer.docs = ["plan-v2.md", "docs/SERVER.md"];
     writeInventory(root, inventory);
     assertRejected(root, /能力 outbox-relayer 的独立 launch 只能登记为 extra/);
   } finally {
@@ -167,6 +167,54 @@ test("inventory verifier rejects a vanished verification command", () => {
       .verification[0].script = "missing:inventory-command";
     writeInventory(root, inventory);
     assertRejected(root, /能力 shared-contract 根命令不存在：missing:inventory-command/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects the historical plan as route of truth", () => {
+  const root = createFixture();
+  try {
+    const inventory = readInventory(root);
+    inventory.routeOfTruth.corePlan = "plan.md";
+    writeInventory(root, inventory);
+    assertRejected(root, /routeOfTruth\.corePlan 必须指向 plan-v2\.md/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects removal of the current plan truth declaration", () => {
+  const root = createFixture();
+  try {
+    const plan = join(root, "plan-v2.md");
+    const text = readFileSync(plan, "utf8").replace("的唯一真相", "的执行清单");
+    writeFileSync(plan, text);
+    assertRejected(root, /plan-v2\.md 未声明当前计划唯一真相/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects removal of the current plan from README", () => {
+  const root = createFixture();
+  try {
+    const readme = join(root, "README.md");
+    const text = readFileSync(readme, "utf8").replace("- [当前开发收口计划](plan-v2.md)\n", "");
+    writeFileSync(readme, text);
+    assertRejected(root, /README\.md 未登记 plan-v2\.md 当前计划入口/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier keeps the historical plan registered as a checked reference", () => {
+  const root = createFixture();
+  try {
+    const inventory = readInventory(root);
+    inventory.referenceDocs = [];
+    writeInventory(root, inventory);
+    assertRejected(root, /referenceDocs 必须登记历史 plan\.md/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -223,6 +271,23 @@ test("inventory verifier rejects synchronized removal of a required assistant in
       writeFileSync(file, text);
     }
     assertRejected(root, /AGENTS\.md\/CLAUDE\.md 缺少共同关键指令：inventory 反例测试/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects synchronized removal of the current plan entry", () => {
+  const root = createFixture();
+  try {
+    for (const filename of ["AGENTS.md", "CLAUDE.md"]) {
+      const file = join(root, filename);
+      const text = readFileSync(file, "utf8").replace(
+        "> - [plan-v2.md](plan-v2.md)：当前开放问题、实施状态与验收证据的唯一真相\n",
+        "",
+      );
+      writeFileSync(file, text);
+    }
+    assertRejected(root, /AGENTS\.md\/CLAUDE\.md 缺少共同关键指令：当前计划唯一真相/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

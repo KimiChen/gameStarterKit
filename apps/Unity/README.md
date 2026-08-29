@@ -17,4 +17,4 @@
 
 如果实际项目另行立项，应先用 `logic/rooms/ballMove`、shared 契约与 bitECS 的 TypedArray/SoA 用法做
 最小可行性实验，再决定重写 adapter 还是引入转换工具；这项实验不构成 gameStarterKit 的路线承诺或
-[核心 plan](../../plan.md) 的验收项。
+[核心收口计划](../../plan-v2.md) 的验收项。

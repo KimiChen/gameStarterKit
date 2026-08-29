@@ -334,15 +334,34 @@ for (const entry of allEntries) if (!registeredDefaults.has(entry) && entry.star
 
 const corePlan = inventory?.routeOfTruth?.corePlan;
 const extra = inventory?.routeOfTruth?.extraCapabilities;
-if (!exists(corePlan) || !exists(extra)) fail("routeOfTruth 必须指向存在的 plan.md 与 EXTRAFEATURES.md");
+if (corePlan !== "plan-v2.md") fail("routeOfTruth.corePlan 必须指向 plan-v2.md");
+if (!exists(corePlan) || !exists(extra)) fail("routeOfTruth 必须指向存在的核心计划与 EXTRAFEATURES.md");
 else {
   const planText = fs.readFileSync(repoPath(corePlan), "utf8");
   const extraText = fs.readFileSync(repoPath(extra), "utf8");
+  const readmeText = fs.readFileSync(repoPath("README.md"), "utf8");
   checkMarkdownLinks(corePlan);
   checkMarkdownLinks(extra);
-  if (!/核心改进优先级/.test(planText)) fail("plan.md 未声明核心改进优先级真相");
+  if (!/唯一真相/.test(planText)) fail("plan-v2.md 未声明当前计划唯一真相");
+  if (!readmeText.includes("[当前开发收口计划](plan-v2.md)")) fail("README.md 未登记 plan-v2.md 当前计划入口");
   if (!/额外功能/.test(extraText)) fail("docs/EXTRAFEATURES.md 未声明额外能力真相");
   if (/^##\s+路线图/m.test(extraText)) fail("EXTRAFEATURES.md 不得维护第二套路线图");
+}
+
+if (!Array.isArray(inventory.referenceDocs) || !inventory.referenceDocs.includes("plan.md")) {
+  fail("referenceDocs 必须登记历史 plan.md");
+} else {
+  const seenReferenceDocs = new Set();
+  for (const doc of inventory.referenceDocs) {
+    if (typeof doc !== "string" || doc.trim() === "") {
+      fail("referenceDocs 只能包含非空路径");
+      continue;
+    }
+    if (seenReferenceDocs.has(doc)) fail(`referenceDocs 重复：${doc}`);
+    seenReferenceDocs.add(doc);
+    if (!exists(doc)) fail(`referenceDocs 文档不存在：${doc}`);
+    else checkMarkdownLinks(doc);
+  }
 }
 
 // Keep the two assistant entry documents semantically identical while allowing
@@ -364,6 +383,7 @@ const assistantRequirements = [
   ["外部身份 HTTP 边界", "外部身份服务只走 HTTP 契约边界"],
   ["inventory 正向校验", "npm run verify:inventory"],
   ["inventory 反例测试", "npm run test:inventory"],
+  ["当前计划唯一真相", "[plan-v2.md](plan-v2.md)"],
 ];
 for (const [label, requirement] of assistantRequirements) {
   if (!agents.includes(requirement) || !claude.includes(requirement)) {
