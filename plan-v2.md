@@ -173,8 +173,13 @@
 ### P1-07 大厅重连
 
 - `[不阻塞·有意保留]` Game transport 目前只做 desired input 对账，不等同于业务恢复。
-- `[不阻塞·待补齐]` 大厅连接最终死亡后会整段重新登录，以重建 session 和角色快照；当前没有独立的
-  session/角色快照对账层。
+- `[已完成]` 大厅连接最终死亡后先复用当前内存 token，以显式 ownership 重进所选区 Lobby，再拉
+  `user.getInfo`；shared validator 校验后的角色快照仅在完整 session identity（generation/userId/token）
+  仍匹配时原子提交，失败才进入既有 `returnToLogin`。同世代重复事件合流，页面取消或旧世代迟到只释放
+  自己的 ownership，不能覆盖新快照或关闭新登录连接；初次登录也在进入 Home 前提交同一权威快照。
+  验收证据：`sessionReconcile.test.ts` 与页面生命周期负例覆盖成功、失败、取消、重复事件、uid 不匹配及
+  新旧世代竞态；Cocos Creator 3.8.8 真实导入生成新增脚本 `.meta`；`npm run test:client` 229/229、
+  `npm run test:fgui` 50/50、两套客户端 typecheck 与 `npm run verify:sync` 通过。
 - `[不阻塞·待补齐]` Lobby 房没有注册 `onReconnect`，`slot.dropping` 当前也没有对应消费方。
 
 来源：`plan.md:615-618`

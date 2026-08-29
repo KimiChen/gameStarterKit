@@ -484,6 +484,7 @@ test("Login：join/GetInfo 任一失败都清会话并释放大厅，不进入�
           if (failureStage === "getInfo") throw failure;
           return { user };
         },
+        commitProfile: () => { events.push("commitProfile"); return true; },
         clearSession: () => { events.push("clearSession"); clearSession(); },
         leave: () => { events.push("leave"); },
       }),
@@ -511,6 +512,7 @@ test("Login：GetInfo 返回空档案也拒绝导航；成功路径保留完整�
       setSession,
       join: async () => {},
       getInfo: async () => ({ user: null }),
+      commitProfile: () => true,
       clearSession: () => { clears++; clearSession(); },
       leave: () => { leaves++; },
     }),
@@ -529,6 +531,7 @@ test("Login：GetInfo 返回空档案也拒绝导航；成功路径保留完整�
     setSession,
     join: async () => {},
     getInfo: async () => ({ user: successUser }),
+    commitProfile: () => true,
     clearSession: () => { clears++; clearSession(); },
     leave: () => { leaves++; },
   });
@@ -536,6 +539,32 @@ test("Login：GetInfo 返回空档案也拒绝导航；成功路径保留完整�
   assert.equal(clears, 0);
   assert.equal(leaves, 0);
   assert.equal(isLoggedIn(), true, "成功拿到具体角色后会话保持，才允许导航");
+  clearSession();
+});
+
+test("Login：角色 uid 不匹配或快照提交过期时回滚完整登录事务", async () => {
+  const response = { userId: "u_profile_owner", accessToken: "u_profile_owner.token", isNewAccount: false };
+  for (const failure of ["uid-mismatch", "stale-commit"] as const) {
+    const events: string[] = [];
+    clearSession();
+    await assert.rejects(
+      runAuthenticatedLoginFlow(response, {
+        setSession: (next) => { events.push("setSession"); setSession(next); },
+        join: async () => { events.push("join"); },
+        getInfo: async () => ({
+          user: { uid: failure === "uid-mismatch" ? "u_other" : response.userId },
+        }),
+        commitProfile: () => { events.push("commitProfile"); return false; },
+        clearSession: () => { events.push("clearSession"); clearSession(); },
+        leave: () => { events.push("leave"); },
+      }),
+      failure === "uid-mismatch" ? /身份与登录会话不一致/ : /登录事务已失效/,
+    );
+    assert.deepEqual(events, failure === "uid-mismatch"
+      ? ["setSession", "join", "clearSession", "leave"]
+      : ["setSession", "join", "commitProfile", "clearSession", "leave"]);
+    assert.equal(isLoggedIn(), false);
+  }
   clearSession();
 });
 
@@ -547,6 +576,7 @@ test("Login：旧页面世代失败不清理或关闭新会话的连接", async 
       setSession,
       join: async () => { throw new Error("stale join"); },
       getInfo: async () => ({ user: null }),
+      commitProfile: () => false,
       clearSession: () => { events.push("clear"); clearSession(); },
       leave: () => { events.push("leave"); },
       shouldRollback: () => false,

@@ -21,10 +21,12 @@ export type LoginContinuation = (response: WebPlatformLoginResponse) => Promise<
  * here makes the failure/rollback contract testable without importing Cocos
  * or FairyGUI into the logic layer.
  */
-export interface AuthenticatedLoginFlowDeps<TUser> {
+export interface AuthenticatedLoginFlowDeps<TUser extends { readonly uid: string }> {
     setSession(response: WebPlatformLoginResponse): void;
     join(accessToken: string, signal?: AbortSignal): Promise<void>;
     getInfo(): Promise<{ user: TUser | null | undefined }>;
+    /** Commit only when this flow still owns the captured session generation. */
+    commitProfile(user: TUser): boolean;
     clearSession(): void;
     leave(): Promise<void> | void;
     /** Return false when a newer page/session owns the state; skip rollback. */
@@ -60,7 +62,7 @@ export async function joinSelectedServerLobby(
  * rolls back both the bearer/session state and the physical lobby connection,
  * so callers can never navigate with a half-established session.
  */
-export async function runAuthenticatedLoginFlow<TUser>(
+export async function runAuthenticatedLoginFlow<TUser extends { readonly uid: string }>(
     response: WebPlatformLoginResponse,
     deps: AuthenticatedLoginFlowDeps<TUser>,
     signal?: AbortSignal,
@@ -71,6 +73,12 @@ export async function runAuthenticatedLoginFlow<TUser>(
         const info = await deps.getInfo();
         if (!info || info.user === null || info.user === undefined) {
             throw new Error("登录成功但角色档案为空");
+        }
+        if (info.user.uid !== response.userId) {
+            throw new Error("角色档案身份与登录会话不一致");
+        }
+        if (!deps.commitProfile(info.user)) {
+            throw new Error("登录事务已失效");
         }
         return info.user;
     } catch (error) {

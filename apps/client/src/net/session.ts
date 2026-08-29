@@ -6,7 +6,8 @@
  *    → notifyAuthInvalid → UI 清态回登录页；
  *  - **强制下线**：服务端主动踢（封禁/顶号/强制下线）——先推 `auth.forceLogout{reason}`，
  *    连接已死时由 `onLeave(code)` 按 KICK_CLOSE_CODE 兜底判因（M12d §2.3）；
- *  - **掉线**：大厅房 SDK 自动重连；重连最终失败（onLeave）→ notifyConnLost → UI 提示重登；
+ *  - **掉线**：大厅房 SDK 自动重连；最终失败（onLeave）后先复用当前 token 重进 Lobby 并拉 GetInfo，
+ *    对账失败才清会话并提示重登；
  *  - **换号/顶号**：logout() 清本地会话（token/userId）——房间离开由编排层（view/pages）负责。
  *    ⚠ **单端语义**（09·G7c）：换端登录即顶号——服务端见组 sess 的 tokenHash 变化就踢旧连接
  *    （reason=replaced）；⛔ 不是"互不影响"。
@@ -14,7 +15,19 @@
  * ⛔ 本模块不 import net 客户端类（WebSocketClient/RoomClient 反向调用本模块，防循环依赖）。
  */
 import { setToken, getToken } from "../core/http";
-import type { WebPlatformLoginResponse } from "../shared/index";
+import {
+    UserRpc,
+    validateLobbyRpcResponse,
+    type IUserView,
+    type WebPlatformLoginResponse,
+} from "../shared/index";
+
+/** One immutable snapshot of the in-memory session identity used across async reconciliation. */
+export interface SessionReconcileIdentity {
+    readonly generation: number;
+    readonly userId: string;
+    readonly accessToken: string;
+}
 
 /**
  * 鉴权失效原因。两类来源：
@@ -39,6 +52,7 @@ export type ReturnToLoginHandler = (reason: ReturnToLoginReason) => Promise<void
 
 let userId = "";
 let sessionGeneration = 0;
+let sessionProfile: { readonly generation: number; readonly user: IUserView } | null = null;
 const authInvalidHandlers = new Set<(reason: AuthInvalidReason) => void>();
 const connLostHandlers = new Set<() => void>();
 // 战斗房（GameRoom）连接最终死亡。⚠ 与 connLost（大厅房）**刻意分开**：两者的来源和
@@ -72,11 +86,32 @@ function observeSubscriber(scope: string, invoke: () => unknown): void {
 /** 当前页面组合根提供的唯一回登录实现。模块级是刻意的：session 不反向依赖 View。 */
 let returnToLoginHandler: ReturnToLoginHandler | null = null;
 
+/** Lobby 最终死亡后的可选恢复口；页面组合根注入，session 不反向依赖 transport/View。 */
+export type SessionReconcileHandler = (identity: SessionReconcileIdentity) => boolean | Promise<boolean>;
+let sessionReconcileHandler: SessionReconcileHandler | null = null;
+let sessionReconcileFlight: {
+    readonly identity: SessionReconcileIdentity;
+    readonly promise: Promise<boolean>;
+} | null = null;
+
+function sameSessionIdentity(a: SessionReconcileIdentity, b: SessionReconcileIdentity): boolean {
+    return a.generation === b.generation && a.userId === b.userId && a.accessToken === b.accessToken;
+}
+
+function cloneUserView(user: IUserView): IUserView {
+    return { ...user };
+}
+
+function clearSessionProfile(): void {
+    sessionProfile = null;
+}
+
 /** 登录成功：记会话（token 进 core/http，后续 HTTP Bearer / 房间 join 都取自它）。 */
 export function setSession(r: WebPlatformLoginResponse): void {
     userId = r.userId;
     setToken(r.accessToken);
     sessionGeneration++;
+    clearSessionProfile();
     sessionTransition.reset();
 }
 
@@ -93,11 +128,47 @@ export function clearSession(): void {
     userId = "";
     setToken("");
     sessionGeneration++;
+    clearSessionProfile();
 }
 
 /** 当前会话世代；异步登录/导航在每个 await 后用它拒绝迟到结果。 */
 export function getSessionGeneration(): number {
     return sessionGeneration;
+}
+
+/** 当前内存会话身份。accessToken 仍只存于 core/http，不新增持久化或第二份凭证状态。 */
+export function getSessionIdentity(): SessionReconcileIdentity | null {
+    const accessToken = getToken();
+    if (userId === "" || accessToken === "") return null;
+    return { generation: sessionGeneration, userId, accessToken };
+}
+
+/** 精确判断异步结果是否仍属于捕获时的登录世代。 */
+export function isSessionIdentityCurrent(identity: SessionReconcileIdentity): boolean {
+    const current = getSessionIdentity();
+    return current !== null && sameSessionIdentity(current, identity);
+}
+
+/**
+ * 原子提交权威自档：先经 shared GetInfo response validator 复制/校验，再比较完整 session identity。
+ * `false` 表示结果已过期；身份不一致属于协议错误，直接拒绝而不是污染当前快照。
+ */
+export function commitSessionProfile(identity: SessionReconcileIdentity, user: IUserView): boolean {
+    if (!isSessionIdentityCurrent(identity)) return false;
+    const owned = validateLobbyRpcResponse(UserRpc.GetInfo, { user }).user;
+    if (owned.uid !== identity.userId) {
+        throw new Error("[session] 角色档案身份与登录会话不一致");
+    }
+    if (!isSessionIdentityCurrent(identity)) return false;
+    sessionProfile = { generation: identity.generation, user: cloneUserView(owned) };
+    return true;
+}
+
+/** 当前世代的角色快照；返回副本，View/Logic 无法回写模块内权威值。 */
+export function getSessionProfile(): IUserView | null {
+    const profile = sessionProfile;
+    if (!profile || profile.generation !== sessionGeneration || !isLoggedIn()) return null;
+    return cloneUserView(profile.user);
 }
 
 /**
@@ -169,6 +240,14 @@ export function registerReturnToLogin(handler: ReturnToLoginHandler): () => void
     };
 }
 
+/** 注册当前页面组合根唯一的 Lobby 最终断线对账器。 */
+export function registerSessionReconciler(handler: SessionReconcileHandler): () => void {
+    sessionReconcileHandler = handler;
+    return () => {
+        if (sessionReconcileHandler === handler) sessionReconcileHandler = null;
+    };
+}
+
 /**
  * 统一、可等待、幂等的回登录队列。第一次调用会立即清本地会话，保证之后的 Portal
  * 登录请求不会携带旧 Bearer；并发/迟到事件共享同一个 Promise。
@@ -204,7 +283,6 @@ export function notifyAuthInvalid(reason: AuthInvalidReason): void {
     }
 }
 
-/** 网络层上报大厅连接最终死亡（非鉴权原因）。注册导航出口后会统一回登录并清理 bearer。 */
 /** 订阅战斗房连接最终死亡（Main 回滚战斗态、view 层做导航/提示），返回解绑函数。 */
 export function onBattleLost(cb: () => void): () => void {
     battleLostHandlers.add(cb);
@@ -225,15 +303,51 @@ export function notifyBattleLost(): void {
     }
 }
 
+/** 网络层上报大厅连接最终死亡（非鉴权原因）。先尝试 session/profile 对账，失败才回登录。 */
 export function notifyConnLost(): void {
     const hadSession = isLoggedIn();
     const eventGeneration = sessionGeneration;
     for (const cb of connLostHandlers) {
         observeSubscriber("connLost", cb);
     }
-    if (hadSession && sessionGeneration === eventGeneration) {
+    if (!hadSession || sessionGeneration !== eventGeneration) return;
+    const identity = getSessionIdentity();
+    if (!identity) return;
+    dispatchSessionReconcile(identity);
+}
+
+/**
+ * 同一 session generation 的重复最终断线只启动一次对账。没有恢复器或恢复失败时，
+ * 才进入既有 returnToLogin；旧 generation 的迟到结果只结束自身，不能清新会话。
+ */
+function dispatchSessionReconcile(identity: SessionReconcileIdentity): void {
+    const handler = sessionReconcileHandler;
+    if (!handler) {
         dispatchReturnToLogin({ kind: "CONN_LOST" });
+        return;
     }
+    const current = sessionReconcileFlight;
+    if (current && sameSessionIdentity(current.identity, identity)) return;
+
+    const promise = Promise.resolve().then(() => handler(identity)).then((recovered) => recovered === true);
+    const flight = { identity, promise };
+    sessionReconcileFlight = flight;
+    promise.then(
+        (recovered) => finishSessionReconcile(flight, recovered),
+        () => {
+            console.error("[session] Lobby 会话/角色快照对账失败");
+            finishSessionReconcile(flight, false);
+        },
+    );
+}
+
+function finishSessionReconcile(
+    flight: { readonly identity: SessionReconcileIdentity; readonly promise: Promise<boolean> },
+    recovered: boolean,
+): void {
+    if (sessionReconcileFlight === flight) sessionReconcileFlight = null;
+    if (recovered || !isSessionIdentityCurrent(flight.identity)) return;
+    dispatchReturnToLogin({ kind: "CONN_LOST" });
 }
 
 /** 事件 API 保持同步；已注册的异步 transition 在后台运行且 rejection 已被观察。 */

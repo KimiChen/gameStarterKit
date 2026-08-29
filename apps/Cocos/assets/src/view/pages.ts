@@ -15,6 +15,7 @@ import type { AreaListView } from "./AreaListView";
 import type { LoginNoticeView } from "./LoginNoticeView";
 import type { HomeView } from "./HomeView";
 import type { ConfirmView } from "./ConfirmView";
+import { reconcileSessionProfile } from "../logic/page/SessionReconcileLogic";
 import {
   joinSelectedServerLobby,
   LoginLogic,
@@ -29,11 +30,16 @@ import { devLogin } from "../net/http/account";
 import { WebSocketClient } from "../net/WebSocketClient";
 import {
   clearSession,
+  commitSessionProfile,
+  getSessionIdentity,
   getSessionGeneration,
+  isSessionIdentityCurrent,
   registerReturnToLogin,
+  registerSessionReconciler,
   returnToLogin,
   setSession,
   type ReturnToLoginReason,
+  type SessionReconcileIdentity,
 } from "../net/session";
 import {
   ForceLogoutMessage,
@@ -88,6 +94,7 @@ type EnterBattleHandler = () => void | Promise<void>;
  */
 interface PageSessionOwner {
   readonly id: symbol;
+  readonly controller: AbortController;
   generation: number;
   disposed: boolean;
 }
@@ -129,6 +136,45 @@ let nextLoginFlightId = 0;
 let nextTransitionId = 0;
 let openLoginInFlight: LoginFlight | null = null;
 let latestOnEnterBattle: EnterBattleHandler | null = null;
+
+function isPageOwnerActive(owner: PageSessionOwner, generation = owner.generation): boolean {
+  return activePageOwner === owner && !owner.disposed
+    && pageLifecycleGeneration === generation && !owner.controller.signal.aborted;
+}
+
+/** Lobby 物理连接最终死亡后复用当前 token 重进并刷新权威自档；失败由 session 回退到登录页。 */
+async function reconcilePageSession(
+  owner: PageSessionOwner,
+  wiredPageGeneration: number,
+  identity: SessionReconcileIdentity,
+): Promise<boolean> {
+  if (!isSessionIdentityCurrent(identity)) return true;
+  if (!isPageOwnerActive(owner, wiredPageGeneration)) return false;
+  const server = getCurrentServer();
+  if (!server) return false;
+
+  const result = await reconcileSessionProfile<IUserView>(identity, {
+    connect: (captured, control) => {
+      WebSocketClient.inst.init(server.gameWsUrl);
+      return WebSocketClient.inst.joinOwned(captured.accessToken, { sId: server.serverId }, control);
+    },
+    getInfo: () => WebSocketClient.inst.rpc(UserRpc.GetInfo, {}),
+    isCurrent: (captured) => isPageOwnerActive(owner, wiredPageGeneration)
+      && isSessionIdentityCurrent(captured),
+    commitProfile: commitSessionProfile,
+  }, owner.controller.signal);
+  if (!isSessionIdentityCurrent(identity)) return true;
+  if (result.status === "stale" || !isPageOwnerActive(owner, wiredPageGeneration)) return false;
+
+  const onEnterBattle = latestOnEnterBattle;
+  if (!onEnterBattle) return false;
+  const home = await openHome(() => onEnterBattle(), identity.userId, result.user);
+  if (!isPageOwnerActive(owner, wiredPageGeneration) || !isSessionIdentityCurrent(identity)) {
+    home.close();
+    return !isSessionIdentityCurrent(identity);
+  }
+  return true;
+}
 
 /**
  * 在旧登录事务结束后再开新事务。关键约束是：绝不 await `observedFlight.promise` 本身，
@@ -206,7 +252,9 @@ function wireSessionEvents(owner: PageSessionOwner): void {
   sessionWired = true;
   wiredSessionOwner = owner;
   const wiredPageGeneration = pageLifecycleGeneration;
-  unregisterSessionEvents = registerReturnToLogin(async (reason: ReturnToLoginReason) => {
+  const unregisterReconciler = registerSessionReconciler((identity) =>
+    reconcilePageSession(owner, wiredPageGeneration, identity));
+  const unregisterReturn = registerReturnToLogin(async (reason: ReturnToLoginReason) => {
     if (activePageOwner !== owner || owner.disposed || pageLifecycleGeneration !== wiredPageGeneration) return;
     // 捕获并标记触发事件时的具体 flight；它可能仍在 fetch/ViewMgr.open 中，不能被处理器
     // 直接 await，否则 openLogin 与回登录 transition 会互相等待。
@@ -251,6 +299,10 @@ function wireSessionEvents(owner: PageSessionOwner): void {
       owner,
     );
   });
+  unregisterSessionEvents = () => {
+    unregisterReconciler();
+    unregisterReturn();
+  };
 }
 
 /**
@@ -265,7 +317,10 @@ function wireSessionEvents(owner: PageSessionOwner): void {
 export function disposePageSessionEvents(owner?: PageSessionOwner): void {
   if (owner && activePageOwner !== owner) return;
   const disposedOwner = activePageOwner;
-  if (disposedOwner) disposedOwner.disposed = true;
+  if (disposedOwner) {
+    disposedOwner.disposed = true;
+    disposedOwner.controller.abort();
+  }
   activePageOwner = null;
   pageLifecycleGeneration++;
   const flight = openLoginInFlight;
@@ -300,6 +355,7 @@ export function createPageSessionScope(): PageSessionScope {
   disposePageSessionEvents();
   const owner: PageSessionOwner = {
     id: Symbol("page-session"),
+    controller: new AbortController(),
     generation: pageLifecycleGeneration,
     disposed: false,
   };
@@ -335,6 +391,7 @@ function ensurePageOwner(): PageSessionOwner {
   // without a Cocos Main scope. A later Main scope will supersede this owner.
   const owner: PageSessionOwner = {
     id: Symbol("page-session-implicit"),
+    controller: new AbortController(),
     generation: ++pageLifecycleGeneration,
     disposed: false,
   };
@@ -509,6 +566,11 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
                   throw new Error("登录事务已失效");
                 }
                 return info;
+              },
+              commitProfile: (next) => {
+                const identity = getSessionIdentity();
+                return identity !== null && identity.generation === flowSessionGen
+                  && commitSessionProfile(identity, next);
               },
               clearSession,
               leave: () => WebSocketClient.inst.leave(),

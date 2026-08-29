@@ -1234,6 +1234,7 @@ async function createPageFlowHarness(runtime: ViewRuntime, options: PageFlowHarn
   const originalSocket = {
     init: socket.init,
     join: socket.join,
+    joinOwned: socket.joinOwned,
     rpc: socket.rpc,
     leave: socket.leave,
   };
@@ -1288,12 +1289,19 @@ async function createPageFlowHarness(runtime: ViewRuntime, options: PageFlowHarn
   const currentHandles = new Map<string, any>();
   let homeAttempts = 0;
   let joinCalls = 0;
+  let reconcileJoinCalls = 0;
   let rpcCalls = 0;
   let leaveCalls = 0;
   let rootDisposals = 0;
+  const homeSetups: string[] = [];
 
   socket.init = () => {};
   socket.join = async () => { joinCalls++; };
+  socket.joinOwned = (_token: string, _options: unknown, control: { timeoutMs?: number; signal?: AbortSignal }) => {
+    reconcileJoinCalls++;
+    assert.equal(control.timeoutMs, 15_000, "页面 reconciliation 必须给 Lobby join 显式超时");
+    return { ready: Promise.resolve(), leave: async () => {} };
+  };
   socket.rpc = async () => {
     rpcCalls++;
     return {
@@ -1301,14 +1309,14 @@ async function createPageFlowHarness(runtime: ViewRuntime, options: PageFlowHarn
         uid: `page-flow-user-${loginResponses}`,
         star: 0,
         maxRound: 0,
-        wins: 0,
+        wins: rpcCalls,
         losses: 0,
         stamina: 100,
         lastStaminaRecoverAt: 0,
         musicOn: true,
         sfxOn: true,
         guildId: 0,
-        ver: 1,
+        ver: rpcCalls,
       },
     };
   };
@@ -1337,8 +1345,9 @@ async function createPageFlowHarness(runtime: ViewRuntime, options: PageFlowHarn
       const failSetup = homeAttempts === 1 && options.homeFailure === "setup";
       const view: any = {
         onEnterBattle: null,
-        setup: () => {
+        setup: (summary: string) => {
           if (failSetup) throw new Error("Home setup failed");
+          homeSetups.push(summary);
         },
       };
       const handle = makeHandle(view);
@@ -1378,9 +1387,11 @@ async function createPageFlowHarness(runtime: ViewRuntime, options: PageFlowHarn
     namedCloses,
     get homeAttempts() { return homeAttempts; },
     get joinCalls() { return joinCalls; },
+    get reconcileJoinCalls() { return reconcileJoinCalls; },
     get rpcCalls() { return rpcCalls; },
     get leaveCalls() { return leaveCalls; },
     get rootDisposals() { return rootDisposals; },
+    homeSetups,
     cleanup: () => {
       scope.dispose();
       session.clearSession();
@@ -1389,12 +1400,41 @@ async function createPageFlowHarness(runtime: ViewRuntime, options: PageFlowHarn
       mgr.disposeViewRoot = originalMgr.disposeViewRoot;
       socket.init = originalSocket.init;
       socket.join = originalSocket.join;
+      socket.joinOwned = originalSocket.joinOwned;
       socket.rpc = originalSocket.rpc;
       socket.leave = originalSocket.leave;
       (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = originalXhr;
     },
   };
 }
+
+test("pages Lobby 最终断线：复用 session 对账 GetInfo 并刷新 Home，不重新签发登录", async () => {
+  const runtime = await loadViewRuntime();
+  const harness = await createPageFlowHarness(runtime);
+  try {
+    await harness.pages.openLogin(() => {}, harness.scope);
+    await harness.loginHandles[0].view.onEnter();
+    assert.equal(harness.session.isLoggedIn(), true);
+    assert.equal(harness.rpcCalls, 1);
+    assert.equal(harness.homeAttempts, 1);
+    const loginPostsBefore = harness.requests.filter((request) => request.method === "POST").length;
+
+    harness.session.notifyConnLost();
+    await waitForPageFlow(() => harness.rpcCalls === 2 && harness.homeAttempts === 2,
+      "最终断线后必须完成 Lobby rejoin、GetInfo 和 Home 恢复");
+
+    assert.equal(harness.reconcileJoinCalls, 1);
+    assert.equal(harness.joinCalls, 1, "reconciliation 不应重跑初始隐式 join 流程");
+    assert.equal(harness.requests.filter((request) => request.method === "POST").length, loginPostsBefore,
+      "有效 token 对账不能重新调用会签发 token 的登录 HTTP");
+    assert.equal(harness.session.isLoggedIn(), true);
+    assert.equal(harness.session.getSessionProfile()?.ver, 2);
+    assert.match(harness.homeSetups.at(-1) ?? "", /2胜0负/, "Home 必须消费刷新后的角色快照");
+    assert.equal(harness.confirmLogics.length, 0, "成功对账不应弹回登录提示");
+  } finally {
+    harness.cleanup();
+  }
+});
 
 test("pages Home open/setup 失败：清理会话与 Lobby 后提示并重开可用 Login", async () => {
   const runtime = await loadViewRuntime();

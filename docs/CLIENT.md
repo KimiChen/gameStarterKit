@@ -259,9 +259,11 @@ options，不符即抛错而非静默复用；本次 `client`/`endpoint`/options
 与 WebSocketClient 共用；timeout 或 AbortSignal 会立即结束本地 ownership，SDK 迟到的 room 仍在后台释放。
 onDrop 会立即把全部在途 RPC 判为 CONN_LOST，room 实例与监听在 SDK 自动重连后继续存活。
 `net/session.ts` 是登录态与 authInvalid/connLost/battleLost 三类 transport 事件的枢纽；authInvalid 在
-未登录时幂等吞掉迟到上报。三类事件与 Main 的进房失败（BATTLE_JOIN_FAILED）都由统一 `returnToLogin`
-出口串行编排；注册该出口后，回登录前会清理旧 bearer。transport 事件本身仍只广播给订阅者，订阅方需
-自行保证回滚操作幂等。
+未登录时幂等吞掉迟到上报。Lobby 最终 `onLeave` 后，页面组合根先复用当前内存 token，以显式 ownership
+重进所选区 Lobby，再拉 `user.getInfo`；只有完整 identity 仍匹配的结果才能原子替换角色快照并恢复 Home。
+join 使用 15 秒显式超时并随页面 scope 取消，失败才进入统一 `returnToLogin` 清旧 bearer。重复最终断线
+在同一 generation 内合流；旧 continuation 只能释放自己的 ownership，不能覆盖新快照或关闭后来登录。
+authInvalid、battleLost、对账失败与 Main 的进房失败（BATTLE_JOIN_FAILED）仍由 `returnToLogin` 串行编排。
 
 ### HTTP
 
