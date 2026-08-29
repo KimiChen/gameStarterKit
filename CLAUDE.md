@@ -45,6 +45,9 @@ npm run verify:fgui
 npm run verify:inventory
 npm run test:inventory
 npm run verify:perf
+npm run verify:project
+npm run verify:core
+npm run verify:all
 npm --workspace @game/server run test
 npm --workspace @game/server run smoke:framework
 npm --workspace @game/server run smoke
