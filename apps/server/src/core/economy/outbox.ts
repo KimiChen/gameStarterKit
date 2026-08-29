@@ -26,6 +26,7 @@ import {
 import { BusyError, ColdUserError, EffectConflictError, InvalidEffectError } from "../errors";
 import { storedFinite, storedInt } from "../infra/numbers";
 import { ensureLive } from "../archive/thaw";
+import { migrateLiveUserSchemaLocked } from "../liveSchema";
 import { withUserLock } from "../locks";
 
 /**
@@ -239,14 +240,21 @@ async function runTrimAppliedRetries(
   throw new ColdUserError(`trimApplied remained cold uid=${uid} sId=${sId}`);
 }
 
-export const _outboxTrimTestHooks = { runTrimAppliedRetries };
+export const _outboxTrimTestHooks: {
+  runTrimAppliedRetries: typeof runTrimAppliedRetries;
+  afterEnsureLive?: (uid: string, sId: number) => Promise<void>;
+} = { runTrimAppliedRetries };
 
 export async function trimApplied(uid: string, sId = currentZoneId()): Promise<number> {
   return zoneCtx.run({ sId }, () => runTrimAppliedRetries(uid, sId, async () => {
     await ensureLive(uid, sId);
+    if (_outboxTrimTestHooks.afterEnsureLive) {
+      await _outboxTrimTestHooks.afterEnsureLive(uid, sId);
+    }
     return withUserLock(uid, async (fence): Promise<TrimAppliedAttemptResult> => {
       const redis = clientFor(uid);
       if ((await redis.exists(kUser(uid))) === 0) { return { outcome: "cold", removed: 0 }; }
+      await migrateLiveUserSchemaLocked(uid, fence);
       const candidates = await redis.zrangebyscore(
         kApplied(uid), "-inf", `(${Date.now() - APPLIED_RETENTION_MS}`,
       );

@@ -6,6 +6,7 @@ import { ensureLive } from "../core/archive/thaw";
 import { withUserLock } from "../core/locks";
 import { BusyError } from "../core/errors";
 import { SCHEMA_VERSION } from "../core/infra/config";
+import { migrateLiveUserSchemaLocked } from "../core/liveSchema";
 
 export type CharacterRegistrationState = "pending" | "ready" | null;
 
@@ -14,6 +15,11 @@ export interface CharacterRegistrationInfo {
   /** Unix epoch milliseconds of the last authoritative external check/PUT. */
   readonly checkedAtMs: number | null;
 }
+
+/** Test-only race injection; production leaves it empty. */
+export const _characterStateTestHooks: {
+  afterEnsureLive?: (uid: string, sId: number) => Promise<void>;
+} = {};
 
 const MARK_CHARACTER_READY = defineScript("markCharacterRegistrationReady", `
 if redis.call('GET', KEYS[1]) ~= ARGV[1] then return 'lost' end
@@ -70,12 +76,18 @@ export async function markCharacterRegistrationReady(
   await zoneCtx.run({ sId }, async () => {
     for (let attempt = 0; attempt < 2; attempt++) {
       await ensureLive(uid, sId);
-      const result = await withUserLock(uid, (fence) => evalshaWithReload(
-        clientFor(uid),
-        MARK_CHARACTER_READY,
-        [kLock(uid), kUser(uid)],
-        [String(fence), "ready", String(checkedAtMs)],
-      ));
+      if (_characterStateTestHooks.afterEnsureLive) {
+        await _characterStateTestHooks.afterEnsureLive(uid, sId);
+      }
+      const result = await withUserLock(uid, async (fence) => {
+        await migrateLiveUserSchemaLocked(uid, fence);
+        return evalshaWithReload(
+          clientFor(uid),
+          MARK_CHARACTER_READY,
+          [kLock(uid), kUser(uid)],
+          [String(fence), "ready", String(checkedAtMs)],
+        );
+      });
       if (result === "ok") { return; }
       if (result === "cold") { continue; }
       throw new BusyError(`character marker lost uid=${uid} sId=${sId}`);

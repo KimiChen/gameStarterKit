@@ -17,7 +17,7 @@ import {
 } from "../../src/core/economy/outbox";
 import { claimMailAttach, sendMail } from "../../src/core/economy/mailer";
 import { createUser } from "../../src/core/userRecord";
-import { CUR_GOLD, OUTBOX_DONE } from "../../src/core/infra/config";
+import { CUR_GOLD, OUTBOX_DONE, SCHEMA_VERSION } from "../../src/core/infra/config";
 import {
   kApplied, kAppliedPayload, kBagAll, kUser, zoneCtx,
 } from "../../src/core/infra/keys";
@@ -245,7 +245,7 @@ test("Lua apply 预检 Redis key 类型与键集合：污染时不发生部分�
 test("Lua apply 严格守卫热档 schema/ver：缺失或 future 元数据不被静默补默认值", async () => {
   const cases = [
     { name: "missing-ver", field: "ver", value: null },
-    { name: "future-schema", field: "schemaVersion", value: "2" },
+    { name: "future-schema", field: "schemaVersion", value: String(SCHEMA_VERSION + 1) },
   ] as const;
   for (const item of cases) {
     const user = await seed(`metadata-${item.name}`);

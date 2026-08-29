@@ -15,15 +15,19 @@ import { after, before, test } from "node:test";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { acquireLease } from "../../src/core/locks";
-import { withUser } from "../../src/core/uow";
+import { _uowTestHooks, withUser } from "../../src/core/uow";
 import { idemAcquire, idemComplete, idemRelease } from "../../src/core/idem";
 import { deriveOpId, redisApply } from "../../src/core/economy/outbox";
-import { createUser } from "../../src/core/userRecord";
+import { createUser, loadFields } from "../../src/core/userRecord";
 import { writeGroupSess } from "../../src/core/auth/session";
-import { LOCK_TTL_MS } from "../../src/core/infra/config";
+import { LOCK_TTL_MS, SCHEMA_VERSION } from "../../src/core/infra/config";
 import { kApplied, kBag, kBagAll, kIdemUser, kLock, kSess, kUser } from "../../src/core/infra/keys";
 import { clientFor, closeRedis } from "../../src/core/infra/redisRoute";
-import { CAS_HSET, evalshaWithReload } from "../../src/core/infra/redisScripts";
+import { CAS_HSET, CREATE_USER, evalshaWithReload } from "../../src/core/infra/redisScripts";
+import { USER_GENERIC_WRITE_RESERVED_FIELDS } from "../../src/core/userSchema";
+import {
+  _liveSchemaTestHooks, migrateLiveUserSchemaLocked,
+} from "../../src/core/liveSchema";
 import { closeMysql } from "../../src/core/infra/mysql";
 import { assertRedisUp, cleanupUser, sleep, testUid } from "./helpers";
 
@@ -128,7 +132,9 @@ test("casHset 严格守卫 schema/ver/fence：缺失或损坏元数据时零部�
     },
     {
       name: "future-schema",
-      corrupt: async (user) => { await clientFor(user).hset(kUser(user), "schemaVersion", "2"); },
+      corrupt: async (user) => {
+        await clientFor(user).hset(kUser(user), "schemaVersion", String(SCHEMA_VERSION + 1));
+      },
       message: /casHset schema invalid/,
     },
     {
@@ -149,6 +155,171 @@ test("casHset 严格守卫 schema/ver/fence：缺失或损坏元数据时零部�
     );
     assert.deepEqual(await c.hgetall(kUser(u)), before, `${item.name} 不得产生任何字段写入`);
   }
+});
+
+test("createUser writes v2/checkedAt=0 and rejects every caller-supplied reserved field before creating a key", async () => {
+  const created = uid("create_v2");
+  assert.equal(await createUser(created, { nickname: "new" }), "ok");
+  assert.deepEqual(
+    await clientFor(created).hmget(kUser(created), "schemaVersion", "ver", "fence", "characterRegistrationCheckedAt"),
+    [String(SCHEMA_VERSION), "0", "0", "0"],
+  );
+
+  for (const field of USER_GENERIC_WRITE_RESERVED_FIELDS) {
+    const rejected = uid(`create_reserved_${field}`);
+    await assert.rejects(createUser(rejected, { [field]: "x" }), /不得覆盖保留字段/);
+    assert.equal(await clientFor(rejected).exists(kUser(rejected)), 0, `${field} 失败不得留下半档`);
+  }
+
+  const direct = uid("create_lua_reserved");
+  await assert.rejects(
+    evalshaWithReload(clientFor(direct), CREATE_USER, [kUser(direct)], [
+      String(SCHEMA_VERSION), String(Date.now()), "", "schemaVersion", "1",
+    ]),
+    /createUser reserved field/,
+  );
+  assert.equal(await clientFor(direct).exists(kUser(direct)), 0, "Lua preflight 必须发生在首个 HSET 前");
+});
+
+test("loadFields atomically accepts N/N-1 without writing; withUser migrates v1 under lock exactly once", async () => {
+  const u = uid("hot_v1_migrate");
+  await createUser(u, { nickname: "legacy" });
+  const c = clientFor(u);
+  await c.hset(kUser(u), "schemaVersion", "1", "ver", "4");
+  await c.hdel(kUser(u), "characterRegistrationCheckedAt");
+  const beforeRead = await c.hgetall(kUser(u));
+
+  assert.deepEqual(await loadFields(u, ["nickname", "ver"]), { nickname: "legacy", ver: "4" });
+  assert.deepEqual(await c.hgetall(kUser(u)), beforeRead, "纯读不得顺手迁移 N-1");
+
+  let runs = 0;
+  await withUser(u, async (uow) => {
+    runs++;
+    uow.set("probe", "written");
+  });
+  assert.equal(runs, 1);
+  assert.deepEqual(
+    await c.hmget(kUser(u), "schemaVersion", "characterRegistrationCheckedAt", "ver", "probe"),
+    [String(SCHEMA_VERSION), "0", "6", "written"],
+    "migration bumps 4->5 and the generic commit bumps 5->6",
+  );
+
+  const afterFirst = await c.hgetall(kUser(u));
+  await loadFields(u, ["nickname"]);
+  assert.deepEqual(await c.hgetall(kUser(u)), afterFirst, "v2 reread remains a no-op");
+});
+
+test("hot v1 preserves legal checkedAt; malformed/future/wrongtype reads and writes are zero-change", async () => {
+  const legal = uid("hot_v1_preserve");
+  await createUser(legal);
+  const legalClient = clientFor(legal);
+  await legalClient.hset(
+    kUser(legal), "schemaVersion", "1", "ver", "7", "characterRegistrationCheckedAt", "123",
+  );
+  await withUser(legal, async (uow) => { uow.set("probe", "ok"); });
+  assert.equal(await legalClient.hget(kUser(legal), "characterRegistrationCheckedAt"), "123");
+
+  for (const item of [
+    { name: "malformed", prepare: async (c: ReturnType<typeof clientFor>, key: string) => {
+      await c.hset(key, "schemaVersion", "1", "characterRegistrationCheckedAt", "-1");
+    } },
+    { name: "future", prepare: async (c: ReturnType<typeof clientFor>, key: string) => {
+      await c.hset(key, "schemaVersion", String(SCHEMA_VERSION + 1));
+    } },
+  ]) {
+    const target = uid(`hot_${item.name}`);
+    await createUser(target, { untouched: "yes" });
+    const client = clientFor(target);
+    await item.prepare(client, kUser(target));
+    const before = await client.hgetall(kUser(target));
+    await assert.rejects(
+      loadFields(target, ["untouched"]),
+      /(?:characterRegistrationCheckedAt|schemaVersion)/,
+    );
+    let callbackRan = false;
+    await assert.rejects(
+      withUser(target, async () => { callbackRan = true; }),
+      /(?:characterRegistrationCheckedAt|schemaVersion)/,
+    );
+    assert.equal(callbackRan, false, "schema preflight 必须早于业务 callback");
+    assert.deepEqual(await client.hgetall(kUser(target)), before);
+  }
+
+  const wrong = uid("hot_wrongtype");
+  const wrongClient = clientFor(wrong);
+  await wrongClient.set(kUser(wrong), "wrong-type");
+  await assert.rejects(loadFields(wrong, ["probe"]), /user key type string expected hash/);
+  assert.equal(await wrongClient.get(kUser(wrong)), "wrong-type");
+});
+
+test("CAS_HSET rejects the exact generic reserved set before the first field write", async () => {
+  for (const field of USER_GENERIC_WRITE_RESERVED_FIELDS) {
+    const u = uid(`cas_reserved_${field}`);
+    await createUser(u, { untouched: "yes" });
+    const c = clientFor(u);
+    const before = await c.hgetall(kUser(u));
+    await assert.rejects(
+      evalshaWithReload(c, CAS_HSET, [kUser(u)], ["1", "ordinary", "would-write", field, "x"]),
+      /casHset reserved field/,
+    );
+    assert.deepEqual(await c.hgetall(kUser(u)), before, `${field} 不得留下前序 ordinary 半写`);
+  }
+});
+
+test("current v2 is revalidated atomically inside the lock when metadata changes after the TS read", async () => {
+  const u = uid("current_atomic_recheck");
+  await createUser(u, { untouched: "yes" });
+  const c = clientFor(u);
+  const lease = await acquireLease(u);
+  let injected = false;
+  _liveSchemaTestHooks.beforeAtomicMigration = async (hookUid) => {
+    if (hookUid !== u || injected) { return; }
+    injected = true;
+    await c.hset(kUser(u), "characterRegistrationCheckedAt", "-1");
+  };
+  try {
+    await assert.rejects(
+      migrateLiveUserSchemaLocked(u, lease.fence),
+      /user schema migrate checkedAt invalid/,
+    );
+  } finally {
+    delete _liveSchemaTestHooks.beforeAtomicMigration;
+    await lease.release();
+  }
+  assert.equal(injected, true);
+  assert.deepEqual(
+    await c.hmget(kUser(u), "schemaVersion", "ver", "characterRegistrationCheckedAt", "untouched"),
+    [String(SCHEMA_VERSION), "0", "-1", "yes"],
+    "Lua current 分支只能暴露注入损坏，不得自行写入任何字段",
+  );
+});
+
+test("withUser repeats schema preflight under its business lock before callback", async () => {
+  const u = uid("uow_schema_window");
+  await createUser(u, { untouched: "yes" });
+  const c = clientFor(u);
+  let callbackRan = false;
+  _uowTestHooks.afterEnsureLive = async (hookUid) => {
+    if (hookUid === u) {
+      await c.hset(kUser(u), "schemaVersion", String(SCHEMA_VERSION + 1));
+    }
+  };
+  try {
+    await assert.rejects(
+      withUser(u, async (uow) => {
+        callbackRan = true;
+        uow.set("probe", "bad");
+      }),
+      /schemaVersion/,
+    );
+  } finally {
+    delete _uowTestHooks.afterEnsureLive;
+  }
+  assert.equal(callbackRan, false, "future schema 必须在业务 callback/外部副作用前被锁内拒绝");
+  assert.deepEqual(
+    await c.hmget(kUser(u), "schemaVersion", "ver", "probe", "untouched"),
+    [String(SCHEMA_VERSION + 1), "0", null, "yes"],
+  );
 });
 
 // ── 5. op_id 重放 → dup，数量不变 ───────────────────────────────

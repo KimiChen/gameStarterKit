@@ -11,6 +11,8 @@ import { CAS_HSET, evalshaWithReload } from "./infra/redisScripts";
 import { ColdUserError, StaleFenceError } from "./errors";
 import { withUserLock } from "./locks";
 import { touchActive } from "./userRecord";
+import { assertGenericUserFieldWritable } from "./userSchema";
+import { migrateLiveUserSchemaLocked } from "./liveSchema";
 
 export class UnitOfWork {
   private dirty = new Map<string, string>(); // 作用域对象，绝不是单例（09·R8）
@@ -27,7 +29,10 @@ export class UnitOfWork {
     return Object.fromEntries(fields.map((f, i) => [f, vals[i]]));
   }
 
-  set(field: string, value: string): void { this.dirty.set(field, value); }
+  set(field: string, value: string): void {
+    assertGenericUserFieldWritable(field);
+    this.dirty.set(field, value);
+  }
 
   /** 单条 Lua casHset：fence CAS + 只写脏字段 + bump ver。stale → 抛（客户端自动重试）。 */
   async commit(): Promise<void> {
@@ -42,6 +47,11 @@ export class UnitOfWork {
 
   discard(): void { this.dirty.clear(); }
 }
+
+/** Test-only race injection; production leaves it empty. */
+export const _uowTestHooks: {
+  afterEnsureLive?: (uid: string) => Promise<void>;
+} = {};
 
 /**
  * 写路径入口：localMutex → 跨实例锁 → UoW → fn → commit（[03]）。
@@ -60,6 +70,7 @@ export async function withUser<T>(uid: string, fn: (uow: UnitOfWork) => Promise<
   const sId = currentZoneId();
   // live hash 存在也可能是 Redis PITR 后的旧分支；所有普通玩法写先完成 archive 对账。
   await ensureLive(uid, sId);
+  if (_uowTestHooks.afterEnsureLive) { await _uowTestHooks.afterEnsureLive(uid); }
   try {
     return await withUserAttempt(uid, fn);
   } catch (e) {
@@ -77,6 +88,9 @@ async function withUserAttempt<T>(uid: string, fn: (uow: UnitOfWork) => Promise<
     // 并跳过退会）。预检让常规冷路径 callback 零执行、直接走外层 ensureLive 重试；
     // EXISTS 与后续读写同在本锁内，freeze/thaw 也走同一把锁，无 TOCTOU。
     if ((await clientFor(uid).exists(kUser(uid))) === 0) { throw new ColdUserError(); }
+    // ensureLive 的锁外快检只负责避开普通请求的慢路径；真正的写前版本闸必须与
+    // callback/commit 共用本锁，防滚动部署中的 N+1 进程在两者之间升级成 future。
+    await migrateLiveUserSchemaLocked(uid, fence);
     const uow = new UnitOfWork(uid, fence);
     try {
       const r = await fn(uow);

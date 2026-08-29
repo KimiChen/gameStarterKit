@@ -6,13 +6,13 @@
  * 迁到当前 SCHEMA_VERSION。冷档可能一冻数月，跨越多个 schema 版本——这里是唯一能把
  * N-k 老档拉回 N 的地方（在线档由 S1 的双读/灰度双写覆盖，只保证 N 与 N-1）。
  *
- * **首版恒等函数**（10·M9 / 09·S1）：SCHEMA_VERSION 仍是 1，无历史格式可迁。
- * ⚠ 第一次 schema 变更前必须实现真迁移（10 · 范围裁剪指引：懒迁移 worker 可以晚，
- * 但「第一次 schema 变更前必须就绪」）。
+ * 实际迁移步骤与热档共用 `core/userSchema.ts` 的 registry；本文件只负责 archive
+ * 容器（bag/applied/payload）深校验与不可变地替换 migrated user。
  */
 import type { ArchiveSnapshot } from "./archiveScripts";
 import { BAG_SHARDS, SCHEMA_VERSION } from "../infra/config";
 import { storedInt } from "../infra/numbers";
+import { migrateUserSchemaToCurrent, validateUserSchema } from "../userSchema";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -43,20 +43,13 @@ export function validateArchiveSnapshotSchema(
     throw new Error("archive snapshot 字段集合非法");
   }
   validateStringRecord(snapshot.user, "archive snapshot.user");
-  const embeddedRaw = snapshot.user.schemaVersion;
-  if (typeof embeddedRaw !== "string" || !/^[1-9]\d*$/.test(embeddedRaw)) {
-    throw new Error(`archive snapshot.user.schemaVersion 非法：「${String(embeddedRaw)}」`);
-  }
-  const embedded = Number(embeddedRaw);
-  if (!Number.isSafeInteger(embedded) || embedded !== fromVersion) {
+  try {
+    validateUserSchema(snapshot.user, fromVersion);
+  } catch (error) {
     throw new Error(
-      `archive schema 里外不一致：outer=${fromVersion} embedded=${String(embeddedRaw)}`,
+      `archive snapshot user schema 非法：${error instanceof Error ? error.message : String(error)}`,
     );
   }
-  storedInt(snapshot.user.ver, "archive snapshot.user.ver", {
-    min: 0,
-    max: Number.MAX_SAFE_INTEGER,
-  });
   if (!Array.isArray(snapshot.bag) || snapshot.bag.length !== BAG_SHARDS) {
     throw new Error(`archive snapshot.bag 分片数非法：${String(snapshot.bag?.length)}`);
   }
@@ -88,14 +81,11 @@ export function validateArchiveSnapshotSchema(
  */
 export async function lazyMigrateSchema(
   snapshot: ArchiveSnapshot,
-  // ⚠ `_` 前缀 = 有意未用（TS 的 noUnusedParameters 内置逃生口）：首版恒等，签名为真迁移预留。
-  // ⛔ 别删这个参数——删了将来加迁移要改所有调用点。（原先挂的 eslint-disable 是死注释：本仓无 eslint。）
   fromVersion: number,
 ): Promise<ArchiveSnapshot> {
   validateArchiveSnapshotSchema(snapshot, fromVersion);
-  // SCHEMA_VERSION == 1：唯一存在过的格式，恒等返回（09·S1）。
-  // 未来样例：
-  //   if (fromVersion < 2) { snapshot = migrateV1toV2(snapshot); }
-  //   snapshot.user.schemaVersion = String(SCHEMA_VERSION);
-  return snapshot;
+  const user = migrateUserSchemaToCurrent(snapshot.user, fromVersion);
+  const migrated: ArchiveSnapshot = { ...snapshot, user };
+  validateArchiveSnapshotSchema(migrated, SCHEMA_VERSION);
+  return migrated;
 }

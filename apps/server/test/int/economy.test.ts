@@ -14,11 +14,14 @@ import { getShopSku } from "../../src/core/economy/catalog";
 import { getBalance, invalidateBalanceCache } from "../../src/core/economy/currency";
 import { claimMailAttach, sendMail } from "../../src/core/economy/mailer";
 import {
-  deriveOpId, drainPendingFor, markOutboxDone, purchase, purchaseTx, readBack, redisApply, trimApplied,
+  _outboxTrimTestHooks, deriveOpId, drainPendingFor, markOutboxDone, purchase, purchaseTx,
+  readBack, redisApply, trimApplied,
 } from "../../src/core/economy/outbox";
 import { createOrder, handleWxPayNotify } from "../../src/core/economy/purchases";
 import { createUser } from "../../src/core/userRecord";
-import { APPLIED_RETENTION_MS, CUR_GOLD, OUTBOX_PENDING } from "../../src/core/infra/config";
+import {
+  APPLIED_RETENTION_MS, CUR_GOLD, OUTBOX_PENDING, SCHEMA_VERSION,
+} from "../../src/core/infra/config";
 import { kApplied, kAppliedPayload, kBag, kCacheCurrency, kUser } from "../../src/core/infra/keys";
 import { cacheClient, clientFor, closeRedis } from "../../src/core/infra/redisRoute";
 import { closeMysql, getPool } from "../../src/core/infra/mysql";
@@ -185,8 +188,24 @@ test("applied 裁剪与 coordinator 联动：pending/dead 的 op 标记超窗也
   await c.zadd(kApplied(u), "XX", "CH", Date.now() - APPLIED_RETENTION_MS - 3_600_000, stuckOp);
 
   const verBeforePending = Number(await c.hget(kUser(u), "ver"));
-  assert.equal(await trimApplied(u), 0, "行仍 pending：标记超窗也不许裁");
-  assert.equal(Number(await c.hget(kUser(u), "ver")), verBeforePending, "无删除不得 bump ver");
+  let injected = false;
+  _outboxTrimTestHooks.afterEnsureLive = async (hookUid) => {
+    if (hookUid !== u || injected) { return; }
+    injected = true;
+    await c.hset(kUser(u), "schemaVersion", "1");
+    await c.hdel(kUser(u), "characterRegistrationCheckedAt");
+  };
+  try {
+    assert.equal(await trimApplied(u), 0, "行仍 pending：标记超窗也不许裁");
+  } finally {
+    delete _outboxTrimTestHooks.afterEnsureLive;
+  }
+  assert.equal(injected, true);
+  assert.deepEqual(
+    await c.hmget(kUser(u), "schemaVersion", "characterRegistrationCheckedAt", "ver"),
+    [String(SCHEMA_VERSION), "0", String(verBeforePending + 1)],
+    "trim 锁内先迁移 v1，pending 无删除不再额外 bump ver",
+  );
   assert.ok(await c.zscore(kApplied(u), stuckOp), "标记还在");
   assert.ok(await c.hget(kAppliedPayload(u), stuckOp), "pending op 的 payload 绑定也必须保留");
   // 关键红线：此刻 relayer 重放这条 pending，applied 必须还判 dup（否则二次发货）

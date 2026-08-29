@@ -127,7 +127,8 @@
   创建一次，后到请求回读现有状态，不重置资源或检查点；
 - JSON 解析失败、未知 schema、越界数字或非法状态组合必须 fail-closed；
 - 坏档不能静默当作新玩家，否则等价于清档；
-- 领域需要独立 decoder、迁移版本和测试。当前框架热档 reader 不会自动替本玩法迁移 `schemaVersion`。
+- 领域需要独立 decoder、迁移版本和测试。框架只对玩家根档做 N/N-1 只读校验并在 writer 首写前迁移；
+  不会自动替本玩法迁移内嵌 `idleState.schemaVersion`。
 
 ## 2. 服务端一致性与安全边界
 
@@ -280,7 +281,7 @@ outbox、applied marker 和失败补偿。当前 relayer、死信处置和 archi
 - shared 的体力、自然日和命名 RNG 当前只有纯函数与单测，没有业务调用点；
 - 通用 RPC 幂等未绑定 payload hash，成功结果缓存约 60 秒；
 - handler 超时不会取消迟到副作用；
-- 热档 reader 不会按领域 `schemaVersion` 自动迁移；
+- 玩家根档 reader 只读校验 N/N-1，writer 在首写前迁移；内嵌领域 `schemaVersion` 不会自动迁移；
 - push 是尽力唤醒，不是必达事件系统；
 - 默认未启用 RedisPresence/RedisDriver，不承诺横向扩展；
 - archive freeze 默认关闭，且不提供备份、物理容量保证或自动冷档淘汰，不能作为挂机档备份方案；

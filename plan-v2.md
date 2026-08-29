@@ -49,7 +49,15 @@
   `stream-depth-lifecycle.test.ts` 3/3 覆盖独立告警；
   `npm --workspace @game/server run typecheck`、服务端单测 215/215、全量集成 106/106 与
   `npm run verify:inventory` 通过。
-- `[不阻塞·待补齐]` 热档 schema 迁移仍待补齐（详见 §4 P1-06）。
+- `[已完成]` 玩家档 `SCHEMA_VERSION` 提升为 2；`loadFields` 用单条只读 Lua 原子校验 N/N-1 且不写，
+  `ensureLive` 与所有普通/后台 writer 在业务 callback 或首写前完成锁内迁移/对账。v1 缺失
+  `characterRegistrationCheckedAt` 补 `"0"`、合法值保留、畸形值拒绝并 bump `ver`；新档直接写 v2。
+  freeze、janitor 与 lazy thaw 共用 `core/userSchema.ts` 的连续 registry/deep validator，future、WRONGTYPE、
+  损坏快照和迁移竞态均在首写前 fail-closed；generic UoW/CAS 精确禁止六个框架/角色登记保留字段。
+  验收证据：`user-schema.test.ts` 6/6，真实 Redis/MySQL 的 `int/core.test.ts` 18/18、
+  `int/archive.test.ts` 51/51、`int/economy.test.ts` 8/8、`int/character-repair.test.ts` 7/7 与
+  `int/effect-atomic.test.ts` 12/12；服务端 typecheck、单测 262/262、全量集成 147/147、
+  `smoke:framework`、`npm run verify:inventory` 与 `git diff --check` 通过。
 - `[已完成]` Game HTTP request schema 已由 shared validator 同源生成并直接注入（证据见 §4 P1-03）。
 - `[不阻塞·待补齐]` match evidence 不足以重放完整输入序列（**本清单无对应 P 条目，仅此处登记**）。
 - `[已完成]` `PROTOCOL_VERSION` 已提升为 6，版本流水明确登记 `setField` 文本接受域由 UTF-16 码元收紧为
@@ -179,7 +187,8 @@
 - `[已完成]` relayer 事务边界已拆为守卫短事务与事务外 I/O，且失败/接管路径有定向证据（见 §1）。
 - `[已完成]` archive 区隔离、崩溃判权、容量 admission、写路径对账与升级 preflight 已补齐；实现边界和
   44/44 Archive 集成、22/22 定向单测、1/1 bootstrap 反例及全量 134/134 证据见 §1 第 2 条。
-- `[不阻塞·待补齐]` 热档 schema 迁移仍待补齐（即 §1 第 4 条）。
+- `[已完成]` 热档 N/N-1 原子读、写前迁移、冷档共用 registry、保留字段闸与零部分写已补齐；实现边界和
+  定向/全量单测证据见 §1 对应条目。
 - `[不阻塞·有意保留]` freeze worker 默认关闭（`FREEZE_ENABLED`），默认配置下不会触发；启用时必须显式
   配置非空、无重复的 `ARCHIVE_ZONES`。
 - `[不阻塞·有意保留]` dispatcher 的 timeout 仍不取消 handler，迟到副作用只能由数据层幂等收敛。

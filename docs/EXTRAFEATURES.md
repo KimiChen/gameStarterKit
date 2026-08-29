@@ -184,8 +184,9 @@ guard 要求显式区清单。每区 `archive_zone_usage` 在 freeze singleton l
 还可被 `ZADD XX GT` 提升到 cold cutoff 作为 skip/error 的有界调度退避，因此不能反向当作真实活跃
 时间；真实重建源仍是 `user.lastActiveAt`。
 
-仓库不承诺横向扩展、分片迁移、备份、自动冷档淘汰或物理容量保证；热档 `schemaVersion` 迁移也仍未
-闭环。因此 archive 保持默认关闭的实验参考，不能作为通用冷数据存储方案。
+仓库不承诺横向扩展、分片迁移、备份、自动冷档淘汰或物理容量保证。热档/冷档已共用版本 registry 与
+深校验器，当前 v1→v2 在写前原子迁移并由 freeze/thaw 复用；这只闭合数据格式演进，不提供上述运维与
+容量能力。因此 archive 保持默认关闭的实验参考，不能作为通用冷数据存储方案。
 
 ### 3.7 玩法与业务域样例
 

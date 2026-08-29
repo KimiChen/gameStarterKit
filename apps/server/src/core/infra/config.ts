@@ -411,8 +411,8 @@ export const PURCHASE_CLOSED = 4;
 /** user_currency.currency（SMALLINT）。现阶段仅 gold。 */
 export const CUR_GOLD = 1;
 
-/** Redis 玩法档 schemaVersion 当前值（09·S1：读侧兼容 N 与 N-1）。 */
-export const SCHEMA_VERSION = 1;
+/** Redis 玩法档 schemaVersion 当前值（09·S1：热档兼容 N/N-1，冷档按 registry 逐级迁移）。 */
+export const SCHEMA_VERSION = 2;
 
 /** deriveOpId 的 uuidv5 namespace（固定，⛔ 永不改：改了同一 clientReqId 会派生出新 op_id 破坏幂等）。 */
 export const OP_ID_NAMESPACE = "7c9e6679-7425-40de-944b-e07fc1f90ae7";

@@ -29,7 +29,6 @@
 - `archive/`：已接入 thaw、但 freeze 默认关闭的实验模块。
 
 额外后台、冷档和商业化参考的准确状态见
-[`docs/EXTRAFEATURES.md`](../../../../docs/EXTRAFEATURES.md)。当前已知实现偏差（payload hash、effect
-预验证、relayer 事务外 I/O、热档 schemaVersion 等）见
-[`docs/SERVER.md`](../../../../docs/SERVER.md#12-开发约束索引)，不要用历史里程碑或已不存在的“07 表”
-替代当前源码与测试。
+[`docs/EXTRAFEATURES.md`](../../../../docs/EXTRAFEATURES.md)。热档/冷档 schema 的 registry、原子只读与
+写前迁移契约见 [`docs/SERVER.md`](../../../../docs/SERVER.md#7-玩家档案)；不要用历史里程碑或已不存在的
+“07 表”替代当前源码与测试。

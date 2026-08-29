@@ -59,7 +59,9 @@ import {
   ARCHIVE_PHASE_COMMITTED, ARCHIVE_PHASE_LEGACY, ARCHIVE_PHASE_PREPARED, newFreezeId,
   type ArchivePhase,
 } from "../../src/core/archive/protocol";
-import { markCharacterRegistrationReady } from "../../src/player/characterState";
+import {
+  _characterStateTestHooks, markCharacterRegistrationReady,
+} from "../../src/player/characterState";
 import { assertRedisUp, cleanupUser, testUid } from "./helpers";
 
 const COLD_MS = COLD_DAYS * 86_400_000;
@@ -517,9 +519,9 @@ test("freeze ② 后 ③ 前崩溃：archive 与 Redis 并存 → resolve LIVE �
   await getPool().execute(
     `INSERT INTO user_archive (
        user_id, server_id, snapshot, schema_version, fence_hwm, freeze_id, archive_phase
-     ) VALUES (?, 0, CAST(? AS JSON), 1, ?, ?, ?)`,
+     ) VALUES (?, 0, CAST(? AS JSON), ?, ?, ?, ?)`,
     [u, JSON.stringify({ user: before.user, bag: before.bags, applied: before.applied }),
-      counter, freezeId, ARCHIVE_PHASE_PREPARED]);
+      SCHEMA_VERSION, counter, freezeId, ARCHIVE_PHASE_PREPARED]);
   await rebuildUsage(0);
 
   const st = await withUserLock(u, async () => resolve(u));
@@ -952,6 +954,11 @@ test("legacy 双存态 fail-closed，legacy 纯冷档可先升级 freeze_id 再 
   await rebuildUsage(0);
   await ensureLive(cold);
   assert.equal(await clientFor(cold).hget(kUser(cold), "nickname"), "legacy archive");
+  assert.deepEqual(
+    await clientFor(cold).hmget(kUser(cold), "schemaVersion", "characterRegistrationCheckedAt", "ver"),
+    [String(SCHEMA_VERSION), "0", "2"],
+    "cold v1 复用同一 registry：缺 checkedAt 补 0 且 ver bump 一次",
+  );
   assert.equal(await archiveRow(cold), null);
   assert.equal(await clientFor(cold).hlen(kArchiveProof(cold)), 0,
     "legacy thaw 删除 archive 后清理临时升级出的 proof member");
@@ -1029,6 +1036,103 @@ test("freeze 缺 ver/schemaVersion fail-closed：不写 PREPARED、不登记 pro
   }
 });
 
+test("freeze 对合法热档 v1 先锁内迁移再 snapshot；缺 checkedAt 补 0 且 migration 单独 bump ver", async () => {
+  const { uid: u } = await seedFullUser("freeze_schema_v1");
+  const c = clientFor(u);
+  await makeCold(u);
+  await c.hset(kUser(u), "schemaVersion", "1", "ver", "10");
+  await c.hdel(kUser(u), "characterRegistrationCheckedAt");
+
+  assert.equal(await freezeUser(u, freezeLease), "frozen");
+  const row = await archiveRow(u);
+  assert.ok(row);
+  assert.deepEqual(
+    [row!.snapshot.user.schemaVersion, row!.snapshot.user.characterRegistrationCheckedAt, row!.snapshot.user.ver],
+    [String(SCHEMA_VERSION), "0", "11"],
+  );
+  const [stored] = await getPool().query<RowDataPacket[]>(
+    "SELECT schema_version FROM user_archive WHERE user_id = ? AND server_id = 0",
+    [u],
+  );
+  assert.equal(Number(stored[0].schema_version), SCHEMA_VERSION, "freeze 只落当前 schema 冷档");
+});
+
+test("freeze 对 v1 畸形 checkedAt 在首个 archive/proof 写前失败并完整保留热档", async () => {
+  const { uid: u } = await seedFullUser("freeze_schema_corrupt");
+  const c = clientFor(u);
+  await makeCold(u);
+  await c.hset(
+    kUser(u), "schemaVersion", "1", "ver", "10", "characterRegistrationCheckedAt", "-1",
+  );
+  const before = await c.hgetall(kUser(u));
+
+  await assert.rejects(freezeUser(u, freezeLease), /characterRegistrationCheckedAt/);
+  assert.deepEqual(await c.hgetall(kUser(u)), before);
+  assert.equal(await archiveRow(u), null);
+  assert.equal(await c.hlen(kArchiveProof(u)), 0);
+});
+
+test("LIVE+archive 的合法 v1 先迁移成功再删陈旧行；proof 与 ledger 一并收敛", async () => {
+  const { uid: u } = await seedFullUser("dual_schema_v1");
+  const c = clientFor(u);
+  await c.hset(kUser(u), "schemaVersion", "1", "ver", "20");
+  await c.hdel(kUser(u), "characterRegistrationCheckedAt");
+  const live = await dumpAll(u);
+  const snapshot: ArchiveSnapshot = {
+    user: live.user,
+    bag: live.bags,
+    applied: live.applied,
+    appliedPayload: live.appliedPayload,
+  };
+  const freezeId = newFreezeId();
+  await c.hset(kArchiveProof(u), freezeId, "1");
+  await getPool().execute(
+    `INSERT INTO user_archive (
+       user_id, server_id, snapshot, schema_version, fence_hwm, freeze_id, archive_phase
+     ) VALUES (?, 0, CAST(? AS JSON), 1, 0, ?, ?)`,
+    [u, JSON.stringify(snapshot), freezeId, ARCHIVE_PHASE_PREPARED],
+  );
+  await rebuildUsage(0);
+
+  await ensureLive(u);
+  assert.deepEqual(
+    await c.hmget(kUser(u), "schemaVersion", "characterRegistrationCheckedAt", "ver"),
+    [String(SCHEMA_VERSION), "0", "21"],
+  );
+  assert.equal(await archiveRow(u), null, "只有迁移成功后才可删陈旧 archive");
+  assert.equal(await c.hexists(kArchiveProof(u), freezeId), 0);
+  assert.deepEqual(await ledgerUsage(0), await exactUsage(0));
+});
+
+test("janitor 的 LIVE+archive v1 分支同样先迁移再删行", async () => {
+  const { uid: u } = await seedFullUser("janitor_schema_v1");
+  const c = clientFor(u);
+  await c.hset(kUser(u), "schemaVersion", "1", "ver", "30");
+  await c.hdel(kUser(u), "characterRegistrationCheckedAt");
+  const live = await dumpAll(u);
+  const snapshot: ArchiveSnapshot = {
+    user: live.user, bag: live.bags, applied: live.applied, appliedPayload: live.appliedPayload,
+  };
+  const freezeId = newFreezeId();
+  await c.hset(kArchiveProof(u), freezeId, "1");
+  await getPool().execute(
+    `INSERT INTO user_archive (
+       user_id, server_id, snapshot, schema_version, fence_hwm, freeze_id, archive_phase
+     ) VALUES (?, 0, CAST(? AS JSON), 1, 0, ?, ?)`,
+    [u, JSON.stringify(snapshot), freezeId, ARCHIVE_PHASE_PREPARED],
+  );
+  await rebuildUsage(0);
+
+  resetJanitorCursor();
+  const result = await janitorSweep(freezeLease, 10_000, [0]);
+  assert.ok(result.deleted >= 1);
+  assert.deepEqual(
+    await c.hmget(kUser(u), "schemaVersion", "characterRegistrationCheckedAt", "ver"),
+    [String(SCHEMA_VERSION), "0", "31"],
+  );
+  assert.equal(await archiveRow(u), null);
+});
+
 test("ready marker 写前对账且只在真实变化时 bump ver；坏 ver/schema 零部分写", async () => {
   const { uid: u } = await seedFullUser("ready_marker_guard");
   const c = clientFor(u);
@@ -1043,14 +1147,67 @@ test("ready marker 写前对账且只在真实变化时 bump ver；坏 ver/schem
   assert.equal(Number(await c.hget(kUser(u), "ver")), ver0 + 1, "重复相同 marker 不 bump ver");
 
   await c.hset(kUser(u), "ver", "bad");
-  await assert.rejects(markCharacterRegistrationReady(u, 0, checkedAt + 1), /character marker ver invalid/);
+  await assert.rejects(markCharacterRegistrationReady(u, 0, checkedAt + 1), /user\.ver/);
   assert.equal(await c.hget(kUser(u), "characterRegistrationCheckedAt"), String(checkedAt));
   assert.equal(await c.hget(kUser(u), "ver"), "bad");
 
   await c.hset(kUser(u), "ver", String(ver0 + 1), "schemaVersion", String(SCHEMA_VERSION + 1));
-  await assert.rejects(markCharacterRegistrationReady(u, 0, checkedAt + 2), /character marker schema invalid/);
+  await assert.rejects(markCharacterRegistrationReady(u, 0, checkedAt + 2), /user\.schemaVersion/);
   assert.equal(await c.hget(kUser(u), "characterRegistrationCheckedAt"), String(checkedAt));
   assert.equal(await c.hget(kUser(u), "schemaVersion"), String(SCHEMA_VERSION + 1));
+});
+
+test("ready marker 在 ensureLive 后出现 v1 也会在同一业务锁内先迁移再写 marker", async () => {
+  const { uid: u } = await seedFullUser("ready_marker_schema_window");
+  const c = clientFor(u);
+  let injected = false;
+  _characterStateTestHooks.afterEnsureLive = async (hookUid) => {
+    if (hookUid !== u || injected) { return; }
+    injected = true;
+    await c.hset(kUser(u), "schemaVersion", "1", "ver", "40");
+    await c.hdel(kUser(u), "characterRegistrationCheckedAt");
+  };
+  try {
+    await markCharacterRegistrationReady(u, 0, 777);
+  } finally {
+    delete _characterStateTestHooks.afterEnsureLive;
+  }
+  assert.deepEqual(
+    await c.hmget(
+      kUser(u), "schemaVersion", "characterRegistration", "characterRegistrationCheckedAt", "ver",
+    ),
+    [String(SCHEMA_VERSION), "ready", "777", "42"],
+    "migration 40->41，marker 41->42",
+  );
+});
+
+test("cold v1 lazy thaw 保留合法 checkedAt，迁移为 v2 后再执行原子恢复", async () => {
+  const u = uid("cold_v1_checked_at");
+  const snapshot: ArchiveSnapshot = {
+    user: {
+      schemaVersion: "1",
+      ver: "8",
+      fence: "0",
+      createdAt: "100",
+      characterRegistration: "ready",
+      characterRegistrationCheckedAt: "456",
+    },
+    bag: [{}, {}, {}, {}],
+    applied: [],
+  };
+  await getPool().execute(
+    `INSERT INTO user_archive (user_id, server_id, snapshot, schema_version, fence_hwm)
+     VALUES (?, 0, CAST(? AS JSON), 1, 3)`,
+    [u, JSON.stringify(snapshot)],
+  );
+  await rebuildUsage(0);
+
+  await ensureLive(u);
+  assert.deepEqual(
+    await clientFor(u).hmget(kUser(u), "schemaVersion", "characterRegistrationCheckedAt", "ver"),
+    [String(SCHEMA_VERSION), "456", "9"],
+  );
+  assert.equal(await archiveRow(u), null);
 });
 
 test("THAW_RESTORE 全量 preflight：WRONGTYPE、坏快照与 future schema 均在 overwrite 前零破坏", async () => {
@@ -1084,6 +1241,19 @@ test("THAW_RESTORE 全量 preflight：WRONGTYPE、坏快照与 future schema 均
   });
   assert.equal(await c.hget(kUser(u), "nickname"), before.user.nickname, "坏 snapshot 不得 UNLINK user");
 
+  const badCheckedAt: ArchiveSnapshot = {
+    ...valid,
+    user: { ...valid.user, characterRegistrationCheckedAt: "-1" },
+  };
+  await withUserLock(u, async (fence) => {
+    await assert.rejects(
+      thawRestore(u, fence, Number(before.counter), badCheckedAt, true, newFreezeId()),
+      /archive snapshot characterRegistrationCheckedAt invalid/,
+    );
+  });
+  assert.equal(await c.hget(kUser(u), "nickname"), before.user.nickname,
+    "v2 checkedAt 损坏必须在 overwrite UNLINK 前失败");
+
   const future: ArchiveSnapshot = {
     ...valid,
     user: { ...valid.user, schemaVersion: String(SCHEMA_VERSION + 1) },
@@ -1100,6 +1270,18 @@ test("THAW_RESTORE 全量 preflight：WRONGTYPE、坏快照与 future schema 均
 
 test("冷档 corrupt/future snapshot 在 identity materialize 前失败，MySQL 与 Redis 业务键零变化", async () => {
   const cases: ReadonlyArray<{ name: string; outer: number; snapshot: ArchiveSnapshot }> = [
+    {
+      name: "v1-bad-checked-at",
+      outer: 1,
+      snapshot: {
+        user: {
+          schemaVersion: "1", ver: "1", fence: "0",
+          characterRegistrationCheckedAt: "-1",
+        },
+        bag: [{}, {}, {}, {}],
+        applied: [],
+      },
+    },
     {
       name: "corrupt",
       outer: SCHEMA_VERSION,
@@ -1149,7 +1331,10 @@ test("ledger 缺行时并发事务先建 sentinel 再重建，最终 row/byte �
   const sId = 65_000;
   const users = [uid("ledger_missing_a"), uid("ledger_missing_b")];
   const snapshots: ArchiveSnapshot[] = users.map((u, index) => ({
-    user: { schemaVersion: String(SCHEMA_VERSION), ver: String(index), fence: "0", owner: u },
+    user: {
+      schemaVersion: String(SCHEMA_VERSION), ver: String(index), fence: "0", owner: u,
+      characterRegistrationCheckedAt: "0",
+    },
     bag: [{}, {}, {}, {}],
     applied: [],
   }));
@@ -1325,6 +1510,39 @@ test("relayer 收 cold → ensureLive → 重试成功：后到 outbox 行照常
   );
 });
 
+test("relayer 对热档 v1 必须先经 ensureLive 迁移，再执行无 fence effect", async () => {
+  const { uid: u } = await seedFullUser("relayer_hot_schema_v1");
+  const c = clientFor(u);
+  await c.hset(kUser(u), "schemaVersion", "1", "ver", "50");
+  await c.hdel(kUser(u), "characterRegistrationCheckedAt");
+  const op = deriveOpId(u, 0, "grant", "schema-v1");
+  await getPool().execute(
+    `INSERT INTO gameplay_outbox (op_id, user_id, effect, status, created_at)
+     VALUES (?,?,CAST(? AS JSON),?, NOW(3) - INTERVAL 30 SECOND)`,
+    [op, u, JSON.stringify([{ kind: "item", itemId: 19, count: 2 }]), OUTBOX_PENDING],
+  );
+
+  await expireLease("outbox_relayer");
+  const lease = await tryAcquireLease("outbox_relayer", makeHolderId(), 60);
+  assert.ok(lease);
+  try {
+    await relayerTick(lease!);
+  } finally {
+    await expireLease("outbox_relayer");
+  }
+  assert.deepEqual(
+    await c.hmget(kUser(u), "schemaVersion", "characterRegistrationCheckedAt", "ver"),
+    [String(SCHEMA_VERSION), "0", "52"],
+    "migration 50->51，applyEffect 51->52",
+  );
+  assert.equal(await c.hget(kBag(u, 19 % 4), "19"), "2");
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    "SELECT status FROM gameplay_outbox WHERE op_id = ? AND server_id = 0",
+    [op],
+  );
+  assert.equal(Number(rows[0].status), OUTBOX_DONE);
+});
+
 // ── 鲸鱼档（09·R1 唯一豁免 + HSCAN 分块，08 · 限速与调度） ──────────────────
 
 test("鲸鱼档：字段数 > WHALE_FIELDS 走 HSCAN 分块快照，往返全等", async () => {
@@ -1427,7 +1645,10 @@ test("thawRestore overwrite 契约：计数器反超 hwm 也不回退（评审�
   const inflated = Number(await c.get(kFence(u)));
   const hwm = inflated - 500;
   const snap: ArchiveSnapshot = {
-    user: { schemaVersion: "1", fence: "0", ver: "50", star: "7", lastActiveAt: String(Date.now()) },
+    user: {
+      schemaVersion: String(SCHEMA_VERSION), fence: "0", ver: "50", star: "7",
+      lastActiveAt: String(Date.now()), characterRegistrationCheckedAt: "0",
+    },
     bag: [{}, {}, {}, {}],
     applied: [],
   };

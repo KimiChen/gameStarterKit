@@ -49,6 +49,7 @@ import {
   ARCHIVE_PHASE_COMMITTED, ARCHIVE_PHASE_PREPARED, newFreezeId,
 } from "./protocol";
 import { validateArchiveSnapshotSchema } from "./lazyMigrate";
+import { migrateLiveUserSchemaLocked } from "../liveSchema";
 
 const COLD_MS = COLD_DAYS * 86_400_000;
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
@@ -226,6 +227,9 @@ export async function freezeUser(
       freezeCounters.skipped++;
       return "skipped";
     }
+    // freeze 已持 per-user 锁；合法 N-1 必须先原子迁到 N，再钉 ver 读快照。
+    // future/corrupt/WRONGTYPE 在这里首写前失败，不得生成 PREPARED/proof 或删热档。
+    await migrateLiveUserSchemaLocked(uid, fence);
     if (await r.exists(kSess(uid, zone))) { freezeCounters.skipped++; return "skipped"; }
     if (await hasOpenOutbox(uid, zone)) { freezeCounters.skipped++; return "skipped"; } // 09·F2 锁内复查
     if (await lastActiveMs(uid) > Date.now() - COLD_MS) { freezeCounters.skipped++; return "skipped"; }
@@ -710,6 +714,7 @@ const productionJanitorDependencies: JanitorSweepDependencies = {
         const st = await resolve(uid, sId); // 锁内复判（09·F1）
         if (st.kind === "LIVE" && st.row) {
           if (st.row.freezeId === null) { return "unchanged"; }
+          await migrateLiveUserSchemaLocked(uid, fence);
           await restoreActiveIndex(uid, sId, st.row.snapshot);
           const deleted = await withLeaseTx(lease, (conn) => deleteArchiveWithUsage(
             conn,

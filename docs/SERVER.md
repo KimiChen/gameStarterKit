@@ -259,8 +259,16 @@ player/core 写路径直接修改权威数据。
    （5s）远大于业务 p99，且抢锁必然消耗 fence 号，使新持有者的号恒更高——这不是消除窗口，触发需要
    超过 TTL 的停顿叠加跨实例换主。
 3. 按需 `HMGET` 并只写 dirty 字段；禁止 `HGETALL` 后整档覆盖。
-4. `schemaVersion` 当前由建档和 thaw 写入，但热档 `readUser` 只以 `ver` 判断存在，没有校验或迁移
-   `schemaVersion`；文档不能宣称热读已完成 N/N-1 兼容。
+4. `loadFields` 用单条只读 Lua 原子取得 `schemaVersion/ver/fence/createdAt/characterRegistrationCheckedAt`
+   与请求字段；纯读接受 N/N-1 并深校验但绝不回写，future、过旧、WRONGTYPE 或畸形元数据 fail-closed。
+5. `ensureLive` 的纯热档快路径识别 N/N-1；N-1 经 single-flight 与 `lock:{uid}` 后按
+   `core/userSchema.ts` 的连续 registry 原子迁到 N。`withUser`、ready marker、applied trim、freeze 与
+   janitor 在各自业务锁内、首个业务 callback/写之前再次迁移/校验；relayer 在无 fence apply 前先走
+   `ensureLive`。因此锁外快检与实际写之间的滚动发布竞态不能让旧进程越过 future schema 执行业务。
+6. 当前 `SCHEMA_VERSION=2`：v1 缺失 `characterRegistrationCheckedAt` 时补规范字符串 `"0"`，合法旧值
+   原样保留，显式畸形值拒绝；每个迁移步骤 bump `ver`。新档直接写 v2 与 checkedAt `"0"`，建角专用
+   入口另原子写 `characterRegistration=pending`。普通 UoW/CAS 禁写 `schemaVersion`、`ver`、`fence`、
+   `createdAt`、`characterRegistration` 与 `characterRegistrationCheckedAt`。
 
 ## 8. 幂等与 outbox
 
@@ -318,7 +326,9 @@ fail-closed，保留热档。
 freeze，不会为腾空间删除仍是唯一权威的冷档。
 
 这些上限是 admission guard，不是表空间或磁盘容量保证；模块也不提供备份、分片迁移、自动冷档淘汰或
-通用长期存储方案。热档 `schemaVersion` 的读取/迁移仍未闭环，因此即使配置满足也只能按实验模块评估。
+通用长期存储方案。热档与冷档现共用 `core/userSchema.ts` 的深校验和迁移 registry：freeze 只写当前版本，
+lazy thaw 在任何 Redis/MySQL identity 改动前完成不可变迁移，future/损坏快照保持两侧零部分写。schema
+闭环不改变 archive 默认关闭的实验性质，配置满足也仍只能按实验模块评估。
 完整分类见
 [EXTRAFEATURES §3.6](EXTRAFEATURES.md#36-多区分片扩展与冷档参考)。
 
@@ -418,12 +428,13 @@ quarantine 不属于自动 `XTRIM` 范围，非空或 key 类型/权限异常时
 
 - **09·F1–F5 / S1–S2**：freeze/thaw 用 phase、当前 `freeze_id` 的 exact proof membership 判权；
   `fence_hwm` 只阻断 thaw 后的僵尸 writer，不参与权威排序；无法证明同源时保留双存态并 fail-closed；
-  写路径不绕过在线保护；角色存在性不靠猜；reader/migrator/version 与需迁移常量的边界显式化。
+  写路径不绕过在线保护；角色存在性不靠猜；热档只读原子接受 N/N-1，写前锁内迁移，冷档 lazy thaw
+  共用同一 registry/deep validator；future、WRONGTYPE 与损坏数据均在首写前失败。
 
-当前已确认的主要偏差是 S1 的热档 reader 不看 schemaVersion。Game HTTP request schema 已由 shared
-validator 同源生成并直接注入带 body 的路由；该边界在源码中没有对应编号标签，⛔ 不要用 09·X2 / 09·X3
-指代。relayer 外部 I/O 事务边界、坏 match entry 隔离、GameRoom C2S、Lobby RPC envelope、Public
-WebPlatform response 和未知路由限流均已有对应守门，不应继续列作当前偏差。不要用规则编号掩盖剩余事实。
+Game HTTP request schema 已由 shared validator 同源生成并直接注入带 body 的路由；该边界在源码中没有
+对应编号标签，⛔ 不要用 09·X2 / 09·X3 指代。热档 schema、relayer 外部 I/O 事务边界、坏 match entry
+隔离、GameRoom C2S、Lobby RPC envelope、Public WebPlatform response 和未知路由限流均已有对应守门，
+不应继续列作当前偏差。不要用规则编号掩盖剩余事实。
 
 ## 13. 登记点
 

@@ -9,11 +9,13 @@ import { SCHEMA_VERSION } from "./infra/config";
 import { activeLruBucketOf, kActiveLru, kUser, zoneCtx } from "./infra/keys";
 import { clientFor, indexClientFor } from "./infra/redisRoute";
 import { CREATE_USER, evalshaWithReload } from "./infra/redisScripts";
+import { readLiveUserFields } from "./liveSchema";
+import { USER_GENERIC_WRITE_RESERVED_FIELDS } from "./userSchema";
 
 /** 按需取字段。⛔ 禁止 HGETALL。缺失字段返回 null（09·R9：hmget 数组自己 zip）。 */
 export async function loadFields(uid: string, fields: string[]): Promise<Record<string, string | null>> {
-  const vals = await clientFor(uid).hmget(kUser(uid), ...fields);
-  return Object.fromEntries(fields.map((f, i) => [f, vals[i]]));
+  const read = await readLiveUserFields(uid, fields);
+  return read.fields;
 }
 
 /** 刷活跃索引（登录点 + withUser 写提交尾部共同构成完整索引，冷档候选靠它，08）。 */
@@ -32,7 +34,28 @@ export async function createUser(
   uid: string,
   initFields: Record<string, string> = {},
 ): Promise<"ok" | "exists"> {
-  const argv: string[] = [String(SCHEMA_VERSION), String(Date.now())];
+  return createUserRecord(uid, initFields, null);
+}
+
+/** 建角专用入口：pending marker 由底座参数写入，不借普通 initFields 绕过保留字段闸。 */
+export async function createCharacterUser(
+  uid: string,
+  initFields: Record<string, string> = {},
+): Promise<"ok" | "exists"> {
+  return createUserRecord(uid, initFields, "pending");
+}
+
+async function createUserRecord(
+  uid: string,
+  initFields: Record<string, string>,
+  registration: "pending" | null,
+): Promise<"ok" | "exists"> {
+  for (const field of USER_GENERIC_WRITE_RESERVED_FIELDS) {
+    if (Object.hasOwn(initFields, field)) {
+      throw new Error(`createUser initFields 不得覆盖保留字段：${field}`);
+    }
+  }
+  const argv: string[] = [String(SCHEMA_VERSION), String(Date.now()), registration ?? ""];
   for (const [f, v] of Object.entries(initFields)) { argv.push(f, v); }
   return await evalshaWithReload(clientFor(uid), CREATE_USER, [kUser(uid)], argv) as "ok" | "exists";
 }

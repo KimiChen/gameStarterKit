@@ -18,7 +18,7 @@
  */
 import { STAMINA_MAX } from "@game/shared";
 import { zoneCtx } from "../core/infra/keys";
-import { createUser } from "../core/userRecord";
+import { createCharacterUser } from "../core/userRecord";
 import { ensureLive, invalidateUserNegcache } from "../core/archive/thaw";
 import { webPlatformClient } from "../platform/webPlatformClient";
 import { enqueueCharacterRepairIntent, registerCharacterWithRepair } from "./characterRepair";
@@ -42,11 +42,6 @@ const zoneCharInit = (): Record<string, string> => {
     stamina: String(STAMINA_MAX),
     lastStaminaRecoverAt: "0", // 满体力：恢复计时未开始
     avatarId: "-1",
-    // The marker is written atomically with the Redis profile.  A crash between
-    // createUser and the external PUT therefore leaves an observable pending
-    // state that the next join can repair.
-    characterRegistration: "pending",
-    characterRegistrationCheckedAt: "0",
   };
 };
 
@@ -76,7 +71,7 @@ export interface CharacterInitializerDependencies {
 
 const defaultCharacterInitializerDependencies: CharacterInitializerDependencies = {
   ensureLive,
-  createUser,
+  createUser: createCharacterUser,
   registerCharacterWithRepair,
   hasCharacter: (uid, sId) => webPlatformClient.hasCharacter(uid, sId),
   enqueueCharacterRepairIntent,

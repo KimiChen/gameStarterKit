@@ -9,7 +9,7 @@ import {
 } from "../../src/core/infra/keys";
 import { clientFor, clientForKey, closeRedis } from "../../src/core/infra/redisRoute";
 import { closeMysql } from "../../src/core/infra/mysql";
-import { createUser } from "../../src/core/userRecord";
+import { createCharacterUser } from "../../src/core/userRecord";
 import { zoneCtx } from "../../src/core/infra/keys";
 import { readCharacterRegistration } from "../../src/player/characterState";
 import {
@@ -40,9 +40,7 @@ const intent = (name: string, serverId: number) => {
 };
 
 async function seedPendingProfile(item: { userId: string; serverId: number }): Promise<void> {
-  assert.equal(await zoneCtx.run({ sId: item.serverId }, () => createUser(item.userId, {
-    characterRegistration: "pending",
-  })), "ok");
+  assert.equal(await zoneCtx.run({ sId: item.serverId }, () => createCharacterUser(item.userId)), "ok");
 }
 
 before(assertRedisUp);
@@ -108,9 +106,7 @@ test("processOnce：远端 PUT 成功后只把对应区的 profile marker 补为
   const profileKey = zoneCtx.run({ sId: item.serverId }, () => kUser(item.userId));
   const profileClient = clientFor(item.userId);
   try {
-    await zoneCtx.run({ sId: item.serverId }, () => createUser(item.userId, {
-      characterRegistration: "pending",
-    }));
+    await zoneCtx.run({ sId: item.serverId }, () => createCharacterUser(item.userId));
     await enqueueCharacterRepairIntent(item.userId, item.serverId, 0);
 
     const result = await processCharacterRepairOnce({
@@ -141,10 +137,8 @@ test("readCharacterRegistration：真实 Redis marker 严格解析 checkedAt", a
   try {
     await profileClient.unlink(profileKey);
 
-    await profileClient.hset(profileKey, {
-      characterRegistration: "ready",
-      characterRegistrationCheckedAt: "123456",
-    });
+    await zoneCtx.run({ sId }, () => createCharacterUser(uid));
+    await profileClient.hset(profileKey, "characterRegistration", "ready", "characterRegistrationCheckedAt", "123456");
     assert.deepEqual(
       await readCharacterRegistration(uid, sId),
       { state: "ready", checkedAtMs: 123456 },
@@ -153,20 +147,23 @@ test("readCharacterRegistration：真实 Redis marker 严格解析 checkedAt", a
 
     for (const value of ["", "-1", "1.5", "NaN", "9007199254740992", "garbage"]) {
       await profileClient.hset(profileKey, "characterRegistrationCheckedAt", value);
-      assert.deepEqual(
-        await readCharacterRegistration(uid, sId),
-        { state: "ready", checkedAtMs: null },
-        `非法 checkedAt=${JSON.stringify(value)} 必须退回权威复核`,
+      await assert.rejects(
+        readCharacterRegistration(uid, sId),
+        /characterRegistrationCheckedAt/,
+        `v2 非法 checkedAt=${JSON.stringify(value)} 必须按坏档拒绝`,
       );
     }
 
-    await profileClient.hset(profileKey, "characterRegistration", "unknown");
-    await profileClient.hdel(profileKey, "characterRegistrationCheckedAt");
+    await profileClient.hset(profileKey, "characterRegistration", "unknown", "characterRegistrationCheckedAt", "0");
     assert.deepEqual(
       await readCharacterRegistration(uid, sId),
-      { state: null, checkedAtMs: null },
-      "未知 marker 与缺失时间戳都必须 fail-closed",
+      { state: null, checkedAtMs: 0 },
+      "未知 marker 仍必须 fail-closed，而合法 v2 checkedAt 保持可读",
     );
+
+    await profileClient.hdel(profileKey, "characterRegistrationCheckedAt");
+    await assert.rejects(readCharacterRegistration(uid, sId), /缺失/,
+      "v2 缺失 checkedAt 属 schema 损坏，不得降级成 legacy marker");
   } finally {
     await profileClient.unlink(profileKey).catch(() => {});
   }

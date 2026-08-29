@@ -15,6 +15,7 @@ import {
   EFFECT_FIELD_VALUE_RULES, EFFECT_RESERVED_FIELDS, EFFECT_SCHEMA_VERSION,
 } from "@game/shared";
 import { BAG_SHARDS, SCHEMA_VERSION } from "./config";
+import { USER_GENERIC_WRITE_RESERVED_FIELDS } from "../userSchema";
 
 export interface RedisScript { readonly name: string; readonly lua: string; readonly sha: string }
 
@@ -22,6 +23,104 @@ export interface RedisScript { readonly name: string; readonly lua: string; read
 export const defineScript = (name: string, lua: string): RedisScript =>
   ({ name, lua, sha: createHash("sha1").update(lua).digest("hex") });
 const script = defineScript;
+const luaSet = (values: readonly string[]): string =>
+  `{${values.map((value) => `[${JSON.stringify(value)}]=true`).join(",")}}`;
+const LUA_USER_GENERIC_RESERVED = luaSet(USER_GENERIC_WRITE_RESERVED_FIELDS);
+
+/**
+ * 原子读取 user schema 元数据与调用方字段。返回首项 `absent`，或
+ * `[live, schemaVersion, ver, fence, createdAt, checkedAt, ...requested]`。
+ * 脚本只读，供 loadFields 与 ensureLive 共用同一个无撕裂快照。
+ */
+export const READ_USER_FIELDS = script("readUserFields", `
+local kind = redis.call('TYPE', KEYS[1]).ok
+if kind == 'none' then return { 'absent' } end
+if kind ~= 'hash' then return redis.error_reply('user key type ' .. kind .. ' expected hash') end
+local names = {
+  'schemaVersion', 'ver', 'fence', 'createdAt', 'characterRegistrationCheckedAt'
+}
+for i = 1, #ARGV do names[#names + 1] = ARGV[i] end
+local values = redis.call('HMGET', KEYS[1], unpack(names))
+local result = { 'live' }
+for i = 1, #values do result[#result + 1] = values[i] or false end
+return result
+`);
+
+/**
+ * 锁内热档 v1→v2 原子迁移。所有来源值与目标值在首个 HSET 前完成类型、范围和 CAS
+ * preflight；relayer 在锁外 bump ver 时返回 changed，由 wrapper 重读 registry 后重试。
+ */
+export const MIGRATE_USER_SCHEMA = script("migrateUserSchema", `
+-- KEYS[1]=lock KEYS[2]=user
+-- ARGV=[myFence, expectedSchema, expectedVer, expectedFence, expectedCreatedAt|'',
+--       expectedCheckedAt|'', targetSchema, targetVer, targetCheckedAt]
+local function keyType(key) return redis.call('TYPE', key).ok end
+local function canonicalUnsigned(value)
+  if type(value) ~= 'string' or not string.match(value, '^%d+$') then return nil end
+  if #value > 1 and string.sub(value, 1, 1) == '0' then return nil end
+  local number = tonumber(value)
+  if number == nil or number < 0 or number ~= math.floor(number) or number > 9007199254740991 then
+    return nil
+  end
+  return number
+end
+if #KEYS ~= 2 or #ARGV ~= 9 then return redis.error_reply('user schema migrate argv invalid') end
+if keyType(KEYS[1]) ~= 'string' then return redis.error_reply('user schema migrate lock type') end
+if redis.call('GET', KEYS[1]) ~= ARGV[1] then return 'lost' end
+local userType = keyType(KEYS[2])
+if userType == 'none' then return 'cold' end
+if userType ~= 'hash' then return redis.error_reply('user schema migrate user type') end
+if (ARGV[2] ~= '${SCHEMA_VERSION - 1}' and ARGV[2] ~= '${SCHEMA_VERSION}')
+  or ARGV[7] ~= '${SCHEMA_VERSION}' then
+  return redis.error_reply('user schema migrate version plan invalid')
+end
+local currentSchema = redis.call('HGET', KEYS[2], 'schemaVersion')
+if currentSchema ~= ARGV[2] then return 'changed' end
+local currentVer = redis.call('HGET', KEYS[2], 'ver')
+local currentFence = redis.call('HGET', KEYS[2], 'fence')
+local currentCreatedAt = redis.call('HGET', KEYS[2], 'createdAt')
+local currentCheckedAt = redis.call('HGET', KEYS[2], 'characterRegistrationCheckedAt')
+local parsedVer = canonicalUnsigned(currentVer)
+if parsedVer == nil or canonicalUnsigned(currentFence) == nil then
+  return redis.error_reply('user schema migrate metadata invalid')
+end
+if currentCreatedAt ~= false and canonicalUnsigned(currentCreatedAt) == nil then
+  return redis.error_reply('user schema migrate createdAt invalid')
+end
+if currentCheckedAt ~= false and canonicalUnsigned(currentCheckedAt) == nil then
+  return redis.error_reply('user schema migrate checkedAt invalid')
+end
+if ARGV[2] == '${SCHEMA_VERSION}' and currentCheckedAt == false then
+  return redis.error_reply('user schema migrate checkedAt missing')
+end
+if currentVer ~= ARGV[3] or currentFence ~= ARGV[4] then return 'changed' end
+if (ARGV[5] == '' and currentCreatedAt ~= false)
+  or (ARGV[5] ~= '' and currentCreatedAt ~= ARGV[5]) then
+  return 'changed'
+end
+if (ARGV[6] == '' and currentCheckedAt ~= false)
+  or (ARGV[6] ~= '' and currentCheckedAt ~= ARGV[6]) then
+  return 'changed'
+end
+if ARGV[2] == '${SCHEMA_VERSION}' then
+  if ARGV[8] ~= currentVer or ARGV[9] ~= currentCheckedAt then
+    return redis.error_reply('user schema current plan invalid')
+  end
+  return 'current'
+end
+local targetVer = canonicalUnsigned(ARGV[8])
+if targetVer == nil or targetVer ~= parsedVer + 1 then
+  return redis.error_reply('user schema migrate target ver invalid')
+end
+if canonicalUnsigned(ARGV[9]) == nil then
+  return redis.error_reply('user schema migrate checkedAt invalid')
+end
+redis.call('HSET', KEYS[2],
+  'schemaVersion', ARGV[7],
+  'ver', ARGV[8],
+  'characterRegistrationCheckedAt', ARGV[9])
+return 'ok'
+`);
 
 /**
  * 交互式玩法写：fence CAS + 只写脏字段 + bump ver（03）。
@@ -30,6 +129,10 @@ const script = defineScript;
 export const CAS_HSET = script("casHset", `
 if redis.call('EXISTS', KEYS[1]) == 0 then return 'cold' end
 if #ARGV < 3 or (#ARGV % 2) ~= 1 then return redis.error_reply('casHset argv invalid') end
+local reserved = ${LUA_USER_GENERIC_RESERVED}
+for i = 2, #ARGV, 2 do
+  if reserved[ARGV[i]] == true then return redis.error_reply('casHset reserved field ' .. ARGV[i]) end
+end
 if redis.call('HGET', KEYS[1], 'schemaVersion') ~= '${SCHEMA_VERSION}' then
   return redis.error_reply('casHset schema invalid')
 end
@@ -64,8 +167,6 @@ return 'ok'
  * 从 MySQL 读取历史 JSON，且所有字段写入必须在同一 Redis 脚本内完成。
  * KEYS = [user, applied, appliedPayload, bag0..bagN]。
  */
-const luaSet = (values: readonly string[]): string =>
-  `{${values.map((value) => `[${JSON.stringify(value)}]=true`).join(",")}}`;
 const LUA_EFFECT_FIELDS = luaSet(EFFECT_FIELD_ALLOWLIST);
 const LUA_EFFECT_RESERVED = luaSet(EFFECT_RESERVED_FIELDS);
 const LUA_EFFECT_FIELD_RULES = `{${Object.entries(EFFECT_FIELD_VALUE_RULES).map(([field, rule]) => {
@@ -378,12 +479,36 @@ return 0
 /**
  * 建号原子创建 user:{uid}：已存在则不动（⛔ 隐式创建/覆盖都是 09·R2 禁区，
  * 只有本脚本的建号路径与 thaw 的 thawRestore 允许创建档）。
- * ARGV = [schemaVersion, nowMs, field, value, ...]。返回 'ok' | 'exists'。
+ * ARGV = [schemaVersion, nowMs, characterRegistration|'', field, value, ...]。
+ * checkedAt 固定由底座写 0，调用方字段不得覆盖任何保留字段。返回 'ok' | 'exists'。
  */
 export const CREATE_USER = script("createUser", `
+local function canonicalUnsigned(value)
+  if type(value) ~= 'string' or not string.match(value, '^%d+$') then return false end
+  if #value > 1 and string.sub(value, 1, 1) == '0' then return false end
+  local number = tonumber(value)
+  return number ~= nil and number >= 0 and number == math.floor(number) and number <= 9007199254740991
+end
+if #ARGV < 3 or (#ARGV % 2) ~= 1 then return redis.error_reply('createUser argv invalid') end
+if ARGV[1] ~= '${SCHEMA_VERSION}' or not canonicalUnsigned(ARGV[2]) then
+  return redis.error_reply('createUser metadata invalid')
+end
+if ARGV[3] ~= '' and ARGV[3] ~= 'pending' then
+  return redis.error_reply('createUser registration invalid')
+end
+local reserved = ${LUA_USER_GENERIC_RESERVED}
+for i = 4, #ARGV, 2 do
+  if reserved[ARGV[i]] == true then return redis.error_reply('createUser reserved field ' .. ARGV[i]) end
+end
 if redis.call('EXISTS', KEYS[1]) == 1 then return 'exists' end
-redis.call('HSET', KEYS[1], 'schemaVersion', ARGV[1], 'fence', '0', 'ver', '0', 'createdAt', ARGV[2])
-for i = 3, #ARGV, 2 do
+redis.call('HSET', KEYS[1],
+  'schemaVersion', ARGV[1],
+  'fence', '0',
+  'ver', '0',
+  'createdAt', ARGV[2],
+  'characterRegistrationCheckedAt', '0')
+if ARGV[3] ~= '' then redis.call('HSET', KEYS[1], 'characterRegistration', ARGV[3]) end
+for i = 4, #ARGV, 2 do
   redis.call('HSET', KEYS[1], ARGV[i], ARGV[i+1])
 end
 return 'ok'

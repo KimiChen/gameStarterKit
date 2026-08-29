@@ -131,7 +131,9 @@ freeze/thaw 仍是实验模块。thaw 接缝已经被部分 player/UoW 路径调
 还可能被 `ZADD XX GT` 提升为 skip/error 的调度退避边界，不能取代真实活跃来源 `user.lastActiveAt`。
 容量 ledger 使用
 `JSON_STORAGE_SIZE` 做 admission 记账，但不等同于物理磁盘容量，也不提供备份、分片迁移或为腾空间
-自动删除冷档权威。热档 schema 迁移仍未闭环。
+自动删除冷档权威。热档只读原子接受当前 N 与 N-1，普通及后台写在各自锁/无 fence apply 前完成对账；
+freeze 迁移后才取快照，thaw 与热档共用连续 migration registry 和深校验器。当前 v1→v2 会补缺失的
+`characterRegistrationCheckedAt="0"`、保留合法旧值并 bump `ver`，畸形/future/WRONGTYPE 均 fail-closed。
 
 准确状态见 [SERVER §9](SERVER.md#9-实验性冷档模块) 和
 [EXTRAFEATURES §3.6](EXTRAFEATURES.md#36-多区分片扩展与冷档参考)。

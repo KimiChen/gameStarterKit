@@ -11,7 +11,7 @@
  * 否则 localMutex 自等死锁）。relayer 不走 withUser（09·X5），是合法调用方。
  */
 import type Redis from "ioredis";
-import { LOCK_RENEW_MS, SCHEMA_VERSION, THAW_RATE, normalizeSId } from "../infra/config";
+import { LOCK_RENEW_MS, THAW_RATE, normalizeSId } from "../infra/config";
 import {
   activeLruBucketOf, currentZoneId, kActiveLru, kApplied, kAppliedPayload, kArchiveProof,
   kBagAll, kNegcacheUser, kUser, zoneCtx,
@@ -32,6 +32,9 @@ import {
   ARCHIVE_PHASE_COMMITTED, ARCHIVE_PHASE_LEGACY, ARCHIVE_PHASE_PREPARED,
   newFreezeId, parseArchivePhase, parseFreezeId, type ArchivePhase,
 } from "./protocol";
+import {
+  inspectLiveUserSchema, migrateLiveUserSchemaLocked, readLiveUserFields,
+} from "../liveSchema";
 
 // ───────────────────── 常量（模块私有；跨模块配置见 core/infra/config.ts） ─────────────────────
 
@@ -138,23 +141,9 @@ async function validateDualStateLiveBranch(
   redis: Redis,
   uid: string,
 ): Promise<{ valid: true } | { valid: false; reason: string }> {
-  const userType = await redis.type(kUser(uid));
-  if (userType !== "hash") {
-    return { valid: false, reason: `user_type_${userType}` };
-  }
-  const [schemaRaw, verRaw, fenceRaw] = await redis.hmget(
-    kUser(uid), "schemaVersion", "ver", "fence",
-  );
   try {
-    const schema = storedInt(schemaRaw, "live user.schemaVersion", {
-      min: 1,
-      max: Number.MAX_SAFE_INTEGER,
-    });
-    if (schema !== SCHEMA_VERSION) {
-      return { valid: false, reason: `user_schema_${schema}` };
-    }
-    storedInt(verRaw, "live user.ver", { min: 0, max: Number.MAX_SAFE_INTEGER });
-    storedInt(fenceRaw, "live user.fence", { min: 0, max: Number.MAX_SAFE_INTEGER });
+    const read = await readLiveUserFields(uid, []);
+    if (read.kind !== "live") { return { valid: false, reason: "user_absent" }; }
   } catch (error) {
     return {
       valid: false,
@@ -200,7 +189,13 @@ export async function resolve(uid: string, sId = currentZoneId()): Promise<{ kin
   if (rows.length > 1) { throw new Error(`user_archive identity 非唯一 uid=${uid} sId=${sId}`); }
   const row: ArchiveRow | undefined = rows.length === 1 ? archiveRowOf(rows[0]) : undefined;
 
-  if (live && !row) { return { kind: "LIVE" }; }
+  if (live && !row) {
+    const liveBranch = await validateDualStateLiveBranch(r, uid);
+    if (!liveBranch.valid) {
+      throw new Error(`live user schema/key 非法 uid=${uid} sId=${sId}: ${liveBranch.reason}`);
+    }
+    return { kind: "LIVE" };
+  }
   if (!live && row) { return { kind: "FROZEN", row }; }
   if (!live && !row) { return { kind: "ABSENT" }; }
 
@@ -404,8 +399,22 @@ export async function ensureLive(uid: string, sId?: number): Promise<void> {
   // Keep the complete fast path in the explicit zone context too. This is
   // required for callers such as relayer that have no request ALS store.
   return zoneCtx.run({ sId: zone }, async () => {
-    const r = clientFor(uid);
-    if ((await r.exists(kUser(uid))) === 1) {
+    let schemaState: "absent" | "current" | "previous";
+    try {
+      schemaState = await inspectLiveUserSchema(uid);
+    } catch (error) {
+      // A malformed live key beside an archive row is an authority conflict,
+      // not permission to prefer either side. Enter locked resolve so it can
+      // preserve both branches; pure-hot corruption still surfaces directly.
+      if (await archiveRowExists(uid, zone)) {
+        return ensureLiveFlights.run(uid, zone, () => thawSlowPath(uid, zone));
+      }
+      throw error;
+    }
+    if (schemaState !== "absent") {
+      if (schemaState === "previous") {
+        return ensureLiveFlights.run(uid, zone, () => thawSlowPath(uid, zone));
+      }
       if (!(await archiveRowExists(uid, zone))) { return; } // 快路径：纯热档
       // live && archive 并存（中断残留或 PITR）→ 掉进慢路径锁内 resolve
     } else {
@@ -429,6 +438,8 @@ async function thawSlowPath(uid: string, sId: number): Promise<void> {
     const st = await resolve(uid, sId); // 锁内判定（08）
     switch (st.kind) {
       case "LIVE": {
+        // 合法 N-1 双存态也只能在迁移成功后删除 archive；纯热档 N-1 同样走本锁内路径。
+        await migrateLiveUserSchemaLocked(uid, fence);
         if (st.row) { // freeze ②③ 间 / thaw 删行前的中断残留：archive 已陈旧，删（08 情形表）
           await restoreActiveIndex(uid, sId, st.row.snapshot);
           await deleteArchiveRow(uid, st.row);

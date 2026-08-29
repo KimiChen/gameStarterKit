@@ -174,10 +174,26 @@ end
 if s.user.schemaVersion ~= '${SCHEMA_VERSION}' then
   return redis.error_reply('archive snapshot schema invalid')
 end
-local userVer = tonumber(s.user.ver)
-if not string.match(s.user.ver, '^[0-9]+$') or userVer == nil or userVer < 0
-  or userVer ~= math.floor(userVer) or userVer > 9007199254740991 then
+local function canonicalUserInt(value)
+  if type(value) ~= 'string' or not string.match(value, '^%d+$') then return nil end
+  if #value > 1 and string.sub(value, 1, 1) == '0' then return nil end
+  local number = tonumber(value)
+  if number == nil or number < 0 or number ~= math.floor(number) or number > 9007199254740991 then
+    return nil
+  end
+  return number
+end
+if canonicalUserInt(s.user.ver) == nil then
   return redis.error_reply('archive snapshot ver invalid')
+end
+if canonicalUserInt(s.user.fence) == nil then
+  return redis.error_reply('archive snapshot fence invalid')
+end
+if s.user.createdAt ~= nil and canonicalUserInt(s.user.createdAt) == nil then
+  return redis.error_reply('archive snapshot createdAt invalid')
+end
+if canonicalUserInt(s.user.characterRegistrationCheckedAt) == nil then
+  return redis.error_reply('archive snapshot characterRegistrationCheckedAt invalid')
 end
 for field, value in pairs(s.user) do
   if type(field) ~= 'string' or type(value) ~= 'string' then
