@@ -677,7 +677,8 @@ test("close→onDrop 间隙发出的写 RPC 不得进入 SDK 队列并在重连�
   // 竞态窗口：底层 socket 已关，但 onDrop 尚未回调，slot.dropping 仍是 false，
   // 因此 rpc() 的本地闸放行并真的调用了 room.send()。
   fake.closeSocket();
-  const pending = WebSocketClient.inst.rpc(UserRpc.GetUserId, {});
+  // 用真正的写 RPC（idem 路由）而不是只读 getUserId，让用例名副其实。
+  const pending = WebSocketClient.inst.rpcIdem(GuildRpc.Join, { guildId: 7 }, "cr-gap");
   assert.equal(
     fake.room.reconnection.enqueuedMessages.length,
     0,
@@ -825,4 +826,22 @@ test("闸失效放弃连接：释放全部 owner 并只上报一次最终断线"
     }
     await owner.leave();
   }
+});
+
+test("bind 前已存在的 SDK 出站队列必须被清空", async () => {
+  // max=0 之外的第二道闸：join 之前队列里已经躺着东西的房间形状。
+  const fake = makeQueueingFakeRoom();
+  fake.room.reconnection.enqueuedMessages.push({
+    data: { type: LOBBY_MSG_RPC, data: { id: "stale-1" } },
+  });
+  const c = WebSocketClient.inst as unknown as { client: unknown };
+  c.client = { auth: { token: "" }, joinOrCreate: async () => fake.room };
+  await WebSocketClient.inst.join("token-prequeue");
+  assert.equal(fake.room.reconnection.maxEnqueuedMessages, 0, "bindRoom 必须关闭 SDK 离线队列");
+  assert.equal(
+    fake.room.reconnection.enqueuedMessages.length,
+    0,
+    "bindRoom 必须清空 bind 前已存在的 SDK 队列",
+  );
+  await WebSocketClient.inst.leave();
 });
