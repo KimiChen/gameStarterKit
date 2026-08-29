@@ -21,11 +21,16 @@ import { randomBytes } from "node:crypto";
 import { hostname } from "node:os";
 import type { Redis } from "ioredis";
 
-import { K_STREAM_MATCH, K_STREAM_MATCH_V2 } from "../infra/keys";
+import {
+  K_STREAM_MATCH,
+  K_STREAM_MATCH_QUARANTINE,
+  K_STREAM_MATCH_V2,
+} from "../infra/keys";
 import { withRcTx, type ResultSetHeader } from "../infra/mysql";
 import { clientForKey } from "../infra/redisRoute";
 import { assertAdmissionOpen, defaultLifecycle } from "../infra/lifecycle";
 import { storedInt } from "../infra/numbers";
+import { defineScript, evalshaWithReload } from "../infra/redisScripts";
 
 // ── 常量（已登记 docs/SERVER.md §13，⛔ 禁止散落——09 审查流程第 6 条） ──
 
@@ -42,10 +47,11 @@ const CONSUME_BLOCK_MS = 5000;
 /** 裁剪节流周期（消费循环内）。 */
 const TRIM_INTERVAL_MS = 60_000;
 
-/** consumer 名 per **主机**（⛔ 不含 PID，评审修正）：进程崩溃重启后复用同名，
- *  consumeOnce 的 "0" 起点直接接回自己的 PEL 残留；含 PID 会让旧 PEL 变成孤儿，
- *  只能靠 XAUTOCLAIM 兜（跨机死进程仍由 claimStale 接管）。 */
-const CONSUMER = `c_${hostname()}`;
+/**
+ * consumer 名必须精确到进程。同一主机允许启动多个 settle worker；若只用 hostname，它们会共享
+ * PEL owner，并可能同时用起点 "0" 读取同一条目。崩溃进程的 PID 残留由 XAUTOCLAIM 接管。
+ */
+export const MATCH_STREAM_CONSUMER = `c_${hostname()}_${process.pid}`;
 
 /** 跨消费者 PEL 接管的空闲阈值：条目在别的（死）消费者手里挂 ≥ 此值即认领。 */
 const CLAIM_MIN_IDLE_MS = 60_000;
@@ -95,6 +101,127 @@ export interface MatchEvidence {
   participants: EvidenceParticipant[]; // 已按名次排序（place 1 在前）
 }
 
+const MATCH_EVIDENCE_KEYS = [
+  "matchId", "sId", "mode", "seed", "mapIndex", "loadout", "injectWaves", "participants",
+] as const;
+const EVIDENCE_PARTICIPANT_KEYS = [
+  "sessionId", "userId", "name", "place", "round", "elapsedMs", "survived",
+] as const;
+const EVIDENCE_INJECT_WAVE_KEYS = ["nonce", "count", "targetSessionId", "atMs"] as const;
+const MAX_EVIDENCE_PARTICIPANTS = 256;
+const MAX_EVIDENCE_INJECT_WAVES = 16_384;
+
+function exactJsonKeys(value: JsonObject, expected: readonly string[]): boolean {
+  const keys = Object.getOwnPropertyNames(value);
+  return Object.getOwnPropertySymbols(value).length === 0
+    && keys.length === expected.length
+    && expected.every((key) => Object.hasOwn(value, key));
+}
+
+function evidenceInt(value: unknown, min: number, max = Number.MAX_SAFE_INTEGER): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= min && value <= max;
+}
+
+function evidenceString(value: unknown, min: number, max: number): value is string {
+  return typeof value === "string" && value.length >= min && value.length <= max;
+}
+
+interface JsonValidationState {
+  remaining: number;
+  readonly seen: Set<object>;
+}
+
+/** Keep opaque loadout data JSON-stable until its ranked business schema exists. */
+function isCanonicalJsonValue(
+  value: unknown,
+  depth = 0,
+  state: JsonValidationState = { remaining: 4096, seen: new Set<object>() },
+): boolean {
+  if (--state.remaining < 0 || depth > 16) return false;
+  if (value === null || typeof value === "string" || typeof value === "boolean") return true;
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value !== "object" || state.seen.has(value)) return false;
+  const proto = Object.getPrototypeOf(value);
+  if (proto !== Object.prototype && proto !== null && proto !== Array.prototype) return false;
+  state.seen.add(value);
+  try {
+    if (Array.isArray(value)) {
+      if (value.length > 4096 || Object.getOwnPropertySymbols(value).length > 0) return false;
+      const names = Object.getOwnPropertyNames(value);
+      if (names.length !== value.length + 1 || names[names.length - 1] !== "length") return false;
+      for (let index = 0; index < value.length; index++) {
+        if (names[index] !== String(index)
+            || !isCanonicalJsonValue(value[index], depth + 1, state)) return false;
+      }
+      return true;
+    }
+    const names = Object.getOwnPropertyNames(value);
+    if (names.length > 256 || Object.getOwnPropertySymbols(value).length > 0) return false;
+    for (const name of names) {
+      const descriptor = Object.getOwnPropertyDescriptor(value, name);
+      if (!descriptor?.enumerable || !("value" in descriptor)
+          || !isCanonicalJsonValue(descriptor.value, depth + 1, state)) return false;
+    }
+    return true;
+  } finally {
+    state.seen.delete(value);
+  }
+}
+
+/** v2 payload is an audit record, so every field with a declared domain is exact and runtime checked. */
+function isMatchEvidencePayload(payload: JsonObject): payload is JsonObject & MatchEvidence {
+  if (!exactJsonKeys(payload, MATCH_EVIDENCE_KEYS)
+      || !evidenceString(payload.matchId, 1, 40)
+      || !evidenceInt(payload.sId, 0, 65_535)
+      || (payload.mode !== MATCH_MODE_CASUAL && payload.mode !== MATCH_MODE_RANKED)
+      || !evidenceInt(payload.seed, 0, 0xffff_ffff)
+      || !evidenceInt(payload.mapIndex, 0, 65_535)
+      || !isCanonicalJsonValue(payload.loadout)
+      || !Array.isArray(payload.injectWaves)
+      || payload.injectWaves.length > MAX_EVIDENCE_INJECT_WAVES
+      || !Array.isArray(payload.participants)
+      || payload.participants.length < 1
+      || payload.participants.length > MAX_EVIDENCE_PARTICIPANTS) {
+    return false;
+  }
+
+  const participantIds = new Set<string>();
+  for (let index = 0; index < payload.participants.length; index++) {
+    const value: unknown = payload.participants[index];
+    if (value === null || typeof value !== "object" || Array.isArray(value)) return false;
+    const participant = value as JsonObject;
+    if (!exactJsonKeys(participant, EVIDENCE_PARTICIPANT_KEYS)
+        || !evidenceString(participant.sessionId, 1, 64)
+        || !(participant.userId === null || evidenceString(participant.userId, 1, 128))
+        || !evidenceString(participant.name, 0, 128)
+        || participant.place !== index + 1
+        || !evidenceInt(participant.round, 0)
+        || !evidenceInt(participant.elapsedMs, 0)
+        || typeof participant.survived !== "boolean"
+        || participantIds.has(participant.sessionId)) {
+      return false;
+    }
+    participantIds.add(participant.sessionId);
+  }
+
+  const nonces = new Set<number>();
+  for (const value of payload.injectWaves) {
+    if (value === null || typeof value !== "object" || Array.isArray(value)) return false;
+    const wave = value as JsonObject;
+    if (!exactJsonKeys(wave, EVIDENCE_INJECT_WAVE_KEYS)
+        || !evidenceInt(wave.nonce, 0)
+        || !evidenceInt(wave.count, 1)
+        || !evidenceString(wave.targetSessionId, 1, 64)
+        || !participantIds.has(wave.targetSessionId)
+        || !evidenceInt(wave.atMs, 0)
+        || nonces.has(wave.nonce)) {
+      return false;
+    }
+    nonces.add(wave.nonce);
+  }
+  return true;
+}
+
 // ── matchId ──
 
 /**
@@ -115,6 +242,9 @@ export function newMatchId(): string {
  */
 export async function emitMatchEvidence(ev: MatchEvidence): Promise<string | null> {
   try {
+    if (!isMatchEvidencePayload(ev as unknown as JsonObject)) {
+      throw new TypeError("match evidence payload is not canonical v2");
+    }
     return await clientForKey(K_STREAM_MATCH_V2).xadd(
       K_STREAM_MATCH_V2, "*",
       // v2 key 与显式版本必须一起升级：旧 worker 根本看不到该 key，新 worker 才按 v2 契约解码。
@@ -199,6 +329,12 @@ interface NormalizedEntry {
   payload: string;
 }
 
+type EntryDecodeResult =
+  | { readonly ok: true; readonly entry: NormalizedEntry }
+  | { readonly ok: false; readonly reason: string };
+
+const decodeFailure = (reason: string): EntryDecodeResult => ({ ok: false, reason });
+
 /** Redis 顶层无符号十进制：拒绝空白、指数、负零等非 canonical 形态。 */
 function parseUInt(raw: string | undefined, max: number): number | null {
   if (raw === undefined || !/^(?:0|[1-9]\d*)$/.test(raw)) { return null; }
@@ -229,14 +365,15 @@ function payloadSId(value: unknown): number | null {
  * - v2：schemaVersion 必须精确为 "2"，顶层与 payload 的 matchId/mode/sId 必须一致；
  * - legacy：无顶层 sId 的真旧消息从 payload 取合法值，否则缺失回退 0；f91 顶层 sId 为权威并回填 payload。
  */
-function normalizeEntry(stream: MatchStreamState, fields: string[]): NormalizedEntry | null {
+function normalizeEntry(stream: MatchStreamState, fields: string[]): EntryDecodeResult {
+  if (fields.length % 2 !== 0) { return decodeFailure("FIELD_PAIRS"); }
   if (stream.kind === "v2") {
     const allowed = new Set(["schemaVersion", "matchId", "mode", "sId", "payload"]);
     const seen = new Set<string>();
-    if (fields.length !== allowed.size * 2) { return null; }
+    if (fields.length !== allowed.size * 2) { return decodeFailure("V2_FIELD_SET"); }
     for (let i = 0; i < fields.length; i += 2) {
       const name = fields[i];
-      if (!allowed.has(name) || seen.has(name)) { return null; }
+      if (!allowed.has(name) || seen.has(name)) { return decodeFailure("V2_FIELD_SET"); }
       seen.add(name);
     }
   }
@@ -244,26 +381,86 @@ function normalizeEntry(stream: MatchStreamState, fields: string[]): NormalizedE
   const matchId = f.matchId ?? "";
   const mode = parseUInt(f.mode, 255);
   const payload = parsePayload(f.payload);
-  if (!matchId || matchId.length > 40 || mode === null || !payload) { return null; }
+  if (!matchId || matchId.length > 40) { return decodeFailure("MATCH_ID"); }
+  if (mode === null) { return decodeFailure("MODE"); }
+  if (!payload) { return decodeFailure("PAYLOAD_JSON"); }
 
   if (stream.kind === "v2") {
     const sId = parseUInt(f.sId, 65535);
-    if (f.schemaVersion !== String(MATCH_STREAM_SCHEMA_VERSION) || sId === null
-        || payload.matchId !== matchId || payload.mode !== mode || payload.sId !== sId) {
-      return null;
+    if (f.schemaVersion !== String(MATCH_STREAM_SCHEMA_VERSION)) {
+      return decodeFailure("V2_SCHEMA_VERSION");
     }
-    return { matchId, mode, sId, payload: JSON.stringify(payload) };
+    if (sId === null) { return decodeFailure("V2_SERVER_ID"); }
+    if (payload.matchId !== matchId || payload.mode !== mode || payload.sId !== sId) {
+      return decodeFailure("V2_PAYLOAD_BINDING");
+    }
+    if (!isMatchEvidencePayload(payload)) { return decodeFailure("V2_PAYLOAD_SHAPE"); }
+    return { ok: true, entry: { matchId, mode, sId, payload: JSON.stringify(payload) } };
   }
 
   // f91 legacy 同时有顶层 + payload sId：顶层是落库契约，必须保留；真实 c8 两处都没有则补 0。
   const topLevelSId = f.sId === undefined ? null : parseUInt(f.sId, 65535);
-  if (f.sId !== undefined && topLevelSId === null) { return null; }
+  if (f.sId !== undefined && topLevelSId === null) { return decodeFailure("LEGACY_SERVER_ID"); }
   const embeddedSId = payload.sId === undefined ? null : payloadSId(payload.sId);
-  if (payload.sId !== undefined && embeddedSId === null) { return null; }
-  if (topLevelSId !== null && embeddedSId !== null && topLevelSId !== embeddedSId) { return null; }
+  if (payload.sId !== undefined && embeddedSId === null) {
+    return decodeFailure("LEGACY_PAYLOAD_SERVER_ID");
+  }
+  if (topLevelSId !== null && embeddedSId !== null && topLevelSId !== embeddedSId) {
+    return decodeFailure("LEGACY_SERVER_ID_MISMATCH");
+  }
   const sId = topLevelSId ?? embeddedSId ?? 0;
   payload.sId = sId;
-  return { matchId, mode, sId, payload: JSON.stringify(payload) };
+  return { ok: true, entry: { matchId, mode, sId, payload: JSON.stringify(payload) } };
+}
+
+/**
+ * XADD quarantine 必须先于 XACK。Lua 保证两条命令之间没有别的客户端插入；更关键的是，若 XADD
+ * 因 WRONGTYPE/OOM 等失败，脚本会在执行 XACK 前终止，原条目仍留在 PEL。quarantine 保留精确的
+ * fields 数组，修复工具无需信任已经失败的顶层字段。
+ */
+export const QUARANTINE_MATCH_ENTRY = defineScript("quarantineMatchEntry", `
+local quarantineId = redis.call(
+  "XADD", KEYS[2], "*",
+  "sourceStream", KEYS[1],
+  "sourceId", ARGV[2],
+  "sourceGroup", ARGV[1],
+  "sourceKind", ARGV[3],
+  "sourceIdentity", KEYS[1] .. "\\n" .. ARGV[1] .. "\\n" .. ARGV[2],
+  "reason", ARGV[4],
+  "rawFields", ARGV[5],
+  "quarantinedAtMs", ARGV[6]
+)
+local acked = redis.call("XACK", KEYS[1], ARGV[1], ARGV[2])
+return {quarantineId, acked}
+`);
+
+export async function quarantineMalformedMatchEntry(
+  client: Redis,
+  sourceStream: string,
+  sourceKind: MatchStreamKind,
+  id: string,
+  fields: string[],
+  reason: string,
+  quarantineKey = K_STREAM_MATCH_QUARANTINE,
+): Promise<string> {
+  const result = await evalshaWithReload(
+    client,
+    QUARANTINE_MATCH_ENTRY,
+    [sourceStream, quarantineKey],
+    [GROUP, id, sourceKind, reason, JSON.stringify(fields), String(Date.now())],
+  );
+  if (!Array.isArray(result) || result.length !== 2
+      || typeof result[0] !== "string" || !/^\d+-\d+$/.test(result[0])
+      || (result[1] !== 0 && result[1] !== 1)) {
+    throw new Error(`[matchConsumer] quarantine 返回非法 id=${String(result)}`);
+  }
+  if (result[1] === 0) {
+    console.error(
+      `[matchConsumer] quarantine 已持久化但来源 PEL 已被其它 owner ACK：`
+      + `source=${sourceStream} id=${id} quarantineId=${result[0]}`,
+    );
+  }
+  return result[0];
 }
 
 /**
@@ -272,20 +469,25 @@ function normalizeEntry(stream: MatchStreamState, fields: string[]): NormalizedE
  *   靠非分区 `match_index` 补回。ODKU 写法（09·DB1：⛔ INSERT IGNORE 静默吞截断/NOT NULL）；
  *   池已 `-FOUND_ROWS`，affectedRows 插入=1/重复=0 可信（09·DB2）。
  * - 重复 matchId（重复投递/重复消费）：跳过 results 但**仍 XACK**——重复条目已无信息量。
- * - 结构损坏条目：生产者是我们自己，损坏=bug → 告警后 ACK 丢弃（不 ACK 会永久卡死 PEL）。
+ * - 结构损坏条目：先原子写入 quarantine（完整原始 fields），成功后才 ACK；人工修复重投。
  * - DB 故障：**不 ACK** 直接抛——条目留在 PEL，下次 consumeOnce 的 "0" 起点重放，幂等闸兜底。
  */
 async function settleEntry(
   client: Redis, stream: MatchStreamState, id: string, fields: string[],
 ): Promise<void> {
-  const normalized = normalizeEntry(stream, fields);
-  if (!normalized) {
+  const decoded = normalizeEntry(stream, fields);
+  if (!decoded.ok) {
     const matchId = fieldMap(fields).matchId || "?";
-    console.error(`[matchConsumer] ${stream.label} 证据条目结构/版本损坏，ACK 丢弃：id=${id} matchId=${matchId}`);
-    await client.xack(stream.key, GROUP, id);
+    const quarantineId = await quarantineMalformedMatchEntry(
+      client, stream.key, stream.kind, id, fields, decoded.reason,
+    );
+    console.error(
+      `[matchConsumer] ${stream.label} 证据条目结构/版本损坏，已隔离：`
+      + `id=${id} matchId=${matchId} reason=${decoded.reason} quarantineId=${quarantineId}`,
+    );
     return;
   }
-  const { matchId, mode, sId, payload } = normalized;
+  const { matchId, mode, sId, payload } = decoded.entry;
   await withRcTx(async (conn) => {
     const [r] = await conn.execute<ResultSetHeader>(
       "INSERT INTO match_index (match_id, created_at) VALUES (?, NOW(3)) ON DUPLICATE KEY UPDATE match_id = match_id",
@@ -345,7 +547,7 @@ export async function consumeOnce(opts: ConsumeOptions = {}): Promise<number> {
 /** XAUTOCLAIM 接管死消费者的 PEL（幂等闸保证重复处理无害）。认领即成为 owner，随后走同一落库+ACK 路径。 */
 async function claimStale(client: Redis, stream: MatchStreamState, count: number): Promise<number> {
   const res = (await client.call(
-    "XAUTOCLAIM", stream.key, GROUP, CONSUMER, String(CLAIM_MIN_IDLE_MS), stream.claimCursor,
+    "XAUTOCLAIM", stream.key, GROUP, MATCH_STREAM_CONSUMER, String(CLAIM_MIN_IDLE_MS), stream.claimCursor,
     "COUNT", String(count),
   )) as [string, [string, string[] | null][]];
   const nextCursor = String(res?.[0] ?? "");
@@ -367,7 +569,7 @@ async function claimStale(client: Redis, stream: MatchStreamState, count: number
 async function readBatch(
   client: Redis, stream: MatchStreamState, startId: string, count: number,
 ): Promise<number> {
-  const args: (string | number)[] = ["GROUP", GROUP, CONSUMER, "COUNT", count];
+  const args: (string | number)[] = ["GROUP", GROUP, MATCH_STREAM_CONSUMER, "COUNT", count];
   args.push("STREAMS", stream.key, startId);
   const res = (await client.call("XREADGROUP", ...args.map(String))) as XReadGroupReply;
   const entries = res?.[0]?.[1] ?? [];
@@ -377,7 +579,7 @@ async function readBatch(
 
 /** 两 key 的 hash 输入相同，故可在一次 BLOCK XREADGROUP 中等待任一流，避免顺序阻塞饿死 v2。 */
 async function readNewBatches(client: Redis, count: number, blockMs?: number): Promise<number> {
-  const args: (string | number)[] = ["GROUP", GROUP, CONSUMER, "COUNT", count];
+  const args: (string | number)[] = ["GROUP", GROUP, MATCH_STREAM_CONSUMER, "COUNT", count];
   if (blockMs !== undefined) { args.push("BLOCK", blockMs); }
   args.push(
     "STREAMS",
@@ -570,6 +772,61 @@ async function streamBacklog(client: Redis, stream: MatchStreamState): Promise<{
   };
 }
 
+export interface MatchStreamDepthProbe {
+  readonly sourceBacklog: (streamKey: string) => Promise<{ backlog: number; xlen: number }>;
+  readonly quarantineDepth: () => Promise<number>;
+  readonly report: (message: string) => void;
+}
+
+const defaultMatchStreamDepthProbe: MatchStreamDepthProbe = {
+  sourceBacklog: async (streamKey) => {
+    const stream = MATCH_STREAM_BY_KEY.get(streamKey);
+    if (!stream) throw new Error(`未知 match stream key=${streamKey}`);
+    return streamBacklog(clientForKey(stream.key), stream);
+  },
+  quarantineDepth: () => clientForKey(K_STREAM_MATCH_QUARANTINE).xlen(K_STREAM_MATCH_QUARANTINE),
+  report: (message) => console.error(message),
+};
+
+function probeError(error: unknown): string {
+  return error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+}
+
+/** 单次健康探针。每个 key 独立收口错误，quarantine WRONGTYPE/ACL 不能被其它成功读掩盖。 */
+export async function runMatchStreamDepthCheck(
+  probe: MatchStreamDepthProbe = defaultMatchStreamDepthProbe,
+): Promise<void> {
+  await Promise.all([
+    ...MATCH_STREAMS.map(async (stream) => {
+      try {
+        const { backlog, xlen } = await probe.sourceBacklog(stream.key);
+        if (backlog > STREAM_DEPTH_ALERT) {
+          probe.report(
+            `[matchConsumer] ⚠⚠ ${stream.label} 未处理深度 ${backlog}（XLEN=${xlen}）`
+            + `超阈值 ${STREAM_DEPTH_ALERT}——settle worker 未运行或积压`
+            + `（npm --workspace @game/server run settle）`,
+          );
+        }
+      } catch (error) {
+        probe.report(`[matchConsumer] ⚠ ${stream.label} 深度探针失败：${probeError(error)}`);
+      }
+    }),
+    (async () => {
+      try {
+        const depth = await probe.quarantineDepth();
+        if (!Number.isSafeInteger(depth) || depth < 0) {
+          throw new Error(`XLEN 返回非法深度 ${String(depth)}`);
+        }
+        if (depth > 0) {
+          probe.report(`[matchConsumer] ⚠⚠ match quarantine 有 ${depth} 条待人工修复；禁止自动裁剪`);
+        }
+      } catch (error) {
+        probe.report(`[matchConsumer] ⚠ match quarantine 深度探针失败：${probeError(error)}`);
+      }
+    })(),
+  ]);
+}
+
 /** 网关启动时挂上：两条流分别检查未处理深度，任一超阈值都告警。 */
 export function startStreamDepthAlert(): void {
   if (activeStreamDepth?.active) { return; }
@@ -586,12 +843,9 @@ export function startStreamDepthAlert(): void {
   activeStreamDepth = state;
   state.timer = setInterval(() => {
     if (!state.active || activeStreamDepth !== state) { return; }
-    const check: Promise<void> = Promise.all(MATCH_STREAMS.map(async (stream) => {
-      const { backlog, xlen } = await streamBacklog(clientForKey(stream.key), stream);
-      if (backlog > STREAM_DEPTH_ALERT) {
-        console.error(`[matchConsumer] ⚠⚠ ${stream.label} 未处理深度 ${backlog}（XLEN=${xlen}）超阈值 ${STREAM_DEPTH_ALERT}——settle worker 未运行或积压（npm --workspace @game/server run settle）`);
-      }
-    })).then(() => undefined).catch(() => { /* Redis 抖动不告警——连接级问题由 infra 监控负责 */ });
+    const check = runMatchStreamDepthCheck().catch((error) => {
+      console.error("[matchConsumer] stream depth probe runner failed", error);
+    });
     state.checks.add(check);
     void check.then(
       () => { state.checks.delete(check); },
@@ -640,7 +894,7 @@ import { fileURLToPath } from "node:url";
 
 const isMain = process.argv[1] && realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1]);
 if (isMain) {
-  console.log(`[settle] 启动（consumer=${CONSUMER}，group=${GROUP}，streams=legacy+v2）`);
+  console.log(`[settle] 启动（consumer=${MATCH_STREAM_CONSUMER}，group=${GROUP}，streams=legacy+v2）`);
   startMatchConsumer();
   const shutdown = () => {
     void stopMatchConsumer().then(() => process.exit(0));

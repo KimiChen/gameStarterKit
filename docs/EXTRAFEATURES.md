@@ -149,15 +149,15 @@ package、构建/预览/部署脚本或构建产物，也不把它恢复为 gitl
 | character repair worker | 默认 `src/index.ts` | 外部角色登记失败的本地补偿样例 |
 | mail wake loop | 首次 LobbyRoom 创建时启动，进程内单例 | 只做“有变化后重新 pull”的唤醒样例 |
 | outbox relayer | `npm --workspace @game/server run relayer` | 独立命令，不随 `dev` 启动；死信（status=2）无自动或人工处置入口，需自行接线 `replayDead` |
-| match settle consumer | `npm --workspace @game/server run settle` | 独立命令，不随 `dev` 启动 |
+| match settle consumer | `npm --workspace @game/server run settle` | 独立命令；坏条目先入 quarantine 再 ACK，隔离流需人工修复和清理 |
 | freeze worker | `npm --workspace @game/server run freeze-worker` | 默认硬关闭；当前实现明确标为 unsafe |
 | Colyseus playground/monitor | 非 `production` 的 app config | 本地开发管理界面，不是外部管理后台 |
 
 这些组件没有形成长期进程编排、指标采集或故障值守能力。默认进程现在通过单一 lifecycle registry 聚合
 关闭，按逆序、可等待且幂等地释放资源；启动半失败和 Lobby 按需 mail wake 也走同一 cleanup 路径。relayer
-已拆成守卫短事务与事务外 apply/thaw/trim，但仍只承诺 singleton 串行，不提供多 worker claim/分片；此外
-evidence 不足以确定性重放、坏 stream entry 会被 ACK 等问题仍待闭合。如果实际项目选择采用，应继续完成
-隔离、故障测试和运维接线。它们的不完整不阻塞核心框架验收。
+已拆成守卫短事务与事务外 apply/thaw/trim，但仍只承诺 singleton 串行，不提供多 worker claim/分片；match
+坏条目已有同槽 quarantine 与持久告警，但没有外部告警平台或自动修复。evidence 不足以确定性重放等问题
+仍待闭合。如果实际项目选择采用，应继续完成故障测试和运维接线。它们的不完整不阻塞核心框架验收。
 
 ### 3.6 多区、分片、扩展与冷档参考
 

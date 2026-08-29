@@ -103,6 +103,11 @@ export const K_STREAM_MATCH = `${G}stream:match`;
  * 两流均按各自已落库位点 XTRIM MINID，禁止 MAXLEN（09·K6）。
  */
 export const K_STREAM_MATCH_V2 = `${G}stream:match:v2:{${K_STREAM_MATCH}}`;
+/**
+ * 对局证据坏条目隔离流。与 legacy/v2 源流使用同一 hash-tag，consumer 才能在一个 Lua 原子段中
+ * 先持久化原始条目、再 ACK 来源 PEL。该流禁止自动裁剪；人工修复重投并确认落库后才可 XDEL。
+ */
+export const K_STREAM_MATCH_QUARANTINE = `${G}stream:match:quarantine:{${K_STREAM_MATCH}}`;
 /** 邮件唤醒 STREAM（10·M5，跨节点消费）。可靠流：⛔ 禁 MAXLEN，XTRIM MINID 按已投递位点裁（09·K6）。 */
 export const K_STREAM_MAILWAKE = `${G}stream:mailwake`;
 /** 踢人流（DUAL_MODE §2.3 / M12d）：coord Redis 上广播

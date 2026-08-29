@@ -375,16 +375,26 @@ structured-clone、无 IO、无副作用的纯 CPU 工作。周期任务、批�
 - **09·K4–K6**：match ID 与 schema version 稳定；证据输入边界明确；消费幂等、坏条目可追踪，裁剪
   不越过未处理位点。
 
+match consumer 不再把结构或版本损坏的条目直接 ACK 丢弃。来源流与
+`K_STREAM_MATCH_QUARANTINE` 固定同槽；Lua 先把 `sourceStream`、`sourceId`、group、稳定原因码和原始
+fields 数组写入 quarantine，再 ACK 来源 PEL。v2 producer/consumer 共用 exact payload validator：已声明字段
+逐项校验，尚无业务 schema 的 ranked `loadout` 也必须是不会被序列化静默改写的 canonical JSON；legacy
+流保留历史 sId 规范化接受域。consumer owner 含 hostname 与 PID，同主机多 worker 不共享 PEL owner，
+崩溃残留由 `XAUTOCLAIM` 接管。
+quarantine 不属于自动 `XTRIM` 范围，非空或 key 类型/权限异常时由默认深度探针独立告警。处置时先根据
+`rawFields` 修复并 XADD 回正确来源流，确认 settle worker 已写入 `match_results` 或命中 `match_index`
+幂等闸后，才可 XDEL 对应 quarantine 条目；不得直接清空隔离流。
+
 ### F/S — 档案与 schema
 
 - **09·F1–F5 / S1–S2**：freeze/thaw 核对 fence；写路径不绕过在线保护；角色存在性不靠猜；
   reader/migrator/version 与需迁移常量的边界显式化。
 
-当前已确认的主要偏差是：relayer 在持锁事务内等待 Redis/`ensureLive`/清理查询、Game HTTP request schema
-仍由 endpoint options 维护（shared request validator 目前通过接受集合测试对照而非直接注入）、K 的坏 match
-entry 会被 ACK 丢弃、S1 的热档 reader 不看 schemaVersion。其中前两条在源码中没有对应编号标签，⛔ 不要用
-09·X2 / 09·X3 指代它们。GameRoom C2S、Lobby RPC envelope、Public WebPlatform response 和未知路由限流
-已分别有 runtime/contract 守门，不应继续列作当前偏差。不要用规则编号掩盖剩余事实。
+当前已确认的主要偏差是：Game HTTP request schema 仍由 endpoint options 维护（shared request validator
+目前通过接受集合测试对照而非直接注入），S1 的热档 reader 不看 schemaVersion。前一条在源码中没有对应
+编号标签，⛔ 不要用 09·X2 / 09·X3 指代。relayer 外部 I/O 事务边界、坏 match entry 隔离、GameRoom C2S、
+Lobby RPC envelope、Public WebPlatform response 和未知路由限流均已有对应守门，不应继续列作当前偏差。
+不要用规则编号掩盖剩余事实。
 
 ## 13. 登记点
 

@@ -29,7 +29,16 @@
   真实进程崩溃窗口和 lease 接管；定向边界测试 7/7、`npm --workspace @game/server run typecheck`、
   `npm --workspace @game/server run test` 214/214 与 `npm --workspace @game/server run test:int` 104/104 通过。
 - `[不阻塞·待补齐]` archive 表仍缺少完整的区隔离与容量方案（详见 §4 P1-06）。
-- `[不阻塞·待补齐]` 坏 stream entry 的处置仍待补齐（**本清单无对应 P 条目，仅此处登记**）。
+- `[已完成]` 坏 match stream entry 不再 ACK 丢弃：来源流与 quarantine 固定同槽，Lua 先持久化来源
+  key/id、group、原因码及精确原始 fields，再 ACK 来源 PEL；v2 payload 在生产/消费两侧做 exact shape 与
+  已声明值域校验，opaque loadout 也须为 canonical JSON，legacy 保持历史兼容域。同主机 worker 使用进程
+  唯一 consumer，崩溃 PEL 由 `XAUTOCLAIM` 接管。quarantine 禁止自动裁剪，
+  非空及 key 类型/权限错误均独立告警；`docs/SERVER.md` 登记了修复重投、确认落库后再删除的处置顺序。
+  验收证据：`int/settlement.test.ts` 12/12 覆盖完整 payload 反例、ranked opaque loadout 保真、隔离副本、
+  来源 ACK、普通 trim 不触碰 quarantine 与 quarantine WRONGTYPE 时保留 PEL；
+  `stream-depth-lifecycle.test.ts` 3/3 覆盖独立告警；
+  `npm --workspace @game/server run typecheck`、服务端单测 215/215、全量集成 106/106 与
+  `npm run verify:inventory` 通过。
 - `[不阻塞·待补齐]` 热档 schema 迁移仍待补齐（详见 §4 P1-06）。
 - `[不阻塞·待补齐]` Game HTTP request schema 尚未直接由 shared validator 生成（详见 §4 P1-03）。
 - `[不阻塞·待补齐]` match evidence 不足以重放完整输入序列（**本清单无对应 P 条目，仅此处登记**）。
