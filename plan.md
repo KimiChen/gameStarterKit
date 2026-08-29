@@ -2,7 +2,7 @@
 
 > 审阅日期：2026-08-29
 >
-> 实现基线：分支 `new`；截至最终 HEAD `27792b5`，本轮已完成 P0-01 至 P0-05、P1-01 至 P1-09、P2-01 至 P2-03 的计划内收口，
+> 实现基线：分支 `new`；截至历史 HEAD `27792b5`，已完成 P0-01 至 P0-05、P1-01 至 P1-09、P2-01 至 P2-03 的计划内收口，
 > 并分别落在 `0bfa70f`、`9dff8f9`、`1a49eb3`、`04280b0`、`91fdf02`、`a461398`、`808fcc3`、
 > `0531c2b`、`8e767a1` 等提交中。当前 inventory 登记 14 项能力（13 项 core + 1 项 extra relayer）和 5 个默认入口。
 > 上述为历史实现基线摘要，最终收口提交与验证结果见下方第九轮记录。
@@ -56,6 +56,23 @@
 > 服务端 207/207、客户端 222/222、FGUI 50/50、集成 103/103；故障矩阵 unit 122/122、integration 147/147，四组共 13 个
 > fault point 均实际执行并 fail-closed。`apps/website/` 再次确认物理目录存在、被 `.gitignore` 忽略且未进入索引。
 > 各轮结论一致的部分不重复记录；新增差异统一写进各条目的「复核备注」。
+> 第十轮（2026-08-29，复核时 HEAD `1c1a728`，当前树 HEAD 为 `0ea018c`）对与第九轮同范围的 12 个提交做独立逐 commit 复核（约 25 条裁决）：
+> 全部声称成立——`mainGameplay.test.ts` 动态加载真实 `Main` 并断言三类失效终态（上一轮「计数/身份层」
+> 的限定已解除）、`df5d8d6` 的 ready marker 低频权威复核机制与「repair worker PUT 后补 marker」的直接
+> 断言、SIGTERM 正常停服的子进程执行证据、`efbd628` 恢复 `noUnusedLocals` 且双 typecheck 实测通过、
+> gameplay 就近 README 三件套与镜像逐字节一致。`verify:all`（服务端 207/207、客户端 222/222）、
+> `test:fgui`（50/50）、`test:int`（103/103，本地栈实测）、`test:faults:int`（4 组 fault point 全部
+> 实测执行）在本轮重跑复现。本轮修正 P1-06「65 处调用点」的不准确计数（任何口径都复算不出 65，已改为
+> 可 grep 复核的持久表述）。第四/五轮的提交计数（12/47）因历史改写无法在当前 git log 复算，维持其
+> 「过程记录」定性，不作为代码证据。
+> 范围说明：`ca8251c..0ea018c` 实为 14 个提交；`0ea018c`（把 `todo-godogen.md` 入库）不在第九/第十轮的
+> 复核范围内，其登记问题见 P1-09 复核备注。调用方在 `1c1a728` 上跑出的基线对代码侧结论仍然有效
+> （`0ea018c` 只动文档）。
+> 第十一轮（2026-08-29，HEAD `0ea018c`）按子系统分 4 组并行复核、每组配独立怀疑者做对抗式验证，
+> 共 41 条裁决：24 条「上一轮登记项已闭合且有能失败的测试锁定」，17 条需要回填。本轮对 5 个纯测试提交
+> 逐用例做了变异推演（删掉被守护的生产代码后用例是否变红），确认 `df5d8d6` 的三处守护代码、
+> `e7ba622` 的进程级停服、`67f9a34` 的 Main 世代失效、`403ac1a` 的身份门与 `b7a876b` 的 presentation
+> 正向链路都能变红；同时登记 5 处恒真/无覆盖的附带断言（见各条目「未覆盖判据」），它们不推翻任何 ✅。
 > 真实 Creator 预览和完整 smoke 仍不纳入 Node/本地栈测试的通过声明。
 
 ## 1. 计划边界
@@ -65,11 +82,16 @@
 的玩法策划案同属额外内容，其状态和文档入口已由该文件统一记录。额外功能不构成核心完成
 门槛；但已经进入默认入口的可选代码仍必须可停止、可隔离，不能破坏核心构建和本地调试。
 
+仓库根的 `todo-godogen.md`（`0ea018c` 入库，其后仍在扩写）是对外部项目的对照吸收笔记，不是本仓承诺；
+其中的 P1/P2 标记只描述该对照清单自身的取舍顺序，不与本文件的核心优先级竞争，也不构成核心完成门槛。
+根目录的散装 Markdown 不在 `verify:inventory` 的覆盖面内，其登记状态靠人工维护——详见 P1-09 的登记边界。
+
 P0 表示继续扩展核心玩法前应先修复的确定性问题；P1 表示把现有 Demo 接缝收敛为可复用框架；P2 表示
 在正确性稳定后再做的增强。条目内的四类小标题含义不同：「复核备注（已收口）」＝有测试/门禁证据的结论；
 「原审阅证据（已收口）」＝实现前的复现记录，仅说明改动动机，不代表当前基线仍存在这些缺陷；「保留
 边界」＝已知且当前不打算做的范围限制；「已知语义回退（待闭合）」＝为达成本条目标而付出的运行行为代价，
-已识别闭合方案但尚未实施（与「保留边界」区别在于它改变了行为，而非只是测得不够）。
+已识别闭合方案但尚未实施（与「保留边界」区别在于它改变了行为，而非只是测得不够；**当前无条目使用**——
+P0-04 原有的该类条目已随 `df5d8d6` 实施闭合方案，残余取舍改由该条正文的作用域表述承载）。
 `✅` 表示当前基线已完成并有测试/门禁证据，`◐` 表示核心接缝已完成但保留明确限制（当前无条目使用）。
 本文同时保留原审阅证据，避免把 Demo 的边界误写成线上能力。
 
@@ -312,13 +334,31 @@ initializer，不触外部依赖）；空库首登与并发 join 由 `apps/serve
 WebPlatform。legacy 无 marker、时间戳缺失或窗口过期时先调用 `hasCharacter`：远端已有登记时只补 marker，
 未登记时执行带 durable repair 的幂等 PUT；存在性查询失败会持久化 repair intent 并拒绝 ready。repair worker
 成功 PUT 后补 marker 与时间戳，且 marker 写入带 EXISTS 守卫，在档已被删除时不会重新创建 hash。
-`character-ready.test.ts` 直接覆盖 s1 ready 不得短路 s2 首次登记、过期 marker 自愈；`character-repair.test.ts`
+`character-ready.test.ts` 覆盖 orchestrator 向 marker reader 透传 `sId`（s1 ready 不得短路 s2 首次登记）
+与过期 marker 自愈——注意该用例内的 `sId` 断言取自测试自身的包装变量，真实 per-zone key 隔离由
+`int/lobby-zone.test.ts` 承担；`character-repair.test.ts`
 直接断言 worker 的 marker/时间戳写入和 intent 清理；`lobby-zone.test.ts` 覆盖真实首登状态转移。
-另：新增的档字段 `characterRegistration` 不在 `apps/shared/src/protocol/lobbyRpc/economy.ts` 的
+另：新增的档字段 `characterRegistration` 与 `characterRegistrationCheckedAt` 都不在
+`apps/shared/src/protocol/lobbyRpc/economy.ts` 的
 `EFFECT_RESERVED_FIELDS` 内。当前不可利用（`EFFECT_FIELD_ALLOWLIST` 未收录该字段，且值规则对 allowlist
 穷尽，扩表必须同时补规则），且其它 `CREATE_USER` 写入的字段（如 `registerTime`）同样不在保留表内，故不是
-与现有习惯的不一致。ready marker 仅作为有限复核窗口内的快路径；外部登记删除最多在该窗口内保持陈旧，
+与现有习惯的不一致。⚠ 两个字段的风险并不对等：`characterRegistration` 被误加进 allowlist 时客户端最多把
+自己标成 ready，而 `characterRegistrationCheckedAt` 是复核窗口的新鲜度闸门——客户端若能自刷时间戳，就能
+把 marker 永久钉在快路径上，正好绕开本次修复。将来扩 `EFFECT_FIELD_ALLOWLIST` 必须同时把这两个字段加入
+`EFFECT_RESERVED_FIELDS`。ready marker 仅作为有限复核窗口内的快路径；外部登记删除最多在该窗口内保持陈旧，
 窗口到期即重新探测并通过 repair 路径恢复，不再是永久信任或不可自愈的语义回退。
+
+取舍：「外部登记不可用时不再拒绝全量 join」现在只在复核窗口内成立——窗口过期的热档与全部解冻冷档在下次
+join 时必打一次 `hasCharacter`；外部不可用时该次 join 被拒（与首次建档失败同码），重试仍会被拒，只留
+durable repair intent 待外部恢复后收敛。默认 24 小时窗口下，WebPlatform 故障期每小时约有 1/24 的回访热档
+用户受影响；冷档解冻后 `characterRegistrationCheckedAt` 随档原样搬回、必为旧值，因此解冻用户在故障期
+一律受影响。
+
+未覆盖判据：新鲜度判据中的未来时间戳守卫（`apps/server/src/player/character.ts:121` 的
+`nowMs >= checkedAtMs`）目前无用例——现有用例注入的 `checkedAtMs` 都不晚于 `nowMs`，删掉该行不会变红，
+而删掉它会让未来时间戳的 marker 恒被判为新鲜，即本次要消除的永久信任复现。`parseCheckedAt` 对坏值
+（非数字、负号、超 2^53）返回 null 因而重新探测的方向，以及窗口边界（差值恰等于 `recheckMs` 判过期），
+同样无用例；真实 `readCharacterRegistration` 至今没有单测，现有覆盖都建立在注入的 stub 上。
 
 **原审阅证据（已收口）**
 
@@ -386,7 +426,15 @@ cleanup 后以原始异常退出。`loop-monitor.test.ts` 覆盖重复 start/幂
   stream depth alert 和存储入口仍有连续 start/stop 与停服关闸用例。
 
 保留边界：完整外部 Redis/MySQL/WebPlatform smoke、真实 Creator 预览和目标设备采样仍不在 Node 证据内；
-默认进程的真实启动依赖这些本地/外部服务，测试中的隔离子进程替换了外部适配器，因此不等于生产拓扑或
+子进程用例替换的不止外部适配器，还包括 `app.config` 组合根（rooms/routes/express）以及 loader、
+loopMonitor、matchConsumer、kickBus、characterRepair、push、redisRoute、mysql、webPlatformClient 等内部
+模块的探针桩，运行时房间数为 0。它证明的是 admission 关闭时点、producer → character-ready → detached
+task → registered resources 的释放顺序与 exit 0；不证明真实房间在 `onBeforeShutdown` 与 `onShutdown`
+之间被排空，也不证明真实依赖装配——后者仍由同文件的源码接缝断言与本地 smoke 承担。
+另：该用例中 detached task 的 settle 时点由固定 20ms 定时器模拟，事件序列里 `drain-ready` 早于
+`task-settled` 只是时间窗而非确定性顺序；慢机器/高负载 CI 上这两行互换应先按测试装配排查，不得直接记为
+停服顺序回归。真正确定性的判据是 `task-settled` 早于 `close-webplatform`/`close-mysql`/`close-redis`。
+默认进程的真实启动依赖这些本地/外部服务，因此不等于生产拓扑或
 第三方服务可用性承诺。
 
 ## 6. P1：稳定框架接缝
@@ -515,8 +563,8 @@ running + queued 饱和；`dispatcher-idem.test.ts` 直接执行 deadline helper
 并由测试钉死。
 
 1. 完整数字 parser 拒绝尾随垃圾、指数写法、NaN/Infinity 和非安全整数；负值与上下界由调用方传入的
-   min/max 选项拒绝（parser 本身不内置非负约束，`numbers.ts:16`/`:36` 的正则显式允许前导 `-`），当前 65
-   处调用点全部显式传 min。
+   min/max 选项拒绝（parser 本身不内置非负约束，`numbers.ts:16`/`:36` 的正则显式允许前导 `-`），全部
+   调用点显式传 min（每处可 grep 复核，不钉死随代码演进的计数）。
 2. compute pool 有总队列容量、admission policy 和稳定 overload 错误；周期任务不进入请求池。
 3. dispatcher 成功路径清理/unref timeout，pending lease 与执行窗口保持明确边界；timeout 仍不取消 handler，
    迟到副作用由数据层幂等收敛。
@@ -595,7 +643,9 @@ consumer 的 `gameHttpUrl` 仍在 `openAreaList` 选服接线中直接传给 `in
    `typecheck` 明确串行执行完整 ES2022 无头探针和 ES2017 legacy 探针，因此 `verify:core` / `verify:all`
    会守住全部客户端源码的运行时下限。`clientTypecheckConfig.test.ts` 递归收集并断言每个
    `apps/client/src/**/*.ts` 都在 legacy program 中，同时注入 `Object.fromEntries` 与 `Promise.allSettled`
-   反例，确认 ES2017 API floor 和根聚合命令均不可被静默削弱。
+   反例，确认 ES2017 API floor 和根聚合命令均不可被静默削弱。覆盖面差异：该文件的 `noUnusedLocals`
+   断言目前只覆盖 legacy 探针配置，strict 探针（`apps/client/tsconfig.test.json`）的同一开关没有守门
+   断言——被静默改回 `false` 不会变红，正是上一轮登记的「严格性被放宽」可以复现的那一侧。
 8. `apps/client/tsconfig.json`、`cc-stub.d.ts`、根/客户端/Cocos README 与 CLIENT/OVERVIEW 文档均已区分
    `typecheck:client`（完整源码与测试、ES2022 桩）和 `typecheck:client:legacy`（全部 `src/**/*.ts`、
    ES2017 下限），并明确根 `typecheck` 同时运行两者。
@@ -625,15 +675,25 @@ workspace main、`app.config.ts` 组合根、Creator scene 压缩 UUID 对应的
 launch 命令确实启动登记入口。默认入口从 workspace main 的直接静态组合 import 与默认 scene 脚本 UUID
 独立发现，不依赖清单自报 `sceneClass`。AGENTS/CLAUDE 除空白外全文一致，并锁定镜像、shared、View/Logic、
 FGUI、外部身份和 inventory 命令等必要条款；README 命令表已补 vendor、inventory 反例和 perf 门禁。
+已知缺口：`CLAUDE.md`/`AGENTS.md` 的「常用本地命令」逐条列出了 `verify:core` 的多个下游阶段，却漏掉聚合
+入口 `verify:core` / `verify:all` 与阶段命令 `verify:project`，而 `docs/OVERVIEW.md` 的口径是「改动合入前
+至少应通过 `verify:core`」；`verify:inventory` 的条款检查不覆盖命令表完整性，该缺口无机检。
 
 说明站边界已闭合：`apps/website/` 保留为新设计站点的本地 Sites checkout/构建工作区，由 `.gitignore`
 忽略，不进入 Git 索引、workspace、能力清单或核心验证；本仓不恢复 gitlink/submodule，也不删除该物理目录。
 额外文档边界也已闭合：`docs/undergroundIdle/` 已在 README、AGENTS/CLAUDE 和
 `docs/EXTRAFEATURES.md` 登记为未实现的玩法策划案，不伪装成活跃能力或默认入口。
 
-复核备注（已收口）：`apps/client/src/gameplay/` 的就近 README 已由 `f574210` 补入，Cocos 镜像及其 `.meta`
-由 `9d08be5` 同步；文档说明 catalog、Logic/room/presentation 依赖方向和新增玩法验证动线，inventory 的
+复核备注（已收口）：`apps/client/src/gameplay/` 的就近 README 由 `d770a09` 补入，Cocos 镜像由 `f574210`
+同步、`.meta` 由 `9d08be5` 补齐；文档说明 catalog、Logic/room/presentation 依赖方向和新增玩法验证动线，inventory 的
 `gameplay-boundary.defaultEntry` 因而有就近入口说明。
+
+登记边界：`verify:inventory` 与 Markdown 链接检查覆盖的是登记表内的文档与就近 README，不扫描仓库根的
+散装 Markdown。根目录 `todo-godogen.md`（`0ea018c` 入库，其后仍有未提交扩写，198 行）因此不在任何机检
+覆盖内：它含 `## 3. 待办清单` 下的三条 P1、三条 P2 与「推荐执行顺序」，形式上构成第二份活跃待办，与本条
+「不再维护第二套路线图」以及 §10 完成定义第 1 条存在张力。当前处置是把它定性为对外部项目的对照吸收
+笔记（不是本仓承诺、不与核心优先级竞争，见 §1）；若长期保留，应按 `docs/undergroundIdle/` 的既有先例在
+README、AGENTS/CLAUDE 与 `docs/EXTRAFEATURES.md` 登记，或迁入 `docs/` 后纳入链接检查。
 
 保留边界：组合根发现不声称构建完整 TypeScript import graph，scene 发现不扫描动态 prefab，Markdown
 检查守住登记链接与锚点而不是通用语法解析。

@@ -22,10 +22,13 @@ npm run dev
   由同一真源生成客户端 `core/devEnv.ts`，两侧使用同一规则以免端口静默脑裂，显式环境变量覆盖时
   config.ts 会打印分叉告警。
 
-角色登记的 `ready` marker 默认每 24 小时向 WebPlatform 做一次权威复核（可用
-`CHARACTER_REGISTRATION_RECHECK_MS` 调整为 1..30 天）。复核窗口内的热档回访仍走本地快路径；旧档缺少
-时间戳、marker 过期或外部登记不存在时会重新登记并写入 durable repair/时间戳，避免本地 marker 永久掩盖
-外部删档。该配置只控制复核频率，不改变首次 ready gate 的超时预算。
+角色登记的 `ready` marker 默认每 24 小时向 WebPlatform 做一次权威复核（`CHARACTER_REGISTRATION_RECHECK_MS`
+以**毫秒**为单位，接受域 `1..2592000000`，即最小 1 毫秒、最大 30 天；配成极小值会让每次热档回访都退化成
+一次 `hasCharacter` 外部调用，等于关闭快路径）。复核窗口内的热档回访仍走本地快路径；旧档缺少时间戳、
+marker 过期或外部登记不存在时会重新登记并写入 durable repair/时间戳，避免本地 marker 永久掩盖外部删档。
+复核探测本身失败（WebPlatform 不可用）会持久化 repair intent 并拒绝本次 join（与首次建档失败同码），
+需等外部恢复后由 repair worker 收敛；因此「外部不可用时热档回访仍可进」只在复核窗口内成立。
+该配置只控制复核频率，不改变首次 ready gate 的超时预算。
 
 停止与查看本地栈：
 
