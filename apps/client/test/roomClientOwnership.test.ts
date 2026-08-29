@@ -385,17 +385,18 @@ test("GameRoom ownership：首个 exact state 前公共发送 API 保持只读",
   join.resolve(fake.room);
   await new Promise<void>((resolve) => setImmediate(resolve));
 
-  client.ping();
-  client.castSkill(1);
-  client.chat("before-state");
+  // 两极都断言：只断 false 的话，一个恒返回 false 的退化实现也能全绿。
+  assert.equal(client.ping(), false, "state 屏障前 ping() 必须返回 false");
+  assert.equal(client.castSkill(1), false, "state 屏障前 castSkill() 必须返回 false");
+  assert.equal(client.chat("before-state"), false, "state 屏障前 chat() 必须返回 false");
   assert.equal(fake.sent.length, 0, "SDK JOIN_ROOM 后、首个有效 state 前不得发送任何 C2S");
 
   fake.room.state = validBallMoveState();
   fake.emitState();
   await owner.ready;
-  client.ping();
-  client.castSkill(1);
-  client.chat("after-state");
+  assert.equal(client.ping(), true, "state 屏障放开后 ping() 必须返回 true");
+  assert.equal(client.castSkill(1), true, "state 屏障放开后 castSkill() 必须返回 true");
+  assert.equal(client.chat("after-state"), true, "state 屏障放开后 chat() 必须返回 true");
   assert.deepEqual(fake.sent.map((message) => message.type), [C2S.Ping, C2S.CastSkill, C2S.Chat]);
   await owner.leave();
 });

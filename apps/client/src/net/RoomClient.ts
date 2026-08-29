@@ -1073,19 +1073,21 @@ export class RoomClient {
 
     // ---------------- 类型安全的消息发送 ----------------
 
-    ping(): void {
+    // 返回值是契约：`false` 表示这次发送被 slot/state/allowlist 闸拒绝，未过线。
+    // 与 `TypedGameRoom.send`（:74）保持同一语义，调用方才能据此回滚本地记账。
+    ping(): boolean {
         const payload: IPingReq = { clientTime: Date.now() };
-        this.sendCurrent(C2S.Ping, payload);
+        return this.sendCurrent(C2S.Ping, payload);
     }
 
-    castSkill(skillId: number, targetId?: string): void {
+    castSkill(skillId: number, targetId?: string): boolean {
         const payload: ICastSkillReq = { skillId, targetId };
-        this.sendCurrent(C2S.CastSkill, payload);
+        return this.sendCurrent(C2S.CastSkill, payload);
     }
 
-    chat(text: string): void {
+    chat(text: string): boolean {
         const payload: IChatReq = { text };
-        this.sendCurrent(C2S.Chat, payload);
+        return this.sendCurrent(C2S.Chat, payload);
     }
 
     private sendCurrent<K extends keyof C2SPayloadMap>(type: K, payload: C2SPayloadMap[K]): boolean {

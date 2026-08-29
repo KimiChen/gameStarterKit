@@ -151,13 +151,25 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
   `context.room.ping()` 走的是 `net/rooms/BallMoveRoom.ts` typed facade（`room.send(C2S.Ping, …)`），并非
   `RoomClient.ping()`；但删除这些方法会迫使重写不在本条范围内的 `roomClientOwnership.test.ts` 写屏障用例，
   故选择「保留 + 补反例」把发送面的运行时闸钉死。
-- `[不阻塞·待补齐]` **公共 API 返回值契约未兑现**：本文此前要求 idle slot 下
+- `[已完成]` **公共 API 返回值契约未兑现**：本文此前要求 idle slot 下
   `RoomClient.castSkill()/chat()` 返回 `false`，但当前实现（`apps/client/src/net/RoomClient.ts:1081-1088`）
   将两者声明为 `void`，调用结果实际为 `undefined`。现有
   `apps/client/test/wireTransport.test.ts:197-200` 只断言没有 `room.send`，`false` 的断言在
   `:207-210` 针对的是私有 `sendFromSlot`，不能证明公共方法契约。需在「返回值是契约」与「fire-and-forget、只
   要拒绝且不发包」之间作出明确选择；前者应把公共方法改为返回 `boolean` 并补直接断言，后者则应删去计划中
   的 `返回 false` 主张并将该条收窄为「被拒且不产生 `room.send`」。
+  **已补齐**：选了「返回值是契约」。理由是该发送面其余出口本来就是 boolean 且返回值被真实消费——
+  `RoomClient.ts:74` 的 `TypedGameRoom.send` 声明 `: boolean`，`net/rooms/GameRoomTransport.ts:101` 用
+  `if (room.send(C2S.Move, …))` 闸住 seq 记账；收窄措辞等于承认同一发送面上有两套语义，并让验收对象长期停在
+  可随时重命名的私有 `sendFromSlot` 上。`ping()/castSkill()/chat()` 改为 `: boolean` 并 `return
+  this.sendCurrent(...)`，闸本身一行未动；`wireTransport.test.ts` 把语句位调用换成对**公共方法**的直接断言。
+  同时在 `roomClientOwnership.test.ts` 的 state 屏障用例补上**两极**断言（屏障前恒 `false`、放开后恒 `true`）
+  ——只断 false 的话，一个恒返回 false 的退化实现也能全绿。
+  变异推演两条，各只杀一例：`ping()` 保留 `: boolean` 但改成「调用后 `return true`」（仍不发包）→
+  `wireTransport.test.ts` 8 例中 1 例红；`sendCurrent` 仍转调 `sendFromSlot` 但恒 `return false` →
+  `roomClientOwnership.test.ts` 37 例中 1 例红。两条互不搭便车，分别钉住「返回值反映闸门结果」的两个方向。
+  `npm run sync:client` 已刷新 `apps/Cocos/assets/src` 镜像；`typecheck:client`、`typecheck:client:legacy`
+  各 0 error，`test:client` 246/246，`verify:sync` 镜像一致。
 - `[已完成]` `GameRoom` 的 player factory 非 Schema 守卫（`apps/server/src/rooms/GameRoom.ts:566-568`）
   只有与 `MapSchema.set` 内建 `assertInstanceType` 结果不可区分的用例：`createModePlayer` 与 `players.set`
   被同一个 try/catch 收敛（`GameRoom.ts:950-958`），删除守卫后底层 `EncodeSchemaError` 会产生同样的

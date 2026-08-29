@@ -194,9 +194,11 @@ test("RoomClient：idle slot 下与 mode 无关的公共 send API 被 C2S allowl
 
     // 反例：typed room 的 send 在编译期被 TOutbound 约束，但 RoomClient 上这几个
     // 与 mode 无关的公共 API 绕过了它，只有运行时 allowlist 能拦住。
-    client.ping();
-    client.castSkill(1, "game-session");
-    client.chat("hello");
+    // 返回值本身就是公共契约：断言公共方法而非私有 sendFromSlot，私有方法可以被
+    // 重命名或内联，而调用方唯一能触碰的是这三个公共出口。
+    assert.equal(client.ping(), false, "idle gameplay 下 ping() 必须返回 false");
+    assert.equal(client.castSkill(1, "game-session"), false, "idle gameplay 下 castSkill() 必须返回 false");
+    assert.equal(client.chat("hello"), false, "idle gameplay 下 chat() 必须返回 false");
     assert.deepEqual(fake.sent, pulse, "idle gameplay 不允许的 C2S 不得产生任何 room.send");
 
     // `as any` 直呼内部发送面同样必须返回 false，而不是靠调用方的类型约束兜底。
