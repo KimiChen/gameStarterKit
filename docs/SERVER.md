@@ -232,6 +232,17 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
 正式玩法扩展仍需在该 Demo 边界之上声明 state root、admission、phase、input validation、reset/settle 和
 可选 evidence 契约，再复用该房间模式；当前两种规则的运行时闸不等于通用玩法层已经交付。
 
+改 state 形状或新增 C2S 消息：
+
+1. 改 `apps/shared/schema/game-room-state.json`（state 形状的唯一真源），或在
+   `apps/shared/src/protocol/messages.ts` 登记消息名与 payload。
+2. 运行 `npm --workspace @game/server run codegen:state` 重新生成 `apps/shared/src/protocol/state.ts`
+   与 `apps/server/src/rooms/schema/GameRoomState.ts`（两者都是生成物，禁手改），再运行 `npm run sync:shared`。
+3. 新增 C2S 消息时，通用 `rooms/GameRoom.ts` 仍必须登记三处：`GAME_ROOM_C2S_SCHEMAS`（`[K in C2SType]`
+   映射，漏写 typecheck 失败）、`messages` handler 表（漏写即静默丢消息）、`phaseAllows` switch（default
+   为 false，漏写即静默拒绝）。玩法自带输入不能只落在 `modes/<Mode>` 内。
+4. 补齐合法/非法 payload、phase 越界与 mode 隔离测试。
+
 ## 6. HTTP 开发边界
 
 `src/http/index.ts` 运行时只消费生成的静态 `manifest.generated.ts`：
@@ -462,7 +473,7 @@ Game HTTP request schema 已由 shared validator 同源生成并直接注入带 
 | Room 名、C2S/S2C、join options | `apps/shared/src/protocol/rooms.ts`、`messages.ts` |
 | Lobby RPC 请求/响应/消息全集 | `apps/shared/src/protocol/lobbyRpc` |
 | RPC 错误码 | `apps/shared/src/protocol/lobbyRpc/envelope.ts` 的 `RPC_ERR_CODES`（15 个）；异常→码映射在 `core/errors.ts` 的 `ERR_MAP`（覆盖 11 个，其余落 `INTERNAL` 兜底）。其中 `GRANTING` 当前没有任何产出点，`AUTH_EPOCH_STALE` 服务端已停产、只保留客户端分支，`ORDER_MISMATCH` 只由可选的 `http/pay/wxNotify.ts` 直接返回，不经 `ERR_MAP` |
-| Colyseus state 纯数据镜像 | `apps/shared/src/protocol/state.ts`；运行时 Schema 在 `rooms/schema` |
+| Colyseus state 形状 | `apps/shared/schema/game-room-state.json`；纯数据镜像 `apps/shared/src/protocol/state.ts` 与运行时 Schema `apps/server/src/rooms/schema/GameRoomState.ts` 都是 `apps/server/tools/room-state-codegen.ts` 的生成物（首行带 AUTO-GENERATED 标记，禁手改），改 manifest 后运行 `npm --workspace @game/server run codegen:state` |
 | `ballMove` v3 evidence schema/validator/replay | `apps/server/src/core/match/matchEvidence.ts`、`matchReplay.ts`；流生产消费在 `matchConsumer.ts` |
 | Redis key | `apps/server/src/core/infra/keys.ts` |
 | Asset effect schema/validator | `apps/shared/src/protocol/lobbyRpc/economy.ts`；Lua 镜像在 `apps/server/src/core/infra/redisScripts.ts` |
@@ -470,7 +481,7 @@ Game HTTP request schema 已由 shared validator 同源生成并直接注入带 
 | Lua | `apps/server/src/core/infra/redisScripts.ts` 与模块专属 script 文件；认证组 sess fence 在 `core/auth/session.ts` 以 `defineScript` 登记，并统一经 `evalshaWithReload` 执行 |
 | MySQL DDL | `apps/server/sql/schema.sql`；兼容升级逻辑在 `tools/db-bootstrap.ts` |
 | RPC endpoint | `apps/server/src/websocket/<domain>/<method>.ts`；装载规则在 `loader.ts` |
-| HTTP endpoint | `apps/server/src/http/<domain>/<method>.ts`；装配在 `http/index.ts` |
+| HTTP endpoint | `apps/server/src/http/<domain>/<method>.ts`；装配表是生成物 `apps/server/src/http/manifest.generated.ts`（禁手改），新增后运行 `npm --workspace @game/server run codegen:http`，`http/index.ts` 只消费该 manifest |
 | 外部身份契约 | 锁定的 `@gono/webplatform-contract` 与 `apps/shared/src/generated/webplatform` |
 | 协议指纹 | `scripts/protocol.fingerprint`；更新命令 `node scripts/protocol-fingerprint.mjs`。当前只覆盖 `apps/shared/src/protocol/**` 与 `PROTOCOL_VERSION`，由 `npm run test:client` 中的 `protocolFingerprint.test.ts` 校验；`constants/errors.ts` 的 `ErrorCode` 数值、`constants/game.ts` 的 `GamePhase` 与帧率等常量、`logic/battle.ts` 的技能表与伤害公式同为双端契约，但不在该闸内 |
 | 计算任务 | `apps/server/src/core/compute/tasks` |

@@ -97,6 +97,11 @@ npm --workspace @game/server run test:int
    - `apps/client/src/shared/` 来自 `apps/shared/src`。
    - `apps/Cocos/assets/src/` 来自 `apps/client/src`，包括随目录提交的 `.meta`。
    - 修改真源后使用 `sync:shared` / `sync:client`。
+   - `apps/shared/src/protocol/state.ts` 与 `apps/server/src/rooms/schema/GameRoomState.ts` 来自
+     `apps/shared/schema/game-room-state.json`，用 `npm --workspace @game/server run codegen:state` 刷新。
+   - `apps/server/src/http/manifest.generated.ts` 来自 `apps/server/src/http/<domain>/<method>.ts`，
+     用 `npm --workspace @game/server run codegen:http` 刷新。
+   - `apps/shared/src/project.ts` 来自 `project.metadata.json`，用 `npm run init:project` 刷新。
 3. **相对导入不带扩展名**，以兼容 Cocos 编译链。
 4. **shared 零依赖**：只使用 TypeScript 与 ES 标准库；禁 npm 包、Node API、`cc`、DOM
    及宿主环境全局对象；禁 `const enum`；lib 钉 ES2017。

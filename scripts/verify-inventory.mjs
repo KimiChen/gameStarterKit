@@ -153,6 +153,127 @@ function readmeCommandScripts(text) {
   return scripts;
 }
 
+function workspaceCommandFromText(command) {
+  // npm accepts `--workspace <name>` and `-w <name>`; the trailing guard keeps
+  // `run stack` from also matching `run stack:stop`.
+  const match = command.match(
+    /npm[ \t]+(?:--workspace|-w)[ \t]+(\S+)[ \t]+run[ \t]+([A-Za-z0-9:_-]+)(?![A-Za-z0-9:_-])/u,
+  );
+  return match ? { kind: "workspace", workspace: match[1], script: match[2] } : null;
+}
+
+function assistantWorkspaceCommands(text, doc) {
+  const section = markdownSection(text, "常用本地命令", doc);
+  if (section === null) return new Set();
+  const blocks = [...section.matchAll(/^```(?:bash|sh|shell)[ \t]*\r?$([\s\S]*?)^```[ \t]*\r?$/gmu)];
+  if (blocks.length !== 1) return new Set();
+  const keys = new Set();
+  for (const line of blocks[0][1].split(/\r?\n/u)) {
+    const command = workspaceCommandFromText(line);
+    if (command) keys.add(commandKey(command));
+  }
+  return keys;
+}
+
+function enumerateWorkspaceCommands() {
+  const commands = [];
+  for (const item of rootPackage.workspaces ?? []) {
+    const location = workspaceLocation(item);
+    if (!location) continue;
+    const packageFile = path.join(ROOT, location, "package.json");
+    const workspace = packageName(packageFile);
+    if (typeof workspace !== "string") continue;
+    for (const script of Object.keys(packageScripts(packageFile)).sort()) {
+      commands.push({ kind: "workspace", workspace, script });
+    }
+  }
+  return commands;
+}
+
+/**
+ * The root command table only owns `package.json.scripts`, so every workspace
+ * script used to be invisible to the completeness gate.  Each one must now be
+ * either listed in the assistant command block or registered here with a
+ * machine-checked justification: a root script that provably invokes it, or a
+ * document that literally spells the command out.
+ */
+function checkWorkspaceCommandScope(documented) {
+  const scope = inventory.workspaceCommandScope;
+  if (!Array.isArray(scope)) {
+    fail("inventory.workspaceCommandScope 必须是数组");
+    return;
+  }
+  const registered = new Map();
+  for (const [index, entry] of scope.entries()) {
+    const owner = `workspaceCommandScope[${index}]`;
+    if (!entry || typeof entry !== "object") { fail(`${owner} 必须是 object`); continue; }
+    requireString(entry.reason, `${owner}.reason`);
+    const command = entry.command;
+    if (command?.kind !== "workspace") { fail(`${owner}.command.kind 必须为 workspace`); continue; }
+    checkCommand(command, owner);
+    const key = commandKey(command);
+    if (!key) continue;
+    if (registered.has(key)) fail(`${owner} 重复登记：${key}`);
+    registered.set(key, entry);
+    if (documented.has(key)) {
+      fail(`${owner} 已在助手命令表登记，不得再列为作用域外：${key}`);
+    }
+    const hasSuperseded = entry.supersededBy !== undefined;
+    const hasDocumented = entry.documentedIn !== undefined;
+    if (hasSuperseded === hasDocumented) {
+      fail(`${owner} 必须且只能声明 supersededBy 或 documentedIn 之一`);
+      continue;
+    }
+    if (hasSuperseded) {
+      checkCommand(entry.supersededBy, `${owner}.supersededBy`);
+      if (commandExists(entry.supersededBy) && !commandCovers(entry.supersededBy, command)) {
+        fail(`${owner}.supersededBy 并未实际调用 ${key}：${commandKey(entry.supersededBy)}`);
+      }
+      continue;
+    }
+    requireString(entry.documentedIn, `${owner}.documentedIn`);
+    if (typeof entry.documentedIn !== "string") continue;
+    if (!exists(entry.documentedIn)) {
+      fail(`${owner}.documentedIn 文档不存在：${entry.documentedIn}`);
+      continue;
+    }
+    const docText = fs.readFileSync(repoPath(entry.documentedIn), "utf8");
+    const literal = new RegExp(
+      `npm[ \\t]+--workspace[ \\t]+${escapeRegex(command.workspace)}[ \\t]+run[ \\t]+${escapeRegex(command.script)}(?![A-Za-z0-9:_-])`,
+      "u",
+    );
+    if (!literal.test(docText)) {
+      fail(`${owner}.documentedIn 未写出命令原文：${entry.documentedIn} 缺少 ${key}`);
+    }
+  }
+
+  const missing = enumerateWorkspaceCommands()
+    .map((command) => commandKey(command))
+    .filter((key) => key && !documented.has(key) && !registered.has(key));
+  if (missing.length > 0) {
+    fail(`workspace 脚本既未登记进助手命令表也未登记作用域：${missing.join(", ")}`);
+  }
+  const stale = [...registered.keys()].filter((key) => {
+    const command = registered.get(key).command;
+    return !commandExists(command);
+  });
+  if (stale.length > 0) fail(`workspaceCommandScope 登记了不存在的 workspace 命令：${stale.join(", ")}`);
+}
+
+// Any workspace command spelled out in a root document must resolve to a real
+// script, otherwise a rename leaves copy-pasteable but broken instructions.
+function checkWorkspaceCommandLiterals(doc, text) {
+  const seen = new Set();
+  const literalRe = /npm[ \t]+(?:--workspace|-w)[ \t]+(\S+)[ \t]+run[ \t]+([A-Za-z0-9:_-]+)(?![A-Za-z0-9:_-])/gu;
+  for (const match of text.matchAll(literalRe)) {
+    const command = { kind: "workspace", workspace: match[1], script: match[2] };
+    const key = commandKey(command);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    if (!commandExists(command)) fail(`${doc} 引用了不存在的 workspace 命令：${key}`);
+  }
+}
+
 function checkRootCommandTable(doc, scripts) {
   const declared = Object.keys(rootPackage.scripts ?? {}).sort();
   const missing = declared.filter((script) => !scripts.has(script));
@@ -464,9 +585,24 @@ if (normalizeInstructionText(agents) !== normalizeInstructionText(claude)) {
 checkRootCommandTable("AGENTS.md", assistantCommandScripts(agents, "AGENTS.md"));
 checkRootCommandTable("CLAUDE.md", assistantCommandScripts(claude, "CLAUDE.md"));
 checkRootCommandTable("README.md", readmeCommandScripts(readme));
+checkWorkspaceCommandScope(
+  new Set([
+    ...assistantWorkspaceCommands(agents, "AGENTS.md"),
+    ...assistantWorkspaceCommands(claude, "CLAUDE.md"),
+  ]),
+);
+for (const [doc, text] of [["AGENTS.md", agents], ["CLAUDE.md", claude], ["README.md", readme]]) {
+  checkWorkspaceCommandLiterals(doc, text);
+}
 const assistantRequirements = [
   ["bitECS 锁定目录", "`apps/client/src/lib/bitecs/` 的 12 个 TypeScript 文件禁改"],
   ["生成镜像禁手改", "生成镜像禁手改"],
+  // 铁律 2 的生成物清单必须完整：只校验标题在场会让新增生成物静默漏登记。
+  ["state 生成物登记", "`apps/shared/src/protocol/state.ts` 与 `apps/server/src/rooms/schema/GameRoomState.ts`"],
+  ["state 重生成命令", "npm --workspace @game/server run codegen:state"],
+  ["HTTP manifest 生成物登记", "`apps/server/src/http/manifest.generated.ts`"],
+  ["HTTP manifest 重生成命令", "npm --workspace @game/server run codegen:http"],
+  ["项目元数据生成物登记", "`apps/shared/src/project.ts` 来自 `project.metadata.json`，用 `npm run init:project` 刷新"],
   ["shared 零依赖", "shared 零依赖"],
   ["相对导入无扩展名", "相对导入不带扩展名"],
   ["View/Logic 分离", "客户端 View/Logic 分离"],

@@ -171,5 +171,62 @@
     "corePlan": "plan-v3.md",
     "extraCapabilities": "docs/EXTRAFEATURES.md"
   },
-  "referenceDocs": ["plan.md", "plan-v2.md", "todo-godogen.md"]
+  "referenceDocs": ["plan.md", "plan-v2.md", "todo-godogen.md"],
+  "workspaceCommandScope": [
+    {
+      "command": { "kind": "workspace", "workspace": "@game/server", "script": "dev" },
+      "supersededBy": { "kind": "root", "script": "dev" },
+      "reason": "根 dev 直接转调该脚本，助手命令表登记根入口即可"
+    },
+    {
+      "command": { "kind": "workspace", "workspace": "@game/server", "script": "start" },
+      "supersededBy": { "kind": "root", "script": "start:server" },
+      "reason": "根 start:server 直接转调该脚本，助手命令表登记根入口即可"
+    },
+    {
+      "command": { "kind": "workspace", "workspace": "@game/server", "script": "typecheck" },
+      "supersededBy": { "kind": "root", "script": "typecheck" },
+      "reason": "根 typecheck 聚合调用，单独登记会与聚合入口重复"
+    },
+    {
+      "command": { "kind": "workspace", "workspace": "@game/shared", "script": "typecheck" },
+      "supersededBy": { "kind": "root", "script": "typecheck" },
+      "reason": "根 typecheck 聚合调用，单独登记会与聚合入口重复"
+    },
+    {
+      "command": { "kind": "workspace", "workspace": "@game/server", "script": "stack:stop" },
+      "documentedIn": "docs/SERVER.md",
+      "reason": "stack 的配对停止命令，随本地依赖栈说明一并登记"
+    },
+    {
+      "command": { "kind": "workspace", "workspace": "@game/server", "script": "relayer" },
+      "documentedIn": "docs/EXTRAFEATURES.md",
+      "reason": "常驻 outbox relayer 进程，不随 dev 启动，属额外功能边界"
+    },
+    {
+      "command": { "kind": "workspace", "workspace": "@game/server", "script": "freeze-worker" },
+      "documentedIn": "docs/EXTRAFEATURES.md",
+      "reason": "默认关闭的归档 worker，属额外功能边界"
+    },
+    {
+      "command": { "kind": "workspace", "workspace": "@game/server", "script": "settle" },
+      "documentedIn": "docs/EXTRAFEATURES.md",
+      "reason": "常驻结算 consumer 进程，不随 dev 启动，属额外功能边界"
+    },
+    {
+      "command": { "kind": "workspace", "workspace": "@game/server", "script": "codegen:http" },
+      "documentedIn": "docs/SERVER.md",
+      "reason": "生成物刷新命令，登记在 HTTP endpoint 章节而非日常命令表"
+    },
+    {
+      "command": { "kind": "workspace", "workspace": "@game/server", "script": "codegen:state" },
+      "documentedIn": "docs/OVERVIEW.md",
+      "reason": "生成物刷新命令，登记在标准开发动线而非日常命令表"
+    },
+    {
+      "command": { "kind": "workspace", "workspace": "@game/server", "script": "loadtest" },
+      "documentedIn": "docs/EXTRAFEATURES.md",
+      "reason": "当前入房参数已失效，登记为不可用工具而非开发动线命令"
+    }
+  ]
 }

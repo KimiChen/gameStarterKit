@@ -337,6 +337,59 @@ test("inventory verifier rejects synchronized removal of a required assistant in
   }
 });
 
+test("inventory verifier rejects synchronized removal of the state codegen registration", () => {
+  const root = createFixture();
+  try {
+    for (const filename of ["AGENTS.md", "CLAUDE.md"]) {
+      const file = join(root, filename);
+      const text = readFileSync(file, "utf8").replace(
+        "   - `apps/shared/src/protocol/state.ts` 与 `apps/server/src/rooms/schema/GameRoomState.ts` 来自\n"
+        + "     `apps/shared/schema/game-room-state.json`，用 `npm --workspace @game/server run codegen:state` 刷新。\n",
+        "",
+      );
+      writeFileSync(file, text);
+    }
+    assertRejected(root, /AGENTS\.md\/CLAUDE\.md 缺少共同关键指令：state 生成物登记/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects synchronized removal of the HTTP manifest registration", () => {
+  const root = createFixture();
+  try {
+    for (const filename of ["AGENTS.md", "CLAUDE.md"]) {
+      const file = join(root, filename);
+      const text = readFileSync(file, "utf8").replace(
+        "   - `apps/server/src/http/manifest.generated.ts` 来自 `apps/server/src/http/<domain>/<method>.ts`，\n"
+        + "     用 `npm --workspace @game/server run codegen:http` 刷新。\n",
+        "",
+      );
+      writeFileSync(file, text);
+    }
+    assertRejected(root, /AGENTS\.md\/CLAUDE\.md 缺少共同关键指令：HTTP manifest 生成物登记/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects synchronized removal of the project metadata registration", () => {
+  const root = createFixture();
+  try {
+    for (const filename of ["AGENTS.md", "CLAUDE.md"]) {
+      const file = join(root, filename);
+      const text = readFileSync(file, "utf8").replace(
+        "   - `apps/shared/src/project.ts` 来自 `project.metadata.json`，用 `npm run init:project` 刷新。\n",
+        "",
+      );
+      writeFileSync(file, text);
+    }
+    assertRejected(root, /AGENTS\.md\/CLAUDE\.md 缺少共同关键指令：项目元数据生成物登记/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("inventory verifier rejects synchronized removal of the Godogen assistant entry", () => {
   const root = createFixture();
   try {
@@ -444,4 +497,91 @@ test("inventory verifier rejects duplicate or empty --root arguments", () => {
   });
   assert.notEqual(empty.status, 0);
   assert.match(outputOf(empty), /--root 需要非空目录参数/);
+});
+
+test("inventory verifier rejects a newly added unregistered workspace script", () => {
+  const root = createFixture();
+  try {
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts["fixture:worker"] = "tsx tools/fixture-worker.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /workspace 脚本既未登记进助手命令表也未登记作用域：workspace:@game\/server#fixture:worker/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects a workspace scope entry whose root command stops invoking it", () => {
+  const root = createFixture();
+  try {
+    // `start:server` is the registered justification for @game/server#start; once
+    // it no longer calls that script the registration is a rubber stamp.
+    const packageFile = join(root, "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts["start:server"] = "node apps/server/dist/index.js";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /workspaceCommandScope\[\d+\]\.supersededBy 并未实际调用 workspace:@game\/server#start/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects a workspace scope entry whose document drops the command", () => {
+  const root = createFixture();
+  try {
+    const file = join(root, "docs", "EXTRAFEATURES.md");
+    const before = readFileSync(file, "utf8");
+    const after = before.replace("（`npm --workspace @game/server run loadtest`）", "");
+    assert.notEqual(after, before, "fixture must actually remove the loadtest command literal");
+    writeFileSync(file, after);
+    assertRejected(
+      root,
+      /workspaceCommandScope\[\d+\]\.documentedIn 未写出命令原文：docs\/EXTRAFEATURES\.md 缺少 workspace:@game\/server#loadtest/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects a workspace scope entry that is already in the command table", () => {
+  const root = createFixture();
+  try {
+    const inventory = readInventory(root);
+    inventory.workspaceCommandScope.push({
+      command: { kind: "workspace", workspace: "@game/server", script: "test" },
+      documentedIn: "docs/SERVER.md",
+      reason: "fixture duplicate registration",
+    });
+    writeInventory(root, inventory);
+    assertRejected(
+      root,
+      /workspaceCommandScope\[\d+\] 已在助手命令表登记，不得再列为作用域外：workspace:@game\/server#test/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects a root document citing a missing workspace command", () => {
+  const root = createFixture();
+  try {
+    const file = join(root, "README.md");
+    const before = readFileSync(file, "utf8");
+    const after = before.replace(
+      "npm --workspace @game/server run db:bootstrap",
+      "npm --workspace @game/server run db:migrate",
+    );
+    assert.notEqual(after, before, "fixture must actually rewrite a workspace command literal");
+    writeFileSync(file, after);
+    assertRejected(root, /README\.md 引用了不存在的 workspace 命令：workspace:@game\/server#db:migrate/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

@@ -125,20 +125,26 @@ participants；热档/冷档 schema 迁移、asset effect 原子性与经济操�
    并确认是否需要 bump PROTOCOL_VERSION（不重钉则 npm run test:client 中的 protocolFingerprint 测试失败）。
    指纹脚本只接受 `rooms.ts` 中唯一的顶层 export 声明，并会忽略注释，避免文档示例中的旧版本
    误导版本闸。
-4. 在 apps/server/src/websocket 或 http 增加 endpoint
-5. 更新服务端登记点、key/config 与测试
-6. 在 apps/client/src/logic 增加行为
-7. 需要页面时通过 codegen 创建 View 并登记 viewRegistry
-8. npm run sync:client
-9. 运行本地类型检查和相关测试
+4. 若改动落在 apps/shared/schema/game-room-state.json，运行
+   npm --workspace @game/server run codegen:state 重新生成 apps/shared/src/protocol/state.ts 与
+   apps/server/src/rooms/schema/GameRoomState.ts（两者都是生成物，禁手改），再重新 sync:shared
+5. 在 apps/server/src/websocket 或 http 增加 endpoint；新增 http endpoint 后运行
+   npm --workspace @game/server run codegen:http 重新生成 apps/server/src/http/manifest.generated.ts
+6. 更新服务端登记点、key/config 与测试
+7. 在 apps/client/src/logic 增加行为
+8. 需要页面时通过 codegen 创建 View 并登记 viewRegistry
+9. npm run sync:client
+10. 运行本地类型检查和相关测试
 ```
 
 ### 4.2 新玩法
 
 ```text
 shared 登记 canonical mode id + state manifest root / wire message
-  → state codegen 生成 mode→root constructor / validator 映射
+  → npm --workspace @game/server run codegen:state 生成 mode→root constructor / validator 映射
   → server modes/<Mode> + modes/catalog.ts
+  → 玩法自带 C2S 输入时：server rooms/GameRoom.ts 的 GAME_ROOM_C2S_SCHEMAS、messages handler 表
+    与 phaseAllows switch 登记该消息
   → client logic/rooms/<mode> + net/rooms/<Mode>Room.ts
   → client mode adapter 注入 raw exact validator / reconcile
   → client gameplay/catalog.ts
@@ -150,8 +156,11 @@ shared 登记 canonical mode id + state manifest root / wire message
 从生成映射选择且冻结 root；撮合同时按 `sId` 和 `mode` 隔离。客户端 `RoomClient` 不假定 root shape，状态
 raw exact validator 与重连 reconcile 由玩法 adapter 注入；校验先看 reflected Schema 的真实 wire shape，
 不先白名单重建状态。玩法只取得不含原始 SDK room/send 的 typed facade；只有真实 `ROOM_STATE` 校验通过才
-开放发送，SDK 离线队列不能绕过该闸。新增玩法通过登记点扩展，不在通用 transport
-中增加玩法分支。
+开放发送，SDK 离线队列不能绕过该闸。客户端新增玩法通过登记点扩展，不在通用 transport 中增加玩法分支；
+服务端只有不带新增 C2S 输入的玩法能做到同样程度——玩法自带新消息时，仍必须改通用
+`apps/server/src/rooms/GameRoom.ts` 的三处登记：`GAME_ROOM_C2S_SCHEMAS`（`[K in C2SType]` 映射，漏写
+typecheck 失败）、无类型约束的 `messages` handler 表（漏写即静默丢消息）和 `phaseAllows` switch（default
+为 false，漏写即静默拒绝）。`c2s.idle.pulse` 就是这样接入的。
 
 ### 4.3 FairyGUI 页面
 

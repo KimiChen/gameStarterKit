@@ -208,7 +208,8 @@ guard 要求显式区清单。每区 `archive_zone_usage` 在 freeze singleton l
 
 - Excel 转换器以同一 canonical serializer 生成双端 JSON；预期输出已经入库，`--check` 会只读逐字节比较
   两份生成物并分别拒绝缺失或陈旧结果，但仍没有正式运行时消费方；
-- `apps/server/loadtest/bot.ts` 仍使用过期的入房参数，当前严格鉴权下不能视为可用工具；
+- `apps/server/loadtest/bot.ts`（`npm --workspace @game/server run loadtest`）仍使用过期的入房参数，
+  当前严格鉴权下不能视为可用工具；
 - `apps/Unity` 只有说明和空目录占位，没有 Unity version、`Packages/manifest.json`、
   `ProjectSettings/ProjectVersion.txt`、C# 生成或测试闭环。
 
