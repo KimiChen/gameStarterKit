@@ -180,7 +180,14 @@
   验收证据：`sessionReconcile.test.ts` 与页面生命周期负例覆盖成功、失败、取消、重复事件、uid 不匹配及
   新旧世代竞态；Cocos Creator 3.8.8 真实导入生成新增脚本 `.meta`；`npm run test:client` 229/229、
   `npm run test:fgui` 50/50、两套客户端 typecheck 与 `npm run verify:sync` 通过。
-- `[不阻塞·待补齐]` Lobby 房没有注册 `onReconnect`，`slot.dropping` 当前也没有对应消费方。
+- `[已完成]` Lobby 只对 SDK 可自动重试的异常关闭码开放 10 秒 `onDrop` 窗口，`onReconnect` 以
+  session、token 与精确 online-registration 三重身份重新校验并把稳定逻辑连接原子换绑到新 transport；
+  replacement login、宽限超时、停服和迟到回调只能注销自己持有的 registration。客户端在 `onDrop`
+  后立即拒绝在途及新增 RPC，当前 generation 的 `onReconnect` 仅清除 `slot.dropping`，room、ownership
+  与 push listener 原样保留；只有最终 `onLeave` 才触发既有 session/profile 对账。验收证据：
+  `lobby-join-race.test.ts` 17/17 覆盖成功换绑、timeout、replacement、token fence、停服及非重连关闭码；
+  客户端 transport 定向测试 30/30 与全量 `npm run test:client` 231/231 覆盖 fail-fast、恢复、迟到旧代和
+  最终离线；服务端 typecheck、两套客户端 typecheck、`npm run verify:sync` 与 owned diff check 通过。
 
 来源：`plan.md:615-618`
 

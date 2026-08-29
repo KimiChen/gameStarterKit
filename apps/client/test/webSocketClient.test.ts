@@ -33,7 +33,7 @@ function deferred<T>(): Deferred<T> {
 function makeFakeRoom() {
   const sent: { type: string; data: { id: string; type: string; payload?: any } }[] = [];
   const handlers = new Map<string, (msg: any) => void>();
-  const cbs: { drop?: () => void; leave?: (code?: number) => void } = {};
+  const cbs: { drop?: () => void; reconnect?: () => void; leave?: (code?: number) => void } = {};
   let leaveCalls = 0;
   const room = {
     sessionId: "s_fake",
@@ -41,6 +41,7 @@ function makeFakeRoom() {
     send(type: string, data: any) { sent.push({ type, data }); },
     onMessage(type: string, cb: (msg: any) => void) { handlers.set(type, cb); return () => { handlers.delete(type); }; },
     onDrop(cb: () => void) { cbs.drop = cb; return () => {}; },
+    onReconnect(cb: () => void) { cbs.reconnect = cb; return () => {}; },
     onLeave(cb: (code?: number) => void) { cbs.leave = cb; return () => {}; },
     leave: async () => { leaveCalls++; return true; },
     removeAllListeners() { /* noop */ },
@@ -110,6 +111,72 @@ test("onLeave：在途请求全判 CONN_LOST，之后 rpc 立即拒（未加入�
     (e: unknown) => e instanceof RpcError && e.code === "CONN_LOST");
 });
 
+test("onDrop/onReconnect：掉线期 RPC fail-fast，恢复后复用 room、owner 与 push 订阅", async () => {
+  const fake = makeFakeRoom();
+  const c = await joinWithFakeRoom(fake);
+  const { onConnLost } = await import("../src/net/session");
+  let connLost = 0;
+  let notices = 0;
+  const stopLost = onConnLost(() => { connLost++; });
+  const stopPush = c.onPush(LobbyPush.ServerNotice, () => { notices++; });
+
+  try {
+    const pending = c.rpc(UserRpc.GetUserId, {});
+    assert.equal(fake.sent.length, 1);
+    fake.cbs.drop?.();
+    fake.cbs.drop?.();
+    await assert.rejects(pending, (e: unknown) => e instanceof RpcError && e.code === "CONN_LOST");
+    assert.equal(connLost, 0, "transient drop 不能触发最终断线对账");
+
+    await assert.rejects(c.rpc(UserRpc.GetUserId, {}),
+      (e: unknown) => e instanceof RpcError && e.code === "CONN_LOST");
+    assert.equal(fake.sent.length, 1, "掉线窗口不得把业务 RPC 排进 SDK 重连队列");
+
+    fake.cbs.reconnect?.();
+    fake.cbs.reconnect?.();
+    const recovered = c.rpc(UserRpc.GetUserId, {});
+    assert.equal(fake.sent.length, 2, "当前代重连后应立即恢复 RPC 可用性");
+    fake.reply({ id: fake.sent[1].data.id, ok: true, data: { uid: "recovered" } });
+    assert.deepEqual(await recovered, { uid: "recovered" });
+    fake.push(LobbyPush.ServerNotice, { text: "after reconnect" });
+    assert.equal(notices, 1, "重连不得重建或清空既有 push listener");
+    assert.equal(c.room, fake.room);
+    assert.equal(implicitOwnerCount(), 1);
+  } finally {
+    stopPush();
+    stopLost();
+    await c.leave().catch(() => {});
+  }
+});
+
+test("drop 后最终 onLeave：只上报一次 connLost；主动 leave 则不误报", async () => {
+  const { onConnLost } = await import("../src/net/session");
+  let connLost = 0;
+  const stopLost = onConnLost(() => { connLost++; });
+  try {
+    const dead = makeFakeRoom();
+    await joinWithFakeRoom(dead);
+    dead.cbs.drop?.();
+    dead.cbs.leave?.(1006);
+    dead.cbs.leave?.(1006);
+    assert.equal(connLost, 1, "只有当前 slot 的首次最终 leave 能触发对账");
+
+    const manual = makeFakeRoom();
+    await joinWithFakeRoom(manual);
+    const lateReconnect = manual.cbs.reconnect;
+    const lateLeave = manual.cbs.leave;
+    manual.cbs.drop?.();
+    await WebSocketClient.inst.leave();
+    lateReconnect?.();
+    lateLeave?.(1006);
+    assert.equal(manual.room.reconnection.enabled, false);
+    assert.equal(connLost, 1, "主动释放掉线中的 slot 不得上报最终连接丢失");
+  } finally {
+    stopLost();
+    await WebSocketClient.inst.leave().catch(() => {});
+  }
+});
+
 test("隐式 ownership：被动 onLeave 后清理，重复掉线/重登不累积旧闭包", async () => {
   await WebSocketClient.inst.leave().catch(() => {});
   const first = makeFakeRoom();
@@ -154,7 +221,7 @@ test("隐式 ownership：被动 onLeave 后清理，重复掉线/重登不累积
   assert.equal(third.leaveCalls, 1, "主动 leave 只关闭当前 room");
 });
 
-test("隐式 ownership：替换后旧 room 的迟到 onLeave 不得清掉新一代", async () => {
+test("隐式 ownership：替换后旧 room 的迟到 reconnect/leave 不得改写新一代", async () => {
   await WebSocketClient.inst.leave().catch(() => {});
   const oldRoom = makeFakeRoom();
   const newRoom = makeFakeRoom();
@@ -174,6 +241,7 @@ test("隐式 ownership：替换后旧 room 的迟到 onLeave 不得清掉新一�
 
   await WebSocketClient.inst.join("token-old");
   const oldSlot = internals.slot;
+  const oldReconnect = oldRoom.cbs.reconnect;
   const oldLeave = oldRoom.cbs.leave;
   assert.equal(implicitOwnerCount(), 1);
   await internals.closeSlot.call(WebSocketClient.inst, oldSlot);
@@ -182,9 +250,15 @@ test("隐式 ownership：替换后旧 room 的迟到 onLeave 不得清掉新一�
   active = newRoom;
   await WebSocketClient.inst.join("token-new");
   assert.equal(implicitOwnerCount(), 1);
+  newRoom.cbs.drop?.();
+  oldReconnect?.();
+  await assert.rejects(WebSocketClient.inst.rpc(UserRpc.GetUserId, {}),
+    (e: unknown) => e instanceof RpcError && e.code === "CONN_LOST");
+  assert.equal(newRoom.sent.length, 0, "旧 reconnect 不得清掉新 slot 的 dropping");
   oldLeave?.(1006); // 迟到旧回调：current() 为 false，但仍会命中旧 slot 过滤。
   assert.equal(implicitOwnerCount(), 1, "旧回调不得清掉新 slot 的 ownership");
   assert.equal(WebSocketClient.inst.room, newRoom.room);
+  newRoom.cbs.reconnect?.();
   await WebSocketClient.inst.leave();
   assert.equal(implicitOwnerCount(), 0);
 });
@@ -291,11 +365,12 @@ test("强制下线·推送路径：收到 auth.forceLogout{reason} → 上报对
   } finally { stop(); await WebSocketClient.inst.leave().catch(() => {}); }
 });
 
-test("强制下线·关闭码兜底：推送没赶上时 onLeave(code) 仍判出被踢（⛔ 不当成掉线）", async () => {
+test("强制下线·掉线窗口关闭码兜底：最终 onLeave 仍判出被踢（⛔ 不当成普通掉线）", async () => {
   const fake = makeFakeRoom();
   await joinWithFakeRoom(fake);
   const { got, stop } = await collectAuthInvalid();
   try {
+    fake.cbs.drop?.();
     fake.cbs.leave?.(KICK_CLOSE_CODE[ForceLogoutReason.Banned]); // 只有关闭码、无推送
     assert.deepEqual(got, ["FORCE_BANNED"], "关闭码兜底判因");
   } finally { stop(); }

@@ -37,6 +37,7 @@ function makeLobbyRoom() {
       return () => { if (handlers.get(type) === callback) handlers.delete(type); };
     },
     onDrop(_callback: () => void) { return () => {}; },
+    onReconnect(_callback: () => void) { return () => {}; },
     onLeave(_callback: (code?: number) => void) { return () => {}; },
     leave: async () => { leaveCalls++; return true; },
     removeAllListeners() { handlers.clear(); },

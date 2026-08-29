@@ -1,13 +1,23 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { ErrorCode as SharedErrorCode } from "@game/shared";
+import { CloseCode } from "@colyseus/core";
+import {
+  ErrorCode as SharedErrorCode,
+  ForceLogoutReason,
+  KICK_CLOSE_CODE,
+  LOBBY_MSG_PUSH,
+  LobbyPush,
+} from "@game/shared";
 import { AuthRequiredError } from "../src/core/errors";
 import {
   LobbyRoom,
+  LOBBY_RECONNECT_GRACE_S,
   type LobbyJoinDependencies,
 } from "../src/websocket/LobbyRoom";
 import type { OnlineRegistration } from "../src/websocket/push";
 import { beginShutdown, resetAdmission } from "../src/core/infra/lifecycle";
+
+type CapturedOnlineConn = Parameters<LobbyJoinDependencies["registerOnline"]>[2];
 
 function deferred<T>(): {
   promise: Promise<T>;
@@ -23,12 +33,16 @@ function deferred<T>(): {
   return { promise, resolve, reject };
 }
 
-function fakeClient(token: string): never {
+function fakeClient(token: string, options: {
+  sessionId?: string;
+  onSend?: (type: string, data: unknown) => void;
+  onLeave?: (code?: number) => void;
+} = {}): never {
   return {
-    sessionId: "stale-seat",
+    sessionId: options.sessionId ?? "stale-seat",
     auth: { userId: "race-user", token, sId: 7 },
-    send: () => {},
-    leave: async () => {},
+    send: (type: string, data: unknown) => options.onSend?.(type, data),
+    leave: async (code?: number) => { options.onLeave?.(code); },
   } as never;
 }
 
@@ -296,6 +310,307 @@ test("a late stale join cannot unregister a replacement using the same session k
     assert.deepEqual(unregistered, [registrations[0], registrations[1]]);
     assert.equal(active, undefined);
   } finally {
+    room.clock.stop();
+  }
+});
+
+test("Lobby reconnect keeps one registration and rebinds push/kick to the new physical client", async () => {
+  const registration: OnlineRegistration = { token: Symbol("reconnect-success") };
+  let onlineConn: CapturedOnlineConn | undefined;
+  let ensureCalls = 0;
+  let verifyCalls = 0;
+  const unregistered: OnlineRegistration[] = [];
+  const oldSends: string[] = [];
+  const newSends: string[] = [];
+  const newLeaves: number[] = [];
+  const reconnect = deferred<never>();
+  const graceCalls: number[] = [];
+  const { room } = roomWith({
+    ensureCharacterReady: async () => { ensureCalls++; },
+    verifySession: async () => { verifyCalls++; },
+    registerOnline: (_uid, _sessionId, conn) => {
+      onlineConn = conn;
+      return registration;
+    },
+    unregisterOnline: (_uid, _sessionId, expected) => {
+      if (expected) unregistered.push(expected);
+    },
+    isOnlineRegistrationCurrent: (_uid, _sessionId, expected) => expected === registration,
+  });
+  (room as unknown as {
+    allowReconnection: (client: unknown, seconds: number) => Promise<unknown>;
+  }).allowReconnection = async (_client, seconds) => {
+    graceCalls.push(seconds);
+    return reconnect.promise;
+  };
+  const oldClient = fakeClient("same-token", {
+    onSend: (type) => oldSends.push(type),
+  });
+  const newClient = fakeClient("adapter-token-is-overwritten", {
+    onSend: (type) => newSends.push(type),
+    onLeave: (code) => { if (code !== undefined) newLeaves.push(code); },
+  });
+
+  try {
+    await room.onJoin(oldClient);
+    const dropping = room.onDrop(oldClient, CloseCode.ABNORMAL_CLOSURE);
+    assert.deepEqual(graceCalls, [LOBBY_RECONNECT_GRACE_S]);
+    reconnect.resolve(newClient);
+    await room.onReconnect(newClient);
+    await dropping;
+
+    assert.equal(ensureCalls, 1, "transport reconnect must not rerun character initialization");
+    assert.equal(verifyCalls, 3, "join has two fences and reconnect adds exactly one fresh fence");
+    assert.deepEqual((newClient as unknown as { auth: unknown }).auth, {
+      userId: "race-user", token: "same-token", sId: 7,
+    });
+    assert.ok(onlineConn);
+    onlineConn.sink(LobbyPush.ServerNotice, { text: "recovered" });
+    onlineConn.kick(KICK_CLOSE_CODE[ForceLogoutReason.Revoked]);
+    assert.deepEqual(oldSends, [], "logical registration must not keep sending through RECONNECTED old client");
+    assert.deepEqual(newSends, [LOBBY_MSG_PUSH]);
+    assert.deepEqual(newLeaves, [KICK_CLOSE_CODE[ForceLogoutReason.Revoked]]);
+
+    room.onLeave(oldClient);
+    assert.deepEqual(unregistered, [], "old physical leave after handoff must be stale");
+    room.onLeave(newClient);
+    room.onLeave(newClient);
+    assert.deepEqual(unregistered, [registration], "final logical leave unregisters the exact token once");
+  } finally {
+    room.clock.stop();
+  }
+});
+
+test("Lobby reconnect grace timeout unregisters the exact registration once", async () => {
+  const reconnect = deferred<never>();
+  const registration: OnlineRegistration = { token: Symbol("reconnect-timeout") };
+  const unregistered: OnlineRegistration[] = [];
+  const { room } = roomWith({
+    registerOnline: () => registration,
+    unregisterOnline: (_uid, _sessionId, expected) => {
+      if (expected) unregistered.push(expected);
+    },
+    isOnlineRegistrationCurrent: (_uid, _sessionId, expected) => expected === registration,
+  });
+  (room as unknown as {
+    allowReconnection: (_client: unknown, _seconds: number) => Promise<unknown>;
+  }).allowReconnection = async () => reconnect.promise;
+  const client = fakeClient("timeout-token");
+
+  try {
+    await room.onJoin(client);
+    const dropping = room.onDrop(client, CloseCode.ABNORMAL_CLOSURE);
+    reconnect.reject(new Error("grace expired"));
+    await dropping;
+    room.onLeave(client);
+    room.onLeave(client);
+    assert.deepEqual(unregistered, [registration]);
+  } finally {
+    room.clock.stop();
+  }
+});
+
+test("Lobby replacement during grace wins over old timeout cleanup", async () => {
+  const reconnect = deferred<never>();
+  const registrations: OnlineRegistration[] = [];
+  const unregistered: OnlineRegistration[] = [];
+  let active: OnlineRegistration | undefined;
+  const { room } = roomWith({
+    registerOnline: () => {
+      const registration = { token: Symbol("grace-generation") };
+      registrations.push(registration);
+      active = registration;
+      return registration;
+    },
+    unregisterOnline: (_uid, _sessionId, expected) => {
+      if (!expected) return;
+      unregistered.push(expected);
+      if (active === expected) active = undefined;
+    },
+    isOnlineRegistrationCurrent: (_uid, _sessionId, expected) => active === expected,
+  });
+  (room as unknown as {
+    allowReconnection: (_client: unknown, _seconds: number) => Promise<unknown>;
+  }).allowReconnection = async () => reconnect.promise;
+  const oldClient = fakeClient("old-token");
+  const replacement = fakeClient("new-token");
+
+  try {
+    await room.onJoin(oldClient);
+    const dropping = room.onDrop(oldClient, CloseCode.ABNORMAL_CLOSURE);
+    await room.onJoin(replacement);
+    assert.equal(active, registrations[1]);
+
+    reconnect.reject(new Error("old grace expired"));
+    await dropping;
+    room.onLeave(oldClient);
+    assert.deepEqual(unregistered, [registrations[0]]);
+    assert.equal(active, registrations[1], "old exact cleanup must leave replacement online");
+
+    room.onLeave(replacement);
+    assert.deepEqual(unregistered, [registrations[0], registrations[1]]);
+  } finally {
+    room.clock.stop();
+  }
+});
+
+test("Lobby replacement wins while the reconnect session fence is pending", async () => {
+  const verifyStarted = deferred<void>();
+  const verifyRelease = deferred<void>();
+  const oldRegistration: OnlineRegistration = { token: Symbol("reconnect-old") };
+  const replacementRegistration: OnlineRegistration = { token: Symbol("reconnect-replacement") };
+  const unregistered: OnlineRegistration[] = [];
+  let active: OnlineRegistration | undefined = oldRegistration;
+  let verifyCalls = 0;
+  const { room } = roomWith({
+    verifySession: async () => {
+      verifyCalls++;
+      if (verifyCalls === 3) {
+        verifyStarted.resolve();
+        await verifyRelease.promise;
+      }
+    },
+    registerOnline: () => oldRegistration,
+    unregisterOnline: (_uid, _sessionId, expected) => {
+      if (!expected) return;
+      unregistered.push(expected);
+      if (active === expected) active = undefined;
+    },
+    isOnlineRegistrationCurrent: (_uid, _sessionId, expected) => active === expected,
+  });
+  const oldClient = fakeClient("old-token");
+  const reconnectedClient = fakeClient("old-token");
+  (room as unknown as {
+    allowReconnection: (_client: unknown, _seconds: number) => Promise<unknown>;
+  }).allowReconnection = async () => reconnectedClient;
+
+  try {
+    await room.onJoin(oldClient);
+    const dropping = room.onDrop(oldClient, CloseCode.ABNORMAL_CLOSURE);
+    const reconnecting = room.onReconnect(reconnectedClient);
+    await verifyStarted.promise;
+    active = replacementRegistration;
+    verifyRelease.resolve();
+
+    await assert.rejects(
+      reconnecting,
+      (error: unknown) => error instanceof Error && error.message.includes("AUTH_REQUIRED"),
+    );
+    await dropping;
+    room.onLeave(reconnectedClient);
+    assert.deepEqual(unregistered, [oldRegistration]);
+    assert.equal(active, replacementRegistration, "old continuation must not unregister the winning generation");
+  } finally {
+    room.clock.stop();
+  }
+});
+
+test("Lobby reconnect rejects a token fence replaced during grace", async () => {
+  const registration: OnlineRegistration = { token: Symbol("reconnect-stale-token") };
+  const unregistered: OnlineRegistration[] = [];
+  let currentToken = "old-token";
+  const { room } = roomWith({
+    verifySession: async (_uid, token) => {
+      if (token !== currentToken) throw new AuthRequiredError("stale reconnect token");
+    },
+    registerOnline: () => registration,
+    unregisterOnline: (_uid, _sessionId, expected) => {
+      if (expected) unregistered.push(expected);
+    },
+    isOnlineRegistrationCurrent: (_uid, _sessionId, expected) => expected === registration,
+  });
+  const newClient = fakeClient("old-token");
+  (room as unknown as {
+    allowReconnection: (_client: unknown, _seconds: number) => Promise<unknown>;
+  }).allowReconnection = async () => newClient;
+  const oldClient = fakeClient("old-token");
+
+  try {
+    await room.onJoin(oldClient);
+    const dropping = room.onDrop(oldClient, CloseCode.ABNORMAL_CLOSURE);
+    currentToken = "replacement-token";
+    await assert.rejects(
+      room.onReconnect(newClient),
+      (error: unknown) => error instanceof Error && error.message.includes("AUTH_REQUIRED"),
+    );
+    await dropping;
+    room.onLeave(newClient);
+    assert.deepEqual(unregistered, [registration]);
+  } finally {
+    room.clock.stop();
+  }
+});
+
+test("Lobby forced, consented and shutdown leaves bypass reconnect grace", async (t) => {
+  const cases = [
+    { name: "forced", code: KICK_CLOSE_CODE[ForceLogoutReason.Banned], viaDrop: true },
+    { name: "server shutdown", code: CloseCode.SERVER_SHUTDOWN, viaDrop: true },
+    { name: "consented", code: CloseCode.CONSENTED, viaDrop: false },
+  ];
+  for (const item of cases) {
+    await t.test(item.name, async () => {
+      let graceCalls = 0;
+      const { room, unregistered } = roomWith({});
+      (room as unknown as {
+        allowReconnection: (_client: unknown, _seconds: number) => Promise<unknown>;
+      }).allowReconnection = async () => { graceCalls++; return undefined; };
+      const client = fakeClient(`${item.name}-token`, { sessionId: `${item.name}-seat` });
+      try {
+        await room.onJoin(client);
+        if (item.viaDrop) await room.onDrop(client, item.code);
+        room.onLeave(client);
+        assert.equal(graceCalls, 0);
+        assert.deepEqual(unregistered, [`${item.name}-seat`]);
+      } finally {
+        room.clock.stop();
+      }
+    });
+  }
+});
+
+test("Lobby reconnect continuation after shutdown cannot restore registration", async () => {
+  const verifyStarted = deferred<void>();
+  const verifyRelease = deferred<void>();
+  const registration: OnlineRegistration = { token: Symbol("reconnect-shutdown") };
+  const unregistered: OnlineRegistration[] = [];
+  let verifyCalls = 0;
+  const { room } = roomWith({
+    verifySession: async () => {
+      verifyCalls++;
+      if (verifyCalls === 3) {
+        verifyStarted.resolve();
+        await verifyRelease.promise;
+      }
+    },
+    registerOnline: () => registration,
+    unregisterOnline: (_uid, _sessionId, expected) => {
+      if (expected) unregistered.push(expected);
+    },
+    isOnlineRegistrationCurrent: (_uid, _sessionId, expected) => expected === registration,
+  });
+  const oldClient = fakeClient("shutdown-reconnect-token");
+  const newClient = fakeClient("shutdown-reconnect-token");
+  (room as unknown as {
+    allowReconnection: (_client: unknown, _seconds: number) => Promise<unknown>;
+  }).allowReconnection = async () => newClient;
+
+  try {
+    await room.onJoin(oldClient);
+    const dropping = room.onDrop(oldClient, CloseCode.ABNORMAL_CLOSURE);
+    const reconnecting = room.onReconnect(newClient);
+    await verifyStarted.promise;
+    beginShutdown();
+    verifyRelease.resolve();
+    await assert.rejects(
+      reconnecting,
+      (error: unknown) => error instanceof Error
+        && error.message.startsWith(`${SharedErrorCode.CharCreateFailed}|`),
+    );
+    await dropping;
+    room.onLeave(newClient);
+    assert.deepEqual(unregistered, [registration]);
+  } finally {
+    resetAdmission();
     room.clock.stop();
   }
 });

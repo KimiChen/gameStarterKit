@@ -576,6 +576,10 @@ export class WebSocketClient {
             slot.dropping = true;
             this.rejectAll("CONN_LOST", slot);
         });
+        room.onReconnect(() => {
+            if (!current()) return;
+            slot.dropping = false;
+        });
         room.onLeave((code?: number) => {
             // Handle stale callbacks as well as the current room. Filtering by
             // slot identity prevents an old room from clearing a replacement.
@@ -656,7 +660,9 @@ export class WebSocketClient {
     rpc<T extends LobbyRpcType>(type: T, payload: RpcReq<T>): Promise<RpcRes<T>> {
         const slot = this.slot;
         const room = slot?.room;
-        if (!room || !slot) return Promise.reject(new RpcError("CONN_LOST", "未加入大厅房"));
+        if (!room || !slot || slot.cancelled || slot.dropping) {
+            return Promise.reject(new RpcError("CONN_LOST", "大厅连接当前不可用"));
+        }
         const id = `r${++this.seq}`;
         let wirePayload: RpcReq<T>;
         let envelope: IRpcEnvelope;

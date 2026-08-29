@@ -257,7 +257,10 @@ adapter 必须把对应 `mode` 传给 Game join，不能依赖服务端默认值
 options，不符即抛错而非静默复用；本次 `client`/`endpoint`/options/generation 会在 join 开始时冻结，
 `init()` 换端点不会污染在途连接。join 的 deadline/cancel 契约由 `net/joinControl.ts` 定义，RoomClient
 与 WebSocketClient 共用；timeout 或 AbortSignal 会立即结束本地 ownership，SDK 迟到的 room 仍在后台释放。
-onDrop 会立即把全部在途 RPC 判为 CONN_LOST，room 实例与监听在 SDK 自动重连后继续存活。
+LobbyRoom 只为 SDK 会自动重试的 transport close code 保留 10 秒重连窗口；主动退出、停服和 49xx 强踢
+直接最终清理。客户端 onDrop 会立即把全部在途 RPC 判为 CONN_LOST，掉线窗口内的新 RPC 也 fail-fast，
+不会进入 SDK 消息队列；当前 generation 的 onReconnect 只恢复发送能力，room、ownership 与 push listener
+继续存活。只有最终 onLeave 才进入下述 session/profile 对账。
 `net/session.ts` 是登录态与 authInvalid/connLost/battleLost 三类 transport 事件的枢纽；authInvalid 在
 未登录时幂等吞掉迟到上报。Lobby 最终 `onLeave` 后，页面组合根先复用当前内存 token，以显式 ownership
 重进所选区 Lobby，再拉 `user.getInfo`；只有完整 identity 仍匹配的结果才能原子替换角色快照并恢复 Home。

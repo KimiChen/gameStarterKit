@@ -6,7 +6,7 @@
  * - 每消息快路径复验 sess（**纯组缓存 hash 比对、零权威回源**；在线撤销靠踢，见 §2.3 封号 SOP）。
  * - 大包防护在 transport 层 maxPayload（09·G4，见 app.ts）。
  */
-import { Room, type AuthContext, type Client } from "@colyseus/core";
+import { CloseCode, Room, type AuthContext, type Client } from "@colyseus/core";
 import {
   LOBBY_MSG_PUSH, LOBBY_MSG_RPC, PROTOCOL_VERSION,
   ErrorCode as SharedErrorCode, isPlainRecord, validateLobbyPush, validateLobbyRoomJoinOptions,
@@ -84,7 +84,22 @@ const defaultLobbyJoinDependencies: LobbyJoinDependencies = {
 interface LobbyRegistrationState {
   readonly uid: string;
   readonly sessionId: string;
+  readonly token: string;
+  readonly sId: number;
   readonly registration: OnlineRegistration;
+  readonly transport: { client: LobbyClient };
+}
+
+/** Keep Lobby transport recovery aligned with the existing GameRoom window. */
+export const LOBBY_RECONNECT_GRACE_S = 10;
+
+/** These are exactly the close codes for which the 0.17 client SDK retries. */
+function isReconnectableDrop(code?: number): boolean {
+  return code === undefined
+    || code === CloseCode.GOING_AWAY
+    || code === CloseCode.NO_STATUS_RECEIVED
+    || code === CloseCode.ABNORMAL_CLOSURE
+    || code === CloseCode.MAY_TRY_RECONNECT;
 }
 
 /** Validate the complete push envelope before it reaches the Colyseus transport. */
@@ -174,9 +189,33 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
 
   /** The map key alone is not an ownership proof when a late join callback races a replacement. */
   private readonly onlineRegistrations = new WeakMap<LobbyClient, LobbyRegistrationState>();
+  /** Published before allowReconnection awaits the replacement transport. */
+  private readonly reconnectingRegistrations = new Map<string, LobbyRegistrationState>();
 
   constructor(private readonly joinDeps: LobbyJoinDependencies = defaultLobbyJoinDependencies) {
     super();
+  }
+
+  private isRegistrationCurrent(state: LobbyRegistrationState): boolean {
+    if (this.onlineRegistrations.get(state.transport.client)?.registration !== state.registration) {
+      return false;
+    }
+    if (this.joinDeps.isOnlineRegistrationCurrent === undefined) { return true; }
+    try {
+      return this.joinDeps.isOnlineRegistrationCurrent(state.uid, state.sessionId, state.registration);
+    } catch {
+      return false;
+    }
+  }
+
+  private unregisterRegistration(state: LobbyRegistrationState): void {
+    if (this.reconnectingRegistrations.get(state.sessionId) === state) {
+      this.reconnectingRegistrations.delete(state.sessionId);
+    }
+    const client = state.transport.client;
+    if (this.onlineRegistrations.get(client)?.registration !== state.registration) { return; }
+    this.onlineRegistrations.delete(client);
+    this.joinDeps.unregisterOnline(state.uid, state.sessionId, state.registration);
   }
 
   /** token 反查 uid + 严格校验（连接级）。⛔ 不接受客户端单独传 userId（09·G1）。 */
@@ -320,7 +359,12 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
     // slot from the one this join registered.
     const sessionId = client.sessionId;
 
-    const sink: PushSink = (type, data) => sendLobbyPush(client, type, data);
+    // Colyseus replaces the old client's `ref` after reconnection, but leaves
+    // that old object in RECONNECTED state. Its send() path therefore drops
+    // pushes. Keep the logical registration stable while allowing its physical
+    // transport target to move to the new Client object in onReconnect.
+    const transport = { client };
+    const sink: PushSink = (type, data) => sendLobbyPush(transport.client, type, data);
     // Register before the potentially slow ready flight.  A replacement login
     // must be able to see and kick this connection; Colyseus does not expose
     // the seat to clients until onJoin resolves, so the ready gate still keeps
@@ -333,22 +377,23 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
       // kickUser (so its delivery ack remains honest), but observe a rejected
       // Promise because this callback is invoked from a detached kick path.
       kick: (closeCode) => {
-        const result = client.leave(closeCode);
+        const result = transport.client.leave(closeCode);
         // The Colyseus type is `void`, while adapters may return a Promise;
         // Promise.resolve keeps both shapes covered without hiding a sync throw.
         void Promise.resolve(result).catch(() => {});
       },
       tokenHash: this.joinDeps.tokenHashOf(token),
     });
-    this.onlineRegistrations.set(client, { uid, sessionId, registration });
+    const state: LobbyRegistrationState = { uid, sessionId, token, sId, registration, transport };
+    this.onlineRegistrations.set(client, state);
 
     let registrationUnregistered = false;
     const unregisterRegistration = (): void => {
       // Keep the client map coherent without allowing an old callback to
       // delete a newer registration that happens to reuse the same seat key.
-      const ownsLocal = this.onlineRegistrations.get(client)?.registration === registration;
+      const ownsLocal = this.onlineRegistrations.get(transport.client)?.registration === registration;
       if (ownsLocal) {
-        this.onlineRegistrations.delete(client);
+        this.onlineRegistrations.delete(transport.client);
       }
       // onLeave may already have removed this local state while an await was
       // pending. In that case its exact unregister call is the sole cleanup;
@@ -363,7 +408,7 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
     // happens this callback no longer owns a seat and must not resolve as a
     // successful join after its registration has been removed/replaced.
     const assertRegistrationCurrent = (): void => {
-      let current = this.onlineRegistrations.get(client)?.registration === registration;
+      let current = this.onlineRegistrations.get(transport.client)?.registration === registration;
       if (current && this.joinDeps.isOnlineRegistrationCurrent !== undefined) {
         try {
           current = this.joinDeps.isOnlineRegistrationCurrent(uid, sessionId, registration);
@@ -429,7 +474,7 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
         // A detached read may finish after this client leaves or after its
         // slot is replaced.  Never apply stale guild state to the newer
         // registration.
-        if (this.onlineRegistrations.get(client)?.registration !== registration) { return; }
+        if (this.onlineRegistrations.get(transport.client)?.registration !== registration) { return; }
         const globallyCurrent = this.joinDeps.isOnlineRegistrationCurrent === undefined
           || this.joinDeps.isOnlineRegistrationCurrent(uid, sessionId, registration);
         if (!globallyCurrent) { return; }
@@ -439,12 +484,71 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
       .catch((e) => console.error(`[lobby] 在线公会索引初始化失败 uid=${uid} sId=${sId}`, e));
   }
 
+  async onDrop(client: LobbyClient, code?: number): Promise<void> {
+    const state = this.onlineRegistrations.get(client);
+    if (!state || !isAdmissionOpen() || !isReconnectableDrop(code)) { return; }
+
+    const existing = this.reconnectingRegistrations.get(state.sessionId);
+    if (existing !== undefined && existing !== state) {
+      // A different generation already owns this handoff key. Do not overwrite
+      // it; framework finalization will route this client through onLeave.
+      return;
+    }
+    this.reconnectingRegistrations.set(state.sessionId, state);
+    try {
+      await this.allowReconnection(client, LOBBY_RECONNECT_GRACE_S);
+      // onReconnect claims and removes the handoff. A successful await alone
+      // is not authorization: the reconnect hook still revalidates the fence.
+    } catch {
+      if (this.reconnectingRegistrations.get(state.sessionId) === state) {
+        this.reconnectingRegistrations.delete(state.sessionId);
+      }
+      // Colyseus invokes final onLeave after a dropped client's grace expires.
+    }
+  }
+
+  async onReconnect(client: LobbyClient): Promise<void> {
+    const state = this.reconnectingRegistrations.get(client.sessionId);
+    if (!state) { throw joinRefusedAuth("AUTH_REQUIRED"); }
+    if (this.reconnectingRegistrations.get(state.sessionId) === state) {
+      this.reconnectingRegistrations.delete(state.sessionId);
+    }
+
+    const admissionOpen = isAdmissionOpen();
+    if (!admissionOpen || !this.isRegistrationCurrent(state)) {
+      this.unregisterRegistration(state);
+      throw !admissionOpen
+        ? joinRefused(SharedErrorCode.CharCreateFailed)
+        : joinRefusedAuth("AUTH_REQUIRED");
+    }
+
+    const previousClient = state.transport.client;
+    this.onlineRegistrations.delete(previousClient);
+    state.transport.client = client;
+    client.auth = { userId: state.uid, token: state.token, sId: state.sId };
+    this.onlineRegistrations.set(client, state);
+
+    try {
+      await this.joinDeps.verifySession(state.uid, state.token, state.sId);
+    } catch (error) {
+      this.unregisterRegistration(state);
+      throw joinRefusedAuth(toErrCode(error));
+    }
+    if (!isAdmissionOpen()) {
+      this.unregisterRegistration(state);
+      throw joinRefused(SharedErrorCode.CharCreateFailed);
+    }
+    if (!this.isRegistrationCurrent(state)) {
+      this.unregisterRegistration(state);
+      throw joinRefusedAuth("AUTH_REQUIRED");
+    }
+  }
+
   onLeave(client: LobbyClient): void {
     // 按 sessionId 注销：⛔ 不能按 uid 整槽删——同 uid 的其它连接必须保留可踢/可推
     // （否则 /admin/kick 回 kicked:false 假阴性，破坏 09·G7b 的 ack 语义）。
     const state = this.onlineRegistrations.get(client);
     if (!state) { return; }
-    this.onlineRegistrations.delete(client);
-    this.joinDeps.unregisterOnline(state.uid, state.sessionId, state.registration);
+    this.unregisterRegistration(state);
   }
 }
