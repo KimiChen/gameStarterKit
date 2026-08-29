@@ -28,6 +28,8 @@ export type GameplayModeIdType = (typeof GameplayModeId)[keyof typeof GameplayMo
  * Schema 字段增删、消息名/语义变更时 +1，双端随 sync:shared 同步。
  *
  * 版本流水（新版本在上）：
+ *   6 = `setField` 文本长度从 UTF-16 码元统一为 UTF-8 字节，并拒绝不成对代理项；v5 客户端按旧口径
+ *       可能接受服务端现已拒绝的输入，因此在首次承担线上兼容义务前显式切断混跑。
  *   5 = join options 增加受校验的玩法 mode；同一 GameRoom 按 mode 隔离撮合并选择注册的 GameMode。
  *   4 = 删除未被服务端验证的可选 `listHash` join 字段；目录 hash 仍保留在 HTTP 响应中，但不伪装成进服闸。
  *   3 = WebPlatform 拆为独立 HTTP 服务：会话由外部 Public 契约签发，游戏服只做 Internal verify（提交 01fcbf5）。
@@ -36,7 +38,7 @@ export type GameplayModeIdType = (typeof GameplayModeId)[keyof typeof GameplayMo
  *       被 `ProtocolMismatch` 明确拒掉（见 GameRoom.onAuth 注释）。
  *   1 = 首版。
  */
-export const PROTOCOL_VERSION = 5;
+export const PROTOCOL_VERSION = 6;
 
 /** 两类房间共享的 join options 字段。 */
 export interface IRoomJoinOptions {

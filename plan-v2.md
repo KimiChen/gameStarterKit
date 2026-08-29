@@ -28,10 +28,11 @@
 - `[不阻塞·待补齐]` 热档 schema 迁移仍待补齐（详见 §4 P1-06）。
 - `[不阻塞·待补齐]` Game HTTP request schema 尚未直接由 shared validator 生成（详见 §4 P1-03）。
 - `[不阻塞·待补齐]` match evidence 不足以重放完整输入序列（**本清单无对应 P 条目，仅此处登记**）。
-- `[条件阻塞·首次线上兼容义务发布前]` `PROTOCOL_VERSION` 仍为 5：`9dff8f9` 已收紧 `setField` 的 wire
-  接受域（UTF-16 码元 → UTF-8 字节）但未 bump 版本。开发期仓内没有已部署的旧版线上客户端，当前不存在
-  混合版本兼容义务；**首次承担线上兼容义务的发布前，必须把该语义变更提升为新协议版本并按迁移窗口发布**。
-  来源：`plan.md:123-126`、`plan.md:43-44`
+- `[已完成]` `PROTOCOL_VERSION` 已提升为 6，版本流水明确登记 `setField` 文本接受域由 UTF-16 码元收紧为
+  UTF-8 字节并拒绝不成对代理项。客户端 Lobby/Game join 与服务端两个版本闸均消费同一 shared 常量；旧 v5
+  会以 `ProtocolMismatch` 拒绝，仓内不存在已部署旧客户端，因而在首次线上发布前完成了单版本切换。
+  验收证据：`node scripts/protocol-fingerprint.mjs` 生成 `v6` 指纹，`npm run test:client`、
+  `npm --workspace @game/server run test` 与 `npm run verify:sync`。
 
 除标注 `[条件阻塞]` 的条目外，本清单所有条目均不影响当前限定范围的核心验收；但不能据此把当前 Demo
 描述成通用生产框架。
