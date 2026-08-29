@@ -18,6 +18,7 @@
     "relayer": "tsx src/core/economy/relayer.ts",
     "freeze-worker": "tsx src/core/archive/freezeWorker.ts",
     "settle": "tsx src/core/match/matchConsumer.ts",
+    "codegen:http": "tsx tools/http-endpoint-manifest.ts",
     "typecheck": "tsc --noEmit",
     "loadtest": "tsx loadtest/bot.ts --endpoint ws://localhost:2568 --room game --numClients 20"
   },

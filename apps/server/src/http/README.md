@@ -1,8 +1,13 @@
 # http/ —— 游戏服 HTTP endpoint
 
-`index.ts` 是唯一静态装配点。新增 endpoint 使用 `<domain>/<method>.ts`，默认导出
-`createGameEndpoint(contractKey, ...)` 结果，再显式 import 并加入 `routes`。该工厂在序列化前调用
-shared `GameHttpContractMap` 的 response validator；根层当前没有 `common.ts`。
+`index.ts` 消费生成的静态装配表 `manifest.generated.ts`。新增 endpoint 使用 `<domain>/<method>.ts`，
+默认直接导出 `createGameEndpoint("ContractKey", ...)` 结果，再运行
+`npm --workspace @game/server run codegen:http`。生成器用 TypeScript AST 自动发现文件并拒绝缺失、未知或重复
+contract key；服务端测试以只读 freshness 检查阻止漏跑 codegen。运行时不扫描文件系统。
+
+`createGameEndpoint` 在序列化前调用 shared `GameHttpContractMap` 的 response validator；根层只保留
+`contract.ts`、`index.ts` 与生成 manifest。每个 `<domain>/*.ts` 都视为 endpoint；仅供 HTTP handler 复用的
+named-export helper 放在显式排除的 `_support/`，不得混进 domain 目录掩盖漏登记文件。
 
 当前路由：
 
@@ -21,8 +26,8 @@ shared `GameHttpContractMap` 的 response validator；根层当前没有 `common
 当前六个游戏服 endpoint 均由 `GameHttpContractMap` 登记 method/path/request/response；每个 request validator
 在 shared 定义处直接生成 Standard Schema。`createGameEndpoint` 从 contract key 派生 path、校验 method，给
 带 body 的路由安装该 shared schema，并在序列化前验证 response；endpoint options 不得另带 body schema。
-当前仍没有统一的应用层 body 大小上限。新增核心 HTTP 契约时应先补齐 shared contract，再登记 router，并补
-request 非法向量与 shared schema 来源测试。
+当前仍没有统一的应用层 body 大小上限。新增核心 HTTP 契约时应先补齐 shared contract，再新增 endpoint 文件、
+重生成 manifest，并补 request 非法向量与 shared schema 来源测试。
 
 完整 route matrix、限制和额外能力分类见
 [`docs/SERVER.md §6`](../../../../docs/SERVER.md#6-http-开发边界) 与

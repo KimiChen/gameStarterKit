@@ -133,8 +133,11 @@
   Standard Schema；`createGameEndpoint` 给带 body 的路由安装同一 schema 实例，并在类型与运行时都禁止
   endpoint options 另带本地 body schema。验收证据：HTTP request/response 与 wire 定向测试 22/22，
   服务端单测 215/215、`npm run typecheck`、`npm run verify:sync` 与协议指纹测试 3/3 通过。
-- `[不阻塞·待补齐]` 新增 endpoint 仍须同时创建文件并在 `http/index.ts` 人工登记；现有 contract/route
-  集合漂移测试只能守住已登记集合，尚未自动发现遗漏的 endpoint 文件。
+- `[已完成]` HTTP domain 文件由 TypeScript AST 自动发现并生成静态 `manifest.generated.ts`，`http/index.ts`
+  不再维护人工 import 表；生成器强制官方 factory、literal contract key 和直接 default export，并双向拒绝
+  缺失、未知、重复或未重生成的 endpoint。验收证据：HTTP manifest/route/response 定向测试 15/15，
+  `npm --workspace @game/server run codegen:http -- --check`、服务端 typecheck、服务端单测 220/220 与
+  `git diff --check` 通过；漏文件反例同时证明旧的已登记 route 集合断言仍会误绿而 freshness 门禁会失败。
 - `[不阻塞·有意保留]` WebPlatform consumer map 另登记了仓内未调用的 `Livez`/`Readyz` 两个契约
   （属 consumer 子集而非生成全集，当前无实际暴露面）。
 
