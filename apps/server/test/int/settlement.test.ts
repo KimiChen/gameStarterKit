@@ -885,6 +885,126 @@ test("v2 损坏条目先完整写入 quarantine 再 ACK 来源 PEL", async () =>
   }
 });
 
+/**
+ * c6043f0 收紧的 v2 接受域没有 producer 可以复现（v3 上线后 v2 只剩历史输入），
+ * 因此只能直接 XADD 原始 payload：JSON 里写 `-0` 才能造出 `JSON.parse` 产出的负零。
+ * ⛔ 这三条一旦放行：`-0 !== 0` 为 false 会让 binding 检查静默通过，随后被 JSON.stringify
+ * 重写成 0 落库，审计记录与 Redis 原始字节从此对不上。
+ */
+test("v2 接受域：payload 负零与 casual/ranked loadout 违规一律隔离且不落库", async () => {
+  const nonce = Date.now().toString(36);
+  const negZeroSIdMid = `m_v2_negzero_sid_${nonce}`;
+  const casualLoadoutMid = `m_v2_casual_loadout_${nonce}`;
+  const rankedNegZeroMid = `m_v2_ranked_negzero_${nonce}`;
+  const rankedControlMid = `m_v2_ranked_control_${nonce}`;
+  usedMatchIds.push(negZeroSIdMid, casualLoadoutMid, rankedNegZeroMid, rankedControlMid);
+
+  /** JSON.stringify 永远把 -0 写成 0，负零只能靠替换原始字节注入。 */
+  const injectNegativeZero = (json: string, needle: string): string => {
+    assert.equal(json.split(needle).length, 2, `${needle} 必须在 payload 中精确出现一次`);
+    return json.replace(needle, `${needle.slice(0, -1)}-0`);
+  };
+
+  // ① 顶层 sId 负零：binding 检查（-0 !== 0 为 false）放行，只能由 evidenceInt 的 Object.is 闸住。
+  const negZeroSIdPayload = injectNegativeZero(
+    JSON.stringify(makeEvidence(negZeroSIdMid, 0)), '"sId":0',
+  );
+  assert.ok(
+    Object.is((JSON.parse(negZeroSIdPayload) as { sId: number }).sId, -0),
+    "夹具必须真的产出 -0，否则本用例恒真",
+  );
+  const negZeroSIdId = await stream().xadd(
+    K_STREAM_MATCH_V2, "*",
+    "schemaVersion", String(MATCH_STREAM_V2_SCHEMA_VERSION),
+    "matchId", negZeroSIdMid, "mode", String(MATCH_MODE_CASUAL), "sId", "0",
+    "payload", negZeroSIdPayload,
+  );
+
+  // ② casual 局的 loadout 必须精确为 null：BYO 局不得夹带任何配装数据。
+  const casualLoadoutPayload = JSON.stringify({ ...makeEvidence(casualLoadoutMid, 5), loadout: {} });
+  const casualLoadoutId = await stream().xadd(
+    K_STREAM_MATCH_V2, "*",
+    "schemaVersion", String(MATCH_STREAM_V2_SCHEMA_VERSION),
+    "matchId", casualLoadoutMid, "mode", String(MATCH_MODE_CASUAL), "sId", "5",
+    "payload", casualLoadoutPayload,
+  );
+
+  // ③ ranked 局的 loadout 走 canonical JSON 递归校验：嵌套负零同样不是 canonical。
+  const rankedNegZeroPayload = injectNegativeZero(
+    JSON.stringify({ ...makeEvidence(rankedNegZeroMid, 6), mode: MATCH_MODE_RANKED, loadout: { roll: 0 } }),
+    '"roll":0',
+  );
+  const rankedNegZeroId = await stream().xadd(
+    K_STREAM_MATCH_V2, "*",
+    "schemaVersion", String(MATCH_STREAM_V2_SCHEMA_VERSION),
+    "matchId", rankedNegZeroMid, "mode", String(MATCH_MODE_RANKED), "sId", "6",
+    "payload", rankedNegZeroPayload,
+  );
+
+  // ④ 对照组：同一条 ranked 证据把 -0 换成 0 后必须正常落库，证明拒绝理由只可能是负零。
+  const rankedControlPayload = JSON.stringify({
+    ...makeEvidence(rankedControlMid, 6), mode: MATCH_MODE_RANKED, loadout: { roll: 0 },
+  });
+  assert.equal(
+    rankedControlPayload.replace(rankedControlMid, rankedNegZeroMid),
+    rankedNegZeroPayload.replace('"roll":-0', '"roll":0'),
+    "对照组必须与负零组逐字节只差一个负号",
+  );
+  const rankedControlId = await stream().xadd(
+    K_STREAM_MATCH_V2, "*",
+    "schemaVersion", String(MATCH_STREAM_V2_SCHEMA_VERSION),
+    "matchId", rankedControlMid, "mode", String(MATCH_MODE_RANKED), "sId", "6",
+    "payload", rankedControlPayload,
+  );
+
+  assert.ok(negZeroSIdId && casualLoadoutId && rankedNegZeroId && rankedControlId);
+  const rejectedIds = new Map([
+    [negZeroSIdId!, negZeroSIdMid],
+    [casualLoadoutId!, casualLoadoutMid],
+    [rankedNegZeroId!, rankedNegZeroMid],
+  ]);
+  for (const id of [negZeroSIdId!, casualLoadoutId!, rankedNegZeroId!, rankedControlId!]) {
+    rememberStreamEntry(K_STREAM_MATCH_V2, id);
+  }
+  const quarantinedForSources = async () => {
+    const entries = await stream(K_STREAM_MATCH_QUARANTINE).xrange(
+      K_STREAM_MATCH_QUARANTINE, "-", "+",
+    ) as [string, string[]][];
+    return entries.map(([id, fields]) => ({ id, fields: Object.fromEntries(
+      Array.from({ length: fields.length / 2 }, (_, i) => fields.slice(i * 2, i * 2 + 2)),
+    ) })).filter((entry) => rejectedIds.has(entry.fields.sourceId));
+  };
+
+  try {
+    assert.ok(await consumeOnce() >= 4, "四条 v2 条目都被读取并处置");
+    const quarantined = new Map(
+      (await quarantinedForSources()).map((entry) => [entry.fields.sourceId, entry.fields]),
+    );
+    for (const [sourceId, matchId] of rejectedIds) {
+      assert.equal(
+        quarantined.get(sourceId)?.reason, "V2_PAYLOAD_SHAPE",
+        `${matchId} 必须按 v2 payload 形状隔离`,
+      );
+      assert.equal(quarantined.get(sourceId)?.sourceKind, "v2");
+      assert.equal(await countRows("match_index", matchId), 0, `${matchId} 不得落 match_index`);
+      assert.equal(await countRows("match_results", matchId), 0, `${matchId} 不得落 match_results`);
+    }
+    // 对照组落库：说明三条拒绝都不是因为夹具本身不合法。
+    assert.equal(await countRows("match_results", rankedControlMid), 1, "合法 ranked 对照组必须落库");
+    const [rows] = await getPool().query<RowDataPacket[]>(
+      "SELECT payload FROM match_results WHERE match_id = ?", [rankedControlMid],
+    );
+    assert.deepEqual((rows[0].payload as MatchEvidence).loadout, { roll: 0 });
+  } finally {
+    const cleanupEntries = await quarantinedForSources();
+    if (cleanupEntries.length > 0) {
+      await stream(K_STREAM_MATCH_QUARANTINE).xdel(
+        K_STREAM_MATCH_QUARANTINE, ...cleanupEntries.map((entry) => entry.id),
+      );
+    }
+  }
+});
+
 test("v3 replay mismatch, one-player evidence, non-canonical JSON, and oversized payload are quarantined", async () => {
   const nonce = Date.now().toString(36);
   const mismatchMid = `m_v3_mismatch_${nonce}`;

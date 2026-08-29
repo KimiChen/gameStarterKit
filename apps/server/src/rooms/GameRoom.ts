@@ -1,4 +1,5 @@
 import { Room, Client, CloseCode, type AuthContext, type Serializer } from "colyseus";
+import type { ServerError } from "@colyseus/core";
 import { Schema } from "@colyseus/schema";
 import {
     C2S,
@@ -161,6 +162,14 @@ const MAX_INPUTS_PER_SOURCE = 256;
  * input that would make the replay evidence incomplete.
  */
 export const MAX_ACCEPTED_INPUTS = MATCH_EVIDENCE_MAX_ACCEPTED_INPUTS;
+/**
+ * 入座失败的可区分内部原因码。⛔ 只进日志，不上线（对客户端一律 BadRequest）：
+ * `factory` = 本仓 `createModePlayer` 守卫拒绝 mode 交回的 player；
+ * `register` = `@colyseus/schema` 在 `MapSchema.set` 里 assertInstanceType 兜底拒绝。
+ * 两者合并后不可区分，等于让 factory 守卫失去可失败的证据。
+ */
+export const MODE_PLAYER_FACTORY_REASON = "mode-player-factory";
+export const MODE_PLAYER_REGISTER_REASON = "mode-player-register";
 
 /** 可替换的单调时间源。默认使用 Colyseus room clock。 */
 export type GameRoomClock = (() => number) | { now?: () => number; currentTime?: number };
@@ -895,6 +904,26 @@ export class GameRoom extends Room {
         }
     }
 
+    /**
+     * 入座失败的统一出口：回滚 player 槽位与 mode 入场资源，再按**可区分的内部原因码**告警。
+     * 对外仍是同一个 BadRequest（⛔ 不向客户端泄漏内部根因），运维靠 reason 分辨到底是本仓的
+     * player factory 守卫拒绝，还是 schema 库在注册时兜底拒绝。
+     */
+    private async refuseModePlayer(
+        client: Client,
+        mode: RuntimeGameMode,
+        reason: string,
+        error: unknown,
+    ): Promise<ServerError> {
+        this.state.players.delete(client.sessionId);
+        await this.releaseModeAdmission(client);
+        console.error(
+            `[GameRoom ${this.roomId}] mode ${mode.id} player admission failed reason=${reason}`,
+            error,
+        );
+        return joinRefused(ErrorCode.BadRequest);
+    }
+
     async onJoin(client: Client, _options: unknown) {
         const mode = this.requireMode();
         // 对局已开/已结算的房间不收新客（M8a：参与者集合在开局时固定，中途进人会污染名次与
@@ -947,15 +976,20 @@ export class GameRoom extends Room {
         }
         this.modeAdmissions.add(client.sessionId);
 
+        // ⛔ factory 与 registration 必须分开兜底：两者对客户端同样是 BadRequest，但只有分开的
+        // 内部原因码能把「mode 返回了非 Schema / 身份被篡改的 player」（本仓守卫）与
+        // 「@colyseus/schema 在 MapSchema.set 里 assertInstanceType 兜底」区分开——合并成一个
+        // catch 时，删掉 createModePlayer 的守卫不会改变任何可观测输出。
         let player!: RuntimeModePlayer;
         try {
             player = this.createModePlayer(mode, client.sessionId, randomNickname(this.admissionRng));
+        } catch (error) {
+            throw await this.refuseModePlayer(client, mode, MODE_PLAYER_FACTORY_REASON, error);
+        }
+        try {
             this.state.players.set(client.sessionId, player as PlayerState);
         } catch (error) {
-            this.state.players.delete(client.sessionId);
-            await this.releaseModeAdmission(client);
-            console.error(`[GameRoom ${this.roomId}] mode ${mode.id} player factory failed`, error);
-            throw joinRefused(ErrorCode.BadRequest);
+            throw await this.refuseModePlayer(client, mode, MODE_PLAYER_REGISTER_REASON, error);
         }
         this.sessionUserId.set(client.sessionId, auth.userId);
         this.userSessionId.set(auth.userId, client.sessionId);

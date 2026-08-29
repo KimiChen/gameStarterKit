@@ -13,7 +13,11 @@ import {
     IDLE_GAME_MODE_ID,
     gameModeRegistry,
 } from "../src/rooms/GameMode";
-import { GameRoom } from "../src/rooms/GameRoom";
+import {
+    GameRoom,
+    MODE_PLAYER_FACTORY_REASON,
+    MODE_PLAYER_REGISTER_REASON,
+} from "../src/rooms/GameRoom";
 import {
     IDLE_DEFAULT_PULSE_GOAL,
     IDLE_MAX_PULSE_GOAL,
@@ -24,6 +28,7 @@ import {
     GameRoomState,
     IdlePlayerState,
     IdleRoomState,
+    PlayerState,
     createRoomStateForMode,
 } from "../src/rooms/schema/GameRoomState";
 
@@ -204,6 +209,63 @@ test("Idle 开局：精确 player/root 字段，生产 goal=3 且拒绝非 Schem
         );
         assert.equal(idleState(tamperedIdentityRoom).players.size, 0);
         await tamperedIdentityRoom.onDispose();
+    }
+});
+
+test("player factory 守卫与 schema 注册兜底必须给出可区分的入座诊断", async () => {
+    const logs: unknown[][] = [];
+    const originalError = console.error;
+    console.error = (...args: unknown[]) => { logs.push(args); };
+    const reasonOf = (): string[] => logs
+        .map(([message]) => typeof message === "string" ? message : "")
+        .filter((message) => message.includes("player admission failed"))
+        .map((message) => message.slice(message.indexOf("reason=") + "reason=".length));
+
+    try {
+        // 本仓守卫：mode 交回的根本不是 Schema。
+        const plainRoom = new GameRoom({
+            seed: 709,
+            mode: {
+                ...createIdleGameMode(),
+                createPlayer: ({ sessionId, name }) => ({ id: sessionId, name, pulses: 0 }) as never,
+            },
+        });
+        await assert.rejects(
+            join(plainRoom, client("diag-plain")),
+            (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.BadRequest)),
+        );
+        assert.equal(idleState(plainRoom).players.size, 0);
+        await plainRoom.onDispose();
+        assert.deepEqual(reasonOf(), [MODE_PLAYER_FACTORY_REASON]);
+
+        logs.length = 0;
+        // 库内兜底：是 Schema、身份也没被篡改，但不是本 root 声明的 childType。
+        const wrongSchemaRoom = new GameRoom({
+            seed: 710,
+            mode: {
+                ...createIdleGameMode(),
+                createPlayer: ({ sessionId, name }) => {
+                    const foreign = new PlayerState();
+                    foreign.id = sessionId;
+                    foreign.name = name;
+                    return foreign as never;
+                },
+            },
+        });
+        await assert.rejects(
+            join(wrongSchemaRoom, client("diag-foreign")),
+            (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.BadRequest)),
+        );
+        assert.equal(idleState(wrongSchemaRoom).players.size, 0);
+        await wrongSchemaRoom.onDispose();
+        assert.deepEqual(
+            reasonOf(),
+            [MODE_PLAYER_REGISTER_REASON],
+            "非本 root childType 的 Schema 必须由 MapSchema.set 兜底，且原因码与 factory 守卫可区分",
+        );
+        assert.notEqual(MODE_PLAYER_FACTORY_REASON, MODE_PLAYER_REGISTER_REASON);
+    } finally {
+        console.error = originalError;
     }
 });
 

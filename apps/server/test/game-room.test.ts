@@ -262,6 +262,37 @@ test("accepted input evidence has a bounded capacity and rejects later side effe
     assert.deepEqual(evidence?.events.map((event) => event.type), ["move", "leave"]);
 });
 
+test("cast 达到 accepted input 上限时在冷却与伤害之前 fail-closed", async () => {
+    const room = new GameRoom({ ...runtime(213), maxAcceptedInputs: 1 });
+    installLock(room);
+    const a = fakeClient("a", "ua");
+    const b = fakeClient("b", "ub");
+    await join(room, a);
+    await join(room, b);
+    const cast = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.CastSkill];
+    const playerA = room.state.players.get("a")!;
+    const playerB = room.state.players.get("b")!;
+    const badRequests = (sender: FakeClient): number => sender.sent
+        .filter(([, payload]) => (payload as { code?: number }).code === ErrorCode.BadRequest).length;
+
+    // 先用一次合法 cast 占满容量：它必须真的结算过，后面的对照才有意义。
+    cast(a, { skillId: 1, targetId: "b" });
+    assert.equal(room.getAcceptedInputs().length, 1);
+    assert.ok(playerB.hp < PLAYER_INIT_HP, "占位的第一发必须真的落伤害");
+    assert.deepEqual(Object.keys(playerA.lastCastTick), ["1"], "占位的第一发必须写入冷却");
+    const hpA = playerA.hp;
+    const hpB = playerB.hp;
+    const errorsBefore = badRequests(b);
+
+    // b 从未施法：技能表、存活、冷却全部合法，唯一可能的拒绝理由只有证据容量闸。
+    cast(b, { skillId: 1, targetId: "a" });
+    assert.equal(room.getAcceptedInputs().length, 1, "达到上限后 cast 不得进入证据链");
+    assert.equal(playerA.hp, hpA, "容量耗尽时不得先结算伤害再拒绝（否则证据与状态脱节）");
+    assert.equal(playerB.hp, hpB);
+    assert.deepEqual(Object.keys(playerB.lastCastTick), [], "容量耗尽时不得写入冷却");
+    assert.equal(badRequests(b), errorsBefore + 1, "被容量闸拒绝的 cast 必须回 BadRequest");
+});
+
 test("winning cast is appended before settlement emits replayable v3 evidence", async () => {
     let emissions = 0;
     const room = new GameRoom({

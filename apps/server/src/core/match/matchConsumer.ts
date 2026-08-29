@@ -145,7 +145,16 @@ interface JsonValidationState {
   readonly seen: Set<object>;
 }
 
-/** Keep opaque loadout data JSON-stable until its ranked business schema exists. */
+/**
+ * Keep opaque loadout data JSON-stable until its ranked business schema exists.
+ *
+ * ⚠ defense-in-depth：唯一调用点（`isMatchEvidenceV2Payload` 的 `payload.loadout`）只处理
+ * `JSON.parse` 产物，而 `JSON.parse` 只会生成 enumerable 数据属性，因此下面数组/对象两个分支里
+ * 的 accessor descriptor 拒绝（`!descriptor?.enumerable` / `!("value" in descriptor)`）当前**不可达**，
+ * 没有能失败的用例。⛔ 仍然保留、且⛔ 不得改写成 `value[index]` 直取：descriptor 读法是本校验器
+ * 「不触发 getter」的唯一保证，一旦接入非 JSON.parse 的调用方（对局内构造的 loadout、外部 SDK 对象），
+ * 直取写法会在审计校验中执行任意用户代码。两个分支同源同理，删只删一半只会造成不一致。
+ */
 function isCanonicalJsonValue(
   value: unknown,
   depth = 0,
