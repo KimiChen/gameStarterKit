@@ -20,7 +20,7 @@
 > **计数口径**：每条验收证据中的测试计数为**写入该条时的 HEAD 快照**；同一命令在不同条目出现不同计数时，
 > 以最后写入的一条为准。
 >
-> **本轮回写快照**（全部 `[已完成]` 条目落盘后同一工作树实测）：`verify:core`、`verify:all`、`typecheck`、
+> **前次回写快照**（`8a76d29`，全部当时的 `[已完成]` 条目落盘后同一工作树实测）：`verify:core`、`verify:all`、`typecheck`、
 > `verify:sync`、`verify:inventory` 全绿；服务端单测 297/297、客户端 246/246、`test:fgui` 50/50、
 > `test:int` 154/154、`test:inventory` 33/33、`test:faults:int` 四组 72/61/12/15 全绿。
 >
@@ -142,15 +142,22 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
 - `[已完成]` 客户端 C2S allowlist（`apps/client/src/net/RoomClient.ts:1106-1109`）没有能失败的定向
   测试：删除该闸后客户端 245 个用例与服务端双 mode wire 用例全部保持绿。typed room 的 `send` 在编译期已被
   `TOutbound` 约束，因此这条运行时闸真正守护的是 `RoomClient` 上与 mode 无关的公共 send API 与 `as any`
-  路径。需补一条 idle slot 下调用 `castSkill()/chat()` 必须返回 false 且不产生 `room.send` 的反例；同时评估
-  直接删除这些与 mode 无关的公共方法（仓内已无生产调用方），把发送面完全收进 typed facade。
-  **已补齐**：`apps/client/test/wireTransport.test.ts` 新增 idle slot 下调用 `castSkill()/chat()` 必须返回
-  false 且不产生 `room.send` 的反例。变异推演：删除 `RoomClient` 的 allowlist 闸 → 客户端 246 例中仅该例变红
-  （**245 pass / 1 fail**，与本条原记录「删闸后 245 例全绿」精确吻合）。
+  路径。
+  **已补齐**：`apps/client/test/wireTransport.test.ts` 在 idle slot 下验证 `ping()/castSkill()/chat()` 被
+  allowlist 拒绝且不产生 `room.send`，并对内部 `sendFromSlot` 的拒绝结果断言为 `false`。变异推演：删除
+  `RoomClient` 的 allowlist 闸 → 客户端 246 例中仅该例变红（**245 pass / 1 fail**，与本条原记录「删闸后
+  245 例全绿」精确吻合）。
   「直接删除与 mode 无关的公共方法」一项评估后**保留**：生产唯一调用点 `BallMoveGameplay.ts:260` 的
   `context.room.ping()` 走的是 `net/rooms/BallMoveRoom.ts` typed facade（`room.send(C2S.Ping, …)`），并非
   `RoomClient.ping()`；但删除这些方法会迫使重写不在本条范围内的 `roomClientOwnership.test.ts` 写屏障用例，
   故选择「保留 + 补反例」把发送面的运行时闸钉死。
+- `[不阻塞·待补齐]` **公共 API 返回值契约未兑现**：本文此前要求 idle slot 下
+  `RoomClient.castSkill()/chat()` 返回 `false`，但当前实现（`apps/client/src/net/RoomClient.ts:1081-1088`）
+  将两者声明为 `void`，调用结果实际为 `undefined`。现有
+  `apps/client/test/wireTransport.test.ts:197-200` 只断言没有 `room.send`，`false` 的断言在
+  `:207-210` 针对的是私有 `sendFromSlot`，不能证明公共方法契约。需在「返回值是契约」与「fire-and-forget、只
+  要拒绝且不发包」之间作出明确选择；前者应把公共方法改为返回 `boolean` 并补直接断言，后者则应删去计划中
+  的 `返回 false` 主张并将该条收窄为「被拒且不产生 `room.send`」。
 - `[已完成]` `GameRoom` 的 player factory 非 Schema 守卫（`apps/server/src/rooms/GameRoom.ts:566-568`）
   只有与 `MapSchema.set` 内建 `assertInstanceType` 结果不可区分的用例：`createModePlayer` 与 `players.set`
   被同一个 try/catch 收敛（`GameRoom.ts:950-958`），删除守卫后底层 `EncodeSchemaError` 会产生同样的
@@ -255,6 +262,16 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
   兜底）。`docs/CLIENT.md` 与 `LobbyRoom.ts` 就地注释改为「四个 SDK 可重试关闭码 + 无关闭码兜底」，并补上
   `code === undefined` 分支的定向用例。变异推演：把 `isReconnectableDrop` 的 undefined 分支收紧为 fail-closed
   → 该用例变红（18 例中仅此 1 例）。
+- `[不阻塞·待补齐]` **Lobby RPC 存在 SDK 离线队列竞态**：`apps/client/src/net/WebSocketClient.ts:574-578`
+  的 `onDrop` 只标记 `slot.dropping` 并拒绝本地 pending，没有清理 Colyseus SDK 的
+  `reconnection.enqueuedMessages`。在底层 socket 已关闭而 `onDrop` 尚未回调的间隙，`:660-690` 仍可能调用
+  `room.send()`；SDK `Room.ts:282-285` 会把消息入队，重连 JOIN_ROOM 后 `Room.ts:400-406` 自动 flush。于是调用方
+  已收到 `CONN_LOST` 的写 RPC 仍可能迟到执行，与用户重试形成重复副作用。现有
+  `disableSdkOutboundReplay`（`apps/client/src/net/RoomClient.ts:361-378`）只由游戏 transport 调用，
+  `WebSocketClient` 没有同等保护；`webSocketClient.test.ts` 的 fake room 也没有模拟 SDK 队列，因此当前
+  `test:client` 246/246 不能覆盖该路径。需补 Lobby 专用 reconnection-queue fixture，覆盖 close→onDrop 间隙、
+  `onDrop` 后清队列以及重连前不 flush 旧 RPC；删除清理/发送闸的变异必须使该用例失败。`docs/CLIENT.md:268`
+  当前「不会进入 SDK 消息队列」的表述也须随实现或范围说明一起修正。
 - `[不阻塞·有意保留]` Game transport 自动重连只在下一份 mode state 通过 exact 校验后运行 adapter 的可选
   reconcile；当前 ballMove 只对账 desired input，idle 不对账业务状态，两者都不等同于完整业务恢复。
 - `[不阻塞·有意保留]` `apps/client/src/net/session.ts` 的角色快照（`commitSessionProfile` /
@@ -303,7 +320,18 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
   查出 `loadtest` 是唯一没有任何文档写出命令原文的脚本，已在 `docs/EXTRAFEATURES.md` 补上。
   `scripts/verify-inventory.test.mjs` 新增 5 条反例（新增未登记 workspace 脚本、`supersededBy` 的根脚本不再
   转调、`documentedIn` 文档删掉命令原文、与命令表重复登记、根文档引用不存在的 workspace 命令）。变异推演
-  两处：删掉 `checkWorkspaceCommandScope` 调用 → 4 条变红；删掉字面量存在性断言 → 第 5 条变红。
+  两处：删掉 `checkWorkspaceCommandScope` 调用 → 4 条变红；删掉字面量存在性断言 → 第 5 条变红。上述
+  5 条只覆盖正常登记路径，不覆盖下面两种绕过。
+- `[不阻塞·待补齐]` **workspace 覆盖门禁允许 self-reference**：
+  `scripts/verify-inventory.mjs:227-230` 未限制 `supersededBy.kind` 必须为 `root`，而
+  `commandCovers`（`:706-714`）在 command key 相同时直接返回 `true`。因此任意 workspace 脚本可以把自己登记为
+  `supersededBy`，无需证明任何根命令实际调用它即可通过 `verify:inventory`。需补 fixture 反例，断言
+  `supersededBy` 只能指向根命令（或明确禁止同 key），并以 self-reference 变异证明门禁确实失败。
+- `[不阻塞·待补齐]` **workspace 覆盖门禁把文本伪调用当成真实执行**：
+  `scripts/verify-inventory.mjs:676-690` 的 `commandReferences` 只对 package script 文本做正则扫描，
+  `echo npm --workspace ... run ...`、注释以及永不执行的 shell 分支也会被当作覆盖；现有
+  `scripts/verify-inventory.test.mjs` 的 5 条反例没有这些形态。需补伪调用 fixture，要求只有实际可执行的
+  workspace 调用才能满足 `supersededBy`，并以删除/放宽执行性判断的变异证明反例会失败。
 - `[不阻塞·有意保留]` inventory 与 Markdown 链接检查只覆盖登记表内文档和就近 README，不扫描任意根目录
   Markdown；`plan-v3.md` 已通过 `routeOfTruth.corePlan`、`plan-v2.md` 与 `todo-godogen.md` 已通过
   `referenceDocs` 纳入检查。本轮由复核者独立对 `git ls-files "*.md"` 全量（52 个 tracked `.md`）做了相对
@@ -388,3 +416,27 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
   归档中的旧计数不再追改。
   **已完成于 `8d0ec91`**：本文文首「计数口径」段已统一为「写入该条时的 HEAD 快照，同一命令以最后写入的一条
   为准」；归档旧计数按该口径不再追改，本条自此闭合。
+- `[条件阻塞·用户批准迁移]` **plan-v2 → plan-v3 的唯一真相迁移缺少可追溯批准**：`8d0ec91` 已把
+  `docs/inventory.json:171`、`AGENTS.md:12`、`CLAUDE.md:12`、`README.md:21` 以及
+  `scripts/verify-inventory.mjs:536` 切换为 `plan-v3.md`，并把 `plan-v2.md` 降级为历史归档；但仓内没有找到
+  「同意改变核心计划真相」的批准记录，而本任务此前明确要求以 `plan-v2.md` 为唯一真相。本次回写指令确认了
+  回写目标文件，却不能自动补齐该历史授权证据。若该指令即代表批准迁移，应在本条记录批准来源后转为
+  `[已完成]`；否则在批准前不得把迁移视为无条件闭合。
+- `[不阻塞·待补齐]` **每个问题独立 commit 的流程契约未满足**：本文文首要求每条问题在同一独立 commit 中
+  完成实现、验证和证据回写，但 `a10f2f7..8a76d29` 的变更将多个问题合并：`6b77ebe` 同时处理 4 条，
+  `a83467d` 同时处理 4 条，`28cd900` 同时处理 3 条，`e54ad71` 处理 1 条，`08f6c5c` 同时处理 P1-09
+  与 §7 的多条文档/门禁问题；`8a76d29` 又集中回写全部条目证据，故实现/验证与证据并未保持同 commit。
+  这是已发生的历史流程偏差，不建议为重写历史而强行拆 commit；应明确记录为经批准的例外，或从下一条开放项起
+  严格执行「一条问题 = 一个实现、验证、证据 commit」，并在对应条目写入 commit id。
+
+## 8. 本次独立审计快照
+
+审计范围为 `a10f2f7..8a76d29`（当前 HEAD `8a76d29`），针对同事新增的实现、测试、门禁和 plan-v3 回写逐项
+复核。结论为 3 条 P1 风险（Lobby SDK 队列、真相迁移授权、提交粒度）和 3 条 P2 风险（公共 API 返回值、
+workspace self-reference、workspace 文本伪调用）；它们已分别在 P1-01、P1-07、P1-09 和本节上方的 §7 登记，
+在完成补证或取得明确决策前不得继续写成无条件「全部已完成」。
+
+本次复核执行并通过：`npm run verify:inventory`（14 项能力 / 5 个默认入口）、`npm run test:inventory`
+（33/33）、`npm run test:client`（246/246）、`npm --workspace @game/server run test`（297/297）和
+`git diff --check`。这些绿灯只证明现有路径；测试 fake room 没有覆盖 Lobby 的 close→`onDrop` 队列间隙，
+也没有覆盖公共 `void` 返回值、self-reference 或文本伪调用，因此不能抵销上述开放项。
