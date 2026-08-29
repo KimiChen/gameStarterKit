@@ -4,12 +4,16 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
-import { assertGameHttpRoutes } from "../src/http/index";
+import { GameHttpContractMap, type GameHttpContractKey } from "@game/shared";
+import { assertGameHttpRoutes, gameRouteDefinitions } from "../src/http/index";
 import {
   assertHttpEndpointManifestFresh,
   discoverHttpEndpoints,
   writeHttpEndpointManifest,
+  type HttpEndpointSource,
 } from "../tools/http-endpoint-manifest";
+
+const ALL_CONTRACT_KEYS = Object.keys(GameHttpContractMap) as readonly GameHttpContractKey[];
 
 const SERVER_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -36,15 +40,84 @@ test("checked-in HTTP endpoint manifest is fresh", () => {
   assert.doesNotThrow(() => assertHttpEndpointManifestFresh({ serverRoot: SERVER_ROOT }));
 });
 
-test("file discovery catches an endpoint that the registered-route set cannot see", () => {
+/**
+ * 用 fixture 的**文件发现结果**重建「已登记 route 集合」：contractKey 来自 fixture 目录，
+ * method/path 仍取自真实 endpoint 定义。旧断言只看这两样，看不到文件路径，
+ * 因此对同一 key 的文件搬家完全无感 —— 而 manifest freshness 会红。
+ */
+function fixtureRouteDefinitions(
+  endpoints: readonly HttpEndpointSource[],
+): Record<string, (typeof gameRouteDefinitions)[GameHttpContractKey]> {
+  return Object.fromEntries(endpoints.map(({ contractKey }) =>
+    [contractKey, gameRouteDefinitions[contractKey as GameHttpContractKey]]));
+}
+
+function allKeyFixture(): string {
+  return createFixture(Object.fromEntries(
+    ALL_CONTRACT_KEYS.map((key) => [`misc/${key}.ts`, endpointSource(key)]),
+  ));
+}
+
+test("file discovery catches an endpoint file move that the registered-route set cannot see", () => {
+  const root = allKeyFixture();
+  try {
+    assert.equal(writeHttpEndpointManifest({
+      serverRoot: root,
+      expectedContractKeys: ALL_CONTRACT_KEYS,
+    }), true);
+
+    // 把 Version 端点挪到另一个域目录：contractKey 集合与 method/path 都没变，只有文件路径漂移。
+    fs.mkdirSync(path.join(root, "src/http/deploy"), { recursive: true });
+    fs.renameSync(
+      path.join(root, "src/http/misc/Version.ts"),
+      path.join(root, "src/http/deploy/Version.ts"),
+    );
+    const discovered = discoverHttpEndpoints({
+      serverRoot: root,
+      expectedContractKeys: ALL_CONTRACT_KEYS,
+    });
+
+    // 对照：作用在 fixture 作用域的已登记 route 集合上，旧断言仍然误绿。
+    assert.doesNotThrow(() => assertGameHttpRoutes(fixtureRouteDefinitions(discovered)));
+    // 同一个对照断言在 fixture 少一个 endpoint 时会红，说明它确实有判别力而不是恒绿。
+    assert.throws(
+      () => assertGameHttpRoutes(fixtureRouteDefinitions(
+        discovered.filter((endpoint) => endpoint.contractKey !== "Version"),
+      )),
+      /route key 不一致：缺少=\[Version\]/,
+    );
+
+    assert.throws(
+      () => assertHttpEndpointManifestFresh({
+        serverRoot: root,
+        expectedContractKeys: ALL_CONTRACT_KEYS,
+      }),
+      /manifest 缺失或陈旧.*Version:deploy\/Version\.ts/,
+    );
+
+    assert.equal(writeHttpEndpointManifest({
+      serverRoot: root,
+      expectedContractKeys: ALL_CONTRACT_KEYS,
+    }), true);
+    assert.doesNotThrow(() => assertHttpEndpointManifestFresh({
+      serverRoot: root,
+      expectedContractKeys: ALL_CONTRACT_KEYS,
+    }));
+    assert.match(
+      fs.readFileSync(path.join(root, "src/http/manifest.generated.ts"), "utf8"),
+      /import endpoint\d+ from "\.\/deploy\/Version";/,
+    );
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("manifest freshness catches a newly added endpoint file", () => {
   const root = createFixture({ "misc/healthz.ts": endpointSource("Health") });
   try {
     writeHttpEndpointManifest({ serverRoot: root, expectedContractKeys: ["Health"] });
     fs.writeFileSync(path.join(root, "src/http/misc/version.ts"), endpointSource("Version"), "utf8");
 
-    // The historical assertion only sees the already imported definitions and
-    // therefore remains green when an unrelated endpoint file is omitted.
-    assert.doesNotThrow(() => assertGameHttpRoutes());
     assert.throws(
       () => assertHttpEndpointManifestFresh({
         serverRoot: root,

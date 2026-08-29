@@ -172,6 +172,37 @@ test("HTTP endpoint executes the shared request contract before its handler", as
   assert.equal(called, true);
 });
 
+test("HTTP endpoint 对 GET 也执行 shared 请求契约：非空 body 必须在 handler 前被拒", async () => {
+  let called = false;
+  const endpoint = createGameEndpoint("Health", { method: "GET" }, async () => {
+    called = true;
+    return { status: "ok", serverTime: 1, version: "1" };
+  });
+  // Better-Call 禁止 GET 带 body schema，因此 GET 的请求侧唯一校验就是 endpoint 内部那次
+  // validateGameHttpRequest（对 GET 即 shared 的 validateNoBody）；少了它 GET 会静默接受任意 body。
+  assert.equal(endpoint.options.body, undefined);
+
+  await assert.rejects(() => endpoint({ body: { x: 1 } }), /WIRE_KEYS at request/);
+  assert.equal(called, false, "GET 的非法 body 必须在 handler 之前被拒");
+
+  assert.deepEqual(await endpoint({}), { status: "ok", serverTime: 1, version: "1" });
+  assert.equal(called, true);
+});
+
+test("HTTP endpoint 类型级禁止 endpoint options 另带 body schema", () => {
+  // 编译期反例：`GameEndpointOptions` 的 `body?: never` 必须让下面这次调用报错。
+  // 一旦该约束被移除（例如把 options 类型改回 EndpointOptions），@ts-expect-error 会因为
+  // 「未报错」而让 `npm --workspace @game/server run typecheck` 变红。
+  assert.throws(
+    () => createGameEndpoint("AdminKick", {
+      method: "POST",
+      // @ts-expect-error endpoint options 不得另带 body schema：body 由 shared contract 单源生成
+      body: GameHttpContractMap.AdminKick.requestSchema,
+    }, async () => ({ kicked: false })),
+    /body schema 由 shared contract 生成.*不得覆盖/,
+  );
+});
+
 test("HTTP endpoint rejects route-local strip/coercion schemas instead of composing a second request source", async () => {
   const wideningSchema = {
     "~standard": {
