@@ -1,9 +1,9 @@
 /**
  * outbox relayer —— **独立单例进程**（[04 · relayer](docs/SERVER.md)）。
  *
- * - `singleton_lease('outbox_relayer')` 抢占；**续租守卫与业务批写同一 MySQL 事务、
- *   守卫作第一句、0 行即 ROLLBACK 自杀**（09·X7，僵尸 leader 绝不双写）。
- * - `FOR UPDATE SKIP LOCKED` 取行（RC 会话，09·DB5）。
+ * - `singleton_lease('outbox_relayer')` 抢占；生产主循环严格单例、串行执行 tick。
+ * - 每行经历「守卫选择短事务 → 事务外 Redis/thaw → 守卫落状态短事务」；守卫 0 行即
+ *   ROLLBACK 自杀（09·X7），MySQL 行锁不跨外部 I/O。
  * - ⚠ relayer 不走 withUser（09·X5）；`cold` → 先 `ensureLive` 解冻再重试
  *   （M9 已接线；冻结后仍可能有后到 outbox 行，08 / 09·X5）。
  * - 死信：attempts > OUTBOX_MAX_ATTEMPTS → status=2 + 告警；人工处置走 replayDead（09·X6）。
@@ -29,6 +29,30 @@ const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms
 interface OutboxRow extends RowDataPacket {
   op_id: string; user_id: string; server_id: unknown; effect: Effect; attempts: unknown;
 }
+
+type LeaseTxRunner = <T>(
+  lease: SingletonLease,
+  fn: (conn: PoolConnection) => Promise<T>,
+) => Promise<T>;
+
+/** Test seam for proving the MySQL/external-I/O phase boundary. */
+export interface RelayerDependencies {
+  readonly withLeaseTx: LeaseTxRunner;
+  readonly redisApply: typeof redisApply;
+  readonly ensureLive: typeof ensureLive;
+  readonly trimApplied: typeof trimApplied;
+  readonly random: () => number;
+  readonly reportFailure: (message: string) => void;
+}
+
+const defaultRelayerDependencies: RelayerDependencies = {
+  withLeaseTx,
+  redisApply,
+  ensureLive,
+  trimApplied,
+  random: Math.random,
+  reportFailure: (message) => console.error(message),
+};
 
 const MAX_SERVER_ID_FIELD = 65_535; // SMALLINT UNSIGNED（sql/schema.sql）
 const MAX_OUTBOX_ATTEMPTS_FIELD = 65_535; // SMALLINT UNSIGNED（sql/schema.sql）
@@ -68,68 +92,90 @@ async function recordRelayerFailure(
   row: OutboxRow,
   error: unknown,
   metadata: NormalizedOutboxMetadata | undefined,
-): Promise<void> {
+): Promise<string | null> {
   const detail = errorText(error);
   if (metadata === undefined) {
-    await conn.execute<ResultSetHeader>(
-      "UPDATE gameplay_outbox SET attempts = ?, last_error = ?, status = ? WHERE op_id = ?",
-      [CORRUPT_ROW_ATTEMPTS, detail, OUTBOX_DEAD, row.op_id]);
-    console.error(`[relayer] ☠ 损坏 outbox 行已死信 op=${row.op_id}: ${detail}`);
-    return;
+    const [result] = await conn.execute<ResultSetHeader>(
+      "UPDATE gameplay_outbox SET attempts = ?, last_error = ?, status = ? WHERE op_id = ? AND status = ?",
+      [CORRUPT_ROW_ATTEMPTS, detail, OUTBOX_DEAD, row.op_id, OUTBOX_PENDING]);
+    return result.affectedRows === 1
+      ? `[relayer] ☠ 损坏 outbox 行已死信 op=${row.op_id}: ${detail}`
+      : null;
   }
 
   const nextAttempts = metadata.attempts + 1;
   const dead = nextAttempts > OUTBOX_MAX_ATTEMPTS;
-  await conn.execute<ResultSetHeader>(
-    "UPDATE gameplay_outbox SET attempts = ?, last_error = ?, status = ? WHERE op_id = ? AND server_id = ?",
-    [nextAttempts, detail, dead ? OUTBOX_DEAD : OUTBOX_PENDING, row.op_id, metadata.serverId]);
-  if (dead) { console.error(`[relayer] ☠ 死信 op=${row.op_id} uid=${row.user_id}: ${detail}`); }
+  const [result] = await conn.execute<ResultSetHeader>(
+    `UPDATE gameplay_outbox SET attempts = ?, last_error = ?, status = ?
+      WHERE op_id = ? AND server_id = ? AND status = ?`,
+    [nextAttempts, detail, dead ? OUTBOX_DEAD : OUTBOX_PENDING,
+      row.op_id, metadata.serverId, OUTBOX_PENDING]);
+  return dead && result.affectedRows === 1
+    ? `[relayer] ☠ 死信 op=${row.op_id} uid=${row.user_id}: ${detail}`
+    : null;
 }
 
 
-/** 单轮：续租守卫（第一句）+ 取批 + apply + 标记，全在一个 RC 事务。返回处理行数。 */
-export async function relayerTick(lease: SingletonLease): Promise<number> {
-  return withLeaseTx(lease, async (conn) => {
+/**
+ * 单轮分成短事务选择、事务外 apply/thaw、短事务落状态。生产入口依赖
+ * singleton lease 严格串行；这里不提供多 worker claim/分片语义。
+ * lease 在 apply 后丢失时，旧 leader 的最终守卫会失败；继任者可依靠
+ * op_id 幂等重放 pending 行。
+ */
+export async function relayerTick(
+  lease: SingletonLease,
+  dependencies: RelayerDependencies = defaultRelayerDependencies,
+): Promise<number> {
+  const rows = await dependencies.withLeaseTx(lease, async (conn) => {
     const [rows] = await conn.query<OutboxRow[]>(
       `SELECT op_id, user_id, server_id, effect, attempts FROM gameplay_outbox
         WHERE status = ? AND created_at < NOW(3) - INTERVAL ? SECOND
         ORDER BY created_at, op_id
-        LIMIT ${BATCH}
-        FOR UPDATE SKIP LOCKED`,
+        LIMIT ${BATCH}`,
       [OUTBOX_PENDING, RELAYER_VISIBILITY_S]);
-
-    for (const row of rows) {
-      let metadata: NormalizedOutboxMetadata | undefined;
-      try {
-        // mysql2 may expose BIG/SMALLINT columns as strings depending on the
-        // configured numeric mode.  Normalize before zone routing or arithmetic;
-        // otherwise `"9" + 1` becomes 91 and a malformed sId can select the wrong
-        // Redis prefix.  Keep this inside the row's error boundary: one corrupt
-        // durable row must not abort the rest of the batch.
-        metadata = normalizeOutboxMetadata(row);
-        const { serverId } = metadata;
-        // 后台无请求上下文（DUAL_MODE §3.6 B4）：按行 server_id 重建区上下文，
-        // redisApply/ensureLive/trimApplied 才落对区 Redis 前缀（落 run 外 = 落 s0 影子区 → 二次发货/漏裁剪）。
-        await zoneCtx.run({ sId: serverId }, async () => {
-          let r = await redisApply(row.user_id, row.op_id, row.effect); // stringify 在 redisApply 内（09·DB8）
-          if (r === "cold") {
-            await ensureLive(row.user_id, serverId);                    // 先解冻再重试（09·X5）
-            r = await redisApply(row.user_id, row.op_id, row.effect);
-          }
-          if (r !== "ok" && r !== "dup") { throw new Error(`apply=${r}`); }
-          await conn.execute<ResultSetHeader>(
-            "UPDATE gameplay_outbox SET status = ? WHERE op_id = ? AND server_id = ?",
-            [OUTBOX_DONE, row.op_id, serverId]);
-          if (Math.random() < 0.01) { await trimApplied(row.user_id, serverId).catch(() => {}); } // 顺路裁剪（09·I5）
-        });
-      } catch (e) {
-        // 真失败（Redis 连不上 / Lua 报错 / effect 非法）才累加；超限进死信。
-        // metadata 解析失败时 recordRelayerFailure 走按 op_id 的损坏行闸，且继续下一行。
-        await recordRelayerFailure(conn, row, e, metadata);
-      }
-    }
-    return rows.length;
+    return rows;
   });
+
+  for (const row of rows) {
+    let metadata: NormalizedOutboxMetadata | undefined;
+    try {
+      // mysql2 may expose integer columns as strings. Normalize before routing
+      // or arithmetic; malformed durable metadata follows the row failure path.
+      metadata = normalizeOutboxMetadata(row);
+      const { serverId } = metadata;
+      await zoneCtx.run({ sId: serverId }, async () => {
+        let r = await dependencies.redisApply(row.user_id, row.op_id, row.effect);
+        if (r === "cold") {
+          await dependencies.ensureLive(row.user_id, serverId);
+          r = await dependencies.redisApply(row.user_id, row.op_id, row.effect);
+        }
+        if (r !== "ok" && r !== "dup") { throw new Error(`apply=${r}`); }
+      });
+    } catch (e) {
+      // Failure accounting is also a guarded business write. A leader that lost
+      // its lease while waiting on external I/O cannot mutate the durable row.
+      const failureMessage = await dependencies.withLeaseTx(lease, (conn) =>
+        recordRelayerFailure(conn, row, e, metadata));
+      if (failureMessage !== null) dependencies.reportFailure(failureMessage);
+      continue;
+    }
+
+    const { serverId } = metadata;
+    const finalized = await dependencies.withLeaseTx(lease, async (conn) => {
+      const [result] = await conn.execute<ResultSetHeader>(
+        `UPDATE gameplay_outbox SET status = ?, last_error = NULL
+          WHERE op_id = ? AND server_id = ? AND status = ?`,
+        [OUTBOX_DONE, row.op_id, serverId, OUTBOX_PENDING]);
+      return result.affectedRows === 1;
+    });
+
+    // trimApplied reads MySQL and Redis; it is best-effort maintenance and runs
+    // only after guarded finalization has committed.
+    if (finalized && dependencies.random() < 0.01) {
+      await dependencies.trimApplied(row.user_id, serverId).catch(() => {});
+    }
+  }
+  return rows.length;
 }
 
 /** 主循环：抢租约 → tick 循环 → 租约丢失即自杀（进程级，由 systemd/pm2 拉起新实例）。 */

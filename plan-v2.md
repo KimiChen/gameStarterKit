@@ -22,7 +22,12 @@
 
 以下限制由 `plan.md` 的总体结论直接列出（来源：`plan.md:114-118`）：
 
-- `[不阻塞·待补齐]` relayer 仍在持有 MySQL 锁的事务内等待外部 I/O（详见 §4 P1-06）。
+- `[已完成]` relayer 已拆为守卫选择短事务、事务外 Redis apply/thaw、守卫落状态短事务；trim 与死信日志
+  同样只在提交后执行，MySQL 行锁不再跨外部 I/O。生产契约保持 singleton 串行，lease 交接重放由
+  `op_id + canonical payload` 幂等收敛，不承诺多 worker claim/分片。验收证据：
+  `relayer-boundary.test.ts` 覆盖成功/失败阶段、lease 丢失、死信与 CAS 0 行，`int/relayer.test.ts` 覆盖
+  真实进程崩溃窗口和 lease 接管；定向边界测试 7/7、`npm --workspace @game/server run typecheck`、
+  `npm --workspace @game/server run test` 214/214 与 `npm --workspace @game/server run test:int` 104/104 通过。
 - `[不阻塞·待补齐]` archive 表仍缺少完整的区隔离与容量方案（详见 §4 P1-06）。
 - `[不阻塞·待补齐]` 坏 stream entry 的处置仍待补齐（**本清单无对应 P 条目，仅此处登记**）。
 - `[不阻塞·待补齐]` 热档 schema 迁移仍待补齐（详见 §4 P1-06）。
@@ -141,8 +146,9 @@
 
 ### P1-06 任务、存储和冷档边界
 
-- `[不阻塞·待补齐]` relayer 事务边界、archive 区隔离/容量方案与热档 schema 迁移仍列为明确限制
-  （即 §1 的第 1、2、4 条）。
+- `[已完成]` relayer 事务边界已拆为守卫短事务与事务外 I/O，且失败/接管路径有定向证据（见 §1）。
+- `[不阻塞·待补齐]` archive 区隔离/容量方案仍待补齐（即 §1 第 2 条）。
+- `[不阻塞·待补齐]` 热档 schema 迁移仍待补齐（即 §1 第 4 条）。
 - `[不阻塞·有意保留]` freeze worker 默认硬关闭（`FREEZE_ENABLED`），默认配置下不会触发。
   （「启用需 unsafe escape hatch」一说出自 `docs/EXTRAFEATURES.md`，非 `plan.md` 原文。）
 - `[不阻塞·有意保留]` dispatcher 的 timeout 仍不取消 handler，迟到副作用只能由数据层幂等收敛。

@@ -273,9 +273,10 @@ endpoint 时仍应先补齐 shared request/response/path，再在 `http/index.ts
 示例 SKU 也只使用 item 类 grant。新增含 `setField` 的写路径前必须先接线该约定，否则序反转不会被任何
 机制拦住。
 
-显式 `relayer` 当前在持有 `FOR UPDATE` 行锁的 MySQL 事务内等待 Redis、`ensureLive` 和部分清理查询，
-与“事务内不等待外部 I/O”的目标约束不一致。该后台样例及其成熟度见 EXTRAFEATURES；是否修复及其
-优先级由实际采用方决定；当前收口状态见核心 `plan-v2.md`。
+显式 `relayer` 以 singleton lease 严格单例、串行执行。每轮先在守卫短事务中选择 pending 行，提交后才做
+Redis apply / `ensureLive`，再用新的守卫短事务 CAS 落 done 或失败状态；`trimApplied` 与死信日志也只在
+提交后执行，因此 MySQL 行锁不跨外部 I/O。lease 交接窗口允许继任者重放同一 pending intent，由
+`op_id + canonical payload` 的 Redis 幂等绑定收敛；当前不提供多 worker claim/分片语义。
 
 relayer 重试超过 `OUTBOX_MAX_ATTEMPTS` 后会把 intent 行标记为 dead（status=2）。dead 行既不会被保留期
 清理删除，也会让对应 `applied` 标记永远跳过裁剪。当前仓库只提供 `core/economy/outbox.ts` 的
