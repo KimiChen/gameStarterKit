@@ -8,6 +8,11 @@ import {
   resetAdmission,
 } from "../src/core/infra/lifecycle";
 import {
+  K_STREAM_MATCH,
+  K_STREAM_MATCH_V2,
+  K_STREAM_MATCH_V3,
+} from "../src/core/infra/keys";
+import {
   runMatchStreamDepthCheck,
   startStreamDepthAlert,
   stopStreamDepthAlert,
@@ -58,11 +63,13 @@ test("stream depth alert：停服关闸后拒绝重启且不留下资源", async
 
 test("stream depth alert：各来源与 quarantine 故障独立告警，不能被统一 catch 吞掉", async () => {
   const reports: string[] = [];
-  let sourceCalls = 0;
+  const sourceCalls: string[] = [];
   const probe: MatchStreamDepthProbe = {
-    sourceBacklog: async () => {
-      sourceCalls++;
-      if (sourceCalls === 1) throw new Error("WRONGTYPE source");
+    sourceBacklog: async (streamKey) => {
+      sourceCalls.push(streamKey);
+      if (streamKey === K_STREAM_MATCH) throw new Error("WRONGTYPE legacy");
+      if (streamKey === K_STREAM_MATCH_V3) throw new Error("NOPERM v3");
+      assert.equal(streamKey, K_STREAM_MATCH_V2);
       return { backlog: 1001, xlen: 1002 };
     },
     quarantineDepth: async () => { throw new Error("NOPERM quarantine"); },
@@ -70,10 +77,15 @@ test("stream depth alert：各来源与 quarantine 故障独立告警，不能�
   };
 
   await runMatchStreamDepthCheck(probe);
-  assert.equal(sourceCalls, 2, "一条来源流失败不得阻止另一条来源流探测");
-  assert.equal(reports.length, 3);
-  assert.ok(reports.some((message) => message.includes("WRONGTYPE source")));
+  assert.deepEqual(
+    sourceCalls,
+    [K_STREAM_MATCH, K_STREAM_MATCH_V2, K_STREAM_MATCH_V3],
+    "必须逐一探测三个精确来源 key",
+  );
+  assert.equal(reports.length, 4);
+  assert.ok(reports.some((message) => message.includes("WRONGTYPE legacy")));
   assert.ok(reports.some((message) => message.includes("未处理深度 1001")));
+  assert.ok(reports.some((message) => message.includes("NOPERM v3")));
   assert.ok(reports.some((message) => message.includes("NOPERM quarantine")));
 
   reports.length = 0;

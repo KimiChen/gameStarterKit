@@ -1,13 +1,13 @@
 /**
  * M8a DoD 集成测试（10·M8a）——真实 Redis(6401) + 真实 MySQL(3316)，⛔ 不 mock：
- *  1. 生产→消费闭环：emitMatchEvidence 一条证据（同局两名玩家同 payload）→ consumeOnce →
+ *  1. 生产→消费闭环：GameRoom 生成 v3，emitMatchEvidence 单写 v3 → consumeOnce →
  *     match_index / match_results 各一行、payload 完整回读（09·K5 输入完整性）
  *  2. 幂等闸（DoD）：同一 matchId 重复投递 + 重复消费 → match_results 仍只有一行
  *     （非分区 match_index ODKU 闸，09·DB4/05·Δ2；-FOUND_ROWS 下 affectedRows 语义可信）
  *  3. 常驻消费循环冒烟：startMatchConsumer（独占连接 XREADGROUP BLOCK）自动落库；
  *     stopMatchConsumer 打断阻塞及时退出
  *  4. 房间端到端：@colyseus/testing 起真 GameRoom 打完一局（绑定框架账号）→ state.matchId
- *     开局即生成（09·K4）→ 收局后 stream:match:v2 出现该 matchId 的证据 → 消费落库
+ *     开局即生成（09·K4）→ 收局后 stream:match:v3 出现该 matchId 的证据 → 消费落库
  * 前置：npm --workspace @game/server run stack。清理：XDEL 测试条目 + DELETE 测试行（09·R6）。
  */
 import "./env-setup"; // 必须第一个 import（env 先于 config.ts 模块级读取）
@@ -16,7 +16,6 @@ import { after, before, test } from "node:test";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
 
 import {
-  C2S,
   ErrorCode,
   GamePhase,
   GameplayModeId,
@@ -30,7 +29,9 @@ import {
   MATCH_MODE_CASUAL,
   MATCH_MODE_RANKED,
   MATCH_STREAM_CONSUMER,
-  MATCH_STREAM_SCHEMA_VERSION,
+  MATCH_STREAM_V2_SCHEMA_VERSION,
+  MATCH_STREAM_V3_SCHEMA_VERSION,
+  MATCH_V3_MAX_PAYLOAD_BYTES,
   newMatchId,
   quarantineMalformedMatchEntry,
   startMatchConsumer,
@@ -39,8 +40,13 @@ import {
   type MatchEvidence,
 } from "../../src/core/match/matchConsumer";
 import {
+  validateMatchEvidenceV3,
+  type MatchEvidenceV3,
+} from "../../src/core/match/matchEvidence";
+import { replayMatchEvidenceV3 } from "../../src/core/match/matchReplay";
+import {
   activeLruBucketOf, kActiveLru, kSess,
-  K_STREAM_MATCH, K_STREAM_MATCH_QUARANTINE, K_STREAM_MATCH_V2,
+  K_STREAM_MATCH, K_STREAM_MATCH_QUARANTINE, K_STREAM_MATCH_V2, K_STREAM_MATCH_V3,
 } from "../../src/core/infra/keys";
 import { closeMysql, getPool, type RowDataPacket } from "../../src/core/infra/mysql";
 import { bucketOf, clientFor, clientForKey, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
@@ -48,8 +54,18 @@ import { GameRoom } from "../../src/rooms/GameRoom";
 import { assertRedisUp, cleanupUser, sleep, testUid } from "./helpers";
 
 const GROUP = "settle";
-const MATCH_STREAM_KEYS = [K_STREAM_MATCH, K_STREAM_MATCH_V2] as const;
+const MATCH_STREAM_KEYS = [K_STREAM_MATCH, K_STREAM_MATCH_V2, K_STREAM_MATCH_V3] as const;
 const stream = (key: string = K_STREAM_MATCH_V2) => clientForKey(key);
+
+/** Historical input fixture only; production exports no v2 writer. */
+const emitV2Evidence = (evidence: MatchEvidence): Promise<string | null> => stream(K_STREAM_MATCH_V2).xadd(
+  K_STREAM_MATCH_V2, "*",
+  "schemaVersion", String(MATCH_STREAM_V2_SCHEMA_VERSION),
+  "matchId", evidence.matchId,
+  "mode", String(evidence.mode),
+  "sId", String(evidence.sId),
+  "payload", JSON.stringify(evidence),
+);
 
 /** 本轮用过的 matchId / stream 条目 id —— after 里定点清理，不碰别人的数据。 */
 const usedMatchIds: string[] = [];
@@ -127,6 +143,34 @@ function makeEvidence(matchId: string, sId = 0): MatchEvidence {
   };
 }
 
+async function makeV3Evidence(matchId: string, sId = 0): Promise<MatchEvidenceV3> {
+  let evidence: MatchEvidenceV3 | undefined;
+  const room = new GameRoom({
+    seed: 0x1234_5678,
+    matchId: () => matchId,
+    evidenceEmitter: (value) => {
+      evidence = value;
+      return Promise.resolve(null);
+    },
+  });
+  (room as unknown as { sId: number }).sId = sId;
+  (room as unknown as { lock: () => Promise<void> }).lock = async () => undefined;
+  const client = (sessionId: string, userId: string) => ({
+    sessionId,
+    auth: { userId, sId, mode: GameplayModeId.BallMove },
+    send() {},
+  });
+  const first = client("sA", "u_int_a");
+  const second = client("sB", "u_int_b");
+  await room.onJoin(first as never, {});
+  await room.onJoin(second as never, {});
+  await room.onLeave(second as never, 4000);
+  assert.ok(evidence, "GameRoom leave must synchronously hand v3 evidence to the emitter");
+  replayMatchEvidenceV3(validateMatchEvidenceV3(evidence));
+  await room.onDispose();
+  return evidence;
+}
+
 test("GameRoom sId 只接受 0..65535 整数（网络输入先运行时校验）", async () => {
   for (const raw of [-1, 65536, 1.5, Number.NaN, Number.POSITIVE_INFINITY, "1", null]) {
     const options = {
@@ -157,12 +201,15 @@ test("GameRoom sId 只接受 0..65535 整数（网络输入先运行时校验）
   }
 });
 
-test("match v2 key 与 legacy 同槽但物理隔离（旧 consumer 永远看不到新消息）", () => {
+test("match v2/v3 keys 与 legacy 同槽但物理隔离", () => {
   const tag = /\{([^{}]+)\}/.exec(K_STREAM_MATCH_V2)?.[1];
   assert.equal(tag, K_STREAM_MATCH, "v2 hash-tag 必须精确锚定完整 legacy 运行时 key");
+  assert.equal(/\{([^{}]+)\}/.exec(K_STREAM_MATCH_V3)?.[1], K_STREAM_MATCH);
   assert.equal(bucketOf(tag!), bucketOf(K_STREAM_MATCH), "自定义 Redis 路由桶一致");
   assert.strictEqual(clientForKey(K_STREAM_MATCH_V2), clientForKey(K_STREAM_MATCH), "两个 key 路由到同一 Redis 实例");
+  assert.strictEqual(clientForKey(K_STREAM_MATCH_V3), clientForKey(K_STREAM_MATCH));
   assert.notEqual(K_STREAM_MATCH_V2, K_STREAM_MATCH, "但 key 必须物理隔离，旧 consumer 只读 legacy");
+  assert.notEqual(K_STREAM_MATCH_V3, K_STREAM_MATCH_V2);
   const quarantineTag = /\{([^{}]+)\}/.exec(K_STREAM_MATCH_QUARANTINE)?.[1];
   assert.equal(quarantineTag, K_STREAM_MATCH, "quarantine 必须与两条来源流同槽，才能原子 XADD + XACK");
   assert.strictEqual(clientForKey(K_STREAM_MATCH_QUARANTINE), clientForKey(K_STREAM_MATCH));
@@ -180,7 +227,69 @@ async function countRows(table: "match_index" | "match_results", matchId: string
 
 // ── 1. 生产 → 消费闭环：一条证据 → 两表各一行、payload 完整 ─────────────────
 
-test("emitMatchEvidence 只写 schema v2 流；consumeOnce 落库完整 payload", async () => {
+test("v3 producer changes neither legacy nor v2 and consumer stores the replay-verified payload", async () => {
+  const matchId = newMatchId();
+  usedMatchIds.push(matchId);
+  const evidence = await makeV3Evidence(matchId, 17);
+  const before = new Map<string, number>();
+  for (const key of MATCH_STREAM_KEYS) before.set(key, await stream(key).xlen(key));
+
+  const entryId = await emitMatchEvidence(evidence);
+  assert.ok(entryId);
+  rememberStreamEntry(K_STREAM_MATCH_V3, entryId!);
+  assert.equal(await stream(K_STREAM_MATCH).xlen(K_STREAM_MATCH), before.get(K_STREAM_MATCH));
+  assert.equal(await stream(K_STREAM_MATCH_V2).xlen(K_STREAM_MATCH_V2), before.get(K_STREAM_MATCH_V2));
+  assert.equal(await stream(K_STREAM_MATCH_V3).xlen(K_STREAM_MATCH_V3), before.get(K_STREAM_MATCH_V3)! + 1);
+
+  const entries = await stream(K_STREAM_MATCH_V3).xrange(K_STREAM_MATCH_V3, entryId!, entryId!);
+  const fields = Object.fromEntries(
+    Array.from({ length: entries[0][1].length / 2 }, (_, index) =>
+      entries[0][1].slice(index * 2, index * 2 + 2)),
+  );
+  assert.equal(fields.schemaVersion, String(MATCH_STREAM_V3_SCHEMA_VERSION));
+  assert.equal(fields.matchId, evidence.matchId);
+  assert.equal(fields.sId, String(evidence.sId));
+  assert.deepEqual(JSON.parse(fields.payload), evidence);
+
+  assert.ok(await consumeOnce() >= 1);
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    "SELECT server_id, mode, payload FROM match_results WHERE match_id = ?", [matchId],
+  );
+  assert.equal(rows.length, 1);
+  assert.equal(Number(rows[0].server_id), 17);
+  assert.equal(Number(rows[0].mode), MATCH_MODE_CASUAL);
+  assert.deepEqual(rows[0].payload, evidence);
+  const pending = await stream(K_STREAM_MATCH_V3).xpending(K_STREAM_MATCH_V3, GROUP) as [number, ...unknown[]];
+  assert.equal(Number(pending[0]), 0);
+});
+
+test("v3 producer rejects extra fields and replay-mismatched final state before any XADD", async () => {
+  const extraKeyEvidence = {
+    ...await makeV3Evidence(`m_v3_extra_${Date.now().toString(36)}`, 18),
+    unexpected: true,
+  } as unknown as MatchEvidenceV3;
+  const replayMismatch = structuredClone(
+    await makeV3Evidence(`m_v3_producer_replay_${Date.now().toString(36)}`, 19),
+  );
+  replayMismatch.finalState.players[0].hp--;
+  validateMatchEvidenceV3(replayMismatch);
+
+  const before = new Map<string, number>();
+  for (const key of MATCH_STREAM_KEYS) before.set(key, await stream(key).xlen(key));
+  const originalError = console.error;
+  console.error = () => undefined;
+  try {
+    assert.equal(await emitMatchEvidence(extraKeyEvidence), null, "extra key must fail exact-shape validation");
+    assert.equal(await emitMatchEvidence(replayMismatch), null, "changed final state must fail deterministic replay");
+  } finally {
+    console.error = originalError;
+  }
+  for (const key of MATCH_STREAM_KEYS) {
+    assert.equal(await stream(key).xlen(key), before.get(key), `${key} must not change after rejected evidence`);
+  }
+});
+
+test("historical raw v2 fixture preserves the frozen v2 payload contract", async () => {
   const m = newMatchId();
   usedMatchIds.push(m);
   // matchId 形制（09·K4/05）：m_ + 时间戳36 + 随机hex，纯 ascii ≤ 40
@@ -189,43 +298,17 @@ test("emitMatchEvidence 只写 schema v2 流；consumeOnce 落库完整 payload"
 
   const ev = makeEvidence(m);
   ev.participants[0].userId = "u".repeat(128);
-  const rejected = makeEvidence(`m_uid_too_long_${Date.now().toString(36)}`);
-  rejected.participants[0].userId = "u".repeat(129);
-  const lenBeforeRejected = await stream().xlen(K_STREAM_MATCH_V2);
-  assert.equal(await emitMatchEvidence(rejected), null, "WebPlatform 上限外 userId 必须在 producer 侧拒绝");
-  assert.equal(await stream().xlen(K_STREAM_MATCH_V2), lenBeforeRejected, "非法 evidence 不得进入 stream");
-  const casualLoadout = makeEvidence(`m_casual_loadout_${Date.now().toString(36)}`);
-  casualLoadout.loadout = {};
-  assert.equal(await emitMatchEvidence(casualLoadout), null, "casual BYO loadout 必须精确为 null");
-  const unstableLoadout = makeEvidence(`m_bad_loadout_${Date.now().toString(36)}`);
-  unstableLoadout.mode = MATCH_MODE_RANKED;
-  unstableLoadout.loadout = { roll: Number.NaN };
-  assert.equal(await emitMatchEvidence(unstableLoadout), null, "会被 JSON 静默改写的 loadout 必须拒绝");
-  const negativeZeroLoadout = makeEvidence(`m_negative_zero_loadout_${Date.now().toString(36)}`);
-  negativeZeroLoadout.mode = MATCH_MODE_RANKED;
-  negativeZeroLoadout.loadout = { roll: -0 };
-  assert.equal(await emitMatchEvidence(negativeZeroLoadout), null, "JSON 会把 -0 改写成 0，必须拒绝");
-  const negativeZeroSeed = makeEvidence(`m_negative_zero_seed_${Date.now().toString(36)}`);
-  negativeZeroSeed.seed = -0;
-  assert.equal(await emitMatchEvidence(negativeZeroSeed), null, "声明为无符号整数的字段也不得接受 -0");
-  const accessorLoadout = makeEvidence(`m_accessor_loadout_${Date.now().toString(36)}`);
-  accessorLoadout.mode = MATCH_MODE_RANKED;
-  const accessorArray: unknown[] = [];
-  Object.defineProperty(accessorArray, "0", { enumerable: true, get: () => "unstable" });
-  accessorLoadout.loadout = accessorArray;
-  assert.equal(await emitMatchEvidence(accessorLoadout), null, "数组 getter 不得在校验和序列化间变值");
-  assert.equal(await stream().xlen(K_STREAM_MATCH_V2), lenBeforeRejected);
   const legacyLenBefore = await stream(K_STREAM_MATCH).xlen(K_STREAM_MATCH);
-  const sid = await emitMatchEvidence(ev);
+  const sid = await emitV2Evidence(ev);
   assert.ok(sid, "XADD 成功返回条目 id");
   rememberStreamEntry(K_STREAM_MATCH_V2, sid!);
-  assert.equal(await stream(K_STREAM_MATCH).xlen(K_STREAM_MATCH), legacyLenBefore, "新 producer ⛔ 不写 legacy 流");
+  assert.equal(await stream(K_STREAM_MATCH).xlen(K_STREAM_MATCH), legacyLenBefore);
   const entries = await stream().xrange(K_STREAM_MATCH_V2, sid!, sid!);
   assert.equal(entries.length, 1, "消息只存在 v2 key");
   const fields = Object.fromEntries(
     Array.from({ length: entries[0][1].length / 2 }, (_, i) => entries[0][1].slice(i * 2, i * 2 + 2)),
   );
-  assert.equal(fields.schemaVersion, String(MATCH_STREAM_SCHEMA_VERSION), "v2 顶层版本字段精确为 2");
+  assert.equal(fields.schemaVersion, String(MATCH_STREAM_V2_SCHEMA_VERSION), "v2 顶层版本字段精确为 2");
 
   const n = await consumeOnce();
   assert.ok(n >= 1, "至少消费到本条证据");
@@ -255,7 +338,7 @@ test("schema v2 ranked evidence 保真落库非 null 嵌套 JSON loadout", async
     cosmetics: { title: "season-one", visible: true, badge: null },
   };
 
-  const entryId = await emitMatchEvidence(evidence);
+  const entryId = await emitV2Evidence(evidence);
   assert.ok(entryId, "ranked evidence 必须进入 v2 stream");
   rememberStreamEntry(K_STREAM_MATCH_V2, entryId!);
   const entries = await stream().xrange(K_STREAM_MATCH_V2, entryId!, entryId!);
@@ -263,7 +346,7 @@ test("schema v2 ranked evidence 保真落库非 null 嵌套 JSON loadout", async
     Array.from({ length: entries[0][1].length / 2 }, (_, index) =>
       entries[0][1].slice(index * 2, index * 2 + 2)),
   );
-  assert.equal(fields.schemaVersion, "2", "兼容 ranked payload 仍属于 schema v2");
+  assert.equal(fields.schemaVersion, String(MATCH_STREAM_V2_SCHEMA_VERSION), "兼容 ranked payload 仍属于 schema v2");
 
   assert.ok(await consumeOnce() >= 1, "ranked evidence 必须被 settle consumer 消费");
   const [rows] = await getPool().query<RowDataPacket[]>(
@@ -282,8 +365,8 @@ test("同一 matchId 重复投递 + 重复消费 → match_results 仍只有一�
   const ev = makeEvidence(m);
 
   // 重复投递：同一局的证据被 XADD 两次（如收局路径重放/进程重启补发）
-  const id1 = await emitMatchEvidence(ev);
-  const id2 = await emitMatchEvidence(ev);
+  const id1 = await emitV2Evidence(ev);
+  const id2 = await emitV2Evidence(ev);
   assert.ok(id1 && id2 && id1 !== id2, "两条独立的 stream 条目");
   rememberStreamEntry(K_STREAM_MATCH_V2, id1!);
   rememberStreamEntry(K_STREAM_MATCH_V2, id2!);
@@ -305,7 +388,7 @@ test("startMatchConsumer 常驻循环：阻塞等待中投递的证据被自动�
   try {
     const m = newMatchId();
     usedMatchIds.push(m);
-    const sid = await emitMatchEvidence(makeEvidence(m));
+    const sid = await emitV2Evidence(makeEvidence(m));
     assert.ok(sid);
     rememberStreamEntry(K_STREAM_MATCH_V2, sid!);
 
@@ -385,25 +468,25 @@ test("GameRoom 区服端到端：跨区 joinById 拒绝；同区开局 → 收�
     usedMatchIds.push(matchId);
     assert.match(matchId, /^m_[0-9a-z]+[0-9a-f]{16}$/, "开局即生成 matchId 写进 state（09·K4）");
 
-    // 击杀收局：服务端权威状态直接把守方血量压到一击可破（@colyseus/testing 的 room 即服务端实例），
-    // c1 一发普攻收人头 → 存活 ≤1 → Settle
-    room.state.players.get(c2.sessionId)!.hp = 1;
-    c1.send(C2S.CastSkill, { skillId: 1, targetId: c2.sessionId });
+    // 主动离开是完整、可重放的权威事件；不得直接篡改服务端 HP 制造不可重放终态。
+    await c2.leave();
     for (let i = 0; i < 80 && room.state.phase !== GamePhase.Settle; i++) { await room.waitForNextPatch(); }
     assert.equal(room.state.phase, GamePhase.Settle, "收局");
 
     // 证据是 fire-and-forget XADD：轮询等它到流里（同一 matchId）
     let entryId: string | undefined;
     for (let i = 0; i < 40 && !entryId; i++) {
-      const entries = (await stream().xrange(K_STREAM_MATCH_V2, "-", "+")) as [string, string[]][];
+      const entries = (await stream(K_STREAM_MATCH_V3).xrange(
+        K_STREAM_MATCH_V3, "-", "+",
+      )) as [string, string[]][];
       for (const [id, fields] of entries) {
         const idx = fields.indexOf("matchId");
         if (idx >= 0 && fields[idx + 1] === matchId) { entryId = id; break; }
       }
       if (!entryId) { await sleep(50); }
     }
-    assert.ok(entryId, "收局后 stream:match:v2 出现本局证据");
-    rememberStreamEntry(K_STREAM_MATCH_V2, entryId!);
+    assert.ok(entryId, "收局后 stream:match:v3 出现本局证据");
+    rememberStreamEntry(K_STREAM_MATCH_V3, entryId!);
 
     // 消费落库：payload 里两名参与者、userId 齐全、名次正确
     await consumeOnce();
@@ -413,7 +496,8 @@ test("GameRoom 区服端到端：跨区 joinById 拒绝；同区开局 → 收�
     assert.equal(rows[0].mode, MATCH_MODE_CASUAL, "休闲局 mode=0");
     // ⚠ 端到端钉住区：建房 options.sId=7 → onCreate 存房级 sId → 收局证据带出 → 落库 server_id
     assert.equal(Number(rows[0].server_id), 7, "⛔ 建房时的 sId 必须一路带到 match_results.server_id");
-    const payload = rows[0].payload as MatchEvidence;
+    const payload = rows[0].payload as MatchEvidenceV3;
+    replayMatchEvidenceV3(validateMatchEvidenceV3(payload));
     assert.equal(payload.participants.length, 2);
     const winner = payload.participants.find((p) => p.place === 1);
     const loser = payload.participants.find((p) => p.place === 2);
@@ -423,6 +507,7 @@ test("GameRoom 区服端到端：跨区 joinById 拒绝；同区开局 → 收�
     assert.equal(loser?.survived, false);
     assert.ok(typeof payload.seed === "number" && payload.mapIndex === 0, "seed/mapIndex 入证据");
     assert.equal(payload.loadout, null, "休闲局无归一化 loadout（BYO）");
+    assert.equal(payload.events.at(-1)?.type, "leave", "Playing leave 必须在 settle 前进入 v3 event log");
   } finally {
     await colyseus.shutdown();
     for (const { uid, sId } of players) {
@@ -439,7 +524,7 @@ test("对局按区：证据的 sId 落进 match_results.server_id（喂运营统
   //   这局属于哪个区就无处可查了。发奖（U6）按区记账依赖它。
   const mid = `m_zone_${Date.now().toString(36)}`;
   usedMatchIds.push(mid);
-  const entryId = await emitMatchEvidence(makeEvidence(mid, 107));
+  const entryId = await emitV2Evidence(makeEvidence(mid, 107));
   assert.ok(entryId);
   rememberStreamEntry(K_STREAM_MATCH_V2, entryId!);
   await consumeOnce();
@@ -450,10 +535,11 @@ test("对局按区：证据的 sId 落进 match_results.server_id（喂运营统
   assert.equal(Number(rows[0].server_id), 107, "⛔ server_id 必须是证据里的区，不能恒 0");
 });
 
-test("单轮双读：f91 legacy 顶层 sId 保留，v2 同时落库，两流 PEL 各自 ACK", async () => {
+test("单轮三读：legacy/v2/v3 同时落库，三条独立 PEL 各自 ACK", async () => {
   const legacyMid = `m_f91_${Date.now().toString(36)}`;
   const v2Mid = `m_v2_${Date.now().toString(36)}`;
-  usedMatchIds.push(legacyMid, v2Mid);
+  const v3Mid = `m_v3_${Date.now().toString(36)}`;
+  usedMatchIds.push(legacyMid, v2Mid, v3Mid);
   const legacyEv = makeEvidence(legacyMid, 107);
   const legacyId = await stream(K_STREAM_MATCH).xadd(
     K_STREAM_MATCH, "*",
@@ -461,20 +547,167 @@ test("单轮双读：f91 legacy 顶层 sId 保留，v2 同时落库，两流 PEL
   );
   assert.ok(legacyId);
   rememberStreamEntry(K_STREAM_MATCH, legacyId!);
-  const v2Id = await emitMatchEvidence(makeEvidence(v2Mid, 8));
+  const v2Id = await emitV2Evidence(makeEvidence(v2Mid, 8));
   assert.ok(v2Id);
   rememberStreamEntry(K_STREAM_MATCH_V2, v2Id!);
+  const v3Id = await emitMatchEvidence(await makeV3Evidence(v3Mid, 9));
+  assert.ok(v3Id);
+  rememberStreamEntry(K_STREAM_MATCH_V3, v3Id!);
 
-  assert.ok(await consumeOnce() >= 2, "同一轮同时读取 legacy 与 v2");
+  assert.ok(await consumeOnce() >= 3, "同一轮同时读取 legacy、v2 与 v3");
   const [rows] = await getPool().query<RowDataPacket[]>(
-    "SELECT match_id, server_id, payload FROM match_results WHERE match_id IN (?, ?)", [legacyMid, v2Mid]);
+    "SELECT match_id, server_id, payload FROM match_results WHERE match_id IN (?, ?, ?)",
+    [legacyMid, v2Mid, v3Mid],
+  );
   const byMid = new Map(rows.map((row) => [String(row.match_id), row]));
   assert.equal(Number(byMid.get(legacyMid)?.server_id), 107, "f91 legacy 顶层非零 sId 保留");
   assert.equal(Number(byMid.get(legacyMid)?.payload.sId), 107, "legacy DB JSON 同步为权威顶层 sId");
   assert.equal(Number(byMid.get(v2Mid)?.server_id), 8, "v2 sId 正常落库");
+  assert.equal(Number(byMid.get(v3Mid)?.server_id), 9, "v3 sId 正常落库");
+  replayMatchEvidenceV3(validateMatchEvidenceV3(byMid.get(v3Mid)?.payload));
   for (const key of MATCH_STREAM_KEYS) {
     const pending = await stream(key).xpending(key, GROUP) as [number, ...unknown[]];
     assert.equal(Number(pending[0]), 0, `${key} 的 ACK 必须落回各自来源流`);
+  }
+});
+
+test("XAUTOCLAIM takes stale PEL entries from legacy, v2, and v3", async () => {
+  const nonce = Date.now().toString(36);
+  const legacyMid = `m_claim_legacy_${nonce}`;
+  const v2Mid = `m_claim_v2_${nonce}`;
+  const v3Mid = `m_claim_v3_${nonce}`;
+  usedMatchIds.push(legacyMid, v2Mid, v3Mid);
+  const legacyEvidence = makeEvidence(legacyMid, 31);
+  const legacyId = await stream(K_STREAM_MATCH).xadd(
+    K_STREAM_MATCH, "*",
+    "matchId", legacyMid, "mode", String(legacyEvidence.mode), "sId", "31",
+    "payload", JSON.stringify(legacyEvidence),
+  );
+  const v2Id = await emitV2Evidence(makeEvidence(v2Mid, 32));
+  const v3Id = await emitMatchEvidence(await makeV3Evidence(v3Mid, 33));
+  assert.ok(legacyId && v2Id && v3Id);
+  const entries = [
+    { key: K_STREAM_MATCH, id: legacyId! },
+    { key: K_STREAM_MATCH_V2, id: v2Id! },
+    { key: K_STREAM_MATCH_V3, id: v3Id! },
+  ] as const;
+  for (const entry of entries) rememberStreamEntry(entry.key, entry.id);
+  const deadConsumer = `dead_claim_${process.pid}_${nonce}`;
+
+  try {
+    for (const { key, id } of entries) {
+      const delivered = await stream(key).call(
+        "XREADGROUP", "GROUP", GROUP, deadConsumer, "COUNT", "1", "STREAMS", key, ">",
+      ) as [string, [string, string[]][]][] | null;
+      assert.equal(delivered?.[0]?.[1]?.[0]?.[0], id);
+      await stream(key).call("XCLAIM", key, GROUP, deadConsumer, "0", id, "IDLE", "61000");
+    }
+    assert.ok(await consumeOnce({ count: 64 }) >= entries.length);
+    for (const { key } of entries) {
+      const pending = await stream(key).xpending(key, GROUP) as [number, ...unknown[]];
+      assert.equal(Number(pending[0]), 0, `${key} stale PEL must be claimed, stored, and ACKed`);
+    }
+    for (const matchId of [legacyMid, v2Mid, v3Mid]) {
+      assert.equal(await countRows("match_results", matchId), 1);
+    }
+  } finally {
+    for (const { key } of entries) {
+      await stream(key).xgroup("DELCONSUMER", key, GROUP, deadConsumer);
+    }
+  }
+});
+
+test("safe-point trim advances independently on legacy, v2, and v3", async () => {
+  const nonce = Date.now().toString(36);
+  const mids = {
+    legacy: `m_trim_legacy_${nonce}`,
+    v2: `m_trim_v2_${nonce}`,
+    v3: `m_trim_v3_${nonce}`,
+  };
+  usedMatchIds.push(mids.legacy, mids.v2, mids.v3);
+  const legacy = makeEvidence(mids.legacy, 51);
+  const v2 = makeEvidence(mids.v2, 52);
+  const v3 = await makeV3Evidence(mids.v3, 53);
+  const fixtures = [
+    {
+      key: K_STREAM_MATCH,
+      fields: ["matchId", mids.legacy, "mode", "0", "sId", "51", "payload", JSON.stringify(legacy)],
+    },
+    {
+      key: K_STREAM_MATCH_V2,
+      fields: [
+        "schemaVersion", String(MATCH_STREAM_V2_SCHEMA_VERSION),
+        "matchId", mids.v2, "mode", "0", "sId", "52", "payload", JSON.stringify(v2),
+      ],
+    },
+    {
+      key: K_STREAM_MATCH_V3,
+      fields: [
+        "schemaVersion", String(MATCH_STREAM_V3_SCHEMA_VERSION),
+        "matchId", mids.v3, "mode", "0", "sId", "53", "payload", JSON.stringify(v3),
+      ],
+    },
+  ] as const;
+  const firstIds = new Map<string, string>();
+  const batchSize = 140;
+  for (const fixture of fixtures) {
+    const pipeline = stream(fixture.key).pipeline();
+    for (let index = 0; index < batchSize; index++) {
+      pipeline.xadd(fixture.key, "*", ...fixture.fields);
+    }
+    const results = await pipeline.exec();
+    assert.ok(results && results.every(([error, id]) => !error && typeof id === "string"));
+    const ids = results!.map(([, id]) => String(id));
+    firstIds.set(fixture.key, ids[0]);
+    for (const id of ids) rememberStreamEntry(fixture.key, id);
+  }
+  const heldV2Id = firstIds.get(K_STREAM_MATCH_V2)!;
+  const holder = `trim_holder_${process.pid}_${nonce}`;
+  const held = await stream(K_STREAM_MATCH_V2).call(
+    "XREADGROUP", "GROUP", GROUP, holder, "COUNT", "1", "STREAMS", K_STREAM_MATCH_V2, ">",
+  ) as [string, [string, string[]][]][] | null;
+  assert.equal(held?.[0]?.[1]?.[0]?.[0], heldV2Id);
+
+  try {
+    let consumed = 0;
+    for (let round = 0; round < 10; round++) {
+      const count = await consumeOnce({ count: 256 });
+      consumed += count;
+      if (count === 0) break;
+    }
+    assert.ok(consumed >= batchSize * fixtures.length - 1);
+    await trimToSafePoint();
+    for (const key of [K_STREAM_MATCH, K_STREAM_MATCH_V3]) {
+      const pending = await stream(key).xpending(key, GROUP) as [number, ...unknown[]];
+      assert.equal(Number(pending[0]), 0);
+      const firstId = firstIds.get(key)!;
+      assert.equal(
+        (await stream(key).xrange(key, firstId, firstId)).length,
+        0,
+        `${key} must trim even while v2 has an independent PEL`,
+      );
+    }
+    const v2Pending = await stream(K_STREAM_MATCH_V2).xpending(
+      K_STREAM_MATCH_V2, GROUP,
+    ) as [number, ...unknown[]];
+    assert.equal(Number(v2Pending[0]), 1);
+    assert.equal(
+      (await stream(K_STREAM_MATCH_V2).xrange(K_STREAM_MATCH_V2, heldV2Id, heldV2Id)).length,
+      1,
+      "v2 pending must block only the v2 trim",
+    );
+    await stream(K_STREAM_MATCH_V2).call(
+      "XCLAIM", K_STREAM_MATCH_V2, GROUP, MATCH_STREAM_CONSUMER, "0", heldV2Id,
+    );
+    assert.ok(await consumeOnce({ count: 8 }) >= 1, "claimed v2 PEL must take the normal DB + ACK path");
+    await trimToSafePoint();
+    assert.equal(
+      (await stream(K_STREAM_MATCH_V2).xrange(K_STREAM_MATCH_V2, heldV2Id, heldV2Id)).length,
+      0,
+      "v2 advances after its own PEL is ACKed",
+    );
+  } finally {
+    await stream(K_STREAM_MATCH_V2).xgroup("DELCONSUMER", K_STREAM_MATCH_V2, GROUP, holder);
   }
 });
 
@@ -499,6 +732,67 @@ test("真正旧条目（顶层和 payload 都无 sId）规范化为 0 后再存"
   assert.equal(Number(rows[0].payload.sId), 0, "DB JSON 也必须补齐数值 sId，满足当前 MatchEvidence");
 });
 
+test("legacy 损坏条目从 own PEL 重放后完整隔离并 ACK 来源", async () => {
+  const mid = `m_legacy_bad_sid_${Date.now().toString(36)}`;
+  usedMatchIds.push(mid);
+  const evidence = makeEvidence(mid, 1);
+  const sourceId = await stream(K_STREAM_MATCH).xadd(
+    K_STREAM_MATCH, "*",
+    "matchId", mid,
+    "mode", String(evidence.mode),
+    "sId", "01",
+    "payload", JSON.stringify(evidence),
+  );
+  assert.ok(sourceId);
+  rememberStreamEntry(K_STREAM_MATCH, sourceId!);
+  const source = await stream(K_STREAM_MATCH).xrange(
+    K_STREAM_MATCH, sourceId!, sourceId!,
+  ) as [string, string[]][];
+  assert.equal(source.length, 1);
+  const delivered = await stream(K_STREAM_MATCH).call(
+    "XREADGROUP", "GROUP", GROUP, MATCH_STREAM_CONSUMER,
+    "COUNT", "1", "STREAMS", K_STREAM_MATCH, ">",
+  ) as [string, [string, string[]][]][] | null;
+  assert.equal(delivered?.[0]?.[1]?.[0]?.[0], sourceId, "损坏 legacy 必须先进入正式 consumer 的 PEL");
+
+  const quarantinedForSource = async () => {
+    const entries = await stream(K_STREAM_MATCH_QUARANTINE).xrange(
+      K_STREAM_MATCH_QUARANTINE, "-", "+",
+    ) as [string, string[]][];
+    return entries.map(([id, fields]) => ({ id, fields: Object.fromEntries(
+      Array.from({ length: fields.length / 2 }, (_, index) => fields.slice(index * 2, index * 2 + 2)),
+    ) })).filter((entry) => entry.fields.sourceId === sourceId);
+  };
+
+  try {
+    assert.ok(await consumeOnce({ count: 8 }) >= 1, "own PEL 中的 legacy 损坏条目必须被重放处置");
+    assert.equal(await countRows("match_index", mid), 0);
+    assert.equal(await countRows("match_results", mid), 0);
+    const pending = await stream(K_STREAM_MATCH).call(
+      "XPENDING", K_STREAM_MATCH, GROUP, sourceId!, sourceId!, "1",
+    ) as [string, ...unknown[]][];
+    assert.equal(pending.length, 0, "quarantine 持久化后必须 ACK legacy 来源 PEL");
+
+    const quarantined = await quarantinedForSource();
+    assert.equal(quarantined.length, 1, "同一 legacy 来源只产生一条精确隔离副本");
+    const fields = quarantined[0].fields;
+    assert.equal(fields.sourceStream, K_STREAM_MATCH);
+    assert.equal(fields.sourceKind, "legacy");
+    assert.equal(fields.sourceGroup, GROUP);
+    assert.equal(fields.sourceIdentity, `${K_STREAM_MATCH}\n${GROUP}\n${sourceId}`);
+    assert.deepEqual(JSON.parse(fields.rawFields), source[0][1]);
+    assert.equal(fields.reason, "LEGACY_SERVER_ID");
+  } finally {
+    const quarantined = await quarantinedForSource();
+    if (quarantined.length > 0) {
+      await stream(K_STREAM_MATCH_QUARANTINE).xdel(
+        K_STREAM_MATCH_QUARANTINE, ...quarantined.map((entry) => entry.id),
+      );
+    }
+    await stream(K_STREAM_MATCH).xdel(K_STREAM_MATCH, sourceId!);
+  }
+});
+
 test("v2 损坏条目先完整写入 quarantine 再 ACK 来源 PEL", async () => {
   const missingMid = `m_v2_nover_${Date.now().toString(36)}`;
   const nonCanonicalMid = `m_v2_badver_${Date.now().toString(36)}`;
@@ -519,7 +813,7 @@ test("v2 损坏条目先完整写入 quarantine 再 ACK 来源 PEL", async () =>
   delete incompletePayload.participants;
   const incompleteId = await stream().xadd(
     K_STREAM_MATCH_V2, "*",
-    "schemaVersion", String(MATCH_STREAM_SCHEMA_VERSION),
+    "schemaVersion", "2",
     "matchId", incompleteMid, "mode", String(MATCH_MODE_CASUAL), "sId", "1",
     "payload", JSON.stringify(incompletePayload),
   );
@@ -591,19 +885,97 @@ test("v2 损坏条目先完整写入 quarantine 再 ACK 来源 PEL", async () =>
   }
 });
 
-test("quarantine 写入失败时不得 ACK 损坏来源条目", async () => {
-  const mid = `m_v2_quarantine_fail_${Date.now().toString(36)}`;
-  const ev = makeEvidence(mid, 1);
-  const sourceId = await stream().xadd(
-    K_STREAM_MATCH_V2, "*",
+test("v3 replay mismatch, one-player evidence, non-canonical JSON, and oversized payload are quarantined", async () => {
+  const nonce = Date.now().toString(36);
+  const mismatchMid = `m_v3_mismatch_${nonce}`;
+  const onePlayerMid = `m_v3_one_${nonce}`;
+  const nonCanonicalMid = `m_v3_canonical_${nonce}`;
+  const oversizedMid = `m_v3_oversized_${nonce}`;
+  const mismatched = structuredClone(await makeV3Evidence(mismatchMid, 41));
+  mismatched.finalState.players[0].hp--;
+  const onePlayer = structuredClone(await makeV3Evidence(onePlayerMid, 42));
+  onePlayer.initialRoster.pop();
+  const nonCanonical = await makeV3Evidence(nonCanonicalMid, 43);
+  const addRawV3 = (matchId: string, sId: number, payload: string) => stream(K_STREAM_MATCH_V3).xadd(
+    K_STREAM_MATCH_V3, "*",
+    "schemaVersion", String(MATCH_STREAM_V3_SCHEMA_VERSION),
+    "matchId", matchId,
+    "mode", String(MATCH_MODE_CASUAL),
+    "sId", String(sId),
+    "payload", payload,
+  );
+  const mismatchId = await addRawV3(mismatchMid, 41, JSON.stringify(mismatched));
+  const onePlayerId = await addRawV3(onePlayerMid, 42, JSON.stringify(onePlayer));
+  const nonCanonicalId = await addRawV3(
+    nonCanonicalMid,
+    43,
+    ` ${JSON.stringify(nonCanonical)}\n`,
+  );
+  const oversizedId = await addRawV3(
+    oversizedMid,
+    44,
+    "x".repeat(MATCH_V3_MAX_PAYLOAD_BYTES + 1),
+  );
+  assert.ok(mismatchId && onePlayerId && nonCanonicalId && oversizedId);
+  const mismatchSource = await stream(K_STREAM_MATCH_V3).xrange(
+    K_STREAM_MATCH_V3, mismatchId!, mismatchId!,
+  ) as [string, string[]][];
+  const sourceIds = new Set([mismatchId!, onePlayerId!, nonCanonicalId!, oversizedId!]);
+  for (const id of sourceIds) rememberStreamEntry(K_STREAM_MATCH_V3, id);
+
+  const quarantined = async () => {
+    const entries = await stream(K_STREAM_MATCH_QUARANTINE).xrange(
+      K_STREAM_MATCH_QUARANTINE, "-", "+",
+    ) as [string, string[]][];
+    return entries.map(([id, fields]) => ({ id, fields: Object.fromEntries(
+      Array.from({ length: fields.length / 2 }, (_, index) => fields.slice(index * 2, index * 2 + 2)),
+    ) })).filter((entry) => sourceIds.has(entry.fields.sourceId));
+  };
+
+  try {
+    assert.ok(await consumeOnce() >= 4);
+    for (const matchId of [mismatchMid, onePlayerMid, nonCanonicalMid, oversizedMid]) {
+      assert.equal(await countRows("match_index", matchId), 0);
+    }
+    const pending = await stream(K_STREAM_MATCH_V3).xpending(K_STREAM_MATCH_V3, GROUP) as [number, ...unknown[]];
+    assert.equal(Number(pending[0]), 0);
+    const bySource = new Map((await quarantined()).map((entry) => [entry.fields.sourceId, entry.fields]));
+    assert.equal(bySource.get(mismatchId!)?.reason, "V3_REPLAY_FINAL_STATE");
+    assert.equal(bySource.get(onePlayerId!)?.reason, "V3_PAYLOAD_ARRAY");
+    assert.equal(bySource.get(nonCanonicalId!)?.reason, "V3_PAYLOAD_CANONICAL");
+    assert.equal(bySource.get(oversizedId!)?.reason, "V3_PAYLOAD_SIZE");
+    const mismatchQuarantine = bySource.get(mismatchId!);
+    assert.equal(mismatchQuarantine?.sourceStream, K_STREAM_MATCH_V3);
+    assert.equal(mismatchQuarantine?.sourceGroup, GROUP);
+    assert.equal(mismatchQuarantine?.sourceKind, "v3");
+    assert.equal(
+      mismatchQuarantine?.sourceIdentity,
+      `${K_STREAM_MATCH_V3}\n${GROUP}\n${mismatchId}`,
+    );
+    assert.deepEqual(JSON.parse(mismatchQuarantine!.rawFields), mismatchSource[0][1]);
+  } finally {
+    const entries = await quarantined();
+    if (entries.length > 0) {
+      await stream(K_STREAM_MATCH_QUARANTINE).xdel(
+        K_STREAM_MATCH_QUARANTINE, ...entries.map((entry) => entry.id),
+      );
+    }
+  }
+});
+
+test("v3 quarantine 写入失败时不得 ACK 损坏来源条目", async () => {
+  const mid = `m_v3_quarantine_fail_${Date.now().toString(36)}`;
+  const ev = await makeV3Evidence(mid, 1);
+  const sourceId = await stream(K_STREAM_MATCH_V3).xadd(
+    K_STREAM_MATCH_V3, "*",
     "schemaVersion", "broken",
     "matchId", mid, "mode", String(ev.mode), "sId", "1", "payload", JSON.stringify(ev),
   );
   assert.ok(sourceId);
-  rememberStreamEntry(K_STREAM_MATCH_V2, sourceId!);
+  rememberStreamEntry(K_STREAM_MATCH_V3, sourceId!);
   const reader = `quarantine_failure_${process.pid}`;
-  const read = await stream().call(
-    "XREADGROUP", "GROUP", GROUP, reader, "COUNT", "1", "STREAMS", K_STREAM_MATCH_V2, ">",
+  const read = await stream(K_STREAM_MATCH_V3).call(
+    "XREADGROUP", "GROUP", GROUP, reader, "COUNT", "1", "STREAMS", K_STREAM_MATCH_V3, ">",
   ) as [string, [string, string[]][]][] | null;
   const entry = read?.[0]?.[1]?.find(([id]) => id === sourceId);
   assert.ok(entry, "测试条目必须先进入 settle PEL");
@@ -613,17 +985,18 @@ test("quarantine 写入失败时不得 ACK 损坏来源条目", async () => {
   try {
     await assert.rejects(
       quarantineMalformedMatchEntry(
-        stream(), K_STREAM_MATCH_V2, "v2", sourceId!, entry![1], "V2_SCHEMA_VERSION", wrongTypeKey,
+        stream(K_STREAM_MATCH_V3), K_STREAM_MATCH_V3, "v3", sourceId!, entry![1],
+        "V3_SCHEMA_VERSION", wrongTypeKey,
       ),
       /WRONGTYPE/,
     );
-    const details = await stream().call(
-      "XPENDING", K_STREAM_MATCH_V2, GROUP, sourceId!, sourceId!, "1",
+    const details = await stream(K_STREAM_MATCH_V3).call(
+      "XPENDING", K_STREAM_MATCH_V3, GROUP, sourceId!, sourceId!, "1",
     ) as [string, ...unknown[]][];
     assert.equal(details.length, 1, "XADD quarantine 失败时 Lua 不得继续执行 XACK");
   } finally {
-    await stream().xack(K_STREAM_MATCH_V2, GROUP, sourceId!);
+    await stream(K_STREAM_MATCH_V3).xack(K_STREAM_MATCH_V3, GROUP, sourceId!);
     await stream(wrongTypeKey).del(wrongTypeKey);
-    await stream().xgroup("DELCONSUMER", K_STREAM_MATCH_V2, GROUP, reader);
+    await stream(K_STREAM_MATCH_V3).xgroup("DELCONSUMER", K_STREAM_MATCH_V3, GROUP, reader);
   }
 });

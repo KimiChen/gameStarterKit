@@ -4,6 +4,8 @@ import {
     C2S,
     ErrorCode,
     GamePhase,
+    MAP_WIDTH,
+    PLAYER_MOVE_SPEED,
     PROTOCOL_VERSION,
     PLAYER_INIT_HP,
     S2C,
@@ -17,6 +19,13 @@ import {
     type GameRoomRuntimeOptions,
 } from "../src/rooms/GameRoom";
 import { BALL_MOVE_GAME_MODE_ID } from "../src/rooms/GameMode";
+import {
+    BALL_MOVE_RULESET_ID,
+    BALL_MOVE_RULESET_VERSION,
+    validateMatchEvidenceV3,
+    type MatchEvidenceV3,
+} from "../src/core/match/matchEvidence";
+import { replayMatchEvidenceV3 } from "../src/core/match/matchReplay";
 
 type FakeClient = {
     sessionId: string;
@@ -70,7 +79,7 @@ function simulationSnapshot(room: GameRoom): unknown {
             alive: player.alive,
             dirX: player.dirX,
             dirY: player.dirY,
-            lastCastAt: { ...player.lastCastAt },
+            lastCastTick: { ...player.lastCastTick },
             level: player.level,
         };
     }
@@ -220,11 +229,20 @@ test("rejected skills do not enter the accepted input sequence", async () => {
 });
 
 test("accepted input evidence has a bounded capacity and rejects later side effects", async () => {
-    const room = new GameRoom({ ...runtime(113), maxAcceptedInputs: 1 });
+    let evidence: MatchEvidenceV3 | undefined;
+    const room = new GameRoom({
+        ...runtime(113),
+        maxAcceptedInputs: 1,
+        evidenceEmitter: (value) => {
+            evidence = value;
+            return Promise.resolve(null);
+        },
+    });
     installLock(room);
     const a = fakeClient("a", "ua");
+    const b = fakeClient("b", "ub");
     await join(room, a);
-    await join(room, fakeClient("b", "ub"));
+    await join(room, b);
     const move = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Move];
     const player = room.state.players.get("a")!;
 
@@ -242,6 +260,208 @@ test("accepted input evidence has a bounded capacity and rejects later side effe
     );
 
     assert.ok(MAX_ACCEPTED_INPUTS > 1, "生产上限应大于测试覆盖的小容量覆写");
+    await room.onLeave(b as never, 4000);
+    assert.deepEqual(evidence?.events.map((event) => event.type), ["move", "leave"]);
+});
+
+test("winning cast is appended before settlement emits replayable v3 evidence", async () => {
+    let emissions = 0;
+    const room = new GameRoom({
+        ...runtime(114),
+        matchId: () => "m_winning_cast",
+        evidenceEmitter: (evidence) => {
+            assert.equal(evidence.events.at(-1)?.type, "castSkill");
+            replayMatchEvidenceV3(validateMatchEvidenceV3(evidence));
+            emissions++;
+            return Promise.resolve(null);
+        },
+    });
+    installLock(room);
+    const a = fakeClient("a", "ua");
+    const b = fakeClient("b", "ub");
+    await join(room, a);
+    await join(room, b);
+    const cast = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.CastSkill];
+
+    cast(a, { skillId: 3, targetId: b.sessionId });
+    for (let tick = 0; tick < 100; tick++) room.stepFixed();
+    cast(a, { skillId: 3, targetId: b.sessionId });
+    for (let tick = 0; tick < 100; tick++) room.stepFixed();
+    cast(a, { skillId: 3, targetId: b.sessionId });
+
+    assert.equal(room.state.phase, GamePhase.Settle);
+    assert.equal(room.state.tick, 200);
+    assert.equal(emissions, 1);
+});
+
+test("Playing leave is appended before death/removal and emits ordered deterministic evidence", async () => {
+    let emitted: MatchEvidenceV3 | undefined;
+    const room = new GameRoom({
+        ...runtime(115),
+        matchId: () => "m_ordered_leave",
+        evidenceEmitter: (evidence) => {
+            assert.equal(evidence.events.at(-1)?.type, "leave");
+            replayMatchEvidenceV3(validateMatchEvidenceV3(evidence));
+            emitted = evidence;
+            return Promise.resolve(null);
+        },
+    });
+    installLock(room);
+    const a = fakeClient("a", "ua");
+    const b = fakeClient("b", "ub");
+    await join(room, a);
+    await join(room, b);
+    const initialX = room.state.players.get(a.sessionId)!.x;
+    const move = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Move];
+    move(a, { dirX: 1, dirY: 0 });
+    for (let tick = 0; tick < 10; tick++) room.stepFixed();
+    assert.equal(
+        room.state.players.get(a.sessionId)!.x,
+        Math.min(initialX + PLAYER_MOVE_SPEED * (room.fixedStep / 1000) * 10, MAP_WIDTH),
+    );
+
+    const calls: string[] = [];
+    const internals = room as unknown as {
+        recordLeaveEvent(sessionId: string, acceptedTick: number): void;
+        recordDeath(sessionId: string): void;
+        removePlayer(sessionId: string, removeParticipant: boolean): void;
+    };
+    const recordLeaveEvent = internals.recordLeaveEvent.bind(room);
+    const recordDeath = internals.recordDeath.bind(room);
+    const removePlayer = internals.removePlayer.bind(room);
+    internals.recordLeaveEvent = (sessionId, acceptedTick) => {
+        calls.push("event");
+        assert.equal(room.state.players.get(sessionId)?.alive, true);
+        recordLeaveEvent(sessionId, acceptedTick);
+    };
+    internals.recordDeath = (sessionId) => {
+        calls.push("death");
+        recordDeath(sessionId);
+    };
+    internals.removePlayer = (sessionId, removeParticipant) => {
+        calls.push("remove");
+        removePlayer(sessionId, removeParticipant);
+    };
+
+    await room.onLeave(b as never, 4000);
+    assert.deepEqual(calls, ["event", "death", "remove"]);
+    assert.deepEqual(emitted?.initialRoster.map((entry) => entry.sessionId), ["a", "b"]);
+    assert.deepEqual(
+        emitted?.initialState.players.map((player) => [player.sessionId, player.name]),
+        emitted?.initialRoster.map((entry) => [entry.sessionId, entry.name]),
+    );
+});
+
+test("diagonal move evidence preserves accepted input and normalizes exactly once in replay", async () => {
+    let emitted: MatchEvidenceV3 | undefined;
+    const room = new GameRoom({
+        ...runtime(1_150),
+        matchId: () => "m_diagonal_replay",
+        evidenceEmitter: (evidence) => {
+            replayMatchEvidenceV3(validateMatchEvidenceV3(evidence));
+            emitted = evidence;
+            return Promise.resolve(null);
+        },
+    });
+    installLock(room);
+    const a = fakeClient("a", "ua");
+    const b = fakeClient("b", "ub");
+    await join(room, a);
+    await join(room, b);
+
+    const move = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Move];
+    move(a, { dirX: 1, dirY: 1 });
+    room.stepFixed();
+    await room.onLeave(b as never, 4000);
+
+    const moveEvent = emitted?.events.find((event) => event.type === "move");
+    assert.deepEqual(moveEvent, {
+        type: "move",
+        sessionId: a.sessionId,
+        dirX: 1,
+        dirY: 1,
+        acceptedTick: 0,
+    });
+    assert.equal(room.state.phase, GamePhase.Settle);
+});
+
+test("settlement freezes replay evidence before the mode finish hook can mutate live state", async () => {
+    let emitted: MatchEvidenceV3 | undefined;
+    const room = new GameRoom({
+        ...runtime(1_151),
+        matchId: () => "m_finish_snapshot",
+        mode: {
+            id: BALL_MOVE_GAME_MODE_ID,
+            matchEvidenceRuleset: {
+                id: BALL_MOVE_RULESET_ID,
+                version: BALL_MOVE_RULESET_VERSION,
+            },
+            onFinish: ({ state }) => {
+                state.players.get("a")!.hp = 0;
+            },
+        },
+        evidenceEmitter: (evidence) => {
+            replayMatchEvidenceV3(validateMatchEvidenceV3(evidence));
+            emitted = evidence;
+            return Promise.resolve(null);
+        },
+    });
+    installLock(room);
+    const a = fakeClient("a", "ua");
+    const b = fakeClient("b", "ub");
+    await join(room, a);
+    await join(room, b);
+
+    await room.onLeave(b as never, 4000);
+
+    assert.equal(room.state.players.get(a.sessionId)?.hp, 0, "finish hook must have run");
+    assert.equal(
+        emitted?.finalState.players.find((player) => player.sessionId === a.sessionId)?.hp,
+        PLAYER_INIT_HP,
+        "durable evidence must be the pre-hook settlement snapshot",
+    );
+});
+
+test("Playing leave settles before awaiting a slow mode leave hook", async () => {
+    let releaseHook!: () => void;
+    const hookGate = new Promise<void>((resolve) => { releaseHook = resolve; });
+    let emitted: MatchEvidenceV3 | undefined;
+    const room = new GameRoom({
+        ...runtime(1_152),
+        matchId: () => "m_slow_leave",
+        mode: {
+            id: BALL_MOVE_GAME_MODE_ID,
+            matchEvidenceRuleset: {
+                id: BALL_MOVE_RULESET_ID,
+                version: BALL_MOVE_RULESET_VERSION,
+            },
+            onLeave: () => hookGate,
+        },
+        evidenceEmitter: (evidence) => {
+            replayMatchEvidenceV3(validateMatchEvidenceV3(evidence));
+            emitted = evidence;
+            return Promise.resolve(null);
+        },
+    });
+    installLock(room);
+    const a = fakeClient("a", "ua");
+    const b = fakeClient("b", "ub");
+    await join(room, a);
+    await join(room, b);
+
+    const leaving = room.onLeave(b as never, 4000);
+    const frozenTick = room.state.tick;
+    assert.equal(room.state.phase, GamePhase.Settle, "phase must freeze before the hook resolves");
+    assert.equal(emitted?.events.at(-1)?.type, "leave");
+
+    room.stepFixed();
+    const move = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Move];
+    move(a, { dirX: 1, dirY: 0 });
+    assert.equal(room.state.tick, frozenTick, "slow cleanup must not leave simulation running");
+    assert.equal(emitted?.events.length, 1, "no gameplay event may follow the leave event");
+
+    releaseHook();
+    await leaving;
 });
 
 test("Waiting/Settle phase whitelist prevents simulation input and update", async () => {
@@ -300,7 +520,7 @@ test("startMatch resets every gameplay field changed while waiting", async () =>
     waiting.alive = false;
     waiting.dirX = 1;
     waiting.dirY = -1;
-    waiting.lastCastAt = { 1: 12345 };
+    waiting.lastCastTick = { 1: 12345 };
     waiting.level = 9;
     room.state.tick = 88;
     await join(room, fakeClient("b", "ub"));
@@ -312,7 +532,7 @@ test("startMatch resets every gameplay field changed while waiting", async () =>
     assert.equal(started.alive, true);
     assert.equal(started.dirX, 0);
     assert.equal(started.dirY, 0);
-    assert.deepEqual(started.lastCastAt, {});
+    assert.deepEqual(started.lastCastTick, {});
     assert.equal(started.level, 1);
 });
 
@@ -718,6 +938,13 @@ test("fixed-step options cannot produce an invalid Welcome tick rate", async () 
     assert.equal(room.fixedStep, TICK_MS, "过高 tickRate 的步长应回退默认值");
     const welcome = a.sent.find(([type]) => type === S2C.Welcome)?.[1] as { tickRate: number } | undefined;
     assert.equal(welcome?.tickRate, 20);
+
+    const fractional = new GameRoom({ seed: 29, fixedStepMs: 16.5 });
+    assert.equal(
+        fractional.fixedStep,
+        TICK_MS,
+        "v3 evidence requires the same integer fixed-step domain as the live room",
+    );
 });
 
 test("per-client message budget returns controlled errors and stays isolated by session", async () => {

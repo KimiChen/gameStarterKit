@@ -1,5 +1,6 @@
 import type { Client } from "colyseus";
 import { GameplayModeId, validateGameplayModeId, type C2SType } from "@game/shared";
+import { BALL_MOVE_RULESET_ID, BALL_MOVE_RULESET_VERSION } from "../core/match/matchEvidence";
 import type { GameRoomState } from "./schema/GameRoomState";
 
 /**
@@ -23,8 +24,11 @@ export interface GameModeMessage<TState = GameRoomState> {
 
 export interface GameMode<TState = GameRoomState> {
     readonly id: string;
-    /** Opt in to GameRoom's ballMove-shaped casual evidence contract. */
-    readonly emitsGenericMatchEvidence?: boolean;
+    /** Exact replay contract implemented by this mode, when any. */
+    readonly matchEvidenceRuleset?: {
+        readonly id: string;
+        readonly version: number;
+    };
     /** Return false to reject the client after auth but before state mutation. */
     onAdmission?(context: GameModeContext<TState> & { readonly client: Client }): boolean | void;
     /** Return true when the mode fully consumes a validated message. */
@@ -83,7 +87,10 @@ export const IDLE_GAME_MODE_ID = GameplayModeId.Idle;
 export const gameModeRegistry = new GameModeRegistry<GameRoomState>();
 gameModeRegistry.register(BALL_MOVE_GAME_MODE_ID, () => ({
     id: BALL_MOVE_GAME_MODE_ID,
-    emitsGenericMatchEvidence: true,
+    matchEvidenceRuleset: {
+        id: BALL_MOVE_RULESET_ID,
+        version: BALL_MOVE_RULESET_VERSION,
+    },
 }));
 
 function normalizeModeId(id: string): string {

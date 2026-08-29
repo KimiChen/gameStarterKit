@@ -39,7 +39,10 @@ test("GameModeRegistry：第二个 mode 可独立登记、创建和撤销", () =
     assert.throws(() => registry.register("idle", () => ({ id: "idle" })), /已登记/);
     unregister();
     assert.equal(registry.has("idle"), false);
-    assert.equal(gameModeRegistry.create(BALL_MOVE_GAME_MODE_ID).emitsGenericMatchEvidence, true);
+    assert.deepEqual(gameModeRegistry.create(BALL_MOVE_GAME_MODE_ID).matchEvidenceRuleset, {
+        id: BALL_MOVE_GAME_MODE_ID,
+        version: 1,
+    });
 });
 
 test("GameModeRegistry：同 factory replace 后旧 disposer 不删除新 registration", () => {

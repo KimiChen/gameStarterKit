@@ -19,8 +19,8 @@
  * fail-fast + 全入口（LobbyRoom.messages / room / worker）`zoneCtx.run` 包裹，开 GROUP_ZONES 前必做。
  *
  * `{...}` 是 Cluster hash-tag：per-user key 用 `{uid}` 同槽（09·R3）；`active:lru` 用 `{bucket}`。
- * legacy `stream:match` 本身无 hash-tag；它的 v2 后继把**完整 legacy key**放进 hash-tag，使两个版本在
- * Redis Cluster 与自定义 `clientForKey` 路由下都命中同一实例/slot，才能用一次 XREADGROUP 双读。
+ * legacy `stream:match` 本身无 hash-tag；它的 v2/v3 后继把**完整 legacy key**放进 hash-tag，使三个版本在
+ * Redis Cluster 与自定义 `clientForKey` 路由下都命中同一实例/slot，才能用一次 XREADGROUP 读取三流。
  * 跨用户流 ⛔ 不与 per-user key 进同一条 Lua。区前缀不含 hash-tag，`{...}` 语义不受影响。
  */
 import { AsyncLocalStorage } from "node:async_hooks";
@@ -98,14 +98,19 @@ export const kRl = (scope: string) => `${G}rl:${scope}`;
 /** legacy 对局证据链 STREAM：升级后仅供新 consumer 排空；⛔ 新 producer 禁写。 */
 export const K_STREAM_MATCH = `${G}stream:match`;
 /**
- * v2 对局证据链 STREAM（新 producer 唯一写点，schemaVersion=2）。
+ * v2 历史对局证据链 STREAM（升级后只排空，schemaVersion=2；新 producer 禁写）。
  * hash-tag 内容刻意等于**完整 legacy key**：旧 key 无 tag 时按整个 key 路由，因此两者输入同一串字节，
  * 在 Redis Cluster slot 与 `clientForKey` 的自定义桶路由下都同实例；⛔ 不得简化成 `{stream:match}`。
- * 两流均按各自已落库位点 XTRIM MINID，禁止 MAXLEN（09·K6）。
+ * 各来源流均按各自已落库位点 XTRIM MINID，禁止 MAXLEN（09·K6）。
  */
 export const K_STREAM_MATCH_V2 = `${G}stream:match:v2:{${K_STREAM_MATCH}}`;
 /**
- * 对局证据坏条目隔离流。与 legacy/v2 源流使用同一 hash-tag，consumer 才能在一个 Lua 原子段中
+ * v3 可重放对局证据链 STREAM（新 producer 唯一写点，schemaVersion=3）。
+ * 与 legacy/v2 使用相同的完整 legacy key hash-tag，确保三流可由一次 XREADGROUP 同槽读取。
+ */
+export const K_STREAM_MATCH_V3 = `${G}stream:match:v3:{${K_STREAM_MATCH}}`;
+/**
+ * 对局证据坏条目隔离流。与 legacy/v2/v3 源流使用同一 hash-tag，consumer 才能在一个 Lua 原子段中
  * 先持久化原始条目、再 ACK 来源 PEL。该流禁止自动裁剪；人工修复重投并确认落库后才可 XDEL。
  */
 export const K_STREAM_MATCH_QUARANTINE = `${G}stream:match:quarantine:{${K_STREAM_MATCH}}`;

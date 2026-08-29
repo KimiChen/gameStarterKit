@@ -202,7 +202,7 @@ test("real Colyseus GameRoomState and PlayerState instances satisfy the shared s
     player.dirX = Number.NaN;
     player.dirY = Number.POSITIVE_INFINITY;
     player.level = 99;
-    player.lastCastAt = { 1: 1234 };
+    player.lastCastTick = { 1: 1234 };
     state.players.set(player.id, player);
 
     // Assert the actual Schema projection, rather than only validating a

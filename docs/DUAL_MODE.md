@@ -104,10 +104,10 @@ durable 与 cache 是两个物理 Redis，分别通过 `clientFor*` 和 `cacheCl
 - mailwake/kick 走通用 `startStreamConsumer`：每节点独立 `XREAD` 游标，初始值 `$`，只看启动后的新条目，
   单条按顺序 await，并按时间窗 best-effort trim；没有历史补读或 ack。
 - match settle 走 Redis consumer group：处理本 consumer 的 PEL、`XAUTOCLAIM` 接管死 consumer，再读新
-  条目；落 MySQL 后 ACK，并在 PEL 为空时按安全位点 trim。当前坏 shape 会记日志后 ACK 丢弃，是已知
-  缺口。
-- match 流本身是 legacy+v2 双流转制：v2 把完整 legacy key 编入 hash-tag 同槽双读，强制
-  `schemaVersion=2` 并交叉校验顶层与 payload 字段。
+  条目；落 MySQL 后 ACK，并在 PEL 为空时按安全位点 trim。坏 shape/version/replay 先与原始 fields 一起
+  原子写入同槽 quarantine，成功后才 ACK 来源 PEL。
+- match 流处于 legacy/v2 排空、v3 持续生产的三流迁移期：三者同槽物理隔离，生产只写 v3；v2 按冻结
+  shape 校验，v3 在生产和消费两侧 validate + replay。三条来源流分别维护 PEL、claim、safe trim 与深度探针。
 
 不要把“每节点独立游标”写成所有 stream 的共同规则，也不要把其中任一种描述为外部送达保证。
 

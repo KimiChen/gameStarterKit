@@ -39,16 +39,15 @@
   `outbox-trim-boundary.test.ts` 定向 22/22，`int/db-bootstrap.test.ts` 1/1 覆盖升级前只读 preflight 与
   DDL 零半升级；服务端 typecheck、单测 256/256、全量集成 134/134、`smoke:framework`、
   `npm run verify:inventory` 与 `git diff --check` 通过。
-- `[已完成]` 坏 match stream entry 不再 ACK 丢弃：来源流与 quarantine 固定同槽，Lua 先持久化来源
-  key/id、group、原因码及精确原始 fields，再 ACK 来源 PEL；v2 payload 在生产/消费两侧做 exact shape 与
-  已声明值域校验，opaque loadout 也须为 canonical JSON，legacy 保持历史兼容域。同主机 worker 使用进程
-  唯一 consumer，崩溃 PEL 由 `XAUTOCLAIM` 接管。quarantine 禁止自动裁剪，
-  非空及 key 类型/权限错误均独立告警；`docs/SERVER.md` 登记了修复重投、确认落库后再删除的处置顺序。
-  验收证据：`int/settlement.test.ts` 12/12 覆盖完整 payload 反例、casual/ranked loadout 值域与 JSON
-  保真、隔离副本、来源 ACK、普通 trim 不触碰 quarantine 与 quarantine WRONGTYPE 时保留 PEL；
-  `stream-depth-lifecycle.test.ts` 3/3 覆盖独立告警；
-  `npm --workspace @game/server run typecheck`、服务端单测 215/215、全量集成 106/106 与
-  `npm run verify:inventory` 通过。
+- `[已完成]` 坏 match stream entry 不再 ACK 丢弃：legacy、v2、v3 三条来源流与 quarantine 固定同槽，
+  Lua 先持久化来源 key/id、kind、group、稳定原因码及精确原始 fields，再 ACK 来源 PEL；v2 只按冻结的历史
+  shape/值域校验排空，v3 的 exact validator、24 MiB parse budget、canonical JSON 或确定性 replay 失败也进入
+  同一隔离处置。三条来源流分别处理本 consumer PEL、`XAUTOCLAIM`、安全 `XTRIM MINID` 与 backlog probe；
+  同主机 worker 使用进程唯一 consumer，quarantine 禁止自动裁剪，非空及 key 类型/权限错误独立告警。
+  `docs/SERVER.md` 登记了修复重投、确认落库后再删除的处置顺序。验收证据：`int/settlement.test.ts` 18/18
+  覆盖三流生产消费/PEL 接管/独立裁剪、legacy/v2/v3 隔离来源与 raw fields、来源 ACK、v3 replay/容量反例及
+  quarantine 写失败保留 PEL；`stream-depth-lifecycle.test.ts` 3/3 覆盖三来源和 quarantine 独立探测；服务端
+  typecheck、单测 273/273、全量集成 153/153、`npm run verify:inventory` 与 `git diff --check` 通过。
 - `[已完成]` 玩家档 `SCHEMA_VERSION` 提升为 2；`loadFields` 用单条只读 Lua 原子校验 N/N-1 且不写，
   `ensureLive` 与所有普通/后台 writer 在业务 callback 或首写前完成锁内迁移/对账。v1 缺失
   `characterRegistrationCheckedAt` 补 `"0"`、合法值保留、畸形值拒绝并 bump `ver`；新档直接写 v2。
@@ -59,7 +58,24 @@
   `int/effect-atomic.test.ts` 12/12；服务端 typecheck、单测 262/262、全量集成 147/147、
   `smoke:framework`、`npm run verify:inventory` 与 `git diff --check` 通过。
 - `[已完成]` Game HTTP request schema 已由 shared validator 同源生成并直接注入（证据见 §4 P1-03）。
-- `[不阻塞·待补齐]` match evidence 不足以重放完整输入序列（**本清单无对应 P 条目，仅此处登记**）。
+- `[已完成]` `ballMove` 收局证据升级为服务端内部 `schemaVersion=3` exact contract：绑定 match/区/mode、
+  `ballMove@1` ruleset、seed、fixed step、map/loadout、有序开局 roster 与 canonical initial state、带权威
+  `acceptedTick` 的已接受 move/cast 和 Playing leave，以及 final tick/elapsed/canonical state 与完整
+  participants。致胜 cast 在 settle 前入链，leave 在死亡簿记/删除/任何可等待 hook 前入链并同步冻结终态；
+  同 tick 以数组顺序重放，非法、冷却中或容量外输入不入链。生产者和消费者都先 exact validate 并实际重算
+  initial/final state 与 participants，再分别 XADD v3/落库；生产只写独立 `K_STREAM_MATCH_V3`，legacy/v2
+  仅由三流 consumer 排空。accepted input 上限为 16,384，耗尽后 fail-closed 拒绝后续 move/cast 及其玩法
+  副作用，leave 使用固定 roster 余量。重放用 motion anchor 解析 tick gap，复杂度为 `O(events + players)`，
+  最大安全 final tick 不触发逐帧循环；权威时间和冷却使用 tick，`elapsedMs` 只是确定性派生值。v3 payload
+  在生产序列化后和消费 JSON parse 前都受 24 MiB 上限保护。该能力只证明仓内 `ballMove@1` 输入重放与结果
+  核对；XADD 仍是 tracked detached best-effort，不承诺 producer 必达、exactly-once、防篡改或防作弊。
+  它不改变 C2S/S2C/shared wire，`lastCastTick` 只在 manifest 的 `serverOnly` 域，`PROTOCOL_VERSION` 保持 6。
+  验收证据：`match-replay.test.ts` 6/6 覆盖事件删改/乱序、seed/roster/final/participants 变异、hostile shape、
+  16,384 输入与最大安全 tick；`game-room.test.ts` 32/32 覆盖拒绝输入、容量 fail-closed、致胜 cast、leave/finish
+  hook 前冻结、慢 leave hook 和对角移动单次归一化；`int/settlement.test.ts` 18/18 覆盖 v3-only producer、真实
+  GameRoom→Redis→replay→MySQL、生产/消费双重门禁及三流生命周期；`stream-depth-lifecycle.test.ts` 3/3、
+  `game-room-wire-contract.test.ts` 2/2、state codegen freshness、`verify:sync`、服务端 typecheck/单测 273/273、
+  全量集成 153/153、inventory 与 diff check 通过。
 - `[已完成]` `PROTOCOL_VERSION` 已提升为 6，版本流水明确登记 `setField` 文本接受域由 UTF-16 码元收紧为
   UTF-8 字节并拒绝不成对代理项。客户端 Lobby/Game join 与服务端两个版本闸均消费同一 shared 常量；旧 v5
   会以 `ProtocolMismatch` 拒绝，仓内不存在已部署旧客户端，因而在首次线上发布前完成了单版本切换。

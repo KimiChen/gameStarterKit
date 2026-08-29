@@ -109,8 +109,9 @@ apps/client/src
 - 大规模同步计算不放在网关 handler 中。
 
 这些是开发实现应保持的不变量，不是对当前所有路径已经完成证明的声明。完成状态、剩余缺口和保留边界
-统一以 [plan-v2.md](../plan-v2.md) 为准；当前仍开放的是 match 完整输入重放和异构第二玩法。热档/冷档
-schema 迁移、asset effect 原子性与经济操作的跨区回读均已按对应条目收口。
+统一以 [plan-v2.md](../plan-v2.md) 为准；当前仍开放的是异构第二玩法。`ballMove@1` 的服务端内部 v3
+evidence 已按 seed/fixed-step/有序事件重算初末状态与 participants；热档/冷档 schema 迁移、asset effect
+原子性与经济操作的跨区回读也已按对应条目收口。
 
 ## 4. 标准开发动线
 

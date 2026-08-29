@@ -9,12 +9,8 @@ import {
     MAX_PLAYERS,
     MAP_WIDTH,
     MAP_HEIGHT,
-    PLAYER_MOVE_SPEED,
     PLAYER_INIT_HP,
-    clamp,
-    normalize,
     getSkillDef,
-    calcDamage,
     SeededRandom,
     PROTOCOL_VERSION,
     PROJECT_DISPLAY_NAME,
@@ -46,8 +42,20 @@ import {
     emitMatchEvidence,
     MATCH_MODE_CASUAL,
     newMatchId,
-    type MatchEvidence,
 } from "../core/match/matchConsumer";
+import {
+    BALL_MOVE_ROSTER_SIZE,
+    BALL_MOVE_RULESET_ID,
+    BALL_MOVE_RULESET_VERSION,
+    MATCH_EVIDENCE_MAX_ACCEPTED_INPUTS,
+    MATCH_EVIDENCE_SCHEMA_VERSION,
+    snapshotCanonicalMatchState,
+    type CanonicalMatchState,
+    type MatchEvidenceEvent,
+    type MatchEvidenceRosterEntry,
+    type MatchEvidenceV3,
+} from "../core/match/matchEvidence";
+import { buildReplayParticipants } from "../core/match/matchReplay";
 import { trackTask } from "../core/infra/lifecycle";
 import {
     BALL_MOVE_GAME_MODE_ID,
@@ -55,6 +63,13 @@ import {
     type GameMode,
     type GameModeContext,
 } from "./GameMode";
+import {
+    advanceBallMovePlayers,
+    applyBallMoveCast,
+    applyBallMoveDirection,
+    resetBallMovePlayers,
+    type BallMoveMotionAnchor,
+} from "./ballMoveRules";
 
 // demo 昵称池（原 mock/data，mock 层删除后归本房间私有；真实项目从档案取昵称）
 const NICK_PREFIX = ["快乐", "无敌", "神秘", "暴走", "咸鱼", "低调", "闪电", "锦鲤"];
@@ -141,7 +156,7 @@ const MAX_INPUTS_PER_SOURCE = 256;
  * must fail closed once the cap is reached rather than silently dropping an
  * input that would make the replay evidence incomplete.
  */
-export const MAX_ACCEPTED_INPUTS = 16_384;
+export const MAX_ACCEPTED_INPUTS = MATCH_EVIDENCE_MAX_ACCEPTED_INPUTS;
 
 /** 可替换的单调时间源。默认使用 Colyseus room clock。 */
 export type GameRoomClock = (() => number) | { now?: () => number; currentTime?: number };
@@ -172,7 +187,7 @@ export interface GameRoomRuntimeOptions {
     /** Optional ruleset; transport/admission remains owned by GameRoom. */
     mode?: GameMode<GameRoomState>;
     /** Test/embedded override for durable match evidence emission. */
-    evidenceEmitter?: (evidence: MatchEvidence) => Promise<unknown>;
+    evidenceEmitter?: (evidence: MatchEvidenceV3) => Promise<unknown>;
     /** Test/replay override for the accepted-input evidence cap. */
     maxAcceptedInputs?: number;
 }
@@ -199,7 +214,7 @@ function normalizeSeed(seed: number | undefined): number {
 
 function normalizeFixedStep(step: number | undefined): number {
     return typeof step === "number"
-        && Number.isFinite(step)
+        && Number.isSafeInteger(step)
         && step >= 1
         && step <= 1000
         && Math.round(1000 / step) <= MAX_WELCOME_TICK_RATE
@@ -346,7 +361,7 @@ function snapshotInjectedInput(input: unknown): GameRoomInput | undefined {
  *  - 玩家进出：随机出生点 + demo 昵称（真实项目从档案取）
  *  - 移动：客户端发方向输入，服务端按逻辑帧积分位置
  *  - 技能：使用 shared 战斗公式结算伤害并广播
- *  - 结算（服务端框架 M8a）：存活 ≤1 → Settle + 证据链 XADD stream:match:v2
+ *  - 结算（服务端框架 M8a）：存活 ≤1 → Settle + 可重放证据链 XADD stream:match:v3
  *    （消费落库见 core/match/matchConsumer）
  */
 export class GameRoom extends Room {
@@ -369,10 +384,9 @@ export class GameRoom extends Room {
     private readonly startLockTimeoutMs: number;
     private readonly maxAcceptedInputs: number;
     private simulationAccumulatorMs = 0;
-    private simulationTimeMs = 0;
     private readonly runtimeClock: () => number;
     private readonly matchIdFactory: () => string;
-    private readonly evidenceEmitter: (evidence: MatchEvidence) => Promise<unknown>;
+    private readonly evidenceEmitter: (evidence: MatchEvidenceV3) => Promise<unknown>;
     /** Mode may be selected by the validated onCreate options for production
      * rooms; tests can still inject an exact mode through the constructor. */
     private mode: GameMode<GameRoomState> | null;
@@ -383,6 +397,10 @@ export class GameRoom extends Room {
     private inputSource?: GameRoomInputSource;
     private readonly injectedInputs: GameRoomInput[] = [];
     private readonly acceptedInputSequence: AcceptedGameInput[] = [];
+    private readonly matchEvidenceEvents: MatchEvidenceEvent[] = [];
+    private readonly motionAnchors = new Map<string, BallMoveMotionAnchor>();
+    private initialRoster: MatchEvidenceRosterEntry[] = [];
+    private initialMatchState: CanonicalMatchState | null = null;
     private readonly messageBudget = new Map<string, { windowStart: number; count: number }>();
     private startPromise: Promise<boolean> | null = null;
     private startAbort: { generation: number; reject: (reason: unknown) => void } | null = null;
@@ -402,10 +420,7 @@ export class GameRoom extends Room {
     private participantUserId = new Map<string, string>();
     /** 死亡顺序（sessionId，先死在前）；结算名次 = 存活者优先、其余按死亡逆序 */
     private deathOrder: string[] = [];
-    /** 中途退房者的昵称快照（state.players 里已删，结算证据还需要名字） */
-    private departedNames = new Map<string, string>();
-    /** 开局时刻（clock 毫秒），证据 elapsedMs 用 */
-    private matchStartMs = 0;
+    private readonly deaths = new Set<string>();
 
     constructor(options: GameRoomRuntimeOptions = {}) {
         super();
@@ -586,19 +601,11 @@ export class GameRoom extends Room {
             if (this.modeMessage(C2S.Move, client, msg)) return;
             const player = this.state.players.get(client.sessionId);
             if (!player || !player.alive) return;
-            const dir = normalize(msg.dirX, msg.dirY);
-            const recorded = this.recordInput({
-                type: "move",
-                sessionId: client.sessionId,
-                dirX: dir.x,
-                dirY: dir.y,
-            });
-            if (!recorded) {
+            if (!this.hasInputCapacity()) {
                 this.sendError(client, ErrorCode.BadRequest);
                 return;
             }
-            player.dirX = dir.x;
-            player.dirY = dir.y;
+            this.acceptMoveInput(client.sessionId, msg.dirX, msg.dirY);
         },
 
         [C2S.CastSkill]: (client: Client, raw: ICastSkillReq) => {
@@ -607,18 +614,7 @@ export class GameRoom extends Room {
             if (this.modeMessage(C2S.CastSkill, client, msg)) return;
             const player = this.state.players.get(client.sessionId);
             if (!player || !player.alive) return;
-            if (!this.hasInputCapacity()) {
-                this.sendError(client, ErrorCode.BadRequest);
-                return;
-            }
-            const accepted = this.handleCastSkill(client, msg);
-            if (!accepted) return;
-            this.recordInput({
-                type: "castSkill",
-                sessionId: client.sessionId,
-                skillId: msg.skillId,
-                ...(msg.targetId === undefined ? {} : { targetId: msg.targetId }),
-            });
+            this.handleCastSkill(client, msg);
         },
 
         [C2S.Chat]: (client: Client, raw: IChatReq) => {
@@ -722,7 +718,7 @@ export class GameRoom extends Room {
      * 故区是**房级常量**，⛔ 不需要像 LobbyRoom 那样每消息 `zoneCtx.run`。
      *
      * ⚠ 缺省 0 = 大混服/单形态（老客户端不带 sId）。
-     * ⚠ **为什么现在就要存它，哪怕本房还没有按区的读写**：收局证据一旦 XADD 进 `stream:match:v2`，
+     * ⚠ **为什么现在就要存它，哪怕本房还没有按区的读写**：收局证据一旦 XADD 进 `stream:match:v3`，
      * 房间就 dispose 了 —— 那时再想知道"这局属于哪个区"**无处可查**。发奖（U6）要按区记账
      * （`deriveOpId(uid, sId, …)` 把 sId 编进幂等键），拿错区 = 钱记到别的区且幂等键错误、重发也修不回。
      */
@@ -878,18 +874,22 @@ export class GameRoom extends Room {
         }
         if (this.disposed) return;
         const player = this.state.players.get(client.sessionId);
+        const leftDuringMatch = player !== undefined && this.state.phase === GamePhase.Playing;
+        const acceptedTick = this.state.tick;
+        if (leftDuringMatch) this.recordLeaveEvent(client.sessionId, acceptedTick);
         if (player && this.state.phase === GamePhase.Playing) {
-            // 结算证据还需要退房者的名字——无论死活都先快照（state.players 马上要删）
-            this.departedNames.set(client.sessionId, player.name);
             // 活着退房视为阵亡（M8a：名次/证据完整性要求每个参与者都有归宿）；已死者已在 deathOrder
             if (player.alive) this.recordDeath(client.sessionId);
         }
         // Waiting 离开没有结算证据需求，参与者快照也必须删除；Playing/Settle
         // 则保留 participantUserId，供退房者的最终名次回读 uid。
         this.removePlayer(client.sessionId, this.state.phase === GamePhase.Waiting);
+        // Freeze phase/evidence before awaiting extension cleanup. Otherwise a
+        // slow onLeave hook leaves a one-player room in Playing, allowing ticks
+        // or inputs after the authoritative leave event.
+        this.maybeSettle();
         await this.releaseModeAdmission(client);
         console.log(`[GameRoom ${this.roomId}] ${client.sessionId} 离开（${consented ? "主动" : `code=${code}，宽限已过`}），剩余 ${this.state.players.size} 人`);
-        this.maybeSettle();
     }
 
     onDispose(): Promise<void> {
@@ -916,13 +916,17 @@ export class GameRoom extends Room {
                 this.messageBudget.clear();
                 this.injectedInputs.length = 0;
                 this.acceptedInputSequence.length = 0;
+                this.matchEvidenceEvents.length = 0;
+                this.motionAnchors.clear();
+                this.initialRoster = [];
+                this.initialMatchState = null;
                 this.inputSource = undefined;
                 this.sessionUserId.clear();
                 this.userSessionId.clear();
                 this.participantUserId.clear();
                 this.modeAdmissions.clear();
                 this.deathOrder = [];
-                this.departedNames.clear();
+                this.deaths.clear();
                 console.log(`[GameRoom ${this.roomId}] 销毁`);
             }
         });
@@ -985,6 +989,7 @@ export class GameRoom extends Room {
             // after its start hook succeeds, keeping Waiting -> Playing atomic.
             await this.requireMode().onMatchStart?.(this.modeContext());
             if (!this.isGenerationActive(generation)) throw new Error("room disposed during mode start");
+            this.captureInitialEvidenceState();
             this.state.phase = GamePhase.Playing;
             return true;
         } catch (error) {
@@ -1087,14 +1092,15 @@ export class GameRoom extends Room {
     private initializeMatchState(): void {
         this.state.tick = 0;
         this.state.matchId = this.matchIdFactory();
-        this.matchStartMs = this.now();
         this.simulationAccumulatorMs = 0;
-        this.simulationTimeMs = 0;
         this.deathOrder = [];
-        this.departedNames.clear();
+        this.deaths.clear();
         this.messageBudget.clear();
         this.acceptedInputSequence.length = 0;
+        this.matchEvidenceEvents.length = 0;
         this.injectedInputs.length = 0;
+        this.initialRoster = [];
+        this.initialMatchState = null;
         this.rng = SeededRandom.stream(this.matchSeed, "match");
 
         // 只保留本次正式参与者的 uid 快照；活动双向索引由 onJoin/onLeave 维护，
@@ -1104,39 +1110,55 @@ export class GameRoom extends Room {
         }
 
         // 出生点在正式 RNG 流中重新生成，因而等待期的展示 RNG/历史不会改变本局初始状态。
+        resetBallMovePlayers(this.state.players, this.motionAnchors, this.rng);
+    }
+
+    private captureInitialEvidenceState(): void {
+        const roster: MatchEvidenceRosterEntry[] = [];
         this.state.players.forEach((player, sessionId) => {
-            player.id = sessionId;
-            player.hp = PLAYER_INIT_HP;
-            player.maxHp = PLAYER_INIT_HP;
-            player.alive = true;
-            player.dirX = 0;
-            player.dirY = 0;
-            player.lastCastAt = {};
-            player.level = 1;
-            player.x = this.rng.nextInt(100, Math.max(101, MAP_WIDTH - 100));
-            player.y = this.rng.nextInt(100, Math.max(101, MAP_HEIGHT - 100));
+            roster.push({
+                sessionId,
+                userId: this.participantUserId.get(sessionId) ?? null,
+                name: player.name,
+            });
         });
+        if (roster.length !== BALL_MOVE_ROSTER_SIZE) {
+            throw new Error(`ballMove initial roster must contain ${BALL_MOVE_ROSTER_SIZE} players`);
+        }
+        this.initialRoster = roster;
+        this.initialMatchState = snapshotCanonicalMatchState(
+            {
+                tick: this.state.tick,
+                phase: GamePhase.Playing,
+                matchId: this.state.matchId,
+                players: this.state.players,
+            },
+            roster,
+            this.motionAnchors,
+        );
     }
 
     private rollbackMatchState(): void {
         this.state.phase = GamePhase.Waiting;
         this.state.matchId = "";
         this.state.tick = 0;
-        this.matchStartMs = 0;
         this.simulationAccumulatorMs = 0;
-        this.simulationTimeMs = 0;
         this.deathOrder = [];
-        this.departedNames.clear();
+        this.deaths.clear();
         this.messageBudget.clear();
         this.acceptedInputSequence.length = 0;
+        this.matchEvidenceEvents.length = 0;
         this.injectedInputs.length = 0;
+        this.motionAnchors.clear();
+        this.initialRoster = [];
+        this.initialMatchState = null;
         this.state.players.forEach((player) => {
             player.hp = PLAYER_INIT_HP;
             player.maxHp = PLAYER_INIT_HP;
             player.alive = true;
             player.dirX = 0;
             player.dirY = 0;
-            player.lastCastAt = {};
+            player.lastCastTick = {};
             player.level = 1;
         });
     }
@@ -1147,14 +1169,7 @@ export class GameRoom extends Room {
         this.applyInjectedInputs(this.state.tick);
         if (this.state.phase !== GamePhase.Playing) return;
         this.state.tick++;
-        const seconds = this.fixedStepMs / 1000;
-        this.state.players.forEach((player) => {
-            if (!player.alive) return;
-            if (player.dirX === 0 && player.dirY === 0) return;
-            player.x = clamp(player.x + player.dirX * PLAYER_MOVE_SPEED * seconds, 0, MAP_WIDTH);
-            player.y = clamp(player.y + player.dirY * PLAYER_MOVE_SPEED * seconds, 0, MAP_HEIGHT);
-        });
-        this.simulationTimeMs += this.fixedStepMs;
+        advanceBallMovePlayers(this.state.players, this.motionAnchors, this.state.tick, this.fixedStepMs);
         const mode = this.requireMode();
         try {
             const result = mode.onStep?.({ ...this.modeContext(), dtMs: this.fixedStepMs });
@@ -1195,6 +1210,7 @@ export class GameRoom extends Room {
     /** 活动 session/uid 双向索引的唯一删除点。 */
     private removePlayer(sessionId: string, removeParticipant: boolean): void {
         this.state.players.delete(sessionId);
+        this.motionAnchors.delete(sessionId);
         const userId = this.sessionUserId.get(sessionId);
         this.sessionUserId.delete(sessionId);
         if (userId !== undefined && this.userSessionId.get(userId) === sessionId) {
@@ -1205,25 +1221,30 @@ export class GameRoom extends Room {
     }
 
     private recordDeath(sessionId: string): void {
-        if (!this.deathOrder.includes(sessionId)) this.deathOrder.push(sessionId);
+        if (this.deaths.has(sessionId)) return;
+        this.deaths.add(sessionId);
+        this.deathOrder.push(sessionId);
     }
 
     private hasInputCapacity(): boolean {
         return this.acceptedInputSequence.length < this.maxAcceptedInputs;
     }
 
-    private recordInput(input: GameRoomInput): boolean {
-        if (!this.hasInputCapacity()) {
-            // Do not mutate the input object or gameplay state after evidence
-            // storage is exhausted. Callers perform this check before any
-            // side effects; the guard remains here for replay adapters.
-            return false;
-        }
+    private recordAcceptedInput(input: GameRoomInput, event: MatchEvidenceEvent): void {
+        if (!this.hasInputCapacity()) throw new Error("accepted input capacity invariant violated");
         this.acceptedInputSequence.push({
             ...input,
-            acceptedTick: this.state.tick,
+            acceptedTick: event.acceptedTick,
         });
-        return true;
+        this.matchEvidenceEvents.push(event);
+    }
+
+    private recordLeaveEvent(sessionId: string, acceptedTick: number): void {
+        const reservedCapacity = this.maxAcceptedInputs + BALL_MOVE_ROSTER_SIZE;
+        if (this.matchEvidenceEvents.length >= reservedCapacity) {
+            throw new Error("leave evidence capacity invariant violated");
+        }
+        this.matchEvidenceEvents.push({ type: "leave", sessionId, acceptedTick });
     }
 
     /** 注入一条已经过调用方验证的输入；非法输入直接拒绝，不进入 replay 序列。 */
@@ -1338,26 +1359,58 @@ export class GameRoom extends Room {
         const player = this.state.players.get(input.sessionId);
         if (!player || !player.alive || this.state.phase !== GamePhase.Playing) return;
         if (input.type === "move") {
-            const dir = normalize(input.dirX, input.dirY);
-            if (!this.recordInput({ type: "move", sessionId: input.sessionId, dirX: dir.x, dirY: dir.y, ...(input.tick === undefined ? {} : { tick: input.tick }) })) return;
-            player.dirX = dir.x;
-            player.dirY = dir.y;
+            if (!this.hasInputCapacity()) return;
+            this.acceptMoveInput(input.sessionId, input.dirX, input.dirY, input.tick);
             return;
         }
-        if (!this.hasInputCapacity()) return;
         const client = this.clients.find((candidate) => candidate.sessionId === input.sessionId);
-        const accepted = this.handleCastSkill(client, input, input.sessionId);
-        if (!accepted) return;
-        this.recordInput({
-            type: "castSkill",
-            sessionId: input.sessionId,
-            skillId: input.skillId,
-            ...(input.targetId === undefined ? {} : { targetId: input.targetId }),
-            ...(input.tick === undefined ? {} : { tick: input.tick }),
-        });
+        this.handleCastSkill(client, input, input.sessionId, input.tick);
     }
 
-    private handleCastSkill(client: Client | undefined, msg: ICastSkillReq, sessionIdOverride?: string): boolean {
+    private acceptMoveInput(sessionId: string, dirX: number, dirY: number, sourceTick?: number): boolean {
+        if (this.disposed || this.state.phase !== GamePhase.Playing || !this.hasInputCapacity()) return false;
+        const player = this.state.players.get(sessionId);
+        const motion = this.motionAnchors.get(sessionId);
+        if (!player?.alive || !motion) return false;
+        const acceptedTick = this.state.tick;
+        applyBallMoveDirection(
+            player,
+            motion,
+            dirX,
+            dirY,
+            acceptedTick,
+            this.fixedStepMs,
+        );
+        // Evidence preserves the accepted wire input. Replay applies the same
+        // normalization exactly once; storing the live normalized vector here
+        // would normalize diagonal input twice and change its final bits.
+        const evidenceDirX = Object.is(dirX, -0) ? 0 : dirX;
+        const evidenceDirY = Object.is(dirY, -0) ? 0 : dirY;
+        this.recordAcceptedInput(
+            {
+                type: "move",
+                sessionId,
+                dirX: evidenceDirX,
+                dirY: evidenceDirY,
+                ...(sourceTick === undefined ? {} : { tick: sourceTick }),
+            },
+            {
+                type: "move",
+                sessionId,
+                dirX: evidenceDirX,
+                dirY: evidenceDirY,
+                acceptedTick,
+            },
+        );
+        return true;
+    }
+
+    private handleCastSkill(
+        client: Client | undefined,
+        msg: ICastSkillReq,
+        sessionIdOverride?: string,
+        sourceTick?: number,
+    ): boolean {
         // 只有 Playing 能改变模拟；入口 handler 已做 phase 闸，注入/replay 也必须兜底。
         if (this.disposed || this.state.phase !== GamePhase.Playing) return false;
         const sessionId = client?.sessionId ?? sessionIdOverride;
@@ -1371,30 +1424,45 @@ export class GameRoom extends Room {
             this.sendS2C(client, S2C.Error, err);
             return false;
         }
-
-        // 冷却检查（服务端内部字段，不同步）
-        const now = this.simulationTimeMs;
-        const lastAt = caster.lastCastAt[skill.id];
-        if (lastAt !== undefined && now - lastAt < skill.cooldownMs) return false;
-        caster.lastCastAt[skill.id] = now;
-
-        // 用双端共享公式结算伤害
-        const damage = calcDamage(skill, caster.level, this.rng.next());
-
-        const target = msg.targetId ? this.state.players.get(msg.targetId) : undefined;
-        if (target && target.alive) {
-            target.hp = clamp(target.hp - damage, 0, target.maxHp);
-            if (target.hp <= 0) {
-                target.alive = false;
-                this.recordDeath(target.id);
-            }
+        if (!this.hasInputCapacity()) {
+            if (client) this.sendError(client, ErrorCode.BadRequest);
+            return false;
         }
+
+        const acceptedTick = this.state.tick;
+        const result = applyBallMoveCast(
+            this.state.players,
+            this.rng,
+            acceptedTick,
+            this.fixedStepMs,
+            sessionId,
+            skill.id,
+            msg.targetId,
+        );
+        if (!result) return false;
+        this.recordAcceptedInput(
+            {
+                type: "castSkill",
+                sessionId,
+                skillId: skill.id,
+                ...(msg.targetId === undefined ? {} : { targetId: msg.targetId }),
+                ...(sourceTick === undefined ? {} : { tick: sourceTick }),
+            },
+            {
+                type: "castSkill",
+                sessionId,
+                skillId: skill.id,
+                targetId: msg.targetId ?? null,
+                acceptedTick,
+            },
+        );
+        if (result.diedSessionId !== undefined) this.recordDeath(result.diedSessionId);
 
         const res: ISkillResultRes = {
             casterId: sessionId,
             skillId: skill.id,
             targetId: msg.targetId,
-            damage,
+            damage: result.damage,
         };
         this.broadcastS2C(S2C.SkillResult, res);
         this.maybeSettle();
@@ -1411,63 +1479,61 @@ export class GameRoom extends Room {
         if (alive <= 1) this.settle();
     }
 
-    /**
-     * 收局：phase → Settle + 证据链生产（02·P7）。一局一条 XADD `stream:match:v2`，
-     * 含全部名次 + verifier 重放所需输入（seed 等，09·K5）。emitMatchEvidence 内部吞错——
-     * XADD 失败只告警，⛔ 不阻塞收局。落库消费见 gameplay/matchConsumer（consumer group `settle`）。
-     * 纯游客局（无任何绑定账号）无落库效应、审计无对象 → 不产证据
-     * （也让纯 mock 联调的房间路径不隐性依赖 Redis）。
-     */
+    /** 收局：先冻结 v3 证据，再运行 mode finish hook；XADD 失败不阻塞房间结束。 */
     private settle() {
         if (this.disposed || this.state.phase !== GamePhase.Playing) return;
         this.state.phase = GamePhase.Settle;
         const mode = this.requireMode();
+        const evidence = this.buildMatchEvidence(mode);
         try {
             const result = mode.onFinish?.(this.modeContext());
             if (isPromiseLike(result)) this.observeModePromise(result, "finish");
         } catch (error) {
             console.error(`[GameRoom ${this.roomId}] mode ${mode.id} finish hook failed`, error);
         }
-        // 结算耗时取 fixed-step 逻辑时钟，而不是 wall-clock/dt；注入同一 seed、步长和
-        // accepted inputs 的回放会得到完全相同的 elapsedMs。
-        const elapsedMs = this.now() >= this.matchStartMs
-            ? Math.max(0, this.simulationTimeMs)
-            : 0;
+        if (!evidence) return;
+        console.log(
+            `[GameRoom ${this.roomId}] 收局 matchId=${this.state.matchId}：`
+            + evidence.participants.map((participant) => `#${participant.place} ${participant.name}`).join("，"),
+        );
+        void trackTask("game:match-evidence", this.evidenceEmitter(evidence));
+    }
 
-        // 名次：存活者在前，其余按死亡逆序（后死名次高）
-        const order: { sessionId: string; name: string; survived: boolean }[] = [];
-        this.state.players.forEach((p, sid) => {
-            if (p.alive) order.push({ sessionId: sid, name: p.name, survived: true });
-        });
-        for (let i = this.deathOrder.length - 1; i >= 0; i--) {
-            const sid = this.deathOrder[i];
-            const name = this.state.players.get(sid)?.name ?? this.departedNames.get(sid) ?? "";
-            order.push({ sessionId: sid, name, survived: false });
+    private buildMatchEvidence(mode: GameMode<GameRoomState>): MatchEvidenceV3 | null {
+        const ruleset = mode.matchEvidenceRuleset;
+        if (ruleset?.id !== BALL_MOVE_RULESET_ID || ruleset.version !== BALL_MOVE_RULESET_VERSION) return null;
+        const initialState = this.initialMatchState;
+        if (!initialState
+            || this.initialRoster.length !== BALL_MOVE_ROSTER_SIZE
+            || this.matchEvidenceEvents.length < 1
+            || !this.initialRoster.some((entry) => entry.userId !== null)) {
+            return null;
         }
-        console.log(`[GameRoom ${this.roomId}] 收局 matchId=${this.state.matchId}：${order.map((o, i) => `#${i + 1} ${o.name}`).join("，")}`);
-
-        // The generic payload/ranking semantics belong to ballMove. New modes
-        // must opt in explicitly rather than silently writing incompatible
-        // results under MATCH_MODE_CASUAL.
-        if (!mode.emitsGenericMatchEvidence
-            || !order.some((o) => this.participantUserId.has(o.sessionId))) return;
-        void trackTask("game:match-evidence", this.evidenceEmitter({
+        const elapsedMs = this.state.tick * this.fixedStepMs;
+        const participants = buildReplayParticipants(
+            this.initialRoster,
+            this.state.players,
+            this.deathOrder,
+            elapsedMs,
+        );
+        if (participants.length !== this.initialRoster.length) return null;
+        return {
+            schemaVersion: MATCH_EVIDENCE_SCHEMA_VERSION,
             matchId: this.state.matchId,
-            sId: this.sId, // ⚠ 房级区（见 onCreate）：证据发出后房间即 dispose，⛔ 此处不带就永久丢失
-            mode: MATCH_MODE_CASUAL, // 排位房型接入后按房型切 MATCH_MODE_RANKED
+            sId: this.sId,
+            mode: MATCH_MODE_CASUAL,
+            ruleset: { id: BALL_MOVE_RULESET_ID, version: BALL_MOVE_RULESET_VERSION },
             seed: this.matchSeed,
-            mapIndex: 0, // 单地图演示
+            fixedStepMs: this.fixedStepMs,
+            mapIndex: 0,
             loadout: null,
-            injectWaves: [], // 本作暂无服务端注入事件；有则仿 Arthur VersusRoom 记 injectLog
-            participants: order.map((o, i) => ({
-                sessionId: o.sessionId,
-                userId: this.participantUserId.get(o.sessionId) ?? null, // 游客 null
-                name: o.name,
-                place: i + 1,
-                round: 0, // 本作无波次概念
-                elapsedMs,
-                survived: o.survived,
-            })),
-        }));
+            initialRoster: this.initialRoster.map((entry) => ({ ...entry })),
+            initialState,
+            events: this.matchEvidenceEvents.map((event) => ({ ...event })),
+            finalTick: this.state.tick,
+            elapsedMs,
+            finalState: snapshotCanonicalMatchState(this.state, this.initialRoster, this.motionAnchors),
+            participants,
+        };
     }
 }

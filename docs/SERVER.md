@@ -190,8 +190,8 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
 - WebPlatform strict session verify、协议版本与区号复核。
 - `filterBy(["sId", "mode"])` 的撮合隔离及房内再次校验；Game join 的 `mode` 必填且由 shared 校验。
 - Colyseus Schema 状态、服务端逻辑帧移动、技能公式、聊天和重连宽限。
-- 两名玩家后进入 Playing；只有显式声明兼容通用 casual evidence 的 mode 才在收局后 best-effort 写证据，
-  `idle` 不会污染 `ballMove` 战绩。
+- 两名玩家后进入 Playing；只有显式声明受支持 `matchEvidenceRuleset` 的 mode 才生成对应证据。当前仅
+  `ballMove@1` 生产 v3，`idle` 不会污染 `ballMove` 战绩。
 - onCreate 拒绝非法区号（WrongServer），同一 userId 禁止重复入座（AlreadyInRoom）。
 
 它不是通用玩法层。当前 Demo 已收口以下边界：
@@ -206,12 +206,19 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
 - mode 在 `onCreate` 验证 options 后才实例化；`onMatchStart`、`onLeave`、`onDispose` 可等待且失败被观察，
   admission 后开局失败会 exactly-once 归还该 client 的 mode 资源。
 - session → user 双向索引在加入、离开和 Waiting 回滚路径统一维护；断线宽限成功不会提前记入死亡序。
+- `ballMove@1` 正式开局冻结有序 roster 与 canonical initial state；v3 记录 schema/ruleset、seed/fixed step、
+  map/loadout、按接受顺序排列且带权威 `acceptedTick` 的 move/cast/leave、final state 与 participants。致胜 cast
+  在 settle 前入链，Playing leave 在死亡簿记和删除前入链，并在任何可等待 leave hook 前同步冻结终态。
+- accepted gameplay input 上限为 16,384；达到上限后先拒绝后续 move/cast 及其玩法副作用，leave 使用固定
+  roster 余量，避免产生缺输入却看似完整的证据。
 
 仍有以下明确限制：
 
 - `ballMove` evidence 的写入是受进程任务跟踪的 detached best-effort 操作；Redis 失败返回 `null`，不会阻止收局。
-- accepted input 序列目前只保存在房间内存中，未随 match evidence 发出；现有 evidence 字段不足以宣称可
-  确定性重放整局。
+- v3 在生产和消费两侧都 exact validate，并以 `ballMove@1` 重算 initial/final state 与 participants；motion
+  anchor 直接解析 tick gap，复杂度为 `O(events + players)`，不会按 final tick 逐帧循环。权威时间轴与冷却
+  使用 tick；`elapsedMs = finalTick * fixedStepMs` 只是确定性派生值。该 exact ruleset 不代表通用玩法 evidence。
+- v3 只能证明仓内输入重放与结果核对，不提供防篡改、防作弊、producer 必达或 exactly-once 送达保证。
 
 正式玩法扩展仍需在该 Demo 边界之上补齐 admission、phase、input validation、reset/settle 和 evidence
 契约，再复用该房间模式；当前 Demo 的运行时闸不等于通用玩法层已经交付。
@@ -345,8 +352,10 @@ lazy thaw 在任何 Redis/MySQL identity 改动前完成不可变迁移，future
 - 在线表只登记 Lobby 连接，并按区维护 guild 索引。
 - mailwake/kick 的通用 consumer 使用每节点独立 XREAD 游标；match settle 使用 consumer group，不能把
   两种消费语义混写成同一种。
-- match evidence 为 legacy+v2 双流转制：v2 key 把完整 legacy key 编入 hash-tag 保证同槽，consumer
-  一次 XREADGROUP 双读两条流；v2 条目强制 `schemaVersion=2` 并做顶层与 payload 交叉校验。
+- match evidence 处于 legacy/v2 排空、v3 持续生产的三流迁移期：v2/v3 key 都把完整 legacy key 编入
+  hash-tag，三条来源流物理隔离但同槽；生产只写 `schemaVersion=3` 的 v3，一次 XREADGROUP 等待三流
+  新条目。consumer 对三流分别处理 PEL、`XAUTOCLAIM`、safe `XTRIM MINID` 和 backlog probe；legacy/v2
+  只保留历史兼容读取。
 
 这些是本地事件接缝，不是外部消息系统或送达承诺。
 
@@ -414,12 +423,13 @@ structured-clone、无 IO、无副作用的纯 CPU 工作。周期任务、批�
 - **09·K4–K6**：match ID 与 schema version 稳定；证据输入边界明确；消费幂等、坏条目可追踪，裁剪
   不越过未处理位点。
 
-match consumer 不再把结构或版本损坏的条目直接 ACK 丢弃。来源流与
-`K_STREAM_MATCH_QUARANTINE` 固定同槽；Lua 先把 `sourceStream`、`sourceId`、group、稳定原因码和原始
-fields 数组写入 quarantine，再 ACK 来源 PEL。v2 producer/consumer 共用 exact payload validator：已声明字段
-逐项校验，尚无业务 schema 的 ranked `loadout` 也必须是不会被序列化静默改写的 canonical JSON；legacy
-流保留历史 sId 规范化接受域。consumer owner 含 hostname 与 PID，同主机多 worker 不共享 PEL owner，
-崩溃残留由 `XAUTOCLAIM` 接管。
+match consumer 不再把结构、版本或 replay 损坏的条目直接 ACK 丢弃。legacy/v2/v3 来源流与
+`K_STREAM_MATCH_QUARANTINE` 固定同槽；Lua 先把 `sourceStream`、`sourceId`、`sourceKind`、group、稳定原因码
+和原始 fields 数组写入 quarantine，再 ACK 来源 PEL。v2 只按冻结的历史 exact shape/值域校验排空，尚无
+业务 schema 的 ranked `loadout` 也必须是 canonical JSON；legacy 保留历史 sId 规范化接受域。v3 另校验
+24 MiB parse budget、canonical JSON、完整 exact contract，并实际重放核对初态、终态与 participants；producer
+也在 XADD 前执行同一 validate + replay。三条来源流各自维护 PEL/claim/trim/depth，consumer owner 含
+hostname 与 PID，同主机多 worker 不共享 PEL owner，崩溃残留由 `XAUTOCLAIM` 接管。
 quarantine 不属于自动 `XTRIM` 范围，非空或 key 类型/权限异常时由默认深度探针独立告警。处置时先根据
 `rawFields` 修复并 XADD 回正确来源流，确认 settle worker 已写入 `match_results` 或命中 `match_index`
 幂等闸后，才可 XDEL 对应 quarantine 条目；不得直接清空隔离流。
@@ -444,6 +454,7 @@ Game HTTP request schema 已由 shared validator 同源生成并直接注入带 
 | Lobby RPC 请求/响应/消息全集 | `apps/shared/src/protocol/lobbyRpc` |
 | RPC 错误码 | `apps/shared/src/protocol/lobbyRpc/envelope.ts` 的 `RPC_ERR_CODES`（15 个）；异常→码映射在 `core/errors.ts` 的 `ERR_MAP`（覆盖 11 个，其余落 `INTERNAL` 兜底）。其中 `GRANTING` 当前没有任何产出点，`AUTH_EPOCH_STALE` 服务端已停产、只保留客户端分支，`ORDER_MISMATCH` 只由可选的 `http/pay/wxNotify.ts` 直接返回，不经 `ERR_MAP` |
 | Colyseus state 纯数据镜像 | `apps/shared/src/protocol/state.ts`；运行时 Schema 在 `rooms/schema` |
+| `ballMove` v3 evidence schema/validator/replay | `apps/server/src/core/match/matchEvidence.ts`、`matchReplay.ts`；流生产消费在 `matchConsumer.ts` |
 | Redis key | `apps/server/src/core/infra/keys.ts` |
 | Asset effect schema/validator | `apps/shared/src/protocol/lobbyRpc/economy.ts`；Lua 镜像在 `apps/server/src/core/infra/redisScripts.ts` |
 | 跨模块服务端配置 | `apps/server/src/core/infra/config.ts`；少量模块私有常量仍在实现文件内 |

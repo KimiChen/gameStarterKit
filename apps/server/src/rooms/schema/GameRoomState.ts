@@ -20,8 +20,8 @@ export class PlayerState extends Schema {
     dirX: number = 0;
     /** Normalized movement input on the y axis */
     dirY: number = 0;
-    /** Last skill cast timestamps in milliseconds */
-    lastCastAt: Record<number, number> = {};
+    /** Last accepted skill cast ticks */
+    lastCastTick: Record<number, number> = {};
     /** Demo level used by the damage formula */
     level: number = 1;
 }

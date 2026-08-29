@@ -74,10 +74,10 @@
           "description": "Normalized movement input on the y axis"
         },
         {
-          "name": "lastCastAt",
+          "name": "lastCastTick",
           "kind": "numberRecord",
           "default": "empty",
-          "description": "Last skill cast timestamps in milliseconds"
+          "description": "Last accepted skill cast ticks"
         },
         {
           "name": "level",
