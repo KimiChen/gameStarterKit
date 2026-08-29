@@ -397,8 +397,12 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
   `commandInvokesEntry` 要求 segment 首 token 属 `node|npm|npx|tsx|sh|bash` 或就是入口路径本身。
   正则本身一行未改。（落地时踩到一个 TDZ：启动器表若写成模块级 `const`，会因驱动段先于该声明执行而
   `Cannot access before initialization`，故内联在函数内。）
-  **验收口径收窄**（不假装解决了不可解的问题）：新判定只证明调用处于**可执行位置**（不是 `echo` 参数、注释、
-  引号内），**不证明运行时可达**。
+  **验收口径收窄**（不假装解决了不可解的问题）：新判定只证明调用出现在**引号外、注释外、非命令替换内、
+  非 heredoc 内**的可执行段中，且该调用**就是这一段的命令头**（`commandReferences`），或**不落在
+  `-e/--eval/-p/--print/-c/--check` 这类不执行入口的 flag 之后**（`commandInvokesEntry`）。
+  **不保证**：运行时可达（`false && …`、`exit` 后死代码）、变量展开（`$CMD run x`）、
+  `eval`/`source`/`xargs`/别名/任意 wrapper、`sh -c` 内联脚本的内层语义、以及启动器**参数位**里出现的
+  入口路径（`npm exec cowsay <entry>`）。真 shell 解析器 + 运行时语义才能判定这些，静态不可判。
   四条反例：`echo` 伪调用、`#` 注释伪调用（与 echo 分开写，否则后人只给 echo 加特判就会以为修好了）、
   `verify:core` 链路里 echo 掉 `verify:vendor`（守既有消费点）、echo 掉 relayer 的 launch 入口。
   变异推演三条：撤回 `commandReferences` 的可执行位判定 → 3 例红；把分隔符退化成「只切换行」→ 2 例红

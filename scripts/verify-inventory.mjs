@@ -712,11 +712,48 @@ function commandBase(command) {
  * `exit` 之后的死代码不做可达性判定——shell 可达性静态不可判定。
  */
 function executableSegments(script) {
-  return script.split(/&&|\|\||[;|\n]/u).map((segment) => segment.trim()).filter(Boolean);
+  // heredoc/herestring 的内容边界静态不可判定，整段放弃（失败关闭）。
+  if (script.includes("<<")) return [];
+  const segments = [];
+  let current = "";
+  let unparsable = false;
+  const push = () => { const trimmed = current.trim(); if (trimmed) segments.push(trimmed); current = ""; };
+  for (let index = 0; index < script.length; index += 1) {
+    const ch = script[index];
+    // 转义与引号内的内容整体折叠成哨兵：它们既不是命令头，也不该让内部的分隔符切段。
+    if (ch === "\\") { index += 1; current += "\u0000"; continue; }
+    if (ch === "'" || ch === '"') {
+      const close = script.indexOf(ch, index + 1);
+      if (close < 0) { unparsable = true; break; }
+      const inner = script.slice(index + 1, close);
+      if (ch === '"' && (inner.includes("`") || inner.includes("$("))) unparsable = true;
+      current += "\u0000";
+      index = close;
+      continue;
+    }
+    // 命令替换会引入静态不可知的命令，整段放弃。
+    if (ch === "`" || (ch === "$" && script[index + 1] === "(")) { unparsable = true; break; }
+    if (ch === "#" && (current === "" || /\s$/u.test(current))) {
+      while (index < script.length && script[index] !== "\n") index += 1;
+      push();
+      continue;
+    }
+    if (ch === ";" || ch === "\n") { push(); continue; }
+    if ((ch === "&" || ch === "|") && script[index + 1] === ch) { index += 1; push(); continue; }
+    if (ch === "|") { push(); continue; }
+    current += ch;
+  }
+  if (unparsable) return [];
+  push();
+  return segments;
+}
+
+function segmentTokens(segment) {
+  return segment.split(/\s+/u).filter(Boolean);
 }
 
 function segmentLeadsWith(segment, binaries) {
-  const first = segment.split(/\s+/u)[0];
+  const first = segmentTokens(segment)[0];
   return first !== undefined && binaries.includes(first);
 }
 
@@ -726,10 +763,15 @@ function commandInvokesEntry(command, entry) {
   const target = repoPath(entry);
   if (typeof script !== "string" || !base || !target) return false;
   const relativeTarget = normalizeRepoPath(path.relative(base, target));
-  const escaped = escapeRegex(relativeTarget);
-  const mention = new RegExp(`(?:^|[\\s;&|])(?:\\./)?${escaped}(?=$|[\\s;&|])`);
+  const isTarget = (token) => token === relativeTarget || token === `./${relativeTarget}`;
   return executableSegments(script).some((segment) => {
-    if (!mention.test(segment)) return false;
+    const tokens = segmentTokens(segment);
+    if (!tokens.some(isTarget)) return false;
+    // 这些 flag 自带内联程序或只做静态检查，出现即判为「未启动」。
+    for (let i = 1; i < tokens.length && tokens[i].startsWith("-"); i += 1) {
+      if (["-e", "--eval", "-p", "--print", "-c", "--check", "-h", "--help", "-v", "--version"]
+        .includes(tokens[i])) return false;
+    }
     // 新增启动器必须显式加入这张表（内联而非模块级 const：驱动段先于此处初始化执行）。
     return segmentLeadsWith(segment, ["node", "npm", "tsx", "sh", "bash"])
       || segmentLeadsWith(segment, [relativeTarget, `./${relativeTarget}`]);
@@ -746,10 +788,14 @@ function commandReferences(command) {
   const rootRe = /npm\s+run\s+([A-Za-z0-9:_-]+)/g;
   for (const segment of executableSegments(script)) {
     if (!segmentLeadsWith(segment, ["npm"])) continue;
+    // 引用必须就是这一段本身的命令头；参数位里的 `npm run x`（`-- npm run x`、
+    // `--silent npm run x`）不是被执行的命令。
     for (const match of segment.matchAll(workspaceRe)) {
+      if (match.index !== 0) continue;
       references.push({ kind: "workspace", workspace: match[1], script: match[2] });
     }
     for (const match of segment.matchAll(rootRe)) {
+      if (match.index !== 0) continue;
       references.push({ kind: "root", script: match[1] });
     }
   }

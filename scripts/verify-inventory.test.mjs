@@ -977,3 +977,122 @@ test("inventory verifier rejects an npx-launched entry", () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("inventory verifier rejects a quoted pseudo-call as coverage", () => {
+  const root = createFixture();
+  try {
+    const packageFile = join(root, "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts["start:server"] = 'echo "ignored; npm --workspace @game/server run start"';
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /workspaceCommandScope\[\d+\]\.supersededBy 并未实际调用 workspace:@game\/server#start/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects an entry mentioned only in a trailing comment", () => {
+  const root = createFixture();
+  try {
+    // 启动器白名单只看首 token，所以「白名单启动器 + 注释里提一嘴入口路径」是最直白的
+    // 盖绿章形态；只有把引号外的 `#` 截断掉，那个路径 token 才会消失。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "bash tools/dev-stack.sh # src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects a command-substitution launch as coverage", () => {
+  const root = createFixture();
+  try {
+    // 命令替换引入静态不可知的命令，整段必须失败关闭。这里刻意让段首仍是白名单启动器，
+    // 否则会被「首 token 不是启动器」提前挡掉，测不到命令替换这一条规则。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "node $(echo --check) src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects a heredoc pseudo-call as coverage", () => {
+  const root = createFixture();
+  try {
+    const packageFile = join(root, "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts["start:server"] = "cat <<EOF\nnpm --workspace @game/server run start\nEOF";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /workspaceCommandScope\[\d+\]\.supersededBy 并未实际调用 workspace:@game\/server#start/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects an argument-position pseudo-call as coverage", () => {
+  const root = createFixture();
+  try {
+    // 引用必须是这一段的命令头；参数位里的 npm run x 不是被执行的命令。
+    const packageFile = join(root, "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    const before = pkg.scripts["verify:core"];
+    pkg.scripts["verify:core"] = before.replace(
+      "npm run verify:vendor",
+      "npm run verify:fgui -- npm run verify:vendor",
+    );
+    assert.notEqual(pkg.scripts["verify:core"], before, "fixture must rewrite the verify:vendor link");
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(root, /未实际覆盖声明的验证命令：root:verify:vendor/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects a non-executing launcher flag as launch", () => {
+  const root = createFixture();
+  try {
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "node --check src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier still accepts launchers with value-taking flags", () => {
+  const root = createFixture();
+  try {
+    // 反向锁：不得把「第一个非 flag token 才是入口」当规则，那会把 node -r reg <entry>
+    // 这类合法启动误判成未启动。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "node --enable-source-maps -r tsx/cjs src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    const result = runVerifier(root);
+    assert.equal(result.status, 0, outputOf(result));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
