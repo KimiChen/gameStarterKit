@@ -276,6 +276,65 @@ test("inventory verifier rejects synchronized removal of a required assistant in
   }
 });
 
+test("inventory verifier rejects a root command removed from both assistant command blocks", () => {
+  const root = createFixture();
+  try {
+    for (const filename of ["AGENTS.md", "CLAUDE.md"]) {
+      const file = join(root, filename);
+      const text = readFileSync(file, "utf8").replace("npm run test:faults:int\n", "");
+      writeFileSync(file, text);
+    }
+    const result = runVerifier(root);
+    const output = outputOf(result);
+    assert.notEqual(result.status, 0, output);
+    for (const doc of ["AGENTS.md", "CLAUDE.md"]) {
+      assert.ok(
+        output.includes(`${doc} 的常用命令登记缺少根命令：test:faults:int`),
+        output,
+      );
+    }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects a newly added undocumented root command", () => {
+  const root = createFixture();
+  try {
+    const packageFile = join(root, "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts["fixture:undocumented"] = "node fixture-undocumented.mjs";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+
+    const result = runVerifier(root);
+    const output = outputOf(result);
+    assert.notEqual(result.status, 0, output);
+    for (const doc of ["AGENTS.md", "CLAUDE.md", "README.md"]) {
+      assert.ok(
+        output.includes(`${doc} 的常用命令登记缺少根命令：fixture:undocumented`),
+        output,
+      );
+    }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects a stale root command in the README command table", () => {
+  const root = createFixture();
+  try {
+    const readme = join(root, "README.md");
+    const text = readFileSync(readme, "utf8").replace(
+      "| `npm run dev` | 启动服务端开发进程 |\n",
+      "| `npm run fixture:stale` | fixture stale command |\n| `npm run dev` | 启动服务端开发进程 |\n",
+    );
+    writeFileSync(readme, text);
+    assertRejected(root, /README\.md 的常用命令登记包含不存在的根命令：fixture:stale/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("inventory verifier rejects synchronized removal of the current plan entry", () => {
   const root = createFixture();
   try {

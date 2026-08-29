@@ -191,7 +191,11 @@
 
 ### P1-09 登记和文档覆盖
 
-- `[不阻塞·待补齐]` `verify:inventory` 不检查 AGENTS/CLAUDE/README 命令表完整性，同类遗漏仍可能再次发生。
+- `[已完成]` `verify:inventory` 以根 `package.json.scripts` 为动态权威集合，只解析 AGENTS/CLAUDE 的
+  `常用本地命令` shell block 与 README 的 `常用开发命令` 表格首列，三处都必须完整登记全部根命令，
+  并拒绝 stale 命令。验收证据：三处均识别 34/34 个根脚本；`npm run test:inventory` 20/20 覆盖
+  同步遗漏、新增未登记与 stale 登记反例；`npm run verify:inventory`、两脚本 `node --check` 及
+  AGENTS/CLAUDE byte-identical 检查通过。
 - `[不阻塞·有意保留]` inventory 与 Markdown 链接检查只覆盖登记表内文档和就近 README，不扫描仓库根的
   散装 Markdown；根目录 `todo-godogen.md` 与本文件因此都不在任何机检覆盖内，其待办与处置见 §6。
 - `[不阻塞·有意保留]` 组合根发现不构建完整 TypeScript import graph，scene 发现不扫描动态 prefab；

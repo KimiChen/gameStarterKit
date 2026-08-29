@@ -85,6 +85,84 @@ function normalizeRepoPath(value) {
   return value.split(path.sep).join("/").replace(/^\.\//, "");
 }
 
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function markdownSection(text, heading, doc) {
+  const headingPattern = new RegExp(`^##[ \\t]+${escapeRegex(heading)}[ \\t]*\\r?$`, "gmu");
+  const matches = [...text.matchAll(headingPattern)];
+  if (matches.length !== 1) {
+    fail(`${doc} 必须且只能包含一个“## ${heading}”章节`);
+    return null;
+  }
+
+  const start = matches[0].index + matches[0][0].length;
+  const remaining = text.slice(start);
+  const nextHeading = remaining.match(/^#{1,2}[ \t]+/mu);
+  return remaining.slice(0, nextHeading?.index ?? remaining.length);
+}
+
+function rootScriptFromCommand(command) {
+  const match = command.trim().match(/^npm[ \t]+run(?:[ \t]+--silent)?[ \t]+([A-Za-z0-9:_-]+)(?:[ \t]|$)/u);
+  return match?.[1] ?? null;
+}
+
+function assistantCommandScripts(text, doc) {
+  const section = markdownSection(text, "常用本地命令", doc);
+  if (section === null) return new Set();
+  const blocks = [...section.matchAll(/^```(?:bash|sh|shell)[ \t]*\r?$([\s\S]*?)^```[ \t]*\r?$/gmu)];
+  if (blocks.length !== 1) {
+    fail(`${doc} 的“常用本地命令”必须且只能包含一个 shell fenced block`);
+    return new Set();
+  }
+
+  const scripts = new Set();
+  for (const line of blocks[0][1].split(/\r?\n/u)) {
+    const script = rootScriptFromCommand(line);
+    if (script) scripts.add(script);
+  }
+  return scripts;
+}
+
+function firstMarkdownTableCell(line) {
+  const match = line.match(/^[ \t]*\|([^|]*)\|/u);
+  return match?.[1]?.trim() ?? null;
+}
+
+function readmeCommandScripts(text) {
+  const section = markdownSection(text, "常用开发命令", "README.md");
+  if (section === null) return new Set();
+  const lines = section.split(/\r?\n/u);
+  const headerIndex = lines.findIndex((line) => firstMarkdownTableCell(line) === "命令");
+  const separator = headerIndex >= 0 ? firstMarkdownTableCell(lines[headerIndex + 1] ?? "") : null;
+  if (headerIndex < 0 || !/^:?-{3,}:?$/u.test(separator ?? "")) {
+    fail("README.md 的“常用开发命令”必须包含以“命令”为首列的 Markdown 表格");
+    return new Set();
+  }
+
+  const scripts = new Set();
+  for (const line of lines.slice(headerIndex + 2)) {
+    const commandCell = firstMarkdownTableCell(line);
+    if (commandCell === null) break;
+    for (const codeSpan of commandCell.matchAll(/`([^`\r\n]+)`/gu)) {
+      const script = rootScriptFromCommand(codeSpan[1]);
+      if (script) scripts.add(script);
+    }
+  }
+  return scripts;
+}
+
+function checkRootCommandTable(doc, scripts) {
+  const declared = Object.keys(rootPackage.scripts ?? {}).sort();
+  const missing = declared.filter((script) => !scripts.has(script));
+  const stale = [...scripts].filter(
+    (script) => !Object.prototype.hasOwnProperty.call(rootPackage.scripts ?? {}, script),
+  ).sort();
+  if (missing.length > 0) fail(`${doc} 的常用命令登记缺少根命令：${missing.join(", ")}`);
+  if (stale.length > 0) fail(`${doc} 的常用命令登记包含不存在的根命令：${stale.join(", ")}`);
+}
+
 const TS_MODULE_EXTENSIONS = [".ts", ".tsx", ".mts", ".cts", ".js", ".mjs", ".cjs"];
 
 function resolveLocalModule(importer, specifier) {
@@ -369,10 +447,14 @@ if (!Array.isArray(inventory.referenceDocs) || !inventory.referenceDocs.includes
 // a synchronized edit from deleting the repository's critical invariants.
 const agents = fs.readFileSync(path.join(ROOT, "AGENTS.md"), "utf8");
 const claude = fs.readFileSync(path.join(ROOT, "CLAUDE.md"), "utf8");
+const readme = fs.readFileSync(path.join(ROOT, "README.md"), "utf8");
 const normalizeInstructionText = (text) => text.replace(/\s+/gu, " ").trim();
 if (normalizeInstructionText(agents) !== normalizeInstructionText(claude)) {
   fail("AGENTS.md/CLAUDE.md 除空白外必须保持一致");
 }
+checkRootCommandTable("AGENTS.md", assistantCommandScripts(agents, "AGENTS.md"));
+checkRootCommandTable("CLAUDE.md", assistantCommandScripts(claude, "CLAUDE.md"));
+checkRootCommandTable("README.md", readmeCommandScripts(readme));
 const assistantRequirements = [
   ["bitECS 锁定目录", "`apps/client/src/lib/bitecs/` 的 12 个 TypeScript 文件禁改"],
   ["生成镜像禁手改", "生成镜像禁手改"],

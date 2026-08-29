@@ -81,6 +81,7 @@ npm run dev
 | `npm run dev` | 启动服务端开发进程 |
 | `npm run start:server` | 非 watch 方式启动服务端，等价于 `@game/server` 的 `start` |
 | `npm run dev:client` | 启动时先按锁定契约重生成 `apps/shared/src/generated/webplatform`、再全量同步一次 shared，然后常驻监听 shared/client 改动并同步到 Cocos 工程；需先 `npm install`（契约刷新读 `node_modules/@gono/webplatform-contract`，缺失则在起 watcher 前退出） |
+| `npm run init:project -- <参数>` | 幂等写入项目身份元数据并同步生成投影；用 `--help` 查看必填身份参数和 dry-run 选项 |
 | `npm run sync:webplatform-contract` | 刷新外部身份服务契约生成物并级联同步 |
 | `npm run verify:webplatform-contract` | 本地校验契约版本、hash 与生成物 |
 | `npm run sync:shared` | shared → client → Cocos |
@@ -98,10 +99,13 @@ npm run dev
 | `npm run test:inventory` | 在临时 checkout fixture 中验证能力清单漂移会被拒绝 |
 | `npm run verify:perf` | 校验固定输入下的客户端性能基线结构和 checksum |
 | `npm run test:client` | 客户端全部无头行为测试（Node/tsx） |
+| `npm run test:vendor` | 运行第三方运行时内容锁专项反例测试 |
 | `npm run test:fgui` | FGUI codegen、结构契约与 registry 专项测试 |
-| `npm run test:faults` | 运行核心 fault-matrix（默认不连接本地栈；集成版用 `test:faults:int`） |
+| `npm run test:faults` / `npm run test:faults:int` | 运行核心 fault-matrix；前者默认不连接本地栈，后者使用本地 Redis/MySQL |
 | `npm run codegen:fgui -- <Pkg> <Comp>` | 生成或更新 View 的 AUTO 区块 |
 | `npm run verify:ecs` | 校验锁定的 bitECS 文件 |
+| `npm run fetch:fgui` / `npm run fetch:colyseus` | 维护团队显式升级锁定客户端依赖并重钉内容锁；普通开发不运行 |
+| `npm run config:excel-to-json` / `npm run config:excel-to-json:check` | 写出 Excel 示例配表双端 JSON，或只读校验源表；均属额外功能 |
 | `npm --workspace @game/server run test` | 服务端单元测试 |
 | `npm --workspace @game/server run smoke:framework` | 已启动并初始化的本地 Redis/MySQL 连通性检查 |
 | `npm --workspace @game/server run smoke` | 需要外部 WebPlatform 与运行中游戏服的完整开发链路冒烟；GM kick 分支可选 |

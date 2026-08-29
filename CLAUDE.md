@@ -31,14 +31,24 @@ npm install
 npm run sync:webplatform-contract
 npm run verify:webplatform-contract
 npm run sync:shared
+npm run sync:shared:watch
 npm run sync:client
+npm run sync:client:watch
 npm run dev:client
 npm run dev
+npm run start:server
+npm run init:project -- --project-id <id> --name <name> --display-name <text> --scope <scope|none> --brand <text>
 npm run typecheck
+npm run typecheck:client
+npm run typecheck:client:legacy
 npm run verify:sync
 npm run test:client
 npm run test:fgui
+npm run test:vendor
+npm run test:faults
+npm run test:faults:int
 npm run codegen:fgui -- <Pkg> <Comp>
+npm run perf:client
 npm run verify:ecs
 npm run verify:vendor
 npm run verify:fgui
@@ -48,6 +58,10 @@ npm run verify:perf
 npm run verify:project
 npm run verify:core
 npm run verify:all
+npm run fetch:fgui
+npm run fetch:colyseus
+npm run config:excel-to-json
+npm run config:excel-to-json:check
 npm --workspace @game/server run test
 npm --workspace @game/server run smoke:framework
 npm --workspace @game/server run smoke
