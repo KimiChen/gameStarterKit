@@ -75,7 +75,7 @@ test("CHARACTER_READY_TIMEOUT_MS：环境配置必须是 1..120000 的安全整�
   }
 });
 
-test("CHARACTER_REGISTRATION_RECHECK_MS：环境配置必须是 1..30 天的安全整数", () => {
+test("CHARACTER_REGISTRATION_RECHECK_MS：环境配置必须是 1..2592000000 毫秒的安全整数（最长 30 天）", () => {
   const max = String(30 * 86_400_000);
   for (const bad of ["0", "-1", "1.5", "NaN", "Infinity", String(30 * 86_400_000 + 1), "9007199254740992"]) {
     const r = loadConfigWith({ CHARACTER_REGISTRATION_RECHECK_MS: bad });
