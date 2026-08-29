@@ -672,14 +672,39 @@ function commandBase(command) {
   return null;
 }
 
+/**
+ * 覆盖判定过去直接对整段 script 文本做正则匹配，于是 `echo npm run x`、`# npm run x`
+ * 这类**写出了命令原文但不会执行**的文本也算数，`supersededBy`、`verification.requires`
+ * 与 `launch.defaultEntry` 三处登记性断言因此都是橡皮图章。这里先按 shell 操作符切段，
+ * 只有 segment 的首个 token 才被当作实际执行的命令。
+ *
+ * 边界（失败关闭，不猜）：`FOO=1 npm …`、`npx`、子 shell `( … )` 等形态今天仓内不存在，
+ * 会被判为「未覆盖」而不是放行，逼调用方显式决策。短路操作符右侧（`false && npm …`）与
+ * `exit` 之后的死代码不做可达性判定——shell 可达性静态不可判定。
+ */
+function executableSegments(script) {
+  return script.split(/&&|\|\||[;|\n]/u).map((segment) => segment.trim()).filter(Boolean);
+}
+
+function segmentLeadsWith(segment, binaries) {
+  const first = segment.split(/\s+/u)[0];
+  return first !== undefined && binaries.includes(first);
+}
+
 function commandInvokesEntry(command, entry) {
   const script = commandScript(command);
   const base = commandBase(command);
   const target = repoPath(entry);
   if (typeof script !== "string" || !base || !target) return false;
   const relativeTarget = normalizeRepoPath(path.relative(base, target));
-  const escaped = relativeTarget.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`(?:^|[\\s;&|])(?:\\./)?${escaped}(?=$|[\\s;&|])`).test(script);
+  const escaped = escapeRegex(relativeTarget);
+  const mention = new RegExp(`(?:^|[\\s;&|])(?:\\./)?${escaped}(?=$|[\\s;&|])`);
+  return executableSegments(script).some((segment) => {
+    if (!mention.test(segment)) return false;
+    // 新增启动器必须显式加入这张表（内联而非模块级 const：驱动段先于此处初始化执行）。
+    return segmentLeadsWith(segment, ["node", "npm", "npx", "tsx", "sh", "bash"])
+      || segmentLeadsWith(segment, [relativeTarget, `./${relativeTarget}`]);
+  });
 }
 
 function commandReferences(command) {
@@ -689,12 +714,15 @@ function commandReferences(command) {
   // npm accepts both `--workspace <name>` and `-w <name>`; support the forms
   // used by this repository and ignore arbitrary shell commands.
   const workspaceRe = /npm\s+(?:--workspace|-w)\s+([^\s]+)\s+run\s+([A-Za-z0-9:_-]+)/g;
-  for (const match of script.matchAll(workspaceRe)) {
-    references.push({ kind: "workspace", workspace: match[1], script: match[2] });
-  }
   const rootRe = /npm\s+run\s+([A-Za-z0-9:_-]+)/g;
-  for (const match of script.matchAll(rootRe)) {
-    references.push({ kind: "root", script: match[1] });
+  for (const segment of executableSegments(script)) {
+    if (!segmentLeadsWith(segment, ["npm"])) continue;
+    for (const match of segment.matchAll(workspaceRe)) {
+      references.push({ kind: "workspace", workspace: match[1], script: match[2] });
+    }
+    for (const match of segment.matchAll(rootRe)) {
+      references.push({ kind: "root", script: match[1] });
+    }
   }
   return references;
 }

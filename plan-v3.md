@@ -371,11 +371,31 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
   收紧成「只认 root」→ **只有 C 红**，锁住不误伤方向。`test:inventory` 33→36，`verify:inventory` 仍绿。
   残余风险另立条目：锚点闸只把橡皮图章从「零成本自证」抬高到「需要在锚点脚本文本里写一段能匹配正则的调用」，
   并未建立真实可达性——文本伪调用见下一条。
-- `[不阻塞·待补齐]` **workspace 覆盖门禁把文本伪调用当成真实执行**：
+- `[已完成]` **workspace 覆盖门禁把文本伪调用当成真实执行**：
   `scripts/verify-inventory.mjs:676-690` 的 `commandReferences` 只对 package script 文本做正则扫描，
   `echo npm --workspace ... run ...`、注释以及永不执行的 shell 分支也会被当作覆盖；现有
   `scripts/verify-inventory.test.mjs` 的 5 条反例没有这些形态。需补伪调用 fixture，要求只有实际可执行的
   workspace 调用才能满足 `supersededBy`，并以删除/放宽执行性判断的变异证明反例会失败。
+  **已补齐**，且范围比原登记更大：同一缺陷波及**三个**登记性断言，不止 `supersededBy`——`commandReferences`
+  喂给 `commandCovers` 的边被 `checkWorkspaceCommandScope` 与**既有的** `checkCommand`（`verification.requires`）
+  共同消费，`commandInvokesEntry`（`launch.defaultEntry`）也是同一种整段正则匹配。只修 `supersededBy` 会让
+  `verify:core` 的 requires 继续是软的。
+  新增 `executableSegments(script)`（按 `&&` `||` `;` `|` 换行切段）与 `segmentLeadsWith(segment, binaries)`
+  （trim 后首 token 严格相等）；`commandReferences` 只在首 token 为 `npm` 的 segment 内匹配，
+  `commandInvokesEntry` 要求 segment 首 token 属 `node|npm|npx|tsx|sh|bash` 或就是入口路径本身。
+  正则本身一行未改。（落地时踩到一个 TDZ：启动器表若写成模块级 `const`，会因驱动段先于该声明执行而
+  `Cannot access before initialization`，故内联在函数内。）
+  **验收口径收窄**（不假装解决了不可解的问题）：新判定只证明调用处于**可执行位置**（不是 `echo` 参数、注释、
+  引号内），**不证明运行时可达**。
+  四条反例：`echo` 伪调用、`#` 注释伪调用（与 echo 分开写，否则后人只给 echo 加特判就会以为修好了）、
+  `verify:core` 链路里 echo 掉 `verify:vendor`（守既有消费点）、echo 掉 relayer 的 launch 入口。
+  变异推演三条：撤回 `commandReferences` 的可执行位判定 → 3 例红；把分隔符退化成「只切换行」→ 2 例红
+  （含既有基线正例——`verify:core` 首 token 是 `node`，退化后 10 条 npm 引用全丢，正例是这个变异的唯一杀手）；
+  撤回 `commandInvokesEntry` 那一刀 → 只有 launch 那条红，证明两刀口互相独立。
+  `test:inventory` 36→40，`verify:inventory` 仍绿（51 条 script 的引用集合逐条比对无丢失）。
+- `[不阻塞·有意保留]` shell 可达性静态不可判定：短路操作符右侧（`false && npm run x`）与 `exit` 之后的死代码
+  仍会被算作覆盖。`FOO=1 npm …`、`npx`、子 shell `( … )` 等形态仓内今天不存在，被判为**未覆盖**（失败关闭），
+  新增此类形态时必须显式决策而不是静默放行。
 - `[不阻塞·有意保留]` inventory 与 Markdown 链接检查只覆盖登记表内文档和就近 README，不扫描任意根目录
   Markdown；`plan-v3.md` 已通过 `routeOfTruth.corePlan`、`plan-v2.md` 与 `todo-godogen.md` 已通过
   `referenceDocs` 纳入检查。本轮由复核者独立对 `git ls-files "*.md"` 全量（52 个 tracked `.md`）做了相对

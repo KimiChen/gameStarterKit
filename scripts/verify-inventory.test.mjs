@@ -658,3 +658,72 @@ test("inventory verifier accepts a workspace anchor that is itself in the comman
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("inventory verifier rejects an echoed workspace command as coverage", () => {
+  const root = createFixture();
+  try {
+    // 写出了命令原文但不会执行：整段的首个 token 是 echo，不是 npm。
+    const packageFile = join(root, "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts["start:server"] = "echo npm --workspace @game/server run start";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /workspaceCommandScope\[\d+\]\.supersededBy 并未实际调用 workspace:@game\/server#start/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects a commented-out workspace command as coverage", () => {
+  const root = createFixture();
+  try {
+    // 与 echo 分开写：否则后人只给 echo 加一条特判就会以为修好了。
+    const packageFile = join(root, "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts["start:server"] = "# npm --workspace @game/server run start";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /workspaceCommandScope\[\d+\]\.supersededBy 并未实际调用 workspace:@game\/server#start/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects an echoed root command in a verification chain", () => {
+  const root = createFixture();
+  try {
+    // 守既有消费点 verification.requires，而不只是新加的 supersededBy。
+    const packageFile = join(root, "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    const before = pkg.scripts["verify:core"];
+    pkg.scripts["verify:core"] = before.replace(
+      "npm run verify:vendor",
+      "echo npm run verify:vendor",
+    );
+    assert.notEqual(pkg.scripts["verify:core"], before, "fixture must rewrite the verify:vendor link");
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(root, /未实际覆盖声明的验证命令：root:verify:vendor/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects an echoed launch entry", () => {
+  const root = createFixture();
+  try {
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "echo tsx src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
