@@ -11,6 +11,7 @@
 > **阻塞性标签**（每条一个）：
 > `[不阻塞·有意保留]` 已评估过的取舍或范围限制，不打算改；
 > `[不阻塞·待补齐]` 认可的缺口，补齐前不影响当前限定范围的核心验收；
+> `[已完成]` 已有仓内实现、能失败的定向测试和本条验收证据；
 > `[条件阻塞·<触发条件>]` 平时不阻塞，但触发条件成立前必须处理。
 >
 > **溯源口径**：本文条目溯源到 `plan-v2.md` 的**小节名**（如「plan-v2 §4 P1-06」），不沿用其行号——
@@ -18,6 +19,10 @@
 >
 > **计数口径**：每条验收证据中的测试计数为**写入该条时的 HEAD 快照**；同一命令在不同条目出现不同计数时，
 > 以最后写入的一条为准。
+>
+> **本轮回写快照**（全部 `[已完成]` 条目落盘后同一工作树实测）：`verify:core`、`verify:all`、`typecheck`、
+> `verify:sync`、`verify:inventory` 全绿；服务端单测 297/297、客户端 246/246、`test:fgui` 50/50、
+> `test:int` 154/154、`test:inventory` 33/33、`test:faults:int` 四组 72/61/12/15 全绿。
 >
 > **上一轮结论**：plan-v2 的 28 条 `[已完成]` 经本轮 6 组并行 + 对抗式独立复核，**全部成立、无一条被证伪**
 > （58 条裁决，0 条 claim-false）。本文只承接其中「证据弱于主张」的部分、仍然有效的保留边界，以及本轮
@@ -37,22 +42,44 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
 
 ### 1.1 待补齐
 
-- `[不阻塞·待补齐]` 重放的「死亡即冻结坐标」路径（`core/match/matchReplay.ts:162-170` 的 cast 前
+- `[已完成]` 重放的「死亡即冻结坐标」路径（`core/match/matchReplay.ts:162-170` 的 cast 前
   `resolveBallMovePlayerAtTick`）没有定向用例：现有用例中被 cast 击杀的玩家方向恒为 0，删掉该段不会让任何
   用例变红。该分支一旦损坏，真实对局中「移动中被技能击杀」的证据会在 producer 侧 replay 失败 →
   `emitMatchEvidence` 吞错返回 null → 整局证据静默丢失。补一条用例：目标玩家先发一次非零 Move、推进若干
   tick 后再被致命 cast 击杀，断言 replay 通过且 finalState 中该玩家坐标等于死亡 tick 的解析值。
-- `[不阻塞·待补齐]` accepted input 容量 fail-closed 的 **cast 分支**无定向用例：`game-room.test.ts` 是全仓
+  **已补齐**：`apps/server/test/match-replay.test.ts` 新增 `makeLethalCastEvidence()` 与用例
+  `v3 replay freezes a moving victim at the tick the lethal cast lands`——目标先发一次 `dirX=-1` 的非零 Move，
+  两发不致命旋风斩后由第三发击杀；期望坐标以「锚点 + 方向 × `PLAYER_MOVE_SPEED` × 时长」独立算出，并先断言
+  它落在地图内部（非 clamp 边界）且 ≠ 锚点，避免恒真。变异推演：删掉 `matchReplay.ts` cast 前的
+  `resolveBallMovePlayerAtTick` 整段 → 该用例变红（`MatchReplayError code=FINAL_STATE`，7 例中仅此 1 例红）。
+- `[已完成]` accepted input 容量 fail-closed 的 **cast 分支**无定向用例：`game-room.test.ts` 是全仓
   唯一的 `maxAcceptedInputs` 覆写用例且只走 Move。删掉 `GameRoom.ts:1607-1610` 的 cast 容量闸、或把它挪到
   `applyBallMoveCast` 之后（会造成「冷却与伤害已生效但输入未入链」的证据不完整），没有任何用例会变红。
   补 cast 版本：`maxAcceptedInputs=1` 先占满，再发第二次合法 cast，断言输入不增长、目标 hp 未变、
   `lastCastTick` 未写入且回 `BadRequest`。
-- `[不阻塞·待补齐]` `c6043f0` 收紧的 v2 evidence 接受域（`core/match/matchConsumer.ts:131-136` 的 `-0` 判定、
+  **已补齐**：`apps/server/test/game-room.test.ts` 新增
+  `cast 达到 accepted input 上限时在冷却与伤害之前 fail-closed`——`maxAcceptedInputs=1` 由 a 占满（并断言其
+  确实落伤害、写冷却），再由**从未施法**的 b 发第二次全合法 cast，使容量闸成为唯一可能的拒绝理由。变异推演
+  两种，均变红：删除容量闸；把容量闸挪到 `applyBallMoveCast` 之后（被 a 的 hp 与 b 的 `lastCastTick` 断言
+  抓住，证明断言非恒真）。
+- `[已完成]` `c6043f0` 收紧的 v2 evidence 接受域（`core/match/matchConsumer.ts:131-136` 的 `-0` 判定、
   `:155` 同名判定、`:196-198` casual/ranked 分支）在 HEAD 已无任何定向用例——原用例随 `47244c2` 删除 v2
   producer 时一并移除。这三处仍可达且有意义（`JSON.parse('{"sId":-0}')` 确实产出 `-0`，而 `-0 !== 0` 为
   false 会让 binding 检查放行并被静默重写成 0 落库）。补 `int/settlement.test.ts` 的 v2 隔离用例；同时评估
   删除 `matchConsumer.ts:157-162` 的数组 accessor descriptor 分支（唯一调用点只处理 `JSON.parse` 产物，
   该分支已不可达）。
+  **已补齐**：`apps/server/test/int/settlement.test.ts` 新增
+  `v2 接受域：payload 负零与 casual/ranked loadout 违规一律隔离且不落库`，直接 XADD 四条到 `stream:match:v2`：
+  `"sId":-0`（`JSON.stringify` 永远写出 `0`，故靠替换原始字节注入，并先断言 `Object.is(JSON.parse(...).sId, -0)`
+  防夹具失效）、casual + `loadout:{}`、ranked + `loadout:{"roll":-0}`，以及对照组 ranked + `loadout:{"roll":0}`
+  正常落 `match_results`——对照组与负零组逐字节只差一个负号，因此三条拒绝的唯一可能原因就是被收紧的接受域。
+  变异推演三处均变红：去掉 `evidenceInt` 的 `!Object.is(value,-0)`；把 `isCanonicalJsonValue` 的 number 分支
+  退化为只 `Number.isFinite`；塌缩 casual/ranked 三元分支。
+  数组 accessor descriptor 分支的评估结论是**保留而非删除**：该分支确实不可达（实测 `JSON.parse` 产物的自有
+  属性恒为 enumerable 数据属性），但要删它必须改成 `value[index]` 直取，会把一个**不触发 getter** 的审计
+  校验器变成会执行任意 getter 的校验器，与本仓其它 validator（`matchEvidence` 的 `DATA_PROPERTY`、wire
+  validator 的 hostile getter 用例）姿态相悖；且对象分支同构，只删一半会造成不一致。已在 `matchConsumer.ts`
+  的 `isCanonicalJsonValue` 上方就地注释标注「当前不可达、无可失败用例、不得改写成直取」及其理由。
 
 ### 1.2 保留边界
 
@@ -112,17 +139,34 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
 
 ### P1-01 多玩法边界
 
-- `[不阻塞·待补齐]` 客户端 C2S allowlist（`apps/client/src/net/RoomClient.ts:1106-1109`）没有能失败的定向
+- `[已完成]` 客户端 C2S allowlist（`apps/client/src/net/RoomClient.ts:1106-1109`）没有能失败的定向
   测试：删除该闸后客户端 245 个用例与服务端双 mode wire 用例全部保持绿。typed room 的 `send` 在编译期已被
   `TOutbound` 约束，因此这条运行时闸真正守护的是 `RoomClient` 上与 mode 无关的公共 send API 与 `as any`
   路径。需补一条 idle slot 下调用 `castSkill()/chat()` 必须返回 false 且不产生 `room.send` 的反例；同时评估
   直接删除这些与 mode 无关的公共方法（仓内已无生产调用方），把发送面完全收进 typed facade。
-- `[不阻塞·待补齐]` `GameRoom` 的 player factory 非 Schema 守卫（`apps/server/src/rooms/GameRoom.ts:566-568`）
+  **已补齐**：`apps/client/test/wireTransport.test.ts` 新增 idle slot 下调用 `castSkill()/chat()` 必须返回
+  false 且不产生 `room.send` 的反例。变异推演：删除 `RoomClient` 的 allowlist 闸 → 客户端 246 例中仅该例变红
+  （**245 pass / 1 fail**，与本条原记录「删闸后 245 例全绿」精确吻合）。
+  「直接删除与 mode 无关的公共方法」一项评估后**保留**：生产唯一调用点 `BallMoveGameplay.ts:260` 的
+  `context.room.ping()` 走的是 `net/rooms/BallMoveRoom.ts` typed facade（`room.send(C2S.Ping, …)`），并非
+  `RoomClient.ping()`；但删除这些方法会迫使重写不在本条范围内的 `roomClientOwnership.test.ts` 写屏障用例，
+  故选择「保留 + 补反例」把发送面的运行时闸钉死。
+- `[已完成]` `GameRoom` 的 player factory 非 Schema 守卫（`apps/server/src/rooms/GameRoom.ts:566-568`）
   只有与 `MapSchema.set` 内建 `assertInstanceType` 结果不可区分的用例：`createModePlayer` 与 `players.set`
   被同一个 try/catch 收敛（`GameRoom.ts:950-958`），删除守卫后底层 `EncodeSchemaError` 会产生同样的
   `BadRequest` 与 `players.size===0`。二选一：拆成两个 catch 并给出可区分诊断再断言；或承认它是
   defense-in-depth 并标注「非 Schema 拒绝由 `@colyseus/schema` 兜底」。同条中「被篡改的公共身份」那一半
   （`:569-572`）是真正变异敏感的，无需补。
+  **已补齐**：选了拆分路径。`GameRoom.ts` 把 `createModePlayer` 与 `players.set` 拆成两个 try/catch，统一走新的
+  `refuseModePlayer(client, mode, reason, error)`（回滚 player 槽位 + 释放 mode 入场资源 + 按 reason 告警 +
+  返回同一个 `BadRequest`），新增导出常量 `MODE_PLAYER_FACTORY_REASON` / `MODE_PLAYER_REGISTER_REASON`。
+  对外错误语义完全不变（仍是 `joinRefused(ErrorCode.BadRequest)`、`players.size === 0`、admission 已释放），
+  只有内部日志的 `reason=` 变得可区分。`apps/server/test/idle-game-mode.test.ts` 新增
+  `player factory 守卫与 schema 注册兜底必须给出可区分的入座诊断`：用例一 `createPlayer` 返回普通对象 →
+  `reason=mode-player-factory`；用例二返回合法 Schema 但非本 root childType 的 `PlayerState` → 由
+  `MapSchema.set` 的 `assertInstanceType` 兜底 → `reason=mode-player-register`。变异推演两种均变红：
+  删除 `instanceof Schema` 守卫（普通对象改由库兜底，reason 塌缩成 `register`）；把两个 catch 合并回单一
+  catch（register 用例得到 `factory`）。
 - `[不阻塞·有意保留]` `idle` 只是无 presentation 的最小 multi-mode 证明，不代表完整第二玩法 UI 已交付。
 - `[不阻塞·有意保留]` 两个 root 仍各自复制 tick/phase/matchId/players 的生命周期字段并共享同一套约定；
   Waiting/Playing/Settle 相位白名单（`GameRoom.ts:743-757`）、两人开局与 `MAX_PLAYERS` 上限
@@ -138,21 +182,44 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
 
 ### P1-03 HTTP contract
 
-- `[不阻塞·待补齐]` `http-route-contract.test.ts` 的 uid/amountFen 向量在 request schema 单源化后已退化为
+- `[已完成]` `http-route-contract.test.ts` 的 uid/amountFen 向量在 request schema 单源化后已退化为
   自洽恒等式（route schema 就是 shared validator 的包装），`assert.equal(Boolean(route.issues), !shared)`
   恒真；uid 1..128、amountFen 1..MAX_SAFE_INTEGER 的绝对接受域不被任何断言钉住，放宽 shared validator
   不会让任何用例变红。向量表改为 `[label, value, expectedAccepted]` 三元组直接断言绝对期望，保留
   `requestSchema` 同一性断言作为注入证据。
-- `[不阻塞·待补齐]` `createGameEndpoint` 的类型级 body 禁令（`apps/server/src/http/contract.ts:52` 的
+  **已补齐**：向量表改为 `[label, value, expectedAccepted]` 三元组，新助手 `assertRequestDomain` 对每条**同时**
+  断言 route schema 结果与 shared validator 结果等于写死的期望（不再互相推导），`requestSchema` 同一性断言
+  保留为注入证据。uid：1 收 / 128 收 / 129 拒 / 空串拒 / 非字符串拒；amountFen：1 收 / `MAX_SAFE_INTEGER` 收 /
+  0 拒 / 1.5 拒 / `MAX_SAFE_INTEGER+1` 拒 / Infinity 拒。变异推演两处均变红：把 shared `boundedString` 的 uid
+  上界 128 放宽到 1024；把 `finiteInteger` 的 amountFen 下界 1 放宽到 0。
+- `[已完成]` `createGameEndpoint` 的类型级 body 禁令（`apps/server/src/http/contract.ts:52` 的
   `body?: never`）没有能失败的证据：唯一反例用 `as never` 绕过类型只测运行时抛错，把 `:52` 改回
   `EndpointOptions` 后 typecheck 与全部服务端单测仍全绿。补一处 `// @ts-expect-error` 编译期反例。
-- `[不阻塞·待补齐]` GET 路由不安装 Standard Schema（`contract.ts:277`），其请求侧唯一校验是 `:310` 的
+  **已补齐**：`http-response-contract.test.ts` 新增 `HTTP endpoint 类型级禁止 endpoint options 另带 body schema`，
+  在 options 字面量的 `body:` **属性行**（不是实参行——放实参行会同时触发 `TS2578` 与 `TS2322`）加
+  `// @ts-expect-error`，原 `as never` 运行时反例保留。变异推演：把 `contract.ts:52` 改回
+  `type GameEndpointOptions = EndpointOptions;` → 服务端 typecheck 变红，且**唯一**错误就是
+  `TS2578: Unused '@ts-expect-error' directive`，说明证据精确锚定在该类型上。
+- `[已完成]` GET 路由不安装 Standard Schema（`contract.ts:277`），其请求侧唯一校验是 `:310` 的
   `validateGameHttpRequest`（对 GET 即 shared 的 `validateNoBody`），但没有任何用例给 GET endpoint 传非空
   body；删掉 `:310` 后 POST/PUT 由注入的 schema 兜住，GET 则静默接受任意 body，无断言会红。
-- `[不阻塞·待补齐]` `http-endpoint-manifest.test.ts` 的漏文件反例用默认参数调用 `assertGameHttpRoutes()`，
+  **已补齐**：新增 `HTTP endpoint 对 GET 也执行 shared 请求契约：非空 body 必须在 handler 前被拒`——对 `Health`
+  （GET）先断言 `endpoint.options.body === undefined`（确认确实没装 Standard Schema），再以
+  `endpoint({ body: { x: 1 } })` 断言 rejects `/WIRE_KEYS at request/` 且 handler 未被调用，正例 `endpoint({})`
+  仍通过。变异推演：删掉 `contract.ts:310` 的 `validateGameHttpRequest` 调用 → 该用例变红，且同文件其余 9 例
+  仍全绿，证明这确是此前唯一缺口。
+- `[已完成]` `http-endpoint-manifest.test.ts` 的漏文件反例用默认参数调用 `assertGameHttpRoutes()`，
   作用于仓内真实 `gameRouteDefinitions` 而非 fixture 目录，因此无法证明「旧的已登记 route 集合断言仍会
   误绿」——该对照断言恒绿。要么改成对 fixture 作用域的定义集调用，要么删除该行并同步修正措辞。
   freshness 门禁本身真实且能失败，主结论不受影响。
+  **已补齐**：查证后发现 (a)「改成对 fixture 作用域调用」在**漏文件**场景上无法成立——`assertGameHttpRoutes` 的
+  key 集合固定对齐整张 `GameHttpContractMap`，缺 key 必抛，该场景本就不存在误绿。因此拆成两个用例：新增
+  `file discovery catches an endpoint file move that the registered-route set cannot see`（fixture 覆盖全部 6 个
+  contractKey，把 `misc/Version.ts` 搬到 `deploy/Version.ts`，key 与 method/path 均不变、只有路径漂移），对照
+  断言改为对 **fixture 作用域**的定义集调用并补 `assert.throws(/route key 不一致：缺少=\[Version\]/)` 证明其
+  有判别力而非恒绿，freshness 则断言 `/manifest 缺失或陈旧.*Version:deploy\/Version\.ts/`；原「漏文件」用例
+  按 (b) 删掉那行恒绿对照、改名为 `manifest freshness catches a newly added endpoint file` 并删除误导性注释。
+  变异推演：让 `tools/http-endpoint-manifest.ts` 的比较忽略 `import endpoint…` 行 → 搬家反例变红。
 - `[不阻塞·有意保留]` WebPlatform consumer map 另登记了仓内未调用的 `Livez`/`Readyz` 两个契约
   （属 consumer 子集而非生成全集，不经 `defineGameHttpContract`、不进 `manifest.generated.ts`，当前无
   实际暴露面）。
@@ -171,15 +238,23 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
 
 ### P1-07 大厅重连
 
-- `[不阻塞·待补齐]` `sessionReconcile.test.ts` 的旧世代竞态用例里 `releasedOwners.has(newOwner)` 是恒真
+- `[已完成]` `sessionReconcile.test.ts` 的旧世代竞态用例里 `releasedOwners.has(newOwner)` 是恒真
   断言（`newOwner` 全文无写入方，唯一 ownership 工厂的 `leave` 只写 `oldOwner`），不能守护「旧 continuation
   不得释放新登录 ownership」：把 `SessionReconcileLogic.ts` 的 `finally` 改成调用任何全局 leave，该断言也
   不会变红。应让该用例为新登录世代也构造一个真实可释放的 ownership。
-- `[不阻塞·待补齐]` Lobby 宽限窗口的措辞（「只对 SDK 可自动重试的异常关闭码开放 10 秒窗口」，另见
+  **已补齐**：`sessionReconcile.test.ts` 让新登录世代也构造一个真实可释放的 ownership。变异推演：把
+  `SessionReconcileLogic.ts` 的 `finally` 改成释放「当前」ownership → 该用例变红（命中「旧 continuation 无权
+  调用新登录 owner」）。交叉验证：保留同一变异、把测试文件还原成 HEAD 旧版 → **5/5 全绿**，直接坐实旧断言
+  `releasedOwners.has(newOwner)` 确为恒真。
+- `[已完成]` Lobby 宽限窗口的措辞（「只对 SDK 可自动重试的异常关闭码开放 10 秒窗口」，另见
   `docs/CLIENT.md`）应补上实现里的第五个分支：`apps/server/src/websocket/LobbyRoom.ts:97-103` 的
   `isReconnectableDrop` 除四个 SDK 可重试关闭码（1001/1005/1006/4010）外，对 `code === undefined`
   同样 fail-open 开放 10 秒宽限，会多占 10 秒 seat / online registration，且该分支无定向用例。
   要么改措辞为「四个可重试关闭码 + 无关闭码兜底」并补用例，要么收紧为 fail-closed。
+  **已补齐**：选了「改措辞 + 补用例」而非收紧为 fail-closed（`code === undefined` 的 fail-open 是有意的保守
+  兜底）。`docs/CLIENT.md` 与 `LobbyRoom.ts` 就地注释改为「四个 SDK 可重试关闭码 + 无关闭码兜底」，并补上
+  `code === undefined` 分支的定向用例。变异推演：把 `isReconnectableDrop` 的 undefined 分支收紧为 fail-closed
+  → 该用例变红（18 例中仅此 1 例）。
 - `[不阻塞·有意保留]` Game transport 自动重连只在下一份 mode state 通过 exact 校验后运行 adapter 的可选
   reconcile；当前 ballMove 只对账 desired input，idle 不对账业务状态，两者都不等同于完整业务恢复。
 - `[不阻塞·有意保留]` `apps/client/src/net/session.ts` 的角色快照（`commitSessionProfile` /
@@ -190,10 +265,13 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
 
 ### P1-08 本地验证边界
 
-- `[不阻塞·待补齐]` `config:excel-to-json:check` 的「只读、不静默修复产物」性质缺少能失败的用例：canonical
+- `[已完成]` `config:excel-to-json:check` 的「只读、不静默修复产物」性质缺少能失败的用例：canonical
   正例在断言「不改写」时，磁盘内容与 checker 构造的期望内容本就完全相同，恒真；把 check 分支改成「先比较、
   再照写一遍」，五个用例无一变红。需补反例：把产物写成陈旧内容后跑 `--check`，断言退出码非 0 **且**文件
   仍保持陈旧字节。实现本身确实没有写，这是证据缺口而非缺陷。
+  **已补齐**：`tools/excel-to-json.test.mjs` 新增反例——把产物写成陈旧内容后跑 `--check`，断言退出码非 0
+  **且**文件仍保持陈旧字节。变异推演：把 check 分支改成「先比较、再照写一遍」 → 该用例变红（原 5 例全绿，
+  印证本条原判断）。
 - `[不阻塞·有意保留]` Excel 生成物新鲜度检查是独立的按需命令，未纳入 `verify:core` 或任何自动门禁；改
   xlsx 后不重新生成即提交陈旧产物不会被自动拦截。该边界与「Excel 示例链尚无运行时消费方、属额外功能」的
   既有取舍一致，接入真实消费方前不打算升级为强制门禁。
@@ -209,12 +287,23 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
 
 ### P1-09 登记和文档覆盖
 
-- `[不阻塞·待补齐]` 命令表完整性闸只以根 `package.json.scripts` 为权威集合，其解析正则不匹配
+- `[已完成]` 命令表完整性闸只以根 `package.json.scripts` 为权威集合，其解析正则不匹配
   `npm --workspace ... run ...`，因此 `@game/server` 的 16 个 workspace 脚本无同类机检——根文档实际只登记
   其中 6 条。本轮新增的 `codegen:state` 仅见于 `apps/server/src/rooms/README.md`，未进 `docs/SERVER.md`
   与 `docs/OVERVIEW.md` 的动线。待补齐：(a) 把 `codegen:state` 补入 SERVER.md 与 OVERVIEW 动线，并提示
   新增 http endpoint 需跑 `codegen:http`；(b) 评估是否把 workspace 脚本纳入同一完整性闸，或显式登记为
   有意保留的作用域边界。
+  **已补齐**：(a) `codegen:state` 已进 `docs/SERVER.md` 与 `docs/OVERVIEW.md` 动线，并提示新增 http endpoint 需跑
+  `codegen:http`。(b) 选了「纳入同一完整性闸」而非登记为作用域边界：`verify-inventory.mjs` 新增
+  `checkWorkspaceCommandScope`，要求**每个** workspace 脚本（`@game/server` 16 个 + `@game/shared` 1 个）
+  要么出现在助手文档的「常用本地命令」块，要么在 `docs/inventory.json.workspaceCommandScope` 中带**机检**
+  理由登记——`supersededBy` 用既有 `commandCovers` 证明某根脚本确实转调它，`documentedIn` 要求该文档写出
+  命令原文；并拒绝重复登记、拒绝与命令表双登记、拒绝指向已不存在的脚本。另加 `checkWorkspaceCommandLiterals`：
+  三份根文档里写出的 workspace 命令必须解析到真实脚本，防止改名后留下可复制但已失效的指令。落地时该闸立刻
+  查出 `loadtest` 是唯一没有任何文档写出命令原文的脚本，已在 `docs/EXTRAFEATURES.md` 补上。
+  `scripts/verify-inventory.test.mjs` 新增 5 条反例（新增未登记 workspace 脚本、`supersededBy` 的根脚本不再
+  转调、`documentedIn` 文档删掉命令原文、与命令表重复登记、根文档引用不存在的 workspace 命令）。变异推演
+  两处：删掉 `checkWorkspaceCommandScope` 调用 → 4 条变红；删掉字面量存在性断言 → 第 5 条变红。
 - `[不阻塞·有意保留]` inventory 与 Markdown 链接检查只覆盖登记表内文档和就近 README，不扫描任意根目录
   Markdown；`plan-v3.md` 已通过 `routeOfTruth.corePlan`、`plan-v2.md` 与 `todo-godogen.md` 已通过
   `referenceDocs` 纳入检查。本轮由复核者独立对 `git ls-files "*.md"` 全量（52 个 tracked `.md`）做了相对
@@ -253,7 +342,7 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
 
 ## 7. 文档自身的问题
 
-- `[不阻塞·待补齐]` 生成物登记点与铁律 2 未随 manifest 化更新：`docs/SERVER.md` §13 仍把
+- `[已完成]` 生成物登记点与铁律 2 未随 manifest 化更新：`docs/SERVER.md` §13 仍把
   `apps/shared/src/protocol/state.ts` 记为「Colyseus state 纯数据镜像」的真源（该文件与
   `apps/server/src/rooms/schema/GameRoomState.ts` 首行均已是 room-state-codegen 的 AUTO-GENERATED 标记），
   且全文未出现 `apps/shared/schema/game-room-state.json`、`codegen:state`、`room-state-codegen`；
@@ -261,7 +350,11 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
   需把 state 真源改为 manifest 并注明生成命令、HTTP endpoint 行补 `manifest.generated.ts` + `codegen:http`。
   ⚠ 该漂移无门禁依据：命令表校验只覆盖根 `package.json` 的 script，workspace 级 `codegen:*` 不在闸内；
   `verify:core` 也不含服务端单测，按旧口径手改生成物后只有 `verify:all` 才会红。
-- `[不阻塞·待补齐]` `AGENTS.md`/`CLAUDE.md` 铁律 2「生成镜像禁手改」只列三项 sync 镜像，未列入四项生成物：
+  **已补齐**：`docs/SERVER.md` §13 的 state 真源改为 `apps/shared/schema/game-room-state.json` 并注明
+  `room-state-codegen` 与 `codegen:state`，HTTP endpoint 登记行补上 `manifest.generated.ts` 与 `codegen:http`。
+  本条末尾标注的「workspace 级 `codegen:*` 不在闸内」这一门禁空白，已由同轮 P1-09 的
+  `checkWorkspaceCommandScope` 消除。
+- `[已完成]` `AGENTS.md`/`CLAUDE.md` 铁律 2「生成镜像禁手改」只列三项 sync 镜像，未列入四项生成物：
   `apps/shared/src/protocol/state.ts` 与 `apps/server/src/rooms/schema/GameRoomState.ts`（真源
   `apps/shared/schema/game-room-state.json`，`npm --workspace @game/server run codegen:state` 刷新）、
   `apps/server/src/http/manifest.generated.ts`（`codegen:http`）、`apps/shared/src/project.ts`（真源
@@ -270,15 +363,28 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
   待补齐：补列四项与对应重生成命令，并给 assistantRequirements 增加断言 + 反例，使清单完整性与命令表一样
   受机检约束。现有缓和：四个文件首行均带 Do not edit banner，freshness 反例与只读比对会拦住手改——
   这是文档可发现性问题而非防护缺口。
-- `[不阻塞·待补齐]` `docs/OVERVIEW.md` §4.2 的结论句「新增玩法通过登记点扩展，不在通用 transport 中增加
+  **已补齐**：`AGENTS.md`/`CLAUDE.md` 铁律 2 补列四项生成物与各自重生成命令，并给 `verify-inventory.mjs` 的
+  `assistantRequirements` 增加 state 生成物登记 / state 重生成命令 / HTTP manifest 生成物登记 / HTTP manifest
+  重生成命令 / 项目元数据生成物登记五条断言，使清单完整性与命令表一样受机检约束。变异推演：从真实
+  `AGENTS.md`/`CLAUDE.md` 删掉 HTTP manifest bullet → `verify:inventory` 退出码 1 并报出 2 条缺失。
+- `[已完成]` `docs/OVERVIEW.md` §4.2 的结论句「新增玩法通过登记点扩展，不在通用 transport 中增加
   玩法分支」只对客户端成立。服务端新增自带 C2S 输入的玩法，仍必须改通用 `apps/server/src/rooms/GameRoom.ts`
   三处：`GAME_ROOM_C2S_SCHEMAS`（`[K in C2SType]` 映射，漏写 typecheck 失败）、无类型约束的 `messages`
   handler 表（漏写即静默丢消息）、`phaseAllows` switch（default 为 false，漏写即静默拒绝）。`a10f2f7`
   自己加 `c2s.idle.pulse` 时正是这么做的。应在动线图补上「server GameRoom 消息表 / phaseAllows 登记该消息」
   一步并收窄结论句；或把 C2S→mode 的路由改成由 mode 声明其消息集合、由通用 shell 按声明分发。
-- `[不阻塞·待补齐]` 历史归档 `plan.md` 的 P1-09 正文仍写着「`plan.md` 是核心优先级真相」，与其文首归档头、
+  **已补齐**：选了「补动线 + 收窄结论句」。`docs/OVERVIEW.md` §4.2 的结论句收窄为只对客户端成立，标准开发
+  动线补上「server GameRoom 消息表 / `phaseAllows` 登记该消息」一步，并点名 `GAME_ROOM_C2S_SCHEMAS`、
+  `messages` handler 表与 `phaseAllows` switch 三处必改点及各自的失败形态（typecheck 失败 / 静默丢消息 /
+  静默拒绝）。「由 mode 声明消息集合、通用 shell 按声明分发」的改造范围远超本条，未采纳。
+- `[已完成]` 历史归档 `plan.md` 的 P1-09 正文仍写着「`plan.md` 是核心优先级真相」，与其文首归档头、
   `docs/inventory.json.routeOfTruth.corePlan` 与 verifier 的硬拒绝互相矛盾；`verify:inventory` 只检查链接和
   锚点，发现不了这类语义冲突。应改为指向本文件，并复查归档内其余「本文件是唯一真相」式表述。
-- `[不阻塞·待补齐]` plan-v2 对同一文件/命令给出过两个计数（`relayer-boundary.test.ts` 7 vs HEAD 8；
+  **已完成于 `8d0ec91`**（本文件建档提交）：`plan.md:682` 已改为「当前核心优先级真相为
+  [plan-v3.md](plan-v3.md)」，`plan.md:3` 归档头同时指向本文件；复查归档其余「唯一真相」式表述后，
+  `plan-v2.md` 已无此类残留。
+- `[已完成]` plan-v2 对同一文件/命令给出过两个计数（`relayer-boundary.test.ts` 7 vs HEAD 8；
   `int/archive.test.ts` 44 vs 51；`test:inventory` 20 vs 25）。本文文首已统一计数口径，后续回写须遵守；
   归档中的旧计数不再追改。
+  **已完成于 `8d0ec91`**：本文文首「计数口径」段已统一为「写入该条时的 HEAD 快照，同一命令以最后写入的一条
+  为准」；归档旧计数按该口径不再追改，本条自此闭合。
