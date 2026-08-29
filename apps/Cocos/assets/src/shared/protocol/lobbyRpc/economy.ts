@@ -67,7 +67,8 @@ export const EFFECT_FIELD_VALUE_RULES: { readonly [K in EffectField]: EffectFiel
 export const EFFECT_RESERVED_FIELDS = [
     "uid", "userId", "serverId", "sId", "schemaVersion", "version", "ver", "fence",
     "lastFence", "last_fence", "applied", "opId", "op_id", "effect", "status",
-    "attempts", "createdAt", "updatedAt",
+    "attempts", "createdAt", "updatedAt", "characterRegistration",
+    "characterRegistrationCheckedAt",
 ] as const;
 
 /** JSON 中持久化的完整 effect envelope。 */

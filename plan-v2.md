@@ -61,13 +61,13 @@
 
 ### P0-04 ready marker
 
-- `[不阻塞·待补齐]` `characterRegistration` 与 `characterRegistrationCheckedAt` 当前不在
-  `EFFECT_RESERVED_FIELDS`。现阶段因 `EFFECT_FIELD_ALLOWLIST` 未收录而不可利用，但未来若误加入
-  allowlist，客户端可能修改 ready marker 或复核时间戳。
+- `[已完成]` `characterRegistration` 与 `characterRegistrationCheckedAt` 已加入 shared
+  `EFFECT_RESERVED_FIELDS`；validator 在 allowlist 前拒绝 reserved 字段，Lua reserved 集合也由同一 shared
+  常量生成。未来即使误扩 `EFFECT_FIELD_ALLOWLIST`，客户端仍不能写 ready marker 或复核时间戳。
+  验收证据：`wire-contract.test.ts` 锁定集合成员与稳定 `EFFECT_RESERVED_FIELD`，
+  `int/effect-atomic.test.ts` 锁定 Lua validate-then-apply 不产生半状态；`npm run verify:sync` 与协议指纹通过。
 - `[不阻塞·有意保留]` `characterRegistrationCheckedAt` 是复核窗口的新鲜度闸门；若被客户端刷新，
   可能永久走 ready 快路径，绕过权威复核。
-- `[条件阻塞·扩 EFFECT_FIELD_ALLOWLIST 时]` 由此产生一条长期约束：将来扩 `EFFECT_FIELD_ALLOWLIST` 时，
-  **必须**同时把上述两个字段加入 `EFFECT_RESERVED_FIELDS`（值规则对 allowlist 穷尽，扩表也必须同时补规则）。
 - `[不阻塞·有意保留]` ready marker 只在有限复核窗口（默认 24 小时）内作为快路径；窗口过期的热档与
   全部解冻冷档在下次 join 时必打一次 `hasCharacter`。
 - `[不阻塞·有意保留]` WebPlatform 不可用时该次 join 被拒（与首次建档失败同码），重试仍会被拒，

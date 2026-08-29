@@ -123,6 +123,14 @@ test("Lua validate-then-apply：首条合法、后续非法时 Redis/applied/pay
       grants: [legal, { kind: "setField", field: "ver", value: "bad" }],
     },
     {
+      code: "EFFECT_RESERVED_FIELD",
+      grants: [legal, { kind: "setField", field: "characterRegistration", value: "ready" }],
+    },
+    {
+      code: "EFFECT_RESERVED_FIELD",
+      grants: [legal, { kind: "setField", field: "characterRegistrationCheckedAt", value: "9999999999999" }],
+    },
+    {
       code: "EFFECT_COUNT",
       grants: [legal, { kind: "item", itemId: 8, count: 0 }],
     },

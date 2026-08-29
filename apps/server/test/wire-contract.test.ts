@@ -9,6 +9,7 @@ import {
   ApiPath,
   C2S,
   C2S_RUNTIME_VALIDATORS,
+  EFFECT_RESERVED_FIELDS,
   EFFECT_MAX_VALUE_BYTES,
   GameHttpContractMap,
   GamePhase,
@@ -199,6 +200,16 @@ test("setField：按字段值域拒绝数字垃圾、越界值和非规范开关
   assertInvalid(() => validateGrant({ kind: "setField", field: "musicOn", value: "true" }), "EFFECT_VALUE");
   assertInvalid(() => validateGrant({ kind: "setField", field: "guildId", value: "9007199254740992" }), "EFFECT_VALUE");
   assertInvalid(() => validateGrant({ kind: "setField", field: "nickname", value: "x".repeat(129) }), "EFFECT_VALUE");
+});
+
+test("setField：角色登记 marker 与复核时间戳永久保留", () => {
+  for (const field of ["characterRegistration", "characterRegistrationCheckedAt"] as const) {
+    assert.ok(EFFECT_RESERVED_FIELDS.includes(field), `${field} 必须属于 shared reserved 集合`);
+    assertInvalid(
+      () => validateGrant({ kind: "setField", field, value: "client-controlled" }),
+      "EFFECT_RESERVED_FIELD",
+    );
+  }
 });
 
 test("setField：文本上限统一按 UTF-8 字节，含信封级上限和代理字符", () => {
