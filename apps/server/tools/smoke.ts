@@ -14,7 +14,7 @@ import { kLock, kRl } from "../src/core/infra/keys";
 const EXPECTED_TABLES = [
   "user_currency", "currency_ledger", "gameplay_outbox", "singleton_lease",
   "purchases", "match_index", "match_results", "mail",
-  "user_archive", "user_snapshot_readonly",
+  "user_archive", "archive_zone_usage", "user_snapshot_readonly",
 ];
 const FORBIDDEN_ACCOUNT_TABLES = ["accounts", "account_sessions", "char_registry", "login_audit", "seq"];
 const EXPECTED_LEASES = ["outbox_relayer", "freeze_worker"];

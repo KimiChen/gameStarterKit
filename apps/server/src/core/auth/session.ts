@@ -16,12 +16,13 @@
  */
 import { createHash, timingSafeEqual } from "node:crypto";
 import { SESS_TTL_S } from "../infra/config";
-import { kSess } from "../infra/keys";
+import { kSess, zoneCtx } from "../infra/keys";
 import { clientFor } from "../infra/redisRoute";
 import { AuthRequiredError } from "../errors";
 import { touchActive } from "../userRecord";
 import { storedInt } from "../infra/numbers";
 import { defineScript, evalshaWithReload } from "../infra/redisScripts";
+import { withUserLock } from "../locks";
 // 踢人通道（§2.3）：同区顶号时主动踢旧连接；账号封禁/撤销由 WebPlatform 管理面负责。
 import { broadcastKick, kickLocal } from "./kickBus";
 import { ForceLogoutReason } from "@game/shared";
@@ -109,28 +110,66 @@ return {1, oldHash or ''}
 
 export type GroupSessWriteResult = "written" | "unchanged" | "stale";
 
+export interface GroupSessWriteDependencies {
+  readonly touchActive: typeof touchActive;
+  readonly kickLocal: typeof kickLocal;
+  readonly broadcastKick: typeof broadcastKick;
+}
+
+const defaultGroupSessWriteDependencies: GroupSessWriteDependencies = {
+  touchActive,
+  kickLocal,
+  broadcastKick,
+};
+
 /**
  * @param issuedAtMs WebPlatform 权威侧签发时刻（同 `(uid,sId)` 严格递增）。
  *   ⛔ 别传 `Date.now()`：栅栏两侧必须来自同一个时钟（MySQL），否则进程间时钟偏移会让比较失去意义。
  */
 export async function writeGroupSess(
   uid: string, token: string, sId: number, gwNode = "", issuedAtMs = 0,
+  overrides: Partial<GroupSessWriteDependencies> = {},
 ): Promise<GroupSessWriteResult> {
+  const dependencies: GroupSessWriteDependencies = {
+    touchActive: overrides.touchActive ?? defaultGroupSessWriteDependencies.touchActive,
+    kickLocal: overrides.kickLocal ?? defaultGroupSessWriteDependencies.kickLocal,
+    broadcastKick: overrides.broadcastKick ?? defaultGroupSessWriteDependencies.broadcastKick,
+  };
   const key = kSess(uid, sId);
   const newHash = sha256(token);
   // 顶号判据（单端语义）：组 sess 里**原本存着一个不同的 tokenHash** ⇒ 该账号换了登录态（走了一次登录、
   // 换发了 token）⇒ 旧设备的连接要主动踢下线。⚠ 断线重连**不会**命中：重连复用同一 token（hash 相同），
   // 且不经登录；首次连接/sess 已过期时 oldHash=null 也不命中。判据精确到「换了登录态」这一件事。
   // ⚠ 这一读一写**必须原子**：拆成两步就是 A1 描述的那条竞态（中间可任意交错）。
-  const res = await evalshaWithReload(
-    clientFor(uid),
-    SESS_FENCE_LUA,
-    [key],
-    [newHash, String(issuedAtMs), String(Date.now()), gwNode, String(SESS_TTL_S)],
-  ) as [number, string];
-  const status = storedInt(res?.[0], "session fence status", { min: -1, max: 1 });
-  const oldRaw = String(res?.[1] ?? "");
-  const oldHash = oldRaw === "" ? null : oldRaw;
+  // Session existence is freeze's online-user gate. Serialize the gate write
+  // and its LRU refresh with the same per-zone user lock used by freeze: either
+  // login wins and freeze observes sess, or freeze wins and login subsequently
+  // refreshes the cold uid before onJoin thaws it.
+  const { status, oldHash, touchError } = await zoneCtx.run({ sId }, () => withUserLock(uid, async () => {
+    const res = await evalshaWithReload(
+      clientFor(uid),
+      SESS_FENCE_LUA,
+      [key],
+      [newHash, String(issuedAtMs), String(Date.now()), gwNode, String(SESS_TTL_S)],
+    ) as [number, string];
+    const status = storedInt(res?.[0], "session fence status", { min: -1, max: 1 });
+    const oldRaw = String(res?.[1] ?? "");
+    const oldHash = oldRaw === "" ? null : oldRaw;
+    // Refresh on both written and unchanged. If the first refresh failed after
+    // the session Lua committed, an identical retry sees unchanged and repairs
+    // the LRU instead of leaving a permanently unindexed new user.
+    let touchError: unknown;
+    if (status >= 0) {
+      try {
+        await dependencies.touchActive(uid, sId);
+      } catch (error) {
+        // The session Lua has already committed. Preserve replacement intent so
+        // a derived-index failure cannot suppress the mandatory old-session kick.
+        touchError = error;
+      }
+    }
+    return { status, oldHash, touchError };
+  }));
   if (status < 0) {
     // 陈旧写（更晚的登录已经写过了）：⛔ 直接返回——既不覆盖缓存，**也绝不踢人**。
     // 上一版没有这条路径，迟到的旧写不仅覆盖缓存，还会拿自己的 newHash 当判别位把**合法的新登录端**踢掉。
@@ -139,18 +178,19 @@ export async function writeGroupSess(
   }
   if (status === 0) {
     // 同 token + 同 issuedAt：同一登录态的第二条连接/重连，合法复用，⛔ 不触发顶号。
+    if (touchError !== undefined) { throw touchError; }
     return "unchanged";
   }
-  await touchActive(uid);
   if (oldHash !== null && oldHash !== newHash) {
     // 顶号：踢旧连接（本节点即时 + 跨节点广播）。⚠ 此刻**新连接尚未注册**——
     // Internal verify 后的 onAuth 懒填早于 onJoin.registerOnline，故 ⛔ 不会自踢。
     // ⚠ 带 newHash 判别位：本节点消费者会把这条广播读回来（流无发布者过滤），迟到投递时新连接
     // 可能已 registerOnline —— 判别位保证**只踢旧登录态**、⛔ 不自踢（跨节点同理）。
-    kickLocal(uid, ForceLogoutReason.Replaced, newHash, sId);
+    dependencies.kickLocal(uid, ForceLogoutReason.Replaced, newHash, sId);
     // ⚠ 带上 issuedAtMs（A6）：消费侧据此丢弃陈旧的顶号事件，⛔ 防积压时踢掉赢家
-    await broadcastKick(uid, ForceLogoutReason.Replaced, newHash, issuedAtMs, sId);
+    await dependencies.broadcastKick(uid, ForceLogoutReason.Replaced, newHash, issuedAtMs, sId);
   }
+  if (touchError !== undefined) { throw touchError; }
   return "written";
 }
 

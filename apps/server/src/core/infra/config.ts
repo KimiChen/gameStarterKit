@@ -328,34 +328,60 @@ export const BUCKETS = 16384;
 /** 冷档天数。⚠ 必须 >> max(OUTBOX_RETENTION, APPLIED_RETENTION)，且避开 30 天月度回流周期。 */
 export const COLD_DAYS = 90;
 /**
- * 冻结开关：按内存水位（used_memory/maxmemory > 0.6）启用（09·F5），默认关。
- *
- * ⚠ **archive 步补齐前，freeze 在任何配置下都不安全，故加载期 fail-fast**（DUAL_MODE archive 步）。
- * 判据不是"是否多区"——⛔ **上一版这道闸把判据写成 `GROUP_ZONES.length > 0` 就抛，两边都反了**
- * （评审逮到）。实测事实：
- *   - `GROUP_ZONES` **非空** ⇒ freezeWorker 在**运行期**就崩：它不在 `zoneCtx.run` 内（archive/ 全目录
- *     零 zoneCtx），而 `kUser` 走 `P()` ⇒ `currentZoneId()` 命中 keys.ts 的 fail-fast 抛错。
- *     所以这一侧 freeze 本来就跑不起来，旧闸拦的是**空档**。
- *   - `GROUP_ZONES` **空** ⇒ freeze 真能跑，而这一侧才是**唯一会坏数据**的：`kActiveLru` 用**全局**
- *     前缀 `G`、`kUser` 用**区**前缀 `P()` ⇒ 在 s1 玩过的 uid 出现在全局 LRU 里，worker（sId=0）
- *     去查 `prefix_user:{uid}` 查不到，于是按 freezeWorker 的**幽灵项**分支把这个**活人**从活跃
- *     索引里 `ZREM` 掉。旧闸恰恰放行了它，还有绿测试把它钉成"合法组合"。
- * ⇒ 结论：⛔ 别再试图用「单区/多区」区分安全性。补齐 archive 步（`user_archive` 加 server_id、
- *   `active:lru` 区化、worker 进 zoneCtx）之前，唯一安全值是 0。
- * ⚠ 逃生口 `FREEZE_UNSAFE_S0_ONLY=1` 仅给"目录确实不下发任何 s≥1、全库只有 s0"的部署
- *   （默认目录下发 s1–s5，⛔ 缺省不满足）；命名带 UNSAFE 是刻意的，⛔ 别用它绕过上面的结论。
+ * Freeze worker 的显式区清单。`GROUP_ZONES` 空表示承载全部区，不能据此枚举后台任务；
+ * 因此开启 freeze 时必须给出非空、无重复的 ARCHIVE_ZONES。
  */
-export const FREEZE_ENABLED = (() => {
-  const on = process.env.FREEZE_ENABLED === "1";
-  if (on && process.env.FREEZE_UNSAFE_S0_ONLY !== "1") {
-    throw new Error(
-      "FREEZE_ENABLED=1 但 archive 步未补齐（DUAL_MODE archive 步）——freeze 目前在任何配置下都不安全："
-      + `GROUP_ZONES 非空（当前「${process.env.GROUP_ZONES ?? ""}」）时 freezeWorker 运行期即崩（keys.ts `
-      + "zoneCtx fail-fast）；GROUP_ZONES 空时 active:lru 是全局键而 user 档是区键 ⇒ 在 s≥1 玩过的活人"
-      + "会被当幽灵项从活跃索引 ZREM 掉。补齐前唯一安全值是 FREEZE_ENABLED=0。"
-      + "（确认本部署只有 s0、目录不下发任何 s≥1，才可加 FREEZE_UNSAFE_S0_ONLY=1 显式放行）");
+export const ARCHIVE_ZONES: readonly number[] = (() => {
+  const raw = process.env.ARCHIVE_ZONES;
+  if (raw === undefined || raw.trim() === "") { return []; }
+  const zones: number[] = [];
+  const seen = new Set<number>();
+  for (const item of raw.split(",")) {
+    const value = item.trim();
+    if (!/^\d+$/.test(value)) {
+      throw new Error(`ARCHIVE_ZONES 非法：「${raw}」——须为逗号分隔的 0..65535 整数`);
+    }
+    const sId = Number(value);
+    if (!Number.isInteger(sId) || sId > 65535) {
+      throw new Error(`ARCHIVE_ZONES 非法：「${raw}」——sId 须为 0..65535`);
+    }
+    if (seen.has(sId)) {
+      throw new Error(`ARCHIVE_ZONES 非法：「${raw}」——区 ${sId} 重复`);
+    }
+    seen.add(sId);
+    zones.push(sId);
   }
-  return on;
+  return zones;
+})();
+/** Redis 达到该内存占比后才允许 freeze；缺失/畸形 INFO 或 maxmemory=0 一律 fail-closed。 */
+export const FREEZE_REDIS_HIGH_WATERMARK = (() => {
+  const value = envFloat("FREEZE_REDIS_HIGH_WATERMARK", 0.6);
+  if (value <= 0 || value > 1) {
+    throw new Error(`FREEZE_REDIS_HIGH_WATERMARK 非法：「${value}」——须在 (0,1]`);
+  }
+  return value;
+})();
+const archivePositiveInt = (name: string, dflt: number): number => {
+  const value = envInt(name, dflt);
+  if (value < 1) { throw new Error(`${name} 非法：「${value}」——须为正整数`); }
+  return value;
+};
+/** 单档与每区 admission guard；它们不是备份、分片或物理容量规划。 */
+export const ARCHIVE_MAX_SNAPSHOT_BYTES = archivePositiveInt("ARCHIVE_MAX_SNAPSHOT_BYTES", 8 * 1024 * 1024);
+export const ARCHIVE_MAX_ROWS_PER_ZONE = archivePositiveInt("ARCHIVE_MAX_ROWS_PER_ZONE", 1_000_000);
+export const ARCHIVE_MAX_BYTES_PER_ZONE = archivePositiveInt("ARCHIVE_MAX_BYTES_PER_ZONE", 100 * 1024 * 1024 * 1024);
+if (ARCHIVE_MAX_BYTES_PER_ZONE < ARCHIVE_MAX_SNAPSHOT_BYTES) {
+  throw new Error("ARCHIVE_MAX_BYTES_PER_ZONE 不得小于 ARCHIVE_MAX_SNAPSHOT_BYTES");
+}
+/** 单轮跨全部区/桶的候选总预算。 */
+export const FREEZE_SWEEP_BUDGET = archivePositiveInt("FREEZE_SWEEP_BUDGET", 100);
+/** 默认关；开启必须有可枚举的 archive 区集合。 */
+export const FREEZE_ENABLED = (() => {
+  const enabled = process.env.FREEZE_ENABLED === "1";
+  if (enabled && ARCHIVE_ZONES.length === 0) {
+    throw new Error("FREEZE_ENABLED=1 时 ARCHIVE_ZONES 必须显式配置为非空、无重复区清单");
+  }
+  return enabled;
 })();
 /** 冻结速率 per-instance（uid/s），峰期 0。 */
 export const FREEZE_RATE = envInt("FREEZE_RATE", 50);

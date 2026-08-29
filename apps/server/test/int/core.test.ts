@@ -21,9 +21,10 @@ import { deriveOpId, redisApply } from "../../src/core/economy/outbox";
 import { createUser } from "../../src/core/userRecord";
 import { writeGroupSess } from "../../src/core/auth/session";
 import { LOCK_TTL_MS } from "../../src/core/infra/config";
-import { kApplied, kBag, kBagAll, kIdemUser, kLock, kUser } from "../../src/core/infra/keys";
+import { kApplied, kBag, kBagAll, kIdemUser, kLock, kSess, kUser } from "../../src/core/infra/keys";
 import { clientFor, closeRedis } from "../../src/core/infra/redisRoute";
 import { CAS_HSET, evalshaWithReload } from "../../src/core/infra/redisScripts";
+import { closeMysql } from "../../src/core/infra/mysql";
 import { assertRedisUp, cleanupUser, sleep, testUid } from "./helpers";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -34,6 +35,7 @@ before(async () => { await assertRedisUp(); });
 after(async () => {
   for (const u of usedUids) { await cleanupUser(u); }
   await closeRedis();
+  await closeMysql();
 });
 
 // ── 1. 并发 100 同 uid 串行 + 双 uid 不串号 ──────────────────────
@@ -110,6 +112,42 @@ test("casHset / applyEffect 对不存在的 uid → cold，未创建任何 key",
 
   for (const k of [kUser(u), kApplied(u), ...kBagAll(u)]) {
     assert.equal(await c.exists(k), 0, `${k} 不该被创建（09·R2）`);
+  }
+});
+
+test("casHset 严格守卫 schema/ver/fence：缺失或损坏元数据时零部分写", async () => {
+  const cases: ReadonlyArray<{
+    name: string;
+    corrupt: (user: string) => Promise<void>;
+    message: RegExp;
+  }> = [
+    {
+      name: "missing-ver",
+      corrupt: async (user) => { await clientFor(user).hdel(kUser(user), "ver"); },
+      message: /casHset metadata invalid/,
+    },
+    {
+      name: "future-schema",
+      corrupt: async (user) => { await clientFor(user).hset(kUser(user), "schemaVersion", "2"); },
+      message: /casHset schema invalid/,
+    },
+    {
+      name: "bad-fence",
+      corrupt: async (user) => { await clientFor(user).hset(kUser(user), "fence", "bad"); },
+      message: /casHset metadata invalid/,
+    },
+  ];
+  for (const item of cases) {
+    const u = uid(`cas_guard_${item.name}`);
+    await createUser(u);
+    const c = clientFor(u);
+    await item.corrupt(u);
+    const before = await c.hgetall(kUser(u));
+    await assert.rejects(
+      evalshaWithReload(c, CAS_HSET, [kUser(u)], ["1", "probe", "written"]),
+      item.message,
+    );
+    assert.deepEqual(await c.hgetall(kUser(u)), before, `${item.name} 不得产生任何字段写入`);
   }
 });
 
@@ -218,4 +256,46 @@ test("session fence：脚本缓存丢失时自动 NOSCRIPT reload，状态语义
   } finally {
     redisWithEvalsha.evalsha = originalEvalsha;
   }
+});
+
+test("session 已 written 但首次 touchActive 失败：同 token unchanged 重试补齐 LRU", async () => {
+  const u = uid("session-touch-retry");
+  let touches = 0;
+  await assert.rejects(
+    writeGroupSess(u, "touch-retry-token", 1, "", 301, {
+      touchActive: async () => {
+        touches++;
+        throw new Error("injected LRU failure");
+      },
+    }),
+    /injected LRU failure/,
+  );
+  assert.equal(await writeGroupSess(u, "touch-retry-token", 1, "", 301, {
+    touchActive: async () => { touches++; },
+  }), "unchanged");
+  assert.equal(touches, 2, "unchanged 路径必须重试 touchActive，而非提前返回");
+  await clientFor(u).unlink(kSess(u, 1));
+});
+
+test("replacement session 不因 touchActive 失败漏踢旧登录", async () => {
+  const u = uid("session_replacement_touch_failure");
+  const localKicks: string[] = [];
+  const broadcasts: string[] = [];
+  const dependencies = {
+    touchActive: async (): Promise<void> => {},
+    kickLocal: (_uid: string): void => { localKicks.push(_uid); },
+    broadcastKick: async (_uid: string): Promise<void> => { broadcasts.push(_uid); },
+  };
+  assert.equal(await writeGroupSess(u, "old-token", 1, "", 401, dependencies), "written");
+
+  await assert.rejects(writeGroupSess(u, "new-token", 1, "", 402, {
+    ...dependencies,
+    touchActive: async (): Promise<void> => { throw new Error("injected lru failure"); },
+  }), /injected lru failure/);
+  assert.deepEqual(localKicks, [u], "本节点旧连接必须在 LRU 错误上抛前被踢");
+  assert.deepEqual(broadcasts, [u], "跨节点 replacement 事件必须在 LRU 错误上抛前发布");
+
+  assert.equal(await writeGroupSess(u, "new-token", 1, "", 402, dependencies), "unchanged");
+  assert.deepEqual(localKicks, [u], "相同登录态重试不得重复顶号");
+  assert.deepEqual(broadcasts, [u], "相同登录态重试不得重复广播");
 });

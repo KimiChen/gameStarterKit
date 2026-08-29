@@ -56,12 +56,15 @@ export class UnitOfWork {
  * 后台写路径（relayer 等）不走本入口，自行编排 ensureLive（09·X5）。
  */
 export async function withUser<T>(uid: string, fn: (uow: UnitOfWork) => Promise<T>): Promise<T> {
+  const { ensureLive } = await import("./archive/thaw"); // 动态 import 斩静态环（thaw→locks→…）
+  const sId = currentZoneId();
+  // live hash 存在也可能是 Redis PITR 后的旧分支；所有普通玩法写先完成 archive 对账。
+  await ensureLive(uid, sId);
   try {
     return await withUserAttempt(uid, fn);
   } catch (e) {
     if (!(e instanceof ColdUserError)) { throw e; }
-    const { ensureLive } = await import("./archive/thaw"); // 动态 import 斩静态环（thaw→locks→…）
-    await ensureLive(uid, currentZoneId());
+    await ensureLive(uid, sId);
     return withUserAttempt(uid, fn);
   }
 }
@@ -81,7 +84,7 @@ async function withUserAttempt<T>(uid: string, fn: (uow: UnitOfWork) => Promise<
       if (wrote) { uow.set("lastActiveAt", String(Date.now())); }
       await uow.commit();
       // 活跃索引是派生数据：commit 成功后尽力刷，失败靠下次写/登录补，不影响本次正确性
-      if (wrote) { await touchActive(uid).catch(() => {}); }
+      if (wrote) { await touchActive(uid, currentZoneId()).catch(() => {}); }
       return r;
     } catch (e) {
       uow.discard(); // 没 commit 就没写，天然不落

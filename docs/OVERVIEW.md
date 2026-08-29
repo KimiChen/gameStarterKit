@@ -108,9 +108,9 @@ apps/client/src
 - Redis key 与 MySQL 查询显式携带区上下文。
 - 大规模同步计算不放在网关 handler 中。
 
-这些是开发实现应保持的不变量，不是对当前所有路径已经完成证明的声明。relayer 事务边界、archive 隔离、
-stream 坏条目处置和热档 schema 迁移等剩余缺口及其验收标准统一记录在 [plan-v2.md](../plan-v2.md)；asset effect
-原子性与经济操作的跨区回读已按 P0-03 收口。
+这些是开发实现应保持的不变量，不是对当前所有路径已经完成证明的声明。完成状态、剩余缺口和保留边界
+统一以 [plan-v2.md](../plan-v2.md) 为准；当前仍开放的是热档 schema 迁移、match 完整输入重放和异构第二
+玩法，asset effect 原子性与经济操作的跨区回读已按 P0-03 收口。
 
 ## 4. 标准开发动线
 

@@ -96,6 +96,14 @@ export class UserDataLostError extends Error {
   constructor(msg = "user data lost") { super(msg); this.name = "UserDataLostError"; }
 }
 
+/** live/archive 双存但缺少当前 freeze_id 的同源证明；保留两边等待人工判定。 */
+export class ArchiveAuthorityConflictError extends Error {
+  constructor(msg = "archive authority conflict") {
+    super(msg);
+    this.name = "ArchiveAuthorityConflictError";
+  }
+}
+
 /**
  * Lua 返回 cold：user:{uid} 不存在（可能已冻结）。
  * 内部信号，调用方 `ensureLive(uid)` 后重试；不直接对客户端暴露。

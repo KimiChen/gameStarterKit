@@ -6,7 +6,7 @@
  * ⛔ 全仓库禁止 HGETALL（09·R1）——一律 HMGET 按需取字段。
  */
 import { SCHEMA_VERSION } from "./infra/config";
-import { activeLruBucketOf, kActiveLru, kUser } from "./infra/keys";
+import { activeLruBucketOf, kActiveLru, kUser, zoneCtx } from "./infra/keys";
 import { clientFor, indexClientFor } from "./infra/redisRoute";
 import { CREATE_USER, evalshaWithReload } from "./infra/redisScripts";
 
@@ -17,9 +17,11 @@ export async function loadFields(uid: string, fields: string[]): Promise<Record<
 }
 
 /** 刷活跃索引（登录点 + withUser 写提交尾部共同构成完整索引，冷档候选靠它，08）。 */
-export async function touchActive(uid: string): Promise<void> {
-  const bucket = activeLruBucketOf(uid);
-  await indexClientFor(bucket).zadd(kActiveLru(bucket), Date.now(), uid);
+export async function touchActive(uid: string, sId: number): Promise<void> {
+  await zoneCtx.run({ sId }, async () => {
+    const bucket = activeLruBucketOf(uid);
+    await indexClientFor(bucket).zadd(kActiveLru(bucket), Date.now(), uid);
+  });
 }
 
 /**

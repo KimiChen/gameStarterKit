@@ -242,6 +242,27 @@ test("Lua apply 预检 Redis key 类型与键集合：污染时不发生部分�
   });
 });
 
+test("Lua apply 严格守卫热档 schema/ver：缺失或 future 元数据不被静默补默认值", async () => {
+  const cases = [
+    { name: "missing-ver", field: "ver", value: null },
+    { name: "future-schema", field: "schemaVersion", value: "2" },
+  ] as const;
+  for (const item of cases) {
+    const user = await seed(`metadata-${item.name}`);
+    const redis = clientFor(user);
+    if (item.value === null) { await redis.hdel(kUser(user), item.field); }
+    else { await redis.hset(kUser(user), item.field, item.value); }
+    const before = await dump(user);
+    const result = await luaApplyRaw(
+      user,
+      deriveOpId(user, 0, "effect.metadata", item.name),
+      JSON.stringify({ schemaVersion: 1, grants: [{ kind: "item", itemId: 7, count: 1 }] }),
+    );
+    assert.equal(result, "err:EFFECT_DATA_CORRUPT");
+    assert.deepEqual(await dump(user), before, `${item.name} 不得补 ver/schema 或写 marker`);
+  }
+});
+
 test("Lua apply 拒绝 ver/余额安全整数上界溢出，且不写 marker", async () => {
   const user = await seed("overflow");
   await zoneCtx.run({ sId: 0 }, async () => {

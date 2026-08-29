@@ -95,12 +95,13 @@ apps/server/
 | 开发账号、会话、角色存在性 | 外部 WebPlatform | 本仓只通过锁定的 HTTP 契约验证或登记 |
 | 货币、ledger、outbox、邮件、对局结果 | MySQL | 事务、唯一键和显式状态约束 |
 | 玩家热档、背包、fence、applied marker/payload binding | durable Redis | hash/Lua/lock；不能被 cache 替代 |
+| 玩家冷档（实验模块） | MySQL `user_archive` | 以 `(user_id,server_id)` 为身份；仅在显式 freeze 后成为权威 |
 | 余额缓存 | cache Redis | 可重建，失败不能改变 MySQL 权威结果 |
 | Room state、进程内 Map、计时器 | 进程内临时状态 | 不作为持久真源 |
 
-`schema.sql` 还包含若干非核心或未闭环表：`purchases` 属可选商业化参考；`user_archive` 属默认关闭的
-实验模块；`user_snapshot_readonly` 目前只有 DDL，没有运行时代码；`singleton_lease` 服务于显式后台样例。
-不要因表存在就推断对应业务能力已经交付。
+`schema.sql` 还包含若干非核心或未闭环表：`purchases` 属可选商业化参考；`user_archive` 与其派生容量
+ledger `archive_zone_usage` 属默认关闭的实验模块；`user_snapshot_readonly` 目前只有 DDL，没有运行时代码；
+`singleton_lease` 服务于显式后台样例。不要因表存在就推断对应业务能力已经交付。
 
 按区数据必须显式传播区上下文：
 
@@ -109,8 +110,9 @@ apps/server/
   仅 `outboxStats` 与保留期清理是有意的全局聚合/清理操作。
 - per-zone Redis key 只由 `core/infra/keys.ts` 构造，并在 `zoneCtx.run` 中解析区前缀。
 - 派生幂等 ID 编入区号；GameRoom/LobbyRoom 同时核对 `sId`、本组配置与认证结果。
+- `user_archive` 与 `user_snapshot_readonly` 的身份键是 `(user_id,server_id)`；归档查询、恢复、清理和
+  `active:lru` 候选均携带区号。`archive_zone_usage` 是按区派生的 admission ledger，不是新权威。
 - `match_index` 与 `singleton_lease` 刻意是全局表；不能机械添加 `server_id`。
-- `user_archive` 与 `user_snapshot_readonly` 当前没有 `server_id`，这是 archive 不能安全启用的原因之一。
 
 持久写原则上应在请求完成前提交到真源，不依赖进程退出时 flush。Lobby 首角色初始化现在位于
 `onJoin` 的 awaited ready 边界：超时或失败会拒绝本次 join，不会公开一个“已登录但角色为空”的 seat；
@@ -290,11 +292,34 @@ relayer 重试超过 `OUTBOX_MAX_ATTEMPTS` 后会把 intent 行标记为 dead（
 ## 9. 实验性冷档模块
 
 `core/archive` 展示 freeze/thaw、archive fence 与 lazy migrate。`ensureLive`/thaw 已被部分热档路径引用，
-但 freeze worker 默认关闭；设置 `FREEZE_ENABLED=1` 会在加载期失败，除非再显式使用命名为 unsafe 的
-s0-only escape hatch（`FREEZE_UNSAFE_S0_ONLY`）。当前问题包括 archive 表无 `server_id`、active LRU
-全局化和 worker 缺区上下文。
+但 freeze worker 仍默认关闭。启用时必须同时提供非空、无重复的 `ARCHIVE_ZONES`；worker 只轮询该清单，
+在每个区的 `zoneCtx` 中读取独立 `active:lru`，并以 `(user_id,server_id)` 读写冷档。s0 保留旧物理 LRU
+key，s1+ 使用区前缀。旧版全局 LRU 的成员不携带区号，不能安全拆分；存量部署首次启用前必须从权威的
+每区用户清单有界枚举 `user.lastActiveAt`，分别重建所有配置区的 LRU，不能把旧成员复制到各区。
+`active:lru` 的 score 不是纯业务时间：永久 skip 或单次错误会以 `ZADD XX GT` 将它提升到当轮 cold
+cutoff，作为有界扫描的调度退避边界，同时保留并发登录写入的更大 score。因此它等于真实活跃时间与
+调度退避边界的较大值；`user.lastActiveAt` 才是索引丢失后可重建的真实活跃来源。
 
-它不能作为容量、备份或长期存储方案。完整分类见
+双存态不按 fence 数字猜先后：MySQL 行记录随机 `freeze_id` 与
+`LEGACY / PREPARED / COMMITTED` phase，Redis 同槽 proof HASH 只按当前行 `freeze_id` 的精确 membership
+证明同源。`LEGACY` 双存态或无法证明同源的 phase/proof 组合会保留两侧并报冲突；`fence_hwm` 只作为
+thaw 后的 fence floor 阻断僵尸 writer，不参与 live/archive 权威排序。
+
+候选扫描用跨 `zone × bucket` 的轮转游标，`FREEZE_SWEEP_BUDGET` 同时约束候选数和空桶探测数。janitor
+只访问配置区，为每区保存 `(frozen_at,user_id)` keyset 游标并轮转区；空区探测同样消耗单轮预算，进程
+重启后从头扫描仍保持幂等。Redis 只有在 `used_memory / maxmemory` 达到
+`FREEZE_REDIS_HIGH_WATERMARK` 时才允许冻结；INFO 缺失、重复、畸形、请求失败或 `maxmemory=0` 都会
+fail-closed，保留热档。
+
+单档先用 UTF-8 序列化字节数做早期上限检查，最终 admission 一律采用 MySQL
+`JSON_STORAGE_SIZE(snapshot)`。freeze 在 singleton lease 守卫的同一事务中锁定每区
+`archive_zone_usage` 和目标冷档行，按新增/替换增量更新；只有投影超限时才精确重算该区 ledger，以便
+识别人工删除释放的容量。thaw 与 janitor 删除冷档时也在删除事务内扣减 ledger。容量超限只拒绝新
+freeze，不会为腾空间删除仍是唯一权威的冷档。
+
+这些上限是 admission guard，不是表空间或磁盘容量保证；模块也不提供备份、分片迁移、自动冷档淘汰或
+通用长期存储方案。热档 `schemaVersion` 的读取/迁移仍未闭环，因此即使配置满足也只能按实验模块评估。
+完整分类见
 [EXTRAFEATURES §3.6](EXTRAFEATURES.md#36-多区分片扩展与冷档参考)。
 
 ## 10. 广播与事件
@@ -391,8 +416,9 @@ quarantine 不属于自动 `XTRIM` 范围，非空或 key 类型/权限异常时
 
 ### F/S — 档案与 schema
 
-- **09·F1–F5 / S1–S2**：freeze/thaw 核对 fence；写路径不绕过在线保护；角色存在性不靠猜；
-  reader/migrator/version 与需迁移常量的边界显式化。
+- **09·F1–F5 / S1–S2**：freeze/thaw 用 phase、当前 `freeze_id` 的 exact proof membership 判权；
+  `fence_hwm` 只阻断 thaw 后的僵尸 writer，不参与权威排序；无法证明同源时保留双存态并 fail-closed；
+  写路径不绕过在线保护；角色存在性不靠猜；reader/migrator/version 与需迁移常量的边界显式化。
 
 当前已确认的主要偏差是 S1 的热档 reader 不看 schemaVersion。Game HTTP request schema 已由 shared
 validator 同源生成并直接注入带 body 的路由；该边界在源码中没有对应编号标签，⛔ 不要用 09·X2 / 09·X3

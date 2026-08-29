@@ -134,33 +134,64 @@ test("WEBPLATFORM_SERVICE_ID 非法值加载期拒绝", () => {
   }
 });
 
-/**
- * FREEZE_ENABLED 加载期闸（archive 步补齐前唯一安全值是 0）。
- *
- * ⚠ **本组用例是对上一版用例的纠正，⛔ 别改回去**：上一版把判据当成「多区才危险」，于是
- * ①「FREEZE_ENABLED=1 + GROUP_ZONES 非空 → 拒绝」，②「FREEZE_ENABLED=1 + GROUP_ZONES 空 → 合法」。
- * 两条都反了，而且第二条**把唯一会坏数据的组合钉成了绿契约**——比原来的散文更坏，因为有人会信它。
- * 实测依据见 config.ts 该项注释：空 GROUP_ZONES 才是 freeze 唯一跑得起来、也唯一会把在 s≥1
- * 玩过的活人当幽灵项 ZREM 掉的配置；非空那侧 worker 运行期本来就崩（keys.ts zoneCtx fail-fast）。
- */
-test("FREEZE_ENABLED=1：加载期即 throw —— ⛔ 空 GROUP_ZONES 也不例外（那侧才会坏数据）", () => {
-  for (const zones of [undefined, "", "0", "1", "1,2", "0,3"]) {
-    const r = loadConfigWith({ FREEZE_ENABLED: "1", GROUP_ZONES: zones });
-    assert.notEqual(r.status, 0, `GROUP_ZONES=「${String(zones)}」+ freeze 必须拒绝启动`);
-    assert.match(r.stderr, /archive 步未补齐/, `stderr：${r.stderr.slice(0, 300)}`);
+test("ARCHIVE_ZONES 必须是显式、无重复的合法区清单", () => {
+  for (const bad of ["1,1", "1,,2", "-1", "1.5", "x", "65536"]) {
+    const r = loadConfigWith({ ARCHIVE_ZONES: bad });
+    assert.notEqual(r.status, 0, `ARCHIVE_ZONES=${bad} 应拒绝启动`);
+    assert.match(r.stderr, /ARCHIVE_ZONES 非法/);
+  }
+  for (const good of ["0", "1", "0,1,65535", "1, 2, 3"]) {
+    const r = loadConfigWith({ ARCHIVE_ZONES: good });
+    assert.equal(r.status, 0, `ARCHIVE_ZONES=${good} 应通过：${r.stderr.slice(0, 240)}`);
   }
 });
 
-test("FREEZE_ENABLED=0（或未设）：任何 GROUP_ZONES 都正常加载", () => {
-  for (const [freeze, zones] of [["0", ""], ["0", "1,2"], [undefined, "0"], [undefined, ""]] as const) {
-    const r = loadConfigWith({ FREEZE_ENABLED: freeze, GROUP_ZONES: zones });
-    assert.equal(r.status, 0, `FREEZE_ENABLED=${String(freeze)} GROUP_ZONES=${String(zones)} 应通过，stderr：${r.stderr.slice(0, 300)}`);
+test("FREEZE_ENABLED=1 要求非空 ARCHIVE_ZONES，旧 unsafe 开关不能绕过", () => {
+  for (const zones of [undefined, ""]) {
+    const r = loadConfigWith({
+      FREEZE_ENABLED: "1",
+      ARCHIVE_ZONES: zones,
+      FREEZE_UNSAFE_S0_ONLY: "1",
+    });
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /ARCHIVE_ZONES 必须显式配置/);
+  }
+  const enabled = loadConfigWith({ FREEZE_ENABLED: "1", ARCHIVE_ZONES: "0,2" });
+  assert.equal(enabled.status, 0, enabled.stderr.slice(0, 300));
+});
+
+test("FREEZE_ENABLED=0（或未设）允许空 worker 区清单", () => {
+  for (const freeze of ["0", undefined] as const) {
+    const r = loadConfigWith({ FREEZE_ENABLED: freeze, ARCHIVE_ZONES: "" });
+    assert.equal(r.status, 0, `FREEZE_ENABLED=${String(freeze)} 应通过：${r.stderr.slice(0, 300)}`);
   }
 });
 
-test("逃生口 FREEZE_UNSAFE_S0_ONLY=1：显式放行（⛔ 仅限目录不下发 s≥1 的部署）", () => {
-  const r = loadConfigWith({ FREEZE_ENABLED: "1", FREEZE_UNSAFE_S0_ONLY: "1", GROUP_ZONES: "" });
-  assert.equal(r.status, 0, `显式逃生口应放行，stderr：${r.stderr.slice(0, 300)}`);
+test("archive 容量、水位与 sweep budget 配置严格拒绝零值和畸形值", () => {
+  const fields = [
+    "ARCHIVE_MAX_SNAPSHOT_BYTES",
+    "ARCHIVE_MAX_ROWS_PER_ZONE",
+    "ARCHIVE_MAX_BYTES_PER_ZONE",
+    "FREEZE_SWEEP_BUDGET",
+  ];
+  for (const field of fields) {
+    for (const bad of ["0", "-1", "1.5", "NaN", "9007199254740992"]) {
+      const r = loadConfigWith({ [field]: bad });
+      assert.notEqual(r.status, 0, `${field}=${bad} 应拒绝启动`);
+      assert.match(r.stderr, new RegExp(field));
+    }
+  }
+  for (const bad of ["0", "1.1", "-0.1", "NaN", "0.6junk"]) {
+    const r = loadConfigWith({ FREEZE_REDIS_HIGH_WATERMARK: bad });
+    assert.notEqual(r.status, 0, `FREEZE_REDIS_HIGH_WATERMARK=${bad} 应拒绝启动`);
+    assert.match(r.stderr, /FREEZE_REDIS_HIGH_WATERMARK/);
+  }
+  const inverted = loadConfigWith({
+    ARCHIVE_MAX_SNAPSHOT_BYTES: "101",
+    ARCHIVE_MAX_BYTES_PER_ZONE: "100",
+  });
+  assert.notEqual(inverted.status, 0);
+  assert.match(inverted.stderr, /ARCHIVE_MAX_BYTES_PER_ZONE 不得小于/);
 });
 
 /**

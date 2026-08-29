@@ -104,20 +104,22 @@ test("getInfo 压测：只读路径不产生任何 lock:{uid}（09·G2）", asyn
 test("写样板 updateProfile：casHset 落字段 + lastActiveAt + active:lru（10·M5 接线）", async () => {
   const { uid, token } = await makeUser("wr");
   const room = await joinLobby(token);
+  const c = clientFor(uid);
+  const verBefore = Number(await c.hget(kUser(uid), "ver"));
+  assert.ok(Number.isSafeInteger(verBefore), "join 后 user.ver 合法");
   const r = await rpc(room, "user.updateProfile", { clientReqId: "c1", nickname: "赵子龙", avatarId: 3 });
   assert.equal(r.ok, true);
-  const c = clientFor(uid);
   const [nick, avatar, lastActive, ver] = await c.hmget(kUser(uid), "nickname", "avatarId", "lastActiveAt", "ver");
   assert.equal(nick, "赵子龙");
   assert.equal(avatar, "3");
   assert.ok(Number(lastActive) > 0, "lastActiveAt 已写");
-  assert.equal(ver, "1");
+  assert.equal(ver, String(verBefore + 1), "updateProfile 恰好 bump 一次 ver");
   const b = activeLruBucketOf(uid);
   assert.ok(await indexClientFor(b).zscore(kActiveLru(b), uid), "active:lru 已收录");
   // 幂等结果缓存：同 clientReqId 重放直接回缓存，ver 不再 bump
   const r2 = await rpc(room, "user.updateProfile", { clientReqId: "c1", nickname: "赵子龙" });
   assert.equal(r2.ok, true);
-  assert.equal(await c.hget(kUser(uid), "ver"), "1", "重放未二次写入");
+  assert.equal(await c.hget(kUser(uid), "ver"), String(verBefore + 1), "重放未二次写入");
   await room.leave();
 });
 

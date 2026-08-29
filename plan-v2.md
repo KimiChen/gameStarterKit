@@ -28,7 +28,17 @@
   `relayer-boundary.test.ts` 覆盖成功/失败阶段、lease 丢失、死信与 CAS 0 行，`int/relayer.test.ts` 覆盖
   真实进程崩溃窗口和 lease 接管；定向边界测试 7/7、`npm --workspace @game/server run typecheck`、
   `npm --workspace @game/server run test` 214/214 与 `npm --workspace @game/server run test:int` 104/104 通过。
-- `[不阻塞·待补齐]` archive 表仍缺少完整的区隔离与容量方案（详见 §4 P1-06）。
+- `[已完成]` archive 以 `(user_id,server_id)` 隔离冷档身份、LRU、worker 与 janitor；每次 freeze 使用随机
+  `freeze_id`，MySQL `LEGACY/PREPARED/COMMITTED` phase 与 Redis 当前 id 的 exact proof membership
+  处理崩溃双存态，`fence_hwm` 只作为 thaw 后 fence floor，不参与权威排序。legacy、坏热档或无法证明同源
+  的双存态保留两边并 fail-closed；普通及后台 writer 写前统一对账，session 与 freeze 共用 per-zone 用户锁。
+  Redis 水位不可证明、`maxmemory=0`、单档或分区容量超限均保留热档；`archive_zone_usage` 按区以
+  `JSON_STORAGE_SIZE` 增量记账，缺行先锁 sentinel 再精确重建，thaw/janitor 删除在同一事务扣减。
+  验收证据：`int/archive.test.ts` 44/44 覆盖跨区、phase/proof 崩溃窗、PITR、WRONGTYPE/坏 metadata、容量
+  ledger、freeze/session 竞态及 writer 对账；`freeze-janitor.test.ts`、`archive-capacity.test.ts` 与
+  `outbox-trim-boundary.test.ts` 定向 22/22，`int/db-bootstrap.test.ts` 1/1 覆盖升级前只读 preflight 与
+  DDL 零半升级；服务端 typecheck、单测 256/256、全量集成 134/134、`smoke:framework`、
+  `npm run verify:inventory` 与 `git diff --check` 通过。
 - `[已完成]` 坏 match stream entry 不再 ACK 丢弃：来源流与 quarantine 固定同槽，Lua 先持久化来源
   key/id、group、原因码及精确原始 fields，再 ACK 来源 PEL；v2 payload 在生产/消费两侧做 exact shape 与
   已声明值域校验，opaque loadout 也须为 canonical JSON，legacy 保持历史兼容域。同主机 worker 使用进程
@@ -167,10 +177,11 @@
 ### P1-06 任务、存储和冷档边界
 
 - `[已完成]` relayer 事务边界已拆为守卫短事务与事务外 I/O，且失败/接管路径有定向证据（见 §1）。
-- `[不阻塞·待补齐]` archive 区隔离/容量方案仍待补齐（即 §1 第 2 条）。
+- `[已完成]` archive 区隔离、崩溃判权、容量 admission、写路径对账与升级 preflight 已补齐；实现边界和
+  44/44 Archive 集成、22/22 定向单测、1/1 bootstrap 反例及全量 134/134 证据见 §1 第 2 条。
 - `[不阻塞·待补齐]` 热档 schema 迁移仍待补齐（即 §1 第 4 条）。
-- `[不阻塞·有意保留]` freeze worker 默认硬关闭（`FREEZE_ENABLED`），默认配置下不会触发。
-  （「启用需 unsafe escape hatch」一说出自 `docs/EXTRAFEATURES.md`，非 `plan.md` 原文。）
+- `[不阻塞·有意保留]` freeze worker 默认关闭（`FREEZE_ENABLED`），默认配置下不会触发；启用时必须显式
+  配置非空、无重复的 `ARCHIVE_ZONES`。
 - `[不阻塞·有意保留]` dispatcher 的 timeout 仍不取消 handler，迟到副作用只能由数据层幂等收敛。
 
 来源：`plan.md:573-574`、`plan.md:585-586`、`plan.md:596-597`

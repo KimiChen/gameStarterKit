@@ -14,7 +14,7 @@ import {
   EFFECT_MAX_GRANTS, EFFECT_MAX_ITEM_ID, EFFECT_MAX_QUANTITY, EFFECT_MAX_VALUE_BYTES,
   EFFECT_FIELD_VALUE_RULES, EFFECT_RESERVED_FIELDS, EFFECT_SCHEMA_VERSION,
 } from "@game/shared";
-import { BAG_SHARDS } from "./config";
+import { BAG_SHARDS, SCHEMA_VERSION } from "./config";
 
 export interface RedisScript { readonly name: string; readonly lua: string; readonly sha: string }
 
@@ -29,14 +29,27 @@ const script = defineScript;
  */
 export const CAS_HSET = script("casHset", `
 if redis.call('EXISTS', KEYS[1]) == 0 then return 'cold' end
-local cur = tonumber(redis.call('HGET', KEYS[1], 'fence') or '0')
-if cur > tonumber(ARGV[1]) then return 'stale' end
+if #ARGV < 3 or (#ARGV % 2) ~= 1 then return redis.error_reply('casHset argv invalid') end
+if redis.call('HGET', KEYS[1], 'schemaVersion') ~= '${SCHEMA_VERSION}' then
+  return redis.error_reply('casHset schema invalid')
+end
+local rawFence = redis.call('HGET', KEYS[1], 'fence')
+local rawVer = redis.call('HGET', KEYS[1], 'ver')
+if rawFence == false or rawVer == false then return redis.error_reply('casHset metadata invalid') end
+local cur = tonumber(rawFence)
+local requested = tonumber(ARGV[1])
+local ver = tonumber(rawVer)
+if cur == nil or cur < 0 or cur ~= math.floor(cur) or cur > 9007199254740991
+  or requested == nil or requested < 0 or requested ~= math.floor(requested) or requested > 9007199254740991
+  or ver == nil or ver < 0 or ver ~= math.floor(ver) or ver >= 9007199254740991 then
+  return redis.error_reply('casHset metadata invalid')
+end
+if cur > requested then return 'stale' end
 
 for i = 2, #ARGV, 2 do
   redis.call('HSET', KEYS[1], ARGV[i], ARGV[i+1])
 end
-redis.call('HSET',    KEYS[1], 'fence', ARGV[1])
-redis.call('HINCRBY', KEYS[1], 'ver', 1)
+redis.call('HSET', KEYS[1], 'fence', ARGV[1], 'ver', tostring(ver + 1))
 return 'ok'
 `);
 
@@ -118,6 +131,9 @@ if not expectedType(KEYS[1], 'hash')
 end
 for i = 4, #KEYS do
   if not expectedType(KEYS[i], 'hash') then return invalid('EFFECT_DATA_CORRUPT') end
+end
+if redis.call('HGET', KEYS[1], 'schemaVersion') ~= '${SCHEMA_VERSION}' then
+  return invalid('EFFECT_DATA_CORRUPT')
 end
 local decoded, eff = pcall(cjson.decode, ARGV[3])
 if not decoded or type(eff) ~= 'table' then return invalid('EFFECT_NOT_OBJECT') end
@@ -217,9 +233,11 @@ end
 
 -- Validate every current numeric value before the first write. HSET (rather than HINCRBY) in the
 -- apply pass means a malformed pre-existing hash cannot fail half way through the effect.
-local verRaw = redis.call('HGET', KEYS[1], 'ver') or '0'
+local verRaw = redis.call('HGET', KEYS[1], 'ver')
+if verRaw == false then return invalid('EFFECT_DATA_CORRUPT') end
 local ver = tonumber(verRaw)
-if not intIn(ver, 0, ${LUA_MAX_SAFE_INTEGER}) or ver >= ${LUA_MAX_SAFE_INTEGER} then return invalid('EFFECT_DATA_CORRUPT') end
+if not intIn(ver, 0, ${LUA_MAX_SAFE_INTEGER})
+  or ver >= ${LUA_MAX_SAFE_INTEGER} then return invalid('EFFECT_DATA_CORRUPT') end
 local itemValues = {}
 for field, delta in pairs(itemDeltas) do
   local shard = itemShards[field]
@@ -271,12 +289,40 @@ return 'ok'
  * between individual commands.
  */
 export const TRIM_APPLIED = script("trimApplied", `
-if #KEYS ~= 2 then return 0 end
-local removed = 0
-for i = 1, #ARGV do
-  if redis.call('ZREM', KEYS[1], ARGV[i]) == 1 then removed = removed + 1 end
-  redis.call('HDEL', KEYS[2], ARGV[i])
+-- KEYS[1]=lock KEYS[2]=user KEYS[3]=applied KEYS[4]=appliedPayload
+-- ARGV[1]=myFence ARGV[2..]=eligible op ids
+if #KEYS ~= 4 or #ARGV < 2 then return redis.error_reply('trimApplied argument count') end
+local function keyType(key)
+  local reply = redis.call('TYPE', key)
+  return reply['ok']
 end
+if keyType(KEYS[1]) ~= 'string' or redis.call('GET', KEYS[1]) ~= ARGV[1] then return 'lost' end
+local userType = keyType(KEYS[2])
+if userType == 'none' then return 'cold' end
+if userType ~= 'hash' then return redis.error_reply('trimApplied user key type') end
+local appliedType = keyType(KEYS[3])
+if appliedType ~= 'none' and appliedType ~= 'zset' then
+  return redis.error_reply('trimApplied applied key type')
+end
+local payloadType = keyType(KEYS[4])
+if payloadType ~= 'none' and payloadType ~= 'hash' then
+  return redis.error_reply('trimApplied payload key type')
+end
+if redis.call('HGET', KEYS[2], 'schemaVersion') ~= '${SCHEMA_VERSION}' then
+  return redis.error_reply('trimApplied schema invalid')
+end
+local rawVer = redis.call('HGET', KEYS[2], 'ver')
+if rawVer == false then return redis.error_reply('trimApplied user ver invalid') end
+local ver = tonumber(rawVer)
+if ver == nil or ver < 0 or ver ~= math.floor(ver) or ver >= ${LUA_MAX_SAFE_INTEGER} then
+  return redis.error_reply('trimApplied user ver invalid')
+end
+local removed = 0
+for i = 2, #ARGV do
+  if redis.call('ZREM', KEYS[3], ARGV[i]) == 1 then removed = removed + 1 end
+  redis.call('HDEL', KEYS[4], ARGV[i])
+end
+if removed > 0 then redis.call('HSET', KEYS[2], 'ver', tostring(ver + 1)) end
 return removed
 `);
 

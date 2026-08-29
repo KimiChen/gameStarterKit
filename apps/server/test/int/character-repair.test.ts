@@ -8,6 +8,7 @@ import {
   kUser,
 } from "../../src/core/infra/keys";
 import { clientFor, clientForKey, closeRedis } from "../../src/core/infra/redisRoute";
+import { closeMysql } from "../../src/core/infra/mysql";
 import { createUser } from "../../src/core/userRecord";
 import { zoneCtx } from "../../src/core/infra/keys";
 import { readCharacterRegistration } from "../../src/player/characterState";
@@ -22,6 +23,7 @@ import {
 } from "../../src/player/characterRepair";
 import {
   assertRedisUp,
+  cleanupUser,
   fakeWebPlatformClient,
   restoreFakeWebPlatformClient,
   sleep,
@@ -37,15 +39,23 @@ const intent = (name: string, serverId: number) => {
   return value;
 };
 
+async function seedPendingProfile(item: { userId: string; serverId: number }): Promise<void> {
+  assert.equal(await zoneCtx.run({ sId: item.serverId }, () => createUser(item.userId, {
+    characterRegistration: "pending",
+  })), "ok");
+}
+
 before(assertRedisUp);
 
 after(async () => {
   await stopCharacterRepairWorker();
   for (const item of used) {
     await clearCharacterRepairIntent(item.userId, item.serverId).catch(() => {});
+    await zoneCtx.run({ sId: item.serverId }, () => cleanupUser(item.userId)).catch(() => {});
   }
   restoreFakeWebPlatformClient();
   await closeRedis();
+  await closeMysql();
 });
 
 test("PUT 失败：先写 durable intent，再把 WebPlatform 错误显式抛回", async () => {
@@ -73,6 +83,7 @@ test("PUT 失败：先写 durable intent，再把 WebPlatform 错误显式抛回
 test("processOnce：幂等 PUT 成功后同时清除 due 与 attempts", async () => {
   const item = intent("success", 12);
   const member = characterRepairMember(item.userId, item.serverId);
+  await seedPendingProfile(item);
   await enqueueCharacterRepairIntent(item.userId, item.serverId, 0);
 
   const result = await processCharacterRepairOnce({
@@ -164,6 +175,7 @@ test("readCharacterRegistration：真实 Redis marker 严格解析 checkedAt", a
 test("多实例竞态：成功清理后，迟到的失败分支不得复活 intent", async () => {
   const item = intent("race", 13);
   const member = characterRepairMember(item.userId, item.serverId);
+  await seedPendingProfile(item);
   await enqueueCharacterRepairIntent(item.userId, item.serverId, 0);
 
   let arrivals = 0;
@@ -204,6 +216,7 @@ test("多实例竞态：成功清理后，迟到的失败分支不得复活 inte
 test("网关 worker start/stop：启动即处理到期 intent，stop 可等待当前 pass", async () => {
   const item = intent("lifecycle", 14);
   const member = characterRepairMember(item.userId, item.serverId);
+  await seedPendingProfile(item);
   await enqueueCharacterRepairIntent(item.userId, item.serverId, 0);
 
   startCharacterRepairWorker();

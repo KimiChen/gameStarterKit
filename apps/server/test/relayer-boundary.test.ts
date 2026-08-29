@@ -94,10 +94,33 @@ test("relayer runs apply, thaw, and trim only after guarded transactions close",
   assert.equal(txCalls, 2, "selection and finalization use separate short transactions");
   assert.deepEqual(events, [
     "tx:start", "tx:end",
-    "apply:1", "thaw", "apply:2",
+    "thaw", "apply:1", "thaw", "apply:2",
     "tx:start", "tx:end",
     "trim",
   ]);
+});
+
+test("relayer pre-apply archive reconciliation failure never calls Redis apply", async () => {
+  let failureRecorded = false;
+  const connection = {
+    query: async () => [[pendingRow]],
+    execute: async () => {
+      failureRecorded = true;
+      return [{ affectedRows: 1 }];
+    },
+  } as unknown as PoolConnection;
+  const dependencies: RelayerDependencies = {
+    withLeaseTx: async <T>(_lease: SingletonLease, fn: (conn: PoolConnection) => Promise<T>): Promise<T> =>
+      fn(connection),
+    ensureLive: async () => { throw new Error("archive authority conflict"); },
+    redisApply: async () => assert.fail("pre-apply reconciliation failure must block Redis apply"),
+    trimApplied: async () => assert.fail("failed row must not trim idempotency evidence"),
+    random: () => 0,
+    reportFailure: () => assert.fail("first failure remains pending and must not report dead letter"),
+  };
+
+  assert.equal(await relayerTick(lease("pre-apply-failure"), dependencies), 1);
+  assert.equal(failureRecorded, true, "failure is accounted only after reconciliation rejects");
 });
 
 test("lease loss after apply blocks stale finalization and successor converges by dup replay", async () => {
@@ -193,7 +216,9 @@ test("relayer failure accounting commits retry/dead transitions before reporting
         assert.equal(txDepth, 0);
         throw new Error("apply failed");
       },
-      ensureLive: async () => assert.fail("failed apply must not thaw"),
+      ensureLive: async () => {
+        assert.equal(txDepth, 0, "archive reconciliation must run before the failing apply and outside tx");
+      },
       trimApplied: async () => assert.fail("failed apply must not trim"),
       random: () => 0,
       reportFailure: (message) => {

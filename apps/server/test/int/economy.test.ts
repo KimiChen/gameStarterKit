@@ -184,7 +184,9 @@ test("applied 裁剪与 coordinator 联动：pending/dead 的 op 标记超窗也
   // 把 applied 标记拨旧到窗口外（模拟 2 天后）
   await c.zadd(kApplied(u), "XX", "CH", Date.now() - APPLIED_RETENTION_MS - 3_600_000, stuckOp);
 
+  const verBeforePending = Number(await c.hget(kUser(u), "ver"));
   assert.equal(await trimApplied(u), 0, "行仍 pending：标记超窗也不许裁");
+  assert.equal(Number(await c.hget(kUser(u), "ver")), verBeforePending, "无删除不得 bump ver");
   assert.ok(await c.zscore(kApplied(u), stuckOp), "标记还在");
   assert.ok(await c.hget(kAppliedPayload(u), stuckOp), "pending op 的 payload 绑定也必须保留");
   // 关键红线：此刻 relayer 重放这条 pending，applied 必须还判 dup（否则二次发货）
@@ -192,7 +194,30 @@ test("applied 裁剪与 coordinator 联动：pending/dead 的 op 标记超窗也
 
   // 行终于 done：标记可裁
   await markOutboxDone(stuckOp);
+  const verBeforeDelete = Number(await c.hget(kUser(u), "ver"));
   assert.equal(await trimApplied(u), 1, "done 且超窗：裁掉");
+  assert.equal(Number(await c.hget(kUser(u), "ver")), verBeforeDelete + 1, "实际删除必须 bump ver 一次");
   assert.equal(await c.zscore(kApplied(u), stuckOp), null);
   assert.equal(await c.hget(kAppliedPayload(u), stuckOp), null, "marker 与 payload 绑定必须由同一 Lua 原子清理");
+  assert.equal(await trimApplied(u), 0);
+  assert.equal(Number(await c.hget(kUser(u), "ver")), verBeforeDelete + 1, "重复 trim 不得继续 bump ver");
+});
+
+test("applied trim payload WRONGTYPE：完整 preflight 保留 marker/payload/user.ver", async () => {
+  const u = uid("trim_wrongtype");
+  await createUser(u);
+  const c = clientFor(u);
+  const op = deriveOpId(u, 0, "test.trim", "wrongtype");
+  assert.equal(await redisApply(u, op, [{ kind: "item", itemId: 10, count: 1 }]), "ok");
+  await c.zadd(kApplied(u), "XX", "CH", Date.now() - APPLIED_RETENTION_MS - 3_600_000, op);
+  await c.unlink(kAppliedPayload(u));
+  await c.set(kAppliedPayload(u), "wrong-type");
+  const verBefore = await c.hget(kUser(u), "ver");
+
+  await assert.rejects(trimApplied(u), /trimApplied payload key type/);
+
+  assert.ok(await c.zscore(kApplied(u), op), "payload WRONGTYPE 不得先删 applied marker");
+  assert.equal(await c.get(kAppliedPayload(u)), "wrong-type", "污染 payload key 原样保留");
+  assert.equal(await c.hget(kUser(u), "ver"), verBefore, "失败不得 bump user.ver");
+  assert.equal(await c.hget(kBag(u, 10 % 4), "10"), "1", "既有发货结果不受影响");
 });

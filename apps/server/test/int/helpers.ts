@@ -3,7 +3,7 @@
  * uid 带运行期前缀隔离，跑完 UNLINK 清理（09·R6）。
  */
 import { writeGroupSess } from "../../src/core/auth/session";
-import { kApplied, kAppliedPayload, kBagAll, kFence, kLock, kUser } from "../../src/core/infra/keys";
+import { kApplied, kAppliedPayload, kArchiveProof, kBagAll, kFence, kLock, kUser } from "../../src/core/infra/keys";
 import { clientFor } from "../../src/core/infra/redisRoute";
 import { AuthRequiredError } from "../../src/core/errors";
 import {
@@ -66,7 +66,9 @@ export async function assertRedisUp(): Promise<void> {
 }
 
 export async function cleanupUser(uid: string): Promise<void> {
-  await clientFor(uid).unlink(kUser(uid), kFence(uid), kApplied(uid), kAppliedPayload(uid), kLock(uid), ...kBagAll(uid));
+  await clientFor(uid).unlink(
+    kUser(uid), kFence(uid), kArchiveProof(uid), kApplied(uid), kAppliedPayload(uid), kLock(uid), ...kBagAll(uid),
+  );
   fakeCharacters.delete(uid);
   for (const [token, session] of fakeSessions) {
     if (session.userId === uid) { fakeSessions.delete(token); }

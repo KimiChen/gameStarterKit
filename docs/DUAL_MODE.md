@@ -40,8 +40,9 @@ best-effort。适配器边界见 [WEBPLATFORM §6](WEBPLATFORM.md#6-服务端边
 `server_id`；`readBack`、邮件领取和后台重放都会按区回读/更新。`match_index` 是全局 match ID 去重闸，
 `singleton_lease` 是全局任务租约，二者刻意不带区。
 
-`user_archive` 与 `user_snapshot_readonly` 当前也没有 `server_id`，但这不是可复用先例：前者正因区隔离
-未闭环而默认禁用，后者没有运行时读写方。规则索引见 [SERVER §12 DB](SERVER.md#db--mysql)。
+`user_archive` 与 `user_snapshot_readonly` 使用复合身份 `(user_id,server_id)`；前者的 freeze/thaw、
+janitor 与容量 ledger 都按区操作，后者仍没有运行时读写方。`archive_zone_usage` 仅是按区派生统计，
+冷档权威仍只有 `user_archive`。规则索引见 [SERVER §12 DB](SERVER.md#db--mysql)。
 
 ## 3.4 幂等 ID
 
@@ -56,8 +57,8 @@ best-effort。适配器边界见 [WEBPLATFORM §6](WEBPLATFORM.md#6-服务端边
 - Lobby 每条 RPC 在已认证 `auth.sId` 的 `zoneCtx.run` 中执行。
 - 无请求上下文的领域 worker 必须从权威数据行恢复 `sId` 后再访问 per-zone key。
 - `GROUP_ZONES` 非空时，缺少上下文的 per-zone key 构造会 fail-fast；为空时回退 s0。
-- `sess` 使用全局项目前缀但把 `sId` 作为显式键分量；`active:lru` 目前仍是全局前缀，是 archive 的
-  已知未闭环点。
+- `sess` 使用全局项目前缀但把 `sId` 作为显式键分量；`active:lru` 使用 `P()` 分区，s0 保持 legacy
+  物理 key，s1+ 使用区前缀。
 
 业务代码不能手拼 key。分类和例外见 [SERVER §3](SERVER.md#3-数据边界) 与
 [SERVER §12 R](SERVER.md#r--redis)。
@@ -71,8 +72,8 @@ best-effort。适配器边界见 [WEBPLATFORM §6](WEBPLATFORM.md#6-服务端边
 写入当前区，支付回调没有请求上下文，按订单行的 `server_id` 重建区上下文再落对区钱包与缓存。它默认
 关闭（`PAY_ENABLED`），但区列语义与其余经济表一致。
 
-freeze worker 没有完整的区枚举和 `zoneCtx`，archive 表也缺 `server_id`；因此它是本规则的已知反例，
-保持默认关闭。
+freeze worker 不从 `GROUP_ZONES` 猜后台范围；启用时必须显式配置唯一的 `ARCHIVE_ZONES`，并在每区
+`zoneCtx` 中扫描该区 LRU、读写复合身份冷档。它仍是默认关闭的实验模块，而不是多区拓扑能力。
 
 ## 4.1 GameRoom 区隔离
 
@@ -121,9 +122,16 @@ durable 与 cache 是两个物理 Redis，分别通过 `clientFor*` 和 `cacheCl
 
 ## Archive
 
-freeze/thaw 仍是实验模块。thaw 接缝已经被部分 player/UoW 路径调用，但 freeze 默认硬关闭；启用需要
-额外的 unsafe s0-only escape hatch；任何会下发 `sId >= 1` 的目录都不满足该假设。archive 表无区号、
-active LRU 全局化、worker 缺区上下文的问题未解决。
+freeze/thaw 仍是实验模块。thaw 接缝已经被部分 player/UoW 路径调用，freeze 默认关闭；启用要求明确的
+`ARCHIVE_ZONES`。冷档身份、LRU、worker、janitor 游标和容量 ledger 已按区隔离；跨全部区/桶的扫描预算
+包含空探测，Redis 水位无法证明或每区行/字节投影超限时均保留热档。
+
+旧版全局 LRU 条目没有区号，不能自动归属。存量部署须用权威每区用户清单有界读取
+`user.lastActiveAt` 后重建各区索引；仓库不提供把旧全局成员直接拆区的安全捷径。`active:lru` score
+还可能被 `ZADD XX GT` 提升为 skip/error 的调度退避边界，不能取代真实活跃来源 `user.lastActiveAt`。
+容量 ledger 使用
+`JSON_STORAGE_SIZE` 做 admission 记账，但不等同于物理磁盘容量，也不提供备份、分片迁移或为腾空间
+自动删除冷档权威。热档 schema 迁移仍未闭环。
 
 准确状态见 [SERVER §9](SERVER.md#9-实验性冷档模块) 和
 [EXTRAFEATURES §3.6](EXTRAFEATURES.md#36-多区分片扩展与冷档参考)。

@@ -9,12 +9,11 @@
  * **区前缀（docs/DUAL_MODE.md §3.5，M13 每区独立经济）**：per-user 玩法/经济键在项目前缀后再叠
  * **区上下文前缀** `s{sId}_`（`P()` 读 `zoneCtx`）。分类是正确性关键、单形态测试测不到（sId=0 时
  * 两类前缀相等），务对照 §3.5：
- * - **per-zone（`P()`）**：user/bag/fence/applied/lock/idemUser/cache:currency/negcache/guild —— 角色档 + 每区经济。
+ * - **per-zone（`P()`）**：user/bag/fence/archive:proof/applied/lock/idemUser/cache:currency/negcache/guild/active:lru —— 角色档 + 每区经济。
  * - **全局（`G`，不带区前缀）**：`sess`（登录时无区写、每 RPC 有区读，带区会前缀不一致致鉴权崩）、
  *   限流 `rl`（含登录 by-IP，前置区）、可靠流 `stream:*`（跨用户/跨区消费）、
  *   角色登记修复 `repair:character:due|attempts`（member 自带 serverId，调度不依赖区上下文）、
  *   通用幂等占位 `idem:{scope}:{key}`（非 uid 作用域；当前无调用点）。
- * - **暂全局待定**：`active:lru`（冷档索引，per-zone 化涉及登录 touchActive 的前置区上下文，留到 archive 步）。
  *
  * ⚠ 过渡期：`zoneCtx` 未设置即回退项目前缀（sId=0 语义，行为同现网）；多区硬化步改为
  * fail-fast + 全入口（LobbyRoom.messages / room / worker）`zoneCtx.run` 包裹，开 GROUP_ZONES 前必做。
@@ -64,6 +63,8 @@ export const kBag = (uid: string, shard: number) => `${P()}bag:{${uid}}:${shard}
 export const kBagAll = (uid: string) => Array.from({ length: BAG_SHARDS }, (_, i) => kBag(uid, i));
 /** per-uid 锁 fence 单调计数器 STRING。永不过期、永不重置。 */
 export const kFence = (uid: string) => `${P()}fence:{${uid}}`;
+/** 冷档同源证明 HASH（field=freeze_id,value=1）。只按当前 archive 行的精确 membership 判权。 */
+export const kArchiveProof = (uid: string) => `${P()}archive:proof:{${uid}}`;
 /** 幂等已 apply 集合 ZSET（member=op_id, score=applyTs），无 TTL、按窗口裁剪。member=op_id 已编码 sId（§3.4）。 */
 export const kApplied = (uid: string) => `${P()}applied:{${uid}}`;
 /** applied payload 绑定 HASH（field=op_id, value=规范化 effect JSON）。与 applied 同槽，防同 ID 换 payload。 */
@@ -125,9 +126,9 @@ export const K_STREAM_KICK = `${G}stream:kick`;
 export const K_CHARACTER_REPAIR_DUE = `${G}repair:character:due:{character-repair}`;
 export const K_CHARACTER_REPAIR_ATTEMPTS = `${G}repair:character:attempts:{character-repair}`;
 
-/** 活跃索引 ZSET（member=uid, score=lastActiveMs）。hash-tag 是 {bucket} 不是 {uid}。
- *  ⚠ per-zone 归属留到 archive 步（登录 touchActive 前置区上下文的一致性待解），暂用全局前缀（单形态无差）。 */
-export const kActiveLru = (bucket: number) => `${G}active:lru:{${bucket}}`;
+/** 每区活跃索引 ZSET（member=uid, score=lastActiveMs）。hash-tag 是 {bucket} 不是 {uid}。
+ * s0 保持 legacy 物理键；s1+ 由 P() 增加区前缀，禁止跨区共享候选。 */
+export const kActiveLru = (bucket: number) => `${P()}active:lru:{${bucket}}`;
 /** uid → active:lru 桶号（0..255）。⚠ 与 16384 路由桶是两套空间（09·S2：改分片数即迁移）。 */
 export const activeLruBucketOf = (uid: string): number =>
   (crc32(Buffer.from(uid)) >>> 0) % ACTIVE_LRU_BUCKETS;

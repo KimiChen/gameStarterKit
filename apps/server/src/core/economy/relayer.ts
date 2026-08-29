@@ -144,6 +144,9 @@ export async function relayerTick(
       metadata = normalizeOutboxMetadata(row);
       const { serverId } = metadata;
       await zoneCtx.run({ sId: serverId }, async () => {
+        // A Redis PITR can leave an older live hash beside a newer MySQL archive.
+        // Resolve that authority pair before any no-fence effect mutates the hash.
+        await dependencies.ensureLive(row.user_id, serverId);
         let r = await dependencies.redisApply(row.user_id, row.op_id, row.effect);
         if (r === "cold") {
           await dependencies.ensureLive(row.user_id, serverId);

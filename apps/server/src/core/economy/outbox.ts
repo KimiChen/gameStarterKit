@@ -9,10 +9,10 @@
  */
 import { v5 as uuidv5 } from "uuid";
 import {
-  APPLIED_RETENTION_MS, BAG_SHARDS, OP_ID_NAMESPACE, OUTBOX_DONE, OUTBOX_PENDING,
+  APPLIED_RETENTION_MS, BAG_SHARDS, LOCK_RENEW_MS, OP_ID_NAMESPACE, OUTBOX_DONE, OUTBOX_PENDING,
   OUTBOX_RETENTION_MS,
 } from "../infra/config";
-import { currentZoneId, kApplied, kAppliedPayload, kBagAll, kUser, zoneCtx } from "../infra/keys";
+import { currentZoneId, kApplied, kAppliedPayload, kBagAll, kLock, kUser, zoneCtx } from "../infra/keys";
 import { clientFor } from "../infra/redisRoute";
 import { APPLY_EFFECT, evalshaWithReload, TRIM_APPLIED } from "../infra/redisScripts";
 import { getPool, withRcTx } from "../infra/mysql";
@@ -23,8 +23,10 @@ import type { ShopSku } from "./catalog";
 import {
   EffectValidationError, normalizeEffect, type IEffect, type IGrant, type IPurchaseResult,
 } from "@game/shared";
-import { EffectConflictError, InvalidEffectError } from "../errors";
+import { BusyError, ColdUserError, EffectConflictError, InvalidEffectError } from "../errors";
 import { storedFinite, storedInt } from "../infra/numbers";
+import { ensureLive } from "../archive/thaw";
+import { withUserLock } from "../locks";
 
 /**
  * 一次 intent 的全部玩法副作用。货币不在此（走 MySQL，09·A2）。
@@ -213,40 +215,72 @@ export async function drainPendingFor(uid: string, sId: number): Promise<number>
  * done 行本身由 sweepOutboxRetention 按窗清理；不在 outbox 表里的候选（done 已清）安全可裁。
  * （APPLIED_RETENTION ≥ 2 × OUTBOX_RETENTION 仍在 config 固化，作为第一道窗口不等式。）
  */
+interface TrimAppliedAttemptResult {
+  readonly outcome: "done" | "cold" | "lost";
+  readonly removed: number;
+}
+
+async function runTrimAppliedRetries(
+  uid: string,
+  sId: number,
+  attempt: () => Promise<TrimAppliedAttemptResult>,
+): Promise<number> {
+  let lastOutcome: "cold" | "lost" = "cold";
+  let removed = 0;
+  for (let retry = 0; retry < 2; retry++) {
+    const result = await attempt();
+    removed += result.removed;
+    if (result.outcome === "done") { return removed; }
+    lastOutcome = result.outcome;
+  }
+  if (lastOutcome === "lost") {
+    throw new BusyError(`trimApplied lost lock uid=${uid} sId=${sId}`);
+  }
+  throw new ColdUserError(`trimApplied remained cold uid=${uid} sId=${sId}`);
+}
+
+export const _outboxTrimTestHooks = { runTrimAppliedRetries };
+
 export async function trimApplied(uid: string, sId = currentZoneId()): Promise<number> {
-  return zoneCtx.run({ sId }, async () => {
-    const redis = clientFor(uid);
-    const candidates = await redis.zrangebyscore(kApplied(uid), "-inf", `(${Date.now() - APPLIED_RETENTION_MS}`);
-    if (candidates.length === 0) { return 0; }
-    const keep = new Set<string>();
-    for (let i = 0; i < candidates.length; i += 500) {
-      const chunk = candidates.slice(i, i + 500);
-      const [rows] = await getPool().query<RowDataPacket[]>(
-        `SELECT op_id FROM gameplay_outbox
-          WHERE user_id = ? AND server_id = ? AND status != ?
-            AND op_id IN (${chunk.map(() => "?").join(",")})`,
-        [uid, sId, OUTBOX_DONE, ...chunk]);
-      for (const r of rows) { keep.add(r.op_id as string); }
-    }
-    const removable = candidates.filter((id) => !keep.has(id));
-    if (keep.size > 0) {
-      console.warn(`[outbox] ⚠ applied 裁剪跳过 ${keep.size} 个未完结 op（uid=${uid}, sId=${sId}）——outbox 行滞留 pending/dead，需人工关注`);
-    }
-    if (removable.length === 0) { return 0; }
-    let removed = 0;
-    for (let i = 0; i < removable.length; i += 500) {
-      const chunk = removable.slice(i, i + 500);
-      // payload 绑定是 applied 的伴随元数据；同一 Lua 调用保证两者不会
-      // 因进程在 zrem/hdel 之间退出而永久分叉。
-      removed += Number(await evalshaWithReload(
-        redis,
-        TRIM_APPLIED,
-        [kApplied(uid), kAppliedPayload(uid)],
-        chunk,
-      ));
-    }
-    return removed;
-  });
+  return zoneCtx.run({ sId }, () => runTrimAppliedRetries(uid, sId, async () => {
+    await ensureLive(uid, sId);
+    return withUserLock(uid, async (fence): Promise<TrimAppliedAttemptResult> => {
+      const redis = clientFor(uid);
+      if ((await redis.exists(kUser(uid))) === 0) { return { outcome: "cold", removed: 0 }; }
+      const candidates = await redis.zrangebyscore(
+        kApplied(uid), "-inf", `(${Date.now() - APPLIED_RETENTION_MS}`,
+      );
+      if (candidates.length === 0) { return { outcome: "done", removed: 0 }; }
+      const keep = new Set<string>();
+      for (let i = 0; i < candidates.length; i += 500) {
+        const chunk = candidates.slice(i, i + 500);
+        const [rows] = await getPool().query<RowDataPacket[]>(
+          `SELECT op_id FROM gameplay_outbox
+            WHERE user_id = ? AND server_id = ? AND status != ?
+              AND op_id IN (${chunk.map(() => "?").join(",")})`,
+          [uid, sId, OUTBOX_DONE, ...chunk]);
+        for (const row of rows) { keep.add(row.op_id as string); }
+      }
+      const removable = candidates.filter((id) => !keep.has(id));
+      if (keep.size > 0) {
+        console.warn(`[outbox] ⚠ applied 裁剪跳过 ${keep.size} 个未完结 op（uid=${uid}, sId=${sId}）——outbox 行滞留 pending/dead，需人工关注`);
+      }
+      if (removable.length === 0) { return { outcome: "done", removed: 0 }; }
+      let removed = 0;
+      for (let i = 0; i < removable.length; i += 500) {
+        const chunk = removable.slice(i, i + 500);
+        const result = await evalshaWithReload(
+          redis,
+          TRIM_APPLIED,
+          [kLock(uid), kUser(uid), kApplied(uid), kAppliedPayload(uid)],
+          [String(fence), ...chunk],
+        );
+        if (result === "cold" || result === "lost") { return { outcome: result, removed }; }
+        removed += Number(result);
+      }
+      return { outcome: "done", removed };
+    }, { renewMs: LOCK_RENEW_MS });
+  }));
 }
 
 /**
@@ -259,8 +293,11 @@ export async function replayDead(opId: string, sId = currentZoneId()): Promise<"
   if (rows.length === 0) { return "missing"; }
   // 后台重放无请求上下文（§3.6 B4）：从行的 server_id 重建区上下文，redisApply 才落对区 Redis 前缀。
   const rowSId = storedInt(rows[0].server_id, "outbox.server_id", { min: 0, max: 65535 });
-  const r = await zoneCtx.run({ sId: rowSId }, () =>
-    redisApply(rows[0].user_id as string, opId, rows[0].effect as Effect));
+  const replayUid = rows[0].user_id as string;
+  const r = await zoneCtx.run({ sId: rowSId }, async () => {
+    await ensureLive(replayUid, rowSId);
+    return redisApply(replayUid, opId, rows[0].effect as Effect);
+  });
   if (r === "ok" || r === "dup") { await markOutboxDone(opId, rowSId); }
   return r;
 }

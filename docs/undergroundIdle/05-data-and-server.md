@@ -283,7 +283,7 @@ outbox、applied marker 和失败补偿。当前 relayer、死信处置和 archi
 - 热档 reader 不会按领域 `schemaVersion` 自动迁移；
 - push 是尽力唤醒，不是必达事件系统；
 - 默认未启用 RedisPresence/RedisDriver，不承诺横向扩展；
-- archive freeze 默认关闭且存在区隔离限制，不能作为挂机档备份方案；
+- archive freeze 默认关闭，且不提供备份、物理容量保证或自动冷档淘汰，不能作为挂机档备份方案；
 - Excel 配表工具尚无正式生成物消费与 freshness 闭环；
 - outbox relayer、死信处置及跨存储后台编排仍是有限参考；
 - 当前框架不包含生产部署、备份恢复、运营后台、线上监控告警或已验证的容量体系。

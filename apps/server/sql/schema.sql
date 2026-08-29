@@ -125,25 +125,39 @@ CREATE TABLE IF NOT EXISTS mail (
   KEY idx_user_unread (user_id, server_id, read_at, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 冷档：冷用户整档的权威。⚠ PRIMARY KEY (user_id) 是正确性要求，⛔ 禁按时间列 RANGE 分区（09·DB4）
+-- 冷档：每区冷用户整档的权威。⛔ 禁按时间列 RANGE 分区（09·DB4）
 CREATE TABLE IF NOT EXISTS user_archive (
   user_id        VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  server_id      SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   snapshot       JSON NOT NULL,              -- user 全字段 + bag 各分片 + applied 成员集合
   schema_version SMALLINT UNSIGNED NOT NULL,
-  fence_hwm      BIGINT UNSIGNED NOT NULL,   -- 权威判定与 thaw 恢复都靠它（09·F1）
+  fence_hwm      BIGINT UNSIGNED NOT NULL,   -- thaw 后僵尸写 fence；不参与 live/archive 权威排序
+  freeze_id      CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  archive_phase  TINYINT UNSIGNED NOT NULL DEFAULT 0, -- 0=LEGACY, 1=PREPARED, 2=COMMITTED
   frozen_at      DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-  PRIMARY KEY (user_id),
-  KEY idx_frozen (frozen_at)
+  PRIMARY KEY (user_id, server_id),
+  UNIQUE KEY uk_archive_freeze_id (freeze_id),
+  KEY idx_frozen (server_id, frozen_at, user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
   ROW_FORMAT=COMPRESSED;
+
+-- 冷档每区容量 ledger：派生 admission 状态，authority 仍只有 user_archive。
+CREATE TABLE IF NOT EXISTS archive_zone_usage (
+  server_id  SMALLINT UNSIGNED NOT NULL,
+  row_count  BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  byte_count BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (server_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 只读导出镜像（BI/GM）。⚠ 非权威、不回写、不参与恢复（09·A5）
 CREATE TABLE IF NOT EXISTS user_snapshot_readonly (
   user_id    VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  server_id  SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   snapshot   JSON NOT NULL,
   ver        BIGINT UNSIGNED NOT NULL,
   synced_at  DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
-  PRIMARY KEY (user_id)
+  PRIMARY KEY (user_id, server_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ── 预置行（幂等 ODKU no-op，⛔ 绝不 INSERT IGNORE，09·DB1） ──

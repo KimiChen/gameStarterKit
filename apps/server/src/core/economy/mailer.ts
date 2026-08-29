@@ -17,6 +17,7 @@ import {
   canonicalizeEffect, deriveOpId, markOutboxDone, readBack, redisApply,
   type EffectInput, type PurchaseResult,
 } from "./outbox";
+import { ensureLive } from "../archive/thaw";
 
 /**
  * 生产侧：投邮件后发实时唤醒（流仅唤醒，⛔ 不承载邮件内容，09·K6）。
@@ -92,7 +93,10 @@ export async function claimMailAttach(uid: string, mailId: number): Promise<Purc
   // 后台/领取无稳定 ALS：按邮件 server_id 包 zoneCtx，redisApply/readBack 才落对区 Redis 前缀（§3.6）。
   if (claim.fresh && claim.effect) {
     try {
-      const r = await zoneCtx.run({ sId: claim.sId }, () => redisApply(uid, claim.opId, claim.effect!)); // 阶段 2（无 fence，09·X3）
+      const r = await zoneCtx.run({ sId: claim.sId }, async () => {
+        await ensureLive(uid, claim.sId);
+        return redisApply(uid, claim.opId, claim.effect!);
+      }); // 阶段 2（无 fence，09·X3）
       if (r === "ok" || r === "dup") { await markOutboxDone(claim.opId, claim.sId); }
       // cold → 留给 relayer→ensureLive（09·X5）
     } catch { /* relayer 收敛 */ }

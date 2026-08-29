@@ -150,7 +150,7 @@ package、构建/预览/部署脚本或构建产物，也不把它恢复为 gitl
 | mail wake loop | 首次 LobbyRoom 创建时启动，进程内单例 | 只做“有变化后重新 pull”的唤醒样例 |
 | outbox relayer | `npm --workspace @game/server run relayer` | 独立命令，不随 `dev` 启动；死信（status=2）无自动或人工处置入口，需自行接线 `replayDead` |
 | match settle consumer | `npm --workspace @game/server run settle` | 独立命令；坏条目先入 quarantine 再 ACK，隔离流需人工修复和清理 |
-| freeze worker | `npm --workspace @game/server run freeze-worker` | 默认硬关闭；当前实现明确标为 unsafe |
+| freeze worker | `npm --workspace @game/server run freeze-worker` | 默认关闭；启用要求显式 `ARCHIVE_ZONES`，水位或容量无法证明时 fail-closed |
 | Colyseus playground/monitor | 非 `production` 的 app config | 本地开发管理界面，不是外部管理后台 |
 
 这些组件没有形成长期进程编排、指标采集或故障值守能力。默认进程现在通过单一 lifecycle registry 聚合
@@ -170,13 +170,22 @@ package、构建/预览/部署脚本或构建产物，也不把它恢复为 gitl
 - `redis-route.example.yaml` 和 Redis bucket routing；
 - RedisPresence/RedisDriver 依赖与探针；默认 `app.config.ts` 并未启用它们；
 - `core/archive` 的 freeze 路径和独立 worker（worker 内含每小时 janitor：锁内归档解析、陈旧行清理与
-  PITR 后 ARCHIVE_NEWER 修复）。janitor 每轮以 `batch` 作为**总扫描预算**，按
-  `(frozen_at,user_id)` keyset 游标跨轮续扫；正常冷档行会被无锁预筛跳过，但不会长期卡住后面的
-  陈旧残留或 ARCHIVE_NEWER 行。游标只保存在 worker 进程内，重启后从头开始仍保持幂等安全。启用
-  freeze 前仍需完成 archive 的区隔离与容量评估。
+  PITR 后 ARCHIVE_NEWER 修复）。worker 必须使用显式、无重复的 `ARCHIVE_ZONES`，以 per-zone LRU 和
+  `(user_id,server_id)` 冷档身份运行；freeze sweep 的跨区/桶轮转预算同时计算候选与空桶探测。janitor
+  只轮转配置区，为每区保存 `(frozen_at,user_id)` keyset 游标；其 `batch` 也同时约束行数和空区探测，
+  游标只在进程内保存，重启后从头扫描仍保持幂等安全。Redis INFO 水位无法严格解析、`maxmemory=0` 或
+  未达到高水位时均 fail-closed。
 
 其中 `ensureLive`/thaw 已被当前角色读取和写入链引用，不能机械删除；但 freeze worker 默认关闭，且现有
-guard 明确要求 unsafe escape hatch。仓库不承诺横向扩展、分片迁移、容量管理或冷数据存储方案。
+guard 要求显式区清单。每区 `archive_zone_usage` 在 freeze singleton lease 的事务中按
+`JSON_STORAGE_SIZE` 做 O(1) admission 记账，拒绝时才精确刷新；thaw/janitor 删除也在事务内扣减。
+它只拒绝超限的新 freeze，不会为腾空间删除唯一冷档权威。旧版全局 LRU 条目无法可靠推断区号，存量
+部署必须从权威每区用户清单有界读取 `user.lastActiveAt` 并重建各区索引。运行时 `active:lru` score
+还可被 `ZADD XX GT` 提升到 cold cutoff 作为 skip/error 的有界调度退避，因此不能反向当作真实活跃
+时间；真实重建源仍是 `user.lastActiveAt`。
+
+仓库不承诺横向扩展、分片迁移、备份、自动冷档淘汰或物理容量保证；热档 `schemaVersion` 迁移也仍未
+闭环。因此 archive 保持默认关闭的实验参考，不能作为通用冷数据存储方案。
 
 ### 3.7 玩法与业务域样例
 
