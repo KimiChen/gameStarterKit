@@ -69,6 +69,8 @@ test("client headless tsconfig strictly includes all source and test TypeScript 
   const config = parseClientConfig();
   assert.equal(config.options.strict, true, "client strict probe 不得关闭 strict");
   assert.equal(config.options.noEmit, true, "client strict probe 必须保持 noEmit");
+  assert.equal(config.options.noUnusedLocals, true,
+    "client strict probe 必须保持 noUnusedLocals，FGUI 字段由 codegen 的 protected 声明隔离");
   const included = new Set(config.fileNames);
   const sourceFiles = [
     ...collectTypeScriptFiles(join(CLIENT_ROOT, "src")),
