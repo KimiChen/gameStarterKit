@@ -44,6 +44,7 @@ declare namespace Colyseus {
             maxDelay: number;
             minUptime: number;
             maxEnqueuedMessages: number;
+            enqueuedMessages: Array<{ data: Uint8Array }>;
         };
 
         send(type: string | number, message?: any): void;

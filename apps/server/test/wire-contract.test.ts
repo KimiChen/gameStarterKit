@@ -100,6 +100,8 @@ test("join/RPC envelope：exact keys、有限数值和错误码联合严格收�
 
 test("C2S/S2C：每个消息都有 exact runtime validator，坏包不进入回调", () => {
   assert.deepEqual(validateC2SPayload(C2S.Ping, { clientTime: 1 }), { clientTime: 1 });
+  assert.deepEqual(validateC2SPayload(C2S.IdlePulse, {}), {});
+  assertInvalid(() => validateC2SPayload(C2S.IdlePulse, { count: 1 }), "WIRE_KEYS");
   assertInvalid(() => validateC2SPayload(C2S.Move, { dirX: 0, dirY: 0, extra: 1 }), "WIRE_KEYS");
   assertInvalid(() => validateC2SPayload(C2S.Move, { dirX: Number.NaN, dirY: 0 }), "WIRE_NUMBER");
   assertInvalid(() => validateC2SPayload(C2S.Chat, { text: "   " }), "MESSAGE_TEXT");
@@ -108,7 +110,7 @@ test("C2S/S2C：每个消息都有 exact runtime validator，坏包不进入回�
   assertInvalid(() => validateS2CPayload(S2C.Pong, { clientTime: 1, serverTime: 2, extra: 0 }), "WIRE_KEYS");
   assertInvalid(() => validateS2CPayload(S2C.Error, { code: 1, message: "x", extra: true }), "WIRE_KEYS");
   assertInvalid(() => validateS2CPayload("s2c.unknown" as never, {}), "MESSAGE_TYPE");
-  assert.equal(Object.keys(C2S_RUNTIME_VALIDATORS).length, 4);
+  assert.equal(Object.keys(C2S_RUNTIME_VALIDATORS).length, 5);
   assert.equal(Object.keys(S2C_RUNTIME_VALIDATORS).length, 5);
 });
 

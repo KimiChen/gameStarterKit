@@ -1,4 +1,5 @@
-import { Room, Client, CloseCode, type AuthContext } from "colyseus";
+import { Room, Client, CloseCode, type AuthContext, type Serializer } from "colyseus";
+import { Schema } from "@colyseus/schema";
 import {
     C2S,
     S2C,
@@ -7,8 +8,6 @@ import {
     ErrorMessage,
     TICK_MS,
     MAX_PLAYERS,
-    MAP_WIDTH,
-    MAP_HEIGHT,
     PLAYER_INIT_HP,
     getSkillDef,
     SeededRandom,
@@ -25,6 +24,7 @@ import {
     type S2CType,
     type IPingReq,
     type IMoveReq,
+    type IIdlePulseReq,
     type ICastSkillReq,
     type IChatReq,
     type IWelcomeRes,
@@ -34,7 +34,11 @@ import {
     type IErrorRes,
     type ErrorCodeType,
 } from "@game/shared";
-import { GameRoomState, PlayerState } from "./schema/GameRoomState";
+import {
+    createRoomStateForMode,
+    GameRoomState,
+    PlayerState,
+} from "./schema/GameRoomState";
 import { groupAdmitsZone, normalizeSId } from "../core/infra/config";
 import { verifyAndCacheWebPlatformSession } from "../platform/webPlatformClient";
 import { joinRefused, joinRefusedAuth, toErrCode } from "../core/errors";
@@ -185,7 +189,7 @@ export interface GameRoomRuntimeOptions {
     /** 开局 lock 的最大等待时间；测试可缩短，生产使用有界默认值。 */
     startLockTimeoutMs?: number;
     /** Optional ruleset; transport/admission remains owned by GameRoom. */
-    mode?: GameMode<GameRoomState>;
+    mode?: GameMode<any, any>;
     /** Test/embedded override for durable match evidence emission. */
     evidenceEmitter?: (evidence: MatchEvidenceV3) => Promise<unknown>;
     /** Test/replay override for the accepted-input evidence cap. */
@@ -196,6 +200,9 @@ export type AcceptedGameInput = GameRoomInput & {
     /** 接受该输入时的逻辑帧。 */
     acceptedTick: number;
 };
+
+type RuntimeGameMode = GameMode<any, any>;
+type RuntimeModePlayer = { id: string; name: string };
 
 let seedSequence = 0;
 
@@ -274,6 +281,7 @@ export const GAME_ROOM_C2S_SCHEMAS: {
 } = {
     [C2S.Ping]: sharedC2SSchema(C2S.Ping),
     [C2S.Move]: sharedC2SSchema(C2S.Move),
+    [C2S.IdlePulse]: sharedC2SSchema(C2S.IdlePulse),
     [C2S.CastSkill]: sharedC2SSchema(C2S.CastSkill),
     [C2S.Chat]: sharedC2SSchema(C2S.Chat),
 };
@@ -368,7 +376,7 @@ export class GameRoom extends Room {
     maxClients = MAX_PLAYERS;
     /** Colyseus transport 层的每客户端消息闸；handler 还会做一次本地预算检查。 */
     maxMessagesPerSecond = GAME_ROOM_MAX_MESSAGES_PER_SECOND;
-    state = new GameRoomState();
+    declare readonly state: GameRoomState;
     /** 状态快照下发间隔（ms），默认 50ms/20fps */
     patchRate = 50;
 
@@ -389,9 +397,15 @@ export class GameRoom extends Room {
     private readonly evidenceEmitter: (evidence: MatchEvidenceV3) => Promise<unknown>;
     /** Mode may be selected by the validated onCreate options for production
      * rooms; tests can still inject an exact mode through the constructor. */
-    private mode: GameMode<GameRoomState> | null;
-    private readonly injectedMode: GameMode<GameRoomState> | null;
+    private mode: RuntimeGameMode | null;
+    private readonly injectedMode: RuntimeGameMode | null;
     private modeId: string;
+    /** The exact root may be selected once; subsequent lifecycle calls only verify identity. */
+    private stateSelected = false;
+    /** Colyseus installs its serializer once when the selected root first crosses `.state =`. */
+    private stateSerializerConfigured = false;
+    private selectedStateModeId: string | null = null;
+    private creationConfigured = false;
     /** Sessions for which the mode admission hook has acquired ownership. */
     private readonly modeAdmissions = new Set<string>();
     private inputSource?: GameRoomInputSource;
@@ -440,6 +454,7 @@ export class GameRoom extends Room {
         // not instantiate ballMove only to replace and leak it for an idle room.
         this.mode = this.injectedMode;
         this.modeId = this.injectedMode?.id ?? BALL_MOVE_GAME_MODE_ID;
+        if (this.injectedMode) this.selectModeState(this.injectedMode);
     }
 
     private makeClock(clock: GameRoomClock | undefined): () => number {
@@ -473,22 +488,89 @@ export class GameRoom extends Room {
         return Math.floor(value);
     }
 
-    private modeContext(): GameModeContext<GameRoomState> {
+    private modeContext<TState = GameRoomState>(): GameModeContext<TState> {
         return {
-            state: this.state,
+            state: this.state as unknown as TState,
             roomId: this.roomId,
             sId: this.sId,
             fixedStepMs: this.fixedStepMs,
+            settle: () => this.settle(),
         };
     }
 
+    private selectModeState(mode: RuntimeGameMode): void {
+        if (this.stateSelected) {
+            if (this.selectedStateModeId !== mode.id) {
+                throw new Error(
+                    `[GameRoom] root state 已绑定 ${String(this.selectedStateModeId)}，禁止切换到 ${mode.id}`,
+                );
+            }
+            return;
+        }
+        if (typeof mode.usesDefaultBallMoveRules !== "boolean" || typeof mode.createPlayer !== "function") {
+            throw new TypeError(`[GameRoom] mode ${mode.id} contract 不完整`);
+        }
+        const selected = createRoomStateForMode(mode.id);
+        if ((typeof selected !== "object" && typeof selected !== "function") || selected === null) {
+            throw new TypeError(`[GameRoom] generated root factory ${mode.id} 必须返回 Schema root`);
+        }
+        super.setState(selected as GameRoomState);
+        // Pure unit/replay callers do not pass through Room.__init(), so their
+        // first assignment creates a configurable data property. Give that path
+        // the same public `.state =` rejection as a framework-owned room.
+        const descriptor = Object.getOwnPropertyDescriptor(this, "state");
+        if (descriptor?.configurable && Object.prototype.hasOwnProperty.call(descriptor, "value")) {
+            Object.defineProperty(this, "state", {
+                configurable: true,
+                enumerable: descriptor.enumerable,
+                get: () => selected,
+                set: () => { throw this.rootReplacementError(); },
+            });
+        }
+        this.selectedStateModeId = mode.id;
+        this.stateSelected = true;
+    }
+
+    private rootReplacementError(): Error {
+        return new Error("[GameRoom] root state 只能由 mode selection 选择一次，禁止外部替换");
+    }
+
+    /** Colyseus 0.17's current `.state =` API resets through this virtual call. */
+    override setSerializer(serializer: Serializer<any>): void {
+        if (this.stateSelected && this.stateSerializerConfigured) throw this.rootReplacementError();
+        super.setSerializer(serializer);
+        this.stateSerializerConfigured = true;
+    }
+
+    /** Root ownership belongs exclusively to the generated mode selection path. */
+    override setState(_newState: GameRoomState): void {
+        throw this.rootReplacementError();
+    }
+
     /** Legacy unit/replay callers may exercise the room without Colyseus onCreate. */
-    private requireMode(): GameMode<GameRoomState> {
+    private requireMode(): RuntimeGameMode {
         if (!this.mode) {
-            this.mode = gameModeRegistry.create(BALL_MOVE_GAME_MODE_ID);
+            this.mode = gameModeRegistry.create<any, any>(BALL_MOVE_GAME_MODE_ID);
             this.modeId = this.mode.id;
         }
+        this.selectModeState(this.mode);
         return this.mode;
+    }
+
+    private createModePlayer(mode: RuntimeGameMode, sessionId: string, name: string): RuntimeModePlayer {
+        const player = mode.createPlayer({
+            sessionId,
+            name,
+            randomInt: (min, max) => this.admissionRng.nextInt(min, max),
+        }) as unknown;
+        if (!(player instanceof Schema)) {
+            throw new TypeError(`[GameRoom] mode ${mode.id} createPlayer 必须返回 Schema player`);
+        }
+        const candidate = player as Partial<RuntimeModePlayer>;
+        if (candidate.id !== sessionId || candidate.name !== name) {
+            throw new TypeError(`[GameRoom] mode ${mode.id} createPlayer 破坏公共玩家身份`);
+        }
+        return candidate as RuntimeModePlayer;
     }
 
     /** Observe unsupported async hot-path hooks so no rejection escapes detached. */
@@ -599,6 +681,10 @@ export class GameRoom extends Room {
             const msg = this.acceptMessage(client, C2S.Move, raw, GAME_ROOM_C2S_SCHEMAS[C2S.Move]);
             if (!msg) return;
             if (this.modeMessage(C2S.Move, client, msg)) return;
+            if (this.requireMode().usesDefaultBallMoveRules !== true) {
+                this.sendError(client, ErrorCode.BadRequest);
+                return;
+            }
             const player = this.state.players.get(client.sessionId);
             if (!player || !player.alive) return;
             if (!this.hasInputCapacity()) {
@@ -608,10 +694,27 @@ export class GameRoom extends Room {
             this.acceptMoveInput(client.sessionId, msg.dirX, msg.dirY);
         },
 
+        [C2S.IdlePulse]: (client: Client, raw: IIdlePulseReq) => {
+            const msg = this.acceptMessage(
+                client,
+                C2S.IdlePulse,
+                raw,
+                GAME_ROOM_C2S_SCHEMAS[C2S.IdlePulse],
+            );
+            if (!msg) return;
+            if (!this.modeMessage(C2S.IdlePulse, client, msg)) {
+                this.sendError(client, ErrorCode.BadRequest);
+            }
+        },
+
         [C2S.CastSkill]: (client: Client, raw: ICastSkillReq) => {
             const msg = this.acceptMessage(client, C2S.CastSkill, raw, GAME_ROOM_C2S_SCHEMAS[C2S.CastSkill]);
             if (!msg) return;
             if (this.modeMessage(C2S.CastSkill, client, msg)) return;
+            if (this.requireMode().usesDefaultBallMoveRules !== true) {
+                this.sendError(client, ErrorCode.BadRequest);
+                return;
+            }
             const player = this.state.players.get(client.sessionId);
             if (!player || !player.alive) return;
             this.handleCastSkill(client, msg);
@@ -645,6 +748,7 @@ export class GameRoom extends Room {
             case C2S.Chat:
                 return this.state.phase === GamePhase.Waiting || this.state.phase === GamePhase.Playing;
             case C2S.Move:
+            case C2S.IdlePulse:
             case C2S.CastSkill:
                 return this.state.phase === GamePhase.Playing;
             default:
@@ -693,6 +797,7 @@ export class GameRoom extends Room {
         schema: RuntimeSchema<T>,
     ): T | undefined {
         if (this.disposed) return undefined;
+        this.requireMode();
         if (!this.consumeMessageBudget(client)) return undefined;
         let parsed: { success: true; data: T } | { success: false };
         try {
@@ -726,9 +831,14 @@ export class GameRoom extends Room {
 
     onCreate(options: IGameRoomJoinOptions | undefined) {
         if (this.disposed) return;
+        if (this.creationConfigured) throw joinRefused(ErrorCode.BadRequest);
         const joinOptions = validatedJoinOptions(options);
         if ((joinOptions.v ?? 1) !== PROTOCOL_VERSION) {
             throw joinRefused(ErrorCode.ProtocolMismatch);
+        }
+        const sId = normalizeSId(joinOptions.sId);
+        if (sId === null) {
+            throw joinRefused(ErrorCode.WrongServer);
         }
         if (!this.injectedMode) {
             const requestedMode = joinOptions.mode;
@@ -740,17 +850,14 @@ export class GameRoom extends Room {
                 // Unknown client input is BadRequest; a registered factory
                 // throwing is a server defect and must retain its real cause.
                 if (!gameModeRegistry.has(requestedMode)) throw joinRefused(ErrorCode.BadRequest);
-                this.mode = gameModeRegistry.create(requestedMode);
+                this.mode = gameModeRegistry.create<any, any>(requestedMode);
             }
         } else if (joinOptions.mode !== this.injectedMode.id) {
             throw joinRefused(ErrorCode.BadRequest);
         }
         this.modeId = this.requireMode().id;
-        const sId = normalizeSId(joinOptions.sId);
-        if (sId === null) {
-            throw joinRefused(ErrorCode.WrongServer);
-        }
         this.sId = sId;
+        this.creationConfigured = true;
         this.setSimulationInterval((dt) => this.update(dt), this.fixedStepMs);
         console.log(`[GameRoom ${this.roomId}] 创建 sId=${this.sId}`);
     }
@@ -766,7 +873,30 @@ export class GameRoom extends Room {
         }
     }
 
+    private runModePlayerLeaving(
+        mode: RuntimeGameMode,
+        client: Client,
+        player: RuntimeModePlayer,
+        acceptedTick: number,
+        duringMatch: boolean,
+    ): void {
+        if (!mode.onPlayerLeaving) return;
+        try {
+            const result = mode.onPlayerLeaving({
+                ...this.modeContext(),
+                client,
+                player,
+                acceptedTick,
+                duringMatch,
+            });
+            if (isPromiseLike(result)) this.observeModePromise(result, "player-leaving");
+        } catch (error) {
+            console.error(`[GameRoom ${this.roomId}] mode ${mode.id} player-leaving hook failed`, error);
+        }
+    }
+
     async onJoin(client: Client, _options: unknown) {
+        const mode = this.requireMode();
         // 对局已开/已结算的房间不收新客（M8a：参与者集合在开局时固定，中途进人会污染名次与
         // 证据的 09·K5 输入完整性）。撮合层已由开局时的 lock() 挡住，此闸兜底 joinById 直连。
         if (this.disposed || this.state.phase !== GamePhase.Waiting || this.starting || this.lateLockPending) {
@@ -797,7 +927,6 @@ export class GameRoom extends Room {
         // Run the mode hook only after all common, side-effect-free rejection
         // checks. A duplicate/full join must not let a mode reserve resources
         // for a client that will never receive onLeave.
-        const mode = this.requireMode();
         if (mode.onAdmission) {
             let admitted = true;
             try {
@@ -818,12 +947,16 @@ export class GameRoom extends Room {
         }
         this.modeAdmissions.add(client.sessionId);
 
-        const player = new PlayerState();
-        player.id = client.sessionId;
-        player.name = randomNickname(this.admissionRng);
-        player.x = this.admissionRng.nextInt(100, MAP_WIDTH - 100);
-        player.y = this.admissionRng.nextInt(100, MAP_HEIGHT - 100);
-        this.state.players.set(client.sessionId, player);
+        let player!: RuntimeModePlayer;
+        try {
+            player = this.createModePlayer(mode, client.sessionId, randomNickname(this.admissionRng));
+            this.state.players.set(client.sessionId, player as PlayerState);
+        } catch (error) {
+            this.state.players.delete(client.sessionId);
+            await this.releaseModeAdmission(client);
+            console.error(`[GameRoom ${this.roomId}] mode ${mode.id} player factory failed`, error);
+            throw joinRefused(ErrorCode.BadRequest);
+        }
         this.sessionUserId.set(client.sessionId, auth.userId);
         this.userSessionId.set(auth.userId, client.sessionId);
         this.participantUserId.set(client.sessionId, auth.userId);
@@ -858,6 +991,7 @@ export class GameRoom extends Room {
 
     async onLeave(client: Client, code: number) {
         if (this.disposed) return;
+        const mode = this.requireMode();
         const consented = code === CloseCode.CONSENTED;
         if (!consented) {
             try {
@@ -876,8 +1010,11 @@ export class GameRoom extends Room {
         const player = this.state.players.get(client.sessionId);
         const leftDuringMatch = player !== undefined && this.state.phase === GamePhase.Playing;
         const acceptedTick = this.state.tick;
-        if (leftDuringMatch) this.recordLeaveEvent(client.sessionId, acceptedTick);
-        if (player && this.state.phase === GamePhase.Playing) {
+        if (player) {
+            this.runModePlayerLeaving(mode, client, player, acceptedTick, leftDuringMatch);
+        }
+        if (leftDuringMatch && mode.usesDefaultBallMoveRules === true) {
+            this.recordLeaveEvent(client.sessionId, acceptedTick);
             // 活着退房视为阵亡（M8a：名次/证据完整性要求每个参与者都有归宿）；已死者已在 deathOrder
             if (player.alive) this.recordDeath(client.sessionId);
         }
@@ -903,13 +1040,20 @@ export class GameRoom extends Room {
         this.startAbort?.reject(new Error("room disposed during match start"));
         this.startAbort = null;
         this.lateLockPending = false;
+        const pendingStart = this.startPromise;
         const mode = this.mode;
-        const context = this.modeContext();
+        const context = mode ? this.modeContext() : null;
         // Defer extension code by one microtask so the shared promise is stored
         // before a synchronous/re-entrant hook can call onDispose again.
         const disposal = Promise.resolve().then(async () => {
             try {
-                await mode?.onDispose?.(context);
+                // An initialize/start/rollback hook may already own mode state or
+                // external resources.  Let that captured transaction settle
+                // before publishing the mode's final disposal boundary.
+                if (pendingStart) {
+                    try { await pendingStart; } catch { /* start failure is observed by its caller */ }
+                }
+                if (mode && context) await mode.onDispose?.(context);
             } catch (error) {
                 console.error(`[GameRoom ${this.roomId}] mode ${mode?.id ?? this.modeId} dispose hook failed`, error);
             } finally {
@@ -940,6 +1084,7 @@ export class GameRoom extends Room {
      */
     async startMatch(): Promise<boolean> {
         if (this.disposed) return false;
+        this.requireMode();
         if (this.state.phase === GamePhase.Playing) return true;
         if (this.state.phase !== GamePhase.Waiting || this.state.players.size < 2) return false;
         if (this.startPromise) return this.startPromise;
@@ -970,30 +1115,20 @@ export class GameRoom extends Room {
             // lock() 可能需要访问 Redis/driver；在它完成前不公开 Playing。
             if (!this.isGenerationActive(generation)) throw new Error("room disposed before match start");
             await this.lockWithDeadline(abort, wasLocked);
-            // The room may have been disposed while the external lock was in
-            // flight.  Never publish a stale match after that boundary.
-            if (!this.isGenerationActive(generation)) throw new Error("room disposed during match start");
-            // 等待外部 lock 时可能有玩家离开；不能把只剩一人的房间切成 Playing。
-            let participantsUnchanged = this.state.players.size >= 2;
-            if (participantsUnchanged) {
-                this.state.players.forEach((_player, sessionId) => {
-                    if (!startingSessions.has(sessionId)) participantsUnchanged = false;
-                });
-                for (const sessionId of startingSessions) {
-                    if (!this.state.players.has(sessionId)) participantsUnchanged = false;
-                }
-            }
-            if (!participantsUnchanged) throw new Error("match participants changed while locking");
-            this.initializeMatchState();
+            // Every awaited boundary below can interleave with leave/dispose.
+            // Revalidate before invoking the next mode hook or publishing Playing.
+            this.assertMatchStartBoundary(generation, startingSessions, "locking");
+            await this.initializeMatchState();
+            this.assertMatchStartBoundary(generation, startingSessions, "initialization");
             // The mode sees a fully reset state but the phase is published only
             // after its start hook succeeds, keeping Waiting -> Playing atomic.
             await this.requireMode().onMatchStart?.(this.modeContext());
-            if (!this.isGenerationActive(generation)) throw new Error("room disposed during mode start");
+            this.assertMatchStartBoundary(generation, startingSessions, "mode start");
             this.captureInitialEvidenceState();
             this.state.phase = GamePhase.Playing;
             return true;
         } catch (error) {
-            if (this.isGenerationActive(generation)) this.rollbackMatchState();
+            if (this.isGenerationActive(generation)) await this.rollbackMatchState();
             // Colyseus 的 lock() 先改内存再持久化；持久化失败时尽量恢复撮合状态。
             // 若 unlock 也失败，关闭房间是唯一不会继续接客的终态。
             if (this.isGenerationActive(generation)
@@ -1004,7 +1139,15 @@ export class GameRoom extends Room {
                     await this.unlock();
                 } catch (unlockError) {
                     console.error(`[GameRoom] lock 回滚失败，关闭房间 roomId=${this.roomId}`, unlockError);
-                    try { await this.disconnect(CloseCode.WITH_ERROR); } catch { /* 手动单测可能尚未 __init */ }
+                    // Disposal waits the current start transaction before final
+                    // mode cleanup. Waiting for disposal from that same start
+                    // promise would create a cycle, so only observe this close.
+                    try {
+                        void trackTask(
+                            "game:start-failure-disconnect",
+                            Promise.resolve(this.disconnect(CloseCode.WITH_ERROR)),
+                        );
+                    } catch { /* 手动单测可能尚未 __init */ }
                 }
             }
             throw error;
@@ -1016,6 +1159,25 @@ export class GameRoom extends Room {
 
     private isGenerationActive(generation: number): boolean {
         return !this.disposed && generation === this.lifecycleGeneration;
+    }
+
+    private assertMatchStartBoundary(
+        generation: number,
+        startingSessions: ReadonlySet<string>,
+        stage: string,
+    ): void {
+        if (!this.isGenerationActive(generation)) {
+            throw new Error(`room disposed during match ${stage}`);
+        }
+        if (this.state.phase !== GamePhase.Waiting || startingSessions.size < 2
+            || this.state.players.size !== startingSessions.size) {
+            throw new Error(`match participants or phase changed during ${stage}`);
+        }
+        for (const sessionId of startingSessions) {
+            if (!this.state.players.has(sessionId)) {
+                throw new Error(`match participants changed during ${stage}`);
+            }
+        }
     }
 
     /**
@@ -1089,7 +1251,8 @@ export class GameRoom extends Room {
     }
 
     /** 开局一次性复位所有会污染正式模拟的字段。 */
-    private initializeMatchState(): void {
+    private async initializeMatchState(): Promise<void> {
+        const mode = this.requireMode();
         this.state.tick = 0;
         this.state.matchId = this.matchIdFactory();
         this.simulationAccumulatorMs = 0;
@@ -1109,11 +1272,16 @@ export class GameRoom extends Room {
             if (!this.state.players.has(sessionId)) this.participantUserId.delete(sessionId);
         }
 
-        // 出生点在正式 RNG 流中重新生成，因而等待期的展示 RNG/历史不会改变本局初始状态。
-        resetBallMovePlayers(this.state.players, this.motionAnchors, this.rng);
+        if (mode.usesDefaultBallMoveRules === true) {
+            // 出生点在正式 RNG 流中重新生成，因而等待期的展示 RNG/历史不会改变本局初始状态。
+            resetBallMovePlayers(this.state.players, this.motionAnchors, this.rng);
+        }
+        await mode.onMatchInitialize?.(this.modeContext());
     }
 
     private captureInitialEvidenceState(): void {
+        const ruleset = this.requireMode().matchEvidenceRuleset;
+        if (ruleset?.id !== BALL_MOVE_RULESET_ID || ruleset.version !== BALL_MOVE_RULESET_VERSION) return;
         const roster: MatchEvidenceRosterEntry[] = [];
         this.state.players.forEach((player, sessionId) => {
             roster.push({
@@ -1138,7 +1306,8 @@ export class GameRoom extends Room {
         );
     }
 
-    private rollbackMatchState(): void {
+    private async rollbackMatchState(): Promise<void> {
+        const mode = this.requireMode();
         this.state.phase = GamePhase.Waiting;
         this.state.matchId = "";
         this.state.tick = 0;
@@ -1152,25 +1321,35 @@ export class GameRoom extends Room {
         this.motionAnchors.clear();
         this.initialRoster = [];
         this.initialMatchState = null;
-        this.state.players.forEach((player) => {
-            player.hp = PLAYER_INIT_HP;
-            player.maxHp = PLAYER_INIT_HP;
-            player.alive = true;
-            player.dirX = 0;
-            player.dirY = 0;
-            player.lastCastTick = {};
-            player.level = 1;
-        });
+        if (mode.usesDefaultBallMoveRules === true) {
+            this.state.players.forEach((player) => {
+                player.hp = PLAYER_INIT_HP;
+                player.maxHp = PLAYER_INIT_HP;
+                player.alive = true;
+                player.dirX = 0;
+                player.dirY = 0;
+                player.lastCastTick = {};
+                player.level = 1;
+            });
+        }
+        try {
+            await mode.onMatchRollback?.(this.modeContext());
+        } catch (error) {
+            console.error(`[GameRoom ${this.roomId}] mode ${mode.id} rollback hook failed`, error);
+        }
     }
 
     /** 公开一个固定步推进点，供回放/无头测试使用。 */
     stepFixed(): void {
-        if (this.disposed || this.state.phase !== GamePhase.Playing) return;
-        this.applyInjectedInputs(this.state.tick);
+        if (this.disposed) return;
+        const mode = this.requireMode();
+        if (this.state.phase !== GamePhase.Playing) return;
+        if (mode.usesDefaultBallMoveRules === true) this.applyInjectedInputs(this.state.tick);
         if (this.state.phase !== GamePhase.Playing) return;
         this.state.tick++;
-        advanceBallMovePlayers(this.state.players, this.motionAnchors, this.state.tick, this.fixedStepMs);
-        const mode = this.requireMode();
+        if (mode.usesDefaultBallMoveRules === true) {
+            advanceBallMovePlayers(this.state.players, this.motionAnchors, this.state.tick, this.fixedStepMs);
+        }
         try {
             const result = mode.onStep?.({ ...this.modeContext(), dtMs: this.fixedStepMs });
             if (isPromiseLike(result)) this.observeModePromise(result, "step");
@@ -1249,7 +1428,9 @@ export class GameRoom extends Room {
 
     /** 注入一条已经过调用方验证的输入；非法输入直接拒绝，不进入 replay 序列。 */
     injectInput(input: GameRoomInput): boolean {
-        if (this.disposed || this.state.phase !== GamePhase.Playing) return false;
+        if (this.disposed) return false;
+        const mode = this.requireMode();
+        if (this.state.phase !== GamePhase.Playing || mode.usesDefaultBallMoveRules !== true) return false;
         const snapshot = snapshotInjectedInput(input);
         if (!snapshot) return false;
         this.injectedInputs.push(snapshot);
@@ -1474,6 +1655,21 @@ export class GameRoom extends Room {
     /** 结算条件：对局中存活 ≤1。 */
     private maybeSettle() {
         if (this.disposed || this.state.phase !== GamePhase.Playing) return;
+        const mode = this.requireMode();
+        if (mode.shouldSettle) {
+            try {
+                const result = mode.shouldSettle(this.modeContext());
+                if (isPromiseLike(result)) {
+                    this.observeModePromise(result, "should-settle");
+                    return;
+                }
+                if (result) this.settle();
+            } catch (error) {
+                console.error(`[GameRoom ${this.roomId}] mode ${mode.id} settlement hook failed`, error);
+            }
+            return;
+        }
+        if (mode.usesDefaultBallMoveRules !== true) return;
         let alive = 0;
         this.state.players.forEach((p) => { if (p.alive) alive++; });
         if (alive <= 1) this.settle();
@@ -1499,7 +1695,7 @@ export class GameRoom extends Room {
         void trackTask("game:match-evidence", this.evidenceEmitter(evidence));
     }
 
-    private buildMatchEvidence(mode: GameMode<GameRoomState>): MatchEvidenceV3 | null {
+    private buildMatchEvidence(mode: RuntimeGameMode): MatchEvidenceV3 | null {
         const ruleset = mode.matchEvidenceRuleset;
         if (ruleset?.id !== BALL_MOVE_RULESET_ID || ruleset.version !== BALL_MOVE_RULESET_VERSION) return null;
         const initialState = this.initialMatchState;

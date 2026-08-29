@@ -27,6 +27,8 @@ export const C2S = {
     Ping: "c2s.ping",
     /** 玩家移动输入 */
     Move: "c2s.move",
+    /** idle 玩法积分类输入 */
+    IdlePulse: "c2s.idle.pulse",
     /** 释放技能 */
     CastSkill: "c2s.castSkill",
     /** 聊天 */
@@ -54,6 +56,7 @@ export type S2CType = (typeof S2C)[keyof typeof S2C];
 export interface C2SPayloadMap {
     [C2S.Ping]: IPingReq;
     [C2S.Move]: IMoveReq;
+    [C2S.IdlePulse]: IIdlePulseReq;
     [C2S.CastSkill]: ICastSkillReq;
     [C2S.Chat]: IChatReq;
 }
@@ -96,6 +99,12 @@ function validateMove(input: unknown): IMoveReq {
         dirX: finiteNumber(value.dirX, "payload.dirX", -1, 1),
         dirY: finiteNumber(value.dirY, "payload.dirY", -1, 1),
     };
+}
+
+function validateIdlePulse(input: unknown): IIdlePulseReq {
+    const value = messageRecord(input, "payload");
+    assertExactKeys(value, [], [], "payload");
+    return {};
 }
 
 function validateCastSkill(input: unknown): ICastSkillReq {
@@ -174,6 +183,7 @@ const guardMessageValidator = <T>(validator: RuntimeValidator<T>): RuntimeValida
 export const C2S_RUNTIME_VALIDATORS: { [K in C2SType]: RuntimeValidator<C2SPayloadMap[K]> } = {
     [C2S.Ping]: guardMessageValidator(validatePing),
     [C2S.Move]: guardMessageValidator(validateMove),
+    [C2S.IdlePulse]: guardMessageValidator(validateIdlePulse),
     [C2S.CastSkill]: guardMessageValidator(validateCastSkill),
     [C2S.Chat]: guardMessageValidator(validateChat),
 };
@@ -222,6 +232,11 @@ export interface IMoveReq {
     dirX: number;
     /** 归一化方向向量 y ∈ [-1, 1] */
     dirY: number;
+}
+
+/** Idle 每次 pulse 只表达一次动作，不接受客户端参数。 */
+export interface IIdlePulseReq {
+    readonly [key: string]: never;
 }
 
 export interface ICastSkillReq {

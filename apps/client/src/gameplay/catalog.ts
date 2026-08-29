@@ -12,6 +12,12 @@ import {
 } from "../logic/rooms/idle/IdleGameplay";
 import { createIdleRoomJoiner } from "../net/rooms/IdleRoom";
 import { createBallMoveRoomJoiner } from "../net/rooms/BallMoveRoom";
+import {
+    createBallMoveRoomAdapter,
+    createIdleRoomAdapter,
+    type BallMoveRoomAdapter,
+    type IdleRoomAdapter,
+} from "../net/rooms/GameRoomTransport";
 
 /** Inputs/rooms are intentionally erased at the app composition boundary. */
 export type AppGameplayRegistry = GameplayRegistry<any, any>;
@@ -26,6 +32,8 @@ export interface GameplayCatalogContext {
     readonly presentationHost?: GameplayPresentationHost;
     readonly ballMoveJoiner?: GameplayRoomJoiner<BallMoveRoom>;
     readonly idleJoiner?: GameplayRoomJoiner<IdleRoom>;
+    readonly ballMoveAdapter?: BallMoveRoomAdapter;
+    readonly idleAdapter?: IdleRoomAdapter;
 }
 
 /**
@@ -37,6 +45,8 @@ export function registerDefaultGameplays(
     registry: AppGameplayRegistry,
     context: GameplayCatalogContext,
 ): () => void {
+    const ballMoveAdapter = context.ballMoveAdapter ?? createBallMoveRoomAdapter();
+    const idleAdapter = context.idleAdapter ?? createIdleRoomAdapter();
     const ballMoveOff = registerBallMoveGameplay(
         registry as unknown as GameplayRegistry<BallMoveRoom, BallMoveInput>,
         {
@@ -51,14 +61,14 @@ export function registerDefaultGameplays(
                     return new BallMoveView(host.node, (input) => host.dispatchInput(input));
                 },
             } : {}),
-            joiner: context.ballMoveJoiner ?? createBallMoveRoomJoiner(),
+            joiner: context.ballMoveJoiner ?? createBallMoveRoomJoiner(ballMoveAdapter),
         },
     );
     let idleOff: (() => void) | null = null;
     try {
         idleOff = registerIdleGameplay(
             registry as unknown as GameplayRegistry<IdleRoom, IdleInput>,
-            { joiner: context.idleJoiner ?? createIdleRoomJoiner() },
+            { joiner: context.idleJoiner ?? createIdleRoomJoiner(idleAdapter) },
         );
     } catch (error) {
         ballMoveOff();

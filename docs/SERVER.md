@@ -184,27 +184,36 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
 
 ## 5. GameRoom
 
-`GameRoom` 是以 `ballMove` Schema/phase 为基线的实时房间 shell。生产 catalog 已登记默认 `ballMove` 与最小
-`idle` mode；前者运行移动/技能 Demo，后者用于证明同一 transport/lifecycle 可选择第二个真实玩法。当前展示：
+`GameRoom` 是共享 transport/admission/lifecycle 的实时房间 shell。生产 catalog 已登记默认 `ballMove` 与
+最小 `idle` mode；前者使用 `GameRoomState` 运行移动/技能 Demo，后者使用独立 `IdleRoomState` 和 pulse
+胜利条件。两套 root 都由 state manifest 生成的 mode 映射选择。当前展示：
 
 - WebPlatform strict session verify、协议版本与区号复核。
 - `filterBy(["sId", "mode"])` 的撮合隔离及房内再次校验；Game join 的 `mode` 必填且由 shared 校验。
-- Colyseus Schema 状态、服务端逻辑帧移动、技能公式、聊天和重连宽限。
-- 两名玩家后进入 Playing；只有显式声明受支持 `matchEvidenceRuleset` 的 mode 才生成对应证据。当前仅
+- `onCreate` 在首次 handshake 前按 mode 选择一次 root；公共入口之后禁止替换 root。两种状态只共享
+  tick/phase/matchId/players 生命周期语义，不共享 player 字段或结算判定。
+- `ballMove` 的服务端逻辑帧移动/技能公式与 `idle` 的严格空对象 `IdlePulse`；聊天和重连宽限仍属公共能力。
+- 两名玩家后进入 Playing；Idle 达到 pulseGoal（默认 3）获胜，Playing 中对手真实离开时剩余玩家获胜。
+  只有显式声明受支持 `matchEvidenceRuleset` 的 mode 才生成对应证据。当前仅
   `ballMove@1` 生产 v3，`idle` 不会污染 `ballMove` 战绩。
 - onCreate 拒绝非法区号（WrongServer），同一 userId 禁止重复入座（AlreadyInRoom）。
 
 它不是通用玩法层。当前 Demo 已收口以下边界：
 
-- Ping/Move/CastSkill/Chat 先经过 strict C2S runtime schema（exact keys、finite/range/length）和每客户端
-  消息预算；S2C payload 也在发送/广播前验证。非法值不会进入 Schema state 或玩法逻辑。
+- Ping/Move/IdlePulse/CastSkill/Chat 先经过 strict C2S runtime schema（exact keys、finite/range/length）和
+  每客户端消息预算；玩法不支持的消息 fail-closed，S2C payload 也在发送/广播前验证。非法值不会进入
+  Schema state 或玩法逻辑。
 - phase 白名单只允许 Playing 接受移动/技能；Waiting/Settle 不推进正式模拟。唯一的 `startMatch()` 会在
   `lock()` 成功且参与者集合未变化后一次性复位 hp/alive/方向/cooldown/tick，并使用独立 admission/match RNG
   与 fixed-step 时钟。
 - Waiting → Playing 的锁定是 awaited 的；失败会回滚状态并尝试 `unlock()`，连回滚也失败时关闭房间，不会
   留着一个已公开但未持锁的 Playing 房。
-- mode 在 `onCreate` 验证 options 后才实例化；`onMatchStart`、`onLeave`、`onDispose` 可等待且失败被观察，
-  admission 后开局失败会 exactly-once 归还该 client 的 mode 资源。
+- mode 在 `onCreate` 验证 options 后才实例化；`onMatchInitialize`、`onMatchStart`、`onMatchRollback`、`onLeave`、
+  `onDispose` 可等待且失败被观察。每个开局 await 后重验 generation、Waiting phase 和精确 roster；dispose
+  先使 generation 失效并中断 lock 等待，再等进行中的 initialize/start/rollback settle，最后执行 mode dispose
+  与公共清理。admission 后开局失败会 exactly-once 归还该 client 的 mode 资源。
+- mode 契约显式提供 player factory、默认 ballMove 规则开关、开局/回滚、真实离场和结算 hook；异构 mode
+  不会读取 hp/alive/deathOrder，也不会进入 ballMove input/evidence 路径。
 - session → user 双向索引在加入、离开和 Waiting 回滚路径统一维护；断线宽限成功不会提前记入死亡序。
 - `ballMove@1` 正式开局冻结有序 roster 与 canonical initial state；v3 记录 schema/ruleset、seed/fixed step、
   map/loadout、按接受顺序排列且带权威 `acceptedTick` 的 move/cast/leave、final state 与 participants。致胜 cast
@@ -220,8 +229,8 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
   使用 tick；`elapsedMs = finalTick * fixedStepMs` 只是确定性派生值。该 exact ruleset 不代表通用玩法 evidence。
 - v3 只能证明仓内输入重放与结果核对，不提供防篡改、防作弊、producer 必达或 exactly-once 送达保证。
 
-正式玩法扩展仍需在该 Demo 边界之上补齐 admission、phase、input validation、reset/settle 和 evidence
-契约，再复用该房间模式；当前 Demo 的运行时闸不等于通用玩法层已经交付。
+正式玩法扩展仍需在该 Demo 边界之上声明 state root、admission、phase、input validation、reset/settle 和
+可选 evidence 契约，再复用该房间模式；当前两种规则的运行时闸不等于通用玩法层已经交付。
 
 ## 6. HTTP 开发边界
 

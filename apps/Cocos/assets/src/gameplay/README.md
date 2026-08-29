@@ -15,9 +15,10 @@ presentation 绑定到同一个 `GameplayRegistry` 登记；默认登记入口�
 
 ## 新增玩法
 
-1. 在 `apps/shared/src` 登记 canonical mode id，并运行 `npm run sync:shared`。
-2. 增加对应的 `logic/rooms/<mode>/` 与 `net/rooms/<Mode>Room.ts`，沿用通用 transport 的
-   join/leave 与取消语义。
+1. 在 `apps/shared/src` 登记 canonical mode id、state manifest root 与玩法消息，运行 state codegen 和
+   `npm run sync:shared`。
+2. 增加对应的 `logic/rooms/<mode>/` 与 `net/rooms/<Mode>Room.ts`，定义 raw state exact validator、
+   C2S allowlist 和可选 reconcile，沿用通用 transport 的 join/leave 与取消语义。
 3. 在 `catalog.ts` 注册 factory、joiner 和可选 presentation factory。无 UI 的玩法省略
    presentation，不应创建其他玩法的 View。
 4. 运行 `npm run sync:client`，再执行 `npm run typecheck:client`、
@@ -30,6 +31,6 @@ presentation 绑定到同一个 `GameplayRegistry` 登记；默认登记入口�
 ## 当前登记
 
 - `ballMove`：带 `BallMoveView` 的演示玩法；presentation 只在该 entry 启动时动态加载。
-- `idle`：无 presentation 的最小第二 mode，用于验证真实 transport/lifecycle 装配，不代表完整玩法 UI。
+- `idle`：无 presentation、独立 `IdleRoomState` 与 pulse 输入/结算的最小第二 mode，不代表完整玩法 UI。
 
 目录本身不是玩法规则的真源；修改规则请回到 `logic/rooms/`，修改共享协议请回到 `apps/shared/src`。

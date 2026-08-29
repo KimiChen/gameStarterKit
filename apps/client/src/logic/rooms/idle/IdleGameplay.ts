@@ -15,6 +15,7 @@ export interface IdleRoom {
     readonly kind: "idle-fixture" | "idle";
     readonly roomId?: string;
     readonly sessionId?: string;
+    pulse(): void;
 }
 
 export interface IdleGameplayOptions {
@@ -42,6 +43,7 @@ export class IdleGameplay implements GameplayPlugin<IdleRoom, IdleInput> {
     handleInput(input: IdleInput, context: GameplayContext<IdleRoom>): void {
         if (!context.isActive() || input.type !== "pulse") return;
         this.inputs.push({ ...input });
+        context.room.pulse();
     }
 
     tick(dt: number, context: GameplayContext<IdleRoom>): void {

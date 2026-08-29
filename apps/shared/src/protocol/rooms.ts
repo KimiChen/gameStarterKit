@@ -28,6 +28,8 @@ export type GameplayModeIdType = (typeof GameplayModeId)[keyof typeof GameplayMo
  * Schema 字段增删、消息名/语义变更时 +1，双端随 sync:shared 同步。
  *
  * 版本流水（新版本在上）：
+ *   7 = GameRoom state manifest 改为按 mode 选择 root Schema，并新增 idle 专用 `c2s.idle.pulse`；v6 客户端
+ *       只理解单一 GameRoomState，不能参与异构 state patch 或 idle 结算，因此显式切断混跑。
  *   6 = `setField` 文本长度从 UTF-16 码元统一为 UTF-8 字节，并拒绝不成对代理项；v5 客户端按旧口径
  *       可能接受服务端现已拒绝的输入，因此在首次承担线上兼容义务前显式切断混跑。
  *   5 = join options 增加受校验的玩法 mode；同一 GameRoom 按 mode 隔离撮合并选择注册的 GameMode。
@@ -38,7 +40,7 @@ export type GameplayModeIdType = (typeof GameplayModeId)[keyof typeof GameplayMo
  *       被 `ProtocolMismatch` 明确拒掉（见 GameRoom.onAuth 注释）。
  *   1 = 首版。
  */
-export const PROTOCOL_VERSION = 6;
+export const PROTOCOL_VERSION = 7;
 
 /** 两类房间共享的 join options 字段。 */
 export interface IRoomJoinOptions {

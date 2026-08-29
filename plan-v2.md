@@ -69,18 +69,22 @@
   最大安全 final tick 不触发逐帧循环；权威时间和冷却使用 tick，`elapsedMs` 只是确定性派生值。v3 payload
   在生产序列化后和消费 JSON parse 前都受 24 MiB 上限保护。该能力只证明仓内 `ballMove@1` 输入重放与结果
   核对；XADD 仍是 tracked detached best-effort，不承诺 producer 必达、exactly-once、防篡改或防作弊。
-  它不改变 C2S/S2C/shared wire，`lastCastTick` 只在 manifest 的 `serverOnly` 域，`PROTOCOL_VERSION` 保持 6。
+  该 v3 evidence 契约本身不占 C2S/S2C/shared wire，`lastCastTick` 只在 manifest 的 `serverOnly` 域；当前
+  `PROTOCOL_VERSION=7` 来自后续 multi-root/IdlePulse 契约，不能把该次 bump 归因于 evidence。
   验收证据：`match-replay.test.ts` 6/6 覆盖事件删改/乱序、seed/roster/final/participants 变异、hostile shape、
   16,384 输入与最大安全 tick；`game-room.test.ts` 32/32 覆盖拒绝输入、容量 fail-closed、致胜 cast、leave/finish
   hook 前冻结、慢 leave hook 和对角移动单次归一化；`int/settlement.test.ts` 18/18 覆盖 v3-only producer、真实
   GameRoom→Redis→replay→MySQL、生产/消费双重门禁及三流生命周期；`stream-depth-lifecycle.test.ts` 3/3、
   `game-room-wire-contract.test.ts` 2/2、state codegen freshness、`verify:sync`、服务端 typecheck/单测 273/273、
   全量集成 153/153、inventory 与 diff check 通过。
-- `[已完成]` `PROTOCOL_VERSION` 已提升为 6，版本流水明确登记 `setField` 文本接受域由 UTF-16 码元收紧为
-  UTF-8 字节并拒绝不成对代理项。客户端 Lobby/Game join 与服务端两个版本闸均消费同一 shared 常量；旧 v5
-  会以 `ProtocolMismatch` 拒绝，仓内不存在已部署旧客户端，因而在首次线上发布前完成了单版本切换。
-  验收证据：`node scripts/protocol-fingerprint.mjs` 生成 `v6` 指纹，`npm run test:client`、
-  `npm --workspace @game/server run test` 与 `npm run verify:sync`。
+- `[已完成]` GameRoom 已从单一 `GameRoomState` 扩展为按 mode 选择且不可替换的生成 root；`idle` 使用独立
+  `IdleRoomState`/`IdlePlayerState`、严格空对象 `IdlePulse` 和三次 pulse/真实离场结算，客户端也按 mode 注入
+  raw state exact validator、C2S allowlist 与可选 reconcile。完整实现与证据见 §4 P1-01/P1-04。
+- `[已完成]` 当前 `PROTOCOL_VERSION` 已提升为 7。版本流水同时保留 v6 的 `setField` UTF-8 字节/不成对代理项
+  收紧，并登记 v7 的 mode→root Schema 与 `c2s.idle.pulse`；客户端 Lobby/Game join 与服务端两个版本闸均消费
+  同一 shared 常量，旧 v6 客户端会以 `ProtocolMismatch` 拒绝，避免单 root 客户端参与异构 patch。
+  验收证据：`node scripts/protocol-fingerprint.mjs` 生成 `v7 4db1218ced15b0d1…`；客户端 245/245、服务端
+  单测 290/290、全量集成 153/153、`npm run typecheck` 与 `npm run verify:sync` 通过。
 
 除标注 `[条件阻塞]` 的条目外，本清单所有条目均不影响当前限定范围的核心验收；但不能据此把当前 Demo
 描述成通用生产框架。
@@ -147,9 +151,32 @@
 ### P1-01 多玩法边界
 
 - `[不阻塞·有意保留]` `idle` 只是无 presentation 的最小 multi-mode 证明，不代表完整第二玩法 UI 已交付。
-- `[不阻塞·有意保留]` 共享的 `GameRoomState`、Waiting/Playing/Settle 相位、两人开局和部分 reset/settle
-  仍以 ballMove Demo 为基线。
-- `[不阻塞·待补齐]` 不同房间状态和结算语义的玩法仍需扩展 shared Schema 与 mode 契约。
+- `[不阻塞·有意保留]` 两个 root 仍共享 tick/phase/matchId/players 的生命周期约定；Waiting/Playing/Settle
+  相位、两人开局和部分通用 reset/settle shell 仍以 ballMove Demo 为基线。
+- `[已完成]` state manifest format v2 精确登记 `ballMove→GameRoomState` 与 `idle→IdleRoomState`，同源生成
+  shared `RoomStateByMode`/validator 映射和 server root constructor 映射；`GameRoom.onCreate` 在首个 handshake
+  前只选择一次 root，选择前不安装临时 ballMove serializer；弃用的公共 `setState()` 始终拒绝，选择后的
+  Colyseus 0.17 当前 `.state =` 路径也通过 serializer guard 拒绝替换。`GameMode`
+  必填 `createPlayer` 与 `usesDefaultBallMoveRules`，player factory 运行时拒绝非 Schema 值和被篡改的公共身份，
+  `onMatchInitialize`/`onMatchStart`/`onMatchRollback` 均被等待且 rejection 被观察，每个 await 边界后重验
+  generation/Waiting/精确 roster；dispose 先同步失效 generation，再等待进行中的 initialize/start/rollback
+  settle，最后才执行 mode dispose 与公共清理，并提供真实离场和结算 hook；Idle player 只有
+  id/name/pulses，三次 strict `{}` pulse 同步写 winner 并收局，Playing 中真实离场由剩余玩家获胜，
+  Move/Cast、ballMove
+  hp/alive/deathOrder/input/evidence 路径均 fail-closed。客户端 `RoomStateByMode[TMode]`、raw exact validator、
+  C2S allowlist 和 reconcile 归 mode adapter 所有；typed facade 不暴露原始 SDK room。ownership 只认真实
+  `ROOM_STATE` callback，不把 JOIN handshake 默认 root 当首帧；首帧前、drop/reconnect 后下一帧前的
+  `stateReady` 写闸均关闭，首帧缺失受 join timeout 收口，后续每次 state change 直接校验原始 reflected Schema。
+  SDK 离线消息队列固定为 0 并在 drop/reconnect 清空，不能抢在重连 state 前自动 flush；首帧前物理离场即时拒绝
+  owner，不等待二次 leave 超时。Idle 不订阅业务状态也不能绕过 root 闸，且 Idle join/自动重连不会构造 Move；
+  ballMove input generation 阻止旧 capability 改写新房重连输入，旧 typed room 也不能提升 generation。
+  验收证据：state codegen 10/10、GameMode 16/16、Idle 规则 7/7、GameRoom wire 2/2、客户端 ownership 37/37；
+  真实 `Server + WebSocketTransport + SDK` 共用
+  同一 Room definition 的双 mode wire 1/1 覆盖两种独立 root/patch、Idle 三次 pulse、晚加入拒绝和生产客户端
+  自动重连零 Move 及断线窗口 pulse 不被 SDK 重放；客户端 245/245、服务端单测 290/290、全量集成 153/153、
+  `npm run typecheck`、
+  `npm --workspace @game/server run codegen:state -- --check`、`npm run verify:sync`、
+  `npm run verify:inventory`、`npm run verify:project`、`smoke:framework` 与 diff check 通过。
 - `[不阻塞·有意保留]` 真实 Creator 资源导入和目标设备行为仍需编辑器预览。
 
 来源：`plan.md:478-485`
@@ -179,14 +206,18 @@
 
 ### P1-04 schema-first 范围
 
-- `[已完成]` `apps/shared/schema/game-room-state.json` 现为 `PlayerState` / `GameRoomState` 全部 wire 字段、
-  默认值、值域、Map key 关联及服务端内部字段的单一声明源；同一 manifest 生成 shared 纯数据接口与
-  exact validators，以及服务端 `@colyseus/schema` class，`serverOnly` 字段只生成未装饰属性，不进入 wire。
+- `[已完成]` `apps/shared/schema/game-room-state.json` 现为 mode→root、`PlayerState` / `GameRoomState` 与
+  `IdlePlayerState` / `IdleRoomState` 全部 wire 字段、默认值、值域、Map key 关联及服务端内部字段的单一声明源；
+  同一 manifest 生成 shared 纯数据接口/`RoomStateByMode`/exact validator 映射，以及服务端
+  `@colyseus/schema` class/root constructor 映射；`serverOnly` 字段只生成未装饰属性，不进入 wire。
 - `[已完成]` `codegen:state` 对 manifest 做 exact shape、kind、重复名、bounds、跨字段/Map 引用和
-  serverOnly 冲突校验，`--check` 只读拒绝缺失或陈旧双端生成物；AST 反向断言 shared validator keys、
-  server decorated keys 与 manifest 精确相等。验收证据：生成/freshness 正反例 6/6，真实 wire 合约
-  14/14，协议指纹 3/3，服务端全量单测 247/247；shared/server 与两套客户端 typecheck、
-  `codegen:state -- --check`、`npm run verify:sync` 及 scoped diff check 通过。
+  serverOnly 冲突，以及 root 的未知键、空集合、非法/重复 mode、重复/缺失 type 校验；`--check` 只读拒绝
+  缺失或陈旧双端生成物。AST 反向断言 shared validator keys、server decorated keys 与 manifest 精确相等；
+  生产 mode catalog、shared `GameplayModeId`、validator keys 与 root constructor keys 也必须精确同集。
+  验收证据：state codegen/freshness/multi-root 正反例 10/10、真实双 mode wire 1/1、GameRoom wire 2/2、协议
+  指纹 3/3、服务端全量单测 290/290、客户端 245/245 与集成 153/153；shared/server/两套客户端 typecheck、
+  `npm --workspace @game/server run codegen:state -- --check`、`npm run verify:sync`、
+  `npm run verify:inventory`、`npm run verify:project`、`smoke:framework` 及 diff check 通过。
 
 来源：`plan.md:541-547`
 
@@ -213,7 +244,8 @@
 
 ### P1-07 大厅重连
 
-- `[不阻塞·有意保留]` Game transport 目前只做 desired input 对账，不等同于业务恢复。
+- `[不阻塞·有意保留]` Game transport 自动重连只在下一份 mode state 通过 exact 校验后运行 adapter 的可选
+  reconcile；当前 ballMove 只对账 desired input，idle 不对账业务状态，两者都不等同于完整业务恢复。
 - `[已完成]` 大厅连接最终死亡后先复用当前内存 token，以显式 ownership 重进所选区 Lobby，再拉
   `user.getInfo`；shared validator 校验后的角色快照仅在完整 session identity（generation/userId/token）
   仍匹配时原子提交，失败才进入既有 `returnToLogin`。同世代重复事件合流，页面取消或旧世代迟到只释放
@@ -328,4 +360,5 @@
   当前计划，同时通过 `referenceDocs` 继续检查历史归档链接。验收证据：`npm run verify:inventory` 与
   `npm run test:inventory`。
 
-> 协议版本待评估项原列于本节，因其带有硬性发布前置条件、属技术待办而非文档问题，已移至 §1 第 7 条。
+> 协议版本待评估项原列于本节，因其带有硬性发布前置条件、原属技术待办而非文档问题，已完成并移至
+> §1 第 8 条留存证据。

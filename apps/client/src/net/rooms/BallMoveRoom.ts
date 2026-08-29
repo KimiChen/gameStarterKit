@@ -5,27 +5,35 @@ import type {
 } from "../../logic/rooms/ballMove/BallMoveGameplay";
 import { BALL_MOVE_GAMEPLAY_ID } from "../../logic/rooms/ballMove/BallMoveGameplay";
 import {
+    C2S,
     S2C,
-    type IGameRoomState,
     type IPlayerState,
     type S2CPayloadMap,
 } from "../../shared/index";
 import { RoomClient } from "../RoomClient";
-import { joinGameRoom } from "./GameRoomTransport";
+import {
+    joinGameRoom,
+    type BallMoveRoomAdapter,
+    type BallMoveTypedRoom,
+} from "./GameRoomTransport";
 
 type MessageOff = () => void;
 
 /** Bind gameplay operations to one captured physical room, never a global current room. */
 export function createBallMoveRoom(
-    room: Colyseus.Room<IGameRoomState>,
-    client: RoomClient = RoomClient.inst,
+    room: BallMoveTypedRoom,
+    adapter: BallMoveRoomAdapter,
 ): BallMoveRoom {
-    const isCurrent = () => client.room === room;
-    const inputGeneration = client.inputGeneration;
+    if (room.mode !== BALL_MOVE_GAMEPLAY_ID || adapter.mode !== BALL_MOVE_GAMEPLAY_ID) {
+        throw new TypeError("[BallMoveRoom] room mode 与 adapter 不匹配");
+    }
+    if (!room.current) throw new Error("[BallMoveRoom] room 已失效");
+    const isCurrent = () => room.current;
+    const inputGeneration = adapter.beginInputLease();
     const onMessage = <K extends keyof S2CPayloadMap>(
         type: K,
         callback: (message: S2CPayloadMap[K]) => void,
-    ): MessageOff => client.onMessage(room, type, (message) => {
+    ): MessageOff => room.onMessage(type, (message) => {
             if (isCurrent()) callback(message);
         });
 
@@ -33,7 +41,7 @@ export function createBallMoveRoom(
         roomId: room.roomId,
         sessionId: room.sessionId,
         get dropping() {
-            return isCurrent() && client.dropping;
+            return room.dropping;
         },
         onWelcome: (callback) => onMessage(S2C.Welcome, callback),
         onPong: (callback) => onMessage(S2C.Pong, callback),
@@ -41,29 +49,30 @@ export function createBallMoveRoom(
         onSkillResult: (callback) => onMessage(S2C.SkillResult, callback),
         onError: (callback) => onMessage(S2C.Error, callback),
         observePlayers(observer) {
-            return observePlayers(client, room, observer, isCurrent);
+            return observePlayers(room, observer, isCurrent);
         },
         move(dirX, dirY) {
-            if (isCurrent()) client.move(dirX, dirY);
+            adapter.move(inputGeneration, room, dirX, dirY);
         },
         clearMove() {
-            client.clearDesiredMove(inputGeneration);
+            adapter.clearMove(inputGeneration, room);
         },
         ping() {
-            if (isCurrent()) client.ping();
+            if (isCurrent()) room.send(C2S.Ping, { clientTime: Date.now() });
         },
     };
 }
 
 /** Production joiner used by Main; endpoint/session lookup stays outside the shell. */
 export function createBallMoveRoomJoiner(
+    adapter: BallMoveRoomAdapter,
     client: RoomClient = RoomClient.inst,
 ): GameplayRoomJoiner<BallMoveRoom> {
     return {
         join(signal) {
-            const ownership = joinGameRoom(client, BALL_MOVE_GAMEPLAY_ID, signal);
+            const ownership = joinGameRoom(client, adapter, signal);
             return {
-                ready: ownership.ready.then((room) => createBallMoveRoom(room, client)),
+                ready: ownership.ready.then((room) => createBallMoveRoom(room, adapter)),
                 leave: () => ownership.leave(),
             };
         },
@@ -71,12 +80,11 @@ export function createBallMoveRoomJoiner(
 }
 
 function observePlayers(
-    client: RoomClient,
-    room: Colyseus.Room<IGameRoomState>,
+    room: BallMoveTypedRoom,
     observer: BallMovePlayerObserver,
     isCurrent: () => boolean,
 ): () => void {
-    const state = client.state$(room);
+    const state = room.state$();
     const playerChanges = new Map<string, () => void>();
     let active = true;
     const isActive = () => active && isCurrent();

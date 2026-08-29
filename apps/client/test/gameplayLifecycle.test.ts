@@ -39,7 +39,7 @@ function lease(ready: Promise<IdleRoom>): RoomCapability<IdleRoom> & { leaveCall
     };
 }
 
-const room = (): IdleRoom => ({ kind: "idle-fixture" });
+const room = (): IdleRoom => ({ kind: "idle-fixture", pulse() {} });
 
 function trackedGameplay(
     id = "idle",
@@ -72,7 +72,7 @@ test("GameplayRegistry：新增 idle 玩法只需登记 factory，id 与解绑�
 });
 
 test("GameplayRegistry：玩法自带 joiner 可由无默认 transport 的 RoomController 启动", async () => {
-    const actualRoom: IdleRoom = { kind: "idle", roomId: "idle-room", sessionId: "idle-self" };
+    const actualRoom: IdleRoom = { kind: "idle", roomId: "idle-room", sessionId: "idle-self", pulse() {} };
     const capability = lease(Promise.resolve(actualRoom));
     let joins = 0;
     const registry = new GameplayRegistry<IdleRoom, IdleInput>();
@@ -212,7 +212,9 @@ test("gameplay catalog：后续模块登记失败会回滚先前登记", () => {
 
 test("gameplay catalog：默认模块可登记并由无默认 transport 的 controller 启动 idle", async () => {
     const registry = new GameplayRegistry<any, any>();
-    const idleCapability = lease(Promise.resolve({ kind: "idle", roomId: "idle-real", sessionId: "self" }));
+    const idleCapability = lease(Promise.resolve({
+        kind: "idle", roomId: "idle-real", sessionId: "self", pulse() {},
+    }));
     const idleJoiner = { join: () => idleCapability };
     const ballJoiner = {
         join: () => lease(Promise.resolve({} as never)),
@@ -245,7 +247,7 @@ test("gameplay catalog：idle 不创建 BallMove presentation，缺失 presentat
     let idleLeaves = 0;
     const idleJoiner = {
         join: () => ({
-            ready: Promise.resolve({ kind: "idle" as const, roomId: "idle", sessionId: "self" }),
+            ready: Promise.resolve({ kind: "idle" as const, roomId: "idle", sessionId: "self", pulse() {} }),
             async leave() { idleLeaves++; },
         }),
     };
@@ -291,7 +293,8 @@ test("GameplayRegistry：玩法 id 必须是 canonical wire identity", () => {
 });
 
 test("RoomController：精确 room context、并发启动合流、输入/tick 与幂等 stop", async () => {
-    const actualRoom = room();
+    let pulses = 0;
+    const actualRoom: IdleRoom = { kind: "idle-fixture", pulse() { pulses++; } };
     const capability = lease(Promise.resolve(actualRoom));
     let joins = 0;
     const controller = new RoomController<IdleRoom, IdleInput>({
@@ -307,6 +310,7 @@ test("RoomController：精确 room context、并发启动合流、输入/tick �
     assert.equal(controller.status, "running");
     assert.strictEqual(plugin.room, actualRoom, "插件必须持有本次 join 的精确 room");
     assert.equal(await controller.input({ type: "pulse", value: 3 }), true);
+    assert.equal(pulses, 1, "idle input 必须调用精确 room 的 pulse capability");
     assert.equal(await controller.tick(0.25), true);
     assert.deepEqual(plugin.inputs, [{ type: "pulse", value: 3 }]);
     assert.equal(plugin.ticks, 1);
@@ -327,6 +331,7 @@ test("RoomController：精确 room context、并发启动合流、输入/tick �
     assert.equal(plugin.disposed, true);
     assert.equal(controller.status, "stopped");
     assert.equal(await controller.input({ type: "pulse" }), false);
+    assert.equal(pulses, 1, "stop 后的输入不能再触发 room pulse");
 });
 
 test("RoomController：取消黑洞 join 立即释放，迟到 ready 不启动旧插件也不影响新 generation", async () => {

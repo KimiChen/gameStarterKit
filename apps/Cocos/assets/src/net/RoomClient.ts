@@ -4,19 +4,18 @@
  * 职责：
  *  - 连接管理：joinGame ownership / 精确释放 / 自动重连事件透传
  *  - 类型安全的消息收发：消息名与 payload 类型来自双端共享协议
- *  - 状态回调：暴露 getStateCallbacks 代理，配合 shared 的 IGameRoomState 镜像接口
+ *  - 状态回调：由具体 gameplay adapter 注入 exact validator，通用层不假定 root Schema
  */
 import {
     RoomName,
     C2S,
     S2C,
     PROTOCOL_VERSION,
-    GameplayModeId,
+    ROOM_STATE_VALIDATORS,
     type C2SPayloadMap,
-    type IGameRoomState,
+    type GameplayModeIdType,
     type IGameRoomJoinOptions,
     type IPingReq,
-    type IMoveReq,
     type ICastSkillReq,
     type IChatReq,
     type IPongRes,
@@ -24,10 +23,10 @@ import {
     type ISkillResultRes,
     type IChatRes,
     type IErrorRes,
-    isPlainRecord,
+    type RoomStateByMode,
+    type RoomStateMode,
     validateOrigin,
     validateC2SPayload,
-    validateGameRoomState,
     validateGameRoomJoinOptions,
     validateS2CPayload,
 } from "../shared/index";
@@ -46,6 +45,76 @@ export interface S2CPayloadMap {
     [S2C.SkillResult]: ISkillResultRes;
     [S2C.Chat]: IChatRes;
     [S2C.Error]: IErrorRes;
+}
+
+export type GameRoomReconcileReason = "joined" | "reconnected";
+export type SupportedGameRoomMode = GameplayModeIdType & RoomStateMode;
+
+/**
+ * Adapter-owned view of one exact physical GameRoom. `mode` is a literal
+ * discriminator and `send` is restricted to the messages declared by that
+ * adapter both at compile time and at runtime.
+ */
+export interface TypedGameRoom<
+    TMode extends SupportedGameRoomMode,
+    TOutbound extends keyof C2SPayloadMap,
+> {
+    readonly kind: "typed-game-room";
+    readonly mode: TMode;
+    readonly state: RoomStateByMode[TMode];
+    readonly roomId: string;
+    readonly sessionId: string;
+    readonly current: boolean;
+    readonly dropping: boolean;
+    state$(): any;
+    onMessage<K extends keyof S2CPayloadMap>(
+        type: K,
+        callback: (payload: S2CPayloadMap[K]) => unknown,
+    ): () => void;
+    send<K extends TOutbound>(type: K, payload: C2SPayloadMap[K]): boolean;
+}
+
+/** Per-gameplay contract injected before any slot or SDK join is allocated. */
+export interface GameplayRoomAdapter<
+    TMode extends SupportedGameRoomMode,
+    TOutbound extends keyof C2SPayloadMap,
+> {
+    readonly mode: TMode;
+    readonly outbound: readonly TOutbound[];
+    validateState(input: unknown): RoomStateByMode[TMode];
+    /** Optional initial/reconnect reconciliation. Idle intentionally omits it. */
+    reconcile?(
+        room: TypedGameRoom<TMode, TOutbound>,
+        reason: GameRoomReconcileReason,
+    ): unknown;
+}
+
+/** A typed owner returned to a concrete gameplay joiner. */
+export interface GameRoomOwnership<
+    TMode extends SupportedGameRoomMode,
+    TOutbound extends keyof C2SPayloadMap,
+> {
+    readonly kind: "game-room-ownership";
+    readonly mode: TMode;
+    readonly adapter: GameplayRoomAdapter<TMode, TOutbound>;
+    readonly ready: Promise<TypedGameRoom<TMode, TOutbound>>;
+    leave(): Promise<void>;
+}
+
+/** Type-erased ownership for lifecycle infrastructure that does not inspect state. */
+export type CommonGameRoomOwnership = GameRoomOwnership<
+    SupportedGameRoomMode,
+    keyof C2SPayloadMap
+>;
+
+type AnyTypedGameRoom = TypedGameRoom<SupportedGameRoomMode, keyof C2SPayloadMap>;
+
+interface GameplayAdapterSnapshot {
+    readonly source: object;
+    readonly mode: SupportedGameRoomMode;
+    readonly outbound: ReadonlySet<keyof C2SPayloadMap>;
+    readonly validateState: (input: unknown) => unknown;
+    readonly reconcile?: (room: AnyTypedGameRoom, reason: GameRoomReconcileReason) => unknown;
 }
 
 /** leave 的等待上限：掉线窗口里 LEAVE 帧可能发不出去、onLeave 永不触发，限时后强制本地清理 */
@@ -157,6 +226,56 @@ function cloneJson<T>(value: T, ancestors = new Set<object>()): T {
     }
 }
 
+function snapshotGameplayAdapter(input: unknown): GameplayAdapterSnapshot {
+    if ((typeof input !== "object" && typeof input !== "function") || input === null) {
+        throw new TypeError("[RoomClient] gameplay adapter 必须是对象");
+    }
+    let mode: unknown;
+    let outbound: unknown;
+    let validateState: unknown;
+    let reconcile: unknown;
+    try {
+        const value = input as Record<string, unknown>;
+        mode = value.mode;
+        outbound = value.outbound;
+        validateState = value.validateState;
+        reconcile = value.reconcile;
+    } catch {
+        throw new TypeError("[RoomClient] gameplay adapter 无法读取");
+    }
+    const validatedMode = validateGameRoomJoinOptions({ mode }).mode;
+    if (!Object.prototype.hasOwnProperty.call(ROOM_STATE_VALIDATORS, validatedMode)) {
+        throw new TypeError("[RoomClient] gameplay adapter mode 没有生成的 room state contract");
+    }
+    const supportedMode = validatedMode as SupportedGameRoomMode;
+    if (!Array.isArray(outbound)) {
+        throw new TypeError("[RoomClient] gameplay adapter outbound 必须是数组");
+    }
+    const knownMessages = new Set<string>(Object.values(C2S));
+    const allowed = new Set<keyof C2SPayloadMap>();
+    for (const message of outbound) {
+        if (typeof message !== "string" || !knownMessages.has(message) || allowed.has(message as keyof C2SPayloadMap)) {
+            throw new TypeError("[RoomClient] gameplay adapter outbound 含未知或重复消息");
+        }
+        allowed.add(message as keyof C2SPayloadMap);
+    }
+    if (typeof validateState !== "function"
+        || (reconcile !== undefined && typeof reconcile !== "function")) {
+        throw new TypeError("[RoomClient] gameplay adapter 缺少 state validator 或 reconcile 非函数");
+    }
+    const source = input as object;
+    return {
+        source,
+        mode: supportedMode,
+        outbound: allowed,
+        validateState: (value) => validateState.call(input, value),
+        ...(typeof reconcile === "function"
+            ? { reconcile: (room: AnyTypedGameRoom, reason: GameRoomReconcileReason) =>
+                reconcile.call(input, room, reason) }
+            : {}),
+    };
+}
+
 function splitJoinControl(
     options: Record<string, unknown> | undefined,
     explicit: JoinControl | AbortSignal | undefined,
@@ -233,6 +352,35 @@ function safeDiagnostic(value: unknown): string {
     }
 }
 
+/**
+ * The 0.17 SDK buffers `room.send()` while its socket is closed and flushes
+ * that queue immediately after reconnect JOIN_ROOM, before the next full
+ * ROOM_STATE. Our mode/state barrier owns replay, so the SDK queue must stay
+ * empty even in the close -> onDrop notification gap.
+ */
+function disableSdkOutboundReplay(room: Colyseus.Room<unknown>): boolean {
+    try {
+        const reconnection = (room as unknown as {
+            reconnection?: {
+                maxEnqueuedMessages?: unknown;
+                enqueuedMessages?: unknown;
+            };
+        }).reconnection;
+        if (!reconnection || typeof reconnection !== "object") return false;
+        reconnection.maxEnqueuedMessages = 0;
+        if (Array.isArray(reconnection.enqueuedMessages)) {
+            reconnection.enqueuedMessages.length = 0;
+        } else {
+            reconnection.enqueuedMessages = [];
+        }
+        return reconnection.maxEnqueuedMessages === 0
+            && Array.isArray(reconnection.enqueuedMessages)
+            && reconnection.enqueuedMessages.length === 0;
+    } catch {
+        return false;
+    }
+}
+
 function warnInvalidWire(scope: string, error: unknown): void {
     // Payloads may contain user text or account identifiers; log only the
     // validator's stable code/path, never the rejected packet itself.
@@ -286,77 +434,14 @@ function invokeObserved(scope: string, callback: () => unknown): unknown {
     }
 }
 
-/**
- * Colyseus exposes Schema instances for the root and players, while the shared
- * validator intentionally accepts dependency-free plain data. Project only the
- * wire fields for class instances and retain exact keys for plain fixtures so
- * unknown fields are still rejected. MapSchema-like collections are copied to a
- * native Map, preserving the structural `entries()` contract of the validator.
- */
-function projectPlayerForValidation(input: unknown): unknown {
-    if (isPlainRecord(input)) return input;
-    if (typeof input !== "object" || input === null) return input;
-    const value = input as Record<string, unknown>;
-    return {
-        id: value.id,
-        name: value.name,
-        x: value.x,
-        y: value.y,
-        hp: value.hp,
-        maxHp: value.maxHp,
-        alive: value.alive,
-    };
-}
-
-function projectPlayersForValidation(input: unknown): unknown {
-    if (input instanceof Map) {
-        const out = new Map<unknown, unknown>();
-        for (const [key, value] of input.entries()) out.set(key, projectPlayerForValidation(value));
-        return out;
-    }
-    if (typeof input === "object" && input !== null) {
-        const entries = (input as { entries?: unknown }).entries;
-        if (typeof entries === "function") {
-            try {
-                const out = new Map<unknown, unknown>();
-                const iterable = (entries as () => Iterable<unknown>).call(input);
-                for (const pair of iterable) {
-                    if (!Array.isArray(pair) || pair.length !== 2) return input;
-                    out.set(pair[0], projectPlayerForValidation(pair[1]));
-                }
-                return out;
-            } catch {
-                return input;
-            }
-        }
-    }
-    if (isPlainRecord(input)) {
-        const out: Record<string, unknown> = {};
-        for (const key of Object.keys(input)) out[key] = projectPlayerForValidation(input[key]);
-        return out;
-    }
-    return input;
-}
-
-function projectStateForValidation(input: unknown): unknown {
-    if (isPlainRecord(input)) {
-        return { ...input, players: projectPlayersForValidation(input.players) };
-    }
-    if (typeof input !== "object" || input === null) return input;
-    const value = input as Record<string, unknown>;
-    return {
-        tick: value.tick,
-        phase: value.phase,
-        matchId: value.matchId,
-        players: projectPlayersForValidation(value.players),
-    };
-}
-
-function validatedStateSnapshot(room: Colyseus.Room<IGameRoomState>): IGameRoomState | null {
+function validatedStateSnapshot(
+    room: Colyseus.Room<unknown>,
+    adapter: GameplayAdapterSnapshot,
+): unknown | null {
     try {
-        return validateGameRoomState(projectStateForValidation(room.state));
+        return adapter.validateState(room.state);
     } catch (error) {
-        warnInvalidWire("GameRoom state", error);
+        warnInvalidWire(`${adapter.mode} GameRoom state`, error);
         return null;
     }
 }
@@ -379,7 +464,9 @@ function noopStateProxy(): any {
 
 function guardStateCallbacks(
     proxy: any,
-    room: Colyseus.Room<IGameRoomState>,
+    room: Colyseus.Room<unknown>,
+    adapter: GameplayAdapterSnapshot,
+    isCurrent: () => boolean,
     cache = new WeakMap<object, any>(),
 ): any {
     if ((typeof proxy !== "object" && typeof proxy !== "function") || proxy === null) return proxy;
@@ -387,7 +474,7 @@ function guardStateCallbacks(
     if (cached) return cached;
     const guarded = new Proxy(proxy, {
         apply(target, thisArg, args) {
-            if (!validatedStateSnapshot(room)) return noopStateProxy();
+            if (!isCurrent() || !validatedStateSnapshot(room, adapter)) return noopStateProxy();
             let result: unknown;
             try {
                 result = Reflect.apply(target, thisArg, args);
@@ -399,7 +486,7 @@ function guardStateCallbacks(
             // Promise methods rely on their receiver being the original Promise;
             // proxying one would make `then`/`catch` throw in some runtimes.
             if (isThenable(result)) return result;
-            return guardStateCallbacks(result, room, cache);
+            return guardStateCallbacks(result, room, adapter, isCurrent, cache);
         },
         get(target, property, receiver) {
             let value: unknown;
@@ -417,7 +504,7 @@ function guardStateCallbacks(
                             return invokeObserved(`state ${property}`, () => value.apply(target, args));
                         }
                         args[callbackIndex] = (...callbackArgs: unknown[]) => {
-                            if (!validatedStateSnapshot(room)) return undefined;
+                            if (!isCurrent() || !validatedStateSnapshot(room, adapter)) return undefined;
                             return invokeObserved(`state ${property}`, () => callback(...callbackArgs));
                         };
                         return invokeObserved(`state ${property}`, () => value.apply(target, args));
@@ -425,7 +512,7 @@ function guardStateCallbacks(
                 }
             }
             if (value !== null && (typeof value === "object" || typeof value === "function")) {
-                return guardStateCallbacks(value, room, cache);
+                return guardStateCallbacks(value, room, adapter, isCurrent, cache);
             }
             return value;
         },
@@ -434,21 +521,10 @@ function guardStateCallbacks(
     return guarded;
 }
 
-/**
- * 一次战斗连接的 ownership 租约。
- *
- * `ready` 可与其它租约合流到同一个在途 join，但 `leave()` 只释放本租约；同一连接仍有其它
- * owner 时绝不关闭。调用方因此可以安全丢弃迟到的旧世代，而不会误关后来者共享的房间。
- */
-export interface GameRoomOwnership {
-    readonly ready: Promise<Colyseus.Room<IGameRoomState>>;
-    leave(): Promise<void>;
-}
-
 interface RoomOwner {
     active: boolean;
     readonly slot: RoomSlot;
-    readonly ready: Promise<Colyseus.Room<IGameRoomState>>;
+    readonly ready: Promise<AnyTypedGameRoom>;
     cancel(reason: Error): void;
     disposeControl(): void;
 }
@@ -460,16 +536,20 @@ interface RoomOwner {
 interface RoomSlot {
     readonly connectionKey: string;
     readonly generation: number;
-    readonly inputLease: number;
-    room: Colyseus.Room<IGameRoomState> | null;
-    ready: Promise<Colyseus.Room<IGameRoomState>>;
+    readonly adapter: GameplayAdapterSnapshot;
+    room: Colyseus.Room<unknown> | null;
+    typedRoom: AnyTypedGameRoom | null;
+    ready: Promise<AnyTypedGameRoom>;
     closing: Promise<void> | null;
     physicalClose: Promise<void> | null;
     cancelled: boolean;
     /** Synchronous/asynchronous join failure observed before all owners attach. */
     failure: Error | null;
+    /** Rejects a handshake that is waiting for the SDK's first ROOM_STATE. */
+    pendingStateReject: ((reason: Error) => void) | null;
     dropping: boolean;
-    lastInputSeq: number;
+    /** No C2S may cross before the first/reconnected exact state snapshot. */
+    stateReady: boolean;
     readonly owners: Set<RoomOwner>;
 }
 
@@ -489,16 +569,9 @@ export class RoomClient {
      */
     private slot: RoomSlot | null = null;
     private generation = 0;
-    private inputLease = 0;
-    private inputSeq = 0;
-    private desiredInput = { dirX: 0, dirY: 0, seq: 0 };
-
-    get room(): Colyseus.Room<IGameRoomState> | null {
-        return this.slot?.room ?? null;
-    }
 
     get connected(): boolean {
-        return this.room != null;
+        return this.slot?.room != null;
     }
 
     /** 掉线重连窗口中（onDrop→onReconnect/onLeave 之间）。 */
@@ -507,16 +580,7 @@ export class RoomClient {
     }
 
     get sessionId(): string {
-        return this.room?.sessionId ?? "";
-    }
-
-    /** 当前期望输入的快照（seq 单调递增，供恢复时 reconcile）。 */
-    get desiredMove(): Readonly<{ dirX: number; dirY: number; seq: number }> {
-        return this.desiredInput;
-    }
-
-    get inputGeneration(): number {
-        return this.inputLease;
+        return this.slot?.room?.sessionId ?? "";
     }
 
     /** @param endpoint http(s) 地址，如 http://localhost:2568，SDK 自动派生 ws(s) */
@@ -535,23 +599,34 @@ export class RoomClient {
      * 每次成功调用都有自己的 owner：旧世代 `leave()` 只减少自己的 ownership；只有最后一个
      * owner 离开才关闭物理房间。这是 Main 世代竞态的硬边界。
      */
-    joinGame(options?: Record<string, unknown>, control?: JoinControl | AbortSignal): GameRoomOwnership {
+    joinGame<
+        TMode extends SupportedGameRoomMode,
+        TOutbound extends keyof C2SPayloadMap,
+    >(
+        adapter: GameplayRoomAdapter<TMode, TOutbound>,
+        options?: Record<string, unknown>,
+        control?: JoinControl | AbortSignal,
+    ): GameRoomOwnership<TMode, TOutbound> {
         if (!this.client || this.endpoint === null) {
             throw new Error("[RoomClient] 未初始化，请先调用 init(endpoint)");
         }
+        const adapterSnapshot = snapshotGameplayAdapter(adapter);
         const split = splitJoinControl(options, control);
         // Validate the local wait policy before allocating a slot/owner.  A bad
         // timeout must fail atomically; otherwise an exception here would leave
         // an owner in the slot with no timer or abort listener to release it.
         const waitMs = waitMsForJoin(split.control);
+        if (split.options.mode !== undefined && split.options.mode !== adapterSnapshot.mode) {
+            throw new TypeError("[RoomClient] join mode 与 gameplay adapter 不匹配");
+        }
         const joinOptions = validateGameRoomJoinOptions(
-            cloneJson({ mode: GameplayModeId.BallMove, ...split.options, v: PROTOCOL_VERSION }),
+            cloneJson({ ...split.options, mode: adapterSnapshot.mode, v: PROTOCOL_VERSION }),
         );
         const endpoint = this.endpoint;
         const client = this.client;
         const key = connectionKey(endpoint, joinOptions);
         let slot = this.slot;
-        if (slot && slot.connectionKey !== key) {
+        if (slot && (slot.connectionKey !== key || slot.adapter.source !== adapterSnapshot.source)) {
             // ⛔ 错误里不打印 key：它包含 token。既有 slot/owners 原样保留，由调用方显式释放。
             throw new Error("[RoomClient] 当前战斗连接参数与本次 join 不一致，请先释放现有 ownership");
         }
@@ -559,15 +634,17 @@ export class RoomClient {
             slot = {
                 connectionKey: key,
                 generation: ++this.generation,
-                inputLease: ++this.inputLease,
+                adapter: adapterSnapshot,
                 room: null,
-                ready: null as unknown as Promise<Colyseus.Room<IGameRoomState>>,
+                typedRoom: null,
+                ready: null as unknown as Promise<AnyTypedGameRoom>,
                 closing: null,
                 physicalClose: null,
                 cancelled: false,
                 failure: null,
+                pendingStateReject: null,
                 dropping: false,
-                lastInputSeq: -1,
+                stateReady: false,
                 owners: new Set<RoomOwner>(),
             };
             // 先挂槽再启动 async join：若 SDK 在调用点同步抛错，doJoin 的失败清理也能命中本槽。
@@ -580,7 +657,7 @@ export class RoomClient {
         }
 
         let rejectCancelled!: (reason: Error) => void;
-        const cancelled = new Promise<Colyseus.Room<IGameRoomState>>((_resolve, reject) => {
+        const cancelled = new Promise<AnyTypedGameRoom>((_resolve, reject) => {
             rejectCancelled = reject;
         });
         const ready = Promise.race([slot.ready, cancelled]);
@@ -655,7 +732,10 @@ export class RoomClient {
         // ready 落定后清理本 owner 的 timer/listener；Promise.then 的 rejection 被显式观察。
         ready.then(dispose, dispose).catch(() => {});
         return {
-            ready,
+            kind: "game-room-ownership",
+            mode: adapterSnapshot.mode as TMode,
+            adapter,
+            ready: ready as Promise<TypedGameRoom<TMode, TOutbound>>,
             leave: () => {
                 if (owner.active) cancelOwner(new Error("[RoomClient] ownership 已释放"));
                 // cancelOwner 已同步摘掉 owner；若它是最后一个，返回同一个精确
@@ -675,8 +755,8 @@ export class RoomClient {
         slot: RoomSlot,
         client: Colyseus.Client,
         joinOptions: IGameRoomJoinOptions,
-    ): Promise<Colyseus.Room<IGameRoomState>> {
-        let room: Colyseus.Room<IGameRoomState>;
+    ): Promise<AnyTypedGameRoom> {
+        let room: Colyseus.Room<unknown>;
         try {
             // Colyseus authenticates the connection from its standard auth token
             // field. Keep it aligned with the slot snapshot before the SDK
@@ -686,7 +766,7 @@ export class RoomClient {
             // field must never accidentally reuse the previous account's
             // bearer. A real server will reject the resulting empty token.
             client.auth.token = joinOptions.token ?? "";
-            room = await client.joinOrCreate<IGameRoomState>(RoomName.Game, joinOptions);
+            room = await client.joinOrCreate<unknown>(RoomName.Game, joinOptions);
         } catch (e) {
             // 失败槽不再接纳后来调用；既有 owner 仍从各自 ready 收到原始连接错误。
             if (this.slot === slot) { this.slot = null; }
@@ -708,53 +788,136 @@ export class RoomClient {
             throw new JoinError("CANCELLED", "[RoomClient] join 结果已过期");
         }
         slot.room = room;
+        let typedRoom!: AnyTypedGameRoom;
 
-        // 回调按 **slot + room** 双身份守卫：旧槽迟到的事件不得清掉新槽或改写其 dropping。
+        // SDK join resolves on JOIN_ROOM; reflected state arrives in a later
+        // ROOM_STATE frame. Register every lifecycle callback first, then keep
+        // ownership.ready pending until the first exact state snapshot passes.
         try {
+            if (!disableSdkOutboundReplay(room)) {
+                throw new Error("[RoomClient] 无法禁用 SDK 离线消息队列");
+            }
+            typedRoom = this.createTypedRoom(slot, room);
+            slot.typedRoom = typedRoom;
+            let initialStateSettled = false;
+            let reconnectStatePending = false;
+            let resolveInitialState!: () => void;
+            let rejectInitialState!: (reason: Error) => void;
+            const initialState = new Promise<void>((resolve, reject) => {
+                resolveInitialState = resolve;
+                rejectInitialState = reject;
+            });
+            const resolveInitial = () => {
+                if (initialStateSettled) return;
+                initialStateSettled = true;
+                slot.stateReady = true;
+                slot.pendingStateReject = null;
+                resolveInitialState();
+            };
+            const rejectInitial = (reason: Error) => {
+                if (initialStateSettled) return;
+                initialStateSettled = true;
+                slot.pendingStateReject = null;
+                rejectInitialState(reason);
+            };
+            slot.pendingStateReject = rejectInitial;
+
+            room.onStateChange(() => {
+                if (this.slot !== slot || slot.room !== room || slot.cancelled) return;
+                if (!validatedStateSnapshot(room, slot.adapter)) {
+                    const failure = new TypeError(`[RoomClient] ${slot.adapter.mode} GameRoom state 非法`);
+                    if (!initialStateSettled) rejectInitial(failure);
+                    else this.invalidateGameplayState(slot, room, failure);
+                    return;
+                }
+                if (!initialStateSettled) resolveInitial();
+                if (reconnectStatePending) {
+                    reconnectStatePending = false;
+                    slot.stateReady = true;
+                    slot.dropping = false;
+                    this.reconcileGameplay(slot, "reconnected");
+                    console.log("[RoomClient] 自动重连成功");
+                }
+            });
             room.onDrop((code, reason) => {
-            if (this.slot !== slot || slot.room !== room) return;
-            slot.dropping = true;
-            // 服务端未必收到掉线前最后一个输入；恢复时强制发送当前 desired state。
-            slot.lastInputSeq = -1;
-            console.warn(`[RoomClient] 连接掉线（自动重连中） code=${safeDiagnostic(code)} reason=${safeDiagnostic(reason)}`);
+                if (this.slot !== slot || slot.room !== room) return;
+                slot.dropping = true;
+                slot.stateReady = false;
+                reconnectStatePending = false;
+                if (!disableSdkOutboundReplay(room)) {
+                    const failure = new Error("[RoomClient] 无法清理 SDK 离线消息队列");
+                    rejectInitial(failure);
+                    this.invalidateGameplayState(slot, room, failure);
+                    return;
+                }
+                console.warn(`[RoomClient] 连接掉线（自动重连中） code=${safeDiagnostic(code)} reason=${safeDiagnostic(reason)}`);
             });
             room.onReconnect(() => {
-            if (this.slot !== slot || slot.room !== room) return;
-            slot.dropping = false;
-            this.reconcileInput(slot);
-            console.log("[RoomClient] 自动重连成功");
+                if (this.slot !== slot || slot.room !== room) return;
+                // Reconnect JOIN_ROOM precedes its full state frame as well.
+                // Keep sends blocked until the following state callback validates.
+                slot.dropping = true;
+                slot.stateReady = false;
+                reconnectStatePending = true;
+                if (!disableSdkOutboundReplay(room)) {
+                    const failure = new Error("[RoomClient] 无法清理 SDK 离线消息队列");
+                    rejectInitial(failure);
+                    this.invalidateGameplayState(slot, room, failure);
+                }
             });
             room.onLeave((code, reason) => {
-            if (this.slot !== slot || slot.room !== room) return;
-            this.slot = null;
-            slot.room = null;
-            slot.dropping = false;
-            slot.cancelled = true;
-            // 物理房已死：该槽所有 ownership 同时失效。Main 收到 battleLost 后再 leave 是幂等空操作。
-            for (const owner of slot.owners) { owner.active = false; }
-            for (const owner of slot.owners) { owner.disposeControl(); }
-            slot.owners.clear();
-            try { room.removeAllListeners(); } catch { /* malformed adapter */ }
-            console.log(`[RoomClient] 已离开房间 code=${safeDiagnostic(code)} reason=${safeDiagnostic(reason)}`);
-            // **非主动离开 = 这一局没了**（重连耗尽/服务端强断/房间销毁）：必须上报，
-            // ⛔ 否则 Main 永远不知道连接已死，会拿着死房间继续驱动渲染（inBattle 恒 true，
-            // 玩家卡在冻结的战斗画面且回不去大厅）。这不是鉴权判定，故走 battleLost；
-            // 已注册的 session 导航出口随后统一回登录并清理 bearer。
-            //
-            // ⚠ 主动 leave **不会**走到这里：最后一个 owner 释放时先摘掉 `this.slot`，本回调
-            // 开头即 return。无需全局 `_leaving` 标志（它无法区分旧槽 leave 与新槽意外死亡）。
-            notifyBattleLost();
+                if (this.slot !== slot || slot.room !== room) return;
+                const failure = new Error("[RoomClient] GameRoom 在首个 state 前离开");
+                rejectInitial(failure);
+                this.slot = null;
+                slot.room = null;
+                slot.typedRoom = null;
+                slot.dropping = false;
+                slot.stateReady = false;
+                slot.cancelled = true;
+                slot.failure = failure;
+                // 物理房已死：该槽所有 ownership 同时失效。Main 收到 battleLost 后再 leave 是幂等空操作。
+                for (const owner of slot.owners) {
+                    owner.active = false;
+                    owner.disposeControl();
+                    owner.cancel(failure);
+                }
+                slot.owners.clear();
+                try { room.removeAllListeners(); } catch { /* malformed adapter */ }
+                console.log(`[RoomClient] 已离开房间 code=${safeDiagnostic(code)} reason=${safeDiagnostic(reason)}`);
+                // **非主动离开 = 这一局没了**（重连耗尽/服务端强断/房间销毁）：必须上报，
+                // ⛔ 否则 Main 永远不知道连接已死，会拿着死房间继续驱动渲染（inBattle 恒 true，
+                // 玩家卡在冻结的战斗画面且回不去大厅）。这不是鉴权判定，故走 battleLost；
+                // 已注册的 session 导航出口随后统一回登录并清理 bearer。
+                //
+                // ⚠ 主动 leave **不会**走到这里：最后一个 owner 释放时先摘掉 `this.slot`，本回调
+                // 开头即 return。无需全局 `_leaving` 标志（它无法区分旧槽 leave 与新槽意外死亡）。
+                notifyBattleLost();
+            });
+            room.onError((code, message) => {
+                if (!initialStateSettled) rejectInitial(new Error("[RoomClient] GameRoom 首个 state 前发生错误"));
+                console.error(`[RoomClient] 房间错误 code=${safeDiagnostic(code)} message=${safeDiagnostic(message)}`);
             });
 
-            // join 前已经记录的 desired input（例如触摸按下后才完成握手）在首个有效
-            // room 上只发送一次；seq/lease 防止旧槽迟到回调重放到新槽。
-            this.reconcileInput(slot);
-            room.onError((code, message) => {
-            console.error(`[RoomClient] 房间错误 code=${safeDiagnostic(code)} message=${safeDiagnostic(message)}`);
-            });
+            // JOIN_ROOM's Schema handshake may already expose a default-looking
+            // root. Only an actual ROOM_STATE callback can open the write barrier.
+            await initialState;
+            if (slot.cancelled || this.slot !== slot || slot.room !== room || slot.owners.size === 0) {
+                throw new JoinError("CANCELLED", "[RoomClient] join state 结果已过期");
+            }
+            // Only the selected gameplay adapter knows whether anything needs
+            // replaying. Idle has no hook, so join cannot fabricate Move.
+            this.reconcileGameplay(slot, "joined");
         } catch (error) {
+            // onLeave already proves the physical connection is dead and clears
+            // slot.room. Do not call room.leave() again and delay owner.ready by
+            // the close fallback timeout in that path.
+            const shouldClosePhysical = slot.room === room;
+            slot.pendingStateReject = null;
             if (this.slot === slot) this.slot = null;
             slot.room = null;
+            slot.typedRoom = null;
+            slot.stateReady = false;
             slot.cancelled = true;
             const failure = safeError(error, "[RoomClient] room setup failed");
             slot.failure = failure;
@@ -764,11 +927,68 @@ export class RoomClient {
                 owner.cancel(failure);
             }
             slot.owners.clear();
-            await this.closePhysicalRoom(slot, room);
+            if (shouldClosePhysical) await this.closePhysicalRoom(slot, room);
             throw error;
         }
 
-        return room;
+        return typedRoom;
+    }
+
+    private createTypedRoom(slot: RoomSlot, room: Colyseus.Room<unknown>): AnyTypedGameRoom {
+        const isCurrent = () => this.slot === slot && slot.room === room && !slot.cancelled;
+        return {
+            kind: "typed-game-room",
+            mode: slot.adapter.mode,
+            get state() {
+                return room.state as RoomStateByMode[SupportedGameRoomMode];
+            },
+            roomId: room.roomId,
+            sessionId: room.sessionId,
+            get current() { return isCurrent(); },
+            get dropping() { return isCurrent() && slot.dropping; },
+            state$: () => {
+                if (!isCurrent()) return noopStateProxy();
+                const callbacks = Colyseus.getStateCallbacks(room);
+                if (!callbacks) return noopStateProxy();
+                return guardStateCallbacks(callbacks, room, slot.adapter, isCurrent);
+            },
+            onMessage: (type, callback) => this.onMessage(room, type, (payload) => {
+                if (isCurrent()) return callback(payload);
+                return undefined;
+            }),
+            send: (type, payload) => this.sendFromSlot(slot, room, type, payload),
+        };
+    }
+
+    private reconcileGameplay(slot: RoomSlot, reason: GameRoomReconcileReason): void {
+        const room = slot.typedRoom;
+        const reconcile = slot.adapter.reconcile;
+        if (!room || !reconcile || this.slot !== slot || slot.cancelled || slot.dropping || !slot.stateReady) return;
+        invokeObserved(`${slot.adapter.mode} ${reason} reconcile`, () => reconcile(room, reason));
+    }
+
+    /** A malformed reflected state invalidates the whole physical ownership. */
+    private invalidateGameplayState(
+        slot: RoomSlot,
+        room: Colyseus.Room<unknown>,
+        failure = new Error(`[RoomClient] ${slot.adapter.mode} GameRoom state 非法`),
+    ): void {
+        if (this.slot !== slot || slot.room !== room || slot.cancelled) return;
+        this.slot = null;
+        slot.room = null;
+        slot.typedRoom = null;
+        slot.dropping = false;
+        slot.stateReady = false;
+        slot.cancelled = true;
+        slot.failure = failure;
+        for (const owner of slot.owners) {
+            owner.active = false;
+            owner.disposeControl();
+            owner.cancel(failure);
+        }
+        slot.owners.clear();
+        void this.closePhysicalRoom(slot, room);
+        notifyBattleLost();
     }
 
     /** 释放精确 owner；同槽仍有后来者时只减 ownership，绝不关闭共享连接。 */
@@ -790,13 +1010,16 @@ export class RoomClient {
         if (slot.closing) return slot.closing;
         if (this.slot === slot) { this.slot = null; }
         slot.cancelled = true;
+        slot.pendingStateReject?.(new JoinError("CANCELLED", "[RoomClient] join state 已取消"));
+        slot.pendingStateReject = null;
         slot.dropping = false;
+        slot.stateReady = false;
         const room = slot.room;
         if (!room) {
-            // 在途 join 不可被 SDK 中断；leave 必须立即返回，迟到 room 由后台 finally
-            // 释放。给 raw promise 挂 catch，避免黑洞/失败分支产生 unhandled rejection。
+            // 在途 join 不可被 SDK 中断；leave 必须立即返回，迟到 room 由 doJoin
+            // 的 stale-result 分支释放。给 raw promise 挂 catch，避免 unhandled rejection。
             slot.closing = Promise.resolve();
-            void slot.ready.then((lateRoom) => this.closePhysicalRoom(slot, lateRoom)).catch(() => {});
+            void slot.ready.catch(() => {});
             return slot.closing;
         }
         slot.closing = this.closePhysicalRoom(slot, room);
@@ -804,7 +1027,7 @@ export class RoomClient {
     }
 
     /** 精确 room 的有界关闭；无论 leave 成功、失败或超时都清理 timer/listener。 */
-    private closePhysicalRoom(slot: RoomSlot, room: Colyseus.Room<IGameRoomState>): Promise<void> {
+    private closePhysicalRoom(slot: RoomSlot, room: Colyseus.Room<unknown>): Promise<void> {
         if (slot.physicalClose) return slot.physicalClose;
         let timer: ReturnType<typeof setTimeout> | null = null;
         const timeout = new Promise<void>((resolve) => {
@@ -830,69 +1053,9 @@ export class RoomClient {
         return slot.physicalClose;
     }
 
-    /**
-     * 记录并（若当前连接可写）发送最新移动意图。即使没有 room 或处于 dropping，
-     * 也必须更新 desired；重连回调会按 seq 重新 reconcile，避免“松手”丢失。
-     */
-    move(dirX: number, dirY: number): void {
-        let payload: IMoveReq;
-        try {
-            // Validate before recording desired state. Otherwise an out-of-range
-            // direction would remain queued and be retried on every reconnect.
-            payload = validateC2SPayload(C2S.Move, { dirX, dirY });
-        } catch (error) {
-            warnInvalidWire(`C2S ${String(C2S.Move)}`, error);
-            return;
-        }
-        this.desiredInput = { dirX: payload.dirX, dirY: payload.dirY, seq: ++this.inputSeq };
-        const slot = this.slot;
-        if (slot && slot.room && !slot.dropping && !slot.cancelled) this.reconcileInput(slot);
-    }
-
-    /**
-     * 清空当前意图；下一房间首包会是 stop，且不会被旧局方向污染。
-     * 传入 generation 时仅允许对应输入租约清理：旧插件 stop 的迟到清理
-     * 不得覆盖后来房间已经写入的新方向。
-     */
-    clearDesiredMove(expectedGeneration?: number): boolean {
-        if (expectedGeneration !== undefined && expectedGeneration !== this.inputLease) return false;
-        this.desiredInput = { dirX: 0, dirY: 0, seq: ++this.inputSeq };
-        const slot = this.slot;
-        if (slot && slot.room && !slot.dropping && !slot.cancelled) this.reconcileInput(slot);
-        return true;
-    }
-
-    /** 主动触发当前槽的输入对账（测试/外部恢复编排可调用）。 */
-    reconcileInput(slot?: RoomSlot): void {
-        slot = slot ?? this.slot ?? undefined;
-        if (!slot || this.slot !== slot || !slot.room || slot.dropping || slot.cancelled) return;
-        // seq=0 代表尚未收到任何用户意图；首次 join 不凭空发一条 stop，
-        // 但 move/clearDesiredMove 一旦产生 seq，迟到 join 与重连都必须对账。
-        if (this.desiredInput.seq === 0 && this.inputSeq === 0) return;
-        if (slot.lastInputSeq >= this.desiredInput.seq) return;
-        const payload: IMoveReq = {
-            dirX: this.desiredInput.dirX,
-            dirY: this.desiredInput.dirY,
-        };
-        if (this.sendC2S(C2S.Move, payload, slot.room)) {
-            slot.lastInputSeq = this.desiredInput.seq;
-        }
-    }
-
-    /**
-     * 状态回调代理（0.16 风格 $，0.17 仍受支持）：
-     *   const $ = RoomClient.inst.state$(room);
-     *   $(room.state).players.onAdd((player, id) => { $(player).listen("x", cb); });
-     */
-    state$(room: Colyseus.Room<IGameRoomState>): any {
-        const callbacks = Colyseus.getStateCallbacks(room);
-        if (!callbacks) return noopStateProxy();
-        return guardStateCallbacks(callbacks, room);
-    }
-
     /** 在精确 room 上注册服务端消息处理器，返回解绑函数。 */
     onMessage<K extends keyof S2CPayloadMap>(
-        room: Colyseus.Room<IGameRoomState>,
+        room: Colyseus.Room<unknown>,
         type: K,
         callback: (payload: S2CPayloadMap[K]) => unknown,
     ): () => void {
@@ -912,24 +1075,46 @@ export class RoomClient {
 
     ping(): void {
         const payload: IPingReq = { clientTime: Date.now() };
-        this.sendC2S(C2S.Ping, payload);
+        this.sendCurrent(C2S.Ping, payload);
     }
 
     castSkill(skillId: number, targetId?: string): void {
         const payload: ICastSkillReq = { skillId, targetId };
-        this.sendC2S(C2S.CastSkill, payload);
+        this.sendCurrent(C2S.CastSkill, payload);
     }
 
     chat(text: string): void {
         const payload: IChatReq = { text };
-        this.sendC2S(C2S.Chat, payload);
+        this.sendCurrent(C2S.Chat, payload);
+    }
+
+    private sendCurrent<K extends keyof C2SPayloadMap>(type: K, payload: C2SPayloadMap[K]): boolean {
+        const slot = this.slot;
+        const room = slot?.room;
+        return slot && room ? this.sendFromSlot(slot, room, type, payload) : false;
+    }
+
+    private sendFromSlot<K extends keyof C2SPayloadMap>(
+        slot: RoomSlot,
+        room: Colyseus.Room<unknown>,
+        type: K,
+        payload: C2SPayloadMap[K],
+    ): boolean {
+        if (this.slot !== slot || slot.room !== room || slot.cancelled || slot.dropping || !slot.stateReady) {
+            return false;
+        }
+        if (!slot.adapter.outbound.has(type)) {
+            console.warn(`[RoomClient] gameplay ${slot.adapter.mode} 不允许发送 C2S ${String(type)}`);
+            return false;
+        }
+        return this.sendC2S(type, payload, room);
     }
 
     /** Validate every client-originated payload immediately before it crosses the wire. */
     private sendC2S<K extends keyof C2SPayloadMap>(
         type: K,
         payload: C2SPayloadMap[K],
-        targetRoom: Colyseus.Room<IGameRoomState> | null = this.room,
+        targetRoom: Colyseus.Room<unknown> | null,
     ): boolean {
         const room = targetRoom;
         if (!room) return false;
@@ -943,8 +1128,7 @@ export class RoomClient {
         try {
             room.send(type as string, wirePayload);
         } catch {
-            // A failed send must not advance reconcile's lastInputSeq: the latest desired
-            // input remains queued and can be retried by a reconnect/join callback.
+            // Adapter reconciliation owns retry state; report only the transport failure.
             warnSendFailure(String(type));
             return false;
         }

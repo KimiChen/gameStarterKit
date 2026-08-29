@@ -9,10 +9,26 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { C2S, GameplayModeId, RoomName, PROTOCOL_VERSION, S2C, type IGameRoomState, type IPlayerState } from "../src/shared/index";
-import { RoomClient } from "../src/net/RoomClient";
+import {
+  C2S,
+  GamePhase,
+  GameplayModeId,
+  RoomName,
+  PROTOCOL_VERSION,
+  S2C,
+  type IGameRoomState,
+  type IPlayerState,
+} from "../src/shared/index";
+import { RoomClient, type GameplayRoomAdapter } from "../src/net/RoomClient";
 import { createBallMoveRoom, createBallMoveRoomJoiner } from "../src/net/rooms/BallMoveRoom";
-import { createIdleRoomJoiner } from "../src/net/rooms/IdleRoom";
+import { createIdleRoom, createIdleRoomJoiner } from "../src/net/rooms/IdleRoom";
+import {
+  createBallMoveRoomAdapter,
+  createIdleRoomAdapter,
+  type BallMoveRoomAdapter,
+  type BallMoveTypedRoom,
+  type IdleTypedRoom,
+} from "../src/net/rooms/GameRoomTransport";
 import { setServerList } from "../src/net/serverSession";
 import { onBattleLost } from "../src/net/session";
 import type { WebPlatformAreaListResponse } from "../src/shared/index";
@@ -34,28 +50,70 @@ function deferred<T>(): Deferred<T> {
 }
 
 type RoomCallbacks = {
+  state?: () => void;
   drop?: (code?: number, reason?: string) => void;
   reconnect?: () => void;
   leave?: (code?: number, reason?: string) => void;
   error?: (code?: number, message?: string) => void;
 };
 
-function makeFakeRoom(name: string, leaveResult: Promise<boolean> = Promise.resolve(true)) {
+function validBallMoveState() {
+  return { tick: 0, phase: GamePhase.Waiting, matchId: "", players: new Map() };
+}
+
+function validIdleState() {
+  return {
+    tick: 0,
+    phase: GamePhase.Waiting,
+    matchId: "",
+    pulseGoal: 3,
+    winnerId: "",
+    players: new Map(),
+  };
+}
+
+function makeFakeRoom(
+  name: string,
+  leaveResult: Promise<boolean> = Promise.resolve(true),
+  state: unknown = validBallMoveState(),
+  emitInitialState = true,
+) {
   const callbacks: RoomCallbacks = {};
   const sent: Array<{ type: string; data: unknown }> = [];
+  const reconnection = {
+    enabled: true,
+    maxEnqueuedMessages: 10,
+    enqueuedMessages: [] as Array<{ data: { type: string; data: unknown } }>,
+  };
+  let connectionOpen = true;
   let leaveCalls = 0;
   let removeAllCalls = 0;
   const room = {
     roomId: name,
     sessionId: `${name}-session`,
-    state: {},
-    reconnection: { enabled: true },
+    state,
+    reconnection,
     onDrop(cb: RoomCallbacks["drop"]) { callbacks.drop = cb; return () => {}; },
     onReconnect(cb: RoomCallbacks["reconnect"]) { callbacks.reconnect = cb; return () => {}; },
     onLeave(cb: RoomCallbacks["leave"]) { callbacks.leave = cb; return () => {}; },
     onError(cb: RoomCallbacks["error"]) { callbacks.error = cb; return () => {}; },
     onMessage() { return () => {}; },
-    send(type: string, data: unknown) { sent.push({ type, data }); },
+    onStateChange(cb: RoomCallbacks["state"]) {
+      callbacks.state = cb;
+      if (emitInitialState) cb?.();
+      return () => {};
+    },
+    send(type: string, data: unknown) {
+      const message = { type, data };
+      if (connectionOpen) {
+        sent.push(message);
+        return;
+      }
+      reconnection.enqueuedMessages.push({ data: message });
+      if (reconnection.enqueuedMessages.length > reconnection.maxEnqueuedMessages) {
+        reconnection.enqueuedMessages.shift();
+      }
+    },
     leave() {
       leaveCalls++;
       return leaveResult;
@@ -66,6 +124,14 @@ function makeFakeRoom(name: string, leaveResult: Promise<boolean> = Promise.reso
     room,
     callbacks,
     sent,
+    emitState() { callbacks.state?.(); },
+    setConnectionOpen(open: boolean) { connectionOpen = open; },
+    emitReconnect() {
+      connectionOpen = true;
+      callbacks.reconnect?.();
+      for (const message of reconnection.enqueuedMessages) sent.push(message.data);
+      reconnection.enqueuedMessages.length = 0;
+    },
     get leaveCalls() { return leaveCalls; },
     get removeAllCalls() { return removeAllCalls; },
   };
@@ -101,13 +167,35 @@ function makeClient(...joins: Array<Deferred<unknown>>): RoomClient {
   return client;
 }
 
+function physicalRoomOf(client: RoomClient): unknown | null {
+  return (client as unknown as { slot: { room: unknown } | null }).slot?.room ?? null;
+}
+
+const clientBallAdapters = new WeakMap<RoomClient, BallMoveRoomAdapter>();
+function ballAdapter(client: RoomClient): BallMoveRoomAdapter {
+  let adapter = clientBallAdapters.get(client);
+  if (!adapter) {
+    adapter = createBallMoveRoomAdapter();
+    clientBallAdapters.set(client, adapter);
+  }
+  return adapter;
+}
+
+function joinBall(
+  client: RoomClient,
+  options?: Record<string, unknown>,
+  control?: Parameters<RoomClient["joinGame"]>[2],
+) {
+  return client.joinGame(ballAdapter(client), options, control);
+}
+
 test("合流同一在途 join：旧 owner 释放不关闭后来者共享的 room", async () => {
   const join = deferred<unknown>();
   const fake = makeFakeRoom("shared");
   const client = makeClient(join);
 
-  const oldGeneration = client.joinGame({ token: "same-session", sId: 7 });
-  const newGeneration = client.joinGame({ token: "same-session", sId: 7 });
+  const oldGeneration = joinBall(client, { token: "same-session", sId: 7 });
+  const newGeneration = joinBall(client, { token: "same-session", sId: 7 });
   assert.equal(joinCalls.length, 1, "两代在 join 在途期必须合流同一个物理连接槽");
   assert.deepEqual(joinCalls[0], {
     endpoint: "http://game.example",
@@ -126,16 +214,16 @@ test("合流同一在途 join：旧 owner 释放不关闭后来者共享的 room
   join.resolve(fake.room);
 
   await oldReadyRejected;
-  assert.equal(await newGeneration.ready, fake.room);
-  assert.equal(client.room, fake.room);
+  await newGeneration.ready;
+  assert.equal(physicalRoomOf(client), fake.room);
   assert.equal(fake.leaveCalls, 0, "旧世代只能释放自己的 owner，不能关闭后来者仍持有的共享 room");
 
   await newGeneration.leave();
   assert.equal(fake.leaveCalls, 1, "最后一个 owner 释放时才关闭物理 room");
-  assert.equal(client.room, null);
+  assert.equal(physicalRoomOf(client), null);
 });
 
-test("slot 连接 key：endpoint/token/sId/其它 option 任一不同均 fail-fast，且不破坏原 owner", async (t) => {
+test("slot 连接 key：endpoint/token/sId 任一不同均 fail-fast，且不破坏原 owner", async (t) => {
   const base = { token: "token-a", sId: 7 };
   const cases = [
     {
@@ -153,11 +241,6 @@ test("slot 连接 key：endpoint/token/sId/其它 option 任一不同均 fail-fa
       prepare(_client: RoomClient) { /* endpoint 不变 */ },
       options: { ...base, sId: 8 },
     },
-    {
-      name: "mode 不同",
-      prepare(_client: RoomClient) { /* endpoint 不变 */ },
-      options: { ...base, mode: GameplayModeId.Idle },
-    },
   ];
 
   for (const item of cases) {
@@ -167,49 +250,344 @@ test("slot 连接 key：endpoint/token/sId/其它 option 任一不同均 fail-fa
       const room1 = makeFakeRoom(`${item.name}-old`);
       const room2 = makeFakeRoom(`${item.name}-new`);
       const client = makeClient(join1, join2);
-      const original = client.joinGame(base);
+      const original = joinBall(client, base);
 
       item.prepare(client);
       assert.throws(
-        () => client.joinGame(item.options),
+        () => joinBall(client, item.options),
         /参数与本次 join 不一致，请先释放现有 ownership/,
         "身份冲突不得静默合流到旧 slot",
       );
       assert.equal(joinCalls.length, 1, "冲突调用不能发起第二条连接，也不能改写现有 slot");
 
       join1.resolve(room1.room);
-      assert.equal(await original.ready, room1.room, "原 ownership 必须保持可用");
-      assert.equal(client.room, room1.room);
+      await original.ready;
+      assert.equal(physicalRoomOf(client), room1.room, "原 ownership 必须保持可用");
       assert.equal(room1.leaveCalls, 0);
       await original.leave();
 
-      const replacement = client.joinGame(item.options);
+      const replacement = joinBall(client, item.options);
       assert.equal(joinCalls.length, 2, "显式释放旧 ownership 后才能按新 key 建房");
       join2.resolve(room2.room);
-      assert.equal(await replacement.ready, room2.room);
+      await replacement.ready;
+      assert.equal(physicalRoomOf(client), room2.room);
       await replacement.leave();
     });
   }
+});
+
+test("join mode 与 adapter 不匹配时在 SDK join 前 fail-closed", () => {
+  const client = makeClient();
+  const idleAdapter = createIdleRoomAdapter();
+  assert.throws(
+    () => client.joinGame(idleAdapter, { mode: GameplayModeId.BallMove, token: "same", sId: 7 }),
+    /mode 与 gameplay adapter 不匹配/,
+  );
+  assert.equal(joinCalls.length, 0, "mode/adapter mismatch 不能分配物理连接");
+  assert.equal(physicalRoomOf(client), null);
+});
+
+test("GameplayRoomAdapter：state 类型由 mode 映射，不能独立拼接异构 validator", () => {
+  const idleAdapter = createIdleRoomAdapter();
+  const invalid: GameplayRoomAdapter<typeof GameplayModeId.BallMove, typeof C2S.Move> = {
+    mode: GameplayModeId.BallMove,
+    outbound: [C2S.Move],
+    // @ts-expect-error ballMove adapter 的 validator 必须返回 RoomStateByMode["ballMove"]。
+    validateState: (input) => idleAdapter.validateState(input),
+  };
+  assert.equal(invalid.mode, GameplayModeId.BallMove);
+});
+
+test("玩法 transport API：不暴露原始 SDK room/send", () => {
+  const typed = {} as BallMoveTypedRoom;
+  const client = new RoomClient();
+  if (false) {
+    // @ts-expect-error gameplay capability 不能取得原始 SDK room 绕过 send allowlist。
+    void typed.room;
+    // @ts-expect-error RoomClient 也不能公开当前原始 SDK room。
+    void client.room;
+  }
+  assert.equal("room" in client, false);
+});
+
+test("Idle adapter：直接 exact 校验 reflected Schema，不洗掉 root/player 额外 wire 字段", () => {
+  class ReflectedIdleState {
+    constructor(private readonly extraAt: "none" | "root" | "player") {
+      Object.defineProperties(this, {
+        "~changes": { value: {}, enumerable: false },
+        "~refId": { value: 1, enumerable: false },
+      });
+    }
+    toJSON() {
+      const player = { id: "idle-session", name: "Idle", pulses: 2 } as Record<string, unknown>;
+      if (this.extraAt === "player") player.extraPlayer = true;
+      const state = {
+        tick: 7,
+        phase: GamePhase.Playing,
+        matchId: "idle-match",
+        pulseGoal: 3,
+        winnerId: "",
+        players: { "idle-session": player },
+      } as Record<string, unknown>;
+      if (this.extraAt === "root") state.extraRoot = true;
+      return state;
+    }
+  }
+  const adapter = createIdleRoomAdapter();
+  const parsed = adapter.validateState(new ReflectedIdleState("none"));
+  assert.equal(parsed.players.get("idle-session")?.pulses, 2);
+  assert.throws(() => adapter.validateState(new ReflectedIdleState("root")), /WIRE_KEYS at idleState/);
+  assert.throws(
+    () => adapter.validateState(new ReflectedIdleState("player")),
+    /WIRE_KEYS at idleState\.players\.idle-session/,
+  );
+});
+
+test("Idle ownership：初始 root 畸形时 ready fail-closed 并关闭物理房", async () => {
+  const join = deferred<unknown>();
+  const fake = makeFakeRoom("idle-invalid-state", Promise.resolve(true), {});
+  const client = makeClient(join);
+  const owner = client.joinGame(createIdleRoomAdapter(), { token: "idle-token", sId: 8 });
+  join.resolve(fake.room);
+  await assert.rejects(owner.ready, /GameRoom state 非法/);
+  assert.equal(fake.leaveCalls, 1);
+  assert.equal(physicalRoomOf(client), null);
+});
+
+test("GameRoom ownership：SDK 已 join 但首个 state 黑洞时 timeout 关闭精确物理房", async () => {
+  const join = deferred<unknown>();
+  const fake = makeFakeRoom("state-blackhole", Promise.resolve(true), {}, false);
+  const client = makeClient(join);
+  const owner = client.joinGame(
+    createIdleRoomAdapter(),
+    { token: "idle-token", sId: 8 },
+    { timeoutMs: 5 },
+  );
+  join.resolve(fake.room);
+
+  await assert.rejects(owner.ready, (error: unknown) =>
+    (error as { code?: string })?.code === "TIMEOUT");
+  await owner.leave();
+  assert.equal(fake.leaveCalls, 1);
+  assert.equal(physicalRoomOf(client), null);
+  assert.equal(
+    (client as unknown as { slot: unknown }).slot,
+    null,
+    "首 state 等待取消后不得遗留 slot",
+  );
+});
+
+test("GameRoom ownership：首个 exact state 前公共发送 API 保持只读", async () => {
+  const join = deferred<unknown>();
+  const fake = makeFakeRoom("state-write-barrier", Promise.resolve(true), {}, false);
+  const client = makeClient(join);
+  const owner = joinBall(client, undefined, { timeoutMs: 1_000 });
+  join.resolve(fake.room);
+  await new Promise<void>((resolve) => setImmediate(resolve));
+
+  client.ping();
+  client.castSkill(1);
+  client.chat("before-state");
+  assert.equal(fake.sent.length, 0, "SDK JOIN_ROOM 后、首个有效 state 前不得发送任何 C2S");
+
+  fake.room.state = validBallMoveState();
+  fake.emitState();
+  await owner.ready;
+  client.ping();
+  client.castSkill(1);
+  client.chat("after-state");
+  assert.deepEqual(fake.sent.map((message) => message.type), [C2S.Ping, C2S.CastSkill, C2S.Chat]);
+  await owner.leave();
+});
+
+test("GameRoom ownership：首个 state 前物理离场立即拒绝 owner，不等待二次 leave 超时", async () => {
+  const neverLeaves = new Promise<boolean>(() => {});
+  const join = deferred<unknown>();
+  const fake = makeFakeRoom("leave-before-state", neverLeaves, {}, false);
+  const client = makeClient(join);
+  let battleLost = 0;
+  const off = onBattleLost(() => { battleLost++; });
+  try {
+    const owner = client.joinGame(
+      createIdleRoomAdapter(),
+      { token: "idle-token", sId: 8 },
+      { timeoutMs: 60_000 },
+    );
+    join.resolve(fake.room);
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    assert.ok(fake.callbacks.leave, "测试必须等到 lifecycle callbacks 已登记");
+
+    fake.callbacks.leave?.(1006, "left before initial state");
+    await assert.rejects(
+      Promise.race([
+        owner.ready,
+        new Promise<never>((_resolve, reject) => {
+          setTimeout(() => reject(new Error("owner.ready 未即时拒绝")), 50);
+        }),
+      ]),
+      /首个 state 前离开/,
+    );
+    assert.equal(fake.leaveCalls, 0, "已死亡的物理房不能再次调用 room.leave");
+    assert.equal(physicalRoomOf(client), null);
+    assert.equal(battleLost, 1);
+    await owner.leave();
+  } finally {
+    off();
+  }
+});
+
+test("GameRoom ownership：非法后续 patch/reconnect state 均销毁房间且不执行 reconcile", async (t) => {
+  for (const reconnect of [false, true]) {
+    await t.test(reconnect ? "reconnect full state" : "ordinary patch", async () => {
+      const join = deferred<unknown>();
+      const fake = makeFakeRoom(`invalid-${reconnect ? "reconnect" : "patch"}`);
+      const client = makeClient(join);
+      const adapter = ballAdapter(client);
+      let battleLost = 0;
+      const off = onBattleLost(() => { battleLost++; });
+      try {
+        const owner = joinBall(client);
+        join.resolve(fake.room);
+        const capability = createBallMoveRoom(await owner.ready, adapter);
+        capability.move(1, 0);
+        fake.sent.length = 0;
+        if (reconnect) {
+          fake.callbacks.drop?.(1006, "temporary");
+          capability.move(0, 1);
+          fake.callbacks.reconnect?.();
+        }
+
+        fake.room.state = {};
+        fake.emitState();
+        await new Promise<void>((resolve) => setImmediate(resolve));
+        assert.equal(physicalRoomOf(client), null);
+        assert.equal(capability.dropping, false);
+        assert.equal(fake.leaveCalls, 1);
+        assert.equal(battleLost, 1);
+        assert.deepEqual(fake.sent, [], "非法 state 不能触发重连输入 reconcile");
+        await owner.leave();
+      } finally {
+        off();
+      }
+    });
+  }
+});
+
+test("Idle ownership：join/drop/reconnect 不发送 Move，pulse 只发送 exact 空对象", async () => {
+  const join = deferred<unknown>();
+  const fake = makeFakeRoom("idle-transport", Promise.resolve(true), validIdleState());
+  const client = makeClient(join);
+  const adapter = createIdleRoomAdapter();
+  const owner = client.joinGame(adapter, { token: "idle-token", sId: 8 });
+  join.resolve(fake.room);
+  const room = await owner.ready;
+  assert.deepEqual(fake.sent, [], "idle initial join 不能构造 ballMove desired input");
+
+  const capability = createIdleRoom(room, adapter);
+  fake.callbacks.drop?.(1006, "temporary");
+  capability.pulse();
+  assert.deepEqual(fake.sent, [], "dropping 窗口不得发送 pulse 或 Move");
+  fake.callbacks.reconnect?.();
+  capability.pulse();
+  assert.deepEqual(fake.sent, [], "reconnect 后首个有效 state 前仍不得发送 pulse 或 Move");
+  fake.emitState();
+  assert.deepEqual(fake.sent, [], "idle reconnect 不得自动重放 Move");
+  capability.pulse();
+  assert.deepEqual(fake.sent, [{ type: C2S.IdlePulse, data: {} }]);
+  await owner.leave();
+});
+
+test("独立 reconnect 与 SDK 离线队列：下一有效 state 前均不得越过发送屏障", async () => {
+  const join = deferred<unknown>();
+  const fake = makeFakeRoom("idle-reconnect-barrier", Promise.resolve(true), validIdleState());
+  const client = makeClient(join);
+  const adapter = createIdleRoomAdapter();
+  const owner = client.joinGame(adapter, { token: "idle-token", sId: 8 });
+  join.resolve(fake.room);
+  const capability = createIdleRoom(await owner.ready, adapter);
+
+  assert.equal(fake.room.reconnection.maxEnqueuedMessages, 0);
+  fake.setConnectionOpen(false);
+  capability.pulse();
+  assert.equal(fake.room.reconnection.enqueuedMessages.length, 0,
+    "socket close 到 onDrop 之间的 send 也不能进入 SDK 自动重放队列");
+  assert.deepEqual(fake.sent, []);
+
+  fake.room.reconnection.enqueuedMessages.push({
+    data: { type: C2S.IdlePulse, data: {} },
+  });
+  fake.emitReconnect();
+  capability.pulse();
+  assert.deepEqual(fake.sent, [],
+    "无先行 onDrop 的 onReconnect 必须清队列并立即阻断发送");
+  fake.emitState();
+  capability.pulse();
+  assert.deepEqual(fake.sent, [{ type: C2S.IdlePulse, data: {} }]);
+  await owner.leave();
+});
+
+test("玩法 capability：ballMove typed room 不能构造 IdleRoom", async () => {
+  const join = deferred<unknown>();
+  const fake = makeFakeRoom("ball-capability");
+  const client = makeClient(join);
+  const owner = joinBall(client);
+  join.resolve(fake.room);
+  const ballRoom = await owner.ready;
+  const idleAdapter = createIdleRoomAdapter();
+  assert.throws(
+    // @ts-expect-error mode discriminator 在编译期拒绝跨玩法 capability。
+    () => createIdleRoom(ballRoom, idleAdapter),
+    /mode 与 adapter 不匹配/,
+  );
+  await owner.leave();
+});
+
+test("玩法 capability：旧 typed room 在提升 input generation 前 fail-closed", () => {
+  const adapter = createBallMoveRoomAdapter();
+  const staleBall = {
+    kind: "typed-game-room",
+    mode: GameplayModeId.BallMove,
+    state: validBallMoveState(),
+    roomId: "stale-ball",
+    sessionId: "stale-ball-session",
+    current: false,
+    dropping: false,
+    state$: () => () => ({}),
+    onMessage: () => () => {},
+    send: () => true,
+  } as unknown as BallMoveTypedRoom;
+  const before = adapter.inputGeneration;
+  assert.throws(() => createBallMoveRoom(staleBall, adapter), /room 已失效/);
+  assert.equal(adapter.inputGeneration, before,
+    "迟到旧 room 不能使当前 capability 的 generation 失效");
+
+  const staleIdle = {
+    ...staleBall,
+    mode: GameplayModeId.Idle,
+    state: validIdleState(),
+  } as unknown as IdleTypedRoom;
+  assert.throws(() => createIdleRoom(staleIdle, createIdleRoomAdapter()), /room 已失效/);
 });
 
 test("slot 连接 key：契约允许字段稳定比较，键顺序/undefined 不造成误拒", async () => {
   const join = deferred<unknown>();
   const fake = makeFakeRoom("stable-key");
   const client = makeClient(join);
-  const first = client.joinGame({
+  const first = joinBall(client, {
     token: "same",
     sId: 3,
     omitted: undefined,
   });
-  const second = client.joinGame({
+  const second = joinBall(client, {
     sId: 3,
     token: "same",
   });
 
   assert.equal(joinCalls.length, 1, "JSON 等价的完整 options 应安全合流");
   join.resolve(fake.room);
-  assert.equal(await first.ready, fake.room);
-  assert.equal(await second.ready, fake.room);
+  const firstRoom = await first.ready;
+  assert.strictEqual(await second.ready, firstRoom);
+  assert.equal(physicalRoomOf(client), fake.room);
   await first.leave();
   assert.equal(fake.leaveCalls, 0);
   await second.leave();
@@ -219,7 +597,7 @@ test("slot 连接 key：契约允许字段稳定比较，键顺序/undefined 不
 test("slot 连接 key：未知 join option 在发送前拒绝", () => {
   const client = makeClient();
   assert.throws(
-    () => client.joinGame({ token: "same", sId: 3, nested: { x: 1 } }),
+    () => joinBall(client, { token: "same", sId: 3, nested: { x: 1 } }),
     /未知字段|unknown|options/i,
   );
 });
@@ -228,12 +606,12 @@ test("非法 join control 在分配 slot 前失败，不遗留 owner", async () 
   const join = deferred<unknown>();
   const client = makeClient(join);
   assert.throws(
-    () => client.joinGame({ token: "same", sId: 3 }, { timeoutMs: 1.5 } as never),
+    () => joinBall(client, { token: "same", sId: 3 }, { timeoutMs: 1.5 } as never),
     /安全整数/,
   );
   assert.equal(joinCalls.length, 0, "非法 timeout 不应启动底层 join");
 
-  const owner = client.joinGame({ token: "same", sId: 3 });
+  const owner = joinBall(client, { token: "same", sId: 3 });
   assert.equal(joinCalls.length, 1, "失败调用不得占住后续合法 join 的 slot");
   const room = makeFakeRoom("after-invalid");
   join.resolve(room.room);
@@ -256,11 +634,11 @@ test("hostile AbortSignal：读取 aborted 在分配 slot 前失败", () => {
   });
 
   assert.throws(
-    () => client.joinGame({ token: "same", sId: 3 }, signal as never),
+    () => joinBall(client, { token: "same", sId: 3 }, signal as never),
     /有效的 AbortSignal/,
   );
   assert.equal(joinCalls.length, 0, "signal shape failure must precede transport slot allocation");
-  assert.equal(client.room, null);
+  assert.equal(physicalRoomOf(client), null);
 });
 
 test("hostile AbortSignal：addEventListener 抛错时 owner/slot 清理，迟到 room 释放", async () => {
@@ -274,7 +652,7 @@ test("hostile AbortSignal：addEventListener 抛错时 owner/slot 清理，迟�
   } as unknown as AbortSignal;
 
   assert.throws(
-    () => client.joinGame({ token: "same", sId: 3 }, signal),
+    () => joinBall(client, { token: "same", sId: 3 }, signal),
     /hostile add listener/,
   );
   assert.equal((client as unknown as { slot: unknown }).slot, null);
@@ -292,9 +670,10 @@ test("hostile AbortSignal：removeEventListener 抛错不阻断成功 join/leave
     addEventListener() { /* noop */ },
     removeEventListener() { throw new Error("hostile remove listener"); },
   } as unknown as AbortSignal;
-  const owner = client.joinGame({ token: "same", sId: 3 }, signal);
+  const owner = joinBall(client, { token: "same", sId: 3 }, signal);
   join.resolve(fake.room);
-  assert.equal(await owner.ready, fake.room);
+  await owner.ready;
+  assert.equal(physicalRoomOf(client), fake.room);
   await owner.leave();
   assert.equal(fake.leaveCalls, 1);
 });
@@ -318,7 +697,7 @@ test("joinOrCreate 同步抛错：迟到 owner 立即失败并释放失败槽", 
   try {
     // A long timeout makes a leaked control timer observable as a hanging test;
     // the failed slot must cancel before installing it.
-    const owner = client.joinGame(undefined, { timeoutMs: 60_000 });
+    const owner = joinBall(client, undefined, { timeoutMs: 60_000 });
     await assert.rejects(owner.ready, (error: unknown) => error === failure);
     assert.equal(internals.slot, null, "同步失败后当前 slot 必须摘除");
     assert.equal(closeCalls, 1, "迟到 owner 必须触发失败槽清理");
@@ -339,28 +718,29 @@ test("旧 room 的迟到 onLeave 不得清除/上报后来创建的新 room", as
   const off = onBattleLost(() => { battleLost++; });
 
   try {
-    const oldOwner = client.joinGame();
+    const oldOwner = joinBall(client);
     join1.resolve(oldRoom.room);
-    assert.equal(await oldOwner.ready, oldRoom.room);
+    await oldOwner.ready;
+    assert.equal(physicalRoomOf(client), oldRoom.room);
 
     // leave() 会在等待旧房 LEAVE 完成前同步摘掉旧 slot；后来者必须立刻能建独立的新 slot。
     const closingOld = oldOwner.leave();
-    const newOwner = client.joinGame();
+    const newOwner = joinBall(client);
     join2.resolve(newRoom.room);
-    assert.equal(await newOwner.ready, newRoom.room);
+    await newOwner.ready;
     assert.equal(joinCalls.length, 2);
-    assert.equal(client.room, newRoom.room);
+    assert.equal(physicalRoomOf(client), newRoom.room);
 
     // 模拟旧 SDK 连接稍后才派发 onLeave。它只能命中旧 slot，不能污染当前连接。
     oldRoom.callbacks.leave?.(1000, "late active-leave callback");
-    assert.equal(client.room, newRoom.room);
+    assert.equal(physicalRoomOf(client), newRoom.room);
     assert.equal(client.connected, true);
     assert.equal(battleLost, 0, "主动关闭旧 room 的迟到事件不能误报当前战斗死亡");
 
     oldLeave.resolve(true);
     await closingOld;
     assert.equal(oldRoom.removeAllCalls, 1);
-    assert.equal(client.room, newRoom.room);
+    assert.equal(physicalRoomOf(client), newRoom.room);
 
     await newOwner.leave();
     assert.equal(newRoom.leaveCalls, 1);
@@ -378,12 +758,12 @@ test("当前 room 非主动 onLeave：失效 owner、清当前槽并且只上报
   const off = onBattleLost(() => { battleLost++; });
 
   try {
-    const owner = client.joinGame();
+    const owner = joinBall(client);
     join.resolve(fake.room);
     await owner.ready;
 
     fake.callbacks.leave?.(1006, "network lost");
-    assert.equal(client.room, null);
+    assert.equal(physicalRoomOf(client), null);
     assert.equal(client.connected, false);
     assert.equal(battleLost, 1);
 
@@ -398,9 +778,9 @@ test("当前 room 非主动 onLeave：失效 owner、清当前槽并且只上报
 
 test("BallMoveRoom：消息、Schema 与发送都绑定捕获的物理 room", () => {
   const source = readFileSync(new URL("../src/net/rooms/BallMoveRoom.ts", import.meta.url), "utf8");
-  assert.match(source, /const isCurrent = \(\) => client\.room === room/,
+  assert.match(source, /const isCurrent = \(\) => room\.current/,
     "capability 必须核对捕获 room，不能把操作发给全局后来者");
-  assert.match(source, /client\.onMessage\(room, type/,
+  assert.match(source, /room\.onMessage\(type/,
     "消息监听必须登记在捕获 room 上");
   assert.match(source, /if \(isCurrent\(\)\) callback\(message\)/,
     "所有消息回调必须经过统一 current-room 守卫");
@@ -409,10 +789,16 @@ test("BallMoveRoom：消息、Schema 与发送都绑定捕获的物理 room", ()
     "players add/remove 入口必须拒绝旧 room");
   assert.match(stateSection, /if \(isActive\(\)\) observer\.change\(player\)/,
     "player change 的迟到回调也必须拒绝旧 room");
-  assert.equal((source.match(/if \(isCurrent\(\)\) client\.(?:move|ping)/g) ?? []).length, 2,
-    "move/ping 必须核对捕获 room");
-  assert.match(source, /const inputGeneration = client\.inputGeneration/);
-  assert.match(source, /client\.clearDesiredMove\(inputGeneration\)/,
+  assert.match(source, /adapter\.move\(inputGeneration, room, dirX, dirY\)/,
+    "Move 必须同时绑定 input generation 与捕获 room");
+  assert.match(source, /if \(isCurrent\(\)\) room\.send\(C2S\.Ping/,
+    "Ping 必须核对捕获 room");
+  assert.match(source, /const inputGeneration = adapter\.beginInputLease\(\)/);
+  assert.ok(
+    source.indexOf("if (!room.current)") < source.indexOf("adapter.beginInputLease()"),
+    "旧 room 必须在提升 adapter input generation 前拒绝",
+  );
+  assert.match(source, /adapter\.clearMove\(inputGeneration, room\)/,
     "stop 发生在 leave 摘槽后，clear 必须按输入世代精确生效");
 });
 
@@ -420,28 +806,30 @@ test("BallMoveRoom capability：切到后来 room 后，迟到消息/Schema/发�
   const captured = {
     roomId: "captured",
     sessionId: "self",
-    state: {},
+    state: {
+      tick: 1,
+      phase: GamePhase.Playing,
+      matchId: "captured-match",
+      players: new Map(),
+    },
   } as unknown as Colyseus.Room<IGameRoomState>;
-  const later = {
-    roomId: "later",
-    sessionId: "later-self",
-    state: {},
-  } as unknown as Colyseus.Room<IGameRoomState>;
-  let current: Colyseus.Room<IGameRoomState> | null = captured;
+  let current = true;
   const messages = new Map<string, (payload: unknown) => void>();
   const playerCallbacks: {
     add?: (player: IPlayerState, sessionId: string) => void;
     remove?: (player: IPlayerState, sessionId: string) => void;
     change?: () => void;
   } = {};
-  const moves: Array<[number, number]> = [];
-  const clears: number[] = [];
-  let pings = 0;
-  const transport = {
-    get room() { return current; },
-    dropping: false,
-    inputGeneration: 17,
-    onMessage(_room: unknown, type: string, callback: (payload: unknown) => void) {
+  const sent: Array<{ type: string; data: unknown }> = [];
+  const typedRoom = {
+    kind: "typed-game-room",
+    mode: GameplayModeId.BallMove,
+    state: captured.state,
+    roomId: captured.roomId,
+    sessionId: captured.sessionId,
+    get current() { return current; },
+    get dropping() { return false; },
+    onMessage(type: string, callback: (payload: unknown) => void) {
       messages.set(type, callback);
       return () => { messages.delete(type); };
     },
@@ -466,11 +854,14 @@ test("BallMoveRoom capability：切到后来 room 后，迟到消息/Schema/发�
             },
           };
     },
-    move(x: number, y: number) { moves.push([x, y]); },
-    clearDesiredMove(generation: number) { clears.push(generation); return true; },
-    ping() { pings++; },
-  } as unknown as RoomClient;
-  const capability = createBallMoveRoom(captured, transport);
+    send(type: string, data: unknown) {
+      if (!current) return false;
+      sent.push({ type, data });
+      return true;
+    },
+  } as unknown as BallMoveTypedRoom;
+  const adapter = createBallMoveRoomAdapter();
+  const capability = createBallMoveRoom(typedRoom, adapter);
   let welcomes = 0;
   let adds = 0;
   let changes = 0;
@@ -490,11 +881,14 @@ test("BallMoveRoom capability：切到后来 room 后，迟到消息/Schema/发�
   playerCallbacks.change?.();
   capability.move(1, 0);
   capability.ping();
-  assert.deepEqual({ welcomes, adds, changes, removes, moves, pings }, {
-    welcomes: 1, adds: 1, changes: 1, removes: 0, moves: [[1, 0]], pings: 1,
+  assert.deepEqual({ welcomes, adds, changes, removes }, {
+    welcomes: 1, adds: 1, changes: 1, removes: 0,
   });
+  assert.deepEqual(sent[0], { type: C2S.Move, data: { dirX: 1, dirY: 0 } });
+  assert.equal(sent[1]?.type, C2S.Ping);
+  assert.equal(Number.isFinite((sent[1]?.data as { clientTime?: number }).clientTime), true);
 
-  current = later;
+  current = false;
   messages.get(S2C.Welcome)?.({ sessionId: "self", tickRate: 20, motd: "late" });
   playerCallbacks.add?.(self, "self");
   playerCallbacks.change?.();
@@ -502,10 +896,12 @@ test("BallMoveRoom capability：切到后来 room 后，迟到消息/Schema/发�
   capability.move(0, 1);
   capability.ping();
   capability.clearMove();
-  assert.deepEqual({ welcomes, adds, changes, removes, moves, pings }, {
-    welcomes: 1, adds: 1, changes: 1, removes: 0, moves: [[1, 0]], pings: 1,
+  assert.deepEqual({ welcomes, adds, changes, removes }, {
+    welcomes: 1, adds: 1, changes: 1, removes: 0,
   });
-  assert.deepEqual(clears, [17], "leave 已摘槽时仍按捕获的 input generation 清理");
+  assert.equal(sent.length, 2, "失效 capability 不得向后来 room 发消息");
+  assert.deepEqual(adapter.desiredMove, { dirX: 0, dirY: 0, seq: 2 },
+    "leave 已摘槽时仍按捕获的 input generation 清理 desired");
   offMessage();
   offPlayers();
   assert.equal(messages.size, 0);
@@ -528,19 +924,33 @@ test("BallMoveRoom joiner：连接端点直接取当前区的 gameWsUrl", async 
     }],
   };
   setServerList(directory);
-  const calls: { endpoint?: string; options?: Record<string, unknown> } = {};
-  const room = { roomId: "room-92", sessionId: "self-92" };
+  const calls: { endpoint?: string; options?: Record<string, unknown>; adapterMode?: string } = {};
+  const adapter = createBallMoveRoomAdapter();
+  const room = {
+    kind: "typed-game-room",
+    mode: GameplayModeId.BallMove,
+    state: validBallMoveState(),
+    roomId: "room-92",
+    sessionId: "self-92",
+    current: true,
+    dropping: false,
+    state$: () => () => ({}),
+    onMessage: () => () => {},
+    send: () => true,
+  } as unknown as BallMoveTypedRoom;
   const fakeClient = {
     init(endpoint: string) { calls.endpoint = endpoint; },
-    joinGame(options: Record<string, unknown>) {
+    joinGame(inputAdapter: BallMoveRoomAdapter, options: Record<string, unknown>) {
+      calls.adapterMode = inputAdapter.mode;
       calls.options = options;
       return { ready: Promise.resolve(room), leave: async () => {} };
     },
   } as unknown as RoomClient;
   try {
-    const ownership = createBallMoveRoomJoiner(fakeClient).join(new AbortController().signal);
+    const ownership = createBallMoveRoomJoiner(adapter, fakeClient).join(new AbortController().signal);
     assert.equal((await ownership.ready).roomId, "room-92");
     assert.equal(calls.endpoint, "wss://ws-zone-92.example");
+    assert.equal(calls.adapterMode, GameplayModeId.BallMove);
     assert.deepEqual(calls.options, { token: "", sId: 92, mode: GameplayModeId.BallMove });
     await ownership.leave();
   } finally {
@@ -564,23 +974,38 @@ test("IdleRoom joiner：复用同一区服 transport 并显式选择 idle mode",
     }],
   };
   setServerList(directory);
-  const calls: { endpoint?: string; options?: Record<string, unknown> } = {};
+  const calls: { endpoint?: string; options?: Record<string, unknown>; adapterMode?: string } = {};
+  const adapter = createIdleRoomAdapter();
   const physical = { roomId: "idle-room-93", sessionId: "idle-self-93" };
+  const room = {
+    kind: "typed-game-room",
+    mode: GameplayModeId.Idle,
+    state: validIdleState(),
+    roomId: physical.roomId,
+    sessionId: physical.sessionId,
+    current: true,
+    dropping: false,
+    state$: () => () => ({}),
+    onMessage: () => () => {},
+    send: () => true,
+  } as unknown as IdleTypedRoom;
   const fakeClient = {
     init(endpoint: string) { calls.endpoint = endpoint; },
-    joinGame(options: Record<string, unknown>) {
+    joinGame(inputAdapter: ReturnType<typeof createIdleRoomAdapter>, options: Record<string, unknown>) {
+      calls.adapterMode = inputAdapter.mode;
       calls.options = options;
-      return { ready: Promise.resolve(physical), leave: async () => {} };
+      return { ready: Promise.resolve(room), leave: async () => {} };
     },
   } as unknown as RoomClient;
   try {
-    const ownership = createIdleRoomJoiner(fakeClient).join(new AbortController().signal);
-    assert.deepEqual(await ownership.ready, {
-      kind: "idle",
-      roomId: "idle-room-93",
-      sessionId: "idle-self-93",
-    });
+    const ownership = createIdleRoomJoiner(adapter, fakeClient).join(new AbortController().signal);
+    const capability = await ownership.ready;
+    assert.equal(capability.kind, "idle");
+    assert.equal(capability.roomId, "idle-room-93");
+    assert.equal(capability.sessionId, "idle-self-93");
+    assert.equal(typeof capability.pulse, "function");
     assert.equal(calls.endpoint, "wss://ws-zone-93.example");
+    assert.equal(calls.adapterMode, GameplayModeId.Idle);
     assert.deepEqual(calls.options, { token: "", sId: 93, mode: GameplayModeId.Idle });
     await ownership.leave();
   } finally {
@@ -606,20 +1031,22 @@ test("掉线输入 reconcile：松手后的 stop/最新方向成为重连后的�
   const join = deferred<unknown>();
   const fake = makeFakeRoom("input-reconcile");
   const client = makeClient(join);
-  const owner = client.joinGame();
+  const adapter = ballAdapter(client);
+  const owner = joinBall(client);
   join.resolve(fake.room);
-  await owner.ready;
+  const capability = createBallMoveRoom(await owner.ready, adapter);
 
-  // join 建立时会先对账一次初始 stop；后续断线断言只关注本段输入。
   fake.sent.length = 0;
-  client.move(1, 0);
+  capability.move(1, 0);
   assert.deepEqual(fake.sent.at(-1), { type: C2S.Move, data: { dirX: 1, dirY: 0 } });
   fake.callbacks.drop?.(1006, "temporary");
 
   // dropping 窗口中不发旧方向，但必须更新 desired seq；用户随后松手写入 stop。
-  client.move(0, 0);
+  capability.move(0, 0);
   assert.equal(fake.sent.length, 1, "掉线期间不应把输入排进旧连接");
   fake.callbacks.reconnect?.();
+  assert.equal(fake.sent.length, 1, "reconnect full state 校验前不得恢复发送");
+  fake.emitState();
   assert.deepEqual(fake.sent.at(-1), { type: C2S.Move, data: { dirX: 0, dirY: 0 } });
 
   await owner.leave();
@@ -629,29 +1056,46 @@ test("输入 generation：leave 摘槽后本局可清零，旧局迟到 stop 不
   const firstJoin = deferred<unknown>();
   const firstRoom = makeFakeRoom("input-generation-old");
   const client = makeClient(firstJoin);
-  const oldOwner = client.joinGame();
+  const adapter = ballAdapter(client);
+  const oldOwner = joinBall(client);
   firstJoin.resolve(firstRoom.room);
-  await oldOwner.ready;
-  client.move(1, 0);
-  const oldInputGeneration = client.inputGeneration;
+  const oldCapability = createBallMoveRoom(await oldOwner.ready, adapter);
+  oldCapability.move(1, 0);
+  const oldInputGeneration = adapter.inputGeneration;
   await oldOwner.leave();
 
-  assert.equal(client.clearDesiredMove(oldInputGeneration), true,
+  const desiredAtLeave = adapter.desiredMove;
+  oldCapability.move(-1, 0);
+  assert.strictEqual(adapter.desiredMove, desiredAtLeave,
+    "leave 到下一 capability 创建之间，旧 move 也必须被 room.current 拒绝");
+  oldCapability.clearMove();
+  assert.deepEqual(adapter.desiredMove, { dirX: 0, dirY: 0, seq: 2 },
     "RoomController 先 leave 再 stop plugin 时，本局 generation 仍应能清零 desired");
-  assert.deepEqual(client.desiredMove, { dirX: 0, dirY: 0, seq: 2 });
 
   const nextJoin = deferred<unknown>();
   const nextRoom = makeFakeRoom("input-generation-new");
   joinQueue.push(nextJoin);
-  const newOwner = client.joinGame();
+  const newOwner = joinBall(client);
   nextJoin.resolve(nextRoom.room);
-  await newOwner.ready;
-  client.move(0, 1);
-  const desired = client.desiredMove;
-  assert.equal(client.clearDesiredMove(oldInputGeneration), false,
+  const newCapability = createBallMoveRoom(await newOwner.ready, adapter);
+  newCapability.move(0, 1);
+  const desired = adapter.desiredMove;
+  const sentBeforeStaleMove = nextRoom.sent.length;
+  oldCapability.move(-1, 0);
+  assert.strictEqual(adapter.desiredMove, desired,
+    "旧 capability 的 move 不得改写新 generation desired input");
+  assert.equal(nextRoom.sent.length, sentBeforeStaleMove);
+  nextRoom.callbacks.drop?.(1006, "temporary");
+  nextRoom.callbacks.reconnect?.();
+  assert.equal(nextRoom.sent.length, sentBeforeStaleMove, "reconnect state 校验前不得重放输入");
+  nextRoom.emitState();
+  assert.deepEqual(nextRoom.sent.at(-1), { type: C2S.Move, data: { dirX: 0, dirY: 1 } },
+    "新房重连必须重放自己的最新方向，不能重放旧 capability 输入");
+  oldCapability.clearMove();
+  assert.strictEqual(adapter.desiredMove, desired,
     "旧插件迟到清理必须被新 input generation 拒绝");
-  assert.strictEqual(client.desiredMove, desired);
-  assert.deepEqual(client.desiredMove, { dirX: 0, dirY: 1, seq: 3 });
+  assert.equal(adapter.clearMove(oldInputGeneration), false);
+  assert.deepEqual(adapter.desiredMove, { dirX: 0, dirY: 1, seq: 3 });
   await newOwner.leave();
 });
 
@@ -659,7 +1103,7 @@ test("RoomClient join 黑洞：超时/AbortSignal 不阻塞 leave，迟到 room 
   const pending = deferred<unknown>();
   const late = makeFakeRoom("late-game");
   const client = makeClient(pending);
-  const owner = client.joinGame(undefined, { timeoutMs: 10 });
+  const owner = joinBall(client, undefined, { timeoutMs: 10 });
   await assert.rejects(owner.ready, (e: unknown) => (e as { code?: string })?.code === "TIMEOUT");
   await owner.leave();
   pending.resolve(late.room);
@@ -670,7 +1114,7 @@ test("RoomClient join 黑洞：超时/AbortSignal 不阻塞 leave，迟到 room 
   const lateCancel = makeFakeRoom("late-game-cancel");
   const controller = new AbortController();
   const client2 = makeClient(pendingCancel);
-  const owner2 = client2.joinGame(undefined, controller.signal);
+  const owner2 = joinBall(client2, undefined, controller.signal);
   controller.abort();
   await assert.rejects(owner2.ready, (e: unknown) => (e as { code?: string })?.code === "CANCELLED");
   await owner2.leave();

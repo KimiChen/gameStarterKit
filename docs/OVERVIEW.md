@@ -15,9 +15,9 @@ gameStarterKit 是客户端、服务端和 shared 共同演进的 TypeScript 游
 - `apps/art` 负责 FairyGUI 设计源。
 - 外部身份服务只通过锁定的 HTTP 契约参与本地示例链路。
 
-当前 `ballMove` 是默认演示玩法，不是通用玩法实现；`idle` 是复用真实房间 transport/lifecycle 的最小第二
-mode 证明，不包含完整 UI 或玩法规则。框架的可复用部分是目录边界、同步工具、契约、网络接缝、视图组织
-和服务端一致性原语。
+当前 `ballMove` 是默认演示玩法，不是通用玩法实现；`idle` 是复用真实房间 transport/lifecycle、但使用
+独立 `IdleRoomState` 与 pulse 结算规则的最小第二 mode 证明。它不包含完整 UI；框架的可复用部分是目录
+边界、同步工具、契约、网络接缝、视图组织和服务端一致性原语。
 
 ## 2. 目录与源码真相
 
@@ -52,7 +52,8 @@ apps/client/src
 - 消息名、请求/响应类型、状态镜像、错误码和公式进入 shared。
 - 服务端与客户端从 shared import，不复制字符串或接口。
 - 外部身份 HTTP 类型来自锁定的 `@gono/webplatform-contract` 生成物。
-- Colyseus state 字段改变时，同步更新 shared state 镜像与协议指纹。
+- Colyseus state 的 mode→root、字段和值域只修改 `apps/shared/schema/game-room-state.json`；生成器同时产出
+  shared interface/validator 映射与服务端 Schema 构造器映射，再更新协议指纹。
 
 ### 3.2 约束可执行
 
@@ -109,9 +110,9 @@ apps/client/src
 - 大规模同步计算不放在网关 handler 中。
 
 这些是开发实现应保持的不变量，不是对当前所有路径已经完成证明的声明。完成状态、剩余缺口和保留边界
-统一以 [plan-v2.md](../plan-v2.md) 为准；当前仍开放的是异构第二玩法。`ballMove@1` 的服务端内部 v3
-evidence 已按 seed/fixed-step/有序事件重算初末状态与 participants；热档/冷档 schema 迁移、asset effect
-原子性与经济操作的跨区回读也已按对应条目收口。
+统一以 [plan-v2.md](../plan-v2.md) 为准。异构第二玩法现由生成的 mode→root 契约、玩法专属结算和客户端
+state adapter 约束；`ballMove@1` 的服务端内部 v3 evidence 已按 seed/fixed-step/有序事件重算初末状态与
+participants；热档/冷档 schema 迁移、asset effect 原子性与经济操作的跨区回读也已按对应条目收口。
 
 ## 4. 标准开发动线
 
@@ -135,16 +136,22 @@ evidence 已按 seed/fixed-step/有序事件重算初末状态与 participants�
 ### 4.2 新玩法
 
 ```text
-shared 登记 canonical mode id
+shared 登记 canonical mode id + state manifest root / wire message
+  → state codegen 生成 mode→root constructor / validator 映射
   → server modes/<Mode> + modes/catalog.ts
   → client logic/rooms/<mode> + net/rooms/<Mode>Room.ts
+  → client mode adapter 注入 raw exact validator / reconcile
   → client gameplay/catalog.ts
   → sync:shared / sync:client + 双端 mode/lifecycle 测试
 ```
 
 `GameplayRegistry` 让 factory 与 mode-owned joiner 同属一个 registration；`RoomController` 只接管一次启动的
-精确 room capability。服务端 `GameRoom` 按已验证的 `mode` 延迟创建对应 `GameMode`，撮合同时按 `sId` 和
-`mode` 隔离。新增玩法不应改通用 RoomClient、RoomController 或 GameRoom transport。
+精确 room capability。服务端 `GameRoom` 按已验证的 `mode` 延迟创建对应 `GameMode`，并在首次 handshake 前
+从生成映射选择且冻结 root；撮合同时按 `sId` 和 `mode` 隔离。客户端 `RoomClient` 不假定 root shape，状态
+raw exact validator 与重连 reconcile 由玩法 adapter 注入；校验先看 reflected Schema 的真实 wire shape，
+不先白名单重建状态。玩法只取得不含原始 SDK room/send 的 typed facade；只有真实 `ROOM_STATE` 校验通过才
+开放发送，SDK 离线队列不能绕过该闸。新增玩法通过登记点扩展，不在通用 transport
+中增加玩法分支。
 
 ### 4.3 FairyGUI 页面
 

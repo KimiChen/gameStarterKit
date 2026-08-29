@@ -11,6 +11,7 @@ import {
     type C2SType,
 } from "@game/shared";
 import { GameRoom, GAME_ROOM_C2S_SCHEMAS } from "../src/rooms/GameRoom";
+import { createBallMoveGameMode } from "../src/rooms/GameMode";
 import { GameRoomState, PlayerState } from "../src/rooms/schema/GameRoomState";
 
 type Vector = {
@@ -37,14 +38,14 @@ function handledByGameRoom(type: C2SType, value: unknown): {
         seed: 1,
         clock: () => 0,
         mode: {
-            id: "wire-contract-probe",
+            ...createBallMoveGameMode(),
             onMessage(message) {
                 captured.push({ type: message.type, payload: message.payload });
                 return true;
             },
         },
     });
-    room.state.phase = type === C2S.Move || type === C2S.CastSkill
+    room.state.phase = type === C2S.Move || type === C2S.IdlePulse || type === C2S.CastSkill
         ? GamePhase.Playing
         : GamePhase.Waiting;
     const client = {
@@ -100,6 +101,14 @@ const c2sVectors: Record<C2SType, readonly Vector[]> = {
         { label: "missing", value: { dirX: 0 }, accepted: false },
         { label: "extra key", value: { dirX: 0, dirY: 0, tick: 1 }, accepted: false },
         { label: "symbol key", value: symbolExtra({ dirX: 0, dirY: 0 }), accepted: false },
+    ],
+    [C2S.IdlePulse]: [
+        { label: "empty object", value: {}, accepted: true },
+        { label: "null prototype", value: Object.create(null), accepted: true },
+        { label: "extra key", value: { count: 1 }, accepted: false },
+        { label: "symbol key", value: symbolExtra({}), accepted: false },
+        { label: "array", value: [], accepted: false },
+        { label: "null", value: null, accepted: false },
     ],
     [C2S.CastSkill]: [
         { label: "skill lower", value: { skillId: 0 }, accepted: true },

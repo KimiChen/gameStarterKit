@@ -18,10 +18,8 @@ import {
     MAX_ACCEPTED_INPUTS,
     type GameRoomRuntimeOptions,
 } from "../src/rooms/GameRoom";
-import { BALL_MOVE_GAME_MODE_ID } from "../src/rooms/GameMode";
+import { BALL_MOVE_GAME_MODE_ID, createBallMoveGameMode } from "../src/rooms/GameMode";
 import {
-    BALL_MOVE_RULESET_ID,
-    BALL_MOVE_RULESET_VERSION,
     validateMatchEvidenceV3,
     type MatchEvidenceV3,
 } from "../src/core/match/matchEvidence";
@@ -391,11 +389,7 @@ test("settlement freezes replay evidence before the mode finish hook can mutate 
         ...runtime(1_151),
         matchId: () => "m_finish_snapshot",
         mode: {
-            id: BALL_MOVE_GAME_MODE_ID,
-            matchEvidenceRuleset: {
-                id: BALL_MOVE_RULESET_ID,
-                version: BALL_MOVE_RULESET_VERSION,
-            },
+            ...createBallMoveGameMode(),
             onFinish: ({ state }) => {
                 state.players.get("a")!.hp = 0;
             },
@@ -430,11 +424,7 @@ test("Playing leave settles before awaiting a slow mode leave hook", async () =>
         ...runtime(1_152),
         matchId: () => "m_slow_leave",
         mode: {
-            id: BALL_MOVE_GAME_MODE_ID,
-            matchEvidenceRuleset: {
-                id: BALL_MOVE_RULESET_ID,
-                version: BALL_MOVE_RULESET_VERSION,
-            },
+            ...createBallMoveGameMode(),
             onLeave: () => hookGate,
         },
         evidenceEmitter: (evidence) => {

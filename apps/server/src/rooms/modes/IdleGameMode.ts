@@ -1,5 +1,8 @@
 import { C2S } from "@game/shared";
-import type { GameRoomState } from "../schema/GameRoomState";
+import {
+    IdlePlayerState,
+    IdleRoomState,
+} from "../schema/GameRoomState";
 import {
     IDLE_GAME_MODE_ID,
     gameModeRegistry,
@@ -7,23 +10,75 @@ import {
     type GameModeRegistry,
 } from "../GameMode";
 
+export const IDLE_DEFAULT_PULSE_GOAL = 3;
+export const IDLE_MAX_PULSE_GOAL = 1_000;
+
+export interface IdleGameModeOptions {
+    /** Deterministic test override; production registration always uses the default. */
+    readonly pulseGoal?: number;
+}
+
+function normalizePulseGoal(value: number | undefined): number {
+    return typeof value === "number"
+        && Number.isSafeInteger(value)
+        && value >= 1
+        && value <= IDLE_MAX_PULSE_GOAL
+        ? value
+        : IDLE_DEFAULT_PULSE_GOAL;
+}
+
+function resetIdleMatchState(state: IdleRoomState, pulseGoal: number): void {
+    state.pulseGoal = pulseGoal;
+    state.winnerId = "";
+    state.players.forEach((player) => { player.pulses = 0; });
+}
+
 /**
- * A minimal but real second GameRoom mode. It shares authenticated room
- * admission with the starter while consuming gameplay messages without
- * applying ballMove rules.
+ * A structurally independent second mode. Transport/admission remains in
+ * GameRoom while every stateful rule below is typed to IdleRoomState.
  */
-export function createIdleGameMode(): GameMode<GameRoomState> {
+export function createIdleGameMode(options: IdleGameModeOptions = {}): GameMode<IdleRoomState, IdlePlayerState> {
+    const pulseGoal = normalizePulseGoal(options.pulseGoal);
     return {
         id: IDLE_GAME_MODE_ID,
-        // Ping and Chat remain room/transport capabilities. Idle only consumes
-        // the rule-specific inputs that ballMove would otherwise apply.
-        onMessage: ({ type }) => type === C2S.Move || type === C2S.CastSkill,
+        usesDefaultBallMoveRules: false,
+        createPlayer: ({ sessionId, name }) => {
+            const player = new IdlePlayerState();
+            player.id = sessionId;
+            player.name = name;
+            return player;
+        },
+        // Ping and Chat remain shared transport capabilities. Gameplay inputs
+        // are exclusive: unsupported Move/Cast return false and GameRoom rejects
+        // them before any ballMove fallback can run.
+        onMessage: ({ type, client, context }) => {
+            if (type !== C2S.IdlePulse) return false;
+            const player = context.state.players.get(client.sessionId);
+            if (!player) return true;
+            player.pulses++;
+            if (player.pulses >= context.state.pulseGoal) {
+                context.state.winnerId = client.sessionId;
+                context.settle();
+            }
+            return true;
+        },
+        onMatchInitialize: ({ state }) => resetIdleMatchState(state, pulseGoal),
+        onMatchRollback: ({ state }) => resetIdleMatchState(state, pulseGoal),
+        onStep: () => undefined,
+        onPlayerLeaving: ({ state, client, duringMatch }) => {
+            if (!duringMatch) return;
+            state.winnerId = "";
+            state.players.forEach((_player, sessionId) => {
+                if (sessionId !== client.sessionId) state.winnerId = sessionId;
+            });
+        },
+        shouldSettle: ({ state }) => state.players.size <= 1,
     };
 }
 
 /** Module-owned registration; generic GameRoom and transport code stay unchanged. */
 export function registerIdleGameMode(
-    registry: GameModeRegistry<GameRoomState> = gameModeRegistry,
+    registry: GameModeRegistry = gameModeRegistry,
 ): () => void {
-    return registry.register(IDLE_GAME_MODE_ID, createIdleGameMode);
+    return registry.register<IdleRoomState, IdlePlayerState>(IDLE_GAME_MODE_ID, createIdleGameMode);
 }

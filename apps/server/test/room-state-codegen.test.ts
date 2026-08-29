@@ -6,6 +6,18 @@ import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import ts from "typescript";
 import {
+  ROOM_STATE_VALIDATORS,
+  validateRoomStateForMode,
+  type IGameRoomState,
+  type IIdleRoomState,
+} from "@game/shared";
+import {
+  createRoomStateForMode,
+  GameRoomState,
+  IdleRoomState,
+  ROOM_STATE_ROOT_CONSTRUCTORS,
+} from "../src/rooms/schema/GameRoomState";
+import {
   assertRoomStateArtifactsFresh,
   parseRoomStateDescriptor,
   readRoomStateDescriptor,
@@ -26,9 +38,14 @@ type MutableType = {
   fields: MutableField[];
   serverOnly: MutableField[];
 };
+type MutableRoot = {
+  mode: string;
+  type: string;
+  [key: string]: unknown;
+};
 type MutableManifest = {
   formatVersion: number;
-  root: string;
+  roots: MutableRoot[];
   types: MutableType[];
   [key: string]: unknown;
 };
@@ -210,6 +227,67 @@ test("manifest rejects unknown shapes, invalid field types, duplicates and inval
   }, /min must not exceed max/);
 });
 
+test("formatVersion 2 requires exact, unique and resolvable mode roots", () => {
+  assertManifestError((manifest) => { manifest.formatVersion = 1; }, /only formatVersion 2 is supported/);
+  assertManifestError((manifest) => { manifest.root = "GameRoomState"; }, /manifest: unknown key\(s\): root/);
+  assertManifestError((manifest) => { manifest.roots = []; }, /manifest\.roots: must be a non-empty array/);
+  assertManifestError((manifest) => { manifest.roots[0].legacy = true; }, /roots\[0\]: unknown key\(s\): legacy/);
+  assertManifestError((manifest) => { manifest.roots[0].mode = "bad mode"; }, /invalid gameplay mode id: bad mode/);
+  assertManifestError((manifest) => {
+    manifest.roots[1].mode = manifest.roots[0].mode;
+  }, /duplicate root mode: ballMove/);
+  assertManifestError((manifest) => {
+    manifest.roots[1].type = manifest.roots[0].type;
+  }, /ambiguous root type: GameRoomState/);
+  assertManifestError((manifest) => {
+    manifest.roots[1].type = "MissingRoomState";
+  }, /roots\[1\]\.type: missing root type: MissingRoomState/);
+
+  const descriptor = parseRoomStateDescriptor(manifestFixture());
+  assert.deepEqual(descriptor.roots, [
+    { mode: "ballMove", type: "GameRoomState" },
+    { mode: "idle", type: "IdleRoomState" },
+  ]);
+});
+
+test("roots directly drive shared validators and server constructors", () => {
+  const manifest = manifestFixture();
+  manifest.roots[1].mode = "idle-v2";
+  const artifacts = renderRoomStateArtifacts(parseRoomStateDescriptor(manifest));
+
+  assert.match(artifacts.shared, /"idle-v2": IIdleRoomState;/);
+  assert.match(artifacts.shared, /"idle-v2": validateIdleRoomState,/);
+  assert.doesNotMatch(artifacts.shared, /"idle": IIdleRoomState;/);
+  assert.doesNotMatch(artifacts.shared, /"idle": validateIdleRoomState,/);
+  assert.match(artifacts.server, /"idle-v2": IdleRoomState,/);
+  assert.doesNotMatch(artifacts.server, /"idle": IdleRoomState,/);
+});
+
+test("generated root maps are frozen, type-safe and reject unknown modes", () => {
+  assert.deepEqual(Object.keys(ROOM_STATE_VALIDATORS), ["ballMove", "idle"]);
+  assert.deepEqual(Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS), ["ballMove", "idle"]);
+  assert.equal(Object.isFrozen(ROOM_STATE_VALIDATORS), true);
+  assert.equal(Object.isFrozen(ROOM_STATE_ROOT_CONSTRUCTORS), true);
+
+  const ballMove: GameRoomState = createRoomStateForMode("ballMove");
+  const idle: IdleRoomState = createRoomStateForMode("idle");
+  assert.ok(ballMove instanceof GameRoomState);
+  assert.ok(idle instanceof IdleRoomState);
+  const parsedBallMove: IGameRoomState = validateRoomStateForMode("ballMove", ballMove);
+  const parsedIdle: IIdleRoomState = validateRoomStateForMode("idle", idle);
+  assert.equal(parsedBallMove.phase, ballMove.phase);
+  assert.equal(parsedIdle.pulseGoal, 3);
+
+  assert.throws(
+    () => createRoomStateForMode("missing-mode"),
+    /unsupported gameplay mode: missing-mode/,
+  );
+  assert.throws(
+    () => validateRoomStateForMode("missing-mode", {}),
+    /STATE_MODE/,
+  );
+});
+
 test("manifest rejects broken map and cross-field references", () => {
   assertManifestError((manifest) => {
     manifestField(manifestType(manifest, "GameRoomState"), "players").valueType = "MissingPlayerState";
@@ -260,4 +338,14 @@ test("generated validator keys exactly equal runtime decorated keys and exclude 
       assert.doesNotMatch(artifacts.shared, new RegExp(`\\b${internal.name}\\b`, "u"));
     }
   }
+});
+
+test("map entry helpers are unique per owner type when roots share a field name", () => {
+  const descriptor = readRoomStateDescriptor({ repositoryRoot: REPOSITORY_ROOT });
+  const { shared } = renderRoomStateArtifacts(descriptor);
+  assert.match(shared, /function entriesOfGameRoomStatePlayers\(/);
+  assert.match(shared, /function entriesOfIdleRoomStatePlayers\(/);
+  assert.doesNotMatch(shared, /function entriesOfPlayers\(/);
+  assert.match(shared, /const entries = entriesOfGameRoomStatePlayers\(value\.players/);
+  assert.match(shared, /const entries = entriesOfIdleRoomStatePlayers\(value\.players/);
 });

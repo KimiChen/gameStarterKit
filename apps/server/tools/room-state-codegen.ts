@@ -82,9 +82,14 @@ export type StateTypeDescriptor = {
   readonly serverOnly: readonly ServerOnlyField[];
 };
 
+export type RoomStateRootDescriptor = {
+  readonly mode: string;
+  readonly type: string;
+};
+
 export type RoomStateDescriptor = {
-  readonly formatVersion: 1;
-  readonly root: string;
+  readonly formatVersion: 2;
+  readonly roots: readonly RoomStateRootDescriptor[];
   readonly types: readonly StateTypeDescriptor[];
 };
 
@@ -134,6 +139,14 @@ function stringValue(value: unknown, pathLabel: string): string {
 function identifier(value: unknown, pathLabel: string): string {
   const result = stringValue(value, pathLabel);
   if (!IDENTIFIER.test(result)) fail(pathLabel, `invalid TypeScript identifier: ${result}`);
+  return result;
+}
+
+function modeId(value: unknown, pathLabel: string): string {
+  const result = stringValue(value, pathLabel);
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/u.test(result)) {
+    fail(pathLabel, `invalid gameplay mode id: ${result}`);
+  }
   return result;
 }
 
@@ -415,9 +428,20 @@ function validateReferences(descriptor: RoomStateDescriptor): void {
 
 export function parseRoomStateDescriptor(input: unknown): RoomStateDescriptor {
   const value = record(input, "manifest");
-  exactKeys(value, ["formatVersion", "root", "types"], [], "manifest");
-  if (value.formatVersion !== 1) fail("manifest.formatVersion", "only formatVersion 1 is supported");
+  exactKeys(value, ["formatVersion", "roots", "types"], [], "manifest");
+  if (value.formatVersion !== 2) fail("manifest.formatVersion", "only formatVersion 2 is supported");
+  if (!Array.isArray(value.roots) || value.roots.length === 0) {
+    fail("manifest.roots", "must be a non-empty array");
+  }
   if (!Array.isArray(value.types) || value.types.length === 0) fail("manifest.types", "must be a non-empty array");
+  const roots = value.roots.map((inputRoot, index): RoomStateRootDescriptor => {
+    const root = record(inputRoot, `manifest.roots[${index}]`);
+    exactKeys(root, ["mode", "type"], [], `manifest.roots[${index}]`);
+    return {
+      mode: modeId(root.mode, `manifest.roots[${index}].mode`),
+      type: identifier(root.type, `manifest.roots[${index}].type`),
+    };
+  });
   const types = value.types.map((type, index) => parseStateType(type, `manifest.types[${index}]`));
   const names = new Set<string>();
   const sharedNames = new Set<string>();
@@ -433,9 +457,16 @@ export function parseRoomStateDescriptor(input: unknown): RoomStateDescriptor {
     validators.add(type.validatorName);
     paths.add(type.defaultPath);
   }
-  const root = identifier(value.root, "manifest.root");
-  if (!names.has(root)) fail("manifest.root", `missing root type: ${root}`);
-  const descriptor: RoomStateDescriptor = { formatVersion: 1, root, types };
+  const rootModes = new Set<string>();
+  const rootTypes = new Set<string>();
+  for (const [index, root] of roots.entries()) {
+    if (rootModes.has(root.mode)) fail("manifest.roots", `duplicate root mode: ${root.mode}`);
+    if (rootTypes.has(root.type)) fail("manifest.roots", `ambiguous root type: ${root.type}`);
+    if (!names.has(root.type)) fail(`manifest.roots[${index}].type`, `missing root type: ${root.type}`);
+    rootModes.add(root.mode);
+    rootTypes.add(root.type);
+  }
+  const descriptor: RoomStateDescriptor = { formatVersion: 2, roots, types };
   validateReferences(descriptor);
   return descriptor;
 }
@@ -505,8 +536,12 @@ function pascalCase(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-function renderEntriesHelper(field: MapField): string[] {
-  const functionName = `entriesOf${pascalCase(field.name)}`;
+function entriesHelperName(owner: StateTypeDescriptor, field: MapField): string {
+  return `entriesOf${owner.name}${pascalCase(field.name)}`;
+}
+
+function renderEntriesHelper(owner: StateTypeDescriptor, field: MapField): string[] {
+  const functionName = entriesHelperName(owner, field);
   return [
     `function ${functionName}(input: unknown, path: string): Array<[string, unknown]> {`,
     "    if (input instanceof Map) {",
@@ -570,7 +605,7 @@ function renderValidator(
   descriptor: RoomStateDescriptor,
   byName: ReadonlyMap<string, StateTypeDescriptor>,
 ): string[] {
-  const root = type.name === descriptor.root;
+  const root = descriptor.roots.some((candidate) => candidate.type === type.name);
   const signature = root
     ? `export function ${type.validatorName}(input: unknown): ${type.sharedName} {`
     : `export function ${type.validatorName}(input: unknown, path = ${JSON.stringify(type.defaultPath)}): ${type.sharedName} {`;
@@ -608,7 +643,7 @@ function renderValidator(
       const keyField = target.fields.find((candidate): candidate is StringField =>
         candidate.name === field.key.field && candidate.kind === "string");
       if (!keyField) fail(`${type.name}.${field.name}`, `invalid map key field ${field.key.field}`);
-      const entriesName = `entriesOf${pascalCase(field.name)}`;
+      const entriesName = entriesHelperName(type, field);
       lines.push(
         `        const entries = ${entriesName}(value.${field.name}, path + ${JSON.stringify(`.${field.name}`)});`,
         `        if (entries.length > ${field.maxSizeConstant}) throw new WireValidationError(${JSON.stringify(field.errorCode)}, path + ${JSON.stringify(`.${field.name}`)});`,
@@ -635,6 +670,11 @@ function renderValidator(
 function renderShared(descriptor: RoomStateDescriptor, sourceLabel: string): string {
   const types = topologicalTypes(descriptor);
   const byName = new Map(types.map((type) => [type.name, type]));
+  const roots = descriptor.roots.map((root) => {
+    const rootType = byName.get(root.type);
+    if (!rootType) fail(`roots.${root.mode}`, `missing root type while rendering: ${root.type}`);
+    return { ...root, descriptor: rootType };
+  });
   const sharedValues = new Set<string>();
   const sharedTypes = new Set<string>();
   for (const type of types) {
@@ -666,14 +706,32 @@ function renderShared(descriptor: RoomStateDescriptor, sourceLabel: string): str
     }
     lines.push("}", "");
   }
+  lines.push("export interface RoomStateByMode {");
+  for (const root of roots) lines.push(`    ${JSON.stringify(root.mode)}: ${root.descriptor.sharedName};`);
   lines.push(
+    "}",
+    "",
+    "export type RoomStateMode = keyof RoomStateByMode;",
+    "export type RoomState = RoomStateByMode[RoomStateMode];",
+    "export type RoomStateValidator<M extends RoomStateMode> = (input: unknown) => RoomStateByMode[M];",
+    "",
+  );
+  lines.push(
+    "function hasReflectedSchemaMarkers(input: object): boolean {",
+    "    const changes = Object.getOwnPropertyDescriptor(input, \"~changes\");",
+    "    const refId = Object.getOwnPropertyDescriptor(input, \"~refId\");",
+    "    // The server Schema runtime exposes ~refId as enumerable while client",
+    "    // reflection does not. Both own it and lock ~changes as non-enumerable.",
+    "    return changes !== undefined && changes.enumerable === false",
+    "        && changes.configurable === false && refId !== undefined;",
+    "}",
+    "",
     "function stateRecord(input: unknown, path: string): PlainRecord {",
-    "    if (isPlainRecord(input)) return input;",
-    "    // Accept only a real @colyseus/schema projection without importing that runtime into shared.",
+    "    // Reflection-generated client roots may inherit directly from Object. Check",
+    "    // the runtime-owned Schema markers before the plain-record path.",
     "    if (typeof input === \"object\" && input !== null) {",
     "        try {",
-    "            if (Object.prototype.hasOwnProperty.call(input, \"~changes\")",
-    "                && Object.prototype.hasOwnProperty.call(input, \"~refId\")) {",
+    "            if (hasReflectedSchemaMarkers(input)) {",
     "                const serializer = (input as { toJSON?: unknown }).toJSON;",
     "                if (typeof serializer === \"function\") {",
     "                    const projected = serializer.call(input);",
@@ -684,13 +742,33 @@ function renderShared(descriptor: RoomStateDescriptor, sourceLabel: string): str
     "            throw new WireValidationError(\"WIRE_DATA_CORRUPT\", path);",
     "        }",
     "    }",
+    "    if (isPlainRecord(input)) return input;",
     "    throw new WireValidationError(\"STATE_OBJECT\", path);",
     "}",
     "",
   );
-  const mapFields = types.flatMap((type) => type.fields.filter((field): field is MapField => field.kind === "map"));
-  for (const field of mapFields) lines.push(...renderEntriesHelper(field), "");
+  for (const type of types) {
+    for (const field of type.fields) {
+      if (field.kind === "map") lines.push(...renderEntriesHelper(type, field), "");
+    }
+  }
   for (const type of types) lines.push(...renderValidator(type, descriptor, byName), "");
+  lines.push("export const ROOM_STATE_VALIDATORS = Object.freeze({");
+  for (const root of roots) {
+    lines.push(`    ${JSON.stringify(root.mode)}: ${root.descriptor.validatorName},`);
+  }
+  lines.push(
+    "} as const satisfies { readonly [M in RoomStateMode]: RoomStateValidator<M> });",
+    "",
+    "export function validateRoomStateForMode<M extends RoomStateMode>(mode: M, input: unknown): RoomStateByMode[M];",
+    "export function validateRoomStateForMode(mode: string, input: unknown): RoomState;",
+    "export function validateRoomStateForMode(mode: string, input: unknown): RoomState {",
+    "    const validator = (ROOM_STATE_VALIDATORS as Readonly<Partial<Record<string, (value: unknown) => RoomState>>>)[mode];",
+    "    if (!validator) throw new WireValidationError(\"STATE_MODE\", \"mode\");",
+    "    return validator(input);",
+    "}",
+    "",
+  );
   return `${lines.join("\n").trimEnd()}\n`;
 }
 
@@ -711,8 +789,14 @@ function renderServerOnlyField(field: ServerOnlyField): string {
 
 function renderServer(descriptor: RoomStateDescriptor, sourceLabel: string): string {
   const types = topologicalTypes(descriptor);
+  const byName = new Map(types.map((type) => [type.name, type]));
+  const roots = descriptor.roots.map((root) => {
+    const rootType = byName.get(root.type);
+    if (!rootType) fail(`roots.${root.mode}`, `missing root type while rendering: ${root.type}`);
+    return { ...root, descriptor: rootType };
+  });
   const serverValues = new Set<string>();
-  const serverTypes = new Set<string>();
+  const serverTypes = new Set<string>(["RoomStateMode"]);
   for (const type of types) {
     for (const field of type.fields) {
       if (field.kind === "enum") {
@@ -748,6 +832,24 @@ function renderServer(descriptor: RoomStateDescriptor, sourceLabel: string): str
     }
     lines.push("}", "");
   }
+  lines.push("export const ROOM_STATE_ROOT_CONSTRUCTORS = Object.freeze({");
+  for (const root of roots) lines.push(`    ${JSON.stringify(root.mode)}: ${root.descriptor.name},`);
+  lines.push(
+    "} as const satisfies Record<RoomStateMode, new () => Schema>);",
+    "",
+    "export type RoomStateRootForMode<M extends RoomStateMode> = InstanceType<(typeof ROOM_STATE_ROOT_CONSTRUCTORS)[M]>;",
+    "export type RoomStateRoot = RoomStateRootForMode<RoomStateMode>;",
+    "type RoomStateRootConstructor = (typeof ROOM_STATE_ROOT_CONSTRUCTORS)[RoomStateMode];",
+    "",
+    "export function createRoomStateForMode<M extends RoomStateMode>(mode: M): RoomStateRootForMode<M>;",
+    "export function createRoomStateForMode(mode: string): RoomStateRoot;",
+    "export function createRoomStateForMode(mode: string): RoomStateRoot {",
+    "    const Root = (ROOM_STATE_ROOT_CONSTRUCTORS as Readonly<Partial<Record<string, RoomStateRootConstructor>>>)[mode];",
+    "    if (!Root) throw new TypeError(`[room-state] unsupported gameplay mode: ${mode}`);",
+    "    return new Root();",
+    "}",
+    "",
+  );
   return `${lines.join("\n").trimEnd()}\n`;
 }
 

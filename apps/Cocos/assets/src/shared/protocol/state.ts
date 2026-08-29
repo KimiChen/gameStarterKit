@@ -28,13 +28,53 @@ export interface IGameRoomState {
     players: Map<string, IPlayerState>;
 }
 
+export interface IIdlePlayerState {
+    /** Colyseus sessionId */
+    id: string;
+    name: string;
+    /** Accepted idle pulse count */
+    pulses: number;
+}
+
+export interface IIdleRoomState {
+    /** Logical frame number */
+    tick: number;
+    /** Room phase */
+    phase: GamePhaseType;
+    /** Stable match id; empty while waiting */
+    matchId: string;
+    /** Pulses required to win */
+    pulseGoal: number;
+    /** Winning sessionId; empty before settlement */
+    winnerId: string;
+    /** Idle players keyed by sessionId */
+    players: Map<string, IIdlePlayerState>;
+}
+
+export interface RoomStateByMode {
+    "ballMove": IGameRoomState;
+    "idle": IIdleRoomState;
+}
+
+export type RoomStateMode = keyof RoomStateByMode;
+export type RoomState = RoomStateByMode[RoomStateMode];
+export type RoomStateValidator<M extends RoomStateMode> = (input: unknown) => RoomStateByMode[M];
+
+function hasReflectedSchemaMarkers(input: object): boolean {
+    const changes = Object.getOwnPropertyDescriptor(input, "~changes");
+    const refId = Object.getOwnPropertyDescriptor(input, "~refId");
+    // The server Schema runtime exposes ~refId as enumerable while client
+    // reflection does not. Both own it and lock ~changes as non-enumerable.
+    return changes !== undefined && changes.enumerable === false
+        && changes.configurable === false && refId !== undefined;
+}
+
 function stateRecord(input: unknown, path: string): PlainRecord {
-    if (isPlainRecord(input)) return input;
-    // Accept only a real @colyseus/schema projection without importing that runtime into shared.
+    // Reflection-generated client roots may inherit directly from Object. Check
+    // the runtime-owned Schema markers before the plain-record path.
     if (typeof input === "object" && input !== null) {
         try {
-            if (Object.prototype.hasOwnProperty.call(input, "~changes")
-                && Object.prototype.hasOwnProperty.call(input, "~refId")) {
+            if (hasReflectedSchemaMarkers(input)) {
                 const serializer = (input as { toJSON?: unknown }).toJSON;
                 if (typeof serializer === "function") {
                     const projected = serializer.call(input);
@@ -45,10 +85,52 @@ function stateRecord(input: unknown, path: string): PlainRecord {
             throw new WireValidationError("WIRE_DATA_CORRUPT", path);
         }
     }
+    if (isPlainRecord(input)) return input;
     throw new WireValidationError("STATE_OBJECT", path);
 }
 
-function entriesOfPlayers(input: unknown, path: string): Array<[string, unknown]> {
+function entriesOfGameRoomStatePlayers(input: unknown, path: string): Array<[string, unknown]> {
+    if (input instanceof Map) {
+        const entries: Array<[string, unknown]> = [];
+        for (const [key, value] of input.entries()) {
+            if (entries.length >= MAX_PLAYERS) throw new WireValidationError("STATE_PLAYERS", path);
+            entries.push([key, value]);
+        }
+        return entries;
+    }
+    if (typeof input === "object" && input !== null) {
+        const entriesMethod = (input as { entries?: unknown }).entries;
+        if (typeof entriesMethod === "function") {
+            try {
+                const iterable = (entriesMethod as () => Iterable<unknown>).call(input);
+                const iterator = iterable[Symbol.iterator]();
+                const entries: Array<[string, unknown]> = [];
+                for (;;) {
+                    const step = iterator.next();
+                    if (step.done) break;
+                    const pair = step.value;
+                    if (!Array.isArray(pair) || pair.length !== 2) {
+                        throw new WireValidationError("STATE_PLAYERS", path);
+                    }
+                    if (entries.length >= MAX_PLAYERS) throw new WireValidationError("STATE_PLAYERS", path);
+                    entries.push([pair[0] as string, pair[1]]);
+                }
+                return entries;
+            } catch (error) {
+                if (error instanceof WireValidationError) throw error;
+                throw new WireValidationError("STATE_PLAYERS", path);
+            }
+        }
+    }
+    if (isPlainRecord(input)) {
+        const keys = Object.keys(input);
+        if (keys.length > MAX_PLAYERS) throw new WireValidationError("STATE_PLAYERS", path);
+        return keys.map((key) => [key, input[key]]);
+    }
+    throw new WireValidationError("STATE_PLAYERS", path);
+}
+
+function entriesOfIdleRoomStatePlayers(input: unknown, path: string): Array<[string, unknown]> {
     if (input instanceof Map) {
         const entries: Array<[string, unknown]> = [];
         for (const [key, value] of input.entries()) {
@@ -124,7 +206,7 @@ export function validateGameRoomState(input: unknown): IGameRoomState {
             throw new WireValidationError("STATE_PHASE", path + ".phase");
         }
         const matchId = boundedString(value.matchId, path + ".matchId", 0, 128);
-        const entries = entriesOfPlayers(value.players, path + ".players");
+        const entries = entriesOfGameRoomStatePlayers(value.players, path + ".players");
         if (entries.length > MAX_PLAYERS) throw new WireValidationError("STATE_PLAYERS", path + ".players");
         const players = new Map<string, IPlayerState>();
         for (const [entryKey, entryValue] of entries) {
@@ -144,4 +226,69 @@ export function validateGameRoomState(input: unknown): IGameRoomState {
             players,
         };
     });
+}
+
+export function validateIdlePlayerState(input: unknown, path = "idlePlayer"): IIdlePlayerState {
+    return guardWire(path, () => {
+        const value = stateRecord(input, path);
+        assertExactKeys(value, ["id","name","pulses"], [], path);
+        const id = boundedString(value.id, path + ".id", 1, 64);
+        const name = boundedString(value.name, path + ".name", 1, 128);
+        const pulses = finiteInteger(value.pulses, path + ".pulses", 0, Number.MAX_SAFE_INTEGER);
+        return {
+            id,
+            name,
+            pulses,
+        };
+    });
+}
+
+export function validateIdleRoomState(input: unknown): IIdleRoomState {
+    const path = "idleState";
+    return guardWire(path, () => {
+        const value = stateRecord(input, path);
+        assertExactKeys(value, ["tick","phase","matchId","pulseGoal","winnerId","players"], [], path);
+        const tick = finiteInteger(value.tick, path + ".tick", 0);
+        const phase = value.phase;
+        if (phase !== GamePhase.Waiting && phase !== GamePhase.Playing && phase !== GamePhase.Settle) {
+            throw new WireValidationError("STATE_PHASE", path + ".phase");
+        }
+        const matchId = boundedString(value.matchId, path + ".matchId", 0, 128);
+        const pulseGoal = finiteInteger(value.pulseGoal, path + ".pulseGoal", 1, Number.MAX_SAFE_INTEGER);
+        const winnerId = boundedString(value.winnerId, path + ".winnerId", 0, 128);
+        const entries = entriesOfIdleRoomStatePlayers(value.players, path + ".players");
+        if (entries.length > MAX_PLAYERS) throw new WireValidationError("STATE_PLAYERS", path + ".players");
+        const players = new Map<string, IIdlePlayerState>();
+        for (const [entryKey, entryValue] of entries) {
+            if (typeof entryKey !== "string" || entryKey.length < 1 || entryKey.length > 64 || players.has(entryKey)) {
+                throw new WireValidationError("STATE_PLAYER_ID", path + ".players");
+            }
+            const parsed = validateIdlePlayerState(entryValue, path + ".players." + entryKey);
+            if (parsed.id !== entryKey) {
+                throw new WireValidationError("STATE_PLAYER_ID", path + ".players." + entryKey + ".id");
+            }
+            players.set(entryKey, parsed);
+        }
+        return {
+            tick,
+            phase,
+            matchId,
+            pulseGoal,
+            winnerId,
+            players,
+        };
+    });
+}
+
+export const ROOM_STATE_VALIDATORS = Object.freeze({
+    "ballMove": validateGameRoomState,
+    "idle": validateIdleRoomState,
+} as const satisfies { readonly [M in RoomStateMode]: RoomStateValidator<M> });
+
+export function validateRoomStateForMode<M extends RoomStateMode>(mode: M, input: unknown): RoomStateByMode[M];
+export function validateRoomStateForMode(mode: string, input: unknown): RoomState;
+export function validateRoomStateForMode(mode: string, input: unknown): RoomState {
+    const validator = (ROOM_STATE_VALIDATORS as Readonly<Partial<Record<string, (value: unknown) => RoomState>>>)[mode];
+    if (!validator) throw new WireValidationError("STATE_MODE", "mode");
+    return validator(input);
 }

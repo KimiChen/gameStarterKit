@@ -1,6 +1,15 @@
 {
-  "formatVersion": 1,
-  "root": "GameRoomState",
+  "formatVersion": 2,
+  "roots": [
+    {
+      "mode": "ballMove",
+      "type": "GameRoomState"
+    },
+    {
+      "mode": "idle",
+      "type": "IdleRoomState"
+    }
+  ],
   "types": [
     {
       "name": "PlayerState",
@@ -129,6 +138,100 @@
             "errorCode": "STATE_PLAYER_ID"
           },
           "description": "Players keyed by sessionId"
+        }
+      ],
+      "serverOnly": []
+    },
+    {
+      "name": "IdlePlayerState",
+      "sharedName": "IIdlePlayerState",
+      "validatorName": "validateIdlePlayerState",
+      "defaultPath": "idlePlayer",
+      "fields": [
+        {
+          "name": "id",
+          "kind": "string",
+          "default": "",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Colyseus sessionId"
+        },
+        {
+          "name": "name",
+          "kind": "string",
+          "default": "",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        {
+          "name": "pulses",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "max": "MAX_SAFE_INTEGER",
+          "description": "Accepted idle pulse count"
+        }
+      ],
+      "serverOnly": []
+    },
+    {
+      "name": "IdleRoomState",
+      "sharedName": "IIdleRoomState",
+      "validatorName": "validateIdleRoomState",
+      "defaultPath": "idleState",
+      "fields": [
+        {
+          "name": "tick",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "description": "Logical frame number"
+        },
+        {
+          "name": "phase",
+          "kind": "enum",
+          "enumObject": "GamePhase",
+          "enumType": "GamePhaseType",
+          "members": ["Waiting", "Playing", "Settle"],
+          "default": "Waiting",
+          "errorCode": "STATE_PHASE",
+          "description": "Room phase"
+        },
+        {
+          "name": "matchId",
+          "kind": "string",
+          "default": "",
+          "minLength": 0,
+          "maxLength": 128,
+          "description": "Stable match id; empty while waiting"
+        },
+        {
+          "name": "pulseGoal",
+          "kind": "integer",
+          "default": 3,
+          "min": 1,
+          "max": "MAX_SAFE_INTEGER",
+          "description": "Pulses required to win"
+        },
+        {
+          "name": "winnerId",
+          "kind": "string",
+          "default": "",
+          "minLength": 0,
+          "maxLength": 128,
+          "description": "Winning sessionId; empty before settlement"
+        },
+        {
+          "name": "players",
+          "kind": "map",
+          "valueType": "IdlePlayerState",
+          "maxSizeConstant": "MAX_PLAYERS",
+          "errorCode": "STATE_PLAYERS",
+          "key": {
+            "field": "id",
+            "errorCode": "STATE_PLAYER_ID"
+          },
+          "description": "Idle players keyed by sessionId"
         }
       ],
       "serverOnly": []

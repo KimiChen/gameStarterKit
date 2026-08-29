@@ -90,8 +90,9 @@ apps/Cocos/
 
 玩法通过 `logic/gameplay/GameplayRegistry` 登记 factory 与该玩法自己的 room joiner，
 `RoomController.startRegistered` 取得同一 registration 的快照后接管精确 room capability。默认组合点是
-`gameplay/catalog.ts`：`ballMove` 带 Cocos presentation，`idle` 是无 presentation 的最小真实
-transport/lifecycle 证明。新增玩法应扩展自己的 logic、room adapter 和 catalog 登记，不修改通用
+`gameplay/catalog.ts`：`ballMove` 带 Cocos presentation，`idle` 是无 presentation、但拥有独立 state 与
+pulse 输入的最小真实玩法。每个登记项注入自己的 raw state exact validator、允许发送的消息集合和
+可选 reconnect reconcile；新增玩法扩展自己的 logic、room adapter 和 catalog 登记，不修改通用
 `RoomClient`、`RoomController` 或 `Main` 的启动流程。
 
 ### View
@@ -227,9 +228,10 @@ apps/art/fairygui 中修改设计源
 
 ## 7. 网络层
 
-GameRoom 的通用 join/leave ownership 位于 `net/rooms/GameRoomTransport.ts`；`BallMoveRoom.ts`、
-`IdleRoom.ts` 只把一个已捕获的物理 room 适配成各玩法能力。`Main.gameplayId` 选择 catalog 中的玩法，
-adapter 必须把对应 `mode` 传给 Game join，不能依赖服务端默认值。
+GameRoom 的通用 join/leave ownership 与 mode adapter 契约位于 `net/rooms/GameRoomTransport.ts`；
+`BallMoveRoom.ts`、`IdleRoom.ts` 只把一个已捕获的物理 room 适配成各玩法能力。`Main.gameplayId` 选择 catalog
+中的玩法，adapter 必须把对应 `mode`、生成的 state 类型/validator 和允许的 C2S 集合传给 Game join，不能
+依赖服务端默认值。ballMove adapter 独占 Move reconcile；idle 没有该 hook，join/reconnect 都不会构造 Move。
 
 ### RoomClient
 
@@ -237,8 +239,11 @@ adapter 必须把对应 `mode` 传给 Game join，不能依赖服务端默认值
 
 - join 与连接复用。
 - ownership/generation 守卫。
-- 输入发送。
-- Schema 状态监听。
+- 只通过不含原始 SDK room/send 的 typed facade 暴露玩法能力。
+- 按 adapter allowlist 校验并发送输入；首个真实 `ROOM_STATE` 前和 reconnect 下一帧前 `stateReady` 保持关闭。
+- 经 adapter raw exact validator 守卫的初始 root、异构 Schema state change 与 reconnect 恢复；JOIN handshake
+  产生的默认 root 不作为首帧证据。
+- SDK 离线消息队列固定为 0，并在 drop/reconnect 清空，防止其先于下一份 state 自动 flush。
 - drop/reconnect/leave 事件。
 
 复用判据必须包含 endpoint 和完整 join options；旧连接的迟到事件无权修改新 slot。ballMove gameplay

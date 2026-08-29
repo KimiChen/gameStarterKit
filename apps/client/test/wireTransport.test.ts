@@ -15,6 +15,7 @@ import {
 } from "../src/shared/index";
 import { RpcError, WebSocketClient } from "../src/net/WebSocketClient";
 import { RoomClient } from "../src/net/RoomClient";
+import { createBallMoveRoomAdapter } from "../src/net/rooms/GameRoomTransport";
 import { markFaultPoint } from "./faultMatrix";
 
 type Handler = (...values: unknown[]) => void;
@@ -36,6 +37,7 @@ function makeLobbyRoom() {
       handlers.set(type, callback);
       return () => { if (handlers.get(type) === callback) handlers.delete(type); };
     },
+    onStateChange(callback: () => void) { callback(); return () => {}; },
     onDrop(_callback: () => void) { return () => {}; },
     onReconnect(_callback: () => void) { return () => {}; },
     onLeave(_callback: (code?: number) => void) { return () => {}; },
@@ -125,6 +127,7 @@ function makeGameRoom(state: unknown, onSend?: (type: string, data: unknown) => 
       handlers.set(type, callback);
       return () => { if (handlers.get(type) === callback) handlers.delete(type); };
     },
+    onStateChange(callback: () => void) { callback(); return () => {}; },
     onDrop(_callback: () => void) { return () => {}; },
     onReconnect(_callback: () => void) { return () => {}; },
     onLeave(_callback: (code?: number, reason?: string) => void) { return () => {}; },
@@ -166,8 +169,10 @@ test("RoomClient：C2S/S2C 发送与回调均经过 runtime validator", async ()
   try {
     const client = new RoomClient();
     client.init("http://game.example");
-    const owner = client.joinGame();
-    await owner.ready;
+    const adapter = createBallMoveRoomAdapter();
+    const inputGeneration = adapter.beginInputLease();
+    const owner = client.joinGame(adapter);
+    const room = await owner.ready;
 
     const received: unknown[] = [];
     client.onMessage(fake.room as never, S2C.Pong, (payload) => received.push(payload));
@@ -176,11 +181,11 @@ test("RoomClient：C2S/S2C 发送与回调均经过 runtime validator", async ()
     fake.emit(S2C.Pong, { clientTime: 1, serverTime: 2 });
     assert.deepEqual(received, [{ clientTime: 1, serverTime: 2 }]);
 
-    client.move(2, 0);
+    adapter.move(inputGeneration, room, 2, 0);
     client.castSkill(Number.NaN);
     client.chat("   ");
     assert.equal(fake.sent.length, 0, "越界/NaN/空白 C2S 不得发包");
-    client.move(1, 0);
+    adapter.move(inputGeneration, room, 1, 0);
     client.chat("hello");
     assert.deepEqual(fake.sent.map((item) => item.type), [C2S.Move, C2S.Chat]);
     await owner.leave();
@@ -211,23 +216,25 @@ test("RoomClient：room.send 同步异常不穿透，reconcile 不误记已发�
   try {
     const client = new RoomClient();
     client.init("http://game.example");
-    const owner = client.joinGame();
-    await owner.ready;
+    const adapter = createBallMoveRoomAdapter();
+    const inputGeneration = adapter.beginInputLease();
+    const owner = client.joinGame(adapter);
+    const room = await owner.ready;
 
     assert.doesNotThrow(() => {
-      client.move(1, 0);
+      adapter.move(inputGeneration, room, 1, 0);
       client.ping();
       client.castSkill(1);
       client.chat("hello");
     }, "fire-and-forget C2S API 不得把 adapter 的同步异常抛给调用方");
-    assert.deepEqual(client.desiredMove, { dirX: 1, dirY: 0, seq: 1 });
+    assert.deepEqual(adapter.desiredMove, { dirX: 1, dirY: 0, seq: 1 });
     assert.equal(fake.sent.length, 0, "同步失败的 send 不得记为已发包");
     assert.equal(warnings.length, 4);
     assert.ok(warnings.every((args) => !String(args[0]).includes("adapter rejected")),
       "发送失败日志不得回显 adapter/packet 错误内容");
 
     failSend = false;
-    client.reconcileInput();
+    adapter.reconcile?.(room, "reconnected");
     assert.deepEqual(fake.sent, [{ type: C2S.Move, data: { dirX: 1, dirY: 0 } }],
       "send 失败后 lastInputSeq 必须保持未确认，恢复时应重发最新 desired");
     markFaultPoint("transport-reconcile");
@@ -257,17 +264,26 @@ test("RoomClient state$：MapSchema-like entries 可校验，坏快照不触发 
     ? { players: { onAdd(callback: Handler) { addCallback = callback; callback((mapSchema as any).entries().next().value[1], "game-session"); return () => {}; } } }
     : playerCallbacks;
   (globalThis as { Colyseus?: unknown }).Colyseus = {
+    Client: class {
+      constructor(_endpoint: string) {}
+      auth = { token: "" };
+      async joinOrCreate() { return fake.room; }
+    },
     getStateCallbacks: () => callbacks,
   };
   try {
     const client = new RoomClient();
-    const $ = client.state$(fake.room as never);
+    client.init("http://game.example");
+    const owner = client.joinGame(createBallMoveRoomAdapter());
+    const room = await owner.ready;
+    const $ = room.state$();
     let called = 0;
     $(state).players.onAdd(() => { called++; });
     assert.equal(called, 1, "合法 MapSchema-like state 应触发 immediate callback");
     state.tick = Number.NaN;
     addCallback?.({ id: "game-session", name: "A", x: 0, y: 0, hp: 10, maxHp: 10, alive: true }, "game-session");
     assert.equal(called, 1, "坏状态快照后的 deferred callback 必须丢弃");
+    await owner.leave();
   } finally {
     (globalThis as { Colyseus?: unknown }).Colyseus = oldColyseus;
   }
@@ -291,7 +307,7 @@ test("RoomClient：S2C callback 的同步异常与 Promise rejection 都被观�
   try {
     const client = new RoomClient();
     client.init("http://game.example");
-    const owner = client.joinGame();
+    const owner = client.joinGame(createBallMoveRoomAdapter());
     await owner.ready;
     let calls = 0;
     client.onMessage(fake.room as never, S2C.Pong, () => {
@@ -328,18 +344,29 @@ test("RoomClient state$：注册方法/回调异常均不穿透，也不产生 u
       },
     };
   };
-  (globalThis as { Colyseus?: unknown }).Colyseus = { getStateCallbacks: () => callbacks };
+  (globalThis as { Colyseus?: unknown }).Colyseus = {
+    Client: class {
+      constructor(_endpoint: string) {}
+      auth = { token: "" };
+      async joinOrCreate() { return fake.room; }
+    },
+    getStateCallbacks: () => callbacks,
+  };
   const unhandled: unknown[] = [];
   const onUnhandled = (reason: unknown) => unhandled.push(reason);
   process.on("unhandledRejection", onUnhandled);
   try {
     const client = new RoomClient();
-    const guarded = client.state$(fake.room as never);
+    client.init("http://game.example");
+    const owner = client.joinGame(createBallMoveRoomAdapter());
+    const room = await owner.ready;
+    const guarded = room.state$();
     assert.doesNotThrow(() => guarded(state).players.onAdd(() => { throw new Error("ignored"); }));
     assert.doesNotThrow(() => guarded(state).players.onRemove(() => Promise.reject(new Error("async"))));
     assert.doesNotThrow(() => deferredCallback?.(state.players.get("game-session"), "game-session"));
     await flushMicrotasks();
     assert.deepEqual(unhandled, []);
+    await owner.leave();
   } finally {
     process.off("unhandledRejection", onUnhandled);
     (globalThis as { Colyseus?: unknown }).Colyseus = oldColyseus;

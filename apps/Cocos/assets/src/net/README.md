@@ -12,7 +12,12 @@
 注意：RoomClient 与 WebSocketClient 都走 websocket 协议——按「有无状态同步」区分，不按协议区分。
 XHR 底座与 token 在 `core/http.ts`；Lobby 写接口应使用 `rpcIdem`（`clientReqId` 生成一次、重试复用）。
 Lobby join 禁止 `mode`；Game join 必须显式携带 shared canonical `mode`。通用 transport 只持有物理 room
-ownership，各 mode adapter 再暴露自己的消息、状态和输入能力，默认登记集中在 `gameplay/catalog.ts`。
+ownership，并要求 mode adapter 注入生成 state 类型对应的 raw exact validator、C2S allowlist 与可选
+reconcile；通用层在 join、每次 state change 和 reconnect 恢复前验证原始 reflected Schema，不先白名单投影
+洗掉未知 wire 字段。玩法只拿到不含原始 SDK room/send 的 typed facade；首个真实 `ROOM_STATE` 前以及每次
+reconnect 的下一帧前发送闸保持关闭，SDK 自带离线消息队列固定为 0 并清空，不能绕过 validator/allowlist
+自动重放。各 adapter 再暴露自己的消息、状态和输入能力，默认登记集中在 `gameplay/catalog.ts`。ballMove
+独占 Move reconcile，idle 的 join/reconnect 不构造 Move。
 LobbyRoom 对 SDK 可重试的 transport drop 保留 10 秒窗口；WebSocketClient 在窗口内保留 room/ownership/listener，
 拒绝全部新 RPC 而不让 SDK 排队，当前 generation 的 onReconnect 恢复后续 RPC。主动 leave、停服与强踢不进宽限。
 Lobby 最终 `onLeave` 会在 transport 清理后触发客户端对账层：复用当前内存 token，以显式 ownership 重进所选区 Lobby，

@@ -157,7 +157,9 @@ test("gameplay catalog：正向动态 presentation factory 可挂载并在 stop 
         unregister = registerDefaultGameplays(registry, {
             presentationHost: { node: host as never, dispatchInput: (value) => dispatched.push(value) },
             ballMoveJoiner: joiner,
-            idleJoiner: { join: () => ({ ready: Promise.resolve({ kind: "idle" }), async leave() {} }) },
+            idleJoiner: {
+                join: () => ({ ready: Promise.resolve({ kind: "idle", pulse() {} }), async leave() {} }),
+            },
         });
         const controller = new RoomController<any, any>();
         assert.deepEqual(await controller.startRegistered(registry, "ballMove"), {
