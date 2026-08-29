@@ -40,7 +40,7 @@
   `npm --workspace @game/server run typecheck`、服务端单测 215/215、全量集成 106/106 与
   `npm run verify:inventory` 通过。
 - `[不阻塞·待补齐]` 热档 schema 迁移仍待补齐（详见 §4 P1-06）。
-- `[不阻塞·待补齐]` Game HTTP request schema 尚未直接由 shared validator 生成（详见 §4 P1-03）。
+- `[已完成]` Game HTTP request schema 已由 shared validator 同源生成并直接注入（证据见 §4 P1-03）。
 - `[不阻塞·待补齐]` match evidence 不足以重放完整输入序列（**本清单无对应 P 条目，仅此处登记**）。
 - `[已完成]` `PROTOCOL_VERSION` 已提升为 6，版本流水明确登记 `setField` 文本接受域由 UTF-16 码元收紧为
   UTF-8 字节并拒绝不成对代理项。客户端 Lobby/Game join 与服务端两个版本闸均消费同一 shared 常量；旧 v5
@@ -129,10 +129,12 @@
 
 ### P1-03 HTTP contract
 
-- `[不阻塞·待补齐]` Game HTTP request schema 仍由 endpoint options 维护；shared validator 只在本地
-  schema 前后夹持并做接受集合对照，未由 shared 直接生成。
-- `[不阻塞·待补齐]` 新增 endpoint 仍须人工登记 contract map；漂移本身已由 route/shared 接受集合漂移
-  用例与前后夹持的 shared validator 覆盖，残留的是「schema 未由 shared 直接生成」这一来源边界。
+- `[已完成]` `GameHttpContractMap` 在 shared 定义每项 contract 时由 request validator 直接生成
+  Standard Schema；`createGameEndpoint` 给带 body 的路由安装同一 schema 实例，并在类型与运行时都禁止
+  endpoint options 另带本地 body schema。验收证据：HTTP request/response 与 wire 定向测试 22/22，
+  服务端单测 215/215、`npm run typecheck`、`npm run verify:sync` 与协议指纹测试 3/3 通过。
+- `[不阻塞·待补齐]` 新增 endpoint 仍须同时创建文件并在 `http/index.ts` 人工登记；现有 contract/route
+  集合漂移测试只能守住已登记集合，尚未自动发现遗漏的 endpoint 文件。
 - `[不阻塞·有意保留]` WebPlatform consumer map 另登记了仓内未调用的 `Livez`/`Readyz` 两个契约
   （属 consumer 子集而非生成全集，当前无实际暴露面）。
 

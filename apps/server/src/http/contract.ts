@@ -43,25 +43,20 @@ type ResponseLike = {
   readonly statusText: string;
 };
 
-type StandardIssue = {
-  readonly message: string;
-  readonly path?: readonly (PropertyKey | { readonly key: PropertyKey })[];
-};
-
-type StandardResult =
-  | { readonly value: unknown; readonly issues?: undefined }
-  | { readonly issues: readonly StandardIssue[] };
-
-type StandardBodySchema = {
-  readonly "~standard": {
-    readonly version: 1;
-    readonly vendor: string;
-    readonly validate: (value: unknown) => StandardResult | Promise<StandardResult>;
-  };
-};
-
 type GameContractPath<K extends GameHttpContractKey> =
   (typeof GameHttpContractMap)[K]["path"];
+
+type GameContractRequest<K extends GameHttpContractKey> =
+  ReturnType<(typeof GameHttpContractMap)[K]["request"]>;
+
+type GameEndpointOptions = EndpointOptions & { readonly body?: never };
+
+type GameEndpointContext<
+  K extends GameHttpContractKey,
+  O extends GameEndpointOptions,
+> = Omit<EndpointContext<GameContractPath<K>, O>, "body"> & {
+  body: GameContractRequest<K>;
+};
 
 // Only errors created by the current endpoint context may bypass its success
 // response contract. Better-Call's public test is name-based, which lets an
@@ -207,63 +202,6 @@ function normalizeRouterResponse(value: unknown): unknown {
   });
 }
 
-function safeContractErrorMessage(error: unknown): string {
-  try {
-    if (error instanceof Error) {
-      return typeof error.message === "string" ? error.message : String(error.message);
-    }
-    if (error === null || error === undefined) return "";
-    return String(error);
-  } catch {
-    return "";
-  }
-}
-
-function standardIssue(error: unknown): StandardIssue {
-  return { message: safeContractErrorMessage(error) || "request contract violation" };
-}
-
-/**
- * Compose the shared request contract before and after a route-local schema.
- * Better-Call otherwise hands us the local schema's transformed value, which
- * means a `.strip()`/coercion could hide an invalid wire request.
- */
-function composeRequestSchema(
-  key: GameHttpContractKey,
-  local: StandardBodySchema,
-): StandardBodySchema {
-  return {
-    "~standard": {
-      version: 1,
-      vendor: "game-http-contract",
-      validate: async (input: unknown): Promise<StandardResult> => {
-        let sharedInput: unknown;
-        try {
-          sharedInput = validateGameHttpRequest(key, input);
-        } catch (error) {
-          return { issues: [standardIssue(error)] };
-        }
-
-        let localResult: StandardResult;
-        try {
-          localResult = await local["~standard"].validate(sharedInput);
-        } catch (error) {
-          return { issues: [standardIssue(error)] };
-        }
-        if (localResult.issues) return localResult;
-
-        try {
-          // Local schemas may transform valid values. Re-check the actual
-          // handler input so those transforms cannot widen the wire contract.
-          return { value: validateGameHttpRequest(key, localResult.value) };
-        } catch (error) {
-          return { issues: [standardIssue(error)] };
-        }
-      },
-    },
-  };
-}
-
 function assertContractMethod(key: GameHttpContractKey, options: EndpointOptions): void {
   const expected = GameHttpContractMap[key].method;
   const configured = Array.isArray(options.method) ? options.method : [options.method];
@@ -323,21 +261,24 @@ export function validateGameHttpRequest<K extends GameHttpContractKey>(
  */
 export function createGameEndpoint<
   K extends GameHttpContractKey,
-  O extends EndpointOptions,
+  O extends GameEndpointOptions,
 >(
   key: K,
   options: O,
-  handler: (ctx: EndpointContext<GameContractPath<K>, O>) => Promise<unknown> | unknown,
+  handler: (ctx: GameEndpointContext<K, O>) => Promise<unknown> | unknown,
 ): Endpoint {
   const contract = GameHttpContractMap[key];
   assertContractMethod(key, options);
-  // Validate the raw body before Better-Call's route-local parser can strip or
-  // coerce fields. The handler-level check below remains a defense-in-depth
-  // guard for POST endpoints without a local schema.
-  const endpointOptions = options.body
-    ? ({ ...options, body: composeRequestSchema(key, options.body as StandardBodySchema) } as O)
-    : options;
-  return createEndpoint(contract.path, endpointOptions, async (ctx) => {
+  if (Object.prototype.hasOwnProperty.call(options, "body")) {
+    throw new Error(`[http-contract] ${key} body schema 由 shared contract 生成，endpoint options 不得覆盖`);
+  }
+  // Better-Call forbids body schemas on GET/HEAD. Body-bearing methods consume
+  // the exact Standard Schema instance generated beside the shared validator.
+  const endpointOptions = (contract.method === "GET"
+    ? options
+    : { ...options, body: contract.requestSchema }) as EndpointOptions;
+  return createEndpoint(contract.path, endpointOptions, async (rawContext) => {
+    const ctx = rawContext as unknown as GameEndpointContext<K, O>;
     const createError = ctx.error;
     ctx.error = ((...args: Parameters<typeof createError>) => {
       const error = createError(...args);
@@ -363,9 +304,9 @@ export function createGameEndpoint<
       }
       return createJson(...args);
     }) as typeof ctx.json;
-    // Better-Call has already applied the endpoint's Standard Schema here.
-    // Run the shared validator as the final authority before any side effect,
-    // and give the handler its normalized copy rather than the local result.
+    // Better-Call has already applied the shared-derived Standard Schema here.
+    // Keep the final check for direct adapters/middleware and pass only the
+    // shared validator's normalized copy to the handler.
     ctx.body = validateGameHttpRequest(key, ctx.body) as typeof ctx.body;
     return validateGameHttpResponse(key, await handler(ctx));
   });

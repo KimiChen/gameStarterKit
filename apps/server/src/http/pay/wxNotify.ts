@@ -7,7 +7,6 @@
  * 「功能压根没上线」，排障时会往错误方向查。501 放在密钥闸**之前**：能被未鉴权者探到"支付没开"
  * 是无害信息，而把"没上线"说清楚是这个开关的全部目的。
  */
-import { z } from "zod";
 import { type RpcErrCode } from "@game/shared";
 import { PAY_ENABLED } from "../../core/infra/config";
 import { safeSecretEqual } from "../../core/auth/session";
@@ -15,15 +14,6 @@ import { createGameEndpoint } from "../contract";
 
 export default createGameEndpoint("PayWxNotify", {
   method: "POST",
-  body: z.object({
-    orderId: z.string().min(1).max(64),
-    wxTxnId: z.string().min(1).max(64),
-    // Spell out the same finite safe-integer domain as shared's
-    // `finiteInteger(..., 1, Number.MAX_SAFE_INTEGER)` validator.  Zod 4's
-    // `int()` is safe-integer based today, but keeping the bound explicit
-    // prevents a future schema/library change from widening payment values.
-    amountFen: z.number().finite().int().positive().max(Number.MAX_SAFE_INTEGER),
-  }).strict(),
 }, async (ctx) => {
   if (!PAY_ENABLED()) { throw ctx.error(501, { error: "NOT_IMPLEMENTED" }); }
   const secret = process.env.WXPAY_NOTIFY_SECRET ?? "";

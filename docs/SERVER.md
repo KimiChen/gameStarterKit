@@ -227,13 +227,13 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
 | `POST /admin/kick` | 可选强制下线参考 | 见 [EXTRAFEATURES](EXTRAFEATURES.md#32-gm账号管理与强制下线参考) |
 | `POST /pay/wx-notify` | 默认关闭的可选参考 | 见 [EXTRAFEATURES](EXTRAFEATURES.md#34-真实货币支付参考) |
 
-`GameHttpContractMap` 现在登记全部六个游戏服 endpoint；`createGameEndpoint` 从 contract key 派生 path、
-校验 method，并在 handler 返回值序列化前运行 shared response validator。请求 body 仍由 endpoint options 中的
-strict Zod schema 交给 better-call 校验，当前 contract tests 会对关键字段的接受集合做 shared 对照；新增核心
-endpoint 时仍应先补齐 shared request/response/path，再在 `http/index.ts` 登记。
+`GameHttpContractMap` 现在登记全部六个游戏服 endpoint；每个 request validator 在 shared 定义处直接生成
+Standard Schema。`createGameEndpoint` 从 contract key 派生 path、校验 method，给带 body 的路由安装该 schema，
+禁止 endpoint options 另带本地 body schema，并在 handler 返回值序列化前运行 shared response validator。
+新增核心 endpoint 时仍应先补齐 shared request/response/path，再在 `http/index.ts` 登记。
 
-当前 router 对带 body 的样例使用 strict Zod，但没有统一的应用层 body 大小上限。HTTP handler 不得泄漏原始
-异常、SQL 或密钥，也不得绕过 player/core 写路径直接修改权威数据。
+当前 router 没有统一的应用层 body 大小上限。HTTP handler 不得泄漏原始异常、SQL 或密钥，也不得绕过
+player/core 写路径直接修改权威数据。
 外部身份请求只能经 `platform/webPlatformClient.ts`。
 
 ## 7. 玩家档案
@@ -390,11 +390,10 @@ quarantine 不属于自动 `XTRIM` 范围，非空或 key 类型/权限异常时
 - **09·F1–F5 / S1–S2**：freeze/thaw 核对 fence；写路径不绕过在线保护；角色存在性不靠猜；
   reader/migrator/version 与需迁移常量的边界显式化。
 
-当前已确认的主要偏差是：Game HTTP request schema 仍由 endpoint options 维护（shared request validator
-目前通过接受集合测试对照而非直接注入），S1 的热档 reader 不看 schemaVersion。前一条在源码中没有对应
-编号标签，⛔ 不要用 09·X2 / 09·X3 指代。relayer 外部 I/O 事务边界、坏 match entry 隔离、GameRoom C2S、
-Lobby RPC envelope、Public WebPlatform response 和未知路由限流均已有对应守门，不应继续列作当前偏差。
-不要用规则编号掩盖剩余事实。
+当前已确认的主要偏差是 S1 的热档 reader 不看 schemaVersion。Game HTTP request schema 已由 shared
+validator 同源生成并直接注入带 body 的路由；该边界在源码中没有对应编号标签，⛔ 不要用 09·X2 / 09·X3
+指代。relayer 外部 I/O 事务边界、坏 match entry 隔离、GameRoom C2S、Lobby RPC envelope、Public
+WebPlatform response 和未知路由限流均已有对应守门，不应继续列作当前偏差。不要用规则编号掩盖剩余事实。
 
 ## 13. 登记点
 

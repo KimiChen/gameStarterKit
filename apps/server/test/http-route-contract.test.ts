@@ -40,6 +40,12 @@ function sharedAccepts(validator: (value: unknown) => unknown, value: unknown): 
 
 test("HTTP request schemas stay aligned with shared uid/amountFen domains", async () => {
   const admin = gameRouteDefinitions.AdminKick;
+  assert.strictEqual(
+    admin.options.body,
+    GameHttpContractMap.AdminKick.requestSchema,
+    "AdminKick 必须直接安装 shared contract 生成的 request schema",
+  );
+  assert.equal(admin.options.body?.["~standard"].vendor, "@game/shared/http");
   const adminVectors: readonly [string, unknown][] = [
     ["uid min", { uid: "u" }],
     ["uid max shared", { uid: "u".repeat(128) }],
@@ -53,6 +59,12 @@ test("HTTP request schemas stay aligned with shared uid/amountFen domains", asyn
   }
 
   const pay = gameRouteDefinitions.PayWxNotify;
+  assert.strictEqual(
+    pay.options.body,
+    GameHttpContractMap.PayWxNotify.requestSchema,
+    "PayWxNotify 必须直接安装 shared contract 生成的 request schema",
+  );
+  assert.equal(pay.options.body?.["~standard"].vendor, "@game/shared/http");
   const payVectors: readonly [string, unknown][] = [
     ["amount min", { orderId: "o", wxTxnId: "w", amountFen: 1 }],
     ["amount max shared", { orderId: "o", wxTxnId: "w", amountFen: Number.MAX_SAFE_INTEGER }],

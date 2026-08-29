@@ -44,6 +44,49 @@ export type ApiPathType = (typeof ApiPath)[keyof typeof ApiPath];
 /** 零依赖 runtime validator 类型；实现只依赖 ES 标准库，客户端可直接同步使用。 */
 export type RuntimeValidator<T> = (input: unknown) => T;
 
+/**
+ * Standard Schema v1 的最小零依赖结构。Game HTTP router 直接消费它，避免 endpoint
+ * 再维护一份会与 shared 接受域漂移的本地 schema。
+ */
+export interface RuntimeStandardSchema<T> {
+    readonly "~standard": {
+        readonly version: 1;
+        readonly vendor: "@game/shared/http";
+        readonly validate: (value: unknown) => StandardSchemaResult<T>;
+        /** 仅供 Standard Schema 的类型推导，运行时对象不写入该字段。 */
+        readonly types?: { readonly input: unknown; readonly output: T };
+    };
+}
+
+export type StandardSchemaResult<T> =
+    | { readonly value: T; readonly issues?: undefined }
+    | { readonly issues: readonly { readonly message: string }[] };
+
+function standardSchemaIssue(error: unknown): { readonly message: string } {
+    try {
+        if (error instanceof Error && typeof error.message === "string" && error.message !== "") {
+            return { message: error.message };
+        }
+    } catch { /* hostile thrown values use the stable fallback */ }
+    return { message: "request contract violation" };
+}
+
+function runtimeStandardSchema<T>(validator: RuntimeValidator<T>): RuntimeStandardSchema<T> {
+    return {
+        "~standard": {
+            version: 1,
+            vendor: "@game/shared/http",
+            validate(value: unknown): StandardSchemaResult<T> {
+                try {
+                    return { value: validator(value) };
+                } catch (error) {
+                    return { issues: [standardSchemaIssue(error)] };
+                }
+            },
+        },
+    };
+}
+
 /** 跨 HTTP/RPC/S2C 边界共用的可判别校验错误。 */
 export class WireValidationError extends Error {
     readonly code: string;
@@ -636,15 +679,30 @@ export interface HttpContract<TRequest = unknown, TResponse = unknown> {
     readonly response: RuntimeValidator<TResponse>;
 }
 
+type GameHttpContractDefinition = HttpContract & {
+    readonly requestSchema: RuntimeStandardSchema<unknown>;
+};
+
+function defineGameHttpContract<const T extends HttpContract>(
+    contract: T,
+): T & { readonly requestSchema: RuntimeStandardSchema<ReturnType<T["request"]>> } {
+    return {
+        ...contract,
+        requestSchema: runtimeStandardSchema(
+            contract.request as RuntimeValidator<ReturnType<T["request"]>>,
+        ),
+    };
+}
+
 /** 游戏服 HTTP 的唯一运行时契约表。 */
 export const GameHttpContractMap = {
-    Health: { method: "GET", path: ApiPath.Health, auth: "none", request: validateNoBody, response: (input: unknown) => guardWire("response", () => validateHealthResponse(input)) },
-    Version: { method: "GET", path: ApiPath.Version, auth: "none", request: validateNoBody, response: (input: unknown) => guardWire("response", () => validateVersionResponse(input)) },
-    ClockNow: { method: "GET", path: ApiPath.ClockNow, auth: "none", request: validateNoBody, response: (input: unknown) => guardWire("response", () => validateClockResponse(input)) },
-    NoticeList: { method: "GET", path: ApiPath.NoticeList, auth: "none", request: validateNoBody, response: (input: unknown) => guardWire("response", () => validateNoticeListResponse(input)) },
-    AdminKick: { method: "POST", path: ApiPath.AdminKick, auth: "internal", request: (input: unknown) => guardWire("request", () => validateAdminKickRequest(input)), response: (input: unknown) => guardWire("response", () => validateAdminKickResponse(input)) },
-    PayWxNotify: { method: "POST", path: ApiPath.PayWxNotify, auth: "internal", request: (input: unknown) => guardWire("request", () => validatePayWxNotifyRequest(input)), response: (input: unknown) => guardWire("response", () => validatePayWxNotifyResponse(input)) },
-} as const;
+    Health: defineGameHttpContract({ method: "GET", path: ApiPath.Health, auth: "none", request: validateNoBody, response: (input: unknown) => guardWire("response", () => validateHealthResponse(input)) }),
+    Version: defineGameHttpContract({ method: "GET", path: ApiPath.Version, auth: "none", request: validateNoBody, response: (input: unknown) => guardWire("response", () => validateVersionResponse(input)) }),
+    ClockNow: defineGameHttpContract({ method: "GET", path: ApiPath.ClockNow, auth: "none", request: validateNoBody, response: (input: unknown) => guardWire("response", () => validateClockResponse(input)) }),
+    NoticeList: defineGameHttpContract({ method: "GET", path: ApiPath.NoticeList, auth: "none", request: validateNoBody, response: (input: unknown) => guardWire("response", () => validateNoticeListResponse(input)) }),
+    AdminKick: defineGameHttpContract({ method: "POST", path: ApiPath.AdminKick, auth: "internal", request: (input: unknown) => guardWire("request", () => validateAdminKickRequest(input)), response: (input: unknown) => guardWire("response", () => validateAdminKickResponse(input)) }),
+    PayWxNotify: defineGameHttpContract({ method: "POST", path: ApiPath.PayWxNotify, auth: "internal", request: (input: unknown) => guardWire("request", () => validatePayWxNotifyRequest(input)), response: (input: unknown) => guardWire("response", () => validatePayWxNotifyResponse(input)) }),
+} as const satisfies Record<string, GameHttpContractDefinition>;
 
 export type GameHttpContractKey = keyof typeof GameHttpContractMap;
 export type GameHttpContract = (typeof GameHttpContractMap)[GameHttpContractKey];

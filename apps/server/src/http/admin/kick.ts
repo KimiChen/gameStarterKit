@@ -10,7 +10,6 @@
  * 真正危险的是「节点活着在服务玩家、但 GM 够不到它」，故 GM 工具必须重试并对最终失败告警。
  * ⚠ 鉴权走共享密钥头（同 pay/wxNotify 范式）；**未配置 `ADMIN_API_SECRET` 即端点关闭**（fail-closed）。
  */
-import { z } from "zod";
 import { ForceLogoutReason, type ForceLogoutReasonType, type RpcErrCode } from "@game/shared";
 import { ADMIN_API_SECRET } from "../../core/infra/config";
 import { safeSecretEqual } from "../../core/auth/session";
@@ -19,14 +18,6 @@ import { createGameEndpoint } from "../contract";
 
 export default createGameEndpoint("AdminKick", {
   method: "POST",
-  // reason 决定客户端提示文案与关闭码（缺省 banned = GM 封号 SOP 的主用途）
-  body: z.object({
-    // Keep the HTTP boundary aligned with the shared user-id contract.  The
-    // WebPlatform may issue ids up to 128 characters; the previous 32-char
-    // cap rejected otherwise valid accounts before kickUser could see them.
-    uid: z.string().min(1).max(128),
-    reason: z.enum([ForceLogoutReason.Banned, ForceLogoutReason.Revoked]).optional(),
-  }).strict(),
 }, async (ctx) => {
   const secret = ADMIN_API_SECRET();
   if (!safeSecretEqual(ctx.headers?.get?.("x-admin-secret"), secret)) { // 恒时；未配 secret 即拒（fail-closed）

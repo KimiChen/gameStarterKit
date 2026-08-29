@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import vm from "node:vm";
-import { WireValidationError } from "@game/shared";
-import { z } from "zod";
+import { GameHttpContractMap, WireValidationError } from "@game/shared";
 import {
   createGameEndpoint,
   validateGameHttpRequest,
@@ -158,13 +157,11 @@ test("HTTP endpoint executes the shared request contract before its handler", as
   let called = false;
   const endpoint = createGameEndpoint("AdminKick", {
     method: "POST",
-    // Deliberately wider than the contract: the adapter must remain the final
-    // authority even if a future local schema drifts.
-    body: z.object({ uid: z.string() }).passthrough(),
   }, async () => {
     called = true;
     return { kicked: false };
   });
+  assert.strictEqual(endpoint.options.body, GameHttpContractMap.AdminKick.requestSchema);
 
   await assert.rejects(
     () => endpoint({ body: { uid: "u1", extra: true } }),
@@ -175,35 +172,27 @@ test("HTTP endpoint executes the shared request contract before its handler", as
   assert.equal(called, true);
 });
 
-test("HTTP endpoint validates the raw request before local strip/coercion transforms", async () => {
-  let called = false;
-  const stripped = createGameEndpoint("AdminKick", {
-    method: "POST",
-    // A route-local object schema without passthrough would otherwise hide
-    // the extra field before the shared exact-key validator sees it.
-    body: z.object({ uid: z.string() }),
-  }, async () => {
-    called = true;
-    return { kicked: false };
-  });
-
-  await assert.rejects(
-    () => stripped({ body: { uid: "u1", extra: true } }),
-    /WIRE_KEYS at request/,
+test("HTTP endpoint rejects route-local strip/coercion schemas instead of composing a second request source", async () => {
+  const wideningSchema = {
+    "~standard": {
+      version: 1 as const,
+      vendor: "test-widening-schema",
+      validate: () => ({ value: { uid: "rewritten" } }),
+    },
+  };
+  assert.throws(
+    () => createGameEndpoint("AdminKick", {
+      method: "POST",
+      body: wideningSchema,
+    } as never, async () => ({ kicked: false })),
+    /body schema 由 shared contract 生成.*不得覆盖/,
   );
-  assert.equal(called, false);
 
-  const coerced = createGameEndpoint("PayWxNotify", {
-    method: "POST",
-    body: z.object({
-      orderId: z.string(),
-      wxTxnId: z.string(),
-      amountFen: z.coerce.number(),
-    }),
-  }, async () => ({ code: "SUCCESS" }));
+  const endpoint = createGameEndpoint("PayWxNotify", { method: "POST" }, async () => ({ code: "SUCCESS" }));
+  assert.strictEqual(endpoint.options.body, GameHttpContractMap.PayWxNotify.requestSchema);
 
   await assert.rejects(
-    () => coerced({ body: { orderId: "o", wxTxnId: "w", amountFen: "1" } }),
+    () => endpoint({ body: { orderId: "o", wxTxnId: "w", amountFen: "1" } }),
     /WIRE_INTEGER at request.amountFen/,
   );
 });
