@@ -18,7 +18,7 @@
 - [额外功能说明](docs/EXTRAFEATURES.md)
 - [《Underground Idle》玩法策划案（未实现）](docs/undergroundIdle/README.md)
 - [Godogen 对照吸收计划（未实现的额外能力）](todo-godogen.md)
-- [当前开发收口计划](plan-v2.md)
+- [当前开发收口计划](plan-v3.md)
 
 ## 目录
 

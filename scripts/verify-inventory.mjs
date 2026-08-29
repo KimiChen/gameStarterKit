@@ -412,7 +412,7 @@ for (const entry of allEntries) if (!registeredDefaults.has(entry) && entry.star
 
 const corePlan = inventory?.routeOfTruth?.corePlan;
 const extra = inventory?.routeOfTruth?.extraCapabilities;
-if (corePlan !== "plan-v2.md") fail("routeOfTruth.corePlan 必须指向 plan-v2.md");
+if (corePlan !== "plan-v3.md") fail("routeOfTruth.corePlan 必须指向 plan-v3.md");
 if (!exists(corePlan) || !exists(extra)) fail("routeOfTruth 必须指向存在的核心计划与 EXTRAFEATURES.md");
 else {
   const planText = fs.readFileSync(repoPath(corePlan), "utf8");
@@ -420,8 +420,8 @@ else {
   const readmeText = fs.readFileSync(repoPath("README.md"), "utf8");
   checkMarkdownLinks(corePlan);
   checkMarkdownLinks(extra);
-  if (!/唯一真相/.test(planText)) fail("plan-v2.md 未声明当前计划唯一真相");
-  if (!readmeText.includes("[当前开发收口计划](plan-v2.md)")) fail("README.md 未登记 plan-v2.md 当前计划入口");
+  if (!/唯一真相/.test(planText)) fail("plan-v3.md 未声明当前计划唯一真相");
+  if (!readmeText.includes("[当前开发收口计划](plan-v3.md)")) fail("README.md 未登记 plan-v3.md 当前计划入口");
   if (!readmeText.includes("](todo-godogen.md)")) fail("README.md 未登记 todo-godogen.md 对照计划入口");
   if (!/额外功能/.test(extraText)) fail("docs/EXTRAFEATURES.md 未声明额外能力真相");
   if (!extraText.includes("](../todo-godogen.md)")) {
@@ -434,6 +434,7 @@ if (!Array.isArray(inventory.referenceDocs)) {
   fail("referenceDocs 必须是数组");
 } else {
   if (!inventory.referenceDocs.includes("plan.md")) fail("referenceDocs 必须登记历史 plan.md");
+  if (!inventory.referenceDocs.includes("plan-v2.md")) fail("referenceDocs 必须登记历史 plan-v2.md");
   if (!inventory.referenceDocs.includes("todo-godogen.md")) {
     fail("referenceDocs 必须登记 Godogen 对照计划 todo-godogen.md");
   }
@@ -474,7 +475,7 @@ const assistantRequirements = [
   ["inventory 正向校验", "npm run verify:inventory"],
   ["inventory 反例测试", "npm run test:inventory"],
   ["Godogen 对照计划", "[todo-godogen.md](todo-godogen.md)"],
-  ["当前计划唯一真相", "[plan-v2.md](plan-v2.md)"],
+  ["当前计划唯一真相", "[plan-v3.md](plan-v3.md)"],
 ];
 for (const [label, requirement] of assistantRequirements) {
   if (!agents.includes(requirement) || !claude.includes(requirement)) {

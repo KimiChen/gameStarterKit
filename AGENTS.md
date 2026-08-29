@@ -9,7 +9,8 @@
 > - [docs/EXTRAFEATURES.md](docs/EXTRAFEATURES.md)：可选额外功能、现有实现与非承诺说明
 > - [docs/undergroundIdle/README.md](docs/undergroundIdle/README.md)：未实现的玩法策划案与扩展草案
 > - [todo-godogen.md](todo-godogen.md)：未实现的外部项目对照吸收计划，不构成核心能力承诺
-> - [plan-v2.md](plan-v2.md)：当前开放问题、实施状态与验收证据的唯一真相
+> - [plan-v3.md](plan-v3.md)：当前开放问题、实施状态与验收证据的唯一真相
+> - [plan-v2.md](plan-v2.md)：上一轮实施状态与验收证据的历史归档
 >
 > 多数源码目录另有就近 README，但尚未覆盖全部：`apps/shared`、`apps/server` 根、`apps/server/src/player/`
 > 与 `core/` 下除 `compute/` 外的子目录目前没有；这些目录的约束分别见铁律 4/6 与

@@ -135,7 +135,7 @@ test("inventory verifier rejects a standalone relayer classified as core", () =>
     const inventory = readInventory(root);
     const relayer = inventory.capabilities.find((capability) => capability.id === "outbox-relayer");
     relayer.category = "core";
-    relayer.docs = ["plan-v2.md", "docs/SERVER.md"];
+    relayer.docs = ["plan-v3.md", "docs/SERVER.md"];
     writeInventory(root, inventory);
     assertRejected(root, /能力 outbox-relayer 的独立 launch 只能登记为 extra/);
   } finally {
@@ -178,7 +178,7 @@ test("inventory verifier rejects the historical plan as route of truth", () => {
     const inventory = readInventory(root);
     inventory.routeOfTruth.corePlan = "plan.md";
     writeInventory(root, inventory);
-    assertRejected(root, /routeOfTruth\.corePlan 必须指向 plan-v2\.md/);
+    assertRejected(root, /routeOfTruth\.corePlan 必须指向 plan-v3\.md/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -187,10 +187,11 @@ test("inventory verifier rejects the historical plan as route of truth", () => {
 test("inventory verifier rejects removal of the current plan truth declaration", () => {
   const root = createFixture();
   try {
-    const plan = join(root, "plan-v2.md");
-    const text = readFileSync(plan, "utf8").replace("的唯一真相", "的执行清单");
+    const plan = join(root, "plan-v3.md");
+    // 全量替换：门禁只要求文中存在「唯一真相」，留下任何一处都不算移除声明。
+    const text = readFileSync(plan, "utf8").replaceAll("唯一真相", "执行清单");
     writeFileSync(plan, text);
-    assertRejected(root, /plan-v2\.md 未声明当前计划唯一真相/);
+    assertRejected(root, /plan-v3\.md 未声明当前计划唯一真相/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -200,9 +201,9 @@ test("inventory verifier rejects removal of the current plan from README", () =>
   const root = createFixture();
   try {
     const readme = join(root, "README.md");
-    const text = readFileSync(readme, "utf8").replace("- [当前开发收口计划](plan-v2.md)\n", "");
+    const text = readFileSync(readme, "utf8").replace("- [当前开发收口计划](plan-v3.md)\n", "");
     writeFileSync(readme, text);
-    assertRejected(root, /README\.md 未登记 plan-v2\.md 当前计划入口/);
+    assertRejected(root, /README\.md 未登记 plan-v3\.md 当前计划入口/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -418,7 +419,7 @@ test("inventory verifier rejects synchronized removal of the current plan entry"
     for (const filename of ["AGENTS.md", "CLAUDE.md"]) {
       const file = join(root, filename);
       const text = readFileSync(file, "utf8").replace(
-        "> - [plan-v2.md](plan-v2.md)：当前开放问题、实施状态与验收证据的唯一真相\n",
+        "> - [plan-v3.md](plan-v3.md)：当前开放问题、实施状态与验收证据的唯一真相\n",
         "",
       );
       writeFileSync(file, text);

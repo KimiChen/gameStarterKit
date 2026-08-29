@@ -212,7 +212,7 @@ AUTO 区块外是手写区。重复执行应得到稳定结果。
 - FairyGUI 设置：`apps/art/fairygui/settings/Adaptation.json`。
 
 现有测试会核对代码常量、Main 策略和 FairyGUI 设置，但尚未读取 Cocos `project.json`；四处当前一致，
-仍可能在以后发生未被测试发现的漂移，收口项见 [plan-v2.md](../plan-v2.md)。
+仍可能在以后发生未被测试发现的漂移，收口项见 [plan-v3.md](../plan-v3.md)。
 
 资源动线：
 
@@ -359,4 +359,4 @@ Creator 编辑器预览用于补充验证引擎绑定、资源导入和页面交
 
 现有场景、开发账号和演示页面只用于本地开发。微信小游戏兼容层等渠道接缝属于
 [额外功能与参考实现](EXTRAFEATURES.md)，不构成核心能力承诺；完整项目边界见根 README，已知客户端
-缺口见 [plan-v2.md](../plan-v2.md)。
+缺口见 [plan-v3.md](../plan-v3.md)。
