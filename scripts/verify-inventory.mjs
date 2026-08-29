@@ -422,13 +422,21 @@ else {
   checkMarkdownLinks(extra);
   if (!/唯一真相/.test(planText)) fail("plan-v2.md 未声明当前计划唯一真相");
   if (!readmeText.includes("[当前开发收口计划](plan-v2.md)")) fail("README.md 未登记 plan-v2.md 当前计划入口");
+  if (!readmeText.includes("](todo-godogen.md)")) fail("README.md 未登记 todo-godogen.md 对照计划入口");
   if (!/额外功能/.test(extraText)) fail("docs/EXTRAFEATURES.md 未声明额外能力真相");
+  if (!extraText.includes("](../todo-godogen.md)")) {
+    fail("docs/EXTRAFEATURES.md 未登记 todo-godogen.md 对照计划入口");
+  }
   if (/^##\s+路线图/m.test(extraText)) fail("EXTRAFEATURES.md 不得维护第二套路线图");
 }
 
-if (!Array.isArray(inventory.referenceDocs) || !inventory.referenceDocs.includes("plan.md")) {
-  fail("referenceDocs 必须登记历史 plan.md");
+if (!Array.isArray(inventory.referenceDocs)) {
+  fail("referenceDocs 必须是数组");
 } else {
+  if (!inventory.referenceDocs.includes("plan.md")) fail("referenceDocs 必须登记历史 plan.md");
+  if (!inventory.referenceDocs.includes("todo-godogen.md")) {
+    fail("referenceDocs 必须登记 Godogen 对照计划 todo-godogen.md");
+  }
   const seenReferenceDocs = new Set();
   for (const doc of inventory.referenceDocs) {
     if (typeof doc !== "string" || doc.trim() === "") {
@@ -465,6 +473,7 @@ const assistantRequirements = [
   ["外部身份 HTTP 边界", "外部身份服务只走 HTTP 契约边界"],
   ["inventory 正向校验", "npm run verify:inventory"],
   ["inventory 反例测试", "npm run test:inventory"],
+  ["Godogen 对照计划", "[todo-godogen.md](todo-godogen.md)"],
   ["当前计划唯一真相", "[plan-v2.md](plan-v2.md)"],
 ];
 for (const [label, requirement] of assistantRequirements) {

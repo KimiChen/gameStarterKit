@@ -94,7 +94,8 @@ T1 verify:creator 最小路径
 
 **为什么**：本仓客户端 217 个测试跑在 cc 桩上，桩与真引擎不一致的风险**已经实际发生过两次**
 （两次扩 `cc-stub.d.ts`）。当前文档明确把 Creator 真实资源导入、渲染和交互留在人工预览边界，
-见 [`docs/CLIENT.md`](docs/CLIENT.md#L332) 与 [`docs/OVERVIEW.md`](docs/OVERVIEW.md#L79)。
+见 [`docs/CLIENT.md`](docs/CLIENT.md#8-本地检查) 与
+[`docs/OVERVIEW.md`](docs/OVERVIEW.md#32-约束可执行)。
 
 一个有利条件：帧捕获要可复现，前提是确定性（固定步长、seeded RNG、input tape）——**本仓已经具备这三样**，
 这是「命令 trace → 像素」路径成本较低的真正原因。
@@ -240,8 +241,9 @@ T1 verify:creator 最小路径
 - [liangdabiao 资产规划](https://github.com/liangdabiao/Godogen/blob/8f315780bf50eea1875e08c8b614930e9d6e8450/.claude/skills/godogen/asset-planner.md#L67-L169)
 - liangdabiao `journey-runner/scenes/build_*.gd` 的 `validate_packed_scene` 往返自检
 - [liangdabiao godot-api 转换器与逐类文档](https://github.com/liangdabiao/Godogen/tree/8f315780bf50eea1875e08c8b614930e9d6e8450/.claude/skills/godot-api)
-- 本仓真源：[`docs/CLIENT.md`](docs/CLIENT.md#L332)、[`docs/OVERVIEW.md`](docs/OVERVIEW.md#L79)、
-  [Underground Idle 美术制作流程](docs/undergroundIdle/07-art-direction.md#L342-L386)、
+- 本仓真源：[`docs/CLIENT.md`](docs/CLIENT.md#8-本地检查)、
+  [`docs/OVERVIEW.md`](docs/OVERVIEW.md#32-约束可执行)、
+  [Underground Idle 美术制作流程](docs/undergroundIdle/07-art-direction.md#13-制作流程)、
   `apps/Cocos/extensions/fairygui-cc/runtime/fairygui.d.ts`、
   `tools/client-perf-baseline.ts` 的 `renderBallMoveWorld` trace 校验链
 

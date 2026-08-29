@@ -171,5 +171,5 @@
     "corePlan": "plan-v2.md",
     "extraCapabilities": "docs/EXTRAFEATURES.md"
   },
-  "referenceDocs": ["plan.md"]
+  "referenceDocs": ["plan.md", "todo-godogen.md"]
 }

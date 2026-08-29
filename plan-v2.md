@@ -198,8 +198,9 @@
   并拒绝 stale 命令。验收证据：三处均识别 34/34 个根脚本；`npm run test:inventory` 20/20 覆盖
   同步遗漏、新增未登记与 stale 登记反例；`npm run verify:inventory`、两脚本 `node --check` 及
   AGENTS/CLAUDE byte-identical 检查通过。
-- `[不阻塞·有意保留]` inventory 与 Markdown 链接检查只覆盖登记表内文档和就近 README，不扫描仓库根的
-  散装 Markdown；根目录 `todo-godogen.md` 与本文件因此都不在任何机检覆盖内，其待办与处置见 §6。
+- `[不阻塞·有意保留]` inventory 与 Markdown 链接检查只覆盖登记表内文档和就近 README，不扫描任意
+  根目录 Markdown；`plan-v2.md` 已通过 `routeOfTruth.corePlan`、`todo-godogen.md` 已通过
+  `referenceDocs` 显式纳入检查，未登记的其它散装文档仍不在通用扫描范围内。
 - `[不阻塞·有意保留]` 组合根发现不构建完整 TypeScript import graph，scene 发现不扫描动态 prefab；
   Markdown 检查只守住登记链接和锚点，不是通用语法解析。
 
@@ -239,8 +240,11 @@
   [`docs/EXTRAFEATURES.md` §3.10](docs/EXTRAFEATURES.md#310-产物往返自检导出物反序列化校验)，
   当前状态仍为未实现；它用于发现导出过程静默丢内容，现有 manifest/hash 检查不能覆盖这一失败形态。
   该迁移可作为其余条目的处置样板。
-- `[不阻塞·待补齐]` 若长期保留 `todo-godogen.md` 的其余内容，应同样在 README、AGENTS/CLAUDE 与
-  `docs/EXTRAFEATURES.md` 登记，或迁入 `docs/` 后纳入链接检查。
+- `[已完成]` 根 `todo-godogen.md` 作为未实现的外部项目对照计划长期保留，并已在 README、
+  AGENTS/CLAUDE 与 `docs/EXTRAFEATURES.md` 登记；`docs/inventory.json.referenceDocs` 将其全部 Markdown
+  链接和锚点纳入检查，本地 `#L` 行号均已替换为稳定标题锚点。验收证据：`npm run test:inventory`
+  25/25 覆盖入口、登记、EXTRAFEATURES、内部锚点及助手文档同步遗漏；`npm run verify:inventory`、
+  两脚本 `node --check`、AGENTS/CLAUDE byte-identical 与 `git diff --check` 通过。
 
 来源：`plan.md:92-96`、`plan.md:709-716`
 

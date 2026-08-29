@@ -208,6 +208,21 @@ test("inventory verifier rejects removal of the current plan from README", () =>
   }
 });
 
+test("inventory verifier rejects removal of the Godogen plan from README", () => {
+  const root = createFixture();
+  try {
+    const readme = join(root, "README.md");
+    const text = readFileSync(readme, "utf8").replace(
+      "- [Godogen 对照吸收计划（未实现的额外能力）](todo-godogen.md)\n",
+      "",
+    );
+    writeFileSync(readme, text);
+    assertRejected(root, /README\.md 未登记 todo-godogen\.md 对照计划入口/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("inventory verifier keeps the historical plan registered as a checked reference", () => {
   const root = createFixture();
   try {
@@ -215,6 +230,51 @@ test("inventory verifier keeps the historical plan registered as a checked refer
     inventory.referenceDocs = [];
     writeInventory(root, inventory);
     assertRejected(root, /referenceDocs 必须登记历史 plan\.md/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier keeps the Godogen plan registered as a checked reference", () => {
+  const root = createFixture();
+  try {
+    const inventory = readInventory(root);
+    inventory.referenceDocs = inventory.referenceDocs.filter((doc) => doc !== "todo-godogen.md");
+    writeInventory(root, inventory);
+    assertRejected(root, /referenceDocs 必须登记 Godogen 对照计划 todo-godogen\.md/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier requires EXTRAFEATURES to register the Godogen plan", () => {
+  const root = createFixture();
+  try {
+    const extra = join(root, "docs", "EXTRAFEATURES.md");
+    const text = readFileSync(extra, "utf8").replace(
+      "[`todo-godogen.md`](../todo-godogen.md)",
+      "`todo-godogen.md`",
+    );
+    writeFileSync(extra, text);
+    assertRejected(root, /docs\/EXTRAFEATURES\.md 未登记 todo-godogen\.md 对照计划入口/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier checks stable local anchors in the Godogen plan", () => {
+  const root = createFixture();
+  try {
+    const godogen = join(root, "todo-godogen.md");
+    const text = readFileSync(godogen, "utf8").replace(
+      "docs/CLIENT.md#8-本地检查",
+      "docs/CLIENT.md#不存在的本地检查",
+    );
+    writeFileSync(godogen, text);
+    assertRejected(
+      root,
+      /文档 todo-godogen\.md 的锚点不存在：docs\/CLIENT\.md#不存在的本地检查/,
+    );
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -271,6 +331,23 @@ test("inventory verifier rejects synchronized removal of a required assistant in
       writeFileSync(file, text);
     }
     assertRejected(root, /AGENTS\.md\/CLAUDE\.md 缺少共同关键指令：inventory 反例测试/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects synchronized removal of the Godogen assistant entry", () => {
+  const root = createFixture();
+  try {
+    for (const filename of ["AGENTS.md", "CLAUDE.md"]) {
+      const file = join(root, filename);
+      const text = readFileSync(file, "utf8").replace(
+        "> - [todo-godogen.md](todo-godogen.md)：未实现的外部项目对照吸收计划，不构成核心能力承诺\n",
+        "",
+      );
+      writeFileSync(file, text);
+    }
+    assertRejected(root, /AGENTS\.md\/CLAUDE\.md 缺少共同关键指令：Godogen 对照计划/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
