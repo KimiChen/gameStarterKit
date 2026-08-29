@@ -160,21 +160,36 @@ test("Lobby 最终断线：对账失败释放本次 owner，再进入既有回�
 });
 
 test("Lobby 对账迟到：旧 generation 只释放旧 owner，不覆盖或关闭新登录", async () => {
-  const readyGate = deferred<void>();
+  const oldReadyGate = deferred<void>();
   const reasons: string[] = [];
   const oldOwner = Symbol("old-owner");
   const newOwner = Symbol("new-owner");
+  const connectedOwners = new Set<symbol>();
+  const finishedOwners = new Set<symbol>();
   const releasedOwners = new Set<symbol>();
   const oldIdentity = login("u_reconcile_old");
   commitSessionProfile(oldIdentity, profile(oldIdentity.userId, 1));
   const offReturn = registerReturnToLogin((reason) => { reasons.push(reason.kind); });
   const offReconcile = registerSessionReconciler(async (captured) => {
+    // ⛔ 每个世代都必须拿到一份**真实可释放**的 ownership：旧世代 leave 写 oldOwner、
+    // 新世代 leave 写 newOwner。否则 `releasedOwners.has(newOwner)` 只是恒真断言，
+    // 守不住「旧 continuation 释放了新登录 ownership」。
+    const isOld = captured.generation === oldIdentity.generation;
+    const owner = isOld ? oldOwner : newOwner;
     const result = await reconcileSessionProfile(captured, {
-      connect: () => ({ ready: readyGate.promise, leave: () => { releasedOwners.add(oldOwner); } }),
-      getInfo: async () => ({ user: profile(captured.userId, 2) }),
+      connect: () => {
+        connectedOwners.add(owner);
+        return {
+          ready: isOld ? oldReadyGate.promise : Promise.resolve(),
+          leave: () => { releasedOwners.add(owner); },
+        };
+      },
+      // 新世代自己也提交 ver 7，旧世代的迟到 ver 2 必须提交不进去。
+      getInfo: async () => ({ user: profile(captured.userId, isOld ? 2 : 7) }),
       isCurrent: isSessionIdentityCurrent,
       commitProfile: commitSessionProfile,
     });
+    finishedOwners.add(owner);
     return result.status === "reconciled";
   });
   try {
@@ -183,9 +198,19 @@ test("Lobby 对账迟到：旧 generation 只释放旧 owner，不覆盖或关�
     const freshIdentity = login("u_reconcile_new");
     commitSessionProfile(freshIdentity, profile(freshIdentity.userId, 7));
 
-    readyGate.resolve(undefined);
-    await waitFor(() => releasedOwners.has(oldOwner), "旧 reconciliation 完成后必须释放自己的 owner");
+    // 新世代先跑完自己的一次对账并**保留**自己的 ownership：此后 newOwner 进入
+    // releasedOwners 的唯一途径就是被旧 continuation 越权释放。
+    notifyConnLost();
+    await waitFor(() => finishedOwners.has(newOwner), "新登录世代必须能独立完成自己的对账");
+    assert.equal(connectedOwners.has(newOwner), true, "新登录世代必须真的建立过 ownership");
+    assert.equal(releasedOwners.has(newOwner), false, "对账成功的新 ownership 不得被自己释放");
+
+    // `finishedOwners` 在 reconcileSessionProfile 的 finally（含 await leave）之后才写，
+    // 因此这里两个方向的释放都已经落定，可以直接判别旧 continuation 释放了谁。
+    oldReadyGate.resolve(undefined);
+    await waitFor(() => finishedOwners.has(oldOwner), "旧 reconciliation 必须结束自身");
     assert.equal(releasedOwners.has(newOwner), false, "旧 continuation 无权调用新登录 owner");
+    assert.equal(releasedOwners.has(oldOwner), true, "旧 reconciliation 完成后必须释放自己的 owner");
     assert.equal(isLoggedIn(), true);
     assert.equal(getUserId(), freshIdentity.userId);
     assert.equal(getSessionProfile()?.ver, 7, "旧 GetInfo 不得覆盖新账号快照");

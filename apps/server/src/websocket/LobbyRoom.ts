@@ -93,7 +93,14 @@ interface LobbyRegistrationState {
 /** Keep Lobby transport recovery aligned with the existing GameRoom window. */
 export const LOBBY_RECONNECT_GRACE_S = 10;
 
-/** These are exactly the close codes for which the 0.17 client SDK retries. */
+/**
+ * 四个 SDK 可重试关闭码 + 无关闭码兜底。
+ *
+ * `code === undefined` 是 fail-open 的第五个分支：框架没给关闭码时无法判定这是不是
+ * 一次可重试断开，而错判成最终离场会立刻注销 online registration、让 SDK 随后真实
+ * 重连时拿不到 seat。代价有界（最多多占 `LOBBY_RECONNECT_GRACE_S` 秒 seat），因此
+ * 这里选择开放宽限窗口而不是收紧。
+ */
 function isReconnectableDrop(code?: number): boolean {
   return code === undefined
     || code === CloseCode.GOING_AWAY

@@ -410,6 +410,34 @@ test("Lobby reconnect grace timeout unregisters the exact registration once", as
   }
 });
 
+test("Lobby drop without a close code fails open into the same grace window", async () => {
+  const reconnect = deferred<never>();
+  const graceSeconds: number[] = [];
+  const { room, unregistered } = roomWith({});
+  (room as unknown as {
+    allowReconnection: (_client: unknown, seconds: number) => Promise<unknown>;
+  }).allowReconnection = async (_client: unknown, seconds: number) => {
+    graceSeconds.push(seconds);
+    return reconnect.promise;
+  };
+  const client = fakeClient("no-close-code-token", { sessionId: "no-close-code-seat" });
+
+  try {
+    await room.onJoin(client);
+    // 框架没给关闭码：第五个 fail-open 分支必须开放与四个可重试关闭码相同的宽限窗口。
+    const dropping = room.onDrop(client);
+    assert.deepEqual(graceSeconds, [LOBBY_RECONNECT_GRACE_S],
+      "无关闭码的 drop 必须 fail-open 进入既有 10 秒宽限窗口");
+    assert.deepEqual(unregistered, [], "宽限窗口内不得提前注销 seat / online registration");
+    reconnect.reject(new Error("grace expired"));
+    await dropping;
+    room.onLeave(client);
+    assert.deepEqual(unregistered, ["no-close-code-seat"], "宽限过期后才做最终注销");
+  } finally {
+    room.clock.stop();
+  }
+});
+
 test("Lobby replacement during grace wins over old timeout cleanup", async () => {
   const reconnect = deferred<never>();
   const registrations: OnlineRegistration[] = [];

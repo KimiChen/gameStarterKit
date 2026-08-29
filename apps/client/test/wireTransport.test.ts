@@ -15,7 +15,7 @@ import {
 } from "../src/shared/index";
 import { RpcError, WebSocketClient } from "../src/net/WebSocketClient";
 import { RoomClient } from "../src/net/RoomClient";
-import { createBallMoveRoomAdapter } from "../src/net/rooms/GameRoomTransport";
+import { createBallMoveRoomAdapter, createIdleRoomAdapter } from "../src/net/rooms/GameRoomTransport";
 import { markFaultPoint } from "./faultMatrix";
 
 type Handler = (...values: unknown[]) => void;
@@ -153,6 +153,71 @@ function validState() {
     ]),
   };
 }
+
+function validIdleState() {
+  return {
+    tick: 1,
+    phase: GamePhase.Playing,
+    matchId: "match-idle",
+    pulseGoal: 3,
+    winnerId: "",
+    players: new Map([["game-session", { id: "game-session", name: "Idle", pulses: 0 }]]),
+  };
+}
+
+test("RoomClient：idle slot 下与 mode 无关的公共 send API 被 C2S allowlist 拒绝", async () => {
+  const fake = makeGameRoom(validIdleState());
+  const oldColyseus = (globalThis as { Colyseus?: unknown }).Colyseus;
+  class FakeClient {
+    constructor(_endpoint: string) {}
+    auth = { token: "" };
+    async joinOrCreate() { return fake.room; }
+  }
+  (globalThis as { Colyseus?: unknown }).Colyseus = {
+    Client: FakeClient,
+    getStateCallbacks: () => undefined,
+  };
+  const oldWarn = console.warn;
+  const warnings: string[] = [];
+  console.warn = (...args: unknown[]) => { warnings.push(String(args[0])); };
+  try {
+    const client = new RoomClient();
+    client.init("http://game.example");
+    const adapter = createIdleRoomAdapter();
+    const owner = client.joinGame(adapter, { token: "idle-token", sId: 8 });
+    const room = await owner.ready;
+
+    // 正对照：allowlist 内的消息照常跨 wire，证明这个 slot 本身处于可发送状态。
+    const pulse = [{ type: C2S.IdlePulse, data: {} }];
+    assert.equal(room.send(C2S.IdlePulse, {}), true);
+    assert.deepEqual(fake.sent, pulse);
+
+    // 反例：typed room 的 send 在编译期被 TOutbound 约束，但 RoomClient 上这几个
+    // 与 mode 无关的公共 API 绕过了它，只有运行时 allowlist 能拦住。
+    client.ping();
+    client.castSkill(1, "game-session");
+    client.chat("hello");
+    assert.deepEqual(fake.sent, pulse, "idle gameplay 不允许的 C2S 不得产生任何 room.send");
+
+    // `as any` 直呼内部发送面同样必须返回 false，而不是靠调用方的类型约束兜底。
+    const internals = client as unknown as {
+      slot: { room: unknown };
+      sendFromSlot(slot: unknown, room: unknown, type: string, payload: unknown): boolean;
+    };
+    assert.equal(
+      internals.sendFromSlot(internals.slot, internals.slot.room, C2S.Move, { dirX: 1, dirY: 0 }),
+      false,
+      "sendFromSlot 必须按 adapter.outbound 拒绝非 allowlist C2S",
+    );
+    assert.deepEqual(fake.sent, pulse, "被 allowlist 拒绝的消息不得跨 wire");
+    assert.equal(warnings.length, 4, "每次拒绝都必须留下一条 allowlist 警告");
+    assert.ok(warnings.every((line) => line.includes("不允许发送 C2S")), warnings.join(" | "));
+    await owner.leave();
+  } finally {
+    console.warn = oldWarn;
+    (globalThis as { Colyseus?: unknown }).Colyseus = oldColyseus;
+  }
+});
 
 test("RoomClient：C2S/S2C 发送与回调均经过 runtime validator", async () => {
   const fake = makeGameRoom(validState());
