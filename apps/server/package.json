@@ -19,6 +19,7 @@
     "freeze-worker": "tsx src/core/archive/freezeWorker.ts",
     "settle": "tsx src/core/match/matchConsumer.ts",
     "codegen:http": "tsx tools/http-endpoint-manifest.ts",
+    "codegen:state": "tsx tools/room-state-codegen.ts",
     "typecheck": "tsc --noEmit",
     "loadtest": "tsx loadtest/bot.ts --endpoint ws://localhost:2568 --room game --numClients 20"
   },

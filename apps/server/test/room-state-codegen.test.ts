@@ -1,0 +1,263 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { test } from "node:test";
+import ts from "typescript";
+import {
+  assertRoomStateArtifactsFresh,
+  parseRoomStateDescriptor,
+  readRoomStateDescriptor,
+  renderRoomStateArtifacts,
+  writeRoomStateArtifacts,
+  type RoomStateCodegenOptions,
+} from "../tools/room-state-codegen";
+
+const REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+const SCHEMA_FILE = path.join(REPOSITORY_ROOT, "apps/shared/schema/game-room-state.json");
+
+type MutableField = Record<string, unknown>;
+type MutableType = {
+  name: string;
+  sharedName: string;
+  validatorName: string;
+  defaultPath: string;
+  fields: MutableField[];
+  serverOnly: MutableField[];
+};
+type MutableManifest = {
+  formatVersion: number;
+  root: string;
+  types: MutableType[];
+  [key: string]: unknown;
+};
+
+function manifestFixture(): MutableManifest {
+  return JSON.parse(fs.readFileSync(SCHEMA_FILE, "utf8")) as MutableManifest;
+}
+
+function manifestType(manifest: MutableManifest, name: string): MutableType {
+  const result = manifest.types.find((type) => type.name === name);
+  assert.ok(result, `missing fixture type ${name}`);
+  return result;
+}
+
+function manifestField(type: MutableType, name: string): MutableField {
+  const result = type.fields.find((field) => field.name === name);
+  assert.ok(result, `missing fixture field ${type.name}.${name}`);
+  return result;
+}
+
+function assertManifestError(change: (manifest: MutableManifest) => void, pattern: RegExp): void {
+  const manifest = manifestFixture();
+  change(manifest);
+  assert.throws(() => parseRoomStateDescriptor(manifest), pattern);
+}
+
+function createFixture(manifest = manifestFixture()): {
+  readonly root: string;
+  readonly options: RoomStateCodegenOptions;
+  readonly schemaFile: string;
+  readonly sharedOutputFile: string;
+  readonly serverOutputFile: string;
+} {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "room-state-codegen-"));
+  const schemaFile = path.join(root, "schema/game-room-state.json");
+  const sharedOutputFile = path.join(root, "generated/state.shared.ts");
+  const serverOutputFile = path.join(root, "generated/state.server.ts");
+  fs.mkdirSync(path.dirname(schemaFile), { recursive: true });
+  fs.writeFileSync(schemaFile, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+  return {
+    root,
+    schemaFile,
+    sharedOutputFile,
+    serverOutputFile,
+    options: { repositoryRoot: root, schemaFile, sharedOutputFile, serverOutputFile },
+  };
+}
+
+type ServerClassFields = {
+  readonly decorated: readonly string[];
+  readonly undecorated: readonly string[];
+};
+
+function propertyName(member: ts.PropertyDeclaration): string | null {
+  return ts.isIdentifier(member.name) || ts.isStringLiteral(member.name) ? member.name.text : null;
+}
+
+function isWireDecorator(decorator: ts.Decorator): boolean {
+  const expression = decorator.expression;
+  return ts.isCallExpression(expression)
+    && ts.isIdentifier(expression.expression)
+    && expression.expression.text === "type";
+}
+
+function serverClassFields(source: string): ReadonlyMap<string, ServerClassFields> {
+  const sourceFile = ts.createSourceFile("GameRoomState.ts", source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const result = new Map<string, ServerClassFields>();
+  for (const statement of sourceFile.statements) {
+    if (!ts.isClassDeclaration(statement) || !statement.name) continue;
+    const decorated: string[] = [];
+    const undecorated: string[] = [];
+    for (const member of statement.members) {
+      if (!ts.isPropertyDeclaration(member)) continue;
+      const name = propertyName(member);
+      if (!name) continue;
+      const decorators = ts.canHaveDecorators(member) ? ts.getDecorators(member) ?? [] : [];
+      (decorators.some(isWireDecorator) ? decorated : undecorated).push(name);
+    }
+    result.set(statement.name.text, { decorated, undecorated });
+  }
+  return result;
+}
+
+function literalStringArray(expression: ts.Expression | undefined): readonly string[] | null {
+  if (!expression || !ts.isArrayLiteralExpression(expression)) return null;
+  const values: string[] = [];
+  for (const element of expression.elements) {
+    if (!ts.isStringLiteral(element)) return null;
+    values.push(element.text);
+  }
+  return values;
+}
+
+function sharedValidatorKeys(source: string): ReadonlyMap<string, readonly string[]> {
+  const sourceFile = ts.createSourceFile("state.ts", source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const result = new Map<string, readonly string[]>();
+  for (const statement of sourceFile.statements) {
+    if (!ts.isFunctionDeclaration(statement) || !statement.name || !statement.body) continue;
+    let keys: readonly string[] | null = null;
+    const visit = (node: ts.Node): void => {
+      if (ts.isCallExpression(node)
+        && ts.isIdentifier(node.expression)
+        && node.expression.text === "assertExactKeys") {
+        const candidate = literalStringArray(node.arguments[1]);
+        if (!candidate) throw new Error(`non-literal assertExactKeys in ${statement.name?.text ?? "validator"}`);
+        if (keys !== null) throw new Error(`duplicate assertExactKeys in ${statement.name?.text ?? "validator"}`);
+        keys = candidate;
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(statement.body);
+    if (keys !== null) result.set(statement.name.text, keys);
+  }
+  return result;
+}
+
+test("checked-in room-state artifacts are fresh", () => {
+  assert.doesNotThrow(() => assertRoomStateArtifactsFresh({ repositoryRoot: REPOSITORY_ROOT }));
+});
+
+test("freshness check is read-only and fails after a descriptor field is added", () => {
+  const fixture = createFixture();
+  try {
+    assert.deepEqual(writeRoomStateArtifacts(fixture.options), [
+      "generated/state.shared.ts",
+      "generated/state.server.ts",
+    ]);
+    assert.doesNotThrow(() => assertRoomStateArtifactsFresh(fixture.options));
+    const originalShared = fs.readFileSync(fixture.sharedOutputFile, "utf8");
+    const originalServer = fs.readFileSync(fixture.serverOutputFile, "utf8");
+
+    const changed = manifestFixture();
+    manifestType(changed, "PlayerState").fields.push({
+      name: "debugWire",
+      kind: "boolean",
+      default: false,
+      description: "Fixture-only generated field",
+    });
+    fs.writeFileSync(fixture.schemaFile, `${JSON.stringify(changed, null, 2)}\n`, "utf8");
+
+    assert.throws(
+      () => assertRoomStateArtifactsFresh(fixture.options),
+      /generated state is missing or stale: generated\/state\.shared\.ts, generated\/state\.server\.ts/,
+    );
+    assert.equal(fs.readFileSync(fixture.sharedOutputFile, "utf8"), originalShared);
+    assert.equal(fs.readFileSync(fixture.serverOutputFile, "utf8"), originalServer);
+
+    assert.deepEqual(writeRoomStateArtifacts(fixture.options), [
+      "generated/state.shared.ts",
+      "generated/state.server.ts",
+    ]);
+    assert.match(fs.readFileSync(fixture.sharedOutputFile, "utf8"), /debugWire: boolean/);
+    assert.match(fs.readFileSync(fixture.serverOutputFile, "utf8"), /@type\("boolean"\) debugWire: boolean = false/);
+    assert.doesNotThrow(() => assertRoomStateArtifactsFresh(fixture.options));
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test("manifest rejects unknown shapes, invalid field types, duplicates and invalid bounds", () => {
+  assertManifestError((manifest) => { manifest.legacySchema = true; }, /manifest: unknown key\(s\): legacySchema/);
+  assertManifestError((manifest) => {
+    manifestField(manifestType(manifest, "PlayerState"), "id").wire = true;
+  }, /unknown key\(s\): wire/);
+  assertManifestError((manifest) => {
+    manifestField(manifestType(manifest, "PlayerState"), "id").kind = "uuid";
+  }, /unsupported wire kind: uuid/);
+  assertManifestError((manifest) => {
+    manifestField(manifestType(manifest, "PlayerState"), "alive").default = "true";
+  }, /must be a boolean literal or constant reference/);
+  assertManifestError((manifest) => {
+    const player = manifestType(manifest, "PlayerState");
+    player.fields.push({ ...player.fields[0] });
+  }, /duplicate wire field: id/);
+  assertManifestError((manifest) => {
+    const x = manifestField(manifestType(manifest, "PlayerState"), "x");
+    x.min = 2;
+    x.max = 1;
+  }, /min must not exceed max/);
+});
+
+test("manifest rejects broken map and cross-field references", () => {
+  assertManifestError((manifest) => {
+    manifestField(manifestType(manifest, "GameRoomState"), "players").valueType = "MissingPlayerState";
+  }, /players\.valueType: missing type: MissingPlayerState/);
+  assertManifestError((manifest) => {
+    manifestField(manifestType(manifest, "PlayerState"), "hp").maxField = "missingMaxHp";
+  }, /hp\.maxField: missing field: missingMaxHp/);
+  assertManifestError((manifest) => {
+    manifestField(manifestType(manifest, "PlayerState"), "hp").maxField = "alive";
+  }, /hp\.maxField: must reference a number\/integer field: alive/);
+  assertManifestError((manifest) => {
+    const players = manifestField(manifestType(manifest, "GameRoomState"), "players");
+    players.key = { field: "alive", errorCode: "STATE_PLAYER_ID" };
+  }, /players\.key\.field: must reference a string field on PlayerState/);
+});
+
+test("server-only fields reject exposure markers, collisions, duplicates and unsupported kinds", () => {
+  assertManifestError((manifest) => {
+    manifestType(manifest, "PlayerState").serverOnly[0].wire = true;
+  }, /serverOnly\[0\]: unknown key\(s\): wire/);
+  assertManifestError((manifest) => {
+    manifestType(manifest, "PlayerState").serverOnly[0].name = "id";
+  }, /field collides with wire field: id/);
+  assertManifestError((manifest) => {
+    const player = manifestType(manifest, "PlayerState");
+    player.serverOnly.push({ ...player.serverOnly[0] });
+  }, /duplicate server-only field: dirX/);
+  assertManifestError((manifest) => {
+    manifestType(manifest, "PlayerState").serverOnly[0].kind = "string";
+  }, /unsupported server-only kind: string/);
+});
+
+test("generated validator keys exactly equal runtime decorated keys and exclude server-only fields", () => {
+  const descriptor = readRoomStateDescriptor({ repositoryRoot: REPOSITORY_ROOT });
+  const artifacts = renderRoomStateArtifacts(descriptor);
+  const validators = sharedValidatorKeys(artifacts.shared);
+  const classes = serverClassFields(artifacts.server);
+
+  for (const type of descriptor.types) {
+    const expectedWire = type.fields.map((field) => field.name);
+    const classFields = classes.get(type.name);
+    assert.ok(classFields, `missing generated class ${type.name}`);
+    assert.deepEqual(validators.get(type.validatorName), expectedWire, `${type.validatorName} exact keys drifted`);
+    assert.deepEqual(classFields.decorated, expectedWire, `${type.name} decorated keys drifted`);
+    for (const internal of type.serverOnly) {
+      assert.ok(classFields.undecorated.includes(internal.name), `${type.name}.${internal.name} must be undecorated`);
+      assert.equal(expectedWire.includes(internal.name), false, `${type.name}.${internal.name} leaked into wire fields`);
+      assert.doesNotMatch(artifacts.shared, new RegExp(`\\b${internal.name}\\b`, "u"));
+    }
+  }
+});

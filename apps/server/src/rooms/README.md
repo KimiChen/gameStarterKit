@@ -11,8 +11,9 @@
   模块登记 factory，不改通用房间接缝。
 - `modes/catalog.ts` / `modes/IdleGameMode.ts`：生产 mode catalog 与最小第二玩法。Idle 复用真实 GameRoom
   transport，但不执行 ballMove 输入规则，也不写 ballMove casual evidence。
-- `schema/GameRoomState.ts`：运行时 Schema。字段增删时同步更新 shared `protocol/state.ts` 纯数据镜像，
-  并运行协议指纹更新与相关测试。
+- `schema/GameRoomState.ts`：由 shared `schema/game-room-state.json` 生成的运行时 Schema；同一 manifest 也生成
+  shared `protocol/state.ts` 的纯数据接口与 exact validator。字段增删只修改 manifest，再运行
+  `npm --workspace @game/server run codegen:state`、协议指纹更新与相关测试；两份生成文件禁止手改。
 
 GameRoom 当前包含 strict auth、协议/区号/mode 复核、按 `sId + mode` 撮合隔离、聊天、重连宽限和显式 opt-in
 的 best-effort match evidence。

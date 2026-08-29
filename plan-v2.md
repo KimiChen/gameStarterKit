@@ -145,9 +145,14 @@
 
 ### P1-04 schema-first 范围
 
-- `[不阻塞·待补齐]` 当前只完成第一阶段的 shared exact validators、RPC/HTTP contract map、
-  Colyseus state mirror 和协议 fingerprint。
-- `[不阻塞·待补齐]` 更广泛的自动生成 state/schema 仍属于后续演进，尚未实现。
+- `[已完成]` `apps/shared/schema/game-room-state.json` 现为 `PlayerState` / `GameRoomState` 全部 wire 字段、
+  默认值、值域、Map key 关联及服务端内部字段的单一声明源；同一 manifest 生成 shared 纯数据接口与
+  exact validators，以及服务端 `@colyseus/schema` class，`serverOnly` 字段只生成未装饰属性，不进入 wire。
+- `[已完成]` `codegen:state` 对 manifest 做 exact shape、kind、重复名、bounds、跨字段/Map 引用和
+  serverOnly 冲突校验，`--check` 只读拒绝缺失或陈旧双端生成物；AST 反向断言 shared validator keys、
+  server decorated keys 与 manifest 精确相等。验收证据：生成/freshness 正反例 6/6，真实 wire 合约
+  14/14，协议指纹 3/3，服务端全量单测 247/247；shared/server 与两套客户端 typecheck、
+  `codegen:state -- --check`、`npm run verify:sync` 及 scoped diff check 通过。
 
 来源：`plan.md:541-547`
 

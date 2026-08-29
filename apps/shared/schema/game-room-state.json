@@ -1,0 +1,137 @@
+{
+  "formatVersion": 1,
+  "root": "GameRoomState",
+  "types": [
+    {
+      "name": "PlayerState",
+      "sharedName": "IPlayerState",
+      "validatorName": "validatePlayerState",
+      "defaultPath": "player",
+      "fields": [
+        {
+          "name": "id",
+          "kind": "string",
+          "default": "",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Colyseus sessionId"
+        },
+        {
+          "name": "name",
+          "kind": "string",
+          "default": "",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        {
+          "name": "x",
+          "kind": "number",
+          "default": 0,
+          "min": "MIN_SAFE_INTEGER",
+          "max": "MAX_SAFE_INTEGER",
+          "description": "Logical x coordinate"
+        },
+        {
+          "name": "y",
+          "kind": "number",
+          "default": 0,
+          "min": "MIN_SAFE_INTEGER",
+          "max": "MAX_SAFE_INTEGER",
+          "description": "Logical y coordinate"
+        },
+        {
+          "name": "hp",
+          "kind": "number",
+          "default": { "constant": "PLAYER_INIT_HP" },
+          "min": 0,
+          "maxField": "maxHp"
+        },
+        {
+          "name": "maxHp",
+          "kind": "number",
+          "default": { "constant": "PLAYER_INIT_HP" },
+          "min": 0,
+          "max": "MAX_SAFE_INTEGER"
+        },
+        {
+          "name": "alive",
+          "kind": "boolean",
+          "default": true,
+          "description": "Whether the player is alive"
+        }
+      ],
+      "serverOnly": [
+        {
+          "name": "dirX",
+          "kind": "number",
+          "default": 0,
+          "description": "Normalized movement input on the x axis"
+        },
+        {
+          "name": "dirY",
+          "kind": "number",
+          "default": 0,
+          "description": "Normalized movement input on the y axis"
+        },
+        {
+          "name": "lastCastAt",
+          "kind": "numberRecord",
+          "default": "empty",
+          "description": "Last skill cast timestamps in milliseconds"
+        },
+        {
+          "name": "level",
+          "kind": "number",
+          "default": 1,
+          "description": "Demo level used by the damage formula"
+        }
+      ]
+    },
+    {
+      "name": "GameRoomState",
+      "sharedName": "IGameRoomState",
+      "validatorName": "validateGameRoomState",
+      "defaultPath": "state",
+      "fields": [
+        {
+          "name": "tick",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "description": "Logical frame number"
+        },
+        {
+          "name": "phase",
+          "kind": "enum",
+          "enumObject": "GamePhase",
+          "enumType": "GamePhaseType",
+          "members": ["Waiting", "Playing", "Settle"],
+          "default": "Waiting",
+          "errorCode": "STATE_PHASE",
+          "description": "Room phase"
+        },
+        {
+          "name": "matchId",
+          "kind": "string",
+          "default": "",
+          "minLength": 0,
+          "maxLength": 128,
+          "description": "Stable match id; empty while waiting"
+        },
+        {
+          "name": "players",
+          "kind": "map",
+          "valueType": "PlayerState",
+          "maxSizeConstant": "MAX_PLAYERS",
+          "errorCode": "STATE_PLAYERS",
+          "key": {
+            "field": "id",
+            "errorCode": "STATE_PLAYER_ID"
+          },
+          "description": "Players keyed by sessionId"
+        }
+      ],
+      "serverOnly": []
+    }
+  ]
+}
