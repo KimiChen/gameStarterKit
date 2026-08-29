@@ -617,3 +617,107 @@ test("主动 leave 立即拒绝旧 slot 的 pending RPC", async () => {
   await assert.rejects(pending, (e: unknown) => e instanceof RpcError && e.code === "CONN_LOST");
   await leaving;
 });
+
+/**
+ * 忠实建模 0.17 SDK 的离线重放队列：socket 关闭时 send 入队而不抛，重连时先跑
+ * onReconnect 回调、再同步 flush 队列并**整体重新赋值**（与 colyseus.js 的
+ * `enqueuedMessages = []` 一致，不是原地截断），否则持有旧数组引用的实现会被掩盖。
+ */
+function makeQueueingFakeRoom() {
+  const sent: { type: string; data: any }[] = [];
+  const handlers = new Map<string, (msg: any) => void>();
+  const cbs: { drop?: () => void; reconnect?: () => void; leave?: (code?: number) => void } = {};
+  const room: any = {
+    sessionId: "s_queue",
+    connectionOpen: true,
+    reconnection: { enabled: true, maxEnqueuedMessages: 10, enqueuedMessages: [] as { data: any }[] },
+    send(type: string, data: any) {
+      if (!room.connectionOpen) {
+        room.reconnection.enqueuedMessages.push({ data: { type, data } });
+        if (room.reconnection.enqueuedMessages.length > room.reconnection.maxEnqueuedMessages) {
+          room.reconnection.enqueuedMessages.shift();
+        }
+        return;
+      }
+      sent.push({ type, data });
+    },
+    onMessage(type: string, cb: (msg: any) => void) { handlers.set(type, cb); return () => { handlers.delete(type); }; },
+    onDrop(cb: () => void) { cbs.drop = cb; return () => {}; },
+    onReconnect(cb: () => void) { cbs.reconnect = cb; return () => {}; },
+    onLeave(cb: (code?: number) => void) { cbs.leave = cb; return () => {}; },
+    leave: async () => true,
+    removeAllListeners() { /* noop */ },
+  };
+  return {
+    room,
+    sent,
+    closeSocket: () => { room.connectionOpen = false; },
+    emitDrop: () => cbs.drop?.(),
+    emitReconnect: () => {
+      room.connectionOpen = true;
+      cbs.reconnect?.();
+      // SDK 的 flush 在 onReconnect 回调返回之后同步执行；reconnection 被换掉时无队列可 flush。
+      if (!room.reconnection) return;
+      for (const message of room.reconnection.enqueuedMessages) sent.push(message.data);
+      room.reconnection.enqueuedMessages = [];
+    },
+  };
+}
+
+test("close→onDrop 间隙发出的写 RPC 不得进入 SDK 队列并在重连后重放", async () => {
+  const fake = makeQueueingFakeRoom();
+  const c = WebSocketClient.inst as unknown as { client: unknown };
+  c.client = { auth: { token: "" }, joinOrCreate: async () => fake.room };
+  await WebSocketClient.inst.join("token-queue");
+
+  // 装闸必须在 bindRoom 就生效：max=0 让 SDK 的 push-then-shift 变成空操作。
+  assert.equal(fake.room.reconnection.maxEnqueuedMessages, 0, "bindRoom 必须关闭 SDK 离线队列");
+
+  // 竞态窗口：底层 socket 已关，但 onDrop 尚未回调，slot.dropping 仍是 false，
+  // 因此 rpc() 的本地闸放行并真的调用了 room.send()。
+  fake.closeSocket();
+  const pending = WebSocketClient.inst.rpc(UserRpc.GetUserId, {});
+  assert.equal(
+    fake.room.reconnection.enqueuedMessages.length,
+    0,
+    "间隙内发出的 RPC 不得留在 SDK 队列里",
+  );
+
+  fake.emitDrop();
+  await assert.rejects(pending, (e: unknown) => e instanceof RpcError && e.code === "CONN_LOST");
+
+  fake.emitReconnect();
+  assert.equal(
+    fake.sent.filter((message) => message.type === LOBBY_MSG_RPC).length,
+    0,
+    "调用方已收到 CONN_LOST 的写 RPC 不得在重连后被 SDK 重放",
+  );
+  await WebSocketClient.inst.leave();
+});
+
+test("掉线/重连时若 SDK 重放队列不可控则主动断开大厅连接", async () => {
+  for (const phase of ["drop", "reconnect"] as const) {
+    const fake = makeQueueingFakeRoom();
+    const c = WebSocketClient.inst as unknown as { client: unknown };
+    c.client = { auth: { token: "" }, joinOrCreate: async () => fake.room };
+    await WebSocketClient.inst.join(`token-guard-${phase}`);
+
+    const pending = WebSocketClient.inst.rpc(UserRpc.GetUserId, {});
+    // 房间对象在 bind 之后被换成不可控形状：闸再也装不上，只能失败关闭。
+    fake.room.reconnection = null;
+    if (phase === "drop") fake.emitDrop();
+    else fake.emitReconnect();
+
+    await assert.rejects(
+      pending,
+      (e: unknown) => e instanceof RpcError && e.code === "CONN_LOST",
+      `${phase} 阶段闸失效必须让在途 RPC 判 CONN_LOST`,
+    );
+    assert.equal(
+      (WebSocketClient.inst as unknown as { slot: unknown }).slot,
+      null,
+      `${phase} 阶段闸失效必须摘除大厅 slot`,
+    );
+    await WebSocketClient.inst.leave();
+  }
+});

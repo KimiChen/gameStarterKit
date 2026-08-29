@@ -274,7 +274,7 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
   兜底）。`docs/CLIENT.md` 与 `LobbyRoom.ts` 就地注释改为「四个 SDK 可重试关闭码 + 无关闭码兜底」，并补上
   `code === undefined` 分支的定向用例。变异推演：把 `isReconnectableDrop` 的 undefined 分支收紧为 fail-closed
   → 该用例变红（18 例中仅此 1 例）。
-- `[不阻塞·待补齐]` **Lobby RPC 存在 SDK 离线队列竞态**：`apps/client/src/net/WebSocketClient.ts:574-578`
+- `[已完成]` **Lobby RPC 存在 SDK 离线队列竞态**：`apps/client/src/net/WebSocketClient.ts:574-578`
   的 `onDrop` 只标记 `slot.dropping` 并拒绝本地 pending，没有清理 Colyseus SDK 的
   `reconnection.enqueuedMessages`。在底层 socket 已关闭而 `onDrop` 尚未回调的间隙，`:660-690` 仍可能调用
   `room.send()`；SDK `Room.ts:282-285` 会把消息入队，重连 JOIN_ROOM 后 `Room.ts:400-406` 自动 flush。于是调用方
@@ -284,6 +284,25 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
   `test:client` 246/246 不能覆盖该路径。需补 Lobby 专用 reconnection-queue fixture，覆盖 close→onDrop 间隙、
   `onDrop` 后清队列以及重连前不 flush 旧 RPC；删除清理/发送闸的变异必须使该用例失败。`docs/CLIENT.md:268`
   当前「不会进入 SDK 消息队列」的表述也须随实现或范围说明一起修正。
+  **已补齐**：`WebSocketClient.ts` 新增模块级 `disableSdkOutboundReplay(room)`（与 `RoomClient.ts:361` 同形，
+  刻意不跨文件抽取以免扩大改动面并牵动生成镜像），在 **bindRoom、onDrop、onReconnect 三处**装闸；装闸失败
+  一律 fail-closed——bindRoom 阶段抛错让 join 失败（由既有 catch 兜底），掉线/重连阶段走新增的
+  `abandonOnReplayGuardLoss`：摘除 slot、把在途 RPC 判 `CONN_LOST`、后台 `closeSlot`。**不碰**
+  `reconnection.enabled`，避免打破 `webSocketClient.test.ts` 中「主动 leave 后 enabled === false」的既有断言。
+  锁定 SDK 侧核对（`apps/client/src/lib/colyseus/colyseus.js`）：`:8771` socket 关闭时 `send()` 静默入队**不抛**
+  （所以 `rpc()` 的 try/catch 永远接不到这条路径）、`:8988-8990` push 后超限 shift（故 `maxEnqueuedMessages = 0`
+  使入队成为空操作）、`:8863` `onReconnect.invoke()` 早于 `:8870-8875` 的 flush（故必须在 handler 内**同步**装闸）、
+  `:8653` `reconnection` 只在构造函数赋值一次。
+  两条新用例配忠实的 SDK 队列 fixture（flush 用 `enqueuedMessages = []` 整体赋值，与 `:8875` 一致，
+  而非原地截断）：一条覆盖 close→onDrop 间隙不入队且重连不 flush，一条覆盖 bind 之后 `reconnection` 变成
+  不可控形状时 drop/reconnect 两个阶段都必须失败关闭。变异推演四条，各自独立变红（25 例基线）：
+  删 bindRoom 装闸 → 2 例红；删 onDrop 处调用 → 1 例红；删 onReconnect 处调用 → 1 例红；
+  把 `abandonOnReplayGuardLoss` 降级为空操作 → 1 例红。
+  `docs/CLIENT.md` 的「不会进入 SDK 消息队列」改写为点名该间隙、三处装闸与 fail-closed 行为。
+  `test:client` 248/248、`typecheck:client` 0 error、`verify:sync` 镜像一致。
+  严重性口径（不夸大）：这是**潜在缺陷 + 证据缺口**而非在跑的 bug——仓内 Lobby RPC 的生产调用方目前只有
+  只读的 `user.getInfo`，`rpcIdem` 无生产调用方，且服务端 dispatcher 对 `idem` 路由按
+  `(type, uid, clientReqId)` 去重、SDK 还有 `minUptime` 5s 闸；但这些都依赖调用方守约，闸本身该关。
 - `[不阻塞·有意保留]` Game transport 自动重连只在下一份 mode state 通过 exact 校验后运行 adapter 的可选
   reconcile；当前 ballMove 只对账 desired input，idle 不对账业务状态，两者都不等同于完整业务恢复。
 - `[不阻塞·有意保留]` `apps/client/src/net/session.ts` 的角色快照（`commitSessionProfile` /

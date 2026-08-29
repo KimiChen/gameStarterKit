@@ -256,6 +256,38 @@ function reportPushFailure(kind: "exception" | "rejection"): void {
     console.error(`[WebSocketClient] push 处理器 ${kind}`);
 }
 
+/**
+ * The 0.17 SDK buffers `room.send()` while its socket is closed and flushes that
+ * queue right after reconnect JOIN_ROOM (`onReconnect.invoke()` runs first, the
+ * flush loop immediately after). The Lobby answers RPCs by id, so a request the
+ * caller already saw rejected as CONN_LOST must never be replayed: the reply
+ * would land on a deleted pending entry while the server-side effect happened
+ * twice. Keep the SDK queue disabled, including in the close -> onDrop gap where
+ * `slot.dropping` is still false.
+ */
+function disableSdkOutboundReplay(room: Colyseus.Room): boolean {
+    try {
+        const reconnection = (room as unknown as {
+            reconnection?: {
+                maxEnqueuedMessages?: unknown;
+                enqueuedMessages?: unknown;
+            };
+        }).reconnection;
+        if (!reconnection || typeof reconnection !== "object") return false;
+        reconnection.maxEnqueuedMessages = 0;
+        if (Array.isArray(reconnection.enqueuedMessages)) {
+            reconnection.enqueuedMessages.length = 0;
+        } else {
+            reconnection.enqueuedMessages = [];
+        }
+        return reconnection.maxEnqueuedMessages === 0
+            && Array.isArray(reconnection.enqueuedMessages)
+            && reconnection.enqueuedMessages.length === 0;
+    } catch {
+        return false;
+    }
+}
+
 function invokePushHandler(callback: (data: unknown) => unknown, data: unknown): void {
     let result: unknown;
     try {
@@ -523,6 +555,11 @@ export class WebSocketClient {
 
     private bindRoom(slot: LobbySlot, room: Colyseus.Room): void {
         const current = () => this.slot === slot && slot.room === room && !slot.cancelled;
+        // 装闸失败说明这个 room 不是可控的 SDK 形状，join 直接失败关闭比留一条会重放
+        // 写 RPC 的通道安全；调用方由 bindRoom 的 catch 收到 JoinError。
+        if (!disableSdkOutboundReplay(room)) {
+            throw new Error("[WebSocketClient] 无法关闭 SDK 离线重放队列");
+        }
         room.onMessage(LOBBY_MSG_RPC, (raw: unknown) => {
             if (!current()) return;
             let reply: IRpcReply;
@@ -575,10 +612,14 @@ export class WebSocketClient {
             if (!current()) return;
             slot.dropping = true;
             this.rejectAll("CONN_LOST", slot);
+            // close -> onDrop 之间发出的 RPC 已经躺在 SDK 队列里，必须在这里清掉。
+            this.abandonOnReplayGuardLoss(slot, room);
         });
         room.onReconnect(() => {
             if (!current()) return;
             slot.dropping = false;
+            // 必须同步执行：SDK 在 onReconnect 回调返回后立刻 flush 队列。
+            this.abandonOnReplayGuardLoss(slot, room);
         });
         room.onLeave((code?: number) => {
             // Handle stale callbacks as well as the current room. Filtering by
@@ -728,6 +769,18 @@ export class WebSocketClient {
 
     static newClientReqId(): string {
         return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+    }
+
+    /**
+     * 掉线/重连路径上关不掉 SDK 队列时不能继续用这条连接：宁可让调用方看到
+     * CONN_LOST 并重新 join，也不能放任一批写 RPC 在重连后被重放。
+     */
+    private abandonOnReplayGuardLoss(slot: LobbySlot, room: Colyseus.Room): void {
+        if (disableSdkOutboundReplay(room)) return;
+        console.error("[WebSocketClient] SDK 离线重放队列不可控，主动断开大厅连接");
+        slot.cancelled = true;
+        this.rejectAll("CONN_LOST", slot);
+        void this.closeSlot(slot);
     }
 
     private rejectAll(code: LocalErrCode, slot?: LobbySlot): void {

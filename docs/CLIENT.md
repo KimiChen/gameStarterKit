@@ -265,7 +265,12 @@ options，不符即抛错而非静默复用；本次 `client`/`endpoint`/options
 LobbyRoom 只为四个 SDK 会自动重试的 transport close code（1001/1005/1006/4010）**加上「框架未给关闭码」
 的兜底分支**保留 10 秒重连窗口（`code === undefined` 时无从判定是否可重试，fail-open 最多多占 10 秒
 seat / online registration）；主动退出、停服和 49xx 强踢直接最终清理。客户端 onDrop 会立即把全部在途
-RPC 判为 CONN_LOST，掉线窗口内的新 RPC 也 fail-fast，不会进入 SDK 消息队列；当前 generation 的
+RPC 判为 CONN_LOST，onDrop 之后的新 RPC 也 fail-fast。socket 已关而 onDrop 尚未回调的间隙里，本地闸
+（`slot.dropping`）还没合上，`room.send()` 仍会被调用且 SDK **不抛异常**；因此 `WebSocketClient` 在
+bindRoom、onDrop 与 onReconnect 三处把 SDK 的离线重放队列钉死（`maxEnqueuedMessages = 0` 并清空
+`enqueuedMessages`），使这类请求既不会入队也不会在重连 JOIN_ROOM 后被 flush——否则调用方已按 CONN_LOST
+处理的写 RPC 会迟到执行。装闸失败时 fail-closed：bindRoom 阶段直接让 join 失败，掉线/重连阶段主动摘除
+slot 并把在途 RPC 判 CONN_LOST。当前 generation 的
 onReconnect 只恢复发送能力，room、ownership 与 push listener 继续存活。只有最终 onLeave 才进入下述
 session/profile 对账。
 `net/session.ts` 是登录态与 authInvalid/connLost/battleLost 三类 transport 事件的枢纽；authInvalid 在
