@@ -653,6 +653,7 @@ function makeQueueingFakeRoom() {
     sent,
     closeSocket: () => { room.connectionOpen = false; },
     emitDrop: () => cbs.drop?.(),
+    emitLeave: (code?: number) => cbs.leave?.(code),
     emitReconnect: () => {
       room.connectionOpen = true;
       cbs.reconnect?.();
@@ -719,5 +720,109 @@ test("掉线/重连时若 SDK 重放队列不可控则主动断开大厅连接",
       `${phase} 阶段闸失效必须摘除大厅 slot`,
     );
     await WebSocketClient.inst.leave();
+  }
+});
+
+test("装闸部分失败时仍必须同步清空已入队消息，重连不得 flush 旧 RPC", async () => {
+  // 敌意形状：maxEnqueuedMessages 的 setter 在 hostile 置位后抛错，enqueuedMessages
+  // 仍是普通可写数组。SDK 在 onReconnect 回调返回后同步 flush，所以「清队列」必须
+  // 先于「设上限」，且不能被上限赋值的异常吞掉。
+  const fake = makeQueueingFakeRoom();
+  let hostile = false;
+  let backing = 10;
+  Object.defineProperty(fake.room.reconnection, "maxEnqueuedMessages", {
+    configurable: true,
+    get: () => backing,
+    set: (value: number) => {
+      if (hostile) throw new Error("hostile maxEnqueuedMessages");
+      backing = value;
+    },
+  });
+
+  const c = WebSocketClient.inst as unknown as { client: unknown };
+  c.client = { auth: { token: "" }, joinOrCreate: async () => fake.room };
+  await WebSocketClient.inst.join("token-hostile");
+  assert.equal(fake.room.reconnection.maxEnqueuedMessages, 0, "bindRoom 期装闸必须成功");
+
+  // 之后队列被重新武装，且上限再也写不进去。
+  hostile = true;
+  backing = 10;
+  fake.closeSocket();
+  const pending = WebSocketClient.inst.rpc(UserRpc.GetUserId, {});
+  assert.equal(
+    fake.room.reconnection.enqueuedMessages.length,
+    1,
+    "夹具必须真的预置了一条队列消息，否则本用例是空跑",
+  );
+
+  fake.emitReconnect();
+  assert.equal(
+    fake.sent.filter((message) => message.type === LOBBY_MSG_RPC).length,
+    0,
+    "装闸部分失败也不得让旧 RPC 在重连后被 flush",
+  );
+  await assert.rejects(pending, (e: unknown) => e instanceof RpcError && e.code === "CONN_LOST");
+  await WebSocketClient.inst.leave();
+});
+
+test("清队列失败也不得吞掉设上限：三步中和必须各自独立", async () => {
+  // 冻结数组让 `length = 0` 抛错（严格模式）。此时唯一还能阻止**后续**入队的动作
+  // 就是把上限设为 0——三步共用一个 try 时它会被前一步的异常吞掉。
+  const fake = makeQueueingFakeRoom();
+  // 必须非空：空的冻结数组本身就是已中和状态，清理步骤根本不会尝试写入。
+  const frozen = Object.freeze([{ data: "stale" }] as { data: unknown }[]);
+  Object.defineProperty(fake.room.reconnection, "enqueuedMessages", {
+    configurable: true,
+    get: () => frozen,
+    set: () => { throw new Error("hostile enqueuedMessages"); },
+  });
+
+  const c = WebSocketClient.inst as unknown as { client: unknown };
+  c.client = { auth: { token: "" }, joinOrCreate: async () => fake.room };
+  await assert.rejects(
+    WebSocketClient.inst.join("token-frozen"),
+    /无法关闭 SDK 离线重放队列/,
+    "队列不可中和时 join 必须失败关闭",
+  );
+  assert.equal(
+    fake.room.reconnection.maxEnqueuedMessages,
+    0,
+    "清队列失败不得吞掉设上限——它是唯一还能阻止后续入队的动作",
+  );
+});
+
+test("闸失效放弃连接：释放全部 owner 并只上报一次最终断线", async () => {
+  const { onConnLost } = await import("../src/net/session");
+  for (const phase of ["drop", "reconnect"] as const) {
+    const fake = makeQueueingFakeRoom();
+    const c = WebSocketClient.inst as unknown as { client: unknown };
+    c.client = { auth: { token: "" }, joinOrCreate: async () => fake.room };
+    const owner = WebSocketClient.inst.joinOwned(`token-abandon-${phase}`, undefined, { timeoutMs: 60_000 });
+    await owner.ready;
+
+    let connLost = 0;
+    const un = onConnLost(() => { connLost++; });
+    try {
+      const owners = (WebSocketClient.inst as unknown as {
+        slot: { owners: Set<{ active: boolean }> } | null;
+      }).slot?.owners;
+      assert.ok(owners && owners.size > 0, `${phase}：前置条件——slot 必须持有 owner`);
+      const held = [...owners];
+
+      fake.room.reconnection = null;
+      if (phase === "drop") fake.emitDrop();
+      else fake.emitReconnect();
+
+      assert.equal(owners.size, 0, `${phase}：闸失效必须释放全部 owner`);
+      assert.ok(held.every((o) => o.active === false), `${phase}：owner 不得停在 active`);
+      assert.equal(connLost, 1, `${phase}：闸失效必须上报一次最终断线`);
+
+      // 迟到的 onLeave 会被 current() 挡掉，不得重复上报。
+      fake.emitLeave(1006);
+      assert.equal(connLost, 1, `${phase}：迟到 onLeave 不得二次上报`);
+    } finally {
+      un();
+    }
+    await owner.leave();
   }
 });

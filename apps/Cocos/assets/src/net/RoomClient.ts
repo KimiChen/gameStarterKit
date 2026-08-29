@@ -367,12 +367,20 @@ function disableSdkOutboundReplay(room: Colyseus.Room<unknown>): boolean {
             };
         }).reconnection;
         if (!reconnection || typeof reconnection !== "object") return false;
-        reconnection.maxEnqueuedMessages = 0;
-        if (Array.isArray(reconnection.enqueuedMessages)) {
-            reconnection.enqueuedMessages.length = 0;
-        } else {
-            reconnection.enqueuedMessages = [];
-        }
+        // 顺序与分步都要紧：调用点（bindRoom / onDrop / onReconnect）返回后 SDK 会
+        // **同步** flush 队列，所以「清空已入队的旧消息」必须先于「设上限」，且任一步
+        // 失败都不能吞掉后面的补救——过去三步共用一个 try，写上限抛错会直接跳过清队列。
+        try {
+            const queue = reconnection.enqueuedMessages;
+            if (Array.isArray(queue) && queue.length > 0) queue.length = 0;
+        } catch { /* 冻结数组：交给下面的整体替换 */ }
+        try {
+            const queue = reconnection.enqueuedMessages;
+            if (!Array.isArray(queue) || queue.length > 0) reconnection.enqueuedMessages = [];
+        } catch { /* 不可写：只能如实报告失败 */ }
+        try {
+            reconnection.maxEnqueuedMessages = 0;
+        } catch { /* 不可写：只能如实报告失败 */ }
         return reconnection.maxEnqueuedMessages === 0
             && Array.isArray(reconnection.enqueuedMessages)
             && reconnection.enqueuedMessages.length === 0;
