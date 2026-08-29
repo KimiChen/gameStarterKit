@@ -293,8 +293,9 @@
   同步遗漏、新增未登记与 stale 登记反例；`npm run verify:inventory`、两脚本 `node --check` 及
   AGENTS/CLAUDE byte-identical 检查通过。
 - `[不阻塞·有意保留]` inventory 与 Markdown 链接检查只覆盖登记表内文档和就近 README，不扫描任意
-  根目录 Markdown；`plan-v2.md` 已通过 `routeOfTruth.corePlan`、`todo-godogen.md` 已通过
+  根目录 Markdown；本文件当轮通过 `routeOfTruth.corePlan`、`todo-godogen.md` 通过
   `referenceDocs` 显式纳入检查，未登记的其它散装文档仍不在通用扫描范围内。
+  （归档补注：`corePlan` 自 `8d0ec91` 起为 [plan-v3.md](plan-v3.md)，本文件改由 `referenceDocs` 纳入检查。）
 - `[不阻塞·有意保留]` 组合根发现不构建完整 TypeScript import graph，scene 发现不扫描动态 prefab；
   Markdown 检查只守住登记链接和锚点，不是通用语法解析。
 
@@ -356,10 +357,11 @@
   保留边界共存、不代表零遗留；`◐` 则专指验收范围内仍有可执行缺口或仅部分完成，两者定义互斥。
   验收证据：`npm run verify:inventory` 通过，并人工核对 P0-04、P0-05、P1-05、P1-06、P1-07、P1-08
   与 P1-09 的状态及保留边界。
-- `[已完成]` `plan-v2.md` 已登记为 `docs/inventory.json` 的 `routeOfTruth.corePlan`，根 README、
-  AGENTS/CLAUDE 与当前缺口入口均指向本文件；`verify-inventory.mjs` 会拒绝把历史 `plan.md` 重新登记为
+- `[已完成]` 当轮已把本文件登记为 `docs/inventory.json` 的 `routeOfTruth.corePlan`，根 README、
+  AGENTS/CLAUDE 与当时的缺口入口均指向本文件；`verify-inventory.mjs` 会拒绝把历史 `plan.md` 重新登记为
   当前计划，同时通过 `referenceDocs` 继续检查历史归档链接。验收证据：`npm run verify:inventory` 与
   `npm run test:inventory`。
+  （归档补注：`corePlan` 自 `8d0ec91` 起为 [plan-v3.md](plan-v3.md)，本条描述的是当轮状态。）
 
 > 协议版本待评估项原列于本节，因其带有硬性发布前置条件、原属技术待办而非文档问题，已完成并移至
 > §1 第 8 条留存证据。
