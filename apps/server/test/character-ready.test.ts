@@ -4,6 +4,7 @@ import {
   CHARACTER_READY_TIMEOUT_MAX_MS,
   CHARACTER_READY_TIMEOUT_MS,
 } from "../src/core/infra/config";
+import { zoneCtx } from "../src/core/infra/keys";
 import {
   CharacterReadyCoordinator,
   CharacterReadyClosedError,
@@ -212,7 +213,7 @@ test("character initializer：ready marker 按区隔离，s1 的 ready 不得短
       calls.push({ stage: "ensureLive", sId });
     },
     createUser: async (_uid: string, _fields: Record<string, string>) => {
-      calls.push({ stage: "createUser", sId: currentSId });
+      calls.push({ stage: "createUser", sId: zoneCtx.getStore()?.sId ?? -1 });
       return "exists" as const;
     },
     readCharacterRegistration: async (_uid: string, sId: number) => {
@@ -232,17 +233,15 @@ test("character initializer：ready marker 按区隔离，s1 的 ready 不得短
       calls.push({ stage: "mark-ready", sId });
     },
     invalidateUserNegcache: async (_uid: string) => {
-      calls.push({ stage: "negcache", sId: currentSId });
+      calls.push({ stage: "negcache", sId: zoneCtx.getStore()?.sId ?? -1 });
     },
     nowMs: () => 100,
     registrationRecheckMs: 1_000,
   };
   // createUser/invalidateUserNegcache intentionally have no sId parameter in
-  // their production ports; this variable records the ALS zone visible while
-  // the orchestrator invokes them, catching accidental cross-zone reuse.
-  let currentSId = 0;
+  // their production ports; read the actual ALS store to catch a missing
+  // zoneCtx.run rather than manufacturing the expected zone in the test.
   const run = async (sId: number): Promise<void> => {
-    currentSId = sId;
     await ensureCharacterWithDependencies("same-user", sId, deps);
   };
 
