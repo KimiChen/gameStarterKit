@@ -120,6 +120,28 @@ test("check reports stale server and client outputs independently", () => {
     }
 });
 
+// canonical 正例断言「不改写」时磁盘内容与期望内容本就一致，恒真；
+// 只有先把产物写成陈旧字节，才能真正区分「只读拒绝」与「静默修复后再拒绝」。
+test("check refuses stale outputs without silently rewriting them", () => {
+    const paths = fixture();
+    try {
+        generate(paths);
+        const staleServer = '{"schemaVersion":0,"items":[]}\n';
+        const staleClient = '{"schemaVersion":0}\n';
+        writeFileSync(paths.server, staleServer);
+        writeFileSync(paths.client, staleClient);
+
+        const result = invoke(paths, "--check");
+        assert.notEqual(result.status, 0, result.stdout);
+        assert.match(result.stderr, /生成物陈旧/);
+        // --check 是只读命令：拒绝之后双端产物必须仍是陈旧字节，不能被就地修复。
+        assert.equal(readFileSync(paths.server, "utf8"), staleServer);
+        assert.equal(readFileSync(paths.client, "utf8"), staleClient);
+    } finally {
+        rmSync(paths.root, { recursive: true, force: true });
+    }
+});
+
 test("no-client-output limits both write and check to the server output", () => {
     const paths = fixture();
     try {
