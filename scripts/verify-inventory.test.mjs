@@ -788,3 +788,69 @@ test("inventory verifier rejects a non-string script value", () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("inventory verifier rejects a self-referencing verification requirement", () => {
+  const root = createFixture();
+  try {
+    // commandCovers 在 key 相同时短路返回 true，自引用能自证覆盖。
+    const inventory = readInventory(root);
+    inventory.capabilities[0].verification.push({
+      kind: "root",
+      script: "verify:core",
+      requires: [{ kind: "root", script: "verify:core" }],
+    });
+    writeInventory(root, inventory);
+    assertRejected(root, /requires 不得自引用或成环：root:verify:core/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects mutually requiring verification commands", () => {
+  const root = createFixture();
+  try {
+    const inventory = readInventory(root);
+    inventory.capabilities[0].verification.push({
+      kind: "root",
+      script: "verify:core",
+      requires: [{
+        kind: "root",
+        script: "verify:all",
+        requires: [{ kind: "root", script: "verify:core" }],
+      }],
+    });
+    writeInventory(root, inventory);
+    assertRejected(root, /requires 不得自引用或成环：root:verify:core/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier does not let a self-wrapped requirement whitewash a broken chain", () => {
+  const root = createFixture();
+  try {
+    // 环闸若排在 requires===undefined 早退之后，把一条真实失败多包一层自身 key
+    // 就能让整棵子树的断言被静默跳过。
+    const packageFile = join(root, "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts["verify:core"] = pkg.scripts["verify:core"].replace(
+      "npm run verify:vendor",
+      "echo npm run verify:vendor",
+    );
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    const inventory = readInventory(root);
+    inventory.capabilities[0].verification.push({
+      kind: "root",
+      script: "verify:core",
+      requires: [{
+        kind: "root",
+        script: "verify:core",
+        requires: [{ kind: "root", script: "verify:vendor" }],
+      }],
+    });
+    writeInventory(root, inventory);
+    assertRejected(root, /requires 不得自引用或成环：root:verify:core/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

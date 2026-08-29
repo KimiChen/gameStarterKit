@@ -783,13 +783,20 @@ function checkCommand(command, owner, stack = new Set()) {
     return;
   }
 
+  // 环必须失败关闭，且判定要早于 `requires === undefined` 的叶子早退：`commandCovers`
+  // 在 key 相同时短路返回 true，自引用与互相 requires 都能自证覆盖；而过去这里遇到
+  // 重复 key 只静默 return，等于把该节点以下整棵子树的断言跳过——把一条已被反例守住的
+  // 失败多包一层自身 key 就能漂白。
+  const currentKey = commandKey(command);
+  if (currentKey && stack.has(currentKey)) {
+    fail(`${owner}.requires 不得自引用或成环：${currentKey}`);
+    return;
+  }
   if (command.requires === undefined) return;
   if (!Array.isArray(command.requires)) {
     fail(`${owner}.requires 必须是命令数组`);
     return;
   }
-  const currentKey = commandKey(command);
-  if (currentKey && stack.has(currentKey)) return;
   const nextStack = new Set(stack);
   if (currentKey) nextStack.add(currentKey);
   for (const [index, requirement] of command.requires.entries()) {
