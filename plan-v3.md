@@ -353,11 +353,24 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
   转调、`documentedIn` 文档删掉命令原文、与命令表重复登记、根文档引用不存在的 workspace 命令）。变异推演
   两处：删掉 `checkWorkspaceCommandScope` 调用 → 4 条变红；删掉字面量存在性断言 → 第 5 条变红。上述
   5 条只覆盖正常登记路径，不覆盖下面两种绕过。
-- `[不阻塞·待补齐]` **workspace 覆盖门禁允许 self-reference**：
+- `[已完成]` **workspace 覆盖门禁允许 self-reference**：
   `scripts/verify-inventory.mjs:227-230` 未限制 `supersededBy.kind` 必须为 `root`，而
   `commandCovers`（`:706-714`）在 command key 相同时直接返回 `true`。因此任意 workspace 脚本可以把自己登记为
   `supersededBy`，无需证明任何根命令实际调用它即可通过 `verify:inventory`。需补 fixture 反例，断言
   `supersededBy` 只能指向根命令（或明确禁止同 key），并以 self-reference 变异证明门禁确实失败。
+  **已补齐**：实证先确认了两种绕过在 HEAD 都能过闸（在 `git archive` 出的一次性副本上跑 `--root`）：
+  `@game/server#relayer` 自指 → exit 0；新增互相调用的 `fx:a`/`fx:b` 并互为 `supersededBy` → exit 0。
+  修复没有采用「只能指向根命令」，因为那会**误伤**一类正当登记：锚点若是**已写在助手命令表里**的 workspace
+  命令（例如 `@game/server#smoke`），其文档保证与 root 锚点等价——root 的保证本就来自
+  `checkRootCommandTable` 强制它出现在文档里。实际判定改为「锚点必须是 root，**或**自己已在助手命令表中」，
+  由 `documented` 集合直接判定；`:216-218` 已保证登记项自身的 key 绝不可能在 `documented` 里（在里面就直接
+  fail），因此自指永远拿不到放行。**不动 `commandCovers`**：它被 `checkCommand` 的 `verification.requires`
+  判定复用，改短路语义会波及既有覆盖判定，超出本条范围。
+  三条反例：A 自指、B 互相 supersede、C **正当 workspace 锚点必须仍放行**（反向锁）。变异推演三条：
+  删掉锚点闸 → A、B 两条红；退化成「只禁自指」（`anchorKey === key`）→ **只有 B 红**，证明 A 不能替代 B；
+  收紧成「只认 root」→ **只有 C 红**，锁住不误伤方向。`test:inventory` 33→36，`verify:inventory` 仍绿。
+  残余风险另立条目：锚点闸只把橡皮图章从「零成本自证」抬高到「需要在锚点脚本文本里写一段能匹配正则的调用」，
+  并未建立真实可达性——文本伪调用见下一条。
 - `[不阻塞·待补齐]` **workspace 覆盖门禁把文本伪调用当成真实执行**：
   `scripts/verify-inventory.mjs:676-690` 的 `commandReferences` 只对 package script 文本做正则扫描，
   `echo npm --workspace ... run ...`、注释以及永不执行的 shell 分支也会被当作覆盖；现有

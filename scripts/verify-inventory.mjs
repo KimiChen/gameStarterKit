@@ -225,6 +225,15 @@ function checkWorkspaceCommandScope(documented) {
       continue;
     }
     if (hasSuperseded) {
+      // 锚点必须自己已被文档登记，否则这条登记是橡皮图章：`commandCovers` 在
+      // command key 相同时直接短路返回 true，一个脚本可以拿自己当锚点自证；两个
+      // 互相调用、谁都没进命令表的脚本也能互证。root 锚点的文档保证来自
+      // `checkRootCommandTable`，workspace 锚点则必须自己就在助手命令表里。
+      const anchorKey = commandKey(entry.supersededBy);
+      if (entry.supersededBy?.kind !== "root" && !(anchorKey && documented.has(anchorKey))) {
+        fail(`${owner}.supersededBy 必须锚定到根命令或助手命令表已登记的 workspace 命令：${anchorKey ?? "无效命令"}`);
+        continue;
+      }
       checkCommand(entry.supersededBy, `${owner}.supersededBy`);
       if (commandExists(entry.supersededBy) && !commandCovers(entry.supersededBy, command)) {
         fail(`${owner}.supersededBy 并未实际调用 ${key}：${commandKey(entry.supersededBy)}`);

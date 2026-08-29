@@ -585,3 +585,76 @@ test("inventory verifier rejects a root document citing a missing workspace comm
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("inventory verifier rejects a workspace scope entry that supersedes itself", () => {
+  const root = createFixture();
+  try {
+    // commandCovers 在 key 相同时短路返回 true，所以自指锚点不会被覆盖判定拦住。
+    const inventory = readInventory(root);
+    const entry = inventory.workspaceCommandScope.find((item) => item.command.script === "relayer");
+    assert.ok(entry, "fixture must contain the relayer scope entry");
+    delete entry.documentedIn;
+    entry.supersededBy = { kind: "workspace", workspace: "@game/server", script: "relayer" };
+    writeInventory(root, inventory);
+    assertRejected(
+      root,
+      /workspaceCommandScope\[\d+\]\.supersededBy 必须锚定到根命令或助手命令表已登记的 workspace 命令：workspace:@game\/server#relayer/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects two workspace scope entries that supersede each other", () => {
+  const root = createFixture();
+  try {
+    // 互相调用、谁都没进命令表的两个脚本也能互证——比自指更一般的形态，
+    // 只禁自指的实现挡不住它。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts["fx:a"] = "npm --workspace @game/server run fx:b";
+    pkg.scripts["fx:b"] = "npm --workspace @game/server run fx:a";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+
+    const inventory = readInventory(root);
+    for (const [script, anchor] of [["fx:a", "fx:b"], ["fx:b", "fx:a"]]) {
+      inventory.workspaceCommandScope.push({
+        command: { kind: "workspace", workspace: "@game/server", script },
+        supersededBy: { kind: "workspace", workspace: "@game/server", script: anchor },
+        reason: "fixture mutual supersede",
+      });
+    }
+    writeInventory(root, inventory);
+    assertRejected(
+      root,
+      /workspaceCommandScope\[\d+\]\.supersededBy 必须锚定到根命令或助手命令表已登记的 workspace 命令：workspace:@game\/server#fx:(a|b)/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier accepts a workspace anchor that is itself in the command table", () => {
+  const root = createFixture();
+  try {
+    // 反向锁：闸不得被收紧成「只认 root」。`smoke` 已在助手命令表里，其文档保证与
+    // root 锚点等价，因此以它为锚点是正当登记，必须放行。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts["fx:c"] = "node tools/fixture-c.mjs";
+    pkg.scripts.smoke = `${pkg.scripts.smoke} && npm --workspace @game/server run fx:c`;
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+
+    const inventory = readInventory(root);
+    inventory.workspaceCommandScope.push({
+      command: { kind: "workspace", workspace: "@game/server", script: "fx:c" },
+      supersededBy: { kind: "workspace", workspace: "@game/server", script: "smoke" },
+      reason: "fixture legitimate workspace anchor",
+    });
+    writeInventory(root, inventory);
+    const result = runVerifier(root);
+    assert.equal(result.status, 0, outputOf(result));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
