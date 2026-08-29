@@ -182,9 +182,16 @@ test("index 默认入口：真实监听后收到 SIGTERM 按序释放并以 0 �
     writeSandboxFile(sandbox, "src/probe.ts", `
       import { appendFileSync } from "node:fs";
       import { isAdmissionOpen } from "./core/infra/lifecycle";
+      let readyDrainResolve!: () => void;
+      const readyDrained = new Promise<void>((resolve) => { readyDrainResolve = resolve; });
       export function record(name: string): void {
         appendFileSync(process.env.LIFECYCLE_LOG!, name + "|admission=" + String(isAdmissionOpen()) + "\\n");
       }
+      export function markReadyDrained(): void {
+        record("drain-ready");
+        readyDrainResolve();
+      }
+      export function waitForReadyDrain(): Promise<void> { return readyDrained; }
     `);
     writeSandboxFile(sandbox, "src/app.config.ts", `
       import { Server } from "@colyseus/core";
@@ -229,9 +236,9 @@ test("index 默认入口：真实监听后收到 SIGTERM 按序释放并以 0 �
       export async function stopCharacterRepairWorker(): Promise<void> { record("stop-repair"); }
     `);
     writeSandboxFile(sandbox, "src/player/character.ts", `
-      import { record } from "../probe";
+      import { markReadyDrained, record } from "../probe";
       export function clearCharacterReadyFlights(): void { record("clear-ready"); }
-      export async function drainCharacterReadyFlights(): Promise<void> { record("drain-ready"); }
+      export async function drainCharacterReadyFlights(): Promise<void> { markReadyDrained(); }
     `);
     writeSandboxFile(sandbox, "src/websocket/push.ts", `
       import { record } from "../probe";
@@ -253,12 +260,10 @@ test("index 默认入口：真实监听后收到 SIGTERM 按序释放并以 0 �
     writeSandboxFile(sandbox, "register-cleanup.mjs", `
       import { appendFileSync } from "node:fs";
       import { defaultLifecycle, defaultTasks, isAdmissionOpen } from "./src/core/infra/lifecycle.ts";
+      import { waitForReadyDrain } from "./src/probe.ts";
       const log = (name) => appendFileSync(process.env.LIFECYCLE_LOG, name + "|admission=" + String(isAdmissionOpen()) + "\\n");
       defaultLifecycle.register("probe-marker", () => { log("marker"); });
-      const pending = new Promise((resolve) => {
-        process.once("SIGTERM", () => setTimeout(resolve, 20));
-      });
-      void defaultTasks.track("probe-task", pending.then(() => { log("task-settled"); }));
+      void defaultTasks.track("probe-task", waitForReadyDrain().then(() => { log("task-settled"); }));
     `);
 
     const childEnv: NodeJS.ProcessEnv = {
