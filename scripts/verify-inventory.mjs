@@ -156,8 +156,11 @@ function readmeCommandScripts(text) {
 function workspaceCommandFromText(command) {
   // npm accepts `--workspace <name>` and `-w <name>`; the trailing guard keeps
   // `run stack` from also matching `run stack:stop`.
-  const match = command.match(
-    /npm[ \t]+(?:--workspace|-w)[ \t]+(\S+)[ \t]+run[ \t]+([A-Za-z0-9:_-]+)(?![A-Za-z0-9:_-])/u,
+  // 行首锚点与 `rootScriptFromCommand` 对齐：登记行必须**就是**那条命令，而不是顺带
+  // 提到它（`# …`、`echo "…"`、`false && …` 都不算登记）。反陈旧的全文扫描留在
+  // `checkWorkspaceCommandLiterals`，那里故意不加锚点。
+  const match = command.trim().match(
+    /^npm[ \t]+(?:--workspace|-w)[ \t]+(\S+)[ \t]+run[ \t]+([A-Za-z0-9:_-]+)(?![A-Za-z0-9:_-])/u,
   );
   return match ? { kind: "workspace", workspace: match[1], script: match[2] } : null;
 }
@@ -197,6 +200,8 @@ function enumerateWorkspaceCommands() {
  * machine-checked justification: a root script that provably invokes it, or a
  * document that literally spells the command out.
  */
+const DOCUMENTED_IN_PATTERN = /^(?:README\.md|docs\/(?:[^/\\]+\/)*[^/\\]+\.md)$/u;
+
 function checkWorkspaceCommandScope(documented) {
   const scope = inventory.workspaceCommandScope;
   if (!Array.isArray(scope)) {
@@ -242,11 +247,19 @@ function checkWorkspaceCommandScope(documented) {
     }
     requireString(entry.documentedIn, `${owner}.documentedIn`);
     if (typeof entry.documentedIn !== "string") continue;
-    if (!exists(entry.documentedIn)) {
+    // 限定在真正的命令文档面：README.md 与 docs/ 下的 .md。否则把 documentedIn 指向
+    // 任意文件（例如 package.json 的 description 字段）就能盖绿章；历史归档 plan*.md
+    // 也不该成为「当前命令登记处」。
+    if (!DOCUMENTED_IN_PATTERN.test(normalizeRepoPath(entry.documentedIn))) {
+      fail(`${owner}.documentedIn 必须是 README.md 或 docs/ 下的 .md 文档：${entry.documentedIn}`);
+      continue;
+    }
+    const documentedPath = repoPath(entry.documentedIn);
+    if (!documentedPath || !fs.existsSync(documentedPath) || !fs.statSync(documentedPath).isFile()) {
       fail(`${owner}.documentedIn 文档不存在：${entry.documentedIn}`);
       continue;
     }
-    const docText = fs.readFileSync(repoPath(entry.documentedIn), "utf8");
+    const docText = fs.readFileSync(documentedPath, "utf8");
     const literal = new RegExp(
       `npm[ \\t]+--workspace[ \\t]+${escapeRegex(command.workspace)}[ \\t]+run[ \\t]+${escapeRegex(command.script)}(?![A-Za-z0-9:_-])`,
       "u",

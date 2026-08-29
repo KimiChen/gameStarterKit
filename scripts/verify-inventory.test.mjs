@@ -854,3 +854,108 @@ test("inventory verifier does not let a self-wrapped requirement whitewash a bro
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("inventory verifier rejects a commented-out workspace command in the assistant block", () => {
+  const root = createFixture();
+  try {
+    // 真实绕过形态：新增脚本只靠命令块里「顺带提一嘴」的注释行充当登记。
+    // 注意不能写成 `# npm …`（带空格），那样首 token 是 `#`；这里刻意用紧贴形式，
+    // 证明守的是行首锚点而不是某个 `#` 特判。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts["fixture:worker"] = "tsx tools/fixture-worker.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    for (const filename of ["AGENTS.md", "CLAUDE.md"]) {
+      const file = join(root, filename);
+      const text = readFileSync(file, "utf8").replace(
+        "npm --workspace @game/server run test\n",
+        "npm --workspace @game/server run test\n#已废弃：npm --workspace @game/server run fixture:worker\n",
+      );
+      writeFileSync(file, text);
+    }
+    assertRejected(
+      root,
+      /workspace 脚本既未登记进助手命令表也未登记作用域：workspace:@game\/server#fixture:worker/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects an echoed workspace command in the assistant block", () => {
+  const root = createFixture();
+  try {
+    // 与注释形态分开写，防止后人只给 `#` 加特判就以为修好了。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts["fixture:worker"] = "tsx tools/fixture-worker.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    for (const filename of ["AGENTS.md", "CLAUDE.md"]) {
+      const file = join(root, filename);
+      const text = readFileSync(file, "utf8").replace(
+        "npm --workspace @game/server run test\n",
+        "npm --workspace @game/server run test\necho \"npm --workspace @game/server run fixture:worker\"\n",
+      );
+      writeFileSync(file, text);
+    }
+    assertRejected(
+      root,
+      /workspace 脚本既未登记进助手命令表也未登记作用域：workspace:@game\/server#fixture:worker/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects documentedIn outside README and docs", () => {
+  const root = createFixture();
+  try {
+    const inventory = readInventory(root);
+    const entry = inventory.workspaceCommandScope.find((item) => item.command.script === "loadtest");
+    assert.ok(entry, "fixture must contain the loadtest scope entry");
+    entry.documentedIn = "apps/server/package.json";
+    writeInventory(root, inventory);
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.description = "npm --workspace @game/server run loadtest";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /documentedIn 必须是 README\.md 或 docs\/ 下的 \.md 文档：apps\/server\/package\.json/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects documentedIn pointing at an archived plan", () => {
+  const root = createFixture();
+  try {
+    const inventory = readInventory(root);
+    const entry = inventory.workspaceCommandScope.find((item) => item.command.script === "loadtest");
+    entry.documentedIn = "plan-v2.md";
+    writeInventory(root, inventory);
+    const plan = join(root, "plan-v2.md");
+    writeFileSync(plan, `${readFileSync(plan, "utf8")}\n\`npm --workspace @game/server run loadtest\`\n`);
+    assertRejected(root, /documentedIn 必须是 README\.md 或 docs\/ 下的 \.md 文档：plan-v2\.md/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects documentedIn pointing at a directory instead of crashing", () => {
+  const root = createFixture();
+  try {
+    const inventory = readInventory(root);
+    const entry = inventory.workspaceCommandScope.find((item) => item.command.script === "loadtest");
+    entry.documentedIn = "docs/fixture.md";
+    writeInventory(root, inventory);
+    mkdirSync(join(root, "docs", "fixture.md"), { recursive: true });
+    const result = runVerifier(root);
+    assert.notEqual(result.status, 0, outputOf(result));
+    assert.doesNotMatch(outputOf(result), /EISDIR/, outputOf(result));
+    assert.match(outputOf(result), /documentedIn 文档不存在：docs\/fixture\.md/, outputOf(result));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
