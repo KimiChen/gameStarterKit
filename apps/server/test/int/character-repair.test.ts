@@ -10,6 +10,7 @@ import {
 import { clientFor, clientForKey, closeRedis } from "../../src/core/infra/redisRoute";
 import { createUser } from "../../src/core/userRecord";
 import { zoneCtx } from "../../src/core/infra/keys";
+import { readCharacterRegistration } from "../../src/player/characterState";
 import {
   characterRepairMember,
   clearCharacterRepairIntent,
@@ -116,6 +117,45 @@ test("processOnce：远端 PUT 成功后只把对应区的 profile marker 补为
       "marker 更新不得删除或重建错误的 profile");
     assert.equal(await redis().zscore(K_CHARACTER_REPAIR_DUE, member), null);
     assert.equal(await redis().hget(K_CHARACTER_REPAIR_ATTEMPTS, member), null);
+  } finally {
+    await profileClient.unlink(profileKey).catch(() => {});
+  }
+});
+
+test("readCharacterRegistration：真实 Redis marker 严格解析 checkedAt", async () => {
+  const uid = testUid("marker-reader");
+  const sId = 17;
+  const profileKey = zoneCtx.run({ sId }, () => kUser(uid));
+  const profileClient = clientFor(uid);
+  try {
+    await profileClient.unlink(profileKey);
+
+    await profileClient.hset(profileKey, {
+      characterRegistration: "ready",
+      characterRegistrationCheckedAt: "123456",
+    });
+    assert.deepEqual(
+      await readCharacterRegistration(uid, sId),
+      { state: "ready", checkedAtMs: 123456 },
+      "合法的非负安全整数毫秒应被解析为 number",
+    );
+
+    for (const value of ["", "-1", "1.5", "NaN", "9007199254740992", "garbage"]) {
+      await profileClient.hset(profileKey, "characterRegistrationCheckedAt", value);
+      assert.deepEqual(
+        await readCharacterRegistration(uid, sId),
+        { state: "ready", checkedAtMs: null },
+        `非法 checkedAt=${JSON.stringify(value)} 必须退回权威复核`,
+      );
+    }
+
+    await profileClient.hset(profileKey, "characterRegistration", "unknown");
+    await profileClient.hdel(profileKey, "characterRegistrationCheckedAt");
+    assert.deepEqual(
+      await readCharacterRegistration(uid, sId),
+      { state: null, checkedAtMs: null },
+      "未知 marker 与缺失时间戳都必须 fail-closed",
+    );
   } finally {
     await profileClient.unlink(profileKey).catch(() => {});
   }
