@@ -97,13 +97,14 @@
 
 - `[不阻塞·有意保留]` 完整外部 Redis/MySQL/WebPlatform smoke、真实 Creator 预览和目标设备采样不在
   Node 证据内。
-- `[不阻塞·待补齐]` SIGTERM 子进程用例替换的不止外部适配器，还包括 `app.config` 组合根
-  （rooms/routes/express）、`infra/config`，以及 loader、loopMonitor、matchConsumer、kickBus、
-  character、characterRepair、push、redisRoute、mysql、webPlatformClient 的探针桩，运行时房间数为 0；
-  其中 `player/character.ts` 被桩掉意味着 character-ready 阶段本身也是探针。
-- `[不阻塞·待补齐]` 该用例证明 admission 关闭时点、阶段释放顺序与 exit 0，但不证明真实房间在
-  `onBeforeShutdown` 与 `onShutdown` 之间被排空。其中真实依赖装配另由同文件的源码接缝断言
-  （含 `listen(app, PORT)`、只注册一处 aggregator）与本地 smoke 承担；真实房间排空仍无 Node 侧证据。
+- `[已完成]` SIGTERM 子进程用例继续隔离外部适配器并证明默认入口的 admission 关闭、阶段释放顺序与
+  exit 0；另由 `shutdown-aggregator.test.ts` 在独立子进程中启动真实 `Server`、`WebSocketTransport` 与
+  matchmaker，通过真实 SDK 客户端加入一个活动测试 Room。其阻塞式 `onDispose` 锁定
+  `before-done < room-dispose-start < room-dispose-done < after-start`，并证明 dispose 未释放时
+  `onShutdown` 与停服 Promise 均不能提前完成，最终房间计数归零、房间引用移除且 transport 关闭。
+  该证据不引入 Redis/MySQL/WebPlatform，也不把直接调用 Room hook 当作框架生命周期。
+  验收证据：`shutdown-aggregator.test.ts` 6/6 与 `index-startup-lifecycle.test.ts` 3/3 定向通过；
+  `npm --workspace @game/server run typecheck`、服务端单测 215/215 与 `npm run verify:inventory` 通过。
 
 来源：`plan.md:437-438`、`plan.md:445-454`
 

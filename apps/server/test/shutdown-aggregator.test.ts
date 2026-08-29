@@ -156,20 +156,109 @@ test("shutdown aggregator：同一 Server 禁止重复注册第二个 onBeforeSh
   assert.equal(fake.after.length, 1);
 });
 
-test("真实 Colyseus Server：listen 后 gracefullyShutdown(false) 关闭底层句柄并正常返回", () => {
+test("真实 Colyseus Server：活动 Room 在 before 与 after shutdown 之间完成排空", () => {
+  const shutdownModuleUrl = new URL("../src/shutdown.ts", import.meta.url).href;
   const script = `
-    import { Server } from "@colyseus/core";
+    import assert from "node:assert/strict";
+    import { Client } from "@colyseus/sdk";
+    import { matchMaker, Room, Server } from "@colyseus/core";
     import { WebSocketTransport } from "@colyseus/ws-transport";
+    const { installShutdownAggregator } = await import(${JSON.stringify(shutdownModuleUrl)});
+
+    const events = [];
+    let disposeCalls = 0;
+    let releaseDispose;
+    let markDisposeStarted;
+    const disposeGate = new Promise((resolve) => { releaseDispose = resolve; });
+    const disposeStarted = new Promise((resolve) => { markDisposeStarted = resolve; });
+
+    class ShutdownProbeRoom extends Room {
+      onCreate() {
+        this.autoDispose = false;
+        events.push("room-created");
+      }
+
+      onJoin() {
+        events.push("room-joined");
+      }
+
+      onLeave() {
+        events.push("room-left");
+      }
+
+      async onDispose() {
+        disposeCalls++;
+        events.push("room-dispose-start");
+        markDisposeStarted();
+        await disposeGate;
+        events.push("room-dispose-done");
+      }
+    }
+
     const server = new Server({
       transport: new WebSocketTransport(),
       gracefullyShutdown: false,
       greet: false,
+      devMode: false,
     });
+    server.define("shutdown-probe", ShutdownProbeRoom);
+    installShutdownAggregator(server, {
+      beginShutdown: () => { events.push("before-start"); },
+      clearCharacterReadyFlights: () => { events.push("before-clear-ready"); },
+      stopBackgroundProducers: async () => {
+        events.push("before-producers-start");
+        await Promise.resolve();
+        events.push("before-done");
+      },
+      finishShutdown: async () => {
+        events.push("after-start");
+        await Promise.resolve();
+        events.push("after-done");
+      },
+    });
+
     await server.listen(0);
-    const listening = server.transport.server?.address() !== null;
-    await server.gracefullyShutdown(false);
-    const closed = server.transport.server?.address() === null;
-    process.stdout.write(JSON.stringify({ listening, closed }));
+    const address = server.transport.server?.address();
+    assert.ok(address && typeof address === "object", "transport must expose its bound port");
+    const client = new Client("ws://127.0.0.1:" + address.port);
+    const joinedRoom = await client.joinOrCreate("shutdown-probe");
+    const activeRoom = matchMaker.getLocalRoomById(joinedRoom.roomId);
+    assert.ok(activeRoom, "joined room must be registered in the real matchmaker");
+    assert.equal(activeRoom.clients.length, 1, "room must have one active SDK client before shutdown");
+    assert.equal(matchMaker.stats.local.roomCount, 1, "shutdown probe must not run with zero rooms");
+
+    let shutdownSettled = false;
+    const shutdown = server.gracefullyShutdown(false).finally(() => { shutdownSettled = true; });
+    let disposeStartTimeout;
+    await Promise.race([
+      disposeStarted,
+      new Promise((_, reject) => {
+        disposeStartTimeout = setTimeout(() => reject(new Error("room dispose did not start")), 5_000);
+      }),
+    ]);
+    clearTimeout(disposeStartTimeout);
+    await new Promise((resolve) => setTimeout(resolve, 25));
+
+    assert.equal(shutdownSettled, false, "server shutdown must await the blocked Room.onDispose");
+    assert.equal(events.includes("after-start"), false, "onShutdown must not start before Room.onDispose resolves");
+    assert.equal(disposeCalls, 1, "active room must enter onDispose exactly once");
+
+    releaseDispose();
+    await shutdown;
+
+    const order = (name) => {
+      const index = events.indexOf(name);
+      assert.notEqual(index, -1, "missing lifecycle event: " + name);
+      return index;
+    };
+    assert.ok(order("before-done") < order("room-dispose-start"));
+    assert.ok(order("room-dispose-start") < order("room-dispose-done"));
+    assert.ok(order("room-dispose-done") < order("after-start"));
+    assert.equal(disposeCalls, 1);
+    assert.equal(matchMaker.stats.local.roomCount, 0, "real matchmaker room count must drain to zero");
+    assert.equal(matchMaker.getLocalRoomById(joinedRoom.roomId), undefined);
+    assert.equal(server.transport.server?.address(), null, "transport must close after room drain");
+    process.stdout.write(JSON.stringify({ events, disposeCalls }));
   `;
   const result = spawnSync(process.execPath, ["--import", "tsx", "--input-type=module", "-e", script], {
     cwd: process.cwd(),
@@ -179,5 +268,8 @@ test("真实 Colyseus Server：listen 后 gracefullyShutdown(false) 关闭底层
   });
   assert.equal(result.signal, null, result.stderr);
   assert.equal(result.status, 0, result.stderr);
-  assert.deepEqual(JSON.parse(result.stdout), { listening: true, closed: true });
+  const output = JSON.parse(result.stdout) as { events: string[]; disposeCalls: number };
+  assert.equal(output.disposeCalls, 1);
+  assert.ok(output.events.indexOf("before-done") < output.events.indexOf("room-dispose-start"));
+  assert.ok(output.events.indexOf("room-dispose-done") < output.events.indexOf("after-start"));
 });
