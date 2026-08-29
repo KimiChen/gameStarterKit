@@ -727,3 +727,64 @@ test("inventory verifier rejects an echoed launch entry", () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("inventory verifier rejects a prototype-chain property posing as a root script", () => {
+  const root = createFixture();
+  try {
+    const inventory = readInventory(root);
+    inventory.capabilities[0].verification.push({ kind: "root", script: "toString" });
+    writeInventory(root, inventory);
+    assertRejected(root, /根命令不存在：toString/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects a prototype-chain property posing as a workspace script", () => {
+  const root = createFixture();
+  try {
+    const inventory = readInventory(root);
+    inventory.capabilities[0].verification.push({
+      kind: "workspace",
+      workspace: "@game/server",
+      script: "constructor",
+    });
+    writeInventory(root, inventory);
+    assertRejected(root, /workspace 命令不存在：@game\/server#constructor/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects a prototype-chain workspace scope registration", () => {
+  const root = createFixture();
+  try {
+    // 第三个消费面：stale 检查也走同一张表，否则 phantom 登记永远没有回归保护。
+    const inventory = readInventory(root);
+    inventory.workspaceCommandScope.push({
+      command: { kind: "workspace", workspace: "@game/server", script: "toString" },
+      documentedIn: "docs/SERVER.md",
+      reason: "fixture phantom script",
+    });
+    writeInventory(root, inventory);
+    assertRejected(root, /workspaceCommandScope 登记了不存在的 workspace 命令：workspace:@game\/server#toString/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects a non-string script value", () => {
+  const root = createFixture();
+  try {
+    const packageFile = join(root, "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts["fixture:object"] = { nested: "not a command" };
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    const inventory = readInventory(root);
+    inventory.capabilities[0].verification.push({ kind: "root", script: "fixture:object" });
+    writeInventory(root, inventory);
+    assertRejected(root, /根命令不存在：fixture:object/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

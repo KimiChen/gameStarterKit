@@ -630,6 +630,18 @@ for (const [label, requirement] of assistantRequirements) {
 checkMarkdownLinks("AGENTS.md");
 checkMarkdownLinks("CLAUDE.md");
 
+/**
+ * 脚本查表必须走自有属性 + 字符串校验：`scripts` 来自 `JSON.parse`，原型链仍是
+ * `Object.prototype`，所以裸索引会让 `toString` / `constructor` 这类继承属性
+ * 被当成真实脚本盖上绿章。
+ */
+function scriptEntry(scripts, name) {
+  if (!scripts || typeof scripts !== "object" || typeof name !== "string") return undefined;
+  if (!Object.hasOwn(scripts, name)) return undefined;
+  const value = scripts[name];
+  return typeof value === "string" ? value : undefined;
+}
+
 function packageScripts(packageFile) {
   try { return readJson(packageFile).scripts ?? {}; } catch { return {}; }
 }
@@ -652,12 +664,12 @@ function resolveWorkspace(command) {
 }
 
 function commandScript(command) {
-  if (command?.kind === "root") return rootPackage.scripts?.[command.script];
+  if (command?.kind === "root") return scriptEntry(rootPackage.scripts, command.script);
   if (command?.kind === "workspace") {
     const workspace = resolveWorkspace(command);
     if (!workspace) return undefined;
     const packagePath = workspaceLocation(workspace);
-    return packageScripts(path.join(ROOT, packagePath, "package.json"))[command.script];
+    return scriptEntry(packageScripts(path.join(ROOT, packagePath, "package.json")), command.script);
   }
   return undefined;
 }
@@ -729,13 +741,13 @@ function commandReferences(command) {
 
 function commandExists(command) {
   if (!command || typeof command !== "object") return false;
-  if (command.kind === "root") return typeof command.script === "string" && !!rootPackage.scripts?.[command.script];
+  if (command.kind === "root") return scriptEntry(rootPackage.scripts, command.script) !== undefined;
   if (command.kind === "workspace") {
     if (typeof command.workspace !== "string" || typeof command.script !== "string") return false;
     const workspace = resolveWorkspace(command);
     if (!workspace) return false;
     const packagePath = workspaceLocation(workspace);
-    return !!packageScripts(path.join(ROOT, packagePath, "package.json"))[command.script];
+    return scriptEntry(packageScripts(path.join(ROOT, packagePath, "package.json")), command.script) !== undefined;
   }
   return false;
 }
@@ -754,7 +766,7 @@ function checkCommand(command, owner, stack = new Set()) {
   if (!command || typeof command !== "object") { fail(`${owner} verification 项必须是 object`); return; }
   if (command.kind === "root") {
     requireString(command.script, `${owner}.root.script`);
-    if (!rootPackage.scripts?.[command.script]) fail(`${owner} 根命令不存在：${command.script}`);
+    if (scriptEntry(rootPackage.scripts, command.script) === undefined) fail(`${owner} 根命令不存在：${command.script}`);
   } else if (command.kind === "workspace") {
     requireString(command.workspace, `${owner}.workspace`);
     requireString(command.script, `${owner}.workspace.script`);
@@ -762,7 +774,7 @@ function checkCommand(command, owner, stack = new Set()) {
     if (!workspace) fail(`${owner} workspace 不存在：${command.workspace}`);
     else {
       const packagePath = workspaceLocation(workspace);
-      if (!packageScripts(path.join(ROOT, packagePath, "package.json"))[command.script]) {
+      if (scriptEntry(packageScripts(path.join(ROOT, packagePath, "package.json")), command.script) === undefined) {
         fail(`${owner} workspace 命令不存在：${command.workspace}#${command.script}`);
       }
     }
