@@ -285,6 +285,42 @@ test("character initializer：过期 ready marker 重新探测外部登记并可
   assert.deepEqual(calls, ["has", "register", "mark:1101", "negcache"]);
 });
 
+test("character initializer：未来/坏时间戳与恰好到期都不得走 ready 快路径", async () => {
+  const cases = [
+    { name: "future", checkedAtMs: 1_101, nowMs: 1_100 },
+    { name: "negative", checkedAtMs: -1, nowMs: 1_100 },
+    { name: "unsafe", checkedAtMs: Number.MAX_SAFE_INTEGER + 1, nowMs: 1_100 },
+    { name: "boundary", checkedAtMs: 100, nowMs: 1_100 },
+  ] as const;
+
+  for (const current of cases) {
+    const calls: string[] = [];
+    await ensureCharacterWithDependencies(`marker-${current.name}`, 3, {
+      ensureLive: async () => {},
+      createUser: async () => "exists",
+      readCharacterRegistration: async () => ({
+        state: "ready" as const,
+        checkedAtMs: current.checkedAtMs,
+      }),
+      hasCharacter: async () => {
+        calls.push("has");
+        return false;
+      },
+      registerCharacterWithRepair: async () => { calls.push("register"); },
+      markCharacterRegistrationReady: async () => { calls.push("mark"); },
+      invalidateUserNegcache: async () => { calls.push("negcache"); },
+      nowMs: () => current.nowMs,
+      registrationRecheckMs: 1_000,
+    });
+
+    assert.deepEqual(
+      calls,
+      ["has", "register", "mark", "negcache"],
+      `${current.name} marker 必须视为过期并重新登记`,
+    );
+  }
+});
+
 test("character ready observes a late underlying rejection and reuses it across reset", async () => {
   const work = deferred<void>();
   const retryWork = deferred<void>();
