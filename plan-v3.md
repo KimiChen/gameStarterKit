@@ -175,6 +175,9 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
   `roomClientOwnership.test.ts` 37 例中 1 例红。两条互不搭便车，分别钉住「返回值反映闸门结果」的两个方向。
   `npm run sync:client` 已刷新 `apps/Cocos/assets/src` 镜像；`typecheck:client`、`typecheck:client:legacy`
   各 0 error，`test:client` 246/246，`verify:sync` 镜像一致。
+  **再审计保留项（HEAD `54e1941`）**：测试只覆盖本地 slot/state 闸；SDK 在 closed socket 上会静默入队并
+  返回，不会同步 throw，故 `sendC2S()` 仍可能对“未实际发送”的消息返回 `true`。若 boolean 语义是
+  “已通过本地闸并调用 SDK”可收窄主张，否则需补 closed-socket 反例并修正实现。详见 §9.3。
 - `[已完成]` `GameRoom` 的 player factory 非 Schema 守卫（`apps/server/src/rooms/GameRoom.ts:566-568`）
   只有与 `MapSchema.set` 内建 `assertInstanceType` 结果不可区分的用例：`createModePlayer` 与 `players.set`
   被同一个 try/catch 收敛（`GameRoom.ts:950-958`），删除守卫后底层 `EncodeSchemaError` 会产生同样的
@@ -308,6 +311,10 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
   严重性口径（不夸大）：这是**潜在缺陷 + 证据缺口**而非在跑的 bug——仓内 Lobby RPC 的生产调用方目前只有
   只读的 `user.getInfo`，`rpcIdem` 无生产调用方，且服务端 dispatcher 对 `idem` 路由按
   `(type, uid, clientReqId)` 去重、SDK 还有 `minUptime` 5s 闸；但这些都依赖调用方守约，闸本身该关。
+  **再审计保留项（HEAD `54e1941`）**：上述装闸覆盖的是可控 SDK 形状的正常路径；若 guard 在
+  `onReconnect` 中失败，`abandonOnReplayGuardLoss` 的 `void closeSlot()` 仍把物理关闭推迟到微任务，而 SDK
+  会在回调返回后同步 flush，且提前置 `slot.cancelled` 会让迟到 `onLeave` 跳过显式 owner 清理和
+  `notifyConnLost()`。详见 §9.1、§9.2。
 - `[不阻塞·有意保留]` Game transport 自动重连只在下一份 mode state 通过 exact 校验后运行 adapter 的可选
   reconcile；当前 ballMove 只对账 desired input，idle 不对账业务状态，两者都不等同于完整业务恢复。
 - `[不阻塞·有意保留]` `apps/client/src/net/session.ts` 的角色快照（`commitSessionProfile` /
@@ -399,8 +406,8 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
   撤回 `commandInvokesEntry` 那一刀 → 只有 launch 那条红，证明两刀口互相独立。
   `test:inventory` 36→40，`verify:inventory` 仍绿（51 条 script 的引用集合逐条比对无丢失）。
 - `[不阻塞·有意保留]` shell 可达性静态不可判定：短路操作符右侧（`false && npm run x`）与 `exit` 之后的死代码
-  仍会被算作覆盖。`FOO=1 npm …`、`npx`、子 shell `( … )` 等形态仓内今天不存在，被判为**未覆盖**（失败关闭），
-  新增此类形态时必须显式决策而不是静默放行。
+  仍会被算作覆盖。`FOO=1 npm …` 与子 shell `( … )` 等形态仓内今天不存在，被判为**未覆盖**（失败关闭），
+  新增此类形态时必须显式决策而不是静默放行；`npx` 的实际启动器白名单行为与这里的旧口径不一致，另见 §9.6。
 - `[不阻塞·有意保留]` inventory 与 Markdown 链接检查只覆盖登记表内文档和就近 README，不扫描任意根目录
   Markdown；`plan-v3.md` 已通过 `routeOfTruth.corePlan`、`plan-v2.md` 与 `todo-godogen.md` 已通过
   `referenceDocs` 纳入检查。本轮由复核者独立对 `git ls-files "*.md"` 全量（52 个 tracked `.md`）做了相对
@@ -506,15 +513,16 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
   唯一实质残留是上面已更正的 `plan-v2.md:296/:359`，属 §7 上一条的口径问题，已一并修掉。
   未新增针对该类自称的机检：可行的实现只能是短语正则（`已通过|已登记为` + `corePlan|唯一真相`），
   写成「本文件即当前 corePlan」即可绕过，收益低于其脆性与维护面。
-- `[已完成]` **每个问题独立 commit 的流程契约未满足**：本文文首要求每条问题在同一独立 commit 中
+- `[条件阻塞·用户批准历史例外]` **每个问题独立 commit 的流程契约未满足**：本文文首要求每条问题在同一独立 commit 中
   完成实现、验证和证据回写，但 `a10f2f7..8a76d29` 的变更将多个问题合并：`6b77ebe` 同时处理 4 条，
   `a83467d` 同时处理 4 条，`28cd900` 同时处理 3 条，`e54ad71` 处理 1 条，`08f6c5c` 同时处理 P1-09
   与 §7 的多条文档/门禁问题；`8a76d29` 又集中回写全部条目证据，故实现/验证与证据并未保持同 commit。
   这是已发生的历史流程偏差，不建议为重写历史而强行拆 commit；应明确记录为经批准的例外，或从下一条开放项起
   严格执行「一条问题 = 一个实现、验证、证据 commit」，并在对应条目写入 commit id。
-  **已收口**：计数经独立复核逐个 commit 核对**全部准确**（`08f6c5c` 的「多条」精确为 4 条：P1-09 1 条 +
-  §7 3 条）；最硬的一条是 5 个实现 commit 对 `plan-v3.md` 的改动行数**全为 0**，即「实现/验证与证据同
-  commit」这一维度当轮 0/5 合规，无从辩护。
+  **复核更正（HEAD `54e1941`）**：`git show --numstat` 显示本轮六个收口提交都改动了 `plan-v3.md`：
+  `509cb4e=13/1`、`8cb6fc4=20/1`、`37851b5=14/1`、`1ad756c=21/1`、`80c86be=18/3`、
+  `54e1941=37/5`（插入/删除行数）。因此本轮「证据同 commit」维度为 **6/6**；这并不改变历史
+  `a10f2f7..8a76d29` 的多问题合并仍未满足「一条问题一个 commit」。
   **不 rebase**，理由不采用「会摧毁 §7 迁移条目的溯源」那条——复核指出 `8d0ec91..bc02794` 按 git 范围记法
   **不含** `8d0ec91`，该 commit 是改写基点、hash 不变，相关引用不会失效。真实理由是：需要 force-push 覆盖
   已发布历史；要诚实写出每个 commit 的计数快照就得在约 13 个中间 commit 上逐个重跑门禁；而 `08f6c5c` 的
@@ -551,3 +559,97 @@ workspace self-reference、workspace 文本伪调用）；它们已分别在 P1-
 `git diff --check`。当时已正确指出这些绿灯只证明现有路径——fake room 没有覆盖 Lobby 的 close→`onDrop`
 队列间隙，也没有覆盖公共 `void` 返回值、self-reference 或文本伪调用。收口后这四条路径均已有能失败的
 定向用例：`test:client` 246→248、`test:inventory` 33→40。
+
+## 9. 本轮再审计开放项
+
+审计基线为 HEAD `54e1941`。本节复核的是上一节所述六个收口提交后的**残余主张和反例**，不是对原条目
+实现的回滚；代码与测试在本轮均未修改。每条均按隔离 `git archive` 副本或现有测试 fixture 重跑，状态标签
+表示当前计划是否仍需处理。原条目的 `[已完成]` 只在其原登记范围内成立，不能覆盖本节列出的更一般形态。
+
+### 9.1 Lobby guard 失败后的重放时序
+
+- `[条件阻塞·SDK guard 失败时]` **P2**：`apps/client/src/net/WebSocketClient.ts:618-623` 的
+  `onReconnect` 调用 `abandonOnReplayGuardLoss`；失败路径 `:778-783` 先标记 slot 并用 `void closeSlot()`
+  异步启动物理关闭，而 `:680-698` 的实际 `leave` 在 Promise 微任务中开始。SDK
+  `apps/client/src/lib/colyseus/colyseus.js:8863` 在回调返回后，于 `:8870-8875` 同步 flush
+  `enqueuedMessages`。向 `maxEnqueuedMessages` 注入抛错并预置一条旧队列消息，可观察
+  `staleFlushed: 1`：关闭完成前旧 RPC 已被 flush。需让 guard 失败路径在回调返回前同步中和队列/阻止 flush，
+  并补该反例的能失败测试。
+
+### 9.2 Lobby guard 失败后的迟到 onLeave
+
+- `[条件阻塞·迟到 onLeave]` **P2**：`:781` 先置 `slot.cancelled = true`，迟到 `onLeave` 在
+  `WebSocketClient.ts:624-628` 的 `current()` 检查处直接返回；因此不会执行 `:634-639` 的显式 owner
+  清理和 `notifyConnLost()`，也不会进入 `apps/client/src/net/session.ts:306-317` 的 session reconciliation。
+  注入不可控 `reconnection` 后触发 drop 的结果为 `slotCurrent:null, cancelled:true, owners:1,
+  ownerActive:true, connLost:0`。需保证 guard 失败仍精确释放所有 owner，并发出一次最终连接死亡通知，或
+  明确记录由其他同步路径承担这些职责。
+
+### 9.3 closed socket 下的 RoomClient 返回值
+
+- `[条件阻塞·boolean 语义未决]` **P2**：`apps/client/src/net/RoomClient.ts:1130-1137` 只把同步
+  throw 判为失败；SDK `apps/client/src/lib/colyseus/colyseus.js:8771-8773` 在 socket 关闭时静默入队并
+  返回。将 `maxEnqueuedMessages` 设为 `0` 后，closed send 可观察 `result:true, sent:0, queue:0`，
+  `apps/client/src/net/rooms/GameRoomTransport.ts:98-103` 因而可能把未实际发送的 Move 记入
+  `lastSentSeq`。若 boolean 仅表示“通过本地闸并调用 SDK”，应收窄 P1-01 的契约文字；若表示已发送/已接受，
+  则需修复实现并补 closed-socket 反例。
+
+### 9.4 Lobby replay 的 exactly-once 证据
+
+- `[不阻塞·待补齐]` **P2**：`apps/client/test/webSocketClient.test.ts:667-696` 的 replay 用例只调用
+  只读 `UserRpc.GetUserId`，没有写 RPC 的副作用计数、`clientReqId` 或服务端效果断言，也没有独立验证
+  bind 前已存在的非空 SDK 队列。因此它证明了“消息不留在当前 fake 队列”，不能证明
+  `UserRpc.UpdateProfile`、`GuildRpc.Join`、`ShopRpc.Purchase` 等写路径在重连/重试下 exactly once。
+  应补写路由 fixture、效果计数和同一 `clientReqId` 的重连序列，并以删除清理闸的变异使测试失败。
+
+### 9.5 inventory shell 语法解析不足
+
+- `[条件阻塞·shell 语法覆盖]` **P2**：`scripts/verify-inventory.mjs:685-707` 的
+  `executableSegments()` 只按 `&&`、`||`、`;`、`|` 和换行切段，并不解析引号、转义、注释、命令替换或
+  参数语义；因此它不能兑现本文件 :400-401 所称的“不是引号内、注释”。在隔离副本中，以下代表性伪调用
+  均可令 `verify-inventory --root` 返回 0：
+  `echo "ignored; npm --workspace @game/server run start"`、
+  `npm run verify:project # npm --workspace @game/server run test`、
+  `npm run verify:project "$(echo npm run verify:vendor)"`、
+  `sh -c 'echo path; true'`、`node -e noop path`、`node --check path`。
+  需采用受限且明确的 shell 解析器/白名单并为每种语法补反例，或把计划主张收窄为仅支持当前明确语法。
+
+### 9.6 npx 白名单与文档口径冲突
+
+- `[条件阻塞·npx 策略未决]` **P2**：`scripts/verify-inventory.mjs:704-706` 把 `npx` 列入
+  `commandInvokesEntry` 启动器白名单，但本文件 :408-410 原先声称 `npx` 应被判为未覆盖、失败关闭。
+  隔离副本中 `npx tsx src/core/economy/relayer.ts` 与 `npx echo src/core/economy/relayer.ts` 均可通过，
+  后者甚至不需要真实入口执行。需统一策略：移除 `npx` 并保持 fail-closed，或明确接受它并补充外部包解析/下载
+  的范围说明与测试；在决策前不能把该边界写成已闭合。
+
+### 9.7 documentedIn 与助手命令表的全文伪登记
+
+- `[不阻塞·待补齐]` **P2**：`scripts/verify-inventory.mjs:165-175` 和 `:243-255` 只对助手文档/指定
+  `documentedIn` 做全文正则匹配，不限制 Markdown 文档、命令代码块、目录或有效登记位置。隔离副本中把
+  `npm --workspace @game/server run fixture:worker` 放进 shell 注释，或把 `documentedIn` 指向
+  `apps/server/package.json` 并把命令文本写进 description，均可通过。该闸只能证明出现了字符串，不能证明
+  真实文档登记；应收紧路径/区块解析，或明确把全文匹配降级为非强保证。
+
+### 9.8 verification.requires 的自引用和循环
+
+- `[条件阻塞·verification.requires 无环]` **P2**：`scripts/verify-inventory.mjs:743-750` 的
+  `commandCovers()` 对同 key 直接返回 `true`，`checkCommand()` 在 `:779-785` 遇到循环只静默 return。
+  在隔离副本中把 root/workspace requirement 改成自身，或让两个命令互相 `requires`，均仍返回 0；若后续
+  按登记执行，脚本还可能进入无限递归。应在发现重复 key 时 fail-closed，并补自引用和两节点循环反例。
+
+### 9.9 命令存在性被原型链属性绕过
+
+- `[条件阻塞·脚本存在性校验]` **P2**：`scripts/verify-inventory.mjs:654-660`、`:730-738` 和
+  `:753-766` 通过普通属性索引与 truthiness 判断脚本存在，没有 own-property 或字符串类型校验。将验证项改成
+  `root:toString`、`root:constructor`，或 workspace `@game/server#toString`，可在隔离副本中通过
+  `verify-inventory`，但这些都不是实际脚本。应使用 `Object.hasOwn`（或等价检查）并要求 script 值为字符串。
+
+### 9.10 历史提交粒度例外
+
+- `[条件阻塞·历史例外待批准]` **P2**：§7 已记录历史 `a10f2f7..8a76d29` 将多个问题合并，仍不满足
+  原始“一条问题一个 commit”要求；本轮六个收口提交虽已逐条拆分，但不能 retroactively 修复历史。当前不
+  重写已发布历史的决定需由用户明确接受为例外；在此之前，§7 不应使用无条件 `[已完成]`。
+
+本次再审计实际执行并通过：`npm run verify:inventory`、`npm run test:inventory`（40/40）、
+`npm run test:client`（248/248）、`npm run typecheck`、`npm run verify:all`（服务端 297/297、FGUI 50/50）
+及 `git diff --check`。这些绿灯只证明当前正向路径，不能抵销上述隔离副本中的反例和证据缺口。
