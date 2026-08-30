@@ -1476,3 +1476,38 @@ test("inventory verifier still accepts an idiomatic shell option cluster with a 
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("inventory verifier rejects an entry after the &| garbage sequence", () => {
+  const root = createFixture();
+  try {
+    // `>&|` 在真实 bash 是语法错误（syntax error near '|'），入口不会执行；
+    // `&` 守卫只看前一字符是 >/<，拦不住它，| 被当管道切段后入口升格为段首。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "tsx tools/smoke.ts >&| src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects an entry after a spaced > | sequence", () => {
+  const root = createFixture();
+  try {
+    // `> |` 带空格同样是语法错误；守卫读原始字符时中间隔着空格，切段后入口升格为段首。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "tsx tools/smoke.ts > | src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

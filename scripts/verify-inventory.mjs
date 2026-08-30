@@ -758,7 +758,15 @@ function executableSegments(script) {
     if (ch === "&" && script[index - 1] !== ">" && script[index - 1] !== "<") { push(); continue; }
     // `>|` / `N>|` 是 noclobber 覆盖重定向算子，不是管道。在这里切段会把重定向目标
     // 升格成新段的段首，被下方 `segmentLeadsWith` 当成「入口自己就是启动器」而假绿。
-    if (ch === "|" && script[index - 1] !== ">") { push(); continue; }
+    // `&|`、`> |`（带空格）等相邻形态在真实 bash 里是语法错误，同样不切段（失败关闭）；
+    // 判定看前一个**非 IFS 空白**字符，属于 `>`/`<`/`&` 就不切。
+    if (ch === "|") {
+      let prev = index - 1;
+      while (prev >= 0 && (script[prev] === " " || script[prev] === "\t")) prev -= 1;
+      if (prev < 0 || (script[prev] !== ">" && script[prev] !== "<" && script[prev] !== "&")) { push(); continue; }
+      current += ch;
+      continue;
+    }
     current += ch;
   }
   if (unparsable) return [];
