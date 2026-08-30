@@ -779,26 +779,53 @@ function commandInvokesEntry(command, entry) {
   });
 }
 
+/**
+ * 按 token 解析一整段 `npm … run <script>`，而不是在段内做正则捞取。
+ *
+ * 正则版有一个致命漏判：`npm run typecheck --workspace @game/shared` 执行的是 **workspace**
+ * 脚本，正则却因为「`npm run X` 出现在段首」把它记成 `root:X`，于是一条从未被执行的根命令
+ * 被盖上绿章。后缀式还有 `-w=Y`、`--workspace=Y`、`--prefix Z` 等多种写法，逐个打补丁挡不住。
+ *
+ * 这里改为：段首必须是 `npm`，`run` 之前只允许已知的中性 flag 与 workspace 选择器，
+ * `run <script>` 之后不允许任何未知 flag —— 任何没见过的形态一律返回 null（失败关闭），
+ * 宁可漏报覆盖（表现为「未实际覆盖」的红灯）也不误盖绿章。
+ */
+function npmRunReference(segment) {
+  const NEUTRAL_FLAGS = ["--silent", "-s", "--if-present", "--loglevel=silent"];
+  const tokens = segmentTokens(segment);
+  if (tokens[0] !== "npm") return null;
+  let index = 1;
+  let workspace = null;
+  while (index < tokens.length && tokens[index] !== "run") {
+    const token = tokens[index];
+    if ((token === "--workspace" || token === "-w") && workspace === null && tokens[index + 1]) {
+      workspace = tokens[index + 1];
+      index += 2;
+      continue;
+    }
+    const inline = token.match(/^(?:--workspace|-w)=(.+)$/u);
+    if (inline && workspace === null) { workspace = inline[1]; index += 1; continue; }
+    if (NEUTRAL_FLAGS.includes(token)) { index += 1; continue; }
+    return null;
+  }
+  const script = tokens[index + 1];
+  if (tokens[index] !== "run" || !script || !/^[A-Za-z0-9:_-]+$/u.test(script)) return null;
+  // 脚本名之后仍是 npm 的 flag 位：`npm run X --workspace Y` 与前缀式等价，
+  // `--prefix Z` 之类同样改变被执行的脚本，都不能当作对 root:X 的调用。
+  for (let i = index + 2; i < tokens.length; i += 1) {
+    if (tokens[i] === "--") break;
+    if (tokens[i].startsWith("-") && !NEUTRAL_FLAGS.includes(tokens[i])) return null;
+  }
+  return workspace === null ? { kind: "root", script } : { kind: "workspace", workspace, script };
+}
+
 function commandReferences(command) {
   const script = commandScript(command);
   if (typeof script !== "string") return [];
   const references = [];
-  // npm accepts both `--workspace <name>` and `-w <name>`; support the forms
-  // used by this repository and ignore arbitrary shell commands.
-  const workspaceRe = /npm\s+(?:--workspace|-w)\s+([^\s]+)\s+run\s+([A-Za-z0-9:_-]+)/g;
-  const rootRe = /npm\s+run\s+([A-Za-z0-9:_-]+)/g;
   for (const segment of executableSegments(script)) {
-    if (!segmentLeadsWith(segment, ["npm"])) continue;
-    // 引用必须就是这一段本身的命令头；参数位里的 `npm run x`（`-- npm run x`、
-    // `--silent npm run x`）不是被执行的命令。
-    for (const match of segment.matchAll(workspaceRe)) {
-      if (match.index !== 0) continue;
-      references.push({ kind: "workspace", workspace: match[1], script: match[2] });
-    }
-    for (const match of segment.matchAll(rootRe)) {
-      if (match.index !== 0) continue;
-      references.push({ kind: "root", script: match[1] });
-    }
+    const reference = npmRunReference(segment);
+    if (reference) references.push(reference);
   }
   return references;
 }

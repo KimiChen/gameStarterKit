@@ -1096,3 +1096,56 @@ test("inventory verifier still accepts launchers with value-taking flags", () =>
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("inventory verifier rejects a suffix-workspace npm run posing as a root command", () => {
+  const root = createFixture();
+  try {
+    // `npm run X --workspace Y` 执行的是 workspace 脚本，不是 root:X。
+    const packageFile = join(root, "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    const before = pkg.scripts["verify:core"];
+    pkg.scripts["verify:core"] = before.replace(
+      "npm run verify:vendor",
+      "npm run verify:vendor --workspace @game/shared",
+    );
+    assert.notEqual(pkg.scripts["verify:core"], before, "fixture must rewrite the verify:vendor call");
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(root, /未实际覆盖声明的验证命令：root:verify:vendor/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects an inline suffix-workspace npm run", () => {
+  const root = createFixture();
+  try {
+    // `-w=Y` / `--prefix Z` 等写法同样改变被执行的脚本；逐个特判挡不住，只能失败关闭。
+    const packageFile = join(root, "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    const before = pkg.scripts["verify:core"];
+    pkg.scripts["verify:core"] = before.replace(
+      "npm run verify:vendor",
+      "npm run verify:vendor --prefix apps/shared",
+    );
+    assert.notEqual(pkg.scripts["verify:core"], before, "fixture must rewrite the verify:vendor call");
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(root, /未实际覆盖声明的验证命令：root:verify:vendor/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier still accepts a prefix-workspace npm run", () => {
+  const root = createFixture();
+  try {
+    // 反向锁：前缀式 `npm --workspace Y run X` 是仓内实际写法，不得被收紧误伤。
+    const packageFile = join(root, "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts["start:server"] = "npm --silent --workspace @game/server run start";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    const result = runVerifier(root);
+    assert.equal(result.status, 0, outputOf(result));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
