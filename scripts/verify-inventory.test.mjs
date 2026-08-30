@@ -1395,3 +1395,35 @@ test("inventory verifier still accepts a launcher piped into another command", (
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("inventory verifier accepts a shell launcher with clustered short options", () => {
+  const root = createFixture();
+  try {
+    // 真实 bash 对 `-ex` / `-eu` 照常执行脚本；按 node CLI 语义前缀匹配会把它判成未启动。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "bash -ex src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    const result = runVerifier(root);
+    assert.equal(result.status, 0, outputOf(result));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects a shell launcher whose option cluster contains -c", () => {
+  const root = createFixture();
+  try {
+    // 含 `c` 的簇把随后的 token 当命令字符串，入口不会被当脚本执行。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "bash -ce src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
