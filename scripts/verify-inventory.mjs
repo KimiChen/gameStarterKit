@@ -855,6 +855,10 @@ function commandInvokesEntry(command, entry) {
     const launcher = tokens[0];
     for (let i = 1; i < entryIndex; i += 1) {
       if (launcher === "sh" || launcher === "bash") {
+        // 入口之前的操作数：真实 shell 执行的是第一个操作数（脚本），入口只是它的 argv——
+        // `bash decoy.sh <entry>` 入口永不执行。选项值已被 consume 跳过；到这里的不以
+        // -/+ 开头的 token 就是操作数。
+        if (!tokens[i].startsWith("-") && !tokens[i].startsWith("+")) return false;
         const verdict = shellFlagVerdict(tokens[i]);
         if (verdict === "reject") return false;
         if (verdict === "consume") {

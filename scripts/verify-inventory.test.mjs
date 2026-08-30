@@ -1575,3 +1575,20 @@ for (const [name, script] of [
     }
   });
 }
+
+test("inventory verifier rejects a positional operand before the shell entry", () => {
+  const root = createFixture();
+  try {
+    // `bash tools/dev-stack.sh <entry>`：真实 bash 执行的是 dev-stack.sh，入口只是它的 argv。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "bash tools/dev-stack.sh src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

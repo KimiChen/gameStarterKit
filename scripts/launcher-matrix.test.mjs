@@ -45,6 +45,7 @@ const CASES = [
   { kind: "shell", args: ["-o", "errexit"] },
   { kind: "shell", args: ["-O", "expand_aliases"] },
   { kind: "shell", args: ["+o", "errexit"] },
+  { kind: "shell", args: ["-e", "decoy.sh"], note: "入口前有操作数：真实 bash 执行 decoy.sh，入口只是 argv" },
 
   // ---- bash：入口不会执行，应拒绝 ----
   ...["-c", "-s", "-n", "-D", "+s", "-ce", "-es", "-oe", "-eo", "-xo", "-ox",
@@ -92,6 +93,8 @@ function setup() {
   // `bash -t` 只执行第一条就退出，marker 因此不出现——与门禁把它判为「未启动」一致。
   writeFileSync(join(probeDir, "entry.sh"), `: first command\necho ${MARKER}\n`);
   writeFileSync(join(probeDir, "entry.mjs"), `console.log(${JSON.stringify(MARKER)});\n`);
+  // 诱饵脚本：存在、能跑完、但绝不打 marker——用于「入口前有操作数」的形态。
+  writeFileSync(join(probeDir, "decoy.sh"), ": decoy ran\n");
   try {
     cpSync(join(REPO_ROOT, "node_modules"), join(probeDir, "node_modules"), {
       recursive: true, dereference: false, force: false, errorOnExist: false,
