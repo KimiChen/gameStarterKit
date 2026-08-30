@@ -443,3 +443,23 @@ test("toolchain contract catches collusive deletion from both declaration table 
   }
 });
 
+test("toolchain contract fails closed on npm pre/post lifecycle hooks of gated commands", () => {
+  // npm 对 `npm run X` 会隐式先跑 preX、后跑 postX；钩子不在 && 链文本里，链条门禁与
+  // 聚合矩阵都看不见。仓内今天没有任何钩子，加上即拒。
+  const cases = ["preverify:core", "posttypecheck", "pretest:client"];
+  for (const hook of cases) {
+    const root = createFixture();
+    try {
+      editJson(root, "package.json", (pkg) => { pkg.scripts[hook] = "node -e \"process.exit(0)\""; });
+      const result = runVerifier(root);
+      assert.notEqual(result.status, 0, `${hook} unexpectedly passed`);
+      assert.match(
+        result.output,
+        new RegExp(`scripts\\.${hook.replace(":", "\\:")} 是被闸命令`),
+        `${hook} 必须被生命周期钩子检查点名：\n${result.output}`,
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  }
+});

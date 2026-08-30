@@ -77,6 +77,33 @@ const EXACT_SCRIPTS = {
   "test:toolchain-runtime-matrix": TOOLCHAIN_RUNTIME_MATRIX_COMMAND,
 };
 
+/**
+ * 被闸命令集合：四条聚合链脚本名 + 精确钉住的脚本名 + 链成员引用的根脚本名。
+ * npm 对 `npm run X` 会先跑 `preX`、后跑 `postX`（若存在）——这些钩子不在 `&&` 链文本里，
+ * 链条门禁只看文本、聚合矩阵只跑链本身，两边都看不见，等于给验证图留暗道。失败关闭：
+ * 根 package.json 不得为任何被闸命令定义 pre-/post- 前缀变体。
+ */
+const GATED_SCRIPT_NAMES = new Set([
+  ...Object.keys(CHAIN_SCRIPTS),
+  ...Object.keys(EXACT_SCRIPTS),
+  ...Object.values(CHAIN_SCRIPTS)
+    .flat()
+    .map((command) => /^npm run ([A-Za-z0-9:_-]+)$/u.exec(command)?.[1])
+    .filter((name) => name !== undefined),
+]);
+
+function requireNoLifecycleHooks(scripts, errors) {
+  for (const name of Object.keys(scripts ?? {})) {
+    const base = name.startsWith("pre") ? name.slice(3)
+      : name.startsWith("post") ? name.slice(4) : null;
+    if (base !== null && GATED_SCRIPT_NAMES.has(base)) {
+      errors.push(
+        `package.json scripts.${name} 是被闸命令 ${base} 的 npm 生命周期钩子：`
+        + `它随 \`npm run ${base}\` 隐式执行，链条文本门禁与聚合矩阵均不可见，必须移除或改名`,
+      );
+    }
+  }
+}
 
 function parseArgs(argv) {
   let root;
@@ -306,6 +333,7 @@ export function verifyToolchain(root = ROOT) {
   for (const [scriptName, expected] of Object.entries(EXACT_SCRIPTS)) {
     requireExactScript(scriptName, scripts?.[scriptName], expected, errors);
   }
+  requireNoLifecycleHooks(scripts, errors);
 
   return { ok: errors.length === 0, errors, nodeMajor: pinnedMajor ?? undefined };
 }
