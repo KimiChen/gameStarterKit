@@ -453,6 +453,53 @@ test("toolchain contract pins load-bearing chain members against silent removal"
   );
 });
 
+test("toolchain contract fails closed on workspace lifecycle hooks of gated commands", () => {
+  // 链里有三条 workspace 命令（shared/server 的 typecheck、server 的 test）。给 workspace
+  // 加钩子再按命令表要求登记——一串看起来完全正当的操作——曾让两道门禁双双放行，而真实 npm
+  // 确实会跑那个钩子。夹具默认没有 workspaces 字段（workspace 检查随之 no-op），这里显式补上。
+  for (const [location, name, hook] of [
+    ["apps/server", "@game/server", "pretest"],
+    ["apps/shared", "@game/shared", "posttypecheck"],
+  ]) {
+    const root = createFixture();
+    try {
+      editJson(root, "package.json", (pkg) => { pkg.workspaces = ["apps/server", "apps/shared"]; });
+      writeJson(root, `${location}/package.json`, {
+        name,
+        engines: { node: ">=22" },
+        scripts: { [hook]: "node -e \"process.exit(0)\"" },
+      });
+      const result = runVerifier(root);
+      assert.notEqual(result.status, 0, `${location} 的 ${hook} 未被拒绝`);
+      assert.match(
+        result.output,
+        new RegExp(`${location}/package\\.json scripts\\.${hook} 是被闸命令`),
+        `${location} 的 ${hook} 必须被 workspace 生命周期钩子检查点名：\n${result.output}`,
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  }
+});
+
+test("toolchain contract leaves non-gated workspace scripts alone", () => {
+  // 反向锁：workspace 里非被闸命令的钩子（smoke 不在任何链里）不得误伤。
+  const root = createFixture();
+  try {
+    editJson(root, "package.json", (pkg) => { pkg.workspaces = ["apps/server"]; });
+    writeJson(root, "apps/server/package.json", {
+      name: "@game/server",
+      engines: { node: ">=22" },
+      devDependencies: TOOL_DEPENDENCIES,
+      scripts: { presmoke: "node -e \"process.exit(0)\"" },
+    });
+    const result = runVerifier(root);
+    assert.equal(result.status, 0, `非被闸 workspace 钩子被误伤：\n${result.output}`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("toolchain contract pins exact script bodies against collusive rewrite", () => {
   // 精确脚本文本（含测试 glob 与路径）是覆盖面的最后防线：常量与 package.json 双侧同改
   // 此前实测全绿。双向 deepEqual（Record 结构比较不依赖 key 顺序，双方多/少/改都红）。
@@ -461,6 +508,8 @@ test("toolchain contract pins exact script bodies against collusive rewrite", ()
     EXACT_LOAD_BEARING,
     "EXACT_SCRIPTS 与承重钉不一致——精确脚本文本双侧同改（或单方改）时本断言必须红",
   );
+  // ⚠ 这条 key 集合断言对**值为 undefined**零判别力（key 照样在）；真正拦住值被清空的是
+  // 上面那条值比较断言——不得为了「简化」把它删掉只留 key 比较。
   assert.deepEqual(
     Object.keys(EXACT_SCRIPTS).sort(),
     Object.keys(EXACT_LOAD_BEARING).sort(),
@@ -500,7 +549,18 @@ test("toolchain contract catches collusive deletion from both declaration table 
 test("toolchain contract fails closed on npm pre/post lifecycle hooks of gated commands", () => {
   // npm 对 `npm run X` 会隐式先跑 preX、后跑 postX；钩子不在 && 链文本里，链条门禁与
   // 聚合矩阵都看不见。仓内今天没有任何钩子，加上即拒。
-  const cases = ["preverify:core", "posttypecheck", "pretest:client"];
+  // 用例从声明表**全量派生**，不再硬编码 3 个样例：那 3 个恰好全落在 CHAIN/EXACT 的 key 上，
+  // 永远碰不到「链成员引用的根脚本名」那一段派生逻辑——删掉那段实测全绿。
+  const gatedFromChains = [...new Set(
+    Object.values(CHAIN_SCRIPTS).flat()
+      .map((command) => /^npm run ([A-Za-z0-9:_-]+)$/u.exec(command)?.[1])
+      .filter((name): name is string => name !== undefined),
+  )];
+  const cases = [
+    ...Object.keys(CHAIN_SCRIPTS).map((name) => `pre${name}`),
+    ...Object.keys(EXACT_SCRIPTS).map((name) => `post${name}`),
+    ...gatedFromChains.map((name) => `pre${name}`),
+  ];
   for (const hook of cases) {
     const root = createFixture();
     try {

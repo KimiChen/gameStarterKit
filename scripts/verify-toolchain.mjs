@@ -79,10 +79,15 @@ export const EXACT_SCRIPTS = {
 };
 
 /**
- * 被闸命令集合：四条聚合链脚本名 + 精确钉住的脚本名 + 链成员引用的根脚本名。
- * npm 对 `npm run X` 会先跑 `preX`、后跑 `postX`（若存在）——这些钩子不在 `&&` 链文本里，
- * 链条门禁只看文本、聚合矩阵只跑链本身，两边都看不见，等于给验证图留暗道。失败关闭：
- * 根 package.json 不得为任何被闸命令定义 pre-/post- 前缀变体。
+ * 被闸命令集合：四条聚合链脚本名 + 精确钉住的脚本名 + 链成员引用的**根脚本名与
+ * workspace 脚本名**。npm 对 `npm run X` 会先跑 `preX`、后跑 `postX`（若存在）——这些钩子
+ * 不在 `&&` 链文本里，链条门禁只看文本、聚合矩阵只跑链本身，两边都看不见，等于给验证图
+ * 留暗道。失败关闭：根**与被引用 workspace 的** package.json 都不得为被闸命令定义
+ * pre-/post- 前缀变体。
+ *
+ * workspace 侧曾是真洞：链里有三条 workspace 命令（shared/server 的 typecheck、server 的
+ * test），给 `apps/server` 加 `pretest` 再按命令表要求登记进 AGENTS/CLAUDE/README——
+ * 一串看起来完全正当的操作——两道门禁实测双双放行，而真实 npm 确实会跑那个钩子。
  */
 const GATED_SCRIPT_NAMES = new Set([
   ...Object.keys(CHAIN_SCRIPTS),
@@ -93,16 +98,44 @@ const GATED_SCRIPT_NAMES = new Set([
     .filter((name) => name !== undefined),
 ]);
 
-function requireNoLifecycleHooks(scripts, errors) {
+/** workspace 名 → 该 workspace 中被闸的脚本名集合（从链声明派生，不另立副本）。 */
+const GATED_WORKSPACE_SCRIPTS = new Map();
+for (const command of Object.values(CHAIN_SCRIPTS).flat()) {
+  const match = /^npm --workspace (\S+) run ([A-Za-z0-9:_-]+)$/u.exec(command);
+  if (!match) continue;
+  if (!GATED_WORKSPACE_SCRIPTS.has(match[1])) GATED_WORKSPACE_SCRIPTS.set(match[1], new Set());
+  GATED_WORKSPACE_SCRIPTS.get(match[1]).add(match[2]);
+}
+
+function requireNoLifecycleHooks(label, scripts, gated, errors) {
   for (const name of Object.keys(scripts ?? {})) {
     const base = name.startsWith("pre") ? name.slice(3)
       : name.startsWith("post") ? name.slice(4) : null;
-    if (base !== null && GATED_SCRIPT_NAMES.has(base)) {
+    if (base !== null && gated.has(base)) {
       errors.push(
-        `package.json scripts.${name} 是被闸命令 ${base} 的 npm 生命周期钩子：`
+        `${label} scripts.${name} 是被闸命令 ${base} 的 npm 生命周期钩子：`
         + `它随 \`npm run ${base}\` 隐式执行，链条文本门禁与聚合矩阵均不可见，必须移除或改名`,
       );
     }
+  }
+}
+
+/**
+ * 逐个被引用的 workspace 再查一遍。workspaces 字段缺席时静默 no-op——`toolchainContract`
+ * 的夹具根 package.json 就没有 workspaces、也没有 apps/shared，硬查会让该套件每一条
+ * 夹具反例都假红。
+ */
+function requireNoWorkspaceLifecycleHooks(root, rootPackage, errors) {
+  for (const item of rootPackage?.workspaces ?? []) {
+    const location = typeof item === "string" ? item : item?.location;
+    if (!location) continue;
+    let manifest;
+    try {
+      manifest = JSON.parse(fs.readFileSync(path.join(root, location, "package.json"), "utf8"));
+    } catch { continue; }
+    const gated = GATED_WORKSPACE_SCRIPTS.get(manifest?.name);
+    if (!gated) continue;
+    requireNoLifecycleHooks(`${location}/package.json`, manifest.scripts, gated, errors);
   }
 }
 
@@ -334,7 +367,8 @@ export function verifyToolchain(root = ROOT) {
   for (const [scriptName, expected] of Object.entries(EXACT_SCRIPTS)) {
     requireExactScript(scriptName, scripts?.[scriptName], expected, errors);
   }
-  requireNoLifecycleHooks(scripts, errors);
+  requireNoLifecycleHooks("package.json", scripts, GATED_SCRIPT_NAMES, errors);
+  requireNoWorkspaceLifecycleHooks(root, rootPackage, errors);
 
   return { ok: errors.length === 0, errors, nodeMajor: pinnedMajor ?? undefined };
 }
