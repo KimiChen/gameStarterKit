@@ -36,6 +36,8 @@ const VERIFY_CORE_COMMANDS = [
   "npm run test:inventory",
   "npm run test:launcher-matrix",
   "npm run test:npm-reference-matrix",
+  "npm run test:aggregate-chain-matrix",
+  "npm run test:sync-mirror-matrix",
   "npm run verify:perf",
   "npm run test:client",
 ];
@@ -50,6 +52,8 @@ const FGUI_TEST_COMMAND =
 const INVENTORY_TEST_COMMAND = "node --test scripts/verify-inventory.test.mjs";
 const LAUNCHER_MATRIX_COMMAND = "node --test scripts/launcher-matrix.test.mjs";
 const NPM_REFERENCE_MATRIX_COMMAND = "node --test scripts/npm-reference-matrix.test.mjs";
+const AGGREGATE_CHAIN_MATRIX_COMMAND = "node --test scripts/aggregate-chain-matrix.test.mjs";
+const SYNC_MIRROR_MATRIX_COMMAND = "node --test scripts/sync-mirror-matrix.test.mjs";
 
 function parseArgs(argv) {
   let root;
@@ -280,6 +284,8 @@ export function verifyToolchain(root = ROOT) {
   requireExactScript("test:inventory", scripts?.["test:inventory"], INVENTORY_TEST_COMMAND, errors);
   requireExactScript("test:launcher-matrix", scripts?.["test:launcher-matrix"], LAUNCHER_MATRIX_COMMAND, errors);
   requireExactScript("test:npm-reference-matrix", scripts?.["test:npm-reference-matrix"], NPM_REFERENCE_MATRIX_COMMAND, errors);
+  requireExactScript("test:aggregate-chain-matrix", scripts?.["test:aggregate-chain-matrix"], AGGREGATE_CHAIN_MATRIX_COMMAND, errors);
+  requireExactScript("test:sync-mirror-matrix", scripts?.["test:sync-mirror-matrix"], SYNC_MIRROR_MATRIX_COMMAND, errors);
   requireCommandChain("verify:core", scripts?.["verify:core"], VERIFY_CORE_COMMANDS, errors);
   requireCommandChain("verify:all", scripts?.["verify:all"], VERIFY_ALL_COMMANDS, errors);
 
