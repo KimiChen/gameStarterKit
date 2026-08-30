@@ -60,6 +60,7 @@ npm run test:launcher-matrix
 npm run test:npm-reference-matrix
 npm run test:aggregate-chain-matrix
 npm run test:sync-mirror-matrix
+npm run test:toolchain-runtime-matrix
 npm run verify:perf
 npm run verify:project
 npm run verify:core
