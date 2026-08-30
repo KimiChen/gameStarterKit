@@ -22,6 +22,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { after, test } from "node:test";
 
+import { CHAIN_SCRIPTS } from "./verify-toolchain.mjs";
+
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const TOOLCHAIN_SCRIPT = join(REPO_ROOT, "scripts", "verify-toolchain.mjs");
 const MARK = "CHAIN_MARK:";
@@ -178,6 +180,17 @@ test("声明表里的每条命令在真实仓库中都必须可解析", () => {
     }
   }
   assert.deepEqual(missing, [], `声明表引用了真实仓库中不存在的命令：\n  ${missing.join("\n  ")}`);
+});
+
+test("矩阵覆盖面钉住声明表：新增聚合链必须同步进 CHAINS", () => {
+  // CHAINS 是本文件对「有哪几条链」的第二次表达。新增第五条链时若忘了加进来，矩阵会
+  // 一眼都不看它就全绿——实测过：源表加链 + 打钉后，本矩阵仍 4/4。key 集合双向相等即可拦住。
+  // （`constant` 名仍是人工映射，但那一半由 declaredChain 的抛错兜住。）
+  assert.deepEqual(
+    Object.keys(CHAIN_SCRIPTS).sort(),
+    CHAINS.map((chain) => chain.script).sort(),
+    "CHAINS 与 verify-toolchain 的 CHAIN_SCRIPTS 链集合必须双向相等",
+  );
 });
 
 test("声明提取本身有判别力：读不到的常量必须失败而不是静默返回空", () => {
