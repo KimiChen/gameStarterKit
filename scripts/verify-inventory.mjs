@@ -770,9 +770,12 @@ function commandInvokesEntry(command, entry) {
   const isTarget = (token) => token === relativeTarget || token === `./${relativeTarget}`;
   return executableSegments(script).some((segment) => {
     const tokens = segmentTokens(segment);
-    if (!tokens.some(isTarget)) return false;
-    // 这些 flag 自带内联程序或只做静态检查，出现即判为「未启动」。
-    for (let i = 1; i < tokens.length && tokens[i].startsWith("-"); i += 1) {
+    const entryIndex = tokens.findIndex(isTarget);
+    if (entryIndex < 0) return false;
+    // 这些 flag 自带内联程序或只做静态检查，出现即判为「未启动」。必须扫描入口**之前的
+    // 全部** token：遇到第一个非 `-` token 就停会让 `node --import tsx --check <entry>`
+    // 这类「取值 flag 之后再出现黑名单 flag」的形态漏判。
+    for (let i = 1; i < entryIndex; i += 1) {
       if (["-e", "--eval", "-p", "--print", "-c", "--check", "-h", "--help", "-v", "--version"]
         .includes(tokens[i])) return false;
     }

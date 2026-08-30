@@ -1196,3 +1196,20 @@ test("inventory verifier still accepts a heredoc mentioned only inside a comment
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("inventory verifier rejects a blacklisted flag after a value-taking flag", () => {
+  const root = createFixture();
+  try {
+    // 扫描必须覆盖入口之前的全部 token：遇到第一个非 `-` token 就停会漏判。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "node --import tsx --check src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
