@@ -654,7 +654,8 @@ workspace self-reference、workspace 文本伪调用）；它们已分别在 P1-
   实际动作两条：replay 用例从只读 `UserRpc.GetUserId` 改为真实写路由
   `rpcIdem(GuildRpc.Join, …, "cr-gap")`，让用例名副其实；新增「bind 前 SDK 队列已非空」反例，这是
   `max=0` 之外的第二道闸，此前无任何用例覆盖。
-  变异推演如实记录：去掉返回值的 `length === 0` 子句 → 3 例红；**把原地清空改成 no-op 不会变红**——
+  变异推演如实记录：去掉返回值的 `length === 0` 子句 → 冻结队列用例变红（写档时记为「3 例红」，
+  复核时仅能定位 1 例直接来源，按可复算口径收窄为「至少 1 例」）；**把原地清空改成 no-op 不会变红**——
   9.1 拆分三步后整体替换那步本就是它的兜底，两者按设计冗余，不假称该行被独立覆盖。
   未加 `serverEffects` / `clientReqId` 计数：零杀伤力，且会让读者误以为客户端 fixture 在证 exactly-once。
 
