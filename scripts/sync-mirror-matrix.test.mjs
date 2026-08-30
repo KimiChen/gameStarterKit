@@ -62,7 +62,8 @@ function createFixture() {
   }).toString().split("\0").filter(Boolean);
   for (const file of files) {
     if (file === "apps/website" || file.startsWith("apps/website/")) continue;
-    if (file === ".env" || file.startsWith(".env.")) continue;
+    if (file === ".env") continue; // 只排除含密钥的 .env；已入库的 .env.development 必须进夹具，
+    // 否则「开发者改 PORT 并正常同步」的合法状态会被 devEnv 新鲜度检查按默认值重算成漂移（假红）。
     const source = join(REPO_ROOT, file);
     if (!existsSync(source)) continue;
     const destination = join(root, file);
@@ -154,6 +155,19 @@ const SCENARIOS = [
 
 /** 只对 sync-client 有意义的 `.meta` 场景。 */
 const CLIENT_SCENARIOS = [
+  {
+    // 开发者改 `.env.development` 的 PORT 并正常同步后的合法状态：夹具里的 .env.development
+    // 与两端 devEnv.ts 必须一致，`--check` 应放行且同步无改动。用夹具内的真实 sync 脚本
+    // 重生成，保证与开发者本地操作逐字节一致。
+    name: "PORT 改值后 .env 与两端生成物一致",
+    expectClean: true,
+    mutate: (root) => {
+      const envFile = join(root, ".env.development");
+      writeFileSync(envFile, `${readFileSync(envFile, "utf8")}\nPORT=3000\n`);
+      execFileSync("node", ["scripts/sync-client.mjs"], { cwd: root, stdio: "ignore" });
+    },
+  },
+
   {
     // 注意这条判的是 **git index** 而不是工作树：从磁盘上删掉 .meta 不会触发它
     // （`git ls-files` 仍列出该条目）。真正的失效形态是「文件入库了但它的 .meta 没入库」，
