@@ -54,7 +54,7 @@
 
 | 当前位置 | 当前事实 | 直接接 Snake 的后果 |
 | --- | --- | --- |
-| `apps/server/src/rooms/GameRoom.ts` | ballMove 的 Move、技能、fixed-step、离场、结算、evidence/replay 仍由公共房间直接处理，约 20 处 `usesDefaultBallMoveRules` 特判 | Snake 会继续向公共房间增加条件分支，第三个玩法再重复一次 |
+| `apps/server/src/rooms/GameRoom.ts` | ballMove 的 Move、技能、fixed-step、离场、结算、evidence/replay 仍由公共房间直接处理，本文件 10 处 `usesDefaultBallMoveRules` 特判（全仓含 GameMode/README 共 16 处） | Snake 会继续向公共房间增加条件分支，第三个玩法再重复一次 |
 | `apps/server/src/rooms/GameRoom.ts` | 第二名玩家加入时自动开局，开局人数和相位规则由房间壳硬编码 | 无法准确表达“无需等满、全员 Ready、房主手动 Start” |
 | `apps/server/src/rooms/GameRoom.ts` | 每个 C2S 都要同时登记 schema、handler 和 `phaseAllows` | 新增 SnakeInput/Ready/Start 时必须多处修改，漏一处可能静默丢弃或拒绝 |
 | `apps/server/src/rooms/GameMode.ts` | mode 只有 lifecycle hooks，并以 `usesDefaultBallMoveRules` 决定是否借用 ballMove | 公共接口仍以 ballMove 为默认语义；fallback 虽不绕过正常 onCreate/onAuth 的未知 mode 拒绝，仍污染内部直调、测试和未完整初始化路径 |
