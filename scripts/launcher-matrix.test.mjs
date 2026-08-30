@@ -53,6 +53,12 @@ const CASES = [
     .map((flag) => ({ kind: "shell", args: [flag] })),
   { kind: "shell", args: ["-o"], note: "选项值恰为入口，入口被吃成 -o 的值" },
   { kind: "shell", args: ["-t"], note: "只执行第一条命令即退出，入口跑不完，不算启动" },
+  {
+    kind: "shell",
+    args: ["--", "-x"],
+    note: "`--` 之后的第一个操作数就是脚本名：真实 bash 找不到名为 `-x` 的脚本，入口不执行",
+  },
+  { kind: "shell", args: ["--", "--"], note: "同上：第二个 `--` 被当成脚本名" },
 
   // ---- node：应放行 ----
   { kind: "node", args: [] },
@@ -62,6 +68,8 @@ const CASES = [
   ...["--check", "-c", "--eval=1", "-e1", "-p1", "--print=1", "-v", "--version", "-h", "--help"]
     .map((flag) => ({ kind: "node", args: [flag] })),
   { kind: "node", args: ["--import", "tsx", "--check"] },
+  { kind: "node", args: ["decoy.mjs"], note: "入口前的操作数就是被执行的脚本，入口只是它的 argv" },
+  { kind: "node", args: ["--", "decoy.mjs"], note: "`--` 之后第一个操作数是脚本名，入口不执行" },
 ];
 
 let fixture = null;
@@ -93,6 +101,8 @@ function setup() {
   // `bash -t` 只执行第一条就退出，marker 因此不出现——与门禁把它判为「未启动」一致。
   writeFileSync(join(probeDir, "entry.sh"), `: first command\necho ${MARKER}\n`);
   writeFileSync(join(probeDir, "entry.mjs"), `console.log(${JSON.stringify(MARKER)});\n`);
+  // 诱饵：验证「入口出现在真正被执行的脚本之后」时不算启动。
+  writeFileSync(join(probeDir, "decoy.mjs"), "void 0;\n");
   // 诱饵脚本：存在、能跑完、但绝不打 marker——用于「入口前有操作数」的形态。
   writeFileSync(join(probeDir, "decoy.sh"), ": decoy ran\n");
   try {

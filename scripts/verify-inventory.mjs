@@ -854,10 +854,24 @@ function commandInvokesEntry(command, entry) {
     // 占下一个 token——是入口则入口被吃（拒绝），以 `-` 开头则真实 shell 报错（拒绝）。
     const launcher = tokens[0];
     for (let i = 1; i < entryIndex; i += 1) {
+      // `--` 之后的**第一个操作数就是要执行的脚本**，其余全是它的 argv——bash 与 node 实测
+      // 语义一致（`bash -- -x <entry>` 与 `node -- decoy.mjs <entry>` 入口都不执行）。
+      // 这一条对以 `-` 开头的操作数同样成立，所以必须排在下面的操作数判定之前。
+      if (tokens[i] === "--") {
+        if (i + 1 !== entryIndex) return false;
+        continue;
+      }
+      // node/tsx：紧跟启动器的非 flag token 只能是要执行的脚本本身（这个位置不可能是任何
+      // flag 的选项值），入口只是它的 argv。更靠后的位置需要 node 的取值 flag 元数表
+      // （60+ 项且随版本漂移），仍登记为已知边界，不在这里猜。
+      if ((launcher === "node" || launcher === "tsx") && i === 1 && !tokens[i].startsWith("-")) {
+        return false;
+      }
       if (launcher === "sh" || launcher === "bash") {
         // 入口之前的操作数：真实 shell 执行的是第一个操作数（脚本），入口只是它的 argv——
         // `bash decoy.sh <entry>` 入口永不执行。选项值已被 consume 跳过；到这里的不以
-        // -/+ 开头的 token 就是操作数。
+        // -/+ 开头的 token 要么是操作数，要么是引号折叠后留下的哨兵（`bash "-x" <entry>`）——
+        // 后者信息已不可判，同样失败关闭取红。
         if (!tokens[i].startsWith("-") && !tokens[i].startsWith("+")) return false;
         const verdict = shellFlagVerdict(tokens[i]);
         if (verdict === "reject") return false;
