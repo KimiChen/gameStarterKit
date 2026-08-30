@@ -1511,3 +1511,21 @@ test("inventory verifier rejects an entry after a spaced > | sequence", () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("inventory verifier rejects a mid-cluster shell option that eats the entry", () => {
+  const root = createFixture();
+  try {
+    // `-o` 无论在簇的哪个位置都吃掉下一个 token 当选项值：真实 bash 对 `-oe`/`-eo`/`-xo`
+    // 一律报 `invalid option name <entry>`，入口从未执行。只判「簇以 o 结尾」会漏掉这族。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "bash -oe src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

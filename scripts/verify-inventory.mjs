@@ -787,8 +787,11 @@ function segmentLeadsWith(segment, binaries) {
 // flag 语义必须按**启动器族**分派：这张表原本是纯 node CLI 语义，被无差别套到
 // `sh`/`bash` 上会把 `bash -ex <entry>` 判成「未启动」——实测真实 bash 照常执行入口。
 // POSIX shell 的短 option 可以成簇书写且仍执行脚本；入口不执行的有三类：簇含 `c`
-// （随后 token 是命令字符串）、簇含 `s`（读 stdin，入口退化为位置参数）、簇以 `o`/`O`
-// 结尾且把入口吃成选项值。未列出的未知 flag（如 `--bogus`）无法静态判定语义，仍属已知边界。
+// （随后 token 是命令字符串）、簇含 `s`（读 stdin，入口退化为位置参数）、簇含 `o`/`O`
+// 且紧跟的就是入口（`-o` 无论出现在簇的哪个位置都吃掉下一个 token 当选项值——实测
+// `-oe` / `-eo` / `-xo` / `-ox` 全部报 `invalid option name <entry>`；写成 `-o errexit <entry>`
+// 时选项值另有其词，入口照常执行，由 `nextIsEntry` 区分）。
+// 未列出的未知 flag（如 `--bogus`）无法静态判定语义，仍属已知边界。
 function isNonExecutingFlag(token, launcher, nextIsEntry) {
   // 内联而非模块级 const：本函数经 commandInvokesEntry 被顶层驱动段调用，模块级 const
   // 若声明在驱动段之后会 TDZ 崩溃（与下方启动器表同一约束）。
@@ -796,7 +799,7 @@ function isNonExecutingFlag(token, launcher, nextIsEntry) {
     if (token === "--help" || token === "--version") return true;
     if (!/^-[^-]+$/u.test(token)) return false;
     if (/[cs]/u.test(token)) return true;
-    if (/[oO]$/u.test(token) && nextIsEntry) return true;
+    if (/[oO]/u.test(token) && nextIsEntry) return true;
     return false;
   }
   const flags = ["-e", "--eval", "-p", "--print", "-c", "--check", "-h", "--help", "-v", "--version"];
