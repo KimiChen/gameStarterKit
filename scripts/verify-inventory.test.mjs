@@ -1346,3 +1346,52 @@ test("inventory verifier still accepts an entry followed by a log redirect", () 
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("inventory verifier rejects an entry behind a noclobber redirection", () => {
+  const root = createFixture();
+  try {
+    // `>|` 是 noclobber 覆盖重定向算子，不是管道；入口只是被写的文件名。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "tsx tools/smoke.ts >| src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects an entry behind an fd-allocating redirection", () => {
+  const root = createFixture();
+  try {
+    // `{fd}>` 不以数字开头，逐形态枚举挡不住；改为「含 <> 的 token 一律是边界」。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "tsx tools/smoke.ts {fd}> src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier still accepts a launcher piped into another command", () => {
+  const root = createFixture();
+  try {
+    // 反向锁：真实管道不得被 `>|` 守卫误伤。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "tsx src/core/economy/relayer.ts | tee relayer.log";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    const result = runVerifier(root);
+    assert.equal(result.status, 0, outputOf(result));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

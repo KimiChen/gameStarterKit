@@ -751,7 +751,9 @@ function executableSegments(script) {
     if ((ch === "&" || ch === "|") && script[index + 1] === ch) { index += 1; push(); continue; }
     // 单个 `&` 也是命令分隔符（后台执行）；`2>&1` / `>&2` 里的 `&` 属于重定向，不切段。
     if (ch === "&" && script[index - 1] !== ">" && script[index - 1] !== "<") { push(); continue; }
-    if (ch === "|") { push(); continue; }
+    // `>|` / `N>|` 是 noclobber 覆盖重定向算子，不是管道。在这里切段会把重定向目标
+    // 升格成新段的段首，被下方 `segmentLeadsWith` 当成「入口自己就是启动器」而假绿。
+    if (ch === "|" && script[index - 1] !== ">") { push(); continue; }
     current += ch;
   }
   if (unparsable) return [];
@@ -790,7 +792,10 @@ function commandInvokesEntry(command, entry) {
     const tokens = segmentTokens(segment);
     // 入口出现在重定向目标位不算启动：`tsx smoke.ts >& <entry>` 真正执行的是 smoke.ts，
     // 入口只是被写/读的文件名。`>`/`>>`/`<`/`>&`/`2>&1`/`>file` 等形态统一作为边界。
-    const redirectIndex = tokens.findIndex((token) => /^\d*(?:>>?|<)&?/u.test(token));
+    // 失败关闭：任何含 `<`/`>` 的 token 一律当重定向边界。逐形态枚举挡不住 `{fd}>`
+    // （bash 自动分配 fd）这类不以数字开头的算子。引号与转义已折叠成哨兵，
+    // 合法实参里不会残留裸 `<`/`>`。
+    const redirectIndex = tokens.findIndex((token) => /[<>]/u.test(token));
     const boundary = redirectIndex >= 0 ? redirectIndex : tokens.length;
     const entryIndex = tokens.findIndex((token, index) => index < boundary && isTarget(token));
     if (entryIndex < 0) return false;
