@@ -784,29 +784,40 @@ function segmentLeadsWith(segment, binaries) {
   return first !== undefined && binaries.includes(first);
 }
 
-// flag 语义必须按**启动器族**分派：这张表原本是纯 node CLI 语义，被无差别套到
-// `sh`/`bash` 上会把 `bash -ex <entry>` 判成「未启动」——实测真实 bash 照常执行入口。
-// POSIX shell 的短 option 可以成簇书写且仍执行脚本；入口不执行的有三类：簇含 `c`
-// （随后 token 是命令字符串）、簇含 `s`（读 stdin，入口退化为位置参数）、簇含 `o`/`O`
-// 且紧跟的就是入口（`-o` 无论出现在簇的哪个位置都吃掉下一个 token 当选项值——实测
-// `-oe` / `-eo` / `-xo` / `-ox` 全部报 `invalid option name <entry>`；写成 `-o errexit <entry>`
-// 时选项值另有其词，入口照常执行，由 `nextIsEntry` 区分）。
-// 未列出的未知 flag（如 `--bogus`）无法静态判定语义，仍属已知边界。
-function isNonExecutingFlag(token, launcher, nextIsEntry) {
+// flag 语义必须按**启动器族**分派。sh/bash 用**白名单**失败关闭：只放行实测会照常执行入口的
+// 形态（见 `shellFlagVerdict` 与对应正例锁），其余一律判「未启动」。黑名单打地鼠的教训：
+// `-s`（stdin）、`-n`（noexec）、`-D`（隐含 `-n`）、`-t`（执行一条即退）、`+` 簇、
+// `--dump-*`/`--pretty-print`/`--help`/`--version` 全是入口不执行的形态，逐一特判赶不上。
+// node/tsx 保持黑名单+粘连判定（其 flag 面已有 17 形态零背离实测矩阵，见 plan-v3 §15.3）。
+function isNonExecutingFlag(token, launcher) {
   // 内联而非模块级 const：本函数经 commandInvokesEntry 被顶层驱动段调用，模块级 const
   // 若声明在驱动段之后会 TDZ 崩溃（与下方启动器表同一约束）。
-  if (launcher === "sh" || launcher === "bash") {
-    if (token === "--help" || token === "--version") return true;
-    if (!/^-[^-]+$/u.test(token)) return false;
-    if (/[cs]/u.test(token)) return true;
-    if (/[oO]/u.test(token) && nextIsEntry) return true;
-    return false;
-  }
   const flags = ["-e", "--eval", "-p", "--print", "-c", "--check", "-h", "--help", "-v", "--version"];
   const glued = launcher === "node" || launcher === "tsx";
   return flags.some((flag) => token === flag
     || (glued && flag.startsWith("--") && token.startsWith(`${flag}=`))
     || (glued && flag.length === 2 && !token.startsWith("--") && token.startsWith(flag)));
+}
+
+// sh/bash 单 token 判定："ok" 放行 / "reject" 判未启动 / "consume" 消耗下一个 token 作选项值
+// （值恰为入口时由调用方拒绝）。所有白名单项均经真实 bash 逐条实测「入口会执行」。
+function shellFlagVerdict(token) {
+  const SAFE_SHORT = "exuvfabmhirlEP";
+  const SAFE_LONG = ["--noprofile", "--norc", "--posix", "--verbose", "--noediting", "--login"];
+  if (token === "--") return "ok"; // 选项终止符
+  if (token.startsWith("--")) {
+    if (SAFE_LONG.includes(token)) return "ok";
+    if (token === "--init-file" || token === "--rcfile") return "consume";
+    return "reject"; // --help/--version/--dump-*/--pretty-print 等均不执行入口
+  }
+  if (token.startsWith("+")) return "reject"; // `+` 簇（`+s` 读 stdin 等）一律失败关闭
+  if (/^-[^-]+$/u.test(token)) {
+    // 簇内每个字符都必须在实测白名单内；含 `c`（命令串）、`s`（stdin）、`n`（noexec）、
+    // `t`（执行一条即退）、`D`（隐含 -n 的 dump）等不在白名单的字符自然落红，无需逐一特判。
+    if (/[oO]/u.test(token)) return "consume";   // -o/-O 的选项值占下一个 token
+    return [...token.slice(1)].every((ch) => SAFE_SHORT.includes(ch)) ? "ok" : "reject";
+  }
+  return "ok"; // 非 flag token（选项值、路径等）不拦截
 }
 
 function commandInvokesEntry(command, entry) {
@@ -830,8 +841,21 @@ function commandInvokesEntry(command, entry) {
     // 这些 flag 自带内联程序或只做静态检查，出现即判为「未启动」。必须扫描入口**之前的
     // 全部** token：遇到第一个非 `-` token 就停会让 `node --import tsx --check <entry>`
     // 这类「取值 flag 之后再出现黑名单 flag」的形态漏判；粘连形式（`--eval=1`、`-e1`）同样覆盖。
+    // sh/bash 走白名单（`shellFlagVerdict`）；`-o`/`-O` 与 `--init-file`/`--rcfile` 的选项值
+    // 占下一个 token——是入口则入口被吃（拒绝），以 `-` 开头则真实 shell 报错（拒绝）。
+    const launcher = tokens[0];
     for (let i = 1; i < entryIndex; i += 1) {
-      if (isNonExecutingFlag(tokens[i], tokens[0], i + 1 === entryIndex)) return false;
+      if (launcher === "sh" || launcher === "bash") {
+        const verdict = shellFlagVerdict(tokens[i]);
+        if (verdict === "reject") return false;
+        if (verdict === "consume") {
+          if (i + 1 === entryIndex) return false;
+          if (tokens[i + 1].startsWith("-")) return false;
+          i += 1;
+        }
+        continue;
+      }
+      if (isNonExecutingFlag(tokens[i], launcher)) return false;
     }
     // 新增启动器必须显式加入这张表（内联而非模块级 const：驱动段先于此处初始化执行）。
     return segmentLeadsWith(segment, ["node", "npm", "tsx", "sh", "bash"])

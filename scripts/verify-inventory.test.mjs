@@ -1529,3 +1529,49 @@ test("inventory verifier rejects a mid-cluster shell option that eats the entry"
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+// 以下五条反例覆盖白名单化前真实 bash 实测 rc=0 的静默假绿族（入口均未执行）。
+for (const [name, script] of [
+  ["shell -n (noexec)", "bash -n src/core/economy/relayer.ts"],
+  ["shell +s cluster (stdin)", "bash +s src/core/economy/relayer.ts"],
+  ["shell -D (dump implies noexec)", "bash -D src/core/economy/relayer.ts"],
+  ["shell --dump-strings", "bash --dump-strings src/core/economy/relayer.ts"],
+  ["shell -t (exit after one command)", "bash -t src/core/economy/relayer.ts"],
+]) {
+  test(`inventory verifier rejects a non-executing ${name}`, () => {
+    const root = createFixture();
+    try {
+      const packageFile = join(root, "apps", "server", "package.json");
+      const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+      pkg.scripts.relayer = script;
+      writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+      assertRejected(
+        root,
+        /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+}
+
+// 正例反向锁：白名单必须放行这些真实 bash 实测会执行入口的形态。
+for (const [name, script] of [
+  ["long-option whitelist (--norc)", "bash --norc src/core/economy/relayer.ts"],
+  ["-- terminator", "bash -- src/core/economy/relayer.ts"],
+  ["interactive flag in cluster", "bash -i src/core/economy/relayer.ts"],
+]) {
+  test(`inventory verifier still accepts ${name}`, () => {
+    const root = createFixture();
+    try {
+      const packageFile = join(root, "apps", "server", "package.json");
+      const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+      pkg.scripts.relayer = script;
+      writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+      const result = runVerifier(root);
+      assert.equal(result.status, 0, outputOf(result));
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+}
