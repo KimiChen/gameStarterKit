@@ -715,13 +715,15 @@ function commandBase(command) {
  * 白名单只判 segment 的**首 token**，不判启动器的参数语义，也不判其后的注释文本——
  * `npm exec cowsay <entry>` 仍会放行（入口出现在参数位）；`-e/--eval/-p/--print/-c/--check` 等
  * 不执行入口的 flag 之后判「未启动」（见 `commandInvokesEntry` 与对应反例）。
+ * token 切分只认 shell IFS 的空格与制表符：`\r`、NBSP 等 Unicode 空白在真实 shell/npm 里不是
+ * 分词符——让它们粘附在 token 上使命名失配（失败关闭），而不是被静态分词「洗干净」后放行。
  * 短路操作符右侧（`false && npm …`）与 `exit` 之后的死代码不做可达性判定——shell 可达性静态不可判定。
  */
 function executableSegments(script) {
   const segments = [];
   let current = "";
   let unparsable = false;
-  const push = () => { const trimmed = current.trim(); if (trimmed) segments.push(trimmed); current = ""; };
+  const push = () => { const trimmed = current.replace(/^[ \t]+|[ \t]+$/gu, ""); if (trimmed) segments.push(trimmed); current = ""; };
   for (let index = 0; index < script.length; index += 1) {
     const ch = script[index];
     // 转义与引号内的内容整体折叠成哨兵：它们既不是命令头，也不该让内部的分隔符切段。
@@ -758,7 +760,8 @@ function executableSegments(script) {
 }
 
 function segmentTokens(segment) {
-  return segment.split(/\s+/u).filter(Boolean);
+  // 只按 shell IFS 的空格/制表符分词；\r 与 Unicode 空白保持粘附，让命名失配而非静默放行。
+  return segment.split(/[ \t]+/u).filter(Boolean);
 }
 
 function segmentLeadsWith(segment, binaries) {

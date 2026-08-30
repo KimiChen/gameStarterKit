@@ -1229,3 +1229,39 @@ test("inventory verifier rejects documentedIn escaping through a parent segment"
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("inventory verifier rejects a CR-glued npm run script name", () => {
+  const root = createFixture();
+  try {
+    // `\r` 不是 shell IFS 分词符：真实 npm 收到的是带 CR 的脚本名（Missing script），
+    // 静态分词若把它当空白就会给从未执行的 root:verify:vendor 盖绿章。
+    const packageFile = join(root, "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    const before = pkg.scripts["verify:core"];
+    pkg.scripts["verify:core"] = before.replace("npm run verify:vendor", "npm run verify:vendor\r");
+    assert.notEqual(pkg.scripts["verify:core"], before, "fixture must rewrite the verify:vendor call");
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(root, /未实际覆盖声明的验证命令：root:verify:vendor/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects NBSP-glued npm run tokens", () => {
+  const root = createFixture();
+  try {
+    // NBSP 同理：`npm run verify:vendor` 在真实 shell 里是一个整词（command not found）。
+    const packageFile = join(root, "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    const before = pkg.scripts["verify:core"];
+    pkg.scripts["verify:core"] = before.replace(
+      "npm run verify:vendor",
+      "npm run verify:vendor",
+    );
+    assert.notEqual(pkg.scripts["verify:core"], before, "fixture must rewrite the verify:vendor call");
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(root, /未实际覆盖声明的验证命令：root:verify:vendor/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
