@@ -1213,3 +1213,19 @@ test("inventory verifier rejects a blacklisted flag after a value-taking flag", 
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("inventory verifier rejects documentedIn escaping through a parent segment", () => {
+  const root = createFixture();
+  try {
+    // docs/../plan-v2.md 归一化后是 plan-v2.md，不在允许的文档面内。
+    const inventory = readInventory(root);
+    const entry = inventory.workspaceCommandScope.find((item) => item.command.script === "loadtest");
+    entry.documentedIn = "docs/../plan-v2.md";
+    writeInventory(root, inventory);
+    const plan = join(root, "plan-v2.md");
+    writeFileSync(plan, `${readFileSync(plan, "utf8")}\nnpm --workspace @game/server run loadtest\n`);
+    assertRejected(root, /documentedIn 必须是 README\.md 或 docs\/ 下的 \.md 文档/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
