@@ -1130,7 +1130,8 @@ FGUI 50/50）。
    只有 `+s` 走 stdin。改为沿用同一张白名单判定。
 3. `[已完成]` `+o errexit` 与 `-o errexit` 同样只是吃掉选项值，应放行。
 
-修复后 **70 种形态（bash 54 + node 16）零背离**。
+修复后 **70 种形态（bash 56 + node 14）零背离**（拆分系回写时笔误，总数 70 不变；
+第十四轮 `bd1c481` 又增 1 个 shell 诱饵形态，当前为 71 = bash 57 + node 14）。
 
 ### 17.3 方法固化：`test:launcher-matrix`
 
@@ -1262,8 +1263,11 @@ marker 拆开拼接，因为 npm 执行前会**回显命令行**，marker 字面
   不是全域证明——与 §17.5 同一口径。
 - `[不阻塞·有意保留]` 聚合链矩阵的桩是**叶子**：`verify:core` 引用的 `npm run typecheck` 只打一个
   marker、不再展开，因为声明表描述的就是直接子命令。跨层的执行关系不在覆盖范围内。
-- `[不阻塞·有意保留]` sync 矩阵的夹具排除 `.env*`，因此 `sync-client` 的 `devEnv.ts` 生成走的是
-  无 `.env.development` 的默认分支；`.env` 变体下的行为差异未覆盖。
+- ~~sync 矩阵的夹具排除 `.env*`，因此 `sync-client` 的 `devEnv.ts` 生成走的是
+  无 `.env.development` 的默认分支；`.env` 变体下的行为差异未覆盖~~ —— 已于第十四轮修掉
+  （`9eca872`：夹具只排除含密钥的 `.env` 本体，`.env.development` 随夹具带走，并新增
+  「PORT 改值后 .env 与两端生成物一致」场景）。注意原措辞还低估了风险：那不是「未覆盖」，
+  而是合法改 PORT 会被假红。
 - ~~`verify-toolchain` 的非链条检查没有「vs 真实运行时」矩阵~~ —— 已于第十三轮补上，见 §20。
 
 ## 20. 第十三轮：给 verify-toolchain 的非链条检查补矩阵（2026-08-30）
