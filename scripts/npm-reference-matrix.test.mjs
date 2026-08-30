@@ -100,6 +100,9 @@ function setup() {
   // 真实 npm 探针：一个最小 workspace，root 与 workspace 各有一个同名目标脚本，
   // 靠 marker 区分究竟哪一个被执行。`npm run` 解析 workspaces 不需要先 install。
   probe = mkdtempSync(join(tmpdir(), "npm-matrix-probe-"));
+  // npm 探针的环境隔离：cache/logdir 指进探针目录（失败形态会写 _logs debug 日志），
+  // userconfig 指向探针内的空文件（不读用户 ~/.npmrc），避免污染开发者环境。
+  writeFileSync(join(probe, ".npmrc-isolated"), "\n");
   mkdirSync(join(probe, "ws"), { recursive: true });
   writeFileSync(join(probe, "package.json"), `${JSON.stringify({
     name: "npm-matrix-probe", version: "1.0.0", private: true, workspaces: ["ws"],
@@ -173,6 +176,11 @@ function realNpmTarget(form) {
   writeFileSync(file, `${JSON.stringify(pkg, null, 2)}\n`);
   const result = spawnSync("npm", ["run", "caller"], {
     cwd: probe, encoding: "utf8", input: "", timeout: 120_000,
+    env: {
+      ...process.env,
+      npm_config_cache: join(probe, ".npm-cache"),
+      NPM_CONFIG_USERCONFIG: join(probe, ".npmrc-isolated"),
+    },
   });
   const output = `${result.stdout}\n${result.stderr}`;
   if (output.includes(WS_MARKER)) return "workspace";
