@@ -1427,3 +1427,52 @@ test("inventory verifier rejects a shell launcher whose option cluster contains 
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("inventory verifier rejects a shell launch that reads stdin instead of the entry", () => {
+  const root = createFixture();
+  try {
+    // `bash -s` 读 stdin，入口只退化为位置参数，不会被执行（真实 bash 实测 exit 0 静默假绿）。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "bash -s src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects a shell option that eats the entry as its value", () => {
+  const root = createFixture();
+  try {
+    // `bash -o` 把随后 token 吃成选项名：`bash -o <entry>` 的入口不会被执行。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "bash -o src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier still accepts an idiomatic shell option cluster with a value", () => {
+  const root = createFixture();
+  try {
+    // 反向锁：`bash -euo pipefail <entry>` 的 pipefail 是 -o 的取值，入口照常执行，不得误伤。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "bash -euo pipefail src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    const result = runVerifier(root);
+    assert.equal(result.status, 0, outputOf(result));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

@@ -778,14 +778,18 @@ function segmentLeadsWith(segment, binaries) {
 
 // flag 语义必须按**启动器族**分派：这张表原本是纯 node CLI 语义，被无差别套到
 // `sh`/`bash` 上会把 `bash -ex <entry>` 判成「未启动」——实测真实 bash 照常执行入口。
-// POSIX shell 的短 option 可以成簇书写且仍执行脚本，只有含 `c` 的簇才把随后的 token
-// 当命令字符串。未列出的未知 flag（如 `--bogus`）无法静态判定语义，仍属已知边界。
-function isNonExecutingFlag(token, launcher) {
+// POSIX shell 的短 option 可以成簇书写且仍执行脚本；入口不执行的有三类：簇含 `c`
+// （随后 token 是命令字符串）、簇含 `s`（读 stdin，入口退化为位置参数）、簇以 `o`/`O`
+// 结尾且把入口吃成选项值。未列出的未知 flag（如 `--bogus`）无法静态判定语义，仍属已知边界。
+function isNonExecutingFlag(token, launcher, nextIsEntry) {
   // 内联而非模块级 const：本函数经 commandInvokesEntry 被顶层驱动段调用，模块级 const
   // 若声明在驱动段之后会 TDZ 崩溃（与下方启动器表同一约束）。
   if (launcher === "sh" || launcher === "bash") {
-    return token === "--help" || token === "--version"
-      || (/^-[^-]+$/u.test(token) && token.includes("c"));
+    if (token === "--help" || token === "--version") return true;
+    if (!/^-[^-]+$/u.test(token)) return false;
+    if (/[cs]/u.test(token)) return true;
+    if (/[oO]$/u.test(token) && nextIsEntry) return true;
+    return false;
   }
   const flags = ["-e", "--eval", "-p", "--print", "-c", "--check", "-h", "--help", "-v", "--version"];
   const glued = launcher === "node" || launcher === "tsx";
@@ -816,7 +820,7 @@ function commandInvokesEntry(command, entry) {
     // 全部** token：遇到第一个非 `-` token 就停会让 `node --import tsx --check <entry>`
     // 这类「取值 flag 之后再出现黑名单 flag」的形态漏判；粘连形式（`--eval=1`、`-e1`）同样覆盖。
     for (let i = 1; i < entryIndex; i += 1) {
-      if (isNonExecutingFlag(tokens[i], tokens[0])) return false;
+      if (isNonExecutingFlag(tokens[i], tokens[0], i + 1 === entryIndex)) return false;
     }
     // 新增启动器必须显式加入这张表（内联而非模块级 const：驱动段先于此处初始化执行）。
     return segmentLeadsWith(segment, ["node", "npm", "tsx", "sh", "bash"])
