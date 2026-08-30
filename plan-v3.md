@@ -1647,3 +1647,46 @@ marker 拆开拼接，因为 npm 执行前会**回显命令行**，marker 字面
 - ⚠ 流程提醒：本轮五张矩阵在**与复核 agent 并发**时出现过 3 张红，单独串行重跑全绿。
   矩阵会在真实仓库上跑 `git ls-files` 建夹具，并发 agent 留下的临时文件会污染夹具——
   与第八轮「探针缺依赖」同类，**判定门禁坏了之前先串行复跑一次**。
+
+## 27. 第二十轮复核（2026-08-31）
+
+复核对象：`9c6f2c9..9cd31c7`（同事第十九轮的三个修复 commit `5f5c79e`/`b7d1662`/`951b553` +
+§26 回写 `15f5b49` + 两份新设计文档 `4986932`/`9cd31c7`），及同事对第十八轮 `06bc422` 的验证。
+方法：对抗式独立核查（隔离副本 + 真实 npm 实测）+ 文档事实性抽查。
+
+### 27.1 对第十九轮的判定
+
+- 三个修复 commit **全部成立**：`5f5c79e` 的 workspace 钩子洞实证成立（父提交下两门禁 exit 0 而
+  真实 npm 先跑钩子；HEAD 点名 `scripts.pretest` 拒绝），派生用例三来源覆盖正确；`b7d1662` 的
+  父提交「加第五条链+打钉后矩阵仍 4/4 全绿」实证成立，HEAD 双向钉恰 1 红；`951b553` 的
+  TARGETS 漂移与「sync-webplatform-contract 不入矩阵」三理由逐条成立（源在 node_modules、
+  无 README、--check 与真同步共用 expectedFiles() 结构上无法背离）。
+- §26.3 的「覆盖面副本 vs 同形第三份副本」分界与实际改动一致；§26.4 并发污染提醒属实
+  （launcher/npm-reference/sync-mirror 三张矩阵用 `git ls-files --others` 在真实仓库建夹具，
+  并发 agent 的临时文件会污染夹具——判定门禁坏了之前先串行复跑）。
+- 同事对 `06bc422` 的验证成立；其指出的 R3「静默无钉」措辞不准（父提交会红 4 条但全是别的闸
+  在报，无一点名未打钉）已收窄为「无定向报错」。
+- **唯一数字失实**：「全量派生 21 例」实为 32 次迭代 / 29 个唯一钩子（跨源去重 3 个），已更正。
+
+### 27.2 本轮新发现并修掉的缺陷
+
+1. `[已完成]` plan-v3 两处复核表述更正（数字 21→32/29、「静默」→「无定向报错」）。
+2. `[已完成]` `docs/Non-intrusive-room.md` 的「约 20 处 `usesDefaultBallMoveRules` 特判」夸大，
+   修正为本文件 10 处（全仓含 GameMode/README 共 16 处）。
+3. `[已完成]` `docs/snakeoff/02` 内部事务态 `Locking` 与 `Non-intrusive-room.md` §13.1 的
+   `Starting` 不统一，已统一为 `Starting` 并注明同源。
+4. `[已完成]` 两份新设计文档零登记：README/AGENTS/CLAUDE 各加两行入口；
+   `docs/Non-intrusive-room.md` 进 `referenceDocs`；snakeoff 仿 undergroundIdle 在
+   EXTRAFEATURES 新增 §3.11。
+
+### 27.3 仍登记的已知边界
+
+- `5f5c79e` 的 workspace 闸表从 `npm --workspace <名> run <脚本>` 形态派生：链若改写成
+  `npm run test --workspace X` 或路径形态则不匹配（该 workspace 失闸）——链声明本身被文本钉
+  双侧看守，属自指边界。
+- `951b553` 的覆盖面正则只认 `node scripts/sync-*.mjs --check` 裸形态；豁免表条目本身靠评审。
+- 两份新文档互为配套的「框架能力 vs 首版产品」分层（撮合预留 vs 首版不做公开匹配）与
+  「默认入口归属」（snakeoff 替代 ballMove 入口 vs wsrpc 迁移入口）尚无仲裁顺序，落地时需先拍板。
+
+实测：`verify:all` 通过（服务端 297/297、客户端 261/261、FGUI 50/50、五矩阵 3/2/5/4/3）、
+`test:inventory` 96/96、`test:int` 154/154（本地栈）。
