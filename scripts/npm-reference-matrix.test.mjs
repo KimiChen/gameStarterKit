@@ -180,6 +180,10 @@ function realNpmTarget(form) {
       ...process.env,
       npm_config_cache: join(probe, ".npm-cache"),
       NPM_CONFIG_USERCONFIG: join(probe, ".npmrc-isolated"),
+      // 小写同名键必须一并写：大写的 NPM_CONFIG_USERCONFIG 压不住环境里**已存在的**
+      // 小写 npm_config_userconfig（外层 npm run 会把用户 npmrc 的值再导出成 npm_config_*，
+      // 随 ...process.env 直接进探针）。实测未闭合时矩阵会因 workspace 形态跑不出 marker 而红。
+      npm_config_userconfig: join(probe, ".npmrc-isolated"),
     },
   });
   const output = `${result.stdout}\n${result.stderr}`;
