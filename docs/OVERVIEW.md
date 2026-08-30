@@ -68,6 +68,7 @@ apps/client/src
 | 工具链版本与聚合命令图 | `npm run verify:core` 首闸（`scripts/verify-toolchain.mjs`） |
 | FGUI 设计源、导出物和 registry/codegen 契约 | `npm run verify:fgui`、`npm run test:fgui` |
 | 能力清单与默认入口登记 | `npm run verify:inventory`、`npm run test:inventory` |
+| 门禁判定 vs 真实行为矩阵（启动器 / npm 引用 / 聚合链 / 同步镜像 / 运行时） | `npm run test:launcher-matrix` 等 5 个 `test:*-matrix` |
 | 服务端路由、协议与一致性规则 | `npm --workspace @game/server run test` |
 | 客户端无头行为、wire 与生命周期 | `npm run test:client` |
 | vendored runtime 内容与文件集合锁 | `npm run verify:vendor`、`npm run test:vendor` |
