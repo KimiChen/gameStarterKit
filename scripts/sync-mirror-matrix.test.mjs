@@ -169,6 +169,24 @@ const CLIENT_SCENARIOS = [
   },
 
   {
+    // 上一条正例锁的是「合法同步状态不得假红」，但它对 devEnv **新鲜度检查**恒真——
+    // 删掉那个检查它照样绿。这条负例才是钉住新鲜度的那颗钉：改了 PORT 却没跑同步必须红。
+    // 端口值从夹具里**已生成的** devEnv.ts 读出当前生效值再取一个不同的（读可观测产物，
+    // 不是拿 devenv-gen 去验 devenv-gen）；PORT 用 **prepend**，因为 .env 的语义是
+    // 「同名键第一条声明生效」。
+    name: "PORT 改值但未跑同步",
+    expectClean: false,
+    mutate: (root) => {
+      const generated = join(root, "apps/client/src/core/devEnv.ts");
+      const match = /DEV_SERVER_PORT = (\d+)/u.exec(readFileSync(generated, "utf8"));
+      assert.ok(match, `夹具前提不成立：${generated} 里读不到 DEV_SERVER_PORT`);
+      const next = match[1] === "3000" ? 3001 : 3000;
+      const envFile = join(root, ".env.development");
+      writeFileSync(envFile, `PORT=${next}\n${readFileSync(envFile, "utf8")}`);
+    },
+  },
+
+  {
     // 注意这条判的是 **git index** 而不是工作树：从磁盘上删掉 .meta 不会触发它
     // （`git ls-files` 仍列出该条目）。真正的失效形态是「文件入库了但它的 .meta 没入库」，
     // 所以这里用 `git rm --cached` 取消跟踪，文件本身留在磁盘上。
