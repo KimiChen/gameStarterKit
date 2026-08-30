@@ -135,4 +135,18 @@ declare module "*.mjs" {
   export function packageNames(args: { name: string; scope?: string | null }): Record<string, string>;
   export function assertPackageNames(metadata: { name: string; scope?: string | null; packages?: Record<string, string> }): void;
   export function verifyProjectMetadata(root: string): { ok: boolean; errors: string[]; metadata?: unknown };
+  // scripts/verify-toolchain.mjs 导出的验证图声明表（单源，toolchainContract 直接 import）
+  export const ROOT_TOOL_DEPENDENCIES: string[];
+  export const TYPECHECK_COMMANDS: string[];
+  export const VERIFY_SYNC_COMMANDS: string[];
+  export const VERIFY_CORE_COMMANDS: string[];
+  export const VERIFY_ALL_COMMANDS: string[];
+  export const CLIENT_TEST_COMMAND: string;
+  export const FGUI_TEST_COMMAND: string;
+  export const INVENTORY_TEST_COMMAND: string;
+  export const LAUNCHER_MATRIX_COMMAND: string;
+  export const NPM_REFERENCE_MATRIX_COMMAND: string;
+  export const AGGREGATE_CHAIN_MATRIX_COMMAND: string;
+  export const SYNC_MIRROR_MATRIX_COMMAND: string;
+  export const TOOLCHAIN_RUNTIME_MATRIX_COMMAND: string;
 }

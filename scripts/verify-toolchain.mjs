@@ -11,8 +11,11 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const MINIMUM_SUPPORTED_NODE_MAJOR = 22;
-const ROOT_TOOL_DEPENDENCIES = ["@types/node", "tsx", "typescript"];
-const TYPECHECK_COMMANDS = [
+// 下列声明表是验证图的唯一真源并对外导出：toolchainContract.test.ts 与
+// toolchain-runtime-matrix.test.mjs 一律 import 使用，不得再保留本地复制件（复制件曾漂移，
+// 见 toolchainContract 的承重钉用例）。声明全部位于文件前部，先于任何使用点求值，无 TDZ 风险。
+export const ROOT_TOOL_DEPENDENCIES = ["@types/node", "tsx", "typescript"];
+export const TYPECHECK_COMMANDS = [
   "npm run verify:webplatform-contract",
   "npm --workspace @game/shared run typecheck",
   "npm --workspace @game/server run typecheck",
@@ -20,11 +23,11 @@ const TYPECHECK_COMMANDS = [
   "npm run typecheck:client:legacy",
   "npm run verify:sync",
 ];
-const VERIFY_SYNC_COMMANDS = [
+export const VERIFY_SYNC_COMMANDS = [
   "node scripts/sync-shared.mjs --check",
   "node scripts/sync-client.mjs --check",
 ];
-const VERIFY_CORE_COMMANDS = [
+export const VERIFY_CORE_COMMANDS = [
   "node scripts/verify-toolchain.mjs",
   "npm run verify:project",
   "npm run typecheck",
@@ -42,20 +45,38 @@ const VERIFY_CORE_COMMANDS = [
   "npm run verify:perf",
   "npm run test:client",
 ];
-const VERIFY_ALL_COMMANDS = [
+export const VERIFY_ALL_COMMANDS = [
   "npm run verify:core",
   "npm --workspace @game/server run test",
 ];
-const CLIENT_TEST_COMMAND =
+export const CLIENT_TEST_COMMAND =
   "cd apps/server && node --import tsx --test ../client/test/*.test.ts ../../scripts/vendor-lock.test.mjs";
-const FGUI_TEST_COMMAND =
+export const FGUI_TEST_COMMAND =
   "cd apps/server && node --import tsx --test ../../scripts/fgui-manifest.test.mjs ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/fguiContract.test.ts ../client/test/viewRegistry.test.ts";
-const INVENTORY_TEST_COMMAND = "node --test scripts/verify-inventory.test.mjs";
-const LAUNCHER_MATRIX_COMMAND = "node --test scripts/launcher-matrix.test.mjs";
-const NPM_REFERENCE_MATRIX_COMMAND = "node --test scripts/npm-reference-matrix.test.mjs";
-const AGGREGATE_CHAIN_MATRIX_COMMAND = "node --test scripts/aggregate-chain-matrix.test.mjs";
-const SYNC_MIRROR_MATRIX_COMMAND = "node --test scripts/sync-mirror-matrix.test.mjs";
-const TOOLCHAIN_RUNTIME_MATRIX_COMMAND = "node --test scripts/toolchain-runtime-matrix.test.mjs";
+export const INVENTORY_TEST_COMMAND = "node --test scripts/verify-inventory.test.mjs";
+export const LAUNCHER_MATRIX_COMMAND = "node --test scripts/launcher-matrix.test.mjs";
+export const NPM_REFERENCE_MATRIX_COMMAND = "node --test scripts/npm-reference-matrix.test.mjs";
+export const AGGREGATE_CHAIN_MATRIX_COMMAND = "node --test scripts/aggregate-chain-matrix.test.mjs";
+export const SYNC_MIRROR_MATRIX_COMMAND = "node --test scripts/sync-mirror-matrix.test.mjs";
+export const TOOLCHAIN_RUNTIME_MATRIX_COMMAND = "node --test scripts/toolchain-runtime-matrix.test.mjs";
+
+const CHAIN_SCRIPTS = {
+  typecheck: TYPECHECK_COMMANDS,
+  "verify:sync": VERIFY_SYNC_COMMANDS,
+  "verify:core": VERIFY_CORE_COMMANDS,
+  "verify:all": VERIFY_ALL_COMMANDS,
+};
+const EXACT_SCRIPTS = {
+  "test:client": CLIENT_TEST_COMMAND,
+  "test:fgui": FGUI_TEST_COMMAND,
+  "test:inventory": INVENTORY_TEST_COMMAND,
+  "test:launcher-matrix": LAUNCHER_MATRIX_COMMAND,
+  "test:npm-reference-matrix": NPM_REFERENCE_MATRIX_COMMAND,
+  "test:aggregate-chain-matrix": AGGREGATE_CHAIN_MATRIX_COMMAND,
+  "test:sync-mirror-matrix": SYNC_MIRROR_MATRIX_COMMAND,
+  "test:toolchain-runtime-matrix": TOOLCHAIN_RUNTIME_MATRIX_COMMAND,
+};
+
 
 function parseArgs(argv) {
   let root;
@@ -279,18 +300,12 @@ export function verifyToolchain(root = ROOT) {
   }
 
   const scripts = rootPackage?.scripts;
-  requireCommandChain("typecheck", scripts?.typecheck, TYPECHECK_COMMANDS, errors);
-  requireCommandChain("verify:sync", scripts?.["verify:sync"], VERIFY_SYNC_COMMANDS, errors);
-  requireExactScript("test:client", scripts?.["test:client"], CLIENT_TEST_COMMAND, errors);
-  requireExactScript("test:fgui", scripts?.["test:fgui"], FGUI_TEST_COMMAND, errors);
-  requireExactScript("test:inventory", scripts?.["test:inventory"], INVENTORY_TEST_COMMAND, errors);
-  requireExactScript("test:launcher-matrix", scripts?.["test:launcher-matrix"], LAUNCHER_MATRIX_COMMAND, errors);
-  requireExactScript("test:npm-reference-matrix", scripts?.["test:npm-reference-matrix"], NPM_REFERENCE_MATRIX_COMMAND, errors);
-  requireExactScript("test:aggregate-chain-matrix", scripts?.["test:aggregate-chain-matrix"], AGGREGATE_CHAIN_MATRIX_COMMAND, errors);
-  requireExactScript("test:sync-mirror-matrix", scripts?.["test:sync-mirror-matrix"], SYNC_MIRROR_MATRIX_COMMAND, errors);
-  requireExactScript("test:toolchain-runtime-matrix", scripts?.["test:toolchain-runtime-matrix"], TOOLCHAIN_RUNTIME_MATRIX_COMMAND, errors);
-  requireCommandChain("verify:core", scripts?.["verify:core"], VERIFY_CORE_COMMANDS, errors);
-  requireCommandChain("verify:all", scripts?.["verify:all"], VERIFY_ALL_COMMANDS, errors);
+  for (const [scriptName, expected] of Object.entries(CHAIN_SCRIPTS)) {
+    requireCommandChain(scriptName, scripts?.[scriptName], expected, errors);
+  }
+  for (const [scriptName, expected] of Object.entries(EXACT_SCRIPTS)) {
+    requireExactScript(scriptName, scripts?.[scriptName], expected, errors);
+  }
 
   return { ok: errors.length === 0, errors, nodeMajor: pinnedMajor ?? undefined };
 }

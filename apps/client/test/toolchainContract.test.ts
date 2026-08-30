@@ -1,4 +1,11 @@
-/** Node declaration and root verification-graph regression checks. */
+/**
+ * Node declaration and root verification-graph regression checks.
+ *
+ * 链条声明表（TYPECHECK/VERIFY_SYNC/VERIFY_CORE/VERIFY_ALL）与精确脚本命令文本的唯一真源是
+ * scripts/verify-toolchain.mjs 的导出常量，本文件一律 import，不留本地复制件——复制件曾
+ * 实际漂移（缺 5 条矩阵命令），让「逐条删除必红」用例对 verify:core 段失去判别力（反例红，
+ * 但红在缺的 5 条上，而不是红在被删的那条上）。
+ */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -6,43 +13,53 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
+import {
+  ROOT_TOOL_DEPENDENCIES,
+  TYPECHECK_COMMANDS,
+  VERIFY_SYNC_COMMANDS,
+  VERIFY_CORE_COMMANDS,
+  VERIFY_ALL_COMMANDS,
+  CLIENT_TEST_COMMAND,
+  FGUI_TEST_COMMAND,
+  INVENTORY_TEST_COMMAND,
+  LAUNCHER_MATRIX_COMMAND,
+  NPM_REFERENCE_MATRIX_COMMAND,
+  AGGREGATE_CHAIN_MATRIX_COMMAND,
+  SYNC_MIRROR_MATRIX_COMMAND,
+  TOOLCHAIN_RUNTIME_MATRIX_COMMAND,
+} from "../../../scripts/verify-toolchain.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const VERIFY_SCRIPT = join(ROOT, "scripts/verify-toolchain.mjs");
-const TYPECHECK_COMMANDS = [
-  "npm run verify:webplatform-contract",
-  "npm --workspace @game/shared run typecheck",
-  "npm --workspace @game/server run typecheck",
-  "npm run typecheck:client",
-  "npm run typecheck:client:legacy",
-  "npm run verify:sync",
-];
-const VERIFY_SYNC_COMMANDS = [
-  "node scripts/sync-shared.mjs --check",
-  "node scripts/sync-client.mjs --check",
-];
-const VERIFY_CORE_COMMANDS = [
-  "node scripts/verify-toolchain.mjs",
-  "npm run verify:project",
-  "npm run typecheck",
-  "npm run verify:ecs",
-  "npm run verify:vendor",
-  "npm run verify:fgui",
-  "npm run test:fgui",
-  "npm run verify:inventory",
-  "npm run test:inventory",
-  "npm run verify:perf",
-  "npm run test:client",
-];
-const VERIFY_ALL_COMMANDS = [
-  "npm run verify:core",
-  "npm --workspace @game/server run test",
-];
-const TOOL_DEPENDENCIES = {
+const CHAIN_SCRIPTS: Record<string, string[]> = {
+  typecheck: TYPECHECK_COMMANDS,
+  "verify:sync": VERIFY_SYNC_COMMANDS,
+  "verify:core": VERIFY_CORE_COMMANDS,
+  "verify:all": VERIFY_ALL_COMMANDS,
+};
+const EXACT_SCRIPTS: Record<string, string> = {
+  "test:client": CLIENT_TEST_COMMAND,
+  "test:fgui": FGUI_TEST_COMMAND,
+  "test:inventory": INVENTORY_TEST_COMMAND,
+  "test:launcher-matrix": LAUNCHER_MATRIX_COMMAND,
+  "test:npm-reference-matrix": NPM_REFERENCE_MATRIX_COMMAND,
+  "test:aggregate-chain-matrix": AGGREGATE_CHAIN_MATRIX_COMMAND,
+  "test:sync-mirror-matrix": SYNC_MIRROR_MATRIX_COMMAND,
+  "test:toolchain-runtime-matrix": TOOLCHAIN_RUNTIME_MATRIX_COMMAND,
+};
+/**
+ * 夹具只需给出每个工具依赖的版本号取值；「闸哪些工具」沿用导入的 ROOT_TOOL_DEPENDENCIES。
+ * verify-toolchain 新增第 4 个工具时这里取到 undefined，夹具随之缺声明、基线断言立刻红——
+ * 失败关闭，提醒同步补版本号。
+ */
+const TOOL_VERSIONS: Record<string, string> = {
   "@types/node": "^22.13.14",
   tsx: "^4.21.0",
   typescript: "^5.9.3",
 };
+const TOOL_DEPENDENCIES = Object.fromEntries(
+  ROOT_TOOL_DEPENDENCIES.map((dependency) => [dependency, TOOL_VERSIONS[dependency]]),
+);
 
 type JsonRecord = Record<string, any>;
 
@@ -56,13 +73,8 @@ function createFixture(): string {
   const root = mkdtempSync(join(tmpdir(), "toolchain-contract-"));
   const rootPackage = {
     scripts: {
-      typecheck: TYPECHECK_COMMANDS.join(" && "),
-      "verify:sync": VERIFY_SYNC_COMMANDS.join(" && "),
-      "test:client": "cd apps/server && node --import tsx --test ../client/test/*.test.ts ../../scripts/vendor-lock.test.mjs",
-      "test:fgui": "cd apps/server && node --import tsx --test ../../scripts/fgui-manifest.test.mjs ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/fguiContract.test.ts ../client/test/viewRegistry.test.ts",
-      "test:inventory": "node --test scripts/verify-inventory.test.mjs",
-      "verify:core": VERIFY_CORE_COMMANDS.join(" && "),
-      "verify:all": VERIFY_ALL_COMMANDS.join(" && "),
+      ...Object.fromEntries(Object.entries(CHAIN_SCRIPTS).map(([name, commands]) => [name, commands.join(" && ")])),
+      ...EXACT_SCRIPTS,
     },
     engines: { node: ">=22" },
     devDependencies: TOOL_DEPENDENCIES,
@@ -94,12 +106,100 @@ function createFixture(): string {
   return root;
 }
 
-function runVerifier(root: string): { status: number | null; output: string } {
-  const result = spawnSync(process.execPath, [VERIFY_SCRIPT, "--root", root], {
+function runVerifierFile(script: string, root: string): { status: number | null; output: string } {
+  const result = spawnSync(process.execPath, [script, "--root", root], {
     cwd: ROOT,
     encoding: "utf8",
   });
   return { status: result.status, output: `${result.stdout}\n${result.stderr}` };
+}
+
+function runVerifier(root: string): { status: number | null; output: string } {
+  return runVerifierFile(VERIFY_SCRIPT, root);
+}
+
+/** 把打了补丁的 verify-toolchain 副本写进夹具，用于演「声明表被改」方向的反例。 */
+function writePatchedVerifier(root: string, patch: (source: string) => string): string {
+  const source = readFileSync(VERIFY_SCRIPT, "utf8");
+  const semantic = patch(source);
+  assert.notEqual(semantic, source, "补丁必须真实改动 verify-toolchain.mjs 源文本，否则该用例在空转");
+  // 副本落在 os 临时目录里；macOS 的 tmpdir 是符号链接，isMain 守卫（argv[1] 与
+  // import.meta.url 的字符串比较）此时不成立、main 不会自动跑——副本必须把守卫调用
+  // 改成无条件调用，否则进程静默 exit 0，反例假红。
+  const patched = semantic.replace("if (isMain) main();", "main();");
+  assert.notEqual(patched, semantic, "isMain 守卫替换失败——verify-toolchain.mjs 的驱动段结构变了？");
+  const file = join(root, "verify-toolchain.patched.mjs");
+  writeFileSync(file, patched);
+  return file;
+}
+
+/**
+ * 夹具前提：未变异的夹具必须全绿。历史上夹具用本地复制件搭、比声明表缺 5 条命令，
+ * 导致每个反例都红在「缺 5 条」上——断言全过却毫无判别力。每个反例套件开头先钉一次基线。
+ */
+function assertFixtureGreen(): void {
+  const root = createFixture();
+  try {
+    const result = runVerifier(root);
+    assert.equal(
+      result.status,
+      0,
+      `夹具前提失效：未变异夹具必须全绿，否则本套件全部反例都在空转：\n${result.output}`,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+/**
+ * verify:core 的承重命令钉。声明表与 package.json 链若被「合谋式同删」， verifier 与
+ * 「逐条删除」用例都消费同一张导入表、会一起继续全绿——这条独立的成员资格断言是第三锚点。
+ * 即使连钉也被同删，docs/inventory.json 给 verify:core 登记的 requires 仍会让
+ * verify-inventory 报「未实际覆盖声明的验证命令」（第四锚点，见下方交叉锚定断言）。
+ */
+const VERIFY_CORE_LOAD_BEARING = [
+  "node scripts/verify-toolchain.mjs",
+  "npm run typecheck",
+  "npm run verify:vendor",
+  "npm run verify:inventory",
+  "npm run test:inventory",
+  "npm run test:client",
+];
+
+function missingLoadBearing(table: string[]): string[] {
+  return VERIFY_CORE_LOAD_BEARING.filter((command) => !table.includes(command));
+}
+
+type InventoryCommand = { kind?: string; script?: string; workspace?: string; requires?: InventoryCommand[] };
+
+/** docs/inventory.json 中登记在指定聚合链节点下的直接 requires（只读；该文件由 inventory 门禁维护）。 */
+function inventoryChainRequires(chainScript: string): InventoryCommand[] {
+  const inventory = JSON.parse(readFileSync(join(ROOT, "docs/inventory.json"), "utf8")) as JsonRecord;
+  const found: InventoryCommand[] = [];
+  const visit = (node: InventoryCommand): void => {
+    if (node.kind === "root" && node.script === chainScript) found.push(...(node.requires ?? []));
+    for (const requirement of node.requires ?? []) visit(requirement);
+  };
+  for (const capability of (inventory.capabilities ?? []) as Array<{ verification?: InventoryCommand[] }>) {
+    for (const command of capability.verification ?? []) visit(command);
+  }
+  return found;
+}
+
+function chainCommandText(command: InventoryCommand): string {
+  return command.kind === "root"
+    ? `npm run ${command.script}`
+    : `npm --workspace ${command.workspace} run ${command.script}`;
+}
+
+function removeChainCommand(root: string, script: string, command: string): void {
+  editJson(root, "package.json", (pkg) => {
+    pkg.scripts[script] = (pkg.scripts[script] as string)
+      .split("&&")
+      .map((part: string) => part.trim())
+      .filter((part: string) => part !== command)
+      .join(" && ");
+  });
 }
 
 function editJson(root: string, relative: string, edit: (value: JsonRecord) => void): void {
@@ -116,6 +216,7 @@ test("toolchain contract accepts the checked-in Node and verification declaratio
 });
 
 test("toolchain contract rejects Node declaration and lock projection drift", () => {
+  assertFixtureGreen();
   const cases: Array<{
     name: string;
     mutate(root: string): void;
@@ -216,26 +317,23 @@ test("toolchain contract rejects Node declaration and lock projection drift", ()
 });
 
 test("toolchain contract rejects removal of every command in the verification graph", () => {
-  const graphCases = [
-    ...TYPECHECK_COMMANDS.map((command) => ({ script: "typecheck", command })),
-    ...VERIFY_SYNC_COMMANDS.map((command) => ({ script: "verify:sync", command })),
-    ...VERIFY_CORE_COMMANDS.map((command) => ({ script: "verify:core", command })),
-    ...VERIFY_ALL_COMMANDS.map((command) => ({ script: "verify:all", command })),
-  ];
+  assertFixtureGreen();
+  const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const graphCases = Object.entries(CHAIN_SCRIPTS).flatMap(([script, commands]) =>
+    commands.map((command) => ({ script, command })),
+  );
 
   for (const graphCase of graphCases) {
     const root = createFixture();
     try {
-      editJson(root, "package.json", (pkg) => {
-        pkg.scripts[graphCase.script] = pkg.scripts[graphCase.script]
-          .split("&&")
-          .map((part: string) => part.trim())
-          .filter((part: string) => part !== graphCase.command)
-          .join(" && ");
-      });
+      removeChainCommand(root, graphCase.script, graphCase.command);
       const result = runVerifier(root);
       assert.notEqual(result.status, 0, `${graphCase.script} without ${graphCase.command} unexpectedly passed`);
-      assert.match(result.output, new RegExp(`${graphCase.script.replace(":", "\\:")} 缺少聚合命令`), result.output);
+      assert.match(
+        result.output,
+        new RegExp(`${graphCase.script.replace(":", "\\:")} 缺少聚合命令 \`${escapeRegExp(graphCase.command)}\``),
+        `失败必须点名被删的那条命令，而不是被别的缺口兜底：\n${result.output}`,
+      );
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -243,6 +341,7 @@ test("toolchain contract rejects removal of every command in the verification gr
 });
 
 test("toolchain contract rejects weakened negative-test entrypoints and duplicate inherited gates", () => {
+  assertFixtureGreen();
   const cases: Array<{ name: string; edit(scripts: JsonRecord): void; expected: RegExp }> = [
     {
       name: "client suite no longer covers every client contract test",
@@ -278,3 +377,69 @@ test("toolchain contract rejects weakened negative-test entrypoints and duplicat
     }
   }
 });
+
+test("toolchain contract rejects declaration-table shrinkage in the opposite direction", () => {
+  // 反方向的判别力：声明表（verify-toolchain.mjs 内）删一条、package.json 链不动，
+  // requireCommandChain 必须以「包含未登记聚合命令」报红。用打补丁的 verifier 副本演这一刀，
+  // 真源文件不动。
+  const victim = "npm run test:client";
+  const root = createFixture();
+  try {
+    const patched = writePatchedVerifier(root, (source) =>
+      source.replace(`\n  ${JSON.stringify(victim)},`, ""));
+    const result = runVerifierFile(patched, root);
+    assert.notEqual(result.status, 0, "声明表删一条而链不动必须红");
+    assert.match(result.output, /verify:core 包含未登记聚合命令 `npm run test:client`/, result.output);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("toolchain contract pins load-bearing verify:core members against silent removal", () => {
+  assert.deepEqual(
+    missingLoadBearing(VERIFY_CORE_COMMANDS),
+    [],
+    "verify:core 声明表缺承重命令——声明表与 package.json 链同删时本断言必须红",
+  );
+  // 第四锚点交叉锚定：docs/inventory.json 登记由 verify:core 覆盖的命令必须仍在声明表里。
+  // 三方同删（声明表 + 链 + 上方承重钉）之后，是 verify-inventory 的「未实际覆盖」兜底。
+  const dangling = inventoryChainRequires("verify:core")
+    .map(chainCommandText)
+    .filter((command) => !VERIFY_CORE_COMMANDS.includes(command));
+  assert.deepEqual(
+    dangling,
+    [],
+    "docs/inventory.json 登记由 verify:core 覆盖、但已不在声明表中的命令",
+  );
+});
+
+test("toolchain contract catches collusive deletion from both declaration table and chain", () => {
+  const victim = "npm run test:client";
+  const root = createFixture();
+  try {
+    // 合谋现场：打补丁的 verifier 删掉声明表条目，夹具链删掉同一条命令。
+    const patched = writePatchedVerifier(root, (source) =>
+      source.replace(`\n  ${JSON.stringify(victim)},`, ""));
+    removeChainCommand(root, "verify:core", victim);
+    const blind = runVerifierFile(patched, root);
+    assert.equal(
+      blind.status,
+      0,
+      `前提：声明表与链同删后 verifier 自身依旧全绿（它只比对双方文本）——这正是承重钉存在的理由：\n${blind.output}`,
+    );
+    // 兜底一：承重钉立即命中被删命令（上一条用例随之变红）。
+    assert.deepEqual(
+      missingLoadBearing(VERIFY_CORE_COMMANDS.filter((command) => command !== victim)),
+      [victim],
+      "合谋删掉承重命令必须被承重钉清单命中",
+    );
+    // 兜底二：inventory 登记不随声明表漂移，verify-inventory 会报「未实际覆盖声明的验证命令」。
+    assert.ok(
+      inventoryChainRequires("verify:core").some((command) => command.kind === "root" && command.script === "test:client"),
+      "前提：test:client 必须仍登记在 docs/inventory.json 的 verify:core requires 里",
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
