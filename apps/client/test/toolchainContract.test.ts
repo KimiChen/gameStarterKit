@@ -152,17 +152,33 @@ function assertFixtureGreen(): void {
 }
 
 /**
- * verify:core 的承重命令钉。声明表与 package.json 链若被「合谋式同删」， verifier 与
+ * verify:core 的承重命令钉。声明表与 package.json 链若被「合谋式同删」，verifier 与
  * 「逐条删除」用例都消费同一张导入表、会一起继续全绿——这条独立的成员资格断言是第三锚点。
  * 即使连钉也被同删，docs/inventory.json 给 verify:core 登记的 requires 仍会让
  * verify-inventory 报「未实际覆盖声明的验证命令」（第四锚点，见下方交叉锚定断言）。
+ *
+ * ⚠ 这份清单是**刻意保留的第二份副本**，靠下方的双向 `deepEqual` 防漂移，**禁止改成 import**。
+ * `5648579` 清掉的那份旧复制件之所以能静默漂移掉 5 条矩阵命令，正是因为它只被用来搭夹具、
+ * 从未被断言与真源相等——单源化解决的是「无人比对的副本」，不是「所有副本」。
+ * 清单必须**逐条覆盖** VERIFY_CORE_COMMANDS：只钉一部分等于给没钉的那些留合谋暗道
+ * （曾只钉 6/16，`npm run verify:ecs` 这条铁律 1 的唯一守门命令就在没钉的一半里）。
  */
 const VERIFY_CORE_LOAD_BEARING = [
   "node scripts/verify-toolchain.mjs",
+  "npm run verify:project",
   "npm run typecheck",
+  "npm run verify:ecs",
   "npm run verify:vendor",
+  "npm run verify:fgui",
+  "npm run test:fgui",
   "npm run verify:inventory",
   "npm run test:inventory",
+  "npm run test:launcher-matrix",
+  "npm run test:npm-reference-matrix",
+  "npm run test:aggregate-chain-matrix",
+  "npm run test:sync-mirror-matrix",
+  "npm run test:toolchain-runtime-matrix",
+  "npm run verify:perf",
   "npm run test:client",
 ];
 
@@ -397,9 +413,9 @@ test("toolchain contract rejects declaration-table shrinkage in the opposite dir
 
 test("toolchain contract pins load-bearing verify:core members against silent removal", () => {
   assert.deepEqual(
-    missingLoadBearing(VERIFY_CORE_COMMANDS),
-    [],
-    "verify:core 声明表缺承重命令——声明表与 package.json 链同删时本断言必须红",
+    [...VERIFY_CORE_COMMANDS].sort(),
+    [...VERIFY_CORE_LOAD_BEARING].sort(),
+    "verify:core 声明表与承重钉不一致——声明表与 package.json 链同删（或单方新增）时本断言必须红",
   );
   // 第四锚点交叉锚定：docs/inventory.json 登记由 verify:core 覆盖的命令必须仍在声明表里。
   // 三方同删（声明表 + 链 + 上方承重钉）之后，是 verify-inventory 的「未实际覆盖」兜底。
@@ -428,9 +444,8 @@ test("toolchain contract catches collusive deletion from both declaration table 
       `前提：声明表与链同删后 verifier 自身依旧全绿（它只比对双方文本）——这正是承重钉存在的理由：\n${blind.output}`,
     );
     // 兜底一：承重钉立即命中被删命令（上一条用例随之变红）。
-    assert.deepEqual(
-      missingLoadBearing(VERIFY_CORE_COMMANDS.filter((command) => command !== victim)),
-      [victim],
+    assert.ok(
+      missingLoadBearing(VERIFY_CORE_COMMANDS.filter((command) => command !== victim)).includes(victim),
       "合谋删掉承重命令必须被承重钉清单命中",
     );
     // 兜底二：inventory 登记不随声明表漂移，verify-inventory 会报「未实际覆盖声明的验证命令」。
