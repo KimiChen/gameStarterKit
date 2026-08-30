@@ -34,6 +34,7 @@ const VERIFY_CORE_COMMANDS = [
   "npm run test:fgui",
   "npm run verify:inventory",
   "npm run test:inventory",
+  "npm run test:launcher-matrix",
   "npm run verify:perf",
   "npm run test:client",
 ];
@@ -46,6 +47,7 @@ const CLIENT_TEST_COMMAND =
 const FGUI_TEST_COMMAND =
   "cd apps/server && node --import tsx --test ../../scripts/fgui-manifest.test.mjs ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/fguiContract.test.ts ../client/test/viewRegistry.test.ts";
 const INVENTORY_TEST_COMMAND = "node --test scripts/verify-inventory.test.mjs";
+const LAUNCHER_MATRIX_COMMAND = "node --test scripts/launcher-matrix.test.mjs";
 
 function parseArgs(argv) {
   let root;
@@ -274,6 +276,7 @@ export function verifyToolchain(root = ROOT) {
   requireExactScript("test:client", scripts?.["test:client"], CLIENT_TEST_COMMAND, errors);
   requireExactScript("test:fgui", scripts?.["test:fgui"], FGUI_TEST_COMMAND, errors);
   requireExactScript("test:inventory", scripts?.["test:inventory"], INVENTORY_TEST_COMMAND, errors);
+  requireExactScript("test:launcher-matrix", scripts?.["test:launcher-matrix"], LAUNCHER_MATRIX_COMMAND, errors);
   requireCommandChain("verify:core", scripts?.["verify:core"], VERIFY_CORE_COMMANDS, errors);
   requireCommandChain("verify:all", scripts?.["verify:all"], VERIFY_ALL_COMMANDS, errors);
 

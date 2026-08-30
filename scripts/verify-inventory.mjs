@@ -802,7 +802,10 @@ function isNonExecutingFlag(token, launcher) {
 // sh/bash 单 token 判定："ok" 放行 / "reject" 判未启动 / "consume" 消耗下一个 token 作选项值
 // （值恰为入口时由调用方拒绝）。所有白名单项均经真实 bash 逐条实测「入口会执行」。
 function shellFlagVerdict(token) {
-  const SAFE_SHORT = "exuvfabmhirlEP";
+  // 逐字符经真实 bash 实测「入口会执行」。刻意不含：c（命令串）、s（读 stdin）、
+  // n（noexec）、D（隐含 noexec 的 dump）、t（只执行第一条命令就退出——多行入口实测
+  // 只跑首行，不算启动）。
+  const SAFE_SHORT = "exuvfabmhirlEPkpBCHT";
   const SAFE_LONG = ["--noprofile", "--norc", "--posix", "--verbose", "--noediting", "--login"];
   if (token === "--") return "ok"; // 选项终止符
   if (token.startsWith("--")) {
@@ -810,7 +813,13 @@ function shellFlagVerdict(token) {
     if (token === "--init-file" || token === "--rcfile") return "consume";
     return "reject"; // --help/--version/--dump-*/--pretty-print 等均不执行入口
   }
-  if (token.startsWith("+")) return "reject"; // `+` 簇（`+s` 读 stdin 等）一律失败关闭
+  // `+` 簇是「关闭该选项」，同样照常执行入口（实测 `+e`/`+x`/`+u`/`+ex` 均执行），
+  // 只有 `+s` 仍走 stdin。沿用同一张白名单判定，不再一律拒绝。
+  if (token.startsWith("+")) {
+    if (!/^\+[^-]+$/u.test(token)) return "reject";
+    if (/[oO]/u.test(token)) return "consume"; // `+o errexit` 与 `-o errexit` 同样吃掉选项值
+    return [...token.slice(1)].every((ch) => SAFE_SHORT.includes(ch)) ? "ok" : "reject";
+  }
   if (/^-[^-]+$/u.test(token)) {
     // 簇内每个字符都必须在实测白名单内；含 `c`（命令串）、`s`（stdin）、`n`（noexec）、
     // `t`（执行一条即退）、`D`（隐含 -n 的 dump）等不在白名单的字符自然落红，无需逐一特判。

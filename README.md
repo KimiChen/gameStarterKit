@@ -98,6 +98,7 @@ npm run dev
 | `npm run verify:fgui` | 校验 FairyGUI 设计源、导出物和 View AUTO 区块 manifest |
 | `npm run verify:inventory` | 校验能力清单、默认入口、文档和验证命令登记 |
 | `npm run test:inventory` | 在临时 checkout fixture 中验证能力清单漂移会被拒绝 |
+| `npm run test:launcher-matrix` | 逐条比对启动器判定与真实 bash/node 的行为，背离即失败 |
 | `npm run verify:perf` | 校验固定输入下的客户端性能基线结构和 checksum |
 | `npm run test:client` | 客户端全部无头行为测试（Node/tsx） |
 | `npm run test:vendor` | 运行第三方运行时内容锁专项反例测试 |
