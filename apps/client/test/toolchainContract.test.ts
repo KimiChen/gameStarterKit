@@ -4,7 +4,8 @@
  * 链条声明表（TYPECHECK/VERIFY_SYNC/VERIFY_CORE/VERIFY_ALL）与精确脚本命令文本的唯一真源是
  * scripts/verify-toolchain.mjs 的导出常量，本文件一律 import，不留本地复制件——复制件曾
  * 实际漂移（缺 5 条矩阵命令），让「逐条删除必红」用例对 verify:core 段失去判别力（反例红，
- * 但红在缺的 5 条上，而不是红在被删的那条上）。
+ * 但红在缺的 5 条上，而不是红在被删的那条上）。唯一例外是 `VERIFY_CORE_LOAD_BEARING` 承重钉：
+ * 它是刻意保留、靠双向 `deepEqual` 守门的第二份副本（见其注释），不得改成 import。
  */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
