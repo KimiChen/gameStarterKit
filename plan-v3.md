@@ -774,3 +774,32 @@ workspace self-reference、workspace 文本伪调用）；它们已分别在 P1-
 本次再审计实际执行并通过（审计基线 `54e1941` 时点）：`npm run verify:inventory`、`npm run test:inventory`（40/40）、
 `npm run test:client`（248/248）、`npm run typecheck`、`npm run verify:all`（服务端 297/297、FGUI 50/50）
 及 `git diff --check`。这些绿灯只证明当前正向路径，不能抵销上述隔离副本中的反例和证据缺口。
+
+## 10. 本轮完整审计记录（2026-08-30）
+
+审计范围：`ca8251c..0d94f5f` 全部新提交 + plan-v2 → plan-v3 承接完整性。四路独立核查（客户端网络、
+inventory 门禁、服务端证据链、文档承接）+ 全部基线实测。
+
+**实测复现**（HEAD `0d94f5f` 工作树）：`verify:all` 通过（服务端 297/297、客户端 254/254）、
+`test:fgui` 50/50、`test:int` 154/154（本地 Redis/MySQL 栈实测）、`test:inventory` 60/60、
+`test:faults:int` 四组全绿且 13 个 fault point 全部实测执行——与文首「本轮回写快照」一致。
+
+**结论**：未发现任何「标已完成而实际未做」的条目；plan-v2 的 61 条标签条目在本文零丢失、零定性漂移；
+迁移登记链（inventory `routeOfTruth` / README / AGENTS / CLAUDE / plan.md 归档头 / verifier 硬断言）
+五处一致且机检通过。
+
+**本轮修正**（各自独立 commit）：
+
+1. §9.10「证据回写同 commit」表述更正为实际形态（`a1052b8`），登记为本轮已发生的粒度偏差。
+2. §9.1 变异措辞收窄：孤立的顺序对调无判别力，判别力来自与单 try 的耦合（`0e1c4cd`）。
+3. §9.4「3 例红」收窄为可复算口径（`985d03d`）。
+4. `scripts/verify-inventory.mjs` 头部注释删除与 R6 矛盾的「仍会放行」举例（`277b9b4`，代码注释对齐
+   已被反例锁定的行为，无行为变更）。
+5. P1-09 可执行位段启动器白名单补时态标注（`10bf034`）。
+6. §9 末段实测清单补基线时点标注（`a343b52`）。
+7. §9.5 自引行号修正（`5883c50`）。
+
+**行号快照提示**（供下一轮复核定位）：§1.1/§9 各条引用的 `GameRoom.ts`、`matchConsumer.ts`、
+`verify-inventory.mjs` 行号多为修复前快照（符合文首「写入时快照」口径）。当前位置：cast 容量闸
+`GameRoom.ts:1642-1645`、v2 casual/ranked 分支 `matchConsumer.ts:205-207`、accessor 分支
+`:171-183`、`emitMatchEvidence` `:271-293`、`scriptEntry` `verify-inventory.mjs:651-656`。
