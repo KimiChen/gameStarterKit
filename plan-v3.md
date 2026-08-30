@@ -672,7 +672,7 @@ workspace self-reference、workspace 文本伪调用）；它们已分别在 P1-
 
 - `[已完成]` **P2**：`scripts/verify-inventory.mjs:685-707` 的
   `executableSegments()` 只按 `&&`、`||`、`;`、`|` 和换行切段，并不解析引号、转义、注释、命令替换或
-  参数语义；因此它不能兑现本文件 :405-407 所称的「引号外、注释外」。在隔离副本中，以下代表性伪调用
+  参数语义；因此它不能兑现本文件 :409-411 所称的「引号外、注释外」。在隔离副本中，以下代表性伪调用
   均可令 `verify-inventory --root` 返回 0：
   `echo "ignored; npm --workspace @game/server run start"`、
   `npm run verify:project # npm --workspace @game/server run test`、
