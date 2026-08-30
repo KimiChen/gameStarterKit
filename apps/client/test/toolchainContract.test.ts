@@ -4,7 +4,7 @@
  * 链条声明表（TYPECHECK/VERIFY_SYNC/VERIFY_CORE/VERIFY_ALL）与精确脚本命令文本的唯一真源是
  * scripts/verify-toolchain.mjs 的导出常量，本文件一律 import，不留本地复制件——复制件曾
  * 实际漂移（缺 5 条矩阵命令），让「逐条删除必红」用例对 verify:core 段失去判别力（反例红，
- * 但红在缺的 5 条上，而不是红在被删的那条上）。唯一例外是 `VERIFY_CORE_LOAD_BEARING` 承重钉：
+ * 但红在缺的 5 条上，而不是红在被删的那条上）。唯一例外是 `CHAIN_LOAD_BEARING` 承重钉：
  * 它是刻意保留、靠双向 `deepEqual` 守门的第二份副本（见其注释），不得改成 import。
  */
 import assert from "node:assert/strict";
@@ -153,38 +153,59 @@ function assertFixtureGreen(): void {
 }
 
 /**
- * verify:core 的承重命令钉。声明表与 package.json 链若被「合谋式同删」，verifier 与
- * 「逐条删除」用例都消费同一张导入表、会一起继续全绿——这条独立的成员资格断言是第三锚点。
- * 即使连钉也被同删，docs/inventory.json 给 verify:core 登记的 requires 仍会让
- * verify-inventory 报「未实际覆盖声明的验证命令」（第四锚点，见下方交叉锚定断言）。
+ * 四条链的承重命令钉。声明表与 package.json 链若被「合谋式同删」，verifier 与
+ * 「逐条删除」用例都消费同一张导入表、会一起继续全绿——这组独立的成员资格断言是第三锚点。
  *
  * ⚠ 这份清单是**刻意保留的第二份副本**，靠下方的双向 `deepEqual` 防漂移，**禁止改成 import**。
  * `5648579` 清掉的那份旧复制件之所以能静默漂移掉 5 条矩阵命令，正是因为它只被用来搭夹具、
  * 从未被断言与真源相等——单源化解决的是「无人比对的副本」，不是「所有副本」。
- * 清单必须**逐条覆盖** VERIFY_CORE_COMMANDS：只钉一部分等于给没钉的那些留合谋暗道
- * （曾只钉 6/16，`npm run verify:ecs` 这条铁律 1 的唯一守门命令就在没钉的一半里）。
+ * 每条链都必须**逐条覆盖**对应声明表：只钉一部分等于给没钉的那些留合谋暗道
+ * （曾只钉 verify:core 的 6/16，`npm run verify:ecs` 这条铁律 1 的唯一守门命令就在没钉的一半里）。
+ *
+ * 四条链都要钉，不能只钉 verify:core：`docs/inventory.json` 的交叉锚定（第四锚点）只对
+ * `verify:core` 生效——`typecheck` / `verify:sync` 的 `verification.requires` 为空、
+ * `verify:all` 根本未登记，「未实际覆盖」检查对空列表不产生任何断言。那三条链在补上本钉之前
+ * 是**零兜底**的。
  */
-const VERIFY_CORE_LOAD_BEARING = [
-  "node scripts/verify-toolchain.mjs",
-  "npm run verify:project",
-  "npm run typecheck",
-  "npm run verify:ecs",
-  "npm run verify:vendor",
-  "npm run verify:fgui",
-  "npm run test:fgui",
-  "npm run verify:inventory",
-  "npm run test:inventory",
-  "npm run test:launcher-matrix",
-  "npm run test:npm-reference-matrix",
-  "npm run test:aggregate-chain-matrix",
-  "npm run test:sync-mirror-matrix",
-  "npm run test:toolchain-runtime-matrix",
-  "npm run verify:perf",
-  "npm run test:client",
-];
+const CHAIN_LOAD_BEARING: Record<string, string[]> = {
+  "typecheck": [
+    "npm run verify:webplatform-contract",
+    "npm --workspace @game/shared run typecheck",
+    "npm --workspace @game/server run typecheck",
+    "npm run typecheck:client",
+    "npm run typecheck:client:legacy",
+    "npm run verify:sync",
+  ],
+  "verify:sync": [
+    "node scripts/sync-shared.mjs --check",
+    "node scripts/sync-client.mjs --check",
+  ],
+  "verify:core": [
+    "node scripts/verify-toolchain.mjs",
+    "npm run verify:project",
+    "npm run typecheck",
+    "npm run verify:ecs",
+    "npm run verify:vendor",
+    "npm run verify:fgui",
+    "npm run test:fgui",
+    "npm run verify:inventory",
+    "npm run test:inventory",
+    "npm run test:launcher-matrix",
+    "npm run test:npm-reference-matrix",
+    "npm run test:aggregate-chain-matrix",
+    "npm run test:sync-mirror-matrix",
+    "npm run test:toolchain-runtime-matrix",
+    "npm run verify:perf",
+    "npm run test:client",
+  ],
+  "verify:all": [
+    "npm run verify:core",
+    "npm --workspace @game/server run test",
+  ],
+};
 
-function missingLoadBearing(table: string[]): string[] {
-  return VERIFY_CORE_LOAD_BEARING.filter((command) => !table.includes(command));
+function missingLoadBearing(chain: string, table: string[]): string[] {
+  return CHAIN_LOAD_BEARING[chain].filter((command) => !table.includes(command));
 }
 
 type InventoryCommand = { kind?: string; script?: string; workspace?: string; requires?: InventoryCommand[] };
@@ -412,12 +433,14 @@ test("toolchain contract rejects declaration-table shrinkage in the opposite dir
   }
 });
 
-test("toolchain contract pins load-bearing verify:core members against silent removal", () => {
-  assert.deepEqual(
-    [...VERIFY_CORE_COMMANDS].sort(),
-    [...VERIFY_CORE_LOAD_BEARING].sort(),
-    "verify:core 声明表与承重钉不一致——声明表与 package.json 链同删（或单方新增）时本断言必须红",
-  );
+test("toolchain contract pins load-bearing chain members against silent removal", () => {
+  for (const [chain, declared] of Object.entries(CHAIN_SCRIPTS)) {
+    assert.deepEqual(
+      [...declared].sort(),
+      [...CHAIN_LOAD_BEARING[chain]].sort(),
+      `${chain} 声明表与承重钉不一致——声明表与 package.json 链同删（或单方新增）时本断言必须红`,
+    );
+  }
   // 第四锚点交叉锚定：docs/inventory.json 登记由 verify:core 覆盖的命令必须仍在声明表里。
   // 三方同删（声明表 + 链 + 上方承重钉）之后，是 verify-inventory 的「未实际覆盖」兜底。
   const dangling = inventoryChainRequires("verify:core")
@@ -446,7 +469,7 @@ test("toolchain contract catches collusive deletion from both declaration table 
     );
     // 兜底一：承重钉立即命中被删命令（上一条用例随之变红）。
     assert.ok(
-      missingLoadBearing(VERIFY_CORE_COMMANDS.filter((command) => command !== victim)).includes(victim),
+      missingLoadBearing("verify:core", VERIFY_CORE_COMMANDS.filter((command) => command !== victim)).includes(victim),
       "合谋删掉承重命令必须被承重钉清单命中",
     );
     // 兜底二：inventory 登记不随声明表漂移，verify-inventory 会报「未实际覆盖声明的验证命令」。
