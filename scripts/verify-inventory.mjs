@@ -708,8 +708,9 @@ function commandBase(command) {
  * 就得判 `npx <pkg>` 的 `<pkg>` 是不是解释器，那意味着引入 registry/下载语义，与本仓
  * 「依赖必须入库并按哈希校验」的路线冲突。
  * 白名单只判 segment 的**首 token**，不判启动器的参数语义，也不判其后的注释文本——
- * `npm exec cowsay <entry>`、`node --check <entry>`、`bash -c 'true' # <entry>` 仍会放行。短路操作符右侧（`false && npm …`）与
- * `exit` 之后的死代码不做可达性判定——shell 可达性静态不可判定。
+ * `npm exec cowsay <entry>` 仍会放行（入口出现在参数位）；`-e/--eval/-p/--print/-c/--check` 等
+ * 不执行入口的 flag 之后判「未启动」（见 `commandInvokesEntry` 与对应反例）。
+ * 短路操作符右侧（`false && npm …`）与 `exit` 之后的死代码不做可达性判定——shell 可达性静态不可判定。
  */
 function executableSegments(script) {
   // heredoc/herestring 的内容边界静态不可判定，整段放弃（失败关闭）。
