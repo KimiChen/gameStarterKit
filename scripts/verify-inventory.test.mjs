@@ -1592,3 +1592,21 @@ test("inventory verifier rejects a positional operand before the shell entry", (
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("inventory verifier rejects a bare dash as the node entry position (stdin script)", () => {
+  const root = createFixture();
+  try {
+    // `node - <entry>`：node 从 stdin 读脚本（实测入口不执行）；bash 的 `-` 是选项终止符，
+    // 语义不同族，不能共用判定。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "node - src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

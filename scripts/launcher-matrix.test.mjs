@@ -68,6 +68,11 @@ const CASES = [
   ...["--check", "-c", "--eval=1", "-e1", "-p1", "--print=1", "-v", "--version", "-h", "--help"]
     .map((flag) => ({ kind: "node", args: [flag] })),
   { kind: "node", args: ["--import", "tsx", "--check"] },
+  // 裸 `-`：node 从 stdin 读脚本（实测入口不执行），门禁应拒。
+  { kind: "node", args: ["-"] },
+  // 两条合法形态回归钉：`--` 终止符后紧跟入口、带 loader 的取值 flag。
+  { kind: "node", args: ["--"], note: "合法：-- 后第一个操作数即入口，实测执行" },
+  { kind: "node", args: ["--import", "tsx"], note: "合法：loader 取值后入口执行" },
   { kind: "node", args: ["decoy.mjs"], note: "入口前的操作数就是被执行的脚本，入口只是它的 argv" },
   { kind: "node", args: ["--", "decoy.mjs"], note: "`--` 之后第一个操作数是脚本名，入口不执行" },
 ];

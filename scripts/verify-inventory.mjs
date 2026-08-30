@@ -863,8 +863,10 @@ function commandInvokesEntry(command, entry) {
       }
       // node/tsx：紧跟启动器的非 flag token 只能是要执行的脚本本身（这个位置不可能是任何
       // flag 的选项值），入口只是它的 argv。更靠后的位置需要 node 的取值 flag 元数表
-      // （60+ 项且随版本漂移），仍登记为已知边界，不在这里猜。
-      if ((launcher === "node" || launcher === "tsx") && i === 1 && !tokens[i].startsWith("-")) {
+      // （60+ 项且随版本漂移），仍登记为已知边界，不在这里猜。裸 `-` 同位：node 读 stdin
+      // （实测入口不执行）；bash 的 `-` 是选项终止符（实测入口照常执行），不误伤。
+      if ((launcher === "node" || launcher === "tsx") && i === 1
+        && (tokens[i] === "-" || !tokens[i].startsWith("-"))) {
         return false;
       }
       if (launcher === "sh" || launcher === "bash") {
