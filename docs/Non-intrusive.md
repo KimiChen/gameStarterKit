@@ -50,7 +50,7 @@ C2S 消息、公共 FGUI 基础包改造或全局数据模型变化；这些仍�
 | `apps/shared/src/protocol/lobbyRpc/envelope.ts` | 手工扩展全局错误码数组 | 领域错误与框架错误耦合，多个 feature 分支容易冲突 |
 | `apps/shared/src/protocol/lobbyRpc/push.ts` | 手工扩展 push 常量、Map、switch validator | 第二阶段新增唤醒推送仍会修改中央文件 |
 | `apps/shared/src/logic/index.ts` | 手工 re-export 新纯逻辑 | 玩法代码虽然是新增文件，公共入口仍要人工侵入 |
-| `apps/server/src/websocket/rpc.ts` | endpoint 重复声明 schema 和 `idem: true` | shared 已有语义仍需服务端再次登记，存在漂移或漏开幂等的风险 |
+| `apps/server/src/websocket/rpc.ts` | endpoint 重复声明 schema 和 `idem: true` | shared 已有语义仍需服务端再次登记；剩余风险是手写两字段的机械重复（含 clientReqId 的路由漏开 idem 已是编译期错误） |
 | `apps/server/src/core/errors.ts` | 为新异常维护中央 constructor→code 映射 | 领域错误必须侵入框架核心 |
 | `apps/server/src/core/idem.ts` | 只有短期 pending/result 缓存 | 不绑定 payload，且没有受控状态查询，不能完整承载结果未知恢复 |
 | `apps/client/src/view/pages.ts` | 手工组合页面、导航和会话恢复 | 新玩法会继续把分支堆进中央页面组合根 |
@@ -207,7 +207,8 @@ feature 必须拥有自己的：
 - server endpoint、core 领域模块及持久化收据；
 - client Logic、View、route composition 和网络 port adapter；
 - FairyGUI 独立包或明确声明的共享包依赖；
-- 单测、集成测试和位于 `apps/server/test/lobbyRpcVectors/` 的 RPC 最小向量；
+- 单测、集成测试和位于 `apps/server/test/lobbyRpcVectors/`（拟新增，当前不存在；`test/` 已整体在服务端
+  tsconfig include 内）的 RPC 最小向量；
 - 说明文档和 inventory fragment。
 
 跨 feature 依赖必须在 manifest 中通过 `dependsOn` 或稳定 port 声明。禁止 feature 互相直接读取内部状态，生成器
@@ -217,13 +218,17 @@ feature 必须拥有自己的：
 
 ### 5.1 RPC 领域自描述
 
+命名注意：仓内已有 Room 玩法 fixture `idle`（`GameplayModeId.Idle`、
+`apps/server/src/rooms/modes/IdleGameMode.ts`、`apps/client/src/logic/rooms/idle/IdleGameplay.ts`），与
+本文的 Lobby 域 `idle` **同名不同层**；实施时若保留该 fixture，需在文档与代码注释里区分二者，或对其中
+一方改名。
+
 新增稳定的零依赖 builder，例如：
 
 ```ts
 export default defineLobbyRpcDomain({
   domain: "idle",
-  errorCodes: [
-    "STATE_CONFLICT",
+  errorCodes: [    "STATE_CONFLICT",
     "OPERATION_RESULT_EXPIRED",
     "GAMEPLAY_NOT_READY",
     "GAMEPLAY_STATE_INVALID",
@@ -731,7 +736,7 @@ feature 只运行既有命令，不再新增专属根命令。
 apps/server/test/lobbyRpcVectors/idle.ts
 ```
 
-该目录已进入服务端 tsconfig；测试 loader 运行时发现向量，同时常规 typecheck 静态覆盖它。不得把 vectors 放进
+该目录为拟新增路径，当前不存在；`test/` 已整体在服务端 tsconfig include 内，新建后常规 typecheck 即覆盖它。不得把 vectors 放进
 shared/runtime descriptor 或同步到 Cocos。
 
 每个 route 至少提供一个最小合法 request 和 response；sidecar 缺失、重复/未知 route、错误 export shape 都要
