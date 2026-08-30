@@ -18,6 +18,8 @@
 - [额外功能说明](docs/EXTRAFEATURES.md)
 - [《Underground Idle》玩法策划案（未实现）](docs/undergroundIdle/README.md)
 - [非侵入式功能扩展改造方案（设计提案，未实施）](docs/Non-intrusive-wsrpc.md)
+- [低侵入式房间玩法方案（设计提案，未实施）](docs/Non-intrusive-room.md)
+- [《Snake Off》竖版贪吃蛇玩法策划案（未实现）](docs/snakeoff/README.md)
 - [Godogen 对照吸收计划（未实现的额外能力）](todo-godogen.md)
 - [当前开发收口计划](plan-v3.md)
 
