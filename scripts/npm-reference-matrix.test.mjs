@@ -103,6 +103,8 @@ function setup() {
   // npm 探针的环境隔离：cache/logdir 指进探针目录（失败形态会写 _logs debug 日志），
   // userconfig 指向探针内的空文件（不读用户 ~/.npmrc），避免污染开发者环境。
   writeFileSync(join(probe, ".npmrc-isolated"), "\n");
+  // globalconfig 必须与 userconfig 是**两个文件**：同一个文件被 npm 判 double-loading 拒跑。
+  writeFileSync(join(probe, ".npmrc-global-isolated"), "\n");
   mkdirSync(join(probe, "ws"), { recursive: true });
   writeFileSync(join(probe, "package.json"), `${JSON.stringify({
     name: "npm-matrix-probe", version: "1.0.0", private: true, workspaces: ["ws"],
@@ -184,6 +186,9 @@ function realNpmTarget(form) {
       // 小写 npm_config_userconfig（外层 npm run 会把用户 npmrc 的值再导出成 npm_config_*，
       // 随 ...process.env 直接进探针）。实测未闭合时矩阵会因 workspace 形态跑不出 marker 而红。
       npm_config_userconfig: join(probe, ".npmrc-isolated"),
+      // 同形的 globalconfig 通道一并闭合（外层 npm 同样会把它再导出成 npm_config_globalconfig）。
+      NPM_CONFIG_GLOBALCONFIG: join(probe, ".npmrc-global-isolated"),
+      npm_config_globalconfig: join(probe, ".npmrc-global-isolated"),
     },
   });
   const output = `${result.stdout}\n${result.stderr}`;
