@@ -771,6 +771,6 @@ workspace self-reference、workspace 文本伪调用）；它们已分别在 P1-
   `a10f2f7..8a76d29` 的粒度偏差正式登记为**经批准的例外**，已发布历史不再改写；「一条问题 = 一个实现、
   验证、证据 commit」自 `c2bf0d2..` 起严格执行，本条与 §7 同步转 `[已完成]`。
 
-本次再审计实际执行并通过：`npm run verify:inventory`、`npm run test:inventory`（40/40）、
+本次再审计实际执行并通过（审计基线 `54e1941` 时点）：`npm run verify:inventory`、`npm run test:inventory`（40/40）、
 `npm run test:client`（248/248）、`npm run typecheck`、`npm run verify:all`（服务端 297/297、FGUI 50/50）
 及 `git diff --check`。这些绿灯只证明当前正向路径，不能抵销上述隔离副本中的反例和证据缺口。
