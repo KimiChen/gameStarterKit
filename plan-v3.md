@@ -398,7 +398,8 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
   `verify:core` 的 requires 继续是软的。
   新增 `executableSegments(script)`（按 `&&` `||` `;` `|` 换行切段）与 `segmentLeadsWith(segment, binaries)`
   （trim 后首 token 严格相等）；`commandReferences` 只在首 token 为 `npm` 的 segment 内匹配，
-  `commandInvokesEntry` 要求 segment 首 token 属 `node|npm|npx|tsx|sh|bash` 或就是入口路径本身。
+  `commandInvokesEntry` 要求 segment 首 token 属启动器白名单（本段写入时为 `node|npm|npx|tsx|sh|bash`；
+  `npx` 后由 §9.6/`86aa214` 移除）或就是入口路径本身。
   正则本身一行未改。（落地时踩到一个 TDZ：启动器表若写成模块级 `const`，会因驱动段先于该声明执行而
   `Cannot access before initialization`，故内联在函数内。）
   **验收口径收窄**（不假装解决了不可解的问题）：新判定只证明调用出现在**引号外、注释外、非命令替换内、
