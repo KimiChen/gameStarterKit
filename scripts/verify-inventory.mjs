@@ -903,11 +903,21 @@ function npmRunReference(segment) {
   }
   const script = tokens[index + 1];
   if (tokens[index] !== "run" || !script || !/^[A-Za-z0-9:_-]+$/u.test(script)) return null;
-  // 脚本名之后仍是 npm 的 flag 位：`npm run X --workspace Y` 与前缀式等价，
-  // `--prefix Z` 之类同样改变被执行的脚本，都不能当作对 root:X 的调用。
+  // 脚本名之后仍是 npm 的 flag 位。`npm run X --workspace Y` 与前缀式 `npm --workspace Y run X`
+  // **等价**（实测两者跑的都是 workspace 脚本），所以这里要把后缀选择器**解析出来**而不是丢掉——
+  // 丢掉会让它既不算 root 调用也不算 workspace 调用，变成假红。`--prefix Z` 之类同样会改变被执行
+  // 的脚本但语义不可静态判定，仍然失败关闭。
   for (let i = index + 2; i < tokens.length; i += 1) {
-    if (tokens[i] === "--") break;
-    if (tokens[i].startsWith("-") && !NEUTRAL_FLAGS.includes(tokens[i])) return null;
+    const token = tokens[i];
+    if (token === "--") break;
+    if ((token === "--workspace" || token === "-w") && workspace === null && tokens[i + 1]) {
+      workspace = tokens[i + 1];
+      i += 1;
+      continue;
+    }
+    const suffixInline = token.match(/^(?:--workspace|-w)=(.+)$/u);
+    if (suffixInline && workspace === null) { workspace = suffixInline[1]; continue; }
+    if (token.startsWith("-") && !NEUTRAL_FLAGS.includes(token)) return null;
   }
   return workspace === null ? { kind: "root", script } : { kind: "workspace", workspace, script };
 }

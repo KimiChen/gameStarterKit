@@ -57,6 +57,7 @@ npm run verify:fgui
 npm run verify:inventory
 npm run test:inventory
 npm run test:launcher-matrix
+npm run test:npm-reference-matrix
 npm run verify:perf
 npm run verify:project
 npm run verify:core
