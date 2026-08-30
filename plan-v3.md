@@ -56,11 +56,17 @@
 > `test:launcher-matrix` 3/3（70 形态零背离）、新增 `test:npm-reference-matrix`
 > **2/2（15 形态零背离）**、`test:faults:int` 四组 72/67/12/15 全绿。
 >
-> **本轮回写快照**（§19 第三、四张矩阵落地后同一工作树实测）：`verify:core`、`verify:all`、
+> **上一轮回写快照**（§19 第三、四张矩阵落地后同一工作树实测）：`verify:core`、`verify:all`、
 > `typecheck`、`verify:sync`、`verify:inventory` 全绿；服务端单测 297/297、客户端 254/254、
 > `test:fgui` 50/50、`test:int` 154/154、`test:inventory` 94/94；四张矩阵
 > `test:launcher-matrix` 3/3、`test:npm-reference-matrix` 2/2、新增
 > `test:aggregate-chain-matrix` **4/4**、`test:sync-mirror-matrix` **3/3（13 场景）**；
+> `test:faults:int` 四组 72/67/12/15 全绿。
+>
+> **本轮回写快照**（§20 第五张矩阵落地、且把本机 `@types/node` 复原到 22.20.1 之后实测）：
+> `verify:core`、`verify:all`、`typecheck`、`verify:sync`、`verify:inventory` 全绿；
+> 服务端单测 297/297、客户端 254/254、`test:fgui` 50/50、`test:int` 154/154、
+> `test:inventory` 94/94；五张矩阵 3/3、2/2、4/4、3/3、**3/3**；
 > `test:faults:int` 四组 72/67/12/15 全绿。
 >
 > **上一轮结论**：plan-v2 的 28 条 `[已完成]` 经本轮 6 组并行 + 对抗式独立复核，**全部成立、无一条被证伪**
@@ -1258,5 +1264,60 @@ marker 拆开拼接，因为 npm 执行前会**回显命令行**，marker 字面
   marker、不再展开，因为声明表描述的就是直接子命令。跨层的执行关系不在覆盖范围内。
 - `[不阻塞·有意保留]` sync 矩阵的夹具排除 `.env*`，因此 `sync-client` 的 `devEnv.ts` 生成走的是
   无 `.env.development` 的默认分支；`.env` 变体下的行为差异未覆盖。
-- `[不阻塞·有意保留]` `verify-toolchain` 的**非链条**检查（Node 版本声明、lockfile 投影、
-  `@types/node` 主版本一致性）仍靠自身逻辑，没有「vs 真实运行时」矩阵。
+- ~~`verify-toolchain` 的非链条检查没有「vs 真实运行时」矩阵~~ —— 已于第十三轮补上，见 §20。
+
+## 20. 第十三轮：给 verify-toolchain 的非链条检查补矩阵（2026-08-30）
+
+§19.4 最后一条边界。补完之后，`verify-inventory` / `verify-toolchain` / `sync-*` 三条门禁的
+主要判定面都有了各自的「vs 真实行为」矩阵：
+
+| 矩阵 | 守的判定 | 地面真相 |
+|---|---|---|
+| `test:launcher-matrix` | `commandInvokesEntry` | 真实 bash / node 是否执行入口 |
+| `test:npm-reference-matrix` | `commandReferences` | 真实 npm 跑的是 root 还是 workspace |
+| `test:aggregate-chain-matrix` | `verify-toolchain` 四张聚合链表 | 真实 npm 的执行序列 |
+| `test:sync-mirror-matrix` | `sync-*.mjs --check` | 真跑一次同步，镜像树变没变 |
+| `test:toolchain-runtime-matrix` | `verify-toolchain` 的非链条检查 | 正在跑的 Node + 实际安装的依赖版本 |
+
+### 20.1 这条为什么值得单独守
+
+`verify-toolchain` 的非链条部分全是**声明之间互相比对**：读 `package.json`、`.node-version`、
+`package-lock.json`，从不看正在跑的 Node，也从不看 `node_modules` 里真正装着什么。
+「声明自洽」与「装出来的东西符合声明」是两件事——前者绿不代表后者成立。
+
+### 20.2 它当场查出的真实漂移
+
+落地当天矩阵就报红：本机 root `node_modules/@types/node` 装的是 **26.1.1**，而 lockfile 与
+声明范围都是 **22.x**（`npm ls` 自己标 `invalid: "^22.13.14" from the root project`），
+`apps/server` 的嵌套副本才是 22.20.1。`verify-toolchain` 全绿——它只比对声明，看不见安装态。
+
+后果不是抽象的：客户端那条 typecheck 走 root 提升的 `@types/node`，也就是**一直在按 Node 26
+的类型面校验一个声明目标为 Node 22 的仓库**，Node 22 上不存在的 API 不会被拦住。
+`npm ci` 复原到 22.20.1 后全门禁复跑仍然全绿——说明这次漂移尚未掩盖任何真实破损，但它确实是
+这条门禁本该拦住的那一类。
+
+**一条弯路记在这里**：我第一次在临时目录跑 `npm ci` 验证 lockfile 是否自洽时失败了，
+错误指向一个不存在的 temp 路径下的 `vendor/*.tgz`。差点据此判定「lockfile 钉了机器相关的绝对
+路径」——实际是**我的探针只拷了 package.json 系列文件、没拷 `vendor/`**，而 lockfile 里那条
+`file:vendor/…tgz` 是**相对路径**且 tgz 已入库。补拷 `vendor/` 后 `npm ci` 一次通过。
+与第八轮那次「三条假绿实为探针缺依赖」同一类错误：判定「仓库错了」之前必须先排除探针自身缺陷。
+
+### 20.3 设计取舍
+
+- **semver 判定独立实现**，不复用 `verify-toolchain.mjs` 的——拿被验对象自己的判定去验它自己
+  是同义反复。只支持仓内实际出现的 `>=X` 与 `^X.Y.Z` 两种形态，遇到没见过的形态**抛错**
+  而不是静默放行（配了专门的用例锁这条）。
+- **判定写成纯函数** `divergences(inputs)`：既用真实值跑（应为空），也用构造值跑五种背离
+  （应精确命中）。否则「真实恰好全绿」会让用例变成空跑——这是前几轮反复踩的坑。
+- **刻意不断言「正在跑的 Node 主版本 == `.node-version`」**：契约是 `engines.node`（`>=22`），
+  `.node-version` 只是给版本管理器的钉子。本机跑 Node 25 满足契约却不等于 22，断言相等会让
+  任何没精确切到 22 的开发机变红。登记为边界而非失败。
+
+### 20.4 边界
+
+- `[不阻塞·有意保留]` 只覆盖 `ROOT_TOOL_DEPENDENCIES` 三项（`@types/node` / `tsx` / `typescript`）
+  的安装态，不校验整棵依赖树；`npm ls` 级别的完整性仍无矩阵。
+- `[不阻塞·有意保留]` 只看 root `node_modules` 的提升结果，不逐 workspace 校验嵌套副本——
+  本轮漂移恰好是「root 与 apps/server 装了不同版本」，矩阵是靠 root 侧违反声明范围抓到的，
+  不是靠比对两个副本。嵌套副本一致性未覆盖。
+- `[不阻塞·有意保留]` 运行时侧只断言满足 `engines.node`，不断言等于 `.node-version`（见 20.3）。
