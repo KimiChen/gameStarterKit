@@ -713,8 +713,6 @@ function commandBase(command) {
  * 短路操作符右侧（`false && npm …`）与 `exit` 之后的死代码不做可达性判定——shell 可达性静态不可判定。
  */
 function executableSegments(script) {
-  // heredoc/herestring 的内容边界静态不可判定，整段放弃（失败关闭）。
-  if (script.includes("<<")) return [];
   const segments = [];
   let current = "";
   let unparsable = false;
@@ -739,8 +737,13 @@ function executableSegments(script) {
       push();
       continue;
     }
+    // heredoc/herestring 的内容边界静态不可判定，整段放弃。判定必须在这里（引号外、
+    // 注释外）而不是入口处的整串 includes——否则注释里写一句 `<< EOF` 就会误伤整条脚本。
+    if (ch === "<" && script[index + 1] === "<") { unparsable = true; break; }
     if (ch === ";" || ch === "\n") { push(); continue; }
     if ((ch === "&" || ch === "|") && script[index + 1] === ch) { index += 1; push(); continue; }
+    // 单个 `&` 也是命令分隔符（后台执行）；`2>&1` / `>&2` 里的 `&` 属于重定向，不切段。
+    if (ch === "&" && script[index - 1] !== ">" && script[index - 1] !== "<") { push(); continue; }
     if (ch === "|") { push(); continue; }
     current += ch;
   }

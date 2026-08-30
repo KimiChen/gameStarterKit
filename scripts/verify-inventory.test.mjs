@@ -1149,3 +1149,50 @@ test("inventory verifier still accepts a prefix-workspace npm run", () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("inventory verifier rejects a backgrounded pseudo-launch", () => {
+  const root = createFixture();
+  try {
+    // 单个 & 也是命令分隔符：真正被启动的是 smoke.ts，入口只出现在 echo 的参数位。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "tsx smoke.ts & echo src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier still accepts a launcher with shell redirection", () => {
+  const root = createFixture();
+  try {
+    // 反向锁：`2>&1` 里的 & 属于重定向，不得被当成命令分隔符。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "tsx src/core/economy/relayer.ts > relayer.log 2>&1";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    const result = runVerifier(root);
+    assert.equal(result.status, 0, outputOf(result));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier still accepts a heredoc mentioned only inside a comment", () => {
+  const root = createFixture();
+  try {
+    // 反向锁：heredoc 判定必须在引号外、注释外生效，否则注释里写一句 << 就误伤整条脚本。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "tsx src/core/economy/relayer.ts # 见 heredoc << EOF 说明";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    const result = runVerifier(root);
+    assert.equal(result.status, 0, outputOf(result));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
