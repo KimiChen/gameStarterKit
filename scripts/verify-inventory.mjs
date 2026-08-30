@@ -739,6 +739,11 @@ function executableSegments(script) {
     }
     // 命令替换会引入静态不可知的命令，整段放弃。
     if (ch === "`" || (ch === "$" && script[index + 1] === "(")) { unparsable = true; break; }
+    // 注意：这里的 `\s` **刻意**宽于上面说的 shell IFS，不要「顺手对齐」。真实 sh 里
+    // `<NBSP>#` 是词内字面量而不是注释起始，所以多吞一截只会让覆盖判定变红（失败关闭）。
+    // 反向收窄成 `/[ \t]$/` 反而制造假绿：`<NBSP>#` 会变成普通 token，入口随之落进
+    // 「入口出现在参数位仍放行」这条已登记边界——实测 `node smoke.ts <NBSP># <entry>`
+    // 由正确的红翻成绿。要动这里必须先收紧参数位判定。
     if (ch === "#" && (current === "" || /\s$/u.test(current))) {
       while (index < script.length && script[index] !== "\n") index += 1;
       push();
