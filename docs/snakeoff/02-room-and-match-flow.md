@@ -39,7 +39,8 @@
 
 ### 2.1 对外阶段与内部事务
 
-沿用现有公开 `GamePhase`：`waiting`、`playing`、`settle`。Start 中的 `Locking` 是服务端内部事务状态，不新增为公开可持久阶段。
+沿用现有公开 `GamePhase`：`waiting`、`playing`、`settle`。Start 中的 `Starting` 是服务端内部事务状态（与
+`docs/Non-intrusive-room.md` §13.1 同名同义），不新增为公开可持久阶段。
 
 ```text
 Create / Resolve code
@@ -50,7 +51,7 @@ Create / Resolve code
         │
         │  当前房主 Start + 人数达下限 + 精确 roster 全员 Ready 且在线
         ▼
-  [内部 Locking]
+  [内部 Starting]
         │  任一条件变化 → 取消、unlock、回到 Waiting
         │  lock 与玩法初始化成功
         ▼
