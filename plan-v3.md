@@ -45,10 +45,16 @@
 > `verify:sync`、`verify:inventory` 全绿；服务端单测 297/297、客户端 254/254、`test:fgui` 50/50、
 > `test:int` 154/154、`test:inventory` **86/86**、`test:faults:int` 四组 72/67/12/15 全绿。
 >
-> **本轮回写快照**（§17 矩阵工具化 + 白名单修复后同一工作树实测）：`verify:core`、`verify:all`、
+> **上一轮回写快照**（§17 矩阵工具化 + 白名单修复后同一工作树实测）：`verify:core`、`verify:all`、
 > `typecheck`、`verify:sync`、`verify:inventory` 全绿；服务端单测 297/297、客户端 254/254、
 > `test:fgui` 50/50、`test:int` 154/154、`test:inventory` **94/94**、新增
 > `test:launcher-matrix` **3/3（70 种形态零背离）**、`test:faults:int` 四组 72/67/12/15 全绿。
+>
+> **本轮回写快照**（§18 第二张矩阵 + 后缀 workspace 修复后同一工作树实测）：`verify:core`、
+> `verify:all`、`typecheck`、`verify:sync`、`verify:inventory` 全绿；服务端单测 297/297、
+> 客户端 254/254、`test:fgui` 50/50、`test:int` 154/154、`test:inventory` 94/94、
+> `test:launcher-matrix` 3/3（70 形态零背离）、新增 `test:npm-reference-matrix`
+> **2/2（15 形态零背离）**、`test:faults:int` 四组 72/67/12/15 全绿。
 >
 > **上一轮结论**：plan-v2 的 28 条 `[已完成]` 经本轮 6 组并行 + 对抗式独立复核，**全部成立、无一条被证伪**
 > （58 条裁决，0 条 claim-false）。本文只承接其中「证据弱于主张」的部分、仍然有效的保留边界，以及本轮
@@ -1140,6 +1146,51 @@ vs 真实解释器怎么做（同样的 flag 跑只打 marker 的入口）。两
 - `[不阻塞·有意保留]` §16.3 各条维持不变：白名单外的新增 shell flag 仍一律判未启动，需显式入表并配锁。
 - `[不阻塞·有意保留]` 矩阵覆盖的是 `CASES` 里**已构造**的 70 种形态，不是全域证明。它把「想不到的形态」
   从**盲区**变成了**已登记的空白**——加一行就能覆盖，但没加的仍然没覆盖。
-- `[不阻塞·有意保留]` 矩阵只覆盖 `commandInvokesEntry`（launch 判定）。`commandReferences`
-  （`supersededBy` / `verification.requires`）的 npm 形态判定仍靠 `test:inventory` 的反例守，
-  尚无同类「vs 真实 npm」矩阵；这是下一个可固化的方向。
+- ~~`commandReferences` 尚无同类「vs 真实 npm」矩阵~~ —— 已于第十一轮补上，见 §18。
+
+## 18. 第十一轮：`commandReferences` vs 真实 npm 矩阵（2026-08-30）
+
+§17.5 把这条列为「下一个可固化的方向」，本轮做掉。两张矩阵现在分守判定链的两端：
+`launcher-matrix` 守 `commandInvokesEntry`（launch 判定），`npm-reference-matrix` 守
+`commandReferences`——后者经 `commandCovers` 喂给 `supersededBy` 与 `verification.requires`
+两个登记性断言，判错的后果是**给一条从未被执行的命令盖绿章**。
+
+### 18.1 机制
+
+- **真实侧**：一个最小 npm workspace 探针，root 与 workspace 各有一个**同名**目标脚本，
+  靠 marker 区分究竟哪一个被执行。同名是关键——`npm run X --workspace Y` 与
+  `npm --workspace Y run X` 的区别只在「跑了哪一个 X」，不同名就测不出来。
+- **门禁侧**：借用仓内两处真实登记分别探两条判定——`verify:core` requires `root:verify:vendor`
+  探 root 引用，`start:server` supersedes `@game/server#start` 探 workspace 引用。
+- 判定三态（root / workspace / none）而不是布尔：只判「有没有引用」会漏掉**记错目标**这一类，
+  而那正是本轮查出的缺陷所在。
+
+### 18.2 工具当场查出的假红
+
+`[已完成]` **后缀 workspace 选择器被整条丢弃**：`npm run X --workspace Y`（以及 `-w Y`、`-w=Y`）
+真实 npm 跑的是 **workspace** 脚本，门禁却既不算 root 调用也不算 workspace 调用。
+根因是第四轮把正则捞取改成 token 解析时，我对 `run` 之后的未知 flag 一律失败关闭，把后缀选择器
+一并丢了。当时的判断「后缀式写法挡不住，一律失败关闭」只对了一半：**挡不住的是 `--prefix` 这类
+语义不可静态判定的形态，而 workspace 选择器的语义是明确的**，实测两种写法等价，应当解析出来。
+`--prefix Z` 仍然失败关闭。
+
+### 18.3 有意背离的钉法
+
+两类已登记背离用 `failClosed` / `staticBlind` **显式钉在表里**，而不是从表里删掉：
+`npm run -s X` 真实执行但门禁判未覆盖（失败关闭）；`false && npm run X` 真实不执行但门禁仍算
+覆盖（shell 可达性静态不可判定）。矩阵对这两类断言的是「背离仍然存在且方向不变」——将来谁把它们
+「修好」了这里会红，提醒同步更新边界登记。这比把它们从表里删掉强：删掉就没人记得还有这回事。
+
+### 18.4 一条如实记录的未覆盖变异
+
+把 `npmRunReference` 的 `tokens[0] !== "npm"` 段首锚点放宽成 `tokens.includes("npm")`，矩阵**不红**。
+原因是扫描循环的「未知 token 即失败关闭」已经把它 subsume 了：任何非 npm 开头的形态都会在
+`run` 之前撞上未知 token 而返回 null。该锚点是纵深防御而非独立判定，不假称被覆盖。
+
+### 18.5 边界
+
+- `[不阻塞·有意保留]` 覆盖 `CASES` 里已构造的 15 种形态，不是全域证明——与 §17.5 同一口径。
+- `[不阻塞·有意保留]` 探针不跑 `npm install`：`npm run` 解析 workspaces 不需要先安装依赖，
+  但因此**只能测脚本解析语义**，测不到依赖安装后才出现的行为差异。
+- `[不阻塞·有意保留]` 两张矩阵都只覆盖 `verify-inventory` 这一条链。`verify-toolchain` 的聚合命令
+  登记、`sync-*` 的镜像判定等仍靠各自的反例守，没有同类「vs 真实行为」矩阵。
