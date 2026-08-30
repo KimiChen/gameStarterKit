@@ -50,11 +50,18 @@
 > `test:fgui` 50/50、`test:int` 154/154、`test:inventory` **94/94**、新增
 > `test:launcher-matrix` **3/3（70 种形态零背离）**、`test:faults:int` 四组 72/67/12/15 全绿。
 >
-> **本轮回写快照**（§18 第二张矩阵 + 后缀 workspace 修复后同一工作树实测）：`verify:core`、
+> **上一轮回写快照**（§18 第二张矩阵 + 后缀 workspace 修复后同一工作树实测）：`verify:core`、
 > `verify:all`、`typecheck`、`verify:sync`、`verify:inventory` 全绿；服务端单测 297/297、
 > 客户端 254/254、`test:fgui` 50/50、`test:int` 154/154、`test:inventory` 94/94、
 > `test:launcher-matrix` 3/3（70 形态零背离）、新增 `test:npm-reference-matrix`
 > **2/2（15 形态零背离）**、`test:faults:int` 四组 72/67/12/15 全绿。
+>
+> **本轮回写快照**（§19 第三、四张矩阵落地后同一工作树实测）：`verify:core`、`verify:all`、
+> `typecheck`、`verify:sync`、`verify:inventory` 全绿；服务端单测 297/297、客户端 254/254、
+> `test:fgui` 50/50、`test:int` 154/154、`test:inventory` 94/94；四张矩阵
+> `test:launcher-matrix` 3/3、`test:npm-reference-matrix` 2/2、新增
+> `test:aggregate-chain-matrix` **4/4**、`test:sync-mirror-matrix` **3/3（13 场景）**；
+> `test:faults:int` 四组 72/67/12/15 全绿。
 >
 > **上一轮结论**：plan-v2 的 28 条 `[已完成]` 经本轮 6 组并行 + 对抗式独立复核，**全部成立、无一条被证伪**
 > （58 条裁决，0 条 claim-false）。本文只承接其中「证据弱于主张」的部分、仍然有效的保留边界，以及本轮
@@ -1192,5 +1199,64 @@ vs 真实解释器怎么做（同样的 flag 跑只打 marker 的入口）。两
 - `[不阻塞·有意保留]` 覆盖 `CASES` 里已构造的 15 种形态，不是全域证明——与 §17.5 同一口径。
 - `[不阻塞·有意保留]` 探针不跑 `npm install`：`npm run` 解析 workspaces 不需要先安装依赖，
   但因此**只能测脚本解析语义**，测不到依赖安装后才出现的行为差异。
-- `[不阻塞·有意保留]` 两张矩阵都只覆盖 `verify-inventory` 这一条链。`verify-toolchain` 的聚合命令
-  登记、`sync-*` 的镜像判定等仍靠各自的反例守，没有同类「vs 真实行为」矩阵。
+- ~~两张矩阵都只覆盖 `verify-inventory` 这一条链~~ —— `verify-toolchain` 的聚合链与 `sync-*` 的
+  镜像判定已于第十二轮补上同类矩阵，见 §19。
+
+## 19. 第十二轮：给 verify-toolchain 与 sync 补同类矩阵（2026-08-30）
+
+§18.5 把这两条列为「还没有同类矩阵」的边界，本轮做掉。四张矩阵现在的分工：
+
+| 矩阵 | 守的判定 | 地面真相 |
+|---|---|---|
+| `test:launcher-matrix` | `commandInvokesEntry`（launch） | 真实 bash / node 是否执行入口 |
+| `test:npm-reference-matrix` | `commandReferences`（覆盖判定） | 真实 npm 跑的是 root 还是 workspace 脚本 |
+| `test:aggregate-chain-matrix` | `verify-toolchain` 的四张聚合链声明表 | 真实 npm 的**执行序列** |
+| `test:sync-mirror-matrix` | `sync-*.mjs --check` | 真的跑一次同步，**镜像树变没变** |
+
+### 19.1 聚合链矩阵
+
+`verify-toolchain` 按 `&&` 切分 script 文本与声明表做集合与顺序比对——守的是「文本长得像声明」，
+不是「跑起来真的会执行」。矩阵把链条文本**原样**搬进探针 workspace，把它引用的每条子命令换成只打
+marker 的桩，真的 `npm run`，按顺序收集 marker，与从 `verify-toolchain.mjs` **解析出来**的声明表
+逐项比对（顺序也算——短路会让后半截 marker 消失）。声明表直接读源文件而不复制一份，避免两边各自漂移。
+
+两个实现细节值得记：桩必须全部 exit 0（`&&` 短路会把「后面没跑」误报成声明不符）；inline 桩要把
+marker 拆开拼接，因为 npm 执行前会**回显命令行**，marker 字面量出现在命令行里会被数两次。
+
+**一条自己发现并补上的缺口**：探针替所有子命令生成桩，因此它证明不了「这些命令在真实仓库里存在」。
+实测把 `scripts.verify:ecs` 删掉后，链条文本不变，**主用例与 `verify-toolchain` 双双放行**。
+补了独立用例，校验声明表每条命令在真实 `package.json` / workspace / 文件系统中可解析。
+
+### 19.2 sync 镜像矩阵
+
+`--check` 只读判定、不带参数真的同步。`verify:sync` 消费前者，而开发者相信的是
+「红灯 ⟺ 我需要去跑一次 sync」——这条等价关系此前无人守着，`--check` 可以在任意方向上说谎。
+
+地面真相刻意**不是**再实现一遍判定逻辑（那只是拿判定验判定），而是文件系统的可观测效果：
+镜像树的「路径 → 内容哈希」快照 → 真的跑一次同步 → 再快照 → 看树变没变。默认断言
+「`--check` 红 ⟺ 同步会改动镜像」，并额外断言**收敛性**：同步之后 `--check` 必须转绿，
+否则「跑一次 sync 就好」这句话就是假的。
+
+13 个场景（shared 6 + client 7）：原样、镜像文件被改坏 / 被删、孤儿文件、源目录新增未同步、
+警示 README 被改，以及 client 侧的 `.meta` 场景。
+
+两处踩坑写进了注释：夹具必须 `git init`（`sync-client --check` 用 `git ls-files` 判 `.meta`，
+非 git 目录直接抛错而不是给判定）；`.meta` 规则判的是 **git index** 而不是工作树——从磁盘删掉
+`.meta` 不触发它，真正的失效形态是「文件入库了但 `.meta` 没入库」，要用 `git rm --cached` 构造。
+我第一版就写错成删磁盘文件，矩阵当场把它报成「判定=绿 期望=红」。
+
+### 19.3 有意背离的钉法（与 §18.3 同一姿态）
+
+`.meta` 由 Cocos 编辑器生成，同步脚本补不了，于是 `--check` 红而同步无改动。这条登记在
+`syncCannotFix` 里而不是从场景表里删掉：将来谁让同步能补 `.meta` 了，矩阵会红并提醒同步更新登记。
+
+### 19.4 边界
+
+- `[不阻塞·有意保留]` 四张矩阵覆盖的都是各自 `CASES` / `SCENARIOS` 里**已构造**的形态，
+  不是全域证明——与 §17.5 同一口径。
+- `[不阻塞·有意保留]` 聚合链矩阵的桩是**叶子**：`verify:core` 引用的 `npm run typecheck` 只打一个
+  marker、不再展开，因为声明表描述的就是直接子命令。跨层的执行关系不在覆盖范围内。
+- `[不阻塞·有意保留]` sync 矩阵的夹具排除 `.env*`，因此 `sync-client` 的 `devEnv.ts` 生成走的是
+  无 `.env.development` 的默认分支；`.env` 变体下的行为差异未覆盖。
+- `[不阻塞·有意保留]` `verify-toolchain` 的**非链条**检查（Node 版本声明、lockfile 投影、
+  `@types/node` 主版本一致性）仍靠自身逻辑，没有「vs 真实运行时」矩阵。
