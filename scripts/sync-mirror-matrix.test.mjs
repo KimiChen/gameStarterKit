@@ -47,6 +47,17 @@ const TARGETS = [
   },
 ];
 
+/**
+ * 登记豁免：`sync-webplatform-contract` 也有 `--check`，但**刻意不进 TARGETS**。
+ * 理由（逐条实测）：(a) 它的源在 `node_modules/@gono/webplatform-contract`，而夹具用
+ * `git ls-files` 构建、不含 node_modules，第一个场景就 ENOENT；(b) 该镜像没有 README.md，
+ * 「警示 README 被改」场景直接抛；(c) 它的 `expectedFiles()` 是固定三条，往源包新增文件
+ * 对镜像零影响，「源目录新增未同步」场景会产生真假红。
+ * 更重要的是本矩阵的立论——「`--check` 是第二套判定实现、可能撒谎」——对它不成立：
+ * 它的 `--check` 与真同步共用同一个 `expectedFiles()`，结构上无法背离。
+ */
+const CHECK_SCRIPT_EXEMPTIONS = ["scripts/sync-webplatform-contract.mjs"];
+
 const fixtures = [];
 after(() => { for (const dir of fixtures) rmSync(dir, { recursive: true, force: true }); });
 
@@ -260,4 +271,21 @@ test("矩阵本身有判别力：两侧探针都不是恒真", () => {
   // 效果侧：改坏时同步会动树，原样时不会。
   assert.equal(syncChangesMirror(root, target.script, target.mirror), true, "改坏后同步必须改动镜像");
   assert.equal(syncChangesMirror(root, target.script, target.mirror), false, "已一致时同步不得再改动镜像");
+});
+
+test("矩阵覆盖面钉住 package.json：新增镜像 --check 脚本必须进 TARGETS 或显式豁免", () => {
+  // TARGETS 是本文件对「有哪几面镜子」的第二次表达。新增一面镜子若忘了登记，矩阵会
+  // 一眼都不看它就全绿。这条钉把它和 package.json 的真实脚本文本对齐。
+  const scripts = JSON.parse(readFileSync(join(REPO_ROOT, "package.json"), "utf8")).scripts ?? {};
+  const declared = new Set();
+  for (const body of Object.values(scripts)) {
+    for (const match of String(body).matchAll(/node\s+(scripts\/sync-[A-Za-z0-9-]+\.mjs)\s+--check/gu)) {
+      declared.add(match[1]);
+    }
+  }
+  assert.deepEqual(
+    [...declared].sort(),
+    [...TARGETS.map((target) => target.script), ...CHECK_SCRIPT_EXEMPTIONS].sort(),
+    "package.json 里的镜像 --check 脚本必须等于 TARGETS ∪ 登记豁免",
+  );
 });
