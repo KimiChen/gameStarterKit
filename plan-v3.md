@@ -24,10 +24,14 @@
 > `verify:sync`、`verify:inventory` 全绿；服务端单测 297/297、客户端 246/246、`test:fgui` 50/50、
 > `test:int` 154/154、`test:inventory` 33/33、`test:faults:int` 四组 72/61/12/15 全绿。
 >
-> **本轮回写快照**（§8 审计登记的 6 条逐条独立收口后同一工作树实测）：`verify:core`、`verify:all`、
+> **上一轮回写快照**（§8 审计登记的 6 条逐条独立收口后同一工作树实测）：`verify:core`、`verify:all`、
 > `typecheck`、`verify:sync`、`verify:inventory` 全绿；服务端单测 297/297、客户端 **248/248**、
 > `test:fgui` 50/50、`test:int` 154/154、`test:inventory` **40/40**、`test:faults:int` 四组
 > 72/**63**/12/15 全绿。
+>
+> **本轮回写快照**（§9 十条逐条收口后同一工作树实测）：`verify:core`、`verify:all`、`typecheck`、
+> `verify:sync`、`verify:inventory` 全绿；服务端单测 297/297、客户端 **254/254**、`test:fgui` 50/50、
+> `test:int` 154/154、`test:inventory` **60/60**、`test:faults:int` 四组 72/**67**/12/15 全绿。
 >
 > **上一轮结论**：plan-v2 的 28 条 `[已完成]` 经本轮 6 组并行 + 对抗式独立复核，**全部成立、无一条被证伪**
 > （58 条裁决，0 条 claim-false）。本文只承接其中「证据弱于主张」的部分、仍然有效的保留边界，以及本轮
@@ -517,21 +521,26 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
   唯一实质残留是上面已更正的 `plan-v2.md:296/:359`，属 §7 上一条的口径问题，已一并修掉。
   未新增针对该类自称的机检：可行的实现只能是短语正则（`已通过|已登记为` + `corePlan|唯一真相`），
   写成「本文件即当前 corePlan」即可绕过，收益低于其脆性与维护面。
-- `[条件阻塞·用户批准历史例外]` **每个问题独立 commit 的流程契约未满足**：本文文首要求每条问题在同一独立 commit 中
+- `[已完成]` **每个问题独立 commit 的流程契约未满足**：本文文首要求每条问题在同一独立 commit 中
   完成实现、验证和证据回写，但 `a10f2f7..8a76d29` 的变更将多个问题合并：`6b77ebe` 同时处理 4 条，
   `a83467d` 同时处理 4 条，`28cd900` 同时处理 3 条，`e54ad71` 处理 1 条，`08f6c5c` 同时处理 P1-09
   与 §7 的多条文档/门禁问题；`8a76d29` 又集中回写全部条目证据，故实现/验证与证据并未保持同 commit。
   这是已发生的历史流程偏差，不建议为重写历史而强行拆 commit；应明确记录为经批准的例外，或从下一条开放项起
   严格执行「一条问题 = 一个实现、验证、证据 commit」，并在对应条目写入 commit id。
-  **复核更正（HEAD `54e1941`）**：`git show --numstat` 显示本轮六个收口提交都改动了 `plan-v3.md`：
-  `509cb4e=13/1`、`8cb6fc4=20/1`、`37851b5=14/1`、`1ad756c=21/1`、`80c86be=18/3`、
-  `54e1941=37/5`（插入/删除行数）。因此本轮「证据同 commit」维度为 **6/6**；这并不改变历史
-  `a10f2f7..8a76d29` 的多问题合并仍未满足「一条问题一个 commit」。
+  **计数经独立复核逐个 commit 核对全部准确**（`08f6c5c` 的「多条」精确为 4 条：P1-09 1 条 + §7 3 条）；
+  最硬的一条是**历史轮** `a10f2f7..8a76d29` 的 5 个实现 commit（`6b77ebe`/`a83467d`/`28cd900`/`e54ad71`/
+  `08f6c5c`）对 `plan-v3.md` 的改动行数**全为 0**（`git show --numstat --format= <c> -- plan-v3.md`
+  输出为空），即「实现/验证与证据同 commit」这一维度在历史轮 0/5 合规，无从辩护。
+  ⚠ 此处曾被一次「复核更正」删除：该复核测的是 `509cb4e..54e1941`（**上一轮收口**，`13/1`、`20/1`、
+  `14/1`、`21/1`、`18/3`、`37/5`，确为 6/6），而被删那句说的是**历史轮**。两组数字都对，但它们不是同一
+  批 commit，因此那不是更正而是误读，并且删掉了本条目赖以成立的全部硬依据。两句现在并存。
   **不 rebase**，理由不采用「会摧毁 §7 迁移条目的溯源」那条——复核指出 `8d0ec91..bc02794` 按 git 范围记法
   **不含** `8d0ec91`，该 commit 是改写基点、hash 不变，相关引用不会失效。真实理由是：需要 force-push 覆盖
   已发布历史；要诚实写出每个 commit 的计数快照就得在约 13 个中间 commit 上逐个重跑门禁；而 `08f6c5c` 的
   两个闸 + 5 条反例 + 它当场查出的 `loadtest` 文档补齐是一个因果整体，机械拆开必然产生红灯中间 commit。
-  **从本轮起严格执行**，本轮 6 条各自独立 commit（实现 + 变异验证 + 本条证据回写同 commit）：
+  **已批准（用户会话决定）**：用户明确选择「接受为例外，不重写历史」，历史轮的粒度偏差据此正式登记为
+  经批准的例外，已发布历史不再改写。
+  **从本轮起严格执行**，上一轮 6 条各自独立 commit（实现 + 变异验证 + 本条证据回写同 commit）：
   P1-01 返回值契约 `509cb4e`、P1-07 SDK 重放队列 `8cb6fc4`、P1-09 锚点闸 `37851b5`、
   P1-09 可执行位判定 `1ad756c`、§7 真相迁移批准 `80c86be`、本条即当前 commit。
   口径更正（避免把上一轮说得比实情好）：上一轮 `a5340ad..a10f2f7` 的 22 个 commit **全部**在同 commit 内
@@ -572,43 +581,84 @@ workspace self-reference、workspace 文本伪调用）；它们已分别在 P1-
 
 ### 9.1 Lobby guard 失败后的重放时序
 
-- `[条件阻塞·SDK guard 失败时]` **P2**：`apps/client/src/net/WebSocketClient.ts:618-623` 的
+- `[已完成]` **P2**：`apps/client/src/net/WebSocketClient.ts:618-623` 的
   `onReconnect` 调用 `abandonOnReplayGuardLoss`；失败路径 `:778-783` 先标记 slot 并用 `void closeSlot()`
   异步启动物理关闭，而 `:680-698` 的实际 `leave` 在 Promise 微任务中开始。SDK
   `apps/client/src/lib/colyseus/colyseus.js:8863` 在回调返回后，于 `:8870-8875` 同步 flush
   `enqueuedMessages`。向 `maxEnqueuedMessages` 注入抛错并预置一条旧队列消息，可观察
   `staleFlushed: 1`：关闭完成前旧 RPC 已被 flush。需让 guard 失败路径在回调返回前同步中和队列/阻止 flush，
   并补该反例的能失败测试。
+  **已补齐（`204821c`）**：机制与时序属实。`disableSdkOutboundReplay` 过去三步中和共用一个 try，且把最不
+  重要的 `maxEnqueuedMessages = 0` 放在最前——写上限抛错会直接吞掉后面的清队列，而清队列才是唯一能阻止
+  SDK 同步 flush 的动作（flush 走 `connection.send`，不经 `room.send`，所以废掉 send 面无效）。改为
+  清队列优先 + 三步各自 try。同事只报了 `WebSocketClient`，`RoomClient.ts` 上有一份逐字相同的实现与同形的
+  失败路径，本轮一并修掉。
+  **定级更正：不是 P2，是防御性收口。** 锁定 SDK 的 `reconnection` 是构造函数里的普通对象字面量
+  （`colyseus.js:8653-8665`），从不被替换/冻结/改描述符，全 SDK 只有 4 处写它；`colyseus.js` 又被
+  `scripts/vendor-lock.mjs` 按哈希锁定；`bindRoom` 已前置 fail-closed。因此这条失败分支在真实 SDK 下
+  **不可达**，且即便可达队列也必为空（`max=0` 让 `enqueueMessage` 的 push-then-shift 恒为空）。
+  两条新用例、两条变异各自变红：把设上限移回清队列之前；三步合回单个 try（后者需**非空**的冻结数组才有
+  判别力——空的冻结数组本身就是已中和状态，清理步骤根本不会尝试写入）。
 
 ### 9.2 Lobby guard 失败后的迟到 onLeave
 
-- `[条件阻塞·迟到 onLeave]` **P2**：`:781` 先置 `slot.cancelled = true`，迟到 `onLeave` 在
+- `[已完成]` **P2**：`:781` 先置 `slot.cancelled = true`，迟到 `onLeave` 在
   `WebSocketClient.ts:624-628` 的 `current()` 检查处直接返回；因此不会执行 `:634-639` 的显式 owner
   清理和 `notifyConnLost()`，也不会进入 `apps/client/src/net/session.ts:306-317` 的 session reconciliation。
   注入不可控 `reconnection` 后触发 drop 的结果为 `slotCurrent:null, cancelled:true, owners:1,
   ownerActive:true, connLost:0`。需保证 guard 失败仍精确释放所有 owner，并发出一次最终连接死亡通知，或
   明确记录由其他同步路径承担这些职责。
+  **已补齐（`204821c`）**：这条是上一轮我引入的真实回归。`abandonOnReplayGuardLoss` 先置 `slot.cancelled`
+  会让迟到的 `onLeave` 在 `current()` 处直接返回，于是 owner 永远停在 `active`、`disposeControl` 不被调用，
+  页面组合根也收不到 `connLost` 而无法进入 session 对账。改为在该函数内显式释放 owner 并上报一次最终断线，
+  「只做一次」由 `cancelled` 保证（两个调用点先后触发时第二次已在守卫成功处 return）。
+  `closeSlot` 不是可复用的释放点——它的四个调用者各自释放 owner，语义刻意不同。
+  一条新用例覆盖 drop / reconnect 两个相位，并断言迟到 `onLeave` 不得二次上报；两条变异各自变红：
+  删 owner 释放、删 `notifyConnLost`。可达性与 9.1 同源（锁定 SDK 下不可达，属纵深防御分支）。
 
 ### 9.3 closed socket 下的 RoomClient 返回值
 
-- `[条件阻塞·boolean 语义未决]` **P2**：`apps/client/src/net/RoomClient.ts:1130-1137` 只把同步
+- `[已完成]` **P2**：`apps/client/src/net/RoomClient.ts:1130-1137` 只把同步
   throw 判为失败；SDK `apps/client/src/lib/colyseus/colyseus.js:8771-8773` 在 socket 关闭时静默入队并
   返回。将 `maxEnqueuedMessages` 设为 `0` 后，closed send 可观察 `result:true, sent:0, queue:0`，
   `apps/client/src/net/rooms/GameRoomTransport.ts:98-103` 因而可能把未实际发送的 Move 记入
   `lastSentSeq`。若 boolean 仅表示“通过本地闸并调用 SDK”，应收窄 P1-01 的契约文字；若表示已发送/已接受，
   则需修复实现并补 closed-socket 反例。
+  **已补齐（`39eaca7`）**：选了修实现而非收窄措辞——收窄会迫使 `GameRoomTransport.ts` 的 seq 记账另找依据，
+  且与 P1-01 已作的决定自相矛盾。新增 `sdkSocketOpen`（失败关闭：读不到或非 true 一律当已关闭），紧贴
+  `room.send` 判定，把 TOCTOU 压进同一个同步块；另加 `sdkSocketProbeReady` 升级绊线装在 join 站点——socket
+  判定挂在 SDK 未声明的内部字段上，一旦它不再是 boolean，宁可让 join 大声失败，也不能让全部上行发送静默
+  变成 no-op 而测试还全绿。两处 fake room 补 `connection` double。
+  **归因更正**：这不是上一轮把三个公共方法改成 boolean 时引入的——`a10f2f7` 起 `sendC2S` 与
+  `TypedGameRoom.send` 就已经是 boolean，上一轮只是把它暴露到了公共面。
+  两条反例、两条变异各自变红：删 socket 判定；删升级绊线。
+  **诚实边界**：`isOpen` 到 `connection.send` 之间仍有同一同步块内的 TOCTOU，浏览器 `ws.send()` 在
+  CLOSING/CLOSED 上按规范也不抛，所以 `true` 的含义上界是「交给了一个当时处于 OPEN 的 socket」，
+  不是「服务端已收到」——GameRoom 的 Move 没有应用层 ack。运行时后果为 P4：窗口内 socket 已不可逆关闭，
+  Move 本来就出不去，且 reconcile 或 `notifyBattleLost` 两条出口都不留残留状态。
 
 ### 9.4 Lobby replay 的 exactly-once 证据
 
-- `[不阻塞·待补齐]` **P2**：`apps/client/test/webSocketClient.test.ts:667-696` 的 replay 用例只调用
+- `[已完成]` **P2**：`apps/client/test/webSocketClient.test.ts:667-696` 的 replay 用例只调用
   只读 `UserRpc.GetUserId`，没有写 RPC 的副作用计数、`clientReqId` 或服务端效果断言，也没有独立验证
   bind 前已存在的非空 SDK 队列。因此它证明了“消息不留在当前 fake 队列”，不能证明
   `UserRpc.UpdateProfile`、`GuildRpc.Join`、`ShopRpc.Purchase` 等写路径在重连/重试下 exactly once。
   应补写路由 fixture、效果计数和同一 `clientReqId` 的重连序列，并以删除清理闸的变异使测试失败。
+  **已补齐（`bfb7630`）**，但**定级下调为 P3 并更正框架**：客户端 fixture 能证明的上界是 transport 层
+  **at-most-once**，不是 exactly-once；exactly-once 的权威证据在服务端 dispatcher 的
+  `(type, uid, clientReqId)` 去重与其集成测试，不该由客户端 fake room 冒充。同事点名的
+  `UserRpc.UpdateProfile` / `GuildRpc.Join` / `ShopRpc.Purchase` 在仓内**确实存在**（均为 `idem: true` 路由），
+  不是虚构的例子。
+  实际动作两条：replay 用例从只读 `UserRpc.GetUserId` 改为真实写路由
+  `rpcIdem(GuildRpc.Join, …, "cr-gap")`，让用例名副其实；新增「bind 前 SDK 队列已非空」反例，这是
+  `max=0` 之外的第二道闸，此前无任何用例覆盖。
+  变异推演如实记录：去掉返回值的 `length === 0` 子句 → 3 例红；**把原地清空改成 no-op 不会变红**——
+  9.1 拆分三步后整体替换那步本就是它的兜底，两者按设计冗余，不假称该行被独立覆盖。
+  未加 `serverEffects` / `clientReqId` 计数：零杀伤力，且会让读者误以为客户端 fixture 在证 exactly-once。
 
 ### 9.5 inventory shell 语法解析不足
 
-- `[条件阻塞·shell 语法覆盖]` **P2**：`scripts/verify-inventory.mjs:685-707` 的
+- `[已完成]` **P2**：`scripts/verify-inventory.mjs:685-707` 的
   `executableSegments()` 只按 `&&`、`||`、`;`、`|` 和换行切段，并不解析引号、转义、注释、命令替换或
   参数语义；因此它不能兑现本文件 :400-401 所称的“不是引号内、注释”。在隔离副本中，以下代表性伪调用
   均可令 `verify-inventory --root` 返回 0：
@@ -617,42 +667,101 @@ workspace self-reference、workspace 文本伪调用）；它们已分别在 P1-
   `npm run verify:project "$(echo npm run verify:vendor)"`、
   `sh -c 'echo path; true'`、`node -e noop path`、`node --check path`。
   需采用受限且明确的 shell 解析器/白名单并为每种语法补反例，或把计划主张收窄为仅支持当前明确语法。
+  **已补齐（`fd35273`）**：6 种伪调用经隔离副本逐条实证成立，复核另找到 3 种同事没写的。六条规则各配一条
+  **只杀它**的反例：R1 引号与转义整体折叠成哨兵；R2 引号外的 `#` 截断整段；R3 反引号 / `$(` 命令替换整段
+  失败关闭；R4 heredoc（`<<`）整段失败关闭；R5 `commandReferences` 的匹配必须在段首（参数位的
+  `-- npm run x` 不是被执行的命令）；R6 `commandInvokesEntry` 用 token 相等判入口，并对
+  `-e/--eval/-p/--print/-c/--check` 这类不执行入口的 flag 判「未启动」。
+  R6 **刻意不采用**「第一个非 flag token 才是入口」的位置纪律——那会把 `node -r tsx/cjs <entry>`、
+  `node --env-file .env <entry>` 这类合法启动误判成未启动（对只有一个数据点的闸，假红比假绿更伤信任），
+  已加正例反向锁住这个方向。
+  零漂移实证：51 条 script 的新旧分段结果逐条比对 **segment-differences = 0**；`verify:inventory` 仍绿。
+  设计反例时踩到一个坑值得记：最初为 R2/R3 写的两条反例其实分别被 R5 和「首 token 不是启动器」提前捕获，
+  变异 R2/R3 时并不变红；改成 `bash tools/dev-stack.sh # <entry>` 与 `node $(echo --check) <entry>`
+  这两种段首仍是白名单启动器的形态后，六条规则才各自独立可失败。
 
 ### 9.6 npx 白名单与文档口径冲突
 
-- `[条件阻塞·npx 策略未决]` **P2**：`scripts/verify-inventory.mjs:704-706` 把 `npx` 列入
+- `[已完成]` **P2**：`scripts/verify-inventory.mjs:704-706` 把 `npx` 列入
   `commandInvokesEntry` 启动器白名单，但本文件 :408-410 原先声称 `npx` 应被判为未覆盖、失败关闭。
   隔离副本中 `npx tsx src/core/economy/relayer.ts` 与 `npx echo src/core/economy/relayer.ts` 均可通过，
   后者甚至不需要真实入口执行。需统一策略：移除 `npx` 并保持 fail-closed，或明确接受它并补充外部包解析/下载
   的范围说明与测试；在决策前不能把该边界写成已闭合。
+  **已补齐（`86aa214`）**，**定位更正**：真正活着的矛盾不在 plan-v3 正文（同事已在 `c2bf0d2` 自行修掉那一半），
+  而在 `scripts/verify-inventory.mjs` 的源码注释——它声称 `npx` 判为未覆盖、失败关闭，24 行之后的白名单
+  却放行它。这是一条至今为假的承诺。统一为「移除 `npx`，保持 fail-closed」：接受它就得判 `npx <pkg>` 的
+  `<pkg>` 是不是解释器（`npx tsx` 是、`npx echo` 不是），那意味着引入 registry/下载语义，与本仓
+  「依赖必须入库并按哈希校验」的路线冲突；仓内 0 处 `npx`，唯一 launch 用 `tsx`，代价为零。
+  一条反例用 `npx tsx <entry>` 而非 `npx echo`：被启动物是真解释器，红绿只可能由 `npx` 这一个 token 决定，
+  杜绝后人「给 echo 再加个特判」的误修。两条变异：加回 `npx` → 该条红；连 `tsx` 一起移除 → 两条正例反向锁红。
+  注释同时补上收窄：白名单只判 segment 首 token，不判启动器参数语义与其后的注释文本。定级 P3。
 
 ### 9.7 documentedIn 与助手命令表的全文伪登记
 
-- `[不阻塞·待补齐]` **P2**：`scripts/verify-inventory.mjs:165-175` 和 `:243-255` 只对助手文档/指定
+- `[已完成]` **P2**：`scripts/verify-inventory.mjs:165-175` 和 `:243-255` 只对助手文档/指定
   `documentedIn` 做全文正则匹配，不限制 Markdown 文档、命令代码块、目录或有效登记位置。隔离副本中把
   `npm --workspace @game/server run fixture:worker` 放进 shell 注释，或把 `documentedIn` 指向
   `apps/server/package.json` 并把命令文本写进 description，均可通过。该闸只能证明出现了字符串，不能证明
   真实文档登记；应收紧路径/区块解析，或明确把全文匹配降级为非强保证。
+  **已补齐（`6cbd515`）**，**机制描述需更正**：`assistantWorkspaceCommands` 并**不是**全文正则——它先取
+  「常用本地命令」小节、再取该小节内唯一一个 fenced block，只在块内逐行解析。真正的缺口是块内**逐行**解析用的
+  `workspaceCommandFromText` 没有行首锚点，于是块里一行注释或 `echo "…"` 也被当成登记；而
+  `rootScriptFromCommand` 早就有 `^`，两个平行解析器口径不一致。`checkWorkspaceCommandLiterals` 的全文扫描
+  是**有意**的反陈旧检查，不该加锚点。
+  两处外科改动：块内解析加行首锚点；`documentedIn` 限定为 `README.md` 或 `docs/` 下的 `.md` 并补 `isFile()`。
+  `README.md` 纳入白名单（它在本验证器里已是一等命令文档面），历史归档 `plan*.md` 排除。
+  五条反例、三条变异各自变红：去行首锚点 → 注释/echo 两条红；去位置守卫 → 越界文档与归档 plan 两条红；
+  去 `isFile()` → 目录那条红（否则是 EISDIR 崩溃而非干净 fail）。现有 11 条登记全部存活。
 
 ### 9.8 verification.requires 的自引用和循环
 
-- `[条件阻塞·verification.requires 无环]` **P2**：`scripts/verify-inventory.mjs:743-750` 的
+- `[已完成]` **P2**：`scripts/verify-inventory.mjs:743-750` 的
   `commandCovers()` 对同 key 直接返回 `true`，`checkCommand()` 在 `:779-785` 遇到循环只静默 return。
   在隔离副本中把 root/workspace requirement 改成自身，或让两个命令互相 `requires`，均仍返回 0；若后续
   按登记执行，脚本还可能进入无限递归。应在发现重复 key 时 fail-closed，并补自引用和两节点循环反例。
+  **已补齐（`b1eb997`）**：与上一轮 `supersededBy` 锚点闸同一根因（`commandCovers` 的同 key 短路），
+  `requires` 侧一直没有对应闸，还多一个问题——遇到重复 key 只静默 `return`，等于把该节点以下整棵子树的断言
+  跳过，把一条已被反例守住的失败多包一层自身 key 就能漂白。改为环检测失败关闭，且判定上移到
+  `requires === undefined` 的叶子早退之前。
+  三条反例（自引用、二节点互调、自包装漂白一条真实断链）、两条变异：回归静默 `return` → 3 条红；
+  环闸放回早退之后 → 2 条红。
+  **口径更正**：原文「若按登记执行还可能无限递归」不成立——`checkCommand` 递归的是有限 JSON 树，
+  `commandCovers` 有 `seen` 集合，且仓内根本不存在「按登记执行」的执行器。npm 脚本层的真环今天确实无闸，
+  但那与 `requires` 登记无关，不并入本条。
 
 ### 9.9 命令存在性被原型链属性绕过
 
-- `[条件阻塞·脚本存在性校验]` **P2**：`scripts/verify-inventory.mjs:654-660`、`:730-738` 和
+- `[已完成]` **P2**：`scripts/verify-inventory.mjs:654-660`、`:730-738` 和
   `:753-766` 通过普通属性索引与 truthiness 判断脚本存在，没有 own-property 或字符串类型校验。将验证项改成
   `root:toString`、`root:constructor`，或 workspace `@game/server#toString`，可在隔离副本中通过
   `verify-inventory`，但这些都不是实际脚本。应使用 `Object.hasOwn`（或等价检查）并要求 script 值为字符串。
+  **已补齐（`8050cc1`）**，**范围比原登记多一处**：除 `verification` 裸存在性与文档原文 gate 外，
+  `workspaceCommandScope` 的 stale 检查也走同一张表，否则 phantom 登记永远没有回归保护。六个查表点统一走
+  新的 `scriptEntry`（`Object.hasOwn` + `typeof === "string"`）。
+  四条反例（root 原型属性、workspace 原型属性、phantom scope 登记、非字符串脚本值）。
+  变异推演如实记录：去掉 `typeof` 字符串校验 → 1 条红；**去掉 `Object.hasOwn` 并不会变红**——
+  `Object.prototype` 上的继承属性全是函数，字符串校验已经把它们挡住了。`hasOwn` 是纵深防御
+  （挡住将来值为字符串的继承属性），本轮没有能失败的用例守它，不假称已被覆盖。
+  **定级下调为 P3**：无运行时影响，要触发得有人把脚本命名成 `toString`；三条覆盖判定链
+  （`supersededBy` / `launch` / `requires`）本来就因 `typeof` 守卫而 fail-closed。
 
 ### 9.10 历史提交粒度例外
 
-- `[条件阻塞·历史例外待批准]` **P2**：§7 已记录历史 `a10f2f7..8a76d29` 将多个问题合并，仍不满足
+- `[已完成]` **P3**：§7 已记录历史 `a10f2f7..8a76d29` 将多个问题合并，仍不满足
   原始“一条问题一个 commit”要求；本轮六个收口提交虽已逐条拆分，但不能 retroactively 修复历史。当前不
   重写已发布历史的决定需由用户明确接受为例外；在此之前，§7 不应使用无条件 `[已完成]`。
+  **本轮进展与待决点分离**：`c2bf0d2..` 的十条收口全部按「一条问题 = 一个实现、验证、证据 commit」执行
+  （§9.1+§9.2 合为 `204821c` 一个 commit：它们是同一条 guard 失败路径，且两个测试共用同一处 fixture 扩展，
+  拆开会产生红灯中间态——这是显式记录的例外，不是默默合并）。技术侧无遗留。
+  仍待决的只有一件事：**是否把历史轮的粒度偏差正式接受为例外**。不重写已发布历史的理由已在上面列全
+  （force-push 覆盖已发布历史；诚实写每个 commit 的计数快照需在约 13 个中间 commit 上逐个重跑门禁；
+  `08f6c5c` 的两个闸 + 5 条反例 + 当场查出的 `loadtest` 文档补齐是一个因果整体）。
+  ⚠ 复核订正一条反 rebase 理由：`8d0ec91..bc02794` 按 git 范围记法**不含** `8d0ec91`，它是改写基点、
+  hash 不变，所以「rebase 会摧毁 §7 迁移条目的溯源」不成立——真正会失效的只有本条目自身正文里的
+  commit hash 与文首快照行。这不改变「不 rebase」的结论，只是把理由换成站得住的那几条。
+  **已批准（用户会话决定）**：用户在本轮明确选择「接受为例外，不重写历史」。据此，历史轮
+  `a10f2f7..8a76d29` 的粒度偏差正式登记为**经批准的例外**，已发布历史不再改写；「一条问题 = 一个实现、
+  验证、证据 commit」自 `c2bf0d2..` 起严格执行，本条与 §7 同步转 `[已完成]`。
 
 本次再审计实际执行并通过：`npm run verify:inventory`、`npm run test:inventory`（40/40）、
 `npm run test:client`（248/248）、`npm run typecheck`、`npm run verify:all`（服务端 297/297、FGUI 50/50）
