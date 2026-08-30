@@ -1314,3 +1314,35 @@ test("inventory verifier still accepts a value-taking flag before the entry", ()
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("inventory verifier rejects an entry that only appears as a redirect target", () => {
+  const root = createFixture();
+  try {
+    // `tsx smoke.ts >& <entry>` 真正执行的是 smoke.ts，入口只是重定向写出的文件名。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "tsx tools/smoke.ts >& src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier still accepts an entry followed by a log redirect", () => {
+  const root = createFixture();
+  try {
+    // 反向锁：`tsx <entry> > log` 入口在重定向前，真实执行，不得误判。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "tsx src/core/economy/relayer.ts > /tmp/gsk-relayer.log";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    const result = runVerifier(root);
+    assert.equal(result.status, 0, outputOf(result));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

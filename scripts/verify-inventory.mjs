@@ -788,7 +788,11 @@ function commandInvokesEntry(command, entry) {
   const isTarget = (token) => token === relativeTarget || token === `./${relativeTarget}`;
   return executableSegments(script).some((segment) => {
     const tokens = segmentTokens(segment);
-    const entryIndex = tokens.findIndex(isTarget);
+    // 入口出现在重定向目标位不算启动：`tsx smoke.ts >& <entry>` 真正执行的是 smoke.ts，
+    // 入口只是被写/读的文件名。`>`/`>>`/`<`/`>&`/`2>&1`/`>file` 等形态统一作为边界。
+    const redirectIndex = tokens.findIndex((token) => /^\d*(?:>>?|<)&?/u.test(token));
+    const boundary = redirectIndex >= 0 ? redirectIndex : tokens.length;
+    const entryIndex = tokens.findIndex((token, index) => index < boundary && isTarget(token));
     if (entryIndex < 0) return false;
     // 这些 flag 自带内联程序或只做静态检查，出现即判为「未启动」。必须扫描入口**之前的
     // 全部** token：遇到第一个非 `-` token 就停会让 `node --import tsx --check <entry>`
