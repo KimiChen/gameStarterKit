@@ -769,6 +769,16 @@ function segmentLeadsWith(segment, binaries) {
   return first !== undefined && binaries.includes(first);
 }
 
+// 精确匹配之外：`--eval=...` 的长 flag 粘连与 `-e...` 的短 flag 粘连同样不执行入口。
+// 未列出的未知 flag（如 `--bogus`）无法静态判定其语义，仍属已知边界。
+function isNonExecutingFlag(token) {
+  // 内联而非模块级 const：驱动段先于此处初始化执行（与下方启动器表同一约束）。
+  const flags = ["-e", "--eval", "-p", "--print", "-c", "--check", "-h", "--help", "-v", "--version"];
+  return flags.some((flag) => token === flag
+    || (flag.startsWith("--") && token.startsWith(`${flag}=`))
+    || (flag.length === 2 && !token.startsWith("--") && token.startsWith(flag)));
+}
+
 function commandInvokesEntry(command, entry) {
   const script = commandScript(command);
   const base = commandBase(command);
@@ -782,10 +792,9 @@ function commandInvokesEntry(command, entry) {
     if (entryIndex < 0) return false;
     // 这些 flag 自带内联程序或只做静态检查，出现即判为「未启动」。必须扫描入口**之前的
     // 全部** token：遇到第一个非 `-` token 就停会让 `node --import tsx --check <entry>`
-    // 这类「取值 flag 之后再出现黑名单 flag」的形态漏判。
+    // 这类「取值 flag 之后再出现黑名单 flag」的形态漏判；粘连形式（`--eval=1`、`-e1`）同样覆盖。
     for (let i = 1; i < entryIndex; i += 1) {
-      if (["-e", "--eval", "-p", "--print", "-c", "--check", "-h", "--help", "-v", "--version"]
-        .includes(tokens[i])) return false;
+      if (isNonExecutingFlag(tokens[i])) return false;
     }
     // 新增启动器必须显式加入这张表（内联而非模块级 const：驱动段先于此处初始化执行）。
     return segmentLeadsWith(segment, ["node", "npm", "tsx", "sh", "bash"])

@@ -1265,3 +1265,52 @@ test("inventory verifier rejects NBSP-glued npm run tokens", () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("inventory verifier rejects a glued long non-executing flag before the entry", () => {
+  const root = createFixture();
+  try {
+    // `--eval=1` 与 `--eval 1` 同义：node 执行内联表达式后退出，入口不会运行。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "node --eval=1 src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects a glued short non-executing flag before the entry", () => {
+  const root = createFixture();
+  try {
+    // `-e1` 是 `-e 1` 的粘连短 flag 形式，同样不执行入口。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "node -e1 src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    assertRejected(
+      root,
+      /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier still accepts a value-taking flag before the entry", () => {
+  const root = createFixture();
+  try {
+    // 反向锁：`--import tsx` 是仓内真实写法（带取值的合法 flag），不得被粘连判定误伤。
+    const packageFile = join(root, "apps", "server", "package.json");
+    const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
+    pkg.scripts.relayer = "node --import tsx src/core/economy/relayer.ts";
+    writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
+    const result = runVerifier(root);
+    assert.equal(result.status, 0, outputOf(result));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
