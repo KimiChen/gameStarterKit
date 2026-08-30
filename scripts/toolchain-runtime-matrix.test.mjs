@@ -24,9 +24,15 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
+import { ROOT_TOOL_DEPENDENCIES } from "./verify-toolchain.mjs";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const TOOL_DEPENDENCIES = ["@types/node", "tsx", "typescript"];
+/**
+ * 「闸哪些工具依赖」的唯一真源是 verify-toolchain.mjs 的 ROOT_TOOL_DEPENDENCIES——这里导入，
+ * 不再保留复制件（复制件曾是无守门的第二真源）。刻意保持独立的只有下方的**版本判定逻辑**：
+ * 拿被验对象自己的判定去验它自己就成了同义反复，但「清单」是声明不是判定，必须单源。
+ */
+const TOOL_DEPENDENCIES = ROOT_TOOL_DEPENDENCIES;
 
 const readJson = (relative) => JSON.parse(readFileSync(join(REPO_ROOT, relative), "utf8"));
 
