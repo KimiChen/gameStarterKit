@@ -149,4 +149,6 @@ declare module "*.mjs" {
   export const AGGREGATE_CHAIN_MATRIX_COMMAND: string;
   export const SYNC_MIRROR_MATRIX_COMMAND: string;
   export const TOOLCHAIN_RUNTIME_MATRIX_COMMAND: string;
+  export const CHAIN_SCRIPTS: Record<string, string[]>;
+  export const EXACT_SCRIPTS: Record<string, string>;
 }

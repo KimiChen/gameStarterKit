@@ -4,8 +4,9 @@
  * 链条声明表（TYPECHECK/VERIFY_SYNC/VERIFY_CORE/VERIFY_ALL）与精确脚本命令文本的唯一真源是
  * scripts/verify-toolchain.mjs 的导出常量，本文件一律 import，不留本地复制件——复制件曾
  * 实际漂移（缺 5 条矩阵命令），让「逐条删除必红」用例对 verify:core 段失去判别力（反例红，
- * 但红在缺的 5 条上，而不是红在被删的那条上）。唯一例外是 `CHAIN_LOAD_BEARING` 承重钉：
- * 它是刻意保留、靠双向 `deepEqual` 守门的第二份副本（见其注释），不得改成 import。
+ * 但红在缺的 5 条上，而不是红在被删的那条上）。唯一例外是 `CHAIN_LOAD_BEARING` 与
+ * `EXACT_LOAD_BEARING` 两组承重钉：它们是刻意保留、靠双向 `deepEqual` 守门的第二份副本
+ * （见其注释），不得改成 import。
  */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
@@ -16,38 +17,13 @@ import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import {
   ROOT_TOOL_DEPENDENCIES,
-  TYPECHECK_COMMANDS,
-  VERIFY_SYNC_COMMANDS,
   VERIFY_CORE_COMMANDS,
-  VERIFY_ALL_COMMANDS,
-  CLIENT_TEST_COMMAND,
-  FGUI_TEST_COMMAND,
-  INVENTORY_TEST_COMMAND,
-  LAUNCHER_MATRIX_COMMAND,
-  NPM_REFERENCE_MATRIX_COMMAND,
-  AGGREGATE_CHAIN_MATRIX_COMMAND,
-  SYNC_MIRROR_MATRIX_COMMAND,
-  TOOLCHAIN_RUNTIME_MATRIX_COMMAND,
+  CHAIN_SCRIPTS,
+  EXACT_SCRIPTS,
 } from "../../../scripts/verify-toolchain.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const VERIFY_SCRIPT = join(ROOT, "scripts/verify-toolchain.mjs");
-const CHAIN_SCRIPTS: Record<string, string[]> = {
-  typecheck: TYPECHECK_COMMANDS,
-  "verify:sync": VERIFY_SYNC_COMMANDS,
-  "verify:core": VERIFY_CORE_COMMANDS,
-  "verify:all": VERIFY_ALL_COMMANDS,
-};
-const EXACT_SCRIPTS: Record<string, string> = {
-  "test:client": CLIENT_TEST_COMMAND,
-  "test:fgui": FGUI_TEST_COMMAND,
-  "test:inventory": INVENTORY_TEST_COMMAND,
-  "test:launcher-matrix": LAUNCHER_MATRIX_COMMAND,
-  "test:npm-reference-matrix": NPM_REFERENCE_MATRIX_COMMAND,
-  "test:aggregate-chain-matrix": AGGREGATE_CHAIN_MATRIX_COMMAND,
-  "test:sync-mirror-matrix": SYNC_MIRROR_MATRIX_COMMAND,
-  "test:toolchain-runtime-matrix": TOOLCHAIN_RUNTIME_MATRIX_COMMAND,
-};
 /**
  * 夹具只需给出每个工具依赖的版本号取值；「闸哪些工具」沿用导入的 ROOT_TOOL_DEPENDENCIES。
  * verify-toolchain 新增第 4 个工具时这里取到 undefined，夹具随之缺声明、基线断言立刻红——
@@ -202,6 +178,24 @@ const CHAIN_LOAD_BEARING: Record<string, string[]> = {
     "npm run verify:core",
     "npm --workspace @game/server run test",
   ],
+};
+
+/**
+ * 八条精确脚本文本的承重钉。与 CHAIN_LOAD_BEARING 同型：刻意保留的第二份副本、禁止改成
+ * import——「双侧同改」（常量与 package.json 同步改写，例如收窄 `test:client` 的测试 glob）
+ * 此前实测全绿，无人拦截。精确文本里含测试文件 glob 与路径，是覆盖面的最后防线。
+ */
+const EXACT_LOAD_BEARING: Record<string, string> = {
+  "test:client":
+    "cd apps/server && node --import tsx --test ../client/test/*.test.ts ../../scripts/vendor-lock.test.mjs",
+  "test:fgui":
+    "cd apps/server && node --import tsx --test ../../scripts/fgui-manifest.test.mjs ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/fguiContract.test.ts ../client/test/viewRegistry.test.ts",
+  "test:inventory": "node --test scripts/verify-inventory.test.mjs",
+  "test:launcher-matrix": "node --test scripts/launcher-matrix.test.mjs",
+  "test:npm-reference-matrix": "node --test scripts/npm-reference-matrix.test.mjs",
+  "test:aggregate-chain-matrix": "node --test scripts/aggregate-chain-matrix.test.mjs",
+  "test:sync-mirror-matrix": "node --test scripts/sync-mirror-matrix.test.mjs",
+  "test:toolchain-runtime-matrix": "node --test scripts/toolchain-runtime-matrix.test.mjs",
 };
 
 function missingLoadBearing(chain: string, table: string[]): string[] {
@@ -434,6 +428,12 @@ test("toolchain contract rejects declaration-table shrinkage in the opposite dir
 });
 
 test("toolchain contract pins load-bearing chain members against silent removal", () => {
+  // 钉表与声明表的链 key 集合也必须双向相等：新增链不打钉、或钉表多钉不存在的链，都立即红。
+  assert.deepEqual(
+    Object.keys(CHAIN_SCRIPTS).sort(),
+    Object.keys(CHAIN_LOAD_BEARING).sort(),
+    "新增链必须同步打钉（钉表与声明表的链集合双向相等）",
+  );
   for (const [chain, declared] of Object.entries(CHAIN_SCRIPTS)) {
     assert.deepEqual(
       [...declared].sort(),
@@ -450,6 +450,21 @@ test("toolchain contract pins load-bearing chain members against silent removal"
     dangling,
     [],
     "docs/inventory.json 登记由 verify:core 覆盖、但已不在声明表中的命令",
+  );
+});
+
+test("toolchain contract pins exact script bodies against collusive rewrite", () => {
+  // 精确脚本文本（含测试 glob 与路径）是覆盖面的最后防线：常量与 package.json 双侧同改
+  // 此前实测全绿。双向 deepEqual（Record 结构比较不依赖 key 顺序，双方多/少/改都红）。
+  assert.deepEqual(
+    EXACT_SCRIPTS,
+    EXACT_LOAD_BEARING,
+    "EXACT_SCRIPTS 与承重钉不一致——精确脚本文本双侧同改（或单方改）时本断言必须红",
+  );
+  assert.deepEqual(
+    Object.keys(EXACT_SCRIPTS).sort(),
+    Object.keys(EXACT_LOAD_BEARING).sort(),
+    "新增精确脚本必须同步打钉（key 集合双向相等）",
   );
 });
 

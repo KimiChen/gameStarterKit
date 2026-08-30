@@ -60,13 +60,14 @@ export const AGGREGATE_CHAIN_MATRIX_COMMAND = "node --test scripts/aggregate-cha
 export const SYNC_MIRROR_MATRIX_COMMAND = "node --test scripts/sync-mirror-matrix.test.mjs";
 export const TOOLCHAIN_RUNTIME_MATRIX_COMMAND = "node --test scripts/toolchain-runtime-matrix.test.mjs";
 
-const CHAIN_SCRIPTS = {
+// 两张映射表同样是唯一真源并导出：toolchainContract 若本地重建 key 集合，新增链会静默无钉。
+export const CHAIN_SCRIPTS = {
   typecheck: TYPECHECK_COMMANDS,
   "verify:sync": VERIFY_SYNC_COMMANDS,
   "verify:core": VERIFY_CORE_COMMANDS,
   "verify:all": VERIFY_ALL_COMMANDS,
 };
-const EXACT_SCRIPTS = {
+export const EXACT_SCRIPTS = {
   "test:client": CLIENT_TEST_COMMAND,
   "test:fgui": FGUI_TEST_COMMAND,
   "test:inventory": INVENTORY_TEST_COMMAND,
