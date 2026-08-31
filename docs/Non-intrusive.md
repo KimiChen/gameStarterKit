@@ -16,10 +16,8 @@
 >   [08 · 来源与素材借鉴台账](snakeoff/08-source-and-asset-provenance.md)）。
 >
 > 两个策划案目录只负责各自的产品规则、数值与表现，**通用框架以本文为唯一技术基线**。两类实体的改造共享
-> 生成器、协议身份、View/FGUI 登记与保护路径等基础设施，因此合并在同一份文档、同一条时间线里推进
-> （§9）——⛔ 分开描述会让共享部分再次漂移。
->
-> 本文由 `docs/Non-intrusive-wsrpc.md` 与 `docs/Non-intrusive-room.md` 合并而来，两份原文档已删除。
+> 生成器、协议身份、View/FGUI 登记与保护路径等基础设施，因此放在同一份文档、同一条时间线里推进（§9）
+> ——⛔ 分开描述会让共享部分漂移。
 
 ## 1. 结论与改造口径
 
@@ -194,8 +192,8 @@ Cocos Creator 3.8.8 的 TypeScript 源工程。它适合用于梳理玩法规则
 | **feature** | 已登录 Lobby，页面型 | 挂机、邮件、商店、公会 | `codegen:features` | `apps/client/src/features/<id>/` + shared domain |
 | **gameplay module** | GameRoom 内，实时对局 | ballMove、Snake | `codegen:gameplays` | `apps/shared/gameplays/<id>/` + 三端模块 |
 
-**命名规则（由上表推出，⛔ 不得再漂移）**：两类实体的 id **不得同名**。当前唯一一次冲突是 `idle`——
-它已归既有 gameplay module（`GameplayModeId.Idle`），因此 Lobby 侧的挂机能力一律用准确名
+**命名规则**：两类实体的 id **不得同名**。目前唯一一处需要区分的是 `idle`——
+它归既有 gameplay module（`GameplayModeId.Idle`），因此 Lobby 侧的挂机能力一律用准确名
 `undergroundIdle`。风格统一为 **camelCase**，⛔ 不用 kebab-case。该规则约束：feature id、RPC domain 名与
 路由前缀、`operationGroup`、服务端 endpoint 与 core 目录、shared domain 文件、测试与向量文件名、领域配置
 表 id。
@@ -214,7 +212,7 @@ Cocos Creator 3.8.8 的 TypeScript 源工程。它适合用于梳理玩法规则
 `manifest` / `descriptor` / `catalog` / `registry` 的用词在本文内保持一致即可，⛔ 不做全仓重命名——
 仓内 `GameplayRegistry` / `viewRegistry` / `VIEW_REGISTRY` 已把 registry 用于多种含义。
 
-**唯一的交汇点有四处**，各自只有一个 owner，⛔ 不得出现第二份：
+**唯一的交汇点有五处**，各自只有一个 owner，⛔ 不得出现第二份：
 
 | 共享设施 | 唯一 owner | 另一方的消费方式 |
 | --- | --- | --- |
@@ -222,6 +220,7 @@ Cocos Creator 3.8.8 的 TypeScript 源工程。它适合用于梳理玩法规则
 | Home 菜单数据源 | §7.4 的 menu contribution | gameplay 入口编译成**相同形状**的 contribution |
 | 协议兼容版本与仓库级指纹锁 | §4.8 | 两类实体共用 `GAME_ROOM_PROTOCOL_VERSION` / `LOBBY_PROTOCOL_VERSION`，⛔ 不各自新增版本闸 |
 | Redis Lua 装载与 key 构造 | 仓内既有 `core/infra/redisScripts.ts` + `keys.ts` | 两侧都只**复用**，⛔ 不另建第二套（但 ⛔ 不共用记录结构，见 §6 导语） |
+| 生成器执行顺序 | 本节 | 当 gameplay 的 View/menu contribution 成为最终 View 生成器的输入时，`codegen:gameplays` 必须在 `codegen:features` **之前**运行；两者的 freshness 断言互不依赖顺序。⛔ 不合并成单一 `codegen -- --all` 前端——与仓内 `codegen:fgui` / `codegen:http` / `codegen:state` 三条并存、逐条登记的惯例冲突 |
 
 下面是各自的术语定义：
 
@@ -281,10 +280,6 @@ Cocos Creator 3.8.8 的 TypeScript 源工程。它适合用于梳理玩法规则
   结论；实施时以 `docs/inventory.json` 的 `routeOfTruth.corePlan` 为准，而不是本文写死的文件名；
 - 不为单个玩法提前抽象通用 MySQL/outbox/跨服编排，也不提前发明万能 Schema DSL、跨运行时巨型 plugin
   或统一所有网络同步模型。
-
-> ⚠ 原 feature 侧方案曾写「不在本轮重写 GameRoom mode/C2S 消息架构，实时 Room 玩法仍遵守现有独立动线」。
-> 合并后该条**已失效**：§4.5 与 §6.1–§6.3 正是这项重写，且它被排在 §9 阶段 1–2。保留此注是为了让读过旧
-> 文档的人知道口径变了。
 
 **gameplay module 侧**——本方案另外不承诺：
 
@@ -356,7 +351,7 @@ shared 是双端唯一契约真源，也是两类实体唯一的交汇点。本�
 
 ### 4.1 RPC 领域自描述
 
-> **命名裁定（已定，⛔ 不留给实施者）**：仓内已有 Room 玩法 `idle`——它是一个 **gameplay module**
+> **命名边界**：仓内已有 Room 玩法 `idle`——它是一个 **gameplay module**
 > （`GameplayModeId.Idle = "idle"`、`apps/server/src/rooms/modes/IdleGameMode.ts`、
 > `apps/client/src/logic/rooms/idle/IdleGameplay.ts`、`c2s.idle.pulse`、`IdleRoomState`）。
 > 本文的 Lobby 能力是一个 **feature**，两者按 §3.1 是**不同实体**，⛔ 不得同名。
@@ -795,7 +790,7 @@ load: () => import("../features/undergroundIdle/index")
 
 ### 5.4 生成物清单与 gameplay 专有约束
 
-新增拟议 workspace 脚本 `npm --workspace @game/server run codegen:gameplays`（命令形态的裁定见本节末），
+新增 workspace 脚本 `npm --workspace @game/server run codegen:gameplays`（命令形态见本节末），
 生成：
 
 ```text
@@ -808,9 +803,9 @@ apps/client/src/gameplay/catalog.generated.ts
 apps/client/src/view/view-catalog.generated.ts
 ```
 
-> ⚠ 上表最后一行 `apps/client/src/view/view-catalog.generated.ts` 按 §4.1 的裁定改为：
-> `codegen:gameplays` **只产出 gameplay 的 View contribution（中间产物）**，由最终 View 生成器汇总；
-> ⛔ 不直接写客户端 View 产物。客户端 View catalog / FGUI contract 全仓只有一个 writer，见 §4.1 表 1。
+> ⚠ 上表最后一行 `apps/client/src/view/view-catalog.generated.ts` 是**中间产物**：
+> `codegen:gameplays` 只产出 gameplay 的 View contribution，由最终 View 生成器汇总，
+> ⛔ 不直接写客户端 View 产物。客户端 View catalog / FGUI contract 全仓只有一个 writer，见 §3.1 交汇点表。
 
 客户端和服务端 catalog 都应是显式、排序稳定的静态 import。客户端具体 Cocos/FairyGUI presentation 仍由
 玩法 entry 内部使用字面量动态 import，避免进入普通脚本静态依赖图。不要使用副作用式自注册、`fs` 运行时扫描
@@ -842,7 +837,7 @@ apps/client/src/view/view-catalog.generated.ts
   ⛔ 禁显式赋 `undefined`）、`verbatimModuleSyntax`（类型导入一律 `import type`）、`isolatedModules`
   （类型再导出用 `export type`）；相对导入不带扩展名。
 
-**生成物路径与协议字节锁的关系（已定：移出协议目录）**：
+**生成物路径与协议字节锁的关系**：per-mode 生成物移出协议目录。
 
 per-mode 生成物落到 `apps/shared/src/gameplays/generated/**`（wire catalog 与 state descriptor 一起搬），
 `apps/shared/src/protocol/` 只保留稳定 join envelope 与 core wire。**因此新增或修改玩法不会改变仓库级协议
@@ -854,11 +849,11 @@ per-mode 生成物落到 `apps/shared/src/gameplays/generated/**`（wire catalog
 > 语义兼容（§4.8），用它来换玩法可见性性价比不高——玩法契约的可见性已由 per-mode digest + `modeVersion`
 > 承担。
 >
-> ⚠ 该裁定的前提是 `protocol-fingerprint.mjs` 覆盖的是 `apps/shared/src/protocol/**`。若实施时发现它的覆盖
+> ⚠ 该结论的前提是 `protocol-fingerprint.mjs` 覆盖的是 `apps/shared/src/protocol/**`。若实施时发现它的覆盖
 > 面更宽（例如整个 `apps/shared/src`），则移出目录并不能免除重钉，必须回到被否决方案并按它补 §11.2 与 §10.6
 > 的重钉步骤。**实施前先跑一次确认覆盖面。**
 
-**命令形态（已定：不新增根命令）**：
+**命令形态：不新增根命令。**
 
 沿用仓内 `codegen:state` / `codegen:http` 的先例：
 
@@ -930,8 +925,8 @@ property、spread 或顶层副作用形态直接拒绝。validator 函数本身�
 
 **生成器必须有确定的命令名**（全文其余位置一律引用它，⛔ 不再写“feature codegen”这类无法执行的代称）。
 
-**命令形态已定：不新增根命令**，与 §4.3 的 gameplay 生成器
-同形（全文同一裁定，见 §3.1 交汇点表）：
+**命令形态：不新增根命令**，与 §4.3 的 gameplay 生成器
+同形（见 §3.1 交汇点表）：
 
 - **writer** 是 workspace 脚本 `codegen:features`；
 - **只读闸不是独立命令**，而是 freshness 测试断言，随 `verify:all` 生效；
@@ -1209,14 +1204,14 @@ starting 标记；**Ready 状态是否保留必须显式规定**——本文取�
 lock 成功前不得发生客户端可见的 mode state mutation；需要昂贵预计算时只能增加无副作用、结果可丢弃的
 `prepare`，不能冒充 initialize。
 
-**Starting 必须对客户端可见（已定：Ready 在 Start 在途期间被拒）**：
+**Starting 必须对客户端可见，且 Ready 在 Start 在途期间被拒。**
 
 §4.6 的 `OwnerReady` fragment 增加低频控制字段 `starting: boolean`。它在第一个 await 之前置位，rollback 或
 发布 Playing 时清除；置位期间 `Ready` / `Unready` 的 core handler 一律以 §6.5 的“Start 在途”稳定错误拒绝，
 客户端据此禁用按钮。因此 Start 在途只需对 join / 最终 leave / drop / dispose 做重验，⛔ 不需要观察
 readyRevision。
 
-产品语义随之确定：**成员点下 Ready 即为承诺，房主按下 Start 之后成员无权反悔。** 掉线仍然会使开局失效
+产品语义因此是：**成员点下 Ready 即为承诺，房主按下 Start 之后成员无权反悔。** 掉线仍然会使开局失效
 （那不是意图，是事实），但主动 Unready 不会。
 
 > 被否决的替代方案：保留“Unready 使 Start 失效”，即成员可否决开局。否决理由是它必须额外定义重试上限与
@@ -1346,10 +1341,10 @@ GameRoom auth/admission。
    `PX = codeCooldownMs`，⛔ **不是 `DEL`**。隔离期内 `resolve` 一律返回与“码不存在”完全相同的折叠错误；
    分配器的 `SET NX` 因 key 仍存在而不会重用该码；隔离期满由 TTL 自然回收。进程崩溃由短 TTL 回收，
    崩溃场景没有隔离期是刻意的取舍（崩溃后不存在仍持旧码的客户端会话可被误导）。
-   > **已定取 tombstone**：它与第 2 条的 `SET NX` 分配器天然兼容、不引入新依赖，且 Start 后码立即可回收、
+   > **本文取 tombstone**：它与第 2 条的 `SET NX` 分配器天然兼容、不引入新依赖，且 Start 后码立即可回收、
    > 码池压力最小。
    > 被否决的替代方案：「码持有到 dispose 为止（Start 后只置 inactive），dispose 之后再冷却」。它的唯一优势
-   > 是能让 Playing 期间的 resolve 返回准确的“房已开始”；本方案接受失去这一区分（见 §6.8 的连带裁定），
+   > 是能让 Playing 期间的 resolve 返回准确的“房已开始”；本方案接受失去这一区分（见 §6.8），
    > 换取实现简单性与码回收速度。
 8. Redis 故障 fail-closed，不创建一个没有可解析邀请码的“半成功私房”；**创建成功之后**才发生的故障按第 5 条
    的 `unknown → lost` 收敛，⛔ 不允许房间在无法证明持码的情况下继续对外展示邀请码。
@@ -1438,7 +1433,7 @@ listing 首次持久化之前**调用 `setPrivate(true)`；创建者 `onJoin` �
     因此 resolve 能命中的“已开局”窗口只剩 start fence 已置位、Playing 尚未发布的那一小段；该段返回可重试的
     “Start 在途”（§6.5），客户端退避后重试即可得到确定结论。
 
-  > ⚠ **连带裁定**：`房已开始` **不再是保留类**，它在 tombstone 方案下已不可达——Playing 之后码已进隔离期，
+  > ⚠ **连带影响**：`房已开始` **不属于**保留类，它在 tombstone 方案下已不可达——Playing 之后码已进隔离期，
   > resolve 只会得到折叠类的 `ROOM_CODE_UNAVAILABLE`。这是 §6.7 取 tombstone 的**已知代价**：好友在对局
   > 进行中输码，只能看到“码不可用”，分不清是输错还是已开局。若产品认为该区分必要，必须回到 §6.7 的
   > 「持有到 dispose」方案，⛔ 不能只在这里单独恢复一个不可达的错误码。
@@ -2024,7 +2019,7 @@ manifest 给出精确源码路径，`fgui-manifest.mjs`、view registry test 和
 
 - codegen 生成不可变、静态 import 的 View catalog；`ViewMgr` 从注入的只读 catalog 查询 `ViewMeta`，不再读取
   手写的 `VIEW_REGISTRY` 全集。**writer 只有一个**：最终产物固定为 §7.5 的
-  `apps/client/src/generated/views.generated.ts` + `fguiContracts.generated.ts`（见 §4.1 表 1），
+  `apps/client/src/generated/views.generated.ts` + `fguiContracts.generated.ts`（见 §3.1 交汇点表），
   `codegen:gameplays` 只产出 gameplay 的 View contribution 中间产物。每条 View metadata 带 `owner` 字段
   （feature id 或 gameplay id），生成期检查同一 View 只被一个 manifest 拥有；
 - View metadata 的**手写唯一真源**沿用 §6.1 的 `*.view.json` sidecar 格式与字段集（layer / fullscreen /
@@ -2134,8 +2129,7 @@ gameplay generation」双守卫并写清两者失效的先后；`dispatchInput` 
 
 ### 7.8 宿主前后台与本地时钟
 
-实时玩法在切后台 / 回前台时的行为，此前两份原文档都未认领（feature 侧的 §3.3 明确不覆盖实时 Room），
-是一个空洞。合并后固定如下：
+实时玩法在切后台 / 回前台时的行为容易被两侧都当成对方的职责而落空，因此在此固定：
 
 1. `hide` 时**暂停本地 tick 与预测 / 插值**，⛔ 不关闭 room、⛔ 不把已发出的输入判失败；
 2. `hide` 期间禁止产生新的输入意图，输入 `seq` ⛔ 不因暂停而跳变；
@@ -2185,7 +2179,7 @@ provenance 白名单里单列说明它是人工项。⛔ 不建议把它改成 g
 | `apps/shared/src/protocol/http.ts`、`apps/server/src/http/misc/version.ts`、`healthz.ts` | `/version` 和健康检查仍引用单一全局协议版本（客户端**没有**启动探测在读它） | 同时报告 Lobby 与 GameRoom 两类身份；per-mode 兼容在 gameplay catalog/join 中校验 |
 | `scripts/protocol-fingerprint.mjs`、`apps/client/test/protocolFingerprint.test.ts` | 指纹脚本从 `rooms.ts` 读取唯一版本并覆盖整个 protocol；当前**无 argv 解析**，运行即重钉 | 口径以 §4.8 为准（互斥 `--check/--write`、**保留单一全局字节锁**），⛔ 两文档不得对同一脚本给出不同拆法；per-mode digest 归 `codegen:gameplays`；补 Lobby/Game join 和版本矩阵测试 |
 | `apps/server/package.json`、`apps/server/tools/gameplay-codegen/**`、`apps/server/test/` | 尚无 gameplay 生成器与 freshness 守门 | 新增 workspace 脚本 `codegen:gameplays` 与 freshness 断言（⛔ 不新增根命令，见 §5.4）；覆盖 digest/version、三端集合与删除保护 |
-| `apps/shared/src/protocol/lobbyRpc/**` | 新增 `room.prepareCreate/resolve` 在当前架构仍会触碰中央 RPC 全集 | 若先实施 本文，通过 domain 文件 + codegen 接入；否则本次显式增加两条 core route 契约 |
+| `apps/shared/src/protocol/lobbyRpc/**` | 新增 `room.prepareCreate/resolve` 在当前架构会触碰中央 RPC 全集 | 按 §9 的顺序，RPC descriptor 与 domain codegen 已在阶段 3 落地，这两条路由只需新增 `domains/room.ts`，⛔ 不触碰中央全集 |
 | 根 `README.md`、`AGENTS.md` / `CLAUDE.md`（两者在仓库根字节等同）、`docs/OVERVIEW.md`、`SERVER.md`、`CLIENT.md` 与相关 README | 当前铁律精确写死单一 state manifest/生成路径和旧扩展动线 | 框架落地时同步更新真源、生成物、禁手改范围和新玩法动线；完成证据最后回写**当前计划文件**（以 `docs/inventory.json` 的 `routeOfTruth.corePlan` 为准），⛔ 不向已降级的历史归档回写 |
 
 
@@ -2266,7 +2260,7 @@ apps/art/fairygui/assets/<PrivateRoomLobby-package>/**
 - `InviteCodeLease.ts` 与 `core/infra/lease.ts` 的 MySQL `singleton_lease`（fence_token）**无关，勿混用**；
   必要时改名为 `InviteCodeReservation.ts` 以免同词不同义。
 
-`apps/server/tools/gameplay-codegen/**/*.ts` 按 §5.4 的裁定，**由 `apps/server/test/` 下的 freshness 测试
+`apps/server/tools/gameplay-codegen/**/*.ts` 按 §5.4，**由 `apps/server/test/` 下的 freshness 测试
 值导入**而被 tsc 传递纳入，⛔ 不允许长期游离在类型检查之外。
 
 
@@ -2296,7 +2290,7 @@ provenance：真源 = 该规则文件；writer = 人工评审并在提交中显�
 | 依赖 | 为什么 |
 | --- | --- |
 | Lobby RPC descriptor + 幂等 v2 **先于** private-room（§6.6–§6.9） | 否则 `room.prepareCreate` / `room.resolve` 要显式改 `lobbyRpc/envelope.ts` 与 `core/errors.ts`，多付一笔中央侵入 |
-| 协议身份拆分（§4.8）**先于** private-room | 阶段 12 要 bump `GAME_ROOM_PROTOCOL_VERSION`，而该常量由协议身份拆分建立。⚠ 这条依赖容易被漏看 |
+| 协议身份拆分（§4.8）**先于** private-room | 阶段 8 要 bump `GAME_ROOM_PROTOCOL_VERSION`，而该常量由协议身份拆分建立 |
 | AppRuntime / Navigation / Home / View 生成 **先于** gameplay 客户端 module | 否则 gameplay 侧要先建一套最小 contribution 与 `pages.ts` 临时接线，随后被二次改写 |
 | 拆 ballMove + gameplay wire/state（阶段 1–2）**与 Lobby 侧无耦合** | 只动 GameRoom、shared gameplay 契约与 gameplay 生成器 |
 
@@ -2324,10 +2318,8 @@ token、catch-all dispatcher 与分片 state 是 GameRoom 地基，越早建立�
 | 10 | 两个玩法的实现 | 高——**唯一依赖真机与真实多客户端联调的阶段** | 真机、2–4 个真实客户端、外部 WebPlatform 完整登录链 | 可回退 |
 | 11 | 切换默认入口与清理决策 | 中——改变默认可见入口，属 §12.3 的显式评审项 | 无 | 可回退 |
 
-> **默认入口归属已拍板（2026-08-31，记录于 plan-v3 §27.3）：snakeoff 优先替代 ballMove 入口**，
-> undergroundIdle 的迁移入口路线次之。该决定写在已降级的归档里、当前计划文件未承接，因此在此登记，
-> ⛔ 不让批准来源再次只存在于会话指令。**注意它只决定阶段 11 的默认入口取谁，⛔ 不改变上面的实施顺序**
-> ——两个玩法都要等框架（阶段 0–9）完成后才开始实现。
+> **默认入口归属**：阶段 11 的默认 Home 入口取 snakeoff，undergroundIdle 的入口路线次之。
+> 这只决定阶段 11 取谁，**⛔ 不改变上面的实施顺序**——两个玩法都要等框架（阶段 0–9）完成后才开始实现。
 
 ### 阶段 0：冻结口径与基线
 
@@ -2499,7 +2491,7 @@ undergroundIdle 在本阶段并行实现：它只新增 feature 文件，不再�
 
 ### 阶段 11：切换默认入口与清理决策
 
-- 默认 Home contribution 指向 Snake 私房 Demo（该归属已于 2026-08-31 拍板，见 §4.1 表 2 下的登记）；
+- 默认 Home contribution 指向 Snake 私房 Demo（归属见 §9.2）；
 - ballMove 仍作为**已登记 GameMode** 保留（供回归与 fixture 遍历），但**不贡献 Home menu contribution**；
   “隐藏回归 mode”指的正是这个状态，⛔ 不是菜单里的隐藏条目。只有确需「已登记但不可见的菜单条目」时，才在
   §7.4 的字段清单里补显式 `visibility` 字段——那不改变 §12.3「改变默认启用 feature 仍需显式评审」；
@@ -2679,9 +2671,9 @@ npm --workspace @game/server run test:int  # 需先 npm --workspace @game/server
 > 所以那一步 Creator 不能省。
 > `verify:all` 已覆盖上述子链，单列它们只为定位失败，⛔ 不必在回归记录里逐条重复。
 > gameplay 生成物的 freshness 断言随 `npm --workspace @game/server run test` 进入 `verify:all`，
-> ⛔ 不新增独立根命令、也不单列（命令形态的裁定见 §5.4）。
-> 若 gameplay 的 View/menu contribution 是最终 View 生成器的输入，则 `codegen:gameplays` 必须在 feature
-> codegen **之前**运行（§4.1 表 1「生成器执行顺序」）。
+> ⛔ 不新增独立根命令、也不单列（命令形态见 §5.4）。
+> 若 gameplay 的 View/menu contribution 是最终 View 生成器的输入，则 `codegen:gameplays` 必须在
+> `codegen:features` **之前**运行（§3.1 交汇点表）。
 
 涉及邀请码 Redis lease 时还要启动本地 stack 并运行相应 `test:int` 和故障矩阵。完整登录链依赖匹配的外部
 WebPlatform；Creator/真机预览必须单列，不能由 Node 无头测试冒充。
@@ -2977,10 +2969,8 @@ apps/client/src/app/**
 5. 首期是否需要可信战绩/evidence；若不需要，应显式声明 `evidence: none`。
 6. 旧构建档案中哪些代码、音频、图片和动画已获授权复用；未确认资源不得进入本仓
    （台账见 [snakeoff/08](snakeoff/08-source-and-asset-provenance.md)）。
-> ✅ 原第 7 条「FGUI 资源层是否一并改名」**已裁定为改**，不再是待决项：包 `Idle` → `UndergroundIdle`、
-> 组件 `IdleMain` / `IdleSceneGenerated` → `UndergroundIdle*`、stableKey `idle.*` → `undergroundIdle.*`、
-> 资源目录 `assets/Idle/` → `assets/UndergroundIdle/`、`codegen:fgui` 的包参数一并更新。因资源尚未开始
-> 制作，本次改名不产生返工；⛔ 后续不得再退回 `idle` 形态。
+
+命名（含 FGUI 包、组件、stableKey 与资源目录）不在此列——它由 §3.1 的命名规则直接确定，⛔ 不是产品可选项。
 
 **实施优先级**——§9 的阶段顺序已由依赖方向定死，下面是各项工作的**价值排序**，用于在阶段内部取舍：
 
