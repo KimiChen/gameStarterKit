@@ -40,6 +40,9 @@ import {
   type MatchEvidence,
 } from "../../src/core/match/matchConsumer";
 import {
+  BALL_MOVE_RULESET_ID,
+  BALL_MOVE_RULESET_VERSION,
+  MATCH_EVIDENCE_MAX_ACCEPTED_INPUTS,
   validateMatchEvidenceV3,
   type MatchEvidenceV3,
 } from "../../src/core/match/matchEvidence";
@@ -361,6 +364,229 @@ test("v3 producer 自检失败：不碰三条来源流，但必须留下 sourceK
       );
     }
   }
+});
+
+/**
+ * 自检③（payload 超预算，matchConsumer.ts 的 `MATCH_V3_MAX_PAYLOAD_BYTES` 守卫）是**防御性兜底**：
+ * validate 的逐字段上界把任何合法证据钉死在 ~13.6MiB（下面实测），够不到 24MiB 预算——今天不存在
+ * 能自然触发它的诚实数据。但守卫一旦删掉、将来任一上界放宽都会静默失守，所以本用例用
+ * `Buffer.byteLength` 的**定点桩**（只对这条证据的 canonical payload 谎报尺寸）驱动分支。
+ * 变异锚点：删掉守卫的 `if` 本用例必红（证据会正常 XADD 成功）；删掉 quarantine XADD 同样必红。
+ */
+test("v3 producer 自检③：payload 超预算 → self-check + producer quarantine，三条来源流不动", async () => {
+  const matchId = `m_v3_producer_oversized_${Date.now().toString(36)}`;
+  const evidence = await makeV3Evidence(matchId, 26);
+  // 逆序顶层键：validate 对键序不敏感，但 rawFields（JSON.stringify(原始输入)）因此与
+  // canonical payload 不同串——定点桩按内容精确匹配后者，绝不会误伤 quarantine XADD 的
+  // ioredis 参数编码（它也走 Buffer.byteLength，误匹配会把 RESP 帧写坏）。
+  const reversed = Object.fromEntries(Object.entries(evidence).reverse()) as unknown as MatchEvidenceV3;
+  const expectedPayload = JSON.stringify(validateMatchEvidenceV3(evidence));
+  assert.notEqual(JSON.stringify(reversed), expectedPayload, "rawFields 必须与 canonical payload 可区分");
+
+  // 夹具有效性①：同一条（逆序键）证据不插桩必须 XADD 成功——下面的失败只能是超预算守卫造成的。
+  const control = await emitMatchEvidence(reversed);
+  assert.ok(control.ok, "对照：未插桩的同一条证据必须 XADD 成功");
+  await stream(K_STREAM_MATCH_V3).xdel(K_STREAM_MATCH_V3, control.entryId);
+
+  // 夹具有效性②：实测「能通过 validate 的最胖证据」确实够不到预算（这就是必须插桩的原因）。
+  // 上界若被放宽到天然可达，本断言先红——届时应改写为不插桩的真实超预算用例。
+  const esc = (n: number) => "\u0001".repeat(n); // 每 UTF-16 unit 序列化成 \uXXXX 六字节，制造最大转义
+  const maxTick = Number.MAX_SAFE_INTEGER;
+  const maxName = esc(128);
+  const maxSidA = esc(64);
+  const maxSidB = `${esc(63)}\u0002`;
+  const maxRoster = [
+    { sessionId: maxSidA, userId: esc(128), name: maxName },
+    { sessionId: maxSidB, userId: null, name: maxName },
+  ];
+  const maxClocks = (tick: number) =>
+    Array.from({ length: 256 }, (_, index) => ({ skillId: index + 1, atTick: tick }));
+  const maxPlayer = (sessionId: string, tick: number) => ({
+    sessionId, name: maxName, x: 1, y: 1, hp: 1, maxHp: 1, alive: true,
+    dirX: -0.111_111_111_111_111_11, dirY: 0.111_111_111_111_111_11,
+    lastCastTick: maxClocks(tick), level: 1000,
+    motionAnchorX: 1, motionAnchorY: 1, motionAnchorTick: tick,
+  });
+  const maxEvents: MatchEvidenceV3["events"] = Array.from(
+    { length: MATCH_EVIDENCE_MAX_ACCEPTED_INPUTS },
+    (): MatchEvidenceV3["events"][number] => ({
+      type: "castSkill", sessionId: maxSidA, skillId: 65_535, targetId: esc(64), acceptedTick: maxTick,
+    }),
+  );
+  maxEvents.push({ type: "leave", sessionId: maxSidB, acceptedTick: maxTick });
+  const maxMatchId = `m_${"z".repeat(37)}`;
+  const maximal = validateMatchEvidenceV3({
+    schemaVersion: 3, matchId: maxMatchId, sId: 65_535, mode: 0,
+    ruleset: { id: BALL_MOVE_RULESET_ID, version: BALL_MOVE_RULESET_VERSION },
+    seed: 0xffff_ffff, fixedStepMs: 5, mapIndex: 0, loadout: null,
+    initialRoster: maxRoster,
+    initialState: {
+      tick: 0, phase: GamePhase.Playing, matchId: maxMatchId,
+      players: [maxPlayer(maxSidA, 0), maxPlayer(maxSidB, 0)],
+    },
+    events: maxEvents,
+    finalTick: maxTick,
+    elapsedMs: maxTick * 5,
+    finalState: {
+      tick: maxTick, phase: GamePhase.Settle, matchId: maxMatchId,
+      players: [maxPlayer(maxSidA, maxTick), maxPlayer(maxSidB, maxTick)],
+    },
+    participants: [
+      { sessionId: maxSidA, userId: esc(128), name: maxName, place: 1, round: 0, elapsedMs: maxTick * 5, survived: true },
+      { sessionId: maxSidB, userId: null, name: maxName, place: 2, round: 0, elapsedMs: maxTick * 5, survived: false },
+    ],
+  });
+  const maxBytes = Buffer.byteLength(JSON.stringify(maximal), "utf8");
+  assert.ok(
+    maxBytes < MATCH_V3_MAX_PAYLOAD_BYTES,
+    `合法证据尺寸上界 ${maxBytes}B 必须仍低于预算 ${MATCH_V3_MAX_PAYLOAD_BYTES}B——否则自检③应改为不插桩直测`,
+  );
+
+  const before = new Map<string, number>();
+  for (const key of MATCH_STREAM_KEYS) before.set(key, await stream(key).xlen(key));
+  const quarantineBefore = await stream(K_STREAM_MATCH_QUARANTINE).xlen(K_STREAM_MATCH_QUARANTINE);
+  const producerEntry = async () => {
+    const entries = await stream(K_STREAM_MATCH_QUARANTINE).xrange(
+      K_STREAM_MATCH_QUARANTINE, "-", "+",
+    ) as [string, string[]][];
+    return entries.map(([id, fields]) => ({ id, fields: Object.fromEntries(
+      Array.from({ length: fields.length / 2 }, (_, index) => fields.slice(index * 2, index * 2 + 2)),
+    ) })).filter((entry) => entry.fields.matchId === matchId);
+  };
+
+  const errors: string[] = [];
+  const originalError = console.error;
+  const originalByteLength = Buffer.byteLength;
+  console.error = (...args: unknown[]) => { errors.push(args.map(String).join(" ")); };
+  // 桩只对「守卫那一调用」生效：生产代码是 Buffer.byteLength(payload, "utf8") 双参调用，
+  // 而 ioredis 的参数编码全部是单参调用（Command.js）——桩永不向 RESP 编码撒谎。即使守卫
+  // 被删（变异推演），XADD 也会正常成功，用例以断言失败转红，而不是连接挂起。
+  Buffer.byteLength = ((value: unknown, ...rest: unknown[]) =>
+    value === expectedPayload && rest[0] === "utf8"
+      ? MATCH_V3_MAX_PAYLOAD_BYTES + 1
+      : (originalByteLength as (...args: unknown[]) => number)(value, ...rest)) as typeof Buffer.byteLength;
+  try {
+    const result = await emitMatchEvidence(reversed);
+    assert.deepEqual(
+      result,
+      { ok: false, kind: "self-check", reason: "V3_PAYLOAD_PAYLOAD_SIZE" },
+      "超预算必须归类 self-check；码 = V3_PAYLOAD_ 前缀 + PAYLOAD_SIZE（与消费侧裸 V3_PAYLOAD_SIZE 同码族）",
+    );
+  } finally {
+    Buffer.byteLength = originalByteLength;
+    console.error = originalError;
+  }
+
+  try {
+    assert.ok(
+      errors.some((line) => line.includes("producer 自检失败") && line.includes("V3_PAYLOAD_PAYLOAD_SIZE")),
+      "自检③失败必须留下带码的 console.error 痕迹（⛔ 不得整个吞掉日志）",
+    );
+    for (const key of MATCH_STREAM_KEYS) {
+      assert.equal(await stream(key).xlen(key), before.get(key), `${key} 不得因自检③失败而变动`);
+    }
+    assert.equal(
+      await stream(K_STREAM_MATCH_QUARANTINE).xlen(K_STREAM_MATCH_QUARANTINE),
+      quarantineBefore + 1,
+      "自检③失败必须写一条 producer quarantine——删掉那段 XADD 时本断言转红",
+    );
+    const mine = await producerEntry();
+    assert.equal(mine.length, 1, "quarantine 痕迹必须能按 matchId 找回");
+    assert.equal(mine[0].fields.sourceKind, "producer");
+    assert.equal(mine[0].fields.reason, "V3_PAYLOAD_PAYLOAD_SIZE");
+    assert.equal(JSON.parse(String(mine[0].fields.rawFields)).matchId, matchId,
+      "rawFields 必须保全可供人工核查的原始证据");
+  } finally {
+    // quarantine 永不自动裁剪，本用例自己清理，⛔ 不得泄漏条目。
+    const leftover = await producerEntry();
+    if (leftover.length > 0) {
+      await stream(K_STREAM_MATCH_QUARANTINE).xdel(
+        K_STREAM_MATCH_QUARANTINE, ...leftover.map((entry) => entry.id),
+      );
+    }
+  }
+});
+
+/**
+ * XADD 真实失败（transport）注入：同一 Redis 实例、同一条证据，只把 `stream:match:v3` 一个 key 的
+ * xadd 打成拒绝。断言三点：① emitMatchEvidence 归 `transport/V3_XADD_FAILED`；② 真实 GameRoom
+ * 调用方（settle 的 `.then`，默认 evidenceEmitter 即 emitMatchEvidence）**不告警**——只有
+ * self-check 才告警；③ quarantine 零新增（transport 不是内部一致性缺陷，⛔ 不得留 producer 条目）。
+ */
+test("v3 XADD 失败：归 transport、真实调用方不告警、quarantine 零新增", async () => {
+  const directMatchId = `m_v3_xadd_direct_${Date.now().toString(36)}`;
+  const roomMatchId = `m_v3_xadd_room_${Date.now().toString(36)}`;
+  const evidence = await makeV3Evidence(directMatchId, 27);
+
+  // 夹具有效性：同一 Redis、同一条证据，未注入故障时必须 XADD 成功。
+  const control = await emitMatchEvidence(evidence);
+  assert.ok(control.ok, "对照：未注入故障时 XADD 必须成功");
+  await stream(K_STREAM_MATCH_V3).xdel(K_STREAM_MATCH_V3, control.entryId);
+
+  const before = new Map<string, number>();
+  for (const key of MATCH_STREAM_KEYS) before.set(key, await stream(key).xlen(key));
+  const quarantineBefore = await stream(K_STREAM_MATCH_QUARANTINE).xlen(K_STREAM_MATCH_QUARANTINE);
+
+  const client = clientForKey(K_STREAM_MATCH_V3);
+  const injected = new Error("injected XADD outage");
+  const ownDescriptor = Object.getOwnPropertyDescriptor(client, "xadd");
+  const originalXadd = client.xadd;
+  const errors: string[] = [];
+  const originalError = console.error;
+  let room: GameRoom | null = null;
+  console.error = (...args: unknown[]) => { errors.push(args.map(String).join(" ")); };
+  (client as unknown as { xadd: unknown }).xadd = (...args: unknown[]) =>
+    args[0] === K_STREAM_MATCH_V3
+      ? Promise.reject(injected)
+      : (originalXadd as (...a: unknown[]) => unknown).apply(client, args);
+  try {
+    // ① 直调：真实 validate+replay 通过、XADD 被拒 ⇒ transport，⛔ 不是 self-check。
+    const result = await emitMatchEvidence(evidence);
+    assert.deepEqual(
+      result,
+      { ok: false, kind: "transport", reason: "V3_XADD_FAILED" },
+      "XADD 失败必须归类 transport——它是 Redis 可用性事故，不是 GameRoom 内部一致性缺陷",
+    );
+
+    // ② 走真实调用方：默认 evidenceEmitter 的 GameRoom 完整收局。
+    room = new GameRoom({ seed: 0xabcd_ef01, matchId: () => roomMatchId });
+    (room as unknown as { sId: number }).sId = 33;
+    (room as unknown as { lock: () => Promise<void> }).lock = async () => undefined;
+    const roomClient = (sessionId: string, userId: string) => ({
+      sessionId,
+      auth: { userId, sId: 33, mode: GameplayModeId.BallMove },
+      send() {},
+    });
+    const first = roomClient("sA", "u_xadd_a");
+    const second = roomClient("sB", "u_xadd_b");
+    await room.onJoin(first as never, {});
+    await room.onJoin(second as never, {});
+    await room.onLeave(second as never, 4000);
+    assert.equal(room.state.phase, GamePhase.Settle, "构造前提：本用例必须真的走到收局");
+    await sleep(50); // 等 emitMatchEvidence 的 promise 链落地
+  } finally {
+    if (ownDescriptor) { Object.defineProperty(client, "xadd", ownDescriptor); }
+    else { delete (client as unknown as Record<string, unknown>).xadd; }
+    console.error = originalError;
+    if (room) { await room.onDispose(); }
+  }
+
+  assert.ok(
+    errors.some((line) => line.includes("v3 证据链 XADD 失败") && line.includes(roomMatchId)),
+    "调用方路径必须真的发生了 XADD 失败（带 matchId 的 transport 日志）",
+  );
+  assert.ok(
+    !errors.some((line) => line.includes("收局证据自检失败")),
+    "⛔ transport 不得触发 GameRoom 的自检告警——只有 self-check 才告警（GameRoom settle 的 `.then`）",
+  );
+  for (const key of MATCH_STREAM_KEYS) {
+    assert.equal(await stream(key).xlen(key), before.get(key), `${key} 不得有残留条目`);
+  }
+  assert.equal(
+    await stream(K_STREAM_MATCH_QUARANTINE).xlen(K_STREAM_MATCH_QUARANTINE),
+    quarantineBefore,
+    "transport 失败不得写 quarantine——它不是内部一致性缺陷",
+  );
 });
 
 test("historical raw v2 fixture preserves the frozen v2 payload contract", async () => {
