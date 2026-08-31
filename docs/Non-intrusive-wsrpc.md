@@ -4,9 +4,13 @@
 >
 > 本文说明为了让《Underground Idle》以及后续类似 Lobby 玩法尽量以“只新增 feature 文件”的方式接入，
 > 框架本身需要进行的一次性改造。它不表示这些能力已经交付，也不改变
-> [当前实施状态与验收真相](../plan-v3.md)。现有架构与约束仍分别以
+> [当前开放问题、实施状态与验收证据的唯一真相](../plan-v4.md)；plan-v3.md / plan-v2.md 为历史归档。
+> 现有架构与约束仍分别以
 > [技术总览](OVERVIEW.md)、[服务端开发](SERVER.md)、[客户端开发](CLIENT.md) 为准；
 > 本文的直接需求来源是 [《Underground Idle》策划案](undergroundIdle/README.md)。
+>
+> 实时 Room 玩法方向的补充方案见 [Non-intrusive-room.md](Non-intrusive-room.md)；两份方案共享的生成器基础
+> 设施 owner 与落地顺序以该文 **§4.1** 为准，本文 ⛔ 不引入第二真源。
 
 ## 1. 结论与改造口径
 
@@ -57,7 +61,7 @@ C2S 消息、公共 FGUI 基础包改造或全局数据模型变化；这些仍�
 | `apps/client/src/view/viewRegistry.ts` | 每个 View 手工登记动态 import 和元数据 | View 文件与中央 registry 需要同步修改 |
 | `apps/client/src/view/fguiContracts.ts` | 手工维护契约常量和全集 | XML、View AUTO、contract 和 registry 存在多个同步点 |
 | `apps/client/src/view/HomeView.ts` | 固定 `btn_enter` 进入 ballMove | 每增加一个主入口都可能修改既有 Home 页面 |
-| `apps/client/src/net/WebSocketClient.ts` | drop/reconnect 只在内部处理 | feature 无法通过稳定接口响应断线、重连和结果未知 |
+| `apps/client/src/net/WebSocketClient.ts`、`net/session.ts` | **瞬态** drop/reconnect 只在 `WebSocketClient` 内部处理；**最终态**已有 `session.ts` 的 `onAuthInvalid` / `onConnLost` / `onBattleLost` 稳定订阅（`Main.ts` 消费），但没有 joining/ready/dropped/reconnected 这类瞬态事件 | feature 只能感知“已经完了”，无法响应短暂 drop、重连与结果未知 |
 | 契约、View 与 inventory 测试 | 中央穷尽 fixture 或文件名假设 | 新领域必须修改旧测试表，feature 无法完全拥有自己的验收向量 |
 
 这些修改本身不一定复杂，但会产生三个长期问题：
@@ -135,7 +139,8 @@ feature 菜单、静态注册表生成以及 fixture 发现都是其他 Lobby �
 - 不把 feature 变成新的 npm workspace，也不要求把所有现有源码迁入一个巨型 vertical-slice 目录；
 - 不在 shared 引入 Zod、Node API、DOM、`cc` 或完整 schema DSL；
 - 不从 TypeScript interface 自动猜测运行时 validator；validator 仍由领域显式实现；
-- 不让生成器自动 bump 语义版本、自动宣告功能完成或自动修改 `plan-v3.md` 的验收结论；
+- 不让生成器自动 bump 语义版本、自动宣告功能完成或自动修改**当前计划文件**（写作时为 plan-v4.md）的验收
+  结论；实施时以 `docs/inventory.json` 的 `routeOfTruth.corePlan` 为准，而不是本文写死的文件名；
 - 不为单个挂机玩法提前抽象通用 MySQL/outbox/跨服编排；
 - 不在本轮重写 GameRoom mode/C2S 消息架构。实时 Room 玩法仍遵守现有独立动线；本文主要解决
   Lobby WS-RPC + 页面型 feature。
@@ -228,7 +233,8 @@ feature 必须拥有自己的：
 ```ts
 export default defineLobbyRpcDomain({
   domain: "idle",
-  errorCodes: [    "STATE_CONFLICT",
+  errorCodes: [
+    "STATE_CONFLICT",
     "OPERATION_RESULT_EXPIRED",
     "GAMEPLAY_NOT_READY",
     "GAMEPLAY_STATE_INVALID",
@@ -270,7 +276,8 @@ query；显式 metadata 才能正确表达这种语义。
 
 ### 5.2 生成的 RPC 全集
 
-`registry.generated.ts` 静态 import 每个 domain，自动推导并导出：
+`registry.generated.ts` 静态 import 每个 domain，并由 **AST 生成器逐条写死** route → req/res 映射与执行模式
+归属，导出：
 
 - `LobbyRpcType`；
 - `LobbyRpcMap`；
@@ -281,6 +288,15 @@ query；显式 metadata 才能正确表达这种语义。
 - core + domain 错误码全集和 `isRpcErrCode`；
 - 可查询 operation route 集合；
 - 可选 push type、payload validator 和 push 全集。
+
+⚠ 这里是**生成的显式字面量联合**，⛔ **不依赖 `typeof domain` 之类的类型推导**——routes 数组一旦被 widen，
+route 与 mode 的字面量就丢了，§8.2 第 5 条的编译期负例也写不出来。这一点是硬要求：现有
+`apps/server/src/websocket/rpc.ts` 的 `defineRpc` idem / 非 idem **双重载**依赖 `LobbyRpcIdemType` 是精确字面量
+联合才能在编译期收窄；而且该类型必须**改由显式 mode metadata 产生**，⛔ 不再用今天的「req 结构里含
+`clientReqId`」做推断（§5.1 已说明为什么结构推断不足以表达 `queryOperation` 这类路由）。
+
+配套契约测试：descriptor 的**运行时值**（domain / route / mode / errorCodes）必须与 generated 表**双向相等**，
+防止 AST 读取结果与运行时值成为两份真源。生成器只做**语法读取**，⛔ 不执行 domain 文件（见 §8.1）。
 
 现有 `lobbyRpc/index.ts`、`envelope.ts` 和 `push.ts` 改成稳定 façade；以后只 re-export 类型、信封验证器和生成
 registry，不再维护领域 switch 或数组。
@@ -298,6 +314,14 @@ metadata，不能把 domain 级错误集合误读为逐路由穷尽表。
 - NaN、Infinity 和非安全整数；
 - 越界字符串、数组和对象；
 - 非法枚举、重复 id 和不完整联合类型。
+
+**`clientReqId` 需要一块专用积木。** 它今天走通用的 `requiredId`，只有长度界（1–64），**没有字符集约束**——
+而它会作为最后一段进入 Redis key。应由 shared 侧唯一的积木校验：ASCII 安全字符集（建议
+`^[A-Za-z0-9_-]+$`）、**长度上限保持现有 64**、字节长度 = 字符长度，禁控制字符与 key 分隔符。
+所有 idempotent-write route 复用同一积木，⛔ 不再各自调通用 `requiredId`。
+⚠ 收紧字符集会拒绝旧客户端可能发出的历史 ID，属于 **wire 收紧**，须与 §8.4 的协议身份分离一起走版本节奏，
+⛔ 不能混进 §11 阶段 1 「现有 route、validator、endpoint 和行为不变」的机械迁移。
+⛔ 不要顺手把长度下界从 1 提到 8——那会拒绝现有客户端的合法短 ID。
 
 生产 contract 中不放测试 fixture，避免客户端包携带测试数据。测试向量放在 feature-owned sidecar。
 
@@ -370,10 +394,28 @@ SHA-256(
 
 - 对象 key 使用仓库唯一参考实现规定的稳定顺序；
 - 数组顺序保留；
-- `clientReqId` 已进入 Redis key，可从 business payload 摘要中排除；
+- `clientReqId` 已作为 key 的**最后一段**进入 Redis key（现有 `kIdemUser(route, uid, clientReqId)` 的 `sub`
+  分量），`(route, uid)` 固定时不同 ID 必得不同 key、编码单射，因此摘要可安全排除它。⛔ 改变 key 的分段顺序、
+  或让 `clientReqId` 不再位于末段，会同时破坏这条推理与冲突检测——两者必须一起修改并补回归向量；
 - route type 和算法版本必须进入 preimage；
 - validator 必须先排除非 JSON 值和越界数据；
-- hash 由框架注入 `ctx.operation`，领域收据直接复用，禁止领域再实现另一套 canonicalization。
+- hash 由框架注入 `ctx.operation`，领域收据直接复用，禁止领域再实现另一套 canonicalization；
+- 记录中必须额外持久化该 route 的**契约版本**（由 route descriptor 声明的 `contractVersion`，随 request /
+  response validator 的语义变更人工 bump）。⛔ **契约版本不进 preimage、也不进 key**——进 preimage 会把一次
+  升级变成 `OPERATION_CONFLICT`，进 key 会让升级期同一 `clientReqId` 重新执行 handler，两者都比 fail-closed
+  更糟；
+- 读到契约版本不匹配的记录时按 **fail closed** 处理：pending 返回 `IN_PROGRESS`，done 返回
+  `OPERATION_RESULT_EXPIRED`，⛔ 不重放、不重新执行。
+
+**key 必须经 `keys.ts` 构造。** 第 3 步的 key 由 `apps/server/src/core/infra/keys.ts` 的
+`kIdemUser(route, uid, clientReqId)` 生成（已带项目前缀、区前缀与 `{uid}` hash-tag），zone 分量来自
+`zoneCtx` / `currentZoneId()`，**不接受客户端自报**；⛔ 禁止在 dispatcher 或领域代码里就地拼接（铁律 8）。
+这与 [Non-intrusive-room.md](Non-intrusive-room.md) §8.2 对邀请码 key 的要求对称。
+
+> **`IN_PROGRESS` ≠ 操作未完成。** 第 3–6 步的通用幂等记录是 §6.4 所说的 transient gate，`IN_PROGRESS` 只表示
+> “通用闸当前被占用”，⛔ **不表示“操作尚未完成”**——孤儿 lease 下两者会不一致。客户端收到 `IN_PROGRESS` 后的
+> 恢复路径是 §6.4 的查询路由，**不是**继续重试写路由。对**未**声明 `operationGroup + inspectable` 的路由
+> （本阶段除 Idle 外全部），其 ResultUnknown 窗口以 pending TTL 为上界，窗口过后重试是安全的。
 
 canonicalizer 必须有跨嵌套对象、Unicode key、数组、可选字段和 key 顺序变化的 golden vectors；其他语言或领域
 代码不得自行解释“稳定排序”。构造摘要时从副本排除 `clientReqId`，不得修改随后传给 handler 的 validated
@@ -386,9 +428,24 @@ payload。该同步工作发生在 handler 预算外，必须依赖 transport `m
 
 ```ts
 type StoredIdem =
-  | { v: 2; state: "pending"; hash: string; leaseId: string }
-  | { v: 2; state: "done"; hash: string; resultJson: string };
+  | { v: 2; state: "pending"; hash: string; leaseId: string; contractVersion: number }
+  | { v: 2; state: "done"; hash: string; resultJson: string; contractVersion: number }
+  | { v: 2; state: "done-oversize"; hash: string; contractVersion: number };
 ```
+
+**生存期不变式（v2 继承 v1，⛔ 不得在升级中丢失）**：pending 写入带 pending TTL（现为 30s 量级的
+`IDEM_PENDING_MS`）；done 写入带 result TTL（现为 60s 量级的 `IDEM_RESULT_MS`）。CAS complete 是「比对 pending
+记录 + 覆写为 done + **重置** TTL 为 result TTL」的**单条 Lua**，⛔ 不得沿用 pending 的剩余 TTL，也 ⛔ 不得写成
+无 TTL 的 SET；release 只删自己的 pending。启动期继续断言 `IDEM_PENDING_MS > HANDLER_TIMEOUT_MS`——引入
+`leaseId` 后这条不变式**更强而非更弱**。
+
+**结果大小上限**：done 记录有 `IDEM_RESULT_MAX_BYTES` 上限（新增 config，按现有响应 validator 的最大声明尺寸
+取值）。超限时 ⛔ **不写入响应体**，改写 `done-oversize` 墓碑：重放该 `clientReqId` 与 `inspect` 都返回
+`OPERATION_RESULT_EXPIRED`（既不重跑 handler，也不伪装成 `unknown`），客户端按领域收据查询恢复；超限事件计入
+指标，用于发现「不该走通用结果缓存」的 route。
+
+**每 uid 并发上限**：同一 uid 同时存在的 pending 记录数有上限，超限返回 `BUSY`。否则一个客户端可以用无限多个
+不同 `clientReqId` 撑爆 key 空间。该计数与幂等 key 同槽（`{uid}` hash-tag），随 TTL 自然衰减。
 
 `complete` 和 `release` 都必须通过 Lua/CAS 比对完整 pending 记录：
 
@@ -396,13 +453,28 @@ type StoredIdem =
 - 旧 handler 不得删除后来者的 pending；
 - 只有响应契约校验通过后才能从 pending 提升为 done；
 - 腐坏或未知版本记录必须 fail closed，不能当作“未执行”；
-- acquire 使用原子 Lua，或保留经过并发证明的有界 `SET NX + GET + retry`；跨过期窗口的双 acquisition 必须有
-  集成测试；
+- **acquire 必须使用原子 Lua。** 原文的「或保留经过并发证明的有界 `SET NX + GET + retry`」在引入 `leaseId`
+  后不再等价——`SET NX` 失败后的 `GET` 与后续判断之间存在过期窗口，两个请求可能各自认为自己拿到了 gate，
+  而 v1 用 sessionId 当 holder 时这种重叠是无害的、v2 会产生两个都写 done 的 lease。⛔ 不保留该分支；
+  跨过期窗口的双 acquisition 必须有集成测试；
 - 升级默认采用 drain/维护窗口，除非逐路由证明混部兼容。直接复用旧 key 会让旧节点误读 v2 记录，换 namespace
   又可能让新旧节点同时取得 gate，不能只靠“换前缀”宣称安全。
+  **drain 窗口的最小时长 = 最后一个旧节点写入之后再等 `IDEM_RESULT_MS` + `IDEM_PENDING_MS`**，否则旧 shape
+  的 done 记录会跨过升级点存活。若使用新 namespace，还必须显式说明新旧 gate 并存期内如何避免双执行；
+- v2 若使用新前缀，属于**新增 key 族**，必须先更新契约登记再进 `keys.ts`，新旧构造器并存到迁移完成为止。
+
+响应契约重校验失败时按现有 dispatcher 语义返回 `INTERNAL` 且**不删除记录**，该 `clientReqId` 在剩余 TTL 内
+不可用——这是**刻意的 fail-closed**，客户端应改由领域收据查询恢复，⛔ 不得为此把重校验失败降级为「当作未执行」。
 
 handler 可能已经提交领域状态，但 complete CAS 因 lease 过期或换代而失败；此时不能回滚业务提交，也不能让旧
 lease 覆盖新记录。durable receipt 才是权威，客户端进入结果未知并保留原 ID 查询或重试。
+此时旧 lease 的 pending **归新持有者或归 TTL，⛔ 不归旧 handler**：旧 handler 既不能 complete、也不能
+release，只能放弃；客户端在该窗口内看到的是 `IN_PROGRESS`，恢复路径按 §6.2 的衔接说明走查询路由。
+
+⚠ **孤儿 lease 不能默认是罕见路径。** 仓库已有加载期不变量 `IDEM_PENDING_MS > HANDLER_TIMEOUT_MS`，但它
+**不充分**——超时不取消 handler（`Promise.race`，见 §6.4 末段），handler 实际时长无上界。真正需要保持的是
+`IDEM_PENDING_MS > handler 实测 p99`：每条幂等路由必须有执行时长埋点，p99 逼近 `IDEM_PENDING_MS` 的路由要么
+拆分、要么单独放大租约；complete CAS 失败要打一条独立的孤儿 lease 指标。
 
 ### 6.4 受控 operation 查询
 
@@ -420,10 +492,24 @@ ctx.operations.inspect(routeType, clientReqId)
 type InspectResult<T extends LobbyRpcIdemType> =
   | { kind: "pending" }
   | { kind: "done"; data: RpcRes<T> }
+  | { kind: "result-expired" }   // 含 §6.3 的 done-oversize 墓碑
   | { kind: "unknown" };
 ```
 
-约束如下：
+⚠ `done-oversize` 墓碑必须映射到 `result-expired`，⛔ **不得被归类为 `unknown`**——前者是「确定执行过、
+结果不可得」，后者是「无法确定是否执行过」，客户端的恢复动作完全不同。
+
+**`operationGroup` 的所有权规则（⛔ 它不是一个无主的全局字符串命名空间）**：
+
+1. `operationGroup` 是受生成器管理的**受拥有 id**：每个 group 必须由且仅由一个 feature/domain 在 manifest
+   顶层显式 `ownsOperationGroups: [...]` 声明，重复声明由 codegen 拒绝；
+2. `inspectsOperationGroup` 默认只能引用**本 feature 自己拥有**的组。引用他人拥有的组必须同时满足：查询方
+   `dependsOn` 被查询方，且被查询方显式 `exposesOperationGroupTo: [<featureId>]`。任一条缺失即 codegen
+   fail closed——这与 §4.3「禁止 feature 互相直接读取内部状态」是同一条边界；
+3. 同一条 route ⛔ 不得同时声明 `operationGroup` 与 `inspectsOperationGroup`；查询 route 必须是 `query` 模式；
+4. §8.1 的重复 id 拒绝清单必须包含 `operationGroup`，双向所有权校验也必须覆盖 group 的 owner/consumer 关系。
+
+其余约束如下：
 
 - uid、区号从当前 `RpcCtx` 绑定，客户端不能传入或覆盖；
 - dispatcher 同时校验调用方 query route 的 `inspectsOperationGroup` 与目标 route 的 `operationGroup`；
@@ -441,12 +527,20 @@ type InspectResult<T extends LobbyRpcIdemType> =
 4. generic pending 存在时返回 `pending`；
 5. 以上都不存在才返回 `unknown`。
 
+第 2 步的比较对象要写明：按 done 快照内嵌的 `stateVersion` 与当前聚合版本比较；**当前版本更新时只能返回
+`applied`**（该操作已被更晚的操作覆盖），⛔ 不得据此判定冲突。
+
+**查询是无锁读。** 下一段所说的「同一个序列化段」只约束**写**路径，⛔ **查询路径不得获取领域写锁**——客户端
+轮询的目标往往正是那个持锁的在途写，查询去抢锁会把 UX 快闸变成阻塞源。作为无锁读的代价，返回 `unknown`
+之前必须**复读一次领域收据**（收据是最先落地且此后不再消失的证据），关闭「第 1 步读收据早于提交点、
+pending 又已被 TTL 抹掉」的双 miss 窗口。
+
 通用幂等只是 30/60 秒量级的 UX 快闸，不是 exactly-once 真源。Idle 状态和收据仍必须在同一提交边界落地，
 `unknown` 也不能被解释为安全失败。
 
-“先查收据、后查 `expectedStateVersion`”必须位于同一个用户锁/UoW/CAS 序列化段：receipt read、状态推进、
-版本检查、状态写入和 receipt insert 共同构成领域原子操作。只在锁外预读一次收据会出现双 miss。同一成功操作
-携旧版本重试时，应回放第一次结果，而不是被误判为新的状态冲突。
+**写路径**的“先查收据、后查 `expectedStateVersion`”必须位于同一个用户锁/UoW/CAS 序列化段：receipt read、
+状态推进、版本检查、状态写入和 receipt insert 共同构成领域原子操作。只在锁外预读一次收据会出现双 miss。
+同一成功操作携旧版本重试时，应回放第一次结果，而不是被误判为新的状态冲突。
 
 完整 receipt 窗口、tombstone 窗口、最大条数和裁剪顺序必须由领域文档化；tombstone 至少保留 route、
 clientReqId 和 payload hash。若奖励进入 MySQL、背包、outbox 或其他聚合，上述“同一提交边界”不再成立，必须
@@ -514,7 +608,11 @@ route 和 View 继续懒加载，不能因为引入 catalog 就把所有 `cc`/Fa
 catalog 中的 feature/route/menu/View descriptor 是生成期确定的不可变数据，runtime install 不再动态注册这些
 条目。route 参数 validator 位于不依赖 `cc`/FairyGUI 的纯 descriptor module：Navigator 先校验 route id 和
 可 JSON 化外壳，再加载该纯模块校验参数，最后才 activate feature runtime 和打开 View。每个 View 的手写 metadata
-唯一真源固定为 `apps/client/src/features/<id>/view/*.view.json`；根 `feature.json` 只引用这些路径，不复制内容。
+唯一真源固定为**与 View 同目录**的 `*.view.json` sidecar（feature 的落在
+`apps/client/src/features/<id>/view/`，gameplay 的落在自己的 View 目录，见
+[Non-intrusive-room.md](Non-intrusive-room.md) §9.3），具体路径由拥有它的 feature 或 gameplay manifest 声明；
+根 `feature.json` 只引用这些路径，不复制内容。每条 View metadata 带 `owner` 字段，生成期检查同一 View 只被
+一个 manifest 拥有。
 
 ### 7.2 通用 AppRuntime 与导航
 
@@ -538,12 +636,19 @@ apps/client/src/app/
 
 职责边界：
 
-- `AppRuntime`：构造小型稳定 port 并管理整体 dispose，不做 feature 分支；
+- `AppRuntime`：构造小型稳定 port 并管理整体 dispose，不做 feature 分支。它同时定义 **app generation**——
+  构造时递增、dispose 时冻结，对应一次 Cocos scene owner 生命周期，替代今天 `view/pages.ts` 里的
+  page lifecycle generation（后者今天与 session generation **分开**校验，二者不可互相推导）；
 - `FeatureRegistry`：消费 generated catalog，解析 feature、route 和 Home contribution；
-- `FeatureHost`：只拥有 feature module 的 app/session scope、安装状态和 dispose，不拥有当前 route；
+- `FeatureHost`：只拥有 feature module 的 app/session scope、安装状态和 dispose，不拥有当前 route。
+  **停用由 route refcount 决定**：NavigationService 关闭该 feature 的最后一个 route 时通知 FeatureHost 进入
+  `disposing`；session 结束与 app dispose 是强制释放点。`keep-mounted` 策略的 route 显式豁免 refcount 归零
+  释放，并必须在 manifest 里声明其常驻代价；
 - `NavigationService`：唯一拥有业务 route stack、route handle 和当前 authenticated base route；
-- `SessionCoordinator`：独占 Lobby join/rejoin、GetInfo、回登录和鉴权恢复；
-- `LifecycleBus`：统一连接与宿主前后台事件；
+- `SessionCoordinator`：**独家**派生并发布所有带 session generation 的高层事件；独占 Lobby join/rejoin、
+  GetInfo、回登录和鉴权恢复；final-loss 的“每代一次”由它的 generation gate 保证；
+- `LifecycleBus`：**只做无状态转发与订阅管理**——转发 transport 原样事件和宿主 hide/show，
+  ⛔ 不持有 session generation、⛔ 不做任何派生；
 - `RefreshCoordinator`：合并 foreground、reconnect、reopen 等并发原因，只刷新当前 authenticated base
   feature/session controller；
 - `ports.ts`：只暴露 navigation、lobbyRpc、session、clock、route-scoped ticker、lifecycle、views、launch 等
@@ -557,10 +662,25 @@ apps/client/src/app/
 数组必须迁走，不能让旧接线和新 Coordinator 同时拥有恢复真相。最终新增 feature 不再向 `pages.ts` 添加
 `openXxx`。
 
+迁移期的“两套并存”必须有可执行规则，⛔ 不能只写目标态：
+
+- **(a)** 阶段 3 的**第一个提交**就让 SessionCoordinator 成为 return-to-login / session reconciler 的唯一
+  注册方，`pages.ts` 在**同一提交**里删掉自己的注册调用，只保留纯转发的 `openLogin` / `openConfirm`；
+  ⛔ 不允许出现「两边都注册、靠顺序取胜」的中间态。
+- **(b)** 现有 `net/session.ts` 的那两个注册点是**单槽覆盖式**（后注册者静默替换，先注册者的 disposer 因
+  handler 身份比对失败退化为 no-op）。迁移后必须改为**重复注册即 fail-fast**，或至少有一条断言测试证明整个
+  启动链路里各只注册一次。
+
 FeatureHost 至少需要 `unloaded/loading/active/disposing/failed` 状态；并发加载同一 feature 必须合流为同一个
 Promise。descriptor 非法在 codegen 期 fail closed；runtime install 失败只回滚 controller、订阅和 scoped
-provider，不修改不可变 catalog，并允许显式重试或在本 app generation 禁用；View/FGUI 加载失败保持可重试。
-dispose 必须幂等并按依赖逆序执行。
+provider，不修改不可变 catalog；View/FGUI 加载失败保持可重试。dispose 必须幂等并按依赖逆序执行。
+
+`failed` 的两条出路要写死：**经显式用户意图（再次 launch）回到 `loading`**，每个 app generation 的自动/连续
+重试次数有上限；超限后置为 `disabled(app-generation)`，直到下一个 app generation 才复位。
+
+这两个状态必须连回 Home：**FeatureHost 的运行时可用性是 catalog 之外的可变叠加层**。§7.4 的 Home composer
+在渲染时把 `disabled` / `failed` 叠加到不可变 contribution 上，显示为不可点击 + 可手动重试的入口，
+⛔ **绝不允许显示一个必然失败的正常入口**。
 NavigationService 的稳定 API 至少包括 `open/replace/back/close/closeGroup`：Navigator 管业务路由栈和页面组，
 ViewMgr 只管 View mount/cache/input lease，不拥有业务 route。每次 route open 都返回带 signal/generation 的
 ownership handle；close/replace 即使发生在 feature、package、View 或 setup 的任一 await 中，也必须取消并回滚。
@@ -569,6 +689,24 @@ ResultUnknown 不能只保存在 route Logic。增加 feature-session scoped `Pe
 `clientReqId + route + 完整规范化原 payload + expectedStateVersion + 状态`。route 关闭只断开渲染订阅，不删除
 未决操作；只有 applied、结果过期、明确人工放弃或 session ended 才清理，重开后仍复用原 ID。本方案至少保证
 同一 app session 内恢复；若要跨进程重启，还需另行设计安全持久化、隐私和版本迁移，本文不作承诺。
+
+journal 的四条硬约束：
+
+1. **write-ahead**：条目必须**写在 send 之前**——先落 `clientReqId + route + 规范化 payload +
+   expectedStateVersion + 状态=inflight`，再调用 send。⛔ 不允许在收到响应或 `onDrop` 时才补写：drop 落在
+   send 与 journal 写入之间会**永久丢失** `clientReqId`。`onDrop` 只做状态迁移（inflight → unknown），
+   ⛔ 不产生新条目。
+2. **上限与溢出**：journal 有 `maxEntries` 与单条 `maxPayloadBytes`（超限只保留
+   `clientReqId + route + hash + expectedStateVersion`，恢复时按领域收据查询而非本地重放）。达到
+   `maxEntries` 时 ⛔ **不得淘汰任何未决条目**——必须 fail closed，拒绝发起新的 idempotent write 并提示用户
+   先等待既有操作收敛。可淘汰的只有已 applied / 已放弃的**终态**条目。（淘汰最旧条目丢掉的正是
+   `clientReqId`，会把 ResultUnknown 升级为永久未知。）
+3. **重发必须字节等同**：重发只能原样发送 journal 中已存的那份规范化 payload，⛔ 不得在重发时重新规范化。
+   客户端与服务端共用 shared 里的同一个 canonicalizer 参考实现（§6.2 所指的“仓库唯一参考实现”）并共享同一组
+   golden vectors，否则同 ID 重发会被误判为 `OPERATION_CONFLICT`。canonicalizer 放 shared 满足铁律 4
+   （纯 TypeScript + ES 标准库），但 **SHA-256 摘要仍只在服务端计算**——客户端不需要也不应计算 hash。
+4. **账号边界**：journal 是 feature-session scoped。主动登出与任何 uid 变化都必须**同步清空整个 journal**，
+   `clientReqId` ⛔ 不得跨 uid 复用。
 
 静态依赖门禁必须证明 feature logic/route 不导入 `WebSocketClient` singleton、Colyseus Room、`cc` 或
 FairyGUI；View 目录是引擎依赖例外。Ticker/FrameScheduler 由 route scope 注入，Logic 只消费 monotonic Clock，
@@ -590,18 +728,33 @@ subscribeConnection(listener): () => void
 - `reconnected`；
 - `closed`。
 
+新 `subscribeConnection` 必须**吸收** `net/session.ts` 现有的 `onAuthInvalid` / `onConnLost` / `onBattleLost`
+（由 LifecycleBus 转发、SessionCoordinator 派生，`Main.ts` 改订新出口），⛔ **不得与旧 fanout 并存两份连接
+真相**；§10 保护清单里的 `net/session.ts` 指的是**迁移完成后**的稳定态。
+
 低层 transport event 只携带 connection/slot generation、单调 sequence 和关闭原因，不反向依赖 session。
-SessionCoordinator/LifecycleBus 再派生带 session generation 的高层事件，并区分主动关闭、短暂 drop 和最终 leave：
+SessionCoordinator 再派生带 session generation 的高层事件（LifecycleBus 只转发，见 §7.2），并区分主动关闭、
+短暂 drop 和最终 leave：
 
 - `dropped`：当前 feature 立即禁用写操作；在途写进入 ResultUnknown；
-- `reconnected`：只在发送闸重新建立后发布，由 RefreshCoordinator 拉权威快照；
+- `reconnected`：只在发送闸重新建立后发布，随后**固定按“先对账、后拉快照”的顺序**执行——先按
+  `PendingOperationJournal` 对账未决 operation（走 §6.4 的查询路由确定 applied / pending / unknown），
+  **再**由 RefreshCoordinator 拉权威快照。这与下文 `EVENT_SHOW` 路径**同序**。⛔ 不允许先拉快照：那会渲染
+  尚未包含未决写结果的视图，中间帧闪烁并诱导用户重复提交；
 - `closed` 使用判别联合 `voluntary | auth-invalid | final-loss`；只有 final-loss 可以重进，auth-invalid 直接清理
-  session，voluntary 不触发导航；
+  session，voluntary 不触发导航。
+  **`auth-invalid` 的凭证清除必须与事件派生同步发生**：transport 在发布 `closed{auth-invalid}` 之前先关闭
+  发送闸，SessionCoordinator 在派生该事件的**同一个同步栈**里清 token/userId 并 bump session generation，
+  两者之间 ⛔ **不得插入任何 await**；订阅者只能观察到已经无凭证的状态。（这正是现有
+  `net/session.ts` 先 `clearSession()` 再遍历订阅者的语义，迁移时必须原样保留。）
+  journal 的处置也在此分叉：`auth-invalid` 视为 session ended，**必须清空 journal**（新会话无权查询旧 uid 的
+  operation）；`final-loss` **保留** journal 并在重进成功后对账。⚠ 同 uid 重新登录**不恢复**上一 session 的
+  journal；
 - feature 不得自行调用 join/rejoin；
 - SDK 离线发送队列继续保持禁用，不能借生命周期接口恢复不受控重放。
 
-`onDrop` 的顺序固定为“关闭发送闸、拒绝在途 RPC、清理 SDK 队列、发布 `dropped`”；`reconnected` 只能在发送
-闸恢复后发布。onLeave、replay guard 失败和 join 后物理死亡都必须汇入一个 generation-gated final-loss 出口，
+`onDrop` 的顺序固定为“关闭发送闸 → 在途**写**结算为 ResultUnknown、在途**只读**按可重试失败结算 →
+清理 SDK 队列 → 发布 `dropped`”；`reconnected` 只能在发送闸恢复后发布。onLeave、replay guard 失败和 join 后物理死亡都必须汇入一个 generation-gated final-loss 出口，
 每代只发布一次；强踢 close code/push 要先规约成 auth-invalid，绝不能触发重连。订阅接口还要提供当前不可变状态
 snapshot，或在订阅时立即回放，确保 Lobby 已 ready 后才加载的 feature 不会永远错过 ready。
 
@@ -609,13 +762,43 @@ snapshot，或在订阅时立即回放，确保 Lobby 已 ready 后才加载的 
 authenticated history 并回 Login。临时 popup 默认 `discard`，只有显式声明且参数可重建时才 reopen。普通 popup
 不是 refresh owner；它通过父 route ownership 关联到底层 feature controller。
 
-foreground、reconnect 和 route reopen 同时发生时，RefreshCoordinator 只合流**当前并发 flight**，key 包含
-route-handle generation、session generation 和 connection/recovery epoch；flight settle 后允许下一次正常刷新。
-flight 中再次变脏时最多补一次 trailing refresh，非活跃 feature 不得后台请求快照。
+**回登录 transition 必须包含用户可见提示**，⛔ 不能静默把人踢回登录页。固定次序是：关闭发送闸 → leave →
+清空 authenticated route/页面组 → 打开并 **await** 一个 **session 作用域**（不是 route 作用域）的提示视图 →
+重开 Login。该提示不属于任何 feature route，**不受 `discard` 策略影响**，也不是 refresh owner；它的关闭或
+超时都必须让 transition 继续，⛔ 不得卡死。回登录原因 → 文案的映射由 SessionCoordinator 拥有（继承现有
+`view/pages.ts` 里 AUTH_INVALID 子因 / CONN_LOST / BATTLE_LOST / BATTLE_JOIN_FAILED 的分支），feature 不参与。
+每一步 await 之后都要重校验 app generation + session generation。
 
-`Main.ts` 最终只负责 bootstrap、update 转发和 dispose，但现有启动不变量必须迁入 host 而不是删除：
-WeChat compatibility 仍早于首次 Colyseus 操作，设计分辨率、portal/server 配置、gameplay tick 和 scene owner
-销毁顺序都有回归测试。Cocos `EVENT_HIDE/EVENT_SHOW` 通过独立 bridge 进入 LifecycleBus：hide 只暂停本地 ticker、
+foreground、reconnect 和 route reopen 同时发生时，RefreshCoordinator 只合流**当前并发 flight**，key 包含
+**app generation**、route-handle generation、session generation 和 connection/recovery epoch；flight settle
+后允许下一次正常刷新。非活跃 feature 不得后台请求快照。
+
+“flight 中再次变脏时最多补一次 trailing refresh”有三处语义留白，必须写死：
+
+1. **dirty 位只能在实际发出请求的那一刻清除**——提前清会让本次 flight 冒领之后的变更，延后清会抹掉窗口内的
+   变更，两者都是丢更新。
+2. **“最多一次 trailing”是按 flight 计且递归的**：每个 flight（trailing 自身也算一个 flight）settle 时若
+   dirty 仍置位，必须再排一次刷新；⛔ 不允许理解为「每个 dirty 周期至多一次」。
+3. **刷新失败（超时、drop、错误）必须把 dirty 位重新置位**，由下一次 ready / foreground 触发重试；
+   ⛔ 不允许静默丢弃——配合「非活跃 feature 不得后台请求快照」，静默丢弃会让该 feature 永久停在陈旧快照上。
+
+另需**背压**：同一 key 的连续刷新有最小间隔与失败指数退避；退避期内的变脏只置 dirty、不新开 flight；
+退避上限内仍失败则把该 feature 标记为 stale 并显示可手动重试的占位，⛔ 不得静默空转。
+
+`Main.ts` 最终只负责 bootstrap、update 转发和 dispose，但现有启动不变量必须迁入 host 而不是删除。
+⚠ **“都有回归测试”不准确**——逐条核实后，当前保护形态如下，迁移前必须按“迁移后形态”一列补齐：
+
+| 启动不变量 | 当前保护形态 | 迁移后必须的形态 |
+| --- | --- | --- |
+| WeChat compat 早于首次 Colyseus 操作 | **无任何测试**（客户端测试里查不到该函数） | 迁移**之前**先补一条 bootstrap 顺序断言 |
+| 750×1624 + `FIXED_WIDTH` | 对 `Main.ts` **源文本**的正则 pin | 对新 host 的行为断言 |
+| portal / server 配置 | 只有对 `initPortal` 自身的行为测试，**没有**断言证明 host 在打开页面之前调用了 `initHttp/initPortal` | 补一条“先初始化后开页面”的顺序断言 |
+| gameplay tick 转发 | 对 `Main.ts` **源文本**的正则 pin | 对新 host 的行为断言 |
+| scene owner 销毁顺序 | 只 pin 了「存在 dispose 调用」，**没有 pin 顺序** | 升级为对 `AppRuntime.dispose` 的顺序行为断言 |
+
+⛔ 这些源文本 pin 必须与掏空 `Main.ts` 的提交**同批**改写，不允许先删后补。
+
+Cocos `EVENT_HIDE/EVENT_SHOW` 通过独立 bridge 进入 LifecycleBus：hide 只暂停本地 ticker、
 禁止新意图，不把已发送写判失败，也不删除 PendingOperationJournal；show 时若 Lobby 未 ready 只标 dirty，ready 后
 先恢复未决 operation，再刷新 snapshot。所有异步仍使用 route signal + session generation 双守卫。
 
@@ -629,18 +812,34 @@ WeChat compatibility 仍早于首次 Colyseus 操作，设计分辨率、portal/
 - 点击只调用统一 `LaunchPort.launch(target)`，不在 Home 分支 Navigation/gameplay；
 - Idle 使用独立 FGUI 包，后续新增入口不再修改 Home XML。
 
-menu 可以引用已登记的 gameplay id，但“新增 gameplay 本身”仍走现有 GameplayRegistry/Room 动线，不在本方案的
-无侵入承诺内。排序固定为 `slot → order → featureId → entryId`。
+gameplay 的**实现**仍走 GameRoom 动线（见 [Non-intrusive-room.md](Non-intrusive-room.md)），但它的 Home 入口
+以**同一形状**的 menu contribution 登记——**菜单只有一个数据源**。排序固定为
+`slot → order → featureId → entryId`。
+
+⚠ 实施时必须明确写出：新玩法登记入口时**是否会碰** `features/built-in/feature.json`。若会碰，则
+`Non-intrusive-room.md` §3.1 第 8 条与 §16 的「不再因玩法名修改中央清单」必须相应保留那条例外（该文已登记）；
+若不会碰（contribution 的手写真源在玩法自己的 manifest 里），则那条例外可以删除。⛔ 不能默认它是零成本。
 
 若图标来自跨包资源，manifest 必须声明 URL，由生成器计算 entry package dependency；Home route composer 在
-render 前通过受控 package loader 按当前可见 entry 合流加载，失败时显示明确占位而不是静默空白。不得让 View
-临时猜测或隐式加载包。
+render 前通过受控 package loader 按当前可见 entry 合流加载。**失败时显示明确占位**——占位有两种触发因素：
+图标包加载失败，以及 §7.2 所说的 feature 已 `disabled` / `failed`。⛔ 不允许静默空白，也不允许显示一个必然
+失败的正常入口。不得让 View 临时猜测或隐式加载包。
 
 ### 7.5 View/FGUI 注册表生成
 
 `viewRegistry.ts` 和 `fguiContracts.ts` 一次性改为稳定 façade，消费 generated registry。唯一输入是 FGUI XML +
-feature-owned `.view.json` 手写 metadata；同一生成步骤分别产生 View AUTO、generated contract 和 registry，
-派生的 View AUTO 不能反过来成为 contract 真源。生成器负责：
+`.view.json` 手写 metadata（sidecar 与 View 同目录，见 §7.1）；同一生成步骤分别产生 View AUTO、generated
+contract 和 registry，派生的 View AUTO 不能反过来成为 contract 真源。
+
+> **客户端 View catalog / FGUI contract / FGUI 包闭包全仓只有一个 writer、一个输出文件、一套双向闭合测试。**
+> 最终文件固定为本节的 `apps/client/src/generated/views.generated.ts` + `fguiContracts.generated.ts`；
+> [Non-intrusive-room.md](Non-intrusive-room.md) 的 `codegen:gameplays` 只产出 gameplay 的 View contribution
+> 中间产物，⛔ 不直接写客户端 View 产物（口径见该文 §4.1 表 1）。每条 View metadata 带 `owner` 字段
+> （feature id 或 gameplay id），生成期检查同一 View 只被一个 manifest 拥有。
+> **谁先落地谁拥有生成器与产物路径**，后落地方只新增输入类型与 `owner` 取值，⛔ 不得二次改写
+> `viewRegistry` / `fguiContracts`；若 room 侧先落地，本文阶段 4 接管并在实施记录里注明接管点。
+
+生成器负责：
 
 - 从 XML 和同一 binding 规则产生 direct `required`；
 - 生成 `defineView` 元数据和静态动态 import；
@@ -657,7 +856,7 @@ feature-owned `.view.json` 手写 metadata；同一生成步骤分别产生 View
 - nested、list item、controller、relation 等业务依赖子集；
 - 动态拼接或代码直接引用的资源 URL。
 
-`fgui-codegen` 应支持 feature 输出目录，并且只写 View AUTO 区；完成后可以提示或运行 feature codegen
+`fgui-codegen` 应支持 feature 输出目录，并且只写 View AUTO 区；完成后可以提示或运行 `npm run verify:features`
 `--check`，但不得覆盖 registry/contracts，也不得自动执行 FGUI manifest `--write`。它不再要求开发者手改
 `fguiContracts.ts` 和 `viewRegistry.ts`。generated view
 manifest 给出精确源码路径，`fgui-manifest.mjs`、view registry test 和 contract test 统一消费它，不再各自扫描
@@ -668,7 +867,7 @@ manifest 给出精确源码路径，`fgui-manifest.mjs`、view registry test 和
 
 ### 8.1 `--write` 与 `--check` 分离
 
-feature codegen 必须提供两种明确模式：
+feature 生成器必须提供两种明确模式（writer `npm run codegen:features` / 只读闸 `npm run verify:features`）：
 
 ```text
 --write  确定性刷新生成物
@@ -704,33 +903,48 @@ literal 形态，生成器用 TypeScript compiler API 读取 domain、route、mo
 property、spread 或顶层副作用形态直接拒绝。validator 函数本身仍由生成 registry 在 typecheck/contract test 中
 加载并验证。这样生成阶段既不依赖 tsx 副作用，也不复制一份 JSON 路由真源。
 
+**生成器必须有确定的命令名**（全文其余位置一律引用它，⛔ 不再写“feature codegen”这类无法执行的代称）。
+本文取 writer `npm run codegen:features`、只读闸 `npm run verify:features`。
+
 新增根命令后，需要一次性接入现有四重守门：根 `package.json`、`scripts/verify-toolchain.mjs`、
-`apps/client/test/toolchainContract.test.ts` 的承重钉、`docs/inventory.json` 的验证依赖，同时更新
-README、AGENTS/CLAUDE。还要有删除聚合命令的反例，证明 feature gate 不会静默退出 `verify:core`。之后普通
-feature 只运行既有命令，不再新增专属根命令。
+`apps/client/test/toolchainContract.test.ts` 的承重钉（**仅当该命令被挂进 typecheck / verify:sync /
+verify:core / verify:all 之一时**才必须同步钉）、`docs/inventory.json` 的验证依赖，同时更新根 `README.md` 与
+`AGENTS.md` / `CLAUDE.md`（`verify-inventory` 对这三份常用命令表与根 scripts 做双向相等断言，AGENTS/CLAUDE
+另需逐字一致）。还要有删除聚合命令的反例，证明 feature gate 不会静默退出 `verify:core`。之后普通 feature
+只运行既有命令，不再新增专属根命令。
+
+> 若最终决定**不**新增根命令（沿用 `codegen:state` / `codegen:http` 那样的 workspace 脚本 + 测试 freshness
+> 形态），则上面这段改为：「本生成器不新增根命令，freshness 由 X 测试断言随 `verify:all` 生效；⛔ 只有真的
+> 新增根命令时才需要接入四重守门。」两种形态二选一，实施前必须选定。
 
 建议提交版产物的 provenance 固定如下：
 
 | 产物 | 真源 | Writer | 只读检查 | 性质 |
 | --- | --- | --- | --- | --- |
-| `apps/shared/src/features.generated.ts` | feature manifest | feature codegen | feature codegen `--check` | 普通机械生成 |
-| `apps/shared/src/protocol/lobbyRpc/registry.generated.ts` | feature manifest + RPC domain descriptor AST | feature codegen | feature codegen `--check` + contract test | 普通机械生成 |
-| `apps/shared/src/logic/features.generated.ts` | manifest 中的 shared public modules | feature codegen | feature codegen `--check` | 普通机械生成 |
-| `apps/client/src/generated/features.generated.ts` | feature manifest | feature codegen | feature codegen `--check` | 普通机械生成 |
-| `apps/client/src/generated/routes.generated.ts` | route descriptor references | feature codegen | feature codegen `--check` + route test | 普通机械生成 |
-| `apps/client/src/generated/views.generated.ts` | `.view.json` + FGUI XML | feature codegen | feature codegen `--check` + FGUI contract test | 普通机械生成 |
-| `apps/client/src/generated/fguiContracts.generated.ts` | `.view.json` + FGUI XML | feature codegen | feature codegen `--check` + FGUI contract test | 普通机械生成 |
-| `apps/client/src/generated/fguiPackages.generated.ts` | art 引用图 + View/entry asset URLs | feature codegen | feature codegen `--check` + FGUI contract test | 普通机械生成 |
+| `apps/shared/src/features.generated.ts` | feature manifest | `npm run codegen:features` | `npm run verify:features` | 普通机械生成 |
+| `apps/shared/src/protocol/lobbyRpc/registry.generated.ts` | feature manifest + RPC domain descriptor AST | `npm run codegen:features` | `npm run verify:features` + contract test | 普通机械生成 |
+| `apps/shared/src/logic/features.generated.ts` | manifest 中的 shared public modules | `npm run codegen:features` | `npm run verify:features` | 普通机械生成 |
+| `apps/client/src/generated/features.generated.ts` | feature manifest | `npm run codegen:features` | `npm run verify:features` | 普通机械生成 |
+| `apps/client/src/generated/routes.generated.ts` | route descriptor references | `npm run codegen:features` | `npm run verify:features` + route test | 普通机械生成 |
+| `apps/client/src/generated/views.generated.ts` | `.view.json` + FGUI XML | `npm run codegen:features` | `npm run verify:features` + FGUI contract test | 普通机械生成 |
+| `apps/client/src/generated/fguiContracts.generated.ts` | `.view.json` + FGUI XML | `npm run codegen:features` | `npm run verify:features` + FGUI contract test | 普通机械生成 |
+| `apps/client/src/generated/fguiPackages.generated.ts` | art 引用图 + View/entry asset URLs | `npm run codegen:features` | `npm run verify:features` + FGUI contract test | 普通机械生成 |
 | `apps/client/src/features/**/view/*View.ts` 的 AUTO 区 | FGUI XML + binding 规则 | `fgui-codegen` | AUTO freshness test | 局部机械生成 |
-| `docs/features.generated.md` | feature manifest | feature codegen | feature codegen `--check` | 普通机械生成 |
+| `docs/features.generated.md` | feature manifest | `npm run codegen:features` | `npm run verify:features` | 普通机械生成 |
 | `scripts/protocol.fingerprint` | shared protocol 真源 + 协议版本 | protocol fingerprint writer | fingerprint test | 显式协议审计锁 |
 | `scripts/fgui.manifest.json` | art、FGUI 导出物和 View AUTO 区 | FGUI manifest writer | `verify:fgui` | 显式资源审计锁 |
+| 保护路径规则（如 `scripts/protected-paths.json`） | 人工评审 | 人工（提交中显式声明） | 无侵入矩阵测试 | 显式治理锁 |
 | `apps/client/src/shared/**` | `apps/shared/src/**` | `sync:shared` | `verify:sync` | 生成镜像 |
 | `apps/Cocos/assets/src/**` | `apps/client/src/**` | `sync:client` | `verify:sync` | 生成镜像 |
 
 ### 8.2 测试向量由 feature 持有
 
-当前中央合法 payload/response 表改为按 sidecar 发现，例如：
+⚠ 先厘清现状：当前只有中央 **request** 向量表（服务端契约测试里的 `validPayloads`，12 条）；**response 侧
+只有 shared 的运行时 validator**（发送前调用），**没有任何测试向量**。因此本方案要求 sidecar 同时提供
+request 与 response 最小合法向量时，存量 12 条路由的 **response 向量是新增工作，不是迁移**——⛔ 也不要据此
+去删 shared 的 response validator，那是运行时闸，与测试向量是两回事。
+
+现有的中央 request 表改为按 sidecar 发现，例如：
 
 ```text
 apps/server/test/lobbyRpcVectors/idle.ts
@@ -766,8 +980,12 @@ View 测试不再假设 `apps/client/src/view/<Name>View.ts` 顶层结构，而�
 
 `docs/inventory.json` 保留框架和 core 基座，verifier 合并 `features/*/feature.json` 中的 capability fragment：
 
-- 普通 feature fragment **只能**声明 `extra`，禁止修改 `defaultModules`、`defaultScene`、`routeOfTruth` 和 command
-  scope；
+- 普通 feature fragment **只能**声明 `extra`，禁止修改 `defaultModules`、`defaultScene`、`routeOfTruth` 和
+  `workspaceCommandScope`；
+- category 为 `extra` 的 fragment **必须**在 `docs` 中包含 `docs/EXTRAFEATURES.md`；`core` 则**必须不含**
+  （现有 verifier 已双向断言）；
+- 声明了独立 `launch` 的能力**只能是 `extra`**，且 `launch` 必须能实际启动其 `defaultEntry`（verifier 另校验
+  命令与入口的对应关系）；
 - 晋升 core、改变默认入口或修改项目边界仍需显式修改中央 inventory 和计划；
 - manifest 只记录 `planned/registered/source-present/enabled` 等结构状态，不使用 `implemented/verified` 冒充
   测试实跑或人工验收；
@@ -777,7 +995,9 @@ View 测试不再假设 `apps/client/src/view/<Name>View.ts` 顶层结构，而�
 generated index 成为机器发现真相，verifier 不再要求人工在 `EXTRAFEATURES.md` 逐项复制。verification fragment
 只能引用能实际发现该 feature 的固定聚合命令，防止登记一个存在但不覆盖 feature 的脚本而假绿。
 
-生成器不能自动写 `plan-v3.md` 的验收结果。实跑证据、开放问题和“已完成”判断仍由人工维护。
+⛔ 生成器不能自动写**当前计划文件**（写作时为 plan-v4.md）的验收结果。实跑证据、开放问题和“已完成”判断仍由
+人工维护。实施时以 `docs/inventory.json` 的 `routeOfTruth.corePlan` 为准，而不是本文写死的文件名；并补一条
+反例：把任一 `plan-*.md` 加进 writer 的允许输出集合后，生成器自检必须红。
 
 ### 8.4 协议身份与指纹
 
@@ -797,6 +1017,16 @@ generated index 成为机器发现真相，verifier 不再要求人工在 `EXTRA
 
 不得为了追求无侵入而取消协议锁，也不得让 `--check` 自动重钉。若未来多个 feature 分支频繁冲突，再基于真实
 冲突数据考虑按 domain/package 分片指纹；初期继续保留一个确定性的全局锁更简单。
+
+> **本节是两份方案对协议身份的唯一口径。** [Non-intrusive-room.md](Non-intrusive-room.md) §5.3 的
+> “framework protocol version”**就是**这里的 `GAME_ROOM_PROTOCOL_VERSION`，不是第三个整数；该文的 per-mode
+> `modeVersion` 是第三层，由 `codegen:gameplays` 单独产出 digest、单独校验，⛔ **不进
+> `protocol-fingerprint.mjs`**——仓库级字节锁保持唯一。两份方案若分别落地，以先落地者建立的常量为准。
+>
+> ⚠ 实施硬约束：`protocol-fingerprint.mjs` 的版本解析要求 `apps/shared/src/protocol/rooms.ts` **有且仅有
+> 一个**顶层 `export const PROTOCOL_VERSION = <整数>;`，任何改名或拆分都会先 throw；锁文件当前是单行
+> `v<version> <hash>`，改为两个整数后的新行格式必须在实施前定死，并同批更新
+> `apps/client/test/protocolFingerprint.test.ts` 与版本矩阵测试。
 
 ### 8.5 同步与资源产物
 
@@ -823,6 +1053,12 @@ codegen/sync 产物禁止手改；FGUI 二进制和图集由 FairyGUI 编辑器�
 只能由 sync 写入；新资源可以新增 `.meta`，但既有 `.meta` UUID 改变不能被归类为普通机械变化。白名单外的
 既有文件出现修改、删除或重命名时，必须按真实框架侵入处理。
 
+⚠ **手工场景 / 预制体资产不在白名单内。** `apps/Cocos/assets/scene.scene` 里序列化着 `Main` 的
+`@property`（`serverUrl` / `portalUrl` / `gameplayId`）；把这些属性搬到 bootstrap 组件会改变组件序列化形状，
+必须在 Creator 编辑器中重新序列化并**人工审查**该 diff，⛔ 只能由编辑器产生。（若 `Main` 保留这些
+`@property` 并只转发给 `AppRuntime`，则不触发该 diff。）`gameplayId` 这个编辑器字段在 Home 数据驱动化之后
+应被删除，删除本身同样会改变序列化形状。
+
 ## 9. 一次性侵入范围
 
 下面是实施本方案时预期需要修改的既有文件。它们是为了消除今后的重复侵入，而不是每个 feature 都要修改。
@@ -838,7 +1074,12 @@ codegen/sync 产物禁止手改；FGUI 二进制和图集由 FairyGUI 编辑器�
 | Home | `HomeView.ts`、`HomeLogic.ts`、Home FGUI XML 与导出物 | 固定按钮改为数据驱动 feature menu |
 | View/FGUI | `viewRegistry.ts`、`fguiContracts.ts`、`defineView.ts`、必要的 `ViewMgr.ts`、FGUI codegen/manifest | 生成静态 registry 与契约 |
 | Tests | RPC contract/wire/idem 测试、View/FGUI 测试、相关生命周期测试 | 中央穷尽表改为 manifest/vector 遍历 |
-| Governance | 根 `package.json`、工具链检查、inventory verifier、README、AGENTS/CLAUDE、OVERVIEW/CLIENT/SERVER | 登记一次性命令与新开发动线 |
+| Governance | 根 `package.json`、工具链检查、inventory verifier、README、AGENTS/CLAUDE、OVERVIEW/CLIENT/SERVER、保护路径规则文件与无侵入矩阵测试 | 登记一次性命令、新开发动线与可机检的保护集合 |
+| 场景资产 | `apps/Cocos/assets/scene.scene`（及其 `.meta`） | `Main` 的 `@property` 搬家时由 Creator 重新序列化并人工审查；⛔ 不属于机械 diff |
+
+`scripts/fault-matrix.config.json` 是**人工审阅的中央故障矩阵登记**：新增普通 feature 只有在需要把自己的
+故障点纳入矩阵时才动它；届时按“显式框架登记项”评审，**不计入“只新增文件”的承诺**，并在保护规则的
+provenance 白名单里单列说明它是人工项。⛔ 不建议把它改成 generated 产物。
 
 若分阶段实施，可通过 compatibility manifest 暂时指向现有 Login、Home、Confirm 等旧路径；不要求一次提交把所有
 页面搬目录。但在完成现有功能迁移和双向集合测试之前，不能对外承诺“后续 feature 只新增文件”。
@@ -879,12 +1120,15 @@ apps/client/test/undergroundIdle*.test.ts
 ```text
 1. 新增 feature.json、shared domain、RPC vectors、server/client 源码和 View metadata
 2. FairyGUI 编辑并真实导出；fgui-codegen 生成 View AUTO 区
-3. 运行 feature codegen --write，审查普通 generated registry diff
+3. 运行 npm run codegen:features -- --write，审查普通 generated registry diff
 4. 显式运行 protocol fingerprint --write 与 fgui manifest --write，审查两类 lock diff
 5. 运行 npm run sync:shared（当前已包含 client→Cocos 同步，不再重复运行 sync:client）
-6. 运行 feature --check、protocol/FGUI/sync/inventory check、typecheck 和 RPC/客户端/服务端测试
-7. Creator 本地预览真实资源与生命周期
-8. 分类审查手写 feature diff、generated diff、lock diff、资源 diff 和镜像 diff
+6. 打开 Cocos Creator 一次，为 sync 新产生的 apps/Cocos/assets/src/** 文件与新目录生成 .meta，
+   与源码同批提交（⚠ sync-client --check 的 .meta 断言只遍历 git ls-files：本地未 add 时不会红，
+   提交或 CI 上必红——这一步不能省）
+7. 运行 npm run verify:features、protocol/FGUI/sync/inventory check、typecheck 和 RPC/客户端/服务端测试
+8. Creator 本地预览真实资源与生命周期
+9. 分类审查手写 feature diff、generated diff、lock diff、资源 diff 和镜像 diff
 ```
 
 在这条动线中，不应再修改：
@@ -913,10 +1157,30 @@ apps/client/src/app/**
 如果实现一个普通 feature 仍需手改其中任何文件，应视为框架扩展点缺失，先判断是本方案遗漏，还是该需求本质上
 改变了全局框架语义。
 
-正式实现时应把上述保护集合变成一份 canonical protected-path 规则并由无侵入矩阵机检；本文列表只解释边界，
-不能成为随后悄悄漂移的第二真源。
+正式实现时应把上述保护集合变成一份 canonical protected-path 规则文件（如 `scripts/protected-paths.json`）并由
+无侵入矩阵机检；本文列表只解释边界，⛔ 不能成为随后悄悄漂移的第二真源。该规则文件已进 §8.1 的 provenance
+表与 §9 的 Governance 行；矩阵必须把散文清单与规则文件做**双向比对**，两者不一致时红。
+（先例：仓内 `verify-inventory` 已经在做「解析 Markdown 表 → 与 `package.json` 双向 deepEqual」。）
+
+⚠ **适用范围**：本清单约束的是**普通 feature 的新增动线**（见本节首句“在这条动线中”）。
+[Non-intrusive-room.md](Non-intrusive-room.md) 的框架阶段按 §12.3 属于**显式框架侵入**，不适用本清单；
+实时 Room 玩法的对应约束见该文 §4.1 与 §11.5。若两份方案都落地，规则文件只有一份（§4.1 表 1 末行）。
 
 ## 11. 分阶段实施计划
+
+### 11.0 阶段总表：风险、外部依赖与可回退性
+
+| 阶段 | 风险等级与理由 | 外部依赖 | 可回退性 |
+| --- | --- | --- | --- |
+| 0 冻结口径与基线 | 低——只产出 manifest schema、基线记录与生成器 fixture | 无 | 可回退 |
+| 1 RPC descriptor 与向量发现 | 中——机械迁移，但要同时保持 12 条存量路由行为不变并新增 response 向量 | 无 | 可回退 |
+| 2 幂等 v2 与错误自描述 | 高——改 Redis 记录结构，**升级期是单向门** | 本地 Redis（`test:int` + 故障矩阵） | **单向门**：需 drain 窗口（≥ `IDEM_RESULT_MS + IDEM_PENDING_MS`）；回退同样需要一次 drain |
+| 3 客户端 FeatureHost 与生命周期 | **最高**——12 个新模块 + `pages.ts` 状态机迁移；`Main.ts` 的源文本 pin 必须与掏空同批改写 | 无（Node 侧），但 Creator 预览是必要的人工证据 | 可回退，但迁移期 ⛔ 不允许「新旧都注册」的中间态，回退必须整批 |
+| 4 Home 与 View/FGUI 生成登记 | 高——与 [Non-intrusive-room.md](Non-intrusive-room.md) 的 View catalog 有 owner 之争（§4.1 表 1） | FairyGUI 编辑器真实导出、Cocos Creator 预览 | 可回退；若 room 侧已先落地生成器，本阶段是**接管**而非新建 |
+| 5 inventory、文档索引与协议身份 | 中——协议身份拆分会动指纹锁文件格式与版本矩阵测试 | 无 | 可回退（需同批回滚锁文件格式） |
+
+> 阶段 3 是本方案的最重风险项，`pages.ts` 的状态机迁移尤其如此——迁移期两套恢复真相并存会产生难以复现的
+> 缺陷。§7.2 的「(a)/(b) 两条可执行规则」正是为此写的，⛔ 不要跳过。
 
 ### 阶段 0：冻结口径与基线
 
@@ -939,6 +1203,9 @@ apps/client/src/app/**
 - 中央 fixture 改为 feature/domain vector loader；
 - 保留 endpoint loader 的全集校验。
 
+本阶段还需为**存量 12 条路由补 response 向量**（见 §8.2：response 侧今天只有运行时 validator、没有测试向量）。
+⚠ `clientReqId` 的字符集收紧属 **wire 收紧**，⛔ 不进本阶段——本阶段的口径是“行为不变”。
+
 退出条件：现有 route、validator、endpoint 和行为不变；添加一个 fixture domain 只新增领域/endpoint/vector，
 不修改人工中央源码。
 
@@ -952,6 +1219,10 @@ apps/client/src/app/**
 - 更新单测与 Redis 集成故障矩阵；
 - 逐条审计现有 updateProfile/mail/shop/guild 写路由，决定 natural/idempotent 分类及 durable 兜底；
 - 默认制定 drain/维护窗口升级 SOP；只有逐路由证明后才允许混部。
+
+退出条件补三条：Lua 写入路径的 TTL 由集成测试断言（写入后 `PTTL` 落在预期区间），跨过期窗口的双 acquisition
+用例同时断言 TTL 与 `leaseId`；`done-oversize` 墓碑既不重跑 handler 也不返回 `unknown`；每 uid pending 上限
+超限返回 `BUSY`。
 
 退出条件：同 lease/cache 窗口内相同 ID/相同 payload 不并发执行且缓存命中不重执行；相同 ID/不同 payload
 稳定冲突；有 durable receipt/UNIQUE 的领域只产生一次权威转换；旧 lease 无法覆盖/释放新 lease；corrupt done
@@ -967,6 +1238,11 @@ apps/client/src/app/**
 - Main 收敛为 bootstrap/update/dispose；
 - 登录恢复不再固定打开 Home；
 - foreground/reconnect/reopen 由 RefreshCoordinator 合并。
+
+退出条件补三条：`Main.ts` / `pages.ts` 的**源文本 pin 已全部改写为对新 host 的行为断言，且改写与掏空 Main
+在同一次提交**，⛔ 不允许先删后补；WeChat compat 的 bootstrap 顺序断言在迁移**之前**已补上；`auth-invalid`
+事件发布后的**同一 tick 内** `getToken()` 已为空，且此后任何 feature 发起的 HTTP/RPC 都不携带旧 Bearer
+（有反例测试）。
 
 退出条件：fixture feature 在页面关闭、加载中取消、drop/reconnect、强踢、最终 leave、回前台和 session
 generation 变化时均不会让旧响应回写；late subscriber 能立即读取连接状态；foreground+reconnect+reopen 只
@@ -1018,24 +1294,40 @@ contracts 无人工 diff；迁移期 alias 不产生重复所有权；Creator �
 
 框架只有在以下条件全部满足后，才能宣称支持本方案中的“非侵入式 feature”：
 
-- [ ] 新增完整 fixture feature 时，既有人工源码零修改；
-- [ ] 只有 feature 新文件、generated registry、指纹、FGUI 产物和镜像发生变化；
-- [ ] manifest 仍存在时，缺任一 descriptor、endpoint、vector、View metadata 或 composer 必然失败；删除整个
-  feature 只能通过显式允许的删除流程；
-- [ ] route mode 不再由字段结构推断；
-- [ ] 相同 ID 不同 payload 在 handler 前被拒绝；
-- [ ] pending/done/unknown 与 durable receipt 的优先级有故障测试；
-- [ ] drop/reconnect/foreground/close 后不会发生旧 View 回写或 SDK 队列重放；
-- [ ] Home 新入口不需要修改 Home 源码或 XML；
-- [ ] FGUI 新包仍通过真实编辑器导出和 Creator 预览；
-- [ ] `verify:all`、feature generator/vector gate、相关 server integration/fault 测试和同步检查全部通过；
-- [ ] 文档仍明确区分“设计提案”“已实现”“已验收”。
+> **口径同 [Non-intrusive-room.md](Non-intrusive-room.md) §15**：机检项必须给出「判定方式」与「变异验证」
+> （改哪一行 / 删哪个断言 → 哪条用例转红）。⛔ 机检项给不出变异验证的不得作为验收项。人工项写「人工证据」
+> 并留存截图/录屏、设备与版本、日期、操作者、对应 commit。
+
+| 验收项 | 判定方式 | 变异验证 |
+| --- | --- | --- |
+| 新增完整 fixture feature 时，既有人工源码零修改 | 无侵入矩阵（见下） | 让 fixture 必须手改一处中央源码 → 矩阵转红 |
+| 只有 feature 新文件、generated registry、指纹、FGUI 产物和镜像发生变化 | 无侵入矩阵的 diff 分类器 | 往既有文件里加一行 → 分类器转红 |
+| manifest 仍存在时，缺任一 descriptor、endpoint、vector、View metadata 或 composer 必然失败 | `npm run verify:features` | 逐个删除这五类引用 → 各转红一条 |
+| 删除整个 feature 只能通过显式允许的删除流程 | `npm run verify:features` | 直接删目录后跑 writer → 必须拒绝而不是静默删生成物 |
+| route mode 不再由字段结构推断 | 编译期负例 | 让 `LobbyRpcIdemType` 改回结构推断 → 负例转红 |
+| 相同 ID 不同 payload 在 handler 前被拒绝 | 服务端幂等用例 | 去掉 payload hash 比较 → 转红 |
+| `clientReqId` 的字符集/长度积木拒绝含 `:`、`{`、换行、超长与非 ASCII 的值 | shared 契约向量 | 换回通用 `requiredId` → 转红 |
+| pending/done/done-oversize/unknown 与 durable receipt 的优先级有故障测试 | `test:int` + 故障矩阵 | 把 `done-oversize` 归类为 `unknown` → 转红 |
+| 新 feature 仅声明 `inspectsOperationGroup: "idle"` 而未 `dependsOn`、也未获 idle 侧 expose 时，`verify:features` 必须失败 | `npm run verify:features` | 去掉 group 所有权校验 → 该反例转绿（即门禁失效） |
+| drop/reconnect/foreground/close 后不会发生旧 View 回写或 SDK 队列重放 | 客户端生命周期用例 | 去掉 generation 守卫 → 转红 |
+| `auth-invalid` 事件发布后的**同一 tick 内** `getToken()` 已为空，此后任何请求不携带旧 Bearer | 客户端用例 | 在清 token 与发布事件之间插入一个 await → 转红 |
+| app dispose 后 connection/session/route/ticker/lifecycle 订阅计数**归零**，`PendingOperationJournal` 与 FeatureHost 实例全部释放 | 客户端 dispose 用例（计数断言） | 漏掉任一 disposer → 计数不归零，转红 |
+| 反复 open/close 同一 feature route N 轮后，订阅数、ViewMgr 缓存条目和 uncached handle 回到基线 | 客户端用例 | 让 route close 不解绑订阅 → 转红 |
+| Home 新入口不需要修改 Home 源码或 XML | 无侵入矩阵 | 让新入口必须改 Home XML → 转红 |
+| 抬头状态行与 `docs/inventory.json` 的 `routeOfTruth` 指向一致 | `npm run verify:inventory` | 把抬头指向已降级的归档 → 转红 |
+| §10 的散文保护清单与 canonical 规则文件**双向比对**一致 | 无侵入矩阵 | 从规则文件里删掉 `pages.ts` → 矩阵因散文清单对不上而转红 |
+| `verify:all`、feature generator/vector gate、相关 server integration/fault 测试和同步检查全部通过 | 上述命令 | 不适用（聚合项） |
+| FGUI 新包仍通过真实编辑器导出和 Creator 预览 | **人工证据** | 不适用（人工项） |
 
 还应增加一条端到端“无侵入扩展矩阵”：在临时 checkout 中记录保护文件 hash，加入并 stage/intent-to-add 一个
 带合成 FGUI 导出物的最小 `smoke-lobby-feature`；先证明全部 `--check` 因 stale/missing output 与 lock 失败，再运行
 writer、显式 lock accept 和 sync，最后证明全部 check 通过。分类器断言人工文件只出现 feature-owned `A`，既有
 `M` 只命中 provenance 白名单且没有 `D/R` 或既有 `.meta` UUID 变化；第二次 writer/sync 后第一次 patch 的字节/
 hash 不再变化。FGUI 编辑器/Creator 的真实导出与预览另做专项验收，Node fixture 不冒充编辑器。
+
+⚠ 镜像 TS 的 `.meta` **无法由 Node fixture 合成**——矩阵会显式 stage/intent-to-add，那恰好把文件变成已跟踪，
+从而触发 `sync-client --check` 的 `.meta` 断言。矩阵要么另造合成 `.meta` 并说明 uuid 来源，要么**显式声明
+本矩阵跳过 `sync-client --check` 的 `.meta` 段**、由单独的 Creator 人工验收项覆盖。⛔ 不能假装这一段被覆盖了。
 
 删除 fixture 是第二个独立阶段，允许该 feature 自有文件和镜像出现预期 `D`，但必须通过显式删除授权，并确认
 generated registry、Home entry、View、FGUI package/output、未引用源码和镜像均无残留。
