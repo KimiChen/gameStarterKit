@@ -279,8 +279,11 @@ test("故障注入：真实 worker error/exit 会 reap 并退避补位", async (
     // 还得覆盖注入 worker 的冷启动（data: URL 模块在 tsx 进程里编译 + 启动）。机器一忙，冷启动
     // 就超过 250ms，第一段的 `code=23` 断言会拿到「任务超时」而红。实测：单跑 3/3 绿，
     // 全量套件里约 1/3 概率红。
-    // 修法是把两者的间距拉开而不是各自微调：respawn 4s、任务超时 1.2s——冷启动预算 ×4.8，
-    // 排队超时与替补到位之间留 2.8s，两个竞态同时消失。⛔ 不要把它们调回相邻值。
+    // 修法是把两者的间距拉开而不是各自微调。⚠ 当前取值与余量只写在下面 env 块那一处
+    // （见 `COMPUTE_TASK_TIMEOUT_MS` / `COMPUTE_RESPAWN_DELAY_MS` 的赋值与其上方注释），
+    // ⛔ 这里**不重复具体数字**：上一版在这里抄了一份「respawn 4s、任务超时 1.2s、×4.8、余量 2.8s」，
+    // 89eebb4 改了 env 却没改这段，于是同一文件对同两个变量给出两套互斥数字，
+    // 而承载病史与禁令的偏偏是过期的那份。数字只留一处，才不会再分叉。
     const timeoutScript = `
       import assert from "node:assert/strict";
       import { Worker } from "node:worker_threads";
