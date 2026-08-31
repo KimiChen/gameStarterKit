@@ -105,8 +105,10 @@ npm --workspace @game/server run test:int
    - `apps/client/src/shared/` 来自 `apps/shared/src`。
    - `apps/Cocos/assets/src/` 来自 `apps/client/src`，包括随目录提交的 `.meta`。
    - 修改真源后使用 `sync:shared` / `sync:client`。
-   - `apps/shared/src/protocol/state.ts` 与 `apps/server/src/rooms/schema/GameRoomState.ts` 来自
-     `apps/shared/schema/game-room-state.json`，用 `npm --workspace @game/server run codegen:state` 刷新。
+   - `apps/shared/src/gameplays/`、`apps/server/src/rooms/schema/GameRoomState.ts` 与
+     `apps/server/src/rooms/schema/generated/`、`apps/client/src/gameplay/catalog.generated.ts` 来自
+     `apps/shared/schema/gameplays/<id>/`（manifest.json + state.json），用
+     `npm --workspace @game/server run codegen:gameplays` 刷新。
    - `apps/server/src/http/manifest.generated.ts` 来自 `apps/server/src/http/<domain>/<method>.ts`，
      用 `npm --workspace @game/server run codegen:http` 刷新。
    - `apps/shared/src/project.ts` 来自 `project.metadata.json`，用 `npm run init:project` 刷新。

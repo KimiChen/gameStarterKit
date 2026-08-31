@@ -36,8 +36,15 @@
 - `modes/catalog.ts` / `modes/IdleGameMode.ts`：生产 mode catalog（ballMove 与 idle 都在此登记）与最小
   第二玩法。Idle 使用独立 `IdleRoomState`、strict `IdlePulse` 和 pulse/真实离场结算，不声明 evidence
   capability，也不写任何收局证据。
-- `schema/GameRoomState.ts`：由 shared `schema/game-room-state.json` 生成的多 root 运行时 Schema 及
-  mode→root 构造器映射；同一 manifest 也生成 shared `protocol/state.ts` 的纯数据接口、mode→validator 映射。
+- `schema/GameRoomState.ts` 与 `schema/generated/<id>.ts`：由每玩法单源
+  `apps/shared/schema/gameplays/<id>/{manifest.json,state.json}` 经
+  `apps/server/tools/gameplay-codegen/` 生成——`generated/<id>.ts` 是该 mode 的运行时 Schema 类，
+  `GameRoomState.ts` 是聚合器（re-export 各 mode 类 + `RoomStateLifecycle` 视图 + mode→root 构造器映射）；
+  同一单源也生成 shared `gameplays/generated/state/<id>.ts` 的纯数据接口、`gameplays/catalog.generated.ts`
+  的 mode→validator 映射与 `GAMEPLAY_CATALOG`（id/modeVersion/maxPlayers/contractDigest），以及客户端
+  `gameplay/catalog.generated.ts` 镜像（跨 workspace 直写是 docs/Non-intrusive.md §5.4 登记的职责偏差，
+  freshness 由 `test/gameplay-codegen.test.ts` 守门）。players map 容量来自 manifest 的 `maxPlayers`；
+  契约 digest 变化必须同批 bump 该 mode 的 `modeVersion`，删除玩法必须显式 `--allow-delete <id>`。
   ⚠ 每个 root **必须**声明 shell 依赖的生命周期字段 `tick`/`phase`/`matchId`/`players`，其 player 类型
   必须声明 `id`/`name`；漏声明在 codegen 期直接失败。`phase` 还必须是 `GamePhase`/`GamePhaseType`
   **本身**并声明 `Waiting`/`Playing`/`Settle` 三个成员——⛔「是个 enum」不够：换一个枚举会让
@@ -45,8 +52,8 @@
   拒掉 shell 无条件写入的那个值（该 mode 全部客户端在结算时解不出状态）。据此生成的 `RoomStateLifecycle` 是 `GameRoom.state`
   的类型——⛔ 它不是任何具体 root 的别名：曾经的 `declare readonly state: GameRoomState` 让 shell 在类型上
   拥有 ballMove 的全部字段，「玩法无关」只剩口头约定。玩法专属字段只在 mode 自己的 hook 里按其精确
-  root 类型读写。root/字段增删只修改 manifest，再运行
-  `npm --workspace @game/server run codegen:state`、协议指纹更新与相关测试；两份生成文件禁止手改。
+  root 类型读写。root/字段增删只修改该 mode 的单源目录，再运行
+  `npm --workspace @game/server run codegen:gameplays` 与相关测试；全部生成文件禁止手改。
 
 GameRoom 当前包含 strict auth、协议/区号/mode 复核、按 `sId + mode` 撮合隔离、异构 state、聊天、重连宽限
 和显式 opt-in 的 best-effort match evidence 发射通道。

@@ -52,8 +52,10 @@ apps/client/src
 - 消息名、请求/响应类型、状态镜像、错误码和公式进入 shared。
 - 服务端与客户端从 shared import，不复制字符串或接口。
 - 外部身份 HTTP 类型来自锁定的 `@gono/webplatform-contract` 生成物。
-- Colyseus state 的 mode→root、字段和值域只修改 `apps/shared/schema/game-room-state.json`；生成器同时产出
-  shared interface/validator 映射与服务端 Schema 构造器映射，再更新协议指纹。
+- Colyseus state 的 mode→root、字段和值域只修改 `apps/shared/schema/gameplays/<id>/`（manifest.json +
+  state.json）；`codegen:gameplays` 同时产出 shared per-mode interface/validator 与 catalog、服务端 Schema
+  构造器映射和客户端 catalog。生成物落在 `apps/shared/src/gameplays/`，不进协议指纹目录；per-mode 契约
+  身份由 catalog 的 contractDigest + manifest.modeVersion 承担。
 
 ### 3.2 约束可执行
 
@@ -127,9 +129,11 @@ participants；热档/冷档 schema 迁移、asset effect 原子性与经济操�
    并确认是否需要 bump PROTOCOL_VERSION（不重钉则 npm run test:client 中的 protocolFingerprint 测试失败）。
    指纹脚本只接受 `rooms.ts` 中唯一的顶层 export 声明，并会忽略注释，避免文档示例中的旧版本
    误导版本闸。
-4. 若改动落在 apps/shared/schema/game-room-state.json，运行
-   npm --workspace @game/server run codegen:state 重新生成 apps/shared/src/protocol/state.ts 与
-   apps/server/src/rooms/schema/GameRoomState.ts（两者都是生成物，禁手改），再重新 sync:shared
+4. 若改动落在 apps/shared/schema/gameplays/<id>/（manifest.json / state.json），运行
+   npm --workspace @game/server run codegen:gameplays 重新生成 apps/shared/src/gameplays/、
+   apps/server/src/rooms/schema/GameRoomState.ts 与 schema/generated/、
+   apps/client/src/gameplay/catalog.generated.ts（都是生成物，禁手改；契约 digest 变化必须同批
+   bump 该 mode 的 manifest.modeVersion），再重新 sync:shared
 5. 在 apps/server/src/websocket 或 http 增加 endpoint；新增 http endpoint 后运行
    npm --workspace @game/server run codegen:http 重新生成 apps/server/src/http/manifest.generated.ts
 6. 更新服务端登记点、key/config 与测试
@@ -142,8 +146,8 @@ participants；热档/冷档 schema 迁移、asset effect 原子性与经济操�
 ### 4.2 新玩法
 
 ```text
-shared 登记 canonical mode id + state manifest root / wire message
-  → npm --workspace @game/server run codegen:state 生成 mode→root constructor / validator 映射
+shared 登记 canonical mode id + 新建 apps/shared/schema/gameplays/<id>/{manifest.json,state.json} / wire message
+  → npm --workspace @game/server run codegen:gameplays 生成 mode→root constructor / validator 映射与三端 catalog
   → server modes/<Mode> + modes/catalog.ts
   → 玩法自带 C2S 输入时：server rooms/GameRoom.ts 的 GAME_ROOM_C2S_SCHEMAS 与 messages handler 表
     登记该消息（只此两处；handler 表必须是全 C2S 联合的静态表，见下文）

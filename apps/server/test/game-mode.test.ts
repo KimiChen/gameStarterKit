@@ -7,6 +7,7 @@ import { CloseCode } from "colyseus";
 import {
     C2S,
     ErrorCode,
+    GAMEPLAY_CATALOG,
     GamePhase,
     GameplayModeId,
     MAX_PLAYERS,
@@ -103,6 +104,7 @@ test("生产 mode catalog 与 shared/state 生成映射保持精确同集", () =
     try {
         const canonicalModes = [...Object.values(GameplayModeId)].sort();
         assert.deepEqual(gameModeRegistry.list(), canonicalModes);
+        assert.deepEqual(Object.keys(GAMEPLAY_CATALOG).sort(), canonicalModes);
         assert.deepEqual(Object.keys(ROOM_STATE_VALIDATORS).sort(), canonicalModes);
         assert.deepEqual(Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS).sort(), canonicalModes);
     } finally {

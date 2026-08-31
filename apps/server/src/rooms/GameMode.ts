@@ -1,6 +1,7 @@
 import type { Client } from "colyseus";
 import {
     C2S,
+    GAMEPLAY_CATALOG,
     GamePhase,
     GameplayModeId,
     MAX_PLAYERS,
@@ -71,15 +72,16 @@ export interface GameModeMessage<TState = GameRoomState> {
  * 一个玩法的人数事实。GameRoom 是通用 shell，⛔ 不得再在 shell 里写死人数字面量——
  * 「几个人算满」「几个人能开」「几个人自动开」是玩法事实，不是传输层事实。
  *
- * `max` 的上界不是随便定的：root players map 的容量由生成 validator 按 shared 的
- * `MAX_PLAYERS` 烧死（manifest 的 `maxSizeConstant`），声明超过它的 mode 会在 schema
- * 层炸，所以这里 fail-closed 挡在**建 mode 实例时**（`GameModeRegistry.create`，即建房那一刻）。
+ * `max` 的上界不是随便定的：root players map 的容量由该 mode 自己的 state descriptor 提供
+ * （`GAMEPLAY_CATALOG[modeId].maxPlayers`，来自 manifest.json），生成 validator 按它烧死字面量，
+ * 声明超过它的 mode 会在 schema 层炸，所以这里 fail-closed 挡在**建 mode 实例时**
+ * （`GameModeRegistry.create`，即建房那一刻）。
  * ⚠ 不是 `register()`：register 只收一个 factory，不调用它，所以拿不到可校验的实例。
  */
 export interface GameModeRoster {
     /** 开局所需最少人数；低于它 startMatch 不开局。 */
     readonly min: number;
-    /** 房间容量上限，写进 Colyseus 的 `maxClients`。必须 ≤ shared 的 MAX_PLAYERS。 */
+    /** 房间容量上限，写进 Colyseus 的 `maxClients`。必须 ≤ 该 mode 的 players map 容量。 */
     readonly max: number;
     /** 达到该人数时自动开局；必须落在 [min, max]。 */
     readonly autoStart: number;
@@ -239,9 +241,13 @@ export function assertGameModeRoster(
             throw new Error(`[GameModeRegistry] mode ${key} 的 roster.${field} 必须是 ≥1 的整数，实际 ${String(value)}`);
         }
     }
-    if (roster.max > MAX_PLAYERS) {
+    // 该 mode 的 players map 容量来自它自己的 manifest（GAMEPLAY_CATALOG.maxPlayers）；
+    // 未进 catalog 的 mode id（测试探针/注入 mode）保留 MAX_PLAYERS 作为 shell 兜底上界。
+    const capacity = (GAMEPLAY_CATALOG as Readonly<Partial<Record<string, { readonly maxPlayers: number }>>>)[key]
+        ?.maxPlayers ?? MAX_PLAYERS;
+    if (roster.max > capacity) {
         throw new Error(
-            `[GameModeRegistry] mode ${key} 的 roster.max=${roster.max} 超过 root players map 的容量 ${MAX_PLAYERS}`,
+            `[GameModeRegistry] mode ${key} 的 roster.max=${roster.max} 超过 root players map 的容量 ${capacity}`,
         );
     }
     if (roster.min > roster.max) {

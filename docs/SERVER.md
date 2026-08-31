@@ -260,10 +260,12 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
 
 改 state 形状或新增 C2S 消息：
 
-1. 改 `apps/shared/schema/game-room-state.json`（state 形状的唯一真源），或在
-   `apps/shared/src/protocol/messages.ts` 登记消息名与 payload。
-2. 运行 `npm --workspace @game/server run codegen:state` 重新生成 `apps/shared/src/protocol/state.ts`
-   与 `apps/server/src/rooms/schema/GameRoomState.ts`（两者都是生成物，禁手改），再运行 `npm run sync:shared`。
+1. 改 `apps/shared/schema/gameplays/<id>/state.json`（该 mode state 形状的唯一真源；容量来自同目录
+   manifest.json 的 `maxPlayers`），或在 `apps/shared/src/protocol/messages.ts` 登记消息名与 payload。
+2. 运行 `npm --workspace @game/server run codegen:gameplays` 重新生成 `apps/shared/src/gameplays/`
+   （per-mode state + catalog/index）、`apps/server/src/rooms/schema/GameRoomState.ts` 与
+   `apps/server/src/rooms/schema/generated/`、`apps/client/src/gameplay/catalog.generated.ts`
+   （都是生成物，禁手改；契约 digest 变化必须同批 bump manifest.modeVersion），再运行 `npm run sync:shared`。
    ⚠ 新增 root 时，它**必须**声明 `tick`/`phase`/`matchId`/`players`，其 player 类型必须声明 `id`/`name`
    ——通用 GameRoom shell 只读这些，漏声明在 codegen 期失败而不是运行期读到 undefined。`GameRoom.state`
    的类型是据此生成的 `RoomStateLifecycle`，⛔ 不是任何具体 root；shell 读 ball 专属字段必须显式走
@@ -537,7 +539,7 @@ Game HTTP request schema 已由 shared validator 同源生成并直接注入带 
 | Room 名、C2S/S2C、join options | `apps/shared/src/protocol/rooms.ts`、`messages.ts` |
 | Lobby RPC 请求/响应/消息全集 | `apps/shared/src/protocol/lobbyRpc` |
 | RPC 错误码 | `apps/shared/src/protocol/lobbyRpc/envelope.ts` 的 `RPC_ERR_CODES`（15 个）；异常→码映射在 `core/errors.ts` 的 `ERR_MAP`（覆盖 11 个，其余落 `INTERNAL` 兜底）。其中 `GRANTING` 当前没有任何产出点，`AUTH_EPOCH_STALE` 服务端已停产、只保留客户端分支，`ORDER_MISMATCH` 只由可选的 `http/pay/wxNotify.ts` 直接返回，不经 `ERR_MAP` |
-| Colyseus state 形状 | `apps/shared/schema/game-room-state.json`；纯数据镜像 `apps/shared/src/protocol/state.ts` 与运行时 Schema `apps/server/src/rooms/schema/GameRoomState.ts` 都是 `apps/server/tools/room-state-codegen.ts` 的生成物（首行带 AUTO-GENERATED 标记，禁手改），改 manifest 后运行 `npm --workspace @game/server run codegen:state` |
+| Colyseus state 形状 | `apps/shared/schema/gameplays/<id>/{manifest.json,state.json}`；纯数据镜像 `apps/shared/src/gameplays/generated/state/<id>.ts` + catalog、运行时 Schema `apps/server/src/rooms/schema/generated/<id>.ts` 与聚合器 `GameRoomState.ts` 都是 `apps/server/tools/gameplay-codegen/` 的生成物（首行带 AUTO-GENERATED 标记，禁手改），改单源后运行 `npm --workspace @game/server run codegen:gameplays` |
 | `ballMove` v3 evidence schema/validator/replay | `apps/server/src/core/match/matchEvidence.ts`、`matchReplay.ts`；流生产消费在 `matchConsumer.ts` |
 | Redis key | `apps/server/src/core/infra/keys.ts` |
 | Asset effect schema/validator | `apps/shared/src/protocol/lobbyRpc/economy.ts`；Lua 镜像在 `apps/server/src/core/infra/redisScripts.ts` |

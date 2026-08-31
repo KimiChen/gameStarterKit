@@ -402,8 +402,10 @@ test("inventory verifier rejects synchronized removal of the state codegen regis
     for (const filename of ["AGENTS.md", "CLAUDE.md"]) {
       const file = join(root, filename);
       const text = readFileSync(file, "utf8").replace(
-        "   - `apps/shared/src/protocol/state.ts` 与 `apps/server/src/rooms/schema/GameRoomState.ts` 来自\n"
-        + "     `apps/shared/schema/game-room-state.json`，用 `npm --workspace @game/server run codegen:state` 刷新。\n",
+        "   - `apps/shared/src/gameplays/`、`apps/server/src/rooms/schema/GameRoomState.ts` 与\n"
+        + "     `apps/server/src/rooms/schema/generated/`、`apps/client/src/gameplay/catalog.generated.ts` 来自\n"
+        + "     `apps/shared/schema/gameplays/<id>/`（manifest.json + state.json），用\n"
+        + "     `npm --workspace @game/server run codegen:gameplays` 刷新。\n",
         "",
       );
       writeFileSync(file, text);
