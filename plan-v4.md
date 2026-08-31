@@ -321,7 +321,10 @@ quarantine 自身写失败降级为 `transport/V3_QUARANTINE_UNAVAILABLE`——�
   ⚠ handler 表仍必须是全 C2S 联合的静态表，这条绕不过去（`Room.__init()` 早于 `onCreate()`）。
 - **阶段三**：`parseRoomStateDescriptor` 加 root 生命周期断言，codegen 生成
   `RoomStateLifecycle` / `RoomStatePlayerLifecycle`，`GameRoom.state` 改用前者；
-  14 处 ball 专属读写改走具名的 `ballState` 收窄访问器（实施结果原写「20 处」，系计数不实）。
+  **13 个** `this.ballState` 访问点承接全部 ball 专属读写（另有 1 处是 getter 声明本身，不是读写点）。
+  ⚠ 该数字被改错过两次：最初写「20 处」——那是重新给 `state` 定类型后 `tsc` 报出的**错误条数**，
+  不是访问点数（同一行上的 `player.hp` / `.maxHp` / `.alive` 各算一条错误，却只对应一个访问点）；
+  第十九轮改成「14 处」，是把 getter 声明也算进了读写点。以 `grep -o 'this\.ballState' | wc -l` 为准。
 
 ---
 
