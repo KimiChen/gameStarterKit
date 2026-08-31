@@ -152,13 +152,20 @@ test("故障注入：真实 worker error/exit 会 reap 并退避补位", async (
     const script = `
       import assert from "node:assert/strict";
       import { Worker } from "node:worker_threads";
+      import { COMPUTE_RESPAWN_DELAY_MS } from "./src/core/infra/config.ts";
       import { _computePoolTestHooks, destroyPool, runInPool } from "./src/core/compute/pool.ts";
 
       const source = ${JSON.stringify(faultWorkerSource)};
       // ⚠ 退避值必须从被验实现自己读，⛔ 不能写死 1000：COMPUTE_RESPAWN_DELAY_MS 现在是可配置的，
       // 外部环境里设了它（合法生产配置）就会让「delay === 1000」一条也钩不到，用例假红成
       // 「must schedule a replacement timer」——那是夹具坏了，不是产品坏了。
-      const RESPAWN_MS = Number(process.env.COMPUTE_RESPAWN_DELAY_MS ?? 1000);
+      // ⚠ 从 config **导入**实际生效值。⛔ 不要读 env 再用「?? 1000」兜底：那个 1000 是
+      // config.ts 里默认值的第二份拷贝，config 改默认值时它会静默分叉；而 env 在本子进程里
+      // 是显式钉死的（见下面 env 块），兜底分支根本不可达——实测删掉它用例照常全绿，
+      // 即死代码 + 无守门的第二真源。
+      // ⛔⛔ 本注释在**模板字符串内**：绝不能出现反引号，否则会提前终止 script 字符串，
+      // 子进程拿到空脚本、stdout 为空而退出码仍是 0，报错指向「stdout 不匹配」完全误导。
+      const RESPAWN_MS = COMPUTE_RESPAWN_DELAY_MS;
       const nativeSetTimeout = globalThis.setTimeout;
       const respawnTimers = [];
       globalThis.setTimeout = (callback, delay, ...args) => {
@@ -294,6 +301,7 @@ test("故障注入：真实 worker error/exit 会 reap 并退避补位", async (
     const timeoutScript = `
       import assert from "node:assert/strict";
       import { Worker } from "node:worker_threads";
+      import { COMPUTE_RESPAWN_DELAY_MS } from "./src/core/infra/config.ts";
       import { _computePoolTestHooks, runInPool } from "./src/core/compute/pool.ts";
 
       const source = ${JSON.stringify(faultWorkerSource)};
@@ -301,7 +309,7 @@ test("故障注入：真实 worker error/exit 会 reap 并退避补位", async (
       const respawnTimers = [];
       globalThis.setTimeout = (callback, delay, ...args) => {
         const timer = nativeSetTimeout(callback, delay, ...args);
-        if (delay === Number(process.env.COMPUTE_RESPAWN_DELAY_MS ?? 1000)) respawnTimers.push(timer);
+        if (delay === COMPUTE_RESPAWN_DELAY_MS) respawnTimers.push(timer);
         return timer;
       };
 
