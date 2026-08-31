@@ -7,7 +7,7 @@ import {
   type GamePhaseType,
 } from "@game/shared";
 
-import type { BallMoveMotionAnchor, BallMoveMutablePlayer } from "../../rooms/ballMoveRules";
+import type { BallMoveMotionAnchor, BallMoveMutablePlayer } from "../../rooms/modes/ballMove/rules";
 
 export const MATCH_EVIDENCE_SCHEMA_VERSION = 3;
 export const BALL_MOVE_RULESET_VERSION = 1;

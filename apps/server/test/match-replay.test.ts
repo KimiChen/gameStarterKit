@@ -34,7 +34,7 @@ import {
   resetBallMovePlayers,
   type BallMoveMotionAnchor,
   type BallMoveMutablePlayer,
-} from "../src/rooms/ballMoveRules";
+} from "../src/rooms/modes/ballMove/rules";
 
 const FIXED_STEP_MS = 50;
 

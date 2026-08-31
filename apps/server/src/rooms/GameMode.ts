@@ -3,18 +3,16 @@ import {
     C2S,
     GamePhase,
     GameplayModeId,
-    MAP_HEIGHT,
-    MAP_WIDTH,
     MAX_PLAYERS,
     validateGameplayModeId,
     type C2SType,
+    type ErrorCodeType,
     type GamePhaseType,
+    type S2CType,
 } from "@game/shared";
-import {
-    BALL_MOVE_ROSTER_SIZE,
-    BALL_MOVE_RULESET_ID,
-    BALL_MOVE_RULESET_VERSION,
-} from "../core/match/matchEvidence";
+// ⚠ 仅类型：MatchEvidenceV3 是 core 拥有的通用证据格式（不是 ballMove 私有符号），
+// evidence capability 的 build() 返回值需要它。本文件不 import 任何 ballMove 实现。
+import type { MatchEvidenceV3 } from "../core/match/matchEvidence";
 import { GameRoomState, PlayerState } from "./schema/GameRoomState";
 
 /**
@@ -27,8 +25,26 @@ export interface GameModeContext<TState = GameRoomState> {
     readonly roomId: string;
     readonly sId: number;
     readonly fixedStepMs: number;
+    /** 本局种子（进证据链供 verifier 重放）。 */
+    readonly matchSeed: number;
+    /**
+     * 正式对局确定性随机流。⚠ 房间在 initializeMatchState 里**重建**该流，context 的
+     * 两个方法始终转发到当前流（闭包引用，非快照）——mode 不得自己缓存底层流对象。
+     */
+    readonly random: {
+        next(): number;
+        nextInt(min: number, max: number): number;
+    };
     /** Freeze the current match synchronously. Mode state must be finalized first. */
     settle(): void;
+    /** 出站 S2C 仍走房间的 shared validator 校验路径；client 允许为 undefined（注入/回放）。 */
+    sendS2C(client: Client | undefined, type: S2CType, payload: unknown): void;
+    broadcastS2C(type: S2CType, payload: unknown): void;
+    sendError(client: Client, code: ErrorCodeType): void;
+    /** 注入/回放路径按 sessionId 反查真实连接；不存在时返回 undefined。 */
+    findClientBySession(sessionId: string): Client | undefined;
+    /** 当前对局参与者的框架账号 uid（participantUserId 快照）；无记录时 null。 */
+    userIdOf(sessionId: string): string | null;
 }
 
 export interface GameModePlayerFactoryContext {
@@ -83,6 +99,25 @@ export interface GameModeInputs {
     readonly phases?: { readonly [K in C2SType]?: readonly GamePhaseType[] };
 }
 
+/**
+ * mode 的可选证据能力。声明了它的 mode 拥有可重放的收局证据契约；未声明的 mode
+ * （如 idle）在 settle 时明确不产出任何证据。
+ */
+export interface GameModeEvidenceCapability {
+    /**
+     * roster 与证据契约的自洽闸。registry.create 与注入两条路径都在 roster/inputs 闸后调用，
+     * 保持「非法 roster+证据耦合在建 mode 实例时抛」的既有时机。
+     */
+    assertRosterCompatible(key: string, roster: GameModeRoster): void;
+    /**
+     * 开局边界（mode start boundary 之后、phase=Playing 之前）冻结初始快照；
+     * throw = 开局失败，走既有 rollback。
+     */
+    captureInitialState(): void;
+    /** settle 时、onFinish 之前调用；null = 本局无证据（静默丢弃/不产出）。 */
+    build(): MatchEvidenceV3 | null;
+}
+
 export interface GameMode<TState = GameRoomState, TPlayer = PlayerState> {
     readonly id: string;
     /** 人数事实；shell 只按它分发，不再写死字面量。 */
@@ -91,16 +126,8 @@ export interface GameMode<TState = GameRoomState, TPlayer = PlayerState> {
     readonly inputs: GameModeInputs;
     /** Creates the exact per-mode Schema value inserted into the root players map. */
     createPlayer(context: GameModePlayerFactoryContext): TPlayer;
-    /**
-     * True delegates simulation fallbacks to the starter's ballMove rules;
-     * false guarantees GameRoom never reads ball-only fields for this mode.
-     */
-    readonly usesDefaultBallMoveRules: boolean;
-    /** Exact replay contract implemented by this mode, when any. */
-    readonly matchEvidenceRuleset?: {
-        readonly id: string;
-        readonly version: number;
-    };
+    /** 可选证据能力；未声明的 mode settle 时不产出证据。 */
+    readonly evidence?: GameModeEvidenceCapability;
     /** Return false to reject the client after auth but before state mutation. */
     onAdmission?(context: GameModeContext<TState> & { readonly client: Client }): boolean | void;
     /** Return true when the mode fully consumes a validated message. */
@@ -110,6 +137,11 @@ export interface GameMode<TState = GameRoomState, TPlayer = PlayerState> {
     onMatchStart?(context: GameModeContext<TState>): void | Promise<void>;
     /** Restores mode-owned fields when an attempted start is rolled back. */
     onMatchRollback?(context: GameModeContext<TState>): void | Promise<void>;
+    /**
+     * stepFixed 在 `tick++` **之前**调用（ballMove 在此应用注入/回放输入）。
+     * ⚠ 该钩子可能同步 settle；shell 调用后必须复查 phase===Playing 再推进 tick。
+     */
+    onBeforeStep?(context: GameModeContext<TState> & { readonly dtMs: number }): void;
     onStep?(context: GameModeContext<TState> & { readonly dtMs: number }): void;
     /** Synchronous state transition before the departing player is removed. */
     onPlayerLeaving?(context: GameModePlayerLeavingContext<TState, TPlayer>): void;
@@ -160,14 +192,14 @@ export class GameModeRegistry<TState = GameRoomState, TPlayer = PlayerState> {
         if (!mode || typeof mode !== "object" || mode.id !== key) {
             throw new Error(`[GameModeRegistry] 插件 id 不匹配：登记 ${key}，实际 ${String(mode?.id)}`);
         }
-        if (typeof mode.usesDefaultBallMoveRules !== "boolean") {
-            throw new Error(`[GameModeRegistry] mode ${key} 必须声明 usesDefaultBallMoveRules boolean`);
-        }
         if (typeof mode.createPlayer !== "function") {
             throw new Error(`[GameModeRegistry] mode ${key} 必须声明 createPlayer factory`);
         }
-        assertGameModeRoster(key, mode.roster, mode.matchEvidenceRuleset);
+        assertGameModeRoster(key, mode.roster);
         assertGameModeInputs(key, mode.inputs);
+        // 声明了证据能力的 mode，其 roster 必须与证据契约自洽（如 ballMove v1 的固定 2 人）。
+        // 与 roster/inputs 闸同一时机：create（建房）与注入构造期，⛔ register 不校验。
+        mode.evidence?.assertRosterCompatible(key, mode.roster);
         // The id check above is the registry's runtime erasure boundary. The
         // selected mode keeps its precise state/player types within its hooks.
         return mode as GameMode<TModeState, TModePlayer>;
@@ -177,31 +209,11 @@ export class GameModeRegistry<TState = GameRoomState, TPlayer = PlayerState> {
 export const BALL_MOVE_GAME_MODE_ID = GameplayModeId.BallMove;
 export const IDLE_GAME_MODE_ID = GameplayModeId.Idle;
 
-/** Default mode keeps the existing GameRoom rules as the compatibility mode. */
+/**
+ * Process-local production registry.  ⚠ 本文件不注册任何具体玩法：登记发生在进程组合根
+ * `modes/catalog.ts`（ballMove 与 idle 对称），import 本文件不再带任何注册副作用。
+ */
 export const gameModeRegistry = new GameModeRegistry<GameRoomState>();
-export function createBallMoveGameMode(): GameMode<GameRoomState, PlayerState> {
-    return {
-        id: BALL_MOVE_GAME_MODE_ID,
-        // 与去硬编码前的 shell 行为逐值一致：满员 MAX_PLAYERS、两人开局、两人自动开局。
-        roster: { min: 2, max: MAX_PLAYERS, autoStart: 2 },
-        // Move/CastSkill 是正式模拟输入，⛔ 绝不在 Waiting/Settle 改状态。
-        inputs: { accepts: [C2S.Move, C2S.CastSkill] },
-        usesDefaultBallMoveRules: true,
-        createPlayer: ({ sessionId, name, randomInt }) => {
-            const player = new PlayerState();
-            player.id = sessionId;
-            player.name = name;
-            player.x = randomInt(100, MAP_WIDTH - 100);
-            player.y = randomInt(100, MAP_HEIGHT - 100);
-            return player;
-        },
-        matchEvidenceRuleset: {
-            id: BALL_MOVE_RULESET_ID,
-            version: BALL_MOVE_RULESET_VERSION,
-        },
-    };
-}
-gameModeRegistry.register(BALL_MOVE_GAME_MODE_ID, createBallMoveGameMode);
 
 /**
  * roster 的 fail-closed 校验：漏配、非整数、或次序不成立都在**建 mode 实例时**抛，
@@ -217,7 +229,6 @@ gameModeRegistry.register(BALL_MOVE_GAME_MODE_ID, createBallMoveGameMode);
 export function assertGameModeRoster(
     key: string,
     roster: GameModeRoster | undefined,
-    ruleset?: GameMode["matchEvidenceRuleset"],
 ): void {
     if (!roster || typeof roster !== "object") {
         throw new Error(`[GameModeRegistry] mode ${key} 必须声明 roster{min,max,autoStart}`);
@@ -242,17 +253,8 @@ export function assertGameModeRoster(
             + `必须落在 [${roster.min}, ${roster.max}]`,
         );
     }
-    // ballMove v1 证据把 initialRoster 冻结成**恰好** BALL_MOVE_ROSTER_SIZE 条（producer 与
-    // verifier 两侧都按 exactArray 校验），所以声明该 ruleset 却配了别的开局人数，是一条自相
-    // 矛盾的声明。此前它只在真开局时炸成给客户端的 1000/Unknown，这里提前到建 mode 实例时。
-    // ⛔ 不连 max 一起断言：max 是座位上限，与「开局时恰好几人」不是同一件事。
-    if (ruleset && ruleset.id === BALL_MOVE_RULESET_ID && ruleset.version === BALL_MOVE_RULESET_VERSION
-        && (roster.min !== BALL_MOVE_ROSTER_SIZE || roster.autoStart !== BALL_MOVE_ROSTER_SIZE)) {
-        throw new Error(
-            `[GameModeRegistry] mode ${key} 声明了 ballMove v1 证据，其 roster.min/autoStart `
-            + `必须都是 ${BALL_MOVE_ROSTER_SIZE}，实际 min=${roster.min} autoStart=${roster.autoStart}`,
-        );
-    }
+    // roster 与证据契约的耦合断言不在这里：它属于声明证据能力的 mode 自己
+    //（`GameModeEvidenceCapability.assertRosterCompatible`，create/注入两路径都会调）。
 }
 
 /**

@@ -11,7 +11,7 @@ import {
     type C2SType,
 } from "@game/shared";
 import { GameRoom, GAME_ROOM_C2S_SCHEMAS } from "../src/rooms/GameRoom";
-import { createBallMoveGameMode } from "../src/rooms/GameMode";
+import { createBallMoveGameMode } from "../src/rooms/modes/ballMove/index";
 import { GameRoomState, PlayerState } from "../src/rooms/schema/GameRoomState";
 
 type Vector = {

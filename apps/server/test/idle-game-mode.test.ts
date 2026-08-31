@@ -19,6 +19,10 @@ import {
     MODE_PLAYER_REGISTER_REASON,
 } from "../src/rooms/GameRoom";
 import {
+    createBallMoveGameMode,
+    registerBallMoveGameMode,
+} from "../src/rooms/modes/ballMove/index";
+import {
     IDLE_DEFAULT_PULSE_GOAL,
     IDLE_MAX_PULSE_GOAL,
     createIdleGameMode,
@@ -100,6 +104,9 @@ async function startedIdleRoom(goal = IDLE_DEFAULT_PULSE_GOAL): Promise<{
 test("Idle root：onCreate 只按生成映射选择一次，之后禁止替换", () => {
     const registeredHere = !gameModeRegistry.has(IDLE_GAME_MODE_ID);
     const unregister = registeredHere ? registerIdleGameMode() : () => undefined;
+    // ballMove 登记同样只在组合根/显式调用；本用例的 ballRoom.onCreate 需要它。
+    const ballRegisteredHere = !gameModeRegistry.has(BALL_MOVE_GAME_MODE_ID);
+    const unregisterBall = ballRegisteredHere ? registerBallMoveGameMode() : () => undefined;
     try {
         const beforeCreate = new GameRoom({ seed: 699 });
         assert.equal(
@@ -146,6 +153,7 @@ test("Idle root：onCreate 只按生成映射选择一次，之后禁止替换",
         assert.equal(ballRoom.state instanceof IdleRoomState, false);
     } finally {
         unregister();
+        unregisterBall();
     }
 });
 
@@ -315,7 +323,7 @@ test("玩法消息 fail-closed：Idle 拒 Move/Cast，ballMove 拒 IdlePulse", a
     assert.deepEqual(errorCodes(first), [ErrorCode.BadRequest, ErrorCode.BadRequest]);
     await room.onDispose();
 
-    const ballRoom = new GameRoom({ seed: 704 });
+    const ballRoom = new GameRoom({ seed: 704, mode: createBallMoveGameMode() });
     installLock(ballRoom);
     const ballA = client("ball-a", BALL_MOVE_GAME_MODE_ID);
     const ballB = client("ball-b", BALL_MOVE_GAME_MODE_ID);
@@ -366,14 +374,24 @@ test("Idle 重连成功：保留座位与 pulses，不触发离场胜负", async
     await room.onDispose();
 });
 
-test("Idle fixed step：只推进公共 tick，不接受或执行 ballMove 注入", async () => {
+test("Idle fixed step：只推进公共 tick，GameRoom 已无 ballMove 注入 API", async () => {
     const { room, state, first } = await startedIdleRoom();
     const player = state.players.get(first.sessionId)!;
-    assert.equal(room.injectInput({ type: "move", sessionId: first.sessionId, dirX: 1, dirY: 0 }), false);
+    // 阶段 1：注入/回放 harness 下沉到 ballMove mode，通用房间不再实现 ballMove 输入形状。
+    // 编译期该 API 已不存在；这里再做运行期断言，防 any 化回潜。
+    assert.equal("injectInput" in room, false, "GameRoom 不得再暴露 injectInput");
+    assert.equal("setInputSource" in room, false);
+    assert.equal("getAcceptedInputs" in room, false);
+    // 未绑定到本房的 ballMove mode 句柄同样拒绝注入（idle 房无从接受 ballMove 输入）。
+    const strayBallMove = createBallMoveGameMode();
+    assert.equal(
+        strayBallMove.injectInput({ type: "move", sessionId: first.sessionId, dirX: 1, dirY: 0 }),
+        false,
+    );
     (room as unknown as { stepFixed(): void }).stepFixed();
     assert.equal(state.tick, 1);
     assert.equal(player.pulses, 0);
     assert.equal("dirX" in player, false);
-    assert.deepEqual(room.getAcceptedInputs(), []);
+    assert.deepEqual(strayBallMove.getAcceptedInputs(), []);
     await room.onDispose();
 });

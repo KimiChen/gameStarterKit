@@ -16,10 +16,16 @@ import {
 import {
     GameRoom,
     GAME_ROOM_MAX_MESSAGES_PER_SECOND,
-    MAX_ACCEPTED_INPUTS,
     type GameRoomRuntimeOptions,
 } from "../src/rooms/GameRoom";
-import { BALL_MOVE_GAME_MODE_ID, createBallMoveGameMode } from "../src/rooms/GameMode";
+import { BALL_MOVE_GAME_MODE_ID } from "../src/rooms/GameMode";
+import {
+    MAX_ACCEPTED_INPUTS,
+    createBallMoveGameMode,
+    registerBallMoveGameMode,
+    type BallMoveGameMode,
+    type BallMoveGameModeOptions,
+} from "../src/rooms/modes/ballMove/index";
 import {
     validateMatchEvidenceV3,
     type MatchEvidenceV3,
@@ -27,6 +33,10 @@ import {
 import { replayMatchEvidenceV3 } from "../src/core/match/matchReplay";
 import type { EmitEvidenceResult } from "../src/core/match/matchConsumer";
 import type { GameRoomState } from "../src/rooms/schema/GameRoomState";
+
+// 玩法注册在组合根（modes/catalog）；本文件的 `GameRoom.onAuth` 断言需要生产 registry
+// 认得 ballMove（onAuth 先验 mode 再验 token），⛔ import GameMode 不再有注册副作用。
+registerBallMoveGameMode();
 
 /**
  * ballMove root 视图。`GameRoom.state` 现在只暴露生成的生命周期字段（tick/phase/matchId/players），
@@ -68,6 +78,25 @@ async function join(room: GameRoom, client: FakeClient): Promise<void> {
 
 function runtime(seed: number, now = 0): GameRoomRuntimeOptions {
     return { seed, clock: () => now, fixedStepMs: 50 };
+}
+
+/**
+ * shell 已无隐式默认玩法（阶段 1 fail-fast）：每个房间显式注入 ballMove mode，
+ * 并返回 mode 句柄——注入/回放 harness API（injectInput/setInputSource/getAcceptedInputs）
+ * 已从 GameRoom 下沉到 ballMove mode。
+ */
+function ballMoveRoom(
+    opts: GameRoomRuntimeOptions = {},
+    modeOpts: BallMoveGameModeOptions = {},
+): { room: GameRoom; mode: BallMoveGameMode } {
+    const mode = createBallMoveGameMode(modeOpts);
+    const room = new GameRoom({ ...opts, mode });
+    return { room, mode };
+}
+
+/** 消息驱动的单点收敛：仍经 per-type `room.messages`，阶段 2 catch-all 化时只改这里。 */
+function dispatch(room: GameRoom, type: string, client: unknown, payload: unknown): void {
+    (room.messages as unknown as Record<string, (c: unknown, p: unknown) => void>)[type](client, payload);
 }
 
 /**
@@ -114,7 +143,7 @@ test("GameRoom auth 只信标准 token，options.token 只能逐字匹配", asyn
 });
 
 test("GameRoom S2C 出站 payload 先经 shared runtime validator，再交给 transport", () => {
-    const room = new GameRoom(runtime(10));
+    const { room } = ballMoveRoom(runtime(10));
     const client = fakeClient("s1");
     const sent: Array<[string, unknown]> = [];
     client.send = (type, payload) => { sent.push([type, payload]); };
@@ -147,7 +176,7 @@ test("GameRoom S2C 出站 payload 先经 shared runtime validator，再交给 tr
 });
 
 test("GameRoom C2S exact runtime schema rejects NaN/range/length/unknown keys", async () => {
-    const room = new GameRoom(runtime(11));
+    const { room } = ballMoveRoom(runtime(11));
     installLock(room);
     const a = fakeClient("a", "ua");
     await join(room, a);
@@ -155,32 +184,28 @@ test("GameRoom C2S exact runtime schema rejects NaN/range/length/unknown keys", 
     await join(room, b);
     const player = ballState(room).players.get(a.sessionId)!;
     const before = { x: player.x, y: player.y, dirX: player.dirX, dirY: player.dirY };
-    const move = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Move];
 
-    move(a, { dirX: Number.NaN, dirY: 0 });
-    move(a, { dirX: 2, dirY: 0 });
-    move(a, { dirX: 0, dirY: 0, extra: true });
+    dispatch(room, C2S.Move, a, { dirX: Number.NaN, dirY: 0 });
+    dispatch(room, C2S.Move, a, { dirX: 2, dirY: 0 });
+    dispatch(room, C2S.Move, a, { dirX: 0, dirY: 0, extra: true });
     assert.deepEqual(
         { x: player.x, y: player.y, dirX: player.dirX, dirY: player.dirY },
         before,
         "非法移动不能进入玩法状态",
     );
 
-    const chat = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Chat];
-    chat(a, { text: "x".repeat(101) });
-    const cast = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.CastSkill];
-    cast(a, { skillId: 1, targetId: "" });
+    dispatch(room, C2S.Chat, a, { text: "x".repeat(101) });
+    dispatch(room, C2S.CastSkill, a, { skillId: 1, targetId: "" });
     assert.ok(a.sent.some(([, payload]) => (payload as { code?: number }).code === ErrorCode.BadRequest));
 });
 
 test("GameRoom C2S rejects non-plain and symbol-keyed direct handler payloads", async () => {
-    const room = new GameRoom(runtime(110));
+    const { room } = ballMoveRoom(runtime(110));
     installLock(room);
     const a = fakeClient("a", "ua");
     await join(room, a);
     const b = fakeClient("b", "ub");
     await join(room, b);
-    const move = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Move];
     const player = ballState(room).players.get("a")!;
     const before = { x: player.x, y: player.y, dirX: player.dirX, dirY: player.dirY };
     class MovePayload {
@@ -190,9 +215,9 @@ test("GameRoom C2S rejects non-plain and symbol-keyed direct handler payloads", 
     const nonEnumerable = { dirX: 0, dirY: 1 };
     Object.defineProperty(nonEnumerable, "extra", { value: true, enumerable: false });
     const symbolPayload = { dirX: 1, dirY: 0, [Symbol("extra")]: true };
-    move(a, new MovePayload());
-    move(a, nonEnumerable);
-    move(a, symbolPayload);
+    dispatch(room, C2S.Move, a, new MovePayload());
+    dispatch(room, C2S.Move, a, nonEnumerable);
+    dispatch(room, C2S.Move, a, symbolPayload);
     assert.deepEqual(
         { x: player.x, y: player.y, dirX: player.dirX, dirY: player.dirY },
         before,
@@ -202,65 +227,62 @@ test("GameRoom C2S rejects non-plain and symbol-keyed direct handler payloads", 
 });
 
 test("rejected skills do not enter the accepted input sequence", async () => {
-    const room = new GameRoom(runtime(111));
+    const { room, mode } = ballMoveRoom(runtime(111));
     installLock(room);
     const a = fakeClient("a", "ua");
     const b = fakeClient("b", "ub");
     await join(room, a);
     await join(room, b);
-    const cast = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.CastSkill];
 
     // The wire shape is valid, but the skill id is not in the server skill table.
-    cast(a, { skillId: 0xffff, targetId: b.sessionId });
-    assert.equal(room.getAcceptedInputs().length, 0);
+    dispatch(room, C2S.CastSkill, a, { skillId: 0xffff, targetId: b.sessionId });
+    assert.equal(mode.getAcceptedInputs().length, 0);
 
     // A real cast is recorded exactly once; an immediate retry is rejected by cooldown.
-    cast(a, { skillId: 1, targetId: b.sessionId });
-    assert.equal(room.getAcceptedInputs().length, 1);
-    cast(a, { skillId: 1, targetId: b.sessionId });
-    assert.equal(room.getAcceptedInputs().length, 1);
+    dispatch(room, C2S.CastSkill, a, { skillId: 1, targetId: b.sessionId });
+    assert.equal(mode.getAcceptedInputs().length, 1);
+    dispatch(room, C2S.CastSkill, a, { skillId: 1, targetId: b.sessionId });
+    assert.equal(mode.getAcceptedInputs().length, 1);
 
     // Replay/injected inputs use the same post-application rule.
-    const replayRoom = new GameRoom(runtime(112));
+    const { room: replayRoom, mode: replayMode } = ballMoveRoom(runtime(112));
     installLock(replayRoom);
     await join(replayRoom, fakeClient("a", "ua"));
     await join(replayRoom, fakeClient("b", "ub"));
-    assert.equal(replayRoom.injectInput({ type: "castSkill", sessionId: "a", skillId: 0xffff }), true);
+    assert.equal(replayMode.injectInput({ type: "castSkill", sessionId: "a", skillId: 0xffff }), true);
     replayRoom.stepFixed();
-    assert.equal(replayRoom.getAcceptedInputs().length, 0);
-    assert.equal(replayRoom.injectInput({ type: "castSkill", sessionId: "a", skillId: 1 }), true);
+    assert.equal(replayMode.getAcceptedInputs().length, 0);
+    assert.equal(replayMode.injectInput({ type: "castSkill", sessionId: "a", skillId: 1 }), true);
     replayRoom.stepFixed();
-    assert.equal(replayRoom.getAcceptedInputs().length, 1);
-    assert.equal(replayRoom.injectInput({ type: "castSkill", sessionId: "a", skillId: 1 }), true);
+    assert.equal(replayMode.getAcceptedInputs().length, 1);
+    assert.equal(replayMode.injectInput({ type: "castSkill", sessionId: "a", skillId: 1 }), true);
     replayRoom.stepFixed();
-    assert.equal(replayRoom.getAcceptedInputs().length, 1);
+    assert.equal(replayMode.getAcceptedInputs().length, 1);
 });
 
 test("accepted input evidence has a bounded capacity and rejects later side effects", async () => {
     let evidence: MatchEvidenceV3 | undefined;
-    const room = new GameRoom({
+    const { room, mode } = ballMoveRoom({
         ...runtime(113),
-        maxAcceptedInputs: 1,
         evidenceEmitter: (value) => {
             evidence = value;
             return Promise.resolve({ ok: true as const, entryId: "0-0" });
         },
-    });
+    }, { maxAcceptedInputs: 1 });
     installLock(room);
     const a = fakeClient("a", "ua");
     const b = fakeClient("b", "ub");
     await join(room, a);
     await join(room, b);
-    const move = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Move];
     const player = ballState(room).players.get("a")!;
 
-    move(a, { dirX: 1, dirY: 0 });
-    assert.equal(room.getAcceptedInputs().length, 1);
+    dispatch(room, C2S.Move, a, { dirX: 1, dirY: 0 });
+    assert.equal(mode.getAcceptedInputs().length, 1);
     assert.equal(player.dirX, 1);
     const errorsBefore = a.sent.filter(([, payload]) => (payload as { code?: number }).code === ErrorCode.BadRequest).length;
 
-    move(a, { dirX: -1, dirY: 0 });
-    assert.equal(room.getAcceptedInputs().length, 1, "达到上限后证据序列不得继续增长");
+    dispatch(room, C2S.Move, a, { dirX: -1, dirY: 0 });
+    assert.equal(mode.getAcceptedInputs().length, 1, "达到上限后证据序列不得继续增长");
     assert.equal(player.dirX, 1, "证据容量耗尽时不得半应用新的移动");
     assert.equal(
         a.sent.filter(([, payload]) => (payload as { code?: number }).code === ErrorCode.BadRequest).length,
@@ -273,21 +295,20 @@ test("accepted input evidence has a bounded capacity and rejects later side effe
 });
 
 test("cast 达到 accepted input 上限时在冷却与伤害之前 fail-closed", async () => {
-    const room = new GameRoom({ ...runtime(213), maxAcceptedInputs: 1 });
+    const { room, mode } = ballMoveRoom(runtime(213), { maxAcceptedInputs: 1 });
     installLock(room);
     const a = fakeClient("a", "ua");
     const b = fakeClient("b", "ub");
     await join(room, a);
     await join(room, b);
-    const cast = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.CastSkill];
     const playerA = ballState(room).players.get("a")!;
     const playerB = ballState(room).players.get("b")!;
     const badRequests = (sender: FakeClient): number => sender.sent
         .filter(([, payload]) => (payload as { code?: number }).code === ErrorCode.BadRequest).length;
 
     // 先用一次合法 cast 占满容量：它必须真的结算过，后面的对照才有意义。
-    cast(a, { skillId: 1, targetId: "b" });
-    assert.equal(room.getAcceptedInputs().length, 1);
+    dispatch(room, C2S.CastSkill, a, { skillId: 1, targetId: "b" });
+    assert.equal(mode.getAcceptedInputs().length, 1);
     assert.ok(playerB.hp < PLAYER_INIT_HP, "占位的第一发必须真的落伤害");
     assert.deepEqual(Object.keys(playerA.lastCastTick), ["1"], "占位的第一发必须写入冷却");
     const hpA = playerA.hp;
@@ -295,8 +316,8 @@ test("cast 达到 accepted input 上限时在冷却与伤害之前 fail-closed",
     const errorsBefore = badRequests(b);
 
     // b 从未施法：技能表、存活、冷却全部合法，唯一可能的拒绝理由只有证据容量闸。
-    cast(b, { skillId: 1, targetId: "a" });
-    assert.equal(room.getAcceptedInputs().length, 1, "达到上限后 cast 不得进入证据链");
+    dispatch(room, C2S.CastSkill, b, { skillId: 1, targetId: "a" });
+    assert.equal(mode.getAcceptedInputs().length, 1, "达到上限后 cast 不得进入证据链");
     assert.equal(playerA.hp, hpA, "容量耗尽时不得先结算伤害再拒绝（否则证据与状态脱节）");
     assert.equal(playerB.hp, hpB);
     assert.deepEqual(Object.keys(playerB.lastCastTick), [], "容量耗尽时不得写入冷却");
@@ -305,7 +326,7 @@ test("cast 达到 accepted input 上限时在冷却与伤害之前 fail-closed",
 
 test("winning cast is appended before settlement emits replayable v3 evidence", async () => {
     let emissions = 0;
-    const room = new GameRoom({
+    const { room } = ballMoveRoom({
         ...runtime(114),
         matchId: () => "m_winning_cast",
         evidenceEmitter: (evidence) => {
@@ -320,13 +341,12 @@ test("winning cast is appended before settlement emits replayable v3 evidence", 
     const b = fakeClient("b", "ub");
     await join(room, a);
     await join(room, b);
-    const cast = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.CastSkill];
 
-    cast(a, { skillId: 3, targetId: b.sessionId });
+    dispatch(room, C2S.CastSkill, a, { skillId: 3, targetId: b.sessionId });
     for (let tick = 0; tick < 100; tick++) room.stepFixed();
-    cast(a, { skillId: 3, targetId: b.sessionId });
+    dispatch(room, C2S.CastSkill, a, { skillId: 3, targetId: b.sessionId });
     for (let tick = 0; tick < 100; tick++) room.stepFixed();
-    cast(a, { skillId: 3, targetId: b.sessionId });
+    dispatch(room, C2S.CastSkill, a, { skillId: 3, targetId: b.sessionId });
 
     assert.equal(room.state.phase, GamePhase.Settle);
     assert.equal(room.state.tick, 200);
@@ -335,7 +355,7 @@ test("winning cast is appended before settlement emits replayable v3 evidence", 
 
 test("Playing leave is appended before death/removal and emits ordered deterministic evidence", async () => {
     let emitted: MatchEvidenceV3 | undefined;
-    const room = new GameRoom({
+    const { room, mode } = ballMoveRoom({
         ...runtime(115),
         matchId: () => "m_ordered_leave",
         evidenceEmitter: (evidence) => {
@@ -351,33 +371,32 @@ test("Playing leave is appended before death/removal and emits ordered determini
     await join(room, a);
     await join(room, b);
     const initialX = ballState(room).players.get(a.sessionId)!.x;
-    const move = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Move];
-    move(a, { dirX: 1, dirY: 0 });
+    dispatch(room, C2S.Move, a, { dirX: 1, dirY: 0 });
     for (let tick = 0; tick < 10; tick++) room.stepFixed();
     assert.equal(
         ballState(room).players.get(a.sessionId)!.x,
         Math.min(initialX + PLAYER_MOVE_SPEED * (room.fixedStep / 1000) * 10, MAP_WIDTH),
     );
 
+    // 「leave 事件 → 阵亡 → 移除」时序 pin：证据录入已下沉到 ballMove mode 句柄
+    //（内部调用一律经由句柄方法，可替换观察），removePlayer 仍是 shell 的唯一删除点。
     const calls: string[] = [];
-    const internals = room as unknown as {
-        recordLeaveEvent(sessionId: string, acceptedTick: number): void;
-        recordDeath(sessionId: string): void;
-        removePlayer(sessionId: string, removeParticipant: boolean): void;
-    };
-    const recordLeaveEvent = internals.recordLeaveEvent.bind(room);
-    const recordDeath = internals.recordDeath.bind(room);
-    const removePlayer = internals.removePlayer.bind(room);
-    internals.recordLeaveEvent = (sessionId, acceptedTick) => {
+    const recordLeaveEvent = mode.recordLeaveEvent;
+    const recordDeath = mode.recordDeath;
+    mode.recordLeaveEvent = (sessionId, acceptedTick) => {
         calls.push("event");
         assert.equal(ballState(room).players.get(sessionId)?.alive, true);
         recordLeaveEvent(sessionId, acceptedTick);
     };
-    internals.recordDeath = (sessionId) => {
+    mode.recordDeath = (sessionId) => {
         calls.push("death");
         recordDeath(sessionId);
     };
-    internals.removePlayer = (sessionId, removeParticipant) => {
+    const roomInternals = room as unknown as {
+        removePlayer(sessionId: string, removeParticipant: boolean): void;
+    };
+    const removePlayer = roomInternals.removePlayer.bind(room);
+    roomInternals.removePlayer = (sessionId, removeParticipant) => {
         calls.push("remove");
         removePlayer(sessionId, removeParticipant);
     };
@@ -393,7 +412,7 @@ test("Playing leave is appended before death/removal and emits ordered determini
 
 test("diagonal move evidence preserves accepted input and normalizes exactly once in replay", async () => {
     let emitted: MatchEvidenceV3 | undefined;
-    const room = new GameRoom({
+    const { room } = ballMoveRoom({
         ...runtime(1_150),
         matchId: () => "m_diagonal_replay",
         evidenceEmitter: (evidence) => {
@@ -408,8 +427,7 @@ test("diagonal move evidence preserves accepted input and normalizes exactly onc
     await join(room, a);
     await join(room, b);
 
-    const move = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Move];
-    move(a, { dirX: 1, dirY: 1 });
+    dispatch(room, C2S.Move, a, { dirX: 1, dirY: 1 });
     room.stepFixed();
     await room.onLeave(b as never, 4000);
 
@@ -486,8 +504,7 @@ test("Playing leave settles before awaiting a slow mode leave hook", async () =>
     assert.equal(emitted?.events.at(-1)?.type, "leave");
 
     room.stepFixed();
-    const move = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Move];
-    move(a, { dirX: 1, dirY: 0 });
+    dispatch(room, C2S.Move, a, { dirX: 1, dirY: 0 });
     assert.equal(room.state.tick, frozenTick, "slow cleanup must not leave simulation running");
     assert.equal(emitted?.events.length, 1, "no gameplay event may follow the leave event");
 
@@ -496,14 +513,13 @@ test("Playing leave settles before awaiting a slow mode leave hook", async () =>
 });
 
 test("Waiting/Settle phase whitelist prevents simulation input and update", async () => {
-    const room = new GameRoom(runtime(12));
+    const { room } = ballMoveRoom(runtime(12));
     installLock(room);
     const a = fakeClient("a", "ua");
     await join(room, a);
     const player = ballState(room).players.get(a.sessionId)!;
     const waitingX = player.x;
-    const move = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Move];
-    move(a, { dirX: 1, dirY: 0 });
+    dispatch(room, C2S.Move, a, { dirX: 1, dirY: 0 });
     (room as unknown as { update: (dt: number) => void }).update(1000);
     assert.equal(player.dirX, 0);
     assert.equal(player.x, waitingX, "等待期位置保持不变");
@@ -511,14 +527,14 @@ test("Waiting/Settle phase whitelist prevents simulation input and update", asyn
 
     // A direct state transition models a room after settle; the same handler must remain inert.
     room.state.phase = GamePhase.Settle;
-    move(a, { dirX: -1, dirY: 0 });
+    dispatch(room, C2S.Move, a, { dirX: -1, dirY: 0 });
     assert.equal(player.dirX, 0);
 });
 
 test("startMatch waits for lock before publishing Playing and rolls back on lock failure", async () => {
     let release!: () => void;
     const pendingLock = new Promise<void>((resolve) => { release = resolve; });
-    const room = new GameRoom(runtime(13));
+    const { room } = ballMoveRoom(runtime(13));
     installLock(room, () => pendingLock);
     const a = fakeClient("a", "ua");
     await join(room, a);
@@ -531,7 +547,7 @@ test("startMatch waits for lock before publishing Playing and rolls back on lock
     assert.equal(room.state.phase, GamePhase.Playing);
     assert.notEqual(room.state.matchId, "");
 
-    const failed = new GameRoom(runtime(14));
+    const { room: failed } = ballMoveRoom(runtime(14));
     installLock(failed, async () => { throw new Error("driver unavailable"); });
     await join(failed, fakeClient("a", "ua"));
     await assert.rejects(join(failed, fakeClient("b", "ub")));
@@ -541,7 +557,7 @@ test("startMatch waits for lock before publishing Playing and rolls back on lock
 });
 
 test("startMatch resets every gameplay field changed while waiting", async () => {
-    const room = new GameRoom(runtime(17));
+    const { room } = ballMoveRoom(runtime(17));
     installLock(room);
     const a = fakeClient("a", "ua");
     await join(room, a);
@@ -570,7 +586,7 @@ test("startMatch resets every gameplay field changed while waiting", async () =>
 test("a leave during lock aborts the start instead of publishing a one-player match", async () => {
     let release!: () => void;
     const pendingLock = new Promise<void>((resolve) => { release = resolve; });
-    const room = new GameRoom(runtime(18));
+    const { room } = ballMoveRoom(runtime(18));
     installLock(room, () => pendingLock);
     const a = fakeClient("a", "ua");
     const b = fakeClient("b", "ub");
@@ -585,7 +601,7 @@ test("a leave during lock aborts the start instead of publishing a one-player ma
 });
 
 test("Waiting leave clears both identity indexes so the same account can rejoin", async () => {
-    const room = new GameRoom(runtime(15));
+    const { room } = ballMoveRoom(runtime(15));
     installLock(room);
     const first = fakeClient("first", "same-user");
     await join(room, first);
@@ -595,33 +611,33 @@ test("Waiting leave clears both identity indexes so the same account can rejoin"
 });
 
 test("same seed + fixed steps + injected inputs produce identical state", async () => {
-    const make = async (): Promise<GameRoom> => {
-        const room = new GameRoom({ ...runtime(0x12345678), matchId: () => "m_deterministic" });
+    const make = async (): Promise<{ room: GameRoom; mode: BallMoveGameMode }> => {
+        const { room, mode } = ballMoveRoom({ ...runtime(0x12345678), matchId: () => "m_deterministic" });
         installLock(room);
         await join(room, fakeClient("a", "ua"));
         await join(room, fakeClient("b", "ub"));
-        return room;
+        return { room, mode };
     };
     const left = await make();
     const right = await make();
-    const leftA = ballState(left).players.get("a")!;
-    const rightA = ballState(right).players.get("a")!;
+    const leftA = ballState(left.room).players.get("a")!;
+    const rightA = ballState(right.room).players.get("a")!;
     assert.deepEqual(
         { x: leftA.x, y: leftA.y, hp: leftA.hp, alive: leftA.alive },
         { x: rightA.x, y: rightA.y, hp: rightA.hp, alive: rightA.alive },
     );
-    assert.equal(left.state.matchId, right.state.matchId);
+    assert.equal(left.room.state.matchId, right.room.state.matchId);
     assert.equal(leftA.hp, PLAYER_INIT_HP);
 
-    assert.equal(left.injectInput({ type: "move", sessionId: "a", dirX: 1, dirY: 0 }), true);
-    assert.equal(right.injectInput({ type: "move", sessionId: "a", dirX: 1, dirY: 0 }), true);
-    (left as unknown as { stepFixed: () => void }).stepFixed();
-    (right as unknown as { stepFixed: () => void }).stepFixed();
+    assert.equal(left.mode.injectInput({ type: "move", sessionId: "a", dirX: 1, dirY: 0 }), true);
+    assert.equal(right.mode.injectInput({ type: "move", sessionId: "a", dirX: 1, dirY: 0 }), true);
+    left.room.stepFixed();
+    right.room.stepFixed();
     assert.deepEqual(
-        { x: leftA.x, y: leftA.y, tick: left.state.tick },
-        { x: rightA.x, y: rightA.y, tick: right.state.tick },
+        { x: leftA.x, y: leftA.y, tick: left.room.state.tick },
+        { x: rightA.x, y: rightA.y, tick: right.room.state.tick },
     );
-    assert.equal(left.getAcceptedInputs().length, 1);
+    assert.equal(left.mode.getAcceptedInputs().length, 1);
 });
 
 test("default seed sequence keeps rooms created in the same millisecond distinct and replayable", (t) => {
@@ -630,6 +646,7 @@ test("default seed sequence keeps rooms created in the same millisecond distinct
 
     // Exercise the production constructor path: no injected seed means every
     // room must consume the module-level sequence even when wall time is equal.
+    // ⚠ 刻意不注入 mode：seed 序列属于壳的构造期，不依赖任何玩法。
     const seeds = Array.from({ length: 8 }, () => new GameRoom().seedForReplay);
     assert.equal(new Set(seeds).size, seeds.length, "same-millisecond rooms must not share a seed");
 
@@ -647,8 +664,8 @@ test("default seed sequence keeps rooms created in the same millisecond distinct
 });
 
 test("same seed keeps formal match state deterministic across different waiting histories", async () => {
-    const make = async (withWaitingHistory: boolean): Promise<GameRoom> => {
-        const room = new GameRoom({
+    const make = async (withWaitingHistory: boolean): Promise<{ room: GameRoom; mode: BallMoveGameMode }> => {
+        const { room, mode } = ballMoveRoom({
             ...runtime(0x2468ace0),
             matchId: () => "m_waiting_history",
         });
@@ -660,44 +677,42 @@ test("same seed keeps formal match state deterministic across different waiting 
             // arrive.  The extra history must not perturb formal match state.
             const observer = fakeClient("observer", "u-observer");
             await join(room, observer);
-            const ping = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Ping];
-            ping(observer, { clientTime: 1 });
+            dispatch(room, C2S.Ping, observer, { clientTime: 1 });
             await room.onLeave(observer as never, 4000);
         }
 
         await join(room, fakeClient("a", "ua"));
         await join(room, fakeClient("b", "ub"));
-        return room;
+        return { room, mode };
     };
 
     const quiet = await make(false);
     const noisy = await make(true);
-    assert.equal(quiet.state.phase, GamePhase.Playing);
-    assert.equal(noisy.state.phase, GamePhase.Playing);
+    assert.equal(quiet.room.state.phase, GamePhase.Playing);
+    assert.equal(noisy.room.state.phase, GamePhase.Playing);
     assert.deepEqual(
-        simulationSnapshot(quiet),
-        simulationSnapshot(noisy),
+        simulationSnapshot(quiet.room),
+        simulationSnapshot(noisy.room),
         "等待期入退场和消息不能改变正式对局的初始模拟状态（昵称不属于该快照）",
     );
 
     // Compare a later frame too, including a random-consuming skill, so the
     // assertion covers the match RNG stream and not just spawn coordinates.
-    assert.equal(quiet.injectInput({ type: "move", sessionId: "a", dirX: 1, dirY: 0 }), true);
-    assert.equal(noisy.injectInput({ type: "move", sessionId: "a", dirX: 1, dirY: 0 }), true);
-    quiet.stepFixed();
-    noisy.stepFixed();
-    assert.equal(quiet.injectInput({ type: "castSkill", sessionId: "a", skillId: 1, targetId: "b" }), true);
-    assert.equal(noisy.injectInput({ type: "castSkill", sessionId: "a", skillId: 1, targetId: "b" }), true);
-    quiet.stepFixed();
-    noisy.stepFixed();
-    assert.deepEqual(simulationSnapshot(quiet), simulationSnapshot(noisy));
+    assert.equal(quiet.mode.injectInput({ type: "move", sessionId: "a", dirX: 1, dirY: 0 }), true);
+    assert.equal(noisy.mode.injectInput({ type: "move", sessionId: "a", dirX: 1, dirY: 0 }), true);
+    quiet.room.stepFixed();
+    noisy.room.stepFixed();
+    assert.equal(quiet.mode.injectInput({ type: "castSkill", sessionId: "a", skillId: 1, targetId: "b" }), true);
+    assert.equal(noisy.mode.injectInput({ type: "castSkill", sessionId: "a", skillId: 1, targetId: "b" }), true);
+    quiet.room.stepFixed();
+    noisy.room.stepFixed();
+    assert.deepEqual(simulationSnapshot(quiet.room), simulationSnapshot(noisy.room));
 });
 
 test("input source is fail-closed and respects declared ticks", async () => {
     let calls = 0;
-    const room = new GameRoom({
-        ...runtime(19),
-        input: () => {
+    const { room, mode } = ballMoveRoom(runtime(19), {
+        inputSource: () => {
             calls++;
             if (calls === 1) return [{ type: "move", sessionId: "a", dirX: 1, dirY: 0, tick: 1 }];
             if (calls === 2) return [null as never, { type: "unknown" } as never];
@@ -709,15 +724,15 @@ test("input source is fail-closed and respects declared ticks", async () => {
     await join(room, fakeClient("b", "ub"));
     const player = ballState(room).players.get("a")!;
     const startX = player.x;
-    (room as unknown as { stepFixed: () => void }).stepFixed();
+    room.stepFixed();
     assert.equal(player.x, startX, "tick 不匹配的 source 输入不能提前应用");
-    assert.doesNotThrow(() => (room as unknown as { stepFixed: () => void }).stepFixed());
-    assert.doesNotThrow(() => (room as unknown as { stepFixed: () => void }).stepFixed());
-    assert.equal(room.getAcceptedInputs().length, 0);
+    assert.doesNotThrow(() => room.stepFixed());
+    assert.doesNotThrow(() => room.stepFixed());
+    assert.equal(mode.getAcceptedInputs().length, 0);
 });
 
 test("hostile injected proxies and iterators are dropped without breaking the next frame", async () => {
-    const room = new GameRoom({ seed: 20, fixedStepMs: 50 });
+    const { room, mode } = ballMoveRoom({ seed: 20, fixedStepMs: 50 });
     installLock(room);
     await join(room, fakeClient("a", "ua"));
     await join(room, fakeClient("b", "ub"));
@@ -730,7 +745,7 @@ test("hostile injected proxies and iterators are dropped without breaking the ne
         dirY: 0,
     }, {});
     revocable.revoke();
-    assert.doesNotThrow(() => assert.equal(room.injectInput(revocable.proxy as never), false));
+    assert.doesNotThrow(() => assert.equal(mode.injectInput(revocable.proxy as never), false));
 
     let calls = 0;
     const throwingItem = new Proxy({
@@ -741,9 +756,9 @@ test("hostile injected proxies and iterators are dropped without breaking the ne
     }, {
             get() { throw new Error("hostile getter"); },
         });
-    assert.doesNotThrow(() => assert.equal(room.injectInput(throwingItem as never), false));
+    assert.doesNotThrow(() => assert.equal(mode.injectInput(throwingItem as never), false));
     const validItem = { type: "move", sessionId: "a", dirX: 1, dirY: 0 } as const;
-    room.setInputSource(() => {
+    mode.setInputSource(() => {
         calls++;
         if (calls === 1) {
             const broken = [throwingItem] as unknown[];
@@ -760,13 +775,13 @@ test("hostile injected proxies and iterators are dropped without breaking the ne
     assert.equal(player.dirX, 0, "坏迭代器/字段不能半应用本帧");
     assert.doesNotThrow(() => room.stepFixed());
     assert.equal(player.dirX, 1, "下一帧仍可应用合法输入");
-    assert.equal(room.getAcceptedInputs().length, 1);
+    assert.equal(mode.getAcceptedInputs().length, 1);
 });
 
 test("dispose invalidates a pending match start and prevents a late lock from publishing Playing", async () => {
     let release!: () => void;
     const pendingLock = new Promise<void>((resolve) => { release = resolve; });
-    const room = new GameRoom({ seed: 21, fixedStepMs: 50, startLockTimeoutMs: 1000 });
+    const { room } = ballMoveRoom({ seed: 21, fixedStepMs: 50, startLockTimeoutMs: 1000 });
     installLock(room, () => pendingLock);
     const a = fakeClient("a", "ua");
     await join(room, a);
@@ -788,7 +803,7 @@ test("a timed-out lock gates retries until its late unlock settles", async () =>
     let lockCalls = 0;
     let unlockCalls = 0;
     let locked = false;
-    const room = new GameRoom({ seed: 26, fixedStepMs: 50, startLockTimeoutMs: 5 });
+    const { room } = ballMoveRoom({ seed: 26, fixedStepMs: 50, startLockTimeoutMs: 5 });
     // The real Room.lock() flips this private bit before awaiting its driver;
     // model that transition explicitly in this pure unit test.
     Object.defineProperty(room, "locked", { configurable: true, get: () => locked });
@@ -827,7 +842,7 @@ test("dispose still best-effort releases a late lock", async () => {
     let resolveLock!: () => void;
     let unlockCalls = 0;
     let locked = false;
-    const room = new GameRoom({ seed: 27, fixedStepMs: 50, startLockTimeoutMs: 5 });
+    const { room } = ballMoveRoom({ seed: 27, fixedStepMs: 50, startLockTimeoutMs: 5 });
     Object.defineProperty(room, "locked", { configurable: true, get: () => locked });
     (room as unknown as { lock: () => Promise<void> }).lock = () => {
         locked = true;
@@ -850,7 +865,7 @@ test("dispose before timeout also releases a lock that settles late", async () =
     let resolveLock!: () => void;
     let unlockCalls = 0;
     let locked = false;
-    const room = new GameRoom({ seed: 271, fixedStepMs: 50, startLockTimeoutMs: 1000 });
+    const { room } = ballMoveRoom({ seed: 271, fixedStepMs: 50, startLockTimeoutMs: 1000 });
     Object.defineProperty(room, "locked", { configurable: true, get: () => locked });
     (room as unknown as { lock: () => Promise<void> }).lock = () => {
         locked = true;
@@ -873,7 +888,7 @@ test("dispose before timeout also releases a lock that settles late", async () =
 });
 
 test("disposed rooms ignore late leave callbacks, messages, ticks, and injected input", async () => {
-    const room = new GameRoom(runtime(29));
+    const { room, mode } = ballMoveRoom(runtime(29));
     installLock(room);
     const a = fakeClient("a", "ua");
     await join(room, a);
@@ -882,11 +897,9 @@ test("disposed rooms ignore late leave callbacks, messages, ticks, and injected 
     const before = { x: player.x, dirX: player.dirX, tick: room.state.tick, sent: a.sent.length };
 
     await room.onDispose();
-    const move = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Move];
-    const ping = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Ping];
-    assert.doesNotThrow(() => move(a, { dirX: 1, dirY: 0 }));
-    assert.doesNotThrow(() => ping(a, { clientTime: 0 }));
-    assert.doesNotThrow(() => room.injectInput({ type: "move", sessionId: "a", dirX: 1, dirY: 0 }));
+    assert.doesNotThrow(() => dispatch(room, C2S.Move, a, { dirX: 1, dirY: 0 }));
+    assert.doesNotThrow(() => dispatch(room, C2S.Ping, a, { clientTime: 0 }));
+    assert.doesNotThrow(() => mode.injectInput({ type: "move", sessionId: "a", dirX: 1, dirY: 0 }));
     (room as unknown as { update: (dt: number) => void }).update(1000);
     room.stepFixed();
     await room.onLeave(a as never, 4000);
@@ -900,7 +913,7 @@ test("disposed rooms ignore late leave callbacks, messages, ticks, and injected 
 });
 
 test("onLeave does not mutate a room after reconnection await resolves post-dispose", async () => {
-    const room = new GameRoom(runtime(30));
+    const { room } = ballMoveRoom(runtime(30));
     installLock(room);
     const a = fakeClient("a", "ua");
     await join(room, a);
@@ -916,7 +929,7 @@ test("onLeave does not mutate a room after reconnection await resolves post-disp
 });
 
 test("match start lock has a bounded deadline and rolls back without hanging the join", async () => {
-    const room = new GameRoom({ seed: 22, fixedStepMs: 50, startLockTimeoutMs: 5 });
+    const { room } = ballMoveRoom({ seed: 22, fixedStepMs: 50, startLockTimeoutMs: 5 });
     installLock(room, () => new Promise<void>(() => undefined));
     await join(room, fakeClient("a", "ua"));
     await assert.rejects(join(room, fakeClient("b", "ub")));
@@ -926,7 +939,7 @@ test("match start lock has a bounded deadline and rolls back without hanging the
 });
 
 test("startMatch returning false is treated as a failed join and does not send welcome", async () => {
-    const room = new GameRoom(runtime(23));
+    const { room } = ballMoveRoom(runtime(23));
     installLock(room);
     const first = fakeClient("a", "ua");
     await join(room, first);
@@ -939,7 +952,7 @@ test("startMatch returning false is treated as a failed join and does not send w
 
 test("faulty clocks and enormous dt stay finite and keep the room loop alive", async () => {
     let clockMode: "throw" | "fraction" = "throw";
-    const room = new GameRoom({
+    const { room } = ballMoveRoom({
         seed: 24,
         fixedStepMs: 50,
         clock: () => clockMode === "throw" ? (() => { throw new Error("clock unavailable"); })() : 12.75,
@@ -953,16 +966,15 @@ test("faulty clocks and enormous dt stay finite and keep the room loop alive", a
     assert.ok(Number.isSafeInteger(room.state.tick));
     assert.ok(room.state.tick <= 121, "catch-up 必须受上限约束");
 
-    const ping = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Ping];
-    assert.doesNotThrow(() => ping(a, { clientTime: 0 }));
+    assert.doesNotThrow(() => dispatch(room, C2S.Ping, a, { clientTime: 0 }));
     clockMode = "fraction";
-    assert.doesNotThrow(() => ping(a, { clientTime: 0 }));
+    assert.doesNotThrow(() => dispatch(room, C2S.Ping, a, { clientTime: 0 }));
     const pongs = a.sent.filter(([type]) => type === S2C.Pong);
     assert.equal(pongs.at(-1)?.[1] && (pongs.at(-1)![1] as { serverTime: number }).serverTime, 12);
 });
 
 test("fixed-step options cannot produce an invalid Welcome tick rate", async () => {
-    const room = new GameRoom({ seed: 28, fixedStepMs: 1 });
+    const { room } = ballMoveRoom({ seed: 28, fixedStepMs: 1 });
     installLock(room);
     const a = fakeClient("a", "ua");
     await join(room, a);
@@ -970,7 +982,7 @@ test("fixed-step options cannot produce an invalid Welcome tick rate", async () 
     const welcome = a.sent.find(([type]) => type === S2C.Welcome)?.[1] as { tickRate: number } | undefined;
     assert.equal(welcome?.tickRate, 20);
 
-    const fractional = new GameRoom({ seed: 29, fixedStepMs: 16.5 });
+    const { room: fractional } = ballMoveRoom({ seed: 29, fixedStepMs: 16.5 });
     assert.equal(
         fractional.fixedStep,
         TICK_MS,
@@ -980,17 +992,16 @@ test("fixed-step options cannot produce an invalid Welcome tick rate", async () 
 
 test("per-client message budget returns controlled errors and stays isolated by session", async () => {
     let now = 0;
-    const room = new GameRoom({ seed: 16, clock: () => now, fixedStepMs: 50 });
+    const { room } = ballMoveRoom({ seed: 16, clock: () => now, fixedStepMs: 50 });
     installLock(room);
     const a = fakeClient("a", "ua");
     const b = fakeClient("b", "ub");
     await join(room, a);
     await join(room, b);
-    const ping = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Ping];
     assert.equal(room.maxMessagesPerSecond, GAME_ROOM_MAX_MESSAGES_PER_SECOND);
 
     for (let i = 0; i < GAME_ROOM_MAX_MESSAGES_PER_SECOND; i++) {
-        ping(a, { clientTime: i });
+        dispatch(room, C2S.Ping, a, { clientTime: i });
     }
     assert.equal(a.sent.filter(([type]) => type === S2C.Pong).length, GAME_ROOM_MAX_MESSAGES_PER_SECOND);
     assert.equal(
@@ -1000,7 +1011,7 @@ test("per-client message budget returns controlled errors and stays isolated by 
         "预算内的合法 Ping 必须全部得到正常 Pong",
     );
 
-    ping(a, { clientTime: GAME_ROOM_MAX_MESSAGES_PER_SECOND });
+    dispatch(room, C2S.Ping, a, { clientTime: GAME_ROOM_MAX_MESSAGES_PER_SECOND });
     assert.equal(
         a.sent.filter(([type]) => type === S2C.Pong).length,
         GAME_ROOM_MAX_MESSAGES_PER_SECOND,
@@ -1014,7 +1025,7 @@ test("per-client message budget returns controlled errors and stays isolated by 
     );
 
     // A separate session has its own bucket and remains able to receive Pong.
-    ping(b, { clientTime: 7 });
+    dispatch(room, C2S.Ping, b, { clientTime: 7 });
     assert.equal(b.sent.filter(([type]) => type === S2C.Pong).length, 1);
     assert.equal(
         b.sent.filter(([type, payload]) => type === S2C.Error
@@ -1025,7 +1036,7 @@ test("per-client message budget returns controlled errors and stays isolated by 
 
     // The same client gets a fresh allowance in the next one-second window.
     now = 1_000;
-    ping(a, { clientTime: 1_001 });
+    dispatch(room, C2S.Ping, a, { clientTime: 1_001 });
     assert.equal(
         a.sent.filter(([type]) => type === S2C.Pong).length,
         GAME_ROOM_MAX_MESSAGES_PER_SECOND + 1,
@@ -1046,7 +1057,7 @@ test("收局证据：只有自检失败告警，传输失败与成功都不得�
         const originalError = console.error;
         console.error = (...args: unknown[]) => { alerts.push(args.map(String).join(" ")); };
         try {
-            const room = new GameRoom({
+            const { room } = ballMoveRoom({
                 ...runtime(931),
                 matchId: () => "m_evidence_kind",
                 evidenceEmitter: () => Promise.resolve(result),
@@ -1058,8 +1069,7 @@ test("收局证据：只有自检失败告警，传输失败与成功都不得�
             await join(room, b);
             // 让 b 出局触发收局
             ballState(room).players.get(b.sessionId)!.hp = 0;
-            const cast = (room.messages as Record<string, (c: unknown, m: unknown) => void>)[C2S.CastSkill];
-            cast(a, { skillId: 3, targetId: b.sessionId });
+            dispatch(room, C2S.CastSkill, a, { skillId: 3, targetId: b.sessionId });
             for (let tick = 0; tick < 100 && room.state.phase !== GamePhase.Settle; tick++) room.stepFixed();
             assert.equal(room.state.phase, GamePhase.Settle, "构造前提：本用例必须真的走到收局");
             await new Promise((resolve) => setImmediate(resolve));
@@ -1090,21 +1100,24 @@ test("收局证据：只有自检失败告警，传输失败与成功都不得�
 /**
  * mode 的 `onPlayerLeaving` 在钩子里删掉 players 条目时，收局证据仍必须完整。
  *
- * ⚠ 该钩子被文档定性为「离开者被移除**之前**的同步状态迁移」，mode 在里面动 state 是合法的。
- * shell 若在钩子**之后**重新 `players.get(...)` 拿 alive，就会得到 undefined → 漏记阵亡 →
- * participants 与 initialRoster 不等长 → buildMatchEvidence 返回 null → **整局证据被静默丢弃**，
- * 而且没有任何告警。被删掉的 Schema 对象仍是活的 JS 对象，所以必须用捕获时的引用。
+ * ⚠ 该钩子被文档定性为「离开者被移除**之前**的同步状态迁移」，包装钩子在里面动 state 是合法的。
+ * ballMove 的离场簿记若重新 `players.get(...)` 拿 alive，就会得到 undefined → 漏记阵亡 →
+ * participants 与 initialRoster 不等长 → evidence.build 返回 null → **整局证据被静默丢弃**，
+ * 而且没有任何告警。被删掉的 Schema 对象仍是活的 JS 对象，所以必须用 context 捕获的引用。
  */
 test("mode 在 onPlayerLeaving 里删掉条目时，收局证据仍必须完整产出", async () => {
     let emitted: MatchEvidenceV3 | undefined;
+    const base = createBallMoveGameMode();
     const room = new GameRoom({
         ...runtime(942),
         matchId: () => "m_leaving_deletes",
         mode: {
-            ...createBallMoveGameMode(),
-            onPlayerLeaving: ({ state, client: leaving }) => {
-                // 合法用法：钩子里把条目摘掉。⛔ shell 不得因此丢失阵亡记录。
-                state.players.delete(leaving.sessionId);
+            ...base,
+            onPlayerLeaving: (context) => {
+                // 合法用法：钩子先把条目摘掉，再走 ballMove 自己的离场簿记。
+                // ⛔ 簿记必须仍用 context.player 的捕获引用，不得因条目已删而漏记阵亡。
+                context.state.players.delete(context.client.sessionId);
+                base.onPlayerLeaving?.(context);
             },
         },
         evidenceEmitter: (evidence) => {
@@ -1122,7 +1135,7 @@ test("mode 在 onPlayerLeaving 里删掉条目时，收局证据仍必须完整�
     await room.onLeave(b as never, CloseCode.CONSENTED);
 
     assert.equal(room.state.phase, GamePhase.Settle, "对手离开后必须收局");
-    assert.ok(emitted, "⛔ 证据必须产出——若 shell 在 hook 之后重取 player，这里会是 undefined");
+    assert.ok(emitted, "⛔ 证据必须产出——若离场簿记在 hook 之后重取 player，这里会是 undefined");
     assert.equal(emitted.participants.length, 2, "两名参与者都必须有名次");
     assert.deepEqual(
         emitted.participants.map((participant) => participant.place).sort(),

@@ -54,6 +54,7 @@ import {
 import { closeMysql, getPool, type RowDataPacket } from "../../src/core/infra/mysql";
 import { bucketOf, clientFor, clientForKey, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
 import { GameRoom } from "../../src/rooms/GameRoom";
+import { createBallMoveGameMode } from "../../src/rooms/modes/ballMove/index";
 import { assertRedisUp, cleanupUser, sleep, testUid } from "./helpers";
 
 const GROUP = "settle";
@@ -151,6 +152,8 @@ async function makeV3Evidence(matchId: string, sId = 0): Promise<MatchEvidenceV3
   const room = new GameRoom({
     seed: 0x1234_5678,
     matchId: () => matchId,
+    // 阶段 1 起 shell 无隐式默认玩法：显式注入 ballMove mode。
+    mode: createBallMoveGameMode(),
     evidenceEmitter: (value) => {
       evidence = value;
       return Promise.resolve({ ok: true as const, entryId: "0-0" });
@@ -549,7 +552,7 @@ test("v3 XADD 失败：归 transport、真实调用方不告警、quarantine 零
     );
 
     // ② 走真实调用方：默认 evidenceEmitter 的 GameRoom 完整收局。
-    room = new GameRoom({ seed: 0xabcd_ef01, matchId: () => roomMatchId });
+    room = new GameRoom({ seed: 0xabcd_ef01, matchId: () => roomMatchId, mode: createBallMoveGameMode() });
     (room as unknown as { sId: number }).sId = 33;
     (room as unknown as { lock: () => Promise<void> }).lock = async () => undefined;
     const roomClient = (sessionId: string, userId: string) => ({
