@@ -670,8 +670,8 @@ const assistantRequirements = [
   ["bitECS 锁定目录", "`apps/client/src/lib/bitecs/` 的 12 个 TypeScript 文件禁改"],
   ["生成镜像禁手改", "生成镜像禁手改"],
   // 铁律 2 的生成物清单必须完整：只校验标题在场会让新增生成物静默漏登记。
-  ["state 生成物登记", "`apps/shared/src/protocol/state.ts` 与 `apps/server/src/rooms/schema/GameRoomState.ts`"],
-  ["state 重生成命令", "npm --workspace @game/server run codegen:state"],
+  ["state 生成物登记", "`apps/shared/src/gameplays/`、`apps/server/src/rooms/schema/GameRoomState.ts`"],
+  ["state 重生成命令", "npm --workspace @game/server run codegen:gameplays"],
   ["HTTP manifest 生成物登记", "`apps/server/src/http/manifest.generated.ts`"],
   ["HTTP manifest 重生成命令", "npm --workspace @game/server run codegen:http"],
   ["项目元数据生成物登记", "`apps/shared/src/project.ts` 来自 `project.metadata.json`，用 `npm run init:project` 刷新"],

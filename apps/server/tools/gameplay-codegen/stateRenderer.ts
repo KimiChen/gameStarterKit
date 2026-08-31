@@ -1,12 +1,15 @@
-import fs from "node:fs";
+/**
+ * 每玩法 state descriptor 的解析与渲染。
+ *
+ * ⚠ 本模块由 `tools/room-state-codegen.ts`（已删除）的 parse/render/断言函数**拆迁**而来，
+ * ⛔ 不是从零重写：生成产物与旧 `protocol/state.ts` / `schema/GameRoomState.ts` 的语义等价
+ * 依赖这份复用。与旧 DSL 的唯一差异：
+ *  - 单文件多 root（formatVersion 2 的 roots[]）改为每玩法单 root（schemaVersion 1 的 root）；
+ *  - map 字段删除 `maxSizeConstant`：players map 容量改由 manifest.maxPlayers 注入，
+ *    生成物内输出模块级字面量常量并带 provenance 注释。
+ */
 import path from "node:path";
-import process from "node:process";
-import { fileURLToPath } from "node:url";
 
-const TOOL_REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
-const DEFAULT_SCHEMA_RELATIVE_PATH = "apps/shared/schema/game-room-state.json";
-const DEFAULT_SHARED_OUTPUT_RELATIVE_PATH = "apps/shared/src/protocol/state.ts";
-const DEFAULT_SERVER_OUTPUT_RELATIVE_PATH = "apps/server/src/rooms/schema/GameRoomState.ts";
 const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/u;
 const ERROR_CODE = /^[A-Z][A-Z0-9_]*$/u;
 
@@ -55,7 +58,6 @@ type MapField = {
   readonly name: string;
   readonly kind: "map";
   readonly valueType: string;
-  readonly maxSizeConstant: string;
   readonly errorCode: string;
   readonly key: {
     readonly field: string;
@@ -82,31 +84,14 @@ export type StateTypeDescriptor = {
   readonly serverOnly: readonly ServerOnlyField[];
 };
 
-export type RoomStateRootDescriptor = {
-  readonly mode: string;
-  readonly type: string;
-};
-
-export type RoomStateDescriptor = {
-  readonly formatVersion: 2;
-  readonly roots: readonly RoomStateRootDescriptor[];
+export type GameplayStateDescriptor = {
+  readonly schemaVersion: 1;
+  readonly root: string;
   readonly types: readonly StateTypeDescriptor[];
 };
 
-export type RoomStateCodegenOptions = {
-  readonly repositoryRoot?: string;
-  readonly schemaFile?: string;
-  readonly sharedOutputFile?: string;
-  readonly serverOutputFile?: string;
-};
-
-export type RoomStateArtifacts = {
-  readonly shared: string;
-  readonly server: string;
-};
-
 function fail(pathLabel: string, message: string): never {
-  throw new Error(`[room-state-codegen] ${pathLabel}: ${message}`);
+  throw new Error(`[gameplay-codegen] ${pathLabel}: ${message}`);
 }
 
 function isRecord(value: unknown): value is JsonRecord {
@@ -139,14 +124,6 @@ function stringValue(value: unknown, pathLabel: string): string {
 function identifier(value: unknown, pathLabel: string): string {
   const result = stringValue(value, pathLabel);
   if (!IDENTIFIER.test(result)) fail(pathLabel, `invalid TypeScript identifier: ${result}`);
-  return result;
-}
-
-function modeId(value: unknown, pathLabel: string): string {
-  const result = stringValue(value, pathLabel);
-  if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/u.test(result)) {
-    fail(pathLabel, `invalid gameplay mode id: ${result}`);
-  }
   return result;
 }
 
@@ -283,7 +260,7 @@ function parseWireField(input: unknown, pathLabel: string): WireField {
   if (kind === "map") {
     exactKeys(
       value,
-      ["name", "kind", "valueType", "maxSizeConstant", "errorCode", "key"],
+      ["name", "kind", "valueType", "errorCode", "key"],
       ["description"],
       pathLabel,
     );
@@ -293,7 +270,6 @@ function parseWireField(input: unknown, pathLabel: string): WireField {
       name,
       kind,
       valueType: identifier(value.valueType, `${pathLabel}.valueType`),
-      maxSizeConstant: identifier(value.maxSizeConstant, `${pathLabel}.maxSizeConstant`),
       errorCode: errorCode(value.errorCode, `${pathLabel}.errorCode`),
       key: {
         field: identifier(key.field, `${pathLabel}.key.field`),
@@ -385,7 +361,7 @@ function validationFieldOrder(type: StateTypeDescriptor): readonly WireField[] {
   return ordered;
 }
 
-function topologicalTypes(descriptor: RoomStateDescriptor): readonly StateTypeDescriptor[] {
+function topologicalTypes(descriptor: GameplayStateDescriptor): readonly StateTypeDescriptor[] {
   const byName = new Map(descriptor.types.map((type) => [type.name, type]));
   const ordered: StateTypeDescriptor[] = [];
   const visiting = new Set<string>();
@@ -408,7 +384,7 @@ function topologicalTypes(descriptor: RoomStateDescriptor): readonly StateTypeDe
   return ordered;
 }
 
-function validateReferences(descriptor: RoomStateDescriptor): void {
+function validateReferences(descriptor: GameplayStateDescriptor): void {
   const byName = new Map(descriptor.types.map((type) => [type.name, type]));
   for (const type of descriptor.types) {
     validationFieldOrder(type);
@@ -426,47 +402,29 @@ function validateReferences(descriptor: RoomStateDescriptor): void {
   topologicalTypes(descriptor);
 }
 
-export function parseRoomStateDescriptor(input: unknown): RoomStateDescriptor {
-  const value = record(input, "manifest");
-  exactKeys(value, ["formatVersion", "roots", "types"], [], "manifest");
-  if (value.formatVersion !== 2) fail("manifest.formatVersion", "only formatVersion 2 is supported");
-  if (!Array.isArray(value.roots) || value.roots.length === 0) {
-    fail("manifest.roots", "must be a non-empty array");
-  }
-  if (!Array.isArray(value.types) || value.types.length === 0) fail("manifest.types", "must be a non-empty array");
-  const roots = value.roots.map((inputRoot, index): RoomStateRootDescriptor => {
-    const root = record(inputRoot, `manifest.roots[${index}]`);
-    exactKeys(root, ["mode", "type"], [], `manifest.roots[${index}]`);
-    return {
-      mode: modeId(root.mode, `manifest.roots[${index}].mode`),
-      type: identifier(root.type, `manifest.roots[${index}].type`),
-    };
-  });
-  const types = value.types.map((type, index) => parseStateType(type, `manifest.types[${index}]`));
+export function parseGameplayStateDescriptor(input: unknown): GameplayStateDescriptor {
+  const value = record(input, "state");
+  exactKeys(value, ["schemaVersion", "root", "types"], [], "state");
+  if (value.schemaVersion !== 1) fail("state.schemaVersion", "only schemaVersion 1 is supported");
+  const root = identifier(value.root, "state.root");
+  if (!Array.isArray(value.types) || value.types.length === 0) fail("state.types", "must be a non-empty array");
+  const types = value.types.map((type, index) => parseStateType(type, `state.types[${index}]`));
   const names = new Set<string>();
   const sharedNames = new Set<string>();
   const validators = new Set<string>();
   const paths = new Set<string>();
   for (const type of types) {
-    if (names.has(type.name)) fail("manifest.types", `duplicate type name: ${type.name}`);
-    if (sharedNames.has(type.sharedName)) fail("manifest.types", `duplicate sharedName: ${type.sharedName}`);
-    if (validators.has(type.validatorName)) fail("manifest.types", `duplicate validatorName: ${type.validatorName}`);
-    if (paths.has(type.defaultPath)) fail("manifest.types", `duplicate defaultPath: ${type.defaultPath}`);
+    if (names.has(type.name)) fail("state.types", `duplicate type name: ${type.name}`);
+    if (sharedNames.has(type.sharedName)) fail("state.types", `duplicate sharedName: ${type.sharedName}`);
+    if (validators.has(type.validatorName)) fail("state.types", `duplicate validatorName: ${type.validatorName}`);
+    if (paths.has(type.defaultPath)) fail("state.types", `duplicate defaultPath: ${type.defaultPath}`);
     names.add(type.name);
     sharedNames.add(type.sharedName);
     validators.add(type.validatorName);
     paths.add(type.defaultPath);
   }
-  const rootModes = new Set<string>();
-  const rootTypes = new Set<string>();
-  for (const [index, root] of roots.entries()) {
-    if (rootModes.has(root.mode)) fail("manifest.roots", `duplicate root mode: ${root.mode}`);
-    if (rootTypes.has(root.type)) fail("manifest.roots", `ambiguous root type: ${root.type}`);
-    if (!names.has(root.type)) fail(`manifest.roots[${index}].type`, `missing root type: ${root.type}`);
-    rootModes.add(root.mode);
-    rootTypes.add(root.type);
-  }
-  const descriptor: RoomStateDescriptor = { formatVersion: 2, roots, types };
+  if (!names.has(root)) fail("state.root", `missing root type: ${root}`);
+  const descriptor: GameplayStateDescriptor = { schemaVersion: 1, root, types };
   validateReferences(descriptor);
   assertRootLifecycle(descriptor);
   return descriptor;
@@ -481,7 +439,7 @@ export function parseRoomStateDescriptor(input: unknown): RoomStateDescriptor {
  * 其中任一字段的 root，过去只会在运行期读到 undefined；这里把它变成 codegen 期的失败，
  * 并让生成的 `RoomStateLifecycle` 有据可依。
  */
-const ROOT_LIFECYCLE_FIELDS = [
+export const ROOT_LIFECYCLE_FIELDS = [
   { name: "tick", kind: "integer" },
   { name: "phase", kind: "enum" },
   { name: "matchId", kind: "string" },
@@ -507,106 +465,76 @@ const ROOT_PHASE_ENUM_TYPE = "GamePhaseType";
 const ROOT_PHASE_REQUIRED_MEMBERS = ["Waiting", "Playing", "Settle"] as const;
 
 /** shell 只读 player 的这两个字段（chat 广播与证据 roster 都只要它们）。 */
-const PLAYER_LIFECYCLE_FIELDS = [
+export const PLAYER_LIFECYCLE_FIELDS = [
   { name: "id", kind: "string" },
   { name: "name", kind: "string" },
 ] as const;
 
-function assertRootLifecycle(descriptor: RoomStateDescriptor): void {
+function assertRootLifecycle(descriptor: GameplayStateDescriptor): void {
   const byName = new Map(descriptor.types.map((type) => [type.name, type]));
-  for (const root of descriptor.roots) {
-    const type = byName.get(root.type);
-    if (!type) continue; // 缺失 root 类型已由上面的 roots 校验报过，⛔ 不重复报
-    for (const required of ROOT_LIFECYCLE_FIELDS) {
-      const field = type.fields.find((candidate) => candidate.name === required.name);
-      if (!field) {
+  const type = byName.get(descriptor.root);
+  if (!type) return; // 缺失 root 类型已由上面的 root 校验报过，⛔ 不重复报
+  for (const required of ROOT_LIFECYCLE_FIELDS) {
+    const field = type.fields.find((candidate) => candidate.name === required.name);
+    if (!field) {
+      fail(
+        `state.types.${type.name}`,
+        `root type must declare lifecycle field "${required.name}" (generic GameRoom shell reads it)`,
+      );
+    }
+    if (field.kind !== required.kind) {
+      fail(
+        `state.types.${type.name}.${required.name}`,
+        `lifecycle field must be kind "${required.kind}", got "${field.kind}"`,
+      );
+    }
+    if (required.name === "phase" && field.kind === "enum") {
+      if (field.enumObject !== ROOT_PHASE_ENUM_OBJECT || field.enumType !== ROOT_PHASE_ENUM_TYPE) {
         fail(
-          `manifest.types.${type.name}`,
-          `root type must declare lifecycle field "${required.name}" (generic GameRoom shell reads it)`,
+          `state.types.${type.name}.phase`,
+          `root phase must use ${ROOT_PHASE_ENUM_OBJECT}/${ROOT_PHASE_ENUM_TYPE}, `
+          + `got ${field.enumObject}/${field.enumType} `
+          + "(the generic shell writes GamePhase.* unconditionally)",
         );
       }
-      if (field.kind !== required.kind) {
-        fail(
-          `manifest.types.${type.name}.${required.name}`,
-          `lifecycle field must be kind "${required.kind}", got "${field.kind}"`,
-        );
-      }
-      if (required.name === "phase" && field.kind === "enum") {
-        if (field.enumObject !== ROOT_PHASE_ENUM_OBJECT || field.enumType !== ROOT_PHASE_ENUM_TYPE) {
+      for (const member of ROOT_PHASE_REQUIRED_MEMBERS) {
+        if (!field.members.includes(member)) {
           fail(
-            `manifest.types.${type.name}.phase`,
-            `root phase must use ${ROOT_PHASE_ENUM_OBJECT}/${ROOT_PHASE_ENUM_TYPE}, `
-            + `got ${field.enumObject}/${field.enumType} `
-            + "(the generic shell writes GamePhase.* unconditionally)",
+            `state.types.${type.name}.phase`,
+            `root phase must declare member "${member}" — the generic shell writes it `
+            + "unconditionally, and the generated wire validator would reject it",
           );
         }
-        for (const member of ROOT_PHASE_REQUIRED_MEMBERS) {
-          if (!field.members.includes(member)) {
-            fail(
-              `manifest.types.${type.name}.phase`,
-              `root phase must declare member "${member}" — the generic shell writes it `
-              + "unconditionally, and the generated wire validator would reject it",
-            );
-          }
-        }
       }
     }
-    const players = type.fields.find((field) => field.name === "players");
-    if (players?.kind !== "map") continue;
-    const playerType = byName.get(players.valueType);
-    if (!playerType) continue;
-    for (const required of PLAYER_LIFECYCLE_FIELDS) {
-      const field = playerType.fields.find((candidate) => candidate.name === required.name);
-      if (!field) {
-        fail(
-          `manifest.types.${playerType.name}`,
-          `root player type must declare lifecycle field "${required.name}" (generic GameRoom shell reads it)`,
-        );
-      }
-      if (field.kind !== required.kind) {
-        fail(
-          `manifest.types.${playerType.name}.${required.name}`,
-          `lifecycle field must be kind "${required.kind}", got "${field.kind}"`,
-        );
-      }
+  }
+  const players = type.fields.find((field) => field.name === "players");
+  if (players?.kind !== "map") return;
+  const playerType = byName.get(players.valueType);
+  if (!playerType) return;
+  for (const required of PLAYER_LIFECYCLE_FIELDS) {
+    const field = playerType.fields.find((candidate) => candidate.name === required.name);
+    if (!field) {
+      fail(
+        `state.types.${playerType.name}`,
+        `root player type must declare lifecycle field "${required.name}" (generic GameRoom shell reads it)`,
+      );
+    }
+    if (field.kind !== required.kind) {
+      fail(
+        `state.types.${playerType.name}.${required.name}`,
+        `lifecycle field must be kind "${required.kind}", got "${field.kind}"`,
+      );
     }
   }
 }
 
-function posixPath(value: string): string {
-  return value.split(path.sep).join("/");
-}
+// ── 渲染 ────────────────────────────────────────────────────────────────────
 
-function resolvedOptions(options: RoomStateCodegenOptions): {
-  readonly repositoryRoot: string;
-  readonly schemaFile: string;
-  readonly sharedOutputFile: string;
-  readonly serverOutputFile: string;
-} {
-  const repositoryRoot = path.resolve(options.repositoryRoot ?? TOOL_REPOSITORY_ROOT);
-  return {
-    repositoryRoot,
-    schemaFile: path.resolve(options.schemaFile ?? path.join(repositoryRoot, DEFAULT_SCHEMA_RELATIVE_PATH)),
-    sharedOutputFile: path.resolve(
-      options.sharedOutputFile ?? path.join(repositoryRoot, DEFAULT_SHARED_OUTPUT_RELATIVE_PATH),
-    ),
-    serverOutputFile: path.resolve(
-      options.serverOutputFile ?? path.join(repositoryRoot, DEFAULT_SERVER_OUTPUT_RELATIVE_PATH),
-    ),
-  };
-}
+/** 生成物内 players map 容量常量的模块局部标识符（provenance 见常量上方注释）。 */
+const MAP_CAPACITY_IDENT = "MAX_PLAYERS";
 
-export function readRoomStateDescriptor(options: RoomStateCodegenOptions = {}): RoomStateDescriptor {
-  const resolved = resolvedOptions(options);
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(fs.readFileSync(resolved.schemaFile, "utf8"));
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error);
-    fail(posixPath(path.relative(resolved.repositoryRoot, resolved.schemaFile)), `cannot read valid JSON: ${detail}`);
-  }
-  return parseRoomStateDescriptor(parsed);
-}
+export const GENERATOR_LABEL = "apps/server/tools/gameplay-codegen/cli.ts";
 
 function renderDoc(descriptionValue: string | undefined, indent = ""): string[] {
   return descriptionValue === undefined ? [] : [`${indent}/** ${descriptionValue} */`];
@@ -649,7 +577,7 @@ function renderEntriesHelper(owner: StateTypeDescriptor, field: MapField): strin
     "    if (input instanceof Map) {",
     "        const entries: Array<[string, unknown]> = [];",
     "        for (const [key, value] of input.entries()) {",
-    `            if (entries.length >= ${field.maxSizeConstant}) throw new WireValidationError(${JSON.stringify(field.errorCode)}, path);`,
+    `            if (entries.length >= ${MAP_CAPACITY_IDENT}) throw new WireValidationError(${JSON.stringify(field.errorCode)}, path);`,
     "            entries.push([key, value]);",
     "        }",
     "        return entries;",
@@ -668,7 +596,7 @@ function renderEntriesHelper(owner: StateTypeDescriptor, field: MapField): strin
     "                    if (!Array.isArray(pair) || pair.length !== 2) {",
     `                        throw new WireValidationError(${JSON.stringify(field.errorCode)}, path);`,
     "                    }",
-    `                    if (entries.length >= ${field.maxSizeConstant}) throw new WireValidationError(${JSON.stringify(field.errorCode)}, path);`,
+    `                    if (entries.length >= ${MAP_CAPACITY_IDENT}) throw new WireValidationError(${JSON.stringify(field.errorCode)}, path);`,
     "                    entries.push([pair[0] as string, pair[1]]);",
     "                }",
     "                return entries;",
@@ -680,7 +608,7 @@ function renderEntriesHelper(owner: StateTypeDescriptor, field: MapField): strin
     "    }",
     "    if (isPlainRecord(input)) {",
     "        const keys = Object.keys(input);",
-    `        if (keys.length > ${field.maxSizeConstant}) throw new WireValidationError(${JSON.stringify(field.errorCode)}, path);`,
+    `        if (keys.length > ${MAP_CAPACITY_IDENT}) throw new WireValidationError(${JSON.stringify(field.errorCode)}, path);`,
     "        return keys.map((key) => [key, input[key]]);",
     "    }",
     `    throw new WireValidationError(${JSON.stringify(field.errorCode)}, path);`,
@@ -704,10 +632,10 @@ function renderNumberValidation(field: NumberField): string {
 
 function renderValidator(
   type: StateTypeDescriptor,
-  descriptor: RoomStateDescriptor,
+  descriptor: GameplayStateDescriptor,
   byName: ReadonlyMap<string, StateTypeDescriptor>,
 ): string[] {
-  const root = descriptor.roots.some((candidate) => candidate.type === type.name);
+  const root = descriptor.root === type.name;
   const signature = root
     ? `export function ${type.validatorName}(input: unknown): ${type.sharedName} {`
     : `export function ${type.validatorName}(input: unknown, path = ${JSON.stringify(type.defaultPath)}): ${type.sharedName} {`;
@@ -748,7 +676,7 @@ function renderValidator(
       const entriesName = entriesHelperName(type, field);
       lines.push(
         `        const entries = ${entriesName}(value.${field.name}, path + ${JSON.stringify(`.${field.name}`)});`,
-        `        if (entries.length > ${field.maxSizeConstant}) throw new WireValidationError(${JSON.stringify(field.errorCode)}, path + ${JSON.stringify(`.${field.name}`)});`,
+        `        if (entries.length > ${MAP_CAPACITY_IDENT}) throw new WireValidationError(${JSON.stringify(field.errorCode)}, path + ${JSON.stringify(`.${field.name}`)});`,
         `        const ${field.name} = new Map<string, ${target.sharedName}>();`,
         "        for (const [entryKey, entryValue] of entries) {",
         `            if (typeof entryKey !== "string" || entryKey.length < ${keyField.minLength} || entryKey.length > ${keyField.maxLength} || ${field.name}.has(entryKey)) {`,
@@ -769,14 +697,30 @@ function renderValidator(
   return lines;
 }
 
-function renderShared(descriptor: RoomStateDescriptor, sourceLabel: string): string {
+/** 生成物抬头（「禁止手改」+ 来源），两端 renderer 共用。 */
+export function generatedHeader(sourceLabel: string): string {
+  return `/** AUTO-GENERATED by ${GENERATOR_LABEL} from ${sourceLabel}. Do not edit. */`;
+}
+
+function hasFieldKind(types: readonly StateTypeDescriptor[], kind: WireField["kind"]): boolean {
+  return types.some((type) => type.fields.some((field) => field.kind === kind));
+}
+
+/**
+ * shared 每玩法 state 模块（`apps/shared/src/gameplays/generated/state/<id>.ts`）。
+ * 私有积木（stateRecord/hasReflectedSchemaMarkers/entriesOf*）随文件重发；
+ * 满足 shared 加严选项（exactOptionalPropertyTypes/verbatimModuleSyntax/noUnusedLocals）与 ES2017。
+ */
+export function renderSharedStateModule(
+  gameplayId: string,
+  maxPlayers: number,
+  descriptor: GameplayStateDescriptor,
+  sourceLabel: string,
+): string {
   const types = topologicalTypes(descriptor);
   const byName = new Map(types.map((type) => [type.name, type]));
-  const roots = descriptor.roots.map((root) => {
-    const rootType = byName.get(root.type);
-    if (!rootType) fail(`roots.${root.mode}`, `missing root type while rendering: ${root.type}`);
-    return { ...root, descriptor: rootType };
-  });
+  const rootType = byName.get(descriptor.root);
+  if (!rootType) fail(`gameplays.${gameplayId}`, `missing root type while rendering: ${descriptor.root}`);
   const sharedValues = new Set<string>();
   const sharedTypes = new Set<string>();
   for (const type of types) {
@@ -784,22 +728,37 @@ function renderShared(descriptor: RoomStateDescriptor, sourceLabel: string): str
       if (field.kind === "enum") {
         sharedValues.add(field.enumObject);
         sharedTypes.add(field.enumType);
-      } else if (field.kind === "map") {
-        sharedValues.add(field.maxSizeConstant);
       }
     }
   }
-  const importNames = [
-    ...[...sharedValues].sort(),
-    ...[...sharedTypes].sort().map((name) => `type ${name}`),
+  const lines = [generatedHeader(sourceLabel)];
+  if (sharedValues.size > 0 || sharedTypes.size > 0) {
+    const importNames = [
+      ...[...sharedValues].sort(),
+      ...[...sharedTypes].sort().map((name) => `type ${name}`),
+    ];
+    lines.push(`import { ${importNames.join(", ")} } from "../../../constants/game";`);
+  }
+  // noUnusedLocals：只导入本 mode 实际用到的积木。
+  const httpImports = [
+    "assertExactKeys",
+    ...(hasFieldKind(types, "string") ? ["boundedString"] : []),
+    ...(hasFieldKind(types, "integer") ? ["finiteInteger"] : []),
+    ...(hasFieldKind(types, "number") ? ["finiteNumber"] : []),
+    "guardWire",
+    "isPlainRecord",
+    "type PlainRecord",
+    "WireValidationError",
   ];
-  const lines = [
-    `/** AUTO-GENERATED by apps/server/tools/room-state-codegen.ts from ${sourceLabel}. Do not edit. */`,
-    `import { ${importNames.join(", ")} } from "../constants/game";`,
-    "import { assertExactKeys, boundedString, finiteInteger, finiteNumber, guardWire, isPlainRecord, type PlainRecord, WireValidationError } from \"./http\";",
-    "",
-    "/** Dependency-free mirrors of the Colyseus wire state. */",
-  ];
+  lines.push(`import { ${httpImports.join(", ")} } from "../../../protocol/http";`, "");
+  if (hasFieldKind(types, "map")) {
+    lines.push(
+      `/** Root players map capacity. Source: apps/shared/schema/gameplays/${gameplayId}/manifest.json (maxPlayers). */`,
+      `const ${MAP_CAPACITY_IDENT} = ${maxPlayers};`,
+      "",
+    );
+  }
+  lines.push("/** Dependency-free mirrors of the Colyseus wire state. */");
   for (const type of types) {
     lines.push(`export interface ${type.sharedName} {`);
     for (const field of type.fields) {
@@ -808,16 +767,6 @@ function renderShared(descriptor: RoomStateDescriptor, sourceLabel: string): str
     }
     lines.push("}", "");
   }
-  lines.push("export interface RoomStateByMode {");
-  for (const root of roots) lines.push(`    ${JSON.stringify(root.mode)}: ${root.descriptor.sharedName};`);
-  lines.push(
-    "}",
-    "",
-    "export type RoomStateMode = keyof RoomStateByMode;",
-    "export type RoomState = RoomStateByMode[RoomStateMode];",
-    "export type RoomStateValidator<M extends RoomStateMode> = (input: unknown) => RoomStateByMode[M];",
-    "",
-  );
   lines.push(
     "function hasReflectedSchemaMarkers(input: object): boolean {",
     "    const changes = Object.getOwnPropertyDescriptor(input, \"~changes\");",
@@ -855,22 +804,63 @@ function renderShared(descriptor: RoomStateDescriptor, sourceLabel: string): str
     }
   }
   for (const type of types) lines.push(...renderValidator(type, descriptor, byName), "");
-  lines.push("export const ROOM_STATE_VALIDATORS = Object.freeze({");
-  for (const root of roots) {
-    lines.push(`    ${JSON.stringify(root.mode)}: ${root.descriptor.validatorName},`);
+  return `${lines.join("\n").trimEnd()}\n`;
+}
+
+/**
+ * 服务端每玩法 Schema 模块（`apps/server/src/rooms/schema/generated/<id>.ts`）。
+ * @type 装饰器与旧 `GameRoomState.ts` 产物同语义。
+ */
+export function renderServerSchemaModule(
+  gameplayId: string,
+  descriptor: GameplayStateDescriptor,
+  sourceLabel: string,
+): string {
+  const types = topologicalTypes(descriptor);
+  const byName = new Map(types.map((type) => [type.name, type]));
+  if (!byName.has(descriptor.root)) {
+    fail(`gameplays.${gameplayId}`, `missing root type while rendering: ${descriptor.root}`);
   }
-  lines.push(
-    "} as const satisfies { readonly [M in RoomStateMode]: RoomStateValidator<M> });",
-    "",
-    "export function validateRoomStateForMode<M extends RoomStateMode>(mode: M, input: unknown): RoomStateByMode[M];",
-    "export function validateRoomStateForMode(mode: string, input: unknown): RoomState;",
-    "export function validateRoomStateForMode(mode: string, input: unknown): RoomState {",
-    "    const validator = (ROOM_STATE_VALIDATORS as Readonly<Partial<Record<string, (value: unknown) => RoomState>>>)[mode];",
-    "    if (!validator) throw new WireValidationError(\"STATE_MODE\", \"mode\");",
-    "    return validator(input);",
-    "}",
-    "",
-  );
+  const serverValues = new Set<string>();
+  const serverTypes = new Set<string>();
+  for (const type of types) {
+    for (const field of type.fields) {
+      if (field.kind === "enum") {
+        serverValues.add(field.enumObject);
+        serverTypes.add(field.enumType);
+      } else if (field.kind !== "map" && isRecord(field.default)) {
+        serverValues.add(field.default.constant as string);
+      }
+    }
+  }
+  const schemaImports = ["Schema", "type", ...(hasFieldKind(types, "map") ? ["MapSchema"] : [])];
+  const lines = [
+    generatedHeader(sourceLabel),
+    `import { ${schemaImports.join(", ")} } from "@colyseus/schema";`,
+  ];
+  if (serverValues.size > 0 || serverTypes.size > 0) {
+    const sharedImports = [
+      ...[...serverValues].sort(),
+      ...[...serverTypes].sort().map((name) => `type ${name}`),
+    ];
+    lines.push(`import { ${sharedImports.join(", ")} } from "@game/shared";`);
+  }
+  lines.push("");
+  for (const type of types) {
+    lines.push(`export class ${type.name} extends Schema {`);
+    for (const field of type.fields) {
+      lines.push(...renderDoc(field.description, "    "));
+      lines.push(renderServerField(field));
+    }
+    if (type.serverOnly.length > 0) {
+      lines.push("", "    // Server-only fields below are intentionally undecorated and never enter the wire state.");
+      for (const field of type.serverOnly) {
+        lines.push(...renderDoc(field.description, "    "));
+        lines.push(renderServerOnlyField(field));
+      }
+    }
+    lines.push("}", "");
+  }
   return `${lines.join("\n").trimEnd()}\n`;
 }
 
@@ -889,185 +879,7 @@ function renderServerOnlyField(field: ServerOnlyField): string {
   return `    ${field.name}: number = ${JSON.stringify(field.default)};`;
 }
 
-function renderServer(descriptor: RoomStateDescriptor, sourceLabel: string): string {
-  const types = topologicalTypes(descriptor);
-  const byName = new Map(types.map((type) => [type.name, type]));
-  const roots = descriptor.roots.map((root) => {
-    const rootType = byName.get(root.type);
-    if (!rootType) fail(`roots.${root.mode}`, `missing root type while rendering: ${root.type}`);
-    return { ...root, descriptor: rootType };
-  });
-  const serverValues = new Set<string>();
-  const serverTypes = new Set<string>(["RoomStateMode"]);
-  for (const type of types) {
-    for (const field of type.fields) {
-      if (field.kind === "enum") {
-        serverValues.add(field.enumObject);
-        serverTypes.add(field.enumType);
-      } else if (field.kind !== "map" && isRecord(field.default)) {
-        serverValues.add(field.default.constant as string);
-      }
-    }
-  }
-  const sharedImports = [
-    ...[...serverValues].sort(),
-    ...[...serverTypes].sort().map((name) => `type ${name}`),
-  ];
-  const lines = [
-    `/** AUTO-GENERATED by apps/server/tools/room-state-codegen.ts from ${sourceLabel}. Do not edit. */`,
-    "import { Schema, type, MapSchema } from \"@colyseus/schema\";",
-    `import { ${sharedImports.join(", ")} } from "@game/shared";`,
-    "",
-  ];
-  for (const type of types) {
-    lines.push(`export class ${type.name} extends Schema {`);
-    for (const field of type.fields) {
-      lines.push(...renderDoc(field.description, "    "));
-      lines.push(renderServerField(field));
-    }
-    if (type.serverOnly.length > 0) {
-      lines.push("", "    // Server-only fields below are intentionally undecorated and never enter the wire state.");
-      for (const field of type.serverOnly) {
-        lines.push(...renderDoc(field.description, "    "));
-        lines.push(renderServerOnlyField(field));
-      }
-    }
-    lines.push("}", "");
-  }
-  // 通用 shell 只被允许看见这组字段。⛔ 不要把它写成某个具体 root 的别名：那正是被替换掉的
-  // `declare readonly state: GameRoomState`——它让 shell 在类型上拥有 ballMove 的全部字段，
-  // 于是「玩法无关」只剩下口头约定。字段集由 manifest 的 root 生命周期断言保证每个 root 都有。
-  lines.push(
-    "/** Fields every root declares; the gameplay-agnostic GameRoom shell may only touch these. */",
-    "export interface RoomStatePlayerLifecycle {",
-  );
-  for (const field of PLAYER_LIFECYCLE_FIELDS) {
-    lines.push(`    ${field.name}: ${field.kind === "string" ? "string" : "number"};`);
-  }
-  lines.push(
-    "}",
-    "",
-    "/** Root lifecycle view used by the generic shell; the selected mode owns everything else. */",
-    "export interface RoomStateLifecycle {",
-    "    tick: number;",
-    "    phase: GamePhaseType;",
-    "    matchId: string;",
-    "    players: MapSchema<RoomStatePlayerLifecycle>;",
-    "}",
-    "",
-  );
-  lines.push("export const ROOM_STATE_ROOT_CONSTRUCTORS = Object.freeze({");
-  for (const root of roots) lines.push(`    ${JSON.stringify(root.mode)}: ${root.descriptor.name},`);
-  lines.push(
-    "} as const satisfies Record<RoomStateMode, new () => Schema>);",
-    "",
-    "export type RoomStateRootForMode<M extends RoomStateMode> = InstanceType<(typeof ROOM_STATE_ROOT_CONSTRUCTORS)[M]>;",
-    "export type RoomStateRoot = RoomStateRootForMode<RoomStateMode>;",
-    "type RoomStateRootConstructor = (typeof ROOM_STATE_ROOT_CONSTRUCTORS)[RoomStateMode];",
-    "",
-    "export function createRoomStateForMode<M extends RoomStateMode>(mode: M): RoomStateRootForMode<M>;",
-    "export function createRoomStateForMode(mode: string): RoomStateRoot;",
-    "export function createRoomStateForMode(mode: string): RoomStateRoot {",
-    "    const Root = (ROOM_STATE_ROOT_CONSTRUCTORS as Readonly<Partial<Record<string, RoomStateRootConstructor>>>)[mode];",
-    "    if (!Root) throw new TypeError(`[room-state] unsupported gameplay mode: ${mode}`);",
-    "    return new Root();",
-    "}",
-    "",
-  );
-  return `${lines.join("\n").trimEnd()}\n`;
-}
-
-export function renderRoomStateArtifacts(
-  descriptor: RoomStateDescriptor,
-  sourceLabel = DEFAULT_SCHEMA_RELATIVE_PATH,
-): RoomStateArtifacts {
-  validateReferences(descriptor);
-  return {
-    shared: renderShared(descriptor, sourceLabel),
-    server: renderServer(descriptor, sourceLabel),
-  };
-}
-
-function generatedArtifacts(options: RoomStateCodegenOptions): {
-  readonly resolved: ReturnType<typeof resolvedOptions>;
-  readonly artifacts: RoomStateArtifacts;
-} {
-  const resolved = resolvedOptions(options);
-  const descriptor = readRoomStateDescriptor(options);
-  const sourceLabel = posixPath(path.relative(resolved.repositoryRoot, resolved.schemaFile));
-  return { resolved, artifacts: renderRoomStateArtifacts(descriptor, sourceLabel) };
-}
-
-export function assertRoomStateArtifactsFresh(options: RoomStateCodegenOptions = {}): void {
-  const { resolved, artifacts } = generatedArtifacts(options);
-  const outputs = [
-    [resolved.sharedOutputFile, artifacts.shared],
-    [resolved.serverOutputFile, artifacts.server],
-  ] as const;
-  const stale = outputs
-    .filter(([file, expected]) => !fs.existsSync(file) || fs.readFileSync(file, "utf8") !== expected)
-    .map(([file]) => posixPath(path.relative(resolved.repositoryRoot, file)));
-  if (stale.length > 0) {
-    throw new Error(
-      `[room-state-codegen] generated state is missing or stale: ${stale.join(", ")}. `
-      + "Run npm --workspace @game/server run codegen:state",
-    );
-  }
-}
-
-export function writeRoomStateArtifacts(options: RoomStateCodegenOptions = {}): readonly string[] {
-  const { resolved, artifacts } = generatedArtifacts(options);
-  const outputs = [
-    [resolved.sharedOutputFile, artifacts.shared],
-    [resolved.serverOutputFile, artifacts.server],
-  ] as const;
-  const changed: string[] = [];
-  for (const [file, content] of outputs) {
-    if (fs.existsSync(file) && fs.readFileSync(file, "utf8") === content) continue;
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, content, "utf8");
-    changed.push(posixPath(path.relative(resolved.repositoryRoot, file)));
-  }
-  return changed;
-}
-
-function parseCli(argv: readonly string[]): { readonly check: boolean; readonly repositoryRoot?: string } {
-  let check = false;
-  let repositoryRoot: string | undefined;
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-    if (arg === "--check") {
-      if (check) throw new Error("duplicate argument: --check");
-      check = true;
-    } else if (arg === "--root") {
-      if (repositoryRoot !== undefined) throw new Error("duplicate argument: --root");
-      const value = argv[++index];
-      if (!value) throw new Error("--root requires a non-empty directory");
-      repositoryRoot = value;
-    } else if (arg.startsWith("--root=")) {
-      if (repositoryRoot !== undefined) throw new Error("duplicate argument: --root");
-      repositoryRoot = arg.slice("--root=".length);
-      if (!repositoryRoot) throw new Error("--root requires a non-empty directory");
-    } else {
-      throw new Error(`unknown argument: ${arg}`);
-    }
-  }
-  return { check, ...(repositoryRoot === undefined ? {} : { repositoryRoot }) };
-}
-
-const invokedFile = process.argv[1] ? path.resolve(process.argv[1]) : "";
-if (invokedFile === fileURLToPath(import.meta.url)) {
-  try {
-    const args = parseCli(process.argv.slice(2));
-    if (args.check) {
-      assertRoomStateArtifactsFresh(args);
-      console.log("[room-state-codegen] generated state is fresh");
-    } else {
-      const changed = writeRoomStateArtifacts(args);
-      console.log(`[room-state-codegen] ${changed.length === 0 ? "no changes" : `updated ${changed.join(", ")}`}`);
-    }
-  } catch (error) {
-    console.error(error instanceof Error ? error.message : error);
-    process.exitCode = 1;
-  }
+/** posix 归一化的相对路径（渲染来源标签、报错点名共用）。 */
+export function posixPath(value: string): string {
+  return value.split(path.sep).join("/");
 }

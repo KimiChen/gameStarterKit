@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "gameplay manifest v1 (apps/shared/schema/gameplays/<id>/manifest.json)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "constantName", "modeVersion", "maxPlayers"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" },
+    "constantName": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9]{0,63}$" },
+    "modeVersion": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+    "maxPlayers": { "type": "integer", "minimum": 1, "maximum": 1024 },
+    "profiles": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" }
+    }
+  }
+}

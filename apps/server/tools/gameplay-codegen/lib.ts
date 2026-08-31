@@ -1,0 +1,574 @@
+/**
+ * codegen:gameplays 的编排层：发现每玩法单源目录、digest/modeVersion 闸、
+ * 三端产物渲染、freshness（--check 只读）与原子写盘（--write）。
+ *
+ * §5.5 通用约束的落点：
+ *  - 稳定排序（mode 按 id 排序）⇒ 相同输入字节级相同输出；
+ *  - `--check` 只读：stale/missing/extra 三态失败并点名，不创建目录、不改 mtime；
+ *  - 先在内存完成全部校验与渲染，再逐文件临时文件原子替换；
+ *  - 重复 id（含大小写归一化）、路径越界、符号链接逃逸拒绝；
+ *  - 目录名 === manifest.id 且双向所有权：schema/gameplays/ 下有目录必须 manifest+state 齐备，
+ *    catalog 里已有而目录消失必须显式 `--allow-delete <id>`；
+ *  - 生成文件带「AUTO-GENERATED … Do not edit」抬头与来源。
+ *
+ * ⚠ 职责偏差（docs/Non-intrusive.md §5.4 已登记）：本生成器住在 @game/server workspace，
+ * 却直写 `apps/client/src/gameplay/catalog.generated.ts`——`apps/client` 不是 npm workspace，
+ * 客户端产物的 freshness 由 `apps/server/test/gameplay-codegen.test.ts` 的只读断言守门。
+ */
+import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+import process from "node:process";
+import { fileURLToPath } from "node:url";
+import { parseGameplayManifest, type GameplayManifest } from "./manifestSchema";
+import {
+  generatedHeader,
+  parseGameplayStateDescriptor,
+  posixPath,
+  renderSharedStateModule,
+  renderServerSchemaModule,
+  type GameplayStateDescriptor,
+} from "./stateRenderer";
+
+const TOOL_REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
+const SCHEMA_DIR_RELATIVE = "apps/shared/schema/gameplays";
+const SHARED_STATE_DIR_RELATIVE = "apps/shared/src/gameplays/generated/state";
+const SHARED_GENERATED_DIR_RELATIVE = "apps/shared/src/gameplays/generated";
+const SHARED_CATALOG_RELATIVE = "apps/shared/src/gameplays/catalog.generated.ts";
+const SHARED_INDEX_RELATIVE = "apps/shared/src/gameplays/index.ts";
+const SERVER_SCHEMA_DIR_RELATIVE = "apps/server/src/rooms/schema/generated";
+const SERVER_AGGREGATE_RELATIVE = "apps/server/src/rooms/schema/GameRoomState.ts";
+const CLIENT_CATALOG_RELATIVE = "apps/client/src/gameplay/catalog.generated.ts";
+
+const MODE_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/u;
+const RUN_HINT = "Run npm --workspace @game/server run codegen:gameplays";
+
+export type GameplayCodegenOptions = {
+  readonly repositoryRoot?: string;
+  readonly allowDelete?: readonly string[];
+};
+
+export type GameplayDescriptor = {
+  readonly id: string;
+  readonly manifest: GameplayManifest;
+  readonly state: GameplayStateDescriptor;
+  /** sha256(manifest.json 字节 + "\0" + state.json 字节)，per-mode 契约身份。 */
+  readonly contractDigest: string;
+  readonly sourceLabel: string;
+};
+
+export type GameplayWriteResult = {
+  readonly changed: readonly string[];
+  readonly deleted: readonly string[];
+};
+
+function fail(pathLabel: string, message: string): never {
+  throw new Error(`[gameplay-codegen] ${pathLabel}: ${message}`);
+}
+
+function resolvedRoot(options: GameplayCodegenOptions): string {
+  return path.resolve(options.repositoryRoot ?? TOOL_REPOSITORY_ROOT);
+}
+
+function readJsonFile(file: string, label: string): { readonly bytes: Buffer; readonly value: unknown } {
+  let bytes: Buffer;
+  try {
+    bytes = fs.readFileSync(file);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    fail(label, `cannot read file: ${detail}`);
+  }
+  try {
+    return { bytes, value: JSON.parse(bytes.toString("utf8")) };
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    fail(label, `cannot read valid JSON: ${detail}`);
+  }
+}
+
+function assertRegularFile(file: string, label: string): void {
+  let stat: fs.Stats;
+  try {
+    stat = fs.lstatSync(file);
+  } catch {
+    fail(label, "missing required file");
+  }
+  if (stat.isSymbolicLink()) fail(label, "symlink escape is not allowed");
+  if (!stat.isFile()) fail(label, "must be a regular file");
+}
+
+/** 发现并解析全部玩法单源目录；输出按 id 稳定排序。 */
+export function readGameplayDescriptors(options: GameplayCodegenOptions = {}): readonly GameplayDescriptor[] {
+  const root = resolvedRoot(options);
+  const schemaDir = path.join(root, SCHEMA_DIR_RELATIVE);
+  if (!fs.existsSync(schemaDir)) {
+    fail(SCHEMA_DIR_RELATIVE, "gameplay schema directory does not exist");
+  }
+  const entries = fs.readdirSync(schemaDir, { withFileTypes: true })
+    .slice()
+    .sort((left, right) => (left.name < right.name ? -1 : left.name > right.name ? 1 : 0));
+  const gameplays: GameplayDescriptor[] = [];
+  const normalizedIds = new Map<string, string>();
+  for (const entry of entries) {
+    const entryLabel = `${SCHEMA_DIR_RELATIVE}/${entry.name}`;
+    const entryPath = path.join(schemaDir, entry.name);
+    if (fs.lstatSync(entryPath).isSymbolicLink()) fail(entryLabel, "symlink escape is not allowed");
+    if (!entry.isDirectory()) fail(entryLabel, "only per-gameplay directories are allowed here");
+    if (!MODE_ID.test(entry.name)) fail(entryLabel, `invalid gameplay mode id: ${entry.name}`);
+    // 防御性路径闸：id 正则已排除路径分隔符，这里再钉一次解析结果必须留在 schema 根之下。
+    const resolvedEntry = path.resolve(schemaDir, entry.name);
+    if (resolvedEntry !== path.join(schemaDir, entry.name) || !resolvedEntry.startsWith(schemaDir + path.sep)) {
+      fail(entryLabel, "path escapes the gameplay schema root");
+    }
+    const normalized = entry.name.toLowerCase();
+    const clash = normalizedIds.get(normalized);
+    if (clash !== undefined) {
+      fail(entryLabel, `gameplay id collides with "${clash}" under case normalization`);
+    }
+    normalizedIds.set(normalized, entry.name);
+
+    const children = fs.readdirSync(entryPath).sort();
+    const unexpected = children.filter((name) => name !== "manifest.json" && name !== "state.json");
+    if (unexpected.length > 0) fail(entryLabel, `unexpected file(s): ${unexpected.join(", ")}`);
+    const manifestFile = path.join(entryPath, "manifest.json");
+    const stateFile = path.join(entryPath, "state.json");
+    assertRegularFile(manifestFile, `${entryLabel}/manifest.json`);
+    assertRegularFile(stateFile, `${entryLabel}/state.json`);
+
+    const manifestRaw = readJsonFile(manifestFile, `${entryLabel}/manifest.json`);
+    const stateRaw = readJsonFile(stateFile, `${entryLabel}/state.json`);
+    const manifest = parseGameplayManifest(manifestRaw.value, `${entryLabel}/manifest.json`);
+    if (manifest.id !== entry.name) {
+      fail(`${entryLabel}/manifest.json`, `manifest.id "${manifest.id}" must equal its directory name "${entry.name}"`);
+    }
+    const state = parseGameplayStateDescriptor(stateRaw.value);
+    const contractDigest = crypto.createHash("sha256")
+      .update(manifestRaw.bytes)
+      .update("\0")
+      .update(stateRaw.bytes)
+      .digest("hex");
+    gameplays.push({
+      id: manifest.id,
+      manifest,
+      state,
+      contractDigest,
+      sourceLabel: `${SCHEMA_DIR_RELATIVE}/${manifest.id}/{manifest.json,state.json}`,
+    });
+  }
+  if (gameplays.length === 0) fail(SCHEMA_DIR_RELATIVE, "no gameplay directories found");
+  assertCrossGameplayUniqueness(gameplays);
+  return gameplays;
+}
+
+/** mode id、生成类型名与导出符号必须全局唯一——跨 mode 重名符号会在聚合 barrel 里互相顶替。 */
+function assertCrossGameplayUniqueness(gameplays: readonly GameplayDescriptor[]): void {
+  const owners = new Map<string, string>();
+  const claim = (symbol: string, owner: string, label: string): void => {
+    const existing = owners.get(symbol);
+    if (existing !== undefined && existing !== owner) {
+      fail(label, `symbol "${symbol}" already owned by gameplay "${existing}" — cross-gameplay symbols must be unique`);
+    }
+    owners.set(symbol, owner);
+  };
+  const constantNames = new Map<string, string>();
+  for (const gameplay of gameplays) {
+    const label = `${SCHEMA_DIR_RELATIVE}/${gameplay.id}`;
+    const constantClash = constantNames.get(gameplay.manifest.constantName);
+    if (constantClash !== undefined) {
+      fail(label, `constantName "${gameplay.manifest.constantName}" already used by gameplay "${constantClash}"`);
+    }
+    constantNames.set(gameplay.manifest.constantName, gameplay.id);
+    for (const type of gameplay.state.types) {
+      claim(type.name, gameplay.id, label);
+      claim(type.sharedName, gameplay.id, label);
+      claim(type.validatorName, gameplay.id, label);
+    }
+  }
+}
+
+// ── 渲染 ────────────────────────────────────────────────────────────────────
+
+// ⚠ 标签会进 `/** … */` 块注释：⛔ 不能写 `*/`（glob 星号 + 斜杠会提前终止注释）。
+const AGGREGATE_SOURCE_LABEL = `${SCHEMA_DIR_RELATIVE}/<id>/{manifest.json,state.json}`;
+
+function rootType(gameplay: GameplayDescriptor): { readonly sharedName: string; readonly validatorName: string; readonly name: string } {
+  const type = gameplay.state.types.find((candidate) => candidate.name === gameplay.state.root);
+  if (!type) fail(`gameplays.${gameplay.id}`, `missing root type while rendering: ${gameplay.state.root}`);
+  return type;
+}
+
+function renderCatalogEntries(gameplays: readonly GameplayDescriptor[]): string[] {
+  const lines: string[] = [];
+  for (const gameplay of gameplays) {
+    lines.push(
+      `    ${JSON.stringify(gameplay.id)}: {`,
+      `        id: ${JSON.stringify(gameplay.id)},`,
+      `        constantName: ${JSON.stringify(gameplay.manifest.constantName)},`,
+      `        modeVersion: ${gameplay.manifest.modeVersion},`,
+      `        maxPlayers: ${gameplay.manifest.maxPlayers},`,
+      `        contractDigest: ${JSON.stringify(gameplay.contractDigest)},`,
+      "    },",
+    );
+  }
+  return lines;
+}
+
+function renderSharedCatalog(gameplays: readonly GameplayDescriptor[]): string {
+  const lines = [
+    generatedHeader(AGGREGATE_SOURCE_LABEL),
+    "import { WireValidationError } from \"../protocol/http\";",
+  ];
+  for (const gameplay of gameplays) {
+    const root = rootType(gameplay);
+    lines.push(
+      `import { ${root.validatorName}, type ${root.sharedName} } from "./generated/state/${gameplay.id}";`,
+    );
+  }
+  lines.push(
+    "",
+    "/** Wire root interfaces keyed by canonical gameplay mode id. */",
+    "export interface RoomStateByMode {",
+  );
+  for (const gameplay of gameplays) {
+    lines.push(`    ${JSON.stringify(gameplay.id)}: ${rootType(gameplay).sharedName};`);
+  }
+  lines.push(
+    "}",
+    "",
+    "export type RoomStateMode = keyof RoomStateByMode;",
+    "export type RoomState = RoomStateByMode[RoomStateMode];",
+    "export type RoomStateValidator<M extends RoomStateMode> = (input: unknown) => RoomStateByMode[M];",
+    "",
+    "export const ROOM_STATE_VALIDATORS = Object.freeze({",
+  );
+  for (const gameplay of gameplays) {
+    lines.push(`    ${JSON.stringify(gameplay.id)}: ${rootType(gameplay).validatorName},`);
+  }
+  lines.push(
+    "} as const satisfies { readonly [M in RoomStateMode]: RoomStateValidator<M> });",
+    "",
+    "export function validateRoomStateForMode<M extends RoomStateMode>(mode: M, input: unknown): RoomStateByMode[M];",
+    "export function validateRoomStateForMode(mode: string, input: unknown): RoomState;",
+    "export function validateRoomStateForMode(mode: string, input: unknown): RoomState {",
+    "    const validator = (ROOM_STATE_VALIDATORS as Readonly<Partial<Record<string, (value: unknown) => RoomState>>>)[mode];",
+    "    if (!validator) throw new WireValidationError(\"STATE_MODE\", \"mode\");",
+    "    return validator(input);",
+    "}",
+    "",
+    "/** Per-gameplay catalog. contractDigest = sha256(manifest.json + \"\\0\" + state.json). */",
+    "export const GAMEPLAY_CATALOG = {",
+    ...renderCatalogEntries(gameplays),
+    "} as const;",
+    "",
+    "export type GameplayCatalogId = keyof typeof GAMEPLAY_CATALOG;",
+    "",
+  );
+  return `${lines.join("\n").trimEnd()}\n`;
+}
+
+function renderSharedIndex(gameplays: readonly GameplayDescriptor[]): string {
+  const lines = [
+    generatedHeader(AGGREGATE_SOURCE_LABEL),
+    "// 稳定 façade：外部只 import 本文件或包根 barrel，⛔ 不直接 import generated/ 内部路径。",
+    "export * from \"./catalog.generated\";",
+  ];
+  for (const gameplay of gameplays) {
+    lines.push(`export * from "./generated/state/${gameplay.id}";`);
+  }
+  return `${lines.join("\n").trimEnd()}\n`;
+}
+
+function renderServerAggregate(gameplays: readonly GameplayDescriptor[]): string {
+  const lines = [
+    generatedHeader(AGGREGATE_SOURCE_LABEL),
+    "import { Schema, MapSchema } from \"@colyseus/schema\";",
+    "import { type GamePhaseType, type RoomStateMode } from \"@game/shared\";",
+  ];
+  for (const gameplay of gameplays) {
+    lines.push(`import { ${rootType(gameplay).name} } from "./generated/${gameplay.id}";`);
+  }
+  lines.push("");
+  for (const gameplay of gameplays) {
+    const names = gameplay.state.types.map((type) => type.name);
+    lines.push(`export { ${names.join(", ")} } from "./generated/${gameplay.id}";`);
+  }
+  // 通用 shell 只被允许看见这组字段。⛔ 不要把它写成某个具体 root 的别名：那正是被替换掉的
+  // `declare readonly state: GameRoomState`——它让 shell 在类型上拥有 ballMove 的全部字段，
+  // 于是「玩法无关」只剩下口头约定。字段集由每玩法 state descriptor 的生命周期断言保证。
+  lines.push(
+    "",
+    "/** Fields every root declares; the gameplay-agnostic GameRoom shell may only touch these. */",
+    "export interface RoomStatePlayerLifecycle {",
+    "    id: string;",
+    "    name: string;",
+    "}",
+    "",
+    "/** Root lifecycle view used by the generic shell; the selected mode owns everything else. */",
+    "export interface RoomStateLifecycle {",
+    "    tick: number;",
+    "    phase: GamePhaseType;",
+    "    matchId: string;",
+    "    players: MapSchema<RoomStatePlayerLifecycle>;",
+    "}",
+    "",
+    "export const ROOM_STATE_ROOT_CONSTRUCTORS = Object.freeze({",
+  );
+  for (const gameplay of gameplays) {
+    lines.push(`    ${JSON.stringify(gameplay.id)}: ${rootType(gameplay).name},`);
+  }
+  lines.push(
+    "} as const satisfies Record<RoomStateMode, new () => Schema>);",
+    "",
+    "export type RoomStateRootForMode<M extends RoomStateMode> = InstanceType<(typeof ROOM_STATE_ROOT_CONSTRUCTORS)[M]>;",
+    "export type RoomStateRoot = RoomStateRootForMode<RoomStateMode>;",
+    "type RoomStateRootConstructor = (typeof ROOM_STATE_ROOT_CONSTRUCTORS)[RoomStateMode];",
+    "",
+    "export function createRoomStateForMode<M extends RoomStateMode>(mode: M): RoomStateRootForMode<M>;",
+    "export function createRoomStateForMode(mode: string): RoomStateRoot;",
+    "export function createRoomStateForMode(mode: string): RoomStateRoot {",
+    "    const Root = (ROOM_STATE_ROOT_CONSTRUCTORS as Readonly<Partial<Record<string, RoomStateRootConstructor>>>)[mode];",
+    "    if (!Root) throw new TypeError(`[room-state] unsupported gameplay mode: ${mode}`);",
+    "    return new Root();",
+    "}",
+    "",
+  );
+  return `${lines.join("\n").trimEnd()}\n`;
+}
+
+function renderClientCatalog(gameplays: readonly GameplayDescriptor[]): string {
+  // ⚠ 客户端生成代码钉 ES2017 运行时 API 且必须过 noUnusedLocals（本文件只有字面量数据）。
+  const lines = [
+    generatedHeader(AGGREGATE_SOURCE_LABEL),
+    "",
+    "/** Per-gameplay catalog mirror (minimal; extended in stage 9). contractDigest = sha256(manifest.json + \"\\0\" + state.json). */",
+    "export const GAMEPLAY_CATALOG = {",
+    ...renderCatalogEntries(gameplays),
+    "} as const;",
+    "",
+    "export type GameplayCatalogId = keyof typeof GAMEPLAY_CATALOG;",
+    "",
+  ];
+  return `${lines.join("\n").trimEnd()}\n`;
+}
+
+/** 全部产物（相对仓根路径 → 内容），键按路径稳定排序。 */
+export function renderGameplayArtifacts(
+  gameplays: readonly GameplayDescriptor[],
+): ReadonlyMap<string, string> {
+  const artifacts = new Map<string, string>();
+  for (const gameplay of gameplays) {
+    artifacts.set(
+      `${SHARED_STATE_DIR_RELATIVE}/${gameplay.id}.ts`,
+      renderSharedStateModule(gameplay.id, gameplay.manifest.maxPlayers, gameplay.state, gameplay.sourceLabel),
+    );
+    artifacts.set(
+      `${SERVER_SCHEMA_DIR_RELATIVE}/${gameplay.id}.ts`,
+      renderServerSchemaModule(gameplay.id, gameplay.state, gameplay.sourceLabel),
+    );
+  }
+  artifacts.set(SHARED_CATALOG_RELATIVE, renderSharedCatalog(gameplays));
+  artifacts.set(SHARED_INDEX_RELATIVE, renderSharedIndex(gameplays));
+  artifacts.set(SERVER_AGGREGATE_RELATIVE, renderServerAggregate(gameplays));
+  artifacts.set(CLIENT_CATALOG_RELATIVE, renderClientCatalog(gameplays));
+  return new Map([...artifacts.entries()].sort(([left], [right]) => (left < right ? -1 : 1)));
+}
+
+// ── digest/modeVersion 闸 ───────────────────────────────────────────────────
+
+type CatalogRecord = { readonly modeVersion: number; readonly contractDigest: string };
+
+/**
+ * 从既有 shared catalog 生成物中恢复 per-mode digest/modeVersion 记录。
+ * 生成物格式由本生成器唯一拥有，解析不动的文件按「无历史记录」处理（首次生成放行；
+ * catalog 本身受 freshness 断言守护，手工篡改会先被 --check 点名）。
+ */
+export function previousCatalogRecords(options: GameplayCodegenOptions = {}): ReadonlyMap<string, CatalogRecord> {
+  const file = path.join(resolvedRoot(options), SHARED_CATALOG_RELATIVE);
+  const records = new Map<string, CatalogRecord>();
+  if (!fs.existsSync(file)) return records;
+  const text = fs.readFileSync(file, "utf8");
+  const entry = /"([A-Za-z0-9._-]{1,64})": \{\n {8}id: "[^"\n]+",\n {8}constantName: "[^"\n]+",\n {8}modeVersion: (\d+),\n {8}maxPlayers: \d+,\n {8}contractDigest: "([0-9a-f]{64})",\n {4}\},/gu;
+  for (const match of text.matchAll(entry)) {
+    records.set(match[1], {
+      modeVersion: Number(match[2]),
+      contractDigest: match[3],
+    });
+  }
+  return records;
+}
+
+/** 契约 digest 变化必须伴随 manifest.modeVersion 递增；首次生成（无旧记录）放行。 */
+export function assertModeVersionBumped(
+  gameplays: readonly GameplayDescriptor[],
+  previous: ReadonlyMap<string, CatalogRecord>,
+): void {
+  for (const gameplay of gameplays) {
+    const record = previous.get(gameplay.id);
+    if (!record) continue;
+    if (record.contractDigest === gameplay.contractDigest) continue;
+    if (gameplay.manifest.modeVersion > record.modeVersion) continue;
+    fail(
+      `${SCHEMA_DIR_RELATIVE}/${gameplay.id}`,
+      `contract digest changed but modeVersion did not increase (kept ${gameplay.manifest.modeVersion}, `
+      + `previous ${record.modeVersion}). Bump modeVersion in ${SCHEMA_DIR_RELATIVE}/${gameplay.id}/manifest.json`,
+    );
+  }
+}
+
+// ── freshness 与写盘 ────────────────────────────────────────────────────────
+
+/** 生成器独占所有权的目录：其中出现非预期文件即 extra。 */
+const OWNED_GENERATED_DIRS = [SHARED_GENERATED_DIR_RELATIVE, SERVER_SCHEMA_DIR_RELATIVE] as const;
+
+function collectOwnedFiles(root: string): readonly string[] {
+  const out: string[] = [];
+  const walk = (dir: string, base: string): void => {
+    if (!fs.existsSync(dir)) return;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(full, base);
+      else out.push(posixPath(path.relative(base, full)));
+    }
+  };
+  for (const relative of OWNED_GENERATED_DIRS) walk(path.join(root, relative), root);
+  return [...new Set(out)].sort();
+}
+
+function diffArtifacts(root: string, expected: ReadonlyMap<string, string>): {
+  readonly stale: readonly string[];
+  readonly missing: readonly string[];
+  readonly extra: readonly string[];
+} {
+  const stale: string[] = [];
+  const missing: string[] = [];
+  for (const [relative, content] of expected) {
+    const file = path.join(root, relative);
+    if (!fs.existsSync(file)) {
+      missing.push(relative);
+    } else if (fs.readFileSync(file, "utf8") !== content) {
+      stale.push(relative);
+    }
+  }
+  const extra = collectOwnedFiles(root).filter((relative) => !expected.has(relative));
+  return { stale, missing, extra };
+}
+
+/** 只读 freshness 断言：stale / missing / extra 任一非空即失败并点名。 */
+export function assertGameplayArtifactsFresh(options: GameplayCodegenOptions = {}): void {
+  const root = resolvedRoot(options);
+  const gameplays = readGameplayDescriptors(options);
+  assertModeVersionBumped(gameplays, previousCatalogRecords(options));
+  const { stale, missing, extra } = diffArtifacts(root, renderGameplayArtifacts(gameplays));
+  const problems: string[] = [];
+  if (stale.length > 0) problems.push(`stale: ${stale.join(", ")}`);
+  if (missing.length > 0) problems.push(`missing: ${missing.join(", ")}`);
+  if (extra.length > 0) problems.push(`extra: ${extra.join(", ")}`);
+  if (problems.length > 0) {
+    throw new Error(
+      `[gameplay-codegen] generated gameplay artifacts are not fresh — ${problems.join("; ")}. ${RUN_HINT}`,
+    );
+  }
+}
+
+function atomicWrite(file: string, content: string): void {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const temporary = `${file}.tmp-${process.pid}`;
+  fs.writeFileSync(temporary, content, "utf8");
+  fs.renameSync(temporary, file);
+}
+
+/**
+ * 写盘。目录消失但 catalog 仍登记的 mode 必须显式 `--allow-delete <id>`，
+ * 生成目录内它的产物同批删除、不留残留。
+ */
+export function writeGameplayArtifacts(options: GameplayCodegenOptions = {}): GameplayWriteResult {
+  const root = resolvedRoot(options);
+  const allowDelete = new Set(options.allowDelete ?? []);
+  const gameplays = readGameplayDescriptors(options);
+  const previous = previousCatalogRecords(options);
+  assertModeVersionBumped(gameplays, previous);
+
+  const currentIds = new Set(gameplays.map((gameplay) => gameplay.id));
+  const removed = [...previous.keys()].filter((id) => !currentIds.has(id));
+  const refused = removed.filter((id) => !allowDelete.has(id));
+  if (refused.length > 0) {
+    fail(
+      SCHEMA_DIR_RELATIVE,
+      `gameplay id(s) still in the generated catalog but their source directories are gone: ${refused.join(", ")}. `
+      + `Deleting a gameplay requires an explicit --allow-delete <id>`,
+    );
+  }
+
+  const expected = renderGameplayArtifacts(gameplays);
+  // extra 清理：生成目录里不再被任何 mode 拥有的文件。允许删除名单里的 mode 产物删除；
+  // 其余一律拒绝——普通 --write 不得静默吞掉未知文件。
+  const orphans = collectOwnedFiles(root).filter((relative) => !expected.has(relative));
+  const deletable: string[] = [];
+  for (const relative of orphans) {
+    const stem = path.basename(relative).replace(/\.ts$/u, "");
+    if (allowDelete.has(stem)) {
+      deletable.push(relative);
+    } else {
+      fail(relative, `unexpected file in a generator-owned directory. ${RUN_HINT} with --allow-delete <id> if this gameplay was removed`);
+    }
+  }
+
+  const changed: string[] = [];
+  for (const [relative, content] of expected) {
+    const file = path.join(root, relative);
+    if (fs.existsSync(file) && fs.readFileSync(file, "utf8") === content) continue;
+    atomicWrite(file, content);
+    changed.push(relative);
+  }
+  for (const relative of deletable) fs.rmSync(path.join(root, relative));
+  return { changed, deleted: deletable };
+}
+
+// ── CLI 参数 ────────────────────────────────────────────────────────────────
+
+export type GameplayCliArguments = {
+  readonly check: boolean;
+  readonly repositoryRoot?: string;
+  readonly allowDelete?: readonly string[];
+};
+
+/** 沿用仓内惯例：`--check`、`--root <dir>`/`--root=<dir>`；重复/未知参数 throw。 */
+export function parseCli(argv: readonly string[]): GameplayCliArguments {
+  let check = false;
+  let repositoryRoot: string | undefined;
+  const allowDelete: string[] = [];
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === "--check") {
+      if (check) throw new Error("duplicate argument: --check");
+      check = true;
+    } else if (arg === "--root") {
+      if (repositoryRoot !== undefined) throw new Error("duplicate argument: --root");
+      const value = argv[++index];
+      if (!value) throw new Error("--root requires a non-empty directory");
+      repositoryRoot = value;
+    } else if (arg.startsWith("--root=")) {
+      if (repositoryRoot !== undefined) throw new Error("duplicate argument: --root");
+      repositoryRoot = arg.slice("--root=".length);
+      if (!repositoryRoot) throw new Error("--root requires a non-empty directory");
+    } else if (arg === "--allow-delete") {
+      const value = argv[++index];
+      if (!value || !MODE_ID.test(value)) throw new Error("--allow-delete requires a gameplay id");
+      if (allowDelete.includes(value)) throw new Error(`duplicate argument: --allow-delete ${value}`);
+      allowDelete.push(value);
+    } else if (arg.startsWith("--allow-delete=")) {
+      const value = arg.slice("--allow-delete=".length);
+      if (!value || !MODE_ID.test(value)) throw new Error("--allow-delete requires a gameplay id");
+      if (allowDelete.includes(value)) throw new Error(`duplicate argument: --allow-delete ${value}`);
+      allowDelete.push(value);
+    } else {
+      throw new Error(`unknown argument: ${arg}`);
+    }
+  }
+  if (check && allowDelete.length > 0) throw new Error("--check is read-only and rejects --allow-delete");
+  return {
+    check,
+    ...(repositoryRoot === undefined ? {} : { repositoryRoot }),
+    ...(allowDelete.length === 0 ? {} : { allowDelete }),
+  };
+}

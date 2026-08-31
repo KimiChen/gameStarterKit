@@ -21,7 +21,7 @@ import {
     type BallMoveGraphicsSink,
     type BallMoveRenderPalette,
 } from "../apps/client/src/logic/rooms/ballMove/BallMoveGameplay";
-import type { IPlayerState } from "../apps/client/src/shared/protocol/state";
+import type { IPlayerState } from "../apps/client/src/shared/gameplays/index";
 import { MAP_HEIGHT, MAP_WIDTH } from "../apps/client/src/shared/constants/game";
 
 export const PERF_SCHEMA_VERSION = 2 as const;

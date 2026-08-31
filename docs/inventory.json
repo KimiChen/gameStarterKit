@@ -219,7 +219,7 @@
       "reason": "生成物刷新命令，登记在 HTTP endpoint 章节而非日常命令表"
     },
     {
-      "command": { "kind": "workspace", "workspace": "@game/server", "script": "codegen:state" },
+      "command": { "kind": "workspace", "workspace": "@game/server", "script": "codegen:gameplays" },
       "documentedIn": "docs/OVERVIEW.md",
       "reason": "生成物刷新命令，登记在标准开发动线而非日常命令表"
     },
