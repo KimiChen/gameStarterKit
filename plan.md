@@ -1,6 +1,6 @@
 # gameStarterKit 历史代码审阅归档
 
-> 当前开放问题、实施状态与验收证据以 [plan-v3.md](plan-v3.md) 为唯一真相（[plan-v2.md](plan-v2.md) 为上一轮归档）。本文件保留此前审阅过程、
+> 当前开放问题、实施状态与验收证据以 [plan-v4.md](plan-v4.md) 为唯一真相（[plan-v3.md](plan-v3.md) 与 [plan-v2.md](plan-v2.md) 为更早的归档）。本文件保留此前审阅过程、
 > 历史基线和已收口条目的上下文，不再接受本轮状态回写。
 
 > 审阅日期：2026-08-29
@@ -679,8 +679,8 @@ consumer 的 `gameHttpUrl` 仍在 `openAreaList` 选服接线中直接传给 `in
 `verify:inventory` 会检查路径、命令、链接、默认模块与能力归类。
 
 每个核心能力必须能定位到活跃入口、真源、运行时边界和测试；每个默认活跃模块也必须在 OVERVIEW/就近
-README 标明。当前核心优先级真相为 [plan-v3.md](plan-v3.md)（见 `docs/inventory.json` 的
-`routeOfTruth.corePlan`），本文件与 `plan-v2.md` 均为历史归档；`docs/EXTRAFEATURES.md` 是额外能力真相，
+README 标明。当前核心优先级真相为 [plan-v4.md](plan-v4.md)（见 `docs/inventory.json` 的
+`routeOfTruth.corePlan`），本文件与 `plan-v2.md`、`plan-v3.md` 均为历史归档；`docs/EXTRAFEATURES.md` 是额外能力真相，
 不再维护第二套路线图。
 
 本轮已同步修正 AGENTS/CLAUDE、CLIENT/SERVER/WEBPLATFORM、第三方依赖域、说明站保留约定和失效链接，

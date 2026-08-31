@@ -135,7 +135,7 @@ test("inventory verifier rejects a standalone relayer classified as core", () =>
     const inventory = readInventory(root);
     const relayer = inventory.capabilities.find((capability) => capability.id === "outbox-relayer");
     relayer.category = "core";
-    relayer.docs = ["plan-v3.md", "docs/SERVER.md"];
+    relayer.docs = ["plan-v4.md", "docs/SERVER.md"];
     writeInventory(root, inventory);
     assertRejected(root, /能力 outbox-relayer 的独立 launch 只能登记为 extra/);
   } finally {
@@ -178,7 +178,7 @@ test("inventory verifier rejects the historical plan as route of truth", () => {
     const inventory = readInventory(root);
     inventory.routeOfTruth.corePlan = "plan.md";
     writeInventory(root, inventory);
-    assertRejected(root, /routeOfTruth\.corePlan 必须指向 plan-v3\.md/);
+    assertRejected(root, /routeOfTruth\.corePlan 必须指向 plan-v4\.md/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -187,11 +187,11 @@ test("inventory verifier rejects the historical plan as route of truth", () => {
 test("inventory verifier rejects removal of the current plan truth declaration", () => {
   const root = createFixture();
   try {
-    const plan = join(root, "plan-v3.md");
+    const plan = join(root, "plan-v4.md");
     // 全量替换：门禁只要求文中存在「唯一真相」，留下任何一处都不算移除声明。
     const text = readFileSync(plan, "utf8").replaceAll("唯一真相", "执行清单");
     writeFileSync(plan, text);
-    assertRejected(root, /plan-v3\.md 未声明当前计划唯一真相/);
+    assertRejected(root, /plan-v4\.md 未声明当前计划唯一真相/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -201,9 +201,9 @@ test("inventory verifier rejects removal of the current plan from README", () =>
   const root = createFixture();
   try {
     const readme = join(root, "README.md");
-    const text = readFileSync(readme, "utf8").replace("- [当前开发收口计划](plan-v3.md)\n", "");
+    const text = readFileSync(readme, "utf8").replace("- [当前开发收口计划](plan-v4.md)\n", "");
     writeFileSync(readme, text);
-    assertRejected(root, /README\.md 未登记 plan-v3\.md 当前计划入口/);
+    assertRejected(root, /README\.md 未登记 plan-v4\.md 当前计划入口/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -231,6 +231,34 @@ test("inventory verifier keeps the historical plan registered as a checked refer
     inventory.referenceDocs = [];
     writeInventory(root, inventory);
     assertRejected(root, /referenceDocs 必须登记历史 plan\.md/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier keeps the previous plan registered as a checked archive", () => {
+  // 真相指针迁到 plan-v4 后，plan-v3 与 plan/plan-v2 同列历史归档。⛔ 缺登记会让一份仍被大量
+  // 文档引用的计划变成没有归属的孤儿，链接检查也不再覆盖它。
+  const root = createFixture();
+  try {
+    const inventory = readInventory(root);
+    inventory.referenceDocs = inventory.referenceDocs.filter((doc) => doc !== "plan-v3.md");
+    writeInventory(root, inventory);
+    assertRejected(root, /referenceDocs 必须登记历史 plan-v3\.md/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier rejects listing the current plan as a historical reference", () => {
+  // 当前计划同时出现在 referenceDocs 里，等于同一份文档既是真相又是归档——上一轮
+  // plan-v2 → plan-v3 迁移后正是这种半迁移状态最难被发现。
+  const root = createFixture();
+  try {
+    const inventory = readInventory(root);
+    inventory.referenceDocs = [...inventory.referenceDocs, inventory.routeOfTruth.corePlan];
+    writeInventory(root, inventory);
+    assertRejected(root, /referenceDocs 不得同时登记当前计划/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -472,7 +500,7 @@ test("inventory verifier rejects synchronized removal of the current plan entry"
     for (const filename of ["AGENTS.md", "CLAUDE.md"]) {
       const file = join(root, filename);
       const text = readFileSync(file, "utf8").replace(
-        "> - [plan-v3.md](plan-v3.md)：当前开放问题、实施状态与验收证据的唯一真相\n",
+        "> - [plan-v4.md](plan-v4.md)：当前开放问题、实施状态与验收证据的唯一真相\n",
         "",
       );
       writeFileSync(file, text);

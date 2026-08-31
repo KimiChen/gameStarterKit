@@ -1,24 +1,69 @@
-# gameStarterKit 产品/工程留白清单（plan-v4）
+# gameStarterKit 当前开发收口计划（plan-v4）
 
-> **本文件不是当前计划的唯一真相。** `docs/inventory.json` 的 `routeOfTruth.corePlan` 仍指向
-> [plan-v3.md](plan-v3.md)（其开放项已全部闭合，正文 34 条 `[已完成]`、0 条待补齐）。
-> 本文件是从 plan-v3 的 78 条 `[不阻塞·有意保留]` 中挑出的 **5 条真正的产品/工程留白**，
-> 查清事实后做成可排期清单。是否把真相指针迁到本文件，是需要单独拍板的决定。
+> **本文件是当前开放问题、实施状态与验收证据的唯一真相**（`docs/inventory.json` 的
+> `routeOfTruth.corePlan` 指向本文件）。上一轮 [plan-v3.md](plan-v3.md) 已降级为历史归档：
+> 其正文 34 条 `[已完成]`、0 条待补齐，开放项全部闭合。
 >
-> **口径**：每条给出「现状 / 可复现的失败形态 / 影响面 / 修复方案 / 代价」五项。
-> 指向源码的 `file:line` 为**写入时快照**（HEAD `e58061d`），复核时应重新定位。
-> 「今天没炸的原因」一项必须写实——这些条目此前之所以能挂 `[不阻塞]`，靠的是具体的兜底机制，
-> 排期时要先确认那些机制还在。
+> 本文件从 plan-v3 的 78 条 `[不阻塞·有意保留]` 中挑出 **5 条真正的产品/工程留白**，
+> 查清事实后做成可排期清单，随后逐条实施完毕。
+>
+> **口径**：每条给出「现状 / 可复现的失败形态 / 影响面 / 修复方案 / 代价」五项，并在实施后
+> 补「实施结果」。指向源码的 `file:line` 为**写入清单时的快照**（HEAD `e58061d`），
+> 实施后位置多已改变，复核时应重新定位。
 
-## 优先级建议
+## 真相指针迁移的批准来源
 
-| # | 条目 | 建议 | 理由 |
-|---|---|---|---|
-| 3 | ready marker 的熔断器放大 | **最先做** | 唯一一条今天就在放大故障面的；4.1 可独立落地、收益立竿见影 |
-| 2 | `emitMatchEvidence` 吞两类失败 | 次之 | 证据静默丢失，且现有唯一用例对日志零断言；改动可控 |
-| 1 | `match_results.payload` 三形状 | 接读取方之前必须做 | 今天零读取方所以零影响；一旦有读取方就是运行期事故 |
-| 5 | FGUI 产物往返自检 | 可独立排期 | 纯新增、不动既有门禁；可行性已实证 |
-| 4 | GameRoom shell 的玩法硬编码 | 接第三个玩法前做 | 是重构不是补丁，需分阶段 |
+plan-v3 §30 登记过一条教训：`plan-v2 → plan-v3` 的迁移**批准存在，但只存在于会话指令**，
+仓内查不到，只读仓库的复核者无从追溯。本轮据此先行记录，⛔ 不重复该形态。
+
+- **批准来源**：用户会话指令，原话为「这五个问题都按照你的建议进行修复，修复完提交 commit，
+  然后给我拍板的：**我确定可以**」。其中「拍板」指的正是 plan-v4 建档时挂起的那个待决项——
+  「是否把 `routeOfTruth.corePlan` 从 plan-v3.md 迁到 plan-v4.md」。
+- **迁移改动面**（本次实际修改，非举例）：`docs/inventory.json` 的 `routeOfTruth.corePlan`
+  与 12 处能力 `docs`、`referenceDocs`（plan-v4 移出、plan-v3 移入）；
+  `scripts/verify-inventory.mjs` 的 4 处硬断言（含新增的「`referenceDocs` 必须登记 plan-v3.md」
+  与「`referenceDocs` 不得同时登记当前计划」）与助手关键指令表；
+  `scripts/verify-inventory.test.mjs` 的 7 处 fixture；`README.md`、`AGENTS.md`、`CLAUDE.md`；
+  `plan-v3.md` 降级归档头；以及 `plan.md`、`plan-v2.md` 两处下游归档指针。
+- **归档内自称的复查**：按 plan-v3 §30 记录的教训，本次不只按短语查，也按语义查。
+  `plan-v3.md:487` 原以现在时自称经 `routeOfTruth.corePlan` 纳入检查，已改为当轮时态并加归档补注。
+
+## 实施状态总表
+
+| # | 条目 | 状态 | commit | 变异验证 |
+|---|---|---|---|---|
+| 3 | ready marker 的熔断器放大 | **已实现** | `6707c36` | 熔断器合并 → 红；宽限窗口去界 → 红 |
+| 2 | `emitMatchEvidence` 吞两类失败 | **已实现** | `d312541` | 两类失败合并 → int 红 1；两码合并 → 红 1 |
+| 1 | `match_results.payload` 三形状 | **已实现** | `d34ef36` | 去掉加列 → 红 1；legacy 改标 3 → 红 2；去掉绑定校验 → 红 1 |
+| 5 | FGUI 产物往返自检 | **A–D 已实现，E 未做** | `216087f` | 逐条删 A/B/C/D → 各红 1 |
+| 4 | GameRoom shell 的玩法硬编码 | **三阶段全部已实现** | `1755bb2` / `47af72c` / `a6ce634` | 共 14 个变异，逐个转红 |
+
+全量门禁：单测 315/315、int 155/155、`verify:all` exit 0。
+
+## 仍然开放的部分
+
+| 来源 | 内容 | 为什么留着 |
+|---|---|---|
+| 条目 5 | 不变量 E：sprite rect ⊆ 图集图片真实尺寸（PNG IHDR / JPEG SOF 直读） | `rotated` 会让 rect 的 w/h 与图集坐标轴互换，调查中第一版未处理产生 6 个假阳；值得单独一轮 |
+| 条目 5 | `.meta` uuid 集合与 Cocos 场景序列化的往返自检 | 需要真实 Creator 引擎，属于尚未实现的 Creator 运行证据方向 |
+| 条目 5 | `tools/excel-to-json.mjs` 的 `--check` 不是往返自检 | writer 与 checker 共用同一个内存 `data`，`buildItems()` 里的静默丢行对两侧同时生效；低成本补法是在 `run()` 里对行数/键集做独立断言 |
+| 条目 1 | 存量 `match_results` 行的精确回填 | 只有 v3 能精确回填；一条恰好 8 键的 legacy 行与真 v2 行逐字节相同，⛔ 无法区分，故一律留在 `schema_version = 0` |
+
+## 实施中发现的、清单里没有的事实
+
+1. **ballMove v1 证据与 roster 的耦合此前无人守**（条目 4 阶段一发现）。证据侧
+   `copyRoster` 用 `exactArray(2, 2)` 把 `initialRoster` 冻死，而 shell 直到真开局时才撞上，
+   表现为给加入者的 `1000/Unknown` + 回滚。已提前到登记期报错。
+2. **满员闸与开局边界重验在正常路径上到不了**（条目 4 阶段一）。`min ≤ autoStart ≤ max` 成立时
+   人数一到 `autoStart` 就开局，座位数永远够不到 `max`。两处是 joinById/直连的兜底闸，
+   用例改用预置座位与直接调用被验方法抵达——⛔ 不因为够不到就不测。
+3. **条目 4 阶段三不牵动协议指纹**，与清单里的预判相反。`RoomStateLifecycle` 是服务端生成物，
+   `apps/shared/` 逐字节未变，`sync:shared` 写入 0 个文件。已用例钉死（shared 产物不得出现
+   `RoomStateLifecycle`）。
+4. **`player.id` 的缺失已有更早的既存闸**（条目 4 阶段三）：map 的 `key.field` 指向它。
+   用例据实钉住挡它的是那一条，⛔ 不谎称是本轮新增覆盖。
+
+---
 
 ---
 
@@ -66,6 +111,14 @@ legacy = 任意 JSON object（解码 `:473-485`，**无 shape 校验**）。
 **顺带建议**（可独立、更廉价）：给 legacy 分支补上 v2/v3 已有的顶层↔payload 绑定校验，
 把上面第 2 条失败形态直接消掉——约 5 行，不需要改表。
 
+**实施结果（`d34ef36`）**：按方案 A 落地，并把「顺带建议」一起做了。
+`schema_version TINYINT UNSIGNED NOT NULL DEFAULT 0` 照 `server_id` 的先例走不指定 `AFTER` 的
+`ALGORITHM=INSTANT`，配 `verifyMatchSchemaVersionColumn` 读 `INFORMATION_SCHEMA` 精确核对；
+`NormalizedEntry.schemaVersion` 三个 return 点分别填 2/3/0。legacy 补上
+`LEGACY_MATCH_ID_MISMATCH` / `LEGACY_MODE_MISMATCH`，**只在 payload 确实带了该字段时**要求一致
+——⛔ 不能无条件要求存在，真 c8 旧消息两者都不带，用例专门钉住这条不被误伤。
+本机既有开发库由 `db:bootstrap` 就地 INSTANT 加列后 int 全绿，即迁移路径本身的实测。
+
 ---
 
 ## 2. `emitMatchEvidence` 把「内部一致性缺陷」与「外部 Redis 故障」吞进同一个 catch
@@ -105,6 +158,12 @@ producer 侧没有来源条目，需新增只 XADD 不 XACK 的姊妹函数。�
 **代价**：改 `matchConsumer.ts` 一处函数 + 一个新 quarantine 姊妹函数 + 调用方
 `GameRoom.ts:1729` 改为观察结果（仍不阻塞）。需补：两类失败各自的日志/码断言（**且不得再把
 `console.error` 整个替换掉**）、自检③用例、XADD 失败注入用例。不牵动生成镜像与双端契约。
+
+**实施结果（`d312541`）**：`EmitEvidenceResult` 判别联合区分 `ok` / `kind:"self-check"` /
+`kind:"transport"`；自检失败带具体码（`V3_PAYLOAD_<code>` 与 `V3_REPLAY_MISMATCH` 分别成码）
+并走 `quarantineProducerSelfCheck`（只 XADD、`sourceKind:"producer"`、不 XACK）。
+quarantine 自身写失败降级为 `transport/V3_QUARANTINE_UNAVAILABLE`——⛔ 不把传输故障伪装成
+自检结论。GameRoom 只在 `kind === "self-check"` 时告警。
 
 ---
 
@@ -153,6 +212,14 @@ producer 侧没有来源条目，需新增只 XADD 不 XACK 的姊妹函数。�
 **运行时可调窗口（把常量改成现读函数 / 加 admin 端点）单独做买不到运维能力**——外部无法改
 运行中进程的 `process.env`，admin 端点则是 per-instance、重启即失，与 `/admin/kick` 同款成本。
 
+**实施结果（`6707c36`）**：熔断器按路由族拆分（`session` / `character` 各一个），
+`call()` 签名加 `route` 参数。`webplatform-breaker-isolation.test.ts` 单独成文件——
+`WEBPLATFORM_BREAKER_FAILURES` 在模块加载期读一次，而既有的
+`webplatform-client.test.ts` 把它设成 100（等于关掉熔断），`node --test` 每文件一个子进程，
+这样才能拥有自己的阈值与模块实例。宽限窗口由 `CHARACTER_REGISTRATION_GRACE_MS` 控制、
+默认 0（即默认行为不变），且**刻意不调用** `markCharacterRegistrationReady`——
+⛔ 宽限是「暂缓拒绝」，不是「重新确认已就绪」。
+
 ---
 
 ## 4. 通用 GameRoom shell 里的玩法硬编码
@@ -190,6 +257,19 @@ producer 侧没有来源条目，需新增只 XADD 不 XACK 的姊妹函数。�
   （每个 root 必须声明 `tick`/`phase`/`matchId`/`players`），并由 codegen 生成
   `RoomStateLifecycle` 接口替换 `GameRoom.ts:388` 的 `declare readonly state: GameRoomState`。
   **牵动铁律 2 的生成物**：改完必须跑 `codegen:state` + `sync:shared`，并重钉协议指纹。
+
+**实施结果（`1755bb2` / `47af72c` / `a6ce634`，三阶段全部完成）**：
+
+- **阶段一**：`GameMode.roster{min,max,autoStart}`，五处字面量全部改读它，`onCreate` 里赋
+  `this.maxClients`。登记期与注入期各一道 fail-closed 闸——注入式 mode 不经过 registry，
+  ⛔ 只在 registry 校验等于留了个后门。
+- **阶段二**：`GameMode.inputs{accepts,phases?}`，`C2S.IdlePulse` 从 shell 的 `phaseAllows`
+  switch 里删除，改由 `IdleGameMode` 声明。`phaseAllows` 只保留 Ping/Chat。文档里的
+  「新增 C2S 三处登记」据此改写为「两处登记 + 准入随玩法走」。
+  ⚠ handler 表仍必须是全 C2S 联合的静态表，这条绕不过去（`Room.__init()` 早于 `onCreate()`）。
+- **阶段三**：`parseRoomStateDescriptor` 加 root 生命周期断言，codegen 生成
+  `RoomStateLifecycle` / `RoomStatePlayerLifecycle`，`GameRoom.state` 改用前者；
+  20 处 ball 专属读写改走具名的 `ballState` 收窄访问器。
 
 ---
 
@@ -239,3 +319,12 @@ AGENTS/CLAUDE/README 命令表与 `verify-toolchain` 的声明表同步登记，
 writer 与 checker **共用同一个 `data`**（`:379-392`），所以 `buildItems()`（`:243-285`）里
 任何静默丢行对两侧同时生效、永远比得上。行数只进 summary 打印、不做断言（`:403`）。
 低成本补法是在 `run()` 里对行数/键集做独立断言。
+
+**实施结果（`216087f`，不变量 A–D）**：`scripts/fgui-roundtrip.mjs` 用纯 Node、零依赖解析
+uncompressed FGUI v7，字段顺序照抄 `fairygui.mjs` 的 `loadPackage`——那是运行时真正用来读这些
+文件的实现。12 个包全部解析成功，条目 123 / 组件 27 / exported 88，与 `package.xml` 的 88 处
+`exported="true"` 相等。检查**内联在 `currentManifest()` 里、重记哈希之前**，`--write` 与
+`--check` 同口径，一次 `--write` 不会把残缺状态钉成新基线。E 未做，理由见上文「仍然开放的部分」。
+
+`test:fgui` 的三处声明（`package.json` / `verify-toolchain` / `toolchainContract` 承重钉）同步登记
+——只改两处时承重钉如期转红，这也是该承重钉自身的一次实测。

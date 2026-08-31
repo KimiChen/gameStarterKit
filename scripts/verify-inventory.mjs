@@ -560,7 +560,7 @@ for (const entry of allEntries) if (!registeredDefaults.has(entry) && entry.star
 
 const corePlan = inventory?.routeOfTruth?.corePlan;
 const extra = inventory?.routeOfTruth?.extraCapabilities;
-if (corePlan !== "plan-v3.md") fail("routeOfTruth.corePlan 必须指向 plan-v3.md");
+if (corePlan !== "plan-v4.md") fail("routeOfTruth.corePlan 必须指向 plan-v4.md");
 if (!exists(corePlan) || !exists(extra)) fail("routeOfTruth 必须指向存在的核心计划与 EXTRAFEATURES.md");
 else {
   const planText = fs.readFileSync(repoPath(corePlan), "utf8");
@@ -568,8 +568,8 @@ else {
   const readmeText = fs.readFileSync(repoPath("README.md"), "utf8");
   checkMarkdownLinks(corePlan);
   checkMarkdownLinks(extra);
-  if (!/唯一真相/.test(planText)) fail("plan-v3.md 未声明当前计划唯一真相");
-  if (!readmeText.includes("[当前开发收口计划](plan-v3.md)")) fail("README.md 未登记 plan-v3.md 当前计划入口");
+  if (!/唯一真相/.test(planText)) fail("plan-v4.md 未声明当前计划唯一真相");
+  if (!readmeText.includes("[当前开发收口计划](plan-v4.md)")) fail("README.md 未登记 plan-v4.md 当前计划入口");
   if (!readmeText.includes("](todo-godogen.md)")) fail("README.md 未登记 todo-godogen.md 对照计划入口");
   if (!/额外功能/.test(extraText)) fail("docs/EXTRAFEATURES.md 未声明额外能力真相");
   if (!extraText.includes("](../todo-godogen.md)")) {
@@ -583,6 +583,10 @@ if (!Array.isArray(inventory.referenceDocs)) {
 } else {
   if (!inventory.referenceDocs.includes("plan.md")) fail("referenceDocs 必须登记历史 plan.md");
   if (!inventory.referenceDocs.includes("plan-v2.md")) fail("referenceDocs 必须登记历史 plan-v2.md");
+  // 真相指针迁到 plan-v4 后，plan-v3 与 plan/plan-v2 同列为历史归档。⛔ 缺登记会让一份仍被
+  // 大量文档引用的计划变成没有归属的孤儿。
+  if (!inventory.referenceDocs.includes("plan-v3.md")) fail("referenceDocs 必须登记历史 plan-v3.md");
+  if (inventory.referenceDocs.includes(corePlan)) fail("referenceDocs 不得同时登记当前计划");
   if (!inventory.referenceDocs.includes("todo-godogen.md")) {
     fail("referenceDocs 必须登记 Godogen 对照计划 todo-godogen.md");
   }
@@ -638,7 +642,8 @@ const assistantRequirements = [
   ["inventory 正向校验", "npm run verify:inventory"],
   ["inventory 反例测试", "npm run test:inventory"],
   ["Godogen 对照计划", "[todo-godogen.md](todo-godogen.md)"],
-  ["当前计划唯一真相", "[plan-v3.md](plan-v3.md)"],
+  ["当前计划唯一真相", "[plan-v4.md](plan-v4.md)"],
+  ["上一轮计划归档登记", "[plan-v3.md](plan-v3.md)"],
 ];
 for (const [label, requirement] of assistantRequirements) {
   if (!agents.includes(requirement) || !claude.includes(requirement)) {

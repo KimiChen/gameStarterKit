@@ -1,6 +1,7 @@
 # gameStarterKit
 
 本项目正式名称为 gono，诠释为 Go Non-blocking。
+是一套通过单源契约、确定性生成、精确运行时校验、非阻塞生命周期和可执行验证矩阵，让游戏功能能够安全前进、独立扩展、低冲突协作的 TypeScript 开发底座。
 
 基于 **Cocos Creator 3.8.8 + Colyseus 0.17 + TypeScript** 的游戏开发期 monorepo 骨架。
 仓库提供客户端、服务端和共享层的代码组织、契约同步、示例玩法、本地调试与本地测试基础。
@@ -20,9 +21,9 @@
 - [非侵入式功能扩展改造方案（设计提案，未实施）](docs/Non-intrusive-wsrpc.md)
 - [低侵入式房间玩法方案（设计提案，未实施）](docs/Non-intrusive-room.md)
 - [《Snake Off》竖版贪吃蛇玩法策划案（未实现）](docs/snakeoff/README.md)
-- [产品/工程留白清单（5 条，非当前真相）](plan-v4.md)
 - [Godogen 对照吸收计划（未实现的额外能力）](todo-godogen.md)
-- [当前开发收口计划](plan-v3.md)
+- [当前开发收口计划](plan-v4.md)
+- [上一轮收口计划（历史归档）](plan-v3.md)
 
 ## 目录
 

@@ -18,7 +18,7 @@
       "sourceOfTruth": "apps/client/src/net/session.ts",
       "wireBoundary": "apps/client/src/net",
       "verification": [{ "kind": "root", "script": "test:client" }],
-      "docs": ["plan-v3.md", "docs/CLIENT.md"]
+      "docs": ["plan-v4.md", "docs/CLIENT.md"]
     },
     {
       "id": "game-room-runtime",
@@ -27,7 +27,7 @@
       "sourceOfTruth": "apps/server/src/rooms/GameRoom.ts",
       "wireBoundary": "apps/shared/src/protocol/rooms.ts",
       "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test" }],
-      "docs": ["plan-v3.md", "docs/SERVER.md"]
+      "docs": ["plan-v4.md", "docs/SERVER.md"]
     },
     {
       "id": "asset-effect-and-zone-isolation",
@@ -36,7 +36,7 @@
       "sourceOfTruth": "apps/server/src/core/infra/redisScripts.ts",
       "wireBoundary": "apps/shared/src/protocol/lobbyRpc/economy.ts",
       "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test:int" }],
-      "docs": ["plan-v3.md", "docs/SERVER.md", "docs/DUAL_MODE.md"]
+      "docs": ["plan-v4.md", "docs/SERVER.md", "docs/DUAL_MODE.md"]
     },
     {
       "id": "outbox-relayer",
@@ -55,7 +55,7 @@
       "sourceOfTruth": "apps/server/src/player/character.ts",
       "wireBoundary": "apps/shared/src/protocol/lobbyRpc/user.ts",
       "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test:int" }],
-      "docs": ["plan-v3.md", "docs/SERVER.md"]
+      "docs": ["plan-v4.md", "docs/SERVER.md"]
     },
     {
       "id": "process-lifecycle",
@@ -64,7 +64,7 @@
       "sourceOfTruth": "apps/server/src/core/infra/lifecycle.ts",
       "wireBoundary": "apps/server/src/index.ts",
       "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test" }],
-      "docs": ["plan-v3.md", "docs/SERVER.md"]
+      "docs": ["plan-v4.md", "docs/SERVER.md"]
     },
     {
       "id": "gameplay-boundary",
@@ -73,7 +73,7 @@
       "sourceOfTruth": "apps/client/src/logic/gameplay",
       "wireBoundary": "apps/client/src/net/RoomClient.ts",
       "verification": [{ "kind": "root", "script": "test:client" }],
-      "docs": ["plan-v3.md", "docs/CLIENT.md"]
+      "docs": ["plan-v4.md", "docs/CLIENT.md"]
     },
     {
       "id": "view-logic-lifecycle",
@@ -82,7 +82,7 @@
       "sourceOfTruth": "apps/client/src/view",
       "wireBoundary": "apps/client/src/view/pages.ts",
       "verification": [{ "kind": "root", "script": "test:fgui" }, { "kind": "root", "script": "typecheck:client" }],
-      "docs": ["plan-v3.md", "docs/CLIENT.md"]
+      "docs": ["plan-v4.md", "docs/CLIENT.md"]
     },
     {
       "id": "wire-runtime-contract",
@@ -91,7 +91,7 @@
       "sourceOfTruth": "apps/shared/src/protocol",
       "wireBoundary": "apps/shared/src/protocol/http.ts",
       "verification": [{ "kind": "root", "script": "test:client" }, { "kind": "workspace", "workspace": "@game/server", "script": "test" }],
-      "docs": ["plan-v3.md", "docs/SERVER.md", "docs/CLIENT.md"]
+      "docs": ["plan-v4.md", "docs/SERVER.md", "docs/CLIENT.md"]
     },
     {
       "id": "fgui-resource-contract",
@@ -100,7 +100,7 @@
       "sourceOfTruth": "apps/art/fairygui",
       "wireBoundary": "apps/client/src/view",
       "verification": [{ "kind": "root", "script": "test:fgui" }, { "kind": "root", "script": "verify:fgui" }],
-      "docs": ["plan-v3.md", "tools/fgui-codegen/README.md", "apps/art/fairygui/README.md"]
+      "docs": ["plan-v4.md", "tools/fgui-codegen/README.md", "apps/art/fairygui/README.md"]
     },
     {
       "id": "server-infrastructure-boundaries",
@@ -109,7 +109,7 @@
       "sourceOfTruth": "apps/server/src/core/infra",
       "wireBoundary": "apps/server/src/core/infra/redisRoute.ts",
       "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test" }, { "kind": "workspace", "workspace": "@game/server", "script": "smoke:framework" }],
-      "docs": ["plan-v3.md", "docs/SERVER.md"]
+      "docs": ["plan-v4.md", "docs/SERVER.md"]
     },
     {
       "id": "area-directory-determinism",
@@ -118,7 +118,7 @@
       "sourceOfTruth": "apps/client/src/net/serverSession.ts",
       "wireBoundary": "apps/shared/src/protocol/http.ts",
       "verification": [{ "kind": "root", "script": "test:client" }],
-      "docs": ["plan-v3.md", "docs/CLIENT.md", "docs/WEBPLATFORM.md"]
+      "docs": ["plan-v4.md", "docs/CLIENT.md", "docs/WEBPLATFORM.md"]
     },
     {
       "id": "verification-and-locks",
@@ -136,7 +136,7 @@
           { "kind": "root", "script": "test:client" }
         ]
       }],
-      "docs": ["plan-v3.md", "README.md"]
+      "docs": ["plan-v4.md", "README.md"]
     }
   ],
   "defaultModules": [
@@ -168,10 +168,10 @@
   ],
   "defaultScene": "apps/Cocos/assets/scene.scene",
   "routeOfTruth": {
-    "corePlan": "plan-v3.md",
+    "corePlan": "plan-v4.md",
     "extraCapabilities": "docs/EXTRAFEATURES.md"
   },
-  "referenceDocs": ["plan.md", "plan-v2.md", "plan-v4.md", "todo-godogen.md", "docs/Non-intrusive-wsrpc.md", "docs/Non-intrusive-room.md"],
+  "referenceDocs": ["plan.md", "plan-v2.md", "plan-v3.md", "todo-godogen.md", "docs/Non-intrusive-wsrpc.md", "docs/Non-intrusive-room.md"],
   "workspaceCommandScope": [
     {
       "command": { "kind": "workspace", "workspace": "@game/server", "script": "dev" },
