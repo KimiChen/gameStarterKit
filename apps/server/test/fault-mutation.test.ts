@@ -155,11 +155,15 @@ test("故障注入：真实 worker error/exit 会 reap 并退避补位", async (
       import { _computePoolTestHooks, destroyPool, runInPool } from "./src/core/compute/pool.ts";
 
       const source = ${JSON.stringify(faultWorkerSource)};
+      // ⚠ 退避值必须从被验实现自己读，⛔ 不能写死 1000：COMPUTE_RESPAWN_DELAY_MS 现在是可配置的，
+      // 外部环境里设了它（合法生产配置）就会让「delay === 1000」一条也钩不到，用例假红成
+      // 「must schedule a replacement timer」——那是夹具坏了，不是产品坏了。
+      const RESPAWN_MS = Number(process.env.COMPUTE_RESPAWN_DELAY_MS ?? 1000);
       const nativeSetTimeout = globalThis.setTimeout;
       const respawnTimers = [];
       globalThis.setTimeout = (callback, delay, ...args) => {
         const timer = nativeSetTimeout(callback, delay, ...args);
-        if (delay === 1000) respawnTimers.push(timer);
+        if (delay === RESPAWN_MS) respawnTimers.push(timer);
         return timer;
       };
 
@@ -192,8 +196,8 @@ test("故障注入：真实 worker error/exit 会 reap 并退避补位", async (
         assert.equal(result.iterations, 7);
         assert.equal(spawnCount, 2, mode + " must create exactly one replacement worker");
         assert.ok(
-          performance.now() - startedAt >= 900,
-          mode + " replacement must preserve the one-second respawn backoff",
+          performance.now() - startedAt >= RESPAWN_MS * 0.9,
+          mode + " replacement must preserve the respawn backoff (" + RESPAWN_MS + "ms)",
         );
 
         await destroyPool();
@@ -251,6 +255,8 @@ test("故障注入：真实 worker error/exit 会 reap 并退避补位", async (
           // 表现为「compute 任务超时（5000ms）」。⛔ 不要为了跑得快再把它调小：
           // 这里没有任何断言依赖超时发生，取生产默认量级即可。
           COMPUTE_TASK_TIMEOUT_MS: "30000",
+          // ⛔ 必须显式钉住：不钉就会继承外部环境的值，而本段的退避断言依赖它
+          COMPUTE_RESPAWN_DELAY_MS: "1000",
         },
         encoding: "utf8",
         timeout: 90_000,
@@ -282,7 +288,7 @@ test("故障注入：真实 worker error/exit 会 reap 并退避补位", async (
       const respawnTimers = [];
       globalThis.setTimeout = (callback, delay, ...args) => {
         const timer = nativeSetTimeout(callback, delay, ...args);
-        if (delay === 4000) respawnTimers.push(timer);
+        if (delay === Number(process.env.COMPUTE_RESPAWN_DELAY_MS)) respawnTimers.push(timer);
         return timer;
       };
 
