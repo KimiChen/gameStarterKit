@@ -10,12 +10,10 @@ import { guildExists } from "../../core/guild/catalog";
 import { emitGuildEvent } from "../../core/guild/events";
 import { withUser } from "../../core/uow";
 import { pushToGuild, setOnlineGuild } from "../push";
-import { defineRpc, sharedRpcSchema } from "../rpc";
+import { defineRpc } from "../rpc";
 import { currentZoneId } from "../../core/infra/keys";
 
 export default defineRpc(GuildRpc.Join, {
-  schema: sharedRpcSchema(GuildRpc.Join),
-  idem: true,
   handler: async (ctx, p) => {
     // 存在性校验先于一切写路径（档/索引/事件键都不许为未知 gid 产生）
     if (!guildExists(p.guildId)) { throw new InvalidPayloadError(`未知工会: ${p.guildId}`); }

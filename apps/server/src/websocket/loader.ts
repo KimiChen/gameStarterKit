@@ -32,7 +32,8 @@ export async function collectEndpoints(): Promise<AnyLobbyRpcDef[]> {
     for (const file of files) {
       const mod = await import(pathToFileURL(join(HANDLERS_DIR, domain, file)).href) as { default?: AnyLobbyRpcDef };
       const def = mod.default;
-      if (!def || typeof def.type !== "string" || !def.schema || typeof def.handler !== "function") {
+      if (!def || typeof def.type !== "string" || !def.schema
+        || typeof def.handler !== "function" || typeof def.mode !== "string") {
         throw new Error(`[rpc-loader] websocket/${domain}/${file} 缺少 defineRpc 的 default 导出`);
       }
       const expected = `${domain}.${file.slice(0, -".ts".length)}`;

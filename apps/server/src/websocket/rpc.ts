@@ -2,16 +2,19 @@
  * ws-RPC 类型胶水（项目级，⛔ 不属于 Arthur 回流件）：把 shared 的 lobbyRpc 契约
  * 钉到 dispatcher registerRoute 的 def 形状上。dispatcher.ts / core/errors.ts 保持零改动。
  *
- * 所有端点的 request schema 必须使用下方 sharedRpcSchema 适配器；它直接调用
- * shared 的 exact/range validator，避免本地 Zod object 漏字段或静默剥离未知键。
- * response 也在 defineRpc 包装层校验，保证直接调用 handler 与 dispatcher 路径具有相同边界。
+ * 阶段 3（Non-intrusive §6.10）：defineRpc 由 registry metadata 驱动——endpoint 只写
+ * handler；request schema（sharedRpcSchema 适配 shared exact/range validator）与幂等行为
+ * （LOBBY_RPC_ROUTE_MODES 的 idempotent-write）都从 shared registry 派生，⛔ endpoint
+ * 不再（也无法）自填 schema / idem / 响应 validator。
+ * response 在 defineRpc 包装层校验，保证直接调用 handler 与 dispatcher 路径具有相同边界。
  */
 import { performance } from "node:perf_hooks";
 import { z, type ZodType } from "zod";
 import {
+  LOBBY_RPC_ROUTE_MODES,
   validateLobbyRpcRequest,
   validateLobbyRpcResponse,
-  type LobbyRpcIdemType,
+  type LobbyRpcRouteMode,
   type LobbyRpcType,
   type RpcReq,
   type RpcRes,
@@ -23,7 +26,9 @@ import type { RpcCtx } from "./dispatcher";
 export interface LobbyRpcDef<T extends LobbyRpcType> {
   type: T;
   schema: ZodType<RpcReq<T>>;
-  /** 幂等占位（09·I1）；开了则 req 必须含 clientReqId——defineRpc 重载在编译期强制 */
+  /** registry 派生的执行模式（query / natural-write / idempotent-write），只读 metadata。 */
+  mode: LobbyRpcRouteMode;
+  /** 幂等占位（09·I1）；= mode === "idempotent-write" 的派生位，dispatcher 沿用它触发 runIdem */
   idem?: boolean;
   handler: (ctx: RpcCtx, payload: RpcReq<T>) => Promise<RpcRes<T>>;
 }
@@ -50,23 +55,19 @@ export function sharedRpcSchema<T extends LobbyRpcType>(type: T): ZodType<RpcReq
 /** 全端点联合（loader 的收集元素类型） */
 export type AnyLobbyRpcDef = { [K in LobbyRpcType]: LobbyRpcDef<K> }[LobbyRpcType];
 
-// idem: true 重载：类型域收窄到 LobbyRpcIdemType（req 含 clientReqId 的路由），09·I2 编译期化
-export function defineRpc<T extends LobbyRpcIdemType>(type: T, def: {
-  schema: ZodType<RpcReq<T>>;
-  idem: true;
+// 单签名（阶段 3）：schema 与幂等行为都从 shared registry 派生。旧「idem: true 双重载」的
+// 编译期职责由 registry 的显式 mode metadata 承接（LobbyRpcIdemType 现由 mode 生成，
+// 「复制只读模板忘开幂等」的缺口不再存在——endpoint 根本没有该参数）。
+export function defineRpc<T extends LobbyRpcType>(type: T, def: {
   handler: (ctx: RpcCtx, payload: RpcReq<T>) => Promise<RpcRes<T>>;
-}): LobbyRpcDef<T>;
-// 无 idem 重载：只读/天然幂等路由。类型域排除 LobbyRpcIdemType——req 含 clientReqId 的
-// 路由必须显式 idem: true（防「复制只读模板忘开幂等」：漏开则占位/结果缓存整条链失效）
-export function defineRpc<T extends Exclude<LobbyRpcType, LobbyRpcIdemType>>(type: T, def: {
-  schema: ZodType<RpcReq<T>>;
-  handler: (ctx: RpcCtx, payload: RpcReq<T>) => Promise<RpcRes<T>>;
-}): LobbyRpcDef<T>;
-export function defineRpc<T extends LobbyRpcType>(type: T, def: Omit<LobbyRpcDef<T>, "type">): LobbyRpcDef<T> {
+}): LobbyRpcDef<T> {
+  const mode = LOBBY_RPC_ROUTE_MODES[type];
   const budgeted = withSyncBudget(type, def.handler);
   return {
     type,
-    ...def,
+    schema: sharedRpcSchema(type),
+    mode,
+    ...(mode === "idempotent-write" ? { idem: true } : {}),
     // Validate responses before dispatcher serialization and idem caching.
     handler: async (ctx, payload): Promise<RpcRes<T>> =>
       validateLobbyRpcResponse(type, await budgeted(ctx, payload)),

@@ -3,10 +3,8 @@
  */
 import { MailRpc } from "@game/shared";
 import { claimMailAttach } from "../../core/economy/mailer";
-import { defineRpc, sharedRpcSchema } from "../rpc";
+import { defineRpc } from "../rpc";
 
 export default defineRpc(MailRpc.ClaimAttach, {
-  schema: sharedRpcSchema(MailRpc.ClaimAttach),
-  idem: true,
   handler: async (ctx, p) => claimMailAttach(ctx.uid, p.mailId),
 });

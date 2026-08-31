@@ -4,11 +4,9 @@
  */
 import { UserRpc } from "@game/shared";
 import { withUser } from "../../core/uow";
-import { defineRpc, sharedRpcSchema } from "../rpc";
+import { defineRpc } from "../rpc";
 
 export default defineRpc(UserRpc.UpdateProfile, {
-  schema: sharedRpcSchema(UserRpc.UpdateProfile),
-  idem: true,
   handler: async (ctx, p) =>
     withUser(ctx.uid, async (uow) => {
       if (p.nickname !== undefined) { uow.set("nickname", p.nickname); }

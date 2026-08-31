@@ -184,12 +184,23 @@ tsx 直接执行和运行时文件系统扫描，不是打包产物装载器。
 - handler 与 core：通过 `withUser`、MySQL 事务或具体领域原语实现写入串行化；dispatcher 本身不提供
   全局 per-user 串行化。
 
-新增 RPC：
+新增 RPC（阶段 3 起 metadata 驱动，Non-intrusive §4.1/§6.10）：
 
-1. 在 `apps/shared/src/protocol/lobbyRpc` 定义消息名、请求、响应和错误码。
-2. 运行 `npm run sync:shared`。
-3. 新建 `websocket/<domain>/<method>.ts`，用 `defineRpc` 导出 schema、handler 与幂等属性。
-4. 增加合法、非法、重复、错误映射及需要的数据库测试。
+1. 在 `apps/shared/src/protocol/lobbyRpc/domains/<domain>.ts` 声明路由名、请求/响应类型、
+   validator 与 `defineLobbyRpcDomain` descriptor（执行模式三分：query / natural-write /
+   idempotent-write；幂等路由的 req 必须字面含必选 `clientReqId: string`，生成器 AST 层校验）。
+   新增一个域 = 新建一份 domains 文件；⛔ 不再手改 `lobbyRpc/index.ts`、`envelope.ts`、`push.ts`
+   （它们是稳定 façade）。core 通用错误码与 core 推送在 `coreErrors.ts`。
+2. 运行 `npm --workspace @game/server run codegen:features` 刷新
+   `apps/shared/src/protocol/lobbyRpc/registry.generated.ts`（路由/模式/validator map/错误码/
+   推送全集的生成聚合；freshness 由 `apps/server/test/feature-codegen.test.ts` 只读守门），
+   然后 `node scripts/protocol-fingerprint.mjs` 重钉协议指纹，再 `npm run sync:shared`。
+3. 新建 `websocket/<domain>/<method>.ts`，`defineRpc(type, { handler })` 只写领域行为——
+   request schema、响应校验与幂等行为全部由 registry 派生，endpoint 无法（编译期拒绝）自填
+   `schema` / `idem` / `mode`。
+4. 补 `apps/server/test/lobbyRpcVectors/<domain>.ts` 的最小合法 request/response 向量
+   （通用测试 `lobby-rpc-vectors.test.ts` 自动做正反向与幂等断言），再加错误映射及需要的
+   数据库测试。
 
 读写分路：纯读使用 `readUser` / `readUserReadonly` / `loadFields`；单用户热档写使用 `withUser` 和 UoW；
 MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可序列化、无 IO 的纯 CPU 计算；“跨用户写”
@@ -197,8 +208,10 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
 
 当前边界仍有缺口：
 
-- 当前已登记端点通过 `defineRpc` + `sharedRpcSchema` 使用 shared 的 exact/range validator，未知字段不会被
-  静默剥离；loader 目前只校验路由全集，尚未在运行时阻止未来端点绕过该构造器自带一套 Zod schema。
+- 当前已登记端点的 request schema 由 `defineRpc` 内部经 `sharedRpcSchema` 从 registry 派生
+  （shared exact/range validator，未知字段不会被静默剥离），endpoint 编译期无法自填 schema；
+  loader 校验路由全集与 def 形状（type/schema/handler/mode），但尚未在运行时阻止未来代码绕过
+  `defineRpc` 手写 def 对象注册。
 - 通用幂等占位只按 `(type, uid, clientReqId)` 缓存结果，没有绑定 payload hash；相同 ID 携带不同 payload
   不会被识别为冲突。
 - 未知路由现在先经过与已知路由相同的 per-principal 令牌桶，再返回低权重 `UNKNOWN_TYPE` 计数；它不会绕过
@@ -547,8 +560,8 @@ Game HTTP request schema 已由 shared validator 同源生成并直接注入带 
 | --- | --- |
 | Room 名、join options | `apps/shared/src/protocol/rooms.ts` |
 | 房内消息（C2S/S2C） | core 消息（Ping/Chat/Pong/Welcome/Error）在 `apps/shared/src/protocol/messages.ts`；玩法消息在各玩法手写 `apps/shared/src/gameplays/<id>/wire.ts` 的 defineC2S/defineS2C token；全集聚合（`C2S`/`S2C`/validator 表/owner/phases/rateCost）由 `codegen:gameplays` 生成在 `apps/shared/src/gameplays/generated/wire-catalog.generated.ts` |
-| Lobby RPC 请求/响应/消息全集 | `apps/shared/src/protocol/lobbyRpc` |
-| RPC 错误码 | `apps/shared/src/protocol/lobbyRpc/envelope.ts` 的 `RPC_ERR_CODES`（15 个）；异常→码映射在 `core/errors.ts` 的 `ERR_MAP`（覆盖 11 个，其余落 `INTERNAL` 兜底）。其中 `GRANTING` 当前没有任何产出点，`AUTH_EPOCH_STALE` 服务端已停产、只保留客户端分支，`ORDER_MISMATCH` 只由可选的 `http/pay/wxNotify.ts` 直接返回，不经 `ERR_MAP` |
+| Lobby RPC 请求/响应/消息全集 | 各域 descriptor 在 `apps/shared/src/protocol/lobbyRpc/domains/<domain>.ts`（`defineLobbyRpcDomain`：路由/执行模式/validator/领域错误码/域推送）；core 错误码与 core 推送在 `lobbyRpc/coreErrors.ts`；全集聚合（`LobbyRpcMap`/`ALL_LOBBY_RPC_TYPES`/`LOBBY_RPC_ROUTE_MODES`/validator map/`RPC_ERR_CODES`/`LobbyPush`）由 `npm --workspace @game/server run codegen:features` 生成在 `lobbyRpc/registry.generated.ts`（AUTO-GENERATED，禁手改；改后重钉协议指纹） |
+| RPC 错误码 | core 码在 `apps/shared/src/protocol/lobbyRpc/coreErrors.ts`（`CORE_RPC_ERROR_CODES` + 历史顺序钉 `RPC_ERR_CODE_ORDER`），领域码在各域 descriptor 的 `errorCodes`（现仅 shop：INSUFFICIENT_BALANCE/GRANTING/ORDER_MISMATCH）；聚合 `RPC_ERR_CODES`（15 个）生成在 `lobbyRpc/registry.generated.ts`；异常→码映射在 `core/errors.ts` 的 `ERR_MAP`（覆盖 11 个，其余落 `INTERNAL` 兜底）。其中 `GRANTING` 当前没有任何产出点，`AUTH_EPOCH_STALE` 服务端已停产、只保留客户端分支，`ORDER_MISMATCH` 只由可选的 `http/pay/wxNotify.ts` 直接返回，不经 `ERR_MAP` |
 | Colyseus state 形状 | `apps/shared/schema/gameplays/<id>/{manifest.json,state.json}`；纯数据镜像 `apps/shared/src/gameplays/generated/state/<id>.ts` + catalog、运行时 Schema `apps/server/src/rooms/schema/generated/<id>.ts` 与聚合器 `GameRoomState.ts` 都是 `apps/server/tools/gameplay-codegen/` 的生成物（首行带 AUTO-GENERATED 标记，禁手改），改单源后运行 `npm --workspace @game/server run codegen:gameplays` |
 | `ballMove` v3 evidence schema/validator/replay | `apps/server/src/core/match/matchEvidence.ts`、`matchReplay.ts`；流生产消费在 `matchConsumer.ts` |
 | Redis key | `apps/server/src/core/infra/keys.ts` |

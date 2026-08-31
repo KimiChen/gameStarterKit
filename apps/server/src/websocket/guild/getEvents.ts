@@ -5,11 +5,10 @@
 import { GuildRpc } from "@game/shared";
 import { readGuildEvents } from "../../core/guild/events";
 import { loadFields } from "../../core/userRecord";
-import { defineRpc, sharedRpcSchema } from "../rpc";
+import { defineRpc } from "../rpc";
 import { optionalStoredInt } from "../../core/infra/numbers";
 
 export default defineRpc(GuildRpc.GetEvents, {
-  schema: sharedRpcSchema(GuildRpc.GetEvents),
   handler: async (ctx, p) => {
     const f = await loadFields(ctx.uid, ["guildId"]);
     const gid = optionalStoredInt(f.guildId, 0, "guildId", { min: 0 });
