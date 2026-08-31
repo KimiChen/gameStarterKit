@@ -32,7 +32,11 @@ marker 过期或外部登记不存在时会重新登记并写入 durable repair/
 
 `CHARACTER_REGISTRATION_GRACE_MS` 是外部不可用时的**有界宽限**（默认 `0` = 关闭，行为同上；
 接受域 `0..2592000000`）。**生产部署建议显式设为 7d**——脚手架默认保持关闭，是为了不单方面改变既有
-安全姿态，选择权留给部署方。开启后，只有同时满足「本地确有热档」「曾通过权威复核（marker 为 ready
+安全姿态，选择权留给部署方。⚠ **它必须严格大于 `CHARACTER_REGISTRATION_RECHECK_MS`**，否则宽限是个
+静默的空操作：只有 marker 过了复核窗（`stale >= recheck`）才会去探测外部，而宽限又要求
+`stale < grace`，两者在 `grace <= recheck` 时不可能同时成立。所以「recheck=7d + grace=7d」这组看起来
+很合理的配置实际什么也不做，连一条 warn 都不会打。⛔ 这一条不只写在文档里——`config.ts` 在加载期
+交叉校验并拒绝启动（同 `WEBPLATFORM_CONNECT_TIMEOUT_MS` / `CHARACTER_REPAIR_BACKOFF_*` 两组配对旋钮）。开启后，只有同时满足「本地确有热档」「曾通过权威复核（marker 为 ready
 且有时间戳）」「陈旧未超上限」「错误是 `WebPlatformUnavailableError`（含熔断器开启）」「durable repair
 intent 已写入」时才放行；⛔ 宽限分支**绝不刷新 marker 时间戳**，否则宽限会自我续期成永久信任。
 契约错误与服务身份错误（`WebPlatformContractError` / `WebPlatformServiceError`）一律不宽限——
@@ -42,8 +46,11 @@ intent 已写入」时才放行；⛔ 宽限分支**绝不刷新 marker 时间�
 也放行），它是修复触发器而非授权检查，所以宽限放行与健康路径的最终状态语义等价、只是补 PUT 变成异步。
 宽限**不覆盖**新号、`pending` 残留档、无 marker 的 legacy 档、`thaw` 的 F4 独立探测路径，
 以及封号/注销（那条链在 session verify 与 `/admin/kick` 上，宽限完全不触碰）。唯一新增风险是把 PUT
-推迟到 repair 收敛前（上界 `CHARACTER_REPAIR_BACKOFF_MAX_MS`），该窗口内该区 durable 成员标记可能缺失
-——这与今天已存在的崩溃窗同类，只是被拉长。
+推迟到 repair 收敛前，该窗口内该区 durable 成员标记可能缺失——这与今天已存在的崩溃窗同类，只是被拉长。
+⚠ 该窗口的上界**不是** `CHARACTER_REPAIR_BACKOFF_MAX_MS`（那是重试**间隔**的上限，不是窗口长度）：
+repair 要等外部恢复才能成功，而宽限期间玩家会持续被放行，所以窗口实际由外部不可用的持续时间决定，
+上界是 `CHARACTER_REGISTRATION_GRACE_MS` 本身（建议值 7d，接受域上限 30d）——比重试间隔大若干个数量级。
+把 grace 设多大，就是接受多长的成员标记缺失窗口。
 
 WebPlatform 客户端的熔断器**按路由族隔离**（`session` / `character` 各一个）。共用一个实例时，
 character 路由故障会推开同一个熔断器并连带拒掉 session verify，把故障面从「回访角色复核」放大成

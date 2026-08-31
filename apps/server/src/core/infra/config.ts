@@ -279,6 +279,24 @@ export const CHARACTER_REGISTRATION_GRACE_MS = (() => {
   }
   return value;
 })();
+/**
+ * ⚠ 宽限必须**严格大于**复核窗口，否则它是一个静默的空操作。
+ *
+ * 推导：只有 `isFreshReadyMarker` 为假才会去探测 WebPlatform，而在 state=ready、
+ * checkedAtMs 有效、时钟不回拨时，为假的唯一原因就是 `stale >= recheckMs`；宽限分支又要求
+ * `stale < graceMs`。于是 `graceMs <= recheckMs` ⇒ 两个条件不可能同时成立，宽限永不命中。
+ *
+ * ⛔ 不能只写进文档：实测过 recheck=7d/grace=7d 这组「看起来很合理」的配置——WebPlatform 一挂，
+ * 所有 marker 过窗的回访玩家照旧被拒，日志里连一条「走有界宽限放行」的 warn 都不会出现，
+ * 运维会以为宽限已生效而去别处排查。本仓另外两组配对旋钮都有加载期交叉校验，这一组也必须有。
+ */
+if (CHARACTER_REGISTRATION_GRACE_MS > 0
+    && CHARACTER_REGISTRATION_GRACE_MS <= CHARACTER_REGISTRATION_RECHECK_MS) {
+  throw new Error(
+    "CHARACTER_REGISTRATION_GRACE_MS 必须大于 CHARACTER_REGISTRATION_RECHECK_MS，否则宽限永不命中"
+    + `（当前 grace=${CHARACTER_REGISTRATION_GRACE_MS} recheck=${CHARACTER_REGISTRATION_RECHECK_MS}）`,
+  );
+}
 
 /** 支付链总开关（缺省**关**）：关 ⇒ `/pay/wx-notify` 直接 501「未上线」。
  *  ⚠ 支付链现在不具备上线条件（无下单端点、共享密钥而非 APIv3 验签、无对账，见 docs/EXTRAFEATURES.md §3.4），

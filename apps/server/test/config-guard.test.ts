@@ -224,3 +224,47 @@ test("幂等 pending 租约窗口必须覆盖 handler timeout", () => {
   );
   assert.equal(r.status, 0, `配置窗口不满足不等式：${r.stderr.slice(0, 300)}`);
 });
+
+/**
+ * GRACE 与 RECHECK 是一对：宽限必须**严格大于**复核窗口，否则它是静默的空操作。
+ *
+ * 推导见 config.ts 的注释。这里钉的是**加载期拒绝启动**，⛔ 不能只写文档——
+ * 实测过 recheck=7d/grace=7d 这组「看起来很合理」的配置：WebPlatform 一挂，所有 marker 过窗的
+ * 回访玩家照旧被拒，日志里连一条「走有界宽限放行」的 warn 都不会出现，运维会以为宽限已生效。
+ * 本仓另外两组配对旋钮（CONNECT/REQUEST 超时、REPAIR_BACKOFF BASE/MAX）都有同款加载期交叉校验。
+ */
+test("CHARACTER_REGISTRATION_GRACE_MS 不大于 RECHECK 时必须拒绝启动", () => {
+    const day = 86_400_000;
+    for (const [grace, recheck, label] of [
+        [String(7 * day), String(7 * day), "相等（文档建议值撞上默认复核窗时最容易踩）"],
+        [String(day), String(7 * day), "宽限小于复核窗"],
+        [String(30 * day), String(30 * day), "两端都设成上限"],
+    ] as const) {
+        const r = loadConfigWith({
+            CHARACTER_REGISTRATION_GRACE_MS: grace,
+            CHARACTER_REGISTRATION_RECHECK_MS: recheck,
+        });
+        assert.notEqual(r.status, 0, `${label} 应拒绝启动`);
+        assert.match(
+            r.stderr,
+            /CHARACTER_REGISTRATION_GRACE_MS 必须大于 CHARACTER_REGISTRATION_RECHECK_MS/,
+            `${label} 应报配对非法，实际 stderr：${r.stderr.slice(0, 300)}`,
+        );
+    }
+});
+
+test("GRACE 严格大于 RECHECK、以及关闭宽限（0）都必须正常加载", () => {
+    const day = 86_400_000;
+    // ⛔ 这一组必须放行，否则上面的 notEqual 可能只是因为 config 根本起不来
+    const ok = loadConfigWith({
+        CHARACTER_REGISTRATION_GRACE_MS: String(7 * day),
+        CHARACTER_REGISTRATION_RECHECK_MS: String(day),
+    });
+    assert.equal(ok.status, 0, `严格大于应通过，stderr：${ok.stderr.slice(0, 300)}`);
+    // grace=0 是「关闭宽限」，与 recheck 的大小无关，不得被配对校验误伤
+    const disabled = loadConfigWith({
+        CHARACTER_REGISTRATION_GRACE_MS: "0",
+        CHARACTER_REGISTRATION_RECHECK_MS: String(30 * day),
+    });
+    assert.equal(disabled.status, 0, `关闭宽限应通过，stderr：${disabled.stderr.slice(0, 300)}`);
+});
