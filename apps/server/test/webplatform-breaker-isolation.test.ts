@@ -45,7 +45,6 @@ process.env.WEBPLATFORM_REQUEST_TIMEOUT_MS = "120";
 // 阈值压到 1，且开启窗口足够长，保证后续调用一定撞在开启态上。
 process.env.WEBPLATFORM_BREAKER_FAILURES = "1";
 process.env.WEBPLATFORM_BREAKER_OPEN_MS = "60000";
-process.env.WEBPLATFORM_RETRY_ATTEMPTS = "1";
 
 const clientModule = await import("../src/platform/webPlatformClient");
 
