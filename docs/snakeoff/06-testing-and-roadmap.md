@@ -277,7 +277,7 @@ Node 侧测试不能替代以下真实引擎验证：
 - 四人长局、带宽、Creator/真机和完整开房链验收。
 - Home 默认 contribution 切到 Snake；ballMove 保留可显式选择。
 
-退出条件：Definition of Done 全部满足，`plan-v3.md` 更新真实实施证据。
+退出条件：Definition of Done 全部满足，`plan-v4.md` 更新真实实施证据。
 
 ### 阶段 7：可选清理与扩展
 

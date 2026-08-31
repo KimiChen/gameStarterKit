@@ -578,6 +578,41 @@ else {
   if (/^##\s+路线图/m.test(extraText)) fail("EXTRAFEATURES.md 不得维护第二套路线图");
 }
 
+/**
+ * 已登记文档里不得把**历史归档**说成当前真相。
+ *
+ * 这是真相指针迁移的直接教训：`plan-v2 → plan-v3` 那轮漏了几处，本轮 `plan-v3 → plan-v4`
+ * 又漏了 19 处（docs/OVERVIEW、docs/EXTRAFEATURES、docs/CLIENT、docs/SERVER、todo-godogen、
+ * docs/snakeoff/*），而两次的 verify:inventory 都是绿的——读者会被指去一份文首写着
+ * 「不得从其中的完成标记推导当前状态」的归档。
+ *
+ * ⚠ plan-v3 §30 评估过一版纯短语正则并否掉了它（写成「本文件即当前 corePlan」即可绕过，
+ * 收益低于脆性）。这里换了判据：**归档清单来自 inventory 自己的 `referenceDocs`**，
+ * 下一轮迁移时把新归档移进 referenceDocs，这道闸自动开始守它，不需要改这段代码。
+ * 判的也不是自称，而是「已登记文档 → 归档」的指向，正是实际发生过两次的那个形态。
+ */
+function checkArchiveNotClaimedAsTruth(registeredDocs, archives) {
+  // 「为准 / 唯一真相 / 当前实施状态」出现在同一行的归档链接旁边即视为把归档当成了当前真相。
+  // ⛔ 刻意不匹配「历史归档 / 上一轮 / 归档补注 / 原始记录」这类已经写明身份的表述。
+  const CLAIM = /为准|唯一真相|当前实施状态|核心优先级/u;
+  const EXEMPT = /历史归档|上一轮|归档补注|原始记录|已降级/u;
+  for (const doc of registeredDocs) {
+    if (!exists(doc) || archives.includes(doc)) continue;
+    const lines = fs.readFileSync(repoPath(doc), "utf8").split("\n");
+    for (const [index, line] of lines.entries()) {
+      if (!CLAIM.test(line) || EXEMPT.test(line)) continue;
+      for (const archive of archives) {
+        const base = archive.split("/").pop();
+        if (!line.includes(base)) continue;
+        fail(
+          `${doc}:${index + 1} 把历史归档 ${archive} 说成当前真相；当前计划是 ${corePlan}` +
+          `（若确为历史引用，请写明「历史归档」等身份）`,
+        );
+      }
+    }
+  }
+}
+
 if (!Array.isArray(inventory.referenceDocs)) {
   fail("referenceDocs 必须是数组");
 } else {
@@ -601,6 +636,12 @@ if (!Array.isArray(inventory.referenceDocs)) {
     if (!exists(doc)) fail(`referenceDocs 文档不存在：${doc}`);
     else checkMarkdownLinks(doc);
   }
+  const archives = inventory.referenceDocs.filter((doc) => /^plan(-v\d+)?\.md$/u.test(doc));
+  const registeredDocs = new Set([corePlan, extra, "README.md", ...inventory.referenceDocs]);
+  for (const capability of inventory.capabilities ?? []) {
+    for (const doc of capability.docs ?? []) registeredDocs.add(doc);
+  }
+  checkArchiveNotClaimedAsTruth([...registeredDocs], archives);
 }
 
 // Keep the two assistant entry documents semantically identical while allowing

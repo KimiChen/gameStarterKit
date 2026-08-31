@@ -25,8 +25,16 @@ plan-v3 §30 登记过一条教训：`plan-v2 → plan-v3` 的迁移**批准存�
   与「`referenceDocs` 不得同时登记当前计划」）与助手关键指令表；
   `scripts/verify-inventory.test.mjs` 的 7 处 fixture；`README.md`、`AGENTS.md`、`CLAUDE.md`；
   `plan-v3.md` 降级归档头；以及 `plan.md`、`plan-v2.md` 两处下游归档指针。
-- **归档内自称的复查**：按 plan-v3 §30 记录的教训，本次不只按短语查，也按语义查。
-  `plan-v3.md:487` 原以现在时自称经 `routeOfTruth.corePlan` 纳入检查，已改为当轮时态并加归档补注。
+- **归档内自称的复查**：`plan-v3.md:487` 原以现在时自称经 `routeOfTruth.corePlan` 纳入检查，
+  已改为当轮时态并加归档补注。
+  ⚠ **更正（迁移当轮的这段原文写过头了）**：当时写的是「本次不只按短语查，也按语义查」，
+  但语义查实际只覆盖了 `plan-v3.md` 自身这一处。随后的对抗式复核在**已登记文档**里又查出 19 处
+  仍以现在时把 plan-v3 当作当前真相（`docs/OVERVIEW.md` 2 处、`docs/EXTRAFEATURES.md` 4 处、
+  `docs/CLIENT.md` 2 处、`docs/SERVER.md` 1 处、`todo-godogen.md` 4 处、`docs/snakeoff/` 4 处，
+  其中 OVERVIEW 与 EXTRAFEATURES 是那一轮**本就改过**的文件），而 `verify:inventory` 全绿。
+  这正是本仓反复点名的「断言写得比证据远」。已全部改正，并新增 `checkArchiveNotClaimedAsTruth`
+  机检：归档清单取自 inventory 自己的 `referenceDocs`，下一轮迁移无需改代码即自动开始守新归档。
+  ⛔ 该闸只覆盖**已登记文档**（17 份），`docs/snakeoff/` 不在其中，那 4 处是人工改的。
 
 ## 实施状态总表
 
@@ -39,6 +47,13 @@ plan-v3 §30 登记过一条教训：`plan-v2 → plan-v3` 的迁移**批准存�
 | 4 | GameRoom shell 的玩法硬编码 | **三阶段全部已实现** | `1755bb2` / `47af72c` / `a6ce634` | 共 14 个变异，逐个转红 |
 
 全量门禁：单测 315/315、int 155/155、`verify:all` exit 0。
+
+## plan-v3 的保留边界仍然有效
+
+本文件只承接 5 条产品/工程留白，**不**复制 plan-v3 的 78 条 `[不阻塞·有意保留]`。那些保留边界
+（已评估过的取舍与范围限制）继续有效，其**原始记录与证据在历史归档
+[plan-v3.md](plan-v3.md)**——查某条边界的具体内容时读那里，判断「当前计划状态」时读本文件。
+⛔ 不要从 plan-v3 的完成标记推导当前状态。
 
 ## 仍然开放的部分
 

@@ -143,6 +143,6 @@ Snake 玩法与视觉分析借鉴自用户提供的《贪吃蛇大作战》静�
 - [客户端 View/Logic、FGUI 与本地预览](../CLIENT.md)
 - [可选额外功能边界](../EXTRAFEATURES.md)
 - [邀请码房间与实时玩法低侵入方案](../Non-intrusive-room.md)
-- [当前实施状态与开放问题](../../plan-v3.md)
+- [当前实施状态与开放问题](../../plan-v4.md)
 
-`docs/snakeoff/` 是玩法提案，不覆盖上述框架文档，也不修改 `plan-v3.md` 的当前事实。实施完成后，必须以代码、测试证据和 `plan-v3.md` 的状态更新为准。
+`docs/snakeoff/` 是玩法提案，不覆盖上述框架文档，也不修改 `plan-v4.md` 的当前事实。实施完成后，必须以代码、测试证据和 `plan-v4.md` 的状态更新为准。

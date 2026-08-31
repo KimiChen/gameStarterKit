@@ -8,7 +8,7 @@
 > - [liangdabiao/Godogen@8f31578](https://github.com/liangdabiao/Godogen/tree/8f315780bf50eea1875e08c8b614930e9d6e8450)
 >
 > 定位：本文是**对外部项目的对照吸收计划**，不是本仓能力承诺。其中的任务不进入 `verify:core`
-> 的既有门禁口径，也不改变 [plan-v3.md](plan-v3.md) 的核心优先级；两者分工见 §7。
+> 的既有门禁口径，也不改变 [plan-v4.md](plan-v4.md) 的核心优先级；两者分工见 §7。
 >
 > 接手须知：先读 §2（吸收边界）再动手——里面有一条「看起来很有说服力但会直接摧毁本仓价值」的
 > 负面经验，以及两个来源仓库不可直接取用的具体原因。
@@ -204,7 +204,7 @@ T1 verify:creator 最小路径
 - **远程值守 / IM steer 形态**：对本仓核心开发暂不适用；若将来做全量美术重扫等长任务，可借用
   「无人值守 + 结束产 15–20s 证明录像」的交付形态。
 - **历史审阅归档**：`plan.md` 已保留为 archive，当前状态、实现证据与后续收口只写入
-  `plan-v3.md`，不再向历史多轮复核记录叠加新结论。
+  `plan-v4.md`，不再向历史多轮复核记录叠加新结论。
 
 ## 6. 事实核实与来源
 
@@ -247,10 +247,10 @@ T1 verify:creator 最小路径
   `apps/Cocos/extensions/fairygui-cc/runtime/fairygui.d.ts`、
   `tools/client-perf-baseline.ts` 的 `renderBallMoveWorld` trace 校验链
 
-## 7. 与 `plan-v3.md` 的分工
+## 7. 与 `plan-v4.md` 的分工
 
-- [plan-v3.md](plan-v3.md) 是**核心问题、实施状态与验收证据的唯一真相**，其条目状态由对应门禁背书。
-- 本文是**额外能力的对照吸收计划**：任务完成前不得写进 `plan-v3.md` 的完成声明，也不得据此放宽
+- [plan-v4.md](plan-v4.md) 是**核心问题、实施状态与验收证据的唯一真相**，其条目状态由对应门禁背书。
+- 本文是**额外能力的对照吸收计划**：任务完成前不得写进 `plan-v4.md` 的完成声明，也不得据此放宽
   `verify:core` / `verify:all` 的口径。
 - 本文任务若产出新的门禁（如 T1 的 `verify:creator`），应在落地时按本仓既有规则登记到
   `docs/inventory.json` 并补正反例，再考虑是否并入聚合命令；已移出的产物往返自检同此要求，

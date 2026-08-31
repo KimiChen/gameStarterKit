@@ -218,7 +218,7 @@ Start 失败并回滚。回滚保留当前权威 Ready，不盲目清空。
 | --- | --- |
 | 根 `AGENTS.md`、`CLAUDE.md` | 同步更新真源、生成物禁手改路径与新玩法标准动线，并保持语义一致性 |
 | `docs/OVERVIEW.md`、`docs/SERVER.md`、`docs/CLIENT.md` 和相关 README | 记录 generated gameplay module、profile、ticket、View contribution 边界 |
-| `plan-v3.md` | 只在实现和验收证据真实完成后回写状态 |
+| `plan-v4.md` | 只在实现和验收证据真实完成后回写状态 |
 
 ## 7. 一次性新增的通用框架文件
 

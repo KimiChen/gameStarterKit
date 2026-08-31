@@ -84,7 +84,8 @@ apps/client/src
 `src/**/*.ts`（包括 Main、View 和 gameplay），防止现代 API 越过运行时下限。Creator 真实引擎类型、资源
 导入和完整 View 生命周期仍需编辑器预览。
 `test:fgui` 侧重 codegen/registry 行为，
-设计源到已导出 `.bin` 的新鲜度由 `verify:fgui` 的 manifest 检查；已知边界见 [plan-v3.md](../plan-v3.md)。
+设计源到已导出 `.bin` 的新鲜度由 `verify:fgui` 的 manifest 检查与 `fgui-roundtrip` 的产物往返自检；
+已知边界见 [plan-v4.md](../plan-v4.md)。
 
 ### 3.3 视图与行为分离
 
@@ -111,7 +112,7 @@ apps/client/src
 - 大规模同步计算不放在网关 handler 中。
 
 这些是开发实现应保持的不变量，不是对当前所有路径已经完成证明的声明。完成状态、剩余缺口和保留边界
-统一以 [plan-v3.md](../plan-v3.md) 为准。异构第二玩法现由生成的 mode→root 契约、玩法专属结算和客户端
+统一以 [plan-v4.md](../plan-v4.md) 为准（保留边界的原始记录在历史归档 [plan-v3.md](../plan-v3.md)）。异构第二玩法现由生成的 mode→root 契约、玩法专属结算和客户端
 state adapter 约束；`ballMove@1` 的服务端内部 v3 evidence 已按 seed/fixed-step/有序事件重算初末状态与
 participants；热档/冷档 schema 迁移、asset effect 原子性与经济操作的跨区回读也已按对应条目收口。
 
@@ -221,6 +222,6 @@ FairyGUI 编辑设计源
 - `apps/shared/src/logic` 的体力（stamina）、自然日（time）与命名 RNG 子流（`SeededRandom.stream`）当前
   只有单测覆盖，没有服务端或客户端调用点；被实际消费的是 logic 中的 math 工具与技能表/伤害公式，以及
   constants 中的 join 错误码工具。
-- 核心改进状态以 [plan-v3.md](../plan-v3.md) 为准；可选模块的准确状态见
+- 核心改进状态以 [plan-v4.md](../plan-v4.md) 为准；可选模块的准确状态见
   [额外功能与参考实现](EXTRAFEATURES.md)。
 - 完整项目边界以根 README 为准。

@@ -236,6 +236,37 @@ test("inventory verifier keeps the historical plan registered as a checked refer
   }
 });
 
+test("inventory verifier rejects a registered doc that points at an archive as current truth", () => {
+  // 这是真相指针迁移的实际教训：plan-v2→v3 那轮漏了几处、plan-v3→v4 这轮漏了 19 处，
+  // 两次 verify:inventory 都是绿的，读者被指去一份文首写着「不得推导当前状态」的归档。
+  // ⚠ 归档清单取自 inventory 自己的 referenceDocs，所以下一轮迁移这道闸自动开始守新归档。
+  const root = createFixture();
+  try {
+    const doc = join(root, "docs/OVERVIEW.md");
+    writeFileSync(doc, `${readFileSync(doc, "utf8")}\n\n完成状态以 [plan-v3.md](../plan-v3.md) 为准。\n`);
+    assertRejected(root, /docs\/OVERVIEW\.md:\d+ 把历史归档 plan-v3\.md 说成当前真相/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier still allows citing an archive when its identity is stated", () => {
+  // ⛔ 闸不能宽到把一切归档链接都拒掉：文档经常需要正当地引用归档。判据是「有没有写明身份」。
+  const root = createFixture();
+  try {
+    const doc = join(root, "docs/OVERVIEW.md");
+    writeFileSync(
+      doc,
+      `${readFileSync(doc, "utf8")}\n\n完成状态以 [plan-v4.md](../plan-v4.md) 为准` +
+      `（保留边界的原始记录在历史归档 [plan-v3.md](../plan-v3.md)）。\n`,
+    );
+    const result = runVerifier(root);
+    assert.equal(result.status, 0, outputOf(result));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("inventory verifier keeps the previous plan registered as a checked archive", () => {
   // 真相指针迁到 plan-v4 后，plan-v3 与 plan/plan-v2 同列历史归档。⛔ 缺登记会让一份仍被大量
   // 文档引用的计划变成没有归属的孤儿，链接检查也不再覆盖它。
