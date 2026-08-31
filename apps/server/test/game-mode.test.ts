@@ -6,6 +6,7 @@ import {
     ErrorCode,
     GamePhase,
     GameplayModeId,
+    MAX_PLAYERS,
     PROTOCOL_VERSION,
     ROOM_STATE_VALIDATORS,
     S2C,
@@ -595,4 +596,166 @@ test("GameRoom：未结算直接销毁仍只调用一次 mode dispose", async ()
     assert.strictEqual(first, second, "重复 dispose 必须合流到同一可等待 Promise");
     await first;
     assert.equal(disposes, 1);
+});
+
+// ── roster 声明化（plan-v4 条目 4 阶段一）────────────────────────────────────
+//
+// 「几个人算满 / 几个人能开 / 几个人自动开」是玩法事实，此前以字面量散在通用 shell 的五处。
+// 下面的用例钉两件事：① 登记期对非法 roster fail-closed；② shell 真的按声明分发，
+// 而不是恰好与旧字面量相等——所以构造的 mode 必须用**与旧字面量不同**的值。
+
+/** 现有用例的既定做法：不 stub 掉真实 simulation interval，node --test 会被存活定时器挂住。 */
+function stubSimulation(room: GameRoom): void {
+    (room as unknown as { setSimulationInterval: (callback: () => void, delay: number) => void })
+        .setSimulationInterval = () => {};
+}
+
+test("GameModeRegistry：非法 roster 必须在登记期抛，⛔ 不留到运行期兜底", () => {
+    const registry = new GameModeRegistry<GameRoomState>();
+    const { matchEvidenceRuleset: _unusedRuleset, ...ballMove } = createBallMoveGameMode();
+    const withRoster = (roster: unknown) => {
+        const id = `roster-probe`;
+        registry.register(id, () => ({ ...ballMove, id, roster } as never), { replace: true });
+        return () => registry.create(id);
+    };
+    assert.throws(withRoster(undefined), /必须声明 roster\{min,max,autoStart\}/);
+    assert.throws(withRoster({ min: 2, max: 4 }), /roster\.autoStart 必须是 ≥1 的整数/);
+    assert.throws(withRoster({ min: 0, max: 4, autoStart: 2 }), /roster\.min 必须是 ≥1 的整数/);
+    assert.throws(withRoster({ min: 2, max: 1.5, autoStart: 2 }), /roster\.max 必须是 ≥1 的整数/);
+    // root players map 的容量由生成 validator 按 shared 的 MAX_PLAYERS 烧死，超过它会在 schema 层炸
+    assert.throws(withRoster({ min: 2, max: MAX_PLAYERS + 1, autoStart: 2 }), /超过 root players map 的容量/);
+    assert.throws(withRoster({ min: 3, max: 2, autoStart: 2 }), /roster\.min=3 大于 roster\.max=2/);
+    assert.throws(withRoster({ min: 2, max: 4, autoStart: 1 }), /roster\.autoStart=1 必须落在 \[2, 4\]/);
+    assert.throws(withRoster({ min: 2, max: 4, autoStart: 5 }), /roster\.autoStart=5 必须落在 \[2, 4\]/);
+    // 合法值必须放行，否则上面全部 throws 可能只是因为 create 本身坏了
+    assert.deepEqual(withRoster({ min: 1, max: 3, autoStart: 2 })().roster, { min: 1, max: 3, autoStart: 2 });
+});
+
+test("注入式 mode 也必须过同一道 roster 闸——⛔ 注入路径不得成为绕过闸的后门", () => {
+    const broken = { ...createBallMoveGameMode(), roster: undefined } as unknown as GameMode<GameRoomState>;
+    assert.throws(
+        () => new GameRoom({ seed: 1, mode: broken }),
+        /必须声明 roster\{min,max,autoStart\}/,
+        "注入 mode 不经过 GameModeRegistry.create，必须在构造期补闸",
+    );
+});
+
+test("shell 的人数闸按 mode.roster 分发：满员/自动开局都随声明变化", async () => {
+    // 刻意与旧字面量（max=MAX_PLAYERS=4、autoStart=2）都不同：若 shell 还在读字面量，
+    // 下面两条断言至少有一条会失败。
+    // ⚠ 必须摘掉 matchEvidenceRuleset：ballMove v1 证据把 initialRoster 冻结成恰好 2 条，
+    // 一个 3 人开局的 mode 再声明该 ruleset 就是自相矛盾的声明（下面单独有用例钉这条）。
+    const { matchEvidenceRuleset: _unusedRuleset, ...ballMove } = createBallMoveGameMode();
+    const mode: GameMode<GameRoomState> = {
+        ...ballMove,
+        roster: { min: 3, max: 3, autoStart: 3 },
+    };
+    const room = new GameRoom({ seed: 42, fixedStepMs: 50, mode });
+    stubSimulation(room);
+    installLock(room);
+    room.onCreate({ v: PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
+    assert.equal(room.maxClients, 3, "onCreate 必须把 maxClients 赋成 mode.roster.max（撮合侧读的就是它）");
+
+    await join(room, client("a", BALL_MOVE_GAME_MODE_ID));
+    await join(room, client("b", BALL_MOVE_GAME_MODE_ID));
+    assert.equal(room.state.phase, GamePhase.Waiting, "autoStart=3 时两人不得开局（旧字面量是 2）");
+
+    await join(room, client("c", BALL_MOVE_GAME_MODE_ID));
+    assert.equal(room.state.phase, GamePhase.Playing, "满 3 人必须自动开局");
+
+    await assert.rejects(
+        join(room, client("d", BALL_MOVE_GAME_MODE_ID)),
+        (error: unknown) => error instanceof Error
+            && error.message.includes(String(ErrorCode.GameAlreadyStarted)),
+    );
+    await room.onDispose();
+});
+
+test("shell 的开局下限按 mode.roster.min：低于它 startMatch 不开局", async () => {
+    const { matchEvidenceRuleset: _unusedRuleset, ...ballMove } = createBallMoveGameMode();
+    const mode: GameMode<GameRoomState> = {
+        ...ballMove,
+        // autoStart 抬到 4 使自动开局不会抢跑，min=3 才是本例要钉的那条闸
+        roster: { min: 3, max: 4, autoStart: 4 },
+    };
+    const room = new GameRoom({ seed: 42, fixedStepMs: 50, mode });
+    stubSimulation(room);
+    installLock(room);
+    room.onCreate({ v: PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
+    await join(room, client("a", BALL_MOVE_GAME_MODE_ID));
+    await join(room, client("b", BALL_MOVE_GAME_MODE_ID));
+    assert.equal(await room.startMatch(), false, "两人未达 min=3，⛔ 不得开局（旧字面量下这里会开）");
+    assert.equal(room.state.phase, GamePhase.Waiting);
+
+    await join(room, client("c", BALL_MOVE_GAME_MODE_ID));
+    assert.equal(room.state.phase, GamePhase.Waiting, "autoStart=4 未达成，自动开局不得抢跑");
+    assert.equal(await room.startMatch(), true, "达到 min=3 后显式 startMatch 必须成功");
+    await room.onDispose();
+});
+
+test("声明 ballMove v1 证据的 mode，其 roster 必须与冻结的 2 人 initialRoster 自洽", () => {
+    // 这条耦合此前无人守：证据侧 copyRoster 用 exactArray(2,2) 冻死，而 shell 直到真开局时
+    // 才撞上，表现为给加入者的 1000/Unknown + 回滚。定性成登记期的自相矛盾声明更准确。
+    const registry = new GameModeRegistry<GameRoomState>();
+    const id = "ruleset-roster-probe";
+    const make = (roster: GameMode<GameRoomState>["roster"]) => {
+        registry.register(id, () => ({ ...createBallMoveGameMode(), id, roster }), { replace: true });
+        return () => registry.create(id);
+    };
+    assert.throws(
+        make({ min: 3, max: 4, autoStart: 3 }),
+        /声明了 ballMove v1 证据，其 roster\.min\/autoStart 必须都是 2，实际 min=3 autoStart=3/,
+    );
+    assert.throws(make({ min: 2, max: 4, autoStart: 3 }), /实际 min=2 autoStart=3/);
+    // 生产默认值必须放行，否则上面两条 throws 可能只是因为断言写反了
+    assert.equal(make({ min: 2, max: MAX_PLAYERS, autoStart: 2 })().roster.autoStart, 2);
+    // ⛔ 不连 max 一起断言：max 是座位上限，与「开局时恰好几人」不是同一件事
+    assert.equal(make({ min: 2, max: 2, autoStart: 2 })().roster.max, 2);
+});
+
+test("满员闸的上限来自 mode.roster.max——这是防御性闸，用预置座位直接抵达", async () => {
+    // ⚠ 正常路径到不了这条闸：min ≤ autoStart ≤ max 成立时，人数一到 autoStart 就开局了，
+    // 座位数永远够不到 max。它是 joinById/直连的兜底。所以这里绕过 onJoin 直接预置座位，
+    // 让房间停在「Waiting 且已满」这个只有兜底闸能处理的状态。⛔ 不要因为够不到就不测：
+    // 兜底闸读错常量，恰恰只会在被绕过的那条路径上出事。
+    const { matchEvidenceRuleset: _unusedRuleset, ...ballMove } = createBallMoveGameMode();
+    const mode: GameMode<GameRoomState> = { ...ballMove, roster: { min: 2, max: 2, autoStart: 2 } };
+    const room = new GameRoom({ seed: 42, fixedStepMs: 50, mode });
+    stubSimulation(room);
+    installLock(room);
+    room.onCreate({ v: PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
+    for (const sessionId of ["seat-a", "seat-b"]) {
+        room.state.players.set(sessionId, mode.createPlayer({ sessionId, name: sessionId, randomInt: () => 0 }));
+    }
+    assert.equal(room.state.phase, GamePhase.Waiting, "预置座位不触发开局，房间必须仍在 Waiting");
+    await assert.rejects(
+        join(room, client("late", BALL_MOVE_GAME_MODE_ID)),
+        (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.RoomFull)),
+        "满 roster.max=2 必须 RoomFull——⛔ 若这里读的是 MAX_PLAYERS=4，第 3 个人会被放进来",
+    );
+    await room.onDispose();
+});
+
+test("开局边界重验的人数下限同样来自 mode.roster.min", () => {
+    // 这条同样是防御性重验：startMatch 入口已经挡过一次 min，所以正常路径下它不会先触发。
+    // 直接调用被验方法是抵达它的唯一诚实方式——用 join 编不出「已过入口闸却人数不足」的状态。
+    const { matchEvidenceRuleset: _unusedRuleset, ...ballMove } = createBallMoveGameMode();
+    const boundaryOf = (min: number) => {
+        const mode: GameMode<GameRoomState> = { ...ballMove, roster: { min, max: 4, autoStart: min } };
+        const room = new GameRoom({ seed: 42, fixedStepMs: 50, mode });
+        stubSimulation(room);
+        room.onCreate({ v: PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
+        for (const sessionId of ["seat-a", "seat-b"]) {
+            room.state.players.set(sessionId, mode.createPlayer({ sessionId, name: sessionId, randomInt: () => 0 }));
+        }
+        const internals = room as unknown as {
+            lifecycleGeneration: number;
+            assertMatchStartBoundary(generation: number, sessions: ReadonlySet<string>, stage: string): void;
+        };
+        return () => internals.assertMatchStartBoundary(
+            internals.lifecycleGeneration, new Set(["seat-a", "seat-b"]), "probe",
+        );
+    };
+    assert.throws(boundaryOf(3), /match participants or phase changed during probe/, "2 人 < min=3 必须炸");
+    assert.doesNotThrow(boundaryOf(2), "2 人 == min=2 必须放行——否则上面的 throws 只是恒真");
 });

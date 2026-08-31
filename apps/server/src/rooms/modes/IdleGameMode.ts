@@ -1,4 +1,4 @@
-import { C2S } from "@game/shared";
+import { C2S, MAX_PLAYERS } from "@game/shared";
 import {
     IdlePlayerState,
     IdleRoomState,
@@ -41,6 +41,8 @@ export function createIdleGameMode(options: IdleGameModeOptions = {}): GameMode<
     const pulseGoal = normalizePulseGoal(options.pulseGoal);
     return {
         id: IDLE_GAME_MODE_ID,
+        // 与去硬编码前的 shell 行为逐值一致；roster 现在是 mode 的声明而不是 shell 的字面量。
+        roster: { min: 2, max: MAX_PLAYERS, autoStart: 2 },
         usesDefaultBallMoveRules: false,
         createPlayer: ({ sessionId, name }) => {
             const player = new IdlePlayerState();

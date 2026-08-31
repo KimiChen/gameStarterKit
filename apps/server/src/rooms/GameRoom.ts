@@ -64,6 +64,7 @@ import { buildReplayParticipants } from "../core/match/matchReplay";
 import { trackTask } from "../core/infra/lifecycle";
 import {
     BALL_MOVE_GAME_MODE_ID,
+    assertGameModeRoster,
     gameModeRegistry,
     type GameMode,
     type GameModeContext,
@@ -382,6 +383,11 @@ function snapshotInjectedInput(input: unknown): GameRoomInput | undefined {
  *    （消费落库见 core/match/matchConsumer）
  */
 export class GameRoom extends Room {
+    /**
+     * onCreate 选定 mode 之前的兜底容量。真正生效的是 onCreate 里按 `mode.roster.max`
+     * 的赋值——`maxClients` 在 `Room.__init()` 之后是 accessor，写入会同步更新 `_listing`，
+     * 而 MatchMaker 读 listing 发生在 `onCreate` 之后，所以撮合侧看到的是 per-mode 容量。
+     */
     maxClients = MAX_PLAYERS;
     /** Colyseus transport 层的每客户端消息闸；handler 还会做一次本地预算检查。 */
     maxMessagesPerSecond = GAME_ROOM_MAX_MESSAGES_PER_SECOND;
@@ -463,7 +469,12 @@ export class GameRoom extends Room {
         // not instantiate ballMove only to replace and leak it for an idle room.
         this.mode = this.injectedMode;
         this.modeId = this.injectedMode?.id ?? BALL_MOVE_GAME_MODE_ID;
-        if (this.injectedMode) this.selectModeState(this.injectedMode);
+        if (this.injectedMode) {
+            // 注入路径不经过 GameModeRegistry.create，必须在这里补同一道 roster 闸，
+            // ⛔ 否则 roster 缺失会一路走到「players.size >= undefined 恒 false」的无上限房。
+            assertGameModeRoster(this.injectedMode.id, this.injectedMode.roster, this.injectedMode.matchEvidenceRuleset);
+            this.selectModeState(this.injectedMode);
+        }
     }
 
     private makeClock(clock: GameRoomClock | undefined): () => number {
@@ -864,7 +875,11 @@ export class GameRoom extends Room {
         } else if (joinOptions.mode !== this.injectedMode.id) {
             throw joinRefused(ErrorCode.BadRequest);
         }
-        this.modeId = this.requireMode().id;
+        const mode = this.requireMode();
+        this.modeId = mode.id;
+        // ⚠ 必须在 onCreate 里赋，不能提前到构造期：__init() 之后 maxClients 才是会同步
+        // 更新 listing 的 accessor，而生产房的 mode 直到这里才选定。
+        this.maxClients = mode.roster.max;
         this.sId = sId;
         this.creationConfigured = true;
         this.setSimulationInterval((dt) => this.update(dt), this.fixedStepMs);
@@ -942,7 +957,7 @@ export class GameRoom extends Room {
         if (typeof auth.mode !== "string" || auth.mode !== this.modeId) {
             throw joinRefused(ErrorCode.BadRequest);
         }
-        if (this.state.players.size >= MAX_PLAYERS) {
+        if (this.state.players.size >= mode.roster.max) {
             throw joinRefused(ErrorCode.RoomFull);
         }
         // 同一框架账号禁止占双座（对齐 Arthur VersusRoom）：证据里同一 userId 出现两个名次会污染战绩。
@@ -995,7 +1010,7 @@ export class GameRoom extends Room {
         this.userSessionId.set(auth.userId, client.sessionId);
         this.participantUserId.set(client.sessionId, auth.userId);
 
-        if (this.state.phase === GamePhase.Waiting && this.state.players.size >= 2) {
+        if (this.state.phase === GamePhase.Waiting && this.state.players.size >= mode.roster.autoStart) {
             try {
                 // startMatch 先 await lock，再把 phase 切到 Playing；锁失败时不会公开一个
                 // 仍可被撮合/直连塞人的 Playing 房。
@@ -1118,9 +1133,9 @@ export class GameRoom extends Room {
      */
     async startMatch(): Promise<boolean> {
         if (this.disposed) return false;
-        this.requireMode();
+        const mode = this.requireMode();
         if (this.state.phase === GamePhase.Playing) return true;
-        if (this.state.phase !== GamePhase.Waiting || this.state.players.size < 2) return false;
+        if (this.state.phase !== GamePhase.Waiting || this.state.players.size < mode.roster.min) return false;
         if (this.startPromise) return this.startPromise;
         // A previous timed-out Room.lock() can still mutate the listing.  Do
         // not start another match until its late completion has been observed
@@ -1203,7 +1218,7 @@ export class GameRoom extends Room {
         if (!this.isGenerationActive(generation)) {
             throw new Error(`room disposed during match ${stage}`);
         }
-        if (this.state.phase !== GamePhase.Waiting || startingSessions.size < 2
+        if (this.state.phase !== GamePhase.Waiting || startingSessions.size < this.requireMode().roster.min
             || this.state.players.size !== startingSessions.size) {
             throw new Error(`match participants or phase changed during ${stage}`);
         }

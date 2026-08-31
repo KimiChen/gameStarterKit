@@ -7,7 +7,12 @@
   之后禁止替换；默认 ballMove 按 `TICK_MS` 积分移动，Schema patch rate 为 50ms，并使用 shared 技能公式。
 - `GameMode.ts`：服务端玩法登记点。`GameRoom` 继续拥有 transport、auth、房间锁和生命周期；玩法通过
   `createPlayer` 提供精确 player Schema，并必须用 `usesDefaultBallMoveRules: boolean` 显式声明是否委托
-  ballMove fallback。`onAdmission`、`onMessage`、`onMatchInitialize`、`onMatchStart`、`onMatchRollback`、
+  ballMove fallback，用 `roster{min,max,autoStart}` 声明人数事实——⛔ shell 里不再有人数字面量，
+  `maxClients`、满员闸、自动开局阈值、开局下限与开局边界重验五处全部读它。`roster.max` 不得超过 shared 的
+  `MAX_PLAYERS`（root players map 的容量由生成 validator 按它烧死），`min ≤ autoStart ≤ max`；声明了
+  `ballMove@1` 证据的 mode 其 `min`/`autoStart` 必须都等于 `BALL_MOVE_ROSTER_SIZE`，因为该证据把
+  `initialRoster` 冻结成恰好 2 条。上述校验在登记期与注入期各跑一次（注入式 mode 不经过 registry，
+  ⛔ 不能只在 registry 里校验）。`onAdmission`、`onMessage`、`onMatchInitialize`、`onMatchStart`、`onMatchRollback`、
   `onStep`、`onPlayerLeaving`、`shouldSettle`、`onLeave`、`onFinish`、`onDispose` 扩展玩法生命周期；
   `matchEvidenceRuleset` 必须显式声明受支持的 exact replay 契约，当前只有 `ballMove@1`。registry 会在
   创建 mode 时校验必填能力，漏配即 fail-closed；root 只来自 manifest 生成映射，不由 mode factory 手写。
