@@ -465,3 +465,33 @@ uncompressed FGUI v7，字段顺序照抄 `fairygui.mjs` 的 `loadPackage`——
 snakeoff 4 = 19）。第四处「ballState 14 处」把 getter 声明算成了读写点，实测访问器调用 13 处、
 另有 1 处刻意例外。另：他们推翻了上一轮复核对 `WEBPLATFORM_RETRY_ATTEMPTS` 的驳回——
 该 env 确无读取方（重试硬编码 `attempt < 2`），**原报出属实，上一轮的驳回是错的**。
+
+### 第二十一轮：对抗复核同事的 flaky/加固批次（2026-08-31）
+
+**复核范围**：`d28363d..33fe7f1`（16 个 commit：compute flaky 四连修、排队超时更正、熔断 flake
+两连修、FGUI 注释/CDATA 三连修、四个文档修正、第二十轮回写）。方法：三路对抗式独立核查 +
+真实负载测量（冷启动空载 90–170ms、满载峰值 1142ms）+ 多配置矩阵实测。
+
+**判定**：compute 四连修（`ac691e5`/`41e06d8`/`25de865`/`68ea3fa`）与 `e0a816b` 的可达性更正
+**全部成立**（根因经负载实测证实；`COMPUTE_RESPAWN_DELAY_MS=2000` 的假红在父 commit 复现、
+HEAD 绿）；`fb777ce` 成立且其「未闭环」自报诚实（文件内唯一负载敏感变量属实，全量套件
+连跑 6 遍稳定）；FGUI 三件（`06aeeea`/`ac7e18a`/`d792f26`）成立；文档四处基本属实。
+
+**本轮修掉的**（各自独立 commit）：
+
+1. 熔断用例注释的 grep 证据命令**第三次**自指（`grep -n TIMEOUT` 命中注释自身）——改为
+   正则形式使命令文本不匹配自身，实测只命中两行赋值。
+2. compute late-queue 断言 `>= 850`（`68ea3fa` 漏网的第 4 处硬编码）→ 相对式
+   `>= RESPAWN_MS * 0.9`；第二子进程退避钩子在 env 缺失时为 NaN → 补 `?? 1000`。
+3. compute admission 饱和用例的 `COMPUTE_TASK_TIMEOUT_MS=1000` 小于真实 worker 冷启动时
+   third 转 running 而非 overload → 放宽到 5000（断言依赖容量计数，不依赖超时发生）。
+4. `COMPUTE_RESPAWN_DELAY_MS` 的加载期边界补 config-guard 用例（0/负/小数/非数字/越界拒启，
+   1/上限/常用值放行；两组变异实测转红）。
+5. plan-v4 标题计数更正（「对抗式复核 10 个修复」→ 9 个，与表行数一致）。
+
+**仍登记**：第二子进程 1200ms 预算与满载冷启动峰值（1142ms）贴边，更重机器可能再红；
+CDATA **内容**里的字面 `src=` 仍会被当真引用（当前 0 命中，未守边界）；
+`fb777ce` 未形成复现-修复-复现闭环（已自报），若全量套件再现熔断红需重新取证。
+
+实测：`verify:all` exit 0（服务端 326/326、客户端 264/264、FGUI 63/63）、
+compute 相关文件连跑 5 次稳定、typecheck 全阶段 0 错。
