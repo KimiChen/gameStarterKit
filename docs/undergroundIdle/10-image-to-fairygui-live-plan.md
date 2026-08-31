@@ -1,6 +1,6 @@
 # 《Underground Idle》图片标注到 FairyGUI 自动编译滚动实施计划（Living Plan）
 
-> [返回总目录](README.md) · [上一篇：IdleMain FairyGUI 装配契约](09-fairygui-idlemain-assembly.md)
+> [返回总目录](README.md) · [上一篇：UndergroundIdleMain FairyGUI 装配契约](09-fairygui-undergroundidle-main-assembly.md)
 >
 > 文档版本：0.1<br>
 > 首次编写：2026-08-30<br>
@@ -60,7 +60,7 @@ Idle FairyGUI 真源/发布物与业务接线均尚未实施；本文只定义�
 | --- | --- | --- |
 | 分层与坐标 | 07～09 规定尺寸、pivot、九宫格和装配目标 | 建立统一 v1 Schema，并用首次批准的分层源验证 |
 | 切图 | 本文规定 Alpha bbox、padding、pivot 和 source anchor 规则 | 实现统一入口、原子写入、来源白名单和编译报告 |
-| FairyGUI 源 | 09 规定拟定装配契约 | 创建 `Idle/package.xml`、组件 XML、运行 PNG，并由 Editor 首次发布 |
+| FairyGUI 源 | 09 规定拟定装配契约 | 创建 `UndergroundIdle/package.xml`、组件 XML、运行 PNG，并由 Editor 首次发布 |
 | 稳定引用 | 本文规定稳定 ID 原则 | 首次创建 package/resource/component/child/page ID 后写入 append-only lock |
 | View 绑定 | 仓库通用 codegen 能力需要在 P0 盘点 | 验证或补齐 XML → TypeScript，并接入生成 XML |
 | 发布闭包 | 仓库通用 manifest 能力需要在 P0 盘点 | 验证设计源与 Editor 发布物闭包；`.bin` 必须由 Editor 发布 |
@@ -75,7 +75,7 @@ P0 应先盘点可复用的通用工具；只有经过验证的能力才接入�
 ```text
 玩法与交互：02～04
 视觉语言：07～08
-IdleMain 拟定装配契约：09
+UndergroundIdleMain 拟定装配契约：09
 生成节点、坐标和切图：*.layout.json
 稳定 FairyGUI ID：ids.lock.json
 生成物：运行 PNG + machine-owned XML
@@ -104,28 +104,28 @@ tools/fgui-layout-compiler/
 └─ *.test.ts
 
 docs/undergroundIdle/art/production/main_v01/fgui/
-├─ IdleSceneGenerated.layout.json
-├─ IdleSceneGenerated.annotation.png
+├─ UndergroundIdleSceneGenerated.layout.json
+├─ UndergroundIdleSceneGenerated.annotation.png
 └─ compile-report.json
 
 apps/art/fairygui/layout/idle/
 └─ ids.lock.json
 
-apps/art/fairygui/assets/Idle/
+apps/art/fairygui/assets/UndergroundIdle/
 ├─ package.xml
-├─ IdleMain.xml                    # Editor-owned 外壳，首期不整文件覆盖
-├─ IdleSceneGenerated.xml          # machine-owned
+├─ UndergroundIdleMain.xml                    # Editor-owned 外壳，首期不整文件覆盖
+├─ UndergroundIdleSceneGenerated.xml          # machine-owned
 └─ generated/                      # machine-owned 运行 PNG
 ```
 
-首期先生成 `IdleSceneGenerated.xml`，由人工维护的 `IdleMain.xml` 继续持有业务文字、按钮、controller 和复杂
+首期先生成 `UndergroundIdleSceneGenerated.xml`，由人工维护的 `UndergroundIdleMain.xml` 继续持有业务文字、按钮、controller 和复杂
 交互。新页面如果从第一天就以 Schema 为真源，可以让生成器独占整个页面 XML；已有页面只有在 Editor 往返稳定
 后才迁移，禁止半自动地覆盖任意人工子树。
 
 ### 3.3 FairyGUI 文件授权
 
 首次实施前必须由项目负责人对明确的 FairyGUI 文件范围给出写入授权。授权只解除相应 XML 的写入限制，不降低
-[09 装配契约](09-fairygui-idlemain-assembly.md) 规定的 XML 解析、Editor 整项目重载、单包发布、codegen、契约
+[09 装配契约](09-fairygui-undergroundidle-main-assembly.md) 规定的 XML 解析、Editor 整项目重载、单包发布、codegen、契约
 测试和 Creator 验收要求。生成器只能写 machine-owned 文件和白名单约束的 `package.xml` 条目，不能覆盖无关
 人工节点。
 
@@ -155,8 +155,8 @@ apps/art/fairygui/assets/Idle/
     "id": "<allocate-on-first-generation>"
   },
   "component": {
-    "stableKey": "idle.scene.main.generated",
-    "name": "IdleSceneGenerated",
+    "stableKey": "undergroundIdle.scene.main.generated",
+    "name": "UndergroundIdleSceneGenerated",
     "ownership": "machine",
     "designSize": [750, 1624]
   },
@@ -169,7 +169,7 @@ apps/art/fairygui/assets/Idle/
   },
   "assets": [
     {
-      "stableKey": "idle.scene.background",
+      "stableKey": "undergroundIdle.scene.background",
       "name": "ug_main_00_background_v01",
       "sourceMode": "fullCanvas",
       "sourceRect": [0, 0, 1500, 3248],
@@ -179,7 +179,7 @@ apps/art/fairygui/assets/Idle/
       "atlas": "alone_npot"
     },
     {
-      "stableKey": "idle.ui.panel.example",
+      "stableKey": "undergroundIdle.ui.panel.example",
       "name": "ug_ui_panel_example_v01",
       "sourceMode": "alphaBBox",
       "sourceRect": [100, 200, 600, 320],
@@ -193,10 +193,10 @@ apps/art/fairygui/assets/Idle/
   ],
   "nodes": [
     {
-      "stableKey": "idle.node.background",
+      "stableKey": "undergroundIdle.node.background",
       "type": "image",
       "name": "img_background",
-      "asset": "idle.scene.background",
+      "asset": "undergroundIdle.scene.background",
       "rect": [0, 0, 750, 1624],
       "zOrder": 0,
       "touchable": false
@@ -282,12 +282,12 @@ scale9grid = [
 - package/resource ID 改变会破坏 `ui://`，必须作为阻断错误；
 - group、relation target 和 gear page 最终都解析为锁定 ID。
 
-IdleMain 首次生成后必须增加精确节点 ID 契约测试；后续若迁移已存在页面，必须导入其真实 ID，而不是重新编号。
+UndergroundIdleMain 首次生成后必须增加精确节点 ID 契约测试；后续若迁移已存在页面，必须导入其真实 ID，而不是重新编号。
 
 ### 6.2 XML 所有权
 
-- `IdleSceneGenerated.xml` 等 machine-owned 文件允许整文件确定性重建；
-- `IdleMain.xml` 首期为 Editor-owned，只显式引用生成子组件，不做通用三方合并；
+- `UndergroundIdleSceneGenerated.xml` 等 machine-owned 文件允许整文件确定性重建；
+- `UndergroundIdleMain.xml` 首期为 Editor-owned，只显式引用生成子组件，不做通用三方合并；
 - `package.xml` 使用 XML AST 只增改本工具登记的 folder/component/image，保留未知属性、已有顺序、
   `alone_npot`、`scale9grid`、`exported` 和不透明元数据；
 - FairyGUI 的实际字段名 `extention` 不得被“纠正”为 `extension`；
@@ -307,14 +307,14 @@ IdleMain 首次生成后必须增加精确节点 ID 契约测试；后续若迁�
 ```bash
 # 生成审稿标注图、切图、ID lock、组件 XML，并受控更新 package.xml
 npm run compile:fgui-layout -- \
-  --layout docs/undergroundIdle/art/production/main_v01/fgui/IdleSceneGenerated.layout.json
+  --layout docs/undergroundIdle/art/production/main_v01/fgui/UndergroundIdleSceneGenerated.layout.json
 
 # 只检查 Schema、源哈希、切图漂移、ID 和 XML 引用，不写文件
 npm run verify:fgui-layout -- \
-  --layout docs/undergroundIdle/art/production/main_v01/fgui/IdleSceneGenerated.layout.json
+  --layout docs/undergroundIdle/art/production/main_v01/fgui/UndergroundIdleSceneGenerated.layout.json
 
 # XML → View 代码生成；P0 先确认仓库工具接口
-npm run codegen:fgui -- Idle IdleSceneGenerated
+npm run codegen:fgui -- UndergroundIdle UndergroundIdleSceneGenerated
 
 # FairyGUI Editor 首次发布完成后执行仓库门禁
 npm run test:fgui
@@ -381,12 +381,12 @@ Gate B1：首次制作的主界面代表性资源可由批准源确定性生成�
 Gate B2：连续编译两次零 diff；只改坐标不会改 ID；新增、删除、重排资源不会复用旧 ID。<br>
 状态：`未开始`。
 
-### P4：`IdleSceneGenerated` 试点
+### P4：`UndergroundIdleSceneGenerated` 试点
 
-- [ ] 在首次 IdleMain 方案中选择纯视觉场景层作为试点，不先纳入业务 controller；
-- [ ] 建立 `IdleSceneGenerated.layout.json`，分配并锁定首次资源 ID；若目标包已有真实 ID 则先导入；
-- [ ] 自动生成场景切图和 `IdleSceneGenerated.xml`；
-- [ ] 在 Editor-owned `IdleMain.xml` 中只接入一个生成子组件实例；
+- [ ] 在首次 UndergroundIdleMain 方案中选择纯视觉场景层作为试点，不先纳入业务 controller；
+- [ ] 建立 `UndergroundIdleSceneGenerated.layout.json`，分配并锁定首次资源 ID；若目标包已有真实 ID 则先导入；
+- [ ] 自动生成场景切图和 `UndergroundIdleSceneGenerated.xml`；
+- [ ] 在 Editor-owned `UndergroundIdleMain.xml` 中只接入一个生成子组件实例；
 - [ ] 对比 08～09 的拟定坐标、遮挡、热区和状态契约；
 - [ ] 验证 Editor 打开、保存、重载后没有丢节点、修复提示或不可解释 diff。
 
@@ -419,7 +419,7 @@ Gate D：Creator 真实预览与状态矩阵通过。至此可把本流程标记
 ### P7：扩展与迁移
 
 - [ ] 用一个新页面验证整页 machine-owned XML；
-- [ ] 评估是否迁移 IdleMain 的 UI 容器和简单状态，不强制迁移复杂交互；
+- [ ] 评估是否迁移 UndergroundIdleMain 的 UI 容器和简单状态，不强制迁移复杂交互；
 - [ ] 按实际需求增加 Button、ProgressBar、list、transition 白名单模板；
 - [ ] 统一剩余 ART manifest，删除重复的人工复制步骤；
 - [ ] 建立变更记录和 Schema 升级器，旧布局可继续重建。
@@ -434,7 +434,7 @@ Gate D：Creator 真实预览与状态矩阵通过。至此可把本流程标记
 
 ```text
 阅读 docs/undergroundIdle/README.md、07-art-direction.md、
-08-main-screen-art-brief.md、09-fairygui-idlemain-assembly.md 和
+08-main-screen-art-brief.md、09-fairygui-undergroundidle-main-assembly.md 和
 10-image-to-fairygui-live-plan.md。
 
 使用 $imagegen 基于 <参考图路径或已附图片> 制作 <页面/状态/资产批次>。本次把视觉生成、机器标注、
@@ -442,7 +442,7 @@ Gate D：Creator 真实预览与状态矩阵通过。至此可把本流程标记
 
 固定参数：
 - FairyGUI package：<package，例如 idle>
-- machine-owned component：<组件名，例如 IdleSceneGenerated>
+- machine-owned component：<组件名，例如 UndergroundIdleSceneGenerated>
 - 逻辑画布：<宽×高，例如 750×1624>
 - 源画布：<宽×高，例如 1500×3248>
 - 视觉与交互真相：<文档/manifest 路径>
@@ -595,4 +595,4 @@ nineSlice、atlas policy、z-order、group、touchable、controller/page/gear/re
 
 ---
 
-[返回总目录](README.md) · [上一篇：IdleMain FairyGUI 装配契约](09-fairygui-idlemain-assembly.md)
+[返回总目录](README.md) · [上一篇：UndergroundIdleMain FairyGUI 装配契约](09-fairygui-undergroundidle-main-assembly.md)

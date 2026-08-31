@@ -37,7 +37,7 @@
 | [指标、测试、路线图与完成定义](06-testing-and-roadmap.md) | 指标、测试矩阵、阶段路线、风险和验收 | 制作、测试、全体成员 |
 | [美术表现与资产制作](07-art-direction.md) | 视觉定位、界面布局、角色/场景资产、动效和验收 | 美术、UI、客户端 |
 | [主界面视觉落地与效果图任务书](08-main-screen-art-brief.md) | 效果图、1500×3248 分层主界面 Master、ART-01～09 量产包、工程装配与审稿门计划 | 美术、UI、策划、客户端 |
-| [IdleMain FairyGUI 装配契约](09-fairygui-idlemain-assembly.md) | `idle / IdleMain` 的资源映射、坐标、命名、controller、安全区与 Creator 验收矩阵 | UI、客户端、测试 |
+| [UndergroundIdleMain FairyGUI 装配契约](09-fairygui-undergroundidle-main-assembly.md) | `UndergroundIdle / UndergroundIdleMain` 的资源映射、坐标、命名、controller、安全区与 Creator 验收矩阵 | UI、客户端、测试 |
 | [图片标注到 FairyGUI 自动编译实时计划](10-image-to-fairygui-live-plan.md) | 统一布局 Schema、自动切图、稳定 ID、XML 编译、Editor/Dashboard 验收与可复用提示词 | 美术、UI、工具、客户端、测试 |
 
 ## 推荐阅读路径
@@ -51,7 +51,7 @@
   [指标、测试、路线图与完成定义](06-testing-and-roadmap.md)。
 - 做美术与界面：[美术表现与资产制作](07-art-direction.md) →
   [主界面视觉落地与效果图任务书](08-main-screen-art-brief.md) →
-  [IdleMain FairyGUI 装配契约](09-fairygui-idlemain-assembly.md) →
+  [UndergroundIdleMain FairyGUI 装配契约](09-fairygui-undergroundidle-main-assembly.md) →
   [图片标注到 FairyGUI 自动编译实时计划](10-image-to-fairygui-live-plan.md)；玩法信息与交互真相同时参考
   [页面体验、客户端与 WS-RPC](04-client-and-rpc.md)。
 

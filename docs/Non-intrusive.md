@@ -200,9 +200,13 @@ Cocos Creator 3.8.8 的 TypeScript 源工程。它适合用于梳理玩法规则
 路由前缀、`operationGroup`、服务端 endpoint 与 core 目录、shared domain 文件、测试与向量文件名、领域配置
 表 id。
 
-⚠ 两类实体**内部**的类名与 FGUI 资源命名不受此约束（目录归属已足够表明所有权），但 ⛔ 不得反过来占用对方
-的命名空间前缀。undergroundIdle 的 FGUI 包与 stableKey 目前仍是 `idle.*` / `Idle*` 形态，是否一并改名列为
-遗留决策（§12.4）。
+该规则**同样覆盖 FGUI 资源层**：包名、stableKey、组件名与资源目录都用同一个前缀
+（undergroundIdle 的形态是 `UndergroundIdle` 包 / `UndergroundIdleMain` 组件 / `undergroundIdle.*` stableKey /
+`apps/art/fairygui/assets/UndergroundIdle/`）。
+
+⚠ 三类**不受**此约束、⛔ 不得机械改名的东西：外部专有名词（如竞品名 `Melvor_Idle`）、通用美术术语
+（如动画状态 `Idle` / `Work`）、以及实体**内部**的领域字段与函数名（如 `idleState`、`advanceIdleTo`）
+——后者是标识符而非命名空间前缀，目录归属已足够表明所有权。
 
 ⚠ **feature 与 gameplay module 是两种不同实体**，⛔ 不得互相冒充，也 ⛔ 不得合并成一个巨型插件模型。
 两者各自的 manifest schema 必须改名区分（`features/feature-schema-v1.json` 与
@@ -2973,11 +2977,10 @@ apps/client/src/app/**
 5. 首期是否需要可信战绩/evidence；若不需要，应显式声明 `evidence: none`。
 6. 旧构建档案中哪些代码、音频、图片和动画已获授权复用；未确认资源不得进入本仓
    （台账见 [snakeoff/08](snakeoff/08-source-and-asset-provenance.md)）。
-7. undergroundIdle 的 **FGUI 资源层是否一并改名**。协议与领域配置已统一为 `undergroundIdle.*`，但 FGUI 包名
-   `idle.bin`、stableKey `idle.scene.*` / `idle.ui.*` / `idle.node.*`、组件 `IdleMain` / `IdleSceneGenerated`
-   与资源目录 `apps/art/fairygui/assets/Idle/` 仍是旧形态。它们自成一套自洽的资源命名体系，改名要动
-   FairyGUI 工程与 `scripts/fgui.manifest.json` 审计锁；因资源尚未开始制作，此刻改成本最低，**越晚越贵**。
-   ⛔ 不要只改其中一半。
+> ✅ 原第 7 条「FGUI 资源层是否一并改名」**已裁定为改**，不再是待决项：包 `Idle` → `UndergroundIdle`、
+> 组件 `IdleMain` / `IdleSceneGenerated` → `UndergroundIdle*`、stableKey `idle.*` → `undergroundIdle.*`、
+> 资源目录 `assets/Idle/` → `assets/UndergroundIdle/`、`codegen:fgui` 的包参数一并更新。因资源尚未开始
+> 制作，本次改名不产生返工；⛔ 后续不得再退回 `idle` 形态。
 
 **实施优先级**——§9 的阶段顺序已由依赖方向定死，下面是各项工作的**价值排序**，用于在阶段内部取舍：
 

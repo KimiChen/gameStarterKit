@@ -41,5 +41,5 @@
 6. 人工复核三秒扫描、角色身份、长数字、满仓、锁定、离岗、断线与结果弹窗。
 
 节点、坐标、controller、资源名与 Creator 状态矩阵以
-[`../../09-fairygui-idlemain-assembly.md`](../../09-fairygui-idlemain-assembly.md) 为装配目标；其中任何现状描述
+[`../../09-fairygui-undergroundidle-main-assembly.md`](../../09-fairygui-undergroundidle-main-assembly.md) 为装配目标；其中任何现状描述
 都不能替代本目录各生产包的单独生成和验收记录。
