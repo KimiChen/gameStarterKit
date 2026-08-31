@@ -21,17 +21,18 @@ plan-v3 §30 登记过一条教训：`plan-v2 → plan-v3` 的迁移**批准存�
   「是否把 `routeOfTruth.corePlan` 从 plan-v3.md 迁到 plan-v4.md」。
 - **迁移改动面**（本次实际修改，非举例）：`docs/inventory.json` 的 `routeOfTruth.corePlan`
   与 12 处能力 `docs`、`referenceDocs`（plan-v4 移出、plan-v3 移入）；
-  `scripts/verify-inventory.mjs` 的 4 处硬断言（含新增的「`referenceDocs` 必须登记 plan-v3.md」
-  与「`referenceDocs` 不得同时登记当前计划」）与助手关键指令表；
+  `scripts/verify-inventory.mjs` 的 4 处硬断言改写与 2 条新增断言（「`referenceDocs` 必须登记
+  plan-v3.md」与「`referenceDocs` 不得同时登记当前计划」）与助手关键指令表；
   `scripts/verify-inventory.test.mjs` 的 7 处 fixture；`README.md`、`AGENTS.md`、`CLAUDE.md`；
   `plan-v3.md` 降级归档头；以及 `plan.md`、`plan-v2.md` 两处下游归档指针。
 - **归档内自称的复查**：`plan-v3.md:487` 原以现在时自称经 `routeOfTruth.corePlan` 纳入检查，
   已改为当轮时态并加归档补注。
   ⚠ **更正（迁移当轮的这段原文写过头了）**：当时写的是「本次不只按短语查，也按语义查」，
-  但语义查实际只覆盖了 `plan-v3.md` 自身这一处。随后的对抗式复核在**已登记文档**里又查出 19 处
-  仍以现在时把 plan-v3 当作当前真相（`docs/OVERVIEW.md` 2 处、`docs/EXTRAFEATURES.md` 4 处、
-  `docs/CLIENT.md` 2 处、`docs/SERVER.md` 1 处、`todo-godogen.md` 4 处、`docs/snakeoff/` 4 处，
-  其中 OVERVIEW 与 EXTRAFEATURES 是那一轮**本就改过**的文件），而 `verify:inventory` 全绿。
+  但语义查实际只覆盖了 `plan-v3.md` 自身这一处。随后的对抗式复核又查出 19 处
+  仍以现在时把 plan-v3 当作当前真相（已登记文档 15 处：`docs/OVERVIEW.md` 3 处、
+  `docs/EXTRAFEATURES.md` 4 处、`docs/CLIENT.md` 2 处、`docs/SERVER.md` 1 处、`todo-godogen.md`
+  5 处；另有未登记的 `docs/snakeoff/` 4 处，其中 OVERVIEW 与 EXTRAFEATURES 是那一轮**本就改过**的
+  文件），而 `verify:inventory` 全绿。
   这正是本仓反复点名的「断言写得比证据远」。已全部改正，并新增 `checkArchiveNotClaimedAsTruth`
   机检：归档清单取自 inventory 自己的 `referenceDocs`，下一轮迁移无需改代码即自动开始守新归档。
   ⛔ 该闸只覆盖**已登记文档**（17 份），`docs/snakeoff/` 不在其中，那 4 处是人工改的。
@@ -73,7 +74,7 @@ plan-v3 §30 登记过一条教训：`plan-v2 → plan-v3` 的迁移**批准存�
 |---|---|---|---|
 | 1 | `docs/OVERVIEW.md` §4.2 动线代码块仍教人往 `phaseAllows` 加 case，与同节散文和 SERVER.md 的 ⛔ 矛盾；加 case 会短路 `default` 分支、静默吞掉 mode 声明的 phases | 高 | `74a7be1` |
 | 2 | `d312541` 的落点（自检失败必须留持久痕迹）零回归覆盖——删掉整段 quarantine XADD 后单测 315/315、int 20/20 全绿；用例名 "before any XADD" 与生产行为相反；条目泄漏进永不裁剪的流 | 高 | `a7d593d` |
-| 3 | 真相指针迁移漏了 19 处已登记文档（含那轮**本就改过**的 OVERVIEW 与 EXTRAFEATURES），`verify:inventory` 全绿 | 高 | `d5f996a` |
+| 3 | 真相指针迁移漏了 19 处文档引用（已登记 15 处 + 未登记 snakeoff 4 处；含那轮**本就改过**的 OVERVIEW 与 EXTRAFEATURES），`verify:inventory` 全绿 | 高 | `d5f996a` |
 | 4 | FGUI 不变量 B 只解析 `ui://`，漏掉主要拼写 `src=`/`pkg=`（53 对 38）——「被引用但未导出」的资源同时逃过 A 与 B | 高 | `ede87fe` |
 | 5 | 不变量 D 漏掉 `require=` 伴生文件（Spine 的 `.atlas.txt`/`.png`） | 中 | `ede87fe` |
 | 6 | `GRACE ≤ RECHECK` 时宽限是静默空操作；SERVER.md 恰好把 7d 写成建议值，而窗口上界那句也不实 | 中 | `20aa0e2` |
@@ -87,7 +88,8 @@ plan-v3 §30 登记过一条教训：`plan-v2 → plan-v3` 的迁移**批准存�
 | 14 | `6707c36` 的提交信息写「服务端单测 297→298」，实测是 **297→299**（该 commit 加了 2 条用例）。commit 已推送不可改写，记录于此 | 低 | 本条 |
 
 复核同时**驳回**了 12 条，其中值得记的两条：「`schema_version` 实际标的是来源流而非 payload 形状」
-与「新测试用了仓内不存在的 `WEBPLATFORM_RETRY_ATTEMPTS`」——都经独立核对不成立。⛔ 复核者的
+经独立核对不成立；「新测试用了仓内不存在的 `WEBPLATFORM_RETRY_ATTEMPTS`」的驳回则被第十九轮复核
+**证伪**——该 env 全仓仅被测试设置、无读取方（确为死 env），原报出属实，已删除。⛔ 复核者的
 结论同样要验，不能照单全收；上表第 13 条里的「18 处假阳」正是复核者判定「属实」而实测为 15 的例子。
 
 新增的三道机检（都配了反例，逐条删除实现即转红）：
@@ -319,7 +321,7 @@ quarantine 自身写失败降级为 `transport/V3_QUARANTINE_UNAVAILABLE`——�
   ⚠ handler 表仍必须是全 C2S 联合的静态表，这条绕不过去（`Room.__init()` 早于 `onCreate()`）。
 - **阶段三**：`parseRoomStateDescriptor` 加 root 生命周期断言，codegen 生成
   `RoomStateLifecycle` / `RoomStatePlayerLifecycle`，`GameRoom.state` 改用前者；
-  20 处 ball 专属读写改走具名的 `ballState` 收窄访问器。
+  14 处 ball 专属读写改走具名的 `ballState` 收窄访问器（实施结果原写「20 处」，系计数不实）。
 
 ---
 
