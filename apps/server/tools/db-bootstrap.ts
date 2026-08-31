@@ -89,6 +89,37 @@ async function verifyMatchServerIdColumn(conn: mysql.Connection, dbName: string)
   return true;
 }
 
+/** INFORMATION_SCHEMA 中读取并验证 match_results.schema_version。
+ *
+ * 同 server_id 的理由：⛔ 不能只吞 ER_DUP_FIELDNAME(1060)。这一列比 server_id 更不能将就——
+ * 它是读取方决定「拿哪套 verifier 解 payload」的依据，若存量库里同名列可空或默认值不是 0，
+ * 未标注的历史行会被当成某个具体版本去解，比不解读更危险。 */
+async function verifyMatchSchemaVersionColumn(conn: mysql.Connection, dbName: string): Promise<boolean> {
+  const [rows] = await conn.query<ColumnShape[]>(
+    `SELECT DATA_TYPE, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT
+       FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'match_results' AND COLUMN_NAME = 'schema_version'`,
+    [dbName],
+  );
+  if (rows.length === 0) { return false; }
+  if (rows.length !== 1) {
+    throw new Error(`match_results.schema_version 定义异常：INFORMATION_SCHEMA 返回 ${rows.length} 行`);
+  }
+  const c = rows[0];
+  const ok = c.DATA_TYPE.toLowerCase() === "tinyint"
+    && c.COLUMN_TYPE.toLowerCase() === "tinyint unsigned"
+    && c.IS_NULLABLE === "NO"
+    && String(c.COLUMN_DEFAULT) === "0";
+  if (!ok) {
+    throw new Error(
+      "match_results.schema_version 定义不匹配：期望 TINYINT UNSIGNED NOT NULL DEFAULT 0，"
+      + `实际 DATA_TYPE=${c.DATA_TYPE} COLUMN_TYPE=${c.COLUMN_TYPE} `
+      + `IS_NULLABLE=${c.IS_NULLABLE} COLUMN_DEFAULT=${String(c.COLUMN_DEFAULT)}`,
+    );
+  }
+  return true;
+}
+
 /** INFORMATION_SCHEMA 中读取并验证 idx_zone_time 的完整定义。
  *
  * ⛔ 不能粗暴吞 ER_DUP_KEYNAME(1061)：同名索引可能列反了、带前缀、变成 UNIQUE 或不是 BTREE；
@@ -140,6 +171,17 @@ async function ensureMatchResultsZoneShape(conn: mysql.Connection, dbName: strin
          ALGORITHM=INSTANT`,
     );
     await verifyMatchServerIdColumn(conn, dbName);
+  }
+
+  // schema_version 与 server_id 同批：都是不指定 AFTER 的 INSTANT 加列，彼此独立，
+  // 任一步崩溃后重跑都从「查真定义」重新判断，不依赖前一步的结果。
+  if (!(await verifyMatchSchemaVersionColumn(conn, dbName))) {
+    await conn.query(
+      `ALTER TABLE match_results
+         ADD COLUMN schema_version TINYINT UNSIGNED NOT NULL DEFAULT 0,
+         ALGORITHM=INSTANT`,
+    );
+    await verifyMatchSchemaVersionColumn(conn, dbName);
   }
 
   if (!(await verifyMatchZoneIndex(conn, dbName))) {

@@ -98,6 +98,11 @@ CREATE TABLE IF NOT EXISTS match_results (
   -- 用途：运营按区统计、关单区时 `DELETE WHERE server_id = N` 回收（同其余经济表，U4 定案）。
   server_id  INT UNSIGNED NOT NULL DEFAULT 0,
   mode       TINYINT UNSIGNED NOT NULL,
+  -- payload 的形状版本：0 = 未知/legacy（任意 JSON，顶层列不保证与 payload 一致）、
+  -- 2 = 冻结的 v2（8 键）、3 = 可重放的 v3（16 键）。⚠ 读取方必须先看这一列再决定怎么解 payload：
+  -- 直接拿 v3 verifier 去读 v2/legacy 行会在 exactRecord 抛 KEYS。DEFAULT 0 使存量行自动收敛成
+  -- 「未知」，⛔ 不要给它别的默认值——把没标注过的历史行当成 v3 比不解读更危险。
+  schema_version TINYINT UNSIGNED NOT NULL DEFAULT 0,
   payload    JSON NOT NULL,
   PRIMARY KEY (match_id, created_at),
   KEY idx_zone_time (server_id, created_at)

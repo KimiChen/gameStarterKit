@@ -426,9 +426,19 @@ interface NormalizedEntry {
   matchId: string;
   mode: number;
   sId: number;
+  /**
+   * 落 `match_results.schema_version` 的 payload 形状版本。⚠ 它标的是 **payload 长什么样**，
+   * 不是来源流：`0` 意味着「顶层列与 payload 都不保证互相一致，也没有 shape 校验」，读取方
+   * 必须先看这一列再决定拿哪套 verifier。⛔ 不要用来源流名字反推——quarantine 修复流程允许把
+   * 条目 XADD 回任意来源流。
+   */
+  schemaVersion: MatchPayloadSchemaVersion;
   /** 已按当前 MatchEvidence 规范化后的 JSON（legacy 至少补齐 number sId）。 */
   payload: string;
 }
+
+/** `match_results.schema_version` 的取值域；与 sql/schema.sql 的列注释同义。 */
+export type MatchPayloadSchemaVersion = 0 | 2 | 3;
 
 type EntryDecodeResult =
   | { readonly ok: true; readonly entry: NormalizedEntry }
@@ -501,7 +511,7 @@ function normalizeEntry(stream: MatchStreamState, fields: string[]): EntryDecode
       return decodeFailure("V2_PAYLOAD_BINDING");
     }
     if (!isMatchEvidenceV2Payload(payload)) { return decodeFailure("V2_PAYLOAD_SHAPE"); }
-    return { ok: true, entry: { matchId, mode, sId, payload: JSON.stringify(payload) } };
+    return { ok: true, entry: { matchId, mode, sId, schemaVersion: 2, payload: JSON.stringify(payload) } };
   }
 
   if (stream.kind === "v3") {
@@ -530,7 +540,7 @@ function normalizeEntry(stream: MatchStreamState, fields: string[]): EntryDecode
       const code = error instanceof MatchReplayError ? error.code : "MALFORMED";
       return decodeFailure(`V3_REPLAY_${code}`);
     }
-    return { ok: true, entry: { matchId, mode, sId, payload: canonicalPayload } };
+    return { ok: true, entry: { matchId, mode, sId, schemaVersion: 3, payload: canonicalPayload } };
   }
 
   // f91 legacy 同时有顶层 + payload sId：顶层是落库契约，必须保留；真实 c8 两处都没有则补 0。
@@ -543,9 +553,19 @@ function normalizeEntry(stream: MatchStreamState, fields: string[]): EntryDecode
   if (topLevelSId !== null && embeddedSId !== null && topLevelSId !== embeddedSId) {
     return decodeFailure("LEGACY_SERVER_ID_MISMATCH");
   }
+  // v2（V2_PAYLOAD_BINDING）与 v3（V3_PAYLOAD_BINDING）都挡住了「顶层列与 payload 各说各话」，
+  // 只有 legacy 没挡——实测可以落出 match_id 列与 payload.matchId 完全不同的行，导致连顶层两列
+  // 都不能当可信索引。这里只在 payload **确实带了**对应字段时要求一致：真正的 c8 旧消息两者
+  // 都不带，⛔ 不能改成无条件要求存在，那会把合法历史消息全部隔离。
+  if (payload.matchId !== undefined && payload.matchId !== matchId) {
+    return decodeFailure("LEGACY_MATCH_ID_MISMATCH");
+  }
+  if (payload.mode !== undefined && payload.mode !== mode) {
+    return decodeFailure("LEGACY_MODE_MISMATCH");
+  }
   const sId = topLevelSId ?? embeddedSId ?? 0;
   payload.sId = sId;
-  return { ok: true, entry: { matchId, mode, sId, payload: JSON.stringify(payload) } };
+  return { ok: true, entry: { matchId, mode, sId, schemaVersion: 0, payload: JSON.stringify(payload) } };
 }
 
 /**
@@ -622,7 +642,7 @@ async function settleEntry(
     );
     return;
   }
-  const { matchId, mode, sId, payload } = decoded.entry;
+  const { matchId, mode, sId, schemaVersion, payload } = decoded.entry;
   await withRcTx(async (conn) => {
     const [r] = await conn.execute<ResultSetHeader>(
       "INSERT INTO match_index (match_id, created_at) VALUES (?, NOW(3)) ON DUPLICATE KEY UPDATE match_id = match_id",
@@ -631,8 +651,9 @@ async function settleEntry(
     if (r.affectedRows === 1) {
       // 分区表（RANGE COLUMNS(created_at)，05）；重复已被闸住，此处必然首插
       await conn.execute(
-        "INSERT INTO match_results (match_id, created_at, server_id, mode, payload) VALUES (?, NOW(3), ?, ?, ?)",
-        [matchId, sId, mode, payload],
+        "INSERT INTO match_results (match_id, created_at, server_id, mode, schema_version, payload)"
+        + " VALUES (?, NOW(3), ?, ?, ?, ?)",
+        [matchId, sId, mode, schemaVersion, payload],
       );
     }
   });

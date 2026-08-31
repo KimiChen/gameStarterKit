@@ -467,11 +467,22 @@ match consumer 不再把结构、版本或 replay 损坏的条目直接 ACK 丢�
 和原始 fields 数组写入 quarantine，再 ACK 来源 PEL。v2 只按冻结的历史 exact shape/值域校验排空，尚无
 业务 schema 的 ranked `loadout` 也必须是 canonical JSON；legacy 保留历史 sId 规范化接受域。v3 另校验
 24 MiB parse budget、canonical JSON、完整 exact contract，并实际重放核对初态、终态与 participants；producer
-也在 XADD 前执行同一 validate + replay。三条来源流各自维护 PEL/claim/trim/depth，consumer owner 含
+也在 XADD 前执行同一 validate + replay。三条通道都要求顶层 `matchId`/`mode` 与 payload 内的同名字段一致
+（legacy 只在 payload **确实带了**该字段时要求，真 c8 旧消息两者都不带），发散条目按
+`LEGACY_MATCH_ID_MISMATCH` / `LEGACY_MODE_MISMATCH` / `V2_PAYLOAD_BINDING` / `V3_PAYLOAD_BINDING` 隔离——
+否则 `match_results` 的顶层两列不能当可信索引。三条来源流各自维护 PEL/claim/trim/depth，consumer owner 含
 hostname 与 PID，同主机多 worker 不共享 PEL owner，崩溃残留由 `XAUTOCLAIM` 接管。
 quarantine 不属于自动 `XTRIM` 范围，非空或 key 类型/权限异常时由默认深度探针独立告警。处置时先根据
 `rawFields` 修复并 XADD 回正确来源流，确认 settle worker 已写入 `match_results` 或命中 `match_index`
 幂等闸后，才可 XDEL 对应 quarantine 条目；不得直接清空隔离流。
+
+`match_results.payload` 同表混存三种形状，判别键是 `schema_version` 列：`0` = 未知/legacy（任意 JSON
+object，无 shape 校验）、`2` = 冻结的 v2（8 键）、`3` = 可重放的 v3（16 键）。读取方必须先看这一列再决定
+拿哪套 verifier——直接用 v3 verifier 读 v2/legacy 行会在 `exactRecord` 抛 `KEYS`。⛔ 不要用 `mode` 列反推
+形状：v3 的 `mode` 恒 0，与 legacy/v2 的玩法值取值域重叠。该列由 `db:bootstrap` 以 `ALGORITHM=INSTANT`
+加列、`DEFAULT 0` 收敛存量行；⛔ 不得把存量行 backfill 成 2 或 3：一条恰好 8 键形状的 legacy 行与真 v2 行
+逐字节相同，无法区分。quarantine 修复流程允许把条目 XADD 回任意来源流，所以 `schema_version` 标的是
+**payload 长什么样**，不是它从哪条流来。
 
 ### F/S — 档案与 schema
 

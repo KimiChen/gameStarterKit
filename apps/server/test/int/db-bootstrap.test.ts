@@ -102,6 +102,26 @@ async function assertZoneShape(dbName: string): Promise<void> {
       defaultValue: "0",
     }]);
 
+    // schema_version 与 server_id 同批加列，判据同样落在真定义上而不是「列存在即可」：
+    // 一个可空或默认值不是 0 的同名列，会让未标注的历史行被当成某个具体 payload 版本去解。
+    const [versionColumns] = await conn.query<ColumnRow[]>(
+      `SELECT DATA_TYPE, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT
+         FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'match_results' AND COLUMN_NAME = 'schema_version'`,
+      [dbName],
+    );
+    assert.deepEqual(versionColumns.map((c) => ({
+      dataType: c.DATA_TYPE,
+      columnType: c.COLUMN_TYPE,
+      nullable: c.IS_NULLABLE,
+      defaultValue: String(c.COLUMN_DEFAULT),
+    })), [{
+      dataType: "tinyint",
+      columnType: "tinyint unsigned",
+      nullable: "NO",
+      defaultValue: "0",
+    }], "match_results.schema_version 必须是 TINYINT UNSIGNED NOT NULL DEFAULT 0");
+
     const [indexes] = await conn.query<IndexRow[]>(
       `SELECT SEQ_IN_INDEX, COLUMN_NAME, SUB_PART, NON_UNIQUE, INDEX_TYPE, COLLATION
          FROM information_schema.STATISTICS
@@ -273,6 +293,7 @@ test("db:bootstrap 对 fresh/c8 存量均幂等，并拒绝同名错定义索引
   const freshDb = `game_boot_${suffix}_fresh`;
   const legacyDb = `game_boot_${suffix}_legacy`;
   const badIndexDb = `game_boot_${suffix}_bad`;
+  const badVersionColumnDb = `game_boot_${suffix}_ver`;
   const badArchiveColumnDb = `game_boot_${suffix}_acol`;
   const badArchivePrimaryDb = `game_boot_${suffix}_apk`;
   const badArchiveIndexDb = `game_boot_${suffix}_aidx`;
@@ -281,6 +302,7 @@ test("db:bootstrap 对 fresh/c8 存量均幂等，并拒绝同名错定义索引
   const badArchiveEngineDb = `game_boot_${suffix}_engine`;
   const databases = [
     freshDb, legacyDb, badIndexDb,
+    badVersionColumnDb,
     badArchiveColumnDb, badArchivePrimaryDb, badArchiveIndexDb,
     badArchivePreflightDb,
     badArchiveUsageDb,
@@ -365,10 +387,16 @@ test("db:bootstrap 对 fresh/c8 存量均幂等，并拒绝同名错定义索引
       const conn = await mysql.createConnection(connectionOptions(legacyDb));
       try {
         const [rows] = await conn.query<mysql.RowDataPacket[]>(
-          "SELECT server_id FROM match_results WHERE match_id = 'legacy_match'",
+          "SELECT server_id, schema_version FROM match_results WHERE match_id = 'legacy_match'",
         );
         assert.equal(rows.length, 1);
         assert.equal(Number(rows[0].server_id), 0, "旧行须由 DEFAULT 0 收敛到大混服区");
+        assert.equal(
+          Number(rows[0].schema_version),
+          0,
+          "存量行没人知道 payload 是什么形状，必须由 DEFAULT 0 收敛成「未知/legacy」——"
+          + "⛔ 不得 backfill 成 2 或 3：一条恰好 8 键的 legacy 行与真 v2 行逐字节相同，无法区分",
+        );
         const [archiveRows] = await conn.query<mysql.RowDataPacket[]>(
           "SELECT server_id, freeze_id, archive_phase FROM user_archive WHERE user_id = 'legacy_user'",
         );
@@ -422,6 +450,39 @@ test("db:bootstrap 对 fresh/c8 存量均幂等，并拒绝同名错定义索引
       bootstrapOutput(rejected),
       /idx_zone_time 定义不匹配/,
       `错误输出应指出索引定义不匹配\n${bootstrapOutput(rejected)}`,
+    );
+
+    // 同名列同样不是「已经迁移」的充分条件：可空的 schema_version 必须 fail-fast，
+    // 否则未标注行会以 NULL 落库，读取方对它的解读完全没有约束。
+    await admin.query(`CREATE DATABASE ${quoteDatabase(badVersionColumnDb)} DEFAULT CHARSET utf8mb4`);
+    const badVersion = await mysql.createConnection(connectionOptions(badVersionColumnDb));
+    try {
+      await badVersion.query(
+        `CREATE TABLE match_results (
+           match_id   VARCHAR(40) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+           created_at DATETIME(3) NOT NULL,
+           server_id  INT UNSIGNED NOT NULL DEFAULT 0,
+           mode       TINYINT UNSIGNED NOT NULL,
+           schema_version TINYINT UNSIGNED NULL DEFAULT 3,
+           payload    JSON NOT NULL,
+           PRIMARY KEY (match_id, created_at),
+           KEY idx_zone_time (server_id, created_at)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+         PARTITION BY RANGE COLUMNS (created_at) (
+           PARTITION p2026_07 VALUES LESS THAN ('2026-08-01'),
+           PARTITION p2026_08 VALUES LESS THAN ('2026-09-01'),
+           PARTITION pmax VALUES LESS THAN (MAXVALUE)
+         )`,
+      );
+    } finally {
+      await badVersion.end();
+    }
+    const rejectedVersion = runBootstrap(badVersionColumnDb);
+    assert.notEqual(rejectedVersion.status, 0, "同名但错定义的 schema_version 必须 fail-fast");
+    assert.match(
+      bootstrapOutput(rejectedVersion),
+      /match_results\.schema_version 定义不匹配/,
+      `错误输出应指出列定义不匹配\n${bootstrapOutput(rejectedVersion)}`,
     );
 
     async function createBadArchiveDatabase(

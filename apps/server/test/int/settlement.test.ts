@@ -548,6 +548,92 @@ test("对局按区：证据的 sId 落进 match_results.server_id（喂运营统
   assert.equal(Number(rows[0].server_id), 107, "⛔ server_id 必须是证据里的区，不能恒 0");
 });
 
+/**
+ * legacy 分支此前是唯一不校验「顶层列 ↔ payload」的通道，实测能落出 `match_id` 列与
+ * `payload.matchId` 完全不同的行——连顶层两列都不能当可信索引。v2 有 V2_PAYLOAD_BINDING、
+ * v3 有 V3_PAYLOAD_BINDING，这里补上 legacy 的对应闸。
+ *
+ * 同时钉住**不能过度收紧**：真正的 c8 旧消息 payload 里根本没有 matchId/mode，若改成无条件
+ * 要求存在会把全部合法历史消息隔离掉，所以下面第三段用「payload 不带这两个字段」的条目
+ * 断言它照常落库。
+ */
+test("legacy 顶层列与 payload 发散必须隔离，但不带这两个字段的真旧消息照常落库", async () => {
+  const nonce = `${process.pid}_${Date.now().toString(36)}`;
+  const divergentMid = `m_lgbind_${nonce}`;
+  const bareMid = `m_lgbare_${nonce}`;
+  usedMatchIds.push(divergentMid, bareMid);
+
+  // ① payload.matchId 与顶层完全不同 → 必须隔离，不得落库
+  const divergent = makeEvidence(divergentMid, 31);
+  divergent.matchId = "COMPLETELY_DIFFERENT";
+  const divergentId = await stream(K_STREAM_MATCH).xadd(
+    K_STREAM_MATCH, "*",
+    "matchId", divergentMid, "mode", String(divergent.mode), "sId", "31",
+    "payload", JSON.stringify(divergent),
+  );
+  assert.ok(divergentId);
+  rememberStreamEntry(K_STREAM_MATCH, divergentId!);
+
+  // ② payload.mode 与顶层不同 → 同样隔离（mode 列是运营口径的分组键）
+  const modeMid = `m_lgmode_${nonce}`;
+  usedMatchIds.push(modeMid);
+  const modeDivergent = makeEvidence(modeMid, 32);
+  modeDivergent.mode = 99;
+  const modeId = await stream(K_STREAM_MATCH).xadd(
+    K_STREAM_MATCH, "*",
+    "matchId", modeMid, "mode", "1", "sId", "32", "payload", JSON.stringify(modeDivergent),
+  );
+  assert.ok(modeId);
+  rememberStreamEntry(K_STREAM_MATCH, modeId!);
+
+  // ③ 真 c8 形态：payload 里既没有 matchId 也没有 mode → 必须照常落库
+  const bareId = await stream(K_STREAM_MATCH).xadd(
+    K_STREAM_MATCH, "*",
+    "matchId", bareMid, "mode", "1", "sId", "33",
+    "payload", JSON.stringify({ source: "c8", detail: { rounds: 3 } }),
+  );
+  assert.ok(bareId);
+  rememberStreamEntry(K_STREAM_MATCH, bareId!);
+
+  const quarantinedFor = async (sourceIds: string[]) => {
+    const entries = await stream(K_STREAM_MATCH_QUARANTINE).xrange(
+      K_STREAM_MATCH_QUARANTINE, "-", "+",
+    ) as [string, string[]][];
+    return entries.map(([id, fields]) => ({ id, fields: Object.fromEntries(
+      Array.from({ length: fields.length / 2 }, (_, index) => fields.slice(index * 2, index * 2 + 2)),
+    ) })).filter((entry) => sourceIds.includes(String(entry.fields.sourceId)));
+  };
+
+  try {
+    assert.ok(await consumeOnce({ count: 16 }) >= 3);
+    assert.equal(await countRows("match_results", divergentMid), 0, "matchId 发散的 legacy 行不得落库");
+    assert.equal(await countRows("match_results", modeMid), 0, "mode 发散的 legacy 行不得落库");
+
+    const quarantined = await quarantinedFor([divergentId!, modeId!]);
+    assert.equal(quarantined.length, 2, "两条发散条目各自产生一条隔离副本");
+    const reasonById = new Map(quarantined.map((e) => [String(e.fields.sourceId), String(e.fields.reason)]));
+    assert.equal(reasonById.get(divergentId!), "LEGACY_MATCH_ID_MISMATCH");
+    assert.equal(reasonById.get(modeId!), "LEGACY_MODE_MISMATCH");
+
+    const [bareRows] = await getPool().query<RowDataPacket[]>(
+      "SELECT mode, server_id, schema_version, payload FROM match_results WHERE match_id = ?",
+      [bareMid],
+    );
+    assert.equal(bareRows.length, 1, "⛔ 不带 matchId/mode 的真 c8 旧消息必须照常落库，不能被新闸误伤");
+    assert.equal(Number(bareRows[0].mode), 1);
+    assert.equal(Number(bareRows[0].server_id), 33);
+    assert.equal(Number(bareRows[0].schema_version), 0);
+  } finally {
+    const leftover = await quarantinedFor([divergentId!, modeId!]);
+    if (leftover.length > 0) {
+      await stream(K_STREAM_MATCH_QUARANTINE).xdel(
+        K_STREAM_MATCH_QUARANTINE, ...leftover.map((entry) => entry.id),
+      );
+    }
+    await stream(K_STREAM_MATCH).xdel(K_STREAM_MATCH, divergentId!, modeId!, bareId!);
+  }
+});
+
 test("单轮三读：legacy/v2/v3 同时落库，三条独立 PEL 各自 ACK", async () => {
   const legacyMid = `m_f91_${Date.now().toString(36)}`;
   const v2Mid = `m_v2_${Date.now().toString(36)}`;
@@ -571,10 +657,15 @@ test("单轮三读：legacy/v2/v3 同时落库，三条独立 PEL 各自 ACK", a
 
   assert.ok(await consumeOnce() >= 3, "同一轮同时读取 legacy、v2 与 v3");
   const [rows] = await getPool().query<RowDataPacket[]>(
-    "SELECT match_id, server_id, payload FROM match_results WHERE match_id IN (?, ?, ?)",
+    "SELECT match_id, server_id, schema_version, payload FROM match_results WHERE match_id IN (?, ?, ?)",
     [legacyMid, v2Mid, v3Mid],
   );
   const byMid = new Map(rows.map((row) => [String(row.match_id), row]));
+  // 三种形状在同一张表里共存，读取方唯一能依据的判别就是这一列。⛔ 不要用 mode 列反推：
+  // v3 的 mode 恒 0，而 legacy/v2 的 mode 是玩法值，两者取值域重叠。
+  assert.equal(Number(byMid.get(legacyMid)?.schema_version), 0, "legacy 形状标 0（未知/无 shape 校验）");
+  assert.equal(Number(byMid.get(v2Mid)?.schema_version), 2, "v2 形状标 2（冻结的 8 键）");
+  assert.equal(Number(byMid.get(v3Mid)?.schema_version), 3, "v3 形状标 3（可重放的 16 键）");
   assert.equal(Number(byMid.get(legacyMid)?.server_id), 107, "f91 legacy 顶层非零 sId 保留");
   assert.equal(Number(byMid.get(legacyMid)?.payload.sId), 107, "legacy DB JSON 同步为权威顶层 sId");
   assert.equal(Number(byMid.get(v2Mid)?.server_id), 8, "v2 sId 正常落库");
