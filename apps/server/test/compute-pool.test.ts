@@ -87,9 +87,13 @@ test("compute admission：运行中 + 排队任务达到总容量时稳定返回
   // third submission, so this exercises the real admission boundary without
   // depending on worker speed or a long-running fixture task.
   //
-  // ⚠ COMPUTE_TASK_TIMEOUT_MS 必须覆盖真实 worker 冷启动（本机负载实测 ~400ms，
-  // 更重的机器更慢）：它若小于冷启动，first/second 会先超时、third 转为 running
-  // 而不是 overload——断言依赖的是容量计数，放宽不削弱判别力（68ea3fa 同类）。
+  // ⚠ COMPUTE_TASK_TIMEOUT_MS 对本用例是**无关变量**，取多少都不影响结论：三次 runInPool
+  // 是同步连续调用，第三次在入口处 `queue.length + running.size >= COMPUTE_QUEUE_CAPACITY`
+  // 就同步抛 ComputeOverloadedError，任何定时器都插不进这段同步块。实测把它压到 **1ms**
+  // 本用例照样绿。上一版注释在这里写了「它若小于冷启动，first/second 会先超时、third 转为
+  // running」——那条因果链不可能发生，而且与上面三行既有注释（"without depending on
+  // worker speed"）直接矛盾。⛔ 不要再据此调整该值；真要改容量语义，改的是
+  // COMPUTE_QUEUE_CAPACITY。
   const serverRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
   const script = `
     import { ComputeOverloadedError, destroyPool, runInPool } from "./src/core/compute/pool.ts";
