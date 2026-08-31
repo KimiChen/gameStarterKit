@@ -856,7 +856,7 @@ contract 和 registry，派生的 View AUTO 不能反过来成为 contract 真�
 - nested、list item、controller、relation 等业务依赖子集；
 - 动态拼接或代码直接引用的资源 URL。
 
-`fgui-codegen` 应支持 feature 输出目录，并且只写 View AUTO 区；完成后可以提示或运行 `npm run verify:features`
+`fgui-codegen` 应支持 feature 输出目录，并且只写 View AUTO 区；完成后可以提示或运行 feature 生成器
 `--check`，但不得覆盖 registry/contracts，也不得自动执行 FGUI manifest `--write`。它不再要求开发者手改
 `fguiContracts.ts` 和 `viewRegistry.ts`。generated view
 manifest 给出精确源码路径，`fgui-manifest.mjs`、view registry test 和 contract test 统一消费它，不再各自扫描
@@ -867,7 +867,7 @@ manifest 给出精确源码路径，`fgui-manifest.mjs`、view registry test 和
 
 ### 8.1 `--write` 与 `--check` 分离
 
-feature 生成器必须提供两种明确模式（writer `npm run codegen:features` / 只读闸 `npm run verify:features`）：
+feature 生成器必须提供两种明确模式（writer = workspace 脚本 `codegen:features`；只读闸 = freshness 测试断言）：
 
 ```text
 --write  确定性刷新生成物
@@ -904,33 +904,45 @@ property、spread 或顶层副作用形态直接拒绝。validator 函数本身�
 加载并验证。这样生成阶段既不依赖 tsx 副作用，也不复制一份 JSON 路由真源。
 
 **生成器必须有确定的命令名**（全文其余位置一律引用它，⛔ 不再写“feature codegen”这类无法执行的代称）。
-本文取 writer `npm run codegen:features`、只读闸 `npm run verify:features`。
 
-新增根命令后，需要一次性接入现有四重守门：根 `package.json`、`scripts/verify-toolchain.mjs`、
-`apps/client/test/toolchainContract.test.ts` 的承重钉（**仅当该命令被挂进 typecheck / verify:sync /
-verify:core / verify:all 之一时**才必须同步钉）、`docs/inventory.json` 的验证依赖，同时更新根 `README.md` 与
-`AGENTS.md` / `CLAUDE.md`（`verify-inventory` 对这三份常用命令表与根 scripts 做双向相等断言，AGENTS/CLAUDE
-另需逐字一致）。还要有删除聚合命令的反例，证明 feature gate 不会静默退出 `verify:core`。之后普通 feature
-只运行既有命令，不再新增专属根命令。
+**命令形态已定：不新增根命令**，与 [Non-intrusive-room.md](Non-intrusive-room.md) §5.2 的 gameplay 生成器
+同形（两文档同一裁定，见该文 §4.1 表 1）：
 
-> 若最终决定**不**新增根命令（沿用 `codegen:state` / `codegen:http` 那样的 workspace 脚本 + 测试 freshness
-> 形态），则上面这段改为：「本生成器不新增根命令，freshness 由 X 测试断言随 `verify:all` 生效；⛔ 只有真的
-> 新增根命令时才需要接入四重守门。」两种形态二选一，实施前必须选定。
+- **writer** 是 workspace 脚本 `codegen:features`；
+- **只读闸不是独立命令**，而是 freshness 测试断言，随 `verify:all` 生效；
+- 生成器自身的 `.ts` 由该 freshness 测试**值导入**而被 tsc 传递纳入，⛔ 不需要改 tsconfig 的 include。
+
+因此**不接入根命令的四重守门**——`scripts/verify-inventory.mjs` 的 `checkRootCommandTable` 只对根
+`package.json` 的 scripts 与 README/AGENTS/CLAUDE 三份命令表做双向相等，workspace 脚本不在其覆盖内。
+
+> ⚠ 落点必须在实施时定死并如实登记：本生成器的产物主要落在 `apps/shared/**` 与 `apps/client/**`，
+> 而 **`apps/client` 不是 npm workspace**、`apps/shared` 目前只有 `typecheck` 脚本、没有 `tools/` 与
+> `test/` 基础设施。现成的落点只有 `@game/server`（那里已有 `tools/` 与 `test/`，且 `codegen:state` 已有
+> 跨写 `apps/shared` 的先例），代价是 server workspace 的职责边界被撑宽。若改为给 `apps/shared` 或
+> `apps/client` 补齐 workspace 基础设施，属于**额外的一次性框架改造**，必须单独评审。
+>
+> 被否决的替代方案：新增根命令 `codegen:features` / `verify:features`。命令可直接执行、动线更直观，
+> 但必须逐条接入根 `package.json`、`scripts/verify-toolchain.mjs`、
+> `apps/client/test/toolchainContract.test.ts` 的承重钉（仅当被挂进 typecheck / verify:sync / verify:core /
+> verify:all 之一时）、`docs/inventory.json` 的验证依赖，以及上述三份命令表的双向相等断言——漏一条就是静默
+> 失闸。仍需保留的是那条**反例**：无论哪种形态，都要证明 feature gate 不会静默退出 `verify:core`。
+
+之后普通 feature 只运行既有命令，不再新增专属命令。
 
 建议提交版产物的 provenance 固定如下：
 
 | 产物 | 真源 | Writer | 只读检查 | 性质 |
 | --- | --- | --- | --- | --- |
-| `apps/shared/src/features.generated.ts` | feature manifest | `npm run codegen:features` | `npm run verify:features` | 普通机械生成 |
-| `apps/shared/src/protocol/lobbyRpc/registry.generated.ts` | feature manifest + RPC domain descriptor AST | `npm run codegen:features` | `npm run verify:features` + contract test | 普通机械生成 |
-| `apps/shared/src/logic/features.generated.ts` | manifest 中的 shared public modules | `npm run codegen:features` | `npm run verify:features` | 普通机械生成 |
-| `apps/client/src/generated/features.generated.ts` | feature manifest | `npm run codegen:features` | `npm run verify:features` | 普通机械生成 |
-| `apps/client/src/generated/routes.generated.ts` | route descriptor references | `npm run codegen:features` | `npm run verify:features` + route test | 普通机械生成 |
-| `apps/client/src/generated/views.generated.ts` | `.view.json` + FGUI XML | `npm run codegen:features` | `npm run verify:features` + FGUI contract test | 普通机械生成 |
-| `apps/client/src/generated/fguiContracts.generated.ts` | `.view.json` + FGUI XML | `npm run codegen:features` | `npm run verify:features` + FGUI contract test | 普通机械生成 |
-| `apps/client/src/generated/fguiPackages.generated.ts` | art 引用图 + View/entry asset URLs | `npm run codegen:features` | `npm run verify:features` + FGUI contract test | 普通机械生成 |
+| `apps/shared/src/features.generated.ts` | feature manifest | workspace 脚本 `codegen:features` | freshness 断言 | 普通机械生成 |
+| `apps/shared/src/protocol/lobbyRpc/registry.generated.ts` | feature manifest + RPC domain descriptor AST | workspace 脚本 `codegen:features` | freshness 断言 + contract test | 普通机械生成 |
+| `apps/shared/src/logic/features.generated.ts` | manifest 中的 shared public modules | workspace 脚本 `codegen:features` | freshness 断言 | 普通机械生成 |
+| `apps/client/src/generated/features.generated.ts` | feature manifest | workspace 脚本 `codegen:features` | freshness 断言 | 普通机械生成 |
+| `apps/client/src/generated/routes.generated.ts` | route descriptor references | workspace 脚本 `codegen:features` | freshness 断言 + route test | 普通机械生成 |
+| `apps/client/src/generated/views.generated.ts` | `.view.json` + FGUI XML | workspace 脚本 `codegen:features` | freshness 断言 + FGUI contract test | 普通机械生成 |
+| `apps/client/src/generated/fguiContracts.generated.ts` | `.view.json` + FGUI XML | workspace 脚本 `codegen:features` | freshness 断言 + FGUI contract test | 普通机械生成 |
+| `apps/client/src/generated/fguiPackages.generated.ts` | art 引用图 + View/entry asset URLs | workspace 脚本 `codegen:features` | freshness 断言 + FGUI contract test | 普通机械生成 |
 | `apps/client/src/features/**/view/*View.ts` 的 AUTO 区 | FGUI XML + binding 规则 | `fgui-codegen` | AUTO freshness test | 局部机械生成 |
-| `docs/features.generated.md` | feature manifest | `npm run codegen:features` | `npm run verify:features` | 普通机械生成 |
+| `docs/features.generated.md` | feature manifest | workspace 脚本 `codegen:features` | freshness 断言 | 普通机械生成 |
 | `scripts/protocol.fingerprint` | shared protocol 真源 + 协议版本 | protocol fingerprint writer | fingerprint test | 显式协议审计锁 |
 | `scripts/fgui.manifest.json` | art、FGUI 导出物和 View AUTO 区 | FGUI manifest writer | `verify:fgui` | 显式资源审计锁 |
 | 保护路径规则（如 `scripts/protected-paths.json`） | 人工评审 | 人工（提交中显式声明） | 无侵入矩阵测试 | 显式治理锁 |
@@ -1120,13 +1132,14 @@ apps/client/test/undergroundIdle*.test.ts
 ```text
 1. 新增 feature.json、shared domain、RPC vectors、server/client 源码和 View metadata
 2. FairyGUI 编辑并真实导出；fgui-codegen 生成 View AUTO 区
-3. 运行 npm run codegen:features -- --write，审查普通 generated registry diff
+3. 运行 feature 生成器 writer（workspace 脚本 codegen:features），审查普通 generated registry diff
 4. 显式运行 protocol fingerprint --write 与 fgui manifest --write，审查两类 lock diff
 5. 运行 npm run sync:shared（当前已包含 client→Cocos 同步，不再重复运行 sync:client）
 6. 打开 Cocos Creator 一次，为 sync 新产生的 apps/Cocos/assets/src/** 文件与新目录生成 .meta，
    与源码同批提交（⚠ sync-client --check 的 .meta 断言只遍历 git ls-files：本地未 add 时不会红，
    提交或 CI 上必红——这一步不能省）
-7. 运行 npm run verify:features、protocol/FGUI/sync/inventory check、typecheck 和 RPC/客户端/服务端测试
+7. 运行 protocol/FGUI/sync/inventory check、typecheck 和 RPC/客户端/服务端测试（feature 生成物的 freshness
+   断言就在这批测试里，⛔ 无独立 --check 命令）
 8. Creator 本地预览真实资源与生命周期
 9. 分类审查手写 feature diff、generated diff、lock diff、资源 diff 和镜像 diff
 ```
@@ -1302,13 +1315,13 @@ contracts 无人工 diff；迁移期 alias 不产生重复所有权；Creator �
 | --- | --- | --- |
 | 新增完整 fixture feature 时，既有人工源码零修改 | 无侵入矩阵（见下） | 让 fixture 必须手改一处中央源码 → 矩阵转红 |
 | 只有 feature 新文件、generated registry、指纹、FGUI 产物和镜像发生变化 | 无侵入矩阵的 diff 分类器 | 往既有文件里加一行 → 分类器转红 |
-| manifest 仍存在时，缺任一 descriptor、endpoint、vector、View metadata 或 composer 必然失败 | `npm run verify:features` | 逐个删除这五类引用 → 各转红一条 |
-| 删除整个 feature 只能通过显式允许的删除流程 | `npm run verify:features` | 直接删目录后跑 writer → 必须拒绝而不是静默删生成物 |
+| manifest 仍存在时，缺任一 descriptor、endpoint、vector、View metadata 或 composer 必然失败 | feature freshness 断言（随 `verify:all`） | 逐个删除这五类引用 → 各转红一条 |
+| 删除整个 feature 只能通过显式允许的删除流程 | feature freshness 断言（随 `verify:all`） | 直接删目录后跑 writer → 必须拒绝而不是静默删生成物 |
 | route mode 不再由字段结构推断 | 编译期负例 | 让 `LobbyRpcIdemType` 改回结构推断 → 负例转红 |
 | 相同 ID 不同 payload 在 handler 前被拒绝 | 服务端幂等用例 | 去掉 payload hash 比较 → 转红 |
 | `clientReqId` 的字符集/长度积木拒绝含 `:`、`{`、换行、超长与非 ASCII 的值 | shared 契约向量 | 换回通用 `requiredId` → 转红 |
 | pending/done/done-oversize/unknown 与 durable receipt 的优先级有故障测试 | `test:int` + 故障矩阵 | 把 `done-oversize` 归类为 `unknown` → 转红 |
-| 新 feature 仅声明 `inspectsOperationGroup: "idle"` 而未 `dependsOn`、也未获 idle 侧 expose 时，`verify:features` 必须失败 | `npm run verify:features` | 去掉 group 所有权校验 → 该反例转绿（即门禁失效） |
+| 新 feature 仅声明 `inspectsOperationGroup: "idle"` 而未 `dependsOn`、也未获 idle 侧 expose 时必须失败 | feature freshness 断言（随 `verify:all`） | 去掉 group 所有权校验 → 该反例转绿（即门禁失效） |
 | drop/reconnect/foreground/close 后不会发生旧 View 回写或 SDK 队列重放 | 客户端生命周期用例 | 去掉 generation 守卫 → 转红 |
 | `auth-invalid` 事件发布后的**同一 tick 内** `getToken()` 已为空，此后任何请求不携带旧 Bearer | 客户端用例 | 在清 token 与发布事件之间插入一个 await → 转红 |
 | app dispose 后 connection/session/route/ticker/lifecycle 订阅计数**归零**，`PendingOperationJournal` 与 FeatureHost 实例全部释放 | 客户端 dispose 用例（计数断言） | 漏掉任一 disposer → 计数不归零，转红 |
