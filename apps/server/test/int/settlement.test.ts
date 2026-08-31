@@ -265,7 +265,16 @@ test("v3 producer changes neither legacy nor v2 and consumer stores the replay-v
   assert.equal(Number(pending[0]), 0);
 });
 
-test("v3 producer rejects extra fields and replay-mismatched final state before any XADD", async () => {
+/**
+ * ⚠ 用例名从「before any XADD」改成现在这样是必须的：producer 自检失败**现在会 XADD**一条
+ * quarantine（这正是 d312541 的落点——自检失败必须留下不可忽略的持久痕迹）。旧名字与生产行为
+ * 相反，而且旧断言只比对了三条来源流的 xlen，等于把新增的那次 XADD 完全放在视野之外。
+ *
+ * 更要紧的是覆盖：把 `quarantineProducerSelfCheck` 里整段 XADD 删掉，此前全仓仍然全绿
+ * （单测 315/315、int settlement 20/20）——本轮唯一新增的行为在回归上完全裸奔。下面逐字段断言
+ * quarantine 条目，并在末尾清理，⛔ 不把条目泄漏进这条永不自动裁剪的流。
+ */
+test("v3 producer 自检失败：不碰三条来源流，但必须留下 sourceKind=producer 的 quarantine 痕迹", async () => {
   const extraKeyEvidence = {
     ...await makeV3Evidence(`m_v3_extra_${Date.now().toString(36)}`, 18),
     unexpected: true,
@@ -275,9 +284,21 @@ test("v3 producer rejects extra fields and replay-mismatched final state before 
   );
   replayMismatch.finalState.players[0].hp--;
   validateMatchEvidenceV3(replayMismatch);
+  const matchIds = [extraKeyEvidence.matchId, replayMismatch.matchId];
 
   const before = new Map<string, number>();
   for (const key of MATCH_STREAM_KEYS) before.set(key, await stream(key).xlen(key));
+  const quarantineBefore = await stream(K_STREAM_MATCH_QUARANTINE).xlen(K_STREAM_MATCH_QUARANTINE);
+
+  const producerQuarantined = async () => {
+    const entries = await stream(K_STREAM_MATCH_QUARANTINE).xrange(
+      K_STREAM_MATCH_QUARANTINE, "-", "+",
+    ) as [string, string[]][];
+    return entries.map(([id, fields]) => ({ id, fields: Object.fromEntries(
+      Array.from({ length: fields.length / 2 }, (_, index) => fields.slice(index * 2, index * 2 + 2)),
+    ) })).filter((entry) => matchIds.includes(String(entry.fields.matchId)));
+  };
+
   const originalError = console.error;
   console.error = () => undefined;
   try {
@@ -294,11 +315,46 @@ test("v3 producer rejects extra fields and replay-mismatched final state before 
       "replay 失败必须归类为 self-check");
     assert.equal(replayResult.ok === false && replayResult.reason, "V3_REPLAY_MISMATCH",
       "replay 失败必须与 shape 失败使用不同的码——两类事故不得再不可区分");
+
+    // ⛔ 三条来源流一条都不许动：自检在 XADD 到来源流之前就拦住了。
+    for (const key of MATCH_STREAM_KEYS) {
+      assert.equal(await stream(key).xlen(key), before.get(key),
+        `${key} must not change after rejected evidence`);
+    }
+    // 但 quarantine **必须**多两条——这是「自检失败留下持久痕迹」的唯一可回归证据。
+    assert.equal(
+      await stream(K_STREAM_MATCH_QUARANTINE).xlen(K_STREAM_MATCH_QUARANTINE),
+      quarantineBefore + 2,
+      "两次自检失败必须各写一条 quarantine——⛔ 删掉那段 XADD 时本断言必须转红",
+    );
+
+    const quarantined = await producerQuarantined();
+    assert.equal(quarantined.length, 2, "两条痕迹必须都能按 matchId 找回");
+    const byMatchId = new Map(quarantined.map((entry) => [String(entry.fields.matchId), entry.fields]));
+
+    const shapeFields = byMatchId.get(extraKeyEvidence.matchId)!;
+    assert.equal(shapeFields.sourceKind, "producer",
+      "⛔ 必须与消费侧的 legacy/v2/v3 隔离条目区分开：这条是生产侧自检产生的");
+    assert.equal(shapeFields.sourceStream, "", "producer 自检没有来源流");
+    assert.equal(shapeFields.sourceId, "", "producer 自检没有来源条目 id");
+    assert.match(String(shapeFields.reason), /^V3_PAYLOAD_/u);
+    assert.match(String(shapeFields.at), /^(?:0|[1-9]\d*)$/u);
+    // rawFields 必须保留可供人工核查的原始 payload，⛔ 不能只留一个码
+    assert.equal(JSON.parse(String(shapeFields.rawFields)).matchId, extraKeyEvidence.matchId);
+
+    const replayFields = byMatchId.get(replayMismatch.matchId)!;
+    assert.equal(replayFields.sourceKind, "producer");
+    assert.equal(replayFields.reason, "V3_REPLAY_MISMATCH",
+      "两类自检失败在 quarantine 里也必须是不同的码");
   } finally {
     console.error = originalError;
-  }
-  for (const key of MATCH_STREAM_KEYS) {
-    assert.equal(await stream(key).xlen(key), before.get(key), `${key} must not change after rejected evidence`);
+    // quarantine 不属于自动 XTRIM 范围，用例必须自己清理，⛔ 否则每跑一次就永久泄漏两条。
+    const leftover = await producerQuarantined();
+    if (leftover.length > 0) {
+      await stream(K_STREAM_MATCH_QUARANTINE).xdel(
+        K_STREAM_MATCH_QUARANTINE, ...leftover.map((entry) => entry.id),
+      );
+    }
   }
 });
 

@@ -24,6 +24,7 @@ import {
     type MatchEvidenceV3,
 } from "../src/core/match/matchEvidence";
 import { replayMatchEvidenceV3 } from "../src/core/match/matchReplay";
+import type { EmitEvidenceResult } from "../src/core/match/matchConsumer";
 import type { GameRoomState } from "../src/rooms/schema/GameRoomState";
 
 /**
@@ -1029,4 +1030,58 @@ test("per-client message budget returns controlled errors and stays isolated by 
         GAME_ROOM_MAX_MESSAGES_PER_SECOND + 1,
         "新时间窗应恢复该客户端的正常 Pong 配额",
     );
+});
+
+/**
+ * 收局证据的三种结果在 GameRoom 侧必须**可区分地**落地：只有自检失败才告警。
+ *
+ * ⚠ 此前这条分支零覆盖——全部用例的 evidenceEmitter 都返回 `{ok:true}`，于是
+ * 「传输失败不该告警」和「自检失败必须告警」两条都没人守。把 `result.kind !== "self-check"`
+ * 改成恒 false（即两类都告警）或恒 true（即都不告警），本用例都会转红。
+ */
+test("收局证据：只有自检失败告警，传输失败与成功都不得污染告警通道", async () => {
+    const alertsFor = async (result: EmitEvidenceResult): Promise<string[]> => {
+        const alerts: string[] = [];
+        const originalError = console.error;
+        console.error = (...args: unknown[]) => { alerts.push(args.map(String).join(" ")); };
+        try {
+            const room = new GameRoom({
+                ...runtime(931),
+                matchId: () => "m_evidence_kind",
+                evidenceEmitter: () => Promise.resolve(result),
+            });
+            installLock(room);
+            const a = fakeClient("a", "ua");
+            const b = fakeClient("b", "ub");
+            await join(room, a);
+            await join(room, b);
+            // 让 b 出局触发收局
+            ballState(room).players.get(b.sessionId)!.hp = 0;
+            const cast = (room.messages as Record<string, (c: unknown, m: unknown) => void>)[C2S.CastSkill];
+            cast(a, { skillId: 3, targetId: b.sessionId });
+            for (let tick = 0; tick < 100 && room.state.phase !== GamePhase.Settle; tick++) room.stepFixed();
+            assert.equal(room.state.phase, GamePhase.Settle, "构造前提：本用例必须真的走到收局");
+            await new Promise((resolve) => setImmediate(resolve));
+            return alerts;
+        } finally {
+            console.error = originalError;
+        }
+    };
+
+    const onSelfCheck = await alertsFor({ ok: false, kind: "self-check", reason: "V3_REPLAY_MISMATCH" });
+    assert.equal(onSelfCheck.length, 1, "自检失败必须且只告警一次");
+    assert.match(onSelfCheck[0], /收局证据自检失败/u);
+    assert.match(onSelfCheck[0], /V3_REPLAY_MISMATCH/u, "告警必须带上具体的码");
+    assert.match(onSelfCheck[0], /本房间状态与证据不自洽/u, "告警必须点明这是内部一致性缺陷");
+
+    // ⛔ 传输失败不得走告警通道：它是外部事故，重试即可，混进来会淹没真正需要人工核查的那一类。
+    assert.deepEqual(
+        await alertsFor({ ok: false, kind: "transport", reason: "V3_XADD_FAILED" }), [],
+        "传输失败不得告警",
+    );
+    assert.deepEqual(
+        await alertsFor({ ok: false, kind: "transport", reason: "V3_QUARANTINE_UNAVAILABLE" }), [],
+        "quarantine 不可用降级成的 transport 同样不得告警",
+    );
+    assert.deepEqual(await alertsFor({ ok: true, entryId: "0-0" }), [], "成功不得告警");
 });

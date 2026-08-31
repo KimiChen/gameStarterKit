@@ -303,12 +303,21 @@ async function quarantineProducerSelfCheck(
   }
 }
 
+/** 未经校验的尽力取值：只在 quarantine 的索引字段上使用，⛔ 不得用于任何判定。 */
+function bestEffortMatchId(input: unknown): string {
+  const value = (input as { matchId?: unknown } | null | undefined)?.matchId;
+  return typeof value === "string" && value.length > 0 && value.length <= 40 ? value : "?";
+}
+
 /**
  * 收局时 XADD 一条证据。⛔ 无论哪类失败都**不阻塞对局结束**（对局结果已广播/已写档）。
  * 错误码与消费侧 `decodeFailure` **复用同一套码空间**，运维只需要一套码表。
  */
 export async function emitMatchEvidence(input: MatchEvidenceV3): Promise<EmitEvidenceResult> {
-  let matchId = "?";
+  // ⚠ 尽力先取一次 matchId：validate 失败时 quarantine 条目仍必须带上身份，否则运维拿到的是一条
+  // matchId="?" 的痕迹，只能靠翻 rawFields 才知道是哪一局——而 quarantine 的全部意义就是可追查。
+  // ⛔ 这里不做任何校验，取到什么算什么；真正的形状判定仍由下面的 validate 负责。
+  let matchId = bestEffortMatchId(input);
   let payload = "";
   // ── 自检段：失败属 GameRoom 内部一致性缺陷 ──
   try {
