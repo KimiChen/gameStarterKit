@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
-import { WebPlatformUnavailableError } from "../src/platform/webPlatformClient";
+import {
+  WebPlatformContractError,
+  WebPlatformServiceError,
+  WebPlatformUnavailableError,
+} from "../src/platform/webPlatformClient";
 import { test } from "node:test";
 import {
   CHARACTER_READY_TIMEOUT_MAX_MS,
@@ -442,4 +446,107 @@ test("character initializer：WebPlatform 不可用时的有界宽限", async ()
     (error: unknown) => error === unavailable,
   );
   assert.deepEqual(calls, ["has", "enqueue"], "无 marker 的档不得宽限");
+});
+
+test("character initializer：宽限「不覆盖」形状反例——新号/pending/legacy/配置事故一律照拒", async () => {
+  // 与上一条用例同一组窗口：recheck=1s（marker 已陈旧、必进探测分支）、grace=5s、stale=1s 在宽限内。
+  const calls: string[] = [];
+  const makeDeps = (opts: {
+    created: "ok" | "exists";
+    state: "pending" | "ready" | null;
+    checkedAtMs?: number | null;
+    error: Error;
+    registerFails?: boolean;
+  }) => ({
+    ensureLive: async () => {},
+    createUser: async () => opts.created,
+    readCharacterRegistration: async () => {
+      if (opts.state === null) { return { state: null, checkedAtMs: opts.checkedAtMs ?? null }; }
+      return opts.state === "ready"
+        ? { state: "ready" as const, checkedAtMs: opts.checkedAtMs ?? 9_000 }
+        : { state: "pending" as const, checkedAtMs: opts.checkedAtMs ?? null };
+    },
+    hasCharacter: async () => { calls.push("has"); throw opts.error; },
+    enqueueCharacterRepairIntent: async () => { calls.push("enqueue"); },
+    registerCharacterWithRepair: async () => {
+      calls.push("register");
+      if (opts.registerFails) { throw opts.error; }
+    },
+    markCharacterRegistrationReady: async () => { calls.push("mark-ready"); },
+    nowMs: () => 10_000,
+    registrationRecheckMs: 1_000,
+    registrationGraceMs: 5_000,
+    invalidateUserNegcache: async () => { calls.push("negcache"); },
+  });
+  const unavailable = new WebPlatformUnavailableError("down");
+
+  // 0. 正对照（夹具有效性）：被禁条件都不沾、其余全满足时宽限确实放行——下面的「照拒」
+  //    才不是夹具本身坏掉。calls 里出现 has 证明走的是探测+宽限分支，不是 ready 快路径。
+  calls.length = 0;
+  await ensureCharacterWithDependencies(
+    "grace-control", 1, makeDeps({ created: "exists", state: "ready", error: unavailable }),
+  );
+  assert.deepEqual(calls, ["has", "enqueue", "negcache"],
+    "正对照：exists + ready 宽限内 + Unavailable + intent 落库 ⇒ 必须放行");
+
+  // 1. 新号（created === "ok"）：必走 PUT，外部不可用照拒。刻意给它一个「幽灵 ready marker」
+  //    （真实新号只会是 pending；这里是为了让其余宽限条件全部成立），单独钉住宽限分支的
+  //    created === "exists" 前提——删掉它本用例转红。
+  calls.length = 0;
+  await assert.rejects(
+    ensureCharacterWithDependencies(
+      "grace-new", 1, makeDeps({ created: "ok", state: "ready", error: unavailable, registerFails: true }),
+    ),
+    (error: unknown) => error === unavailable,
+  );
+  assert.deepEqual(calls, ["register"], "新号必须走 PUT 且失败照拒，不得触碰 probe/宽限/negcache");
+
+  // 2. pending 残留档：登记从未完成，与「曾通过权威复核」无关，不宽限。刻意带一个残留时间戳
+  //    （state 与 checkedAtMs 是两个独立字段，生产上可出现）——它是「宽限对 pending 开门」
+  //    （探测分支与 state 条件两处同时放宽）时转红的形状。
+  calls.length = 0;
+  await assert.rejects(
+    ensureCharacterWithDependencies(
+      "grace-pending", 1,
+      makeDeps({ created: "exists", state: "pending", checkedAtMs: 9_000, error: unavailable, registerFails: true }),
+    ),
+    (error: unknown) => error === unavailable,
+  );
+  assert.deepEqual(calls, ["register"], "pending 档走修复 PUT，失败照拒；不得宽限放行");
+
+  // 3. legacy 无 marker 档（state 为 null）：从未通过权威复核，不宽限。
+  //    characterState 里 state 与 checkedAtMs 是两个独立解析的字段，生产上可能出现
+  //    「state=null 但残留合法时间戳」（如字段被部分清掉）；3b 是唯一能在
+  //    「删掉宽限分支的 registration.state === "ready" 条件」时转红的形状。
+  for (const legacy of [
+    { name: "no-fields", checkedAtMs: null },
+    { name: "stale-timestamp", checkedAtMs: 9_000 },
+  ] as const) {
+    calls.length = 0;
+    await assert.rejects(
+      ensureCharacterWithDependencies(
+        `grace-legacy-${legacy.name}`, 1,
+        makeDeps({ created: "exists", state: null, checkedAtMs: legacy.checkedAtMs, error: unavailable }),
+      ),
+      (error: unknown) => error === unavailable,
+    );
+    assert.deepEqual(calls, ["has", "enqueue"],
+      `legacy ${legacy.name}：留 intent 后必须拒绝，不得宽限`);
+  }
+
+  // 4. ContractError/ServiceError 是配置事故（契约漂移/服务身份错误），不是可用性事故：
+  //    即使其余条件全部满足也一律不宽限——fail-open 会把部署错误掩盖成「外部抖动」。
+  for (const configError of [
+    new WebPlatformContractError("response shape drift"),
+    new WebPlatformServiceError("401 wrong service identity"),
+  ]) {
+    calls.length = 0;
+    await assert.rejects(
+      ensureCharacterWithDependencies(
+        `grace-${configError.name}`, 1, makeDeps({ created: "exists", state: "ready", error: configError }),
+      ),
+      (error: unknown) => error === configError,
+    );
+    assert.deepEqual(calls, ["has", "enqueue"], `${configError.name} 不得宽限`);
+  }
 });
