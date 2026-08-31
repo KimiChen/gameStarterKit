@@ -100,6 +100,7 @@ Snake 玩法与视觉分析借鉴自用户提供的《贪吃蛇大作战》静�
 | 网络权威 | 客户端只发输入；服务端决定世界状态和结算 |
 | 实现方式 | 面向本项目 TypeScript、Cocos Creator 3.8.8、FairyGUI 和 Colyseus 独立重写 |
 | ballMove | Snake Off 验收后成为默认入口；首期先保留 ballMove 作为内部回归样例，不在同一阶段物理删除 |
+| 路线仲裁 | 与 wsrpc/undergroundIdle 迁移入口路线相比，**Snake Off 优先**替代 ballMove 默认入口（2026-08-31 拍板） |
 | 永久数据 | 首版不接经济、排行榜、赛季和永久战绩 |
 
 ## 待确认但不阻塞文档设计的产品项
