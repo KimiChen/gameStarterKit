@@ -175,6 +175,12 @@ test("故障注入：真实 worker error/exit 会 reap 并退避补位", async (
           return spawnCount === 1
             ? new Worker(new URL("data:text/javascript," + encodeURIComponent(source)), {
                 workerData: { mode },
+                // ⚠ 注入的故障 worker 是**纯 JavaScript**，不需要 tsx loader。默认继承父进程
+                // execArgv 会让每个这样的 worker 在自己线程里再跑一遍 tsx 引导——实测 8 核满载下
+                // 冷启动 113–154ms vs 18–31ms（5–6×），极端并发下被放大到秒级，正是本文件
+                // 三轮 flaky 的共同放大器。⛔ 不要删掉 execArgv：worker 只做 exit/throw，
+                // 它不影响被验行为，只把无关的 loader 成本从计时窗口里拿掉。
+                execArgv: [],
               })
             : createDefaultWorker();
         });
@@ -212,6 +218,7 @@ test("故障注入：真实 worker error/exit 会 reap 并退避补位", async (
           return spawnCount === 1
             ? new Worker(new URL("data:text/javascript," + encodeURIComponent(source)), {
                 workerData: { mode: "error" },
+                execArgv: [], // 同上：纯 JS 故障 worker 不需要 tsx loader
               })
             : createDefaultWorker();
         });
@@ -304,6 +311,7 @@ test("故障注入：真实 worker error/exit 会 reap 并退避补位", async (
         return spawnCount === 1
           ? new Worker(new URL("data:text/javascript," + encodeURIComponent(source)), {
               workerData: { mode: "exit" },
+              execArgv: [], // 同上：纯 JS 故障 worker 不需要 tsx loader
             })
           : createDefaultWorker();
       });
