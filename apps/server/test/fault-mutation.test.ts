@@ -263,8 +263,9 @@ test("故障注入：真实 worker error/exit 会 reap 并退避补位", async (
     );
     assert.match(result.stdout, /compute-worker-lifecycle-ok/);
 
-    // ⚠ 本子进程曾是 flaky 的根源：本段要覆盖「排队超时」分支，就必须让任务超时 < respawn 退避
-    // （否则排队任务会等到替补 worker 而永不超时——生产默认正是这个反向排序，见 config 注释），
+    // ⚠ 本子进程曾是 flaky 的根源：本段要在**崩溃-重生**场景里覆盖「排队超时」分支，就必须让
+    // 任务超时 < respawn 退避（否则排队任务会等到替补 worker 而永不超时——生产默认正是这个反向
+    // 排序，见 config 注释）。⛔ 这不等于该分支只在此排序下可达：worker 被长任务占满同样会走到它。
     // 而当初两者是 250ms / 1000ms——**同一个 250ms 预算**
     // 还得覆盖注入 worker 的冷启动（data: URL 模块在 tsx 进程里编译 + 启动）。机器一忙，冷启动
     // 就超过 250ms，第一段的 `code=23` 断言会拿到「任务超时」而红。实测：单跑 3/3 绿，
@@ -319,7 +320,7 @@ test("故障注入：真实 worker error/exit 会 reap 并退避补位", async (
           ...process.env,
           COMPUTE_POOL_SIZE: "1",
           COMPUTE_QUEUE_CAPACITY: "4",
-          // 成对设置，⛔ 只改一个会让「排队超时」路径不可达或让冷启动重新变成竞态
+          // 成对设置，⛔ 只改一个会让本场景走不到排队超时，或让冷启动重新变成竞态
           COMPUTE_TASK_TIMEOUT_MS: "1200",
           COMPUTE_RESPAWN_DELAY_MS: "4000",
         },
