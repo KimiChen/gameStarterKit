@@ -498,6 +498,19 @@ export const MYSQL_QUEUE_ALERT = envInt("MYSQL_QUEUE_ALERT", 5);
 export const COMPUTE_POOL_SIZE = envInt("COMPUTE_POOL_SIZE", 2);
 /** 计算池单任务超时：超时 reject 并终止换新 worker（线程无法安全打断，只能弃车） */
 export const COMPUTE_TASK_TIMEOUT_MS = envInt("COMPUTE_TASK_TIMEOUT_MS", 30_000);
+/**
+ * worker 死亡后延迟重建的退避窗口。
+ *
+ * ⚠ 它与 `COMPUTE_TASK_TIMEOUT_MS` 的**相对大小决定了退避期内排队任务的归宿**，两种排序都是合法的：
+ *  - 生产默认（退避 1s < 任务超时 30s）：退避期排队的任务会等到替补 worker 并正常执行——这是想要的，
+ *    一次 worker 崩溃不该把在途请求全部打成超时。
+ *  - 任务超时 < 退避：排队任务会先超时。**只有这个排序才走得到「排队超时」路径**，
+ *    故障注入用例正是靠它来覆盖该分支。
+ * ⛔ 因此这里**没有**加载期配对校验：两种排序各有正当用途，强制一种会把另一种合法配置拒掉。
+ */
+export const COMPUTE_RESPAWN_DELAY_MS =
+  webPlatformPositiveInt("COMPUTE_RESPAWN_DELAY_MS", 1_000, 600_000);
+
 /** 计算池最多保留的排队任务数；满载时以稳定 overload 错误快速拒绝。 */
 export const COMPUTE_QUEUE_CAPACITY =
   webPlatformPositiveInt("COMPUTE_QUEUE_CAPACITY", 100, 100_000);

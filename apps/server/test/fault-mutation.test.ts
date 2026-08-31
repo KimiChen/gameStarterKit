@@ -258,6 +258,14 @@ test("故障注入：真实 worker error/exit 会 reap 并退避补位", async (
     );
     assert.match(result.stdout, /compute-worker-lifecycle-ok/);
 
+    // ⚠ 本子进程曾是 flaky 的根源：本段要覆盖「排队超时」分支，就必须让任务超时 < respawn 退避
+    // （否则排队任务会等到替补 worker 而永不超时——生产默认正是这个反向排序，见 config 注释），
+    // 而当初两者是 250ms / 1000ms——**同一个 250ms 预算**
+    // 还得覆盖注入 worker 的冷启动（data: URL 模块在 tsx 进程里编译 + 启动）。机器一忙，冷启动
+    // 就超过 250ms，第一段的 `code=23` 断言会拿到「任务超时」而红。实测：单跑 3/3 绿，
+    // 全量套件里约 1/3 概率红。
+    // 修法是把两者的间距拉开而不是各自微调：respawn 4s、任务超时 1.2s——冷启动预算 ×4.8，
+    // 排队超时与替补到位之间留 2.8s，两个竞态同时消失。⛔ 不要把它们调回相邻值。
     const timeoutScript = `
       import assert from "node:assert/strict";
       import { Worker } from "node:worker_threads";
@@ -268,7 +276,7 @@ test("故障注入：真实 worker error/exit 会 reap 并退避补位", async (
       const respawnTimers = [];
       globalThis.setTimeout = (callback, delay, ...args) => {
         const timer = nativeSetTimeout(callback, delay, ...args);
-        if (delay === 1000) respawnTimers.push(timer);
+        if (delay === 4000) respawnTimers.push(timer);
         return timer;
       };
 
@@ -306,10 +314,12 @@ test("故障注入：真实 worker error/exit 会 reap 并退避补位", async (
           ...process.env,
           COMPUTE_POOL_SIZE: "1",
           COMPUTE_QUEUE_CAPACITY: "4",
-          COMPUTE_TASK_TIMEOUT_MS: "250",
+          // 成对设置，⛔ 只改一个会让「排队超时」路径不可达或让冷启动重新变成竞态
+          COMPUTE_TASK_TIMEOUT_MS: "1200",
+          COMPUTE_RESPAWN_DELAY_MS: "4000",
         },
         encoding: "utf8",
-        timeout: 5_000,
+        timeout: 20_000,
       },
     );
     assert.equal(

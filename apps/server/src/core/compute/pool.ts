@@ -23,7 +23,12 @@
  */
 import { Worker } from "node:worker_threads";
 import { fileURLToPath } from "node:url";
-import { COMPUTE_POOL_SIZE, COMPUTE_QUEUE_CAPACITY, COMPUTE_TASK_TIMEOUT_MS } from "../infra/config";
+import {
+  COMPUTE_POOL_SIZE,
+  COMPUTE_QUEUE_CAPACITY,
+  COMPUTE_RESPAWN_DELAY_MS,
+  COMPUTE_TASK_TIMEOUT_MS,
+} from "../infra/config";
 
 /** 队列达到 admission 上限时返回的稳定错误类型，调用方可退避而不是无限堆积。 */
 export class ComputeOverloadedError extends Error {
@@ -45,7 +50,8 @@ interface WorkerReply { id: number; ok: boolean; result?: unknown; error?: strin
 
 const WORKER_PATH = fileURLToPath(new URL("./worker-boot.mjs", import.meta.url));
 const SIZE = Math.max(1, COMPUTE_POOL_SIZE);
-const RESPAWN_DELAY_MS = 1_000;
+/** 见 config 的 COMPUTE_RESPAWN_DELAY_MS：与 COMPUTE_TASK_TIMEOUT_MS 的相对大小决定退避期排队任务的归宿。 */
+const RESPAWN_DELAY_MS = COMPUTE_RESPAWN_DELAY_MS;
 
 type WorkerFactory = () => Worker;
 type WorkerFactoryOverride = (createDefaultWorker: WorkerFactory) => Worker;
