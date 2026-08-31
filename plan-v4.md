@@ -383,3 +383,36 @@ uncompressed FGUI v7，字段顺序照抄 `fairygui.mjs` 的 `loadPackage`——
 
 `test:fgui` 的三处声明（`package.json` / `verify-toolchain` / `toolchainContract` 承重钉）同步登记
 ——只改两处时承重钉如期转红，这也是该承重钉自身的一次实测。
+
+---
+
+## 复核与修复记录（2026-08-31）
+
+**复核范围**：`0d2333e..f2a73ec`（真相迁移 + 五条实施 + 八个对抗修复 + 回写，共 20 个 commit）。
+方法：三路对抗式独立核查（实施项 / 修复项 / 迁移与文档一致性）+ 全量基线实测。
+
+**判定**：五条实施结果与八个对抗修复的声称**全部成立**（每条都做了父状态核对与亲手变异复现）；
+真相迁移改动面与 plan-v4 各处声明基本属实；基线数字（服务端 324→326/326、int 155→157/157、
+客户端 264/264、inventory 100/100、verify:all exit 0）实测复现。
+
+**本轮修掉的**（各自独立 commit，均配能失败的断言与变异推演）：
+
+1. `55fb112`：manifest 移除 ballMove root 时 `instanceof undefined` 的含混 TypeError → 可读诊断；
+   绑定校验抽为导出的 `assertBallMoveRulesBinding`（生成物冻结，边界分支只能直接调用覆盖）。
+2. 死 env `WEBPLATFORM_RETRY_ATTEMPTS` 删除——复核轮的驳回记录被证伪（全仓仅设置无读取）。
+3. FGUI 引用抽取三处先剥 XML 注释，注释里的 `src=`/`ui://`/`pkg=` 不再产生假引用。
+4. `a77a4cd`：emitMatchEvidence 自检③（payload 超预算）与 XADD 传输失败的故障注入覆盖
+   （自检③在诚实数据下数学不可达，用定点桩 + 上界实测断言锁定；详见 commit 与用例注释）。
+5. `ae03792`：宽限「不覆盖」形状的五条定向反例（新号/pending/legacy×2/配置事故）+ 正对照。
+6. plan-v4 文档更正一个 commit：迁移段分项计数（OVERVIEW 2→3、todo-godogen 4→5、
+   「已登记 19 处」拆 15+4）、断言口径（4 改写 + 2 新增）、驳回记录证伪更正、
+   条目 4「20 处 ballState」→ 实测 13 处（`this.ballState` 精确计数；20 是最初 tsc 错误条数，
+   14 是本轮误测把 getter 声明算了进去，`8fbb987` 已二次更正，见条目 4 的就地注记）。
+
+**仍登记的观察项/边界**：
+
+- `src=` 悬空的 resId（pkg 有效但目标包声明里无此 id）今天无闸——修它要先定义「合法但不被引用」
+  的语义边界，有误红风险，暂登记不动。
+- FGUI 合法差额里有 2 个**负差额**包（Dynamic_Login、View_SharedWidget_Confirm，bin 比声明多）——
+  「发布会剥离未导出资源」的文档解释不覆盖负差额，属解释不完备而非缺陷。
+- 条目 2 的 XADD 失败在 GameRoom stub 侧无注入（int 侧已覆盖，单测侧桩不重复建设）。
