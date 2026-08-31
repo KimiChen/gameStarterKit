@@ -15,7 +15,10 @@
 - `tasks/<task>.ts` 默认导出纯函数；任务名等于文件名。
 - 输入和输出必须能被 `structuredClone`；任务内禁止 Redis、MySQL、HTTP、文件 IO 和可见副作用。
 - 排队与执行共用 `COMPUTE_TASK_TIMEOUT_MS`。执行超时会终止 worker 并补位，所以任务不能留下半成品。
-- worker error/exit 会使在途任务失败，并在退避后补位；空闲 worker `unref()`。
+- worker error/exit 会使在途任务失败，并在 `COMPUTE_RESPAWN_DELAY_MS`（默认 1s）退避后补位；
+  空闲 worker `unref()`。⚠ 该退避与 `COMPUTE_TASK_TIMEOUT_MS` 的**相对大小**决定退避期内排队任务的
+  归宿：生产默认（退避 1s < 超时 30s）下它们会等到替补 worker 并正常执行；反过来才会先超时——
+  「排队超时」分支只有在后一种排序下才可达，故障注入用例正是这样配的。⛔ 两种排序都合法，无配对校验。
 
 用法：
 
