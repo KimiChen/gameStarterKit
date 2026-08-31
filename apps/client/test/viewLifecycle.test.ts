@@ -1505,3 +1505,32 @@ test("pages Home 迟到成功：scope/session 失效后只关闭旧 Home handle"
     }
   }
 });
+
+test("启动链路单槽注册各只注册一次：openLogin 全链在 fail-fast 语义下可重入（§7.2 (b) 断言）", async () => {
+  const runtime = await loadViewRuntime();
+  const harness = await createPageFlowHarness(runtime);
+  try {
+    // fail-fast 语义下，链路里任何第二次注册都会当场 throw——openLogin 全链能走完
+    // 本身就是「returnToLogin / reconciler 各只注册一次」的机检。
+    await harness.pages.openLogin(() => {}, harness.scope);
+    assert.throws(() => harness.session.registerReturnToLogin(() => {}), /fail-fast/,
+      "启动链路完成后 returnToLogin 槽必须已被唯一占用");
+    assert.throws(() => harness.session.registerSessionReconciler(() => true), /fail-fast/,
+      "启动链路完成后 reconciler 槽必须已被唯一占用");
+
+    // 场景 supersede（先 dispose 后 claim/register 的固定顺序）不得触发 fail-fast。
+    const nextScope = harness.pages.createPageSessionScope();
+    await harness.pages.openLogin(() => {}, nextScope);
+    assert.throws(() => harness.session.registerReturnToLogin(() => {}), /fail-fast/,
+      "supersede 后新场景同样各只注册一次");
+    nextScope.dispose();
+
+    // 组合根释放后槽位清空，外部可重新注册（disposer 身份比对语义保留）。
+    const offReturn = harness.session.registerReturnToLogin(() => {});
+    const offReconcile = harness.session.registerSessionReconciler(() => true);
+    offReturn();
+    offReconcile();
+  } finally {
+    harness.cleanup();
+  }
+});

@@ -7,10 +7,47 @@
  * invalidation happen at the actual await boundary.
  */
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import { after, test } from "node:test";
 import { fileURLToPath } from "node:url";
+
+// ── Bootstrap 顺序源文本断言（Non-intrusive §7.3：迁移前必须先补；5b 掏空 Main 时
+//    升级为对 bootstrap 的行为断言，⛔ 不允许先删后补）。──────────────────────────
+const MAIN_SOURCE = readFileSync(new URL("../src/Main.ts", import.meta.url), "utf8");
+
+test("Main bootstrap：installWeChatCompat 是模块求值期顶层调用，早于任何 Colyseus/网络初始化", () => {
+  // 顶层调用形态：行首列 0、独立语句（不在任何函数/方法体内——类内代码必有缩进）。
+  const topLevelCall = /^installWeChatCompat\(\);$/m;
+  assert.match(MAIN_SOURCE, topLevelCall,
+    "installWeChatCompat() 必须保持模块求值期顶层调用（掏空 Main.ts 时最易被静默丢掉）");
+  const callAt = MAIN_SOURCE.search(topLevelCall);
+  const classAt = MAIN_SOURCE.indexOf("export class Main");
+  assert.ok(classAt > callAt,
+    "installWeChatCompat() 必须位于 Main 类声明之前——一切网络初始化都在类方法体内");
+  // 网络初始化面：HTTP 底座、portal、以及 transport 事件接线都必须晚于 compat 安装。
+  for (const netInit of ["initHttp(", "initPortal(", "wireConnectionEvents("]) {
+    const initAt = MAIN_SOURCE.indexOf(netInit);
+    assert.ok(initAt === -1 || initAt > callAt,
+      `${netInit}... 不得出现在 installWeChatCompat() 之前（WeChat compat 必须早于首次 Colyseus/网络操作）`);
+  }
+  // Colyseus 网络客户端不得在模块求值期建立连接：Main.ts 顶层只允许 compat 副作用。
+  assert.ok(!/^\s*Colyseus\./m.test(MAIN_SOURCE.slice(0, callAt)),
+    "installWeChatCompat() 之前不得出现任何 Colyseus 调用");
+});
+
+test("Main.start 接线序：wireConnectionEvents/lifecycle bridge 先于 openLogin（5a 接线 pin）", () => {
+  const wireAt = MAIN_SOURCE.indexOf("wireConnectionEvents();");
+  const bridgeAt = MAIN_SOURCE.indexOf("installCocosLifecycleBridge(lifecycleBus)");
+  const openLoginAt = MAIN_SOURCE.indexOf("pages.openLogin(");
+  assert.ok(wireAt >= 0, "Main.start 必须调用 wireConnectionEvents()（transport→bus→SessionCoordinator 接线）");
+  assert.ok(bridgeAt >= 0, "Main.start 必须安装 CocosLifecycleBridge（宿主 hide/show 入 bus）");
+  assert.ok(openLoginAt >= 0, "Main.start 必须打开 Login");
+  assert.ok(wireAt < openLoginAt,
+    "wireConnectionEvents 必须先于 openLogin：页面挂载前 transport 事件即可被派生");
+  assert.ok(bridgeAt < openLoginAt, "lifecycle bridge 必须先于 openLogin 安装");
+});
 
 type LoaderModule = {
   _load: (request: string, parent: unknown, isMain: boolean) => unknown;
@@ -68,6 +105,8 @@ async function loadMainRuntime(): Promise<MainRuntime> {
       },
       Canvas: class {},
       Layers: { Enum: {} },
+      game: { on: () => {}, off: () => {} },
+      Game: { EVENT_HIDE: "game_on_hide", EVENT_SHOW: "game_on_show" },
     };
 
     // Dynamic import is part of the continuation.  Cache a tiny module with

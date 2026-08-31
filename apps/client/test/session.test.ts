@@ -18,6 +18,21 @@ const login = (uid: string) => setSession({
   isNewAccount: false,
 });
 
+test("session façade：单槽注册 fail-fast（§7.2 (b)——⛔ 后注册者静默覆盖已废止）", async () => {
+  const { registerSessionReconciler } = await import("../src/net/session");
+  const offReturn = registerReturnToLogin(() => {});
+  const offReconciler = registerSessionReconciler(() => true);
+  try {
+    assert.throws(() => registerReturnToLogin(() => {}), /fail-fast/,
+      "经 façade 双注册 returnToLogin 必须 throw");
+    assert.throws(() => registerSessionReconciler(() => true), /fail-fast/,
+      "经 façade 双注册 session reconciler 必须 throw");
+  } finally {
+    offReturn();
+    offReconciler();
+  }
+});
+
 test("session：登录入态 / 换号 = clear 后新登", () => {
   login("u_1");
   assert.equal(isLoggedIn(), true);

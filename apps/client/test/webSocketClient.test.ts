@@ -13,6 +13,12 @@ import {
   LobbyPush, PROTOCOL_VERSION, RoomName, UserRpc,
 } from "../src/shared/index";
 import { JoinError, RpcError, WebSocketClient } from "../src/net/WebSocketClient";
+import { wireConnectionEvents } from "../src/app/wiring";
+
+// 阶段 5a：transport 不再 import session，只发布连接事件；接通应用级派生
+// （transport → LifecycleBus → SessionCoordinator）后，下面对 onAuthInvalid /
+// onConnLost 的既有断言语义与迁移前完全一致。
+wireConnectionEvents();
 
 interface IRpcReplyLite { id: string; ok: boolean; data?: unknown; err?: { code: string; msg: string } }
 
@@ -64,6 +70,21 @@ async function joinWithFakeRoom(fake: ReturnType<typeof makeFakeRoom>): Promise<
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+test("§7.3 单向依赖：net/WebSocketClient.ts 不得 import session/SessionCoordinator（静态断言）", async () => {
+  const { readFileSync } = await import("node:fs");
+  const source = readFileSync(new URL("../src/net/WebSocketClient.ts", import.meta.url), "utf8");
+  // 只匹配 import 语句（静态/动态/require），不误伤注释里的说明文字。
+  const bannedImport = /(?:from\s+|import\s*\(\s*|require\s*\(\s*)["'][^"']*(?:\/session|SessionCoordinator)["']/;
+  assert.ok(!bannedImport.test(source),
+    "transport 不得 import net/session 或 app/SessionCoordinator（连接真相单向流动：transport 发事件、Coordinator 派生）");
+  assert.ok(bannedImport.test(`import { notifyConnLost } from "./session";`),
+    "守门正则必须能识别旧的反向 import 形态");
+  assert.ok(bannedImport.test(`import { x } from "../app/SessionCoordinator";`),
+    "守门正则必须覆盖 SessionCoordinator 直引");
+  assert.match(source, /subscribeConnection\(/,
+    "transport 必须暴露 subscribeConnection 作为唯一低层连接真相出口");
+});
 
 test("rpc 按信封 id 配对：ok resolve data、err 按 code 抛 RpcError", async () => {
   const fake = makeFakeRoom();

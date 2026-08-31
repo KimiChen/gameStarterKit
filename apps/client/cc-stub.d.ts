@@ -74,6 +74,13 @@ declare module "cc" {
 
     export const Layers: { Enum: { UI_2D: number; DEFAULT: number; [k: string]: number } };
 
+    /** 宿主前后台事件面（app/CocosLifecycleBridge 用）。 */
+    export const game: {
+        on(type: string, callback: () => void, target?: unknown): unknown;
+        off(type: string, callback: () => void, target?: unknown): unknown;
+    };
+    export const Game: { EVENT_HIDE: string; EVENT_SHOW: string };
+
     export const input: {
         on(type: unknown, callback: (...args: any[]) => unknown, target?: unknown): void;
         off(type: unknown, callback: (...args: any[]) => unknown, target?: unknown): void;

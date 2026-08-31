@@ -4,8 +4,17 @@
  * 与 RoomClient（GameRoom：fire-and-forget + 状态同步）职责分离：本类只管 lobby 房的
  * `rpc`（信封 {id,type,payload} ⇄ {id,ok,data,err}，按 id 配对）与 `push`（{type,data}）两个消息。
  * 路由名与 req/res 类型全部来自 shared/protocol/lobbyRpc（铁律 6）。
+ *
+ * 连接真相单向流动（Non-intrusive §7.3）：本类只发布低层连接事件
+ * （subscribeConnection），⛔ 不 import session/SessionCoordinator——session 级
+ * 派生（清凭证/回登录/对账）由 app/SessionCoordinator 订阅 LifecycleBus 完成。
  */
-import { notifyAuthInvalid, notifyConnLost, type AuthInvalidReason } from "./session";
+import type {
+    AuthInvalidReason,
+    LobbyConnectionEvent,
+    LobbyConnectionListener,
+    LobbyConnectionSnapshot,
+} from "./connectionEvents";
 import {
     looksLikeJoinSignal,
     normalizeJoinSignal,
@@ -188,6 +197,9 @@ const FORCE_REASON_MAP: Record<ForceLogoutReasonType, AuthInvalidReason> = {
     [ForceLogoutReason.Revoked]: "FORCE_REVOKED",
 };
 
+/** 连接事件单调 sequence（模块级：跨 slot 世代单调递增）。 */
+let connectionEventSeq = 0;
+
 interface LobbySlot {
     readonly connectionKey: string;
     readonly generation: number;
@@ -203,6 +215,8 @@ interface LobbySlot {
     /** Synchronous/asynchronous join failure observed before all owners attach. */
     failure: Error | null;
     dropping: boolean;
+    /** 本代是否已发布过 closed 连接事件（voluntary 只在未发布过时补发终局）。 */
+    closedEmitted: boolean;
     readonly owners: Set<LobbyOwner>;
 }
 
@@ -334,6 +348,8 @@ export class WebSocketClient {
     private pending = new Map<string, IPending>();
     private seq = 0;
     private pushHandlers = new Map<string, Set<(data: unknown) => unknown>>();
+    private readonly connectionListeners = new Set<LobbyConnectionListener>();
+    private connectionSnapshot: LobbyConnectionSnapshot = { state: "idle", connGeneration: 0, lastSeq: 0 };
 
     get connected(): boolean {
         return this.slot?.room != null;
@@ -341,6 +357,82 @@ export class WebSocketClient {
 
     get room(): Colyseus.Room | null {
         return this.slot?.room ?? null;
+    }
+
+    /**
+     * 订阅低层连接事件（§7.3）。订阅时立即以当前快照回放一条合成事件（idle 无可
+     * 回放），晚到订阅者不会永远错过 ready。listener 异常被逐个观察，⛔ 不中断其余
+     * listener 与主流程。返回解绑函数。
+     */
+    subscribeConnection(listener: LobbyConnectionListener): () => void {
+        this.connectionListeners.add(listener);
+        const snapshot = this.connectionSnapshot;
+        if (snapshot.state !== "idle") {
+            const kind = snapshot.state === "joining" ? "joining"
+                : snapshot.state === "dropped" ? "dropped"
+                : "ready";
+            try {
+                listener({ kind, connGeneration: snapshot.connGeneration, seq: snapshot.lastSeq });
+            } catch (error) {
+                console.error("[WebSocketClient] connection listener 回放异常", error);
+            }
+        }
+        return () => { this.connectionListeners.delete(listener); };
+    }
+
+    /** 当前不可变连接快照（§7.3 的 snapshot 出口；replay 与它同源）。 */
+    getConnectionState(): LobbyConnectionSnapshot {
+        return this.connectionSnapshot;
+    }
+
+    /** 发布一条连接事件：先更新快照，再严格同步分发；listener 异常逐个观察。 */
+    private publishConnectionEvent(event: LobbyConnectionEvent): void {
+        if (event.kind === "closed") {
+            // 旧代的迟到 closed 不得回退新代快照。
+            if (event.connGeneration === this.connectionSnapshot.connGeneration) {
+                this.connectionSnapshot = { state: "idle", connGeneration: event.connGeneration, lastSeq: event.seq };
+            }
+        } else {
+            const state = event.kind === "joining" ? "joining"
+                : event.kind === "dropped" ? "dropped"
+                : "ready";
+            this.connectionSnapshot = { state, connGeneration: event.connGeneration, lastSeq: event.seq };
+        }
+        for (const listener of [...this.connectionListeners]) {
+            try {
+                listener(event);
+            } catch (error) {
+                console.error("[WebSocketClient] connection listener 异常", error);
+            }
+        }
+    }
+
+    /** 发布 closed{auth-invalid}（强踢推送/关闭码兜底/RPC 鉴权错误码路径）。 */
+    private publishConnectionAuthInvalid(slot: LobbySlot, authReason: AuthInvalidReason): void {
+        slot.closedEmitted = true;
+        this.publishConnectionEvent({
+            kind: "closed",
+            connGeneration: slot.generation,
+            seq: ++connectionEventSeq,
+            reason: "auth-invalid",
+            authReason,
+        });
+    }
+
+    /**
+     * 发布 closed{voluntary|final-loss}。voluntary 只在本代尚未发布过 closed 时补发
+     * （主动 leave 跟在 auth-invalid/final-loss 之后不再重复终局）；final-loss 的
+     * “每代一次”由既有 current()/cancelled 结构闸保证。
+     */
+    private publishConnectionClosed(slot: LobbySlot, reason: "voluntary" | "final-loss"): void {
+        if (reason === "voluntary" && slot.closedEmitted) return;
+        slot.closedEmitted = true;
+        this.publishConnectionEvent({
+            kind: "closed",
+            connGeneration: slot.generation,
+            seq: ++connectionEventSeq,
+            reason,
+        });
     }
 
     /** @param endpoint http(s) 地址，如 http://localhost:2568（SDK 自动派生 ws(s)） */
@@ -423,9 +515,18 @@ export class WebSocketClient {
                 cancelled: false,
                 failure: null,
                 dropping: false,
+                closedEmitted: false,
                 owners: new Set<LobbyOwner>(),
             };
             this.slot = slot;
+            // joining 必须先于 doJoin：joinOrCreate 同步抛错时 doJoin 的 catch 会立即
+            // 发布 closed，事件序不得倒置。listener 是框架内部订阅（bus 转发/测试），
+            // ⛔ 不得在回调里同步重入 joinOwned（此刻 slot.ready 尚未装配）。
+            this.publishConnectionEvent({
+                kind: "joining",
+                connGeneration: slot.generation,
+                seq: ++connectionEventSeq,
+            });
             slot.ready = this.doJoin(slot);
             slot.ready.catch(() => {});
         }
@@ -533,10 +634,13 @@ export class WebSocketClient {
                 owner.cancel(failure);
             }
             slot.owners.clear();
+            // join 失败是不触发 session 通知的终局：voluntary（派生层不导航）。
+            this.publishConnectionClosed(slot, "voluntary");
             throw e;
         }
         if (slot.cancelled || this.slot !== slot || slot.owners.size === 0) {
             this.forgetImplicitOwners(slot);
+            this.publishConnectionClosed(slot, "voluntary");
             await this.closePhysicalRoom(slot, room);
             throw new JoinError("CANCELLED", "[WebSocketClient] join 结果已过期");
         }
@@ -556,9 +660,16 @@ export class WebSocketClient {
                 owner.cancel(failure);
             }
             slot.owners.clear();
+            this.publishConnectionClosed(slot, "voluntary");
             await this.closePhysicalRoom(slot, room);
             throw error;
         }
+        // replay 闸装好、slot.ready 即将解析：ready 是发送闸建立后的首个可用信号。
+        this.publishConnectionEvent({
+            kind: "ready",
+            connGeneration: slot.generation,
+            seq: ++connectionEventSeq,
+        });
     }
 
     private bindRoom(slot: LobbySlot, room: Colyseus.Room): void {
@@ -593,7 +704,7 @@ export class WebSocketClient {
             } else {
                 const code = (reply.err?.code ?? "INTERNAL") as RpcErrCode;
                 if (code === "AUTH_EPOCH_STALE" || code === "AUTH_REQUIRED" || code === "ACCOUNT_BANNED") {
-                    notifyAuthInvalid(code as AuthInvalidReason);
+                    this.publishConnectionAuthInvalid(slot, code as AuthInvalidReason);
                 }
                 p.reject(new RpcError(code, reply.err.msg));
             }
@@ -608,7 +719,7 @@ export class WebSocketClient {
                 return;
             }
             if (msg.type === LobbyPush.ForceLogout) {
-                notifyAuthInvalid(FORCE_REASON_MAP[msg.data.reason]);
+                this.publishConnectionAuthInvalid(slot, FORCE_REASON_MAP[msg.data.reason]);
             }
             const set = this.pushHandlers.get(msg.type);
             if (!set) return;
@@ -622,12 +733,30 @@ export class WebSocketClient {
             this.rejectAll("CONN_LOST", slot);
             // close -> onDrop 之间发出的 RPC 已经躺在 SDK 队列里，必须在这里清掉。
             this.abandonOnReplayGuardLoss(slot, room);
+            // 先闸后播（§7.3 固定序：关发送闸→在途结算→清 SDK 队列→发布 dropped）；
+            // 闸失守时 abandon 已发布 closed{final-loss}，不再发布 dropped。
+            if (!slot.cancelled) {
+                this.publishConnectionEvent({
+                    kind: "dropped",
+                    connGeneration: slot.generation,
+                    seq: ++connectionEventSeq,
+                });
+            }
         });
         room.onReconnect(() => {
             if (!current()) return;
             slot.dropping = false;
             // 必须同步执行：SDK 在 onReconnect 回调返回后立刻 flush 队列。
             this.abandonOnReplayGuardLoss(slot, room);
+            // reconnected 只在发送闸同步重装完成后发布；闸失守时 abandon 已发布
+            // closed{final-loss}。
+            if (!slot.cancelled) {
+                this.publishConnectionEvent({
+                    kind: "reconnected",
+                    connGeneration: slot.generation,
+                    seq: ++connectionEventSeq,
+                });
+            }
         });
         room.onLeave((code?: number) => {
             // Handle stale callbacks as well as the current room. Filtering by
@@ -643,8 +772,8 @@ export class WebSocketClient {
             slot.owners.clear();
             try { room.removeAllListeners(); } catch { /* malformed adapter */ }
             const forced = code !== undefined ? forceLogoutReasonOf(code) : null;
-            if (forced) notifyAuthInvalid(FORCE_REASON_MAP[forced]);
-            else notifyConnLost();
+            if (forced) this.publishConnectionAuthInvalid(slot, FORCE_REASON_MAP[forced]);
+            else this.publishConnectionClosed(slot, "final-loss");
         });
     }
 
@@ -664,7 +793,7 @@ export class WebSocketClient {
         await this.closeSlot(slot);
     }
 
-    private closeSlot(slot: LobbySlot): Promise<void> {
+    private closeSlot(slot: LobbySlot, emitClosed = true): Promise<void> {
         this.forgetImplicitOwners(slot);
         if (slot.closing) return slot.closing;
         if (this.slot === slot) this.slot = null;
@@ -673,6 +802,9 @@ export class WebSocketClient {
         // RPC_CLIENT_TIMEOUT_MS 拖住，且迟到回包可能落到一个已无主的 pending。
         this.rejectAll("CONN_LOST", slot);
         slot.dropping = false;
+        // 主动关闭：先闸后播。abandonOnReplayGuardLoss 传 emitClosed=false，由它在
+        // 自己的调用点发布 closed{final-loss}（非自愿终局，不能被 voluntary 顶替）。
+        if (emitClosed) this.publishConnectionClosed(slot, "voluntary");
         if (!slot.room) {
             slot.closing = Promise.resolve();
             void slot.ready.then(() => {
@@ -794,8 +926,8 @@ export class WebSocketClient {
         this.rejectAll("CONN_LOST", slot);
         for (const owner of slot.owners) { owner.active = false; owner.disposeControl(); }
         slot.owners.clear();
-        void this.closeSlot(slot);
-        notifyConnLost();
+        void this.closeSlot(slot, false);
+        this.publishConnectionClosed(slot, "final-loss");
     }
 
     private rejectAll(code: LocalErrCode, slot?: LobbySlot): void {

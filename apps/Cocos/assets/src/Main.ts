@@ -15,6 +15,8 @@ import {
     RoomController,
 } from "./logic/gameplay/RoomController";
 import { getSessionGeneration, onAuthInvalid, onBattleLost, onConnLost, returnToLogin } from "./net/session";
+import { installCocosLifecycleBridge } from "./app/CocosLifecycleBridge";
+import { lifecycleBus, wireConnectionEvents } from "./app/wiring";
 import { GameplayModeId, joinErrText } from "./shared/index";
 import type { GameplayStartResult } from "./logic/gameplay/RoomController";
 import { registerDefaultGameplays, type AppGameplayRegistry } from "./gameplay/catalog";
@@ -56,6 +58,10 @@ export class Main extends Component {
     async start(): Promise<void> {
         initHttp(this.effectiveServerUrl);
         initPortal(this.portalUrl);
+        // Transport 连接事件 → LifecycleBus → SessionCoordinator 派生：必须先于任何
+        // 页面挂载接通（§7.3 阶段 5a；应用级接线跨场景保持，5b 迁入 bootstrap）。
+        wireConnectionEvents();
+        this.unsubs.push(installCocosLifecycleBridge(lifecycleBus));
 
         // Register before opening pages so transport loss always tears down the
         // gameplay generation before the navigation layer mounts Login again.
