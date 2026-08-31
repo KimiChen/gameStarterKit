@@ -7,7 +7,9 @@
   之后禁止替换；默认 ballMove 按 `TICK_MS` 积分移动，Schema patch rate 为 50ms，并使用 shared 技能公式。
 - `GameMode.ts`：服务端玩法登记点。`GameRoom` 继续拥有 transport、auth、房间锁和生命周期；玩法通过
   `createPlayer` 提供精确 player Schema，并必须用 `usesDefaultBallMoveRules: boolean` 显式声明是否委托
-  ballMove fallback，用 `roster{min,max,autoStart}` 声明人数事实——⛔ shell 里不再有人数字面量，
+  ballMove fallback（⚠ 该声明在 `selectModeState` 里与**真实 root** 交叉核对：非 ballMove root 上声明
+  它会抛——否则 shell 的 `ballState` 收窄会静默把 ball 字段写到别的 player 类型上，那些字段没有
+  `@type`、永不进 wire，且 `alive` 恒真会让房间再也不结算），用 `roster{min,max,autoStart}` 声明人数事实——⛔ shell 里不再有人数字面量，
   `maxClients`、满员闸、自动开局阈值、开局下限与开局边界重验五处全部读它。`roster.max` 不得超过 shared 的
   `MAX_PLAYERS`（root players map 的容量由生成 validator 按它烧死），`min ≤ autoStart ≤ max`；声明了
   `ballMove@1` 证据的 mode 其 `min`/`autoStart` 必须都等于 `BALL_MOVE_ROSTER_SIZE`，因为该证据把
@@ -24,7 +26,10 @@
 - `schema/GameRoomState.ts`：由 shared `schema/game-room-state.json` 生成的多 root 运行时 Schema 及
   mode→root 构造器映射；同一 manifest 也生成 shared `protocol/state.ts` 的纯数据接口、mode→validator 映射。
   ⚠ 每个 root **必须**声明 shell 依赖的生命周期字段 `tick`/`phase`/`matchId`/`players`，其 player 类型
-  必须声明 `id`/`name`；漏声明在 codegen 期直接失败。据此生成的 `RoomStateLifecycle` 是 `GameRoom.state`
+  必须声明 `id`/`name`；漏声明在 codegen 期直接失败。`phase` 还必须是 `GamePhase`/`GamePhaseType`
+  **本身**并声明 `Waiting`/`Playing`/`Settle` 三个成员——⛔「是个 enum」不够：换一个枚举会让
+  `state.phase !== GamePhase.Waiting` 恒真（房间永久不可进），少一个成员会让生成的 wire validator
+  拒掉 shell 无条件写入的那个值（该 mode 全部客户端在结算时解不出状态）。据此生成的 `RoomStateLifecycle` 是 `GameRoom.state`
   的类型——⛔ 它不是任何具体 root 的别名：曾经的 `declare readonly state: GameRoomState` 让 shell 在类型上
   拥有 ballMove 的全部字段，「玩法无关」只剩口头约定。shell 读 ball 专属字段必须显式走
   `GameRoom.ballState`，且只在 `usesDefaultBallMoveRules === true` 的路径上。

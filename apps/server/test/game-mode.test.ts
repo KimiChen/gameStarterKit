@@ -934,3 +934,29 @@ test("phaseAllows 穷尽矩阵：shell 只认 Ping/Chat，其余全部由 mode �
         }
     }
 });
+
+/**
+ * `usesDefaultBallMoveRules` 是 mode **自报**的布尔值，此前与真实 root 完全没有绑定。
+ *
+ * 后果全程静默：一个 `id:"idle"` 且 `usesDefaultBallMoveRules:true` 的 mode 能过全部
+ * fail-closed 闸，然后 shell 的 `ballState`（`as unknown as GameRoomState`，不做任何检查）
+ * 把 x/y/hp/alive 写到 `IdlePlayerState` 上——那些字段没有 `@type`，永远不进 wire，客户端什么也
+ * 看不到；`alive` 恒为 true 使 `alive <= 1` 永不成立，房间进 Playing 后再也不会结算。
+ * ⛔ 没有一处抛错，是最难排查的那类事故。
+ */
+test("usesDefaultBallMoveRules 必须与真实 root 绑定：idle root 上声明它必须抛", () => {
+    const idleWithBallRules = {
+        ...createIdleGameMode(),
+        usesDefaultBallMoveRules: true,
+    } as unknown as GameMode<GameRoomState>;
+    assert.throws(
+        () => new GameRoom({ seed: 1, mode: idleWithBallRules }),
+        /声明 usesDefaultBallMoveRules 却选出了 IdleRoomState root/,
+        "自报的布尔值必须被真实 root 反驳",
+    );
+
+    // ⛔ 反向不得误伤：ballMove root 上声明它必须放行，且 idle 不声明它也必须放行；
+    // 否则上面的 throws 可能只是因为构造 GameRoom 本身坏了。
+    assert.doesNotThrow(() => new GameRoom({ seed: 1, mode: createBallMoveGameMode() }));
+    assert.doesNotThrow(() => new GameRoom({ seed: 1, mode: createIdleGameMode() as never }));
+});

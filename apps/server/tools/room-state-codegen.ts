@@ -488,6 +488,24 @@ const ROOT_LIFECYCLE_FIELDS = [
   { name: "players", kind: "map" },
 ] as const;
 
+/**
+ * `phase` 只验到「是个 enum」是不够的——生成的 `RoomStateLifecycle.phase` 写死成
+ * `GamePhaseType`，而 shell 无条件写 `GamePhase.Waiting/Playing/Settle` 这三个值。
+ *
+ * 两种漏网形态（都实测过能通过「是个 enum」这一关）：
+ *  - **异枚举**：root 声明 `PuzzlePhase`，默认值落在 `PuzzlePhase.Idle`，于是 GameRoom 里
+ *    `state.phase !== GamePhase.Waiting` 恒真 → 每次 onJoin 都被 GameAlreadyStarted 拒绝，
+ *    房间永久不可进；而 `declare readonly state` 与 `as GameRoomState` 两处 cast 让 typecheck 抓不到。
+ *  - **成员子集**：root 只声明 `[Waiting, Playing]`（「按自己规则永不 Settle」的玩法），
+ *    生成的 shared validator 就会拒掉 `settle`——房间一进结算，该 mode 全部客户端的
+ *    `validateRoomStateForMode` 抛 STATE_PHASE，整份结算状态无法解码。
+ *    ⚠ `settle()` 不是 ballMove 专属：mode 自己在 onMessage 里调 `context.settle()` 就会写入，
+ *    IdleGameMode 正是这么做的。
+ */
+const ROOT_PHASE_ENUM_OBJECT = "GamePhase";
+const ROOT_PHASE_ENUM_TYPE = "GamePhaseType";
+const ROOT_PHASE_REQUIRED_MEMBERS = ["Waiting", "Playing", "Settle"] as const;
+
 /** shell 只读 player 的这两个字段（chat 广播与证据 roster 都只要它们）。 */
 const PLAYER_LIFECYCLE_FIELDS = [
   { name: "id", kind: "string" },
@@ -512,6 +530,25 @@ function assertRootLifecycle(descriptor: RoomStateDescriptor): void {
           `manifest.types.${type.name}.${required.name}`,
           `lifecycle field must be kind "${required.kind}", got "${field.kind}"`,
         );
+      }
+      if (required.name === "phase" && field.kind === "enum") {
+        if (field.enumObject !== ROOT_PHASE_ENUM_OBJECT || field.enumType !== ROOT_PHASE_ENUM_TYPE) {
+          fail(
+            `manifest.types.${type.name}.phase`,
+            `root phase must use ${ROOT_PHASE_ENUM_OBJECT}/${ROOT_PHASE_ENUM_TYPE}, `
+            + `got ${field.enumObject}/${field.enumType} `
+            + "(the generic shell writes GamePhase.* unconditionally)",
+          );
+        }
+        for (const member of ROOT_PHASE_REQUIRED_MEMBERS) {
+          if (!field.members.includes(member)) {
+            fail(
+              `manifest.types.${type.name}.phase`,
+              `root phase must declare member "${member}" — the generic shell writes it `
+              + "unconditionally, and the generated wire validator would reject it",
+            );
+          }
+        }
       }
     }
     const players = type.fields.find((field) => field.name === "players");

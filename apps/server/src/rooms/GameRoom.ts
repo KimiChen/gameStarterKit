@@ -39,6 +39,7 @@ import {
     createRoomStateForMode,
     GameRoomState,
     PlayerState,
+    ROOM_STATE_ROOT_CONSTRUCTORS,
     type RoomStateLifecycle,
 } from "./schema/GameRoomState";
 import { groupAdmitsZone, normalizeSId } from "../core/infra/config";
@@ -551,6 +552,21 @@ export class GameRoom extends Room {
         const selected = createRoomStateForMode(mode.id);
         if ((typeof selected !== "object" && typeof selected !== "function") || selected === null) {
             throw new TypeError(`[GameRoom] generated root factory ${mode.id} 必须返回 Schema root`);
+        }
+        // ⚠ 把「我委托 ballMove 默认规则」这句**自报的布尔值**绑到真实 root 上。
+        // 二者此前完全没有绑定：一个 id:"idle" 且 usesDefaultBallMoveRules:true 的 mode 能过
+        // 全部 fail-closed 闸，然后 shell 的 `ballState`（`as unknown as GameRoomState`，不做任何
+        // 检查）会把 x/y/hp/alive 写到 IdlePlayerState 上——那些字段没有 @type，永远不进 wire，
+        // 客户端什么也看不到；`alive` 恒为 true 使 `alive <= 1` 永不成立，房间进 Playing 后
+        // 再也不会结算。⛔ 全程静默，没有一处抛错。
+        // 从生成的 mode→root 映射里取，⛔ 不要硬写 GameRoomState：映射是 manifest 的产物，
+        // 硬写会让 manifest 改了 ballMove 的 root 之后这道闸悄悄失效。
+        const ballMoveRoot = ROOM_STATE_ROOT_CONSTRUCTORS[BALL_MOVE_GAME_MODE_ID];
+        if (mode.usesDefaultBallMoveRules === true && !(selected instanceof ballMoveRoot)) {
+            throw new TypeError(
+                `[GameRoom] mode ${mode.id} 声明 usesDefaultBallMoveRules 却选出了 `
+                + `${selected.constructor.name} root——ballMove 默认规则只能作用在 ballMove root 上`,
+            );
         }
         super.setState(selected as GameRoomState);
         // Pure unit/replay callers do not pass through Room.__init(), so their

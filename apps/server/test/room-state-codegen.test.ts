@@ -392,6 +392,54 @@ test("生命周期字段的 kind 不对同样必须失败——⛔ 只查名字�
   );
 });
 
+test("root 的 phase 必须是 GamePhase 本身，⛔ 「是个 enum」不够", () => {
+  // 异枚举实测能通过「是个 enum」：生成的 root 是 `phase: PuzzlePhaseType = PuzzlePhase.Idle`，
+  // 而同一份产物里 RoomStateLifecycle 仍写死 `phase: GamePhaseType`——两处 cast
+  // （declare readonly state / as GameRoomState）让 typecheck 抓不到，运行期表现是
+  // `state.phase !== GamePhase.Waiting` 恒真 → 每次 onJoin 都 GameAlreadyStarted，房间永久不可进。
+  assertManifestError(
+    (manifest) => {
+      const phase = manifestField(manifestType(manifest, "IdleRoomState"), "phase");
+      phase.enumObject = "PuzzlePhase";
+      phase.enumType = "PuzzlePhaseType";
+      phase.members = ["Waiting", "Playing", "Settle"];
+    },
+    /root phase must use GamePhase\/GamePhaseType, got PuzzlePhase\/PuzzlePhaseType/,
+  );
+  // 只错 enumType 也必须被命中——⛔ 不能只查 enumObject
+  assertManifestError(
+    (manifest) => { manifestField(manifestType(manifest, "GameRoomState"), "phase").enumType = "PuzzlePhaseType"; },
+    /root phase must use GamePhase\/GamePhaseType/,
+  );
+});
+
+test("root 的 phase 必须声明 shell 会写入的全部成员，缺一个都不行", () => {
+  // 成员子集同样能通过「是个 enum」。少了 Settle 时，生成的 shared validator 会拒掉 settle，
+  // 房间一进结算该 mode 全部客户端的 validateRoomStateForMode 抛 STATE_PHASE，结算状态无法解码。
+  // ⚠ settle() 不是 ballMove 专属：mode 在 onMessage 里调 context.settle() 就会写入。
+  for (const member of ["Waiting", "Playing", "Settle"]) {
+    assertManifestError(
+      (manifest) => {
+        const phase = manifestField(manifestType(manifest, "IdleRoomState"), "phase");
+        phase.members = (phase.members as string[]).filter((value) => value !== member);
+        // ⚠ 必须同时把 default 挪到仍然存在的成员上：删掉 default 指向的成员会先撞上既有的
+        // 「default 必须是已声明成员」闸，用例就测不到本轮新增的成员断言了。
+        phase.default = (phase.members as string[])[0];
+      },
+      new RegExp(`root phase must declare member "${member}"`),
+    );
+  }
+  // 据实记录既有闸的覆盖：删掉 default 指向的成员由更早的 default 闸挡住，
+  // ⛔ 不谎称是本轮新增覆盖。
+  assertManifestError(
+    (manifest) => {
+      const phase = manifestField(manifestType(manifest, "IdleRoomState"), "phase");
+      phase.members = (phase.members as string[]).filter((value) => value !== "Waiting");
+    },
+    /must name a declared enum member/,
+  );
+});
+
 test("root 的 player 类型漏掉 name 必须在 codegen 期失败", () => {
   assertManifestError(
     (manifest) => {
