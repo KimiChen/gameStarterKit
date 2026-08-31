@@ -233,7 +233,7 @@ test("accepted input evidence has a bounded capacity and rejects later side effe
         maxAcceptedInputs: 1,
         evidenceEmitter: (value) => {
             evidence = value;
-            return Promise.resolve(null);
+            return Promise.resolve({ ok: true as const, entryId: "0-0" });
         },
     });
     installLock(room);
@@ -302,7 +302,7 @@ test("winning cast is appended before settlement emits replayable v3 evidence", 
             assert.equal(evidence.events.at(-1)?.type, "castSkill");
             replayMatchEvidenceV3(validateMatchEvidenceV3(evidence));
             emissions++;
-            return Promise.resolve(null);
+            return Promise.resolve({ ok: true as const, entryId: "0-0" });
         },
     });
     installLock(room);
@@ -332,7 +332,7 @@ test("Playing leave is appended before death/removal and emits ordered determini
             assert.equal(evidence.events.at(-1)?.type, "leave");
             replayMatchEvidenceV3(validateMatchEvidenceV3(evidence));
             emitted = evidence;
-            return Promise.resolve(null);
+            return Promise.resolve({ ok: true as const, entryId: "0-0" });
         },
     });
     installLock(room);
@@ -389,7 +389,7 @@ test("diagonal move evidence preserves accepted input and normalizes exactly onc
         evidenceEmitter: (evidence) => {
             replayMatchEvidenceV3(validateMatchEvidenceV3(evidence));
             emitted = evidence;
-            return Promise.resolve(null);
+            return Promise.resolve({ ok: true as const, entryId: "0-0" });
         },
     });
     installLock(room);
@@ -428,7 +428,7 @@ test("settlement freezes replay evidence before the mode finish hook can mutate 
         evidenceEmitter: (evidence) => {
             replayMatchEvidenceV3(validateMatchEvidenceV3(evidence));
             emitted = evidence;
-            return Promise.resolve(null);
+            return Promise.resolve({ ok: true as const, entryId: "0-0" });
         },
     });
     installLock(room);
@@ -461,7 +461,7 @@ test("Playing leave settles before awaiting a slow mode leave hook", async () =>
         evidenceEmitter: (evidence) => {
             replayMatchEvidenceV3(validateMatchEvidenceV3(evidence));
             emitted = evidence;
-            return Promise.resolve(null);
+            return Promise.resolve({ ok: true as const, entryId: "0-0" });
         },
     });
     installLock(room);

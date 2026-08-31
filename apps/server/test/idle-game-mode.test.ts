@@ -274,7 +274,7 @@ test("IdlePulse：strict {}、只累加发送者，达目标同步结算且不�
     const room = new GameRoom({
         seed: 703,
         mode: createIdleGameMode({ pulseGoal: 2 }),
-        evidenceEmitter: async () => { evidenceEmissions++; return null; },
+        evidenceEmitter: async () => { evidenceEmissions++; return { ok: true as const, entryId: "0-0" }; },
     });
     installLock(room);
     const first = client("pulse-a");

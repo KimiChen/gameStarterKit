@@ -150,7 +150,7 @@ async function makeV3Evidence(matchId: string, sId = 0): Promise<MatchEvidenceV3
     matchId: () => matchId,
     evidenceEmitter: (value) => {
       evidence = value;
-      return Promise.resolve(null);
+      return Promise.resolve({ ok: true as const, entryId: "0-0" });
     },
   });
   (room as unknown as { sId: number }).sId = sId;
@@ -234,7 +234,9 @@ test("v3 producer changes neither legacy nor v2 and consumer stores the replay-v
   const before = new Map<string, number>();
   for (const key of MATCH_STREAM_KEYS) before.set(key, await stream(key).xlen(key));
 
-  const entryId = await emitMatchEvidence(evidence);
+  const emitted = await emitMatchEvidence(evidence);
+  assert.ok(emitted.ok, "生产侧应当成功 XADD");
+  const entryId = emitted.entryId;
   assert.ok(entryId);
   rememberStreamEntry(K_STREAM_MATCH_V3, entryId!);
   assert.equal(await stream(K_STREAM_MATCH).xlen(K_STREAM_MATCH), before.get(K_STREAM_MATCH));
@@ -279,8 +281,19 @@ test("v3 producer rejects extra fields and replay-mismatched final state before 
   const originalError = console.error;
   console.error = () => undefined;
   try {
-    assert.equal(await emitMatchEvidence(extraKeyEvidence), null, "extra key must fail exact-shape validation");
-    assert.equal(await emitMatchEvidence(replayMismatch), null, "changed final state must fail deterministic replay");
+    const extraKeyResult = await emitMatchEvidence(extraKeyEvidence);
+    assert.equal(extraKeyResult.ok, false, "extra key must fail exact-shape validation");
+    assert.equal(extraKeyResult.ok === false && extraKeyResult.kind, "self-check",
+      "exact-shape 失败必须归类为 self-check 而不是 transport");
+    assert.match(extraKeyResult.ok === false ? extraKeyResult.reason : "", /^V3_PAYLOAD_/u,
+      "自检失败的码必须落在与消费侧共用的 V3_PAYLOAD_* 码空间");
+
+    const replayResult = await emitMatchEvidence(replayMismatch);
+    assert.equal(replayResult.ok, false, "changed final state must fail deterministic replay");
+    assert.equal(replayResult.ok === false && replayResult.kind, "self-check",
+      "replay 失败必须归类为 self-check");
+    assert.equal(replayResult.ok === false && replayResult.reason, "V3_REPLAY_MISMATCH",
+      "replay 失败必须与 shape 失败使用不同的码——两类事故不得再不可区分");
   } finally {
     console.error = originalError;
   }
@@ -550,7 +563,9 @@ test("单轮三读：legacy/v2/v3 同时落库，三条独立 PEL 各自 ACK", a
   const v2Id = await emitV2Evidence(makeEvidence(v2Mid, 8));
   assert.ok(v2Id);
   rememberStreamEntry(K_STREAM_MATCH_V2, v2Id!);
-  const v3Id = await emitMatchEvidence(await makeV3Evidence(v3Mid, 9));
+  const v3Emitted = await emitMatchEvidence(await makeV3Evidence(v3Mid, 9));
+  assert.ok(v3Emitted.ok);
+  const v3Id = v3Emitted.entryId;
   assert.ok(v3Id);
   rememberStreamEntry(K_STREAM_MATCH_V3, v3Id!);
 
@@ -584,7 +599,9 @@ test("XAUTOCLAIM takes stale PEL entries from legacy, v2, and v3", async () => {
     "payload", JSON.stringify(legacyEvidence),
   );
   const v2Id = await emitV2Evidence(makeEvidence(v2Mid, 32));
-  const v3Id = await emitMatchEvidence(await makeV3Evidence(v3Mid, 33));
+  const v3Emitted = await emitMatchEvidence(await makeV3Evidence(v3Mid, 33));
+  assert.ok(v3Emitted.ok);
+  const v3Id = v3Emitted.entryId;
   assert.ok(legacyId && v2Id && v3Id);
   const entries = [
     { key: K_STREAM_MATCH, id: legacyId! },

@@ -44,7 +44,7 @@ import { groupAdmitsZone, normalizeSId } from "../core/infra/config";
 import { verifyAndCacheWebPlatformSession } from "../platform/webPlatformClient";
 import { joinRefused, joinRefusedAuth, toErrCode } from "../core/errors";
 import {
-    emitMatchEvidence,
+    emitMatchEvidence, type EmitEvidenceResult,
     MATCH_MODE_CASUAL,
     newMatchId,
 } from "../core/match/matchConsumer";
@@ -200,7 +200,7 @@ export interface GameRoomRuntimeOptions {
     /** Optional ruleset; transport/admission remains owned by GameRoom. */
     mode?: GameMode<any, any>;
     /** Test/embedded override for durable match evidence emission. */
-    evidenceEmitter?: (evidence: MatchEvidenceV3) => Promise<unknown>;
+    evidenceEmitter?: (evidence: MatchEvidenceV3) => Promise<EmitEvidenceResult>;
     /** Test/replay override for the accepted-input evidence cap. */
     maxAcceptedInputs?: number;
 }
@@ -403,7 +403,7 @@ export class GameRoom extends Room {
     private simulationAccumulatorMs = 0;
     private readonly runtimeClock: () => number;
     private readonly matchIdFactory: () => string;
-    private readonly evidenceEmitter: (evidence: MatchEvidenceV3) => Promise<unknown>;
+    private readonly evidenceEmitter: (evidence: MatchEvidenceV3) => Promise<EmitEvidenceResult>;
     /** Mode may be selected by the validated onCreate options for production
      * rooms; tests can still inject an exact mode through the constructor. */
     private mode: RuntimeGameMode | null;
@@ -1726,7 +1726,15 @@ export class GameRoom extends Room {
             `[GameRoom ${this.roomId}] 收局 matchId=${this.state.matchId}：`
             + evidence.participants.map((participant) => `#${participant.place} ${participant.name}`).join("，"),
         );
-        void trackTask("game:match-evidence", this.evidenceEmitter(evidence));
+        // 两类失败都不阻塞收局，但必须**可区分地**留下痕迹：自检失败是本房间的内部一致性
+        // 缺陷（已由 emitMatchEvidence 写进 quarantine、被深度探针告警），传输失败是外部事故。
+        void trackTask("game:match-evidence", this.evidenceEmitter(evidence).then((result) => {
+            if (result.ok || result.kind !== "self-check") return;
+            console.error(
+                `[GameRoom ${this.roomId}] ⚠⚠ 收局证据自检失败 matchId=${this.state.matchId} `
+                + `reason=${result.reason}——本房间状态与证据不自洽，已入 quarantine 待人工核查`,
+            );
+        }));
     }
 
     private buildMatchEvidence(mode: RuntimeGameMode): MatchEvidenceV3 | null {

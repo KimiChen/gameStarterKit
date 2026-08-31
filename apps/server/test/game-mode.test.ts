@@ -570,7 +570,7 @@ test("idle mode：generic settle 不写 ballMove casual evidence", async () => {
     const room = new GameRoom({
         seed: 96,
         mode: createIdleGameMode(),
-        evidenceEmitter: async () => { emissions++; return null; },
+        evidenceEmitter: async () => { emissions++; return { ok: true as const, entryId: "0-0" }; },
     });
     installLock(room);
     const first = client("idle-evidence-a");

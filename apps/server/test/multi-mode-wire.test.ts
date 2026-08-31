@@ -73,7 +73,7 @@ class MultiModeWireRoom extends GameRoom {
         super({
             seed: sequence,
             matchId: () => `wire-match-${sequence}`,
-            evidenceEmitter: async () => undefined,
+            evidenceEmitter: async () => ({ ok: true as const, entryId: "0-0" }),
         });
 
         const handleMove = this.messages[C2S.Move];

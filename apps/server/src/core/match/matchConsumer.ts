@@ -264,32 +264,95 @@ export function newMatchId(): string {
 // ── 生产侧 ──
 
 /**
- * 收局时 XADD 一条证据。**吞错**：XADD 失败只 console.error 告警、返回 null，
- * ⛔ 不阻塞对局结束（对局结果已广播/已写档，证据丢失属可对账事故，不能拖死房间）。
- * @returns stream 条目 id；失败 null。
+ * producer 侧自检失败（validate / replay / 超预算）与外部 XADD 故障是**两类事故**：
+ * 前者是 GameRoom 内部一致性缺陷，后者是 Redis 可用性问题。此前它们共用一个 catch、
+ * 一律返回 null，调用方与运维都无法区分。
+ *
+ * 方向：自检失败应当 **fail-closed**——消费侧对**同一组**校验走的就是 fail-closed
+ * （写 quarantine 保全原始 payload 再 ACK 并由深度探针告警）；生产侧对自己造的数据反而
+ * fail-open 直接丢弃，是两侧姿态不一致。但 fail-closed **不等于阻塞收局**（对局结果已广播），
+ * 正确落点是「必须留下不可忽略的持久痕迹」——即把自检失败也写进同一个 quarantine 流，
+ * 让已有的 `runMatchStreamDepthCheck` 告警看得见，不新增任何 observability 基建。
  */
-export async function emitMatchEvidence(input: MatchEvidenceV3): Promise<string | null> {
+export type EmitEvidenceResult =
+  | { readonly ok: true; readonly entryId: string }
+  | { readonly ok: false; readonly kind: "self-check"; readonly reason: string }
+  | { readonly ok: false; readonly kind: "transport"; readonly reason: string };
+
+/** 自检失败的证据没有来源条目，只 XADD quarantine、不 XACK（来源 PEL 里本就没有它）。 */
+async function quarantineProducerSelfCheck(
+  matchId: string,
+  reason: string,
+  payload: string,
+): Promise<boolean> {
+  try {
+    await clientForKey(K_STREAM_MATCH_QUARANTINE).xadd(
+      K_STREAM_MATCH_QUARANTINE, "*",
+      "sourceStream", "",
+      "sourceKind", "producer",
+      "sourceId", "",
+      "reason", reason,
+      "matchId", matchId,
+      "rawFields", payload,
+      "at", String(Date.now()),
+    );
+    return true;
+  } catch (e) {
+    console.error(`[matchConsumer] producer 自检失败的 quarantine 落盘也失败 matchId=${matchId}:`, e);
+    return false;
+  }
+}
+
+/**
+ * 收局时 XADD 一条证据。⛔ 无论哪类失败都**不阻塞对局结束**（对局结果已广播/已写档）。
+ * 错误码与消费侧 `decodeFailure` **复用同一套码空间**，运维只需要一套码表。
+ */
+export async function emitMatchEvidence(input: MatchEvidenceV3): Promise<EmitEvidenceResult> {
   let matchId = "?";
+  let payload = "";
+  // ── 自检段：失败属 GameRoom 内部一致性缺陷 ──
   try {
     const ev = validateMatchEvidenceV3(input);
     matchId = ev.matchId;
     replayMatchEvidenceV3(ev);
-    const payload = JSON.stringify(ev);
+    payload = JSON.stringify(ev);
     if (Buffer.byteLength(payload, "utf8") > MATCH_V3_MAX_PAYLOAD_BYTES) {
-      throw new TypeError("match evidence payload exceeds the v3 parse budget");
+      throw new MatchEvidenceValidationError("PAYLOAD_SIZE", "evidence");
     }
-    return await clientForKey(K_STREAM_MATCH_V3).xadd(
+  } catch (e) {
+    const reason = e instanceof MatchEvidenceValidationError
+      ? `V3_PAYLOAD_${e.code}`
+      : "V3_REPLAY_MISMATCH";
+    console.error(
+      `[matchConsumer] ⚠⚠ producer 自检失败 matchId=${matchId} reason=${reason}`
+      + `——属 GameRoom 内部一致性缺陷，⛔ 不是 Redis 故障:`, e,
+    );
+    const persisted = await quarantineProducerSelfCheck(matchId, reason, safeRawPayload(input));
+    // quarantine 也写不进去时降级为 transport：此时无法留下持久痕迹，性质变成外部不可用。
+    return persisted
+      ? { ok: false, kind: "self-check", reason }
+      : { ok: false, kind: "transport", reason: "V3_QUARANTINE_UNAVAILABLE" };
+  }
+  // ── 传输段：失败属 Redis 可用性问题 ──
+  try {
+    const entryId = await clientForKey(K_STREAM_MATCH_V3).xadd(
       K_STREAM_MATCH_V3, "*",
       "schemaVersion", String(MATCH_STREAM_V3_SCHEMA_VERSION),
-      "matchId", ev.matchId,
-      "mode", String(ev.mode),
-      "sId", String(ev.sId),
+      "matchId", matchId,
+      "mode", String(input.mode),
+      "sId", String(input.sId),
       "payload", payload,
     );
+    return { ok: true, entryId: String(entryId) };
   } catch (e) {
     console.error(`[matchConsumer] v3 证据链 XADD 失败（matchId=${matchId}），收局不受阻、证据待对账:`, e);
-    return null;
+    return { ok: false, kind: "transport", reason: "V3_XADD_FAILED" };
   }
+}
+
+/** 自检失败时原始输入未必可序列化，保全尽可能多的信息而不再抛。 */
+function safeRawPayload(input: MatchEvidenceV3): string {
+  try { return JSON.stringify(input); } catch { return "<unserializable>"; }
 }
 
 // ── 消费侧 ──
