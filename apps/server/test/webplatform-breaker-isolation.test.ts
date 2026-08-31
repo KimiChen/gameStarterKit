@@ -41,7 +41,9 @@ process.env.WEBPLATFORM_INTERNAL_URL = `http://127.0.0.1:${address.port}`;
 process.env.WEBPLATFORM_SERVICE_ID = "game-server-test";
 process.env.WEBPLATFORM_SERVICE_SECRET = "test-service-secret";
 // ⚠ 超时值对本用例是**无关变量**：熔断由 mock 的 503 响应驱动，全文没有任何断言依赖超时发生
-// （`grep -n 超时` 只命中这两行）。而 40ms/120ms 是文件里仅有的负载敏感数字——全量套件下
+// （证据：`grep -n TIMEOUT` 只命中下面两行赋值，此外无处引用；⛔ 原注释写的是 `grep -n 超时`，
+// 那是条坏引证——赋值行里根本没有「超时」二字，那条命令只会命中注释自己）。
+// 而 40ms/120ms 是文件里仅有的负载敏感数字——全量套件下
 // 每个测试文件是独立进程，机器一忙进程被调度走，本地 socket 的 connect 回调就可能晚于 40ms 定时器，
 // 于是 session verify 被打成超时、`sessionHits` 断言失败。放宽到不会误伤的量级；mock 是本地即时
 // 响应，用例耗时不受影响。⛔ 不要为了「跑得快」再把它们调回几十毫秒。
