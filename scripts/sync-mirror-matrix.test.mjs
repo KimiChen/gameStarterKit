@@ -58,8 +58,8 @@ const CHECK_SCRIPT_EXEMPTIONS = {
     "源在 node_modules（夹具用 git ls-files 构建、不含它），该镜像无 README.md，且其 --check "
     + "与真同步共用同一个 expectedFiles()——结构上无法背离，本矩阵的立论对它不成立",
   "scripts/vendor-lock.mjs":
-    "锁定产物的哈希闸而非目录镜像：没有「跑一次同步把它改成一致」的写模式语义，"
-    + "覆盖由 scripts/vendor-lock.test.mjs 承担",
+    "其写模式是「重新祝福当前字节」而非从独立真源恢复镜像——本矩阵的源/镜像场景表不适用；"
+    + "产物集合不匹配时写模式直接抛错（vendor-lock.mjs:205-209），覆盖由 vendor-lock.test.mjs 承担",
   "scripts/fgui-manifest.mjs":
     "manifest 新鲜度闸，产物是单文件而非镜像树，覆盖由 scripts/fgui-manifest.test.mjs 承担",
   "tools/excel-to-json.mjs":
