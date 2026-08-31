@@ -415,7 +415,7 @@
 概念图直接裁切按钮、面板或角色进入工程。
 
 资源工作流必须遵守 [客户端开发文档](../CLIENT.md) 中的真源和导出约定：FairyGUI 设计源位于
-`apps/art/fairygui`，本项目所有 fairygui 文件存放在：`apps/art/fairygui/assets/Idle/`
+`apps/art/fairygui`，本项目所有 fairygui 文件存放在：`apps/art/fairygui/assets/UndergroundIdle/`
 导出物进入 Cocos resources；客户端代码真源和 Cocos 镜像不得混淆或手工双写。
 
 ## 14. 首版明确不做

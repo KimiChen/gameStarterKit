@@ -1,17 +1,17 @@
-# 《Underground Idle》IdleMain FairyGUI 装配契约
+# 《Underground Idle》UndergroundIdleMain FairyGUI 装配契约
 
 > [返回总目录](README.md) · [上一篇：主界面视觉落地与效果图任务书](08-main-screen-art-brief.md) ·
 > [下一篇：图片标注到 FairyGUI 自动编译实时计划](10-image-to-fairygui-live-plan.md)
 >
 > 文档版本：0.1<br>
 > 编写日期：2026-08-28<br>
-> 当前状态：`初始装配契约 / IdleMain 尚未制作、发布或接线`<br>
+> 当前状态：`初始装配契约 / UndergroundIdleMain 尚未制作、发布或接线`<br>
 > 目标：在 ART-01～ART-09 首次制作并通过审稿后，将其装成可状态化、可绑定、可在 Creator 验收的主界面
 
 ## 1. 拟定真源与初始状态
 
-FairyGUI 包名固定为 `Idle`，主组件固定为 `IdleMain`，设计画板为 `750×1624`、左上原点、`MatchWidth`。
-设计真源目标目录为 `apps/art/fairygui/assets/Idle/`。该路径、包、组件、发布物、绑定代码和业务接线均属于首次
+FairyGUI 包名固定为 `UndergroundIdle`，主组件固定为 `UndergroundIdleMain`，设计画板为 `750×1624`、左上原点、`MatchWidth`。
+设计真源目标目录为 `apps/art/fairygui/assets/UndergroundIdle/`。该路径、包、组件、发布物、绑定代码和业务接线均属于首次
 实施任务，不能因本文列出名称就视为已经存在。常规制作优先由 FairyGUI Editor 写入；只有获得项目负责人对
 明确文件范围的显式授权时，才允许直接维护 XML。手工维护后必须同时通过 XML 解析、编辑器整项目重载、单包
 发布、代码生成漂移检查和 Creator 导入，不能只凭文本 diff 宣称可用。
@@ -19,9 +19,9 @@ FairyGUI 包名固定为 `Idle`，主组件固定为 `IdleMain`，设计画板�
 初始状态全部为 `未开始`：
 
 - 等待 08 文档的效果图、规范板、1500×3248 分层 Master 与 ART-01～ART-09 通过对应 Gate；
-- 等待创建 `idle / IdleMain`、`HotspotButton`、`WarehouseProgress`、根绑定、controller 与九宫格；
-- 等待 FairyGUI Editor 首次发布 `idle.bin`、图集和独立纹理，再由 Creator 生成稳定 `.meta`；
-- 等待生成或实现 `IdleMainView`、结构契约、动态注册和纯 TypeScript `IdleMainLogic`；
+- 等待创建 `idle / UndergroundIdleMain`、`HotspotButton`、`WarehouseProgress`、根绑定、controller 与九宫格；
+- 等待 FairyGUI Editor 首次发布 `undergroundIdle.bin`、图集和独立纹理，再由 Creator 生成稳定 `.meta`；
+- 等待生成或实现 `UndergroundIdleMainView`、结构契约、动态注册和纯 TypeScript `UndergroundIdleMainLogic`；
 - 等待按 02～05 的权威边界实现 shared/服务端 RPC、客户端网络 port、三页签与结果未知恢复；
 - 等待通过第 8 节完整 Creator 状态矩阵与 ART-09 程序动效/性能终检。
 
@@ -136,7 +136,7 @@ s = R4.h' / 938
 ## 4. 节点树与图层
 
 ```text
-IdleMain
+UndergroundIdleMain
 ├─ 00_BACKGROUND                    全屏、同画布左上锚
 ├─ warehouseVisual                  R3 仓库建筑与仓储状态，不受场景 Mask 裁切
 ├─ sceneMask                        (0,365,750,960)
@@ -201,7 +201,7 @@ UI 永远盖住角色、矿车和灯光；前景遮挡只覆盖脚底约 6～10p
 
 ## 6. 代码绑定命名
 
-首轮至少需要下列 33 个核心绑定。完成 FairyGUI 组件后，由 codegen 生成 `IdleMainView` 并建立 `REQUIRED` 与
+首轮至少需要下列 33 个核心绑定。完成 FairyGUI 组件后，由 codegen 生成 `UndergroundIdleMainView` 并建立 `REQUIRED` 与
 `fguiContracts.ts` 单源；在生成物实际产生前，不登记 required 绑定总数：
 
 ```text
@@ -269,19 +269,19 @@ H11 `btn_refresh` 只在 `view=resultUnknown`、`reconnecting`、`stateConflict`
 
 ## 9. 编辑器到客户端动线
 
-1. 在 FairyGUI Editor 工程中首次创建 `idle / IdleMain`，保存并确认可完整重载；目标工程路径为
+1. 在 FairyGUI Editor 工程中首次创建 `idle / UndergroundIdleMain`，保存并确认可完整重载；目标工程路径为
    `apps/art/fairygui/FairyGUI.fairy`，实施前先确认该工程可用；
 2. 在编辑器内维护资源、九宫格、pivot、relation、controller、默认页和热区；显式授权的 XML 修改也必须回到
    编辑器完整重载验证；
-3. 确认发布目录配置后，只发布 `Idle` 到 `apps/Cocos/assets/resources/ui/`，禁止用“仅发布描述”代替完整发布；
+3. 确认发布目录配置后，只发布 `UndergroundIdle` 到 `apps/Cocos/assets/resources/ui/`，禁止用“仅发布描述”代替完整发布；
 4. 运行 `node scripts/fgui-manifest.mjs --write`，把设计源与发布输出闭包钉入清单；
-5. 运行 `npm run codegen:fgui -- Idle IdleMain`，再核对 `fguiContracts`、`viewRegistry`、View 与 Logic；
+5. 运行 `npm run codegen:fgui -- UndergroundIdle UndergroundIdleMain`，再核对 `fguiContracts`、`viewRegistry`、View 与 Logic；
 6. 运行 `npm run sync:client`，并由 Cocos Creator 3.8.8 为新增真源镜像和 UI 资源生成稳定 `.meta`；
 7. 运行 `npm run test:fgui`、`npm run typecheck`、`npm run test:client`、`npm run verify:sync`；
 8. 用 Cocos Creator 3.8.8 完成第 8 节状态预览并保存证据。
 
 `undergroundIdle.*` 服务端/shared 契约与客户端接线必须按 02～05 首次实现并单独验证；Creator 的预览数据只负责表现
-验收，不能替代服务端权威快照。若需要脱离外部 WebPlatform 审稿，可规划 `previewIdleMain` 只读开关：它应在
+验收，不能替代服务端权威快照。若需要脱离外部 WebPlatform 审稿，可规划 `previewUndergroundIdleMain` 只读开关：它应在
 初始化 HTTP、外部登录、WebSocket 和 gameplay Room 之前进入固定组合根，所有高层操作只显示审稿提示；审稿
 后必须恢复为 `false`。该开关在代码实际实现和测试前仅为计划。Creator 只能通过 Cocos Dashboard 启动，不能
 用命令行启动替代本验收。

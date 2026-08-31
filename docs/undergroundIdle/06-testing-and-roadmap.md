@@ -156,7 +156,7 @@ WebPlatform，不能把无头单测写成端到端通过。
 
 ### 阶段 3：表现与完整验收（待实施）
 
-- P0/P1 效果图、量产规范、ART-01～ART-09、IdleMain FairyGUI 真源/发布包和三页签业务；
+- P0/P1 效果图、量产规范、ART-01～ART-09、UndergroundIdleMain FairyGUI 真源/发布包和三页签业务；
 - FGUI 瓶颈提示、离线回归摘要，以及 Dashboard 启动的 Creator 基线预览；
 - VR-01～VR-04 完整状态矩阵，以及安全区、长数字、满仓、异常遮罩、结果/离线弹窗和建筑三阶段的视觉签字；
 - ART-09/MOTION-01 程序动效、红点、透明边缘和目标设备性能终检；
