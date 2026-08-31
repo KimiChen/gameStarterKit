@@ -183,10 +183,10 @@
 
 建议子流名：
 
-- `idle.expedition.grade.v1`
-- `idle.expedition.ore.v1`
-- `idle.expedition.fragment.v1`
-- `idle.expedition.relic.v1`
+- `undergroundIdle.expedition.grade.v1`
+- `undergroundIdle.expedition.ore.v1`
+- `undergroundIdle.expedition.fragment.v1`
+- `undergroundIdle.expedition.relic.v1`
 
 命名子流可以让未来新增一次遗物抽取时不改变既有矿石和等级结果。流名和算法版本属于玩法契约。
 框架现有 `SeededRandom.stream` 可用于可复现抽取，但它不是密码学随机；初始种子仍应来自服务端安全随机源，

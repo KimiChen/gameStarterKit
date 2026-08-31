@@ -280,7 +280,7 @@ H11 `btn_refresh` 只在 `view=resultUnknown`、`reconnecting`、`stateConflict`
 7. 运行 `npm run test:fgui`、`npm run typecheck`、`npm run test:client`、`npm run verify:sync`；
 8. 用 Cocos Creator 3.8.8 完成第 8 节状态预览并保存证据。
 
-`idle.*` 服务端/shared 契约与客户端接线必须按 02～05 首次实现并单独验证；Creator 的预览数据只负责表现
+`undergroundIdle.*` 服务端/shared 契约与客户端接线必须按 02～05 首次实现并单独验证；Creator 的预览数据只负责表现
 验收，不能替代服务端权威快照。若需要脱离外部 WebPlatform 审稿，可规划 `previewIdleMain` 只读开关：它应在
 初始化 HTTP、外部登录、WebSocket 和 gameplay Room 之前进入固定组合根，所有高层操作只显示审稿提示；审稿
 后必须恢复为 `false`。该开关在代码实际实现和测试前仅为计划。Creator 只能通过 Cocos Dashboard 启动，不能

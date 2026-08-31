@@ -21,7 +21,9 @@
 - 写操作通过状态版本、payload 绑定和领域收据处理并发、重试、超时与掉线；
 - 首版状态与模式内资源留在 durable Redis 玩家热档，不强行引入跨 MySQL/Redis 经济。
 
-这里的“公会”是世界观中的玩家个人经营组织，不是现有多人社交 `guild`。技术领域统一建议使用 `idle.*`。
+这里的“公会”是世界观中的玩家个人经营组织，不是现有多人社交 `guild`。技术领域统一使用 `undergroundIdle.*`
+（⛔ 不用 `idle.*`——`idle` 已归仓内既有 Room 玩法 gameplay module，见
+[Non-intrusive.md](../Non-intrusive.md) §3.1 的命名裁定）。
 
 ## 阅读导航
 

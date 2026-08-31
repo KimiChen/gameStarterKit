@@ -21,7 +21,9 @@
 - 断线、切后台、切设备后通过完整快照恢复界面。
 
 这里的“公会”是世界观中的**玩家个人经营组织**，不是现有 `guild.*` 多人社交公会。实现时建议使用
-`idle.*` 作为 RPC 与代码领域名，避免和现有 `guildId`、工会事件及社交接口发生语义混淆。
+`undergroundIdle.*` 作为 RPC 与代码领域名。它同时避免两重混淆：与现有 `guildId`、工会事件及社交接口的
+**世界观**混淆；以及与仓内既有 Room 玩法 `idle`（`GameplayModeId.Idle`，一个 gameplay module）的**实体**
+混淆——后者按 [Non-intrusive.md](../Non-intrusive.md) §3.1 与本 feature 是两类不同实体，⛔ 不得同名。
 
 ### 1.3 目标平台与体验节奏
 

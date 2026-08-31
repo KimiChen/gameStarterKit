@@ -2,7 +2,7 @@
 
 > [返回总目录](README.md) · [上一篇：矿工、远征与新手流程](03-workers-and-expeditions.md) · [下一篇：数据、服务端与内容配置](05-data-and-server.md)
 
-> 文档状态：初始设计，本文所列页面、交互与 `idle.*` RPC 均待实施。
+> 文档状态：初始设计，本文所列页面、交互与 `undergroundIdle.*` RPC 均待实施。
 
 ## 1. 页面与交互设计
 
@@ -84,25 +84,25 @@ Mutating
 
 ### 2.1 路由清单
 
-玩法世界观仍包含“公会”，协议域统一建议为 `idle.*`：
+玩法世界观仍包含“公会”，协议域统一建议为 `undergroundIdle.*`：
 
 | RPC | 读/写 | 幂等要求 | 语义 |
 | --- | --- | --- | --- |
-| `idle.getSnapshot` | 读 | 无需写幂等 | 返回激活状态、服务端时间、权威版本和当前投影快照 |
-| `idle.activate` | 写 | 必须 | 首次进入时原子创建确定初始档；已激活时回读当前快照 |
-| `idle.collect` | 写 | 必须 | 结算仓库并全部转入矿石余额 |
-| `idle.upgradeBuilding` | 写 | 必须 | 先按旧参数结算，再扣费升级 |
-| `idle.assignWorkers` | 写 | 必须 | 先按旧岗位结算，再原子替换岗位集合 |
-| `idle.startExpedition` | 写 | 必须 | 恢复/扣除体力、结算矿场、固化远征并离岗 |
-| `idle.claimExpedition` | 写 | 必须 | 校验时间并只发放一次已固化奖励 |
-| `idle.queryOperation` | 读 | 无需写幂等 | 按原路由与请求 ID 查询 `pending/applied/unknown` |
+| `undergroundIdle.getSnapshot` | 读 | 无需写幂等 | 返回激活状态、服务端时间、权威版本和当前投影快照 |
+| `undergroundIdle.activate` | 写 | 必须 | 首次进入时原子创建确定初始档；已激活时回读当前快照 |
+| `undergroundIdle.collect` | 写 | 必须 | 结算仓库并全部转入矿石余额 |
+| `undergroundIdle.upgradeBuilding` | 写 | 必须 | 先按旧参数结算，再扣费升级 |
+| `undergroundIdle.assignWorkers` | 写 | 必须 | 先按旧岗位结算，再原子替换岗位集合 |
+| `undergroundIdle.startExpedition` | 写 | 必须 | 恢复/扣除体力、结算矿场、固化远征并离岗 |
+| `undergroundIdle.claimExpedition` | 写 | 必须 | 校验时间并只发放一次已固化奖励 |
+| `undergroundIdle.queryOperation` | 读 | 无需写幂等 | 按原路由与请求 ID 查询 `pending/applied/unknown` |
 
 首版可以把四座建筑、四名矿工和三个地点作为小型版本化 shared 配置；服务端仍是成本、时长和奖励的
-唯一权威。如果配置不随客户端包发布，可在后续阶段增加 `idle.getCatalog`。
+唯一权威。如果配置不随客户端包发布，可在后续阶段增加 `undergroundIdle.getCatalog`。
 
 ### 2.2 写请求公共字段
 
-除 `idle.activate` 外，所有写请求至少包含：
+除 `undergroundIdle.activate` 外，所有写请求至少包含：
 
 | 字段 | 说明 |
 | --- | --- |
@@ -110,7 +110,7 @@ Mutating
 | `expectedStateVersion` | 发起操作时客户端看到的 `idle` 领域版本 |
 | 业务最小参数 | 建筑 ID、岗位集合、地点 ID、矿工 ID 或远征实例 ID |
 
-`idle.activate` 是唯一特例：它只携带 `clientReqId`，不携带 `expectedStateVersion`。服务端先判断存档是否
+`undergroundIdle.activate` 是唯一特例：它只携带 `clientReqId`，不携带 `expectedStateVersion`。服务端先判断存档是否
 存在；不存在才创建版本 1，已存在则天然幂等地返回当前快照，不重置资源，也不因调用方曾看到版本 0 而报
 普通状态冲突。
 
@@ -141,14 +141,14 @@ Mutating
 与“带版本快照”，只应用不低于本地 `stateVersion` 的快照。
 
 操作结果只承诺在文档化的领域收据窗口内可完整回读。超过窗口后，客户端仍必须复用第一次的完整请求；
-除 `idle.activate` 外，这也包括原 `expectedStateVersion`。服务端可以返回状态冲突或“结果已过期”，但不能
+除 `undergroundIdle.activate` 外，这也包括原 `expectedStateVersion`。服务端可以返回状态冲突或“结果已过期”，但不能
 把它静默改写成当前版本的新操作。
 
 ### 2.4 版本检查顺序
 
 服务端收到写请求后应遵守：
 
-`idle.activate` 先执行上一节的存在性特例；以下顺序适用于其他领域写操作：
+`undergroundIdle.activate` 先执行上一节的存在性特例；以下顺序适用于其他领域写操作：
 
 1. 规范化并计算 payload 摘要；
 2. 先查相同 `clientReqId` 的领域收据；
@@ -162,7 +162,7 @@ Mutating
 
 ### 2.5 结果未知查询语义
 
-`idle.queryOperation` 请求包含原始 `operationType` 与 `clientReqId`，响应只允许三种状态：
+`undergroundIdle.queryOperation` 请求包含原始 `operationType` 与 `clientReqId`，响应只允许三种状态：
 
 | 状态 | 含义 | 客户端动作 |
 | --- | --- | --- |
@@ -171,7 +171,7 @@ Mutating
 | `unknown` | 当前既看不到占位也看不到收据 | 不能视为失败；刷新快照并以完全相同请求重试或继续查询 |
 
 由于 handler 超时不会取消迟到副作用，“快照暂时没变化”也不能证明操作失败。要支持 `pending`，
-实施前必须为 `idle.queryOperation` 增加读取原路由通用幂等占位的受控适配；当前框架没有可直接复用的业务查询接口。
+实施前必须为 `undergroundIdle.queryOperation` 增加读取原路由通用幂等占位的受控适配；当前框架没有可直接复用的业务查询接口。
 
 ## 3. 客户端实现边界
 
@@ -199,7 +199,7 @@ Mutating
 
 ### 3.3 离线摘要
 
-`idle.getSnapshot` 可返回一个派生的结算预览摘要：
+`undergroundIdle.getSnapshot` 可返回一个派生的结算预览摘要：
 
 - 自上次已提交检查点累计的时长（不宣称是玩家实际离线时长）；
 - 其中计入收益的时长；
