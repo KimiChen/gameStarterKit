@@ -371,7 +371,7 @@ test("CDATA 里的字面 <!-- 不得吞掉其后的真实引用", () => {
   // 第一个真 `-->`，把中间整段（含真实 src=/ui://）删掉——引用抽取少校验若干条，
   // 失败方向是**误绿**：漏导那些资源时 verify:fgui 依然打 ✔。
   // ⚠ 触发要同时具备「CDATA 内的字面 <!--」与「其后的真注释」两件事，缺一不成立。
-  const { extractUiUrls, extractAssetReferences, withoutXmlComments } = fguiManifestTestHooks;
+  const { extractUiUrls, extractAssetReferences, withoutCommentsAndCdata } = fguiManifestTestHooks;
   const source = [
     '<component name="Main">',
     '  <text name="tip"><![CDATA[ 写法：<!-- 注释 ]]></text>',
@@ -386,14 +386,34 @@ test("CDATA 里的字面 <!-- 不得吞掉其后的真实引用", () => {
     "CDATA 之后的真实 src= 必须全部保留，注释里的 ghostRes 必须剔除",
   );
   assert.deepEqual(extractUiUrls(source), ["Pkg/realA"], "CDATA 之后的真实 ui:// 必须保留");
-  // CDATA 段本身必须原样留在输出里，⛔ 不能被当成注释一并删掉
-  assert.match(withoutXmlComments(source), /<!\[CDATA\[ 写法：<!-- 注释 \]\]>/u);
+  // CDATA 整段（含内容）必须消失：它是字符数据，声明与引用都不可能住在里面，
+  // 留着只会让展示文字被当成真引用。
+  assert.doesNotMatch(withoutCommentsAndCdata(source), /CDATA|写法/u);
+});
+
+test("CDATA **内容**里的 src/pkg/ui:// 是展示文字，不是引用", () => {
+  // ⛔ 这一条不只是噪声：`pkg=` 走 parseUiReferences，写在说明文字里的未知 pkg 会让
+  // verify:fgui **误红**（而 src=/ui:// 指向真实 id 时则是凭空多出一条约束）。
+  const { extractUiUrls, extractAssetReferences, extractPkgReferences } = fguiManifestTestHooks;
+  const source = [
+    '<component name="Doc">',
+    '  <text name="tip"><![CDATA[ 用法：<image src="e6t9d" pkg="ghostPkg"/> 见 ui://Pkg/demo ]]></text>',
+    '  <image name="real" src="realRes"/>',
+    '</component>',
+  ].join("\n");
+  assert.deepEqual(
+    extractAssetReferences(source).map((reference) => reference.src),
+    ["realRes"],
+    "CDATA 内容里的 src= 不得成为引用，CDATA 之外的必须保留",
+  );
+  assert.deepEqual(extractPkgReferences(source), [], "CDATA 内容里的 pkg= 不得成为包引用");
+  assert.deepEqual(extractUiUrls(source), [], "CDATA 内容里的 ui:// 不得成为引用");
 });
 
 test("XML 注释里的 src/pkg/ui:// 引用不是引用", () => {
   const { extractUiUrls, extractAssetReferences, extractPkgReferences } = fguiManifestTestHooks;
-  // 注释剥离只有一个实现（withoutXmlComments），声明解析与引用抽取共用它
-  assert.equal(typeof fguiManifestTestHooks.withoutXmlComments, "function");
+  // 注释剥离只有一个实现（withoutCommentsAndCdata），声明解析与引用抽取共用它
+  assert.equal(typeof fguiManifestTestHooks.withoutCommentsAndCdata, "function");
   const source = [
     '<component name="Main">',
     '  <!-- 设计备注：<image src="ghost.png"/> 引用 ui://GhostPkg/ghostItem -->',

@@ -69,19 +69,24 @@ function attrs(source) {
  * ⚠ 声明解析与**引用抽取**（`extractUiUrls` / `extractAssetReferences` / `pkg=` 扫描）共用这一个
  * 实现。⛔ 不要再写第二个同义函数：注释剥离是一条规则，两份实现会在其中一份被加固时静默分叉。
  */
-function withoutXmlComments(xml) {
-  // ⚠ CDATA 必须参与同一次扫描：正则从左到右匹配，先命中的 CDATA 整段被原样保留，
-  // 于是里面的字面 `<!--` 不会成为注释起点。⛔ 不能只写 /<!--[\s\S]*?-->/ ——那样
-  // CDATA 里的一个 `<!--` 会一路吃到文件后面第一个真 `-->`，把中间的真实 src=/ui:// 引用
-  // 连同整行删掉，引用抽取因此少校验若干条（失败方向是**误绿**）。
-  // 当前 41 个资源 XML 里 CDATA 与字面 `<!--` 均为 0 命中，故这是加固而非在修一个活的缺陷；
-  // 但 FairyGUI 编辑器的输出格式不由本仓决定，一行的代价买断整类问题。
-  return xml.replace(/<!\[CDATA\[[\s\S]*?\]\]>|<!--[\s\S]*?-->/g,
-    (match) => match.startsWith("<!--") ? "" : match);
+function withoutCommentsAndCdata(xml) {
+  // 注释与 CDATA **一起**在同一次扫描里去掉，两者各自解决一个方向的问题：
+  //
+  //  - CDATA 参与同一次扫描（而不是事后单独处理）：正则从左到右匹配，CDATA 整段先被命中，
+  //    里面的字面 `<!--` 因此不会成为注释起点。⛔ 只写 /<!--[\s\S]*?-->/ 的话，CDATA 里的一个
+  //    `<!--` 会一路吃到文件后面第一个真 `-->`，把中间的真实 src=/ui:// 引用连同整行删掉
+  //    ——失败方向是**误绿**。
+  //  - CDATA 的**内容**也一并去掉：CDATA 按定义是字符数据，声明与引用都不可能住在里面，
+  //    而把它留下会让展示文字被当成真引用。⛔ 这不只是噪声：`pkg=` 走的是 parseUiReferences，
+  //    一个写在说明文字里的未知 pkg 会让 verify:fgui **误红**。
+  //
+  // 当前 41 个资源 XML 里 CDATA 与字面 `<!--` 均为 0 命中，故两者都是加固而非在修活的缺陷；
+  // 但 FairyGUI 编辑器的输出格式不由本仓决定。
+  return xml.replace(/<!\[CDATA\[[\s\S]*?\]\]>|<!--[\s\S]*?-->/g, "");
 }
 
 function packageDescription(xml) {
-  const match = /<packageDescription\b([^>]*)>/i.exec(withoutXmlComments(xml));
+  const match = /<packageDescription\b([^>]*)>/i.exec(withoutCommentsAndCdata(xml));
   if (!match) throw new Error("package.xml 缺少 packageDescription");
   const id = attrs(match[1]).id;
   if (!id) throw new Error("package.xml 缺少 packageDescription.id");
@@ -90,7 +95,7 @@ function packageDescription(xml) {
 
 function componentDeclarations(xml) {
   const out = [];
-  const body = /<resources\b[^>]*>([\s\S]*?)<\/resources>/i.exec(withoutXmlComments(xml))?.[1] ?? "";
+  const body = /<resources\b[^>]*>([\s\S]*?)<\/resources>/i.exec(withoutCommentsAndCdata(xml))?.[1] ?? "";
   for (const match of body.matchAll(/<component\b([^>]*)\/?>(?:<\/component>)?/gi)) {
     const a = attrs(match[1]);
     if (a.name) out.push({ name: a.name, exported: a.exported === "true" });
@@ -101,7 +106,7 @@ function componentDeclarations(xml) {
 /** package.xml 中所有可由 ui:// URL 指向的资源（不仅是组件）。 */
 function resourceDeclarations(xml) {
   const out = [];
-  const body = /<resources\b[^>]*>([\s\S]*?)<\/resources>/i.exec(withoutXmlComments(xml))?.[1] ?? "";
+  const body = /<resources\b[^>]*>([\s\S]*?)<\/resources>/i.exec(withoutCommentsAndCdata(xml))?.[1] ?? "";
   // FairyGUI has added resource kinds over time (movieclip/sound/video,
   // dragonBones, ...).  Treat every named resource entry as addressable while
   // excluding `folder`, which is an editor grouping rather than a ui:// item.
@@ -191,7 +196,7 @@ function extractUiUrls(source) {
   const urls = [];
   // Stop at XML/entity delimiters so a URL in customData="...&quot;}}" is
   // captured as `ui://Pkg/item`, not with the surrounding JSON suffix.
-  for (const match of withoutXmlComments(source).matchAll(/ui:\/\/([^\s"'<>|&]+)/g)) {
+  for (const match of withoutCommentsAndCdata(source).matchAll(/ui:\/\/([^\s"'<>|&]+)/g)) {
     const value = match[1].replace(/[),.;\]}]+$/g, "");
     if (value) urls.push(value);
   }
@@ -290,7 +295,7 @@ function resolveUiUrl(raw, maps) {
  */
 function extractAssetReferences(source) {
   const references = [];
-  for (const match of withoutXmlComments(source).matchAll(/<([a-zA-Z]+)\b([^>]*\bsrc="[^"]*"[^>]*)>/g)) {
+  for (const match of withoutCommentsAndCdata(source).matchAll(/<([a-zA-Z]+)\b([^>]*\bsrc="[^"]*"[^>]*)>/g)) {
     const a = attrs(match[2]);
     if (!a.src) continue;
     references.push({ element: match[1], src: a.src, pkg: a.pkg });
@@ -305,7 +310,7 @@ function extractAssetReferences(source) {
  */
 function extractPkgReferences(source) {
   const out = [];
-  for (const match of withoutXmlComments(source).matchAll(/\bpkg\s*=\s*["']([^"']+)["']/g)) {
+  for (const match of withoutCommentsAndCdata(source).matchAll(/\bpkg\s*=\s*["']([^"']+)["']/g)) {
     out.push(match[1]);
   }
   return out;
@@ -682,7 +687,7 @@ if (isMain) {
 
 /** 内部抽取器的测试入口（_computePoolTestHooks 先例；生产路径不要从这里拿函数）。 */
 export const fguiManifestTestHooks = {
-  extractUiUrls, extractAssetReferences, extractPkgReferences, withoutXmlComments,
+  extractUiUrls, extractAssetReferences, extractPkgReferences, withoutCommentsAndCdata,
 };
 
 export {
