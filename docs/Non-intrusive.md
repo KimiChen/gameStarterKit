@@ -346,7 +346,7 @@ feature 必须拥有自己的：
 
 ## 4. Shared 契约改造
 
-shared 是双端唯一契约真源，也是两类实体唯一的交汇点。本章按「先 Lobby RPC、后 GameRoom wire」的顺序
+shared 是双端唯一契约真源，也是两类实体交汇点中最核心的一处（交汇点全集见 §3.1，共五处）。本章按「先 Lobby RPC、后 GameRoom wire」的顺序
 给出契约改造，最后统一协议身份（§4.8）——那是两类实体共用的版本闸。
 
 ### 4.1 RPC 领域自描述
@@ -460,7 +460,7 @@ metadata，不能把 domain 级错误集合误读为逐路由穷尽表。
 `^[A-Za-z0-9_-]+$`）、**长度上限保持现有 64**、字节长度 = 字符长度，禁控制字符与 key 分隔符。
 所有 idempotent-write route 复用同一积木，⛔ 不再各自调通用 `requiredId`。
 ⚠ 收紧字符集会拒绝旧客户端可能发出的历史 ID，属于 **wire 收紧**，须与 §4.8 的协议身份分离一起走版本节奏，
-⛔ 不能混进 §9 阶段 1 「现有 route、validator、endpoint 和行为不变」的机械迁移。
+⛔ 不能混进 §9 阶段 3 「现有 route、validator、endpoint 和行为不变」的机械迁移。
 ⛔ 不要顺手把长度下界从 1 提到 8——那会拒绝现有客户端的合法短 ID。
 
 生产 contract 中不放测试 fixture，避免客户端包携带测试数据。测试向量放在 feature-owned sidecar。
@@ -645,7 +645,7 @@ Proxy/跨边界属性读取异常。客户端继续只按 `code` 分支，不解
 `modeVersion`。这样 Snake 的演进不会无条件使 ballMove/idle 客户端全部失配。
 
 这不是只改 `rooms.ts`：当前 `PROTOCOL_VERSION`（`apps/shared/src/protocol/rooms.ts`，写作时取值 7）被
-Lobby join（`LobbyRoom.ts:252`）、Game join（`GameRoom.ts:114/658/878`）、`/version`（`http/misc/version.ts`）、
+Lobby join（`LobbyRoom.ts:252`）、Game join（`GameRoom.ts:115/706/926`）、`/version`（`http/misc/version.ts`）、
 `/healthz`（`http/misc/healthz.ts`）、客户端 join options（`WebSocketClient.ts:402`、`RoomClient.ts:654`）
 与 `scripts/protocol-fingerprint.mjs` 共同读取。⛔ **客户端目前没有任何 HTTP 启动探测**；本方案若要新增，须
 显式登记为新增能力，不能当作既有事实。per-mode digest 只覆盖该 mode 的 wire/state/modeData 契约，不把服务端
@@ -704,7 +704,7 @@ Lobby join（`LobbyRoom.ts:252`）、Game join（`GameRoom.ts:114/658/878`）、
 
 ```text
 features/
-├── schema-v1.json
+├── feature-schema-v1.json
 ├── built-in/
 │   └── feature.json
 └── undergroundIdle/
@@ -832,7 +832,7 @@ apps/client/src/view/view-catalog.generated.ts
 
 - 生成的 **client** 代码只能使用 ES2017 运行时 API（⛔ 禁 `Object.fromEntries` / `Array.prototype.flat` /
   `Promise.allSettled` / `String.prototype.matchAll`；`apps/client/tsconfig.json` 的 target/lib 钉死 ES2017，
-  且已有用例专门断言前两者必须报错），并且必须过 `noUnusedLocals`；
+  且已有用例专门断言 `Object.fromEntries` 与 `Promise.allSettled` 必须报错），并且必须过 `noUnusedLocals`；
 - 生成的 **shared** 代码额外满足铁律 4 与 shared 侧的加严选项：`exactOptionalPropertyTypes`（可选字段
   ⛔ 禁显式赋 `undefined`）、`verbatimModuleSyntax`（类型导入一律 `import type`）、`isolatedModules`
   （类型再导出用 `export type`）；相对导入不带扩展名。
@@ -925,7 +925,7 @@ property、spread 或顶层副作用形态直接拒绝。validator 函数本身�
 
 **生成器必须有确定的命令名**（全文其余位置一律引用它，⛔ 不再写“feature codegen”这类无法执行的代称）。
 
-**命令形态：不新增根命令**，与 §4.3 的 gameplay 生成器
+**命令形态：不新增根命令**，与 §5.4 的 gameplay 生成器
 同形（见 §3.1 交汇点表）：
 
 - **writer** 是 workspace 脚本 `codegen:features`；
@@ -972,12 +972,13 @@ property、spread 或顶层副作用形态直接拒绝。validator 函数本身�
 
 ### 5.6 测试向量由 feature 持有
 
-⚠ 先厘清现状：当前只有中央 **request** 向量表（服务端契约测试里的 `validPayloads`，12 条）；**response 侧
-只有 shared 的运行时 validator**（发送前调用），**没有任何测试向量**。因此本方案要求 sidecar 同时提供
-request 与 response 最小合法向量时，存量 12 条路由的 **response 向量是新增工作，不是迁移**——⛔ 也不要据此
-去删 shared 的 response validator，那是运行时闸，与测试向量是两回事。
+⚠ 先厘清现状：中央 request 向量表有两张（服务端契约测试的 `validPayloads` 与 wire contract 测试的
+`requestFixtures`，各 12 条）；response 侧除发送前调用的 shared 运行时 validator 外，也已有中央向量表
+（wire contract 测试的 `responseFixtures`，12 条，逐路由做正反向断言）。因此本方案要求 sidecar 同时提供
+request 与 response 最小合法向量时，存量 12 条路由的 request/response 向量都是**从中央表迁移，不是新增**
+——⛔ 也不要据此去删 shared 的 response validator，那是运行时闸，与测试向量是两回事。
 
-现有的中央 request 表改为按 sidecar 发现，例如：
+现有的中央向量表改为按 sidecar 发现，例如：
 
 ```text
 apps/server/test/lobbyRpcVectors/undergroundIdle.ts
@@ -1036,7 +1037,7 @@ generated index 成为机器发现真相，verifier 不再要求人工在 `EXTRA
 
 ### 5.8 同步与资源产物
 
-正常新增 feature 后，机械变化必须来自 8.1 的唯一 provenance 表。路径分类可概括为：
+正常新增 feature 后，机械变化必须来自 §5.5 的唯一 provenance 表。路径分类可概括为：
 
 ```text
 apps/shared/src/features.generated.ts
@@ -1060,10 +1061,10 @@ codegen/sync 产物禁止手改；FGUI 二进制和图集由 FairyGUI 编辑器�
 既有文件出现修改、删除或重命名时，必须按真实框架侵入处理。
 
 ⚠ **手工场景 / 预制体资产不在白名单内。** `apps/Cocos/assets/scene.scene` 里序列化着 `Main` 的
-`@property`（`serverUrl` / `portalUrl` / `gameplayId`）；把这些属性搬到 bootstrap 组件会改变组件序列化形状，
-必须在 Creator 编辑器中重新序列化并**人工审查**该 diff，⛔ 只能由编辑器产生。（若 `Main` 保留这些
-`@property` 并只转发给 `AppRuntime`，则不触发该 diff。）`gameplayId` 这个编辑器字段在 Home 数据驱动化之后
-应被删除，删除本身同样会改变序列化形状。
+`@property`（`serverUrl` / `portalUrl`；`gameplayId` 未被序列化，仅是 `Main.ts` 的类默认值）；把这些属性
+搬到 bootstrap 组件会改变组件序列化形状，必须在 Creator 编辑器中重新序列化并**人工审查**该 diff，⛔ 只能
+由编辑器产生。（若 `Main` 保留这些 `@property` 并只转发给 `AppRuntime`，则不触发该 diff。）`gameplayId`
+这个编辑器字段在 Home 数据驱动化之后应从 `Main.ts` 删除；它不在 scene.scene 里，删除不产生场景资产 diff。
 
 
 ## 6. 服务端改造
@@ -1335,7 +1336,7 @@ GameRoom auth/admission。
    不可续的绝对 `waitingDeadlineMs` 负责关闭僵尸房；达到 deadline 后关闭并 dispose，不能只释放 code 留下
    永久不可加入的 Waiting 房。`waitingDeadlineMs` **只在 `starting === false` 时求值**；一旦 start fence
    置位，deadline 推迟到本次 Start 收敛之后再判定，⛔ 不允许 deadline dispose 与在途 Start 抢跑。三者与
-   §6.2 的 lock 超时一起在**启动期断言**（与「generated state 上限 / admission cap / `maxClients` 三者相等」
+   §6.3 的 lock 超时一起在**启动期断言**（与「generated state 上限 / admission cap / `maxClients` 三者相等」
    同形），⛔ 不允许留到运行时才暴露。§12.4 第 3 条只冻结**数值**，不替代这里的**不等式**；
 7. Start 成功和 room dispose 都把码从 active 转入**隔离态**：对同一 Redis key 写入 tombstone value、
    `PX = codeCooldownMs`，⛔ **不是 `DEL`**。隔离期内 `resolve` 一律返回与“码不存在”完全相同的折叠错误；
@@ -1813,7 +1814,7 @@ apps/client/src/app/
 
 迁移期的“两套并存”必须有可执行规则，⛔ 不能只写目标态：
 
-- **(a)** 阶段 3 的**第一个提交**就让 SessionCoordinator 成为 return-to-login / session reconciler 的唯一
+- **(a)** 阶段 5 的**第一个提交**就让 SessionCoordinator 成为 return-to-login / session reconciler 的唯一
   注册方，`pages.ts` 在**同一提交**里删掉自己的注册调用，只保留纯转发的 `openLogin` / `openConfirm`；
   ⛔ 不允许出现「两边都注册、靠顺序取胜」的中间态。
 - **(b)** 现有 `net/session.ts` 的那两个注册点是**单槽覆盖式**（后注册者静默替换，先注册者的 disposer 因
@@ -1963,7 +1964,7 @@ Cocos `EVENT_HIDE/EVENT_SHOW` 通过独立 bridge 进入 LifecycleBus：hide 只
 - 点击只调用统一 `LaunchPort.launch(target)`，不在 Home 分支 Navigation/gameplay；
 - undergroundIdle 使用独立 FGUI 包，后续新增入口不再修改 Home XML。
 
-gameplay 的**实现**仍走 GameRoom 动线（见 本文），但它的 Home 入口
+gameplay 的**实现**仍走 GameRoom 动线（见 §6），但它的 Home 入口
 以**同一形状**的 menu contribution 登记——**菜单只有一个数据源**。排序固定为
 `slot → order → featureId → entryId`。
 
@@ -2022,7 +2023,7 @@ manifest 给出精确源码路径，`fgui-manifest.mjs`、view registry test 和
   `apps/client/src/generated/views.generated.ts` + `fguiContracts.generated.ts`（见 §3.1 交汇点表），
   `codegen:gameplays` 只产出 gameplay 的 View contribution 中间产物。每条 View metadata 带 `owner` 字段
   （feature id 或 gameplay id），生成期检查同一 View 只被一个 manifest 拥有；
-- View metadata 的**手写唯一真源**沿用 §6.1 的 `*.view.json` sidecar 格式与字段集（layer / fullscreen /
+- View metadata 的**手写唯一真源**沿用 §7.1 的 `*.view.json` sidecar 格式与字段集（layer / fullscreen /
   onlyOne / permanent / interactive、无前缀的手写绑定、动态资源 URL，并**必须包含 `sharedPkgs` 传递闭包**）；
   gameplay 拥有的 View 把 sidecar 放在自己的 View 同目录，`codegen:gameplays` 只校验 gameplay View 集合与
   manifest 一致，⛔ 不定义第二种 metadata 格式；
@@ -2063,7 +2064,7 @@ Start、错误重试”，数据只来自 `AccessPolicy + StartPolicy` 的公共
 声明使用该模板并提供标题、图标和 launch 参数；只有确实需要不同交互时才新增玩法自有 Lobby View。不要把它
 扩展成能描述任意 UI 的 DSL。
 
-玩法启动与返回**统一由 §6.2 的 `NavigationService` + `LaunchPort` + `SessionCoordinator` 拥有**。
+玩法启动与返回**统一由 §7.2 的 `NavigationService` + `LaunchPort` + `SessionCoordinator` 拥有**。
 `pages.ts` 若保留 `openGameplayLobby` / `submitGameplayLaunch` / `restoreAuthenticatedHome`，只能是**零状态
 的纯转发**（分别转发到 navigation 的 route open、`LaunchPort.launch(target)`、SessionCoordinator 的已登录
 base route 恢复），⛔ 不得在 `pages.ts` 内持有 session、reconciler 或页面数组，也不增加 `openSnakeRoom`、
@@ -2119,7 +2120,7 @@ roster / ready / 邀请码状态，以及它究竟是 exit 还是 launch。退�
 
 `dispatchInput` 和 `requestExit` 都要校验 generation。旧 View、迟到 join、迟到 RPC 或上一局的 async callback
 无权操作后来创建的 room。**gameplay generation 与页面 / route 所有权的关系必须显式定义**——推荐由
-§6.2 的 route ownership handle 派生（route close/replace 立即使其失效），或明确采用「route signal +
+§7.2 的 route ownership handle 派生（route close/replace 立即使其失效），或明确采用「route signal +
 gameplay generation」双守卫并写清两者失效的先后；`dispatchInput` / `requestExit` 的守卫对象据此确定。
 
 正常结算和主动退出都由通用恢复路径执行 `controller.stop → 恢复已登录 Home`，玩法不能自行重建登录页或房间
@@ -2217,7 +2218,7 @@ RPC/error/codegen 的一次性框架改造，不能把“新增 endpoint 文件�
 | `apps/client/src/view/viewRegistry.ts`、`ViewMgr.ts` | `VIEW_REGISTRY` 是手写静态全集（类型只读，但运行时并未 `Object.freeze`） | 改为 generated 静态 catalog + 可注入只读 lookup，不引入运行时注销 |
 | `apps/client/src/view/fguiContracts.ts` | contract 和 ViewMeta 两份全集 | contract 随 ViewMeta contribution，测试从 generated catalog 派生全集 |
 | `apps/client/src/view/HomeView.ts`、`logic/page/HomeLogic.ts`、Home FGUI 设计源 | 入口固定为 `btn_enter` | 一次性改为玩法入口列表，数据来自 lobby contributions |
-| `apps/Cocos/assets/scene.scene`（及其 `.meta`） | `Main` 的 `@property`（`serverUrl` / `portalUrl` / `gameplayId`）序列化在**手工场景资产**里 | 属性搬到 bootstrap 组件时必须在 Creator 编辑器中重新序列化并人工审查该 diff；⛔ 该文件**不在**机械 diff 白名单内。若 Main 保留这些 `@property` 并只转发给新 host，则本行不触发。`gameplayId` 在 Home 数据驱动化之后应被删除，删除本身会改变组件序列化形状 |
+| `apps/Cocos/assets/scene.scene`（及其 `.meta`） | `Main` 的 `@property`（`serverUrl` / `portalUrl`）序列化在**手工场景资产**里（`gameplayId` 未被序列化，仅是类默认值） | 属性搬到 bootstrap 组件时必须在 Creator 编辑器中重新序列化并人工审查该 diff；⛔ 该文件**不在**机械 diff 白名单内。若 Main 保留这些 `@property` 并只转发给新 host，则本行不触发。`gameplayId` 在 Home 数据驱动化之后应从 `Main.ts` 删除；它不在该场景资产里，删除不产生 scene.scene diff |
 | 客户端 lifecycle/wire/view/FGUI 测试 | 两类：(a) fixture 穷举现有玩法和页面；(b) 对 `Main.ts` / `pages.ts` 的**源文本正则 pin**（如 `ResolutionPolicy.FIXED_WIDTH`、`controller.tick(dt)`、`this.disposePages?.()`） | (a) 改成自动遍历 registry，并增加旧 generation、迟到 RPC 和不同 join strategy 反例；(b) 源文本 pin 改写为对新 host 的**行为断言**，且必须与掏空 `Main.ts` 的提交**同批**改写，⛔ 不允许删除了事。另：客户端 typecheck 配置测试硬编码了一组必含路径哨兵（`src/Main.ts`、`src/view/pages.ts`、`src/view/LoginView.ts`、`src/view/HomeView.ts`、`src/view/ConfirmView.ts` 等），把这些 core View 搬进 feature/玩法目录时必须同批更新该哨兵列表；**include 本身是递归 `src/**/*.ts`，新增目录会自动覆盖，不必改 tsconfig** |
 
 以下位置不应因“竖版 Snake”而修改：
@@ -2273,8 +2274,8 @@ apps/art/fairygui/assets/<PrivateRoomLobby-package>/**
 provenance：真源 = 该规则文件；writer = 人工评审并在提交中显式声明；checker = 无侵入矩阵测试；
 红在 `verify:core` 链里。
 
-**全仓只有一份规则文件**（见 §3.1 交汇点表）：feature 与 gameplay module 的保护条目都追加进同一份，
-⛔ 不产生第二份。§7 末段的保护清单是它的散文视图，两者必须双向比对。
+**全仓只有一份规则文件**（登记见 §5.5 的 provenance 表与 §8 的 Governance 行）：feature 与 gameplay
+module 的保护条目都追加进同一份，⛔ 不产生第二份。§11.3 的保护清单是它的散文视图，两者必须双向比对。
 
 先例：仓内 `verify-inventory` 已经在做「解析 Markdown 表 → 与 `package.json` 双向 deepEqual」，本规则的
 双向比对可以照此形态实现。
@@ -2308,7 +2309,7 @@ token、catch-all dispatcher 与分片 state 是 GameRoom 地基，越早建立�
 | 0 | 冻结口径与基线 | 低——只产出 manifest schema、基线记录与生成器 fixture | 无 | 可回退 |
 | 1 | 行为等价拆出 ballMove | 中——纯重构但触及结算与 evidence，行为等价性靠回归与变异测试证明 | 无 | 可回退（revert 单提交） |
 | 2 | gameplay wire token、分片 state、静态 catalog | **高，且是单向门** | 无 | **单向门**：state codegen 的 writer 切换必须在同一提交内完成 |
-| 3 | RPC descriptor 与测试向量发现 | 中——机械迁移，但要保持 12 条存量路由行为不变并新增 response 向量 | 无 | 可回退 |
+| 3 | RPC descriptor 与测试向量发现 | 中——机械迁移，但要保持 12 条存量路由行为不变并把中央 request/response 向量迁入 sidecar | 无 | 可回退 |
 | 4 | 幂等 v2 与错误自描述 | **高，且是单向门** | 本地 Redis（`test:int` + 故障矩阵） | **单向门**：需 drain 窗口（≥ `IDEM_RESULT_MS + IDEM_PENDING_MS`），回退同样需要一次 drain |
 | 5 | 客户端 FeatureHost 与生命周期 | **最高**——12 个新模块 + `pages.ts` 状态机迁移；`Main.ts` 源文本 pin 必须与掏空同批改写 | Creator 预览（人工证据） | 可回退，但迁移期 ⛔ 不允许「新旧都注册」的中间态，回退必须整批 |
 | 6 | Home 与 View/FGUI 生成登记 | 高——建立全仓唯一的 View writer 与产物路径 | FairyGUI 编辑器真实导出、Creator 预览 | 可回退 |
@@ -2356,7 +2357,7 @@ lifecycle 与测试基线。§6.7 的三个时间参数与 §6.8 的限流数值
 
 - 引入玩法 wire builder、catch-all dispatcher、typed send/broadcast；
 - 拆分 state descriptor，生成三端 catalog 和 per-mode artifact；
-- 增加 gameplay 生成器的 freshness 断言、digest/version 和集合一致性门禁（workspace 脚本形态，见 §5.2）。
+- 增加 gameplay 生成器的 freshness 断言、digest/version 和集合一致性门禁（workspace 脚本形态，见 §5.4）。
 - 同步更新根 `README.md`、`AGENTS.md` 与 `CLAUDE.md`（后两者在仓库根字节等同）、OVERVIEW/SERVER/CLIENT、
   就近 README 和 inventory；完成后再向**当前计划文件**回写证据，⛔ 不向已降级的历史归档回写。实施时以
   `docs/inventory.json` 的 `routeOfTruth.corePlan` 为准，而不是本文写死的文件名。
@@ -2377,7 +2378,8 @@ lifecycle 与测试基线。§6.7 的三个时间参数与 §6.8 的限流数值
 - 中央 fixture 改为 feature/domain vector loader；
 - 保留 endpoint loader 的全集校验。
 
-本阶段还需为**存量 12 条路由补 response 向量**（见 §8.2：response 侧今天只有运行时 validator、没有测试向量）。
+本阶段把存量 12 条路由的 request/response 向量**从中央表迁入 sidecar**（现状见 §5.6：request/response
+中央向量表均已存在，属迁移而非新增）。
 ⚠ `clientReqId` 的字符集收紧属 **wire 收紧**，⛔ 不进本阶段——本阶段的口径是“行为不变”。
 
 退出条件：现有 route、validator、endpoint 和行为不变；添加一个 fixture domain 只新增领域/endpoint/vector，
@@ -2452,7 +2454,7 @@ contracts 无人工 diff；迁移期 alias 不产生重复所有权；Creator �
 
 - 实现邀请码 lease、`prepareCreate/resolve`、creation/join ticket、create/joinById；
 - 实现 owner/Ready/Start、revision-fenced start 和房主最终离开转移；
-- **落实 §6.1 的稳定 join envelope**：`profile` 变必填并 bump framework version（`GAME_ROOM_PROTOCOL_VERSION`）。
+- **落实 §4.4 的稳定 join envelope**：`profile` 变必填并 bump framework version（`GAME_ROOM_PROTOCOL_VERSION`）。
   必填切换必须与客户端在**同一个提交**内完成，或先发一版只读容忍缺省的过渡版本；⛔ 不做「缺省时随便匹配」；
 - 保留 public matchmaking/auto-start policy 供现有 mode 兼容迁移。
 
@@ -2600,7 +2602,7 @@ undergroundIdle 在本阶段并行实现：它只新增 feature 文件，不再�
 
 框架只有在以下条件全部满足后，才能宣称支持本方案中的“非侵入式 feature”：
 
-> **口径同 §11.3**：机检项必须给出「判定方式」与「变异验证」
+> **口径同 §10 导语**：机检项必须给出「判定方式」与「变异验证」
 > （改哪一行 / 删哪个断言 → 哪条用例转红）。⛔ 机检项给不出变异验证的不得作为验收项。人工项写「人工证据」
 > 并留存截图/录屏、设备与版本、日期、操作者、对应 commit。
 
@@ -2894,7 +2896,7 @@ apps/client/src/app/**
 
 ⚠ **适用范围**：本清单约束的是**普通 feature 与 gameplay module 的新增动线**（见本节首句“在这条动线中”）。
 §9 的框架改造阶段本身按 §12.3 属于**显式框架侵入**，不适用本清单。保护集合的机检真源见 §8.5，
-**全仓只有一份规则文件**（§3.1 交汇点表），⛔ 本节散文不是第二真源。
+**全仓只有一份规则文件**（登记见 §5.5 provenance 表与 §8 Governance 行），⛔ 本节散文不是第二真源。
 
 
 ## 12. 最终效果与遗留决策
