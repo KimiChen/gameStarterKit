@@ -8,10 +8,9 @@ import { ensureLive } from "../../core/archive/thaw";
 import { UserDataLostError } from "../../core/errors";
 import { readUser } from "../../player/userStore";
 import { currentZoneId } from "../../core/infra/keys";
-import { defineRpc, sharedRpcSchema } from "../rpc";
+import { defineRpc } from "../rpc";
 
 export default defineRpc(UserRpc.GetInfo, {
-  schema: sharedRpcSchema(UserRpc.GetInfo),
   handler: async (ctx) => {
     let user = await readUser(ctx.uid);
     if (!user) {

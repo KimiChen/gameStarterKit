@@ -7,11 +7,9 @@ import { ShopRpc } from "@game/shared";
 import { InvalidPayloadError } from "../../core/errors";
 import { getShopSku } from "../../core/economy/catalog";
 import { purchase } from "../../core/economy/outbox";
-import { defineRpc, sharedRpcSchema } from "../rpc";
+import { defineRpc } from "../rpc";
 
 export default defineRpc(ShopRpc.Purchase, {
-  schema: sharedRpcSchema(ShopRpc.Purchase),
-  idem: true,
   handler: async (ctx, p) => {
     const sku = getShopSku(p.sku);
     if (!sku) { throw new InvalidPayloadError(`未知 SKU: ${p.sku}`); }

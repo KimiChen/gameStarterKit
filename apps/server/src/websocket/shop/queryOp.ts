@@ -4,10 +4,9 @@
 import { ShopRpc } from "@game/shared";
 import { currentZoneId } from "../../core/infra/keys";
 import { readBack } from "../../core/economy/outbox";
-import { defineRpc, sharedRpcSchema } from "../rpc";
+import { defineRpc } from "../rpc";
 
 export default defineRpc(ShopRpc.QueryOp, {
-  schema: sharedRpcSchema(ShopRpc.QueryOp),
   // sId 取当前区上下文（zoneCtx；单形态/未包裹 = 0，DUAL_MODE §3.4）
   handler: async (ctx, p) => readBack(ctx.uid, currentZoneId(), p.opId),
 });

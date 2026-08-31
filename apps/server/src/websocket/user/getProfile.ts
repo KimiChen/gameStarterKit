@@ -3,9 +3,8 @@
  */
 import { UserRpc } from "@game/shared";
 import { readUserReadonly } from "../../player/userStore";
-import { defineRpc, sharedRpcSchema } from "../rpc";
+import { defineRpc } from "../rpc";
 
 export default defineRpc(UserRpc.GetProfile, {
-  schema: sharedRpcSchema(UserRpc.GetProfile),
   handler: async (_ctx, p) => ({ profile: await readUserReadonly(p.uid) }),
 });

@@ -7,7 +7,8 @@
 import { ErrorCode as ColyseusErrorCode, ServerError } from "@colyseus/core";
 import { ErrorMessage, type ErrorCodeType, type RpcErrCode } from "@game/shared";
 
-// 错误码真源在 shared/protocol/lobbyRpc/envelope.ts 的 RPC_ERR_CODES（登记顺序：shared RPC_ERR_CODES → 此处 ERR_MAP 映射 → docs/SERVER.md §13 登记点）
+// 错误码真源（阶段 3 起）：core 码在 shared/protocol/lobbyRpc/coreErrors.ts、领域码在各域 descriptor 的
+// errorCodes；聚合 RPC_ERR_CODES 生成在 lobbyRpc/registry.generated.ts（登记顺序：descriptor → 此处 ERR_MAP 映射 → docs/SERVER.md §13 登记点）
 export type ErrCode = RpcErrCode;
 
 /** 抢 lock:{uid} 失败（客户端同一 clientReqId 自动重试）。 */

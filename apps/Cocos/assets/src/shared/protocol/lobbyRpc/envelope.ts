@@ -1,13 +1,17 @@
 import { assertExactKeys, boundedString, guardWire, isPlainRecord, type PlainRecord, type RuntimeValidator, WireValidationError } from "../http";
+import { isRpcErrCode, type RpcErrCode } from "./registry.generated";
 
 /**
- * LobbyRoom ws-RPC 信封与错误码 —— 双端共享的**类型真源**。
+ * LobbyRoom ws-RPC 信封 —— 双端共享的**类型真源**。
  *
  * 服务端 websocket/dispatcher.ts（RpcEnvelope/RpcReply）与 core/errors.ts（ErrCode）
  * 直接别名引用本文件（Arthur 停回流后单源合一，不存在镜像漂移）。
- * 登记新错误码顺序：此处 RPC_ERR_CODES（码全集真源）→ 服务端 core/errors.ts 的 ERR_MAP 映射
- * → 按 docs/SERVER.md §13 登记点复核。
+ * 错误码全集自阶段 3 起由 registry.generated.ts 聚合（core 码在 coreErrors.ts、领域码在
+ * domains/<域>.ts），本文件只 re-export；登记新 core 错误码顺序见 coreErrors.ts 抬头。
+ * ⚠ 防循环：registry.generated ⛔ 不得 import 本文件。
  */
+
+export { isRpcErrCode, RPC_ERR_CODES, type RpcErrCode } from "./registry.generated";
 
 /** C2S 请求信封（room.send(LOBBY_MSG_RPC, envelope)）。id 为客户端生成的配对串（1~64 字符）。 */
 export interface IRpcEnvelope {
@@ -33,27 +37,6 @@ export interface IRpcErrorReply {
 /** 判别联合让 data/err 混用在编译期和 runtime 都不可行。 */
 export type IRpcReply = IRpcSuccessReply | IRpcErrorReply;
 
-/** 服务端错误码全集（码全集真源；服务端 ErrCode 即此联合类型）。 */
-export const RPC_ERR_CODES = [
-    "AUTH_REQUIRED",
-    "AUTH_EPOCH_STALE",
-    "ACCOUNT_BANNED",
-    "RATE_LIMITED",
-    "INVALID_PAYLOAD",
-    "UNKNOWN_TYPE",
-    "INSUFFICIENT_BALANCE",
-    "BUSY",
-    "STALE_FENCE",
-    "IN_PROGRESS",
-    "GRANTING",
-    "THAWING",
-    "USER_DATA_LOST",
-    "ORDER_MISMATCH",
-    "INTERNAL",
-] as const;
-
-export type RpcErrCode = (typeof RPC_ERR_CODES)[number];
-
 const RPC_ID_MAX = 64;
 
 function envelopeRecord(input: unknown, path: string): PlainRecord {
@@ -71,10 +54,6 @@ export function validateRpcEnvelope(input: unknown): IRpcEnvelope {
         if (!Object.prototype.hasOwnProperty.call(value, "payload") || value.payload === undefined) return { id, type };
         return { id, type, payload: value.payload };
     });
-}
-
-function isRpcErrCode(value: unknown): value is RpcErrCode {
-    return typeof value === "string" && (RPC_ERR_CODES as readonly string[]).includes(value);
 }
 
 /** RPC response runtime validator，按 ok 判别联合严格拒绝 data/err 混用。 */

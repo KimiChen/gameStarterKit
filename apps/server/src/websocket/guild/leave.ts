@@ -6,13 +6,11 @@ import { guildExists } from "../../core/guild/catalog";
 import { emitGuildEvent } from "../../core/guild/events";
 import { withUser } from "../../core/uow";
 import { pushToGuild, setOnlineGuild } from "../push";
-import { defineRpc, sharedRpcSchema } from "../rpc";
+import { defineRpc } from "../rpc";
 import { currentZoneId } from "../../core/infra/keys";
 import { optionalStoredInt } from "../../core/infra/numbers";
 
 export default defineRpc(GuildRpc.Leave, {
-  schema: sharedRpcSchema(GuildRpc.Leave),
-  idem: true,
   handler: async (ctx) => {
     const prevGid = await withUser(ctx.uid, async (uow) => {
       const f = await uow.loadFields(["guildId"]);

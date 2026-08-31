@@ -5,9 +5,8 @@
  * ⛔ 不信客户端上报）——本接口连 Redis 都不必碰，鉴权上下文即答案。
  */
 import { UserRpc } from "@game/shared";
-import { defineRpc, sharedRpcSchema } from "../rpc";
+import { defineRpc } from "../rpc";
 
 export default defineRpc(UserRpc.GetUserId, {
-  schema: sharedRpcSchema(UserRpc.GetUserId),
   handler: async (ctx) => ({ uid: ctx.uid }),
 });

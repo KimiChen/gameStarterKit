@@ -16,8 +16,6 @@ import {
   GamePhase,
   GameplayModeId,
   LobbyPush,
-  LOBBY_RPC_REQUEST_VALIDATORS,
-  LOBBY_RPC_RESPONSE_VALIDATORS,
   S2C,
   S2C_RUNTIME_VALIDATORS,
   WebPlatformHttpContractMap,
@@ -45,7 +43,6 @@ import {
   utf8ByteLength,
   validateEffect,
   validateGrant,
-  type LobbyRpcType,
 } from "@game/shared";
 
 const assertInvalid = (fn: () => unknown, code?: string): void => {
@@ -295,50 +292,8 @@ test("所有公开 wire validator：hostile getter/iterator 统一转为可判�
   assertInvalid(() => normalizeEffect(revokedEffectArray.proxy), "EFFECT_DATA_CORRUPT");
 });
 
-const requestFixtures: Record<LobbyRpcType, unknown> = {
-  "user.getUserId": {},
-  "user.getInfo": {},
-  "user.getProfile": { uid: "u1" },
-  "user.updateProfile": { clientReqId: "c1", nickname: "n", avatarId: 1, province: "p", musicOn: true, sfxOn: false },
-  "mail.list": { before: 10, limit: 20 },
-  "mail.claimAttach": { clientReqId: "c1", mailId: 1 },
-  "mail.markRead": { mailId: 1 },
-  "shop.purchase": { clientReqId: "c1", sku: "sku1" },
-  "shop.queryOp": { opId: "op1" },
-  "guild.join": { clientReqId: "c1", guildId: 1 },
-  "guild.leave": { clientReqId: "c1" },
-  "guild.getEvents": { sinceSeq: 0 },
-};
-
-const ok = { ok: true };
-const purchase = { opId: "op1", status: "done", balance: 10, granted: [{ kind: "item", itemId: 1, count: 1 }] };
-const responseFixtures: Record<LobbyRpcType, unknown> = {
-  "user.getUserId": { uid: "u1" },
-  "user.getInfo": { user: { uid: "u1", star: 0, maxRound: 0, wins: 0, losses: 0, stamina: 30, lastStaminaRecoverAt: 0, musicOn: true, sfxOn: true, guildId: 0, ver: 1 } },
-  "user.getProfile": { profile: null },
-  "user.updateProfile": ok,
-  "mail.list": { mails: [] },
-  "mail.claimAttach": purchase,
-  "mail.markRead": ok,
-  "shop.purchase": purchase,
-  "shop.queryOp": purchase,
-  "guild.join": { ok: true, seq: 1 },
-  "guild.leave": ok,
-  "guild.getEvents": { events: [], latestSeq: 0, guildId: 0 },
-};
-
-test("Lobby route vectors：shared request/response map 覆盖全集且 extra key/NaN 均拒绝", () => {
-  const types = Object.keys(LOBBY_RPC_REQUEST_VALIDATORS) as LobbyRpcType[];
-  assert.deepEqual(new Set(types), new Set(Object.keys(LOBBY_RPC_RESPONSE_VALIDATORS)));
-  for (const type of types) {
-    assert.doesNotThrow(() => validateLobbyRpcRequest(type, requestFixtures[type]), type);
-    assert.doesNotThrow(() => validateLobbyRpcResponse(type, responseFixtures[type]), type);
-    assertInvalid(() => validateLobbyRpcRequest(type, { ...(requestFixtures[type] as Record<string, unknown>), extra: true }), "WIRE_KEYS");
-  }
-  assertInvalid(() => validateLobbyRpcRequest("mail.list", { limit: Number.NaN }), "WIRE_INTEGER");
-  assertInvalid(() => validateLobbyRpcRequest("unknown.route" as never, {}), "RPC_TYPE");
-  assertInvalid(() => validateLobbyRpcResponse("shop.queryOp", { ...purchase, balance: Number.POSITIVE_INFINITY }), "WIRE_INTEGER");
-});
+// Lobby 路由的 request/response 向量已迁入 feature-owned sidecar
+// （test/lobbyRpcVectors/<域>.ts），正反向断言见 lobby-rpc-vectors.test.ts。
 
 test("push/state vectors：未知推送、非法 phase、状态 extra key 在渲染前拒绝", () => {
   assert.deepEqual(validateLobbyPush({ type: LobbyPush.MailNew, data: { mailId: 1 } }), { type: LobbyPush.MailNew, data: { mailId: 1 } });

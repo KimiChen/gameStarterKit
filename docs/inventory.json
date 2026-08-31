@@ -224,6 +224,11 @@
       "reason": "生成物刷新命令，登记在标准开发动线而非日常命令表"
     },
     {
+      "command": { "kind": "workspace", "workspace": "@game/server", "script": "codegen:features" },
+      "documentedIn": "docs/SERVER.md",
+      "reason": "生成物刷新命令，登记在 Lobby RPC 章节而非日常命令表"
+    },
+    {
       "command": { "kind": "workspace", "workspace": "@game/server", "script": "loadtest" },
       "documentedIn": "docs/EXTRAFEATURES.md",
       "reason": "当前入房参数已失效，登记为不可用工具而非开发动线命令"

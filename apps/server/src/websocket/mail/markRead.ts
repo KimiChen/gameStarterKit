@@ -5,10 +5,9 @@ import { MailRpc } from "@game/shared";
 import { getPool } from "../../core/infra/mysql";
 import { currentZoneId } from "../../core/infra/keys";
 import type { ResultSetHeader } from "../../core/infra/mysql";
-import { defineRpc, sharedRpcSchema } from "../rpc";
+import { defineRpc } from "../rpc";
 
 export default defineRpc(MailRpc.MarkRead, {
-  schema: sharedRpcSchema(MailRpc.MarkRead),
   handler: async (ctx, p) => {
     await getPool().execute<ResultSetHeader>(
       // ⚠ 带 server_id（A2）：⛔ 不能让本区连接把他区邮件标成已读

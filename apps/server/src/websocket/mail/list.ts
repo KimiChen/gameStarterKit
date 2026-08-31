@@ -7,7 +7,7 @@ import { getPool } from "../../core/infra/mysql";
 import { currentZoneId } from "../../core/infra/keys";
 import type { RowDataPacket } from "../../core/infra/mysql";
 import { storedInt } from "../../core/infra/numbers";
-import { defineRpc, sharedRpcSchema } from "../rpc";
+import { defineRpc } from "../rpc";
 
 interface MailRow extends RowDataPacket {
   mail_id: unknown; title: string; body: string;
@@ -43,7 +43,6 @@ export function normalizeMailCreatedAt(raw: unknown): number {
 }
 
 export default defineRpc(MailRpc.List, {
-  schema: sharedRpcSchema(MailRpc.List),
   handler: async (ctx, p) => {
     // ⚠ **必须带 server_id 谓词**（A2）：`mail` 表有该列、`mailer.sendMail` 写入时也落了值，
     // 但查询侧此前只按 user_id ⇒ 同账号在 s1 收的邮件，切到 s2 也能看到（实证过）。
