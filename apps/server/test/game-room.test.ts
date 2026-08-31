@@ -94,9 +94,13 @@ function ballMoveRoom(
     return { room, mode };
 }
 
-/** 消息驱动的单点收敛：仍经 per-type `room.messages`，阶段 2 catch-all 化时只改这里。 */
+/** 消息驱动的单点收敛：统一走 catch-all（阶段 2b 后 `messages` 只有 `"_"` 一个键）。 */
 function dispatch(room: GameRoom, type: string, client: unknown, payload: unknown): void {
-    (room.messages as unknown as Record<string, (c: unknown, p: unknown) => void>)[type](client, payload);
+    (room.messages as unknown as Record<string, (c: unknown, t: string, p: unknown) => void>)["_"](
+        client,
+        type,
+        payload,
+    );
 }
 
 /**

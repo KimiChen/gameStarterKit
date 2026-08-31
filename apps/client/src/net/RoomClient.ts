@@ -9,7 +9,6 @@
 import {
     RoomName,
     C2S,
-    S2C,
     PROTOCOL_VERSION,
     ROOM_STATE_VALIDATORS,
     type C2SPayloadMap,
@@ -18,13 +17,11 @@ import {
     type IPingReq,
     type ICastSkillReq,
     type IChatReq,
-    type IPongRes,
-    type IWelcomeRes,
-    type ISkillResultRes,
-    type IChatRes,
-    type IErrorRes,
     type RoomStateByMode,
     type RoomStateMode,
+    // 阶段 2b：S2C payload 类型映射不再本地重复声明，改由 shared 生成的 wire catalog
+    // 单源推导；运行时校验路径（validateS2CPayload）零改动。
+    type S2CPayloadMap,
     validateOrigin,
     validateC2SPayload,
     validateGameRoomJoinOptions,
@@ -38,14 +35,7 @@ import {
     waitMsForJoin,
 } from "./joinControl";
 
-/** 服务端 → 客户端各消息的 payload 类型映射 */
-export interface S2CPayloadMap {
-    [S2C.Pong]: IPongRes;
-    [S2C.Welcome]: IWelcomeRes;
-    [S2C.SkillResult]: ISkillResultRes;
-    [S2C.Chat]: IChatRes;
-    [S2C.Error]: IErrorRes;
-}
+export type { S2CPayloadMap };
 
 export type GameRoomReconcileReason = "joined" | "reconnected";
 export type SupportedGameRoomMode = GameplayModeIdType & RoomStateMode;

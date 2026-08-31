@@ -258,29 +258,38 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
 正式玩法扩展仍需在该 Demo 边界之上声明 state root、admission、phase、input validation、reset/settle 和
 可选 evidence 契约，再复用该房间模式；当前两种规则的运行时闸不等于通用玩法层已经交付。
 
-改 state 形状或新增 C2S 消息：
+改 state 形状或新增消息：
 
-1. 改 `apps/shared/schema/gameplays/<id>/state.json`（该 mode state 形状的唯一真源；容量来自同目录
-   manifest.json 的 `maxPlayers`），或在 `apps/shared/src/protocol/messages.ts` 登记消息名与 payload。
+1. state：改 `apps/shared/schema/gameplays/<id>/state.json`（该 mode state 形状的唯一真源；容量来自
+   同目录 manifest.json 的 `maxPlayers`）。玩法消息：在 `apps/shared/src/gameplays/<id>/wire.ts` 用
+   `defineC2S`/`defineS2C` 声明消息名、payload 接口与 validator、允许 `phases` 和 `rateCost`
+   ——⚠ wire.ts 顶层只允许 import / 接口 / const 字面量 / defineC2S、defineS2C 调用 / validator
+   函数声明（生成器做**语法读取**，spread/computed property/顶层副作用直接拒绝）。core 消息
+   （Ping/Chat 与 Pong/Welcome/Chat/Error）住在 `apps/shared/src/protocol/messages.ts`，属 shell。
 2. 运行 `npm --workspace @game/server run codegen:gameplays` 重新生成 `apps/shared/src/gameplays/`
-   （per-mode state + catalog/index）、`apps/server/src/rooms/schema/GameRoomState.ts` 与
+   （per-mode state + catalog/index + `generated/wire-catalog.generated.ts` 的 `C2S`/`S2C`/
+   validator 全集聚合与 owner/phases/rateCost 表）、`apps/server/src/rooms/schema/GameRoomState.ts` 与
    `apps/server/src/rooms/schema/generated/`、`apps/client/src/gameplay/catalog.generated.ts`
-   （都是生成物，禁手改；契约 digest 变化必须同批 bump manifest.modeVersion），再运行 `npm run sync:shared`。
+   （都是生成物，禁手改；契约 digest = sha256(manifest + state + wire.ts) 变化必须同批 bump
+   manifest.modeVersion），再运行 `npm run sync:shared`。
    ⚠ 新增 root 时，它**必须**声明 `tick`/`phase`/`matchId`/`players`，其 player 类型必须声明 `id`/`name`
    ——通用 GameRoom shell 只读这些，漏声明在 codegen 期失败而不是运行期读到 undefined。`GameRoom.state`
-   的类型是据此生成的 `RoomStateLifecycle`，⛔ 不是任何具体 root；shell 读 ball 专属字段必须显式走
-   `ballState`，且只在 `usesDefaultBallMoveRules === true` 的路径上。
-3. 新增 C2S 消息时，通用 `rooms/GameRoom.ts` 必须登记**两处**：`GAME_ROOM_C2S_SCHEMAS`（`[K in C2SType]`
-   映射，漏写 typecheck 失败）与 `messages` handler 表（漏写即静默丢消息）。⚠ handler 表**不能**按 mode
-   构建：Colyseus 0.17 在 `Room.__init()` 里消费 `this.messages`，而 `__init()` 早于 `onCreate()`，生产房的
-   mode 那时还没选定。
-4. **准入写在玩法里，不写在 shell 里**：在该玩法的 `inputs.accepts` 声明这条消息，需要 Playing 之外的
-   phase 时再加 `inputs.phases`。`phaseAllows` 只保留 Ping/Chat 两条 shell 公共能力，其余查 mode 声明；
-   漏声明即被拒（fail-closed），⛔ 不要为了让消息通过而把它加回 shell 的 switch。
-   建 mode 实例时（`GameModeRegistry.create`，即建房那一刻）会校验：未知 C2S、重复声明、
-   声明 Ping/Chat、为未接受的输入配 phases 都直接抛。⚠ 不是 `register()` 时——非法 mode
-   能被成功注册，到第一次建房才炸。
-5. 补齐合法/非法 payload、phase 越界与 mode 隔离测试。
+   的类型是据此生成的 `RoomStateLifecycle`，⛔ 不是任何具体 root；玩法专属字段只在 mode 自己的 hook 里
+   按其精确 root 类型读写。
+3. **新增玩法消息不再修改通用 `rooms/GameRoom.ts`**：`GameRoom.messages` 只注册一个 catch-all
+   （键是 `"_"`，实例字段初始化器，⚠ `Room.__init()` 会 delete 该键，⛔ 不得共享模块级常量），
+   dispatcher 按生成的 wire catalog 固定序执行：基础预算（未知/畸形 type 也计费）→ owner 闸
+   （core 或当前 mode）→ exact validate（非普通对象含 Uint8Array 一律拒）→ rateCost 追加消耗 →
+   phase 闸 → core handler / mode `commands[type]`。中央 C2S schema 表、具名 handler 表与
+   phase switch / mode inputs 声明均已删除，⛔ 不得再注册任何具名 handler（Colyseus 分派具名优先，
+   残留具名注册就是绕过全部 gate 的暗道）。
+4. 在该玩法 mode 的 `commands` 里为新消息提供 typed handler：键必须属于本玩法的 wire token 集合
+   （`gameplayC2STokens[id]`；建 mode 实例时与注入期各校验一次——⚠ 不是 `register()` 时，非法 mode
+   能被成功注册，到第一次建房才炸）。phase 白名单随 token 的 `phases` 声明走（core Ping/Chat 的
+   phase 规则仍归 shell）；owner 声明了消息但没有对应 command 时回 BadRequest。出站用
+   `context.sendS2C(client, token, payload)` / `context.broadcastS2C(token, payload)`——token 的
+   dir/owner 在发送前校验，payload 过 token.validate。
+5. 补齐合法/非法 payload、phase 越界与 owner 隔离测试。
 
 ## 6. HTTP 开发边界
 
@@ -536,7 +545,8 @@ Game HTTP request schema 已由 shared validator 同源生成并直接注入带 
 
 | 内容 | 当前真源 |
 | --- | --- |
-| Room 名、C2S/S2C、join options | `apps/shared/src/protocol/rooms.ts`、`messages.ts` |
+| Room 名、join options | `apps/shared/src/protocol/rooms.ts` |
+| 房内消息（C2S/S2C） | core 消息（Ping/Chat/Pong/Welcome/Error）在 `apps/shared/src/protocol/messages.ts`；玩法消息在各玩法手写 `apps/shared/src/gameplays/<id>/wire.ts` 的 defineC2S/defineS2C token；全集聚合（`C2S`/`S2C`/validator 表/owner/phases/rateCost）由 `codegen:gameplays` 生成在 `apps/shared/src/gameplays/generated/wire-catalog.generated.ts` |
 | Lobby RPC 请求/响应/消息全集 | `apps/shared/src/protocol/lobbyRpc` |
 | RPC 错误码 | `apps/shared/src/protocol/lobbyRpc/envelope.ts` 的 `RPC_ERR_CODES`（15 个）；异常→码映射在 `core/errors.ts` 的 `ERR_MAP`（覆盖 11 个，其余落 `INTERNAL` 兜底）。其中 `GRANTING` 当前没有任何产出点，`AUTH_EPOCH_STALE` 服务端已停产、只保留客户端分支，`ORDER_MISMATCH` 只由可选的 `http/pay/wxNotify.ts` 直接返回，不经 `ERR_MAP` |
 | Colyseus state 形状 | `apps/shared/schema/gameplays/<id>/{manifest.json,state.json}`；纯数据镜像 `apps/shared/src/gameplays/generated/state/<id>.ts` + catalog、运行时 Schema `apps/server/src/rooms/schema/generated/<id>.ts` 与聚合器 `GameRoomState.ts` 都是 `apps/server/tools/gameplay-codegen/` 的生成物（首行带 AUTO-GENERATED 标记，禁手改），改单源后运行 `npm --workspace @game/server run codegen:gameplays` |

@@ -107,8 +107,11 @@ npm --workspace @game/server run test:int
    - 修改真源后使用 `sync:shared` / `sync:client`。
    - `apps/shared/src/gameplays/`、`apps/server/src/rooms/schema/GameRoomState.ts` 与
      `apps/server/src/rooms/schema/generated/`、`apps/client/src/gameplay/catalog.generated.ts` 来自
-     `apps/shared/schema/gameplays/<id>/`（manifest.json + state.json），用
-     `npm --workspace @game/server run codegen:gameplays` 刷新。
+     `apps/shared/schema/gameplays/<id>/`（manifest.json + state.json）与各玩法手写的
+     `apps/shared/src/gameplays/<id>/wire.ts`，用
+     `npm --workspace @game/server run codegen:gameplays` 刷新。⚠ `gameplays/` 下的
+     `defineGameplayWire.ts` 与 `<id>/wire.ts` 是手写真源（不是生成物），其余
+     （catalog.generated.ts / index.ts / generated/）禁手改。
    - `apps/server/src/http/manifest.generated.ts` 来自 `apps/server/src/http/<domain>/<method>.ts`，
      用 `npm --workspace @game/server run codegen:http` 刷新。
    - `apps/shared/src/project.ts` 来自 `project.metadata.json`，用 `npm run init:project` 刷新。

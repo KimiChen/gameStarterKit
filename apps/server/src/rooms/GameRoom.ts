@@ -4,6 +4,9 @@ import { Schema } from "@colyseus/schema";
 import {
     C2S,
     S2C,
+    GAME_WIRE_OWNERS,
+    GAME_WIRE_PHASES,
+    GAME_WIRE_RATE_COST,
     GamePhase,
     ErrorCode,
     ErrorMessage,
@@ -17,14 +20,11 @@ import {
     validateC2SPayload,
     validateS2CPayload,
     WireValidationError,
+    type GameplayS2CToken,
     type IGameRoomJoinOptions,
     type C2SType,
-    type C2SPayload,
     type S2CType,
     type IPingReq,
-    type IMoveReq,
-    type IIdlePulseReq,
-    type ICastSkillReq,
     type IChatReq,
     type IWelcomeRes,
     type IPongRes,
@@ -50,11 +50,11 @@ import {
 import type { MatchEvidenceV3 } from "../core/match/matchEvidence";
 import { trackTask } from "../core/infra/lifecycle";
 import {
-    assertGameModeInputs,
+    assertGameModeCommands,
     assertGameModeRoster,
     gameModeRegistry,
-    modeAllowsInput,
     type GameMode,
+    type GameModeCommandContext,
     type GameModeContext,
 } from "./GameMode";
 
@@ -207,38 +207,6 @@ class GameRoomStartLockTimeoutError extends Error {
     }
 }
 
-type RuntimeSchema<T> = {
-    safeParse(input: unknown): { success: true; data: T } | { success: false };
-};
-
-/**
- * Keep the server's historical `safeParse` export shape while making shared
- * validators the only source of C2S payload domains and exact-key semantics.
- * The wrapper intentionally drops the error object: GameRoom maps every wire
- * failure to its stable BadRequest protocol error.
- */
-function sharedC2SSchema<T extends C2SType>(messageType: T): RuntimeSchema<C2SPayload<T>> {
-    return {
-        safeParse(input: unknown) {
-            try {
-                return { success: true as const, data: validateC2SPayload(messageType, input) };
-            } catch {
-                return { success: false as const };
-            }
-        },
-    };
-}
-
-export const GAME_ROOM_C2S_SCHEMAS: {
-    [K in C2SType]: RuntimeSchema<C2SPayload<K>>;
-} = {
-    [C2S.Ping]: sharedC2SSchema(C2S.Ping),
-    [C2S.Move]: sharedC2SSchema(C2S.Move),
-    [C2S.IdlePulse]: sharedC2SSchema(C2S.IdlePulse),
-    [C2S.CastSkill]: sharedC2SSchema(C2S.CastSkill),
-    [C2S.Chat]: sharedC2SSchema(C2S.Chat),
-};
-
 /**
  * 通用玩法房间壳：拥有 transport、strict auth、准入、开局事务、fixed-step 时钟与
  * settle/证据发射通道；具体玩法规则（模拟、输入、evidence 录入）全部由选定的
@@ -329,7 +297,7 @@ export class GameRoom extends Room {
             // 注入路径不经过 GameModeRegistry.create，必须在这里补同一道 roster 闸，
             // ⛔ 否则 roster 缺失会一路走到「players.size >= undefined 恒 false」的无上限房。
             assertGameModeRoster(this.injectedMode.id, this.injectedMode.roster);
-            assertGameModeInputs(this.injectedMode.id, this.injectedMode.inputs);
+            assertGameModeCommands(this.injectedMode.id, this.injectedMode.commands);
             this.injectedMode.evidence?.assertRosterCompatible(this.injectedMode.id, this.injectedMode.roster);
             this.selectModeState(this.injectedMode);
         }
@@ -380,8 +348,8 @@ export class GameRoom extends Room {
                 nextInt: (min: number, max: number) => this.rng.nextInt(min, max),
             },
             settle: () => this.settle(),
-            sendS2C: (client, type, payload) => this.sendS2C(client, type, payload),
-            broadcastS2C: (type, payload) => this.broadcastS2C(type, payload),
+            sendS2C: (client, token, payload) => this.sendModeS2C(client, token, payload),
+            broadcastS2C: (token, payload) => this.broadcastModeS2C(token, payload),
             sendError: (client, code) => this.sendError(client, code),
             findClientBySession: (sessionId) =>
                 this.clients.find((candidate) => candidate.sessionId === sessionId),
@@ -484,24 +452,6 @@ export class GameRoom extends Room {
         return this.modeId;
     }
 
-    private modeMessage(type: C2SType, client: Client, payload: unknown): boolean {
-        const mode = this.requireMode();
-        if (!mode.onMessage) return false;
-        try {
-            const result = mode.onMessage({ type, client, payload, context: this.modeContext() });
-            if (isPromiseLike(result)) {
-                this.observeModePromise(result, "message");
-                this.sendError(client, ErrorCode.Unknown);
-                return true;
-            }
-            return result === true;
-        } catch (error) {
-            console.error(`[GameRoom ${this.roomId}] mode ${mode.id} 消息钩子失败`, error);
-            this.sendError(client, ErrorCode.Unknown);
-            return true;
-        }
-    }
-
     /**
      * 账号绑定（M8a）：WebPlatform 签发的不透明 token 反查 uid 存入 client.auth（09·G1
      * ⛔ 不信客户端单独传的 userId）。token 缺失/伪造/过期一律拒连（去 mock 后无游客模式）。
@@ -557,55 +507,121 @@ export class GameRoom extends Room {
     }
 
     /**
-     * Colyseus 0.17 消息处理表，消息名来自双端共享的 C2S 常量。
+     * Colyseus 0.17 catch-all 消息入口（键是 `"_"`，等价于 `onMessage("*")`）。
      *
-     * 这里保留函数形态（而不是只依赖 Room.onMessage 的 validator），因为测试、
-     * replay adapter 和未来的非 websocket transport 可能直接调用 handler；每个入口
-     * 都必须经过同一个 `acceptMessage()` exact runtime schema 与预算闸。
+     * ⚠ 必须是**实例字段初始化器**产生的每实例对象，⛔ 不得赋模块级共享常量：
+     * `Room.__init()` 读到 catch-all 键后会 `delete` 掉它，共享常量会让第一间房之后的
+     * 所有房间永久没有 catch-all。
+     *
+     * ⛔ 不得再注册任何具名 handler：Colyseus 的分派是「具名优先、catch-all 兜底」，
+     * 任何残留的具名注册都是绕过全部 gate（预算、exact validator、phase、owner）的暗道。
+     * 测试、replay adapter 和未来的非 websocket transport 直接调用
+     * `messages["_"](client, type, payload)` 走同一入口。
      */
     messages = {
-        [C2S.Ping]: (client: Client, raw: IPingReq) => {
-            const msg = this.acceptMessage(client, C2S.Ping, raw, GAME_ROOM_C2S_SCHEMAS[C2S.Ping]);
-            if (!msg) return;
-            if (this.modeMessage(C2S.Ping, client, msg)) return;
+        "_": (client: Client, type: unknown, message: unknown) =>
+            this.dispatchGameMessage(client, type, message),
+    };
+
+    /**
+     * 通用 dispatcher 固定序（docs/Non-intrusive.md §4.5）：
+     *  1. disposed 短路；先消耗基础预算（未知/畸形 type 也计费，flood 不因拼错消息名而免费）；
+     *  2. type 非 string / 不在 wire catalog / owner 既非 core 也非当前 mode → BadRequest；
+     *  3. exact validate（shared validator；二进制帧 fallback 会把 Uint8Array 原样交入，
+     *     isPlainRecord 的原型检查负责拒绝）；
+     *  4. rateCost > 1 时追加预算消耗（在昂贵后续处理之前）；
+     *  5. phase：core 消息用 shell 规则（Ping→W/P/S；Chat→W/P），玩法消息用 token 声明；
+     *  6. core 消息交 core handler，玩法消息交当前 mode 的 `commands[type]`；无对应
+     *     command → BadRequest。
+     */
+    private dispatchGameMessage(client: Client, type: unknown, message: unknown): void {
+        if (this.disposed) return;
+        const mode = this.requireMode();
+        if (!this.consumeMessageBudget(client)) return;
+        const owner = typeof type === "string"
+            ? (GAME_WIRE_OWNERS as Readonly<Partial<Record<string, string>>>)[type]
+            : undefined;
+        if (owner === undefined || (owner !== "core" && owner !== this.modeId)) {
+            this.sendError(client, ErrorCode.BadRequest);
+            return;
+        }
+        const messageType = type as C2SType;
+        let payload: unknown;
+        try {
+            payload = validateC2SPayload(messageType, message);
+        } catch {
+            // 含 S2C 消息名与未登记 C2S validator 的兜底（MESSAGE_TYPE 同样落到这里）。
+            this.sendError(client, ErrorCode.BadRequest);
+            return;
+        }
+        for (let extra = this.wireRateCost(messageType) - 1; extra > 0; extra--) {
+            if (!this.consumeMessageBudget(client)) return;
+        }
+        if (!this.wirePhaseAllows(messageType, owner)) {
+            this.sendError(client, ErrorCode.BadRequest);
+            return;
+        }
+        if (owner === "core") {
+            this.handleCoreMessage(client, messageType, payload);
+            return;
+        }
+        const handler = (mode.commands as
+            | Readonly<Record<string, (context: GameModeCommandContext<unknown>, payload: unknown) => unknown>>
+            | undefined)?.[messageType];
+        if (typeof handler !== "function") {
+            // 玩法输入没有任何 shell 默认实现：owner 声明了消息却没有 command = BadRequest。
+            this.sendError(client, ErrorCode.BadRequest);
+            return;
+        }
+        try {
+            const result = handler({ ...this.modeContext(), client }, payload);
+            if (isPromiseLike(result)) {
+                // commands 是同步热路径：异步 handler 按错误消费并被观察，⛔ 不悬挂。
+                this.observeModePromise(result, "command");
+                this.sendError(client, ErrorCode.Unknown);
+            }
+        } catch (error) {
+            console.error(`[GameRoom ${this.roomId}] mode ${mode.id} command ${messageType} 失败`, error);
+            this.sendError(client, ErrorCode.Unknown);
+        }
+    }
+
+    /** 玩法 C2S 的预算成本（生成的 wire catalog；未登记按 1）。测试可替换观察机制。 */
+    private wireRateCost(messageType: string): number {
+        return (GAME_WIRE_RATE_COST as Readonly<Partial<Record<string, number>>>)[messageType] ?? 1;
+    }
+
+    /**
+     * phase 闸：core 消息的 phase 规则由 shell 拥有（⛔ 不进玩法 wire catalog）；
+     * 玩法消息用其 wire token 声明的 phases。
+     */
+    private wirePhaseAllows(messageType: C2SType, owner: string): boolean {
+        const phase = this.state.phase;
+        if (owner === "core") {
+            switch (messageType) {
+                case C2S.Ping:
+                    // 心跳在结算阶段也必须活着，否则客户端会在看结算界面时被判掉线。
+                    return phase === GamePhase.Waiting || phase === GamePhase.Playing || phase === GamePhase.Settle;
+                case C2S.Chat:
+                    return phase === GamePhase.Waiting || phase === GamePhase.Playing;
+                default:
+                    return false;
+            }
+        }
+        const phases = (GAME_WIRE_PHASES as Readonly<Partial<Record<string, readonly string[]>>>)[messageType];
+        return phases !== undefined && phases.includes(phase);
+    }
+
+    /** core 消息的 shell 实现（原具名 handler 逻辑内联；payload 已过 exact validate）。 */
+    private handleCoreMessage(client: Client, messageType: C2SType, payload: unknown): void {
+        if (messageType === C2S.Ping) {
+            const msg = payload as IPingReq;
             const res: IPongRes = { clientTime: msg.clientTime, serverTime: this.now() };
             this.sendS2C(client, S2C.Pong, res);
-        },
-
-        [C2S.Move]: (client: Client, raw: IMoveReq) => {
-            const msg = this.acceptMessage(client, C2S.Move, raw, GAME_ROOM_C2S_SCHEMAS[C2S.Move]);
-            if (!msg) return;
-            // 玩法输入没有任何 shell 默认实现：mode 声明接受却不消费 = BadRequest。
-            if (!this.modeMessage(C2S.Move, client, msg)) {
-                this.sendError(client, ErrorCode.BadRequest);
-            }
-        },
-
-        [C2S.IdlePulse]: (client: Client, raw: IIdlePulseReq) => {
-            const msg = this.acceptMessage(
-                client,
-                C2S.IdlePulse,
-                raw,
-                GAME_ROOM_C2S_SCHEMAS[C2S.IdlePulse],
-            );
-            if (!msg) return;
-            if (!this.modeMessage(C2S.IdlePulse, client, msg)) {
-                this.sendError(client, ErrorCode.BadRequest);
-            }
-        },
-
-        [C2S.CastSkill]: (client: Client, raw: ICastSkillReq) => {
-            const msg = this.acceptMessage(client, C2S.CastSkill, raw, GAME_ROOM_C2S_SCHEMAS[C2S.CastSkill]);
-            if (!msg) return;
-            if (!this.modeMessage(C2S.CastSkill, client, msg)) {
-                this.sendError(client, ErrorCode.BadRequest);
-            }
-        },
-
-        [C2S.Chat]: (client: Client, raw: IChatReq) => {
-            const msg = this.acceptMessage(client, C2S.Chat, raw, GAME_ROOM_C2S_SCHEMAS[C2S.Chat]);
-            if (!msg) return;
-            if (this.modeMessage(C2S.Chat, client, msg)) return;
+            return;
+        }
+        if (messageType === C2S.Chat) {
+            const msg = payload as IChatReq;
             const player = this.state.players.get(client.sessionId);
             if (!player) return;
             const text = msg.text.trim();
@@ -616,27 +632,10 @@ export class GameRoom extends Room {
                 time: this.now(),
             };
             this.broadcastS2C(S2C.Chat, res);
-        },
-    };
-
-    /**
-     * 准入 = shell 的公共传输能力 ∪ 当前 mode 自己声明的输入。
-     *
-     * ⛔ 这里不再穷举玩法消息名：`C2S.IdlePulse` 曾写死在这个 switch 里，等于通用 shell 知道
-     * 一个具体玩法的输入。玩法输入现在由 `mode.inputs` 声明，shell 只做分发。
-     * Ping/Chat 留在 shell：它们是连接级心跳与房间互动，不属于任何玩法。
-     */
-    private phaseAllows(mode: RuntimeGameMode, messageType: C2SType): boolean {
-        const phase = this.state.phase;
-        switch (messageType) {
-            case C2S.Ping:
-                // 心跳在结算阶段也必须活着，否则客户端会在看结算界面时被判掉线。
-                return phase === GamePhase.Waiting || phase === GamePhase.Playing || phase === GamePhase.Settle;
-            case C2S.Chat:
-                return phase === GamePhase.Waiting || phase === GamePhase.Playing;
-            default:
-                return modeAllowsInput(mode.inputs, messageType, phase);
+            return;
         }
+        // core S2C 名已在 validate 一步拒绝；这里是防御性兜底。
+        this.sendError(client, ErrorCode.BadRequest);
     }
 
     private consumeMessageBudget(client: Client): boolean {
@@ -673,31 +672,39 @@ export class GameRoom extends Room {
         this.broadcast(type, wire);
     }
 
-    private acceptMessage<T>(
-        client: Client,
-        messageType: C2SType,
-        raw: unknown,
-        schema: RuntimeSchema<T>,
-    ): T | undefined {
-        if (this.disposed) return undefined;
-        const mode = this.requireMode();
-        if (!this.consumeMessageBudget(client)) return undefined;
-        let parsed: { success: true; data: T } | { success: false };
-        try {
-            parsed = schema.safeParse(raw);
-        } catch {
-            this.sendError(client, ErrorCode.BadRequest);
-            return undefined;
+    /**
+     * mode 出站的 token 闸：dir 必须是 s2c，owner ∈ {core, 当前 mode}；payload 过
+     * token.validate（与 shared S2C validator 同一实现）。坏 token/越权 token 是 mode
+     * 的实现缺陷，直接 throw 交由调用 hook 的既有兜底记录。
+     */
+    private assertModeS2CToken(token: GameplayS2CToken<unknown>): void {
+        if (!token || typeof token !== "object" || token.dir !== "s2c" || typeof token.type !== "string") {
+            throw new TypeError(`[GameRoom] mode ${this.modeId} 出站消息必须携带 s2c wire token`);
         }
-        if (!parsed.success) {
-            this.sendError(client, ErrorCode.BadRequest);
-            return undefined;
+        const owner = (GAME_WIRE_OWNERS as Readonly<Partial<Record<string, string>>>)[token.type];
+        if (owner !== "core" && owner !== this.modeId) {
+            throw new TypeError(
+                `[GameRoom] mode ${this.modeId} 不得发送 ${token.type}（owner=${String(owner)}）`,
+            );
         }
-        if (!this.phaseAllows(mode, messageType)) {
-            this.sendError(client, ErrorCode.BadRequest);
-            return undefined;
-        }
-        return parsed.data;
+    }
+
+    private sendModeS2C<TPayload>(
+        client: Client | undefined,
+        token: GameplayS2CToken<TPayload>,
+        payload: TPayload,
+    ): void {
+        if (this.disposed) return;
+        this.assertModeS2CToken(token);
+        const wire = token.validate(payload);
+        try { client?.send?.(token.type, wire); } catch { /* connection may be closing */ }
+    }
+
+    private broadcastModeS2C<TPayload>(token: GameplayS2CToken<TPayload>, payload: TPayload): void {
+        if (this.disposed) return;
+        this.assertModeS2CToken(token);
+        const wire = token.validate(payload);
+        this.broadcast(token.type, wire);
     }
 
     /**

@@ -70,7 +70,11 @@ async function join(room: GameRoom, joined: FakeClient): Promise<void> {
 }
 
 function handler(room: GameRoom, type: string): (sender: FakeClient, payload: unknown) => void {
-    return (room.messages as unknown as Record<string, (sender: FakeClient, payload: unknown) => void>)[type];
+    // 阶段 2b：统一走 catch-all 单入口（具名 handler 已全部删除）。
+    const catchAll = (room.messages as unknown as {
+        _: (sender: FakeClient, type: string, payload: unknown) => void;
+    })._;
+    return (sender, payload) => catchAll.call(room.messages, sender, type, payload);
 }
 
 function errorCodes(sender: FakeClient): number[] {

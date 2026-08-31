@@ -53,9 +53,12 @@ apps/client/src
 - 服务端与客户端从 shared import，不复制字符串或接口。
 - 外部身份 HTTP 类型来自锁定的 `@gono/webplatform-contract` 生成物。
 - Colyseus state 的 mode→root、字段和值域只修改 `apps/shared/schema/gameplays/<id>/`（manifest.json +
-  state.json）；`codegen:gameplays` 同时产出 shared per-mode interface/validator 与 catalog、服务端 Schema
-  构造器映射和客户端 catalog。生成物落在 `apps/shared/src/gameplays/`，不进协议指纹目录；per-mode 契约
-  身份由 catalog 的 contractDigest + manifest.modeVersion 承担。
+  state.json）；玩法房内消息只修改该玩法手写的 `apps/shared/src/gameplays/<id>/wire.ts`
+  （defineC2S/defineS2C token：消息名、payload validator、phases、rateCost）。`codegen:gameplays`
+  同时产出 shared per-mode interface/validator 与 catalog、wire catalog（`C2S`/`S2C` 等公共名的全集
+  聚合 + owner/phases/rateCost 表）、服务端 Schema 构造器映射和客户端 catalog。生成物落在
+  `apps/shared/src/gameplays/`，不进协议指纹目录；per-mode 契约身份由 catalog 的
+  contractDigest（= sha256(manifest + state + wire.ts)）+ manifest.modeVersion 承担。
 
 ### 3.2 约束可执行
 
@@ -129,8 +132,10 @@ participants；热档/冷档 schema 迁移、asset effect 原子性与经济操�
    并确认是否需要 bump PROTOCOL_VERSION（不重钉则 npm run test:client 中的 protocolFingerprint 测试失败）。
    指纹脚本只接受 `rooms.ts` 中唯一的顶层 export 声明，并会忽略注释，避免文档示例中的旧版本
    误导版本闸。
-4. 若改动落在 apps/shared/schema/gameplays/<id>/（manifest.json / state.json），运行
-   npm --workspace @game/server run codegen:gameplays 重新生成 apps/shared/src/gameplays/、
+4. 若改动落在 apps/shared/schema/gameplays/<id>/（manifest.json / state.json）或玩法手写的
+   apps/shared/src/gameplays/<id>/wire.ts，运行
+   npm --workspace @game/server run codegen:gameplays 重新生成 apps/shared/src/gameplays/
+   （catalog/index/generated，含 wire catalog）、
    apps/server/src/rooms/schema/GameRoomState.ts 与 schema/generated/、
    apps/client/src/gameplay/catalog.generated.ts（都是生成物，禁手改；契约 digest 变化必须同批
    bump 该 mode 的 manifest.modeVersion），再重新 sync:shared
@@ -146,14 +151,13 @@ participants；热档/冷档 schema 迁移、asset effect 原子性与经济操�
 ### 4.2 新玩法
 
 ```text
-shared 登记 canonical mode id + 新建 apps/shared/schema/gameplays/<id>/{manifest.json,state.json} / wire message
-  → npm --workspace @game/server run codegen:gameplays 生成 mode→root constructor / validator 映射与三端 catalog
-  → server modes/<Mode> + modes/catalog.ts
-  → 玩法自带 C2S 输入时：server rooms/GameRoom.ts 的 GAME_ROOM_C2S_SCHEMAS 与 messages handler 表
-    登记该消息（只此两处；handler 表必须是全 C2S 联合的静态表，见下文）
-  → 该消息的准入写在玩法里：mode 的 inputs.accepts（需要 Playing 之外的 phase 时再加 inputs.phases）
-    ⛔ 不要在 GameRoom 的 phaseAllows switch 里加 case——显式 case 会短路掉 default 分支的
-    modeAllowsInput，把 mode 自己声明的 phases 静默吞掉，且对所有 mode 一律放行
+shared 登记 canonical mode id + 新建 apps/shared/schema/gameplays/<id>/{manifest.json,state.json}
+  → 玩法自带消息时：手写 apps/shared/src/gameplays/<id>/wire.ts，用 defineC2S/defineS2C 声明
+    消息名、payload validator、允许 phases 与 rateCost（准入随 token 声明走，⛔ 不改任何中央表）
+  → npm --workspace @game/server run codegen:gameplays 生成 mode→root constructor / validator 映射、
+    三端 catalog 与 wire catalog（C2S/S2C 全集聚合 + owner/phases/rateCost 表）
+  → server modes/<Mode> + modes/catalog.ts：mode 的 commands（typed handler map，键 = 本玩法 wire token）
+    消费消息；⛔ 不改 GameRoom——它只有一个 catch-all dispatcher，按 wire catalog 分发
   → client logic/rooms/<mode> + net/rooms/<Mode>Room.ts
   → client mode adapter 注入 raw exact validator / reconcile
   → client gameplay/catalog.ts
@@ -166,13 +170,15 @@ shared 登记 canonical mode id + 新建 apps/shared/schema/gameplays/<id>/{mani
 raw exact validator 与重连 reconcile 由玩法 adapter 注入；校验先看 reflected Schema 的真实 wire shape，
 不先白名单重建状态。玩法只取得不含原始 SDK room/send 的 typed facade；只有真实 `ROOM_STATE` 校验通过才
 开放发送，SDK 离线队列不能绕过该闸。客户端新增玩法通过登记点扩展，不在通用 transport 中增加玩法分支；
-服务端玩法自带新消息时，仍必须改通用 `apps/server/src/rooms/GameRoom.ts` 的**两处**登记：
-`GAME_ROOM_C2S_SCHEMAS`（`[K in C2SType]` 映射，漏写 typecheck 失败）与无类型约束的 `messages` handler 表
-（漏写即静默丢消息）。⚠ 这两处绕不过去：Colyseus 0.17 在 `Room.__init()` 里就消费掉 `this.messages`，而
-`__init()` 跑在 `onCreate()` 之前、生产房的 mode 尚未选定，所以 handler 表**只能**是全 C2S 联合的静态表。
-**准入不再是第三处登记**：`phaseAllows` 曾用一个穷举玩法消息名的 switch 决定准入（`c2s.idle.pulse` 就写在
-里面），现在改为「Ping/Chat 由 shell 拥有，其余查 `mode.inputs` 声明」——玩法输入的准入随玩法走，通用
-shell 不再认识任何具体玩法的消息名。
+服务端玩法自带新消息时，**不再修改通用 `apps/server/src/rooms/GameRoom.ts`**：消息由该玩法自己的
+`apps/shared/src/gameplays/<id>/wire.ts` 声明（defineC2S/defineS2C token：消息名、validator、phases、
+rateCost），`codegen:gameplays` 把它聚合进 wire catalog（`C2S`/`S2C` 等公共名以同名继续从 shared 导出），
+GameRoom 只注册一个 catch-all（键 `"_"`；⚠ Colyseus 0.17 在 `Room.__init()` 里消费 `this.messages` 并
+delete 该键，所以它必须是实例字段初始化器、⛔ 不得共享模块级常量，也 ⛔ 不得再注册任何具名 handler
+——分派具名优先，残留具名注册就是绕过预算/exact validate/owner/phase 全部 gate 的暗道）。dispatcher
+按 wire catalog 做 owner 独占分发：core 消息（Ping/Chat）归 shell，玩法消息交当前 mode 的 `commands`
+typed handler map（键 = 本玩法 wire token 的消息名，建实例时校验）；phase 白名单随 token 声明走，
+通用 shell 不再认识任何具体玩法的消息名。
 
 ### 4.3 FairyGUI 页面
 

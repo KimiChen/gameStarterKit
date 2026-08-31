@@ -31,6 +31,7 @@ import {
 import {
   assertGameplayArtifactsFresh,
   parseCli,
+  readCoreWireNames,
   readGameplayDescriptors,
   renderGameplayArtifacts,
   writeGameplayArtifacts,
@@ -46,6 +47,7 @@ const SHARED_STATE_DIR = "apps/shared/src/gameplays/generated/state";
 const SERVER_SCHEMA_DIR = "apps/server/src/rooms/schema/generated";
 const SHARED_CATALOG = "apps/shared/src/gameplays/catalog.generated.ts";
 const SHARED_INDEX = "apps/shared/src/gameplays/index.ts";
+const SHARED_WIRE_CATALOG = "apps/shared/src/gameplays/generated/wire-catalog.generated.ts";
 const SERVER_AGGREGATE = "apps/server/src/rooms/schema/GameRoomState.ts";
 const CLIENT_CATALOG = "apps/client/src/gameplay/catalog.generated.ts";
 
@@ -58,6 +60,7 @@ const FIXTURE_ARTIFACTS = [
   SHARED_CATALOG,
   `${SHARED_STATE_DIR}/ballMove.ts`,
   `${SHARED_STATE_DIR}/idle.ts`,
+  SHARED_WIRE_CATALOG,
   SHARED_INDEX,
 ] as const;
 
@@ -111,6 +114,18 @@ function assertStateError(id: string, change: (state: MutableState) => void, pat
 function createFixture(): { readonly root: string; readonly options: GameplayCodegenOptions } {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "gameplay-codegen-"));
   fs.cpSync(SCHEMA_DIR, path.join(root, "apps/shared/schema/gameplays"), { recursive: true });
+  // wire catalog 的两个额外单源：core 消息名表（protocol/messages.ts）与各玩法手写 wire.ts。
+  fs.mkdirSync(path.join(root, "apps/shared/src/protocol"), { recursive: true });
+  fs.copyFileSync(
+    path.join(REPOSITORY_ROOT, "apps/shared/src/protocol/messages.ts"),
+    path.join(root, "apps/shared/src/protocol/messages.ts"),
+  );
+  for (const id of ["ballMove", "idle"]) {
+    const wire = path.join(REPOSITORY_ROOT, "apps/shared/src/gameplays", id, "wire.ts");
+    if (!fs.existsSync(wire)) continue;
+    fs.mkdirSync(path.join(root, "apps/shared/src/gameplays", id), { recursive: true });
+    fs.copyFileSync(wire, path.join(root, "apps/shared/src/gameplays", id, "wire.ts"));
+  }
   return { root, options: { repositoryRoot: root } };
 }
 
@@ -265,12 +280,15 @@ test("checked-in gameplay artifacts are fresh", () => {
   assert.doesNotThrow(() => assertGameplayArtifactsFresh({ repositoryRoot: REPOSITORY_ROOT }));
 });
 
-test("catalog contractDigest 就是 sha256(manifest + NUL + state)，⛔ 不是另一套口径", () => {
+test("catalog contractDigest 就是 sha256(manifest + NUL + state + NUL + wire)，⛔ 不是另一套口径", () => {
   for (const id of ["ballMove", "idle"] as const) {
+    const wireFile = path.join(REPOSITORY_ROOT, "apps/shared/src/gameplays", id, "wire.ts");
     const digest = crypto.createHash("sha256")
       .update(fs.readFileSync(path.join(SCHEMA_DIR, id, "manifest.json")))
       .update("\0")
       .update(fs.readFileSync(path.join(SCHEMA_DIR, id, "state.json")))
+      .update("\0")
+      .update(fs.existsSync(wireFile) ? fs.readFileSync(wireFile) : Buffer.alloc(0))
       .digest("hex");
     assert.equal(GAMEPLAY_CATALOG[id].contractDigest, digest);
   }
@@ -297,7 +315,7 @@ test("freshness check is read-only and fails after a descriptor field is added",
     writeFixtureJson(fixture.root, "apps/shared/schema/gameplays/ballMove/state.json", changedState);
     // digest 变了 ⇒ 同批必须 bump modeVersion，否则下面的重写会被 digest 闸拦住（单独有用例钉闸）
     const changedManifest = manifestFixture("ballMove");
-    changedManifest.modeVersion = 2;
+    changedManifest.modeVersion = 3;
     writeFixtureJson(fixture.root, "apps/shared/schema/gameplays/ballMove/manifest.json", changedManifest);
 
     assert.throws(
@@ -321,8 +339,8 @@ test("freshness check is read-only and fails after a descriptor field is added",
       readFixtureText(fixture.root, `${SERVER_SCHEMA_DIR}/ballMove.ts`),
       /@type\("boolean"\) debugWire: boolean = false/,
     );
-    assert.match(readFixtureText(fixture.root, SHARED_CATALOG), /modeVersion: 2,/);
-    assert.match(readFixtureText(fixture.root, CLIENT_CATALOG), /modeVersion: 2,/);
+    assert.match(readFixtureText(fixture.root, SHARED_CATALOG), /modeVersion: 3,/);
+    assert.match(readFixtureText(fixture.root, CLIENT_CATALOG), /modeVersion: 3,/);
     assert.doesNotThrow(() => assertGameplayArtifactsFresh(fixture.options));
   } finally {
     fs.rmSync(fixture.root, { recursive: true, force: true });
@@ -379,10 +397,10 @@ test("契约 digest 变化而 modeVersion 未增：writer 与只读闸都必须�
     assert.equal(readFixtureText(fixture.root, SHARED_CATALOG), before);
 
     const bumped = manifestFixture("idle");
-    bumped.modeVersion = 2;
+    bumped.modeVersion = 3;
     writeFixtureJson(fixture.root, "apps/shared/schema/gameplays/idle/manifest.json", bumped);
     assert.ok(writeGameplayArtifacts(fixture.options).changed.length > 0);
-    assert.match(readFixtureText(fixture.root, SHARED_CATALOG), /modeVersion: 2,/);
+    assert.match(readFixtureText(fixture.root, SHARED_CATALOG), /modeVersion: 3,/);
     assert.doesNotThrow(() => assertGameplayArtifactsFresh(fixture.options));
   } finally {
     fs.rmSync(fixture.root, { recursive: true, force: true });
@@ -620,7 +638,7 @@ test("generated root maps are frozen, type-safe and reject unknown modes", () =>
 
 test("generated validator keys exactly equal runtime decorated keys and exclude server-only fields", () => {
   const gameplays = readGameplayDescriptors({ repositoryRoot: REPOSITORY_ROOT });
-  const artifacts = renderGameplayArtifacts(gameplays);
+  const artifacts = renderGameplayArtifacts(gameplays, readCoreWireNames({ repositoryRoot: REPOSITORY_ROOT }));
   for (const gameplay of gameplays) {
     const shared = artifacts.get(`${SHARED_STATE_DIR}/${gameplay.id}.ts`);
     const server = artifacts.get(`${SERVER_SCHEMA_DIR}/${gameplay.id}.ts`);
@@ -643,7 +661,10 @@ test("generated validator keys exactly equal runtime decorated keys and exclude 
 });
 
 test("map entry helpers are unique per owner type when roots share a field name", () => {
-  const artifacts = renderGameplayArtifacts(readGameplayDescriptors({ repositoryRoot: REPOSITORY_ROOT }));
+  const artifacts = renderGameplayArtifacts(
+    readGameplayDescriptors({ repositoryRoot: REPOSITORY_ROOT }),
+    readCoreWireNames({ repositoryRoot: REPOSITORY_ROOT }),
+  );
   const ballMove = artifacts.get(`${SHARED_STATE_DIR}/ballMove.ts`) ?? "";
   const idle = artifacts.get(`${SHARED_STATE_DIR}/idle.ts`) ?? "";
   assert.match(ballMove, /function entriesOfGameRoomStatePlayers\(/);
@@ -788,7 +809,10 @@ test("真实 descriptor 必须通过生命周期断言，否则上面的反例�
 });
 
 test("生成的 RoomStateLifecycle 是独立接口，⛔ 不得是某个具体 root 的别名，也不得泄进 shared 产物", () => {
-  const artifacts = renderGameplayArtifacts(readGameplayDescriptors({ repositoryRoot: REPOSITORY_ROOT }));
+  const artifacts = renderGameplayArtifacts(
+    readGameplayDescriptors({ repositoryRoot: REPOSITORY_ROOT }),
+    readCoreWireNames({ repositoryRoot: REPOSITORY_ROOT }),
+  );
   const aggregate = artifacts.get(SERVER_AGGREGATE) ?? "";
   assert.match(aggregate, /export interface RoomStateLifecycle \{/u);
   assert.match(aggregate, /export interface RoomStatePlayerLifecycle \{/u);
@@ -799,6 +823,193 @@ test("生成的 RoomStateLifecycle 是独立接口，⛔ 不得是某个具体 r
   for (const [relative, content] of artifacts) {
     if (!relative.startsWith("apps/shared/") && !relative.startsWith("apps/client/")) continue;
     assert.doesNotMatch(content, /RoomStateLifecycle/u, `${relative} 泄漏了生命周期接口`);
+  }
+});
+
+// ── wire token（阶段 2b：玩法 wire.ts 语法约束 / 重名闸 / digest 并入 / 增量退出条件）──
+
+function writeFixtureWire(root: string, id: string, source: string): void {
+  const dir = path.join(root, "apps/shared/src/gameplays", id);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "wire.ts"), source, "utf8");
+}
+
+const PUZZLE_WIRE = `import { GamePhase } from "../../constants/game";
+import { defineC2S, defineS2C } from "../defineGameplayWire";
+
+export interface IPuzzleStepReq {
+    steps: number;
+}
+
+export interface IPuzzleBoardRes {
+    cells: number;
+}
+
+function validatePuzzleStep(input: unknown): IPuzzleStepReq {
+    return input as IPuzzleStepReq;
+}
+
+function validatePuzzleBoard(input: unknown): IPuzzleBoardRes {
+    return input as IPuzzleBoardRes;
+}
+
+export const PuzzleStep = defineC2S("c2s.puzzle.step", validatePuzzleStep, {
+    phases: [GamePhase.Waiting, GamePhase.Playing],
+    rateCost: 2,
+});
+
+export const PuzzleBoard = defineS2C("s2c.puzzle.board", validatePuzzleBoard);
+`;
+
+test("wire.ts 语法约束：顶层副作用/spread/computed/let/未导出 token 一律拒绝", () => {
+  const fixture = createFixture();
+  try {
+    const attempt = (source: string, pattern: RegExp): void => {
+      addFixtureMode(fixture.root, "puzzle", puzzleManifest(), puzzleState());
+      writeFixtureWire(fixture.root, "puzzle", source);
+      assert.throws(() => readGameplayDescriptors(fixture.options), pattern);
+      fs.rmSync(path.join(fixture.root, "apps/shared/schema/gameplays/puzzle"), { recursive: true });
+      fs.rmSync(path.join(fixture.root, "apps/shared/src/gameplays/puzzle"), { recursive: true });
+    };
+    // 顶层副作用（表达式语句）
+    attempt(`${PUZZLE_WIRE}console.log("boot");\n`, /wire\.ts 顶层只允许/);
+    // class / let 都不属于允许的顶层形态
+    attempt(`${PUZZLE_WIRE}class Boot {}\n`, /不允许：ClassDeclaration/);
+    attempt(`${PUZZLE_WIRE}let mutable = 1;\n`, /只允许 const 声明/);
+    // 顶层 const 里的 spread/computed
+    attempt(`${PUZZLE_WIRE}const key = "k";\nconst bad = { [key]: 1 };\n`, /禁 spread\/computed\/副作用/);
+    attempt(
+      `${PUZZLE_WIRE}const base = { a: 1 };\nconst bad = { ...base };\n`,
+      /禁 spread\/computed\/副作用/,
+    );
+    // defineC2S 选项里的 spread
+    attempt(
+      PUZZLE_WIRE.replace(
+        "phases: [GamePhase.Waiting, GamePhase.Playing],\n    rateCost: 2,",
+        "...({ phases: [GamePhase.Playing] }),",
+      ),
+      /不允许 spread\/computed property/,
+    );
+    // token 必须 export
+    attempt(PUZZLE_WIRE.replace("export const PuzzleBoard", "const PuzzleBoard"), /必须 export/);
+    // validator 必须是本文件函数声明且带接口返回类型注解
+    attempt(
+      PUZZLE_WIRE.replace("defineS2C(\"s2c.puzzle.board\", validatePuzzleBoard)",
+        "defineS2C(\"s2c.puzzle.board\", (input) => input)"),
+      /validator 必须是本文件内函数声明的标识符引用/,
+    );
+    attempt(
+      PUZZLE_WIRE.replace("function validatePuzzleBoard(input: unknown): IPuzzleBoardRes {",
+        "function validatePuzzleBoard(input: unknown) {"),
+      /必须带单一接口标识符的返回类型注解/,
+    );
+    attempt(
+      PUZZLE_WIRE.replace("export interface IPuzzleBoardRes", "interface IPuzzleBoardRes"),
+      /必须在本文件内声明并导出/,
+    );
+    // phases/rateCost 的字面量约束
+    attempt(PUZZLE_WIRE.replace("[GamePhase.Waiting, GamePhase.Playing]", "[]"), /非空数组字面量/);
+    attempt(PUZZLE_WIRE.replace("GamePhase.Waiting", "GamePhase.Lobby"), /GamePhase\.Waiting\/Playing\/Settle/);
+    attempt(PUZZLE_WIRE.replace("rateCost: 2", "rateCost: 0"), /rateCost 必须是 ≥1 的整数/);
+    attempt(PUZZLE_WIRE.replace("rateCost: 2", "rateCost: 1 + 1"), /rateCost 必须是数字字面量/);
+    // 消息名前缀与文件内重名
+    attempt(PUZZLE_WIRE.replace('"c2s.puzzle.step"', '"puzzle.step"'), /必须以 "c2s\." 开头/);
+    attempt(
+      `${PUZZLE_WIRE}export const PuzzleStepAgain = defineC2S("c2s.puzzle.step", validatePuzzleStep, {\n    phases: [GamePhase.Playing],\n});\n`,
+      /重复声明消息名：c2s\.puzzle\.step/,
+    );
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test("wire 重名闸：跨 mode 消息名、与 core 重名的消息名/聚合键名都必须 fail", () => {
+  const fixture = createFixture();
+  try {
+    addFixtureMode(fixture.root, "puzzle", puzzleManifest(), puzzleState());
+    // ① 跨 mode 重名：ballMove 已拥有 c2s.move
+    writeFixtureWire(fixture.root, "puzzle", PUZZLE_WIRE.replace('"c2s.puzzle.step"', '"c2s.move"'));
+    assert.throws(
+      () => readGameplayDescriptors(fixture.options),
+      /wire message "c2s\.move" already owned by gameplay "ballMove"/,
+    );
+    // ② 与 core 重名的消息名（Ping 属 shell）——生成器在聚合时拒绝
+    writeFixtureWire(fixture.root, "puzzle", PUZZLE_WIRE.replace('"c2s.puzzle.step"', '"c2s.ping"'));
+    assert.throws(
+      () => writeGameplayArtifacts(fixture.options),
+      /wire message "c2s\.ping" is already a core message/,
+    );
+    // ③ token 导出名与 core 聚合键重名（S2C 对象里已有 Error）
+    writeFixtureWire(fixture.root, "puzzle", PUZZLE_WIRE.replace("export const PuzzleBoard", "export const Error"));
+    assert.throws(
+      () => writeGameplayArtifacts(fixture.options),
+      /wire token "Error" collides with core in the aggregated S2C keys/,
+    );
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test("digest 并入 wire.ts 字节：改 wire.ts 一个字节而不 bump modeVersion 必须转红", () => {
+  const fixture = createFixture();
+  try {
+    writeGameplayArtifacts(fixture.options);
+    assert.doesNotThrow(() => assertGameplayArtifactsFresh(fixture.options));
+
+    const wireFile = path.join(fixture.root, "apps/shared/src/gameplays/ballMove/wire.ts");
+    fs.appendFileSync(wireFile, "// drift\n", "utf8");
+    const gate = /contract digest changed but modeVersion did not increase/;
+    assert.throws(() => assertGameplayArtifactsFresh(fixture.options), gate);
+    assert.throws(() => writeGameplayArtifacts(fixture.options), gate);
+
+    const bumped = manifestFixture("ballMove");
+    bumped.modeVersion = 3;
+    writeFixtureJson(fixture.root, "apps/shared/schema/gameplays/ballMove/manifest.json", bumped);
+    assert.ok(writeGameplayArtifacts(fixture.options).changed.length > 0);
+    assert.doesNotThrow(() => assertGameplayArtifactsFresh(fixture.options));
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test("阶段 2b 退出条件：fixture mode 新增 C2S/S2C 只加 wire.ts（+manifest/state），生成 wire catalog 即收发", () => {
+  const fixture = createFixture();
+  try {
+    writeGameplayArtifacts(fixture.options);
+    const untouched = [
+      `${SHARED_STATE_DIR}/ballMove.ts`,
+      `${SHARED_STATE_DIR}/idle.ts`,
+      `${SERVER_SCHEMA_DIR}/ballMove.ts`,
+      `${SERVER_SCHEMA_DIR}/idle.ts`,
+    ];
+    const snapshot = new Map(untouched.map((relative) => [relative, readFixtureText(fixture.root, relative)]));
+
+    addFixtureMode(fixture.root, "puzzle", puzzleManifest(), puzzleState());
+    writeFixtureWire(fixture.root, "puzzle", PUZZLE_WIRE);
+    writeGameplayArtifacts(fixture.options);
+    for (const relative of untouched) {
+      assert.equal(readFixtureText(fixture.root, relative), snapshot.get(relative), `${relative} 必须保持字节不动`);
+    }
+
+    const wireCatalog = readFixtureText(fixture.root, SHARED_WIRE_CATALOG);
+    // 聚合常量：新消息以 token 导出名为键进入 C2S/S2C 字面量
+    assert.match(wireCatalog, /PuzzleStep: "c2s\.puzzle\.step",/);
+    assert.match(wireCatalog, /PuzzleBoard: "s2c\.puzzle\.board",/);
+    // payload map / validator 表 / owner / phases / rateCost / per-mode token 表全部收录
+    assert.match(wireCatalog, /"c2s\.puzzle\.step": IPuzzleStepReq;/);
+    assert.match(wireCatalog, /"s2c\.puzzle\.board": IPuzzleBoardRes;/);
+    assert.match(wireCatalog, /"c2s\.puzzle\.step": PuzzleStep\.validate,/);
+    assert.match(wireCatalog, /"s2c\.puzzle\.board": PuzzleBoard\.validate,/);
+    assert.match(wireCatalog, /"c2s\.puzzle\.step": "puzzle",/);
+    assert.match(wireCatalog, /"s2c\.puzzle\.board": "puzzle",/);
+    assert.match(wireCatalog, /"c2s\.puzzle\.step": \[GamePhase\.Waiting, GamePhase\.Playing\],/);
+    assert.match(wireCatalog, /"c2s\.puzzle\.step": 2,/);
+    assert.match(wireCatalog, /import \{ PuzzleBoard, PuzzleStep, type IPuzzleBoardRes, type IPuzzleStepReq \} from "\.\.\/puzzle\/wire";/);
+    // 聚合 barrel 收录手写 wire 模块；catalog digest 覆盖 wire 字节（上一用例已钉）
+    assert.match(readFixtureText(fixture.root, SHARED_INDEX), /export \* from "\.\/puzzle\/wire";/);
+    assert.doesNotThrow(() => assertGameplayArtifactsFresh(fixture.options));
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
   }
 });
 

@@ -1,4 +1,4 @@
-import { C2S, MAX_PLAYERS } from "@game/shared";
+import { IdlePulse, MAX_PLAYERS, gameplayC2STokens } from "@game/shared";
 import {
     IdlePlayerState,
     IdleRoomState,
@@ -8,6 +8,7 @@ import {
     gameModeRegistry,
     type GameMode,
     type GameModeRegistry,
+    type GameplayCommandsFor,
 } from "../GameMode";
 
 export const IDLE_DEFAULT_PULSE_GOAL = 3;
@@ -43,8 +44,6 @@ export function createIdleGameMode(options: IdleGameModeOptions = {}): GameMode<
         id: IDLE_GAME_MODE_ID,
         // 与去硬编码前的 shell 行为逐值一致；roster 现在是 mode 的声明而不是 shell 的字面量。
         roster: { min: 2, max: MAX_PLAYERS, autoStart: 2 },
-        // IdlePulse 此前写死在通用 shell 的 phaseAllows switch 里，现由本 mode 自己声明。
-        inputs: { accepts: [C2S.IdlePulse] },
         // 不声明 evidence capability：idle settle 时明确不产出任何收局证据。
         createPlayer: ({ sessionId, name }) => {
             const player = new IdlePlayerState();
@@ -52,20 +51,20 @@ export function createIdleGameMode(options: IdleGameModeOptions = {}): GameMode<
             player.name = name;
             return player;
         },
-        // Ping and Chat remain shared transport capabilities. Gameplay inputs
-        // are exclusive: unsupported Move/Cast return false and GameRoom rejects
-        // them before any ballMove fallback can run.
-        onMessage: ({ type, client, context }) => {
-            if (type !== C2S.IdlePulse) return false;
-            const player = context.state.players.get(client.sessionId);
-            if (!player) return true;
-            player.pulses++;
-            if (player.pulses >= context.state.pulseGoal) {
-                context.state.winnerId = client.sessionId;
-                context.settle();
-            }
-            return true;
-        },
+        // Ping/Chat 仍是 shell 的公共传输能力。玩法输入按 wire token owner 独占分发：
+        // Move/Cast 属 ballMove，catch-all dispatcher 在 owner 闸就会拒绝，⛔ 不会到达本表。
+        // 键由本玩法 wire token 派生（satisfies 钉住键集与 payload 类型）。
+        commands: {
+            [IdlePulse.type]: ({ state, client, settle }) => {
+                const player = state.players.get(client.sessionId);
+                if (!player) return;
+                player.pulses++;
+                if (player.pulses >= state.pulseGoal) {
+                    state.winnerId = client.sessionId;
+                    settle();
+                }
+            },
+        } satisfies GameplayCommandsFor<IdleRoomState, typeof gameplayC2STokens.idle>,
         onMatchInitialize: ({ state }) => resetIdleMatchState(state, pulseGoal),
         onMatchRollback: ({ state }) => resetIdleMatchState(state, pulseGoal),
         onStep: () => undefined,
