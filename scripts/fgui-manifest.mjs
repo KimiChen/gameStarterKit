@@ -70,7 +70,14 @@ function attrs(source) {
  * 实现。⛔ 不要再写第二个同义函数：注释剥离是一条规则，两份实现会在其中一份被加固时静默分叉。
  */
 function withoutXmlComments(xml) {
-  return xml.replace(/<!--[\s\S]*?-->/g, "");
+  // ⚠ CDATA 必须参与同一次扫描：正则从左到右匹配，先命中的 CDATA 整段被原样保留，
+  // 于是里面的字面 `<!--` 不会成为注释起点。⛔ 不能只写 /<!--[\s\S]*?-->/ ——那样
+  // CDATA 里的一个 `<!--` 会一路吃到文件后面第一个真 `-->`，把中间的真实 src=/ui:// 引用
+  // 连同整行删掉，引用抽取因此少校验若干条（失败方向是**误绿**）。
+  // 当前 41 个资源 XML 里 CDATA 与字面 `<!--` 均为 0 命中，故这是加固而非在修一个活的缺陷；
+  // 但 FairyGUI 编辑器的输出格式不由本仓决定，一行的代价买断整类问题。
+  return xml.replace(/<!\[CDATA\[[\s\S]*?\]\]>|<!--[\s\S]*?-->/g,
+    (match) => match.startsWith("<!--") ? "" : match);
 }
 
 function packageDescription(xml) {

@@ -366,6 +366,30 @@ test("ui:// closure:合法 name/id 别名通过，未知包、资源和缺失 ke
   assert.match(validateUiUrl("unknownbinary", maps), /未知 ui:\/\/ 包\/资源/);
 });
 
+test("CDATA 里的字面 <!-- 不得吞掉其后的真实引用", () => {
+  // 正则式剥注释若不认 CDATA，`<![CDATA[ ... <!-- ... ]]>` 里的 `<!--` 会一路吃到文件后面
+  // 第一个真 `-->`，把中间整段（含真实 src=/ui://）删掉——引用抽取少校验若干条，
+  // 失败方向是**误绿**：漏导那些资源时 verify:fgui 依然打 ✔。
+  // ⚠ 触发要同时具备「CDATA 内的字面 <!--」与「其后的真注释」两件事，缺一不成立。
+  const { extractUiUrls, extractAssetReferences, withoutXmlComments } = fguiManifestTestHooks;
+  const source = [
+    '<component name="Main">',
+    '  <text name="tip"><![CDATA[ 写法：<!-- 注释 ]]></text>',
+    '  <image name="realA" src="realResA" url="ui://Pkg/realA"/>',
+    '  <!-- 真注释：<image src="ghostRes"/> -->',
+    '  <image name="realB" src="realResB"/>',
+    '</component>',
+  ].join("\n");
+  assert.deepEqual(
+    extractAssetReferences(source).map((reference) => reference.src),
+    ["realResA", "realResB"],
+    "CDATA 之后的真实 src= 必须全部保留，注释里的 ghostRes 必须剔除",
+  );
+  assert.deepEqual(extractUiUrls(source), ["Pkg/realA"], "CDATA 之后的真实 ui:// 必须保留");
+  // CDATA 段本身必须原样留在输出里，⛔ 不能被当成注释一并删掉
+  assert.match(withoutXmlComments(source), /<!\[CDATA\[ 写法：<!-- 注释 \]\]>/u);
+});
+
 test("XML 注释里的 src/pkg/ui:// 引用不是引用", () => {
   const { extractUiUrls, extractAssetReferences, extractPkgReferences } = fguiManifestTestHooks;
   // 注释剥离只有一个实现（withoutXmlComments），声明解析与引用抽取共用它
