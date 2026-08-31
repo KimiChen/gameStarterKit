@@ -176,7 +176,6 @@ export const MAX_ACCEPTED_INPUTS = MATCH_EVIDENCE_MAX_ACCEPTED_INPUTS;
 export const MODE_PLAYER_FACTORY_REASON = "mode-player-factory";
 export const MODE_PLAYER_REGISTER_REASON = "mode-player-register";
 
-/** 可替换的单调时间源。默认使用 Colyseus room clock。 */
 /**
  * 「我委托 ballMove 默认规则」这句 mode 自报布尔值与真实 root 的绑定校验。
  * 导出为独立函数：生成物对象是冻结的，缺 root 的形态无法在运行时模拟，边界分支
@@ -210,6 +209,7 @@ export function assertBallMoveRulesBinding(
     }
 }
 
+/** 可替换的单调时间源。默认使用 Colyseus room clock。 */
 export type GameRoomClock = (() => number) | { now?: () => number; currentTime?: number };
 
 /**
