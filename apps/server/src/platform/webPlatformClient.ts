@@ -122,7 +122,23 @@ class CircuitBreaker {
   }
 }
 
-const breaker = new CircuitBreaker();
+/**
+ * 熔断器**按路由族隔离**，不共用一个实例。
+ *
+ * 共用时 character 路由族的故障会推开同一个熔断器，连带让 `onAuth` 的 session verify 一起被拒
+ * ——故障面从「回访热档用户的角色复核」放大成「所有人无法登录」。两族的可用性是独立事实，
+ * 熔断状态也必须独立。
+ *
+ * 刻意按**族**而不是按 path 分：character 路径带 userId/serverId 参数，按 path 分会把 Map
+ * 撑爆（每个用户一个熔断器，等于没有熔断）。
+ */
+type WebPlatformRoute = "session" | "character";
+const breakers = new Map<WebPlatformRoute, CircuitBreaker>();
+const breakerFor = (route: WebPlatformRoute): CircuitBreaker => {
+  let breaker = breakers.get(route);
+  if (!breaker) { breaker = new CircuitBreaker(); breakers.set(route, breaker); }
+  return breaker;
+};
 
 function transportRequest(
   path: string,
@@ -274,11 +290,13 @@ async function requestWithRetry(
 }
 
 async function call<T>(
+  route: WebPlatformRoute,
   path: string,
   method: string,
   body: unknown,
   parse: (value: unknown) => T,
 ): Promise<T> {
+  const breaker = breakerFor(route);
   breaker.enter();
   try {
     const result = await requestWithRetry(path, method, body);
@@ -339,6 +357,7 @@ const httpWebPlatformClient: WebPlatformClient = {
     }
     const contract = WebPlatformHttpContractMap.VerifySession;
     const response = await call(
+      "session",
       contract.path,
       contract.method,
       request,
@@ -362,6 +381,7 @@ const httpWebPlatformClient: WebPlatformClient = {
       throw new WebPlatformServiceError(`character register 请求形状无效: ${error instanceof Error ? error.message : String(error)}`);
     }
     await call(
+      "character",
       characterPath(userId, serverId),
       contract.method,
       undefined,
@@ -377,6 +397,7 @@ const httpWebPlatformClient: WebPlatformClient = {
       throw new WebPlatformServiceError(`character has 请求形状无效: ${error instanceof Error ? error.message : String(error)}`);
     }
     const response = await call(
+      "character",
       characterPath(userId, serverId),
       contract.method,
       undefined,

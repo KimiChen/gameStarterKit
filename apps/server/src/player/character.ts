@@ -20,7 +20,7 @@ import { STAMINA_MAX } from "@game/shared";
 import { zoneCtx } from "../core/infra/keys";
 import { createCharacterUser } from "../core/userRecord";
 import { ensureLive, invalidateUserNegcache } from "../core/archive/thaw";
-import { webPlatformClient } from "../platform/webPlatformClient";
+import { webPlatformClient, WebPlatformUnavailableError } from "../platform/webPlatformClient";
 import { enqueueCharacterRepairIntent, registerCharacterWithRepair } from "./characterRepair";
 import {
   markCharacterRegistrationReady,
@@ -32,6 +32,7 @@ import {
   CHARACTER_READY_TIMEOUT_MAX_MS,
   CHARACTER_READY_TIMEOUT_MS,
   CHARACTER_REGISTRATION_RECHECK_MS,
+  CHARACTER_REGISTRATION_GRACE_MS,
 } from "../core/infra/config";
 
 /** 首进区角色初始字段（与登录建号一致；缺 musicOn/sfxOn = 读侧默认开，07 字段表）。 */
@@ -65,6 +66,7 @@ export interface CharacterInitializerDependencies {
   nowMs?(): number;
   /** How long a ready marker may bypass the external authority. */
   registrationRecheckMs?: number;
+  registrationGraceMs?: number;
   /** 建角成功后的 Redis 负缓存失效。 */
   invalidateUserNegcache(uid: string): Promise<void>;
 }
@@ -79,6 +81,7 @@ const defaultCharacterInitializerDependencies: CharacterInitializerDependencies 
   markCharacterRegistrationReady,
   nowMs: () => Date.now(),
   registrationRecheckMs: CHARACTER_REGISTRATION_RECHECK_MS,
+  registrationGraceMs: CHARACTER_REGISTRATION_GRACE_MS,
   invalidateUserNegcache,
 };
 
@@ -129,6 +132,10 @@ export async function ensureCharacterWithDependencies(
   if (!Number.isSafeInteger(recheckMs) || recheckMs < 1) {
     throw new RangeError(`character registration recheck window 非法：${String(recheckMs)}`);
   }
+  const graceMs = deps.registrationGraceMs ?? CHARACTER_REGISTRATION_GRACE_MS;
+  if (!Number.isSafeInteger(graceMs) || graceMs < 0) {
+    throw new RangeError(`character registration grace window 非法：${String(graceMs)}`);
+  }
   // ⚠ **ensureLive 先于 createUser**：冻结回流用户先 thaw 恢复真档，
   // ⛔ 绝不在冻结档上 createUser 建空档（空档上先发生写会致 archive 被删、真档永久丢失）。
   // ⚠ ensureLive 内部抢 lock:{uid}——本函数不得在 withUser 锁内调用（onJoin best-effort 调，安全）。
@@ -160,6 +167,27 @@ export async function ensureCharacterWithDependencies(
             [error, repairError],
             `WebPlatform 角色存在性查询失败且 durable repair intent 写入失败 uid=${uid} sId=${sId}`,
           );
+        }
+        // 有界宽限：外部**不可用**时，让「曾经通过权威复核、且陈旧未超上限」的热档继续放行。
+        // 语义等价性依据：健康路径下 `hasCharacter` 的返回值**不是准入判据**——true 放行、
+        // false 也在补 PUT 后放行；它是修复触发器而非授权检查。因此「探测失败 + 落 intent +
+        // 放行」与健康路径的最终状态一致，只是补 PUT 变成异步（repair worker 无条件收敛）。
+        // ⛔ **绝不 markCharacterRegistrationReady**：刷新 checkedAt 会让宽限自我续期成永久
+        // 信任，等于永久关闭复核——这是本分支唯一的致命误实现。
+        if (
+          graceMs > 0
+          && error instanceof WebPlatformUnavailableError
+          && registration.state === "ready"
+          && registration.checkedAtMs !== null
+          && nowMs >= registration.checkedAtMs
+          && nowMs - registration.checkedAtMs < graceMs
+        ) {
+          console.warn(
+            `[character] WebPlatform 不可用，ready marker 走有界宽限放行 uid=${uid} sId=${sId} `
+            + `staleMs=${nowMs - registration.checkedAtMs} graceMs=${graceMs}（已留 durable repair intent）`,
+          );
+          await deps.invalidateUserNegcache(uid);
+          return;
         }
         throw error;
       }

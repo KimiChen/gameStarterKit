@@ -26,9 +26,28 @@ npm run dev
 以**毫秒**为单位，接受域 `1..2592000000`，即最小 1 毫秒、最大 30 天；配成极小值会让每次热档回访都退化成
 一次 `hasCharacter` 外部调用，等于关闭快路径）。复核窗口内的热档回访仍走本地快路径；旧档缺少时间戳、
 marker 过期或外部登记不存在时会重新登记并写入 durable repair/时间戳，避免本地 marker 永久掩盖外部删档。
-复核探测本身失败（WebPlatform 不可用）会持久化 repair intent 并拒绝本次 join（与首次建档失败同码），
-需等外部恢复后由 repair worker 收敛；因此「外部不可用时热档回访仍可进」只在复核窗口内成立。
+复核探测本身失败（WebPlatform 不可用）默认会持久化 repair intent 并拒绝本次 join（与首次建档失败同码），
+需等外部恢复后由 repair worker 收敛；因此「外部不可用时热档回访仍可进」默认只在复核窗口内成立。
 该配置只控制复核频率，不改变首次 ready gate 的超时预算。
+
+`CHARACTER_REGISTRATION_GRACE_MS` 是外部不可用时的**有界宽限**（默认 `0` = 关闭，行为同上；
+接受域 `0..2592000000`）。**生产部署建议显式设为 7d**——脚手架默认保持关闭，是为了不单方面改变既有
+安全姿态，选择权留给部署方。开启后，只有同时满足「本地确有热档」「曾通过权威复核（marker 为 ready
+且有时间戳）」「陈旧未超上限」「错误是 `WebPlatformUnavailableError`（含熔断器开启）」「durable repair
+intent 已写入」时才放行；⛔ 宽限分支**绝不刷新 marker 时间戳**，否则宽限会自我续期成永久信任。
+契约错误与服务身份错误（`WebPlatformContractError` / `WebPlatformServiceError`）一律不宽限——
+它们代表配置事故，fail-open 会掩盖部署问题。
+
+安全取舍：`hasCharacter` 的返回值**本来就不是准入判据**（健康路径下 `true` 放行、`false` 补 PUT 后
+也放行），它是修复触发器而非授权检查，所以宽限放行与健康路径的最终状态语义等价、只是补 PUT 变成异步。
+宽限**不覆盖**新号、`pending` 残留档、无 marker 的 legacy 档、`thaw` 的 F4 独立探测路径，
+以及封号/注销（那条链在 session verify 与 `/admin/kick` 上，宽限完全不触碰）。唯一新增风险是把 PUT
+推迟到 repair 收敛前（上界 `CHARACTER_REPAIR_BACKOFF_MAX_MS`），该窗口内该区 durable 成员标记可能缺失
+——这与今天已存在的崩溃窗同类，只是被拉长。
+
+WebPlatform 客户端的熔断器**按路由族隔离**（`session` / `character` 各一个）。共用一个实例时，
+character 路由故障会推开同一个熔断器并连带拒掉 session verify，把故障面从「回访角色复核」放大成
+「所有人无法登录」；隔离后两族的可用性互不影响。
 
 停止与查看本地栈：
 

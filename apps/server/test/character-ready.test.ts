@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { WebPlatformUnavailableError } from "../src/platform/webPlatformClient";
 import { test } from "node:test";
 import {
   CHARACTER_READY_TIMEOUT_MAX_MS,
@@ -374,4 +375,71 @@ test("character ready drain waits for admitted work before dependencies close", 
   await draining;
   assert.equal(initializerFinished, true);
   assert.equal(drained, true);
+});
+
+test("character initializer：WebPlatform 不可用时的有界宽限", async () => {
+  const calls: string[] = [];
+  const makeDeps = (opts: {
+    graceMs: number;
+    checkedAtMs: number | null;
+    state?: "pending" | "ready" | null;
+    error: Error;
+  }) => ({
+    ensureLive: async () => {},
+    createUser: async () => "exists" as const,
+    readCharacterRegistration: async () => {
+      const state = opts.state ?? "ready";
+      return state === "ready" ? { state, checkedAtMs: opts.checkedAtMs } : state;
+    },
+    hasCharacter: async () => { calls.push("has"); throw opts.error; },
+    enqueueCharacterRepairIntent: async () => { calls.push("enqueue"); },
+    registerCharacterWithRepair: async () => { calls.push("register"); },
+    markCharacterRegistrationReady: async () => { calls.push("mark-ready"); },
+    nowMs: () => 10_000,
+    // recheck 窗口刻意小于 stale，保证不会走 isFreshReadyMarker 的快路径、一定进探测分支。
+    registrationRecheckMs: 1_000,
+    registrationGraceMs: opts.graceMs,
+    invalidateUserNegcache: async () => { calls.push("negcache"); },
+  });
+  const unavailable = new WebPlatformUnavailableError("down");
+
+  // 1. 默认 grace=0：行为与历史一致，照旧拒绝。
+  calls.length = 0;
+  await assert.rejects(
+    ensureCharacterWithDependencies("no-grace", 1, makeDeps({ graceMs: 0, checkedAtMs: 9_000, error: unavailable })),
+    (error: unknown) => error === unavailable,
+  );
+  assert.deepEqual(calls, ["has", "enqueue"], "grace=0 必须保持既有拒绝行为");
+
+  // 2. 陈旧在宽限内 + 不可用：放行，且**绝不刷新 checkedAt**。
+  calls.length = 0;
+  await ensureCharacterWithDependencies("in-grace", 1, makeDeps({ graceMs: 5_000, checkedAtMs: 9_000, error: unavailable }));
+  assert.deepEqual(calls, ["has", "enqueue", "negcache"], "宽限放行必须先留 durable repair intent");
+  assert.ok(!calls.includes("mark-ready"),
+    "⛔ 宽限分支绝不能刷新 checkedAt——否则宽限自我续期成永久信任，等于永久关闭复核");
+
+  // 3. 陈旧超出宽限：仍拒绝（宽限是有界的，不是无限信任）。
+  calls.length = 0;
+  await assert.rejects(
+    ensureCharacterWithDependencies("past-grace", 1, makeDeps({ graceMs: 500, checkedAtMs: 9_000, error: unavailable })),
+    (error: unknown) => error === unavailable,
+  );
+  assert.deepEqual(calls, ["has", "enqueue"], "超出宽限上限必须拒绝");
+
+  // 4. 非 Unavailable（契约/服务身份错误）一律不宽限：它们是配置事故，fail-open 会掩盖部署问题。
+  calls.length = 0;
+  const contractError = new Error("contract drift");
+  await assert.rejects(
+    ensureCharacterWithDependencies("wrong-error", 1, makeDeps({ graceMs: 5_000, checkedAtMs: 9_000, error: contractError })),
+    (error: unknown) => error === contractError,
+  );
+  assert.deepEqual(calls, ["has", "enqueue"], "非 Unavailable 错误不得宽限");
+
+  // 5. 没有 marker 的 legacy 档（checkedAtMs 为 null）不得宽限——它从未通过权威复核。
+  calls.length = 0;
+  await assert.rejects(
+    ensureCharacterWithDependencies("no-marker", 1, makeDeps({ graceMs: 5_000, checkedAtMs: null, error: unavailable })),
+    (error: unknown) => error === unavailable,
+  );
+  assert.deepEqual(calls, ["has", "enqueue"], "无 marker 的档不得宽限");
 });

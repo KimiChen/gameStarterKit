@@ -263,6 +263,23 @@ export const CHARACTER_READY_TIMEOUT_MS =
 export const CHARACTER_REGISTRATION_RECHECK_MS =
   webPlatformPositiveInt("CHARACTER_REGISTRATION_RECHECK_MS", 86_400_000, 30 * 86_400_000);
 
+/**
+ * WebPlatform **不可用**时，ready marker 可继续放行的最大陈旧年龄。`0` = 关闭宽限（默认，
+ * 行为与历史一致）。生产部署建议显式设为 7d，理由与安全取舍见 docs/SERVER.md。
+ *
+ * ⚠ 只对 `WebPlatformUnavailableError`（含熔断器开启）生效；契约/服务身份错误一律不宽限——
+ * 那两类代表配置事故，fail-open 会掩盖部署问题。
+ */
+export const CHARACTER_REGISTRATION_GRACE_MS = (() => {
+  const raw = process.env.CHARACTER_REGISTRATION_GRACE_MS;
+  if (raw === undefined || raw.trim() === "") return 0;
+  const value = Number(raw);
+  if (!Number.isSafeInteger(value) || value < 0 || value > 30 * 86_400_000) {
+    throw new RangeError(`CHARACTER_REGISTRATION_GRACE_MS 非法：${raw}`);
+  }
+  return value;
+})();
+
 /** 支付链总开关（缺省**关**）：关 ⇒ `/pay/wx-notify` 直接 501「未上线」。
  *  ⚠ 支付链现在不具备上线条件（无下单端点、共享密钥而非 APIv3 验签、无对账，见 docs/EXTRAFEATURES.md §3.4），
  *  这个开关是**防误开**，⛔ 不是"配上就能收钱"。每请求现读（同 ADMIN_API_SECRET 范式，便于灰度）。 */
