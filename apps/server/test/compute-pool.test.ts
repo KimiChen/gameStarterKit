@@ -86,6 +86,10 @@ test("compute admission：运行中 + 排队任务达到总容量时稳定返回
   // synchronously moved to `running` and the second remains queued before the
   // third submission, so this exercises the real admission boundary without
   // depending on worker speed or a long-running fixture task.
+  //
+  // ⚠ COMPUTE_TASK_TIMEOUT_MS 必须覆盖真实 worker 冷启动（本机负载实测 ~400ms，
+  // 更重的机器更慢）：它若小于冷启动，first/second 会先超时、third 转为 running
+  // 而不是 overload——断言依赖的是容量计数，放宽不削弱判别力（68ea3fa 同类）。
   const serverRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
   const script = `
     import { ComputeOverloadedError, destroyPool, runInPool } from "./src/core/compute/pool.ts";
@@ -108,7 +112,7 @@ test("compute admission：运行中 + 排队任务达到总容量时稳定返回
         ...process.env,
         COMPUTE_POOL_SIZE: "1",
         COMPUTE_QUEUE_CAPACITY: "2",
-        COMPUTE_TASK_TIMEOUT_MS: "1000",
+        COMPUTE_TASK_TIMEOUT_MS: "5000",
       },
       encoding: "utf8",
       timeout: 30_000,
