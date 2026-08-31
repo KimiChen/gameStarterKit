@@ -11,6 +11,7 @@ import {
   C2S_RUNTIME_VALIDATORS,
   EFFECT_RESERVED_FIELDS,
   EFFECT_MAX_VALUE_BYTES,
+  GAME_WIRE_OWNERS,
   GameHttpContractMap,
   GamePhase,
   GameplayModeId,
@@ -110,6 +111,14 @@ test("C2S/S2C：每个消息都有 exact runtime validator，坏包不进入回�
   assertInvalid(() => validateS2CPayload(S2C.Pong, { clientTime: 1, serverTime: 2, extra: 0 }), "WIRE_KEYS");
   assertInvalid(() => validateS2CPayload(S2C.Error, { code: 1, message: "x", extra: true }), "WIRE_KEYS");
   assertInvalid(() => validateS2CPayload("s2c.unknown" as never, {}), "MESSAGE_TYPE");
+  // 全集来源变了：阶段 2b 起消息名由生成的 wire catalog 聚合（core + 各玩法 wire token），
+  // validator 表必须与聚合常量精确同集，且 owner 表覆盖每一条消息（数值现仍是 5/5）。
+  assert.deepEqual(Object.keys(C2S_RUNTIME_VALIDATORS).sort(), [...Object.values(C2S)].sort());
+  assert.deepEqual(Object.keys(S2C_RUNTIME_VALIDATORS).sort(), [...Object.values(S2C)].sort());
+  assert.deepEqual(
+    Object.keys(GAME_WIRE_OWNERS).sort(),
+    [...Object.values(C2S), ...Object.values(S2C)].sort(),
+  );
   assert.equal(Object.keys(C2S_RUNTIME_VALIDATORS).length, 5);
   assert.equal(Object.keys(S2C_RUNTIME_VALIDATORS).length, 5);
 });

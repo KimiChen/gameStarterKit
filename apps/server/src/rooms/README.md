@@ -13,14 +13,21 @@
   `MAX_PLAYERS`（root players map 的容量由生成 validator 按它烧死），`min ≤ autoStart ≤ max`。上述校验在
   **建 mode 实例时**（`GameModeRegistry.create`，即建房那一刻）与注入期各跑一次
   ——⚠ 不是 `register()`，register 只收 factory 不调用它，非法 mode 能成功注册、到第一次建房才炸；
-  （注入式 mode 不经过 registry，⛔ 不能只在 registry 里校验）。玩法输入同样声明化：
-  `inputs{accepts,phases?}` 决定 shell 的准入，`phaseAllows` 只保留 Ping/Chat 两条公共传输能力，
-  ⛔ 通用 shell 不再穷举任何具体玩法的消息名。未声明 `phases` 的输入默认只在 Playing 开放。
-  `onAdmission`、`onMessage`、`onMatchInitialize`、`onMatchStart`、`onMatchRollback`、`onBeforeStep`
+  （注入式 mode 不经过 registry，⛔ 不能只在 registry 里校验）。玩法输入完全 token 化（阶段 2b）：
+  消息名、payload validator、phase 白名单与 rateCost 由该玩法 `apps/shared/src/gameplays/<id>/wire.ts`
+  的 defineC2S/defineS2C token 声明并经 codegen 聚合进 wire catalog；`GameRoom.messages` 只注册一个
+  catch-all（键 `"_"`），dispatcher 固定序 = 基础预算（未知/畸形 type 也计费）→ owner 闸（core 或当前
+  mode）→ exact validate（非普通对象含 Uint8Array 一律拒）→ rateCost 追加消耗 → phase 闸 → core
+  handler / mode `commands[type]`。mode 用 `commands`（typed handler map，键必须属于本玩法 wire token
+  集合，create/注入两路径校验）消费玩法消息，⛔ 通用 shell 不再穷举任何具体玩法的消息名，Ping/Chat
+  的 phase 规则仍归 shell（Ping：Waiting/Playing/Settle；Chat：Waiting/Playing）。
+  `onAdmission`、`onMatchInitialize`、`onMatchStart`、`onMatchRollback`、`onBeforeStep`
   （tick++ 之前，可同步 settle）、`onStep`、`onPlayerLeaving`、`shouldSettle`、`onLeave`、`onFinish`、
   `onDispose` 扩展玩法生命周期；结算谓词完全归 mode 的 `shouldSettle`，shell 无默认结算规则。
+  出站 S2C 走 token：`context.sendS2C(client, token, payload)`/`broadcastS2C(token, payload)` 发送前验
+  token 的 dir/owner（core token 见生成的 `CORE_S2C_TOKENS`），payload 过 token.validate。
   可选的 `evidence: GameModeEvidenceCapability`（`assertRosterCompatible`/`captureInitialState`/`build`）
-  声明该玩法的可重放收局证据：create/注入两路径都在 roster/inputs 闸后调用 `assertRosterCompatible`，
+  声明该玩法的可重放收局证据：create/注入两路径都在 roster/commands 闸后调用 `assertRosterCompatible`，
   开局边界（phase=Playing 之前）调用 `captureInitialState` 冻结初始快照，settle 时先 `build()` 冻结证据
   再跑 `onFinish`；未声明该能力的 mode（如 idle）settle 时明确不产出任何证据。registry 会在创建 mode 时
   校验必填能力，漏配即 fail-closed；root 只来自 manifest 生成映射，不由 mode factory 手写。

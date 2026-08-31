@@ -4,15 +4,23 @@ import {
     C2S,
     C2S_RUNTIME_VALIDATORS,
     ErrorCode,
+    GAME_WIRE_OWNERS,
     GamePhase,
     S2C,
     validateGameRoomState,
     validatePlayerState,
+    validateS2CPayload,
     type C2SType,
+    type S2CType,
 } from "@game/shared";
-import { GameRoom, GAME_ROOM_C2S_SCHEMAS } from "../src/rooms/GameRoom";
+import { GameRoom } from "../src/rooms/GameRoom";
 import { createBallMoveGameMode } from "../src/rooms/modes/ballMove/index";
-import { GameRoomState, PlayerState } from "../src/rooms/schema/GameRoomState";
+import { createIdleGameMode } from "../src/rooms/modes/IdleGameMode";
+import {
+    GameRoomState,
+    IdlePlayerState,
+    PlayerState,
+} from "../src/rooms/schema/GameRoomState";
 
 type Vector = {
     label: string;
@@ -28,40 +36,60 @@ function acceptedBy(validator: (value: unknown) => unknown, value: unknown): { a
     }
 }
 
+/**
+ * 真 GameRoom + catch-all 单入口的行为探针。owner 分发是 wire catalog 的事实：
+ * Move/CastSkill 只有 ballMove 房能收，IdlePulse 只有 idle 房能收，Ping/Chat 属 core
+ * （任何 mode 的房都收）。玩法消息经 commands 捕获归一化 payload；core 消息按 shell
+ * 行为断言（Ping→Pong 回包，Chat→广播）。
+ */
 function handledByGameRoom(type: C2SType, value: unknown): {
     captured: Array<{ type: C2SType; payload: unknown }>;
     sent: Array<[string, unknown]>;
+    broadcasts: Array<[string, unknown]>;
 } {
     const captured: Array<{ type: C2SType; payload: unknown }> = [];
     const sent: Array<[string, unknown]> = [];
-    const room = new GameRoom({
-        seed: 1,
-        clock: () => 0,
-        mode: {
+    const broadcasts: Array<[string, unknown]> = [];
+    const capture = (messageType: C2SType) => (_context: unknown, payload: unknown) => {
+        captured.push({ type: messageType, payload });
+    };
+    const owner = GAME_WIRE_OWNERS[type];
+    const mode = owner === "idle"
+        ? {
+            ...createIdleGameMode(),
+            commands: { [C2S.IdlePulse]: capture(C2S.IdlePulse) },
+        }
+        : {
             ...createBallMoveGameMode(),
-            // 本用例的被验对象是**wire 边界的 schema 归一化**，不是玩法准入：所以探针 mode
-            // 必须声明接受全部玩法输入。⛔ 不能沿用 ballMove 的声明——它不接受 IdlePulse，
-            // 那条向量会在准入闸就被拒，用例便测不到它的归一化结果。
-            // Ping/Chat 是 shell 的公共能力，⛔ 不得在这里声明（登记闸会拒）。
-            inputs: { accepts: [C2S.Move, C2S.CastSkill, C2S.IdlePulse] },
-            onMessage(message) {
-                captured.push({ type: message.type, payload: message.payload });
-                return true;
+            commands: {
+                [C2S.Move]: capture(C2S.Move),
+                [C2S.CastSkill]: capture(C2S.CastSkill),
             },
-        },
-    });
-    room.state.phase = type === C2S.Move || type === C2S.IdlePulse || type === C2S.CastSkill
-        ? GamePhase.Playing
-        : GamePhase.Waiting;
+        };
+    const room = new GameRoom({ seed: 1, clock: () => 0, mode: mode as never });
+    room.state.phase = owner === "core" ? GamePhase.Waiting : GamePhase.Playing;
+    if (type === C2S.Chat) {
+        // shell 的 Chat 广播要求发送者已入座（读 player.name）。
+        const player = owner === "idle" ? new IdlePlayerState() : new PlayerState();
+        player.id = "wire-client";
+        player.name = "契约探针";
+        room.state.players.set(player.id, player as PlayerState);
+    }
+    // 广播在未 boot 的房间没有可观察的 client；这里在既有校验路径外记录归一化结果。
+    const internals = room as unknown as { broadcastS2C(type: S2CType, payload: unknown): void };
+    const realBroadcast = internals.broadcastS2C.bind(room);
+    internals.broadcastS2C = (sentType, payload) => {
+        broadcasts.push([sentType, validateS2CPayload(sentType, payload)]);
+        realBroadcast(sentType, payload);
+    };
     const client = {
         sessionId: "wire-client",
         send(sentType: string, payload: unknown) {
             sent.push([sentType, payload]);
         },
     };
-    const handlers = room.messages as Record<C2SType, (client: unknown, payload: unknown) => void>;
-    handlers[type](client, value);
-    return { captured, sent };
+    (room.messages as unknown as { _: (c: unknown, t: string, p: unknown) => void })._(client, type, value);
+    return { captured, sent, broadcasts };
 }
 
 function symbolExtra(value: Record<string, unknown>): Record<string, unknown> {
@@ -145,45 +173,59 @@ const c2sVectors: Record<C2SType, readonly Vector[]> = {
     ],
 };
 
-test("GameRoom C2S boundary is sourced from shared validators", () => {
+test("GameRoom C2S boundary is sourced from the generated wire catalog", () => {
     const room = new GameRoom({ seed: 1, clock: () => 0 });
+    // 三方一致：wire catalog 的 C2S 键集 == runtime validator 键集 == 本向量矩阵覆盖集。
+    const catalogC2S = Object.keys(GAME_WIRE_OWNERS).filter((type) => type.startsWith("c2s."));
     assert.deepEqual(
-        Object.keys(GAME_ROOM_C2S_SCHEMAS).sort(),
+        catalogC2S.sort(),
         Object.keys(C2S_RUNTIME_VALIDATORS).sort(),
-        "server and shared must register the same C2S message set",
+        "wire catalog and shared validators must register the same C2S message set",
     );
     assert.deepEqual(
-        Object.keys(room.messages).sort(),
+        Object.keys(c2sVectors).sort(),
         Object.keys(C2S_RUNTIME_VALIDATORS).sort(),
-        "actual GameRoom handlers and shared must register the same C2S message set",
+        "the vector matrix must cover the complete C2S message set",
     );
+    // 阶段 2b：房间只注册 catch-all 单入口，任何具名 handler 都是绕闸暗道。
+    assert.deepEqual(Object.keys(room.messages), ["_"]);
 
     for (const [rawType, vectors] of Object.entries(c2sVectors)) {
         const type = rawType as C2SType;
         const shared = C2S_RUNTIME_VALIDATORS[type] as (value: unknown) => unknown;
-        const server = GAME_ROOM_C2S_SCHEMAS[type];
         for (const vector of vectors) {
             const sharedResult = acceptedBy(shared, vector.value);
-            const serverResult = server.safeParse(vector.value);
             assert.equal(sharedResult.accepted, vector.accepted, `${type} shared ${vector.label}`);
-            assert.equal(serverResult.success, vector.accepted, `${type} server ${vector.label}`);
-            assert.equal(
-                serverResult.success,
-                sharedResult.accepted,
-                `${type} server/shared acceptance drift: ${vector.label}`,
-            );
-            if (sharedResult.accepted && serverResult.success) {
-                assert.deepEqual(serverResult.data, sharedResult.data, `${type} normalized result drift: ${vector.label}`);
-            }
 
             const handled = handledByGameRoom(type, vector.value);
             if (sharedResult.accepted) {
-                assert.deepEqual(
-                    handled.captured,
-                    [{ type, payload: sharedResult.data }],
-                    `${type} actual handler normalization drift: ${vector.label}`,
-                );
-                assert.deepEqual(handled.sent, [], `${type} valid payload emitted an error: ${vector.label}`);
+                if (type === C2S.Ping) {
+                    // core Ping：shell 直接回 Pong，归一化 clientTime 原样回带。
+                    assert.equal(handled.sent.length, 1, `${type} pong reply count: ${vector.label}`);
+                    assert.equal(handled.sent[0][0], S2C.Pong, `${type} pong reply type: ${vector.label}`);
+                    assert.equal(
+                        (handled.sent[0][1] as { clientTime?: unknown }).clientTime,
+                        (sharedResult.data as { clientTime: number }).clientTime,
+                        `${type} pong normalization drift: ${vector.label}`,
+                    );
+                } else if (type === C2S.Chat) {
+                    // core Chat：shell 广播归一化后的 trim 文本，不回错误。
+                    assert.equal(handled.broadcasts.length, 1, `${type} broadcast count: ${vector.label}`);
+                    assert.equal(handled.broadcasts[0][0], S2C.Chat, `${type} broadcast type: ${vector.label}`);
+                    assert.equal(
+                        (handled.broadcasts[0][1] as { text?: unknown }).text,
+                        (sharedResult.data as { text: string }).text.trim(),
+                        `${type} chat normalization drift: ${vector.label}`,
+                    );
+                    assert.deepEqual(handled.sent, [], `${type} valid payload emitted an error: ${vector.label}`);
+                } else {
+                    assert.deepEqual(
+                        handled.captured,
+                        [{ type, payload: sharedResult.data }],
+                        `${type} actual handler normalization drift: ${vector.label}`,
+                    );
+                    assert.deepEqual(handled.sent, [], `${type} valid payload emitted an error: ${vector.label}`);
+                }
             } else {
                 assert.deepEqual(handled.captured, [], `${type} malformed payload reached gameplay: ${vector.label}`);
                 assert.equal(handled.sent.length, 1, `${type} malformed payload reply count: ${vector.label}`);

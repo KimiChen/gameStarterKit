@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "idle",
   "constantName": "Idle",
-  "modeVersion": 1,
+  "modeVersion": 2,
   "maxPlayers": 4,
   "profiles": []
 }

@@ -26,21 +26,21 @@ export function validateRoomStateForMode(mode: string, input: unknown): RoomStat
     return validator(input);
 }
 
-/** Per-gameplay catalog. contractDigest = sha256(manifest.json + "\0" + state.json). */
+/** Per-gameplay catalog. contractDigest = sha256(manifest.json + "\0" + state.json + "\0" + wire.ts). */
 export const GAMEPLAY_CATALOG = {
     "ballMove": {
         id: "ballMove",
         constantName: "BallMove",
-        modeVersion: 1,
+        modeVersion: 2,
         maxPlayers: 4,
-        contractDigest: "b2dbbf2589da1f554fccfcaea0b9e0167f664744c2bca310f7be72705278884b",
+        contractDigest: "666bb0389fa4167a2208fee2b7f415ae2ef4fb0c6604e9b6924664716929c2a2",
     },
     "idle": {
         id: "idle",
         constantName: "Idle",
-        modeVersion: 1,
+        modeVersion: 2,
         maxPlayers: 4,
-        contractDigest: "ebb621e7aa80ab74098763725f4931a009dba144900a69dccd69bdb2485fce77",
+        contractDigest: "9151b3a0e1913f7ac53c77cad3dd8b72a719e0ce335524e188e248b6fdece695",
     },
 } as const;
 

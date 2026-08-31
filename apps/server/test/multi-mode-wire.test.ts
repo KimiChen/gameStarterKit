@@ -78,13 +78,16 @@ class MultiModeWireRoom extends GameRoom {
             evidenceEmitter: async () => ({ ok: true as const, entryId: "0-0" }),
         });
 
-        const handleMove = this.messages[C2S.Move];
-        this.messages[C2S.Move] = (client, payload) => {
-            moveMessagesByMode.set(
-                this.gameplayModeId,
-                (moveMessagesByMode.get(this.gameplayModeId) ?? 0) + 1,
-            );
-            handleMove(client, payload);
+        // 阶段 2b：只剩 catch-all 一个键；`Room.__init()` 消费前在构造器内包裹仍然可行。
+        const dispatch = this.messages["_"];
+        this.messages["_"] = (client, type, payload) => {
+            if (type === C2S.Move) {
+                moveMessagesByMode.set(
+                    this.gameplayModeId,
+                    (moveMessagesByMode.get(this.gameplayModeId) ?? 0) + 1,
+                );
+            }
+            dispatch.call(this, client, type, payload);
         };
     }
 }

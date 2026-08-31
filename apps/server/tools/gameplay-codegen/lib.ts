@@ -29,13 +29,22 @@ import {
   renderServerSchemaModule,
   type GameplayStateDescriptor,
 } from "./stateRenderer";
+import {
+  parseCoreWireNames,
+  parseGameplayWireModule,
+  type CoreWireNames,
+  type GameplayWireDeclarations,
+} from "./wireParser";
 
 const TOOL_REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 const SCHEMA_DIR_RELATIVE = "apps/shared/schema/gameplays";
+const SHARED_GAMEPLAYS_DIR_RELATIVE = "apps/shared/src/gameplays";
 const SHARED_STATE_DIR_RELATIVE = "apps/shared/src/gameplays/generated/state";
 const SHARED_GENERATED_DIR_RELATIVE = "apps/shared/src/gameplays/generated";
 const SHARED_CATALOG_RELATIVE = "apps/shared/src/gameplays/catalog.generated.ts";
 const SHARED_INDEX_RELATIVE = "apps/shared/src/gameplays/index.ts";
+const SHARED_WIRE_CATALOG_RELATIVE = "apps/shared/src/gameplays/generated/wire-catalog.generated.ts";
+const CORE_MESSAGES_RELATIVE = "apps/shared/src/protocol/messages.ts";
 const SERVER_SCHEMA_DIR_RELATIVE = "apps/server/src/rooms/schema/generated";
 const SERVER_AGGREGATE_RELATIVE = "apps/server/src/rooms/schema/GameRoomState.ts";
 const CLIENT_CATALOG_RELATIVE = "apps/client/src/gameplay/catalog.generated.ts";
@@ -52,7 +61,11 @@ export type GameplayDescriptor = {
   readonly id: string;
   readonly manifest: GameplayManifest;
   readonly state: GameplayStateDescriptor;
-  /** sha256(manifest.json 字节 + "\0" + state.json 字节)，per-mode 契约身份。 */
+  /** 语法读取自 `apps/shared/src/gameplays/<id>/wire.ts`；无 wire.ts 时为空集。 */
+  readonly wire: GameplayWireDeclarations;
+  /** 该 mode 是否存在手写 wire.ts（决定聚合 barrel 是否 re-export 它）。 */
+  readonly hasWireModule: boolean;
+  /** sha256(manifest.json + "\0" + state.json + "\0" + wire.ts 字节)，per-mode 契约身份。 */
   readonly contractDigest: string;
   readonly sourceLabel: string;
 };
@@ -142,15 +155,40 @@ export function readGameplayDescriptors(options: GameplayCodegenOptions = {}): r
       fail(`${entryLabel}/manifest.json`, `manifest.id "${manifest.id}" must equal its directory name "${entry.name}"`);
     }
     const state = parseGameplayStateDescriptor(stateRaw.value);
+
+    // wire.ts（手写，可缺省 = 该 mode 无 wire 消息）：语法读取 + 字节并入 digest。
+    const wireLabel = `${SHARED_GAMEPLAYS_DIR_RELATIVE}/${entry.name}/wire.ts`;
+    const wireFile = path.join(root, SHARED_GAMEPLAYS_DIR_RELATIVE, entry.name, "wire.ts");
+    let wireBytes = Buffer.alloc(0);
+    let wire: GameplayWireDeclarations = { c2s: [], s2c: [] };
+    let hasWireModule = false;
+    let wireStat: fs.Stats | null = null;
+    try {
+      wireStat = fs.lstatSync(wireFile);
+    } catch {
+      wireStat = null;
+    }
+    if (wireStat) {
+      if (wireStat.isSymbolicLink()) fail(wireLabel, "symlink escape is not allowed");
+      if (!wireStat.isFile()) fail(wireLabel, "must be a regular file");
+      wireBytes = fs.readFileSync(wireFile);
+      wire = parseGameplayWireModule(wireBytes.toString("utf8"), wireLabel);
+      hasWireModule = true;
+    }
+
     const contractDigest = crypto.createHash("sha256")
       .update(manifestRaw.bytes)
       .update("\0")
       .update(stateRaw.bytes)
+      .update("\0")
+      .update(wireBytes)
       .digest("hex");
     gameplays.push({
       id: manifest.id,
       manifest,
       state,
+      wire,
+      hasWireModule,
       contractDigest,
       sourceLabel: `${SCHEMA_DIR_RELATIVE}/${manifest.id}/{manifest.json,state.json}`,
     });
@@ -171,6 +209,7 @@ function assertCrossGameplayUniqueness(gameplays: readonly GameplayDescriptor[])
     owners.set(symbol, owner);
   };
   const constantNames = new Map<string, string>();
+  const wireTypes = new Map<string, string>();
   for (const gameplay of gameplays) {
     const label = `${SCHEMA_DIR_RELATIVE}/${gameplay.id}`;
     const constantClash = constantNames.get(gameplay.manifest.constantName);
@@ -182,6 +221,47 @@ function assertCrossGameplayUniqueness(gameplays: readonly GameplayDescriptor[])
       claim(type.name, gameplay.id, label);
       claim(type.sharedName, gameplay.id, label);
       claim(type.validatorName, gameplay.id, label);
+    }
+    // wire 符号进入同一聚合 barrel 命名空间；消息名跨 mode 必须唯一。
+    const wireLabel = `${SHARED_GAMEPLAYS_DIR_RELATIVE}/${gameplay.id}/wire.ts`;
+    for (const token of [...gameplay.wire.c2s, ...gameplay.wire.s2c]) {
+      claim(token.exportName, gameplay.id, wireLabel);
+      claim(token.payloadType, gameplay.id, wireLabel);
+      const typeClash = wireTypes.get(token.type);
+      if (typeClash !== undefined && typeClash !== gameplay.id) {
+        fail(wireLabel, `wire message "${token.type}" already owned by gameplay "${typeClash}" — message types must be unique`);
+      }
+      wireTypes.set(token.type, gameplay.id);
+    }
+  }
+}
+
+/** 玩法 wire 与 core 消息不得重名（消息名与聚合对象键名两个命名空间都要闸）。 */
+function assertCoreWireUniqueness(gameplays: readonly GameplayDescriptor[], core: CoreWireNames): void {
+  const coreTypes = new Set([...core.c2s, ...core.s2c].map((entry) => entry.type));
+  const c2sKeys = new Map<string, string>(core.c2s.map((entry) => [entry.key, "core"]));
+  const s2cKeys = new Map<string, string>(core.s2c.map((entry) => [entry.key, "core"]));
+  for (const gameplay of gameplays) {
+    const label = `${SHARED_GAMEPLAYS_DIR_RELATIVE}/${gameplay.id}/wire.ts`;
+    for (const token of gameplay.wire.c2s) {
+      if (coreTypes.has(token.type)) {
+        fail(label, `wire message "${token.type}" is already a core message — core 名不得被玩法重声明`);
+      }
+      const clash = c2sKeys.get(token.exportName);
+      if (clash !== undefined) {
+        fail(label, `wire token "${token.exportName}" collides with ${clash === "core" ? "core" : `gameplay "${clash}"`} in the aggregated C2S keys`);
+      }
+      c2sKeys.set(token.exportName, gameplay.id);
+    }
+    for (const token of gameplay.wire.s2c) {
+      if (coreTypes.has(token.type)) {
+        fail(label, `wire message "${token.type}" is already a core message — core 名不得被玩法重声明`);
+      }
+      const clash = s2cKeys.get(token.exportName);
+      if (clash !== undefined) {
+        fail(label, `wire token "${token.exportName}" collides with ${clash === "core" ? "core" : `gameplay "${clash}"`} in the aggregated S2C keys`);
+      }
+      s2cKeys.set(token.exportName, gameplay.id);
     }
   }
 }
@@ -255,7 +335,7 @@ function renderSharedCatalog(gameplays: readonly GameplayDescriptor[]): string {
     "    return validator(input);",
     "}",
     "",
-    "/** Per-gameplay catalog. contractDigest = sha256(manifest.json + \"\\0\" + state.json). */",
+    "/** Per-gameplay catalog. contractDigest = sha256(manifest.json + \"\\0\" + state.json + \"\\0\" + wire.ts). */",
     "export const GAMEPLAY_CATALOG = {",
     ...renderCatalogEntries(gameplays),
     "} as const;",
@@ -270,11 +350,191 @@ function renderSharedIndex(gameplays: readonly GameplayDescriptor[]): string {
   const lines = [
     generatedHeader(AGGREGATE_SOURCE_LABEL),
     "// 稳定 façade：外部只 import 本文件或包根 barrel，⛔ 不直接 import generated/ 内部路径。",
+    "export * from \"./defineGameplayWire\";",
     "export * from \"./catalog.generated\";",
+    "export * from \"./generated/wire-catalog.generated\";",
   ];
   for (const gameplay of gameplays) {
+    if (gameplay.hasWireModule) lines.push(`export * from "./${gameplay.id}/wire";`);
     lines.push(`export * from "./generated/state/${gameplay.id}";`);
   }
+  return `${lines.join("\n").trimEnd()}\n`;
+}
+
+// ── wire catalog（§4.5：显式字面量聚合，公共名不变） ─────────────────────────
+
+const WIRE_SOURCE_LABEL =
+  `${SHARED_GAMEPLAYS_DIR_RELATIVE}/<id>/wire.ts + ${CORE_MESSAGES_RELATIVE} (core)`;
+
+type WireEntry = { readonly owner: string; readonly key: string; readonly type: string; readonly payloadRef: string };
+
+/** 读取并语法解析 core 消息名表（protocol/messages.ts 的 CORE_C2S/CORE_S2C）。 */
+export function readCoreWireNames(options: GameplayCodegenOptions = {}): CoreWireNames {
+  const file = path.join(resolvedRoot(options), CORE_MESSAGES_RELATIVE);
+  let source: string;
+  try {
+    source = fs.readFileSync(file, "utf8");
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    fail(CORE_MESSAGES_RELATIVE, `cannot read core message module: ${detail}`);
+  }
+  return parseCoreWireNames(source, CORE_MESSAGES_RELATIVE);
+}
+
+function renderWireCatalog(gameplays: readonly GameplayDescriptor[], core: CoreWireNames): string {
+  assertCoreWireUniqueness(gameplays, core);
+
+  const c2sEntries: WireEntry[] = core.c2s.map((entry) => ({
+    owner: "core",
+    key: entry.key,
+    type: entry.type,
+    payloadRef: `CoreC2SPayloadMap[${JSON.stringify(entry.type)}]`,
+  }));
+  const s2cEntries: WireEntry[] = core.s2c.map((entry) => ({
+    owner: "core",
+    key: entry.key,
+    type: entry.type,
+    payloadRef: `CoreS2CPayloadMap[${JSON.stringify(entry.type)}]`,
+  }));
+  for (const gameplay of gameplays) {
+    for (const token of gameplay.wire.c2s) {
+      c2sEntries.push({ owner: gameplay.id, key: token.exportName, type: token.type, payloadRef: token.payloadType });
+    }
+    for (const token of gameplay.wire.s2c) {
+      s2cEntries.push({ owner: gameplay.id, key: token.exportName, type: token.type, payloadRef: token.payloadType });
+    }
+  }
+  const gameplayC2S = gameplays.flatMap((gameplay) =>
+    gameplay.wire.c2s.map((token) => ({ id: gameplay.id, token })));
+  const hasGameplayC2S = gameplayC2S.length > 0;
+
+  const lines = [generatedHeader(WIRE_SOURCE_LABEL)];
+  if (hasGameplayC2S) {
+    lines.push("import { GamePhase, type GamePhaseType } from \"../../constants/game\";");
+  }
+  lines.push(
+    "import { guardWire, WireValidationError, type RuntimeValidator } from \"../../protocol/http\";",
+    "import {",
+    "    CORE_C2S_WIRE,",
+    "    CORE_S2C_WIRE,",
+    "    type CoreC2SPayloadMap,",
+    "    type CoreS2CPayloadMap,",
+    "} from \"../../protocol/messages\";",
+    "import { defineS2C, type GameplayC2SToken, type GameplayS2CToken } from \"../defineGameplayWire\";",
+  );
+  for (const gameplay of gameplays) {
+    if (!gameplay.hasWireModule) continue;
+    const tokens = [...gameplay.wire.c2s, ...gameplay.wire.s2c];
+    if (tokens.length === 0) continue;
+    const valueNames = tokens.map((token) => token.exportName).sort();
+    const typeNames = [...new Set(tokens.map((token) => token.payloadType))].sort();
+    const specifiers = [...valueNames, ...typeNames.map((name) => `type ${name}`)];
+    lines.push(`import { ${specifiers.join(", ")} } from "../${gameplay.id}/wire";`);
+  }
+
+  lines.push(
+    "",
+    "/** 客户端 → 服务端 消息名（core + 各玩法 wire token 的显式字面量聚合） */",
+    "export const C2S = {",
+    ...c2sEntries.map((entry) => `    ${entry.key}: ${JSON.stringify(entry.type)},`),
+    "} as const;",
+    "",
+    "/** 服务端 → 客户端 消息名 */",
+    "export const S2C = {",
+    ...s2cEntries.map((entry) => `    ${entry.key}: ${JSON.stringify(entry.type)},`),
+    "} as const;",
+    "",
+    "export type C2SType = (typeof C2S)[keyof typeof C2S];",
+    "export type S2CType = (typeof S2C)[keyof typeof S2C];",
+    "",
+    "/** 消息名 → payload 类型，供两端 adapter 和 fixture 共享。 */",
+    "export interface C2SPayloadMap {",
+    ...c2sEntries.map((entry) => `    ${JSON.stringify(entry.type)}: ${entry.payloadRef};`),
+    "}",
+    "",
+    "export interface S2CPayloadMap {",
+    ...s2cEntries.map((entry) => `    ${JSON.stringify(entry.type)}: ${entry.payloadRef};`),
+    "}",
+    "",
+    "export type C2SPayload<T extends C2SType> = C2SPayloadMap[T];",
+    "export type S2CPayload<T extends S2CType> = S2CPayloadMap[T];",
+    "",
+    "/** C2S runtime validators（core 表 + token.validate；漏键编译期红）。 */",
+    "export const C2S_RUNTIME_VALIDATORS: { [K in C2SType]: RuntimeValidator<C2SPayloadMap[K]> } = {",
+    ...c2sEntries.map((entry) => entry.owner === "core"
+      ? `    ${JSON.stringify(entry.type)}: CORE_C2S_WIRE[${JSON.stringify(entry.type)}],`
+      : `    ${JSON.stringify(entry.type)}: ${entry.key}.validate,`),
+    "};",
+    "",
+    "/** S2C runtime validators. Client state/message adapters must validate before dispatching callbacks. */",
+    "export const S2C_RUNTIME_VALIDATORS: { [K in S2CType]: RuntimeValidator<S2CPayloadMap[K]> } = {",
+    ...s2cEntries.map((entry) => entry.owner === "core"
+      ? `    ${JSON.stringify(entry.type)}: CORE_S2C_WIRE[${JSON.stringify(entry.type)}],`
+      : `    ${JSON.stringify(entry.type)}: ${entry.key}.validate,`),
+    "};",
+    "",
+    "export function validateC2SPayload<T extends C2SType>(type: T, input: unknown): C2SPayload<T> {",
+    "    return guardWire(\"payload\", () => {",
+    "        const validator = C2S_RUNTIME_VALIDATORS[type] as RuntimeValidator<C2SPayload<T>> | undefined;",
+    "        if (!validator) throw new WireValidationError(\"MESSAGE_TYPE\", \"type\");",
+    "        return validator(input);",
+    "    });",
+    "}",
+    "",
+    "export function validateS2CPayload<T extends S2CType>(type: T, input: unknown): S2CPayload<T> {",
+    "    return guardWire(\"payload\", () => {",
+    "        const validator = S2C_RUNTIME_VALIDATORS[type] as RuntimeValidator<S2CPayload<T>> | undefined;",
+    "        if (!validator) throw new WireValidationError(\"MESSAGE_TYPE\", \"type\");",
+    "        return validator(input);",
+    "    });",
+    "}",
+    "",
+    "/** message type → 拥有者（core 或玩法 mode id）；dispatcher 的 owner 闸。 */",
+    "export const GAME_WIRE_OWNERS = {",
+    ...c2sEntries.map((entry) => `    ${JSON.stringify(entry.type)}: ${JSON.stringify(entry.owner)},`),
+    ...s2cEntries.map((entry) => `    ${JSON.stringify(entry.type)}: ${JSON.stringify(entry.owner)},`),
+    "} as const;",
+    "",
+    "export type GameWireType = keyof typeof GAME_WIRE_OWNERS;",
+    "",
+    "/** 玩法 C2S 的 phase 白名单（token 声明；core 消息的 phase 规则由 shell 拥有，不在此表）。 */",
+    "export const GAME_WIRE_PHASES = {",
+    ...gameplayC2S.map(({ token }) =>
+      `    ${JSON.stringify(token.type)}: [${token.phases.map((phase) => `GamePhase.${phase}`).join(", ")}],`),
+    hasGameplayC2S
+      ? "} as const satisfies { readonly [type: string]: readonly GamePhaseType[] };"
+      : "} as const;",
+    "",
+    "/** 玩法 C2S 的预算成本（rateCost；机制为高频输入留位）。 */",
+    "export const GAME_WIRE_RATE_COST = {",
+    ...gameplayC2S.map(({ token }) => `    ${JSON.stringify(token.type)}: ${token.rateCost},`),
+    "} as const satisfies { readonly [type: string]: number };",
+    "",
+    "/** 每玩法 C2S token 表（GameMode.commands 键派生与校验用）。 */",
+    "export const gameplayC2STokens = {",
+    ...gameplays.flatMap((gameplay) => [
+      `    ${JSON.stringify(gameplay.id)}: {`,
+      ...gameplay.wire.c2s.map((token) => `        ${JSON.stringify(token.type)}: ${token.exportName},`),
+      "    },",
+    ]),
+    "} as const satisfies { readonly [mode: string]: { readonly [type: string]: GameplayC2SToken<unknown> } };",
+    "",
+    "/** 每玩法 S2C token 表。 */",
+    "export const gameplayS2CTokens = {",
+    ...gameplays.flatMap((gameplay) => [
+      `    ${JSON.stringify(gameplay.id)}: {`,
+      ...gameplay.wire.s2c.map((token) => `        ${JSON.stringify(token.type)}: ${token.exportName},`),
+      "    },",
+    ]),
+    "} as const satisfies { readonly [mode: string]: { readonly [type: string]: GameplayS2CToken<unknown> } };",
+    "",
+    "/** core S2C token（mode 经 context 发送 core Error/Chat 等时使用）。 */",
+    "export const CORE_S2C_TOKENS = {",
+    ...core.s2c.map((entry) =>
+      `    ${entry.key}: defineS2C(${JSON.stringify(entry.type)}, CORE_S2C_WIRE[${JSON.stringify(entry.type)}]),`),
+    "} as const;",
+    "",
+  );
   return `${lines.join("\n").trimEnd()}\n`;
 }
 
@@ -340,7 +600,7 @@ function renderClientCatalog(gameplays: readonly GameplayDescriptor[]): string {
   const lines = [
     generatedHeader(AGGREGATE_SOURCE_LABEL),
     "",
-    "/** Per-gameplay catalog mirror (minimal; extended in stage 9). contractDigest = sha256(manifest.json + \"\\0\" + state.json). */",
+    "/** Per-gameplay catalog mirror (minimal; extended in stage 9). contractDigest = sha256(manifest.json + \"\\0\" + state.json + \"\\0\" + wire.ts). */",
     "export const GAMEPLAY_CATALOG = {",
     ...renderCatalogEntries(gameplays),
     "} as const;",
@@ -354,8 +614,10 @@ function renderClientCatalog(gameplays: readonly GameplayDescriptor[]): string {
 /** 全部产物（相对仓根路径 → 内容），键按路径稳定排序。 */
 export function renderGameplayArtifacts(
   gameplays: readonly GameplayDescriptor[],
+  core: CoreWireNames,
 ): ReadonlyMap<string, string> {
   const artifacts = new Map<string, string>();
+  artifacts.set(SHARED_WIRE_CATALOG_RELATIVE, renderWireCatalog(gameplays, core));
   for (const gameplay of gameplays) {
     artifacts.set(
       `${SHARED_STATE_DIR_RELATIVE}/${gameplay.id}.ts`,
@@ -458,7 +720,7 @@ export function assertGameplayArtifactsFresh(options: GameplayCodegenOptions = {
   const root = resolvedRoot(options);
   const gameplays = readGameplayDescriptors(options);
   assertModeVersionBumped(gameplays, previousCatalogRecords(options));
-  const { stale, missing, extra } = diffArtifacts(root, renderGameplayArtifacts(gameplays));
+  const { stale, missing, extra } = diffArtifacts(root, renderGameplayArtifacts(gameplays, readCoreWireNames(options)));
   const problems: string[] = [];
   if (stale.length > 0) problems.push(`stale: ${stale.join(", ")}`);
   if (missing.length > 0) problems.push(`missing: ${missing.join(", ")}`);
@@ -499,7 +761,7 @@ export function writeGameplayArtifacts(options: GameplayCodegenOptions = {}): Ga
     );
   }
 
-  const expected = renderGameplayArtifacts(gameplays);
+  const expected = renderGameplayArtifacts(gameplays, readCoreWireNames(options));
   // extra 清理：生成目录里不再被任何 mode 拥有的文件。允许删除名单里的 mode 产物删除；
   // 其余一律拒绝——普通 --write 不得静默吞掉未知文件。
   const orphans = collectOwnedFiles(root).filter((relative) => !expected.has(relative));

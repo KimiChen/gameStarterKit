@@ -2,7 +2,6 @@ import {
     assertExactKeys,
     boundedString,
     finiteInteger,
-    finiteNumber,
     guardWire,
     isPlainRecord,
     type PlainRecord,
@@ -12,65 +11,56 @@ import {
 import { isErrorCode, type ErrorCodeType } from "../constants/errors";
 
 /**
- * 房间内消息协议 —— 双端共享。
+ * 房间内 **core** 消息协议 —— 双端共享。
  *
  * 约定：
- *  - C2S：客户端 room.send(C2S.Xxx, payload) → 服务端 this.onMessage(C2S.Xxx, ...)
+ *  - C2S：客户端 room.send(C2S.Xxx, payload) → 服务端 GameRoom catch-all dispatcher
  *  - S2C：服务端 client.send(S2C.Xxx, payload) / this.broadcast(S2C.Xxx, payload)
  *         → 客户端 room.onMessage(S2C.Xxx, ...)
  *  - payload 一律为可 JSON 序列化的纯数据对象，接口以 I 前缀命名。
+ *
+ * 本文件只拥有 shell 的公共传输消息（Ping/Chat 与 Pong/Welcome/Chat/Error）。
+ * 玩法消息住在各玩法自己的 `gameplays/<id>/wire.ts`；全集聚合（`C2S`/`S2C`/
+ * `C2SPayloadMap`/`validateC2SPayload` 等公共名）由 `codegen:gameplays` 生成在
+ * `gameplays/generated/wire-catalog.generated.ts`，经 `@game/shared` 根 barrel 原名导出。
+ * ⚠ `CORE_C2S`/`CORE_S2C` 的字面量形态被生成器语法读取，⛔ 不要改成计算/拼接形式。
  */
 
-/** 客户端 → 服务端 消息名 */
-export const C2S = {
+/** 客户端 → 服务端 core 消息名 */
+export const CORE_C2S = {
     /** 心跳 */
     Ping: "c2s.ping",
-    /** 玩家移动输入 */
-    Move: "c2s.move",
-    /** idle 玩法积分类输入 */
-    IdlePulse: "c2s.idle.pulse",
-    /** 释放技能 */
-    CastSkill: "c2s.castSkill",
     /** 聊天 */
     Chat: "c2s.chat",
 } as const;
 
-/** 服务端 → 客户端 消息名 */
-export const S2C = {
+/** 服务端 → 客户端 core 消息名 */
+export const CORE_S2C = {
     /** 心跳回包 */
     Pong: "s2c.pong",
     /** 欢迎信息（入房后下发一次） */
     Welcome: "s2c.welcome",
-    /** 技能释放结果广播 */
-    SkillResult: "s2c.skillResult",
     /** 聊天广播 */
     Chat: "s2c.chat",
     /** 服务端错误提示 */
     Error: "s2c.error",
 } as const;
 
-export type C2SType = (typeof C2S)[keyof typeof C2S];
-export type S2CType = (typeof S2C)[keyof typeof S2C];
+export type CoreC2SType = (typeof CORE_C2S)[keyof typeof CORE_C2S];
+export type CoreS2CType = (typeof CORE_S2C)[keyof typeof CORE_S2C];
 
-/** 消息名 → payload 类型，供两端 adapter 和 fixture 共享。 */
-export interface C2SPayloadMap {
-    [C2S.Ping]: IPingReq;
-    [C2S.Move]: IMoveReq;
-    [C2S.IdlePulse]: IIdlePulseReq;
-    [C2S.CastSkill]: ICastSkillReq;
-    [C2S.Chat]: IChatReq;
+/** core 消息名 → payload 类型，供生成的全集聚合与两端 adapter 共享。 */
+export interface CoreC2SPayloadMap {
+    [CORE_C2S.Ping]: IPingReq;
+    [CORE_C2S.Chat]: IChatReq;
 }
 
-export interface S2CPayloadMap {
-    [S2C.Pong]: IPongRes;
-    [S2C.Welcome]: IWelcomeRes;
-    [S2C.SkillResult]: ISkillResultRes;
-    [S2C.Chat]: IChatRes;
-    [S2C.Error]: IErrorRes;
+export interface CoreS2CPayloadMap {
+    [CORE_S2C.Pong]: IPongRes;
+    [CORE_S2C.Welcome]: IWelcomeRes;
+    [CORE_S2C.Chat]: IChatRes;
+    [CORE_S2C.Error]: IErrorRes;
 }
-
-export type C2SPayload<T extends C2SType> = C2SPayloadMap[T];
-export type S2CPayload<T extends S2CType> = S2CPayloadMap[T];
 
 const MAX_MESSAGE_ID = 64;
 const MAX_CHAT_TEXT = 100;
@@ -81,38 +71,10 @@ function messageRecord(input: unknown, path: string): PlainRecord {
     return input;
 }
 
-function optionalMessageString(value: PlainRecord, key: string, path: string, max: number): string | undefined {
-    if (!Object.prototype.hasOwnProperty.call(value, key) || value[key] === undefined) return undefined;
-    return boundedString(value[key], `${path}.${key}`, 1, max);
-}
-
 function validatePing(input: unknown): IPingReq {
     const value = messageRecord(input, "payload");
     assertExactKeys(value, ["clientTime"], [], "payload");
     return { clientTime: finiteInteger(value.clientTime, "payload.clientTime", 0) };
-}
-
-function validateMove(input: unknown): IMoveReq {
-    const value = messageRecord(input, "payload");
-    assertExactKeys(value, ["dirX", "dirY"], [], "payload");
-    return {
-        dirX: finiteNumber(value.dirX, "payload.dirX", -1, 1),
-        dirY: finiteNumber(value.dirY, "payload.dirY", -1, 1),
-    };
-}
-
-function validateIdlePulse(input: unknown): IIdlePulseReq {
-    const value = messageRecord(input, "payload");
-    assertExactKeys(value, [], [], "payload");
-    return {};
-}
-
-function validateCastSkill(input: unknown): ICastSkillReq {
-    const value = messageRecord(input, "payload");
-    assertExactKeys(value, ["skillId"], ["targetId"], "payload");
-    const targetId = optionalMessageString(value, "targetId", "payload", MAX_MESSAGE_ID);
-    const skillId = finiteInteger(value.skillId, "payload.skillId", 0, 0xffff);
-    return targetId === undefined ? { skillId } : { skillId, targetId };
 }
 
 function validateChat(input: unknown): IChatReq {
@@ -142,18 +104,6 @@ function validateWelcome(input: unknown): IWelcomeRes {
     };
 }
 
-function validateSkillResult(input: unknown): ISkillResultRes {
-    const value = messageRecord(input, "payload");
-    assertExactKeys(value, ["casterId", "skillId", "damage"], ["targetId"], "payload");
-    const targetId = optionalMessageString(value, "targetId", "payload", MAX_MESSAGE_ID);
-    const result = {
-        casterId: boundedString(value.casterId, "payload.casterId", 1, MAX_MESSAGE_ID),
-        skillId: finiteInteger(value.skillId, "payload.skillId", 0, 0xffff),
-        damage: finiteNumber(value.damage, "payload.damage", 0, Number.MAX_SAFE_INTEGER),
-    };
-    return targetId === undefined ? result : { ...result, targetId };
-}
-
 function validateChatResult(input: unknown): IChatRes {
     const value = messageRecord(input, "payload");
     assertExactKeys(value, ["fromId", "fromName", "text", "time"], [], "payload");
@@ -176,42 +126,22 @@ function validateError(input: unknown): IErrorRes {
     };
 }
 
-/** C2S runtime validators. Values are copied so callers cannot mutate a validated payload. */
+/** Core runtime validators. Values are copied so callers cannot mutate a validated payload. */
 const guardMessageValidator = <T>(validator: RuntimeValidator<T>): RuntimeValidator<T> =>
     (input: unknown) => guardWire("payload", () => validator(input));
 
-export const C2S_RUNTIME_VALIDATORS: { [K in C2SType]: RuntimeValidator<C2SPayloadMap[K]> } = {
-    [C2S.Ping]: guardMessageValidator(validatePing),
-    [C2S.Move]: guardMessageValidator(validateMove),
-    [C2S.IdlePulse]: guardMessageValidator(validateIdlePulse),
-    [C2S.CastSkill]: guardMessageValidator(validateCastSkill),
-    [C2S.Chat]: guardMessageValidator(validateChat),
+/** core 消息名 → validator 表；生成的 wire catalog 静态 import 它并入全集。 */
+export const CORE_C2S_WIRE: { [K in CoreC2SType]: RuntimeValidator<CoreC2SPayloadMap[K]> } = {
+    [CORE_C2S.Ping]: guardMessageValidator(validatePing),
+    [CORE_C2S.Chat]: guardMessageValidator(validateChat),
 };
 
-/** S2C runtime validators. Client state/message adapters must validate before dispatching callbacks. */
-export const S2C_RUNTIME_VALIDATORS: { [K in S2CType]: RuntimeValidator<S2CPayloadMap[K]> } = {
-    [S2C.Pong]: guardMessageValidator(validatePong),
-    [S2C.Welcome]: guardMessageValidator(validateWelcome),
-    [S2C.SkillResult]: guardMessageValidator(validateSkillResult),
-    [S2C.Chat]: guardMessageValidator(validateChatResult),
-    [S2C.Error]: guardMessageValidator(validateError),
+export const CORE_S2C_WIRE: { [K in CoreS2CType]: RuntimeValidator<CoreS2CPayloadMap[K]> } = {
+    [CORE_S2C.Pong]: guardMessageValidator(validatePong),
+    [CORE_S2C.Welcome]: guardMessageValidator(validateWelcome),
+    [CORE_S2C.Chat]: guardMessageValidator(validateChatResult),
+    [CORE_S2C.Error]: guardMessageValidator(validateError),
 };
-
-export function validateC2SPayload<T extends C2SType>(type: T, input: unknown): C2SPayload<T> {
-    return guardWire("payload", () => {
-        const validator = C2S_RUNTIME_VALIDATORS[type] as RuntimeValidator<C2SPayload<T>> | undefined;
-        if (!validator) throw new WireValidationError("MESSAGE_TYPE", "type");
-        return validator(input);
-    });
-}
-
-export function validateS2CPayload<T extends S2CType>(type: T, input: unknown): S2CPayload<T> {
-    return guardWire("payload", () => {
-        const validator = S2C_RUNTIME_VALIDATORS[type] as RuntimeValidator<S2CPayload<T>> | undefined;
-        if (!validator) throw new WireValidationError("MESSAGE_TYPE", "type");
-        return validator(input);
-    });
-}
 
 // ---------------- 网关大厅房（服务端框架 M5，docs/SERVER.md §4 Lobby RPC） ----------------
 
@@ -225,24 +155,6 @@ export const LOBBY_MSG_PUSH = "push";
 export interface IPingReq {
     /** 客户端发送时刻（ms 时间戳），用于计算 RTT */
     clientTime: number;
-}
-
-export interface IMoveReq {
-    /** 归一化方向向量 x ∈ [-1, 1] */
-    dirX: number;
-    /** 归一化方向向量 y ∈ [-1, 1] */
-    dirY: number;
-}
-
-/** Idle 每次 pulse 只表达一次动作，不接受客户端参数。 */
-export interface IIdlePulseReq {
-    readonly [key: string]: never;
-}
-
-export interface ICastSkillReq {
-    skillId: number;
-    /** 目标玩家 sessionId，可选 */
-    targetId?: string;
 }
 
 export interface IChatReq {
@@ -265,13 +177,6 @@ export interface IWelcomeRes {
     tickRate: number;
     /** 欢迎语（假数据演示用） */
     motd: string;
-}
-
-export interface ISkillResultRes {
-    casterId: string;
-    skillId: number;
-    targetId?: string;
-    damage: number;
 }
 
 export interface IChatRes {

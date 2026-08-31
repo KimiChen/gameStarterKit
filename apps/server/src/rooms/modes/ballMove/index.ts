@@ -1,14 +1,17 @@
 import type { Client } from "colyseus";
 import {
-    C2S,
+    CORE_S2C_TOKENS,
+    CastSkill,
     ErrorCode,
     ErrorMessage,
     GamePhase,
     MAP_HEIGHT,
     MAP_WIDTH,
     MAX_PLAYERS,
+    Move,
     PLAYER_INIT_HP,
-    S2C,
+    SkillResult,
+    gameplayC2STokens,
     getSkillDef,
     type ICastSkillReq,
     type IErrorRes,
@@ -23,6 +26,7 @@ import {
     type GameModeContext,
     type GameModePlayerLeavingContext,
     type GameModeRegistry,
+    type GameplayCommandsFor,
 } from "../../GameMode";
 import {
     advanceBallMovePlayers,
@@ -181,7 +185,7 @@ export function createBallMoveGameMode(options: BallMoveGameModeOptions = {}): B
         const skill = getSkillDef(msg?.skillId ?? -1);
         if (!skill) {
             const err: IErrorRes = { code: ErrorCode.SkillUnavailable, message: ErrorMessage[ErrorCode.SkillUnavailable] };
-            context.sendS2C(client, S2C.Error, err);
+            context.sendS2C(client, CORE_S2C_TOKENS.Error, err);
             return false;
         }
         if (!tracker.hasInputCapacity()) {
@@ -224,7 +228,7 @@ export function createBallMoveGameMode(options: BallMoveGameModeOptions = {}): B
             targetId: msg.targetId,
             damage: result.damage,
         };
-        context.broadcastS2C(S2C.SkillResult, res);
+        context.broadcastS2C(SkillResult, res);
         maybeSettle(context);
         return true;
     };
@@ -322,7 +326,6 @@ export function createBallMoveGameMode(options: BallMoveGameModeOptions = {}): B
     const mode = {
         id: BALL_MOVE_GAME_MODE_ID,
         roster: { min: 2, max: MAX_PLAYERS, autoStart: 2 },
-        inputs: { accepts: [C2S.Move, C2S.CastSkill] },
         createPlayer: ({ sessionId, name, randomInt }: {
             sessionId: string;
             name: string;
@@ -355,34 +358,27 @@ export function createBallMoveGameMode(options: BallMoveGameModeOptions = {}): B
             },
         },
 
-        onMessage: (message: {
-            type: string;
-            client: Client;
-            payload: unknown;
-            context: BallMoveContext;
-        }): boolean => {
-            const context = capture(message.context);
-            if (message.type === C2S.Move) {
-                const msg = message.payload as IMoveReq;
-                const player = context.state.players.get(message.client.sessionId);
-                // 与拆出前的 handler 语义逐字一致：死亡/未入座静默消费，容量闸回 BadRequest。
-                if (!player || !player.alive) return true;
+        // 键由本玩法 wire token 派生（satisfies 钉住键集与 payload 类型）；payload 已由
+        // catch-all dispatcher 过 exact validate。与拆出前的 handler 语义逐字一致：
+        // 死亡/未入座静默消费，容量闸回 BadRequest。
+        commands: {
+            [Move.type]: (context, payload: IMoveReq): void => {
+                capture(context);
+                const player = context.state.players.get(context.client.sessionId);
+                if (!player || !player.alive) return;
                 if (!tracker.hasInputCapacity()) {
-                    context.sendError(message.client, ErrorCode.BadRequest);
-                    return true;
+                    context.sendError(context.client, ErrorCode.BadRequest);
+                    return;
                 }
-                acceptMoveInput(context, message.client.sessionId, msg.dirX, msg.dirY);
-                return true;
-            }
-            if (message.type === C2S.CastSkill) {
-                const msg = message.payload as ICastSkillReq;
-                const player = context.state.players.get(message.client.sessionId);
-                if (!player || !player.alive) return true;
-                handleCastSkill(context, message.client, msg);
-                return true;
-            }
-            return false;
-        },
+                acceptMoveInput(context, context.client.sessionId, payload.dirX, payload.dirY);
+            },
+            [CastSkill.type]: (context, payload: ICastSkillReq): void => {
+                capture(context);
+                const player = context.state.players.get(context.client.sessionId);
+                if (!player || !player.alive) return;
+                handleCastSkill(context, context.client, payload);
+            },
+        } satisfies GameplayCommandsFor<GameRoomState, typeof gameplayC2STokens.ballMove>,
 
         onBeforeStep: (context: BallMoveContext & { readonly dtMs: number }): void => {
             capture(context);

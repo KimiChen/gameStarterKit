@@ -1,15 +1,12 @@
 import type { Client } from "colyseus";
 import {
-    C2S,
     GAMEPLAY_CATALOG,
-    GamePhase,
+    gameplayC2STokens,
     GameplayModeId,
     MAX_PLAYERS,
     validateGameplayModeId,
-    type C2SType,
     type ErrorCodeType,
-    type GamePhaseType,
-    type S2CType,
+    type GameplayS2CToken,
 } from "@game/shared";
 // ⚠ 仅类型：MatchEvidenceV3 是 core 拥有的通用证据格式（不是 ballMove 私有符号），
 // evidence capability 的 build() 返回值需要它。本文件不 import 任何 ballMove 实现。
@@ -38,9 +35,13 @@ export interface GameModeContext<TState = GameRoomState> {
     };
     /** Freeze the current match synchronously. Mode state must be finalized first. */
     settle(): void;
-    /** 出站 S2C 仍走房间的 shared validator 校验路径；client 允许为 undefined（注入/回放）。 */
-    sendS2C(client: Client | undefined, type: S2CType, payload: unknown): void;
-    broadcastS2C(type: S2CType, payload: unknown): void;
+    /**
+     * 出站 S2C 走 wire token：发送前验 `token.dir === "s2c"` 且 owner ∈ {core, 当前 mode}，
+     * payload 过 `token.validate`（与拆分前的 shared validator 路径等价）。
+     * client 允许为 undefined（注入/回放）。
+     */
+    sendS2C<TPayload>(client: Client | undefined, token: GameplayS2CToken<TPayload>, payload: TPayload): void;
+    broadcastS2C<TPayload>(token: GameplayS2CToken<TPayload>, payload: TPayload): void;
     sendError(client: Client, code: ErrorCodeType): void;
     /** 注入/回放路径按 sessionId 反查真实连接；不存在时返回 undefined。 */
     findClientBySession(sessionId: string): Client | undefined;
@@ -61,12 +62,32 @@ export interface GameModePlayerLeavingContext<TState, TPlayer> extends GameModeC
     readonly duringMatch: boolean;
 }
 
-export interface GameModeMessage<TState = GameRoomState> {
-    readonly type: C2SType;
-    readonly client: Client;
-    readonly payload: unknown;
-    readonly context: GameModeContext<TState>;
-}
+/** commands handler 收到的 context：房间 context + 发送方连接。 */
+export type GameModeCommandContext<TState = GameRoomState> =
+    GameModeContext<TState> & { readonly client: Client };
+
+/**
+ * 玩法输入的 typed handler map 值形态。
+ * `payload: never` 是刻意的逆变收口：具体 handler 可以把 payload 声明成自己的精确
+ * 类型（如 IMoveReq），仍可赋给本形态；调用方（GameRoom dispatcher）只会传入
+ * 已经过该消息 wire token exact validate 的 payload。
+ */
+export type GameModeCommandHandler<TState = GameRoomState> =
+    (context: GameModeCommandContext<TState>, payload: never) => void;
+
+/**
+ * 从该玩法的 wire token 表派生 commands 的键与 payload 类型；
+ * mode 实现用 `satisfies GameplayCommandsFor<TState, typeof gameplayC2STokens.<id>>` 钉住。
+ */
+export type GameplayCommandsFor<
+    TState,
+    TTokens extends { readonly [type: string]: { readonly type: string; validate(input: unknown): unknown } },
+> = {
+    readonly [K in keyof TTokens & string]: (
+        context: GameModeCommandContext<TState>,
+        payload: ReturnType<TTokens[K]["validate"]>,
+    ) => void;
+};
 
 /**
  * 一个玩法的人数事实。GameRoom 是通用 shell，⛔ 不得再在 shell 里写死人数字面量——
@@ -88,26 +109,12 @@ export interface GameModeRoster {
 }
 
 /**
- * 每个玩法自己声明它收哪些 C2S 输入、各自在哪些 phase 开放。
- *
- * ⚠ handler 表本身**不能**按 mode 构建：Colyseus 0.17 在 `Room.__init()` 里就消费掉
- * `this.messages`，而 `__init()` 跑在 `onCreate()` 之前，生产房的 mode 直到 onCreate 才选定。
- * 所以形态固定为「全 C2S 联合的静态 handler 表 + 在 acceptMessage 里按 mode 声明准入」。
- */
-export interface GameModeInputs {
-    /** 本玩法接受的 C2S 输入。⛔ 不含 Ping/Chat：那两条是 shell 的公共传输能力。 */
-    readonly accepts: readonly C2SType[];
-    /** 各输入开放的 phase；未列出的输入默认只在 Playing 开放。 */
-    readonly phases?: { readonly [K in C2SType]?: readonly GamePhaseType[] };
-}
-
-/**
  * mode 的可选证据能力。声明了它的 mode 拥有可重放的收局证据契约；未声明的 mode
  * （如 idle）在 settle 时明确不产出任何证据。
  */
 export interface GameModeEvidenceCapability {
     /**
-     * roster 与证据契约的自洽闸。registry.create 与注入两条路径都在 roster/inputs 闸后调用，
+     * roster 与证据契约的自洽闸。registry.create 与注入两条路径都在 roster/commands 闸后调用，
      * 保持「非法 roster+证据耦合在建 mode 实例时抛」的既有时机。
      */
     assertRosterCompatible(key: string, roster: GameModeRoster): void;
@@ -124,16 +131,23 @@ export interface GameMode<TState = GameRoomState, TPlayer = PlayerState> {
     readonly id: string;
     /** 人数事实；shell 只按它分发，不再写死字面量。 */
     readonly roster: GameModeRoster;
-    /** 输入事实；shell 只按它准入，不再在 switch 里穷举玩法消息名。 */
-    readonly inputs: GameModeInputs;
+    /**
+     * 玩法输入的 typed handler map：键必须是**本玩法** wire token 的消息名
+     * （`gameplayC2STokens[id]` 的键集；create 与注入两路径都校验）。
+     * 准入（owner/phase/预算/exact validate）全部由 GameRoom 的 catch-all dispatcher
+     * 按生成的 wire catalog 执行，⚠ handler 收到的 payload 已过 exact validate。
+     *
+     * ⚠ handler 表不能按 mode 换表：Colyseus 0.17 在 `Room.__init()` 里就消费掉
+     * `this.messages`，而 `__init()` 跑在 `onCreate()` 之前——所以 GameRoom 只注册
+     * 一个 catch-all，运行时按 owner/mode 分发到这里。
+     */
+    readonly commands?: { readonly [type: string]: GameModeCommandHandler<TState> };
     /** Creates the exact per-mode Schema value inserted into the root players map. */
     createPlayer(context: GameModePlayerFactoryContext): TPlayer;
     /** 可选证据能力；未声明的 mode settle 时不产出证据。 */
     readonly evidence?: GameModeEvidenceCapability;
     /** Return false to reject the client after auth but before state mutation. */
     onAdmission?(context: GameModeContext<TState> & { readonly client: Client }): boolean | void;
-    /** Return true when the mode fully consumes a validated message. */
-    onMessage?(message: GameModeMessage<TState>): boolean | void;
     /** Runs after common tick/match bookkeeping has been reset. */
     onMatchInitialize?(context: GameModeContext<TState>): void | Promise<void>;
     onMatchStart?(context: GameModeContext<TState>): void | Promise<void>;
@@ -198,9 +212,9 @@ export class GameModeRegistry<TState = GameRoomState, TPlayer = PlayerState> {
             throw new Error(`[GameModeRegistry] mode ${key} 必须声明 createPlayer factory`);
         }
         assertGameModeRoster(key, mode.roster);
-        assertGameModeInputs(key, mode.inputs);
+        assertGameModeCommands(key, mode.commands);
         // 声明了证据能力的 mode，其 roster 必须与证据契约自洽（如 ballMove v1 的固定 2 人）。
-        // 与 roster/inputs 闸同一时机：create（建房）与注入构造期，⛔ register 不校验。
+        // 与 roster/commands 闸同一时机：create（建房）与注入构造期，⛔ register 不校验。
         mode.evidence?.assertRosterCompatible(key, mode.roster);
         // The id check above is the registry's runtime erasure boundary. The
         // selected mode keeps its precise state/player types within its hooks.
@@ -264,62 +278,31 @@ export function assertGameModeRoster(
 }
 
 /**
- * shell 自己拥有的公共传输能力，⛔ mode 不得在 `inputs.accepts` 里重复声明它们：
- * 那会让「谁决定 Ping 的准入」出现两个真源。
+ * commands 的 fail-closed 校验；与 roster 同样在**建实例时**与注入期各跑一次（非 register 时）。
+ *
+ * 键集必须 ⊆ 该 mode 自己的 wire token 集合（生成的 `gameplayC2STokens[id]`）：
+ * 声明别的玩法或 core 的消息名（Ping/Chat 属 shell）都会在这里抛——owner 分发由
+ * dispatcher 按 wire catalog 执行，一个越权的 commands 键永远收不到消息，静默
+ * 留着它只会掩盖配置错误。
  */
-export const SHELL_COMMON_INPUTS: readonly C2SType[] = [C2S.Ping, C2S.Chat];
-
-const ALL_PHASES: readonly GamePhaseType[] = Object.values(GamePhase);
-
-/** inputs 的 fail-closed 校验；与 roster 同样在**建实例时**与注入期各跑一次（非 register 时）。 */
-export function assertGameModeInputs(key: string, inputs: GameModeInputs | undefined): void {
-    if (!inputs || typeof inputs !== "object" || !Array.isArray(inputs.accepts)) {
-        throw new Error(`[GameModeRegistry] mode ${key} 必须声明 inputs{accepts}`);
+export function assertGameModeCommands(key: string, commands: unknown): void {
+    if (commands === undefined) return;
+    if (!commands || typeof commands !== "object" || Array.isArray(commands)) {
+        throw new Error(`[GameModeRegistry] mode ${key} 的 commands 必须是「消息名 → handler」对象`);
     }
-    const known = Object.values(C2S) as readonly string[];
-    const seen = new Set<string>();
-    for (const type of inputs.accepts) {
-        if (typeof type !== "string" || !known.includes(type)) {
-            throw new Error(`[GameModeRegistry] mode ${key} 的 inputs.accepts 含未知 C2S：${String(type)}`);
+    const owned = (gameplayC2STokens as Readonly<Partial<Record<string, Readonly<Record<string, unknown>>>>>)[key]
+        ?? {};
+    for (const [type, handler] of Object.entries(commands)) {
+        if (typeof handler !== "function") {
+            throw new Error(`[GameModeRegistry] mode ${key} 的 commands["${type}"] 必须是函数`);
         }
-        if ((SHELL_COMMON_INPUTS as readonly string[]).includes(type)) {
+        if (!Object.prototype.hasOwnProperty.call(owned, type)) {
             throw new Error(
-                `[GameModeRegistry] mode ${key} 不得声明公共传输输入 ${type}——它由 shell 拥有`,
+                `[GameModeRegistry] mode ${key} 的 commands 键 ${type} 不属于该玩法的 wire token 集合`
+                + `（gameplayC2STokens["${key}"]）`,
             );
         }
-        if (seen.has(type)) {
-            throw new Error(`[GameModeRegistry] mode ${key} 的 inputs.accepts 重复声明 ${type}`);
-        }
-        seen.add(type);
     }
-    for (const [type, phases] of Object.entries(inputs.phases ?? {})) {
-        if (!seen.has(type)) {
-            throw new Error(
-                `[GameModeRegistry] mode ${key} 为未接受的输入 ${type} 声明了 inputs.phases`,
-            );
-        }
-        if (!Array.isArray(phases) || phases.length === 0) {
-            throw new Error(`[GameModeRegistry] mode ${key} 的 inputs.phases.${type} 必须是非空 phase 数组`);
-        }
-        for (const phase of phases) {
-            if (!ALL_PHASES.includes(phase)) {
-                throw new Error(
-                    `[GameModeRegistry] mode ${key} 的 inputs.phases.${type} 含未知 phase：${String(phase)}`,
-                );
-            }
-        }
-    }
-}
-
-/** 该 mode 是否在当前 phase 接受这条输入。未列 phases 的输入默认只在 Playing 开放。 */
-export function modeAllowsInput(
-    inputs: GameModeInputs,
-    type: C2SType,
-    phase: GamePhaseType,
-): boolean {
-    if (!inputs.accepts.includes(type)) return false;
-    const phases = inputs.phases?.[type] ?? [GamePhase.Playing];
-    return phases.includes(phase);
 }
 
 function normalizeModeId(id: string): string {
