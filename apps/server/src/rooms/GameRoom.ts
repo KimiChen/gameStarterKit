@@ -39,6 +39,7 @@ import {
     createRoomStateForMode,
     GameRoomState,
     PlayerState,
+    type RoomStateLifecycle,
 } from "./schema/GameRoomState";
 import { groupAdmitsZone, normalizeSId } from "../core/infra/config";
 import { verifyAndCacheWebPlatformSession } from "../platform/webPlatformClient";
@@ -393,7 +394,21 @@ export class GameRoom extends Room {
     maxClients = MAX_PLAYERS;
     /** Colyseus transport 层的每客户端消息闸；handler 还会做一次本地预算检查。 */
     maxMessagesPerSecond = GAME_ROOM_MAX_MESSAGES_PER_SECOND;
-    declare readonly state: GameRoomState;
+    /**
+     * ⚠ 真实 root 由 mode 决定（`ROOM_STATE_ROOT_CONSTRUCTORS`），所以这里**不能**声明成某个
+     * 具体 root：曾经写的 `GameRoomState` 让 shell 在类型上拥有 ballMove 的全部字段，
+     * 「玩法无关」就只剩口头约定。改成生成的生命周期视图后，任何越界读写都会 typecheck 失败，
+     * 必须显式走 `ballState`（且只在 `usesDefaultBallMoveRules` 成立的路径上）。
+     */
+    declare readonly state: RoomStateLifecycle;
+
+    /**
+     * ballMove 默认规则专用视图。⛔ 只允许在已确认 `usesDefaultBallMoveRules === true` 的
+     * 路径上取用——它是一次**具名的、可被 grep 的**收窄，而不是把整个 shell 都当成 ballMove。
+     */
+    private get ballState(): GameRoomState {
+        return this.state as unknown as GameRoomState;
+    }
     /** 状态快照下发间隔（ms），默认 50ms/20fps */
     patchRate = 50;
 
@@ -711,7 +726,7 @@ export class GameRoom extends Room {
                 this.sendError(client, ErrorCode.BadRequest);
                 return;
             }
-            const player = this.state.players.get(client.sessionId);
+            const player = this.ballState.players.get(client.sessionId);
             if (!player || !player.alive) return;
             if (!this.hasInputCapacity()) {
                 this.sendError(client, ErrorCode.BadRequest);
@@ -741,7 +756,7 @@ export class GameRoom extends Room {
                 this.sendError(client, ErrorCode.BadRequest);
                 return;
             }
-            const player = this.state.players.get(client.sessionId);
+            const player = this.ballState.players.get(client.sessionId);
             if (!player || !player.alive) return;
             this.handleCastSkill(client, msg);
         },
@@ -1072,7 +1087,8 @@ export class GameRoom extends Room {
         if (leftDuringMatch && mode.usesDefaultBallMoveRules === true) {
             this.recordLeaveEvent(client.sessionId, acceptedTick);
             // 活着退房视为阵亡（M8a：名次/证据完整性要求每个参与者都有归宿）；已死者已在 deathOrder
-            if (player.alive) this.recordDeath(client.sessionId);
+            // `leftDuringMatch` 蕴含 player 存在，这里按 ball 视图重取只为拿到 alive 字段。
+            if (this.ballState.players.get(client.sessionId)?.alive) this.recordDeath(client.sessionId);
         }
         // Waiting 离开没有结算证据需求，参与者快照也必须删除；Playing/Settle
         // 则保留 participantUserId，供退房者的最终名次回读 uid。
@@ -1330,7 +1346,7 @@ export class GameRoom extends Room {
 
         if (mode.usesDefaultBallMoveRules === true) {
             // 出生点在正式 RNG 流中重新生成，因而等待期的展示 RNG/历史不会改变本局初始状态。
-            resetBallMovePlayers(this.state.players, this.motionAnchors, this.rng);
+            resetBallMovePlayers(this.ballState.players, this.motionAnchors, this.rng);
         }
         await mode.onMatchInitialize?.(this.modeContext());
     }
@@ -1355,7 +1371,7 @@ export class GameRoom extends Room {
                 tick: this.state.tick,
                 phase: GamePhase.Playing,
                 matchId: this.state.matchId,
-                players: this.state.players,
+                players: this.ballState.players,
             },
             roster,
             this.motionAnchors,
@@ -1378,7 +1394,7 @@ export class GameRoom extends Room {
         this.initialRoster = [];
         this.initialMatchState = null;
         if (mode.usesDefaultBallMoveRules === true) {
-            this.state.players.forEach((player) => {
+            this.ballState.players.forEach((player) => {
                 player.hp = PLAYER_INIT_HP;
                 player.maxHp = PLAYER_INIT_HP;
                 player.alive = true;
@@ -1404,7 +1420,7 @@ export class GameRoom extends Room {
         if (this.state.phase !== GamePhase.Playing) return;
         this.state.tick++;
         if (mode.usesDefaultBallMoveRules === true) {
-            advanceBallMovePlayers(this.state.players, this.motionAnchors, this.state.tick, this.fixedStepMs);
+            advanceBallMovePlayers(this.ballState.players, this.motionAnchors, this.state.tick, this.fixedStepMs);
         }
         try {
             const result = mode.onStep?.({ ...this.modeContext(), dtMs: this.fixedStepMs });
@@ -1591,9 +1607,10 @@ export class GameRoom extends Room {
         }
     }
 
+    /** ⚠ 只在 `usesDefaultBallMoveRules === true` 时经 `applyInjectedInputs` 进入（见 update）。 */
     private applyInjectedInput(input: GameRoomInput): void {
         if (this.disposed) return;
-        const player = this.state.players.get(input.sessionId);
+        const player = this.ballState.players.get(input.sessionId);
         if (!player || !player.alive || this.state.phase !== GamePhase.Playing) return;
         if (input.type === "move") {
             if (!this.hasInputCapacity()) return;
@@ -1606,7 +1623,7 @@ export class GameRoom extends Room {
 
     private acceptMoveInput(sessionId: string, dirX: number, dirY: number, sourceTick?: number): boolean {
         if (this.disposed || this.state.phase !== GamePhase.Playing || !this.hasInputCapacity()) return false;
-        const player = this.state.players.get(sessionId);
+        const player = this.ballState.players.get(sessionId);
         const motion = this.motionAnchors.get(sessionId);
         if (!player?.alive || !motion) return false;
         const acceptedTick = this.state.tick;
@@ -1652,7 +1669,7 @@ export class GameRoom extends Room {
         if (this.disposed || this.state.phase !== GamePhase.Playing) return false;
         const sessionId = client?.sessionId ?? sessionIdOverride;
         if (!sessionId) return false;
-        const caster = this.state.players.get(sessionId);
+        const caster = this.ballState.players.get(sessionId);
         if (!caster || !caster.alive) return false;
 
         const skill = getSkillDef(msg?.skillId ?? -1);
@@ -1668,7 +1685,7 @@ export class GameRoom extends Room {
 
         const acceptedTick = this.state.tick;
         const result = applyBallMoveCast(
-            this.state.players,
+            this.ballState.players,
             this.rng,
             acceptedTick,
             this.fixedStepMs,
@@ -1727,7 +1744,7 @@ export class GameRoom extends Room {
         }
         if (mode.usesDefaultBallMoveRules !== true) return;
         let alive = 0;
-        this.state.players.forEach((p) => { if (p.alive) alive++; });
+        this.ballState.players.forEach((p) => { if (p.alive) alive++; });
         if (alive <= 1) this.settle();
     }
 
@@ -1772,7 +1789,7 @@ export class GameRoom extends Room {
         const elapsedMs = this.state.tick * this.fixedStepMs;
         const participants = buildReplayParticipants(
             this.initialRoster,
-            this.state.players,
+            this.ballState.players,
             this.deathOrder,
             elapsedMs,
         );
@@ -1792,7 +1809,7 @@ export class GameRoom extends Room {
             events: this.matchEvidenceEvents.map((event) => ({ ...event })),
             finalTick: this.state.tick,
             elapsedMs,
-            finalState: snapshotCanonicalMatchState(this.state, this.initialRoster, this.motionAnchors),
+            finalState: snapshotCanonicalMatchState(this.ballState, this.initialRoster, this.motionAnchors),
             participants,
         };
     }

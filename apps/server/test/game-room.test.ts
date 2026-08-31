@@ -24,6 +24,14 @@ import {
     type MatchEvidenceV3,
 } from "../src/core/match/matchEvidence";
 import { replayMatchEvidenceV3 } from "../src/core/match/matchReplay";
+import type { GameRoomState } from "../src/rooms/schema/GameRoomState";
+
+/**
+ * ballMove root 视图。`GameRoom.state` 现在只暴露生成的生命周期字段（tick/phase/matchId/players），
+ * 读 ball 专属字段必须显式收窄——⛔ 这不是绕过类型，而是把「这段断言只对 ballMove 成立」写出来。
+ * 本文件的房间全部是 ballMove。
+ */
+const ballState = (room: { state: unknown }): GameRoomState => room.state as GameRoomState;
 
 type FakeClient = {
     sessionId: string;
@@ -67,7 +75,7 @@ function runtime(seed: number, now = 0): GameRoomRuntimeOptions {
  */
 function simulationSnapshot(room: GameRoom): unknown {
     const players: Record<string, unknown> = {};
-    for (const [sessionId, player] of room.state.players.entries()) {
+    for (const [sessionId, player] of ballState(room).players.entries()) {
         players[sessionId] = {
             id: player.id,
             x: player.x,
@@ -143,7 +151,7 @@ test("GameRoom C2S exact runtime schema rejects NaN/range/length/unknown keys", 
     await join(room, a);
     const b = fakeClient("b", "ub");
     await join(room, b);
-    const player = room.state.players.get(a.sessionId)!;
+    const player = ballState(room).players.get(a.sessionId)!;
     const before = { x: player.x, y: player.y, dirX: player.dirX, dirY: player.dirY };
     const move = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Move];
 
@@ -171,7 +179,7 @@ test("GameRoom C2S rejects non-plain and symbol-keyed direct handler payloads", 
     const b = fakeClient("b", "ub");
     await join(room, b);
     const move = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Move];
-    const player = room.state.players.get("a")!;
+    const player = ballState(room).players.get("a")!;
     const before = { x: player.x, y: player.y, dirX: player.dirX, dirY: player.dirY };
     class MovePayload {
         dirX = 1;
@@ -242,7 +250,7 @@ test("accepted input evidence has a bounded capacity and rejects later side effe
     await join(room, a);
     await join(room, b);
     const move = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Move];
-    const player = room.state.players.get("a")!;
+    const player = ballState(room).players.get("a")!;
 
     move(a, { dirX: 1, dirY: 0 });
     assert.equal(room.getAcceptedInputs().length, 1);
@@ -270,8 +278,8 @@ test("cast 达到 accepted input 上限时在冷却与伤害之前 fail-closed",
     await join(room, a);
     await join(room, b);
     const cast = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.CastSkill];
-    const playerA = room.state.players.get("a")!;
-    const playerB = room.state.players.get("b")!;
+    const playerA = ballState(room).players.get("a")!;
+    const playerB = ballState(room).players.get("b")!;
     const badRequests = (sender: FakeClient): number => sender.sent
         .filter(([, payload]) => (payload as { code?: number }).code === ErrorCode.BadRequest).length;
 
@@ -340,12 +348,12 @@ test("Playing leave is appended before death/removal and emits ordered determini
     const b = fakeClient("b", "ub");
     await join(room, a);
     await join(room, b);
-    const initialX = room.state.players.get(a.sessionId)!.x;
+    const initialX = ballState(room).players.get(a.sessionId)!.x;
     const move = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Move];
     move(a, { dirX: 1, dirY: 0 });
     for (let tick = 0; tick < 10; tick++) room.stepFixed();
     assert.equal(
-        room.state.players.get(a.sessionId)!.x,
+        ballState(room).players.get(a.sessionId)!.x,
         Math.min(initialX + PLAYER_MOVE_SPEED * (room.fixedStep / 1000) * 10, MAP_WIDTH),
     );
 
@@ -360,7 +368,7 @@ test("Playing leave is appended before death/removal and emits ordered determini
     const removePlayer = internals.removePlayer.bind(room);
     internals.recordLeaveEvent = (sessionId, acceptedTick) => {
         calls.push("event");
-        assert.equal(room.state.players.get(sessionId)?.alive, true);
+        assert.equal(ballState(room).players.get(sessionId)?.alive, true);
         recordLeaveEvent(sessionId, acceptedTick);
     };
     internals.recordDeath = (sessionId) => {
@@ -421,8 +429,8 @@ test("settlement freezes replay evidence before the mode finish hook can mutate 
         matchId: () => "m_finish_snapshot",
         mode: {
             ...createBallMoveGameMode(),
-            onFinish: ({ state }) => {
-                state.players.get("a")!.hp = 0;
+            onFinish: () => {
+                ballState(room).players.get("a")!.hp = 0;
             },
         },
         evidenceEmitter: (evidence) => {
@@ -439,7 +447,7 @@ test("settlement freezes replay evidence before the mode finish hook can mutate 
 
     await room.onLeave(b as never, 4000);
 
-    assert.equal(room.state.players.get(a.sessionId)?.hp, 0, "finish hook must have run");
+    assert.equal(ballState(room).players.get(a.sessionId)?.hp, 0, "finish hook must have run");
     assert.equal(
         emitted?.finalState.players.find((player) => player.sessionId === a.sessionId)?.hp,
         PLAYER_INIT_HP,
@@ -490,7 +498,7 @@ test("Waiting/Settle phase whitelist prevents simulation input and update", asyn
     installLock(room);
     const a = fakeClient("a", "ua");
     await join(room, a);
-    const player = room.state.players.get(a.sessionId)!;
+    const player = ballState(room).players.get(a.sessionId)!;
     const waitingX = player.x;
     const move = (room.messages as Record<string, (client: unknown, msg: unknown) => void>)[C2S.Move];
     move(a, { dirX: 1, dirY: 0 });
@@ -535,7 +543,7 @@ test("startMatch resets every gameplay field changed while waiting", async () =>
     installLock(room);
     const a = fakeClient("a", "ua");
     await join(room, a);
-    const waiting = room.state.players.get("a")!;
+    const waiting = ballState(room).players.get("a")!;
     waiting.hp = 1;
     waiting.maxHp = 2;
     waiting.alive = false;
@@ -545,7 +553,7 @@ test("startMatch resets every gameplay field changed while waiting", async () =>
     waiting.level = 9;
     room.state.tick = 88;
     await join(room, fakeClient("b", "ub"));
-    const started = room.state.players.get("a")!;
+    const started = ballState(room).players.get("a")!;
     assert.equal(room.state.phase, GamePhase.Playing);
     assert.equal(room.state.tick, 0);
     assert.equal(started.hp, PLAYER_INIT_HP);
@@ -594,8 +602,8 @@ test("same seed + fixed steps + injected inputs produce identical state", async 
     };
     const left = await make();
     const right = await make();
-    const leftA = left.state.players.get("a")!;
-    const rightA = right.state.players.get("a")!;
+    const leftA = ballState(left).players.get("a")!;
+    const rightA = ballState(right).players.get("a")!;
     assert.deepEqual(
         { x: leftA.x, y: leftA.y, hp: leftA.hp, alive: leftA.alive },
         { x: rightA.x, y: rightA.y, hp: rightA.hp, alive: rightA.alive },
@@ -697,7 +705,7 @@ test("input source is fail-closed and respects declared ticks", async () => {
     installLock(room);
     await join(room, fakeClient("a", "ua"));
     await join(room, fakeClient("b", "ub"));
-    const player = room.state.players.get("a")!;
+    const player = ballState(room).players.get("a")!;
     const startX = player.x;
     (room as unknown as { stepFixed: () => void }).stepFixed();
     assert.equal(player.x, startX, "tick 不匹配的 source 输入不能提前应用");
@@ -711,7 +719,7 @@ test("hostile injected proxies and iterators are dropped without breaking the ne
     installLock(room);
     await join(room, fakeClient("a", "ua"));
     await join(room, fakeClient("b", "ub"));
-    const player = room.state.players.get("a")!;
+    const player = ballState(room).players.get("a")!;
 
     const revocable = Proxy.revocable({
         type: "move",
@@ -868,7 +876,7 @@ test("disposed rooms ignore late leave callbacks, messages, ticks, and injected 
     const a = fakeClient("a", "ua");
     await join(room, a);
     await join(room, fakeClient("b", "ub"));
-    const player = room.state.players.get("a")!;
+    const player = ballState(room).players.get("a")!;
     const before = { x: player.x, dirX: player.dirX, tick: room.state.tick, sent: a.sent.length };
 
     await room.onDispose();

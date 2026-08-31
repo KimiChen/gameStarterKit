@@ -23,6 +23,11 @@
   casual evidence。
 - `schema/GameRoomState.ts`：由 shared `schema/game-room-state.json` 生成的多 root 运行时 Schema 及
   mode→root 构造器映射；同一 manifest 也生成 shared `protocol/state.ts` 的纯数据接口、mode→validator 映射。
+  ⚠ 每个 root **必须**声明 shell 依赖的生命周期字段 `tick`/`phase`/`matchId`/`players`，其 player 类型
+  必须声明 `id`/`name`；漏声明在 codegen 期直接失败。据此生成的 `RoomStateLifecycle` 是 `GameRoom.state`
+  的类型——⛔ 它不是任何具体 root 的别名：曾经的 `declare readonly state: GameRoomState` 让 shell 在类型上
+  拥有 ballMove 的全部字段，「玩法无关」只剩口头约定。shell 读 ball 专属字段必须显式走
+  `GameRoom.ballState`，且只在 `usesDefaultBallMoveRules === true` 的路径上。
   root/字段增删只修改 manifest，再运行
   `npm --workspace @game/server run codegen:state`、协议指纹更新与相关测试；两份生成文件禁止手改。
 

@@ -235,7 +235,9 @@ test("GameRoom：transport/admission/tick/finish 均通过可替换 mode 接缝"
     assert.equal(room.state.phase, GamePhase.Playing);
     assert.deepEqual(events.slice(0, 3), ["admission:a", "admission:b", "start"]);
 
-    const player = room.state.players.get("a")!;
+    // 本段断言的是「mode 消费了消息 → 不落入 ballMove 默认规则」，读的是 ball 专属字段，
+    // 所以必须显式收窄到 ballMove root 视图。
+    const player = (room.state as unknown as GameRoomState).players.get("a")!;
     const before = { dirX: player.dirX, dirY: player.dirY };
     const move = (room.messages as Record<string, (sender: unknown, payload: unknown) => void>)[C2S.Move];
     move(first, { dirX: 1, dirY: 0 });

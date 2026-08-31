@@ -468,7 +468,72 @@ export function parseRoomStateDescriptor(input: unknown): RoomStateDescriptor {
   }
   const descriptor: RoomStateDescriptor = { formatVersion: 2, roots, types };
   validateReferences(descriptor);
+  assertRootLifecycle(descriptor);
   return descriptor;
+}
+
+/**
+ * 每个 root 必须声明通用 shell 依赖的那组生命周期字段。
+ *
+ * GameRoom 是玩法无关的 transport/lifecycle shell：它读写 `tick`/`phase`/`matchId`/`players`，
+ * 与玩法自己的字段无关。此前 shell 用 `declare readonly state: GameRoomState` 把这件事写成了
+ * 一句谎——真实的 root 由 mode 决定，`IdleRoomState` 只是恰好也有这四个字段。⛔ 新增一个漏掉
+ * 其中任一字段的 root，过去只会在运行期读到 undefined；这里把它变成 codegen 期的失败，
+ * 并让生成的 `RoomStateLifecycle` 有据可依。
+ */
+const ROOT_LIFECYCLE_FIELDS = [
+  { name: "tick", kind: "integer" },
+  { name: "phase", kind: "enum" },
+  { name: "matchId", kind: "string" },
+  { name: "players", kind: "map" },
+] as const;
+
+/** shell 只读 player 的这两个字段（chat 广播与证据 roster 都只要它们）。 */
+const PLAYER_LIFECYCLE_FIELDS = [
+  { name: "id", kind: "string" },
+  { name: "name", kind: "string" },
+] as const;
+
+function assertRootLifecycle(descriptor: RoomStateDescriptor): void {
+  const byName = new Map(descriptor.types.map((type) => [type.name, type]));
+  for (const root of descriptor.roots) {
+    const type = byName.get(root.type);
+    if (!type) continue; // 缺失 root 类型已由上面的 roots 校验报过，⛔ 不重复报
+    for (const required of ROOT_LIFECYCLE_FIELDS) {
+      const field = type.fields.find((candidate) => candidate.name === required.name);
+      if (!field) {
+        fail(
+          `manifest.types.${type.name}`,
+          `root type must declare lifecycle field "${required.name}" (generic GameRoom shell reads it)`,
+        );
+      }
+      if (field.kind !== required.kind) {
+        fail(
+          `manifest.types.${type.name}.${required.name}`,
+          `lifecycle field must be kind "${required.kind}", got "${field.kind}"`,
+        );
+      }
+    }
+    const players = type.fields.find((field) => field.name === "players");
+    if (players?.kind !== "map") continue;
+    const playerType = byName.get(players.valueType);
+    if (!playerType) continue;
+    for (const required of PLAYER_LIFECYCLE_FIELDS) {
+      const field = playerType.fields.find((candidate) => candidate.name === required.name);
+      if (!field) {
+        fail(
+          `manifest.types.${playerType.name}`,
+          `root player type must declare lifecycle field "${required.name}" (generic GameRoom shell reads it)`,
+        );
+      }
+      if (field.kind !== required.kind) {
+        fail(
+          `manifest.types.${playerType.name}.${required.name}`,
+          `lifecycle field must be kind "${required.kind}", got "${field.kind}"`,
+        );
+      }
+    }
+  }
 }
 
 function posixPath(value: string): string {
@@ -832,6 +897,28 @@ function renderServer(descriptor: RoomStateDescriptor, sourceLabel: string): str
     }
     lines.push("}", "");
   }
+  // 通用 shell 只被允许看见这组字段。⛔ 不要把它写成某个具体 root 的别名：那正是被替换掉的
+  // `declare readonly state: GameRoomState`——它让 shell 在类型上拥有 ballMove 的全部字段，
+  // 于是「玩法无关」只剩下口头约定。字段集由 manifest 的 root 生命周期断言保证每个 root 都有。
+  lines.push(
+    "/** Fields every root declares; the gameplay-agnostic GameRoom shell may only touch these. */",
+    "export interface RoomStatePlayerLifecycle {",
+  );
+  for (const field of PLAYER_LIFECYCLE_FIELDS) {
+    lines.push(`    ${field.name}: ${field.kind === "string" ? "string" : "number"};`);
+  }
+  lines.push(
+    "}",
+    "",
+    "/** Root lifecycle view used by the generic shell; the selected mode owns everything else. */",
+    "export interface RoomStateLifecycle {",
+    "    tick: number;",
+    "    phase: GamePhaseType;",
+    "    matchId: string;",
+    "    players: MapSchema<RoomStatePlayerLifecycle>;",
+    "}",
+    "",
+  );
   lines.push("export const ROOM_STATE_ROOT_CONSTRUCTORS = Object.freeze({");
   for (const root of roots) lines.push(`    ${JSON.stringify(root.mode)}: ${root.descriptor.name},`);
   lines.push(

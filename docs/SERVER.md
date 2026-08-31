@@ -257,6 +257,10 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
    `apps/shared/src/protocol/messages.ts` 登记消息名与 payload。
 2. 运行 `npm --workspace @game/server run codegen:state` 重新生成 `apps/shared/src/protocol/state.ts`
    与 `apps/server/src/rooms/schema/GameRoomState.ts`（两者都是生成物，禁手改），再运行 `npm run sync:shared`。
+   ⚠ 新增 root 时，它**必须**声明 `tick`/`phase`/`matchId`/`players`，其 player 类型必须声明 `id`/`name`
+   ——通用 GameRoom shell 只读这些，漏声明在 codegen 期失败而不是运行期读到 undefined。`GameRoom.state`
+   的类型是据此生成的 `RoomStateLifecycle`，⛔ 不是任何具体 root；shell 读 ball 专属字段必须显式走
+   `ballState`，且只在 `usesDefaultBallMoveRules === true` 的路径上。
 3. 新增 C2S 消息时，通用 `rooms/GameRoom.ts` 必须登记**两处**：`GAME_ROOM_C2S_SCHEMAS`（`[K in C2SType]`
    映射，漏写 typecheck 失败）与 `messages` handler 表（漏写即静默丢消息）。⚠ handler 表**不能**按 mode
    构建：Colyseus 0.17 在 `Room.__init()` 里消费 `this.messages`，而 `__init()` 早于 `onCreate()`，生产房的

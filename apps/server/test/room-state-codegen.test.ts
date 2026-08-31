@@ -349,3 +349,90 @@ test("map entry helpers are unique per owner type when roots share a field name"
   assert.match(shared, /const entries = entriesOfGameRoomStatePlayers\(value\.players/);
   assert.match(shared, /const entries = entriesOfIdleRoomStatePlayers\(value\.players/);
 });
+
+// ── root 生命周期字段断言（plan-v4 条目 4 阶段三）─────────────────────────────
+//
+// 通用 GameRoom shell 只读 root 的 tick/phase/matchId/players 与 player 的 id/name。
+// 此前它用 `declare readonly state: GameRoomState` 声明这件事，那是一句谎：真实 root 由 mode
+// 决定，IdleRoomState 只是恰好也有这些字段。⛔ 新增一个漏字段的 root，过去只在运行期读到
+// undefined。下面把每种漏法都钉成 codegen 期失败。
+
+test("root 漏掉任一生命周期字段必须在 codegen 期失败", () => {
+  for (const field of ["tick", "phase", "matchId", "players"]) {
+    assertManifestError(
+      (manifest) => {
+        const root = manifestType(manifest, "IdleRoomState");
+        root.fields = root.fields.filter((candidate) => candidate.name !== field);
+      },
+      new RegExp(`root type must declare lifecycle field "${field}"`),
+    );
+  }
+});
+
+test("生命周期字段的 kind 不对同样必须失败——⛔ 只查名字不够", () => {
+  // ⚠ 必须换成一个**本身合法**的字段：直接改 kind 会留下原 kind 的专属键（tick 的 min），
+  // 那会先撞上 exactKeys，用例就测不到生命周期断言了。
+  assertManifestError(
+    (manifest) => {
+      const root = manifestType(manifest, "IdleRoomState");
+      root.fields = root.fields.map((field) => field.name === "tick"
+        ? { name: "tick", kind: "string", default: "", minLength: 0, maxLength: 8 }
+        : field);
+    },
+    /lifecycle field must be kind "integer", got "string"/,
+  );
+  assertManifestError(
+    (manifest) => {
+      const root = manifestType(manifest, "GameRoomState");
+      root.fields = root.fields.map((field) => field.name === "matchId"
+        ? { name: "matchId", kind: "integer", default: 0, min: 0 }
+        : field);
+    },
+    /lifecycle field must be kind "string", got "integer"/,
+  );
+});
+
+test("root 的 player 类型漏掉 name 必须在 codegen 期失败", () => {
+  assertManifestError(
+    (manifest) => {
+      const player = manifestType(manifest, "IdlePlayerState");
+      player.fields = player.fields.filter((candidate) => candidate.name !== "name");
+    },
+    /root player type must declare lifecycle field "name"/,
+  );
+  // `id` 已有更早的既存闸（map 的 key.field 指向它），⛔ 不要谎称是本轮新增覆盖：
+  // 这里钉住它确实仍被挡住，以及挡它的是哪一条。
+  assertManifestError(
+    (manifest) => {
+      const player = manifestType(manifest, "IdlePlayerState");
+      player.fields = player.fields.filter((candidate) => candidate.name !== "id");
+    },
+    /players\.key\.field: missing field on IdlePlayerState: id/,
+  );
+});
+
+test("真实 manifest 必须通过生命周期断言，否则上面的反例只是恒真", () => {
+  const descriptor = parseRoomStateDescriptor(manifestFixture());
+  assert.equal(descriptor.roots.length >= 2, true, "至少两个 root 才谈得上「玩法无关」");
+  for (const root of descriptor.roots) {
+    const type = descriptor.types.find((candidate) => candidate.name === root.type);
+    assert.ok(type, `missing root type ${root.type}`);
+    assert.deepEqual(
+      ["tick", "phase", "matchId", "players"].filter((name) =>
+        type.fields.some((field) => field.name === name)),
+      ["tick", "phase", "matchId", "players"],
+      `${root.type} 必须声明全部生命周期字段`,
+    );
+  }
+});
+
+test("生成的 RoomStateLifecycle 是独立接口，⛔ 不得是某个具体 root 的别名", () => {
+  const artifacts = renderRoomStateArtifacts(parseRoomStateDescriptor(manifestFixture()));
+  assert.match(artifacts.server, /export interface RoomStateLifecycle \{/u);
+  assert.match(artifacts.server, /export interface RoomStatePlayerLifecycle \{/u);
+  // 别名形态（= GameRoomState）会让 shell 重新拥有 ballMove 的全部字段
+  assert.doesNotMatch(artifacts.server, /RoomStateLifecycle\s*=\s*GameRoomState/u);
+  assert.match(artifacts.server, /players: MapSchema<RoomStatePlayerLifecycle>;/u);
+  // 生命周期接口不属于 wire 契约，⛔ 不得泄进 shared 生成物（否则会改协议指纹）
+  assert.doesNotMatch(artifacts.shared, /RoomStateLifecycle/u);
+});

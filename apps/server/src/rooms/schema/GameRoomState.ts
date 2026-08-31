@@ -60,6 +60,20 @@ export class IdleRoomState extends Schema {
     @type({ map: IdlePlayerState }) players = new MapSchema<IdlePlayerState>();
 }
 
+/** Fields every root declares; the gameplay-agnostic GameRoom shell may only touch these. */
+export interface RoomStatePlayerLifecycle {
+    id: string;
+    name: string;
+}
+
+/** Root lifecycle view used by the generic shell; the selected mode owns everything else. */
+export interface RoomStateLifecycle {
+    tick: number;
+    phase: GamePhaseType;
+    matchId: string;
+    players: MapSchema<RoomStatePlayerLifecycle>;
+}
+
 export const ROOM_STATE_ROOT_CONSTRUCTORS = Object.freeze({
     "ballMove": GameRoomState,
     "idle": IdleRoomState,
