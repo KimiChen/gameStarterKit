@@ -16,6 +16,7 @@ import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import {
   ALL_LOBBY_RPC_TYPES,
+  LOBBY_RPC_CONTRACT_VERSIONS,
   LOBBY_RPC_DOMAINS,
   LOBBY_RPC_INSPECTABLE,
   LOBBY_RPC_OPERATION_GROUPS,
@@ -120,11 +121,14 @@ test("descriptor 运行时值 ⇔ generated 表双向相等（route/mode/errorCo
     assert.equal(LOBBY_RPC_ROUTE_MODES[type], declaredModes.get(type), `${type} 的 mode 与 descriptor 不一致`);
   }
 
-  // errorCodes：core + 域 = 生成全集（集合相等），且生成顺序 = 历史钉
+  // errorCodes：core + 域 = 生成全集（集合相等），且生成顺序 = 历史钉在前、未上钉新码按
+  // 「core 声明序 → 域名序 → 域内声明序」追加（阶段 4 新增两个 core 码不上钉）
   const declaredCodes = [...CORE_RPC_ERROR_CODES, ...domains.flatMap((d) => [...d.errorCodes])];
   assert.deepEqual(new Set(RPC_ERR_CODES), new Set(declaredCodes));
-  assert.deepEqual([...RPC_ERR_CODES], [...RPC_ERR_CODE_ORDER],
-    "现存 15 码全部在钉表上：生成顺序必须逐字等于拆分前 envelope.ts 的数组顺序");
+  assert.deepEqual(
+    [...RPC_ERR_CODES],
+    [...RPC_ERR_CODE_ORDER, "OPERATION_CONFLICT", "OPERATION_RESULT_EXPIRED"],
+    "钉表 15 码逐字复现拆分前 envelope.ts 顺序；阶段 4 的两个新 core 码按声明序追加在钉表之后");
 
   // pushes：key/type/validator 双向
   const declaredPushes = [...CORE_LOBBY_PUSHES, ...domains.flatMap((d) => [...d.pushes])];
@@ -138,14 +142,20 @@ test("descriptor 运行时值 ⇔ generated 表双向相等（route/mode/errorCo
     assert.equal(validator.name, push.data.name, `${push.type} 的生成 validator 必须与 descriptor 引用同名函数`);
   }
 
-  // operation 元数据：本阶段一律不声明 ⇒ 生成表为空但机制在位
+  // operation 元数据：生产路由一律不声明（undergroundIdle 未实现）⇒ 生成表为空但机制在位
   assert.deepEqual({ ...LOBBY_RPC_OPERATION_GROUPS }, {});
   assert.deepEqual([...LOBBY_RPC_INSPECTABLE], []);
   for (const domain of domains) {
+    assert.deepEqual([...domain.ownsOperationGroups], [], `${domain.domain} 生产域不得声明 ownsOperationGroups`);
     for (const route of domain.routes) {
-      assert.equal(route.operationGroup ?? undefined, undefined, `${route.type} 本阶段不得声明 operationGroup`);
-      assert.notEqual(route.inspectable, true, `${route.type} 本阶段不得声明 inspectable`);
+      assert.equal(route.operationGroup ?? undefined, undefined, `${route.type} 生产路由不得声明 operationGroup`);
+      assert.notEqual(route.inspectable, true, `${route.type} 生产路由不得声明 inspectable`);
+      assert.equal(route.contractVersion ?? undefined, undefined, `${route.type} 当前不显式声明 contractVersion（缺省 1）`);
     }
+  }
+  // contractVersion：全部生产路由缺省 1（§6.11：随 validator 语义变更人工 bump）
+  for (const type of ALL_LOBBY_RPC_TYPES as readonly LobbyRpcType[]) {
+    assert.equal(LOBBY_RPC_CONTRACT_VERSIONS[type], 1, `${type} 的生成契约版本应缺省 1`);
   }
 });
 
@@ -377,6 +387,187 @@ test("退出条件：新增 fixture domain 只加 domains/room.ts，生成 regis
     "未上钉的新码追加在历史钉之后",
   );
   assertFeatureArtifactsFresh(options); // 写盘后新鲜
+});
+
+// ── 阶段 4：operation group 所有权 + contractVersion（§6.11/§6.13） ──────────
+
+/** fixture room 域模板：head 固定，descriptor 段由调用方拼。 */
+const stage4DomainHead = [
+  'import { type RuntimeValidator } from "../../http";',
+  'import { defineLobbyRpcDomain, defineRpcIdempotentWrite, defineRpcQuery } from "../defineDomain";',
+  "export interface IRoomPeekReq {}",
+  "export interface IRoomPeekRes { ok: boolean; }",
+  "export interface IRoomCommitReq { clientReqId: string; }",
+  "export interface IRoomCommitRes { ok: boolean; }",
+  "export const validateRoomPeekReq: RuntimeValidator<IRoomPeekReq> = () => ({});",
+  "export const validateRoomPeekRes: RuntimeValidator<IRoomPeekRes> = () => ({ ok: true });",
+  "export const validateRoomCommitReq: RuntimeValidator<IRoomCommitReq> = () => (undefined as never);",
+  "export const validateRoomCommitRes: RuntimeValidator<IRoomCommitRes> = () => ({ ok: true });",
+].join("\n");
+
+function stage4Domain(descriptor: string): string {
+  return `${stage4DomainHead}\n${descriptor}\n`;
+}
+
+const STAGE4_ROOM_DOMAIN = stage4Domain([
+  "export default defineLobbyRpcDomain({",
+  '    domain: "room",',
+  "    errorCodes: [],",
+  '    ownsOperationGroups: ["roomOps"],',
+  "    routes: [",
+  '        defineRpcQuery("room.peek", { request: validateRoomPeekReq, response: validateRoomPeekRes, inspectsOperationGroup: "roomOps" }),',
+  '        defineRpcIdempotentWrite("room.commit", { request: validateRoomCommitReq, response: validateRoomCommitRes, contractVersion: 3, operationGroup: "roomOps", inspectable: true }),',
+  "    ],",
+  "});",
+].join("\n"));
+
+test("阶段 4 fixture：operationGroup/inspectable/inspects/contractVersion 经生成进四张表", () => {
+  const { root, options } = createFixture();
+  fs.writeFileSync(path.join(root, LOBBY_RPC_DIR, "domains/room.ts"), STAGE4_ROOM_DOMAIN);
+  writeFeatureArtifacts(options);
+  const registry = fs.readFileSync(path.join(root, REGISTRY_RELATIVE), "utf8");
+  assert.match(registry, /^ {4}"room\.commit": "roomOps",$/mu, "LOBBY_RPC_OPERATION_GROUPS 收录写路由");
+  const inspectableBlock = registry.match(/LOBBY_RPC_INSPECTABLE[^;]+;/u)?.[0] ?? "";
+  assert.match(inspectableBlock, /"room\.commit",/u, "LOBBY_RPC_INSPECTABLE 收录写路由");
+  const inspectsBlock = registry.match(/LOBBY_RPC_INSPECTS[^;]+;/u)?.[0] ?? "";
+  assert.match(inspectsBlock, /"room\.peek": "roomOps",/u, "LOBBY_RPC_INSPECTS 收录查询路由");
+  const versionsBlock = registry.match(/LOBBY_RPC_CONTRACT_VERSIONS[^;]+;/u)?.[0] ?? "";
+  assert.match(versionsBlock, /"room\.commit": 3,/u, "显式 contractVersion 逐字进表");
+  assert.match(versionsBlock, /"room\.peek": 1,/u, "未声明的路由缺省 1");
+  assert.match(versionsBlock, /"user\.updateProfile": 1,/u);
+  assertFeatureArtifactsFresh(options);
+});
+
+test("operation group 所有权 fail closed：无主/越权/跨域重复/无组可查全部点名拒绝", () => {
+  const withRoomDomain = (source: string): FeatureCodegenOptions => {
+    const { root, options } = createFixture();
+    fs.writeFileSync(path.join(root, LOBBY_RPC_DIR, "domains/room.ts"), source);
+    return options;
+  };
+
+  // 路由声明了组但本域未 ownsOperationGroups → 拒绝
+  assert.throws(() => readFeatureDescriptors(withRoomDomain(stage4Domain([
+    "export default defineLobbyRpcDomain({",
+    '    domain: "room",',
+    "    errorCodes: [],",
+    '    routes: [defineRpcIdempotentWrite("room.commit", { request: validateRoomCommitReq, response: validateRoomCommitRes, operationGroup: "roomOps" })],',
+    "});",
+  ].join("\n")))), /必须先由本域 ownsOperationGroups 声明所有权/u);
+
+  // inspectable 无 operationGroup → 拒绝
+  assert.throws(() => readFeatureDescriptors(withRoomDomain(stage4Domain([
+    "export default defineLobbyRpcDomain({",
+    '    domain: "room",',
+    "    errorCodes: [],",
+    '    ownsOperationGroups: ["roomOps"],',
+    '    routes: [defineRpcIdempotentWrite("room.commit", { request: validateRoomCommitReq, response: validateRoomCommitRes, inspectable: true })],',
+    "});",
+  ].join("\n")))), /声明了 inspectable 但缺 operationGroup/u);
+
+  // inspects 引用无主组 → 拒绝
+  assert.throws(() => readFeatureDescriptors(withRoomDomain(stage4Domain([
+    "export default defineLobbyRpcDomain({",
+    '    domain: "room",',
+    "    errorCodes: [],",
+    '    routes: [defineRpcQuery("room.peek", { request: validateRoomPeekReq, response: validateRoomPeekRes, inspectsOperationGroup: "ghostOps" })],',
+    "});",
+  ].join("\n")))), /"ghostOps" 无任何域声明所有权/u);
+
+  // 跨域重复所有权 → 重复 id 拒绝清单
+  {
+    const { root, options } = createFixture();
+    fs.writeFileSync(path.join(root, LOBBY_RPC_DIR, "domains/room.ts"), STAGE4_ROOM_DOMAIN);
+    fs.writeFileSync(path.join(root, LOBBY_RPC_DIR, "domains/annex.ts"), stage4Domain([
+      "export default defineLobbyRpcDomain({",
+      '    domain: "annex",',
+      "    errorCodes: [],",
+      '    ownsOperationGroups: ["roomOps"],',
+      '    routes: [defineRpcQuery("annex.peek", { request: validateRoomPeekReq, response: validateRoomPeekRes })],',
+      "});",
+    ].join("\n")));
+    assert.throws(() => readFeatureDescriptors(options), /operationGroup "roomOps" 同时由/u);
+  }
+
+  // 暴露表：key 必须是本域拥有的组、consumer 必须存在且非自身
+  assert.throws(() => readFeatureDescriptors(withRoomDomain(stage4Domain([
+    "export default defineLobbyRpcDomain({",
+    '    domain: "room",',
+    "    errorCodes: [],",
+    '    exposesOperationGroupTo: { ghostOps: ["user"] },',
+    '    routes: [defineRpcQuery("room.peek", { request: validateRoomPeekReq, response: validateRoomPeekRes })],',
+    "});",
+  ].join("\n")))), /只能暴露自己拥有的组/u);
+  assert.throws(() => readFeatureDescriptors(withRoomDomain(stage4Domain([
+    "export default defineLobbyRpcDomain({",
+    '    domain: "room",',
+    "    errorCodes: [],",
+    '    ownsOperationGroups: ["roomOps"],',
+    '    exposesOperationGroupTo: { roomOps: ["phantom"] },',
+    '    routes: [defineRpcQuery("room.peek", { request: validateRoomPeekReq, response: validateRoomPeekRes })],',
+    "});",
+  ].join("\n")))), /引用了不存在的域 "phantom"/u);
+  assert.throws(() => readFeatureDescriptors(withRoomDomain(stage4Domain([
+    "export default defineLobbyRpcDomain({",
+    '    domain: "room",',
+    "    errorCodes: [],",
+    '    ownsOperationGroups: ["roomOps"],',
+    '    exposesOperationGroupTo: { roomOps: ["room"] },',
+    '    routes: [defineRpcQuery("room.peek", { request: validateRoomPeekReq, response: validateRoomPeekRes })],',
+    "});",
+  ].join("\n")))), /不需要（也不允许）列出本域自身/u);
+});
+
+test("跨域 inspects：缺 exposesOperationGroupTo 即 fail closed，显式暴露后放行", () => {
+  // 与 room 域符号不重名（registry import 唯一性闸先于生成）
+  const annexInspects = [
+    'import { type RuntimeValidator } from "../../http";',
+    'import { defineLobbyRpcDomain, defineRpcQuery } from "../defineDomain";',
+    "export interface IAnnexPeekReq {}",
+    "export interface IAnnexPeekRes { ok: boolean; }",
+    "export const validateAnnexPeekReq: RuntimeValidator<IAnnexPeekReq> = () => ({});",
+    "export const validateAnnexPeekRes: RuntimeValidator<IAnnexPeekRes> = () => ({ ok: true });",
+    "export default defineLobbyRpcDomain({",
+    '    domain: "annex",',
+    "    errorCodes: [],",
+    '    routes: [defineRpcQuery("annex.peek", { request: validateAnnexPeekReq, response: validateAnnexPeekRes, inspectsOperationGroup: "roomOps" })],',
+    "});",
+    "",
+  ].join("\n");
+
+  // 未暴露：拒绝
+  {
+    const { root, options } = createFixture();
+    fs.writeFileSync(path.join(root, LOBBY_RPC_DIR, "domains/room.ts"), STAGE4_ROOM_DOMAIN);
+    fs.writeFileSync(path.join(root, LOBBY_RPC_DIR, "domains/annex.ts"), annexInspects);
+    assert.throws(() => readFeatureDescriptors(options),
+      /属于域 room，且未经 exposesOperationGroupTo\["roomOps"\] 显式暴露给 annex/u);
+  }
+  // owner 显式暴露：放行且 generated 表收录
+  {
+    const { root, options } = createFixture();
+    fs.writeFileSync(path.join(root, LOBBY_RPC_DIR, "domains/room.ts"), STAGE4_ROOM_DOMAIN.replace(
+      '    ownsOperationGroups: ["roomOps"],',
+      '    ownsOperationGroups: ["roomOps"],\n    exposesOperationGroupTo: { roomOps: ["annex"] },',
+    ));
+    fs.writeFileSync(path.join(root, LOBBY_RPC_DIR, "domains/annex.ts"), annexInspects);
+    writeFeatureArtifacts(options);
+    const registry = fs.readFileSync(path.join(root, REGISTRY_RELATIVE), "utf8");
+    assert.match(registry, /^ {4}"annex\.peek": "roomOps",$/mu, "获准跨域查询的路由进 LOBBY_RPC_INSPECTS");
+  }
+});
+
+test("contractVersion AST 校验：非数字字面量 / 0 / 小数一律点名拒绝", () => {
+  const build = (literal: string): string => stage4Domain([
+    "export default defineLobbyRpcDomain({",
+    '    domain: "room",',
+    "    errorCodes: [],",
+    `    routes: [defineRpcQuery("room.peek", { request: validateRoomPeekReq, response: validateRoomPeekRes, contractVersion: ${literal} })],`,
+    "});",
+  ].join("\n"));
+  assert.doesNotThrow(() => parseDomainModule(build("2"), "fixture"));
+  assert.throws(() => parseDomainModule(build('"2"'), "fixture"), /必须是数字字面量/u);
+  assert.throws(() => parseDomainModule(build("0"), "fixture"), /≥1 的安全整数/u);
+  assert.throws(() => parseDomainModule(build("1.5"), "fixture"), /≥1 的安全整数/u);
 });
 
 test("删除保护：域源文件消失必须显式 --allow-delete，放行后 registry 同步收缩", () => {

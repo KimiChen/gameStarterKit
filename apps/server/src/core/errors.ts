@@ -5,7 +5,7 @@
  */
 
 import { ErrorCode as ColyseusErrorCode, ServerError } from "@colyseus/core";
-import { ErrorMessage, type ErrorCodeType, type RpcErrCode } from "@game/shared";
+import { ErrorMessage, isRpcErrCode, type ErrorCodeType, type RpcErrCode } from "@game/shared";
 
 // 错误码真源（阶段 3 起）：core 码在 shared/protocol/lobbyRpc/coreErrors.ts、领域码在各域 descriptor 的
 // errorCodes；聚合 RPC_ERR_CODES 生成在 lobbyRpc/registry.generated.ts（登记顺序：descriptor → 此处 ERR_MAP 映射 → docs/SERVER.md §13 登记点）
@@ -111,6 +111,48 @@ export class ArchiveAuthorityConflictError extends Error {
  */
 export class ColdUserError extends Error {
   constructor(msg = "user cold") { super(msg); this.name = "ColdUserError"; }
+}
+
+/**
+ * 带 runtime whitelist 的受控 RPC 异常（Non-intrusive §4.7 阶段 4）。
+ *
+ * 领域/框架代码 `throw new RpcFault("OPERATION_CONFLICT", msg)` 即可产出任意 shared
+ * 白名单错误码，⛔ 不必再逐类登记 ERR_MAP（既有异常类照旧保留，不迁移）。
+ * 构造时即经 shared `isRpcErrCode` 校验——非法码直接 TypeError fail-fast，
+ * 因此 `rpcCode` 字段恒是合法白名单成员。
+ *
+ * 读取点只有两处：dispatcher.rpcErrorCode 与 LobbyRoom.rpcErrorCode，且都必须走
+ * `toRpcFaultCode`（⛔ 不读裸对象 `.rpcCode`——普通对象伪造 `{rpcCode:"..."}` 不可信任）。
+ * 非 INTERNAL 的 msg 会原样下发（沿 2048 截断），必须是有界、可公开文本：
+ * ⛔ 禁 SQL/Redis key/完整 payload/内部路径/栈。
+ */
+export class RpcFault extends Error {
+  readonly rpcCode: RpcErrCode;
+  constructor(rpcCode: RpcErrCode, msg?: string) {
+    if (!isRpcErrCode(rpcCode)) {
+      throw new TypeError(`RpcFault 错误码不在 shared 白名单: ${String(rpcCode)}`);
+    }
+    super(msg ?? rpcCode);
+    this.name = "RpcFault";
+    this.rpcCode = rpcCode;
+  }
+}
+
+/**
+ * 安全读取 RpcFault 的错误码：instanceof 判身份 + 读值后再过一次白名单（防
+ * `Object.create(RpcFault.prototype)` 伪造体挂 hostile getter），全程 try/catch
+ * （toErrCode 同款 Proxy 防御范式）。非 RpcFault / 读取异常 / 越白名单 → null。
+ */
+export function toRpcFaultCode(e: unknown): RpcErrCode | null {
+  try {
+    if (e instanceof RpcFault) {
+      const code: unknown = (e as { readonly rpcCode?: unknown }).rpcCode;
+      if (isRpcErrCode(code)) { return code; }
+    }
+  } catch {
+    // Hostile Proxy/getter must not turn error mapping into a second failure.
+  }
+  return null;
 }
 
 /** 异常 → 错误码（异常类 → shared RPC_ERR_CODES；未列出的一律 INTERNAL）。 */

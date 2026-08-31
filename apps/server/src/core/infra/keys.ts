@@ -9,7 +9,7 @@
  * **区前缀（docs/DUAL_MODE.md §3.5，M13 每区独立经济）**：per-user 玩法/经济键在项目前缀后再叠
  * **区上下文前缀** `s{sId}_`（`P()` 读 `zoneCtx`）。分类是正确性关键、单形态测试测不到（sId=0 时
  * 两类前缀相等），务对照 §3.5：
- * - **per-zone（`P()`）**：user/bag/fence/archive:proof/applied/lock/idemUser/cache:currency/negcache/guild/active:lru —— 角色档 + 每区经济。
+ * - **per-zone（`P()`）**：user/bag/fence/archive:proof/applied/lock/idemUser/idemPending/cache:currency/negcache/guild/active:lru —— 角色档 + 每区经济。
  * - **全局（`G`，不带区前缀）**：`sess`（登录时无区写、每 RPC 有区读，带区会前缀不一致致鉴权崩）、
  *   限流 `rl`（含登录 by-IP，前置区）、可靠流 `stream:*`（跨用户/跨区消费）、
  *   角色登记修复 `repair:character:due|attempts`（member 自带 serverId，调度不依赖区上下文）、
@@ -71,8 +71,15 @@ export const kApplied = (uid: string) => `${P()}applied:{${uid}}`;
 export const kAppliedPayload = (uid: string) => `${P()}applied:payload:{${uid}}`;
 /** per-uid 锁 STRING（值=fence），PX 5s。⛔ thaw:{uid} 已废弃，禁止第二把 per-uid 锁（09·L1）。 */
 export const kLock = (uid: string) => `${P()}lock:{${uid}}`;
-/** 幂等占位 · user 作用域（09·I1；带 `{uid}` hash-tag 与档同实例，per-zone 隔离跨区同 clientReqId）。 */
+/** 幂等占位 · user 作用域（09·I1；带 `{uid}` hash-tag 与档同实例，per-zone 隔离跨区同 clientReqId）。
+ *  v2 值是 JSON `StoredIdem` 记录（core/idem.ts；pending 带 PX=IDEM_PENDING_MS、done/oversize 带 PX=IDEM_RESULT_MS）。
+ *  ⚠ 分段顺序是契约（§6.11）：scope=路由名、`{uid}` hash-tag、**clientReqId 必须在末段**——摘要可安全
+ *  排除 clientReqId 的推理与冲突检测都依赖它，⛔ 禁改分段或挪动末段（登记见 docs/SERVER.md §8/§13）。 */
 export const kIdemUser = (scope: string, uid: string, sub: string) => `${P()}idem:${scope}:{${uid}}:${sub}`;
+/** 每 uid 并发 pending 幂等计数 STRING（§6.12 per-uid 上限；登记见 docs/SERVER.md §8/§13）。
+ *  与 kIdemUser 同 `{uid}` 槽（IDEM_V2_ACQUIRE 单条 Lua 同槽读写）；PX=IDEM_PENDING_MS 随租约自然衰减，
+ *  release/complete DECR 下限 0。计数器只是上限护栏，⛔ 不是真源——腐坏时 Lua 自愈重置。 */
+export const kIdemPending = (uid: string) => `${P()}idem:pending:{${uid}}`;
 /** 工会事件 seq STRING（INCR 单调，无 TTL）。hash-tag g<gid> 与 log 同槽。工会 per-zone。 */
 export const kGuildEvtSeq = (gid: number) => `${P()}guild:evt:seq:{g${gid}}`;
 /** 工会事件近窗 LIST（LPUSH + LTRIM 上限 GUILD_EVT_LOG_MAX）。 */

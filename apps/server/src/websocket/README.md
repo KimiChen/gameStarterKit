@@ -23,7 +23,9 @@ loader 依赖 tsx 直接运行、文件系统扫描和动态 import；它不是�
   若绕过该构造器仍可能自带一套 schema。
 - 未知 route 现在先经过与已知 route 相同的 per-principal token bucket，再返回低权重 `UNKNOWN_TYPE`；
   它不会触发 flood 封禁。
-- 通用 idem key 没有 payload hash，相同 `clientReqId` 携带不同 payload 不会报冲突。
+- 通用 idem 自阶段 4 起是 v2（payload hash 绑定 + 唯一 leaseId + 单条 Lua CAS，见
+  `docs/SERVER.md §8.1`）：相同 `clientReqId` 携带不同 payload 稳定返回 `OPERATION_CONFLICT`；
+  它仍只是 UX 快闸，exactly-once 依旧靠数据层。
 - handler timeout 是不可取消的 `Promise.race`，迟到写入必须由数据层收敛。
 - `LobbyRoom` transport callback 与 dispatcher 共用 `validateRpcEnvelope`；畸形信封会尽力返回带可用 id 的
   `INVALID_PAYLOAD` reply，关闭中的 socket 只丢弃发送。dispatcher 仍会再次校验信封。

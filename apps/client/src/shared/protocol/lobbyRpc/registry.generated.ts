@@ -81,6 +81,23 @@ export const ALL_LOBBY_RPC_TYPES: readonly LobbyRpcType[] = [
     "user.updateProfile",
 ];
 
+/** 路由 → 契约版本（§6.11：随 validator 语义变更人工 bump；幂等 v2 记录持久化并 fail-closed 比对，
+ *  ⛔ 不进摘要 preimage、不进 Redis key）。缺省 1。 */
+export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number } = {
+    "guild.join": 1,
+    "guild.leave": 1,
+    "guild.getEvents": 1,
+    "mail.list": 1,
+    "mail.claimAttach": 1,
+    "mail.markRead": 1,
+    "shop.purchase": 1,
+    "shop.queryOp": 1,
+    "user.getUserId": 1,
+    "user.getInfo": 1,
+    "user.getProfile": 1,
+    "user.updateProfile": 1,
+};
+
 /** idempotent-write 路由 → operation group（§6.13 inspect 机制的元数据；未声明不入表）。 */
 export const LOBBY_RPC_OPERATION_GROUPS: { readonly [K in LobbyRpcType]?: string } = {
 };
@@ -159,6 +176,8 @@ export const RPC_ERR_CODES = [
     "USER_DATA_LOST",
     "ORDER_MISMATCH",
     "INTERNAL",
+    "OPERATION_CONFLICT",
+    "OPERATION_RESULT_EXPIRED",
 ] as const;
 
 export type RpcErrCode = (typeof RPC_ERR_CODES)[number];

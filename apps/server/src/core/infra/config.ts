@@ -336,6 +336,28 @@ export const LOCK_RETRY_MAX = 3;
 export const IDEM_PENDING_MS = 30_000;
 /** 幂等结果缓存。 */
 export const IDEM_RESULT_MS = 60_000;
+/**
+ * 幂等 done 记录的结果体上限字节（§6.12）：超限不写响应体、改写 done-oversize 墓碑
+ * （重放/inspect 一律 OPERATION_RESULT_EXPIRED，客户端按领域收据查询恢复）。
+ * 取值按现响应 validator 的最大声明尺寸复核：幂等层只缓存 idempotent-write 响应
+ * （updateProfile/guild 的 `{ok[,seq]}` 与 purchase/claimAttach 的 IPurchaseResult，
+ * 远小于 32KB）；64KB 邮件正文属 mail.list（query），不入本缓存。
+ */
+export const IDEM_RESULT_MAX_BYTES = envInt("IDEM_RESULT_MAX_BYTES", 32_768);
+if (IDEM_RESULT_MAX_BYTES < 1) {
+  throw new Error(`IDEM_RESULT_MAX_BYTES 非法：「${IDEM_RESULT_MAX_BYTES}」——须为正整数（0 会把全部幂等结果打成墓碑）`);
+}
+/**
+ * 每 uid 并发 pending 幂等记录上限（§6.12）：超限返回 BUSY。
+ * 否则单客户端可用无限多个不同 clientReqId 撑爆 durable key 空间；计数键与幂等键
+ * 同 `{uid}` 槽，随 pending TTL 自然衰减。
+ */
+export const IDEM_MAX_PENDING_PER_UID = envInt("IDEM_MAX_PENDING_PER_UID", 8);
+if (IDEM_MAX_PENDING_PER_UID < 1) {
+  throw new Error(`IDEM_MAX_PENDING_PER_UID 非法：「${IDEM_MAX_PENDING_PER_UID}」——须为 ≥1 的整数（0 会拒绝一切幂等写）`);
+}
+/** canonical hash 的 dispatcher 级耗时探针阈值（§6.11：hash 在 handler 预算外同步执行，超限打 [idem-hash-budget]）。 */
+export const IDEM_HASH_BUDGET_MS = envInt("IDEM_HASH_BUDGET_MS", 20);
 /** sess:{uid} TTL = 3d。 */
 export const SESS_TTL_S = 259_200;
 /** GM 内部端点（`/admin/kick`）共享密钥。**未配置即端点关闭**（fail-closed；无鉴权的踢人端点 = DoS 面）。

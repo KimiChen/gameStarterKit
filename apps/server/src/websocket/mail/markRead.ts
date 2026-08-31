@@ -1,5 +1,8 @@
 /**
  * 标记已读：UPDATE 天然幂等（already-read 时 0 行也返回 ok），权威只在 MySQL。
+ *
+ * 幂等审计（阶段 4，§6.12）：**natural-write**——目标状态赋值天然可重复，不进通用幂等层，
+ * 不受 v2 结果缓存/契约版本语义影响。
  */
 import { MailRpc } from "@game/shared";
 import { getPool } from "../../core/infra/mysql";

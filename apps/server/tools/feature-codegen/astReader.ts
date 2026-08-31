@@ -30,6 +30,8 @@ export type RouteDeclaration = {
   readonly requestType: TypeRef;
   readonly responseValidator: string;
   readonly responseType: TypeRef;
+  /** 契约版本（§6.11；缺省 1，正整数字面量）。 */
+  readonly contractVersion: number;
   readonly operationGroup: string | null;
   readonly inspectable: boolean;
   readonly inspectsOperationGroup: string | null;
@@ -45,6 +47,10 @@ export type PushDeclaration = {
 export type DomainDeclaration = {
   readonly domain: string;
   readonly errorCodes: readonly string[];
+  /** 本域拥有的 operation group（§6.13 受拥有 id；跨域重复由 lib 拒绝）。 */
+  readonly ownsOperationGroups: readonly string[];
+  /** group → 获准跨域查询该组的域列表（§6.13 exposesOperationGroupTo）。 */
+  readonly exposesOperationGroupTo: { readonly [group: string]: readonly string[] };
   readonly pushes: readonly PushDeclaration[];
   readonly routes: readonly RouteDeclaration[];
 };
@@ -328,7 +334,7 @@ function parseRouteCall(index: ModuleIndex, node: ts.Expression, label: string):
   const type = parseRouteType(index, node.arguments[0], label, `${node.expression.text} 的路由名`);
   const options = objectEntries(node.arguments[1], label, `路由 ${type} 的选项`);
 
-  const allowed = new Set(["request", "response"]);
+  const allowed = new Set(["request", "response", "contractVersion"]);
   if (mode === "query") allowed.add("inspectsOperationGroup");
   if (mode === "idempotent-write") { allowed.add("operationGroup"); allowed.add("inspectable"); }
   for (const key of options.keys()) {
@@ -340,6 +346,18 @@ function parseRouteCall(index: ModuleIndex, node: ts.Expression, label: string):
   const request = resolveValidator(index, requestNode, label, `路由 ${type} 的 request`);
   const response = resolveValidator(index, responseNode, label, `路由 ${type} 的 response`);
 
+  let contractVersion = 1;
+  const contractVersionNode = options.get("contractVersion");
+  if (contractVersionNode) {
+    if (!ts.isNumericLiteral(contractVersionNode)) {
+      fail(label, `路由 ${type} 的 contractVersion 必须是数字字面量（正整数）`);
+    }
+    const parsed = Number(contractVersionNode.text);
+    if (!Number.isSafeInteger(parsed) || parsed < 1) {
+      fail(label, `路由 ${type} 的 contractVersion 必须是 ≥1 的安全整数（读到 "${contractVersionNode.text}"）`);
+    }
+    contractVersion = parsed;
+  }
   let operationGroup: string | null = null;
   const operationGroupNode = options.get("operationGroup");
   if (operationGroupNode) {
@@ -371,10 +389,24 @@ function parseRouteCall(index: ModuleIndex, node: ts.Expression, label: string):
     requestType: request.payloadType,
     responseValidator: response.identifier,
     responseType: response.payloadType,
+    contractVersion,
     operationGroup,
     inspectable,
     inspectsOperationGroup,
   };
+}
+
+/** 解析 exposesOperationGroupTo：`{ group: ["domainA", ...] }` 的纯字面量对象。 */
+function parseExposesOperationGroupTo(
+  node: ts.Expression,
+  label: string,
+): { readonly [group: string]: readonly string[] } {
+  const entries = objectEntries(unwrapAsConst(node), label, "exposesOperationGroupTo");
+  const out: Record<string, readonly string[]> = {};
+  for (const [group, value] of entries) {
+    out[group] = parseStringArray(value, label, `exposesOperationGroupTo.${group}`);
+  }
+  return out;
 }
 
 /** 解析一份 domains/<域>.ts；违反顶层语法约束即 fail-fast。 */
@@ -390,7 +422,7 @@ export function parseDomainModule(source: string, label: string): DomainDeclarat
   if (call.arguments.length !== 1) fail(label, "defineLobbyRpcDomain 必须是单对象参数形态");
   const descriptor = objectEntries(call.arguments[0], label, "defineLobbyRpcDomain 的参数");
   for (const key of descriptor.keys()) {
-    if (!["domain", "errorCodes", "pushes", "routes"].includes(key)) {
+    if (!["domain", "errorCodes", "ownsOperationGroups", "exposesOperationGroupTo", "pushes", "routes"].includes(key)) {
       fail(label, `defineLobbyRpcDomain 含未知键：${key}`);
     }
   }
@@ -401,6 +433,11 @@ export function parseDomainModule(source: string, label: string): DomainDeclarat
   const errorCodesNode = descriptor.get("errorCodes");
   if (!errorCodesNode) fail(label, "errorCodes 必须显式声明（可为空数组）");
   const errorCodes = parseStringArray(errorCodesNode, label, "errorCodes");
+
+  const ownsNode = descriptor.get("ownsOperationGroups");
+  const ownsOperationGroups = ownsNode ? parseStringArray(ownsNode, label, "ownsOperationGroups") : [];
+  const exposesNode = descriptor.get("exposesOperationGroupTo");
+  const exposesOperationGroupTo = exposesNode ? parseExposesOperationGroupTo(exposesNode, label) : {};
 
   const pushes: PushDeclaration[] = [];
   const pushesNode = descriptor.get("pushes");
@@ -427,7 +464,7 @@ export function parseDomainModule(source: string, label: string): DomainDeclarat
   }
   if (routes.length === 0) fail(label, "routes 不得为空");
 
-  return { domain, errorCodes, pushes, routes };
+  return { domain, errorCodes, ownsOperationGroups, exposesOperationGroupTo, pushes, routes };
 }
 
 function findExportedConst(sourceFile: ts.SourceFile, name: string, label: string): ts.Expression {

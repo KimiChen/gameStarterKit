@@ -116,10 +116,15 @@ test("写样板 updateProfile：casHset 落字段 + lastActiveAt + active:lru（
   assert.equal(ver, String(verBefore + 1), "updateProfile 恰好 bump 一次 ver");
   const b = activeLruBucketOf(uid);
   assert.ok(await indexClientFor(b).zscore(kActiveLru(b), uid), "active:lru 已收录");
-  // 幂等结果缓存：同 clientReqId 重放直接回缓存，ver 不再 bump
-  const r2 = await rpc(room, "user.updateProfile", { clientReqId: "c1", nickname: "赵子龙" });
+  // 幂等结果缓存：同 clientReqId + **同 payload** 重放直接回缓存，ver 不再 bump
+  const r2 = await rpc(room, "user.updateProfile", { clientReqId: "c1", nickname: "赵子龙", avatarId: 3 });
   assert.equal(r2.ok, true);
   assert.equal(await c.hget(kUser(uid), "ver"), String(verBefore + 1), "重放未二次写入");
+  // ⚠ 阶段 4 行为收紧（§6.11，本阶段唯一有意的对外变化）：同 clientReqId 携带**不同 payload**
+  // 不再静默重放缓存，而是稳定 OPERATION_CONFLICT（此前通用层无 payload 比对）
+  const conflict = await rpc(room, "user.updateProfile", { clientReqId: "c1", nickname: "赵子龙" });
+  assert.equal(conflict.err?.code, "OPERATION_CONFLICT");
+  assert.equal(await c.hget(kUser(uid), "ver"), String(verBefore + 1), "冲突既不重放也不重执行");
   await room.leave();
 });
 
