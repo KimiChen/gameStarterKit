@@ -280,6 +280,22 @@ export type EmitEvidenceResult =
   | { readonly ok: false; readonly kind: "transport"; readonly reason: string };
 
 /** 自检失败的证据没有来源条目，只 XADD quarantine、不 XACK（来源 PEL 里本就没有它）。 */
+/**
+ * producer 自检失败的隔离条目。**与消费侧 Lua 路径的字段不完全相同**，这是刻意的：
+ *
+ * | 字段 | 消费侧（Lua） | producer 侧（本函数） |
+ * |---|---|---|
+ * | `sourceKind` | `legacy` / `v2` / `v3` | `producer` ← **判别键** |
+ * | `sourceStream` / `sourceId` | 真实来源流与条目 id | 空串（生产侧没有来源条目） |
+ * | `sourceGroup` / `sourceIdentity` | 有 | **无**（没有 PEL 可言） |
+ * | `matchId` | 无 | 有（形状失败时也尽力带上，见 bestEffortMatchId） |
+ * | `rawFields` | 原始 fields **数组**的 JSON | 证据 **payload** 的 JSON |
+ * | `quarantinedAtMs` | 有 | 有（同名） |
+ *
+ * ⛔ 处置方式也不同：消费侧条目按 docs/SERVER.md 的流程「修复后 XADD 回正确来源流」；
+ * producer 条目**没有来源流可回**——它代表 GameRoom 自身的状态与它产出的证据矛盾，
+ * 修的是代码不是条目，核查完直接 XDEL。按 `sourceKind` 分流，⛔ 不要对它跑消费侧流程。
+ */
 async function quarantineProducerSelfCheck(
   matchId: string,
   reason: string,
@@ -293,8 +309,10 @@ async function quarantineProducerSelfCheck(
       "sourceId", "",
       "reason", reason,
       "matchId", matchId,
+      // ⚠ 与 Lua 路径同名：时间戳字段一律叫 quarantinedAtMs。此前这里叫 "at"，
+      // 让任何按字段名扫隔离流的工具在两类条目上得走两套代码。
       "rawFields", payload,
-      "at", String(Date.now()),
+      "quarantinedAtMs", String(Date.now()),
     );
     return true;
   } catch (e) {

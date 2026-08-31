@@ -1102,9 +1102,15 @@ export class GameRoom extends Room {
         }
         if (leftDuringMatch && mode.usesDefaultBallMoveRules === true) {
             this.recordLeaveEvent(client.sessionId, acceptedTick);
-            // 活着退房视为阵亡（M8a：名次/证据完整性要求每个参与者都有归宿）；已死者已在 deathOrder
-            // `leftDuringMatch` 蕴含 player 存在，这里按 ball 视图重取只为拿到 alive 字段。
-            if (this.ballState.players.get(client.sessionId)?.alive) this.recordDeath(client.sessionId);
+            // 活着退房视为阵亡（M8a：名次/证据完整性要求每个参与者都有归宿）；已死者已在 deathOrder。
+            //
+            // ⛔ 必须用**捕获时**的 player 引用，不得在 mode hook 之后重新 get：
+            // `onPlayerLeaving` 是同步的状态迁移钩子，mode 可以在里面把该条目从 players 删掉，
+            // 那时重取会拿到 undefined → 漏记阵亡 → participants 与 initialRoster 不等长 →
+            // buildMatchEvidence 返回 null → **整局证据被静默丢弃**。
+            // 被删掉的 Schema 对象本身仍是活的 JS 对象，alive 字段照常可读。
+            // `leftDuringMatch` 蕴含 player 存在；这里的收窄同 ballState，只在 ball 分支内成立。
+            if ((player as unknown as PlayerState).alive) this.recordDeath(client.sessionId);
         }
         // Waiting 离开没有结算证据需求，参与者快照也必须删除；Playing/Settle
         // 则保留 participantUserId，供退房者的最终名次回读 uid。

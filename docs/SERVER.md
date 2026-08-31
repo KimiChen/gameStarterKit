@@ -275,7 +275,9 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
 4. **准入写在玩法里，不写在 shell 里**：在该玩法的 `inputs.accepts` 声明这条消息，需要 Playing 之外的
    phase 时再加 `inputs.phases`。`phaseAllows` 只保留 Ping/Chat 两条 shell 公共能力，其余查 mode 声明；
    漏声明即被拒（fail-closed），⛔ 不要为了让消息通过而把它加回 shell 的 switch。
-   登记期会校验：未知 C2S、重复声明、声明 Ping/Chat、为未接受的输入配 phases 都直接抛。
+   建 mode 实例时（`GameModeRegistry.create`，即建房那一刻）会校验：未知 C2S、重复声明、
+   声明 Ping/Chat、为未接受的输入配 phases 都直接抛。⚠ 不是 `register()` 时——非法 mode
+   能被成功注册，到第一次建房才炸。
 5. 补齐合法/非法 payload、phase 越界与 mode 隔离测试。
 
 ## 6. HTTP 开发边界
@@ -488,9 +490,25 @@ match consumer 不再把结构、版本或 replay 损坏的条目直接 ACK 丢�
 `LEGACY_MATCH_ID_MISMATCH` / `LEGACY_MODE_MISMATCH` / `V2_PAYLOAD_BINDING` / `V3_PAYLOAD_BINDING` 隔离——
 否则 `match_results` 的顶层两列不能当可信索引。三条来源流各自维护 PEL/claim/trim/depth，consumer owner 含
 hostname 与 PID，同主机多 worker 不共享 PEL owner，崩溃残留由 `XAUTOCLAIM` 接管。
-quarantine 不属于自动 `XTRIM` 范围，非空或 key 类型/权限异常时由默认深度探针独立告警。处置时先根据
-`rawFields` 修复并 XADD 回正确来源流，确认 settle worker 已写入 `match_results` 或命中 `match_index`
-幂等闸后，才可 XDEL 对应 quarantine 条目；不得直接清空隔离流。
+quarantine 不属于自动 `XTRIM` 范围，非空或 key 类型/权限异常时由默认深度探针独立告警。
+
+隔离流里有**两类**条目，按 `sourceKind` 分流，⛔ 处置方式不同：
+
+- `sourceKind ∈ {legacy, v2, v3}`（消费侧，Lua 写入）：带 `sourceStream`/`sourceId`/`sourceGroup`/
+  `sourceIdentity`，`rawFields` 是原始 fields **数组**的 JSON。处置时先根据 `rawFields` 修复并
+  XADD 回正确来源流，确认 settle worker 已写入 `match_results` 或命中 `match_index` 幂等闸后，
+  才可 XDEL 对应条目；不得直接清空隔离流。
+- `sourceKind = producer`（生产侧自检失败）：`sourceStream`/`sourceId` 为空串，不带
+  `sourceGroup`/`sourceIdentity`（生产侧没有 PEL），带 `matchId`，`rawFields` 是证据 **payload**
+  的 JSON。⛔ **没有来源流可回**——它代表 GameRoom 自身的状态与它产出的证据矛盾，修的是代码不是
+  条目；核查（并按需修复代码）后直接 XDEL。⚠ 对它跑上面那条「XADD 回来源流」的流程会把一份
+  已知不自洽的证据塞进正式流。
+
+两类的时间戳字段同名（`quarantinedAtMs`），可统一按它做保留期判断。
+
+⚠ **容量**：producer 自检失败会**每次收局各写一条**，而这条流永不自动裁剪。一次系统性的自检回归
+（例如某个 mode 的证据构造改坏）会按对局速率持续写入，撑爆与来源流同槽的共享 Redis。深度探针的
+告警是唯一的早期信号，⛔ 不要把它调成只在很高水位才响。
 
 `match_results.payload` 同表混存三种形状，判别键是 `schema_version` 列：`0` = 未知/legacy（任意 JSON
 object，无 shape 校验）、`2` = 冻结的 v2（8 键）、`3` = 可重放的 v3（16 键）。读取方必须先看这一列再决定

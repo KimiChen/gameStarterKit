@@ -338,7 +338,12 @@ test("v3 producer 自检失败：不碰三条来源流，但必须留下 sourceK
     assert.equal(shapeFields.sourceStream, "", "producer 自检没有来源流");
     assert.equal(shapeFields.sourceId, "", "producer 自检没有来源条目 id");
     assert.match(String(shapeFields.reason), /^V3_PAYLOAD_/u);
-    assert.match(String(shapeFields.at), /^(?:0|[1-9]\d*)$/u);
+    // ⚠ 时间戳字段必须与消费侧 Lua 路径同名，否则按字段名扫隔离流的工具要走两套代码
+    assert.match(String(shapeFields.quarantinedAtMs), /^(?:0|[1-9]\d*)$/u);
+    assert.equal(shapeFields.at, undefined, "⛔ 不得再用旧的 at 字段名");
+    // producer 条目没有 PEL，故不带 sourceGroup / sourceIdentity——这是与消费侧的刻意差异
+    assert.equal(shapeFields.sourceGroup, undefined);
+    assert.equal(shapeFields.sourceIdentity, undefined);
     // rawFields 必须保留可供人工核查的原始 payload，⛔ 不能只留一个码
     assert.equal(JSON.parse(String(shapeFields.rawFields)).matchId, extraKeyEvidence.matchId);
 

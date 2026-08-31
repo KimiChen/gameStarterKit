@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { CloseCode } from "colyseus";
 import {
     C2S,
     ErrorCode,
@@ -1084,4 +1085,49 @@ test("收局证据：只有自检失败告警，传输失败与成功都不得�
         "quarantine 不可用降级成的 transport 同样不得告警",
     );
     assert.deepEqual(await alertsFor({ ok: true, entryId: "0-0" }), [], "成功不得告警");
+});
+
+/**
+ * mode 的 `onPlayerLeaving` 在钩子里删掉 players 条目时，收局证据仍必须完整。
+ *
+ * ⚠ 该钩子被文档定性为「离开者被移除**之前**的同步状态迁移」，mode 在里面动 state 是合法的。
+ * shell 若在钩子**之后**重新 `players.get(...)` 拿 alive，就会得到 undefined → 漏记阵亡 →
+ * participants 与 initialRoster 不等长 → buildMatchEvidence 返回 null → **整局证据被静默丢弃**，
+ * 而且没有任何告警。被删掉的 Schema 对象仍是活的 JS 对象，所以必须用捕获时的引用。
+ */
+test("mode 在 onPlayerLeaving 里删掉条目时，收局证据仍必须完整产出", async () => {
+    let emitted: MatchEvidenceV3 | undefined;
+    const room = new GameRoom({
+        ...runtime(942),
+        matchId: () => "m_leaving_deletes",
+        mode: {
+            ...createBallMoveGameMode(),
+            onPlayerLeaving: ({ state, client: leaving }) => {
+                // 合法用法：钩子里把条目摘掉。⛔ shell 不得因此丢失阵亡记录。
+                state.players.delete(leaving.sessionId);
+            },
+        },
+        evidenceEmitter: (evidence) => {
+            emitted = evidence;
+            return Promise.resolve({ ok: true as const, entryId: "0-0" });
+        },
+    });
+    installLock(room);
+    const a = fakeClient("a", "ua");
+    const b = fakeClient("b", "ub");
+    await join(room, a);
+    await join(room, b);
+    assert.equal(room.state.phase, GamePhase.Playing);
+
+    await room.onLeave(b as never, CloseCode.CONSENTED);
+
+    assert.equal(room.state.phase, GamePhase.Settle, "对手离开后必须收局");
+    assert.ok(emitted, "⛔ 证据必须产出——若 shell 在 hook 之后重取 player，这里会是 undefined");
+    assert.equal(emitted.participants.length, 2, "两名参与者都必须有名次");
+    assert.deepEqual(
+        emitted.participants.map((participant) => participant.place).sort(),
+        [1, 2],
+        "离开者必须被记为阵亡并拿到名次，⛔ 不得因条目已被 mode 删除而丢失",
+    );
+    replayMatchEvidenceV3(validateMatchEvidenceV3(emitted));
 });

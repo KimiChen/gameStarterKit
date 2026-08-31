@@ -606,7 +606,7 @@ test("GameRoom：未结算直接销毁仍只调用一次 mode dispose", async ()
 // ── roster 声明化（plan-v4 条目 4 阶段一）────────────────────────────────────
 //
 // 「几个人算满 / 几个人能开 / 几个人自动开」是玩法事实，此前以字面量散在通用 shell 的五处。
-// 下面的用例钉两件事：① 登记期对非法 roster fail-closed；② shell 真的按声明分发，
+// 下面的用例钉两件事：① 建 mode 实例时对非法 roster fail-closed；② shell 真的按声明分发，
 // 而不是恰好与旧字面量相等——所以构造的 mode 必须用**与旧字面量不同**的值。
 
 /** 现有用例的既定做法：不 stub 掉真实 simulation interval，node --test 会被存活定时器挂住。 */
@@ -615,7 +615,7 @@ function stubSimulation(room: GameRoom): void {
         .setSimulationInterval = () => {};
 }
 
-test("GameModeRegistry：非法 roster 必须在登记期抛，⛔ 不留到运行期兜底", () => {
+test("GameModeRegistry：非法 roster 必须在建实例时抛（非 register 时），⛔ 不留到运行期兜底", () => {
     const registry = new GameModeRegistry<GameRoomState>();
     const { matchEvidenceRuleset: _unusedRuleset, ...ballMove } = createBallMoveGameMode();
     const withRoster = (roster: unknown) => {
@@ -700,7 +700,7 @@ test("shell 的开局下限按 mode.roster.min：低于它 startMatch 不开局"
 
 test("声明 ballMove v1 证据的 mode，其 roster 必须与冻结的 2 人 initialRoster 自洽", () => {
     // 这条耦合此前无人守：证据侧 copyRoster 用 exactArray(2,2) 冻死，而 shell 直到真开局时
-    // 才撞上，表现为给加入者的 1000/Unknown + 回滚。定性成登记期的自相矛盾声明更准确。
+    // 才撞上，表现为给加入者的 1000/Unknown + 回滚。定性成建实例时的自相矛盾声明更准确。
     const registry = new GameModeRegistry<GameRoomState>();
     const id = "ruleset-roster-probe";
     const make = (roster: GameMode<GameRoomState>["roster"]) => {
@@ -767,7 +767,7 @@ test("开局边界重验的人数下限同样来自 mode.roster.min", () => {
 
 // ── inputs 声明化（plan-v4 条目 4 阶段二）───────────────────────────────────
 
-test("GameModeRegistry：非法 inputs 必须在登记期抛", () => {
+test("GameModeRegistry：非法 inputs 必须在建实例时抛（非 register 时）", () => {
     const registry = new GameModeRegistry<GameRoomState>();
     const withInputs = (inputs: unknown) => {
         const id = "inputs-probe";
@@ -959,4 +959,23 @@ test("usesDefaultBallMoveRules 必须与真实 root 绑定：idle root 上声明
     // 否则上面的 throws 可能只是因为构造 GameRoom 本身坏了。
     assert.doesNotThrow(() => new GameRoom({ seed: 1, mode: createBallMoveGameMode() }));
     assert.doesNotThrow(() => new GameRoom({ seed: 1, mode: createIdleGameMode() as never }));
+});
+
+/**
+ * 把 fail-closed 闸的**真实时机**钉住：`register()` 不校验，`create()` 才校验。
+ *
+ * 注释、文档与用例名一度都写着「登记期」，但 `register(id, factory)` 只收下 factory、不调用它，
+ * 此时没有实例可校验——一个非法 mode 能被成功注册，直到第一次**建房**才炸。这是当前形状的
+ * 真实边界（`Room.__init()` 早于 `onCreate()`，mode 只能在建房时才选定），⛔ 不要把它说成
+ * 注册就会拦住。
+ */
+test("fail-closed 闸的真实时机：register 放行，create 才抛", () => {
+    const registry = new GameModeRegistry<GameRoomState>();
+    const id = "timing-probe";
+    const broken = () => ({ ...createBallMoveGameMode(), id, roster: undefined } as never);
+    // ① register 不调用 factory，因此不校验——⛔ 这不是缺陷，是形状使然，但必须说实话
+    assert.doesNotThrow(() => registry.register(id, broken), "register 不得校验（它拿不到实例）");
+    assert.equal(registry.has(id), true, "非法 mode 确实被成功登记了");
+    // ② create 才是闸
+    assert.throws(() => registry.create(id), /必须声明 roster\{min,max,autoStart\}/);
 });

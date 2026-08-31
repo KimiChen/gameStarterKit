@@ -57,7 +57,8 @@ export interface GameModeMessage<TState = GameRoomState> {
  *
  * `max` 的上界不是随便定的：root players map 的容量由生成 validator 按 shared 的
  * `MAX_PLAYERS` 烧死（manifest 的 `maxSizeConstant`），声明超过它的 mode 会在 schema
- * 层炸，所以这里 fail-closed 挡在登记期。
+ * 层炸，所以这里 fail-closed 挡在**建 mode 实例时**（`GameModeRegistry.create`，即建房那一刻）。
+ * ⚠ 不是 `register()`：register 只收一个 factory，不调用它，所以拿不到可校验的实例。
  */
 export interface GameModeRoster {
     /** 开局所需最少人数；低于它 startMatch 不开局。 */
@@ -203,8 +204,12 @@ export function createBallMoveGameMode(): GameMode<GameRoomState, PlayerState> {
 gameModeRegistry.register(BALL_MOVE_GAME_MODE_ID, createBallMoveGameMode);
 
 /**
- * roster 的 fail-closed 校验：漏配、非整数、或次序不成立都在登记期抛，⛔ 不允许留到
- * 运行期由 shell 用 `?? 2` 之类的默认值兜底——那等于把硬编码从 shell 挪进兜底表达式。
+ * roster 的 fail-closed 校验：漏配、非整数、或次序不成立都在**建 mode 实例时**抛，
+ * ⛔ 不允许留到运行期由 shell 用 `?? 2` 之类的默认值兜底——那等于把硬编码从 shell 挪进兜底表达式。
+ *
+ * ⚠ 「建实例时」= `GameModeRegistry.create(id)`（建房那一刻）与注入式 mode 的构造期，
+ * **不是** `register(id, factory)`：register 只登记 factory、不调用它，此时没有实例可校验。
+ * 也就是说一个非法 mode 能被成功 register，直到第一次建房才炸——这是当前形状的真实边界。
  *
  * 导出是必要的：注入式 mode（test/replay harness 的 `GameRoomRuntimeOptions.mode`）
  * 不经过 `create()`，⛔ 若只在注册表里校验，注入路径就成了绕过闸的后门。
@@ -239,7 +244,7 @@ export function assertGameModeRoster(
     }
     // ballMove v1 证据把 initialRoster 冻结成**恰好** BALL_MOVE_ROSTER_SIZE 条（producer 与
     // verifier 两侧都按 exactArray 校验），所以声明该 ruleset 却配了别的开局人数，是一条自相
-    // 矛盾的声明。此前它只在真开局时炸成给客户端的 1000/Unknown，这里提前到登记期。
+    // 矛盾的声明。此前它只在真开局时炸成给客户端的 1000/Unknown，这里提前到建 mode 实例时。
     // ⛔ 不连 max 一起断言：max 是座位上限，与「开局时恰好几人」不是同一件事。
     if (ruleset && ruleset.id === BALL_MOVE_RULESET_ID && ruleset.version === BALL_MOVE_RULESET_VERSION
         && (roster.min !== BALL_MOVE_ROSTER_SIZE || roster.autoStart !== BALL_MOVE_ROSTER_SIZE)) {
@@ -258,7 +263,7 @@ export const SHELL_COMMON_INPUTS: readonly C2SType[] = [C2S.Ping, C2S.Chat];
 
 const ALL_PHASES: readonly GamePhaseType[] = Object.values(GamePhase);
 
-/** inputs 的 fail-closed 校验；与 roster 同样在登记期与注入期各跑一次。 */
+/** inputs 的 fail-closed 校验；与 roster 同样在**建实例时**与注入期各跑一次（非 register 时）。 */
 export function assertGameModeInputs(key: string, inputs: GameModeInputs | undefined): void {
     if (!inputs || typeof inputs !== "object" || !Array.isArray(inputs.accepts)) {
         throw new Error(`[GameModeRegistry] mode ${key} 必须声明 inputs{accepts}`);

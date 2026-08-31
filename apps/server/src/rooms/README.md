@@ -13,7 +13,9 @@
   `maxClients`、满员闸、自动开局阈值、开局下限与开局边界重验五处全部读它。`roster.max` 不得超过 shared 的
   `MAX_PLAYERS`（root players map 的容量由生成 validator 按它烧死），`min ≤ autoStart ≤ max`；声明了
   `ballMove@1` 证据的 mode 其 `min`/`autoStart` 必须都等于 `BALL_MOVE_ROSTER_SIZE`，因为该证据把
-  `initialRoster` 冻结成恰好 2 条。上述校验在登记期与注入期各跑一次（注入式 mode 不经过 registry，
+  `initialRoster` 冻结成恰好 2 条。上述校验在**建 mode 实例时**（`GameModeRegistry.create`，即建房那一刻）与注入期各跑一次
+  ——⚠ 不是 `register()`，register 只收 factory 不调用它，非法 mode 能成功注册、到第一次建房才炸；
+  （注入式 mode 不经过 registry，
   ⛔ 不能只在 registry 里校验）。玩法输入同样声明化：`inputs{accepts,phases?}` 决定 shell 的准入，
   `phaseAllows` 只保留 Ping/Chat 两条公共传输能力，⛔ 通用 shell 不再穷举任何具体玩法的消息名。
   未声明 `phases` 的输入默认只在 Playing 开放。`onAdmission`、`onMessage`、`onMatchInitialize`、`onMatchStart`、`onMatchRollback`、
