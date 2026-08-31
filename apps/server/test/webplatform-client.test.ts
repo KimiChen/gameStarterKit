@@ -96,8 +96,16 @@ process.env.NODE_ENV = "test";
 process.env.WEBPLATFORM_INTERNAL_URL = `http://127.0.0.1:${address.port}`;
 process.env.WEBPLATFORM_SERVICE_ID = "game-server-test";
 process.env.WEBPLATFORM_SERVICE_SECRET = "test-service-secret";
-process.env.WEBPLATFORM_CONNECT_TIMEOUT_MS = "40";
-process.env.WEBPLATFORM_REQUEST_TIMEOUT_MS = "120";
+// ⚠ 与 webplatform-breaker-isolation.test.ts 的 fb777ce 同类，但**不能照抄那边的处方**：
+// 那个文件里超时是无关变量，这里不是——「slow-token」用例（不回包）正是靠 REQUEST_TIMEOUT
+// 触发来验证请求预算与错误分类，所以不能一味放大。
+//
+// 取值按两条约束平衡：① CONNECT 40ms 是对**本地已监听 socket** 建连的预算，进程一被调度走
+// 就可能越过它，成功路径的用例因此假红——这是全文最脆的数字；② REQUEST 决定 slow-token
+// 用例的等待成本（重试 2 次 ⇒ 2×）。取 800/1000：建连余量 ×20、成功往返余量 ×8，
+// 而 slow-token 由 ~0.24s 变 ~2s，代价可接受。⛔ 不要为了跑得快调回几十毫秒。
+process.env.WEBPLATFORM_CONNECT_TIMEOUT_MS = "800";
+process.env.WEBPLATFORM_REQUEST_TIMEOUT_MS = "1000";
 process.env.WEBPLATFORM_BREAKER_FAILURES = "100";
 
 const clientModule = await import("../src/platform/webPlatformClient");
