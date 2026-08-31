@@ -198,10 +198,14 @@ export function assertBallMoveRulesBinding(
             + `先在 apps/shared/schema/game-room-state.json 补回并重跑 codegen:state`,
         );
     }
+    // ⚠ 构造器名必须在 instanceof 之前取：`selected` 是 `Schema`，而 cast 后的右操作数实例类型
+    // 也是 `Schema`，于是**否定分支**里 TS 把 `selected` 收窄成 `never`，读 `.constructor` 直接
+    // typecheck 失败。⛔ 不要把它挪回 throw 里面。
+    const selectedRootName = selected.constructor.name;
     if (!(selected instanceof (ballMoveRoot as new () => Schema))) {
         throw new TypeError(
             `[GameRoom] mode ${modeId} 声明 usesDefaultBallMoveRules 却选出了 `
-            + `${selected.constructor.name} root——ballMove 默认规则只能作用在 ballMove root 上`,
+            + `${selectedRootName} root——ballMove 默认规则只能作用在 ballMove root 上`,
         );
     }
 }
