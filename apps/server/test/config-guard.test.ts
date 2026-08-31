@@ -268,3 +268,22 @@ test("GRACE 严格大于 RECHECK、以及关闭宽限（0）都必须正常加�
     });
     assert.equal(disabled.status, 0, `关闭宽限应通过，stderr：${disabled.stderr.slice(0, 300)}`);
 });
+
+test("COMPUTE_RESPAWN_DELAY_MS 边界：非正整数与越界必须拒绝启动，1 与上限必须放行", () => {
+    for (const [value, label] of [
+        ["0", "零"],
+        ["-1", "负值"],
+        ["1.5", "小数"],
+        ["abc", "非数字"],
+        ["600001", "超上限"],
+        ["9007199254740992", "超安全整数"],
+    ] as const) {
+        const r = loadConfigWith({ COMPUTE_RESPAWN_DELAY_MS: value });
+        assert.notEqual(r.status, 0, `${label} 应拒绝启动`);
+        assert.match(r.stderr, /COMPUTE_RESPAWN_DELAY_MS 非法/, `${label} 应报非法，实际 stderr：${r.stderr.slice(0, 200)}`);
+    }
+    for (const value of ["1", "600000", "2000"]) {
+        const r = loadConfigWith({ COMPUTE_RESPAWN_DELAY_MS: value });
+        assert.equal(r.status, 0, `「${value}」应正常加载，实际 stderr：${r.stderr.slice(0, 200)}`);
+    }
+});
