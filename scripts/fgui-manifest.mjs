@@ -61,10 +61,15 @@ function attrs(source) {
   return out;
 }
 
+/**
+ * Package XML is small and intentionally parsed without a DOM dependency.
+ * Remove comments first so an example snippet in a designer comment cannot
+ * become a false resource/package declaration.
+ *
+ * ⚠ 声明解析与**引用抽取**（`extractUiUrls` / `extractAssetReferences` / `pkg=` 扫描）共用这一个
+ * 实现。⛔ 不要再写第二个同义函数：注释剥离是一条规则，两份实现会在其中一份被加固时静默分叉。
+ */
 function withoutXmlComments(xml) {
-  // Package XML is small and intentionally parsed without a DOM dependency.
-  // Remove comments first so an example snippet in a designer comment cannot
-  // become a false resource/package declaration.
   return xml.replace(/<!--[\s\S]*?-->/g, "");
 }
 
@@ -175,15 +180,11 @@ function resourceAliases(resource) {
 }
 
 /** XML 注释里的引用不是引用：剥掉再抽取，否则注释里的 src=/ui:// 会产生假引用（误红）。 */
-function stripXmlComments(source) {
-  return source.replace(/<!--[\s\S]*?-->/g, "");
-}
-
 function extractUiUrls(source) {
   const urls = [];
   // Stop at XML/entity delimiters so a URL in customData="...&quot;}}" is
   // captured as `ui://Pkg/item`, not with the surrounding JSON suffix.
-  for (const match of stripXmlComments(source).matchAll(/ui:\/\/([^\s"'<>|&]+)/g)) {
+  for (const match of withoutXmlComments(source).matchAll(/ui:\/\/([^\s"'<>|&]+)/g)) {
     const value = match[1].replace(/[),.;\]}]+$/g, "");
     if (value) urls.push(value);
   }
@@ -282,7 +283,7 @@ function resolveUiUrl(raw, maps) {
  */
 function extractAssetReferences(source) {
   const references = [];
-  for (const match of stripXmlComments(source).matchAll(/<([a-zA-Z]+)\b([^>]*\bsrc="[^"]*"[^>]*)>/g)) {
+  for (const match of withoutXmlComments(source).matchAll(/<([a-zA-Z]+)\b([^>]*\bsrc="[^"]*"[^>]*)>/g)) {
     const a = attrs(match[2]);
     if (!a.src) continue;
     references.push({ element: match[1], src: a.src, pkg: a.pkg });
@@ -361,7 +362,7 @@ function parseUiReferences(infos) {
     for (const entry of info.source.filter((item) => item.path.endsWith(".xml") && !item.path.endsWith("/package.xml"))) {
       const file = path.join(ROOT, entry.path);
       const source = fs.readFileSync(file, "utf8");
-      for (const match of stripXmlComments(source).matchAll(/\bpkg\s*=\s*["']([^"']+)["']/g)) {
+      for (const match of withoutXmlComments(source).matchAll(/\bpkg\s*=\s*["']([^"']+)["']/g)) {
         if (!packageForKey(match[1], maps)) errors.push(`${entry.path}: 未知 pkg 引用 ${match[1]}`);
       }
       for (const raw of extractUiUrls(source)) {
@@ -660,7 +661,7 @@ if (isMain) {
 }
 
 /** 内部抽取器的测试入口（_computePoolTestHooks 先例；生产路径不要从这里拿函数）。 */
-export const fguiManifestTestHooks = { extractUiUrls, extractAssetReferences, stripXmlComments };
+export const fguiManifestTestHooks = { extractUiUrls, extractAssetReferences, withoutXmlComments };
 
 export {
   assertManifestShape,

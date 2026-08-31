@@ -368,6 +368,8 @@ test("ui:// closure:合法 name/id 别名通过，未知包、资源和缺失 ke
 
 test("XML 注释里的 src/pkg/ui:// 引用不是引用", () => {
   const { extractUiUrls, extractAssetReferences } = fguiManifestTestHooks;
+  // 注释剥离只有一个实现（withoutXmlComments），声明解析与引用抽取共用它
+  assert.equal(typeof fguiManifestTestHooks.withoutXmlComments, "function");
   const source = [
     '<component name="Main">',
     '  <!-- 设计备注：<image src="ghost.png"/> 引用 ui://GhostPkg/ghostItem -->',
