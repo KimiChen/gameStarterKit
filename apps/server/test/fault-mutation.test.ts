@@ -329,12 +329,18 @@ test("故障注入：真实 worker error/exit 会 reap 并退避补位", async (
           ...process.env,
           COMPUTE_POOL_SIZE: "1",
           COMPUTE_QUEUE_CAPACITY: "4",
-          // 成对设置，⛔ 只改一个会让本场景走不到排队超时，或让冷启动重新变成竞态
-          COMPUTE_TASK_TIMEOUT_MS: "1200",
-          COMPUTE_RESPAWN_DELAY_MS: "4000",
+          // 成对设置，⛔ 只改一个会让本场景走不到排队超时，或让冷启动重新变成竞态。
+          //
+          // ⚠ 预算取值不追求「刚好够」：注入 worker 冷启动的实测峰值两方测得差一个数量级
+          // （本机 8 核满载 174ms；第二十一轮复核记录的是 1142ms），机器差异就能把「刚好够」
+          // 变成「刚好不够」。所以按**较大的那个测量值再留倍数**取 2500ms——对 1142ms 是 2.2×、
+          // 对 174ms 是 14×，谁的测量对都不影响结论。⛔ 不要因为「本机跑得过」再把它调回贴边值。
+          // respawn 同步抬到 8000 以保持 任务超时 < 退避 这个本场景必需的次序（余量 5.5s）。
+          COMPUTE_TASK_TIMEOUT_MS: "2500",
+          COMPUTE_RESPAWN_DELAY_MS: "8000",
         },
         encoding: "utf8",
-        timeout: 20_000,
+        timeout: 60_000,
       },
     );
     assert.equal(
