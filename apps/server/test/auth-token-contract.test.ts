@@ -2,7 +2,11 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { ErrorCode, GameplayModeId, PROTOCOL_VERSION } from "@game/shared";
 import { GameRoom } from "../src/rooms/GameRoom";
+import { registerBallMoveGameMode } from "../src/rooms/modes/ballMove/index";
 import { LobbyRoom } from "../src/websocket/LobbyRoom";
+
+// GameRoom.onAuth 先验 mode 已登记再验 token；玩法登记在组合根，测试进程自行补齐。
+registerBallMoveGameMode();
 
 const invalidTokenCases = [
   ["", "options-only", "缺失标准 token"],

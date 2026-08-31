@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { readFileSync, readdirSync } from "node:fs";
+import { join as joinPath } from "node:path";
+import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { CloseCode } from "colyseus";
 import {
@@ -18,12 +21,12 @@ import {
     GameModeRegistry,
     IDLE_GAME_MODE_ID,
     SHELL_COMMON_INPUTS,
-    createBallMoveGameMode,
     gameModeRegistry,
     type GameMode,
 } from "../src/rooms/GameMode";
-import { assertBallMoveRulesBinding, GameRoom, type GameRoomRuntimeOptions } from "../src/rooms/GameRoom";
+import { GameRoom, type GameRoomRuntimeOptions } from "../src/rooms/GameRoom";
 import { registerDefaultGameModes } from "../src/rooms/modes/catalog";
+import { createBallMoveGameMode, registerBallMoveGameMode } from "../src/rooms/modes/ballMove/index";
 import { createIdleGameMode, registerIdleGameMode } from "../src/rooms/modes/IdleGameMode";
 import {
     GameRoomState,
@@ -64,10 +67,15 @@ test("GameModeRegistry：第二个 mode 可独立登记、创建和撤销", () =
     assert.throws(() => registry.register(IDLE_GAME_MODE_ID, createIdleGameMode), /已登记/);
     unregister();
     assert.equal(registry.has("idle"), false);
-    assert.deepEqual(gameModeRegistry.create(BALL_MOVE_GAME_MODE_ID).matchEvidenceRuleset, {
-        id: BALL_MOVE_GAME_MODE_ID,
-        version: 1,
-    });
+    // ballMove 经同一 registry 路径登记后必须携带自己的 evidence capability
+    //（阶段 1 起证据契约不再是 mode 的 ruleset 字段，而是可选能力对象）。
+    const offBall = registry.register(BALL_MOVE_GAME_MODE_ID, createBallMoveGameMode);
+    const ball = registry.create(BALL_MOVE_GAME_MODE_ID);
+    assert.equal(typeof ball.evidence?.assertRosterCompatible, "function");
+    assert.equal(typeof ball.evidence?.captureInitialState, "function");
+    assert.equal(typeof ball.evidence?.build, "function");
+    offBall();
+    assert.equal(registry.has(BALL_MOVE_GAME_MODE_ID), false);
 });
 
 test("GameModeRegistry：同 factory replace 后旧 disposer 不删除新 registration", () => {
@@ -82,18 +90,10 @@ test("GameModeRegistry：同 factory replace 后旧 disposer 不删除新 regist
     assert.throws(() => registry.register(" idle ", factory), /规范/);
 });
 
-test("GameModeRegistry：漏配规则归属或 player factory 时 fail-closed", () => {
-    const missingRules = new GameModeRegistry<GameRoomState>();
-    missingRules.register(IDLE_GAME_MODE_ID, () => ({
-        id: IDLE_GAME_MODE_ID,
-        createPlayer: createIdleGameMode().createPlayer,
-    }) as never);
-    assert.throws(() => missingRules.create(IDLE_GAME_MODE_ID), /usesDefaultBallMoveRules/);
-
+test("GameModeRegistry：漏配 player factory 时 fail-closed", () => {
     const missingPlayer = new GameModeRegistry<GameRoomState>();
     missingPlayer.register(IDLE_GAME_MODE_ID, () => ({
         id: IDLE_GAME_MODE_ID,
-        usesDefaultBallMoveRules: false,
     }) as never);
     assert.throws(() => missingPlayer.create(IDLE_GAME_MODE_ID), /createPlayer/);
 });
@@ -111,7 +111,14 @@ test("生产 mode catalog 与 shared/state 生成映射保持精确同集", () =
 });
 
 test("GameRoom：onCreate 从生产 registry 选择 idle，未知 mode 和直连错 mode 均拒绝", async () => {
-    const unregister = registerIdleGameMode(gameModeRegistry);
+    const unregisterIdle = registerIdleGameMode(gameModeRegistry);
+    // ballMove 的登记也在组合根（不再是 import GameMode 的副作用），本用例的
+    // defaultRoom 需要生产 registry 认得它。
+    const unregisterBall = registerBallMoveGameMode(gameModeRegistry);
+    const unregister = () => {
+        unregisterIdle();
+        unregisterBall();
+    };
     const mutableRegistry = gameModeRegistry as unknown as {
         create(id: string): GameMode<GameRoomState>;
     };
@@ -617,7 +624,7 @@ function stubSimulation(room: GameRoom): void {
 
 test("GameModeRegistry：非法 roster 必须在建实例时抛（非 register 时），⛔ 不留到运行期兜底", () => {
     const registry = new GameModeRegistry<GameRoomState>();
-    const { matchEvidenceRuleset: _unusedRuleset, ...ballMove } = createBallMoveGameMode();
+    const { evidence: _unusedEvidence, ...ballMove } = createBallMoveGameMode();
     const withRoster = (roster: unknown) => {
         const id = `roster-probe`;
         registry.register(id, () => ({ ...ballMove, id, roster } as never), { replace: true });
@@ -648,9 +655,9 @@ test("注入式 mode 也必须过同一道 roster 闸——⛔ 注入路径不�
 test("shell 的人数闸按 mode.roster 分发：满员/自动开局都随声明变化", async () => {
     // 刻意与旧字面量（max=MAX_PLAYERS=4、autoStart=2）都不同：若 shell 还在读字面量，
     // 下面两条断言至少有一条会失败。
-    // ⚠ 必须摘掉 matchEvidenceRuleset：ballMove v1 证据把 initialRoster 冻结成恰好 2 条，
-    // 一个 3 人开局的 mode 再声明该 ruleset 就是自相矛盾的声明（下面单独有用例钉这条）。
-    const { matchEvidenceRuleset: _unusedRuleset, ...ballMove } = createBallMoveGameMode();
+    // ⚠ 必须摘掉 evidence capability：ballMove v1 证据把 initialRoster 冻结成恰好 2 条，
+    // 一个 3 人开局的 mode 再声明该证据就是自相矛盾的声明（下面单独有用例钉这条）。
+    const { evidence: _unusedEvidence, ...ballMove } = createBallMoveGameMode();
     const mode: GameMode<GameRoomState> = {
         ...ballMove,
         roster: { min: 3, max: 3, autoStart: 3 },
@@ -677,7 +684,7 @@ test("shell 的人数闸按 mode.roster 分发：满员/自动开局都随声明
 });
 
 test("shell 的开局下限按 mode.roster.min：低于它 startMatch 不开局", async () => {
-    const { matchEvidenceRuleset: _unusedRuleset, ...ballMove } = createBallMoveGameMode();
+    const { evidence: _unusedEvidence, ...ballMove } = createBallMoveGameMode();
     const mode: GameMode<GameRoomState> = {
         ...ballMove,
         // autoStart 抬到 4 使自动开局不会抢跑，min=3 才是本例要钉的那条闸
@@ -723,7 +730,7 @@ test("满员闸的上限来自 mode.roster.max——这是防御性闸，用预�
     // 座位数永远够不到 max。它是 joinById/直连的兜底。所以这里绕过 onJoin 直接预置座位，
     // 让房间停在「Waiting 且已满」这个只有兜底闸能处理的状态。⛔ 不要因为够不到就不测：
     // 兜底闸读错常量，恰恰只会在被绕过的那条路径上出事。
-    const { matchEvidenceRuleset: _unusedRuleset, ...ballMove } = createBallMoveGameMode();
+    const { evidence: _unusedEvidence, ...ballMove } = createBallMoveGameMode();
     const mode: GameMode<GameRoomState> = { ...ballMove, roster: { min: 2, max: 2, autoStart: 2 } };
     const room = new GameRoom({ seed: 42, fixedStepMs: 50, mode });
     stubSimulation(room);
@@ -744,7 +751,7 @@ test("满员闸的上限来自 mode.roster.max——这是防御性闸，用预�
 test("开局边界重验的人数下限同样来自 mode.roster.min", () => {
     // 这条同样是防御性重验：startMatch 入口已经挡过一次 min，所以正常路径下它不会先触发。
     // 直接调用被验方法是抵达它的唯一诚实方式——用 join 编不出「已过入口闸却人数不足」的状态。
-    const { matchEvidenceRuleset: _unusedRuleset, ...ballMove } = createBallMoveGameMode();
+    const { evidence: _unusedEvidence, ...ballMove } = createBallMoveGameMode();
     const boundaryOf = (min: number) => {
         const mode: GameMode<GameRoomState> = { ...ballMove, roster: { min, max: 4, autoStart: min } };
         const room = new GameRoom({ seed: 42, fixedStepMs: 50, mode });
@@ -810,7 +817,7 @@ test("shell 不再认识具体玩法输入：IdlePulse 只对声明接受它的 
         (room.messages as Record<string, (client: unknown, payload: unknown) => void>)[C2S.IdlePulse](sender, {});
         return room;
     };
-    const { matchEvidenceRuleset: _unusedRuleset, ...ballMove } = createBallMoveGameMode();
+    const { evidence: _unusedEvidence, ...ballMove } = createBallMoveGameMode();
 
     // ① 不声明 IdlePulse 的 mode：⛔ 必须在准入闸就拒，不得到达 onMessage
     const declining: GameMode<GameRoomState> = {
@@ -844,7 +851,7 @@ test("shell 不再认识具体玩法输入：IdlePulse 只对声明接受它的 
 
 test("inputs.phases 能把输入开放到 Playing 之外，且只影响声明的那一条", () => {
     const seen: C2SType[] = [];
-    const { matchEvidenceRuleset: _unusedRuleset, ...ballMove } = createBallMoveGameMode();
+    const { evidence: _unusedEvidence, ...ballMove } = createBallMoveGameMode();
     const mode: GameMode<GameRoomState> = {
         ...ballMove,
         inputs: {
@@ -897,7 +904,7 @@ test("phaseAllows 穷尽矩阵：shell 只认 Ping/Chat，其余全部由 mode �
         "公共传输输入集合变了就必须重新审视本矩阵，⛔ 不要只改这一行",
     );
 
-    const { matchEvidenceRuleset: _unusedRuleset, ...ballMove } = createBallMoveGameMode();
+    const { evidence: _unusedEvidence, ...ballMove } = createBallMoveGameMode();
     const reached = (type: C2SType, phase: GamePhaseType, accepts: readonly C2SType[]) => {
         const seen: C2SType[] = [];
         const mode: GameMode<GameRoomState> = {
@@ -935,55 +942,55 @@ test("phaseAllows 穷尽矩阵：shell 只认 Ping/Chat，其余全部由 mode �
     }
 });
 
-/**
- * `usesDefaultBallMoveRules` 是 mode **自报**的布尔值，此前与真实 root 完全没有绑定。
- *
- * 后果全程静默：一个 `id:"idle"` 且 `usesDefaultBallMoveRules:true` 的 mode 能过全部
- * fail-closed 闸，然后 shell 的 `ballState`（`as unknown as GameRoomState`，不做任何检查）
- * 把 x/y/hp/alive 写到 `IdlePlayerState` 上——那些字段没有 `@type`，永远不进 wire，客户端什么也
- * 看不到；`alive` 恒为 true 使 `alive <= 1` 永不成立，房间进 Playing 后再也不会结算。
- * ⛔ 没有一处抛错，是最难排查的那类事故。
- */
-test("usesDefaultBallMoveRules 必须与真实 root 绑定：idle root 上声明它必须抛", () => {
-    const idleWithBallRules = {
-        ...createIdleGameMode(),
-        usesDefaultBallMoveRules: true,
-    } as unknown as GameMode<GameRoomState>;
-    assert.throws(
-        () => new GameRoom({ seed: 1, mode: idleWithBallRules }),
-        /声明 usesDefaultBallMoveRules 却选出了 IdleRoomState root/,
-        "自报的布尔值必须被真实 root 反驳",
+// ── 阶段 1（Non-intrusive §6.1 / §9）：删默认玩法回退，未登记 mode fail-fast ────
+
+test("未登记 mode fail-fast：requireMode 不再回退 ballMove", async () => {
+    // 前提：本文件不向生产 registry 泄漏 ballMove 登记（各用例 try/finally 已归还）。
+    assert.equal(
+        gameModeRegistry.has(BALL_MOVE_GAME_MODE_ID),
+        false,
+        "前提：生产 registry 此刻不含 ballMove（登记只发生在组合根/显式调用）",
     );
 
-    // ⛔ 反向不得误伤：ballMove root 上声明它必须放行，且 idle 不声明它也必须放行；
-    // 否则上面的 throws 可能只是因为构造 GameRoom 本身坏了。
-    assert.doesNotThrow(() => new GameRoom({ seed: 1, mode: createBallMoveGameMode() }));
-    assert.doesNotThrow(() => new GameRoom({ seed: 1, mode: createIdleGameMode() as never }));
+    // ① 未注入 mode 的房间：任何触及 mode 的入口都必须炸，⛔ 不得静默选出 ballMove。
+    const bare = new GameRoom({ seed: 981 });
+    assert.throws(() => bare.stepFixed(), /has no game mode/);
+    await assert.rejects(bare.startMatch(), /has no game mode/);
+
+    // ② onCreate 撞上未登记 mode：BadRequest 拒绝，且拒绝后房间依然没有 mode（不回退）。
+    const created = new GameRoom({ seed: 982 });
+    stubSimulation(created);
+    assert.throws(
+        () => created.onCreate({ v: PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID }),
+        (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.BadRequest)),
+        "未登记的 ballMove 必须像任何未知 mode 一样被拒绝",
+    );
+    assert.throws(() => created.stepFixed(), /has no game mode/, "拒绝后不得留下任何回退 mode");
 });
 
-/**
- * 生成物 `ROOM_STATE_ROOT_CONSTRUCTORS` 是冻结对象，「manifest 移除 ballMove root」无法在运行时
- * 模拟；边界分支通过直接调用 `assertBallMoveRulesBinding` 覆盖：缺 root（可读诊断而非含混
- * TypeError）、错 root、未声明三形态。
- */
-test("assertBallMoveRulesBinding 的三形态边界直接覆盖", () => {
-    const idle = new IdleRoomState();
-    const ball = new GameRoomState();
-    // 缺 root：可读诊断，点名补 manifest 的路径。
-    assert.throws(
-        () => assertBallMoveRulesBinding("idle", true, idle, undefined),
-        /ROOM_STATE_ROOT_CONSTRUCTORS 里没有/,
-    );
-    // 错 root：沿用既有归属报错。
-    assert.throws(
-        () => assertBallMoveRulesBinding("idle", true, idle, GameRoomState),
-        /却选出了 IdleRoomState root/,
-    );
-    // 未声明旗标：缺 root 也不抛。
-    assert.doesNotThrow(() => assertBallMoveRulesBinding("idle", false, idle, undefined));
-    assert.doesNotThrow(() => assertBallMoveRulesBinding("idle", undefined, idle, undefined));
-    // 合法形态不误伤。
-    assert.doesNotThrow(() => assertBallMoveRulesBinding("ballMove", true, ball, GameRoomState));
+test("阶段 1 退出条件：apps/server 源码与测试不再出现 ballMove 默认规则旗标", () => {
+    // ⚠ 旗标名动态拼出，避免本测试自身成为 grep 命中。
+    const banned = ["usesDefault", "BallMove", "Rules"].join("");
+    const serverRoot = fileURLToPath(new URL("..", import.meta.url));
+    const offenders: string[] = [];
+    let scanned = 0;
+    const walk = (dir: string): void => {
+        for (const entry of readdirSync(dir, { withFileTypes: true })) {
+            const full = joinPath(dir, entry.name);
+            if (entry.isDirectory()) {
+                if (entry.name === "node_modules") continue;
+                walk(full);
+                continue;
+            }
+            if (!/\.(ts|md|json|mjs)$/.test(entry.name)) continue;
+            scanned++;
+            if (readFileSync(full, "utf8").includes(banned)) offenders.push(full);
+        }
+    };
+    walk(joinPath(serverRoot, "src"));
+    walk(joinPath(serverRoot, "test"));
+    assert.ok(scanned >= 50, `扫描面异常小（${scanned} 个文件），检查根路径是否指错`);
+    assert.deepEqual(offenders, [], `旗标已随阶段 1 删除，⛔ 不得回潜：\n${offenders.join("\n")}`);
 });
 
 /**

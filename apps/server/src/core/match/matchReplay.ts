@@ -8,7 +8,7 @@ import {
   resetBallMovePlayers,
   type BallMoveMotionAnchor,
   type BallMoveMutablePlayer,
-} from "../../rooms/ballMoveRules";
+} from "../../rooms/modes/ballMove/rules";
 import {
   snapshotCanonicalMatchState,
   type CanonicalMatchState,

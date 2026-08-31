@@ -21,9 +21,11 @@ import {
 } from "@game/shared";
 import { GameRoom } from "../src/rooms/GameRoom";
 import {
+    BALL_MOVE_GAME_MODE_ID,
     gameModeRegistry,
     IDLE_GAME_MODE_ID,
 } from "../src/rooms/GameMode";
+import { registerBallMoveGameMode } from "../src/rooms/modes/ballMove/index";
 import { registerIdleGameMode } from "../src/rooms/modes/IdleGameMode";
 import {
     GameRoomState,
@@ -127,6 +129,10 @@ test("one real GameRoom definition carries independent ballMove and idle Schema 
     const unregisterIdle = gameModeRegistry.has(IDLE_GAME_MODE_ID)
         ? undefined
         : registerIdleGameMode(gameModeRegistry);
+    // ballMove 登记在组合根；本测试自建 Server，不经 app.config，需自行登记。
+    const unregisterBallMove = gameModeRegistry.has(BALL_MOVE_GAME_MODE_ID)
+        ? undefined
+        : registerBallMoveGameMode(gameModeRegistry);
     const globals = globalThis as unknown as { Colyseus?: unknown };
     const previousColyseus = globals.Colyseus;
     globals.Colyseus = ColyseusSDK;
@@ -306,6 +312,7 @@ test("one real GameRoom definition carries independent ballMove and idle Schema 
         ]);
         if (listening) await server.gracefullyShutdown(false);
         unregisterIdle?.();
+        unregisterBallMove?.();
         if (previousColyseus === undefined) delete globals.Colyseus;
         else globals.Colyseus = previousColyseus;
     }

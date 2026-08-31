@@ -4,27 +4,38 @@
 `../websocket/`。
 
 - `GameRoom.ts`：通用 transport/admission/lifecycle shell。它在 `onCreate` 按生成映射选择一次 mode root，
-  之后禁止替换；默认 ballMove 按 `TICK_MS` 积分移动，Schema patch rate 为 50ms，并使用 shared 技能公式。
-- `GameMode.ts`：服务端玩法登记点。`GameRoom` 继续拥有 transport、auth、房间锁和生命周期；玩法通过
-  `createPlayer` 提供精确 player Schema，并必须用 `usesDefaultBallMoveRules: boolean` 显式声明是否委托
-  ballMove fallback（⚠ 该声明在 `selectModeState` 里与**真实 root** 交叉核对：非 ballMove root 上声明
-  它会抛——否则 shell 的 `ballState` 收窄会静默把 ball 字段写到别的 player 类型上，那些字段没有
-  `@type`、永不进 wire，且 `alive` 恒真会让房间再也不结算），用 `roster{min,max,autoStart}` 声明人数事实——⛔ shell 里不再有人数字面量，
+  之后禁止替换；shell 自身不含任何玩法规则，也没有默认玩法——未登记/未注入 mode 的房间在
+  `requireMode()` 直接 fail-fast（⛔ 不回退 ballMove）。Schema patch rate 为 50ms，fixed-step 时钟、
+  出站 S2C 校验、消息预算与开局事务都归 shell。
+- `GameMode.ts`：服务端玩法契约与 registry。`GameRoom` 继续拥有 transport、auth、房间锁和生命周期；玩法通过
+  `createPlayer` 提供精确 player Schema，用 `roster{min,max,autoStart}` 声明人数事实——⛔ shell 里没有人数字面量，
   `maxClients`、满员闸、自动开局阈值、开局下限与开局边界重验五处全部读它。`roster.max` 不得超过 shared 的
-  `MAX_PLAYERS`（root players map 的容量由生成 validator 按它烧死），`min ≤ autoStart ≤ max`；声明了
-  `ballMove@1` 证据的 mode 其 `min`/`autoStart` 必须都等于 `BALL_MOVE_ROSTER_SIZE`，因为该证据把
-  `initialRoster` 冻结成恰好 2 条。上述校验在**建 mode 实例时**（`GameModeRegistry.create`，即建房那一刻）与注入期各跑一次
+  `MAX_PLAYERS`（root players map 的容量由生成 validator 按它烧死），`min ≤ autoStart ≤ max`。上述校验在
+  **建 mode 实例时**（`GameModeRegistry.create`，即建房那一刻）与注入期各跑一次
   ——⚠ 不是 `register()`，register 只收 factory 不调用它，非法 mode 能成功注册、到第一次建房才炸；
-  （注入式 mode 不经过 registry，
-  ⛔ 不能只在 registry 里校验）。玩法输入同样声明化：`inputs{accepts,phases?}` 决定 shell 的准入，
-  `phaseAllows` 只保留 Ping/Chat 两条公共传输能力，⛔ 通用 shell 不再穷举任何具体玩法的消息名。
-  未声明 `phases` 的输入默认只在 Playing 开放。`onAdmission`、`onMessage`、`onMatchInitialize`、`onMatchStart`、`onMatchRollback`、
-  `onStep`、`onPlayerLeaving`、`shouldSettle`、`onLeave`、`onFinish`、`onDispose` 扩展玩法生命周期；
-  `matchEvidenceRuleset` 必须显式声明受支持的 exact replay 契约，当前只有 `ballMove@1`。registry 会在
-  创建 mode 时校验必填能力，漏配即 fail-closed；root 只来自 manifest 生成映射，不由 mode factory 手写。
-- `modes/catalog.ts` / `modes/IdleGameMode.ts`：生产 mode catalog 与最小第二玩法。Idle 使用独立
-  `IdleRoomState`、strict `IdlePulse` 和 pulse/真实离场结算，不执行 ballMove 输入规则，也不写 ballMove
-  casual evidence。
+  （注入式 mode 不经过 registry，⛔ 不能只在 registry 里校验）。玩法输入同样声明化：
+  `inputs{accepts,phases?}` 决定 shell 的准入，`phaseAllows` 只保留 Ping/Chat 两条公共传输能力，
+  ⛔ 通用 shell 不再穷举任何具体玩法的消息名。未声明 `phases` 的输入默认只在 Playing 开放。
+  `onAdmission`、`onMessage`、`onMatchInitialize`、`onMatchStart`、`onMatchRollback`、`onBeforeStep`
+  （tick++ 之前，可同步 settle）、`onStep`、`onPlayerLeaving`、`shouldSettle`、`onLeave`、`onFinish`、
+  `onDispose` 扩展玩法生命周期；结算谓词完全归 mode 的 `shouldSettle`，shell 无默认结算规则。
+  可选的 `evidence: GameModeEvidenceCapability`（`assertRosterCompatible`/`captureInitialState`/`build`）
+  声明该玩法的可重放收局证据：create/注入两路径都在 roster/inputs 闸后调用 `assertRosterCompatible`，
+  开局边界（phase=Playing 之前）调用 `captureInitialState` 冻结初始快照，settle 时先 `build()` 冻结证据
+  再跑 `onFinish`；未声明该能力的 mode（如 idle）settle 时明确不产出任何证据。registry 会在创建 mode 时
+  校验必填能力，漏配即 fail-closed；root 只来自 manifest 生成映射，不由 mode factory 手写。
+  ⚠ 本文件不注册任何具体玩法：登记发生在组合根 `modes/catalog.ts`。
+- `modes/ballMove/`：默认演示玩法的完整实现（阶段 1 从 GameRoom 壳中行为等价拆出）：
+  - `rules.ts`：纯函数化的模拟规则（运动锚点、施法、复位），live 与 replay 共用同一组表达式；
+  - `harness.ts`：测试/回放注入边界（`GameRoomInput` 形状与敌意输入快照），⛔ 不是通用玩法契约；
+  - `evidence.ts`：v3 证据的房内录入与组装（accepted 输入序列、容量闸、初始快照、build），
+    证据**格式**所有权仍在 `core/match/matchEvidence.ts`；
+  - `index.ts`：`createBallMoveGameMode(options?)` 返回 GameMode + harness API
+    （`injectInput`/`setInputSource`/`getAcceptedInputs`）的 mode 句柄，`registerBallMoveGameMode`
+    供组合根登记。
+- `modes/catalog.ts` / `modes/IdleGameMode.ts`：生产 mode catalog（ballMove 与 idle 都在此登记）与最小
+  第二玩法。Idle 使用独立 `IdleRoomState`、strict `IdlePulse` 和 pulse/真实离场结算，不声明 evidence
+  capability，也不写任何收局证据。
 - `schema/GameRoomState.ts`：由 shared `schema/game-room-state.json` 生成的多 root 运行时 Schema 及
   mode→root 构造器映射；同一 manifest 也生成 shared `protocol/state.ts` 的纯数据接口、mode→validator 映射。
   ⚠ 每个 root **必须**声明 shell 依赖的生命周期字段 `tick`/`phase`/`matchId`/`players`，其 player 类型
@@ -33,13 +44,12 @@
   `state.phase !== GamePhase.Waiting` 恒真（房间永久不可进），少一个成员会让生成的 wire validator
   拒掉 shell 无条件写入的那个值（该 mode 全部客户端在结算时解不出状态）。据此生成的 `RoomStateLifecycle` 是 `GameRoom.state`
   的类型——⛔ 它不是任何具体 root 的别名：曾经的 `declare readonly state: GameRoomState` 让 shell 在类型上
-  拥有 ballMove 的全部字段，「玩法无关」只剩口头约定。shell 读 ball 专属字段必须显式走
-  `GameRoom.ballState`，且只在 `usesDefaultBallMoveRules === true` 的路径上。
-  root/字段增删只修改 manifest，再运行
+  拥有 ballMove 的全部字段，「玩法无关」只剩口头约定。玩法专属字段只在 mode 自己的 hook 里按其精确
+  root 类型读写。root/字段增删只修改 manifest，再运行
   `npm --workspace @game/server run codegen:state`、协议指纹更新与相关测试；两份生成文件禁止手改。
 
 GameRoom 当前包含 strict auth、协议/区号/mode 复核、按 `sId + mode` 撮合隔离、异构 state、聊天、重连宽限
-和显式 opt-in 的 best-effort match evidence。
+和显式 opt-in 的 best-effort match evidence 发射通道。
 C2S/S2C payload 已经过 strict runtime schema，phase gate、全量开局 reset、fixed-step 时钟和 awaited
 `lock()` 也有对应测试；等待型 `onMatchInitialize/onMatchStart/onMatchRollback/onLeave/onDispose` hook 会被观察，
 每个开局 await 后重验 generation/phase/roster；dispose 会先失效 generation，再等待进行中的开局/回滚 hook，
