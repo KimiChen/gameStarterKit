@@ -174,11 +174,16 @@ function resourceAliases(resource) {
   return new Set([resource.id, name, extensionless, base, baseExtensionless]);
 }
 
+/** XML 注释里的引用不是引用：剥掉再抽取，否则注释里的 src=/ui:// 会产生假引用（误红）。 */
+function stripXmlComments(source) {
+  return source.replace(/<!--[\s\S]*?-->/g, "");
+}
+
 function extractUiUrls(source) {
   const urls = [];
   // Stop at XML/entity delimiters so a URL in customData="...&quot;}}" is
   // captured as `ui://Pkg/item`, not with the surrounding JSON suffix.
-  for (const match of source.matchAll(/ui:\/\/([^\s"'<>|&]+)/g)) {
+  for (const match of stripXmlComments(source).matchAll(/ui:\/\/([^\s"'<>|&]+)/g)) {
     const value = match[1].replace(/[),.;\]}]+$/g, "");
     if (value) urls.push(value);
   }
@@ -277,7 +282,7 @@ function resolveUiUrl(raw, maps) {
  */
 function extractAssetReferences(source) {
   const references = [];
-  for (const match of source.matchAll(/<([a-zA-Z]+)\b([^>]*\bsrc="[^"]*"[^>]*)>/g)) {
+  for (const match of stripXmlComments(source).matchAll(/<([a-zA-Z]+)\b([^>]*\bsrc="[^"]*"[^>]*)>/g)) {
     const a = attrs(match[2]);
     if (!a.src) continue;
     references.push({ element: match[1], src: a.src, pkg: a.pkg });
@@ -356,7 +361,7 @@ function parseUiReferences(infos) {
     for (const entry of info.source.filter((item) => item.path.endsWith(".xml") && !item.path.endsWith("/package.xml"))) {
       const file = path.join(ROOT, entry.path);
       const source = fs.readFileSync(file, "utf8");
-      for (const match of source.matchAll(/\bpkg\s*=\s*["']([^"']+)["']/g)) {
+      for (const match of stripXmlComments(source).matchAll(/\bpkg\s*=\s*["']([^"']+)["']/g)) {
         if (!packageForKey(match[1], maps)) errors.push(`${entry.path}: 未知 pkg 引用 ${match[1]}`);
       }
       for (const raw of extractUiUrls(source)) {
@@ -653,6 +658,9 @@ if (isMain) {
     process.exitCode = 2;
   }
 }
+
+/** 内部抽取器的测试入口（_computePoolTestHooks 先例；生产路径不要从这里拿函数）。 */
+export const fguiManifestTestHooks = { extractUiUrls, extractAssetReferences, stripXmlComments };
 
 export {
   assertManifestShape,

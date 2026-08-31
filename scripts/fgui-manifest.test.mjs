@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 
 import {
+  fguiManifestTestHooks,
   assertManifestShape,
   checkManifest,
   compareRecords,
@@ -363,4 +364,21 @@ test("ui:// closure:合法 name/id 别名通过，未知包、资源和缺失 ke
   assert.match(validateUiUrl("aaaa1111", maps), /缺少资源 ID/);
   assert.match(validateUiUrl("aaaa1111missing", maps), /未知资源 ID missing/);
   assert.match(validateUiUrl("unknownbinary", maps), /未知 ui:\/\/ 包\/资源/);
+});
+
+test("XML 注释里的 src/pkg/ui:// 引用不是引用", () => {
+  const { extractUiUrls, extractAssetReferences } = fguiManifestTestHooks;
+  const source = [
+    '<component name="Main">',
+    '  <!-- 设计备注：<image src="ghost.png"/> 引用 ui://GhostPkg/ghostItem -->',
+    '  <image src="real.png"/>',
+    '  <!-- <loader pkg="ghostPkgId"/> -->',
+    '</component>',
+  ].join("\n");
+  assert.deepEqual(extractUiUrls(source), [], "注释里的 ui:// 不得产生引用");
+  assert.deepEqual(
+    extractAssetReferences(source).map((reference) => reference.src),
+    ["real.png"],
+    "注释里的 src= 不得产生引用，真实 src= 必须保留",
+  );
 });
