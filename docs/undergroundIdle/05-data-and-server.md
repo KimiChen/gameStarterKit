@@ -2,6 +2,8 @@
 
 > [返回总目录](README.md) · [上一篇：页面体验、客户端与 WS-RPC](04-client-and-rpc.md) · [下一篇：指标、测试、路线图与完成定义](06-testing-and-roadmap.md)
 
+> 文档状态：初始设计，本文所列存档、服务端写路径、幂等语义与内容配置均待实施。
+
 ## 1. 数据设计
 
 ### 1.1 权威边界
@@ -10,7 +12,7 @@
 | --- | --- | --- |
 | 账号、会话、角色存在性 | 外部 WebPlatform | 本玩法不接触其数据库或业务源码 |
 | Underground Idle 状态、矿石、碎片、矿工、远征 | durable Redis 玩家热档 | 使用现有玩家锁、fence 与 UoW |
-| 行动力与恢复时间 | durable Redis 现有玩家字段 | 本玩法拟接入 shared 体力公式 |
+| 行动力与恢复时间 | durable Redis 现有玩家字段 | 拟复用 shared 体力公式，并与 `idleState` 同一 UoW 提交 |
 | 操作收据 | 同一 `idle` 领域聚合 | 与状态同一提交边界 |
 | 玩法配置 | 版本化 TypeScript/shared 配置或受控 JSON | 客户端配置仅作展示，服务端权威 |
 | cache Redis | 不存权威玩法数据 | 缓存失败不能影响游戏结果 |
@@ -20,7 +22,7 @@
 ### 1.2 MVP 物理存储建议
 
 首版状态小且上限固定，可在按区玩家 `user:{uid}` Hash 中增加一个版本化、大小受限的 JSON 字段，概念名
-`idleState`。按需读取该字段，不使用 `HGETALL`。行动力继续使用现有两个标量字段，并在一次 UoW 提交中与
+`idleState`。实施时按需读取该字段，不使用 `HGETALL`。行动力继续使用现有两个标量字段，并在一次 UoW 提交中与
 `idleState` 一起更新。
 
 读取 `idleState`、`stamina` 与 `lastStaminaRecoverAt` 时必须使用同一次 `HMGET`（或等价的单次 Lua 读取），
@@ -34,9 +36,9 @@
 - 状态和最近操作收据同一提交；
 - 直接复用 `withUser`、锁、fence 和冷档写接缝。
 
-首版硬上限建议为 4 名可用矿工、16 名数据上限、1 个活动远征、3 个未来槽位上限、128 条最近操作收据和
-16 条已领取远征 tombstone。若未来加入大量装备、历史和多队，再以真实数据量为依据拆键或建表，不在首版
-提前复杂化。
+首版硬上限建议为 4 名可用矿工、16 名矿工数据上限、1 个活动远征、128 条最近操作收据、16 条已领取远征
+tombstone，以及 256 KiB 编码后 `idleState`。若未来加入大量装备、历史、多队或多槽远征，再以真实数据量为依据
+拆键或建表，不在首版提前复杂化。
 
 ### 1.3 `idle` 领域聚合逻辑结构
 
@@ -65,11 +67,10 @@
 | --- | --- |
 | `workerId` | 玩家内稳定实例 ID |
 | `templateId` | 固定矿工模板 |
-| `assignment` | 空闲、凿岩槽或运输槽 |
-| `returnAssignment` | 远征结束自动返回的保留槽 |
+| `assignmentSlotId` | 当前凿岩/运输槽；空闲或远征中为空 |
+| `returnSlotId` | 远征结束自动返回的保留槽；非远征中为空 |
 | `activeExpeditionId` | 远征中引用，否则为空 |
 | `injuredUntil` | 第二阶段使用；首版固定 0 |
-| `version` | 可选矿工局部版本，首版可只用聚合 `stateVersion` |
 
 ### 1.5 远征实例字段
 
@@ -82,9 +83,9 @@
 | `startedAt`、`endAt` | 服务端时间 |
 | `crewSnapshot` | 矿工、出发属性、特质和原岗位 |
 | `teamPower` | 出发时固化能力 |
-| `seedMaterial` | 私有随机材料，不进公共快照 |
+| `seed` | 私有 `uint32` 随机材料，不进公共快照 |
 | `resultGrade` | 已固化 C/B/A/S |
-| `rewardPayload` | 已固化准确奖励，不在结束前公开 |
+| `outcome` | 已固化准确奖励与预留遗物 roll，不在结束前公开 |
 | `returnMaterializedAt` | 归队状态已物化的时间；未物化为 0 |
 | `rewardOpId` | 稳定发奖操作 ID |
 
@@ -102,7 +103,7 @@
 | 字段 | 说明 |
 | --- | --- |
 | `clientReqId` | 客户端逻辑操作 ID |
-| `operationType` | activate、collect、upgrade、assign、start、claim |
+| `operationType` | 完整 `IdleWriteRpcType`：`idle.activate`、`idle.collect`、`idle.upgradeBuilding`、`idle.assignWorkers`、`idle.startExpedition`、`idle.claimExpedition` |
 | `payloadHash` | 规范化完整请求摘要；除 activate 外包含 `expectedStateVersion` |
 | `resultingStateVersion` | 首次成功后的领域版本 |
 | `resultSummary` | 重试必须返回的最小结果 |
@@ -154,22 +155,21 @@ Lobby 认证上下文
 `withUser` callback 在极端 cold thaw 路径可能重跑一次。随机材料必须在 callback 外固定，或从稳定操作 ID
 确定性派生；callback 中不得执行没有幂等保障的外部副作用。
 
-服务端应只有一个纯 `advanceTo(state, config, serverNow)` 概念入口：它负责矿场时间结算、行动力投影、远征
-到期和矿工自动归队。`getSnapshot` 调用它做只读投影而不提交；所有写 RPC 先调用同一入口，再执行自己的
-状态转换并提交。禁止读写两条路径各复制一套离线公式。
+服务端应只有一个纯 `advanceIdleTo(state, stamina, serverNow)` 入口：它负责矿场时间结算、行动力投影、远征到期和矿工自动
+归队，并按存档中的配置版本读取历史目录。`getSnapshot` 调用它做只读投影而不提交；所有写 RPC 先调用同一
+入口，再执行自己的状态转换并提交。禁止读写两条路径各复制一套离线公式。
 
 `advanceTo` 必须把“收益积分”和“状态推进”分开：收益只计算到 8 小时上限，远征结束和归队事件仍推进到
 `serverNow`。跨过 `endAt` 时先按旧岗位结算到边界，再只物化一次归队、清理矿工的远征引用与
-`returnAssignment`；之后才允许调岗或领取。领取只发奖和清理活动远征，绝不能再次恢复旧岗位覆盖玩家在
+`returnSlotId`；之后才允许调岗或领取。领取只发奖和清理活动远征，绝不能再次恢复旧岗位覆盖玩家在
 归队后的新调岗。
 
 ### 2.2 通用幂等层的实现前置
 
 当前 dispatcher 的通用幂等只按 `(type, uid, clientReqId)` 建 key，没有绑定 payload hash；成功结果缓存约
-60 秒。若同一 ID 在缓存期内携带不同 payload，通用层可能直接返回第一次结果，领域 handler 根本没有机会
-发现冲突。
+60 秒。若同一 ID 在缓存期内携带不同 payload，通用层可能直接返回第一次结果，领域 handler 根本没有机会发现冲突。
 
-因此正式实现本 Demo 前必须选择一种方案：
+因此实施本 Demo 前必须选择一种方案：
 
 1. **推荐**：增强通用幂等层，使占位和结果同时绑定规范化 payload hash；
 2. 或为 `idle.*` 提供能够在缓存命中前校验 payload 的领域幂等适配；
@@ -271,14 +271,14 @@ outbox、applied marker 和失败补偿。当前 relayer、死信处置和 archi
 - 当前 Excel 转换工具尚没有正式生成物 freshness 与消费闭环，首版优先使用可测试的版本化 TS/JSON；
 - 若后续接入 Excel，需把生成、校验、同步和版本保留一起纳入门禁。
 
-## 4. 当前框架基线与非承诺边界
+## 4. 实施前框架基线与非承诺边界
 
 实现前必须对现状保持准确描述：
 
-- 当前没有 Underground Idle 页面、RPC、领域存档或服务端业务实现；
+- Underground Idle 尚无页面、RPC、领域存档或服务端业务实现；
 - `apps/client/src/logic/rooms/idle/IdleGameplay.ts` 只是用于玩法注册/生命周期测试的最小 fixture，不是本策划
   所述挂机系统，也不意味着挂机玩法应该使用 Room；
-- shared 的体力、自然日和命名 RNG 当前只有纯函数与单测，没有业务调用点；
+- shared 的体力、自然日和命名 RNG 当前只有纯函数与单测，没有 Underground Idle 业务调用点；
 - 通用 RPC 幂等未绑定 payload hash，成功结果缓存约 60 秒；
 - handler 超时不会取消迟到副作用；
 - 玩家根档 reader 只读校验 N/N-1，writer 在首写前迁移；内嵌领域 `schemaVersion` 不会自动迁移；
@@ -289,7 +289,7 @@ outbox、applied marker 和失败补偿。当前 relayer、死信处置和 archi
 - outbox relayer、死信处置及跨存储后台编排仍是有限参考；
 - 当前框架不包含生产部署、备份恢复、运营后台、线上监控告警或已验证的容量体系。
 
-本策划描述的是**拟建设目标与验收标准**。实现时应继续遵守 [技术总览](../OVERVIEW.md)、
+本策划描述的是**拟建设目标与验收标准**。实施时应遵守 [技术总览](../OVERVIEW.md)、
 [服务端开发约束](../SERVER.md) 和 [客户端开发约束](../CLIENT.md) 的单源契约、View/Logic 分离、
 锁/fence/幂等和运行时 validator 规则。
 

@@ -1,10 +1,11 @@
 # 《Underground Idle》策划案
 
-> 文档版本：0.1（方案草案）  
-> 编写日期：2026-08-28  
-> 目标工程：gonoGame 开发期框架  
-> 核心网络模型：Lobby WS-RPC  
-> 文档目的：定义可制作、可测试、可逐步扩展的挂机玩法 Demo；本文档集不是线上运营、商业化或生产部署承诺。
+> 文档版本：0.1（初始方案草案）<br>
+> 编写日期：2026-08-28<br>
+> 目标工程：gonoGame 开发期框架<br>
+> 核心网络模型：Lobby WS-RPC<br>
+> 文档目的：定义可制作、可测试、可逐步扩展的挂机玩法 Demo；本文档集不是线上运营、商业化或生产部署承诺。<br>
+> 文档状态：初始策划，Underground Idle 玩法、业务代码、美术资产与 UI 尚未实施。
 
 ## 策划摘要
 
@@ -33,6 +34,9 @@
 | [数据、服务端与内容配置](05-data-and-server.md) | 权威边界、存档模型、幂等、一致性、安全、配置 | 服务端、技术策划 |
 | [指标、测试、路线图与完成定义](06-testing-and-roadmap.md) | 指标、测试矩阵、阶段路线、风险和验收 | 制作、测试、全体成员 |
 | [美术表现与资产制作](07-art-direction.md) | 视觉定位、界面布局、角色/场景资产、动效和验收 | 美术、UI、客户端 |
+| [主界面视觉落地与效果图任务书](08-main-screen-art-brief.md) | 效果图、1500×3248 分层主界面 Master、ART-01～09 量产包、工程装配与审稿门计划 | 美术、UI、策划、客户端 |
+| [IdleMain FairyGUI 装配契约](09-fairygui-idlemain-assembly.md) | `idle / IdleMain` 的资源映射、坐标、命名、controller、安全区与 Creator 验收矩阵 | UI、客户端、测试 |
+| [图片标注到 FairyGUI 自动编译实时计划](10-image-to-fairygui-live-plan.md) | 统一布局 Schema、自动切图、稳定 ID、XML 编译、Editor/Dashboard 验收与可复用提示词 | 美术、UI、工具、客户端、测试 |
 
 ## 推荐阅读路径
 
@@ -43,10 +47,13 @@
 - 开始技术设计：本页 → [页面体验、客户端与 WS-RPC](04-client-and-rpc.md) →
   [数据、服务端与内容配置](05-data-and-server.md) →
   [指标、测试、路线图与完成定义](06-testing-and-roadmap.md)。
-- 做美术与界面：[美术表现与资产制作](07-art-direction.md)；玩法信息层级同时参考
+- 做美术与界面：[美术表现与资产制作](07-art-direction.md) →
+  [主界面视觉落地与效果图任务书](08-main-screen-art-brief.md) →
+  [IdleMain FairyGUI 装配契约](09-fairygui-idlemain-assembly.md) →
+  [图片标注到 FairyGUI 自动编译实时计划](10-image-to-fairygui-live-plan.md)；玩法信息与交互真相同时参考
   [页面体验、客户端与 WS-RPC](04-client-and-rpc.md)。
 
-## 已确定的首版取舍
+## 首版方案取舍
 
 | 议题 | 首版决定 |
 | --- | --- |
@@ -71,6 +78,3 @@
 - [服务端开发约束](../SERVER.md)
 - [客户端开发约束](../CLIENT.md)
 - [额外功能与非承诺边界](../EXTRAFEATURES.md)
-
-改造方案（设计提案，未实施）：[非侵入式功能扩展改造方案](../Non-intrusive-wsrpc.md) 是面向本策划案
-落地路径的扩展改造设计。
