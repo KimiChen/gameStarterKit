@@ -158,10 +158,13 @@ shared 登记 canonical mode id + state manifest root / wire message
 raw exact validator 与重连 reconcile 由玩法 adapter 注入；校验先看 reflected Schema 的真实 wire shape，
 不先白名单重建状态。玩法只取得不含原始 SDK room/send 的 typed facade；只有真实 `ROOM_STATE` 校验通过才
 开放发送，SDK 离线队列不能绕过该闸。客户端新增玩法通过登记点扩展，不在通用 transport 中增加玩法分支；
-服务端只有不带新增 C2S 输入的玩法能做到同样程度——玩法自带新消息时，仍必须改通用
-`apps/server/src/rooms/GameRoom.ts` 的三处登记：`GAME_ROOM_C2S_SCHEMAS`（`[K in C2SType]` 映射，漏写
-typecheck 失败）、无类型约束的 `messages` handler 表（漏写即静默丢消息）和 `phaseAllows` switch（default
-为 false，漏写即静默拒绝）。`c2s.idle.pulse` 就是这样接入的。
+服务端玩法自带新消息时，仍必须改通用 `apps/server/src/rooms/GameRoom.ts` 的**两处**登记：
+`GAME_ROOM_C2S_SCHEMAS`（`[K in C2SType]` 映射，漏写 typecheck 失败）与无类型约束的 `messages` handler 表
+（漏写即静默丢消息）。⚠ 这两处绕不过去：Colyseus 0.17 在 `Room.__init()` 里就消费掉 `this.messages`，而
+`__init()` 跑在 `onCreate()` 之前、生产房的 mode 尚未选定，所以 handler 表**只能**是全 C2S 联合的静态表。
+**准入不再是第三处登记**：`phaseAllows` 曾用一个穷举玩法消息名的 switch 决定准入（`c2s.idle.pulse` 就写在
+里面），现在改为「Ping/Chat 由 shell 拥有，其余查 `mode.inputs` 声明」——玩法输入的准入随玩法走，通用
+shell 不再认识任何具体玩法的消息名。
 
 ### 4.3 FairyGUI 页面
 

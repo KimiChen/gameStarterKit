@@ -10,6 +10,8 @@ import {
     PROTOCOL_VERSION,
     ROOM_STATE_VALIDATORS,
     S2C,
+    type C2SType,
+    type GamePhaseType,
 } from "@game/shared";
 import {
     BALL_MOVE_GAME_MODE_ID,
@@ -758,4 +760,109 @@ test("开局边界重验的人数下限同样来自 mode.roster.min", () => {
     };
     assert.throws(boundaryOf(3), /match participants or phase changed during probe/, "2 人 < min=3 必须炸");
     assert.doesNotThrow(boundaryOf(2), "2 人 == min=2 必须放行——否则上面的 throws 只是恒真");
+});
+
+// ── inputs 声明化（plan-v4 条目 4 阶段二）───────────────────────────────────
+
+test("GameModeRegistry：非法 inputs 必须在登记期抛", () => {
+    const registry = new GameModeRegistry<GameRoomState>();
+    const withInputs = (inputs: unknown) => {
+        const id = "inputs-probe";
+        registry.register(id, () => ({ ...createBallMoveGameMode(), id, inputs } as never), { replace: true });
+        return () => registry.create(id);
+    };
+    assert.throws(withInputs(undefined), /必须声明 inputs\{accepts\}/);
+    assert.throws(withInputs({}), /必须声明 inputs\{accepts\}/);
+    assert.throws(withInputs({ accepts: ["c2s.not.a.message"] }), /inputs\.accepts 含未知 C2S/);
+    // Ping/Chat 归 shell 所有：允许 mode 重复声明就等于让准入有两个真源
+    assert.throws(withInputs({ accepts: [C2S.Ping] }), /不得声明公共传输输入 c2s\.ping/);
+    assert.throws(withInputs({ accepts: [C2S.Chat] }), /不得声明公共传输输入 c2s\.chat/);
+    assert.throws(withInputs({ accepts: [C2S.Move, C2S.Move] }), /重复声明 c2s\.move/);
+    assert.throws(
+        withInputs({ accepts: [C2S.Move], phases: { [C2S.CastSkill]: [GamePhase.Playing] } }),
+        /为未接受的输入 c2s\.castSkill 声明了 inputs\.phases/,
+    );
+    assert.throws(withInputs({ accepts: [C2S.Move], phases: { [C2S.Move]: [] } }), /必须是非空 phase 数组/);
+    assert.throws(withInputs({ accepts: [C2S.Move], phases: { [C2S.Move]: [99 as never] } }), /含未知 phase/);
+    assert.deepEqual(withInputs({ accepts: [C2S.Move] })().inputs.accepts, [C2S.Move]);
+});
+
+test("注入式 mode 的 inputs 也必须过同一道闸", () => {
+    const broken = { ...createBallMoveGameMode(), inputs: undefined } as unknown as GameMode<GameRoomState>;
+    assert.throws(() => new GameRoom({ seed: 1, mode: broken }), /必须声明 inputs\{accepts\}/);
+});
+
+test("shell 不再认识具体玩法输入：IdlePulse 只对声明接受它的 mode 开放", async () => {
+    const seen: C2SType[] = [];
+    const errors: unknown[][] = [];
+    const probe = (mode: GameMode<GameRoomState>, phase: GamePhaseType) => {
+        const room = new GameRoom({ seed: 1, clock: () => 0, mode });
+        stubSimulation(room);
+        room.state.phase = phase;
+        const sender = {
+            sessionId: "probe",
+            auth: { userId: "u-probe", sId: 0, mode: mode.id },
+            send: (type: string, payload: unknown) => errors.push([type, payload]),
+        };
+        (room.messages as Record<string, (client: unknown, payload: unknown) => void>)[C2S.IdlePulse](sender, {});
+        return room;
+    };
+    const { matchEvidenceRuleset: _unusedRuleset, ...ballMove } = createBallMoveGameMode();
+
+    // ① 不声明 IdlePulse 的 mode：⛔ 必须在准入闸就拒，不得到达 onMessage
+    const declining: GameMode<GameRoomState> = {
+        ...ballMove,
+        onMessage: ({ type }) => { seen.push(type); return true; },
+    };
+    probe(declining, GamePhase.Playing);
+    assert.deepEqual([...seen], [], "未声明 IdlePulse 的 mode 不得收到它——旧 shell 的 switch 会放行");
+    assert.equal(errors.length, 1, "被拒的输入必须回一条错误");
+    assert.equal(errors[0][0], S2C.Error);
+
+    // ② 声明接受它的 mode：必须到达 onMessage
+    seen.length = 0;
+    errors.length = 0;
+    const accepting: GameMode<GameRoomState> = {
+        ...ballMove,
+        inputs: { accepts: [C2S.IdlePulse] },
+        onMessage: ({ type }) => { seen.push(type); return true; },
+    };
+    probe(accepting, GamePhase.Playing);
+    assert.deepEqual(seen, [C2S.IdlePulse]);
+    assert.deepEqual([...errors], [], "声明接受的输入不得报错");
+
+    // ③ 默认 phase 是 Playing：同一个 mode 在 Waiting 必须被拒
+    seen.length = 0;
+    errors.length = 0;
+    probe(accepting, GamePhase.Waiting);
+    assert.deepEqual([...seen], [], "未声明 phases 时默认只在 Playing 开放");
+    assert.equal(errors.length, 1);
+});
+
+test("inputs.phases 能把输入开放到 Playing 之外，且只影响声明的那一条", () => {
+    const seen: C2SType[] = [];
+    const { matchEvidenceRuleset: _unusedRuleset, ...ballMove } = createBallMoveGameMode();
+    const mode: GameMode<GameRoomState> = {
+        ...ballMove,
+        inputs: {
+            accepts: [C2S.Move, C2S.IdlePulse],
+            phases: { [C2S.IdlePulse]: [GamePhase.Waiting, GamePhase.Playing] },
+        },
+        onMessage: ({ type }) => { seen.push(type); return true; },
+    };
+    const fire = (type: C2SType, phase: GamePhaseType, payload: unknown) => {
+        const room = new GameRoom({ seed: 1, clock: () => 0, mode });
+        stubSimulation(room);
+        room.state.phase = phase;
+        const sender = { sessionId: "p", auth: { userId: "u-p", sId: 0, mode: mode.id }, send() {} };
+        (room.messages as Record<string, (client: unknown, payload: unknown) => void>)[type](sender, payload);
+    };
+    fire(C2S.IdlePulse, GamePhase.Waiting, {});
+    assert.deepEqual(seen, [C2S.IdlePulse], "声明了 Waiting 的输入必须在 Waiting 开放");
+    seen.length = 0;
+    // 同一个 mode 的 Move 没声明 phases，⛔ 不得被上面那条声明连带放开
+    fire(C2S.Move, GamePhase.Waiting, { dirX: 1, dirY: 0 });
+    assert.deepEqual([...seen], [], "未声明 phases 的输入必须仍然只在 Playing 开放");
+    fire(C2S.Move, GamePhase.Playing, { dirX: 1, dirY: 0 });
+    assert.deepEqual(seen, [C2S.Move]);
 });

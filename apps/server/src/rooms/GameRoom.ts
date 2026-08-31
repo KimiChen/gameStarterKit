@@ -64,8 +64,10 @@ import { buildReplayParticipants } from "../core/match/matchReplay";
 import { trackTask } from "../core/infra/lifecycle";
 import {
     BALL_MOVE_GAME_MODE_ID,
+    assertGameModeInputs,
     assertGameModeRoster,
     gameModeRegistry,
+    modeAllowsInput,
     type GameMode,
     type GameModeContext,
 } from "./GameMode";
@@ -473,6 +475,7 @@ export class GameRoom extends Room {
             // 注入路径不经过 GameModeRegistry.create，必须在这里补同一道 roster 闸，
             // ⛔ 否则 roster 缺失会一路走到「players.size >= undefined 恒 false」的无上限房。
             assertGameModeRoster(this.injectedMode.id, this.injectedMode.roster, this.injectedMode.matchEvidenceRuleset);
+            assertGameModeInputs(this.injectedMode.id, this.injectedMode.inputs);
             this.selectModeState(this.injectedMode);
         }
     }
@@ -701,6 +704,9 @@ export class GameRoom extends Room {
             const msg = this.acceptMessage(client, C2S.Move, raw, GAME_ROOM_C2S_SCHEMAS[C2S.Move]);
             if (!msg) return;
             if (this.modeMessage(C2S.Move, client, msg)) return;
+            // 走到这里说明 mode 声明接受 Move 却没消费它——只有委托 ballMove fallback 的 mode
+            // 才有权落到默认规则上。⛔ 不要因为 acceptMessage 已按声明准入就删掉这道闸：
+            // 「声明接受」与「有默认实现」是两件事。
             if (this.requireMode().usesDefaultBallMoveRules !== true) {
                 this.sendError(client, ErrorCode.BadRequest);
                 return;
@@ -757,22 +763,23 @@ export class GameRoom extends Room {
         },
     };
 
-    private phaseAllows(messageType: C2SType): boolean {
-        // Ping 是连接级心跳，结算阶段也允许；聊天只在房间仍可互动时开放；
-        // Move/CastSkill 是正式模拟输入，绝不在 Waiting/Settle 改状态。
+    /**
+     * 准入 = shell 的公共传输能力 ∪ 当前 mode 自己声明的输入。
+     *
+     * ⛔ 这里不再穷举玩法消息名：`C2S.IdlePulse` 曾写死在这个 switch 里，等于通用 shell 知道
+     * 一个具体玩法的输入。玩法输入现在由 `mode.inputs` 声明，shell 只做分发。
+     * Ping/Chat 留在 shell：它们是连接级心跳与房间互动，不属于任何玩法。
+     */
+    private phaseAllows(mode: RuntimeGameMode, messageType: C2SType): boolean {
+        const phase = this.state.phase;
         switch (messageType) {
             case C2S.Ping:
-                return this.state.phase === GamePhase.Waiting
-                    || this.state.phase === GamePhase.Playing
-                    || this.state.phase === GamePhase.Settle;
+                // 心跳在结算阶段也必须活着，否则客户端会在看结算界面时被判掉线。
+                return phase === GamePhase.Waiting || phase === GamePhase.Playing || phase === GamePhase.Settle;
             case C2S.Chat:
-                return this.state.phase === GamePhase.Waiting || this.state.phase === GamePhase.Playing;
-            case C2S.Move:
-            case C2S.IdlePulse:
-            case C2S.CastSkill:
-                return this.state.phase === GamePhase.Playing;
+                return phase === GamePhase.Waiting || phase === GamePhase.Playing;
             default:
-                return false;
+                return modeAllowsInput(mode.inputs, messageType, phase);
         }
     }
 
@@ -817,7 +824,7 @@ export class GameRoom extends Room {
         schema: RuntimeSchema<T>,
     ): T | undefined {
         if (this.disposed) return undefined;
-        this.requireMode();
+        const mode = this.requireMode();
         if (!this.consumeMessageBudget(client)) return undefined;
         let parsed: { success: true; data: T } | { success: false };
         try {
@@ -830,7 +837,7 @@ export class GameRoom extends Room {
             this.sendError(client, ErrorCode.BadRequest);
             return undefined;
         }
-        if (!this.phaseAllows(messageType)) {
+        if (!this.phaseAllows(mode, messageType)) {
             this.sendError(client, ErrorCode.BadRequest);
             return undefined;
         }

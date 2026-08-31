@@ -257,10 +257,15 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
    `apps/shared/src/protocol/messages.ts` 登记消息名与 payload。
 2. 运行 `npm --workspace @game/server run codegen:state` 重新生成 `apps/shared/src/protocol/state.ts`
    与 `apps/server/src/rooms/schema/GameRoomState.ts`（两者都是生成物，禁手改），再运行 `npm run sync:shared`。
-3. 新增 C2S 消息时，通用 `rooms/GameRoom.ts` 仍必须登记三处：`GAME_ROOM_C2S_SCHEMAS`（`[K in C2SType]`
-   映射，漏写 typecheck 失败）、`messages` handler 表（漏写即静默丢消息）、`phaseAllows` switch（default
-   为 false，漏写即静默拒绝）。玩法自带输入不能只落在 `modes/<Mode>` 内。
-4. 补齐合法/非法 payload、phase 越界与 mode 隔离测试。
+3. 新增 C2S 消息时，通用 `rooms/GameRoom.ts` 必须登记**两处**：`GAME_ROOM_C2S_SCHEMAS`（`[K in C2SType]`
+   映射，漏写 typecheck 失败）与 `messages` handler 表（漏写即静默丢消息）。⚠ handler 表**不能**按 mode
+   构建：Colyseus 0.17 在 `Room.__init()` 里消费 `this.messages`，而 `__init()` 早于 `onCreate()`，生产房的
+   mode 那时还没选定。
+4. **准入写在玩法里，不写在 shell 里**：在该玩法的 `inputs.accepts` 声明这条消息，需要 Playing 之外的
+   phase 时再加 `inputs.phases`。`phaseAllows` 只保留 Ping/Chat 两条 shell 公共能力，其余查 mode 声明；
+   漏声明即被拒（fail-closed），⛔ 不要为了让消息通过而把它加回 shell 的 switch。
+   登记期会校验：未知 C2S、重复声明、声明 Ping/Chat、为未接受的输入配 phases 都直接抛。
+5. 补齐合法/非法 payload、phase 越界与 mode 隔离测试。
 
 ## 6. HTTP 开发边界
 

@@ -39,6 +39,11 @@ function handledByGameRoom(type: C2SType, value: unknown): {
         clock: () => 0,
         mode: {
             ...createBallMoveGameMode(),
+            // 本用例的被验对象是**wire 边界的 schema 归一化**，不是玩法准入：所以探针 mode
+            // 必须声明接受全部玩法输入。⛔ 不能沿用 ballMove 的声明——它不接受 IdlePulse，
+            // 那条向量会在准入闸就被拒，用例便测不到它的归一化结果。
+            // Ping/Chat 是 shell 的公共能力，⛔ 不得在这里声明（登记闸会拒）。
+            inputs: { accepts: [C2S.Move, C2S.CastSkill, C2S.IdlePulse] },
             onMessage(message) {
                 captured.push({ type: message.type, payload: message.payload });
                 return true;

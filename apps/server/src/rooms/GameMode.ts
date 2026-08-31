@@ -1,11 +1,14 @@
 import type { Client } from "colyseus";
 import {
+    C2S,
+    GamePhase,
     GameplayModeId,
     MAP_HEIGHT,
     MAP_WIDTH,
     MAX_PLAYERS,
     validateGameplayModeId,
     type C2SType,
+    type GamePhaseType,
 } from "@game/shared";
 import {
     BALL_MOVE_ROSTER_SIZE,
@@ -65,10 +68,26 @@ export interface GameModeRoster {
     readonly autoStart: number;
 }
 
+/**
+ * 每个玩法自己声明它收哪些 C2S 输入、各自在哪些 phase 开放。
+ *
+ * ⚠ handler 表本身**不能**按 mode 构建：Colyseus 0.17 在 `Room.__init()` 里就消费掉
+ * `this.messages`，而 `__init()` 跑在 `onCreate()` 之前，生产房的 mode 直到 onCreate 才选定。
+ * 所以形态固定为「全 C2S 联合的静态 handler 表 + 在 acceptMessage 里按 mode 声明准入」。
+ */
+export interface GameModeInputs {
+    /** 本玩法接受的 C2S 输入。⛔ 不含 Ping/Chat：那两条是 shell 的公共传输能力。 */
+    readonly accepts: readonly C2SType[];
+    /** 各输入开放的 phase；未列出的输入默认只在 Playing 开放。 */
+    readonly phases?: { readonly [K in C2SType]?: readonly GamePhaseType[] };
+}
+
 export interface GameMode<TState = GameRoomState, TPlayer = PlayerState> {
     readonly id: string;
     /** 人数事实；shell 只按它分发，不再写死字面量。 */
     readonly roster: GameModeRoster;
+    /** 输入事实；shell 只按它准入，不再在 switch 里穷举玩法消息名。 */
+    readonly inputs: GameModeInputs;
     /** Creates the exact per-mode Schema value inserted into the root players map. */
     createPlayer(context: GameModePlayerFactoryContext): TPlayer;
     /**
@@ -147,6 +166,7 @@ export class GameModeRegistry<TState = GameRoomState, TPlayer = PlayerState> {
             throw new Error(`[GameModeRegistry] mode ${key} 必须声明 createPlayer factory`);
         }
         assertGameModeRoster(key, mode.roster, mode.matchEvidenceRuleset);
+        assertGameModeInputs(key, mode.inputs);
         // The id check above is the registry's runtime erasure boundary. The
         // selected mode keeps its precise state/player types within its hooks.
         return mode as GameMode<TModeState, TModePlayer>;
@@ -163,6 +183,8 @@ export function createBallMoveGameMode(): GameMode<GameRoomState, PlayerState> {
         id: BALL_MOVE_GAME_MODE_ID,
         // 与去硬编码前的 shell 行为逐值一致：满员 MAX_PLAYERS、两人开局、两人自动开局。
         roster: { min: 2, max: MAX_PLAYERS, autoStart: 2 },
+        // Move/CastSkill 是正式模拟输入，⛔ 绝不在 Waiting/Settle 改状态。
+        inputs: { accepts: [C2S.Move, C2S.CastSkill] },
         usesDefaultBallMoveRules: true,
         createPlayer: ({ sessionId, name, randomInt }) => {
             const player = new PlayerState();
@@ -226,6 +248,65 @@ export function assertGameModeRoster(
             + `必须都是 ${BALL_MOVE_ROSTER_SIZE}，实际 min=${roster.min} autoStart=${roster.autoStart}`,
         );
     }
+}
+
+/**
+ * shell 自己拥有的公共传输能力，⛔ mode 不得在 `inputs.accepts` 里重复声明它们：
+ * 那会让「谁决定 Ping 的准入」出现两个真源。
+ */
+export const SHELL_COMMON_INPUTS: readonly C2SType[] = [C2S.Ping, C2S.Chat];
+
+const ALL_PHASES: readonly GamePhaseType[] = Object.values(GamePhase);
+
+/** inputs 的 fail-closed 校验；与 roster 同样在登记期与注入期各跑一次。 */
+export function assertGameModeInputs(key: string, inputs: GameModeInputs | undefined): void {
+    if (!inputs || typeof inputs !== "object" || !Array.isArray(inputs.accepts)) {
+        throw new Error(`[GameModeRegistry] mode ${key} 必须声明 inputs{accepts}`);
+    }
+    const known = Object.values(C2S) as readonly string[];
+    const seen = new Set<string>();
+    for (const type of inputs.accepts) {
+        if (typeof type !== "string" || !known.includes(type)) {
+            throw new Error(`[GameModeRegistry] mode ${key} 的 inputs.accepts 含未知 C2S：${String(type)}`);
+        }
+        if ((SHELL_COMMON_INPUTS as readonly string[]).includes(type)) {
+            throw new Error(
+                `[GameModeRegistry] mode ${key} 不得声明公共传输输入 ${type}——它由 shell 拥有`,
+            );
+        }
+        if (seen.has(type)) {
+            throw new Error(`[GameModeRegistry] mode ${key} 的 inputs.accepts 重复声明 ${type}`);
+        }
+        seen.add(type);
+    }
+    for (const [type, phases] of Object.entries(inputs.phases ?? {})) {
+        if (!seen.has(type)) {
+            throw new Error(
+                `[GameModeRegistry] mode ${key} 为未接受的输入 ${type} 声明了 inputs.phases`,
+            );
+        }
+        if (!Array.isArray(phases) || phases.length === 0) {
+            throw new Error(`[GameModeRegistry] mode ${key} 的 inputs.phases.${type} 必须是非空 phase 数组`);
+        }
+        for (const phase of phases) {
+            if (!ALL_PHASES.includes(phase)) {
+                throw new Error(
+                    `[GameModeRegistry] mode ${key} 的 inputs.phases.${type} 含未知 phase：${String(phase)}`,
+                );
+            }
+        }
+    }
+}
+
+/** 该 mode 是否在当前 phase 接受这条输入。未列 phases 的输入默认只在 Playing 开放。 */
+export function modeAllowsInput(
+    inputs: GameModeInputs,
+    type: C2SType,
+    phase: GamePhaseType,
+): boolean {
+    if (!inputs.accepts.includes(type)) return false;
+    const phases = inputs.phases?.[type] ?? [GamePhase.Playing];
+    return phases.includes(phase);
 }
 
 function normalizeModeId(id: string): string {

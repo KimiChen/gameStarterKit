@@ -12,7 +12,9 @@
   `MAX_PLAYERS`（root players map 的容量由生成 validator 按它烧死），`min ≤ autoStart ≤ max`；声明了
   `ballMove@1` 证据的 mode 其 `min`/`autoStart` 必须都等于 `BALL_MOVE_ROSTER_SIZE`，因为该证据把
   `initialRoster` 冻结成恰好 2 条。上述校验在登记期与注入期各跑一次（注入式 mode 不经过 registry，
-  ⛔ 不能只在 registry 里校验）。`onAdmission`、`onMessage`、`onMatchInitialize`、`onMatchStart`、`onMatchRollback`、
+  ⛔ 不能只在 registry 里校验）。玩法输入同样声明化：`inputs{accepts,phases?}` 决定 shell 的准入，
+  `phaseAllows` 只保留 Ping/Chat 两条公共传输能力，⛔ 通用 shell 不再穷举任何具体玩法的消息名。
+  未声明 `phases` 的输入默认只在 Playing 开放。`onAdmission`、`onMessage`、`onMatchInitialize`、`onMatchStart`、`onMatchRollback`、
   `onStep`、`onPlayerLeaving`、`shouldSettle`、`onLeave`、`onFinish`、`onDispose` 扩展玩法生命周期；
   `matchEvidenceRuleset` 必须显式声明受支持的 exact replay 契约，当前只有 `ballMove@1`。registry 会在
   创建 mode 时校验必填能力，漏配即 fail-closed；root 只来自 manifest 生成映射，不由 mode factory 手写。

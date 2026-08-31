@@ -43,6 +43,8 @@ export function createIdleGameMode(options: IdleGameModeOptions = {}): GameMode<
         id: IDLE_GAME_MODE_ID,
         // 与去硬编码前的 shell 行为逐值一致；roster 现在是 mode 的声明而不是 shell 的字面量。
         roster: { min: 2, max: MAX_PLAYERS, autoStart: 2 },
+        // IdlePulse 此前写死在通用 shell 的 phaseAllows switch 里，现由本 mode 自己声明。
+        inputs: { accepts: [C2S.IdlePulse] },
         usesDefaultBallMoveRules: false,
         createPlayer: ({ sessionId, name }) => {
             const player = new IdlePlayerState();
