@@ -229,7 +229,10 @@ test("故障注入：真实 worker error/exit 会 reap 并退避补位", async (
         const result = await recovery;
         assert.equal(result.iterations, 9);
         assert.equal(spawnCount, 2);
-        assert.ok(performance.now() - queuedAt >= 850, "late queue must wait for the original backoff");
+        assert.ok(
+          performance.now() - queuedAt >= RESPAWN_MS * 0.9,
+          "late queue must wait for the original backoff (" + RESPAWN_MS + "ms)",
+        );
 
         await destroyPool();
         _computePoolTestHooks.setWorkerFactory(null);
@@ -288,7 +291,7 @@ test("故障注入：真实 worker error/exit 会 reap 并退避补位", async (
       const respawnTimers = [];
       globalThis.setTimeout = (callback, delay, ...args) => {
         const timer = nativeSetTimeout(callback, delay, ...args);
-        if (delay === Number(process.env.COMPUTE_RESPAWN_DELAY_MS)) respawnTimers.push(timer);
+        if (delay === Number(process.env.COMPUTE_RESPAWN_DELAY_MS ?? 1000)) respawnTimers.push(timer);
         return timer;
       };
 
