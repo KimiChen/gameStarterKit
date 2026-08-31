@@ -263,6 +263,7 @@ guard 要求显式区清单。每区 `archive_zone_usage` 在 freeze singleton l
 | # | 不变量 | 挡住的失败形态 | 状态 |
 |---|---|---|---|
 | A | `package.xml` 中每个 `exported="true"` 资源的 `id` 必须出现在同名 `.bin` 条目表 | 主失败形态：导出静默丢内容 | 已实现 |
+| A' | 条目的 `exported`/`type`/`name` 必须与 `package.xml` 对账 | 资源还在、但导出成了另一个东西：丢 `exported` → 无法被 `ui://` 寻址；`type` 变了 → 运行时按错误的 PackageItemType 解读 | 已实现 |
 | B | 源 XML 每个资源引用——`ui://<pkgId><resId>` **与** `<image src pkg>` 两种拼写——目标 `resId` 必须在**目标包 `.bin`** 里 | 引用被目标包漏导，含「被引用但未导出」的资源 | 已实现 |
 | C | `.bin` 段 0 声明的每个依赖包都要有已导出的 `.bin` 且 id 对得上 | 依赖包整包漏导 | 已实现 |
 | D | `.bin` 中 Atlas/Spine/Sound/Misc 条目引用的外部文件，以及 `package.xml` 用 `require=` 声明的伴生文件，都必须落盘 | 图集/骨骼文件漏导，含 Spine 的 `.atlas.txt` / `.png` 伴生 | 已实现 |
@@ -279,7 +280,7 @@ E 未做的理由是它需要单独一轮：`rotated` 标志会让 rect 的 w/h 
 B 最初只解析 `ui://`，于是「被引用但未导出」的资源同时逃过 A（`exported !== true` 被跳过）和 B——
 漏导它的残缺产物四条不变量全绿，`--write` 再把它钉成新基线。这一缺口由本轮对抗式复核发现并补上。
 
-覆盖登记在 `test:fgui`（`scripts/fgui-roundtrip.test.mjs`，10 个用例）；每条不变量各配构造反例，
+覆盖登记在 `test:fgui`（`scripts/fgui-roundtrip.test.mjs`，11 个用例）；每条不变量各配构造反例，
 逐条删除对应实现均可令用例转红。检查本身随 `verify:fgui` 执行，未新增聚合命令。
 
 #### 仍未实现的部分

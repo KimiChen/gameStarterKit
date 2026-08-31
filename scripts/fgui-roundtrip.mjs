@@ -30,6 +30,18 @@ const ITEM_TYPE = {
 const FILE_BEARING_TYPES = new Set([2, 4, 7, 9, 10]);
 
 /**
+ * `package.xml` 的资源 kind → `.bin` 条目 type 名的对照（不变量 A 用）。
+ * ⚠ 刻意只列本仓真实出现过的几种：`resourceDeclarations` 是**前向兼容**的（把任何具名资源条目
+ * 都当作可寻址项），所以遇到没见过的 kind 这里**跳过**而不是报错——⛔ 否则 FairyGUI 以后新增一种
+ * 资源类型会让整条产线红掉，而那并不是产物出了问题。
+ */
+const KIND_TO_ITEM_TYPE = new Map([
+  ["image", "Image"],
+  ["component", "Component"],
+  ["spine", "Spine"],
+]);
+
+/**
  * `.bin` 的只读游标。字段顺序、`readS` 的 65534/65533 哨兵与分段索引表的 seek 语义都照抄
  * `apps/client/extensions/fairygui-cc/runtime/fairygui.mjs` 的 `loadPackage`——那是运行时真正
  * 用来读这些文件的实现，⛔ 偏离它就等于在验一份没人会那样读的格式。
@@ -212,6 +224,7 @@ export function roundtripProblems(packages, { uiDir = UI, read = readPackageBin 
     const itemIds = new Set(bin.items.map((item) => item.id));
 
     // A：已导出资源必须真的出现在产物里。⛔ 判据是「声明为 exported 的那些」，不是总数。
+    const itemById = new Map(bin.items.map((item) => [item.id, item]));
     for (const resource of info.resources) {
       if (!resource.exported) continue;
       if (!itemIds.has(resource.id)) {
@@ -219,6 +232,41 @@ export function roundtripProblems(packages, { uiDir = UI, read = readPackageBin 
           `${info.name}: package.xml 声明 exported 的 ${resource.kind} ${resource.name}（id=${resource.id}）`
           + " 不在产物条目表里——导出过程丢了它，而哈希锁只会如实记下这个残缺结果",
         );
+      }
+    }
+
+    // A'：条目**存在**不等于条目**对**。解析出来的 exported/name/type 必须与 package.xml 对账，
+    // ⛔ 只比 id 集合会放过「资源还在、但导出成了另一个东西」这一类：
+    // 丢了 exported 标志 → 资源在产物里却无法被 ui:// 寻址，运行期取不到；
+    // type 变了 → 运行时按错误的 PackageItemType 解读同一段字节。
+    for (const resource of info.resources) {
+      const item = itemById.get(resource.id);
+      if (!item) continue; // 缺失由 A 负责报，⛔ 不重复报
+      if (item.exported !== resource.exported) {
+        problems.push(
+          `${info.name}: ${resource.name}（id=${resource.id}）的 exported 标志不一致——`
+          + `package.xml=${resource.exported} 产物=${item.exported}`
+          + (resource.exported ? "：产物里的它无法被 ui:// 寻址" : ""),
+        );
+      }
+      const expectedType = KIND_TO_ITEM_TYPE.get(String(resource.kind).toLowerCase());
+      if (expectedType !== undefined && item.typeName !== expectedType) {
+        problems.push(
+          `${info.name}: ${resource.name}（id=${resource.id}）的类型不一致——`
+          + `package.xml 声明 ${resource.kind}（期望 ${expectedType}），产物是 ${item.typeName}`,
+        );
+      }
+      // 产物里的 name 可能是源声明的基名或去扩展名形式，三种都接受；⛔ 不要只认全等，
+      // 那会把 `RGBA/img_toggle.png` 这类带目录的声明全部误报。
+      if (item.name !== null && typeof resource.name === "string") {
+        const base = resource.name.replace(/^.*\//u, "");
+        const accepted = [resource.name, base, base.replace(/\.[^.]+$/u, "")];
+        if (!accepted.includes(item.name)) {
+          problems.push(
+            `${info.name}: id=${resource.id} 的名字不一致——`
+            + `package.xml="${resource.name}" 产物="${item.name}"`,
+          );
+        }
       }
     }
 

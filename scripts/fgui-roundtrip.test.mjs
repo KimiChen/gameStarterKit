@@ -106,6 +106,62 @@ test("A：⛔ 不得拿「声明数 == 条目数」当判据——剥离未导�
   );
 });
 
+test("A'：条目存在但 exported/type/name 与 package.xml 对不上必须被命中", () => {
+  // ⛔ 只比 id 集合会放过「资源还在、但导出成了另一个东西」这一类。
+  const pick = (predicate) => {
+    for (const info of inputs) {
+      const bin = realBins.get(info.name);
+      const resource = info.resources.find((r) => bin.items.some((i) => i.id === r.id && predicate(r, i)));
+      if (resource) return { info, resource };
+    }
+    return null;
+  };
+
+  // ① 丢掉 exported 标志：资源仍在产物里，却再也无法被 ui:// 寻址
+  const exported = pick((r) => r.exported);
+  assert.ok(exported, "构造前提：必须存在已导出资源");
+  {
+    const bins = clone();
+    const item = bins.get(exported.info.name).items.find((i) => i.id === exported.resource.id);
+    item.exported = false;
+    assert.match(
+      withBins(bins).join("\n"),
+      /的 exported 标志不一致——package\.xml=true 产物=false：产物里的它无法被 ui:\/\/ 寻址/u,
+    );
+  }
+
+  // ② 类型变了：运行时会按错误的 PackageItemType 解读同一段字节
+  {
+    const bins = clone();
+    const item = bins.get(exported.info.name).items.find((i) => i.id === exported.resource.id);
+    item.typeName = "Sound";
+    assert.match(withBins(bins).join("\n"), /的类型不一致——package\.xml 声明 .+，产物是 Sound/u);
+  }
+
+  // ③ 名字变了
+  {
+    const bins = clone();
+    const item = bins.get(exported.info.name).items.find((i) => i.id === exported.resource.id);
+    item.name = "renamed_by_a_broken_export";
+    assert.match(withBins(bins).join("\n"), /的名字不一致——package\.xml=".+" 产物="renamed_by_a_broken_export"/u);
+  }
+
+  // ④ ⛔ 不得误伤：带目录的声明（RGBA/img_toggle.png）在产物里是基名，必须仍算一致；
+  //    未知 kind 也必须跳过而不是报错——resourceDeclarations 是前向兼容的。
+  {
+    const bins = clone();
+    const patched = inputs.map((info) => info.name !== exported.info.name ? info : {
+      ...info,
+      resources: info.resources.map((r) => r.id !== exported.resource.id ? r : { ...r, kind: "brand-new-kind" }),
+    });
+    assert.deepEqual(
+      roundtripProblems(patched, { read: (file) => bins.get(path.basename(file, ".bin")) }),
+      [],
+      "没见过的 kind 必须跳过类型对账，⛔ 不得让整条产线红掉",
+    );
+  }
+});
+
 test("B：目标包漏导了被引用的资源必须被命中——ui:// 与 src=/pkg= 两种拼写都要", () => {
   const all = inputs.flatMap((info) => info.uiReferences);
   const uiForm = all.find((reference) => String(reference.form ?? "").startsWith("ui://"));
