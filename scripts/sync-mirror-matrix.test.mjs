@@ -48,15 +48,25 @@ const TARGETS = [
 ];
 
 /**
- * 登记豁免：`sync-webplatform-contract` 也有 `--check`，但**刻意不进 TARGETS**。
- * 理由（逐条实测）：(a) 它的源在 `node_modules/@gono/webplatform-contract`，而夹具用
- * `git ls-files` 构建、不含 node_modules，第一个场景就 ENOENT；(b) 该镜像没有 README.md，
- * 「警示 README 被改」场景直接抛；(c) 它的 `expectedFiles()` 是固定三条，往源包新增文件
- * 对镜像零影响，「源目录新增未同步」场景会产生真假红。
- * 更重要的是本矩阵的立论——「`--check` 是第二套判定实现、可能撒谎」——对它不成立：
- * 它的 `--check` 与真同步共用同一个 `expectedFiles()`，结构上无法背离。
+ * 登记豁免：`package.json` 里每一个 `<解释器> <脚本> --check` 都必须**要么进 TARGETS、
+ * 要么在这里带理由登记**——扫描面刻意不限于 `sync-*`：任何「有写模式 + 有 --check 模式」的
+ * 脚本都适用本矩阵的立论（`--check` 是第二套判定实现、可能撒谎），只认 `sync-` 前缀等于
+ * 把其余同形脚本留在扫描面之外。
  */
-const CHECK_SCRIPT_EXEMPTIONS = ["scripts/sync-webplatform-contract.mjs"];
+const CHECK_SCRIPT_EXEMPTIONS = {
+  "scripts/sync-webplatform-contract.mjs":
+    "源在 node_modules（夹具用 git ls-files 构建、不含它），该镜像无 README.md，且其 --check "
+    + "与真同步共用同一个 expectedFiles()——结构上无法背离，本矩阵的立论对它不成立",
+  "scripts/vendor-lock.mjs":
+    "锁定产物的哈希闸而非目录镜像：没有「跑一次同步把它改成一致」的写模式语义，"
+    + "覆盖由 scripts/vendor-lock.test.mjs 承担",
+  "scripts/fgui-manifest.mjs":
+    "manifest 新鲜度闸，产物是单文件而非镜像树，覆盖由 scripts/fgui-manifest.test.mjs 承担",
+  "tools/excel-to-json.mjs":
+    "配表产物新鲜度闸，其「只读、不静默修复」性质已由 tools/excel-to-json.test.mjs 的反例钉住"
+    + "（见 plan-v3 P1-08）",
+};
+
 
 const fixtures = [];
 after(() => { for (const dir of fixtures) rmSync(dir, { recursive: true, force: true }); });
@@ -279,13 +289,18 @@ test("矩阵覆盖面钉住 package.json：新增镜像 --check 脚本必须进 
   const scripts = JSON.parse(readFileSync(join(REPO_ROOT, "package.json"), "utf8")).scripts ?? {};
   const declared = new Set();
   for (const body of Object.values(scripts)) {
-    for (const match of String(body).matchAll(/node\s+(scripts\/sync-[A-Za-z0-9-]+\.mjs)\s+--check/gu)) {
+    // 扫描面是「任何带 --check 的脚本调用」，不限 sync- 前缀：新增一个同形脚本若既不进
+    // TARGETS 也不登记豁免，这条断言立刻红，逼人显式决策。
+    for (const match of String(body).matchAll(/(?:^|\s)(?:node|tsx)\s+((?:scripts|tools)\/[A-Za-z0-9._-]+\.mjs)\s+--check/gu)) {
       declared.add(match[1]);
     }
   }
   assert.deepEqual(
     [...declared].sort(),
-    [...TARGETS.map((target) => target.script), ...CHECK_SCRIPT_EXEMPTIONS].sort(),
-    "package.json 里的镜像 --check 脚本必须等于 TARGETS ∪ 登记豁免",
+    [...TARGETS.map((target) => target.script), ...Object.keys(CHECK_SCRIPT_EXEMPTIONS)].sort(),
+    "package.json 里带 --check 的脚本必须等于 TARGETS ∪ 登记豁免（新增同形脚本必须显式决策）",
   );
+  for (const [script, reason] of Object.entries(CHECK_SCRIPT_EXEMPTIONS)) {
+    assert.ok(reason.trim().length > 0, `豁免 ${script} 必须写明理由`);
+  }
 });
