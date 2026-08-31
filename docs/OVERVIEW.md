@@ -144,8 +144,11 @@ participants；热档/冷档 schema 迁移、asset effect 原子性与经济操�
 shared 登记 canonical mode id + state manifest root / wire message
   → npm --workspace @game/server run codegen:state 生成 mode→root constructor / validator 映射
   → server modes/<Mode> + modes/catalog.ts
-  → 玩法自带 C2S 输入时：server rooms/GameRoom.ts 的 GAME_ROOM_C2S_SCHEMAS、messages handler 表
-    与 phaseAllows switch 登记该消息
+  → 玩法自带 C2S 输入时：server rooms/GameRoom.ts 的 GAME_ROOM_C2S_SCHEMAS 与 messages handler 表
+    登记该消息（只此两处；handler 表必须是全 C2S 联合的静态表，见下文）
+  → 该消息的准入写在玩法里：mode 的 inputs.accepts（需要 Playing 之外的 phase 时再加 inputs.phases）
+    ⛔ 不要在 GameRoom 的 phaseAllows switch 里加 case——显式 case 会短路掉 default 分支的
+    modeAllowsInput，把 mode 自己声明的 phases 静默吞掉，且对所有 mode 一律放行
   → client logic/rooms/<mode> + net/rooms/<Mode>Room.ts
   → client mode adapter 注入 raw exact validator / reconcile
   → client gameplay/catalog.ts

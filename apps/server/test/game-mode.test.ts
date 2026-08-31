@@ -17,6 +17,7 @@ import {
     BALL_MOVE_GAME_MODE_ID,
     GameModeRegistry,
     IDLE_GAME_MODE_ID,
+    SHELL_COMMON_INPUTS,
     createBallMoveGameMode,
     gameModeRegistry,
     type GameMode,
@@ -867,4 +868,69 @@ test("inputs.phases 能把输入开放到 Playing 之外，且只影响声明的
     assert.deepEqual([...seen], [], "未声明 phases 的输入必须仍然只在 Playing 开放");
     fire(C2S.Move, GamePhase.Playing, { dirX: 1, dirY: 0 });
     assert.deepEqual(seen, [C2S.Move]);
+});
+
+/**
+ * `phaseAllows` 的**穷尽矩阵**：把「shell 不得认识任何具体玩法输入」从一句 ⛔ 变成会红的闸。
+ *
+ * ⚠ 这条闸是必要的：`phaseAllows` 是 switch，任何显式 `case` 都会**短路掉** `default` 分支的
+ * `modeAllowsInput`，于是 mode 声明的 `inputs.phases` 被静默吞掉、且该消息对所有 mode 一律放行。
+ * 此前没有任何用例能发现这种回退——docs/OVERVIEW.md §4.2 的动线代码块一度就还在教人这么做。
+ *
+ * 判据对每个「非公共」C2S × 每个 phase 各断言两次：未声明必须拒、声明了必须放行。
+ * 新增一个 `case C2S.X` 会让 X 的「未声明必须拒」那一格立刻转红。
+ */
+test("phaseAllows 穷尽矩阵：shell 只认 Ping/Chat，其余全部由 mode 声明决定", () => {
+    const ALL_PHASES = [GamePhase.Waiting, GamePhase.Playing, GamePhase.Settle] as const;
+    // 每条消息一份**合法** payload——⛔ 必须合法，否则会先撞 schema 闸，测不到准入闸。
+    const VALID_PAYLOAD: Record<string, unknown> = {
+        [C2S.Move]: { dirX: 1, dirY: 0 },
+        [C2S.CastSkill]: { skillId: 1 },
+        [C2S.IdlePulse]: {},
+    };
+    const gameplayInputs = (Object.values(C2S) as C2SType[])
+        .filter((type) => !SHELL_COMMON_INPUTS.includes(type));
+    assert.ok(gameplayInputs.length >= 3, `玩法输入数量异常：${gameplayInputs.length}`);
+    assert.deepEqual(
+        [...SHELL_COMMON_INPUTS].sort(),
+        [C2S.Chat, C2S.Ping].sort(),
+        "公共传输输入集合变了就必须重新审视本矩阵，⛔ 不要只改这一行",
+    );
+
+    const { matchEvidenceRuleset: _unusedRuleset, ...ballMove } = createBallMoveGameMode();
+    const reached = (type: C2SType, phase: GamePhaseType, accepts: readonly C2SType[]) => {
+        const seen: C2SType[] = [];
+        const mode: GameMode<GameRoomState> = {
+            ...ballMove,
+            // 每格都显式声明 phases，使「放行」只可能来自 mode 声明本身
+            inputs: { accepts, phases: Object.fromEntries(accepts.map((a) => [a, ALL_PHASES])) },
+            onMessage: ({ type: seenType }) => { seen.push(seenType); return true; },
+        };
+        const room = new GameRoom({ seed: 1, clock: () => 0, mode });
+        stubSimulation(room);
+        room.state.phase = phase;
+        const sender = { sessionId: "m", auth: { userId: "u-m", sId: 0, mode: mode.id }, send() {} };
+        (room.messages as Record<string, (c: unknown, p: unknown) => void>)[type](
+            sender, VALID_PAYLOAD[type],
+        );
+        return seen.length > 0;
+    };
+
+    for (const type of gameplayInputs) {
+        assert.ok(type in VALID_PAYLOAD, `新增 C2S ${type} 必须在本矩阵补一份合法 payload`);
+        for (const phase of ALL_PHASES) {
+            assert.equal(
+                reached(type, phase, [type]),
+                true,
+                `${type} 在 ${phase}：mode 声明接受就必须放行`,
+            );
+            assert.equal(
+                reached(type, phase, gameplayInputs.filter((other) => other !== type)),
+                false,
+                `${type} 在 ${phase}：mode 未声明必须被拒——`
+                + "若这一格红了，多半是有人往 phaseAllows 的 switch 里加了 case，"
+                + "它会短路掉 default 的 modeAllowsInput",
+            );
+        }
+    }
 });
