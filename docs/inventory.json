@@ -171,7 +171,7 @@
     "corePlan": "plan-v3.md",
     "extraCapabilities": "docs/EXTRAFEATURES.md"
   },
-  "referenceDocs": ["plan.md", "plan-v2.md", "todo-godogen.md", "docs/Non-intrusive-wsrpc.md", "docs/Non-intrusive-room.md"],
+  "referenceDocs": ["plan.md", "plan-v2.md", "plan-v4.md", "todo-godogen.md", "docs/Non-intrusive-wsrpc.md", "docs/Non-intrusive-room.md"],
   "workspaceCommandScope": [
     {
       "command": { "kind": "workspace", "workspace": "@game/server", "script": "dev" },

@@ -20,6 +20,7 @@
 - [非侵入式功能扩展改造方案（设计提案，未实施）](docs/Non-intrusive-wsrpc.md)
 - [低侵入式房间玩法方案（设计提案，未实施）](docs/Non-intrusive-room.md)
 - [《Snake Off》竖版贪吃蛇玩法策划案（未实现）](docs/snakeoff/README.md)
+- [产品/工程留白清单（5 条，非当前真相）](plan-v4.md)
 - [Godogen 对照吸收计划（未实现的额外能力）](todo-godogen.md)
 - [当前开发收口计划](plan-v3.md)
 
