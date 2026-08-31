@@ -1,13 +1,13 @@
-# 从完成策划案到可运行 FairyGUI UI 的通用生产工作流
+# FairyGUI UI 生产、装配与自动化工作流
 
-> 文档版本：1.0<br>
+> 文档版本：2.0<br>
 > 编写日期：2026-08-31<br>
-> 适用范围：任意玩法或业务模块，不绑定 `Idle` 及其他具体项目<br>
+> 适用范围：任意玩法或业务模块<br>
 > 当前仓库技术栈：Cocos Creator 3.8.8 + FairyGUI 1.2.2 + TypeScript
 
-本文设计一条从“已经完成的策划案”到“可以在 Creator 中真实运行并验收的 UI”的完整生产链，并给出每个阶段可直接复用的提示词。
+本文定义从“已经完成的策划案”到“可以在 Creator 中真实运行并验收的 UI”的完整生产链，同时给出未来从结构化布局生成 SVG、PNG 和受控 FairyGUI XML 的自动化技术边界。
 
-本文描述的是工作流和交付契约，不代表所有自动化工具已经实现。当前仓库已经具备 FairyGUI Editor 工程、发布链、View codegen、结构契约与测试；`layout.json → 切图/XML` 编译器、`ids.lock.json` 和对应命令仍属于可选的后续建设目标，不能当作现成功能使用。
+本文描述的是工作流、交付契约和演进目标，不代表所有自动化工具已经实现。当前仓库已经具备 FairyGUI Editor 工程、发布链、View codegen、结构契约与测试；`layout.json → 切图/XML` 编译器、`ids.lock.json`、浏览器 UI Studio 和对应命令仍属于后续建设目标，不能当作现成功能使用。
 
 ---
 
@@ -102,9 +102,9 @@
 ### 2.6 任何修复都回到最早的错误真源
 
 - 玩法、状态或数据错误：回 UI 契约。
-- 坐标、层级、热区或适配错误：回布局契约或 FairyGUI 设计源。
+- 坐标、层级、热区或适配错误：`layoutMode: editor` 回 FairyGUI 设计源，`layoutMode: machine` 回 `layout.json`。
 - 色板、造型、透明边或 pivot 错误：回生产美术源。
-- Controller、Relation、包引用错误：回 FairyGUI 设计源。
+- Controller、Relation 或包引用错误：Editor-owned 内容回 FairyGUI 设计源，machine-owned 内容回 `layout.json`、审核模板或编译器。
 - 绑定、事件或生命周期错误：回 View/Logic。
 
 禁止直接修改 `.bin`、atlas、Creator `.meta`、同步镜像或其他生成物来掩盖上游问题。
@@ -359,19 +359,11 @@ Gate G5：每个资产通过技术检查和视觉检查；contact sheet 中同�
 - `clearOnPublish` 只用于代码确定会填充的 Loader，否则运行时会空白。
 - `interactive` 是全局 FGUI 输入租约：交互页会让 GRoot 捕获输入并挡住背后玩法；纯展示 HUD 才适合 `false`。`interactive: false` 不是独立输入隔离——只要另一个交互页仍打开，全局 InputProcessor 就继续启用。
 
-#### 未来自动化边界
+#### 自动化边界
 
-如果以后实现 `layout.json → 运行 PNG / XML` 编译器，必须满足：
+当前默认仍是人工在 FairyGUI Editor 中维护 XML。未来启用 machine-owned 组件时，必须遵守第 7 节的文件所有权、稳定 ID、原子写入、Editor round-trip 和官方发布边界；没有获得明确授权的生成器不得写 XML。
 
-1. 当前仓库“XML 只在 FairyGUI Editor 中修改”的规则仍是默认值；自动写入需要专门实现、测试和明确授权。
-2. 只写 file-level 标记为 `machine-owned` 的整个组件 XML；`editor-owned` 页面外壳绝不覆盖。
-3. 首期由 Editor-owned 外壳引用一个 machine-owned 纯视觉子组件。
-4. 既有包先导入真实 ID；稳定 ID 表 append-only，删除后 tombstone，永不复用。
-5. `package.xml` 只做白名单 AST 合并，并保留未知属性、原顺序、`extention`、`scale9grid`、`alone_npot` 和 `exported`。
-6. 全部输出先在临时目录验证，再原子替换；任一步失败不留下半套产物。
-7. `.bin`、atlas、trim、rotation 和分页只能由 FairyGUI Editor 发布；`.meta` 只能由 Creator 真实导入生成或复用。
-
-当前 `package.json` 并没有 `compile:fgui-layout` 或 `verify:fgui-layout`；在工具真正实现并通过 Editor round-trip 前，文档和提示词都不能宣称这些命令可用。
+当前 `package.json` 没有 `ui:studio`、`compile:fgui-layout`、`verify:fgui-layout` 或 `diff:fgui-layout`。这些能力真正实现并通过金样验证前，文档、提示词和验收记录都不得宣称它们可用。
 
 Gate G6：Editor round-trip、发布、引用闭包、Controller/Relation/列表配置和稳定命名全部通过。
 
@@ -443,107 +435,9 @@ Gate G8b：只在产品交付承诺需要这些能力时为必过 Gate；每项�
 
 ---
 
-## 5. 推荐的机器契约
+## 5. 当前仓库执行清单
 
-### 5.1 `layout.json` 最小骨架
-
-下面是未来 `layoutMode: machine` 可扩展的建议 Schema，不是当前仓库已经实现的格式；`layoutMode: editor` 不得把它当成可编译真源：
-
-```json
-{
-  "$schema": "<schema path>",
-  "schemaVersion": 1,
-  "package": {
-    "name": "<Package>"
-  },
-  "component": {
-    "stableKey": "<immutable component key>",
-    "name": "<Component>",
-    "ownership": "machine",
-    "designSize": [750, 1624]
-  },
-  "safeArea": {
-    "mode": "runtime",
-    "referenceInsets": [0, 0, 0, 0]
-  },
-  "sources": [
-    {
-      "stableKey": "<source key>",
-      "file": "<approved source>",
-      "expectedSha256": "<sha256>",
-      "space": "sourcePx",
-      "size": [1500, 3248],
-      "logicalSize": [750, 1624]
-    }
-  ],
-  "assets": [
-    {
-      "stableKey": "<asset key>",
-      "source": "<source key>",
-      "sourceMode": "copy",
-      "sourceRect": null,
-      "paddingPx": [0, 0, 0, 0],
-      "pivotNormalized": [0.5, 0.5],
-      "runtimeSize": [128, 128],
-      "nineSliceInsets": null,
-      "atlasPolicy": "default",
-      "output": "<filename>.png"
-    }
-  ],
-  "nodes": [
-    {
-      "stableKey": "<node key>",
-      "parent": null,
-      "type": "image",
-      "name": "img_example",
-      "asset": "<asset key>",
-      "rect": [0, 0, 128, 128],
-      "zOrder": 0,
-      "touchable": false,
-      "visibleWhen": []
-    }
-  ],
-  "controllers": [],
-  "gears": [],
-  "relations": [],
-  "hotspots": [],
-  "textSlots": [],
-  "lists": []
-}
-```
-
-必须显式区分 `sourcePx` 和 `logicalPx`，统一左上原点。`ownership: "machine"` 才允许未来编译器生成对应的独占 XML；`ownership: "editor"` 时，该文件只可作为审稿和校验规范，编译器必须拒绝写组件 XML。仅有矩形时，只能生成静态 image、loader 或 graph；Controller、Gear、Relation、Button、ProgressBar 和 List 不能根据节点名猜测。
-
-### 5.2 `ids.lock.json` 规则
-
-如果未来启用自动 XML 生成：
-
-- 既有包先从真实 `package.xml` 和组件导入 ID。
-- stable key 与 ID 永久一一映射。
-- 新对象只分配未使用 ID。
-- 删除写入 tombstone，旧 ID 永不回收。
-- JSON 重排、节点重排和改展示名不得改变 ID。
-- package/resource ID 改变或重复属于阻断错误。
-- group、Relation target、Gear page 和 `ui://` 引用必须最终解析到锁定 ID。
-
-### 5.3 生产资产来源模式
-
-| `sourceMode` | 含义 | 允许条件 |
-| --- | --- | --- |
-| `copy` | 无损复制批准的独立源 | 文件哈希已锁定 |
-| `fullCanvas` | 保持源画布坐标的完整层 | 背景、灯光、遮挡等同画布层 |
-| `alphaBBox` | 按可见 Alpha + 显式 padding 裁切 | 已有真实透明通道 |
-| `crop` | 按显式矩形裁切 | 确认无背景污染且无遮挡缺失 |
-| `mask` | 使用独立 Alpha mask | mask 是批准输入，不能自动猜 |
-| `nineSlice` | 生成可伸缩组件源 | 四边 inset 明确且中心区有效 |
-
-扁平效果图中的角色、建筑、按钮和图标如果已经与背景合成，只能重新取得独立源、重新生成透明单体、提供人工 mask，或将其批准为 `fullCanvas` 层；不能用矩形裁切伪装成可复用透明件。
-
----
-
-## 6. 当前仓库执行清单
-
-### 6.1 FairyGUI Editor 发布前
+### 5.1 FairyGUI Editor 发布前
 
 ```text
 □ 需程序访问的节点有正确类型前缀，纯装饰节点不被代码访问
@@ -557,7 +451,7 @@ Gate G8b：只在产品交付承诺需要这些能力时为必过 Gate；每项�
 □ 目标组件在 Editor 保存、关闭、重开后结构稳定
 ```
 
-### 6.2 发布、接线与自动检查
+### 5.2 发布、接线与自动检查
 
 codegen 完成后，先人工审阅四个 AUTO 区块，并完成 `fguiContracts.ts`、配对 Logic、`viewRegistry.ts`、`pages.ts` 和 `sharedPkgs` 接线；确认设计源和真实发布物正确后，再更新 manifest 闭包锁。不要从 codegen 直接跳到 `--write`。
 
@@ -584,1040 +478,448 @@ npm run verify:sync
 
 ---
 
-## 7. 提示词设计规范
+## 6. 从人工 MVP 演进到自动化
 
-### 7.1 公共变量
+### M0：人工可复现
+
+先选 1～2 个代表页面跑通：
+
+- 使用 `layoutMode: editor`，结构化记录 UI 需求、状态矩阵和 handoff 布局，但以 FairyGUI Editor 设计源作为最终结构坐标真源；
+- 人工批准 style anchor、效果图和独立资产；
+- 人工在 FairyGUI Editor 装配、发布；
+- 使用现有 codegen、manifest 和测试；
+- 记录尺寸、pivot、九宫格、来源和缺陷。
+
+这一阶段的目标不是“零人工”，而是确认每一步可追溯、可复现、能在 Creator 中运行。
+
+### M1：混合自动化，推荐长期形态
+
+当至少两个页面显示出稳定的重复规则后，再建设：
+
+- `ui-layout.schema.json`；
+- `ids.lock.json`；
+- Alpha bbox、padding、pivot、九宫格的确定性处理；
+- 由 JSON 反绘标注图；
+- `compile-report.json`；
+- machine-owned 纯视觉子组件；
+- Editor-owned 页面外壳；
+- 临时目录编译、原子替换和 `--check` 漂移模式。
+
+这些能力完成 round-trip 后，目标 machine-owned 组件才切换为 `layoutMode: machine`。机器负责重复且确定的部分，Editor 保留复杂组件、Transition、List 模板和交互编排。这是最稳妥的成熟方案。
+
+### M2：受控整页生成
+
+只有 M1 经过多轮 Editor round-trip 后，才逐项开放：
+
+- 简单整页 machine-owned XML；
+- Button、ProgressBar、List 等审核过的白名单模板；
+- Schema 升级器；
+- CI 中的稳定 ID、引用闭包、来源白名单和连续编译零 diff；
+- 提示词、参考图、批准源、模型参数和哈希的版本化记录。
+
+复杂动画和特殊交互不必为了“全自动”强行纳入生成器。
+
+---
+
+## 7. Machine 模式技术规范
+
+### 7.1 定位与启用条件
+
+Machine 模式的目标不是“从一张效果图自动还原完整 UI”，而是让已经批准的结构化布局和分层生产源可重复生成审稿投影、运行切图和受控 FairyGUI 设计源。
+
+职责固定为：
+
+> SVG 负责看和拖，`layout.json` 负责记录 machine-owned 子树，FairyGUI XML 负责交付给 Editor，PNG 负责运行和分段核验。
+
+只有同时满足以下条件，组件才能从 `layoutMode: editor` 切换为 `layoutMode: machine`：
+
+- 已有通过 Editor 手工创建的最小金样和真实 ID；
+- Schema、稳定 ID、图片处理和 XML 编译器已经实现；
+- 相同输入连续编译能得到确定性输出；
+- FairyGUI Editor 可以打开、保存、重开并发布生成组件；
+- Editor round-trip 没有未解释的语义变化；
+- Creator 可以加载发布物并通过结构与视觉验收；
+- 组件文件被整体标记为 machine-owned，且不与 Editor 双写。
+
+`layout.json` 只对它拥有的生成子树构成唯一布局真源。Editor-owned 页面外壳、复杂组件和交互编排仍以 Editor 设计源为真源；跨边界关系必须通过组件边界、Relation、命名绑定或显式契约表达，禁止在两边复制同一组坐标并分别维护。
+
+### 7.2 为什么不能从扁平效果图直接生成
+
+扁平 PNG 或嵌入整张效果图的 SVG 可以用于视觉评审，但不包含：
+
+- 被遮挡对象的完整像素和真实 Alpha；
+- Button 正常、按下、禁用等状态；
+- 可替换文字、动态数字、头像和远端内容；
+- 节点树、点击区、pivot、锚点和层级；
+- 九宫格、mask、blend、Controller、Gear 和 Relation 语义。
+
+矩形裁切不能恢复已经丢失的信息。正确输入必须是分层母版、完整 RGBA 单体、批准的 mask、字体和图标，以及显式布局契约。只有确认无需透明、无遮挡且不会复用的区域，才允许使用声明过的 `crop`。
+
+FairyGUI XML 也不能直接充当浏览器 DOM。它没有 CSS cascade、flex 或 grid，`displayList` 顺序具有层级语义，并依赖 package item、child、Controller page 等稳定 ID。Editor 还可能补默认值或规范化字段，且没有承诺 XML 是长期稳定的外部交换协议。因此必须通过版本化中间模型和 Editor 金样约束可生成子集。
+
+### 7.3 总体数据流
 
 ```text
-{{PROJECT_NAME}}           项目名
-{{FEATURE_NAME}}           功能或系统名
-{{PAGE_ID}}                页面稳定标识
-{{PLATFORM}}               iOS / Android / Web / PC
-{{DESIGN_WIDTH}}           逻辑设计宽度；本仓通常为 750
-{{DESIGN_HEIGHT}}          逻辑设计高度；本仓通常为 1624
-{{SAFE_AREA}}              安全区规则
-{{TARGET_LANGUAGES}}       目标语言
-{{REPO_RULES}}             仓库与架构约束
-{{GDD}}                    已冻结策划案
-{{UI_REQUIREMENTS}}        UI 需求契约
-{{STATE_MATRIX}}           页面状态矩阵
-{{LAYOUT_SPEC}}            线框与布局契约
-{{STYLE_ANCHOR}}           已批准风格锚点
-{{STYLE_TOKENS}}           可执行风格参数
-{{PAGE_CONCEPT}}           已批准整页效果图
-{{ASSET_MANIFEST}}         生产资产清单
-{{IDS_LOCK}}               稳定 ID 表；未启用时删除引用它的整行
-{{RUNTIME_CONTRACT}}       数据与事件契约
-{{CHANGE_REQUEST}}         本轮唯一允许的变化
-{{APPROVED_INVARIANTS}}    必须保持不变的内容
+批准的契约与视觉目标 + asset manifest + 分层母版 / 独立 RGBA
+                           │
+                           ▼
+                 layout.json + ids.lock.json
+                  布局真源       稳定 ID 真源
+                           │
+                           ▼
+                    fgui-layout-compiler
+          ┌────────────────┼─────────────────┐
+          ▼                ▼                 ▼
+     review.svg       generated/*.png    machine-owned XML
+     annotation.png   composite.png      package.xml 授权条目
+     diff.png         compile-report
+          └────────────────┼─────────────────┘
+                           ▼
+             FairyGUI Editor 重载、往返与正式发布
+                           ▼
+                 .bin + atlas + 独立纹理
+                           ▼
+                    Cocos Creator 导入
+                           ▼
+             runtime.png + 结构检查 + 差异报告
 ```
 
-各提示词还会使用下面这些局部变量：
+生成链不自行伪造 `.bin`、atlas 坐标、trim、rotation、分页或 Creator `.meta`；它们继续由 FairyGUI Editor 和 Cocos Creator 产生。
+
+### 7.4 文件所有权
+
+| 文件或目录 | 职责 | 所有者 | 直接人工编辑 |
+| --- | --- | --- | --- |
+| 分层 PSD/PSB/SVG、完整 RGBA 源件 | 像素、造型与透明度真源 | 美术 | 允许 |
+| `*.target.approved.png` | 人工批准的视觉目标 | 审稿流程 | 重新审稿后替换 |
+| `*.layout.json` | machine-owned 子树的几何、FGUI 映射及资产/状态 stable key 引用 | UI Studio/开发者 | 允许，推荐通过 Studio |
+| `ids.lock.json` | stable key 到 FairyGUI ID 的映射 | 编译器 | 禁止手改，只追加或显式迁移 |
+| `*.review.svg`、`*.annotation.png` | 浏览器画布与审稿投影 | 编译器 | 禁止 |
+| `generated/*.png`、`*.composite.png` | 运行切图与布局重建证据 | 编译器 | 禁止 |
+| `<Generated>.xml` | machine-owned 纯视觉或白名单组件 | 编译器 | 禁止 |
+| `<Page>.xml` | 页面外壳、复杂控件和交互编排 | FairyGUI Editor | 只在 Editor 中编辑 |
+| `package.xml` | 包数据库 | 默认由 Editor 拥有；未来生成器仅拥有获批条目 | 禁止人工文本修改 |
+| `.bin`、atlas、独立发布纹理 | 正式运行发布物 | FairyGUI Editor | 禁止 |
+| Creator `.meta` | Creator 资源身份和导入信息 | Cocos Creator | 禁止伪造 |
+| `*.runtime.png` | 真实运行证据 | 验收流程 | 运行时生成 |
+
+本仓当前规则仍是 XML 只能通过 FairyGUI Editor 修改。启用 machine-owned XML 前，必须先取得针对明确文件的窄化授权；`package.xml` 只有在白名单 AST 合并、未知字段保留和 round-trip 测试全部通过后才能开放生成器条目。
+
+### 7.5 推荐目录
 
 ```text
-# 编排和证据
-{{STAGE_ID}}、{{ORCHESTRATOR_MODE}}、{{PIPELINE_STATUS}}、{{APPROVED_ARTIFACTS}}
-{{CURRENT_OBJECTIVE}}、{{RUNTIME_EVIDENCE}}、{{MODE}}、{{AUTHORIZED_DEFECT_IDS}}
-{{SEVERITY_POLICY}}
+docs/ui/<feature>/<page>/
+├─ 00-input/
+├─ 10-contract/
+├─ 20-layout/
+│  ├─ <Page>.layout.json
+│  ├─ <Page>.review.svg
+│  └─ <Page>.annotation.png
+├─ 30-visual/
+├─ 40-production/
+│  ├─ asset-manifest.json
+│  ├─ source/
+│  ├─ runtime/
+│  └─ contact-sheet.png
+└─ 90-evidence/
+   ├─ <Page>.composite.png
+   ├─ <Page>.runtime.png
+   ├─ <Page>.diff.png
+   ├─ compile-report.json
+   └─ acceptance.md
 
-# 视觉输入和目标
-{{PRIMARY_ART_REFERENCE}}、{{BRAND_REFERENCE}}、{{IP_REFERENCE}}、{{SHAPE_REFERENCE}}
-{{CHARACTER_OR_BRAND_REFERENCE}}、{{WIREFRAME_IMAGE}}、{{LAYOUT_ANNOTATION}}
-{{BRAND_INVARIANTS}}、{{APPROVED_PALETTE_CONSTRAINTS}}
-{{CHARACTER_OR_IP_INVARIANTS}}、{{GENERATION_ANCHOR_SENTENCE}}
-{{STYLE_BOARD_SIZE}}、{{TARGET_STATE}}、{{VISUAL_FOCUS}}、{{PRIMARY_ACTION}}、{{MOOD}}
+apps/art/fairygui/
+├─ layout/<Package>/ids.lock.json
+└─ assets/<Package>/
+   ├─ package.xml
+   ├─ <Page>.xml
+   ├─ <Generated>.xml
+   └─ generated/*.png
 
-# 资产几何和格式
-{{ASSET_STABLE_KEY}}、{{ASSET_NAME_AND_PURPOSE}}、{{ASSET_STATE}}、{{ASSET_INVARIANTS}}
-{{SOURCE_WIDTH}}、{{SOURCE_HEIGHT}}、{{SOURCE_TO_LOGICAL_SCALE}}、{{OUTPUT_FORMAT}}
-{{VISIBLE_BBOX_PX}}、{{PIVOT_NORMALIZED}}、{{PADDING_PX}}、{{SOURCE_MODE}}
-{{LAYER_NAME}}、{{LAYER_SPEC}}、{{OCCLUSION_POLICY}}
-{{BACKGROUND_CONTAMINANTS}}、{{APPROVED_EXTERNAL_EFFECTS}}
-{{TARGET_IMAGE}}、{{EDIT_REGION_OR_MASK_DESCRIPTION}}、{{REFERENCE_IMAGE_ROLES}}
-
-# FGUI 和程序
-{{LAYOUT_MODE}}、{{LAYOUT_SCHEMA}}、{{PACKAGE_NAME}}、{{COMPONENT_NAME}}
-{{FGUI_BINDINGS}}、{{FGUI_OWNERSHIP_POLICY}}、{{FGUI_PROJECT_STATE}}
-{{EXECUTION_MODE}}、{{ALLOWED_WRITE_SCOPE}}、{{CURRENT_CODE}}
+apps/Cocos/assets/resources/ui/
+├─ <Package>.bin
+├─ <Package>_atlas*.png
+└─ *.meta
 ```
 
-发送任何提示词前必须执行变量预检：
+`40-production/runtime/` 只是审稿和交接暂存区。通过 G5 的资产必须按清单导入 FairyGUI 包，不能让暂存副本和包内副本成为两份可独立修改的真源。
 
-```text
-1. 替换全部 {{...}}；最终提示词中不得残留原始占位符。
-2. 可选变量不存在时删除对应整行，并按实际附件顺序重新编号参考图；不要把空字符串或“不适用”发给图片模型。
-3. 每个“图 N”必须对应实际附加的图片，不能只写一个模型无法读取的文件名。
-4. 模板中的 a | b | c 表示枚举；实际输出必须只选择一个值，不能原样复制整串。
-5. 所有 px 字段必须注明属于 sourcePx 还是 logicalPx；pivot 统一使用 0～1 的 pivotNormalized。
-6. 首次图片生成使用“目标 + 参考职责 + 不变量 + 输出要求 + 禁区”；只有修订任务才增加“唯一允许变化”。
-7. 图片提示词不能证明精确像素尺寸、pivot、Alpha 或未编辑区域不变；这些必须由工具参数、manifest 和外部验证提供证据。
-```
+### 7.6 Machine-mode `layout.json` 模型
 
-### 7.2 文本、结构化数据和代码任务的公共执行头
+本节是合并文档中唯一的 machine-mode 语义骨架。真正实现后，仓库中的版本化 JSON Schema 才是唯一可执行契约；本文负责定义真源边界和最小数据流，不用第二份示例替代正式 Schema。
 
-把下面内容放在 P0～P3、P4B、P6、P9～P11 前：
+相邻契约之间只允许稳定引用，禁止复制同一事实：
 
-```text
-你正在执行 {{PROJECT_NAME}} 的 UI 生产流水线阶段：{{STAGE_ID}}。
+| 事实 | 权威真源 | `layout.json` 中允许保存的内容 |
+| --- | --- | --- |
+| 资产来源、哈希、sourceMode、裁切、Alpha bbox、padding、美术锚点、运行尺寸、九宫格、atlas、exported 与输出文件 | `asset-manifest.json` | manifest 路径与哈希；node 只引用资产 stable key |
+| 业务状态、判定条件和数据 fixture | `state-matrix.yaml`、`scenario-fixtures.yaml` | Controller/page 的 FGUI 映射与 scenario stable key |
+| 动态字段来源、格式和刷新语义 | `runtime-contract.yaml` | text slot 到 node/绑定名的映射 |
+| 节点树、逻辑坐标、层序、pivot、FGUI Controller/Gear/Relation 和运行时 mask | `layout.json` | 完整 machine-owned 几何与装配语义 |
 
-权威输入优先级：
-1. {{REPO_RULES}}
-2. 已冻结的策划与运行时契约
-3. 已批准的页面状态、布局、风格和资产清单
-4. 当前实现与真实运行证据
-5. 推断
+编译器把解析后的资产元数据、状态映射和引用闭包写入 `compile-report.json` 作为只读快照；这些快照不能反向编辑，也不能成为新的真源。
 
-规则：
-- 高优先级输入冲突时停止，不得自行选择。
-- 输入缺失时使用 TBD、needs_decision 或 needs_source 标注，不得编造玩法、数据、坐标、隐藏图层、ID 或程序接口。
-- 只完成本阶段，不提前伪造下游产物。
-- 所有结论必须能追溯到权威输入。
-- 明确区分事实、推断、建议和阻塞项。
-- 示例值不是项目事实。
-
-每次输出分成两块：
-
-输出 A：阶段产物
-- 严格遵循当前提示词指定的 JSON/YAML/文档格式。
-- 放在独立代码块中，可直接保存；不混入解释、Markdown 注释或执行日志。
-
-输出 B：`run-report.yaml`
-stage:
-source_inputs:
-decision_log:
-unresolved:
-checks:
-gate:
-  result: pass | fail | blocked
-  missing_evidence:
-```
-
-图片任务不直接套用这个长执行头；图片模型只生成候选图，不能自行证明 Alpha、像素尺寸、pivot 或未编辑区不变。编排器或执行代理应在图片返回后另行生成 `run-report.yaml`。
-
-### 7.3 P0：流水线总控
-
-用途：选择下一阶段，或审阅一个已经产出的阶段；选择和审阅分两次调用，防止模型一边调度一边自证通过。
-
-```text
-角色：UI 生产流水线总控。
-
-模式：{{ORCHESTRATOR_MODE}}  # select 或 review
-
-目标：
-- select：只检查输入并选择下一阶段，不执行阶段，不更新 Gate。
-- review：只审阅已经产生的单阶段产物和证据，更新该 work item 的 Gate，不执行下一阶段。
-
-权威输入：
-- 仓库规则：{{REPO_RULES}}
-- 当前流水线状态：{{PIPELINE_STATUS}}
-- 当前已批准产物：{{APPROVED_ARTIFACTS}}
-- 本轮目标：{{CURRENT_OBJECTIVE}}
-
-不变量：
-- 已批准产物未经显式变更单授权不可修改。
-- 每个阶段只能消费已通过 Gate 的上游产物。
-- 图片、布局、FairyGUI 和程序分别有独立真源，不能相互反向猜测。
-- 效果图不等于分层生产资产，FairyGUI 发布物不等于可运行验收。
-
-任务：
-1. select 模式：判断当前应执行的唯一阶段，检查输入，输出提示词编号和变量，保持 Gate 不变。
-2. review 模式：检查阶段产物、自动检查和人工证据，输出 Gate 结论与缺口，不调度下一阶段。
-3. 同一 work item 同时只有一个当前 Gate；不同页面、组件或资产在共享上游 Gate 通过后可以并行，每项单独记录状态和依赖。
-4. 不得虚报“已发布”“已运行”或“已验收”。
-
-输出格式：
-current_stage:
-work_item_id:
-mode: select | review
-selected_prompt:
-input_check:
-  ready:
-  missing:
-gate:
-  criteria:
-  result: pass | fail | blocked
-next_stage:
-decision_log:
-
-禁区：
-- 不直接生成美术、FairyGUI 或代码。
-- 不跨阶段补造缺失输入。
-- 不以“看起来合理”代替验收证据。
-
-验收标准：
-- 同一 work item 任意时刻只有一个当前 Gate。
-- 每个通过的 Gate 都有对应产物和证据。
-```
-
-### 7.4 P1：策划案转 UI 需求契约
-
-```text
-角色：资深游戏 UI 系统分析师。
-
-目标：
-把已冻结策划案转换为可设计、可装配、可编程、可测试的 UI 需求契约。
-
-权威输入：
-- 策划案：{{GDD}}
-- 平台：{{PLATFORM}}
-- 画布与安全区：{{DESIGN_WIDTH}} × {{DESIGN_HEIGHT}}，{{SAFE_AREA}}
-- 目标语言：{{TARGET_LANGUAGES}}
-- 现有运行时契约：{{RUNTIME_CONTRACT}}；若尚未实现，明确写“缺失”，不要伪造符号
-
-不变量：
-- 不改变玩法、数值公式、奖励规则、解锁条件或业务名词。
-- 每个显示值必须有数据来源，无法确认时标为 TBD。
-- 每个操作必须有前置条件、等待、成功、失败和防重复规则。
-- 动态文字与数字不得被规划为烘焙图片。
-
-任务：
-1. 提取用户目标和完整操作路径。
-2. 建立页面、弹窗、浮层和共用组件清单。
-3. 为每个页面列出入口、出口、数据、操作、反馈和异常状态。
-4. 将策划条款映射到具体 UI 需求。
-5. 对每个动作先描述 UI 所需能力，再检查是否能映射到已有契约符号。
-6. 提取字体/本地化、动效/音效/触觉、可访问性和性能需求。
-7. 找出不足以实现 UI 的策划缺口、权利来源缺口和运行时契约缺口。
-
-输出 YAML：
-feature:
-non_goals:
-user_journeys:
-pages:
-  - page_id:
-    type: page | popup | overlay | component
-    user_goal:
-    entry_conditions:
-    exits:
-    displayed_data:
-      - field:
-        source:
-        format:
-        refresh_trigger:
-        extreme_samples:
-    actions:
-      - action_id:
-        precondition:
-        required_capability:
-        mapped_contract_symbol:
-        contract_status: existing | missing | conflict
-        waiting_feedback:
-        success_feedback:
-        failure_feedback:
-        idempotency:
-        cancellation:
-    required_states:
-    localization_risks:
-traceability:
-  - gdd_clause:
-    ui_requirements:
-runtime_contract_gaps:
-typography_and_localization:
-motion_sound_haptic_needs:
-performance_requirements:
-rights_and_provenance_gaps:
-unresolved:
-
-禁区：
-- 不设计视觉风格和像素坐标。
-- 不创造策划中不存在的货币、按钮或功能。
-- 不为尚未实现的运行时能力自行命名 shared 消息、RPC 或 HTTP 接口。
-- 不用“其他状态类似”省略异常路径。
-
-验收标准：
-- 每个策划操作都映射到至少一个 UI 操作。
-- 每个显示字段都有来源。
-- 每个异步操作都有完整反馈和重复点击处理。
-- 所有疑点均显式记录。
-```
-
-### 7.5 P2：页面和状态矩阵
-
-```text
-角色：UI 状态建模工程师。
-
-目标：
-把 UI 需求转换为无歧义的语义状态矩阵和场景 fixture；具体 FairyGUI Controller 只是后续实现建议，不是本阶段真源。
-
-权威输入：
-- UI 需求：{{UI_REQUIREMENTS}}
-- 运行时数据和事件：{{RUNTIME_CONTRACT}}
-
-不变量：
-- 不增加业务状态。
-- 区分互斥状态和可正交叠加状态，避免一个状态维度承担所有组合。
-- 状态转换必须由明确事件触发。
-- 本阶段不决定像素坐标和美术形式。
-
-任务：
-1. 为每个页面识别实际需要的默认、加载、正常、空、错误、断线、锁定、资源不足和冷却等状态。
-2. 将状态拆分成语义状态维度，并给出 recommended_controllers 作为后续建议。
-3. 此时尚无节点树；用 semantic_element_effects 定义主要操作区、内容区、余额显示等语义元素的可见性、文字、图标、启用、选中和交互行为。
-4. 生成状态转移表。
-5. 显式定义 UI model，其中可包含服务端快照、本地 inflight/乐观状态、时钟、权限、生命周期和宿主环境。
-6. 为每个状态生成可重复的 scenario_id 和 fixture；标出无法从现有输入唯一判定或构造的状态。
-
-输出 YAML：
-pages:
-  - page_id:
-    initial_state:
-    state_dimensions:
-      - id:
-        kind: exclusive | orthogonal
-        default_value:
-        values:
-        recommended_controller:
-    state_matrix:
-      - state_id:
-        trigger:
-        preconditions:
-        dimension_values:
-        semantic_element_effects:
-          - element_role:
-            effects:
-        allowed_actions:
-        exit_event:
-    transitions:
-      - from:
-        event:
-        guard:
-        to:
-        side_effect:
-    scenario_fixtures:
-      - scenario_id:
-        server_snapshot:
-        local_state:
-        clock:
-        permissions:
-        host_environment:
-unresolved:
-
-禁区：
-- 不用截图代替状态定义。
-- 不把网络错误、业务拒绝和空数据混成一个状态。
-- 不使用运行时契约中不存在的字段；缺失能力必须标记为 contract gap。
-
-验收标准：
-- 每个状态可由显式 UI model 唯一判定，并有可重复 fixture。
-- 每个用户操作在相关状态下都有明确行为。
-- 状态维度组合不存在不可达或自相矛盾状态。
-```
-
-### 7.6 P3：线框与布局契约
-
-```text
-角色：游戏 UI 信息架构师与布局工程师。
-
-目标：
-生成不依赖最终美术的线框布局和机器可读布局契约。
-
-权威输入：
-- UI 需求：{{UI_REQUIREMENTS}}
-- 状态矩阵：{{STATE_MATRIX}}
-- 布局模式：{{LAYOUT_MODE}}  # editor 或 machine
-- 布局 Schema：{{LAYOUT_SCHEMA}}  # machine 模式必填；editor 模式为 handoff 格式定义
-- 画布：{{DESIGN_WIDTH}} × {{DESIGN_HEIGHT}}
-- 安全区：{{SAFE_AREA}}
-- 目标语言：{{TARGET_LANGUAGES}}
-
-不变量：
-- 保持页面信息层级和操作顺序。
-- 动态文字必须预留最长语言和最大数字范围。
-- 所有坐标使用同一原点、单位和轴方向。
-- stable key 一旦批准即保持稳定。
-- 不用装饰掩盖布局问题。
-- 所有页面矩形使用 logicalPx、左上原点；pivot 使用 pivotNormalized；源图裁切和 padding 使用 sourcePx。
-
-任务：
-1. 定义页面分区、节点树、坐标、尺寸、anchor、pivot、层级和裁剪规则。
-2. 定义 Relation、安全区、列表滚动、文本溢出和点击区域。
-3. 建立 semantic_role_to_node_key 映射，再给出每个状态的结构变化。
-4. 生成可由 layout 数据反绘的标注说明。
-5. 记录仍需视觉阶段决定的槽位。
-
-输出：
-- 严格 JSON 的 layout/handoff 契约，字段严格服从 {{LAYOUT_SCHEMA}}。
-- 节点清单和 stable key。
-- semantic_role_to_node_key 映射。
-- 默认、最长文本、极值数字、空列表和满列表的布局检查结果。
-- 不能确定的项目放入 openQuestions。
-
-边界：
-- layoutMode=editor：JSON 是设计交接和验收规范，最终坐标真源是 FairyGUI Editor；不得宣称 JSON 可直接生成 FGUI。
-- layoutMode=machine：只有仓库中已存在并验证过编译器时，JSON 才可生成 annotation 和 machine-owned XML。
-- Controller/Gear 只记录已批准语义，不根据节点名推断。
-
-禁区：
-- 不从扁平效果图反推隐藏图层。
-- 不生成最终材质、光影或装饰。
-- 不用肉眼描述代替精确数值。
-- 不把点击区默认等同于可见图形边界。
-
-验收标准：
-- 节点树闭合、父节点存在、stable key 唯一。
-- 所有节点位于合法坐标系，或有明确溢出理由。
-- 安全区、长文本、极值数字和目标屏幕均可容纳。
-- 关键点击目标没有遮挡和歧义。
-```
-
-### 7.7 P4A：生成视觉风格锚点
-
-这是图片生成提示词。输出只用于视觉冻结，不是运行时资产。
-
-```text
-任务类型：视觉探索 / style anchor，不是完整页面，也不是运行时切图。
-
-目标：
-为 {{PROJECT_NAME}} / {{FEATURE_NAME}} 生成一张统一的游戏 UI 风格锚点图。
-
-参考图职责：
-- 图 1：{{PRIMARY_ART_REFERENCE}}，只决定世界观、材质和色彩。
-- 图 2：{{BRAND_REFERENCE}}，只决定品牌辨识。
-- 图 3：{{IP_REFERENCE}}，只决定角色或 IP 身份；若不适用则忽略。
-
-必须保持的不变量：
-- {{BRAND_INVARIANTS}}
-- {{APPROVED_PALETTE_CONSTRAINTS}}
-- {{CHARACTER_OR_IP_INVARIANTS}}
-
-画面必须展示：
-- 主色、辅色、强调色、成功色、警告色和危险色之间的关系。
-- 面板、弹窗、卡片、普通按钮、主按钮、禁用按钮的统一材质语言。
-- 一组同家族图标、边框、分隔线、角饰和进度条。
-- 圆角、描边、内外阴影、高光、厚度和统一光源方向。
-- 一个代表世界观的装饰物，但不要形成完整页面。
-
-构图：
-- 中性展示底板，元素分区清晰，正视角 UI 展示。
-- 元素互不遮挡，保留足够空白。
-- 输出尺寸：{{STYLE_BOARD_SIZE}}。
-
-禁区：
-- 不生成完整游戏页面。
-- 不生成可读正文、数值、未经批准的新商标、签名或水印；批准 Logo 只在明确要求时原样作为身份参考，不得自行改写。
-- 不混入第二套画风。
-- 不使用摄影场景或复杂透视环境背景。
-- 不把棋盘格伪装成透明背景。
-
-验收标准：
-- 所有组件像来自同一个 UI 系统。
-- 材质、描边、圆角和光向可以被明确描述并重复生成。
-- 缩小后仍能区分主操作、次操作、禁用和危险状态。
-```
-
-### 7.8 P4B：冻结可执行风格参数
-
-```text
-角色：UI 美术规范分析师。
-
-目标：
-分析已批准的风格锚点 {{STYLE_ANCHOR}}，生成后续图片生成与 FairyGUI 装配共同使用的风格参数。
-
-权威输入：
-- 风格锚点：{{STYLE_ANCHOR}}
-- 品牌不变量：{{BRAND_INVARIANTS}}
-
-不变量：
-- 只描述图中可验证的视觉规律。
-- 无法精确读取的颜色或尺寸标为估计值。
-- 不重新设计风格。
-
-输出 YAML：
-palette:
-materials:
-stroke:
-corners:
-shadow:
-highlight:
-lighting:
-icon_language:
-button_states:
-panel_language:
-typography_direction:
-forbidden_style_drift:
-generation_anchor_sentence:
-
-禁区：
-- 不把单个偶然细节提升为全局规则。
-- 不使用“高级感”“精致”等不可验证词作为唯一描述。
-
-验收标准：
-- generation_anchor_sentence 可逐字复用于后续每个资产提示词。
-- 参数足以判断新资产是否发生风格漂移。
-```
-
-### 7.9 P5：生成整页高保真效果图
-
-这是图片生成提示词。输出是评审效果图，不能直接假定为可切生产资产。
-
-```text
-任务类型：高保真页面评审图，不是分层生产资产。
-
-目标：
-基于已批准线框生成 {{PAGE_ID}} 的整页高保真效果图。
-
-画布映射：
-- 逻辑画布：{{DESIGN_WIDTH}} × {{DESIGN_HEIGHT}} logicalPx。
-- 实际生成画布：{{SOURCE_WIDTH}} × {{SOURCE_HEIGHT}} sourcePx；必须记录并使用图片工具/API 实际支持的输出尺寸，不能靠提示词声称得到任意精确像素。
-- 映射比例：{{SOURCE_TO_LOGICAL_SCALE}}。
-- 若模型不支持目标比例，用确定性 fit/pad 生成评审画布，并在评审中以线框/布局契约为准；效果图像素不是最终坐标证据。
-
-参考图职责：
-- 图 1：{{WIREFRAME_IMAGE}}，是布局、信息层级和主要热区的唯一权威。
-- 图 2：{{STYLE_ANCHOR}}，是色彩、材质、描边、圆角和光向权威。
-- 图 3：{{IP_REFERENCE}}，只决定角色或品牌身份。
-- 不得互换参考图职责。
-
-必须保持：
-- 画布 {{DESIGN_WIDTH}} × {{DESIGN_HEIGHT}}。
-- 安全区 {{SAFE_AREA}}。
-- 线框中的页面分区、内容槽位、操作顺序和视觉焦点。
-- {{APPROVED_INVARIANTS}}。
-- 风格句：{{GENERATION_ANCHOR_SENTENCE}}。
-
-目标状态：
-- 页面状态：{{TARGET_STATE}}。
-- 视觉焦点：{{VISUAL_FOCUS}}。
-- 主要操作：{{PRIMARY_ACTION}}。
-- 情绪：{{MOOD}}。
-
-文字规则：
-- 玩家名、数字、价格、倒计时和动态正文保留为空白槽或简单占位。
-- 不生成乱码、伪文字或不可编辑的关键标签。
-
-禁区：
-- 不改变线框信息架构。
-- 不新增按钮、货币、功能或角色。
-- 不将多个交互元素合成不可拆装饰。
-- 不改变未授权的构图、色板、角色比例和光向。
-- 不声称效果图已经是分层资产。
-- 每次只输出一张完整页面，不生成多方案拼图或 contact sheet；需要多个方向时分别运行并独立评审。
-
-验收标准：
-- 视觉层级与交互优先级一致。
-- 核心内容全部在安全区内。
-- 所有动态内容有清晰可编辑槽位。
-- 每个视觉元素能映射回一个布局节点或明确标记为纯装饰。
-```
-
-### 7.10 P5R：效果图结构化评审
-
-这个提示词用于评审模型或人工评审助手，不生成新图。
-
-```text
-角色：游戏 UI 视觉评审与可生产性审计员。
-
-目标：
-对比 {{PAGE_CONCEPT}}、{{LAYOUT_SPEC}}、{{STYLE_ANCHOR}}、{{STATE_MATRIX}}，判断效果图是否可以进入生产拆层。
-
-任务：
-1. 检查布局节点是否一一对应，是否擅自新增、删除或移动功能。
-2. 检查安全区、视觉层级、主要操作、长文本槽和极值数字槽。
-3. 检查色板、材质、描边、圆角、光向、图标透视和角色身份一致性。
-4. 标出动态文字烘焙、不可拆元素、背景污染、遮挡缺失和不可复用结构。
-5. 将问题分成：必须回 G2、必须回 G3、可在 G4 拆层解决、无需阻断。
-
-输出表：
-- issue_id
-- severity
-- evidence
-- violated_contract
-- root_stage
-- minimal_change
-- invariants_to_preserve
-- gate_result
-
-禁区：
-- 不以个人喜好替代契约。
-- 不直接修改图像。
-- 不把“可以 PS 抠出来”当作已有透明生产源。
-
-验收标准：
-- 每个结论都指向可见证据和具体契约。
-- Gate 结论只有 pass、fail 或 blocked。
-```
-
-### 7.11 P6：生产资产清单
-
-```text
-角色：2D 游戏 UI 技术美术与资产规划师。
-
-目标：
-把已批准布局、状态和效果图转成可独立生产、可复用、可验证的运行时资产清单。
-
-权威输入：
-- 布局：{{LAYOUT_SPEC}}
-- 状态矩阵：{{STATE_MATRIX}}
-- 风格锚点与参数：{{STYLE_ANCHOR}} / {{STYLE_TOKENS}}
-- 效果图：{{PAGE_CONCEPT}}
-- 稳定 ID：{{IDS_LOCK}}
-
-不变量：
-- 布局和节点语义不变。
-- 动态文字、数字、头像和远端内容不得烘焙。
-- 扁平效果图无法证明的隐藏像素、pivot 和状态变体必须标记 needs_source。
-- 同一语义资产优先复用，不为每个页面复制。
-
-任务：
-为每个节点决定：
-1. 使用 FGUI 图元、运行时文本、Loader、独立透明图、九宫格、整块背景、序列帧、骨骼、粒子或无需资产。
-2. 画布尺寸、可见包围盒、透明边距、裁切方式、pivot、九宫格、采样方式和状态变体。
-3. 生产方式、来源、责任方和验证规则。
-4. 从效果图无法取得的内容明确列为 needs_source，不做推断裁切。
-
-输出 JSON：
+```json
 {
-  "assets": [
+  "$schema": "<schema-path>",
+  "schemaVersion": 1,
+  "layoutMode": "machine",
+  "canvas": {
+    "logicalSize": [750, 1624],
+    "origin": "top-left",
+    "adaptationAssert": {
+      "mode": "MatchWidth"
+    }
+  },
+  "safeArea": {
+    "mode": "runtime",
+    "referenceInsetsLogicalPx": [0, 0, 0, 0]
+  },
+  "package": {
+    "stableKey": "package.example",
+    "name": "<Package>",
+    "idSource": "editorSeeded"
+  },
+  "component": {
+    "stableKey": "component.example.generated",
+    "name": "<Generated>",
+    "ownership": "machine",
+    "exported": false
+  },
+  "assetManifest": {
+    "file": "../40-production/asset-manifest.json",
+    "expectedSha256": "<sha256>"
+  },
+  "nodes": [
     {
-      "stableKey": "",
-      "nodeKeys": [],
-      "kind": "transparent-png | full-canvas-png | nine-slice | icon | sequence | spine | particle | runtime-text | loader | primitive",
-      "purpose": "",
-      "states": [],
-      "sourceOfTruth": "",
-      "sourceMode": "copy | fullCanvas | alphaBBox | crop | mask | nineSlice",
-      "outputCanvasPx": {"width": 0, "height": 0},
-      "visibleBBoxPx": [0, 0, 0, 0],
-      "alpha": true,
+      "stableKey": "node.example",
+      "parent": null,
+      "type": "image",
+      "name": "img_example",
+      "asset": "asset.example",
+      "rectLogicalPx": [0, 0, 128, 128],
       "pivotNormalized": [0.5, 0.5],
-      "scale9GridPx": null,
-      "paddingPx": [0, 0, 0, 0],
-      "format": "png",
-      "outputFile": "",
-      "atlasPolicy": "",
-      "styleReferences": [],
-      "generationPromptId": null,
-      "owner": "artist | generator | fgui | runtime",
-      "status": "ready | needs_decision | needs_source",
-      "expectedSha256": null,
-      "validation": {}
+      "pivotAsAnchor": false,
+      "zOrder": 0,
+      "touchable": false,
+      "visible": true
     }
   ],
-  "nodeCoverage": [],
-  "unresolved": []
+  "controllers": [
+    {
+      "stableKey": "controller.view",
+      "name": "view",
+      "stateDimension": "ui.state.view",
+      "pages": [
+        {
+          "stableKey": "controller.view.page.default",
+          "name": "default",
+          "stateValue": "default"
+        }
+      ]
+    }
+  ],
+  "gears": [],
+  "relations": [],
+  "masks": [],
+  "hotspots": [],
+  "textSlots": [],
+  "lists": [],
+  "scenarios": [
+    {
+      "stableKey": "scenario.default",
+      "fixture": "scenario.default",
+      "controllerPages": {
+        "controller.view": "controller.view.page.default"
+      }
+    }
+  ],
+  "diffMasks": []
 }
-
-禁区：
-- 不把整页效果图自动切成推测图层。
-- 不烘焙动态文本或交互热区。
-- 不在未确认时猜九宫格、pivot 或被遮挡部分。
-- 不用一张巨型透明图替代本应复用的组件。
-- `crop`、`nineSlice`、精确 padding/scale 和 pivot 登记使用确定性工具，不交给图片模型。
-
-验收标准：
-- 每个可见布局节点都有明确资产或渲染责任方。
-- 每个状态变体都有来源。
-- 资产 stable key 唯一并保持稳定。
 ```
 
-### 7.12 P7：生成独立透明生产资产
+契约要求：
 
-每次只生成一个视觉候选。图片 API 的中间输出可以使用支持 Alpha 的 PNG/WebP，但进入当前 FairyGUI 工程的规范交付默认统一为 RGBA PNG；只有完成 Editor 导入、发布、manifest 和 Creator 验证后，才能批准其他格式直入生产链。仅写“transparent”不能替代正确的工具/API 背景与格式参数。
+- `layoutMode: machine` 与 `component.ownership: machine` 必须同时成立；`layoutMode: editor` 只能搭配 editor ownership，编译器不得接受交叉组合；
+- `assetManifest.file`、`$schema` 和所有间接资源路径必须位于批准根目录，且 manifest 哈希必须匹配；
+- 正式 Schema 的所有对象都设置 `additionalProperties: false`，版本变化只能通过显式升级器迁移；
+- `sourcePx` 和 `logicalPx` 明确分离并统一左上原点；source-space 字段以 `SourcePx` 结尾，布局和运行尺寸以 `LogicalPx` 结尾；
+- `referenceInsetsLogicalPx` 顺序固定为 left/top/right/bottom，只是测试参考值，不覆盖运行时安全区；
+- `adaptationAssert` 和发布配置只允许读取与校验；单个页面的编译不得修改 `Adaptation.json`、`Publish.json` 或 Creator 工程设置；
+- node 的 `asset` 与 `component` 按类型二选一；同一父节点下 `zOrder` 唯一，并据此生成 `displayList`，不得按名称排序；
+- asset manifest 的 `sourceAnchorNormalized` 描述裁切前美术锚点，node 的 `pivotNormalized` 与 `pivotAsAnchor` 描述 FGUI 语义；编译器负责坐标回算；
+- 基础显隐只使用 node 的 `visible`，条件显隐只通过 Gear 表达，不维护 `visibleWhen`；
+- Controller 及 page、Gear、Relation、mask、hotspot、text slot、list、scenario 和 diff mask 都有 stable key，引用必须闭合；
+- Controller 的 `stateDimension/stateValue`、scenario 的 `fixture` 和 text slot 的运行时字段只能引用上游契约，不复制判定条件、数据快照或格式规则；
+- M1 纯视觉编译器要求 `hotspots` 与 `lists` 为空；只有 M2 的审核模板和绑定契约落地后才逐项开放；
+- scenario 覆盖关键 Controller page、极值文本、异常态和目标安全区；动态差异只能通过带 reason 的显式 diff mask 排除。
+
+### 7.7 切图与图像规则
+
+本节资产规则同时适用于 `layoutMode: editor` 和 `layoutMode: machine`。Editor 模式由人工或独立确定性工具执行并登记证据；Machine 模式才由布局编译器自动执行。
+
+| `sourceMode` | 用途 | 允许条件 |
+| --- | --- | --- |
+| `copy` | 无损复制批准的独立源 | 文件哈希已锁定 |
+| `fullCanvas` | 保持源画布坐标的完整层 | 背景、灯光、前景遮挡等同画布层 |
+| `alphaBBox` | 按可见 Alpha 和显式 padding 裁切 | 已有真实透明通道，并记录裁切前原点 |
+| `crop` | 按显式矩形裁切 | 确认无背景污染且无遮挡缺失 |
+| `mask` | 使用独立 Alpha mask | mask 是批准输入，不能自动猜 |
+| `nineSlice` | 生成可伸缩源图 | 四边 inset 明确且中心区有效 |
+
+可供 machine 模式消费的 manifest 条目至少登记：asset stable key、源文件及 SHA-256、颜色模式、是否要求 Alpha、`sourceMode`、`sourceRectSourcePx`、`expectedAlphaBBoxSourcePx`、`paddingSourcePx`、`maskSource`、`sourceAnchorNormalized`、`runtimeSizeLogicalPx`、`nineSliceInsetsSourcePx`、`atlasPolicy`、`exported` 和 `output`。不适用字段必须为 `null`，不能省略后交给编译器猜测；`output` 只能是批准的 `generated/` 根下相对路径，禁止绝对路径和 `..`。
+
+所有 PNG 保留真实 Alpha，不使用有损压缩。九宫格边界必须在尺寸内，四个角不能进入伸缩区；源变化而 asset manifest 没有更新、重新批准并锁定哈希时编译失败。输出先进入临时目录，完整校验通过后原子替换；删除旧资源只能按生成清单精确执行。
+
+`fullCanvas` 不是默认逃生口。大量同画布层会增加纹理内存、加载、overdraw 和仓库体积，必须纳入 G0 性能预算和 G8b 真机测量。
+
+### 7.8 稳定 ID
+
+`ids.lock.json` 覆盖 package、package item、child 和 Controller page 的 stable key 映射：
+
+- 新包必须先由 FairyGUI Editor 创建空包，再导入真实 package ID；生成器不得自行推算 package ID；
+- 既有包先从真实 Editor 工程导入 ID；
+- image、component 和其他 package item 共用整个包级 ID 命名空间，不得拆成互不校验的分类 ID；
+- stable key 首次出现时分配，之后永久保持；
+- 移动、重排和修改显示名称不改变 ID；
+- 删除后写入 tombstone，旧 ID 永不复用；
+- stable key 重命名必须通过显式迁移；
+- package 或 package item ID 漂移、重复或引用悬空属于阻断错误；
+- Relation target、Gear Controller/page、group 和 `ui://` 引用必须全部解析；
+- 多分支同时新增 key 时必须由确定性合并器或串行分配流程解决冲突，不能人工挑选保留一边。
+
+folder item 采用 FairyGUI 的规范化完整路径语义；目录移动通过显式路径迁移处理，不与永久对象 ID 混为一谈。
+
+### 7.9 SVG 与浏览器 UI Studio
+
+SVG 是浏览器画布和审稿投影，不是第二份布局真源。节点通过 `data-stable-key` 映射到 JSON；拖动、缩放、排序和属性编辑都更新内存中的 `layout.json`，再重新渲染 SVG。
+
+首版 Studio 只暴露 FairyGUI 可落地的白名单能力：
+
+- 图层选择、锁定、显隐、分组、排序与重命名；
+- 拖拽、缩放、数值输入、网格和边缘吸附；
+- 设计分辨率、安全区与目标屏幕比例预设；
+- pivot、裁切框、Alpha bbox、九宫格保护区与热区；
+- Controller/page、Gear 和 Relation 预览；
+- 长文本、长数字、缺字和 target/composite/runtime/diff 切换；
+- revision/hash 冲突保护、撤销重做和确定性格式化。
+
+Studio 不支持任意 CSS、浏览器滤镜、Web 字体效果、复杂 SVG matrix 或自由 path 变形。若未来允许导入人工修改的 SVG，只接受 stable key、矩形、显隐、DOM 顺序和可归一化 translate/scale；其他语义仍以 JSON 为准。
+
+### 7.10 XML 生成边界
+
+首版编译器只支持经过金样验证的白名单：
+
+- image、loader、graph、group、text 和 component；
+- 坐标、尺寸、pivot、显隐、层序，以及 M1 中固定为 `false` 的 touchable；
+- 简单 Controller/page、`gearDisplay`、`gearIcon` 和 Relation；
+- mask 与已审核资源引用。
+
+Button、ProgressBar、List、Transition 和复杂 Controller/Gear 保留在 Editor-owned 外壳，或以后通过仓库内带 round-trip 测试的模板开放。禁止第一版自由拼装全部 FairyGUI XML 特性。
+
+写入要求：
+
+- machine-owned 组件由编译器整文件重建，禁止人工修改；
+- `package.xml` 只允许保留未知属性、节点和顺序的白名单 AST 合并，不使用字符串替换；
+- 保留 Editor 的实际字段拼写与资源元数据，包括 `extention`、`scale9grid`、`alone_npot` 和 `exported`；
+- `displayList` 严格按 `zOrder` 输出，禁止按名称排序；
+- 属性正确转义，写入前完成唯一性、尺寸、资源存在性和引用闭包检查；
+- Editor 在临时工程副本中的保存结果只用于结构化 diff，不得反写正式 machine-owned 文件；
+- 长期优先评估 FairyGUI Editor 插件 API，以降低对未版本化 XML 细节的依赖。
+
+### 7.11 编译、发布与验收
+
+单次编译按以下顺序执行：
+
+1. 解析并用 JSON Schema 校验布局；
+2. 校验资源根、路径、尺寸、颜色模式、Alpha 和哈希；
+3. 读取并校验 ID lock，只为新 stable key 分配 ID；
+4. 计算裁切、pivot、九宫格、层序和引用图；
+5. 在临时目录生成切片 PNG、review SVG、annotation/composite PNG 和组件 XML；
+6. 校验资源、节点、Controller、Gear、Relation 与 `ui://` 引用闭包；
+7. 在已经授权的前提下对白名单 `package.xml` 条目做 AST 合并；
+8. 生成 `compile-report.json`；
+9. 在固定工具链中再次编译：文本和规范化机器产物要求字节级 zero-diff，Editor 输出使用结构化语义 diff；
+10. 复制完整 FairyGUI 工程到临时目录，并把 staging 候选覆盖到该副本；正式工程保持不变；
+11. 在临时副本执行 Editor 重载、保存、重开和结构化 round-trip；任何差异未解释前都不得提升候选；
+12. round-trip 全部通过后，才将候选 machine-owned 文件和获批 package 条目一次原子提升到正式工程；
+13. 从正式工程使用 Editor 发布 `.bin`、atlas 和独立纹理；
+14. 执行现有 codegen、manifest、FGUI 测试和同步检查；
+15. 通过 Cocos Dashboard 打开 Creator，执行场景矩阵并获取真实运行证据。
+
+视觉验收分成两段：
 
 ```text
-任务类型：独立透明资产视觉候选；精确几何由 manifest 和确定性后处理完成。
-
-只生成一个资产：
-- stable key：{{ASSET_STABLE_KEY}}
-- 名称和用途：{{ASSET_NAME_AND_PURPOSE}}
-- 来源模式：{{SOURCE_MODE}}  # 仅 alphaBBox 或有批准 mask 的 mask；copy 不需要生成，crop/nineSlice 走确定性工具
-- 工具/API 输出格式：{{OUTPUT_FORMAT}}
-- 期望可见 bbox：{{VISIBLE_BBOX_PX}} sourcePx
-- pivotNormalized：{{PIVOT_NORMALIZED}}  # 资产元数据，不要求图片内嵌
-- 目标 padding：{{PADDING_PX}} sourcePx  # 生成后由确定性工具实现
-- 目标状态：{{ASSET_STATE}}
-
-参考图职责：
-- 图 1：{{STYLE_ANCHOR}}，只决定材质、色彩、描边、圆角和光源。
-- 图 2：{{SHAPE_REFERENCE}}，只决定轮廓、比例和朝向。
-- 图 3：{{CHARACTER_OR_BRAND_REFERENCE}}，只决定身份特征。
-
-必须保持的不变量：
-- {{GENERATION_ANCHOR_SENTENCE}}
-- {{ASSET_INVARIANTS}}
-- 与同系列资产一致的正视角、光源方向、线宽和边缘处理。
-
-输出要求：
-- 使用工具/API 支持的画幅生成真正透明的 RGBA 候选，完整保留 Alpha。
-- 只有一个隔离对象，轮廓完整，四周保留指定透明边距。
-- 不裁掉描边、高光、外发光或功能部件。
-- 除非资产定义明确要求，不添加投影、地面接触影或光晕。
-- 输出一个完成版本，不制作 contact sheet 或 sprite sheet。
-
-禁区：
-- 无场景、底板、渐变背景、白底或烘焙棋盘格。
-- 无文字、数字、Logo、签名或水印。
-- 不添加额外道具、第二个对象或展示框。
-- 不改变批准的身份、比例、朝向、主色和光向。
-
-验收标准：
-- 经外部工具验证四角和主体外部是真实 Alpha 0。
-- 候选经确定性 crop/pad/scale 后，输出尺寸、visible bbox、pivotNormalized 和 padding 符合 manifest。
-- 缩放到运行尺寸后轮廓仍清晰。
-- 与 style anchor 和同系列资产无明显漂移。
+target ↔ composite  ：验证拆层、切图、层序、坐标、pivot 和透明边
+composite ↔ runtime：验证 XML、Editor 发布、atlas、九宫格、字体和运行时装配
 ```
 
-### 7.13 P7B：同画布视觉层
+差异报告至少包含热力图、变化像素比例和最大颜色误差。字体、抗锯齿、纹理采样、色彩空间与 Alpha 预乘必须固定环境或使用经过批准的小容差；动态粒子、倒计时和网络内容只能用显式 mask 排除。默认截图不能替代所有 Controller 状态、长短屏和安全区场景。
 
-用于背景、灯光、雾、前景遮挡等必须与页面坐标严格对齐的层。图片模型只产生候选像素，精确 fullCanvas 尺寸和位置由确定性 pad/scale/composite 完成。
+### 7.12 计划命令与现有衔接
 
-```text
-任务类型：fullCanvas 视觉层候选。
+以下命令是未来接口设计，当前不存在：
 
-目标：
-只生成 {{LAYER_NAME}}。最终源画布应为 {{SOURCE_WIDTH}} × {{SOURCE_HEIGHT}} sourcePx，对应 {{DESIGN_WIDTH}} × {{DESIGN_HEIGHT}} logicalPx，比例 {{SOURCE_TO_LOGICAL_SCALE}}；图片模型使用其支持的画幅，最终精确画布由确定性工具产生。
+```bash
+npm run ui:studio -- \
+  --layout docs/ui/<feature>/<page>/20-layout/<Page>.layout.json
 
-权威层定义：{{LAYER_SPEC}}
-遮挡策略：{{OCCLUSION_POLICY}}
-风格句：{{GENERATION_ANCHOR_SENTENCE}}
+npm run compile:fgui-layout -- \
+  --layout docs/ui/<feature>/<page>/20-layout/<Page>.layout.json
 
-参考图职责：
-- 图 1：{{PAGE_CONCEPT}}，只决定该层的位置、覆盖范围和视觉作用。
-- 图 2：{{STYLE_ANCHOR}}，只决定材质、色彩和光向。
-- 图 3：{{LAYOUT_ANNOTATION}}，只决定坐标和安全区。
+npm run verify:fgui-layout -- \
+  --layout docs/ui/<feature>/<page>/20-layout/<Page>.layout.json
 
-来源边界：
-- 效果图只用于位置和视觉作用参考，不是像素提取源。
-- 如果目标层在效果图中被按钮、角色或文字遮挡，而 LAYER_SPEC 没有定义完整内容，立即停止并返回 needs_source，不猜隐藏像素。
-
-必须保持：
-- 视角和所有已批准页面区域。
-- {{APPROVED_INVARIANTS}}。
-- 除 {{LAYER_NAME}} 外的画布全部透明。
-
-输出要求：
-- 真透明 RGBA 候选；当前仓库规范交付统一为 RGBA PNG。
-- 后处理按 manifest 放入完整画布，不 tight crop，不用模型输出本身证明精确坐标。
-- 不包含文字、按钮、角色或其他语义节点，除非它们就是本层定义的一部分。
-
-禁区：
-- 不合成其他层。
-- 不改变全页构图。
-- 不输出带背景的评审图。
-
-验收标准：
-- 经确定性后处理后，与效果图按左上原点叠加位置正确。
-- 外部 Alpha 检查确认除目标层和批准外部效果外无残留像素。
+npm run diff:fgui-layout -- \
+  --layout docs/ui/<feature>/<page>/20-layout/<Page>.layout.json \
+  --actual path/to/<Page>.runtime.png
 ```
 
-### 7.14 P8：最小范围定向修图
+Editor 正式发布后衔接现有命令：
 
-```text
-任务类型：最小范围图像编辑。
-
-执行前先检查 CHANGE_REQUEST 是否只有一个可验证差异。若同时涉及构图、色彩、材质、姿态、比例等两个以上维度，停止并拆成多轮，不执行编辑。
-
-目标图：{{TARGET_IMAGE}}
-
-本轮唯一允许变化：
-{{CHANGE_REQUEST}}
-
-必须保持完全不变：
-- 画布尺寸、文件格式和透明通道。
-- 对象位置、比例、朝向、透视和 pivot。
-- 未指定区域的轮廓、颜色、材质、光照、阴影和边缘。
-- {{APPROVED_INVARIANTS}}。
-- 风格句：{{GENERATION_ANCHOR_SENTENCE}}。
-
-编辑区域：
-{{EDIT_REGION_OR_MASK_DESCRIPTION}}
-
-参考图职责：
-{{REFERENCE_IMAGE_ROLES}}
-
-输出要求：
-- 在工具支持时使用与输入相同的编辑画布；最终尺寸、格式和 Alpha 由确定性后处理统一。
-- 只返回一个完成版本。
-- 透明输入继续保持真正透明的背景。
-
-禁区：
-- 不做全局重绘或重新构图。
-- 不“顺便优化”其他区域。
-- 不增加文字、水印、背景或新物体。
-- 不改变未授权的色相、光向和描边。
-
-验收标准：
-- 指定问题已解决。
-- 对 mask 外区域执行像素差检查；提示词中的“保持不变”不能替代 diff 证据。
-- 几何、Alpha、像素差和运行叠加检查均通过后，方可替换原资产。
+```bash
+npm run codegen:fgui -- <Package> <Component>
+node scripts/fgui-manifest.mjs --write
+npm run test:fgui
+npm run verify:fgui
+npm run sync:client
+npm run typecheck:client
+npm run typecheck:client:legacy
+npm run test:client
+npm run verify:sync
 ```
 
-### 7.15 P8B：仅修正透明背景
+`codegen:fgui` 只从已有组件 XML 生成 View AUTO 区块，不负责生成 XML、切图、`.bin` 或 atlas。更新 manifest 哈希之前必须先审阅真实设计源和发布物，禁止用 `--write` 掩盖错误。
 
-主体造型已经批准，但输出带白底、棋盘格或背景污染时使用。优先使用确定性 mask/matting，再把原始主体 RGB 与新 Alpha 合成；生成式修图只能产生待审候选。
+代码直接通过 `UIPackage.createObject` 创建的正式页面或组件必须 `exported: true`。仅由 Editor-owned 外壳内部引用的 machine-owned 子组件可以保持 `exported: false`；默认只对正式外壳执行 codegen，只有业务代码确实直接访问生成组件时才为其生成独立 View。
 
-```text
-任务类型：背景 Alpha 修正。
+### 7.13 Machine-mode 提交闭包
 
-目标：
-保留已批准主体的造型和内部像素，只处理明确列出的背景污染。
+一次 machine-mode 变更必须按引用闭包提交：`layout.json`、引用的 asset manifest 与批准源、`ids.lock.json`、生成 PNG/XML、获批的 `package.xml` 变化、Editor 发布的 `.bin`/atlas/独立纹理、Creator 生成或复用的 `.meta`、更新后的 FGUI manifest，以及本批验收记录。只忽略工具缓存、临时编译目录、临时 Editor 工程和明确不作为交付物的审稿中间文件。
 
-背景污染：{{BACKGROUND_CONTAMINANTS}}
-必须保留的主体外部效果：{{APPROVED_EXTERNAL_EFFECTS}}
+提交前必须验证所有被引用文件都在闭包内、所有生成物与真源同批更新，并检查仓库体积和二进制变化；不能只提交 XML 或只更新 manifest 哈希。
 
-本轮唯一变化：
-- 只移除 BACKGROUND_CONTAMINANTS 中明确列出的白底、棋盘格或背景色。
-- 主体以外开放区域和四个角必须为 Alpha 0。
+### 7.14 建设顺序与完成口径
 
-必须保持完全不变：
-- 主体位置、尺寸、比例、朝向、轮廓、内部颜色、材质、描边和功能细节。
-- 原画布尺寸和主体在画布中的坐标。
+建设顺序固定为：
 
-输出：
-- 真透明 RGBA 候选；当前 FairyGUI 规范交付统一为 PNG。
-- 保留抗锯齿边缘和细小功能部件。
+1. 冻结 ownership、工具版本、发布设置和最小 Editor 金样；
+2. 实现 Schema、路径/哈希校验、稳定 ID、迁移和失败 fixture；
+3. 实现无界面 CLI 的确定性切图、白名单 XML、引用闭包和原子写入；
+4. 验证 Editor round-trip、正式发布、现有 codegen/manifest 和 Creator 运行；
+5. 固化 target/composite/runtime 差异环境、阈值和状态矩阵；
+6. 只有 CLI 和运行链稳定后才建设浏览器 Studio；
+7. 按金样逐类开放 Relation、文本槽、Button、ProgressBar、Controller/Gear、List 和 Transition。
 
-禁区：
-- 不移动、缩放、裁切、重绘、重新上色或重新打光。
-- 不添加文字、网格、UI、Logo、水印或新物体。
-- 无法可靠区分背景污染和 APPROVED_EXTERNAL_EFFECTS 时停止，返回 blocked/needs_mask。
+只有以下条件全部满足，才能宣称 machine 模式可投入生产：
 
-验收标准：
-- 外部工具确认四角和 padding 开放区 Alpha 为 0。
-- APPROVED_EXTERNAL_EFFECTS 完整保留。
-- 主体 bbox、坐标和内部 RGB 没有非授权变化。
-```
-
-即使执行了这条提示词，也必须检查四角 Alpha、可见 bbox、发丝/细绳/手指等细节和主体 RGB；“运行过抠图”不是通过证据。
-
-### 7.16 P9：FairyGUI 装配
-
-```text
-角色：熟悉 FairyGUI 与当前引擎集成方式的 UI 工程师。
-
-目标：
-把已批准布局和生产资产装配成可在 FairyGUI Editor 往返编辑、发布并由程序绑定的组件。
-
-权威输入：
-- 仓库规则：{{REPO_RULES}}
-- 执行模式：{{EXECUTION_MODE}}  # editor_manual、approved_generator 或 plan_only
-- 允许写入范围：{{ALLOWED_WRITE_SCOPE}}
-- FGUI 所有权策略：{{FGUI_OWNERSHIP_POLICY}}
-- 包名与组件名：{{PACKAGE_NAME}} / {{COMPONENT_NAME}}
-- 布局：{{LAYOUT_SPEC}}
-- 状态矩阵：{{STATE_MATRIX}}
-- 资产清单：{{ASSET_MANIFEST}}
-- 稳定 ID：{{IDS_LOCK}}
-- 当前 FairyGUI 工程：{{FGUI_PROJECT_STATE}}
-
-不变量：
-- 节点名、资源 ID、Controller 名和 page 保持稳定。
-- editor-owned 与 machine-owned 文件边界不变。
-- 动态内容继续使用 Text、Loader、List 等运行时节点。
-- 装配结果必须能被真实 FairyGUI Editor 读取、保存和发布。
-
-任务：
-1. 先阅读仓库规则、现有包结构、命名约定、发布配置和可用工具；不要假定规划中的命令已实现。
-2. 建立节点树、资源引用、层级、Controller、Gear、Relation、点击区、Loader、列表和九宫格。
-3. 只写入 ALLOWED_WRITE_SCOPE 中当前执行方明确拥有的文件；本仓默认通过 Editor 操作 XML。
-4. 使用真实 Editor 发布，不手工生成二进制和图集。
-5. 运行现有 codegen 与验证。
-6. 输出绑定表、变更文件、发布证据和未解决项。
-
-输出 YAML：
-package:
-component:
-ownership:
-node_bindings:
-controllers:
-relations:
-resource_ids:
-shared_packages:
-changed_files:
-publish_evidence:
-validation:
-unresolved:
-
-禁区：
-- 不手工伪造 .bin、atlas 或 Creator .meta。
-- 不从效果图猜 Controller、Gear、热区或隐藏节点。
-- 自动生成器或文本脚本不得覆盖 editor-owned XML；人工只可在授权范围内通过 FairyGUI Editor 修改。
-- machine-owned XML 只能由已批准生成器原子生成；同一文件不能由两方共同拥有。
-- 不把业务逻辑写进 FairyGUI 组件。
-- 无法运行 Editor 时，不得宣称已发布；应输出精确人工步骤和阻塞项。
-
-验收标准：
-- Editor 可打开、保存、重开和重新发布，无丢节点或丢引用。
-- ID 唯一稳定，程序绑定名与清单一致。
-- 全部状态可由 Controller/Gear 或运行时绑定表达。
-- 基准分辨率和目标适配尺寸无裁切、错位和异常点击区。
-```
-
-### 7.17 P10：程序接线
-
-```text
-角色：客户端 UI 架构工程师。
-
-目标：
-将已发布 FairyGUI 组件接入现有程序架构，使页面在真实运行时完成数据展示、事件处理和状态切换。
-
-权威输入：
-- 仓库规则：{{REPO_RULES}}
-- FairyGUI 绑定表：{{FGUI_BINDINGS}}
-- UI 状态矩阵：{{STATE_MATRIX}}
-- 数据与事件契约：{{RUNTIME_CONTRACT}}
-- 当前代码：{{CURRENT_CODE}}
-
-不变量：
-- 协议名、错误码、数据类型和公式从现有共享契约导入。
-- View 只负责引擎/FGUI 绑定、渲染和动作转发；业务决策进入 Logic。
-- 不直接修改生成镜像或生成产物。
-- 页面打开、关闭、事件订阅和异步取消必须成对处理。
-- 同一运行时状态必须得到确定性的 UI 输出。
-
-任务：
-1. 按仓库约定 codegen、注册并动态加载页面。
-2. 建立类型安全的节点绑定。
-3. 实现 render(model) 或等价单向渲染入口。
-4. 接入点击、列表、Loader、等待、成功、失败、断线和恢复。
-5. 防止重复提交、重复订阅和关闭后迟到回调。
-6. 为 Logic 和状态映射添加无头测试。
-7. 执行同步、类型检查和无头测试，并完成至少一次 Creator 页面加载 smoke。
-
-输出 YAML：
-implementation_summary:
-changed_files:
-state_coverage:
-event_flow:
-cleanup_guarantees:
-tests:
-runtime_evidence:
-creator_smoke:
-known_gaps:
-
-禁区：
-- 不在 View 内实现业务公式。
-- 不复制 shared 中已有的协议常量。
-- 不用静态截图代替真实运行验证。
-- 不隐藏失败状态或用日志替代用户反馈。
-- 不绕过正式包加载、ViewMgr 和页面组合入口。
-
-验收标准：
-- 状态矩阵中的每个状态和转换都有实现或明确阻塞。
-- 快速连点、开关页面和网络失败不会产生重复请求或泄漏。
-- 类型检查、相关测试和 Creator 页面加载 smoke 通过；这不构成 G8a 的全状态、全尺寸正式验收。
-```
-
-### 7.18 P11：QA 审计与最小修复
-
-```text
-角色：UI 集成 QA、技术美术和客户端诊断工程师。
-
-模式：{{MODE}}  # audit 或 fix
-授权修复缺陷：{{AUTHORIZED_DEFECT_IDS}}
-严重级别规则：{{SEVERITY_POLICY}}
-
-目标：
-依据批准真源对 {{PAGE_ID}} 做全状态、全尺寸、真实运行时验收；若模式为 fix，只修复已证实且已授权的问题。
-
-权威输入：
-- UI 需求：{{UI_REQUIREMENTS}}
-- 状态矩阵：{{STATE_MATRIX}}
-- 布局：{{LAYOUT_SPEC}}
-- 风格锚点和效果图：{{STYLE_ANCHOR}} / {{PAGE_CONCEPT}}
-- 资产清单：{{ASSET_MANIFEST}}
-- 运行时契约：{{RUNTIME_CONTRACT}}
-- 实际截图、录像、日志和测试结果：{{RUNTIME_EVIDENCE}}
-- 仓库规则：{{REPO_RULES}}
-
-不变量：
-- 不为修一个问题改变已批准的信息架构、风格或业务行为。
-- 修复必须落到真正所属层：需求、状态、布局、资产、FGUI、发布、程序或性能。
-- 生成产物必须通过其真源修复后重新生成。
-- 每次只处理证据充分的缺陷。
-
-任务：
-1. 覆盖所有状态、目标分辨率、安全区、长文本、极值数字和快速重复操作。
-2. 对比期望与实际，定位第一个发生偏差的层。
-3. 建立缺陷表并给出最小修复方案。
-4. audit 模式可以列出全部缺陷，只报告不修改。
-5. fix 模式每次只处理一个授权 defect_id，或一组具有同一最早根因、只修改同一真源的缺陷；否则停止并要求拆批。
-6. 提供修复前后证据和回归结果。
-
-输出 YAML：
-test_matrix:
-defects:
-  - id:
-    severity:
-    state_and_device:
-    expected:
-    actual:
-    evidence:
-    root_cause_layer:
-    root_cause:
-    minimal_fix:
-    regression_scope:
-fixes_applied:
-before_after_evidence:
-commands_and_results:
-gate: pass | fail | blocked
-
-禁区：
-- 不仅凭主观审美判定程序缺陷。
-- 不用代码位移补偿错误裁图，也不用重新出图掩盖错误数据。
-- 不直接编辑发布物或生成镜像。
-- 没有真实运行证据时不得宣布完成。
-
-验收标准：
-- G1/G2 定义的路径和状态全部被测。
-- 目标尺寸、安全区和目标语言均有证据。
-- 严重缺陷为零，其余缺陷有明确接受决定。
-- 修复没有引入新的状态、布局、资源或性能回归。
-```
-
-### 7.19 给 Codex 的持续编排提示词：执行到下一个人工 Gate
-
-这条提示词用于让 Codex 持续编排一个批次，但每次只执行到下一个需要人工批准或外部工具的 Gate。它不会取消人工视觉批准、FairyGUI Editor 发布和 Creator/真机验收。
-
-```text
-为 {{PROJECT_NAME}} 的 {{FEATURE_NAME}} / {{PAGE_ID}} 执行《FairyGUI-ui.md》定义的 UI 生产流水线。
-
-先阅读：
-- 仓库 AGENTS.md 与 {{REPO_RULES}}
-- 已冻结策划案 {{GDD}}
-- 现有客户端和 FairyGUI 文档
-- 当前页面、包、契约、代码和测试
-
-固定参数：
-- 平台：{{PLATFORM}}
-- 逻辑画布：{{DESIGN_WIDTH}} × {{DESIGN_HEIGHT}}
-- 安全区：{{SAFE_AREA}}
-- 目标语言：{{TARGET_LANGUAGES}}
-- 目标 FairyGUI package/component：{{PACKAGE_NAME}} / {{COMPONENT_NAME}}
-
-执行规则：
-1. 先盘点已有产物和 Gate，只推进第一个未通过阶段；到下一个人工 Gate 立即停止，不得跨 Gate。
-2. 用 P1/P2 先把策划转换为 UI 需求、数据动作契约和状态矩阵，所有未知项显式报告。
-3. 用 P3 建立线框和布局契约；layoutMode=editor 时标注图是 handoff/审稿资料，layoutMode=machine 时才允许由布局数据反绘；任何模式都不能 OCR 反推。
-4. 按 P4A → 人工批准 → P4B → P5 → P5R 的顺序锁定风格和效果图。效果图只用于评审，动态文字留槽，不直接进入运行目录。
-5. 用 P6 建资产清单。扁平图中被遮挡、带背景或无透明 Alpha 的对象不得矩形裁成伪独立件。
-6. 用 P7 一次生成一个批准资产，用 P8 做单变量修订；每轮重复不变量和参考图职责。
-7. 按当前仓库真实能力在 FairyGUI Editor 装配和发布；不要假定 layout 编译器存在，不手改 XML，不伪造 .bin、atlas 或 .meta。
-8. 按仓库 View/Logic、动态 import、viewRegistry、pages、codegen 和同步规则完成程序接线。
-9. G7 运行自动检查和 Creator 加载 smoke；G8a 再通过 Cocos Dashboard 打开的 Creator 做全状态集成验收；有真机承诺时继续 G8b。
-10. 每个阶段输出产物、决策、未解决项、检查结果和 Gate 结论；没有证据不得写“完成”。
-11. 修复必须回到最早错误真源，再顺序重建下游。
-12. 只提交本批相关文件，保留用户其他修改；Git 操作遵守仓库约定。
-
-本轮允许变化：
-{{CHANGE_REQUEST}}
-
-必须保持：
-{{APPROVED_INVARIANTS}}
-
-最终报告：
-- 只列出本轮实际产生且有证据的产物。
-- 尚未到达的下游项目列为 pending，不得为了满足清单而伪造。
-- 策划到 UI 的追溯表
-- UI 需求、UI model、状态矩阵、scenario fixtures、运动反馈和性能预算
-- 布局契约和线框/标注图
-- style anchor、效果图、提示词与批准记录
-- asset manifest、生产源、运行资产与技术检查
-- FairyGUI 绑定表和真实发布证据
-- View/Logic 接线与测试
-- Creator G8a 全状态验收证据，以及交付需要时的 G8b 真机证据
-- 未完成或被阻断事项
-```
+- 每个 machine-owned 组件只有一份权威 `layout.json`；
+- 固定输入连续编译 zero-diff，旧 ID 不因重排、增删或显示名变化而漂移；
+- approved target 可由批准切片和布局在阈值内重建；
+- Editor 可以重载、保存、重开和发布，无丢节点、丢引用或未解释规范化；
+- `.bin`、atlas 和 `.meta` 分别由官方工具产生；
+- Creator 能加载页面并覆盖关键状态、目标尺寸和安全区；
+- 文档、命令和验收证据明确区分“已实现”与“计划中”。
 
 ---
 
@@ -1706,50 +1008,7 @@ gate: pass | fail | blocked
 
 ---
 
-## 10. 从人工 MVP 演进到自动化
-
-### M0：人工可复现
-
-先选 1～2 个代表页面跑通：
-
-- 使用 `layoutMode: editor`，结构化记录 UI 需求、状态矩阵和 handoff 布局，但以 FairyGUI Editor 设计源作为最终结构坐标真源；
-- 人工批准 style anchor、效果图和独立资产；
-- 人工在 FairyGUI Editor 装配、发布；
-- 使用现有 codegen、manifest 和测试；
-- 记录尺寸、pivot、九宫格、来源和缺陷。
-
-这一阶段的目标不是“零人工”，而是确认每一步可追溯、可复现、能在 Creator 中运行。
-
-### M1：混合自动化，推荐长期形态
-
-当至少两个页面显示出稳定的重复规则后，再建设：
-
-- `ui-layout.schema.json`；
-- `ids.lock.json`；
-- Alpha bbox、padding、pivot、九宫格的确定性处理；
-- 由 JSON 反绘标注图；
-- `compile-report.json`；
-- machine-owned 纯视觉子组件；
-- Editor-owned 页面外壳；
-- 临时目录编译、原子替换和 `--check` 漂移模式。
-
-这些能力完成 round-trip 后，目标 machine-owned 组件才切换为 `layoutMode: machine`。机器负责重复且确定的部分，Editor 保留复杂组件、Transition、List 模板和交互编排。这是最稳妥的成熟方案。
-
-### M2：受控整页生成
-
-只有 M1 经过多轮 Editor round-trip 后，才逐项开放：
-
-- 简单整页 machine-owned XML；
-- Button、ProgressBar、List 等审核过的白名单模板；
-- Schema 升级器；
-- CI 中的稳定 ID、引用闭包、来源白名单和连续编译零 diff；
-- 提示词、参考图、批准源、模型参数和哈希的版本化记录。
-
-复杂动画和特殊交互不必为了“全自动”强行纳入生成器。
-
----
-
-## 11. 明确禁止的捷径
+## 10. 明确禁止的捷径
 
 - 从一张扁平效果图直接猜全部透明层和被遮挡像素。
 - 从带框标注截图 OCR 坐标，再把截图当布局真源。
@@ -1765,7 +1024,7 @@ gate: pass | fail | blocked
 
 ---
 
-## 12. 首次落地建议
+## 11. 首次落地建议
 
 第一次实施不要选择最简单页面，也不要选择最复杂页面。推荐选择一个包含以下元素的中等复杂页面：
 
@@ -1782,8 +1041,1051 @@ gate: pass | fail | blocked
 
 ---
 
+## 12. 提示词附录
+
+### 12.1 公共变量
+
+```text
+{{PROJECT_NAME}}           项目名
+{{FEATURE_NAME}}           功能或系统名
+{{PAGE_ID}}                页面稳定标识
+{{PLATFORM}}               iOS / Android / Web / PC
+{{DESIGN_WIDTH}}           逻辑设计宽度；本仓通常为 750
+{{DESIGN_HEIGHT}}          逻辑设计高度；本仓通常为 1624
+{{SAFE_AREA}}              安全区规则
+{{TARGET_LANGUAGES}}       目标语言
+{{REPO_RULES}}             仓库与架构约束
+{{GDD}}                    已冻结策划案
+{{UI_REQUIREMENTS}}        UI 需求契约
+{{STATE_MATRIX}}           页面状态矩阵
+{{LAYOUT_SPEC}}            线框与布局契约
+{{STYLE_ANCHOR}}           已批准风格锚点
+{{STYLE_TOKENS}}           可执行风格参数
+{{PAGE_CONCEPT}}           已批准整页效果图
+{{ASSET_MANIFEST}}         生产资产清单
+{{IDS_LOCK}}               稳定 ID 表；未启用时删除引用它的整行
+{{RUNTIME_CONTRACT}}       数据与事件契约
+{{CHANGE_REQUEST}}         本轮唯一允许的变化
+{{APPROVED_INVARIANTS}}    必须保持不变的内容
+```
+
+各提示词还会使用下面这些局部变量：
+
+```text
+# 编排和证据
+{{STAGE_ID}}、{{ORCHESTRATOR_MODE}}、{{PIPELINE_STATUS}}、{{APPROVED_ARTIFACTS}}
+{{CURRENT_OBJECTIVE}}、{{RUNTIME_EVIDENCE}}、{{MODE}}、{{AUTHORIZED_DEFECT_IDS}}
+{{SEVERITY_POLICY}}
+
+# 视觉输入和目标
+{{PRIMARY_ART_REFERENCE}}、{{BRAND_REFERENCE}}、{{IP_REFERENCE}}、{{SHAPE_REFERENCE}}
+{{CHARACTER_OR_BRAND_REFERENCE}}、{{WIREFRAME_IMAGE}}、{{LAYOUT_ANNOTATION}}
+{{BRAND_INVARIANTS}}、{{APPROVED_PALETTE_CONSTRAINTS}}
+{{CHARACTER_OR_IP_INVARIANTS}}、{{GENERATION_ANCHOR_SENTENCE}}
+{{STYLE_BOARD_SIZE}}、{{TARGET_STATE}}、{{VISUAL_FOCUS}}、{{PRIMARY_ACTION}}、{{MOOD}}
+
+# 资产几何和格式
+{{ASSET_STABLE_KEY}}、{{ASSET_NAME_AND_PURPOSE}}、{{ASSET_STATE}}、{{ASSET_INVARIANTS}}
+{{SOURCE_WIDTH}}、{{SOURCE_HEIGHT}}、{{SOURCE_TO_LOGICAL_SCALE}}、{{OUTPUT_FORMAT}}
+{{VISIBLE_BBOX_PX}}、{{PIVOT_NORMALIZED}}、{{PADDING_PX}}、{{SOURCE_MODE}}
+{{LAYER_NAME}}、{{LAYER_SPEC}}、{{OCCLUSION_POLICY}}
+{{BACKGROUND_CONTAMINANTS}}、{{APPROVED_EXTERNAL_EFFECTS}}
+{{TARGET_IMAGE}}、{{EDIT_REGION_OR_MASK_DESCRIPTION}}、{{REFERENCE_IMAGE_ROLES}}
+
+# FGUI 和程序
+{{LAYOUT_MODE}}、{{LAYOUT_SCHEMA}}、{{PACKAGE_NAME}}、{{COMPONENT_NAME}}
+{{FGUI_BINDINGS}}、{{FGUI_OWNERSHIP_POLICY}}、{{FGUI_PROJECT_STATE}}
+{{EXECUTION_MODE}}、{{ALLOWED_WRITE_SCOPE}}、{{CURRENT_CODE}}
+```
+
+发送任何提示词前必须执行变量预检：
+
+```text
+1. 替换全部 {{...}}；最终提示词中不得残留原始占位符。
+2. 可选变量不存在时删除对应整行，并按实际附件顺序重新编号参考图；不要把空字符串或“不适用”发给图片模型。
+3. 每个“图 N”必须对应实际附加的图片，不能只写一个模型无法读取的文件名。
+4. 模板中的 a | b | c 表示枚举；实际输出必须只选择一个值，不能原样复制整串。
+5. 所有 px 字段必须注明属于 sourcePx 还是 logicalPx；pivot 统一使用 0～1 的 pivotNormalized。
+6. 首次图片生成使用“目标 + 参考职责 + 不变量 + 输出要求 + 禁区”；只有修订任务才增加“唯一允许变化”。
+7. 图片提示词不能证明精确像素尺寸、pivot、Alpha 或未编辑区域不变；这些必须由工具参数、manifest 和外部验证提供证据。
+```
+
+### 12.2 文本、结构化数据和代码任务的公共执行头
+
+把下面内容放在 P0～P3、P4B、P6、P9～P11 前：
+
+```text
+你正在执行 {{PROJECT_NAME}} 的 UI 生产流水线阶段：{{STAGE_ID}}。
+
+权威输入优先级：
+1. {{REPO_RULES}}
+2. 已冻结的策划与运行时契约
+3. 已批准的页面状态、布局、风格和资产清单
+4. 当前实现与真实运行证据
+5. 推断
+
+规则：
+- 高优先级输入冲突时停止，不得自行选择。
+- 输入缺失时使用 TBD、needs_decision 或 needs_source 标注，不得编造玩法、数据、坐标、隐藏图层、ID 或程序接口。
+- 只完成本阶段，不提前伪造下游产物。
+- 所有结论必须能追溯到权威输入。
+- 明确区分事实、推断、建议和阻塞项。
+- 示例值不是项目事实。
+
+每次输出分成两块：
+
+输出 A：阶段产物
+- 严格遵循当前提示词指定的 JSON/YAML/文档格式。
+- 放在独立代码块中，可直接保存；不混入解释、Markdown 注释或执行日志。
+
+输出 B：`run-report.yaml`
+stage:
+source_inputs:
+decision_log:
+unresolved:
+checks:
+gate:
+  result: pass | fail | blocked
+  missing_evidence:
+```
+
+图片任务不直接套用这个长执行头；图片模型只生成候选图，不能自行证明 Alpha、像素尺寸、pivot 或未编辑区不变。编排器或执行代理应在图片返回后另行生成 `run-report.yaml`。
+
+### 12.3 P0：流水线总控
+
+用途：选择下一阶段，或审阅一个已经产出的阶段；选择和审阅分两次调用，防止模型一边调度一边自证通过。
+
+```text
+角色：UI 生产流水线总控。
+
+模式：{{ORCHESTRATOR_MODE}}  # select 或 review
+
+目标：
+- select：只检查输入并选择下一阶段，不执行阶段，不更新 Gate。
+- review：只审阅已经产生的单阶段产物和证据，更新该 work item 的 Gate，不执行下一阶段。
+
+权威输入：
+- 仓库规则：{{REPO_RULES}}
+- 当前流水线状态：{{PIPELINE_STATUS}}
+- 当前已批准产物：{{APPROVED_ARTIFACTS}}
+- 本轮目标：{{CURRENT_OBJECTIVE}}
+
+不变量：
+- 已批准产物未经显式变更单授权不可修改。
+- 每个阶段只能消费已通过 Gate 的上游产物。
+- 图片、布局、FairyGUI 和程序分别有独立真源，不能相互反向猜测。
+- 效果图不等于分层生产资产，FairyGUI 发布物不等于可运行验收。
+
+任务：
+1. select 模式：判断当前应执行的唯一阶段，检查输入，输出提示词编号和变量，保持 Gate 不变。
+2. review 模式：检查阶段产物、自动检查和人工证据，输出 Gate 结论与缺口，不调度下一阶段。
+3. 同一 work item 同时只有一个当前 Gate；不同页面、组件或资产在共享上游 Gate 通过后可以并行，每项单独记录状态和依赖。
+4. 不得虚报“已发布”“已运行”或“已验收”。
+
+输出格式：
+current_stage:
+work_item_id:
+mode: select | review
+selected_prompt:
+input_check:
+  ready:
+  missing:
+gate:
+  criteria:
+  result: pass | fail | blocked
+next_stage:
+decision_log:
+
+禁区：
+- 不直接生成美术、FairyGUI 或代码。
+- 不跨阶段补造缺失输入。
+- 不以“看起来合理”代替验收证据。
+
+验收标准：
+- 同一 work item 任意时刻只有一个当前 Gate。
+- 每个通过的 Gate 都有对应产物和证据。
+```
+
+### 12.4 P1：策划案转 UI 需求契约
+
+```text
+角色：资深游戏 UI 系统分析师。
+
+目标：
+把已冻结策划案转换为可设计、可装配、可编程、可测试的 UI 需求契约。
+
+权威输入：
+- 策划案：{{GDD}}
+- 平台：{{PLATFORM}}
+- 画布与安全区：{{DESIGN_WIDTH}} × {{DESIGN_HEIGHT}}，{{SAFE_AREA}}
+- 目标语言：{{TARGET_LANGUAGES}}
+- 现有运行时契约：{{RUNTIME_CONTRACT}}；若尚未实现，明确写“缺失”，不要伪造符号
+
+不变量：
+- 不改变玩法、数值公式、奖励规则、解锁条件或业务名词。
+- 每个显示值必须有数据来源，无法确认时标为 TBD。
+- 每个操作必须有前置条件、等待、成功、失败和防重复规则。
+- 动态文字与数字不得被规划为烘焙图片。
+
+任务：
+1. 提取用户目标和完整操作路径。
+2. 建立页面、弹窗、浮层和共用组件清单。
+3. 为每个页面列出入口、出口、数据、操作、反馈和异常状态。
+4. 将策划条款映射到具体 UI 需求。
+5. 对每个动作先描述 UI 所需能力，再检查是否能映射到已有契约符号。
+6. 提取字体/本地化、动效/音效/触觉、可访问性和性能需求。
+7. 找出不足以实现 UI 的策划缺口、权利来源缺口和运行时契约缺口。
+
+输出 YAML：
+feature:
+non_goals:
+user_journeys:
+pages:
+  - page_id:
+    type: page | popup | overlay | component
+    user_goal:
+    entry_conditions:
+    exits:
+    displayed_data:
+      - field:
+        source:
+        format:
+        refresh_trigger:
+        extreme_samples:
+    actions:
+      - action_id:
+        precondition:
+        required_capability:
+        mapped_contract_symbol:
+        contract_status: existing | missing | conflict
+        waiting_feedback:
+        success_feedback:
+        failure_feedback:
+        idempotency:
+        cancellation:
+    required_states:
+    localization_risks:
+traceability:
+  - gdd_clause:
+    ui_requirements:
+runtime_contract_gaps:
+typography_and_localization:
+motion_sound_haptic_needs:
+performance_requirements:
+rights_and_provenance_gaps:
+unresolved:
+
+禁区：
+- 不设计视觉风格和像素坐标。
+- 不创造策划中不存在的货币、按钮或功能。
+- 不为尚未实现的运行时能力自行命名 shared 消息、RPC 或 HTTP 接口。
+- 不用“其他状态类似”省略异常路径。
+
+验收标准：
+- 每个策划操作都映射到至少一个 UI 操作。
+- 每个显示字段都有来源。
+- 每个异步操作都有完整反馈和重复点击处理。
+- 所有疑点均显式记录。
+```
+
+### 12.5 P2：页面和状态矩阵
+
+```text
+角色：UI 状态建模工程师。
+
+目标：
+把 UI 需求转换为无歧义的语义状态矩阵和场景 fixture；具体 FairyGUI Controller 只是后续实现建议，不是本阶段真源。
+
+权威输入：
+- UI 需求：{{UI_REQUIREMENTS}}
+- 运行时数据和事件：{{RUNTIME_CONTRACT}}
+
+不变量：
+- 不增加业务状态。
+- 区分互斥状态和可正交叠加状态，避免一个状态维度承担所有组合。
+- 状态转换必须由明确事件触发。
+- 本阶段不决定像素坐标和美术形式。
+
+任务：
+1. 为每个页面识别实际需要的默认、加载、正常、空、错误、断线、锁定、资源不足和冷却等状态。
+2. 将状态拆分成语义状态维度，并给出 recommended_controllers 作为后续建议。
+3. 此时尚无节点树；用 semantic_element_effects 定义主要操作区、内容区、余额显示等语义元素的可见性、文字、图标、启用、选中和交互行为。
+4. 生成状态转移表。
+5. 显式定义 UI model，其中可包含服务端快照、本地 inflight/乐观状态、时钟、权限、生命周期和宿主环境。
+6. 为每个状态生成可重复的 scenario_id 和 fixture；标出无法从现有输入唯一判定或构造的状态。
+
+输出 YAML：
+pages:
+  - page_id:
+    initial_state:
+    state_dimensions:
+      - id:
+        kind: exclusive | orthogonal
+        default_value:
+        values:
+        recommended_controller:
+    state_matrix:
+      - state_id:
+        trigger:
+        preconditions:
+        dimension_values:
+        semantic_element_effects:
+          - element_role:
+            effects:
+        allowed_actions:
+        exit_event:
+    transitions:
+      - from:
+        event:
+        guard:
+        to:
+        side_effect:
+    scenario_fixtures:
+      - scenario_id:
+        server_snapshot:
+        local_state:
+        clock:
+        permissions:
+        host_environment:
+unresolved:
+
+禁区：
+- 不用截图代替状态定义。
+- 不把网络错误、业务拒绝和空数据混成一个状态。
+- 不使用运行时契约中不存在的字段；缺失能力必须标记为 contract gap。
+
+验收标准：
+- 每个状态可由显式 UI model 唯一判定，并有可重复 fixture。
+- 每个用户操作在相关状态下都有明确行为。
+- 状态维度组合不存在不可达或自相矛盾状态。
+```
+
+### 12.6 P3：线框与布局契约
+
+```text
+角色：游戏 UI 信息架构师与布局工程师。
+
+目标：
+生成不依赖最终美术的线框布局和机器可读布局契约。
+
+权威输入：
+- UI 需求：{{UI_REQUIREMENTS}}
+- 状态矩阵：{{STATE_MATRIX}}
+- 布局模式：{{LAYOUT_MODE}}  # editor 或 machine
+- 布局 Schema：{{LAYOUT_SCHEMA}}  # machine 模式必填；editor 模式为 handoff 格式定义
+- 画布：{{DESIGN_WIDTH}} × {{DESIGN_HEIGHT}}
+- 安全区：{{SAFE_AREA}}
+- 目标语言：{{TARGET_LANGUAGES}}
+
+不变量：
+- 保持页面信息层级和操作顺序。
+- 动态文字必须预留最长语言和最大数字范围。
+- 所有坐标使用同一原点、单位和轴方向。
+- stable key 一旦批准即保持稳定。
+- 不用装饰掩盖布局问题。
+- 所有页面矩形使用 logicalPx、左上原点；pivot 使用 pivotNormalized；源图裁切和 padding 使用 sourcePx。
+
+任务：
+1. 定义页面分区、节点树、坐标、尺寸、anchor、pivot、层级和裁剪规则。
+2. 定义 Relation、安全区、列表滚动、文本溢出和点击区域。
+3. 建立 semantic_role_to_node_key 映射，再给出每个状态的结构变化。
+4. 生成可由 layout 数据反绘的标注说明。
+5. 记录仍需视觉阶段决定的槽位。
+
+输出：
+- 严格 JSON 的 layout/handoff 契约，字段严格服从 {{LAYOUT_SCHEMA}}。
+- 节点清单和 stable key。
+- semantic_role_to_node_key 映射。
+- 默认、最长文本、极值数字、空列表和满列表的布局检查结果。
+- 不能确定的项目放入 openQuestions。
+
+边界：
+- layoutMode=editor：JSON 是设计交接和验收规范，最终坐标真源是 FairyGUI Editor；不得宣称 JSON 可直接生成 FGUI。
+- layoutMode=machine：只有仓库中已存在并验证过编译器时，JSON 才可生成 annotation 和 machine-owned XML。
+- Controller/Gear 只记录已批准语义，不根据节点名推断。
+
+禁区：
+- 不从扁平效果图反推隐藏图层。
+- 不生成最终材质、光影或装饰。
+- 不用肉眼描述代替精确数值。
+- 不把点击区默认等同于可见图形边界。
+
+验收标准：
+- 节点树闭合、父节点存在、stable key 唯一。
+- 所有节点位于合法坐标系，或有明确溢出理由。
+- 安全区、长文本、极值数字和目标屏幕均可容纳。
+- 关键点击目标没有遮挡和歧义。
+```
+
+### 12.7 P4A：生成视觉风格锚点
+
+这是图片生成提示词。输出只用于视觉冻结，不是运行时资产。
+
+```text
+任务类型：视觉探索 / style anchor，不是完整页面，也不是运行时切图。
+
+目标：
+为 {{PROJECT_NAME}} / {{FEATURE_NAME}} 生成一张统一的游戏 UI 风格锚点图。
+
+参考图职责：
+- 图 1：{{PRIMARY_ART_REFERENCE}}，只决定世界观、材质和色彩。
+- 图 2：{{BRAND_REFERENCE}}，只决定品牌辨识。
+- 图 3：{{IP_REFERENCE}}，只决定角色或 IP 身份；若不适用则忽略。
+
+必须保持的不变量：
+- {{BRAND_INVARIANTS}}
+- {{APPROVED_PALETTE_CONSTRAINTS}}
+- {{CHARACTER_OR_IP_INVARIANTS}}
+
+画面必须展示：
+- 主色、辅色、强调色、成功色、警告色和危险色之间的关系。
+- 面板、弹窗、卡片、普通按钮、主按钮、禁用按钮的统一材质语言。
+- 一组同家族图标、边框、分隔线、角饰和进度条。
+- 圆角、描边、内外阴影、高光、厚度和统一光源方向。
+- 一个代表世界观的装饰物，但不要形成完整页面。
+
+构图：
+- 中性展示底板，元素分区清晰，正视角 UI 展示。
+- 元素互不遮挡，保留足够空白。
+- 输出尺寸：{{STYLE_BOARD_SIZE}}。
+
+禁区：
+- 不生成完整游戏页面。
+- 不生成可读正文、数值、未经批准的新商标、签名或水印；批准 Logo 只在明确要求时原样作为身份参考，不得自行改写。
+- 不混入第二套画风。
+- 不使用摄影场景或复杂透视环境背景。
+- 不把棋盘格伪装成透明背景。
+
+验收标准：
+- 所有组件像来自同一个 UI 系统。
+- 材质、描边、圆角和光向可以被明确描述并重复生成。
+- 缩小后仍能区分主操作、次操作、禁用和危险状态。
+```
+
+### 12.8 P4B：冻结可执行风格参数
+
+```text
+角色：UI 美术规范分析师。
+
+目标：
+分析已批准的风格锚点 {{STYLE_ANCHOR}}，生成后续图片生成与 FairyGUI 装配共同使用的风格参数。
+
+权威输入：
+- 风格锚点：{{STYLE_ANCHOR}}
+- 品牌不变量：{{BRAND_INVARIANTS}}
+
+不变量：
+- 只描述图中可验证的视觉规律。
+- 无法精确读取的颜色或尺寸标为估计值。
+- 不重新设计风格。
+
+输出 YAML：
+palette:
+materials:
+stroke:
+corners:
+shadow:
+highlight:
+lighting:
+icon_language:
+button_states:
+panel_language:
+typography_direction:
+forbidden_style_drift:
+generation_anchor_sentence:
+
+禁区：
+- 不把单个偶然细节提升为全局规则。
+- 不使用“高级感”“精致”等不可验证词作为唯一描述。
+
+验收标准：
+- generation_anchor_sentence 可逐字复用于后续每个资产提示词。
+- 参数足以判断新资产是否发生风格漂移。
+```
+
+### 12.9 P5：生成整页高保真效果图
+
+这是图片生成提示词。输出是评审效果图，不能直接假定为可切生产资产。
+
+```text
+任务类型：高保真页面评审图，不是分层生产资产。
+
+目标：
+基于已批准线框生成 {{PAGE_ID}} 的整页高保真效果图。
+
+画布映射：
+- 逻辑画布：{{DESIGN_WIDTH}} × {{DESIGN_HEIGHT}} logicalPx。
+- 实际生成画布：{{SOURCE_WIDTH}} × {{SOURCE_HEIGHT}} sourcePx；必须记录并使用图片工具/API 实际支持的输出尺寸，不能靠提示词声称得到任意精确像素。
+- 映射比例：{{SOURCE_TO_LOGICAL_SCALE}}。
+- 若模型不支持目标比例，用确定性 fit/pad 生成评审画布，并在评审中以线框/布局契约为准；效果图像素不是最终坐标证据。
+
+参考图职责：
+- 图 1：{{WIREFRAME_IMAGE}}，是布局、信息层级和主要热区的唯一权威。
+- 图 2：{{STYLE_ANCHOR}}，是色彩、材质、描边、圆角和光向权威。
+- 图 3：{{IP_REFERENCE}}，只决定角色或品牌身份。
+- 不得互换参考图职责。
+
+必须保持：
+- 画布 {{DESIGN_WIDTH}} × {{DESIGN_HEIGHT}}。
+- 安全区 {{SAFE_AREA}}。
+- 线框中的页面分区、内容槽位、操作顺序和视觉焦点。
+- {{APPROVED_INVARIANTS}}。
+- 风格句：{{GENERATION_ANCHOR_SENTENCE}}。
+
+目标状态：
+- 页面状态：{{TARGET_STATE}}。
+- 视觉焦点：{{VISUAL_FOCUS}}。
+- 主要操作：{{PRIMARY_ACTION}}。
+- 情绪：{{MOOD}}。
+
+文字规则：
+- 玩家名、数字、价格、倒计时和动态正文保留为空白槽或简单占位。
+- 不生成乱码、伪文字或不可编辑的关键标签。
+
+禁区：
+- 不改变线框信息架构。
+- 不新增按钮、货币、功能或角色。
+- 不将多个交互元素合成不可拆装饰。
+- 不改变未授权的构图、色板、角色比例和光向。
+- 不声称效果图已经是分层资产。
+- 每次只输出一张完整页面，不生成多方案拼图或 contact sheet；需要多个方向时分别运行并独立评审。
+
+验收标准：
+- 视觉层级与交互优先级一致。
+- 核心内容全部在安全区内。
+- 所有动态内容有清晰可编辑槽位。
+- 每个视觉元素能映射回一个布局节点或明确标记为纯装饰。
+```
+
+### 12.10 P5R：效果图结构化评审
+
+这个提示词用于评审模型或人工评审助手，不生成新图。
+
+```text
+角色：游戏 UI 视觉评审与可生产性审计员。
+
+目标：
+对比 {{PAGE_CONCEPT}}、{{LAYOUT_SPEC}}、{{STYLE_ANCHOR}}、{{STATE_MATRIX}}，判断效果图是否可以进入生产拆层。
+
+任务：
+1. 检查布局节点是否一一对应，是否擅自新增、删除或移动功能。
+2. 检查安全区、视觉层级、主要操作、长文本槽和极值数字槽。
+3. 检查色板、材质、描边、圆角、光向、图标透视和角色身份一致性。
+4. 标出动态文字烘焙、不可拆元素、背景污染、遮挡缺失和不可复用结构。
+5. 将问题分成：必须回 G2、必须回 G3、可在 G4 拆层解决、无需阻断。
+
+输出表：
+- issue_id
+- severity
+- evidence
+- violated_contract
+- root_stage
+- minimal_change
+- invariants_to_preserve
+- gate_result
+
+禁区：
+- 不以个人喜好替代契约。
+- 不直接修改图像。
+- 不把“可以 PS 抠出来”当作已有透明生产源。
+
+验收标准：
+- 每个结论都指向可见证据和具体契约。
+- Gate 结论只有 pass、fail 或 blocked。
+```
+
+### 12.11 P6：生产资产清单
+
+```text
+角色：2D 游戏 UI 技术美术与资产规划师。
+
+目标：
+把已批准布局、状态和效果图转成可独立生产、可复用、可验证的运行时资产清单。
+
+权威输入：
+- 布局：{{LAYOUT_SPEC}}
+- 状态矩阵：{{STATE_MATRIX}}
+- 风格锚点与参数：{{STYLE_ANCHOR}} / {{STYLE_TOKENS}}
+- 效果图：{{PAGE_CONCEPT}}
+- 稳定 ID：{{IDS_LOCK}}
+
+不变量：
+- 布局和节点语义不变。
+- 动态文字、数字、头像和远端内容不得烘焙。
+- 扁平效果图无法证明的隐藏像素、pivot 和状态变体必须标记 needs_source。
+- 同一语义资产优先复用，不为每个页面复制。
+
+任务：
+为每个节点决定：
+1. 使用 FGUI 图元、运行时文本、Loader、独立透明图、九宫格、整块背景、序列帧、骨骼、粒子或无需资产。
+2. 画布尺寸、可见包围盒、透明边距、裁切方式、pivot、九宫格、采样方式和状态变体。
+3. 生产方式、来源、责任方和验证规则。
+4. 从效果图无法取得的内容明确列为 needs_source，不做推断裁切。
+
+输出 JSON：
+{
+  "assets": [
+    {
+      "stableKey": "",
+      "nodeKeys": [],
+      "kind": "transparent-png | full-canvas-png | nine-slice | icon | sequence | spine | particle | runtime-text | loader | primitive",
+      "purpose": "",
+      "states": [],
+      "sourceOfTruth": "",
+      "sourceMode": "copy | fullCanvas | alphaBBox | crop | mask | nineSlice",
+      "outputCanvasPx": {"width": 0, "height": 0},
+      "visibleBBoxPx": [0, 0, 0, 0],
+      "alpha": true,
+      "pivotNormalized": [0.5, 0.5],
+      "scale9GridPx": null,
+      "paddingPx": [0, 0, 0, 0],
+      "format": "png",
+      "outputFile": "",
+      "atlasPolicy": "",
+      "styleReferences": [],
+      "generationPromptId": null,
+      "owner": "artist | generator | fgui | runtime",
+      "status": "ready | needs_decision | needs_source",
+      "expectedSha256": null,
+      "validation": {}
+    }
+  ],
+  "nodeCoverage": [],
+  "unresolved": []
+}
+
+禁区：
+- 不把整页效果图自动切成推测图层。
+- 不烘焙动态文本或交互热区。
+- 不在未确认时猜九宫格、pivot 或被遮挡部分。
+- 不用一张巨型透明图替代本应复用的组件。
+- `crop`、`nineSlice`、精确 padding/scale 和 pivot 登记使用确定性工具，不交给图片模型。
+
+验收标准：
+- 每个可见布局节点都有明确资产或渲染责任方。
+- 每个状态变体都有来源。
+- 资产 stable key 唯一并保持稳定。
+```
+
+### 12.12 P7：生成独立透明生产资产
+
+每次只生成一个视觉候选。图片 API 的中间输出可以使用支持 Alpha 的 PNG/WebP，但进入当前 FairyGUI 工程的规范交付默认统一为 RGBA PNG；只有完成 Editor 导入、发布、manifest 和 Creator 验证后，才能批准其他格式直入生产链。仅写“transparent”不能替代正确的工具/API 背景与格式参数。
+
+```text
+任务类型：独立透明资产视觉候选；精确几何由 manifest 和确定性后处理完成。
+
+只生成一个资产：
+- stable key：{{ASSET_STABLE_KEY}}
+- 名称和用途：{{ASSET_NAME_AND_PURPOSE}}
+- 来源模式：{{SOURCE_MODE}}  # 仅 alphaBBox 或有批准 mask 的 mask；copy 不需要生成，crop/nineSlice 走确定性工具
+- 工具/API 输出格式：{{OUTPUT_FORMAT}}
+- 期望可见 bbox：{{VISIBLE_BBOX_PX}} sourcePx
+- pivotNormalized：{{PIVOT_NORMALIZED}}  # 资产元数据，不要求图片内嵌
+- 目标 padding：{{PADDING_PX}} sourcePx  # 生成后由确定性工具实现
+- 目标状态：{{ASSET_STATE}}
+
+参考图职责：
+- 图 1：{{STYLE_ANCHOR}}，只决定材质、色彩、描边、圆角和光源。
+- 图 2：{{SHAPE_REFERENCE}}，只决定轮廓、比例和朝向。
+- 图 3：{{CHARACTER_OR_BRAND_REFERENCE}}，只决定身份特征。
+
+必须保持的不变量：
+- {{GENERATION_ANCHOR_SENTENCE}}
+- {{ASSET_INVARIANTS}}
+- 与同系列资产一致的正视角、光源方向、线宽和边缘处理。
+
+输出要求：
+- 使用工具/API 支持的画幅生成真正透明的 RGBA 候选，完整保留 Alpha。
+- 只有一个隔离对象，轮廓完整，四周保留指定透明边距。
+- 不裁掉描边、高光、外发光或功能部件。
+- 除非资产定义明确要求，不添加投影、地面接触影或光晕。
+- 输出一个完成版本，不制作 contact sheet 或 sprite sheet。
+
+禁区：
+- 无场景、底板、渐变背景、白底或烘焙棋盘格。
+- 无文字、数字、Logo、签名或水印。
+- 不添加额外道具、第二个对象或展示框。
+- 不改变批准的身份、比例、朝向、主色和光向。
+
+验收标准：
+- 经外部工具验证四角和主体外部是真实 Alpha 0。
+- 候选经确定性 crop/pad/scale 后，输出尺寸、visible bbox、pivotNormalized 和 padding 符合 manifest。
+- 缩放到运行尺寸后轮廓仍清晰。
+- 与 style anchor 和同系列资产无明显漂移。
+```
+
+### 12.13 P7B：同画布视觉层
+
+用于背景、灯光、雾、前景遮挡等必须与页面坐标严格对齐的层。图片模型只产生候选像素，精确 fullCanvas 尺寸和位置由确定性 pad/scale/composite 完成。
+
+```text
+任务类型：fullCanvas 视觉层候选。
+
+目标：
+只生成 {{LAYER_NAME}}。最终源画布应为 {{SOURCE_WIDTH}} × {{SOURCE_HEIGHT}} sourcePx，对应 {{DESIGN_WIDTH}} × {{DESIGN_HEIGHT}} logicalPx，比例 {{SOURCE_TO_LOGICAL_SCALE}}；图片模型使用其支持的画幅，最终精确画布由确定性工具产生。
+
+权威层定义：{{LAYER_SPEC}}
+遮挡策略：{{OCCLUSION_POLICY}}
+风格句：{{GENERATION_ANCHOR_SENTENCE}}
+
+参考图职责：
+- 图 1：{{PAGE_CONCEPT}}，只决定该层的位置、覆盖范围和视觉作用。
+- 图 2：{{STYLE_ANCHOR}}，只决定材质、色彩和光向。
+- 图 3：{{LAYOUT_ANNOTATION}}，只决定坐标和安全区。
+
+来源边界：
+- 效果图只用于位置和视觉作用参考，不是像素提取源。
+- 如果目标层在效果图中被按钮、角色或文字遮挡，而 LAYER_SPEC 没有定义完整内容，立即停止并返回 needs_source，不猜隐藏像素。
+
+必须保持：
+- 视角和所有已批准页面区域。
+- {{APPROVED_INVARIANTS}}。
+- 除 {{LAYER_NAME}} 外的画布全部透明。
+
+输出要求：
+- 真透明 RGBA 候选；当前仓库规范交付统一为 RGBA PNG。
+- 后处理按 manifest 放入完整画布，不 tight crop，不用模型输出本身证明精确坐标。
+- 不包含文字、按钮、角色或其他语义节点，除非它们就是本层定义的一部分。
+
+禁区：
+- 不合成其他层。
+- 不改变全页构图。
+- 不输出带背景的评审图。
+
+验收标准：
+- 经确定性后处理后，与效果图按左上原点叠加位置正确。
+- 外部 Alpha 检查确认除目标层和批准外部效果外无残留像素。
+```
+
+### 12.14 P8：最小范围定向修图
+
+```text
+任务类型：最小范围图像编辑。
+
+执行前先检查 CHANGE_REQUEST 是否只有一个可验证差异。若同时涉及构图、色彩、材质、姿态、比例等两个以上维度，停止并拆成多轮，不执行编辑。
+
+目标图：{{TARGET_IMAGE}}
+
+本轮唯一允许变化：
+{{CHANGE_REQUEST}}
+
+必须保持完全不变：
+- 画布尺寸、文件格式和透明通道。
+- 对象位置、比例、朝向、透视和 pivot。
+- 未指定区域的轮廓、颜色、材质、光照、阴影和边缘。
+- {{APPROVED_INVARIANTS}}。
+- 风格句：{{GENERATION_ANCHOR_SENTENCE}}。
+
+编辑区域：
+{{EDIT_REGION_OR_MASK_DESCRIPTION}}
+
+参考图职责：
+{{REFERENCE_IMAGE_ROLES}}
+
+输出要求：
+- 在工具支持时使用与输入相同的编辑画布；最终尺寸、格式和 Alpha 由确定性后处理统一。
+- 只返回一个完成版本。
+- 透明输入继续保持真正透明的背景。
+
+禁区：
+- 不做全局重绘或重新构图。
+- 不“顺便优化”其他区域。
+- 不增加文字、水印、背景或新物体。
+- 不改变未授权的色相、光向和描边。
+
+验收标准：
+- 指定问题已解决。
+- 对 mask 外区域执行像素差检查；提示词中的“保持不变”不能替代 diff 证据。
+- 几何、Alpha、像素差和运行叠加检查均通过后，方可替换原资产。
+```
+
+### 12.15 P8B：仅修正透明背景
+
+主体造型已经批准，但输出带白底、棋盘格或背景污染时使用。优先使用确定性 mask/matting，再把原始主体 RGB 与新 Alpha 合成；生成式修图只能产生待审候选。
+
+```text
+任务类型：背景 Alpha 修正。
+
+目标：
+保留已批准主体的造型和内部像素，只处理明确列出的背景污染。
+
+背景污染：{{BACKGROUND_CONTAMINANTS}}
+必须保留的主体外部效果：{{APPROVED_EXTERNAL_EFFECTS}}
+
+本轮唯一变化：
+- 只移除 BACKGROUND_CONTAMINANTS 中明确列出的白底、棋盘格或背景色。
+- 主体以外开放区域和四个角必须为 Alpha 0。
+
+必须保持完全不变：
+- 主体位置、尺寸、比例、朝向、轮廓、内部颜色、材质、描边和功能细节。
+- 原画布尺寸和主体在画布中的坐标。
+
+输出：
+- 真透明 RGBA 候选；当前 FairyGUI 规范交付统一为 PNG。
+- 保留抗锯齿边缘和细小功能部件。
+
+禁区：
+- 不移动、缩放、裁切、重绘、重新上色或重新打光。
+- 不添加文字、网格、UI、Logo、水印或新物体。
+- 无法可靠区分背景污染和 APPROVED_EXTERNAL_EFFECTS 时停止，返回 blocked/needs_mask。
+
+验收标准：
+- 外部工具确认四角和 padding 开放区 Alpha 为 0。
+- APPROVED_EXTERNAL_EFFECTS 完整保留。
+- 主体 bbox、坐标和内部 RGB 没有非授权变化。
+```
+
+即使执行了这条提示词，也必须检查四角 Alpha、可见 bbox、发丝/细绳/手指等细节和主体 RGB；“运行过抠图”不是通过证据。
+
+### 12.16 P9：FairyGUI 装配
+
+```text
+角色：熟悉 FairyGUI 与当前引擎集成方式的 UI 工程师。
+
+目标：
+把已批准布局和生产资产装配成可在 FairyGUI Editor 往返编辑、发布并由程序绑定的组件。
+
+权威输入：
+- 仓库规则：{{REPO_RULES}}
+- 执行模式：{{EXECUTION_MODE}}  # editor_manual、approved_generator 或 plan_only
+- 允许写入范围：{{ALLOWED_WRITE_SCOPE}}
+- FGUI 所有权策略：{{FGUI_OWNERSHIP_POLICY}}
+- 包名与组件名：{{PACKAGE_NAME}} / {{COMPONENT_NAME}}
+- 布局：{{LAYOUT_SPEC}}
+- 状态矩阵：{{STATE_MATRIX}}
+- 资产清单：{{ASSET_MANIFEST}}
+- 稳定 ID：{{IDS_LOCK}}
+- 当前 FairyGUI 工程：{{FGUI_PROJECT_STATE}}
+
+不变量：
+- 节点名、资源 ID、Controller 名和 page 保持稳定。
+- editor-owned 与 machine-owned 文件边界不变。
+- 动态内容继续使用 Text、Loader、List 等运行时节点。
+- 装配结果必须能被真实 FairyGUI Editor 读取、保存和发布。
+
+任务：
+1. 先阅读仓库规则、现有包结构、命名约定、发布配置和可用工具；不要假定规划中的命令已实现。
+2. 建立节点树、资源引用、层级、Controller、Gear、Relation、点击区、Loader、列表和九宫格。
+3. 只写入 ALLOWED_WRITE_SCOPE 中当前执行方明确拥有的文件；本仓默认通过 Editor 操作 XML。
+4. 使用真实 Editor 发布，不手工生成二进制和图集。
+5. 运行现有 codegen 与验证。
+6. 输出绑定表、变更文件、发布证据和未解决项。
+
+输出 YAML：
+package:
+component:
+ownership:
+node_bindings:
+controllers:
+relations:
+resource_ids:
+shared_packages:
+changed_files:
+publish_evidence:
+validation:
+unresolved:
+
+禁区：
+- 不手工伪造 .bin、atlas 或 Creator .meta。
+- 不从效果图猜 Controller、Gear、热区或隐藏节点。
+- 自动生成器或文本脚本不得覆盖 editor-owned XML；人工只可在授权范围内通过 FairyGUI Editor 修改。
+- machine-owned XML 只能由已批准生成器原子生成；同一文件不能由两方共同拥有。
+- 不把业务逻辑写进 FairyGUI 组件。
+- 无法运行 Editor 时，不得宣称已发布；应输出精确人工步骤和阻塞项。
+
+验收标准：
+- Editor 可打开、保存、重开和重新发布，无丢节点或丢引用。
+- ID 唯一稳定，程序绑定名与清单一致。
+- 全部状态可由 Controller/Gear 或运行时绑定表达。
+- 基准分辨率和目标适配尺寸无裁切、错位和异常点击区。
+```
+
+### 12.17 P10：程序接线
+
+```text
+角色：客户端 UI 架构工程师。
+
+目标：
+将已发布 FairyGUI 组件接入现有程序架构，使页面在真实运行时完成数据展示、事件处理和状态切换。
+
+权威输入：
+- 仓库规则：{{REPO_RULES}}
+- FairyGUI 绑定表：{{FGUI_BINDINGS}}
+- UI 状态矩阵：{{STATE_MATRIX}}
+- 数据与事件契约：{{RUNTIME_CONTRACT}}
+- 当前代码：{{CURRENT_CODE}}
+
+不变量：
+- 协议名、错误码、数据类型和公式从现有共享契约导入。
+- View 只负责引擎/FGUI 绑定、渲染和动作转发；业务决策进入 Logic。
+- 不直接修改生成镜像或生成产物。
+- 页面打开、关闭、事件订阅和异步取消必须成对处理。
+- 同一运行时状态必须得到确定性的 UI 输出。
+
+任务：
+1. 按仓库约定 codegen、注册并动态加载页面。
+2. 建立类型安全的节点绑定。
+3. 实现 render(model) 或等价单向渲染入口。
+4. 接入点击、列表、Loader、等待、成功、失败、断线和恢复。
+5. 防止重复提交、重复订阅和关闭后迟到回调。
+6. 为 Logic 和状态映射添加无头测试。
+7. 执行同步、类型检查和无头测试，并完成至少一次 Creator 页面加载 smoke。
+
+输出 YAML：
+implementation_summary:
+changed_files:
+state_coverage:
+event_flow:
+cleanup_guarantees:
+tests:
+runtime_evidence:
+creator_smoke:
+known_gaps:
+
+禁区：
+- 不在 View 内实现业务公式。
+- 不复制 shared 中已有的协议常量。
+- 不用静态截图代替真实运行验证。
+- 不隐藏失败状态或用日志替代用户反馈。
+- 不绕过正式包加载、ViewMgr 和页面组合入口。
+
+验收标准：
+- 状态矩阵中的每个状态和转换都有实现或明确阻塞。
+- 快速连点、开关页面和网络失败不会产生重复请求或泄漏。
+- 类型检查、相关测试和 Creator 页面加载 smoke 通过；这不构成 G8a 的全状态、全尺寸正式验收。
+```
+
+### 12.18 P11：QA 审计与最小修复
+
+```text
+角色：UI 集成 QA、技术美术和客户端诊断工程师。
+
+模式：{{MODE}}  # audit 或 fix
+授权修复缺陷：{{AUTHORIZED_DEFECT_IDS}}
+严重级别规则：{{SEVERITY_POLICY}}
+
+目标：
+依据批准真源对 {{PAGE_ID}} 做全状态、全尺寸、真实运行时验收；若模式为 fix，只修复已证实且已授权的问题。
+
+权威输入：
+- UI 需求：{{UI_REQUIREMENTS}}
+- 状态矩阵：{{STATE_MATRIX}}
+- 布局：{{LAYOUT_SPEC}}
+- 风格锚点和效果图：{{STYLE_ANCHOR}} / {{PAGE_CONCEPT}}
+- 资产清单：{{ASSET_MANIFEST}}
+- 运行时契约：{{RUNTIME_CONTRACT}}
+- 实际截图、录像、日志和测试结果：{{RUNTIME_EVIDENCE}}
+- 仓库规则：{{REPO_RULES}}
+
+不变量：
+- 不为修一个问题改变已批准的信息架构、风格或业务行为。
+- 修复必须落到真正所属层：需求、状态、布局、资产、FGUI、发布、程序或性能。
+- 生成产物必须通过其真源修复后重新生成。
+- 每次只处理证据充分的缺陷。
+
+任务：
+1. 覆盖所有状态、目标分辨率、安全区、长文本、极值数字和快速重复操作。
+2. 对比期望与实际，定位第一个发生偏差的层。
+3. 建立缺陷表并给出最小修复方案。
+4. audit 模式可以列出全部缺陷，只报告不修改。
+5. fix 模式每次只处理一个授权 defect_id，或一组具有同一最早根因、只修改同一真源的缺陷；否则停止并要求拆批。
+6. 提供修复前后证据和回归结果。
+
+输出 YAML：
+test_matrix:
+defects:
+  - id:
+    severity:
+    state_and_device:
+    expected:
+    actual:
+    evidence:
+    root_cause_layer:
+    root_cause:
+    minimal_fix:
+    regression_scope:
+fixes_applied:
+before_after_evidence:
+commands_and_results:
+gate: pass | fail | blocked
+
+禁区：
+- 不仅凭主观审美判定程序缺陷。
+- 不用代码位移补偿错误裁图，也不用重新出图掩盖错误数据。
+- 不直接编辑发布物或生成镜像。
+- 没有真实运行证据时不得宣布完成。
+
+验收标准：
+- G1/G2 定义的路径和状态全部被测。
+- 目标尺寸、安全区和目标语言均有证据。
+- 严重缺陷为零，其余缺陷有明确接受决定。
+- 修复没有引入新的状态、布局、资源或性能回归。
+```
+
+### 12.19 给 Codex 的持续编排提示词：执行到下一个人工 Gate
+
+这条提示词用于让 Codex 持续编排一个批次，但每次只执行到下一个需要人工批准或外部工具的 Gate。它不会取消人工视觉批准、FairyGUI Editor 发布和 Creator/真机验收。
+
+```text
+为 {{PROJECT_NAME}} 的 {{FEATURE_NAME}} / {{PAGE_ID}} 执行《docs/FAIRYGUI.md》定义的 UI 生产流水线。
+
+先阅读：
+- 仓库 AGENTS.md 与 {{REPO_RULES}}
+- 已冻结策划案 {{GDD}}
+- 现有客户端和 FairyGUI 文档
+- 当前页面、包、契约、代码和测试
+
+固定参数：
+- 平台：{{PLATFORM}}
+- 逻辑画布：{{DESIGN_WIDTH}} × {{DESIGN_HEIGHT}}
+- 安全区：{{SAFE_AREA}}
+- 目标语言：{{TARGET_LANGUAGES}}
+- 目标 FairyGUI package/component：{{PACKAGE_NAME}} / {{COMPONENT_NAME}}
+
+执行规则：
+1. 先盘点已有产物和 Gate，只推进第一个未通过阶段；到下一个人工 Gate 立即停止，不得跨 Gate。
+2. 用 P1/P2 先把策划转换为 UI 需求、数据动作契约和状态矩阵，所有未知项显式报告。
+3. 用 P3 建立线框和布局契约；layoutMode=editor 时标注图是 handoff/审稿资料，layoutMode=machine 时才允许由布局数据反绘；任何模式都不能 OCR 反推。
+4. 按 P4A → 人工批准 → P4B → P5 → P5R 的顺序锁定风格和效果图。效果图只用于评审，动态文字留槽，不直接进入运行目录。
+5. 用 P6 建资产清单。扁平图中被遮挡、带背景或无透明 Alpha 的对象不得矩形裁成伪独立件。
+6. 用 P7 一次生成一个批准资产，用 P8 做单变量修订；每轮重复不变量和参考图职责。
+7. 按当前仓库真实能力在 FairyGUI Editor 装配和发布；不要假定 layout 编译器存在，不手改 XML，不伪造 .bin、atlas 或 .meta。
+8. 按仓库 View/Logic、动态 import、viewRegistry、pages、codegen 和同步规则完成程序接线。
+9. G7 运行自动检查和 Creator 加载 smoke；G8a 再通过 Cocos Dashboard 打开的 Creator 做全状态集成验收；有真机承诺时继续 G8b。
+10. 每个阶段输出产物、决策、未解决项、检查结果和 Gate 结论；没有证据不得写“完成”。
+11. 修复必须回到最早错误真源，再顺序重建下游。
+12. 只提交本批相关文件，保留用户其他修改；Git 操作遵守仓库约定。
+
+本轮允许变化：
+{{CHANGE_REQUEST}}
+
+必须保持：
+{{APPROVED_INVARIANTS}}
+
+最终报告：
+- 只列出本轮实际产生且有证据的产物。
+- 尚未到达的下游项目列为 pending，不得为了满足清单而伪造。
+- 策划到 UI 的追溯表
+- UI 需求、UI model、状态矩阵、scenario fixtures、运动反馈和性能预算
+- 布局契约和线框/标注图
+- style anchor、效果图、提示词与批准记录
+- asset manifest、生产源、运行资产与技术检查
+- FairyGUI 绑定表和真实发布证据
+- View/Logic 接线与测试
+- Creator G8a 全状态验收证据，以及交付需要时的 G8b 真机证据
+- 未完成或被阻断事项
+```
+
+---
+
 ## 13. 参考资料
 
-- [客户端开发与 FairyGUI 接入](docs/CLIENT.md)
-- [FairyGUI 编辑器工程说明](apps/art/fairygui/README.md)
+- [客户端开发与 FairyGUI 接入](CLIENT.md)
+- [FairyGUI 编辑器工程说明](../apps/art/fairygui/README.md)
+- [FairyGUI 包与 package.xml](https://www.fairygui.com/docs/editor/package)
+- [FairyGUI 发布](https://www.fairygui.com/docs/editor/publish)
+- [FairyGUI 组件](https://www.fairygui.com/docs/editor/component)
+- [FairyGUI 控制器](https://www.fairygui.com/docs/editor/controller)
+- [FairyGUI 关联](https://www.fairygui.com/docs/editor/relation)
+- [FairyGUI 编辑器插件](https://www.fairygui.com/docs/editor/plugin)
 - [OpenAI GPT Image Generation Models Prompting Guide](https://developers.openai.com/cookbook/examples/multimodal/image-gen-models-prompting-guide)
