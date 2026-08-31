@@ -167,8 +167,8 @@ apps/shared/src/gameplays/<id>/wire.ts
 | 协议兼容版本与指纹锁 | **wsrpc §8.4** | 本文 §5.3 的 framework protocol version **就是** `GAME_ROOM_PROTOCOL_VERSION`；保留单一仓库级字节锁 | 以先落地者建立的常量为准，⛔ 不允许各自新增一个 Game join 版本闸 |
 | Redis Lua 装载与 key 构造 | 仓内既有 `core/infra/redisScripts.ts` + `keys.ts` | 两文都只**复用**装载器与 key 构造器，⛔ 不另建第二套 | 无 |
 | `pages.ts` 的终局形态与状态所有权 | **wsrpc §7.2**（NavigationService / SessionCoordinator / LaunchPort） | 本文 §9.3 保留的三个函数只能是零状态纯转发 | 若本文先落地，三个函数临时持有接线，但必须在 wsrpc 阶段 3 迁走（见 §14 阶段 4 的迁移债） |
-| 生成器根命令与四重守门 | 各自独立登记 | 两条命令各自接线、各自在 `docs/inventory.json` 登记一条 | ⛔ 不合并成单一 `npm run codegen -- --all` 前端——与仓内 `codegen:fgui` / `codegen:http` / `codegen:state` 三条并存、逐条登记的惯例冲突 |
-| 生成器执行顺序 | 本节 | 若 gameplay 的 View/menu contribution 成为最终 View 生成器的输入，则 `codegen:gameplays --write` 必须在 wsrpc 的 `npm run codegen:features -- --write` **之前**运行，只读闸同序 | 顺序写进 §15.5 的命令块 |
+| 生成器命令形态 | **两文档已同定：不新增根命令** | 两个 writer 都是 workspace 脚本，只读闸都是 freshness 测试断言，随 `verify:all` 生效 | ⛔ 不合并成单一 `npm run codegen -- --all` 前端——与仓内 `codegen:fgui` / `codegen:http` / `codegen:state` 三条并存、逐条登记的惯例冲突；也 ⛔ 不新增根命令（会触发 README/AGENTS/CLAUDE 三份命令表的双向相等断言） |
+| 生成器执行顺序 | 本节 | 若 gameplay 的 View/menu contribution 成为最终 View 生成器的输入，则 `codegen:gameplays` 必须在 wsrpc 的 feature 生成器**之前**运行；两者的 freshness 断言互不依赖顺序 | 顺序写进 §15.5 的命令块 |
 | Lobby RPC 错误域 | **wsrpc §5.2 / §6.5** 的 generated domain error + `RpcFault` | 见下方“表 2 · 错误域两路顺序” | 见下 |
 | 受保护路径规则 | 本文 §11.5 与 wsrpc §10 共用**同一份** canonical 规则文件 | 先落地方建立文件，后落地方往同一份追加条目 | 若两者独立推进，各自持有一份并在合并时归一，⛔ 不长期并存两份 |
 | 幂等原语 vs 邀请码租约 | 两者**不共用记录结构** | `StoredIdem` 是「请求 → 结果」的幂等记录（key 含 `clientReqId`，30/60 秒量级 UX 快闸）；邀请码租约是「六位码 → 房间」的占位记录（生命周期是房间 Waiting 期，需 renew 与绝对 deadline） | 共用的只有 Lua 装载器与 key 构造器 |
@@ -206,7 +206,7 @@ apps/shared/src/gameplays/<id>/wire.ts
 
 ⚠ **feature 与 gameplay module 是两种不同实体**，⛔ 不得互相冒充，也不得合并成一个巨型插件模型。
 两个方案各自的 `schema-v1.json` 必须改名区分（`features/feature-schema-v1.json` 与
-`tools/gameplay-codegen/gameplay-schema-v1.json`），避免同基名文件在检索与工具链里互相顶替。
+`apps/server/tools/gameplay-codegen/gameplay-schema-v1.json`），避免同基名文件在检索与工具链里互相顶替。
 `manifest` / `descriptor` / `catalog` / `registry` 的用词各自文档内保持一致即可，⛔ 不做全仓重命名——
 仓内 `GameplayRegistry` / `viewRegistry` / `VIEW_REGISTRY` 已把 registry 用于多种含义。
 
@@ -244,12 +244,13 @@ apps/client/src/gameplay/modes/<id>/index.ts
 
 ### 5.2 生成物
 
-新增拟议命令 `npm run codegen:gameplays`，生成：
+新增拟议 workspace 脚本 `npm --workspace @game/server run codegen:gameplays`（命令形态的裁定见本节末），
+生成：
 
 ```text
 apps/shared/src/gameplays/catalog.generated.ts
-apps/shared/src/protocol/generated/wire-catalog.generated.ts
-apps/shared/src/protocol/generated/state/<id>.ts
+apps/shared/src/gameplays/generated/wire-catalog.generated.ts
+apps/shared/src/gameplays/generated/state/<id>.ts
 apps/server/src/rooms/schema/generated/<id>.ts
 apps/server/src/rooms/modes/catalog.generated.ts
 apps/client/src/gameplay/catalog.generated.ts
@@ -291,36 +292,52 @@ apps/client/src/view/view-catalog.generated.ts
   ⛔ 禁显式赋 `undefined`）、`verbatimModuleSyntax`（类型导入一律 `import type`）、`isolatedModules`
   （类型再导出用 `export type`）；相对导入不带扩展名。
 
-**生成物路径与协议字节锁的关系（二选一，本文取 (a)）**：
+**生成物路径与协议字节锁的关系（已定：移出协议目录）**：
 
-- **(a)（本文采用）** per-mode 生成物移出协议目录，落到 `apps/shared/src/gameplays/generated/**`（wire catalog
-  与 state descriptor 一起搬）；`apps/shared/src/protocol/` 只保留稳定 join envelope 与 core wire。这样新增
-  玩法不会每次都改变仓库级协议指纹。
-- **(b)** 保留 `protocol/generated/**` 原路径，则必须明写：**每次新增/修改玩法都会改变仓库级协议指纹并需要
-  显式重钉**——这是有意的 review 可见性，与 §5.3 的语义隔离目标不冲突（字节锁只证明协议目录经过显式接受，
-  不证明语义兼容），并在 §12 的“生成侵入”清单与 §15.5 的显式接受段各加一行重钉步骤。
+per-mode 生成物落到 `apps/shared/src/gameplays/generated/**`（wire catalog 与 state descriptor 一起搬），
+`apps/shared/src/protocol/` 只保留稳定 join envelope 与 core wire。**因此新增或修改玩法不会改变仓库级协议
+指纹，也不需要重钉**——玩法迭代期不产生 lock diff，`scripts/protocol.fingerprint` 只在真正动到 core 协议时
+才变。
 
-**命令形态（二选一，实施前必须选定，本文推荐方案 A）**：
+> 被否决的替代方案：保留 `protocol/generated/**` 原路径，把「每次新增玩法都重钉指纹」当作有意的 review
+> 可见性。否决理由是玩法迭代期会持续产生 lock diff，而字节锁本来就只证明“协议目录经过显式接受”、不证明
+> 语义兼容（§5.3），用它来换玩法可见性性价比不高——玩法契约的可见性已由 per-mode digest + `modeVersion`
+> 承担。
+>
+> ⚠ 该裁定的前提是 `protocol-fingerprint.mjs` 覆盖的是 `apps/shared/src/protocol/**`。若实施时发现它的覆盖
+> 面更宽（例如整个 `apps/shared/src`），则移出目录并不能免除重钉，必须回到被否决方案并按它补 §12 与 §15.5
+> 的重钉步骤。**实施前先跑一次确认覆盖面。**
 
-- **方案 A（推荐，不新增根命令）**：沿用仓内 `codegen:state` / `codegen:http` 的先例——writer 作为
-  workspace 脚本，freshness 由测试断言（先例：`apps/server/test/room-state-codegen.test.ts` 对已入库产物做
-  freshness 断言），随 `npm --workspace @game/server run test` → `verify:all` 生效。不触发下面的多重守门。
-- **方案 B（新增根命令 `codegen:gameplays`）**：必须**逐条**接入仓内既有的四重守门，⛔ 漏一条就是静默失闸：
-  1. 根 `package.json` 的 scripts；
-  2. `scripts/verify-toolchain.mjs` 的命令/链声明表；
-  3. `apps/client/test/toolchainContract.test.ts` 的承重钉（**仅当该命令被挂进 typecheck / verify:sync /
-     verify:core / verify:all 之一时**才必须同步钉）；
-  4. `docs/inventory.json` 对应 capability 的验证依赖；
-  5. `scripts/verify-inventory.mjs` 对根 `README.md`、`AGENTS.md`、`CLAUDE.md` **三份**常用命令表与根 scripts
-     的双向相等断言（AGENTS/CLAUDE 另需逐字一致）。
+**命令形态（已定：不新增根命令）**：
 
-  并按 wsrpc §8.1 末段补一条**删除该聚合命令的反例**，证明 gameplay gate 不会静默退出 `verify:core`。
+沿用仓内 `codegen:state` / `codegen:http` 的先例：
+
+- **writer** 是 workspace 脚本 `npm --workspace @game/server run codegen:gameplays`，源码放
+  `apps/server/tools/gameplay-codegen/`；
+- **只读闸不是独立命令**，而是 `apps/server/test/` 下的 freshness 断言（先例：
+  `apps/server/test/room-state-codegen.test.ts` 对已入库产物做 freshness 断言），随
+  `npm --workspace @game/server run test` → `verify:all` 生效；
+- 生成器自身的 `.ts` 因此**由该测试值导入**而被 tsc 传递纳入（先例：`tools/client-perf-baseline.ts` 正是
+  靠一条测试的值导入被纳入），⛔ 不需要改任何 tsconfig 的 include。
+
+这样**不触发**根命令的四重守门——`scripts/verify-inventory.mjs` 的 `checkRootCommandTable` 只对根
+`package.json` 的 scripts 与 README/AGENTS/CLAUDE 三份命令表做双向相等，workspace 脚本不在其覆盖内
+（仅当它被用作 inventory 的 `supersededBy` 锚点时才要求自己进助手命令表）。
+
+> ⚠ 两处必须如实登记的偏差：
+> 1. 该生成器住在 `@game/server`，却要写 `apps/client/src/gameplay/catalog.generated.ts`。
+>    `codegen:state` 只跨写 shared + server，**不写 client**；写客户端产物的既有先例（`codegen:fgui`）
+>    恰恰是根命令。本方案有意不沿用后者，代价是 server workspace 的职责边界被撑宽一点，实施时必须在
+>    `apps/server/tools/` 的就近 README 里写明这一点。
+> 2. `apps/client` 不是 npm workspace，所以客户端产物的 freshness 只能由 server 侧测试断言，
+>    或另由 `apps/client/test/` 增补一条只读比对。**实施时必须点明选了哪一种。**
+>
+> 被否决的替代方案：新增根命令 `codegen:gameplays`。它命令可直接执行、动线更直观，但必须逐条接入根
+> `package.json`、`scripts/verify-toolchain.mjs` 的命令/链声明表、`apps/client/test/toolchainContract.test.ts`
+> 的承重钉、`docs/inventory.json` 的验证依赖，以及上述三份命令表的双向相等断言——漏一条就是静默失闸。
 
 **CLI 与测试形状**沿用既有 `--check` + `--root=<dir>` 约定与 mkdtemp 临时根测试形态（先例同上），
-⛔ 不要写 `--repositoryRoot`——那只是 options 字段名、不是 flag。生成器自身的 `.ts` 必须确实落进某条
-typecheck 程序：要么按 `tools/fgui-codegen` 先例写进客户端 test tsconfig 的 include，要么由一个已在 include
-内的测试值导入（`tools/client-perf-baseline.ts` 正是靠一条测试的值导入被 tsc 传递纳入）。**实施时必须点明
-选了哪一种。**
+⛔ 不要写 `--repositoryRoot`——那只是 options 字段名、不是 flag。
 
 ### 5.3 版本边界
 
@@ -630,16 +647,23 @@ starting 标记；**Ready 状态是否保留必须显式规定**——本文取�
 lock 成功前不得发生客户端可见的 mode state mutation；需要昂贵预计算时只能增加无副作用、结果可丢弃的
 `prepare`，不能冒充 initialize。
 
-**Starting 必须对客户端可见（二选一，实施前必须选定，本文推荐路线 A）**：
+**Starting 必须对客户端可见（已定：Ready 在 Start 在途期间被拒）**：
 
-- **路线 A（推荐）**：§6.3 的 `OwnerReady` fragment 增加低频控制字段 `starting: boolean`。它在第一个 await
-  之前置位，rollback 或发布 Playing 时清除；置位期间 `Ready` 的 core handler 以 §13.2 的“Start 在途”稳定
-  错误拒绝，客户端据此禁用按钮。此时 Start 在途只需对 join / 最终 leave / drop / dispose 做重验。
-- **路线 B**：保留“Unready 使 Start 失效”的语义，但必须写明“成员可否决开局是**刻意**设计”，给出重试上限与
-  退避，并且**仍要**把 `starting` 暴露给客户端用于禁用按钮。
+§6.3 的 `OwnerReady` fragment 增加低频控制字段 `starting: boolean`。它在第一个 await 之前置位，rollback 或
+发布 Playing 时清除；置位期间 `Ready` / `Unready` 的 core handler 一律以 §13.2 的“Start 在途”稳定错误拒绝，
+客户端据此禁用按钮。因此 Start 在途只需对 join / 最终 leave / drop / dispose 做重验，⛔ 不需要观察
+readyRevision。
 
-⛔ 不允许维持“phase 仍是 Waiting、Ready 合法、其他客户端 state 无任何变化”的三不管窗口——那个窗口最长可达
-一个 lock 超时周期。
+产品语义随之确定：**成员点下 Ready 即为承诺，房主按下 Start 之后成员无权反悔。** 掉线仍然会使开局失效
+（那不是意图，是事实），但主动 Unready 不会。
+
+> 被否决的替代方案：保留“Unready 使 Start 失效”，即成员可否决开局。否决理由是它必须额外定义重试上限与
+> 退避——否则单个成员（手抖或恶意）可以无限阻止开局；而四人私房 Demo 里房主已经是权威角色，让成员在 Start
+> 在途期间否决只会制造“Start 按钮点不动”的困惑。若将来产品要改回该语义，必须同时补齐重试上限与退避，
+> 并把 §13.1 的推进点表恢复对 readyRevision 的观察。
+
+⛔ 无论如何都不允许维持“phase 仍是 Waiting、Ready 合法、其他客户端 state 无任何变化”的三不管窗口——那个
+窗口最长可达一个 lock 超时周期。
 
 还必须保留当前已有的 late-lock 防护：`lockWithDeadline + lifecycle abort` 超时后继续观察底层 lock 的最终结果；
 若它晚到成功，立即释放 stale lock；在晚到结果收敛前以 retry fence 拒绝第二次 Start。普通“catch 后 unlock”
@@ -698,8 +722,11 @@ GameRoom auth/admission。
    `PX = codeCooldownMs`，⛔ **不是 `DEL`**。隔离期内 `resolve` 一律返回与“码不存在”完全相同的折叠错误；
    分配器的 `SET NX` 因 key 仍存在而不会重用该码；隔离期满由 TTL 自然回收。进程崩溃由短 TTL 回收，
    崩溃场景没有隔离期是刻意的取舍（崩溃后不存在仍持旧码的客户端会话可被误导）。
-   > 被否决的替代方案：「码持有到 dispose 为止（Start 后只置 inactive），dispose 之后再冷却」。两者取其一，
-   > **实施前必须明写取哪个**；本文取 tombstone 方案，因为它与第 2 条的 `SET NX` 分配器天然兼容，不引入新依赖。
+   > **已定取 tombstone**：它与第 2 条的 `SET NX` 分配器天然兼容、不引入新依赖，且 Start 后码立即可回收、
+   > 码池压力最小。
+   > 被否决的替代方案：「码持有到 dispose 为止（Start 后只置 inactive），dispose 之后再冷却」。它的唯一优势
+   > 是能让 Playing 期间的 resolve 返回准确的“房已开始”；本方案接受失去这一区分（见 §8.3 的连带裁定），
+   > 换取实现简单性与码回收速度。
 8. Redis 故障 fail-closed，不创建一个没有可解析邀请码的“半成功私房”；**创建成功之后**才发生的故障按第 5 条
    的 `unknown → lost` 收敛，⛔ 不允许房间在无法证明持码的情况下继续对外展示邀请码。
 
@@ -777,11 +804,19 @@ listing 首次持久化之前**调用 `setPrivate(true)`；创建者 `onJoin` �
   先登记。⛔ **复用通用 RPC 预算不算满足本条。** 具体数值在阶段 0 与产品一起冻结并写进 config；
 - 权威校验 code、区和 lease generation 仍有效；
 - phase、starting、reserved seats 和容量只能作为最佳努力 UX 快照，不得宣称 resolve 已预留座位；
-- **对外错误分两类**，避免把 resolve 变成存在性预言机：
+- **对外错误分三类**，避免把 resolve 变成存在性预言机：
   - **折叠类**——`码不存在`、`处于隔离期`、`已过期`、`mode/profile 不匹配`、`区不匹配`，统一返回同一稳定码
     （例如 `ROOM_CODE_UNAVAILABLE`），响应体不带 detail、不回显 code；
-  - **保留类**——`房已满`、`房已开始` 保留独立码（持码者本就是被邀请方，客户端需据此给出重试 / 返回引导）；
-    `码格式非法` 单独返回 `INVALID_PAYLOAD`。
+  - **保留类**——`房已满` 保留独立码（持码者本就是被邀请方，客户端需据此给出返回引导）；
+    `码格式非法` 单独返回 `INVALID_PAYLOAD`；
+  - **可重试类**——`Start 在途`。§8.2 第 7 条取 tombstone 之后，码在 Start **成功**的瞬间即进隔离期，
+    因此 resolve 能命中的“已开局”窗口只剩 start fence 已置位、Playing 尚未发布的那一小段；该段返回可重试的
+    “Start 在途”（§13.2），客户端退避后重试即可得到确定结论。
+
+  > ⚠ **连带裁定**：`房已开始` **不再是保留类**，它在 tombstone 方案下已不可达——Playing 之后码已进隔离期，
+  > resolve 只会得到折叠类的 `ROOM_CODE_UNAVAILABLE`。这是 §8.2 取 tombstone 的**已知代价**：好友在对局
+  > 进行中输码，只能看到“码不可用”，分不清是输错还是已开局。若产品认为该区分必要，必须回到 §8.2 的
+  > 「持有到 dispose」方案，⛔ 不能只在这里单独恢复一个不可达的错误码。
 
   真实原因只进服务端日志与指标，且 ⛔ 不与 code / ticket 同行记录；
 - 签发短期、绑定
@@ -1021,10 +1056,10 @@ base route 恢复），⛔ 不得在 `pages.ts` 内持有 session、reconciler �
 | `apps/shared/src/constants/errors.ts`、`protocol/lobbyRpc/envelope.ts` | Game/Lobby 错误仍由中央集合验证 | 通用房间错误一次性归 core；玩法/RPC 领域错误改为 generated contribution，保持三种错误域分离 |
 | `apps/shared/src/constants/game.ts` | `MAX_PLAYERS` 已**不是**运行时权威容量（权威是 `GameMode.roster.max`）。它现在承担三件事：(a) 生成 state validator 的 players map 上界（manifest 的 `maxSizeConstant`）、(b) onCreate 选定 mode 前的 `maxClients` 兜底、(c) `assertGameModeRoster` 对 `roster.max` 的天花板 | 三种职责分别下沉：(a) 归 per-mode state descriptor、(b) 保留为 shell 兜底默认值、(c) 随 roster 断言迁到 codegen/启动期 |
 | `apps/shared/schema/game-room-state.json` | 单文件是所有 mode 的中央冲突点 | 迁移到 `schema/gameplays/<id>/state.json`；旧文件最终删除或仅作迁移入口 |
-| `apps/server/tools/room-state-codegen.ts` | 只生成一组集中 state | 收敛为服务端 Schema renderer/迁移适配；跨 shared/server/client 的总生成器放根 `tools/gameplay-codegen/` |
+| `apps/server/tools/room-state-codegen.ts` | 只生成一组集中 state | 收敛为服务端 Schema renderer/迁移适配；跨 shared/server/client 的总生成器放 `apps/server/tools/gameplay-codegen/`（与 writer 同 workspace，见 §5.2） |
 | `apps/shared/src/protocol/http.ts`、`apps/server/src/http/misc/version.ts`、`healthz.ts` | `/version` 和健康检查仍引用单一全局协议版本（客户端**没有**启动探测在读它） | 同时报告 Lobby 与 GameRoom 两类身份；per-mode 兼容在 gameplay catalog/join 中校验 |
 | `scripts/protocol-fingerprint.mjs`、`apps/client/test/protocolFingerprint.test.ts` | 指纹脚本从 `rooms.ts` 读取唯一版本并覆盖整个 protocol；当前**无 argv 解析**，运行即重钉 | 口径以 `Non-intrusive-wsrpc.md` §8.4 为准（互斥 `--check/--write`、**保留单一全局字节锁**），⛔ 两文档不得对同一脚本给出不同拆法；per-mode digest 归 `codegen:gameplays`；补 Lobby/Game join 和版本矩阵测试 |
-| 根 `package.json`、验证脚本与 inventory | 尚无 `codegen:gameplays` 和 freshness 守门 | 增加生成、`--check`、digest/version、三端集合与删除保护 |
+| `apps/server/package.json`、`apps/server/tools/gameplay-codegen/**`、`apps/server/test/` | 尚无 gameplay 生成器与 freshness 守门 | 新增 workspace 脚本 `codegen:gameplays` 与 freshness 断言（⛔ 不新增根命令，见 §5.2）；覆盖 digest/version、三端集合与删除保护 |
 | `apps/shared/src/protocol/lobbyRpc/**` | 新增 `room.prepareCreate/resolve` 在当前架构仍会触碰中央 RPC 全集 | 若先实施 `Non-intrusive-wsrpc.md`，通过 domain 文件 + codegen 接入；否则本次显式增加两条 core route 契约 |
 | 根 `README.md`、`AGENTS.md` / `CLAUDE.md`（两者在仓库根字节等同）、`docs/OVERVIEW.md`、`SERVER.md`、`CLIENT.md` 与相关 README | 当前铁律精确写死单一 state manifest/生成路径和旧扩展动线 | 框架落地时同步更新真源、生成物、禁手改范围和新玩法动线；完成证据最后回写**当前计划文件**（以 `docs/inventory.json` 的 `routeOfTruth.corePlan` 为准），⛔ 不向已降级的历史归档回写 |
 
@@ -1077,8 +1112,8 @@ RPC/error/codegen 的一次性框架改造，不能把“新增 endpoint 文件�
 
 ```text
 apps/shared/src/gameplays/defineGameplayWire.ts
-tools/gameplay-codegen/schema-v1.json
-tools/gameplay-codegen/cli.ts
+apps/server/tools/gameplay-codegen/gameplay-schema-v1.json
+apps/server/tools/gameplay-codegen/cli.ts
 apps/server/src/rooms/core/GameplayDispatcher.ts
 apps/server/src/rooms/core/StartPolicy.ts
 apps/server/src/rooms/core/AccessPolicy.ts
@@ -1103,8 +1138,8 @@ apps/art/fairygui/assets/<PrivateRoomLobby-package>/**
 - `InviteCodeLease.ts` 与 `core/infra/lease.ts` 的 MySQL `singleton_lease`（fence_token）**无关，勿混用**；
   必要时改名为 `InviteCodeReservation.ts` 以免同词不同义。
 
-`tools/gameplay-codegen/**/*.ts` 必须确实落进某条 typecheck 程序（见 §5.2 末段），⛔ 不允许长期游离在
-类型检查之外。
+`apps/server/tools/gameplay-codegen/**/*.ts` 按 §5.2 的裁定，**由 `apps/server/test/` 下的 freshness 测试
+值导入**而被 tsc 传递纳入，⛔ 不允许长期游离在类型检查之外。
 
 ### 11.5 受保护路径与无侵入矩阵
 
@@ -1208,8 +1243,8 @@ create private room
 异常规则：
 
 - Waiting 新入座者默认未 Ready；其他人的 Ready 可以保留，新成员自然使 `allReady=false`；
-- 按 §7.3 路线 A，`starting` 置位期间 `Ready` 已被 core handler 拒绝，因此 Start 在途只需对 join / 最终
-  leave / drop / dispose 做重验；若改取路线 B，则 Ready 变更同样使在途 Start 失效；
+- 按 §7.3，`starting` 置位期间 `Ready` / `Unready` 已被 core handler 拒绝，因此 Start 在途只需对 join /
+  最终 leave / drop / dispose 做重验；
 - 可重试 transport close 进入当前 10 秒宽限，seat/owner/Ready 保留，但 connected=false 并增加
   `connectionRevision`；离线成员存在时不能 Start，Start 在途遇到 drop 立即失效；
 - reconnect 恢复 connected 并再次增加 revision；主动离开、强踢或宽限失败才是最终 leave；
@@ -1223,7 +1258,7 @@ create private room
 
 **内部原因枚举**（日志 / 指标 + 客户端文案分类的上游，⛔ 不等于对外错误码）：非法码、码不存在 / 过期 /
 处于隔离期、房已满、房已开始、ticket 非法 / 过期、不是房主、有人未 Ready、人数不足、Start 在途 / 失效、
-玩法版本不匹配。
+玩法版本不匹配。其中 `房已开始` 按 §8.3 只作为**内部**原因存在，对外已折叠进 `ROOM_CODE_UNAVAILABLE`。
 
 **对外稳定错误码**按 §8.3 的两类口径收敛（折叠类 / 保留类），并且必须**双端单源定义**。日志和指标保留不含
 token / ticket 的内部原因。
@@ -1276,7 +1311,7 @@ Snake Lobby/Waiting 页面并允许重试。
 
 - 引入玩法 wire builder、catch-all dispatcher、typed send/broadcast；
 - 拆分 state descriptor，生成三端 catalog 和 per-mode artifact；
-- 增加 `codegen:gameplays --check`、digest/version 和集合一致性门禁。
+- 增加 gameplay 生成器的 freshness 断言、digest/version 和集合一致性门禁（workspace 脚本形态，见 §5.2）。
 - 同步更新根 `README.md`、`AGENTS.md` 与 `CLAUDE.md`（后两者在仓库根字节等同）、OVERVIEW/SERVER/CLIENT、
   就近 README 和 inventory；完成后再向**当前计划文件**回写证据，⛔ 不向已降级的历史归档回写。实施时以
   `docs/inventory.json` 的 `routeOfTruth.corePlan` 为准，而不是本文写死的文件名。
@@ -1350,10 +1385,10 @@ join envelope 的版本矩阵（旧客户端被明确拒绝）通过。
 | --- | --- | --- |
 | 六位码 validator 接受 `000001`，拒绝 number、5/7 位、空白、符号和未知字段 | shared 契约用例 | 把 validator 改成接受 `number` → 转红 |
 | Ready/Start/SnakeInput/Snapshot payload 均 exact、finite、有范围和尺寸上限 | shared 契约用例 | 去掉任一 exact-keys 断言 → 转红 |
-| framework version 与 per-mode version 分工明确；digest 变化未 bump `modeVersion` 必须失败 | `codegen:gameplays --check` | 改一字节 wire 而**不动** `modeVersion` → `--check` 转红 |
+| framework version 与 per-mode version 分工明确；digest 变化未 bump `modeVersion` 必须失败 | `npm --workspace @game/server run test`（freshness 断言） | 改一字节 wire 而**不动** `modeVersion` → 断言转红 |
 | Game join 只比较**一个**整数，且该整数与 wsrpc §8.4 的命名一致；`modeVersion` 只影响单玩法拒绝，不影响 core 信封 | 版本矩阵用例 | 让 `modeVersion` 参与 join 拒绝 → 矩阵转红 |
 | `/version`、`/healthz`、framework fingerprint 与 per-mode digest 的范围一致 | 协议指纹用例 + HTTP 契约用例 | 让指纹覆盖面漏掉 protocol 下任一文件 → 转红 |
-| per-mode state、server Schema 和三端 catalog 由同一 manifest 集合生成且新鲜 | `codegen:gameplays --check` | 手改任一生成物 → `--check` 转红 |
+| per-mode state、server Schema 和三端 catalog 由同一 manifest 集合生成且新鲜 | `npm --workspace @game/server run test`（freshness 断言） | 手改任一生成物 → 断言转红 |
 | manifest `maxPlayers` 派生 per-mode state 上限、root map 上界、admission cap 与 `maxClients`，**四处不允许独立配置** | 启动期断言 + 服务端用例 | 手改其中任一处使之与 manifest 不等 → 启动期断言转红 |
 | 未知/畸形 C2S 在昂贵 validator 前已计基础预算，合法大 payload 再计附加成本 | 服务端 dispatcher 用例 | 把基础预算挪到 validator 之后 → 转红 |
 | 房间只注册 catch-all，⛔ 无任何残留具名 `onMessage` | 服务端用例 | 加一条具名 `onMessage` → 转红 |
@@ -1395,7 +1430,7 @@ join envelope 的版本矩阵（旧客户端被明确拒绝）通过。
 | 2、3、4 人全部 Ready 均能由房主开局；低于该 mode 的 `roster.min` 被拒 | 服务端容量矩阵 | 把下界检查去掉 → 转红 |
 | 非房主 Start、有人未 Ready、重复 Start 和第五人入座都有稳定拒绝 | 服务端用例 | 去掉 owner 校验 → 转红 |
 | Start await 期间 join / final-leave / drop / reconnect / owner-change / dispose 会使本次启动失效 | 服务端用例（在每个 await 边界注入事件） | 只比较 fence 元组中的一项 → 转红 |
-| `starting` 对客户端可见；置位期间 Ready 被稳定错误拒绝（路线 A）或 Start 被判失效（路线 B） | 服务端用例 + state 断言 | 不把 `starting` 写进 state → 转红 |
+| `starting` 对客户端可见；置位期间 `Ready` / `Unready` 均被稳定错误拒绝 | 服务端用例 + state 断言 | 不把 `starting` 写进 state → 转红；让 `starting` 期间的 Unready 通过 → 转红 |
 | 离线但仍在重连宽限的成员保留 seat/Ready，却会阻止 Start，直至 reconnect 或最终 leave | 服务端用例 | 让离线成员不阻止 Start → 转红 |
 | `owner-ready` 下 Start 失败后**房主仍在座且仍是 owner**；rollback 保留 Ready | 服务端用例 | 让 rollback 清空 Ready 或转移 owner → 转红 |
 | lock 失败能回滚；rollback/unlock 失败时 fail-closed，不公开错误 Playing roster | 服务端用例 | 让 rollback 失败后仍发布 Playing → 转红 |
@@ -1433,7 +1468,7 @@ join envelope 的版本矩阵（旧客户端被明确拒绝）通过。
 **A 段 · 显式接受动作（人工执行，产生 lock diff）**
 
 ```bash
-npm run codegen:gameplays -- --write       # 拟新增；落地前不存在
+npm --workspace @game/server run codegen:gameplays   # 拟新增；落地前不存在
 node scripts/protocol-fingerprint.mjs      # ⚠ 见下方说明：这是 writer，不是检查
 node scripts/fgui-manifest.mjs --write     # FGUI 资源审计锁
 ```
@@ -1448,7 +1483,7 @@ node scripts/fgui-manifest.mjs --write     # FGUI 资源审计锁
 ```bash
 npm run sync:shared                        # 已包含 client→Cocos 同步，⛔ 不再单列 sync:client
 # ← 此处打开一次 Cocos Creator，为 sync 新产生的 apps/Cocos/assets/src/** 文件与新目录生成 .meta
-npm run codegen:gameplays -- --check       # 拟新增
+# gameplay 生成物的 freshness 由下面 verify:all 链里的服务端测试断言，⛔ 无独立 --check 命令
 npm run verify:sync
 npm run verify:all                         # 已覆盖 verify:core / typecheck / test:client / test:fgui / verify:project
 npm --workspace @game/server run test:int  # 需先 npm --workspace @game/server run stack
@@ -1457,7 +1492,8 @@ npm --workspace @game/server run test:int  # 需先 npm --workspace @game/server
 > `sync-client --check` 的 `.meta` 断言只遍历 `git ls-files`，本地未 `add` 时不会红，**提交或 CI 上必红**——
 > 所以那一步 Creator 不能省。
 > `verify:all` 已覆盖上述子链，单列它们只为定位失败，⛔ 不必在回归记录里逐条重复。
-> `codegen:gameplays --check` 最终应进 `verify:core`，⛔ 不长期单列（命令形态见 §5.2）。
+> gameplay 生成物的 freshness 断言随 `npm --workspace @game/server run test` 进入 `verify:all`，
+> ⛔ 不新增独立根命令、也不单列（命令形态的裁定见 §5.2）。
 > 若 gameplay 的 View/menu contribution 是最终 View 生成器的输入，则 `codegen:gameplays` 必须在 feature
 > codegen **之前**运行（§4.1 表 1「生成器执行顺序」）。
 
@@ -1475,7 +1511,7 @@ WebPlatform；Creator/真机预览必须单列，不能由 Node 无头测试冒�
 本节只列 gameplay 增量断言：
 
 - [ ] fixture mode 的 per-mode state、服务端 Schema、三端 catalog 各**恰好出现一次**且互相引用闭合；
-- [ ] contract digest 改动而未 bump `modeVersion` 时 `--check` 必红（**先证红，再修复**）；
+- [ ] contract digest 改动而未 bump `modeVersion` 时 freshness 断言必红（**先证红，再修复**）；
 - [ ] fixture mode **不出现**在默认 Home contribution 与默认撮合池；
 - [ ] 删除 fixture 走显式删除模式，generated catalog/state/Schema/镜像**无残留**；
 - [ ] 矩阵跑在临时根，复用既有 `--root` fixture seam（先例：仓内 state codegen 测试的 mkdtemp 临时根与
@@ -1518,8 +1554,8 @@ WebPlatform；Creator/真机预览必须单列，不能由 Node 无头测试冒�
 3. Waiting absolute deadline、短 lease TTL、`renewIntervalMs`、`codeCooldownMs`、`maxConcurrentRoomsPerUid`、
    creation/join ticket TTL 与 resolve 专用桶的具体**数值**，以及房主离开后是否继续保留原码。
    ⚠ 只冻结数值——它们之间的**不等式约束**由 §8.2 第 6 条规定并在启动期断言，⛔ 不是产品可选项。
-4. §7.3 的 Starting 可见性取路线 A（Ready 被拒）还是路线 B（Unready 使 Start 失效）；§8.2 第 7 条的码回收取
-   tombstone 冷却还是「持有到 dispose」。两者都必须在阶段 0 定死，⛔ 不能留到实现时随手选。
+4. 好友在对局进行中输码时只能看到“码不可用”（§8.3 的已知代价）是否可接受。若不可接受，唯一出路是把 §8.2
+   第 7 条改回「持有到 dispose」，⛔ 不能只恢复一个不可达的错误码。
 5. 首期是否需要可信战绩/evidence；若不需要，应显式声明 `evidence: none`。
 6. 旧构建档案中哪些代码、音频、图片和动画已获授权复用；未确认资源不得进入本仓
    （台账见 [snakeoff/08](snakeoff/08-source-and-asset-provenance.md)）。
