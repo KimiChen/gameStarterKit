@@ -17,7 +17,7 @@ import {
 import { groupAdmitsZone, normalizeSId } from "../core/infra/config";
 import { zoneCtx } from "../core/infra/keys";
 import { verifyAndCacheWebPlatformSession } from "../platform/webPlatformClient";
-import { joinRefused, joinRefusedAuth, toErrCode } from "../core/errors";
+import { joinRefused, joinRefusedAuth, toErrCode, toRpcFaultCode } from "../core/errors";
 import { loadFields } from "../core/userRecord";
 import { ensureCharacterReady } from "../player/character";
 import { dispatchRpc, type RpcCtx, type RpcReply } from "./dispatcher";
@@ -140,7 +140,12 @@ function safeRpcId(input: unknown): string {
 function rpcErrorCode(error: unknown): RpcErrCode {
   // WireValidationError is not in the domain error map, but malformed input is
   // still a client-visible, stable RPC error rather than an INTERNAL outage.
-  return isWireValidationError(error) ? "INVALID_PAYLOAD" : toErrCode(error);
+  if (isWireValidationError(error)) { return "INVALID_PAYLOAD"; }
+  // §4.7 RpcFault 白名单读取点其二（与 dispatcher.rpcErrorCode 对齐；漏一处会让
+  // 建连/dispatch 前错误映射不一致）。⛔ 不读裸对象 .rpcCode，一律走 toRpcFaultCode。
+  const fault = toRpcFaultCode(error);
+  if (fault !== null) { return fault; }
+  return toErrCode(error);
 }
 
 function rpcErrorMessage(error: unknown, code: RpcErrCode): string {

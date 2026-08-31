@@ -10,6 +10,7 @@
  * → `npm --workspace @game/server run codegen:features` → 服务端 websocket/<域>/<接口>.ts
  * → 测试向量 apps/server/test/lobbyRpcVectors/<域>.ts。⛔ 本文件与 envelope/push 不再登记。
  */
+export * from "./canonicalJson";
 export * from "./defineDomain";
 export * from "./primitives";
 export * from "./envelope";

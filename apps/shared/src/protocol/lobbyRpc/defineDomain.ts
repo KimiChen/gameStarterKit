@@ -26,11 +26,16 @@ export interface LobbyRpcRouteDescriptor<TReq = unknown, TRes = unknown> {
     readonly mode: LobbyRpcRouteMode;
     readonly request: (input: unknown) => TReq;
     readonly response: (input: unknown) => TRes;
-    /** idempotent-write：所属 operation group（阶段 4 的 inspect 机制消费；本阶段不声明）。 */
+    /**
+     * 契约版本（§6.11；缺省 1）：随 request/response validator 的**语义**变更人工 bump。
+     * 幂等 v2 记录持久化它并 fail-closed 处理不匹配；⛔ 不进摘要 preimage、不进 Redis key。
+     */
+    readonly contractVersion?: number;
+    /** idempotent-write：所属 operation group（阶段 4 inspect 机制；必须由本域 ownsOperationGroups 声明所有权）。 */
     readonly operationGroup?: string;
-    /** idempotent-write：是否允许通用 operation 查询（阶段 4；本阶段不声明）。 */
+    /** idempotent-write：是否允许通用 operation 查询（阶段 4；须同时声明 operationGroup）。 */
     readonly inspectable?: boolean;
-    /** query：可查询哪个 operation group 的操作状态（阶段 4；本阶段不声明）。 */
+    /** query：可查询哪个 operation group 的操作状态（阶段 4；所有权规则见 defineLobbyRpcDomain 注释）。 */
     readonly inspectsOperationGroup?: string;
 }
 
@@ -45,6 +50,10 @@ export interface LobbyPushDescriptor<TData = unknown> {
 export interface LobbyRpcDomainDescriptor {
     readonly domain: string;
     readonly errorCodes: readonly string[];
+    /** 本域拥有的 operation group（§6.13：受拥有 id，跨域重复声明由 codegen 拒绝）。 */
+    readonly ownsOperationGroups: readonly string[];
+    /** group → 获准跨域查询该组的域列表（§6.13 exposesOperationGroupTo；key 必须是本域拥有的组）。 */
+    readonly exposesOperationGroupTo: { readonly [group: string]: readonly string[] };
     readonly pushes: readonly LobbyPushDescriptor[];
     readonly routes: readonly LobbyRpcRouteDescriptor[];
 }
@@ -53,6 +62,7 @@ export interface LobbyRpcDomainDescriptor {
 export function defineRpcQuery<TReq, TRes>(type: string, options: {
     readonly request: (input: unknown) => TReq;
     readonly response: (input: unknown) => TRes;
+    readonly contractVersion?: number;
     readonly inspectsOperationGroup?: string;
 }): LobbyRpcRouteDescriptor<TReq, TRes> {
     return {
@@ -60,6 +70,7 @@ export function defineRpcQuery<TReq, TRes>(type: string, options: {
         mode: "query",
         request: options.request,
         response: options.response,
+        ...(options.contractVersion === undefined ? {} : { contractVersion: options.contractVersion }),
         ...(options.inspectsOperationGroup === undefined
             ? {}
             : { inspectsOperationGroup: options.inspectsOperationGroup }),
@@ -70,12 +81,14 @@ export function defineRpcQuery<TReq, TRes>(type: string, options: {
 export function defineRpcNaturalWrite<TReq, TRes>(type: string, options: {
     readonly request: (input: unknown) => TReq;
     readonly response: (input: unknown) => TRes;
+    readonly contractVersion?: number;
 }): LobbyRpcRouteDescriptor<TReq, TRes> {
     return {
         type,
         mode: "natural-write",
         request: options.request,
         response: options.response,
+        ...(options.contractVersion === undefined ? {} : { contractVersion: options.contractVersion }),
     };
 }
 
@@ -83,6 +96,7 @@ export function defineRpcNaturalWrite<TReq, TRes>(type: string, options: {
 export function defineRpcIdempotentWrite<TReq, TRes>(type: string, options: {
     readonly request: (input: unknown) => TReq;
     readonly response: (input: unknown) => TRes;
+    readonly contractVersion?: number;
     readonly operationGroup?: string;
     readonly inspectable?: boolean;
 }): LobbyRpcRouteDescriptor<TReq, TRes> {
@@ -91,6 +105,7 @@ export function defineRpcIdempotentWrite<TReq, TRes>(type: string, options: {
         mode: "idempotent-write",
         request: options.request,
         response: options.response,
+        ...(options.contractVersion === undefined ? {} : { contractVersion: options.contractVersion }),
         ...(options.operationGroup === undefined ? {} : { operationGroup: options.operationGroup }),
         ...(options.inspectable === undefined ? {} : { inspectable: options.inspectable }),
     };
@@ -105,16 +120,30 @@ export function defineLobbyPush<TData>(
     return { key, type, data };
 }
 
-/** 域声明入口；pushes 可省（缺省空集）。 */
+/**
+ * 域声明入口；pushes / ownsOperationGroups / exposesOperationGroupTo 可省（缺省空集）。
+ *
+ * operation group 所有权规则（§6.13，codegen:features 校验，任一违反即拒绝生成）：
+ *  1. group 是受拥有 id：由且仅由一个域在 `ownsOperationGroups` 声明，跨域重复即拒；
+ *  2. 路由的 `operationGroup` 必须是本域拥有的组；`inspectable: true` 必须同时声明 `operationGroup`；
+ *  3. `inspectsOperationGroup` 默认只能引用本域拥有的组；引用他域的组必须由该组 owner 在
+ *     `exposesOperationGroupTo[group]` 里显式列出查询方域名（fail closed）；
+ *  4. 同一条路由不得同时声明 `operationGroup` 与 `inspectsOperationGroup`（builder 形态已排除，
+ *     生成器仍显式复核）；`inspectsOperationGroup` 只允许出现在 query 路由上。
+ */
 export function defineLobbyRpcDomain(descriptor: {
     readonly domain: string;
     readonly errorCodes: readonly string[];
+    readonly ownsOperationGroups?: readonly string[];
+    readonly exposesOperationGroupTo?: { readonly [group: string]: readonly string[] };
     readonly pushes?: readonly LobbyPushDescriptor[];
     readonly routes: readonly LobbyRpcRouteDescriptor[];
 }): LobbyRpcDomainDescriptor {
     return {
         domain: descriptor.domain,
         errorCodes: descriptor.errorCodes,
+        ownsOperationGroups: descriptor.ownsOperationGroups ?? [],
+        exposesOperationGroupTo: descriptor.exposesOperationGroupTo ?? {},
         pushes: descriptor.pushes ?? [],
         routes: descriptor.routes,
     };

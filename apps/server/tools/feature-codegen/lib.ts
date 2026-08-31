@@ -41,6 +41,7 @@ const REGISTRY_RELATIVE = `${LOBBY_RPC_DIR_RELATIVE}/registry.generated.ts`;
 const DOMAIN_ID = /^[a-z][A-Za-z0-9]{0,63}$/u;
 const ROUTE_METHOD = /^[A-Za-z][A-Za-z0-9]{0,63}$/u;
 const ERROR_CODE = /^[A-Z][A-Z0-9_]{0,63}$/u;
+const OPERATION_GROUP_ID = /^[a-z][A-Za-z0-9]{0,63}$/u;
 const RUN_HINT = "Run npm --workspace @game/server run codegen:features";
 const SOURCE_LABEL = `${DOMAINS_DIR_RELATIVE}/*.ts + ${LOBBY_RPC_DIR_RELATIVE}/coreErrors.ts`;
 
@@ -132,6 +133,7 @@ export function readFeatureDescriptors(options: FeatureCodegenOptions = {}): Fea
 
   assertCrossDescriptorUniqueness(domains, core);
   assertErrorCodeOrderPin(domains, core);
+  assertOperationGroupOwnership(domains);
   assertImportSymbolUniqueness(domains, core);
   return { domains, core };
 }
@@ -151,12 +153,74 @@ function assertCrossDescriptorUniqueness(domains: readonly DomainDeclaration[], 
     claim(pushTypeOwner, push.type, "coreErrors", "推送消息名");
     claim(pushKeyOwner, push.key.toLowerCase(), "coreErrors", "推送 key");
   }
+  // §6.13/§5.5：operationGroup 进重复 id 拒绝清单——一个组由且仅由一个域拥有
+  const groupOwner = new Map<string, string>();
   for (const domain of domains) {
     for (const route of domain.routes) claim(routeOwner, route.type, domain.domain, "路由");
     for (const code of domain.errorCodes) claim(errorOwner, code, domain.domain, "错误码");
+    for (const group of domain.ownsOperationGroups) claim(groupOwner, group, domain.domain, "operationGroup");
     for (const push of domain.pushes) {
       claim(pushTypeOwner, push.type, domain.domain, "推送消息名");
       claim(pushKeyOwner, push.key.toLowerCase(), domain.domain, "推送 key");
+    }
+  }
+}
+
+/**
+ * §6.13 operation group 所有权/暴露双向校验（fail closed）：
+ *  - group id 形态校验 + 跨域重复由 assertCrossDescriptorUniqueness 拒绝；
+ *  - 路由的 operationGroup 必须由本域 ownsOperationGroups 声明；
+ *  - inspectable=true 必须同时声明 operationGroup；
+ *  - inspectsOperationGroup 默认只能引用本域拥有的组；跨域引用必须由 owner 在
+ *    exposesOperationGroupTo[group] 显式列出查询方域名；
+ *  - exposesOperationGroupTo 的 key 必须是本域拥有的组、value 必须是已存在的其他域；
+ *  - 同一路由不得双声明 operationGroup 与 inspectsOperationGroup（builder 形态已排除，仍复核）。
+ */
+function assertOperationGroupOwnership(domains: readonly DomainDeclaration[]): void {
+  const ownerOf = new Map<string, DomainDeclaration>();
+  const domainIds = new Set(domains.map((domain) => domain.domain));
+  for (const domain of domains) {
+    const label = `${DOMAINS_DIR_RELATIVE}/${domain.domain}.ts`;
+    for (const group of domain.ownsOperationGroups) {
+      if (!OPERATION_GROUP_ID.test(group)) {
+        fail(label, `operationGroup "${group}" 必须是 camelCase 标识符（^[a-z][A-Za-z0-9]{0,63}$）`);
+      }
+      ownerOf.set(group, domain);
+    }
+  }
+  for (const domain of domains) {
+    const label = `${DOMAINS_DIR_RELATIVE}/${domain.domain}.ts`;
+    for (const [group, consumers] of Object.entries(domain.exposesOperationGroupTo)) {
+      if (ownerOf.get(group)?.domain !== domain.domain) {
+        fail(label, `exposesOperationGroupTo 的组 "${group}" 不由本域 ownsOperationGroups 声明——只能暴露自己拥有的组`);
+      }
+      for (const consumer of consumers) {
+        if (consumer === domain.domain) fail(label, `exposesOperationGroupTo["${group}"] 不需要（也不允许）列出本域自身`);
+        if (!domainIds.has(consumer)) {
+          fail(label, `exposesOperationGroupTo["${group}"] 引用了不存在的域 "${consumer}"（悬空暴露 fail closed）`);
+        }
+      }
+    }
+    for (const route of domain.routes) {
+      if (route.operationGroup !== null && route.inspectsOperationGroup !== null) {
+        fail(label, `路由 ${route.type} 不得同时声明 operationGroup 与 inspectsOperationGroup`);
+      }
+      if (route.operationGroup !== null && ownerOf.get(route.operationGroup)?.domain !== domain.domain) {
+        fail(label, `路由 ${route.type} 的 operationGroup "${route.operationGroup}" 必须先由本域 ownsOperationGroups 声明所有权`);
+      }
+      if (route.inspectable && route.operationGroup === null) {
+        fail(label, `路由 ${route.type} 声明了 inspectable 但缺 operationGroup——无组的可查路由无意义`);
+      }
+      const inspects = route.inspectsOperationGroup;
+      if (inspects !== null) {
+        const owner = ownerOf.get(inspects);
+        if (!owner) fail(label, `路由 ${route.type} 的 inspectsOperationGroup "${inspects}" 无任何域声明所有权`);
+        if (owner.domain !== domain.domain
+          && !(owner.exposesOperationGroupTo[inspects] ?? []).includes(domain.domain)) {
+          fail(label, `路由 ${route.type} 的 inspectsOperationGroup "${inspects}" 属于域 ${owner.domain}，`
+            + `且未经 exposesOperationGroupTo["${inspects}"] 显式暴露给 ${domain.domain}（fail closed）`);
+        }
+      }
     }
   }
 }
@@ -394,6 +458,13 @@ function renderRegistry(descriptors: FeatureDescriptors): string {
   lines.push("export const ALL_LOBBY_RPC_TYPES: readonly LobbyRpcType[] = [");
   for (const route of routes) lines.push(`    "${route.type}",`);
   lines.push("];");
+  lines.push("");
+
+  lines.push("/** 路由 → 契约版本（§6.11：随 validator 语义变更人工 bump；幂等 v2 记录持久化并 fail-closed 比对，");
+  lines.push(" *  ⛔ 不进摘要 preimage、不进 Redis key）。缺省 1。 */");
+  lines.push("export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number } = {");
+  for (const route of routes) lines.push(`    "${route.type}": ${route.contractVersion},`);
+  lines.push("};");
   lines.push("");
 
   const groupRoutes = idemRoutes.filter((route) => route.operationGroup !== null);

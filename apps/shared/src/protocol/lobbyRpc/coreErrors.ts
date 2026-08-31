@@ -24,6 +24,11 @@ export const CORE_RPC_ERROR_CODES = [
     "THAWING",
     "USER_DATA_LOST",
     "INTERNAL",
+    // ── 阶段 4（幂等 v2，Non-intrusive §6.11/§6.12）新增；不上历史钉，按 core 声明序追加 ──
+    /** 同 clientReqId 携带了不同 canonical payload（客户端缺陷：⛔ 不得换 payload 复用旧 ID）。 */
+    "OPERATION_CONFLICT",
+    /** 操作确定执行过，但通用结果缓存不可得（done-oversize 墓碑 / 契约版本升级 fail-closed）；按领域收据查询恢复。 */
+    "OPERATION_RESULT_EXPIRED",
 ] as const;
 
 /**

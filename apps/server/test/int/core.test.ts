@@ -16,12 +16,12 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { acquireLease } from "../../src/core/locks";
 import { _uowTestHooks, withUser } from "../../src/core/uow";
-import { idemAcquire, idemComplete, idemRelease } from "../../src/core/idem";
+import { idemAcquire, idemComplete, idemRelease, newIdemLeaseId } from "../../src/core/idem";
 import { deriveOpId, redisApply } from "../../src/core/economy/outbox";
 import { createUser, loadFields } from "../../src/core/userRecord";
 import { writeGroupSess } from "../../src/core/auth/session";
-import { LOCK_TTL_MS, SCHEMA_VERSION } from "../../src/core/infra/config";
-import { kApplied, kBag, kBagAll, kIdemUser, kLock, kSess, kUser } from "../../src/core/infra/keys";
+import { IDEM_PENDING_MS, IDEM_RESULT_MS, LOCK_TTL_MS, SCHEMA_VERSION } from "../../src/core/infra/config";
+import { kApplied, kBag, kBagAll, kIdemPending, kIdemUser, kLock, kSess, kUser } from "../../src/core/infra/keys";
 import { clientFor, closeRedis } from "../../src/core/infra/redisRoute";
 import { CAS_HSET, CREATE_USER, evalshaWithReload } from "../../src/core/infra/redisScripts";
 import { USER_GENERIC_WRITE_RESERVED_FIELDS } from "../../src/core/userSchema";
@@ -382,24 +382,153 @@ test("kill -9 持锁进程 → 锁 5s 后自然过期，下一个请求正常", 
   await lease.release();
 });
 
-// ── 幂等占位原语（09·I1：执行前占位 + 干净失败立即可重试） ────────
+// ── 幂等 v2 原语（§6.11/§6.12：payload 绑定 + 唯一 lease + 单条 Lua CAS） ────
 
-test("idem：pending 互斥、done 回缓存、release 后立即可重占", async () => {
+test("idem v2：同 hash 互斥、异 hash 冲突、done 回缓存、release 后立即可重占；Lua 写入 TTL 落区间", async () => {
   const u = uid("idem");
   const c = clientFor(u);
   const key = kIdemUser("rpc", u, "req1");
+  const counter = kIdemPending(u);
+  try {
+    const lease1 = newIdemLeaseId();
+    assert.deepEqual(
+      await idemAcquire(c, key, counter, { hash: "h-a", leaseId: lease1, contractVersion: 1 }),
+      { kind: "acquired" });
+    // 退出条件：Lua 写入路径的 TTL 由集成测试断言（PTTL 落预期区间）
+    const pendingTtl = await c.pttl(key);
+    assert.ok(pendingTtl > 0 && pendingTtl <= IDEM_PENDING_MS, `pending PTTL=${pendingTtl} 应落 (0, ${IDEM_PENDING_MS}]`);
+    const counterTtl = await c.pttl(counter);
+    assert.ok(counterTtl > 0 && counterTtl <= IDEM_PENDING_MS, `计数键 PTTL=${counterTtl} 应随租约衰减`);
+    assert.equal(await c.get(counter), "1");
 
-  assert.deepEqual(await idemAcquire(c, key, "h1"), { kind: "acquired" });
-  assert.deepEqual(await idemAcquire(c, key, "h2"), { kind: "pending" }); // 并发双发第二个必须挡住
+    // 并发双发：同 hash 第二个 lease 必须挡住；异 hash 是稳定 conflict（payload 绑定）
+    assert.deepEqual(
+      await idemAcquire(c, key, counter, { hash: "h-a", leaseId: newIdemLeaseId(), contractVersion: 1 }),
+      { kind: "in-progress" });
+    assert.deepEqual(
+      await idemAcquire(c, key, counter, { hash: "h-b", leaseId: newIdemLeaseId(), contractVersion: 1 }),
+      { kind: "conflict" });
 
-  await idemComplete(c, key, '{"ok":true}');
-  assert.deepEqual(await idemAcquire(c, key, "h3"), { kind: "done", result: '{"ok":true}' });
+    assert.equal(await idemComplete(c, key, counter, lease1, '{"ok":true}'), "ok");
+    const doneTtl = await c.pttl(key);
+    assert.ok(doneTtl > IDEM_PENDING_MS && doneTtl <= IDEM_RESULT_MS,
+      `done 必须重置为 result TTL（PTTL=${doneTtl} 应落 (${IDEM_PENDING_MS}, ${IDEM_RESULT_MS}]）`);
+    assert.equal(await c.get(counter), "0", "complete 后 pending 计数回落");
+    assert.deepEqual(
+      await idemAcquire(c, key, counter, { hash: "h-a", leaseId: newIdemLeaseId(), contractVersion: 1 }),
+      { kind: "done", result: '{"ok":true}' });
+    assert.deepEqual(
+      await idemAcquire(c, key, counter, { hash: "h-b", leaseId: newIdemLeaseId(), contractVersion: 1 }),
+      { kind: "conflict" }, "done 后同 ID 异 payload 仍是稳定冲突");
 
-  const key2 = kIdemUser("rpc", u, "req2");
-  assert.deepEqual(await idemAcquire(c, key2, "h1"), { kind: "acquired" });
-  await idemRelease(c, key2, "h1"); // 干净失败释放
-  assert.deepEqual(await idemAcquire(c, key2, "h4"), { kind: "acquired" }); // 不用等 10s
-  await c.unlink(key, key2);
+    // 干净失败释放：只删自己的 pending，立即可重占（不用等 30s）
+    const key2 = kIdemUser("rpc", u, "req2");
+    const lease2 = newIdemLeaseId();
+    assert.deepEqual(
+      await idemAcquire(c, key2, counter, { hash: "h-a", leaseId: lease2, contractVersion: 1 }),
+      { kind: "acquired" });
+    await idemRelease(c, key2, counter, lease2);
+    assert.equal(await c.exists(key2), 0);
+    assert.deepEqual(
+      await idemAcquire(c, key2, counter, { hash: "h-a", leaseId: newIdemLeaseId(), contractVersion: 1 }),
+      { kind: "acquired" });
+    await c.unlink(key2);
+  } finally {
+    await c.unlink(key, counter, kIdemUser("rpc", u, "req2"));
+  }
+});
+
+test("idem v2：跨过期窗口双 acquisition——leaseId 各自独立，旧 lease 不能 complete/release 新 lease", async () => {
+  const u = uid("idem_expire");
+  const c = clientFor(u);
+  const key = kIdemUser("rpc", u, "reqX");
+  const counter = kIdemPending(u);
+  try {
+    const pendingMs = 300; // 测试注入的短租约窗口（生产恒 IDEM_PENDING_MS）
+    const oldLease = newIdemLeaseId();
+    assert.deepEqual(
+      await idemAcquire(c, key, counter, { hash: "h-a", leaseId: oldLease, contractVersion: 1, pendingMs }),
+      { kind: "acquired" });
+    const ttl1 = await c.pttl(key);
+    assert.ok(ttl1 > 0 && ttl1 <= pendingMs, `第一次 acquisition PTTL=${ttl1} 应落 (0, ${pendingMs}]`);
+
+    await sleep(pendingMs + 150); // 跨过期窗口
+    assert.equal(await c.exists(key), 0, "pending 应已随 TTL 过期");
+
+    const newLease = newIdemLeaseId();
+    assert.notEqual(newLease, oldLease, "每次 acquisition 必须是独立 leaseId");
+    assert.deepEqual(
+      await idemAcquire(c, key, counter, { hash: "h-a", leaseId: newLease, contractVersion: 1, pendingMs }),
+      { kind: "acquired" }, "过期后的第二次 acquisition 必须成功（双 acquisition 场景）");
+    const ttl2 = await c.pttl(key);
+    assert.ok(ttl2 > 0 && ttl2 <= pendingMs, `第二次 acquisition PTTL=${ttl2} 应重新落 (0, ${pendingMs}]`);
+    const stored = JSON.parse((await c.get(key))!) as { leaseId: string; state: string };
+    assert.equal(stored.state, "pending");
+    assert.equal(stored.leaseId, newLease, "记录持有的必须是新 leaseId");
+
+    // 迟到的旧 handler：complete 与 release 都必须失败（v1 的 sessionId holder 会在此双写 done）
+    assert.equal(await idemComplete(c, key, counter, oldLease, '{"ok":false}'), "lost");
+    assert.equal((JSON.parse((await c.get(key))!) as { state: string }).state, "pending",
+      "旧 lease 不得把新 pending 提升为 done");
+    await idemRelease(c, key, counter, oldLease);
+    assert.equal(await c.exists(key), 1, "旧 lease 不得删除后来者的 pending");
+
+    assert.equal(await idemComplete(c, key, counter, newLease, '{"ok":true}'), "ok");
+    const done = JSON.parse((await c.get(key))!) as { state: string; resultJson: string };
+    assert.equal(done.state, "done");
+    assert.equal(done.resultJson, '{"ok":true}');
+    assert.equal(await idemComplete(c, key, counter, oldLease, '{"ok":false}'), "lost", "done 后旧 lease 仍不能覆盖");
+  } finally {
+    await c.unlink(key, counter);
+  }
+});
+
+test("idem v2：per-uid pending 上限 busy、oversize 墓碑、版本不匹配与腐坏记录 fail-closed", async () => {
+  const u = uid("idem_guard");
+  const c = clientFor(u);
+  const counter = kIdemPending(u);
+  const k = (n: string) => kIdemUser("rpc", u, n);
+  try {
+    // per-uid 上限：2 个 pending 后第三个 busy；release 一个即恢复
+    const leaseA = newIdemLeaseId();
+    const leaseB = newIdemLeaseId();
+    assert.deepEqual(await idemAcquire(c, k("a"), counter, { hash: "h", leaseId: leaseA, contractVersion: 1, maxPendingPerUid: 2 }), { kind: "acquired" });
+    assert.deepEqual(await idemAcquire(c, k("b"), counter, { hash: "h", leaseId: leaseB, contractVersion: 1, maxPendingPerUid: 2 }), { kind: "acquired" });
+    assert.deepEqual(await idemAcquire(c, k("c"), counter, { hash: "h", leaseId: newIdemLeaseId(), contractVersion: 1, maxPendingPerUid: 2 }), { kind: "busy" });
+    assert.equal(await c.exists(k("c")), 0, "busy 不得留下任何记录");
+    await idemRelease(c, k("a"), counter, leaseA);
+    assert.deepEqual(await idemAcquire(c, k("c"), counter, { hash: "h", leaseId: newIdemLeaseId(), contractVersion: 1, maxPendingPerUid: 2 }), { kind: "acquired" });
+
+    // oversize：complete 写墓碑（不写响应体），重放判定 done-oversize
+    const big = JSON.stringify({ ok: true, blob: "x".repeat(64) });
+    assert.equal(await idemComplete(c, k("b"), counter, leaseB, big, { maxResultBytes: 16 }), "ok-oversize");
+    const tomb = JSON.parse((await c.get(k("b")))!) as { state: string; resultJson?: string };
+    assert.equal(tomb.state, "done-oversize");
+    assert.equal(tomb.resultJson, undefined, "墓碑不得携带响应体");
+    assert.deepEqual(
+      await idemAcquire(c, k("b"), counter, { hash: "h", leaseId: newIdemLeaseId(), contractVersion: 1 }),
+      { kind: "done-oversize" });
+
+    // 版本不匹配 fail-closed 两态
+    assert.deepEqual(
+      await idemAcquire(c, k("b"), counter, { hash: "h", leaseId: newIdemLeaseId(), contractVersion: 2 }),
+      { kind: "version-mismatch", state: "done" });
+    assert.deepEqual(
+      await idemAcquire(c, k("c"), counter, { hash: "h", leaseId: newIdemLeaseId(), contractVersion: 2 }),
+      { kind: "version-mismatch", state: "pending" });
+
+    // 腐坏/未知版本记录 → corrupt（⛔ 不当作未执行）
+    await c.set(k("d"), "__PENDING__:legacy-holder", "PX", 30_000);
+    assert.deepEqual(
+      await idemAcquire(c, k("d"), counter, { hash: "h", leaseId: newIdemLeaseId(), contractVersion: 1 }),
+      { kind: "corrupt" });
+    await c.set(k("e"), '{"v":1,"state":"pending"}', "PX", 30_000);
+    assert.deepEqual(
+      await idemAcquire(c, k("e"), counter, { hash: "h", leaseId: newIdemLeaseId(), contractVersion: 1 }),
+      { kind: "corrupt" });
+  } finally {
+    await c.unlink(k("a"), k("b"), k("c"), k("d"), k("e"), counter);
+  }
 });
 
 test("session fence：脚本缓存丢失时自动 NOSCRIPT reload，状态语义保持不变", async () => {

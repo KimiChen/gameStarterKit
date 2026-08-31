@@ -212,8 +212,9 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
   （shared exact/range validator，未知字段不会被静默剥离），endpoint 编译期无法自填 schema；
   loader 校验路由全集与 def 形状（type/schema/handler/mode），但尚未在运行时阻止未来代码绕过
   `defineRpc` 手写 def 对象注册。
-- 通用幂等占位只按 `(type, uid, clientReqId)` 缓存结果，没有绑定 payload hash；相同 ID 携带不同 payload
-  不会被识别为冲突。
+- 通用幂等自阶段 4 起是 v2：记录绑定 canonical payload hash（相同 clientReqId 携带不同 payload 稳定返回
+  `OPERATION_CONFLICT`）、每次 acquisition 持独立 leaseId 且 complete/release 走单条 Lua CAS；记录形状、
+  结果体上限与升级 SOP 见 §8。它仍只是 30/60 秒量级的 UX 快闸，不是 exactly-once 真源。
 - 未知路由现在先经过与已知路由相同的 per-principal 令牌桶，再返回低权重 `UNKNOWN_TYPE` 计数；它不会绕过
   限流，但仍不触发 flood 封禁。
 - `Promise.race` 超时不会取消 handler；迟到副作用仍须依靠数据层幂等/CAS 收敛。
@@ -384,6 +385,44 @@ relayer 重试超过 `OUTBOX_MAX_ATTEMPTS` 后会把 intent 行标记为 dead（
 清理删除，也会让对应 `applied` 标记永远跳过裁剪。当前仓库只提供 `core/economy/outbox.ts` 的
 `replayDead(opId)` 实现，没有调用它的命令、HTTP endpoint 或后台任务，因此死信处置需要采用方自行接入
 入口。
+
+### 8.1 通用幂等 v2（Non-intrusive §6.11/§6.12，阶段 4）
+
+网关级通用幂等（`core/idem.ts` + dispatcher）自阶段 4 起使用带版本的 JSON 记录，键仍是
+`kIdemUser(route, uid, clientReqId)`（沿用 key 族，无新前缀），新增同 `{uid}` 槽的计数键
+`kIdemPending(uid)`（`idem:pending:{uid}`，per-uid pending 上限的护栏计数，随 pending TTL 自然衰减）：
+
+```ts
+type StoredIdem =
+  | { v: 2; state: "pending"; hash: string; leaseId: string; contractVersion: number }
+  | { v: 2; state: "done"; hash: string; resultJson: string; contractVersion: number }
+  | { v: 2; state: "done-oversize"; hash: string; contractVersion: number };
+```
+
+- `hash` = `sha256("lobby-rpc-idem/v1\0" + route + "\0" + canonicalJson(payload 去 clientReqId))`，
+  canonical 序列化的唯一参考实现在 shared `lobbyRpc/canonicalJson.ts`（golden vectors 在
+  `apps/server/test/canonical-json.test.ts`）；dispatcher 在 validator 归一化之后、handler 之前计算并注入
+  `ctx.operation`，领域收据复用同一 hash，⛔ 禁止领域自行 canonicalize。`kIdemUser` 的分段顺序
+  （clientReqId 在末段）是摘要可排除 clientReqId 的推理前提，⛔ 禁改。
+- 三条单条原子 Lua（`IDEM_V2_ACQUIRE/COMPLETE/RELEASE`，defineScript + evalshaWithReload）：acquire
+  在一条脚本内完成判定 + pending 写入 + 计数（⛔ 无 SET NX + GET 的过期窗口）；complete/release 都 CAS
+  比对 pending 的 leaseId——旧 lease 既不能覆盖新 lease 的完成结果，也不能删除后来者的 pending。
+  complete 把 TTL **重置**为 `IDEM_RESULT_MS`（⛔ 不沿用 pending 剩余 TTL）。
+- 判定语义：同 hash pending → `IN_PROGRESS`；同 hash done → 缓存重放前重过 response validator
+  （失败 `INTERNAL` 且记录保留，刻意 fail-closed）；异 hash → `OPERATION_CONFLICT`；
+  `contractVersion`（route descriptor 声明、缺省 1，⛔ 不进 preimage/key）不匹配 → fail closed
+  （pending 态 `IN_PROGRESS`、done 态 `OPERATION_RESULT_EXPIRED`）；腐坏/未知版本记录 → `INTERNAL`
+  （⛔ 不当作未执行）；结果体超 `IDEM_RESULT_MAX_BYTES` → 写 `done-oversize` 墓碑，重放与 inspect 都
+  返回 `OPERATION_RESULT_EXPIRED`（既不重跑 handler 也不伪装 unknown）；每 uid 并发 pending 超
+  `IDEM_MAX_PENDING_PER_UID` → `BUSY`。complete CAS 失败（孤儿 lease）时结果仍回本次调用方并打
+  `[idem-orphan-lease]` 指标；幂等路由执行时长逼近 `IDEM_PENDING_MS` 的 80% 打 `[idem-p99]`。
+- 受控查询：声明了 `inspectsOperationGroup` 的 query 路由获得 `ctx.operations.inspect`（目标必须是
+  同组且 `inspectable` 的路由；生产路由当前零声明，机制由 codegen fixture 与 dispatcher 单测覆盖）。
+- **升级 SOP（v1 → v2 为默认 drain/维护窗口先例）**：默认 drain——最后一个旧节点写入之后再等
+  `IDEM_RESULT_MS + IDEM_PENDING_MS`（旧 shape 记录彻底过期）才起新节点，⛔ 未逐路由证明混部兼容不得
+  滚动混跑（旧节点会把 v2 JSON 误读为 done 缓存原文回放）。本仓开发期是单进程本地栈，重启即满足 drain
+  窗口，因此本次直接切换；线上多节点部署方必须按上述口径排程。旧 shape 残留记录被 v2 读到时按
+  corrupt fail-closed（`INTERNAL`），随 TTL 自愈。
 
 ## 9. 实验性冷档模块
 
@@ -561,13 +600,13 @@ Game HTTP request schema 已由 shared validator 同源生成并直接注入带 
 | Room 名、join options | `apps/shared/src/protocol/rooms.ts` |
 | 房内消息（C2S/S2C） | core 消息（Ping/Chat/Pong/Welcome/Error）在 `apps/shared/src/protocol/messages.ts`；玩法消息在各玩法手写 `apps/shared/src/gameplays/<id>/wire.ts` 的 defineC2S/defineS2C token；全集聚合（`C2S`/`S2C`/validator 表/owner/phases/rateCost）由 `codegen:gameplays` 生成在 `apps/shared/src/gameplays/generated/wire-catalog.generated.ts` |
 | Lobby RPC 请求/响应/消息全集 | 各域 descriptor 在 `apps/shared/src/protocol/lobbyRpc/domains/<domain>.ts`（`defineLobbyRpcDomain`：路由/执行模式/validator/领域错误码/域推送）；core 错误码与 core 推送在 `lobbyRpc/coreErrors.ts`；全集聚合（`LobbyRpcMap`/`ALL_LOBBY_RPC_TYPES`/`LOBBY_RPC_ROUTE_MODES`/validator map/`RPC_ERR_CODES`/`LobbyPush`）由 `npm --workspace @game/server run codegen:features` 生成在 `lobbyRpc/registry.generated.ts`（AUTO-GENERATED，禁手改；改后重钉协议指纹） |
-| RPC 错误码 | core 码在 `apps/shared/src/protocol/lobbyRpc/coreErrors.ts`（`CORE_RPC_ERROR_CODES` + 历史顺序钉 `RPC_ERR_CODE_ORDER`），领域码在各域 descriptor 的 `errorCodes`（现仅 shop：INSUFFICIENT_BALANCE/GRANTING/ORDER_MISMATCH）；聚合 `RPC_ERR_CODES`（15 个）生成在 `lobbyRpc/registry.generated.ts`；异常→码映射在 `core/errors.ts` 的 `ERR_MAP`（覆盖 11 个，其余落 `INTERNAL` 兜底）。其中 `GRANTING` 当前没有任何产出点，`AUTH_EPOCH_STALE` 服务端已停产、只保留客户端分支，`ORDER_MISMATCH` 只由可选的 `http/pay/wxNotify.ts` 直接返回，不经 `ERR_MAP` |
+| RPC 错误码 | core 码在 `apps/shared/src/protocol/lobbyRpc/coreErrors.ts`（`CORE_RPC_ERROR_CODES` + 历史顺序钉 `RPC_ERR_CODE_ORDER`），领域码在各域 descriptor 的 `errorCodes`（现仅 shop：INSUFFICIENT_BALANCE/GRANTING/ORDER_MISMATCH）；聚合 `RPC_ERR_CODES`（17 个）生成在 `lobbyRpc/registry.generated.ts`；异常→码映射在 `core/errors.ts` 的 `ERR_MAP`（覆盖 11 个），另有阶段 4 的 `RpcFault(code)` 带 runtime whitelist 直接产出任意白名单码（读取点：dispatcher 与 LobbyRoom 的 `rpcErrorCode`，都经 `toRpcFaultCode`），其余落 `INTERNAL` 兜底。阶段 4 新增 `OPERATION_CONFLICT` / `OPERATION_RESULT_EXPIRED`（幂等 v2，见 §8.1）只经 `RpcFault` 产出、不进 `ERR_MAP`。其中 `GRANTING` 当前没有任何产出点，`AUTH_EPOCH_STALE` 服务端已停产、只保留客户端分支，`ORDER_MISMATCH` 只由可选的 `http/pay/wxNotify.ts` 直接返回，不经 `ERR_MAP` |
 | Colyseus state 形状 | `apps/shared/schema/gameplays/<id>/{manifest.json,state.json}`；纯数据镜像 `apps/shared/src/gameplays/generated/state/<id>.ts` + catalog、运行时 Schema `apps/server/src/rooms/schema/generated/<id>.ts` 与聚合器 `GameRoomState.ts` 都是 `apps/server/tools/gameplay-codegen/` 的生成物（首行带 AUTO-GENERATED 标记，禁手改），改单源后运行 `npm --workspace @game/server run codegen:gameplays` |
 | `ballMove` v3 evidence schema/validator/replay | `apps/server/src/core/match/matchEvidence.ts`、`matchReplay.ts`；流生产消费在 `matchConsumer.ts` |
-| Redis key | `apps/server/src/core/infra/keys.ts` |
+| Redis key | `apps/server/src/core/infra/keys.ts`。幂等 v2 键族（阶段 4）：记录键沿用 `kIdemUser`（值升级为 §8.1 的 StoredIdem JSON），新增同 `{uid}` 槽计数键 `kIdemPending`（`idem:pending:{uid}`，per-uid pending 上限护栏） |
 | Asset effect schema/validator | `apps/shared/src/protocol/lobbyRpc/economy.ts`；Lua 镜像在 `apps/server/src/core/infra/redisScripts.ts` |
 | 跨模块服务端配置 | `apps/server/src/core/infra/config.ts`；少量模块私有常量仍在实现文件内 |
-| Lua | `apps/server/src/core/infra/redisScripts.ts` 与模块专属 script 文件；认证组 sess fence 在 `core/auth/session.ts` 以 `defineScript` 登记，并统一经 `evalshaWithReload` 执行 |
+| Lua | `apps/server/src/core/infra/redisScripts.ts` 与模块专属 script 文件；认证组 sess fence 在 `core/auth/session.ts`、幂等 v2 三条（IDEM_V2_ACQUIRE/COMPLETE/RELEASE）在 `core/idem.ts`，都以 `defineScript` 登记并统一经 `evalshaWithReload` 执行 |
 | MySQL DDL | `apps/server/sql/schema.sql`；兼容升级逻辑在 `tools/db-bootstrap.ts` |
 | RPC endpoint | `apps/server/src/websocket/<domain>/<method>.ts`；装载规则在 `loader.ts` |
 | HTTP endpoint | `apps/server/src/http/<domain>/<method>.ts`；装配表是生成物 `apps/server/src/http/manifest.generated.ts`（禁手改），新增后运行 `npm --workspace @game/server run codegen:http`，`http/index.ts` 只消费该 manifest |

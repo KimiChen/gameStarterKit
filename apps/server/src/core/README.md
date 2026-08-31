@@ -18,8 +18,8 @@
 
 目录概览：
 
-- 根层：`locks`（本地 mutex + Redis lock/fence）、`uow`（dirty commit）、`idem`（RPC 占位/结果缓存）、
-  `errors`、`userRecord`。
+- 根层：`locks`（本地 mutex + Redis lock/fence）、`uow`（dirty commit）、`idem`（幂等 v2：payload hash
+  绑定 + 唯一 leaseId + Lua CAS 结果缓存，`docs/SERVER.md §8.1`）、`errors`、`userRecord`。
 - `infra/`：配置、key、Redis 路由/Lua、MySQL、lease、stream consumer 与本地 loop monitor。
 - `auth/`：游戏组 session cache 和 best-effort kick 接缝；账号权威仍在外部 WebPlatform。
 - `economy/`：软货币、ledger、shop/outbox 与显式 relayer 样例。

@@ -1,5 +1,8 @@
 /**
  * 退出工会（写路径 + 在线索引清除；事件通知留在原工会频道）。
+ *
+ * 幂等审计（阶段 4，§6.12）：**idempotent-write，无 durable 收据**——写档与事件非原子的
+ * 现状照旧（重试读到 guildId=0 不补发通知）。v2 结果缓存不可得时重试新 clientReqId 无害。
  */
 import { GuildRpc, LobbyPush } from "@game/shared";
 import { guildExists } from "../../core/guild/catalog";

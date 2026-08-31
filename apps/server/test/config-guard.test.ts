@@ -226,6 +226,36 @@ test("幂等 pending 租约窗口必须覆盖 handler timeout", () => {
 });
 
 /**
+ * 幂等 v2 配对旋钮（§6.12，阶段 4）：两条都是加载期 fail-fast——
+ * IDEM_RESULT_MAX_BYTES=0 会把全部幂等结果打成 done-oversize 墓碑（每个幂等写都回
+ * OPERATION_RESULT_EXPIRED）；IDEM_MAX_PENDING_PER_UID=0 会拒绝一切幂等写（恒 BUSY）。
+ * 两者都是「看起来只是保守一点」实则全量拒绝服务的静默配置事故。
+ */
+test("IDEM_RESULT_MAX_BYTES：0 与畸形值加载期拒绝，正整数放行", () => {
+  for (const bad of ["0", "-1", "1.5", "abc", "9007199254740992"]) {
+    const r = loadConfigWith({ IDEM_RESULT_MAX_BYTES: bad });
+    assert.notEqual(r.status, 0, `IDEM_RESULT_MAX_BYTES=${bad} 应拒绝启动`);
+    assert.match(r.stderr, /IDEM_RESULT_MAX_BYTES 非法/, `stderr：${r.stderr.slice(0, 240)}`);
+  }
+  for (const good of ["1", "32768", "1048576"]) {
+    const r = loadConfigWith({ IDEM_RESULT_MAX_BYTES: good });
+    assert.equal(r.status, 0, `IDEM_RESULT_MAX_BYTES=${good} 应通过，stderr：${r.stderr.slice(0, 240)}`);
+  }
+});
+
+test("IDEM_MAX_PENDING_PER_UID：0 与畸形值加载期拒绝，≥1 放行", () => {
+  for (const bad of ["0", "-1", "1.5", "abc"]) {
+    const r = loadConfigWith({ IDEM_MAX_PENDING_PER_UID: bad });
+    assert.notEqual(r.status, 0, `IDEM_MAX_PENDING_PER_UID=${bad} 应拒绝启动`);
+    assert.match(r.stderr, /IDEM_MAX_PENDING_PER_UID 非法/, `stderr：${r.stderr.slice(0, 240)}`);
+  }
+  for (const good of ["1", "8", "64"]) {
+    const r = loadConfigWith({ IDEM_MAX_PENDING_PER_UID: good });
+    assert.equal(r.status, 0, `IDEM_MAX_PENDING_PER_UID=${good} 应通过，stderr：${r.stderr.slice(0, 240)}`);
+  }
+});
+
+/**
  * GRACE 与 RECHECK 是一对：宽限必须**严格大于**复核窗口，否则它是静默的空操作。
  *
  * 推导见 config.ts 的注释。这里钉的是**加载期拒绝启动**，⛔ 不能只写文档——
