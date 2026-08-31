@@ -46,7 +46,7 @@ plan-v3 §30 登记过一条教训：`plan-v2 → plan-v3` 的迁移**批准存�
 | 5 | FGUI 产物往返自检 | **A–D 已实现，E 未做** | `216087f` | 逐条删 A/B/C/D → 各红 1 |
 | 4 | GameRoom shell 的玩法硬编码 | **三阶段全部已实现** | `1755bb2` / `47af72c` / `a6ce634` | 共 14 个变异，逐个转红 |
 
-全量门禁：单测 315/315、int 155/155、`verify:all` exit 0。
+全量门禁：单测 324/324、int 155/155、`verify:all` exit 0（含随后一轮对抗式复核的 8 个修复 commit，见下节）。
 
 ## plan-v3 的保留边界仍然有效
 
@@ -63,6 +63,41 @@ plan-v3 §30 登记过一条教训：`plan-v2 → plan-v3` 的迁移**批准存�
 | 条目 5 | `.meta` uuid 集合与 Cocos 场景序列化的往返自检 | 需要真实 Creator 引擎，属于尚未实现的 Creator 运行证据方向 |
 | 条目 5 | `tools/excel-to-json.mjs` 的 `--check` 不是往返自检 | writer 与 checker 共用同一个内存 `data`，`buildItems()` 里的静默丢行对两侧同时生效；低成本补法是在 `run()` 里对行数/键集做独立断言 |
 | 条目 1 | 存量 `match_results` 行的精确回填 | 只有 v3 能精确回填；一条恰好 8 键的 legacy 行与真 v2 行逐字节相同，⛔ 无法区分，故一律留在 `schema_version = 0` |
+
+## 对抗式复核轮（8 个 commit）
+
+五条实施完成后做了一轮对抗式复核（8 个维度并行找问题，每条发现由 3 个不同视角的反驳者
+独立判定；32 条报出、12 条被驳回、20 条存活，去重后 14 条）。**多数是这一批自己引入的缺陷。**
+
+| # | 问题 | 严重度 | commit |
+|---|---|---|---|
+| 1 | `docs/OVERVIEW.md` §4.2 动线代码块仍教人往 `phaseAllows` 加 case，与同节散文和 SERVER.md 的 ⛔ 矛盾；加 case 会短路 `default` 分支、静默吞掉 mode 声明的 phases | 高 | `74a7be1` |
+| 2 | `d312541` 的落点（自检失败必须留持久痕迹）零回归覆盖——删掉整段 quarantine XADD 后单测 315/315、int 20/20 全绿；用例名 "before any XADD" 与生产行为相反；条目泄漏进永不裁剪的流 | 高 | `a7d593d` |
+| 3 | 真相指针迁移漏了 19 处已登记文档（含那轮**本就改过**的 OVERVIEW 与 EXTRAFEATURES），`verify:inventory` 全绿 | 高 | `d5f996a` |
+| 4 | FGUI 不变量 B 只解析 `ui://`，漏掉主要拼写 `src=`/`pkg=`（53 对 38）——「被引用但未导出」的资源同时逃过 A 与 B | 高 | `ede87fe` |
+| 5 | 不变量 D 漏掉 `require=` 伴生文件（Spine 的 `.atlas.txt`/`.png`） | 中 | `ede87fe` |
+| 6 | `GRACE ≤ RECHECK` 时宽限是静默空操作；SERVER.md 恰好把 7d 写成建议值，而窗口上界那句也不实 | 中 | `20aa0e2` |
+| 7 | root 的 `phase` 只验到「是个 enum」，异枚举与成员子集都能通过 | 中 | `9c87e70` |
+| 8 | `usesDefaultBallMoveRules` 是自报布尔值，与真实 root 无绑定；idle root 上声明它会静默写坏状态且房间再也不结算 | 中 | `9c87e70` |
+| 9 | `onLeave` 在 mode hook **之后**重取 player——mode 删条目会让整局证据被静默丢弃（上一轮引入的行为变化） | 中 | `880a8ca` |
+| 10 | fail-closed 闸被注释/文档/用例名一致说成「登记期」，实际在 `create()`（建房时） | 中 | `880a8ca` |
+| 11 | producer quarantine 条目与 Lua 条目字段不同，SERVER.md 的处置流程对它不成立；时间戳字段名也不一致 | 中 | `880a8ca` |
+| 12 | 不变量 A 只比 id 集合，条目的 `exported`/`type`/`name` 从不对账 | 低 | `e460783` |
+| 13 | 计数不实：「12 个包里 8 个存在合法差额」实测 7；「18 处假阳」实测 15 | 低 | `ede87fe` |
+| 14 | `6707c36` 的提交信息写「服务端单测 297→298」，实测是 **297→299**（该 commit 加了 2 条用例）。commit 已推送不可改写，记录于此 | 低 | 本条 |
+
+复核同时**驳回**了 12 条，其中值得记的两条：「`schema_version` 实际标的是来源流而非 payload 形状」
+与「新测试用了仓内不存在的 `WEBPLATFORM_RETRY_ATTEMPTS`」——都经独立核对不成立。⛔ 复核者的
+结论同样要验，不能照单全收；上表第 13 条里的「18 处假阳」正是复核者判定「属实」而实测为 15 的例子。
+
+新增的三道机检（都配了反例，逐条删除实现即转红）：
+- `phaseAllows` 穷尽矩阵：每个非公共 C2S × 每个 phase 各断言「未声明必须拒 / 声明了必须放行」，
+  往 switch 里加任何 case 都会转红。
+- `checkArchiveNotClaimedAsTruth`：已登记文档不得把历史归档说成当前真相。归档清单取自
+  inventory 自己的 `referenceDocs`，**下一轮迁移无需改代码**即自动开始守新归档。
+- `CHARACTER_REGISTRATION_GRACE_MS` 与 `RECHECK` 的加载期配对校验。
+
+全量门禁（本轮结束时）：单测 324/324、int 155/155、`verify:all` exit 0。
 
 ## 实施中发现的、清单里没有的事实
 
