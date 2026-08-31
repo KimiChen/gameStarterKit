@@ -283,17 +283,23 @@ test("矩阵本身有判别力：两侧探针都不是恒真", () => {
   assert.equal(syncChangesMirror(root, target.script, target.mirror), false, "已一致时同步不得再改动镜像");
 });
 
+/** 扫描面：任何「解释器 [flags] [./] (scripts|tools)/**.mjs --check」形态的脚本调用。
+ * 刻意不限 `sync-` 前缀（立论适用所有「有写模式 + 有 --check」的脚本）；
+ * 同时容忍 `./` 前缀、解释器与路径之间的 flag、以及子目录脚本——这三类此前都会静默逃逸。
+ */
+function checkScriptPaths(body) {
+  return [...String(body).matchAll(
+    /(?:^|\s)(?:node|tsx)(?:\s+--?[A-Za-z][\w=-]*)*\s+(?:\.\/)?((?:scripts|tools)\/[\w./-]+?\.mjs)\s+--check(?![\w-])/gu,
+  )].map((match) => match[1]);
+}
+
 test("矩阵覆盖面钉住 package.json：新增镜像 --check 脚本必须进 TARGETS 或显式豁免", () => {
   // TARGETS 是本文件对「有哪几面镜子」的第二次表达。新增一面镜子若忘了登记，矩阵会
   // 一眼都不看它就全绿。这条钉把它和 package.json 的真实脚本文本对齐。
   const scripts = JSON.parse(readFileSync(join(REPO_ROOT, "package.json"), "utf8")).scripts ?? {};
   const declared = new Set();
   for (const body of Object.values(scripts)) {
-    // 扫描面是「任何带 --check 的脚本调用」，不限 sync- 前缀：新增一个同形脚本若既不进
-    // TARGETS 也不登记豁免，这条断言立刻红，逼人显式决策。
-    for (const match of String(body).matchAll(/(?:^|\s)(?:node|tsx)\s+((?:scripts|tools)\/[A-Za-z0-9._-]+\.mjs)\s+--check/gu)) {
-      declared.add(match[1]);
-    }
+    for (const script of checkScriptPaths(body)) declared.add(script);
   }
   assert.deepEqual(
     [...declared].sort(),
@@ -302,5 +308,21 @@ test("矩阵覆盖面钉住 package.json：新增镜像 --check 脚本必须进 
   );
   for (const [script, reason] of Object.entries(CHECK_SCRIPT_EXEMPTIONS)) {
     assert.ok(reason.trim().length > 0, `豁免 ${script} 必须写明理由`);
+  }
+});
+
+test("覆盖面扫描面承认 ./ 前缀、解释器 flag 与子目录脚本（此前三类静默逃逸）", () => {
+  const cases = [
+    ["node ./scripts/x.mjs --check", "scripts/x.mjs"],
+    ["node --import tsx scripts/lib/x.mjs --check", "scripts/lib/x.mjs"],
+    ["tsx tools/deep/y.mjs --check", "tools/deep/y.mjs"],
+    ["node --import tsx ./tools/x.mjs --check --force", "tools/x.mjs"],
+  ];
+  for (const [body, expected] of cases) {
+    assert.deepEqual(checkScriptPaths(body), [expected], `形态「${body}」必须被扫描面命中`);
+  }
+  // 反向钉：--checksum 不是 --check；非 scripts/tools 路径与 python 解释器不得命中。
+  for (const body of ["node scripts/x.mjs --checksum", "node bin/x.mjs --check", "python3 scripts/x.mjs --check"]) {
+    assert.deepEqual(checkScriptPaths(body), [], `形态「${body}」不得被扫描面命中`);
   }
 });
