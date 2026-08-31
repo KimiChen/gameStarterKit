@@ -263,19 +263,23 @@ guard 要求显式区清单。每区 `archive_zone_usage` 在 freeze singleton l
 | # | 不变量 | 挡住的失败形态 | 状态 |
 |---|---|---|---|
 | A | `package.xml` 中每个 `exported="true"` 资源的 `id` 必须出现在同名 `.bin` 条目表 | 主失败形态：导出静默丢内容 | 已实现 |
-| B | 源 XML 每个 `ui://<pkgId><resId>` 引用，目标 `resId` 必须在**目标包 `.bin`** 里 | 跨包引用被目标包漏导 | 已实现 |
+| B | 源 XML 每个资源引用——`ui://<pkgId><resId>` **与** `<image src pkg>` 两种拼写——目标 `resId` 必须在**目标包 `.bin`** 里 | 引用被目标包漏导，含「被引用但未导出」的资源 | 已实现 |
 | C | `.bin` 段 0 声明的每个依赖包都要有已导出的 `.bin` 且 id 对得上 | 依赖包整包漏导 | 已实现 |
-| D | `.bin` 中 Atlas/Spine/Sound/Misc 条目引用的外部文件必须落盘 | 图集/骨骼文件漏导 | 已实现 |
+| D | `.bin` 中 Atlas/Spine/Sound/Misc 条目引用的外部文件，以及 `package.xml` 用 `require=` 声明的伴生文件，都必须落盘 | 图集/骨骼文件漏导，含 Spine 的 `.atlas.txt` / `.png` 伴生 | 已实现 |
 | E | sprite rect ⊆ 对应图集图片真实尺寸（PNG IHDR / JPEG SOF 直读） | 图集重导致尺寸变化而 bin 未同步 | **未实现** |
 
 ⛔ **明确不做**：不拿「`package.xml` 声明数 == `.bin` 条目数」当不变量。FairyGUI 发布会剥离「未导出且无人
-引用」的资源，这是正确行为——本仓 12 个包里 8 个存在合法差额，粗比数量会立刻产生 18 处假阳。
+引用」的资源，这是正确行为——本仓 12 个包里 7 个存在合法差额（差额绝对值合计 15），粗比数量会立刻产生 15 处假阳。
 `fgui-roundtrip.test.mjs` 用一个「只剩已导出条目」的构造产物把这条反向钉住。
 
 E 未做的理由是它需要单独一轮：`rotated` 标志会让 rect 的 w/h 与图集坐标轴互换，调查中第一版没处理时
 产生 6 个假阳。
 
-覆盖登记在 `test:fgui`（`scripts/fgui-roundtrip.test.mjs`，8 个用例）；不变量 A–D 各配一个构造反例，
+⚠ **`src=`/`pkg=` 是 FairyGUI 主要的引用拼写，不是补充**：本仓源 XML 里 53 处 `src=` 对 38 处 `ui://`。
+B 最初只解析 `ui://`，于是「被引用但未导出」的资源同时逃过 A（`exported !== true` 被跳过）和 B——
+漏导它的残缺产物四条不变量全绿，`--write` 再把它钉成新基线。这一缺口由本轮对抗式复核发现并补上。
+
+覆盖登记在 `test:fgui`（`scripts/fgui-roundtrip.test.mjs`，10 个用例）；每条不变量各配构造反例，
 逐条删除对应实现均可令用例转红。检查本身随 `verify:fgui` 执行，未新增聚合命令。
 
 #### 仍未实现的部分

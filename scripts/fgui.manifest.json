@@ -1040,7 +1040,8 @@
           "kind": "spine",
           "id": "r9po1a7kmz4",
           "name": "loading_animals.skel",
-          "exported": true
+          "exported": true,
+          "require": "r9po1a7kmz5,r9po1a7kmz6"
         }
       ],
       "outputs": [

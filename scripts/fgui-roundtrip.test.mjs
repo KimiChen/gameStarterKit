@@ -82,38 +82,97 @@ test("A：产物漏掉一个 package.xml 声明为 exported 的资源必须被�
 });
 
 test("A：⛔ 不得拿「声明数 == 条目数」当判据——剥离未导出且无人引用的资源是正确行为", () => {
-  // FairyGUI 发布确实会剥离这类资源，本仓 12 个包里就存在合法差额。若判据是数量相等，
-  // 下面这个「只剩已导出条目」的产物会被误报，而它其实完全合法。
-  const bins = clone();
-  let strippedSomething = false;
-  for (const info of inputs) {
-    const bin = bins.get(info.name);
-    const before = bin.items.length;
-    const exportedIds = new Set(info.resources.filter((r) => r.exported).map((r) => r.id));
-    const referenced = new Set(inputs.flatMap((other) =>
-      other.uiReferences.filter((ref) => ref.packageId === bin.id).map((ref) => ref.resourceId)));
-    bin.items = bin.items.filter((item) =>
-      exportedIds.has(item.id) || referenced.has(item.id)
-      // 图集/骨骼等外部文件载体本身不是 ui:// 可寻址资源，剥离它们会让不变量 D 失去对象
-      || item.file !== null && item.file !== "");
-    if (bin.items.length < before) strippedSomething = true;
-    bin.sprites = bin.sprites.filter((sprite) => bin.items.some((item) => item.id === sprite.itemId));
-  }
-  assert.ok(strippedSomething, "构造前提：真产物里确实存在可被合法剥离的条目");
-  assert.deepEqual(withBins(bins), [], "合法剥离不得产生任何问题");
+  // FairyGUI 发布会剥离「未导出且无人引用」的资源，这是正确行为。判据若写成数量相等，
+  // **本仓当前的真实产物**就会立刻产生一批假阳——下面直接用真实差额把这件事钉住，
+  // ⛔ 不再构造一个「只剩已导出条目」的假产物：把 src=/pkg= 引用也纳入不变量 B 之后，
+  // 几乎每个条目都是「已导出或被引用」，那种构造已经剥不掉任何东西，前提断言会失败。
+  const deltas = inputs
+    .map((info) => ({
+      name: info.name,
+      declared: info.resources.length,
+      items: realBins.get(info.name).items.length,
+    }))
+    .filter((row) => row.declared !== row.items);
+  assert.ok(
+    deltas.length > 0,
+    "构造前提：真产物里必须确实存在合法差额，否则本用例说明不了任何问题",
+  );
+  assert.deepEqual(
+    roundtripProblems(inputs),
+    [],
+    "存在合法差额的真实产物必须全绿——若判据是「声明数 == 条目数」，这里会报 "
+    + `${deltas.length} 个包共 ${deltas.reduce((n, r) => n + Math.abs(r.declared - r.items), 0)} 处假阳：`
+    + deltas.map((r) => `${r.name}(${r.declared}≠${r.items})`).join("、"),
+  );
 });
 
-test("B：目标包漏导了被引用的资源必须被命中", () => {
-  const bins = clone();
-  const reference = inputs.flatMap((info) => info.uiReferences)[0];
-  assert.ok(reference, "构造前提：源 XML 里至少有一条 ui:// 引用");
-  const target = [...bins.values()].find((bin) => bin.id === reference.packageId);
-  target.items = target.items.filter((item) => item.id !== reference.resourceId);
-  const problems = withBins(bins);
-  assert.match(
-    problems.join("\n"),
-    new RegExp(`ui://${reference.packageId}${reference.resourceId} 的目标资源 不在 ${target.name}\\.bin 里`, "u"),
+test("B：目标包漏导了被引用的资源必须被命中——ui:// 与 src=/pkg= 两种拼写都要", () => {
+  const all = inputs.flatMap((info) => info.uiReferences);
+  const uiForm = all.find((reference) => String(reference.form ?? "").startsWith("ui://"));
+  const srcForm = all.find((reference) => String(reference.form ?? "").startsWith("<"));
+  assert.ok(uiForm && srcForm, "构造前提：源里两种拼写都必须真实存在");
+  // src= 是 FairyGUI 主要的拼写：本仓 53 处 src= 对 38 处 ui://。⛔ 只查 ui:// 会让一批
+  // 「被引用但未导出」的资源同时逃过 A 与 B。
+  assert.ok(
+    all.filter((r) => String(r.form ?? "").startsWith("<")).length
+      > all.filter((r) => String(r.form ?? "").startsWith("ui://")).length,
+    "src= 引用数必须多于 ui://，否则本用例的前提描述已经过时",
   );
+
+  for (const reference of [uiForm, srcForm]) {
+    const bins = clone();
+    const target = [...bins.values()].find((bin) => bin.id === reference.packageId);
+    target.items = target.items.filter((item) => item.id !== reference.resourceId);
+    assert.match(
+      withBins(bins).join("\n"),
+      new RegExp(`的目标资源 ${reference.resourceId} 不在 ${target.name}\\.bin 里`, "u"),
+      `${reference.form} 这种拼写的引用被漏导时必须被命中`,
+    );
+  }
+});
+
+/**
+ * 「被引用但未导出」的资源：A 因 `exported !== true` 跳过，只有 B 能守住它。
+ * 这正是审计发现的那个洞——18 个这样的资源此前完全无人守。
+ */
+test("B：被引用但未导出的资源被漏导时必须被命中（A 对它无能为力）", () => {
+  const declared = new Map(inputs.map((info) => [info.id, info]));
+  const victim = inputs.flatMap((info) => info.uiReferences).find((reference) => {
+    const target = declared.get(reference.packageId);
+    return target?.resources.some((r) => r.id === reference.resourceId && !r.exported);
+  });
+  assert.ok(victim, "构造前提：仓里必须真的存在「被引用但未导出」的资源");
+  const bins = clone();
+  const target = [...bins.values()].find((bin) => bin.id === victim.packageId);
+  target.items = target.items.filter((item) => item.id !== victim.resourceId);
+  const problems = withBins(bins);
+  // 同一个资源可能被多份 XML 引用（e6t9d 就被 AreaItem.xml 与 AreaMyItem.xml 各引一次），
+  // 所以条数是引用处数而不是 1；关键是**每一条**都指向该资源，⛔ 不得混进 A 的报错
+  // ——A 对未导出资源无能为力，正是本用例要证明的那一点。
+  assert.ok(problems.length >= 1, "未导出资源被漏导必须被命中");
+  for (const problem of problems) {
+    assert.match(problem, new RegExp(`的目标资源 ${victim.resourceId} 不在`, "u"));
+  }
+});
+
+test("D'：package.xml 用 require= 声明的伴生文件未落盘必须被命中", () => {
+  // Spine 的 .bin 只记 .skel，伴生的 .atlas.txt / .png 既不在条目 file 里也没有 exported，
+  // 所以 A 和 D 都看不见它们——漏导的后果是骨骼加载不出图集与贴图。
+  const companions = inputs.flatMap((info) => info.requiredCompanions ?? []);
+  assert.ok(companions.length > 0, "构造前提：仓里必须真的有 require= 声明");
+  const holder = inputs.find((info) => (info.requiredCompanions ?? []).length > 0);
+  const missing = { ...holder, requiredCompanions: [
+    ...holder.requiredCompanions,
+    { ownerId: "x", ownerName: "ghost.skel", id: "gone", name: "ghost.atlas.txt" },
+  ] };
+  const problems = roundtripProblems(
+    inputs.map((info) => info.name === holder.name ? missing : info),
+    { uiDir: UI },
+  );
+  assert.equal(problems.length, 1, `应且只应报缺失的那一个：${problems.join(" | ")}`);
+  assert.match(problems[0], /ghost\.skel 用 require= 声明的伴生文件 ghost\.atlas\.txt 未落盘/u);
+  // 真实的两个伴生文件必须仍算落盘，⛔ 否则上面的命中可能只是因为闸恒报
+  assert.deepEqual(roundtripProblems(inputs, { uiDir: UI }), []);
 });
 
 test("C：产物声明的依赖包不存在、或 id 与名字对不上，必须分别被命中", () => {

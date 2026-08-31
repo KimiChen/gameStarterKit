@@ -8,8 +8,8 @@
  * （它记的就是残缺结果本身），只能由这里拦。
  *
  * ⛔ 明确不做的事：不拿「`package.xml` 声明数 == `.bin` 条目数」当不变量。FairyGUI 发布会剥离
- * 「未导出且无人引用」的资源，这是正确行为——本仓 12 个包里 8 个存在合法差额，粗比数量会立刻
- * 产生 18 处假阳。判据必须落在**具名的、应当存在的**那一部分上。
+ * 「未导出且无人引用」的资源，这是正确行为——本仓 12 个包里 7 个存在合法差额（差额绝对值合计 15），
+ * 粗比数量会立刻产生 15 处假阳。判据必须落在**具名的、应当存在的**那一部分上。
  *
  * 失败语义：`.bin` 由 FairyGUI 编辑器写出，本仓拦不住它落盘；本仓能做到的等价语义是**阻止残缺
  * 产物进入下游**，所以检查内联在 `fgui-manifest --write` 重记哈希之前。
@@ -178,9 +178,11 @@ function resolveExternalFile(uiDir, packageName, file) {
 /**
  * 四条不变量（纯函数，便于用构造输入验判别力）：
  *   A. `package.xml` 中每个 `exported="true"` 资源的 id 必须出现在同名 `.bin` 条目表；
- *   B. 源 XML 的每个 `ui://<pkgId><resId>` 引用，目标 resId 必须在**目标包 `.bin`** 里；
+ *   B. 源 XML 的每个资源引用——`ui://<pkgId><resId>` **与** `<image src pkg>` 两种拼写——
+ *      目标 resId 必须在**目标包 `.bin`** 里；
  *   C. `.bin` 段 0 声明的每个依赖包都要有已导出的 `.bin` 且 id 对得上；
- *   D. `.bin` 中 Atlas/Spine/Sound/Misc 条目引用的外部文件必须落盘。
+ *   D. `.bin` 中 Atlas/Spine/Sound/Misc 条目引用的外部文件，以及 `package.xml` 用 `require=`
+ *      声明的伴生文件，都必须落盘。
  *
  * @param packages 每项 { name, id, resources, uiReferences }，来自 fgui-manifest 的源 XML 解析。
  */
@@ -248,18 +250,37 @@ export function roundtripProblems(packages, { uiDir = UI, read = readPackageBin 
         );
       }
     }
+
+    // D'：package.xml 的 require= 伴生文件同样必须落盘。
+    // ⚠ 它们不在 .bin 条目的 file 字段里（Spine 的 .bin 只记 .skel），也通常没有 exported，
+    // 所以 A 与上面的 D 都看不见——漏导的后果是骨骼加载不出图集与贴图，且哈希锁会把这个
+    // 残缺状态如实记成新基线。
+    for (const companion of info.requiredCompanions ?? []) {
+      if (!companion.name) continue;
+      if (!resolveExternalFile(uiDir, info.name, companion.name)) {
+        problems.push(
+          `${info.name}: ${companion.ownerName} 用 require= 声明的伴生文件 ${companion.name} 未落盘`
+          + `（找过 ${info.name}_${companion.name} 与 ${companion.name}）`,
+        );
+      }
+    }
   }
 
-  // B：跨包 ui:// 引用的目标必须在目标包产物里。现有 manifest 检查只查到 package.xml 为止，
+  // B：源 XML 里被引用的资源必须在目标包产物里。现有 manifest 检查只查到 package.xml 为止，
   // 「源里声明了、目标包却把它漏导了」这一层此前无人守。
+  //
+  // ⚠ 引用有两种拼写，**必须都查**：`ui://<pkgId><resId>` 与 `<image src="<resId>" pkg="<pkgId>">`
+  // （pkg 缺省即同包）。后者是 FairyGUI 主要的拼写——本仓 53 处 src= 对 38 处 ui://。只查 ui://
+  // 时，一个「被引用但未导出」的资源会同时逃过 A（因 exported !== true 被跳过）和 B，
+  // 于是漏导它的残缺产物四条不变量全绿，`--write` 再把它钉成新基线。
   for (const info of packages) {
     for (const reference of info.uiReferences ?? []) {
       const target = byPackageId.get(reference.packageId);
       if (!target) continue; // 未知包由 fgui-manifest 的 ui:// 闭包检查负责报，这里不重复报
       if (!target.bin.items.some((item) => item.id === reference.resourceId)) {
         problems.push(
-          `${reference.from}: ui://${reference.packageId}${reference.resourceId} 的目标资源`
-          + ` 不在 ${target.name}.bin 里——目标包漏导了它`,
+          `${reference.from}: ${reference.form ?? `ui://${reference.packageId}${reference.resourceId}`}`
+          + ` 的目标资源 ${reference.resourceId} 不在 ${target.name}.bin 里——目标包漏导了它`,
         );
       }
     }

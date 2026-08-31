@@ -105,6 +105,9 @@ function resourceDeclarations(xml) {
       id: a.id,
       name: a.name,
       exported: a.exported === "true",
+      // Spine 等资源用 require 显式声明伴生文件；缺省为 undefined，⛔ 不要写成空串，
+      // 那会让 manifest 的既有记录形状发生无谓变化。
+      ...(a.require === undefined ? {} : { require: a.require }),
     });
   }
   return out;
@@ -266,8 +269,26 @@ function resolveUiUrl(raw, maps) {
 }
 
 /**
- * 源 XML 里全部 ui:// 引用的解析结果，供 `fgui-roundtrip.mjs` 的不变量 B 使用。
- * 与 `parseUiReferences` 共用同一套 XML 解析与别名规则，⛔ 不要另起一套第二真源。
+ * `<image src="e6t9d" pkg="fk4x5zk1">` 形态的资源引用。
+ *
+ * ⚠ 这是 FairyGUI **主要**的引用拼写，不是补充：本仓源 XML 里 53 处 `src=` 对 38 处 `ui://`。
+ * 只解析 `ui://` 会让一大批「被引用但未导出」的资源无人守——A 因 `exported !== true` 跳过它们，
+ * B 因不是 `ui://` 看不见它们。`pkg` 缺省表示同包引用，⛔ 不要当成非法而跳过。
+ */
+function extractAssetReferences(source) {
+  const references = [];
+  for (const match of source.matchAll(/<([a-zA-Z]+)\b([^>]*\bsrc="[^"]*"[^>]*)>/g)) {
+    const a = attrs(match[2]);
+    if (!a.src) continue;
+    references.push({ element: match[1], src: a.src, pkg: a.pkg });
+  }
+  return references;
+}
+
+/**
+ * 源 XML 里全部资源引用（`ui://` 与 `src=`/`pkg=` 两种拼写）的解析结果，
+ * 供 `fgui-roundtrip.mjs` 的不变量 B 使用。与 `parseUiReferences` 共用同一套 XML 解析与
+ * 别名规则，⛔ 不要另起一套第二真源。
  */
 function uiReferenceTargets(infos) {
   const maps = packageMaps(infos, []);
@@ -278,10 +299,40 @@ function uiReferenceTargets(infos) {
       const source = fs.readFileSync(path.join(ROOT, entry.path), "utf8");
       for (const raw of extractUiUrls(source)) {
         const resolved = resolveUiUrl(raw, maps);
-        if (resolved) references.push({ from: entry.path, ...resolved });
+        if (resolved) references.push({ from: entry.path, form: `ui://${raw}`, ...resolved });
+      }
+      for (const reference of extractAssetReferences(source)) {
+        // pkg 缺省 = 同包引用；src 一律是资源 id（不是名字），所以这里不走别名解析。
+        const target = reference.pkg === undefined ? info : maps.byId.get(reference.pkg);
+        if (!target || !(target.resources ?? []).some((item) => item.id === reference.src)) continue;
+        references.push({
+          from: entry.path,
+          form: `<${reference.element} src="${reference.src}"`
+            + `${reference.pkg === undefined ? "" : ` pkg="${reference.pkg}"`}>`,
+          packageId: target.id,
+          resourceId: reference.src,
+        });
       }
     }
     out.set(info.name, references);
+  }
+  return out;
+}
+
+/**
+ * `package.xml` 里 `require="id1,id2"` 声明的伴生资源（Spine 的 `.atlas.txt` / `.png` 等）。
+ * 它们既不出现在 `.bin` 条目的 `file` 字段里（.bin 只记 `.skel`），也通常没有 `exported`，
+ * 所以 A 和 D 都看不见——漏导它们的后果是骨骼加载不出图集与贴图。
+ */
+function requiredCompanions(info) {
+  const byId = new Map((info.resources ?? []).map((resource) => [resource.id, resource]));
+  const out = [];
+  for (const resource of info.resources ?? []) {
+    for (const id of String(resource.require ?? "").split(",").map((value) => value.trim()).filter(Boolean)) {
+      const target = byId.get(id);
+      if (!target) continue; // 未知 id 由 package.xml 自身的闭包检查负责，⛔ 这里不重复报
+      out.push({ ownerId: resource.id, ownerName: resource.name, id, name: target.name });
+    }
   }
   return out;
 }
@@ -294,6 +345,7 @@ function roundtripInputs(infos) {
     id: info.id,
     resources: info.resources ?? [],
     uiReferences: references.get(info.name) ?? [],
+    requiredCompanions: requiredCompanions(info),
   }));
 }
 
