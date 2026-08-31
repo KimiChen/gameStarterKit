@@ -41,9 +41,13 @@ process.env.WEBPLATFORM_INTERNAL_URL = `http://127.0.0.1:${address.port}`;
 process.env.WEBPLATFORM_SERVICE_ID = "game-server-test";
 process.env.WEBPLATFORM_SERVICE_SECRET = "test-service-secret";
 // ⚠ 超时值对本用例是**无关变量**：熔断由 mock 的 503 响应驱动，全文没有任何断言依赖超时发生
-// （证据：`grep -nE 'TIMEOUT_MS = "[0-9]+"'` 只命中下面两行赋值，此外无处引用
-//   ——写证据命令时不能让它在文本里匹配到自己，前两版都踩了这个自指陷阱；⛔ 原注释写的是 `grep -n 超时`，
-// 那是条坏引证——赋值行里根本没有「超时」二字，那条命令只会命中注释自己）。
+// （证据：**代码里**对这两个环境变量的出现只有下面两行赋值，没有任何读取或断言引用它们。
+//   ⛔ 这里刻意不再写「跑某条 grep 得到 N 处命中」——同一个坑本仓已经栽过四次：
+//   写死的命令要么匹配到注释自己（`grep -n 超时` / 宽 `grep -n TIMEOUT_MS`），
+//   要么窄到证不了所主张的事（`grep -nE 'TIMEOUT_MS = "[0-9]+"'` 只能命中赋值行，
+//   对 `process.env.XXX_TIMEOUT_MS` 这类非赋值引用 0 命中）。
+//   更要命的是**计数会被注释自身改变**：上一版把命中数写成 3，而补上这段解释后就变成 5。
+//   结论：注释里陈述事实，不内联一条会被自己扰动的计数命令。）
 // 而 40ms/120ms 是文件里仅有的负载敏感数字——全量套件下
 // 每个测试文件是独立进程，机器一忙进程被调度走，本地 socket 的 connect 回调就可能晚于 40ms 定时器，
 // 于是 session verify 被打成超时、`sessionHits` 断言失败。放宽到不会误伤的量级；mock 是本地即时
