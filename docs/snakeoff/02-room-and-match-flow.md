@@ -40,7 +40,7 @@
 ### 2.1 对外阶段与内部事务
 
 沿用现有公开 `GamePhase`：`waiting`、`playing`、`settle`。Start 中的 `Starting` 是服务端内部事务状态（与
-`docs/Non-intrusive-room.md` §13.1 同名同义），不新增为公开可持久阶段。
+`docs/Non-intrusive.md` §6.4 同名同义），不新增为公开可持久阶段。
 
 ```text
 Create / Resolve code

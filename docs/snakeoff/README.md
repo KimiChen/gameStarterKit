@@ -15,7 +15,7 @@
 Snake 玩法与视觉分析借鉴自用户提供的《贪吃蛇大作战》静态档案目录
 `/Users/kimi/work/tanchishe/wegameVersion`；逐个阅读过的代码文件、Prefab/import 元数据、catalog 逻辑名和 native PNG
 全部登记在 [08 · 来源与素材借鉴台账](08-source-and-asset-provenance.md)。
-通用房间架构则以本仓 [Non-intrusive-room.md](../Non-intrusive-room.md) 为技术基线，三种来源不得混为一谈。
+通用房间架构则以本仓 [Non-intrusive.md](../Non-intrusive.md) 为技术基线，三种来源不得混为一谈。
 
 ## 策划摘要
 
@@ -24,7 +24,7 @@ Snake 玩法与视觉分析借鉴自用户提供的《贪吃蛇大作战》静�
 战斗采用 750×1624 竖版表现：上方显示倒计时、房间或排名信息，中部为主战场，左下为方向摇杆，右下为加速按钮。客户端只上传方向、加速状态和递增序号；出生、移动、成长、食物、碰撞、死亡、得分与胜负均由服务端固定步长模拟决定。
 
 首版定位是“开房链路的完整 Demo”，不是生产级通用房间平台。实时房间的低侵入式技术方案以
-[邀请码房间与竖版贪吃蛇的低侵入式接入方案](../Non-intrusive-room.md) 为准；本目录负责产品、规则、竖版表现、
+[非侵入式框架改造方案](../Non-intrusive.md) 为准；本目录负责产品、规则、竖版表现、
 来源台账和验收口径。它需要证明以下闭环：
 
 ```text
@@ -142,7 +142,7 @@ Snake 玩法与视觉分析借鉴自用户提供的《贪吃蛇大作战》静�
 - [服务端目录、RPC 与一致性](../SERVER.md)
 - [客户端 View/Logic、FGUI 与本地预览](../CLIENT.md)
 - [可选额外功能边界](../EXTRAFEATURES.md)
-- [邀请码房间与实时玩法低侵入方案](../Non-intrusive-room.md)
+- [非侵入式框架改造方案](../Non-intrusive.md)
 - [当前实施状态与开放问题](../../plan-v4.md)
 
 `docs/snakeoff/` 是玩法提案，不覆盖上述框架文档，也不修改 `plan-v4.md` 的当前事实。实施完成后，必须以代码、测试证据和 `plan-v4.md` 的状态更新为准。
