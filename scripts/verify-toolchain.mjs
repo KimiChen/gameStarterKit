@@ -98,13 +98,24 @@ const GATED_SCRIPT_NAMES = new Set([
     .filter((name) => name !== undefined),
 ]);
 
-/** workspace 名 → 该 workspace 中被闸的脚本名集合（从链声明派生，不另立副本）。 */
+/**
+ * workspace 名 → 该 workspace 中被闸的脚本名集合（从链声明派生，不另立副本）。
+ *
+ * 前缀式 `npm --workspace Y run X` 与后缀式 `npm run X --workspace Y` 是**等价写法**
+ * （见 plan-v3 §18：真实 npm 两者跑的都是 workspace 脚本）。只认前缀式会让链条改成
+ * 后缀式时该 workspace **静默失闸**——实测：把链改成后缀式后给 apps/server 加 `pretest`，
+ * verify-toolchain 放行。这不需要合谋，换个等价写法就够了，所以两种形态都要认。
+ */
 const GATED_WORKSPACE_SCRIPTS = new Map();
+function addGatedWorkspaceScript(workspace, script) {
+  if (!GATED_WORKSPACE_SCRIPTS.has(workspace)) GATED_WORKSPACE_SCRIPTS.set(workspace, new Set());
+  GATED_WORKSPACE_SCRIPTS.get(workspace).add(script);
+}
 for (const command of Object.values(CHAIN_SCRIPTS).flat()) {
-  const match = /^npm --workspace (\S+) run ([A-Za-z0-9:_-]+)$/u.exec(command);
-  if (!match) continue;
-  if (!GATED_WORKSPACE_SCRIPTS.has(match[1])) GATED_WORKSPACE_SCRIPTS.set(match[1], new Set());
-  GATED_WORKSPACE_SCRIPTS.get(match[1]).add(match[2]);
+  const prefix = /^npm\s+(?:--workspace|-w)[\s=](\S+)\s+run\s+([A-Za-z0-9:_-]+)\s*$/u.exec(command);
+  if (prefix) { addGatedWorkspaceScript(prefix[1], prefix[2]); continue; }
+  const suffix = /^npm\s+run\s+([A-Za-z0-9:_-]+)\s+(?:--workspace|-w)[\s=](\S+)\s*$/u.exec(command);
+  if (suffix) addGatedWorkspaceScript(suffix[2], suffix[1]);
 }
 
 function requireNoLifecycleHooks(label, scripts, gated, errors) {

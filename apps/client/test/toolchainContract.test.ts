@@ -482,6 +482,38 @@ test("toolchain contract fails closed on workspace lifecycle hooks of gated comm
   }
 });
 
+test("toolchain contract gates workspace hooks even when the chain uses the suffix form", () => {
+  // `npm run X --workspace Y` 与 `npm --workspace Y run X` 是等价写法（plan-v3 §18）。
+  // 闸表若只认前缀式，链条改成后缀式就会让该 workspace 静默失闸——这不需要合谋，
+  // 换个等价写法就够了。夹具把 verify:all 的那条改写成后缀式再验。
+  const root = createFixture();
+  try {
+    // 闸表从**声明表**派生，不是从夹具 package.json 派生——所以必须打补丁改声明表本身，
+    // 只改夹具是空转（第一版就踩了这个坑：变异后用例照样绿）。
+    const prefix = "npm --workspace @game/server run test";
+    const suffix = "npm run test --workspace @game/server";
+    const patched = writePatchedVerifier(root, (source) => source.split(prefix).join(suffix));
+    editJson(root, "package.json", (pkg) => {
+      pkg.workspaces = ["apps/server"];
+      pkg.scripts["verify:all"] = pkg.scripts["verify:all"].replace(prefix, suffix);
+    });
+    writeJson(root, "apps/server/package.json", {
+      name: "@game/server",
+      engines: { node: ">=22" },
+      devDependencies: TOOL_DEPENDENCIES,
+      scripts: { pretest: "node -e \"process.exit(0)\"" },
+    });
+    const result = runVerifierFile(patched, root);
+    assert.match(
+      result.output,
+      /apps\/server\/package\.json scripts\.pretest 是被闸命令/u,
+      `后缀式链写法下 workspace 钩子必须仍被点名：\n${result.output}`,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("toolchain contract leaves non-gated workspace scripts alone", () => {
   // 反向锁：workspace 里非被闸命令的钩子（smoke 不在任何链里）不得误伤。
   const root = createFixture();
