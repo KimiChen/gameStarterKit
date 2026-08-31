@@ -48,6 +48,11 @@ declare module "cc" {
     localStorage: Storage;
   };
   export const Layers: { Enum: { UI_2D: number; DEFAULT: number; [key: string]: number } };
+  export const game: {
+    on(type: string, callback: () => void, target?: unknown): unknown;
+    off(type: string, callback: () => void, target?: unknown): unknown;
+  };
+  export const Game: { EVENT_HIDE: string; EVENT_SHOW: string };
 }
 
 declare module "cc/env" {

@@ -85,6 +85,11 @@ test("client headless tsconfig strictly includes all source and test TypeScript 
   for (const required of [
     "client-test-stubs.d.ts",
     "src/Main.ts",
+    "src/app/SessionCoordinator.ts",
+    "src/app/LifecycleBus.ts",
+    "src/app/CocosLifecycleBridge.ts",
+    "src/app/wiring.ts",
+    "src/net/connectionEvents.ts",
     "src/view/FguiView.ts",
     "src/view/ViewMgr.ts",
     "src/view/viewRegistry.ts",
@@ -127,6 +132,8 @@ test("client legacy tsconfig covers every source TypeScript file", () => {
 
   for (const required of [
     "src/Main.ts",
+    "src/app/SessionCoordinator.ts",
+    "src/app/CocosLifecycleBridge.ts",
     "src/gameplay/catalog.ts",
     "src/view/FguiView.ts",
     "src/view/ViewMgr.ts",
