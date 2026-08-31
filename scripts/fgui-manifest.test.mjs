@@ -367,7 +367,7 @@ test("ui:// closure:合法 name/id 别名通过，未知包、资源和缺失 ke
 });
 
 test("XML 注释里的 src/pkg/ui:// 引用不是引用", () => {
-  const { extractUiUrls, extractAssetReferences } = fguiManifestTestHooks;
+  const { extractUiUrls, extractAssetReferences, extractPkgReferences } = fguiManifestTestHooks;
   // 注释剥离只有一个实现（withoutXmlComments），声明解析与引用抽取共用它
   assert.equal(typeof fguiManifestTestHooks.withoutXmlComments, "function");
   const source = [
@@ -382,5 +382,13 @@ test("XML 注释里的 src/pkg/ui:// 引用不是引用", () => {
     extractAssetReferences(source).map((reference) => reference.src),
     ["real.png"],
     "注释里的 src= 不得产生引用，真实 src= 必须保留",
+  );
+  // ⚠ 用例名里的 pkg 此前**零断言**：把 parseUiReferences 那处 pkg= 扫描的剥注释单独去掉，
+  // 整个 test:fgui 仍然 62/62 全绿。三个抽取器都要各自被守住，⛔ 名字里写了就必须真的断言。
+  assert.deepEqual(extractPkgReferences(source), [], "注释里的 pkg= 不得产生包引用");
+  assert.deepEqual(
+    extractPkgReferences('<loader pkg="realPkgId"/>\n<!-- <loader pkg="ghostPkgId"/> -->'),
+    ["realPkgId"],
+    "真实 pkg= 必须保留——⛔ 否则上一条可能只是因为剥得太狠",
   );
 });

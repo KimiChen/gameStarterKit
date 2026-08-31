@@ -292,6 +292,19 @@ function extractAssetReferences(source) {
 }
 
 /**
+ * `pkg="<pkgId>"` 的包引用扫描。与 `extractUiUrls` / `extractAssetReferences` 对称地抽成纯函数：
+ * 三个抽取器都必须先剥注释，⛔ 但只有能被单独调用的形态才守得住——此前这一处内联在
+ * `parseUiReferences` 里，把它的剥注释单独去掉，整个 test:fgui 仍然全绿（实测 62/62）。
+ */
+function extractPkgReferences(source) {
+  const out = [];
+  for (const match of withoutXmlComments(source).matchAll(/\bpkg\s*=\s*["']([^"']+)["']/g)) {
+    out.push(match[1]);
+  }
+  return out;
+}
+
+/**
  * 源 XML 里全部资源引用（`ui://` 与 `src=`/`pkg=` 两种拼写）的解析结果，
  * 供 `fgui-roundtrip.mjs` 的不变量 B 使用。与 `parseUiReferences` 共用同一套 XML 解析与
  * 别名规则，⛔ 不要另起一套第二真源。
@@ -362,8 +375,8 @@ function parseUiReferences(infos) {
     for (const entry of info.source.filter((item) => item.path.endsWith(".xml") && !item.path.endsWith("/package.xml"))) {
       const file = path.join(ROOT, entry.path);
       const source = fs.readFileSync(file, "utf8");
-      for (const match of withoutXmlComments(source).matchAll(/\bpkg\s*=\s*["']([^"']+)["']/g)) {
-        if (!packageForKey(match[1], maps)) errors.push(`${entry.path}: 未知 pkg 引用 ${match[1]}`);
+      for (const pkg of extractPkgReferences(source)) {
+        if (!packageForKey(pkg, maps)) errors.push(`${entry.path}: 未知 pkg 引用 ${pkg}`);
       }
       for (const raw of extractUiUrls(source)) {
         const error = validateUiUrl(raw, maps);
@@ -661,7 +674,9 @@ if (isMain) {
 }
 
 /** 内部抽取器的测试入口（_computePoolTestHooks 先例；生产路径不要从这里拿函数）。 */
-export const fguiManifestTestHooks = { extractUiUrls, extractAssetReferences, withoutXmlComments };
+export const fguiManifestTestHooks = {
+  extractUiUrls, extractAssetReferences, extractPkgReferences, withoutXmlComments,
+};
 
 export {
   assertManifestShape,
