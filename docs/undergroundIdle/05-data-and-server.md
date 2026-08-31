@@ -103,7 +103,7 @@ tombstone，以及 256 KiB 编码后 `idleState`。若未来加入大量装备�
 | 字段 | 说明 |
 | --- | --- |
 | `clientReqId` | 客户端逻辑操作 ID |
-| `operationType` | 完整 `IdleWriteRpcType`：`idle.activate`、`idle.collect`、`idle.upgradeBuilding`、`idle.assignWorkers`、`idle.startExpedition`、`idle.claimExpedition` |
+| `operationType` | 完整 `UndergroundIdleWriteRpcType`：`undergroundIdle.activate`、`undergroundIdle.collect`、`undergroundIdle.upgradeBuilding`、`undergroundIdle.assignWorkers`、`undergroundIdle.startExpedition`、`undergroundIdle.claimExpedition` |
 | `payloadHash` | 规范化完整请求摘要；除 activate 外包含 `expectedStateVersion` |
 | `resultingStateVersion` | 首次成功后的领域版本 |
 | `resultSummary` | 重试必须返回的最小结果 |
@@ -120,11 +120,11 @@ tombstone，以及 256 KiB 编码后 `idleState`。若未来加入大量装备�
 
 ### 1.7 缺档与坏档
 
-- 玩家没有 `idleState` 时，`idle.getSnapshot` 只返回 `activationState: unactivated` 的版本 0 预览，不计算
+- 玩家没有 `idleState` 时，`undergroundIdle.getSnapshot` 只返回 `activationState: unactivated` 的版本 0 预览，不计算
   生产，也不伪造临时 `checkpointAt`；
-- 客户端随后调用幂等写 RPC `idle.activate`，在 `withUser` 中以首次成功提交的 `serverNow` 创建确定初始档，
+- 客户端随后调用幂等写 RPC `undergroundIdle.activate`，在 `withUser` 中以首次成功提交的 `serverNow` 创建确定初始档，
   包含 100 矿石余额、50 仓库矿石及稳定检查点；
-- `idle.activate` 不接收 `expectedStateVersion`：先判存档是否存在，不存在才创建版本 1；两设备同时激活只能
+- `undergroundIdle.activate` 不接收 `expectedStateVersion`：先判存档是否存在，不存在才创建版本 1；两设备同时激活只能
   创建一次，后到请求回读现有状态，不重置资源或检查点；
 - JSON 解析失败、未知 schema、越界数字或非法状态组合必须 fail-closed；
 - 坏档不能静默当作新玩家，否则等价于清档；
@@ -172,13 +172,13 @@ Lobby 认证上下文
 因此实施本 Demo 前必须选择一种方案：
 
 1. **推荐**：增强通用幂等层，使占位和结果同时绑定规范化 payload hash；
-2. 或为 `idle.*` 提供能够在缓存命中前校验 payload 的领域幂等适配；
+2. 或为 `undergroundIdle.*` 提供能够在缓存命中前校验 payload 的领域幂等适配；
 3. 不接受“仅在 handler 内加收据”作为完整解决方案，因为它拦不住通用缓存的提前返回。
 
 RPC handler 超时使用的 `Promise.race` 不会取消迟到副作用。客户端收到 `TIMEOUT`、`CONN_LOST` 或
 `IN_PROGRESS` 后必须保留原 `clientReqId`，查询操作状态或使用完全相同 payload 重试，禁止换新 ID。
 
-`idle.queryOperation` 还需要通用幂等层提供受控查询适配，才能区分 `pending` 与 `unknown`。在该适配完成前，
+`undergroundIdle.queryOperation` 还需要通用幂等层提供受控查询适配，才能区分 `pending` 与 `unknown`。在该适配完成前，
 快照没变化或查不到领域收据都不能被解释为“原操作已安全失败”。
 
 ### 2.3 权威输入与数据泄漏
@@ -197,7 +197,7 @@ RPC handler 超时使用的 `Promise.race` 不会取消迟到副作用。客户�
 首版不需要新增玩法推送。前台根据 `endAt` 显示“可领取”，但点击后仍由服务端判定。应用恢复、重连、
 切设备或写操作完成后重新拉快照即可。
 
-第二阶段可增加 `idle.changed`，只携带更高的 `stateVersion`，客户端收到后拉完整快照。现有 Lobby push 是
+第二阶段可增加 `undergroundIdle.changed`，只携带更高的 `stateVersion`，客户端收到后拉完整快照。现有 Lobby push 是
 本节点尽力唤醒，不保证跨节点必达或离线送达，不能在 push 中承载唯一奖励或权威增量。
 
 ### 2.5 MySQL 与跨存储边界

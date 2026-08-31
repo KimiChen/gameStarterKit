@@ -160,8 +160,9 @@ Cocos Creator 3.8.8 的 TypeScript 源工程。它适合用于梳理玩法规则
 - Home 中增加玩法入口；
 - 多个 View、FGUI 包、契约和测试接入。
 
-其中只有矿场、矿工、远征、公式和存档结构属于 Idle 领域。幂等 payload 绑定、连接生命周期、导航恢复、
-feature 菜单、静态注册表生成以及 fixture 发现都是其他 Lobby 玩法同样需要的框架能力。若只在 `idle.*` 内部
+其中只有矿场、矿工、远征、公式和存档结构属于 undergroundIdle 领域。幂等 payload 绑定、连接生命周期、
+导航恢复、feature 菜单、静态注册表生成以及 fixture 发现都是其他 Lobby 玩法同样需要的框架能力。若只在
+`undergroundIdle.*` 内部
 解决，将来每个玩法都会复制一次，而且通用 dispatcher 在进入 handler 前就可能返回旧缓存，领域代码无法完整
 补救。
 
@@ -192,6 +193,16 @@ feature 菜单、静态注册表生成以及 fixture 发现都是其他 Lobby �
 | --- | --- | --- | --- | --- |
 | **feature** | 已登录 Lobby，页面型 | 挂机、邮件、商店、公会 | `codegen:features` | `apps/client/src/features/<id>/` + shared domain |
 | **gameplay module** | GameRoom 内，实时对局 | ballMove、Snake | `codegen:gameplays` | `apps/shared/gameplays/<id>/` + 三端模块 |
+
+**命名规则（由上表推出，⛔ 不得再漂移）**：两类实体的 id **不得同名**。当前唯一一次冲突是 `idle`——
+它已归既有 gameplay module（`GameplayModeId.Idle`），因此 Lobby 侧的挂机能力一律用准确名
+`undergroundIdle`。风格统一为 **camelCase**，⛔ 不用 kebab-case。该规则约束：feature id、RPC domain 名与
+路由前缀、`operationGroup`、服务端 endpoint 与 core 目录、shared domain 文件、测试与向量文件名、领域配置
+表 id。
+
+⚠ 两类实体**内部**的类名与 FGUI 资源命名不受此约束（目录归属已足够表明所有权），但 ⛔ 不得反过来占用对方
+的命名空间前缀。undergroundIdle 的 FGUI 包与 stableKey 目前仍是 `idle.*` / `Idle*` 形态，是否一并改名列为
+遗留决策（§12.4）。
 
 ⚠ **feature 与 gameplay module 是两种不同实体**，⛔ 不得互相冒充，也 ⛔ 不得合并成一个巨型插件模型。
 两者各自的 manifest schema 必须改名区分（`features/feature-schema-v1.json` 与
@@ -341,16 +352,25 @@ shared 是双端唯一契约真源，也是两类实体唯一的交汇点。本�
 
 ### 4.1 RPC 领域自描述
 
-命名注意：仓内已有 Room 玩法 fixture `idle`（`GameplayModeId.Idle`、
-`apps/server/src/rooms/modes/IdleGameMode.ts`、`apps/client/src/logic/rooms/idle/IdleGameplay.ts`），与
-本文的 Lobby 域 `idle` **同名不同层**；实施时若保留该 fixture，需在文档与代码注释里区分二者，或对其中
-一方改名。
+> **命名裁定（已定，⛔ 不留给实施者）**：仓内已有 Room 玩法 `idle`——它是一个 **gameplay module**
+> （`GameplayModeId.Idle = "idle"`、`apps/server/src/rooms/modes/IdleGameMode.ts`、
+> `apps/client/src/logic/rooms/idle/IdleGameplay.ts`、`c2s.idle.pulse`、`IdleRoomState`）。
+> 本文的 Lobby 能力是一个 **feature**，两者按 §3.1 是**不同实体**，⛔ 不得同名。
+>
+> **`idle` 归既有 gameplay module；Lobby feature 一律用准确名 `undergroundIdle`。**
+> 方向如此选择的原因是成本不对称：`idle` 已进 join envelope、state manifest 的 root 选择、生成物与三端
+> 镜像，且 `PROTOCOL_VERSION` 的版本注释明确记录了 v7 新增 `c2s.idle.pulse`——给它改名要动协议并 bump
+> 版本；而 undergroundIdle feature 尚无任何代码，改名零成本。
+>
+> 风格统一为 **camelCase**（与 `docs/undergroundIdle/` 及仓内 `logic/rooms/idle/` 等目录惯例一致），
+> ⛔ 不使用 kebab-case 的 `underground-idle`。这条同时约束：feature id、RPC domain 名与路由前缀、
+> `operationGroup`、服务端 endpoint 与 core 目录、shared domain 文件、测试与向量文件名。
 
 新增稳定的零依赖 builder，例如：
 
 ```ts
 export default defineLobbyRpcDomain({
-  domain: "idle",
+  domain: "undergroundIdle",
   errorCodes: [
     "STATE_CONFLICT",
     "OPERATION_RESULT_EXPIRED",
@@ -359,20 +379,20 @@ export default defineLobbyRpcDomain({
     "INSUFFICIENT_STAMINA",
   ] as const,
   routes: [
-    defineRpcQuery("idle.getSnapshot", {
+    defineRpcQuery("undergroundIdle.getSnapshot", {
       request: validateGetSnapshotReq,
       response: validateGetSnapshotRes,
     }),
-    defineRpcIdempotentWrite("idle.activate", {
+    defineRpcIdempotentWrite("undergroundIdle.activate", {
       request: validateActivateReq,
       response: validateActivateRes,
-      operationGroup: "idle",
+      operationGroup: "undergroundIdle",
       inspectable: true,
     }),
-    defineRpcQuery("idle.queryOperation", {
+    defineRpcQuery("undergroundIdle.queryOperation", {
       request: validateQueryOperationReq,
       response: validateQueryOperationRes,
-      inspectsOperationGroup: "idle",
+      inspectsOperationGroup: "undergroundIdle",
     }),
   ],
 });
@@ -386,7 +406,8 @@ export default defineLobbyRpcDomain({
 | `natural-write` | 写入本身可安全重复，如目标状态赋值 | 不使用通用结果缓存；仍执行 validator、预算和 handler 自身的领域约束 |
 | `idempotent-write` | 重复执行可能重复扣除、发奖或推进状态 | 请求必须含 `clientReqId`，自动进入通用幂等层 |
 
-不得再通过“请求类型是否含 `clientReqId`”推断执行模式。`idle.queryOperation` 会携带原操作的请求 ID，但它仍是
+不得再通过“请求类型是否含 `clientReqId`”推断执行模式。`undergroundIdle.queryOperation` 会携带原操作的请求 ID，
+但它仍是
 query；显式 metadata 才能正确表达这种语义。
 
 执行模式不替代并发控制。是否需要用户锁、UoW、UNIQUE 或 CAS 仍由领域写路径决定；`natural-write` 只描述重复
@@ -603,7 +624,7 @@ generated error catalog，或用该玩法自己的 S2C token 表达；不得再�
 一次性引入带 runtime whitelist 的 `RpcFault` 或 `rpcFault(code)`：
 
 ```ts
-throw new RpcFault("STATE_CONFLICT", "idle state version conflict");
+throw new RpcFault("STATE_CONFLICT", "undergroundIdle state version conflict");
 ```
 
 dispatcher 安全读取 `rpcCode`，用生成的 `isRpcErrCode` 验证后返回；非白名单、恶意对象或未知异常统一落到
@@ -687,7 +708,7 @@ features/
 ├── schema-v1.json
 ├── built-in/
 │   └── feature.json
-└── underground-idle/
+└── undergroundIdle/
     └── feature.json
 ```
 
@@ -960,7 +981,7 @@ request 与 response 最小合法向量时，存量 12 条路由的 **response �
 现有的中央 request 表改为按 sidecar 发现，例如：
 
 ```text
-apps/server/test/lobbyRpcVectors/idle.ts
+apps/server/test/lobbyRpcVectors/undergroundIdle.ts
 ```
 
 该目录为拟新增路径，当前不存在；`test/` 已整体在服务端 tsconfig include 内，新建后常规 typecheck 即覆盖它。不得把 vectors 放进
@@ -1472,7 +1493,7 @@ ticket。
 endpoint 的目标形态应收敛为：
 
 ```ts
-export default defineRpc(IdleRpc.Activate, {
+export default defineRpc(UndergroundIdleRpc.Activate, {
   handler: async (ctx, payload) => {
     // 只写领域行为
   },
@@ -1551,7 +1572,7 @@ SHA-256(
 > **`IN_PROGRESS` ≠ 操作未完成。** 第 3–6 步的通用幂等记录是 §6.13 所说的 transient gate，`IN_PROGRESS` 只表示
 > “通用闸当前被占用”，⛔ **不表示“操作尚未完成”**——孤儿 lease 下两者会不一致。客户端收到 `IN_PROGRESS` 后的
 > 恢复路径是 §6.13 的查询路由，**不是**继续重试写路由。对**未**声明 `operationGroup + inspectable` 的路由
-> （本阶段除 Idle 外全部），其 ResultUnknown 窗口以 pending TTL 为上界，窗口过后重试是安全的。
+> （本阶段除 undergroundIdle 外全部），其 ResultUnknown 窗口以 pending TTL 为上界，窗口过后重试是安全的。
 
 canonicalizer 必须有跨嵌套对象、Unicode key、数组、可选字段和 key 顺序变化的 golden vectors；其他语言或领域
 代码不得自行解释“稳定排序”。构造摘要时从副本排除 `clientReqId`，不得修改随后传给 handler 的 validated
@@ -1616,8 +1637,8 @@ release，只能放弃；客户端在该窗口内看到的是 `IN_PROGRESS`，�
 
 ### 6.13 受控 operation 查询
 
-目标 idempotent route 通过 `operationGroup: "idle"` + `inspectable: true` 声明可查；查询 route 通过
-`inspectsOperationGroup: "idle"` 声明自己被授权查询的组。dispatcher 只向该 query handler 注入已经绑定
+目标 idempotent route 通过 `operationGroup: "undergroundIdle"` + `inspectable: true` 声明可查；查询 route
+通过 `inspectsOperationGroup: "undergroundIdle"` 声明自己被授权查询的组。dispatcher 只向该 query handler 注入已经绑定
 uid、zone 和 operation group 的只读 capability：
 
 ```ts
@@ -1651,13 +1672,14 @@ type InspectResult<T extends LobbyRpcIdemType> =
 
 - uid、区号从当前 `RpcCtx` 绑定，客户端不能传入或覆盖；
 - dispatcher 同时校验调用方 query route 的 `inspectsOperationGroup` 与目标 route 的 `operationGroup`；
-- `idle.queryOperation.operationType` 的 validator 只能接受生成的 Idle inspectable route 子集；
+- `undergroundIdle.queryOperation.operationType` 的 validator 只能接受生成的 undergroundIdle inspectable
+  route 子集；
 - done 结果必须再次通过对应 response validator；
 - done 中的缓存 snapshot 可能陈旧，客户端仍按 `stateVersion` 守卫；
 - 不暴露 Redis key、payload hash、leaseId 或 holder；
 - 腐坏记录返回 `INTERNAL`，不能伪装成 `unknown`。
 
-领域查询仍应先查 durable receipt，再查通用短期状态。对于 Idle：
+领域查询仍应先查 durable receipt，再查通用短期状态。对于 undergroundIdle：
 
 1. 找到领域收据时返回 `applied`；
 2. 没有完整收据但有合法 generic done 时，可在短窗内按版本守卫返回 `applied`；
@@ -1673,7 +1695,8 @@ type InspectResult<T extends LobbyRpcIdemType> =
 之前必须**复读一次领域收据**（收据是最先落地且此后不再消失的证据），关闭「第 1 步读收据早于提交点、
 pending 又已被 TTL 抹掉」的双 miss 窗口。
 
-通用幂等只是 30/60 秒量级的 UX 快闸，不是 exactly-once 真源。Idle 状态和收据仍必须在同一提交边界落地，
+通用幂等只是 30/60 秒量级的 UX 快闸，不是 exactly-once 真源。undergroundIdle 状态和收据仍必须在同一提交
+边界落地，
 `unknown` 也不能被解释为安全失败。
 
 **写路径**的“先查收据、后查 `expectedStateVersion`”必须位于同一个用户锁/UoW/CAS 序列化段：receipt read、
@@ -1687,7 +1710,8 @@ clientReqId 和 payload hash。若奖励进入 MySQL、背包、outbox 或其他
 `Promise.race` 超时不会取消 handler；超时只结束客户端等待，迟到副作用仍必须依赖领域原子提交、收据、
 UNIQUE 或 CAS 收敛。
 
-本阶段只承诺 server-side inspector + `idle.queryOperation` 领域适配，不新增全局 `operation.query`。通用 route
+本阶段只承诺 server-side inspector + `undergroundIdle.queryOperation` 领域适配，不新增全局
+`operation.query`。通用 route
 无法替不同领域读取异构 durable receipt，也会扩大 `RpcRes<T>` 的 wire/data 暴露边界；未来若单独设计，它也
 只能查询 transient gate，不能代替领域查询。
 
@@ -1938,7 +1962,7 @@ Cocos `EVENT_HIDE/EVENT_SHOW` 通过独立 bridge 进入 LifecycleBus：hide 只
 - 每个 contribution 声明稳定排序字段、标题文本或可用 LocalizePort 的 key、图标和 launch target；
 - ballMove 也迁成 built-in contribution，不能保留 Home→Main 专属回调；
 - 点击只调用统一 `LaunchPort.launch(target)`，不在 Home 分支 Navigation/gameplay；
-- Idle 使用独立 FGUI 包，后续新增入口不再修改 Home XML。
+- undergroundIdle 使用独立 FGUI 包，后续新增入口不再修改 Home XML。
 
 gameplay 的**实现**仍走 GameRoom 动线（见 本文），但它的 Home 入口
 以**同一形状**的 menu contribution 登记——**菜单只有一个数据源**。排序固定为
@@ -2594,7 +2618,7 @@ undergroundIdle 在本阶段并行实现：它只新增 feature 文件，不再�
 | 相同 ID 不同 payload 在 handler 前被拒绝 | 服务端幂等用例 | 去掉 payload hash 比较 → 转红 |
 | `clientReqId` 的字符集/长度积木拒绝含 `:`、`{`、换行、超长与非 ASCII 的值 | shared 契约向量 | 换回通用 `requiredId` → 转红 |
 | pending/done/done-oversize/unknown 与 durable receipt 的优先级有故障测试 | `test:int` + 故障矩阵 | 把 `done-oversize` 归类为 `unknown` → 转红 |
-| 新 feature 仅声明 `inspectsOperationGroup: "idle"` 而未 `dependsOn`、也未获 idle 侧 expose 时必须失败 | feature freshness 断言（随 `verify:all`） | 去掉 group 所有权校验 → 该反例转绿（即门禁失效） |
+| 新 feature 仅声明 `inspectsOperationGroup: "undergroundIdle"` 而未 `dependsOn`、也未获 undergroundIdle 侧 expose 时必须失败 | feature freshness 断言（随 `verify:all`） | 去掉 group 所有权校验 → 该反例转绿（即门禁失效） |
 | drop/reconnect/foreground/close 后不会发生旧 View 回写或 SDK 队列重放 | 客户端生命周期用例 | 去掉 generation 守卫 → 转红 |
 | `auth-invalid` 事件发布后的**同一 tick 内** `getToken()` 已为空，此后任何请求不携带旧 Bearer | 客户端用例 | 在清 token 与发布事件之间插入一个 await → 转红 |
 | app dispose 后 connection/session/route/ticker/lifecycle 订阅计数**归零**，`PendingOperationJournal` 与 FeatureHost 实例全部释放 | 客户端 dispose 用例（计数断言） | 漏掉任一 disposer → 计数不归零，转红 |
@@ -2798,14 +2822,14 @@ apps/client/test/snake-*.test.ts
 完成框架改造后，Underground Idle 的人工源码应只新增在自己的边界内：
 
 ```text
-features/underground-idle/
+features/undergroundIdle/
 └── feature.json
 
-apps/shared/src/protocol/lobbyRpc/domains/idle.ts
+apps/shared/src/protocol/lobbyRpc/domains/undergroundIdle.ts
 apps/shared/src/logic/undergroundIdle/**
 
-apps/server/src/websocket/idle/*.ts
-apps/server/src/core/idle/**
+apps/server/src/websocket/undergroundIdle/*.ts
+apps/server/src/core/undergroundIdle/**
 
 apps/client/src/features/undergroundIdle/
 ├── index.ts
@@ -2816,11 +2840,11 @@ apps/client/src/features/undergroundIdle/
     ├── *.view.json
     └── *View.ts
 
-apps/art/fairygui/assets/<Idle独立包>/**
+apps/art/fairygui/assets/<undergroundIdle 独立包>/**
 
-apps/server/test/idle*.test.ts
-apps/server/test/int/idle*.test.ts
-apps/server/test/lobbyRpcVectors/idle.ts
+apps/server/test/undergroundIdle*.test.ts
+apps/server/test/int/undergroundIdle*.test.ts
+apps/server/test/lobbyRpcVectors/undergroundIdle.ts
 apps/client/test/undergroundIdle*.test.ts
 ```
 
@@ -2949,6 +2973,11 @@ apps/client/src/app/**
 5. 首期是否需要可信战绩/evidence；若不需要，应显式声明 `evidence: none`。
 6. 旧构建档案中哪些代码、音频、图片和动画已获授权复用；未确认资源不得进入本仓
    （台账见 [snakeoff/08](snakeoff/08-source-and-asset-provenance.md)）。
+7. undergroundIdle 的 **FGUI 资源层是否一并改名**。协议与领域配置已统一为 `undergroundIdle.*`，但 FGUI 包名
+   `idle.bin`、stableKey `idle.scene.*` / `idle.ui.*` / `idle.node.*`、组件 `IdleMain` / `IdleSceneGenerated`
+   与资源目录 `apps/art/fairygui/assets/Idle/` 仍是旧形态。它们自成一套自洽的资源命名体系，改名要动
+   FairyGUI 工程与 `scripts/fgui.manifest.json` 审计锁；因资源尚未开始制作，此刻改成本最低，**越晚越贵**。
+   ⛔ 不要只改其中一半。
 
 **实施优先级**——§9 的阶段顺序已由依赖方向定死，下面是各项工作的**价值排序**，用于在阶段内部取舍：
 
