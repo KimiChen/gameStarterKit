@@ -424,3 +424,44 @@ uncompressed FGUI v7，字段顺序照抄 `fairygui.mjs` 的 `loadPackage`——
 - FGUI 合法差额里有 2 个**负差额**包（Dynamic_Login、View_SharedWidget_Confirm，bin 比声明多）——
   「发布会剥离未导出资源」的文档解释不覆盖负差额，属解释不完备而非缺陷。
 - 条目 2 的 XADD 失败在 GameRoom stub 侧无注入（int 侧已覆盖，单测侧桩不重复建设）。
+
+### 第二十轮：同事 4 个 commit + 对抗式复核 10 个修复
+
+同事修了 4 条（`55fb112` 缺 root 可读诊断、`299ed81` 删死 env、`4bc4366` 引用抽取剥注释、
+`5a16965` 更正四处计数），随后一轮六维度对抗式复核（21 条报出、12 条驳回、9 条存活）。
+
+**接手时先撞上的两件事**（都不在复核范围内，是直接跑门禁发现的）：
+
+- `npm run typecheck` **一直是红的**：`55fb112` 抽出的函数里 `selected` 在 `instanceof` 否定分支被
+  收窄成 `never`，读 `.constructor.name` 编译失败。单测全绿是因为 tsx 运行期不做类型检查。
+  `verify:all` 本就含 typecheck，闸是有的——这次是没跑到底。（`c77d7bc`）
+- 工作区残留**一处未还原的变异**：`emitMatchEvidence` 的 `PAYLOAD_SIZE` 守卫被删掉，
+  正是当轮新写的自检③用例的变异锚点。HEAD 一直是对的，丢的是工作区。
+
+**复核确认并修掉的 9 条**：
+
+| 问题 | 严重度 | commit |
+|---|---|---|
+| 「排队超时只在 任务超时<退避 排序下可达」是假命题（`onJobTimeout` 只看任务是否还在 queue，worker 被长任务占满同样可达），写在三处 | 高 | `e0a816b` |
+| 注释剥离对 CDATA 不感知，CDATA 里的 `<!--` 会吞掉其后真实引用（方向是误绿）；实测当前 41 个 XML 里 0 命中，属加固 | 高 | `06aeeea` |
+| 把退避改成可配置后，用例仍按硬编码 1000/900 断言——`COMPUTE_RESPAWN_DELAY_MS=2000` 即假红 | 中 | `68ea3fa` |
+| 注释剥离的第三个调用点（`pkg=` 扫描）无人守：单独去掉它 test:fgui 仍 62/62 全绿 | 中 | `ac7e18a` |
+| `stripXmlComments` 与既有 `withoutXmlComments` 逐字节同义，一条规则两份实现 | 中 | `d792f26` |
+| 熔断用例注释的证据命令 `grep -n 超时` 是坏引证，只会命中注释自己（应为 `grep -n TIMEOUT`） | 中 | `afa92b4` |
+| 「13 个访问点承接**全部** ball 专属读写」超出证据：`onLeave` 有一处刻意的例外 | 低 | `8d0f6d7` |
+| `assertBallMoveRulesBinding` 插进了 `GameRoomClock` 与它的 JSDoc 之间 | 低 | `e6fec0a` |
+| plan-v4 两个 commit hash 被 rebase 变成不可达（本地 reflog 仍能 show，新 clone 即死引用） | 低 | `ab3bf46` |
+
+**两个 flaky 测试**（`verify:all` 真的红过，非并发干扰）：compute 故障注入用例两个子进程的超时
+预算都不足以覆盖 worker 冷启动（`ac691e5` + `25de865`，第一次只修了一半）；熔断隔离用例的
+40ms/120ms 是全文唯一的负载敏感数字（`fb777ce`）。⚠ 后者**未能确定性复现**（连续 13 次全量绿都没
+撞上），是按静态分析消除唯一可疑变量，不是复现-修复-复现的闭环；若再现需另找根因。
+
+**改不了的一条**：`c77d7bc` 的提交信息写「单测 326/326」，实测该 commit 上是 **325**（326 要等
+同事那两个测试 commit 落地之后）。commit 已推送，不可改写，记录于此。
+
+**同事四处计数更正的复核结论**：三处属实且原文比他们说的更差——我的分项加总只有 17，
+却自称总数 19（实测 OVERVIEW 3 / EXTRAFEATURES 4 / CLIENT 2 / SERVER 1 / todo-godogen 5 /
+snakeoff 4 = 19）。第四处「ballState 14 处」把 getter 声明算成了读写点，实测访问器调用 13 处、
+另有 1 处刻意例外。另：他们推翻了上一轮复核对 `WEBPLATFORM_RETRY_ATTEMPTS` 的驳回——
+该 env 确无读取方（重试硬编码 `attempt < 2`），**原报出属实，上一轮的驳回是错的**。
