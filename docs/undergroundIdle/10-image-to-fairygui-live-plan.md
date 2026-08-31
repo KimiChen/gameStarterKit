@@ -60,7 +60,7 @@ Idle FairyGUI 真源/发布物与业务接线均尚未实施；本文只定义�
 | --- | --- | --- |
 | 分层与坐标 | 07～09 规定尺寸、pivot、九宫格和装配目标 | 建立统一 v1 Schema，并用首次批准的分层源验证 |
 | 切图 | 本文规定 Alpha bbox、padding、pivot 和 source anchor 规则 | 实现统一入口、原子写入、来源白名单和编译报告 |
-| FairyGUI 源 | 09 规定拟定装配契约 | 创建 `idle/package.xml`、组件 XML、运行 PNG，并由 Editor 首次发布 |
+| FairyGUI 源 | 09 规定拟定装配契约 | 创建 `Idle/package.xml`、组件 XML、运行 PNG，并由 Editor 首次发布 |
 | 稳定引用 | 本文规定稳定 ID 原则 | 首次创建 package/resource/component/child/page ID 后写入 append-only lock |
 | View 绑定 | 仓库通用 codegen 能力需要在 P0 盘点 | 验证或补齐 XML → TypeScript，并接入生成 XML |
 | 发布闭包 | 仓库通用 manifest 能力需要在 P0 盘点 | 验证设计源与 Editor 发布物闭包；`.bin` 必须由 Editor 发布 |
@@ -111,7 +111,7 @@ docs/undergroundIdle/art/production/main_v01/fgui/
 apps/art/fairygui/layout/idle/
 └─ ids.lock.json
 
-apps/art/fairygui/assets/idle/
+apps/art/fairygui/assets/Idle/
 ├─ package.xml
 ├─ IdleMain.xml                    # Editor-owned 外壳，首期不整文件覆盖
 ├─ IdleSceneGenerated.xml          # machine-owned
@@ -151,7 +151,7 @@ apps/art/fairygui/assets/idle/
   "$schema": "../../../../../../tools/fgui-layout-compiler/schema/ui-layout.schema.json",
   "schemaVersion": 1,
   "package": {
-    "name": "idle",
+    "name": "Idle",
     "id": "<allocate-on-first-generation>"
   },
   "component": {
@@ -314,7 +314,7 @@ npm run verify:fgui-layout -- \
   --layout docs/undergroundIdle/art/production/main_v01/fgui/IdleSceneGenerated.layout.json
 
 # XML → View 代码生成；P0 先确认仓库工具接口
-npm run codegen:fgui -- idle IdleSceneGenerated
+npm run codegen:fgui -- Idle IdleSceneGenerated
 
 # FairyGUI Editor 首次发布完成后执行仓库门禁
 npm run test:fgui

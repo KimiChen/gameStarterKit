@@ -101,7 +101,7 @@
 | `FX-09` | `art/effects/ug_fx_offline_states_v01.svg` | `未开始` | 正常/容量与上限态同构，按顺序表达入账、损失、归队和待领取 |
 | `SPEC-03～SPEC-05` | `art/specs/` 下对应 `v01` 源 | `未开始` | 完成风格、角色/建筑、UI/网络状态规范并通过人工审阅 |
 | `ART-01～ART-09` | `art/production/art01_scene_v01/`～`art09_fx_v01/` | `未开始` | 按第 9 节拆分、登记 manifest、执行自动审计并人工验收 |
-| FairyGUI / Creator | `apps/art/fairygui/assets/idle/` 与 Creator 发布目录 | `未开始` | 完成 IdleMain 首次装配、Editor 发布、代码绑定及 Creator 状态矩阵验收 |
+| FairyGUI / Creator | `apps/art/fairygui/assets/Idle/` 与 Creator 发布目录 | `未开始` | 完成 IdleMain 首次装配、Editor 发布、代码绑定及 Creator 状态矩阵验收 |
 
 生产清单、审计格式与编辑器装配要求分别以拟定的 `art/production/README.md`、`art/production/AUDIT.md` 和
 [`09-fairygui-idlemain-assembly.md`](09-fairygui-idlemain-assembly.md) 为准。文件存在本身不能关闭任何 Gate；
@@ -466,7 +466,7 @@ hitArea。目标文件 `ug_spec_main_safearea_hotzones_v01.svg` 应作为唯一�
 | `ART-08` 结果与徽记 | C/B/A/S 框和徽章、深层开拓徽记、归队剪影 | 四框相同内容区、不同轮廓；无文字 |
 | `ART-09` 程序动效素材 | 灯晕、尘埃、火花、金光扫、矿石飞入、收取/升级/解锁粒子 | 单帧或少帧；无黑边；可由节点动画驱动 |
 
-FairyGUI 设计真源最终进入 `apps/art/fairygui/assets/idle/`，再按 [客户端开发文档](../CLIENT.md)的资源动线
+FairyGUI 设计真源最终进入 `apps/art/fairygui/assets/Idle/`，再按 [客户端开发文档](../CLIENT.md)的资源动线
 导出到 Cocos。效果图、生成初稿和未确认 PSD/PSB 不应直接复制到 Cocos resources，也不要另建第二套资源
 登记规则。
 

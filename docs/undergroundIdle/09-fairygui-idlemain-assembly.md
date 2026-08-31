@@ -10,8 +10,8 @@
 
 ## 1. 拟定真源与初始状态
 
-FairyGUI 包名固定为 `idle`，主组件固定为 `IdleMain`，设计画板为 `750×1624`、左上原点、`MatchWidth`。
-设计真源目标目录为 `apps/art/fairygui/assets/idle/`。该路径、包、组件、发布物、绑定代码和业务接线均属于首次
+FairyGUI 包名固定为 `Idle`，主组件固定为 `IdleMain`，设计画板为 `750×1624`、左上原点、`MatchWidth`。
+设计真源目标目录为 `apps/art/fairygui/assets/Idle/`。该路径、包、组件、发布物、绑定代码和业务接线均属于首次
 实施任务，不能因本文列出名称就视为已经存在。常规制作优先由 FairyGUI Editor 写入；只有获得项目负责人对
 明确文件范围的显式授权时，才允许直接维护 XML。手工维护后必须同时通过 XML 解析、编辑器整项目重载、单包
 发布、代码生成漂移检查和 Creator 导入，不能只凭文本 diff 宣称可用。
@@ -273,9 +273,9 @@ H11 `btn_refresh` 只在 `view=resultUnknown`、`reconnecting`、`stateConflict`
    `apps/art/fairygui/FairyGUI.fairy`，实施前先确认该工程可用；
 2. 在编辑器内维护资源、九宫格、pivot、relation、controller、默认页和热区；显式授权的 XML 修改也必须回到
    编辑器完整重载验证；
-3. 确认发布目录配置后，只发布 `idle` 到 `apps/Cocos/assets/resources/ui/`，禁止用“仅发布描述”代替完整发布；
+3. 确认发布目录配置后，只发布 `Idle` 到 `apps/Cocos/assets/resources/ui/`，禁止用“仅发布描述”代替完整发布；
 4. 运行 `node scripts/fgui-manifest.mjs --write`，把设计源与发布输出闭包钉入清单；
-5. 运行 `npm run codegen:fgui -- idle IdleMain`，再核对 `fguiContracts`、`viewRegistry`、View 与 Logic；
+5. 运行 `npm run codegen:fgui -- Idle IdleMain`，再核对 `fguiContracts`、`viewRegistry`、View 与 Logic；
 6. 运行 `npm run sync:client`，并由 Cocos Creator 3.8.8 为新增真源镜像和 UI 资源生成稳定 `.meta`；
 7. 运行 `npm run test:fgui`、`npm run typecheck`、`npm run test:client`、`npm run verify:sync`；
 8. 用 Cocos Creator 3.8.8 完成第 8 节状态预览并保存证据。

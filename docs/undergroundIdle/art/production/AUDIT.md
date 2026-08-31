@@ -50,7 +50,7 @@
 
 ## 5. 待执行：FairyGUI 与 Creator
 
-- [ ] FairyGUI `idle` 包、750×1624 页面、九宫格、pivot、controller 和命名契约完成装配；
+- [ ] FairyGUI `Idle` 包、750×1624 页面、九宫格、pivot、controller 和命名契约完成装配；
 - [ ] Editor 完整重载后无资源丢失、ID 断链、gear/page 错配或未知组件；
 - [ ] 发布到 `apps/Cocos/assets/resources/ui/` 后重新检查 `.bin`、图集和 manifest；
 - [ ] 仅通过 Cocos Dashboard 启动 Creator，检查导入、`.meta`、控制台和 750×1624 预览；
