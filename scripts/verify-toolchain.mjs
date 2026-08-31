@@ -99,23 +99,59 @@ const GATED_SCRIPT_NAMES = new Set([
 ]);
 
 /**
- * workspace 名 → 该 workspace 中被闸的脚本名集合（从链声明派生，不另立副本）。
+ * workspace 名/目录 → 该 workspace 中被闸的脚本名集合（从链声明派生，不另立副本）。
  *
- * 前缀式 `npm --workspace Y run X` 与后缀式 `npm run X --workspace Y` 是**等价写法**
- * （见 plan-v3 §18：真实 npm 两者跑的都是 workspace 脚本）。只认前缀式会让链条改成
- * 后缀式时该 workspace **静默失闸**——实测：把链改成后缀式后给 apps/server 加 `pretest`，
- * verify-toolchain 放行。这不需要合谋，换个等价写法就够了，所以两种形态都要认。
+ * 可归类形态（真实 npm 语义一致，§18 实测）：
+ * - 前缀式 `npm --workspace Y run X` / `-w Y run X`（Y 为 manifest.name）；
+ * - 后缀式 `npm run X --workspace Y` / `-w Y`（同上；`-w <dir>` 按目录解析）；
+ * - 目录选择器 `npm --prefix <dir> run X`。
+ * 其余 workspace 调用形态（如 `npm run -w Y X`、`--workspaces`、混用前后缀）一律
+ * 失败关闭报错——只认前缀式已实测失闸（后缀式链 + workspace 钩子双双放行），
+ * 而再漏的形态只能靠「不可归类即拒」兜底；无法解析到实际 workspace 的引用同样报错。
+ *
+ * `workspaces` 字段缺席时静默 no-op——`toolchainContract` 的夹具根 package.json 就没有
+ * workspaces、也没有 apps/shared，硬查会让该套件每一条夹具反例假红。
  */
-const GATED_WORKSPACE_SCRIPTS = new Map();
-function addGatedWorkspaceScript(workspace, script) {
-  if (!GATED_WORKSPACE_SCRIPTS.has(workspace)) GATED_WORKSPACE_SCRIPTS.set(workspace, new Set());
-  GATED_WORKSPACE_SCRIPTS.get(workspace).add(script);
-}
-for (const command of Object.values(CHAIN_SCRIPTS).flat()) {
-  const prefix = /^npm\s+(?:--workspace|-w)[\s=](\S+)\s+run\s+([A-Za-z0-9:_-]+)\s*$/u.exec(command);
-  if (prefix) { addGatedWorkspaceScript(prefix[1], prefix[2]); continue; }
-  const suffix = /^npm\s+run\s+([A-Za-z0-9:_-]+)\s+(?:--workspace|-w)[\s=](\S+)\s*$/u.exec(command);
-  if (suffix) addGatedWorkspaceScript(suffix[2], suffix[1]);
+function gatedWorkspaceScripts(root, rootPackage, errors) {
+  const workspaces = rootPackage?.workspaces;
+  if (!Array.isArray(workspaces)) return new Map();
+  const resolve = (key) => {
+    for (const item of workspaces) {
+      const location = typeof item === "string" ? item : item?.location;
+      if (!location) continue;
+      if (location === key) return location;
+      try {
+        const manifest = JSON.parse(fs.readFileSync(path.join(root, location, "package.json"), "utf8"));
+        if (manifest?.name === key) return location;
+      } catch { /* manifest 不可读时按不匹配处理 */ }
+    }
+    return null;
+  };
+  const byLocation = new Map();
+  for (const command of Object.values(CHAIN_SCRIPTS).flat()) {
+    const prefix = /^npm\s+(?:--workspace|-w)[\s=](\S+)\s+run\s+([A-Za-z0-9:_-]+)\s*$/u.exec(command);
+    const suffix = !prefix && /^npm\s+run\s+([A-Za-z0-9:_-]+)\s+(?:--workspace|-w)[\s=](\S+)\s*$/u.exec(command);
+    const prefixDir = !prefix && !suffix
+      && /^npm\s+--prefix[\s=](\S+)\s+run\s+([A-Za-z0-9:_-]+)\s*$/u.exec(command);
+    let key; let script;
+    if (prefix) { [key, script] = [prefix[1], prefix[2]]; }
+    else if (suffix) { [key, script] = [suffix[2], suffix[1]]; }
+    else if (prefixDir) { [key, script] = [prefixDir[1], prefixDir[2]]; }
+    else if (/\s-w[\s=]|\s--workspaces?\b|\s--prefix[\s=]/u.test(command)) {
+      errors.push(
+        `无法归类的 npm workspace 调用形态（失败关闭，须改写为可识别形态或补充判定）：${command}`,
+      );
+      continue;
+    } else { continue; }
+    const location = resolve(key);
+    // 解析不到时**跳过而非报错**：不完整 workspaces 声明会让该命令在真实 npm 处立即报错
+    // （`No workspace found`，响亮失败），钩子在命令都跑不起来的前提下没有可藏之处；
+    // 且仓内 workspaces 完整时不会发生。报错只留给「能跑但会绕过闸」的不可归类形态。
+    if (!location) continue;
+    if (!byLocation.has(location)) byLocation.set(location, new Set());
+    byLocation.get(location).add(script);
+  }
+  return byLocation;
 }
 
 function requireNoLifecycleHooks(label, scripts, gated, errors) {
@@ -132,20 +168,14 @@ function requireNoLifecycleHooks(label, scripts, gated, errors) {
 }
 
 /**
- * 逐个被引用的 workspace 再查一遍。workspaces 字段缺席时静默 no-op——`toolchainContract`
- * 的夹具根 package.json 就没有 workspaces、也没有 apps/shared，硬查会让该套件每一条
- * 夹具反例都假红。
+ * 逐个被引用的 workspace 再查一遍。
  */
 function requireNoWorkspaceLifecycleHooks(root, rootPackage, errors) {
-  for (const item of rootPackage?.workspaces ?? []) {
-    const location = typeof item === "string" ? item : item?.location;
-    if (!location) continue;
+  for (const [location, gated] of gatedWorkspaceScripts(root, rootPackage, errors)) {
     let manifest;
     try {
       manifest = JSON.parse(fs.readFileSync(path.join(root, location, "package.json"), "utf8"));
     } catch { continue; }
-    const gated = GATED_WORKSPACE_SCRIPTS.get(manifest?.name);
-    if (!gated) continue;
     requireNoLifecycleHooks(`${location}/package.json`, manifest.scripts, gated, errors);
   }
 }

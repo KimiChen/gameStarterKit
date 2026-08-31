@@ -514,6 +514,68 @@ test("toolchain contract gates workspace hooks even when the chain uses the suff
   }
 });
 
+test("toolchain contract gates workspace hooks when the selector is a directory path", () => {
+  // `-w <dir>` 与 `--prefix <dir>` 按目录选择 workspace：闸表必须把目录解析到实际
+  // workspace，否则路径形态下钩子静默失闸（实测真实 npm 两种形态都跑钩子）。
+  for (const suffix of ["npm run test -w apps/server", "npm --prefix apps/server run test"]) {
+    const root = createFixture();
+    try {
+      const patched = writePatchedVerifier(root, (source) =>
+        source.split("npm --workspace @game/server run test").join(suffix));
+      editJson(root, "package.json", (pkg) => {
+        pkg.workspaces = ["apps/server"];
+        pkg.scripts["verify:all"] = pkg.scripts["verify:all"].replace(
+          "npm --workspace @game/server run test", suffix);
+      });
+      writeJson(root, "apps/server/package.json", {
+        name: "@game/server",
+        engines: { node: ">=22" },
+        devDependencies: TOOL_DEPENDENCIES,
+        scripts: { pretest: "node -e \"process.exit(0)\"" },
+      });
+      const result = runVerifierFile(patched, root);
+      assert.match(
+        result.output,
+        /apps\/server\/package\.json scripts\.pretest 是被闸命令/u,
+        `目录选择器形态「${suffix}」下 workspace 钩子必须被点名：\n${result.output}`,
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  }
+});
+
+test("toolchain contract fails closed on unclassifiable workspace selector forms", () => {
+  // 不可归类的 workspace 调用形态（选择器夹在 run 与脚本名之间、复数 --workspaces）：
+  // 失败关闭，必须改写为可识别形态，不允许静默失闸。
+  for (const form of ["npm run -w @game/server test", "npm run test --workspaces --if-present"]) {
+    const root = createFixture();
+    try {
+      const patched = writePatchedVerifier(root, (source) =>
+        source.split("npm --workspace @game/server run test").join(form));
+      editJson(root, "package.json", (pkg) => {
+        pkg.workspaces = ["apps/server"];
+        pkg.scripts["verify:all"] = pkg.scripts["verify:all"].replace(
+          "npm --workspace @game/server run test", form);
+      });
+      writeJson(root, "apps/server/package.json", {
+        name: "@game/server",
+        engines: { node: ">=22" },
+        devDependencies: TOOL_DEPENDENCIES,
+        scripts: {},
+      });
+      const result = runVerifierFile(patched, root);
+      assert.match(
+        result.output,
+        /无法归类的 npm workspace 调用形态/u,
+        `不可归类形态「${form}」必须被失败关闭点名：\n${result.output}`,
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  }
+});
+
 test("toolchain contract leaves non-gated workspace scripts alone", () => {
   // 反向锁：workspace 里非被闸命令的钩子（smoke 不在任何链里）不得误伤。
   const root = createFixture();
