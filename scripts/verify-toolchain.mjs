@@ -52,7 +52,7 @@ export const VERIFY_ALL_COMMANDS = [
 export const CLIENT_TEST_COMMAND =
   "cd apps/server && node --import tsx --test ../client/test/*.test.ts ../../scripts/vendor-lock.test.mjs";
 export const FGUI_TEST_COMMAND =
-  "cd apps/server && node --import tsx --test ../../scripts/fgui-manifest.test.mjs ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/fguiContract.test.ts ../client/test/viewRegistry.test.ts";
+  "cd apps/server && node --import tsx --test ../../scripts/fgui-manifest.test.mjs ../../scripts/fgui-roundtrip.test.mjs ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/fguiContract.test.ts ../client/test/viewRegistry.test.ts";
 export const INVENTORY_TEST_COMMAND = "node --test scripts/verify-inventory.test.mjs";
 export const LAUNCHER_MATRIX_COMMAND = "node --test scripts/launcher-matrix.test.mjs";
 export const NPM_REFERENCE_MATRIX_COMMAND = "node --test scripts/npm-reference-matrix.test.mjs";

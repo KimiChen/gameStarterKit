@@ -189,7 +189,7 @@ const EXACT_LOAD_BEARING: Record<string, string> = {
   "test:client":
     "cd apps/server && node --import tsx --test ../client/test/*.test.ts ../../scripts/vendor-lock.test.mjs",
   "test:fgui":
-    "cd apps/server && node --import tsx --test ../../scripts/fgui-manifest.test.mjs ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/fguiContract.test.ts ../client/test/viewRegistry.test.ts",
+    "cd apps/server && node --import tsx --test ../../scripts/fgui-manifest.test.mjs ../../scripts/fgui-roundtrip.test.mjs ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/fguiContract.test.ts ../client/test/viewRegistry.test.ts",
   "test:inventory": "node --test scripts/verify-inventory.test.mjs",
   "test:launcher-matrix": "node --test scripts/launcher-matrix.test.mjs",
   "test:npm-reference-matrix": "node --test scripts/npm-reference-matrix.test.mjs",

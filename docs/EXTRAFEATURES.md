@@ -240,29 +240,53 @@ guard 要求显式区清单。每区 `archive_zone_usage` 在 freeze singleton l
 
 ### 3.10 产物往返自检（导出物反序列化校验）
 
-状态：**未实现**。
+状态：**FGUI `.bin` 部分已实现（不变量 A–D）；E 与非 FGUI 产物仍未实现**。
 
 这是一类**门禁维度**，不是已有模块：在构建产物落盘之前，把它立刻反序列化回来、与构建时的预期结构比对，
 不一致就失败且**不写出文件**。它与内容哈希锁是两件事——哈希回答「这个文件还是我记下的那个吗」，往返自检
-回答「这个产物解析回来还是我以为的那份内容吗」。
-
-本仓当前没有该检查。导出物一致性依赖 `npm run verify:fgui` 的 manifest/hash 比对与 Creator 人工预览：
-前者能发现文件被改动或缺失/多余，但**发现不了「导出过程本身静默丢了内容、而哈希如实记录了这个残缺结果」**。
-FGUI `.bin` 导出、`.meta` uuid 集合和 Cocos 场景序列化都属于这一类风险。
+回答「这个产物解析回来还是我以为的那份内容吗」。哈希锁对「导出过程本身静默丢了内容、而哈希如实记录了这个
+残缺结果」永远是绿的，因为它记的就是残缺结果本身。
 
 外部依据：`htdt/godogen` 与 `liangdabiao/Godogen` 各自独立地在场景构建脚本里放了同一段自检——
 构建后立即 `instantiate()`、比对节点计数、不等即以非零码退出，并明确要求**用校验结果作为保存的前置条件**。
 它防的具体缺陷是 `owner` 链未设全时 `PackedScene.pack()` 会静默丢节点：编译通过、保存成功、运行时少东西。
 两处实现对该失败形态的定性一致——看起来像成功。
 
-落地时的边界：
+#### 已实现：FGUI `.bin` 往返自检
 
-- 与 `verify:fgui` **并列而不是替换**；哈希锁与往返自检覆盖不同的失败形态，都要保留。
-- 失败语义是「不落盘」，即阻止产物进入 codegen / manifest 重钉等下游，而不是先写出再告警。
-- 需要真实 Creator 引擎才能完成的部分（Cocos 场景、完整 `.meta` 集合）不属于本条，归入同样尚未实现的
+[`scripts/fgui-roundtrip.mjs`](../scripts/fgui-roundtrip.mjs) 用纯 Node、零依赖重写了 uncompressed FGUI v7
+的 header + 分段索引表 seek + 字符串表 + 依赖表 + 条目表 + sprite 表，字段顺序照抄
+`apps/client/extensions/fairygui-cc/runtime/fairygui.mjs` 的 `loadPackage`——那是运行时真正用来读这些文件的
+实现。检查**内联在 `fgui-manifest.mjs` 的 `currentManifest()` 里、重记哈希之前**，所以 `--write` 与 `--check`
+两侧口径一致，一次 `--write` 不会把残缺状态钉成新基线。
+
+| # | 不变量 | 挡住的失败形态 | 状态 |
+|---|---|---|---|
+| A | `package.xml` 中每个 `exported="true"` 资源的 `id` 必须出现在同名 `.bin` 条目表 | 主失败形态：导出静默丢内容 | 已实现 |
+| B | 源 XML 每个 `ui://<pkgId><resId>` 引用，目标 `resId` 必须在**目标包 `.bin`** 里 | 跨包引用被目标包漏导 | 已实现 |
+| C | `.bin` 段 0 声明的每个依赖包都要有已导出的 `.bin` 且 id 对得上 | 依赖包整包漏导 | 已实现 |
+| D | `.bin` 中 Atlas/Spine/Sound/Misc 条目引用的外部文件必须落盘 | 图集/骨骼文件漏导 | 已实现 |
+| E | sprite rect ⊆ 对应图集图片真实尺寸（PNG IHDR / JPEG SOF 直读） | 图集重导致尺寸变化而 bin 未同步 | **未实现** |
+
+⛔ **明确不做**：不拿「`package.xml` 声明数 == `.bin` 条目数」当不变量。FairyGUI 发布会剥离「未导出且无人
+引用」的资源，这是正确行为——本仓 12 个包里 8 个存在合法差额，粗比数量会立刻产生 18 处假阳。
+`fgui-roundtrip.test.mjs` 用一个「只剩已导出条目」的构造产物把这条反向钉住。
+
+E 未做的理由是它需要单独一轮：`rotated` 标志会让 rect 的 w/h 与图集坐标轴互换，调查中第一版没处理时
+产生 6 个假阳。
+
+覆盖登记在 `test:fgui`（`scripts/fgui-roundtrip.test.mjs`，8 个用例）；不变量 A–D 各配一个构造反例，
+逐条删除对应实现均可令用例转红。检查本身随 `verify:fgui` 执行，未新增聚合命令。
+
+#### 仍未实现的部分
+
+- 不变量 E（sprite rect ⊆ 图集真实尺寸）。
+- `.meta` uuid 集合与 Cocos 场景序列化的往返自检：需要真实 Creator 引擎，归入同样尚未实现的
   Creator 运行证据方向。
-- 与其它未实现项一致：它不登记为 `docs/inventory.json` 的活跃能力，也不改变核心框架的完成定义；
-  真正落地时须按本仓既有规则补正反例并登记，再评估是否并入聚合验证命令。
+- `tools/excel-to-json.mjs` 的 `--check` **不是往返自检**，是重生成比对——writer 与 checker 共用同一个
+  内存 `data`，`buildItems()` 里任何静默丢行对两侧同时生效、永远比得上；行数只进 summary 打印、不做断言。
+
+与其它未实现项一致：这些部分不登记为 `docs/inventory.json` 的活跃能力，也不改变核心框架的完成定义。
 
 实施顺序与具体待办见根目录 [`todo-godogen.md`](../todo-godogen.md)（对照吸收计划，非本仓能力承诺）。
 

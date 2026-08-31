@@ -42,7 +42,7 @@
     "typecheck:client:legacy": "tsc -p apps/client/tsconfig.json --noEmit",
     "test:client": "cd apps/server && node --import tsx --test ../client/test/*.test.ts ../../scripts/vendor-lock.test.mjs",
     "test:vendor": "node --test scripts/vendor-lock.test.mjs",
-    "test:fgui": "cd apps/server && node --import tsx --test ../../scripts/fgui-manifest.test.mjs ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/fguiContract.test.ts ../client/test/viewRegistry.test.ts",
+    "test:fgui": "cd apps/server && node --import tsx --test ../../scripts/fgui-manifest.test.mjs ../../scripts/fgui-roundtrip.test.mjs ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/fguiContract.test.ts ../client/test/viewRegistry.test.ts",
     "test:faults": "node scripts/fault-matrix.mjs",
     "test:faults:int": "node scripts/fault-matrix.mjs --integration",
     "verify:core": "node scripts/verify-toolchain.mjs && npm run verify:project && npm run typecheck && npm run verify:ecs && npm run verify:vendor && npm run verify:fgui && npm run test:fgui && npm run verify:inventory && npm run test:inventory && npm run test:launcher-matrix && npm run test:npm-reference-matrix && npm run test:aggregate-chain-matrix && npm run test:sync-mirror-matrix && npm run test:toolchain-runtime-matrix && npm run verify:perf && npm run test:client",

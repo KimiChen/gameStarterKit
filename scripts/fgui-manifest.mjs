@@ -18,6 +18,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
+import { roundtripProblems } from "./fgui-roundtrip.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ART = path.join(ROOT, "apps/art/fairygui/assets");
@@ -238,6 +239,64 @@ function validateUiUrl(raw, maps) {
   return undefined;
 }
 
+/**
+ * 把一条 ui:// 引用解析成 `{ packageId, resourceId }`——`validateUiUrl` 只回答「合不合法」，
+ * 往返自检还需要知道**指向谁**，才能去目标包的产物里核对。解析不了就返回 null，交给
+ * `validateUiUrl` 去报错，⛔ 这里不重复报同一个问题。
+ */
+function resolveUiUrl(raw, maps) {
+  const slash = raw.indexOf("/");
+  let info;
+  let resourceKey;
+  if (slash >= 0) {
+    info = packageForKey(raw.slice(0, slash), maps);
+    resourceKey = normalizeResourceName(raw.slice(slash + 1));
+  } else {
+    const candidates = [...maps.byId.keys()]
+      .filter((id) => raw.startsWith(id))
+      .sort((a, b) => b.length - a.length);
+    info = candidates.length ? maps.byId.get(candidates[0]) : undefined;
+    resourceKey = info ? raw.slice(candidates[0].length) : "";
+  }
+  if (!info || !resourceKey) return null;
+  // resourceKey 可能是 id，也可能是名字/别名；产物侧只认 id，所以这里必须落到 id。
+  const resource = (info.resources ?? []).find((item) => resourceAliases(item).has(resourceKey));
+  if (!resource) return null;
+  return { packageId: info.id, resourceId: resource.id };
+}
+
+/**
+ * 源 XML 里全部 ui:// 引用的解析结果，供 `fgui-roundtrip.mjs` 的不变量 B 使用。
+ * 与 `parseUiReferences` 共用同一套 XML 解析与别名规则，⛔ 不要另起一套第二真源。
+ */
+function uiReferenceTargets(infos) {
+  const maps = packageMaps(infos, []);
+  const out = new Map();
+  for (const info of infos) {
+    const references = [];
+    for (const entry of info.source.filter((item) => item.path.endsWith(".xml") && !item.path.endsWith("/package.xml"))) {
+      const source = fs.readFileSync(path.join(ROOT, entry.path), "utf8");
+      for (const raw of extractUiUrls(source)) {
+        const resolved = resolveUiUrl(raw, maps);
+        if (resolved) references.push({ from: entry.path, ...resolved });
+      }
+    }
+    out.set(info.name, references);
+  }
+  return out;
+}
+
+/** 往返自检的输入：源 XML 侧的声明与引用，产物侧由 fgui-roundtrip 自己解析。 */
+function roundtripInputs(infos) {
+  const references = uiReferenceTargets(infos);
+  return infos.map((info) => ({
+    name: info.name,
+    id: info.id,
+    resources: info.resources ?? [],
+    uiReferences: references.get(info.name) ?? [],
+  }));
+}
+
 function parseUiReferences(infos) {
   const errors = [];
   const maps = packageMaps(infos, errors);
@@ -321,6 +380,13 @@ function currentManifest() {
   for (const pkg of packages) {
     const expectedBin = path.join(UI, `${pkg.name}.bin`);
     if (!fs.existsSync(expectedBin)) throw new Error(`${pkg.name}: 缺少导出 ${rel(ROOT, expectedBin)}`);
+  }
+  // 产物往返自检：哈希锁只回答「文件还是我记下的那个吗」，⛔ 它对「导出过程静默丢内容、
+  // 而哈希如实记下这个残缺结果」永远是绿的。所以必须在**重记哈希之前**把残缺产物挡住，
+  // 否则一次 --write 就会把残缺状态钉成新基线。--check 走同一条路径，两侧口径一致。
+  const roundtrip = roundtripProblems(roundtripInputs(packages));
+  if (roundtrip.length) {
+    throw new Error(`FGUI 产物往返自检失败:\n${roundtrip.map((e) => `  - ${e}`).join("\n")}`);
   }
   return {
     version: VERSION,
@@ -538,6 +604,8 @@ if (isMain) {
 
 export {
   assertManifestShape,
+  packageInfos,
+  roundtripInputs,
   checkManifest,
   componentDeclarations,
   compareRecords,
