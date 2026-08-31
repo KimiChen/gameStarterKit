@@ -349,6 +349,34 @@ test("package.xml declarations:注释和 resources 外的伪声明不会进入�
   assert.throws(() => packageDescription("<packageDescription name=\"without-id\"/>"), /缺少 packageDescription.id/);
 });
 
+test("package.xml declarations:**resources 内部**被注释/CDATA 包住的声明同样不算声明", () => {
+  // ⚠ 上一条用例的注释声明写在 `<resources>` **外面**——而两个声明解析器本来就只扫 resources
+  // 内部，所以它即使不剥注释也会通过。实测：把三个声明侧调用点的剥离全部删掉，
+  // test:fgui 仍 64/64 全绿、verify:fgui 仍 ✔，即声明侧的剥离一直无人守。
+  // 这一条把注释与 CDATA 放进 resources 内部，才真正驱动剥离逻辑。
+  const xml = `<!-- <packageDescription id="ghostpkg"/> -->
+    <packageDescription id="pkg00001"/>
+    <resources>
+      <component id="comp0001" name="Panel.xml" exported="true"/>
+      <!-- <component id="comp9999" name="Ghost.xml" exported="true"/> -->
+      <![CDATA[ <image id="img9999" name="ghost.png" exported="true"/> ]]>
+      <image id="img00001" name="panel.png" exported="true"/>
+    </resources>`;
+
+  // 注释里的 packageDescription 在真声明之前，不剥就会被 exec 先命中
+  assert.equal(packageDescription(xml), "pkg00001", "注释里的 packageDescription 不得被采信");
+  assert.deepEqual(
+    componentDeclarations(xml),
+    [{ name: "Panel.xml", exported: true }],
+    "resources 内被注释的组件不得成为声明",
+  );
+  assert.deepEqual(
+    resourceDeclarations(xml).map((resource) => resource.id),
+    ["comp0001", "img00001"],
+    "resources 内被注释/CDATA 包住的资源不得成为声明",
+  );
+});
+
 test("ui:// closure:合法 name/id 别名通过，未知包、资源和缺失 key 均报错", () => {
   const maps = resourceMaps();
 
