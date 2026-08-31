@@ -401,9 +401,14 @@ uncompressed FGUI v7，字段顺序照抄 `fairygui.mjs` 的 `loadPackage`——
    绑定校验抽为导出的 `assertBallMoveRulesBinding`（生成物冻结，边界分支只能直接调用覆盖）。
 2. 死 env `WEBPLATFORM_RETRY_ATTEMPTS` 删除——复核轮的驳回记录被证伪（全仓仅设置无读取）。
 3. FGUI 引用抽取三处先剥 XML 注释，注释里的 `src=`/`ui://`/`pkg=` 不再产生假引用。
-4. `a77a4cd`：emitMatchEvidence 自检③（payload 超预算）与 XADD 传输失败的故障注入覆盖
+> ⚠ 本文引用的 commit hash 以**可从 HEAD 到达**为准。上面两条曾写成 `a77a4cd` / `ae03792`——
+> 那是 rebase 前的 hash，在本地因 reflog 仍能 `git show`，但 `git merge-base --is-ancestor` 判定不可达，
+> 新 clone 的仓库里就是死引用。⛔ 回写 hash 后若发生过 rebase，必须重新核对可达性，
+> 不能只确认「能 show 出来」。
+
+4. `018a2bd`：emitMatchEvidence 自检③（payload 超预算）与 XADD 传输失败的故障注入覆盖
    （自检③在诚实数据下数学不可达，用定点桩 + 上界实测断言锁定；详见 commit 与用例注释）。
-5. `ae03792`：宽限「不覆盖」形状的五条定向反例（新号/pending/legacy×2/配置事故）+ 正对照。
+5. `c493c8c`：宽限「不覆盖」形状的五条定向反例（新号/pending/legacy×2/配置事故）+ 正对照。
 6. plan-v4 文档更正一个 commit：迁移段分项计数（OVERVIEW 2→3、todo-godogen 4→5、
    「已登记 19 处」拆 15+4）、断言口径（4 改写 + 2 新增）、驳回记录证伪更正、
    条目 4「20 处 ballState」→ 实测 13 处（`this.ballState` 精确计数；20 是最初 tsc 错误条数，
