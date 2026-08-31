@@ -151,7 +151,7 @@ enabled = phase == Waiting
 ## 5. Lobby RPC 契约
 
 以下名称是提案，实施时应成为 shared core Lobby RPC 单源并加入 exact runtime validator。若先落地
-`Non-intrusive-wsrpc.md`，由 domain 文件与 codegen 接入；否则必须显式修改现有中央 RPC/error contract。
+[Non-intrusive.md](../Non-intrusive.md) §4.1，由 domain 文件与 codegen 接入；否则必须显式修改现有中央 RPC/error contract。
 
 ### 5.1 `room.prepareCreate`
 

@@ -3,7 +3,7 @@
 > [返回总目录](README.md) · [上一篇：客户端与协议](04-client-and-protocol.md) · [下一篇：测试与实施路线](06-testing-and-roadmap.md)
 
 本章回答两个实现问题：哪些既有真源必须做一次性侵入改造，以及完成这层扩展边界后，Snake 能以哪些新增目录接入。
-通用架构以 [Non-intrusive-room.md](../Non-intrusive-room.md) 为准；这里给出 Snake 的落地视图，不另立一套房间模型。
+通用架构以 [Non-intrusive.md](../Non-intrusive.md) 为准；这里给出 Snake 的落地视图，不另立一套房间模型。
 
 ## 1. 权威边界
 
