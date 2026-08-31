@@ -4,7 +4,7 @@
 > 编写日期：2026-08-31<br>
 > 类型：开发辅助工具，不是业务实现或项目状态真源
 
-本文集中保存 FairyGUI UI 生产流水线使用的 P0～P11 提示词、公共变量、执行头和持续编排模板。权威流程、Gate、文件所有权、当前仓库能力和验收要求见[FairyGUI UI 生产、装配与自动化工作流](../docs/FAIRYGUI.md)。
+本文集中保存 FairyGUI UI 生产流水线使用的 P0～P11 提示词、公共变量、执行头和持续编排模板。权威流程、Gate、文件所有权、当前仓库能力和验收要求见[FairyGUI UI 生产、装配与自动化工作流](../docs/FairyGUI.md)。
 
 使用边界：
 
@@ -998,7 +998,7 @@ gate: pass | fail | blocked
 这条提示词用于让 Codex 持续编排一个批次，但每次只执行到下一个需要人工批准或外部工具的 Gate。它不会取消人工视觉批准、FairyGUI Editor 发布和 Creator/真机验收。
 
 ```text
-为 {{PROJECT_NAME}} 的 {{FEATURE_NAME}} / {{PAGE_ID}} 执行《docs/FAIRYGUI.md》定义的 UI 生产流水线。
+为 {{PROJECT_NAME}} 的 {{FEATURE_NAME}} / {{PAGE_ID}} 执行《docs/FairyGUI.md》定义的 UI 生产流水线。
 
 先阅读：
 - 仓库 AGENTS.md 与 {{REPO_RULES}}
