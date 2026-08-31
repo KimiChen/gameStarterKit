@@ -245,10 +245,15 @@ test("故障注入：真实 worker error/exit 会 reap 并退避补位", async (
           ...process.env,
           COMPUTE_POOL_SIZE: "1",
           COMPUTE_QUEUE_CAPACITY: "4",
-          COMPUTE_TASK_TIMEOUT_MS: "5000",
+          // ⚠ 本子进程**不测超时**，它测的是「崩溃 → 退避 → 替补 → 恢复任务完成」。
+          // 而 recovery 的超时预算必须覆盖「1s 退避 + 替补 worker 冷启动（tsx 进程里编译启动）
+          // + 执行」——原值 5000ms 在负载下不够，replacement 还没起来 recovery 就超时了，
+          // 表现为「compute 任务超时（5000ms）」。⛔ 不要为了跑得快再把它调小：
+          // 这里没有任何断言依赖超时发生，取生产默认量级即可。
+          COMPUTE_TASK_TIMEOUT_MS: "30000",
         },
         encoding: "utf8",
-        timeout: 20_000,
+        timeout: 90_000,
       },
     );
     assert.equal(
