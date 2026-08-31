@@ -177,6 +177,35 @@ export const MODE_PLAYER_FACTORY_REASON = "mode-player-factory";
 export const MODE_PLAYER_REGISTER_REASON = "mode-player-register";
 
 /** 可替换的单调时间源。默认使用 Colyseus room clock。 */
+/**
+ * 「我委托 ballMove 默认规则」这句 mode 自报布尔值与真实 root 的绑定校验。
+ * 导出为独立函数：生成物对象是冻结的，缺 root 的形态无法在运行时模拟，边界分支
+ * 只能以「直接调用本函数」的方式覆盖（缺 root / 错 root / 未声明三形态各有断言）。
+ */
+export function assertBallMoveRulesBinding(
+    modeId: string,
+    usesDefaultBallMoveRules: boolean | undefined,
+    selected: Schema,
+    ballMoveRoot: unknown,
+): void {
+    if (usesDefaultBallMoveRules !== true) return;
+    // manifest 移除 ballMove root 时该键为 undefined——`instanceof undefined` 会抛出
+    // 含混的 "Right-hand side of 'instanceof'"，先显式判空给出可读诊断。
+    if (typeof ballMoveRoot !== "function") {
+        throw new TypeError(
+            `[GameRoom] mode ${modeId} 声明 usesDefaultBallMoveRules，但生成的 `
+            + `ROOM_STATE_ROOT_CONSTRUCTORS 里没有 ${BALL_MOVE_GAME_MODE_ID} 的 root——`
+            + `先在 apps/shared/schema/game-room-state.json 补回并重跑 codegen:state`,
+        );
+    }
+    if (!(selected instanceof (ballMoveRoot as new () => Schema))) {
+        throw new TypeError(
+            `[GameRoom] mode ${modeId} 声明 usesDefaultBallMoveRules 却选出了 `
+            + `${selected.constructor.name} root——ballMove 默认规则只能作用在 ballMove root 上`,
+        );
+    }
+}
+
 export type GameRoomClock = (() => number) | { now?: () => number; currentTime?: number };
 
 /**
@@ -561,13 +590,12 @@ export class GameRoom extends Room {
         // 再也不会结算。⛔ 全程静默，没有一处抛错。
         // 从生成的 mode→root 映射里取，⛔ 不要硬写 GameRoomState：映射是 manifest 的产物，
         // 硬写会让 manifest 改了 ballMove 的 root 之后这道闸悄悄失效。
-        const ballMoveRoot = ROOM_STATE_ROOT_CONSTRUCTORS[BALL_MOVE_GAME_MODE_ID];
-        if (mode.usesDefaultBallMoveRules === true && !(selected instanceof ballMoveRoot)) {
-            throw new TypeError(
-                `[GameRoom] mode ${mode.id} 声明 usesDefaultBallMoveRules 却选出了 `
-                + `${selected.constructor.name} root——ballMove 默认规则只能作用在 ballMove root 上`,
-            );
-        }
+        assertBallMoveRulesBinding(
+            mode.id,
+            mode.usesDefaultBallMoveRules,
+            selected,
+            ROOM_STATE_ROOT_CONSTRUCTORS[BALL_MOVE_GAME_MODE_ID],
+        );
         super.setState(selected as GameRoomState);
         // Pure unit/replay callers do not pass through Room.__init(), so their
         // first assignment creates a configurable data property. Give that path

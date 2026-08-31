@@ -22,14 +22,14 @@ import {
     gameModeRegistry,
     type GameMode,
 } from "../src/rooms/GameMode";
-import { GameRoom, type GameRoomRuntimeOptions } from "../src/rooms/GameRoom";
+import { assertBallMoveRulesBinding, GameRoom, type GameRoomRuntimeOptions } from "../src/rooms/GameRoom";
 import { registerDefaultGameModes } from "../src/rooms/modes/catalog";
 import { createIdleGameMode, registerIdleGameMode } from "../src/rooms/modes/IdleGameMode";
 import {
-    ROOM_STATE_ROOT_CONSTRUCTORS,
-    type GameRoomState,
+    GameRoomState,
     IdlePlayerState,
-    type IdleRoomState,
+    IdleRoomState,
+    ROOM_STATE_ROOT_CONSTRUCTORS,
 } from "../src/rooms/schema/GameRoomState";
 
 type FakeClient = {
@@ -959,6 +959,31 @@ test("usesDefaultBallMoveRules 必须与真实 root 绑定：idle root 上声明
     // 否则上面的 throws 可能只是因为构造 GameRoom 本身坏了。
     assert.doesNotThrow(() => new GameRoom({ seed: 1, mode: createBallMoveGameMode() }));
     assert.doesNotThrow(() => new GameRoom({ seed: 1, mode: createIdleGameMode() as never }));
+});
+
+/**
+ * 生成物 `ROOM_STATE_ROOT_CONSTRUCTORS` 是冻结对象，「manifest 移除 ballMove root」无法在运行时
+ * 模拟；边界分支通过直接调用 `assertBallMoveRulesBinding` 覆盖：缺 root（可读诊断而非含混
+ * TypeError）、错 root、未声明三形态。
+ */
+test("assertBallMoveRulesBinding 的三形态边界直接覆盖", () => {
+    const idle = new IdleRoomState();
+    const ball = new GameRoomState();
+    // 缺 root：可读诊断，点名补 manifest 的路径。
+    assert.throws(
+        () => assertBallMoveRulesBinding("idle", true, idle, undefined),
+        /ROOM_STATE_ROOT_CONSTRUCTORS 里没有/,
+    );
+    // 错 root：沿用既有归属报错。
+    assert.throws(
+        () => assertBallMoveRulesBinding("idle", true, idle, GameRoomState),
+        /却选出了 IdleRoomState root/,
+    );
+    // 未声明旗标：缺 root 也不抛。
+    assert.doesNotThrow(() => assertBallMoveRulesBinding("idle", false, idle, undefined));
+    assert.doesNotThrow(() => assertBallMoveRulesBinding("idle", undefined, idle, undefined));
+    // 合法形态不误伤。
+    assert.doesNotThrow(() => assertBallMoveRulesBinding("ballMove", true, ball, GameRoomState));
 });
 
 /**
