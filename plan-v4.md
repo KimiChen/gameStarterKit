@@ -65,6 +65,7 @@ plan-v3 §30 登记过一条教训：`plan-v2 → plan-v3` 的迁移**批准存�
 | 条目 5 | `tools/excel-to-json.mjs` 的 `--check` 不是往返自检 | writer 与 checker 共用同一个内存 `data`，`buildItems()` 里的静默丢行对两侧同时生效；低成本补法是在 `run()` 里对行数/键集做独立断言 |
 | 条目 1 | 存量 `match_results` 行的精确回填 | 只有 v3 能精确回填；一条恰好 8 键的 legacy 行与真 v2 行逐字节相同，⛔ 无法区分，故一律留在 `schema_version = 0` |
 | Non-intrusive 阶段 6 | Home「玩法入口列表 GList」视觉升级 | FGUI 编辑器不可用：XML/导出物/图集一律未动，Home 视觉仍是单 `btn_enter`（渲染 contribution[0]，多入口 console.warn）；数据驱动的**机制**（generated menu contributions + LaunchPort.launch + disabled/failed 叠加拒绝）已落地并有无头测试，入口列表视觉需要设计师在编辑器出图后接入 |
+| Non-intrusive 阶段 5b | failed 入口的「可手动重试」UX | 逻辑闸已接通（`47dc934`：启动通道经 FeatureHost，点击 = userIntent）；failed 入口当前渲染为不可点击占位（§7.4 既定），重试交互随 GList 视觉一并出图 |
 | Non-intrusive 阶段 6 | Creator 侧人工证据：动态加载/取消回滚/输入租约/跨包资源 | 机制由既有 viewLifecycle 无头测试覆盖（catalog 生成化后行为断言零改动继续绿）；真实引擎与资源验证仍需 Creator 本地预览，属于尚未补的人工证据 |
 | Non-intrusive 阶段 8b | `PrivateRoomLobby` FGUI 包与模板 View | 客户端 transport（matchmaking strategy + PrivateRoomService）已随 `05591e2` 落地；页面视觉需要设计师在 FGUI 编辑器出图后按阶段 6 动线接入，属编辑器待办（汇总见文末「Non-intrusive 阶段 0–9 实施证据」） |
 
@@ -548,3 +549,45 @@ fixture module 不修改 Main/RoomClient/pages/Home/catalog 的字节断言）�
 FGUI 66/66、inventory 全绿、typecheck 全阶段 0 错）；`test:int` 168/168（本地真 Redis/MySQL 实跑）；
 `test:faults:int` 四组（server-boundaries / client-transitions / storage-effects / character-ready）
 全部 status 0。本批只含规则文件/测试/文档，行为代码零改动。
+
+---
+
+## 第二十三轮复核：11 修复批 + Non-intrusive 全批（2026-09-01）
+
+**复核范围**：同事的两大批 commit——修复批 `b6790a5..c102ba4`（flaky 根因、死代码/no-op 清理、
+文档更正）与 Non-intrusive 实现批 `37ed8b2..947296e`（阶段 1–9 + 治理收尾，共 13 个 commit）。
+方法：三路对抗式独立核查 + 全量基线独立重跑 + 关键变异亲手重做。
+
+**判定：两批全部成立。** 修复批的核心实证均复现：`6f8186a` 的 execArgv 放大器（注入 worker
+继承 tsx loader ~128ms vs `execArgv: []` ~15ms，5–8 倍，是三轮 flaky 的共同根因，此前
+250→1200→2500 的预算抬高全是治症状）；`c102ba4` 证实的 `?? 1000` 死代码；`52eed18` 证实的
+c16d78f no-op（第三次 runInPool 同步抛 ComputeOverloadedError，预算无意义）。Non-intrusive 批
+逐阶段交付与声称一致，主链路行为等价；变异验证亲手重做六处全部按预期转红（requireMode 去
+fail-fast、Lua 去 hash 比对、phase 闸删除、手改生成物、protected-paths 单侧删、
+SessionCoordinator 顺序对调）。
+
+**本轮修掉的**（各自独立 commit，均带变异实测）：
+
+| 问题 | commit | 变异验证 |
+|---|---|---|
+| 邀请码六位形状无纯单测：GameRoom 层全注入 codeFactory 假件、int 只走真 Redis，删 `padStart` 在 verify:all 下全绿存活 | `b14dbd4` | 删 padStart → 恰好新用例红（得到 5 位码） |
+| catch-all owner 闸无定向用例：单删 0 红（被 validate/phase/commands 掩蔽；构造期 `assertGameModeCommands` 又挡住静态构造——用例改为建房后运行期篡改 commands 的最坏情形） | `142a4dd` | 删 owner 检查块 → 恰好新用例红（4/5） |
+| FeatureHost 状态机与生产启动通道断线：`AppRuntime.launch` 直走 launchGameplay，failed/disabled 在启动时刻无判定，userIntent 重试无生产调用方 | `47dc934` | launch 退化直通 → 两条新用例恰好全红（5/7） |
+| `attachSessionNavigator` 先注册 reconciler 再注册 returnToLogin，第二步 fail-fast 时第一步泄漏（单槽被占 → 后续注册全部 wedge） | `881bd16` | 去 try/catch 回滚 → 恰好新用例红（6/7） |
+| `0c42338` 取值注释按「重试 2 次 ⇒ 2×」估算，与 REQUEST_TIMEOUT 跨 attempt 总预算语义矛盾（~0.24s→~2s 实为 ~0.12s→~1s） | `7d0e7f7` | 注释更正，取值不变；整文件实测 ~1.6s 与 1× 语义一致 |
+| `547cf76` 写入的「差出两个量级」与括号内数字矛盾（174/1142/1913ms 最大约 11× = 一个数量级） | `1b55140` | 表述更正，结论不变 |
+| 上述两个客户端修复漏跑 `sync:client`，verify:sync 报 2 处漂移 | `7c2d54a` | sync:client 产出（写入 2，清理 0） |
+
+**登记边界**（不属缺陷，记录备查）：
+
+- failed 入口在 Home 渲染为不可点击占位（§7.4 既定）；「可手动重试」UX 入口属编辑器待办
+  （随 GList 视觉出图），`47dc934` 接通的是启动通道逻辑闸。
+- `enterBattle()` 回退通道（无入口数据时）不过 feature 闸：当前默认玩法属 built-in 常驻
+  （恒 active），无实际差异；未来默认玩法若变为托管 feature 需重新评估。
+- 幂等 per-uid 计数器按窗口虚高（窗口内多次失败也计数）、operation inspect 暂无生产消费者
+  （受控诊断面）、GameRoom.ts 已 2078 行（god-object 风险，拆分属另立计划）、v8 信封硬断
+  要求双端同批部署（协议层既定）。
+
+**实测（写入时）**：`verify:all` exit 0（服务端单测 436/436、客户端 354/354、FGUI 66/66、
+inventory 全绿、typecheck 全阶段 0 错、verify:sync 镜像一致）；`test:int` 168/168
+（本地真 Redis/MySQL 实跑）。
