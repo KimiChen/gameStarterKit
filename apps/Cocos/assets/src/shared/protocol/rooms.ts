@@ -23,13 +23,24 @@ export const GameplayModeId = {
 export type GameplayModeIdType = (typeof GameplayModeId)[keyof typeof GameplayModeId];
 
 /**
- * 双端协议版本。房间 onAuth 以此挡「服务端已升协议、旧包还在跑」的旧客户端
- * （灰度/热更混跑期的部署自检）；HTTP /version 也回带它供启动期探测。
- * Schema 字段增删、消息名/语义变更时 +1，双端随 sync:shared 同步。
+ * 双端协议身份（Non-intrusive §4.8：两个人工判定的兼容整数）。房间 onAuth 以此挡
+ * 「服务端已升协议、旧包还在跑」的旧客户端（灰度/热更混跑期的部署自检）；
+ * HTTP /version 与 /healthz 同时报告两类身份供启动期探测。
+ * Schema 字段增删、消息名/语义变更时对应整数 +1，双端随 sync:shared 同步。
  *
- * 版本流水（新版本在上）：
- *   7 = GameRoom state manifest 改为按 mode 选择 root Schema，并新增 idle 专用 `c2s.idle.pulse`；v6 客户端
- *       只理解单一 GameRoomState，不能参与异构 state patch 或 idle 结算，因此显式切断混跑。
+ * 分工（口径以 docs/Non-intrusive.md §4.8 为准）：
+ *  - `GAME_ROOM_PROTOCOL_VERSION` = framework protocol version：管 join 信封与 core wire 兼容，
+ *    GameRoom join 只比较它；per-mode 契约兼容由各玩法 manifest 的 `modeVersion` 承担。
+ *  - `LOBBY_PROTOCOL_VERSION`：管 Lobby RPC 面（envelope/push/域路由）兼容，Lobby join 只比较它。
+ *  - 仓库级 protocol fingerprint（scripts/protocol.fingerprint）只做字节审计锁，⛔ 不参与运行时
+ *    join 判定。
+ * wire 字段名仍是 `v`：两类房间各自携带并各自比较自己的整数。
+ *
+ * 版本流水（新版本在上；7 之前两整数同源于单一 PROTOCOL_VERSION）：
+ *   7 = 身份拆分：`PROTOCOL_VERSION` 拆为 `GAME_ROOM_PROTOCOL_VERSION` 与 `LOBBY_PROTOCOL_VERSION`，
+ *       两值起点都取 7——wire 字段 `v` 名与取值不变，旧客户端零破坏（拆分不是 bump）。
+ *       同版：GameRoom state manifest 改为按 mode 选择 root Schema，并新增 idle 专用 `c2s.idle.pulse`；
+ *       v6 客户端只理解单一 GameRoomState，不能参与异构 state patch 或 idle 结算，因此显式切断混跑。
  *   6 = `setField` 文本长度从 UTF-16 码元统一为 UTF-8 字节，并拒绝不成对代理项；v5 客户端按旧口径
  *       可能接受服务端现已拒绝的输入，因此在首次承担线上兼容义务前显式切断混跑。
  *   5 = join options 增加受校验的玩法 mode；同一 GameRoom 按 mode 隔离撮合并选择注册的 GameMode。
@@ -40,11 +51,15 @@ export type GameplayModeIdType = (typeof GameplayModeId)[keyof typeof GameplayMo
  *       被 `ProtocolMismatch` 明确拒掉（见 GameRoom.onAuth 注释）。
  *   1 = 首版。
  */
-export const PROTOCOL_VERSION = 7;
+export const GAME_ROOM_PROTOCOL_VERSION = 7;
+export const LOBBY_PROTOCOL_VERSION = 7;
 
 /** 两类房间共享的 join options 字段。 */
 export interface IRoomJoinOptions {
-    /** 协议版本（PROTOCOL_VERSION）。缺省视为 1（首版客户端未带 v）。 */
+    /**
+     * 协议版本：Game join 携带 GAME_ROOM_PROTOCOL_VERSION，Lobby join 携带
+     * LOBBY_PROTOCOL_VERSION；服务端各自只比较自己的整数。缺省视为 1（首版客户端未带 v）。
+     */
     v?: number;
     /** WebPlatform Public API 签发的不透明 access token；缺失或伪造一律拒绝。 */
     token?: string;

@@ -20,7 +20,7 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
 import {
-  ErrorCode, GameplayModeId, LOBBY_MSG_RPC, PROTOCOL_VERSION, RoomName, UserRpc,
+  ErrorCode, GAME_ROOM_PROTOCOL_VERSION, GameplayModeId, LOBBY_MSG_RPC, LOBBY_PROTOCOL_VERSION, RoomName, UserRpc,
   type IRoomJoinOptions,
 } from "@game/shared";
 import { server } from "../../src/app.config";
@@ -56,7 +56,7 @@ async function makeAcct(name: string, sId = 0): Promise<{ uid: string; token: st
 /** 经 SDK 入大厅房；sId 给定则透传（区服形态），缺省不带（单形态/大混服，等价修复前老客户端）。 */
 async function joinLobby(token: string, sId?: number) {
   colyseus.sdk.auth.token = token;
-  const opts: Record<string, unknown> = { v: PROTOCOL_VERSION };
+  const opts: Record<string, unknown> = { v: LOBBY_PROTOCOL_VERSION };
   if (sId !== undefined) { opts.sId = sId; }
   return colyseus.sdk.joinOrCreate(RoomName.Lobby, opts);
 }
@@ -124,7 +124,7 @@ after(async () => {
 test("LobbyRoom sId 先做运行时规范化：承载全部区时畸形值仍拒绝，合法整数正常鉴权", async () => {
   assert.deepEqual(GROUP_ZONES, [], "本用例必须覆盖 GROUP_ZONES 空（承载全部区）的易漏校验形态");
   for (const raw of [-1, 65536, 1.5, Number.NaN, Number.POSITIVE_INFINITY, "1", null]) {
-    const options = { v: PROTOCOL_VERSION, sId: raw } as unknown as IRoomJoinOptions;
+    const options = { v: LOBBY_PROTOCOL_VERSION, sId: raw } as unknown as IRoomJoinOptions;
     await assert.rejects(
       LobbyRoom.onAuth("", options, undefined as never),
       (e: unknown) => e instanceof Error && e.message.includes(String(ErrorCode.WrongServer)),
@@ -134,9 +134,9 @@ test("LobbyRoom sId 先做运行时规范化：承载全部区时畸形值仍拒
 
   // 房间入口必须使用 shared exact-key/runtime contract，而不是只挑几个字段读取。
   const malformed: readonly [unknown, number][] = [
-    [{ v: PROTOCOL_VERSION, extra: true }, ErrorCode.BadRequest],
-    [{ v: PROTOCOL_VERSION, unexpected: true }, ErrorCode.BadRequest],
-    [{ v: PROTOCOL_VERSION, token: "" }, ErrorCode.TokenExpired],
+    [{ v: LOBBY_PROTOCOL_VERSION, extra: true }, ErrorCode.BadRequest],
+    [{ v: LOBBY_PROTOCOL_VERSION, unexpected: true }, ErrorCode.BadRequest],
+    [{ v: LOBBY_PROTOCOL_VERSION, token: "" }, ErrorCode.TokenExpired],
   ];
   for (const [options, code] of malformed) {
     await assert.rejects(
@@ -148,7 +148,7 @@ test("LobbyRoom sId 先做运行时规范化：承载全部区时畸形值仍拒
 
   const { uid, token } = await makeAcct("lobby-sid-valid", 1);
   const auth = await LobbyRoom.onAuth(
-    token, { v: PROTOCOL_VERSION, sId: 1 }, undefined as never,
+    token, { v: LOBBY_PROTOCOL_VERSION, sId: 1 }, undefined as never,
   );
   assert.deepEqual(auth, { userId: uid, token, sId: 1 }, "合法整数须按原值完成权威鉴权");
 });
@@ -249,7 +249,7 @@ test("GameRoom 撮合按区和 mode 隔离：同区同玩法才合流", async ()
   const e = await makeAcct("gz-e-idle", 1);
   const join = async (token: string, sId: number, mode: string) => {
     colyseus.sdk.auth.token = token;
-    return colyseus.sdk.joinOrCreate(RoomName.Game, { v: PROTOCOL_VERSION, sId, mode });
+    return colyseus.sdk.joinOrCreate(RoomName.Game, { v: GAME_ROOM_PROTOCOL_VERSION, sId, mode });
   };
   const joined: Awaited<ReturnType<typeof join>>[] = [];
   try {

@@ -299,15 +299,20 @@ export const isWebSocketOrigin = (value: unknown): value is string => {
 export interface IHealthRes {
     status: "ok";
     serverTime: number;
+    /** 协议身份摘要：`g<GAME_ROOM_PROTOCOL_VERSION> l<LOBBY_PROTOCOL_VERSION>`（§4.8 两类身份同时报告）。 */
     version: string;
 }
 
 // ---------------- GET /version ----------------
 
-/** 部署自检：服务名 + 双端协议版本（PROTOCOL_VERSION，见 protocol/rooms.ts）。 */
+/**
+ * 部署自检：服务名 + 两类协议身份（GAME_ROOM_PROTOCOL_VERSION / LOBBY_PROTOCOL_VERSION，
+ * 见 protocol/rooms.ts；§4.8 拆分后 /version 同时报告两类身份，旧单一 `protocol` 字段已删除）。
+ */
 export interface IVersionRes {
     name: string;
-    protocol: number;
+    gameRoomProtocol: number;
+    lobbyProtocol: number;
 }
 
 // ---------------- GET /clock/now ----------------
@@ -388,10 +393,11 @@ function validateHealthResponse(input: unknown): IHealthRes {
 
 function validateVersionResponse(input: unknown): IVersionRes {
     const value = objectAt(input, "response");
-    assertExactKeys(value, ["name", "protocol"], [], "response");
+    assertExactKeys(value, ["name", "gameRoomProtocol", "lobbyProtocol"], [], "response");
     return {
         name: boundedString(value.name, "response.name", 1, 64),
-        protocol: finiteInteger(value.protocol, "response.protocol", 1, 0xffff),
+        gameRoomProtocol: finiteInteger(value.gameRoomProtocol, "response.gameRoomProtocol", 1, 0xffff),
+        lobbyProtocol: finiteInteger(value.lobbyProtocol, "response.lobbyProtocol", 1, 0xffff),
     };
 }
 

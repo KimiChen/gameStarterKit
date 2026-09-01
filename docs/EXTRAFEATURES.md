@@ -27,6 +27,17 @@ gameStarterKit 的核心定位是**开发期游戏基础框架**：客户端、�
 | 参考代码 | 有局部实现或契约，但缺少完整调用链 |
 | 未实现 | 只属于额外功能类别，仓库当前没有可用实现 |
 
+### 2.1 生成能力索引入口
+
+以 feature 单源目录（`features/<dir>/feature.json`）登记的能力有一份机器生成的索引：
+[docs/features.generated.md](features.generated.md)，由
+`npm --workspace @game/server run codegen:features` 生成（生成物禁手改），只记录
+`planned` / `registered` / `source-present` 三种可机检的结构状态。普通 feature 的 extra
+capability fragment 由 `npm run verify:inventory` 按 fail-closed 规则合并进能力检查集：
+fragment 只能声明 `extra`、必须把本文件登记为权威边界、⛔ 不得触碰中央 `docs/inventory.json`
+的 `defaultModules` / `defaultScene` / `routeOfTruth` / `workspaceCommandScope`。本文件继续保留
+额外能力的政策与边界；晋升 core、改变默认入口或修改项目边界仍需显式修改中央 inventory 与当前计划。
+
 ## 3. 当前仓库中的额外内容
 
 ### 3.1 项目说明站（本地 checkout 保留）

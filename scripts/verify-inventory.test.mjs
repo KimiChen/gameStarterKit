@@ -1674,3 +1674,129 @@ test("inventory verifier rejects a bare dash as the node entry position (stdin s
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+// ── 阶段 7：feature capability fragment 合并（Non-intrusive §5.7） ────────────
+
+/** 在 fixture 根写一个最小 extra feature（仅 capability fragment；无 View/路由/菜单）。 */
+function writeFragmentFeature(root, manifestOverrides = {}, fragmentOverrides = {}) {
+  const dir = join(root, "features", "fixture-extra");
+  mkdirSync(dir, { recursive: true });
+  const fragment = {
+    id: "fixture-extra-cap",
+    category: "extra",
+    defaultEntry: "apps/server/src/core/economy/outbox.ts",
+    sourceOfTruth: "apps/server/src/core/economy",
+    wireBoundary: "apps/server/src/core/economy/outbox.ts",
+    verification: [{ kind: "root", script: "verify:core" }],
+    docs: ["docs/EXTRAFEATURES.md"],
+    ...fragmentOverrides,
+  };
+  const manifest = {
+    schemaVersion: 1,
+    id: "fixtureExtra",
+    category: "extra",
+    docs: ["docs/EXTRAFEATURES.md"],
+    capabilities: [fragment],
+    viewDirs: [],
+    views: [],
+    owners: [],
+    routes: [],
+    menu: [],
+    ...manifestOverrides,
+  };
+  writeFileSync(join(dir, "feature.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+}
+
+test("feature fragment：合法 extra fragment 绿，且不修改中央 inventory.json（阶段 7 退出条件）", () => {
+  const root = createFixture();
+  try {
+    const centralBefore = readFileSync(join(root, "docs", "inventory.json"), "utf8");
+    writeFragmentFeature(root);
+    const result = runVerifier(root);
+    assert.equal(result.status, 0, outputOf(result));
+    assert.equal(
+      readFileSync(join(root, "docs", "inventory.json"), "utf8"),
+      centralBefore,
+      "普通 extra feature 经 fragment 通道登记，⛔ 不得要求（也不得发生）中央 inventory 改写",
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("feature fragment：声明 core 必须拒绝（core 身份不经 fragment 通道）", () => {
+  const root = createFixture();
+  try {
+    writeFragmentFeature(root, {}, { category: "core", docs: ["docs/SERVER.md"] });
+    assertRejected(root, /capabilities\[0\] 只能声明 extra/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("feature fragment：extra fragment 缺 docs/EXTRAFEATURES.md 必须拒绝（沿用双向断言）", () => {
+  const root = createFixture();
+  try {
+    writeFragmentFeature(root, {}, { docs: ["docs/SERVER.md"] });
+    assertRejected(root, /额外能力 fixture-extra-cap 必须引用 docs\/EXTRAFEATURES\.md/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("feature fragment：feature.json 出现中央 inventory 专属键（routeOfTruth 等）必须拒绝", () => {
+  const root = createFixture();
+  try {
+    writeFragmentFeature(root, { routeOfTruth: { corePlan: "plan-v4.md" } });
+    assertRejected(root, /不得声明中央 inventory 专属键.*routeOfTruth/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("feature fragment：fragment 未知键未通过真实 JSON Schema 校验（additionalProperties:false）", () => {
+  const root = createFixture();
+  try {
+    writeFragmentFeature(root, {}, { bogus: true });
+    assertRejected(root, /未通过 feature-schema-v1 校验.*unknown key\(s\): bogus/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("feature fragment：verification 登记存在但不发现 fragment 的命令 → 假绿拒绝（须覆盖 verify:inventory）", () => {
+  const root = createFixture();
+  try {
+    writeFragmentFeature(root, {}, { verification: [{ kind: "root", script: "verify:ecs" }] });
+    assertRejected(root, /feature fragment 能力 fixture-extra-cap 的 verification 未包含能实际发现 fragment 的聚合命令/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("feature fragment：与中央能力重复 id / defaultEntry 不存在，均并入既有 fail-closed 检查", () => {
+  const root = createFixture();
+  try {
+    writeFragmentFeature(root, {}, { id: "outbox-relayer" });
+    assertRejected(root, /能力 id 重复：outbox-relayer/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+  const root2 = createFixture();
+  try {
+    writeFragmentFeature(root2, {}, { defaultEntry: "apps/server/src/core/economy/ghost.ts" });
+    assertRejected(root2, /能力 fixture-extra-cap 路径不存在：apps\/server\/src\/core\/economy\/ghost\.ts/);
+  } finally {
+    rmSync(root2, { recursive: true, force: true });
+  }
+});
+
+test("feature fragment：features/ 目录缺失即 fail closed（发现面不可静默为空）", () => {
+  const root = createFixture();
+  try {
+    rmSync(join(root, "features"), { recursive: true, force: true });
+    assertRejected(root, /features\/ 目录不存在/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

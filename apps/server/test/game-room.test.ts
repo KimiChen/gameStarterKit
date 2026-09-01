@@ -7,7 +7,7 @@ import {
     GamePhase,
     MAP_WIDTH,
     PLAYER_MOVE_SPEED,
-    PROTOCOL_VERSION,
+    GAME_ROOM_PROTOCOL_VERSION,
     PLAYER_INIT_HP,
     S2C,
     TICK_MS,
@@ -63,7 +63,7 @@ function fakeClient(sessionId: string, userId = sessionId, sId = 0): FakeClient 
 }
 
 function options(): IGameRoomJoinOptions {
-    return { v: PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID };
+    return { v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID };
 }
 
 function installLock(room: GameRoom, lock: () => Promise<void> = async () => undefined): void {
@@ -133,7 +133,7 @@ function simulationSnapshot(room: GameRoom): unknown {
 }
 
 test("GameRoom auth 只信标准 token，options.token 只能逐字匹配", async () => {
-    const base = { v: PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID };
+    const base = { v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID };
     await assert.rejects(
         GameRoom.onAuth("", { ...base, token: "options-only" }, undefined as never),
         (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.TokenExpired)),

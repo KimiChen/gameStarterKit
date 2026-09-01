@@ -14,7 +14,7 @@ import {
     C2S,
     GamePhase,
     GameplayModeId,
-    PROTOCOL_VERSION,
+    GAME_ROOM_PROTOCOL_VERSION,
     RoomName,
     validateGameRoomJoinOptions,
     type IGameRoomJoinOptions,
@@ -93,7 +93,7 @@ class MultiModeWireRoom extends GameRoom {
 }
 
 function wireOptions(mode: string, token: string): IGameRoomJoinOptions {
-    return { v: PROTOCOL_VERSION, token, sId: 0, mode };
+    return { v: GAME_ROOM_PROTOCOL_VERSION, token, sId: 0, mode };
 }
 
 function sdkClient(endpoint: string, token: string): SDKClient {

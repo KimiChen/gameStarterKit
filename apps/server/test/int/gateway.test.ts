@@ -9,7 +9,7 @@ import "./env-setup"; // ⚠ 必须第一个 import（限流放宽）
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
-import { ErrorCode as SharedErrorCode, KICK_CLOSE_CODE, LOBBY_MSG_PUSH, LOBBY_MSG_RPC, PROTOCOL_VERSION, RoomName } from "@game/shared";
+import { ErrorCode as SharedErrorCode, KICK_CLOSE_CODE, LOBBY_MSG_PUSH, LOBBY_MSG_RPC, LOBBY_PROTOCOL_VERSION, RoomName } from "@game/shared";
 import { server } from "../../src/app.config";
 
 import { setKickHandler } from "../../src/core/auth/kickBus";
@@ -39,7 +39,7 @@ async function makeUser(name: string): Promise<{ uid: string; token: string }> {
 /** 经 SDK 入大厅房（v = 协议版本，onAuth 硬闸）。 */
 async function joinLobby(token: string) {
   colyseus.sdk.auth.token = token;
-  return colyseus.sdk.joinOrCreate(RoomName.Lobby, { v: PROTOCOL_VERSION });
+  return colyseus.sdk.joinOrCreate(RoomName.Lobby, { v: LOBBY_PROTOCOL_VERSION });
 }
 
 /** RPC 往返：按信封 id 配对回包。 */
@@ -303,14 +303,14 @@ test("协议版本闸门：v 不匹配在 onAuth 即拒（ProtocolMismatch）；
     colyseus.sdk.joinOrCreate(RoomName.Lobby, { v: 999 }),
     (e: Error) => e.message.includes(String(SharedErrorCode.ProtocolMismatch)),
     `旧协议客户端应被拒且带业务码 ${SharedErrorCode.ProtocolMismatch}`);
-  // ⚠ **M12e 起 PROTOCOL_VERSION=2**：不带 v 的首版客户端按 1 处理 ⇒ 现在**必须被拒**。
+  // ⚠ **M12e 起协议版本≥2（今为 LOBBY_PROTOCOL_VERSION）**：不带 v 的首版客户端按 1 处理 ⇒ 现在**必须被拒**。
   //   这正是 bump 的目的——老包不带 sId 登录会拿到 s0 的 token，进别的区时只会得到一句
   //   莫名其妙的「登录已过期」；在 join 处明确拒掉才是对的。⛔ 别把这条改回"放行"。
   await assert.rejects(
     colyseus.sdk.joinOrCreate(RoomName.Lobby, {}),
     (e: Error) => e.message.includes(String(SharedErrorCode.ProtocolMismatch)),
     "不带 v（首版客户端）在 v2 起必须被拒");
-  const ok = await colyseus.sdk.joinOrCreate(RoomName.Lobby, { v: PROTOCOL_VERSION });
+  const ok = await colyseus.sdk.joinOrCreate(RoomName.Lobby, { v: LOBBY_PROTOCOL_VERSION });
   assert.ok(ok.sessionId, "当前版本放行");
   await ok.leave();
 });

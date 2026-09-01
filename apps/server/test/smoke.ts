@@ -18,7 +18,8 @@ import {
     C2S,
     ForceLogoutReason,
     GameplayModeId,
-    PROTOCOL_VERSION,
+    GAME_ROOM_PROTOCOL_VERSION,
+    LOBBY_PROTOCOL_VERSION,
     RoomName,
     S2C,
     WebPlatformPath,
@@ -158,7 +159,7 @@ async function main(): Promise<void> {
     let forgedRejected = false;
     try {
         await client.joinOrCreate(RoomName.Game, {
-            v: PROTOCOL_VERSION,
+            v: GAME_ROOM_PROTOCOL_VERSION,
             token: "forged-opaque-token",
             sId: serverId,
             mode: GameplayModeId.BallMove,
@@ -172,7 +173,7 @@ async function main(): Promise<void> {
     // 因此真实客户端也会在大厅 join 前写入 Client.auth.token。
     client.auth.token = login.accessToken;
     const lobby = await client.joinOrCreate(RoomName.Lobby, {
-        v: PROTOCOL_VERSION,
+        v: LOBBY_PROTOCOL_VERSION,
         sId: serverId,
     });
     check("strict join Lobby", lobby.sessionId.length > 0);
@@ -183,7 +184,7 @@ async function main(): Promise<void> {
     });
 
     const room = await client.joinOrCreate(RoomName.Game, {
-        v: PROTOCOL_VERSION,
+        v: GAME_ROOM_PROTOCOL_VERSION,
         token: login.accessToken,
         sId: serverId,
         mode: GameplayModeId.BallMove,
@@ -262,7 +263,7 @@ async function main(): Promise<void> {
     let oldTokenRejected = false;
     try {
         await client.joinOrCreate(RoomName.Game, {
-            v: PROTOCOL_VERSION,
+            v: GAME_ROOM_PROTOCOL_VERSION,
             token: login.accessToken,
             sId: serverId,
             mode: GameplayModeId.BallMove,
@@ -284,7 +285,7 @@ async function main(): Promise<void> {
     let revokedTokenRejected = false;
     try {
         await client.joinOrCreate(RoomName.Game, {
-            v: PROTOCOL_VERSION,
+            v: GAME_ROOM_PROTOCOL_VERSION,
             token: revokeLogin.accessToken,
             sId: serverId,
             mode: GameplayModeId.BallMove,

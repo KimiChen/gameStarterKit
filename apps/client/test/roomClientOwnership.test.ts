@@ -14,7 +14,7 @@ import {
   GamePhase,
   GameplayModeId,
   RoomName,
-  PROTOCOL_VERSION,
+  GAME_ROOM_PROTOCOL_VERSION,
   S2C,
   type IGameRoomState,
   type IPlayerState,
@@ -202,7 +202,7 @@ test("合流同一在途 join：旧 owner 释放不关闭后来者共享的 room
   assert.deepEqual(joinCalls[0], {
     endpoint: "http://game.example",
     roomName: RoomName.Game,
-    options: { v: PROTOCOL_VERSION, token: "same-session", sId: 7, mode: GameplayModeId.BallMove },
+    options: { v: GAME_ROOM_PROTOCOL_VERSION, token: "same-session", sId: 7, mode: GameplayModeId.BallMove },
   });
   assert.equal(
     (client as unknown as { client: FakeColyseusClient }).client.auth.token,

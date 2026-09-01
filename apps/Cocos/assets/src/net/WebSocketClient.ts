@@ -27,7 +27,7 @@ import {
     LOBBY_MSG_PUSH,
     LOBBY_MSG_RPC,
     LobbyPush,
-    PROTOCOL_VERSION,
+    LOBBY_PROTOCOL_VERSION,
     RoomName,
     type ForceLogoutReasonType,
     type ILobbyRoomJoinOptions,
@@ -491,7 +491,7 @@ export class WebSocketClient {
         // Matchmaking options cross the websocket boundary verbatim. Validate a
         // cloned copy so callers cannot mutate the identity after join starts.
         const joinOptions = validateLobbyRoomJoinOptions(
-            cloneJson({ ...split.options, v: PROTOCOL_VERSION }),
+            cloneJson({ ...split.options, v: LOBBY_PROTOCOL_VERSION }),
         ) as ILobbyRoomJoinOptions;
         const endpoint = this.endpoint;
         const client = this.client;

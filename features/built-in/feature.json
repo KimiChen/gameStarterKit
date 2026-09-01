@@ -1,6 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "builtin",
+  "category": "core",
+  "docs": ["docs/CLIENT.md"],
   "resident": true,
   "viewDirs": ["apps/client/src/view"],
   "views": [

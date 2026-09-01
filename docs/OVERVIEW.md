@@ -128,10 +128,13 @@ participants；热档/冷档 schema 迁移、asset effect 原子性与经济操�
 ```text
 1. 在 apps/shared/src 定义协议、错误码或公式
 2. npm run sync:shared
-3. 若改动落在 apps/shared/src/protocol/**，运行 node scripts/protocol-fingerprint.mjs 重钉协议指纹，
-   并确认是否需要 bump PROTOCOL_VERSION（不重钉则 npm run test:client 中的 protocolFingerprint 测试失败）。
-   指纹脚本只接受 `rooms.ts` 中唯一的顶层 export 声明，并会忽略注释，避免文档示例中的旧版本
-   误导版本闸。
+3. 若改动落在 apps/shared/src/protocol/**，运行 node scripts/protocol-fingerprint.mjs --write 重钉
+   协议指纹（--check 只读比对，CI/审计用，⛔ 无隐式重钉；不重钉则 npm run test:client 中的
+   protocolFingerprint 测试失败），并确认是否需要人工 bump 对应的协议身份整数——
+   GAME_ROOM_PROTOCOL_VERSION 管 join 信封与 core wire 兼容（Game join 只比较它）、
+   LOBBY_PROTOCOL_VERSION 管 Lobby RPC 面（Lobby join 只比较它）；指纹只做字节审计锁，
+   ⛔ 不参与运行时 join 判定。指纹脚本对每个常量都只接受 `rooms.ts` 中唯一的顶层 export
+   声明，并会忽略注释，避免文档示例中的旧版本误导版本闸。
 4. 若改动落在 apps/shared/schema/gameplays/<id>/（manifest.json / state.json）或玩法手写的
    apps/shared/src/gameplays/<id>/wire.ts，运行
    npm --workspace @game/server run codegen:gameplays 重新生成 apps/shared/src/gameplays/

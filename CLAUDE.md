@@ -135,8 +135,11 @@ npm --workspace @game/server run test:int
 
 ```text
 shared 契约
+  → npm --workspace @game/server run codegen:features / codegen:gameplays（改 Lobby RPC 域 descriptor
+    / feature 登记 / 玩法 manifest 时；生成物含 docs/features.generated.md 能力索引）
   → npm run sync:shared
-  → node scripts/protocol-fingerprint.mjs（仅改动 protocol/ 时）
+  → node scripts/protocol-fingerprint.mjs --write（仅改动 protocol/ 时显式重钉；--check 只读比对，
+    CI/审计用，⛔ 无隐式重钉形态）
   → 服务端 websocket/http endpoint
   → 客户端 Logic + View + viewRegistry
   → npm run sync:client

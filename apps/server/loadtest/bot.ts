@@ -7,11 +7,11 @@
  */
 import { cli, type Options } from "@colyseus/loadtest";
 import { Client } from "@colyseus/sdk";
-import { C2S, PROTOCOL_VERSION, type IMoveReq } from "@game/shared";
+import { C2S, GAME_ROOM_PROTOCOL_VERSION, type IMoveReq } from "@game/shared";
 
 async function main(options: Options) {
     const client = new Client(options.endpoint);
-    const room = await client.joinOrCreate(options.roomName, { v: PROTOCOL_VERSION });
+    const room = await client.joinOrCreate(options.roomName, { v: GAME_ROOM_PROTOCOL_VERSION });
 
     // 每 200ms 换一个随机方向（服务端按逻辑帧积分位置，输入只有方向）
     const timer = setInterval(() => {

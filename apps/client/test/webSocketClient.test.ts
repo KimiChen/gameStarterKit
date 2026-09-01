@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import { mock, test } from "node:test";
 import {
   ForceLogoutReason, GuildRpc, KICK_CLOSE_CODE, LOBBY_MSG_PUSH, LOBBY_MSG_RPC,
-  LobbyPush, PROTOCOL_VERSION, RoomName, UserRpc,
+  LobbyPush, LOBBY_PROTOCOL_VERSION, RoomName, UserRpc,
 } from "../src/shared/index";
 import { JoinError, RpcError, WebSocketClient } from "../src/net/WebSocketClient";
 import { wireConnectionEvents } from "../src/app/wiring";
@@ -344,12 +344,12 @@ test("join 透传 options.sId 进 joinOrCreate（区服路由）：带 sId 带�
   // 区服形态：带上所选区 sId → onAuth 据此建区上下文（大厅落 s{sId}_ 前缀，与战斗房同区）
   await WebSocketClient.inst.join("tok-z1", { sId: 1 });
   assert.equal(calls[0].room, RoomName.Lobby);
-  assert.deepEqual(calls[0].options, { v: PROTOCOL_VERSION, sId: 1 }, "带 sId → join options 带 sId");
+  assert.deepEqual(calls[0].options, { v: LOBBY_PROTOCOL_VERSION, sId: 1 }, "带 sId → join options 带 sId");
   await WebSocketClient.inst.leave();
 
   // 缺省不带 sId → 单形态/大混服（服务端 auth.sId=0），向后兼容修复前老客户端
   await WebSocketClient.inst.join("tok-z0");
-  assert.deepEqual(calls[1].options, { v: PROTOCOL_VERSION }, "缺省 → join options 不含 sId（大混服向后兼容）");
+  assert.deepEqual(calls[1].options, { v: LOBBY_PROTOCOL_VERSION }, "缺省 → join options 不含 sId（大混服向后兼容）");
   await WebSocketClient.inst.leave();
 });
 
@@ -449,8 +449,8 @@ test("join 在途固定 client/endpoint：A 被取消后迟到 room 只释放 A�
   internals.client = clientB;
   const ownerB = WebSocketClient.inst.joinOwned("token-b", { sId: 2 });
   assert.deepEqual(calls, [
-    { endpoint: "A", options: { v: PROTOCOL_VERSION, sId: 1 } },
-    { endpoint: "B", options: { v: PROTOCOL_VERSION, sId: 2 } },
+    { endpoint: "A", options: { v: LOBBY_PROTOCOL_VERSION, sId: 1 } },
+    { endpoint: "B", options: { v: LOBBY_PROTOCOL_VERSION, sId: 2 } },
   ]);
 
   aJoin.resolve(a.room);

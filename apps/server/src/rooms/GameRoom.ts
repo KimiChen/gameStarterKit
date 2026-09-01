@@ -13,7 +13,7 @@ import {
     TICK_MS,
     MAX_PLAYERS,
     SeededRandom,
-    PROTOCOL_VERSION,
+    GAME_ROOM_PROTOCOL_VERSION,
     PROJECT_DISPLAY_NAME,
     DEMO_BRAND,
     validateGameRoomJoinOptions,
@@ -89,7 +89,7 @@ function assertCompatibleProtocolVersion(options: unknown): void {
         && Number.isSafeInteger(version)
         && version >= 1
         && version <= 0xffff
-        && version !== PROTOCOL_VERSION) {
+        && version !== GAME_ROOM_PROTOCOL_VERSION) {
         throw joinRefused(ErrorCode.ProtocolMismatch);
     }
 }
@@ -461,8 +461,9 @@ export class GameRoom extends Room {
         // any field-level checks so extra keys cannot silently alter admission semantics.
         const joinOptions = validatedJoinOptions(options);
         // 协议版本硬闸（缺省按 1 兼容首版客户端）：服务端升协议后旧包 join 即拒——
-        // 给出可识别错误码，而不是让旧客户端在 Schema 对不上的畸形状态里挂死
-        if ((joinOptions.v ?? 1) !== PROTOCOL_VERSION) {
+        // 给出可识别错误码，而不是让旧客户端在 Schema 对不上的畸形状态里挂死。
+        // §4.8：Game join 只比较 GAME_ROOM_PROTOCOL_VERSION，⛔ LOBBY_PROTOCOL_VERSION 不参与本闸。
+        if ((joinOptions.v ?? 1) !== GAME_ROOM_PROTOCOL_VERSION) {
             throw joinRefused(ErrorCode.ProtocolMismatch); // ⚠ 业务码走 message（status 必须 200–599）
         }
         const requestedMode = joinOptions.mode;
@@ -723,7 +724,7 @@ export class GameRoom extends Room {
         if (this.disposed) return;
         if (this.creationConfigured) throw joinRefused(ErrorCode.BadRequest);
         const joinOptions = validatedJoinOptions(options);
-        if ((joinOptions.v ?? 1) !== PROTOCOL_VERSION) {
+        if ((joinOptions.v ?? 1) !== GAME_ROOM_PROTOCOL_VERSION) {
             throw joinRefused(ErrorCode.ProtocolMismatch);
         }
         const sId = normalizeSId(joinOptions.sId);
