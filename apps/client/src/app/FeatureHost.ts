@@ -135,6 +135,11 @@ export class FeatureHost {
     launch(id: string, options: FeatureLaunchOptions = {}): Promise<FeatureStatus> {
         const slot = this.slot(id);
         if (slot.status === "active") return Promise.resolve("active");
+        // 并发合流：loading 中的重复 launch 共享同一 flight（用户点击合流是期望行为）。
+        // ⛔ feature install() 内不得 await 对自身 gameplay target 的 ports.launch——
+        // AppRuntime.launch 的闸会走到这里与自身 in-flight 合流，install 等它自己完成，
+        // 循环 await 静默挂死（无 ALS，宿主无法区分合流 awaiter 与 install 自身；
+        // ports.ts 的 launch port 文档有同款警告）。
         if (slot.status === "loading" && slot.loading) return slot.loading;
         if (slot.status === "disposing") {
             return Promise.reject(new Error(`[FeatureHost] ${id} 正在 dispose，不可启动`));
