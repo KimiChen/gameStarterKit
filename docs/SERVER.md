@@ -252,6 +252,25 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
   `net/rooms/PrivateRoomService.ts`，prepareCreate→create / resolve→joinById 携带 access ticket），
   join envelope 必填切换即 GAME_ROOM_PROTOCOL_VERSION 7→8；`PrivateRoomLobby` 页面视觉留
   FGUI 编辑器待办（见 plan-v4.md）。
+- StartPolicy 三变体（`rooms/core/StartPolicy.ts`；人数事实唯一真源仍是 roster/manifest）：
+
+  | kind | 开局触发 | 开局 lock | fence 重验 | Playing 准入 | 失败归属 |
+  |---|---|---|---|---|---|
+  | `auto` | 人数达 roster.autoStart 的 onJoin | ✅ lock | roster 快照（session 集合） | ⛔ 拒（GameAlreadyStarted） | join 拒绝回触发者 |
+  | `owner-ready` | 房主 C2S Start | ✅ lock | 整组元组（sessions/owner/三 revision） | ⛔ 拒 | RoomControlError.StartFailed 回房主 |
+  | `drop-in` | 首人 onJoin（注册期断言 roster.min===1 && autoStart===1） | ⛔ 不 lock | 只验 generation+phase，⛔ 不比 roster 快照 | ✅ 放行（前提 players.size < roster.max，含宽限占座） | join 拒绝回触发者（同 auto） |
+
+  drop-in（自由加入）语义：动态 roster 是策略定义——starting 窗口内的 join 落座成为创始成员、
+  ⛔ 不使开局失效；房间从不显式 lock，满员排除撮合与减员恢复完全交给 Colyseus 按 `maxClients`
+  的自动锁（`joinOrCreate` 天然「先填旧房、满了开新房、旧房空位回填」，⛔ 无自建房间选择器）。
+  互斥断言（注册期 fail-fast，各配反例测试）：drop-in ⛔ 不与 `invite-code` AccessPolicy 组合
+  （未设计的组合，`assertProfilePoliciesCoherent`）；⛔ 不与 `mode.evidence` capability 组合
+  （evidence 冻结 initialRoster 与动态 roster 矛盾，动态 roster 证据属未来独立设计，
+  `GameRoom.assertDropInModeCompatible`）。settle 仍归 `mode.shouldSettle`、清房走 autoDispose；
+  waitingDeadline/邀请码机制对 drop-in 不接线。profile `"dropIn"`（drop-in + matchmaking）由
+  fixture gameplay `dropInFixture` 驱动测试（manifest `maxPlayers: 8` → roster.max → maxClients，
+  8 人上限是玩法 manifest 配置参数而非框架常量；⛔ 不进生产 registry/默认撮合池）。验收见
+  `test/drop-in.test.ts` 与 `test/int/drop-in.test.ts`（8 人同房/第 9 人新房/空位回填/宽限占座真栈）。
 - `onCreate` 在首次 handshake 前按 mode 选择一次 root；公共入口之后禁止替换 root。两种状态只共享
   tick/phase/matchId/players 生命周期语义，不共享 player 字段或结算判定。
 - `ballMove` 的服务端逻辑帧移动/技能公式与 `idle` 的严格空对象 `IdlePulse`；聊天和重连宽限仍属公共能力。

@@ -599,3 +599,77 @@ SessionCoordinator 顺序对调）。
 **实测（写入时）**：`verify:all` exit 0（服务端单测 436/436、客户端 354/354、FGUI 66/66、
 inventory 全绿、typecheck 全阶段 0 错、verify:sync 镜像一致）；`test:int` 168/168
 （本地真 Redis/MySQL 实跑）。
+
+---
+
+## 第二十四轮：自由加入（drop-in）房型框架改造（2026-09-01）
+
+**需求来源**：用户会话指令——snakeoff 房型从邀请码私房改为**自由加入**：①第一个人点开始即进房
+开始游戏；②后来者点开始进入已有房间一起玩（Playing 中可加入）；③房间上限 8 人是**玩法配置参数**，
+第 9 人开新房，老房出空位后新人优先回填老房。⛔ 不实现 Snake 玩法本身——本轮只交付框架能力
+（StartPolicy 第三变体）+ fixture 玩法验收。docs/Non-intrusive.md 仅抬头追加一行后续说明指向本节，
+正文未改。
+
+**交付**（语义详表见 [docs/SERVER.md](docs/SERVER.md)「StartPolicy 三变体」）：
+
+- `rooms/core/StartPolicy.ts`：判别联合扩为 `auto | owner-ready | drop-in`（`DROP_IN_START_POLICY`）。
+  drop-in 语义：首人即开局（复用 auto 的 autoStart 阈值路径）、轻量开局事务 ⛔ 不 lock 房间、
+  fence 只验 generation+phase ⛔ 不比 roster 快照（动态 roster 是策略定义，starting 窗口内 join
+  落座成为创始成员且 ⛔ 不使开局失效）、Playing 中准入（前提 players.size < roster.max，含 pending
+  与重连宽限占座；其余闸——协议版本/sId/mode/profile 双查/重复 uid/session/modeVersion——原样）。
+- `rooms/core/RoomProfile.ts`：新 profile `"dropIn"` = drop-in + matchmaking；
+  `assertProfilePoliciesCoherent`（注册期互斥断言①：drop-in ⛔ 不与 invite-code 组合，文案写明
+  「未设计的组合」，随 resolveRoomProfile / assertRoomProfilesConfigured 全 catalog 跑）。
+- `rooms/GameRoom.ts`：`assertDropInModeCompatible`（注册期断言②③，构造期注入路径与 onCreate
+  生产路径双位点：roster.min===1 && roster.autoStart===1 是 drop-in 定义性前提；drop-in ⛔ 不与
+  `mode.evidence` capability 组合——evidence 冻结 initialRoster 与动态 roster 矛盾，动态 roster
+  证据属未来独立设计，报错文案写明归属）；onJoin phase 闸、autoStart 触发、performStartMatch
+  lock/unlock、assertMatchStartBoundary 四处按 policy 分支，auto/owner-ready 路径逐行原样。
+- **满员与回填零新代码**：drop-in 从不显式 lock，撮合排除/恢复完全交给 Colyseus 按 `maxClients`
+  的满员自动锁（`_lockedExplicitly=false`）——`joinOrCreate` 天然「先填旧房、满了开新房、旧房空位
+  回填（LocalDriver 按建房序 findOne，老房优先）」。⛔ 无自建房间选择器。
+- fixture 玩法 `dropInFixture`（对齐 privateFixture 隔离先例，⛔ 不进生产 registry/默认撮合池）：
+  `apps/shared/schema/gameplays/dropInFixture/{manifest.json,state.json}`——**manifest
+  `maxPlayers: 8` 就是「8 人上限是玩法 manifest 配置参数」的实证**（8 → 生成 catalog → 注册期
+  roster cap → `roster.max` → onCreate 写 `maxClients`，框架无 8 字面量；shared `MAX_PLAYERS=4`
+  仅是未进 catalog 的注入 mode 兜底上界，与此无关）。无 fragments、无 wire.ts（codegen 允许
+  无 wire 的 mode，privateFixture 同例）、无 evidence。`codegen:gameplays` 产物 7 文件再生，
+  `sync:shared` + 合成 `.meta` 1 个；客户端零结构改动（fixture 不在 canonical GameplayModeId，
+  不装配 client module）。settle 归 mode.shouldSettle、清房走 autoDispose、waitingDeadline/邀请码
+  对 drop-in 不接线（prepareCreate 对非 invite profile 本就拒绝，未改）。
+- 测试：`test/drop-in.test.ts` 12 条新单测（含 auto/owner-ready 的 Playing 拒入回归钉与三条互斥
+  反例）；`test/int/drop-in.test.ts` 真栈四场景；三集合闸/catalog 测试按 privateFixture 先例适配
+  （game-mode.test 同集断言 + gameplay-codegen.test 产物清单/键集，其余 436 条既有服务端测试
+  **原断言零改动**全绿）。
+- 文档：SERVER.md「StartPolicy 三变体」表 + drop-in 语义段；rooms/README.md core/ 段；
+  Non-intrusive.md 抬头一行后续说明（正文不改）。
+
+**验收数字（写入时实测）**：服务端单测 448/448（436 既有原断言 + 12 新增）；`test:int` 169/169
+（本地真 Redis/MySQL 实跑，168 既有 + 1 新增四场景）；根 `typecheck` 全阶段 0 错、`verify:sync`
+镜像一致；`test:faults` 两组 status 0；`verify:all` exit 0（客户端 358/358、FGUI 66/66、
+inventory 108/108 均与本轮前基线一致——本轮客户端仅生成 catalog 镜像再生，零结构改动）。
+
+**int 真栈四场景**（`test/int/drop-in.test.ts`，真 Server + 8..11 个 SDK client joinOrCreate
+同 sId/mode/profile）：①8 人同一 roomId 且首人后 phase=Playing；②第 9 人新 roomId（新房同样
+首人即开局）；③老房 consented 离开 1 人 → Colyseus 自动解除满员锁 → 第 10 人回填老房 roomId
+（⛔ 不是新房）；④老房成员非主动断线进入重连宽限 → players map 与撮合层 reserved seat 双占座、
+老房保持满员锁 → 第 11 人 ⛔ 不进老房（落有空位的 B 房）。
+
+**变异锚点**（每条新断言在测试内带「改哪行→哪条红」注释；前两条已亲手实测转红后还原）：
+
+| 变异 | 转红用例 |
+|---|---|
+| performStartMatch 恢复无条件 lock（去掉 `if (!dropIn)`） | 单测「首人入座即 Playing，开局事务 ⛔ 不调用 room.lock」（lock 计数 0 断言）；int 场景③（老房被显式锁死不回填） |
+| assertMatchStartBoundary 删 drop-in 轻量分支（走整组 roster 快照重验） | 单测「starting 窗口内第二人入座不破坏开局」 |
+| onJoin phase 闸删 drop-in 分支 | 单测「Playing 中第 2..8 人入座」；int 场景①第 2 人起被拒 |
+| onJoin autoStart 触发只认 "auto" | 单测「首人入座即 Playing」phase 断言；int 场景①首房停 Waiting |
+| 删 assertProfilePoliciesCoherent 判定 | 单测「与 invite-code 的组合在注册期被拒」 |
+| 删 assertDropInModeCompatible evidence/roster 分支 | 单测两条注册期反例 |
+| drop（非主动断线）立即删座位 | 单测「宽限占座计入容量」；int 场景④ |
+| onCreate 删 `maxClients = mode.roster.max` | int 场景②（撮合层不知满员，第 9 人进老房） |
+
+**六条验收勾验**：✅ 首人即玩（首人 onJoin 即 Playing，单测+int）；✅ Playing 可入（第 2..8 人
+Playing 中入座走同一 createModePlayer 流，mode 无新 hook）；✅ 第 9 人开新房（Colyseus 满员
+自动排除撮合）；✅ 空位回填老房（减员自动恢复，int 实证 roomId 回到老房）；✅ 8 = manifest
+配置参数（dropInFixture manifest maxPlayers:8 → roster cap → maxClients 全链无框架字面量）；
+✅ 既有 auto/owner-ready 零变（436 条既有服务端测试原断言全绿 + 两条 Playing 拒入回归钉）。

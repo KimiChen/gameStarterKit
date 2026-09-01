@@ -43,13 +43,19 @@
 - `modes/catalog.ts` / `modes/IdleGameMode.ts`：生产 mode catalog（ballMove 与 idle 都在此登记）与最小
   第二玩法。Idle 使用独立 `IdleRoomState`、strict `IdlePulse` 和 pulse/真实离场结算，不声明 evidence
   capability，也不写任何收局证据。
-- `core/`（阶段 8a，Non-intrusive §6.2）：房间组合 policy 层——`StartPolicy.ts`（auto / owner-ready
-  判别联合，⛔ 不重复声明任何人数：min/max/autoStart 唯一真源仍是 roster/manifest）、`AccessPolicy.ts`
+- `core/`（阶段 8a，Non-intrusive §6.2）：房间组合 policy 层——`StartPolicy.ts`（auto / owner-ready /
+  drop-in 判别联合，⛔ 不重复声明任何人数：min/max/autoStart 唯一真源仍是 roster/manifest）、`AccessPolicy.ts`
   （matchmaking / invite-code，四个时间/配额参数取自 config，不等式在加载期断言）、`RoomProfile.ts`
   （`(mode, profileId) → policy` 注册表：校验 id ∈ generated catalog.profiles、owner-ready/invite
-  所需 state fragment 存在；`assertRoomProfilesConfigured` 在组合根启动期全量断言）。"default" =
+  所需 state fragment 存在、policy 互斥组合（`assertProfilePoliciesCoherent`）；
+  `assertRoomProfilesConfigured` 在组合根启动期全量断言）。"default" =
   auto+matchmaking（ballMove/idle 现状零变）；"private" = owner-ready+invite-code（由 fixture gameplay
-  `privateFixture` 驱动测试，⛔ 不进生产 registry）。owner-ready 的 Ready/Start core wire、fence 元组
+  `privateFixture` 驱动测试，⛔ 不进生产 registry）；"dropIn" = drop-in+matchmaking（自由加入：
+  首人即开局、开局 ⛔ 不 lock、动态 roster、Playing 中可入座到 roster.max，满员排除/减员回填完全
+  交给 Colyseus 按 maxClients 的自动锁——由 fixture gameplay `dropInFixture` 驱动测试，manifest
+  `maxPlayers: 8` 实证「上限是玩法配置参数」，同样 ⛔ 不进生产 registry；互斥：⛔ 不与 invite-code、
+  ⛔ 不与 mode.evidence 组合，注册期 fail-fast，语义详表见 docs/SERVER.md「StartPolicy 三变体」）。
+  owner-ready 的 Ready/Start core wire、fence 元组
   开局事务、邀请码 lease 生命周期与 access ticket 准入时序见 `GameRoom.ts` 与
   `../core/rooms/`（invite lease/ticket 的 Redis 层 + prepareCreate/resolve 领域逻辑）。
 - `schema/GameRoomState.ts` 与 `schema/generated/<id>.ts`：由每玩法单源
