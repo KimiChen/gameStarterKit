@@ -66,6 +66,10 @@ export interface AppRuntimeOptions {
     readonly gameplayId?: string;
     /** §7.8 show 三态判定的战斗连接快照 seam（测试注入；生产缺省读 gameplay services 的 roomClient）。 */
     readonly battleConnection?: () => GameRoomConnectionSnapshot;
+    /** 测试注入：覆盖 hosted feature 列表（生产缺省由 appFeatureRegistry 派生，全部静态常驻）。 */
+    readonly hostedFeatures?: readonly HostedFeature[];
+    /** 测试注入：覆盖 launch target(gameplayId) → 贡献 feature id 的映射（生产缺省由 menu contributions 派生）。 */
+    readonly launchFeatureMap?: ReadonlyMap<string, string>;
 }
 
 export class AppRuntime {
@@ -91,6 +95,7 @@ export class AppRuntime {
     private readonly pageScope: PageSessionScope;
     private readonly navigation: NavigationService;
     private readonly featureHost: FeatureHost;
+    private readonly launchFeatureIds: ReadonlyMap<string, string>;
     private readonly frameScheduler = new FrameScheduler();
     private readonly journal = new PendingOperationJournal();
     private readonly refresh = new RefreshCoordinator();
@@ -116,14 +121,26 @@ export class AppRuntime {
             launch: (target) => this.launch(target),
             track: (unsubscribe) => this.track(unsubscribe),
         });
-        const hostedFeatures: HostedFeature[] = appFeatureRegistry.featureIds().map((id) => ({
-            id,
-            resident: appFeatureRegistry.featureOf(id)?.resident ?? false,
-        }));
+        const hostedFeatures: readonly HostedFeature[] = options.hostedFeatures
+            ?? appFeatureRegistry.featureIds().map((id) => ({
+                id,
+                resident: appFeatureRegistry.featureOf(id)?.resident ?? false,
+            }));
         this.featureHost = new FeatureHost(hostedFeatures, {
             ports: this.ports,
             appGeneration: this.generation,
         });
+        // launch target(gameplayId) → 贡献它的 feature id：menu contribution 是唯一映射源
+        // （§7.4）；同一 gameplayId 多贡献者取先声明者，无贡献者的 target 不受 feature 闸管控。
+        if (options.launchFeatureMap) {
+            this.launchFeatureIds = options.launchFeatureMap;
+        } else {
+            const map = new Map<string, string>();
+            for (const item of appFeatureRegistry.menuContributions()) {
+                if (!map.has(item.launch.gameplayId)) map.set(item.launch.gameplayId, item.featureId);
+            }
+            this.launchFeatureIds = map;
+        }
         // route refcount → FeatureHost 停用判定（§7.2；built-in 常驻豁免）。
         this.navigation.setRouteObserver((featureId, openCount) => {
             void this.featureHost.releaseIfIdle(featureId, openCount).catch((error) => {
@@ -363,8 +380,22 @@ export class AppRuntime {
         return this.launchGameplay(null);
     }
 
-    /** §7.4 统一玩法启动通道（LaunchPort.launch 的宿主实现）：target 覆盖默认玩法 id。 */
-    launch(target: FeatureLaunchTarget): Promise<void> {
+    /**
+     * §7.4 统一玩法启动通道（LaunchPort.launch 的宿主实现）：target 覆盖默认玩法 id。
+     * 启动前先过 FeatureHost 闸：点击 = 显式用户意图（userIntent），failed 在此刻重试
+     * 装载；结算非 active（failed/disabled）则不启动玩法——菜单 enabled 只是渲染期
+     * 快照，本闸是启动时刻的唯一判定（§7.2 状态机不得被启动通道绕过；built-in 常驻
+     * feature 恒 active，零开销直通）。
+     */
+    async launch(target: FeatureLaunchTarget): Promise<void> {
+        const featureId = this.launchFeatureIds.get(target.gameplayId) ?? null;
+        if (featureId !== null) {
+            const status = await this.featureHost.launch(featureId, { userIntent: true });
+            if (status !== "active") {
+                console.error(`[AppRuntime] feature ${featureId} 不可用（${status}），取消启动玩法 ${target.gameplayId}`);
+                return;
+            }
+        }
         return this.launchGameplay(target);
     }
 
