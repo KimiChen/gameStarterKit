@@ -498,6 +498,91 @@ if (IDEM_PENDING_MS <= HANDLER_TIMEOUT_MS) {
   );
 }
 
+// ── 私房邀请码 / access ticket / resolve 专用预算（Non-intrusive §6.2/§6.7/§6.8；
+//    登记见 docs/SERVER.md §13）。数值产品可调（env），下方**不等式**是启动期断言，
+//    ⛔ 改数值不得破坏不等式（config-guard 子进程 pin）。 ──────────────────────
+
+/** 邀请码 lease TTL：短 TTL 负责崩溃回收（§6.7 第 6 条）。 */
+export const INVITE_LEASE_TTL_MS = envInt("INVITE_LEASE_TTL_MS", 15_000);
+/** 健康房续租周期；必须 ≤ TTL/3（允许连续漏两次 renew 仍不失租）。 */
+export const INVITE_RENEW_INTERVAL_MS = envInt("INVITE_RENEW_INTERVAL_MS", 5_000);
+/** 不可续的绝对 Waiting deadline：关闭僵尸房（到达后关闭并 dispose，⛔ 不许只释放码）。 */
+export const INVITE_WAITING_DEADLINE_MS = envInt("INVITE_WAITING_DEADLINE_MS", 600_000);
+/** 码隔离期（tombstone PX）：Start 成功/dispose 后该码既不可 resolve 也不可再分配。 */
+export const INVITE_CODE_COOLDOWN_MS = envInt("INVITE_CODE_COOLDOWN_MS", 120_000);
+/** 单 uid 并发私房配额：活跃 invite room + 未消费 creation ticket 计入（§6.8）。 */
+export const INVITE_MAX_ROOMS_PER_UID = envInt("INVITE_MAX_ROOMS_PER_UID", 2);
+/** creation/join ticket 的记录 TTL（PX = exp）。 */
+export const ROOM_TICKET_TTL_MS = envInt("ROOM_TICKET_TTL_MS", 30_000);
+/** 六位码 SET NX 分配的碰撞重试上限；耗尽 fail-closed（⛔ 不扩大重试、不降级长码）。 */
+export const INVITE_CODE_ALLOC_MAX_ATTEMPTS = envInt("INVITE_CODE_ALLOC_MAX_ATTEMPTS", 8);
+
+/** 开局锁 deadline（原 GameRoom.ts 常量迁入；GameRoom 仍原名 re-export）。 */
+export const GAME_ROOM_START_LOCK_TIMEOUT_MS = 10_000;
+/**
+ * retry fence 的绝对上限（§6.3）：lock 超时后晚到结果**永不到达**时，fence 观察到此上限即
+ * fail-closed（释放邀请码 lease、下发不可恢复错误并 dispose）。必须 ≥ 一个 lock 超时周期，
+ * 且 ≤ `INVITE_WAITING_DEADLINE_MS`；matchmaking profile 没有 waiting deadline，**自带**本上限。
+ */
+export const GAME_ROOM_START_RETRY_FENCE_MAX_MS = envInt("GAME_ROOM_START_RETRY_FENCE_MAX_MS", 30_000);
+
+/** resolve 专用速率桶（§6.8：⛔ 复用通用 RPC 桶不算满足）。per-uid 失败/成功分桶 + 全区失败上限。 */
+export const RESOLVE_FAIL_CAPACITY = envInt("RESOLVE_FAIL_CAPACITY", 10);
+export const RESOLVE_FAIL_REFILL_PER_S = envFloat("RESOLVE_FAIL_REFILL_PER_S", 0.2);
+export const RESOLVE_OK_CAPACITY = envInt("RESOLVE_OK_CAPACITY", 5);
+export const RESOLVE_OK_REFILL_PER_S = envFloat("RESOLVE_OK_REFILL_PER_S", 0.1);
+export const RESOLVE_ZONE_FAIL_CAPACITY = envInt("RESOLVE_ZONE_FAIL_CAPACITY", 1000);
+export const RESOLVE_ZONE_FAIL_REFILL_PER_S = envFloat("RESOLVE_ZONE_FAIL_REFILL_PER_S", 20);
+
+// §6.7 第 6 条的启动期不等式（与「generated state 上限/admission cap/maxClients 相等」同形，
+// ⛔ 不允许留到运行时才暴露）。§12.4 只冻结数值，不替代这里的不等式。
+if (INVITE_RENEW_INTERVAL_MS < 1 || INVITE_RENEW_INTERVAL_MS * 3 > INVITE_LEASE_TTL_MS) {
+  throw new Error(
+    `INVITE_RENEW_INTERVAL_MS (${INVITE_RENEW_INTERVAL_MS}) 必须满足 renewIntervalMs ≤ leaseTtlMs/3`
+    + `（INVITE_LEASE_TTL_MS=${INVITE_LEASE_TTL_MS}）——连续漏两次 renew 仍不失租`,
+  );
+}
+if (INVITE_LEASE_TTL_MS >= INVITE_WAITING_DEADLINE_MS) {
+  throw new Error(
+    `INVITE_LEASE_TTL_MS (${INVITE_LEASE_TTL_MS}) 必须小于 INVITE_WAITING_DEADLINE_MS (${INVITE_WAITING_DEADLINE_MS})`,
+  );
+}
+if (INVITE_CODE_COOLDOWN_MS < 1) {
+  throw new Error(`INVITE_CODE_COOLDOWN_MS 非法：「${INVITE_CODE_COOLDOWN_MS}」——须为正整数（0 = 无隔离期，码立即可重用）`);
+}
+if (INVITE_MAX_ROOMS_PER_UID < 1) {
+  throw new Error(`INVITE_MAX_ROOMS_PER_UID 非法：「${INVITE_MAX_ROOMS_PER_UID}」——须为 ≥1 的整数`);
+}
+if (ROOM_TICKET_TTL_MS < 1) {
+  throw new Error(`ROOM_TICKET_TTL_MS 非法：「${ROOM_TICKET_TTL_MS}」——须为正整数`);
+}
+if (INVITE_CODE_ALLOC_MAX_ATTEMPTS < 1) {
+  throw new Error(`INVITE_CODE_ALLOC_MAX_ATTEMPTS 非法：「${INVITE_CODE_ALLOC_MAX_ATTEMPTS}」——须为 ≥1 的整数`);
+}
+// §6.3：retry fence 绝对上限 ≥ 一个 lock 超时周期，且 ≤ waiting deadline。
+if (GAME_ROOM_START_RETRY_FENCE_MAX_MS < GAME_ROOM_START_LOCK_TIMEOUT_MS
+  || GAME_ROOM_START_RETRY_FENCE_MAX_MS > INVITE_WAITING_DEADLINE_MS) {
+  throw new Error(
+    `GAME_ROOM_START_RETRY_FENCE_MAX_MS (${GAME_ROOM_START_RETRY_FENCE_MAX_MS}) 必须落在 `
+    + `[GAME_ROOM_START_LOCK_TIMEOUT_MS=${GAME_ROOM_START_LOCK_TIMEOUT_MS}, `
+    + `INVITE_WAITING_DEADLINE_MS=${INVITE_WAITING_DEADLINE_MS}]`,
+  );
+}
+for (const [name, value] of [
+  ["RESOLVE_FAIL_CAPACITY", RESOLVE_FAIL_CAPACITY],
+  ["RESOLVE_OK_CAPACITY", RESOLVE_OK_CAPACITY],
+  ["RESOLVE_ZONE_FAIL_CAPACITY", RESOLVE_ZONE_FAIL_CAPACITY],
+] as const) {
+  if (value < 1) { throw new Error(`${name} 非法：「${value}」——须为 ≥1 的整数（0 会拒绝一切 resolve）`); }
+}
+for (const [name, value] of [
+  ["RESOLVE_FAIL_REFILL_PER_S", RESOLVE_FAIL_REFILL_PER_S],
+  ["RESOLVE_OK_REFILL_PER_S", RESOLVE_OK_REFILL_PER_S],
+  ["RESOLVE_ZONE_FAIL_REFILL_PER_S", RESOLVE_ZONE_FAIL_REFILL_PER_S],
+] as const) {
+  if (!(value > 0)) { throw new Error(`${name} 非法：「${value}」——须为 >0 的速率（0 = 桶永不回填）`); }
+}
+
 // ── 广播/事件系统 + 事件循环防阻塞（见 docs/SERVER.md §10 广播与事件、§11 计算任务） ──
 
 /** 工会事件近窗长度（capped list；窗口外客户端全量刷新，见 shared lobbyRpc/guild.ts） */

@@ -28,6 +28,7 @@ import {
 import { collectEndpoints } from "../src/websocket/loader";
 import guildVectors from "./lobbyRpcVectors/guild";
 import mailVectors from "./lobbyRpcVectors/mail";
+import roomVectors from "./lobbyRpcVectors/room";
 import shopVectors from "./lobbyRpcVectors/shop";
 import userVectors from "./lobbyRpcVectors/user";
 import type { LobbyRpcVectorFile } from "./lobbyRpcVectors/vectorTypes";
@@ -38,6 +39,7 @@ const VECTORS_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "lob
 const VECTOR_FILES: Record<string, LobbyRpcVectorFile> = {
   guild: guildVectors,
   mail: mailVectors,
+  room: roomVectors,
   shop: shopVectors,
   user: userVectors,
 };

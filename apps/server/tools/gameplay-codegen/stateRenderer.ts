@@ -84,10 +84,17 @@ export type StateTypeDescriptor = {
   readonly serverOnly: readonly ServerOnlyField[];
 };
 
+/** §4.6 公共 state fragment id。声明后由生成器把字段注入 root/player 类型（⛔ 不手写进 state.json）。 */
+export type GameplayStateFragment = "ownerReady" | "inviteRoom";
+
+export const GAMEPLAY_STATE_FRAGMENTS: readonly GameplayStateFragment[] = ["ownerReady", "inviteRoom"];
+
 export type GameplayStateDescriptor = {
   readonly schemaVersion: 1;
   readonly root: string;
   readonly types: readonly StateTypeDescriptor[];
+  /** 该玩法声明的公共 fragment（缺省空——ballMove/idle 不声明，生产 state 零变）。 */
+  readonly fragments: readonly GameplayStateFragment[];
 };
 
 function fail(pathLabel: string, message: string): never {
@@ -402,18 +409,93 @@ function validateReferences(descriptor: GameplayStateDescriptor): void {
   topologicalTypes(descriptor);
 }
 
+/**
+ * §4.6 fragment 注入表。字段形状与 `RoomStateOwnerReady`/`RoomStateInviteRoom` 生成视图
+ * 一一对应（lib.ts renderServerAggregate）；⛔ 两处不同步改动会让视图 cast 变成谎言。
+ */
+const OWNER_READY_ROOT_FIELDS: readonly WireField[] = [
+  { name: "ownerId", kind: "string", default: "", minLength: 0, maxLength: 64, description: "Owner sessionId; empty until the expected owner seats" },
+  { name: "rosterRevision", kind: "integer", default: 0, min: 0, description: "Seat membership revision (join / final leave / owner transfer)" },
+  { name: "readyRevision", kind: "integer", default: 0, min: 0, description: "Ready set/clear revision" },
+  { name: "connectionRevision", kind: "integer", default: 0, min: 0, description: "Drop/reconnect revision" },
+  { name: "starting", kind: "boolean", default: false, description: "Start transaction fence; Ready/Unready are refused while set" },
+];
+const OWNER_READY_PLAYER_FIELDS: readonly WireField[] = [
+  { name: "ready", kind: "boolean", default: false, description: "Waiting-phase ready flag; new seats default to false" },
+  { name: "connected", kind: "boolean", default: true, description: "False while the member is inside the reconnect grace window" },
+];
+const INVITE_ROOM_ROOT_FIELDS: readonly WireField[] = [
+  { name: "roomCode", kind: "string", default: "", minLength: 0, maxLength: 6, description: "Best-effort display invite code; the resolve-side lease is the only authority" },
+  { name: "waitingDeadlineAt", kind: "integer", default: 0, min: 0, description: "Absolute waiting deadline (ms timestamp, display only)" },
+];
+
+function parseFragments(value: unknown): readonly GameplayStateFragment[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.length === 0) fail("state.fragments", "must be a non-empty array when present");
+  const fragments: GameplayStateFragment[] = [];
+  for (const [index, entry] of value.entries()) {
+    if (typeof entry !== "string"
+      || !(GAMEPLAY_STATE_FRAGMENTS as readonly string[]).includes(entry)) {
+      fail(`state.fragments[${index}]`, `unknown fragment: ${String(entry)} (supported: ${GAMEPLAY_STATE_FRAGMENTS.join(", ")})`);
+    }
+    if (fragments.includes(entry as GameplayStateFragment)) {
+      fail(`state.fragments[${index}]`, `duplicate fragment: ${entry}`);
+    }
+    fragments.push(entry as GameplayStateFragment);
+  }
+  return fragments;
+}
+
+/** 把声明的 fragment 字段注入 root（与 root 的 players value 类型）。与手写字段重名即 fail。 */
+function withInjectedFragments(
+  types: readonly StateTypeDescriptor[],
+  root: string,
+  fragments: readonly GameplayStateFragment[],
+): readonly StateTypeDescriptor[] {
+  if (fragments.length === 0) return types;
+  const rootType = types.find((type) => type.name === root);
+  if (!rootType) return types; // 缺 root 由外层校验报错
+  const playersField = rootType.fields.find((field) => field.name === "players");
+  const playerTypeName = playersField?.kind === "map" ? playersField.valueType : null;
+
+  const rootExtras: WireField[] = [];
+  const playerExtras: WireField[] = [];
+  if (fragments.includes("ownerReady")) {
+    rootExtras.push(...OWNER_READY_ROOT_FIELDS);
+    playerExtras.push(...OWNER_READY_PLAYER_FIELDS);
+  }
+  if (fragments.includes("inviteRoom")) {
+    rootExtras.push(...INVITE_ROOM_ROOT_FIELDS);
+  }
+  if (playerExtras.length > 0 && playerTypeName === null) {
+    fail("state.fragments", "ownerReady fragment requires a root \"players\" map field");
+  }
+  return types.map((type) => {
+    const extras = type.name === root ? rootExtras : type.name === playerTypeName ? playerExtras : [];
+    if (extras.length === 0) return type;
+    for (const extra of extras) {
+      if (type.fields.some((field) => field.name === extra.name)
+        || type.serverOnly.some((field) => field.name === extra.name)) {
+        fail(`state.types.${type.name}`, `fragment-injected field collides with a declared field: ${extra.name}`);
+      }
+    }
+    return { ...type, fields: [...type.fields, ...extras] };
+  });
+}
+
 export function parseGameplayStateDescriptor(input: unknown): GameplayStateDescriptor {
   const value = record(input, "state");
-  exactKeys(value, ["schemaVersion", "root", "types"], [], "state");
+  exactKeys(value, ["schemaVersion", "root", "types"], ["fragments"], "state");
   if (value.schemaVersion !== 1) fail("state.schemaVersion", "only schemaVersion 1 is supported");
   const root = identifier(value.root, "state.root");
+  const fragments = parseFragments(value.fragments);
   if (!Array.isArray(value.types) || value.types.length === 0) fail("state.types", "must be a non-empty array");
-  const types = value.types.map((type, index) => parseStateType(type, `state.types[${index}]`));
+  const declaredTypes = value.types.map((type, index) => parseStateType(type, `state.types[${index}]`));
   const names = new Set<string>();
   const sharedNames = new Set<string>();
   const validators = new Set<string>();
   const paths = new Set<string>();
-  for (const type of types) {
+  for (const type of declaredTypes) {
     if (names.has(type.name)) fail("state.types", `duplicate type name: ${type.name}`);
     if (sharedNames.has(type.sharedName)) fail("state.types", `duplicate sharedName: ${type.sharedName}`);
     if (validators.has(type.validatorName)) fail("state.types", `duplicate validatorName: ${type.validatorName}`);
@@ -424,7 +506,8 @@ export function parseGameplayStateDescriptor(input: unknown): GameplayStateDescr
     paths.add(type.defaultPath);
   }
   if (!names.has(root)) fail("state.root", `missing root type: ${root}`);
-  const descriptor: GameplayStateDescriptor = { schemaVersion: 1, root, types };
+  const types = withInjectedFragments(declaredTypes, root, fragments);
+  const descriptor: GameplayStateDescriptor = { schemaVersion: 1, root, types, fragments };
   validateReferences(descriptor);
   assertRootLifecycle(descriptor);
   return descriptor;

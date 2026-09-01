@@ -109,10 +109,15 @@ test("生产 mode catalog 与 shared/state 生成映射保持精确同集", () =
     const unregister = registerDefaultGameModes();
     try {
         const canonicalModes = [...Object.values(GameplayModeId)].sort();
+        // 阶段 8：privateFixture 是私房验收的 fixture gameplay（owner-ready + invite fragment，
+        // §10.2/§10.3 用例驱动）。它进 catalog/生成映射走完整单源链，但 ⛔ 刻意不进生产
+        // mode registry——onAuth/onCreate 的 `gameModeRegistry.has` 闸使它永远不可被撮合
+        // 或建房（不出现在默认撮合池，§10.7）。
+        const catalogModes = [...canonicalModes, "privateFixture"].sort();
         assert.deepEqual(gameModeRegistry.list(), canonicalModes);
-        assert.deepEqual(Object.keys(GAMEPLAY_CATALOG).sort(), canonicalModes);
-        assert.deepEqual(Object.keys(ROOM_STATE_VALIDATORS).sort(), canonicalModes);
-        assert.deepEqual(Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS).sort(), canonicalModes);
+        assert.deepEqual(Object.keys(GAMEPLAY_CATALOG).sort(), catalogModes);
+        assert.deepEqual(Object.keys(ROOM_STATE_VALIDATORS).sort(), catalogModes);
+        assert.deepEqual(Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS).sort(), catalogModes);
     } finally {
         unregister();
     }
@@ -143,7 +148,7 @@ test("GameRoom：onCreate 从生产 registry 选择 idle，未知 mode 和直连
         const idleRoom = new GameRoom({ seed: 7 });
         (idleRoom as unknown as { setSimulationInterval: (callback: () => void, delay: number) => void })
             .setSimulationInterval = () => {};
-        idleRoom.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: IDLE_GAME_MODE_ID });
+        void idleRoom.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: IDLE_GAME_MODE_ID });
         assert.equal(idleRoom.gameplayModeId, IDLE_GAME_MODE_ID);
         assert.equal(unexpectedBallFactories, 0, "idle 创建不得实例化或依赖 ballMove factory");
 
@@ -167,7 +172,7 @@ test("GameRoom：onCreate 从生产 registry 选择 idle，未知 mode 和直连
         const defaultRoom = new GameRoom({ seed: 9 });
         (defaultRoom as unknown as { setSimulationInterval: (callback: () => void, delay: number) => void })
             .setSimulationInterval = () => {};
-        defaultRoom.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
+        void defaultRoom.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
         await assert.rejects(
             defaultRoom.onJoin(client("wrong-mode", IDLE_GAME_MODE_ID) as never, {}),
             (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.BadRequest)),
@@ -669,7 +674,7 @@ test("shell 的人数闸按 mode.roster 分发：满员/自动开局都随声明
     const room = new GameRoom({ seed: 42, fixedStepMs: 50, mode });
     stubSimulation(room);
     installLock(room);
-    room.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
+    void room.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
     assert.equal(room.maxClients, 3, "onCreate 必须把 maxClients 赋成 mode.roster.max（撮合侧读的就是它）");
 
     await join(room, client("a", BALL_MOVE_GAME_MODE_ID));
@@ -697,7 +702,7 @@ test("shell 的开局下限按 mode.roster.min：低于它 startMatch 不开局"
     const room = new GameRoom({ seed: 42, fixedStepMs: 50, mode });
     stubSimulation(room);
     installLock(room);
-    room.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
+    void room.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
     await join(room, client("a", BALL_MOVE_GAME_MODE_ID));
     await join(room, client("b", BALL_MOVE_GAME_MODE_ID));
     assert.equal(await room.startMatch(), false, "两人未达 min=3，⛔ 不得开局（旧字面量下这里会开）");
@@ -743,7 +748,7 @@ test("满员闸的上限来自 mode.roster.max——这是防御性闸，用预�
     const room = new GameRoom({ seed: 42, fixedStepMs: 50, mode });
     stubSimulation(room);
     installLock(room);
-    room.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
+    void room.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
     for (const sessionId of ["seat-a", "seat-b"]) {
         room.state.players.set(sessionId, mode.createPlayer({ sessionId, name: sessionId, randomInt: () => 0 }));
     }
@@ -764,16 +769,38 @@ test("开局边界重验的人数下限同样来自 mode.roster.min", () => {
         const mode: GameMode<GameRoomState> = { ...ballMove, roster: { min, max: 4, autoStart: min } };
         const room = new GameRoom({ seed: 42, fixedStepMs: 50, mode });
         stubSimulation(room);
-        room.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
+        void room.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
         for (const sessionId of ["seat-a", "seat-b"]) {
             room.state.players.set(sessionId, mode.createPlayer({ sessionId, name: sessionId, randomInt: () => 0 }));
         }
+        // 阶段 8（§6.3）：边界重验的入参从裸 session 集合升级为完整 fence 元组；
+        // ballMove 无 ownerReady fragment，元组退化为 session 集合语义。
         const internals = room as unknown as {
             lifecycleGeneration: number;
-            assertMatchStartBoundary(generation: number, sessions: ReadonlySet<string>, stage: string): void;
+            assertMatchStartBoundary(
+                generation: number,
+                fence: {
+                    readonly sessions: ReadonlySet<string>;
+                    readonly hasOwnerReady: boolean;
+                    readonly ownerId: string;
+                    readonly rosterRevision: number;
+                    readonly readyRevision: number;
+                    readonly connectionRevision: number;
+                },
+                stage: string,
+            ): void;
         };
         return () => internals.assertMatchStartBoundary(
-            internals.lifecycleGeneration, new Set(["seat-a", "seat-b"]), "probe",
+            internals.lifecycleGeneration,
+            {
+                sessions: new Set(["seat-a", "seat-b"]),
+                hasOwnerReady: false,
+                ownerId: "",
+                rosterRevision: 0,
+                readyRevision: 0,
+                connectionRevision: 0,
+            },
+            "probe",
         );
     };
     assert.throws(boundaryOf(3), /match participants or phase changed during probe/, "2 人 < min=3 必须炸");
@@ -883,10 +910,12 @@ test("wire catalog 穷尽矩阵：owner 独占 + token phases 决定玩法输入
     const gameplayInputs = Object.keys(GAME_WIRE_PHASES) as C2SType[];
     assert.ok(gameplayInputs.length >= 3, `玩法输入数量异常：${gameplayInputs.length}`);
     // shell 公共消息集合变了就必须重新审视本矩阵，⛔ 不要只改这一行
+    //（阶段 8：core 增 RoomReady/RoomStart——owner-ready 行为矩阵在 private-room.test.ts，
+    //  auto/default profile 收到即 BadRequest 由 game-room-wire-contract 矩阵覆盖）。
     const coreC2S = Object.entries(GAME_WIRE_OWNERS)
         .filter(([type, owner]) => owner === "core" && type.startsWith("c2s."))
         .map(([type]) => type);
-    assert.deepEqual(coreC2S.sort(), [C2S.Chat, C2S.Ping].sort());
+    assert.deepEqual(coreC2S.sort(), [C2S.Chat, C2S.Ping, C2S.RoomReady, C2S.RoomStart].sort());
 
     for (const type of gameplayInputs) {
         assert.ok(type in MATRIX_VALID_PAYLOAD, `新增玩法 C2S ${type} 必须在本矩阵补一份合法 payload`);

@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "root": "PrivateFixtureState",
+  "fragments": ["ownerReady", "inviteRoom"],
+  "types": [
+    {
+      "name": "PrivateFixturePlayerState",
+      "sharedName": "IPrivateFixturePlayerState",
+      "validatorName": "validatePrivateFixturePlayerState",
+      "defaultPath": "privateFixturePlayer",
+      "fields": [
+        {
+          "name": "id",
+          "kind": "string",
+          "default": "",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Colyseus sessionId"
+        },
+        {
+          "name": "name",
+          "kind": "string",
+          "default": "",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      ],
+      "serverOnly": []
+    },
+    {
+      "name": "PrivateFixtureState",
+      "sharedName": "IPrivateFixtureState",
+      "validatorName": "validatePrivateFixtureState",
+      "defaultPath": "privateFixtureState",
+      "fields": [
+        {
+          "name": "tick",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "description": "Logical frame number"
+        },
+        {
+          "name": "phase",
+          "kind": "enum",
+          "enumObject": "GamePhase",
+          "enumType": "GamePhaseType",
+          "members": ["Waiting", "Playing", "Settle"],
+          "default": "Waiting",
+          "errorCode": "STATE_PHASE",
+          "description": "Room phase"
+        },
+        {
+          "name": "matchId",
+          "kind": "string",
+          "default": "",
+          "minLength": 0,
+          "maxLength": 128,
+          "description": "Stable match id; empty while waiting"
+        },
+        {
+          "name": "players",
+          "kind": "map",
+          "valueType": "PrivateFixturePlayerState",
+          "errorCode": "STATE_PLAYERS",
+          "key": {
+            "field": "id",
+            "errorCode": "STATE_PLAYER_ID"
+          },
+          "description": "Players keyed by sessionId"
+        }
+      ],
+      "serverOnly": []
+    }
+  ]
+}

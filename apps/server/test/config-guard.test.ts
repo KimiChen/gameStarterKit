@@ -317,3 +317,63 @@ test("COMPUTE_RESPAWN_DELAY_MS 边界：非正整数与越界必须拒绝启动�
         assert.equal(r.status, 0, `「${value}」应正常加载，实际 stderr：${r.stderr.slice(0, 200)}`);
     }
 });
+
+// ── 阶段 8（Non-intrusive §6.7 第 6 条 / §6.3）：私房邀请码配对不等式的启动期 pin ──
+// 产品可改数值、⛔ 不可改不等式：任何违反组合都必须在 config 加载期拒绝启动。
+// 变异验证：删掉 config.ts 里任一不等式断言 → 对应子进程用例转红。
+
+test("INVITE 配对不等式：renewIntervalMs ≤ leaseTtlMs/3 且 leaseTtlMs < waitingDeadlineMs（启动期断言）", () => {
+    // renewIntervalMs > leaseTtlMs/3（连续漏两次 renew 就会失租）→ 拒绝启动
+    const badRenew = loadConfigWith({ INVITE_LEASE_TTL_MS: "15000", INVITE_RENEW_INTERVAL_MS: "6000" });
+    assert.notEqual(badRenew.status, 0, "renewInterval 6s > 15s/3 应拒绝启动");
+    assert.match(badRenew.stderr, /INVITE_RENEW_INTERVAL_MS/);
+
+    // leaseTtlMs ≥ waitingDeadlineMs（崩溃回收窗吞掉绝对 deadline）→ 拒绝启动
+    const badTtl = loadConfigWith({ INVITE_LEASE_TTL_MS: "700000", INVITE_RENEW_INTERVAL_MS: "5000", INVITE_WAITING_DEADLINE_MS: "600000" });
+    assert.notEqual(badTtl.status, 0, "leaseTtl ≥ waitingDeadline 应拒绝启动");
+    assert.match(badTtl.stderr, /INVITE_LEASE_TTL_MS/);
+
+    // 冻结缺省值（15s/5s/600s/120s/2/30s）必须放行
+    const ok = loadConfigWith({
+        INVITE_LEASE_TTL_MS: "15000",
+        INVITE_RENEW_INTERVAL_MS: "5000",
+        INVITE_WAITING_DEADLINE_MS: "600000",
+        INVITE_CODE_COOLDOWN_MS: "120000",
+        INVITE_MAX_ROOMS_PER_UID: "2",
+        ROOM_TICKET_TTL_MS: "30000",
+    });
+    assert.equal(ok.status, 0, `冻结数值应通过，stderr：${ok.stderr.slice(0, 300)}`);
+
+    // 零/非法量纲：cooldown=0（无隔离期）、quota=0（拒绝一切建房）都拒绝启动
+    assert.notEqual(loadConfigWith({ INVITE_CODE_COOLDOWN_MS: "0" }).status, 0);
+    assert.notEqual(loadConfigWith({ INVITE_MAX_ROOMS_PER_UID: "0" }).status, 0);
+});
+
+test("retry fence 绝对上限：∈ [GAME_ROOM_START_LOCK_TIMEOUT_MS, INVITE_WAITING_DEADLINE_MS]（§6.3 启动期断言）", () => {
+    const tooSmall = loadConfigWith({ GAME_ROOM_START_RETRY_FENCE_MAX_MS: "5000" });
+    assert.notEqual(tooSmall.status, 0, "上限 < 一个 lock 超时周期应拒绝启动");
+    assert.match(tooSmall.stderr, /GAME_ROOM_START_RETRY_FENCE_MAX_MS/);
+
+    const tooLarge = loadConfigWith({ GAME_ROOM_START_RETRY_FENCE_MAX_MS: "700000" });
+    assert.notEqual(tooLarge.status, 0, "上限 > waitingDeadline 应拒绝启动（⛔ 僵尸房窗口超过 deadline）");
+
+    for (const value of ["10000", "30000", "600000"]) {
+        const r = loadConfigWith({ GAME_ROOM_START_RETRY_FENCE_MAX_MS: value });
+        assert.equal(r.status, 0, `「${value}」应正常加载，stderr：${r.stderr.slice(0, 300)}`);
+    }
+});
+
+test("resolve 专用桶参数：容量 ≥1、回填速率 >0（0 会拒绝一切 resolve / 桶永不回填）", () => {
+    assert.notEqual(loadConfigWith({ RESOLVE_FAIL_CAPACITY: "0" }).status, 0);
+    assert.notEqual(loadConfigWith({ RESOLVE_OK_REFILL_PER_S: "0" }).status, 0);
+    assert.notEqual(loadConfigWith({ RESOLVE_ZONE_FAIL_CAPACITY: "0" }).status, 0);
+    const ok = loadConfigWith({
+        RESOLVE_FAIL_CAPACITY: "10",
+        RESOLVE_FAIL_REFILL_PER_S: "0.2",
+        RESOLVE_OK_CAPACITY: "5",
+        RESOLVE_OK_REFILL_PER_S: "0.1",
+        RESOLVE_ZONE_FAIL_CAPACITY: "1000",
+        RESOLVE_ZONE_FAIL_REFILL_PER_S: "20",
+    });
+    assert.equal(ok.status, 0, `冻结数值应通过，stderr：${ok.stderr.slice(0, 300)}`);
+});

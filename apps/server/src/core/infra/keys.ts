@@ -138,6 +138,23 @@ export const K_STREAM_KICK = `${G}stream:kick`;
 export const K_CHARACTER_REPAIR_DUE = `${G}repair:character:due:{character-repair}`;
 export const K_CHARACTER_REPAIR_ATTEMPTS = `${G}repair:character:attempts:{character-repair}`;
 
+// ── coordination 实例 · 私房邀请码 / access ticket 键族（Non-intrusive §6.7/§6.8；
+//    登记见 docs/SERVER.md §13）。⚠ 全部 **`sId` 显式参数**，⛔ 不走 `P()`/zoneCtx：
+//    GameRoom 不在任何 `zoneCtx.run` 作用域内（区是房级常量），而 `room.prepareCreate` /
+//    `room.resolve` 跑在 LobbyRoom 的 `zoneCtx.run({sId})` 里——create 与 renew/release
+//    若一侧读 ALS、一侧读房级 sId，就会打到不同 key（§6.7）。
+//    ⚠ 这些键只存在于 coordClient（组内单实例）；INVITE_CODE_ALLOCATE 的 code/gen 同
+//    hash-tag，TICKET_ISSUE_CREATION 刻意跨 tag（quota + ticket），⛔ 不得搬去 cluster。 ──
+
+/** 邀请码 lease/tombstone STRING（JSON value；active 带 PX=leaseTtl，tombstone 带 PX=cooldown，⛔ 非 DEL）。 */
+export const kInviteCode = (sId: number, code: string) => `${G}room:code:{s${sId}:${code}}`;
+/** per-(sId, code) 单调分配代号 INCR 计数器。永不重置、永不随 lease 释放而删除（§6.7）。 */
+export const kInviteCodeGen = (sId: number, code: string) => `${G}room:code:gen:{s${sId}:${code}}`;
+/** creation/join ticket 记录 STRING（JSON，PX=exp）。键名只含 ticket 的 sha256，⛔ 不含原文。 */
+export const kRoomTicket = (sId: number, ticketSha256: string) => `${G}room:ticket:s${sId}:${ticketSha256}`;
+/** 单 uid 私房配额 ZSET：member=`t:<jti>`（未消费 creation ticket）/`r:<roomId>`（活跃私房），score=过期时刻 ms。 */
+export const kRoomTicketQuota = (sId: number, uid: string) => `${G}room:quota:s${sId}:{${uid}}`;
+
 /** 每区活跃索引 ZSET（member=uid, score=lastActiveMs）。hash-tag 是 {bucket} 不是 {uid}。
  * s0 保持 legacy 物理键；s1+ 由 P() 增加区前缀，禁止跨区共享候选。 */
 export const kActiveLru = (bucket: number) => `${P()}active:lru:{${bucket}}`;

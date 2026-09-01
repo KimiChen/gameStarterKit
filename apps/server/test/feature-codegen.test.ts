@@ -32,6 +32,7 @@ import {
 } from "@game/shared";
 import guildDomain from "../../shared/src/protocol/lobbyRpc/domains/guild";
 import mailDomain from "../../shared/src/protocol/lobbyRpc/domains/mail";
+import roomDomain from "../../shared/src/protocol/lobbyRpc/domains/room";
 import shopDomain from "../../shared/src/protocol/lobbyRpc/domains/shop";
 import userDomain from "../../shared/src/protocol/lobbyRpc/domains/user";
 import {
@@ -141,7 +142,7 @@ test("--check 只读：stale/missing/extra 三态失败并点名", () => {
 // ── 运行时 descriptor ⇔ generated 表双向对拍 ────────────────────────────────
 
 test("descriptor 运行时值 ⇔ generated 表双向相等（route/mode/errorCodes/pushes 全覆盖）", () => {
-  const domains = [guildDomain, mailDomain, shopDomain, userDomain];
+  const domains = [guildDomain, mailDomain, roomDomain, shopDomain, userDomain];
   assert.deepEqual(domains.map((d) => d.domain).sort(), [...LOBBY_RPC_DOMAINS].sort());
 
   // routes/mode：双向
@@ -160,8 +161,19 @@ test("descriptor 运行时值 ⇔ generated 表双向相等（route/mode/errorCo
   assert.deepEqual(new Set(RPC_ERR_CODES), new Set(declaredCodes));
   assert.deepEqual(
     [...RPC_ERR_CODES],
-    [...RPC_ERR_CODE_ORDER, "OPERATION_CONFLICT", "OPERATION_RESULT_EXPIRED"],
-    "钉表 15 码逐字复现拆分前 envelope.ts 顺序；阶段 4 的两个新 core 码按声明序追加在钉表之后");
+    [
+      ...RPC_ERR_CODE_ORDER,
+      "OPERATION_CONFLICT",
+      "OPERATION_RESULT_EXPIRED",
+      // 阶段 8：room 域错误码（未上钉——域名序 room 唯一新域、域内声明序）
+      "ROOM_CODE_UNAVAILABLE",
+      "ROOM_FULL",
+      "ROOM_START_IN_PROGRESS",
+      "ROOM_QUOTA_EXCEEDED",
+      "ROOM_SERVICE_UNAVAILABLE",
+      "ROOM_RESULT_UNKNOWN",
+    ],
+    "钉表 15 码逐字复现拆分前 envelope.ts 顺序；未上钉新码按「core 声明序 → 域名序 → 域内声明序」追加");
 
   // pushes：key/type/validator 双向
   const declaredPushes = [...CORE_LOBBY_PUSHES, ...domains.flatMap((d) => [...d.pushes])];
@@ -371,52 +383,54 @@ test("重复 id 拒绝：跨域错误码 / 推送消息名 / 推送 key / 路由
 
 // ── 阶段 3 退出条件：fixture domain 增量 ────────────────────────────────────
 
-const FIXTURE_ROOM_DOMAIN = [
+// ⚠ 阶段 8 起真仓已有 domains/room.ts（私房 prepareCreate/resolve），fixture 域改名 chamber
+// 以保持「新增 domain 只加一个新文件」的退出条件语义不变。
+const FIXTURE_CHAMBER_DOMAIN = [
   'import { type RuntimeValidator } from "../../http";',
   'import { defineLobbyPush, defineLobbyRpcDomain, defineRpcIdempotentWrite, defineRpcQuery } from "../defineDomain";',
-  "export interface IRoomPeekReq {}",
-  "export interface IRoomPeekRes { ok: boolean; }",
-  "export interface IRoomCommitReq { clientReqId: string; }",
-  "export interface IRoomCommitRes { ok: boolean; }",
-  "export interface IRoomEventPush { seq: number; }",
-  "export const validateRoomPeekReq: RuntimeValidator<IRoomPeekReq> = () => ({});",
-  "export const validateRoomPeekRes: RuntimeValidator<IRoomPeekRes> = () => ({ ok: true });",
-  "export const validateRoomCommitReq: RuntimeValidator<IRoomCommitReq> = () => (undefined as never);",
-  "export const validateRoomCommitRes: RuntimeValidator<IRoomCommitRes> = () => ({ ok: true });",
-  "export const validateRoomEventPush: RuntimeValidator<IRoomEventPush> = () => ({ seq: 1 });",
+  "export interface IChamberPeekReq {}",
+  "export interface IChamberPeekRes { ok: boolean; }",
+  "export interface IChamberCommitReq { clientReqId: string; }",
+  "export interface IChamberCommitRes { ok: boolean; }",
+  "export interface IChamberEventPush { seq: number; }",
+  "export const validateChamberPeekReq: RuntimeValidator<IChamberPeekReq> = () => ({});",
+  "export const validateChamberPeekRes: RuntimeValidator<IChamberPeekRes> = () => ({ ok: true });",
+  "export const validateChamberCommitReq: RuntimeValidator<IChamberCommitReq> = () => (undefined as never);",
+  "export const validateChamberCommitRes: RuntimeValidator<IChamberCommitRes> = () => ({ ok: true });",
+  "export const validateChamberEventPush: RuntimeValidator<IChamberEventPush> = () => ({ seq: 1 });",
   "export default defineLobbyRpcDomain({",
-  '    domain: "room",',
-  '    errorCodes: ["ROOM_TEST_FAILED"],',
-  '    pushes: [defineLobbyPush("RoomEvent", "room.event", validateRoomEventPush)],',
+  '    domain: "chamber",',
+  '    errorCodes: ["CHAMBER_TEST_FAILED"],',
+  '    pushes: [defineLobbyPush("ChamberEvent", "chamber.event", validateChamberEventPush)],',
   "    routes: [",
-  '        defineRpcQuery("room.peek", { request: validateRoomPeekReq, response: validateRoomPeekRes }),',
-  '        defineRpcIdempotentWrite("room.commit", { request: validateRoomCommitReq, response: validateRoomCommitRes }),',
+  '        defineRpcQuery("chamber.peek", { request: validateChamberPeekReq, response: validateChamberPeekRes }),',
+  '        defineRpcIdempotentWrite("chamber.commit", { request: validateChamberCommitReq, response: validateChamberCommitRes }),',
   "    ],",
   "});",
   "",
 ].join("\n");
 
-test("退出条件：新增 fixture domain 只加 domains/room.ts，生成 registry 即收录，人工中央源码零改", () => {
+test("退出条件：新增 fixture domain 只加 domains/chamber.ts，生成 registry 即收录，人工中央源码零改", () => {
   const { root, options } = createFixture();
   const before = snapshotHandwritten(root);
-  fs.writeFileSync(path.join(root, LOBBY_RPC_DIR, "domains/room.ts"), FIXTURE_ROOM_DOMAIN);
+  fs.writeFileSync(path.join(root, LOBBY_RPC_DIR, "domains/chamber.ts"), FIXTURE_CHAMBER_DOMAIN);
   const result = writeFeatureArtifacts(options);
   assert.deepEqual(result.changed, [REGISTRY_RELATIVE], "只允许 registry 一件产物变化");
   assert.deepEqual(result.deleted, []);
   const after = snapshotHandwritten(root);
-  assert.deepEqual([...after.keys()].filter((key) => !before.has(key)), [`${LOBBY_RPC_DIR}/domains/room.ts`]);
+  assert.deepEqual([...after.keys()].filter((key) => !before.has(key)), [`${LOBBY_RPC_DIR}/domains/chamber.ts`]);
   for (const [key, bytes] of before) {
     assert.equal(after.get(key), bytes, `人工源码被生成器改动：${key}`);
   }
 
   const registry = fs.readFileSync(path.join(root, REGISTRY_RELATIVE), "utf8");
-  assert.match(registry, /^ {4}"room",$/mu, "LOBBY_RPC_DOMAINS 收录 room");
-  assert.match(registry, /^ {4}"room\.peek": "query",$/mu);
-  assert.match(registry, /^ {4}"room\.commit": "idempotent-write",$/mu);
-  assert.match(registry, /^ {4}\| "room\.commit"[;,]?$/mu, "LobbyRpcIdemType 显式收录 room.commit");
-  assert.ok(registry.includes('RoomEvent: "room.event",'), "LobbyPush 聚合 room.event");
+  assert.match(registry, /^ {4}"chamber",$/mu, "LOBBY_RPC_DOMAINS 收录 chamber");
+  assert.match(registry, /^ {4}"chamber\.peek": "query",$/mu);
+  assert.match(registry, /^ {4}"chamber\.commit": "idempotent-write",$/mu);
+  assert.match(registry, /^ {4}\| "chamber\.commit"[;,]?$/mu, "LobbyRpcIdemType 显式收录 chamber.commit");
+  assert.ok(registry.includes('ChamberEvent: "chamber.event",'), "LobbyPush 聚合 chamber.event");
   assert.ok(
-    registry.indexOf('"INTERNAL",') < registry.indexOf('"ROOM_TEST_FAILED",'),
+    registry.indexOf('"INTERNAL",') < registry.indexOf('"CHAMBER_TEST_FAILED",'),
     "未上钉的新码追加在历史钉之后",
   );
   assertFeatureArtifactsFresh(options); // 写盘后新鲜
