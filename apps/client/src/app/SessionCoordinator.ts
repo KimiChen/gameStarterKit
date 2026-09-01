@@ -30,7 +30,7 @@ import {
     type IUserView,
     type WebPlatformLoginResponse,
 } from "../shared/index";
-import type { AuthInvalidReason, LobbyConnectionEvent } from "../net/connectionEvents";
+import type { AuthInvalidReason, GameRoomConnectionEvent, LobbyConnectionEvent } from "../net/connectionEvents";
 
 export type { AuthInvalidReason };
 
@@ -434,6 +434,20 @@ export function handleLobbyConnectionEvent(event: LobbyConnectionEvent): void {
     if (event.reason === "final-loss") {
         notifyConnLost();
     }
+    // voluntary：主动关闭，不触发任何 session 广播或导航。
+}
+
+/**
+ * LifecycleBus battle 通道的派生订阅（app/wiring.ts 模块求值期接通，阶段 9）：
+ *  - closed{final-loss} → notifyBattleLost()——与 RoomClient 旧的直调**行为等价**
+ *    （同一同步栈、同一次数；广播 + 有会话且同代才开回登录 transition）；
+ *  - closed{voluntary}  → 不触发任何 session 广播（现状：主动 leave 不 notify）；
+ *  - joining/ready/dropped/reconnected → 仅经 bus 透传（AppRuntime §7.8 show
+ *    三态消费），session 层不派生。
+ */
+export function handleGameRoomConnectionEvent(event: GameRoomConnectionEvent): void {
+    if (event.kind !== "closed") return;
+    if (event.reason === "final-loss") notifyBattleLost();
     // voluntary：主动关闭，不触发任何 session 广播或导航。
 }
 

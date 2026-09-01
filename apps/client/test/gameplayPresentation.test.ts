@@ -150,18 +150,30 @@ test("gameplay catalog：正向动态 presentation factory 可挂载并在 stop 
     };
     let unregister: (() => void) | null = null;
     try {
-        // Import the catalog only after the cc loader is installed. The catalog
-        // itself must stay free of a static BallMoveView dependency.
-        const { registerDefaultGameplays } = await import("../src/gameplay/catalog");
+        // Import the gameplay module only after the cc loader is installed. The
+        // module itself must stay free of a static BallMoveView dependency
+        // (BallMoveView 经字面量动态 import 挂接——铁律 10)。
+        const { createGameplayModule } = await import("../src/gameplay/modes/ballMove/index");
+        const { registerGameplayModule } = await import("../src/logic/gameplay/GameplayModule");
+        const { createGameplayServices } = await import("../src/gameplay/services");
         const registry = new GameplayRegistry<any, any>();
-        unregister = registerDefaultGameplays(registry, {
-            presentationHost: { node: host as never, dispatchInput: (value) => dispatched.push(value) },
-            ballMoveJoiner: joiner,
-            idleJoiner: {
-                join: () => ({ ready: Promise.resolve({ kind: "idle", pulse() {} }), async leave() {} }),
-            },
-        });
         const controller = new RoomController<any, any>();
+        // §7.7：View 输入回流经 generation-fenced GameplayInstanceHost → controller 桥。
+        const services = createGameplayServices({
+            controllerBridge: {
+                currentGeneration: () => controller.currentGeneration,
+                dispatchInput: (input) => {
+                    dispatched.push(input);
+                    return controller.input(input);
+                },
+                requestStop: (reason) => controller.stop(reason),
+            },
+            presentationHost: { node: host as never, dispatchInput: (value) => dispatched.push(value) },
+        });
+        unregister = registerGameplayModule(registry, {
+            ...createGameplayModule(services),
+            joiner,
+        }, services.controllerBridge);
         assert.deepEqual(await controller.startRegistered(registry, "ballMove"), {
             status: "started",
             generation: 1,

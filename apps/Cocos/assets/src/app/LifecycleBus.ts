@@ -3,6 +3,8 @@
  *
  * 通道：
  *  - `connection`：转发 WebSocketClient.subscribeConnection 的低层连接事件（原样，不派生）；
+ *  - `battle`：战斗房（GameRoom）低层连接事件（RoomClient 直接发布；阶段 9 把
+ *    notifyBattleLost 直调归一为 closed{final-loss} 的派生，行为等价）；
  *  - `host`：宿主 hide/show（CocosLifecycleBridge 注入）。
  *
  * ⛔ 不持有 session generation、⛔ 不做任何派生、⛔ 发布不得经过微任务/queueMicrotask——
@@ -10,7 +12,7 @@
  * （SessionCoordinator 在同步回调里先清 token 再广播）。listener 异常逐个观察，
  * 不中断其余 listener 与发布方主流程。
  */
-import type { LobbyConnectionEvent } from "../net/connectionEvents";
+import type { GameRoomConnectionEvent, LobbyConnectionEvent } from "../net/connectionEvents";
 
 /** 宿主前后台事件（Cocos Game.EVENT_HIDE/EVENT_SHOW 经 bridge 注入，seq 单调）。 */
 export interface HostLifecycleEvent {
@@ -20,6 +22,7 @@ export interface HostLifecycleEvent {
 
 export interface LifecycleBusChannels {
     readonly connection: LobbyConnectionEvent;
+    readonly battle: GameRoomConnectionEvent;
     readonly host: HostLifecycleEvent;
 }
 
@@ -30,6 +33,7 @@ export class LifecycleBus {
         readonly [K in LifecycleBusChannel]: Set<(event: LifecycleBusChannels[K]) => void>;
     } = {
         connection: new Set(),
+        battle: new Set(),
         host: new Set(),
     };
 

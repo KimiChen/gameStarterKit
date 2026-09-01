@@ -302,3 +302,33 @@ export function parseCoreWireNames(source: string, label: string): CoreWireNames
     s2c: parseCoreNameTable(sourceFile, "CORE_S2C", label),
   };
 }
+
+/**
+ * 从 shared/protocol/rooms.ts 语法读取 canonical `GameplayModeId` 值集（阶段 9：
+ * 客户端 GameplayModule 装配集 = canonical ∩ catalog，与服务端生产 mode registry
+ * 的同集断言同一口径）。⛔ 只语法读取，不执行模块。
+ */
+export function parseGameplayModeIds(source: string, label: string): readonly string[] {
+  const sourceFile = ts.createSourceFile(label, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  return parseCoreNameTable(sourceFile, "GameplayModeId", label).map((entry) => entry.type);
+}
+
+/**
+ * 语法级校验 `apps/client/src/gameplay/modes/<id>/index.ts` 导出约定符号
+ * `createGameplayModule`（函数声明或 const 均可）。⛔ 不执行模块。
+ */
+export function assertClientGameplayModuleSource(source: string, label: string): void {
+  const sourceFile = ts.createSourceFile(label, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  for (const statement of sourceFile.statements) {
+    if (ts.isFunctionDeclaration(statement) && isExported(statement)
+      && statement.name?.text === "createGameplayModule") {
+      return;
+    }
+    if (ts.isVariableStatement(statement) && isExported(statement)) {
+      for (const declaration of statement.declarationList.declarations) {
+        if (ts.isIdentifier(declaration.name) && declaration.name.text === "createGameplayModule") return;
+      }
+    }
+  }
+  fail(label, "必须导出约定符号 createGameplayModule（GameplayServicesContext → GameplayModule）");
+}

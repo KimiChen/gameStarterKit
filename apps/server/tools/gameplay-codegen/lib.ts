@@ -30,7 +30,9 @@ import {
   type GameplayStateDescriptor,
 } from "./stateRenderer";
 import {
+  assertClientGameplayModuleSource,
   parseCoreWireNames,
+  parseGameplayModeIds,
   parseGameplayWireModule,
   type CoreWireNames,
   type GameplayWireDeclarations,
@@ -48,6 +50,8 @@ const CORE_MESSAGES_RELATIVE = "apps/shared/src/protocol/messages.ts";
 const SERVER_SCHEMA_DIR_RELATIVE = "apps/server/src/rooms/schema/generated";
 const SERVER_AGGREGATE_RELATIVE = "apps/server/src/rooms/schema/GameRoomState.ts";
 const CLIENT_CATALOG_RELATIVE = "apps/client/src/gameplay/catalog.generated.ts";
+const CLIENT_MODES_DIR_RELATIVE = "apps/client/src/gameplay/modes";
+const SHARED_ROOMS_RELATIVE = "apps/shared/src/protocol/rooms.ts";
 
 const MODE_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/u;
 const RUN_HINT = "Run npm --workspace @game/server run codegen:gameplays";
@@ -234,6 +238,50 @@ function assertCrossGameplayUniqueness(gameplays: readonly GameplayDescriptor[])
       wireTypes.set(token.type, gameplay.id);
     }
   }
+}
+
+/** 已装配客户端 GameplayModule 的玩法（阶段 9：canonical GameplayModeId ∩ catalog）。 */
+export type ClientGameplayModule = {
+  readonly id: string;
+  readonly constantName: string;
+};
+
+/**
+ * 发现客户端 GameplayModule 装配集（§7.6 阶段 9）：
+ *  - canonical 集 = shared/protocol/rooms.ts 的 `GameplayModeId` 值（语法读取）——
+ *    与服务端生产 mode registry 的同集断言同一口径；
+ *  - 装配集 = canonical ∩ catalog（交集容纳 --allow-delete 的过渡窗口：目录已删、
+ *    GameplayModeId 尚未同批清理时不误伤）；
+ *  - 装配集内每个 id 的 `apps/client/src/gameplay/modes/<id>/index.ts` 必须存在且
+ *    （语法级）导出 `createGameplayModule`，缺失 fail-fast。
+ * 真仓的「modes/ 目录 == canonical 集」双向同集由 gameplay-codegen.test 守门。
+ */
+export function readClientGameplayModules(
+  gameplays: readonly GameplayDescriptor[],
+  options: GameplayCodegenOptions = {},
+): readonly ClientGameplayModule[] {
+  const root = resolvedRoot(options);
+  const roomsFile = path.join(root, SHARED_ROOMS_RELATIVE);
+  let roomsSource: string;
+  try {
+    roomsSource = fs.readFileSync(roomsFile, "utf8");
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    fail(SHARED_ROOMS_RELATIVE, `cannot read canonical GameplayModeId source: ${detail}`);
+  }
+  const canonical = parseGameplayModeIds(roomsSource, SHARED_ROOMS_RELATIVE);
+  const byId = new Map(gameplays.map((gameplay) => [gameplay.id, gameplay]));
+  const modules: ClientGameplayModule[] = [];
+  for (const id of [...canonical].sort()) {
+    const gameplay = byId.get(id);
+    if (!gameplay) continue;
+    const label = `${CLIENT_MODES_DIR_RELATIVE}/${id}/index.ts`;
+    const file = path.join(root, CLIENT_MODES_DIR_RELATIVE, id, "index.ts");
+    assertRegularFile(file, label);
+    assertClientGameplayModuleSource(fs.readFileSync(file, "utf8"), label);
+    modules.push({ id, constantName: gameplay.manifest.constantName });
+  }
+  return modules;
 }
 
 /** 玩法 wire 与 core 消息不得重名（消息名与聚合对象键名两个命名空间都要闸）。 */
@@ -630,19 +678,67 @@ function renderServerAggregate(gameplays: readonly GameplayDescriptor[]): string
   return `${lines.join("\n").trimEnd()}\n`;
 }
 
-function renderClientCatalog(gameplays: readonly GameplayDescriptor[]): string {
-  // ⚠ 客户端生成代码钉 ES2017 运行时 API 且必须过 noUnusedLocals（本文件只有字面量数据）。
+// ⚠ 标签会进 `/** … */` 块注释：⛔ 不能写 `*/`。
+const CLIENT_SOURCE_LABEL =
+  `${AGGREGATE_SOURCE_LABEL} + ${CLIENT_MODES_DIR_RELATIVE}/<id>/index.ts`;
+
+function renderClientCatalog(
+  gameplays: readonly GameplayDescriptor[],
+  clientModules: readonly ClientGameplayModule[],
+): string {
+  // ⚠ 客户端生成代码钉 ES2017 运行时 API 且必须过 noUnusedLocals。
+  // module import 是**静态字面量**（catalog 稳定进依赖图）；cc/FGUI 渲染实现仍由各
+  // module 内的字面量动态 import 挂接（铁律 10；generated-purity 门禁覆盖本文件）。
+  const factoryName = (module: ClientGameplayModule): string =>
+    `create${module.constantName}GameplayModule`;
   const lines = [
-    generatedHeader(AGGREGATE_SOURCE_LABEL),
+    generatedHeader(CLIENT_SOURCE_LABEL),
+    "import { registerGameplayModule } from \"../logic/gameplay/GameplayModule\";",
+    "import type { AppGameplayRegistry, GameplayServicesContext } from \"./services\";",
+  ];
+  for (const module of clientModules) {
+    lines.push(
+      `import { createGameplayModule as ${factoryName(module)} } from "./modes/${module.id}/index";`,
+    );
+  }
+  lines.push(
     "",
-    "/** Per-gameplay catalog mirror (minimal; extended in stage 9). contractDigest = sha256(manifest.json + \"\\0\" + state.json + \"\\0\" + wire.ts). */",
+    "/** Per-gameplay catalog mirror. contractDigest = sha256(manifest.json + \"\\0\" + state.json + \"\\0\" + wire.ts). */",
     "export const GAMEPLAY_CATALOG = {",
     ...renderCatalogEntries(gameplays),
     "} as const;",
     "",
     "export type GameplayCatalogId = keyof typeof GAMEPLAY_CATALOG;",
     "",
-  ];
+    "/** 已装配客户端 module 的玩法（canonical GameplayModeId ∩ catalog；fixture 玩法不在此表）。 */",
+    "export const GAMEPLAY_MODULES = {",
+    ...clientModules.map((module) => `    ${JSON.stringify(module.id)}: ${factoryName(module)},`),
+    "} as const;",
+    "",
+    "export type GameplayModuleId = keyof typeof GAMEPLAY_MODULES;",
+    "",
+    "/**",
+    " * 登记全部 generated gameplay module（§7.6）：每个 module 只注入稳定服务，",
+    " * 后续登记失败回滚本次已登记项（逆序），⛔ 不影响调用前已有登记。",
+    " */",
+    "export function registerGeneratedGameplays(",
+    "    registry: AppGameplayRegistry,",
+    "    services: GameplayServicesContext,",
+    "): () => void {",
+    "    const disposers: Array<() => void> = [];",
+    "    try {",
+    ...clientModules.map((module) =>
+      `        disposers.push(registerGameplayModule(registry, ${factoryName(module)}(services), services.controllerBridge));`),
+    "    } catch (error) {",
+    "        for (const dispose of disposers.splice(0).reverse()) dispose();",
+    "        throw error;",
+    "    }",
+    "    return () => {",
+    "        for (const dispose of disposers.splice(0).reverse()) dispose();",
+    "    };",
+    "}",
+    "",
+  );
   return `${lines.join("\n").trimEnd()}\n`;
 }
 
@@ -650,6 +746,7 @@ function renderClientCatalog(gameplays: readonly GameplayDescriptor[]): string {
 export function renderGameplayArtifacts(
   gameplays: readonly GameplayDescriptor[],
   core: CoreWireNames,
+  clientModules: readonly ClientGameplayModule[],
 ): ReadonlyMap<string, string> {
   const artifacts = new Map<string, string>();
   artifacts.set(SHARED_WIRE_CATALOG_RELATIVE, renderWireCatalog(gameplays, core));
@@ -666,7 +763,7 @@ export function renderGameplayArtifacts(
   artifacts.set(SHARED_CATALOG_RELATIVE, renderSharedCatalog(gameplays));
   artifacts.set(SHARED_INDEX_RELATIVE, renderSharedIndex(gameplays));
   artifacts.set(SERVER_AGGREGATE_RELATIVE, renderServerAggregate(gameplays));
-  artifacts.set(CLIENT_CATALOG_RELATIVE, renderClientCatalog(gameplays));
+  artifacts.set(CLIENT_CATALOG_RELATIVE, renderClientCatalog(gameplays, clientModules));
   return new Map([...artifacts.entries()].sort(([left], [right]) => (left < right ? -1 : 1)));
 }
 
@@ -757,7 +854,10 @@ export function assertGameplayArtifactsFresh(options: GameplayCodegenOptions = {
   const root = resolvedRoot(options);
   const gameplays = readGameplayDescriptors(options);
   assertModeVersionBumped(gameplays, previousCatalogRecords(options));
-  const { stale, missing, extra } = diffArtifacts(root, renderGameplayArtifacts(gameplays, readCoreWireNames(options)));
+  const { stale, missing, extra } = diffArtifacts(
+    root,
+    renderGameplayArtifacts(gameplays, readCoreWireNames(options), readClientGameplayModules(gameplays, options)),
+  );
   const problems: string[] = [];
   if (stale.length > 0) problems.push(`stale: ${stale.join(", ")}`);
   if (missing.length > 0) problems.push(`missing: ${missing.join(", ")}`);
@@ -798,7 +898,11 @@ export function writeGameplayArtifacts(options: GameplayCodegenOptions = {}): Ga
     );
   }
 
-  const expected = renderGameplayArtifacts(gameplays, readCoreWireNames(options));
+  const expected = renderGameplayArtifacts(
+    gameplays,
+    readCoreWireNames(options),
+    readClientGameplayModules(gameplays, options),
+  );
   // extra 清理：生成目录里不再被任何 mode 拥有的文件。允许删除名单里的 mode 产物删除；
   // 其余一律拒绝——普通 --write 不得静默吞掉未知文件。
   const orphans = collectOwnedFiles(root).filter((relative) => !expected.has(relative));

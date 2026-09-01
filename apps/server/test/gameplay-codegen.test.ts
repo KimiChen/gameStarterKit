@@ -31,6 +31,7 @@ import {
 import {
   assertGameplayArtifactsFresh,
   parseCli,
+  readClientGameplayModules,
   readCoreWireNames,
   readGameplayDescriptors,
   renderGameplayArtifacts,
@@ -50,6 +51,7 @@ const SHARED_INDEX = "apps/shared/src/gameplays/index.ts";
 const SHARED_WIRE_CATALOG = "apps/shared/src/gameplays/generated/wire-catalog.generated.ts";
 const SERVER_AGGREGATE = "apps/server/src/rooms/schema/GameRoomState.ts";
 const CLIENT_CATALOG = "apps/client/src/gameplay/catalog.generated.ts";
+const CLIENT_MODES_DIR = "apps/client/src/gameplay/modes";
 
 /** writeGameplayArtifacts 的产物清单（相对仓根，路径排序与实现一致）。 */
 const FIXTURE_ARTIFACTS = [
@@ -122,11 +124,21 @@ function createFixture(): { readonly root: string; readonly options: GameplayCod
     path.join(REPOSITORY_ROOT, "apps/shared/src/protocol/messages.ts"),
     path.join(root, "apps/shared/src/protocol/messages.ts"),
   );
+  // 阶段 9：client catalog 的两个额外单源——canonical GameplayModeId（protocol/rooms.ts）
+  // 与各玩法客户端 module（gameplay/modes/<id>/index.ts，语法级校验）。
+  fs.copyFileSync(
+    path.join(REPOSITORY_ROOT, "apps/shared/src/protocol/rooms.ts"),
+    path.join(root, "apps/shared/src/protocol/rooms.ts"),
+  );
   for (const id of ["ballMove", "idle"]) {
     const wire = path.join(REPOSITORY_ROOT, "apps/shared/src/gameplays", id, "wire.ts");
-    if (!fs.existsSync(wire)) continue;
-    fs.mkdirSync(path.join(root, "apps/shared/src/gameplays", id), { recursive: true });
-    fs.copyFileSync(wire, path.join(root, "apps/shared/src/gameplays", id, "wire.ts"));
+    if (fs.existsSync(wire)) {
+      fs.mkdirSync(path.join(root, "apps/shared/src/gameplays", id), { recursive: true });
+      fs.copyFileSync(wire, path.join(root, "apps/shared/src/gameplays", id, "wire.ts"));
+    }
+    const clientModule = path.join(REPOSITORY_ROOT, CLIENT_MODES_DIR, id, "index.ts");
+    fs.mkdirSync(path.join(root, CLIENT_MODES_DIR, id), { recursive: true });
+    fs.copyFileSync(clientModule, path.join(root, CLIENT_MODES_DIR, id, "index.ts"));
   }
   return { root, options: { repositoryRoot: root } };
 }
@@ -641,7 +653,11 @@ test("generated root maps are frozen, type-safe and reject unknown modes", () =>
 
 test("generated validator keys exactly equal runtime decorated keys and exclude server-only fields", () => {
   const gameplays = readGameplayDescriptors({ repositoryRoot: REPOSITORY_ROOT });
-  const artifacts = renderGameplayArtifacts(gameplays, readCoreWireNames({ repositoryRoot: REPOSITORY_ROOT }));
+  const artifacts = renderGameplayArtifacts(
+    gameplays,
+    readCoreWireNames({ repositoryRoot: REPOSITORY_ROOT }),
+    readClientGameplayModules(gameplays, { repositoryRoot: REPOSITORY_ROOT }),
+  );
   for (const gameplay of gameplays) {
     const shared = artifacts.get(`${SHARED_STATE_DIR}/${gameplay.id}.ts`);
     const server = artifacts.get(`${SERVER_SCHEMA_DIR}/${gameplay.id}.ts`);
@@ -664,9 +680,11 @@ test("generated validator keys exactly equal runtime decorated keys and exclude 
 });
 
 test("map entry helpers are unique per owner type when roots share a field name", () => {
+  const realGameplays = readGameplayDescriptors({ repositoryRoot: REPOSITORY_ROOT });
   const artifacts = renderGameplayArtifacts(
-    readGameplayDescriptors({ repositoryRoot: REPOSITORY_ROOT }),
+    realGameplays,
     readCoreWireNames({ repositoryRoot: REPOSITORY_ROOT }),
+    readClientGameplayModules(realGameplays, { repositoryRoot: REPOSITORY_ROOT }),
   );
   const ballMove = artifacts.get(`${SHARED_STATE_DIR}/ballMove.ts`) ?? "";
   const idle = artifacts.get(`${SHARED_STATE_DIR}/idle.ts`) ?? "";
@@ -812,9 +830,11 @@ test("真实 descriptor 必须通过生命周期断言，否则上面的反例�
 });
 
 test("生成的 RoomStateLifecycle 是独立接口，⛔ 不得是某个具体 root 的别名，也不得泄进 shared 产物", () => {
+  const realGameplays = readGameplayDescriptors({ repositoryRoot: REPOSITORY_ROOT });
   const artifacts = renderGameplayArtifacts(
-    readGameplayDescriptors({ repositoryRoot: REPOSITORY_ROOT }),
+    realGameplays,
     readCoreWireNames({ repositoryRoot: REPOSITORY_ROOT }),
+    readClientGameplayModules(realGameplays, { repositoryRoot: REPOSITORY_ROOT }),
   );
   const aggregate = artifacts.get(SERVER_AGGREGATE) ?? "";
   assert.match(aggregate, /export interface RoomStateLifecycle \{/u);
@@ -1010,6 +1030,110 @@ test("阶段 2b 退出条件：fixture mode 新增 C2S/S2C 只加 wire.ts（+man
     assert.match(wireCatalog, /import \{ PuzzleBoard, PuzzleStep, type IPuzzleBoardRes, type IPuzzleStepReq \} from "\.\.\/puzzle\/wire";/);
     // 聚合 barrel 收录手写 wire 模块；catalog digest 覆盖 wire 字节（上一用例已钉）
     assert.match(readFixtureText(fixture.root, SHARED_INDEX), /export \* from "\.\/puzzle\/wire";/);
+    assert.doesNotThrow(() => assertGameplayArtifactsFresh(fixture.options));
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+// ── 阶段 9：client GameplayModule 装配集（canonical ∩ catalog 双向同集与语法闸）──
+
+test("client module 集 = canonical GameplayModeId：真仓 modes/ 目录双向同集，渲染进 GAMEPLAY_MODULES", () => {
+  const gameplays = readGameplayDescriptors({ repositoryRoot: REPOSITORY_ROOT });
+  const modules = readClientGameplayModules(gameplays, { repositoryRoot: REPOSITORY_ROOT });
+  // canonical（shared/protocol/rooms.ts 的 GameplayModeId）当前 = ballMove/idle；
+  // privateFixture 走完整 catalog 链但 ⛔ 不装配客户端 module（与服务端生产 mode
+  // registry 的同集断言同一口径——三端一致闸的客户端半边）。
+  assert.deepEqual(modules.map((module) => module.id), ["ballMove", "idle"]);
+  // 真仓 modes/ 目录必须与装配集双向同集：多出的目录 = 无主 module，少了 = 装配缺口。
+  const moduleDirs = fs.readdirSync(path.join(REPOSITORY_ROOT, CLIENT_MODES_DIR), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+  assert.deepEqual(moduleDirs, modules.map((module) => module.id).sort(),
+    "gameplay/modes/ 目录必须与 canonical GameplayModeId 装配集精确同集");
+  const artifacts = renderGameplayArtifacts(
+    gameplays,
+    readCoreWireNames({ repositoryRoot: REPOSITORY_ROOT }),
+    modules,
+  );
+  const clientCatalog = artifacts.get(CLIENT_CATALOG) ?? "";
+  assert.match(clientCatalog, /"ballMove": createBallMoveGameplayModule,/);
+  assert.match(clientCatalog, /"idle": createIdleGameplayModule,/);
+  assert.doesNotMatch(clientCatalog, /"privateFixture": create/,
+    "fixture gameplay ⛔ 不得进入 GAMEPLAY_MODULES（无客户端 module）");
+  assert.match(clientCatalog, /import \{ createGameplayModule as createBallMoveGameplayModule \} from "\.\/modes\/ballMove\/index";/);
+});
+
+test("client module 缺失或未导出约定符号：freshness 与 writer 都必须 fail-fast", () => {
+  const fixture = createFixture();
+  try {
+    writeGameplayArtifacts(fixture.options);
+    assert.doesNotThrow(() => assertGameplayArtifactsFresh(fixture.options));
+
+    // ① module 文件被删 → 点名缺失
+    const idleModule = path.join(fixture.root, CLIENT_MODES_DIR, "idle/index.ts");
+    const original = fs.readFileSync(idleModule, "utf8");
+    fs.rmSync(idleModule);
+    const missingGate = /gameplay\/modes\/idle\/index\.ts: missing required file/;
+    assert.throws(() => assertGameplayArtifactsFresh(fixture.options), missingGate);
+    assert.throws(() => writeGameplayArtifacts(fixture.options), missingGate);
+
+    // ② module 存在但未导出 createGameplayModule → 语法级点名
+    fs.writeFileSync(idleModule, "export const somethingElse = 1;\n", "utf8");
+    const exportGate = /必须导出约定符号 createGameplayModule/;
+    assert.throws(() => assertGameplayArtifactsFresh(fixture.options), exportGate);
+    assert.throws(() => writeGameplayArtifacts(fixture.options), exportGate);
+
+    fs.writeFileSync(idleModule, original, "utf8");
+    assert.doesNotThrow(() => assertGameplayArtifactsFresh(fixture.options));
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test("阶段 9 退出条件：新增 canonical 玩法 = 单源目录 + modes/<id>/index.ts，⛔ 不改中央文件即入 GAMEPLAY_MODULES", () => {
+  const fixture = createFixture();
+  try {
+    writeGameplayArtifacts(fixture.options);
+    // canonical 增员：GameplayModeId 加 Puzzle（模拟真实新增玩法的 shared 常量登记）。
+    const roomsFile = path.join(fixture.root, "apps/shared/src/protocol/rooms.ts");
+    const rooms = fs.readFileSync(roomsFile, "utf8");
+    fs.writeFileSync(
+      roomsFile,
+      rooms.replace("Idle: \"idle\",", "Idle: \"idle\",\n    Puzzle: \"puzzle\","),
+      "utf8",
+    );
+    addFixtureMode(fixture.root, "puzzle", puzzleManifest(), puzzleState());
+
+    // canonical ∩ catalog 命中 puzzle 但 module 缺失 → fail-fast（缺口不可静默）。
+    assert.throws(
+      () => writeGameplayArtifacts(fixture.options),
+      /gameplay\/modes\/puzzle\/index\.ts: missing required file/,
+    );
+
+    // 只新增 module 文件（内容语法级满足约定导出即可）。
+    fs.mkdirSync(path.join(fixture.root, CLIENT_MODES_DIR, "puzzle"), { recursive: true });
+    fs.writeFileSync(
+      path.join(fixture.root, CLIENT_MODES_DIR, "puzzle/index.ts"),
+      "export function createGameplayModule(services: unknown): unknown {\n    return services;\n}\n",
+      "utf8",
+    );
+    const untouched = [
+      `${SHARED_STATE_DIR}/ballMove.ts`,
+      `${SHARED_STATE_DIR}/idle.ts`,
+      `${CLIENT_MODES_DIR}/ballMove/index.ts`,
+      `${CLIENT_MODES_DIR}/idle/index.ts`,
+    ];
+    const snapshot = new Map(untouched.map((relative) => [relative, readFixtureText(fixture.root, relative)]));
+    writeGameplayArtifacts(fixture.options);
+    for (const relative of untouched) {
+      assert.equal(readFixtureText(fixture.root, relative), snapshot.get(relative),
+        `${relative} 必须保持字节不动`);
+    }
+    const clientCatalog = readFixtureText(fixture.root, CLIENT_CATALOG);
+    assert.match(clientCatalog, /"puzzle": createPuzzleGameplayModule,/);
+    assert.match(clientCatalog, /registerGameplayModule\(registry, createPuzzleGameplayModule\(services\), services\.controllerBridge\)/);
     assert.doesNotThrow(() => assertGameplayArtifactsFresh(fixture.options));
   } finally {
     fs.rmSync(fixture.root, { recursive: true, force: true });

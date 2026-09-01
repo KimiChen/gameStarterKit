@@ -1059,18 +1059,19 @@ test("AppRuntime：只装配 registry/controller/catalog，不再内联 RoomClie
   assert.doesNotMatch(source, /\bRoomClient\b|\bGameECS\b|\bPlayerModel\b|bindRoom\(/);
   assert.doesNotMatch(source, /\bBallMoveView\b|ballMovePresentation/,
     "presentation adapter 应由 gameplay catalog entry 归属，AppRuntime 只提供通用 host");
-  assert.match(source, /registerDefaultGameplays\(registry,/);
+  // 阶段 9：装配点切到 generated catalog 的 registerGeneratedGameplays（services 注入）。
+  assert.match(source, /registerGeneratedGameplays\(registry, services\)/);
   assert.match(source, /presentationHost/);
   assert.match(source, /controller\.startRegistered\(registry, requestedId, signal\)/);
   assert.match(source, /controller\.tick\(dt\)/);
   assert.match(source, /roomController\?\.stop\(\{ kind \}\)/);
-  assert.doesNotMatch(source, /createIdleRoomJoiner|registerIdleGameplay/,
-    "第二玩法的 joiner/登记应归 catalog，而不是重新侵入宿主");
+  assert.doesNotMatch(source, /createIdleRoomJoiner|registerIdleGameplay|createBallMoveRoomJoiner|ballMoveJoiner|idleJoiner/,
+    "玩法的 joiner/登记应归各 gameplay module，而不是重新侵入宿主");
 
   const main = readFileSync(new URL("../src/Main.ts", import.meta.url), "utf8");
   assert.doesNotMatch(main, /\bRoomClient\b|\bGameECS\b|\bPlayerModel\b|bindRoom\(/,
     "Main 已收敛为 bootstrap/update/dispose，不得回流网络/ECS 细节");
-  assert.doesNotMatch(main, /registerDefaultGameplays|\bBallMoveView\b|startRegistered\(/,
+  assert.doesNotMatch(main, /registerDefaultGameplays|registerGeneratedGameplays|\bBallMoveView\b|startRegistered\(/,
     "gameplay 装配归 AppRuntime，Main ⛔ 不得重新持有");
   assert.match(main, /runtime\?\.tick\(dt\)/, "Main.update 必须只转发 runtime.tick");
   assert.match(main, /runtime\?\.dispose\(\)/, "Main.onDestroy 必须只转发 runtime.dispose");

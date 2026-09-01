@@ -2,9 +2,10 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
     GameplayRegistry,
+    registerGameplayModule,
     RoomController,
+    type GameplayControllerBridge,
     type GameplayPlugin,
-    type GameplayRoomJoiner,
     type RoomCapability,
 } from "../src/logic/gameplay";
 import type { BallMoveRoom } from "../src/logic/rooms/ballMove/BallMoveGameplay";
@@ -15,7 +16,10 @@ import {
     type IdleInput,
     type IdleRoom,
 } from "../src/logic/rooms/idle/IdleGameplay";
-import { registerDefaultGameplays } from "../src/gameplay/catalog";
+import { registerGeneratedGameplays } from "../src/gameplay/catalog.generated";
+import { createGameplayServices, type GameplayPresentationHost } from "../src/gameplay/services";
+import { createGameplayModule as createBallMoveModule } from "../src/gameplay/modes/ballMove/index";
+import { createGameplayModule as createIdleModule } from "../src/gameplay/modes/idle/index";
 
 interface Deferred<T> {
     readonly promise: Promise<T>;
@@ -40,6 +44,26 @@ function lease(ready: Promise<IdleRoom>): RoomCapability<IdleRoom> & { leaveCall
 }
 
 const room = (): IdleRoom => ({ kind: "idle-fixture", pulse() {} });
+
+/** §7.7 controller 桥（生产由 AppRuntime 绑定；测试直连 controller）。 */
+function bridgeFor(controller: RoomController<any, any>): GameplayControllerBridge {
+    return {
+        currentGeneration: () => controller.currentGeneration,
+        dispatchInput: (input) => controller.input(input),
+        requestStop: (reason) => controller.stop(reason),
+    };
+}
+
+/** module 装配测试 services：⛔ 不再有逐玩法 joiner/adapter 字段（§7.6）。 */
+function servicesFor(
+    controller: RoomController<any, any>,
+    presentationHost?: GameplayPresentationHost,
+) {
+    return createGameplayServices({
+        controllerBridge: bridgeFor(controller),
+        ...(presentationHost ? { presentationHost } : {}),
+    });
+}
 
 function trackedGameplay(
     id = "idle",
@@ -191,18 +215,14 @@ test("RoomController：所有未接管插件的拒绝路径都等待 exactly-onc
     assert.equal(malformed.state.disposeCalls, 1);
 });
 
-test("gameplay catalog：后续模块登记失败会回滚先前登记", () => {
+test("generated 登记：后续模块登记失败会回滚先前登记，且不删除调用前已有登记", () => {
     const registry = new GameplayRegistry<any, any>();
+    const controller = new RoomController<any, any>();
     const idleJoiner = { join: () => lease(Promise.resolve(room())) };
     const existingIdleOff = registry.register("idle", createIdleGameplay, { joiner: idleJoiner });
-    const ballJoiner = {
-        join: () => lease(Promise.resolve({} as never)),
-    } as unknown as GameplayRoomJoiner<BallMoveRoom>;
+    // 生成序 ballMove → idle：idle 撞已登记 ⇒ 本次 ballMove 必须回滚。
     assert.throws(
-        () => registerDefaultGameplays(registry, {
-            ballMoveJoiner: ballJoiner,
-            idleJoiner,
-        }),
+        () => registerGeneratedGameplays(registry, servicesFor(controller)),
         /已登记/,
     );
     assert.equal(registry.has("ballMove"), false, "idle 登记失败后必须撤销本次 ballMove");
@@ -210,37 +230,42 @@ test("gameplay catalog：后续模块登记失败会回滚先前登记", () => {
     existingIdleOff();
 });
 
-test("gameplay catalog：默认模块可登记并由无默认 transport 的 controller 启动 idle", async () => {
+test("gameplay module：模块 joiner 可整体替换（⛔ 无逐玩法 context 字段），idle 由无默认 transport 的 controller 启动", async () => {
     const registry = new GameplayRegistry<any, any>();
+    const controller = new RoomController<any, any>();
+    const services = servicesFor(controller);
     const idleCapability = lease(Promise.resolve({
         kind: "idle", roomId: "idle-real", sessionId: "self", pulse() {},
     }));
-    const idleJoiner = { join: () => idleCapability };
-    const ballJoiner = {
-        join: () => lease(Promise.resolve({} as never)),
-    } as unknown as GameplayRoomJoiner<BallMoveRoom>;
-    const unregister = registerDefaultGameplays(registry, {
-        ballMoveJoiner: ballJoiner,
-        idleJoiner,
-    });
-    const controller = new RoomController<any, any>();
+    // 测试替换 transport 的口径：替换**模块对象的 joiner**（模块是普通对象，spread
+    // 即可），⛔ 不再经 catalog context 的 ballMoveJoiner/idleJoiner 字段注入。
+    const ballOff = registerGameplayModule(registry, {
+        ...createBallMoveModule(services),
+        joiner: { join: () => lease(Promise.resolve({} as never)) as unknown as RoomCapability<BallMoveRoom> },
+    }, services.controllerBridge);
+    const idleOff = registerGameplayModule(registry, {
+        ...createIdleModule(services),
+        joiner: { join: () => idleCapability },
+    }, services.controllerBridge);
 
     assert.deepEqual(registry.list(), ["ballMove", "idle"]);
     assert.equal((await controller.startRegistered(registry, "idle")).status, "started");
     assert.equal(controller.pluginId, "idle");
     await controller.dispose();
     assert.equal(idleCapability.leaveCalls, 1);
-    unregister();
+    idleOff();
+    ballOff();
     assert.deepEqual(registry.list(), []);
 });
 
-test("gameplay catalog：idle 不创建 BallMove presentation，缺失 presentation 只影响 ballMove 并完整回滚", async () => {
+test("gameplay module：idle 不创建 BallMove presentation，缺失 presentation 只影响 ballMove 并完整回滚", async () => {
     const registry = new GameplayRegistry<any, any>();
+    const controller = new RoomController<any, any>();
     let nodeReads = 0;
-    const host = {
-        get node(): any {
+    const host: GameplayPresentationHost = {
+        get node(): never {
             nodeReads++;
-            return {};
+            return {} as never;
         },
         dispatchInput() {},
     };
@@ -251,19 +276,20 @@ test("gameplay catalog：idle 不创建 BallMove presentation，缺失 presentat
             async leave() { idleLeaves++; },
         }),
     };
+    let ballLeaves = 0;
     const ballJoiner = {
         join: () => ({
             ready: Promise.resolve({} as never),
             async leave() { ballLeaves++; },
         }),
     };
-    let ballLeaves = 0;
-    const unregister = registerDefaultGameplays(registry, {
-        presentationHost: host,
-        idleJoiner,
-        ballMoveJoiner: ballJoiner,
-    });
-    const controller = new RoomController<any, any>();
+    const services = servicesFor(controller, host);
+    const offs = [
+        registerGameplayModule(registry, { ...createBallMoveModule(services), joiner: ballJoiner },
+            services.controllerBridge),
+        registerGameplayModule(registry, { ...createIdleModule(services), joiner: idleJoiner },
+            services.controllerBridge),
+    ];
 
     assert.deepEqual(await controller.startRegistered(registry, "idle"), {
         status: "started", generation: 1, pluginId: "idle",
@@ -272,13 +298,15 @@ test("gameplay catalog：idle 不创建 BallMove presentation，缺失 presentat
     await controller.stop();
     assert.equal(idleLeaves, 1);
 
-    unregister();
+    for (const off of offs) off();
 
+    // 无 presentationHost 的 services：ballMove 启动失败且完整回滚，idle 不受影响。
     const missingRegistry = new GameplayRegistry<any, any>();
-    registerDefaultGameplays(missingRegistry, {
-        idleJoiner,
-        ballMoveJoiner: ballJoiner,
-    });
+    const missingServices = servicesFor(controller);
+    registerGameplayModule(missingRegistry, { ...createBallMoveModule(missingServices), joiner: ballJoiner },
+        missingServices.controllerBridge);
+    registerGameplayModule(missingRegistry, { ...createIdleModule(missingServices), joiner: idleJoiner },
+        missingServices.controllerBridge);
     const failed = await controller.startRegistered(missingRegistry, "ballMove");
     assert.equal(failed.status, "failed");
     assert.match(String((failed as { error?: unknown }).error), /presentation adapter/);

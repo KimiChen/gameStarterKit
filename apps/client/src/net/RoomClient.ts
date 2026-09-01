@@ -28,7 +28,11 @@ import {
     validateS2CPayload,
 } from "../shared/index";
 import { normalizeGameRoomStrategy, type GameRoomMatchmakingStrategy } from "./rooms/matchmaking";
-import { notifyBattleLost } from "./session";
+// battle 通道（§7.3/§7.8 阶段 9）：战斗房连接事件直接发布进应用级 LifecycleBus，
+// SessionCoordinator 从 closed{final-loss} 派生 battleLost（app/wiring 在模块求值期
+// 已装好派生订阅——import lifecycleBus 即保证发布先后序）。⛔ 本文件不再直调 session。
+import { lifecycleBus } from "../app/wiring";
+import type { GameRoomConnectionEvent, GameRoomConnectionSnapshot } from "./connectionEvents";
 import {
     looksLikeJoinSignal,
     normalizeJoinSignal,
@@ -578,8 +582,13 @@ interface RoomSlot {
     dropping: boolean;
     /** No C2S may cross before the first/reconnected exact state snapshot. */
     stateReady: boolean;
+    /** battle 通道每代最多一条 closed（voluntary 不得跟在 final-loss 之后重复终局）。 */
+    closedEmitted: boolean;
     readonly owners: Set<RoomOwner>;
 }
+
+/** battle 连接事件单调 sequence（模块级：跨实例/世代单调，仅用于事件排序）。 */
+let gameRoomConnectionEventSeq = 0;
 
 export class RoomClient {
     private static _inst: RoomClient | null = null;
@@ -609,6 +618,39 @@ export class RoomClient {
 
     get sessionId(): string {
         return this.slot?.room?.sessionId ?? "";
+    }
+
+    /**
+     * 战斗房连接三态快照（§7.8 show 路径判连接状态）：从当前 slot 派生，
+     * ⛔ 不维护第二份事件簿。ready = state 屏障已过（stateReady）；dropped =
+     * drop 宽限窗口；joining = 握手/首帧屏障中；idle = 无连接。
+     */
+    getBattleConnectionState(): GameRoomConnectionSnapshot {
+        const slot = this.slot;
+        if (!slot) return { state: "idle", connGeneration: this.generation };
+        const state = slot.dropping ? "dropped" : slot.stateReady ? "ready" : "joining";
+        return { state, connGeneration: slot.generation };
+    }
+
+    /** 发布一条 battle 连接事件（严格同步；派生订阅由 app/wiring 模块求值期装好）。 */
+    private publishBattleEvent(event: GameRoomConnectionEvent): void {
+        lifecycleBus.publish("battle", event);
+    }
+
+    /**
+     * 发布 closed{voluntary|final-loss}；每代最多一条终局（主动 leave 跟在
+     * final-loss 之后不再重复）。final-loss 的“每代一次”另由既有 current()/
+     * cancelled 结构闸保证，此处的标志只是显式护栏。
+     */
+    private publishBattleClosed(slot: RoomSlot, reason: "voluntary" | "final-loss"): void {
+        if (slot.closedEmitted) return;
+        slot.closedEmitted = true;
+        this.publishBattleEvent({
+            kind: "closed",
+            connGeneration: slot.generation,
+            seq: ++gameRoomConnectionEventSeq,
+            reason,
+        });
     }
 
     /** @param endpoint http(s) 地址，如 http://localhost:2568，SDK 自动派生 ws(s) */
@@ -678,10 +720,16 @@ export class RoomClient {
                 pendingStateReject: null,
                 dropping: false,
                 stateReady: false,
+                closedEmitted: false,
                 owners: new Set<RoomOwner>(),
             };
             // 先挂槽再启动 async join：若 SDK 在调用点同步抛错，doJoin 的失败清理也能命中本槽。
             this.slot = slot;
+            this.publishBattleEvent({
+                kind: "joining",
+                connGeneration: slot.generation,
+                seq: ++gameRoomConnectionEventSeq,
+            });
             // 固化本次 Client：后续 init() 即使切端点，也不能把在途 join 偷换到另一个 Client。
             slot.ready = this.doJoin(slot, client, joinOptions);
             // 即使调用方忘记观察失败，也要让内部 raw promise 有 rejection handler；每个
@@ -824,6 +872,8 @@ export class RoomClient {
                 owner.cancel(failure);
             }
             slot.owners.clear();
+            // join 失败属「现状不触发 session 通知」的终局（voluntary 分类，与 Lobby 口径一致）。
+            this.publishBattleClosed(slot, "voluntary");
             throw e;
         }
         // leave/timeout/cancel 可能在握手期间先摘掉槽；SDK 仍会把迟到的 room 交回来，
@@ -860,6 +910,11 @@ export class RoomClient {
                 initialStateSettled = true;
                 slot.stateReady = true;
                 slot.pendingStateReject = null;
+                this.publishBattleEvent({
+                    kind: "ready",
+                    connGeneration: slot.generation,
+                    seq: ++gameRoomConnectionEventSeq,
+                });
                 resolveInitialState();
             };
             const rejectInitial = (reason: Error) => {
@@ -884,6 +939,13 @@ export class RoomClient {
                     slot.stateReady = true;
                     slot.dropping = false;
                     this.reconcileGameplay(slot, "reconnected");
+                    // §10.4/§7.8：reconnected 事件 = 重连后的完整快照已过 exact validator
+                    //（发送闸恢复）；show 路径的输入恢复以本事件为准。
+                    this.publishBattleEvent({
+                        kind: "reconnected",
+                        connGeneration: slot.generation,
+                        seq: ++gameRoomConnectionEventSeq,
+                    });
                     console.log("[RoomClient] 自动重连成功");
                 }
             });
@@ -892,6 +954,11 @@ export class RoomClient {
                 slot.dropping = true;
                 slot.stateReady = false;
                 reconnectStatePending = false;
+                this.publishBattleEvent({
+                    kind: "dropped",
+                    connGeneration: slot.generation,
+                    seq: ++gameRoomConnectionEventSeq,
+                });
                 if (!disableSdkOutboundReplay(room)) {
                     const failure = new Error("[RoomClient] 无法清理 SDK 离线消息队列");
                     rejectInitial(failure);
@@ -935,12 +1002,13 @@ export class RoomClient {
                 console.log(`[RoomClient] 已离开房间 code=${safeDiagnostic(code)} reason=${safeDiagnostic(reason)}`);
                 // **非主动离开 = 这一局没了**（重连耗尽/服务端强断/房间销毁）：必须上报，
                 // ⛔ 否则 Main 永远不知道连接已死，会拿着死房间继续驱动渲染（inBattle 恒 true，
-                // 玩家卡在冻结的战斗画面且回不去大厅）。这不是鉴权判定，故走 battleLost；
-                // 已注册的 session 导航出口随后统一回登录并清理 bearer。
+                // 玩家卡在冻结的战斗画面且回不去大厅）。这不是鉴权判定，故发布
+                // closed{final-loss}——battle 通道派生 battleLost（阶段 9 归一，行为等价：
+                // 同一同步栈、同一次数），已注册的 session 导航出口随后统一回登录并清理 bearer。
                 //
                 // ⚠ 主动 leave **不会**走到这里：最后一个 owner 释放时先摘掉 `this.slot`，本回调
                 // 开头即 return。无需全局 `_leaving` 标志（它无法区分旧槽 leave 与新槽意外死亡）。
-                notifyBattleLost();
+                this.publishBattleClosed(slot, "final-loss");
             });
             room.onError((code, message) => {
                 if (!initialStateSettled) rejectInitial(new Error("[RoomClient] GameRoom 首个 state 前发生错误"));
@@ -975,6 +1043,9 @@ export class RoomClient {
                 owner.cancel(failure);
             }
             slot.owners.clear();
+            // 首帧屏障/装配失败或迟到取消的终局：voluntary（onLeave 的 final-loss 已在
+            // 其回调内发布，closedEmitted 护栏防重复终局）。
+            this.publishBattleClosed(slot, "voluntary");
             if (shouldClosePhysical) await this.closePhysicalRoom(slot, room);
             throw error;
         }
@@ -1036,7 +1107,8 @@ export class RoomClient {
         }
         slot.owners.clear();
         void this.closePhysicalRoom(slot, room);
-        notifyBattleLost();
+        // 非法 state = 这一局不可信而失效（非主动）：battle 通道派生 battleLost（行为等价）。
+        this.publishBattleClosed(slot, "final-loss");
     }
 
     /** 释放精确 owner；同槽仍有后来者时只减 ownership，绝不关闭共享连接。 */
@@ -1062,6 +1134,8 @@ export class RoomClient {
         slot.pendingStateReject = null;
         slot.dropping = false;
         slot.stateReady = false;
+        // 显式 leave / 全部 ownership 释放 / join 取消：voluntary 终局（不派生 session 通知）。
+        this.publishBattleClosed(slot, "voluntary");
         const room = slot.room;
         if (!room) {
             // 在途 join 不可被 SDK 中断；leave 必须立即返回，迟到 room 由 doJoin
