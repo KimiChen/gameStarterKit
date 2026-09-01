@@ -251,7 +251,7 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
   客户端 transport 已在阶段 8b 落地（`net/rooms/matchmaking.ts` 的 strategy 判别联合 +
   `net/rooms/PrivateRoomService.ts`，prepareCreate→create / resolve→joinById 携带 access ticket），
   join envelope 必填切换即 GAME_ROOM_PROTOCOL_VERSION 7→8；`PrivateRoomLobby` 页面视觉留
-  FGUI 编辑器待办（见 plan-v4.md）。
+  FGUI 编辑器待办（见 plan-v5.md）。
 - StartPolicy 三变体（`rooms/core/StartPolicy.ts`；人数事实唯一真源仍是 roster/manifest）：
 
   | kind | 开局触发 | 开局 lock | fence 重验 | Playing 准入 | 失败归属 |
@@ -540,7 +540,7 @@ structured-clone、无 IO、无副作用的纯 CPU 工作。周期任务、批�
 ## 12. 开发约束索引
 
 以下 `09·XX` 编号为源码中的历史正确性标签，表达目标规则，不等于当前实现已经全部满足。代码与测试是
-现状真源，已知偏差在本节末尾及 `plan-v4.md` 跟踪。
+现状真源，已知偏差在本节末尾及 `plan-v5.md` 跟踪。
 
 ### A — 数据权威
 

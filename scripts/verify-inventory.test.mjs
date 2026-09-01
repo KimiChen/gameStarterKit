@@ -135,7 +135,7 @@ test("inventory verifier rejects a standalone relayer classified as core", () =>
     const inventory = readInventory(root);
     const relayer = inventory.capabilities.find((capability) => capability.id === "outbox-relayer");
     relayer.category = "core";
-    relayer.docs = ["plan-v4.md", "docs/SERVER.md"];
+    relayer.docs = ["plan-v5.md", "docs/SERVER.md"];
     writeInventory(root, inventory);
     assertRejected(root, /能力 outbox-relayer 的独立 launch 只能登记为 extra/);
   } finally {
@@ -178,7 +178,7 @@ test("inventory verifier rejects the historical plan as route of truth", () => {
     const inventory = readInventory(root);
     inventory.routeOfTruth.corePlan = "plan.md";
     writeInventory(root, inventory);
-    assertRejected(root, /routeOfTruth\.corePlan 必须指向 plan-v4\.md/);
+    assertRejected(root, /routeOfTruth\.corePlan 必须指向 plan-v5\.md/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -187,11 +187,11 @@ test("inventory verifier rejects the historical plan as route of truth", () => {
 test("inventory verifier rejects removal of the current plan truth declaration", () => {
   const root = createFixture();
   try {
-    const plan = join(root, "plan-v4.md");
+    const plan = join(root, "plan-v5.md");
     // 全量替换：门禁只要求文中存在「唯一真相」，留下任何一处都不算移除声明。
     const text = readFileSync(plan, "utf8").replaceAll("唯一真相", "执行清单");
     writeFileSync(plan, text);
-    assertRejected(root, /plan-v4\.md 未声明当前计划唯一真相/);
+    assertRejected(root, /plan-v5\.md 未声明当前计划唯一真相/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -201,9 +201,9 @@ test("inventory verifier rejects removal of the current plan from README", () =>
   const root = createFixture();
   try {
     const readme = join(root, "README.md");
-    const text = readFileSync(readme, "utf8").replace("- [当前开发收口计划](plan-v4.md)\n", "");
+    const text = readFileSync(readme, "utf8").replace("- [当前开发收口计划](plan-v5.md)\n", "");
     writeFileSync(readme, text);
-    assertRejected(root, /README\.md 未登记 plan-v4\.md 当前计划入口/);
+    assertRejected(root, /README\.md 未登记 plan-v5\.md 当前计划入口/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -239,14 +239,17 @@ test("inventory verifier keeps the historical plan registered as a checked refer
 test("inventory verifier rejects a registered doc that points at an archive as current truth", () => {
   // 这是真相指针迁移的实际教训：plan-v2→v3 那轮漏了几处、plan-v3→v4 这轮漏了 19 处，
   // 两次 verify:inventory 都是绿的，读者被指去一份文首写着「不得推导当前状态」的归档。
-  // ⚠ 归档清单取自 inventory 自己的 referenceDocs，所以下一轮迁移这道闸自动开始守新归档。
-  const root = createFixture();
-  try {
-    const doc = join(root, "docs/OVERVIEW.md");
-    writeFileSync(doc, `${readFileSync(doc, "utf8")}\n\n完成状态以 [plan-v3.md](../plan-v3.md) 为准。\n`);
-    assertRejected(root, /docs\/OVERVIEW\.md:\d+ 把历史归档 plan-v3\.md 说成当前真相/);
-  } finally {
-    rmSync(root, { recursive: true, force: true });
+  // ⚠ 归档清单取自 inventory 自己的 referenceDocs，所以迁移时新归档一进清单就自动开始被守
+  // （plan-v4→v5 迁移首次复用了这个设计，下方循环覆盖新旧两个归档）。
+  for (const archive of ["plan-v3.md", "plan-v4.md"]) {
+    const root = createFixture();
+    try {
+      const doc = join(root, "docs/OVERVIEW.md");
+      writeFileSync(doc, `${readFileSync(doc, "utf8")}\n\n完成状态以 [${archive}](../${archive}) 为准。\n`);
+      assertRejected(root, new RegExp(`docs/OVERVIEW\\.md:\\d+ 把历史归档 ${archive.replace(".", "\\.")} 说成当前真相`));
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   }
 });
 
@@ -257,8 +260,8 @@ test("inventory verifier still allows citing an archive when its identity is sta
     const doc = join(root, "docs/OVERVIEW.md");
     writeFileSync(
       doc,
-      `${readFileSync(doc, "utf8")}\n\n完成状态以 [plan-v4.md](../plan-v4.md) 为准` +
-      `（保留边界的原始记录在历史归档 [plan-v3.md](../plan-v3.md)）。\n`,
+      `${readFileSync(doc, "utf8")}\n\n完成状态以 [plan-v5.md](../plan-v5.md) 为准` +
+      `（保留边界的原始记录在历史归档 [plan-v4.md](../plan-v4.md)）。\n`,
     );
     const result = runVerifier(root);
     assert.equal(result.status, 0, outputOf(result));
@@ -268,16 +271,18 @@ test("inventory verifier still allows citing an archive when its identity is sta
 });
 
 test("inventory verifier keeps the previous plan registered as a checked archive", () => {
-  // 真相指针迁到 plan-v4 后，plan-v3 与 plan/plan-v2 同列历史归档。⛔ 缺登记会让一份仍被大量
-  // 文档引用的计划变成没有归属的孤儿，链接检查也不再覆盖它。
-  const root = createFixture();
-  try {
-    const inventory = readInventory(root);
-    inventory.referenceDocs = inventory.referenceDocs.filter((doc) => doc !== "plan-v3.md");
-    writeInventory(root, inventory);
-    assertRejected(root, /referenceDocs 必须登记历史 plan-v3\.md/);
-  } finally {
-    rmSync(root, { recursive: true, force: true });
+  // 真相指针迁到 plan-v5 后，plan-v4 与 plan/plan-v2/plan-v3 同列历史归档。⛔ 缺登记会让
+  // 一份仍被大量文档引用的计划变成没有归属的孤儿，链接检查也不再覆盖它。
+  for (const archive of ["plan-v3.md", "plan-v4.md"]) {
+    const root = createFixture();
+    try {
+      const inventory = readInventory(root);
+      inventory.referenceDocs = inventory.referenceDocs.filter((doc) => doc !== archive);
+      writeInventory(root, inventory);
+      assertRejected(root, new RegExp(`referenceDocs 必须登记历史 ${archive.replace(".", "\\.")}`));
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   }
 });
 
@@ -536,7 +541,7 @@ test("inventory verifier rejects synchronized removal of the current plan entry"
     for (const filename of ["AGENTS.md", "CLAUDE.md"]) {
       const file = join(root, filename);
       const text = readFileSync(file, "utf8").replace(
-        "> - [plan-v4.md](plan-v4.md)：当前开放问题、实施状态与验收证据的唯一真相\n",
+        "> - [plan-v5.md](plan-v5.md)：当前开放问题、实施状态与验收证据的唯一真相\n",
         "",
       );
       writeFileSync(file, text);
