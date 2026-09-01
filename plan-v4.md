@@ -568,7 +568,8 @@ c16d78f no-op（第三次 runInPool 同步抛 ComputeOverloadedError，预算无
 fail-fast、Lua 去 hash 比对、phase 闸删除、手改生成物、protected-paths 单侧删、
 SessionCoordinator 顺序对调）。
 
-**本轮修掉的**（各自独立 commit，均带变异实测）：
+**本轮修掉的**（各自独立 commit；前 4 行带变异实测，`7d0e7f7` 为耗时实测、
+`1b55140` 为表述更正、`7c2d54a` 为同步产出）：
 
 | 问题 | commit | 变异验证 |
 |---|---|---|
