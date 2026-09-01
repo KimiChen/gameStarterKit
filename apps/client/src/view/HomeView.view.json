@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "owner": "builtin",
+  "kind": "fgui",
+  "layer": "base",
+  "fullscreen": true,
+  "onlyOne": true,
+  "permanent": false,
+  "interactive": true,
+  "package": "View_Home_Home",
+  "component": "Home",
+  "logic": "apps/client/src/logic/page/HomeLogic.ts",
+  "sharedPkgs": ["ui/Common_Btn", "ui/Common_RGBA"],
+  "group": "authenticated",
+  "restore": "reopen"
+}

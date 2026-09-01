@@ -34,6 +34,7 @@ import type {
     RpcRes,
     IUserView,
 } from "../shared/index";
+import type { FeatureLaunchTarget } from "./builtinFeature";
 import type { FrameScheduler } from "./FrameScheduler";
 import type { LifecycleBus, HostLifecycleEvent } from "./LifecycleBus";
 import type { NavigationService, NavRouteHandle } from "./NavigationService";
@@ -93,6 +94,11 @@ export interface ViewsPort {
 export interface LaunchPort {
     /** Home「进入战斗」的命令通道（并发点击由宿主合流）。 */
     enterBattle(): Promise<void>;
+    /**
+     * §7.4：统一玩法启动通道——Home 菜单 contribution 点击的唯一出口。
+     * target 来自 generated menu contribution；未注入专用 launch 时回退 enterBattle。
+     */
+    launch(target: FeatureLaunchTarget): Promise<void>;
 }
 
 export interface AppPorts {
@@ -118,6 +124,8 @@ export interface AppPortsDeps {
     readonly frameScheduler: FrameScheduler;
     readonly lifecycleBus: LifecycleBus;
     readonly enterBattle: () => Promise<void>;
+    /** §7.4 launch 通道（缺省回退 enterBattle——测试替身无需提供）。 */
+    readonly launch?: (target: FeatureLaunchTarget) => Promise<void>;
     /** runtime 的订阅追踪：dispose 时强制解绑（订阅计数归零）。 */
     readonly track: (unsubscribe: () => void) => () => void;
     readonly now?: () => number;
@@ -177,6 +185,7 @@ export function createAppPorts(deps: AppPortsDeps): AppPorts {
         },
         launch: {
             enterBattle: () => deps.enterBattle(),
+            launch: (target) => (deps.launch ? deps.launch(target) : deps.enterBattle()),
         },
     };
 }

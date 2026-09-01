@@ -68,8 +68,9 @@ import {
 } from "../net/serverSession";
 import type { WebPlatformAreaServer } from "../shared/index";
 import { currentAppGeneration, nextAppGeneration } from "./appGeneration";
-import { BUILTIN_FEATURE } from "./builtinFeature";
+import { APP_FEATURES, type FeatureLaunchTarget } from "./builtinFeature";
 import { FeatureRegistry } from "./FeatureRegistry";
+import type { HomeMenuEntryModel } from "../logic/page/HomeLogic";
 import { NavigationService, type NavRouteHandle } from "./NavigationService";
 import { RefreshCoordinator, type RefreshFlightKey } from "./RefreshCoordinator";
 
@@ -79,11 +80,32 @@ const NOTICE_DONT_REMIND_DATE_KEY = "game.notice.dont-remind-date";
  *  微信侧接入后此处换 wx.login 取 code → wxLogin(code)。 */
 const DEV_LOGIN_KEY = "dev_local";
 
-/** 应用级不可变 feature/route 目录（阶段 6 换 codegen 产物）。 */
-export const appFeatureRegistry = new FeatureRegistry([BUILTIN_FEATURE]);
+/** 应用级不可变 feature/route 目录（codegen:features 生成的 descriptor 单源）。 */
+export const appFeatureRegistry = new FeatureRegistry(APP_FEATURES);
 
 /** 应用级导航单例：唯一业务 route stack 所有者（AppRuntime 与本模块共用）。 */
 export const appNavigation = new NavigationService(appFeatureRegistry);
+
+/**
+ * §7.4：Home 菜单的运行时接线面。AppRuntime 注册（launch 走 LaunchPort、可用性查
+ * FeatureHost）；无宿主（无头 pages 测试/工具路径）时入口回退 flight 的
+ * onEnterBattle 回调且恒可用。
+ */
+export interface HomeMenuRuntime {
+  launch(target: FeatureLaunchTarget): Promise<void>;
+  /** FeatureHost 运行时可用性（catalog 之外的可变叠加层；built-in 恒 available）。 */
+  availabilityOf(featureId: string): "available" | "failed" | "disabled";
+}
+
+let homeMenuRuntime: HomeMenuRuntime | null = null;
+
+/** 注册当前宿主的菜单接线；返回身份守卫的注销器（旧宿主注销不影响新宿主）。 */
+export function setHomeMenuRuntime(runtime: HomeMenuRuntime): () => void {
+  homeMenuRuntime = runtime;
+  return () => {
+    if (homeMenuRuntime === runtime) homeMenuRuntime = null;
+  };
+}
 
 /** authenticated base 的刷新合流器（对账 GetInfo 与回前台刷新共用同一 key 空间）。 */
 const sessionRefresh = new RefreshCoordinator();
@@ -690,10 +712,24 @@ export async function openHome(
       if (!context.isActive()) return;
       return onEnterBattle();
     };
+    // §7.4 数据驱动入口：菜单唯一数据源是 generated contributions（FeatureRegistry
+    // 暴露，已按 slot → order → featureId → entryId 排序）；点击统一走
+    // LaunchPort.launch(target)（经 HomeMenuRuntime 接线），无宿主回退旧回调。
+    // disabled/failed 是 FeatureHost 的运行时叠加层，不回写不可变 catalog。
+    const entries: HomeMenuEntryModel[] = appFeatureRegistry.menuContributions().map((item) => ({
+      entryId: item.entryId,
+      featureId: item.featureId,
+      label: item.label,
+      enabled: homeMenuRuntime ? homeMenuRuntime.availabilityOf(item.featureId) === "available" : true,
+      launch: () => {
+        if (!context.isActive()) return;
+        return homeMenuRuntime ? homeMenuRuntime.launch(item.launch) : onEnterBattle();
+      },
+    }));
     const cur = getCurrentServer();
     const who = userId || "未登录";
     const summary = user ? ` · 体力 ${user.stamina} · ${user.wins}胜${user.losses}负` : "";
-    view.setup(`${cur ? `${cur.name} · ` : ""}${who}${summary}`);
+    view.setup(`${cur ? `${cur.name} · ` : ""}${who}${summary}`, entries);
   });
   return h;
 }

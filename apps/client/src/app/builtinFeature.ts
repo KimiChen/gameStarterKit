@@ -1,60 +1,37 @@
 /**
- * built-in feature 描述符（Non-intrusive §7.1/§7.2 阶段 5b）。
+ * feature 描述符 façade（Non-intrusive §7.1 阶段 6）。
  *
- * ⚠ 本文件是**手写** descriptor——阶段 6 改为 `codegen:features` 产物（生成式
- * Feature Catalog），届时本文件被 generated catalog 取代，路由/贡献声明迁入
- * feature 单源目录。在那之前它是 FeatureRegistry 的唯一数据源。
+ * 描述符数据的唯一真源已迁到 features/<id>/feature.json + View sidecar，经
+ * `codegen:features` 生成 `generated/features.generated.ts`；本文件只做薄 façade：
+ * re-export 类型别名 + 组装既有导入面（BUILTIN_FEATURE / APP_FEATURES）。
+ * 不可序列化件（load 闭包等行为）不进 JSON——留在各消费方手写。
  *
- * route 表继承今天 view/pages.ts 的五个页面：
- *  - group "authenticated"（Login/AreaList/LoginNotice/Home）：即原 `closeLobby()`
- *    硬编码数组的成员与顺序——NavigationService.closeGroup("authenticated") 取代
- *    该数组（§7.2：新 feature 不得再进硬编码数组）。
- *  - group "system"（Confirm）：会话作用域提示视图，不随 authenticated 组关闭，
- *    也不受 discard 恢复策略影响（回登录提示链）。
- *
- * 恢复策略（§7.3：临时 popup 默认 discard，显式声明才 reopen）：
- *  login/home=reopen（最终断线恢复后重开）、areaList/loginNotice=discard、
- *  confirm=discard（多实例提示不跨会话恢复）。
+ * route 表语义（继承 5b）：
+ *  - group "authenticated"（Login/AreaList/LoginNotice/Home）：原 `closeLobby()` 硬编码
+ *    数组的成员与顺序——NavigationService.closeGroup("authenticated") 消费；
+ *  - group "system"（Confirm）：会话作用域提示视图，不随 authenticated 组关闭；
+ *  - restore：login/home=reopen、areaList/loginNotice/confirm=discard（§7.3）。
  */
+import {
+    GENERATED_FEATURES,
+    type GeneratedFeatureDescriptor,
+} from "../generated/features.generated";
 
-/** 单条业务路由声明：view 名对应 VIEW_REGISTRY 键。 */
-export interface FeatureRouteDescriptor {
-    readonly id: string;
-    readonly view: string;
-    readonly group: string;
-    readonly restore: "keep-mounted" | "reopen" | "fallback" | "discard";
+export type {
+    GeneratedFeatureRoute as FeatureRouteDescriptor,
+    GeneratedMenuContribution as FeatureMenuContribution,
+    GeneratedLaunchTarget as FeatureLaunchTarget,
+    GeneratedFeatureDescriptor as FeatureDescriptor,
+} from "../generated/features.generated";
+
+/** 应用装配的全部 feature 描述符（generated 单源）。 */
+export const APP_FEATURES: readonly GeneratedFeatureDescriptor[] = GENERATED_FEATURES;
+
+function requireFeature(id: string): GeneratedFeatureDescriptor {
+    const descriptor = GENERATED_FEATURES.find((feature) => feature.id === id);
+    if (!descriptor) throw new Error(`[builtinFeature] generated catalog 缺少 feature: ${id}`);
+    return descriptor;
 }
 
-/** Home 菜单入口贡献（§7.4 数据驱动 Home 的数据源雏形；阶段 6 由 composer 消费）。 */
-export interface FeatureMenuContribution {
-    readonly id: string;
-    readonly featureId: string;
-    readonly label: string;
-    readonly gameplayId?: string;
-}
-
-export interface FeatureDescriptor {
-    readonly id: string;
-    /** 常驻 feature：不随 route refcount 归零释放（built-in 即是）。 */
-    readonly resident?: boolean;
-    /** dispose 逆序依据：本 feature 依赖的其它 feature id。 */
-    readonly dependencies?: readonly string[];
-    readonly routes: readonly FeatureRouteDescriptor[];
-    readonly menu: readonly FeatureMenuContribution[];
-}
-
-export const BUILTIN_FEATURE: FeatureDescriptor = {
-    id: "builtin",
-    resident: true,
-    routes: [
-        // 顺序即 closeGroup 关闭顺序——逐字继承原 closeLobby() 数组顺序。
-        { id: "login", view: "Login", group: "authenticated", restore: "reopen" },
-        { id: "areaList", view: "AreaList", group: "authenticated", restore: "discard" },
-        { id: "loginNotice", view: "LoginNotice", group: "authenticated", restore: "discard" },
-        { id: "home", view: "Home", group: "authenticated", restore: "reopen" },
-        { id: "confirm", view: "Confirm", group: "system", restore: "discard" },
-    ],
-    menu: [
-        { id: "ballMove", featureId: "builtin", label: "进入战斗", gameplayId: "ballMove" },
-    ],
-};
+/** built-in feature（兼容既有导入面；值来自 generated catalog）。 */
+export const BUILTIN_FEATURE: GeneratedFeatureDescriptor = requireFeature("builtin");

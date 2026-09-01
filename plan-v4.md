@@ -64,6 +64,9 @@ plan-v3 §30 登记过一条教训：`plan-v2 → plan-v3` 的迁移**批准存�
 | 条目 5 | `.meta` uuid 集合与 Cocos 场景序列化的往返自检 | 需要真实 Creator 引擎，属于尚未实现的 Creator 运行证据方向 |
 | 条目 5 | `tools/excel-to-json.mjs` 的 `--check` 不是往返自检 | writer 与 checker 共用同一个内存 `data`，`buildItems()` 里的静默丢行对两侧同时生效；低成本补法是在 `run()` 里对行数/键集做独立断言 |
 | 条目 1 | 存量 `match_results` 行的精确回填 | 只有 v3 能精确回填；一条恰好 8 键的 legacy 行与真 v2 行逐字节相同，⛔ 无法区分，故一律留在 `schema_version = 0` |
+| Non-intrusive 阶段 6 | Home「玩法入口列表 GList」视觉升级 | FGUI 编辑器不可用：XML/导出物/图集一律未动，Home 视觉仍是单 `btn_enter`（渲染 contribution[0]，多入口 console.warn）；数据驱动的**机制**（generated menu contributions + LaunchPort.launch + disabled/failed 叠加拒绝）已落地并有无头测试，入口列表视觉需要设计师在编辑器出图后接入 |
+| Non-intrusive 阶段 6 | Creator 侧人工证据：动态加载/取消回滚/输入租约/跨包资源 | 机制由既有 viewLifecycle 无头测试覆盖（catalog 生成化后行为断言零改动继续绿）；真实引擎与资源验证仍需 Creator 本地预览，属于尚未补的人工证据 |
+| Non-intrusive 阶段 8b | `PrivateRoomLobby` 模板 View | 阶段 6 只做 View/FGUI 注册表生成化；模板页与其 sidecar/闭包合并规则按 §7.5 留到阶段 8b |
 
 ## 对抗式复核轮（8 个 commit）
 

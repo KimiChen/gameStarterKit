@@ -1,52 +1,21 @@
 /**
- * 页面注册表（登记点，docs/CLIENT.md §4）——每页面一条 defineView 元数据，ViewMgr 按此接管
- * 生命周期。守门：test/viewRegistry.test.ts 校验「view/*View.ts 文件集合 ⇔ 注册表键」与
- * 「注册表契约 ⇔ FGUI_CONTRACTS」双向相等 + AUTO 区块与 .fui 同步 + Logic 配对。
+ * 页面注册表（稳定 façade，Non-intrusive §7.5 阶段 6）。
  *
- * 本文件的 load 闭包会让 tsc 解析 View 模块类型（依赖 fairygui）；legacy 与 Node strict 探针都
- *   使用各自的最小声明桩纳入检查，Creator 侧仍负责真实引擎与资源验证。
+ * 手写全集已由 `codegen:features` 生成的不可变 catalog 取代：唯一输入是
+ * View 同目录的 `<Name>View.view.json` sidecar + FGUI XML，产物在
+ * `generated/views.generated.ts`（load 是生成的字面量动态 import 闭包，铁律 10）。
+ * 本文件只保持既有导入面稳定；新增页面 ⛔ 不再手改这里。
  *
- * ⚠ 调用方约束（铁律 10）：`ViewMgr.open` 只允许 view/ 内部或动态 import 闭包里调用；
- *   页面的组合根（Logic + 注入 net 依赖 + 导航接线）在 view/pages.ts。
+ * 新页面动线：FGUI 出图 → `npm run codegen:fgui -- <Pkg> <Comp>`（生成 View 脚手架）→
+ * 写 `<Name>View.view.json` + `logic/.../<Name>Logic.ts` → 登记进 features/<id>/feature.json →
+ * `npm --workspace @game/server run codegen:features` → `npm run sync:client`。
  *
- * 新页面四步动线：FGUI 出图 → `npm run codegen:fgui -- <Pkg> <Comp>` → logic/page/XxxLogic.ts
- *   → 此处加一条（contract 同步进 fguiContracts.FGUI_CONTRACTS）。
+ * 守门：test/viewRegistry.test.ts 遍历 generated catalog 校验「manifest 目录递归发现的
+ * *View.ts ⇔ 登记条目」「contract 单源」「sharedPkgs ⊇ 依赖闭包」与 AUTO 区块同步。
+ *
+ * ⚠ 调用方约束（铁律 10）：`ViewMgr.open` 只允许 view/ 内部或动态 import 闭包里调用。
  */
-import { defineView, type ViewMeta } from "./defineView";
-import { AREALIST_CONTRACT, CONFIRM_CONTRACT, HOME_CONTRACT, LOGIN_CONTRACT, LOGINNOTICE_CONTRACT } from "./fguiContracts";
+import type { ViewMeta } from "./defineView";
+import { GENERATED_VIEW_CATALOG } from "../generated/views.generated";
 
-export const VIEW_REGISTRY: Readonly<Record<string, ViewMeta>> = {
-  Login: defineView({
-    name: "Login", contract: LOGIN_CONTRACT, layer: "base",
-    fullscreen: true, onlyOne: true, permanent: false, interactive: true,
-    // fairygui 不自动加载依赖包：须声明**传递闭包**（如 btn_login 图标 login_enterGame 在 L10n_zh_hans，
-    // 少了它按钮就空白）。清单由 art XML 引用推导，viewRegistry.test 机检 sharedPkgs ⊇ 依赖闭包。
-    sharedPkgs: ["ui/Common_Btn", "ui/Common_Component", "ui/Common_RGBA", "ui/Dynamic_Login", "ui/Dynamic_Spine", "ui/L10n_zh_hans"],
-    load: () => import("./LoginView").then((m) => m.LoginView),
-  }),
-  AreaList: defineView({
-    name: "AreaList", contract: AREALIST_CONTRACT, layer: "popup",
-    fullscreen: true, onlyOne: true, permanent: false, interactive: true,
-    // Dynamic_Login：区服状态图标 login_status_*（代码 ui:// 引用，非 art XML 依赖）
-    sharedPkgs: ["ui/Common_Btn", "ui/Common_RGBA", "ui/Dynamic_Login"],
-    load: () => import("./AreaListView").then((m) => m.AreaListView),
-  }),
-  LoginNotice: defineView({
-    name: "LoginNotice", contract: LOGINNOTICE_CONTRACT, layer: "popup",
-    fullscreen: true, onlyOne: true, permanent: false, interactive: true,
-    sharedPkgs: ["ui/Common_Btn", "ui/Common_RGBA", "ui/Common_ComboBox", "ui/L10n_zh_hans"],
-    load: () => import("./LoginNoticeView").then((m) => m.LoginNoticeView),
-  }),
-  Home: defineView({
-    name: "Home", contract: HOME_CONTRACT, layer: "base",
-    fullscreen: true, onlyOne: true, permanent: false, interactive: true,
-    sharedPkgs: ["ui/Common_Btn", "ui/Common_RGBA"],
-    load: () => import("./HomeView").then((m) => m.HomeView),
-  }),
-  Confirm: defineView({
-    name: "Confirm", contract: CONFIRM_CONTRACT, layer: "top",
-    fullscreen: true, onlyOne: false, permanent: false, interactive: true,
-    sharedPkgs: ["ui/Common_Btn", "ui/Common_RGBA"],
-    load: () => import("./ConfirmView").then((m) => m.ConfirmView),
-  }),
-};
+export const VIEW_REGISTRY: Readonly<Record<string, ViewMeta>> = GENERATED_VIEW_CATALOG;

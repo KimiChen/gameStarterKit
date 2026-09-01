@@ -1,11 +1,14 @@
 /**
- * codegen:features 全闸（Non-intrusive §4.2/§5.5 阶段 3）。
+ * codegen:features 全闸（Non-intrusive §4.2/§5.5 阶段 3；§7.5 阶段 6 扩展）。
  *
- * 覆盖：freshness 对真仓、mkdtemp 隔离根、--check 只读三态（stale/missing/extra 点名）、
- * 运行时 descriptor ⇔ generated 表双向对拍（route/mode/errorCodes/pushes 全覆盖）、
- * domain 文件形态负例（computed/spread/副作用/let/未知调用点名拒绝）、重复 id 拒绝、
- * 幂等路由 clientReqId 的 AST 层校验反例、错误码顺序钉、删除保护与
- * 「新增 fixture domain 只加文件不改人工中央源码」的阶段 3 退出条件。
+ * 覆盖：freshness 对真仓（registry + 客户端三件产物，apps/client 非 workspace 故其
+ * freshness 沿 §5.4 口径由本测试断言）、mkdtemp 隔离根、--check 只读三态
+ * （stale/missing/extra 点名）、运行时 descriptor ⇔ generated 表双向对拍、domain 文件
+ * 形态负例、重复 id 拒绝、幂等路由 clientReqId 的 AST 层校验反例、错误码顺序钉、
+ * 删除保护、「新增 fixture domain 只加文件不改人工中央源码」的阶段 3 退出条件，以及
+ * 阶段 6 的 View catalog 闸：fixture view sidecar 增量（三产物收录、既有条目字节不动、
+ * 手写源零 diff）、sidecar⇔View 双向、owner/logic 校验、aliasOf 迁移期兼容、
+ * sharedPkgs 闭包 fail-fast、删除走 --allow-delete。
  * ⚠ 本文件的值导入把生成器自身的 .ts 纳入 tsc（§5.5 的先例形态）。
  */
 import assert from "node:assert/strict";
@@ -45,31 +48,56 @@ import {
   writeFeatureArtifacts,
   type FeatureCodegenOptions,
 } from "../tools/feature-codegen/lib";
+import {
+  FEATURES_RELATIVE,
+  FGUI_CONTRACTS_RELATIVE,
+  VIEWS_RELATIVE,
+  readViewCatalog,
+} from "../tools/feature-codegen/viewCatalog";
 
 const REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const LOBBY_RPC_DIR = "apps/shared/src/protocol/lobbyRpc";
 const REGISTRY_RELATIVE = `${LOBBY_RPC_DIR}/registry.generated.ts`;
+const CLIENT_ARTIFACTS = [FGUI_CONTRACTS_RELATIVE, VIEWS_RELATIVE, FEATURES_RELATIVE] as const;
+const ALL_ARTIFACTS = [REGISTRY_RELATIVE, ...CLIENT_ARTIFACTS] as const;
 
+/**
+ * 隔离根：拷贝生成器的全部输入面（lobbyRpc + features + 客户端 view/logic/generated +
+ * art XML——闭包计算只读 XML，图集/位图不拷）。
+ */
 function createFixture(): { readonly root: string; readonly options: FeatureCodegenOptions } {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "feature-codegen-"));
-  fs.cpSync(path.join(REPOSITORY_ROOT, LOBBY_RPC_DIR), path.join(root, LOBBY_RPC_DIR), { recursive: true });
+  for (const dir of [LOBBY_RPC_DIR, "features", "apps/client/src/view", "apps/client/src/logic", "apps/client/src/generated"]) {
+    fs.cpSync(path.join(REPOSITORY_ROOT, dir), path.join(root, dir), { recursive: true });
+  }
+  fs.cpSync(
+    path.join(REPOSITORY_ROOT, "apps/art/fairygui/assets"),
+    path.join(root, "apps/art/fairygui/assets"),
+    {
+      recursive: true,
+      filter: (source) => fs.statSync(source).isDirectory() || source.endsWith(".xml"),
+    },
+  );
   return { root, options: { repositoryRoot: root } };
 }
 
-/** lobbyRpc 目录里除 registry 外全部文件的字节快照（证明生成器不改人工源码）。 */
+/** 生成器输入/输出树里除四件生成物外全部文件的字节快照（证明生成器不改人工源码）。 */
 function snapshotHandwritten(root: string): Map<string, string> {
   const out = new Map<string, string>();
-  const base = path.join(root, LOBBY_RPC_DIR);
+  const generated = new Set<string>(ALL_ARTIFACTS);
   const walk = (dir: string): void => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) { walk(full); continue; }
       const relative = path.relative(root, full).split(path.sep).join("/");
-      if (relative === REGISTRY_RELATIVE) continue;
+      if (generated.has(relative)) continue;
       out.set(relative, fs.readFileSync(full, "utf8"));
     }
   };
-  walk(base);
+  for (const dir of [LOBBY_RPC_DIR, "features", "apps/client/src/view", "apps/client/src/logic", "apps/client/src/generated", "apps/art/fairygui/assets"]) {
+    const base = path.join(root, dir);
+    if (fs.existsSync(base)) walk(base);
+  }
   return out;
 }
 
@@ -581,12 +609,288 @@ test("删除保护：域源文件消失必须显式 --allow-delete，放行后 r
   assert.ok(!/^ {4}"guild",$/mu.test(registry));
 });
 
-test("渲染确定性：相同输入重复渲染字节相同", () => {
+test("渲染确定性：相同输入重复渲染字节相同（registry + 客户端三件）", () => {
   const descriptors = readFeatureDescriptors();
-  const first = renderFeatureArtifacts(descriptors);
-  const second = renderFeatureArtifacts(readFeatureDescriptors());
-  assert.deepEqual([...first.keys()], [REGISTRY_RELATIVE]);
-  assert.equal(first.get(REGISTRY_RELATIVE), second.get(REGISTRY_RELATIVE));
+  const catalog = readViewCatalog(REPOSITORY_ROOT);
+  const first = renderFeatureArtifacts(descriptors, catalog);
+  const second = renderFeatureArtifacts(readFeatureDescriptors(), readViewCatalog(REPOSITORY_ROOT));
+  assert.deepEqual([...first.keys()], [...ALL_ARTIFACTS]);
+  for (const relative of ALL_ARTIFACTS) {
+    assert.equal(first.get(relative), second.get(relative), `${relative} 渲染不确定`);
+  }
+});
+
+// ── 阶段 6：View catalog（features + sidecar + XML → 客户端三产物） ──────────
+
+const FIXTURE_PKG_ID = "zzfx0001";
+const FIXTURE_PKG_NAME = "View_Fixture_Fx";
+
+const FIXTURE_PACKAGE_XML = [
+  `<?xml version="1.0" encoding="utf-8"?>`,
+  `<packageDescription id="${FIXTURE_PKG_ID}">`,
+  "  <resources>",
+  `    <component id="fx000001" name="Fx.xml" exported="true"/>`,
+  "  </resources>",
+  "</packageDescription>",
+  "",
+].join("\n");
+
+const FIXTURE_COMPONENT_XML = [
+  `<?xml version="1.0" encoding="utf-8"?>`,
+  `<component size="200,200">`,
+  "  <displayList>",
+  `    <text id="n0_fx1" name="txt_fx" xy="0,0" size="100,30" text=""/>`,
+  `    <component id="n1_fx1" name="btn_go" src="vjb22f" fileName="BtnCommon210x70.xml" pkg="qdouwnr2" xy="0,50" size="100,30"/>`,
+  "  </displayList>",
+  "</component>",
+  "",
+].join("\n");
+
+function fixtureSidecar(overrides: Record<string, unknown> = {}): string {
+  return `${JSON.stringify({
+    schemaVersion: 1,
+    owner: "builtin",
+    kind: "fgui",
+    layer: "popup",
+    fullscreen: true,
+    onlyOne: true,
+    permanent: false,
+    interactive: true,
+    package: FIXTURE_PKG_NAME,
+    component: "Fx",
+    logic: "apps/client/src/logic/page/FxLogic.ts",
+    sharedPkgs: ["ui/Common_Btn", "ui/Common_RGBA"],
+    ...overrides,
+  }, null, 2)}\n`;
+}
+
+/** 在隔离根加入一个 fixture view（sidecar + 假 XML + View/Logic 桩 + feature.json 登记）。 */
+function addFixtureView(root: string): void {
+  const artDir = path.join(root, "apps/art/fairygui/assets", FIXTURE_PKG_NAME);
+  fs.mkdirSync(artDir, { recursive: true });
+  fs.writeFileSync(path.join(artDir, "package.xml"), FIXTURE_PACKAGE_XML);
+  fs.writeFileSync(path.join(artDir, "Fx.xml"), FIXTURE_COMPONENT_XML);
+  fs.writeFileSync(path.join(root, "apps/client/src/view/FxView.ts"), "export class FxView {}\n");
+  fs.writeFileSync(path.join(root, "apps/client/src/view/FxView.view.json"), fixtureSidecar());
+  fs.writeFileSync(path.join(root, "apps/client/src/logic/page/FxLogic.ts"), "export class FxLogic {}\n");
+  const manifestFile = path.join(root, "features/built-in/feature.json");
+  const manifest = JSON.parse(fs.readFileSync(manifestFile, "utf8"));
+  manifest.views.push("apps/client/src/view/FxView.view.json");
+  fs.writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
+}
+
+test("checked-in client view artifacts are fresh（客户端 freshness 由 server 侧断言，§5.4 口径）", () => {
+  // assertFeatureArtifactsFresh 已覆盖四件产物；此处显式核对三件客户端产物在盘上存在。
+  for (const relative of CLIENT_ARTIFACTS) {
+    assert.ok(fs.existsSync(path.join(REPOSITORY_ROOT, relative)), `${relative} 缺失`);
+  }
+  assertFeatureArtifactsFresh();
+});
+
+test("阶段 6 退出条件：fixture view 只新增文件 + feature.json 登记，三产物收录且既有条目字节不动", () => {
+  const { root, options } = createFixture();
+  const before = snapshotHandwritten(root);
+  const viewsBefore = fs.readFileSync(path.join(root, VIEWS_RELATIVE), "utf8");
+  const contractsBefore = fs.readFileSync(path.join(root, FGUI_CONTRACTS_RELATIVE), "utf8");
+  addFixtureView(root);
+
+  const result = writeFeatureArtifacts(options);
+  // 未挂路由/菜单的 view 只影响 contracts + views 两件；features.generated（feature/
+  // route/menu 数据）与 registry 字节不动。
+  assert.deepEqual(result.changed, [FGUI_CONTRACTS_RELATIVE, VIEWS_RELATIVE],
+    "只允许受影响的客户端产物变化（registry 与手写源零 diff）");
+  assert.deepEqual(result.deleted, []);
+
+  // 手写源零 diff：唯一被修改的手写文件是 feature.json（单源登记点），其余只新增。
+  const after = snapshotHandwritten(root);
+  const added = [...after.keys()].filter((key) => !before.has(key)).sort();
+  assert.deepEqual(added, [
+    `apps/art/fairygui/assets/${FIXTURE_PKG_NAME}/Fx.xml`,
+    `apps/art/fairygui/assets/${FIXTURE_PKG_NAME}/package.xml`,
+    "apps/client/src/logic/page/FxLogic.ts",
+    "apps/client/src/view/FxView.ts",
+    "apps/client/src/view/FxView.view.json",
+  ]);
+  for (const [key, bytes] of before) {
+    if (key === "features/built-in/feature.json") continue; // 测试自己的登记改动
+    assert.equal(after.get(key), bytes, `人工源码被生成器改动：${key}`);
+  }
+
+  // 三产物收录 fixture view；既有条目逐行字节保留。
+  const views = fs.readFileSync(path.join(root, VIEWS_RELATIVE), "utf8");
+  assert.match(views, /^ {4}Fx: defineView\(\{$/mu, "catalog 收录 Fx");
+  assert.ok(views.includes('load: () => import("../view/FxView").then((m) => m.FxView),'),
+    "load 必须是生成的字面量动态 import（铁律 10）");
+  assert.match(views, /^ {4}\{ name: "Fx", owner: "builtin", kind: "fgui", pkg: "View_Fixture_Fx", comp: "Fx", /mu,
+    "VIEW_SOURCE_RECORDS 收录 Fx");
+  for (const line of viewsBefore.split("\n").filter((candidate) => /^ {4}\{ name: /.test(candidate))) {
+    assert.ok(views.includes(line), `既有 manifest 条目字节变化：${line}`);
+  }
+  const contracts = fs.readFileSync(path.join(root, FGUI_CONTRACTS_RELATIVE), "utf8");
+  assert.match(contracts, /^export const FX_CONTRACT: FguiContract = \{$/mu);
+  assert.ok(contracts.includes('"name": "txt_fx"'), "required 必须从 XML 按 binding 规则算出");
+  assert.ok(contracts.includes('"name": "btn_go"'), "required 必须包含带前缀 component 元素");
+  for (const line of contractsBefore.split("\n").filter((candidate) => candidate.startsWith("export const "))) {
+    assert.ok(contracts.includes(line), `既有契约常量声明消失：${line}`);
+  }
+  const featuresOut = fs.readFileSync(path.join(root, FEATURES_RELATIVE), "utf8");
+  assert.ok(featuresOut.includes('"builtin"'), "features 产物保持 feature 全集");
+
+  assertFeatureArtifactsFresh(options);
+});
+
+test("阶段 6 --check 三态：sidecar 变更 → stale 点名客户端产物；删/多余 generated 也红", () => {
+  const { root, options } = createFixture();
+  assertFeatureArtifactsFresh(options);
+  const homeSidecar = path.join(root, "apps/client/src/view/HomeView.view.json");
+  const sidecar = JSON.parse(fs.readFileSync(homeSidecar, "utf8"));
+  sidecar.layer = "popup";
+  fs.writeFileSync(homeSidecar, `${JSON.stringify(sidecar, null, 2)}\n`);
+  const viewsFile = path.join(root, VIEWS_RELATIVE);
+  const viewsBytes = fs.readFileSync(viewsFile, "utf8");
+  assert.throws(() => assertFeatureArtifactsFresh(options), /stale: .*views\.generated\.ts/u);
+  assert.equal(fs.readFileSync(viewsFile, "utf8"), viewsBytes, "--check 不得改写生成物");
+
+  writeFeatureArtifacts(options);
+  assertFeatureArtifactsFresh(options);
+  fs.rmSync(path.join(root, FGUI_CONTRACTS_RELATIVE));
+  assert.throws(() => assertFeatureArtifactsFresh(options), /missing: .*fguiContracts\.generated\.ts/u);
+  writeFeatureArtifacts(options);
+  const bogus = path.join(root, "apps/client/src/generated/bogus.generated.ts");
+  fs.writeFileSync(bogus, "export const bogus = 1;\n");
+  assert.throws(() => assertFeatureArtifactsFresh(options), /extra: .*bogus\.generated\.ts/u);
+  assert.throws(() => writeFeatureArtifacts(options), /bogus\.generated\.ts/u);
+});
+
+test("sidecar⇔View 双向：未登记的 *View.ts 红；登记的 sidecar 缺 View/logic 也红", () => {
+  {
+    const { root } = createFixture();
+    fs.writeFileSync(path.join(root, "apps/client/src/view/OrphanView.ts"), "export class OrphanView {}\n");
+    assert.throws(() => readViewCatalog(root), /发现未登记的 \*View\.ts/u);
+  }
+  {
+    const { root } = createFixture();
+    addFixtureView(root);
+    fs.rmSync(path.join(root, "apps/client/src/view/FxView.ts"));
+    assert.throws(() => readViewCatalog(root), /FxView\.view\.json → apps\/client\/src\/view\/FxView\.ts: missing required file/u);
+  }
+  {
+    const { root } = createFixture();
+    addFixtureView(root);
+    fs.rmSync(path.join(root, "apps/client/src/logic/page/FxLogic.ts"));
+    assert.throws(() => readViewCatalog(root), /FxLogic\.ts: missing required file/u);
+  }
+  {
+    const { root } = createFixture();
+    addFixtureView(root);
+    fs.writeFileSync(
+      path.join(root, "apps/client/src/view/FxView.view.json"),
+      fixtureSidecar({ logic: "apps/client/src/logic/rooms/ballMove/BallMoveGameplay.ts" }),
+    );
+    assert.throws(() => readViewCatalog(root), /不在 owner "builtin" 的目录/u);
+  }
+  {
+    const { root } = createFixture();
+    addFixtureView(root);
+    fs.writeFileSync(
+      path.join(root, "apps/client/src/view/FxView.view.json"),
+      fixtureSidecar({ owner: "phantom" }),
+    );
+    assert.throws(() => readViewCatalog(root), /owner "phantom" 未在 .*owners 表登记/u);
+  }
+});
+
+test("sharedPkgs ⊇ 闭包 fail-fast：漏声明依赖包点名拒绝（art 闭包与 assetUrls 所属包同口径）", () => {
+  const { root } = createFixture();
+  const homeSidecar = path.join(root, "apps/client/src/view/HomeView.view.json");
+  const sidecar = JSON.parse(fs.readFileSync(homeSidecar, "utf8"));
+  sidecar.sharedPkgs = ["ui/Common_RGBA"];
+  fs.writeFileSync(homeSidecar, `${JSON.stringify(sidecar, null, 2)}\n`);
+  assert.throws(() => readViewCatalog(root), /HomeView\.view\.json: sharedPkgs 缺依赖包 \["Common_Btn"\]/u);
+});
+
+test("aliasOf 迁移期兼容：无 alias 的重复 package\\/component 必败；显式 aliasOf 放行且不产重复所有权", () => {
+  const makeAliasFixture = (aliasOf?: string): string => {
+    const { root } = createFixture();
+    fs.writeFileSync(path.join(root, "apps/client/src/view/HomeNextView.ts"), "export class HomeNextView {}\n");
+    fs.writeFileSync(
+      path.join(root, "apps/client/src/view/HomeNextView.view.json"),
+      fixtureSidecar({
+        package: "View_Home_Home",
+        component: "Home",
+        logic: "apps/client/src/logic/page/HomeLogic.ts",
+        ...(aliasOf === undefined ? {} : { aliasOf }),
+      }),
+    );
+    const manifestFile = path.join(root, "features/built-in/feature.json");
+    const manifest = JSON.parse(fs.readFileSync(manifestFile, "utf8"));
+    manifest.views.push("apps/client/src/view/HomeNextView.view.json");
+    fs.writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
+    return root;
+  };
+
+  assert.throws(() => readViewCatalog(makeAliasFixture()), /重复引用/u);
+  assert.throws(() => readViewCatalog(makeAliasFixture("HomeNext")), /aliasOf 不得指向自身|aliasOf 必须指向同组件的 canonical View/u);
+
+  const root = makeAliasFixture("Home");
+  const catalog = readViewCatalog(root);
+  const names = catalog.entries.map((entry) => entry.name);
+  assert.ok(names.includes("Home") && names.includes("HomeNext"), "alias 条目与 canonical 同时在册");
+  const result = writeFeatureArtifacts({ repositoryRoot: root });
+  assert.deepEqual(result.changed, [FGUI_CONTRACTS_RELATIVE, VIEWS_RELATIVE]);
+  const views = fs.readFileSync(path.join(root, VIEWS_RELATIVE), "utf8");
+  assert.match(views, /^ {4}HomeNext: defineView\(\{$/mu, "alias 条目仍是独立 catalog 键（不抢占 canonical）");
+  assertFeatureArtifactsFresh({ repositoryRoot: root });
+});
+
+test("阶段 6 删除保护：View 真源消失必须显式 --allow-delete，放行后三产物同步收缩", () => {
+  const { root, options } = createFixture();
+  addFixtureView(root);
+  writeFeatureArtifacts(options);
+  assertFeatureArtifactsFresh(options);
+
+  fs.rmSync(path.join(root, "apps/client/src/view/FxView.ts"));
+  fs.rmSync(path.join(root, "apps/client/src/view/FxView.view.json"));
+  const manifestFile = path.join(root, "features/built-in/feature.json");
+  const manifest = JSON.parse(fs.readFileSync(manifestFile, "utf8"));
+  manifest.views = manifest.views.filter((entry: string) => !entry.endsWith("FxView.view.json"));
+  fs.writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
+
+  assert.throws(() => writeFeatureArtifacts(options), /--allow-delete/u);
+  const result = writeFeatureArtifacts({ ...options, allowDelete: ["Fx"] });
+  assert.deepEqual(result.deleted, ["Fx"]);
+  const views = fs.readFileSync(path.join(root, VIEWS_RELATIVE), "utf8");
+  assert.ok(!views.includes('"Fx"'), "Fx 必须随删除从 manifest 消失");
+  assert.ok(!fs.readFileSync(path.join(root, FGUI_CONTRACTS_RELATIVE), "utf8").includes("FX_CONTRACT"));
+  assertFeatureArtifactsFresh(options);
+});
+
+test("路由/菜单校验：route 引用未登记 View、缺 group\\/restore、menu entryId 重复均点名拒绝", () => {
+  {
+    const { root } = createFixture();
+    const manifestFile = path.join(root, "features/built-in/feature.json");
+    const manifest = JSON.parse(fs.readFileSync(manifestFile, "utf8"));
+    manifest.routes.push({ id: "fx", view: "Fx" });
+    fs.writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
+    assert.throws(() => readViewCatalog(root), /route "fx" 引用未登记的 View "Fx"/u);
+  }
+  {
+    const { root } = createFixture();
+    addFixtureView(root);
+    const manifestFile = path.join(root, "features/built-in/feature.json");
+    const manifest = JSON.parse(fs.readFileSync(manifestFile, "utf8"));
+    manifest.routes.push({ id: "fx", view: "Fx" });
+    fs.writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
+    assert.throws(() => readViewCatalog(root), /必须在 sidecar 声明 group 与 restore/u);
+  }
+  {
+    const { root } = createFixture();
+    const manifestFile = path.join(root, "features/built-in/feature.json");
+    const manifest = JSON.parse(fs.readFileSync(manifestFile, "utf8"));
+    manifest.menu.push({ ...manifest.menu[0] });
+    fs.writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
+    assert.throws(() => readViewCatalog(root), /menu entryId "ballMove" 重复/u);
+  }
 });
 
 test("CLI 沿用惯例：--check、--root <dir>/--root=<dir>、--allow-delete；重复/未知参数 throw", () => {

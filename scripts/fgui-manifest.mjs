@@ -23,7 +23,6 @@ import { roundtripProblems } from "./fgui-roundtrip.mjs";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ART = path.join(ROOT, "apps/art/fairygui/assets");
 const UI = path.join(ROOT, "apps/Cocos/assets/resources/ui");
-const VIEW = path.join(ROOT, "apps/client/src/view");
 const MANIFEST = path.join(ROOT, "scripts/fgui.manifest.json");
 const VERSION = 1;
 
@@ -426,14 +425,44 @@ function generatedViewHash(source) {
   return createHash("sha256").update(chunks.join("\n")).digest("hex");
 }
 
+/**
+ * 注册 View 的精确源码路径集合来自 generated view manifest（Non-intrusive §7.5 守门
+ * manifest 化第四处）：原 `/^[A-Z].*View\.ts$/` 目录自扫作用于相对路径，**静默排除了
+ * 子目录 View**——View 迁入 feature/gameplay 目录后 AUTO 哈希覆盖会无声丢失。
+ * 现改为消费 `views.generated.ts` 的 VIEW_SOURCE_RECORDS（kind:"fgui" 条目；行格式由
+ * feature-codegen 唯一拥有，与 previousGeneratedViewNames 同款生成物自解析先例）。
+ */
+function generatedViewSourceRecords() {
+  const file = path.join(ROOT, "apps/client/src/generated/views.generated.ts");
+  if (!fs.existsSync(file)) {
+    throw new Error(`${rel(ROOT, file)} 不存在——先运行 npm --workspace @game/server run codegen:features`);
+  }
+  const text = fs.readFileSync(file, "utf8");
+  const records = [];
+  const re = /^ {4}\{ name: "([^"\n]+)", owner: "([^"\n]+)", kind: "(fgui|cocos)", (?:pkg: "([^"\n]+)", comp: "([^"\n]+)", )?path: "([^"\n]+)", logic: "[^"\n]+", sidecar: "[^"\n]+" \},$/gm;
+  let match;
+  while ((match = re.exec(text)) !== null) {
+    records.push({ name: match[1], owner: match[2], kind: match[3], pkg: match[4], comp: match[5], path: match[6] });
+  }
+  if (records.length === 0) {
+    throw new Error(`${rel(ROOT, file)} 未解析出任何 VIEW_SOURCE_RECORDS 条目（生成物格式变更需同步本解析器）`);
+  }
+  return records;
+}
+
 function viewRecords() {
-  const paths = listFiles(VIEW).filter((file) => /^[A-Z].*View\.ts$/.test(file) && file !== "FguiView.ts");
-  return paths.map((file) => {
-    const full = path.join(VIEW, file);
+  const records = generatedViewSourceRecords().filter((record) => record.kind === "fgui");
+  if (records.length === 0) throw new Error("generated view manifest 没有 fgui 条目（清单为空=守门空转）");
+  return records.map((record) => {
+    const full = path.join(ROOT, record.path);
+    if (!fs.existsSync(full)) throw new Error(`${record.path} 在 manifest 登记但文件不存在`);
     const source = fs.readFileSync(full, "utf8");
     const origin = /来源:\s*ui:\/\/([^/]+)\/([^\s]+)/.exec(source);
     const generatedHash = generatedViewHash(source);
     if (!origin || !generatedHash) throw new Error(`${rel(ROOT, full)} 缺少完整 AUTO 区块或来源标记`);
+    if (origin[1] !== record.pkg || origin[2] !== record.comp) {
+      throw new Error(`${rel(ROOT, full)} 来源标记 ui://${origin[1]}/${origin[2]} 与 manifest 登记 ui://${record.pkg}/${record.comp} 不一致`);
+    }
     return { path: rel(ROOT, full), pkg: origin[1], comp: origin[2], generatedHash };
   });
 }

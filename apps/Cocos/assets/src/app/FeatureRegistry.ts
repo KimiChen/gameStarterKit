@@ -1,8 +1,9 @@
 /**
  * FeatureRegistry（Non-intrusive §7.2 阶段 5b）：不可变 feature/route 目录。
  *
- * 消费 builtinFeature 的手写 descriptor（阶段 6 换 codegen:features 产物）；
- * 解析 feature、route 与 Home menu contribution。构造期 fail-fast：重复
+ * 消费 codegen:features 生成的不可变 descriptor（generated/features.generated，
+ * 经 builtinFeature 稳定 façade）；解析 feature、route 与 Home menu
+ * contribution。构造期 fail-fast：重复
  * feature id / route id / view 名直接 throw（descriptor 非法在装配期暴露，
  * ⛔ 不进 runtime 分支）。注册后目录只读——运行时可用性（failed/disabled）是
  * FeatureHost 的可变叠加层，不回写目录。
@@ -71,11 +72,18 @@ export class FeatureRegistry {
         return result;
     }
 
+    /** Home 菜单唯一数据源（§7.4）：固定排序 slot → order → featureId → entryId。 */
     menuContributions(): readonly FeatureMenuContribution[] {
         const result: FeatureMenuContribution[] = [];
         for (const feature of this.features.values()) {
             for (const item of feature.menu) result.push(item);
         }
-        return result;
+        return result.sort((left, right) => {
+            if (left.slot !== right.slot) return left.slot - right.slot;
+            if (left.order !== right.order) return left.order - right.order;
+            if (left.featureId !== right.featureId) return left.featureId < right.featureId ? -1 : 1;
+            if (left.entryId === right.entryId) return 0;
+            return left.entryId < right.entryId ? -1 : 1;
+        });
     }
 }

@@ -34,7 +34,8 @@ import {
     onConnLost,
     returnToLogin,
 } from "./SessionCoordinator";
-import { FeatureHost, type HostedFeature } from "./FeatureHost";
+import type { FeatureLaunchTarget } from "./builtinFeature";
+import { FeatureHost, type FeatureStatus, type HostedFeature } from "./FeatureHost";
 import { FrameScheduler } from "./FrameScheduler";
 import { PendingOperationJournal } from "./PendingOperationJournal";
 import { RefreshCoordinator } from "./RefreshCoordinator";
@@ -46,6 +47,7 @@ import {
     createPageSessionScope,
     openLogin,
     refreshAuthenticatedBaseProfile,
+    setHomeMenuRuntime,
     type PageSessionScope,
 } from "./loginFlow";
 import type { NavigationService } from "./NavigationService";
@@ -95,6 +97,7 @@ export class AppRuntime {
             frameScheduler: this.frameScheduler,
             lifecycleBus,
             enterBattle: () => this.enterBattle(),
+            launch: (target) => this.launch(target),
             track: (unsubscribe) => this.track(unsubscribe),
         });
         const hostedFeatures: HostedFeature[] = appFeatureRegistry.featureIds().map((id) => ({
@@ -112,6 +115,25 @@ export class AppRuntime {
             });
         });
         this.unsubs.push(() => this.navigation.setRouteObserver(null));
+        // §7.4：Home 菜单接线——点击唯一出口 LaunchPort.launch(target)，可用性查询
+        // FeatureHost（disabled/failed 叠加层）。注销器身份守卫，随 dispose 强制释放。
+        this.unsubs.push(setHomeMenuRuntime({
+            launch: (target) => this.ports.launch.launch(target),
+            availabilityOf: (featureId) => this.featureAvailability(featureId),
+        }));
+    }
+
+    /** FeatureHost 运行时可用性叠加（未托管的贡献者不误伤为占位）。 */
+    private featureAvailability(featureId: string): "available" | "failed" | "disabled" {
+        let status: FeatureStatus;
+        try {
+            status = this.featureHost.statusOf(featureId);
+        } catch {
+            return "available";
+        }
+        if (status === "failed") return "failed";
+        if (status === "disabled") return "disabled";
+        return "available";
     }
 
     /** 收编一个外部解绑器（bootstrap 的 lifecycle bridge 等）：dispose 时强制释放。 */
@@ -255,10 +277,19 @@ export class AppRuntime {
 
     /** Home's command boundary; concurrent clicks share one observable transition. */
     enterBattle(): Promise<void> {
+        return this.launchGameplay(null);
+    }
+
+    /** §7.4 统一玩法启动通道（LaunchPort.launch 的宿主实现）：target 覆盖默认玩法 id。 */
+    launch(target: FeatureLaunchTarget): Promise<void> {
+        return this.launchGameplay(target);
+    }
+
+    private launchGameplay(target: FeatureLaunchTarget | null): Promise<void> {
         if (this.disposed) return Promise.resolve();
         if (this.battleTransition) return this.battleTransition;
         const abort = new AbortController();
-        const transition = this.startGameplay(abort.signal);
+        const transition = this.startGameplay(abort.signal, target?.gameplayId);
         this.battleAbort = abort;
         this.battleTransition = transition;
         const settle = (): void => {
@@ -272,7 +303,7 @@ export class AppRuntime {
         return transition;
     }
 
-    private async startGameplay(signal: AbortSignal): Promise<void> {
+    private async startGameplay(signal: AbortSignal, targetGameplayId?: string): Promise<void> {
         const controller = this.roomController;
         const registry = this.gameplayRegistry;
         if (!controller || !registry || signal.aborted || controller.status === "running") return;
@@ -289,9 +320,14 @@ export class AppRuntime {
         }
         if (!isCurrent()) return;
 
-        const requestedId = typeof this.gameplayId === "string" && this.gameplayId.trim().length > 0
+        // launch target（generated contribution）优先；Main 的 gameplayId @property 仍是
+        // 默认 launch target 的兜底（阶段 9 评估删除）。
+        const fallbackId = typeof this.gameplayId === "string" && this.gameplayId.trim().length > 0
             ? this.gameplayId.trim()
             : GameplayModeId.BallMove;
+        const requestedId = typeof targetGameplayId === "string" && targetGameplayId.trim().length > 0
+            ? targetGameplayId.trim()
+            : fallbackId;
         const result = await reconcileGameplayStartResult(
             controller.startRegistered(registry, requestedId, signal),
             {
