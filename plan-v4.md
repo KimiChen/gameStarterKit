@@ -673,3 +673,51 @@ Playing 中入座走同一 createModePlayer 流，mode 无新 hook）；✅ 第 
 自动排除撮合）；✅ 空位回填老房（减员自动恢复，int 实证 roomId 回到老房）；✅ 8 = manifest
 配置参数（dropInFixture manifest maxPlayers:8 → roster cap → maxClients 全链无框架字面量）；
 ✅ 既有 auto/owner-ready 零变（436 条既有服务端测试原断言全绿 + 两条 Playing 拒入回归钉）。
+
+---
+
+## 第二十五轮复核：9 个修复 commit + drop-in 房型批（2026-09-02）
+
+**复核范围**：同事对第二十三轮成果的修复批 `7c3065b..c897741`（4 代码修复 + 5 文档/登记更正）
+与 drop-in 房型批 `91230dd`（实现）+ `537f533`（文档登记）。
+
+**判定：全部成立，本轮未发现需要修复的问题。**
+
+代码修复四条经本体审阅 + 关键变异亲手重做确认：
+
+- `7c3065b`（launch 闸 await 窗口缺活性复验——47dc934 引入的真实回归）：修复位置精确——
+  `startGameplay` 的 `closeGroup("authenticated")` 在其自身 `isCurrent()` 复验**之前**执行，
+  无闸侧复验时迟到的 install 完成确会关掉换代后重开的 Login。亲手重做变异：删闸后复验行 →
+  恰好 1 红（「活性复验」用例），恢复 11/11 绿。
+- `2923b32`（未托管 featureId 渲染/闸两侧裁定不一致）：`FeatureHost.hosts()` 只查不 throw，
+  闸侧与渲染侧统一为防御性直通，⛔ 不用 try/catch 掩蔽真实 install 错误——裁定正确。
+- `3a50473`（userIntent 直通无钉，M2 变异全绿存活属实）：补「恒失败 feature 连续点击
+  上限 + 2 次永不 disabled」钉，上限从 FeatureHost 实例读出而非硬编码。
+- `f211b89`（我 47dc934 的注释「取先声明者」与排序事实相反 + 生产派生零覆盖）：更正为
+  「菜单排序最前」属实；抽 `deriveLaunchFeatureIds` 纯函数 + 两条钉（M4/M5 变异各自转红）。
+
+文档/登记五条全部属实：`a92b127`（install 内 await 自身 ports.launch 的循环 await 隐患——
+结构上不可区分合流者，双侧注释警告 + 边界表是正确处置）；`4fc402e`（我 b14dbd4 注释的
+「期望 ~40% 至少一次」数字错写，应为每次 10%/期望 ~40 次）；`9ee00a0`/`2efbdef`/`c897741`
+（我第二十三轮记录的三处事实误差：「11 修复批」与范围实际 15 commit 的口径、execArgv
+「5–8 倍」超出 6f8186a 原始记录 5–6×、「均带变异实测」对表格后三行不成立）。
+
+drop-in 批的独立核查要点（全部通过）：
+
+- onCreate 时序无假绿：`assertDropInModeCompatible` 在 profile 解析之后执行；构造期注入
+  路径 `if (this.profile)` 双位点覆盖。
+- 隔离成立：fixture 不进生产 registry（`modes/catalog.ts` 仅 ballMove+idle）与默认撮合池；
+  客户端 `GAMEPLAY_MODULES` 显式两成员，fixture 不装配 client module。
+- 「不 lock」前提成立：`lateLockPending` 只在 `lockWithDeadline` 超时分支置位，drop-in
+  跳过该路径，注释声称的「不可能置位」经源码核实。
+- 生产撮合与 int 一致：`app.config.ts` 的 `filterBy(["sId","mode","profile"])` 与 int 测试
+  自建 Server 相同。
+- 协议指纹无需重钉：wire-catalog 只增 dropInFixture 空 token 表，`protocol/` 目录零改动。
+- 既有测试适配（`game-mode.test.ts`/`gameplay-codegen.test.ts` 的集合断言扩员）按
+  privateFixture 先例，属集合增长的必然适配，非削弱。
+- 变异亲手重做：删 onJoin 的 drop-in phase 分支 → `drop-in.test.ts` 4 红，恢复 12/12 绿；
+  int 四场景真栈复现（1/1 绿）。
+
+**实测（写入时）**：`verify:all` exit 0（服务端单测 448/448、客户端 358/358、FGUI 66/66、
+typecheck 全阶段 0 错、verify:sync 镜像一致）；`test:int` 169/169（本地真 Redis/MySQL 实跑，
+含 drop-in 真栈四场景）。
