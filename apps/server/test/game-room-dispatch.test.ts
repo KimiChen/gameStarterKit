@@ -30,20 +30,22 @@ function probeRoom(): {
     sender: { sessionId: string; auth: object; send(type: string, payload: unknown): void };
     sent: SentMessage[];
     captured: Array<{ type: C2SType; payload: unknown }>;
+    commands: Record<string, (context: unknown, payload: unknown) => void>;
 } {
     const captured: Array<{ type: C2SType; payload: unknown }> = [];
     const capture = (type: C2SType) => (_context: unknown, payload: unknown) => {
         captured.push({ type, payload });
+    };
+    const commands: Record<string, (context: unknown, payload: unknown) => void> = {
+        [C2S.Move]: capture(C2S.Move),
+        [C2S.CastSkill]: capture(C2S.CastSkill),
     };
     const room = new GameRoom({
         seed: 1,
         clock: () => 0,
         mode: {
             ...createBallMoveGameMode(),
-            commands: {
-                [C2S.Move]: capture(C2S.Move),
-                [C2S.CastSkill]: capture(C2S.CastSkill),
-            },
+            commands,
         } as never,
     });
     const sent: SentMessage[] = [];
@@ -52,7 +54,7 @@ function probeRoom(): {
         auth: { userId: "u-dispatch", sId: 0, mode: room.gameplayModeId },
         send(type: string, payload: unknown) { sent.push([type, payload]); },
     };
-    return { room, sender, sent, captured };
+    return { room, sender, sent, captured, commands };
 }
 
 function errorCount(sent: SentMessage[]): number {
@@ -162,4 +164,24 @@ test("rateCost 机制：>1 的消息在 exact validate 后追加消耗基础预�
     sent.length = 0;
     dispatch(room, C2S.CastSkill, sender, { skillId: 1 });
     assert.equal(errorCount(sent), 0, "rateCost=1 的消息在同一预算余量下必须放行");
+});
+
+test("owner 闸：他玩法消息即使 validate/phase/commands 全过也必须被拒（唯一拒绝点）", () => {
+    // c2s.idle.pulse 的 owner 是 idle 玩法，本房间跑 ballMove。构造最坏情形：
+    // commands 表在建房之后被运行期篡改、塞进了他玩法的消息键——构造期闸
+    // assertGameModeCommands（commands 键集 ⊆ 本玩法 wire token）已经跑完，此刻
+    // validate（全局表，过）、phase（idle.pulse 声明 Playing、房间 Playing，过）、
+    // commands（有 handler，过）全部兜不住，dispatcher 的 owner 检查是唯一拒绝点。
+    // 变异锚点：删掉 dispatchGameMessage 里的 owner 检查块 ⇒ 本用例必红
+    // （captured 会收到这条跨 mode 消息，且无任何 Error 回包）。
+    const { room, sender, sent, captured, commands } = probeRoom();
+    commands[C2S.IdlePulse] = () => {
+        captured.push({ type: C2S.IdlePulse, payload: {} });
+    };
+    room.state.phase = GamePhase.Playing;
+
+    dispatch(room, C2S.IdlePulse, sender, {});
+    assert.deepEqual(captured, [], "他玩法所有的消息不得到达本 mode commands");
+    assert.equal(errorCount(sent), 1, "必须恰好回 1 条 Error");
+    assert.equal((sent[0][1] as { code: number }).code, ErrorCode.BadRequest);
 });
