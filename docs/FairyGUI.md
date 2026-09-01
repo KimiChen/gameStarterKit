@@ -1,7 +1,7 @@
 # FairyGUI UI 生产、装配与自动化工作流
 
-> 文档版本：2.2<br>
-> 编写日期：2026-08-31<br>
+> 文档版本：2.3<br>
+> 编写日期：2026-09-02<br>
 > 适用范围：任意玩法或业务模块<br>
 > 当前运行时：Cocos Creator 3.8.8 + `fairygui-cc` 1.2.2 + TypeScript
 
@@ -11,17 +11,24 @@
 
 - **当前已有**：FairyGUI Editor 工程、人工保存与发布、View codegen、`.view.json`/`feature.json` 驱动的
   `codegen:features`、生成式 FGUI 契约与 registry、结构契约测试、FGUI 发布闭包锁、发布物反解析对账、客户端同步和 Creator 人工验收。
+- **实际 PSD 证据**：`docs/psd-maker/ug_main_layered_source_v02.psd` 是已保存的 source-only 分层 PSD，制作与
+  composite 对账见 `docs/psd-maker.md`；它不是通用 CLI 的生产金样，也没有通过 Photoshop 往返、运行资产、三层
+  stable key 或 FairyGUI 编译门禁。
 - **近期优先**：统一只读 `FguiProjectIR`、PageSpec Schema、可执行 Scenario、Creator UI Gallery、设置门禁、Editor 工具链锁和发布 receipt。
-- **受控试点**：通过 FairyGUI Editor 官方插件 API 辅助装配和批处理发布；OpenFairyGUI 对正式工程只读、只在临时副本变换的影子验证。
-- **条件式后备**：raw XML 编译器、外部 ID 审计/兼容映射和可编辑浏览器 Studio。它们不是默认建设项。
+- **受控试点**：CLI 编译器 PSD 版在临时完整工程中生成候选 XML/`package.xml`，再由固定版本 Editor 人工接管、
+  保存—重开和正式发布。OpenFairyGUI 至多作为只读解析/影子验证候选。
+- **条件式后备**：超出白名单 ownership 的包级 raw XML merge、外部 ID 兼容层和可编辑浏览器 Studio。它们不是默认建设项。
 
-当前本机 FairyGUI Editor 6.1.4 只能作为 POC 候选基线；仓库尚未锁定 Editor 安装包哈希、配套 TsAPI 或插件版本，不能把“本机可用”写成“项目可复建”。
+当前本机 FairyGUI Editor 6.1.4 只能作为 POC 候选基线；仓库尚未锁定 Editor 安装包哈希、工程格式 adapter、XML codec
+或 Photoshop 工具链，不能把“本机可用”写成“项目可复建”。
 
 为避免同名概念混淆，本文固定使用以下名称：
 
 | 名称 | 含义 |
 | --- | --- |
 | **生产资产清单** | 页面批次的 `asset-manifest.json`，记录批准源、Alpha、裁切、pivot、九宫格和输出策略 |
+| **PSD 交接包** | `PsdHandoffBundle`：批准 PSD、命名/alias、sidecar、source/prompt hash、preview 和批准记录的原子集合 |
+| **CLI 编译器 PSD 版** | 内部 `authoringMode` 为 `cliPSDCompiler`；只在临时完整 FairyGUI 工程生成候选，包含 `seededTemplate` 与 `rawProjectCompiler` 两阶段 |
 | **FGUI 发布闭包锁** | `scripts/fgui.manifest.json`，钉住设计源、发布物和 View AUTO 区块哈希 |
 | **Editor 保存—重开往返验收** | 在真实 Editor 中打开、保存、关闭、重开，检查是否发生修复、丢失或语义变化 |
 | **发布物反解析对账** | 现有 `scripts/fgui-roundtrip.mjs` 对设计源声明与 `.bin` 解析结果做语义对账；它不证明 Editor 能打开或保存 |
@@ -30,17 +37,20 @@
 
 ## 1. 推荐结论
 
-默认路线是“**Scenario-first + Editor-first**”：先把状态变成可重复执行的验收输入，再减少 Editor 内的重复劳动。在默认 `editor` / `editorPlugin` 路线中，FairyGUI Editor 是结构、内部 ID、XML/`package.xml` 序列化和正式发布的权威；`rawXmlFallback` 仅是第 7.8 节明示的窄化例外。
+当前可执行路线是“**Scenario-first + Editor-first**”；目标路线是“**Scenario-first + PSD handoff + CLI 编译器 PSD 版
++ Editor takeover**”。`editor` 流程现在可执行；`cliPSDCompiler` 必须经过 M2 的 ADR、工具锁和 golden test 后才可启用。
+两条路线都以 FairyGUI Editor 作为正式结构、内部 ID、XML/`package.xml` 序列化和发布权威。
 
 ```text
 G0～G2：策划冻结 → PageSpec / Scenario → 布局约束
                                       │
                                       ▼
-G3～G5：视觉锁定 → 生产拆层 → 批准运行资产
+G3～G5：视觉锁定 → 命名 + sidecar 的 PSD handoff → 批准运行资产
                                       │
                                       ▼
 G6：    人工 Editor 装配（当前）
-          或官方 Editor 插件辅助装配（计划）
+          或 CLI 临时完整工程编译候选（M2 计划）
+          → Editor takeover / 人工调整
           → Editor 保存—重开 → Editor 正式发布
                                       │
                                       ▼
@@ -59,11 +69,12 @@ G8a/G8b/G9：无头场景测试 + Creator UI Gallery（计划）
 当前人工 Editor
   → 统一只读 FguiProjectIR 与设置门禁
   → Scenario Host / Creator UI Gallery
-  → 官方 Editor 插件与批处理发布
-       ├─ 已满足需求：停止扩张，维持当前层级
-       └─ 仍有已证明缺口：OpenFairyGUI 影子验证
-              ├─ 已满足需求：停止扩张
-              └─ 仍无法满足且 ADR 通过：raw XML 后备
+  → PsdHandoffBundle pack/verify
+  → CLI 编译器 PSD 版：seededTemplate
+  → rawProjectCompiler + Editor takeover
+       ├─ 已满足需求：停止扩张，维持白名单 ownership
+       └─ 仍有读取/兼容缺口：OpenFairyGUI 只读影子验证
+              └─ 仍无法满足且另立 ADR：包级 raw XML merge 后备
 
 可编辑浏览器 Studio 是独立的协作产品决策，只在只读在线审稿需求被证明后另行评估。
 ```
@@ -78,7 +89,7 @@ G8a/G8b/G9：无头场景测试 + Creator UI Gallery（计划）
 | Standard | 普通生产页面，默认档 | G0～G8a 与 G9；完整 required scenario；目标 viewport/locale 证据；发布闭包与结构对账；人工审美批准 |
 | Full | 正式平台交付、长期复用或有性能承诺 | Standard 全部要求，加 G8b、真机安全区、多语言、实际压缩纹理和量化性能预算 |
 
-能力成熟度 M0～M3 与交付档位是两个维度。处于 M0 的人工流程也能交付 Full 证据；进入 M2 的插件自动化也不能降低验收标准。
+能力成熟度 M0～M3 与交付档位是两个维度。处于 M0 的人工流程也能交付 Full 证据；进入 M2 的 CLI 自动化也不能降低验收标准。
 
 ### 1.2 效果图与可运行程序的交付边界
 
@@ -112,18 +123,21 @@ G8a/G8b/G9：无头场景测试 + Creator UI Gallery（计划）
 
 ### 2.1 每个事实只有一个可编辑真源
 
-同一事实不能长期存在两个可独立修改的版本。例如，状态条件不能同时维护在 YAML fixture 和 TypeScript 测试里；精确坐标不能同时维护在 handoff JSON 和 Editor 中；插件与人工也不能同时拥有同一组件子树。
+同一事实不能长期存在两个可独立修改的版本。例如，状态条件不能同时维护在 YAML fixture 和 TypeScript 测试里；
+进入 Editor takeover 后，精确坐标不能同时由 sidecar 和 Editor 人工维护；CLI 与人工也不能同时拥有同一组件子树。
 
-当前合法的 `authoringMode` 是 `editor`；M2 验证通过后可为授权组件选择 `editorPlugin`：
+当前合法的 `authoringMode` 是 `editor`；M2 验证通过后可为授权组件选择 `cliPSDCompiler`：
 
 - `editor`：当前默认。Editor 设计源是结构、精确坐标和内部 ID 真源。handoff 只保存语义角色、布局约束、适配规则和极值样例；坐标审计图应从真实设计源生成只读 snapshot。
-- `editorPlugin`：推荐的机器辅助方向。插件只通过固定版本 Editor API 修改授权组件，由 Editor 分配 ID、保存设计源并正式发布。首版只处理隔离的 leaf component。
+- `cliPSDCompiler`：计划中的机器辅助方向。CLI 复制正式基线，在临时完整工程内按 `EditorAssemblyPlan` 生成白名单
+  候选；候选 ID 不是正式 ID。人工在固定版本 Editor 中接管、调整、保存—重开后，Editor 设计源重新成为唯一真源。
 
-`rawXmlFallback` 仅是受限后备枚举，未通过第 7.8 节的单独 ADR 前不是合法模式。即使 ADR 通过，外部 writer 也只能在
-临时工程生成候选；正式工程的最终 XML、`package.xml` 与内部 ID 仍必须由固定版本 Editor 接管、保存和序列化，
-不能与 Editor 双写或直接覆盖正式工程。
+`cliPSDCompiler` 内部先使用 `seededTemplate`，再扩展为 `rawProjectCompiler`；二者都只写临时工程。`rawXmlFallback`
+专指超出白名单 ownership 的包级合并后备，未通过第 7.8 节单独 ADR 前不是合法模式。任何模式都不能与 Editor 双写或
+直接覆盖正式工程。
 
-`layoutMode: machine` 不是合法默认模式；raw XML 所需的 `layout.json` 只属于后备编译器自己的配方。
+`layoutMode: machine` 不是合法默认模式。CLI 输入统一使用经 Schema 校验的 PageSpec、`assembly-recipe.json` 与
+`EditorAssemblyPlan`；不得再维护一份自由格式 `layout.json`。
 
 ### 2.2 三条真源并行但不能互相替代
 
@@ -153,17 +167,30 @@ G8a/G8b/G9：无头场景测试 + Creator UI Gallery（计划）
 
 ### 2.6 生成只覆盖明确授权范围
 
-`editorPlugin` 只能通过 Editor 对象 API 创建或修改授权对象；XML、`package.xml` 和内部 ID 仍由 Editor 序列化。插件输入中的 stable key 只做业务映射或审计，不是 ID 发号器。
+`cliPSDCompiler` 只可在路径守门器确认的临时完整工程创建或修改授权对象。首版 ownership 是整文件隔离的
+`cli-managed-component`；人工在同一子树内修改前必须进入 takeover，之后 CLI 不得再次覆盖。候选 XML 与 ID 只是
+传递载体，stable key 只做业务映射或审计，不是正式 ID 发号器。
 
-外部 XML writer、`package.xml` AST merge 和外部 `ids.lock.json` 只属于 `rawXmlFallback` 的临时候选实验，启用条件
-见第 7.8 节；它们不得成为正式工程写入器或内部 ID 发号器。
+超出 plan 白名单的 `package.xml` AST merge、混合 subtree merge 和外部 `ids.lock.json` 属于 `rawXmlFallback`，启用
+条件见第 7.8 节；它们也不得成为正式工程写入器或正式 ID 发号器。
+
+三层交接固定为：
+
+1. **PSD 命名**：顶层可用面向美术的排序组；进入编译的叶子层使用 `ROLE::stableKey`，只回答“它是谁”。
+2. **sidecar 契约**：`delivery-spec.json`、`asset-manifest.json`、`assembly-recipe.json` 回答 Controller、Gear、Relation、
+   热区、九宫格和安全区“应该是什么”；任何 T/H/A 历史编号必须有显式 alias。
+3. **Editor 映射**：takeover 后从正式 Editor 工程反解析 stable key 到 package/resource/component/child 正式 ID，回答
+   “Editor 最终保存成什么”。映射是只读 snapshot，不参与发号。
+
+三层 key 必须闭合；missing、orphan、duplicate 都阻断。单个 PSD、单个 XML 或单个 ID 表都不能替代完整交接。
 
 ### 2.7 修复回到最早的错误真源
 
 - 玩法、状态、数据或动作错误：回 PageSpec / Logic。
 - 坐标、层级、热区或适配错误：回当前 `authoringMode` 的权威输入。
 - 色板、造型、透明边或 pivot 错误：回生产美术源或生产资产清单。
-- Controller、Relation、列表或包引用错误：回 Editor；插件拥有的隔离组件回插件输入或实现。
+- Controller、Relation、列表或包引用错误：takeover 前回 PageSpec/recipe/compiler adapter，takeover 后回 Editor 并
+  用 reconcile 判断是否需要回写上游。
 - 绑定、事件或生命周期错误：回 View/Logic。
 
 禁止修改 `.bin`、atlas、Creator `.meta`、`apps/Cocos/assets/src` 或其他生成物来掩盖上游错误。
@@ -186,6 +213,7 @@ Schema 派生或按 Schema 校验。提示词中的 `layoutMode`、fixture 或 m
 | UI/UX | 页面地图、线框、交互、信息层级、适配和极值样例 | 编造业务规则、从扁平图恢复隐藏图层 |
 | UI 美术 | 风格锚点、效果图、独立生产源和视觉一致性 | Controller、数据字段和 FGUI ID |
 | 技术美术/UI 工程 | 生产资产清单、Alpha、pivot、九宫格、图集和 Editor 装配 | 在 View 中实现业务规则 |
+| 服务端程序 | shared 契约、RPC/Room 行为、持久化、一致性、幂等和测试 | 从 XML 或图片猜业务协议、修改 UI 生成物 |
 | 客户端程序 | UI model、Scenario、View/Logic、数据映射、事件和生命周期 | 手修美术生成物、把业务写进设计源 |
 | QA | 全状态、全尺寸、异常路径、性能和回归证据 | 只看默认截图就判定完成 |
 | 自动化工具 | 确定性读取、检查和明确授权的辅助写入 | 与 Editor 双写、伪造官方发布物、补造语义 |
@@ -195,18 +223,19 @@ Schema 派生或按 Schema 校验。提示词中的 `layoutMode`、fixture 或 m
 | 内容 | 权威真源 | 状态与说明 |
 | --- | --- | --- |
 | 玩法与业务 | 已冻结策划案 | 当前流程 |
+| 批次页面、`featureKind` 与前后端领域 | 批准的 `delivery-spec.json` | 计划中的批次投影；从策划条款派生并保留来源 hash，XML 不得补造 |
 | 页面语义 | `<Page>.page-spec.yaml` | 推荐的新单一契约；Schema 计划中。包含页面、字段、动作、状态维度、运动反馈、非目标和 Scenario ID |
 | 可执行 Scenario | `<Page>.scenarios.ts` | M1 计划；使用真实 UI-model/Logic 类型，同时驱动无头测试与 Creator Gallery |
-| 精确布局 | `editor`/`editorPlugin` 均以 Editor 设计源为真 | handoff 只保存约束；坐标 snapshot 是只读派生物 |
+| 精确布局 | 当前 `editor` 以 Editor 设计源为真；`cliPSDCompiler` takeover 后同样回归 Editor | takeover 前 recipe 只表达候选约束；坐标 snapshot 是只读派生物 |
 | 视觉语言 | 批准的 style anchor + style tokens | 色板、材质、描边、圆角、光向和禁用项 |
 | 视觉目标 | 批准的整页效果图 | 不直接证明可切层 |
-| 美术生产 | 生产资产清单 + 批准源文件及哈希 | 每项的来源、尺寸、Alpha、pivot、策略和许可 |
+| 美术生产 | `PsdHandoffBundle` + 批准独立源 | 使用“PSD 命名 + sidecar 契约 + Editor 映射”；单个 PSD 不是完整输入 |
 | FGUI 内部 ID | FairyGUI Editor 工程 | 新 ID 由 Editor 分配；外部映射至多是只读审计快照 |
-| FGUI 结构 | FairyGUI Editor 工程 | 人工或插件经 Editor API 修改，Editor 序列化 |
+| FGUI 结构 | FairyGUI Editor 工程 | CLI 只生成临时候选；人工 takeover 后由 Editor 序列化并成为正式真源 |
 | 统一读取模型 | `FguiProjectIR` | M0.5 计划中的只读派生模型，不是第二份可编辑真源 |
 | 发布物 | Editor 生成的 `.bin` / atlas / 独立资源 | 当前能力；禁止脚本伪造 |
 | 发布证据 | 当前为人工发布/验收记录；M0.5 后为 publish receipt | receipt 记录工具版本、输入/设置/输出哈希和检查结果 |
-| 程序 | `apps/client/src` | `apps/Cocos/assets/src` 是生成镜像 |
+| 双端程序 | shared 契约 + `apps/server/src` + `apps/client/src` 对应手写真源 | `apps/Cocos/assets/src` 和各类 generated catalog/schema 是生成物 |
 | 完成证据 | 自动检查 + Creator/真机截图录像 + Scenario 结果 | 人工审美批准不可由像素 diff 代替 |
 
 PageSpec 只引用稳定 Scenario ID。M1 前，每个批次必须在 PageSpec 内嵌 fixture 或现有无头测试 fixture 中二选一，声明一份临时唯一来源，并明确记录“统一驱动器未实现”；不得再维护第二份独立状态条件。M1 后，数据快照、本地 inflight 状态、时钟、网络、权限、viewport 和 locale 以 TypeScript catalog 为唯一可执行真源。YAML/JSON 只能是由 catalog 生成的人读投影，或是被 TypeScript 直接导入的纯数据。
@@ -234,9 +263,20 @@ docs/ui/<feature>/<page>/
 │  ├─ concepts/
 │  └─ review-log.md
 ├─ 40-production/
+│  ├─ <Page>.approved.psd
+│  ├─ delivery-spec.json
 │  ├─ asset-manifest.json
+│  ├─ assembly-recipe.json
+│  ├─ prompts/
 │  ├─ source/
 │  ├─ runtime/
+│  ├─ generated/
+│  │  ├─ psd-handoff-ir.json          # 计划：只读派生
+│  │  ├─ editor-assembly-plan.json    # 计划：只读派生
+│  │  └─ editor-id-map.snapshot.json  # 计划：takeover 后只读派生
+│  ├─ evidence/
+│  │  ├─ psd.approval.json
+│  │  └─ fgui.approval.json
 │  └─ contact-sheet.png
 └─ 90-evidence/
    ├─ scenarios/
@@ -248,9 +288,16 @@ apps/client/src/devtools/uiGallery/   # M1 计划；置于开发专用 scene/bun
 ├─ defineUiScenario.ts
 ├─ scenarioRegistry.ts
 └─ scenarios/<Page>.scenarios.ts
+
+tmp/ui-pipeline/<batchId>/<runId>/    # 计划：ignored，可整体丢弃
+├─ fairygui-project/
+├─ publish/
+├─ diff/
+└─ logs/
 ```
 
 `40-production/runtime/` 只是审稿和交接暂存区。G5 通过后，资产按明确映射进入 `apps/art/fairygui/assets/<Package>/`；暂存副本和包内副本不能各自继续修改。
+PSD 命名、sidecar 字段、输入档位和 Photoshop 门禁以 [PSD 到 FairyGUI 的“CLI 编译器 PSD 版”方案](psd.md) 为准。
 
 仓库正式路径：
 
@@ -277,10 +324,10 @@ scripts/fgui.manifest.json                 FGUI 发布闭包锁
 | G1 | PageSpec 与 Scenario | UI model、字段/动作、状态维度、Scenario、运动反馈 | 每个值有来源、每个操作有闭环、每个 required state 可重复构造 |
 | G2 | 线框与布局 | 节点角色、布局约束、热区、安全区、极值样例 | 长文本、极值数字、目标尺寸和点击区可容纳 |
 | G3 | 视觉锁定 | style anchor、tokens、批准效果图、评审记录 | 视觉语言、构图和不变量被批准 |
-| G4 | 生产拆层 | 节点责任、生产资产清单、来源与许可 | 无烘焙动态内容、无虚构图层 |
-| G5 | 运行资产 | 透明件、同画布层、九宫格源、质量报告 | Alpha、尺寸、边缘、pivot、预算和一致性通过 |
-| G6 | Editor 装配与发布 | 组件、Controller、Relation、官方发布物 | Editor 保存—重开、正式发布、引用闭合通过 |
-| G7 | 程序接线 | View、Logic、FGUI 结构契约、registry、pages、测试 | 行为、事件、异步和生命周期正确 |
+| G4 | 生产拆层 | PSD 命名、sidecar、来源/许可和分层批准 | 输入档位明确；无烘焙动态内容、无虚构图层 |
+| G5 | 运行资产 | `productionFromAcceptedAssets` bundle、透明件、九宫格源、质量报告 | Alpha、尺寸、边缘、pivot、预算和一致性通过 |
+| G6 | Editor 装配与发布 | 组件、Controller、Relation、Editor 映射、官方发布物 | 候选只在临时工程；Editor 保存—重开、正式发布、引用闭合通过 |
+| G7 | 双端程序接线 | shared/服务端/客户端行为、View/Logic、FGUI 契约和测试 | 策划行为与 XML 结构各自从正确真源实现，异步和生命周期正确 |
 | G8a | Creator 集成验收 | 场景矩阵、截图/录像、缺陷归因 | 全状态、目标尺寸和异常路径通过 |
 | G8b | 目标平台验收 | 真机构建、安全区、纹理和性能证据 | 仅在交付承诺需要时必过 |
 | G9 | 冻结交付 | 版本、哈希、人工发布/验收记录、变更与回归范围；M0.5 后附 receipt | 下游产物可追溯、可复建 |
@@ -328,7 +375,9 @@ Controller/page 的具体映射由 FGUI 结构契约和 IR 检查，不复制进
 4. 用最长语言、最大数值、空/满列表和目标长短屏压力测试。
 5. 先低保真线框，再做高保真视觉。
 
-`authoringMode: editor` 时，handoff 只交付布局约束与极值样例，精确坐标在 Editor 中维护。`editorPlugin` 时，插件输入也只表达 Editor API 能稳定落地的结构与约束。不得人工维护第二份精确坐标；需要审计时从 Editor 设计源生成 snapshot。
+`authoringMode: editor` 时，handoff 只交付布局约束与极值样例，精确坐标在 Editor 中维护。
+`authoringMode: cliPSDCompiler` 时，recipe 只为临时工程生成候选；takeover 完成后精确坐标仍回归 Editor。
+不得让 recipe 和 Editor 长期双写同一坐标；需要审计时从正式 Editor 设计源生成 snapshot。
 
 Relation 不会自动处理刘海或四边安全区。没有明确程序接线和目标平台证据，安全区不算通过。
 
@@ -356,6 +405,10 @@ Relation 不会自动处理刘海或四边安全区。没有明确程序接线�
 
 生产资产清单至少记录 stable key、节点覆盖、来源、尺寸、状态、Alpha、裁切、padding、pivot、九宫格、图集、责任方、批准状态、许可和源哈希。
 
+分层 PSD 必须声明输入档位：批准整页 target 重组得到的是 `sourceOnlyFromTarget`，只能做分层审阅和后续资产补产；
+只有由 source-approved 独立生产源重建、并带完整 sidecar 与 Photoshop 往返批准的
+`productionFromAcceptedAssets`，在 G5 验收通过后才能进入 CLI FairyGUI 编译。`psd-maker.md` 的现有样例属于前者。
+
 ### 4.7 G5：运行资产
 
 1. 每次生成或修订一个资产，不生成要求精确坐标的巨型 sprite sheet。
@@ -364,6 +417,9 @@ Relation 不会自动处理刘海或四边安全区。没有明确程序接线�
 4. 九宫格 inset 由人工或确定性工具标注，不让图片模型猜。
 5. 检查尺寸、四角 Alpha、可见 bbox、边缘污染、padding、pivot、同系列一致性和运行尺寸清晰度。
 6. 批准后锁定源哈希；装配阶段禁止调用图片模型。
+
+G5 接收的是完整 `PsdHandoffBundle`，不是孤立 `.psd`。PSD、sidecar、source/prompt hash 或批准记录任一变化，运行资产
+批准立即失效；`sourceOnlyFromTarget` 必须先补齐真实 Alpha、隐藏像素、padding 和 pivot，不能直接从整页 target 切图。
 
 ### 4.8 G6：FairyGUI Editor 装配与发布
 
@@ -412,15 +468,28 @@ G6 到正式发布为止。随后按 G7 和第 5 节完成 codegen、接线、�
 - `clearOnPublish` 只用于代码确定会填充的 Loader。
 - `interactive` 是全局 FGUI 输入租约，不是单页命中隔离；关闭必须走 `ViewHandle.close()` 或受支持的 `ViewMgr.close(name)`。
 
-#### 计划中的插件边界
+#### 计划中的 CLI 编译器 PSD 版边界
 
-官方 Editor 插件是首选写自动化。首版只允许：导入批准资产、实例化审核模板、生成隔离 leaf component、设置 Editor API 明确支持的属性、触发官方发布流程。
+M2 首版使用 `seededTemplate`：人工用 Editor 在临时完整工程建立真实槽位和种子 ID，CLI 只填充白名单 leaf
+component 或替换批准资源；`rawProjectCompiler` 阶段允许在临时工程新增 package item、
+Controller、Gear、Relation 和引用。两阶段都必须生成 plan、预期 diff、实际 diff，并要求重复编译零 diff。
 
-插件不得直接写 XML/`package.xml`、不得推算 ID、不得覆盖人工子树、不得直接把未验证候选写进正式发布目录。插件创建的 ID 由 Editor 分配；stable key 放入经 POC 验证的 `customData` 或外部审计映射。
+CLI 不得写正式工程或正式发布目录，不得把候选 ID 当正式 ID，不得覆盖 editor-owned 子树。候选必须经固定版本 Editor
+打开并只在 Editor UI 中人工调整，完成保存—关闭—重开和隔离发布；之后通过 Editor 支持的复制/导入方式接管到正式
+工程。stable key 与正式内部 ID 的关系只记录在 Editor 映射 snapshot 中。
 
 ### 4.9 G7：程序接线
 
-当前接入顺序以真实产物为准：
+G7 同时消费两类互不替代的输入：批准的 DeliverySpec/PageSpec/Scenario 驱动 shared、服务端与客户端行为；正式
+FairyGUI XML 只驱动 View 结构绑定。不得从按钮名、Controller 或 XML 推导 RPC、Room state、存档、锁、幂等或结算。
+
+- `featureKind=lobbyFeature`：先在 shared 的 Lobby RPC domain descriptor 声明消息与 validator，再实现服务端
+  endpoint、数据一致性和测试。
+- `featureKind=roomGameplay`：先手写 `apps/shared/schema/gameplays/<id>/{manifest.json,state.json}` 和玩法
+  `wire.ts`，运行 `codegen:gameplays`，再实现服务端 mode/commands、客户端 room adapter 与 gameplay module。
+- 两类都遵守 View/Logic 分离；涉及玩法 schema/wire 时，`codegen:gameplays` 必须早于 `codegen:features`，生成物禁手改。
+
+UI 接入顺序以正式产物为准：
 
 1. Editor 保存—重开并正式发布。
 2. 运行 `npm run codegen:fgui -- <Package> <Component>`；它从真实 XML 生成或重写 View 的 `IMPORT`、
@@ -444,6 +513,9 @@ G6 到正式发布为止。随后按 G7 和第 5 节完成 codegen、接线、�
 直接绑定的 `required` 以 Editor XML → `codegen:fgui` View AUTO 为单源；其余手写契约段以 `.view.json` 为单源，
 页面/路由/contribution 归属以 `feature.json` 为单源，契约与注册值由 `codegen:features` 生成。FGUI 发布闭包锁记录
 View AUTO 哈希和生成 View 清单，所以 `fgui-manifest --write` 必须晚于两条 codegen 与对应审阅。
+
+若本批次改变 shared 契约，按 [整体开发动线](OVERVIEW.md#4-标准开发动线) 运行 `sync:shared`、协议指纹或 gameplay
+codegen，并在服务端执行对应单元、smoke/int 测试。不能因为页面已显示就跳过服务端行为和一致性验收。
 
 这里的“走正常入口”是复用同一 composition factory、registry、ViewMgr、Logic 和 View，不是强迫 Host 调用无法注入依赖的生产 wrapper，也不是另造假页面。跨包依赖以 `ui/<Package>` 完整登记到 `sharedPkgs`，不含页面自身包。加载失败和超时必须阻止创建，不能静默显示空页面。数据与回调在 `ViewHandle.run(...)` 生命周期内注入，异步 Logic 接收 `AbortSignal`；禁止直接 `view.dispose()`。
 
@@ -469,7 +541,8 @@ M1 的 Creator UI Gallery 应枚举 `scenario × viewport × locale`，固定时
 
 ### 4.12 G9：冻结与回流
 
-批次至少记录：策划与 PageSpec 版本、Scenario 集、style anchor、批准源与运行资产哈希、字体/IP/品牌/参考图许可、生成模型和参数、Editor/插件版本、发布设置、发布物、代码提交和验收证据。
+批次至少记录：策划与 PageSpec 版本、Scenario 集、style anchor、批准源与运行资产哈希、字体/IP/品牌/参考图许可、
+生成模型和参数、PSD/CLI/Editor 工具版本、临时工程 baseline、发布设置、发布物、代码提交和验收证据。
 
 M0.5 落地后用 receipt 记录这些机器可得字段。变更请求必须声明可改真源、不变量、下游重建范围和回归矩阵；禁止在下游成品上做无法追溯的热修。
 
@@ -497,6 +570,10 @@ M0.5 落地后用 receipt 记录这些机器可得字段。变更请求必须声
 
 ```bash
 # 前置条件：FairyGUI Editor 已保存、重开并正式发布
+# 0. roomGameplay 的 manifest/state/wire 有变化时先刷新三端 catalog/schema，再同步 shared
+npm --workspace @game/server run codegen:gameplays
+npm run sync:shared
+
 # 1. 由真实 XML 更新 View AUTO 区块
 npm run codegen:fgui -- <Package> <Component>
 
@@ -548,7 +625,8 @@ M0 的目标不是零人工，而是每一步可追溯、可复现、可归因�
 4. 新增 `Publish.json`、`Adaptation.json`、`designSpec.ts`、`Main.ts` 和 Cocos `project.json` 一致性检查。
 5. 检查发布文件与 `.meta` 一一对应、无孤儿；atlas sprite rect 不越界；设计源/包声明/发布物闭合。
 6. 先用两个结构不同的金样包验证 IR，再扩展为全包 `--all --check` 式只读检查；默认不改文件，并修正现有工具中允许手工仿写 `.meta` 的错误提示。
-7. 锁定 Editor 版本与安装包 SHA-256、匹配 TsAPI、`Publish.json`/`Adaptation.json` 哈希；插件版本在 M2 POC 创建后再锁定。
+7. 锁定 Editor 版本与安装包 SHA-256、工程格式样本、XML codec、`Publish.json`/`Adaptation.json` 哈希；PSD/CLI
+   adapter 版本在 M2 POC 创建前一并锁定。
 8. 每次正式发布生成 receipt；在 staging 校验和原子提升实现前，不改变当前正式发布行为。
 
 ### M1：可执行验收
@@ -557,15 +635,17 @@ M0 的目标不是零人工，而是每一步可追溯、可复现、可归因�
 - **M1b**：加入动作步骤、检查点、确定性 teardown、`scenario × viewport × locale` 自动截图矩阵、结构断言和可审阅 diff。
 - Gallery 位于经验证的开发专用 scene/bundle/入口；正式构建依赖报告必须证明 devtools 未进入生产包，仅检查“无静态 import”不够。
 
-### M2：Editor 官方插件辅助装配
+### M2：CLI 编译器 PSD 版 + Editor takeover
 
-- 以仓库已锁定的 Editor/TsAPI 为唯一目标；本机 6.1.4 只是 POC 候选；
-- POC 创建后锁定插件版本、源哈希和与 Editor/TsAPI 的兼容矩阵；
-- 在临时工程或 staging 中导入资产、实例化审核模板、创建隔离 leaf component；
-- 插件只调 Editor API，Editor 分配 ID、序列化 XML/`package.xml` 并正式发布；
-- 明确 `editor-owned` 与 `plugin-managed` 边界，禁止覆盖人工子树；
-- 候选通过保存—重开、正式发布、IR diff 和 Creator Scenario 后才能提升；
-- 生成完整 receipt，支持失败回退。
+- 以仓库锁定的 Editor 工程格式、XML codec 和 Photoshop/PSD 工具链为唯一目标；本机 6.1.4 只是 POC 候选；
+- 输入必须是 `productionFromAcceptedAssets` 的完整 `PsdHandoffBundle`，使用“命名 + sidecar 契约 + Editor 映射”；
+- 先实现 `seededTemplate`，只填充真实模板槽和隔离 leaf component；再以两个结构不同的 golden package 验证
+  `rawProjectCompiler` 的 package/component codec、候选 ID 和引用闭包；
+- CLI 只写 `tmp/ui-pipeline/<batch>/<run>/fairygui-project`，明确 `editor-owned` 与 `cli-managed-component` 边界；
+- 同一输入连续编译两次零 diff，候选通过静态 IR 与官方 CLI 隔离发布后，才允许 Editor takeover；
+- 人工修改只发生在 Editor UI；保存—关闭—重开后 reconcile stable key、正式 ID 与语义 diff；
+- 正式工程通过 Editor 支持的复制/导入接管并正式发布，CLI 不复制候选 XML 覆盖正式目录；
+- 生成完整 receipt，支持 baseline 漂移阻断和失败回退。
 
 ### M2-S：OpenFairyGUI 影子试点
 
@@ -575,7 +655,9 @@ OpenFairyGUI 是非官方的独立项目，不是当前依赖或生产权威。�
 
 ### M3：条件式后备
 
-只有第 7.8 节的启用条件全部满足，才讨论 raw XML 编译器。浏览器 Studio 更晚：先证明跨角色在线审稿有真实需求，再从只读 evidence viewer 开始；不得为了“自动化完整”重造半个 FairyGUI Editor。
+只有第 7.8 节的启用条件全部满足，才讨论超出 `cliPSDCompiler` 白名单 ownership 的包级 raw XML merge 或混合
+subtree merge。浏览器 Studio 更晚：先证明跨角色在线审稿有真实需求，再从只读 evidence viewer 开始；不得为了
+“自动化完整”重造半个 FairyGUI Editor。
 
 ---
 
@@ -587,9 +669,10 @@ OpenFairyGUI 是非官方的独立项目，不是当前依赖或生产权威。�
 
 1. 只读 `FguiProjectIR`、Scenario 或现有检查能否解决？
 2. 人工 Editor 加模板能否以较低总成本解决？
-3. 官方 Editor 插件 API 能否完成？
-4. OpenFairyGUI 影子试点能否降低读取、验证或事务变换成本？
-5. 是否确有必要承担 raw XML 外部协议的长期维护成本？
+3. `seededTemplate` 能否在临时完整工程填充已批准槽位？
+4. 白名单 `rawProjectCompiler` 能否生成候选并由 Editor takeover？
+5. OpenFairyGUI 只读影子试点能否降低解析或兼容验证成本？
+6. 是否确有必要承担包级 raw XML merge 或混合 ownership 的额外维护成本？
 
 只有前一层有证据证明不足，才进入后一层。浏览器 Studio 不参与结构生产路线的默认选择。
 
@@ -620,49 +703,62 @@ Scenario catalog 使用真实 UI-model/Logic 类型。Scenario Host 负责把确
 - 维护只在截图时存在的假组件；
 - 用 Node 投影或浏览器 DOM 截图冒充 Creator 运行证据。
 
-### 7.4 Editor 插件数据流
+### 7.4 CLI 编译器 PSD 版数据流
 
 ```text
-PageSpec 引用 + 批准资产 + 审核模板
+策划文档 → DeliverySpec / PageSpec / Scenario
+                 +
+PSD 命名 + sidecar 契约 + 批准运行资产
                  │
                  ▼
-Node 侧校验/图像处理 → 临时完整 Editor 工程
+PsdHandoffIR + 正式工程只读 FguiProjectIR
+  → EditorAssemblyPlan / expected diff
                  │
                  ▼
-固定版本 Editor 插件 API
-  → 导入资源 / 创建或更新授权 leaf component / 设置属性
+复制正式 baseline → 临时完整 Editor 工程
+  → seededTemplate / rawProjectCompiler
+  → candidate XML、候选 ID、actual diff
                  │
                  ▼
-Editor 分配 ID、保存并重开
+重复编译零 diff + IR/引用/所有权检查
+  → 官方 CLI 发布到隔离目录
                  │
                  ▼
-官方发布到 staging（目标能力）
-  → FguiProjectIR / 发布物反解析 / Scenario 检查
+固定版本 Editor takeover
+  → 只在 Editor UI 人工调整 → 保存—关闭—重开
+  → reconcile stable key / 正式 ID / 语义 diff
                  │
                  ▼
-原子提升正式工程与发布物 + receipt（目标能力）
+Editor 支持的复制/导入接管正式工程
+  → Editor 正式发布 → codegen / sync / Scenario / receipt
 ```
 
-当前没有 staging/原子提升实现；POC 必须先在临时工程中完成，不得改写正式包。
+当前没有 CLI 编译器、staging 或原子提升实现；现阶段仍使用人工 `authoringMode: editor`。POC 必须在临时工程中完成，
+不得改写正式包，也不得把“人工修改 XML 文件”解释为文本编辑 XML；人工修订只能在 Editor UI 中进行。
 
 ### 7.5 所有权与身份
 
 | 对象 | 权威所有者 | 自动化边界 |
 | --- | --- | --- |
 | 分层源、RGBA、九宫格源 | 美术 | 工具只做确定性校验/转换 |
-| Editor 人工页面/复杂组件 | Editor 人工流程 | 插件不得覆盖 |
-| 隔离 leaf component | Editor 插件可管理 | 插件调 API；Editor 序列化 |
-| XML、`package.xml`、内部 ID | FairyGUI Editor | 外部工具默认只读 |
+| PSD 结构语义 | `asset-manifest.json` + `assembly-recipe.json` | PSD 命名负责定位；sidecar 负责语义；不得从像素猜业务 |
+| Editor 人工页面/复杂组件 | Editor 人工流程 | CLI 不得覆盖 editor-owned 子树 |
+| 临时候选 leaf component | CLI 可在 plan 白名单内管理 | takeover 前 CLI 整文件拥有；不支持人机混编子树 |
+| 候选 XML、`package.xml`、候选 ID | CLI 编译器 PSD 版的临时候选工程 | 只用于验证和接力，不得覆盖正式目录 |
+| 正式 XML、`package.xml`、内部 ID | FairyGUI Editor | takeover 后由 Editor 保存和序列化，外部工具恢复只读 |
 | `.bin`、atlas、独立发布资源 | FairyGUI Editor | 禁止伪造 |
 | Creator `.meta` | Cocos Creator | 禁止手工仿写 |
 | View AUTO 区块 | codegen | 禁止手改 |
 | `apps/Cocos/assets/src` | `sync:client` | 禁止手改 |
 
-业务 stable key 与 Editor 内部 ID 是不同概念。插件可以用 `customData` 或外部表保存 stable key，但必须先验证 Editor 保存—重开时能稳定保留。外部映射只做审计；新 ID 始终由 Editor 分配。
+业务 stable key 与 Editor 内部 ID 是不同概念。CLI 可分配确定性的候选 ID，但 takeover 后必须从 Editor 正式设计源
+反解析 `editor-id-map.snapshot.json`；候选 ID 无权覆盖正式映射。若用 `customData` 保存 stable key，必须先证明目标
+Editor 保存—重开稳定保留，否则只使用外部只读映射。
 
 ### 7.6 工具链锁、staging 与 receipt
 
-正式自动发布至少要锁定：Editor 版本和安装包哈希、匹配 TsAPI、插件版本、Node 工具版本、`Publish.json`、`Adaptation.json`、输入资产/PageSpec 哈希。
+正式自动化至少要锁定：Editor 版本和安装包哈希、Photoshop 版本、Pillow/PSD parser/writer/ImageMagick、Node 与 XML
+codec/工程格式 adapter、CLI 源码 hash、`Publish.json`、`Adaptation.json`、DeliverySpec/PageSpec/PSD/sidecar/批准资产哈希。
 
 目标 receipt 至少记录：
 
@@ -682,22 +778,22 @@ staging 必须包含完整输出闭包并通过校验后整体提升。提升前
 
 即使影子试点通过，官方 Editor 仍是序列化和发布权威。任何写正式工程的放权都要另立 ADR，不能从“读得出来”推导为“可以接管生产”。
 
-### 7.8 raw XML 后备启用条件
+### 7.8 包级 raw XML 后备启用条件
 
 只有以下条件全部满足，才能启动独立 RFC：
 
-1. 官方 Editor 插件明确无法完成已证明的必要操作。
-2. OpenFairyGUI 影子能力也无法满足。
-3. 至少两个真实页面证明重复成本足以覆盖编译器长期维护成本。
-4. 已有官方 Editor 创建的最小金样和真实 ID。
-5. ownership 能缩小为整文件隔离的 leaf component。
-6. Editor 保存—重开、官方发布、发布物反解析和 Creator Scenario 已有自动 Gate。
-7. Editor/XML 版本、Schema、版本兼容、未知字段和失败回退策略已冻结。
+1. `seededTemplate` 与白名单 `rawProjectCompiler` 都无法完成一个已由两个真实页面证明的必要操作。
+2. 重复成本足以覆盖包级协议、并发、迁移和回退的长期维护成本。
+3. 已有至少两个官方 Editor 创建、结构不同的 golden package 和真实 ID 样本。
+4. no-op round-trip、重复编译零 diff、未知字段保留和候选引用闭包全部通过。
+5. ownership 能缩小为独占 package 或整文件集合；仍不允许人机混编同一 subtree。
+6. Editor 保存—重开、官方发布、发布物反解析和 Creator Scenario 已成为自动 Gate。
+7. Editor/XML 版本、Schema、版本兼容、baseline 并发锁、失败回退和备份策略已冻结。
 
-即使启用，首版仍遵守：外部 writer 只在临时工程生成白名单 leaf component 候选；候选进入正式工程前必须由
+即使启用，首版仍遵守：外部 writer 只在临时工程生成白名单 package/文件候选；候选进入正式工程前必须由
 固定版本 Editor 打开、接管、保存、关闭、重开并重新序列化，最终 `package.xml`、XML 与内部 ID 仍归 Editor。
-外部 ID 表只从 Editor 导入作审计，不负责发号；`.bin`、atlas 和 `.meta` 继续由官方工具生成。完整
-`layout.json`、自由 XML writer 和包级 AST merge 只允许在单独 RFC 批准的临时候选实验中出现。
+外部 ID 表只从 Editor 导入作审计，不负责发号；`.bin`、atlas 和 `.meta` 继续由官方工具生成。自由结构配方、混合
+subtree writer 和超出批准 ownership 的包级 AST merge 只允许在单独 RFC 批准的临时候选实验中出现。
 
 ### 7.9 生产资产的确定性规则
 
@@ -750,7 +846,8 @@ composite ↔ runtime：Editor 发布、atlas、九宫格、字体和运行时�
 
 只有跨角色、远程、无需安装 Editor 的审稿需求被两个以上真实流程证明后，才评估 Studio。第一版只读展示 PageSpec、Scenario、target/composite/runtime 和差异证据；不做布局写入。
 
-在 raw CLI 和 ownership 尚未稳定前，禁止实现图层编辑、Controller、Relation、撤销重做或 XML 导出。优先评估现成工具和 OpenFairyGUI 相关应用，避免维护另一套布局真源。
+在 `cliPSDCompiler` 和 ownership 尚未稳定前，禁止在 Studio 实现图层编辑、Controller、Relation、撤销重做或 XML
+导出。OpenFairyGUI 只读影子评估不能改变 Editor 权威，也不能成为另一套布局真源。
 
 ---
 
@@ -772,7 +869,7 @@ composite ↔ runtime：Editor 发布、atlas、九宫格、字体和运行时�
 ### 8.2 布局与美术
 
 ```text
-□ Editor 是 editor/editorPlugin 的精确布局真源
+□ Editor 是 editor 流程及 cliPSDCompiler takeover 后的精确布局真源
 □ handoff 只保存约束，坐标 snapshot 可重建且不可反向编辑
 □ 长文本、最大数字、空/满列表和目标长短屏通过
 □ 效果图、生产源和运行资产分离
@@ -794,7 +891,7 @@ composite ↔ runtime：Editor 发布、atlas、九宫格、字体和运行时�
 □ codegen AUTO、`.view.json`、`feature.json` 与 generated FGUI 契约/registry 字段级一致
 □ FGUI 发布闭包锁晚于 codegen 更新且只在审阅后写入
 □ M0.5 后，FguiProjectIR 的消费者对同一工程得出一致结构
-□ M2 后，插件候选通过临时工程、重开、发布、staging diff 和 receipt
+□ M2 后，CLI 候选只在临时完整工程生成，并通过零 diff、Editor takeover、重开、隔离发布和 receipt
 □ OpenFairyGUI 影子试点没有正式工程写权限
 ```
 
@@ -836,9 +933,10 @@ composite ↔ runtime：Editor 发布、atlas、九宫格、字体和运行时�
 | Controller、Gear、Relation、列表 | G6 | codegen、contract、程序映射和 Creator |
 | 数据、事件、生命周期 | G7 | Logic/View 测试、Scenario 和 Creator |
 | 发布设置、图集、压缩 | G6 | 发布闭包、导入、串色、内存和性能 |
-| Editor/插件/OpenFairyGUI 版本 | M0.5/M2 | IR、往返、发布、diff、receipt 和回退 |
+| Editor/PSD/CLI/XML codec/OpenFairyGUI 版本 | M0.5/M2 | PSD composite、IR、往返、发布、diff、receipt 和回退 |
 
-生成或提升前保留最近一个已通过 Gate 的完整基线。插件、影子工具和未来编译器都必须使用临时目录或工程副本；全部检查通过前不得覆盖已知可用版本。
+生成或提升前保留最近一个已通过 Gate 的完整基线。CLI 编译器与影子工具都必须使用临时目录或工程副本；全部检查
+通过前不得覆盖已知可用版本。
 
 ---
 
@@ -847,10 +945,10 @@ composite ↔ runtime：Editor 发布、atlas、九宫格、字体和运行时�
 - 从扁平效果图猜透明层、隐藏像素、热区或内部 ID。
 - 从标注截图 OCR 坐标，再把截图当布局真源。
 - 维护只供 Gallery 使用的假业务逻辑或假页面。
-- 让插件与人工同时维护同一组件子树。
-- 让插件、OpenFairyGUI 影子试点或脚本直接写正式工程。
+- 让 CLI 与人工同时维护同一组件子树；人工调整必须进入 Editor takeover。
+- 让 CLI、OpenFairyGUI 影子试点或脚本直接写正式工程。
 - 自行分配或推算 package/resource/child ID。
-- 为追求自动化先造 raw XML writer，再寻找使用场景。
+- 未先建立 Scenario、PsdHandoffBundle、golden project、临时路径守门和 Editor takeover，就扩张 raw XML writer。
 - 外部修改 `package.xml` 后用字符串替换或未验证 AST merge 掩盖冲突。
 - 手工伪造 `.bin`、atlas、trim、rotation、分页或 Creator `.meta`。
 - 把发布物反解析对账称为 Editor 保存—重开往返验收。
@@ -858,7 +956,7 @@ composite ↔ runtime：Editor 发布、atlas、九宫格、字体和运行时�
 - 在装配阶段重新调用图片模型；输入必须已批准并锁定哈希。
 - 为修最终画面直接修改发布目录或同步镜像。
 - 只看默认静态页面就宣布全状态、真机或性能通过。
-- 把 PageSpec、Scenario Host、Gallery、staging、receipt、Editor 插件或 raw XML 命令当成当前已有能力。
+- 把 PageSpec、Scenario Host、Gallery、staging、receipt 或 `ui:*` CLI 命令当成当前已有能力。
 - 把浏览器 Studio 建成新的布局或业务真源。
 
 ---
@@ -869,9 +967,10 @@ composite ↔ runtime：Editor 发布、atlas、九宫格、字体和运行时�
 2. 金样稳定后扩展到全包只读检查，再宣称 M0.5 完成。
 3. 选一个现有中等复杂页面实现 M1a 的 typed Scenario Host 和手工 Creator Gallery。
 4. 覆盖默认、加载、空、错误、极值文本、重复点击和至少两个 viewport，再进入 M1b 自动截图/diff。
-5. 选一个隔离 leaf component 做官方 Editor 插件 POC；本机 6.1.4 只作候选，不先写入“已锁定”。
-6. 只有插件 POC 证明仍有缺口时，才选两个结构不同的包做 OpenFairyGUI 影子试点。
-7. 根据 POC 数据决定生产边界；证据出来前不启动 raw XML compiler 或可编辑 Studio。
+5. 把 `psd-maker.md` 的一次性流程收口为可复建 `PsdHandoffBundle` pack/verify，并补 Photoshop 往返金样。
+6. 选一个隔离 leaf component 做 `seededTemplate` POC；本机 6.1.4 只作候选，不先写入“已锁定”。
+7. 用两个结构不同的 golden package 验证 `rawProjectCompiler`，再按九宫格面板、状态组件、小弹窗、主页面逐级试点。
+8. 只有读取/兼容问题有实证时才做 OpenFairyGUI 只读影子试点；只有第 7.8 节条件齐备才扩张包级 merge。
 
 中等复杂页面应包含：背景或同画布层、九宫格面板、运行时文本与极值数字、List 与空态、至少两个正交状态维度、动态 Loader、异步按钮与错误态，以及 Relation/安全区接线。它足以暴露真实问题，又不会把试点变成无法归因的巨型项目。
 
@@ -882,12 +981,13 @@ composite ↔ runtime：Editor 发布、atlas、九宫格、字体和运行时�
 - [客户端开发与 FairyGUI 接入](CLIENT.md)
 - [FairyGUI Editor 工程说明](../apps/art/fairygui/README.md)
 - [FairyGUI UI 生产流水线提示词工具](../tools/FairyGUI-Prompts.md)
+- [PSD 到 FairyGUI 的“CLI 编译器 PSD 版”实施方案](psd.md)
+- [一次实际分层 PSD 生成记录](psd-maker.md)
 - [FairyGUI 包与 package.xml](https://www.fairygui.com/docs/editor/package)
 - [FairyGUI 发布](https://www.fairygui.com/docs/editor/publish)
 - [FairyGUI 组件](https://www.fairygui.com/docs/editor/component)
 - [FairyGUI 控制器](https://www.fairygui.com/docs/editor/controller)
 - [FairyGUI 关联](https://www.fairygui.com/docs/editor/relation)
-- [FairyGUI Editor 插件](https://www.fairygui.com/docs/editor/plugin)
 - [FairyGUI Editor 发布日志](https://www.fairygui.com/release/editor)
 - [OpenFairyGUI（非官方候选，仅影子评估）](https://github.com/OpenFairyGUI/OpenFairyGUI)
 - [Cocos Creator 3.8 命令行发布](https://docs.cocos.com/creator/3.8/manual/zh/editor/publish/publish-in-command-line.html)

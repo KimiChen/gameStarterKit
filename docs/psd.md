@@ -1,10 +1,12 @@
-# PSD 到 FairyGUI 的 CLI-first 生产流水线实施方案
+# PSD 到 FairyGUI 的“CLI 编译器 PSD 版”实施方案
 
-> 版本：0.1（方案稿）  
-> 日期：2026-09-02  
-> 状态：**尚未实现，不代表仓库已经具备本文命令或工具**  
-> 决策：不开发 FairyGUI Editor 插件；用命令行脚本承担 PSD 解析、资产导出、装配计划生成和候选 FairyGUI 工程编译。
+> 版本：0.2（方案稿）<br>
+> 日期：2026-09-02<br>
+> 状态：已有一次 source-only PSD 生成记录；通用 CLI、Schema、FairyGUI 编译器和全栈编排仍未实现<br>
+> 决策：使用 CLI 编译器 PSD 版承担 PSD 解析、资产导出、装配计划生成和候选 FairyGUI 工程编译。
 > 核心契约：明确采用“**命名 + sidecar 契约 + Editor 映射**”三层方案。
+
+这套命令行产品统一命名为“**CLI 编译器 PSD 版**”，机器可读 `authoringMode` 固定为 `cliPSDCompiler`。
 
 本文给出长期方案：PSD 继续作为可编辑像素生产源；命令行工具把 PSD 与 PageSpec、Scenario、资产 manifest
 编译为可审计的中间表示，再在**可丢弃的完整 FairyGUI 临时工程副本**中创建候选资源、组件、Controller、
@@ -13,20 +15,30 @@ Gear、Relation、热区和九宫格配置。候选工程必须经固定版本 F
 
 本文服从 [FairyGUI UI 生产、装配与自动化工作流](FairyGUI.md)、
 [客户端开发](CLIENT.md)、[FairyGUI 设计源说明](../apps/art/fairygui/README.md) 和根 `AGENTS.md`。
-本文改变的是长期自动化实现选择，不改变以下边界：FairyGUI Editor 仍是正式 XML、`package.xml`、内部 ID 和发布物
-的最终权威；Creator 仍是 `.meta` 的唯一生成者。
+自动化边界固定如下：FairyGUI Editor 是正式 XML、`package.xml`、内部 ID 和发布物的最终权威；Creator 是 `.meta`
+的唯一生成者。
+
+[分层 PSD 生成流程](psd-maker.md) 记录了 `ug_main_layered_source_v02.psd` 的一次实际制作。该记录是本文的
+E0 证据基线，不是已经入库的通用 `ui:*` 工具：它证明了“批准 target → ImageGen 局部 clean plate → Pillow
+确定性裁切/蒙版/文字预览/composite → `ag-psd` 写层 → ImageMagick 像素对账”可以产出 source-only PSD；没有证明
+Photoshop 往返、G5 运行资产、三层 stable key 闭合、FairyGUI XML 编译或前后端实现已经完成。
 
 ## 1. 结论与关键限制
 
-推荐长期架构是“**Scenario-first + PSD handoff + CLI 临时工程编译器 + Editor takeover**”：
+推荐长期架构是“**Scenario-first + PSD handoff + CLI 编译器 PSD 版 + Editor takeover**”。其中 ImageGen 只产生
+候选像素；最终交付给下游的不是单个 PSD，而是 PSD、sidecar、批准记录和哈希组成的 `PsdHandoffBundle`：
 
 ```text
-PageSpec / Scenario / 设计 tokens
+策划文档 → DeliverySpec / PageSpec / Scenario / 设计 tokens
                 +
-分层 PSD + asset-manifest.json
+批准的无字 target / 独立批准源
                 │
                 ▼
-        psd:inspect / psd:extract
+ImageGen 局部候选 + 确定性像素处理
+                │
+                ▼
+分层 PSD + asset-manifest + assembly-recipe
+        → Photoshop 保存—重开批准
                 │
                 ▼
        PsdHandoffIR（只读派生物）
@@ -35,7 +47,8 @@ PageSpec / Scenario / 设计 tokens
   EditorAssemblyPlan（只读装配计划）
                 │
                 ▼
-CLI FairyGUI Project Compiler
+CLI 编译器 PSD 版
+（FairyGUI Project Compiler）
 只写可丢弃的完整临时工程副本
                 │
                 ▼
@@ -51,33 +64,51 @@ codegen:fgui → feature codegen → manifest → sync:client
 Creator 导入、Scenario 验收、receipt 冻结
 ```
 
-必须先接受一个事实：FairyGUI 官方命令行目前提供的是**发布**能力，不是完整的设计期对象 API。它不能像 Editor
-插件那样直接创建组件、Controller、Gear 或 Relation。因此，不使用 Editor 插件而实现同等能力，本质上是维护一个
-受控的 FairyGUI 工程编译器，理解并生成固定版本 Editor 的项目格式。
+### 1.1 当前成熟度
 
-这带来四条硬约束：
+| 能力 | 当前证据 | 结论 |
+| --- | --- | --- |
+| ImageGen 局部修复 | `psd-maker.md` 记录一次 `precise-object-edit` clean plate | 已验证为候选像素来源，不保证几何或 Alpha |
+| 确定性像素处理 | Pillow 12.2.0 完成规范化、裁切、蒙版、文字预览和 composite | 一次性流程已跑通，尚未封装为仓库 CLI |
+| PSD 写入 | `ag-psd@31.0.2` + `pngjs@7.0.0` 写入组、像素层和 Type 描述 | 同解析器可往返；不等于 Photoshop 已确认可编辑 |
+| PSD 像素对账 | ImageMagick 7.1.2 渲染文档 composite，与 sibling preview 的 `AE=0` | 只证明文档 composite 一致，不证明所有层混合或字体往返 |
+| Photoshop 往返 | 历史样例未完成目标 Photoshop 打开—保存—关闭—重开 | 未验证；未通过前只能称 `type-described` 文字层 |
+| 通用 PSD CLI / Schema | 当前无 `ui:psd:*` 或 `psd:*` 仓库命令 | 计划能力 |
+| CLI FairyGUI 编译器 / Editor 映射 | 当前无实现 | 计划能力 |
+| 根据契约和 XML 实现前后端 | 仓库有现成 codegen 与开发动线，但无本文编排器 | 人工可执行，自动编排是计划能力 |
 
-1. 自研编译器只写临时完整工程，绝不直接写 `apps/art/fairygui/` 正式设计源。
-2. 编译器生成的资源 ID、组件 ID 和子对象 ID 都只是候选；Editor 接管后的 ID 才是正式 ID。
-3. `package.xml`、组件 XML 和未知字段必须通过版本锁、round-trip golden test 和 Editor 重开验证。
-4. 在本文方案完成 ADR、工具锁和两个结构不同的 golden package 之前，仍执行 `docs/FairyGUI.md` 的现行
+FairyGUI 官方命令行提供的是**发布**能力，不是完整的设计期对象 API。`cliPSDCompiler` 因而是受控的 FairyGUI
+工程编译器：它理解固定版本 Editor 的项目格式，并只在临时完整工程中生成组件、Controller、Gear 和 Relation 候选。
+
+这带来六条硬约束：
+
+1. ImageGen 只生成或编辑位图，不直接生成可信的 PSD 分层、文字层或 FairyGUI 语义。
+2. `PsdHandoffBundle` 必须同时包含 PSD、sidecar 和批准 hash；单个 `.psd` 不能启动下游编译。
+3. 自研编译器只写临时完整工程，绝不直接写 `apps/art/fairygui/` 正式设计源。
+4. 编译器生成的资源 ID、组件 ID 和子对象 ID 都只是候选；Editor 接管后的 ID 才是正式 ID。
+5. `package.xml`、组件 XML 和未知字段必须通过版本锁、round-trip golden test 和 Editor 重开验证。
+6. 在本文方案完成 ADR、工具锁和两个结构不同的 golden package 之前，仍执行 `docs/FairyGUI.md` 的现行
    `authoringMode: editor` 流程；不能把本文中的计划命令当作已有能力。
 
 ## 2. 目标与非目标
 
 ### 2.1 目标
 
+- 从 `docs/<feature>/` 策划文档生成可校验的 DeliverySpec、PageSpec、Scenario 和页面生产清单。
 - 从分层 PSD 稳定提取可运行 PNG、文字槽、热区轮廓和视觉状态参考。
 - 用结构化 sidecar 表达 PSD 无法表达的 Controller、Gear、Relation、九宫格和安全区规则。
 - 生成可审阅、可复现、可 diff 的 FairyGUI 候选工程，而不是依赖人工重复装配。
-- 在不开发 Editor 插件的前提下覆盖插件原计划承担的叶子组件和页面装配能力。
+- 覆盖批准范围内的叶子组件和页面装配能力。
 - 保持 Editor 对正式内部 ID、设计源序列化和发布的最终控制权。
 - 让每次生产批次都有输入哈希、工具版本、预期变更、实际变更和验收证据。
+- 在正式 XML 批准后，按 `lobbyFeature` / `roomGameplay` 的既有动线完成 shared、服务端、客户端 Logic/View 和测试。
 
 ### 2.2 非目标
 
 - 不把 PSD 变成 FairyGUI 的第二套结构真源。
+- 不把 ImageGen 输出直接命名为 PSD、透明运行资产或 G5 accepted 资产。
 - 不从图像或层名“猜测”业务状态、Controller 页面或运行时数据绑定。
+- 不从 FairyGUI XML 推导 RPC、存档、并发、结算或服务端业务规则；这些事实只来自策划契约。
 - 不让脚本直接覆盖正式 `package.xml`、组件 XML、`.bin`、图集或 Creator `.meta`。
 - 不用字符串替换、正则表达式拼 XML，或把 Editor 私有格式当成稳定公开协议。
 - 不用 macOS UI 自动化冒充可验证的 Editor API。
@@ -86,7 +117,9 @@ Creator 导入、Scenario 验收、receipt 冻结
 ## 3. “命名 + sidecar 契约 + Editor 映射”三层方案
 
 PSD 不能可靠保存 FairyGUI 的 Controller、Gear、Relation、热区、内部 ID、九宫格和安全区运行逻辑。因此本方案
-不把这些信息全部压进 PSD 名称，而是固定使用三层契约：
+不把这些信息全部压进 PSD 名称，而是固定使用三层契约。实际 `ug_main_layered_source_v02.psd` 使用了数字前缀的
+逻辑分组和 T/H/A 审阅标注，证明“可审阅分组”可行；它尚未使用本文完整 stable key 语法，所以只能作为格式金样，
+不能直接作为三层契约金样：
 
 ```text
 第一层：PSD 命名
@@ -118,10 +151,15 @@ HIT::H04::btn_collect
 这一层适合美术直接维护，容易在 Photoshop 中检查，也能让导出脚本找到对象。它不保存坐标外的结构语义，尤其不保存
 内部 ID、Controller page、Gear 值、Relation 编码、九宫格 inset 或设备 safe inset。
 
+顶层允许保留 `10_BG_ROCK`、`20_STRUCTURE`、`80_RUNTIME_TEXT`、`90_REVIEW_ONLY` 这类面向美术的排序分组；
+真正进入编译器映射的叶子层必须使用 `ROLE::stableKey`。历史 PSD 若只有 T/H/A 编号，必须由 sidecar 提供显式 alias，
+不得根据中文层名或层序猜 stable key。
+
 ### 3.2 第二层：sidecar 契约
 
 sidecar 是机器可校验的完整语义层，由下列文件组成：
 
+- `delivery-spec.json`：玩法类型、页面、包/组件、前后端领域和策划来源 hash；
 - PageSpec / Scenario：字段、动作、状态维度、required page、极值和异常态；
 - `asset-manifest.json`：sourceRect、Alpha、padding、pivot、九宫格、输出策略和 hash；
 - `assembly-recipe.json`：节点树、Controller、Gear、Relation、热区、List、Loader、文字槽和安全区意图；
@@ -159,6 +197,7 @@ round-trip POC 证明自定义字段会被原样保留时，才允许额外写�
 - PSD stable key、sidecar stable key 和 Editor 映射 key 必须一一闭合；missing、orphan 和 duplicate 都是阻断错误。
 - 第一层负责“找到谁”，第二层负责“应该做什么”，第三层负责“Editor 最终把它保存成什么”。
 - 三层都不能替代 PageSpec/Scenario 的业务真相，也不能替代 Editor 对正式内部 ID 和序列化格式的权威。
+- 三层交付的最小单位是 `PsdHandoffBundle`，不是孤立 PSD；PSD 或任一 sidecar 改变后，批准记录立即失效。
 
 ## 4. 真源与所有权
 
@@ -166,6 +205,7 @@ round-trip POC 证明自定义字段会被原样保留时，才允许额外写�
 
 | 事实 | 可编辑真源 | 其他产物的角色 |
 | --- | --- | --- |
+| 玩法类别、页面清单、RPC/Room 领域和策划来源 | 策划文档；批准的 `delivery-spec.json` 是当前批次投影 | XML 与 PSD 不得补造后端语义 |
 | 玩法字段、动作、状态维度 | PageSpec / Scenario | PSD Layer Comp 只能作为视觉样例 |
 | 视觉像素、遮挡补绘、图层效果 | PSD | PNG 是批准后的运行资产投影 |
 | sourceRect、Alpha、padding、pivot、九宫格 inset、输出哈希 | `asset-manifest.json` | PSD 名称只引用 stable key |
@@ -174,6 +214,7 @@ round-trip POC 证明自定义字段会被原样保留时，才允许额外写�
 | 正式 `.bin`、图集、发布描述 | FairyGUI Editor 发布 | 自研脚本不得伪造 |
 | Creator `.meta` | Creator 真实导入 | 脚本不得手工创建 |
 | View AUTO 区块 | `npm run codegen:fgui` | 从正式 XML 生成 |
+| shared、服务端和客户端行为 | shared 契约及对应手写真源 | DeliverySpec/Scenario 驱动实现和验收；XML 只提供 View 结构 |
 | 运行时安全区 inset | Creator/宿主运行时 | PSD 只提供安全区预览，FGUI 只提供容器和 Relation |
 
 ### 4.1 stable key 与内部 ID 分离
@@ -208,15 +249,18 @@ round-trip POC 证明自定义字段会被原样保留时，才允许额外写�
 需在阶段 0 的 ADR 中决定。
 
 ```text
-tools/psd-pipeline/
+tools/ui-pipeline/
 ├── cli.ts
+├── validateDeliverySpec.ts
 ├── inspectPsd.ts
+├── packPsd.ts
 ├── extractAssets.ts
 ├── composePreview.ts
 ├── compileHandoff.ts
 ├── naming.ts
 ├── schemas/
 │   ├── asset-manifest.schema.json
+│   ├── delivery-spec.schema.json
 │   ├── psd-handoff-ir.schema.json
 │   ├── assembly-recipe.schema.json
 │   └── receipt.schema.json
@@ -233,22 +277,26 @@ tools/psd-pipeline/
     └── verifyRoundtrip.ts
 
 docs/ui/<feature>/<page>/40-production/
-├── <Page>.psd
+├── <Page>.approved.psd
 ├── asset-manifest.json
 ├── assembly-recipe.json
+├── prompts/
+├── source/
 ├── generated/
 │   ├── psd-handoff-ir.json
 │   ├── editor-assembly-plan.json
+│   ├── editor-map-request.json
 │   └── editor-id-map.snapshot.json
 ├── staging/
 │   ├── png/
 │   ├── composite/
 │   └── reports/
 └── evidence/
-    ├── review.json
+    ├── psd.approval.json
+    ├── fgui.approval.json
     └── receipt.json
 
-tmp/psd-pipeline/<batchId>/<runId>/
+tmp/ui-pipeline/<batchId>/<runId>/
 ├── fairygui-project/
 ├── publish/
 ├── diff/
@@ -257,6 +305,10 @@ tmp/psd-pipeline/<batchId>/<runId>/
 
 正式 FairyGUI 设计源仍位于 `apps/art/fairygui/`。编译器对该目录只有读取和复制权限；写操作必须由路径守门器
 拒绝。正式发布目录也不作为候选输出目录。
+
+批准 PSD、选中源图、最终 prompt、sidecar 与批准记录属于可追溯输入；拒绝候选、中间 PNG、临时依赖、临时工程和
+隔离发布物留在 ignored 临时目录。`psd-maker.md` 历史样例使用玩法自有 production 目录，不要求迁移；新批次统一走
+上述目录，避免再产生第二套可编辑真源。
 
 ## 6. PSD 制作规范
 
@@ -267,10 +319,14 @@ tmp/psd-pipeline/<batchId>/<runId>/
 - 智能对象默认嵌入。确需链接文件时，链接必须在批次 manifest 中登记且解析后仍位于工作区允许目录。
 - 字体必须登记版本和授权。缺失字体直接阻断，不允许静默替换后继续导出。
 - 不支持或跨渲染器不一致的图层效果必须经批准后栅格化；原始效果层保留在不可导出的 source 组。
-- 所有运行时文字保持独立 Type Layer，只用于排版参考；导出的运行资产不得烘焙中文、数值、等级或价格。
-- 透明热区使用独立 Shape Layer；视觉图层本身默认不承担点击范围。
+- 所有运行时文字保持独立文字槽；`ag-psd` 写入后称 `type-described`，只有目标 Photoshop 保存—重开通过后才称
+  `photoshop-roundtripped Type Layer`。导出的运行资产不得烘焙中文、数值、等级或价格。
+- 热区可以是隐藏 Shape Layer，也可以集中绘制在 `90_REVIEW_ONLY`；权威 bbox/polygon 始终来自 sidecar，视觉图层
+  本身默认不承担点击范围。
 - 九宫格边框保留完整四角和边缘；stretch inset 写入 manifest，不依赖肉眼重猜。
 - Layer Comp 用于状态视觉 A/B，不作为 Controller 真源。
+- 批准整页 target 生成的 PSD 默认是 `source-only`。只有逐项运行资产通过 G5 后，才能把对应图层标为
+  `production-ready`；不得因 PSD 分组完整就升级状态。
 
 ### 6.2 图层命名语法
 
@@ -310,7 +366,7 @@ FairyGUI 内部 ID、完整本地化文本或业务公式。
 
 ### 6.3 命名校验
 
-`psd:inspect` 必须拒绝：
+计划中的 `ui:psd:verify` 必须拒绝：
 
 - 重复 stable key、slot ID 或 hotspot ID；
 - 未知角色前缀和非法字符；
@@ -322,6 +378,40 @@ FairyGUI 内部 ID、完整本地化文本或业务公式。
 - 同一 key 同时声明为多种互斥角色。
 
 PSD 自带 layer ID 只可写入审计日志，不能当作跨保存稳定身份。
+
+### 6.4 两种 PSD 输入档位
+
+| 档位 | 输入 | 允许用途 | 禁止声称 |
+| --- | --- | --- | --- |
+| `sourceOnlyFromTarget` | 批准整页 target、局部 ImageGen clean plate、确定性裁切和 source mask | 美术交接、分层讨论、文字/热区审阅、后续资产生产 | 已完成 G4/G5、可整页导入、角色已有生产 Alpha/pivot |
+| `productionFromAcceptedAssets` | source-approved 独立 RGBA、九宫格源、fullCanvas 层和明确 manifest | 生成 staging 运行资产并进入 G5；G5 批准后才可生成 FairyGUI 候选 | Editor/Creator 已通过、业务行为已实现 |
+
+`ug_main_layered_source_v02.psd` 属于第一档：固定 UI 来自批准 target，R4 来自 ImageGen clean plate，三名角色是
+审稿级 source mask，建筑/状态/灯光仍有烘焙。它适合做 PSD 格式与 composite 金样，不可直接作为运行资产金样。
+
+### 6.5 已验证的 PSD 封装基线
+
+[实际生成记录](psd-maker.md) 确认以下最小链路可行，通用 Packager 首版应从这条链路提取，而不是先引入另一套模板协议：
+
+```text
+批准无字 target
+  → ImageGen 只修改 allow-mask 内的局部内容
+  → Pillow 12.2.0 规范化、裁切、蒙版、文字栅格预览与 composite
+  → ag-psd@31.0.2 + pngjs@7.0.0 写 imageData、组和 Type 描述
+  → ag-psd 结构往返
+  → ImageMagick 7.1.2 渲染 PSD[0]，与 sibling preview 做 AE 对账
+  → 目标 Photoshop 更新文字、保存、关闭、重开（尚待验证）
+```
+
+实现要求：
+
+- 文档级 `imageData` 与 sibling preview 使用同一 composite 像素，保证文件预览可对账；
+- 普通层写入明确 `left/top`、`imageData`、可见性和 `blendMode`，不依赖 PSD reader 猜位置；
+- 文字层同时保存栅格预览与 Type 描述；栅格预览只服务审稿，不得导出为运行时文字；
+- `noBackground=true`、`trimImageData=false`，保留透明和声明画布；
+- 是否使用 `invalidateTextLayers` 由 Photoshop golden test 锁定；历史样例的 `false` 不是通用结论；
+- ImageMagick `AE=0` 只证明文档 composite 与 preview 一致，不证明 Photoshop 字体或每层混合结果一致；
+- 缺少 Photoshop 往返记录时，批准状态最多为 `source-review-accepted`，不能成为 `psd-production-accepted`。
 
 ## 7. 用 sidecar 表达 PSD 无法表达的 FairyGUI 语义
 
@@ -480,21 +570,23 @@ safe inset 数值不得写入 PSD 图层名、PNG 或 FairyGUI 固定坐标。
 
 ### 8.1 `PsdHandoffIR`
 
-`PsdHandoffIR` 是由 PSD 和 manifest 生成的只读快照，至少包含：
+`PsdHandoffIR` 是由完整 `PsdHandoffBundle` 生成的只读快照，至少包含：
 
 - schema、批次和页面版本；
+- `sourceOnlyFromTarget` / `productionFromAcceptedAssets` 输入档位与允许下游；
 - PSD 路径、文件哈希、画布、色彩空间；
-- 解析器、像素渲染器和字体锁版本；
+- ImageGen 输入/输出/prompt/hash、Pillow、`ag-psd`、`pngjs`、ImageMagick、Photoshop 和字体锁版本；
 - 图层树、stable key、角色、bbox、可见性、混合模式；
-- 文字槽、热区、Layer Comp 和导出资产；
+- 文字槽、`type-described`/`photoshop-roundtripped` 状态、热区、Layer Comp 和导出资产；
 - 外部智能对象、缺失字体、不支持效果等警告；
 - 每个 PNG 的尺寸、Alpha bbox、hash 和来源层集合。
+- sibling preview hash、PSD composite 渲染 hash、AE/容差结果和 Photoshop 往返批准 hash。
 
 它不能手改。输入变化后必须整体重建。
 
 ### 8.2 `EditorAssemblyPlan`
 
-该文件由 `PsdHandoffIR + PageSpec + assembly-recipe + 正式工程只读 IR` 编译，至少包含：
+该文件由 `DeliverySpec + PsdHandoffIR + PageSpec + assembly-recipe + 正式工程只读 IR` 编译，至少包含：
 
 - 目标包、组件和 authoring mode；
 - 正式基线 revision/hash；
@@ -527,71 +619,74 @@ receipt 不能自行代表审美批准或 Editor 操作成功；它只收集可�
 
 ### 9.1 命令状态约定
 
-本节所有 `psd:*` 命令均为**计划命令**，仓库当前尚不存在。实现前先在 `package.json` 登记，再为每条命令补
-`--help`、JSON Schema、退出码和测试。本文后面明确标为“现有”的命令才可以立即运行。
+本节所有 `ui:*` 命令均为**计划命令**，仓库当前尚不存在。`psd-maker.md` 中的 Pillow/Node/ImageMagick 命令是一次
+实际制作记录，不是可复用仓库入口。实现时统一以 `tools/ui-pipeline/cli.ts` 为入口，在 `package.json` 登记命令，并为
+每条命令补 `--help`、JSON Schema、退出码和测试。本文后面明确标为“现有”的命令才可以立即运行。
 
 ### 9.2 计划命令
 
 ```bash
-# [计划] 只读检查 PSD、命名、字体、色彩空间和 manifest
-npm run psd:inspect -- \
-  --psd docs/ui/<feature>/<page>/40-production/<Page>.psd \
-  --page-spec docs/ui/<feature>/<page>/page-spec.json \
-  --manifest docs/ui/<feature>/<page>/40-production/asset-manifest.json \
-  --out docs/ui/<feature>/<page>/40-production/generated/psd-handoff-ir.json
+# [计划] 校验策划来源、DeliverySpec、PageSpec、Scenario 和阻断项
+npm run ui:spec:check -- --page docs/ui/<feature>/<page>
 
-# [计划] 使用锁定的像素渲染 adapter 导出 staging PNG
-npm run psd:extract -- \
-  --ir docs/ui/<feature>/<page>/40-production/generated/psd-handoff-ir.json \
-  --out docs/ui/<feature>/<page>/40-production/staging/png
+# [计划] 按已批准 target/源图、manifest 与文字槽生成 PSD、preview 和 builder receipt
+npm run ui:psd:pack -- --page docs/ui/<feature>/<page>
 
-# [计划] 重组无字页面、状态板和九宫格拉伸预览
-npm run psd:composite -- \
-  --ir docs/ui/<feature>/<page>/40-production/generated/psd-handoff-ir.json \
-  --out docs/ui/<feature>/<page>/40-production/staging/composite
+# [计划] 检查命名、字体、图层、Type 描述、sidecar、composite 对账和批准 hash
+npm run ui:psd:verify -- --page docs/ui/<feature>/<page>
 
 # [计划] 生成只读 EditorAssemblyPlan 和预期 diff
-npm run psd:plan -- \
+npm run ui:fgui:plan -- \
   --ir docs/ui/<feature>/<page>/40-production/generated/psd-handoff-ir.json \
   --recipe docs/ui/<feature>/<page>/40-production/assembly-recipe.json \
   --baseline apps/art/fairygui \
   --out docs/ui/<feature>/<page>/40-production/generated/editor-assembly-plan.json
 
 # [计划] 复制正式基线并只在临时完整工程中编译候选
-npm run psd:compile:fgui -- \
+npm run ui:fgui:compile -- \
   --plan docs/ui/<feature>/<page>/40-production/generated/editor-assembly-plan.json \
   --baseline apps/art/fairygui \
   --mode rawProjectCompiler \
-  --out tmp/psd-pipeline/<batchId>/<runId>/fairygui-project
+  --out tmp/ui-pipeline/<batchId>/<runId>/fairygui-project
 
 # [计划] 静态结构、引用闭包、ID 冲突和预期 diff 守门
-npm run psd:verify:fgui -- \
+npm run ui:fgui:verify -- \
   --plan docs/ui/<feature>/<page>/40-production/generated/editor-assembly-plan.json \
-  --candidate tmp/psd-pipeline/<batchId>/<runId>/fairygui-project
+  --candidate tmp/ui-pipeline/<batchId>/<runId>/fairygui-project
 
 # [计划] 调用官方 Editor CLI 发布候选到隔离目录，仅作解析/闭包验证
-npm run psd:publish:fgui -- \
-  --project tmp/psd-pipeline/<batchId>/<runId>/fairygui-project \
-  --out tmp/psd-pipeline/<batchId>/<runId>/publish
+npm run ui:fgui:publish -- \
+  --project tmp/ui-pipeline/<batchId>/<runId>/fairygui-project \
+  --out tmp/ui-pipeline/<batchId>/<runId>/publish
+
+# [计划] Editor 人工修改并保存后，生成语义 diff 和 Editor 映射候选
+npm run ui:fgui:reconcile -- \
+  --plan docs/ui/<feature>/<page>/40-production/generated/editor-assembly-plan.json \
+  --project tmp/ui-pipeline/<batchId>/<runId>/fairygui-project
 
 # [计划] 汇总证据；缺失人工确认时 receipt 必须保持 incomplete
-npm run psd:receipt -- --batch <batchId>
+npm run ui:receipt -- --batch <batchId>
 ```
 
-所有命令默认 dry-run；任何写入命令都必须显式给出 `--out`，且输出路径只能位于批准的 staging 或 `tmp/psd-pipeline`
+所有命令默认 dry-run；任何写入命令都必须显式给出 `--out` 或从 page root 解析到批准的 staging，且候选输出只能位于
+批准的 staging 或 `tmp/ui-pipeline`
 根下。禁止用当前工作目录、`~`、`$HOME` 或未解析的环境变量作为删除或覆盖目标。
 
 ### 9.3 PSD 解析与像素渲染分离
 
-PSD 结构解析器和像素渲染器是两个 adapter：
+通用实现沿用实际制作中已经证明有效的职责拆分，但把一次性命令收口为可锁定 adapter：
 
-- 结构解析器读取图层树、名称、bbox、文字信息、Shape 和 Layer Comp；
-- 像素渲染器负责与批准视觉一致的 PNG；
-- Node PSD 库可以作为结构解析候选，但在 golden test 证明前，不得假设它能忠实渲染全部 Photoshop
-  图层效果、混合模式、智能对象和字体；
-- 美术生产推荐优先使用锁定版本 Photoshop 的原生批处理导出；无 Photoshop 的 CI 只验证已批准 PNG、哈希、
-  manifest 和结构，不重新解释像素；
+- ImageGen adapter 只登记候选位图、prompt、输入角色、允许变化区和 hash，不承担确定性布局；
+- Pillow 12.2.0 adapter 负责画布规范化、裁切、mask、文字栅格预览和 composite；
+- `ag-psd@31.0.2` + `pngjs@7.0.0` adapter 负责 PSD 结构、imageData、组和 Type 描述；
+- ImageMagick 7.1.2 adapter 只渲染文档 composite 和执行 AE/容差对账；
+- Photoshop adapter 是人工 Gate，负责真实文字更新、保存—关闭—重开；无 Photoshop 的 CI 只能检查 hash、结构和
+  composite，不能把文字状态升级为 `photoshop-roundtripped`；
+- Node PSD reader 不得被假设能忠实渲染全部 Photoshop 图层效果、混合模式、智能对象和字体；
 - 任何 renderer 变化都必须使全部 PNG hash 失效并重新走 G5 A/B 审阅。
+
+实际样例将依赖安装在临时目录。生产化时上述版本必须进入受锁定的工具依赖与第三方声明，禁止每批次临时解析
+“最新版”；Photoshop 版本和安装包 hash 在首次真实往返时一并冻结。
 
 ### 9.4 FairyGUI XML codec
 
@@ -635,7 +730,7 @@ IR、资产导出、Controller/Gear/Relation codec 和 diff 守门。
 
 ### 10.2 阶段 B：`rawProjectCompiler`
 
-这是长期目标，用命令行覆盖原 Editor 插件计划能力：
+该阶段使用命令行覆盖批准范围内的完整候选工程编译能力：
 
 - 在临时完整工程内新增资源和 package item；
 - 创建隔离 leaf component，逐步扩展到完整页面；
@@ -647,7 +742,7 @@ IR、资产导出、Controller/Gear/Relation codec 和 diff 守门。
 
 启用条件：
 
-- 先更新 `docs/FairyGUI.md` 的 ADR，使 `cliTempCompiler` 成为明示授权模式；
+- 先更新 `docs/FairyGUI.md` 的 ADR，使 `cliPSDCompiler` 成为明示授权模式；
 - 锁定 FairyGUI Editor 安装包、版本、工程 schema 样本和发布设置；
 - 至少两个结构不同的 golden package 通过无修改 round-trip；
 - 同一输入连续编译两次零 diff；
@@ -670,22 +765,24 @@ raw XML 候选实验，且禁止写 `package.xml`。在上述 ADR 完成前，�
 
 ### 11.1 阶段 0：ADR 与工具链锁
 
-1. 在 `docs/FairyGUI.md` 增加 `cliTempCompiler` authoring mode 和启用条件。
+1. 在 `docs/FairyGUI.md` 增加 `cliPSDCompiler` authoring mode 和启用条件。
 2. 明确正式设计源、临时工程、staging 发布和 Creator 发布目录。
 3. 锁定 FairyGUI Editor、Photoshop/像素 renderer、Node、PSD parser 和 XML codec 版本与哈希。
 4. 保存两个结构不同的最小 golden package：一个纯叶子组件，一个含 Controller/Gear/Relation/跨组件引用。
 5. 记录官方 Editor CLI 的调用方式、发布输出和失败诊断边界。
-6. 为正式路径增加写入守门测试，确保 `psd:*` 工具无法直接修改它。
+6. 为正式路径增加写入守门测试，确保 `ui:*` 工具无法直接修改它。
 
 退出条件：ADR 批准、工具版本可复建、golden project 可在固定 Editor 中打开和发布。
 
 ### 11.2 G0～G2：先冻结语义、Scenario 与几何
 
-1. 冻结页面范围、平台、预算、非目标和验收责任。
-2. PageSpec 列出所有字段、值来源、动作、异步结果和异常状态。
-3. Scenario 覆盖 required Controller page、极值数字、长文本、无数据、锁定、满仓和错误态。
-4. G2 定义区域、容器、滚动策略、点击热区、岗位 pivot、安全区和短屏规则。
-5. `assembly-recipe.json` 只引用已冻结的 stable key，不发明业务语义。
+1. 从 `docs/<feature>/` 策划文档生成 `delivery-spec.json` 候选，逐项记录来源文件、标题/条款和 hash；无法确定的
+   `featureKind`、页面、RPC/Room 领域、存档和验收要求必须标成 blocker，不能由图像或 XML 补猜。
+2. 人工批准 DeliverySpec，冻结页面范围、平台、预算、非目标、前后端责任和验收责任。
+3. PageSpec 列出所有字段、值来源、动作、异步结果和异常状态。
+4. Scenario 覆盖 required Controller page、极值数字、长文本、无数据、锁定、满仓和错误态。
+5. G2 定义区域、容器、滚动策略、点击热区、岗位 pivot、安全区和短屏规则。
+6. `assembly-recipe.json` 只引用已冻结的 stable key，不发明业务语义。
 
 退出条件：每个显示值有来源，每个操作有闭环，每个 required 状态可重复构造。
 
@@ -700,41 +797,47 @@ Underground Idle 应继续遵守 `UG-MAIN-GOLDEN-V02`、750×1624、Bitmap-first
 
 ### 11.4 G4：制作分层 PSD
 
-1. 按语义区域和运行时职责拆层，而不是按视觉碎片随意切层。
-2. 为资产、文字槽、热区、Loader 和九宫格应用第 6 节命名。
-3. 被遮挡但运行时会移动或切换的对象完成补绘。
-4. 运行时文字保留为独立 Type Layer，不进入 PNG 输出。
-5. `asset-manifest.json` 登记来源、输出策略、尺寸、padding、pivot、九宫格和许可。
-6. `assembly-recipe.json` 登记 Controller、Gear、Relation、List、Loader、热区和安全区意图。
+1. 先声明本批次是 `sourceOnlyFromTarget` 还是 `productionFromAcceptedAssets`；不得在生成后按结果好看程度改档。
+2. 按语义区域和运行时职责拆层，而不是按视觉碎片随意切层。
+3. 为资产、文字槽、热区、Loader 和九宫格应用第 6 节命名；历史 T/H/A 编号必须由 alias 显式映射。
+4. 被遮挡但运行时会移动或切换的对象完成补绘。ImageGen 只允许修改批准 mask 内像素，输出仍是候选。
+5. 运行时文字保留为独立文字槽；脚本写入的 Type 描述必须在目标 Photoshop 中完成打开、更新、保存、关闭、重开。
+6. `asset-manifest.json` 登记来源、输出策略、尺寸、padding、pivot、九宫格和许可。
+7. `assembly-recipe.json` 登记 Controller、Gear、Relation、List、Loader、热区和安全区意图。
+8. 生成 sibling preview，用锁定 renderer 与 PSD document composite 对账并完成人工分层审阅。
 
-退出条件：PSD、manifest、recipe 和 PageSpec stable key 闭合，无虚构层、无重复身份。
+退出条件：`PsdHandoffBundle` 内 PSD、manifest、recipe、prompt/source hash、preview 和批准记录一致；stable key 闭合，
+无虚构层、无重复身份。`sourceOnlyFromTarget` 到此只能进入资产补产/复核，不能直接进入 FGUI 编译。
 
 ### 11.5 G5：检查与导出运行资产
 
-1. 运行计划命令 `psd:inspect`，生成 `PsdHandoffIR`。
-2. 对缺失字体、外链智能对象、未知效果、非法混合模式和路径逃逸零容忍。
-3. 使用锁定 renderer 导出透明 PNG 到 staging。
-4. 检查尺寸、Alpha bbox、半透明边、padding、pivot、功耗/纹理预算和命名。
-5. 重组无字页面，和批准黄金 target 做确定性 overlay/A-B。
-6. 为九宫格生成最小、基准、最大尺寸预览。
-7. 人工审阅每张资产和重组结果，批准后冻结 PNG hash。
+1. 对 `sourceOnlyFromTarget` 中尚未生产化的角色、建筑、状态件和遮挡层补齐独立批准源，生成新的
+   `productionFromAcceptedAssets` bundle；禁止直接切取带背景污染或缺失隐藏像素的区域。
+2. 运行计划命令 `ui:psd:verify`，生成 `PsdHandoffIR`。
+3. 对缺失字体、外链智能对象、未知效果、非法混合模式和路径逃逸零容忍。
+4. 使用锁定 renderer 导出透明 PNG 到 staging。
+5. 检查尺寸、Alpha bbox、半透明边、padding、pivot、功耗/纹理预算和命名。
+6. 重组无字页面，和批准黄金 target 做确定性 overlay/A-B。
+7. 为九宫格生成最小、基准、最大尺寸预览。
+8. 人工审阅每张资产和重组结果，批准后冻结 PNG hash 与 `psd-production-accepted` 记录。
 
 退出条件：G5 报告通过、人工批准、PNG hash 与 manifest 一致。
 
 ### 11.6 生成装配计划
 
-1. 只读解析正式 `apps/art/fairygui/`，生成 `FguiProjectIR` 和基线 hash。
-2. 编译 `PsdHandoffIR + PageSpec + recipe + FguiProjectIR`。
-3. 检查 required node、资源、Controller page、Gear target、Relation target 和包依赖。
-4. 生成 `EditorAssemblyPlan` 和人类可读预期 diff。
-5. 审核预计新增、修改、删除对象；首版删除必须完全禁止。
-6. 计划批准后冻结 plan hash。
+1. 验证输入是 `productionFromAcceptedAssets`，且 PSD、sidecar、Photoshop 往返和 G5 批准 hash 全部有效。
+2. 只读解析正式 `apps/art/fairygui/`，生成 `FguiProjectIR` 和基线 hash。
+3. 编译 `DeliverySpec + PsdHandoffIR + PageSpec + recipe + FguiProjectIR`。
+4. 检查 required node、资源、Controller page、Gear target、Relation target 和包依赖。
+5. 生成 `EditorAssemblyPlan` 和人类可读预期 diff。
+6. 审核预计新增、修改、删除对象；首版删除必须完全禁止。
+7. 计划批准后冻结 plan hash。
 
 退出条件：预期 diff 只覆盖授权组件，不触及 editor-owned 对象或正式发布目录。
 
 ### 11.7 创建临时完整工程
 
-1. 创建唯一 `runId` 和 `tmp/psd-pipeline/<batch>/<runId>`。
+1. 创建唯一 `runId` 和 `tmp/ui-pipeline/<batch>/<runId>`。
 2. 把正式 FairyGUI 工程只读复制为完整基线，保留设置、包依赖和发布配置。
 3. 写入批次锁，记录正式基线 hash 和工作树 revision。
 4. 将批准 PNG 复制到候选工程允许的资源目录。
@@ -767,14 +870,16 @@ Underground Idle 应继续遵守 `UG-MAIN-GOLDEN-V02`、750×1624、Bitmap-first
 
 ### 11.10 Editor takeover
 
-由于不开发 Editor 插件，本步骤保留明确的人机接力：
+本步骤通过明确的人机接力完成 Editor takeover：
 
 1. 用锁定版本 FairyGUI Editor 打开候选完整工程。
 2. 检查目标包、组件、资源、Controller、Gear、Relation、List、Loader、九宫格和热区。
-3. 保存工程，关闭 Editor。
-4. 重新打开同一候选工程，确认结构、ID、引用、布局和发布设置未丢失。
-5. 再次发布到隔离目录并与 takeover 前结果做语义 diff。
-6. 记录人工确认和 Editor 日志。
+3. 需要调整时只在 Editor UI 中修改候选；不得用文本编辑器直接修 XML。保存后运行 `ui:fgui:reconcile`，将
+   人工修改归类为“回写 PageSpec/recipe/asset”或“接受为 Editor 映射”，禁止形成无来源的第三份规则。
+4. 保存工程，关闭 Editor。
+5. 重新打开同一候选工程，确认结构、ID、引用、布局和发布设置未丢失。
+6. 再次发布到隔离目录并与 takeover 前结果做语义 diff。
+7. 记录人工确认、Editor 日志、正式映射候选和所有上游回写。
 
 若 Editor 重写了未知字段、丢失引用、改变语义或导致非授权 diff，立即丢弃候选并回到 codec/adapter；不得手工修补
 后跳过 golden test。
@@ -805,26 +910,42 @@ Underground Idle 应继续遵守 `UG-MAIN-GOLDEN-V02`、750×1624、Bitmap-first
 
 退出条件：Editor 保存—重开、正式发布、引用闭合、结构对账全部通过。
 
-### 11.13 G7：现有接线流程
+### 11.13 G7：按 DeliverySpec 完成前后端与接线
 
-以下命令是仓库**现有**流程。前置条件是正式 Editor 已保存、重开并发布：
+以下命令是仓库**现有**能力，但“自动读取策划和 XML 后生成完整业务代码”不是当前能力。前置条件是 DeliverySpec、
+PageSpec/Scenario 已批准，正式 Editor 已保存、重开并发布。业务契约只从策划侧生成或手写，XML 只驱动 View 结构：
+
+1. 若 `featureKind=lobbyFeature`，先在 shared 的 Lobby RPC domain descriptor 定义消息与 validator，再实现服务端
+   endpoint、锁/幂等/数据一致性与测试；不得从按钮名猜 RPC。
+2. 若 `featureKind=roomGameplay`，先手写 `manifest.json`、`state.json` 和该玩法 `wire.ts`，运行
+   `codegen:gameplays`，再实现服务端 mode/commands 和客户端 room adapter/gameplay module；不得修改通用
+   `GameRoom` dispatcher 补玩法分支。
+3. 两类都在 `apps/client/src/logic` 实现无引擎业务逻辑，在 View AUTO 区块外完成绑定和动作转发，并登记
+   `.view.json` 与 `feature.json`。
 
 ```bash
-# 1. 从正式 XML 生成或重写 View AUTO 区块
+# roomGameplay 且 schema/manifest/wire 变化时先运行；lobbyFeature 可跳过
+npm --workspace @game/server run codegen:gameplays
+npm run sync:shared
+
+# 从正式 XML 生成或重写 View AUTO 区块
 npm run codegen:fgui -- <Package> <Component>
 
-# 2. AUTO 区块外完成 View/Logic，并更新同目录 .view.json 与 feature.json
+# AUTO 区块外完成 View/Logic，并更新同目录 .view.json 与 feature.json
 
-# 3. 刷新 feature、View、FGUI 契约、route 和 package catalog
+# 刷新 Lobby RPC registry、feature、View、FGUI 契约、route 和 package catalog
 npm --workspace @game/server run codegen:features
 
-# 4. 人工审阅设计源、发布物、AUTO 区块、sidecar 和生成 catalog 后更新闭包锁
+# shared 生成结果变更后同步；纯 View 批次若 shared 未变也必须确认镜像无漂移
+npm run sync:shared
+
+# 人工审阅设计源、发布物、AUTO 区块、sidecar 和生成 catalog 后更新闭包锁
 node scripts/fgui-manifest.mjs --write
 
-# 5. 同步客户端真源到 Creator 工程壳
+# 同步客户端真源到 Creator 工程壳
 npm run sync:client
 
-# 6. 自动检查
+# 自动检查
 npm run typecheck:client
 npm run typecheck:client:legacy
 npm run test:client
@@ -833,7 +954,9 @@ npm run verify:fgui
 npm run verify:sync
 ```
 
-不得手改生成 façade 或镜像。Creator 必须通过 Dashboard 打开工程并真实导入发布资源和脚本，生成或复用 `.meta`。
+服务端至少运行对应 workspace 单测；涉及数据库、Redis、HTTP 或 Room 时按 `docs/SERVER.md` 增加相应 smoke/int
+证据。不得手改生成 façade、schema/catalog 或镜像。Creator 必须通过 Dashboard 打开工程并真实导入发布资源和脚本，
+生成或复用 `.meta`。
 
 ### 11.14 G8a/G8b：Creator 与目标平台验收
 
@@ -940,21 +1063,35 @@ official publish → published closure/round-trip equivalence
 
 ## 14. 分阶段实施路线
 
+### E0：一次性 source-only 证据（已完成记录）
+
+- `psd-maker.md` 已记录一个批准 target 到分层 PSD 的实际链路、工具版本、组结构和 AE=0 composite 对账。
+- `docs/psd-maker/` 现包含最终 `ug_main_layered_source_v02.psd`、原始 prompt、geometry、待审
+  `asset-manifest.json` 与七张图，共 11 份证据；文件哈希和证据等级见 `psd-maker.md` 第 3.5 节。
+- manifest 仍是 `pendingHumanReview / G5 notStarted / editorImportAllowed=false` 的计划快照，不能据此升级 Gate。
+- 样例 PSD 的 SHA-256 为 `6fb8c2009ce9ac9355f4937212901a2011577f3c422dfb9ffb799416dc1b1f5f`；它仍没有
+  Photoshop 实机往返、stable key sidecar 闭合或运行资产批准，不能冒充后续金样。
+- Phase 0～2 应复用这条链路的已验证做法，并把可重建文件、hash 和失败样本正式收进 fixture。
+
+退出标准：仅作为 source-only 证据成立；不解锁 FairyGUI 编译。
+
 ### Phase 0：决策与锁定
 
-- 更新 FairyGUI ADR，正式选择 `cliTempCompiler`，删除“生产目标是 Editor 插件”的歧义。
+- 在 FairyGUI ADR 中登记 `cliPSDCompiler` authoring mode、所有权和启用条件。
 - 锁定 Editor/Photoshop/parser/codec 版本和哈希。
 - 建立目录、schema、命令退出码和禁止写正式路径的守门测试。
 
 退出标准：只读 POC 可重复，现有人工流程不受影响。
 
-### Phase 1：只读 PSD inspector
+### Phase 1：可复建 PSD packager 与只读 inspector
 
-- 实现命名解析、字体/智能对象/效果检查和 `PsdHandoffIR`。
+- 把 `psd-maker.md` 中 Pillow、`ag-psd`/`pngjs`、ImageMagick 的一次性步骤收口为版本锁定 adapter。
+- 实现 DeliverySpec、三层命名/alias、字体/智能对象/效果检查和 `PsdHandoffIR`。
+- 为 `sourceOnlyFromTarget` 与 `productionFromAcceptedAssets` 建立不同状态和下游权限。
 - 不输出运行资产，不写 FairyGUI。
-- 建立四类 golden PSD。
+- 建立 Photoshop 真实保存—重开金样、composite 金样与失败样本；`type-described` 未通过 Photoshop 前不得升级。
 
-退出标准：同一 PSD 的 IR 稳定，所有失败样本被正确阻断。
+退出标准：同一批准输入重复 pack/inspect 得到稳定 IR 与可解释视觉 diff，所有失败样本被正确阻断。
 
 ### Phase 2：资产导出与 G5
 
@@ -999,7 +1136,9 @@ official publish → published closure/round-trip equivalence
 ## 15. Underground Idle 试点建议
 
 Underground Idle 当前主界面玩法、FairyGUI 包和客户端接线尚未实施，G4 manifest 候选待联合审阅、G5 未关闭。
-因此不要把 `UndergroundIdleMain` 作为编译器的第一个样本。
+`psd-maker.md` 虽记录了 `ug_main_layered_source_v02.psd` 的实际生成，但它是 `sourceOnlyFromTarget`：可复用为
+分组、文字描述和 composite 对账证据，不能作为运行资产或 FairyGUI 编译输入。因此不要把
+`UndergroundIdleMain` 作为编译器的第一个样本。
 
 推荐顺序：
 
@@ -1027,10 +1166,12 @@ Underground Idle 当前主界面玩法、FairyGUI 包和客户端接线尚未实
 
 ## 16. 完成定义
 
-只有同时满足以下条件，才能声称 CLI-first 流水线完成一个组件或页面：
+只有同时满足以下条件，才能声称“CLI 编译器 PSD 版”流水线完成一个组件或页面：
 
+- DeliverySpec 有逐项策划来源，前后端领域与阻断项已人工批准；
 - PageSpec、Scenario、PSD、manifest 和 recipe 的 stable key 闭合；
-- PSD 无运行时文字烘焙，PNG 通过 G5 和人工 A/B；
+- 输入是完整 `PsdHandoffBundle`，目标 Photoshop 往返通过且批准 hash 未漂移；
+- PSD 无运行时文字烘焙，`productionFromAcceptedAssets` PNG 通过 G5 和人工 A/B；
 - `EditorAssemblyPlan` 和预期 diff 已审阅；
 - 候选只生成于临时完整工程；
 - 重复编译零 diff，引用、ID 和所有权检查通过；
@@ -1038,13 +1179,16 @@ Underground Idle 当前主界面玩法、FairyGUI 包和客户端接线尚未实
 - 固定版本 Editor 完成打开、保存、关闭、重开；
 - 正式工程由 Editor 接管、再次保存—重开并正式发布；
 - 正式内部 ID snapshot、XML 和发布物完成对账；
-- `codegen:fgui`、feature codegen、manifest、sync 和自动测试通过；
+- DeliverySpec 要求的 shared、服务端和客户端行为已经实现；room gameplay 先通过 gameplay codegen，之后再运行
+  `codegen:fgui`、feature codegen、manifest、sync 和对应双端自动测试；
 - Creator 真实导入 `.meta` 并完成 required Scenario 与安全区验收；
 - receipt 完整且有审美、技术和测试责任人的确认。
 
 ## 17. 明确禁止的捷径
 
 - 让 CLI 直接写 `apps/art/fairygui/` 或正式发布目录。
+- 把 ImageGen 位图直接包装成“生产 PSD”，或把 `sourceOnlyFromTarget` 送入 FairyGUI 编译器。
+- 只交付 `.psd`，缺少 sidecar、source/prompt hash、Photoshop 往返和批准记录。
 - 把 PSD 图层名、PSD layer ID 或 hash 当作 FairyGUI 内部 ID。
 - 从图层可见性自动猜 Controller、Gear 或业务状态。
 - 用正则、字符串替换或未经 golden test 的 AST merge 修改 `package.xml`。
@@ -1053,12 +1197,14 @@ Underground Idle 当前主界面玩法、FairyGUI 包和客户端接线尚未实
 - 仅凭官方 Editor CLI 退出码宣称发布成功。
 - 自研生成 `.bin`、图集描述或 Creator `.meta`。
 - 候选失败后把临时 XML 手工复制到正式工程“抢救”。
-- 把本文的 `psd:*`、FguiProjectIR、staging、receipt 或 Gallery 当作当前已有能力。
+- 用文本编辑器人工修改候选或正式 XML；人工调整必须发生在 FairyGUI Editor，并经 reconcile 与重开验证。
+- 把本文的 `ui:*`、FguiProjectIR、staging、receipt 或 Gallery 当作当前已有能力。
 - 在 G4/G5 未关闭前，把 UndergroundIdleMain 的临时 raw XML 候选当成正式设计源。
 
 ## 18. 参考资料
 
 - [FairyGUI UI 生产、装配与自动化工作流](FairyGUI.md)
+- [一次实际分层 PSD 生成记录](psd-maker.md)
 - [客户端开发](CLIENT.md)
 - [FairyGUI 设计源说明](../apps/art/fairygui/README.md)
 - [FairyGUI 官方：发布](https://www.fairygui.com/docs/editor/publish)

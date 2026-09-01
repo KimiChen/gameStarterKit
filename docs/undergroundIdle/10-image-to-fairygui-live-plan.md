@@ -2,7 +2,7 @@
 
 > [返回总目录](README.md) · [上一篇：UndergroundIdleMain FairyGUI 装配契约](09-fairygui-undergroundidle-main-assembly.md)
 >
-> 文档版本：1.0<br>
+> 文档版本：1.1<br>
 > 编写日期：2026-09-01<br>
 > 当前状态：`规范已定义 / 主界面运行资产、FairyGUI 包、客户端接线与 Creator 验收均未实施`
 
@@ -32,6 +32,10 @@ FairyGUI 布局真源。正式运行输入只使用批准并登记的 PNG、字�
 
 FairyGUI XML、`package.xml` 和内部 ID 由 FairyGUI Editor 分配和序列化。本流程不建立 raw XML writer，
 不从图片推算 ID，也不让外部脚本直接写正式 FGUI 工程。
+
+当前 source-only PSD 证据是 [`docs/psd-maker/ug_main_layered_source_v02.psd`](../psd-maker/ug_main_layered_source_v02.psd)，
+制作过程与证据边界见 [`docs/psd-maker.md`](../psd-maker.md)。它的存在不等于 G5 运行 PNG 已 accepted，也不解锁
+FairyGUI 编译或正式工程写入。
 
 批准 target 始终是视觉对账基准，不能在拆层时被新的独立构图替代。`target ↔ composite` 未通过人工 A/B 前，
 运行 PNG 不得进入 FairyGUI Editor；资产拆分只使用批准 target 的像素、局部编辑和同源补绘。
@@ -252,9 +256,10 @@ manifest 至少记录以下字段；字段可扩展，但不能把 FGUI ID 或�
 5. 完整保存、关闭、重开目标组件，记录 Editor 往返结论；
 6. 使用 Editor 正式发布 `.bin`、atlas 和独立纹理。
 
-外部工具默认只读 FGUI XML。需要自动化时，优先在临时工程做锁定版本的官方 Editor 插件 POC，插件只通过
-Editor API 导入资产或创建授权 leaf component，ID 仍由 Editor 分配。UndergroundIdleMain 这类复杂整页不作为
-raw XML 后备试点。
+自动化使用 `cliPSDCompiler`：它只在锁定版本的临时完整工程中导入批准资产、生成授权 leaf component 和候选
+XML/`package.xml`，不得写正式工程。候选必须经过 Editor takeover、保存—关闭—重开和正式发布；正式 ID 以 Editor
+接管后的设计源为准。UndergroundIdleMain 这类复杂整页必须在 `seededTemplate` 与 golden package 验证通过后再进入
+`rawProjectCompiler` 页面级试点。
 
 明确禁止：
 
