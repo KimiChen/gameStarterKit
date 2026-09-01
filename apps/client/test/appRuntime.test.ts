@@ -219,3 +219,79 @@ test("wireSessionLifecycle：transport 失效先拆玩法 generation；journal/t
     session.clearSession();
   }
 });
+
+
+test("launch 统一启动通道经 FeatureHost 闸：failed 不启动、userIntent 重试成功后启动、常驻与未托管直通", async () => {
+  // 缺口：此前 AppRuntime.launch 直接 launchGameplay，FeatureHost 状态机（failed/disabled）
+  // 在生产启动通道上无任何判定——菜单 enabled 只是渲染期快照，渲染后失败的 feature
+  // 照常进玩法；userIntent 重试也没有生产调用方。本用例钉住启动时刻的唯一判定。
+  // 变异锚点：launch 退化为直走 launchGameplay ⇒ ① 的 started=0 断言必红。
+  const { appRuntime, makeNode } = await loadAppHost();
+  let failInstall = true;
+  let installs = 0;
+  const hostedFeatures = [
+    { id: "builtin", resident: true },
+    {
+      id: "fx",
+      load: () => ({
+        install: () => {
+          installs++;
+          if (failInstall) throw new Error("fixture install failed");
+        },
+      }),
+    },
+  ];
+  const runtime = new appRuntime.AppRuntime({
+    node: makeNode(),
+    hostedFeatures,
+    launchFeatureMap: new Map([["ballMove", "builtin"], ["fxGame", "fx"]]),
+  }) as unknown as Record<string, any>;
+  let started = 0;
+  runtime.launchGameplay = async () => { started++; };
+
+  // ① 托管 feature install 失败：玩法不得启动（启动时刻再闸，不信渲染期快照）。
+  await runtime.launch({ kind: "gameplay", gameplayId: "fxGame" });
+  assert.equal(started, 0, "feature failed 时不得启动玩法");
+  assert.equal(runtime.features.statusOf("fx"), "failed");
+
+  // ② 点击 = 显式用户意图：重试装载成功后照常启动，且装载恰好重试一次。
+  failInstall = false;
+  await runtime.launch({ kind: "gameplay", gameplayId: "fxGame" });
+  assert.equal(runtime.features.statusOf("fx"), "active");
+  assert.equal(started, 1, "userIntent 重试成功后必须启动玩法");
+  assert.equal(installs, 2, "装载必须恰好重试一次");
+
+  // ③ resident built-in：恒 active 短路，零开销直通（不触发任何装载）。
+  await runtime.launch({ kind: "gameplay", gameplayId: "ballMove" });
+  assert.equal(started, 2, "常驻 feature 必须直通");
+
+  // ④ 未托管 target（无 contribution 映射）：不受 feature 闸管控，直通。
+  await runtime.launch({ kind: "gameplay", gameplayId: "otherGame" });
+  assert.equal(started, 3, "未托管 target 必须直通");
+
+  runtime.dispose();
+});
+
+test("launch 统一启动通道：disabled(app-generation) 的 feature 同样不得启动玩法", async () => {
+  const { appRuntime, makeNode } = await loadAppHost();
+  const hostedFeatures = [
+    { id: "fx", load: () => ({ install: () => { throw new Error("always fails"); } }) },
+  ];
+  const runtime = new appRuntime.AppRuntime({
+    node: makeNode(),
+    hostedFeatures,
+    launchFeatureMap: new Map([["fxGame", "fx"]]),
+  }) as unknown as Record<string, any>;
+  let started = 0;
+  runtime.launchGameplay = async () => { started++; };
+
+  // 自动重试预算耗尽（默认上限 2：首次 failed 后两次自动重试仍失败）→ disabled。
+  assert.equal(await runtime.features.launch("fx"), "failed");
+  assert.equal(await runtime.features.launch("fx"), "failed");
+  assert.equal(await runtime.features.launch("fx"), "failed");
+  assert.equal(await runtime.features.launch("fx"), "disabled", "超限必须置 disabled(app-generation)");
+
+  await runtime.launch({ kind: "gameplay", gameplayId: "fxGame" });
+  assert.equal(started, 0, "disabled feature 不得启动玩法（userIntent 也不能越过 disabled）");
+  runtime.dispose();
+});
