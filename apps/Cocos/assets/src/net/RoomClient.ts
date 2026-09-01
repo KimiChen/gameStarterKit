@@ -9,7 +9,7 @@
 import {
     RoomName,
     C2S,
-    PROTOCOL_VERSION,
+    GAME_ROOM_PROTOCOL_VERSION,
     ROOM_STATE_VALIDATORS,
     type C2SPayloadMap,
     type GameplayModeIdType,
@@ -641,7 +641,7 @@ export class RoomClient {
             throw new TypeError("[RoomClient] join mode 与 gameplay adapter 不匹配");
         }
         const joinOptions = validateGameRoomJoinOptions(
-            cloneJson({ ...split.options, mode: adapterSnapshot.mode, v: PROTOCOL_VERSION }),
+            cloneJson({ ...split.options, mode: adapterSnapshot.mode, v: GAME_ROOM_PROTOCOL_VERSION }),
         );
         const endpoint = this.endpoint;
         const client = this.client;

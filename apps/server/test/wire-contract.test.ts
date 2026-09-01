@@ -58,6 +58,17 @@ test("HTTP contract map：路径/方法唯一且响应 validator 拒绝 extra、
   assert.equal(GameHttpContractMap.Health.path, ApiPath.Health);
   assert.equal(GameHttpContractMap.Version.path, ApiPath.Version);
   assertInvalid(() => GameHttpContractMap.Health.response({ status: "ok", serverTime: 1, version: "3", extra: true }), "WIRE_KEYS");
+  // §4.8 拆分：/version 同时报告两类协议身份；旧单一 protocol 字段已删除，携带即拒。
+  assert.deepEqual(
+    GameHttpContractMap.Version.response({ name: "demo-server", gameRoomProtocol: 7, lobbyProtocol: 7 }),
+    { name: "demo-server", gameRoomProtocol: 7, lobbyProtocol: 7 },
+  );
+  assertInvalid(() => GameHttpContractMap.Version.response({ name: "demo-server", protocol: 7 }), "WIRE_KEYS");
+  assertInvalid(() => GameHttpContractMap.Version.response({ name: "demo-server", gameRoomProtocol: 7 }), "WIRE_KEYS");
+  assertInvalid(
+    () => GameHttpContractMap.Version.response({ name: "demo-server", gameRoomProtocol: Number.NaN, lobbyProtocol: 7 }),
+    "WIRE_INTEGER",
+  );
   assertInvalid(() => GameHttpContractMap.ClockNow.response({ serverTime: Number.NaN }), "WIRE_INTEGER");
   assertInvalid(() => validateWebPlatformAreaListResponse({ hash: "h", isOps: false, myServerIds: [], servers: [{
     serverId: 1, name: "s1", status: "smooth", tag: "normal", openTime: 0,

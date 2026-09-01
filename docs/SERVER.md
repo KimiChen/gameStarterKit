@@ -194,7 +194,8 @@ tsx 直接执行和运行时文件系统扫描，不是打包产物装载器。
 2. 运行 `npm --workspace @game/server run codegen:features` 刷新
    `apps/shared/src/protocol/lobbyRpc/registry.generated.ts`（路由/模式/validator map/错误码/
    推送全集的生成聚合；freshness 由 `apps/server/test/feature-codegen.test.ts` 只读守门），
-   然后 `node scripts/protocol-fingerprint.mjs` 重钉协议指纹，再 `npm run sync:shared`。
+   然后 `node scripts/protocol-fingerprint.mjs --write` 重钉协议指纹（--check 只读比对），
+   再 `npm run sync:shared`。
 3. 新建 `websocket/<domain>/<method>.ts`，`defineRpc(type, { handler })` 只写领域行为——
    request schema、响应校验与幂等行为全部由 registry 派生，endpoint 无法（编译期拒绝）自填
    `schema` / `idem` / `mode`。
@@ -611,7 +612,7 @@ Game HTTP request schema 已由 shared validator 同源生成并直接注入带 
 | RPC endpoint | `apps/server/src/websocket/<domain>/<method>.ts`；装载规则在 `loader.ts` |
 | HTTP endpoint | `apps/server/src/http/<domain>/<method>.ts`；装配表是生成物 `apps/server/src/http/manifest.generated.ts`（禁手改），新增后运行 `npm --workspace @game/server run codegen:http`，`http/index.ts` 只消费该 manifest |
 | 外部身份契约 | 锁定的 `@gono/webplatform-contract` 与 `apps/shared/src/generated/webplatform` |
-| 协议指纹 | `scripts/protocol.fingerprint`；更新命令 `node scripts/protocol-fingerprint.mjs`。当前只覆盖 `apps/shared/src/protocol/**` 与 `PROTOCOL_VERSION`，由 `npm run test:client` 中的 `protocolFingerprint.test.ts` 校验；`constants/errors.ts` 的 `ErrorCode` 数值、`constants/game.ts` 的 `GamePhase` 与帧率等常量、`logic/battle.ts` 的技能表与伤害公式同为双端契约，但不在该闸内 |
+| 协议指纹 | `scripts/protocol.fingerprint`（单行 `g<GAME_ROOM_PROTOCOL_VERSION> l<LOBBY_PROTOCOL_VERSION> <sha256>`）；更新命令 `node scripts/protocol-fingerprint.mjs --write`（`--check` 只读比对，⛔ 无隐式重钉）。当前只覆盖 `apps/shared/src/protocol/**` 与两个协议身份整数（GAME_ROOM 管信封与 core wire、LOBBY 管 Lobby RPC 面，各自的 join 闸只比较自己的整数；指纹只做字节审计锁，不参与 join 判定），由 `npm run test:client` 中的 `protocolFingerprint.test.ts` 校验；`constants/errors.ts` 的 `ErrorCode` 数值、`constants/game.ts` 的 `GamePhase` 与帧率等常量、`logic/battle.ts` 的技能表与伤害公式同为双端契约，但不在该闸内 |
 | 计算任务 | `apps/server/src/core/compute/tasks` |
 | 本地环境变量与项目命名空间 | 根 `.env.development`；加载与校验在 `apps/server/src/core/infra/config.ts`（`PROJECT_ID` / `PORT` 加载期 fail-fast） |
 

@@ -166,8 +166,10 @@ bitECS 没有自动抓取命令。其 `apps/client/src/lib/bitecs/` 下的 12 �
 
 ```text
 shared 契约
+  → npm --workspace @game/server run codegen:features / codegen:gameplays（改 RPC 域 descriptor /
+    feature 登记 / 玩法 manifest 时）
   → npm run sync:shared
-  → node scripts/protocol-fingerprint.mjs（仅改动 protocol/ 时）
+  → node scripts/protocol-fingerprint.mjs --write（仅改动 protocol/ 时；--check 只读比对）
   → 服务端 endpoint
   → 客户端 Logic + View + viewRegistry
   → npm run sync:client

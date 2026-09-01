@@ -11,7 +11,7 @@ import "./env-setup"; // ⚠ 必须第一个 import（限流放宽）
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
-import { LOBBY_MSG_PUSH, LOBBY_MSG_RPC, PROTOCOL_VERSION, RoomName } from "@game/shared";
+import { LOBBY_MSG_PUSH, LOBBY_MSG_RPC, LOBBY_PROTOCOL_VERSION, RoomName } from "@game/shared";
 import { server } from "../../src/app.config";
 
 import { GUILD_CATALOG } from "../../src/core/guild/catalog";
@@ -50,7 +50,7 @@ async function makeUser(name: string): Promise<{ uid: string; token: string }> {
 /** 经 SDK 入大厅房（v = 协议版本，onAuth 硬闸）。 */
 async function joinLobby(token: string) {
   colyseus.sdk.auth.token = token;
-  return colyseus.sdk.joinOrCreate(RoomName.Lobby, { v: PROTOCOL_VERSION });
+  return colyseus.sdk.joinOrCreate(RoomName.Lobby, { v: LOBBY_PROTOCOL_VERSION });
 }
 
 /** RPC 往返：按信封 id 配对回包。 */

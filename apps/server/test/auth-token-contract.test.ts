@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { ErrorCode, GameplayModeId, PROTOCOL_VERSION } from "@game/shared";
+import { ErrorCode, GAME_ROOM_PROTOCOL_VERSION, GameplayModeId, LOBBY_PROTOCOL_VERSION } from "@game/shared";
 import { GameRoom } from "../src/rooms/GameRoom";
 import { registerBallMoveGameMode } from "../src/rooms/modes/ballMove/index";
 import { LobbyRoom } from "../src/websocket/LobbyRoom";
@@ -17,7 +17,7 @@ for (const [standardToken, optionToken, label] of invalidTokenCases) {
   test(`GameRoom auth：${label}时拒绝`, async () => {
     await assert.rejects(
       GameRoom.onAuth(standardToken, {
-        v: PROTOCOL_VERSION,
+        v: GAME_ROOM_PROTOCOL_VERSION,
         sId: 0,
         token: optionToken,
         mode: GameplayModeId.BallMove,
@@ -29,7 +29,7 @@ for (const [standardToken, optionToken, label] of invalidTokenCases) {
   test(`LobbyRoom auth：${label}时拒绝`, async () => {
     await assert.rejects(
       LobbyRoom.onAuth(standardToken, {
-        v: PROTOCOL_VERSION,
+        v: LOBBY_PROTOCOL_VERSION,
         sId: 0,
         token: optionToken,
       }, undefined as never),
@@ -41,7 +41,7 @@ for (const [standardToken, optionToken, label] of invalidTokenCases) {
 test("LobbyRoom auth：拒绝只属于 GameRoom 的 mode 撮合字段", async () => {
   await assert.rejects(
     LobbyRoom.onAuth("", {
-      v: PROTOCOL_VERSION,
+      v: LOBBY_PROTOCOL_VERSION,
       sId: 0,
       mode: GameplayModeId.Idle,
     } as never, undefined as never),

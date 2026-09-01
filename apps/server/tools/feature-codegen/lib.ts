@@ -4,8 +4,11 @@
  *    coreErrors.ts），语法读取后渲染 `registry.generated.ts`；
  *  - 发现 features/<dir>/feature.json + `<Name>View.view.json` sidecar + FGUI XML（viewCatalog.ts），
  *    渲染客户端三产物 `apps/client/src/generated/{fguiContracts,views,features}.generated.ts`
- *    ——全仓唯一的客户端 View catalog/FGUI contract writer（§3.1 交汇点）。
- * freshness（--check 只读）与原子写盘（--write）对四件产物同一口径。
+ *    ——全仓唯一的客户端 View catalog/FGUI contract writer（§3.1 交汇点）；
+ *  - 渲染能力索引 `docs/features.generated.md`（§5.7 阶段 7：id/category/docs/结构状态，
+ *    状态词汇表仅 planned/registered/source-present；⛔ 生成器不写 plan-*.md——
+ *    `assertWriterOutputSetSafe` 对允许输出集合自检，塞进计划文件即红）。
+ * freshness（--check 只读）与原子写盘（--write）对五件产物同一口径。
  *
  * §5.5 通用约束的落点（形态沿用 gameplay-codegen）：
  *  - 稳定排序（域按 id 排序、域内按声明序）⇒ 相同输入字节级相同输出；
@@ -20,7 +23,7 @@
  * @game/server workspace，却直写 apps/shared 的 registry 与 **apps/client 的 generated 目录**
  * （apps/client 不是 npm workspace，客户端产物的 freshness 沿 §5.4 口径由
  * `apps/server/test/feature-codegen.test.ts` 的只读断言守门）。
- * ⚠ registry 落在 protocol/ 内 ⇒ `--write` 后必须 `node scripts/protocol-fingerprint.mjs`
+ * ⚠ registry 落在 protocol/ 内 ⇒ `--write` 后必须 `node scripts/protocol-fingerprint.mjs --write`
  * 重钉协议指纹（--check ⛔ 不碰指纹，那是显式审计锁）。
  */
 import fs from "node:fs";
@@ -37,6 +40,7 @@ import {
   type TypeRef,
 } from "./astReader";
 import {
+  FEATURE_INDEX_RELATIVE,
   previousGeneratedFeatureIds,
   previousGeneratedViewNames,
   readViewCatalog,
@@ -613,8 +617,8 @@ export function previousRegistryDomains(options: FeatureCodegenOptions = {}): re
 
 // ── freshness 与写盘 ────────────────────────────────────────────────────────
 
-/** 生成器独占所有权面：lobbyRpc/ 与 apps/client/src/generated/ 下的全部 *.generated.ts；
- *  预期之外的即 extra。 */
+/** 生成器独占所有权面：lobbyRpc/ 与 apps/client/src/generated/ 下的全部 *.generated.ts，
+ *  外加能力索引 docs/features.generated.md；预期之外的即 extra。 */
 function collectOwnedFiles(root: string): readonly string[] {
   const out: string[] = [];
   const walk = (dir: string, base: string): void => {
@@ -627,7 +631,37 @@ function collectOwnedFiles(root: string): readonly string[] {
   };
   walk(path.join(root, LOBBY_RPC_DIR_RELATIVE), root);
   walk(path.join(root, "apps/client/src/generated"), root);
+  if (fs.existsSync(path.join(root, FEATURE_INDEX_RELATIVE))) out.push(FEATURE_INDEX_RELATIVE);
   return [...new Set(out)].sort();
+}
+
+// ── writer 允许输出集合自检（§5.7：⛔ 生成器不写当前计划文件） ───────────────
+
+/**
+ * writer 输出路径的显式允许形态：protocol/lobbyRpc 与客户端 generated/ 的 `*.generated.ts`
+ * + 能力索引 `docs/features.generated.md`。集合外的任何路径都拒绝。
+ */
+const WRITER_OUTPUT_ALLOWED = [
+  /^apps\/shared\/src\/protocol\/lobbyRpc\/[A-Za-z0-9_/.-]*\.generated\.ts$/u,
+  /^apps\/client\/src\/generated\/[A-Za-z0-9_.-]+\.generated\.ts$/u,
+  /^docs\/features\.generated\.md$/u,
+] as const;
+
+/**
+ * 自检 writer 的允许输出集合（每次渲染/写盘前执行）。§5.7 硬约束：生成器⛔ 不能自动写
+ * **当前计划文件**（plan-*.md）——验收结果、实跑证据与「已完成」判断由人工维护。
+ * 把任一 plan-*.md 加进允许输出集合，本自检立即红（feature-codegen.test 反例钉住）。
+ */
+export function assertWriterOutputSetSafe(outputs: readonly string[]): void {
+  for (const output of outputs) {
+    const normalized = posixPath(output);
+    if (/(^|\/)plan(-v\d+)?\.md$/u.test(normalized)) {
+      fail(normalized, "当前计划文件（plan-*.md）不得进入生成器允许输出集合——验收与实跑证据由人工维护（§5.7）");
+    }
+    if (!WRITER_OUTPUT_ALLOWED.some((pattern) => pattern.test(normalized))) {
+      fail(normalized, "不在生成器允许输出集合内（lobbyRpc/客户端 generated 的 *.generated.ts + docs/features.generated.md）");
+    }
+  }
 }
 
 function diffArtifacts(root: string, expected: ReadonlyMap<string, string>): {
@@ -654,7 +688,9 @@ export function assertFeatureArtifactsFresh(options: FeatureCodegenOptions = {})
   const root = resolvedRoot(options);
   const descriptors = readFeatureDescriptors(options);
   const catalog = readViewCatalog(root);
-  const { stale, missing, extra } = diffArtifacts(root, renderFeatureArtifacts(descriptors, catalog));
+  const expected = renderFeatureArtifacts(descriptors, catalog);
+  assertWriterOutputSetSafe([...expected.keys()]);
+  const { stale, missing, extra } = diffArtifacts(root, expected);
   const problems: string[] = [];
   if (stale.length > 0) problems.push(`stale: ${stale.join(", ")}`);
   if (missing.length > 0) problems.push(`missing: ${missing.join(", ")}`);
@@ -698,6 +734,7 @@ export function writeFeatureArtifacts(options: FeatureCodegenOptions = {}): Feat
   }
 
   const expected = renderFeatureArtifacts(descriptors, catalog);
+  assertWriterOutputSetSafe([...expected.keys()]);
   const orphans = collectOwnedFiles(root).filter((relative) => !expected.has(relative));
   for (const relative of orphans) {
     fail(relative, `unexpected generated file in an owned generated directory. ${RUN_HINT}`);

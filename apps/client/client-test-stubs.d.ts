@@ -129,9 +129,12 @@ declare module "*.mjs" {
   export function devEnvPort(file: string): number;
   export function devEnvContent(file: string): string;
   export const FINGERPRINT_FILE: string;
-  export function computeFingerprint(): string;
-  export function parseProtocolVersion(source: string): number;
-  export function readProtocolVersion(): number;
+  export function computeFingerprint(root?: string): string;
+  // scripts/protocol-fingerprint.mjs（§4.8 拆分后：两个协议身份整数 + 新锁行解析）
+  export function parseProtocolVersions(source: string): { gameRoom: number; lobby: number };
+  export function readProtocolVersions(root?: string): { gameRoom: number; lobby: number };
+  export function parseFingerprintLock(text: string): { gameRoom: number; lobby: number; hash: string };
+  export function runCli(argv: readonly string[]): number;
   export const BREAKER_MIN: number;
   export const BREAKER_RATIO: number;
   export function breakerTripped(args: { removed: number; srcCount: number }): boolean;

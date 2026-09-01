@@ -42,6 +42,7 @@ import {
 import { parseCoreErrorsModule, parseDomainModule } from "../tools/feature-codegen/astReader";
 import {
   assertFeatureArtifactsFresh,
+  assertWriterOutputSetSafe,
   parseCli,
   readFeatureDescriptors,
   renderFeatureArtifacts,
@@ -49,17 +50,19 @@ import {
   type FeatureCodegenOptions,
 } from "../tools/feature-codegen/lib";
 import {
+  FEATURE_INDEX_RELATIVE,
   FEATURES_RELATIVE,
   FGUI_CONTRACTS_RELATIVE,
   VIEWS_RELATIVE,
   readViewCatalog,
+  renderFeatureIndex,
 } from "../tools/feature-codegen/viewCatalog";
 
 const REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const LOBBY_RPC_DIR = "apps/shared/src/protocol/lobbyRpc";
 const REGISTRY_RELATIVE = `${LOBBY_RPC_DIR}/registry.generated.ts`;
 const CLIENT_ARTIFACTS = [FGUI_CONTRACTS_RELATIVE, VIEWS_RELATIVE, FEATURES_RELATIVE] as const;
-const ALL_ARTIFACTS = [REGISTRY_RELATIVE, ...CLIENT_ARTIFACTS] as const;
+const ALL_ARTIFACTS = [REGISTRY_RELATIVE, ...CLIENT_ARTIFACTS, FEATURE_INDEX_RELATIVE] as const;
 
 /**
  * 隔离根：拷贝生成器的全部输入面（lobbyRpc + features + 客户端 view/logic/generated +
@@ -70,6 +73,8 @@ function createFixture(): { readonly root: string; readonly options: FeatureCode
   for (const dir of [LOBBY_RPC_DIR, "features", "apps/client/src/view", "apps/client/src/logic", "apps/client/src/generated"]) {
     fs.cpSync(path.join(REPOSITORY_ROOT, dir), path.join(root, dir), { recursive: true });
   }
+  fs.mkdirSync(path.join(root, "docs"), { recursive: true });
+  fs.cpSync(path.join(REPOSITORY_ROOT, FEATURE_INDEX_RELATIVE), path.join(root, FEATURE_INDEX_RELATIVE));
   fs.cpSync(
     path.join(REPOSITORY_ROOT, "apps/art/fairygui/assets"),
     path.join(root, "apps/art/fairygui/assets"),
@@ -94,7 +99,7 @@ function snapshotHandwritten(root: string): Map<string, string> {
       out.set(relative, fs.readFileSync(full, "utf8"));
     }
   };
-  for (const dir of [LOBBY_RPC_DIR, "features", "apps/client/src/view", "apps/client/src/logic", "apps/client/src/generated", "apps/art/fairygui/assets"]) {
+  for (const dir of [LOBBY_RPC_DIR, "features", "apps/client/src/view", "apps/client/src/logic", "apps/client/src/generated", "apps/art/fairygui/assets", "docs"]) {
     const base = path.join(root, dir);
     if (fs.existsSync(base)) walk(base);
   }
@@ -905,4 +910,85 @@ test("CLI 沿用惯例：--check、--root <dir>/--root=<dir>、--allow-delete；
   assert.throws(() => parseCli(["--allow-delete", "guild", "--allow-delete", "guild"]), /duplicate/u);
   assert.throws(() => parseCli(["--check", "--allow-delete", "guild"]), /read-only/u);
   assert.throws(() => parseCli(["--mystery"]), /unknown argument/u);
+});
+
+// ── 阶段 7：能力索引（docs/features.generated.md）与 writer 输出集合自检 ─────
+
+test("能力索引：真仓在盘且新鲜；状态词汇表仅 planned/registered/source-present，无实跑冒充词", () => {
+  const file = path.join(REPOSITORY_ROOT, FEATURE_INDEX_RELATIVE);
+  assert.ok(fs.existsSync(file), "docs/features.generated.md 缺失——运行 codegen:features");
+  const rendered = renderFeatureIndex(readViewCatalog(REPOSITORY_ROOT));
+  assert.equal(fs.readFileSync(file, "utf8"), rendered, "能力索引不新鲜——重跑 codegen:features");
+  // 阶段 7 退出条件：生成索引不得用 implemented/verified 冒充测试实跑或人工验收（§5.7）。
+  assert.doesNotMatch(rendered, /implemented|verified/iu);
+  assert.match(rendered, /^\| `builtin` \| core \| registered \| /mu, "builtin feature 行在索引中");
+  assert.match(rendered, /planned/u);
+  assert.match(rendered, /source-present/u);
+});
+
+/** 隔离根加入一个最小 extra feature（仅 capability fragment，无 View/路由/菜单）。 */
+function addFixtureExtraFeature(root: string, defaultEntry: string): void {
+  const dir = path.join(root, "features/fixture-extra");
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "feature.json"), `${JSON.stringify({
+    schemaVersion: 1,
+    id: "fixtureExtra",
+    category: "extra",
+    docs: ["docs/EXTRAFEATURES.md"],
+    capabilities: [{
+      id: "fixture-extra-cap",
+      category: "extra",
+      defaultEntry,
+      sourceOfTruth: "apps/client/src/logic/page",
+      wireBoundary: "apps/client/src/view/pages.ts",
+      verification: [{ kind: "root", script: "verify:core" }],
+      docs: ["docs/EXTRAFEATURES.md"],
+    }],
+    viewDirs: [],
+    views: [],
+    owners: [],
+    routes: [],
+    menu: [],
+  }, null, 2)}\n`);
+}
+
+test("阶段 7：fixture extra feature 只加新文件即进索引；fragment 状态按 defaultEntry 存在性判定", () => {
+  const { root, options } = createFixture();
+  const before = snapshotHandwritten(root);
+  addFixtureExtraFeature(root, "apps/client/src/logic/page/HomeLogic.ts");
+  const result = writeFeatureArtifacts(options);
+  assert.deepEqual(result.changed, [FEATURES_RELATIVE, FEATURE_INDEX_RELATIVE],
+    "仅 features 数据产物与能力索引变化（registry/View 产物与手写源零 diff）");
+  const after = snapshotHandwritten(root);
+  assert.deepEqual([...after.keys()].filter((key) => !before.has(key)), ["features/fixture-extra/feature.json"]);
+  for (const [key, bytes] of before) {
+    assert.equal(after.get(key), bytes, `人工源码被生成器改动：${key}`);
+  }
+  const index = fs.readFileSync(path.join(root, FEATURE_INDEX_RELATIVE), "utf8");
+  assert.match(index, /^\| `fixtureExtra` \| extra \| registered \| /mu, "feature 行收录");
+  assert.match(index,
+    /^\| `fixture-extra-cap` \| `fixtureExtra` \| extra \| `apps\/client\/src\/logic\/page\/HomeLogic\.ts` \| source-present \| /mu,
+    "defaultEntry 在仓内存在 ⇒ source-present");
+  assertFeatureArtifactsFresh(options);
+
+  // defaultEntry 尚不存在 ⇒ planned（结构状态，生成器不因此失败——存在性硬闸在 verify:inventory）
+  addFixtureExtraFeature(root, "apps/client/src/logic/page/GhostLogic.ts");
+  writeFeatureArtifacts(options);
+  const planned = fs.readFileSync(path.join(root, FEATURE_INDEX_RELATIVE), "utf8");
+  assert.match(planned,
+    /^\| `fixture-extra-cap` \| `fixtureExtra` \| extra \| `apps\/client\/src\/logic\/page\/GhostLogic\.ts` \| planned \| /mu);
+  assertFeatureArtifactsFresh(options);
+});
+
+test("⛔ 生成器不写当前计划文件：把 plan-v4.md 加进 writer 允许输出集合 → 自检红（§5.7 反例）", () => {
+  assert.doesNotThrow(() => assertWriterOutputSetSafe([...ALL_ARTIFACTS]));
+  for (const planFile of ["plan-v4.md", "plan.md", "plan-v2.md", "docs/plan-v4.md"]) {
+    assert.throws(
+      () => assertWriterOutputSetSafe([...ALL_ARTIFACTS, planFile]),
+      /计划文件.*不得进入生成器允许输出集合/u,
+      `计划文件必须被 writer 自检拒绝：${planFile}`,
+    );
+  }
+  assert.throws(() => assertWriterOutputSetSafe(["docs/other.generated.md"]), /不在生成器允许输出集合内/u);
+  assert.throws(() => assertWriterOutputSetSafe(["apps/shared/src/protocol/rooms.ts"]), /不在生成器允许输出集合内/u);
 });

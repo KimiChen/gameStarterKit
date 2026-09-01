@@ -471,9 +471,15 @@ if (typeof inventory?.defaultScene !== "string" || inventory.defaultScene.trim()
 const ids = new Set();
 const allEntries = new Set();
 const capabilityEntries = new Map();
-for (const [index, capability] of capabilities.entries()) {
-  if (!capability || typeof capability !== "object") { fail(`capabilities[${index}] 必须是 object`); continue; }
-  for (const key of ["id", "category", "defaultEntry", "sourceOfTruth", "wireBoundary"]) requireString(capability[key], `capabilities[${index}].${key}`);
+
+/**
+ * 单条能力条目的完整校验（中央 inventory 与 feature capability fragment 共用同一套断言，
+ * §5.7：fragment「并入 capability 检查集」而不是另起一套宽松规则）。
+ * `fragmentContext` 非 null 时追加 fragment 专属的 fail-closed 规则。
+ */
+function checkCapabilityRecord(capability, labelBase, fragmentContext = null) {
+  if (!capability || typeof capability !== "object") { fail(`${labelBase} 必须是 object`); return; }
+  for (const key of ["id", "category", "defaultEntry", "sourceOfTruth", "wireBoundary"]) requireString(capability[key], `${labelBase}.${key}`);
   if (ids.has(capability.id)) fail(`能力 id 重复：${capability.id}`);
   ids.add(capability.id);
   if (typeof capability.defaultEntry === "string") {
@@ -511,7 +517,26 @@ for (const [index, capability] of capabilities.entries()) {
       fail(`能力 ${capability.id}.launch 未实际启动 defaultEntry：${capability.defaultEntry}`);
     }
   }
+  if (fragmentContext !== null) {
+    // §5.7：verification fragment 只能引用**能实际发现该 feature 的固定聚合命令**——
+    // 登记一个存在但根本不扫 features/ 的脚本即假绿。发现 fragment 的命令是
+    // `verify:inventory`（本脚本自身）；沿既有 commandCovers（npm run 引用图递归）实证，
+    // 至少一条 verification 必须覆盖它（verify:core / verify:all 等聚合链均满足）。
+    const discovery = { kind: "root", script: "verify:inventory" };
+    const verification = Array.isArray(capability.verification) ? capability.verification : [];
+    if (verification.length > 0
+      && !verification.some((command) => commandExists(command) && commandCovers(command, discovery))) {
+      fail(`feature fragment 能力 ${capability.id} 的 verification 未包含能实际发现 fragment 的聚合命令`
+        + `（须经 npm run 引用链覆盖 root:verify:inventory）——${fragmentContext.file}`);
+    }
+  }
 }
+
+for (const [index, capability] of capabilities.entries()) {
+  checkCapabilityRecord(capability, `capabilities[${index}]`);
+}
+
+checkFeatureCapabilityFragments();
 
 const registeredDefaults = new Set();
 const defaultDocs = new Set();
@@ -1064,6 +1089,145 @@ function checkCommand(command, owner, stack = new Set()) {
     checkCommand(requirement, label, nextStack);
     if (commandExists(requirement) && !commandCovers(command, requirement)) {
       fail(`${owner} 未实际覆盖声明的验证命令：${commandKey(requirement)}`);
+    }
+  }
+}
+
+// ── feature capability fragment（§5.7 阶段 7） ────────────────────────────────
+//
+// verifier 合并 `features/*/feature.json` 里的 capability fragment：普通 feature 只能
+// 以 fragment 声明 extra 能力，⛔ 禁改 defaultModules/defaultScene/routeOfTruth/
+// workspaceCommandScope（中央 inventory 专属）；fragment 逐条并入上方同一套能力检查集
+// （fail closed），因此普通 extra feature 无需修改中央 docs/inventory.json。
+
+function isJsonRecord(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function assertSupportedFeatureSchema(schema, label) {
+  // 解释器支持的 JSON Schema 关键字子集（与 feature-codegen/featureManifestSchema.ts 同口径）：
+  // schema 文件演进出认不得的关键字时先红，⛔ 不允许静默跳过一条约束。
+  // 内联而非模块级 const：本函数经顶层驱动段调用，模块级 const 声明在驱动段之后会 TDZ 崩溃
+  // （与 commandInvokesEntry 的启动器表同一约束）。
+  const FEATURE_SCHEMA_KEYWORDS = new Set([
+    "$schema", "title", "type", "const", "pattern", "minimum", "maximum",
+    "required", "properties", "additionalProperties", "items",
+  ]);
+  if (!isJsonRecord(schema)) throw new Error(`${label}: schema node must be an object`);
+  for (const keyword of Object.keys(schema)) {
+    if (!FEATURE_SCHEMA_KEYWORDS.has(keyword)) {
+      throw new Error(`${label}: schema uses unsupported keyword "${keyword}" — extend the interpreter before extending the schema`);
+    }
+  }
+  if (isJsonRecord(schema.properties)) {
+    for (const [key, child] of Object.entries(schema.properties)) {
+      assertSupportedFeatureSchema(child, `${label}.properties.${key}`);
+    }
+  }
+  if (schema.items !== undefined) assertSupportedFeatureSchema(schema.items, `${label}.items`);
+}
+
+/** 真实 JSON Schema 校验（首错即 throw；调用方转 fail）。 */
+function validateFeatureSchemaNode(schema, value, pathLabel) {
+  if (schema.const !== undefined) {
+    if (value !== schema.const) throw new Error(`${pathLabel} must be ${JSON.stringify(schema.const)}`);
+    return;
+  }
+  const type = schema.type;
+  if (type === "object") {
+    if (!isJsonRecord(value)) throw new Error(`${pathLabel} must be an object`);
+    const properties = isJsonRecord(schema.properties) ? schema.properties : {};
+    if (schema.additionalProperties === false) {
+      const unknown = Object.keys(value).filter((key) => !Object.prototype.hasOwnProperty.call(properties, key));
+      if (unknown.length > 0) throw new Error(`${pathLabel} unknown key(s): ${unknown.join(", ")}`);
+    }
+    const required = Array.isArray(schema.required) ? schema.required : [];
+    const missing = required.filter((key) => typeof key === "string"
+      && !Object.prototype.hasOwnProperty.call(value, key));
+    if (missing.length > 0) throw new Error(`${pathLabel} missing key(s): ${missing.join(", ")}`);
+    for (const [key, child] of Object.entries(properties)) {
+      if (!Object.prototype.hasOwnProperty.call(value, key)) continue;
+      if (!isJsonRecord(child)) throw new Error(`${pathLabel}.${key} invalid schema node`);
+      validateFeatureSchemaNode(child, value[key], `${pathLabel}.${key}`);
+    }
+    return;
+  }
+  if (type === "string") {
+    if (typeof value !== "string") throw new Error(`${pathLabel} must be a string`);
+    if (typeof schema.pattern === "string" && !new RegExp(schema.pattern, "u").test(value)) {
+      throw new Error(`${pathLabel} does not match pattern ${schema.pattern}`);
+    }
+    return;
+  }
+  if (type === "integer") {
+    if (!Number.isSafeInteger(value)) throw new Error(`${pathLabel} must be a safe integer`);
+    if (typeof schema.minimum === "number" && value < schema.minimum) throw new Error(`${pathLabel} must be >= ${schema.minimum}`);
+    if (typeof schema.maximum === "number" && value > schema.maximum) throw new Error(`${pathLabel} must be <= ${schema.maximum}`);
+    return;
+  }
+  if (type === "boolean") {
+    if (typeof value !== "boolean") throw new Error(`${pathLabel} must be a boolean`);
+    return;
+  }
+  if (type === "array") {
+    if (!Array.isArray(value)) throw new Error(`${pathLabel} must be an array`);
+    if (isJsonRecord(schema.items)) {
+      value.forEach((item, index) => validateFeatureSchemaNode(schema.items, item, `${pathLabel}[${index}]`));
+    }
+    return;
+  }
+  throw new Error(`${pathLabel} schema declares unsupported type: ${String(type)}`);
+}
+
+function checkFeatureCapabilityFragments() {
+  const featuresDir = path.join(ROOT, "features");
+  if (!fs.existsSync(featuresDir) || !fs.statSync(featuresDir).isDirectory()) {
+    fail("features/ 目录不存在：feature 单源目录是 capability fragment 的发现面（fail closed）");
+    return;
+  }
+  const schemaFile = path.join(featuresDir, "feature-schema-v1.json");
+  let schema;
+  try {
+    schema = readJson(schemaFile);
+    assertSupportedFeatureSchema(schema, "features/feature-schema-v1.json");
+  } catch (error) {
+    fail(`features/feature-schema-v1.json 无法加载为受支持的 JSON Schema：${error instanceof Error ? error.message : error}`);
+    return;
+  }
+
+  const dirs = fs.readdirSync(featuresDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+  for (const dir of dirs) {
+    const relative = `features/${dir}/feature.json`;
+    const file = path.join(featuresDir, dir, "feature.json");
+    if (!fs.existsSync(file)) { fail(`${relative} 缺失：每个 feature 目录必须有 feature.json`); continue; }
+    let manifest;
+    try { manifest = readJson(file); } catch { fail(`${relative} 不是有效 JSON`); continue; }
+    if (!isJsonRecord(manifest)) { fail(`${relative} 必须是 JSON object`); continue; }
+    // 禁改中央键：fragment 通道只允许声明 extra 能力，⛔ 不得触碰中央 inventory 的
+    // defaultModules/defaultScene/routeOfTruth/workspaceCommandScope（先于 schema 判，点名拒绝）。
+    const centralOnlyKeys = ["defaultModules", "defaultScene", "routeOfTruth", "workspaceCommandScope"];
+    const centralKeys = centralOnlyKeys.filter((key) => Object.prototype.hasOwnProperty.call(manifest, key));
+    if (centralKeys.length > 0) {
+      fail(`${relative} 不得声明中央 inventory 专属键（禁改 defaultModules/defaultScene/routeOfTruth/workspaceCommandScope）：${centralKeys.join(", ")}`);
+      continue;
+    }
+    try {
+      validateFeatureSchemaNode(schema, manifest, relative);
+    } catch (error) {
+      fail(`${relative} 未通过 feature-schema-v1 校验：${error instanceof Error ? error.message : error}`);
+      continue;
+    }
+    const fragments = Array.isArray(manifest.capabilities) ? manifest.capabilities : [];
+    for (const [index, fragment] of fragments.entries()) {
+      const labelBase = `${relative} capabilities[${index}]`;
+      if (!isJsonRecord(fragment) || fragment.category !== "extra") {
+        fail(`${labelBase} 只能声明 extra（built-in 的 core 身份不经 fragment 通道；晋升 core、改默认入口或项目边界须显式修改中央 inventory 与计划）`);
+        continue;
+      }
+      checkCapabilityRecord(fragment, labelBase, { file: relative });
     }
   }
 }

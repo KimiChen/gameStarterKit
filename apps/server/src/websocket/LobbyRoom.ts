@@ -8,7 +8,7 @@
  */
 import { CloseCode, Room, type AuthContext, type Client } from "@colyseus/core";
 import {
-  LOBBY_MSG_PUSH, LOBBY_MSG_RPC, PROTOCOL_VERSION,
+  LOBBY_MSG_PUSH, LOBBY_MSG_RPC, LOBBY_PROTOCOL_VERSION,
   ErrorCode as SharedErrorCode, isPlainRecord, validateLobbyPush, validateLobbyRoomJoinOptions,
   validateRpcEnvelope, validateRpcReply, WireValidationError,
   type IRpcEnvelope, type RpcErrCode,
@@ -253,8 +253,9 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
       }
       throw joinRefused(SharedErrorCode.BadRequest);
     }
-    // 协议版本硬闸（缺省按 1 兼容首版客户端）——语义同 GameRoom.onAuth，见 shared/protocol/rooms.ts
-    if ((joinOptions.v ?? 1) !== PROTOCOL_VERSION) {
+    // 协议版本硬闸（缺省按 1 兼容首版客户端）——语义同 GameRoom.onAuth，见 shared/protocol/rooms.ts。
+    // §4.8：Lobby join 只比较 LOBBY_PROTOCOL_VERSION，⛔ GAME_ROOM_PROTOCOL_VERSION 不参与本闸。
+    if ((joinOptions.v ?? 1) !== LOBBY_PROTOCOL_VERSION) {
       throw joinRefused(SharedErrorCode.ProtocolMismatch); // ⚠ 业务码走 message（status 必须 200–599，见 joinRefused）
     }
     // options 来自网络：⛔ TS 的 number 标注不能挡 string/null/NaN。尤其 GROUP_ZONES 空 = 承载全部，

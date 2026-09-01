@@ -21,7 +21,7 @@ export const ErrorCode = {
     GameAlreadyStarted: 3002,
     /** 技能不存在或未解锁 */
     SkillUnavailable: 3003,
-    /** 双端协议版本不匹配（join options.v ≠ 服务端 PROTOCOL_VERSION，见 protocol/rooms.ts） */
+    /** 双端协议版本不匹配（join options.v ≠ 服务端对应房型的协议整数：GameRoom 比 GAME_ROOM_PROTOCOL_VERSION、Lobby 比 LOBBY_PROTOCOL_VERSION，见 protocol/rooms.ts） */
     ProtocolMismatch: 3004,
     /** 目标区服不属于本进程/组（串服）或不可进入（维护/未开服）——进服硬闸拒连，客户端重新选服（docs/DUAL_MODE.md §4.3） */
     WrongServer: 3005,

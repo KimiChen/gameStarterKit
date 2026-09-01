@@ -13,7 +13,7 @@ import {
     GamePhase,
     GameplayModeId,
     MAX_PLAYERS,
-    PROTOCOL_VERSION,
+    GAME_ROOM_PROTOCOL_VERSION,
     ROOM_STATE_VALIDATORS,
     S2C,
     type C2SType,
@@ -58,7 +58,7 @@ function installLock(room: GameRoom): void {
 }
 
 async function join(room: GameRoom, item: FakeClient): Promise<void> {
-    await room.onJoin(item as never, { v: PROTOCOL_VERSION, sId: 0, mode: item.auth.mode });
+    await room.onJoin(item as never, { v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: item.auth.mode });
 }
 
 /** 消息驱动统一走 catch-all（阶段 2b 后 `messages` 只有 `"_"` 一个键）。 */
@@ -143,7 +143,7 @@ test("GameRoom：onCreate 从生产 registry 选择 idle，未知 mode 和直连
         const idleRoom = new GameRoom({ seed: 7 });
         (idleRoom as unknown as { setSimulationInterval: (callback: () => void, delay: number) => void })
             .setSimulationInterval = () => {};
-        idleRoom.onCreate({ v: PROTOCOL_VERSION, sId: 0, mode: IDLE_GAME_MODE_ID });
+        idleRoom.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: IDLE_GAME_MODE_ID });
         assert.equal(idleRoom.gameplayModeId, IDLE_GAME_MODE_ID);
         assert.equal(unexpectedBallFactories, 0, "idle 创建不得实例化或依赖 ballMove factory");
 
@@ -151,15 +151,15 @@ test("GameRoom：onCreate 从生产 registry 选择 idle，未知 mode 和直连
         (unknownRoom as unknown as { setSimulationInterval: (callback: () => void, delay: number) => void })
             .setSimulationInterval = () => {};
         assert.throws(
-            () => unknownRoom.onCreate({ v: PROTOCOL_VERSION, sId: 0, mode: "missing-mode" }),
+            () => unknownRoom.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: "missing-mode" }),
             (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.BadRequest)),
         );
         assert.throws(
-            () => unknownRoom.onCreate({ v: PROTOCOL_VERSION, sId: 0 } as never),
+            () => unknownRoom.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0 } as never),
             (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.BadRequest)),
         );
         assert.throws(
-            () => unknownRoom.onCreate({ v: PROTOCOL_VERSION - 1, sId: 0, mode: IDLE_GAME_MODE_ID }),
+            () => unknownRoom.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION - 1, sId: 0, mode: IDLE_GAME_MODE_ID }),
             (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.ProtocolMismatch)),
         );
 
@@ -167,7 +167,7 @@ test("GameRoom：onCreate 从生产 registry 选择 idle，未知 mode 和直连
         const defaultRoom = new GameRoom({ seed: 9 });
         (defaultRoom as unknown as { setSimulationInterval: (callback: () => void, delay: number) => void })
             .setSimulationInterval = () => {};
-        defaultRoom.onCreate({ v: PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
+        defaultRoom.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
         await assert.rejects(
             defaultRoom.onJoin(client("wrong-mode", IDLE_GAME_MODE_ID) as never, {}),
             (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.BadRequest)),
@@ -181,7 +181,7 @@ test("GameRoom：onCreate 从生产 registry 选择 idle，未知 mode 和直连
 test("GameRoom：legacy protocol preflight 先于 v5 mode 必填校验", async () => {
     const assertCode = (code: number) => (error: unknown) =>
         error instanceof Error && error.message.includes(String(code));
-    for (const legacy of [{ v: PROTOCOL_VERSION - 1 }, {}]) {
+    for (const legacy of [{ v: GAME_ROOM_PROTOCOL_VERSION - 1 }, {}]) {
         await assert.rejects(
             GameRoom.onAuth("", legacy as never, undefined as never),
             assertCode(ErrorCode.ProtocolMismatch),
@@ -191,12 +191,12 @@ test("GameRoom：legacy protocol preflight 先于 v5 mode 必填校验", async (
     }
 
     await assert.rejects(
-        GameRoom.onAuth("", { v: PROTOCOL_VERSION } as never, undefined as never),
+        GameRoom.onAuth("", { v: GAME_ROOM_PROTOCOL_VERSION } as never, undefined as never),
         assertCode(ErrorCode.BadRequest),
     );
     const current = new GameRoom({ seed: 92 });
     assert.throws(
-        () => current.onCreate({ v: PROTOCOL_VERSION } as never),
+        () => current.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION } as never),
         assertCode(ErrorCode.BadRequest),
     );
 });
@@ -669,7 +669,7 @@ test("shell 的人数闸按 mode.roster 分发：满员/自动开局都随声明
     const room = new GameRoom({ seed: 42, fixedStepMs: 50, mode });
     stubSimulation(room);
     installLock(room);
-    room.onCreate({ v: PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
+    room.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
     assert.equal(room.maxClients, 3, "onCreate 必须把 maxClients 赋成 mode.roster.max（撮合侧读的就是它）");
 
     await join(room, client("a", BALL_MOVE_GAME_MODE_ID));
@@ -697,7 +697,7 @@ test("shell 的开局下限按 mode.roster.min：低于它 startMatch 不开局"
     const room = new GameRoom({ seed: 42, fixedStepMs: 50, mode });
     stubSimulation(room);
     installLock(room);
-    room.onCreate({ v: PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
+    room.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
     await join(room, client("a", BALL_MOVE_GAME_MODE_ID));
     await join(room, client("b", BALL_MOVE_GAME_MODE_ID));
     assert.equal(await room.startMatch(), false, "两人未达 min=3，⛔ 不得开局（旧字面量下这里会开）");
@@ -743,7 +743,7 @@ test("满员闸的上限来自 mode.roster.max——这是防御性闸，用预�
     const room = new GameRoom({ seed: 42, fixedStepMs: 50, mode });
     stubSimulation(room);
     installLock(room);
-    room.onCreate({ v: PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
+    room.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
     for (const sessionId of ["seat-a", "seat-b"]) {
         room.state.players.set(sessionId, mode.createPlayer({ sessionId, name: sessionId, randomInt: () => 0 }));
     }
@@ -764,7 +764,7 @@ test("开局边界重验的人数下限同样来自 mode.roster.min", () => {
         const mode: GameMode<GameRoomState> = { ...ballMove, roster: { min, max: 4, autoStart: min } };
         const room = new GameRoom({ seed: 42, fixedStepMs: 50, mode });
         stubSimulation(room);
-        room.onCreate({ v: PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
+        room.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
         for (const sessionId of ["seat-a", "seat-b"]) {
             room.state.players.set(sessionId, mode.createPlayer({ sessionId, name: sessionId, randomInt: () => 0 }));
         }
@@ -951,7 +951,7 @@ test("未登记 mode fail-fast：requireMode 不再回退 ballMove", async () =>
     const created = new GameRoom({ seed: 982 });
     stubSimulation(created);
     assert.throws(
-        () => created.onCreate({ v: PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID }),
+        () => created.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID }),
         (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.BadRequest)),
         "未登记的 ballMove 必须像任何未知 mode 一样被拒绝",
     );

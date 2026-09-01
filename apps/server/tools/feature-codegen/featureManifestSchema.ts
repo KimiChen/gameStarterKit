@@ -36,9 +36,32 @@ export type FeatureManifestMenuItem = {
   readonly launch: FeatureManifestLaunch;
 };
 
+/**
+ * capability fragment（§5.7 阶段 7）：与中央 docs/inventory.json capability 条目同形状的
+ * 结构声明。本生成器只消费 id/category/docs/defaultEntry 渲染能力索引；合并规则的
+ * fail-closed 校验（只能 extra、必含 EXTRAFEATURES、verification 覆盖等）在
+ * scripts/verify-inventory.mjs。
+ */
+export type FeatureCapabilityFragment = {
+  readonly id: string;
+  readonly category: "core" | "extra";
+  readonly defaultEntry: string;
+  readonly sourceOfTruth: string;
+  readonly wireBoundary: string;
+  readonly verification: readonly JsonRecord[];
+  readonly docs: readonly string[];
+  readonly launch?: JsonRecord;
+};
+
 export type FeatureManifest = {
   readonly schemaVersion: 1;
   readonly id: string;
+  /** 能力索引用的结构分类；缺省 extra（core 身份必须显式声明，today 仅 built-in）。 */
+  readonly category: "core" | "extra";
+  /** 能力索引用的权威文档链接（仓库相对路径）；缺省空。 */
+  readonly docs: readonly string[];
+  /** capability fragment 声明（§5.7）；缺省空——built-in 不产 capability fragment。 */
+  readonly capabilities: readonly FeatureCapabilityFragment[];
   readonly resident: boolean;
   readonly dependencies: readonly string[];
   readonly viewDirs: readonly string[];
@@ -160,6 +183,20 @@ export function parseFeatureManifest(repositoryRoot: string, input: unknown, pat
   return {
     schemaVersion: 1,
     id: value.id as string,
+    category: value.category === "core" ? "core" : "extra",
+    docs: Array.isArray(value.docs) ? [...(value.docs as string[])] : [],
+    capabilities: Array.isArray(value.capabilities)
+      ? (value.capabilities as JsonRecord[]).map((fragment) => ({
+        id: fragment.id as string,
+        category: fragment.category === "core" ? "core" as const : "extra" as const,
+        defaultEntry: fragment.defaultEntry as string,
+        sourceOfTruth: fragment.sourceOfTruth as string,
+        wireBoundary: fragment.wireBoundary as string,
+        verification: [...(fragment.verification as JsonRecord[])],
+        docs: [...(fragment.docs as string[])],
+        ...(fragment.launch === undefined ? {} : { launch: fragment.launch as JsonRecord }),
+      }))
+      : [],
     resident: value.resident === true,
     dependencies: Array.isArray(value.dependencies) ? [...(value.dependencies as string[])] : [],
     viewDirs: [...(value.viewDirs as string[])],
