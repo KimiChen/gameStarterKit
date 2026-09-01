@@ -1847,16 +1847,16 @@
       "generatedHash": "5484fe55ff8476946aa84cef63c4a84db74eb21ba0a06cf3295d909e9563ef00"
     },
     {
-      "path": "apps/client/src/view/LoginNoticeView.ts",
-      "pkg": "View_AreaList_LoginNotice",
-      "comp": "LoginNotice",
-      "generatedHash": "add78fc68cdad498de7415411c34a11916da975aa1faf11e6f816e0341eaf3c6"
-    },
-    {
       "path": "apps/client/src/view/LoginView.ts",
       "pkg": "View_AreaList_Login",
       "comp": "Login",
       "generatedHash": "c3bbfd3329096a579fec46eb38c4301e9ef1eae9bd3bb47e82aac7fa2c007848"
+    },
+    {
+      "path": "apps/client/src/view/LoginNoticeView.ts",
+      "pkg": "View_AreaList_LoginNotice",
+      "comp": "LoginNotice",
+      "generatedHash": "add78fc68cdad498de7415411c34a11916da975aa1faf11e6f816e0341eaf3c6"
     }
   ]
 }

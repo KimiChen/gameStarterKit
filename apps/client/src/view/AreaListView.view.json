@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "owner": "builtin",
+  "kind": "fgui",
+  "layer": "popup",
+  "fullscreen": true,
+  "onlyOne": true,
+  "permanent": false,
+  "interactive": true,
+  "package": "View_AreaList_AreaList",
+  "component": "AreaList",
+  "logic": "apps/client/src/logic/page/AreaListLogic.ts",
+  "sharedPkgs": ["ui/Common_Btn", "ui/Common_RGBA", "ui/Dynamic_Login"],
+  "relations": [{ "sidePair": "center-center,middle-middle", "count": 3 }],
+  "listItems": [
+    {
+      "listPath": "jb_tabbar",
+      "defaultItem": "ui://fk4x5zk1lsnn2",
+      "required": [
+        { "name": "txt_title1", "tsType": "GTextField" },
+        { "name": "txt_title2", "tsType": "GTextField" },
+        { "name": "go_open", "tsType": "GGroup" },
+        { "name": "go_close", "tsType": "GGroup" }
+      ],
+      "controllers": ["lib"],
+      "relations": [{ "sidePair": "height-height,center-center" }]
+    },
+    {
+      "listPath": "lst_server",
+      "defaultItem": "ui://fk4x5zk1lsnn1",
+      "required": [
+        { "name": "txt_serverName", "tsType": "GTextField" },
+        { "name": "go_new", "tsType": "GGroup" },
+        { "name": "go_full", "tsType": "GGroup" },
+        { "name": "ld_status", "tsType": "GLoader" },
+        { "name": "txt_openTime", "tsType": "GTextField" }
+      ]
+    },
+    {
+      "listPath": "lst_my",
+      "defaultItem": "ui://fk4x5zk1th7va",
+      "required": [
+        { "name": "txt_uName", "tsType": "GTextField" },
+        { "name": "ld_status", "tsType": "GLoader" },
+        { "name": "txt_serverName", "tsType": "GTextField" },
+        { "name": "txt_openTime", "tsType": "GTextField" }
+      ]
+    }
+  ],
+  "assetUrls": [
+    "ui://Dynamic_Login/login_status_1",
+    "ui://Dynamic_Login/login_status_2",
+    "ui://Dynamic_Login/login_status_9"
+  ],
+  "group": "authenticated",
+  "restore": "discard"
+}

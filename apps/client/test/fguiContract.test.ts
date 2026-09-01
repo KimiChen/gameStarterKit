@@ -9,6 +9,7 @@ import { elementTsType, checkContract } from "../../../tools/fgui-codegen/bindin
 import { findFguiElement, parseFguiComponent, type FguiComponent, type FguiElement } from "../../../tools/fgui-codegen/parseFgui";
 import { FGUI_CONTRACTS } from "../src/view/fguiContracts";
 import type { FguiContract, FguiFieldContract, FguiListItemContract, FguiNestedContract, FguiRelationContract } from "../src/view/fguiContracts";
+import { VIEW_SOURCE_RECORDS } from "../src/generated/views.generated";
 
 // FGUI 组件源在 apps/art/fairygui/assets（FGUI 工程扫描根，只扫直接子目录）；公司标准库 Original 平铺同级。
 const FGUI_ROOT = join(import.meta.dirname, "../../art/fairygui/assets");
@@ -267,7 +268,14 @@ function sourceWithoutComments(source: string): string {
 }
 
 function assertViewCallsDeclared(contract: FguiContract, label: string): void {
-    const viewPath = join(FGUI_ROOT, "..", "..", "..", "client", "src", "view", `${label}View.ts`);
+    // View 源码路径由 generated view manifest 逐条声明（§7.5：不再硬编码
+    // apps/client/src/view/<label>View.ts 目录形状，View 迁目录后此测不静默失效）。
+    const record = VIEW_SOURCE_RECORDS.find(
+        (candidate) => candidate.kind === "fgui"
+            && candidate.pkg === contract.pkg && candidate.comp === contract.comp,
+    );
+    assert.ok(record, `${contract.pkg}/${contract.comp} 未在 generated view manifest 登记`);
+    const viewPath = join(FGUI_ROOT, "..", "..", "..", "..", record.path);
     const source = sourceWithoutComments(readFileSync(viewPath, "utf8"));
     const declared = new Set(requiredFields(contract).map((field) => field.name));
     const childCalls = [...source.matchAll(/\.getChild\s*(?:<\s*([^>]+?)\s*>)?\s*\(\s*["']([^"']+)["']\s*\)/g)];

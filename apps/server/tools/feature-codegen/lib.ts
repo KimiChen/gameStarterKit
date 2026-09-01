@@ -1,7 +1,11 @@
 /**
- * codegen:features 的编排层（Non-intrusive §4.2/§5.5 阶段 3）：发现 Lobby RPC domain
- * descriptor（apps/shared/src/protocol/lobbyRpc/domains/*.ts + coreErrors.ts），语法读取后
- * 渲染 `registry.generated.ts`，freshness（--check 只读）与原子写盘（--write）。
+ * codegen:features 的编排层（Non-intrusive §4.2/§5.5 阶段 3；§7.5 阶段 6 扩展）：
+ *  - 发现 Lobby RPC domain descriptor（apps/shared/src/protocol/lobbyRpc/domains/*.ts +
+ *    coreErrors.ts），语法读取后渲染 `registry.generated.ts`；
+ *  - 发现 features/<dir>/feature.json + `<Name>View.view.json` sidecar + FGUI XML（viewCatalog.ts），
+ *    渲染客户端三产物 `apps/client/src/generated/{fguiContracts,views,features}.generated.ts`
+ *    ——全仓唯一的客户端 View catalog/FGUI contract writer（§3.1 交汇点）。
+ * freshness（--check 只读）与原子写盘（--write）对四件产物同一口径。
  *
  * §5.5 通用约束的落点（形态沿用 gameplay-codegen）：
  *  - 稳定排序（域按 id 排序、域内按声明序）⇒ 相同输入字节级相同输出；
@@ -13,8 +17,9 @@
  *  - 生成文件带「AUTO-GENERATED … Do not edit」抬头与来源。
  *
  * ⚠ 与 gameplay-codegen 相同的职责偏差（docs/Non-intrusive.md §5.5 已登记）：生成器住在
- * @game/server workspace，却直写 apps/shared 的 registry；freshness 由
- * `apps/server/test/feature-codegen.test.ts` 的只读断言守门。
+ * @game/server workspace，却直写 apps/shared 的 registry 与 **apps/client 的 generated 目录**
+ * （apps/client 不是 npm workspace，客户端产物的 freshness 沿 §5.4 口径由
+ * `apps/server/test/feature-codegen.test.ts` 的只读断言守门）。
  * ⚠ registry 落在 protocol/ 内 ⇒ `--write` 后必须 `node scripts/protocol-fingerprint.mjs`
  * 重钉协议指纹（--check ⛔ 不碰指纹，那是显式审计锁）。
  */
@@ -31,6 +36,12 @@ import {
   type RouteDeclaration,
   type TypeRef,
 } from "./astReader";
+import {
+  previousGeneratedFeatureIds,
+  previousGeneratedViewNames,
+  readViewCatalog,
+  renderViewCatalogArtifacts,
+} from "./viewCatalog";
 
 const TOOL_REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 const LOBBY_RPC_DIR_RELATIVE = "apps/shared/src/protocol/lobbyRpc";
@@ -39,6 +50,8 @@ const CORE_ERRORS_RELATIVE = `${LOBBY_RPC_DIR_RELATIVE}/coreErrors.ts`;
 const REGISTRY_RELATIVE = `${LOBBY_RPC_DIR_RELATIVE}/registry.generated.ts`;
 
 const DOMAIN_ID = /^[a-z][A-Za-z0-9]{0,63}$/u;
+/** --allow-delete 同时接受域/feature（camelCase）与 View 名（PascalCase）。 */
+const ALLOW_DELETE_ID = /^[A-Za-z][A-Za-z0-9]{0,63}$/u;
 const ROUTE_METHOD = /^[A-Za-z][A-Za-z0-9]{0,63}$/u;
 const ERROR_CODE = /^[A-Z][A-Z0-9_]{0,63}$/u;
 const OPERATION_GROUP_ID = /^[a-z][A-Za-z0-9]{0,63}$/u;
@@ -576,9 +589,14 @@ function renderRegistry(descriptors: FeatureDescriptors): string {
   return `${lines.join("\n")}\n`;
 }
 
-/** 渲染全部产物（当前只有 registry 一件；保持 Map 形态与 gameplay-codegen 同构）。 */
-export function renderFeatureArtifacts(descriptors: FeatureDescriptors): ReadonlyMap<string, string> {
-  return new Map([[REGISTRY_RELATIVE, renderRegistry(descriptors)]]);
+/** 渲染全部产物（registry + 客户端三件；保持 Map 形态与 gameplay-codegen 同构）。 */
+export function renderFeatureArtifacts(
+  descriptors: FeatureDescriptors,
+  catalog: ReturnType<typeof readViewCatalog>,
+): ReadonlyMap<string, string> {
+  const artifacts = new Map<string, string>([[REGISTRY_RELATIVE, renderRegistry(descriptors)]]);
+  for (const [relative, content] of renderViewCatalogArtifacts(catalog)) artifacts.set(relative, content);
+  return artifacts;
 }
 
 // ── 删除保护 ────────────────────────────────────────────────────────────────
@@ -595,7 +613,8 @@ export function previousRegistryDomains(options: FeatureCodegenOptions = {}): re
 
 // ── freshness 与写盘 ────────────────────────────────────────────────────────
 
-/** 生成器独占所有权面：lobbyRpc/ 下的全部 *.generated.ts；预期之外的即 extra。 */
+/** 生成器独占所有权面：lobbyRpc/ 与 apps/client/src/generated/ 下的全部 *.generated.ts；
+ *  预期之外的即 extra。 */
 function collectOwnedFiles(root: string): readonly string[] {
   const out: string[] = [];
   const walk = (dir: string, base: string): void => {
@@ -607,6 +626,7 @@ function collectOwnedFiles(root: string): readonly string[] {
     }
   };
   walk(path.join(root, LOBBY_RPC_DIR_RELATIVE), root);
+  walk(path.join(root, "apps/client/src/generated"), root);
   return [...new Set(out)].sort();
 }
 
@@ -633,7 +653,8 @@ function diffArtifacts(root: string, expected: ReadonlyMap<string, string>): {
 export function assertFeatureArtifactsFresh(options: FeatureCodegenOptions = {}): void {
   const root = resolvedRoot(options);
   const descriptors = readFeatureDescriptors(options);
-  const { stale, missing, extra } = diffArtifacts(root, renderFeatureArtifacts(descriptors));
+  const catalog = readViewCatalog(root);
+  const { stale, missing, extra } = diffArtifacts(root, renderFeatureArtifacts(descriptors, catalog));
   const problems: string[] = [];
   if (stale.length > 0) problems.push(`stale: ${stale.join(", ")}`);
   if (missing.length > 0) problems.push(`missing: ${missing.join(", ")}`);
@@ -653,28 +674,33 @@ function atomicWrite(file: string, content: string): void {
 }
 
 /**
- * 写盘。registry 已登记而 domains/ 源文件消失的域必须显式 `--allow-delete <域>`；
- * 普通 `--write` 不得静默接受整个域消失。
+ * 写盘。已登记而真源消失的域 / feature / View 必须显式 `--allow-delete <id>`；
+ * 普通 `--write` 不得静默接受整个域、feature 或 View 消失。
  */
 export function writeFeatureArtifacts(options: FeatureCodegenOptions = {}): FeatureWriteResult {
   const root = resolvedRoot(options);
   const allowDelete = new Set(options.allowDelete ?? []);
   const descriptors = readFeatureDescriptors(options);
+  const catalog = readViewCatalog(root);
   const currentIds = new Set(descriptors.domains.map((domain) => domain.domain));
   const removed = previousRegistryDomains(options).filter((id) => !currentIds.has(id));
-  const refused = removed.filter((id) => !allowDelete.has(id));
+  const currentFeatureIds = new Set(catalog.features.map((feature) => feature.id));
+  const removedFeatures = previousGeneratedFeatureIds(root).filter((id) => !currentFeatureIds.has(id));
+  const currentViewNames = new Set(catalog.entries.map((entry) => entry.name));
+  const removedViews = previousGeneratedViewNames(root).filter((name) => !currentViewNames.has(name));
+  const refused = [...removed, ...removedFeatures, ...removedViews].filter((id) => !allowDelete.has(id));
   if (refused.length > 0) {
     fail(
-      DOMAINS_DIR_RELATIVE,
-      `registry 已登记但源文件消失的域：${refused.join(", ")}。`
-      + "删除一个域需要显式 --allow-delete <域>",
+      `${DOMAINS_DIR_RELATIVE} + features/`,
+      `已登记但真源消失的域/feature/View：${refused.join(", ")}。`
+      + "删除需要显式 --allow-delete <id>",
     );
   }
 
-  const expected = renderFeatureArtifacts(descriptors);
+  const expected = renderFeatureArtifacts(descriptors, catalog);
   const orphans = collectOwnedFiles(root).filter((relative) => !expected.has(relative));
   for (const relative of orphans) {
-    fail(relative, `unexpected generated file in the lobbyRpc directory. ${RUN_HINT}`);
+    fail(relative, `unexpected generated file in an owned generated directory. ${RUN_HINT}`);
   }
 
   const changed: string[] = [];
@@ -684,7 +710,10 @@ export function writeFeatureArtifacts(options: FeatureCodegenOptions = {}): Feat
     atomicWrite(file, content);
     changed.push(relative);
   }
-  return { changed, deleted: removed.filter((id) => allowDelete.has(id)) };
+  return {
+    changed,
+    deleted: [...removed, ...removedFeatures, ...removedViews].filter((id) => allowDelete.has(id)),
+  };
 }
 
 // ── CLI 参数 ────────────────────────────────────────────────────────────────
@@ -716,12 +745,12 @@ export function parseCli(argv: readonly string[]): FeatureCliArguments {
       if (!repositoryRoot) throw new Error("--root requires a non-empty directory");
     } else if (arg === "--allow-delete") {
       const value = argv[++index];
-      if (!value || !DOMAIN_ID.test(value)) throw new Error("--allow-delete requires a domain id");
+      if (!value || !ALLOW_DELETE_ID.test(value)) throw new Error("--allow-delete requires a domain/feature/View id");
       if (allowDelete.includes(value)) throw new Error(`duplicate argument: --allow-delete ${value}`);
       allowDelete.push(value);
     } else if (arg.startsWith("--allow-delete=")) {
       const value = arg.slice("--allow-delete=".length);
-      if (!value || !DOMAIN_ID.test(value)) throw new Error("--allow-delete requires a domain id");
+      if (!value || !ALLOW_DELETE_ID.test(value)) throw new Error("--allow-delete requires a domain/feature/View id");
       if (allowDelete.includes(value)) throw new Error(`duplicate argument: --allow-delete ${value}`);
       allowDelete.push(value);
     } else {

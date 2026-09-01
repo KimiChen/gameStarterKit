@@ -1,12 +1,16 @@
 /**
- * 页面注册表守门（docs/CLIENT.md §4/§5）——与服务端 loader 启动校验同哲学，客户端在测试期做：
- *  1. view/*View.ts 文件集合 ⇔ VIEW_REGISTRY 键集合 双向相等（漏登记/漏文件都红）
- *  2. 注册表引用的契约 ⇔ fguiContracts.FGUI_CONTRACTS 双向相等（合流靠测试而非 import 方向——
- *     registry 的 load 闭包会解析 View，现由两套最小引擎桩纳入无头 typecheck）
- *  3. 每个已注册页面的 View 文件 AUTO 区块与 .fui 当前结构同步且未被手改
- *     （regenerateViewSource 恒等断言 = 「忘跑 codegen」与「手改生成区」双向漂移一次兜住）
- *  4. 每个页面的 sharedPkgs ⊇ 其 art 依赖**传递闭包**（fairygui 不自动加载依赖包——少一个
- *     跨包元素就空白不渲染，如 btn_login 图标在 L10n_zh_hans；闭包从 art XML 的 pkg=/ui:// 引用推导）
+ * 页面注册表守门（docs/CLIENT.md §4/§5；Non-intrusive §7.5 阶段 6 manifest 化）——
+ * 与服务端 loader 启动校验同哲学，客户端在测试期做：
+ *  1. generated view manifest 声明的每个 view 目录**递归**发现的 *View.ts ⇔ 登记条目
+ *     双向相等（未登记的 View 文件红；机械件 MACHINERY 豁免）——原「非递归 readdirSync」
+ *     硬编码目录形状已废；
+ *  2. 每条登记的 logic 路径存在（原 `logic/page/<Name>Logic.ts` 硬编码已废，路径由
+ *     manifest 逐条声明）；
+ *  3. 注册表（稳定 façade）与 generated catalog / FGUI_CONTRACTS 单源派生一致；
+ *  4. 每个页面的 sharedPkgs ⊇ art 依赖**传递闭包**（生成器已算过一遍；此处按同一算法
+ *     **独立重算**，防生成器闭包实现静默退化）；
+ *  5. 代码内 ui://Pkg/ 引用 ⊆ 本页包 ∪ sharedPkgs；
+ *  6. AUTO 区块与 .fui 同步且未被手改（fgui 条目；恒等断言 + REQUIRED ⇔ contract 单源）。
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -16,66 +20,78 @@ import { fileURLToPath } from "node:url";
 import { VIEW_LAYERS } from "../src/view/layers";
 import { FGUI_CONTRACTS } from "../src/view/fguiContracts";
 import { VIEW_REGISTRY } from "../src/view/viewRegistry";
+import {
+  GENERATED_VIEW_CATALOG,
+  VIEW_SOURCE_DIRS,
+  VIEW_SOURCE_RECORDS,
+} from "../src/generated/views.generated";
 import { parseFguiComponent } from "../../../tools/fgui-codegen/parseFgui";
 import { regenerateViewSource } from "../../../tools/fgui-codegen/binding";
 
-const VIEW_DIR = fileURLToPath(new URL("../src/view", import.meta.url));
-const ART_DIR = fileURLToPath(new URL("../../art/fairygui/assets", import.meta.url));
-/** view/ 下的机械件（非页面视图），不参与文件⇔注册表比对 */
+const REPO_ROOT = fileURLToPath(new URL("../../..", import.meta.url));
+const ART_DIR = join(REPO_ROOT, "apps/art/fairygui/assets");
+/** view 目录下的机械件（非页面视图），不参与文件⇔manifest 比对 */
 const MACHINERY = new Set(["FguiView.ts"]);
 
-function pageViewFiles(): string[] {
-  return readdirSync(VIEW_DIR)
-    .filter((f) => /^[A-Z].*View\.ts$/.test(f) && !MACHINERY.has(f));
+function viewFilesUnder(dir: string): string[] {
+  const out: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...viewFilesUnder(full));
+    else if (/^[A-Z].*View\.ts$/.test(entry.name) && !MACHINERY.has(entry.name)) out.push(full);
+  }
+  return out;
 }
 
-test("view/*View.ts 文件集合 ⇔ 注册表键集合（含 meta 基本合法性）", () => {
-  const files = pageViewFiles().map((f) => f.replace(/View\.ts$/, "")).sort();
-  const names = Object.keys(VIEW_REGISTRY).sort();
-  assert.deepEqual(files, names,
-    "页面文件与 viewRegistry 必须一一对应（新页面加注册条目；删页面删条目）");
-  const LOGIC_PAGE_DIR = fileURLToPath(new URL("../src/logic/page", import.meta.url));
+test("manifest 目录递归发现的 *View.ts ⇔ generated 登记条目 双向相等", () => {
+  assert.ok(VIEW_SOURCE_DIRS.length >= 1, "manifest 必须声明至少一个 view 目录");
+  const discovered = VIEW_SOURCE_DIRS
+    .flatMap((dir) => viewFilesUnder(join(REPO_ROOT, dir)))
+    .map((full) => full.slice(REPO_ROOT.length).split("\\").join("/"))
+    .sort();
+  const registered = VIEW_SOURCE_RECORDS.map((record) => record.path).slice().sort();
+  assert.deepEqual(discovered, registered,
+    "view 目录里的 *View.ts 与 generated manifest 必须一一对应（新 View 写 sidecar 并重跑 codegen:features；删 View 用 --allow-delete）");
+});
+
+test("manifest 逐条 logic 路径存在 + sidecar 文件存在（View↔Logic 配对，不再硬编码 logic/page）", () => {
+  assert.ok(VIEW_SOURCE_RECORDS.length >= 6, "manifest 条目数异常（扫描空转？）");
+  for (const record of VIEW_SOURCE_RECORDS) {
+    assert.ok(existsSync(join(REPO_ROOT, record.logic)),
+      `${record.name}: manifest 声明的 logic 缺失 ${record.logic}`);
+    assert.ok(existsSync(join(REPO_ROOT, record.sidecar)),
+      `${record.name}: manifest 声明的 sidecar 缺失 ${record.sidecar}`);
+  }
+});
+
+test("稳定 façade 与 generated 单源：VIEW_REGISTRY ⇔ catalog ⇔ manifest fgui 条目 ⇔ FGUI_CONTRACTS", () => {
+  assert.equal(VIEW_REGISTRY, GENERATED_VIEW_CATALOG,
+    "viewRegistry 必须是 generated catalog 的稳定 façade（不许出现第二份手写全集）");
+  const fguiNames = VIEW_SOURCE_RECORDS.filter((record) => record.kind === "fgui")
+    .map((record) => record.name).sort();
+  assert.deepEqual(Object.keys(VIEW_REGISTRY).sort(), fguiNames,
+    "catalog 键必须等于 manifest 的 fgui 条目集合（cocos 条目不进 ViewMgr catalog）");
   for (const [key, meta] of Object.entries(VIEW_REGISTRY)) {
     assert.equal(meta.name, key, `注册键与 meta.name 不一致: ${key}`);
     assert.ok((VIEW_LAYERS as readonly string[]).includes(meta.layer), `${key}: 非法 layer ${meta.layer}`);
     assert.equal(typeof meta.load, "function", `${key}: load 必须是动态 import 闭包`);
-    // 视图/逻辑二分的配对机检（四步动线第 3 步）：每个注册页面必须有同名 Logic
-    assert.ok(existsSync(join(LOGIC_PAGE_DIR, `${key}Logic.ts`)),
-      `${key}: 缺 logic/page/${key}Logic.ts 配对文件（行为层，无头单测）`);
   }
-});
-
-test("注册表契约 ⇔ FGUI_CONTRACTS 双向相等（键 + required 字段级）", () => {
+  // contract 单源：catalog 条目的 contract 与 FGUI_CONTRACTS 是同一批对象（⛔ 第二份全集）
   const keyOf = (c: { pkg: string; comp: string }): string => `${c.pkg}/${c.comp}`;
   const fromRegistry = Object.values(VIEW_REGISTRY).map((m) => keyOf(m.contract)).sort();
   const declared = FGUI_CONTRACTS.map(keyOf).sort();
-  assert.deepEqual(fromRegistry, declared,
-    "每个注册页面的 contract 必须同时列进 FGUI_CONTRACTS（契约测试的遍历入口），反之亦然");
-  // 字段级：两处副本只键级比对会漏 required/手写/嵌套内容漂移（如一边加了元素另一边没加）
-  const byKey = new Map(FGUI_CONTRACTS.map((c) => [keyOf(c), c]));
+  assert.deepEqual(fromRegistry, declared, "catalog 契约与 FGUI_CONTRACTS 必须同集合");
+  const byIdentity = new Set(FGUI_CONTRACTS);
   for (const meta of Object.values(VIEW_REGISTRY)) {
-    const entry = byKey.get(keyOf(meta.contract));
-    assert.deepEqual(
-      {
-        required: [...meta.contract.required],
-        manualRequired: [...(meta.contract.manualRequired ?? [])],
-        nested: [...(meta.contract.nested ?? [])],
-        listItems: [...(meta.contract.listItems ?? [])],
-        controllers: [...(meta.contract.controllers ?? [])],
-        relations: [...(meta.contract.relations ?? [])],
-        assetUrls: [...(meta.contract.assetUrls ?? [])],
-      },
-      {
-        required: [...(entry?.required ?? [])],
-        manualRequired: [...(entry?.manualRequired ?? [])],
-        nested: [...(entry?.nested ?? [])],
-        listItems: [...(entry?.listItems ?? [])],
-        controllers: [...(entry?.controllers ?? [])],
-        relations: [...(entry?.relations ?? [])],
-        assetUrls: [...(entry?.assetUrls ?? [])],
-      },
-      `${keyOf(meta.contract)}: 注册表与 FGUI_CONTRACTS 的结构契约内容不一致`,
-    );
+    assert.ok(byIdentity.has(meta.contract),
+      `${meta.name}: catalog 的 contract 必须与 FGUI_CONTRACTS 是同一对象（单源，非副本）`);
+  }
+  // manifest 的 pkg/comp 与 contract 一致（fgui-manifest.mjs 消费同一份记录）
+  const recordByName = new Map(VIEW_SOURCE_RECORDS.map((record) => [record.name, record]));
+  for (const [key, meta] of Object.entries(VIEW_REGISTRY)) {
+    const record = recordByName.get(key);
+    assert.equal(record?.pkg, meta.contract.pkg, `${key}: manifest pkg 与 contract 不一致`);
+    assert.equal(record?.comp, meta.contract.comp, `${key}: manifest comp 与 contract 不一致`);
   }
 });
 
@@ -128,7 +144,7 @@ function directDeps(pkg: string, id2name: Map<string, string>): Set<string> {
   return names;
 }
 
-test("每个页面 sharedPkgs ⊇ art 依赖传递闭包（缺包=跨包元素空白不渲染）", () => {
+test("generated 条目 sharedPkgs ⊇ art 依赖传递闭包（独立重算，防生成器闭包实现退化）", () => {
   const id2name = buildPkgIdMap();
   const depCache = new Map<string, Set<string>>();
   const deps = (pkg: string): Set<string> =>
@@ -140,37 +156,45 @@ test("每个页面 sharedPkgs ⊇ art 依赖传递闭包（缺包=跨包元素�
     seen.delete(pkg);
     return seen;
   };
-  for (const [key, meta] of Object.entries(VIEW_REGISTRY)) {
+  const name2id = new Map([...id2name.entries()].map(([id, name]) => [name, id]));
+  for (const [key, meta] of Object.entries(GENERATED_VIEW_CATALOG)) {
     const need = closure(meta.contract.pkg);
+    // 生成器把 assetUrls 所属包并入闭包；独立重算保持同一口径。
+    for (const url of meta.contract.assetUrls ?? []) {
+      const assetPkg = url.slice("ui://".length).split("/")[0];
+      if (name2id.has(assetPkg) && assetPkg !== meta.contract.pkg) need.add(assetPkg);
+    }
     const declared = new Set((meta.sharedPkgs ?? []).map((p) => p.replace(/^ui\//, "")));
     const missing = [...need].filter((n) => !declared.has(n)).sort();
     assert.deepEqual(missing, [],
       `${key}: sharedPkgs 缺依赖包 ${JSON.stringify(missing)}（fairygui 不自动加载，运行时这些包的元素会空白）——` +
-      `补进 viewRegistry ${key}.sharedPkgs（形如 "ui/<包名>"）`);
+      `补进 ${key}View.view.json 的 sharedPkgs（形如 "ui/<包名>"）并重跑 codegen:features`);
   }
 });
 
 test("代码内 ui://Pkg/ 引用 ⊆ 本页包 ∪ sharedPkgs（写错包名不报错、运行时图标/元素空白）", () => {
   // art XML 闭包抓不到**代码里手写**的跨包 ui:// URL（icon/GLoader.url 等）——
   // 曾漏检真实 bug：login_status_* 写成页面自己的包名，测试全绿、运行时图标空白。
-  const viewDir = fileURLToPath(new URL("../src/view", import.meta.url));
-  for (const [key, meta] of Object.entries(VIEW_REGISTRY)) {
-    const viewFile = join(viewDir, `${key}View.ts`);
-    const src = readFileSync(viewFile, "utf8");
+  const recordByName = new Map(VIEW_SOURCE_RECORDS.map((record) => [record.name, record]));
+  for (const [key, meta] of Object.entries(GENERATED_VIEW_CATALOG)) {
+    const record = recordByName.get(key)!;
+    const src = readFileSync(join(REPO_ROOT, record.path), "utf8");
     const allowed = new Set([meta.contract.pkg, ...(meta.sharedPkgs ?? []).map((p) => p.replace(/^ui\//, ""))]);
     const bad = new Set<string>();
     for (const m of src.matchAll(/ui:\/\/([^\s"'<>|/]+)\//g)) {
       if (!allowed.has(m[1])) bad.add(m[1]);
     }
     assert.deepEqual([...bad].sort(), [],
-      `${key}View.ts 引用了闭包外的包 ${JSON.stringify([...bad].sort())}——包名写错（资源实际在别的包）` +
-      `或漏在 viewRegistry ${key}.sharedPkgs 声明（fairygui 不自动加载，运行时元素空白）`);
+      `${record.path} 引用了闭包外的包 ${JSON.stringify([...bad].sort())}——包名写错（资源实际在别的包）` +
+      `或漏在 ${key}View.view.json 的 sharedPkgs 声明（fairygui 不自动加载，运行时元素空白）`);
   }
 });
 
-test("已注册页面的 AUTO 区块与 .fui 同步且未被手改（双向漂移机检）", () => {
-  for (const [key, meta] of Object.entries(VIEW_REGISTRY)) {
-    const viewPath = join(VIEW_DIR, `${key}View.ts`);
+test("已登记页面的 AUTO 区块与 .fui 同步且未被手改（双向漂移机检）", () => {
+  const recordByName = new Map(VIEW_SOURCE_RECORDS.map((record) => [record.name, record]));
+  for (const [key, meta] of Object.entries(GENERATED_VIEW_CATALOG)) {
+    const record = recordByName.get(key)!;
+    const viewPath = join(REPO_ROOT, record.path);
     const xmlPath = join(ART_DIR, meta.contract.pkg, `${meta.contract.comp}.xml`);
     const source = readFileSync(viewPath, "utf8");
     const comp = parseFguiComponent(readFileSync(xmlPath, "utf8"));
@@ -178,11 +202,12 @@ test("已注册页面的 AUTO 区块与 .fui 同步且未被手改（双向漂�
       viewClass: `${key}View`, pkg: meta.contract.pkg, comp: meta.contract.comp,
     });
     assert.equal(regen, source,
-      `${key}View.ts 的 AUTO 区块与 .fui 不同步（忘跑 codegen？）或生成区被手改（重跑 codegen 恢复）`);
-    // 第三处副本：View 内嵌 AUTO REQUIRED ⇔ 注册条目 contract.required（字段级）
+      `${record.path} 的 AUTO 区块与 .fui 不同步（忘跑 codegen？）或生成区被手改（重跑 codegen 恢复）`);
+    // View 内嵌 AUTO REQUIRED ⇔ generated contract.required（生成器按同一 binding 规则
+    // 从 XML 计算——此处双向兜住「忘跑 codegen:features」与「忘跑 codegen:fgui」）
     const m = /static readonly REQUIRED = (\[[\s\S]*?\]) as const;/.exec(source);
-    assert.ok(m, `${key}View.ts 缺 static REQUIRED（codegen 产物）`);
+    assert.ok(m, `${record.path} 缺 static REQUIRED（codegen 产物）`);
     assert.deepEqual(JSON.parse(m[1]), [...meta.contract.required],
-      `${key}View.ts 内嵌 REQUIRED 与注册条目 contract.required 不一致`);
+      `${record.path} 内嵌 REQUIRED 与 generated contract.required 不一致`);
   }
 });

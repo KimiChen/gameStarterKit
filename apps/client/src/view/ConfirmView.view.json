@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "owner": "builtin",
+  "kind": "fgui",
+  "layer": "top",
+  "fullscreen": true,
+  "onlyOne": false,
+  "permanent": false,
+  "interactive": true,
+  "package": "View_SharedWidget_Confirm",
+  "component": "Confirm",
+  "logic": "apps/client/src/logic/page/ConfirmLogic.ts",
+  "sharedPkgs": ["ui/Common_Btn", "ui/Common_RGBA"],
+  "relations": [
+    { "sidePair": "center-center" },
+    { "sidePair": "center-center,middle-middle" }
+  ],
+  "manualRequired": [
+    { "name": "title", "tsType": "GTextField" },
+    { "name": "content", "tsType": "GRichTextField" },
+    { "name": "yesBtn", "tsType": "GButton" },
+    { "name": "noBtn", "tsType": "GButton" }
+  ],
+  "group": "system",
+  "restore": "discard"
+}

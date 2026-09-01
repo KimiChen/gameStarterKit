@@ -22,6 +22,7 @@ type FakeListener = { callback: (...args: any[]) => unknown; target?: unknown };
 interface ViewRuntime {
   FguiView: any;
   ViewMgr: any;
+  setViewCatalog: (catalog: Record<string, any> | null) => void;
   VIEW_REGISTRY: Record<string, any>;
   LoginView: any;
   HomeView: any;
@@ -355,7 +356,7 @@ async function loadViewRuntime(): Promise<ViewRuntime> {
     return originalLoad.call(this, request, parent, isMain);
   };
   try {
-    const [{ FguiView }, { ViewMgr }, { VIEW_REGISTRY }, { LoginView }, { HomeView }, { AreaListView }, { LoginNoticeView }, { observePageAction }] = await Promise.all([
+    const [{ FguiView }, { ViewMgr, setViewCatalog }, { VIEW_REGISTRY }, { LoginView }, { HomeView }, { AreaListView }, { LoginNoticeView }, { observePageAction }] = await Promise.all([
       import("../src/view/FguiView"),
       import("../src/view/ViewMgr"),
       import("../src/view/viewRegistry"),
@@ -368,6 +369,7 @@ async function loadViewRuntime(): Promise<ViewRuntime> {
     installedRuntime = {
       FguiView,
       ViewMgr,
+      setViewCatalog,
       VIEW_REGISTRY: VIEW_REGISTRY as Record<string, any>,
       makeComponent: (name = "root") => {
         const component = new FakeGComponent();
@@ -555,6 +557,42 @@ test("ViewMgr teardown closes active uncached views and permits a fresh root", a
     second?.close();
     ViewMgr.disposeViewRoot();
     delete VIEW_REGISTRY[name];
+  }
+});
+
+test("ViewMgr catalog 注入 seam：替身 catalog 不触碰生产 catalog，复位后按名回落 generated", async () => {
+  const { FguiView, ViewMgr, setViewCatalog, VIEW_REGISTRY } = await loadViewRuntime();
+  class StubView extends FguiView {
+    protected bind(): void {}
+  }
+  const name = "__injected_catalog_probe__";
+  const stubCatalog: Record<string, any> = {
+    [name]: {
+      name,
+      contract: { pkg: "TestInjected", comp: "Root", required: [] },
+      layer: "top",
+      fullscreen: false,
+      onlyOne: false,
+      permanent: false,
+      interactive: false,
+      load: async () => StubView,
+    },
+  };
+  let handle: any = null;
+  try {
+    setViewCatalog(stubCatalog);
+    handle = await ViewMgr.open(name);
+    assert.equal(handle.view instanceof StubView, true, "注入 catalog 后 open 必须按替身元数据加载");
+    assert.equal(name in VIEW_REGISTRY, false, "注入是整表替换，⛔ 不得改写生产 catalog");
+    await assert.rejects(ViewMgr.open("Login"), /未注册页面/, "替身 catalog 之外的页面必须 fail-fast");
+    handle.close();
+    setViewCatalog(null);
+    assert.ok(VIEW_REGISTRY["Login"], "复位后默认查询源回到 generated catalog（经 viewRegistry façade）");
+    await assert.rejects(ViewMgr.open(name), /未注册页面/, "复位后替身条目不得残留（无运行时注销语义）");
+  } finally {
+    handle?.close();
+    setViewCatalog(null);
+    ViewMgr.disposeViewRoot();
   }
 });
 

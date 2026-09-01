@@ -1,0 +1,177 @@
+/**
+ * feature.json 的真实 JSON Schema 校验（§5.1/§5.5：additionalProperties:false）。
+ *
+ * 单源是仓库根 `features/feature-schema-v1.json`（随 features/ 真源目录走 --root seam，
+ * fixture 根需自带一份）。解释器只实现该 schema 用到的 draft-07 关键字子集，并在加载期
+ * 对未知关键字 fail-fast——schema 文件演进出解释器认不得的关键字时先炸加载，
+ * ⛔ 不允许静默跳过一条约束（形态沿用 gameplay-codegen/manifestSchema.ts）。
+ */
+import fs from "node:fs";
+import path from "node:path";
+
+type JsonRecord = Record<string, unknown>;
+
+export type FeatureManifestOwner = {
+  readonly id: string;
+  readonly logicDir: string;
+};
+
+export type FeatureManifestRoute = {
+  readonly id: string;
+  readonly view: string;
+};
+
+export type FeatureManifestLaunch = {
+  readonly kind: "gameplay";
+  readonly gameplayId: string;
+};
+
+export type FeatureManifestMenuItem = {
+  readonly entryId: string;
+  readonly slot: number;
+  readonly order: number;
+  readonly label: string;
+  readonly labelKey: string;
+  readonly icon?: string;
+  readonly launch: FeatureManifestLaunch;
+};
+
+export type FeatureManifest = {
+  readonly schemaVersion: 1;
+  readonly id: string;
+  readonly resident: boolean;
+  readonly dependencies: readonly string[];
+  readonly viewDirs: readonly string[];
+  readonly views: readonly string[];
+  readonly owners: readonly FeatureManifestOwner[];
+  readonly routes: readonly FeatureManifestRoute[];
+  readonly menu: readonly FeatureManifestMenuItem[];
+};
+
+function fail(pathLabel: string, message: string): never {
+  throw new Error(`[feature-codegen] ${pathLabel}: ${message}`);
+}
+
+function isRecord(value: unknown): value is JsonRecord {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** 解释器支持的关键字全集；元数据关键字只登记、不参与校验。 */
+const SUPPORTED_KEYWORDS = new Set([
+  "$schema", "title", "type", "const", "pattern", "minimum", "maximum",
+  "required", "properties", "additionalProperties", "items",
+]);
+
+function assertSupportedSchema(schema: unknown, label: string): asserts schema is JsonRecord {
+  if (!isRecord(schema)) fail(label, "schema node must be an object");
+  for (const keyword of Object.keys(schema)) {
+    if (!SUPPORTED_KEYWORDS.has(keyword)) {
+      fail(label, `schema uses unsupported keyword "${keyword}" — extend the interpreter before extending the schema`);
+    }
+  }
+  if (isRecord(schema.properties)) {
+    for (const [key, child] of Object.entries(schema.properties)) assertSupportedSchema(child, `${label}.properties.${key}`);
+  }
+  if (schema.items !== undefined) assertSupportedSchema(schema.items, `${label}.items`);
+}
+
+export function loadFeatureManifestSchema(repositoryRoot: string): JsonRecord {
+  const schemaFile = path.join(repositoryRoot, "features/feature-schema-v1.json");
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(fs.readFileSync(schemaFile, "utf8"));
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    fail("features/feature-schema-v1.json", `cannot read valid JSON: ${detail}`);
+  }
+  assertSupportedSchema(parsed, "features/feature-schema-v1.json");
+  return parsed;
+}
+
+function validateNode(schema: JsonRecord, value: unknown, pathLabel: string): void {
+  if (schema.const !== undefined) {
+    if (value !== schema.const) fail(pathLabel, `must be ${JSON.stringify(schema.const)}`);
+    return;
+  }
+  const type = schema.type;
+  if (type === "object") {
+    if (!isRecord(value)) fail(pathLabel, "must be an object");
+    const properties = isRecord(schema.properties) ? schema.properties : {};
+    if (schema.additionalProperties === false) {
+      const unknown = Object.keys(value).filter((key) => !Object.prototype.hasOwnProperty.call(properties, key));
+      if (unknown.length > 0) fail(pathLabel, `unknown key(s): ${unknown.join(", ")}`);
+    }
+    const required = Array.isArray(schema.required) ? schema.required : [];
+    const missing = required.filter((key) => typeof key === "string"
+      && !Object.prototype.hasOwnProperty.call(value, key));
+    if (missing.length > 0) fail(pathLabel, `missing key(s): ${missing.join(", ")}`);
+    for (const [key, child] of Object.entries(properties)) {
+      if (!Object.prototype.hasOwnProperty.call(value, key)) continue;
+      if (!isRecord(child)) fail(`${pathLabel}.${key}`, "invalid schema node");
+      validateNode(child, value[key], `${pathLabel}.${key}`);
+    }
+    return;
+  }
+  if (type === "string") {
+    if (typeof value !== "string") fail(pathLabel, "must be a string");
+    if (typeof schema.pattern === "string" && !new RegExp(schema.pattern, "u").test(value)) {
+      fail(pathLabel, `does not match pattern ${schema.pattern}`);
+    }
+    return;
+  }
+  if (type === "integer") {
+    if (!Number.isSafeInteger(value)) fail(pathLabel, "must be a safe integer");
+    const numeric = value as number;
+    if (typeof schema.minimum === "number" && numeric < schema.minimum) fail(pathLabel, `must be >= ${schema.minimum}`);
+    if (typeof schema.maximum === "number" && numeric > schema.maximum) fail(pathLabel, `must be <= ${schema.maximum}`);
+    return;
+  }
+  if (type === "boolean") {
+    if (typeof value !== "boolean") fail(pathLabel, "must be a boolean");
+    return;
+  }
+  if (type === "array") {
+    if (!Array.isArray(value)) fail(pathLabel, "must be an array");
+    if (isRecord(schema.items)) {
+      value.forEach((item, index) => validateNode(schema.items as JsonRecord, item, `${pathLabel}[${index}]`));
+    }
+    return;
+  }
+  fail(pathLabel, `schema declares unsupported type: ${String(type)}`);
+}
+
+/** 校验并归一化一份 feature manifest；可选字段给出确定缺省。 */
+export function parseFeatureManifest(repositoryRoot: string, input: unknown, pathLabel: string): FeatureManifest {
+  const schema = loadFeatureManifestSchema(repositoryRoot);
+  validateNode(schema, input, pathLabel);
+  const value = input as JsonRecord;
+  const menu = (value.menu as JsonRecord[]).map((item) => ({
+    entryId: item.entryId as string,
+    slot: item.slot as number,
+    order: item.order as number,
+    label: item.label as string,
+    labelKey: item.labelKey as string,
+    ...(item.icon === undefined ? {} : { icon: item.icon as string }),
+    launch: {
+      kind: "gameplay" as const,
+      gameplayId: (item.launch as JsonRecord).gameplayId as string,
+    },
+  }));
+  return {
+    schemaVersion: 1,
+    id: value.id as string,
+    resident: value.resident === true,
+    dependencies: Array.isArray(value.dependencies) ? [...(value.dependencies as string[])] : [],
+    viewDirs: [...(value.viewDirs as string[])],
+    views: [...(value.views as string[])],
+    owners: (value.owners as JsonRecord[]).map((owner) => ({
+      id: owner.id as string,
+      logicDir: owner.logicDir as string,
+    })),
+    routes: (value.routes as JsonRecord[]).map((route) => ({
+      id: route.id as string,
+      view: route.view as string,
+    })),
+    menu,
+  };
+}

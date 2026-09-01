@@ -8,8 +8,11 @@
  *   npm --workspace @game/server run codegen:features -- --allow-delete <域>  # 显式删除保护
  *
  * 单源：apps/shared/src/protocol/lobbyRpc/{domains/*.ts,coreErrors.ts}（AST 语法读取，⛔ 不执行）
+ *      + features/<dir>/feature.json + apps/client/src 下的 <Name>View.view.json + apps/art/fairygui XML
  * 产物：apps/shared/src/protocol/lobbyRpc/registry.generated.ts
- * ⚠ registry 在 protocol/ 内：--write 后须 `node scripts/protocol-fingerprint.mjs` 重钉指纹。
+ *      + apps/client/src/generated/{fguiContracts,views,features}.generated.ts（唯一 View writer，§7.5）
+ * ⚠ registry 在 protocol/ 内：其字节变化后须 `node scripts/protocol-fingerprint.mjs` 重钉指纹；
+ *   客户端产物变化后须 `npm run sync:client` 刷新 Cocos 镜像。
  */
 import path from "node:path";
 import process from "node:process";
@@ -29,8 +32,11 @@ if (invokedFile === fileURLToPath(import.meta.url)) {
       if (result.changed.length > 0) summary.push(`updated ${result.changed.join(", ")}`);
       if (result.deleted.length > 0) summary.push(`deleted domain(s) ${result.deleted.join(", ")}`);
       console.log(`[feature-codegen] ${summary.length === 0 ? "no changes" : summary.join("; ")}`);
-      if (result.changed.length > 0) {
+      if (result.changed.some((relative) => relative.startsWith("apps/shared/src/protocol/"))) {
         console.log("[feature-codegen] ⚠ protocol/ 字节已变化：运行 node scripts/protocol-fingerprint.mjs 重钉指纹");
+      }
+      if (result.changed.some((relative) => relative.startsWith("apps/client/src/"))) {
+        console.log("[feature-codegen] ⚠ 客户端产物已变化：运行 npm run sync:client 刷新 Cocos 镜像");
       }
     }
   } catch (error) {

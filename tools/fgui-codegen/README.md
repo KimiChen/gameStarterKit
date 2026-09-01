@@ -24,8 +24,15 @@ FairyGUI 方案里“**结构契约无头测**”的核心（见[客户端 codeg
 ```bash
 npm run test:client                         # 跑全部客户端无头行为测试，无需 Creator
 npm run test:fgui                            # 跑 FGUI codegen/registry/结构契约专项测试
-npm run codegen:fgui -- <Pkg> <Comp>       # 生成/幂等重写 view/<Comp>View.ts（[ViewClass] 可选第三参）
+npm run codegen:fgui -- <Pkg> <Comp>       # 生成/幂等重写 view/<Comp>View.ts（[ViewClass] 可选第三参；--view-dir 可换输出目录）
 ```
+
+本工具只写 View AUTO 区（Non-intrusive §7.5）：契约/注册表是 `codegen:features` 的生成物
+（`apps/client/src/generated/{fguiContracts,views}.generated.ts`，真源为 View 同目录的
+`<Name>View.view.json` sidecar + `features/<id>/feature.json`），⛔ 不再要求手改
+`fguiContracts.ts` / `viewRegistry.ts`（两者是稳定 façade）。AUTO 重写后可运行
+`npm --workspace @game/server run codegen:features -- --check` 校验生成物新鲜度；本工具
+不覆盖 registry/contracts，也不自动执行 FGUI manifest `--write`（那是显式资源审计锁）。
 
 契约把关是**双向机检**（`apps/client/test/viewRegistry.test.ts`）：View 文件的 AUTO 区块对组件 XML 现状做
 `regenerateViewSource` 恒等断言——「忘跑 codegen」与「手改生成区」同一条断言抓住。

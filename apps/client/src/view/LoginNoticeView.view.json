@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "owner": "builtin",
+  "kind": "fgui",
+  "layer": "popup",
+  "fullscreen": true,
+  "onlyOne": true,
+  "permanent": false,
+  "interactive": true,
+  "package": "View_AreaList_LoginNotice",
+  "component": "LoginNotice",
+  "logic": "apps/client/src/logic/page/LoginNoticeLogic.ts",
+  "sharedPkgs": ["ui/Common_Btn", "ui/Common_RGBA", "ui/Common_ComboBox", "ui/L10n_zh_hans"],
+  "relations": [{ "sidePair": "center-center,middle-middle", "count": 3 }],
+  "nested": [
+    {
+      "path": "jb_tabbar",
+      "source": "ui://22ylet4nph1yh",
+      "required": [{ "name": "lst_jb", "tsType": "GList" }]
+    }
+  ],
+  "listItems": [
+    {
+      "listPath": "jb_tabbar.lst_jb",
+      "defaultItem": "ui://22ylet4nph1yi",
+      "required": [
+        { "name": "txt_off", "tsType": "GTextField" },
+        { "name": "txt_on", "tsType": "GTextField" },
+        { "name": "img_on", "tsType": "GImage" },
+        { "name": "img_off", "tsType": "GImage" }
+      ]
+    }
+  ],
+  "group": "authenticated",
+  "restore": "discard"
+}

@@ -48,6 +48,18 @@ interface PendingOpen {
   readonly cacheable: boolean;
 }
 
+/**
+ * 只读 View catalog（§7.5：ViewMgr 从注入 catalog 查询 ViewMeta，不再自读手写全集）。
+ * 默认注入 generated catalog（经 viewRegistry 稳定 façade）；测试可注入替身。
+ * ⛔ 不引入运行时注销/热卸载语义——注入是整表替换，不修改生产 catalog。
+ */
+let activeCatalog: Readonly<Record<string, ViewMeta>> = VIEW_REGISTRY;
+
+/** 测试 seam：注入替身 catalog；传 null 复位为默认 generated catalog。 */
+export function setViewCatalog(catalog: Readonly<Record<string, ViewMeta>> | null): void {
+  activeCatalog = catalog ?? VIEW_REGISTRY;
+}
+
 const layerRoots = new Map<ViewLayer, GComponent>();
 const cache = new Map<string, Entry>();                 // onlyOne/permanent 单例缓存
 const pending = new Map<string, PendingOpen>();          // onlyOne/permanent 在途去重
@@ -326,8 +338,8 @@ function ensurePendingActive(rec: PendingOpen): void {
 }
 
 async function open(name: string, setup?: ViewSetup): Promise<ViewHandle> {
-  const meta = VIEW_REGISTRY[name];
-  if (!meta) { throw new Error(`[ViewMgr] 未注册页面: ${name}（view/viewRegistry.ts 加一条）`); }
+  const meta = activeCatalog[name];
+  if (!meta) { throw new Error(`[ViewMgr] 未注册页面: ${name}（写 <Name>View.view.json 并登记进 features/<id>/feature.json 后重跑 codegen:features）`); }
 
   ensureLayers(); // 先做失效检测：场景重载后 cache 里是死视图，不能走复用分支
   const entry = cache.get(name);

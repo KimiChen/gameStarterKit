@@ -2,19 +2,25 @@
 
 依赖 cc / fairygui-cc，只做「取组件 + 搬数据」，不写业务行为（行为归 `logic/`）。
 
-## 新页面接入动线
+## 新页面接入动线（阶段 6：注册表/契约生成化）
 
 1. 在 FairyGUI 编辑器修改 `apps/art/fairygui`，把 `.bin` 与图集导出到
    `apps/Cocos/assets/resources/ui`，再打开 Creator 生成或复用 `.meta`。
-2. 运行 `npm run codegen:fgui -- <Pkg> <Comp>` 生成/更新 `XxxView.ts` 的四个 AUTO 区块，并把契约
-   条目加入 `fguiContracts.FGUI_CONTRACTS`。
-3. 在 `logic/page/XxxLogic.ts` 写行为与无头测试，以同名前缀配对。
-4. 在 `viewRegistry.ts` 添加 `defineView`（layer/fullscreen/onlyOne/permanent/interactive/load/sharedPkgs）。
-5. 在 `view/pages.ts` 增加 `openXxx` 组合根：打开页面、构造 Logic、注入 net 依赖与导航回调
-   （Main 与业务层只调这里，不直接调 `ViewMgr`）。
-6. 新 View 会由 `apps/client/tsconfig.test.json` 的 `src/**/*.ts` glob 自动纳入 Node strict 探针；若
+2. 运行 `npm run codegen:fgui -- <Pkg> <Comp>` 生成/更新 `XxxView.ts` 的四个 AUTO 区块
+   （只写 AUTO 区，⛔ 不再手改 `fguiContracts.ts` / `viewRegistry.ts`——两者已是
+   generated 产物的稳定 façade）。
+3. 同目录写 `XxxView.view.json` sidecar（owner/kind/layer/fullscreen/onlyOne/permanent/
+   interactive/logic/sharedPkgs + 手写契约段 manualRequired/nested/listItems/controllers/
+   relations/assetUrls），并把 sidecar 路径登记进 `features/<id>/feature.json` 的 `views`
+   （需要路由时同步登记 `routes`，group/restore 写在 sidecar）。
+4. 在 sidecar.logic 指向的 `logic/.../XxxLogic.ts` 写行为与无头测试。
+5. 运行 `npm --workspace @game/server run codegen:features` 刷新
+   `src/generated/{fguiContracts,views,features}.generated.ts`（只读校验 `-- --check`）。
+6. 页面打开经 feature route/NavigationService；登录/公告等旧页面的组合根在
+   `app/loginFlow.ts`（`view/pages.ts` 是零状态转发 façade，最终新增 feature ⛔ 不再加 openXxx）。
+7. 新 View 会由 `apps/client/tsconfig.test.json` 的 `src/**/*.ts` glob 自动纳入 Node strict 探针；若
    使用新的引擎 API，先补齐 `client-test-stubs.d.ts`，再由 Creator 工程验证真实类型和资源。
-7. 运行 `npm run sync:client`，再运行 `npm run typecheck:client`、`npm run typecheck:client:legacy`、`npm run test:client`、
+8. 运行 `npm run sync:client`，再运行 `npm run typecheck:client`、`npm run typecheck:client:legacy`、`npm run test:client`、
    `npm run test:fgui`、`npm run verify:sync` 并在 Creator 本地预览。
 
 打开 = `ViewMgr.open("Xxx")`（只接受页面名，返回句柄；数据与回调在 `pages.ts` 经 `view.setup(...)` 注入）；
@@ -27,8 +33,9 @@ ensurePackages/挂载/分层/单例/常驻/交互输入全部由注册表元数�
 `FguiView.configurePackageLoading({ deadlineMs })` 调整；`ViewMgr` 贯通 open 的 `AbortSignal`，关闭或
 场景/root 世代切换会取消当前等待。FairyGUI 无法取消底层请求，迟到回调会被观察；成功共享包保持常驻，
 页面关闭只释放组件树。
-`test/viewRegistry.test.ts` 会检查 View/registry/Logic/契约集合、AUTO 区块、包依赖闭包和
-`XxxView.ts` 内的 `ui://<Pkg>` 字面量（`areaPresentation.ts` 等其他 view/ 文件不在扫描内）；
+`test/viewRegistry.test.ts` 遍历 generated view manifest 检查「manifest 目录递归发现的
+*View.ts ⇔ 登记条目」、逐条 logic 路径、AUTO 区块、包依赖闭包（独立重算）和
+`XxxView.ts` 内的 `ui://<Pkg>` 字面量（`areaPresentation.ts` 等非 View 文件不在扫描内）；
 它不会检查设计源是否已重新导出为 `.bin`、relation 或列表 item 配置。
 
 > ⚠ **调用方约束**：ViewMgr 静态依赖 fairygui——`ViewMgr.open` 只允许在 view/ 内部
