@@ -272,6 +272,74 @@ test("launch 统一启动通道经 FeatureHost 闸：failed 不启动、userInte
   runtime.dispose();
 });
 
+test("launch 闸 await 窗口的活性复验：换代/dispose 后迟到的 install 完成不得启动玩法", async () => {
+  // 缺口（47dc934 引入的回归）：launch 的 FeatureHost 闸是 await——install 挂起期间
+  // 会话可能换代（returnToLogin 后重新登录）、app 可能 dispose。若无复验，迟到的
+  // install 完成会带着旧意图进 launchGameplay（closeGroup("authenticated") 关掉换代后
+  // 重开的 Login / 在新会话下启动玩法）。观察面取 started 计数：launchGameplay 被
+  // override，变异（删复验/删入口 disposed）后 started 必不为 0。
+  const { appRuntime, session, makeNode } = await loadAppHost();
+  const makeRuntime = () => {
+    let resolveGate: () => void = () => {};
+    const gate = new Promise<void>((resolve) => { resolveGate = resolve; });
+    let installs = 0;
+    const hostedFeatures = [
+      { id: "builtin", resident: true },
+      {
+        id: "fx",
+        load: async () => {
+          await gate;
+          return { install: () => { installs++; } };
+        },
+      },
+    ];
+    const runtime = new appRuntime.AppRuntime({
+      node: makeNode(),
+      hostedFeatures,
+      launchFeatureMap: new Map([["ballMove", "builtin"], ["fxGame", "fx"]]),
+    }) as unknown as Record<string, any>;
+    let started = 0;
+    runtime.launchGameplay = async () => { started++; };
+    return {
+      runtime,
+      resolveGate: () => resolveGate(),
+      installs: () => installs,
+      started: () => started,
+    };
+  };
+
+  // ① 挂起 install 期间会话换代：resolve 后 install 虽完成（active），玩法不得启动。
+  const first = makeRuntime();
+  try {
+    const pending = first.runtime.launch({ kind: "gameplay", gameplayId: "fxGame" });
+    session.setSession({ userId: "uid-relaunch", accessToken: "token-relaunch", isNewAccount: false });
+    first.resolveGate();
+    await pending;
+    assert.equal(first.installs(), 1, "install 本身照常完成（复验只拦启动，不拦装载结算）");
+    assert.equal(first.runtime.features.statusOf("fx"), "active");
+    assert.equal(first.started(), 0, "换代后迟到的 install 完成不得启动玩法");
+  } finally {
+    session.clearSession();
+    first.runtime.dispose();
+  }
+
+  // ② dispose() 后 launch：入口即拒——不触发装载，也不启动。
+  // gate 先放行：变异（删入口 disposed）时装载会跑完并以 installs=1 干净转红，不挂死。
+  const second = makeRuntime();
+  second.resolveGate();
+  second.runtime.dispose();
+  await second.runtime.launch({ kind: "gameplay", gameplayId: "fxGame" });
+  assert.equal(second.installs(), 0, "dispose 后 launch 不得触发 feature 装载");
+  assert.equal(second.started(), 0, "dispose 后 launch 不得启动玩法");
+
+  // ③ 闸 await 期间 dispose（常驻 feature：闸恒 active，窗口只有一个微任务跳）。
+  const third = makeRuntime();
+  const inFlight = third.runtime.launch({ kind: "gameplay", gameplayId: "ballMove" });
+  third.runtime.dispose();
+  await inFlight;
+  assert.equal(third.started(), 0, "闸 await 期间 dispose 后不得启动玩法");
+});
+
 test("launch 统一启动通道：disabled(app-generation) 的 feature 同样不得启动玩法", async () => {
   const { appRuntime, makeNode } = await loadAppHost();
   const hostedFeatures = [
