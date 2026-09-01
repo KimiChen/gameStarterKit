@@ -942,7 +942,9 @@ test("page navigation boundary observes rejected async actions without unhandled
     await new Promise((resolve) => setTimeout(resolve, 0));
     await new Promise((resolve) => setTimeout(resolve, 0));
     assert.deepEqual(unhandled, [], "页面导航 rejection 必须被观察");
-    const pagesSource = readFileSync(new URL("../src/view/pages.ts", import.meta.url), "utf8");
+    // 阶段 5b：页面组合根状态机迁至 app/loginFlow.ts（view/pages.ts 为零状态转发
+    // façade），导航调用点源文本 pin 跟随迁移。
+    const pagesSource = readFileSync(new URL("../src/app/loginFlow.ts", import.meta.url), "utf8");
     assert.match(
       pagesSource,
       /view\.onNotice\s*=\s*\(\)\s*=>\s*\{\s*observePageAction\(\(\)\s*=>\s*openNotice\(\),\s*"openNotice"\);\s*\}/,
@@ -1420,7 +1422,9 @@ test("pages Lobby 最终断线：复用 session 对账 GetInfo 并刷新 Home，
     const loginPostsBefore = harness.requests.filter((request) => request.method === "POST").length;
 
     harness.session.notifyConnLost();
-    await waitForPageFlow(() => harness.rpcCalls === 2 && harness.homeAttempts === 2,
+    // Home 恢复经 NavigationService.restoreAuthenticatedBase（多几跳微任务），以
+    // setup 完成为恢复完成的判据（断言意图不变：GetInfo 对账 + Home 消费新快照）。
+    await waitForPageFlow(() => harness.rpcCalls === 2 && harness.homeSetups.length === 2,
       "最终断线后必须完成 Lobby rejoin、GetInfo 和 Home 恢复");
 
     assert.equal(harness.reconcileJoinCalls, 1);
