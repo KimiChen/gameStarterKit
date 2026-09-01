@@ -36,7 +36,7 @@ verify:sync 镜像一致、inventory 全绿）；`test:int` 169/169（本地真 
 | A1 | FGUI 不变量 E：sprite rect ⊆ 图集图片真实尺寸（PNG IHDR / JPEG SOF 直读） | 不变量 A–D 已实现（`216087f`）；E 未做：`rotated` 会让 rect 的 w/h 与图集坐标轴互换，第一版未处理产生 6 个假阳，值得单独一轮 | plan-v4「仍然开放的部分」条目 5 |
 | A2 | `tools/excel-to-json.mjs` 的 `--check` 不是往返自检 | writer 与 checker 共用同一个内存 `data`，`buildItems()` 的静默丢行对两侧同时生效；低成本补法：在 `run()` 里对行数/键集做独立断言 | 同上 |
 
-## B. 编辑器 / 真机待办（⛔ 无头环境无法替代）
+## B. 编辑器 / Creator 待办（⛔ 无头环境无法替代）
 
 | # | 待办 | 现状 | 出处 |
 |---|---|---|---|
@@ -53,6 +53,7 @@ verify:sync 镜像一致、inventory 全绿）；`test:int` 169/169（本地真 
 |---|---|---|
 | C1 | snakeoff（竖版贪吃蛇）玩法实现 | 已拍板（2026-08-31）：snakeoff 优先替代 ballMove 入口；房型方向已从邀请码私房改为 **drop-in 自由加入**，框架能力已就绪（`91230dd`：StartPolicy 第三变体，真栈四场景验收）。接入只需：manifest 写 `maxPlayers: 8`、`profiles: ["dropIn"]`、roster `{min:1,max:8,autoStart:1}`，其余全是玩法自己的文件 |
 | C2 | undergroundIdle 玩法实现 | wsrpc 迁移入口路线次之（同一拍板）；美术生产流程与规格文档在 `docs/undergroundIdle/`（在途） |
+| C3 | 两玩法的**真机联调** | 承接 plan-v4「遗留待办」表的 `真机 / 阶段 10` 行。原表已定性为「既定范围外，随玩法实现另立计划」，故归入 C 而非 B——⛔ 但必须被点名：B 类全是编辑器/Creator 项，不点名它就会随抽离一起消失 |
 
 ## D. 有意保留 / 永久边界（登记备查，⛔ 不是待办）
 
