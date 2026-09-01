@@ -390,7 +390,10 @@ export class AppRuntime {
     async launch(target: FeatureLaunchTarget): Promise<void> {
         if (this.disposed) return;
         const featureId = this.launchFeatureIds.get(target.gameplayId) ?? null;
-        if (featureId !== null) {
+        // 映射指向未托管 feature 时不误伤、直通——与渲染侧 featureAvailability 对未登记
+        // id 返回 "available" 的防御裁定一致（⛔ 不用 try/catch 吞异常：真实 install
+        // 错误不得被掩蔽为直通）。
+        if (featureId !== null && this.featureHost.hosts(featureId)) {
             // ⚠ 闸是 await：install 期间会话可能换代（clearSession/setSession）、app 可能
             // dispose。迟到的 install 完成不得 closeGroup("authenticated")（会关掉换代后
             // 重开的 Login），也不得在新会话下启动玩法——await 后复验，不一致直接

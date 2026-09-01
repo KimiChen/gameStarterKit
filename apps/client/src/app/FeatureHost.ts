@@ -113,6 +113,11 @@ export class FeatureHost {
         return this.slot(id).status;
     }
 
+    /** 是否托管该 feature（只查 slot 存在，⛔ 不 throw）：未托管 id 的防御裁定入口。 */
+    hosts(id: string): boolean {
+        return this.slots.has(id);
+    }
+
     lastErrorOf(id: string): unknown {
         return this.slot(id).error;
     }
