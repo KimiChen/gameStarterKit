@@ -20,6 +20,11 @@
   表述（OVERVIEW/EXTRAFEATURES/Non-intrusive 抬头/todo-godogen）。
 - 归档机检 `checkArchiveNotClaimedAsTruth` 的清单取自 `referenceDocs`：plan-v4.md 移入后
   自动开始被守，无需改判据代码（该设计在 v3→v4 迁移时落地，本轮首次复用）。
+  ⚠ **但它只挡住了它扫得到的那部分**：该闸原本只扫 inventory 登记的文档，于是未登记的
+  `docs/snakeoff/` 仍有 5 处指向 plan-v4（README 3 处 + 05/06 各 1 处），**与 v3→v4 那轮
+  漏的是同一批文件**——上一轮还专门把这条限制写进计划说「那几处是人工改的」，第二次照样没记住。
+  已在 `a69a43f` 把扫描面改为全仓 Markdown（并加词边界，否则 `live-plan.md` 会被
+  `plan.md` 的子串匹配误红），漏网文档在 `02b2863` 补齐。⛔ 不要再把扫描面缩回登记表。
 
 ## 当前验证基线（建档时实测）
 
