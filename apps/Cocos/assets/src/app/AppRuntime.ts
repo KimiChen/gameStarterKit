@@ -388,9 +388,16 @@ export class AppRuntime {
      * feature 恒 active，零开销直通）。
      */
     async launch(target: FeatureLaunchTarget): Promise<void> {
+        if (this.disposed) return;
         const featureId = this.launchFeatureIds.get(target.gameplayId) ?? null;
         if (featureId !== null) {
+            // ⚠ 闸是 await：install 期间会话可能换代（clearSession/setSession）、app 可能
+            // dispose。迟到的 install 完成不得 closeGroup("authenticated")（会关掉换代后
+            // 重开的 Login），也不得在新会话下启动玩法——await 后复验，不一致直接
+            // return（换代/dispose 是正常竞态，⛔ 不进 launchGameplay、不打错误）。
+            const sessionGeneration = getSessionGeneration();
             const status = await this.featureHost.launch(featureId, { userIntent: true });
+            if (this.disposed || getSessionGeneration() !== sessionGeneration) return;
             if (status !== "active") {
                 console.error(`[AppRuntime] feature ${featureId} 不可用（${status}），取消启动玩法 ${target.gameplayId}`);
                 return;
