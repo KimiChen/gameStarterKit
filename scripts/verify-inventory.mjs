@@ -616,19 +616,39 @@ else {
  * 下一轮迁移时把新归档移进 referenceDocs，这道闸自动开始守它，不需要改这段代码。
  * 判的也不是自称，而是「已登记文档 → 归档」的指向，正是实际发生过两次的那个形态。
  */
-function checkArchiveNotClaimedAsTruth(registeredDocs, archives) {
-  // 「为准 / 唯一真相 / 当前实施状态」出现在同一行的归档链接旁边即视为把归档当成了当前真相。
+/** 仓内全部 Markdown（跳过依赖与生成物目录）。 */
+function allMarkdownDocs() {
+  const skip = new Set(["node_modules", ".git", "library", "temp", "build", "dist"]);
+  const out = [];
+  const walk = (relative) => {
+    let children;
+    try { children = fs.readdirSync(repoPath(relative || "."), { withFileTypes: true }); } catch { return; }
+    for (const child of children) {
+      if (skip.has(child.name)) continue;
+      const next = relative ? `${relative}/${child.name}` : child.name;
+      if (child.isDirectory()) { walk(next); continue; }
+      if (child.isFile() && child.name.endsWith(".md")) out.push(next);
+    }
+  };
+  walk("");
+  return out;
+}
+
+function checkArchiveNotClaimedAsTruth(docs, archives) {
+  // 「为准 / 唯一真相 / 回写状态」等出现在同一行的归档链接旁边，即视为把归档当成了当前真相。
   // ⛔ 刻意不匹配「历史归档 / 上一轮 / 归档补注 / 原始记录」这类已经写明身份的表述。
-  const CLAIM = /为准|唯一真相|当前实施状态|核心优先级/u;
+  const CLAIM = /为准|唯一真相|当前实施状态|核心优先级|回写状态|更新真实实施证据/u;
   const EXEMPT = /历史归档|上一轮|归档补注|原始记录|已降级/u;
-  for (const doc of registeredDocs) {
+  for (const doc of docs) {
     if (!exists(doc) || archives.includes(doc)) continue;
     const lines = fs.readFileSync(repoPath(doc), "utf8").split("\n");
     for (const [index, line] of lines.entries()) {
       if (!CLAIM.test(line) || EXEMPT.test(line)) continue;
       for (const archive of archives) {
         const base = archive.split("/").pop();
-        if (!line.includes(base)) continue;
+        // ⚠ 必须带词边界：`docs/undergroundIdle/…/10-image-to-fairygui-live-plan.md` 里的
+        // `live-plan.md` 会被 `includes("plan.md")` 命中，产生假红。
+        if (!new RegExp(`(?<![\\w-])${base.replace(/\./gu, "\\.")}`, "u").test(line)) continue;
         fail(
           `${doc}:${index + 1} 把历史归档 ${archive} 说成当前真相；当前计划是 ${corePlan}` +
           `（若确为历史引用，请写明「历史归档」等身份）`,
@@ -663,11 +683,12 @@ if (!Array.isArray(inventory.referenceDocs)) {
     else checkMarkdownLinks(doc);
   }
   const archives = inventory.referenceDocs.filter((doc) => /^plan(-v\d+)?\.md$/u.test(doc));
-  const registeredDocs = new Set([corePlan, extra, "README.md", ...inventory.referenceDocs]);
-  for (const capability of inventory.capabilities ?? []) {
-    for (const doc of capability.docs ?? []) registeredDocs.add(doc);
-  }
-  checkArchiveNotClaimedAsTruth([...registeredDocs], archives);
+  // ⚠ 扫**全仓 Markdown**，不再只扫已登记文档。
+  // 这条闸原本只覆盖 inventory 里登记的 17 份，于是 `docs/snakeoff/` 这类未登记文档
+  // 在 plan-v3→v4 与 plan-v4→v5 **两次迁移里各漏了一次**（同样的文件、同样的原因），
+  // 第一次还专门写进计划说「那几处是人工改的」——靠人记住第二次照样没记住。
+  // 覆盖面本身才是问题。⛔ 不要为了跑得快把它缩回登记表。
+  checkArchiveNotClaimedAsTruth(allMarkdownDocs(), archives);
 }
 
 // Keep the two assistant entry documents semantically identical while allowing
