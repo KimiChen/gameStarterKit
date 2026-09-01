@@ -15,7 +15,7 @@ import { newInviteCode } from "../src/core/rooms/invite/InviteCodeReservation";
 const SAMPLES = 400;
 
 test("邀请码：恒为六位数字（000001 是合法码，padStart 不可删）", () => {
-  let sawShort = false; // 观测用：未变异时也应覆盖到 <100000 的抽样（期望 ~40% 至少一次）
+  let sawShort = false; // 观测用：未变异时也应覆盖到 <100000 的抽样（每次 10%，期望 ~40 次；至少一次 ≈ 必然，漏采概率 ~10^-18）
   for (let i = 0; i < SAMPLES; i++) {
     const code = newInviteCode();
     assert.equal(code.length, 6, `码长度必须为 6，得到 ${JSON.stringify(code)}`);
