@@ -97,11 +97,11 @@ apps/Cocos/
 页面行为通过依赖注入连接 HTTP/RPC/View port，因此可在 Node 环境无头测试。
 
 玩法通过 `logic/gameplay/GameplayRegistry` 登记 factory 与该玩法自己的 room joiner，
-`RoomController.startRegistered` 取得同一 registration 的快照后接管精确 room capability。组合点自
-阶段 9 起生成化：每个玩法一个 `gameplay/modes/<id>/index.ts` 模块（导出
+`RoomController.startRegistered` 取得同一 registration 的快照后接管精确 room capability。组合点采用生成式
+catalog：每个玩法一个 `gameplay/modes/<id>/index.ts` 模块（导出
 `createGameplayModule(services)`：validateLaunch + joiner + createPlugin，services 是
 `gameplay/services.ts` 的稳定注入面），由生成的 `gameplay/catalog.generated.ts`
-（`registerGeneratedGameplays`）静态聚合登记，`gameplay/catalog.ts` 只是废弃零状态 façade。
+（`registerGeneratedGameplays`）静态聚合登记；`gameplay/catalog.ts` 只提供零状态转发，不参与 registration。
 `ballMove` 带 Cocos presentation（字面量动态 import，输入经 generation-fenced
 `GameplayInstanceHost` 回流），`idle` 是无 presentation、但拥有独立 state 与 pulse 输入的最小真实
 玩法。每个模块注入自己的 raw state exact validator、允许发送的消息集合和可选 reconnect
@@ -121,7 +121,7 @@ reconcile；新增玩法只新增 `modes/<id>/` 模块文件与自己的 logic/r
 
 ## 4. 页面定义与生命周期
 
-页面由三部分组成（阶段 6 起注册表/契约生成化）：
+页面由三部分组成：
 
 1. `view/XxxView.ts`：结构绑定（codegen 维护四个 AUTO 区块）与手写接线。
 2. 同目录 `XxxView.view.json` sidecar：owner/layer/实例策略/logic 指向与手写契约段
@@ -129,11 +129,11 @@ reconcile；新增玩法只新增 `modes/<id>/` 模块文件与自己的 logic/r
 3. `features/<id>/feature.json`：把 sidecar、路由（group/restore 在 sidecar）与 Home 入口
    contribution 登记进 feature；`npm --workspace @game/server run codegen:features` 据此生成
    `src/generated/{views,fguiContracts,features}.generated.ts`。`view/viewRegistry.ts` 与
-   `view/fguiContracts.ts` 只是生成值的稳定 façade，⛔ 不再手改。
+   `view/fguiContracts.ts` 只是生成值的稳定 façade，⛔ 禁止手改。
 
 页面打开经 feature route / `app/NavigationService`；登录/选区/公告等既有页面的组合根在
-`app/loginFlow.ts`（`view/pages.ts` 是零状态转发 façade，保住旧动态 import 面；最终新增
-feature ⛔ 不再向它添加 `openXxx`）。回登录 transition 的固定次序与文案映射由
+`app/loginFlow.ts`（`view/pages.ts` 是零状态转发 façade；新增 feature ⛔ 只通过 feature route，禁止向它添加
+`openXxx`）。回登录 transition 的固定次序与文案映射由
 `app/SessionCoordinator` 拥有。
 
 打开页面：
@@ -301,7 +301,7 @@ slot 并把在途 RPC 判 CONN_LOST。当前 generation 的
 onReconnect 只恢复发送能力，room、ownership 与 push listener 继续存活。只有最终 onLeave 才进入下述
 session/profile 对账。
 `net/session.ts` 是登录态与 authInvalid/connLost/battleLost 三类 transport 事件的稳定 façade——
-状态与派生逻辑自阶段 5a 起收敛在 `app/SessionCoordinator`（低层 connection/battle 事件经
+状态与派生逻辑由 `app/SessionCoordinator` 统一拥有（低层 connection/battle 事件经
 `app/LifecycleBus` 转发，battle transport 事件由 RoomClient 发布、SessionCoordinator 派生
 battleLost）；authInvalid 在未登录时幂等吞掉迟到上报。Lobby 最终 `onLeave` 后，页面组合根先复用当前内存 token，以显式 ownership
 重进所选区 Lobby，再拉 `user.getInfo`；只有完整 identity 仍匹配的结果才能原子替换角色快照并恢复 Home。
@@ -380,18 +380,20 @@ Creator 编辑器预览用于补充验证引擎绑定、资源导入和页面交
 ## 9. 新页面开发清单
 
 1. 在 FairyGUI 编辑器中修改并导出组件。
-2. 运行 `codegen:fgui`（生成/更新 View 四个 AUTO 区块；⛔ 不再手改 `fguiContracts.ts` /
+2. 运行 `codegen:fgui`（生成/更新 View 四个 AUTO 区块；⛔ 禁止手改 `fguiContracts.ts` /
    `viewRegistry.ts`——两者是生成值的稳定 façade）。
 3. 在 View 手写区接入必要事件。
 4. 同目录写 `<Name>View.view.json` sidecar（实例策略、logic 指向与手写契约段）。
 5. 在 Logic 中实现行为并注入依赖。
 6. 把 sidecar、路由与 Home 入口登记进 `features/<id>/feature.json`，运行
    `npm --workspace @game/server run codegen:features` 刷新生成注册表（共享包依赖写在 sidecar）。
-7. 页面打开经 feature route / NavigationService；登录链旧页面的组合根在 `app/loginFlow.ts`
-   （`view/pages.ts` 为零状态转发 façade，最终新增 feature ⛔ 不再加 `openXxx`）。
-8. 增加无头测试。
-9. 运行 `sync:client`。
-10. 在 Cocos 中本地预览。
+7. 审阅 Editor 设计源、发布物、View AUTO、sidecar 和生成 catalog，再运行
+   `node scripts/fgui-manifest.mjs --write` 更新 FGUI 发布闭包锁。
+8. 页面打开经 feature route / NavigationService；登录/选区/公告页面的组合根在 `app/loginFlow.ts`
+   （`view/pages.ts` 为零状态转发 façade；新增 feature ⛔ 禁止添加 `openXxx`）。
+9. 增加无头测试。
+10. 运行 `sync:client`。
+11. 通过 Cocos Dashboard 打开 Creator 并本地预览。
 
 ## 10. 范围
 

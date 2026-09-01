@@ -13,22 +13,21 @@
 - 深层开拓徽记只在古代遗迹首次通关时单独出现，不能常驻在普通结果等级内。
 - 归队剪影为 512×384，脚底/地面 pivot 为 (256,360)；它表达自动归队，不代表奖励已经领取。
 
-候选生成后，完整尺寸、来源组、运行尺寸和 pivot 必须登记到 `manifest.json`。
+候选生成后，完整尺寸、生产 mode、来源组、运行尺寸和 pivot 必须登记到 `asset-manifest.json`。
 
 ## 验证
 
 候选生成后在本目录执行：
 
-    find . -name '*.svg' -print0 | xargs -0 xmllint --noout
     find . -name '*.png' -print0 | xargs -0 -n1 sips -g pixelWidth -g pixelHeight -g space -g hasAlpha
 
 验收时还需确认：
 
 - 全部 PNG 为 sRGB RGBA，四角 Alpha 为 0；
-- SVG 不含 text 元素，框与徽章内部无 C/B/A/S 字母；
+- PNG 不含文字或伪文字，框与徽章内部无 C/B/A/S 字母；
 - 四框内容区完全一致，内容不能因等级变化而移动；
 - 徽章在 64 像素显示尺寸仍可凭轮廓辨认；
 - 归队剪影不含地点背景、结果面板、奖励或按钮 UI。
 
-自动检查、同构内容区比对、64px 联系表审阅和人工签字全部完成前，本包保持 `To audit`，不得把任何等级框或
-徽章表述为已经采用。
+候选生成后进入 `To audit`；自动检查、同构内容区比对、64px 联系表审阅和人工签字全部通过后才能标记为
+`Accepted`。候选尚未生成时保持 `To generate`。

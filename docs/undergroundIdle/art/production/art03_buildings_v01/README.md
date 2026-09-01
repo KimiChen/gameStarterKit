@@ -1,7 +1,7 @@
 # ART-03 建筑与状态生产规范
 
 > 版本：v01<br>
-> 画面基线：`SPEC-03` / `SPEC-04` / `production/main_v01`<br>
+> 画面基线：`SPEC-03` / `SPEC-04` / 批准黄金 target / `production/main_bitmap_v02`<br>
 > 计划运行文件：透明 PNG；文字、等级和价格由 FairyGUI/客户端运行时提供<br>
 > 当前状态：候选待生成、待选择、待归一化和待审计
 
@@ -19,9 +19,9 @@
 - `state/main/ug_state_empty_cart_v01.png`、`ug_state_cart_load_v01.png`：开采瓶颈空矿车与平衡态装载层；
 - `state/main/ug_state_job_plate_v01.png`：四个岗位共用的无字牌；
 - `state/main/ug_state_depth_locked/unlockable/unlocked_v01.png`：深层入口三态；
-- `state/ug_art03_state_atlas_v01.svg/.png`：2048×1024 可编辑状态 atlas；
+- `state/ug_art03_state_atlas_v01.png`：2048×1024 无字状态 atlas；
 - `state/main/main-state-overlays.json`：主界面状态件裁切、运行尺寸、pivot 与源画布位置；
-- `manifest.json`：文件、frame rect、pivot、来源和归一化数据；
+- `asset-manifest.json`：文件、生产 mode、frame rect、pivot、来源、mask 和归一化数据；
 - `ug_art03_building_stages_contact_sheet_v01.png`：四建筑三阶段审阅表。
 - `ug_art03_main_state_overlays_contact_sheet_v01.png`：七个主界面独立状态件审阅表。
 
@@ -37,16 +37,17 @@
 
 ## 计划制作与来源
 
-- Stage 01 计划从 `production/main_v01/buildings/` 中经人工选择的候选切图无损复用；
+- Stage 01 计划从 `production/main_bitmap_v02/asset-manifest.json` 中已通过 G5 的建筑透明件无损复用；
 - Stage 02/03 计划使用内置 ImageGen，以四张三阶段概念稿与经选择的 Stage 01 为身份锚点逐张生成；候选提示词见
   [`IMAGEGEN_PROMPTS.md`](IMAGEGEN_PROMPTS.md)；
 - 如果 ImageGen 把浅色透明预览格烘焙进 RGB，原始输出应以 `*_raw_v01.png` 保存为可追溯中间件且不得进入运行时；
-  `production/tools/remove-light-checker.mjs` 只清除与画布边缘连通的高亮中性色背景；
-- `production/tools/normalize-building-stages.mjs` 计划将同组阶段归一到固定画布和 pivot；任何 `framingScale`
-  必须经人工审阅，只能纠正透明留白差异，不得改变建筑内部几何；
-- 状态件计划由 `ug_art03_state_atlas_v01.svg` 确定性输出，并沿用主界面木材、钢铁、黄铜与矿石色板；
-- 七个主界面独立状态件计划从 `production/main_v01/state/ug_main_40_prop_state_v01.svg` 的目标 group/symbol
-  机械提取，不重绘；裁切应保留 24px 源画布透明边，并在 metadata 中登记 2×→1×位置换算。
+  透明清理只能移除与画布边缘连通的高亮中性色背景，并必须保留处理记录与前后对照；
+- 同组阶段必须确定性归一到固定画布和 pivot；任何 `framingScale` 必须写入 manifest 并经人工审阅，只能纠正
+  透明留白差异，不得改变建筑内部几何；
+- 状态件从批准 target/单体通过 `regionCrop`、`inpaintCrop` 或 `generatedVariant` 生产，并沿用主界面木材、
+  钢铁、黄铜与矿石色板；
+- 七个主界面独立状态件必须使用 manifest 中明确的 source rect/mask 生产；被遮挡或需隐藏轮廓的对象不得机械
+  裁切，必须补绘完整 Alpha 边界。输出保留至少 24px 透明边，并登记源→运行坐标换算。
 
 ## 工程约束
 
@@ -54,24 +55,17 @@
   frame）以及 `state/main/` 的 7 张主界面状态 PNG；
 - 建筑节点锚点使用 `(0.5, 1504/1536)`，切换阶段时不得重算点击区或岗位锚点；
 - 状态单图均为 512×512，建议 pivot `[256,480]`；仓储五档只切换场景箱堆，不替代顶部权威容量条；
-- `state/main/` 使用紧凑裁切而非 512×512 通用画布；必须按 `manifest.mainStateOverlays` 的
+- `state/main/` 使用紧凑裁切而非 512×512 通用画布；必须按 `asset-manifest.json#mainStateOverlays` 的
   `runtimeSizeLogical`、`sourceAnchorLogical` 与 `pivotNormalized` 放置，不能再次 tight crop；
 - 四块岗位牌复用同一资源，实例矩形以 `job_plate.instances` 为准；文字、加号与忙碌状态单独渲染；
 - 灯光 bloom、呼吸和粒子来自 ART-09，建筑图中的灯芯仅提供静态可读性。
 
 ## 待执行验证
 
-以下命令只用于生成候选或检查候选，不代表当前已经执行：
+- [ ] 四组阶段底部落点一致，成熟阶段无裁切；
+- [ ] 透明边缘无浅色方格，空白铭牌无伪文字；
+- [ ] manifest 中的来源、mode、mask、pivot、尺寸和哈希闭合；
+- [ ] 联系表、目标运行尺寸和主界面 composite 均通过人工复核。
 
-```bash
-xmllint --noout docs/undergroundIdle/art/production/art03_buildings_v01/state/ug_art03_state_atlas_v01.svg
-NODE_PATH=/Users/kimi/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules \
-  node docs/undergroundIdle/art/production/tools/extract-art03-main-states.mjs
-NODE_PATH=/Users/kimi/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules \
-  node docs/undergroundIdle/art/production/tools/normalize-building-stages.mjs
-NODE_PATH=/Users/kimi/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules \
-  node docs/undergroundIdle/art/production/tools/build-art03-delivery.mjs
-```
-
-验收重点：四组阶段底部落点一致、成熟阶段无裁切、透明边缘无浅色方格、空白铭牌无伪文字。生成脚本、自动
-检查和人工签字全部完成前不得把本包标为可交付。
+候选尚未生成时保持 `To generate`；候选生成后进入 `To audit`，自动检查和人工签字全部通过后才能标记为
+`Accepted`。

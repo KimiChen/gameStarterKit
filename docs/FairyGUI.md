@@ -1,6 +1,6 @@
 # FairyGUI UI 生产、装配与自动化工作流
 
-> 文档版本：2.1<br>
+> 文档版本：2.2<br>
 > 编写日期：2026-08-31<br>
 > 适用范围：任意玩法或业务模块<br>
 > 当前运行时：Cocos Creator 3.8.8 + `fairygui-cc` 1.2.2 + TypeScript
@@ -9,10 +9,11 @@
 
 本文同时包含当前能力和规划能力。阅读时必须区分：
 
-- **当前已有**：FairyGUI Editor 工程、人工保存与发布、View codegen、`fguiContracts`、registry/结构契约测试、FGUI 发布闭包锁、发布物反解析对账、客户端同步和 Creator 人工验收。
+- **当前已有**：FairyGUI Editor 工程、人工保存与发布、View codegen、`.view.json`/`feature.json` 驱动的
+  `codegen:features`、生成式 FGUI 契约与 registry、结构契约测试、FGUI 发布闭包锁、发布物反解析对账、客户端同步和 Creator 人工验收。
 - **近期优先**：统一只读 `FguiProjectIR`、PageSpec Schema、可执行 Scenario、Creator UI Gallery、设置门禁、Editor 工具链锁和发布 receipt。
 - **受控试点**：通过 FairyGUI Editor 官方插件 API 辅助装配和批处理发布；OpenFairyGUI 对正式工程只读、只在临时副本变换的影子验证。
-- **条件式后备**：raw XML 编译器、外部 ID 审计/迁移映射和可编辑浏览器 Studio。它们不是默认建设项。
+- **条件式后备**：raw XML 编译器、外部 ID 审计/兼容映射和可编辑浏览器 Studio。它们不是默认建设项。
 
 当前本机 FairyGUI Editor 6.1.4 只能作为 POC 候选基线；仓库尚未锁定 Editor 安装包哈希、配套 TsAPI 或插件版本，不能把“本机可用”写成“项目可复建”。
 
@@ -43,7 +44,9 @@ G6：    人工 Editor 装配（当前）
           → Editor 保存—重开 → Editor 正式发布
                                       │
                                       ▼
-G7：    codegen → FGUI 结构契约 / registry / pages / Logic / View
+G7：    codegen:fgui → .view.json / feature.json / Logic / View
+          → codegen:features → 生成式结构契约 / registry / routes
+          → fgui-manifest --write → sync:client
                                       │
                                       ▼
 G8a/G8b/G9：无头场景测试 + Creator UI Gallery（计划）
@@ -77,7 +80,7 @@ G8a/G8b/G9：无头场景测试 + Creator UI Gallery（计划）
 
 能力成熟度 M0～M3 与交付档位是两个维度。处于 M0 的人工流程也能交付 Full 证据；进入 M2 的插件自动化也不能降低验收标准。
 
-### 1.2 为什么不能从一张效果图直接生成程序
+### 1.2 效果图与可运行程序的交付边界
 
 一张扁平效果图不包含：
 
@@ -116,9 +119,11 @@ G8a/G8b/G9：无头场景测试 + Creator UI Gallery（计划）
 - `editor`：当前默认。Editor 设计源是结构、精确坐标和内部 ID 真源。handoff 只保存语义角色、布局约束、适配规则和极值样例；坐标审计图应从真实设计源生成只读 snapshot。
 - `editorPlugin`：推荐的机器辅助方向。插件只通过固定版本 Editor API 修改授权组件，由 Editor 分配 ID、保存设计源并正式发布。首版只处理隔离的 leaf component。
 
-`rawXmlFallback` 只是保留名称，未通过第 7.8 节的单独 ADR 前不是合法模式。启用后，外部配方也只能独占整文件，不能与 Editor 双写。
+`rawXmlFallback` 仅是受限后备枚举，未通过第 7.8 节的单独 ADR 前不是合法模式。即使 ADR 通过，外部 writer 也只能在
+临时工程生成候选；正式工程的最终 XML、`package.xml` 与内部 ID 仍必须由固定版本 Editor 接管、保存和序列化，
+不能与 Editor 双写或直接覆盖正式工程。
 
-禁止继续使用含义宽泛的 `layoutMode: machine` 作为默认路线；raw XML 所需的 `layout.json` 只属于后备编译器自己的配方。
+`layoutMode: machine` 不是合法默认模式；raw XML 所需的 `layout.json` 只属于后备编译器自己的配方。
 
 ### 2.2 三条真源并行但不能互相替代
 
@@ -140,7 +145,7 @@ G8a/G8b/G9：无头场景测试 + Creator UI Gallery（计划）
 
 模型不得猜测策划中没有的数据、布局中没有的热区、效果图中看不见的图层、已有 FGUI 包中的 ID，或运行时中不存在的接口。证据不足时输出 `TBD`、`needs_decision` 或 `needs_source`。
 
-每轮视觉迭代要明确“允许改变什么”和“必须保持什么”。一次只处理一个可审阅变量，避免把构图、色板、材质和角色比例同时漂移。
+每个视觉审阅批次都要明确“允许改变什么”和“必须保持什么”。一次只处理一个可审阅变量，避免把构图、色板、材质和角色比例同时漂移。
 
 ### 2.5 自动化先补证据闭环
 
@@ -150,7 +155,8 @@ G8a/G8b/G9：无头场景测试 + Creator UI Gallery（计划）
 
 `editorPlugin` 只能通过 Editor 对象 API 创建或修改授权对象；XML、`package.xml` 和内部 ID 仍由 Editor 序列化。插件输入中的 stable key 只做业务映射或审计，不是 ID 发号器。
 
-外部 XML writer、`package.xml` AST merge 和外部 `ids.lock.json` 只属于 `rawXmlFallback`，启用条件见第 7.8 节。
+外部 XML writer、`package.xml` AST merge 和外部 `ids.lock.json` 只属于 `rawXmlFallback` 的临时候选实验，启用条件
+见第 7.8 节；它们不得成为正式工程写入器或内部 ID 发号器。
 
 ### 2.7 修复回到最早的错误真源
 
@@ -164,7 +170,9 @@ G8a/G8b/G9：无头场景测试 + Creator UI Gallery（计划）
 
 ### 2.8 Schema 与提示词的优先级
 
-未来 PageSpec Schema 和生产资产清单 Schema 是可执行契约；[提示词工具](../tools/FairyGUI-Prompts.md) 只能由 Schema 派生或按 Schema 校验。当前提示词文件中的旧字段、`layoutMode`、fixture 或 machine XML 描述不构成新路线的真源，后续应同批迁移，不能继续演化成第二套协议。
+PageSpec Schema 和生产资产清单 Schema 是计划中的可执行契约；[提示词工具](../tools/FairyGUI-Prompts.md) 只能由
+Schema 派生或按 Schema 校验。提示词中的 `layoutMode`、fixture 或 machine XML 描述不是项目真源，也不能演化成
+第二套协议。
 
 ---
 
@@ -355,7 +363,7 @@ Relation 不会自动处理刘海或四边安全区。没有明确程序接线�
 3. 灯光、背景和前景遮挡需要保持坐标时使用 `fullCanvas`。
 4. 九宫格 inset 由人工或确定性工具标注，不让图片模型猜。
 5. 检查尺寸、四角 Alpha、可见 bbox、边缘污染、padding、pivot、同系列一致性和运行尺寸清晰度。
-6. 批准后锁定源哈希；装配阶段不再调用图片模型。
+6. 批准后锁定源哈希；装配阶段禁止调用图片模型。
 
 ### 4.8 G6：FairyGUI Editor 装配与发布
 
@@ -415,17 +423,27 @@ G6 到正式发布为止。随后按 G7 和第 5 节完成 codegen、接线、�
 当前接入顺序以真实产物为准：
 
 1. Editor 保存—重开并正式发布。
-2. 先在 `fguiContracts.ts` 声明结构依赖意图，尤其是 `manualRequired`、`nested`、`listItems`、Controller、Relation 和代码动态 `assetUrls`。
-3. 运行 `npm run codegen:fgui -- <Package> <Component>`；它从真实 XML 生成/重写 View 的 `IMPORT`、`REQUIRED`、`FIELD`、`BIND` 四个 AUTO 区块。
-4. 按生成的 `View.REQUIRED` 最终对账 `fguiContracts.ts.required`，并加入 `FGUI_CONTRACTS`。
-5. 在 View AUTO 区块外完成绑定、渲染、点击/列表回调和动作转发。
-6. 在 `logic/page/XxxLogic.ts` 实现不依赖 `cc` / `fairygui-cc` 的行为和无头测试。
-7. 在 `viewRegistry.ts` 登记 FGUI 结构契约、layer、fullscreen、onlyOne、permanent、interactive、sharedPkgs 和动态 `load`。
-8. 在 `pages.ts` 抽出带类型的页面 composition factory / `PageDependencies`，组合 Logic、网络、时钟、会话和导航。生产 wrapper 注入真实依赖，M1 的 Scenario Host 向同一个 factory 注入确定性依赖；外部生产入口仍只调用 `openXxx`。
-9. M1 落地后注册同一组 Scenario。每个场景拥有独立 lifecycle owner、`AbortController` 和可控 deferred/scheduler，结束时必须完成 teardown。
-10. 运行 `sync:client`，不手改 `apps/Cocos/assets/src`。
+2. 运行 `npm run codegen:fgui -- <Package> <Component>`；它从真实 XML 生成或重写 View 的 `IMPORT`、
+   `REQUIRED`、`FIELD`、`BIND` 四个 AUTO 区块。
+3. 在 View AUTO 区块外完成绑定、渲染、点击/列表回调和动作转发；在 Logic 中实现不依赖
+   `cc` / `fairygui-cc` 的行为和无头测试。
+4. 在 View 同目录创建或更新 `<Name>View.view.json` sidecar：登记 owner/kind、layer、fullscreen、onlyOne、
+   permanent、interactive、logic、sharedPkgs，以及 `manualRequired/nested/listItems/controllers/relations/assetUrls`
+   等手写契约段。直接绑定的 `required` 由 XML 与 View AUTO 共同守门，不在 sidecar 复制。
+5. 将 sidecar、路由、菜单或其他 contribution 登记进 `features/<id>/feature.json`；新增 feature 页面通过 feature
+   route / `NavigationService` 打开，不向 `pages.ts` 增加新的手写全集入口。
+6. 运行 `npm --workspace @game/server run codegen:features`，从 `.view.json`、FGUI XML 与 `feature.json` 刷新
+   `apps/client/src/generated/` 下的 View、FGUI 契约、feature、route 和 package catalog。
+7. 审阅 View AUTO、sidecar、feature 登记与生成 catalog；`fguiContracts.ts`、`viewRegistry.ts`、`pages.ts` 是
+   稳定 façade，禁止手改其中的生成值或新增页面全集。
+8. 审阅完成后运行 `node scripts/fgui-manifest.mjs --write`，更新包含 View AUTO 哈希的 FGUI 发布闭包锁。
+9. 运行 `npm run sync:client`，不手改 `apps/Cocos/assets/src`。
+10. M1 落地后注册同一组 Scenario。每个场景拥有独立 lifecycle owner、`AbortController` 和可控
+    deferred/scheduler，结束时必须完成 teardown。
 
-`fguiContracts.ts` 是提交版结构依赖；codegen 当前不会自动更新它。新页面可先声明契约意图，但最终 `required` 必须以真实 XML 生成的 AUTO `REQUIRED` 完成对账。FGUI 发布闭包锁记录 View AUTO 哈希，所以 `fgui-manifest --write` 必须晚于 codegen 和 AUTO 审阅。
+直接绑定的 `required` 以 Editor XML → `codegen:fgui` View AUTO 为单源；其余手写契约段以 `.view.json` 为单源，
+页面/路由/contribution 归属以 `feature.json` 为单源，契约与注册值由 `codegen:features` 生成。FGUI 发布闭包锁记录
+View AUTO 哈希和生成 View 清单，所以 `fgui-manifest --write` 必须晚于两条 codegen 与对应审阅。
 
 这里的“走正常入口”是复用同一 composition factory、registry、ViewMgr、Logic 和 View，不是强迫 Host 调用无法注入依赖的生产 wrapper，也不是另造假页面。跨包依赖以 `ui/<Package>` 完整登记到 `sharedPkgs`，不含页面自身包。加载失败和超时必须阻止创建，不能静默显示空页面。数据与回调在 `ViewHandle.run(...)` 生命周期内注入，异步 Logic 接收 `AbortSignal`；禁止直接 `view.dispose()`。
 
@@ -482,15 +500,20 @@ M0.5 落地后用 receipt 记录这些机器可得字段。变更请求必须声
 # 1. 由真实 XML 更新 View AUTO 区块
 npm run codegen:fgui -- <Package> <Component>
 
-# 2. 人工同步 fguiContracts/FGUI_CONTRACTS，完成 View/Logic/registry/pages/sharedPkgs
-# 3. 审阅设计源、发布物和四个 AUTO 区块后，更新 FGUI 发布闭包锁
+# 2. 在 AUTO 区块外完成 View/Logic；更新同目录 <Name>View.view.json
+#    并将 sidecar、路由和 contribution 登记进 features/<id>/feature.json
+
+# 3. 生成 View、FGUI 契约、feature、route 与 package catalog；稳定 façade 禁止手改
+npm --workspace @game/server run codegen:features
+
+# 4. 审阅设计源、发布物、四个 AUTO 区块、sidecar 与生成 catalog 后，更新 FGUI 发布闭包锁
 node scripts/fgui-manifest.mjs --write
 
-# 4. 同步客户端真源到 Creator 工程壳
+# 5. 同步客户端真源到 Creator 工程壳
 npm run sync:client
 
-# 5. 用 Dashboard 打开 Creator，等待发布资源和新增脚本完成导入并生成/复用 .meta
-# 6. 自动检查
+# 6. 用 Dashboard 打开 Creator，等待发布资源和新增脚本完成导入并生成/复用 .meta
+# 7. 自动检查
 npm run typecheck:client
 npm run typecheck:client:legacy
 npm run test:client
@@ -669,9 +692,12 @@ staging 必须包含完整输出闭包并通过校验后整体提升。提升前
 4. 已有官方 Editor 创建的最小金样和真实 ID。
 5. ownership 能缩小为整文件隔离的 leaf component。
 6. Editor 保存—重开、官方发布、发布物反解析和 Creator Scenario 已有自动 Gate。
-7. Editor/XML 版本、Schema、迁移、未知字段和失败回退策略已冻结。
+7. Editor/XML 版本、Schema、版本兼容、未知字段和失败回退策略已冻结。
 
-即使启用，首版仍遵守：`package.xml` 默认由 Editor 管理；外部 ID 表从 Editor 导入并先作审计，不负责发号；只支持金样覆盖的白名单 leaf component；`.bin`、atlas 和 `.meta` 继续由官方工具生成。旧文档中的完整 `layout.json` 示例、自由 XML writer 和包级 AST merge 不再是主执行手册内容，应进入独立 RFC。
+即使启用，首版仍遵守：外部 writer 只在临时工程生成白名单 leaf component 候选；候选进入正式工程前必须由
+固定版本 Editor 打开、接管、保存、关闭、重开并重新序列化，最终 `package.xml`、XML 与内部 ID 仍归 Editor。
+外部 ID 表只从 Editor 导入作审计，不负责发号；`.bin`、atlas 和 `.meta` 继续由官方工具生成。完整
+`layout.json`、自由 XML writer 和包级 AST merge 只允许在单独 RFC 批准的临时候选实验中出现。
 
 ### 7.9 生产资产的确定性规则
 
@@ -681,7 +707,7 @@ staging 必须包含完整输出闭包并通过校验后整体提升。提升前
 stableKey
 sourceFile + sourceSha256
 colorMode + requiresAlpha
-sourceMode
+mode
 sourceRectSourcePx
 expectedAlphaBBoxSourcePx
 paddingSourcePx
@@ -696,14 +722,16 @@ outputRelativePath
 
 不适用字段显式为 `null`，不能省略后交给工具猜。`outputRelativePath` 只能位于批准根下，拒绝绝对路径和 `..`。
 
-| `sourceMode` | 用途 | 条件 |
+| `mode` | 用途 | 条件 |
 | --- | --- | --- |
 | `copy` | 无损复制独立源 | 源哈希已锁定 |
+| `regionCrop` | 显式矩形裁切 | 区域完整、无背景污染、无遮挡缺失且不需隐藏像素 |
+| `inpaintCrop` | 先按 mask 补绘再提取 | 保存批准输入、mask、处理记录和输出哈希 |
+| `alphaObject` | 独立透明角色、建筑、状态件或图标 | 有完整轮廓、真实 Alpha、padding 和 pivot |
 | `fullCanvas` | 保留源画布坐标 | 背景、灯光、前景遮挡 |
-| `alphaBBox` | 可见 Alpha 加 padding 裁切 | 有真实 Alpha，记录裁切前原点 |
-| `crop` | 显式矩形裁切 | 无背景污染、无遮挡缺失 |
-| `mask` | 独立 Alpha mask | mask 是批准输入 |
 | `nineSlice` | 可伸缩源图 | inset 明确且中心有效 |
+| `tile` | 横向或纵向平铺纹理 | 已提供目标方向的无缝接缝证据 |
+| `generatedVariant` | 升级、锁定、满仓等换态单体 | reference、状态 key 与允许变化区已登记 |
 
 `nineSliceInsetsSourcePx` 的顺序固定为 `left, top, right, bottom`；它不是 FairyGUI `scale9grid` 的中心矩形。工具转换时必须按源图宽高计算中心矩形并校验正面积。输出先进入临时目录，校验通过后原子替换；删除只能按生成清单精确执行。
 
@@ -763,7 +791,7 @@ composite ↔ runtime：Editor 发布、atlas、九宫格、字体和运行时�
 □ Editor 保存—关闭—重开无未解释修复或丢引用
 □ 发布物由 Editor 产生，Creator .meta 由真实导入产生
 □ 发布物反解析对账通过，但未被当成 Editor 保存—重开证据
-□ codegen AUTO、fguiContracts 和 registry 字段级一致
+□ codegen AUTO、`.view.json`、`feature.json` 与 generated FGUI 契约/registry 字段级一致
 □ FGUI 发布闭包锁晚于 codegen 更新且只在审阅后写入
 □ M0.5 后，FguiProjectIR 的消费者对同一工程得出一致结构
 □ M2 后，插件候选通过临时工程、重开、发布、staging diff 和 receipt
@@ -810,7 +838,7 @@ composite ↔ runtime：Editor 发布、atlas、九宫格、字体和运行时�
 | 发布设置、图集、压缩 | G6 | 发布闭包、导入、串色、内存和性能 |
 | Editor/插件/OpenFairyGUI 版本 | M0.5/M2 | IR、往返、发布、diff、receipt 和回退 |
 
-保留上一批已通过 Gate 的完整产物。插件、影子工具和未来编译器都必须使用临时目录或工程副本；全部检查通过前不得覆盖已知可用版本。
+生成或提升前保留最近一个已通过 Gate 的完整基线。插件、影子工具和未来编译器都必须使用临时目录或工程副本；全部检查通过前不得覆盖已知可用版本。
 
 ---
 
@@ -835,7 +863,7 @@ composite ↔ runtime：Editor 发布、atlas、九宫格、字体和运行时�
 
 ---
 
-## 11. 首次落地顺序
+## 11. 能力建设顺序
 
 1. 先选两个结构不同的金样包实施 M0.5 的只读 IR 与设置/资源检查，不改变设计源。
 2. 金样稳定后扩展到全包只读检查，再宣称 M0.5 完成。
@@ -845,7 +873,7 @@ composite ↔ runtime：Editor 发布、atlas、九宫格、字体和运行时�
 6. 只有插件 POC 证明仍有缺口时，才选两个结构不同的包做 OpenFairyGUI 影子试点。
 7. 根据 POC 数据决定生产边界；证据出来前不启动 raw XML compiler 或可编辑 Studio。
 
-中等复杂页面应包含：背景或同画布层、九宫格面板、运行时文本与极值数字、List 与空态、至少两个正交状态维度、动态 Loader、异步按钮与错误态，以及 Relation/安全区接线。它足以暴露真实问题，又不会把首个试点变成无法归因的巨型项目。
+中等复杂页面应包含：背景或同画布层、九宫格面板、运行时文本与极值数字、List 与空态、至少两个正交状态维度、动态 Loader、异步按钮与错误态，以及 Relation/安全区接线。它足以暴露真实问题，又不会把试点变成无法归因的巨型项目。
 
 ---
 

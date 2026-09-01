@@ -1,598 +1,331 @@
-# 《Underground Idle》图片标注到 FairyGUI 自动编译滚动实施计划（Living Plan）
+# 《Underground Idle》黄金位图到 FairyGUI Editor 生产流程
 
 > [返回总目录](README.md) · [上一篇：UndergroundIdleMain FairyGUI 装配契约](09-fairygui-undergroundidle-main-assembly.md)
 >
-> 文档版本：0.1<br>
-> 首次编写：2026-08-30<br>
-> 最近更新：2026-08-30<br>
-> 当前状态：`初始实施计划 / 全部阶段未开始`<br>
-> 下一阶段：P0 基线审查与边界冻结<br>
-> 目标：下一批页面在生成或确认图片的同一轮中，同时得到机器标注、生产切图和 FairyGUI 设计源 XML
+> 文档版本：1.0<br>
+> 编写日期：2026-09-01<br>
+> 当前状态：`规范已定义 / 主界面运行资产、FairyGUI 包、客户端接线与 Creator 验收均未实施`
 
-## 1. 目标与完成口径
+## 1. 当前流程
 
-本计划定义一条待首次实现的“标注即编译”流水线，用于把未来的效果图、SPEC 标注、ART manifest、切图与
-FairyGUI 装配收口到同一机器真源：
+Underground Idle 的默认 UI 生产路线固定为：
 
 ```text
-效果图 / 分层母版 / 独立透明件
-  → 同批写入机器可读 layout.json
-  → 自动生成审稿标注图
-  → 确定性切图、透明边与 pivot 归一化
-  → 稳定 ID 分配
-  → 生成 machine-owned FairyGUI 组件 XML
-  → 受控合并 package.xml
-  → FairyGUI Editor 重载并发布 .bin / atlas
-  → codegen、自动门禁
-  → Cocos Dashboard 启动 Creator 完成真实预览
+玩法 / PageSpec / 状态契约
+  → 无运行时文字的黄金位图 target
+  → PNG 资产分类、裁切、遮挡补绘与独立透明件
+  → asset-manifest.json + 确定性 composite
+  → target ↔ composite 分区视觉回归 + 人工签字
+  → FairyGUI Editor 导入和装配
+  → Editor 保存—关闭—重开 + 正式发布
+  → Editor 生成 XML / 内部 ID / .bin / atlas
+  → codegen:fgui → .view.json / feature.json → codegen:features
+  → 契约/AUTO 审阅 → fgui-manifest --write
+  → sync:client → Dashboard/Creator 导入和状态矩阵
 ```
 
-“下一批可以直接这样做”只有在本计划的 Gate C 通过后才成立。统一 Schema、ID lock、切图入口、XML 编译器、
-Idle FairyGUI 真源/发布物与业务接线均尚未实施；本文只定义目标、边界、阶段与验收方法，不能作为自动化可用
-或界面已经实现的证据。
+生产美术不得使用 SVG Master 作为中间真源。SVG 可以作为一次性审稿或标注工具，但不能成为运行美术真源、切图依赖或
+FairyGUI 布局真源。正式运行输入只使用批准并登记的 PNG、字体和程序资源。
 
-### 1.1 一次任务应交付什么
+效果图也不能被“盲切”为完整页面：只有满足第 5 节条件的像素区域允许直接裁切；遮挡、透明边、隐藏像素、
+换态对象和九宫格必须通过补绘、独立生成或人工修图得到合法生产源。
 
-每次页面或场景视觉批次至少同时交付：
+FairyGUI XML、`package.xml` 和内部 ID 由 FairyGUI Editor 分配和序列化。本流程不建立 raw XML writer，
+不从图片推算 ID，也不让外部脚本直接写正式 FGUI 工程。
 
-1. 审稿效果图或分层母版；
-2. `*.layout.json`：坐标、资源、节点、状态和交互的唯一机器真源；
-3. `*_annotation.png`：由 JSON 反向绘制的审稿标注图，不是坐标真源；
-4. 运行 PNG：透明切图、同画布层、九宫格源图或已批准文件的无损副本；
-5. `ids.lock.json`：package、resource、component、child、controller page 的稳定 ID；
-6. FairyGUI `package.xml` 受控资源登记与 machine-owned 组件 XML；
-7. 编译报告：源图哈希、裁切框、可见 Alpha bbox、输出尺寸、pivot、引用闭包和告警；
-8. FairyGUI Editor 发布结果及 Creator 真实预览验收记录。
+批准 target 始终是视觉对账基准，不能在拆层时被新的独立构图替代。`target ↔ composite` 未通过人工 A/B 前，
+运行 PNG 不得进入 FairyGUI Editor；资产拆分只使用批准 target 的像素、局部编辑和同源补绘。
 
-### 1.2 明确不自动完成
+## 2. 真源与所有权
 
-- 不从画有矩形和文字的标注 PNG 做 OCR，再猜坐标或节点语义；
-- 不从一张扁平效果图直接裁出角色、按钮、建筑等被遮挡或需要透明背景的生产件；
-- 不猜 controller、page、gear、relation、热区、文本槽和安全区适配；这些必须在 Schema 中显式声明；
-- 不伪造 FairyGUI `.bin`、atlas、trim、rotation、分页或 `Alone (NPOT)` 发布结果；
-- 不由脚本创建或伪造 Creator `.meta`；
-- 不通过命令行启动 Cocos Creator，Creator 必须由 Cocos Dashboard 启动；
-- 不让生成器与 FairyGUI Editor 同时成为同一个 XML 文件的写入真源。
-
-## 2. 初始输入与实施缺口
-
-| 能力 | 初始输入 | 首次实施任务 |
+| 内容 | 权威真源 | 说明 |
 | --- | --- | --- |
-| 分层与坐标 | 07～09 规定尺寸、pivot、九宫格和装配目标 | 建立统一 v1 Schema，并用首次批准的分层源验证 |
-| 切图 | 本文规定 Alpha bbox、padding、pivot 和 source anchor 规则 | 实现统一入口、原子写入、来源白名单和编译报告 |
-| FairyGUI 源 | 09 规定拟定装配契约 | 创建 `UndergroundIdle/package.xml`、组件 XML、运行 PNG，并由 Editor 首次发布 |
-| 稳定引用 | 本文规定稳定 ID 原则 | 首次创建 package/resource/component/child/page ID 后写入 append-only lock |
-| View 绑定 | 仓库通用 codegen 能力需要在 P0 盘点 | 验证或补齐 XML → TypeScript，并接入生成 XML |
-| 发布闭包 | 仓库通用 manifest 能力需要在 P0 盘点 | 验证设计源与 Editor 发布物闭包；`.bin` 必须由 Editor 发布 |
-| 最终预览 | 08～09 提供验收矩阵 | 首次完成 Editor round-trip 与 Dashboard/Creator 状态矩阵验收 |
+| 玩法、字段、状态与动作 | 02～04、PageSpec/Scenario | 图片不得猜业务语义 |
+| 视觉语言 | 07、批准黄金 target | target 锁定构图、材质、光向、比例与 UI 质感 |
+| 生产资产 | 批准 PNG 源 + `asset-manifest.json` | 记录来源、crop、Alpha、pivot、九宫格和输出策略 |
+| 精确页面结构与坐标 | FairyGUI Editor 设计源 | Editor 是 package/component/child/controller/relation 真源 |
+| FGUI 内部 ID | FairyGUI Editor | 外部工具不发号、不推算 |
+| 正式发布物 | FairyGUI Editor | `.bin`、atlas、独立纹理由 Editor 发布 |
+| View AUTO 区块 | `codegen:fgui` | 禁止手改 |
+| Creator `.meta` | Creator 真实导入 | 禁止脚本伪造 |
+| 审阅证据 | target、composite、runtime 截图与差异报告 | 只读派生物，不反向成为布局真源 |
 
-P0 应先盘点可复用的通用工具；只有经过验证的能力才接入，不另建第二套互不兼容的资源规则。
+`asset-manifest.json` 只拥有资产生产事实，不拥有 FGUI 的内部 ID、Controller、Gear、Relation 或最终精确布局。
+PageSpec 只表达语义角色、布局约束、安全区和极值；Editor 保存后的设计源拥有最终像素坐标。
 
-## 3. 真源、所有权与建议目录
+`main_bitmap_v02/asset-manifest.json` 是主界面页面批次的唯一入口。ART-01～ART-09 若作为可复用独立包拥有各自
+`asset-manifest.json`，主界面清单只按稳定 key + 文件哈希引用已批准条目，不复制一份可独立修改的 pivot、inset
+或来源事实。
 
-### 3.1 真源优先级
+## 3. 目录
 
-```text
-玩法与交互：02～04
-视觉语言：07～08
-UndergroundIdleMain 拟定装配契约：09
-生成节点、坐标和切图：*.layout.json
-稳定 FairyGUI ID：ids.lock.json
-生成物：运行 PNG + machine-owned XML
-发布物：FairyGUI Editor 生成的 .bin / atlas
-最终实机表现：Dashboard 启动的 Creator 预览
-```
-
-标注图必须由 `layout.json` 生成。禁止先手动画标注图、再把肉眼读出的数字回填 JSON，否则审稿图和实际编译
-输入会再次形成双真源。
-
-### 3.2 计划新增的工具和文件
-
-以下路径全部属于实施目标，不表示文件或目录已经创建：
+主界面生产文件使用以下目录：
 
 ```text
-tools/fgui-layout-compiler/
-├─ cli.ts
-├─ schema/ui-layout.schema.json
-├─ readLayout.ts
-├─ sliceAssets.ts
-├─ idLock.ts
-├─ compilePackage.ts
-├─ compileComponent.ts
-├─ renderAnnotation.ts
-├─ validate.ts
-└─ *.test.ts
-
-docs/undergroundIdle/art/production/main_v01/fgui/
-├─ UndergroundIdleSceneGenerated.layout.json
-├─ UndergroundIdleSceneGenerated.annotation.png
-└─ compile-report.json
-
-apps/art/fairygui/layout/idle/
-└─ ids.lock.json
-
-apps/art/fairygui/assets/UndergroundIdle/
-├─ package.xml
-├─ UndergroundIdleMain.xml                    # Editor-owned 外壳，首期不整文件覆盖
-├─ UndergroundIdleSceneGenerated.xml          # machine-owned
-└─ generated/                      # machine-owned 运行 PNG
+docs/undergroundIdle/art/
+├─ targets/
+│  ├─ ug_main_golden_v02.png                 # 750×1624 无运行时文字 target
+│  ├─ ug_main_golden_v02_review.png          # 运行时文字审阅投影
+│  └─ ug_main_golden_v02.prompt.md
+├─ production/main_bitmap_v02/
+│  ├─ asset-manifest.json                    # 生产资产唯一清单
+│  ├─ sources/                               # 批准源、mask、inpaint 输入；不进工程
+│  ├─ runtime/
+│  │  ├─ full_canvas/                        # 背景、灯光、前景遮挡
+│  │  ├─ ui_chrome/                          # 固定区块、九宫格和按钮态
+│  │  ├─ buildings/                          # 建筑阶段与状态件
+│  │  ├─ characters/                         # 独立 RGBA 角色
+│  │  └─ icons/
+│  ├─ composite/
+│  │  ├─ ug_main_initial_text_off_v02.png
+│  │  └─ ug_main_initial_review_v02.png
+│  ├─ review/
+│  │  ├─ target_composite_overlay_v02.png
+│  │  ├─ target_composite_diff_v02.png
+│  │  └─ region_report_v02.json
+│  └─ AUDIT.md
 ```
 
-首期先生成 `UndergroundIdleSceneGenerated.xml`，由人工维护的 `UndergroundIdleMain.xml` 继续持有业务文字、按钮、controller 和复杂
-交互。新页面如果从第一天就以 Schema 为真源，可以让生成器独占整个页面 XML；已有页面只有在 Editor 往返稳定
-后才迁移，禁止半自动地覆盖任意人工子树。
+运行 PNG 只有通过 manifest 和审计后才可导入 `apps/art/fairygui`。`targets/`、`sources/`、`composite/`、
+`review/` 和 prompt 均禁止进入 FairyGUI/Cocos 运行目录。
 
-### 3.3 FairyGUI 文件授权
+## 4. 黄金 target 与几何裁定
 
-首次实施前必须由项目负责人对明确的 FairyGUI 文件范围给出写入授权。授权只解除相应 XML 的写入限制，不降低
-[09 装配契约](09-fairygui-undergroundidle-main-assembly.md) 规定的 XML 解析、Editor 整项目重载、单包发布、codegen、契约
-测试和 Creator 验收要求。生成器只能写 machine-owned 文件和白名单约束的 `package.xml` 条目，不能覆盖无关
-人工节点。
+### 4.1 target 要求
 
-未取得明确授权时，只生成 `layout.json`、标注图、切图和待应用的 XML 变更报告，不直接写 FairyGUI 真源。
+黄金 target 必须：
 
-## 4. `layout.json` 最小契约
+- 750×1624 审阅尺寸，另保留尽可能高分辨率的批准源；
+- 不含运行时中文、数字、价格、等级、倒计时和填充值；
+- 包含完整六区构图、材质、边框、图标透视、角色比例、光向与首屏初始状态；
+- 使用真实首版快照语义，不制造不存在的角色、建筑或商业化入口；
+- 登记源图哈希、生成/编辑方式、参考图、允许变化区与人工批准记录。
 
-### 4.1 坐标约定
+运行时文字审阅图是由 target + 文本投影生成的证据，不是生产源。
 
-- `sourcePx`：源图真实像素，例如主界面 2×母版 `1500×3248`；
-- `logicalPx`：FairyGUI 设计尺寸，例如 `750×1624`；
-- 原点固定为左上，x 向右、y 向下；
-- 每个矩形必须注明属于 `sourcePx` 还是 `logicalPx`，禁止依赖隐式缩放；
-- 节点层级以 Schema 数组顺序或显式 `zOrder` 为准，不能按名称排序；
-- pivot 统一使用资源局部像素或 0～1 归一化值，并在字段名中明确单位。
+### 4.2 target 与装配契约一致性
 
-### 4.2 示例骨架
+黄金 target 必须符合 09 文档的 R1～R6、热区、岗位锚点和安全区换算。视觉参考与装配契约的几何不一致时，
+必须先生成或编辑出符合契约的 target 并单独完成人工批准，禁止先切图后拉伸，也不能把另一套几何的批准结论
+直接转移到当前 target。
 
-下面仅定义字段形态，正式实现以 JSON Schema 和测试 fixture 为准：
+## 5. 资产分类与切片规则
+
+### 5.1 允许的生产方式
+
+| mode | 适用内容 | 规则 |
+| --- | --- | --- |
+| `copy` | 已批准独立 PNG | 哈希校验后无损复制 |
+| `regionCrop` | 无遮挡、固定尺寸、无动态内容的完整矩形区块 | 显式 sourceRect；不得含运行时文字 |
+| `inpaintCrop` | target 上对象被文字或邻近装饰影响，但边界可明确 | 保存 mask、补绘输入和输出哈希 |
+| `alphaObject` | 角色、建筑、状态件、图标 | 真实 Alpha、完整隐藏轮廓、padding、pivot |
+| `fullCanvas` | 场景 clean plate、灯光、前景遮挡 | 保留完整画布坐标，禁止 tight crop |
+| `nineSlice` | 面板、按钮、页签、状态卡 | 必须有干净中心；明确 source insets |
+| `tile` | 可验证无缝的纹理 | 提供横/纵向接缝证据 |
+| `generatedVariant` | 升级、满仓、解锁、按钮状态 | 以黄金 target/批准单体为 reference，只改变授权状态 |
+
+ImageGen 可用于 `inpaintCrop`、`alphaObject` 和 `generatedVariant` 的候选制作，但每个输出都必须回到 target 做
+身份、材质、尺度、光向和边缘检查。不能再次独立生成整套不相关构图后强行拼回页面。
+
+### 5.2 可以直接裁切
+
+同时满足以下条件时才允许 `regionCrop`：
+
+1. 目标区域在 target 中完整可见且没有前景遮挡；
+2. 不需要透明边、隐藏像素、独立阴影或独立换态；
+3. 不含运行时文字、数字、容量填充或一次性状态；
+4. 最终显示尺寸固定，或已证明可作为九宫格干净源；
+5. 裁切后放回原坐标可与 target 对齐，不出现背景污染、接缝或重影。
+
+主界面优先裁成少量高保真大区块，而不是把每个铆钉拆成小 PNG：
+
+- 标题/资源/仓库固定 chrome；
+- 无文字的指标区 chrome；
+- 无文字的底栏 chrome；
+- 场景 clean plate；
+- 少量需要换态的按钮、图标和状态件。
+
+### 5.3 不能直接裁切
+
+- 被角色、轨道、木梁、阴影、灯光或前景遮住的对象；
+- 需要透明边、完整隐藏轮廓、pivot 或程序动画的角色/建筑；
+- 会升级、离岗、满仓、装载、解锁或切换页签的对象；
+- target 中已与背景预乘、产生色边或带背景残留的像素；
+- 没有干净可拉伸中心的任意截图块；
+- 运行时文字、进度填充值、热区、Controller、Gear、Relation 和内部 ID。
+
+这些内容必须使用 clean plate + 独立透明件重建。缺失像素通过显式 mask/inpaint 或以 target 为 reference 的
+局部资产生成补齐，不允许模型凭空猜测未登记的业务状态。
+
+## 6. 主界面拆分
+
+### 6.1 固定视觉大块
+
+| 资产 | 建议模式 | 说明 |
+| --- | --- | --- |
+| 顶部标题与资源 chrome | `regionCrop` 或 2～3 个固定 PNG | 保留黑铁、黄铜护角和手绘磨损；文字槽透明/空白 |
+| 仓库与收取 chrome | 固定底板 + 收取按钮五态 | 容量填充、库存数字独立 |
+| 中央矿井 clean plate | `fullCanvas` 或 R4 固定视口 PNG | 移除角色、矿车、可换建筑和深层状态，补齐隐藏背景 |
+| 四指标 chrome | 固定大块或四个同源组件 | 数字、标签和状态轨由运行时/换态层承担 |
+| 三页签 chrome | 固定底板 + 三个页签状态 | 倒计时、待领取角标独立 |
+
+### 6.2 动态透明件
+
+- 格伦、诺拉、伊芙与后续奥托；
+- 矿井、升降机、仓库三个外观阶段；
+- 空矿车、装载层、矿堆、升降负荷、箱体填充；
+- 深层锁定、可解锁、已解锁；
+- 岗位牌、锁、告警、收取、页签和资源语义图标；
+- 暖灯、冷光、雾、尘埃与脚底前景遮挡。
+
+所有动态件使用相同坐标系和 pivot；切换状态不得移动热区、岗位锚点和固定 UI。
+
+## 7. `asset-manifest.json`
+
+manifest 至少记录以下字段；字段可扩展，但不能把 FGUI ID 或最终 XML 结构塞进资产清单：
 
 ```json
 {
-  "$schema": "../../../../../../tools/fgui-layout-compiler/schema/ui-layout.schema.json",
-  "schemaVersion": 1,
-  "package": {
-    "name": "Idle",
-    "id": "<allocate-on-first-generation>"
-  },
-  "component": {
-    "stableKey": "undergroundIdle.scene.main.generated",
-    "name": "UndergroundIdleSceneGenerated",
-    "ownership": "machine",
-    "designSize": [750, 1624]
-  },
-  "source": {
-    "file": "../ug_main_master_v01.png",
-    "space": "sourcePx",
-    "size": [1500, 3248],
-    "logicalSize": [750, 1624],
-    "expectedSha256": "<required-at-compile-time>"
+  "version": 1,
+  "target": {
+    "file": "../../targets/ug_main_golden_v02.png",
+    "sha256": "TBD",
+    "width": 750,
+    "height": 1624,
+    "geometryContract": "09#R1-R6"
   },
   "assets": [
     {
-      "stableKey": "undergroundIdle.scene.background",
-      "name": "ug_main_00_background_v01",
-      "sourceMode": "fullCanvas",
-      "sourceRect": [0, 0, 1500, 3248],
-      "output": "generated/ug_main_00_background_v01.png",
-      "runtimeSize": [750, 1624],
-      "pivotNormalized": [0, 0],
-      "atlas": "alone_npot"
-    },
-    {
-      "stableKey": "undergroundIdle.ui.panel.example",
-      "name": "ug_ui_panel_example_v01",
-      "sourceMode": "alphaBBox",
-      "sourceRect": [100, 200, 600, 320],
-      "paddingPx": [24, 24, 24, 24],
-      "output": "generated/ug_ui_panel_example_v01.png",
-      "runtimeSize": [300, 160],
-      "pivotNormalized": [0.5, 0.5],
-      "nineSliceInsets": [36, 36, 36, 36],
-      "atlas": "default"
+      "key": "ui.topChrome",
+      "mode": "regionCrop",
+      "source": "sources/ug_main_golden_v02_2x.png",
+      "sourceRect": [0, 0, 1500, 414],
+      "output": "runtime/ui_chrome/ug_ui_top_chrome_v02.png",
+      "runtimeSize": [750, 207],
+      "alpha": "opaque",
+      "atlasPolicy": "alone",
+      "approval": "pending"
     }
-  ],
-  "nodes": [
-    {
-      "stableKey": "undergroundIdle.node.background",
-      "type": "image",
-      "name": "img_background",
-      "asset": "undergroundIdle.scene.background",
-      "rect": [0, 0, 750, 1624],
-      "zOrder": 0,
-      "touchable": false
-    }
-  ],
-  "controllers": [],
-  "relations": [],
-  "hotspots": [],
-  "textSlots": []
+  ]
 }
 ```
 
-### 4.3 Schema 必须覆盖的五层信息
+示例坐标只说明字段含义，不能在几何裁定完成前复制为实际值。每个资产还应按类型登记：
 
-| 层 | 必填信息 |
-| --- | --- |
-| 画布与来源 | 源文件、哈希、真实尺寸、逻辑尺寸、坐标系、缩放和来源级别 |
-| 资产 | stable key、来源模式、crop/mask、trim、padding、pivot、anchor、运行尺寸、九宫格、atlas 策略、输出名 |
-| 组件与节点 | stable key、类型、名称、xywh、z-order、group、资源/组件引用、touchable、fill、文本样式 |
-| 行为 | controller、page、默认页、gear、relation、hotspot、list/defaultItem、ProgressBar/Button 模板 |
-| 稳定 ID | package、resource、component、child、controller page 的永久映射和 tombstone |
+- crop 前原点、可见 Alpha bbox、padding 和 pivot；
+- 九宫格 `left/top/right/bottom` source inset；
+- fullCanvas 的固定画布与 blend mode；
+- generatedVariant 的 reference、允许变化区和状态 key；
+- source/output SHA-256、色彩空间、位深、许可与批准状态。
 
-仅有位置矩形时，只能生成静态 image/loader/graph。需要按钮、进度条、状态切换或安全区关系时，必须补齐行为层，
-编译器不得根据节点名字自行猜测。
+## 8. 确定性 composite 与视觉 Gate
 
-## 5. 切图规则
+运行 PNG 生成后，必须按 manifest 在 750×1624 画布上重组至少以下状态：
 
-### 5.1 允许的来源模式
+- 新手初始；
+- 产能平衡、开采瓶颈、运输瓶颈；
+- 仓库近满、已满；
+- 深层锁定、可解锁、已解锁；
+- 收取按钮五态；
+- 安全区与长数字样例。
 
-| `sourceMode` | 用途 | 规则 |
-| --- | --- | --- |
-| `copy` | 已批准独立 PNG | 校验哈希后无损复制，不重新编码 |
-| `fullCanvas` | 背景、结构、灯光、前景遮挡等同画布层 | 保持完整画布，不 tight crop；可标为 `alone_npot` |
-| `alphaBBox` | 已有真实透明 Alpha 的独立件 | 按可见 bbox + 显式 padding 裁切，并回算 pivot |
-| `crop` | 确认没有背景污染、没有被其他对象遮挡的局部区域 | 只使用显式矩形，不自动扩大语义边界 |
-| `mask` | 有独立 Alpha mask 或图层源的对象 | mask 必须是输入文件，不能由模型凭效果图猜测 |
-| `nineSlice` | 严格组件源图 | 必须显式登记四边 inset，并校验中心可拉伸区大于零 |
+`target ↔ composite` 检查至少包含：
 
-### 5.2 扁平效果图的限制
+1. 全页叠图和分区感知差异；
+2. R1～R6 的材质、边框、倒角、纹理、光向和信息密度 A/B；
+3. 角色与建筑的尺度、脚底接触、环境色和遮挡；
+4. 九宫格 1×/极值尺寸无变形；
+5. 关闭运行时文字后无伪字、数字、等级或填充值；
+6. 人工三秒扫描与美术负责人签字。
 
-如果角色、建筑、图标或按钮与背景已经合成，矩形裁切会带入背景像素，也无法恢复被遮挡部分。这种情况只能：
+不要求跨字体和渲染器逐像素相等，但批准的固定像素区不得无理由漂移。差异报告必须区分：允许的运行时文字/
+状态区、采样/抗锯齿容差和禁止变化区。没有人工签字时，自动分数不能关闭视觉 Gate。
 
-1. 使用原始分层母版或独立图层；
-2. 重新生成单体透明件；
-3. 使用人工提供并审核的 mask；
-4. 将整层作为 `fullCanvas` 视觉层，而不是伪装成可复用透明件。
+## 9. FairyGUI Editor 装配
 
-审稿用 `FX`、`SPEC`、`*_review.*`、contact sheet、带文字效果图和生成原稿默认禁止进入运行输出。
+`target ↔ composite` 通过后才进入 Editor：
 
-### 5.3 pivot 与位置回算
+1. 用 FairyGUI Editor 打开 `apps/art/fairygui/FairyGUI.fairy`；
+2. 导入 manifest 中 `approval=accepted` 的运行 PNG；
+3. 创建/修改 `UndergroundIdle / UndergroundIdleMain`；
+4. 在 Editor 中配置组件、Controller/page、Gear、Relation、九宫格、List、Loader、pivot 和热区；
+5. 完整保存、关闭、重开目标组件，记录 Editor 往返结论；
+6. 使用 Editor 正式发布 `.bin`、atlas 和独立纹理。
 
-裁切后必须保持页面上的视觉锚点不漂移。紧凑切图可使用：
+外部工具默认只读 FGUI XML。需要自动化时，优先在临时工程做锁定版本的官方 Editor 插件 POC，插件只通过
+Editor API 导入资产或创建授权 leaf component，ID 仍由 Editor 分配。UndergroundIdleMain 这类复杂整页不作为
+raw XML 后备试点。
 
-```text
-nodeXY = sourceAnchorLogical
-         - pivotPx × runtimeSize / outputSize
-```
+明确禁止：
 
-编译报告必须同时记录原始矩形、Alpha bbox、最终 crop、padding、输出尺寸、pivot 和页面 anchor，便于逐像素复核。
+- 从 target 或标注图推算 package/resource/child/controller page ID；
+- 外部脚本直接写正式组件 XML 或 `package.xml`；
+- 伪造 `.bin`、atlas、trim、rotation、分页或 Creator `.meta`；
+- 把 review/composite/spec/prompt 导入运行包；
+- 在装配阶段重新调用图片模型修最终画面。
 
-九宫格从四边 inset 转为 FairyGUI `scale9grid`：
+## 10. Editor 后执行顺序
 
-```text
-scale9grid = [
-  left,
-  top,
-  sourceWidth - left - right,
-  sourceHeight - top - bottom
-]
-```
-
-## 6. FairyGUI ID 与 XML 编译规则
-
-### 6.1 ID lock
-
-`ids.lock.json` 必须 append-only：
-
-- 若目标包在实施时已有真实 `package.xml`、组件 XML 和 controller pages，则先导入 ID；首次新建包则分配一次并立即锁定；
-- 使用 stable key 查找 ID，不能用数组位置、文件顺序或可改名的展示名称重新计算；
-- 新对象只分配未使用 ID；删除对象写入 tombstone，旧 ID 永不回收；
-- 编译时检查重复、悬空引用和 lock 漂移；
-- 仅重新排序节点不得改变任何既有 ID；
-- package/resource ID 改变会破坏 `ui://`，必须作为阻断错误；
-- group、relation target 和 gear page 最终都解析为锁定 ID。
-
-UndergroundIdleMain 首次生成后必须增加精确节点 ID 契约测试；后续若迁移已存在页面，必须导入其真实 ID，而不是重新编号。
-
-### 6.2 XML 所有权
-
-- `UndergroundIdleSceneGenerated.xml` 等 machine-owned 文件允许整文件确定性重建；
-- `UndergroundIdleMain.xml` 首期为 Editor-owned，只显式引用生成子组件，不做通用三方合并；
-- `package.xml` 使用 XML AST 只增改本工具登记的 folder/component/image，保留未知属性、已有顺序、
-  `alone_npot`、`scale9grid`、`exported` 和不透明元数据；
-- FairyGUI 的实际字段名 `extention` 不得被“纠正”为 `extension`；
-- `displayList` 顺序即 z-order，不能做字母排序；
-- Button、ProgressBar、复杂 list、transition 和特殊资源首期只允许使用已审核模板，不开放任意生成；
-- Editor 保存后的格式化或默认值变化必须进入 round-trip diff 审核，不能直接用 manifest `--write` 掩盖。
-
-### 6.3 原子写入
-
-编译器先在临时目录完成全部切图、XML 和引用校验，成功后再替换 machine-owned 输出。任一资源、ID 或 XML
-校验失败时，不得留下半套输出，也不得修改 Editor-owned 文件。
-
-## 7. 计划命令
-
-以下命令是计划接口，需在 P1～P5 实现后才可使用：
+顺序固定为：
 
 ```bash
-# 生成审稿标注图、切图、ID lock、组件 XML，并受控更新 package.xml
-npm run compile:fgui-layout -- \
-  --layout docs/undergroundIdle/art/production/main_v01/fgui/UndergroundIdleSceneGenerated.layout.json
+# 前提：Editor 已保存、关闭、重开并正式发布
+npm run codegen:fgui -- UndergroundIdle UndergroundIdleMain
 
-# 只检查 Schema、源哈希、切图漂移、ID 和 XML 引用，不写文件
-npm run verify:fgui-layout -- \
-  --layout docs/undergroundIdle/art/production/main_v01/fgui/UndergroundIdleSceneGenerated.layout.json
+# 创建/更新目标 View 同目录 .view.json 与 features/<id>/feature.json 后
+npm --workspace @game/server run codegen:features
 
-# XML → View 代码生成；P0 先确认仓库工具接口
-npm run codegen:fgui -- UndergroundIdle UndergroundIdleSceneGenerated
+# 审阅真实 XML、View AUTO、fguiContracts、viewRegistry、pages 与 feature 生成差异
 
-# FairyGUI Editor 首次发布完成后执行仓库门禁
+node scripts/fgui-manifest.mjs --write
+npm run sync:client
 npm run test:fgui
-npm run verify:fgui
+npm run typecheck
+npm run test:client
 npm run verify:sync
 ```
 
-不得增加“命令行启动 Creator”的脚本。最终步骤是人工通过 Cocos Dashboard 启动 Creator 3.8.8。
+`.view.json` 与 `features/<id>/feature.json` 是 feature/View 登记真源；`fguiContracts`、`viewRegistry`、`pages`
+等稳定 façade 的生成区不得手改。`fgui-manifest --write` 必须晚于两次 codegen 和 AUTO 审阅，因为发布闭包锁
+包含 View AUTO 哈希。随后通过 Cocos Dashboard 打开 Creator，等待真实导入生成/复用 `.meta`，再执行 09 文档
+的完整状态矩阵。
 
-## 8. 实时阶段计划
+## 11. Gate 与完成定义
 
-状态约定：`[x]` 已完成，`[~]` 进行中，`[ ]` 未开始，`[!]` 阻断。每次推进后更新本文“最近更新”、阶段状态、
-证据和下一步；不能仅因文件存在就把 Gate 标为通过。
-
-### P0：基线审查与边界冻结
-
-- [ ] 盘点 ART manifest、切图工具、FairyGUI 工程、codegen 和 manifest 校验器；
-- [ ] 用最小 fixture 验证设计源 XML 的可生成范围，并确认 `.bin`/atlas 只由 FairyGUI Editor 发布；
-- [ ] 确认 Creator 只能通过 Cocos Dashboard 启动；
-- [ ] 把扁平效果图和审稿标注图加入生产来源禁止清单；
-- [ ] 人工批准“machine-owned 生成子组件 + Editor-owned 页面外壳”首期所有权模型；
-- [ ] 审阅第 9 节任务提示词和 ImageGen 提示词模板。
-
-Gate 0：工具盘点、所有权、授权与发布边界均有可复核记录。<br>
-状态：`未开始`。
-
-### P1：统一 Schema、fixture 与 ID lock 建立/导入
-
-- [ ] 新增 `ui-layout.schema.json` 和 TypeScript 类型；
-- [ ] 定义 source/logical 两套坐标、来源白名单和 SHA-256 锁定；
-- [ ] 定义 asset、node、controller、gear、relation、hotspot 和 text slot；
-- [ ] 为 ART-01、ART-03、ART-04、ART-06、ART-07 首次 manifest 编写适配器或样例；
-- [ ] 创建新的 package/resource/component/child/page ID 并从第一次生成起锁定；若实施时存在真实目标包，
-  则先显式导入其 ID，禁止根据文档推测 ID；
-- [ ] 建立 append-only `ids.lock.json`、tombstone 和碰撞测试；
-- [ ] 产出最小合法、完整合法和非法输入 fixtures。
-
-Gate A：Schema 能完整表达一个静态页面、一个九宫格、一个热区和一组 controller/gear，重排 JSON 不改变 ID。<br>
-状态：`未开始`。
-
-### P2：确定性切图与标注图
-
-- [ ] 实现 `copy/fullCanvas/alphaBBox/crop/mask/nineSlice`；
-- [ ] 实现并测试 Alpha bbox、padding、pivot 和 source anchor 逻辑；
-- [ ] 检查四角 Alpha、边缘污染、空图、越界 crop、输出重名和不允许来源；
-- [ ] 从 JSON 生成带 stable key、矩形、锚点和 z-order 的审稿标注图；
-- [ ] 输出 `compile-report.json` 与源/目标哈希；
-- [ ] 使用临时目录和原子替换，失败不污染输出；
-- [ ] 同输入重复运行得到字节一致 PNG 或受控的等价哈希。
-
-Gate B1：首次制作的主界面代表性资源可由批准源确定性生成，位置、Alpha、pivot 和九宫格审计通过。<br>
-状态：`未开始`。
-
-### P3：稳定 ID 与 XML 编译
-
-- [ ] 生成 machine-owned 组件的 controller 和有序 `displayList`；
-- [ ] 支持 image、loader、graph、group、text slot 和白名单 component；
-- [ ] 支持显式 relation、gearDisplay、gearIcon 及引用校验；
-- [ ] 受控 AST 合并 `package.xml`，保留未知字段和已锁定资源 ID；
-- [ ] 校验所有 `src + pkg`、`ui://`、group、relation target 和 gear page；
-- [ ] 校验 gear pages/values 数量及 controller 归属；
-- [ ] 添加 `--check` 漂移模式和确定性格式化测试。
-
-Gate B2：连续编译两次零 diff；只改坐标不会改 ID；新增、删除、重排资源不会复用旧 ID。<br>
-状态：`未开始`。
-
-### P4：`UndergroundIdleSceneGenerated` 试点
-
-- [ ] 在首次 UndergroundIdleMain 方案中选择纯视觉场景层作为试点，不先纳入业务 controller；
-- [ ] 建立 `UndergroundIdleSceneGenerated.layout.json`，分配并锁定首次资源 ID；若目标包已有真实 ID 则先导入；
-- [ ] 自动生成场景切图和 `UndergroundIdleSceneGenerated.xml`；
-- [ ] 在 Editor-owned `UndergroundIdleMain.xml` 中只接入一个生成子组件实例；
-- [ ] 对比 08～09 的拟定坐标、遮挡、热区和状态契约；
-- [ ] 验证 Editor 打开、保存、重载后没有丢节点、修复提示或不可解释 diff。
-
-Gate C：FairyGUI Editor round-trip 通过，并能按首次确认的 `Publish.json` 单包发布有效 `.bin` 与 atlas。<br>
-状态：`未开始`。
-
-### P5：命令、测试与仓库门禁
-
-- [ ] 增加 `compile:fgui-layout` 和 `verify:fgui-layout`；
-- [ ] 为 Schema、裁切、ID、package 合并、XML 引用和原子失败添加测试；
-- [ ] 把生成组件接入 P0 验证通过的 `fgui-codegen`，缺失能力先补齐；
-- [ ] 把 layout、ID lock、生成源和 Editor 发布物纳入 manifest 闭包；
-- [ ] 验证 `test:fgui`、`verify:fgui`、`verify:sync` 和相关 typecheck；
-- [ ] 记录生成文件与人工文件边界，防止格式化工具批量改写 Editor-owned XML。
-
-状态：`未开始`。
-
-### P6：Dashboard/Creator 验收
-
-- [ ] FairyGUI Editor 完整重载并发布；
-- [ ] 通过 Cocos Dashboard 启动 Creator 3.8.8；
-- [ ] 等待 Creator 导入并生成/稳定 `.meta`；
-- [ ] 验收 750×1624、安全区、长数字、遮挡、热区和主要状态；
-- [ ] 检查图集黑边、透明污染、九宫格拉伸和 NPOT 独立纹理；
-- [ ] 保存真实预览证据并更新本计划。
-
-Gate D：Creator 真实预览与状态矩阵通过。至此可把本流程标记为“下一批默认可用”。<br>
-状态：`未开始`。
-
-### P7：扩展与迁移
-
-- [ ] 用一个新页面验证整页 machine-owned XML；
-- [ ] 评估是否迁移 UndergroundIdleMain 的 UI 容器和简单状态，不强制迁移复杂交互；
-- [ ] 按实际需求增加 Button、ProgressBar、list、transition 白名单模板；
-- [ ] 统一剩余 ART manifest，删除重复的人工复制步骤；
-- [ ] 建立变更记录和 Schema 升级器，旧布局可继续重建。
-
-状态：`未开始`，不阻断首期可用。
-
-## 9. 下一批可直接复用的提示词
-
-### 9.1 给 Codex 的整批执行提示词
-
-替换尖括号变量后直接使用；如果本计划尚未通过 Gate C，提示词应先要求完成编译器，而不是假装命令已经存在。
-
-```text
-阅读 docs/undergroundIdle/README.md、07-art-direction.md、
-08-main-screen-art-brief.md、09-fairygui-undergroundidle-main-assembly.md 和
-10-image-to-fairygui-live-plan.md。
-
-使用 $imagegen 基于 <参考图路径或已附图片> 制作 <页面/状态/资产批次>。本次把视觉生成、机器标注、
-生产切图和 FairyGUI 设计源作为同一个交付批次，不在生成图片后再人工抄坐标。
-
-固定参数：
-- FairyGUI package：<package，例如 idle>
-- machine-owned component：<组件名，例如 UndergroundIdleSceneGenerated>
-- 逻辑画布：<宽×高，例如 750×1624>
-- 源画布：<宽×高，例如 1500×3248>
-- 视觉与交互真相：<文档/manifest 路径>
-- 输出 layout：<*.layout.json 路径>
-- 输出运行资源目录：<FairyGUI package 下的 generated/ 路径>
-
-授权边界：实施前取得 FairyGUI 目标文件的明确写入授权；未授权时只输出待应用的 XML 变更报告，不直接修改
-FairyGUI 真源。
-
-执行要求：
-1. 先冻结构图、状态语义和资产清单，再生成效果图或独立透明件。
-2. 同步写机器可读 layout.json；坐标、crop、pivot、运行尺寸、九宫格、z-order、group、热区、
-   controller/page/gear/relation 均使用显式字段。标注 PNG 必须由 layout.json 生成，禁止 OCR 反推。
-3. 扁平效果图中有背景污染、遮挡或缺失像素的对象不得直接矩形裁切；改用分层源、独立透明件或显式 mask。
-4. 使用稳定 ids.lock.json；若目标包有真实 ID 则导入复用，否则首次分配后立即锁定；禁止按数组下标重编号或回收 ID。
-5. 自动输出经过 Alpha、尺寸、pivot、九宫格和来源白名单检查的切图，并生成 machine-owned FairyGUI XML；
-   package.xml 只做受控 AST 合并，不能覆盖未知属性或非本工具所有的资源配置。
-6. 不生成或伪造 .bin、atlas、Creator .meta；这些由 FairyGUI Editor 发布和 Dashboard 启动的 Creator 导入。
-7. 运行 verify:fgui-layout、codegen、test:fgui、verify:fgui、verify:sync；记录未通过项，不能用更新哈希掩盖错误。
-8. 输出本批的源图、layout、标注图、切图、XML、编译报告、人工 Editor 步骤和 Creator 验收清单。
-9. 不通过命令行启动 Cocos Creator。
-10. 不 commit，不 push。
-```
-
-### 9.2 ImageGen：整页视觉探索提示词
-
-整页结果只用于冻结构图和视觉方向，不直接切成生产资产：
-
-```text
-Use case: stylized-concept
-Asset type: full-page mobile game visual target, review-only
-Primary request: Create the approved <PAGE_AND_STATE> for Underground Idle at a strict portrait composition matching a 750×1624 logical canvas. Use the supplied approved main-screen baseline and style tile only as visual references.
-Layout: preserve the documented fixed regions, safe areas, interaction hierarchy, stage viewport and empty runtime-text slots exactly; keep all important subjects inside their declared rectangles.
-Style/medium: original hand-painted 2D game art; chunky readable silhouettes; dark charcoal rock, timber, old steel and restrained brass; strong dark outlines; upper-left key light; controlled warm amber actions and restrained cool depth light.
-State: clearly communicate <STATE_DESCRIPTION> without moving fixed UI regions or changing semantic hotspots.
-Runtime text: leave every title, number, price, timer, badge and Chinese text slot blank for FairyGUI runtime text.
-Constraints: one coherent review image; no fake text, gibberish, logo, watermark, device frame, notch, gesture bar, debug guides or coordinate labels.
-Avoid: isometric camera, 3D render, photorealism, thin flat UI, noisy microtexture, baked status numbers, moved buttons, duplicated characters, conflicting light direction.
-```
-
-### 9.3 ImageGen：可切生产单体提示词
-
-角色、建筑、装饰和图标应单独生成，不能依赖从整页图恢复透明背景：
-
-```text
-Use case: stylized-concept
-Asset type: standalone production 2D game <ASSET_TYPE> cutout
-Primary request: Generate exactly one complete <ASSET_NAME>, matching the supplied approved Underground Idle identity, silhouette, material and upper-left lighting references.
-Style/medium: original hand-painted 2D game art; strong dark production outline; simplified readable color planes; restrained texture; consistent timber, rock, cloth, leather, brass and old-steel materials.
-Composition/framing: one complete centered object, fully visible, generous transparent padding, stable <PIVOT_DESCRIPTION>; no crop and no second object.
-Scene/backdrop: genuine transparent RGBA outside the complete silhouette.
-Lighting: neutral production lighting only; no cast shadow, floor shadow, glow, bloom or halo unless the requested asset itself is an isolated light-FX layer.
-Text: none.
-Constraints: clean antialiased edges with color extension; preserve all required functional parts; no UI, labels, numbers, level badge, price, logo, signature or watermark.
-Avoid: baked checkerboard, solid background, card frame, presentation board, perspective turntable, extra props, floor plane, duplicated parts, cropped base.
-```
-
-### 9.4 透明背景修正提示词
-
-只有主体已经通过身份和造型审阅时使用：
-
-```text
-Use case: background-extraction
-Primary request: Preserve the exact approved subject pixels and change only the exterior background alpha. Remove every checkerboard/background pixel, vignette, haze, cast shadow and soft halo. Output only the unchanged complete subject on genuine transparent alpha.
-Invariants: do not move, resize, crop, redraw, recolor, relight or add details; preserve the exact silhouette, interior colors, outline, position and scale.
-Alpha requirement: all open space and all four corners must be alpha 0; preserve clean antialiased edge pixels and fine functional details.
-Constraints: no text, labels, grid, UI, logo, signature, watermark or new object.
-```
-
-ImageGen 仍可能返回烘焙棋盘或浅色背景。自动清理只能移除与画布边缘连通、且满足明确颜色条件的背景；随后必须
-检查四角 Alpha、可见 bbox、细绳/手指/发丝/高光和主体 RGB，不能把“运行了抠图”当成通过。
-
-### 9.5 给标注/编译步骤的专用提示词
-
-当视觉资产已经批准、不需要再次生成图片时使用：
-
-```text
-不要重新设计或重绘图片。读取 <批准源图/分层目录>、<视觉契约>、<目标 FairyGUI package；首次可为空> 和
-10-image-to-fairygui-live-plan.md，为 <组件名> 建立或更新机器可读 layout.json。
-
-先列出每个 asset/node 的 stableKey、来源模式、sourceRect、logical rect、padding、pivot、runtimeSize、
-nineSlice、atlas policy、z-order、group、touchable、controller/page/gear/relation 和输出文件。无法从证据确定的
-语义必须报告，不得根据像素或名称猜测。
-
-随后由 layout.json 生成审稿标注图、生产切图、ids.lock、machine-owned 组件 XML 和受控 package.xml 变更，
-执行确定性二次编译和全部引用/Alpha/尺寸门禁。不得从标注图 OCR 回填数据，不得从扁平合成图裁带背景的透明件，
-不得伪造 FairyGUI .bin、atlas 或 Creator .meta，也不得通过命令行启动 Creator。写入 FairyGUI 真源前必须
-确认项目负责人已对明确文件范围授权；未授权时只输出待应用变更。
-```
-
-## 10. 验收矩阵
-
-### 10.1 自动验收
-
-- Schema 版本、必填字段、坐标空间和源文件哈希有效；
-- crop/mask 不越界，输出非空，透明件四角和边缘满足规则；
-- 九宫格中心区为正数，inset 没有落到圆角、描边或装饰上；
-- 同 stable key 的既有 ID 不变，新增 ID 无碰撞，tombstone 不复用；
-- 所有 package、resource、component、child、group、relation、page 和 `ui://` 引用闭合；
-- gear page 属于目标 controller，pages 与 values 数量一致；
-- `displayList` 与显式 z-order 一致；
-- 连续编译两次无 diff，`--check` 在漂移时以非零状态退出；
-- review、raw、contact sheet、文字烘焙源没有进入运行目录；
-- 任一步失败时不得留下半套输出；若目标目录已有可用输出，则保持不变。
-
-### 10.2 FairyGUI Editor 验收
-
-- 工程完整重载无缺失资源、自动修复或悬空引用；
-- machine-owned XML 打开、保存、关闭再打开后结构稳定；
-- `package.xml` 的 `alone_npot`、九宫格、exported 和已锁定 ID 保持；
-- 组件遮挡、状态页、gear、relation、按钮模板和热区符合契约；
-- 按首次确认的 `Publish.json` 发布 `.bin`、atlas 和独立纹理成功。
-
-### 10.3 Creator 验收
-
-- 只通过 Cocos Dashboard 启动 Creator 3.8.8；
-- 资源导入和 `.meta` 稳定；
-- 750×1624 基线、安全区、长数字、满仓、锁定、远征和异常态通过；
-- 无九宫格变形、透明黑边、图集串色、热区漂移或遮挡错误；
-- `test:fgui`、`verify:fgui`、`verify:sync` 及相关客户端测试通过。
-
-## 11. 风险与回退
-
-| 风险 | 阻断方式 | 回退策略 |
+| Gate | 交付 | 关闭条件 |
 | --- | --- | --- |
-| 扁平图无法恢复透明件 | 来源模式和白名单阻断 | 改用独立图层、透明单体或 fullCanvas 层 |
-| ID 重算破坏 `ui://`/gear/group | append-only lock、既有 ID 导入和精确测试 | 保留旧 lock，禁止发布新 XML |
-| Editor 与生成器双写 | 文件级 ownership | 回到上一个生成输出；人工改动回填 Schema 后重编译 |
-| package 合并丢未知属性 | AST 白名单、round-trip diff | 不写 package，保留现有文件并报告差异 |
-| ImageGen 输出不稳定 | 源哈希、人工批准和确定性后处理 | 固定批准源，不在编译阶段重新调用生成模型 |
-| trim/pivot 导致页面漂移 | anchor 公式和逐像素 overlay | 回退 fullCanvas 或修正显式 pivot/crop |
-| 更新 manifest 掩盖坏发布物 | 先执行结构与预览门禁 | 不运行写入模式，回到 Editor 修复并重新发布 |
+| G0 | 策划冻结 | 玩法范围、业务规则、非目标和权威边界批准 |
+| G1 | PageSpec/Scenario | 字段、状态、动作、极值与验收场景闭合 |
+| G2 | 布局与几何裁定 | target 与 09 的固定区、热区、岗位锚点和安全区契约一致 |
+| G3 | 视觉锁定 | 无字黄金 target、prompt/编辑记录、哈希和人工美术批准 |
+| G4 | 生产拆分 | manifest、切片方式、动态对象、九宫格、预算和来源闭合 |
+| G5 | 运行资产 | PNG 的 Alpha/尺寸/pivot/状态系列通过，target ↔ composite 分区回归和人工 A/B 通过 |
+| G6 | Editor | 保存—关闭—重开、正式发布、引用闭合通过 |
+| G7 | 代码接线 | 两次 codegen、契约审阅、FGUI 发布闭包锁、同步和客户端测试通过 |
+| G8a/G8b | Creator/目标平台 | 初始、极值、安全区、网络、完整状态矩阵及交付范围内真机检查通过 |
+| G9 | 冻结与回流 | 证据、批准结论、缺陷回流与版本状态闭合 |
 
-## 12. 实施记录
+任何 Gate 的文件存在不等于通过。G5 未通过时必须回到 target 或运行 PNG 修复，不能在 Editor 中用额外装饰
+掩盖；G6 之后的结构问题回 Editor，视觉源问题回 G3～G5。
 
-初始记录为空。首次执行从 P0 开始；每次更新只追加有证据的结论。若 Gate 未通过，状态必须保持“未开始/
-进行中/阻断”，不能使用“基本完成”代替明确的失败项，也不能把文档编写本身登记为实现证据。
+## 12. 风险与回退
 
-## 13. 完成定义
+| 风险 | 阻断/检测 | 回退 |
+| --- | --- | --- |
+| 直接裁切含背景污染 | Alpha/边缘与回放重影检查 | 改用 inpaintCrop 或独立透明件 |
+| 大区块保真但状态不可换 | manifest 动态节点盘点 | 拆出最小动态覆盖层，不拆静态铆钉 |
+| 九宫格中心不干净 | inset 与极值拉伸检查 | 重新绘制同风格九宫格源 |
+| 角色像贴纸 | 脚底、环境色、投影和遮挡 A/B | 回角色源与局部灯光层修复 |
+| target 与装配坐标比例冲突 | G2 布局与几何裁定 | 修订 target；若业务布局确需变化则先同步修改 08/09 |
+| Editor 与外部工具双写 | 正式工程写入监控/审阅 | 丢弃外部候选，回 Editor 已知版本 |
+| 发布顺序导致闭包锁陈旧 | codegen/AUTO 哈希检查 | 重新 codegen、审阅后再写 manifest |
 
-当且仅当以下条件全部满足，才能在下一批任务中把“生成图片时同步得到切图和 FGUI XML”作为默认能力：
+## 13. 实施顺序
 
-1. 一个批准源批次可以通过单一 `layout.json` 重建标注图、所有运行 PNG 和 machine-owned XML；
-2. 相同输入连续编译零 diff，JSON 重排不改变稳定 ID；
-3. 非法来源、污染 Alpha、越界 crop、悬空引用和错误 gear 会在写文件前失败；
-4. FairyGUI Editor round-trip 和发布通过，不需要手工修 XML 才能打开；
-5. 项目 codegen、manifest 和 FGUI 测试已接入本流水线并通过；
-6. Cocos Dashboard 启动的 Creator 完成真实预览；
-7. 下一位执行者能够仅凭仓库中的文档、命令、所有权和回退说明复现结果。
+1. 在 G2 确认 target 与 09 装配契约的几何一致；
+2. 在 G3 制作并批准无字 `ug_main_golden_v02`；
+3. 在 G4 建立 `main_bitmap_v02/asset-manifest.json` 和切片计划；
+4. 在 G5 生产 PNG、回放 composite 并完成人工 A/B；
+5. 进入 09 规定的 FairyGUI Editor 装配。
 
----
-
-[返回总目录](README.md) · [上一篇：UndergroundIdleMain FairyGUI 装配契约](09-fairygui-undergroundidle-main-assembly.md)
+在 G5 通过前，不创建 UndergroundIdleMain 正式 XML、不发布资源，也不修改客户端绑定。
