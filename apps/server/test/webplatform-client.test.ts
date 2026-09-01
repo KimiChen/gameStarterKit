@@ -102,8 +102,10 @@ process.env.WEBPLATFORM_SERVICE_SECRET = "test-service-secret";
 //
 // 取值按两条约束平衡：① CONNECT 40ms 是对**本地已监听 socket** 建连的预算，进程一被调度走
 // 就可能越过它，成功路径的用例因此假红——这是全文最脆的数字；② REQUEST 决定 slow-token
-// 用例的等待成本（重试 2 次 ⇒ 2×）。取 800/1000：建连余量 ×20、成功往返余量 ×8，
-// 而 slow-token 由 ~0.24s 变 ~2s，代价可接受。⛔ 不要为了跑得快调回几十毫秒。
+// 用例的等待成本——它是跨 attempt 的**总预算**（deadline 制：attempt 0 耗尽预算后，
+// attempt 1 拿 remaining≤0 直接 break），等待 ≈ 1× 而非 2×。取 800/1000：建连余量 ×20、
+// 成功往返余量 ×8，而 slow-token 由 ~0.12s 变 ~1s（实测整文件 ~1.6s），代价可接受。
+// ⛔ 不要为了跑得快调回几十毫秒。
 process.env.WEBPLATFORM_CONNECT_TIMEOUT_MS = "800";
 process.env.WEBPLATFORM_REQUEST_TIMEOUT_MS = "1000";
 process.env.WEBPLATFORM_BREAKER_FAILURES = "100";
