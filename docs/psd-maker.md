@@ -1,13 +1,13 @@
 # 分层 PSD 生成流程
 
-> 文档版本：1.0<br>
+> 文档版本：1.3<br>
 > 编写日期：2026-09-02<br>
 > 示例对象：`Underground Idle / ug_main_layered_source_v02.psd`<br>
 > 适用范围：从批准的整页 PNG 视觉稿制作可审阅、带逻辑分组和文字层的 PSD 美术交接文件
 
 ## 1. 目的与结论
 
-本文记录 `ug_main_layered_source_v02.psd` 的实际生成过程，并把它整理成可复用流程。
+本文记录 `ug_main_layered_source_v02.psd` 的实际生成过程，并把它整理成后续工具化可复用的 E0 证据基线。
 
 该 PSD 不是在 Photoshop 中逐层手工绘制，而是通过以下链路生成：
 
@@ -27,8 +27,33 @@
 - FairyGUI Editor 中的 package、component、Controller、Gear、Relation 和内部 ID；
 - Creator 真实运行与安全区验收。
 
+### 1.1 与长期方案的关系
+
+长期方案采用“**命名 + sidecar 契约 + Editor 映射**”三层交接，以及“**Scenario-first + PSD handoff + CLI 编译器 PSD
+版 + Editor takeover**”架构。本案例只完成了其中一段：
+
+| 长期阶段 | 本案例证据 | 状态 |
+| --- | --- | --- |
+| Scenario-first | 读取策划、美术方向、黄金 target、几何和装配约束 | 有人工输入证据；没有通用 DeliverySpec/PageSpec CLI |
+| PSD handoff | [`docs/psd-maker/ug_main_layered_source_v02.psd`](psd-maker/ug_main_layered_source_v02.psd) 包含逻辑分组和文字 Type 描述；生成时完成同解析器往返与 ImageMagick `AE=0` | 文件已作为证据保存；仍仅为 `sourceOnlyFromTarget`，不是完整 `PsdHandoffBundle` |
+| 命名层 | 使用 `10_BG_ROCK` 等排序组和 T/H/A 审阅编号 | 可审阅，但没有 `ROLE::stableKey` 叶子命名 |
+| sidecar 层 | 参考既有策划与装配文档，并留下 G4 `asset-manifest.json` 待审快照 | 没有形成 `delivery-spec.json`、`asset-manifest.json`、`assembly-recipe.json` 的闭合契约 |
+| Editor 映射层 | 未进入 FairyGUI | 没有正式 ID snapshot、Controller/Gear/Relation 映射 |
+| CLI 编译器 PSD 版 | 未执行 | 没有候选 XML、golden project、重复编译或隔离发布证据 |
+| Editor takeover | 未执行 | 没有 FairyGUI Editor 保存—重开或正式发布证据 |
+
+因此，本案例可作为“批准 target → ImageGen 局部候选 → 确定性像素处理 → PSD 封装 → composite 对账”的实现参考，
+不能直接成为 FairyGUI 编译输入。PSD 实体及其输入图、审稿图、决策记录和 G4 待审 manifest 均保存在
+`docs/psd-maker/`；PSD 当前 SHA-256 为
+`6fb8c2009ce9ac9355f4937212901a2011577f3c422dfb9ffb799416dc1b1f5f`。它仍缺少真实 Photoshop
+打开—保存—关闭—重开、stable key sidecar 闭合和 G5 accepted 运行资产，完成这些验证前不能升级为可执行 golden fixture。
+
+后续批次应由 `docs/psd.md` 规定的通用 Packager 生成完整交接包。历史 T/H/A 编号若继续使用，必须在 sidecar 中显式
+alias 到 stable key；不得根据中文层名、数字顺序或 PSD layer ID 猜映射。
+
 相关约束见：
 
+- [PSD 到 FairyGUI 的“CLI 编译器 PSD 版”实施方案](psd.md)
 - [FairyGUI UI 生产、装配与自动化工作流](FairyGUI.md)
 - [Underground Idle 美术表现与资产制作](undergroundIdle/07-art-direction.md)
 - [主界面视觉落地与效果图任务书](undergroundIdle/08-main-screen-art-brief.md)
@@ -42,10 +67,13 @@
 示例使用以下视觉基准：
 
 ```text
-docs/undergroundIdle/art/targets/ug_main_golden_v02.png
+docs/psd-maker/ug_main_golden_v02.png
 ```
 
 它是 `750×1624`、无运行时文字的 `UG-MAIN-GOLDEN-V02` 批准视觉 target。
+
+本案例的证据统一保存在 `docs/psd-maker/`。本文第 3.5 节是证据索引；
+[`docs/psd-maker/SHA256SUMS`](psd-maker/SHA256SUMS) 只用于机器校验文件是否被改动，不承担额外的设计说明职责。
 
 项目字体来自：
 
@@ -71,19 +99,16 @@ SourceHanSansCN-Regular
 
 内置 ImageGen 是默认生成路径，不要求 `OPENAI_API_KEY`。ImageGen 输出必须复制到工作区后才能成为项目内的源候选。
 
-### 2.3 示例输出
+### 2.3 当前 PSD 证据
 
-历史示例输出路径为：
+最终生成的分层 PSD 保存在：
 
 ```text
-docs/undergroundIdle/art/production/main_bitmap_v02/sources/
-├─ ug_main_cleanplate_imagegen_candidate_v01.png
-├─ ug_main_layered_source_v02.psd
-├─ ug_main_layered_source_v02_preview.png
-└─ ug_main_layered_source_v02.prompt.md
+docs/psd-maker/ug_main_layered_source_v02.psd
 ```
 
-这些文件属于 source/review，不得整页导入 FairyGUI 或 Cocos 运行目录。
+文件元数据为 `750×1624`、RGB、8-bit，大小 `14,866,179` bytes。它和同目录的 target、clean plate、提示词、
+几何记录、审稿图及 manifest 都属于 source/review 证据，不得整页导入 FairyGUI 或 Cocos 运行目录。
 
 ## 3. `UG-MAIN-GOLDEN-V02` 的背景与参考资料
 
@@ -95,11 +120,10 @@ docs/undergroundIdle/art/production/main_bitmap_v02/sources/
 exec-53aa6312-22bd-4b18-91f0-0701dc29b469.png
 ```
 
-该输出归档为：
+该输出当前保存为：
 
 ```text
-docs/undergroundIdle/art/production/main_bitmap_v02/sources/
-ug_main_selected_exec_53aa_source_853x1844.png
+docs/psd-maker/ug_main_selected_exec_53aa_source_853x1844.png
 ```
 
 原始图尺寸是 `853×1844`。项目中的 `750×1624` 黄金 target 由该源等比缩放、居中并补足画布得到，没有进行非等比拉伸，也没有把低分辨率图机械放大后冒充新的高分辨率作者源。
@@ -148,15 +172,15 @@ Gate A：未关闭
 | `AGENTS.md` | 确认仓库真源、生成镜像、FairyGUI 和 Git 约束 |
 | `docs/undergroundIdle/README.md` | 确认玩法范围、当前实施状态和美术阅读路径 |
 | `docs/undergroundIdle/07-art-direction.md` | 确认 Q 版手绘方向、色板、材质、人物比例、主界面六区、文字禁入和资产责任 |
-| `docs/FairyGUI.md` | 确认 Scenario-first + Editor-first、G0～G9 Gate、效果图/生产源/运行资产边界、Type 文本与 Editor 所有权 |
+| `docs/FairyGUI.md` | 定义当前 `editor` 流程，以及 Scenario-first + PSD handoff + CLI 编译器 PSD 版 + Editor takeover 目标路线 |
 | `docs/undergroundIdle/08-main-screen-art-brief.md` | 确认 FX-01 初始快照、R1～R6 语义、分层组顺序、三秒扫描、文字投影和 Gate A 口径 |
 | `docs/undergroundIdle/09-fairygui-undergroundidle-main-assembly.md` | 提供 R/T/H/A 坐标、T01～T13 槽位、岗位锚点、目标节点树和安全区规则 |
 | `docs/undergroundIdle/10-image-to-fairygui-live-plan.md` | 确认 `regionCrop`、`inpaintCrop`、`alphaObject`、`fullCanvas` 等生产方式，以及禁止盲切和整页导入 |
 | `docs/undergroundIdle/art/production/README.md` | 确认 Bitmap-first 批次状态、source/runtime/composite/review 的目录责任和 Gate 顺序 |
 | `docs/undergroundIdle/art/production/main_bitmap_v02/README.md` | 确认 79 项计划输出、当前烘焙责任、三层场景、角色/灯光/状态的待拆边界 |
-| `docs/undergroundIdle/art/production/main_bitmap_v02/asset-manifest.json` | 核对计划资产组、文字槽、热区、状态族和 composite 责任；没有把 pending 条目冒充 accepted 输入 |
-| `docs/undergroundIdle/art/targets/ug_main_golden_v02.geometry.md` | 确认 `adoptConceptGeometry`、六区坐标、Mask、安全区和短屏决策 |
-| `docs/undergroundIdle/art/targets/ug_main_golden_v02.prompt.md` | 确认原始 ImageGen 提示词、用户选稿、853×1844 源、750×1624 规范化方法和历史候选排除项 |
+| `docs/psd-maker/asset-manifest.json` | 核对计划资产组、文字槽、热区、状态族和 composite 责任；没有把 pending 条目冒充 accepted 输入 |
+| `docs/psd-maker/ug_main_golden_v02.geometry.md` | 确认 `adoptConceptGeometry`、六区坐标、Mask、安全区和短屏决策 |
+| `docs/psd-maker/ug_main_golden_v02.prompt.md` | 确认原始 ImageGen 提示词、用户选稿、853×1844 源、750×1624 规范化方法和历史候选排除项 |
 | `apps/art/fairygui/assets/L10n_zh_hans/Font/siyuanheitiCNRegular.ttf` | 用于 T01～T13 的栅格预览，并登记 `SourceHanSansCN-Regular` Type 字体名 |
 
 这些文件的责任不同：
@@ -174,13 +198,13 @@ Gate A：未关闭
 
 | 图像 | 用途 | 是否直接进入 PSD 默认合成 |
 | --- | --- | --- |
-| `art/targets/ug_main_golden_v02.png` | 唯一批准视觉 target、ImageGen 编辑目标、固定 UI 和角色像素来源 | 是；固定 UI/角色来自该图，另保留隐藏参考层 |
-| `art/production/main_bitmap_v02/sources/ug_main_selected_exec_53aa_source_853x1844.png` | 核对用户选定的原始 ImageGen 输出和细节密度 | 否；PSD 使用规范化 target 和新的 clean plate 候选 |
-| `art/targets/ug_main_golden_v02_review.png` | 核对项目字体、常规中文、数值层级和视觉占位 | 否；文字在 PSD 中重新建立 |
-| `art/targets/ug_main_golden_v02_review_extreme.png` | 核对长数字、极限速率和满仓文字槽设计 | 否；它是审稿证据 |
-| `art/ug_spec_main_geometry_v02.png` | 核对 R/Mask/H/T/A 标注 | 否；PSD 根据 09 的坐标重新生成隐藏 guide |
-| `art/ug_spec_main_safearea_88_68_v02.png` | 理解非对称安全区和 598px 舞台规则 | 否；安全区不是烘焙像素 |
-| `ug_main_cleanplate_imagegen_candidate_v01.png` | 本轮依据黄金 target 新生成的无角色 R4 候选 | 是；规范化后仅使用 R4 |
+| `docs/psd-maker/ug_main_golden_v02.png` | 唯一批准视觉 target、ImageGen 编辑目标、固定 UI 和角色像素来源 | 是；固定 UI/角色来自该图，另保留隐藏参考层 |
+| `docs/psd-maker/ug_main_selected_exec_53aa_source_853x1844.png` | 核对用户选定的原始 ImageGen 输出和细节密度 | 否；PSD 使用规范化 target 和新的 clean plate 候选 |
+| `docs/psd-maker/ug_main_golden_v02_review.png` | 核对项目字体、常规中文、数值层级和视觉占位 | 否；文字在 PSD 中重新建立 |
+| `docs/psd-maker/ug_main_golden_v02_review_extreme.png` | 核对长数字、极限速率和满仓文字槽设计 | 否；它是审稿证据 |
+| `docs/psd-maker/ug_spec_main_geometry_v02.png` | 核对 R/Mask/H/T/A 标注 | 否；PSD 根据 09 的坐标重新生成隐藏 guide |
+| `docs/psd-maker/ug_spec_main_safearea_88_68_v02.png` | 理解非对称安全区和 598px 舞台规则 | 否；安全区不是烘焙像素 |
+| `docs/psd-maker/ug_main_cleanplate_imagegen_candidate_v01.png` | 依据黄金 target 生成的无角色 R4 候选 | 是；规范化后仅使用 R4 |
 
 以下历史图明确没有被当作最终 PSD 视觉输入：
 
@@ -216,6 +240,42 @@ ag-psd/dist/psd.d.ts
 ```
 
 重点确认 `Layer.imageData`、`children` 分组、`LayerTextData`、`shapeType=box`、`boxBounds`、字体、行距和 `paragraphStyle.justification` 的写入结构。它们只是 PSD 文件格式实现参考，不是项目视觉或业务真源。
+
+### 3.5 证据目录与使用边界
+
+本案例共有 11 份证据文件，统一平铺在 `docs/psd-maker/`。本文就是这些文件的人工索引；`SHA256SUMS` 是完整性校验清单，
+不属于设计证据，也不另建 README、迁移表或第二套索引。
+
+| 文件 | SHA-256 | 证据角色 | 使用边界 |
+| --- | --- | --- | --- |
+| [`asset-manifest.json`](psd-maker/asset-manifest.json) | `5de28955a8fcf750a0869768ae87deeff5ee0d32e4303df6ff3bd2d7cb0392ca` | 79 项后续拆层、状态、责任和验证要求的 G4 计划快照 | 仍为 `pendingHumanReview / G5 notStarted / editorImportAllowed=false`，不能当作 accepted 清单 |
+| [`ug_main_cleanplate_imagegen_candidate_v01.png`](psd-maker/ug_main_cleanplate_imagegen_candidate_v01.png) | `df5d115df89b7f59c7708d2ed38b885f8764bc96f8926eb8637399e6e2ad4e4e` | 无角色 R4 clean plate 候选 | 仅为 source 候选，局部变化仍需人工 A/B |
+| [`ug_main_golden_v02.geometry.md`](psd-maker/ug_main_golden_v02.geometry.md) | `20936e890e101e832b858045fa4a8b8e6ad76469c5f40c6676617bfaf62a29dc` | `adoptConceptGeometry`、R/Mask 坐标和安全区记录 | 证明该 target 的几何裁定，不代替现行装配验收 |
+| [`ug_main_golden_v02.png`](psd-maker/ug_main_golden_v02.png) | `697ae579d2c2875c763b6f07b09b08666513fc33f219dc9bf0106184b02538f4` | 唯一批准视觉 target | 可做视觉和 composite 基准，不是运行时整页资源 |
+| [`ug_main_golden_v02.prompt.md`](psd-maker/ug_main_golden_v02.prompt.md) | `0f599f0249f7dba783b11f8c29c748c0f5e7dddaf7e8f8f906139346fb3691f3` | ImageGen 提示词、输出 ID、源哈希和用户选稿记录 | 证明生成与选稿来源，不证明 G4/G5 完成 |
+| [`ug_main_golden_v02_review.png`](psd-maker/ug_main_golden_v02_review.png) | `326e2375272495f61852e9e4f28095aa27251013992966310e14674c033ee93d` | 常规文字与数值层级审稿图 | 仅供审阅，文字不进入位图运行资产 |
+| [`ug_main_golden_v02_review_extreme.png`](psd-maker/ug_main_golden_v02_review_extreme.png) | `b7b73c085b0501275f6951d841f6a0d13ddcf4eef84c1acd88274648b37c87ef` | 长数字、极限速率和满仓槽位审稿图 | 仅供极值审阅 |
+| [`ug_main_layered_source_v02.psd`](psd-maker/ug_main_layered_source_v02.psd) | `6fb8c2009ce9ac9355f4937212901a2011577f3c422dfb9ffb799416dc1b1f5f` | 最终生成的分层 source-only PSD | 可审阅分组和文字 Type 描述；不是运行资产，也尚未完成 Photoshop 实机往返 |
+| [`ug_main_selected_exec_53aa_source_853x1844.png`](psd-maker/ug_main_selected_exec_53aa_source_853x1844.png) | `1de931e33d5d66e65f12ecdcf50ee4d84675c091c310f09fbd26ace2cf20b8fd` | 用户选定的原始 ImageGen 输出 | 证明选稿源与细节密度，不直接作为 PSD 默认合成层 |
+| [`ug_spec_main_geometry_v02.png`](psd-maker/ug_spec_main_geometry_v02.png) | `cf1b2c229a47608294257b2c77321ef893cf2c7fc15bd5233c4a58b8b6397543` | R/Mask/H/T/A 几何标注 | 仅供规范核对，不是烘焙像素 |
+| [`ug_spec_main_safearea_88_68_v02.png`](psd-maker/ug_spec_main_safearea_88_68_v02.png) | `7b14c7509a80d69bd8350a2dfa5f4ace0cc98d2bc30620cc74d52f4d9db2b608` | 非对称安全区和 598px 舞台说明 | 仅供安全区核对，安全区逻辑由运行时实现 |
+
+PSD 已通过文件头识别：`Adobe Photoshop Image, 750 x 1624, RGB, 3x 8-bit channels`，文件大小为
+`14,866,179` bytes。生成过程记录的同解析器往返和 composite `AE=0` 只证明当时的结构与合成一致；真实 Photoshop
+打开—保存—关闭—重开仍是独立的后续验收项。
+
+证据链如下：
+
+```text
+prompt + selected source
+  → approved golden target
+  → geometry decision + SPEC/review evidence
+  → ImageGen clean plate + layered PSD
+  → G4 asset-manifest plan
+```
+
+证据必须按其等级使用：manifest 中尚未生成的 runtime、composite 和 review 路径是计划引用，不应为让路径存在而伪造空
+文件；任何一项证据都不能单独支持“资产已 accepted”“G5 已完成”或“可以导入 FairyGUI”。
 
 ## 4. 第一步：锁定 target 与页面几何
 
@@ -534,7 +594,7 @@ const buffer = writePsdBuffer(psd, {
 ### 12.1 格式与尺寸
 
 ```bash
-file docs/undergroundIdle/art/production/main_bitmap_v02/sources/ug_main_layered_source_v02.psd
+file docs/psd-maker/ug_main_layered_source_v02.psd
 ```
 
 示例预期：
@@ -624,6 +684,8 @@ PASS: plan manifest validation
 5. **PSD 不拥有运行时文字。** T01～T13 最终必须在 FairyGUI Editor 中建立真实文本节点，由运行时数据更新。
 6. **PSD 不拥有交互。** 热区、Controller、Gear、Relation、Loader、内部 ID 和安全区逻辑仍归 FairyGUI Editor 与客户端代码。
 7. **不能整页导入运行包。** PSD、preview、prompt、target 和 guide 都属于 source/review。
+8. **不是通用 CLI。** Pillow/Node/ImageMagick 命令是该页面的一次性实现，没有 Schema、路径守门、golden fixture 或仓库命令入口。
+9. **三层契约未闭合。** 数字分组和 T/H/A 标注没有替代 `ROLE::stableKey`、sidecar 或 Editor 正式 ID 映射。
 
 ## 14. 进入生产流程前的完成条件
 
@@ -639,6 +701,8 @@ PASS: plan manifest validation
 □ 750×754 与 750×598 场景 composite 通过
 □ 人工 A/B 和三秒扫描签字
 □ 真实 Photoshop 或批准的 PSD 编辑器完成打开—保存—关闭—重开
+□ 叶子层命名或显式 alias、asset-manifest、assembly-recipe 和 PageSpec stable key 闭合
+□ 生成 productionFromAcceptedAssets 的完整 PsdHandoffBundle 与批准 hash
 □ 只有 accepted PNG 进入 FairyGUI Editor
 ```
 
