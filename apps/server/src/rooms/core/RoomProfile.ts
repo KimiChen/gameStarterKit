@@ -13,7 +13,7 @@
  */
 import { GAMEPLAY_CATALOG } from "@game/shared";
 import { ROOM_STATE_FRAGMENTS } from "../schema/GameRoomState";
-import { AUTO_START_POLICY, OWNER_READY_START_POLICY, type StartPolicy } from "./StartPolicy";
+import { AUTO_START_POLICY, DROP_IN_START_POLICY, OWNER_READY_START_POLICY, type StartPolicy } from "./StartPolicy";
 import { INVITE_CODE_ACCESS_POLICY, MATCHMAKING_ACCESS_POLICY, type AccessPolicy } from "./AccessPolicy";
 
 export interface RoomProfile {
@@ -40,6 +40,13 @@ const PROFILE_POLICIES: Readonly<Record<string, {
     "private": {
         startPolicy: OWNER_READY_START_POLICY,
         accessPolicy: INVITE_CODE_ACCESS_POLICY,
+    },
+    // "dropIn" = drop-in + matchmaking（自由加入：首人即开局、不锁房、动态 roster、Playing 可入座）。
+    // 由 fixture mode（dropInFixture，roster {min:1,max:8,autoStart:1}）驱动测试；8 人上限是该
+    // 玩法 manifest 的 maxPlayers 配置参数，不是框架常量。⛔ 不进生产 registry/默认撮合池。
+    "dropIn": {
+        startPolicy: DROP_IN_START_POLICY,
+        accessPolicy: MATCHMAKING_ACCESS_POLICY,
     },
 });
 
@@ -74,8 +81,28 @@ function assertProfileFragments(profile: RoomProfile): void {
 }
 
 /**
+ * policy 组合互斥断言（注册期 fail-fast，随 resolveRoomProfile / assertRoomProfilesConfigured
+ * 对整个 catalog 跑一遍）：drop-in ⛔ 不与 invite-code 组合——邀请码私房的整套机制
+ * （creation claim / access ticket / waitingDeadline / Start 后码隔离）都以「roster 在开局时
+ * 固定、Playing 拒新客」为前提，与 drop-in 的动态 roster 定义矛盾，是**未设计的组合**。
+ * 导出供测试直接投喂反例组合（PROFILE_POLICIES 表本身不可能构造出该组合）。
+ *
+ * drop-in 的另一条互斥（⛔ 不与 mode.evidence capability 组合）需要 mode 实例才能判定，
+ * 断言位点在 GameRoom（assertDropInModeCompatible，构造期/onCreate 两路径）。
+ */
+export function assertProfilePoliciesCoherent(profile: RoomProfile): void {
+    if (profile.startPolicy.kind === "drop-in" && profile.accessPolicy.kind === "invite-code") {
+        throw new Error(
+            `[RoomProfile] mode ${profile.mode} 的 profile "${profile.id}" 把 drop-in startPolicy 与 `
+            + "invite-code AccessPolicy 组合：这是未设计的组合（邀请码私房以固定 roster/Playing 拒新客为前提，"
+            + "与 drop-in 的动态 roster 定义矛盾），注册期拒绝——改用 matchmaking，或改用 owner-ready 私房",
+        );
+    }
+}
+
+/**
  * 解析 `(mode, profileId)`。未知 mode、id ∉ catalog.profiles、catalog 声明了但本表没有
- * policy 定义、fragment 缺失都抛（fail-fast；join 侧把它映射为拒绝）。
+ * policy 定义、fragment 缺失、互斥组合都抛（fail-fast；join 侧把它映射为拒绝）。
  */
 export function resolveRoomProfile(mode: string, profileId: string): RoomProfile {
     const entry = catalogEntry(mode);
@@ -97,6 +124,7 @@ export function resolveRoomProfile(mode: string, profileId: string): RoomProfile
         startPolicy: policies.startPolicy,
         accessPolicy: policies.accessPolicy,
     };
+    assertProfilePoliciesCoherent(profile);
     assertProfileFragments(profile);
     return profile;
 }

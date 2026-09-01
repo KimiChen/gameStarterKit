@@ -15,6 +15,15 @@ export const GAMEPLAY_CATALOG = {
         stateFragments: [],
         contractDigest: "c8fca655408e3bae34c9b3072681536e03b9258bdc97d827015ccf19feea677e",
     },
+    "dropInFixture": {
+        id: "dropInFixture",
+        constantName: "DropInFixture",
+        modeVersion: 1,
+        maxPlayers: 8,
+        profiles: ["dropIn"],
+        stateFragments: [],
+        contractDigest: "10a6c06129af42a6f473481239d8a6570a08f2c70e5a5100d511e8e48300badb",
+    },
     "idle": {
         id: "idle",
         constantName: "Idle",

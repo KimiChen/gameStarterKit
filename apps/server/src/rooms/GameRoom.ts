@@ -387,6 +387,9 @@ export class GameRoom extends Room {
             assertGameModeRoster(this.injectedMode.id, this.injectedMode.roster);
             assertGameModeCommands(this.injectedMode.id, this.injectedMode.commands);
             this.injectedMode.evidence?.assertRosterCompatible(this.injectedMode.id, this.injectedMode.roster);
+            // 注入 mode + 注入 profile 同时在场时，drop-in 互斥/前提在构造期即 fail-fast
+            //（生产路径的同一断言在 onCreate；两路径共用一份文案）。
+            if (this.profile) this.assertDropInModeCompatible(this.injectedMode);
             this.selectModeState(this.injectedMode);
         }
     }
@@ -543,8 +546,38 @@ export class GameRoom extends Room {
     // ── 私房 profile / fragment 视图（§6.2/§4.6）──────────────────────────────
 
     /** 当前 startPolicy；profile 未解析（legacy/default 房）等价 auto。 */
-    private startPolicyKind(): "auto" | "owner-ready" {
+    private startPolicyKind(): "auto" | "owner-ready" | "drop-in" {
         return this.profile?.startPolicy.kind ?? "auto";
+    }
+
+    /**
+     * drop-in profile 与 mode 事实的注册期断言（fail-fast；构造期注入路径与 onCreate 生产
+     * 路径都过——mode 实例在这两处才存在，⛔ 不能挪到 RoomProfile 注册表（那里只有 id））：
+     *  - **首人即开局**复用 auto 的 autoStart 阈值路径，故 roster.min === 1 &&
+     *    roster.autoStart === 1 是 drop-in 的定义性前提（不满足 = 配置矛盾，拒绝建房）；
+     *  - **动态 roster 与 evidence 互斥**：evidence capability 在开局边界 captureInitialState
+     *    冻结 initialRoster，Playing 中入座会让证据与真实参与者集合不自洽——动态 roster 的
+     *    证据格式属未来独立设计，⛔ 不允许静默组合。
+     */
+    private assertDropInModeCompatible(mode: RuntimeGameMode): void {
+        if (this.startPolicyKind() !== "drop-in") return;
+        const profileId = this.profile?.id ?? DEFAULT_ROOM_PROFILE_ID;
+        if (mode.roster.min !== 1 || mode.roster.autoStart !== 1) {
+            throw new Error(
+                `[GameRoom] mode ${mode.id} 的 profile "${profileId}" 声明 drop-in startPolicy，`
+                + `但 roster.min=${mode.roster.min}/roster.autoStart=${mode.roster.autoStart}：`
+                + "drop-in 的定义是首人即开局，要求 roster.min === 1 && roster.autoStart === 1——"
+                + `修正 modes/${mode.id} 的 roster，或改用 auto/owner-ready startPolicy`,
+            );
+        }
+        if (mode.evidence) {
+            throw new Error(
+                `[GameRoom] mode ${mode.id} 的 profile "${profileId}" 声明 drop-in startPolicy，`
+                + "但 mode 声明了 evidence capability：evidence 在开局冻结 initialRoster，与 drop-in 的"
+                + "动态 roster（Playing 中可入座）矛盾——动态 roster 的证据属未来独立设计，"
+                + "当前必须去掉 evidence 或改用 auto/owner-ready startPolicy",
+            );
+        }
     }
 
     private inviteAccessPolicy(): Extract<RoomProfile["accessPolicy"], { kind: "invite-code" }> | null {
@@ -1012,6 +1045,10 @@ export class GameRoom extends Room {
         if (this.inviteAccessPolicy() && !this.modeHasFragment("inviteRoom")) {
             throw joinRefused(ErrorCode.BadRequest);
         }
+        // drop-in 的 roster 前提（min===1 && autoStart===1）与 evidence 互斥：配置矛盾
+        // fail-fast 拒绝建房（带归属文案的 Error，⛔ 不折叠成无差别 BadRequest——这是
+        // 服务端配置缺陷，不是客户端输入错误）。
+        this.assertDropInModeCompatible(mode);
         // ⚠ 必须在 onCreate 里赋，不能提前到构造期：__init() 之后 maxClients 才是会同步
         // 更新 listing 的 accessor，而生产房的 mode 直到这里才选定。
         this.maxClients = mode.roster.max;
@@ -1382,9 +1419,17 @@ export class GameRoom extends Room {
     async onJoin(client: Client, options: unknown) {
         const mode = this.requireMode();
         // 准入时序第 1 步（§6.8 固定时序，⛔ 不得重排）：同步校验 start/admission fence 与 phase。
-        // 对局已开/已结算的房间不收新客（M8a：参与者集合在开局时固定，中途进人会污染名次与
-        // 证据的 09·K5 输入完整性）。撮合层已由开局时的 lock() 挡住，此闸兜底 joinById 直连。
-        if (this.disposed || this.state.phase !== GamePhase.Waiting || this.starting || this.lateLockPending) {
+        // auto/owner-ready：对局已开/已结算的房间不收新客（M8a：参与者集合在开局时固定，中途进人
+        // 会污染名次与证据的 09·K5 输入完整性）。撮合层已由开局时的 lock() 挡住，此闸兜底 joinById 直连。
+        // drop-in：动态 roster 是策略定义——Waiting 与 Playing 都可入座（Playing 的容量前提由下方
+        // 既有 roster.max 闸承担，含 pending 与重连宽限占座）；starting 窗口内的 join 允许落座并成为
+        // 创始成员（⛔ 不得因窗口内 join 使开局失效，见 assertMatchStartBoundary 的 drop-in 分支）；
+        // 只有 Settle/disposed 拒收（对局已收局，无座可入）。drop-in 开局不 lock，lateLockPending
+        // 在该策略下不可能置位，不参与判定。
+        const refuseJoinByPhase = this.startPolicyKind() === "drop-in"
+            ? this.disposed || this.state.phase === GamePhase.Settle
+            : this.disposed || this.state.phase !== GamePhase.Waiting || this.starting || this.lateLockPending;
+        if (refuseJoinByPhase) {
             throw joinRefused(ErrorCode.GameAlreadyStarted); // ⛔ 曾硬编码 4002（越界 status + 与关闭码混淆）
         }
         const auth = client.auth as GameRoomAuth | undefined;
@@ -1521,11 +1566,16 @@ export class GameRoom extends Room {
             })());
         }
 
-        if (this.startPolicyKind() === "auto"
+        // drop-in 复用同一 autoStart 阈值路径（其注册期断言钉死 autoStart === 1 ⇒ 首人即开局）；
+        // starting 窗口内的后续 join 命中同一分支时，startMatch 返回在途的 startPromise——
+        // 新成员与创始事务共同等待 Playing 发布（⛔ 不另起第二个开局事务）。失败归属同 auto：
+        // 回滚触发者的 roster 槽位并以 join 拒绝回给触发者。
+        const startKind = this.startPolicyKind();
+        if ((startKind === "auto" || startKind === "drop-in")
             && this.state.phase === GamePhase.Waiting && this.state.players.size >= mode.roster.autoStart) {
             try {
-                // startMatch 先 await lock，再把 phase 切到 Playing；锁失败时不会公开一个
-                // 仍可被撮合/直连塞人的 Playing 房。
+                // startMatch 先 await lock（drop-in 除外——不锁房，见 performStartMatch），
+                // 再把 phase 切到 Playing；锁失败时不会公开一个仍可被撮合/直连塞人的 Playing 房。
                 const started = await this.startMatch();
                 if (!started) throw new Error("match did not start");
             } catch (error) {
@@ -1700,11 +1750,15 @@ export class GameRoom extends Room {
         const abort = new Promise<never>((_, reject) => { rejectAbort = reject; });
         this.startAbort = { generation, reject: rejectAbort };
         const wasLocked = this.locked;
+        // drop-in 轻量开局事务：⛔ 不 lock 房间——「房间必须始终可撮合」是策略定义（撮合层的
+        // 满员排除/减员恢复由 Colyseus 按 maxClients 自动管理，⛔ 不与 start 绑定）。
+        // auto/owner-ready 的 lock/unlock/retry-fence 路径原样保留。
+        const dropIn = this.startPolicyKind() === "drop-in";
         const fence = this.snapshotStartFence();
         try {
             // lock() 可能需要访问 Redis/driver；在它完成前不公开 Playing。
             if (!this.isGenerationActive(generation)) throw new Error("room disposed before match start");
-            await this.lockWithDeadline(abort, wasLocked);
+            if (!dropIn) await this.lockWithDeadline(abort, wasLocked);
             // Every awaited boundary below can interleave with leave/dispose.
             // Revalidate before invoking the next mode hook or publishing Playing.
             this.assertMatchStartBoundary(generation, fence, "locking");
@@ -1727,7 +1781,10 @@ export class GameRoom extends Room {
             if (this.isGenerationActive(generation)) await this.rollbackMatchState();
             // Colyseus 的 lock() 先改内存再持久化；持久化失败时尽量恢复撮合状态。
             // 若 unlock 也失败，关闭房间是唯一不会继续接客的终态。
-            if (this.isGenerationActive(generation)
+            // drop-in 从不 lock，跳过整个 unlock 回滚分支——此刻观测到的 locked 只可能来自
+            // Colyseus 的满员自动锁（_lockedExplicitly=false），⛔ 不得替撮合层解开。
+            if (!dropIn
+                && this.isGenerationActive(generation)
                 && !(error instanceof GameRoomStartLockTimeoutError)
                 && !wasLocked
                 && this.locked) {
@@ -1800,6 +1857,19 @@ export class GameRoom extends Room {
     ): void {
         if (!this.isGenerationActive(generation)) {
             throw new Error(`room disposed during match ${stage}`);
+        }
+        // drop-in 轻量边界：只验 generation（含 dispose，上面已判）+ phase，⛔ 不比 roster 快照。
+        // owner-ready/auto 的整组元组重验在这里**不适用**：那套 fence 的目的（§6.3）是保证
+        // 「开局时公布的参与者集合 = 玩家按下 Ready/触发 join 时看到的集合」——参与者集合是
+        // 其证据与名次契约的输入。drop-in 的定义恰好相反：roster 是动态的，starting 窗口内的
+        // join 是**合法落座**（成为创始成员，Playing 发布时已在 players map），⛔ 不得使开局
+        // 失效；离开也不回退开局（留下的人继续玩，无 evidence 契约可污染——注册期已断言
+        // drop-in ⛔ 不与 evidence capability 组合）。
+        if (this.startPolicyKind() === "drop-in") {
+            if (this.state.phase !== GamePhase.Waiting) {
+                throw new Error(`match phase changed during ${stage}`);
+            }
+            return;
         }
         if (this.state.phase !== GamePhase.Waiting || fence.sessions.size < this.requireMode().roster.min
             || this.state.players.size !== fence.sessions.size) {

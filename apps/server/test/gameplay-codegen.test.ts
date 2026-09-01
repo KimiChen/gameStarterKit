@@ -58,10 +58,12 @@ const FIXTURE_ARTIFACTS = [
   CLIENT_CATALOG,
   SERVER_AGGREGATE,
   `${SERVER_SCHEMA_DIR}/ballMove.ts`,
+  `${SERVER_SCHEMA_DIR}/dropInFixture.ts`,
   `${SERVER_SCHEMA_DIR}/idle.ts`,
   `${SERVER_SCHEMA_DIR}/privateFixture.ts`,
   SHARED_CATALOG,
   `${SHARED_STATE_DIR}/ballMove.ts`,
+  `${SHARED_STATE_DIR}/dropInFixture.ts`,
   `${SHARED_STATE_DIR}/idle.ts`,
   `${SHARED_STATE_DIR}/privateFixture.ts`,
   SHARED_WIRE_CATALOG,
@@ -625,10 +627,11 @@ test("server-only 字段拒绝暴露标记、碰撞、重复与不支持的 kind
 // ── 生成映射与运行时行为（真仓产物）─────────────────────────────────────────
 
 test("generated root maps are frozen, type-safe and reject unknown modes", () => {
-  // privateFixture：阶段 8 私房验收 fixture gameplay（catalog 全链收录，⛔ 不进生产 mode registry）。
-  assert.deepEqual(Object.keys(ROOM_STATE_VALIDATORS), ["ballMove", "idle", "privateFixture"]);
-  assert.deepEqual(Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS), ["ballMove", "idle", "privateFixture"]);
-  assert.deepEqual(Object.keys(GAMEPLAY_CATALOG), ["ballMove", "idle", "privateFixture"]);
+  // privateFixture：阶段 8 私房验收 fixture gameplay；dropInFixture：drop-in（自由加入）验收
+  // fixture gameplay（catalog 全链收录，⛔ 都不进生产 mode registry）。
+  assert.deepEqual(Object.keys(ROOM_STATE_VALIDATORS), ["ballMove", "dropInFixture", "idle", "privateFixture"]);
+  assert.deepEqual(Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS), ["ballMove", "dropInFixture", "idle", "privateFixture"]);
+  assert.deepEqual(Object.keys(GAMEPLAY_CATALOG), ["ballMove", "dropInFixture", "idle", "privateFixture"]);
   assert.equal(Object.isFrozen(ROOM_STATE_VALIDATORS), true);
   assert.equal(Object.isFrozen(ROOM_STATE_ROOT_CONSTRUCTORS), true);
 
@@ -1062,6 +1065,8 @@ test("client module 集 = canonical GameplayModeId：真仓 modes/ 目录双向�
   assert.match(clientCatalog, /"idle": createIdleGameplayModule,/);
   assert.doesNotMatch(clientCatalog, /"privateFixture": create/,
     "fixture gameplay ⛔ 不得进入 GAMEPLAY_MODULES（无客户端 module）");
+  assert.doesNotMatch(clientCatalog, /"dropInFixture": create/,
+    "drop-in fixture gameplay 同样 ⛔ 不得进入 GAMEPLAY_MODULES");
   assert.match(clientCatalog, /import \{ createGameplayModule as createBallMoveGameplayModule \} from "\.\/modes\/ballMove\/index";/);
 });
 

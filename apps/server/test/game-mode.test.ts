@@ -121,7 +121,9 @@ test("生产 mode catalog 与 shared/state 生成映射保持精确同集", () =
         // §10.2/§10.3 用例驱动）。它进 catalog/生成映射走完整单源链，但 ⛔ 刻意不进生产
         // mode registry——onAuth/onCreate 的 `gameModeRegistry.has` 闸使它永远不可被撮合
         // 或建房（不出现在默认撮合池，§10.7）。
-        const catalogModes = [...canonicalModes, "privateFixture"].sort();
+        // dropInFixture 是 drop-in（自由加入）房型验收的 fixture gameplay（同 privateFixture 隔离
+        // 方式：进 catalog/生成映射走完整单源链，⛔ 不进生产 mode registry/默认撮合池）。
+        const catalogModes = [...canonicalModes, "privateFixture", "dropInFixture"].sort();
         assert.deepEqual(gameModeRegistry.list(), canonicalModes);
         assert.deepEqual(Object.keys(GAMEPLAY_CATALOG).sort(), catalogModes);
         assert.deepEqual(Object.keys(ROOM_STATE_VALIDATORS).sort(), catalogModes);

@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "dropInFixture",
+  "constantName": "DropInFixture",
+  "modeVersion": 1,
+  "maxPlayers": 8,
+  "profiles": ["dropIn"]
+}
