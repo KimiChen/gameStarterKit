@@ -1,6 +1,6 @@
 # gameStarterKit 历史代码审阅归档
 
-> 当前开放问题、实施状态与验收证据以 [plan-v4.md](plan-v4.md) 为唯一真相（[plan-v3.md](plan-v3.md) 与 [plan-v2.md](plan-v2.md) 为更早的归档）。本文件保留此前审阅过程、
+> 当前开放问题、实施状态与验收证据以 [plan-v5.md](plan-v5.md) 为唯一真相（[plan-v4.md](plan-v4.md)、[plan-v3.md](plan-v3.md) 与 [plan-v2.md](plan-v2.md) 为更早的归档）。本文件保留此前审阅过程、
 > 历史基线和已收口条目的上下文，不再接受本轮状态回写。
 
 > 审阅日期：2026-08-29

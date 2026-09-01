@@ -21,8 +21,8 @@
 - [非侵入式框架改造方案（框架侧阶段 0-9 已实施，两玩法未实现）](docs/Non-intrusive.md)
 - [《Snake Off》竖版贪吃蛇玩法策划案（未实现）](docs/snakeoff/README.md)
 - [Godogen 对照吸收计划（未实现的额外能力）](todo-godogen.md)
-- [当前开发收口计划](plan-v4.md)
-- [上一轮收口计划（历史归档）](plan-v3.md)
+- [当前开发收口计划](plan-v5.md)
+- [上一轮收口计划（历史归档）](plan-v4.md)
 
 ## 目录
 
