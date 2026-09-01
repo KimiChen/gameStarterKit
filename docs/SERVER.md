@@ -230,7 +230,22 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
 胜利条件。两套 root 都由 state manifest 生成的 mode 映射选择。当前展示：
 
 - WebPlatform strict session verify、协议版本与区号复核。
-- `filterBy(["sId", "mode"])` 的撮合隔离及房内再次校验；Game join 的 `mode` 必填且由 shared 校验。
+- `filterBy(["sId", "mode", "profile"])` 的撮合隔离及房内再次校验；Game join 的 `mode` 必填且由 shared
+  校验，`profile` 本版本可选、缺省注入 `"default"`（auto + matchmaking，ballMove/idle 行为零变）。
+- 通用 private-room core（Non-intrusive §6.2–§6.9，阶段 8a）：`rooms/core/{RoomProfile,StartPolicy,
+  AccessPolicy}.ts` 的 profile 注册表（"default"=auto+matchmaking、"private"=owner-ready+invite-code，
+  校验 id ∈ generated catalog.profiles 且 policy 所需 state fragment 存在——启动期
+  `assertRoomProfilesConfigured`）；owner-ready 的 core Ready/Start wire（`c2s.room.ready/start`、
+  `s2c.room.error`（RoomControlError 独立数字段）/`s2c.room.codeInvalidated`）；可回滚开局事务的
+  fence 元组（owner/sessions/rosterRevision/readyRevision/connectionRevision 同步快照整组重验，
+  `starting` 置位期间 Ready/Unready 拒，rollback 保留 Ready 不动 owner，retry-fence 绝对上限
+  fail-closed dispose）；六位邀请码 lease（`core/rooms/invite/`，SET NX + 三态 renew + tombstone 隔离期）
+  与 access ticket 固定准入时序（同步 fence → 同步 pending 占位 → 异步 claim → 同步重验 →
+  `mode.onAdmission` → 落座+seated CAS）。invite 房在 `onCreate` 体内 listing 持久化前
+  `setPrivate(true)`；`roomCode` ⛔ 不进 listing/metadata/filterBy。验收矩阵见
+  `test/private-room.test.ts` 与 `test/int/private-room.test.ts`（§10.2/§10.3 逐行）。
+  当前生产玩法只声明 `"default"`；`"private"` 由 fixture gameplay `privateFixture` 驱动测试，
+  客户端 transport（RoomClient strategy/PrivateRoomService）与 profile 必填 bump 属下一批边界。
 - `onCreate` 在首次 handshake 前按 mode 选择一次 root；公共入口之后禁止替换 root。两种状态只共享
   tick/phase/matchId/players 生命周期语义，不共享 player 字段或结算判定。
 - `ballMove` 的服务端逻辑帧移动/技能公式与 `idle` 的严格空对象 `IdlePulse`；聊天和重连宽限仍属公共能力。
@@ -604,10 +619,10 @@ Game HTTP request schema 已由 shared validator 同源生成并直接注入带 
 | RPC 错误码 | core 码在 `apps/shared/src/protocol/lobbyRpc/coreErrors.ts`（`CORE_RPC_ERROR_CODES` + 历史顺序钉 `RPC_ERR_CODE_ORDER`），领域码在各域 descriptor 的 `errorCodes`（现仅 shop：INSUFFICIENT_BALANCE/GRANTING/ORDER_MISMATCH）；聚合 `RPC_ERR_CODES`（17 个）生成在 `lobbyRpc/registry.generated.ts`；异常→码映射在 `core/errors.ts` 的 `ERR_MAP`（覆盖 11 个），另有阶段 4 的 `RpcFault(code)` 带 runtime whitelist 直接产出任意白名单码（读取点：dispatcher 与 LobbyRoom 的 `rpcErrorCode`，都经 `toRpcFaultCode`），其余落 `INTERNAL` 兜底。阶段 4 新增 `OPERATION_CONFLICT` / `OPERATION_RESULT_EXPIRED`（幂等 v2，见 §8.1）只经 `RpcFault` 产出、不进 `ERR_MAP`。其中 `GRANTING` 当前没有任何产出点，`AUTH_EPOCH_STALE` 服务端已停产、只保留客户端分支，`ORDER_MISMATCH` 只由可选的 `http/pay/wxNotify.ts` 直接返回，不经 `ERR_MAP` |
 | Colyseus state 形状 | `apps/shared/schema/gameplays/<id>/{manifest.json,state.json}`；纯数据镜像 `apps/shared/src/gameplays/generated/state/<id>.ts` + catalog、运行时 Schema `apps/server/src/rooms/schema/generated/<id>.ts` 与聚合器 `GameRoomState.ts` 都是 `apps/server/tools/gameplay-codegen/` 的生成物（首行带 AUTO-GENERATED 标记，禁手改），改单源后运行 `npm --workspace @game/server run codegen:gameplays` |
 | `ballMove` v3 evidence schema/validator/replay | `apps/server/src/core/match/matchEvidence.ts`、`matchReplay.ts`；流生产消费在 `matchConsumer.ts` |
-| Redis key | `apps/server/src/core/infra/keys.ts`。幂等 v2 键族（阶段 4）：记录键沿用 `kIdemUser`（值升级为 §8.1 的 StoredIdem JSON），新增同 `{uid}` 槽计数键 `kIdemPending`（`idem:pending:{uid}`，per-uid pending 上限护栏） |
+| Redis key | `apps/server/src/core/infra/keys.ts`。幂等 v2 键族（阶段 4）：记录键沿用 `kIdemUser`（值升级为 §8.1 的 StoredIdem JSON），新增同 `{uid}` 槽计数键 `kIdemPending`（`idem:pending:{uid}`，per-uid pending 上限护栏）。私房键族（阶段 8，全部 **coordination Redis** + **`sId` 显式参数**，⛔ 不走 `zoneCtx`——GameRoom 不在 `zoneCtx.run` 内而 Lobby RPC 在，ambient 读取会打到不同 key）：`kInviteCode(sId, code)`（`room:code:{s<sId>:<code>}`，lease/tombstone JSON，PX=lease TTL 或 cooldown）、`kInviteCodeGen(sId, code)`（`room:code:gen:{s<sId>:<code>}`，per-(sId,code) 分配代号 INCR，永不重置/删除）、`kRoomTicket(sId, ticketSha256)`（`room:ticket:s<sId>:<sha256hex>`，creation/join ticket 记录 JSON，PX=exp；键名只含 ticket 的 sha256，⛔ 不含 ticket 原文）、`kRoomTicketQuota(sId, uid)`（`room:quota:s<sId>:{<uid>}` ZSET，member=`t:<jti>`/`r:<roomId>`、score=过期时刻，§6.8 配额原子检查）。resolve 专用限流桶复用 `kRl`，scope=`room:resolve:fail:<uid>`/`room:resolve:ok:<uid>`/`room:resolve:zonefail:s<sId>`（⛔ 与通用 `rpc:<uid>` 桶分离） |
 | Asset effect schema/validator | `apps/shared/src/protocol/lobbyRpc/economy.ts`；Lua 镜像在 `apps/server/src/core/infra/redisScripts.ts` |
 | 跨模块服务端配置 | `apps/server/src/core/infra/config.ts`；少量模块私有常量仍在实现文件内 |
-| Lua | `apps/server/src/core/infra/redisScripts.ts` 与模块专属 script 文件；认证组 sess fence 在 `core/auth/session.ts`、幂等 v2 三条（IDEM_V2_ACQUIRE/COMPLETE/RELEASE）在 `core/idem.ts`，都以 `defineScript` 登记并统一经 `evalshaWithReload` 执行 |
+| Lua | `apps/server/src/core/infra/redisScripts.ts` 与模块专属 script 文件；认证组 sess fence 在 `core/auth/session.ts`、幂等 v2 三条（IDEM_V2_ACQUIRE/COMPLETE/RELEASE）在 `core/idem.ts`，私房邀请码/ticket 六条（INVITE_CODE_ALLOCATE / INVITE_CODE_RENEW / INVITE_CODE_TOMBSTONE / TICKET_ISSUE_CREATION / TICKET_CLAIM / TICKET_TRANSITION）在 `core/rooms/invite/redisScripts.ts`（跑在 coordination Redis 单实例上，TICKET_ISSUE_CREATION 刻意跨 hash-tag——⛔ 不得搬到 cluster 化的 durable 实例），都以 `defineScript` 登记并统一经 `evalshaWithReload` 执行 |
 | MySQL DDL | `apps/server/sql/schema.sql`；兼容升级逻辑在 `tools/db-bootstrap.ts` |
 | RPC endpoint | `apps/server/src/websocket/<domain>/<method>.ts`；装载规则在 `loader.ts` |
 | HTTP endpoint | `apps/server/src/http/<domain>/<method>.ts`；装配表是生成物 `apps/server/src/http/manifest.generated.ts`（禁手改），新增后运行 `npm --workspace @game/server run codegen:http`，`http/index.ts` 只消费该 manifest |

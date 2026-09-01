@@ -23,6 +23,7 @@ import { collectEndpoints } from "../src/websocket/loader";
 import { defineRpc } from "../src/websocket/rpc";
 import guildVectors from "./lobbyRpcVectors/guild";
 import mailVectors from "./lobbyRpcVectors/mail";
+import roomVectors from "./lobbyRpcVectors/room";
 import shopVectors from "./lobbyRpcVectors/shop";
 import userVectors from "./lobbyRpcVectors/user";
 
@@ -30,6 +31,7 @@ import userVectors from "./lobbyRpcVectors/user";
 const vectors: Record<string, { request: unknown; response: unknown } | undefined> = {
   ...guildVectors,
   ...mailVectors,
+  ...roomVectors,
   ...shopVectors,
   ...userVectors,
 };

@@ -15,6 +15,8 @@ import { IdlePulse, type IIdlePulseReq } from "../idle/wire";
 export const C2S = {
     Ping: "c2s.ping",
     Chat: "c2s.chat",
+    RoomReady: "c2s.room.ready",
+    RoomStart: "c2s.room.start",
     Move: "c2s.move",
     CastSkill: "c2s.castSkill",
     IdlePulse: "c2s.idle.pulse",
@@ -26,6 +28,8 @@ export const S2C = {
     Welcome: "s2c.welcome",
     Chat: "s2c.chat",
     Error: "s2c.error",
+    RoomError: "s2c.room.error",
+    RoomCodeInvalidated: "s2c.room.codeInvalidated",
     SkillResult: "s2c.skillResult",
 } as const;
 
@@ -36,6 +40,8 @@ export type S2CType = (typeof S2C)[keyof typeof S2C];
 export interface C2SPayloadMap {
     "c2s.ping": CoreC2SPayloadMap["c2s.ping"];
     "c2s.chat": CoreC2SPayloadMap["c2s.chat"];
+    "c2s.room.ready": CoreC2SPayloadMap["c2s.room.ready"];
+    "c2s.room.start": CoreC2SPayloadMap["c2s.room.start"];
     "c2s.move": IMoveReq;
     "c2s.castSkill": ICastSkillReq;
     "c2s.idle.pulse": IIdlePulseReq;
@@ -46,6 +52,8 @@ export interface S2CPayloadMap {
     "s2c.welcome": CoreS2CPayloadMap["s2c.welcome"];
     "s2c.chat": CoreS2CPayloadMap["s2c.chat"];
     "s2c.error": CoreS2CPayloadMap["s2c.error"];
+    "s2c.room.error": CoreS2CPayloadMap["s2c.room.error"];
+    "s2c.room.codeInvalidated": CoreS2CPayloadMap["s2c.room.codeInvalidated"];
     "s2c.skillResult": ISkillResultRes;
 }
 
@@ -56,6 +64,8 @@ export type S2CPayload<T extends S2CType> = S2CPayloadMap[T];
 export const C2S_RUNTIME_VALIDATORS: { [K in C2SType]: RuntimeValidator<C2SPayloadMap[K]> } = {
     "c2s.ping": CORE_C2S_WIRE["c2s.ping"],
     "c2s.chat": CORE_C2S_WIRE["c2s.chat"],
+    "c2s.room.ready": CORE_C2S_WIRE["c2s.room.ready"],
+    "c2s.room.start": CORE_C2S_WIRE["c2s.room.start"],
     "c2s.move": Move.validate,
     "c2s.castSkill": CastSkill.validate,
     "c2s.idle.pulse": IdlePulse.validate,
@@ -67,6 +77,8 @@ export const S2C_RUNTIME_VALIDATORS: { [K in S2CType]: RuntimeValidator<S2CPaylo
     "s2c.welcome": CORE_S2C_WIRE["s2c.welcome"],
     "s2c.chat": CORE_S2C_WIRE["s2c.chat"],
     "s2c.error": CORE_S2C_WIRE["s2c.error"],
+    "s2c.room.error": CORE_S2C_WIRE["s2c.room.error"],
+    "s2c.room.codeInvalidated": CORE_S2C_WIRE["s2c.room.codeInvalidated"],
     "s2c.skillResult": SkillResult.validate,
 };
 
@@ -90,6 +102,8 @@ export function validateS2CPayload<T extends S2CType>(type: T, input: unknown): 
 export const GAME_WIRE_OWNERS = {
     "c2s.ping": "core",
     "c2s.chat": "core",
+    "c2s.room.ready": "core",
+    "c2s.room.start": "core",
     "c2s.move": "ballMove",
     "c2s.castSkill": "ballMove",
     "c2s.idle.pulse": "idle",
@@ -97,6 +111,8 @@ export const GAME_WIRE_OWNERS = {
     "s2c.welcome": "core",
     "s2c.chat": "core",
     "s2c.error": "core",
+    "s2c.room.error": "core",
+    "s2c.room.codeInvalidated": "core",
     "s2c.skillResult": "ballMove",
 } as const;
 
@@ -125,6 +141,8 @@ export const gameplayC2STokens = {
     "idle": {
         "c2s.idle.pulse": IdlePulse,
     },
+    "privateFixture": {
+    },
 } as const satisfies { readonly [mode: string]: { readonly [type: string]: GameplayC2SToken<unknown> } };
 
 /** 每玩法 S2C token 表。 */
@@ -134,6 +152,8 @@ export const gameplayS2CTokens = {
     },
     "idle": {
     },
+    "privateFixture": {
+    },
 } as const satisfies { readonly [mode: string]: { readonly [type: string]: GameplayS2CToken<unknown> } };
 
 /** core S2C token（mode 经 context 发送 core Error/Chat 等时使用）。 */
@@ -142,4 +162,6 @@ export const CORE_S2C_TOKENS = {
     Welcome: defineS2C("s2c.welcome", CORE_S2C_WIRE["s2c.welcome"]),
     Chat: defineS2C("s2c.chat", CORE_S2C_WIRE["s2c.chat"]),
     Error: defineS2C("s2c.error", CORE_S2C_WIRE["s2c.error"]),
+    RoomError: defineS2C("s2c.room.error", CORE_S2C_WIRE["s2c.room.error"]),
+    RoomCodeInvalidated: defineS2C("s2c.room.codeInvalidated", CORE_S2C_WIRE["s2c.room.codeInvalidated"]),
 } as const;

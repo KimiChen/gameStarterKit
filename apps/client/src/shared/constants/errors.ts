@@ -61,6 +61,49 @@ export function errorMessageOf(code: ErrorCodeType): string {
     return ErrorMessage[code];
 }
 
+// ── 房内 core control 错误域（Non-intrusive §4.7 三类错误域之二） ─────────────
+//
+// Ready/Start/owner/phase 等通用房间控制错误，经 `s2c.room.error` 下发。
+// ⛔ 独立于上方 ErrorCode（§4.7 明令三域不合并为一个万能 enum）；数字段 31xx 专用，
+// 与 3xxx 房间 join refusal 段不重叠。新增码必须同步 RoomControlErrorMessage（穷尽映射）。
+
+export const RoomControlError = {
+    /** Start 只能由当前 owner 发起 */
+    NotOwner: 3101,
+    /** 有成员未 Ready（精确 roster 必须全员 Ready） */
+    NotAllReady: 3102,
+    /** 人数低于该 mode 的 roster.min */
+    BelowMin: 3103,
+    /** Start 在途（starting 已置位 / 重试 fence 未收敛）：Ready/Unready/重复 Start 都以此拒绝 */
+    StartInProgress: 3104,
+    /** phase 已离开 Waiting（Ready/Start 只在 Waiting 合法） */
+    AlreadyStarted: 3105,
+    /** 有成员掉线且仍在重连宽限内（roster 必须全部在线才能 Start） */
+    MemberOffline: 3106,
+    /** owner-ready Start 失败并已回滚 Waiting：稳定可重试（⛔ 不移除房主、不触发 owner 转移） */
+    StartFailed: 3107,
+} as const;
+
+export type RoomControlErrorType = (typeof RoomControlError)[keyof typeof RoomControlError];
+
+/** 穷尽映射：新增 RoomControlError 后若未登记文案，shared 类型检查会直接失败。 */
+export const RoomControlErrorMessage: { [K in RoomControlErrorType]: string } = {
+    [RoomControlError.NotOwner]: "只有房主可以开始游戏",
+    [RoomControlError.NotAllReady]: "还有成员未准备",
+    [RoomControlError.BelowMin]: "人数不足，无法开始",
+    [RoomControlError.StartInProgress]: "正在开局中，请稍候",
+    [RoomControlError.AlreadyStarted]: "对局已开始",
+    [RoomControlError.MemberOffline]: "有成员掉线，等待重连",
+    [RoomControlError.StartFailed]: "开局失败，请重试",
+};
+
+export const ROOM_CONTROL_ERROR_VALUES: readonly RoomControlErrorType[] = Object.values(RoomControlError);
+
+export function isRoomControlError(value: unknown): value is RoomControlErrorType {
+    return typeof value === "number" && Number.isSafeInteger(value)
+        && (ROOM_CONTROL_ERROR_VALUES as readonly number[]).includes(value);
+}
+
 // ── 进房/建连拒绝的 message 编码（双端单源） ──────────────────────────────
 //
 // ⚠ Colyseus 的 join 失败只给 `{code, error}` 两个字段，且 **code 会被当 HTTP status**

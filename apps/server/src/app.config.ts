@@ -2,12 +2,16 @@ import { defineServer, defineRoom, monitor, playground } from "colyseus";
 import { WebSocketTransport } from "@colyseus/ws-transport";
 import { RoomName } from "@game/shared";
 import { GameRoom } from "./rooms/GameRoom";
+import { assertRoomProfilesConfigured } from "./rooms/core/RoomProfile";
 import { registerDefaultGameModes } from "./rooms/modes/catalog";
 import { LobbyRoom } from "./websocket/LobbyRoom";
 import { MAX_WS_PAYLOAD_BYTES } from "./core/infra/config";
 import { routes } from "./http/index";
 
 registerDefaultGameModes();
+// 启动期断言（Non-intrusive §6.2/§4.6）：catalog 声明的每个 (mode, profile) 都有 policy 定义、
+// owner-ready/invite profile 的 state fragment 存在；配对不等式已在 config 加载期断言。
+assertRoomProfilesConfigured();
 
 /**
  * Colyseus 0.17 服务端配置。
@@ -19,13 +23,17 @@ registerDefaultGameModes();
  */
 export const server = defineServer({
     rooms: {
-        // ⚠ **区服/玩法撮合硬闸**：`filterBy(["sId", "mode"])` 只匹配同区同玩法的房
-        //（⛔ 不加则 1 区与 2 区玩家会被撮合进同一场对局 —— 而战斗路径不碰 per-zone 键，
-        //   `keys.ts` 的 fail-fast 逮不到，属**静默混区**）。
-        // ⚠ 必须与 `groupAdmitsZone` 的「缺 sId 收紧」成对：filterBy 只在 options **含** sId 时
+        // ⚠ **区服/玩法/组合撮合硬闸**：`filterBy(["sId", "mode", "profile"])` 只匹配同区同
+        //   玩法同 profile 的房（⛔ 不加 sId 则 1 区与 2 区玩家会被撮合进同一场对局 —— 而战斗
+        //   路径不碰 per-zone 键，`keys.ts` 的 fail-fast 逮不到，属**静默混区**；profile 一次性
+        //   扩入过滤键，Non-intrusive §6.6——不同房间组合互不混撮）。
+        // ⚠ 必须与 `groupAdmitsZone` 的「缺 sId 收紧」成对：filterBy 只在 options **含** 该键时
         //   才纳入过滤（`RegisteredHandler.getFilterOptions` 用 hasOwnProperty），缺 sId 的 join
-        //   会绕过过滤匹配到任意房。单形态（不带 sId）两侧都无该键，互相匹配，行为不变。
-        [RoomName.Game]: defineRoom(GameRoom).filterBy(["sId", "mode"]),
+        //   会绕过过滤匹配到任意房。单形态（不带 sId）两侧都无该键，互相匹配，行为不变；
+        //   本版本 profile 仍可选（缺省注入 "default" 发生在校验层，两侧都不带即互相匹配，
+        //   wire 兼容零破坏；必填收紧随下一版本 bump）。邀请码房在创建期 setPrivate(true)，
+        //   ⛔ 不进普通撮合候选，⛔ roomCode 不进 filterBy/metadata（§6.6）。
+        [RoomName.Game]: defineRoom(GameRoom).filterBy(["sId", "mode", "profile"]),
         // 网关大厅房（框架 M5）：取数/邮件/工会走单一 rpc 消息通道。连接需要 WebPlatform
         // Public API 签发的 token，strict auth 通过 Internal HTTP 回源；
         // 不需要大厅功能的联调不 join 它即可，不影响 GameRoom。

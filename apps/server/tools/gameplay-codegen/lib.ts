@@ -286,6 +286,8 @@ function renderCatalogEntries(gameplays: readonly GameplayDescriptor[]): string[
       `        constantName: ${JSON.stringify(gameplay.manifest.constantName)},`,
       `        modeVersion: ${gameplay.manifest.modeVersion},`,
       `        maxPlayers: ${gameplay.manifest.maxPlayers},`,
+      `        profiles: [${gameplay.manifest.profiles.map((profile) => JSON.stringify(profile)).join(", ")}],`,
+      `        stateFragments: [${gameplay.state.fragments.map((fragment) => JSON.stringify(fragment)).join(", ")}],`,
       `        contractDigest: ${JSON.stringify(gameplay.contractDigest)},`,
       "    },",
     );
@@ -571,6 +573,39 @@ function renderServerAggregate(gameplays: readonly GameplayDescriptor[]): string
     "    players: MapSchema<RoomStatePlayerLifecycle>;",
     "}",
     "",
+    "/** OwnerReady fragment view (§4.6): only roots whose state.json declares \"ownerReady\" carry these fields. */",
+    "export interface RoomStatePlayerOwnerReady extends RoomStatePlayerLifecycle {",
+    "    /** Waiting-phase ready flag; new seats default to false */",
+    "    ready: boolean;",
+    "    /** False while the member is inside the reconnect grace window */",
+    "    connected: boolean;",
+    "}",
+    "",
+    "export interface RoomStateOwnerReady extends RoomStateLifecycle {",
+    "    /** Owner sessionId; empty until the expected owner seats */",
+    "    ownerId: string;",
+    "    rosterRevision: number;",
+    "    readyRevision: number;",
+    "    connectionRevision: number;",
+    "    /** Start transaction fence; Ready/Unready are refused while set */",
+    "    starting: boolean;",
+    "    players: MapSchema<RoomStatePlayerOwnerReady>;",
+    "}",
+    "",
+    "/** InviteRoom fragment view (§4.6): display-only invite code and waiting-deadline info. */",
+    "export interface RoomStateInviteRoom {",
+    "    /** Best-effort display invite code; the resolve-side lease is the only authority */",
+    "    roomCode: string;",
+    "    /** Absolute waiting deadline (ms timestamp, display only) */",
+    "    waitingDeadlineAt: number;",
+    "}",
+    "",
+    "/** Declared state fragments per mode; profile startup assertions read this map. */",
+    "export const ROOM_STATE_FRAGMENTS = Object.freeze({",
+    ...gameplays.map((gameplay) =>
+      `    ${JSON.stringify(gameplay.id)}: [${gameplay.state.fragments.map((fragment) => JSON.stringify(fragment)).join(", ")}],`),
+    "} as const satisfies Record<RoomStateMode, readonly string[]>);",
+    "",
     "export const ROOM_STATE_ROOT_CONSTRUCTORS = Object.freeze({",
   );
   for (const gameplay of gameplays) {
@@ -649,7 +684,9 @@ export function previousCatalogRecords(options: GameplayCodegenOptions = {}): Re
   const records = new Map<string, CatalogRecord>();
   if (!fs.existsSync(file)) return records;
   const text = fs.readFileSync(file, "utf8");
-  const entry = /"([A-Za-z0-9._-]{1,64})": \{\n {8}id: "[^"\n]+",\n {8}constantName: "[^"\n]+",\n {8}modeVersion: (\d+),\n {8}maxPlayers: \d+,\n {8}contractDigest: "([0-9a-f]{64})",\n {4}\},/gu;
+  // profiles/stateFragments 两行可缺省匹配：既容纳阶段 8 之前的旧 catalog 格式（首次带
+  // fragment 的迁移仍能读到历史 digest/modeVersion），也容纳当前格式。
+  const entry = /"([A-Za-z0-9._-]{1,64})": \{\n {8}id: "[^"\n]+",\n {8}constantName: "[^"\n]+",\n {8}modeVersion: (\d+),\n {8}maxPlayers: \d+,\n(?: {8}(?:profiles|stateFragments): \[[^\]\n]*\],\n)* {8}contractDigest: "([0-9a-f]{64})",\n {4}\},/gu;
   for (const match of text.matchAll(entry)) {
     records.set(match[1], {
       modeVersion: Number(match[2]),

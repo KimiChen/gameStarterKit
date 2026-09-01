@@ -3,9 +3,11 @@ import { Schema, MapSchema } from "@colyseus/schema";
 import { type GamePhaseType, type RoomStateMode } from "@game/shared";
 import { GameRoomState } from "./generated/ballMove";
 import { IdleRoomState } from "./generated/idle";
+import { PrivateFixtureState } from "./generated/privateFixture";
 
 export { PlayerState, GameRoomState } from "./generated/ballMove";
 export { IdlePlayerState, IdleRoomState } from "./generated/idle";
+export { PrivateFixturePlayerState, PrivateFixtureState } from "./generated/privateFixture";
 
 /** Fields every root declares; the gameplay-agnostic GameRoom shell may only touch these. */
 export interface RoomStatePlayerLifecycle {
@@ -21,9 +23,44 @@ export interface RoomStateLifecycle {
     players: MapSchema<RoomStatePlayerLifecycle>;
 }
 
+/** OwnerReady fragment view (§4.6): only roots whose state.json declares "ownerReady" carry these fields. */
+export interface RoomStatePlayerOwnerReady extends RoomStatePlayerLifecycle {
+    /** Waiting-phase ready flag; new seats default to false */
+    ready: boolean;
+    /** False while the member is inside the reconnect grace window */
+    connected: boolean;
+}
+
+export interface RoomStateOwnerReady extends RoomStateLifecycle {
+    /** Owner sessionId; empty until the expected owner seats */
+    ownerId: string;
+    rosterRevision: number;
+    readyRevision: number;
+    connectionRevision: number;
+    /** Start transaction fence; Ready/Unready are refused while set */
+    starting: boolean;
+    players: MapSchema<RoomStatePlayerOwnerReady>;
+}
+
+/** InviteRoom fragment view (§4.6): display-only invite code and waiting-deadline info. */
+export interface RoomStateInviteRoom {
+    /** Best-effort display invite code; the resolve-side lease is the only authority */
+    roomCode: string;
+    /** Absolute waiting deadline (ms timestamp, display only) */
+    waitingDeadlineAt: number;
+}
+
+/** Declared state fragments per mode; profile startup assertions read this map. */
+export const ROOM_STATE_FRAGMENTS = Object.freeze({
+    "ballMove": [],
+    "idle": [],
+    "privateFixture": ["ownerReady", "inviteRoom"],
+} as const satisfies Record<RoomStateMode, readonly string[]>);
+
 export const ROOM_STATE_ROOT_CONSTRUCTORS = Object.freeze({
     "ballMove": GameRoomState,
     "idle": IdleRoomState,
+    "privateFixture": PrivateFixtureState,
 } as const satisfies Record<RoomStateMode, new () => Schema>);
 
 export type RoomStateRootForMode<M extends RoomStateMode> = InstanceType<(typeof ROOM_STATE_ROOT_CONSTRUCTORS)[M]>;

@@ -57,9 +57,11 @@ const FIXTURE_ARTIFACTS = [
   SERVER_AGGREGATE,
   `${SERVER_SCHEMA_DIR}/ballMove.ts`,
   `${SERVER_SCHEMA_DIR}/idle.ts`,
+  `${SERVER_SCHEMA_DIR}/privateFixture.ts`,
   SHARED_CATALOG,
   `${SHARED_STATE_DIR}/ballMove.ts`,
   `${SHARED_STATE_DIR}/idle.ts`,
+  `${SHARED_STATE_DIR}/privateFixture.ts`,
   SHARED_WIRE_CATALOG,
   SHARED_INDEX,
 ] as const;
@@ -315,7 +317,7 @@ test("freshness check is read-only and fails after a descriptor field is added",
     writeFixtureJson(fixture.root, "apps/shared/schema/gameplays/ballMove/state.json", changedState);
     // digest 变了 ⇒ 同批必须 bump modeVersion，否则下面的重写会被 digest 闸拦住（单独有用例钉闸）
     const changedManifest = manifestFixture("ballMove");
-    changedManifest.modeVersion = 3;
+    changedManifest.modeVersion = Number(changedManifest.modeVersion) + 1;
     writeFixtureJson(fixture.root, "apps/shared/schema/gameplays/ballMove/manifest.json", changedManifest);
 
     assert.throws(
@@ -339,8 +341,8 @@ test("freshness check is read-only and fails after a descriptor field is added",
       readFixtureText(fixture.root, `${SERVER_SCHEMA_DIR}/ballMove.ts`),
       /@type\("boolean"\) debugWire: boolean = false/,
     );
-    assert.match(readFixtureText(fixture.root, SHARED_CATALOG), /modeVersion: 3,/);
-    assert.match(readFixtureText(fixture.root, CLIENT_CATALOG), /modeVersion: 3,/);
+    assert.match(readFixtureText(fixture.root, SHARED_CATALOG), new RegExp(`modeVersion: ${changedManifest.modeVersion},`));
+    assert.match(readFixtureText(fixture.root, CLIENT_CATALOG), new RegExp(`modeVersion: ${changedManifest.modeVersion},`));
     assert.doesNotThrow(() => assertGameplayArtifactsFresh(fixture.options));
   } finally {
     fs.rmSync(fixture.root, { recursive: true, force: true });
@@ -397,10 +399,10 @@ test("契约 digest 变化而 modeVersion 未增：writer 与只读闸都必须�
     assert.equal(readFixtureText(fixture.root, SHARED_CATALOG), before);
 
     const bumped = manifestFixture("idle");
-    bumped.modeVersion = 3;
+    bumped.modeVersion = Number(bumped.modeVersion) + 1;
     writeFixtureJson(fixture.root, "apps/shared/schema/gameplays/idle/manifest.json", bumped);
     assert.ok(writeGameplayArtifacts(fixture.options).changed.length > 0);
-    assert.match(readFixtureText(fixture.root, SHARED_CATALOG), /modeVersion: 3,/);
+    assert.match(readFixtureText(fixture.root, SHARED_CATALOG), new RegExp(`modeVersion: ${bumped.modeVersion},`));
     assert.doesNotThrow(() => assertGameplayArtifactsFresh(fixture.options));
   } finally {
     fs.rmSync(fixture.root, { recursive: true, force: true });
@@ -611,9 +613,10 @@ test("server-only 字段拒绝暴露标记、碰撞、重复与不支持的 kind
 // ── 生成映射与运行时行为（真仓产物）─────────────────────────────────────────
 
 test("generated root maps are frozen, type-safe and reject unknown modes", () => {
-  assert.deepEqual(Object.keys(ROOM_STATE_VALIDATORS), ["ballMove", "idle"]);
-  assert.deepEqual(Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS), ["ballMove", "idle"]);
-  assert.deepEqual(Object.keys(GAMEPLAY_CATALOG), ["ballMove", "idle"]);
+  // privateFixture：阶段 8 私房验收 fixture gameplay（catalog 全链收录，⛔ 不进生产 mode registry）。
+  assert.deepEqual(Object.keys(ROOM_STATE_VALIDATORS), ["ballMove", "idle", "privateFixture"]);
+  assert.deepEqual(Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS), ["ballMove", "idle", "privateFixture"]);
+  assert.deepEqual(Object.keys(GAMEPLAY_CATALOG), ["ballMove", "idle", "privateFixture"]);
   assert.equal(Object.isFrozen(ROOM_STATE_VALIDATORS), true);
   assert.equal(Object.isFrozen(ROOM_STATE_ROOT_CONSTRUCTORS), true);
 
@@ -963,7 +966,7 @@ test("digest 并入 wire.ts 字节：改 wire.ts 一个字节而不 bump modeVer
     assert.throws(() => writeGameplayArtifacts(fixture.options), gate);
 
     const bumped = manifestFixture("ballMove");
-    bumped.modeVersion = 3;
+    bumped.modeVersion = Number(bumped.modeVersion) + 1;
     writeFixtureJson(fixture.root, "apps/shared/schema/gameplays/ballMove/manifest.json", bumped);
     assert.ok(writeGameplayArtifacts(fixture.options).changed.length > 0);
     assert.doesNotThrow(() => assertGameplayArtifactsFresh(fixture.options));

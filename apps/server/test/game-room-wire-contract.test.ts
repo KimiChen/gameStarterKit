@@ -171,6 +171,25 @@ const c2sVectors: Record<C2SType, readonly Vector[]> = {
         { label: "extra key", value: { text: "x", channel: "global" }, accepted: false },
         { label: "symbol key", value: symbolExtra({ text: "x" }), accepted: false },
     ],
+    // §10.1：Ready/Start payload 均 exact（去掉任一 exact-keys 断言 → 本矩阵转红）。
+    [C2S.RoomReady]: [
+        { label: "ready true", value: { ready: true }, accepted: true },
+        { label: "ready false", value: { ready: false }, accepted: true },
+        { label: "missing", value: {}, accepted: false },
+        { label: "wrong type", value: { ready: 1 }, accepted: false },
+        { label: "stringly bool", value: { ready: "true" }, accepted: false },
+        { label: "extra key", value: { ready: true, seat: 1 }, accepted: false },
+        { label: "symbol key", value: symbolExtra({ ready: true }), accepted: false },
+        { label: "null", value: null, accepted: false },
+    ],
+    [C2S.RoomStart]: [
+        { label: "empty object", value: {}, accepted: true },
+        { label: "null prototype", value: Object.create(null), accepted: true },
+        { label: "extra key", value: { force: true }, accepted: false },
+        { label: "symbol key", value: symbolExtra({}), accepted: false },
+        { label: "array", value: [], accepted: false },
+        { label: "null", value: null, accepted: false },
+    ],
 };
 
 test("GameRoom C2S boundary is sourced from the generated wire catalog", () => {
@@ -218,6 +237,17 @@ test("GameRoom C2S boundary is sourced from the generated wire catalog", () => {
                         `${type} chat normalization drift: ${vector.label}`,
                     );
                     assert.deepEqual(handled.sent, [], `${type} valid payload emitted an error: ${vector.label}`);
+                } else if (type === C2S.RoomReady || type === C2S.RoomStart) {
+                    // core 私房控制消息：auto/default profile 的房间收到即回 BadRequest（§6.2；
+                    // owner-ready profile 的行为矩阵在 private-room.test.ts）。
+                    assert.deepEqual(handled.captured, [], `${type} core message reached gameplay: ${vector.label}`);
+                    assert.equal(handled.sent.length, 1, `${type} auto-profile refusal count: ${vector.label}`);
+                    assert.equal(handled.sent[0][0], S2C.Error, `${type} auto-profile refusal type: ${vector.label}`);
+                    assert.equal(
+                        (handled.sent[0][1] as { code?: unknown }).code,
+                        ErrorCode.BadRequest,
+                        `${type} auto-profile refusal code: ${vector.label}`,
+                    );
                 } else {
                     assert.deepEqual(
                         handled.captured,

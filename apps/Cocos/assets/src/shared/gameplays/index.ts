@@ -7,3 +7,4 @@ export * from "./ballMove/wire";
 export * from "./generated/state/ballMove";
 export * from "./idle/wire";
 export * from "./generated/state/idle";
+export * from "./generated/state/privateFixture";

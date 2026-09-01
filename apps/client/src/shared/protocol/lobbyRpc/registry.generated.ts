@@ -6,6 +6,7 @@ import { validateForceLogoutPush, validateServerNoticePush, type IForceLogoutPus
 import type { IPurchaseResult } from "./economy";
 import { validateEventsRes, validateGuildEventPush, validateGuildEventsReq, validateGuildJoinReq, validateGuildLeaveReq, validateGuildLeaveRes, validateJoinRes, type IGuildEventPush, type IGuildGetEventsReq, type IGuildGetEventsRes, type IGuildJoinReq, type IGuildJoinRes, type IGuildLeaveReq, type IGuildLeaveRes } from "./domains/guild";
 import { validateMailClaimAttachRes, validateMailClaimReq, validateMailListReq, validateMailListRes, validateMailMarkReadRes, validateMailMarkReq, validateMailNewPush, type IMailClaimAttachReq, type IMailListReq, type IMailListRes, type IMailMarkReadReq, type IMailMarkReadRes, type IMailNewPush } from "./domains/mail";
+import { validatePrepareCreateReq, validatePrepareCreateRes, validateResolveReq, validateResolveRes, type IRoomPrepareCreateReq, type IRoomPrepareCreateRes, type IRoomResolveReq, type IRoomResolveRes } from "./domains/room";
 import { validatePurchaseResult, validateShopPurchaseReq, validateShopQueryReq, type IShopPurchaseReq, type IShopQueryOpReq } from "./domains/shop";
 import { validateGetInfoReq, validateGetInfoRes, validateGetProfileReq, validateGetUserIdReq, validateGetUserIdRes, validateProfileRes, validateUpdateProfileReq, validateUpdateRes, type IGetInfoReq, type IGetInfoRes, type IGetProfileReq, type IGetProfileRes, type IGetUserIdReq, type IGetUserIdRes, type IUpdateProfileReq, type IUpdateProfileRes } from "./domains/user";
 
@@ -13,6 +14,7 @@ import { validateGetInfoReq, validateGetInfoRes, validateGetProfileReq, validate
 export const LOBBY_RPC_DOMAINS: readonly string[] = [
     "guild",
     "mail",
+    "room",
     "shop",
     "user",
 ];
@@ -25,6 +27,8 @@ export interface LobbyRpcMap {
     "mail.list": { req: IMailListReq; res: IMailListRes };
     "mail.claimAttach": { req: IMailClaimAttachReq; res: IPurchaseResult };
     "mail.markRead": { req: IMailMarkReadReq; res: IMailMarkReadRes };
+    "room.prepareCreate": { req: IRoomPrepareCreateReq; res: IRoomPrepareCreateRes };
+    "room.resolve": { req: IRoomResolveReq; res: IRoomResolveRes };
     "shop.purchase": { req: IShopPurchaseReq; res: IPurchaseResult };
     "shop.queryOp": { req: IShopQueryOpReq; res: IPurchaseResult };
     "user.getUserId": { req: IGetUserIdReq; res: IGetUserIdRes };
@@ -42,6 +46,7 @@ export type LobbyRpcIdemType =
     | "guild.join"
     | "guild.leave"
     | "mail.claimAttach"
+    | "room.prepareCreate"
     | "shop.purchase"
     | "user.updateProfile";
 
@@ -57,6 +62,8 @@ export const LOBBY_RPC_ROUTE_MODES: { readonly [K in LobbyRpcType]: LobbyRpcRout
     "mail.list": "query",
     "mail.claimAttach": "idempotent-write",
     "mail.markRead": "natural-write",
+    "room.prepareCreate": "idempotent-write",
+    "room.resolve": "query",
     "shop.purchase": "idempotent-write",
     "shop.queryOp": "query",
     "user.getUserId": "query",
@@ -73,6 +80,8 @@ export const ALL_LOBBY_RPC_TYPES: readonly LobbyRpcType[] = [
     "mail.list",
     "mail.claimAttach",
     "mail.markRead",
+    "room.prepareCreate",
+    "room.resolve",
     "shop.purchase",
     "shop.queryOp",
     "user.getUserId",
@@ -90,6 +99,8 @@ export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number
     "mail.list": 1,
     "mail.claimAttach": 1,
     "mail.markRead": 1,
+    "room.prepareCreate": 1,
+    "room.resolve": 1,
     "shop.purchase": 1,
     "shop.queryOp": 1,
     "user.getUserId": 1,
@@ -118,6 +129,8 @@ export const LOBBY_RPC_REQUEST_VALIDATORS: { readonly [K in LobbyRpcType]: Runti
     "mail.list": guardRpcValidator("payload", validateMailListReq),
     "mail.claimAttach": guardRpcValidator("payload", validateMailClaimReq),
     "mail.markRead": guardRpcValidator("payload", validateMailMarkReq),
+    "room.prepareCreate": guardRpcValidator("payload", validatePrepareCreateReq),
+    "room.resolve": guardRpcValidator("payload", validateResolveReq),
     "shop.purchase": guardRpcValidator("payload", validateShopPurchaseReq),
     "shop.queryOp": guardRpcValidator("payload", validateShopQueryReq),
     "user.getUserId": guardRpcValidator("payload", validateGetUserIdReq),
@@ -134,6 +147,8 @@ export const LOBBY_RPC_RESPONSE_VALIDATORS: { readonly [K in LobbyRpcType]: Runt
     "mail.list": guardRpcValidator("response", validateMailListRes),
     "mail.claimAttach": guardRpcValidator("response", validateMailClaimAttachRes),
     "mail.markRead": guardRpcValidator("response", validateMailMarkReadRes),
+    "room.prepareCreate": guardRpcValidator("response", validatePrepareCreateRes),
+    "room.resolve": guardRpcValidator("response", validateResolveRes),
     "shop.purchase": guardRpcValidator("response", validatePurchaseResult),
     "shop.queryOp": guardRpcValidator("response", validatePurchaseResult),
     "user.getUserId": guardRpcValidator("response", validateGetUserIdRes),
@@ -178,6 +193,12 @@ export const RPC_ERR_CODES = [
     "INTERNAL",
     "OPERATION_CONFLICT",
     "OPERATION_RESULT_EXPIRED",
+    "ROOM_CODE_UNAVAILABLE",
+    "ROOM_FULL",
+    "ROOM_START_IN_PROGRESS",
+    "ROOM_QUOTA_EXCEEDED",
+    "ROOM_SERVICE_UNAVAILABLE",
+    "ROOM_RESULT_UNKNOWN",
 ] as const;
 
 export type RpcErrCode = (typeof RPC_ERR_CODES)[number];

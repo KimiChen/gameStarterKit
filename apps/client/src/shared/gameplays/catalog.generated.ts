@@ -2,11 +2,13 @@
 import { WireValidationError } from "../protocol/http";
 import { validateGameRoomState, type IGameRoomState } from "./generated/state/ballMove";
 import { validateIdleRoomState, type IIdleRoomState } from "./generated/state/idle";
+import { validatePrivateFixtureState, type IPrivateFixtureState } from "./generated/state/privateFixture";
 
 /** Wire root interfaces keyed by canonical gameplay mode id. */
 export interface RoomStateByMode {
     "ballMove": IGameRoomState;
     "idle": IIdleRoomState;
+    "privateFixture": IPrivateFixtureState;
 }
 
 export type RoomStateMode = keyof RoomStateByMode;
@@ -16,6 +18,7 @@ export type RoomStateValidator<M extends RoomStateMode> = (input: unknown) => Ro
 export const ROOM_STATE_VALIDATORS = Object.freeze({
     "ballMove": validateGameRoomState,
     "idle": validateIdleRoomState,
+    "privateFixture": validatePrivateFixtureState,
 } as const satisfies { readonly [M in RoomStateMode]: RoomStateValidator<M> });
 
 export function validateRoomStateForMode<M extends RoomStateMode>(mode: M, input: unknown): RoomStateByMode[M];
@@ -31,16 +34,29 @@ export const GAMEPLAY_CATALOG = {
     "ballMove": {
         id: "ballMove",
         constantName: "BallMove",
-        modeVersion: 2,
+        modeVersion: 3,
         maxPlayers: 4,
-        contractDigest: "666bb0389fa4167a2208fee2b7f415ae2ef4fb0c6604e9b6924664716929c2a2",
+        profiles: ["default"],
+        stateFragments: [],
+        contractDigest: "c8fca655408e3bae34c9b3072681536e03b9258bdc97d827015ccf19feea677e",
     },
     "idle": {
         id: "idle",
         constantName: "Idle",
-        modeVersion: 2,
+        modeVersion: 3,
         maxPlayers: 4,
-        contractDigest: "9151b3a0e1913f7ac53c77cad3dd8b72a719e0ce335524e188e248b6fdece695",
+        profiles: ["default"],
+        stateFragments: [],
+        contractDigest: "0ecdaaa95a97d83b73df2a3f3d5535f0e4bf113fb50fa64c52a79477f0749ef7",
+    },
+    "privateFixture": {
+        id: "privateFixture",
+        constantName: "PrivateFixture",
+        modeVersion: 1,
+        maxPlayers: 4,
+        profiles: ["default", "private"],
+        stateFragments: ["ownerReady", "inviteRoom"],
+        contractDigest: "93c50eb5f5de997cb09c843bb187b599efdf7111e65228668a958b84cc1597ed",
     },
 } as const;
 

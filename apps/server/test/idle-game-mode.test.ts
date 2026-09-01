@@ -127,7 +127,7 @@ test("Idle root：onCreate 只按生成映射选择一次，之后禁止替换",
         const room = new GameRoom({ seed: 700 });
         (room as unknown as { setSimulationInterval(callback: () => void, delay: number): void })
             .setSimulationInterval = () => undefined;
-        room.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: IDLE_GAME_MODE_ID });
+        void room.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: IDLE_GAME_MODE_ID });
 
         const selected = idleState(room);
         assert.equal(selected.pulseGoal, IDLE_DEFAULT_PULSE_GOAL);
@@ -152,7 +152,7 @@ test("Idle root：onCreate 只按生成映射选择一次，之后禁止替换",
         const ballRoom = new GameRoom({ seed: 702 });
         (ballRoom as unknown as { setSimulationInterval(callback: () => void, delay: number): void })
             .setSimulationInterval = () => undefined;
-        ballRoom.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
+        void ballRoom.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
         assert.ok(ballRoom.state instanceof GameRoomState);
         assert.equal(ballRoom.state instanceof IdleRoomState, false);
     } finally {

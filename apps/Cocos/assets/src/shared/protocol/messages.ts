@@ -8,7 +8,12 @@ import {
     type RuntimeValidator,
     WireValidationError,
 } from "./http";
-import { isErrorCode, type ErrorCodeType } from "../constants/errors";
+import {
+    isErrorCode,
+    isRoomControlError,
+    type ErrorCodeType,
+    type RoomControlErrorType,
+} from "../constants/errors";
 
 /**
  * 房间内 **core** 消息协议 —— 双端共享。
@@ -32,6 +37,10 @@ export const CORE_C2S = {
     Ping: "c2s.ping",
     /** 聊天 */
     Chat: "c2s.chat",
+    /** 私房 Ready 置位/清除（owner-ready profile；仅 Waiting，§6.2） */
+    RoomReady: "c2s.room.ready",
+    /** 房主开局（owner-ready profile；仅 Waiting，§6.3） */
+    RoomStart: "c2s.room.start",
 } as const;
 
 /** 服务端 → 客户端 core 消息名 */
@@ -44,6 +53,10 @@ export const CORE_S2C = {
     Chat: "s2c.chat",
     /** 服务端错误提示 */
     Error: "s2c.error",
+    /** 房内 core control 错误（Ready/Start/owner/phase；§4.7 三域之二，code 独立于 ErrorCode） */
+    RoomError: "s2c.room.error",
+    /** 邀请码已失效（renew lost；旧码禁止继续展示，§6.7 第 5 条） */
+    RoomCodeInvalidated: "s2c.room.codeInvalidated",
 } as const;
 
 export type CoreC2SType = (typeof CORE_C2S)[keyof typeof CORE_C2S];
@@ -53,6 +66,8 @@ export type CoreS2CType = (typeof CORE_S2C)[keyof typeof CORE_S2C];
 export interface CoreC2SPayloadMap {
     [CORE_C2S.Ping]: IPingReq;
     [CORE_C2S.Chat]: IChatReq;
+    [CORE_C2S.RoomReady]: IRoomReadyReq;
+    [CORE_C2S.RoomStart]: IRoomStartReq;
 }
 
 export interface CoreS2CPayloadMap {
@@ -60,6 +75,8 @@ export interface CoreS2CPayloadMap {
     [CORE_S2C.Welcome]: IWelcomeRes;
     [CORE_S2C.Chat]: IChatRes;
     [CORE_S2C.Error]: IErrorRes;
+    [CORE_S2C.RoomError]: IRoomErrorRes;
+    [CORE_S2C.RoomCodeInvalidated]: IRoomCodeInvalidatedRes;
 }
 
 const MAX_MESSAGE_ID = 64;
@@ -83,6 +100,19 @@ function validateChat(input: unknown): IChatReq {
     const text = boundedString(value.text, "payload.text", 1, MAX_CHAT_TEXT);
     if (text.trim().length === 0) throw new WireValidationError("MESSAGE_TEXT", "payload.text");
     return { text };
+}
+
+function validateRoomReady(input: unknown): IRoomReadyReq {
+    const value = messageRecord(input, "payload");
+    assertExactKeys(value, ["ready"], [], "payload");
+    if (typeof value.ready !== "boolean") throw new WireValidationError("MESSAGE_READY", "payload.ready");
+    return { ready: value.ready };
+}
+
+function validateRoomStart(input: unknown): IRoomStartReq {
+    const value = messageRecord(input, "payload");
+    assertExactKeys(value, [], [], "payload");
+    return {};
 }
 
 function validatePong(input: unknown): IPongRes {
@@ -126,6 +156,21 @@ function validateError(input: unknown): IErrorRes {
     };
 }
 
+function validateRoomError(input: unknown): IRoomErrorRes {
+    const value = messageRecord(input, "payload");
+    assertExactKeys(value, ["code"], [], "payload");
+    const code = finiteInteger(value.code, "payload.code", 0, 0xfffff);
+    // ⛔ code 域独立于 ErrorCode（§4.7）：只接受 RoomControlError 段成员。
+    if (!isRoomControlError(code)) throw new WireValidationError("MESSAGE_ROOM_ERROR_CODE", "payload.code");
+    return { code };
+}
+
+function validateRoomCodeInvalidated(input: unknown): IRoomCodeInvalidatedRes {
+    const value = messageRecord(input, "payload");
+    assertExactKeys(value, [], [], "payload");
+    return {};
+}
+
 /** Core runtime validators. Values are copied so callers cannot mutate a validated payload. */
 const guardMessageValidator = <T>(validator: RuntimeValidator<T>): RuntimeValidator<T> =>
     (input: unknown) => guardWire("payload", () => validator(input));
@@ -134,6 +179,8 @@ const guardMessageValidator = <T>(validator: RuntimeValidator<T>): RuntimeValida
 export const CORE_C2S_WIRE: { [K in CoreC2SType]: RuntimeValidator<CoreC2SPayloadMap[K]> } = {
     [CORE_C2S.Ping]: guardMessageValidator(validatePing),
     [CORE_C2S.Chat]: guardMessageValidator(validateChat),
+    [CORE_C2S.RoomReady]: guardMessageValidator(validateRoomReady),
+    [CORE_C2S.RoomStart]: guardMessageValidator(validateRoomStart),
 };
 
 export const CORE_S2C_WIRE: { [K in CoreS2CType]: RuntimeValidator<CoreS2CPayloadMap[K]> } = {
@@ -141,6 +188,8 @@ export const CORE_S2C_WIRE: { [K in CoreS2CType]: RuntimeValidator<CoreS2CPayloa
     [CORE_S2C.Welcome]: guardMessageValidator(validateWelcome),
     [CORE_S2C.Chat]: guardMessageValidator(validateChatResult),
     [CORE_S2C.Error]: guardMessageValidator(validateError),
+    [CORE_S2C.RoomError]: guardMessageValidator(validateRoomError),
+    [CORE_S2C.RoomCodeInvalidated]: guardMessageValidator(validateRoomCodeInvalidated),
 };
 
 // ---------------- 网关大厅房（服务端框架 M5，docs/SERVER.md §4 Lobby RPC） ----------------
@@ -160,6 +209,14 @@ export interface IPingReq {
 export interface IChatReq {
     text: string;
 }
+
+export interface IRoomReadyReq {
+    /** true = Ready 置位；false = Ready 清除（都只在 Waiting 合法，starting 期间被拒） */
+    ready: boolean;
+}
+
+/** 空 payload（房主开局请求；owner/phase/人数/allReady 全部由服务端权威判定）。 */
+export interface IRoomStartReq {}
 
 // ---------------- S2C payload ----------------
 
@@ -191,3 +248,11 @@ export interface IErrorRes {
     code: ErrorCodeType;
     message: string;
 }
+
+/** 房内 core control 错误（§4.7 三域之二）：客户端只按 code 分支，文案查 RoomControlErrorMessage。 */
+export interface IRoomErrorRes {
+    code: RoomControlErrorType;
+}
+
+/** 邀请码失效通知（无参数；权威绑定由 resolve 侧 lease generation 承担）。 */
+export interface IRoomCodeInvalidatedRes {}

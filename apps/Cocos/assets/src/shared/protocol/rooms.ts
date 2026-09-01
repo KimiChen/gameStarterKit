@@ -74,9 +74,23 @@ export interface IRoomJoinOptions {
 /** Lobby 不分玩法；mode 对它是非法字段。 */
 export interface ILobbyRoomJoinOptions extends IRoomJoinOptions {}
 
+/** core 私房准入凭证（§4.4）：create 与 join purpose 不可互换，⛔ 禁止写入 state、日志或错误文本。 */
+export interface IGameRoomAccess {
+    readonly kind: "create" | "join";
+    /** 不透明 ticket 串（服务端只存 sha256 记录；串本身不携带任何自描述声明，§6.8）。 */
+    readonly ticket: string;
+}
+
 /** GameRoom 必须显式携带 mode，供 Colyseus 在 onAuth 前完成撮合隔离。 */
 export interface IGameRoomJoinOptions extends IRoomJoinOptions {
     mode: string;
+    /**
+     * 房间组合 profile（§4.4）。本版本仍可选、缺省视为 "default"（auto + matchmaking，
+     * wire 兼容不 bump）；profile 必填与版本 bump 属下一版本边界（§9 阶段 8）。
+     */
+    profile?: string;
+    /** 私房准入 ticket；普通撮合 join 不携带。 */
+    access?: IGameRoomAccess;
 }
 
 /**
@@ -111,6 +125,32 @@ export function validateGameplayModeId(value: unknown, path = "options.mode"): s
     return mode;
 }
 
+/** profile id 与 mode id 同一形状约束（generated catalog 的 profiles 成员，§4.4/§6.2）。 */
+export function validateRoomProfileId(value: unknown, path = "options.profile"): string {
+    const profile = boundedString(value, path, 1, 64);
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(profile)) {
+        throw new WireValidationError("ROOM_PROFILE", path);
+    }
+    return profile;
+}
+
+/** ticket 串的形状闸（base64url 字符集；权威校验在服务端 sha256 记录侧，§6.8）。 */
+const ACCESS_TICKET_SHAPE = /^[A-Za-z0-9_-]{16,128}$/;
+
+function validateGameRoomAccess(value: unknown, path = "options.access"): IGameRoomAccess {
+    if (!isPlainRecord(value)) throw new WireValidationError("ROOM_ACCESS", path);
+    assertExactKeys(value, ["kind", "ticket"], [], path);
+    const kind = value.kind;
+    if (kind !== "create" && kind !== "join") {
+        throw new WireValidationError("ROOM_ACCESS_KIND", `${path}.kind`);
+    }
+    const ticket = boundedString(value.ticket, `${path}.ticket`, 16, 128);
+    if (!ACCESS_TICKET_SHAPE.test(ticket)) {
+        throw new WireValidationError("ROOM_ACCESS_TICKET", `${path}.ticket`);
+    }
+    return { kind, ticket };
+}
+
 /** Shared/common validator retained for callers that intentionally handle only base keys. */
 export function validateRoomJoinOptions(input: unknown): IRoomJoinOptions {
     return validateLobbyRoomJoinOptions(input);
@@ -127,10 +167,18 @@ export function validateLobbyRoomJoinOptions(input: unknown): ILobbyRoomJoinOpti
 export function validateGameRoomJoinOptions(input: unknown): IGameRoomJoinOptions {
     return guardWire("options", () => {
         const value = roomOptionsRecord(input);
-        assertExactKeys(value, ["mode"], ["v", "token", "sId"], "options");
-        return {
+        assertExactKeys(value, ["mode"], ["v", "token", "sId", "profile", "access"], "options");
+        const out: IGameRoomJoinOptions = {
             ...validateRoomJoinBase(value),
             mode: validateGameplayModeId(value.mode),
         };
+        // exactOptionalPropertyTypes：可选字段一律条件展开，⛔ 不得赋 undefined（§4.4）。
+        if (Object.prototype.hasOwnProperty.call(value, "profile") && value.profile !== undefined) {
+            out.profile = validateRoomProfileId(value.profile);
+        }
+        if (Object.prototype.hasOwnProperty.call(value, "access") && value.access !== undefined) {
+            out.access = validateGameRoomAccess(value.access);
+        }
+        return out;
     });
 }
