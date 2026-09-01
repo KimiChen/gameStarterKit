@@ -50,15 +50,18 @@ npm run sync:shared
 
 ```text
 apps/client/src/
-├── Main.ts             Cocos 组件入口与 Demo 编排
+├── Main.ts             Cocos 组件入口：@property 三件 + 分辨率/兼容桥 + AppRuntime 转发
 ├── designSpec.ts       设计分辨率数值真源（750×1624）
+├── app/                AppRuntime 宿主、NavigationService、SessionCoordinator、FeatureHost、
+│                       RefreshCoordinator、loginFlow 等横切协调件
 ├── core/               HTTP 底座、生成的开发配置与宿主环境桥
-├── gameplay/           默认玩法 catalog 与组合登记
+├── gameplay/           每玩法 modes/<id>/ 模块 + 生成 catalog + services 注入面
+├── generated/          codegen:features 的 View/契约/feature 注册表产物（禁手改）
 ├── lib/                锁定的第三方技术依赖
 ├── logic/              引擎无关页面与玩法行为
 ├── net/                Room、RPC 与 HTTP 适配
 ├── shared/             apps/shared 的生成镜像
-└── view/               Cocos/FairyGUI 视图绑定与 ViewMgr
+└── view/               Cocos/FairyGUI 视图绑定与 ViewMgr（registry/契约为生成 façade）
 
 apps/Cocos/
 ├── assets/src/         apps/client/src 的生成镜像
@@ -74,6 +77,11 @@ apps/Cocos/
 - `apps/client/src/shared` 禁止手改；改 `apps/shared/src`。
 - `apps/Cocos/assets/src` 整体禁止手改；运行 `npm run sync:client`。
 - `.meta` 与镜像一起提交，保持 UUID 稳定。
+- feature/页面/路由/Home 入口的手写登记在仓库根 `features/<id>/feature.json` 与 View 同目录的
+  `<Name>View.view.json` sidecar；`src/generated/` 与 `gameplay/catalog.generated.ts` 是
+  `codegen:features` / `codegen:gameplays` 的产物，禁止手改。
+- 普通 feature/玩法动线的中央禁改集合以 `scripts/protected-paths.json` 为机检真源
+  （`test:client` 的无侵入矩阵校验，散文视图见 docs/Non-intrusive.md §11.3）。
 
 ## 3. View 与 Logic 分层
 
@@ -89,11 +97,16 @@ apps/Cocos/
 页面行为通过依赖注入连接 HTTP/RPC/View port，因此可在 Node 环境无头测试。
 
 玩法通过 `logic/gameplay/GameplayRegistry` 登记 factory 与该玩法自己的 room joiner，
-`RoomController.startRegistered` 取得同一 registration 的快照后接管精确 room capability。默认组合点是
-`gameplay/catalog.ts`：`ballMove` 带 Cocos presentation，`idle` 是无 presentation、但拥有独立 state 与
-pulse 输入的最小真实玩法。每个登记项注入自己的 raw state exact validator、允许发送的消息集合和
-可选 reconnect reconcile；新增玩法扩展自己的 logic、room adapter 和 catalog 登记，不修改通用
-`RoomClient`、`RoomController` 或 `Main` 的启动流程。
+`RoomController.startRegistered` 取得同一 registration 的快照后接管精确 room capability。组合点自
+阶段 9 起生成化：每个玩法一个 `gameplay/modes/<id>/index.ts` 模块（导出
+`createGameplayModule(services)`：validateLaunch + joiner + createPlugin，services 是
+`gameplay/services.ts` 的稳定注入面），由生成的 `gameplay/catalog.generated.ts`
+（`registerGeneratedGameplays`）静态聚合登记，`gameplay/catalog.ts` 只是废弃零状态 façade。
+`ballMove` 带 Cocos presentation（字面量动态 import，输入经 generation-fenced
+`GameplayInstanceHost` 回流），`idle` 是无 presentation、但拥有独立 state 与 pulse 输入的最小真实
+玩法。每个模块注入自己的 raw state exact validator、允许发送的消息集合和可选 reconnect
+reconcile；新增玩法只新增 `modes/<id>/` 模块文件与自己的 logic/room adapter，不修改通用
+`RoomClient`、`RoomController`、`gameplay/services.ts` 或 `Main` 的启动流程。
 
 ### View
 
@@ -108,21 +121,27 @@ pulse 输入的最小真实玩法。每个登记项注入自己的 raw state exa
 
 ## 4. 页面定义与生命周期
 
-页面由三部分组成：
+页面由三部分组成（阶段 6 起注册表/契约生成化）：
 
-1. `fguiContracts.ts`：登记命名元素契约。
-2. `view/XxxView.ts`：结构绑定与手写接线。
-3. `viewRegistry.ts`：动态加载入口、包名、组件名、共享依赖和实例策略。
+1. `view/XxxView.ts`：结构绑定（codegen 维护四个 AUTO 区块）与手写接线。
+2. 同目录 `XxxView.view.json` sidecar：owner/layer/实例策略/logic 指向与手写契约段
+   （manualRequired/nested/listItems/controllers/relations/assetUrls）的唯一手写真源。
+3. `features/<id>/feature.json`：把 sidecar、路由（group/restore 在 sidecar）与 Home 入口
+   contribution 登记进 feature；`npm --workspace @game/server run codegen:features` 据此生成
+   `src/generated/{views,fguiContracts,features}.generated.ts`。`view/viewRegistry.ts` 与
+   `view/fguiContracts.ts` 只是生成值的稳定 façade，⛔ 不再手改。
 
-页面的对外入口在 `view/pages.ts`：`openXxx` 负责组合 ViewMgr、Logic、net 依赖与导航接线，`Main` 通过
-动态 import 调用它。
+页面打开经 feature route / `app/NavigationService`；登录/选区/公告等既有页面的组合根在
+`app/loginFlow.ts`（`view/pages.ts` 是零状态转发 façade，保住旧动态 import 面；最终新增
+feature ⛔ 不再向它添加 `openXxx`）。回登录 transition 的固定次序与文案映射由
+`app/SessionCoordinator` 拥有。
 
 打开页面：
 
 ```ts
 const handle = await ViewMgr.open("Home");
 await handle.run((_view, context) => {
-  // pages.ts 在这里注入 view.setup(...)，并把 context.signal 传给异步 Logic。
+  // 组合根（app/loginFlow 或 feature route）在这里注入 view.setup(...)，并把 context.signal 传给异步 Logic。
 });
 ```
 
@@ -177,8 +196,10 @@ npm run codegen:fgui -- <Package> <Component>
 
 AUTO 区块外是手写区。重复执行应得到稳定结果。
 
-命名元素必须先进入 `view/fguiContracts.ts`。跨包组件依赖通过 `viewRegistry.sharedPkgs` 声明，
-不要在页面中临时加载隐式依赖。
+命名元素契约的 `required` 段由生成器从 FGUI XML 按 binding 规则计算（与 View AUTO REQUIRED 单源）；
+手写契约段（manualRequired/nested/listItems 等）写在 View 同目录的 `.view.json` sidecar，经
+`codegen:features` 汇入 `generated/fguiContracts.generated.ts`（`view/fguiContracts.ts` 只是
+re-export façade）。跨包组件依赖通过 sidecar 的 `sharedPkgs` 声明，不要在页面中临时加载隐式依赖。
 
 常见约束：
 
@@ -186,9 +207,10 @@ AUTO 区块外是手写区。重复执行应得到稳定结果。
 - Controller 切页使用约定的 page name。
 - XML parser 保留 `displayList` 直接元素作为 AUTO 绑定真源，同时递归记录嵌套组件/list item 的
   `children`/`nestedElements`、`path`、`defaultItem`/模板数量、relation、controller 和 `ui://` 资源引用；
-  手写嵌套 `getChild` 契约必须显式声明 `path`，避免同名元素误匹配。`fguiContracts.ts` 中的
-  `required` 只由 codegen 维护；未加前缀的手写字段使用 `manualRequired`，外部组件和列表模板分别使用
-  `nested`/`listItems`，并由无头测试按 `ui://` 资源实际解析后校验字段、controller 与 `defaultItem`。
+  手写嵌套 `getChild` 契约必须显式声明 `path`，避免同名元素误匹配。生成契约的
+  `required` 只由 codegen 维护；未加前缀的手写字段使用 sidecar 的 `manualRequired`，外部组件和
+  列表模板分别使用 `nested`/`listItems`，并由无头测试按 `ui://` 资源实际解析后校验字段、
+  controller 与 `defaultItem`。
 - `scripts/fgui-manifest.mjs --check`（`npm run verify:fgui`）钉住每个 package 的 XML/资源声明与哈希、
   `ui://` 包及资源 ID 闭包、Cocos `.bin`/图集/Spine 等导出物和 View 四个 AUTO 区块哈希；设计源或
   package 导出物变化后必须重新导出并执行 `--write`，否则本地闸失败。
@@ -229,9 +251,14 @@ apps/art/fairygui 中修改设计源
 ## 7. 网络层
 
 GameRoom 的通用 join/leave ownership 与 mode adapter 契约位于 `net/rooms/GameRoomTransport.ts`；
-`BallMoveRoom.ts`、`IdleRoom.ts` 只把一个已捕获的物理 room 适配成各玩法能力。`Main.gameplayId` 选择 catalog
-中的玩法，adapter 必须把对应 `mode`、生成的 state 类型/validator 和允许的 C2S 集合传给 Game join，不能
-依赖服务端默认值。ballMove adapter 独占 Move reconcile；idle 没有该 hook，join/reconnect 都不会构造 Move。
+`BallMoveRoom.ts`、`IdleRoom.ts` 只把一个已捕获的物理 room 适配成各玩法能力。玩法启动目标经
+Home 菜单 contribution → `LaunchPort.launch` → AppRuntime launch 通道选择（`Main.gameplayId`
+只是默认 launch target 的 @property 兜底；删除属场景资产 diff，需 Creator）。adapter 必须把对应
+`mode`、生成的 state 类型/validator 和允许的 C2S 集合传给 Game join，不能依赖服务端默认值；
+Game join 信封（v8）必填 `mode/modeVersion/profile`——默认撮合由 `joinGameRoom` 按 catalog 注入，
+私房由 `net/rooms/PrivateRoomService.ts`（prepareCreate→create / resolve→joinById，携带 access
+ticket）配合 `net/rooms/matchmaking.ts` 的 strategy 判别联合注入。ballMove adapter 独占 Move
+reconcile；idle 没有该 hook，join/reconnect 都不会构造 Move。
 
 ### RoomClient
 
@@ -273,8 +300,10 @@ bindRoom、onDrop 与 onReconnect 三处把 SDK 的离线重放队列钉死（`m
 slot 并把在途 RPC 判 CONN_LOST。当前 generation 的
 onReconnect 只恢复发送能力，room、ownership 与 push listener 继续存活。只有最终 onLeave 才进入下述
 session/profile 对账。
-`net/session.ts` 是登录态与 authInvalid/connLost/battleLost 三类 transport 事件的枢纽；authInvalid 在
-未登录时幂等吞掉迟到上报。Lobby 最终 `onLeave` 后，页面组合根先复用当前内存 token，以显式 ownership
+`net/session.ts` 是登录态与 authInvalid/connLost/battleLost 三类 transport 事件的稳定 façade——
+状态与派生逻辑自阶段 5a 起收敛在 `app/SessionCoordinator`（低层 connection/battle 事件经
+`app/LifecycleBus` 转发，battle transport 事件由 RoomClient 发布、SessionCoordinator 派生
+battleLost）；authInvalid 在未登录时幂等吞掉迟到上报。Lobby 最终 `onLeave` 后，页面组合根先复用当前内存 token，以显式 ownership
 重进所选区 Lobby，再拉 `user.getInfo`；只有完整 identity 仍匹配的结果才能原子替换角色快照并恢复 Home。
 join 使用 15 秒显式超时并随页面 scope 取消，失败才进入统一 `returnToLogin` 清旧 bearer。重复最终断线
 在同一 generation 内合流；旧 continuation 只能释放自己的 ownership，不能覆盖新快照或关闭后来登录。
@@ -351,13 +380,15 @@ Creator 编辑器预览用于补充验证引擎绑定、资源导入和页面交
 ## 9. 新页面开发清单
 
 1. 在 FairyGUI 编辑器中修改并导出组件。
-2. 更新 `fguiContracts.ts`。
-3. 运行 `codegen:fgui`。
-4. 在 View 手写区接入必要事件。
+2. 运行 `codegen:fgui`（生成/更新 View 四个 AUTO 区块；⛔ 不再手改 `fguiContracts.ts` /
+   `viewRegistry.ts`——两者是生成值的稳定 façade）。
+3. 在 View 手写区接入必要事件。
+4. 同目录写 `<Name>View.view.json` sidecar（实例策略、logic 指向与手写契约段）。
 5. 在 Logic 中实现行为并注入依赖。
-6. 登记 viewRegistry 与共享包依赖。
-7. 在 `view/pages.ts` 增加 `openXxx` 组合根：打开页面、构造 Logic、注入 net 依赖与导航回调（`Main`
-   与业务层只调这里，不直接调 ViewMgr）。
+6. 把 sidecar、路由与 Home 入口登记进 `features/<id>/feature.json`，运行
+   `npm --workspace @game/server run codegen:features` 刷新生成注册表（共享包依赖写在 sidecar）。
+7. 页面打开经 feature route / NavigationService；登录链旧页面的组合根在 `app/loginFlow.ts`
+   （`view/pages.ts` 为零状态转发 façade，最终新增 feature ⛔ 不再加 `openXxx`）。
 8. 增加无头测试。
 9. 运行 `sync:client`。
 10. 在 Cocos 中本地预览。

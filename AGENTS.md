@@ -8,7 +8,7 @@
 > - [docs/WEBPLATFORM.md](docs/WEBPLATFORM.md)：外部身份服务的开发契约边界
 > - [docs/EXTRAFEATURES.md](docs/EXTRAFEATURES.md)：可选额外功能、现有实现与非承诺说明
 > - [docs/undergroundIdle/README.md](docs/undergroundIdle/README.md)：未实现的玩法策划案与扩展草案
-> - [docs/Non-intrusive.md](docs/Non-intrusive.md)：非侵入式框架改造方案（feature 与实时 Room 玩法，设计提案，未实施）
+> - [docs/Non-intrusive.md](docs/Non-intrusive.md)：非侵入式框架改造方案（feature 与实时 Room 玩法；框架侧阶段 0-9 已实施，两玩法未实现，编辑器/真机待办见 plan-v4.md）
 > - [docs/snakeoff/README.md](docs/snakeoff/README.md)：竖版贪吃蛇玩法策划案（未实现）
 > - [todo-godogen.md](todo-godogen.md)：未实现的外部项目对照吸收计划，不构成核心能力承诺
 > - [plan-v4.md](plan-v4.md)：当前开放问题、实施状态与验收证据的唯一真相
@@ -112,6 +112,13 @@ npm --workspace @game/server run test:int
      `npm --workspace @game/server run codegen:gameplays` 刷新。⚠ `gameplays/` 下的
      `defineGameplayWire.ts` 与 `<id>/wire.ts` 是手写真源（不是生成物），其余
      （catalog.generated.ts / index.ts / generated/）禁手改。
+   - `apps/shared/src/protocol/lobbyRpc/registry.generated.ts`、`apps/client/src/generated/`
+     （views/fguiContracts/features）与 `docs/features.generated.md` 来自
+     `features/<id>/feature.json` + View 同目录 `.view.json` sidecar + FGUI XML + 各域
+     RPC descriptor，用 `npm --workspace @game/server run codegen:features` 刷新。
+     `lobbyRpc/index.ts`、`envelope.ts`、`push.ts`、客户端 `view/viewRegistry.ts`、
+     `view/fguiContracts.ts`、`view/pages.ts` 是稳定 façade，普通 feature 不手改
+     （机检真源 `scripts/protected-paths.json`，随 `test:client` 无侵入矩阵校验）。
    - `apps/server/src/http/manifest.generated.ts` 来自 `apps/server/src/http/<domain>/<method>.ts`，
      用 `npm --workspace @game/server run codegen:http` 刷新。
    - `apps/shared/src/project.ts` 来自 `project.metadata.json`，用 `npm run init:project` 刷新。
@@ -141,7 +148,8 @@ shared 契约
   → node scripts/protocol-fingerprint.mjs --write（仅改动 protocol/ 时显式重钉；--check 只读比对，
     CI/审计用，⛔ 无隐式重钉形态）
   → 服务端 websocket/http endpoint
-  → 客户端 Logic + View + viewRegistry
+  → 客户端 Logic + View（.view.json sidecar）+ features/<id>/feature.json 登记
+    （viewRegistry/fguiContracts/pages 是生成值的稳定 façade，⛔ 不手改）
   → npm run sync:client
   → 本地类型检查与测试
 ```
