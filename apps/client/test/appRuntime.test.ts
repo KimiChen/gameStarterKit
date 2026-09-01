@@ -340,6 +340,25 @@ test("launch 闸 await 窗口的活性复验：换代/dispose 后迟到的 insta
   assert.equal(third.started(), 0, "闸 await 期间 dispose 后不得启动玩法");
 });
 
+test("launch 闸对未托管 featureId 的裁定与渲染侧一致：不误伤、直通", async () => {
+  // 缺口：映射指向不在 hostedFeatures 的 feature id 时，渲染侧 featureAvailability
+  // 防御性返回 "available"（入口可点击），而闸侧 featureHost.launch 对未登记 id
+  // fail-fast throw——同一个入口两侧裁定不一致：可点击却点不动（unhandled rejection）。
+  // 修复后闸侧经 hosts() 与渲染侧同款裁定：未托管即直通，不进闸。
+  const { appRuntime, makeNode } = await loadAppHost();
+  const runtime = new appRuntime.AppRuntime({
+    node: makeNode(),
+    hostedFeatures: [{ id: "builtin", resident: true }],
+    launchFeatureMap: new Map([["fxGame", "ghost"]]),
+  }) as unknown as Record<string, any>;
+  let started = 0;
+  runtime.launchGameplay = async () => { started++; };
+
+  await runtime.launch({ kind: "gameplay", gameplayId: "fxGame" });
+  assert.equal(started, 1, "未托管 featureId 必须直通（与渲染侧防御裁定一致），且不得 rejection");
+  runtime.dispose();
+});
+
 test("launch 统一启动通道：disabled(app-generation) 的 feature 同样不得启动玩法", async () => {
   const { appRuntime, makeNode } = await loadAppHost();
   const hostedFeatures = [
