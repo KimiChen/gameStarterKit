@@ -5,7 +5,8 @@
 > 目标工程：gonoGame 开发期框架<br>
 > 核心网络模型：Lobby WS-RPC<br>
 > 文档目的：定义可制作、可测试、可逐步扩展的挂机玩法 Demo；本文档集不是线上运营、商业化或生产部署承诺。<br>
-> 文档状态：玩法、业务代码、主界面运行资产、FairyGUI 包与客户端接线均尚未实施；主界面黄金视觉方向已批准。
+> 文档状态：玩法、业务代码、主界面运行资产、FairyGUI 包与客户端接线均尚未实施；主界面黄金视觉方向已批准，
+> 首版页面 UE 流程与低保真线框已定义。
 
 ## 策划摘要
 
@@ -39,6 +40,7 @@
 | [主界面视觉落地与效果图任务书](08-main-screen-art-brief.md) | 黄金位图 target、PNG 语义资产、ART-01～09 量产包、工程装配与审稿门计划 | 美术、UI、策划、客户端 |
 | [UndergroundIdleMain FairyGUI 装配契约](09-fairygui-undergroundidle-main-assembly.md) | `UndergroundIdle / UndergroundIdleMain` 的资源映射、坐标、命名、controller、安全区与 Creator 验收矩阵 | UI、客户端、测试 |
 | [黄金位图到 FairyGUI Editor 生产流程](10-image-to-fairygui-live-plan.md) | Bitmap-first 切片/补绘、asset manifest、PNG 重组回归、Editor-first 装配与 Creator 验收 | 美术、UI、工具、客户端、测试 |
+| [页面 UE、流程与交互线框](11-ue-flow-and-wireframes.md) | 750×1624 共用壳层、矿场/矿工/远征页面、关键弹窗、异常恢复与验收场景 | 产品、UI、客户端、测试 |
 
 ## 推荐阅读路径
 
@@ -47,9 +49,11 @@
 - 做数值与内容：本页 → [经济、矿场与建筑](02-economy-and-mine.md) →
   [矿工、远征与新手流程](03-workers-and-expeditions.md)。
 - 开始技术设计：本页 → [页面体验、客户端与 WS-RPC](04-client-and-rpc.md) →
+  [页面 UE、流程与交互线框](11-ue-flow-and-wireframes.md) →
   [数据、服务端与内容配置](05-data-and-server.md) →
   [指标、测试、路线图与完成定义](06-testing-and-roadmap.md)。
-- 做美术与界面：[美术表现与资产制作](07-art-direction.md) →
+- 做美术与界面：[页面 UE、流程与交互线框](11-ue-flow-and-wireframes.md) →
+  [美术表现与资产制作](07-art-direction.md) →
   [主界面视觉落地与效果图任务书](08-main-screen-art-brief.md) →
   [UndergroundIdleMain FairyGUI 装配契约](09-fairygui-undergroundidle-main-assembly.md) →
   [黄金位图到 FairyGUI Editor 生产流程](10-image-to-fairygui-live-plan.md)；玩法信息与交互真相同时参考
