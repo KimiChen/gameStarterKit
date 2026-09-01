@@ -1016,18 +1016,27 @@ test("IdleRoom joiner：复用同一区服 transport 并显式选择 idle mode",
   }
 });
 
-test("Main：只装配 registry/controller/catalog，不再内联 RoomClient、ECS 或玩法回调", () => {
-  const source = readFileSync(new URL("../src/Main.ts", import.meta.url), "utf8");
+test("AppRuntime：只装配 registry/controller/catalog，不再内联 RoomClient、ECS 或玩法回调", () => {
+  // 阶段 5b：Main 的装配逻辑逐字迁入 app/AppRuntime.ts，边界钉随迁（同批改写）。
+  const source = readFileSync(new URL("../src/app/AppRuntime.ts", import.meta.url), "utf8");
   assert.doesNotMatch(source, /\bRoomClient\b|\bGameECS\b|\bPlayerModel\b|bindRoom\(/);
   assert.doesNotMatch(source, /\bBallMoveView\b|ballMovePresentation/,
-    "presentation adapter 应由 gameplay catalog entry 归属，Main 只提供通用 host");
+    "presentation adapter 应由 gameplay catalog entry 归属，AppRuntime 只提供通用 host");
   assert.match(source, /registerDefaultGameplays\(registry,/);
   assert.match(source, /presentationHost/);
   assert.match(source, /controller\.startRegistered\(registry, requestedId, signal\)/);
   assert.match(source, /controller\.tick\(dt\)/);
   assert.match(source, /roomController\?\.stop\(\{ kind \}\)/);
   assert.doesNotMatch(source, /createIdleRoomJoiner|registerIdleGameplay/,
-    "第二玩法的 joiner/登记应归 catalog，而不是重新侵入 Main");
+    "第二玩法的 joiner/登记应归 catalog，而不是重新侵入宿主");
+
+  const main = readFileSync(new URL("../src/Main.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(main, /\bRoomClient\b|\bGameECS\b|\bPlayerModel\b|bindRoom\(/,
+    "Main 已收敛为 bootstrap/update/dispose，不得回流网络/ECS 细节");
+  assert.doesNotMatch(main, /registerDefaultGameplays|\bBallMoveView\b|startRegistered\(/,
+    "gameplay 装配归 AppRuntime，Main ⛔ 不得重新持有");
+  assert.match(main, /runtime\?\.tick\(dt\)/, "Main.update 必须只转发 runtime.tick");
+  assert.match(main, /runtime\?\.dispose\(\)/, "Main.onDestroy 必须只转发 runtime.dispose");
 });
 
 test("掉线输入 reconcile：松手后的 stop/最新方向成为重连后的第一条有效输入", async () => {

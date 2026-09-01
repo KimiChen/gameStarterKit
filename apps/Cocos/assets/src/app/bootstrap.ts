@@ -1,0 +1,48 @@
+/**
+ * bootstrap（Non-intrusive §7.2 阶段 5b）：一次 Cocos scene owner 生命周期的装配入口。
+ * 原 Main.onLoad/start 的启动编排逐字迁入；Main.ts 只保留 @property 转发、分辨率
+ * 设置、update/onDestroy 转发与模块级 installWeChatCompat()。
+ *
+ * 固定次序（启动不变量，mainGameplay.test.ts 钉住）：
+ *  initHttp → initPortal → runtime 会话/生命周期订阅（transport 丢失必须先拆玩法
+ *  generation，再让导航层挂 Login）→ wireConnectionEvents（transport→bus→
+ *  SessionCoordinator 派生）→ installCocosLifecycleBridge → startNavigation
+ *  （openLogin 等价入口，必须最后：页面挂载前所有事件接线已就绪）。
+ */
+import { DEV_SERVER_URL } from "../core/devEnv";
+import { initHttp, initPortal } from "../core/http";
+import { AppRuntime } from "./AppRuntime";
+import { installCocosLifecycleBridge } from "./CocosLifecycleBridge";
+import { lifecycleBus, wireConnectionEvents } from "./wiring";
+import type { Node } from "cc";
+
+export interface AppBootstrapOptions {
+    readonly node: Node;
+    /** 服务端 http(s) 地址；空串回落 DEV_SERVER_URL（跟随根 .env.development 的 PORT）。 */
+    readonly serverUrl: string;
+    /** WebPlatform Public http(s) 地址（登录 + 选服），必填（initPortal fail-fast）。 */
+    readonly portalUrl: string;
+    readonly gameplayId?: string;
+}
+
+/**
+ * 装配并启动应用宿主。同步返回 AppRuntime（导航启动是异步的，错误在宿主内观察）；
+ * Main.update/onDestroy 分别转发 runtime.tick/dispose。
+ */
+export function createAppRuntime(options: AppBootstrapOptions): AppRuntime {
+    const runtime = new AppRuntime({
+        node: options.node,
+        gameplayId: options.gameplayId,
+    });
+    initHttp(options.serverUrl || DEV_SERVER_URL);
+    initPortal(options.portalUrl);
+    // Register before opening pages so transport loss always tears down the
+    // gameplay generation before the navigation layer mounts Login again.
+    runtime.wireSessionLifecycle();
+    // Transport 连接事件 → LifecycleBus → SessionCoordinator 派生：必须先于任何
+    // 页面挂载接通（应用级接线跨场景保持）。
+    wireConnectionEvents();
+    runtime.trackDisposer(installCocosLifecycleBridge(lifecycleBus));
+    void runtime.startNavigation();
+    return runtime;
+}

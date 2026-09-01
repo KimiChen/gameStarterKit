@@ -43,6 +43,11 @@ export class LifecycleBus {
         return () => { set.delete(listener); };
     }
 
+    /** 某通道当前订阅数（app dispose 后订阅计数归零的机检出口）。 */
+    listenerCount(channel: LifecycleBusChannel): number {
+        return this.listeners[channel].size;
+    }
+
     /** 严格同步发布：调用返回前所有既有订阅者都已被同步调用（发布期间新增的订阅者不追发）。 */
     publish<K extends LifecycleBusChannel>(channel: K, event: LifecycleBusChannels[K]): void {
         for (const listener of [...this.listeners[channel]]) {

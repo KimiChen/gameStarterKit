@@ -23,6 +23,8 @@
  */
 import { setToken, getToken } from "../core/http";
 import {
+    ForceLogoutMessage,
+    ForceLogoutReason,
     UserRpc,
     validateLobbyRpcResponse,
     type IUserView,
@@ -262,6 +264,93 @@ export function registerSessionReconciler(handler: SessionReconcileHandler): () 
  */
 export function returnToLogin(reason: ReturnToLoginReason): Promise<void> {
     return sessionTransition.run(reason);
+}
+
+/**
+ * 回登录原因 → 用户可见文案的唯一映射（§7.3：由 SessionCoordinator 拥有，feature
+ * 不参与）。分支逐字迁自原 view/pages.ts 的 returnToLogin 处理器（阶段 5b）：
+ * AUTH_INVALID 子因（FORCE_BANNED/REPLACED/REVOKED/ACCOUNT_BANNED）/ BATTLE_LOST /
+ * CONN_LOST / BATTLE_JOIN_FAILED。
+ */
+export function returnToLoginPromptOf(reason: ReturnToLoginReason): {
+    readonly title: string;
+    readonly content: string;
+} {
+    let title = "提示";
+    let content = "登录已过期，请重新登录";
+    if (reason.kind === "AUTH_INVALID") {
+        const auth = reason.reason;
+        content = auth === "FORCE_BANNED" ? ForceLogoutMessage[ForceLogoutReason.Banned]
+            : auth === "FORCE_REPLACED" ? ForceLogoutMessage[ForceLogoutReason.Replaced]
+            : auth === "FORCE_REVOKED" ? ForceLogoutMessage[ForceLogoutReason.Revoked]
+            : auth === "ACCOUNT_BANNED" ? ForceLogoutMessage[ForceLogoutReason.Banned]
+            : "登录已过期，请重新登录";
+    } else if (reason.kind === "BATTLE_LOST") {
+        title = "战斗已结束";
+        content = "与对局的连接已断开";
+    } else if (reason.kind === "CONN_LOST") {
+        title = "连接断开";
+        content = "与服务器的连接已断开，请重新进入";
+    } else if (reason.kind === "BATTLE_JOIN_FAILED") {
+        title = "进入失败";
+        content = "进入对局失败，请重试";
+    }
+    return { title, content };
+}
+
+/**
+ * 导航侧提供给回登录 transition 的最小操作面。flight/owner 的所有权仍在
+ * app/loginFlow（reopen 算法、活性判定），SessionCoordinator 只经这些回调编排
+ * 固定次序——⛔ 本模块不 import WebSocketClient/View，防循环。
+ */
+export interface SessionNavigator {
+    /** owner / app generation 活性（transition 每个 await 后复验的导航侧一半）。 */
+    isCurrent(): boolean;
+    /** 捕获并标记触发事件时的具体 flight，分配 transition id（同一同步栈内完成）。 */
+    beginTransition(): { readonly transitionId: number; readonly observedFlight: unknown };
+    /** 释放大厅连接（内部吞错：leave 失败不阻断回登录）。 */
+    leave(): Promise<void>;
+    closeLobby(): void;
+    /** 打开并 await 一个 session 作用域的提示视图（关闭或超时都让 transition 继续）。 */
+    prompt(title: string, content: string): Promise<void>;
+    /** transition 尾部重开 Login（reopen 算法在 loginFlow，逐字保留）。 */
+    reopenLogin(transitionId: number, transitionGen: number, observedFlight: unknown): Promise<void>;
+    /** Lobby 最终断线对账（reconcilePageSession，所有权在 loginFlow）。 */
+    reconcile(identity: SessionReconcileIdentity): boolean | Promise<boolean>;
+}
+
+/**
+ * 把导航侧接入 SessionCoordinator——**唯一**的 returnToLogin/reconciler 注册方
+ * （§7.2 (a)：pages/loginFlow ⛔ 不再直接调用 register*，两个单槽的 fail-fast 语义
+ * 原样生效）。回登录 transition 的固定次序（§7.3）逐字迁自原 view/pages.ts：
+ * 关闭发送闸（returnToLogin 入口已 clearSession）→ leave → 复验 → 清空
+ * authenticated 页面组 → 文案映射 → 打开并 await session 作用域提示 → 复验 →
+ * 重开 Login。每一步 await 之后都复验 app generation + session generation。
+ */
+export function attachSessionNavigator(navigator: SessionNavigator): () => void {
+    const unregisterReconciler = registerSessionReconciler((identity) => navigator.reconcile(identity));
+    const unregisterReturn = registerReturnToLogin(async (reason: ReturnToLoginReason) => {
+        if (!navigator.isCurrent()) return;
+        // 捕获并标记触发事件时的具体 flight；它可能仍在 fetch/ViewMgr.open 中，不能被
+        // 处理器直接 await，否则 openLogin 与回登录 transition 会互相等待。
+        const transitionGen = sessionGeneration;
+        const { transitionId, observedFlight } = navigator.beginTransition();
+
+        // session.returnToLogin 已先 clearSession；这里按统一顺序释放大厅、关闭壳、
+        // 提示，最后在旧 flight settle 后调度最新宿主的登录页。所有 await 都在同一个
+        // 可观察 Promise 内。
+        await navigator.leave();
+        if (!navigator.isCurrent() || sessionGeneration !== transitionGen) return;
+        navigator.closeLobby();
+        const { title, content } = returnToLoginPromptOf(reason);
+        await navigator.prompt(title, content);
+        if (!navigator.isCurrent() || sessionGeneration !== transitionGen) return;
+        await navigator.reopenLogin(transitionId, transitionGen, observedFlight);
+    });
+    return () => {
+        unregisterReconciler();
+        unregisterReturn();
+    };
 }
 
 /** 订阅鉴权失效（踢线/token 过期/封号），返回解绑函数。 */
