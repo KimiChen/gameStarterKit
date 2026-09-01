@@ -1,7 +1,8 @@
 # ART-09 程序动效素材生产规范 v01
 
-本目录规定 Underground Idle 轻量程序动效素材的生产目标。每个候选应以 SVG 作为唯一可编辑真源，同名 PNG
-应确定性导出为原尺寸、透明背景、straight-alpha。当前不表示任何纹理或 atlas 已经生成、采用或审计通过。
+本目录规定 Underground Idle 轻量程序动效素材的 PNG 生产目标。候选可从批准 target 的局部光效经 mask 提取，
+或以 target 为 reference 独立生成透明纹理/atlas；生产过程不建立 SVG 中间真源。输出必须为原尺寸、透明背景、
+straight-alpha。当前不表示任何纹理或 atlas 已经生成、采用或审计通过。
 
 ## 使用边界
 
@@ -16,8 +17,8 @@
 
 - 单纹理：`lamp_halo`、`dust_mote`、`spark`、`gold_sweep`、`ore_fly`。
 - 4 帧横向图集：`collect_particles_atlas`、`upgrade_particles_atlas`、`unlock_particles_atlas`；每帧 256×256，顺序从左到右。
-- 候选生成后，`manifest.json` 必须登记混合方式、锚点、pivot、运行尺寸、帧矩形、逐帧时长与循环策略；
-- 计划生成 `ug_art09_fx_contact_sheet_v01.svg/.png` 仅用于审阅；标签必须位于 `90_REVIEW_ANNOTATION`，
+- 候选生成后，`asset-manifest.json` 必须登记生产 mode、来源、混合方式、锚点、pivot、运行尺寸、帧矩形、逐帧时长与循环策略；
+- 计划生成 `ug_art09_fx_contact_sheet_v01.png` 仅用于审阅；标签必须位于 `90_REVIEW_ANNOTATION`，
   不属于运行时切图。
 
 ## 验收后的 Cocos 约定
@@ -34,4 +35,5 @@
 - [ ] atlas 帧之间无跨帧像素，每个 frame 边界透明且 rect/pivot/时长与 manifest 一致；
 - [ ] additive/alpha 候选在目标材质下无黑边、白边或亮度爆炸；
 - [ ] 关闭全部程序动效后，核心业务状态仍清晰；
-- [ ] 自动检查与人工动效预览完成前保持 `To audit`。
+- [ ] 候选生成后进入 `To audit`，自动检查与人工动效预览通过后才能标记为 `Accepted`；候选尚未生成时保持
+  `To generate`。
