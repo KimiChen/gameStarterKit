@@ -13,6 +13,7 @@ import {
   C2S,
   GamePhase,
   GameplayModeId,
+  GAMEPLAY_CATALOG,
   RoomName,
   GAME_ROOM_PROTOCOL_VERSION,
   S2C,
@@ -30,7 +31,11 @@ import {
   type IdleTypedRoom,
 } from "../src/net/rooms/GameRoomTransport";
 import { setServerList } from "../src/net/serverSession";
-import { onBattleLost } from "../src/net/session";
+import { clearSession, isLoggedIn, onBattleLost, setSession } from "../src/net/session";
+import { getToken } from "../src/core/http";
+import { PrivateRoomError, PrivateRoomService, type PrivateRoomLobbyPort } from "../src/net/rooms/PrivateRoomService";
+import type { WebSocketClient } from "../src/net/WebSocketClient";
+import { RoomRpc } from "../src/shared/index";
 import type { WebPlatformAreaListResponse } from "../src/shared/index";
 
 interface Deferred<T> {
@@ -140,18 +145,39 @@ function makeFakeRoom(
 }
 
 const joinQueue: Array<Deferred<unknown>> = [];
-const joinCalls: Array<{ endpoint: string; roomName: string; options: Record<string, unknown> }> = [];
+const joinCalls: Array<{
+  method: "joinOrCreate" | "create" | "joinById";
+  endpoint: string;
+  roomName: string;
+  options: Record<string, unknown>;
+}> = [];
 
 class FakeColyseusClient {
   constructor(private readonly endpoint: string) {}
 
   auth = { token: "" };
 
-  joinOrCreate(roomName: string, options: Record<string, unknown>): Promise<unknown> {
+  private take(
+    method: "joinOrCreate" | "create" | "joinById",
+    roomName: string,
+    options: Record<string, unknown>,
+  ): Promise<unknown> {
     const next = joinQueue.shift();
     assert.ok(next, "测试必须先准备 join 结果");
-    joinCalls.push({ endpoint: this.endpoint, roomName, options });
+    joinCalls.push({ method, endpoint: this.endpoint, roomName, options });
     return next.promise;
+  }
+
+  joinOrCreate(roomName: string, options: Record<string, unknown>): Promise<unknown> {
+    return this.take("joinOrCreate", roomName, options);
+  }
+
+  create(roomName: string, options: Record<string, unknown>): Promise<unknown> {
+    return this.take("create", roomName, options);
+  }
+
+  joinById(roomId: string, options: Record<string, unknown>): Promise<unknown> {
+    return this.take("joinById", roomId, options);
   }
 }
 
@@ -183,12 +209,16 @@ function ballAdapter(client: RoomClient): BallMoveRoomAdapter {
   return adapter;
 }
 
+/** v8 必填信封（§4.4）：与生产 joinGameRoom 同口径的注入（modeVersion 取 catalog 单源）。 */
+const BALL_WIRE = { modeVersion: GAMEPLAY_CATALOG.ballMove.modeVersion, profile: "default" } as const;
+const IDLE_WIRE = { modeVersion: GAMEPLAY_CATALOG.idle.modeVersion, profile: "default" } as const;
+
 function joinBall(
   client: RoomClient,
   options?: Record<string, unknown>,
   control?: Parameters<RoomClient["joinGame"]>[2],
 ) {
-  return client.joinGame(ballAdapter(client), options, control);
+  return client.joinGame(ballAdapter(client), { ...BALL_WIRE, ...(options ?? {}) }, control);
 }
 
 test("合流同一在途 join：旧 owner 释放不关闭后来者共享的 room", async () => {
@@ -200,9 +230,16 @@ test("合流同一在途 join：旧 owner 释放不关闭后来者共享的 room
   const newGeneration = joinBall(client, { token: "same-session", sId: 7 });
   assert.equal(joinCalls.length, 1, "两代在 join 在途期必须合流同一个物理连接槽");
   assert.deepEqual(joinCalls[0], {
+    method: "joinOrCreate",
     endpoint: "http://game.example",
     roomName: RoomName.Game,
-    options: { v: GAME_ROOM_PROTOCOL_VERSION, token: "same-session", sId: 7, mode: GameplayModeId.BallMove },
+    options: {
+      v: GAME_ROOM_PROTOCOL_VERSION,
+      token: "same-session",
+      sId: 7,
+      mode: GameplayModeId.BallMove,
+      ...BALL_WIRE,
+    },
   });
   assert.equal(
     (client as unknown as { client: FakeColyseusClient }).client.auth.token,
@@ -349,7 +386,7 @@ test("Idle ownership：初始 root 畸形时 ready fail-closed 并关闭物理�
   const join = deferred<unknown>();
   const fake = makeFakeRoom("idle-invalid-state", Promise.resolve(true), {});
   const client = makeClient(join);
-  const owner = client.joinGame(createIdleRoomAdapter(), { token: "idle-token", sId: 8 });
+  const owner = client.joinGame(createIdleRoomAdapter(), { token: "idle-token", sId: 8, ...IDLE_WIRE });
   join.resolve(fake.room);
   await assert.rejects(owner.ready, /GameRoom state 非法/);
   assert.equal(fake.leaveCalls, 1);
@@ -362,7 +399,7 @@ test("GameRoom ownership：SDK 已 join 但首个 state 黑洞时 timeout 关闭
   const client = makeClient(join);
   const owner = client.joinGame(
     createIdleRoomAdapter(),
-    { token: "idle-token", sId: 8 },
+    { token: "idle-token", sId: 8, ...IDLE_WIRE },
     { timeoutMs: 5 },
   );
   join.resolve(fake.room);
@@ -413,7 +450,7 @@ test("GameRoom ownership：首个 state 前物理离场立即拒绝 owner，不�
   try {
     const owner = client.joinGame(
       createIdleRoomAdapter(),
-      { token: "idle-token", sId: 8 },
+      { token: "idle-token", sId: 8, ...IDLE_WIRE },
       { timeoutMs: 60_000 },
     );
     join.resolve(fake.room);
@@ -481,7 +518,7 @@ test("Idle ownership：join/drop/reconnect 不发送 Move，pulse 只发送 exac
   const fake = makeFakeRoom("idle-transport", Promise.resolve(true), validIdleState());
   const client = makeClient(join);
   const adapter = createIdleRoomAdapter();
-  const owner = client.joinGame(adapter, { token: "idle-token", sId: 8 });
+  const owner = client.joinGame(adapter, { token: "idle-token", sId: 8, ...IDLE_WIRE });
   join.resolve(fake.room);
   const room = await owner.ready;
   assert.deepEqual(fake.sent, [], "idle initial join 不能构造 ballMove desired input");
@@ -505,7 +542,7 @@ test("独立 reconnect 与 SDK 离线队列：下一有效 state 前均不得越
   const fake = makeFakeRoom("idle-reconnect-barrier", Promise.resolve(true), validIdleState());
   const client = makeClient(join);
   const adapter = createIdleRoomAdapter();
-  const owner = client.joinGame(adapter, { token: "idle-token", sId: 8 });
+  const owner = client.joinGame(adapter, { token: "idle-token", sId: 8, ...IDLE_WIRE });
   join.resolve(fake.room);
   const capability = createIdleRoom(await owner.ready, adapter);
 
@@ -954,7 +991,7 @@ test("BallMoveRoom joiner：连接端点直接取当前区的 gameWsUrl", async 
     assert.equal((await ownership.ready).roomId, "room-92");
     assert.equal(calls.endpoint, "wss://ws-zone-92.example");
     assert.equal(calls.adapterMode, GameplayModeId.BallMove);
-    assert.deepEqual(calls.options, { token: "", sId: 92, mode: GameplayModeId.BallMove });
+    assert.deepEqual(calls.options, { token: "", sId: 92, mode: GameplayModeId.BallMove, ...BALL_WIRE });
     await ownership.leave();
   } finally {
     setServerList({ isOps: false, hash: "reset", myServerIds: [], servers: [] });
@@ -1009,7 +1046,7 @@ test("IdleRoom joiner：复用同一区服 transport 并显式选择 idle mode",
     assert.equal(typeof capability.pulse, "function");
     assert.equal(calls.endpoint, "wss://ws-zone-93.example");
     assert.equal(calls.adapterMode, GameplayModeId.Idle);
-    assert.deepEqual(calls.options, { token: "", sId: 93, mode: GameplayModeId.Idle });
+    assert.deepEqual(calls.options, { token: "", sId: 93, mode: GameplayModeId.Idle, ...IDLE_WIRE });
     await ownership.leave();
   } finally {
     setServerList({ isOps: false, hash: "reset", myServerIds: [], servers: [] });
@@ -1168,3 +1205,209 @@ test("SDK 升级绊线：读不到 socket 状态时 join 必须失败而不是�
   await assert.rejects(owner.ready, /无法读取 SDK socket 状态/);
   await owner.leave();
 });
+
+// ── 阶段 8b（Non-intrusive §4.4/§6.9/§10.2）：matchmaking strategy 与私房客户端流程 ────────
+
+test("ownership key：strategy（含 roomName/roomId）参与连接身份——同 options 不同 strategy fail-fast", async () => {
+  const join1 = deferred<unknown>();
+  const room1 = makeFakeRoom("strategy-key");
+  const client = makeClient(join1);
+  const base = { token: "same", sId: 3 };
+  const original = joinBall(client, base); // 缺省 strategy = join-or-create("game")
+  // 同 endpoint + 同 options，但 strategy 不同：⛔ 不得静默合流到旧 slot。
+  assert.throws(
+    () => client.joinGame(ballAdapter(client), { ...BALL_WIRE, ...base }, undefined,
+      { kind: "create", roomName: RoomName.Game }),
+    /参数与本次 join 不一致/,
+  );
+  assert.throws(
+    () => client.joinGame(ballAdapter(client), { ...BALL_WIRE, ...base }, undefined,
+      { kind: "join-by-id", roomId: "room-x" }),
+    /参数与本次 join 不一致/,
+  );
+  assert.equal(joinCalls.length, 1, "身份冲突不得发起第二条连接");
+  join1.resolve(room1.room);
+  await original.ready;
+  await original.leave();
+});
+
+test("strategy 三形态分别映射 SDK joinOrCreate/create/joinById，roomName/roomId 逐字生效", async () => {
+  const cases = [
+    { strategy: undefined, method: "joinOrCreate", target: RoomName.Game },
+    { strategy: { kind: "create", roomName: RoomName.Game } as const, method: "create", target: RoomName.Game },
+    { strategy: { kind: "join-by-id", roomId: "room-42" } as const, method: "joinById", target: "room-42" },
+  ] as const;
+  for (const item of cases) {
+    const join = deferred<unknown>();
+    const fake = makeFakeRoom(`strategy-${item.method}`);
+    const client = makeClient(join);
+    const owner = client.joinGame(
+      ballAdapter(client),
+      { ...BALL_WIRE, token: "t", sId: 1, mode: GameplayModeId.BallMove },
+      undefined,
+      item.strategy as never,
+    );
+    assert.equal(joinCalls.length, 1);
+    assert.equal(joinCalls[0]!.method, item.method);
+    assert.equal(joinCalls[0]!.roomName, item.target);
+    join.resolve(fake.room);
+    await owner.ready;
+    await owner.leave();
+  }
+});
+
+const PRIVATE_DIRECTORY: WebPlatformAreaListResponse = {
+  isOps: false,
+  hash: "private-ws-contract",
+  myServerIds: [95],
+  servers: [{
+    serverId: 95,
+    name: "区95",
+    tag: "normal",
+    status: "smooth",
+    openTime: 1,
+    gameHttpUrl: "https://http-zone-95.example",
+    gameWsUrl: "wss://ws-zone-95.example",
+  }],
+};
+
+function resetPrivateSession(): void {
+  setServerList({ isOps: false, hash: "reset", myServerIds: [], servers: [] });
+  clearSession();
+}
+
+test("PrivateRoomService：prepareCreate → create('game')，creationTicket 只进 access（§6.9 房主流程）", async () => {
+  setServerList(PRIVATE_DIRECTORY);
+  setSession({ userId: "u-private-owner", accessToken: "private-token", isNewAccount: false });
+  try {
+    const join = deferred<unknown>();
+    const fake = makeFakeRoom("private-created");
+    const client = makeClient(join);
+    const lobbyCalls: Array<{ entry: string; payload: unknown }> = [];
+    const lobby: PrivateRoomLobbyPort = {
+      async rpc() { throw new Error("createRoom 不应走 query rpc"); },
+      async rpcIdem(type, payload) {
+        lobbyCalls.push({ entry: type, payload });
+        return { creationTicket: "CREATIONTICKET_0000000000000001", expiresAt: 123 } as never;
+      },
+    };
+    const service = new PrivateRoomService(lobby, client);
+    const ownership = await service.createRoom(ballAdapter(client), "private");
+    assert.deepEqual(lobbyCalls, [{
+      entry: RoomRpc.PrepareCreate,
+      payload: { mode: GameplayModeId.BallMove, modeVersion: BALL_WIRE.modeVersion, profile: "private" },
+    }]);
+    assert.equal(joinCalls.length, 1);
+    assert.equal(joinCalls[0]!.method, "create", "房主必须 create——⛔ 不是 joinOrCreate");
+    assert.equal(joinCalls[0]!.roomName, RoomName.Game);
+    assert.equal(joinCalls[0]!.endpoint, "wss://ws-zone-95.example");
+    assert.deepEqual(joinCalls[0]!.options, {
+      v: GAME_ROOM_PROTOCOL_VERSION,
+      token: "private-token",
+      sId: 95,
+      mode: GameplayModeId.BallMove,
+      modeVersion: BALL_WIRE.modeVersion,
+      profile: "private",
+      access: { kind: "create", ticket: "CREATIONTICKET_0000000000000001" },
+    });
+    join.resolve(fake.room);
+    await ownership.ready;
+    await ownership.leave();
+  } finally {
+    resetPrivateSession();
+  }
+});
+
+test("PrivateRoomService：resolve(code) → joinById(roomId)，joinTicket 只进 access（§6.9 好友流程）", async () => {
+  setServerList(PRIVATE_DIRECTORY);
+  setSession({ userId: "u-private-friend", accessToken: "friend-token", isNewAccount: false });
+  try {
+    const join = deferred<unknown>();
+    const fake = makeFakeRoom("private-resolved");
+    const client = makeClient(join);
+    const resolveCalls: unknown[] = [];
+    const lobby: PrivateRoomLobbyPort = {
+      async rpc(type, payload) {
+        resolveCalls.push([type, payload]);
+        return {
+          roomId: "room-77",
+          mode: GameplayModeId.BallMove,
+          modeVersion: BALL_WIRE.modeVersion,
+          profile: "private",
+          joinTicket: "JOINTICKET_00000000000000000001",
+          expiresAt: 456,
+        } as never;
+      },
+      async rpcIdem() { throw new Error("joinByCode 不应走 idempotent write"); },
+    };
+    const service = new PrivateRoomService(lobby, client);
+    const ownership = await service.joinByCode("000123", ballAdapter(client));
+    assert.deepEqual(resolveCalls, [[RoomRpc.Resolve, { code: "000123" }]]);
+    assert.equal(joinCalls.length, 1);
+    assert.equal(joinCalls[0]!.method, "joinById", "好友必须 joinById——⛔ 不是 joinOrCreate");
+    assert.equal(joinCalls[0]!.roomName, "room-77");
+    assert.deepEqual(joinCalls[0]!.options, {
+      v: GAME_ROOM_PROTOCOL_VERSION,
+      token: "friend-token",
+      sId: 95,
+      mode: GameplayModeId.BallMove,
+      modeVersion: BALL_WIRE.modeVersion,
+      profile: "private",
+      access: { kind: "join", ticket: "JOINTICKET_00000000000000000001" },
+    });
+    join.resolve(fake.room);
+    await ownership.ready;
+    await ownership.leave();
+  } finally {
+    resetPrivateSession();
+  }
+});
+
+// §10.2 行 22（变异验证：让输错码回退 joinOrCreate → 「不发起任何 SDK join」断言转红）。
+test("PrivateRoomService：输错码停留可重试——不误创建房间、不清登录态（§10.2 行 22）", async () => {
+  setServerList(PRIVATE_DIRECTORY);
+  setSession({ userId: "u-private-retry", accessToken: "retry-token", isNewAccount: false });
+  try {
+    const client = makeClient(); // ⛔ 不预备任何 join 结果：任何 SDK join 都会被 fake 断言拒绝
+    let resolveAttempts = 0;
+    const lobby: PrivateRoomLobbyPort = {
+      async rpc() {
+        resolveAttempts++;
+        const { RpcError } = await import("../src/net/WebSocketClient");
+        throw new RpcError("ROOM_CODE_UNAVAILABLE", "邀请码不可用");
+      },
+      async rpcIdem() { throw new Error("不应触发"); },
+    };
+    const service = new PrivateRoomService(lobby, client);
+
+    // ① 格式非法：本地闸直接停留（不消费 resolve 速率预算）。
+    await assert.rejects(
+      service.joinByCode("12345", ballAdapter(client)),
+      (error: unknown) => error instanceof PrivateRoomError
+        && error.code === "ROOM_CODE_FORMAT" && error.retryable === true,
+    );
+    assert.equal(resolveAttempts, 0, "格式非法不得发起 resolve RPC");
+
+    // ② 码不可用（折叠类）：可重试停留。
+    await assert.rejects(
+      service.joinByCode("654321", ballAdapter(client)),
+      (error: unknown) => error instanceof PrivateRoomError
+        && error.code === "ROOM_CODE_UNAVAILABLE" && error.retryable === true,
+    );
+    assert.equal(resolveAttempts, 1);
+
+    // 核心断言（§10.2 行 22）：⛔ 不回退 joinOrCreate/create/joinById 误创建房间。
+    assert.equal(joinCalls.length, 0, "输错码不得发起任何 SDK join（回退 joinOrCreate 即误创建新房）");
+    assert.equal(physicalRoomOf(client), null);
+    // ⛔ 不清登录态：会话与 bearer 原样保留，玩家可原地重输。
+    assert.equal(isLoggedIn(), true, "输错码不得清除仍然有效的登录态");
+    assert.equal(getToken(), "retry-token", "bearer 必须原样保留");
+  } finally {
+    resetPrivateSession();
+  }
+});
+
+// 编译期钉：生产 WebSocketClient 结构满足 PrivateRoomLobbyPort（阶段 9 接线不需要适配层）。
+type ProductionLobbyPortSatisfied = WebSocketClient extends PrivateRoomLobbyPort ? true : never;
+const _productionLobbyPortSatisfied: ProductionLobbyPortSatisfied = true;
+void _productionLobbyPortSatisfied;

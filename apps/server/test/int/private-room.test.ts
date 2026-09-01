@@ -429,6 +429,7 @@ test("端到端：private 房不进 joinOrCreate 撮合、driver 回查 private=
             v: GAME_ROOM_PROTOCOL_VERSION,
             sId: SID,
             mode: FIXTURE_MODE_ID,
+            modeVersion: 1,
             profile: "private",
             access: { kind: "create", ticket: creationTicket },
         };
@@ -453,7 +454,7 @@ test("端到端：private 房不进 joinOrCreate 撮合、driver 回查 private=
         strangerClient.auth.token = friendToken;
         await assert.rejects(
             strangerClient.joinOrCreate(RoomName.Game, {
-                v: GAME_ROOM_PROTOCOL_VERSION, sId: SID, mode: FIXTURE_MODE_ID, profile: "private",
+                v: GAME_ROOM_PROTOCOL_VERSION, sId: SID, mode: FIXTURE_MODE_ID, modeVersion: 1, profile: "private",
             }),
             "joinOrCreate 不得撮合进 private 房，也不能白手创建私房",
         );
@@ -468,6 +469,7 @@ test("端到端：private 房不进 joinOrCreate 撮合、driver 回查 private=
             v: GAME_ROOM_PROTOCOL_VERSION,
             sId: SID,
             mode: FIXTURE_MODE_ID,
+            modeVersion: 1,
             profile: "private",
             access: { kind: "join", ticket: resolved.joinTicket },
         });

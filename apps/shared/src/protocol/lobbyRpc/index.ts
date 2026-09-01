@@ -20,4 +20,5 @@ export * from "./mail";
 export * from "./shop";
 export * from "./push";
 export * from "./guild";
+export * from "./room";
 export * from "./registry.generated";

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { ErrorCode, GAME_ROOM_PROTOCOL_VERSION, GameplayModeId, LOBBY_PROTOCOL_VERSION } from "@game/shared";
+import { ErrorCode, GAME_ROOM_PROTOCOL_VERSION, GAMEPLAY_CATALOG, GameplayModeId, LOBBY_PROTOCOL_VERSION } from "@game/shared";
 import { GameRoom } from "../src/rooms/GameRoom";
 import { registerBallMoveGameMode } from "../src/rooms/modes/ballMove/index";
 import { LobbyRoom } from "../src/websocket/LobbyRoom";
@@ -21,6 +21,8 @@ for (const [standardToken, optionToken, label] of invalidTokenCases) {
         sId: 0,
         token: optionToken,
         mode: GameplayModeId.BallMove,
+        modeVersion: GAMEPLAY_CATALOG.ballMove.modeVersion,
+        profile: "default",
       }, undefined as never),
       (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.TokenExpired)),
     );

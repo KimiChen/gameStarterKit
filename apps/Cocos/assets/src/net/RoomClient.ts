@@ -7,7 +7,6 @@
  *  - 状态回调：由具体 gameplay adapter 注入 exact validator，通用层不假定 root Schema
  */
 import {
-    RoomName,
     C2S,
     GAME_ROOM_PROTOCOL_VERSION,
     ROOM_STATE_VALIDATORS,
@@ -24,9 +23,11 @@ import {
     type S2CPayloadMap,
     validateOrigin,
     validateC2SPayload,
+    validateGameplayModeId,
     validateGameRoomJoinOptions,
     validateS2CPayload,
 } from "../shared/index";
+import { normalizeGameRoomStrategy, type GameRoomMatchmakingStrategy } from "./rooms/matchmaking";
 import { notifyBattleLost } from "./session";
 import {
     looksLikeJoinSignal,
@@ -179,9 +180,13 @@ function stableJson(value: unknown, ancestors = new Set<object>()): string | und
     }
 }
 
-/** endpoint + 实际发送的完整 join options 共同定义一个可安全合流的物理连接。 */
-function connectionKey(endpoint: string, options: unknown): string {
-    return stableJson([endpoint, options])!;
+/**
+ * endpoint + matchmaking strategy（含 roomName/roomId）+ 实际发送的完整 join options 共同
+ * 定义一个可安全合流的物理连接（§4.4：三者都必须进 ownership key）。key 含 token/ticket，
+ * 只参与内存比较，⛔ 不得打印或写日志。
+ */
+function connectionKey(endpoint: string, strategy: GameRoomMatchmakingStrategy, options: unknown): string {
+    return stableJson([endpoint, strategy, options])!;
 }
 
 /** 复制调用方的 JSON options，避免 join 在途期间外部 mutating 改写身份或线上 payload。 */
@@ -233,7 +238,7 @@ function snapshotGameplayAdapter(input: unknown): GameplayAdapterSnapshot {
     } catch {
         throw new TypeError("[RoomClient] gameplay adapter 无法读取");
     }
-    const validatedMode = validateGameRoomJoinOptions({ mode }).mode;
+    const validatedMode = validateGameplayModeId(mode, "adapter.mode");
     if (!Object.prototype.hasOwnProperty.call(ROOM_STATE_VALIDATORS, validatedMode)) {
         throw new TypeError("[RoomClient] gameplay adapter mode 没有生成的 room state contract");
     }
@@ -558,6 +563,8 @@ interface RoomSlot {
     readonly connectionKey: string;
     readonly generation: number;
     readonly adapter: GameplayAdapterSnapshot;
+    /** normalize 后的冻结 strategy；doJoin 只按它选 SDK 方法（也已进入 connectionKey）。 */
+    readonly strategy: GameRoomMatchmakingStrategy;
     room: Colyseus.Room<unknown> | null;
     typedRoom: AnyTypedGameRoom | null;
     ready: Promise<AnyTypedGameRoom>;
@@ -627,11 +634,15 @@ export class RoomClient {
         adapter: GameplayRoomAdapter<TMode, TOutbound>,
         options?: Record<string, unknown>,
         control?: JoinControl | AbortSignal,
+        strategy?: GameRoomMatchmakingStrategy,
     ): GameRoomOwnership<TMode, TOutbound> {
         if (!this.client || this.endpoint === null) {
             throw new Error("[RoomClient] 未初始化，请先调用 init(endpoint)");
         }
         const adapterSnapshot = snapshotGameplayAdapter(adapter);
+        // strategy（§4.4）：缺省 = joinOrCreate(RoomName.Game)（历史行为）；normalize 在
+        // slot 分配前 fail-fast，冻结拷贝防在途 mutating。
+        const matchmaking = normalizeGameRoomStrategy(strategy);
         const split = splitJoinControl(options, control);
         // Validate the local wait policy before allocating a slot/owner.  A bad
         // timeout must fail atomically; otherwise an exception here would leave
@@ -645,10 +656,10 @@ export class RoomClient {
         );
         const endpoint = this.endpoint;
         const client = this.client;
-        const key = connectionKey(endpoint, joinOptions);
+        const key = connectionKey(endpoint, matchmaking, joinOptions);
         let slot = this.slot;
         if (slot && (slot.connectionKey !== key || slot.adapter.source !== adapterSnapshot.source)) {
-            // ⛔ 错误里不打印 key：它包含 token。既有 slot/owners 原样保留，由调用方显式释放。
+            // ⛔ 错误里不打印 key：它包含 token/ticket。既有 slot/owners 原样保留，由调用方显式释放。
             throw new Error("[RoomClient] 当前战斗连接参数与本次 join 不一致，请先释放现有 ownership");
         }
         if (!slot) {
@@ -656,6 +667,7 @@ export class RoomClient {
                 connectionKey: key,
                 generation: ++this.generation,
                 adapter: adapterSnapshot,
+                strategy: matchmaking,
                 room: null,
                 typedRoom: null,
                 ready: null as unknown as Promise<AnyTypedGameRoom>,
@@ -787,7 +799,19 @@ export class RoomClient {
             // field must never accidentally reuse the previous account's
             // bearer. A real server will reject the resulting empty token.
             client.auth.token = joinOptions.token ?? "";
-            room = await client.joinOrCreate<unknown>(RoomName.Game, joinOptions);
+            // §4.4：SDK 方法由本地 strategy 决定，不属于 wire；三形态与私房流程
+            //（prepareCreate→create / resolve→joinById）一一对应。
+            const strategy = slot.strategy;
+            switch (strategy.kind) {
+                case "create":
+                    room = await client.create<unknown>(strategy.roomName, joinOptions);
+                    break;
+                case "join-by-id":
+                    room = await client.joinById<unknown>(strategy.roomId, joinOptions);
+                    break;
+                default:
+                    room = await client.joinOrCreate<unknown>(strategy.roomName, joinOptions);
+            }
         } catch (e) {
             // 失败槽不再接纳后来调用；既有 owner 仍从各自 ready 收到原始连接错误。
             if (this.slot === slot) { this.slot = null; }

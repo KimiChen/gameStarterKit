@@ -86,7 +86,20 @@ type GameRoomAuth = {
     /** 已由 onAuth 规范化并用对应区会话验证过，onJoin 只信该值。 */
     sId: number;
     mode: string;
+    /** onAuth 已验证 ∈ catalog[mode].profiles；onJoin 用它对房间实际 profile 双查（关 joinById 串 profile 洞）。 */
+    profile: string;
 };
+
+/**
+ * per-mode 契约版本闸（§4.8 三层分工的第三层）：join 携带的 modeVersion 必须与本进程
+ * catalog 一致，否则单玩法拒绝。⛔ 这不是 core 信封闸——GAME_ROOM_PROTOCOL_VERSION 的
+ * 比较在 assertCompatibleProtocolVersion / onAuth，本函数不读 `v`。
+ * 返回 null = mode 不在 catalog（生产 registry mode 必在 catalog；仅注入式测试 mode 例外）。
+ */
+function catalogModeVersion(mode: string): number | null {
+    const entry = (GAMEPLAY_CATALOG as Readonly<Partial<Record<string, { readonly modeVersion: number }>>>)[mode];
+    return entry ? entry.modeVersion : null;
+}
 
 function assertCompatibleProtocolVersion(options: unknown): void {
     let version: unknown = 1;
@@ -582,6 +595,16 @@ export class GameRoom extends Room {
         if (!gameModeRegistry.has(requestedMode)) {
             throw joinRefused(ErrorCode.BadRequest);
         }
+        // per-mode 契约版本（§4.8 第三层）：与 catalog 不一致 = 该玩法的旧客户端，单玩法拒绝。
+        // ⛔ 独立于上面的 GAME_ROOM_PROTOCOL_VERSION 信封闸（modeVersion 不参与 core 信封判定）。
+        if (joinOptions.modeVersion !== catalogModeVersion(requestedMode)) {
+            throw joinRefused(ErrorCode.ProtocolMismatch);
+        }
+        // profile 硬闸（§4.4）：matchmaker filterBy 只影响撮合选择，admission 必须再次拒绝
+        // 未知或不属该 mode 的 profile（缺失已由 validator 拒）。
+        if (!modeDeclaresProfile(requestedMode, joinOptions.profile)) {
+            throw joinRefused(ErrorCode.BadRequest);
+        }
         const sId = normalizeSId(joinOptions.sId);
         if (sId === null) {
             throw joinRefused(ErrorCode.WrongServer);
@@ -611,6 +634,7 @@ export class GameRoom extends Room {
                 userId: await verifyAndCacheWebPlatformSession(standardToken, sId),
                 sId,
                 mode: requestedMode,
+                profile: joinOptions.profile,
             } satisfies GameRoomAuth;
         } catch (e) {
             // 只有 WebPlatform 的 valid:false 才是玩家身份失败；超时、5xx、服务密钥错误等
@@ -961,10 +985,15 @@ export class GameRoom extends Room {
         }
         const mode = this.requireMode();
         this.modeId = mode.id;
-        // profile（§4.4/§6.2）：本版本 join options 可选、缺省注入 "default"（wire 兼容，
-        // ballMove/idle 行为零变）。注入 profile 的测试房只验一致性；生产路径经注册表解析
-        // （校验 id ∈ catalog.profiles + policy 需要的 fragment 存在）。
-        const requestedProfile = joinOptions.profile ?? DEFAULT_ROOM_PROFILE_ID;
+        // per-mode 契约版本闸（§4.8 第三层，与 onAuth 同口径）：catalog 缺席仅注入式测试
+        // mode 放行（生产 registry mode 必在 catalog）。⛔ 不参与 core 信封闸。
+        const expectedModeVersion = catalogModeVersion(this.modeId);
+        if (expectedModeVersion === null ? !this.injectedMode : joinOptions.modeVersion !== expectedModeVersion) {
+            throw joinRefused(ErrorCode.ProtocolMismatch);
+        }
+        // profile（§4.4/§6.2）：v8 起必填（validator 已拒缺失）。注入 profile 的测试房只验
+        // 一致性；生产路径经注册表解析（校验 id ∈ catalog.profiles + policy 需要的 fragment 存在）。
+        const requestedProfile = joinOptions.profile;
         if (this.profile) {
             if (requestedProfile !== this.profile.id) throw joinRefused(ErrorCode.BadRequest);
         } else if (requestedProfile !== DEFAULT_ROOM_PROFILE_ID || modeDeclaresProfile(this.modeId, requestedProfile)) {
@@ -1033,9 +1062,7 @@ export class GameRoom extends Room {
         if (this.disposed) throw joinRefused(ErrorCode.BadRequest);
         this.expectedOwnerUid = claim.uid;
         this.creationTicket = access.ticket;
-        const catalogVersion = (GAMEPLAY_CATALOG as Readonly<Partial<Record<string, { readonly modeVersion: number }>>>)[
-            this.modeId
-        ]?.modeVersion ?? 0;
+        const catalogVersion = catalogModeVersion(this.modeId) ?? 0;
         // Redis 故障 / 码池耗尽在此向上抛 → Colyseus 放弃创建（fail-closed）。
         const lease = await this.inviteCodes().allocate({
             sId: this.sId,
@@ -1129,9 +1156,7 @@ export class GameRoom extends Room {
         this.inviteReissueInFlight = true;
         void trackTask("game:invite-reissue", (async () => {
             try {
-                const catalogVersion = (GAMEPLAY_CATALOG as Readonly<Partial<Record<string, { readonly modeVersion: number }>>>)[
-                    this.modeId
-                ]?.modeVersion ?? 0;
+                const catalogVersion = catalogModeVersion(this.modeId) ?? 0;
                 const lease = await this.inviteCodes().allocate({
                     sId: this.sId,
                     roomId: this.roomId,
@@ -1371,6 +1396,12 @@ export class GameRoom extends Room {
         // `filterBy` covers normal matchmaking; this check
         // closes the joinById/direct-connect path with the same mode identity.
         if (typeof auth.mode !== "string" || auth.mode !== this.modeId) {
+            throw joinRefused(ErrorCode.BadRequest);
+        }
+        // profile 双查（§4.4 admission 双重拒绝）：filterBy(["…","profile"]) 只约束 joinOrCreate，
+        // joinById 可带任意 profile 直连任何房间——auth.profile 已由 onAuth 验 ∈ catalog，
+        // 此处必须再与**本房间实际 profile** 相等，⛔ 不读 options（客户端可伪造）。
+        if (typeof auth.profile !== "string" || auth.profile !== (this.profile?.id ?? DEFAULT_ROOM_PROFILE_ID)) {
             throw joinRefused(ErrorCode.BadRequest);
         }
         // 第五人由 admission 与 maxClients 双重拒绝（§6.2）；容量计算包含 pending 占位

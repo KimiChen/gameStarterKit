@@ -20,7 +20,7 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
 import {
-  ErrorCode, GAME_ROOM_PROTOCOL_VERSION, GameplayModeId, LOBBY_MSG_RPC, LOBBY_PROTOCOL_VERSION, RoomName, UserRpc,
+  ErrorCode, GAME_ROOM_PROTOCOL_VERSION, GAMEPLAY_CATALOG, GameplayModeId, LOBBY_MSG_RPC, LOBBY_PROTOCOL_VERSION, RoomName, UserRpc,
   type IRoomJoinOptions,
 } from "@game/shared";
 import { server } from "../../src/app.config";
@@ -249,7 +249,13 @@ test("GameRoom 撮合按区和 mode 隔离：同区同玩法才合流", async ()
   const e = await makeAcct("gz-e-idle", 1);
   const join = async (token: string, sId: number, mode: string) => {
     colyseus.sdk.auth.token = token;
-    return colyseus.sdk.joinOrCreate(RoomName.Game, { v: GAME_ROOM_PROTOCOL_VERSION, sId, mode });
+    // v8 必填信封（§4.4）：modeVersion 取 catalog 单源。
+    const modeVersion = (GAMEPLAY_CATALOG as Readonly<Partial<Record<string, { readonly modeVersion: number }>>>)[
+      mode
+    ]?.modeVersion ?? 1;
+    return colyseus.sdk.joinOrCreate(RoomName.Game, {
+      v: GAME_ROOM_PROTOCOL_VERSION, sId, mode, modeVersion, profile: "default",
+    });
   };
   const joined: Awaited<ReturnType<typeof join>>[] = [];
   try {

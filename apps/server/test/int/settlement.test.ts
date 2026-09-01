@@ -19,6 +19,7 @@ import {
   ErrorCode,
   GamePhase,
   GameplayModeId,
+  GAMEPLAY_CATALOG,
   GAME_ROOM_PROTOCOL_VERSION,
   RoomName,
   type IGameRoomJoinOptions,
@@ -163,7 +164,7 @@ async function makeV3Evidence(matchId: string, sId = 0): Promise<MatchEvidenceV3
   (room as unknown as { lock: () => Promise<void> }).lock = async () => undefined;
   const client = (sessionId: string, userId: string) => ({
     sessionId,
-    auth: { userId, sId, mode: GameplayModeId.BallMove },
+    auth: { userId, sId, mode: GameplayModeId.BallMove, profile: "default" },
     send() {},
   });
   const first = client("sA", "u_int_a");
@@ -183,6 +184,8 @@ test("GameRoom sId 只接受 0..65535 整数（网络输入先运行时校验）
       v: GAME_ROOM_PROTOCOL_VERSION,
       sId: raw,
       mode: GameplayModeId.BallMove,
+      modeVersion: GAMEPLAY_CATALOG.ballMove.modeVersion,
+      profile: "default",
     } as unknown as IGameRoomJoinOptions;
     await assert.rejects(
       GameRoom.onAuth("", options, undefined as never),
@@ -192,11 +195,20 @@ test("GameRoom sId 只接受 0..65535 整数（网络输入先运行时校验）
   }
 
   // 入口必须先走 shared room-options contract，未知键和预留字段的非法值不能静默放行。
+  const fullEnvelope = {
+    v: GAME_ROOM_PROTOCOL_VERSION,
+    mode: GameplayModeId.BallMove,
+    modeVersion: GAMEPLAY_CATALOG.ballMove.modeVersion,
+    profile: "default",
+  };
   const malformed: readonly [unknown, number][] = [
-    [{ v: GAME_ROOM_PROTOCOL_VERSION, mode: GameplayModeId.BallMove, extra: true }, ErrorCode.BadRequest],
-    [{ v: GAME_ROOM_PROTOCOL_VERSION, mode: GameplayModeId.BallMove, unexpected: true }, ErrorCode.BadRequest],
-    [{ v: GAME_ROOM_PROTOCOL_VERSION, mode: GameplayModeId.BallMove, token: "" }, ErrorCode.TokenExpired],
+    [{ ...fullEnvelope, extra: true }, ErrorCode.BadRequest],
+    [{ ...fullEnvelope, unexpected: true }, ErrorCode.BadRequest],
+    [{ ...fullEnvelope, token: "" }, ErrorCode.TokenExpired],
+    // v8 必填切换（§4.4）：缺 mode/modeVersion/profile 均按 BadRequest 拒（⛔ 不注入缺省）。
     [{ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0 }, ErrorCode.BadRequest],
+    [{ ...fullEnvelope, modeVersion: undefined }, ErrorCode.BadRequest],
+    [{ ...fullEnvelope, profile: undefined }, ErrorCode.BadRequest],
   ];
   for (const [options, code] of malformed) {
     await assert.rejects(
@@ -557,7 +569,7 @@ test("v3 XADD 失败：归 transport、真实调用方不告警、quarantine 零
     (room as unknown as { lock: () => Promise<void> }).lock = async () => undefined;
     const roomClient = (sessionId: string, userId: string) => ({
       sessionId,
-      auth: { userId, sId: 33, mode: GameplayModeId.BallMove },
+      auth: { userId, sId: 33, mode: GameplayModeId.BallMove, profile: "default" },
       send() {},
     });
     const first = roomClient("sA", "u_xadd_a");
@@ -729,12 +741,12 @@ test("GameRoom 区服端到端：跨区 joinById 拒绝；同区开局 → 收�
     const intruder = await mk("joinById-s2", 2);
     colyseus.sdk.auth.token = owner.token;
     const roomS1 = await colyseus.sdk.joinOrCreate(RoomName.Game, {
-      token: owner.token, v: GAME_ROOM_PROTOCOL_VERSION, sId: 1, mode: GameplayModeId.BallMove,
+      token: owner.token, v: GAME_ROOM_PROTOCOL_VERSION, sId: 1, mode: GameplayModeId.BallMove, modeVersion: GAMEPLAY_CATALOG.ballMove.modeVersion, profile: "default",
     });
     colyseus.sdk.auth.token = intruder.token;
     await assert.rejects(
       colyseus.sdk.joinById(roomS1.roomId, {
-        token: intruder.token, v: GAME_ROOM_PROTOCOL_VERSION, sId: 2, mode: GameplayModeId.BallMove,
+        token: intruder.token, v: GAME_ROOM_PROTOCOL_VERSION, sId: 2, mode: GameplayModeId.BallMove, modeVersion: GAMEPLAY_CATALOG.ballMove.modeVersion, profile: "default",
       }),
       (e: unknown) => e instanceof Error && e.message.includes(String(ErrorCode.WrongServer)),
       "持 s2 权威会话的玩家不得通过 joinById 进入 s1 房间",
@@ -750,16 +762,18 @@ test("GameRoom 区服端到端：跨区 joinById 拒绝；同区开局 → 收�
       v: GAME_ROOM_PROTOCOL_VERSION,
       sId: 7,
       mode: GameplayModeId.BallMove,
+      modeVersion: GAMEPLAY_CATALOG.ballMove.modeVersion,
+      profile: "default",
     });
     // ⚠ 带 v：GAME_ROOM_PROTOCOL_VERSION 自 M12e 起为 2，`connectTo` 的 options 会走 GameRoom.onAuth 的版本闸
     colyseus.sdk.auth.token = a.token;
     const c1 = await colyseus.connectTo(room, {
-      token: a.token, v: GAME_ROOM_PROTOCOL_VERSION, sId: 7, mode: GameplayModeId.BallMove,
+      token: a.token, v: GAME_ROOM_PROTOCOL_VERSION, sId: 7, mode: GameplayModeId.BallMove, modeVersion: GAMEPLAY_CATALOG.ballMove.modeVersion, profile: "default",
     });
     assert.equal(room.state.matchId, "", "等人期尚无 matchId");
     colyseus.sdk.auth.token = b.token;
     const c2 = await colyseus.connectTo(room, {
-      token: b.token, v: GAME_ROOM_PROTOCOL_VERSION, sId: 7, mode: GameplayModeId.BallMove,
+      token: b.token, v: GAME_ROOM_PROTOCOL_VERSION, sId: 7, mode: GameplayModeId.BallMove, modeVersion: GAMEPLAY_CATALOG.ballMove.modeVersion, profile: "default",
     });
     c1.onMessage("*", () => { });
     c2.onMessage("*", () => { });

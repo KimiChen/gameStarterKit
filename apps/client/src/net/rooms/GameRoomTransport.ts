@@ -16,6 +16,7 @@ import {
     type TypedGameRoom,
 } from "../RoomClient";
 import { getCurrentGameWsUrl, getCurrentServer } from "../serverSession";
+import { DEFAULT_GAME_ROOM_PROFILE, gameRoomModeVersion } from "./matchmaking";
 
 type BallMoveOutbound =
     | typeof C2S.Ping
@@ -138,5 +139,8 @@ export function joinGameRoom<
         token: getToken(),
         sId: server.serverId,
         mode: adapter.mode,
+        // v8 必填信封（§4.4）：默认撮合注入 "default" profile；modeVersion 取 client catalog。
+        modeVersion: gameRoomModeVersion(adapter.mode),
+        profile: DEFAULT_GAME_ROOM_PROFILE,
     }, signal);
 }

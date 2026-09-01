@@ -17,6 +17,7 @@ import {
     S2C,
     ErrorCode,
     GamePhase,
+    GAMEPLAY_CATALOG,
     GAME_ROOM_PROTOCOL_VERSION,
     RoomControlError,
     type IGameRoomJoinOptions,
@@ -49,7 +50,7 @@ type SentMessage = readonly [string, unknown];
 
 type FakeClient = {
     sessionId: string;
-    auth: { userId: string; sId: number; mode: string };
+    auth: { userId: string; sId: number; mode: string; profile: string };
     sent: SentMessage[];
     send: (type: string, payload: unknown) => void;
 };
@@ -58,7 +59,7 @@ function client(sessionId: string, userId = `u-${sessionId}`): FakeClient {
     const sent: SentMessage[] = [];
     return {
         sessionId,
-        auth: { userId, sId: 0, mode: FIXTURE_MODE_ID },
+        auth: { userId, sId: 0, mode: FIXTURE_MODE_ID, profile: "private" },
         sent,
         send(type, payload) { sent.push([type, payload]); },
     };
@@ -237,6 +238,7 @@ async function buildPrivateRoom(options: {
         v: GAME_ROOM_PROTOCOL_VERSION,
         sId: 0,
         mode: FIXTURE_MODE_ID,
+        modeVersion: GAMEPLAY_CATALOG.privateFixture.modeVersion,
         profile: "private",
         ...(access === undefined ? {} : { access }),
     });
@@ -839,6 +841,7 @@ test("私房：邀请码基础设施故障时建房 fail-closed", async () => {
             v: GAME_ROOM_PROTOCOL_VERSION,
             sId: 0,
             mode: FIXTURE_MODE_ID,
+            modeVersion: GAMEPLAY_CATALOG.privateFixture.modeVersion,
             profile: "private",
             access: { kind: "create", ticket: OWNER_TICKET },
         })),
@@ -867,6 +870,7 @@ test("私房：无 fragment 的 mode 配 owner-ready/invite profile 在 onCreate
             v: GAME_ROOM_PROTOCOL_VERSION,
             sId: 0,
             mode: "ballMove",
+            modeVersion: GAMEPLAY_CATALOG.ballMove.modeVersion,
             profile: "private",
             access: { kind: "create", ticket: OWNER_TICKET },
         })),
@@ -875,18 +879,69 @@ test("私房：无 fragment 的 mode 配 owner-ready/invite profile 在 onCreate
 });
 
 // ── auto/default profile 行为零变：Ready/Start 对 default 房是 BadRequest ─────
-// （§10.1 无侵入口径：profile 缺省注入 default，ballMove/idle 行为零变。）
-test("default profile：join options 不带 profile 时行为与历史一致，Ready/Start 回 BadRequest", async () => {
+// （v8 起 profile 必填（§4.4），显式 "default" 的行为与历史缺省语义一致。）
+test("default profile：显式 profile=default 行为与历史一致，Ready/Start 回 BadRequest", async () => {
     const { createIdleGameMode } = await import("../src/rooms/modes/IdleGameMode");
     const room = new GameRoom({ seed: 5, clock: () => 0, mode: createIdleGameMode() });
     (room as unknown as { setSimulationInterval(callback: () => void, delay: number): void })
         .setSimulationInterval = () => undefined;
-    void room.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: "idle" });
+    const idleOptions = {
+        v: GAME_ROOM_PROTOCOL_VERSION,
+        sId: 0,
+        mode: "idle",
+        modeVersion: GAMEPLAY_CATALOG.idle.modeVersion,
+        profile: "default",
+    };
+    void room.onCreate(idleOptions);
     const probe = client("probe");
     probe.auth.mode = "idle";
-    await room.onJoin(probe as never, { v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: "idle" });
+    probe.auth.profile = "default";
+    await room.onJoin(probe as never, idleOptions);
     dispatch(room, C2S.RoomReady, probe, { ready: true });
     const [type, payload] = probe.sent[probe.sent.length - 1] ?? [];
     assert.equal(type, S2C.Error);
     assert.equal((payload as { code: number }).code, ErrorCode.BadRequest);
+});
+
+// ── §4.4 admission 双重拒绝：joinById 直连不得串 profile ────────────────────────
+// filterBy(["sId","mode","profile"]) 只约束 joinOrCreate；joinById 可指定任意房间，
+// onJoin 必须用 onAuth 已验证的 auth.profile 对房间实际 profile 再闸一次。
+// 变异验证：去掉 onJoin 的 profile 双查 → 两个方向的断言都转红。
+test("profile 双查：joinById 带另一 profile 的 auth 进不了 default 房，也进不了 private 房", async () => {
+    // ① default（idle）房：auth.profile="private" 直连 → BadRequest。
+    const { createIdleGameMode } = await import("../src/rooms/modes/IdleGameMode");
+    const room = new GameRoom({ seed: 6, clock: () => 0, mode: createIdleGameMode() });
+    (room as unknown as { setSimulationInterval(callback: () => void, delay: number): void })
+        .setSimulationInterval = () => undefined;
+    const idleOptions = {
+        v: GAME_ROOM_PROTOCOL_VERSION,
+        sId: 0,
+        mode: "idle",
+        modeVersion: GAMEPLAY_CATALOG.idle.modeVersion,
+        profile: "default",
+    };
+    void room.onCreate(idleOptions);
+    const intruder = client("cross-profile");
+    intruder.auth.mode = "idle";
+    intruder.auth.profile = "private";
+    await assert.rejects(
+        room.onJoin(intruder as never, idleOptions),
+        (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.BadRequest)),
+        "default 房必须拒绝 profile=private 的 auth（joinById 串 profile 洞）",
+    );
+
+    // ② private 房：auth.profile="default" 直连 → 同样 BadRequest，且不消费任何 ticket。
+    const harness = await buildPrivateRoom();
+    await seatOwner(harness);
+    const ticket = "JOINTICKET_cross_000000000000000000";
+    harness.tickets.issueJoin(ticket, "u-cross");
+    const crosser = client("cross-default", "u-cross");
+    crosser.auth.profile = "default";
+    await assert.rejects(
+        harness.room.onJoin(crosser as never, harness.joinOptions({ kind: "join", ticket })),
+        (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.BadRequest)),
+        "private 房必须拒绝 profile=default 的 auth",
+    );
+    assert.equal(harness.tickets.join.get(ticket)?.state, "issued",
+        "profile 双查发生在 ticket claim 之前，凭证不得被消费");
 });

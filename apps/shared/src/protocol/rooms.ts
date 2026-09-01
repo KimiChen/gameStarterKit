@@ -37,6 +37,11 @@ export type GameplayModeIdType = (typeof GameplayModeId)[keyof typeof GameplayMo
  * wire 字段名仍是 `v`：两类房间各自携带并各自比较自己的整数。
  *
  * 版本流水（新版本在上；7 之前两整数同源于单一 PROTOCOL_VERSION）：
+ *   8 = join envelope 必填化（§4.4/§9 阶段 8）：Game join options 的 `modeVersion` 与 `profile`
+ *       变必填（`access`/`modeData` 仍可选、exactOptionalPropertyTypes 条件展开），并新增可选
+ *       `modeData` 顶层字段（玩法自有参数，由对应玩法 exact-validate）。旧 v=7 客户端不带
+ *       profile/modeVersion，⛔ 不做「缺省时随便匹配」的兼容——Game join 在版本闸明确拒绝
+ *       （ProtocolMismatch）；Lobby join 与 LOBBY_PROTOCOL_VERSION 不受影响。
  *   7 = 身份拆分：`PROTOCOL_VERSION` 拆为 `GAME_ROOM_PROTOCOL_VERSION` 与 `LOBBY_PROTOCOL_VERSION`，
  *       两值起点都取 7——wire 字段 `v` 名与取值不变，旧客户端零破坏（拆分不是 bump）。
  *       同版：GameRoom state manifest 改为按 mode 选择 root Schema，并新增 idle 专用 `c2s.idle.pulse`；
@@ -51,7 +56,7 @@ export type GameplayModeIdType = (typeof GameplayModeId)[keyof typeof GameplayMo
  *       被 `ProtocolMismatch` 明确拒掉（见 GameRoom.onAuth 注释）。
  *   1 = 首版。
  */
-export const GAME_ROOM_PROTOCOL_VERSION = 7;
+export const GAME_ROOM_PROTOCOL_VERSION = 8;
 export const LOBBY_PROTOCOL_VERSION = 7;
 
 /** 两类房间共享的 join options 字段。 */
@@ -85,12 +90,19 @@ export interface IGameRoomAccess {
 export interface IGameRoomJoinOptions extends IRoomJoinOptions {
     mode: string;
     /**
-     * 房间组合 profile（§4.4）。本版本仍可选、缺省视为 "default"（auto + matchmaking，
-     * wire 兼容不 bump）；profile 必填与版本 bump 属下一版本边界（§9 阶段 8）。
+     * 该玩法 manifest 的契约版本（§4.8 第三层：per-mode 兼容判定）。v8 起必填；服务端
+     * admission 对 catalog 的 modeVersion 不一致即拒（单玩法拒绝，⛔ 不参与 core 信封闸）。
      */
-    profile?: string;
+    modeVersion: number;
+    /**
+     * 房间组合 profile（§4.4）。v8 起必填（generated catalog 声明的组合 id，如 "default"/
+     * "private"）；服务端 admission 在 matchmaker filter 之外再次拒绝未知或不属该 mode 的取值。
+     */
+    profile: string;
     /** 私房准入 ticket；普通撮合 join 不携带。 */
     access?: IGameRoomAccess;
+    /** 玩法自有参数（§4.4）：core 只透传，由对应玩法 exact-validate；⛔ 不再向顶层加玩法专用字段。 */
+    modeData?: unknown;
 }
 
 /**
@@ -167,17 +179,21 @@ export function validateLobbyRoomJoinOptions(input: unknown): ILobbyRoomJoinOpti
 export function validateGameRoomJoinOptions(input: unknown): IGameRoomJoinOptions {
     return guardWire("options", () => {
         const value = roomOptionsRecord(input);
-        assertExactKeys(value, ["mode"], ["v", "token", "sId", "profile", "access"], "options");
+        assertExactKeys(value, ["mode", "modeVersion", "profile"], ["v", "token", "sId", "access", "modeData"], "options");
         const out: IGameRoomJoinOptions = {
             ...validateRoomJoinBase(value),
             mode: validateGameplayModeId(value.mode),
+            // v8 必填（§4.4）：取值边界与 domains/room.ts 的 prepareCreate 同一口径。
+            modeVersion: finiteInteger(value.modeVersion, "options.modeVersion", 1, 1_000_000),
+            profile: validateRoomProfileId(value.profile),
         };
         // exactOptionalPropertyTypes：可选字段一律条件展开，⛔ 不得赋 undefined（§4.4）。
-        if (Object.prototype.hasOwnProperty.call(value, "profile") && value.profile !== undefined) {
-            out.profile = validateRoomProfileId(value.profile);
-        }
         if (Object.prototype.hasOwnProperty.call(value, "access") && value.access !== undefined) {
             out.access = validateGameRoomAccess(value.access);
+        }
+        // modeData 是玩法自有参数：core 只透传（形状/字段由对应玩法 exact-validate，§4.4）。
+        if (Object.prototype.hasOwnProperty.call(value, "modeData") && value.modeData !== undefined) {
+            out.modeData = value.modeData;
         }
         return out;
     });
