@@ -66,7 +66,7 @@ plan-v3 §30 登记过一条教训：`plan-v2 → plan-v3` 的迁移**批准存�
 | 条目 1 | 存量 `match_results` 行的精确回填 | 只有 v3 能精确回填；一条恰好 8 键的 legacy 行与真 v2 行逐字节相同，⛔ 无法区分，故一律留在 `schema_version = 0` |
 | Non-intrusive 阶段 6 | Home「玩法入口列表 GList」视觉升级 | FGUI 编辑器不可用：XML/导出物/图集一律未动，Home 视觉仍是单 `btn_enter`（渲染 contribution[0]，多入口 console.warn）；数据驱动的**机制**（generated menu contributions + LaunchPort.launch + disabled/failed 叠加拒绝）已落地并有无头测试，入口列表视觉需要设计师在编辑器出图后接入 |
 | Non-intrusive 阶段 6 | Creator 侧人工证据：动态加载/取消回滚/输入租约/跨包资源 | 机制由既有 viewLifecycle 无头测试覆盖（catalog 生成化后行为断言零改动继续绿）；真实引擎与资源验证仍需 Creator 本地预览，属于尚未补的人工证据 |
-| Non-intrusive 阶段 8b | `PrivateRoomLobby` 模板 View | 阶段 6 只做 View/FGUI 注册表生成化；模板页与其 sidecar/闭包合并规则按 §7.5 留到阶段 8b |
+| Non-intrusive 阶段 8b | `PrivateRoomLobby` FGUI 包与模板 View | 客户端 transport（matchmaking strategy + PrivateRoomService）已随 `05591e2` 落地；页面视觉需要设计师在 FGUI 编辑器出图后按阶段 6 动线接入，属编辑器待办（汇总见文末「Non-intrusive 阶段 0–9 实施证据」） |
 
 ## 对抗式复核轮（8 个 commit）
 
@@ -497,3 +497,54 @@ HEAD 绿）；`fb777ce` 成立且其「未闭环」自报诚实（文件内唯�
 
 实测（写入时）：`verify:all` exit 0（服务端 327/327、客户端 264/264、FGUI 63/63）、
 compute 相关文件连跑 5 次稳定、typecheck 全阶段 0 错。
+
+---
+
+## Non-intrusive 阶段 0–9 实施证据（2026-09-01）
+
+**批准来源**：用户会话指令——按 [docs/Non-intrusive.md](docs/Non-intrusive.md) 完成阶段 0–9 全部
+框架改造；阶段 10 的两个玩法（snakeoff / undergroundIdle）明确跳过（既定范围外）；阶段 11 因无
+Snake 无事可做，`ballMove` 保持默认入口。Non-intrusive.md 抬头状态注记已同批改为「框架侧已实施」，
+其正文「现状」描述保留为写作时快照（该文 §2.2 脚注已声明快照性质）。
+
+**口径**：每阶段一行，给出 commit、当轮门禁数字与变异验证锚点（= 改坏实现时首先转红的测试文件；
+逐条变异明细见各 commit message）。阶段 0 并入基线（改造前全量门禁：服务端 327/327、`verify:all`
+exit 0）；阶段 2/5/8 各分两批提交。
+
+| 阶段 | commit | 交付要点 | 当轮门禁 | 变异验证锚点 |
+|---|---|---|---|---|
+| 1 行为等价拆出 ballMove | `37ed8b2` | GameRoom 通用壳化（requireMode fail-fast 不回退）、modes/ballMove/{rules,harness,evidence}、GameMode evidence capability | 服务端 327/327 | `game-room.test.ts` / `game-mode.test.ts`（C2S 表、state wire keys、evidence v3 位元等价原断言全保）+ 全源码旗标 grep 钉 |
+| 2a state 分片 + codegen:gameplays | `c0223c6` | 每玩法单源 `schema/gameplays/<id>/`、生成器接管 writer（shared/server/client 三端产物）、digest 未 bump modeVersion 即红 | 服务端 334/334、客户端 264/264 | `gameplay-codegen.test.ts`（24 条：三态 --check、fixture 增量、删除保护） |
+| 2b wire token + catch-all dispatcher | `3010195` | 玩法消息迁 `<id>/wire.ts` token、GameRoom 单 catch-all 固定序分发、GameMode commands map | 服务端 342/342、客户端 264/264 | `game-room-dispatch.test.ts`、`game-room-wire-contract.test.ts`、`gameplay-codegen.test.ts` wire 条目 |
+| 3 RPC descriptor + registry 生成 | `54fa913` | 四域 domains/*.ts descriptor、`codegen:features` 生成 registry.generated、defineRpc 单签名 {handler}、向量 sidecar | 服务端 357/357、客户端 264/264 | `feature-codegen.test.ts`、`lobby-rpc-vectors.test.ts`、`lobby-rpc-modes.typecheck.ts`（编译期负例） |
+| 4 幂等 v2 + RpcFault + inspect | `d55a6e4` | StoredIdem v2 三态 + 三条 CAS Lua、payload 绑定（同 ID 异 payload → OPERATION_CONFLICT）、受控 operations.inspect | 服务端 390/390、int 159/159 实跑、客户端 264/264 | `canonical-json.test.ts`、`idem-lua.test.ts`、`dispatcher-idem.test.ts`、`int/core-idem` 用例 |
+| 5a 连接与会话真相收敛 | `fb31802` | WebSocketClient 低层 connection 事件、LifecycleBus/SessionCoordinator/CocosLifecycleBridge、net/session.ts 改纯 façade | 客户端 284/284、服务端 390/390 零改动 | `connectionEvents.test.ts`、`sessionCoordinator.test.ts`、`session.test.ts`（原断言经 façade 继续绿） |
+| 5b AppRuntime 宿主 + FeatureHost | `b9f29e4` | app/ 十二件套（AppRuntime/NavigationService/loginFlow/FeatureHost/RefreshCoordinator/Journal 等）、pages.ts 掏空为零状态 façade、Main 收敛 | 客户端 317/317、服务端 390/390 零改动 | `appRuntime.test.ts`、`navigation.test.ts`、`featureHost.test.ts`、`refreshCoordinator.test.ts`、`pendingOperationJournal.test.ts`、`appExitConditions.test.ts` |
+| 6 View/FGUI 生成化 + Home 数据驱动 | `f395bab` | features/built-in/feature.json + .view.json sidecar 真源、codegen:features 全仓唯一 View writer、LaunchPort/menu contribution 机制 | 客户端 326/326、服务端 398/398 | `viewRegistry.test.ts`、`fguiContract.test.ts`、`homeMenu.test.ts`、`generated-purity.test.ts`（fixture 增量：手写生产源字节不变） |
+| 7 协议身份拆分 + inventory fragment | `fae7460` | GAME_ROOM/LOBBY 双整数、指纹互斥 --check/--write、capability fragment 合并、features.generated.md | 服务端 404/404、客户端 331/331、inventory 108/108 | `protocolFingerprint.test.ts`（8 用例重写）、`protocol-version-matrix.test.ts`、`verify-inventory.test.mjs` fragment 反例 |
+| 8a private-room 服务端核心 | `e387d08` | RoomProfile/StartPolicy/AccessPolicy、六位邀请码租约 + tombstone、access ticket 六步准入、fence 元组开局事务、domains/room.ts 零中央侵入 | 服务端 428/428、int 168/168 真 Redis 实跑 | `private-room.test.ts`（§10.2 21 行 + §10.3 10 行逐行）、`int/private-room.test.ts`、`config-guard.test.ts` 配对断言 |
+| 8b envelope 必填 + 客户端私房 transport | `05591e2` | GAME_ROOM_PROTOCOL_VERSION 7→8（modeVersion/profile 必填）、matchmaking strategy 三形态、PrivateRoomService（指纹重钉 g8 l7） | 服务端 431/431、客户端 336/336、int 168/168 | `roomClientOwnership.test.ts`（strategy/ownership key/joinCalls===0 变异钉）、`protocol-version-matrix.test.ts` |
+| 9 GameplayModule + generated client catalog | `5fa943b` | §7.6/§7.7 契约（host.generation = RoomController.currentGeneration 零第二计数）、modes/{ballMove,idle}/index.ts 装配层、battle 通道归一 LifecycleBus、§7.8 前后台三态 | 客户端 345/345、服务端 434/434 | `gameplayModule.test.ts`（7 条：generation 门/迟到异步/seq 连续性/fixture 字节断言）、`appRuntime.test.ts` §7.8 三态、`gameplay-codegen.test.ts` 阶段 9 条目 |
+| 治理收尾（本批，未 commit） | — | `scripts/protected-paths.json`（§11.3 18 条 + §12.2/等价保护点机读化，§8.5 显式治理锁）+ 无侵入矩阵 + 文档全面同步 + 本节回写 | 客户端 351/351、服务端 434/434、FGUI 66/66（终局全链见下） | `protectedPaths.test.ts`（6 条；从任一侧删 `pages.ts` → 双向 deepEqual 红，已实测两方向变异） |
+
+**§10.5/§10.7 端到端无侵入矩阵的对应形态**：未建单一的临时 checkout 大矩阵，验收由**分散落地的
+fixture 增量测试**承接——RPC 域（`feature-codegen.test.ts`：临时根加 domains/room.ts 人工源码字节零改）、
+gameplay 单源（`gameplay-codegen.test.ts`：fixture mode 增量 + canonical 增员无 module 拒 + 删除保护）、
+feature/View（阶段 6 fixture：新增 View/入口只新增文件）、gameplay module（`gameplayModule.test.ts`：
+fixture module 不修改 Main/RoomClient/pages/Home/catalog 的字节断言），加上本批的散文 ⇔ 规则文件
+双向比对矩阵。`.meta` 段按 §10.7 的声明显式跳过 Node 合成，由下列 Creator 人工项覆盖。
+
+**遗留待办（编辑器 / 真机，⛔ 无头环境无法替代）**：
+
+| 类别 | 待办 | 说明 |
+|---|---|---|
+| FGUI 编辑器 | Home「玩法入口列表 GList」视觉 | 机制（menu contribution + LaunchPort）已落地；视觉仍是单 `btn_enter` 渲染 contribution[0] |
+| FGUI 编辑器 | `PrivateRoomLobby` 包与模板 View | 服务端/transport 能力已就绪；页面按阶段 6 动线出图接入 |
+| Creator | 预览人工证据（动态加载/取消回滚/输入租约/跨包资源） | 机制有无头测试；真实引擎与资源验证需编辑器预览留证 |
+| Creator | 本轮合成 `.meta` 确认 | 阶段 8a/9 由脚本合成的镜像 `.meta` 需打开一次 Creator 确认 uuid 稳定后随提交固化 |
+| 真机 | 阶段 10 两玩法联调 | 属既定范围外，随玩法实现另立计划 |
+
+**终局全链（治理收尾批写入时实测）**：`verify:all` exit 0（客户端 351/351、服务端单测 434/434、
+FGUI 66/66、inventory 全绿、typecheck 全阶段 0 错）；`test:int` 168/168（本地真 Redis/MySQL 实跑）；
+`test:faults:int` 四组（server-boundaries / client-transitions / storage-effects / character-ready）
+全部 status 0。本批只含规则文件/测试/文档，行为代码零改动。

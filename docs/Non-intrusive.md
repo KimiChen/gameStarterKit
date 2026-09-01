@@ -1,11 +1,18 @@
 # 非侵入式框架改造方案
 
-> 状态：**设计提案，尚未实施**。
+> 状态：**框架侧已实施**——§9 的阶段 0–9 全部落地（commit `37ed8b2`…`5fa943b`，逐阶段 commit、
+> 测试数字与变异锚点回写在 [plan-v4.md](../plan-v4.md) 的「Non-intrusive 阶段 0–9 实施证据」一节）。
+> 阶段 10 的两个玩法（snakeoff / undergroundIdle）按既定范围**未实现**；阶段 11 因无 Snake 无事可做，
+> `ballMove` 保持默认入口。FGUI 编辑器 / Creator / 真机侧的遗留待办（Home GList 视觉、
+> PrivateRoomLobby 包与视图、Creator 预览人工证据、合成 `.meta` 确认）见 plan-v4.md 同节。
 >
-> 本文说明为了让后续玩法尽量以“只新增玩法文件”的方式接入，框架本身需要进行哪些一次性改造。它不表示这些
-> 能力已经交付，也不改变
+> ⚠ 正文写于实施前：各节对「现状」的描述是**写作时快照**（§2.2 脚注已声明快照性质），实施后的
+> 架构现状以 [技术总览](OVERVIEW.md)、[服务端开发](SERVER.md)、[客户端开发](CLIENT.md) 为准；
+> 保护集合的机检真源已按 §8.5 落地为 `scripts/protected-paths.json`（checker =
+> `apps/client/test/protectedPaths.test.ts` 无侵入矩阵）。
+>
+> 本文说明为了让后续玩法尽量以“只新增玩法文件”的方式接入，框架本身需要进行哪些一次性改造。它不改变
 > [当前开放问题、实施状态与验收证据的唯一真相](../plan-v4.md)；plan-v3.md / plan-v2.md 为历史归档。
-> 现有架构与约束仍分别以 [技术总览](OVERVIEW.md)、[服务端开发](SERVER.md)、[客户端开发](CLIENT.md) 为准。
 >
 > 本文覆盖**两类扩展实体**（边界见 §3.1，⛔ 不得互相冒充）：
 >

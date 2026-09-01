@@ -18,7 +18,7 @@
 - [外部身份服务开发边界](docs/WEBPLATFORM.md)
 - [额外功能说明](docs/EXTRAFEATURES.md)
 - [《Underground Idle》玩法策划案（未实现）](docs/undergroundIdle/README.md)
-- [非侵入式框架改造方案（设计提案，未实施）](docs/Non-intrusive.md)
+- [非侵入式框架改造方案（框架侧阶段 0-9 已实施，两玩法未实现）](docs/Non-intrusive.md)
 - [《Snake Off》竖版贪吃蛇玩法策划案（未实现）](docs/snakeoff/README.md)
 - [Godogen 对照吸收计划（未实现的额外能力）](todo-godogen.md)
 - [当前开发收口计划](plan-v4.md)
@@ -35,7 +35,7 @@ apps/
 ├── shared/     双端共享协议、公式与常量
 └── art/        FairyGUI 编辑器工程
 docs/           当前开发架构说明
-scripts/        同步、校验、依赖抓取与协议指纹脚本，及其锁文件基线（bitecs/vendor/protocol）
+scripts/        同步、校验、依赖抓取与协议指纹脚本，及其锁文件基线（bitecs/vendor/protocol/fgui）与保护路径规则（protected-paths.json）
 tools/          FairyGUI codegen 与 Excel 配表转换工具
 vendor/         精确锁定的外部身份契约 tarball（`@gono/webplatform-contract`，由 package.json 以 file: 引用）
 ```
@@ -171,7 +171,8 @@ shared 契约
   → npm run sync:shared
   → node scripts/protocol-fingerprint.mjs --write（仅改动 protocol/ 时；--check 只读比对）
   → 服务端 endpoint
-  → 客户端 Logic + View + viewRegistry
+  → 客户端 Logic + View（.view.json sidecar）+ features/<id>/feature.json 登记
+    （viewRegistry/fguiContracts/pages 是生成值的稳定 façade，不手改）
   → npm run sync:client
   → 本地类型检查与测试
 ```

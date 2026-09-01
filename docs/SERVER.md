@@ -107,7 +107,7 @@ apps/server/
     ├── http/            游戏服 HTTP endpoint
     ├── platform/        外部 WebPlatform Internal HTTP 适配
     ├── player/          玩家档案视图、建角与登记修复
-    ├── rooms/           GameRoom 与 Schema 状态
+    ├── rooms/           GameRoom shell、GameMode 契约、modes/ 玩法实现、core/ 房间 policy 与 schema/ 生成状态
     └── websocket/       LobbyRoom、dispatcher、loader 与逐文件 RPC endpoint
 ```
 
@@ -230,8 +230,11 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
 胜利条件。两套 root 都由 state manifest 生成的 mode 映射选择。当前展示：
 
 - WebPlatform strict session verify、协议版本与区号复核。
-- `filterBy(["sId", "mode", "profile"])` 的撮合隔离及房内再次校验；Game join 的 `mode` 必填且由 shared
-  校验，`profile` 本版本可选、缺省注入 `"default"`（auto + matchmaking，ballMove/idle 行为零变）。
+- `filterBy(["sId", "mode", "profile"])` 的撮合隔离及房内再次校验；Game join 信封（v8，阶段 8b）
+  的 `mode`/`modeVersion`/`profile` 必填且由 shared 校验（`modeVersion` 对 `GAMEPLAY_CATALOG`
+  另有独立比较位点，不参与 core 信封闸）；admission 在 filter 外双重拒绝缺失/未知/不属 mode 的
+  profile 并在 `onJoin` 二次核对，堵 `joinById` 绕 filter 串 profile 的洞。默认撮合客户端注入
+  `"default"`（auto + matchmaking，ballMove/idle 行为零变）。
 - 通用 private-room core（Non-intrusive §6.2–§6.9，阶段 8a）：`rooms/core/{RoomProfile,StartPolicy,
   AccessPolicy}.ts` 的 profile 注册表（"default"=auto+matchmaking、"private"=owner-ready+invite-code，
   校验 id ∈ generated catalog.profiles 且 policy 所需 state fragment 存在——启动期
@@ -244,8 +247,11 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
   `mode.onAdmission` → 落座+seated CAS）。invite 房在 `onCreate` 体内 listing 持久化前
   `setPrivate(true)`；`roomCode` ⛔ 不进 listing/metadata/filterBy。验收矩阵见
   `test/private-room.test.ts` 与 `test/int/private-room.test.ts`（§10.2/§10.3 逐行）。
-  当前生产玩法只声明 `"default"`；`"private"` 由 fixture gameplay `privateFixture` 驱动测试，
-  客户端 transport（RoomClient strategy/PrivateRoomService）与 profile 必填 bump 属下一批边界。
+  当前生产玩法只声明 `"default"`；`"private"` 由 fixture gameplay `privateFixture` 驱动测试。
+  客户端 transport 已在阶段 8b 落地（`net/rooms/matchmaking.ts` 的 strategy 判别联合 +
+  `net/rooms/PrivateRoomService.ts`，prepareCreate→create / resolve→joinById 携带 access ticket），
+  join envelope 必填切换即 GAME_ROOM_PROTOCOL_VERSION 7→8；`PrivateRoomLobby` 页面视觉留
+  FGUI 编辑器待办（见 plan-v4.md）。
 - `onCreate` 在首次 handshake 前按 mode 选择一次 root；公共入口之后禁止替换 root。两种状态只共享
   tick/phase/matchId/players 生命周期语义，不共享 player 字段或结算判定。
 - `ballMove` 的服务端逻辑帧移动/技能公式与 `idle` 的严格空对象 `IdlePulse`；聊天和重连宽限仍属公共能力。

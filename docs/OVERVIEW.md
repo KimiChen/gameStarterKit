@@ -59,6 +59,15 @@ apps/client/src
   聚合 + owner/phases/rateCost 表）、服务端 Schema 构造器映射和客户端 catalog。生成物落在
   `apps/shared/src/gameplays/`，不进协议指纹目录；per-mode 契约身份由 catalog 的
   contractDigest（= sha256(manifest + state + wire.ts)）+ manifest.modeVersion 承担。
+- Lobby RPC 面与页面/入口登记也是单源生成：各域 descriptor 在
+  `apps/shared/src/protocol/lobbyRpc/domains/<domain>.ts`（core 错误码与推送在 `coreErrors.ts`），
+  feature/View/路由/Home 入口的手写真源是 `features/<id>/feature.json` + View 同目录
+  `<Name>View.view.json` sidecar + FGUI XML。`npm --workspace @game/server run codegen:features`
+  据此生成 `lobbyRpc/registry.generated.ts`、客户端
+  `generated/{views,fguiContracts,features}.generated.ts` 与 `docs/features.generated.md`；
+  `lobbyRpc/index.ts`、`envelope.ts`、`push.ts` 与客户端 `view/viewRegistry.ts`、
+  `view/fguiContracts.ts`、`view/pages.ts` 均为稳定 façade，普通 feature ⛔ 不再手改
+  （保护集合的机检真源是 `scripts/protected-paths.json`，随 `test:client` 的无侵入矩阵校验）。
 
 ### 3.2 约束可执行
 
@@ -97,13 +106,20 @@ apps/client/src
 客户端分成：
 
 - `view/`：允许依赖 `cc` 和 `fairygui-cc`，只做节点绑定、事件转发和数据搬运。
-- `gameplay/`：默认玩法 catalog；把每个玩法自己的 factory、room joiner 与 presentation 组合登记。
+- `app/`：AppRuntime 宿主与横切协调件（NavigationService、SessionCoordinator、FeatureHost、
+  RefreshCoordinator、loginFlow 等）；`Main.ts` 只保留 @property 与转发。
+- `gameplay/`：每个玩法一个 `modes/<id>/index.ts` 模块（导出 `createGameplayModule(services)`：
+  validateLaunch + joiner + createPlugin），由生成的 `catalog.generated.ts` 静态聚合登记；
+  `services.ts` 是稳定服务注入面，`catalog.ts` 是废弃零状态 façade。
 - `logic/`：不依赖引擎/UI，承载页面行为和玩法规则，便于无头测试。
 - `net/`：房间、RPC 和 HTTP 的传输适配。
 - `core/`：HTTP 底座、生成的本地开发配置和宿主环境兼容桥。
+- `generated/`：`codegen:features` 的 View/契约/feature 注册表产物，禁手改。
 - `view/ViewMgr.ts`：页面加载、分层、缓存和交互输入生命周期。
 
-新增页面通过 `defineView + viewRegistry + ViewMgr.open` 接入，不向通用入口堆静态 import。
+新增页面通过 `.view.json` sidecar + `features/<id>/feature.json` 登记，经 `codegen:features`
+进入生成 catalog，打开走 feature route / NavigationService；不向通用入口堆静态 import
+（`ViewMgr.open` 只允许 view/ 内部或动态 import 闭包调用）。
 
 ### 3.4 数据正确性优先
 
@@ -142,11 +158,17 @@ participants；热档/冷档 schema 迁移、asset effect 原子性与经济操�
    apps/server/src/rooms/schema/GameRoomState.ts 与 schema/generated/、
    apps/client/src/gameplay/catalog.generated.ts（都是生成物，禁手改；契约 digest 变化必须同批
    bump 该 mode 的 manifest.modeVersion），再重新 sync:shared
-5. 在 apps/server/src/websocket 或 http 增加 endpoint；新增 http endpoint 后运行
+5. 在 apps/server/src/websocket 或 http 增加 endpoint。新增 Lobby RPC 时先在
+   apps/shared/src/protocol/lobbyRpc/domains/<domain>.ts 声明 descriptor，运行
+   npm --workspace @game/server run codegen:features 刷新 lobbyRpc/registry.generated.ts，
+   endpoint 只写 defineRpc(type, { handler })；新增 http endpoint 后运行
    npm --workspace @game/server run codegen:http 重新生成 apps/server/src/http/manifest.generated.ts
 6. 更新服务端登记点、key/config 与测试
 7. 在 apps/client/src/logic 增加行为
-8. 需要页面时通过 codegen 创建 View 并登记 viewRegistry
+8. 需要页面时经 npm run codegen:fgui 生成 View AUTO 区，写 <Name>View.view.json sidecar 并登记进
+   features/<id>/feature.json（路由/入口同表），再运行
+   npm --workspace @game/server run codegen:features 刷新生成注册表
+   （viewRegistry/fguiContracts/pages 是稳定 façade，⛔ 不手改）
 9. npm run sync:client
 10. 运行本地类型检查和相关测试
 ```
@@ -163,7 +185,9 @@ shared 登记 canonical mode id + 新建 apps/shared/schema/gameplays/<id>/{mani
     消费消息；⛔ 不改 GameRoom——它只有一个 catch-all dispatcher，按 wire catalog 分发
   → client logic/rooms/<mode> + net/rooms/<Mode>Room.ts
   → client mode adapter 注入 raw exact validator / reconcile
-  → client gameplay/catalog.ts
+  → client gameplay/modes/<id>/index.ts 导出 createGameplayModule(services)（装配层：
+    validateLaunch + joiner + createPlugin；presentation 用字面量动态 import），再跑一次
+    codegen:gameplays 让 catalog.generated.ts 收录（catalog.ts 是废弃 façade，⛔ 不手改）
   → sync:shared / sync:client + 双端 mode/lifecycle 测试
 ```
 
@@ -229,6 +253,10 @@ FairyGUI 编辑设计源
 ## 7. 当前状态
 
 - 本仓包含用于本地验证的 Lobby、GameRoom、ballMove、技能结算、页面和数据读写示例。
+- 通用 private-room 能力（profile `"private"`：六位邀请码租约 + access ticket + owner-ready 开局
+  事务；客户端 matchmaking strategy 与 `PrivateRoomService`）已落地，由 fixture gameplay
+  `privateFixture` 驱动测试；生产玩法当前只声明 `"default"`（auto + matchmaking），
+  `PrivateRoomLobby` 页面视觉属 FGUI 编辑器待办（见 [plan-v4.md](../plan-v4.md)）。
 - 本地开发账号通过外部服务的 dev session 契约创建。
 - Unity 目录只是研究占位。
 - 所有演示 endpoint、配置和页面只用于开发与验证。
