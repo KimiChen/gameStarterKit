@@ -329,24 +329,32 @@ export interface SessionNavigator {
  */
 export function attachSessionNavigator(navigator: SessionNavigator): () => void {
     const unregisterReconciler = registerSessionReconciler((identity) => navigator.reconcile(identity));
-    const unregisterReturn = registerReturnToLogin(async (reason: ReturnToLoginReason) => {
-        if (!navigator.isCurrent()) return;
-        // 捕获并标记触发事件时的具体 flight；它可能仍在 fetch/ViewMgr.open 中，不能被
-        // 处理器直接 await，否则 openLogin 与回登录 transition 会互相等待。
-        const transitionGen = sessionGeneration;
-        const { transitionId, observedFlight } = navigator.beginTransition();
+    let unregisterReturn: () => void;
+    try {
+        unregisterReturn = registerReturnToLogin(async (reason: ReturnToLoginReason) => {
+            if (!navigator.isCurrent()) return;
+            // 捕获并标记触发事件时的具体 flight；它可能仍在 fetch/ViewMgr.open 中，不能被
+            // 处理器直接 await，否则 openLogin 与回登录 transition 会互相等待。
+            const transitionGen = sessionGeneration;
+            const { transitionId, observedFlight } = navigator.beginTransition();
 
-        // session.returnToLogin 已先 clearSession；这里按统一顺序释放大厅、关闭壳、
-        // 提示，最后在旧 flight settle 后调度最新宿主的登录页。所有 await 都在同一个
-        // 可观察 Promise 内。
-        await navigator.leave();
-        if (!navigator.isCurrent() || sessionGeneration !== transitionGen) return;
-        navigator.closeLobby();
-        const { title, content } = returnToLoginPromptOf(reason);
-        await navigator.prompt(title, content);
-        if (!navigator.isCurrent() || sessionGeneration !== transitionGen) return;
-        await navigator.reopenLogin(transitionId, transitionGen, observedFlight);
-    });
+            // session.returnToLogin 已先 clearSession；这里按统一顺序释放大厅、关闭壳、
+            // 提示，最后在旧 flight settle 后调度最新宿主的登录页。所有 await 都在同一个
+            // 可观察 Promise 内。
+            await navigator.leave();
+            if (!navigator.isCurrent() || sessionGeneration !== transitionGen) return;
+            navigator.closeLobby();
+            const { title, content } = returnToLoginPromptOf(reason);
+            await navigator.prompt(title, content);
+            if (!navigator.isCurrent() || sessionGeneration !== transitionGen) return;
+            await navigator.reopenLogin(transitionId, transitionGen, observedFlight);
+        });
+    } catch (error) {
+        // 第二步 fail-fast（returnToLogin 单槽被占）时回滚第一步：⛔ 不留无法释放的
+        // 半注册——泄漏的 reconciler 单槽会把后续所有注册全部 wedge 在 fail-fast 上。
+        unregisterReconciler();
+        throw error;
+    }
     return () => {
         unregisterReconciler();
         unregisterReturn();
