@@ -253,6 +253,36 @@ test("inventory verifier rejects a registered doc that points at an archive as c
   }
 });
 
+test("inventory verifier scans unregistered docs too (snakeoff 那类两次漏网的目录)", () => {
+  // 这条闸原本只扫 inventory 登记的文档，于是 docs/snakeoff/ 在 plan-v3→v4 与 plan-v4→v5
+  // **两次迁移里各漏了一次**——同样的文件、同样的原因，第一次还专门写进计划说「人工改的」。
+  const root = createFixture();
+  try {
+    const doc = join(root, "docs/snakeoff/README.md");
+    writeFileSync(doc, `${readFileSync(doc, "utf8")}\n\n- [当前实施状态与开放问题](../../plan-v4.md)\n`);
+    assertRejected(root, /docs\/snakeoff\/README\.md:\d+ 把历史归档 plan-v4\.md 说成当前真相/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inventory verifier 不因文件名子串误红（live-plan.md 不是 plan.md）", () => {
+  // ⛔ 用 includes("plan.md") 匹配会把 `10-image-to-fairygui-live-plan.md` 判成引用了归档
+  // plan.md——仓内真实存在这样一行，扩大扫描面时它是唯一的假阳。
+  const root = createFixture();
+  try {
+    const doc = join(root, "docs/snakeoff/README.md");
+    writeFileSync(
+      doc,
+      `${readFileSync(doc, "utf8")}\n\n生产流程以 [活文档](10-image-to-fairygui-live-plan.md) 为准。\n`,
+    );
+    const result = runVerifier(root);
+    assert.equal(result.status, 0, outputOf(result));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("inventory verifier still allows citing an archive when its identity is stated", () => {
   // ⛔ 闸不能宽到把一切归档链接都拒掉：文档经常需要正当地引用归档。判据是「有没有写明身份」。
   const root = createFixture();
