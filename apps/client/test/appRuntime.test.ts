@@ -340,6 +340,38 @@ test("launch 闸 await 窗口的活性复验：换代/dispose 后迟到的 insta
   assert.equal(third.started(), 0, "闸 await 期间 dispose 后不得启动玩法");
 });
 
+test("launch 点击恒为 userIntent：连续点击不计入自动重试上限，永不进 disabled", async () => {
+  // 缺口（变异 M2-drop-userIntent 存活）：既有用例只覆盖「failed 后一次点击重试成功」，
+  // 没钉住「点击不消耗自动重试预算」——把 launch 的 { userIntent: true } 改成 {} 时
+  // 全绿存活，用户连点几次入口就把 feature 点进 disabled(app-generation)。
+  const { appRuntime, makeNode } = await loadAppHost();
+  const hostedFeatures = [
+    { id: "fx", load: () => ({ install: () => { throw new Error("install always fails"); } }) },
+  ];
+  const runtime = new appRuntime.AppRuntime({
+    node: makeNode(),
+    hostedFeatures,
+    launchFeatureMap: new Map([["fxGame", "fx"]]),
+  }) as unknown as Record<string, any>;
+  let started = 0;
+  runtime.launchGameplay = async () => { started++; };
+
+  // 对照 FeatureHost 实现读出本 runtime 生效的自动重试上限（默认 2），点击数取上限 + 2，
+  // 保证只要点击被计入自动重试就必然越过上限。
+  const maxAutoRetries = (runtime.features as unknown as Record<string, any>).maxAutoRetries as number;
+  assert.equal(typeof maxAutoRetries, "number");
+  for (let i = 0; i < maxAutoRetries + 2; i++) {
+    await runtime.launch({ kind: "gameplay", gameplayId: "fxGame" });
+    assert.equal(runtime.features.statusOf("fx"), "failed",
+      `第 ${i + 1} 次点击后必须仍是 failed——点击 = userIntent，不消耗自动重试预算`);
+  }
+  assert.equal(started, 0, "install 恒失败时玩法始终不得启动");
+  // 非 userIntent 的内部路径按上限进 disabled 由既有用例钉住：
+  // 本文件「launch 统一启动通道：disabled(app-generation)…」与 featureHost.test.ts
+  // 「failed 两条出路…」。
+  runtime.dispose();
+});
+
 test("launch 闸对未托管 featureId 的裁定与渲染侧一致：不误伤、直通", async () => {
   // 缺口：映射指向不在 hostedFeatures 的 feature id 时，渲染侧 featureAvailability
   // 防御性返回 "available"（入口可点击），而闸侧 featureHost.launch 对未登记 id
