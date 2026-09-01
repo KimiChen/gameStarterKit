@@ -6,6 +6,8 @@
 > `ballMove` 保持默认入口。FGUI 编辑器 / Creator / 真机侧的遗留待办（Home GList 视觉、
 > PrivateRoomLobby 包与视图、Creator 预览人工证据、合成 `.meta` 确认）见 plan-v4.md 同节。
 >
+> 后续说明（2026-09）：snakeoff 房型方向已改为**自由加入（drop-in）**——StartPolicy 第三变体已实施，语义与验收见 [SERVER.md「StartPolicy 三变体」](SERVER.md)与 [plan-v4.md](../plan-v4.md) 对应轮次登记；本文正文不改。
+>
 > ⚠ 正文写于实施前：各节对「现状」的描述是**写作时快照**（§2.2 脚注已声明快照性质），实施后的
 > 架构现状以 [技术总览](OVERVIEW.md)、[服务端开发](SERVER.md)、[客户端开发](CLIENT.md) 为准；
 > 保护集合的机检真源已按 §8.5 落地为 `scripts/protected-paths.json`（checker =
