@@ -97,6 +97,9 @@ export interface LaunchPort {
     /**
      * §7.4：统一玩法启动通道——Home 菜单 contribution 点击的唯一出口。
      * target 来自 generated menu contribution；未注入专用 launch 时回退 enterBattle。
+     * ⛔ feature install() 内不得 await 对自身 gameplay target 的 ports.launch——
+     * 宿主闸会与该 feature 自身的 in-flight install 合流，install 等它自己完成，
+     * 循环 await 静默挂死（FeatureHost.launch 合流分支的同款警告）。
      */
     launch(target: FeatureLaunchTarget): Promise<void>;
 }

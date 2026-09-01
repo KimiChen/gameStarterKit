@@ -587,6 +587,11 @@ SessionCoordinator 顺序对调）。
 - 幂等 per-uid 计数器按窗口虚高（窗口内多次失败也计数）、operation inspect 暂无生产消费者
   （受控诊断面）、GameRoom.ts 已 2078 行（god-object 风险，拆分属另立计划）、v8 信封硬断
   要求双端同批部署（协议层既定）。
+- feature install() 内 await 对自身 gameplay target 的 ports.launch 会经 AppRuntime 闸
+  与该 feature 自身的 in-flight install 合流：install 等它自己完成，循环 await 静默挂死
+  （47dc934 引入面）。结构修复不可行——无 ALS，宿主无法区分合流 awaiter 与 install 自身，
+  而用户点击合流进 in-flight 是期望行为；已在 ports.ts launch port 文档与
+  FeatureHost.launch 合流分支双侧注释警告。
 
 **实测（写入时）**：`verify:all` exit 0（服务端单测 436/436、客户端 354/354、FGUI 66/66、
 inventory 全绿、typecheck 全阶段 0 错、verify:sync 镜像一致）；`test:int` 168/168
