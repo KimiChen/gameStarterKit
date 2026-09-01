@@ -92,6 +92,72 @@ test("AppRuntime.tick：转发 RoomController.tick 与 FrameScheduler；dispose 
   assert.deepEqual(schedulerTicks, [0.16, 0.2], "dispose 后 ticker 已清空");
 });
 
+test("§7.8 宿主前后台：hide 停喂 tick + 拒新输入；show 按 ready/drop 宽限/final-loss 三态恢复", async () => {
+  const { appRuntime, wiring, makeNode } = await loadAppHost();
+  // battle 快照 seam：可变对象驱动三态（生产缺省读 roomClient 派生快照）。
+  const battle = { state: "ready" as "idle" | "joining" | "ready" | "dropped", connGeneration: 1 };
+  const runtime = new appRuntime.AppRuntime({
+    node: makeNode(),
+    battleConnection: () => ({ ...battle }),
+  }) as unknown as Record<string, any>;
+  const controllerTicks: number[] = [];
+  const inputs: unknown[] = [];
+  runtime.roomController = {
+    status: "running",
+    currentGeneration: 1,
+    tick: (dt: number) => { controllerTicks.push(dt); return Promise.resolve(true); },
+    input: (value: unknown) => { inputs.push(value); return Promise.resolve(true); },
+    stop: () => Promise.resolve(),
+  };
+  try {
+    runtime.wireSessionLifecycle();
+    runtime.tick(0.1);
+    assert.equal(controllerTicks.length, 1);
+    assert.equal(await runtime.dispatchGameplayInput({ type: "target", x: 1, y: 2 }), true);
+    assert.equal(inputs.length, 1);
+
+    // (1)(2) hide：停喂玩法 tick、拒新输入意图（被拒输入不触达 controller ⇒ seq 不跳变）。
+    wiring.lifecycleBus.publish("host", { kind: "hide", seq: 8101 });
+    runtime.tick(0.1);
+    assert.equal(controllerTicks.length, 1, "hide 期间必须停喂玩法 tick");
+    assert.equal(runtime.scheduler.isPaused, true, "hide 仍暂停 route-scoped ticker");
+    assert.equal(await runtime.dispatchGameplayInput({ type: "release" }), false,
+      "hide 期间禁止产生新的输入意图");
+    assert.equal(inputs.length, 1, "被拒输入不得到达 controller");
+
+    // (3) show@ready：立即恢复 tick 与输入（权威快照：Lobby 经 RefreshCoordinator，
+    // GameRoom state 由存活 socket 持续同步）。
+    wiring.lifecycleBus.publish("host", { kind: "show", seq: 8102 });
+    runtime.tick(0.1);
+    assert.equal(controllerTicks.length, 2, "show@ready 恢复玩法 tick");
+    assert.equal(await runtime.dispatchGameplayInput({ type: "release" }), true);
+    assert.equal(inputs.length, 2);
+
+    // (3)(4) show@drop 宽限：本地 tick 恢复，但输入挂起等 reconnect（完整快照过闸）。
+    wiring.lifecycleBus.publish("host", { kind: "hide", seq: 8103 });
+    battle.state = "dropped";
+    wiring.lifecycleBus.publish("host", { kind: "show", seq: 8104 });
+    runtime.tick(0.1);
+    assert.equal(controllerTicks.length, 3, "drop 宽限的 show 恢复本地 tick");
+    assert.equal(await runtime.dispatchGameplayInput({ type: "release" }), false,
+      "drop 宽限的 show 后输入必须等 reconnect");
+    wiring.lifecycleBus.publish("battle", { kind: "reconnected", connGeneration: 1, seq: 8105 });
+    assert.equal(await runtime.dispatchGameplayInput({ type: "release" }), true,
+      "reconnected（重连完整快照已过校验）解除输入挂起");
+    assert.equal(inputs.length, 3);
+
+    // (3) show@final-loss：连接已死（快照 idle）——既有恢复路径负责拆局，不留输入挂起。
+    wiring.lifecycleBus.publish("host", { kind: "hide", seq: 8106 });
+    battle.state = "idle";
+    wiring.lifecycleBus.publish("host", { kind: "show", seq: 8107 });
+    assert.equal(runtime.battleInputHold, false, "final-loss 不得遗留输入挂起（走既有恢复路径）");
+    assert.equal(runtime.hostHidden, false);
+  } finally {
+    runtime.roomController = null;
+    runtime.dispose();
+  }
+});
+
 test("wireSessionLifecycle：transport 失效先拆玩法 generation；journal/ticker 生命周期接线", async () => {
   const { appRuntime, session, wiring, makeNode } = await loadAppHost();
   const runtime = new appRuntime.AppRuntime({ node: makeNode() }) as unknown as Record<string, any>;

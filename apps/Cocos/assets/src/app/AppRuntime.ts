@@ -25,7 +25,14 @@ import {
     RoomController,
 } from "../logic/gameplay/RoomController";
 import type { GameplayStartResult } from "../logic/gameplay/RoomController";
-import { registerDefaultGameplays, type AppGameplayRegistry } from "../gameplay/catalog";
+import type { GameplayControllerBridge } from "../logic/gameplay/GameplayModule";
+import { registerGeneratedGameplays } from "../gameplay/catalog.generated";
+import {
+    createGameplayServices,
+    type AppGameplayRegistry,
+    type GameplayServicesContext,
+} from "../gameplay/services";
+import type { GameRoomConnectionSnapshot } from "../net/connectionEvents";
 import { GameplayModeId, joinErrText } from "../shared/index";
 import {
     getSessionGeneration,
@@ -57,6 +64,8 @@ export interface AppRuntimeOptions {
     readonly node: Node;
     /** 要进入的已登记玩法 id；默认 ballMove（阶段 9 数据驱动后评估删除）。 */
     readonly gameplayId?: string;
+    /** §7.8 show 三态判定的战斗连接快照 seam（测试注入；生产缺省读 gameplay services 的 roomClient）。 */
+    readonly battleConnection?: () => GameRoomConnectionSnapshot;
 }
 
 export class AppRuntime {
@@ -65,11 +74,17 @@ export class AppRuntime {
 
     private gameplayRegistry: AppGameplayRegistry | null = null;
     private roomController: RoomController<any, any> | null = null;
+    private gameplayServices: GameplayServicesContext | null = null;
     private unregisterGameplay: (() => void) | null = null;
     private disposePages: (() => void) | null = null;
     private battleTransition: Promise<void> | null = null;
     private battleAbort: AbortController | null = null;
     private disposed = false;
+    /** §7.8：宿主 hide 期间为 true——停喂玩法 tick、拒绝新输入意图（seq 不跳变）。 */
+    private hostHidden = false;
+    /** §7.8 show 三态之 drop 宽限：等 reconnect（battle 通道 ready/reconnected/closed 解除）。 */
+    private battleInputHold = false;
+    private readonly battleConnection: (() => GameRoomConnectionSnapshot) | null;
     private readonly unsubs: Array<() => void> = [];
 
     private readonly gameplayId: string;
@@ -83,6 +98,7 @@ export class AppRuntime {
 
     constructor(options: AppRuntimeOptions) {
         this.gameplayId = options.gameplayId ?? GameplayModeId.BallMove;
+        this.battleConnection = options.battleConnection ?? null;
         // Claim page/session ownership：构造即递增 app generation；旧场景的 scope 被
         // supersede（其异步 transition 先失效再返回）。
         const scope = createPageSessionScope();
@@ -196,16 +212,57 @@ export class AppRuntime {
                     void refreshAuthenticatedBaseProfile().catch(() => {});
                 }
             }),
-            // 宿主 hide 只暂停本地 ticker、禁止新意图（不判失败、不清 journal）；
-            // show 恢复 ticker 并刷新 authenticated base（Lobby 未 ready 时只置 dirty）。
+            // §7.8 宿主前后台（复用 5a 的 LifecycleBus/CocosLifecycleBridge，⛔ 不另起
+            // EVENT_HIDE/EVENT_SHOW 监听）：hide 暂停本地 ticker + 停喂玩法 tick +
+            // 禁新输入意图（⛔ 不关 room、不把已发输入判失败、不清 journal，seq 不跳变）；
+            // show 按连接三态恢复（onHostShow）。
             lifecycleBus.subscribe("host", (event) => {
-                if (event.kind === "hide") this.frameScheduler.setPaused(true);
-                if (event.kind === "show") {
-                    this.frameScheduler.setPaused(false);
-                    void refreshAuthenticatedBaseProfile().catch(() => {});
+                if (event.kind === "hide") this.onHostHide();
+                if (event.kind === "show") this.onHostShow();
+            }),
+            // §7.8 第 3/4 条的 drop 宽限收尾：等 reconnect——battle 通道的
+            // reconnected（重连完整快照已过 exact validator）或 ready 解除输入挂起；
+            // closed（final-loss 已走既有恢复路径 / voluntary 已无局可言）同样解除。
+            lifecycleBus.subscribe("battle", (event) => {
+                if (event.kind === "reconnected" || event.kind === "ready" || event.kind === "closed") {
+                    this.battleInputHold = false;
                 }
             }),
         );
+    }
+
+    /** §7.8 (1)(2)：hide 暂停本地 tick/预测与新输入意图。 */
+    private onHostHide(): void {
+        this.hostHidden = true;
+        this.frameScheduler.setPaused(true);
+    }
+
+    /**
+     * §7.8 (3)：show 先判战斗连接三态——
+     *  - ready：先请求一次权威快照再恢复输入。authenticated base 经
+     *    RefreshCoordinator 合流刷新；GameRoom 侧的权威 state 由存活 socket 的
+     *    Schema patch 持续同步（协议无客户端拉取式快照），随恢复的 tick 立即消费；
+     *  - drop 宽限：本地 tick 恢复，新输入意图继续挂起等 reconnect（§10.4：重连后的
+     *    完整快照过 exact validator 之前不恢复输入；发送闸 stateReady 在 transport
+     *    另有一道）；
+     *  - final-loss：battle 通道的 closed{final-loss} 已派生 battleLost →
+     *    stopGameplay(room-lost) 既有恢复路径，此处无局可恢复。
+     */
+    private onHostShow(): void {
+        this.frameScheduler.setPaused(false);
+        void refreshAuthenticatedBaseProfile().catch(() => {});
+        const battle = this.battleConnectionState();
+        this.battleInputHold = battle.state === "dropped"
+            && this.roomController?.status === "running";
+        this.hostHidden = false;
+    }
+
+    /** 战斗连接快照（seam 可注入；生产读 gameplay services 的 roomClient）。 */
+    private battleConnectionState(): GameRoomConnectionSnapshot {
+        if (this.battleConnection) return this.battleConnection();
+        const services = this.gameplayServices;
+        if (!services) return { state: "idle", connGeneration: 0 };
+        return services.roomClient.getBattleConnectionState();
     }
 
     /** 导航启动（openLogin 等价入口）；失败只记录，不炸宿主帧循环。 */
@@ -221,7 +278,8 @@ export class AppRuntime {
     /** 帧驱动（Main.update 转发）：RoomController.tick + FrameScheduler。 */
     tick(dt: number): void {
         const controller = this.roomController;
-        if (controller) {
+        // §7.8 (1)：hide 期间停喂玩法 tick（本地预测/插值暂停；room/transport 不动）。
+        if (controller && !this.hostHidden) {
             void controller.tick(dt).catch((error) => {
                 console.error("[AppRuntime] gameplay tick 失败：", error);
             });
@@ -245,6 +303,7 @@ export class AppRuntime {
         this.unregisterGameplay?.();
         this.unregisterGameplay = null;
         this.gameplayRegistry = null;
+        this.gameplayServices = null;
         const controller = this.roomController;
         this.roomController = null;
         void controller?.dispose().catch((error) => {
@@ -259,20 +318,44 @@ export class AppRuntime {
     private configureGameplay(node: Node): void {
         const registry = new GameplayRegistry<any, any>();
         const controller = new RoomController<any, any>();
+        this.roomController = controller;
+        // §7.7 controller 桥：GameplayInstanceHost 的 generation/输入/退出转发面。
+        // generation 直接取 RoomController.currentGeneration（唯一玩法世代计数）；
+        // dispatchInput 是 §7.8 的宿主输入闸位（hide/drop 宽限拒绝新输入意图）。
+        const controllerBridge: GameplayControllerBridge = {
+            currentGeneration: () => this.roomController?.currentGeneration ?? 0,
+            dispatchInput: (input) => this.dispatchGameplayInput(input),
+            requestStop: async (reason) => {
+                await this.roomController?.stop(reason);
+            },
+        };
         const presentationHost = {
             node,
             dispatchInput: (input: unknown): void => {
-                if (!this.roomController) return;
-                void this.roomController.input(input).catch((error) => {
+                void this.dispatchGameplayInput(input).catch((error) => {
                     console.error("[AppRuntime] gameplay input 失败：", error);
                 });
             },
         };
-        this.unregisterGameplay = registerDefaultGameplays(registry, {
+        const services = createGameplayServices({
+            controllerBridge,
             presentationHost,
         });
+        this.unregisterGameplay = registerGeneratedGameplays(registry, services);
         this.gameplayRegistry = registry;
-        this.roomController = controller;
+        this.gameplayServices = services;
+    }
+
+    /**
+     * 玩法输入统一入口（presentation host 与 GameplayInstanceHost 共用）。
+     * §7.8 (2)：hide 期间禁止产生新的输入意图——直接拒绝（false），⛔ 不排队、
+     * 不递增任何输入 seq；drop 宽限的 show 后同样挂起，等 reconnect。
+     */
+    private dispatchGameplayInput(input: unknown): Promise<boolean> {
+        if (this.hostHidden || this.battleInputHold) return Promise.resolve(false);
+        const controller = this.roomController;
+        if (!controller) return Promise.resolve(false);
+        return controller.input(input);
     }
 
     /** Home's command boundary; concurrent clicks share one observable transition. */

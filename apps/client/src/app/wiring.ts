@@ -5,10 +5,16 @@
  */
 import { WebSocketClient } from "../net/WebSocketClient";
 import { LifecycleBus } from "./LifecycleBus";
-import { handleLobbyConnectionEvent } from "./SessionCoordinator";
+import { handleGameRoomConnectionEvent, handleLobbyConnectionEvent } from "./SessionCoordinator";
 
 /** 应用级 LifecycleBus 单例（宿主 hide/show 与连接事件共用；5b 归入 AppRuntime）。 */
 export const lifecycleBus = new LifecycleBus();
+
+// battle 通道派生（阶段 9，5a 偏差 8 收尾）：RoomClient 为发布战斗房连接事件而
+// import 本模块取得 bus ⇒ 本行在任何 battle 发布之前已求值，派生订阅必然在位——
+// ⛔ 不需要（也不提供）第二个显式接线开关，避免「未接线时 battleLost 静默丢失」
+// 的中间态；closed{final-loss} → notifyBattleLost 与旧直调行为等价（严格同步）。
+lifecycleBus.subscribe("battle", handleGameRoomConnectionEvent);
 
 let connectionWiring: (() => void) | null = null;
 

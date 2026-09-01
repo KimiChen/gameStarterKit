@@ -55,3 +55,33 @@ export interface LobbyConnectionSnapshot {
 }
 
 export type LobbyConnectionListener = (event: LobbyConnectionEvent) => void;
+
+/**
+ * 战斗房（GameRoom）连接事件——battle 通道的低层真相（§7.3/§7.8 阶段 9）。
+ * 由 net/RoomClient 直接发布进 app/LifecycleBus 的 `battle` 通道，
+ * SessionCoordinator 只从 `closed{final-loss}` 派生 battleLost（与旧
+ * notifyBattleLost 直调**行为等价**）；`closed{voluntary}` = 主动 leave /
+ * join 取消，现状不触发任何 session 通知。GameRoom 没有 auth-invalid 分类：
+ * 鉴权失败在 join 阶段直接拒绝、强踢经 Lobby 侧派生。
+ */
+export type GameRoomConnectionEvent =
+    | { readonly kind: "joining"; readonly connGeneration: number; readonly seq: number }
+    | { readonly kind: "ready"; readonly connGeneration: number; readonly seq: number }
+    | { readonly kind: "dropped"; readonly connGeneration: number; readonly seq: number }
+    | { readonly kind: "reconnected"; readonly connGeneration: number; readonly seq: number }
+    | {
+        readonly kind: "closed";
+        readonly connGeneration: number;
+        readonly seq: number;
+        readonly reason: "voluntary" | "final-loss";
+    };
+
+/**
+ * 战斗房连接三态快照（§7.8 show 路径判连接状态用）：从当前 slot **派生**，
+ * ⛔ 不是第二份事件簿——ready = 首帧/重连 state 已过 exact validator，
+ * dropped = drop 宽限窗口，joining = 握手或首帧屏障中，idle = 无连接。
+ */
+export interface GameRoomConnectionSnapshot {
+    readonly state: "idle" | "joining" | "ready" | "dropped";
+    readonly connGeneration: number;
+}

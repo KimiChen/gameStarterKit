@@ -15,6 +15,7 @@ import {
 import { WebSocketClient } from "../src/net/WebSocketClient";
 import { wireConnectionEvents } from "../src/app/wiring";
 import {
+  handleGameRoomConnectionEvent,
   handleLobbyConnectionEvent,
   clearSession,
   isLoggedIn,
@@ -204,6 +205,46 @@ test("bus→derive 分支矩阵：closed 三分类派生正确，非 closed 事�
     assert.deepEqual(battle, [], "连接事件不派生 battleLost（battle transport 归一属阶段 9）");
   } finally {
     offAuth(); offConn(); offBattle(); offReturn();
+    clearSession();
+  }
+});
+
+test("battle 通道派生矩阵（阶段 9）：closed{final-loss} → battleLost；voluntary/透传事件不派生", async () => {
+  const battle: number[] = [];
+  const conn: number[] = [];
+  const reasons: string[] = [];
+  const offBattle = onBattleLost(() => battle.push(1));
+  const offConn = onConnLost(() => conn.push(1));
+  const offReturn = registerReturnToLogin((reason) => { reasons.push(reason.kind); });
+  const base = { connGeneration: 7, seq: 1 } as const;
+  try {
+    login("u_battle_channel");
+
+    for (const kind of ["joining", "ready", "dropped", "reconnected"] as const) {
+      handleGameRoomConnectionEvent({ kind, ...base });
+    }
+    assert.deepEqual([battle.length, conn.length], [0, 0],
+      "joining/ready/dropped/reconnected 仅透传（§7.8 宿主消费），session 层不派生");
+
+    handleGameRoomConnectionEvent({ kind: "closed", reason: "voluntary", ...base });
+    await Promise.resolve();
+    assert.deepEqual([battle.length, reasons.length], [0, 0], "voluntary（主动 leave）不触发任何广播/导航");
+    assert.equal(isLoggedIn(), true);
+
+    handleGameRoomConnectionEvent({ kind: "closed", reason: "final-loss", ...base });
+    assert.deepEqual(battle, [1], "final-loss → battleLost 广播（同一同步栈，与旧直调等价）");
+    assert.deepEqual(conn, [], "battle transport 死亡 ⛔ 不得误当大厅断线");
+    await Promise.resolve();
+    assert.deepEqual(reasons, ["BATTLE_LOST"], "有会话且同代 → 统一回登录 transition");
+
+    // 登出后的迟到 final-loss：仍广播（玩法态回滚），但不再开启新的回登录 transition。
+    const reasonsBefore = reasons.length;
+    handleGameRoomConnectionEvent({ kind: "closed", reason: "final-loss", ...base });
+    assert.deepEqual(battle, [1, 1], "battleLost 总是广播（玩法态必须回滚）");
+    await Promise.resolve();
+    assert.equal(reasons.length, reasonsBefore, "无会话的迟到 final-loss 不得再导航");
+  } finally {
+    offBattle(); offConn(); offReturn();
     clearSession();
   }
 });

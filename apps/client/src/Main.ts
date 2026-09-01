@@ -24,6 +24,10 @@ export class Main extends Component {
 
     @property({ tooltip: "WebPlatform Public http(s) 地址（登录 + 选服），必填。" })
     portalUrl = "";
+    // 阶段 9 登记：Home 菜单已数据驱动（generated menu contribution 的 launch target
+    // 优先），本字段只剩「默认 launch target 兜底」职责，Home 数据驱动稳定后可删——
+    // 但删除 @property 属场景资产 diff（scene.scene 由 Creator 重新序列化并人工审查，
+    // 见 docs/Non-intrusive.md §8），⛔ 不在无头批次中机械删除。
     @property({ tooltip: "要进入的已登记玩法 id；默认 ballMove，可替换为 idle。" })
     gameplayId = GameplayModeId.BallMove;
 

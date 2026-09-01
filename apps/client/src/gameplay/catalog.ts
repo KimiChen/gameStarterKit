@@ -1,81 +1,25 @@
-import type { Node } from "cc";
-import type { GameplayRegistry, GameplayRoomJoiner } from "../logic/gameplay/index";
-import {
-    registerBallMoveGameplay,
-    type BallMoveInput,
-    type BallMoveRoom,
-} from "../logic/rooms/ballMove/BallMoveGameplay";
-import {
-    registerIdleGameplay,
-    type IdleInput,
-    type IdleRoom,
-} from "../logic/rooms/idle/IdleGameplay";
-import { createIdleRoomJoiner } from "../net/rooms/IdleRoom";
-import { createBallMoveRoomJoiner } from "../net/rooms/BallMoveRoom";
-import {
-    createBallMoveRoomAdapter,
-    createIdleRoomAdapter,
-    type BallMoveRoomAdapter,
-    type IdleRoomAdapter,
-} from "../net/rooms/GameRoomTransport";
-
-/** Inputs/rooms are intentionally erased at the app composition boundary. */
-export type AppGameplayRegistry = GameplayRegistry<any, any>;
-
-/** Engine host passed once to the catalog; each entry owns its adapter creation. */
-export interface GameplayPresentationHost {
-    readonly node: Node;
-    readonly dispatchInput: (input: unknown) => void;
-}
-
-export interface GameplayCatalogContext {
-    readonly presentationHost?: GameplayPresentationHost;
-    readonly ballMoveJoiner?: GameplayRoomJoiner<BallMoveRoom>;
-    readonly idleJoiner?: GameplayRoomJoiner<IdleRoom>;
-    readonly ballMoveAdapter?: BallMoveRoomAdapter;
-    readonly idleAdapter?: IdleRoomAdapter;
-}
-
 /**
- * Register the starter gameplay modules in one replaceable catalog. Adding a
- * module means adding its own `register` call here; RoomClient, RoomController
- * and the Main lifecycle shell remain unchanged.
+ * gameplay catalog 稳定 façade（Non-intrusive §7.6 阶段 9 收敛后）。
+ *
+ * @deprecated 组合目录的真相已生成化：登记走 `catalog.generated.ts` 的
+ * `registerGeneratedGameplays(registry, services)`（services 由 gameplay/services.ts
+ * 组装）。本文件只保留零状态纯转发与类型 re-export，供既有导入面平滑过渡；
+ * ⛔ 不得在此新增任何逐玩法字段（ballMoveJoiner/idleAdapter 之类）或状态——
+ * 新增玩法 = 只新增 `gameplay/modes/<id>/` 模块文件 + 单源 schema/wire。
  */
+import { registerGeneratedGameplays } from "./catalog.generated";
+import type { AppGameplayRegistry, GameplayServicesContext } from "./services";
+
+export type {
+    AppGameplayRegistry,
+    GameplayPresentationHost,
+    GameplayServicesContext,
+} from "./services";
+
+/** @deprecated 请直接使用 registerGeneratedGameplays（generated 单源）。 */
 export function registerDefaultGameplays(
     registry: AppGameplayRegistry,
-    context: GameplayCatalogContext,
+    services: GameplayServicesContext,
 ): () => void {
-    const ballMoveAdapter = context.ballMoveAdapter ?? createBallMoveRoomAdapter();
-    const idleAdapter = context.idleAdapter ?? createIdleRoomAdapter();
-    const ballMoveOff = registerBallMoveGameplay(
-        registry as unknown as GameplayRegistry<BallMoveRoom, BallMoveInput>,
-        {
-            // The adapter is constructed by the ballMove entry, only when a
-            // ballMove plugin starts. Other registrations (notably idle) do
-            // not allocate or touch BallMoveView.
-            ...(context.presentationHost ? {
-                presentationFactory: async () => {
-                    const host = context.presentationHost;
-                    if (!host) return undefined;
-                    const { BallMoveView } = await import("../view/rooms/ballMove/BallMoveView");
-                    return new BallMoveView(host.node, (input) => host.dispatchInput(input));
-                },
-            } : {}),
-            joiner: context.ballMoveJoiner ?? createBallMoveRoomJoiner(ballMoveAdapter),
-        },
-    );
-    let idleOff: (() => void) | null = null;
-    try {
-        idleOff = registerIdleGameplay(
-            registry as unknown as GameplayRegistry<IdleRoom, IdleInput>,
-            { joiner: context.idleJoiner ?? createIdleRoomJoiner(idleAdapter) },
-        );
-    } catch (error) {
-        ballMoveOff();
-        throw error;
-    }
-    return () => {
-        idleOff?.();
-        ballMoveOff();
-    };
+    return registerGeneratedGameplays(registry, services);
 }
