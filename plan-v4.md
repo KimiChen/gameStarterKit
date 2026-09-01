@@ -561,8 +561,8 @@ FGUI 66/66、inventory 全绿、typecheck 全阶段 0 错）；`test:int` 168/16
 方法：三路对抗式独立核查 + 全量基线独立重跑 + 关键变异亲手重做。
 
 **判定：两批全部成立。** 修复批的核心实证均复现：`6f8186a` 的 execArgv 放大器（注入 worker
-继承 tsx loader ~128ms vs `execArgv: []` ~15ms，5–8 倍，是三轮 flaky 的共同根因，此前
-250→1200→2500 的预算抬高全是治症状）；`c102ba4` 证实的 `?? 1000` 死代码；`52eed18` 证实的
+继承 tsx：113/126/154ms vs `execArgv: []`：21/31/18ms，约 5–6×，是三轮 flaky 的共同根因，
+此前 250→1200→2500 的预算抬高全是治症状）；`c102ba4` 证实的 `?? 1000` 死代码；`52eed18` 证实的
 c16d78f no-op（第三次 runInPool 同步抛 ComputeOverloadedError，预算无意义）。Non-intrusive 批
 逐阶段交付与声称一致，主链路行为等价；变异验证亲手重做六处全部按预期转红（requireMode 去
 fail-fast、Lua 去 hash 比对、phase 闸删除、手改生成物、protected-paths 单侧删、
