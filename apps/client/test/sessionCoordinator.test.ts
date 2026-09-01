@@ -17,6 +17,7 @@ import { wireConnectionEvents } from "../src/app/wiring";
 import {
   handleGameRoomConnectionEvent,
   handleLobbyConnectionEvent,
+  attachSessionNavigator,
   clearSession,
   isLoggedIn,
   onAuthInvalid,
@@ -25,6 +26,7 @@ import {
   registerReturnToLogin,
   registerSessionReconciler,
   setSession,
+  type SessionNavigator,
 } from "../src/app/SessionCoordinator";
 import { getToken, initPortal, portalRequest } from "../src/core/http";
 import { LifecycleBus } from "../src/app/LifecycleBus";
@@ -323,4 +325,41 @@ test("CocosLifecycleBridge：EVENT_HIDE/EVENT_SHOW 进 bus host 通道，seq 单
   dispose(); // 幂等
   assert.equal(listeners.size, 0, "卸载必须解绑全部宿主监听");
   offHost();
+});
+
+test("attachSessionNavigator：第二步 fail-fast 时回滚第一步，不留半注册", () => {
+  // 缺口：此前先注册 reconciler 再注册 returnToLogin，第二步 fail-fast throw 时
+  // reconciler 单槽被无法释放地占用（attach 抛错、detach 函数从未产生），后续所有
+  // reconciler 注册全部 wedge 在 fail-fast 上。生产单注册点不可达，属提示级；
+  // 本用例钉住回滚语义。变异锚点：去掉 try/catch 回滚 ⇒ 下方 ② 必红。
+  const navigator: SessionNavigator = {
+    isCurrent: () => true,
+    beginTransition: () => ({ transitionId: 0, observedFlight: null }),
+    leave: () => Promise.resolve(),
+    closeLobby: () => {},
+    prompt: () => Promise.resolve(),
+    reopenLogin: () => Promise.resolve(),
+    reconcile: () => true,
+  };
+
+  // ① 占位 returnToLogin 单槽 → attach 的第二步必抛 fail-fast。
+  const offReturn = registerReturnToLogin(() => {});
+  try {
+    assert.throws(() => attachSessionNavigator(navigator), /fail-fast/,
+      "第二步双注册必须 throw（fail-fast 语义保留）");
+  } finally {
+    offReturn();
+  }
+
+  // ② 若第一步未回滚，reconciler 单槽仍被泄漏占用，这里会 fail-fast。
+  const offReconciler = registerSessionReconciler(() => true);
+  offReconciler();
+
+  // ③ 回滚后完整 attach 成功；detach 同时释放两槽（再注册不抛）。
+  const detach = attachSessionNavigator(navigator);
+  detach();
+  const offReturn2 = registerReturnToLogin(() => {});
+  const offReconciler2 = registerSessionReconciler(() => true);
+  offReturn2();
+  offReconciler2();
 });
