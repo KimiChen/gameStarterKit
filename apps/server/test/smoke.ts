@@ -19,6 +19,7 @@ import {
     ForceLogoutReason,
     GameplayModeId,
     GAME_ROOM_PROTOCOL_VERSION,
+    GAMEPLAY_CATALOG,
     LOBBY_PROTOCOL_VERSION,
     RoomName,
     S2C,
@@ -163,6 +164,8 @@ async function main(): Promise<void> {
             token: "forged-opaque-token",
             sId: serverId,
             mode: GameplayModeId.BallMove,
+            modeVersion: GAMEPLAY_CATALOG.ballMove.modeVersion,
+            profile: "default",
         });
     } catch {
         forgedRejected = true;
@@ -188,6 +191,8 @@ async function main(): Promise<void> {
         token: login.accessToken,
         sId: serverId,
         mode: GameplayModeId.BallMove,
+        modeVersion: GAMEPLAY_CATALOG.ballMove.modeVersion,
+        profile: "default",
     });
     check("strict join GameRoom", room.sessionId.length > 0, room.roomId);
 
@@ -267,6 +272,8 @@ async function main(): Promise<void> {
             token: login.accessToken,
             sId: serverId,
             mode: GameplayModeId.BallMove,
+            modeVersion: GAMEPLAY_CATALOG.ballMove.modeVersion,
+            profile: "default",
         });
     } catch {
         oldTokenRejected = true;
@@ -289,6 +296,8 @@ async function main(): Promise<void> {
             token: revokeLogin.accessToken,
             sId: serverId,
             mode: GameplayModeId.BallMove,
+            modeVersion: GAMEPLAY_CATALOG.ballMove.modeVersion,
+            profile: "default",
         });
     } catch {
         revokedTokenRejected = true;

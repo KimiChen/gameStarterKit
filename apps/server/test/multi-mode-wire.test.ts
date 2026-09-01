@@ -14,6 +14,7 @@ import {
     C2S,
     GamePhase,
     GameplayModeId,
+    GAMEPLAY_CATALOG,
     GAME_ROOM_PROTOCOL_VERSION,
     RoomName,
     validateGameRoomJoinOptions,
@@ -67,6 +68,7 @@ class MultiModeWireRoom extends GameRoom {
             userId: `wire-user:${token}`,
             sId: parsed.sId ?? 0,
             mode: parsed.mode,
+            profile: parsed.profile,
         };
     }
 
@@ -93,7 +95,11 @@ class MultiModeWireRoom extends GameRoom {
 }
 
 function wireOptions(mode: string, token: string): IGameRoomJoinOptions {
-    return { v: GAME_ROOM_PROTOCOL_VERSION, token, sId: 0, mode };
+    // v8 必填信封（§4.4）：modeVersion 取 catalog 单源。
+    const modeVersion = (GAMEPLAY_CATALOG as Readonly<Partial<Record<string, { readonly modeVersion: number }>>>)[
+        mode
+    ]?.modeVersion ?? 1;
+    return { v: GAME_ROOM_PROTOCOL_VERSION, token, sId: 0, mode, modeVersion, profile: "default" };
 }
 
 function sdkClient(endpoint: string, token: string): SDKClient {
@@ -178,7 +184,8 @@ test("one real GameRoom definition carries independent ballMove and idle Schema 
         idleRoomClient.init(endpoint);
         const activeIdleOwnership = idleRoomClient.joinGame(
             createIdleRoomAdapter(),
-            { token: "idle-a", sId: 0 },
+            // v8 必填信封：RoomClient 不注入缺省（§4.4 由调用方/transport 注入）。
+            { token: "idle-a", sId: 0, modeVersion: GAMEPLAY_CATALOG.idle.modeVersion, profile: "default" },
             { timeoutMs: 5_000 },
         );
         idleOwnership = activeIdleOwnership;

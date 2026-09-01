@@ -7,6 +7,7 @@ import { test } from "node:test";
 import {
   C2S,
   GamePhase,
+  GAMEPLAY_CATALOG,
   LOBBY_MSG_PUSH,
   LOBBY_MSG_RPC,
   LobbyPush,
@@ -17,6 +18,10 @@ import { RpcError, WebSocketClient } from "../src/net/WebSocketClient";
 import { RoomClient } from "../src/net/RoomClient";
 import { createBallMoveRoomAdapter, createIdleRoomAdapter } from "../src/net/rooms/GameRoomTransport";
 import { markFaultPoint } from "./faultMatrix";
+
+/** v8 必填信封（§4.4）：modeVersion 取 catalog 单源（与生产 joinGameRoom 同口径注入）。 */
+const BALL_WIRE = { modeVersion: GAMEPLAY_CATALOG.ballMove.modeVersion, profile: "default" } as const;
+const IDLE_WIRE = { modeVersion: GAMEPLAY_CATALOG.idle.modeVersion, profile: "default" } as const;
 
 type Handler = (...values: unknown[]) => void;
 
@@ -185,7 +190,7 @@ test("RoomClient：idle slot 下与 mode 无关的公共 send API 被 C2S allowl
     const client = new RoomClient();
     client.init("http://game.example");
     const adapter = createIdleRoomAdapter();
-    const owner = client.joinGame(adapter, { token: "idle-token", sId: 8 });
+    const owner = client.joinGame(adapter, { token: "idle-token", sId: 8, ...IDLE_WIRE });
     const room = await owner.ready;
 
     // 正对照：allowlist 内的消息照常跨 wire，证明这个 slot 本身处于可发送状态。
@@ -239,7 +244,7 @@ test("RoomClient：C2S/S2C 发送与回调均经过 runtime validator", async ()
     client.init("http://game.example");
     const adapter = createBallMoveRoomAdapter();
     const inputGeneration = adapter.beginInputLease();
-    const owner = client.joinGame(adapter);
+    const owner = client.joinGame(adapter, { ...BALL_WIRE });
     const room = await owner.ready;
 
     const received: unknown[] = [];
@@ -286,7 +291,7 @@ test("RoomClient：room.send 同步异常不穿透，reconcile 不误记已发�
     client.init("http://game.example");
     const adapter = createBallMoveRoomAdapter();
     const inputGeneration = adapter.beginInputLease();
-    const owner = client.joinGame(adapter);
+    const owner = client.joinGame(adapter, { ...BALL_WIRE });
     const room = await owner.ready;
 
     assert.doesNotThrow(() => {
@@ -342,7 +347,7 @@ test("RoomClient state$：MapSchema-like entries 可校验，坏快照不触发 
   try {
     const client = new RoomClient();
     client.init("http://game.example");
-    const owner = client.joinGame(createBallMoveRoomAdapter());
+    const owner = client.joinGame(createBallMoveRoomAdapter(), { ...BALL_WIRE });
     const room = await owner.ready;
     const $ = room.state$();
     let called = 0;
@@ -375,7 +380,7 @@ test("RoomClient：S2C callback 的同步异常与 Promise rejection 都被观�
   try {
     const client = new RoomClient();
     client.init("http://game.example");
-    const owner = client.joinGame(createBallMoveRoomAdapter());
+    const owner = client.joinGame(createBallMoveRoomAdapter(), { ...BALL_WIRE });
     await owner.ready;
     let calls = 0;
     client.onMessage(fake.room as never, S2C.Pong, () => {
@@ -426,7 +431,7 @@ test("RoomClient state$：注册方法/回调异常均不穿透，也不产生 u
   try {
     const client = new RoomClient();
     client.init("http://game.example");
-    const owner = client.joinGame(createBallMoveRoomAdapter());
+    const owner = client.joinGame(createBallMoveRoomAdapter(), { ...BALL_WIRE });
     const room = await owner.ready;
     const guarded = room.state$();
     assert.doesNotThrow(() => guarded(state).players.onAdd(() => { throw new Error("ignored"); }));

@@ -19,6 +19,7 @@ import { test } from "node:test";
 import {
     ErrorCode,
     GAME_ROOM_PROTOCOL_VERSION,
+    GAMEPLAY_CATALOG,
     GameplayModeId,
     LOBBY_PROTOCOL_VERSION,
 } from "@game/shared";
@@ -32,6 +33,15 @@ registerBallMoveGameMode();
 const SRC_ROOT = joinPath(fileURLToPath(import.meta.url), "../../src");
 const assertCode = (code: number) => (error: unknown): boolean =>
     error instanceof Error && error.message.includes(String(code));
+
+/** v8 完整信封（§4.4 必填 modeVersion/profile）；modeVersion 取 catalog 单源。 */
+const gameOptions = () => ({
+    v: GAME_ROOM_PROTOCOL_VERSION,
+    sId: 0,
+    mode: GameplayModeId.BallMove,
+    modeVersion: GAMEPLAY_CATALOG.ballMove.modeVersion,
+    profile: "default",
+});
 
 test("版本矩阵：Lobby join 只拿 LOBBY_PROTOCOL_VERSION 判定（正确版本穿过版本闸，错误版本 ProtocolMismatch）", async () => {
     // 错误版本：版本闸先于 token 闸 ⇒ ProtocolMismatch
@@ -52,19 +62,70 @@ test("版本矩阵：Lobby join 只拿 LOBBY_PROTOCOL_VERSION 判定（正确版
 });
 
 test("版本矩阵：Game join 只拿 GAME_ROOM_PROTOCOL_VERSION 判定（onAuth 与 onCreate 同口径）", async () => {
-    const mode = GameplayModeId.BallMove;
+    const options = gameOptions();
     await assert.rejects(
-        GameRoom.onAuth("", { v: GAME_ROOM_PROTOCOL_VERSION + 1, sId: 0, mode }, undefined as never),
+        GameRoom.onAuth("", { ...options, v: GAME_ROOM_PROTOCOL_VERSION + 1 }, undefined as never),
         assertCode(ErrorCode.ProtocolMismatch),
     );
     await assert.rejects(
-        GameRoom.onAuth("", { v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode }, undefined as never),
+        GameRoom.onAuth("", options, undefined as never),
         assertCode(ErrorCode.TokenExpired),
     );
     const room = new GameRoom({ seed: 4801 });
     assert.throws(
-        () => room.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION + 1, sId: 0, mode }),
+        () => room.onCreate({ ...options, v: GAME_ROOM_PROTOCOL_VERSION + 1 }),
         assertCode(ErrorCode.ProtocolMismatch),
+    );
+});
+
+// ── v8 必填切换（§4.4/§9 阶段 8）：旧 v=7 Game join 明确拒绝，Lobby 不受影响 ────────────
+// 变异验证：把 GAME_ROOM_PROTOCOL_VERSION 退回 7、或给缺 profile/modeVersion 的 join 走
+// 「缺省时随便匹配」的兼容 → 本组转红。
+test("版本矩阵 v8：旧 v=7 Game join（无 profile/modeVersion 信封）被 ProtocolMismatch 明确拒绝", async () => {
+    assert.equal(GAME_ROOM_PROTOCOL_VERSION, 8, "阶段 8b 的必填切换随 bump 7→8 落地");
+    // 旧 v=7 客户端的真实信封：不带 profile/modeVersion。版本闸先于 validator，
+    // 给出的是可识别的 ProtocolMismatch（升级提示），⛔ 不是含混的 BadRequest。
+    const legacy = { v: 7, sId: 0, mode: GameplayModeId.BallMove };
+    await assert.rejects(
+        GameRoom.onAuth("", legacy as never, undefined as never),
+        assertCode(ErrorCode.ProtocolMismatch),
+    );
+    const room = new GameRoom({ seed: 4802 });
+    assert.throws(() => room.onCreate(legacy as never), assertCode(ErrorCode.ProtocolMismatch));
+    // v=8 但缺 profile/modeVersion：validator 收紧后是 BadRequest（⛔ 不注入缺省 profile）。
+    await assert.rejects(
+        GameRoom.onAuth("", { v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: GameplayModeId.BallMove } as never,
+            undefined as never),
+        assertCode(ErrorCode.BadRequest),
+    );
+    // Lobby 不受影响：LOBBY_PROTOCOL_VERSION 仍为 7，v=7 Lobby join 穿过版本闸落在 token 闸。
+    assert.equal(LOBBY_PROTOCOL_VERSION, 7, "8b 只 bump GAME_ROOM，Lobby 身份不动");
+    await assert.rejects(
+        LobbyRoom.onAuth("", { v: 7, sId: 0 }, undefined as never),
+        assertCode(ErrorCode.TokenExpired),
+    );
+});
+
+// ── §4.8 第三层：modeVersion 只影响单玩法拒绝，不参与 core 信封闸 ───────────────────────
+// 变异验证：让 modeVersion 参与 `v` 信封闸（或反之）→ 下面「同值不同玩法」的对照转红。
+test("版本矩阵：modeVersion 对 catalog 单玩法判定（不匹配拒绝；不影响其他玩法与 core 信封）", async () => {
+    const options = gameOptions();
+    // 同一 core 信封 v，modeVersion 不匹配 → 单玩法拒绝（ProtocolMismatch：旧玩法包请更新）。
+    await assert.rejects(
+        GameRoom.onAuth("", { ...options, modeVersion: options.modeVersion + 1 }, undefined as never),
+        assertCode(ErrorCode.ProtocolMismatch),
+    );
+    const room = new GameRoom({ seed: 4803 });
+    assert.throws(
+        () => room.onCreate({ ...options, modeVersion: options.modeVersion + 1 }),
+        assertCode(ErrorCode.ProtocolMismatch),
+    );
+    // 匹配的 modeVersion 穿过 per-mode 闸落在 token 闸——证明比较的是 catalog 的该玩法整数。
+    await assert.rejects(GameRoom.onAuth("", options, undefined as never), assertCode(ErrorCode.TokenExpired));
+    // profile 的 admission 双重拒绝（§4.4）：未知/不属该 mode 的 profile 与版本无关，BadRequest。
+    await assert.rejects(
+        GameRoom.onAuth("", { ...options, profile: "no-such-profile" }, undefined as never),
+        assertCode(ErrorCode.BadRequest),
     );
 });
 

@@ -5,6 +5,7 @@ import {
     C2S,
     ErrorCode,
     GamePhase,
+    GAMEPLAY_CATALOG,
     GAME_ROOM_PROTOCOL_VERSION,
     S2C,
 } from "@game/shared";
@@ -38,7 +39,7 @@ import {
 
 type FakeClient = {
     sessionId: string;
-    auth: { userId: string; sId: number; mode: string };
+    auth: { userId: string; sId: number; mode: string; profile: string };
     sent: Array<[string, unknown]>;
     send(type: string, payload: unknown): void;
 };
@@ -46,7 +47,7 @@ type FakeClient = {
 function client(sessionId: string, mode: string = IDLE_GAME_MODE_ID): FakeClient {
     return {
         sessionId,
-        auth: { userId: `u-${sessionId}`, sId: 0, mode },
+        auth: { userId: `u-${sessionId}`, sId: 0, mode, profile: "default" },
         sent: [],
         send(type, payload) { this.sent.push([type, payload]); },
     };
@@ -62,11 +63,15 @@ function installLock(room: GameRoom): void {
 }
 
 async function join(room: GameRoom, joined: FakeClient): Promise<void> {
-    await room.onJoin(joined as never, {
-        v: GAME_ROOM_PROTOCOL_VERSION,
-        sId: 0,
-        mode: joined.auth.mode,
-    });
+    await room.onJoin(joined as never, wireOptions(joined.auth.mode));
+}
+
+/** v8 必填信封（§4.4）：modeVersion 取 catalog 单源。 */
+function wireOptions(mode: string) {
+    const modeVersion = (GAMEPLAY_CATALOG as Readonly<Partial<Record<string, { readonly modeVersion: number }>>>)[
+        mode
+    ]?.modeVersion ?? 1;
+    return { v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode, modeVersion, profile: "default" };
 }
 
 function handler(room: GameRoom, type: string): (sender: FakeClient, payload: unknown) => void {
@@ -127,13 +132,13 @@ test("Idle root：onCreate 只按生成映射选择一次，之后禁止替换",
         const room = new GameRoom({ seed: 700 });
         (room as unknown as { setSimulationInterval(callback: () => void, delay: number): void })
             .setSimulationInterval = () => undefined;
-        void room.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: IDLE_GAME_MODE_ID });
+        void room.onCreate(wireOptions(IDLE_GAME_MODE_ID));
 
         const selected = idleState(room);
         assert.equal(selected.pulseGoal, IDLE_DEFAULT_PULSE_GOAL);
         assert.equal(selected.phase, GamePhase.Waiting);
         assert.throws(
-            () => room.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: IDLE_GAME_MODE_ID }),
+            () => room.onCreate(wireOptions(IDLE_GAME_MODE_ID)),
             (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.BadRequest)),
         );
         assert.throws(
@@ -152,7 +157,7 @@ test("Idle root：onCreate 只按生成映射选择一次，之后禁止替换",
         const ballRoom = new GameRoom({ seed: 702 });
         (ballRoom as unknown as { setSimulationInterval(callback: () => void, delay: number): void })
             .setSimulationInterval = () => undefined;
-        void ballRoom.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
+        void ballRoom.onCreate(wireOptions(BALL_MOVE_GAME_MODE_ID));
         assert.ok(ballRoom.state instanceof GameRoomState);
         assert.equal(ballRoom.state instanceof IdleRoomState, false);
     } finally {

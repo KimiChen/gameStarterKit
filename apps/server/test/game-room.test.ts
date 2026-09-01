@@ -8,6 +8,7 @@ import {
     MAP_WIDTH,
     PLAYER_MOVE_SPEED,
     GAME_ROOM_PROTOCOL_VERSION,
+    GAMEPLAY_CATALOG,
     PLAYER_INIT_HP,
     S2C,
     TICK_MS,
@@ -47,7 +48,7 @@ const ballState = (room: { state: unknown }): GameRoomState => room.state as Gam
 
 type FakeClient = {
     sessionId: string;
-    auth: { userId: string; sId: number; mode: string };
+    auth: { userId: string; sId: number; mode: string; profile: string };
     sent: Array<[string, unknown]>;
     send: (type: string, payload: unknown) => void;
 };
@@ -55,7 +56,7 @@ type FakeClient = {
 function fakeClient(sessionId: string, userId = sessionId, sId = 0): FakeClient {
     const client: FakeClient = {
         sessionId,
-        auth: { userId, sId, mode: BALL_MOVE_GAME_MODE_ID },
+        auth: { userId, sId, mode: BALL_MOVE_GAME_MODE_ID, profile: "default" },
         sent: [],
         send(type, payload) { this.sent.push([type, payload]); },
     };
@@ -63,7 +64,14 @@ function fakeClient(sessionId: string, userId = sessionId, sId = 0): FakeClient 
 }
 
 function options(): IGameRoomJoinOptions {
-    return { v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID };
+    // v8 起 modeVersion/profile 必填（§4.4）；modeVersion 取 catalog 单源，⛔ 不手写字面量。
+    return {
+        v: GAME_ROOM_PROTOCOL_VERSION,
+        sId: 0,
+        mode: BALL_MOVE_GAME_MODE_ID,
+        modeVersion: GAMEPLAY_CATALOG.ballMove.modeVersion,
+        profile: "default",
+    };
 }
 
 function installLock(room: GameRoom, lock: () => Promise<void> = async () => undefined): void {
@@ -133,7 +141,7 @@ function simulationSnapshot(room: GameRoom): unknown {
 }
 
 test("GameRoom auth 只信标准 token，options.token 只能逐字匹配", async () => {
-    const base = { v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID };
+    const base = options();
     await assert.rejects(
         GameRoom.onAuth("", { ...base, token: "options-only" }, undefined as never),
         (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.TokenExpired)),

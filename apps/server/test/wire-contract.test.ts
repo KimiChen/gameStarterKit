@@ -89,13 +89,40 @@ test("HTTP/WS origin：拒绝非 canonical 空白、非法 DNS label 与多重�
 test("join/RPC envelope：exact keys、有限数值和错误码联合严格收口", () => {
   assert.deepEqual(validateLobbyRoomJoinOptions({ v: 5, token: "t", sId: 1 }), { v: 5, token: "t", sId: 1 });
   assertInvalid(() => validateLobbyRoomJoinOptions({ v: 5, mode: GameplayModeId.Idle }), "WIRE_KEYS");
+  // v8 必填切换（§4.4）：modeVersion/profile 缺一即拒；access/modeData 条件展开、原样保序。
   assert.deepEqual(
-    validateGameRoomJoinOptions({ v: 5, token: "t", sId: 1, mode: GameplayModeId.Idle }),
-    { v: 5, token: "t", sId: 1, mode: GameplayModeId.Idle },
+    validateGameRoomJoinOptions({ v: 8, token: "t", sId: 1, mode: GameplayModeId.Idle, modeVersion: 3, profile: "default" }),
+    { v: 8, token: "t", sId: 1, mode: GameplayModeId.Idle, modeVersion: 3, profile: "default" },
   );
-  assertInvalid(() => validateGameRoomJoinOptions({ v: 5 }), "WIRE_KEYS");
-  assertInvalid(() => validateGameRoomJoinOptions({ mode: "" }), "WIRE_STRING");
-  assertInvalid(() => validateGameRoomJoinOptions({ mode: " idle " }), "ROOM_MODE");
+  assert.deepEqual(
+    validateGameRoomJoinOptions({
+      v: 8, mode: GameplayModeId.Idle, modeVersion: 3, profile: "private",
+      access: { kind: "join", ticket: "TICKETTICKETTICKET_00001" }, modeData: { lane: 2 },
+    }),
+    {
+      v: 8, mode: GameplayModeId.Idle, modeVersion: 3, profile: "private",
+      access: { kind: "join", ticket: "TICKETTICKETTICKET_00001" }, modeData: { lane: 2 },
+    },
+  );
+  assertInvalid(() => validateGameRoomJoinOptions({ v: 8 }), "WIRE_KEYS");
+  assertInvalid(
+    () => validateGameRoomJoinOptions({ v: 8, mode: GameplayModeId.Idle, profile: "default" }),
+    "WIRE_KEYS",
+  );
+  assertInvalid(
+    () => validateGameRoomJoinOptions({ v: 8, mode: GameplayModeId.Idle, modeVersion: 3 }),
+    "WIRE_KEYS",
+  );
+  assertInvalid(
+    () => validateGameRoomJoinOptions({ v: 8, mode: GameplayModeId.Idle, modeVersion: 0, profile: "default" }),
+    "WIRE_INTEGER",
+  );
+  assertInvalid(
+    () => validateGameRoomJoinOptions({ v: 8, mode: GameplayModeId.Idle, modeVersion: 3, profile: " p " }),
+    "ROOM_PROFILE",
+  );
+  assertInvalid(() => validateGameRoomJoinOptions({ mode: "", modeVersion: 3, profile: "default" }), "WIRE_STRING");
+  assertInvalid(() => validateGameRoomJoinOptions({ mode: " idle ", modeVersion: 3, profile: "default" }), "ROOM_MODE");
   assertInvalid(() => validateRoomJoinOptions({ sId: Number.POSITIVE_INFINITY }), "WIRE_INTEGER");
   assertInvalid(() => validateRoomJoinOptions({ sId: 1, listHash: "h" }), "WIRE_KEYS");
 
@@ -276,7 +303,9 @@ test("所有公开 wire validator：hostile getter/iterator 统一转为可判�
 
   assertInvalid(() => validateRoomJoinOptions(getter({ token: "t" }, "token")), "WIRE_DATA_CORRUPT");
   assertInvalid(
-    () => validateGameRoomJoinOptions(getter({ mode: GameplayModeId.BallMove }, "mode")),
+    () => validateGameRoomJoinOptions(
+      getter({ mode: GameplayModeId.BallMove, modeVersion: 3, profile: "default" }, "mode"),
+    ),
     "WIRE_DATA_CORRUPT",
   );
   assertInvalid(() => validateC2SPayload(C2S.Move, getter({ dirX: 0, dirY: 0 }, "dirX")), "WIRE_DATA_CORRUPT");

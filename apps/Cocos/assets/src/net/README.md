@@ -3,6 +3,7 @@
 | 服务端 | 客户端通道 | 客户端逻辑 |
 |---|---|---|
 | `rooms/GameRoom` | `RoomClient.ts` + `rooms/GameRoomTransport.ts` + mode adapter | `gameplay/catalog.ts` → `logic/rooms/<mode>/` |
+| `websocket/room/*` + `rooms/GameRoom`（私房） | `rooms/PrivateRoomService.ts`（prepareCreate→create / resolve→joinById）+ `rooms/matchmaking.ts`（strategy 判别联合） | 视图装配（PrivateRoomLobby 包）为编辑器待办 |
 | `websocket/<域>/<接口>` | `WebSocketClient.ts`（rpc / rpcIdem / onPush） | 调用方在 page / rooms 皆可 |
 | 外部 WebPlatform Public HTTP | `http/account.ts`（开发登录）/ `http/area.ts`（选服） | `logic/page/` |
 | 游戏服 HTTP | `http/notice.ts`（公告） | `logic/page/` |
@@ -10,6 +11,12 @@
 | （无，纯客户端状态） | `session.ts`（登录态 identity、角色快照与 authInvalid/connLost/battleLost 事件枢纽；Lobby 最终断线先对账，失败才进入统一 returnToLogin） | 编排层订阅 |
 
 注意：RoomClient 与 WebSocketClient 都走 websocket 协议——按「有无状态同步」区分，不按协议区分。
+Game join 信封（v8，Non-intrusive §4.4）必填 `mode/modeVersion/profile`：默认撮合由 `joinGameRoom`
+注入 `profile:"default"` 与 catalog `modeVersion`；私房由 `PrivateRoomService` 按 prepareCreate/resolve
+结果注入并携带 `access` ticket。SDK 方法选择是本地 matchmaking strategy（join-or-create/create/join-by-id），
+不属于 wire；endpoint、strategy（含 roomName/roomId）与完整 join options 一起进 RoomClient 的
+connection ownership key——token/ticket 只参与内存比较，⛔ 不打印。输错邀请码停留可重试，
+⛔ 不回退 joinOrCreate、不清登录态（§10.2 行 22）。
 XHR 底座与 token 在 `core/http.ts`；Lobby 写接口应使用 `rpcIdem`（`clientReqId` 生成一次、重试复用）。
 Lobby join 禁止 `mode`；Game join 必须显式携带 shared canonical `mode`。通用 transport 只持有物理 room
 ownership，并要求 mode adapter 注入生成 state 类型对应的 raw exact validator、C2S allowlist 与可选

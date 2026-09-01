@@ -39,7 +39,7 @@ import {
 
 type FakeClient = {
     sessionId: string;
-    auth: { userId: string; sId: number; mode: string };
+    auth: { userId: string; sId: number; mode: string; profile: string };
     send: () => void;
 };
 
@@ -50,7 +50,15 @@ function deferred<T = void>() {
 }
 
 function client(sessionId: string, mode: string = IDLE_GAME_MODE_ID): FakeClient {
-    return { sessionId, auth: { userId: `u-${sessionId}`, sId: 0, mode }, send() {} };
+    return { sessionId, auth: { userId: `u-${sessionId}`, sId: 0, mode, profile: "default" }, send() {} };
+}
+
+/** v8 必填信封（§4.4）：modeVersion 取 catalog 单源；catalog 缺席（注入式探针 mode）回退 1。 */
+function wireOptions(mode: string) {
+    const modeVersion = (GAMEPLAY_CATALOG as Readonly<Partial<Record<string, { readonly modeVersion: number }>>>)[
+        mode
+    ]?.modeVersion ?? 1;
+    return { v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode, modeVersion, profile: "default" };
 }
 
 function installLock(room: GameRoom): void {
@@ -148,7 +156,7 @@ test("GameRoom：onCreate 从生产 registry 选择 idle，未知 mode 和直连
         const idleRoom = new GameRoom({ seed: 7 });
         (idleRoom as unknown as { setSimulationInterval: (callback: () => void, delay: number) => void })
             .setSimulationInterval = () => {};
-        void idleRoom.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: IDLE_GAME_MODE_ID });
+        void idleRoom.onCreate(wireOptions(IDLE_GAME_MODE_ID));
         assert.equal(idleRoom.gameplayModeId, IDLE_GAME_MODE_ID);
         assert.equal(unexpectedBallFactories, 0, "idle 创建不得实例化或依赖 ballMove factory");
 
@@ -156,7 +164,7 @@ test("GameRoom：onCreate 从生产 registry 选择 idle，未知 mode 和直连
         (unknownRoom as unknown as { setSimulationInterval: (callback: () => void, delay: number) => void })
             .setSimulationInterval = () => {};
         assert.throws(
-            () => unknownRoom.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: "missing-mode" }),
+            () => unknownRoom.onCreate(wireOptions("missing-mode")),
             (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.BadRequest)),
         );
         assert.throws(
@@ -164,7 +172,7 @@ test("GameRoom：onCreate 从生产 registry 选择 idle，未知 mode 和直连
             (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.BadRequest)),
         );
         assert.throws(
-            () => unknownRoom.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION - 1, sId: 0, mode: IDLE_GAME_MODE_ID }),
+            () => unknownRoom.onCreate({ ...wireOptions(IDLE_GAME_MODE_ID), v: GAME_ROOM_PROTOCOL_VERSION - 1 }),
             (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.ProtocolMismatch)),
         );
 
@@ -172,7 +180,7 @@ test("GameRoom：onCreate 从生产 registry 选择 idle，未知 mode 和直连
         const defaultRoom = new GameRoom({ seed: 9 });
         (defaultRoom as unknown as { setSimulationInterval: (callback: () => void, delay: number) => void })
             .setSimulationInterval = () => {};
-        void defaultRoom.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
+        void defaultRoom.onCreate(wireOptions(BALL_MOVE_GAME_MODE_ID));
         await assert.rejects(
             defaultRoom.onJoin(client("wrong-mode", IDLE_GAME_MODE_ID) as never, {}),
             (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.BadRequest)),
@@ -211,7 +219,7 @@ test("idle mode：保留 GameRoom Ping/Pong transport capability", () => {
     const sent: Array<[string, unknown]> = [];
     const sender = {
         sessionId: "idle-ping",
-        auth: { userId: "u-idle-ping", sId: 0, mode: IDLE_GAME_MODE_ID },
+        auth: { userId: "u-idle-ping", sId: 0, mode: IDLE_GAME_MODE_ID, profile: "default" },
         send(type: string, payload: unknown) { sent.push([type, payload]); },
     };
     dispatch(room, C2S.Ping, sender, { clientTime: 10 });
@@ -569,7 +577,7 @@ test("GameRoom：同步热路径返回 thenable 时显式观察 rejection 并 fa
         const sent: Array<[string, unknown]> = [];
         const sender = {
             sessionId: "thenable",
-            auth: { userId: "u-thenable", sId: 0, mode: IDLE_GAME_MODE_ID },
+            auth: { userId: "u-thenable", sId: 0, mode: IDLE_GAME_MODE_ID, profile: "default" },
             send(type: string, payload: unknown) { sent.push([type, payload]); },
         };
         room.state.phase = GamePhase.Playing;
@@ -674,7 +682,7 @@ test("shell 的人数闸按 mode.roster 分发：满员/自动开局都随声明
     const room = new GameRoom({ seed: 42, fixedStepMs: 50, mode });
     stubSimulation(room);
     installLock(room);
-    void room.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
+    void room.onCreate(wireOptions(BALL_MOVE_GAME_MODE_ID));
     assert.equal(room.maxClients, 3, "onCreate 必须把 maxClients 赋成 mode.roster.max（撮合侧读的就是它）");
 
     await join(room, client("a", BALL_MOVE_GAME_MODE_ID));
@@ -702,7 +710,7 @@ test("shell 的开局下限按 mode.roster.min：低于它 startMatch 不开局"
     const room = new GameRoom({ seed: 42, fixedStepMs: 50, mode });
     stubSimulation(room);
     installLock(room);
-    void room.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
+    void room.onCreate(wireOptions(BALL_MOVE_GAME_MODE_ID));
     await join(room, client("a", BALL_MOVE_GAME_MODE_ID));
     await join(room, client("b", BALL_MOVE_GAME_MODE_ID));
     assert.equal(await room.startMatch(), false, "两人未达 min=3，⛔ 不得开局（旧字面量下这里会开）");
@@ -748,7 +756,7 @@ test("满员闸的上限来自 mode.roster.max——这是防御性闸，用预�
     const room = new GameRoom({ seed: 42, fixedStepMs: 50, mode });
     stubSimulation(room);
     installLock(room);
-    void room.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
+    void room.onCreate(wireOptions(BALL_MOVE_GAME_MODE_ID));
     for (const sessionId of ["seat-a", "seat-b"]) {
         room.state.players.set(sessionId, mode.createPlayer({ sessionId, name: sessionId, randomInt: () => 0 }));
     }
@@ -769,7 +777,7 @@ test("开局边界重验的人数下限同样来自 mode.roster.min", () => {
         const mode: GameMode<GameRoomState> = { ...ballMove, roster: { min, max: 4, autoStart: min } };
         const room = new GameRoom({ seed: 42, fixedStepMs: 50, mode });
         stubSimulation(room);
-        void room.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID });
+        void room.onCreate(wireOptions(BALL_MOVE_GAME_MODE_ID));
         for (const sessionId of ["seat-a", "seat-b"]) {
             room.state.players.set(sessionId, mode.createPlayer({ sessionId, name: sessionId, randomInt: () => 0 }));
         }
@@ -867,7 +875,7 @@ function reachedGameplayInput(type: C2SType, phase: GamePhaseType, ownerId: stri
     room.state.phase = phase;
     const sender = {
         sessionId: "matrix",
-        auth: { userId: "u-matrix", sId: 0, mode: ownerId },
+        auth: { userId: "u-matrix", sId: 0, mode: ownerId, profile: "default" },
         send: (sentType: string, payload: unknown) => errors.push([sentType, payload]),
     };
     dispatch(room, type, sender, MATRIX_VALID_PAYLOAD[type]);
@@ -946,7 +954,7 @@ test("shell 公共消息的 phase 规则仍归 shell：Ping W/P/S 全放行，Ch
         const errors: unknown[] = [];
         const sender = {
             sessionId: "core-phase",
-            auth: { userId: "u-core-phase", sId: 0, mode: IDLE_GAME_MODE_ID },
+            auth: { userId: "u-core-phase", sId: 0, mode: IDLE_GAME_MODE_ID, profile: "default" },
             send: (sentType: string) => { if (sentType === S2C.Error) errors.push(sentType); },
         };
         dispatch(room, type, sender, payload);
@@ -980,7 +988,7 @@ test("未登记 mode fail-fast：requireMode 不再回退 ballMove", async () =>
     const created = new GameRoom({ seed: 982 });
     stubSimulation(created);
     assert.throws(
-        () => created.onCreate({ v: GAME_ROOM_PROTOCOL_VERSION, sId: 0, mode: BALL_MOVE_GAME_MODE_ID }),
+        () => created.onCreate(wireOptions(BALL_MOVE_GAME_MODE_ID)),
         (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.BadRequest)),
         "未登记的 ballMove 必须像任何未知 mode 一样被拒绝",
     );
