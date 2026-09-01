@@ -41,7 +41,7 @@ import {
     onConnLost,
     returnToLogin,
 } from "./SessionCoordinator";
-import type { FeatureLaunchTarget } from "./builtinFeature";
+import type { FeatureLaunchTarget, FeatureMenuContribution } from "./builtinFeature";
 import { FeatureHost, type FeatureStatus, type HostedFeature } from "./FeatureHost";
 import { FrameScheduler } from "./FrameScheduler";
 import { PendingOperationJournal } from "./PendingOperationJournal";
@@ -58,6 +58,23 @@ import {
     type PageSessionScope,
 } from "./loginFlow";
 import type { NavigationService } from "./NavigationService";
+
+/**
+ * launch target(gameplayId) → 贡献它的 feature id：menu contribution 是唯一映射源
+ * （§7.4）。同一 gameplayId 多贡献者取**菜单排序最前**（slot → order → featureId →
+ * entryId）的贡献者——⛔ 不是「先声明者」：menuContributions() 返回前已按上述规则
+ * 排序。已知语义：FeatureLaunchTarget 只带 gameplayId，第二贡献者的入口点击会经
+ * 排序最前者的 feature 过闸。无贡献者的 target 不受 feature 闸管控。
+ */
+export function deriveLaunchFeatureIds(
+    contributions: readonly FeatureMenuContribution[],
+): ReadonlyMap<string, string> {
+    const map = new Map<string, string>();
+    for (const item of contributions) {
+        if (!map.has(item.launch.gameplayId)) map.set(item.launch.gameplayId, item.featureId);
+    }
+    return map;
+}
 
 export interface AppRuntimeOptions {
     /** 玩法 presentation 挂载节点（Main 传入；本类不 import cc 值）。 */
@@ -130,17 +147,9 @@ export class AppRuntime {
             ports: this.ports,
             appGeneration: this.generation,
         });
-        // launch target(gameplayId) → 贡献它的 feature id：menu contribution 是唯一映射源
-        // （§7.4）；同一 gameplayId 多贡献者取先声明者，无贡献者的 target 不受 feature 闸管控。
-        if (options.launchFeatureMap) {
-            this.launchFeatureIds = options.launchFeatureMap;
-        } else {
-            const map = new Map<string, string>();
-            for (const item of appFeatureRegistry.menuContributions()) {
-                if (!map.has(item.launch.gameplayId)) map.set(item.launch.gameplayId, item.featureId);
-            }
-            this.launchFeatureIds = map;
-        }
+        // 生产派生见 deriveLaunchFeatureIds 文档注释（多贡献者取菜单排序最前者）。
+        this.launchFeatureIds = options.launchFeatureMap
+            ?? deriveLaunchFeatureIds(appFeatureRegistry.menuContributions());
         // route refcount → FeatureHost 停用判定（§7.2；built-in 常驻豁免）。
         this.navigation.setRouteObserver((featureId, openCount) => {
             void this.featureHost.releaseIfIdle(featureId, openCount).catch((error) => {
