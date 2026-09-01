@@ -2,10 +2,12 @@
 import { Schema, MapSchema } from "@colyseus/schema";
 import { type GamePhaseType, type RoomStateMode } from "@game/shared";
 import { GameRoomState } from "./generated/ballMove";
+import { DropInFixtureState } from "./generated/dropInFixture";
 import { IdleRoomState } from "./generated/idle";
 import { PrivateFixtureState } from "./generated/privateFixture";
 
 export { PlayerState, GameRoomState } from "./generated/ballMove";
+export { DropInFixturePlayerState, DropInFixtureState } from "./generated/dropInFixture";
 export { IdlePlayerState, IdleRoomState } from "./generated/idle";
 export { PrivateFixturePlayerState, PrivateFixtureState } from "./generated/privateFixture";
 
@@ -53,12 +55,14 @@ export interface RoomStateInviteRoom {
 /** Declared state fragments per mode; profile startup assertions read this map. */
 export const ROOM_STATE_FRAGMENTS = Object.freeze({
     "ballMove": [],
+    "dropInFixture": [],
     "idle": [],
     "privateFixture": ["ownerReady", "inviteRoom"],
 } as const satisfies Record<RoomStateMode, readonly string[]>);
 
 export const ROOM_STATE_ROOT_CONSTRUCTORS = Object.freeze({
     "ballMove": GameRoomState,
+    "dropInFixture": DropInFixtureState,
     "idle": IdleRoomState,
     "privateFixture": PrivateFixtureState,
 } as const satisfies Record<RoomStateMode, new () => Schema>);

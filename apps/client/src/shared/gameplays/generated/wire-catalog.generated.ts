@@ -138,6 +138,8 @@ export const gameplayC2STokens = {
         "c2s.move": Move,
         "c2s.castSkill": CastSkill,
     },
+    "dropInFixture": {
+    },
     "idle": {
         "c2s.idle.pulse": IdlePulse,
     },
@@ -149,6 +151,8 @@ export const gameplayC2STokens = {
 export const gameplayS2CTokens = {
     "ballMove": {
         "s2c.skillResult": SkillResult,
+    },
+    "dropInFixture": {
     },
     "idle": {
     },

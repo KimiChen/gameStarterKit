@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "root": "DropInFixtureState",
+  "types": [
+    {
+      "name": "DropInFixturePlayerState",
+      "sharedName": "IDropInFixturePlayerState",
+      "validatorName": "validateDropInFixturePlayerState",
+      "defaultPath": "dropInFixturePlayer",
+      "fields": [
+        {
+          "name": "id",
+          "kind": "string",
+          "default": "",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Colyseus sessionId"
+        },
+        {
+          "name": "name",
+          "kind": "string",
+          "default": "",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      ],
+      "serverOnly": []
+    },
+    {
+      "name": "DropInFixtureState",
+      "sharedName": "IDropInFixtureState",
+      "validatorName": "validateDropInFixtureState",
+      "defaultPath": "dropInFixtureState",
+      "fields": [
+        {
+          "name": "tick",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "description": "Logical frame number"
+        },
+        {
+          "name": "phase",
+          "kind": "enum",
+          "enumObject": "GamePhase",
+          "enumType": "GamePhaseType",
+          "members": ["Waiting", "Playing", "Settle"],
+          "default": "Waiting",
+          "errorCode": "STATE_PHASE",
+          "description": "Room phase"
+        },
+        {
+          "name": "matchId",
+          "kind": "string",
+          "default": "",
+          "minLength": 0,
+          "maxLength": 128,
+          "description": "Stable match id; empty while waiting"
+        },
+        {
+          "name": "players",
+          "kind": "map",
+          "valueType": "DropInFixturePlayerState",
+          "errorCode": "STATE_PLAYERS",
+          "key": {
+            "field": "id",
+            "errorCode": "STATE_PLAYER_ID"
+          },
+          "description": "Players keyed by sessionId; the roster is dynamic (drop-in)"
+        }
+      ],
+      "serverOnly": []
+    }
+  ]
+}
