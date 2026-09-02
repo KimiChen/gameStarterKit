@@ -33,8 +33,14 @@ const MODE_ID = "snake";
 
 type SnakeContext = GameModeContext<SnakeRoomState>;
 
+/** snake mode 类型：GameMode + 测试探针（ballMove harness 先例）。 */
+export type SnakeGameMode = GameMode<SnakeRoomState, SnakePlayerState> & {
+    /** 测试观察面：当前世界实例（无对局时 null）。⛔ 生产路径不读。 */
+    __probeWorld(): SnakeWorld | null;
+};
+
 /** 创建 snake GameMode（每房一个实例；世界状态挂在闭包上，⛔ 不进模块级变量）。 */
-export function createSnakeGameMode(): GameMode<SnakeRoomState, SnakePlayerState> {
+export function createSnakeGameMode(): SnakeGameMode {
     let world: SnakeWorld | null = null;
     let snapshotSeq = 0;
     let joinCounter = 0;
@@ -74,12 +80,12 @@ export function createSnakeGameMode(): GameMode<SnakeRoomState, SnakePlayerState
         }
     };
 
-    const mode: GameMode<SnakeRoomState, SnakePlayerState> = {
+    const mode = {
         id: MODE_ID,
         // drop-in 定义性前提（注册期断言钉死）：首人即开局。
         roster: { min: 1, max: 8, autoStart: 1 },
 
-        createPlayer: ({ sessionId, name }) => {
+        createPlayer: ({ sessionId, name }: { sessionId: string; name: string }) => {
             const player = new SnakePlayerState();
             player.id = sessionId;
             player.name = name;
@@ -191,9 +197,9 @@ export function createSnakeGameMode(): GameMode<SnakeRoomState, SnakePlayerState
             world = null;
             snapshotSeq = 0;
         },
+
+        // ── 测试探针（ballMove harness 先例；⛔ 不进 GameMode 接口，生产路径不读）──
+        __probeWorld: (): SnakeWorld | null => world,
     };
     return mode;
 }
-
-/** 测试观察面（⛔ 不进 GameMode 接口；harness 用）。 */
-export type SnakeModeProbe = ReturnType<typeof createSnakeGameMode>;
