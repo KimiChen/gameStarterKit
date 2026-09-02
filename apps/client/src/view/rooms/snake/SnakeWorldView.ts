@@ -119,6 +119,9 @@ export class SnakeWorldView implements SnakePresentation {
 
         this.worldLayer = new Node("SnakeWorld.World");
         root.addChild(this.worldLayer);
+        // ⚠ Graphics/Sprite/Label 都走 UI 渲染管线，节点必须先有 UITransform——
+        // 缺失时组件不报错但什么都不画（黑屏根因；BallMoveView 同样先加它）。
+        this.worldLayer.addComponent(UITransform);
         this.worldGraphics = this.worldLayer.addComponent(Graphics);
         this.paintBackground();
 
@@ -394,6 +397,7 @@ export class SnakeWorldView implements SnakePresentation {
         const frame = kind === 1 ? this.assets?.star : this.assets?.dot;
         const node = new Node(`food-${id}`);
         this.worldLayer.addChild(node);
+        node.addComponent(UITransform); // UI 渲染前提（见 mount 的 ⚠）
         if (frame) {
             const sprite = node.addComponent(Sprite);
             sprite.spriteFrame = frame;
@@ -448,11 +452,14 @@ export class SnakeWorldView implements SnakePresentation {
         const size = view.getVisibleSize();
         this.joystickBase = new Node("SnakeWorld.JoystickBase");
         this.controlLayer.addChild(this.joystickBase);
+        this.joystickBase.addComponent(UITransform);
         this.joystickBase.setPosition(-size.width / 2 + 170, -size.height / 2 + 220, 0);
         this.joystickKnob = new Node("SnakeWorld.JoystickKnob");
         this.joystickBase.addChild(this.joystickKnob);
+        this.joystickKnob.addComponent(UITransform);
         this.boostNode = new Node("SnakeWorld.Boost");
         this.controlLayer.addChild(this.boostNode);
+        this.boostNode.addComponent(UITransform);
         this.boostNode.setPosition(size.width / 2 - 170, -size.height / 2 + 220, 0);
         this.applyControlSprites();
     }
@@ -559,6 +566,7 @@ export class SnakeWorldView implements SnakePresentation {
     private newLabel(parent: Node, text: string, x: number, y: number, fontSize: number, color: Color): Label {
         const node = new Node(`label-${text.slice(0, 8)}`);
         parent.addChild(node);
+        node.addComponent(UITransform); // UI 渲染前提（见 mount 的 ⚠）
         node.setPosition(x, y, 0);
         const label = node.addComponent(Label);
         label.string = text;
@@ -570,6 +578,7 @@ export class SnakeWorldView implements SnakePresentation {
     private newSprite(parent: Node, frame: SpriteFrame, x: number, y: number, tint: Color | null): Sprite | null {
         const node = new Node("sprite");
         parent.addChild(node);
+        node.addComponent(UITransform); // UI 渲染前提（见 mount 的 ⚠）
         node.setPosition(x, y, 0);
         const sprite = node.addComponent(Sprite);
         sprite.spriteFrame = frame;
