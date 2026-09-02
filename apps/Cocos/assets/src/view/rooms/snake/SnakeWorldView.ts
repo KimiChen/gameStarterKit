@@ -251,14 +251,24 @@ export class SnakeWorldView implements SnakePresentation {
     private async loadAssets(): Promise<void> {
         const loadTexture = (path: string): Promise<Texture2D | null> =>
             new Promise((resolve) => {
-                resources.load(path, Texture2D, (error, asset) => resolve(error ? null : asset));
+                // Creator 把 resources 下的 PNG 主路径登记为 ImageAsset；Texture2D 是
+                // 名为 `texture` 的子资源。用主路径强行按 Texture2D 加载会静默得到 null，
+                // 继而让蛇皮、摇杆、加速键全部退回占位或完全不可见。
+                const texturePath = `${path}/texture`;
+                resources.load(texturePath, Texture2D, (error, asset) => {
+                    if (error) {
+                        console.warn(`[snake] 纹理加载失败 ${texturePath}：`, error);
+                        resolve(null);
+                        return;
+                    }
+                    resolve(asset);
+                });
             });
         const frame = (texture: Texture2D | null, rect?: Rect): SpriteFrame | null => {
             if (!texture) return null;
             const spriteFrame = new SpriteFrame();
             spriteFrame.texture = texture;
-            // ⚠ new SpriteFrame() 的默认 rect 是 (0,0,0,0)：不设 = 什么都不画。
-            // 未传 rect 时用纹理全尺寸（摇杆/加速/结算底图等整图素材）。
+            // 显式钉住整图尺寸，兼容摇杆/加速/结算底图等非 atlas 素材。
             spriteFrame.rect = rect ?? new Rect(0, 0, texture.width, texture.height);
             return spriteFrame;
         };
