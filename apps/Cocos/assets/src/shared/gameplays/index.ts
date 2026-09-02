@@ -9,3 +9,5 @@ export * from "./generated/state/dropInFixture";
 export * from "./idle/wire";
 export * from "./generated/state/idle";
 export * from "./generated/state/privateFixture";
+export * from "./snake/wire";
+export * from "./generated/state/snake";

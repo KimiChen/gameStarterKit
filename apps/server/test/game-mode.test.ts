@@ -124,9 +124,7 @@ test("生产 mode catalog 与 shared/state 生成映射保持精确同集", () =
         // 或建房（不出现在默认撮合池，§10.7）。
         // dropInFixture 是 drop-in（自由加入）房型验收的 fixture gameplay（同 privateFixture 隔离
         // 方式：进 catalog/生成映射走完整单源链，⛔ 不进生产 mode registry/默认撮合池）。
-        // snake 是契约先行的在途玩法（shared catalog/wire 已落地，服务端 mode 与 canonical
-        // GameplayModeId 登记在后续阶段同批加入）——当前与 fixture 同列为「不在生产 registry」。
-        const catalogModes = [...canonicalModes, "privateFixture", "dropInFixture", "snake"].sort();
+        const catalogModes = [...canonicalModes, "privateFixture", "dropInFixture"].sort();
         assert.deepEqual(gameModeRegistry.list(), canonicalModes);
         assert.deepEqual(Object.keys(GAMEPLAY_CATALOG).sort(), catalogModes);
         assert.deepEqual(Object.keys(ROOM_STATE_VALIDATORS).sort(), catalogModes);
@@ -873,8 +871,8 @@ function reachedGameplayInput(type: C2SType, phase: GamePhaseType, ownerId: stri
         ? { ...createIdleGameMode(), commands: { [C2S.IdlePulse]: capture(C2S.IdlePulse) } }
         : ownerId === "snake"
             ? {
-                // snake 服务端 mode 属后续阶段；探针 mode 只供 dispatcher 准入矩阵
-                //（owner 闸/phase/exact validate 都是 shell 行为，与 mode 实现无关）。
+                // 探针 mode 只供 dispatcher 准入矩阵（owner 闸/phase/exact validate
+                // 都是 shell 行为，刻意不依赖 snake mode 的真实实现）。
                 id: "snake",
                 roster: { min: 1, max: 8, autoStart: 1 },
                 createPlayer: ({ sessionId }: { sessionId: string }) => {

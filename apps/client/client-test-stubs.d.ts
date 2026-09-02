@@ -7,10 +7,16 @@ declare module "cc" {
   export class Vec2 { constructor(x?: number, y?: number); x: number; y: number; }
   export class Vec3 { constructor(x?: number, y?: number, z?: number); x: number; y: number; z: number; set(x: number, y: number, z?: number): this; }
   export class Color { constructor(r?: number, g?: number, b?: number, a?: number); r: number; g: number; b: number; a: number; }
+  export class Rect { constructor(x?: number, y?: number, width?: number, height?: number); x: number; y: number; width: number; height: number; }
   export class Node {
     constructor(name?: string);
     name: string; layer: number; active: boolean; parent: Node | null; children: Node[]; isValid: boolean;
+    position: Vec3; scale: Vec3; angle: number;
+    static EventType: { TOUCH_START: string; TOUCH_MOVE: string; TOUCH_END: string; TOUCH_CANCEL: string };
     addChild(child: Node): void; destroy(): boolean; setSiblingIndex(index: number): void;
+    setPosition(x: number, y: number, z?: number): void; setScale(x: number, y: number, z?: number): void;
+    on(type: string, callback: (...args: any[]) => unknown, target?: unknown): void;
+    off(type: string, callback: (...args: any[]) => unknown, target?: unknown): void;
     getComponent<T>(type: new (...args: never[]) => T): T | null;
     getComponentInChildren<T>(type: new (...args: never[]) => T): T | null;
     addComponent<T>(type: new (...args: never[]) => T): T;
@@ -26,8 +32,17 @@ declare module "cc" {
     stroke(): void; fill(): void; circle(x: number, y: number, radius: number): void;
     rect(x: number, y: number, width: number, height: number): void;
   }
+  export class Texture2D { width: number; height: number; }
+  export class SpriteFrame { texture: Texture2D | null; rect: Rect; }
+  export class Sprite extends Component { spriteFrame: SpriteFrame | null; color: Color; sizeMode: number; type: number; }
+  export class Label extends Component { string: string; fontSize: number; color: Color; horizontalAlign: number; }
+  export class AudioClip { duration: number; }
+  export class AudioSource extends Component { playOneShot(clip: AudioClip, volumeScale?: number): void; play(): void; stop(): void; }
+  export const resources: {
+    load<T>(path: string, type: new (...args: never[]) => T, callback: (error: Error | null, asset: T) => void): void;
+  };
   export class Canvas extends Component {}
-  export class EventTouch { getUILocation(out?: Vec2): Vec2; }
+  export class EventTouch { getUILocation(out?: Vec2): Vec2; getID(): number; }
   export const input: {
     on(type: unknown, callback: (...args: any[]) => unknown, target?: unknown): void;
     off(type: unknown, callback: (...args: any[]) => unknown, target?: unknown): void;

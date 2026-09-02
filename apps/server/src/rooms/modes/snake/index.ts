@@ -18,12 +18,14 @@ import {
     type ISnakeInputReq,
 } from "@game/shared";
 import { SNAKE_RULESET } from "@game/shared/gameplays/snake/ruleset";
-import type {
-    GameMode,
-    GameModeCommandContext,
-    GameModeContext,
-    GameModePlayerLeavingContext,
-    GameplayCommandsFor,
+import {
+    gameModeRegistry,
+    type GameMode,
+    type GameModeCommandContext,
+    type GameModeContext,
+    type GameModePlayerLeavingContext,
+    type GameModeRegistry,
+    type GameplayCommandsFor,
 } from "../../GameMode";
 import { SnakePlayerState, SnakeRoomState } from "../../schema/GameRoomState";
 import { driveAi } from "./ai";
@@ -202,4 +204,11 @@ export function createSnakeGameMode(): SnakeGameMode {
         __probeWorld: (): SnakeWorld | null => world,
     };
     return mode;
+}
+
+/** Module-owned registration; generic GameRoom and transport code stay unchanged. */
+export function registerSnakeGameMode(
+    registry: GameModeRegistry = gameModeRegistry,
+): () => void {
+    return registry.register<SnakeRoomState, SnakePlayerState>(MODE_ID, createSnakeGameMode);
 }

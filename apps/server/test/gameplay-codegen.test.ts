@@ -140,6 +140,11 @@ function createFixture(): { readonly root: string; readonly options: GameplayCod
       fs.mkdirSync(path.join(root, "apps/shared/src/gameplays", id), { recursive: true });
       fs.copyFileSync(wire, path.join(root, "apps/shared/src/gameplays", id, "wire.ts"));
     }
+  }
+  // client module：canonical GameplayModeId ∩ modes/ 目录必须双向同集——canonical
+  // 每加一个玩法，这里必须同步复制其 module（fixture 复刻真仓约束；snake 的 wire.ts
+  // 刻意不复制：fixture 内它是无 wire 的 mode，与 dropInFixture 同形）。
+  for (const id of ["ballMove", "idle", "snake"]) {
     const clientModule = path.join(REPOSITORY_ROOT, CLIENT_MODES_DIR, id, "index.ts");
     fs.mkdirSync(path.join(root, CLIENT_MODES_DIR, id), { recursive: true });
     fs.copyFileSync(clientModule, path.join(root, CLIENT_MODES_DIR, id, "index.ts"));
@@ -631,7 +636,7 @@ test("server-only 字段拒绝暴露标记、碰撞、重复与不支持的 kind
 test("generated root maps are frozen, type-safe and reject unknown modes", () => {
   // privateFixture：阶段 8 私房验收 fixture gameplay；dropInFixture：drop-in（自由加入）验收
   // fixture gameplay（catalog 全链收录，⛔ 都不进生产 mode registry）。
-  // snake：契约先行的在途玩法（shared 已收录；服务端 mode/canonical 登记在后续阶段）。
+  // snake：Snake Off 玩法（S4 起 canonical + 生产 registry 登记）。
   assert.deepEqual(Object.keys(ROOM_STATE_VALIDATORS),
     ["ballMove", "dropInFixture", "idle", "privateFixture", "snake"]);
   assert.deepEqual(Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS),
@@ -1050,10 +1055,10 @@ test("阶段 2b 退出条件：fixture mode 新增 C2S/S2C 只加 wire.ts（+man
 test("client module 集 = canonical GameplayModeId：真仓 modes/ 目录双向同集，渲染进 GAMEPLAY_MODULES", () => {
   const gameplays = readGameplayDescriptors({ repositoryRoot: REPOSITORY_ROOT });
   const modules = readClientGameplayModules(gameplays, { repositoryRoot: REPOSITORY_ROOT });
-  // canonical（shared/protocol/rooms.ts 的 GameplayModeId）当前 = ballMove/idle；
-  // privateFixture 走完整 catalog 链但 ⛔ 不装配客户端 module（与服务端生产 mode
+  // canonical（shared/protocol/rooms.ts 的 GameplayModeId）当前 = ballMove/idle/snake；
+  // privateFixture/dropInFixture 走完整 catalog 链但 ⛔ 不装配客户端 module（与服务端生产 mode
   // registry 的同集断言同一口径——三端一致闸的客户端半边）。
-  assert.deepEqual(modules.map((module) => module.id), ["ballMove", "idle"]);
+  assert.deepEqual(modules.map((module) => module.id), ["ballMove", "idle", "snake"]);
   // 真仓 modes/ 目录必须与装配集双向同集：多出的目录 = 无主 module，少了 = 装配缺口。
   const moduleDirs = fs.readdirSync(path.join(REPOSITORY_ROOT, CLIENT_MODES_DIR), { withFileTypes: true })
     .filter((entry) => entry.isDirectory())

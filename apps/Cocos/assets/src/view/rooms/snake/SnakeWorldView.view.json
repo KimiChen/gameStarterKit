@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "owner": "snake",
+  "kind": "cocos",
+  "layer": "base",
+  "fullscreen": true,
+  "onlyOne": true,
+  "permanent": false,
+  "interactive": false,
+  "logic": "apps/client/src/logic/rooms/snake/SnakeGameplay.ts"
+}

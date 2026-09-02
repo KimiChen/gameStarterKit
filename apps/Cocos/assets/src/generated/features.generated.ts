@@ -53,6 +53,7 @@ export const GENERATED_FEATURES: readonly GeneratedFeatureDescriptor[] = [
         ],
         menu: [
             { entryId: "ballMove", featureId: "builtin", slot: 0, order: 0, label: "进入战斗", labelKey: "menu.enterBattle", launch: { kind: "gameplay", gameplayId: "ballMove" } },
+            { entryId: "snake", featureId: "builtin", slot: 0, order: 1, label: "贪吃蛇大作战", labelKey: "menu.snakeOff", launch: { kind: "gameplay", gameplayId: "snake" } },
         ],
     },
 ];
@@ -60,4 +61,5 @@ export const GENERATED_FEATURES: readonly GeneratedFeatureDescriptor[] = [
 /** 全仓菜单贡献（已按 slot → order → featureId → entryId 排序）。 */
 export const GENERATED_MENU_CONTRIBUTIONS: readonly GeneratedMenuContribution[] = [
     { entryId: "ballMove", featureId: "builtin", slot: 0, order: 0, label: "进入战斗", labelKey: "menu.enterBattle", launch: { kind: "gameplay", gameplayId: "ballMove" } },
+    { entryId: "snake", featureId: "builtin", slot: 0, order: 1, label: "贪吃蛇大作战", labelKey: "menu.snakeOff", launch: { kind: "gameplay", gameplayId: "snake" } },
 ];

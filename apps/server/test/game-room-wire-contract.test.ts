@@ -62,8 +62,8 @@ function handledByGameRoom(type: C2SType, value: unknown): {
         }
         : owner === "snake"
             ? {
-                // snake 服务端 mode 属 S2 阶段；这里用探针 mode 只验 dispatcher 准入与
-                // 归一化（owner 闸/phase/exact validate 都是 shell 行为，与 mode 实现无关）。
+                // 探针 mode 只验 dispatcher 准入与归一化（owner 闸/phase/exact
+                // validate 都是 shell 行为，刻意不依赖 snake mode 的真实实现）。
                 id: "snake",
                 roster: { min: 1, max: 8, autoStart: 1 },
                 createPlayer: ({ sessionId }: { sessionId: string }) => {

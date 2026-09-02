@@ -18,6 +18,7 @@ export type RoomNameType = (typeof RoomName)[keyof typeof RoomName];
 export const GameplayModeId = {
     BallMove: "ballMove",
     Idle: "idle",
+    Snake: "snake",
 } as const;
 
 export type GameplayModeIdType = (typeof GameplayModeId)[keyof typeof GameplayModeId];
