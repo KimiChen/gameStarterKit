@@ -50,26 +50,23 @@ const COLOR_BG = new Color(24, 34, 59);
 const COLOR_GRID = new Color(38, 53, 84, 90);
 const COLOR_WALL = new Color(90, 110, 150);
 const COLOR_WRECK = new Color(255, 220, 130);
+const COLOR_FOOD_DOT = new Color(240, 200, 90);
+const COLOR_FOOD_STAR = new Color(120, 210, 255);
+const COLOR_FOOD_STAR_GLOW = new Color(220, 245, 255);
 const COLOR_TEXT = new Color(244, 247, 255);
 const COLOR_TEXT_DIM = new Color(158, 171, 196);
 
 /** classic 蛇 atlas（216×72）三帧横排：身体 | 头 | 身体圆。 */
 const CLASSIC_SKINS = ["snakeoff/snake_skin_classic_1", "snakeoff/snake_skin_classic_2", "snakeoff/snake_skin_classic_3"];
 const HEAD_RECT = new Rect(72, 0, 72, 72);
-const FOOD_DOT_RECT = new Rect(0, 0, 72, 72); // snake_food_classic：banana
-const FOOD_STAR_RECT = new Rect(72, 0, 72, 72); // dice
 
 const JOYSTICK_RADIUS = 110; // 摇杆底半径（设计像素）
 const JOYSTICK_DEAD_ZONE = 12;
 const BODY_POINT_RADIUS = SNAKE_RULESET.bodyWidth / 2;
-const FOOD_DOT_RADIUS = 26;
-const FOOD_STAR_RADIUS = 42;
 const WRECK_RADIUS = 14;
 
 type LoadedAssets = {
     heads: SpriteFrame[]; // classic skins 的头部帧
-    dot: SpriteFrame | null;
-    star: SpriteFrame | null;
     joystickBase: SpriteFrame | null;
     joystickKnob: SpriteFrame | null;
     boost: SpriteFrame | null;
@@ -84,7 +81,8 @@ export class SnakeWorldView implements SnakePresentation {
     private root: Node | null = null;
     private uiLayer = 0;
     private worldLayer: Node | null = null;
-    private worldGraphics: Graphics | null = null; // 网格背景 + 身体/残骸
+    private bgGraphics: Graphics | null = null; // 静态：底色/网格/边界（mount 画一次）
+    private fxGraphics: Graphics | null = null; // 动态：食物/残骸/蛇身（逐帧重建）
     private hudLayer: Node | null = null;
     private countdownLabel: Label | null = null;
     private rankLabels: Label[] = [];
@@ -96,7 +94,6 @@ export class SnakeWorldView implements SnakePresentation {
     private settleLabels: Label[] = [];
     private maskNode: Node | null = null;
     private assets: LoadedAssets | null = null;
-    private foodSprites = new Map<number, Node>();
     private headSprites = new Map<string, Sprite>();
     private joystickPointerId: number | null = null;
     private boostPointerId: number | null = null;
@@ -128,8 +125,20 @@ export class SnakeWorldView implements SnakePresentation {
         // ⚠ Graphics/Sprite/Label 都走 UI 渲染管线，节点必须先有 UITransform——
         // 缺失时组件不报错但什么都不画（黑屏根因；BallMoveView 同样先加它）。
         this.worldLayer.addComponent(UITransform);
-        this.worldGraphics = this.worldLayer.addComponent(Graphics);
+        // 性能分层（对齐原游戏 GLNode 的 draw call 经济：背景一次性、实体合批）：
+        // 静态背景（底色/网格/边界）只画一次，不随帧重建；
+        // 动态实体（食物/残骸/蛇身）在独立 Graphics 上逐帧 clear 重画。
+        const bgNode = new Node("SnakeWorld.Background");
+        bgNode.layer = this.uiLayer;
+        this.worldLayer.addChild(bgNode);
+        bgNode.addComponent(UITransform);
+        this.bgGraphics = bgNode.addComponent(Graphics);
         this.paintBackground();
+        const fxNode = new Node("SnakeWorld.Fx");
+        fxNode.layer = this.uiLayer;
+        this.worldLayer.addChild(fxNode);
+        fxNode.addComponent(UITransform);
+        this.fxGraphics = fxNode.addComponent(Graphics);
 
         this.hudLayer = new Node("SnakeWorld.Hud");
         this.hudLayer.layer = this.uiLayer;
@@ -214,7 +223,6 @@ export class SnakeWorldView implements SnakePresentation {
         input.off(Input.EventType.TOUCH_MOVE, this.onTouchMove, this);
         input.off(Input.EventType.TOUCH_END, this.onTouchEnd, this);
         input.off(Input.EventType.TOUCH_CANCEL, this.onTouchEnd, this);
-        this.foodSprites.clear();
         this.headSprites.clear();
         this.settleLabels = [];
         this.rankLabels = [];
@@ -222,7 +230,8 @@ export class SnakeWorldView implements SnakePresentation {
         const root = this.root;
         this.root = null;
         this.worldLayer = null;
-        this.worldGraphics = null;
+        this.bgGraphics = null;
+        this.fxGraphics = null;
         this.hudLayer = null;
         this.controlLayer = null;
         this.maskNode = null;
@@ -246,11 +255,10 @@ export class SnakeWorldView implements SnakePresentation {
             if (rect) spriteFrame.rect = rect;
             return spriteFrame;
         };
-        const [s1, s2, s3, foods, joystickBase, joystickKnob, boost, resultBg, button] = await Promise.all([
+        const [s1, s2, s3, joystickBase, joystickKnob, boost, resultBg, button] = await Promise.all([
             loadTexture(CLASSIC_SKINS[0]),
             loadTexture(CLASSIC_SKINS[1]),
             loadTexture(CLASSIC_SKINS[2]),
-            loadTexture("snakeoff/snake_food_classic"),
             loadTexture("snakeoff/snake_control_joystick_base"),
             loadTexture("snakeoff/snake_control_joystick_knob"),
             loadTexture("snakeoff/snake_control_boost"),
@@ -260,8 +268,6 @@ export class SnakeWorldView implements SnakePresentation {
         if (!this.mounted) return; // 装载期间 unmount：丢弃结果
         this.assets = {
             heads: [s1, s2, s3].map((texture) => frame(texture, HEAD_RECT)).filter((f): f is SpriteFrame => f !== null),
-            dot: frame(foods, FOOD_DOT_RECT),
-            star: frame(foods, FOOD_STAR_RECT),
             joystickBase: frame(joystickBase),
             joystickKnob: frame(joystickKnob),
             boost: frame(boost),
@@ -274,7 +280,7 @@ export class SnakeWorldView implements SnakePresentation {
     // ── 世界渲染 ───────────────────────────────────────────────────────────
 
     private paintBackground(): void {
-        const graphics = this.worldGraphics;
+        const graphics = this.bgGraphics;
         if (!graphics) return;
         const halfW = SNAKE_RULESET.worldWidth / 2;
         const halfH = SNAKE_RULESET.worldHeight / 2;
@@ -301,7 +307,7 @@ export class SnakeWorldView implements SnakePresentation {
     }
 
     private renderWorld(frame: SnakeRenderFrame): void {
-        const graphics = this.worldGraphics;
+        const graphics = this.fxGraphics;
         if (!graphics || !this.worldLayer) return;
 
         // 相机：跟随自己蛇头（竖版地图接近一屏，钳在场地内）
@@ -320,22 +326,25 @@ export class SnakeWorldView implements SnakePresentation {
             );
         }
 
-        // 食物：sprite 池（id 对齐；缺素材时回退 Graphics 圆点）
-        const seenFood = new Set<number>();
-        for (const food of frame.foods) {
-            seenFood.add(food.id);
-            const sprite = this.foodSprites.get(food.id) ?? this.spawnFoodSprite(food.id, food.kind);
-            sprite?.setPosition(food.x, food.y, 0);
-        }
-        for (const [id, node] of this.foodSprites) {
-            if (!seenFood.has(id)) {
-                node.destroy();
-                this.foodSprites.delete(id);
-            }
-        }
+        // 动态层逐帧 clear 重画（增量追踪在点数/集合规模下是无谓复杂度）：
+        // 食物 ⛔ 不用 sprite（128 个 = 128 draw call，实测 100+ 卡到十几帧）——
+        // 两个 fill 批收编全部 Dot/Star；残骸 1 批；蛇身每蛇 1 批（同色）。
+        graphics.clear();
 
-        // 清屏重画动态图形（残骸 + 蛇身）：逐帧 clear 重画比增量追踪简单且量小
-        this.paintBackground();
+        graphics.fillColor = COLOR_FOOD_DOT;
+        for (const food of frame.foods) {
+            if (food.kind === 0) graphics.circle(food.x, food.y, 9);
+        }
+        graphics.fill();
+        graphics.fillColor = COLOR_FOOD_STAR;
+        graphics.lineWidth = 2;
+        graphics.strokeColor = COLOR_FOOD_STAR_GLOW;
+        for (const food of frame.foods) {
+            if (food.kind === 1) graphics.circle(food.x, food.y, 16);
+        }
+        graphics.fill();
+        graphics.stroke();
+
         graphics.fillColor = COLOR_WRECK;
         for (const wreck of frame.wrecks) {
             graphics.circle(wreck.x, wreck.y, WRECK_RADIUS);
@@ -402,23 +411,6 @@ export class SnakeWorldView implements SnakePresentation {
         return hash % SEAT_COLORS.length;
     }
 
-    private spawnFoodSprite(id: number, kind: number): Node | null {
-        if (!this.worldLayer) return null;
-        const frame = kind === 1 ? this.assets?.star : this.assets?.dot;
-        const node = new Node(`food-${id}`);
-        node.layer = this.uiLayer;
-        this.worldLayer.addChild(node);
-        node.addComponent(UITransform); // UI 渲染前提（见 mount 的 ⚠）
-        if (frame) {
-            const sprite = node.addComponent(Sprite);
-            sprite.spriteFrame = frame;
-            node.setScale(kind === 1 ? FOOD_STAR_RADIUS / 36 : FOOD_DOT_RADIUS / 36, kind === 1 ? FOOD_STAR_RADIUS / 36 : FOOD_DOT_RADIUS / 36, 1);
-        } else {
-            // 回退：Graphics 圆点由 renderWorld 的下一帧重画承担（本帧先登记节点）
-        }
-        this.foodSprites.set(id, node);
-        return node;
-    }
 
     // ── HUD ─────────────────────────────────────────────────────────────
 
@@ -434,25 +426,30 @@ export class SnakeWorldView implements SnakePresentation {
         }
     }
 
+    private setLabelText(label: Label | null, text: string): void {
+        if (!label || label.string === text) return; // ⛔ 每帧同值重写 = 反复标脏触发 TTF 重排
+        label.string = text;
+    }
+
     private renderHud(hud: SnakeHudModel): void {
         if (this.countdownLabel) {
-            this.countdownLabel.string = hud.inStartCountdown
+            this.setLabelText(this.countdownLabel, hud.inStartCountdown
                 ? `准备 ${hud.countdownSeconds}`
-                : `${Math.floor(hud.countdownSeconds / 60)}:${String(hud.countdownSeconds % 60).padStart(2, "0")}`;
+                : `${Math.floor(hud.countdownSeconds / 60)}:${String(hud.countdownSeconds % 60).padStart(2, "0")}`);
         }
         hud.entries.slice(0, 8).forEach((entry, index) => {
             const label = this.rankLabels[index];
             if (!label) return;
-            label.string = `${entry.rank}. ${entry.name} ${entry.score}`;
+            this.setLabelText(label, `${entry.rank}. ${entry.name} ${entry.score}`);
             label.color = entry.isSelf ? new Color(89, 217, 142) : entry.isAi ? COLOR_TEXT_DIM : COLOR_TEXT;
         });
         for (let i = hud.entries.length; i < this.rankLabels.length; i++) {
-            this.rankLabels[i].string = "";
+            this.setLabelText(this.rankLabels[i], "");
         }
         if (this.statusLabel) {
-            this.statusLabel.string = !hud.selfAlive && hud.selfRespawnSeconds > 0
+            this.setLabelText(this.statusLabel, !hud.selfAlive && hud.selfRespawnSeconds > 0
                 ? `复活倒计时 ${hud.selfRespawnSeconds}s`
-                : "";
+                : "");
         }
     }
 
