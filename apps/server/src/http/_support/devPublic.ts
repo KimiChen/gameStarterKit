@@ -20,16 +20,25 @@ import {
 import { PORT } from "../../core/infra/config";
 import { issueDevSession } from "../../platform/devAuthProvider";
 
-/** 本机单服目录（dev）：serverId=0 与 GROUP_ZONES 空（承载全部）同语义。 */
-function devAreaList(): WebPlatformAreaListResponse {
-    const origin = `http://127.0.0.1:${PORT}`;
+/**
+ * 本机单服目录（dev）：serverId=0 与 GROUP_ZONES 空（承载全部）同语义。
+ *
+ * ⚠ gameHttpUrl/gameWsUrl 必须用**请求方的 Host 头**推导，不能写死 127.0.0.1：
+ * 登录流程拿到目录后会用 gameHttpUrl 重新初始化 HTTP 底座——写死 127.0.0.1 时，
+ * 局域网设备拿到目录后转去连**它自己**（ERR_CONNECTION_REFUSED，实测于 LAN 调试）。
+ * 客户端用什么地址连进来，就用什么地址回给它；取不到 Host 时回落 127.0.0.1。
+ */
+function devAreaList(req: Request): WebPlatformAreaListResponse {
+    const host = typeof req.headers.host === "string" && req.headers.host.trim() !== ""
+        ? req.headers.host
+        : `127.0.0.1:${PORT}`;
     const response: WebPlatformAreaListResponse = {
-        hash: `dev-${PORT}`,
+        hash: `dev-${host}`,
         isOps: false,
         myServerIds: [],
         servers: [{
-            gameHttpUrl: origin,
-            gameWsUrl: `ws://127.0.0.1:${PORT}`,
+            gameHttpUrl: `http://${host}`,
+            gameWsUrl: `ws://${host}`,
             name: "本地开发服",
             openTime: 1, // >0 = 已开服（isServerEnterable 语义）
             serverId: 0,
@@ -70,9 +79,9 @@ export function mountDevPublicEndpoints(app: Application): void {
         }
     });
 
-    app.get(WebPlatformPath.ListAreas, async (_req: Request, res: Response) => {
+    app.get(WebPlatformPath.ListAreas, async (req: Request, res: Response) => {
         try {
-            res.status(200).json(devAreaList());
+            res.status(200).json(devAreaList(req));
         } catch (error) {
             console.error("[dev-auth] /v1/areas 失败", error);
             sendError(res, 500, "INTERNAL");
