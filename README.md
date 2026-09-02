@@ -65,7 +65,10 @@ npm --workspace @game/server run db:bootstrap
 npm run dev
 ```
 
-账号示例需要另行启动与当前契约匹配的 `gono-webplatform` 本地开发服务。默认开发约定通常为：
+`npm run dev` 在非生产环境默认 `AUTH_PROVIDER=dev`：游戏服进程内提供开发登录与选服
+（`/v1/sessions/dev`、`/v1/areas`，会话与角色登记落本地 Redis/MySQL），**无需另行启动
+WebPlatform**。要联调真实外部身份服务时，另行启动与当前契约匹配的 `gono-webplatform`
+本地开发服务并设 `AUTH_PROVIDER=webplatform`。默认开发约定通常为：
 
 - Public HTTP：`http://127.0.0.1:2570`
 - Internal HTTP：`http://127.0.0.1:2571`
@@ -74,7 +77,8 @@ npm run dev
 
 1. 用 Cocos Dashboard 3.8.8 打开 `apps/Cocos`。
 2. 等待首次资源导入完成。
-3. 在场景 `Main` 组件中设置本地 WebPlatform Public origin。
+3. dev 动线下 `Main.portalUrl` 留空即可（自动跟随 PORT，portal 即游戏服自身）；
+   联调外部服务时在场景 `Main` 组件中设置 WebPlatform Public origin。
 4. 在编辑器中预览，使用开发会话进入 Lobby 和 Snake Off 示例房间（默认玩法；ballMove 为可选入口）。
 
 这里的启动脚本、开发会话与调试页面只用于本地开发和代码验证。

@@ -33,12 +33,14 @@ npm run sync:shared
 
 1. 场景中存在挂载 `Main` 的节点。
 2. FairyGUI 扩展已由工程加载。
-3. `portalUrl` 指向与当前契约匹配的本地开发服务。
+3. `portalUrl` 指向与当前契约匹配的本地开发服务；dev 动线（服务端 `AUTH_PROVIDER=dev`）
+   下留空即可——portal 回落为游戏服自身端口（见 [外部身份服务开发边界](WEBPLATFORM.md) §1.1）。
 4. shared/client 镜像保持新鲜。
 
 `Main` 组件另有一个可留空的 `serverUrl`：留空时使用 `sync:client` 生成的 `core/devEnv.ts`（跟随根
 `.env.development` 的 `PORT`，默认 `http://localhost:2568`），填写即覆盖。它只是区服目录加载前的默认
-游戏服 HTTP 地址——登录页拉到目录后会用所选区的 `gameHttpUrl` 重新初始化 HTTP 底座。`portalUrl` 留空或不是 http(s) 绝对地址时（见
+游戏服 HTTP 地址——登录页拉到目录后会用所选区的 `gameHttpUrl` 重新初始化 HTTP 底座。`portalUrl` 留空时回落
+`DEV_SERVER_URL`（dev 动线）；显式给了非法值（非 http(s) 绝对地址）时（见
 [外部身份服务开发边界](WEBPLATFORM.md) §5）`Main.start()` 直接抛错，后续的会话事件订阅与登录页都不会执行。
 
 目录中的 `gameHttpUrl` 与 `gameWsUrl` 是两个独立、不可互相推导的端点：前者用于游戏 HTTP 请求，后者

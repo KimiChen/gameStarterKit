@@ -137,7 +137,7 @@ npm --workspace @game/server run test:int
     的静态依赖图。
 11. 网关 handler 不执行大规模同步计算；开发期预算和本地诊断规则见 SERVER 文档，重计算放到
     `core/compute/tasks/`。
-12. **外部身份服务只走 HTTP 契约边界**：本仓不得依赖其业务源码、账号数据库或进程内替代实现。
+12. **外部身份服务生产只走 HTTP 契约边界**：本仓不得依赖其业务源码、账号数据库或进程内替代实现。唯一例外是 `AUTH_PROVIDER=dev`（非生产缺省）：进程内开发身份提供者只为本地无外部服务开发，`AUTH_PROVIDER=dev` + `NODE_ENV=production` 启动期拒启。
 
 ## 标准开发动线
 
