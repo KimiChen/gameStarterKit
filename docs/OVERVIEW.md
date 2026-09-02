@@ -15,7 +15,8 @@ gameStarterKit 是客户端、服务端和 shared 共同演进的 TypeScript 游
 - `apps/art` 负责 FairyGUI 设计源。
 - 外部身份服务只通过锁定的 HTTP 契约参与本地示例链路。
 
-当前 `ballMove` 是默认演示玩法，不是通用玩法实现；`idle` 是复用真实房间 transport/lifecycle、但使用
+当前 `snake`（Snake Off 竖版贪吃蛇：drop-in 自由加入 + 服务端权威 + AI 填充）是默认演示玩法；
+`ballMove` 保留为可选入口与内部回归样例，`idle` 是复用真实房间 transport/lifecycle、但使用
 独立 `IdleRoomState` 与 pulse 结算规则的最小第二 mode 证明。它不包含完整 UI；框架的可复用部分是目录
 边界、同步工具、契约、网络接缝、视图组织和服务端一致性原语。
 

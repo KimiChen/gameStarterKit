@@ -75,7 +75,7 @@ npm run dev
 1. 用 Cocos Dashboard 3.8.8 打开 `apps/Cocos`。
 2. 等待首次资源导入完成。
 3. 在场景 `Main` 组件中设置本地 WebPlatform Public origin。
-4. 在编辑器中预览，使用开发会话进入 Lobby 和 ballMove 示例房间。
+4. 在编辑器中预览，使用开发会话进入 Lobby 和 Snake Off 示例房间（默认玩法；ballMove 为可选入口）。
 
 这里的启动脚本、开发会话与调试页面只用于本地开发和代码验证。
 
