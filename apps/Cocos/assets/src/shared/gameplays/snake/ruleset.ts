@@ -17,9 +17,12 @@ export function quantizeSnake(value: number): number {
 }
 
 export const SNAKE_RULESET = Object.freeze({
-    // ── 世界（竖版 700×1500，中心原点：x∈[-350,350]，y∈[-750,750]）────────
-    worldWidth: 700,
-    worldHeight: 1500,
+    // ── 世界（竖版 1920×3264 = 原游戏 3264×1920 的竖版转置，面积相同；
+    //    中心原点：x∈[-960,960]，y∈[-1632,1632]）────────────────────────
+    //    用户拍板（2026-09-03）：按原游戏大小复原——03 文档的 700×1500 是
+    //    4 人私房候选，已过时（drop-in 8 蛇 + AI 需要原尺寸的密度与游走空间）。
+    worldWidth: 1920,
+    worldHeight: 3264,
 
     // ── 时钟（GameRoom fixedStep 20Hz）─────────────────────────────────
     fixedStepMs: 50,
@@ -45,11 +48,11 @@ export const SNAKE_RULESET = Object.freeze({
     boostWreckValue: 1,
 
     // ── 食物 ───────────────────────────────────────────────────────────
-    dotTarget: 120, // 源 300@横版大图；按面积/蛇数缩减（03 §6.1）
+    dotTarget: 300, // 复原源值（地图面积已与源相同，密度同步复原）
     dotGrowth: 1,
     dotScore: 1,
     dotRadius: 8, // 源 Dot size 16 的半径
-    starTarget: 8, // 源 15
+    starTarget: 15, // 复原源值
     starGrowth: 5,
     starScore: 5,
     starRadius: 21, // 源 Star size 42 的半径
@@ -85,7 +88,7 @@ export const SNAKE_RULESET = Object.freeze({
     // ── 快照（10Hz 有界完整快照；03 §2.3/04 §6.2）──────────────────────
     snapshotEveryTicks: 2,
     snapshotMaxSnakes: 8,
-    snapshotMaxFoods: 128, // dotTarget + starTarget
+    snapshotMaxFoods: 315, // dotTarget + starTarget
     snapshotMaxWrecks: 240,
     snapshotMaxPointsPerSnake: 512,
     snapshotMaxBytes: 65536, // 64 KiB 预算；达到预算降采样而非截断关键头部

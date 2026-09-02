@@ -86,7 +86,7 @@ export interface SnakeWorldEvents {
 
 // ── 空间网格（03 §7.1：cell 邻格 broad-phase）─────────────────────────────
 
-const GRID_CELL = 150; // unit；world 700×1500 → 5×10 格
+const GRID_CELL = 150; // unit；world 1920×3264 → 13×22 格
 const BODY_SAMPLE_STRIDE = 2; // 身体点按此步长抽稀入格（≈36u 间隔，碰撞半径 18u 不穿透）
 
 class SpatialGrid {

@@ -143,18 +143,22 @@ test("吃食成长：朝最近食物转向的蛇长度与分数增加", () => {
 });
 
 test("加速消耗：长度减少、尾部掉 Wreck、长度到下限自动停加速", () => {
-    const world = new SnakeWorld({ matchSeed: 19 });
+    // 无食物 + 超大图 ruleset 覆写：本用例只验证「消耗→下限停加速」语义本身，
+    // 途中吃食（密度随地图复原变化）与撞墙（大图直行必达边界）都会混淆它。
+    const noFood = { ...SNAKE_RULESET, dotTarget: 0, starTarget: 0, worldWidth: 100000, worldHeight: 100000 };
+    const world = new SnakeWorld({ matchSeed: 19, ruleset: noFood });
     const snake = world.addPlayerSnake("p1", "甲", 0);
     warmUp(world);
     snake.length = 40; // 手术：给出加速余量
     const wrecksBefore = world.wreckList().length;
     let seq = 0;
-    // 全程直行加速：1s = 3 长度 → 从 40 降到 ≤ 20+ 即停
+    // 全程直行加速：1s = 3 长度 → 从 40 降到 ≤ 20 后多走一步，该 tick 即停加速
     for (let tick = 0; tick < 200; tick++) {
         world.applyInput("p1", 1, 0, true, ++seq);
         world.step();
         if (snake.length <= SNAKE_RULESET.minBoostLength) break;
     }
+    world.step(); // 下限以下的下一 tick：boostAccepted 已判 false
     assert.ok(snake.length < 40, "加速必须消耗长度");
     assert.ok(snake.length >= SNAKE_RULESET.minBoostLength - 1, "长度消耗在下限附近停住");
     assert.equal(snake.boostActive, false, "到达下限后加速必须停止");
@@ -200,6 +204,7 @@ test("蛇间碰撞：头撞他蛇身体 → 移动者死、对方记 kill", () =
     b.points = [];
     for (let i = 0; i < 20; i++) b.points.push({ x: i * SNAKE_RULESET.pointSpacing, y: 0 });
     teleport(a, 100, -SNAKE_RULESET.pointSpacing, 90); // 头在 (100,-18) 朝上，下一步进 B 身体
+    a.length = 60; // 手术：死亡掉落的折算基数与途中是否吃食无关（大地图密度实测教训）
     const killsBefore = b.killCount;
     world.step();
     assert.equal(a.alive, false, "撞他蛇身体的一方必须死");

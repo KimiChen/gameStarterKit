@@ -137,8 +137,10 @@ test("compareSnakeRank：score↓→length↓→deathCount↑→达分tick↑→
 
 test("碰撞距离与墙边界：数值自洽（防穿透/防贴墙抖动）", () => {
     const bounds = wallBounds();
-    assert.equal(bounds.halfWidth, 350 - SNAKE_RULESET.bodyWidth * SNAKE_RULESET.wallCollisionFactor);
-    assert.equal(bounds.halfHeight, 750 - SNAKE_RULESET.bodyWidth * SNAKE_RULESET.wallCollisionFactor);
+    assert.equal(bounds.halfWidth,
+        SNAKE_RULESET.worldWidth / 2 - SNAKE_RULESET.bodyWidth * SNAKE_RULESET.wallCollisionFactor);
+    assert.equal(bounds.halfHeight,
+        SNAKE_RULESET.worldHeight / 2 - SNAKE_RULESET.bodyWidth * SNAKE_RULESET.wallCollisionFactor);
     assert.ok(snakeCollisionDistance() > stepDistance(true), "碰撞判定距离必须大于单步位移");
     assert.ok(eatDistance(SNAKE_RULESET.dotRadius) > headRadius(), "吃食距离必须大于头半径");
 });
