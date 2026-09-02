@@ -2,8 +2,8 @@
 
 > [返回总目录](README.md) · [上一篇：UndergroundIdleMain FairyGUI 装配契约](09-fairygui-undergroundidle-main-assembly.md)
 >
-> 文档版本：1.1<br>
-> 编写日期：2026-09-01<br>
+> 文档版本：1.2<br>
+> 编写日期：2026-09-02<br>
 > 当前状态：`规范已定义 / 主界面运行资产、FairyGUI 包、客户端接线与 Creator 验收均未实施`
 
 ## 1. 当前流程
@@ -13,9 +13,12 @@ Underground Idle 的默认 UI 生产路线固定为：
 ```text
 玩法 / PageSpec / 状态契约
   → 无运行时文字的黄金位图 target
-  → PNG 资产分类、裁切、遮挡补绘与独立透明件
-  → asset-manifest.json + 确定性 composite
-  → target ↔ composite 分区视觉回归 + 人工签字
+  → decomposition-spec：逐 stableKey 冻结编辑单元与生产方式
+  → 背景 clean plate + 逐元素独立源 + 局部状态 delta
+  → artistEditableSource PSD + source-reference-excluded composite + Photoshop 人工编辑验收
+  → 逐 leaf 来源/许可/生产属性批准 → productionFromAcceptedAssets
+  → G5 运行 PNG + runtime-reference-excluded composite
+  → target ↔ runtime-reference-excluded composite 分区视觉回归 + 人工签字
   → FairyGUI Editor 导入和装配
   → Editor 保存—关闭—重开 + 正式发布
   → Editor 生成 XML / 内部 ID / .bin / atlas
@@ -33,12 +36,15 @@ FairyGUI 布局真源。正式运行输入只使用批准并登记的 PNG、字�
 FairyGUI XML、`package.xml` 和内部 ID 由 FairyGUI Editor 分配和序列化。本流程不建立 raw XML writer，
 不从图片推算 ID，也不让外部脚本直接写正式 FGUI 工程。
 
-当前 source-only PSD 证据是 [`docs/psd-maker/ug_main_layered_source_v02.psd`](../psd-maker/ug_main_layered_source_v02.psd)，
-制作过程与证据边界见 [`docs/psd-maker.md`](../psd-maker.md)。它的存在不等于 G5 运行 PNG 已 accepted，也不解锁
-FairyGUI 编译或正式工程写入。
+当前历史 source-only PSD 证据是 [`docs/psd-maker/ug_main_layered_source_v02.psd`](../psd-maker/ug_main_layered_source_v02.psd)，
+制作过程与证据边界见 [`docs/psd-maker.md`](../psd-maker.md)。旧档位 `sourceOnlyFromTarget` 按当前规范映射为
+`referenceCompositeOnly`：它的存在不证明元素级可编辑，不等于 G5 运行 PNG 已 accepted，也不解锁 FairyGUI
+编译或正式工程写入。
 
-批准 target 始终是视觉对账基准，不能在拆层时被新的独立构图替代。`target ↔ composite` 未通过人工 A/B 前，
-运行 PNG 不得进入 FairyGUI Editor；资产拆分只使用批准 target 的像素、局部编辑和同源补绘。
+批准 target 始终是视觉对账基准，不能在拆层时被新的独立构图替代；但它只允许作为隐藏 reference，不得参与
+`artistEditableSource` 的可见重组或运行资产导出。G4c 的 `source-reference-excluded composite` 和 G5 的
+`runtime-reference-excluded composite` 必须分别由源 leaf 与运行 PNG/native object 重建；后者未通过人工 A/B 前，
+运行 PNG 不得进入 FairyGUI Editor。资产拆分只使用批准 target 的像素、局部编辑和同源补绘。
 
 ## 2. 真源与所有权
 
@@ -46,6 +52,8 @@ FairyGUI 编译或正式工程写入。
 | --- | --- | --- |
 | 玩法、字段、状态与动作 | 02～04、PageSpec/Scenario | 图片不得猜业务语义 |
 | 视觉语言 | 07、批准黄金 target | target 锁定构图、材质、光向、比例与 UI 质感 |
+| 元素责任与拆分边界 | `decomposition-spec.json` | 冻结 stable key、编辑要求、像素 owner、状态 delta 与 fullCanvas 例外 |
+| 可编辑视觉像素 | 通过 G4c 的 `artistEditableSource` PSD + 独立源 | target/reference 只供对照，不参与可见重组 |
 | 生产资产 | 批准 PNG 源 + `asset-manifest.json` | 记录来源、crop、Alpha、pivot、九宫格和输出策略 |
 | 精确页面结构与坐标 | FairyGUI Editor 设计源 | Editor 是 package/component/child/controller/relation 真源 |
 | FGUI 内部 ID | FairyGUI Editor | 外部工具不发号、不推算 |
@@ -72,8 +80,13 @@ docs/undergroundIdle/art/
 │  ├─ ug_main_golden_v02_review.png          # 运行时文字审阅投影
 │  └─ ug_main_golden_v02.prompt.md
 ├─ production/main_bitmap_v02/
+│  ├─ decomposition-spec.json               # 逐元素编辑责任、来源策略和 fullCanvas 例外
 │  ├─ asset-manifest.json                    # 生产资产唯一清单
 │  ├─ sources/                               # 批准源、mask、inpaint 输入；不进工程
+│  │  ├─ components/                         # 可复用组件母版/独立源
+│  │  └─ reference/                          # 整页 target；只读参考，不参与重组
+│  ├─ psd/
+│  │  └─ ug_main_artist_editable_v02.psd     # 通过 G4c 后的元素级可编辑母版
 │  ├─ runtime/
 │  │  ├─ full_canvas/                        # 背景、灯光、前景遮挡
 │  │  ├─ ui_chrome/                          # 固定区块、九宫格和按钮态
@@ -123,7 +136,7 @@ docs/undergroundIdle/art/
 | `regionCrop` | 无遮挡、固定尺寸、无动态内容的完整矩形区块 | 显式 sourceRect；不得含运行时文字 |
 | `inpaintCrop` | target 上对象被文字或邻近装饰影响，但边界可明确 | 保存 mask、补绘输入和输出哈希 |
 | `alphaObject` | 角色、建筑、状态件、图标 | 真实 Alpha、完整隐藏轮廓、padding、pivot |
-| `fullCanvas` | 场景 clean plate、灯光、前景遮挡 | 保留完整画布坐标，禁止 tight crop |
+| `fullCanvas` | 场景 clean plate、全局灯光、前景遮挡 | 保留完整画布坐标，禁止 tight crop；必须登记 `fullCanvasReason`，不得烘焙按钮、面板、图标、角色、建筑状态件或运行时文字 |
 | `nineSlice` | 面板、按钮、页签、状态卡 | 必须有干净中心；明确 source insets |
 | `tile` | 可验证无缝的纹理 | 提供横/纵向接缝证据 |
 | `generatedVariant` | 升级、满仓、解锁、按钮状态 | 以黄金 target/批准单体为 reference，只改变授权状态 |
@@ -160,6 +173,18 @@ ImageGen 可用于 `inpaintCrop`、`alphaObject` 和 `generatedVariant` 的候�
 
 这些内容必须使用 clean plate + 独立透明件重建。缺失像素通过显式 mask/inpaint 或以 target 为 reference 的
 局部资产生成补齐，不允许模型凭空猜测未登记的业务状态。
+
+### 5.4 元素级可编辑性
+
+生产拆分以语义编辑单元为粒度，不要求“每个铆钉一层”，但以下任一条件成立时必须拥有独立 `ROLE::stableKey` 叶层、
+原生 Type/Shape/Smart Object 或独立 RGBA 源：需要单独移动、隐藏、调色、替换、复用、动画、九宫格拉伸或切状态。
+
+`decomposition-spec.json` 必须为每个 required 节点登记 `stableKey`、`nodeKey`、责任类型、`editabilityRequirement`、
+`sourcePolicy`、`psdLayerPath`、`statePolicy`、`occlusionPolicy`、允许编辑动作和 `fullCanvasReason`。整页 target 只能位于
+隐藏 `REFERENCE_ONLY` 组；背景 clean plate 必须移除所有可调前景并补齐被遮挡像素。
+
+仅把 target 中的可见裁片复制到独立层、同时保留含该对象的完整 base，不算拆层：隐藏或移动裁片后出现底图残影，
+必须阻断 G4c。状态差异使用共享基底加局部 delta，不得为每个状态复制整页位图。
 
 ## 6. 主界面拆分
 
@@ -201,7 +226,13 @@ manifest 至少记录以下字段；字段可扩展，但不能把 FGUI ID 或�
   "assets": [
     {
       "key": "ui.topChrome",
+      "nodeKey": "ui.topChrome",
       "mode": "regionCrop",
+      "editabilityClass": "independent",
+      "psdLayerPath": "20_COMPONENTS/GROUP::ui.topChrome/IMG::ui.topChrome",
+      "referenceOnly": false,
+      "fullCanvasReason": null,
+      "statePolicy": "sharedBase",
       "source": "sources/ug_main_golden_v02_2x.png",
       "sourceRect": [0, 0, 1500, 414],
       "output": "runtime/ui_chrome/ug_ui_top_chrome_v02.png",
@@ -217,14 +248,18 @@ manifest 至少记录以下字段；字段可扩展，但不能把 FGUI ID 或�
 示例坐标只说明字段含义，不能在几何裁定完成前复制为实际值。每个资产还应按类型登记：
 
 - crop 前原点、可见 Alpha bbox、padding 和 pivot；
+- `nodeKey`、`psdLayerPath`、`editabilityClass`、`sourcePolicy`、`referenceOnly` 与允许编辑动作；
 - 九宫格 `left/top/right/bottom` source inset；
-- fullCanvas 的固定画布与 blend mode；
+- fullCanvas 的固定画布、blend mode、`fullCanvasReason` 和显式空的 `bakedStableKeys`；
 - generatedVariant 的 reference、允许变化区和状态 key；
 - source/output SHA-256、色彩空间、位深、许可与批准状态。
 
-## 8. 确定性 composite 与视觉 Gate
+## 8. 双重确定性 composite 与视觉 Gate
 
-运行 PNG 生成后，必须按 manifest 在 750×1624 画布上重组至少以下状态：
+G4c 先只使用 PSD 中 `referenceOnly=false` 的可编辑叶层或原生对象生成
+`source-reference-excluded composite`，证明元素拆分和源重组成立。G5 再只使用已导出的运行 PNG 或原生对象生成
+`runtime-reference-excluded composite`，证明运行导出没有偷用 PSD 文档 composite 或 target/reference 像素。两者都按
+manifest 在 750×1624 画布上重组至少以下状态；整页 target、隐藏 reference、guide 和审稿文字不得参与重组：
 
 - 新手初始；
 - 产能平衡、开采瓶颈、运输瓶颈；
@@ -233,7 +268,8 @@ manifest 至少记录以下字段；字段可扩展，但不能把 FGUI ID 或�
 - 收取按钮五态；
 - 安全区与长数字样例。
 
-`target ↔ composite` 检查至少包含：
+`target ↔ runtime-reference-excluded composite` 以及
+`source-reference-excluded composite ↔ runtime-reference-excluded composite` 检查至少包含：
 
 1. 全页叠图和分区感知差异；
 2. R1～R6 的材质、边框、倒角、纹理、光向和信息密度 A/B；
@@ -241,13 +277,15 @@ manifest 至少记录以下字段；字段可扩展，但不能把 FGUI ID 或�
 4. 九宫格 1×/极值尺寸无变形；
 5. 关闭运行时文字后无伪字、数字、等级或填充值；
 6. 人工三秒扫描与美术负责人签字。
+7. 逐元素 solo sheet，以及隐藏、平移、换色消融结果；差异必须局限于该元素声明的影响范围。
+8. 每个 required node 的 `editableCoverage` 为 100%，状态件只包含声明的局部 delta。
 
 不要求跨字体和渲染器逐像素相等，但批准的固定像素区不得无理由漂移。差异报告必须区分：允许的运行时文字/
 状态区、采样/抗锯齿容差和禁止变化区。没有人工签字时，自动分数不能关闭视觉 Gate。
 
 ## 9. FairyGUI Editor 装配
 
-`target ↔ composite` 通过后才进入 Editor：
+`target ↔ runtime-reference-excluded composite` 和源/运行重组对账通过后才进入 Editor：
 
 1. 用 FairyGUI Editor 打开 `apps/art/fairygui/FairyGUI.fairy`；
 2. 导入 manifest 中 `approval=accepted` 的运行 PNG；
@@ -303,15 +341,17 @@ npm run verify:sync
 | G1 | PageSpec/Scenario | 字段、状态、动作、极值与验收场景闭合 |
 | G2 | 布局与几何裁定 | target 与 09 的固定区、热区、岗位锚点和安全区契约一致 |
 | G3 | 视觉锁定 | 无字黄金 target、prompt/编辑记录、哈希和人工美术批准 |
-| G4 | 生产拆分 | manifest、切片方式、动态对象、九宫格、预算和来源闭合 |
-| G5 | 运行资产 | PNG 的 Alpha/尺寸/pivot/状态系列通过，target ↔ composite 分区回归和人工 A/B 通过 |
+| G4a | 元素分解 | decomposition-spec 覆盖全部 required node，编辑单元、来源策略、状态 delta 与 fullCanvas 例外获批 |
+| G4b | 独立源生产 | 背景 clean plate、独立元素、Alpha/遮挡补绘和共享组件母版齐备；target 仅作隐藏 reference |
+| G4c | 可编辑 PSD | `artistEditableSource` 从独立叶层重组；`source-reference-excluded composite`、solo/消融和 Photoshop 移动、隐藏、替换、调色、文字修改后保存—重开通过 |
+| G5 | 运行资产 | `productionFromAcceptedAssets` 产生的 PNG 的 Alpha/尺寸/pivot/状态系列通过，`runtime-reference-excluded composite` 与 target/source 分区回归和人工 A/B 通过 |
 | G6 | Editor | 保存—关闭—重开、正式发布、引用闭合通过 |
 | G7 | 代码接线 | 两次 codegen、契约审阅、FGUI 发布闭包锁、同步和客户端测试通过 |
 | G8a/G8b | Creator/目标平台 | 初始、极值、安全区、网络、完整状态矩阵及交付范围内真机检查通过 |
 | G9 | 冻结与回流 | 证据、批准结论、缺陷回流与版本状态闭合 |
 
-任何 Gate 的文件存在不等于通过。G5 未通过时必须回到 target 或运行 PNG 修复，不能在 Editor 中用额外装饰
-掩盖；G6 之后的结构问题回 Editor，视觉源问题回 G3～G5。
+任何 Gate 的文件存在不等于通过。`referenceCompositeOnly` 不能关闭 G4c；G5 未通过时必须回到独立生产源或运行 PNG
+修复，不能在 Editor 中用额外装饰掩盖；G6 之后的结构问题回 Editor，视觉源问题回 G3～G5。
 
 ## 12. 风险与回退
 
@@ -329,8 +369,11 @@ npm run verify:sync
 
 1. 在 G2 确认 target 与 09 装配契约的几何一致；
 2. 在 G3 制作并批准无字 `ug_main_golden_v02`；
-3. 在 G4 建立 `main_bitmap_v02/asset-manifest.json` 和切片计划；
-4. 在 G5 生产 PNG、回放 composite 并完成人工 A/B；
-5. 进入 09 规定的 FairyGUI Editor 装配。
+3. 在 G4a 建立 `decomposition-spec.json`，先冻结共享组件、逐元素编辑单元和 fullCanvas 例外；
+4. 在 G4b 生产背景 clean plate、独立元素和局部状态 delta；
+5. 在 G4c 重组 `artistEditableSource` PSD，生成 `source-reference-excluded composite`，完成 solo/消融与 Photoshop 人工编辑验收；
+6. 批准全部 exportable leaf/native object 的来源、许可和生产属性，创建 `productionFromAcceptedAssets` bundle；
+7. 在 G5 从该 bundle 生产 PNG、生成 `runtime-reference-excluded composite` 并完成 target/source 人工 A/B；
+8. 进入 09 规定的 FairyGUI Editor 装配。
 
 在 G5 通过前，不创建 UndergroundIdleMain 正式 XML、不发布资源，也不修改客户端绑定。
