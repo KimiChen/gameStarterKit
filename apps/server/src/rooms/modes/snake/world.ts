@@ -220,15 +220,25 @@ export class SnakeWorld {
         return snake;
     }
 
-    /** 初始身体：沿出生方向反向往后排（尾部朝场地内侧延伸的反方向）。 */
+    /**
+     * 初始身体：沿出生方向反向往后排。⚠ 竖版小场 + 出生方向朝场心 ⇒ 径向尾长
+     * （spawnLength 30 ≈ 540u）可能越出窄边——逐点钳进可玩边界（墙判定线）内，
+     * 贴墙尾部静止不动是合法的（身体点只服务碰撞与渲染，头部永远先于它们撞墙）。
+     */
     private buildInitialBody(spawn: { x: number; y: number; direction: number }): SnakePoint[] {
-        const points: SnakePoint[] = [{ x: spawn.x, y: spawn.y }];
+        const bounds = wallBounds();
+        const clampPoint = (value: number, half: number): number =>
+            quantizeSnake(Math.max(-half, Math.min(half, value)));
+        const points: SnakePoint[] = [{
+            x: clampPoint(spawn.x, bounds.halfWidth),
+            y: clampPoint(spawn.y, bounds.halfHeight),
+        }];
         const back = directionVector(normalizeDegrees(spawn.direction + 180));
         const count = visiblePointCount(this.ruleset.spawnLength);
         for (let i = 1; i < count; i++) {
             points.push({
-                x: quantizeSnake(spawn.x + back.x * this.ruleset.pointSpacing * i),
-                y: quantizeSnake(spawn.y + back.y * this.ruleset.pointSpacing * i),
+                x: clampPoint(spawn.x + back.x * this.ruleset.pointSpacing * i, bounds.halfWidth),
+                y: clampPoint(spawn.y + back.y * this.ruleset.pointSpacing * i, bounds.halfHeight),
             });
         }
         return points;
@@ -264,8 +274,9 @@ export class SnakeWorld {
     }
 
     /**
-     * AI 让位（真人加入导致超编）：选分数最低、最早入场的在场 AI 死亡掉落——
-     * ⛔ 不凭空消失（给新加入者留食物，也让「目标消失」有可视解释）。
+     * AI 让位（真人加入导致超编）：选分数最低、最早入场的在场 AI 死亡掉落并**永久移除**
+     * ——⛔ 不进复活队列（让位是永久性的，不是死亡循环）；掉落留在场上
+     * （给新加入者留食物，也让「目标消失」有可视解释）。
      */
     cullAiForJoin(): SnakeBody | null {
         const candidates = this.snakes.filter((snake) => snake.isAi && snake.alive);
@@ -273,6 +284,12 @@ export class SnakeWorld {
         candidates.sort((a, b) => a.score - b.score || a.joinedTick - b.joinedTick || (a.id < b.id ? -1 : 1));
         const victim = candidates[0];
         this.killSnake(victim, null);
+        victim.respawnAtTick = -1; // 永不复活
+        const pendingIndex = this.pendingRespawns.indexOf(victim);
+        if (pendingIndex >= 0) this.pendingRespawns.splice(pendingIndex, 1);
+        this.snakeById.delete(victim.id);
+        const index = this.snakes.indexOf(victim);
+        if (index >= 0) this.snakes.splice(index, 1);
         return victim;
     }
 
@@ -690,7 +707,8 @@ export class SnakeWorld {
         return entries.sort(compareSnakeRank);
     }
 
-    /** 世界快照（S2C；坐标量化整数）。超 64KiB 预算时按 stride 降采样非头点（03 §2.3）。 */
+    /** 世界快照（S2C；全部实体坐标量化整数——wire validator 烧死 WIRE_INTEGER）。
+     *  超 64KiB 预算时按 stride 降采样非头点（03 §2.3）。 */
     buildSnapshot(matchId: string, seq: number): {
         matchId: string;
         tick: number;
@@ -732,8 +750,14 @@ export class SnakeWorld {
             tick: this.tick,
             seq,
             snakes,
-            foods: this.foodList().map((food) => ({ ...food })),
-            wrecks: this.wreckList().map((wreck) => ({ ...wreck })),
+            foods: this.foodList().map((food) => ({
+                id: food.id, kind: food.kind,
+                x: Math.round(food.x), y: Math.round(food.y),
+            })),
+            wrecks: this.wreckList().map((wreck) => ({
+                id: wreck.id, value: wreck.value,
+                x: Math.round(wreck.x), y: Math.round(wreck.y),
+            })),
         };
     }
 }
