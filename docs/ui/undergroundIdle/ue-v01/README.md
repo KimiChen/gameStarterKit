@@ -5,6 +5,10 @@
 [`docs/psd.md`](../../../psd.md) 的输入成熟度，它映射为 `referenceCompositeOnly`：只能作为整页视觉参考和 PSD
 封装证据，不是 `artistEditableSource`、FairyGUI 设计源、G5 accepted 运行资产或 Creator 运行证据。
 
+这里的失败仅指 G4/G5 元素级可编辑性与生产成熟度，不表示这些整页效果图在 G3 审美上失败。后续重建必须保持已批准
+target 的 UI chrome、材质、边框、按钮、图标、装饰与角色质量；如需提升，先生成新的 G3 target，并重新完成审美批准与
+hash 记录。不得把“不能作为生产 base”误读为“效果图不应有美术 UI”，也不得用程序素框替代原有视觉语言。
+
 `40-production/SHA256SUMS` 覆盖的 sidecar 和 evidence 保留生成时的历史枚举值，不原地改写；本 README 负责记录
 新规范下的能力映射。若后续重建元素级 PSD，必须建立新批次和新证据，不能覆盖本批历史文件。
 

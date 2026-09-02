@@ -1,6 +1,6 @@
 # FairyGUI UI 生产、装配与自动化工作流
 
-> 文档版本：2.4<br>
+> 文档版本：2.5<br>
 > 编写日期：2026-09-02<br>
 > 适用范围：任意玩法或业务模块<br>
 > 当前运行时：Cocos Creator 3.8.8 + `fairygui-cc` 1.2.2 + TypeScript
@@ -101,6 +101,11 @@ G8a/G8b/G9：无头场景测试 + Creator UI Gallery（计划）
 PSD 输入成熟度只回答“美术源能否独立编辑、能否进入运行资产生产”，与 Prototype / Standard / Full **交付档位正交**。
 Prototype 页面只要进入 G5、G6 和真实运行，也不能用低成熟度 PSD 绕过运行资产门禁；Full 交付也可能在 G3 暂时只有
 `referenceCompositeOnly`，但此时不得宣称生产完成。
+
+PSD 输入成熟度不代表视觉质量等级，也不授权删减效果图的美术 UI。完整、高保真的整页效果图在 G3 可以且通常应标为
+`referenceCompositeOnly`；它只允许用于 G3、G4a 和 G4b 的风格/构图参考，不能自身充当 G4b～G6 的生产源或进入运行目录，
+也不表示应把面板、按钮、图标或装饰替换成素框。它可以作为隐藏 reference 随 G4c handoff 保留，但必须从被测 composite、
+切图和运行导出中排除，且不能作为 Gate 通过依据。
 
 | `psdInputMaturity` | 能力边界 | 允许流向 |
 | --- | --- | --- |
@@ -378,7 +383,7 @@ scripts/fgui.manifest.json                 FGUI 发布闭包锁
 | G0 | 策划冻结 | 范围、路径、平台、预算、验收、非目标 | 影响 UI 的关键语义已确定或明确阻断 |
 | G1 | PageSpec 与 Scenario | UI model、字段/动作、状态维度、Scenario、运动反馈 | 每个值有来源、每个操作有闭环、每个 required state 可重复构造 |
 | G2 | 线框与布局 | 节点角色、布局约束、热区、安全区、极值样例 | 长文本、极值数字、目标尺寸和点击区可容纳 |
-| G3 | 视觉锁定 | style anchor、tokens、批准效果图、评审记录 | 视觉语言、构图和不变量被批准 |
+| G3 | 视觉锁定 | style anchor、tokens、运行时文字不烘焙的完整高保真美术 UI 批准效果图、评审记录 | 视觉语言、构图和不变量被批准 |
 | G4a | 元素分解 | `decomposition-spec.json`、逐节点责任类型、stable key 与 source gap | 每个可见 nodeKey 恰有一个责任归属；reference、动态内容和需独立调整元素已标明 |
 | G4b | 独立源生产 | 按 stable key 的独立 RGBA/vector/Type/Shape/Smart Object 源、来源/许可和生成记录 | 无从 target 猜出的 Alpha/隐藏像素；无多职责裁切；缺源项显式阻断 |
 | G4c | 可编辑 PSD | `artistEditableSource` PSD、命名/sidecar、solo contact sheet、`source-reference-excluded composite` 与 Photoshop 往返记录 | 元素能独立编辑；reference 不参与重组；无多职责整页 base；状态仅保存局部 delta |
@@ -444,6 +449,16 @@ Relation 不会自动处理刘海或四边安全区。没有明确程序接线�
 
 冻结色板、材质、描边、圆角、阴影、光向、图标透视、角色比例和禁用项。动态文字只保留槽位，不生成不可编辑的伪文字。每轮只改变一个变量，并记录提示词、参考图、模型、输出和批准结论。
 
+G3 批准的整页效果图/target 必须呈现完整、高保真的美术化游戏 UI，包括已批准的 UI chrome、面板、按钮、页签、图标、
+装饰、场景/角色和状态视觉，使材质、层级、光影与 UI 质感能够接受审美评审。“动态文字只保留槽位”或“无运行时文字”
+只表示不把由 FairyGUI/程序填写的中文、数值、价格、等级、倒计时和填充值烘焙进 target，不等于移除 UI，也不得用无装饰
+线框、纯色图元或程序 HUD 代替美术化 UI。除非当前任务明确是 G4b 的 clean plate，G3 效果图提示词不得用 `no UI` 或
+`environment only` 规避 UI 美术生产。
+
+G4a～G5 的 clean plate、独立源、`fullCanvas` 白名单和整页 base 禁令只约束获批 target 之后的生产源、PSD 重组与运行导出，
+不得反向成为 G3 的生成条件。包含完整美术 UI 的整页 ImageGen 图可以作为 G3 target/`referenceCompositeOnly`，但不能
+冒充 G4/G5 的可编辑生产 base。
+
 ### 4.6 G4：元素分解、独立源与可编辑 PSD
 
 #### G4a：元素分解
@@ -468,8 +483,8 @@ Relation 不会自动处理刘海或四边安全区。没有明确程序接线�
 
 `full-canvas-png` 必须登记 `fullCanvasReason`、单一 owner 和 `bakedStableKeys`。默认要求 `bakedStableKeys: []`；若背景微装饰
 经批准合并，必须逐项列出且这些 key 不得再作为另一运行资产出现。任何交互、状态、Loader、runtime text、可复用、可动画或
-预计独立改稿的元素都禁止进入 full-canvas leaf。一个含完整页面 UI 的 ImageGen base 无论是否隐藏副本或叠加文字层，始终是
-`referenceCompositeOnly`。
+预计独立改稿的元素都禁止进入 full-canvas leaf。进入 G4 后，若把一个含完整页面 UI 的 ImageGen 图当作生产 base，
+无论是否增加隐藏副本或文字层，它都只能是 `referenceCompositeOnly`；这不否定该图作为 G3 整页效果图的审美价值。
 
 G4a 以 stable key 对 `nodeKey` 的 missing、orphan、duplicate 和多重 owner 全部为零结束。信息不足的节点标记
 `needs_source` 并阻断 G4b，不得从 target 猜透明边、隐藏像素或运行责任。
@@ -1028,6 +1043,7 @@ runtime-reference-excluded composite ↔ Editor/Creator runtime：Editor 发布�
 □ handoff 只保存约束，坐标 snapshot 可重建且不可反向编辑
 □ 长文本、最大数字、空/满列表和目标长短屏通过
 □ 效果图、生产源和运行资产分离
+□ G3 target 已包含完整高保真美术 UI；“无运行时文字”没有被错误执行成“无 UI”或程序素框
 □ `psdInputMaturity` 已声明，且没有把 Prototype/Standard/Full 交付档位误当成 PSD 成熟度
 □ 所有 required nodeKey 的元素级责任覆盖为 100%，stable key 无 missing/orphan/duplicate/multi-owner
 □ 需独立调整的元素可单独隐藏、移动、替换或编辑，不存在含多个视觉职责的整页 ImageGen base 或大块 baked raster
