@@ -115,12 +115,17 @@ test("dev-auth 真链：登录/选服/权威 verify/角色登记/双房 join", {
 
         const token = reloginBody.accessToken;
 
-        // ② 选服目录
+        // ② 选服目录：gameHttpUrl/gameWsUrl 必须跟随请求方 Host——⛔ 不得写死
+        // 127.0.0.1（登录流程拿到目录会用它重建 HTTP 底座，写死时局域网设备转去连自己）
         const areas = await fetch(`${dev.endpoint}/v1/areas`);
         const areaBody = validateWebPlatformAreaListResponse(await areas.json());
         assert.equal(areaBody.servers.length, 1);
         assert.equal(areaBody.servers[0].serverId, 0);
         assert.ok(areaBody.servers[0].openTime > 0, "dev 服必须可进入");
+        const devHost = new URL(dev.endpoint).host;
+        assert.equal(areaBody.servers[0].gameHttpUrl, `http://${devHost}`,
+            "gameHttpUrl 必须跟随请求方 Host（LAN 调试前提）");
+        assert.equal(areaBody.servers[0].gameWsUrl, `ws://${devHost}`);
 
         // ③ Lobby join（sess 快路径）
         const sdk = new SDKClient(wsEndpoint);
