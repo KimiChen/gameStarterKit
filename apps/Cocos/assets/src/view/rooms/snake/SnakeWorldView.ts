@@ -32,6 +32,7 @@ import type { SnakeInput, SnakePresentation } from "../../../logic/rooms/snake/S
 import type { SnakeHudModel, SnakeSettleModel } from "../../../logic/rooms/snake/SnakeHud";
 import type { SnakeRenderFrame, SnakeRenderSnake } from "../../../logic/rooms/snake/SnakeSnapshotBuffer";
 import { SNAKE_RULESET } from "../../../shared/gameplays/snake/ruleset";
+import { SnakeMeshRenderer } from "./SnakeMeshRenderer";
 
 /** 席位色系（07 §3.2 四色扩到 8：色相分散 + AI 灰）。 */
 const SEAT_COLORS = [
@@ -67,6 +68,7 @@ const WRECK_RADIUS = 14;
 
 type LoadedAssets = {
     heads: SpriteFrame[]; // classic skins 的头部帧
+    bodyTextures: Texture2D[]; // classic skins 整图（GL 四边形带的身体贴图）
     joystickBase: SpriteFrame | null;
     joystickKnob: SpriteFrame | null;
     boost: SpriteFrame | null;
@@ -82,7 +84,8 @@ export class SnakeWorldView implements SnakePresentation {
     private uiLayer = 0;
     private worldLayer: Node | null = null;
     private bgGraphics: Graphics | null = null; // 静态：底色/网格/边界（mount 画一次）
-    private fxGraphics: Graphics | null = null; // 动态：食物/残骸/蛇身（逐帧重建）
+    private fxGraphics: Graphics | null = null; // 动态：食物/残骸/描边（逐帧重建）
+    private meshRenderer: SnakeMeshRenderer | null = null; // GL 四边形带（身体主渲染）
     private hudLayer: Node | null = null;
     private countdownLabel: Label | null = null;
     private rankLabels: Label[] = [];
@@ -229,6 +232,8 @@ export class SnakeWorldView implements SnakePresentation {
         this.assets = null;
         const root = this.root;
         this.root = null;
+        this.meshRenderer?.dispose();
+        this.meshRenderer = null;
         this.worldLayer = null;
         this.bgGraphics = null;
         this.fxGraphics = null;
@@ -270,6 +275,7 @@ export class SnakeWorldView implements SnakePresentation {
         if (!this.mounted) return; // 装载期间 unmount：丢弃结果
         this.assets = {
             heads: [s1, s2, s3].map((texture) => frame(texture, HEAD_RECT)).filter((f): f is SpriteFrame => f !== null),
+            bodyTextures: [s1, s2, s3].filter((texture): texture is Texture2D => texture !== null),
             joystickBase: frame(joystickBase),
             joystickKnob: frame(joystickKnob),
             boost: frame(boost),
@@ -328,6 +334,11 @@ export class SnakeWorldView implements SnakePresentation {
             );
         }
 
+        // GL 四边形带渲染器：素材（classic 整图纹理）就绪后懒建，只建一次。
+        if (!this.meshRenderer && this.worldLayer && (this.assets?.bodyTextures.length ?? 0) > 0) {
+            this.meshRenderer = new SnakeMeshRenderer(this.worldLayer, this.uiLayer, this.assets!.bodyTextures);
+        }
+
         // 动态层逐帧 clear 重画（增量追踪在点数/集合规模下是无谓复杂度）：
         // 食物 ⛔ 不用 sprite（128 个 = 128 draw call，实测 100+ 卡到十几帧）——
         // 两个 fill 批收编全部 Dot/Star；残骸 1 批；蛇身每蛇 1 批（同色）。
@@ -360,19 +371,22 @@ export class SnakeWorldView implements SnakePresentation {
 
     private renderSnake(graphics: Graphics, snake: SnakeRenderSnake): void {
         if (!snake.alive || snake.points.length === 0) {
+            this.meshRenderer?.removeSnake(snake.id);
             this.headSprites.get(snake.id)?.node.destroy();
             this.headSprites.delete(snake.id);
             return;
         }
         const isSelf = snake.id === this.selfId;
         const color = snake.ai ? COLOR_AI : SEAT_COLORS[this.seatColorIndex(snake.id)];
-        // 身体圆节（头以外沿路径；隔点绘制减少节点感）
-        graphics.fillColor = color;
-        for (let i = 1; i < snake.points.length; i++) {
-            const point = snake.points[i];
-            graphics.circle(point.x, point.y, BODY_POINT_RADIUS);
+        // 身体主渲染：GL 四边形带（每蛇一条网格一次提交）；失败回退 Graphics 圆节。
+        if (this.meshRenderer?.renderSnake(snake.id, snake.points, color) !== true) {
+            graphics.fillColor = color;
+            for (let i = 1; i < snake.points.length; i++) {
+                const point = snake.points[i];
+                graphics.circle(point.x, point.y, BODY_POINT_RADIUS);
+            }
+            graphics.fill();
         }
-        graphics.fill();
         // 自己的细白外轮廓（07 §3.2：不只靠颜色区分）
         if (isSelf) {
             graphics.lineWidth = 3;

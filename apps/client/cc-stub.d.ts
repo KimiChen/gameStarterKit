@@ -43,6 +43,26 @@ declare module "cc" {
     export class Sprite extends Component { spriteFrame: SpriteFrame | null; color: Color; sizeMode: number; type: number; }
     export class Label extends Component { string: string; fontSize: number; color: Color; horizontalAlign: number; }
     export class AudioClip { duration: number; }
+  export class Mesh { subMeshes: Array<{ update(): void }>; }
+  export class Material {
+    initialize(options: { effectName: string; defines?: Record<string, unknown> }): void;
+    setProperty(name: string, value: unknown): void;
+  }
+  export class UIMeshRenderer extends Component { mesh: Mesh | null; material: Material | null; }
+  export namespace gfx {
+    class Attribute { constructor(name: string, format: number); }
+    const AttributeName: { ATTR_POSITION: string; ATTR_TEX_COORD: string; ATTR_COLOR: string };
+    const Format: { RGB32F: number; RG32F: number; RGBA32F: number };
+  }
+  export const utils: {
+    createMesh(data: {
+      attributes: gfx.Attribute[];
+      positions: Float32Array;
+      uvs?: Float32Array;
+      colors?: Float32Array;
+      indices?: Uint16Array;
+    }): Mesh;
+  };
     export class AudioSource extends Component { playOneShot(clip: AudioClip, volumeScale?: number): void; play(): void; stop(): void; }
     export const resources: {
         load<T>(path: string, type: new (...args: never[]) => T, callback: (error: Error | null, asset: T) => void): void;
