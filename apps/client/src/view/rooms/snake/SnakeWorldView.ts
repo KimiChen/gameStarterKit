@@ -252,7 +252,9 @@ export class SnakeWorldView implements SnakePresentation {
             if (!texture) return null;
             const spriteFrame = new SpriteFrame();
             spriteFrame.texture = texture;
-            if (rect) spriteFrame.rect = rect;
+            // ⚠ new SpriteFrame() 的默认 rect 是 (0,0,0,0)：不设 = 什么都不画。
+            // 未传 rect 时用纹理全尺寸（摇杆/加速/结算底图等整图素材）。
+            spriteFrame.rect = rect ?? new Rect(0, 0, texture.width, texture.height);
             return spriteFrame;
         };
         const [s1, s2, s3, joystickBase, joystickKnob, boost, resultBg, button] = await Promise.all([
@@ -493,14 +495,14 @@ export class SnakeWorldView implements SnakePresentation {
         const ui = event.getUILocation();
         const size = view.getVisibleSize();
         const pointerId = event.getID();
-        // 加速区（右下）
-        if (this.boostNode && this.boostPointerId === null && this.withinNode(event, this.boostNode, 130)) {
+        // 加速区（右下，半径 200 的大命中区：对齐原游戏 speedUpNode 的按住语义）
+        if (this.boostNode && this.boostPointerId === null && this.withinNode(event, this.boostNode, 200)) {
             this.boostPointerId = pointerId;
             this.setBoost(true);
             return;
         }
-        // 摇杆区（左下）
-        if (this.joystickPointerId === null && ui.x < size.width / 2 && ui.y < size.height / 2) {
+        // 摇杆区（左半屏：与原游戏的方向触摸区同构——拇指热区，不是可见摇杆才有效）
+        if (this.joystickPointerId === null && ui.x < size.width / 2) {
             this.joystickPointerId = pointerId;
             this.steerTo(event);
         }
