@@ -179,6 +179,11 @@
       "reason": "根 dev 直接转调该脚本，助手命令表登记根入口即可"
     },
     {
+      "command": { "kind": "workspace", "workspace": "@game/server", "script": "dev:server-only" },
+      "supersededBy": { "kind": "root", "script": "dev:server-only" },
+      "reason": "dev 串链（stack+bootstrap+smoke:framework）之外的单进程 watch 逃生口；根 dev:server-only 直接转调"
+    },
+    {
       "command": { "kind": "workspace", "workspace": "@game/server", "script": "start" },
       "supersededBy": { "kind": "root", "script": "start:server" },
       "reason": "根 start:server 直接转调该脚本，助手命令表登记根入口即可"

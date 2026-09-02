@@ -42,6 +42,7 @@ npm run sync:client
 npm run sync:client:watch
 npm run dev:client
 npm run dev
+npm run dev:server-only
 npm run start:server
 npm run init:project -- --project-id <id> --name <name> --display-name <text> --scope <scope|none> --brand <text>
 npm run typecheck

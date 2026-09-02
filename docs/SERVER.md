@@ -8,10 +8,14 @@
 
 ```bash
 npm install
-npm --workspace @game/server run stack
-npm --workspace @game/server run db:bootstrap
 npm run dev
 ```
+
+`npm run dev` 一条命令完成全部启动：本地栈（Redis 6401/6402 + MySQL 3316，`dev-stack.sh start`）
+→ 建库与 schema（`db:bootstrap`，幂等）→ 连通性自检（`smoke:framework`）→ watch 模式服务端。
+任一阶段失败即停在该阶段（不进 watch）。栈与库已就绪、只想快速重启进程时用
+`npm run dev:server-only`（跳过串链直接 `tsx watch`）；栈的停止仍走独立的
+`npm --workspace @game/server run stack:stop`。
 
 本地配置真源是仓库根的 `.env.development`（已入库，唯一 env 文件；`infra/config.ts` 只填 `process.env` 中
 没有的键，显式环境变量优先）。其中两项在模块加载期严格校验、非法即拒绝启动：
@@ -67,6 +71,13 @@ apps/server/tools/dev-stack.sh status
 二进制、监听端口和实际数据目录；端口被其他进程占用、owner 元数据缺失或身份不一致时会跳过并返回失败，
 不会向未知 Redis/MySQL 发送停止指令。`status` 只打印三者的可达性和 instance 标识（当前没有对应的 npm
 script）。多项目默认共用同一套 6401/6402/3316 实例，停止前请确认没有其他项目在用；首次升级前启动一次
+`stack` 以生成 `$GAME_DEV_DATA/.game-dev-stack-id` 和各服务的 `.owner` 元数据。
+
+旧实例迁移（owner 机制引入前启动的栈）：`stack` 会报「已被占用，但不是本栈实例」并拒绝继续——
+这是因为运行中的实例没有 `.owner` 元数据且不满足当前身份校验（例如 MySQL `@@server_id` 与
+instance 派生值不一致）。一次性处置：先手动停掉旧实例（`redis-cli -p 6401/6402 shutdown nosave`、
+`mysqladmin -uroot -h 127.0.0.1 -P 3316 shutdown`），再跑一次 `stack` 即生成带登记的实例，
+此后 `start`/`stop` 都按「已在跑（本栈 instance=…）」正常工作。
 `stack` 以生成 `$GAME_DEV_DATA/.game-dev-stack-id` 和各服务的 `.owner` 元数据。
 另：`npm run dev` 是 watch 模式；不需要 watch 时可用 `npm run start:server`（等价于 `@game/server`
 的 `start`）。

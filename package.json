@@ -20,6 +20,7 @@
     "sync:shared:watch": "node scripts/sync-shared.mjs --watch",
     "dev:client": "node scripts/dev-client.mjs",
     "dev": "npm --workspace @game/server run dev",
+    "dev:server-only": "npm --workspace @game/server run dev:server-only",
     "start:server": "npm --workspace @game/server run start",
     "typecheck": "npm run verify:webplatform-contract && npm --workspace @game/shared run typecheck && npm --workspace @game/server run typecheck && npm run typecheck:client && npm run typecheck:client:legacy && npm run verify:sync",
     "verify:sync": "node scripts/sync-shared.mjs --check && node scripts/sync-client.mjs --check",
