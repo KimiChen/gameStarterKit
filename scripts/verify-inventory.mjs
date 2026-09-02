@@ -726,7 +726,7 @@ const assistantRequirements = [
   ["相对导入无扩展名", "相对导入不带扩展名"],
   ["View/Logic 分离", "客户端 View/Logic 分离"],
   ["FairyGUI 动态导入", "FairyGUI 只走动态 import"],
-  ["外部身份 HTTP 边界", "外部身份服务只走 HTTP 契约边界"],
+  ["外部身份 HTTP 边界", "外部身份服务生产只走 HTTP 契约边界"],
   ["inventory 正向校验", "npm run verify:inventory"],
   ["inventory 反例测试", "npm run test:inventory"],
   ["Godogen 对照计划", "[todo-godogen.md](todo-godogen.md)"],
