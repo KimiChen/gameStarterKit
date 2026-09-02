@@ -5,11 +5,13 @@ import { GameRoomState } from "./generated/ballMove";
 import { DropInFixtureState } from "./generated/dropInFixture";
 import { IdleRoomState } from "./generated/idle";
 import { PrivateFixtureState } from "./generated/privateFixture";
+import { SnakeRoomState } from "./generated/snake";
 
 export { PlayerState, GameRoomState } from "./generated/ballMove";
 export { DropInFixturePlayerState, DropInFixtureState } from "./generated/dropInFixture";
 export { IdlePlayerState, IdleRoomState } from "./generated/idle";
 export { PrivateFixturePlayerState, PrivateFixtureState } from "./generated/privateFixture";
+export { SnakePlayerState, SnakeRoomState } from "./generated/snake";
 
 /** Fields every root declares; the gameplay-agnostic GameRoom shell may only touch these. */
 export interface RoomStatePlayerLifecycle {
@@ -58,6 +60,7 @@ export const ROOM_STATE_FRAGMENTS = Object.freeze({
     "dropInFixture": [],
     "idle": [],
     "privateFixture": ["ownerReady", "inviteRoom"],
+    "snake": [],
 } as const satisfies Record<RoomStateMode, readonly string[]>);
 
 export const ROOM_STATE_ROOT_CONSTRUCTORS = Object.freeze({
@@ -65,6 +68,7 @@ export const ROOM_STATE_ROOT_CONSTRUCTORS = Object.freeze({
     "dropInFixture": DropInFixtureState,
     "idle": IdleRoomState,
     "privateFixture": PrivateFixtureState,
+    "snake": SnakeRoomState,
 } as const satisfies Record<RoomStateMode, new () => Schema>);
 
 export type RoomStateRootForMode<M extends RoomStateMode> = InstanceType<(typeof ROOM_STATE_ROOT_CONSTRUCTORS)[M]>;

@@ -42,6 +42,15 @@ export const GAMEPLAY_CATALOG = {
         stateFragments: ["ownerReady", "inviteRoom"],
         contractDigest: "93c50eb5f5de997cb09c843bb187b599efdf7111e65228668a958b84cc1597ed",
     },
+    "snake": {
+        id: "snake",
+        constantName: "Snake",
+        modeVersion: 1,
+        maxPlayers: 8,
+        profiles: ["dropIn"],
+        stateFragments: [],
+        contractDigest: "620258cad08b812dd3edafb88ee0cdf0a725d0b728f651051ccdb61bf191cdb4",
+    },
 } as const;
 
 export type GameplayCatalogId = keyof typeof GAMEPLAY_CATALOG;

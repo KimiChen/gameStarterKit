@@ -20,6 +20,7 @@ import {
     GameRoomState,
     IdlePlayerState,
     PlayerState,
+    SnakePlayerState,
 } from "../src/rooms/schema/GameRoomState";
 
 type Vector = {
@@ -59,7 +60,21 @@ function handledByGameRoom(type: C2SType, value: unknown): {
             ...createIdleGameMode(),
             commands: { [C2S.IdlePulse]: capture(C2S.IdlePulse) },
         }
-        : {
+        : owner === "snake"
+            ? {
+                // snake 服务端 mode 属 S2 阶段；这里用探针 mode 只验 dispatcher 准入与
+                // 归一化（owner 闸/phase/exact validate 都是 shell 行为，与 mode 实现无关）。
+                id: "snake",
+                roster: { min: 1, max: 8, autoStart: 1 },
+                createPlayer: ({ sessionId }: { sessionId: string }) => {
+                    const player = new SnakePlayerState();
+                    player.id = sessionId;
+                    player.name = `probe-${sessionId}`;
+                    return player;
+                },
+                commands: { [C2S.SnakeInput]: capture(C2S.SnakeInput) },
+            }
+            : {
             ...createBallMoveGameMode(),
             commands: {
                 [C2S.Move]: capture(C2S.Move),
@@ -189,6 +204,22 @@ const c2sVectors: Record<C2SType, readonly Vector[]> = {
         { label: "symbol key", value: symbolExtra({}), accepted: false },
         { label: "array", value: [], accepted: false },
         { label: "null", value: null, accepted: false },
+    ],
+    // SnakeInput（03 §4.1）：方向 [-1,1] 连续值 + boost 布尔 + seq 严格递增整数。
+    [C2S.SnakeInput]: [
+        { label: "zero vector", value: { dirX: 0, dirY: 0, boost: false, seq: 0 }, accepted: true },
+        { label: "fraction direction", value: { dirX: 0.5, dirY: -0.5, boost: true, seq: 1 }, accepted: true },
+        { label: "both bounds", value: { dirX: -1, dirY: 1, boost: false, seq: 2 }, accepted: true },
+        { label: "dir below", value: { dirX: -1.01, dirY: 0, boost: false, seq: 0 }, accepted: false },
+        { label: "dir above", value: { dirX: 0, dirY: 1.01, boost: false, seq: 0 }, accepted: false },
+        { label: "dir nan", value: { dirX: Number.NaN, dirY: 0, boost: false, seq: 0 }, accepted: false },
+        { label: "dir infinity", value: { dirX: 0, dirY: Number.POSITIVE_INFINITY, boost: false, seq: 0 }, accepted: false },
+        { label: "boost wrong type", value: { dirX: 0, dirY: 0, boost: 1, seq: 0 }, accepted: false },
+        { label: "seq negative", value: { dirX: 0, dirY: 0, boost: false, seq: -1 }, accepted: false },
+        { label: "seq fraction", value: { dirX: 0, dirY: 0, boost: false, seq: 1.5 }, accepted: false },
+        { label: "missing seq", value: { dirX: 0, dirY: 0, boost: false }, accepted: false },
+        { label: "extra key", value: { dirX: 0, dirY: 0, boost: false, seq: 0, tick: 1 }, accepted: false },
+        { label: "symbol key", value: symbolExtra({ dirX: 0, dirY: 0, boost: false, seq: 0 }), accepted: false },
     ],
 };
 

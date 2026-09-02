@@ -61,11 +61,13 @@ const FIXTURE_ARTIFACTS = [
   `${SERVER_SCHEMA_DIR}/dropInFixture.ts`,
   `${SERVER_SCHEMA_DIR}/idle.ts`,
   `${SERVER_SCHEMA_DIR}/privateFixture.ts`,
+  `${SERVER_SCHEMA_DIR}/snake.ts`,
   SHARED_CATALOG,
   `${SHARED_STATE_DIR}/ballMove.ts`,
   `${SHARED_STATE_DIR}/dropInFixture.ts`,
   `${SHARED_STATE_DIR}/idle.ts`,
   `${SHARED_STATE_DIR}/privateFixture.ts`,
+  `${SHARED_STATE_DIR}/snake.ts`,
   SHARED_WIRE_CATALOG,
   SHARED_INDEX,
 ] as const;
@@ -629,9 +631,13 @@ test("server-only 字段拒绝暴露标记、碰撞、重复与不支持的 kind
 test("generated root maps are frozen, type-safe and reject unknown modes", () => {
   // privateFixture：阶段 8 私房验收 fixture gameplay；dropInFixture：drop-in（自由加入）验收
   // fixture gameplay（catalog 全链收录，⛔ 都不进生产 mode registry）。
-  assert.deepEqual(Object.keys(ROOM_STATE_VALIDATORS), ["ballMove", "dropInFixture", "idle", "privateFixture"]);
-  assert.deepEqual(Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS), ["ballMove", "dropInFixture", "idle", "privateFixture"]);
-  assert.deepEqual(Object.keys(GAMEPLAY_CATALOG), ["ballMove", "dropInFixture", "idle", "privateFixture"]);
+  // snake：契约先行的在途玩法（shared 已收录；服务端 mode/canonical 登记在后续阶段）。
+  assert.deepEqual(Object.keys(ROOM_STATE_VALIDATORS),
+    ["ballMove", "dropInFixture", "idle", "privateFixture", "snake"]);
+  assert.deepEqual(Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS),
+    ["ballMove", "dropInFixture", "idle", "privateFixture", "snake"]);
+  assert.deepEqual(Object.keys(GAMEPLAY_CATALOG),
+    ["ballMove", "dropInFixture", "idle", "privateFixture", "snake"]);
   assert.equal(Object.isFrozen(ROOM_STATE_VALIDATORS), true);
   assert.equal(Object.isFrozen(ROOM_STATE_ROOT_CONSTRUCTORS), true);
 
