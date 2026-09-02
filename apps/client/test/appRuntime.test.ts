@@ -445,3 +445,19 @@ test("launch 统一启动通道：disabled(app-generation) 的 feature 同样不
   assert.equal(started, 0, "disabled feature 不得启动玩法（userIntent 也不能越过 disabled）");
   runtime.dispose();
 });
+
+test("bootstrap：portalUrl 空串回落 DEV_SERVER_URL（dev 下 portal 即游戏服自身）；显式坏值仍 fail-fast", async () => {
+  const { bootstrap, makeNode } = await loadAppHost();
+  // dev 动线：portalUrl 留空不再必填——回落 DEV_SERVER_URL（AUTH_PROVIDER=dev 的游戏服
+  // 复刻 /v1/sessions/dev 与 /v1/areas 的锁定契约形状）。
+  const runtime = bootstrap.createAppRuntime({ node: makeNode(), serverUrl: "", portalUrl: "" });
+  assert.ok(runtime, "portalUrl 空串必须可启动（回落 DEV_SERVER_URL）");
+  runtime.dispose();
+
+  // 显式坏值不得被回落掩盖：initPortal 的 origin 校验保持 fail-fast。
+  assert.throws(
+    () => bootstrap.createAppRuntime({ node: makeNode(), serverUrl: "", portalUrl: "not-a-url" }),
+    /origin|http/,
+    "显式非法 portalUrl 必须 fail-fast（回落只兜底空串）",
+  );
+});

@@ -22,7 +22,7 @@ export class Main extends Component {
     @property({ tooltip: "服务端 http(s) 地址。留空 = 自动跟随根 .env.development 的 PORT；填写即覆盖。" })
     serverUrl = "";
 
-    @property({ tooltip: "WebPlatform Public http(s) 地址（登录 + 选服），必填。" })
+    @property({ tooltip: "WebPlatform Public http(s) 地址（登录 + 选服）。留空 = 跟随 PORT（dev 下即游戏服自身）；联调外部身份服务时填写。" })
     portalUrl = "";
     // 阶段 9 登记：Home 菜单已数据驱动（generated menu contribution 的 launch target
     // 优先），本字段只剩「默认 launch target 兜底」职责，Home 数据驱动稳定后可删——
