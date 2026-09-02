@@ -57,13 +57,15 @@ npm run sync:shared
 
 Colyseus、FairyGUI 和 bitECS 的锁定版本及运行时文件已随仓库入库；首次打开或日常开发不需要执行依赖抓取命令。
 
-启动服务端本地依赖与开发进程：
+启动服务端本地依赖与开发进程（一条命令）：
 
 ```bash
-npm --workspace @game/server run stack
-npm --workspace @game/server run db:bootstrap
 npm run dev
 ```
+
+`npm run dev` 依次完成：本地栈（Redis 6401/6402 + MySQL 3316）→ 建库与 schema（幂等）
+→ 连通性自检 → watch 模式服务端；任一阶段失败即停。栈与库已就绪、只想快速重启时用
+`npm run dev:server-only` 跳过串链。
 
 `npm run dev` 在非生产环境默认 `AUTH_PROVIDER=dev`：游戏服进程内提供开发登录与选服
 （`/v1/sessions/dev`、`/v1/areas`，会话与角色登记落本地 Redis/MySQL），**无需另行启动
@@ -87,7 +89,8 @@ WebPlatform**。要联调真实外部身份服务时，另行启动与当前契�
 
 | 命令 | 作用 |
 | --- | --- |
-| `npm run dev` | 启动服务端开发进程 |
+| `npm run dev` | 一条命令启动完整开发环境：本地栈（stack）→ 建库（db:bootstrap）→ 连通性自检（smoke:framework）→ watch 模式服务端 |
+| `npm run dev:server-only` | 跳过串链只起 watch 模式服务端（栈与库已就绪时的快速重启逃生口） |
 | `npm run start:server` | 非 watch 方式启动服务端，等价于 `@game/server` 的 `start` |
 | `npm run dev:client` | 启动时先按锁定契约重生成 `apps/shared/src/generated/webplatform`、再全量同步一次 shared，然后常驻监听 shared/client 改动并同步到 Cocos 工程；需先 `npm install`（契约刷新读 `node_modules/@gono/webplatform-contract`，缺失则在起 watcher 前退出） |
 | `npm run init:project -- <参数>` | 幂等写入项目身份元数据并同步生成投影；用 `--help` 查看必填身份参数和 dry-run 选项 |

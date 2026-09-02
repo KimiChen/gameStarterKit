@@ -6,7 +6,7 @@
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "npm run stack && npm run db:bootstrap && npm run smoke:framework && tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "smoke": "tsx test/smoke.ts",
     "smoke:framework": "tsx tools/smoke.ts",
@@ -22,7 +22,8 @@
     "codegen:gameplays": "node --import tsx tools/gameplay-codegen/cli.ts",
     "codegen:features": "node --import tsx tools/feature-codegen/cli.ts",
     "typecheck": "tsc --noEmit",
-    "loadtest": "tsx loadtest/bot.ts --endpoint ws://localhost:2568 --room game --numClients 20"
+    "loadtest": "tsx loadtest/bot.ts --endpoint ws://localhost:2568 --room game --numClients 20",
+    "dev:server-only": "tsx watch src/index.ts"
   },
   "dependencies": {
     "@colyseus/core": "^0.17.0",

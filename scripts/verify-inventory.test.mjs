@@ -554,10 +554,10 @@ test("inventory verifier rejects a stale root command in the README command tabl
   const root = createFixture();
   try {
     const readme = join(root, "README.md");
-    const text = readFileSync(readme, "utf8").replace(
-      "| `npm run dev` | 启动服务端开发进程 |\n",
-      "| `npm run fixture:stale` | fixture stale command |\n| `npm run dev` | 启动服务端开发进程 |\n",
-    );
+    const before = readFileSync(readme, "utf8");
+    const devRow = "| `npm run dev` | 一条命令启动完整开发环境：本地栈（stack）→ 建库（db:bootstrap）→ 连通性自检（smoke:framework）→ watch 模式服务端 |\n";
+    assert.ok(before.includes(devRow), "fixture 前提：README 的 dev 行文本必须与真仓一致");
+    const text = before.replace(devRow, `| \`npm run fixture:stale\` | fixture stale command |\n${devRow}`);
     writeFileSync(readme, text);
     assertRejected(root, /README\.md 的常用命令登记包含不存在的根命令：fixture:stale/);
   } finally {
@@ -674,7 +674,7 @@ test("inventory verifier rejects a root document citing a missing workspace comm
     const file = join(root, "README.md");
     const before = readFileSync(file, "utf8");
     const after = before.replace(
-      "npm --workspace @game/server run db:bootstrap",
+      "npm --workspace @game/server run smoke:framework",
       "npm --workspace @game/server run db:migrate",
     );
     assert.notEqual(after, before, "fixture must actually rewrite a workspace command literal");
