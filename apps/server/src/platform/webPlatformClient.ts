@@ -430,6 +430,18 @@ export const webPlatformClient: WebPlatformClient = {
 };
 
 /**
+ * 组合根安装身份提供者（AUTH_PROVIDER=dev 时由 app.config.ts 安装进程内开发实现）。
+ * 与测试 delegate 不同：这是受控的生产路径分支——生产环境硬拒绝替换
+ * （铁律 12：生产只走 HTTP 契约边界；config.ts 的 AUTH_PROVIDER 闸在此之前已拒）。
+ */
+export function installWebPlatformClient(client: WebPlatformClient): void {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("生产环境禁止替换 WebPlatformClient（铁律 12：生产只走 HTTP 契约边界）");
+  }
+  webPlatformDelegateFrame = { client };
+}
+
+/**
  * 测试专用 delegate 注入。返回的 restore 必须按嵌套安装的逆序调用；生产环境硬拒绝，
  * 防止测试接缝演化成运行期模式开关。
  */
