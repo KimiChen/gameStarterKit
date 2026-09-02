@@ -79,7 +79,7 @@ export function deriveLaunchFeatureIds(
 export interface AppRuntimeOptions {
     /** 玩法 presentation 挂载节点（Main 传入；本类不 import cc 值）。 */
     readonly node: Node;
-    /** 要进入的已登记玩法 id；默认 ballMove（阶段 9 数据驱动后评估删除）。 */
+    /** 要进入的已登记玩法 id；默认 snake（Snake Off 已拍板替代 ballMove 成默认入口）。 */
     readonly gameplayId?: string;
     /** §7.8 show 三态判定的战斗连接快照 seam（测试注入；生产缺省读 gameplay services 的 roomClient）。 */
     readonly battleConnection?: () => GameRoomConnectionSnapshot;
@@ -119,7 +119,7 @@ export class AppRuntime {
     readonly ports: AppPorts;
 
     constructor(options: AppRuntimeOptions) {
-        this.gameplayId = options.gameplayId ?? GameplayModeId.BallMove;
+        this.gameplayId = options.gameplayId ?? GameplayModeId.Snake;
         this.battleConnection = options.battleConnection ?? null;
         // Claim page/session ownership：构造即递增 app generation；旧场景的 scope 被
         // supersede（其异步 transition 先失效再返回）。
@@ -457,7 +457,7 @@ export class AppRuntime {
         // 默认 launch target 的兜底（阶段 9 评估删除）。
         const fallbackId = typeof this.gameplayId === "string" && this.gameplayId.trim().length > 0
             ? this.gameplayId.trim()
-            : GameplayModeId.BallMove;
+            : GameplayModeId.Snake;
         const requestedId = typeof targetGameplayId === "string" && targetGameplayId.trim().length > 0
             ? targetGameplayId.trim()
             : fallbackId;

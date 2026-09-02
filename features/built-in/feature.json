@@ -30,7 +30,7 @@
     {
       "entryId": "ballMove",
       "slot": 0,
-      "order": 0,
+      "order": 1,
       "label": "进入战斗",
       "labelKey": "menu.enterBattle",
       "launch": { "kind": "gameplay", "gameplayId": "ballMove" }
@@ -38,7 +38,7 @@
     {
       "entryId": "snake",
       "slot": 0,
-      "order": 1,
+      "order": 0,
       "label": "贪吃蛇大作战",
       "labelKey": "menu.snakeOff",
       "launch": { "kind": "gameplay", "gameplayId": "snake" }

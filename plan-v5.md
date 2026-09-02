@@ -32,6 +32,9 @@
 verify:sync 镜像一致、inventory 全绿）；`test:int` 169/169（本地真 Redis/MySQL 实跑，
 含 drop-in 真栈四场景）。
 
+> 更新（2026-09-02，Snake Off 首版落地后）：`verify:all` exit 0（服务端 480/480、
+> 客户端 366/366、FGUI 66/66、inventory 110/110）；`test:int` 170/170（含 snake 真栈四场景）。
+
 ---
 
 ## A. 可排期的工程项（无头环境可做）
@@ -56,7 +59,7 @@ verify:sync 镜像一致、inventory 全绿）；`test:int` 169/169（本地真 
 
 | # | 条目 | 现状 |
 |---|---|---|
-| C1 | snakeoff（竖版贪吃蛇）玩法实现 | 已拍板（2026-08-31）：snakeoff 优先替代 ballMove 入口；房型方向已从邀请码私房改为 **drop-in 自由加入**，框架能力已就绪（`91230dd`：StartPolicy 第三变体，真栈四场景验收）。接入只需：manifest 写 `maxPlayers: 8`、`profiles: ["dropIn"]`、roster `{min:1,max:8,autoStart:1}`，其余全是玩法自己的文件 |
+| C1 | snakeoff（竖版贪吃蛇）玩法实现 | ✅ **首版已实现**（2026-09-02，S0–S5：素材与台账 `e9ab40f`、shared 契约 `f0c2111`、SnakeWorld 模拟 `3d2affe`、房间集成 `08b48e4`、客户端战斗链路 `b062f2a`、默认入口切换）。拍板口径：drop-in 自由加入（8 人、首人即开局、Playing 可入）+ 90s 限时计分 + 死亡 2s 复活保分 + AI 填充。剩余尾巴：Creator 预览人工证据与真机联调（归 C3）、数值手感调优（随预览进行）、皮肤/相机随长度缩放等 v1.1 候选（见玩法包内注记） |
 | C2 | undergroundIdle 玩法实现 | wsrpc 迁移入口路线次之（同一拍板）；美术生产流程与规格文档在 `docs/undergroundIdle/`（在途） |
 | C3 | 两玩法的**真机联调** | 承接 plan-v4「遗留待办」表的 `真机 / 阶段 10` 行。原表已定性为「既定范围外，随玩法实现另立计划」，故归入 C 而非 B——⛔ 但必须被点名：B 类全是编辑器/Creator 项，不点名它就会随抽离一起消失 |
 

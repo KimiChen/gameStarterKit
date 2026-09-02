@@ -55,20 +55,22 @@ function sortedByRule(items: readonly GeneratedMenuContribution[]): GeneratedMen
   });
 }
 
-test("generated contributions 已按 slot → order → featureId → entryId 排序，contribution[0] 是 ballMove", () => {
+test("generated contributions 已按 slot → order → featureId → entryId 排序，contribution[0] 是 snake", () => {
   assert.ok(GENERATED_MENU_CONTRIBUTIONS.length >= 1, "菜单不得为空（Home 渲染 contribution[0]）");
   assert.deepEqual([...GENERATED_MENU_CONTRIBUTIONS], sortedByRule(GENERATED_MENU_CONTRIBUTIONS),
     "generated 排序必须与独立重算一致");
+  // Snake Off 已拍板替代 ballMove 成为默认入口（2026-08-31）；ballMove 保留为可选入口
+  // 与内部回归样例（⛔ 不物理删除）。
   const primary = GENERATED_MENU_CONTRIBUTIONS[0];
-  assert.equal(primary.entryId, "ballMove");
+  assert.equal(primary.entryId, "snake");
   assert.equal(primary.featureId, "builtin");
-  assert.equal(primary.label, "进入战斗");
-  assert.deepEqual(primary.launch, { kind: "gameplay", gameplayId: "ballMove" },
+  assert.equal(primary.label, "贪吃蛇大作战");
+  assert.deepEqual(primary.launch, { kind: "gameplay", gameplayId: "snake" },
     "launch target 必须指向已登记玩法（Home 不分支 gameplay，target 进 LaunchPort）");
   // FeatureRegistry 暴露同一数据源（openHome 的读取面）。
   const registry = new FeatureRegistry(APP_FEATURES);
   assert.deepEqual([...registry.menuContributions()], [...GENERATED_MENU_CONTRIBUTIONS]);
-  // ballMove 已迁成 built-in contribution：不存在 Home→Main 专属回调数据源。
+  // ballMove 保留为可选 contribution（内部回归样例）。
   assert.ok(BUILTIN_FEATURE.menu.some((item) => item.entryId === "ballMove"));
 });
 
