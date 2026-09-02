@@ -1,6 +1,6 @@
 # FairyGUI UI 生产、装配与自动化工作流
 
-> 文档版本：2.3<br>
+> 文档版本：2.4<br>
 > 编写日期：2026-09-02<br>
 > 适用范围：任意玩法或业务模块<br>
 > 当前运行时：Cocos Creator 3.8.8 + `fairygui-cc` 1.2.2 + TypeScript
@@ -11,9 +11,10 @@
 
 - **当前已有**：FairyGUI Editor 工程、人工保存与发布、View codegen、`.view.json`/`feature.json` 驱动的
   `codegen:features`、生成式 FGUI 契约与 registry、结构契约测试、FGUI 发布闭包锁、发布物反解析对账、客户端同步和 Creator 人工验收。
-- **实际 PSD 证据**：`docs/psd-maker/ug_main_layered_source_v02.psd` 是已保存的 source-only 分层 PSD，制作与
-  composite 对账见 `docs/psd-maker.md`；它不是通用 CLI 的生产金样，也没有通过 Photoshop 往返、运行资产、三层
-  stable key 或 FairyGUI 编译门禁。
+- **实际 PSD 证据**：`docs/psd-maker/ug_main_layered_source_v02.psd` 是已保存的
+  `referenceCompositeOnly` 重组证据，制作与 composite 对账见 `docs/psd-maker.md`；它不证明元素级可编辑，不是通用
+  CLI 的生产金样，也没有通过 Photoshop 往返、运行资产、三层 stable key 或 FairyGUI 编译门禁。
+  `docs/ui/undergroundIdle/ue-v01/` 的 11 份 PSD 也属于该档：整画布 ImageGen base 未拆成独立语义元素，只能作 UE 审稿参考。
 - **近期优先**：统一只读 `FguiProjectIR`、PageSpec Schema、可执行 Scenario、Creator UI Gallery、设置门禁、Editor 工具链锁和发布 receipt。
 - **受控试点**：CLI 编译器 PSD 版在临时完整工程中生成候选 XML/`package.xml`，再由固定版本 Editor 人工接管、
   保存—重开和正式发布。OpenFairyGUI 至多作为只读解析/影子验证候选。
@@ -27,7 +28,9 @@
 | 名称 | 含义 |
 | --- | --- |
 | **生产资产清单** | 页面批次的 `asset-manifest.json`，记录批准源、Alpha、裁切、pivot、九宫格和输出策略 |
-| **PSD 交接包** | `PsdHandoffBundle`：批准 PSD、命名/alias、sidecar、source/prompt hash、preview 和批准记录的原子集合 |
+| **PSD 交接包** | `PsdHandoffBundle`：带输入成熟度的 PSD、命名/alias、sidecar、独立源、source/prompt hash、preview 和批准记录的原子集合 |
+| **源重组图** | `source-reference-excluded composite`：G4c 只用 PSD 的可编辑 leaf/native object 重建，不含 target/reference |
+| **运行资产重组图** | `runtime-reference-excluded composite`：G5 只用导出的运行 PNG/native object 重建，不含 target/reference 或 PSD 文档 composite |
 | **CLI 编译器 PSD 版** | 内部 `authoringMode` 为 `cliPSDCompiler`；只在临时完整 FairyGUI 工程生成候选，包含 `seededTemplate` 与 `rawProjectCompiler` 两阶段 |
 | **FGUI 发布闭包锁** | `scripts/fgui.manifest.json`，钉住设计源、发布物和 View AUTO 区块哈希 |
 | **Editor 保存—重开往返验收** | 在真实 Editor 中打开、保存、关闭、重开，检查是否发生修复、丢失或语义变化 |
@@ -45,7 +48,9 @@
 G0～G2：策划冻结 → PageSpec / Scenario → 布局约束
                                       │
                                       ▼
-G3～G5：视觉锁定 → 命名 + sidecar 的 PSD handoff → 批准运行资产
+G3～G5：视觉锁定 → G4a 元素分解 → G4b 独立源 → G4c 可编辑 PSD + 源重组图
+          → 来源/许可/生产属性批准 → productionFromAcceptedAssets
+          → G5 批准运行资产 + 运行资产重组图
                                       │
                                       ▼
 G6：    人工 Editor 装配（当前）
@@ -91,7 +96,26 @@ G8a/G8b/G9：无头场景测试 + Creator UI Gallery（计划）
 
 能力成熟度 M0～M3 与交付档位是两个维度。处于 M0 的人工流程也能交付 Full 证据；进入 M2 的 CLI 自动化也不能降低验收标准。
 
-### 1.2 效果图与可运行程序的交付边界
+### 1.2 PSD 输入成熟度
+
+PSD 输入成熟度只回答“美术源能否独立编辑、能否进入运行资产生产”，与 Prototype / Standard / Full **交付档位正交**。
+Prototype 页面只要进入 G5、G6 和真实运行，也不能用低成熟度 PSD 绕过运行资产门禁；Full 交付也可能在 G3 暂时只有
+`referenceCompositeOnly`，但此时不得宣称生产完成。
+
+| `psdInputMaturity` | 能力边界 | 允许流向 |
+| --- | --- | --- |
+| `referenceCompositeOnly` | 整页 target、扁平图或含整页 ImageGen base 的 PSD 包装；可带导线、文字预览和审稿分组，但不保证独立 Alpha、隐藏像素或元素级编辑 | 只用于 G3 审稿、G4a 分解和差异参考；不得进入 G5、G6 或运行目录 |
+| `artistEditableSource` | 每个需要独立调整的可见元素已有独立叶层、原生 Type/Shape/Smart Object 或独立 RGBA 源；原始 target 仅为隐藏 reference，并能在不改变兄弟元素像素的前提下单独隐藏、移动、替换或编辑 | 用于 G4c 美术接管、修订和 Photoshop 往返；尚未通过来源、Alpha、pivot、九宫格和运行预算批准时不得进入 G5 |
+| `productionFromAcceptedAssets` | 在 `artistEditableSource` 基础上，全部可导出叶层或原生对象都有批准独立源、许可、哈希、Alpha/padding/pivot/状态和输出策略，sidecar 闭合且 `source-reference-excluded composite` 通过 | G5 唯一合法输入；通过 G5 且 `runtime-reference-excluded composite` 获批后，才可供人工 Editor 或 M2 CLI 候选装配 |
+
+历史名称 `sourceOnlyFromTarget` 统一迁移为 `referenceCompositeOnly` 的 alias；它不表示“可编辑生产源”，也不能通过增加
+若干文字层、导线层或隐藏组自动升级。成熟度必须由 bundle 字段和对应 Gate 证据显式声明，不能从 `.psd` 扩展名、图层数或
+文件大小推断。
+
+新 Schema 使用 `psdInputMaturity`；历史 schemaVersion 0 的 `inputTier: sourceOnlyFromTarget` 只读映射，不回写已由 hash
+覆盖的旧 evidence。升级必须创建新 bundle 和新批准记录。
+
+### 1.3 效果图与可运行程序的交付边界
 
 一张扁平效果图不包含：
 
@@ -102,15 +126,17 @@ G8a/G8b/G9：无头场景测试 + Creator UI Gallery（计划）
 - FairyGUI package/resource/component/child 的内部 ID；
 - 数据来源、等待、错误、重连、重复点击和生命周期语义。
 
-因此，“视觉上接近”与“可维护、可运行、可验证”必须分阶段。视觉模型只产生候选像素；结构化契约负责语义；Editor 负责设计源与正式发布；程序和 Creator 证据负责运行结果。
+因此，“视觉上接近”与“可维护、可运行、可验证”必须分阶段。视觉模型只产生候选像素，不负责从扁平像素恢复可靠图层；
+结构化契约负责语义；独立生产源和可编辑 PSD 负责美术接管；Editor 负责设计源与正式发布；程序和 Creator 证据负责运行结果。
 
-### 1.3 完成定义
+### 1.4 完成定义
 
 页面只有同时满足以下条件才算完成：
 
 1. 每个用户路径、显示字段、动作和异常分支都能追溯到 PageSpec。
 2. 每个 required state 都有可重复构造的 Scenario；M1 未落地前，至少有等价的人工记录和无头测试。
-3. 每个可见部分都能映射到运行时文本、FGUI 图元、Loader 或批准资产。
+3. 每个可见部分都唯一映射到运行时文本、FGUI 图元、Loader、批准 leaf asset 或批准 native object；需要单独调整的元素
+   不能被烘焙在多职责整页位图中。
 4. Editor 保存—重开往返验收通过，发布物反解析对账也通过；两者不得互相冒充。
 5. View、Logic、数据、事件、异步取消和页面生命周期已接线并有测试。
 6. Creator 真实预览覆盖全部 required scenario 和目标尺寸，且走正常 registry/pages/Logic/View 路径。
@@ -153,7 +179,26 @@ G8a/G8b/G9：无头场景测试 + Creator UI Gallery（计划）
 - 生产源是分层母版、独立透明件、原始矢量、骨骼源或九宫格源图。
 - 运行资产是经过尺寸、Alpha、裁切、pivot、压缩和图集策略校验后进入 FairyGUI/Cocos 的文件。
 
-效果图默认禁止直接进入运行目录。只有明确批准为 `fullCanvas` 的整层图片才可作为运行资产来源。
+效果图默认禁止直接进入运行目录。只有从批准独立源产生、职责单一且满足第 7.9 节约束的 `fullCanvas` 图片才可作为运行
+资产来源；“整页 target 尺寸一致”不是批准理由。
+
+#### 2.3.1 元素级可编辑性的最低定义
+
+“分层”不等于“元素级可编辑”。导线、文字预览、隐藏 reference 和一个仍包含全部 UI 的整页 base 即使位于不同图层，
+也只能算 `referenceCompositeOnly`。一个元素只有同时满足以下条件才算独立生产 leaf：
+
+1. 它有唯一 `stableKey`，并能追溯到 PageSpec / 线框中的 `nodeKey` 与一种明确责任类型。
+2. 在 Photoshop 工作副本中单独隐藏、移动、替换或编辑它，不会同时改动另一个 stable key 的像素；若需多层共同构成
+   一个元素，使用一个 `ROLE::stableKey` 资产组，组内子层不再冒充多个运行资产。
+3. 位图 leaf 有完整 RGBA、真实透明边、必要的被遮挡像素、padding 与 anchor/pivot 证据；不能把邻近背景、文字或其他
+   控件一起烘焙进矩形裁切。
+4. 运行时文本对应真实可编辑 Type Layer 或不导出的槽位参考；FGUI primitive 对应 native Shape/vector 源或明确声明的
+   运行时图元。栅格文字与“只附 Type 元数据的预览像素”都不能冒充可编辑文字源。
+5. 交互、换态、复用、动画、九宫格、Loader、主题化或预计会单独改稿的元素必须各自独立。仅不可交互且确认不会独立
+   调整的微装饰可由美术负责人批准并入一个职责单一的背景 leaf，批准范围写入 manifest。
+
+图片模型可以按 stable key 生成或修订候选单件，但不能充当可靠的扁平图自动拆层器。target 没有提供隐藏像素或 Alpha 时，
+必须重新生成、人工补绘或标记 `needs_source`；禁止用猜出的透明边把成熟度升级为 `artistEditableSource`。
 
 ### 2.4 模型只做有证据的工作
 
@@ -176,7 +221,8 @@ G8a/G8b/G9：无头场景测试 + Creator UI Gallery（计划）
 
 三层交接固定为：
 
-1. **PSD 命名**：顶层可用面向美术的排序组；进入编译的叶子层使用 `ROLE::stableKey`，只回答“它是谁”。
+1. **PSD 命名**：顶层可用面向美术的排序组；进入编译的 leaf/资产组使用 `ROLE::stableKey`，只回答“它是谁”；
+   reference/guide/preview 使用不可导出的保留组并不得复用 exportable stable key。
 2. **sidecar 契约**：`delivery-spec.json`、`asset-manifest.json`、`assembly-recipe.json` 回答 Controller、Gear、Relation、
    热区、九宫格和安全区“应该是什么”；任何 T/H/A 历史编号必须有显式 alias。
 3. **Editor 映射**：takeover 后从正式 Editor 工程反解析 stable key 到 package/resource/component/child 正式 ID，回答
@@ -228,8 +274,8 @@ Schema 派生或按 Schema 校验。提示词中的 `layoutMode`、fixture 或 m
 | 可执行 Scenario | `<Page>.scenarios.ts` | M1 计划；使用真实 UI-model/Logic 类型，同时驱动无头测试与 Creator Gallery |
 | 精确布局 | 当前 `editor` 以 Editor 设计源为真；`cliPSDCompiler` takeover 后同样回归 Editor | takeover 前 recipe 只表达候选约束；坐标 snapshot 是只读派生物 |
 | 视觉语言 | 批准的 style anchor + style tokens | 色板、材质、描边、圆角、光向和禁用项 |
-| 视觉目标 | 批准的整页效果图 | 不直接证明可切层 |
-| 美术生产 | `PsdHandoffBundle` + 批准独立源 | 使用“PSD 命名 + sidecar 契约 + Editor 映射”；单个 PSD 不是完整输入 |
+| 视觉目标 | 批准的整页效果图 / `referenceCompositeOnly` | 只供构图和审美参考，不直接证明可切层或元素可编辑 |
+| 美术生产 | `artistEditableSource` / `productionFromAcceptedAssets` `PsdHandoffBundle` + 批准独立源 | 使用“PSD 命名 + sidecar 契约 + Editor 映射”；单个 PSD 或整页 base 不是完整输入 |
 | FGUI 内部 ID | FairyGUI Editor 工程 | 新 ID 由 Editor 分配；外部映射至多是只读审计快照 |
 | FGUI 结构 | FairyGUI Editor 工程 | CLI 只生成临时候选；人工 takeover 后由 Editor 序列化并成为正式真源 |
 | 统一读取模型 | `FguiProjectIR` | M0.5 计划中的只读派生模型，不是第二份可编辑真源 |
@@ -263,12 +309,16 @@ docs/ui/<feature>/<page>/
 │  ├─ concepts/
 │  └─ review-log.md
 ├─ 40-production/
-│  ├─ <Page>.approved.psd
+│  ├─ reference/
+│  │  └─ <Page>.target.png
+│  ├─ psd/
+│  │  └─ <Page>.artist-editable.psd
 │  ├─ delivery-spec.json
+│  ├─ decomposition-spec.json
 │  ├─ asset-manifest.json
 │  ├─ assembly-recipe.json
 │  ├─ prompts/
-│  ├─ source/
+│  ├─ source/<stableKey>/
 │  ├─ runtime/
 │  ├─ generated/
 │  │  ├─ psd-handoff-ir.json          # 计划：只读派生
@@ -276,6 +326,9 @@ docs/ui/<feature>/<page>/
 │  │  └─ editor-id-map.snapshot.json  # 计划：takeover 后只读派生
 │  ├─ evidence/
 │  │  ├─ psd.approval.json
+│  │  ├─ solo-layer-contact-sheet.png
+│  │  ├─ source-reference-excluded-composite.png
+│  │  ├─ runtime-reference-excluded-composite.png
 │  │  └─ fgui.approval.json
 │  └─ contact-sheet.png
 └─ 90-evidence/
@@ -296,7 +349,9 @@ tmp/ui-pipeline/<batchId>/<runId>/    # 计划：ignored，可整体丢弃
 └─ logs/
 ```
 
-`40-production/runtime/` 只是审稿和交接暂存区。G5 通过后，资产按明确映射进入 `apps/art/fairygui/assets/<Package>/`；暂存副本和包内副本不能各自继续修改。
+`40-production/reference/` 永远不参与运行资产导出。`40-production/runtime/` 只是审稿和交接暂存区；其内容只能由
+`productionFromAcceptedAssets` 中批准的 leaf/native object 确定性产生。G5 通过后，资产按明确映射进入
+`apps/art/fairygui/assets/<Package>/`；暂存副本和包内副本不能各自继续修改。
 PSD 命名、sidecar 字段、输入档位和 Photoshop 门禁以 [PSD 到 FairyGUI 的“CLI 编译器 PSD 版”方案](psd.md) 为准。
 
 仓库正式路径：
@@ -324,15 +379,17 @@ scripts/fgui.manifest.json                 FGUI 发布闭包锁
 | G1 | PageSpec 与 Scenario | UI model、字段/动作、状态维度、Scenario、运动反馈 | 每个值有来源、每个操作有闭环、每个 required state 可重复构造 |
 | G2 | 线框与布局 | 节点角色、布局约束、热区、安全区、极值样例 | 长文本、极值数字、目标尺寸和点击区可容纳 |
 | G3 | 视觉锁定 | style anchor、tokens、批准效果图、评审记录 | 视觉语言、构图和不变量被批准 |
-| G4 | 生产拆层 | PSD 命名、sidecar、来源/许可和分层批准 | 输入档位明确；无烘焙动态内容、无虚构图层 |
-| G5 | 运行资产 | `productionFromAcceptedAssets` bundle、透明件、九宫格源、质量报告 | Alpha、尺寸、边缘、pivot、预算和一致性通过 |
+| G4a | 元素分解 | `decomposition-spec.json`、逐节点责任类型、stable key 与 source gap | 每个可见 nodeKey 恰有一个责任归属；reference、动态内容和需独立调整元素已标明 |
+| G4b | 独立源生产 | 按 stable key 的独立 RGBA/vector/Type/Shape/Smart Object 源、来源/许可和生成记录 | 无从 target 猜出的 Alpha/隐藏像素；无多职责裁切；缺源项显式阻断 |
+| G4c | 可编辑 PSD | `artistEditableSource` PSD、命名/sidecar、solo contact sheet、`source-reference-excluded composite` 与 Photoshop 往返记录 | 元素能独立编辑；reference 不参与重组；无多职责整页 base；状态仅保存局部 delta |
+| G5 | 运行资产 | G5 已批准的运行 PNG/九宫格源、`runtime-reference-excluded composite`、质量报告与输入 bundle hash | 输入为 `productionFromAcceptedAssets` 且只消费 accepted leaf/native object；Alpha、尺寸、边缘、pivot、预算和源/运行重组一致性通过 |
 | G6 | Editor 装配与发布 | 组件、Controller、Relation、Editor 映射、官方发布物 | 候选只在临时工程；Editor 保存—重开、正式发布、引用闭合通过 |
 | G7 | 双端程序接线 | shared/服务端/客户端行为、View/Logic、FGUI 契约和测试 | 策划行为与 XML 结构各自从正确真源实现，异步和生命周期正确 |
 | G8a | Creator 集成验收 | 场景矩阵、截图/录像、缺陷归因 | 全状态、目标尺寸和异常路径通过 |
 | G8b | 目标平台验收 | 真机构建、安全区、纹理和性能证据 | 仅在交付承诺需要时必过 |
 | G9 | 冻结交付 | 版本、哈希、人工发布/验收记录、变更与回归范围；M0.5 后附 receipt | 下游产物可追溯、可复建 |
 
-G0 由策划/产品批准；G1～G2 由 UI/UX 与客户端批准；G3 由美术负责人批准；G4～G6 由美术、技术美术/UI 工程和客户端共同批准；G7 由客户端批准；G8a/G8b 由 QA 与对应负责人批准。模型可以整理证据，不能代替授权人作业务、审美或发布决定。
+G0 由策划/产品批准；G1～G2 由 UI/UX 与客户端批准；G3 由美术负责人批准；G4a～G6 由美术、技术美术/UI 工程和客户端共同批准；G7 由客户端批准；G8a/G8b 由 QA 与对应负责人批准。模型可以整理证据，不能代替授权人作业务、审美或发布决定。
 
 ### 4.2 G0：策划冻结
 
@@ -387,7 +444,13 @@ Relation 不会自动处理刘海或四边安全区。没有明确程序接线�
 
 冻结色板、材质、描边、圆角、阴影、光向、图标透视、角色比例和禁用项。动态文字只保留槽位，不生成不可编辑的伪文字。每轮只改变一个变量，并记录提示词、参考图、模型、输出和批准结论。
 
-### 4.6 G4：生产拆层
+### 4.6 G4：元素分解、独立源与可编辑 PSD
+
+#### G4a：元素分解
+
+先从 PageSpec、线框和批准 target 建立 `decomposition-spec.json`，再生产图层。spec 逐个枚举可见 `nodeKey`、稳定 `stableKey`、
+父子/层序、责任类型、状态维度、是否动态、是否 reference-only、预期源类型和 FGUI 目标类型；不得先从扁平像素自动分割，
+再反推这些语义。
 
 每个可见节点选择责任类型：
 
@@ -398,35 +461,74 @@ Relation 不会自动处理刘海或四边安全区。没有明确程序接线�
 | `nine-slice` | 面板、按钮底、气泡 | 明确四边 inset，中心区有效 |
 | `tile` | 平铺纹理 | 明确方向 |
 | `transparent-png` | 图标、角色、装饰 | 真实 Alpha、完整轮廓、padding、pivot |
-| `full-canvas-png` | 背景、同画布灯光、前景遮挡 | 保持完整画布和固定坐标 |
+| `full-canvas-png` | 单一背景、同画布全局灯光、前景遮挡 | 保持完整画布和固定坐标；不得烘焙面板、按钮、图标、文字、角色或换态件 |
 | `loader` | 头像、远端或状态资源 | 定义空值、加载和失败占位 |
 | `list-template` | 重复项 | 明确 `defaultItem`、字段和空态 |
 | `spine/sequence/fx` | 复杂动画 | 单独预算、状态和降级 |
 
-生产资产清单至少记录 stable key、节点覆盖、来源、尺寸、状态、Alpha、裁切、padding、pivot、九宫格、图集、责任方、批准状态、许可和源哈希。
+`full-canvas-png` 必须登记 `fullCanvasReason`、单一 owner 和 `bakedStableKeys`。默认要求 `bakedStableKeys: []`；若背景微装饰
+经批准合并，必须逐项列出且这些 key 不得再作为另一运行资产出现。任何交互、状态、Loader、runtime text、可复用、可动画或
+预计独立改稿的元素都禁止进入 full-canvas leaf。一个含完整页面 UI 的 ImageGen base 无论是否隐藏副本或叠加文字层，始终是
+`referenceCompositeOnly`。
 
-分层 PSD 必须声明输入档位：批准整页 target 重组得到的是 `sourceOnlyFromTarget`，只能做分层审阅和后续资产补产；
-只有由 source-approved 独立生产源重建、并带完整 sidecar 与 Photoshop 往返批准的
-`productionFromAcceptedAssets`，在 G5 验收通过后才能进入 CLI FairyGUI 编译。`psd-maker.md` 的现有样例属于前者。
+G4a 以 stable key 对 `nodeKey` 的 missing、orphan、duplicate 和多重 owner 全部为零结束。信息不足的节点标记
+`needs_source` 并阻断 G4b，不得从 target 猜透明边、隐藏像素或运行责任。
+
+#### G4b：独立源生产
+
+1. 按 stable key 每次生成、绘制或修订一个独立源；style anchor 和整页 target 只作风格与构图参考。
+2. 角色、图标、装饰和状态件提供完整轮廓的独立 RGBA；面板、按钮底优先提供 native vector/Shape 或可验证九宫格源；
+   文字提供 Type Layer/字体规范或纯运行时槽位。
+3. `regionCrop` 仅允许目标对象完整可见、边缘无背景污染且不需要隐藏像素时使用；否则必须重新生成、人工补绘，或以保存
+   输入、mask、处理记录和批准结论的 `inpaintCrop` 生产候选。
+4. 每个状态组只包含相对共享基底发生变化的 leaf delta。不得为 `locked`、`inProgress`、`claimable` 等状态各复制一张
+   含公共 UI 的整页位图；确需整景切换时必须拆成独立单职责场景 leaf 并单独批准。
+5. 独立源逐项检查来源/许可、色彩模式、Alpha、完整隐藏像素、padding、anchor/pivot、同系列一致性和 source hash。
+
+G4b 输出用于组装 `artistEditableSource` 候选；只有通过 G4c 的可编辑 PSD 和人工编辑验收后才能正式声明该成熟度。
+来源或运行属性未批准的 leaf 必须保留 candidate 状态，不能进入 runtime。
+
+#### G4c：可编辑 PSD 与 handoff
+
+production PSD 必须只用 G4b 的独立源或 native object 重组。可编译叶层命名为 `ROLE::stableKey`；一个 stable key 需要多层
+时以该名称建立资产组。原始 target、整页 ImageGen base、导线和审稿标注只能放入隐藏的 reference-only 组，并且必须从
+`source-reference-excluded composite`、`runtime-reference-excluded composite`、切图和运行导出中排除。
+
+G4c 至少生成并审阅：
+
+- 每个 exportable leaf 的 solo-layer contact sheet；
+- 只由可编辑 exportable leaf/native object 重建的 `source-reference-excluded composite`；
+- 在工作副本逐层隐藏、位移或替换的 layer-ablation/editability probe；
+- Photoshop 中真实打开、编辑 Type/Shape 或位图 leaf、保存、关闭、重开后的层类型、Alpha、命名和层序记录；
+- target ↔ `source-reference-excluded composite` 的结构断言、区域/感知差异和人工审美结论。
+
+只做 open/save 或 composite 像素对账不能证明元素可编辑；若 target 或整页 ImageGen baked base 参与被测 composite，
+差异结果无效。由 target 重组的历史 `sourceOnlyFromTarget` 样例按 `referenceCompositeOnly` 处理。只有 sidecar 闭合、全部 exportable leaf
+批准并达到 `productionFromAcceptedAssets` 后，bundle 才能提交 G5。
 
 ### 4.7 G5：运行资产
 
-1. 每次生成或修订一个资产，不生成要求精确坐标的巨型 sprite sheet。
+1. 只消费 `productionFromAcceptedAssets` 中批准的 leaf asset 或 native object；reference、guide、preview 和未批准 candidate
+   一律不进入导出，不生成要求精确坐标的巨型 sprite sheet。
 2. 独立件使用真实透明背景；禁止白底、棋盘格、场景和水印。
-3. 灯光、背景和前景遮挡需要保持坐标时使用 `fullCanvas`。
+3. 职责单一的灯光、背景和前景遮挡需要保持坐标时使用 `fullCanvas`，并验证其不含未声明 stable key。
 4. 九宫格 inset 由人工或确定性工具标注，不让图片模型猜。
 5. 检查尺寸、四角 Alpha、可见 bbox、边缘污染、padding、pivot、同系列一致性和运行尺寸清晰度。
-6. 批准后锁定源哈希；装配阶段禁止调用图片模型。
+6. 只用导出的运行 PNG/native object 重建 `runtime-reference-excluded composite`，与 target 和
+   `source-reference-excluded composite` 做结构、分区/感知差异及人工 A/B；不得读取 target/reference 像素或 PSD 文档 composite。
+7. 批准后锁定运行资产和证据哈希；装配阶段禁止调用图片模型。
 
-G5 接收的是完整 `PsdHandoffBundle`，不是孤立 `.psd`。PSD、sidecar、source/prompt hash 或批准记录任一变化，运行资产
-批准立即失效；`sourceOnlyFromTarget` 必须先补齐真实 Alpha、隐藏像素、padding 和 pivot，不能直接从整页 target 切图。
+G5 接收的是完整 `productionFromAcceptedAssets` `PsdHandoffBundle`，不是孤立 `.psd`。PSD、独立源、sidecar、
+source/prompt hash 或批准记录任一变化，受影响运行资产批准立即失效。`referenceCompositeOnly`（含历史
+`sourceOnlyFromTarget`）不能通过直接切整页 target 或补写 manifest 升级；必须返回 G4a/G4b 补产独立源。
 
 ### 4.8 G6：FairyGUI Editor 装配与发布
 
 #### 当前人工流程
 
 1. 用 FairyGUI Editor 打开 `apps/art/fairygui/FairyGUI.fairy`。
-2. 创建或修改 package、组件、资源和节点。
+2. 只将 G5 批准的 leaf asset/native object 导入目标 package，再创建或修改组件和节点；禁止导入 reference composite、
+   整页 ImageGen base、导线或仅供审稿的文字预览。
 3. 配置 Controller/page、Gear、Relation、九宫格、tile、List `defaultItem` 和 Loader。
 4. 完整打开、保存、关闭并重开目标组件，完成 Editor 保存—重开往返验收。
 5. 使用 Editor 正式发布到当前 `apps/Cocos/assets/resources/ui`。
@@ -553,6 +655,8 @@ M0.5 落地后用 receipt 记录这些机器可得字段。变更请求必须声
 ### 5.1 Editor 发布前
 
 ```text
+□ 输入是 G5 已批准的运行资产，来源 bundle 为 productionFromAcceptedAssets；没有导入 reference/guide/preview/candidate
+□ 每个图像资源都可追溯到 accepted leaf/native object，stable key 映射无缺失或重复
 □ 需程序访问的节点有正确类型前缀，纯装饰节点不被代码访问
 □ Controller/page、List defaultItem、autoClearItems、Relation 和层序正确
 □ 可伸缩图设置 scale9grid，可平铺图设置 tile
@@ -611,11 +715,15 @@ Creator 导入完成且上述检查通过后，继续在该 Creator 工程中做
 
 - `authoringMode: editor`；
 - 人工批准 PageSpec、线框、风格和资产；
+- 人工完成 G4a 元素分解、G4b 独立源生产和 G4c Photoshop 可编辑 PSD 往返；当前没有自动拆层或 handoff verify 工具，
+  不能以脚本生成成功代替这些人工证据；
 - 人工在 Editor 装配、保存—重开和发布；
 - 运行现有 codegen、契约、发布闭包锁、反解析对账、同步和测试；
 - 在 Creator 人工跑状态与尺寸矩阵。
 
-M0 的目标不是零人工，而是每一步可追溯、可复现、可归因。既有页面不会因为当前工具可用就自动视为已补齐 PageSpec、全状态矩阵和验收证据。
+M0 的目标不是零人工，而是每一步可追溯、可复现、可归因。元素级 PSD 与 accepted leaf 的人工生产现在即可执行，
+不需要等待 M2；M2 自动化的是临时 FGUI 候选装配，不会替代美术源生产。既有页面不会因为当前工具可用就自动视为已补齐
+PageSpec、独立源、全状态矩阵和验收证据。
 
 ### M0.5：基础设施收口（第一优先级）
 
@@ -638,7 +746,7 @@ M0 的目标不是零人工，而是每一步可追溯、可复现、可归因�
 ### M2：CLI 编译器 PSD 版 + Editor takeover
 
 - 以仓库锁定的 Editor 工程格式、XML codec 和 Photoshop/PSD 工具链为唯一目标；本机 6.1.4 只是 POC 候选；
-- 输入必须是 `productionFromAcceptedAssets` 的完整 `PsdHandoffBundle`，使用“命名 + sidecar 契约 + Editor 映射”；
+- 输入必须是通过 G5 的 `productionFromAcceptedAssets` 完整 `PsdHandoffBundle` 及其获批运行资产，使用“命名 + sidecar 契约 + Editor 映射”；
 - 先实现 `seededTemplate`，只填充真实模板槽和隔离 leaf component；再以两个结构不同的 golden package 验证
   `rawProjectCompiler` 的 package/component codec、候选 ID 和引用闭包；
 - CLI 只写 `tmp/ui-pipeline/<batch>/<run>/fairygui-project`，明确 `editor-owned` 与 `cli-managed-component` 边界；
@@ -708,7 +816,14 @@ Scenario catalog 使用真实 UI-model/Logic 类型。Scenario Host 负责把确
 ```text
 策划文档 → DeliverySpec / PageSpec / Scenario
                  +
-PSD 命名 + sidecar 契约 + 批准运行资产
+批准 target / referenceCompositeOnly
+  → G4a decomposition-spec.json
+  → G4b 按 stable key 的独立源 / native object
+  → G4c artistEditableSource + source-reference-excluded composite
+  → 逐 leaf 来源/许可/生产属性批准 → productionFromAcceptedAssets
+  → G5 运行 PNG + runtime-reference-excluded composite
+                 +
+PSD 命名 + sidecar 契约 + 批准 leaf/native object
                  │
                  ▼
 PsdHandoffIR + 正式工程只读 FguiProjectIR
@@ -733,6 +848,10 @@ Editor 支持的复制/导入接管正式工程
   → Editor 正式发布 → codegen / sync / Scenario / receipt
 ```
 
+`PsdHandoffIR` 必须从 exportable leaf/native object 构建，并保留 reference-only 对象的排除记录；不能把 PSD 文档 composite
+或隐藏/可见整页 target 当成一个默认资源节点。plan 中每个资源和 display-list child 都必须追溯到 accepted stable key，或
+明确标为 runtime text、primitive、Loader / list template 等非位图责任。
+
 当前没有 CLI 编译器、staging 或原子提升实现；现阶段仍使用人工 `authoringMode: editor`。POC 必须在临时工程中完成，
 不得改写正式包，也不得把“人工修改 XML 文件”解释为文本编辑 XML；人工修订只能在 Editor UI 中进行。
 
@@ -740,8 +859,9 @@ Editor 支持的复制/导入接管正式工程
 
 | 对象 | 权威所有者 | 自动化边界 |
 | --- | --- | --- |
-| 分层源、RGBA、九宫格源 | 美术 | 工具只做确定性校验/转换 |
-| PSD 结构语义 | `asset-manifest.json` + `assembly-recipe.json` | PSD 命名负责定位；sidecar 负责语义；不得从像素猜业务 |
+| target / reference composite | 美术评审 | 只作视觉参考；不得被工具提升为 leaf、运行资源或 display-list child |
+| 独立 leaf、native object、RGBA、九宫格源 | 美术 | 工具只做确定性校验/转换；元素级 ownership 由 stable key 与批准记录闭合 |
+| PSD 结构语义 | `asset-manifest.json` + `assembly-recipe.json` | PSD 命名负责定位；sidecar 负责语义与 reference 排除；不得从像素猜业务 |
 | Editor 人工页面/复杂组件 | Editor 人工流程 | CLI 不得覆盖 editor-owned 子树 |
 | 临时候选 leaf component | CLI 可在 plan 白名单内管理 | takeover 前 CLI 整文件拥有；不支持人机混编子树 |
 | 候选 XML、`package.xml`、候选 ID | CLI 编译器 PSD 版的临时候选工程 | 只用于验证和接力，不得覆盖正式目录 |
@@ -764,6 +884,8 @@ codec/工程格式 adapter、CLI 源码 hash、`Publish.json`、`Adaptation.json
 
 - 工具链与平台版本；
 - package/component 和 ownership；
+- `psdInputMaturity`、accepted stable key 集合、reference 排除、`source-reference-excluded composite` 与
+  `runtime-reference-excluded composite` 哈希；
 - 输入、设置、设计源、发布物与 View AUTO 哈希；
 - Editor 保存—重开结果；
 - 发布物反解析对账结果；
@@ -801,9 +923,15 @@ subtree writer 和超出批准 ownership 的包级 AST merge 只允许在单独 
 
 ```text
 stableKey
+nodeKey + responsibility
+psdLayerPath
+editabilityClass + sourceKind
 sourceFile + sourceSha256
+referenceOnly + exportPolicy + approvalStatus
 colorMode + requiresAlpha
 mode
+fullCanvasReason + bakedStableKeys
+stateDimension + statePage
 sourceRectSourcePx
 expectedAlphaBBoxSourcePx
 paddingSourcePx
@@ -816,7 +944,26 @@ atlasPolicy + exported
 outputRelativePath
 ```
 
-不适用字段显式为 `null`，不能省略后交给工具猜。`outputRelativePath` 只能位于批准根下，拒绝绝对路径和 `..`。
+`editabilityClass` 至少区分 `independentRgba`、`nativeType`、`nativeShapeOrVector`、`smartObject` 与 `referenceOnly`。
+`referenceOnly: true` 必须对应 `exportPolicy: exclude`；它不能通过填写输出路径变成运行资产。不适用字段显式为 `null`，
+不能省略后交给工具猜。`outputRelativePath` 只能位于批准根下，拒绝绝对路径和 `..`。
+
+`assembly-recipe.json` 的元素映射至少表达：
+
+```text
+stableKey
+assetStableKey | null
+runtimeResponsibility
+fguiObjectType
+parentStableKey + zOrder
+controllerBindings + gearBindings
+relations
+exportPolicy
+```
+
+这份映射只表达候选装配意图，不包含或分配正式 package/resource/component/child ID。一个 exportable asset stable key 必须
+恰好映射到预期资源/child；runtime text、primitive、Loader 和 list template 使用 `assetStableKey: null` 并声明自身责任。missing、
+orphan、duplicate、reference 被映射为资源、以及同一状态 leaf 同时映射到互斥 page 都阻断。
 
 | `mode` | 用途 | 条件 |
 | --- | --- | --- |
@@ -824,21 +971,29 @@ outputRelativePath
 | `regionCrop` | 显式矩形裁切 | 区域完整、无背景污染、无遮挡缺失且不需隐藏像素 |
 | `inpaintCrop` | 先按 mask 补绘再提取 | 保存批准输入、mask、处理记录和输出哈希 |
 | `alphaObject` | 独立透明角色、建筑、状态件或图标 | 有完整轮廓、真实 Alpha、padding 和 pivot |
-| `fullCanvas` | 保留源画布坐标 | 背景、灯光、前景遮挡 |
+| `fullCanvas` | 保留源画布坐标 | 仅职责单一的背景、全局灯光、前景遮挡；`fullCanvasReason` 必填，禁止含交互/状态/文字/面板等未声明角色 |
 | `nineSlice` | 可伸缩源图 | inset 明确且中心有效 |
 | `tile` | 横向或纵向平铺纹理 | 已提供目标方向的无缝接缝证据 |
 | `generatedVariant` | 升级、锁定、满仓等换态单体 | reference、状态 key 与允许变化区已登记 |
+
+状态资产默认是 shared leaf 加局部 delta：`stateDimension` / `statePage` 只控制受影响 stable key 的可见性或资源替换。
+同一状态组若包含与 shared composite 等价的整页像素即阻断；只有经人工批准、职责单一且确实整景变化的 full-canvas leaf 例外。
 
 `nineSliceInsetsSourcePx` 的顺序固定为 `left, top, right, bottom`；它不是 FairyGUI `scale9grid` 的中心矩形。工具转换时必须按源图宽高计算中心矩形并校验正面积。输出先进入临时目录，校验通过后原子替换；删除只能按生成清单精确执行。
 
 ### 7.10 视觉证据与差异
 
-视觉核验分两段：
+视觉核验分三段：
 
 ```text
-target ↔ composite  ：拆层、切图、层序、坐标、pivot、透明边
-composite ↔ runtime：Editor 发布、atlas、九宫格、字体和运行时装配
+target ↔ source-reference-excluded composite：独立源重组、层序、坐标、pivot、透明边
+source-reference-excluded composite ↔ runtime-reference-excluded composite：导出、trim、padding、色彩与运行尺寸
+runtime-reference-excluded composite ↔ Editor/Creator runtime：Editor 发布、atlas、九宫格、字体和运行时装配
 ```
+
+前两段 composite 必须分别由可编辑源 leaf/native object 和导出的运行 PNG/native object 重建；任何 target/reference 或
+整页 ImageGen baked base 参与都会使证据无效。报告同时提供 solo-layer contact sheet 和 layer-ablation/editability probe，
+使审阅者能发现一个 leaf 内夹带多个视觉职责、状态复制公共像素或 reference 误入导出。
 
 差异报告组合使用结构断言、区域截图、感知差异和人工审阅；不得只用全图逐像素相等。字体、抗锯齿、纹理采样、色彩空间和 Alpha 预乘要固定环境或使用批准容差。动态粒子、倒计时和网络内容只能用带原因的显式 mask 排除。
 
@@ -873,9 +1028,16 @@ composite ↔ runtime：Editor 发布、atlas、九宫格、字体和运行时�
 □ handoff 只保存约束，坐标 snapshot 可重建且不可反向编辑
 □ 长文本、最大数字、空/满列表和目标长短屏通过
 □ 效果图、生产源和运行资产分离
+□ `psdInputMaturity` 已声明，且没有把 Prototype/Standard/Full 交付档位误当成 PSD 成熟度
+□ 所有 required nodeKey 的元素级责任覆盖为 100%，stable key 无 missing/orphan/duplicate/multi-owner
+□ 需独立调整的元素可单独隐藏、移动、替换或编辑，不存在含多个视觉职责的整页 ImageGen base 或大块 baked raster
 □ 每个运行资产有 stable key、来源、许可、批准状态和哈希
 □ 动态文字、数字、头像和远端内容没有烘焙
-□ Alpha、trim、padding、pivot、九宫格和 fullCanvas 规则正确
+□ runtime text 是 native Type/运行时槽位，primitive 的 native source 或运行时责任明确
+□ Alpha、trim、padding、pivot、九宫格和 fullCanvas 规则正确；fullCanvas 有理由且不含未声明职责
+□ 状态只保存共享基底上的局部 delta，没有为每个 page 复制公共整页像素
+□ reference/target/整页 ImageGen baked base 已隐藏并从 composite、切图、运行导出中排除；合法 background clean plate 仍参与源重组
+□ solo-layer contact sheet、source-reference-excluded composite、runtime-reference-excluded composite、editability probe 和 Photoshop 编辑—保存—重开通过
 □ 运行尺寸清晰，并满足纹理、图集和内存预算
 ```
 
@@ -883,6 +1045,9 @@ composite ↔ runtime：Editor 发布、atlas、九宫格、字体和运行时�
 
 ```text
 □ 命名节点使用正确前缀和真实类型
+□ 每个 FGUI resource/child 可追溯到 accepted leaf/native object 或明确的 runtime responsibility
+□ reference-only、guide、preview 和未批准 candidate 没有进入 package 资源或 display list
+□ stable key → asset/native object → FGUI resource/child 映射闭合，正式 ID 仍由 Editor 分配
 □ Controller/page、Gear、Relation、List/defaultItem 与 PageSpec 一致
 □ Loader、clearOnPublish、exported 和 sharedPkgs 闭包完整
 □ Editor 保存—关闭—重开无未解释修复或丢引用
@@ -943,6 +1108,11 @@ composite ↔ runtime：Editor 发布、atlas、九宫格、字体和运行时�
 ## 10. 明确禁止的捷径
 
 - 从扁平效果图猜透明层、隐藏像素、热区或内部 ID。
+- 把含完整页面 UI 的 ImageGen base 加上文字、导线或隐藏 reference 后称为元素级分层 PSD。
+- 用文件扩展名、图层数量、`sourceOnlyFromTarget` 历史标签或交付档位替代 `psdInputMaturity` Gate。
+- 让 target/reference 参与 `source-reference-excluded composite`、`runtime-reference-excluded composite`、运行切图、atlas
+  或 FairyGUI display list。
+- 为每个状态复制公共整页像素，而不是共享 leaf 加局部状态 delta。
 - 从标注截图 OCR 坐标，再把截图当布局真源。
 - 维护只供 Gallery 使用的假业务逻辑或假页面。
 - 让 CLI 与人工同时维护同一组件子树；人工调整必须进入 Editor takeover。
@@ -967,7 +1137,9 @@ composite ↔ runtime：Editor 发布、atlas、九宫格、字体和运行时�
 2. 金样稳定后扩展到全包只读检查，再宣称 M0.5 完成。
 3. 选一个现有中等复杂页面实现 M1a 的 typed Scenario Host 和手工 Creator Gallery。
 4. 覆盖默认、加载、空、错误、极值文本、重复点击和至少两个 viewport，再进入 M1b 自动截图/diff。
-5. 把 `psd-maker.md` 的一次性流程收口为可复建 `PsdHandoffBundle` pack/verify，并补 Photoshop 往返金样。
+5. 先用人工 G4a/G4b/G4c 把一个 `referenceCompositeOnly` 金样重产为元素级 `artistEditableSource`，再批准为
+   `productionFromAcceptedAssets`；随后把 `psd-maker.md` 的一次性流程收口为可复建 `PsdHandoffBundle` pack/verify，
+   覆盖 reference 排除、solo layer、状态 delta、editability probe 与 Photoshop 往返金样。
 6. 选一个隔离 leaf component 做 `seededTemplate` POC；本机 6.1.4 只作候选，不先写入“已锁定”。
 7. 用两个结构不同的 golden package 验证 `rawProjectCompiler`，再按九宫格面板、状态组件、小弹窗、主页面逐级试点。
 8. 只有读取/兼容问题有实证时才做 OpenFairyGUI 只读影子试点；只有第 7.8 节条件齐备才扩张包级 merge。
