@@ -2,7 +2,7 @@
 
 > [返回总目录](README.md) · [上一篇：UndergroundIdleMain FairyGUI 装配契约](09-fairygui-undergroundidle-main-assembly.md)
 >
-> 文档版本：1.2<br>
+> 文档版本：1.3<br>
 > 编写日期：2026-09-02<br>
 > 当前状态：`规范已定义 / 主界面运行资产、FairyGUI 包、客户端接线与 Creator 验收均未实施`
 
@@ -12,7 +12,7 @@ Underground Idle 的默认 UI 生产路线固定为：
 
 ```text
 玩法 / PageSpec / 状态契约
-  → 无运行时文字的黄金位图 target
+  → 包含完整高保真美术 UI、但不烘焙运行时文字的黄金位图 target
   → decomposition-spec：逐 stableKey 冻结编辑单元与生产方式
   → 背景 clean plate + 逐元素独立源 + 局部状态 delta
   → artistEditableSource PSD + source-reference-excluded composite + Photoshop 人工编辑验收
@@ -26,6 +26,10 @@ Underground Idle 的默认 UI 生产路线固定为：
   → 契约/AUTO 审阅 → fgui-manifest --write
   → sync:client → Dashboard/Creator 导入和状态矩阵
 ```
+
+这里的“无运行时文字”只表示由 FairyGUI/程序填写的中文、数值、价格、等级、倒计时和填充值留空或另作审阅投影，
+不表示“无 UI”。G3 target 必须完整呈现 UI chrome、面板、按钮、页签、图标、装饰、场景/角色和状态视觉；背景
+clean plate、独立源、`fullCanvas` 白名单与整页 base 禁令从 G4 才开始约束生产，不得反向写成 G3 的 `no UI` 提示词。
 
 生产美术不得使用 SVG Master 作为中间真源。SVG 可以作为一次性审稿或标注工具，但不能成为运行美术真源、切图依赖或
 FairyGUI 布局真源。正式运行输入只使用批准并登记的 PNG、字体和程序资源。
@@ -76,7 +80,7 @@ PageSpec 只表达语义角色、布局约束、安全区和极值；Editor 保�
 ```text
 docs/undergroundIdle/art/
 ├─ targets/
-│  ├─ ug_main_golden_v02.png                 # 750×1624 无运行时文字 target
+│  ├─ ug_main_golden_v02.png                 # 750×1624 完整美术化 UI、无运行时文字 target
 │  ├─ ug_main_golden_v02_review.png          # 运行时文字审阅投影
 │  └─ ug_main_golden_v02.prompt.md
 ├─ production/main_bitmap_v02/
@@ -118,6 +122,9 @@ docs/undergroundIdle/art/
 - 使用真实首版快照语义，不制造不存在的角色、建筑或商业化入口；
 - 登记源图哈希、生成/编辑方式、参考图、允许变化区与人工批准记录。
 
+“不含运行时文字”只清空动态文字内容，不清空 UI 美术。target 中必须保留已批准的黑铁/旧钢面板、黄铜护角、磨损、
+内阴影/倒角、按钮与页签状态、图标语言和其他视觉层次；不得用默认圆角矩形、统一细描边、纯色素框或程序 HUD 代替。
+
 运行时文字审阅图是由 target + 文本投影生成的证据，不是生产源。
 
 ### 4.2 target 与装配契约一致性
@@ -129,6 +136,9 @@ docs/undergroundIdle/art/
 ## 5. 资产分类与切片规则
 
 ### 5.1 允许的生产方式
+
+本节只约束 G4b/G5 的生产资产，不约束 G3 整页效果图应呈现的美术内容。以下 clean plate、独立源和 `fullCanvas` 限制
+不得用于要求 G3 target 省略 UI。
 
 | mode | 适用内容 | 规则 |
 | --- | --- | --- |
@@ -340,7 +350,7 @@ npm run verify:sync
 | G0 | 策划冻结 | 玩法范围、业务规则、非目标和权威边界批准 |
 | G1 | PageSpec/Scenario | 字段、状态、动作、极值与验收场景闭合 |
 | G2 | 布局与几何裁定 | target 与 09 的固定区、热区、岗位锚点和安全区契约一致 |
-| G3 | 视觉锁定 | 无字黄金 target、prompt/编辑记录、哈希和人工美术批准 |
+| G3 | 视觉锁定 | 完整高保真美术 UI、无运行时文字的黄金 target、prompt/编辑记录、哈希和人工美术批准 |
 | G4a | 元素分解 | decomposition-spec 覆盖全部 required node，编辑单元、来源策略、状态 delta 与 fullCanvas 例外获批 |
 | G4b | 独立源生产 | 背景 clean plate、独立元素、Alpha/遮挡补绘和共享组件母版齐备；target 仅作隐藏 reference |
 | G4c | 可编辑 PSD | `artistEditableSource` 从独立叶层重组；`source-reference-excluded composite`、solo/消融和 Photoshop 移动、隐藏、替换、调色、文字修改后保存—重开通过 |
@@ -368,7 +378,7 @@ npm run verify:sync
 ## 13. 实施顺序
 
 1. 在 G2 确认 target 与 09 装配契约的几何一致；
-2. 在 G3 制作并批准无字 `ug_main_golden_v02`；
+2. 在 G3 制作并批准包含完整高保真美术 UI、但不烘焙运行时文字的 `ug_main_golden_v02`；
 3. 在 G4a 建立 `decomposition-spec.json`，先冻结共享组件、逐元素编辑单元和 fullCanvas 例外；
 4. 在 G4b 生产背景 clean plate、独立元素和局部状态 delta；
 5. 在 G4c 重组 `artistEditableSource` PSD，生成 `source-reference-excluded composite`，完成 solo/消融与 Photoshop 人工编辑验收；

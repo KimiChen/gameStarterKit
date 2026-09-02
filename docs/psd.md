@@ -1,6 +1,6 @@
 # PSD 到 FairyGUI 的“CLI 编译器 PSD 版”实施方案
 
-> 版本：0.3（方案稿）<br>
+> 版本：0.4（方案稿）<br>
 > 日期：2026-09-02<br>
 > 状态：已有一次 `referenceCompositeOnly` PSD 生成记录；通用 CLI、Schema、元素级可编辑性验证、FairyGUI 编译器和全栈编排仍未实现<br>
 > 决策：使用 CLI 编译器 PSD 版承担 PSD 解析、资产导出、装配计划生成和候选 FairyGUI 工程编译。
@@ -9,6 +9,8 @@
 这套命令行产品统一命名为“**CLI 编译器 PSD 版**”，机器可读 `authoringMode` 固定为 `cliPSDCompiler`。
 
 本文给出长期方案：只有通过元素级拆分与人工编辑验收的 PSD 才能作为可编辑像素生产源；整页 target 只能是参考。
+这里的“参考”是生产成熟度和下游权限，不是视觉删减要求：G3 target 仍必须呈现完整、高保真的美术化 UI；面板、按钮、
+图标、装饰、场景/角色和状态视觉不能因为后续需要拆分而在效果图阶段被替换成程序素框。
 命令行工具把 PSD 与 PageSpec、Scenario、元素分解契约、资产 manifest 编译为可审计的中间表示，再在
 **可丢弃的完整 FairyGUI 临时工程副本**中创建候选资源、组件、Controller、
 Gear、Relation、热区和九宫格配置。候选工程必须经固定版本 FairyGUI Editor 打开、保存、关闭、重开并正式发布，
@@ -34,7 +36,7 @@ Photoshop 往返、G5 运行资产、三层 stable key 闭合、FairyGUI XML 编
 ```text
 策划文档 → DeliverySpec / PageSpec / Scenario / 设计 tokens
                 +
-批准的无字 target（只作参考）/ decomposition-spec
+批准的完整美术化 UI target（仅运行时文字留空，只作参考）/ decomposition-spec
                 │
                 ▼
 背景 clean plate + 独立语义元素候选 + 确定性像素处理
@@ -88,7 +90,8 @@ Creator 导入、Scenario 验收、receipt 冻结
 
 [`docs/ui/undergroundIdle/ue-v01/`](ui/undergroundIdle/ue-v01/README.md) 的 11 份 UE PSD 同样属于
 `referenceCompositeOnly`：可见 ImageGen 内容仍是整画布 baked base，主要只把运行时文字预览独立出来；UE-08 还用第二张
-整画布图表达状态。它们是本方案新增“元素级可编辑性 Gate”的直接失败样本，不得作为 `artistEditableSource` 金样。
+整画布图表达状态。它们是本方案新增“元素级可编辑性 Gate”的直接失败样本，不得作为 `artistEditableSource` 金样；
+该结论不否定其作为 G3 整页效果图的审美用途，也不允许重建时降低 UI 美术质量。
 
 FairyGUI 官方命令行提供的是**发布**能力，不是完整的设计期对象 API。`cliPSDCompiler` 因而是受控的 FairyGUI
 工程编译器：它理解固定版本 Editor 的项目格式，并只在临时完整工程中生成组件、Controller、Gear 和 Relation 候选。
@@ -490,7 +493,7 @@ PSD 自带 layer ID 只可写入审计日志，不能当作跨保存稳定身份
 
 | 档位 | 输入 | 允许用途 | 禁止声称 |
 | --- | --- | --- | --- |
-| `referenceCompositeOnly` | 批准整页 target、整页 ImageGen 基底、局部 clean plate、确定性裁切或审稿 mask；可含文字/导线层 | 整页视觉对照、分解讨论、文字/热区审阅、为后续独立元素生产提供参考 | 已分层可编辑、可交给美术逐元素调整、已完成 G4/G5、可进入 FGUI |
+| `referenceCompositeOnly` | 批准的整页高保真美术 UI target、整页 ImageGen 基底、局部 clean plate、确定性裁切或审稿 mask；可含文字/导线层 | G3 整页视觉对照、分解讨论、文字/热区审阅、为后续独立元素生产提供参考 | 已分层可编辑、可交给美术逐元素调整、已完成 G4/G5、可进入 FGUI |
 | `artistEditableSource` | 通过 decomposition spec 闭包的 clean plate、独立语义元素、局部状态 delta、文字槽和人工可修 mask | 美术独立移动、换色、隐藏、替换与状态调整；继续完成逐 leaf 来源、许可和生产属性批准 | 已达到 `productionFromAcceptedAssets`、可进入 G5/FGUI、Editor/Creator 已通过 |
 | `productionFromAcceptedAssets` | 从 `artistEditableSource` 逐项批准的独立 RGBA、九宫格源、局部 delta 和白名单 fullCanvas 层，manifest 与 hash 完整，`source-reference-excluded composite` 已通过 | 作为 G5 唯一输入生成 staging 运行资产；G5 批准运行 PNG 与 `runtime-reference-excluded composite` 后才可生成 FairyGUI 候选 | G5 已通过、Editor/Creator 已通过、业务行为已实现 |
 
@@ -508,7 +511,7 @@ PSD 自带 layer ID 只可写入审计日志，不能当作跨保存稳定身份
 `artistEditableSource` 的元素分解证据：
 
 ```text
-批准无字 target
+批准的完整美术化 UI target（仅运行时文字留空）
   → ImageGen 只修改 allow-mask 内的局部内容
   → Pillow 12.2.0 规范化、裁切、蒙版、文字栅格预览与 composite
   → ag-psd@31.0.2 + pngjs@7.0.0 写 imageData、组和 Type 描述
@@ -917,13 +920,17 @@ raw XML 候选实验，且禁止写 `package.xml`。在上述 ADR 完成前，�
 3. 明确状态不能只依赖颜色表达。
 4. 人工批准黄金 target；模型或脚本不能代替审美批准。
 
-Underground Idle 应继续遵守 `UG-MAIN-GOLDEN-V02`、750×1624、Bitmap-first、无运行时文字和安全区规则。
+G3 可以使用 ImageGen 生成完整、高保真的美术化游戏 UI target。“无运行时文字”只表示动态中文、数值、价格、等级、
+倒计时与填充值留空或另作审阅投影，不表示无面板、按钮、页签、图标、装饰或角色。`referenceCompositeOnly` 是成熟度与
+下游权限判定，不是降低视觉质量的要求；G4/G5 的 clean plate、独立源和整页 base 禁令不得反向写成 G3 的 `no UI` 条件。
+
+Underground Idle 应继续遵守 `UG-MAIN-GOLDEN-V02`、750×1624、Bitmap-first、完整美术化 UI、无运行时文字和安全区规则。
 
 ### 11.4 G4：元素分解、独立源与可编辑 PSD
 
 #### G4a：冻结元素分解
 
-1. 先声明 `psdInputMaturity`；整页 target 或整页 ImageGen base 一律从 `referenceCompositeOnly` 起步，不得按结果好看程度升级。
+1. 进入 G4a 后先声明 `psdInputMaturity`；整页 target 或整页 ImageGen base 一律从 `referenceCompositeOnly` 起步，不得按结果好看程度升级。
 2. 从 PageSpec、线框、状态矩阵和批准 target 建立 `decomposition-spec.json`，为每个可见 `nodeKey` 指定 stable key、
    责任类型、像素 owner、允许编辑动作、状态策略、遮挡策略、影响边界与扁平化例外。
 3. 区分 FGUI native Type/Shape/primitive、Loader/list template、独立 RGBA、九宫格、背景 clean plate、局部状态 delta 和
@@ -934,7 +941,8 @@ Underground Idle 应继续遵守 `UG-MAIN-GOLDEN-V02`、750×1624、Bitmap-first
 
 #### G4b：生产独立源
 
-1. 按 stable key 逐项生成、绘制或修订独立源；ImageGen 只产生单件、clean plate 或局部 delta 候选，不承担自动拆层。
+1. 本条只约束 G4b：按 stable key 逐项生成、绘制或修订独立源；此时 ImageGen 只产生单件、clean plate 或局部 delta
+   候选，不承担自动拆层，也不得把该限制反向用于 G3 整页 target。
 2. 从背景 clean plate 移除所有 required 前景并补齐遮挡；禁止在仍含旧元素的整页 base 上叠加裁片冒充拆层。
 3. 被遮挡但会移动、隐藏、切状态、换装或动画的对象必须补齐完整轮廓、Alpha、隐藏像素和人工可修 mask。
 4. 面板和按钮底优先使用 Shape/vector 或九宫格源；运行时文字保留为 Type Layer 或不可导出的文字槽。
@@ -968,7 +976,7 @@ stable key 与像素 owner 闭合，无虚构层、重复身份、底图残影�
 3. 对缺失字体、外链智能对象、未知效果、非法混合模式和路径逃逸零容忍。
 4. 使用锁定 renderer 导出透明 PNG 到 staging。
 5. 检查尺寸、Alpha bbox、半透明边、padding、pivot、功耗/纹理预算和命名。
-6. 仅用已导出的运行 PNG/native object 重组无字页面，生成 `runtime-reference-excluded composite`；确认 reference、guide、
+6. 仅用已导出的运行 PNG/native object 重组不含运行时文字的页面，生成 `runtime-reference-excluded composite`；确认 reference、guide、
    preview 和 PSD 文档 composite 未参与，再与批准黄金 target 及 `source-reference-excluded composite` 做确定性 overlay/A-B。
 7. 为九宫格生成最小、基准、最大尺寸预览。
 8. 人工审阅每张资产和重组结果，批准后冻结 PNG hash 与 `psd-production-accepted` 记录。
@@ -1327,8 +1335,9 @@ Underground Idle 当前主界面玩法、FairyGUI 包和客户端接线尚未实
 - 四个核心热区、岗位 pivot 与核心按钮不随成长状态移动；
 - 刘海、圆角和底部手势区由运行时安全区处理；
 - 背景和装饰不含运行时文字、等级、价格或容量；
-- 整页 UE target 和现有 full-canvas ImageGen base 只作隐藏 reference，不参与新 PSD 可见重组；
-- 背景 clean plate 移除角色、建筑状态件、面板、按钮和需独立调整的装饰，避免底图残影；
+- 从 G4b 起，整页 UE target 和现有 full-canvas ImageGen base 只作隐藏 reference，不参与新 PSD 可见重组；这不否定 G3
+  target 必须包含完整美术化 UI；
+- G4b 的背景 clean plate 移除角色、建筑状态件、面板、按钮和需独立调整的装饰，避免底图残影；
 - 状态差异优先使用局部差异层和同一 Controller，不为每个状态生成整页位图。
 
 具体视觉与几何契约见：
