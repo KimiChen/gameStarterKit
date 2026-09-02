@@ -20,7 +20,9 @@ export interface AppBootstrapOptions {
     readonly node: Node;
     /** 服务端 http(s) 地址；空串回落 DEV_SERVER_URL（跟随根 .env.development 的 PORT）。 */
     readonly serverUrl: string;
-    /** WebPlatform Public http(s) 地址（登录 + 选服），必填（initPortal fail-fast）。 */
+    /** WebPlatform Public http(s) 地址（登录 + 选服）；空串回落 DEV_SERVER_URL——
+     *  dev 模式下 portal 即游戏服自身（服务端 AUTH_PROVIDER=dev 复刻 /v1/sessions/dev
+     *  与 /v1/areas 的锁定契约形状），生产/联调外部服务时显式填写 WebPlatform origin。 */
     readonly portalUrl: string;
     readonly gameplayId?: string;
 }
@@ -35,7 +37,7 @@ export function createAppRuntime(options: AppBootstrapOptions): AppRuntime {
         gameplayId: options.gameplayId,
     });
     initHttp(options.serverUrl || DEV_SERVER_URL);
-    initPortal(options.portalUrl);
+    initPortal(options.portalUrl || DEV_SERVER_URL);
     // Register before opening pages so transport loss always tears down the
     // gameplay generation before the navigation layer mounts Login again.
     runtime.wireSessionLifecycle();
