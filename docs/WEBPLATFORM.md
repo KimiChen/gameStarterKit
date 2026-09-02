@@ -24,6 +24,17 @@ gameStarterKit
 
 本仓不包含 WebPlatform 业务源码、账号表、migration 或进程内账号实现，也不生成或交付外部服务。
 
+## 1.1 dev 例外（2026-09-02 拍板）
+
+本地开发可以不启动 WebPlatform：`AUTH_PROVIDER=dev`（非生产缺省）会安装进程内开发身份提供者
+（`apps/server/src/platform/devAuthProvider.ts`）——会话形状、组 sess 缓存、MySQL 角色登记
+与真链路逐语义一致，并复刻锁定契约的 `/v1/sessions/dev` 与 `/v1/areas` 路径形状
+（`apps/server/src/http/devPublic.ts`）。此时客户端 `portalUrl` 留空即回落到游戏服自身端口
+（`Main.portalUrl` 或 `bootstrap` 的 `DEV_SERVER_URL` 回落）。
+
+⛔ 这是唯一的进程内例外：`AUTH_PROVIDER=dev` + `NODE_ENV=production` 启动期拒启；生产环境的
+真实身份、封禁/撤销与多区目录仍只属于外部 WebPlatform，dev 实现不模仿这些账号语义。
+
 ## 2. 数据所有权
 
 | 数据 | 当前所有者 |

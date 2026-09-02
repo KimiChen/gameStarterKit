@@ -6,7 +6,8 @@
  * ⚠ typed router 优先于 express：路径撞车时 express 侧（`/monitor`、playground）永远打不到，
  * 新增端点前先确认路径不与它们冲突。（mock 层已随「去 mock」移除，仓库当前没有 `src/mock`。）
  *
- * ⚠ 登录与选服属于独立 WebPlatform Public API，不在游戏服挂兼容代理。
+ * ⚠ 登录与选服属于独立 WebPlatform Public API，游戏服在生产环境不挂兼容代理；
+ *   唯一例外是 `AUTH_PROVIDER=dev`（非生产）挂载的 `http/devPublic.ts` 进程内开发端点。
  */
 import { createRouter } from "@colyseus/core";
 import { GameHttpContractMap } from "@game/shared";
