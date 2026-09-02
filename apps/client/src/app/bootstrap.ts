@@ -16,6 +16,20 @@ import { installCocosLifecycleBridge } from "./CocosLifecycleBridge";
 import { lifecycleBus, wireConnectionEvents } from "./wiring";
 import type { Node } from "cc";
 
+/**
+ * 浏览器预览的局域网调试参数（web 预览：`http://<开发机IP>:7456/?server=http://<游戏服IP>:2568`）：
+ * `?server=<http(s) origin>` 覆盖 serverUrl；portalUrl 空串时跟随同一地址（dev 下 portal 即
+ * 游戏服自身）。非浏览器环境（无 location）返回 null；非法 origin 由 initHttp/initPortal
+ * 既有校验 fail-fast。⛔ 只做读取，不写任何配置。
+ */
+export function serverUrlFromQuery(): string | null {
+    const location = (globalThis as { location?: { search?: string } }).location;
+    const search = location?.search;
+    if (!search) return null;
+    const value = new URLSearchParams(search).get("server");
+    return value && value.trim() !== "" ? value : null;
+}
+
 export interface AppBootstrapOptions {
     readonly node: Node;
     /** 服务端 http(s) 地址；空串回落 DEV_SERVER_URL（跟随根 .env.development 的 PORT）。 */
@@ -36,8 +50,10 @@ export function createAppRuntime(options: AppBootstrapOptions): AppRuntime {
         node: options.node,
         gameplayId: options.gameplayId,
     });
-    initHttp(options.serverUrl || DEV_SERVER_URL);
-    initPortal(options.portalUrl || DEV_SERVER_URL);
+    const serverUrl = options.serverUrl || serverUrlFromQuery() || DEV_SERVER_URL;
+    initHttp(serverUrl);
+    // portal 空串时跟随同一游戏服地址（dev 下 portal 即游戏服自身）。
+    initPortal(options.portalUrl || serverUrl);
     // Register before opening pages so transport loss always tears down the
     // gameplay generation before the navigation layer mounts Login again.
     runtime.wireSessionLifecycle();

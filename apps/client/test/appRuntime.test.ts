@@ -461,3 +461,20 @@ test("bootstrap：portalUrl 空串回落 DEV_SERVER_URL（dev 下 portal 即游�
     "显式非法 portalUrl 必须 fail-fast（回落只兜底空串）",
   );
 });
+
+test("bootstrap：?server= 查询参数覆盖 serverUrl（LAN 调试），portal 空串跟随同一地址", async () => {
+  const { bootstrap, makeNode } = await loadAppHost();
+  const globalWithLocation = globalThis as { location?: { search?: string } };
+  const savedLocation = globalWithLocation.location;
+  try {
+    globalWithLocation.location = { search: "?server=http://10.0.1.10:2568" };
+    assert.equal(bootstrap.serverUrlFromQuery(), "http://10.0.1.10:2568", "必须读出 server 参数");
+    const runtime = bootstrap.createAppRuntime({ node: makeNode(), serverUrl: "", portalUrl: "" });
+    runtime.dispose();
+    globalWithLocation.location = { search: "" };
+    assert.equal(bootstrap.serverUrlFromQuery(), null, "无参数必须回落（返回 null）");
+  } finally {
+    if (savedLocation === undefined) delete globalWithLocation.location;
+    else globalWithLocation.location = savedLocation;
+  }
+});
