@@ -3,6 +3,7 @@
  * uid 带运行期前缀隔离，跑完 UNLINK 清理（09·R6）。
  */
 import { writeGroupSess } from "../../src/core/auth/session";
+import { writeDevTokenIndex } from "../../src/platform/devAuthProvider";
 import { kApplied, kAppliedPayload, kArchiveProof, kBagAll, kFence, kLock, kUser } from "../../src/core/infra/keys";
 import { clientFor } from "../../src/core/infra/redisRoute";
 import { AuthRequiredError } from "../../src/core/errors";
@@ -84,8 +85,9 @@ export const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeou
 let lastIssuedAtMs = 0;
 
 /**
- * 造完整测试会话：同一不透明 token 同步写入内存 WebPlatform fake 与游戏组 sess cache，
- * 因而既能通过 LobbyRoom/GameRoom strict onAuth，也能覆盖每消息本地快路径。
+ * 造完整测试会话：同一不透明 token 同步写入内存 WebPlatform fake、游戏组 sess cache
+ * 与 dev provider 的 token 索引，因而既能通过 LobbyRoom/GameRoom strict onAuth
+ * （fake delegate 或 AUTH_PROVIDER=dev 两条路径任选），也能覆盖每消息本地快路径。
  */
 export async function issueSession(
   uid: string, _sessionKey: string | null = null, gwNode = "", sId = 0,
@@ -98,6 +100,9 @@ export async function issueSession(
     throw new Error(`测试会话 issuedAt 栅栏拒绝 uid=${uid} sId=${sId}`);
   }
   fakeSessions.set(token, { userId: uid, serverId: sId, issuedAtMs });
+  // dev provider（AUTH_PROVIDER=dev，非生产缺省）的 verify 走 token 索引——
+  // import app.config 的 int 用例会装上它；写索引对 fake delegate 路径无副作用。
+  await writeDevTokenIndex(token, uid, sId, issuedAtMs);
   latestToken.set(userServerKey(uid, sId), token);
   return { userId: uid, token };
 }

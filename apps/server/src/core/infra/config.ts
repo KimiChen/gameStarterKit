@@ -87,6 +87,30 @@ export const PROJECT_ID = (() => {
 /** 全部 Redis key 的运行时前缀（文档登记的是逻辑键名，存储时带本前缀）。 */
 export const REDIS_KEY_PREFIX = `${PROJECT_ID}_`;
 
+/**
+ * 身份提供者选择（铁律 12 的非生产显式例外）：
+ *  - "webplatform"：外部身份服务 HTTP 契约边界（生产唯一合法值）；
+ *  - "dev"：进程内开发身份提供者（`platform/devAuthProvider.ts`）——会话形状/角色登记
+ *    与真链路完全一致，只为本地无外部服务开发；
+ *  - 空 = 非生产 dev、生产 webplatform；
+ *  - ⛔ AUTH_PROVIDER=dev + NODE_ENV=production 加载期即拒（生产只走 HTTP 契约边界）。
+ */
+export const AUTH_PROVIDER: "dev" | "webplatform" = (() => {
+  const raw = env("AUTH_PROVIDER", "").trim().toLowerCase();
+  const value = raw === "" ? (process.env.NODE_ENV === "production" ? "webplatform" : "dev") : raw;
+  if (value !== "dev" && value !== "webplatform") {
+    throw new Error(
+      `AUTH_PROVIDER 非法：「${raw}」——只接受 "dev" | "webplatform"（空 = 非生产 dev、生产 webplatform）`
+    );
+  }
+  if (value === "dev" && process.env.NODE_ENV === "production") {
+    throw new Error(
+      "AUTH_PROVIDER=dev 是仅限非生产环境的显式例外：生产环境禁止使用进程内开发身份提供者（铁律 12）"
+    );
+  }
+  return value;
+})();
+
 /** 开发端口（根 .env.development 的 PORT 可覆盖；与 PROJECT_ID 同一套加载机制）。
  *  默认 2568：本机 2567（Colyseus 默认）常被其他项目占用；多项目并行时各项目在根
  *  .env.development 错开本值。客户端经 sync:client 从同一真源生成 core/devEnv.ts

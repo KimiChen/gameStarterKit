@@ -5,13 +5,22 @@ import { GameRoom } from "./rooms/GameRoom";
 import { assertRoomProfilesConfigured } from "./rooms/core/RoomProfile";
 import { registerDefaultGameModes } from "./rooms/modes/catalog";
 import { LobbyRoom } from "./websocket/LobbyRoom";
-import { MAX_WS_PAYLOAD_BYTES } from "./core/infra/config";
+import { AUTH_PROVIDER, MAX_WS_PAYLOAD_BYTES } from "./core/infra/config";
 import { routes } from "./http/index";
+import { mountDevPublicEndpoints } from "./http/_support/devPublic";
+import { createDevAuthProvider } from "./platform/devAuthProvider";
+import { installWebPlatformClient } from "./platform/webPlatformClient";
 
 registerDefaultGameModes();
 // 启动期断言（Non-intrusive §6.2/§4.6）：catalog 声明的每个 (mode, profile) 都有 policy 定义、
 // owner-ready/invite profile 的 state fragment 存在；配对不等式已在 config 加载期断言。
 assertRoomProfilesConfigured();
+
+// AUTH_PROVIDER=dev（铁律 12 的非生产显式例外；config.ts 的生产闸在此之前已拒）：
+// 安装进程内开发身份提供者 + 挂载 dev 公开端点（登录/选服复刻锁定契约路径）。
+if (AUTH_PROVIDER === "dev") {
+    installWebPlatformClient(createDevAuthProvider());
+}
 
 /**
  * Colyseus 0.17 服务端配置。
@@ -46,6 +55,10 @@ export const server = defineServer({
     transport: new WebSocketTransport({ maxPayload: MAX_WS_PAYLOAD_BYTES }),
 
     express: async (app) => {
+
+        if (AUTH_PROVIDER === "dev") {
+            mountDevPublicEndpoints(app); // /v1/sessions/dev + /v1/areas（dev 登录/选服）
+        }
 
         // ⚠ **管理面全部只在非生产挂载**：/monitor 不只是查看页——它带房间管理能力
         // （列房间/查连接/踢人/销毁房），裸挂生产 = 未鉴权的运维后台。
