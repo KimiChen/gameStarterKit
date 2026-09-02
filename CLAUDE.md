@@ -29,6 +29,14 @@
 - 外部身份示例：本仓只消费精确锁定的 `@gono/webplatform-contract`，不包含其业务源码。
 - 客户端网络：`@colyseus/sdk` 0.17.43 UMD，是通用网络客户端库。
 - 双端共享：`apps/shared`，零依赖纯 TypeScript。
+- 涉及 Chrome 时优先连接已有的 `9222` 调试端口；仅在端口未开启时启动独立实例：
+
+  ```bash
+  /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9222 --remote-debugging-address=127.0.0.1 --user-data-dir="$HOME/Desktop/chrome_profile"
+  ```
+
+- `9222` 只允许本机开发调试，不得暴露到生产或外部网络。
+
 
 ## 常用本地命令
 

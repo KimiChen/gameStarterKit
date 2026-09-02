@@ -9,9 +9,17 @@
 > `/Users/kimi/work/tanchishe/wegameVersion/` 原游戏无尽模式；源游戏为横版，本项目改为竖版；
 > 原游戏素材可直接采用；要求规划蛇皮肤等养成系统，并使战场格子、食物颜色、AI 皮肤等表现一致。
 >
-> **当前玩法基线：** drop-in 自由加入、8 蛇总量（真人不足由 AI 填充）、首人开局、Playing 可入、
+> **当前实现基线：** drop-in 自由加入、8 蛇总量（真人不足由 AI 填充）、首人开局、Playing 可入、
 > 90 秒限时计分、死亡 2 秒复活保分。该口径已在 [plan-v5.md](plan-v5.md#c-玩法实现既定范围外随玩法立项另立计划)
-> 登记，本专项首期只补战场表现与养成闭环，不暗中把联机规则替换成原作其他版本。
+> 登记。
+>
+> **本专项已选组合：`newEndlessPortraitV2Map4096TimeLimit90`。** 战场层采用原作归档的新版无尽 V2，
+> 但按用户拍板把源地图 `4896 × 4896` 覆盖为 `4096 × 4096`；1000 Dot + 30 Star、出生长度 80、
+> 相机 `1.3 → 0.6 @ 100000`、蛇身
+> `1.0 → 2.8 @ 100000`、16 条 AI；局制层采用原作独立限时模式的 `90s` 上限、剩余时间 HUD 与
+> 到点不可复活规则。两者在原作中是两个模式，本项目显式组合而不伪称原作已有同名模式；连续
+> 1800 Playing tick 则是本项目的联机适配。最多 8 真人、首人开局、Playing 可入也属于联机适配；
+> 场内真人增加时替换 AI，目标活动蛇总量固定为 17。
 >
 > **证据口径：** 文内源码行号是建档时快照，后续复核应按符号重新定位。固定状态标签为
 > `[已拍板·待实施]`、`[进行中]`、`[已完成]`、`[阻塞·需 Creator]`、`[有意不做]`；
@@ -28,13 +36,14 @@
 2. **再建立纯外观养成。** 在同一套稳定皮肤目录上实现收藏、预览、解锁、装备、赛后经验与碎片，
    皮肤不提供速度、初始长度、转向、碰撞或得分优势。
 
-首发推荐范围：
+首发范围：
 
-- 固定一个 `classicEndlessPortraitV1` 竖版复刻配置。
+- 固定 `newEndlessPortraitV2Map4096TimeLimit90`：V2 战场层（地图覆盖为 4096²）+ 原作 TimeLimit 的
+  90 秒上限/HUD/到点不可复活规则 + 本项目连续 1800 tick 联机适配，不在运行时跟随原服 AB 漂移。
 - 接入原作 internal skins 的 16 个稳定内容 ID。
 - 完成衣柜、永久所有权、装备、AI 皮肤和可靠赛后奖励。
 - 预留拖尾、击杀/死亡特效、名牌、表情、皮肤熟练度等槽位，但首发不展开。
-- 原作新版无尽的更大地图、更多食物和更多 AI 作为独立规则配置候选，不与首发经典基线混用。
+- 经典静态默认值只作为历史差异证据，不作为首发 fallback 配置。
 
 ### 1.1 非目标
 
@@ -42,6 +51,9 @@
 - 不把原作私有网络协议、支付、广告、临时皮肤或商业活动系统整体移植进本仓。
 - 不允许客户端在 join 数据中自报一个未经服务端验证的 `skinId`。
 - 不为不同皮肤设置不同碰撞体、速度或攻击范围。
+- 不在运行时接入原服动态难度 AB；首发冻结 V2 的 K1 level 0 AI 阵容。
+- 不把 86 个假榜条目当作场内 AI 或结算参与者。
+- 不声称原作存在“V2 新版无尽 + 90 秒联机”这一完整预设；本项目必须记录组合层和联机适配差异。
 - 不以手改生成镜像或生成 registry 的方式接入功能。
 
 ---
@@ -50,21 +62,24 @@
 
 ### 2.1 世界坐标只旋转，不拉伸
 
-经典原作默认世界为 `3264 × 1920`，当前项目为 `1920 × 3264`，见
-[apps/shared/src/gameplays/snake/ruleset.ts](apps/shared/src/gameplays/snake/ruleset.ts#L19)。
-这不是缩放，而是同面积的 90° 转置。统一采用以下正交变换：
+当前代码仍是经典默认世界的竖版转置 `1920 × 3264`，见
+[apps/shared/src/gameplays/snake/ruleset.ts](apps/shared/src/gameplays/snake/ruleset.ts#L19)。原作 V2 世界为
+`4896 × 4896` 正方形，项目目标边界改为 `4096 × 4096`。角色方向、素材朝向与证据坐标仍采用正交旋转，
+地图改值则作为独立边界覆盖处理：
 
 ```text
 source (x, y) -> portrait (-y, x)
 
-source world:   3264 × 1920
-portrait world: 1920 × 3264
+source V2 world:          4896 × 4896
+rotated evidence world:   4896 × 4896
+target portrait bounds:   4096 × 4096
 
 source design viewport:   1624 × 750
 portrait design viewport:  750 × 1624
 ```
 
-该变换保持距离、角度、格距、食物尺寸、蛇身宽度与碰撞比例不变。场景位置和方向随坐标旋转；
+该变换保持距离、角度、格距、食物尺寸、蛇身宽度与碰撞比例不变。`4096 / 4896` 不作为全局缩放系数；
+程序在以原点为中心的 4096² 新边界内重新生成出生点、食物和 AI，网格仍为 32。场景方向随坐标旋转；
 蛇头素材、食物、文字和 HUD 不作为一张画面整体旋转，而是按竖屏重新布局。
 
 ### 2.2 竖屏布局
@@ -77,17 +92,81 @@ portrait design viewport:  750 × 1624
 
 ### 2.3 复刻配置必须冻结
 
-原作静态默认值位于
-`/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/config/GameConstant.js`，但运行时还会由
-`Game.assignByConfigs` 使用远端配置覆盖。归档中存在 `4896 × 4896、1000 Dot + 30 Star` 的新版无尽配置，
-不能把它与经典 `3264 × 1920、300 + 15` 默认值混成一个不可复现的目标。
+归档实值来自
+`/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/store/FeedGameStore.js:100` 的
+`single_game_config.new_endless_config_abtest`。原客户端在
+`ConfigStore.setConfigs/getNewEndlessConfig` 中直接使用服务端已经选好的对象，本地不再做第二次 AB 选择。
+本项目将原对象冻结为 `newEndlessV2Source4896` 证据快照，再只覆盖地图字段生成
+`newEndlessPortraitV2Map4096` 战场层；不得运行时跟随原服务变动，也不得与 Classic 静态默认或
+`remoteBundles/res` 中的本地调试模板混用。
 
-因此首发冻结：
+| V2 字段 | 原作归档值 | 项目目标值 | 本项目口径 |
+|---|---:|---:|---|
+| `map_width / map_height` | `4896 / 4896` | `4096 / 4096` | 用户拍板的唯一 V2 数值覆盖；不是旋转或缩放结果 |
+| `endless_dot_count / endless_star_count` | `1000 / 30` | `1000 / 30` | 常驻食物总量 1030 |
+| `endless_snake_min_length` | `80` | `80` | 真人与 AI 的基础出生长度 |
+| `endless_snake_max_length` | `100000` | `100000` | V2 配置上限 |
+| `camera_init_scale / camera_min_scale` | `1.3 / 0.6` | `1.3 / 0.6` | 按长度线性缩放 |
+| `camera_scale_snake_max_length` | `100000` | `100000` | 相机缩放封顶长度 |
+| `snake_body_init_scale / snake_body_max_scale` | `1.0 / 2.8` | `1.0 / 2.8` | 全局身体缩放，不因皮肤改变 |
+| `body_scale_snake_max_length` | `100000` | `100000` | 身体缩放封顶长度 |
+| K1 level 0 AI | `aiLevel 401×8, 402×4, 403×2, 404×2` | 同源值 | 原作单人场内的 16 条活动 AI |
+| `fake_snake_count` | `86` | `86` | 仅假榜池，不生成场内实体、不参与奖励 |
+| 假榜初始/增长/重置 | `100..50000 / 10..100 / 0.02` | 同源值 | 每次刷新增长；2% 时重置到 80 |
+| `endless_wreck_score_rate_a / b` | `0.8 / 2` | `0.8 / 2` | 死亡残骸总分公式的指数与倍率 |
+| `point_step_config` | 71 项有序分段表 | 同源表 | 完整镜像源数组；`*_max_point_step=1240` 不当作已消费规则 |
 
-| 配置 | 用途 | 场地 | 食物 | AI/局制 |
-|---|---|---:|---:|---|
-| `classicEndlessPortraitV1` | 本专项首发 | `1920 × 3264` | 300 Dot + 15 Star | 保留当前 8 蛇、90 秒联机规则 |
-| `newEndlessPortraitV2` | 后续候选 | 单独取证后决定 | 单独取证后决定 | 另行做容量、网络和规则评审 |
+保持 1030 个食物而把地图边长从 4896 改为 4096，会让单位面积食物密度变为原 V2 的约 1.43 倍；
+这是本次地图覆盖的直接结果，不自动把食物数按面积降到约 721。若以后调整食物数，必须另建配置版本。
+
+### 2.4 90 秒局制的原作依据与组合规则
+
+原作不是用 V2 无尽配置直接产生 90 秒局，而是把两类模式明确分开：
+
+- 该归档的默认入口把 Endless 和 TimeLimit 都路由到旧 `Game` 场景；其模式 switch 对 Endless 写
+  `totalTime=0`，`isNewEndless` 分支只覆盖 V2 的地图、食物和相机，因此 V2 新版无尽本身不自动结束。
+  `GameNew` 中保留的 `BaseGameDataStrategy/EndlessModeStrategy` 也得出 `totalTime=0`，但只作为旁证，
+  不把未走的路由误写成默认消费路径。
+- `GameConstant.TIME_LIMIT_MODE_TOTAL_TIME=90` 是原作独立 `gameModeTimeLimit` 的准确时长；
+  `Game/GameSingle.onLoad` 对无尽写 `0`、对限时模式写 `90`。
+- `GameStore.isNewEndless()` 只把 Endless/UGC 等模式与 `endless_snake_min_length > 0` 组合为新版无尽，
+  明确不包含 TimeLimit；原作 90 秒模式也不会自动消费 V2 地图、食物和相机配置。
+- `Game.updateGameTime` 达到 90 后调用 `SnakeManager.timeIsOver`；后者使用 `deathTypeTimeOver` 结束玩家本局，
+  `Game.gameOver` 在时间耗尽时拒绝再次复活并进入上传/结算。
+- 原作 TimeLimit 的 90 是有效玩法时长上限，不保证每次现实时间都跑满：玩家可在此前死亡并拒绝/耗尽复活后
+  提前结算，复活选择期间 `isGameOver=true`，`gameTime` 暂停，成功复活后才继续。
+- 原作仅在 `totalTime > 0` 时显示时间 HUD，按 `totalTime - gameTime` 展示剩余时间；限时成绩进入独立的
+  historical/weekly 排行。相关归档证据位于
+  `/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/utils/GameEntryUtil.js:107-116`、
+  `/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/config/GameConstant.js:54`、
+  `/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/store/GameStore.js:174-176`、
+  `/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/scene/Game.js:168-189,306-311,349-352,410-414`
+  和 `/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/game/snake/SnakeManager.js:165-176`。
+
+因此本项目最终命名配置为 `newEndlessPortraitV2Map4096TimeLimit90`，由三个可审计层组合：
+
+| 配置层 | 来源 | 冻结口径 |
+|---|---|---|
+| `newEndlessPortraitV2Map4096` | 原作新版无尽 + 用户地图覆盖 | 除地图改为 4096² 外，沿用 V2 的食物、蛇身、相机、AI、假榜及对应表现 |
+| `sourceTimeLimit90` | 原作 `gameModeTimeLimit` | `totalTime=90` 有效玩法时长上限、剩余时间 HUD、到点不可复活 |
+| `onlineAdaptationV1` | 本项目联机约束 | 连续 1800 tick、首人开局、3 秒准备倒计时、最多 8 真人、活动总量 17 且真人替换 aiLevel 401、Playing 可加入、死亡 2 秒自动复活保局分、服务端统一结算 |
+
+组合后的联机 90 秒语义固定如下；“连续跑满 1800 tick”属于 `onlineAdaptationV1`，不是原作
+`sourceTimeLimit90` 的单人死亡/复活流程：
+
+1. 3 秒准备倒计时不计入 90 秒；进入 Playing 时把 `elapsedPlayingTicks` 置 0。
+2. 20 Hz 下恰好执行 1800 个 Playing tick，真人死亡后的 2 秒等待仍计时；第 1800 个 tick 完成后冻结输入和世界，
+   禁止第 1801 个 tick。
+3. HUD 显示 `ceil((1800 - elapsedPlayingTicks) / 20)`，并以服务端 phase/tick 校正，客户端本地时钟不决定结束。
+4. 超时后不再受理复活、加入或食物结算；先冻结最终分数，再仅对真人参赛账本按“分数降序 → 达成该分数的
+   tick 升序 → 稳定实体 ID 升序”生成 `settlementRank`，随后进入统一结算。
+5. 原作限时模式在 90 秒前死亡时使用独立 `limit_relive_config`，到点后不可复活；V2 玩家死亡则进入
+   `relive_config_b`，选择窗默认 5 秒、AB 为 8/10 秒，成功后恢复死亡前长度、分数等并获得 3 秒保护。
+   实际默认 V2 路由中的 AI 在死亡约 2 秒后重生，但真人没有固定 2 秒自动复活。本项目不移植广告/付费复活，
+   将该 AI 延迟借用为所有真人“死亡 2 秒自动复活、保留局分”的节奏只能算 `onlineAdaptationV1`，
+   不得写成原作真人复活规则。
+6. 若以后选择纯 V2 真无尽，必须建立新的生命周期配置并解决房间回收、退出结算和长期参赛账本，不能把
+   `90` 改成 `0` 就宣称完成。
 
 ---
 
@@ -97,6 +176,11 @@ portrait design viewport:  750 × 1624
 
 - 当前 `snake@1`、最多 8 真人、`dropIn` profile，见
   [apps/shared/schema/gameplays/snake/manifest.json](apps/shared/schema/gameplays/snake/manifest.json#L1)。
+- 当前规则仍是 `1920 × 3264`、300 Dot + 15 Star、出生长度 30、固定体宽和 8 条活动蛇；
+  `newEndlessPortraitV2Map4096` 要求改为 `4096 × 4096`、1000 + 30、出生长度 80、长度驱动体型与
+  17 条活动蛇。`maxPlayers=8` 继续表示真人上限，不能再拿它当场内实体总量。
+- 当前快照 validator 最多接受 8 条蛇和 315 个食物，无法承载 V2 的 17 条蛇和 1030 个常驻食物，见
+  [apps/shared/src/gameplays/snake/ruleset.ts](apps/shared/src/gameplays/snake/ruleset.ts#L88)。
 - 快照已有 `skin`，但只允许 `0..15`，无法表达原作 `101、133、401、701` 等稳定 ID，见
   [apps/shared/src/gameplays/snake/wire.ts](apps/shared/src/gameplays/snake/wire.ts#L37) 与
   [apps/shared/src/gameplays/snake/wire.ts](apps/shared/src/gameplays/snake/wire.ts#L128)。
@@ -132,17 +216,31 @@ portrait design viewport:  750 × 1624
 
 ### 4.1 几何与相机
 
-| 项目 | `classicEndlessPortraitV1` 目标 | 说明 |
+| 项目 | `newEndlessPortraitV2Map4096` 目标 | 说明 |
 |---|---:|---|
-| 世界尺寸 | `1920 × 3264` | 原作 `3264 × 1920` 的 90° 转置 |
+| 世界尺寸 | `4096 × 4096` | 原 V2 为 4896²；本项目按用户拍板覆盖边界 |
 | 视觉格距 | 32 世界单位 | 不是屏幕像素，也不是碰撞分区 |
 | 地图边距 | 16 世界单位 | 对应原作 `MAP_BORDER` |
 | 蛇身基础宽度 | 36 | 所有皮肤统一玩法碰撞口径 |
-| 出生长度 | 30 | 当前与原作静态默认同量级 |
-| 相机初始缩放 | 1.4 | 首发经典配置 |
-| 相机最小缩放 | 0.7 | 长蛇时封顶 |
-| 相机缩放长度上限 | 5000 | 线性插值上限 |
-| 蛇身全局缩放 | 1.0 → 2.8 | 按长度增长；服务端碰撞和客户端表现必须一致 |
+| 出生/最大长度 | `80 / 100000` | 采用 V2 的 min/max length |
+| 相机初始/最小缩放 | `1.3 / 0.6` | 随权威长度线性插值 |
+| 相机缩放长度上限 | `100000` | 达到后保持 0.6 |
+| 蛇身全局缩放 | `1.0 → 2.8 @ 100000` | 服务端碰撞和客户端表现必须一致 |
+| 路径点增长 | V2 `point_step_config` | 作为命名配置随 hash 冻结，不沿用当前固定点距假设 |
+
+`point_step_config` 必须完整镜像原作 71 项有序表。为了便于审计，可用下列无损定义生成并与源数组逐项比对：
+
+```text
+n = 1..63: { max_length: 300*n, step_length: n+2 }
+重复端点:  { max_length: 18900, step_length: 66 }
+n = 64..67: { max_length: 300*n, step_length: n+3 }
+尾部:      {100000,50}, {200000,100}, {300000,100}
+```
+
+原作按各段覆盖长度除以 `step_length` 累加，向下取整后乘 `STEP_POINT_COUNT=2`。重复的
+`{18900,66}` 是零宽区间，镜像中保留但不改变结果；V2 最大长度为 100000，后两条只是尾部兼容数据。
+边界测试至少固定 `80→52、300→200、3000→960、18900→1954、19200→1964、20100→1990、100000→5186`
+个路径点。归档中的三个 `*_max_point_step=1240` 在已还原消费路径中未被读取，只记录为源元数据。
 
 相机公式：
 
@@ -158,6 +256,8 @@ cameraScale = max(
 - 靠近边界时继续跟随，地图外绘制原作外围背景与边界，不采用当前视口钳位。
 - 若加放大镜等临时效果，恢复过程单独插值，不改变稳定公式。
 - 长度缩放若进入碰撞，必须由服务端权威计算；禁止只把客户端画粗而保留旧碰撞半径。
+- 世界逻辑仍使用中心原点；只在原作证据、竖版展示和输入方向映射处应用 90° 变换，禁止对正方形地图
+  再做非等比拉伸。
 
 ### 4.2 背景、网格和边界
 
@@ -169,22 +269,32 @@ cameraScale = max(
 
 ### 4.3 食物与残骸
 
-原作 atlas 包含普通食物 `1..7`、`star` 和主题 star 变体。经典首发目标：
+原作 atlas 包含普通食物 `1..7`、`star` 和主题 star 变体。V2 首发目标：
 
 | 类型 | 数量 | 显示尺寸 | 长度/分值 | 表现 |
 |---|---:|---:|---:|---|
-| Dot | 300 | 16 | 1 | `1..7` 彩色帧均匀或按原作随机分布 |
-| Star | 15 | 42 | 原作 10；是否同步规则见 §4.7 | star 帧、移动、随机变向、撞边反弹 |
+| Dot | 1000 | 16 | 1 | `1..7` 彩色帧按原作确定性随机分布 |
+| Star | 30 | 42 | 原作 10；是否同步规则见 §4.7 | star 帧、移动、随机变向、撞边反弹 |
 | 加速残骸 | 有界补充 | 22 | 1 | 原作对应素材/帧 |
-| 死亡残骸 | 房间 cap 内 | 34 | 3 或聚合价值 | 区分死亡掉落表现 |
+| 死亡残骸 | 房间 cap 内 | 34 | 每个至少 3，按死亡蛇分数公式分摊 | 区分死亡掉落表现 |
 
 实现约束：
 
 - 快照增加服务端权威的 `food.variant`；同一种子和实体 id 应稳定复现。
 - 残骸增加 `kind`，必要时增加 `variant` 或 `sourceSkinId`；不能只靠客户端猜。
 - Star 运动由服务端模拟并随现有快照同步。
-- 315 个常驻食物必须使用同一 atlas/material 的批量 mesh；不得创建 315 个 Sprite 节点或 draw call。
+- 1030 个常驻食物必须使用同一 atlas/material 的批量 mesh；不得创建 1030 个 Sprite 节点或 draw call。
 - 食物素材 rect、尺寸和 atlas 边界加入自动校验。
+
+原作已消费 V2 的死亡残骸参数，场内公式不是待猜测的赛后结算规则：
+
+```text
+totalDeathWreckScore = pow(deadSnakeScore, 0.8) * 2
+perWreckScore = max(totalDeathWreckScore / bodyCount, 3)
+```
+
+本项目在 shared/server 中以确定性定点数口径实现并补齐边界向量；若受房间残骸上限影响而合并实体，必须
+守恒该次死亡产生的总残骸分值。该分值只参与局内拾取和局分，不直接等同于 §8 的赛后资产奖励。
 
 ### 4.4 皮肤目录与渲染
 
@@ -248,6 +358,24 @@ interface SnakeSkinDefinition {
 原作在 `GameStore.generateGameSnakeInfos` 中从其他蛇皮肤池轮换 AI 外观，并对名字、头像做不重复抽取。
 本项目采用等价但可确定性重放的规则：
 
+- `maxPlayers=8` 只限制真人；Playing 阶段目标活动实体总量固定为 17。
+- 首位真人开局时生成 16 条 AI，冻结 K1 level 0 阵容：`aiLevel 401×8、402×4、403×2、404×2`。
+- 第 2～8 位真人加入时，每人替换一条 aiLevel 401 AI；公式为 `AI 数 = 17 - 真人数`，因此满 8 真人时
+  仍有 9 条 AI。真人离开且席位释放后，补回对应 aiLevel 401 AI，维持总量。
+- 不启用 K2 或运行时动态难度 AB；未来调整必须形成新的命名配置版本。
+- `fake_snake_count=86` 仅创建展示榜数据，可用于原作风格 Top 10/个人名次表现；它们没有世界坐标、
+  碰撞、皮肤实体或奖励资格，绝不能混入活动蛇数组。
+
+展示榜与赛后奖励榜必须分为两个模型：
+
+- `displayRank` 只服务局内排行榜。服务端每秒刷新一次：每条假榜记录有 2% 概率把分数重置到出生长度 80，
+  否则增加 `10..100`；取当前活动蛇最大长度作为门槛，仅合并分数小于该门槛的假榜记录，再与活动蛇按分数
+  降序排列，向客户端下发 Top 10 和本人位置。假榜记录只是假数据显示，不能进入 world 或奖励证据。
+- `settlementRank` 只从完整真人参赛账本生成，排序固定为“分数降序 → 达成该分数的 tick 升序 → 稳定实体
+  ID 升序”。AI 和假榜都不进入该集合；奖励公式中的 `rankBonus` 只能读取 `settlementRank`。
+
+活动 AI 的皮肤分配规则：
+
 1. 从 catalog 过滤 `aiEligible=true`。
 2. 优先排除本房真人已经装备的皮肤。
 3. 使用独立 `snake.ai.skin` seeded RNG 洗牌。
@@ -266,16 +394,25 @@ AI 不再统一灰化；若需要区分 AI，通过名牌标记、名字池或�
 
 ### 4.7 表现复刻与规则复刻的边界
 
-当前规则有意调整过速度、转向、加速、出生保护和 Star 价值，见
-[apps/shared/src/gameplays/snake/ruleset.ts](apps/shared/src/gameplays/snake/ruleset.ts#L32)。本专项第一阶段不得借“表现一致”
-静默改这些玩法数值。需要另开数值拍板项的差异包括：
+本次配置选择已拍板同步以下 V2 字段：除地图尺寸外的常驻食物数量、出生/最大长度、相机缩放、身体缩放、
+路径点增长配置、K1 level 0 活动 AI 阵容和假榜参数。90 秒时长、剩余时间 HUD 与超时不可复活来自
+原作 `gameModeTimeLimit`，但原作可提前结束且复活选择期间暂停计时；目标地图 4096²、连续 1800 Playing tick、
+最多 8 真人、首人开局、Playing 可入和真人死亡 2 秒自动复活属于明确标注的 `onlineAdaptationV1` 或
+用户地图覆盖。不得把 V2 的 `totalTime=0` 误写成 90，也不得把联机适配伪装成原作原生规则。
+
+当前规则还调整过速度、转向、加速、出生保护和 Star 价值，见
+[apps/shared/src/gameplays/snake/ruleset.ts](apps/shared/src/gameplays/snake/ruleset.ts#L32)。V2 对这些字段没有形成一套可直接
+覆盖本项目 fixed-step 联机规则的完整配置，不能借“选择 V2”静默混入近似换算。仍需在 S0 差异表逐项拍板：
 
 - 当前 Star 长度/分值为 5，原作静态默认是 10。
 - 当前速度 160 unit/s，低于原作 `4.5 px/frame @ 60fps` 的近似速度。
 - 当前加速倍率 1.6，原作静态默认为 2。
 - 当前转向速度和出生保护也经过竖版/联机收敛。
 
-P0 应形成“只改表现”与“需要规则变更”的差异表。任何规则同步均需更新 shared 真源、测试和版本说明。
+`endless_wreck_score_rate_a=0.8`、`b=2` 已在原作场内死亡残骸路径消费：总残骸分值为
+`pow(deadSnakeScore, 0.8) * 2`，再按身体数量分摊且单个至少为 3。该公式随 V2 快照冻结，接入前补齐
+定点数、房间上限下分值守恒与确定性测试；不得误接到赛后资产结算。任何规则同步均需更新 shared 真源、
+测试和版本说明。
 
 ---
 
@@ -446,7 +583,7 @@ RPC descriptor 是契约真源，按标准流程生成 registry、服务端路�
 - 当前局实体的 `skinId` 冻结；重生、断线重连继续使用该值。
 - 若外观被服务端撤下，下一局回退默认并可在用户锁内修复装备字段。
 
-### 7.2 Snake wire v2
+### 7.2 Snake wire v2 与 V2 容量
 
 建议将字段语义从临时索引收敛为稳定内容 ID，并提升 `snake.modeVersion`：
 
@@ -467,10 +604,20 @@ interface ISnakeSnapshotWreck {
 }
 ```
 
+- 房间元数据显式下发 `battlefieldConfigId=newEndlessPortraitV2Map4096`、`lifecycleConfigId=sourceTimeLimit90`、
+  `onlineAdaptationId=onlineAdaptationV1`、配置 hash 与 `matchDurationTicks=1800`，重连客户端不得靠本地默认猜配置。
 - validator 按 catalog 成员或稳定 ID 上界校验，不能继续限制 `0..15`。
 - `bodyScale` 若能由 shared 长度公式确定，可不占快照字段；若规则可热版本化，则显式下发规则版本。
 - 素材目录不在当前 gameplay contract digest 内，需额外携带 `presentationVersion/catalogHash`。
 - 服务器发送客户端未知的皮肤时，客户端必须回退默认，而不是崩溃或拒绝整个快照。
+- 世界集合上限改为 17 条活动蛇、1030 个常驻食物和现有有界残骸；86 个假榜条目走独立排名模型，
+  不占 `snapshot.snakes`。
+- V2 逻辑路径在长度 100000 时可达 5186 点，当前每蛇 512 点上限不能直接沿用。服务端保留完整权威路径；
+  首次入房/重连通过 `begin → ordered chunks → end(checksum)` 发送有界世界基线，后续按序发送食物增删、
+  Star 移动与蛇路径 append/trim delta。丢序或校验失败时重新申请基线，禁止静默截掉尾部、食物或蛇。
+- 升级 wire 时为 chunk 数、总实体数、单蛇路径点数、全房路径点总数和序号分别设置 validator 上限；
+  fixture 必须覆盖 `17 条蛇 / 1030 个食物 / 单蛇 5186 点 / 全房理论上限 88162 点`，以及缺块、重复块、
+  乱序 delta、重连恢复和旧客户端版本拒绝。
 
 ### 7.3 生成流程
 
@@ -518,7 +665,7 @@ interface SnakeParticipantLedger {
   leftTick: number | null;
   activeTicks: number;
   score: number;
-  rank: number | null;
+  settlementRank: number | null;
   kills: number;
   equippedSkinId: number;
   catalogVersion: number;
@@ -553,6 +700,7 @@ reward
 - 晚加入按有效时长折算。
 - 无输入、无移动贡献且无得分的账号不获得完整奖励。
 - 分数组件必须封顶，避免单局异常值冲击经济。
+- `rankBonus` 只读取真人参赛账本的 `settlementRank`；`displayRank`、AI 和假榜分数均不得进入经济写路径。
 - 每次调参提升 `rewardPolicyVersion`，历史结算按原版本重放。
 
 ---
@@ -604,22 +752,24 @@ Home
 
 | 阶段 | 状态 | 工作 | 主要交付物 | 退出条件 | 预计 |
 |---|---|---|---|---|---:|
-| S0 | [已拍板·待实施] | 冻结基线、取证、差异表 | `classicEndlessPortraitV1`、原作/竖版 golden、规则差异表 | 复刻目标可由固定配置和截图重复获得 | 2–3 人日 |
+| S0 | [已拍板·待实施] | 冻结基线、取证、差异表 | `newEndlessPortraitV2Map4096TimeLimit90`、原作/竖版 golden、规则差异表 | 组合来源、固定配置和截图均可重复核验 | 3–4 人日 |
 | S1 | [已拍板·待实施] | 素材目录与转换 | 16 皮肤 catalog、atlas rect/body config 生成、资源/授权台账 | 全目录生成和资源/rect/hash 校验通过 | 3–5 人日 |
-| S2 | [已拍板·待实施] | 战场表现复刻 | 32 格距、背景、食物、残骸、相机、皮肤统一渲染、AI 外观 | 定向测试通过且竖版 world golden 达标 | 5–7 人日 |
+| S2 | [已拍板·待实施] | V2 战场与 90 秒局制 | 4096² 世界、1030 食物、17 活动蛇、V2 相机/身体、分块基线、限时结束 | 定向测试通过且竖版 world golden 达标 | 7–10 人日 |
 | S3 | [已拍板·待实施] | 衣柜与装备 | Feature、FGUI、snapshot/equip/unlock、Bag/User 存储、准入锁存 | 权威装备、并发、重连、fallback 测试通过 | 6–10 人日 |
 | S4 | [已拍板·待实施] | 可靠养成奖励 | 参赛账本、durable settlement、金币/经验/碎片 outbox | 各崩溃窗口恢复后不漏奖、不双发 | 6–10 人日 |
 | S5 | [已拍板·待实施] | 验收与发布 | 自动测试、Creator、故障演练与兼容证据 | 全量门禁与 Creator 证据齐全 | 2–3 人日 |
 
-完整首发合计约 24–38 人日。S3 可用于内部试玩，面向玩家宣称“养成系统完成”必须等 S4 的可靠奖励闭环完成。
+完整首发合计约 27–42 人日。S3 可用于内部试玩，面向玩家宣称“养成系统完成”必须等 S4 的可靠奖励闭环完成。
 
 ### S0：复刻基线
 
 - [ ] 在原作固定构建和配置下截取横版战场 golden。
 - [ ] 生成只旋转世界层后的竖版参照图；UI 单独给出竖屏布局稿。
 - [ ] 从场景序列化数据提取背景、网格和边界颜色。
-- [ ] 固化 `classicEndlessPortraitV1` presentation 配置和 hash。
-- [ ] 列出表现差异与规则差异，明确本阶段不改的数值。
+- [ ] 固化 `newEndlessV2Source4896`、`newEndlessPortraitV2Map4096`、`sourceTimeLimit90`、
+  `onlineAdaptationV1` 及组合配置 hash。
+- [ ] 用逐项 fixture 校验 V2 归档对象、71 项路径表及 90 秒限时消费路径。
+- [ ] 列出 V2 无尽、原作限时模式与本项目联机适配的差异，禁止把组合配置误标成原作单一模式。
 
 ### S1：素材与目录
 
@@ -631,14 +781,18 @@ Home
 
 ### S2：战场表现
 
+- [ ] 将世界、食物、出生/最大长度切换为 `4096²、1000+30、80/100000`。
 - [ ] 将网格 100 改为 catalog 的 32 世界单位。
 - [ ] 接入原作背景/边界主题。
 - [ ] 食物、Star 和残骸改为 atlas 批渲染。
 - [ ] 接入 Star 运动与反弹。
 - [ ] 统一 `skinId -> head/body/tail` 渲染。
 - [ ] 移除原皮席位 tint 与 AI 灰 tint，增加自机非颜色提示。
-- [ ] 接入长度相机缩放；评审并同步蛇身全局缩放与碰撞。
+- [ ] 接入 `1.3→0.6` 相机、`1.0→2.8` 身体缩放和 71 项路径增长，并同步权威碰撞。
+- [ ] 实现 17 条活动蛇、真人替换 aiLevel 401 AI、离开补位，以及与奖励榜隔离的 86 条 `displayRank` 假榜池。
 - [ ] AI 皮肤使用独立 seeded RNG。
+- [ ] 实现 1800 Playing tick、倒计时不计时、超时冻结/禁复活、同分排序与剩余时间 HUD。
+- [ ] 提升 wire 版本，完成 17 蛇/1030 食物/单蛇 5186 点/全房 88162 点上限的分块基线、delta 与重连恢复。
 
 ### S3：衣柜与装备
 
@@ -673,17 +827,32 @@ Home
 
 ### 11.1 视觉一致性
 
-- 使用固定实体位置/种子的 fixture，在 `750 × 1624` 下将竖版世界层与原作横版世界层旋转 90° 后叠图。
+- 使用落在目标边界内的固定实体位置/种子 fixture，在 `750 × 1624` 下把原作横版世界层旋转 90°，与目标
+  世界的重合区域按 1:1 世界单位叠图；不得用 `4096/4896` 缩放。原作外围 400 单位/边不参与像素叠图，
+  另用边界 fixture 验证目标 4096² 覆盖。
+- 目标世界为 `4096 × 4096`，同时保留原作 V2 `4896 × 4896` 配置快照作来源证据；稳定态恰有
+  1000 Dot + 30 Star，显示数量不得回落到 Classic 的 300 + 15。
 - 网格间距严格为 32 世界单位；地图边距为 16。
 - Dot 和 Star 的世界显示尺寸分别为 16 和 42，七种 Dot 帧均可出现。
 - 背景、网格、边界色来自原作场景数据，不是人工近似值。
 - 每条蛇的头、身、尾和动画始终来自同一 `skinId`。
-- AI 不再统一灰色；同局皮肤池具有足够多样性。
-- 相机缩放公式、蛇头中心跟随和边界外围背景可用 fixture 自动断言。
+- 单真人时 16 AI、共 17 条活动蛇；新增真人只替换 aiLevel 401 AI，满 8 真人时仍有 9 AI。
+- AI 不再统一灰色；同局皮肤池具有足够多样性；86 个假榜条目从不出现在世界实体或结算参与者中。
+- 局内 `displayRank` 可合并符合门槛的假榜记录；资产奖励只读取真人 `settlementRank`，AI 与假榜对奖励无影响。
+- 出生长度 80；相机 `1.3→0.6@100000`、身体 `1.0→2.8@100000`、蛇头中心跟随和边界外围背景
+  均可由 fixture 自动断言。
 - 未知皮肤和资源加载失败稳定回退默认，不阻塞战斗。
 
 ### 11.2 协议与数据正确性
 
+- 准备倒计时结束才开始计时，按本项目联机适配连续运行恰好 1800 个 Playing tick；超时后不再受理加入、
+  复活、输入或得分事件。测试同时证明这不是原作 TimeLimit“死亡可提前结束、复活选择暂停计时”的原样移植。
+- 剩余时间 HUD 由服务端 tick 校正；最终同分顺序与重复结算结果稳定。
+- 房间同时声明 V2 战场层、原作 TimeLimit 的 90 秒上限/HUD 层和联机适配层，任何 hash 不一致均不能
+  静默 fallback 到 Classic。
+- 17 蛇、1030 食物、单蛇 5186 点及全房理论上限 88162 个逻辑路径点可完成首包/重连；缺块、乱序或
+  校验失败会重取基线。
+- 死亡残骸按 `pow(deadSnakeScore, 0.8) * 2` 计算总值、按身体数分摊且单个至少 3；实体合并前后总分守恒。
 - `skinId` 使用稳定内容 ID，不依赖目录顺序或 `% 3`。
 - 客户端伪造未拥有皮肤不能进入战场。
 - 同/不同 requestId 并发装备、重复解锁和状态版本冲突行为确定。
@@ -703,7 +872,13 @@ Home
 
 | 风险 | 影响 | 应对 |
 |---|---|---|
-| 混用原作静态默认与远端新版配置 | 永远无法定义“一致” | 冻结命名配置、hash 和截图基线 |
+| 混用 Classic 静态默认、本地调试模板与 V2 快照 | 永远无法定义“一致” | 冻结命名配置、hash 和截图基线，逐字段 fixture 守门 |
+| 把目标 4096² 写成原作 V2 原值或把 4896² 整体缩放 | 来源与视觉比例失真 | 分离 `newEndlessV2Source4896` 与 `newEndlessPortraitV2Map4096`；只覆盖边界，不缩放世界单位 |
+| 把 V2 的 `totalTime=0` 写成原作 V2 自带 90 秒 | 来源与验收口径失真 | 分离 `newEndlessPortraitV2Map4096` 与 `sourceTimeLimit90`，显式声明组合层 |
+| 继续沿用 8 蛇/315 食物/512 路径点快照上限 | 合法 V2 世界被拒绝或静默截断 | wire 升版，分别守门单蛇 5186 点和全房 88162 点，使用有校验的分块基线和有序 delta |
+| 把 86 个假榜条目生成为活动 AI | 世界数量、碰撞和奖励全部错误 | 假榜使用独立模型；活动蛇硬上限 17 |
+| 把 `1240` 当作路径点或长度上限 | 蛇身、相机与碰撞公式错误 | 镜像 71 项源表并以边界向量验证真实消费算法 |
+| 运行时继续读取动态 AI AB | 同一版本阵容不可复现 | 首发冻结 K1 level 0；变更必须新建命名配置版本 |
 | 原皮 atlas 布局不一致 | 头身错位、动画错误 | 解析原 atlas/body config，生成 catalog，rect 自动验界 |
 | 只改客户端体型 | 视觉和碰撞不一致 | 全局缩放公式由 shared/server 权威，或明确保持固定体宽 |
 | 直接信任 join skinId | 越权使用未拥有皮肤 | 服务端异步准入读取并锁存装备 |
@@ -731,4 +906,5 @@ Home
 
 建议的最终发布口径：
 
-> **竖版经典无尽战场表现复刻 + 16 套原作皮肤 + 纯外观养成 + 服务端权威装备 + 可靠赛后奖励。**
+> **竖版新版无尽 V2 战场（4096² 地图覆盖）+ 原作 TimeLimit 90 秒上限/HUD + 联机连续 90 秒适配 +
+> 16 套原作皮肤 + 纯外观养成 + 服务端权威装备 + 可靠赛后奖励。**
