@@ -57,6 +57,7 @@ export const VIEW_SOURCE_RECORDS: readonly GeneratedViewSourceRecord[] = [
     { name: "Home", owner: "builtin", kind: "fgui", pkg: "View_Home_Home", comp: "Home", path: "apps/client/src/view/HomeView.ts", logic: "apps/client/src/logic/page/HomeLogic.ts", sidecar: "apps/client/src/view/HomeView.view.json" },
     { name: "Login", owner: "builtin", kind: "fgui", pkg: "View_AreaList_Login", comp: "Login", path: "apps/client/src/view/LoginView.ts", logic: "apps/client/src/logic/page/LoginLogic.ts", sidecar: "apps/client/src/view/LoginView.view.json" },
     { name: "LoginNotice", owner: "builtin", kind: "fgui", pkg: "View_AreaList_LoginNotice", comp: "LoginNotice", path: "apps/client/src/view/LoginNoticeView.ts", logic: "apps/client/src/logic/page/LoginNoticeLogic.ts", sidecar: "apps/client/src/view/LoginNoticeView.view.json" },
+    { name: "SnakeWorld", owner: "snake", kind: "cocos", path: "apps/client/src/view/rooms/snake/SnakeWorldView.ts", logic: "apps/client/src/logic/rooms/snake/SnakeGameplay.ts", sidecar: "apps/client/src/view/rooms/snake/SnakeWorldView.view.json" },
 ];
 
 /** manifest 声明的 view 目录（守门测试的递归比对根）。 */

@@ -3,6 +3,7 @@ import { registerGameplayModule } from "../logic/gameplay/GameplayModule";
 import type { AppGameplayRegistry, GameplayServicesContext } from "./services";
 import { createGameplayModule as createBallMoveGameplayModule } from "./modes/ballMove/index";
 import { createGameplayModule as createIdleGameplayModule } from "./modes/idle/index";
+import { createGameplayModule as createSnakeGameplayModule } from "./modes/snake/index";
 
 /** Per-gameplay catalog mirror. contractDigest = sha256(manifest.json + "\0" + state.json + "\0" + wire.ts). */
 export const GAMEPLAY_CATALOG = {
@@ -59,6 +60,7 @@ export type GameplayCatalogId = keyof typeof GAMEPLAY_CATALOG;
 export const GAMEPLAY_MODULES = {
     "ballMove": createBallMoveGameplayModule,
     "idle": createIdleGameplayModule,
+    "snake": createSnakeGameplayModule,
 } as const;
 
 export type GameplayModuleId = keyof typeof GAMEPLAY_MODULES;
@@ -75,6 +77,7 @@ export function registerGeneratedGameplays(
     try {
         disposers.push(registerGameplayModule(registry, createBallMoveGameplayModule(services), services.controllerBridge));
         disposers.push(registerGameplayModule(registry, createIdleGameplayModule(services), services.controllerBridge));
+        disposers.push(registerGameplayModule(registry, createSnakeGameplayModule(services), services.controllerBridge));
     } catch (error) {
         for (const dispose of disposers.splice(0).reverse()) dispose();
         throw error;
