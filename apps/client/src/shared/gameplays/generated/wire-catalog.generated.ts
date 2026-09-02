@@ -10,6 +10,7 @@ import {
 import { defineS2C, type GameplayC2SToken, type GameplayS2CToken } from "../defineGameplayWire";
 import { CastSkill, Move, SkillResult, type ICastSkillReq, type IMoveReq, type ISkillResultRes } from "../ballMove/wire";
 import { IdlePulse, type IIdlePulseReq } from "../idle/wire";
+import { SnakeInput, SnakeSnapshot, type ISnakeInputReq, type ISnakeWorldSnapshot } from "../snake/wire";
 
 /** 客户端 → 服务端 消息名（core + 各玩法 wire token 的显式字面量聚合） */
 export const C2S = {
@@ -20,6 +21,7 @@ export const C2S = {
     Move: "c2s.move",
     CastSkill: "c2s.castSkill",
     IdlePulse: "c2s.idle.pulse",
+    SnakeInput: "c2s.snake.input",
 } as const;
 
 /** 服务端 → 客户端 消息名 */
@@ -31,6 +33,7 @@ export const S2C = {
     RoomError: "s2c.room.error",
     RoomCodeInvalidated: "s2c.room.codeInvalidated",
     SkillResult: "s2c.skillResult",
+    SnakeSnapshot: "s2c.snake.snapshot",
 } as const;
 
 export type C2SType = (typeof C2S)[keyof typeof C2S];
@@ -45,6 +48,7 @@ export interface C2SPayloadMap {
     "c2s.move": IMoveReq;
     "c2s.castSkill": ICastSkillReq;
     "c2s.idle.pulse": IIdlePulseReq;
+    "c2s.snake.input": ISnakeInputReq;
 }
 
 export interface S2CPayloadMap {
@@ -55,6 +59,7 @@ export interface S2CPayloadMap {
     "s2c.room.error": CoreS2CPayloadMap["s2c.room.error"];
     "s2c.room.codeInvalidated": CoreS2CPayloadMap["s2c.room.codeInvalidated"];
     "s2c.skillResult": ISkillResultRes;
+    "s2c.snake.snapshot": ISnakeWorldSnapshot;
 }
 
 export type C2SPayload<T extends C2SType> = C2SPayloadMap[T];
@@ -69,6 +74,7 @@ export const C2S_RUNTIME_VALIDATORS: { [K in C2SType]: RuntimeValidator<C2SPaylo
     "c2s.move": Move.validate,
     "c2s.castSkill": CastSkill.validate,
     "c2s.idle.pulse": IdlePulse.validate,
+    "c2s.snake.input": SnakeInput.validate,
 };
 
 /** S2C runtime validators. Client state/message adapters must validate before dispatching callbacks. */
@@ -80,6 +86,7 @@ export const S2C_RUNTIME_VALIDATORS: { [K in S2CType]: RuntimeValidator<S2CPaylo
     "s2c.room.error": CORE_S2C_WIRE["s2c.room.error"],
     "s2c.room.codeInvalidated": CORE_S2C_WIRE["s2c.room.codeInvalidated"],
     "s2c.skillResult": SkillResult.validate,
+    "s2c.snake.snapshot": SnakeSnapshot.validate,
 };
 
 export function validateC2SPayload<T extends C2SType>(type: T, input: unknown): C2SPayload<T> {
@@ -107,6 +114,7 @@ export const GAME_WIRE_OWNERS = {
     "c2s.move": "ballMove",
     "c2s.castSkill": "ballMove",
     "c2s.idle.pulse": "idle",
+    "c2s.snake.input": "snake",
     "s2c.pong": "core",
     "s2c.welcome": "core",
     "s2c.chat": "core",
@@ -114,6 +122,7 @@ export const GAME_WIRE_OWNERS = {
     "s2c.room.error": "core",
     "s2c.room.codeInvalidated": "core",
     "s2c.skillResult": "ballMove",
+    "s2c.snake.snapshot": "snake",
 } as const;
 
 export type GameWireType = keyof typeof GAME_WIRE_OWNERS;
@@ -123,6 +132,7 @@ export const GAME_WIRE_PHASES = {
     "c2s.move": [GamePhase.Playing],
     "c2s.castSkill": [GamePhase.Playing],
     "c2s.idle.pulse": [GamePhase.Playing],
+    "c2s.snake.input": [GamePhase.Playing],
 } as const satisfies { readonly [type: string]: readonly GamePhaseType[] };
 
 /** 玩法 C2S 的预算成本（rateCost；机制为高频输入留位）。 */
@@ -130,6 +140,7 @@ export const GAME_WIRE_RATE_COST = {
     "c2s.move": 1,
     "c2s.castSkill": 1,
     "c2s.idle.pulse": 1,
+    "c2s.snake.input": 1,
 } as const satisfies { readonly [type: string]: number };
 
 /** 每玩法 C2S token 表（GameMode.commands 键派生与校验用）。 */
@@ -145,6 +156,9 @@ export const gameplayC2STokens = {
     },
     "privateFixture": {
     },
+    "snake": {
+        "c2s.snake.input": SnakeInput,
+    },
 } as const satisfies { readonly [mode: string]: { readonly [type: string]: GameplayC2SToken<unknown> } };
 
 /** 每玩法 S2C token 表。 */
@@ -157,6 +171,9 @@ export const gameplayS2CTokens = {
     "idle": {
     },
     "privateFixture": {
+    },
+    "snake": {
+        "s2c.snake.snapshot": SnakeSnapshot,
     },
 } as const satisfies { readonly [mode: string]: { readonly [type: string]: GameplayS2CToken<unknown> } };
 

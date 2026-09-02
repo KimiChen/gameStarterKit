@@ -1,0 +1,191 @@
+{
+  "schemaVersion": 1,
+  "root": "SnakeRoomState",
+  "types": [
+    {
+      "name": "SnakePlayerState",
+      "sharedName": "ISnakePlayerState",
+      "validatorName": "validateSnakePlayerState",
+      "defaultPath": "snakePlayer",
+      "fields": [
+        {
+          "name": "id",
+          "kind": "string",
+          "default": "",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Colyseus sessionId（真人席位；AI 不进本 map）"
+        },
+        {
+          "name": "name",
+          "kind": "string",
+          "default": "",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        {
+          "name": "joinOrdinal",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "description": "入座次序（稳定排序用）"
+        },
+        {
+          "name": "connected",
+          "kind": "boolean",
+          "default": true,
+          "description": "重连宽限内为 false（席位保留）"
+        },
+        {
+          "name": "alive",
+          "kind": "boolean",
+          "default": true
+        },
+        {
+          "name": "score",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "description": "累计得分（死亡不清零，复活保留）"
+        },
+        {
+          "name": "length",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "description": "当前逻辑长度（复活回 spawnLength）"
+        },
+        {
+          "name": "deathCount",
+          "kind": "integer",
+          "default": 0,
+          "min": 0
+        },
+        {
+          "name": "killCount",
+          "kind": "integer",
+          "default": 0,
+          "min": 0
+        },
+        {
+          "name": "headX",
+          "kind": "number",
+          "default": 0,
+          "min": "MIN_SAFE_INTEGER",
+          "max": "MAX_SAFE_INTEGER",
+          "description": "头部摘要（HUD/排名轻量用；完整蛇身走 S2C 快照）"
+        },
+        {
+          "name": "headY",
+          "kind": "number",
+          "default": 0,
+          "min": "MIN_SAFE_INTEGER",
+          "max": "MAX_SAFE_INTEGER"
+        },
+        {
+          "name": "direction",
+          "kind": "number",
+          "default": 0,
+          "min": 0,
+          "max": 360,
+          "description": "角度制，[0, 360)"
+        },
+        {
+          "name": "boost",
+          "kind": "boolean",
+          "default": false,
+          "description": "服务端是否接受了加速（非客户端按钮态）"
+        },
+        {
+          "name": "ackSeq",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "description": "服务端已接受的最新输入 seq（重连后续发依据）"
+        },
+        {
+          "name": "respawnTick",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "description": "0 = 在局；>0 = 该 tick 复活（死亡等待期）"
+        }
+      ],
+      "serverOnly": []
+    },
+    {
+      "name": "SnakeRoomState",
+      "sharedName": "ISnakeRoomState",
+      "validatorName": "validateSnakeRoomState",
+      "defaultPath": "snakeState",
+      "fields": [
+        {
+          "name": "tick",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "description": "Logical frame number（20Hz）"
+        },
+        {
+          "name": "phase",
+          "kind": "enum",
+          "enumObject": "GamePhase",
+          "enumType": "GamePhaseType",
+          "members": ["Waiting", "Playing", "Settle"],
+          "default": "Waiting",
+          "errorCode": "STATE_PHASE",
+          "description": "Room phase"
+        },
+        {
+          "name": "matchId",
+          "kind": "string",
+          "default": "",
+          "minLength": 0,
+          "maxLength": 128,
+          "description": "Stable match id; empty while waiting"
+        },
+        {
+          "name": "endTick",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "description": "tick >= endTick 时冻结结算（90s 限时）"
+        },
+        {
+          "name": "countdownEndTick",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "description": "开局倒计时结束的 tick（0 = 不在倒计时）"
+        },
+        {
+          "name": "snapshotSeq",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "description": "最近一份世界快照的序号（单调）"
+        },
+        {
+          "name": "winnerId",
+          "kind": "string",
+          "default": "",
+          "minLength": 0,
+          "maxLength": 64,
+          "description": "结算后的第一名 sessionId；未结算为空"
+        },
+        {
+          "name": "players",
+          "kind": "map",
+          "valueType": "SnakePlayerState",
+          "errorCode": "STATE_PLAYERS",
+          "key": {
+            "field": "id",
+            "errorCode": "STATE_PLAYER_ID"
+          },
+          "description": "真人玩家摘要（roster 动态，drop-in）；AI 不进入本 map"
+        }
+      ],
+      "serverOnly": []
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import { validateGameRoomState, type IGameRoomState } from "./generated/state/ba
 import { validateDropInFixtureState, type IDropInFixtureState } from "./generated/state/dropInFixture";
 import { validateIdleRoomState, type IIdleRoomState } from "./generated/state/idle";
 import { validatePrivateFixtureState, type IPrivateFixtureState } from "./generated/state/privateFixture";
+import { validateSnakeRoomState, type ISnakeRoomState } from "./generated/state/snake";
 
 /** Wire root interfaces keyed by canonical gameplay mode id. */
 export interface RoomStateByMode {
@@ -11,6 +12,7 @@ export interface RoomStateByMode {
     "dropInFixture": IDropInFixtureState;
     "idle": IIdleRoomState;
     "privateFixture": IPrivateFixtureState;
+    "snake": ISnakeRoomState;
 }
 
 export type RoomStateMode = keyof RoomStateByMode;
@@ -22,6 +24,7 @@ export const ROOM_STATE_VALIDATORS = Object.freeze({
     "dropInFixture": validateDropInFixtureState,
     "idle": validateIdleRoomState,
     "privateFixture": validatePrivateFixtureState,
+    "snake": validateSnakeRoomState,
 } as const satisfies { readonly [M in RoomStateMode]: RoomStateValidator<M> });
 
 export function validateRoomStateForMode<M extends RoomStateMode>(mode: M, input: unknown): RoomStateByMode[M];
@@ -69,6 +72,15 @@ export const GAMEPLAY_CATALOG = {
         profiles: ["default", "private"],
         stateFragments: ["ownerReady", "inviteRoom"],
         contractDigest: "93c50eb5f5de997cb09c843bb187b599efdf7111e65228668a958b84cc1597ed",
+    },
+    "snake": {
+        id: "snake",
+        constantName: "Snake",
+        modeVersion: 1,
+        maxPlayers: 8,
+        profiles: ["dropIn"],
+        stateFragments: [],
+        contractDigest: "620258cad08b812dd3edafb88ee0cdf0a725d0b728f651051ccdb61bf191cdb4",
     },
 } as const;
 
