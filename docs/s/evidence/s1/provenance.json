@@ -486,6 +486,173 @@
   {
     "authorizationDate": "2026-09-02",
     "authorizationEvidence": "docs/snakeoff/08-source-and-asset-provenance.md#7-直接素材复用登记模板",
+    "catalogLogicalName": "presentation/magnet/aura/x_lighting01",
+    "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+    "meta": {
+      "sha256": "faf86f06540acdd1815520ff1e2506c3b72fe70567e6f49e998c1ce7a5a9abe7",
+      "state": "仓库新生成/持有，待 S5 Creator 确认"
+    },
+    "outputSha256": "f86fb2768cc1c9228ca99d7588c01f37c86e1a088e306076bbde05d94c35aa5b",
+    "responsible": "KimiChen",
+    "rightsStatus": "approved by referenced evidence",
+    "sourceAbsolutePath": "/Users/kimi/work/tanchishe/wegameVersion/remoteBundles/game/native/ca/cae4c893-2179-4fca-9b76-44472a335923.png",
+    "sourceRelativePath": "remoteBundles/game/native/ca/cae4c893-2179-4fca-9b76-44472a335923.png",
+    "sourceSha256": "f86fb2768cc1c9228ca99d7588c01f37c86e1a088e306076bbde05d94c35aa5b",
+    "status": "已引入，待验收",
+    "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_magnet_aura_x_lighting01.png"
+  },
+  {
+    "authorizationDate": "2026-09-02",
+    "authorizationEvidence": "docs/snakeoff/08-source-and-asset-provenance.md#7-直接素材复用登记模板",
+    "catalogLogicalName": "presentation/magnet/aura/x_lighting02",
+    "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+    "meta": {
+      "sha256": "d88257f03225ee20e77264c30d1c1e6a59acea91ac5ab9828dbbd0eb5969f033",
+      "state": "仓库新生成/持有，待 S5 Creator 确认"
+    },
+    "outputSha256": "8bf1c195d4dfc2bf7ad8db4740a0faaa1743d092ac715f9e562a0bccee2c3194",
+    "responsible": "KimiChen",
+    "rightsStatus": "approved by referenced evidence",
+    "sourceAbsolutePath": "/Users/kimi/work/tanchishe/wegameVersion/remoteBundles/game/native/f1/f1b42444-7757-4bdb-b713-c4606298d4f0.png",
+    "sourceRelativePath": "remoteBundles/game/native/f1/f1b42444-7757-4bdb-b713-c4606298d4f0.png",
+    "sourceSha256": "8bf1c195d4dfc2bf7ad8db4740a0faaa1743d092ac715f9e562a0bccee2c3194",
+    "status": "已引入，待验收",
+    "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_magnet_aura_x_lighting02.png"
+  },
+  {
+    "authorizationDate": "2026-09-02",
+    "authorizationEvidence": "docs/snakeoff/08-source-and-asset-provenance.md#7-直接素材复用登记模板",
+    "catalogLogicalName": "presentation/magnet/aura/x_lighting03",
+    "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+    "meta": {
+      "sha256": "3446196ba1445e64e792a8e059a11448b130c5a1dcfc0b4e2889a4f9b2cf86b6",
+      "state": "仓库新生成/持有，待 S5 Creator 确认"
+    },
+    "outputSha256": "15331a741d25de8e08ed903f9c88cab46ebad60bc57c40005fc96f839dd5b45d",
+    "responsible": "KimiChen",
+    "rightsStatus": "approved by referenced evidence",
+    "sourceAbsolutePath": "/Users/kimi/work/tanchishe/wegameVersion/remoteBundles/game/native/3a/3a12368b-8ef7-4bf6-91a9-191ef071ec99.png",
+    "sourceRelativePath": "remoteBundles/game/native/3a/3a12368b-8ef7-4bf6-91a9-191ef071ec99.png",
+    "sourceSha256": "15331a741d25de8e08ed903f9c88cab46ebad60bc57c40005fc96f839dd5b45d",
+    "status": "已引入，待验收",
+    "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_magnet_aura_x_lighting03.png"
+  },
+  {
+    "authorizationDate": "2026-09-02",
+    "authorizationEvidence": "docs/snakeoff/08-source-and-asset-provenance.md#7-直接素材复用登记模板",
+    "catalogLogicalName": "presentation/magnet/aura/xt_s_lighting",
+    "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+    "meta": {
+      "sha256": "b40ebadc0bff0c79d16fed4e7260068bff2be943b905498f288a02348b863ba6",
+      "state": "仓库新生成/持有，待 S5 Creator 确认"
+    },
+    "outputSha256": "11b9fdc1983d39bb1a578ded1fa7e4962fae95da44895f40b819f507c1a5425c",
+    "responsible": "KimiChen",
+    "rightsStatus": "approved by referenced evidence",
+    "sourceAbsolutePath": "/Users/kimi/work/tanchishe/wegameVersion/remoteBundles/game/native/ae/ae0301dd-05fa-45c7-90f5-bb39e23422ca.png",
+    "sourceRelativePath": "remoteBundles/game/native/ae/ae0301dd-05fa-45c7-90f5-bb39e23422ca.png",
+    "sourceSha256": "11b9fdc1983d39bb1a578ded1fa7e4962fae95da44895f40b819f507c1a5425c",
+    "status": "已引入，待验收",
+    "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_magnet_aura_xt_s_lighting.png"
+  },
+  {
+    "authorizationDate": "2026-09-02",
+    "authorizationEvidence": "docs/snakeoff/08-source-and-asset-provenance.md#7-直接素材复用登记模板",
+    "catalogLogicalName": "presentation/magnet/aura/xt_s_lighting02",
+    "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+    "meta": {
+      "sha256": "73ff02279670f077397546325f4b0547de01f5c47afb830a1fa046e5409b7192",
+      "state": "仓库新生成/持有，待 S5 Creator 确认"
+    },
+    "outputSha256": "4e77f9fbd45a66be64f8cd4311e4e761ffdb91e76580e4e8334d582dd7eaebc0",
+    "responsible": "KimiChen",
+    "rightsStatus": "approved by referenced evidence",
+    "sourceAbsolutePath": "/Users/kimi/work/tanchishe/wegameVersion/remoteBundles/game/native/4e/4e216bd4-1dae-4211-bd44-976710bd9889.png",
+    "sourceRelativePath": "remoteBundles/game/native/4e/4e216bd4-1dae-4211-bd44-976710bd9889.png",
+    "sourceSha256": "4e77f9fbd45a66be64f8cd4311e4e761ffdb91e76580e4e8334d582dd7eaebc0",
+    "status": "已引入，待验收",
+    "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_magnet_aura_xt_s_lighting02.png"
+  },
+  {
+    "additionalInputs": [
+      {
+        "absolutePath": "/Users/kimi/work/tanchishe/wegameVersion/remoteBundles/game/native/3a/3a12368b-8ef7-4bf6-91a9-191ef071ec99.png",
+        "sha256": "15331a741d25de8e08ed903f9c88cab46ebad60bc57c40005fc96f839dd5b45d"
+      },
+      {
+        "absolutePath": "/Users/kimi/work/tanchishe/wegameVersion/remoteBundles/game/native/4e/4e216bd4-1dae-4211-bd44-976710bd9889.png",
+        "sha256": "4e77f9fbd45a66be64f8cd4311e4e761ffdb91e76580e4e8334d582dd7eaebc0"
+      },
+      {
+        "absolutePath": "/Users/kimi/work/tanchishe/wegameVersion/remoteBundles/game/native/ae/ae0301dd-05fa-45c7-90f5-bb39e23422ca.png",
+        "sha256": "11b9fdc1983d39bb1a578ded1fa7e4962fae95da44895f40b819f507c1a5425c"
+      },
+      {
+        "absolutePath": "/Users/kimi/work/tanchishe/wegameVersion/remoteBundles/game/native/ca/cae4c893-2179-4fca-9b76-44472a335923.png",
+        "sha256": "f86fb2768cc1c9228ca99d7588c01f37c86e1a088e306076bbde05d94c35aa5b"
+      },
+      {
+        "absolutePath": "/Users/kimi/work/tanchishe/wegameVersion/remoteBundles/game/native/f1/f1b42444-7757-4bdb-b713-c4606298d4f0.png",
+        "sha256": "8bf1c195d4dfc2bf7ad8db4740a0faaa1743d092ac715f9e562a0bccee2c3194"
+      }
+    ],
+    "authorizationDate": "2026-09-02",
+    "authorizationEvidence": "docs/snakeoff/08-source-and-asset-provenance.md#7-直接素材复用登记模板",
+    "catalogLogicalName": "presentation/magnet/aura/runtime-recipe",
+    "conversion": "generate repository-owned Cocos 3 JsonAsset recipe from the normalized, UUID-free aura input",
+    "meta": {
+      "sha256": "b8ab9cd53a1b344a18c7fa0a261c67a125648182b0bfbcf49be6889fd35c1f98",
+      "state": "仓库新生成，待 S5 Creator 确认"
+    },
+    "outputSha256": "16dca7fdc0794aad441dc362516ef1f88ed6d1f1911f1c05a9c75330816fcd23",
+    "responsible": "KimiChen",
+    "rightsStatus": "derived exclusively from approved repository inputs",
+    "sourceAbsolutePath": "/Users/kimi/work/tanchishe/wegameVersion/remoteBundles/game/import/03/0365be86c.json",
+    "sourceRelativePath": "remoteBundles/game/import/03/0365be86c.json",
+    "sourceSha256": "9daafc4c3ce38d76427c02ed40b82c2aa15ce3463fdf832ccd06b802fd4b536f",
+    "status": "已引入，待验收",
+    "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_magnet_aura.json"
+  },
+  {
+    "authorizationDate": "2026-09-02",
+    "authorizationEvidence": "docs/snakeoff/08-source-and-asset-provenance.md#7-直接素材复用登记模板",
+    "catalogLogicalName": "presentation/magnet/status-icon",
+    "conversion": "logical alias only; no second physical byte copy (passive status icon reuses the world frame and texture bytes)",
+    "logicalAliasOf": "presentation/magnet/world",
+    "meta": {
+      "sha256": "5777d23d05056ed0c74e1e05174687dacc734815927540b313cd66c12cd69b18",
+      "state": "仓库新生成/持有，待 S5 Creator 确认"
+    },
+    "outputSha256": "e954359e45836981a574101f7397906da997d07c52498e682b4a1c98b1ee4090",
+    "responsible": "KimiChen",
+    "rightsStatus": "approved by referenced evidence",
+    "sourceAbsolutePath": "/Users/kimi/work/tanchishe/wegameVersion/remoteBundles/atlas/native/14/1473c6a2-0588-411d-b295-2b7517dc029b.png",
+    "sourceRelativePath": "remoteBundles/atlas/native/14/1473c6a2-0588-411d-b295-2b7517dc029b.png",
+    "sourceSha256": "e954359e45836981a574101f7397906da997d07c52498e682b4a1c98b1ee4090",
+    "status": "已引入，待验收",
+    "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_magnet_tools.png"
+  },
+  {
+    "authorizationDate": "2026-09-02",
+    "authorizationEvidence": "docs/snakeoff/08-source-and-asset-provenance.md#7-直接素材复用登记模板",
+    "catalogLogicalName": "presentation/magnet/world",
+    "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+    "meta": {
+      "sha256": "5777d23d05056ed0c74e1e05174687dacc734815927540b313cd66c12cd69b18",
+      "state": "仓库新生成/持有，待 S5 Creator 确认"
+    },
+    "outputSha256": "e954359e45836981a574101f7397906da997d07c52498e682b4a1c98b1ee4090",
+    "responsible": "KimiChen",
+    "rightsStatus": "approved by referenced evidence",
+    "sourceAbsolutePath": "/Users/kimi/work/tanchishe/wegameVersion/remoteBundles/atlas/native/14/1473c6a2-0588-411d-b295-2b7517dc029b.png",
+    "sourceRelativePath": "remoteBundles/atlas/native/14/1473c6a2-0588-411d-b295-2b7517dc029b.png",
+    "sourceSha256": "e954359e45836981a574101f7397906da997d07c52498e682b4a1c98b1ee4090",
+    "status": "已引入，待验收",
+    "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_magnet_tools.png"
+  },
+  {
+    "authorizationDate": "2026-09-02",
+    "authorizationEvidence": "docs/snakeoff/08-source-and-asset-provenance.md#7-直接素材复用登记模板",
     "catalogLogicalName": "audio/button",
     "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
     "meta": {
@@ -500,6 +667,24 @@
     "sourceSha256": "00428dcf5dc443a71e4ef0df3f70f886bba5da81194f12be97fa738dfa070dcf",
     "status": "已引入，待验收",
     "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_sfx_button.mp3"
+  },
+  {
+    "authorizationDate": "2026-09-02",
+    "authorizationEvidence": "docs/snakeoff/08-source-and-asset-provenance.md#7-直接素材复用登记模板",
+    "catalogLogicalName": "audio/collect-magnet",
+    "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+    "meta": {
+      "sha256": "c211d542b6faeae0a8bad2e54d5091bdce96f889d4a5ae4c68e0b2c6192f4830",
+      "state": "仓库新生成/持有，待 S5 Creator 确认"
+    },
+    "outputSha256": "7ca26a88922302ec4492ed31117f57410268109d47645b689318e6138bb5c113",
+    "responsible": "KimiChen",
+    "rightsStatus": "approved by referenced evidence",
+    "sourceAbsolutePath": "/Users/kimi/work/tanchishe/wegameVersion/remoteBundles/audio/native/dc/dc5e02f9-c04f-4bc5-b6e8-3f9016ea8e94.mp3",
+    "sourceRelativePath": "remoteBundles/audio/native/dc/dc5e02f9-c04f-4bc5-b6e8-3f9016ea8e94.mp3",
+    "sourceSha256": "7ca26a88922302ec4492ed31117f57410268109d47645b689318e6138bb5c113",
+    "status": "已引入，待验收",
+    "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_sfx_collect_magnet.mp3"
   },
   {
     "authorizationDate": "2026-09-02",
@@ -1544,6 +1729,42 @@
     "sourceSha256": "17466e2ede3324ea6a28857cc80a28ebac94d42285a61f4f7d18a3c71f0c098b",
     "status": "已引入，待验收",
     "targetRelativePath": "tools/snake-s1-assets/source/presentation/food.atlas.json"
+  },
+  {
+    "authorizationDate": "2026-09-02",
+    "authorizationEvidence": "docs/snakeoff/08-source-and-asset-provenance.md#7-直接素材复用登记模板",
+    "catalogLogicalName": "presentation/magnet-aura/recipe",
+    "conversion": "decode the frozen Cocos 2 compiled pack as data; whitelist components/fields; normalize hierarchy, alpha/additive blend, animation keyframes, particles and five logical dependencies",
+    "meta": {
+      "sha256": null,
+      "state": "不适用（仓内非 Cocos 资源）"
+    },
+    "outputSha256": "16dca7fdc0794aad441dc362516ef1f88ed6d1f1911f1c05a9c75330816fcd23",
+    "responsible": "KimiChen",
+    "rightsStatus": "approved by referenced evidence",
+    "sourceAbsolutePath": "/Users/kimi/work/tanchishe/wegameVersion/remoteBundles/game/import/03/0365be86c.json",
+    "sourceRelativePath": "remoteBundles/game/import/03/0365be86c.json",
+    "sourceSha256": "9daafc4c3ce38d76427c02ed40b82c2aa15ce3463fdf832ccd06b802fd4b536f",
+    "status": "已引入，待验收",
+    "targetRelativePath": "tools/snake-s1-assets/source/presentation/magnet-aura.json"
+  },
+  {
+    "authorizationDate": "2026-09-02",
+    "authorizationEvidence": "docs/snakeoff/08-source-and-asset-provenance.md#7-直接素材复用登记模板",
+    "catalogLogicalName": "presentation/magnet/atlas",
+    "conversion": "extract only referenced atlas frames; normalize rect/offset/originalSize/pivot/rotation and stable-sort",
+    "meta": {
+      "sha256": null,
+      "state": "不适用（仓内非 Cocos 资源）"
+    },
+    "outputSha256": "cfba6a254ddd1e84bfec04189d2c4b68a111f69816bcdb20ae7570d42fbbff8a",
+    "responsible": "KimiChen",
+    "rightsStatus": "approved by referenced evidence",
+    "sourceAbsolutePath": "/Users/kimi/work/tanchishe/wegameVersion/remoteBundles/atlas/import/06/069cb84df.json",
+    "sourceRelativePath": "remoteBundles/atlas/import/06/069cb84df.json",
+    "sourceSha256": "9d1e12c5d141653450b0af0ff7d3be572a2b92e78674d2e02fa0f1f03e2e3748",
+    "status": "已引入，待验收",
+    "targetRelativePath": "tools/snake-s1-assets/source/presentation/magnet.atlas.json"
   },
   {
     "authorizationDate": "2026-09-02",

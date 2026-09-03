@@ -25,6 +25,8 @@ test("server business catalog owns the exact frozen AI pool and no gameplay attr
     assert.equal(SNAKE_SKIN_BUSINESS_CATALOG.length, 16);
     assert.deepEqual(SNAKE_AI_SKIN_POOL, AI_IDS);
     assert.equal(EMBEDDED_PUBLIC_SNAKE_SKIN_CATALOG_HASH, PUBLIC_SNAKE_SKIN_CATALOG_HASH);
+    assert.equal(PUBLIC_SNAKE_SKIN_CATALOG_HASH, "a1cdecbc5e31db3f90ac2fd15465768ef9206b2520000d4ab9f88d6c2135b075");
+    assert.equal(SERVER_SNAKE_SKIN_BUSINESS_HASH, "9ed3762e5f5d24d168aafd14fcaccac1d4de83413d0acb17f6308cea1ccbfa19");
     assert.match(SERVER_SNAKE_SKIN_BUSINESS_HASH, /^[a-f0-9]{64}$/);
     for (const entry of SNAKE_SKIN_BUSINESS_CATALOG) {
         assert.deepEqual(Object.keys(entry).sort(), ["acquisition", "aiEligible", "displayName", "fragmentItemId", "ownershipItemId", "price", "rarity", "saleState", "skinId"]);

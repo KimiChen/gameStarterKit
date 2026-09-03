@@ -15,16 +15,29 @@
     "public exact validation",
     "cross-layer public hash parity",
     "server business hash",
-    "client presentation hash",
+    "client presentation version/hash",
     "atlas bounds including rotated frames",
     "NormalRepeat-only render type",
-    "known animation structures",
-    "registered resource SHA and Cocos metadata"
+    "known skin animation structures",
+    "magnet world frame and passive alias",
+    "UUID-free aura hierarchy/blend/keyframes/particle recipe and five dependencies",
+    "collect-magnet 44.1 kHz mono resource plus bounded sfxOn policy",
+    "registered resource SHA and type-correct Cocos metadata"
   ],
+  "copiedResourceCount": 34,
   "defaultSkinId": 1,
+  "generatedRuntimeResourceCount": 1,
+  "invariantHashes": {
+    "allSkinContentVersionsRemainOne": true,
+    "clientPresentationChanged": true,
+    "publicCatalogUnchanged": true,
+    "serverBusinessUnchanged": true
+  },
+  "presentationVersion": 2,
   "previewCount": 16,
-  "resourceCount": 27,
+  "s1_12RuntimeResourceCount": 8,
   "skinCount": 16,
   "sourceCommit": "6367f65bf210d75ba39c0e48ecace5b30b538a06",
+  "sourceFileCount": 77,
   "status": "passed"
 }

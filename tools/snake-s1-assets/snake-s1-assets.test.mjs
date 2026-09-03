@@ -1,11 +1,28 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import { test } from "node:test";
 import {
   assertContentVersionTransition,
+  assertPresentationVersionTransition,
+  buildArtifacts,
+  convertMagnetAtlasSource,
   convertSkinSource,
+  decodeCocos2PackedDocument,
+  HISTORICAL_CLIENT_PRESENTATION_HASH,
+  HISTORICAL_PUBLIC_CATALOG_HASH,
+  HISTORICAL_SERVER_BUSINESS_HASH,
+  inspectMp3,
   normalizeFrameDuration,
+  SNAKE_PRESENTATION_VERSION,
+  validateMagnetAtlas,
+  validateMagnetAuraRecipe,
+  validateMagnetPresentation,
   validateFrameBounds,
+  validateRegisteredResource,
 } from "./core.mjs";
+
+const MAGNET_ATLAS = JSON.parse(fs.readFileSync(new URL("source/presentation/magnet.atlas.json", import.meta.url), "utf8"));
+const MAGNET_AURA = JSON.parse(fs.readFileSync(new URL("source/presentation/magnet-aura.json", import.meta.url), "utf8"));
 
 function frame(name, rect, extra = {}) {
   return { name, rect, offset: [0, 0], originalSize: rect.slice(2), pivot: [0.5, 0.5], ...extra };
@@ -131,4 +148,139 @@ test("resource interpretation changes require a contentVersion increase", () => 
   const before = { skinId: 1, contentVersion: 1, presentation: { rect: [0, 0, 16, 16] } };
   assert.throws(() => assertContentVersionTransition(before, { ...before, presentation: { rect: [0, 0, 17, 16] } }), /without a version bump/);
   assert.doesNotThrow(() => assertContentVersionTransition(before, { skinId: 1, contentVersion: 2, presentation: { rect: [0, 0, 17, 16] } }));
+});
+
+test("magnet atlas extracts only 10001 and rejects entry, rect, dimension and bounds drift", () => {
+  const source = {
+    unrelated: { name: "10002", rect: [0, 0, 2, 2] },
+    nested: { name: "10001", rect: [346, 256, 84, 92] },
+  };
+  assert.deepEqual(convertMagnetAtlasSource(source), MAGNET_ATLAS);
+  assert.deepEqual(validateMagnetAtlas(MAGNET_ATLAS).rect, { x: 346, y: 256, width: 84, height: 92 });
+  const clone = () => structuredClone(MAGNET_ATLAS);
+  {
+    const value = clone();
+    value.frames.push(structuredClone(value.frames[0]));
+    assert.throws(() => validateMagnetAtlas(value), /exactly frame 10001/);
+  }
+  {
+    const value = clone();
+    value.frames = [];
+    assert.throws(() => validateMagnetAtlas(value), /exactly frame 10001/);
+  }
+  {
+    const value = clone();
+    value.frames[0].rect[2] = 85;
+    assert.throws(() => validateMagnetAtlas(value), /differs from the frozen/);
+  }
+  {
+    const value = clone();
+    value.texture.width = 467;
+    assert.throws(() => validateMagnetAtlas(value), /expected 468x769/);
+  }
+  {
+    const value = clone();
+    value.frames[0].rect[0] = 450;
+    assert.throws(() => validateMagnetAtlas(value), /lies outside/);
+  }
+});
+
+test("magnet presentation enforces one world item, a byte-sharing passive alias and a direct aura fallback", () => {
+  const built = buildArtifacts();
+  assert.doesNotThrow(() => validateMagnetPresentation(built.presentationCatalog.tools, MAGNET_AURA));
+  const clone = () => structuredClone(built.presentationCatalog.tools);
+  {
+    const value = clone();
+    value.extra = value.magnet;
+    assert.throws(() => validateMagnetPresentation(value, MAGNET_AURA), /exact keys/);
+  }
+  {
+    const value = clone();
+    delete value.magnet;
+    assert.throws(() => validateMagnetPresentation(value, MAGNET_AURA), /exact keys/);
+  }
+  {
+    const value = clone();
+    value.magnet.statusIcon.frame.rect.x += 1;
+    assert.throws(() => validateMagnetPresentation(value, MAGNET_AURA), /passive alias/);
+  }
+  {
+    const value = clone();
+    value.magnet.statusIcon.interactive = true;
+    assert.throws(() => validateMagnetPresentation(value, MAGNET_AURA), /non-interactive/);
+  }
+  {
+    const value = clone();
+    value.magnet.statusIcon.activeButtonSlot = 1;
+    assert.throws(() => validateMagnetPresentation(value, MAGNET_AURA), /exact keys/);
+  }
+  {
+    const value = clone();
+    value.magnet.activeEffect.fallback.logicalName = "magnet-active";
+    assert.throws(() => validateMagnetPresentation(value, MAGNET_AURA), /fallback/);
+  }
+});
+
+test("aura recipe is UUID-free, consumes exactly five textures and rejects unknown or incomplete structures", () => {
+  assert.doesNotThrow(() => validateMagnetAuraRecipe(MAGNET_AURA));
+  assert.deepEqual(MAGNET_AURA.textureDependencies.map((entry) => entry.logicalName), [
+    "x_lighting01", "x_lighting02", "x_lighting03", "xt_s_lighting", "xt_s_lighting02",
+  ]);
+  const clone = () => structuredClone(MAGNET_AURA);
+  {
+    const value = clone();
+    value.textureDependencies.pop();
+    assert.throws(() => validateMagnetAuraRecipe(value), /five frozen/);
+  }
+  {
+    const value = clone();
+    value.root.components.push({ type: "unknown-source-component" });
+    assert.throws(() => validateMagnetAuraRecipe(value), /unknown recipe component/);
+  }
+  {
+    const value = clone();
+    value.animation.tracks[0].properties[0].property = "rotation";
+    assert.throws(() => validateMagnetAuraRecipe(value), /unknown or empty animation property/);
+  }
+  {
+    const value = clone();
+    value.textureDependencies[0].textureAsset = "cae4c893-2179-4fca-9b76-44472a335923";
+    assert.throws(() => validateMagnetAuraRecipe(value), /UUID leaked/);
+  }
+  assert.throws(() => decodeCocos2PackedDocument([
+    1,
+    [],
+    [],
+    [["unknown.SourceComponent", ["node"], 1, 1]],
+    [[0, 0, 1]],
+    [[[[0, 0]], 0, 0, [], [], []]],
+  ]), /unsupported class/);
+});
+
+test("S1-12 presentation version changes only the client hash while skin versions remain one", () => {
+  const before = { presentation: { tools: null } };
+  const after = { presentationVersion: 2, presentation: { tools: { magnet: true } } };
+  assert.doesNotThrow(() => assertPresentationVersionTransition(before, after));
+  assert.throws(() => assertPresentationVersionTransition({ presentationVersion: 1, presentation: {} }, { presentationVersion: 1, presentation: { changed: true } }), /must migrate/);
+  const first = buildArtifacts();
+  const second = buildArtifacts();
+  assert.equal(SNAKE_PRESENTATION_VERSION, 2);
+  assert.equal(first.hashes.publicCatalogHash, HISTORICAL_PUBLIC_CATALOG_HASH);
+  assert.equal(first.hashes.serverBusinessHash, HISTORICAL_SERVER_BUSINESS_HASH);
+  assert.notEqual(first.hashes.clientPresentationHash, HISTORICAL_CLIENT_PRESENTATION_HASH);
+  assert.deepEqual(second.hashes, first.hashes);
+  assert.ok(first.publicCatalog.every((entry) => entry.contentVersion === 1));
+  assert.equal(first.artifacts.get("apps/Cocos/assets/resources/snakeoff/snake_magnet_aura.json").equals(second.artifacts.get("apps/Cocos/assets/resources/snakeoff/snake_magnet_aura.json")), true);
+});
+
+test("registered resource guards reject deletion/mutation and collect-magnet remains 44.1 kHz mono", () => {
+  const manifest = JSON.parse(fs.readFileSync(new URL("source/manifest.json", import.meta.url), "utf8"));
+  const record = manifest.copiedResources.find((entry) => entry.logicalName === "audio/collect-magnet");
+  const data = fs.readFileSync(new URL("../../apps/Cocos/assets/resources/snakeoff/snake_sfx_collect_magnet.mp3", import.meta.url));
+  assert.equal(validateRegisteredResource(record, data), record.outputSha256);
+  assert.deepEqual(inspectMp3(data), { codec: "MPEG Layer III", sampleRateHz: 44100, channels: 1 });
+  assert.throws(() => validateRegisteredResource(record, null), /resource is missing/);
+  const changed = Buffer.from(data);
+  changed[changed.length - 1] ^= 1;
+  assert.throws(() => validateRegisteredResource(record, changed), /SHA mismatch/);
 });

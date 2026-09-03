@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "sourceCommit": "6367f65bf210d75ba39c0e48ecace5b30b538a06",
   "approval": {
     "evidence": "docs/snakeoff/08-source-and-asset-provenance.md#7-直接素材复用登记模板",
@@ -26,6 +26,7 @@
     { "skinId": 701, "contentVersion": 1, "publicationState": "active", "isDefault": false, "sortOrder": 701, "playerUsable": true, "technicalLabel": "皮肤 701", "aiEligible": true, "fallbackSkinId": 1, "textureAsset": "snakeoff/snake_skin_ai", "targetFile": "snake_skin_ai.png" }
   ],
   "presentation": {
+    "presentationVersion": 2,
     "gridSpacing": 32,
     "mapMargin": 16,
     "food": {
@@ -51,6 +52,34 @@
       "targetFile": "snake_extras.png",
       "frames": ["protect"]
     },
+    "magnet": {
+      "sourceToolId": 10001,
+      "displaySize": 70,
+      "texture": {
+        "sourceRelativePath": "remoteBundles/atlas/native/14/1473c6a2-0588-411d-b295-2b7517dc029b.png",
+        "expectedSha256": "e954359e45836981a574101f7397906da997d07c52498e682b4a1c98b1ee4090",
+        "width": 468,
+        "height": 769,
+        "targetFile": "snake_magnet_tools.png"
+      },
+      "atlas": {
+        "sourceRelativePath": "remoteBundles/atlas/import/06/069cb84df.json",
+        "expectedSha256": "9d1e12c5d141653450b0af0ff7d3be572a2b92e78674d2e02fa0f1f03e2e3748",
+        "sourceFrameName": "10001"
+      },
+      "aura": {
+        "prefabRelativePath": "remoteBundles/game/import/03/0365be86c.json",
+        "expectedPrefabSha256": "9daafc4c3ce38d76427c02ed40b82c2aa15ce3463fdf832ccd06b802fd4b536f",
+        "recipeTargetFile": "snake_magnet_aura.json",
+        "textures": [
+          { "logicalName": "x_lighting01", "sourceRelativePath": "remoteBundles/game/native/ca/cae4c893-2179-4fca-9b76-44472a335923.png", "expectedSha256": "f86fb2768cc1c9228ca99d7588c01f37c86e1a088e306076bbde05d94c35aa5b", "width": 54, "height": 26, "targetFile": "snake_magnet_aura_x_lighting01.png" },
+          { "logicalName": "x_lighting02", "sourceRelativePath": "remoteBundles/game/native/f1/f1b42444-7757-4bdb-b713-c4606298d4f0.png", "expectedSha256": "8bf1c195d4dfc2bf7ad8db4740a0faaa1743d092ac715f9e562a0bccee2c3194", "width": 78, "height": 34, "targetFile": "snake_magnet_aura_x_lighting02.png" },
+          { "logicalName": "x_lighting03", "sourceRelativePath": "remoteBundles/game/native/3a/3a12368b-8ef7-4bf6-91a9-191ef071ec99.png", "expectedSha256": "15331a741d25de8e08ed903f9c88cab46ebad60bc57c40005fc96f839dd5b45d", "width": 56, "height": 64, "targetFile": "snake_magnet_aura_x_lighting03.png" },
+          { "logicalName": "xt_s_lighting", "sourceRelativePath": "remoteBundles/game/native/ae/ae0301dd-05fa-45c7-90f5-bb39e23422ca.png", "expectedSha256": "11b9fdc1983d39bb1a578ded1fa7e4962fae95da44895f40b819f507c1a5425c", "width": 40, "height": 40, "targetFile": "snake_magnet_aura_xt_s_lighting.png" },
+          { "logicalName": "xt_s_lighting02", "sourceRelativePath": "remoteBundles/game/native/4e/4e216bd4-1dae-4211-bd44-976710bd9889.png", "expectedSha256": "4e77f9fbd45a66be64f8cd4311e4e761ffdb91e76580e4e8334d582dd7eaebc0", "width": 128, "height": 128, "targetFile": "snake_magnet_aura_xt_s_lighting02.png" }
+        ]
+      }
+    },
     "walls": [
       { "theme": "light", "sourceRelativePath": "remoteBundles/gameClassic/native/43/43bd6cef-1ea5-49a8-9ee6-35fe332b39c6.png", "targetFile": "snake_wall_block_1.png" },
       { "theme": "dark", "sourceRelativePath": "remoteBundles/gameClassic/native/ae/aed7b327-a69a-4b9c-a8e3-310bf6cd5cf1.png", "targetFile": "snake_wall_block_2.png" }
@@ -61,6 +90,8 @@
       { "event": "kill", "sourceRelativePath": "remoteBundles/audio/native/45/454df9b6-56c4-43c8-9dfe-8adfc4ecdf43.mp3", "targetFile": "snake_sfx_kill.mp3", "policy": "resource" },
       { "event": "death", "sourceRelativePath": "remoteBundles/audio/native/3b/3b1fa3f8-94a9-4b68-9bae-9c91c58c0914.mp3", "targetFile": "snake_sfx_end.mp3", "policy": "resource" },
       { "event": "button", "sourceRelativePath": "remoteBundles/audio/native/c2/c280b506-d28c-4947-8f4b-d8b6f490f5ca.mp3", "targetFile": "snake_sfx_button.mp3", "policy": "resource" },
+      { "event": "collect-magnet", "sourceRelativePath": "remoteBundles/audio/native/dc/dc5e02f9-c04f-4bc5-b6e8-3f9016ea8e94.mp3", "expectedSha256": "7ca26a88922302ec4492ed31117f57410268109d47645b689318e6138bb5c113", "targetFile": "snake_sfx_collect_magnet.mp3", "policy": "resource", "sfxOnGuarded": true, "playback": "single-instance", "maxConcurrent": 1, "missingPolicy": "silent" },
+      { "event": "magnet-active-loop", "targetFile": null, "policy": "silent", "reason": "no-approved-loop-audio" },
       { "event": "personal-run-result", "targetFile": null, "policy": "silent" },
       { "event": "time-over", "sourceRelativePath": "remoteBundles/audio/native/d1/d1effd86-7e5e-4c82-bb88-9a27c2ca4e4b.mp3", "targetFile": "snake_sfx_time_over.mp3", "policy": "historical-unused" }
     ],

@@ -10,15 +10,21 @@ import {
     CLIENT_SNAKE_PRESENTATION_CATALOG,
     CLIENT_SNAKE_PRESENTATION_HASH,
     SNAKE_ENTITY_PRESENTATION_CATALOG,
+    SNAKE_PRESENTATION_VERSION,
     deriveSkinLayoutMetrics,
     getClientSnakeSkinPresentation,
+    readSnakePresentationVersion,
     resolveClientSnakeSkinPresentation,
+    resolveMagnetRuntimePresentation,
     validateClientSnakePresentationCatalog,
     validateFrameDefinition,
+    validateSnakeEntityPresentationCatalog,
 } from "../src/logic/rooms/snake/SnakePresentationCatalog";
 import {
     CLIENT_SNAKE_PRESENTATION_CATALOG_DATA,
     EMBEDDED_PUBLIC_SNAKE_SKIN_CATALOG_HASH,
+    SNAKE_ENTITY_PRESENTATION_CATALOG_DATA,
+    SNAKE_PRESENTATION_VERSION as GENERATED_SNAKE_PRESENTATION_VERSION,
 } from "../src/logic/rooms/snake/SnakePresentationCatalog.generated";
 
 const IDS = [1, 2, 3, 4, 10, 11, 101, 111, 112, 132, 133, 139, 401, 403, 411, 701];
@@ -31,8 +37,10 @@ test("public skin catalog is exact, stable, uniquely defaulted and hash-compatib
     assert.ok(PUBLIC_SNAKE_SKIN_CATALOG.every((entry) => entry.publicationState === "active" && entry.playerUsable && entry.contentVersion === 1));
     assert.ok(PUBLIC_SNAKE_SKIN_CATALOG.every((entry) => entry.technicalLabel === `皮肤 ${entry.skinId}`));
     assert.equal(EMBEDDED_PUBLIC_SNAKE_SKIN_CATALOG_HASH, PUBLIC_SNAKE_SKIN_CATALOG_HASH);
+    assert.equal(PUBLIC_SNAKE_SKIN_CATALOG_HASH, "a1cdecbc5e31db3f90ac2fd15465768ef9206b2520000d4ab9f88d6c2135b075");
     assert.match(PUBLIC_SNAKE_SKIN_CATALOG_HASH, /^[a-f0-9]{64}$/);
     assert.match(CLIENT_SNAKE_PRESENTATION_HASH, /^[a-f0-9]{64}$/);
+    assert.notEqual(CLIENT_SNAKE_PRESENTATION_HASH, "62e1a6683a71db3ef0724cd6030114b7d9a64845723b14fa8c7c6d58a9302efe");
 });
 
 test("public exact validator rejects extra/missing fields, duplicate IDs and invalid defaults", () => {
@@ -138,6 +146,9 @@ test("frame bounds reject deployment-time invalid rects, including packed rotate
 });
 
 test("food, wreck, walls, audio and FX presentation policy is explicit", () => {
+    assert.equal(SNAKE_PRESENTATION_VERSION, 2);
+    assert.equal(GENERATED_SNAKE_PRESENTATION_VERSION, 2);
+    assert.equal(SNAKE_ENTITY_PRESENTATION_CATALOG.presentationVersion, 2);
     assert.equal(SNAKE_ENTITY_PRESENTATION_CATALOG.grid.spacing, 32);
     assert.equal(SNAKE_ENTITY_PRESENTATION_CATALOG.grid.mapMargin, 16);
     assert.deepEqual(SNAKE_ENTITY_PRESENTATION_CATALOG.food.dots.map((entry) => entry.kind), ["dot-1", "dot-2", "dot-3", "dot-4", "dot-5", "dot-6", "dot-7"]);
@@ -155,4 +166,133 @@ test("food, wreck, walls, audio and FX presentation policy is explicit", () => {
     assert.equal(personalResult?.endlessReachability, "silent");
     assert.equal(SNAKE_ENTITY_PRESENTATION_CATALOG.audio.find((entry) => entry.event === "time-over")?.policy, "historical-unused");
     assert.equal(SNAKE_ENTITY_PRESENTATION_CATALOG.effects.find((entry) => entry.event === "death-explosion")?.policy, "none");
+    assert.deepEqual(SNAKE_ENTITY_PRESENTATION_CATALOG.identity, {
+        ai: { arrow: "none", avatar: "none", nameplate: "text", outline: "none" },
+        otherHuman: { arrow: "none", nameplate: "text", outline: "none" },
+        seatTinting: "forbidden",
+        self: { arrow: "none", nameplate: "none", outline: "fine-white" },
+        skinTint: [255, 255, 255, 255],
+    });
+    const collectMagnet = SNAKE_ENTITY_PRESENTATION_CATALOG.audio.find((entry) => entry.event === "collect-magnet");
+    assert.equal(collectMagnet?.asset, "snakeoff/snake_sfx_collect_magnet");
+    assert.equal(collectMagnet?.sfxOnGuarded, true);
+    assert.equal(collectMagnet?.playback, "single-instance");
+    assert.equal(collectMagnet?.maxConcurrent, 1);
+    assert.equal(collectMagnet?.missingPolicy, "silent");
+    const magnetLoop = SNAKE_ENTITY_PRESENTATION_CATALOG.audio.find((entry) => entry.event === "magnet-active-loop");
+    assert.equal(magnetLoop?.policy, "silent");
+    assert.equal(magnetLoop?.asset, null);
+    assert.equal(magnetLoop?.resourceHash, null);
+});
+
+test("version-2 magnet catalog has one exact world frame, one passive alias and one registered aura recipe", () => {
+    assert.equal(readSnakePresentationVersion({ historical: true }), 1);
+    assert.equal(readSnakePresentationVersion(SNAKE_ENTITY_PRESENTATION_CATALOG_DATA), 2);
+    assert.throws(() => readSnakePresentationVersion({ presentationVersion: 3 }), /unsupported/);
+    assert.doesNotThrow(() => validateSnakeEntityPresentationCatalog(SNAKE_ENTITY_PRESENTATION_CATALOG_DATA));
+    const magnet = SNAKE_ENTITY_PRESENTATION_CATALOG.tools.magnet;
+    assert.equal(magnet.kind, "magnet");
+    assert.equal(magnet.sourceToolId, 10001);
+    assert.equal(magnet.world.logicalName, "magnet");
+    assert.equal(magnet.world.textureAsset, "snakeoff/snake_magnet_tools");
+    assert.equal(magnet.world.displaySize, 70);
+    assert.deepEqual(magnet.world.frame.rect, { x: 346, y: 256, width: 84, height: 92 });
+    assert.equal(magnet.statusIcon.logicalAliasOf, "magnet");
+    assert.equal(magnet.statusIcon.interactive, false);
+    assert.equal(magnet.statusIcon.textureAsset, magnet.world.textureAsset);
+    assert.deepEqual(magnet.statusIcon.frame, magnet.world.frame);
+    assert.equal(magnet.activeEffect.recipeAsset, "snakeoff/snake_magnet_aura");
+    assert.deepEqual(magnet.activeEffect.fallback, { logicalName: "magnet-status-icon", placement: "over-head" });
+});
+
+test("entity validator rejects magnet entry/rect/alias/button/fallback, identity and audio policy drift", () => {
+    const clone = (): Record<string, any> => JSON.parse(JSON.stringify(SNAKE_ENTITY_PRESENTATION_CATALOG_DATA)) as Record<string, any>;
+    {
+        const value = clone();
+        value.tools.extraWorldTool = value.tools.magnet;
+        assert.throws(() => validateSnakeEntityPresentationCatalog(value), /presentation\.tools must contain exactly/);
+    }
+    {
+        const value = clone();
+        delete value.tools.magnet;
+        assert.throws(() => validateSnakeEntityPresentationCatalog(value), /presentation\.tools must contain exactly/);
+    }
+    {
+        const value = clone();
+        value.tools.magnet.world.frame.rect.x = 450;
+        assert.throws(() => validateSnakeEntityPresentationCatalog(value), /outside the loaded texture/);
+    }
+    {
+        const value = clone();
+        value.tools.magnet.world.displaySize = 69;
+        assert.throws(() => validateSnakeEntityPresentationCatalog(value), /displaySize/);
+    }
+    {
+        const value = clone();
+        value.tools.magnet.statusIcon.textureAsset = "snakeoff/copied_status_icon";
+        assert.throws(() => validateSnakeEntityPresentationCatalog(value), /exact logical alias/);
+    }
+    {
+        const value = clone();
+        value.tools.magnet.statusIcon.interactive = true;
+        assert.throws(() => validateSnakeEntityPresentationCatalog(value), /non-interactive/);
+    }
+    {
+        const value = clone();
+        value.tools.magnet.statusIcon.buttonSlot = 2;
+        assert.throws(() => validateSnakeEntityPresentationCatalog(value), /must contain exactly/);
+    }
+    {
+        const value = clone();
+        value.tools.magnet.activeEffect.recipeAsset = "snakeoff/speed_fx";
+        assert.throws(() => validateSnakeEntityPresentationCatalog(value), /registered magnet aura recipe/);
+    }
+    {
+        const value = clone();
+        value.tools.magnet.activeEffect.fallback.logicalName = "magnet-active";
+        assert.throws(() => validateSnakeEntityPresentationCatalog(value), /fallback/);
+    }
+    {
+        const value = clone();
+        value.identity.self.arrow = "procedural";
+        assert.throws(() => validateSnakeEntityPresentationCatalog(value), /old arrow/);
+    }
+    {
+        const value = clone();
+        value.identity.ai.outline = "procedural";
+        assert.throws(() => validateSnakeEntityPresentationCatalog(value), /AI outline/);
+    }
+    {
+        const value = clone();
+        value.audio.find((entry: any) => entry.event === "collect-magnet").maxConcurrent = 4;
+        assert.throws(() => validateSnakeEntityPresentationCatalog(value), /single-instance/);
+    }
+    {
+        const value = clone();
+        value.audio.find((entry: any) => entry.event === "magnet-active-loop").asset = "snakeoff/guessed_loop";
+        assert.throws(() => validateSnakeEntityPresentationCatalog(value), /resource-free/);
+    }
+});
+
+test("magnet runtime blocks an invisible world item and falls back once from a missing aura to the passive icon", () => {
+    const worldMissing = resolveMagnetRuntimePresentation((kind) => kind === "world-texture" ? "missing" : "available");
+    assert.deepEqual(worldMissing, { battleReady: false, world: null, activeVisual: null, diagnostic: "world-resource-missing" });
+
+    const probes: string[] = [];
+    const auraMissing = resolveMagnetRuntimePresentation((kind, asset) => {
+        probes.push(`${kind}:${asset}`);
+        return kind === "aura-recipe" ? "missing" : "available";
+    });
+    assert.equal(auraMissing.battleReady, true);
+    assert.equal(auraMissing.activeVisual?.mode, "status-icon-fallback");
+    assert.equal(auraMissing.activeVisual?.logicalName, "magnet-status-icon");
+    assert.equal(auraMissing.activeVisual?.placement, "over-head");
+    assert.deepEqual(probes, [
+        "world-texture:snakeoff/snake_magnet_tools",
+        "aura-recipe:snakeoff/snake_magnet_aura",
+    ], "fallback is a single direct hop and does not probe recursively");
+
+    const ready = resolveMagnetRuntimePresentation();
+    assert.equal(ready.battleReady, true);
+    assert.deepEqual(ready.activeVisual, { mode: "aura", recipeAsset: "snakeoff/snake_magnet_aura" });
 });

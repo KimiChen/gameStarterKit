@@ -8,6 +8,7 @@ import {
     CLIENT_SNAKE_PRESENTATION_HASH,
     EMBEDDED_PUBLIC_SNAKE_SKIN_CATALOG_HASH,
     SNAKE_ENTITY_PRESENTATION_CATALOG_DATA,
+    SNAKE_PRESENTATION_VERSION as GENERATED_SNAKE_PRESENTATION_VERSION,
 } from "./SnakePresentationCatalog.generated";
 
 export interface FrameDefinition {
@@ -59,6 +60,44 @@ export interface SkinLayoutMetrics {
     readonly tailPointDistance: number | null;
 }
 
+export interface MagnetRenderingGroup {
+    readonly batchGroup: "world-tools" | "passive-status-ui" | "snake-head-effects";
+    readonly material: "sprite-alpha" | "recipe-defined";
+}
+
+export interface MagnetPresentation {
+    readonly kind: "magnet";
+    readonly sourceToolId: 10001;
+    readonly world: {
+        readonly logicalName: "magnet";
+        readonly textureAsset: "snakeoff/snake_magnet_tools";
+        readonly frame: FrameDefinition;
+        readonly displaySize: 70;
+        readonly rendering: MagnetRenderingGroup;
+    };
+    readonly statusIcon: {
+        readonly logicalName: "magnet-status-icon";
+        readonly logicalAliasOf: "magnet";
+        readonly textureAsset: "snakeoff/snake_magnet_tools";
+        readonly frame: FrameDefinition;
+        readonly role: "passive-indicator";
+        readonly interactive: false;
+        readonly rendering: MagnetRenderingGroup;
+    };
+    readonly activeEffect: {
+        readonly event: "magnet-active";
+        readonly policy: "resource";
+        readonly recipeAsset: "snakeoff/snake_magnet_aura";
+        readonly rendering: MagnetRenderingGroup;
+        readonly fallback: {
+            readonly logicalName: "magnet-status-icon";
+            readonly placement: "over-head";
+        };
+    };
+}
+
+export const SNAKE_PRESENTATION_VERSION = GENERATED_SNAKE_PRESENTATION_VERSION;
+
 const PRESENTATION_KEYS = [
     "bodyRenderType", "bodyRenderWidthRate", "boost", "boostSource", "fallbackSkinId",
     "headAnchorY", "normal", "previewAsset", "skinId", "textureAsset", "visualScale",
@@ -66,6 +105,19 @@ const PRESENTATION_KEYS = [
 
 function fail(message: string): never {
     throw new Error(`[snake-presentation-catalog] ${message}`);
+}
+
+function record(value: unknown, context: string): Record<string, unknown> {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) fail(`${context} must be an object`);
+    return value as Record<string, unknown>;
+}
+
+function exactKeys(value: Record<string, unknown>, expected: readonly string[], context: string): void {
+    const actual = Object.keys(value).sort();
+    const wanted = [...expected].sort();
+    if (actual.length !== wanted.length || actual.some((key, index) => key !== wanted[index])) {
+        fail(`${context} must contain exactly ${wanted.join(", ")}`);
+    }
 }
 
 function finite(value: number, context: string): number {
@@ -100,6 +152,17 @@ export function validateFrameDefinition(frame: FrameDefinition, textureWidth?: n
             fail(`${frame.sourceFrameName} rect lies outside the loaded texture`);
         }
     }
+}
+
+function frameIdentity(frame: FrameDefinition): readonly unknown[] {
+    return [
+        frame.sourceFrameName,
+        frame.rect.x, frame.rect.y, frame.rect.width, frame.rect.height,
+        frame.pivot.x, frame.pivot.y,
+        frame.trimOffset.x, frame.trimOffset.y,
+        frame.originalSize.width, frame.originalSize.height,
+        frame.rotated, frame.trimmed,
+    ];
 }
 
 function validateTrack(track: SkinPartTrack, context: string): void {
@@ -164,10 +227,124 @@ export function validateClientSnakePresentationCatalog(value: unknown, embeddedP
     return result;
 }
 
+/** 历史 S1 envelope 无字段时仅用于迁移解释为 1；当前生成物必须显式为 2。 */
+export function readSnakePresentationVersion(value: unknown): 1 | 2 {
+    const raw = record(value, "presentation envelope").presentationVersion;
+    if (raw === undefined) return 1;
+    if (raw !== 1 && raw !== 2) fail(`unsupported presentationVersion ${String(raw)}`);
+    return raw;
+}
+
+function validateRendering(value: unknown, batchGroup: string, material: string, context: string): void {
+    const rendering = record(value, context);
+    exactKeys(rendering, ["batchGroup", "material"], context);
+    if (rendering.batchGroup !== batchGroup || rendering.material !== material) fail(`${context} has an invalid batch/material assignment`);
+}
+
+export function validateMagnetPresentation(value: unknown): MagnetPresentation {
+    const magnet = record(value, "tools.magnet");
+    exactKeys(magnet, ["activeEffect", "kind", "sourceToolId", "statusIcon", "world"], "tools.magnet");
+    if (magnet.kind !== "magnet" || magnet.sourceToolId !== 10001) fail("tools.magnet kind/sourceToolId must be magnet/10001");
+
+    const world = record(magnet.world, "tools.magnet.world");
+    exactKeys(world, ["displaySize", "frame", "logicalName", "rendering", "textureAsset"], "tools.magnet.world");
+    if (world.logicalName !== "magnet" || world.textureAsset !== "snakeoff/snake_magnet_tools" || world.displaySize !== 70) {
+        fail("tools.magnet.world identity, texture or displaySize is invalid");
+    }
+    const worldFrameRecord = record(world.frame, "tools.magnet.world.frame");
+    exactKeys(worldFrameRecord, ["originalSize", "pivot", "rect", "rotated", "sourceFrameName", "trimOffset", "trimmed"], "tools.magnet.world.frame");
+    const worldFrame = world.frame as FrameDefinition;
+    validateFrameDefinition(worldFrame, 468, 769);
+    if (JSON.stringify(frameIdentity(worldFrame)) !== JSON.stringify(["10001", 346, 256, 84, 92, 0.5, 0.5, 0, 0, 84, 92, false, false])) {
+        fail("tools.magnet.world.frame differs from frozen frame 10001");
+    }
+    validateRendering(world.rendering, "world-tools", "sprite-alpha", "tools.magnet.world.rendering");
+
+    const statusIcon = record(magnet.statusIcon, "tools.magnet.statusIcon");
+    exactKeys(statusIcon, ["frame", "interactive", "logicalAliasOf", "logicalName", "rendering", "role", "textureAsset"], "tools.magnet.statusIcon");
+    const statusFrameRecord = record(statusIcon.frame, "tools.magnet.statusIcon.frame");
+    exactKeys(statusFrameRecord, ["originalSize", "pivot", "rect", "rotated", "sourceFrameName", "trimOffset", "trimmed"], "tools.magnet.statusIcon.frame");
+    const statusFrame = statusIcon.frame as FrameDefinition;
+    validateFrameDefinition(statusFrame, 468, 769);
+    if (statusIcon.logicalName !== "magnet-status-icon" || statusIcon.logicalAliasOf !== "magnet"
+        || statusIcon.role !== "passive-indicator" || statusIcon.interactive !== false
+        || statusIcon.textureAsset !== world.textureAsset
+        || JSON.stringify(frameIdentity(statusFrame)) !== JSON.stringify(frameIdentity(worldFrame))) {
+        fail("tools.magnet.statusIcon must be a non-interactive exact logical alias of the world texture/frame");
+    }
+    validateRendering(statusIcon.rendering, "passive-status-ui", "sprite-alpha", "tools.magnet.statusIcon.rendering");
+
+    const activeEffect = record(magnet.activeEffect, "tools.magnet.activeEffect");
+    exactKeys(activeEffect, ["event", "fallback", "policy", "recipeAsset", "rendering"], "tools.magnet.activeEffect");
+    if (activeEffect.event !== "magnet-active" || activeEffect.policy !== "resource" || activeEffect.recipeAsset !== "snakeoff/snake_magnet_aura") {
+        fail("tools.magnet.activeEffect must use the registered magnet aura recipe");
+    }
+    validateRendering(activeEffect.rendering, "snake-head-effects", "recipe-defined", "tools.magnet.activeEffect.rendering");
+    const fallback = record(activeEffect.fallback, "tools.magnet.activeEffect.fallback");
+    exactKeys(fallback, ["logicalName", "placement"], "tools.magnet.activeEffect.fallback");
+    if (fallback.logicalName !== "magnet-status-icon" || fallback.placement !== "over-head") {
+        fail("tools.magnet.activeEffect fallback must directly use magnet-status-icon over-head");
+    }
+    return magnet as unknown as MagnetPresentation;
+}
+
+export function validateSnakeEntityPresentationCatalog(value: unknown, generatedVersion = GENERATED_SNAKE_PRESENTATION_VERSION): MagnetPresentation {
+    const catalog = record(value, "presentation catalog");
+    exactKeys(catalog, ["audio", "effects", "food", "grid", "identity", "presentationVersion", "tools", "walls", "wreck"], "presentation catalog");
+    if (readSnakePresentationVersion(catalog) !== 2 || generatedVersion !== 2 || catalog.presentationVersion !== generatedVersion) {
+        fail("current presentation envelope and generated SNAKE_PRESENTATION_VERSION must both be 2");
+    }
+
+    const identity = record(catalog.identity, "presentation.identity");
+    exactKeys(identity, ["ai", "otherHuman", "seatTinting", "self", "skinTint"], "presentation.identity");
+    if (JSON.stringify(identity.skinTint) !== JSON.stringify([255, 255, 255, 255]) || identity.seatTinting !== "forbidden") {
+        fail("presentation.identity must preserve white skin tint and forbid seat tinting");
+    }
+    const self = record(identity.self, "presentation.identity.self");
+    const otherHuman = record(identity.otherHuman, "presentation.identity.otherHuman");
+    const ai = record(identity.ai, "presentation.identity.ai");
+    exactKeys(self, ["arrow", "nameplate", "outline"], "presentation.identity.self");
+    exactKeys(otherHuman, ["arrow", "nameplate", "outline"], "presentation.identity.otherHuman");
+    exactKeys(ai, ["arrow", "avatar", "nameplate", "outline"], "presentation.identity.ai");
+    if (self.arrow !== "none" || self.nameplate !== "none" || self.outline !== "fine-white"
+        || otherHuman.arrow !== "none" || otherHuman.nameplate !== "text" || otherHuman.outline !== "none"
+        || ai.arrow !== "none" || ai.avatar !== "none" || ai.nameplate !== "text" || ai.outline !== "none") {
+        fail("presentation.identity exposes an old arrow, AI outline/avatar, or non-frozen identity branch");
+    }
+
+    const tools = record(catalog.tools, "presentation.tools");
+    exactKeys(tools, ["magnet"], "presentation.tools");
+    const magnet = validateMagnetPresentation(tools.magnet);
+
+    if (!Array.isArray(catalog.audio)) fail("presentation.audio must be an array");
+    const audio = catalog.audio.map((entry, index) => {
+        const audioEntry = record(entry, `presentation.audio[${index}]`);
+        exactKeys(audioEntry, ["asset", "endlessReachability", "event", "maxConcurrent", "missingPolicy", "playback", "policy", "reason", "resourceHash", "sfxOnGuarded", "volume"], `presentation.audio[${index}]`);
+        return audioEntry;
+    });
+    const names = audio.map((entry) => entry.event);
+    if (names.some((name) => typeof name !== "string") || new Set(names).size !== names.length) fail("presentation.audio event names must be unique strings");
+    const collect = audio.find((entry) => entry.event === "collect-magnet");
+    const loop = audio.find((entry) => entry.event === "magnet-active-loop");
+    if (!collect || collect.policy !== "resource" || collect.asset !== "snakeoff/snake_sfx_collect_magnet"
+        || typeof collect.resourceHash !== "string" || !/^[a-f0-9]{64}$/.test(collect.resourceHash)
+        || collect.sfxOnGuarded !== true || collect.playback !== "single-instance" || collect.maxConcurrent !== 1
+        || collect.missingPolicy !== "silent" || collect.endlessReachability !== "mapped") {
+        fail("collect-magnet audio must be sfxOn-controlled, single-instance, bounded and silent when missing");
+    }
+    if (!loop || loop.policy !== "silent" || loop.asset !== null || loop.resourceHash !== null || loop.volume !== null
+        || loop.sfxOnGuarded !== null || loop.playback !== null || loop.maxConcurrent !== null || loop.missingPolicy !== "silent"
+        || loop.reason !== "no-approved-loop-audio" || loop.endlessReachability !== "silent") {
+        fail("magnet-active-loop must be explicit silent and resource-free");
+    }
+    return magnet;
+}
+
 export const CLIENT_SNAKE_PRESENTATION_CATALOG: readonly ClientSkinPresentation[] = validateClientSnakePresentationCatalog(
     CLIENT_SNAKE_PRESENTATION_CATALOG_DATA,
     EMBEDDED_PUBLIC_SNAKE_SKIN_CATALOG_HASH,
 );
+validateSnakeEntityPresentationCatalog(SNAKE_ENTITY_PRESENTATION_CATALOG_DATA);
 export const SNAKE_ENTITY_PRESENTATION_CATALOG = SNAKE_ENTITY_PRESENTATION_CATALOG_DATA;
 export { CLIENT_SNAKE_PRESENTATION_HASH };
 
@@ -249,4 +426,64 @@ export function resolveClientSnakeSkinPresentation(
     if (hashMismatch) diagnostic = "public-hash-mismatch";
     else if (requested) diagnostic = requestedAvailability === "invalid" ? "invalid-frame" : "resource-missing";
     return { requestedSkinId, presentation: fallback, usedFallback: true, diagnostic };
+}
+
+export type MagnetRuntimeAssetKind = "world-texture" | "aura-recipe";
+export type MagnetRuntimeAssetProbe = (kind: MagnetRuntimeAssetKind, logicalAsset: string) => SnakePresentationAvailability;
+export type MagnetRuntimeDiagnostic = "ok" | "world-resource-missing" | "world-resource-invalid" | "aura-fallback-missing" | "aura-fallback-invalid";
+
+export interface MagnetRuntimeResolution {
+    readonly battleReady: boolean;
+    readonly world: MagnetPresentation["world"] | null;
+    readonly activeVisual:
+        | Readonly<{ mode: "aura"; recipeAsset: "snakeoff/snake_magnet_aura" }>
+        | Readonly<{
+            mode: "status-icon-fallback";
+            logicalName: "magnet-status-icon";
+            placement: "over-head";
+            textureAsset: "snakeoff/snake_magnet_tools";
+            frame: FrameDefinition;
+        }>
+        | null;
+    readonly diagnostic: MagnetRuntimeDiagnostic;
+}
+
+/**
+ * World asset failure is a battle-entry blocker. Aura deployment failure takes one direct, non-recursive hop to the
+ * already-loaded passive icon; it never invents another logical asset name or changes authoritative magnet state.
+ */
+export function resolveMagnetRuntimePresentation(
+    probe: MagnetRuntimeAssetProbe = () => "available",
+): MagnetRuntimeResolution {
+    const magnet = SNAKE_ENTITY_PRESENTATION_CATALOG.tools.magnet;
+    const worldAvailability = probe("world-texture", magnet.world.textureAsset);
+    if (worldAvailability !== "available") {
+        return {
+            battleReady: false,
+            world: null,
+            activeVisual: null,
+            diagnostic: worldAvailability === "invalid" ? "world-resource-invalid" : "world-resource-missing",
+        };
+    }
+    const auraAvailability = probe("aura-recipe", magnet.activeEffect.recipeAsset);
+    if (auraAvailability === "available") {
+        return {
+            battleReady: true,
+            world: magnet.world,
+            activeVisual: { mode: "aura", recipeAsset: magnet.activeEffect.recipeAsset },
+            diagnostic: "ok",
+        };
+    }
+    return {
+        battleReady: true,
+        world: magnet.world,
+        activeVisual: {
+            mode: "status-icon-fallback",
+            logicalName: magnet.activeEffect.fallback.logicalName,
+            placement: magnet.activeEffect.fallback.placement,
+            textureAsset: magnet.statusIcon.textureAsset,
+            frame: magnet.statusIcon.frame,
+        },
+        diagnostic: auraAvailability === "invalid" ? "aura-fallback-invalid" : "aura-fallback-missing",
+    };
 }

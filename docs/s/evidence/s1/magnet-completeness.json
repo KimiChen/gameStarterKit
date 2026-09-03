@@ -1,0 +1,126 @@
+{
+  "audio": {
+    "activeLoop": {
+      "asset": null,
+      "endlessReachability": "silent",
+      "event": "magnet-active-loop",
+      "maxConcurrent": null,
+      "missingPolicy": "silent",
+      "playback": null,
+      "policy": "silent",
+      "reason": "no-approved-loop-audio",
+      "resourceHash": null,
+      "sfxOnGuarded": null,
+      "volume": null
+    },
+    "collect": {
+      "asset": "snakeoff/snake_sfx_collect_magnet",
+      "endlessReachability": "mapped",
+      "event": "collect-magnet",
+      "maxConcurrent": 1,
+      "missingPolicy": "silent",
+      "playback": "single-instance",
+      "policy": "resource",
+      "reason": null,
+      "resourceHash": "7ca26a88922302ec4492ed31117f57410268109d47645b689318e6138bb5c113",
+      "sfxOnGuarded": true,
+      "volume": 1
+    },
+    "format": {
+      "channels": 1,
+      "codec": "MPEG Layer III",
+      "sampleRateHz": 44100
+    }
+  },
+  "aura": {
+    "animationTrackCount": 17,
+    "dependencies": [
+      {
+        "logicalName": "x_lighting01",
+        "resourceHash": "f86fb2768cc1c9228ca99d7588c01f37c86e1a088e306076bbde05d94c35aa5b",
+        "textureAsset": "snakeoff/snake_magnet_aura_x_lighting01"
+      },
+      {
+        "logicalName": "x_lighting02",
+        "resourceHash": "8bf1c195d4dfc2bf7ad8db4740a0faaa1743d092ac715f9e562a0bccee2c3194",
+        "textureAsset": "snakeoff/snake_magnet_aura_x_lighting02"
+      },
+      {
+        "logicalName": "x_lighting03",
+        "resourceHash": "15331a741d25de8e08ed903f9c88cab46ebad60bc57c40005fc96f839dd5b45d",
+        "textureAsset": "snakeoff/snake_magnet_aura_x_lighting03"
+      },
+      {
+        "logicalName": "xt_s_lighting",
+        "resourceHash": "11b9fdc1983d39bb1a578ded1fa7e4962fae95da44895f40b819f507c1a5425c",
+        "textureAsset": "snakeoff/snake_magnet_aura_xt_s_lighting"
+      },
+      {
+        "logicalName": "xt_s_lighting02",
+        "resourceHash": "4e77f9fbd45a66be64f8cd4311e4e761ffdb91e76580e4e8334d582dd7eaebc0",
+        "textureAsset": "snakeoff/snake_magnet_aura_xt_s_lighting02"
+      }
+    ],
+    "fallback": {
+      "logicalName": "magnet-status-icon",
+      "placement": "over-head"
+    },
+    "nodeCount": 17,
+    "recipeAsset": "snakeoff/snake_magnet_aura",
+    "recipeSha256": "16dca7fdc0794aad441dc362516ef1f88ed6d1f1911f1c05a9c75330816fcd23",
+    "runtimePath": "apps/Cocos/assets/resources/snakeoff/snake_magnet_aura.json"
+  },
+  "creatorValidationDeferredTo": "S5",
+  "presentationVersion": 2,
+  "runtimeResources": [
+    "apps/Cocos/assets/resources/snakeoff/snake_magnet_aura.json",
+    "apps/Cocos/assets/resources/snakeoff/snake_magnet_aura_x_lighting01.png",
+    "apps/Cocos/assets/resources/snakeoff/snake_magnet_aura_x_lighting02.png",
+    "apps/Cocos/assets/resources/snakeoff/snake_magnet_aura_x_lighting03.png",
+    "apps/Cocos/assets/resources/snakeoff/snake_magnet_aura_xt_s_lighting.png",
+    "apps/Cocos/assets/resources/snakeoff/snake_magnet_aura_xt_s_lighting02.png",
+    "apps/Cocos/assets/resources/snakeoff/snake_magnet_tools.png",
+    "apps/Cocos/assets/resources/snakeoff/snake_sfx_collect_magnet.mp3"
+  ],
+  "status": "complete-headless",
+  "statusIcon": {
+    "interactive": false,
+    "logicalAliasOf": "magnet",
+    "logicalName": "magnet-status-icon",
+    "physicalCopyCount": 1,
+    "sharesWorldTextureAndFrame": true
+  },
+  "world": {
+    "displaySize": 70,
+    "frame": {
+      "originalSize": {
+        "height": 92,
+        "width": 84
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "rect": {
+        "height": 92,
+        "width": 84,
+        "x": 346,
+        "y": 256
+      },
+      "rotated": false,
+      "sourceFrameName": "10001",
+      "trimOffset": {
+        "x": 0,
+        "y": 0
+      },
+      "trimmed": false
+    },
+    "logicalName": "magnet",
+    "sourceToolId": 10001,
+    "textureAsset": "snakeoff/snake_magnet_tools",
+    "textureSize": {
+      "height": 769,
+      "width": 468
+    }
+  }
+}
