@@ -1,0 +1,298 @@
+# S5：全链路验收、Creator 证据与发布
+
+[← S4 · 可靠养成奖励](s4-reliable-progression-rewards.md) · [专项索引](README.md)
+
+> **状态：`[已拍板·待实施]`**
+>
+> **预计：2–3 人日**
+>
+> **依赖：S0～S4 的自动化、真栈和非 Creator 退出条件均已满足；前序阶段明确移交的 Creator-only 用例可在 S5 收口，除此之外不得留缺口。`onlineCoinRelive5V1` 在本阶段最终放行前仍保持关闭。**
+
+## 1. 目标与非目标
+
+本阶段冻结一个可追溯的发布候选，执行自动测试、真 Redis/MySQL 故障矩阵、Creator 3.8.8 人工验证、长驻房
+运维演练和兼容/回滚检查，随后回写证据。发布结论必须能从命令输出、fixture、receipt/ledger、截图和 commit
+复现，不能以“文档已完成”替代实现证据。
+
+S5 不增加玩法语义，不在验收时临时调数或补协议，不把失败检查改写成“有意不做”，也不允许静默 fallback 到
+Classic、TimeLimit、真人 40 tick 自动复活或客户端扣款。若发现规格缺口，退回拥有该规格的阶段修正并重新跑
+受影响门禁；S5 只负责聚合验收与发布决定。
+
+## 2. 发布冻结口径
+
+发布候选必须同时声明并校验以下五层 ID/hash：
+
+| 层 | 冻结 ID | 不可漂移的核心语义 |
+|---|---|---|
+| 战场 | `newEndlessPortraitV2Map4096` | 来源快照 4896²，目标只覆盖为 4096²；世界单位不整体缩放 |
+| 生命周期 | `sourceEndlessTotalTime0` | `totalTime=0`、`matchDurationTicks=0`、`hasDeadline=false`、无有效 `endTick` |
+| 复活流程 | `sourceEndlessReliveFlow` | 真人限时选择且无自动复活；AI 约 40 tick 独立重生 |
+| 首发复活策略 | `onlineCoinRelive5V1` | 五档 `100/200/300/300/300` 金币、100 tick 选择窗；Feed B 表是冻结样例而非线上恒定默认 |
+| 联机适配 | `onlineEndlessDropInV2` | 3 秒准备、最多 8 真人、稳定态 17 蛇、Playing 可入、个人 run 结算、空房回收 |
+
+发布候选还必须冻结 catalog/presentation、gameplay wire/mode、relive policy、reward policy、evidence schema、
+数据库 migration、协议 fingerprint 和客户端资源版本。任一 hash/version 对不上，不得通过运行时降级改变玩法
+语义；应停止放量并回滚到上一套完整兼容构建。
+
+## 3. 详细任务
+
+### S5-01：建立发布候选清单与追溯基线
+
+- [ ] **动作：** 锁定 commit、五层配置 hash、catalog/presentation、wire/mode、relive/reward/evidence 版本、
+  migration 集合、客户端资源构建和功能开关；逐项关联 S0～S4 的退出证据。
+- **产物：** release-candidate manifest、版本/迁移兼容矩阵、阶段证据索引和明确的 go/no-go owner。
+- **验证：** manifest 可从干净 checkout 重建；任何未完成阶段、未知 hash、缺失 migration 或未关闭的临时测试端口
+  都使候选 fail closed。
+
+### S5-02：验证文档覆盖、真源和生成镜像
+
+- [ ] **动作：** 以拆分前 `9e1814e:plan-s.md` 为来源清单，核对 61 个原阶段任务、19 个代码块、11 张表和
+  14 个唯一旧链接目标均有唯一归属；检查 `docs/s/` 内相对路径与跨文件锚点；从手写真源重跑必要 codegen/sync。
+- [ ] **动作：** 对拆分后跨阶段协作项指定唯一 canonical owner；原清单 #43 的 catalog +
+  `snakeCosmetic` descriptor 以 S3-02 为 canonical owner，S1-04 与 S3-01 只登记为资源身份和业务映射依赖。
+- **产物：** coverage/link 报告、无遗漏/重复说明、生成差异和 protected-path 审计。
+- **验证：** 每个旧任务映射至少一个稳定阶段 ID，canonical owner 恰好一个；无裸 `§x`/“x.y 节”失效引用；
+  `docs/s/*.md` 被链接检查实际扫描，而不是因未登记在 inventory 中被跳过；`verify:sync` 无漂移。
+
+### S5-03：执行完整自动化与真栈命令
+
+- [ ] **动作：** 在发布 commit 的干净工作区执行全量门禁、故障矩阵和本地真 Redis/MySQL 集成测试；记录原始
+  输出、exit code、测试计数、耗时和日期。
+- **产物：** 以下命令的可复现日志；若新增专用 Snake 测试入口，同时记录其命令但不得替代全量门禁。
+- **验证：** 每条命令 exit 0，未 skip 关键 Snake/relive/cosmetic/reward fixture，镜像和类型检查包含新增目录。
+
+```bash
+npm run verify:all
+npm run test:faults
+npm --workspace @game/server run stack
+npm --workspace @game/server run db:bootstrap
+npm --workspace @game/server run smoke:framework
+npm --workspace @game/server run test:int
+npm run test:faults:int
+```
+
+### S5-04：执行固定种子视觉与性能验收
+
+- [ ] **动作：** 运行 S5-VIS 矩阵：固定视口、实体位置和 RNG seed，比对旋转后的原作 world golden、目标边界、
+  数量/尺寸/颜色、皮肤、AI、相机/身体缩放和批渲染性能。
+- **产物：** golden/diff、fixture 输出、catalog/atlas 校验、节点/draw-call/帧耗证据和差异说明。
+- **验证：** S5-VIS-01～09 全部通过；任何人工阈值豁免必须退回 S0/S1/S2 形成新冻结版本，不能在 S5 口头放行。
+
+### S5-05：执行操作区与多指输入验收
+
+- [ ] **动作：** 在默认/左手模式、不同 Safe Area 和触控取消场景运行 S5-IN 矩阵，自动断言节点位置、可见尺寸、
+  圆形命中、pointer owner 与 boost 生命周期。
+- **产物：** 输入 fixture、事件轨迹、布局截图和旧命中规则不存在的静态/行为证据。
+- **验证：** S5-IN-01～06 全部通过；一指转向、另一指持续加速、第三指点击辅助入口互不抢占。
+
+### S5-06：执行无尽生命周期、wire 容量与重连验收
+
+- [ ] **动作：** 运行 S5-NET 矩阵，覆盖 1800/1801 tick、房级/个人 deadline 分型、五层 meta/hash、17 蛇与
+  1030 食物、5186/88162 路径点、chunk/delta 校验、旧客户端拒绝和重连恢复；记录候选实际 modeVersion 及其
+  逐版本兼容矩阵，不以阶段编号推测版本号。
+- **产物：** world/wire fixture、首包与 delta 抓包、checksum/重取日志、版本拒绝证据和内存水位报告。
+- **验证：** S5-NET-01～09 全部通过；合法 V2 世界不被旧 8/315/512 上限拒绝或静默截断。
+
+### S5-07：执行金币复活真栈故障验收
+
+- [ ] **动作：** 运行 S5-REL 矩阵，对 offer、decision、spawn、charge、apply、首个 provisional tick、activated、
+  refund、owner lease、缓存失效和所有终局竞争逐点 kill/restart/replay。
+- **产物：** 每个注入点的 decision/receipt/run/ledger/balance 最终态、恢复器日志和客户端表现记录。
+- **验证：** S5-REL-01～12 全部通过；不吞币、不双扣、不重复复活、不免费复活，退款未确认时不伪造终局。
+
+### S5-08：执行衣柜、权威装备与可靠奖励验收
+
+- [ ] **动作：** 运行 S5-ECO 矩阵，覆盖 catalog mismatch、伪造皮肤、equip/unlock 并发、冷用户/thaw/退休、
+  run 外观锁存、checkpoint、全部 endReason、settlement/outbox 重放和个人结果。
+- **产物：** RPC/Bag/User/ledger/outbox 前后快照、幂等/冲突日志、runResult UI 证据和 reward policy 边界报告。
+- **验证：** S5-ECO-01～10 全部通过；S4 原位扩展 S2R 账本，无第二套 run；资产只来自真人已确认 evidence。
+
+### S5-09：执行长驻房、churn、drain 与资源恢复验收
+
+- [ ] **动作：** 长时间运行 join/leave/reconnect/death-decision/AI 补位，注入资源缺失、掉线、并发顶号、
+  moderation、room fault 和运维 drain；观察 tick、集合、task、run、receipt 和 autoDispose。
+- **产物：** soak/churn 曲线、内存集合水位、drain 时间线、空房回收日志、资源 fallback 和故障结果。
+- **验证：** S5-OPS-01～07 全部通过；AI/假榜不维持空房，所有 run 先 durable freeze，迟到 task 不重开输入。
+
+### S5-10：完成 Creator 3.8.8 人工验收
+
+- [ ] **动作：** 用 Creator 3.8.8 打开同步后的工程，在 `750 × 1624` 与至少一个带底部 Safe Area 的设备预览，
+  走完战场、衣柜、复活、结果、重连和资源缺失路径。
+- **产物：** S5-CR 矩阵的截图/录屏/日志，记录 Creator 版本、构建 commit、设备/视口、操作步骤和结论。
+- **验证：** S5-CR-01～07 全部通过；`.meta`/UUID、动态加载、SpriteFrame rect/pivot、动画、混合、层级和弹窗输入
+  租约符合规格。无头结果不能替代 Creator 证据。
+
+### S5-11：执行发布、drain 与回滚演练
+
+- [ ] **动作：** 在预发布环境验证 migration 顺序、旧/新客户端策略、catalog/config hash 闸门、逐步放量、
+  Active→Draining、回滚构建和恢复器兼容；确认 S2R `eligibleForEnable=true` 且本阶段门禁全绿后，作为**唯一
+  实际开关 owner**执行 `onlineCoinRelive5V1` 的 go/no-go 与受控开启。
+- **产物：** 发布 runbook、go/no-go 清单、监控/告警项、回滚版本和一次完整演练记录。
+- **验证：** 新准入可停止、活跃 run 可有界冻结、未决 relive/reward 可由兼容恢复器收敛；回滚不要求降 schema、
+  不丢 receipt/outbox，也不静默切回另一玩法语义。
+
+### S5-12：回写状态与最终发布证据
+
+- [ ] **动作：** 将实际 commit、命令/计数、真栈故障、Creator、发布/回滚演练和已知限制写入本页；同步
+  [专项索引状态表](README.md#8-总状态与证据汇总) 和 [plan-v5.md](../../plan-v5.md) 的当前事实摘要。
+- **产物：** 完整证据表、发布结论、剩余问题 owner/阶段和最终对外口径。
+- **验证：** 未运行项不写“通过”；所有链接可解析；只有全部退出条件满足后才标记 `[已完成]` 并使用最终发布
+  口径。
+
+## 4. 可执行验收矩阵
+
+### 4.1 视觉、世界与性能
+
+| 检查 ID | 可执行断言 | 必留证据 |
+|---|---|---|
+| [ ] S5-VIS-01 | 固定实体/seed 在 `750 × 1624` 下把原作横版世界层正交旋转 90° 后，与目标重合区按 1:1 世界单位叠图；不得乘 `4096/4896` | 原图、目标图、diff；原作外围每边 400 单位排除说明和独立 4096² 边界 fixture |
+| [ ] S5-VIS-02 | 同时保留来源 `4896 × 4896` 快照与目标 `4096 × 4096`；稳定态恰有 1000 Dot + 30 Star，不回落 Classic 300 + 15 | 配置 hash、实体计数断言 |
+| [ ] S5-VIS-03 | 视觉网格间距 32 世界单位、地图边距 16；背景/明暗网格/边界/外围色取自原作序列化数据，不是肉眼近似；顶部 Safe Area 内排行榜/状态 HUD 不遮挡战场 | 颜色提取 fixture、像素采样、HUD 布局值和截图 |
+| [ ] S5-VIS-04 | Dot/Star 显示尺寸分别为 16/42，七种 Dot 帧均可出现；Star 移动、变向和撞边反弹由服务端确定 | 固定 seed 分布、尺寸和轨迹测试 |
+| [ ] S5-VIS-05 | 每条蛇的 head/body/tail/animation 始终来自同一稳定 `skinId`；原皮白 tint，AI 不统一灰化，自机用非换色提示 | 16 皮肤动态预览、同局 AI 截图 |
+| [ ] S5-VIS-06 | 单真人时 16 AI/共 17 蛇；2～8 真人仅替换 aiLevel 401，满 8 真人仍 9 AI；86 假榜无世界实体、碰撞或奖励资格 | roster/displayRank/world 三模型断言 |
+| [ ] S5-VIS-07 | 出生长度 80；相机 `1.3→0.6@100000`、身体 `1.0→2.8@100000`、蛇头中心跟随、地图外背景和路径边界向量全部匹配 | 长度边界 fixture、golden/轨迹日志 |
+| [ ] S5-VIS-08 | 未知 ID、资源加载失败或非法 rect 回退皮肤 1，不阻塞战斗；权威装备不被客户端 fallback 改写 | 缺资源注入、受控诊断和账号快照 |
+| [ ] S5-VIS-09 | 1030 常驻食物走同 atlas/material 批量 mesh，不创建 1030 Sprite 节点/draw call；皮肤 RNG 不消费移动/出生/食物/碰撞随机流 | 节点/draw-call/帧耗采样；增删皮肤前后玩法轨迹一致 |
+
+### 4.2 操作布局与触控
+
+| 检查 ID | 可执行断言 | 必留证据 |
+|---|---|---|
+| [ ] S5-IN-01 | `750 × 1624` 下摇杆中心 `(375,220)`、底盘 Ø220、帽约 Ø92、独立命中半径 155；最大位移钳制，抬起回正帽但保留最后合法方向 | 坐标/半径断言、输入轨迹 |
+| [ ] S5-IN-02 | 默认 S1 `(130,410)`/Ø88/命中56，S2 `(295,490)`/Ø104/64，S3 `(455,490)`/Ø104/64，S4 `(620,410)`/Ø144/88；命中区互不重叠且不侵入摇杆 | 节点树、圆形几何 fixture |
+| [ ] S5-IN-03 | `controlShiftY=max(0,safeBottom+161-220)` 整组上移；横向中心、弧形相对距离、尺寸和世界单位不变 | 至少两组 Safe Area 布局截图/数值 |
+| [ ] S5-IN-04 | 不可用槽位不渲染、不命中且不补位；默认/左手模式摇杆均 `x=375`，左手只把功能顺序镜像为 `[加速、护盾、主动道具、表情]` | 两种模式 slot/owner fixture |
+| [ ] S5-IN-05 | pointer 按 S1→S2→S3→S4→摇杆优先级精确命中，一指一 owner 至 END/CANCEL；一指转向、另一指按住加速、第三指点辅助入口互不抢控 | 多指事件序列和最终 intent |
+| [ ] S5-IN-06 | END/CANCEL、失焦、死亡、断线、重连、场景切换、模态窗和 run 结束清空 owner/boost；实现中不存在“左半屏摇杆”或加速半径 200 | 自动回归、静态搜索和状态快照 |
+
+### 4.3 无尽生命周期、协议与容量
+
+| 检查 ID | 可执行断言 | 必留证据 |
+|---|---|---|
+| [ ] S5-NET-01 | meta 同时携带五层 ID/hash、`totalTime=0`、`matchDurationTicks=0`、`hasDeadline=false` 且无有效 `endTick`；客户端不显示 `0:00` | 建房/重连 meta 抓包和 HUD 截图 |
+| [ ] S5-NET-02 | 3 秒只用于首次准备；world 第 1800、1801 及后续 tick 正常推进；只有 `hasDeadline && tick >= endTick` 才可按时间 done，Snake 不从此调用 `context.settle()` | 定向 world/mode fixture |
+| [ ] S5-NET-03 | 房级无 deadline 不影响 `decisionDeadlineTick`；不存在临近房级 endTick 禁复活分支 | 100 tick 边界与无房级 deadline 组合测试 |
+| [ ] S5-NET-04 | `roomEpochId/state.matchId` 在开放 admission 前只生成一次，首人 auto-start 不覆盖；首个 OPEN run 已有稳定 epoch | 首人/后续 drop-in/重连生命周期日志 |
+| [ ] S5-NET-05 | wire 使用稳定 skin ID、food variant、wreck kind/variant/source；validator 不再限制 skin `0..15`；manifest 记录实际 modeVersion，任何新增语义都从当时版本递增且有兼容矩阵 | schema/validator 边界测试、版本矩阵和旧客户端拒绝 |
+| [ ] S5-NET-06 | 首包/重连可承载 17 蛇、1030 食物、单蛇 5186 点、全房理论上限 88162 点；不沿用 8/315/512 限制 | 最大容量 fixture 和内存/包大小证据 |
+| [ ] S5-NET-07 | baseline 按 `begin→ordered chunks→end(checksum)`；后续 delta 有序；缺块、重复、乱序或 checksum 失败会请求新 baseline | 丢包/乱序/重复注入日志 |
+| [ ] S5-NET-08 | `point_step_config` 完整保留 71 项；`80→52、300→200、3000→960、18900→1954、19200→1964、20100→1990、100000→5186`；`1240` 不作路径/长度上限 | 源数组 hash、边界向量 |
+| [ ] S5-NET-09 | world 集合删除同时清 participant、AI respawn、真人 relive/task、输入、游标和 finalized run；循环后水位回落 | churn 前后集合计数 |
+
+### 4.4 真人死亡与可靠金币复活
+
+| 检查 ID | 可执行断言 | 必留证据 |
+|---|---|---|
+| [ ] S5-REL-01 | 真人死亡立即停止输入/boost/碰撞、只增一次 deathSeq/deaths 且不生成计分残骸；4 tick 后仅普通且有档位者进入 offer | 死亡事件/实体/残骸 fixture |
+| [ ] S5-REL-02 | 完整版本化 deathSnapshot/hash 持久成功后才激活 offer；deadline=`offeredTick+100`，`currentTick < deadline` 才接收，等号由 timeout 胜 | checkpoint kill 与 99/100 tick 边界 |
+| [ ] S5-REL-03 | 第 1～5 次 applied 分别扣 `100/200/300/300/300`；余额不足/可重试失败不消耗档位；第六次、force/escape 不发 offer | 五档余额/次数/死亡矩阵 |
+| [ ] S5-REL-04 | accept/decline/timeout 在 `runId+deathSeq` 上仅一个 CAS 胜者；同 requestId 同 payload 重放，异 payload 冲突，迟到/相反决定不重复效果 | 并发与跨进程 replay 日志 |
+| [ ] S5-REL-05 | spawn 最多等 20 tick 且先找安全点再扣费；失败为 spawnFailed、无 receipt/扣费；任一 DB await 后复验 generation/token/碰撞 | 无安全点、迟到 task 与重找 fixture |
+| [ ] S5-REL-06 | receipt 只能 `charged→applying→applied→activated` 或幂等 `refunded`；普通 offer checkpoint 不能充当 applied 证明；owner/generation/lease 可恢复 | 各状态 kill/reconciler 最终态 |
+| [ ] S5-REL-07 | ReliveReady 只允许恰好一个保护中的 provisional Active step，随后冻结等待 activated CAS；该 step 是 `[reliveFirstActiveTick, reliveFirstActiveTick+60)` 的第 1 tick，有 firstActiveTick 才下发 revived，确认前崩溃按用户有利原则退款 | 首 tick 前/中/后 kill，世界副作用与余额记录 |
+| [ ] S5-REL-08 | 成功保持同一 runId/skinIdAtRunStart，恢复明确累计字段、清零单生命瞬态；保护在 firstActiveTick 与 `+59` 生效、`+60` 失效，确认后最多剩 59 tick，且不声称对墙绝对无敌 | snapshot 前后 diff、半开保护边界 |
+| [ ] S5-REL-09 | Offering/Pending/Spawning/Committing/Ready 只冻结本人；其他玩家/world tick 继续，本人仍占席；断线不暂停 deadline，重连恢复同一 offer/result | 双真人与重连 fixture |
+| [ ] S5-REL-10 | systemFailed 若已扣费必须先退款；退款中保持 Finalizing 和可 claim receipt；charge/refund 后余额缓存失效，receipt.balanceAfter 仅用于本次响应 | 退款中 kill、缓存读回和 UI 文案 |
+| [ ] S5-REL-11 | AI 不进入真人 offer/扣费/档位，约 40 tick 后保持 AI skin 重生；仅符合源路径的 AI 死亡残骸按 `pow(deadSnakeScore,0.8)*2` 分摊、单个至少 3，cap 合并前后总值守恒 | 真人/AI 对照、定点边界与合并守恒 fixture |
+| [ ] S5-REL-12 | decision/receipt/ledger 按 uid、sId、roomEpochId、runId、deathSeq 隔离；跨区、错账号或错 epoch 的重放不能读取、扣除或恢复另一 run | 跨区/跨账号/跨 epoch 真栈注入 |
+
+### 4.5 衣柜、装备、run 与奖励
+
+| 检查 ID | 可执行断言 | 必留证据 |
+|---|---|---|
+| [ ] S5-ECO-01 | 服务端准入忽略客户端 join skin，读取拥有/装备后在实体创建前持久锁存不可变 `skinIdAtRunStart/catalogVersionAtRunStart`；伪造未拥有皮肤不能进战场 | admission 请求、run/账号/实体快照 |
+| [ ] S5-ECO-02 | catalog hash 不一致时装备/解锁等经济写 fail closed；未知资源时战斗/预览回退皮肤 1 | mismatch 与缺资源注入 |
+| [ ] S5-ECO-03 | equip/unlock 同/异 requestId、同 ID 异 payload、expectedVersion 冲突行为确定；碎片不足时所有字段零写入 | 并发前后 Bag/User/version 快照 |
+| [ ] S5-ECO-04 | 冷用户、thaw、跨区、退休皮肤有确定读取；默认隐式拥有；既有退休所有者仍可装备 | 用户矩阵和 snapshot |
+| [ ] S5-ECO-05 | run 中换装只影响下一新 run；真人复活、AI 重生和宽限重连保持当前 `skinIdAtRunStart/catalogVersionAtRunStart`，结算也不重读当前装备 | 连续两 run、中途换装和结算录像/日志 |
+| [ ] S5-ECO-06 | 宽限内重连延续同一 runId，最终离场后重入生成新 run；单人退出不影响其他真人，最后真人后才回收房间 | 多人生命周期 fixture |
+| [ ] S5-ECO-07 | activeTicks 只在 step 开始 connected/alive/Active 时累计，排除准备、死亡/复活全状态、断线和 Finalizing | 状态逐 tick 计数表 |
+| [ ] S5-ECO-08 | checkpoint 不发奖；首次 finalize 原子写 settlement/金币 ledger/outbox；同 payload 同 receipt、异 payload 隔离、dead 可查询/SOP replay | SQL/Redis 前后态与故障日志 |
+| [ ] S5-ECO-09 | 每个 endReason 按资格矩阵收敛；moderation 无资产，复活成功不结算；已确认进度在崩溃窗口不漏不重 | endReason × kill-point 矩阵 |
+| [ ] S5-ECO-10 | runResult 只驱动本人结果页；其他玩家 room phase 仍 Playing；奖励不读取 displayRank/AI/假榜，XP/碎片走 additive effect | 双真人 UI、effect payload 和 replay |
+
+### 4.6 长驻房与运维
+
+| 检查 ID | 可执行断言 | 必留证据 |
+|---|---|---|
+| [ ] S5-OPS-01 | 大量 join/leave/reconnect/death-decision 后，participant、pendingAiRespawns、relive task、游标和 finalized run 回落到在线规模 | soak 水位曲线 |
+| [ ] S5-OPS-02 | 最后一名真人先 durable freeze，再停止 tick/autoDispose；AI 和假榜不能单独维持房间 | 空房时间线 |
+| [ ] S5-OPS-03 | Active→Draining 先停准入，在有界 deadline 冻结 run、收敛 relive/reward，再关连接；客户端显示 serverDrain 而非超时结算 | drain 演练日志/录像 |
+| [ ] S5-OPS-04 | endRun/disconnect/sessionReplaced/moderation/drain/roomFault 与 relive task 竞争遵循 terminalIntent 优先级；迟到 task 不重开输入 | 全竞争矩阵 |
+| [ ] S5-OPS-05 | tick/snapshotSeq/joinOrdinal 接近协议上界才触发技术 drain，不能成为日常 arena 时限 | 边界 fixture 与配置审计 |
+| [ ] S5-OPS-06 | 硬崩溃恢复只承诺 confirmedThroughTick；UI/receipt 不暗示未确认窗口已持久 | 崩溃恢复与文案证据 |
+| [ ] S5-OPS-07 | 监控能发现 decision/receipt lease 过期、outbox dead、余额缓存异常、集合水位增长和 config/catalog mismatch | 告警注入与 runbook 链接 |
+
+### 4.7 Creator 3.8.8 与可复现证据
+
+| 检查 ID | 人工步骤 | 必留证据 |
+|---|---|---|
+| [ ] S5-CR-01 | 打开工程并等待资源导入完成，检查同步 `.meta`/UUID、动态包和 SpriteFrame rect 未丢失 | Creator 版本、导入日志、资源检查截图 |
+| [ ] S5-CR-02 | `750 × 1624` 预览固定 seed 战场，检查背景、网格、边界、食物、16 皮肤、AI、自机提示、相机和身体缩放；顶部 Safe Area 内显示排行榜/状态，首次 3 秒准备提示保持屏幕居中 | 战场 golden、准备期与 HUD 截图/录屏 |
+| [ ] S5-CR-03 | 在默认/左手与底部 Safe Area 场景测试摇杆、四槽、双/三指和全部取消路径 | 触控录屏、设备/模拟器信息 |
+| [ ] S5-CR-04 | 打开衣柜，检查虚拟列表、动态 head/body/tail 预览、动画、rect/pivot、筛选、装备/解锁、冲突和 fallback | 衣柜截图/录屏 |
+| [ ] S5-CR-05 | 走完普通死亡、五档费用、复活窗的死亡原因/当前长度/分数/服务器倒计时、复活中、保护、放弃/超时/第六次/systemFailed退款中以及重连恢复；“结束本次”必须二次确认 | 状态序列录屏、倒计时抓包与服务端日志 |
+| [ ] S5-CR-06 | 验证个人 runResult、pending/applied/dead、断线重连和资源缺失；同房另一真人不进入结算页 | 双客户端证据、结果页截图 |
+| [ ] S5-CR-07 | 检查吃食物/残骸、击杀、死亡、退出结算和按钮音效遵守 `sfxOn`，且无 TimeLimit 到时提示；视觉插值不改变权威 tick/命中 | 开关前后录屏、事件与音频触发日志 |
+
+## 5. 跨阶段风险与发布回退矩阵
+
+| 风险/失败信号 | 发布防线 | no-go 与回退动作 |
+|---|---|---|
+| Classic、本地调试模板与 V2 快照混用 | 五层 ID/hash 和逐字段 fixture | no-go；回滚整个候选，不做静默 runtime fallback |
+| 把来源 4896² 当目标或把它整体缩到 4096² | S5-VIS-01/02 | 退回 S0/S2 修配置和 golden |
+| 1800 tick 收局、TimeLimit HUD 或房级 deadline 污染复活 deadline | S5-NET-01～03 | no-go；保持旧版本，不开放新无尽入口 |
+| Feed B 表被宣称为普通线上 V2 默认 | release manifest 明示 `onlineCoinRelive5V1` 来源 | 修正文档/config 名称后重验，不做来源失真的发布说明 |
+| 真人复用 AI 40 tick 重生、真人生成计分残骸或全房暂停 | S5-REL-01/09、S5-VIS-06 | no-go；退回 S2 状态机 |
+| accept/decline/timeout 多赢家或 offer 早于持久快照 | S5-REL-02/04 | 保持发布开关关闭；退回 S2R |
+| charged/applied 后未交付、activated 早于活动 tick、恢复器误认 offer checkpoint | S5-REL-06/07/10 | 停复活放量，运行兼容 reconciler/退款，修复后全矩阵重跑 |
+| decision/receipt 无 owner lease，离场/drain 与 task 竞争 | S5-REL-04/06、S5-OPS-04 | 停新准入；drain 并收敛/退款，禁止删除 run |
+| charge/refund 后余额缓存仍旧 | S5-REL-10 | 禁止展示缓存余额；修失效路径并回归 |
+| 仍使用 8 蛇/315 食物/512 点上限或误把 1240 当上限 | S5-NET-06/08 | no-go；退回 wire/validator，不允许截断 |
+| 86 假榜成为实体/奖励，或动态 AI AB 破坏重放 | S5-VIS-06/09、S5-ECO-10 | 禁用假榜合并/动态 AB，恢复冻结 RNG/config |
+| atlas/body config 错位、只改客户端体型 | S5-VIS-05/07、S5-CR-01/02 | 战斗可临时视觉 fallback，但候选 no-go；退回 S1/S2 |
+| join skin 越权、catalog mismatch 仍写经济 | S5-ECO-01/02 | 经济 fail closed；禁用衣柜写入口 |
+| final leave 先删实体、async handler detached、第二套账本 | S5-ECO-06/08/09、S5-OPS-01 | no-go；保留 Finalizing 并用原 hook/repository 恢复 |
+| `totalTime=0` 导致空房永不回收，或发布直接杀长驻 Playing 房 | S5-OPS-02/03 | 停准入并 drain；不得伪装玩法结算 |
+| `runStartedTick` 相减、未确认 checkpoint 被承诺、AI/排名进入奖励 | S5-ECO-07～10、S5-OPS-06 | 隔离错误 settlement，按 SOP 修复/补领，不扩大错误发奖 |
+| 唯一皮肤用普通 Shop SKU 重复购买 | S3 明确未开放 purchase | 下线购买入口；S3 退出不受后续购买能力影响 |
+| 每食物一节点或皮肤 RNG 污染玩法 RNG | S5-VIS-09 | no-go；恢复批渲染/独立 seeded 子流 |
+| 仍存在左半屏摇杆、半径 200 加速或 pointer 残留 | S5-IN-01～06 | no-go；退回 S2 输入实现 |
+| 手改生成物或镜像不一致 | S5-02、`verify:sync`/protected paths | 从真源重新生成，禁止提交手改镜像 |
+
+回滚必须以“上一套数据库向前兼容、恢复器可读当前 receipt/outbox”的完整构建为目标。不得尝试破坏性降 schema，
+不得删除未决 decision/receipt/settlement，也不得将已进入新 run 的玩家静默搬到 Classic/TimeLimit。必要时先停新
+准入、执行 Active→Draining，等待或恢复退款/奖励，再切流量。
+
+## 6. 退出条件
+
+- [ ] S5-01～S5-12 全部完成；S5-VIS、IN、NET、REL、ECO、OPS、CR 所有检查项均有可复现证据且无未解释失败。
+- [ ] `npm run verify:all`、单元/客户端/FGUI/类型/生成/镜像门禁、真 Redis/MySQL `test:int` 和故障矩阵全部 exit 0；
+  关键 Snake fixture 未被 skip。
+- [ ] Creator 3.8.8 已完成资源、战场、输入、衣柜、复活、个人结果、重连和 fallback 人工验收；无头测试没有
+  冒充编辑器证据。
+- [ ] 发布候选五层 ID/hash、catalog/wire/policy/evidence/migration/fingerprint 全部锁定；旧/新客户端与回滚构建
+  的兼容行为明确。
+- [ ] `onlineCoinRelive5V1` 只在 S2R `eligibleForEnable=true` 和本阶段 go/no-go 全绿后，由 S5 这一唯一 owner
+  执行实际开启；此前没有免费成功、客户端扣款或临时商业化分支。
+- [ ] 运维 drain、空房 autoDispose、reconciler/outbox replay、监控告警和回滚演练成功；未决资产操作可继续收敛。
+- [ ] 阶段与总状态、commit、命令计数、真栈/Creator 路径、已知限制已回写，并在 plan-v5 留下当前事实摘要。
+- [ ] 最终对外口径只描述已验证能力：
+
+  > **竖版新版无尽 V2 战场（4096² 地图覆盖）+ 原作 `totalTime=0` 无尽生命周期 + 真人死亡限时选择复活 +
+  > AI 独立约 2 秒重生 + drop-in 联机适配 + 16 套原作皮肤 + 纯外观养成 + 服务端权威装备 +
+  > 可靠真人 run 奖励。**
+
+## 7. 证据回写
+
+未实际运行的命令、未打开的 Creator 工程和未注入的故障不得登记为通过。大型日志可以写绝对或仓内证据路径，
+本表保留摘要、计数和结论；截图必须标明构建 commit 与视口。
+
+| 状态 | commit/候选版本 | 自动验证（命令、exit code、计数、日期） | 真栈/故障证据 | Creator/发布演练 | 备注 |
+|---|---|---|---|---|---|
+| `[已拍板·待实施]` | — | — | — | — | `onlineCoinRelive5V1` 开关关闭 |
+
+---
+
+[← S4 · 可靠养成奖励](s4-reliable-progression-rewards.md) · [专项索引](README.md)
