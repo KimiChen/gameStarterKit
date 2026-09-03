@@ -1,4 +1,4 @@
-/** snake@2 房内 wire：无尽世界、分块 baseline/有序 delta 与个人复活/run 结果。 */
+/** snake@3 房内 wire：无尽世界、分块 baseline/有序 delta 与 demo 金币复活/run 结果。 */
 import {
     GamePhase,
     SnakeDeathCause,

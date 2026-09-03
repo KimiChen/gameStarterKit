@@ -1,7 +1,7 @@
 # S2：竖版战场与无尽生命周期
 
 > [专项索引](README.md) · [上一阶段：S1 素材与目录](s1-assets-and-catalog.md) ·
-> [下一阶段：S2R 可靠金币复活](s2r-reliable-coin-relive.md)
+> [下一阶段：S2R Demo 金币复活](s2r-reliable-coin-relive.md)
 
 ## 状态、预计与依赖
 
@@ -11,8 +11,8 @@
 | 预计 | 11–16 人日；不含最终 FGUI 美术制作与反复数值调优 |
 | 前置依赖 | [S0 复刻基线](s0-replication-baseline.md) 已冻结命名配置、来源证据、规则差异表与 golden；[S1 素材与目录](s1-assets-and-catalog.md)（含 S1-12 磁铁表现资源与目录增量）已完成 |
 | 本阶段输出 | `snake@2`、4096² V2 战场、无房级 deadline 的持续世界、17 条稳定态活动蛇、确定性 Star 运动与磁铁刷新/扩圈拾取周期、中央操作区、设备本地左右手设置、多点触控、测试经济端口上的真人复活状态机、分块基线与增量同步 |
-| 后续依赖方 | S2R 将测试经济端口替换为真实扣费/收据/恢复链；S3 复用稳定皮肤 ID；S4 扩展真人 run 账本并发奖 |
-| 发布门禁 | **本阶段不得开放 `onlineCoinRelive5V1`。S2 只连接确定性的测试 `ReliveEconomyPort`；S2R 负责取得真实金币链路的技术放行资格，实际开关只能由 S5 在最终 go/no-go 后开启。** |
+| 后续依赖方 | S2R 将测试经济替换为进程内 demo 余额与 Redis 镜像；S3 复用稳定皮肤 ID；S4 从房间内真人 run 同步发放 demo 奖励 |
+| 发布门禁 | **本阶段不得开放 `onlineCoinRelive5V1`。S2 只连接确定性的测试 `ReliveEconomyPort`；S2R～S5 均为内部 demo，生产开关保持关闭。** |
 
 本文件是 S2 的实施与验收真相。全仓当前状态仍以 [plan-v5.md](../../plan-v5.md) 为准；生成物与写路径约束遵守
 [仓库总览](../OVERVIEW.md)、[服务端约束](../SERVER.md)、[客户端约束](../CLIENT.md) 和根 `AGENTS.md`。
@@ -38,8 +38,8 @@
 
 ### 非目标
 
-- 不接入真实 MySQL 扣币、货币流水、复活收据、退款、owner lease 或恢复器；这些只属于 S2R。
-- 不用客户端余额扣减、免费复活或内存“成功收据”冒充真实经济完成。
+- 不接入账号余额；S2R 才在现有同步端口上增加进程内 demo 余额和 Redis 镜像。
+- 不用客户端余额扣减或免费复活冒充服务端 demo 结果。
 - 不开放广告、分享、广告券、钻石、现金支付、月卡、新手免费复活或无限复活卡。
 - 不实现衣柜所有权、装备、碎片解锁和养成奖励；分别属于 S3、S4。
 - 不迁移原作私有协议、支付、活动或动态 AB；不把 Feed B 表描述成普通线上 V2 的恒定默认。
@@ -478,10 +478,9 @@ tool entity ID。一次拾取必须在同一 seq 的原子 delta 中同时移除
 不改变公共皮肤 hash 或任一皮肤 `contentVersion`。五层 `configHash` 必须覆盖磁铁时序、循环 gate、
 存在/生效时长、拾取扩张值和 Star/磁铁移动参数，不假设表现 hash 已进入 gameplay contract digest。
 
-`snake@2` 必须一次声明 S2R/S4 已知需要的 versioned receipt/result envelope：S2 测试结果使用
-`rewardStatus="notEnabled"`，S2R 填充已声明的 relive receipt 状态，S4 才启用
-`pending/applied/dead` 与奖励摘要。后续阶段若只激活这些已声明语义，不提升 modeVersion；若确实需要新增或
-改变未声明的 wire 语义，则从**当时实际版本**递增并补兼容矩阵，禁止在任何阶段硬编码“必为 `snake@3`”。
+`snake@2` 预声明了后续可复用的 versioned relive/result envelope：S2 测试结果使用
+`rewardStatus="notEnabled"`，S2R 复用现有运行态字段，S4 再新增简化个人结果。后续阶段只在确有
+未声明的 wire 变化时从**当时实际版本**递增并补兼容矩阵。
 
 ## 稳定任务 ID
 
@@ -952,8 +951,8 @@ S2 使用纯测试端口验证玩法状态唯一性，不声称覆盖真实数�
 - [x] **`onlineCoinRelive5V1` 面向玩家的发布开关仍为关闭。** 文档、UI 和测试结果没有声称已完成真实扣费。
 - [x] 相关生成、同步、类型检查、server/client/FGUI、容量与性能门禁通过；Creator 待验证项已明确留给 S5。
 
-S2 完成只表示“战场与测试经济状态机可内部试玩”。S2R 真实收据、恢复与全崩溃窗口门禁完成后只取得技术
-放行资格；实际对外开关仍由 S5 在最终 go/no-go 后开启。
+S2 完成只表示“战场与测试经济状态机可内部试玩”。S2R～S5 已按后续决策收敛为 demo，
+不会取得生产资产放行资格；实际对外开关保持关闭。
 
 ## 风险与回退
 
@@ -962,7 +961,7 @@ S2 完成只表示“战场与测试经济状态机可内部试玩”。S2R 真�
 | 4096² 被误作整体缩放 | 源快照与目标配置分离；1:1 世界单位叠图 | 阻断 golden；回退目标配置 commit，不改源证据 |
 | Classic/TimeLimit 值混入 | 五层 ID+hash 强校验 | fail closed，不自动退回旧 90 秒模式 |
 | `totalTime=0` 误伤个人 deadline | 字段分型、独立测试 | 禁止上线；恢复最后一个通过的 wire/config 版本 |
-| 真实经济误接 S2 | 依赖反转、生产启动断言、发布开关关闭 | 立即关闭开关；若发生资产写转 S2R 收据审计，不以客户端补偿 |
+| 账号经济误接 S2 | 依赖反转、生产启动断言、发布开关关闭 | 立即关闭开关；只保留明确的 demo 数据，不以客户端状态补偿 |
 | V2 容量导致快照/内存失控 | 分块基线、有序 delta、独立上限和 perf fixture | 拒绝不兼容客户端；不得静默截断世界 |
 | 体型只改视觉 | shared/server 权威公式 | 阻断视觉 golden 与碰撞门禁，不发布该配置 |
 | 真人复用 AI 重生/残骸 | 分离集合与状态类型 | 测试发现即 fail closed，禁止用旧路径兜底 |
@@ -1003,4 +1002,4 @@ fallback 截图，以及发布开关保持关闭的配置证明。
 ---
 
 > [返回专项索引](README.md) · [上一阶段：S1 素材与目录](s1-assets-and-catalog.md) ·
-> [下一阶段：S2R 可靠金币复活](s2r-reliable-coin-relive.md)
+> [下一阶段：S2R Demo 金币复活](s2r-reliable-coin-relive.md)

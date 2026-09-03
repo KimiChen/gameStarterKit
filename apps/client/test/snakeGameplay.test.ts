@@ -295,6 +295,7 @@ test("HUD 无房级时长；磁铁/保护和复活窗只读权威绝对 tick", (
         deathCause: SnakeDeathCause.Collision,
         stateVersion: 4,
         coinCost: 100,
+        coinBalance: 900,
         reliveIndex: 1,
         decisionDeadlineTick: 300,
         score: 123,
@@ -303,7 +304,7 @@ test("HUD 无房级时长；磁铁/保护和复活窗只读权威绝对 tick", (
     const relive = deriveSnakeRelive(state, "self", 201);
     assert.equal(relive?.deathCause, "collision");
     assert.equal(relive?.decisionSeconds, 5);
-    assert.equal(relive?.testEconomy, true);
+    assert.equal(relive?.coinBalance, 900);
 });
 
 test("750×1624 中央控制区、Safe Area 与左右手功能镜像精确", () => {
@@ -431,6 +432,7 @@ function fakePlayer(): ISnakePlayerState {
         runState: SnakeRunState.Active, stateVersion: 2, runStartedTick: 61, activeTicks: 1,
         deathSeq: 0, deathCause: SnakeDeathCause.None, relivesUsed: 0, magnetCollected: 0, starCollected: 0,
         relivePolicyVersion: 1, terminalIntent: "", resolveAtTick: 0, reliveIndex: 0, coinCost: 0,
+        coinBalance: 10_000,
         offeredTick: 0, decisionDeadlineTick: 0, decisionClientReqId: "", receiptId: "", reliveReceiptState: "none",
     };
 }

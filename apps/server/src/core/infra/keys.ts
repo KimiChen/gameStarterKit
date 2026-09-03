@@ -57,6 +57,8 @@ const G = REDIS_KEY_PREFIX;
 
 /** 玩法档【真源】HASH，无 TTL。含 fence / ver / schemaVersion 字段。 */
 export const kUser = (uid: string) => `${P()}user:{${uid}}`;
+/** Snake demo user balance HASH (`coinBalance` only), no TTL and no sId segment. */
+export const kSnakeUser = (uid: string) => `${G}snake:user:{${uid}}`;
 /** 背包分片 HASH（field=itemId, value=count），无 TTL。shard = itemId % BAG_SHARDS。 */
 export const kBag = (uid: string, shard: number) => `${P()}bag:{${uid}}:${shard}`;
 /** 全部背包分片（Lua KEYS 用，顺序 = shard 0..N-1）。 */

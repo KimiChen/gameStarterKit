@@ -172,7 +172,9 @@ export class SnakeWorldView implements SnakePresentation {
         if (!this.mounted) return;
         this.cancelInput();
         if ("outcome" in message && this.statusLabel) {
-            this.statusLabel.string = message.outcome === "insufficientCoins" ? "测试余额不足" : "测试提交失败，可重试";
+            this.statusLabel.string = message.outcome === "insufficientCoins"
+                ? `金币不足${message.balanceAfter === undefined ? "" : `，当前余额 ${message.balanceAfter}`}`
+                : "提交失败，可重试";
         } else if ("result" in message && this.statusLabel) {
             this.statusLabel.string = message.result === "revived" ? "复活成功" : `复活：${message.result}`;
         }
@@ -720,7 +722,7 @@ export class SnakeWorldView implements SnakePresentation {
             this.reliveLayer = layer;
             this.reliveLabel = this.newLabel(layer, "", 0, 70, 28, TEXT);
             const decline = this.newLabel(layer, "放弃", -110, -55, 28, DIM).node;
-            const accept = this.newLabel(layer, "测试复活", 110, -55, 28, TEXT).node;
+            const accept = this.newLabel(layer, "金币复活", 110, -55, 28, TEXT).node;
             decline.on(Node.EventType.TOUCH_END, () => this.dispatchInput({ type: "relive", decision: "decline" }), this);
             accept.on(Node.EventType.TOUCH_END, () => this.dispatchInput({ type: "relive", decision: "accept" }), this);
         }
@@ -729,8 +731,8 @@ export class SnakeWorldView implements SnakePresentation {
                 : model.deathCause === "collision" ? "碰撞"
                     : model.deathCause === "forced" ? "本次已结束" : "未知原因";
             this.reliveLabel.string = model.processing
-                ? "测试续命处理中…"
-                : `${deathCause} · 分数 ${model.score} · 长度 ${model.length}\n第 ${model.reliveIndex} 次，测试金币 ${model.coinCost}\n${model.decisionSeconds}s`;
+                ? "金币复活处理中…"
+                : `${deathCause} · 分数 ${model.score} · 长度 ${model.length}\n第 ${model.reliveIndex} 次，金币 ${model.coinCost} · 余额 ${model.coinBalance}\n${model.decisionSeconds}s`;
         }
     }
 

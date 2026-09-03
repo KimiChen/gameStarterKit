@@ -41,12 +41,12 @@ export interface SnakeReliveViewModel {
     readonly stateVersion: number;
     readonly deathCause: SnakeDeathCauseType;
     readonly coinCost: number;
+    readonly coinBalance: number;
     readonly reliveIndex: number;
     readonly relivesRemaining: number;
     readonly decisionSeconds: number;
     readonly score: number;
     readonly length: number;
-    readonly testEconomy: true;
     readonly processing: boolean;
 }
 
@@ -113,13 +113,13 @@ export function deriveSnakeRelive(
         stateVersion: player.stateVersion,
         deathCause: player.deathCause,
         coinCost: player.coinCost,
+        coinBalance: player.coinBalance,
         reliveIndex: player.reliveIndex,
         relivesRemaining: Math.max(0, 6 - player.reliveIndex),
         decisionSeconds: player.runState === SnakeRunState.PendingRelive
             ? Math.ceil(Math.max(0, player.decisionDeadlineTick - serverTick) / 20) : 0,
         score: player.score,
         length: player.length,
-        testEconomy: true,
         processing: player.runState !== SnakeRunState.PendingRelive,
     };
 }

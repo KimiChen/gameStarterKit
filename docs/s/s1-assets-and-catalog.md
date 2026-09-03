@@ -56,7 +56,7 @@ S1 的目标是把“散落的 PNG 和原作 atlas 信息”变成稳定、可�
 - 不在 S1 实现 1030 食物批渲染、Star 移动、相机、皮肤 mesh 或 AI 分配；这些属于 S2。
 - 不在 S1 实现磁铁生成、移动、拾取判定、8 秒权威效果、AI 生效、复活/重连恢复或 wire；这些属于 S2。
   S1 只交付可由 S2 直接消费且完整受 hash/来源门禁保护的磁铁表现资产与目录。
-- 不在 S1 实现 Bag/User 所有权、解锁、购买、装备或衣柜 RPC；这些属于 S3。
+- 不在 S1 实现 Redis demo 所有权、解锁、装备或衣柜 RPC；这些属于 S3。
 - 不在 S1 拍板最终展示名、稀有度、价格或获取方式；S1 只生成预览和技术审阅输入，最终内容审阅是
   S1 完成后、S3-01 开始前的进入门，不阻塞 S1 或 S2/S2R。
 - 不允许不同皮肤拥有不同速度、碰撞体、初始长度、转向、攻击范围或得分收益。
@@ -78,7 +78,7 @@ S1 的目标是把“散落的 PNG 和原作 atlas 信息”变成稳定、可�
 112, 132, 133, 139, 401, 403, 411, 701
 ```
 
-`skinId` 是跨 shared、server、client、持久化和快照的稳定内容 ID。首发初始矩阵固定如下，S1/S2/S3
+`skinId` 是跨 shared、server、client、Redis profile 和快照的稳定内容 ID。首发初始矩阵固定如下，S1/S2/S3
 不得重新分配：
 
 | 字段 | 冻结值 |
@@ -719,7 +719,7 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
 - [x] 分别计算稳定 `publicCatalogHash`、`serverBusinessHash`、`clientPresentationHash`；对 JSON 空白、key
   顺序和文件遍历顺序做规范化，不比较异构业务/表现 hash 是否相等。
 - [x] 增加 `publicCatalogHash` mismatch 策略测试：外观目录相关经济写 fail-closed，战斗确定性回退皮肤 1；金币复活由
-  独立 room config/policy/receipt 守门，不错误耦合 cosmetic catalog。
+  独立 room config/policy 守门，不错误耦合 cosmetic catalog。
 - [x] 区分 retired 与损坏：资源完整的 retired entry 保持自身解析，未知/部署损坏/加载失败/非法 rect 才运行时回退。
 - [x] 将校验器接入适当的测试/verify 链；命令名称以实际实现为准并回写证据表。
 

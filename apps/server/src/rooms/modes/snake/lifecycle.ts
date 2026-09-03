@@ -1,9 +1,8 @@
-/**
- * Snake S2 个人 run 的可替换边界。
- *
- * S2 只允许进程内确定性测试经济：这里没有 Redis/MySQL/ledger import，也不接受真实
- * 资产凭据。生产环境只能绑定 disabled 端口；S2R 会在同一接口上增加可靠实现。
- */
+/** Snake personal-run economy boundary. Production always disables the demo adapter. */
+
+import { createHash } from "node:crypto";
+import { kSnakeUser } from "../../../core/infra/keys";
+import { clientFor } from "../../../core/infra/redisRoute";
 
 export const ONLINE_COIN_RELIVE_PLAYER_RELEASED = false;
 
@@ -16,6 +15,7 @@ export const DEFAULT_SNAKE_RUN_SKIN_RESOLVER: SnakeRunSkinResolver = Object.free
 });
 
 export interface ReliveEconomyInput {
+    readonly uid: string;
     readonly roomEpochId: string;
     readonly runId: string;
     readonly deathSeq: number;
@@ -30,8 +30,9 @@ export type ReliveEconomyResult =
     | { readonly kind: "systemFailure" };
 
 export interface ReliveEconomyPort {
-    /** 生产启动断言依赖稳定种类；不得用鸭子类型绕过。 */
-    readonly kind: "s2-test" | "disabled";
+    /** Production startup assertions depend on this stable discriminator. */
+    readonly kind: "s2-test" | "demo-redis" | "disabled";
+    balance(input: Pick<ReliveEconomyInput, "uid">): number;
     commit(input: ReliveEconomyInput): ReliveEconomyResult;
 }
 
@@ -44,7 +45,7 @@ export type DeterministicReliveOutcome = ReliveEconomyResult["kind"];
 export class DeterministicTestReliveEconomy implements ReliveEconomyPort {
     readonly kind = "s2-test" as const;
     private readonly results = new Map<string, ReliveEconomyResult>();
-    private balance: number;
+    private balanceValue: number;
 
     constructor(
         initialBalance = 10_000,
@@ -53,7 +54,7 @@ export class DeterministicTestReliveEconomy implements ReliveEconomyPort {
         if (!Number.isSafeInteger(initialBalance) || initialBalance < 0) {
             throw new RangeError("S2 test relive balance must be a non-negative safe integer");
         }
-        this.balance = initialBalance;
+        this.balanceValue = initialBalance;
     }
 
     commit(input: ReliveEconomyInput): ReliveEconomyResult {
@@ -62,15 +63,15 @@ export class DeterministicTestReliveEconomy implements ReliveEconomyPort {
         if (previous) return previous;
         const selected = this.outcome(input);
         let result: ReliveEconomyResult;
-        if (selected === "success" && this.balance >= input.coinCost) {
-            this.balance -= input.coinCost;
+        if (selected === "success" && this.balanceValue >= input.coinCost) {
+            this.balanceValue -= input.coinCost;
             result = {
                 kind: "success",
                 receiptId: `s2-test:${input.runId}:${input.deathSeq}:${input.clientReqId}`,
-                balanceAfter: this.balance,
+                balanceAfter: this.balanceValue,
             };
         } else if (selected === "success" || selected === "insufficientCoins") {
-            result = { kind: "insufficientCoins", balanceAfter: this.balance };
+            result = { kind: "insufficientCoins", balanceAfter: this.balanceValue };
         } else if (selected === "retryableFailure") {
             result = { kind: "retryableFailure" };
         } else {
@@ -80,12 +81,79 @@ export class DeterministicTestReliveEconomy implements ReliveEconomyPort {
         return result;
     }
 
-    get testBalance(): number { return this.balance; }
+    balance(_input: Pick<ReliveEconomyInput, "uid">): number { return this.balanceValue; }
+    get testBalance(): number { return this.balanceValue; }
     get commitCount(): number { return this.results.size; }
+}
+
+export const SNAKE_DEMO_INITIAL_COINS = 10_000;
+
+export interface DemoRelivePersistenceRecord {
+    readonly uid: string;
+    readonly coinBalance: number;
+}
+
+export type DemoRelivePersistence = (record: DemoRelivePersistenceRecord) => Promise<void>;
+
+const demoOperationKey = (input: ReliveEconomyInput): string =>
+    `${input.uid}\u0000${input.roomEpochId}\u0000${input.runId}\u0000${input.deathSeq}`;
+const demoBalances = new Map<string, number>();
+const demoResults = new Map<string, ReliveEconomyResult>();
+
+const persistDemoRelive: DemoRelivePersistence = async (record): Promise<void> => {
+    await clientFor(record.uid).hset(kSnakeUser(record.uid), "coinBalance", String(record.coinBalance));
+};
+
+/**
+ * Demo-only synchronous wallet. Gameplay commits immediately in memory and mirrors only
+ * the resulting balance to durable Redis without waiting on the room hot path.
+ */
+export class RedisDemoReliveEconomy implements ReliveEconomyPort {
+    readonly kind = "demo-redis" as const;
+
+    constructor(
+        private readonly initialBalance = SNAKE_DEMO_INITIAL_COINS,
+        private readonly persistence: DemoRelivePersistence = persistDemoRelive,
+        private readonly reportError: (error: unknown) => void = (error) => {
+            console.warn("[snake] demo relive Redis mirror failed; gameplay result is kept", error);
+        },
+    ) {
+        if (!Number.isSafeInteger(initialBalance) || initialBalance < 0) {
+            throw new RangeError("Snake demo balance must be a non-negative safe integer");
+        }
+    }
+
+    balance(input: Pick<ReliveEconomyInput, "uid">): number {
+        return demoBalances.get(input.uid) ?? this.initialBalance;
+    }
+
+    commit(input: ReliveEconomyInput): ReliveEconomyResult {
+        const operationKey = demoOperationKey(input);
+        const previous = demoResults.get(operationKey);
+        if (previous) return previous;
+        const balance = this.balance(input);
+        if (balance < input.coinCost) {
+            const result: ReliveEconomyResult = { kind: "insufficientCoins", balanceAfter: balance };
+            demoResults.set(operationKey, result);
+            return result;
+        }
+        const balanceAfter = balance - input.coinCost;
+        const receiptId = `demo:${createHash("sha256").update(operationKey).digest("hex")}`;
+        const result: ReliveEconomyResult = { kind: "success", receiptId, balanceAfter };
+        demoBalances.set(input.uid, balanceAfter);
+        demoResults.set(operationKey, result);
+        const record: DemoRelivePersistenceRecord = {
+            uid: input.uid,
+            coinBalance: balanceAfter,
+        };
+        void this.persistence(record).catch(this.reportError);
+        return result;
+    }
 }
 
 export const DISABLED_RELIVE_ECONOMY: ReliveEconomyPort = Object.freeze({
     kind: "disabled" as const,
+    balance: (): number => 0,
     commit: (): ReliveEconomyResult => ({ kind: "systemFailure" }),
 });
 
@@ -96,9 +164,9 @@ export function resolveS2ReliveEconomy(
     const environment = runtimeEnvironment ?? process.env.NODE_ENV ?? "development";
     const port = injected ?? (environment === "production"
         ? DISABLED_RELIVE_ECONOMY
-        : new DeterministicTestReliveEconomy());
-    if (environment === "production" && port.kind === "s2-test") {
-        throw new Error("[snake] production cannot bind the S2 deterministic test ReliveEconomyPort");
+        : new RedisDemoReliveEconomy());
+    if (environment === "production" && port.kind !== "disabled") {
+        throw new Error("[snake] production cannot bind a test/demo ReliveEconomyPort");
     }
     return port;
 }

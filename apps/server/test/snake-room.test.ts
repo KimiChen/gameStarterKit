@@ -19,6 +19,7 @@ import { GameRoom } from "../src/rooms/GameRoom";
 import { createSnakeGameMode, type SnakeGameMode } from "../src/rooms/modes/snake/index";
 import {
     DeterministicTestReliveEconomy,
+    RedisDemoReliveEconomy,
     resolveS2ReliveEconomy,
 } from "../src/rooms/modes/snake/lifecycle";
 import { resolveRoomProfile, type RoomProfile } from "../src/rooms/core/RoomProfile";
@@ -154,6 +155,7 @@ test("首人即无尽开局：稳定 epoch/meta、17 蛇、1030 食物和分块 
     assert.equal(view.endTick, 0, "schema sentinel 不得被解释为 deadline");
     assert.equal(view.onlineCoinReliveEnabled, false);
     assert.equal(view.players.get("first")?.skinId, 1);
+    assert.equal(view.players.get("first")?.coinBalance, 10_000);
     const world = harness.mode.__probeWorld();
     assert.ok(world);
     assert.equal(world.snakes.length, 17);
@@ -265,7 +267,7 @@ test("磁铁拾取在一个 delta 原子包含 tool removal、蛇 buff 与真人
     assert.ok(delta.runUpdates.some((entry) => entry.id === "first" && entry.magnetCollected === 1));
 });
 
-test("五次测试复活费用 100/200/300/300/300；第六死无 offer，buff 清零但累计保留", async () => {
+test("五次金币复活费用 100/200/300/300/300；第六死无 offer，buff 清零但累计保留", async () => {
     const harness = await buildSnakeRoom();
     const first = await seat(harness, "first");
     step(harness.room, SNAKE_RULESET.countdownTicks + SNAKE_RULESET.spawnProtectionTicks + 2);
@@ -297,6 +299,7 @@ test("五次测试复活费用 100/200/300/300/300；第六死无 offer，buff �
     assert.equal(messages<{ rewardStatus: string }>(first, S2C.SnakeRunResult).at(-1)?.rewardStatus, "notEnabled");
     assert.equal(harness.economy.commitCount, 5);
     assert.equal(harness.economy.testBalance, 8_800);
+    assert.equal(player.coinBalance, 8_800);
 });
 
 test("复活 decision CAS：同 ID 同 payload 重放，同 ID 异 payload 不改状态", async () => {
@@ -537,7 +540,7 @@ test("final-leave/churn 集合回落；dispose 进入 Draining 并释放世界�
     assert.equal(harness.view().tick, tickBeforeDispose, "dispose 后 fixed-step 必须停止");
 });
 
-test("结束本次只终结本人；生产环境不能绑定 S2 测试经济", async () => {
+test("结束本次只终结本人；生产环境不能绑定测试或 demo 经济", async () => {
     const harness = await buildSnakeRoom();
     const first = await seat(harness, "first");
     await seat(harness, "second");
@@ -551,6 +554,8 @@ test("结束本次只终结本人；生产环境不能绑定 S2 测试经济", a
     assert.equal(harness.view().players.get("second")?.runState, SnakeRunState.Active);
     assert.equal(harness.view().phase, GamePhase.Playing);
     assert.throws(() => resolveS2ReliveEconomy(new DeterministicTestReliveEconomy(), "production"),
+        /production cannot bind/u);
+    assert.throws(() => resolveS2ReliveEconomy(new RedisDemoReliveEconomy(), "production"),
         /production cannot bind/u);
     assert.equal(resolveS2ReliveEconomy(undefined, "production").kind, "disabled");
 });
