@@ -1,0 +1,42 @@
+{
+  "files": [
+    ".json",
+    ".png"
+  ],
+  "imported": true,
+  "importer": "image",
+  "subMetas": {
+    "6c48a": {
+      "displayName": "snake_skin_403_preview",
+      "files": [
+        ".json"
+      ],
+      "id": "6c48a",
+      "imported": true,
+      "importer": "texture",
+      "name": "texture",
+      "subMetas": {},
+      "userData": {
+        "anisotropy": 0,
+        "imageUuidOrDatabaseUri": "8d3eab1d-9ff3-4997-8a4c-d555d92b478e",
+        "isUuid": true,
+        "magfilter": "linear",
+        "minfilter": "linear",
+        "mipfilter": "none",
+        "visible": false,
+        "wrapModeS": "repeat",
+        "wrapModeT": "repeat"
+      },
+      "uuid": "8d3eab1d-9ff3-4997-8a4c-d555d92b478e@6c48a",
+      "ver": "1.0.22"
+    }
+  },
+  "userData": {
+    "fixAlphaTransparencyArtifacts": false,
+    "hasAlpha": true,
+    "redirect": "8d3eab1d-9ff3-4997-8a4c-d555d92b478e@6c48a",
+    "type": "texture"
+  },
+  "uuid": "8d3eab1d-9ff3-4997-8a4c-d555d92b478e",
+  "ver": "1.0.27"
+}

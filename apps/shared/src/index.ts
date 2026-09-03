@@ -16,5 +16,6 @@ export * from "./protocol/index";
 export * from "./constants/index";
 export * from "./logic/index";
 export * from "./gameplays/index";
+export * from "./cosmetics/index";
 export * from "./generated/webplatform/index";
 export * from "./project";

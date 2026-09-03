@@ -1,0 +1,118 @@
+{
+  "frames": [
+    {
+      "name": "snakebody0",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        50,
+        48
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        1,
+        69,
+        50,
+        48
+      ],
+      "rotated": false
+    },
+    {
+      "name": "snakebody1",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        50,
+        48
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        53,
+        69,
+        50,
+        48
+      ],
+      "rotated": false
+    },
+    {
+      "name": "snakehead",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        66,
+        88
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        1,
+        1,
+        66,
+        88
+      ],
+      "rotated": true
+    },
+    {
+      "name": "snaketail",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        38,
+        44
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        1,
+        119,
+        38,
+        44
+      ],
+      "rotated": true
+    },
+    {
+      "name": "snakewreck",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        18,
+        18
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        91,
+        1,
+        18,
+        18
+      ],
+      "rotated": false
+    }
+  ],
+  "texture": {
+    "height": 256,
+    "width": 128
+  }
+}

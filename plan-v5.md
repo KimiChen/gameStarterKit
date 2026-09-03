@@ -40,7 +40,14 @@ verify:sync 镜像一致、inventory 全绿）；`test:int` 169/169（本地真 
 > 71 项路径表、5 层配置和 14 张 `sourceDerivedStaticReconstruction` golden 已生成。组合 hash 为
 > `2319d173326602d85fc4c6a85f5b4ca16452cd778f0794896398294a1d5f87e2`；unit 10/10、全新临时目录
 > 55/55 文件逐字节复建和 SHA 54/54 均通过。该更新没有修改玩法运行时；S1、S2、S2R、S3、S4、S5
-> 仍未实施，当前线上/本地代码事实仍是下表所述首版。
+> 当时仍未实施，玩法运行时代码事实仍是下表所述首版。
+
+> 更新（2026-09-03，Snake 新版无尽专项 S1）：素材与目录阶段已完成。精确锁定来源 commit `6367f65`，
+> 68 个读取源文件、16 套 atlas/body 仓内输入、27 个实际表现资源、78 行资源/转换/预览续表、16 张单皮肤预览与
+> 两张 contact sheet 已闭合；公共/服务端业务/客户端表现 hash 分别为 `a1cdecbc…b075`、
+> `9ed3762e…fa19`、`62e1a668…2efe`。常规生成/检查在 Node 文件权限只允许本仓时仍通过；converter 8/8、
+> 客户端 377/377、服务端 489/489、typecheck、sync、inventory 均全绿。Creator 3.8.8 导入/UUID/pivot/混合
+> 终验仍归 S5；S2 无尽运行时、S2R、S3、S4、S5 尚未实施，当前玩法运行时仍是下表的 90 秒首版。
 
 ---
 
@@ -66,7 +73,7 @@ verify:sync 镜像一致、inventory 全绿）；`test:int` 169/169（本地真 
 
 | # | 条目 | 现状 |
 |---|---|---|
-| C1 | snakeoff（竖版贪吃蛇）玩法实现 | ✅ **首版已实现**（2026-09-02，S0–S5：素材与台账 `e9ab40f`、shared 契约 `f0c2111`、SnakeWorld 模拟 `3d2affe`、房间集成 `08b48e4`、客户端战斗链路 `b062f2a`、默认入口切换）。当前代码口径仍是：drop-in 自由加入（8 人、首人即开局、Playing 可入）+ 90s 限时计分 + 死亡 2s 复活保分 + AI 填充。下一轮竖版新版无尽 V2 专项仅 **S0 复刻证据基线已完成**（`7a04131`，[证据](docs/s/evidence/s0/README.md)）；S1 素材目录、S2 无尽运行时、S2R 金币选择复活、S3 衣柜、S4 可靠奖励和 S5 发布均未实施，详细状态见 [docs/s/README.md](docs/s/README.md)。首版剩余尾巴：Creator 预览人工证据与真机联调（归 C3）、数值手感调优（随预览进行） |
+| C1 | snakeoff（竖版贪吃蛇）玩法实现 | ✅ **首版已实现**（2026-09-02，S0–S5：素材与台账 `e9ab40f`、shared 契约 `f0c2111`、SnakeWorld 模拟 `3d2affe`、房间集成 `08b48e4`、客户端战斗链路 `b062f2a`、默认入口切换）。当前代码口径仍是：drop-in 自由加入（8 人、首人即开局、Playing 可入）+ 90s 限时计分 + 死亡 2s 复活保分 + AI 填充。下一轮竖版新版无尽 V2 专项已完成 **S0 复刻证据基线**（`7a04131`，[证据](docs/s/evidence/s0/README.md)）和 **S1 素材/三层目录**（[证据](docs/s/evidence/s1/README.md)）；S2 无尽运行时、S2R 金币选择复活、S3 衣柜、S4 可靠奖励和 S5 发布仍未实施，详细状态见 [docs/s/README.md](docs/s/README.md)。首版剩余尾巴：Creator 预览人工证据与真机联调（归 C3/S5）、数值手感调优（随预览进行） |
 | C2 | undergroundIdle 玩法实现 | wsrpc 迁移入口路线次之（同一拍板）；美术生产流程与规格文档在 `docs/undergroundIdle/`（在途） |
 | C3 | 两玩法的**真机联调** | 承接 plan-v4「遗留待办」表的 `真机 / 阶段 10` 行。原表已定性为「既定范围外，随玩法实现另立计划」，故归入 C 而非 B——⛔ 但必须被点名：B 类全是编辑器/Creator 项，不点名它就会随抽离一起消失 |
 

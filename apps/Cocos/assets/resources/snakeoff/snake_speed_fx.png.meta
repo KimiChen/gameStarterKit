@@ -1,0 +1,42 @@
+{
+  "files": [
+    ".json",
+    ".png"
+  ],
+  "imported": true,
+  "importer": "image",
+  "subMetas": {
+    "6c48a": {
+      "displayName": "snake_speed_fx",
+      "files": [
+        ".json"
+      ],
+      "id": "6c48a",
+      "imported": true,
+      "importer": "texture",
+      "name": "texture",
+      "subMetas": {},
+      "userData": {
+        "anisotropy": 0,
+        "imageUuidOrDatabaseUri": "39bf6221-0986-4d16-9c23-0476710ea58f",
+        "isUuid": true,
+        "magfilter": "linear",
+        "minfilter": "linear",
+        "mipfilter": "none",
+        "visible": false,
+        "wrapModeS": "repeat",
+        "wrapModeT": "repeat"
+      },
+      "uuid": "39bf6221-0986-4d16-9c23-0476710ea58f@6c48a",
+      "ver": "1.0.22"
+    }
+  },
+  "userData": {
+    "fixAlphaTransparencyArtifacts": false,
+    "hasAlpha": true,
+    "redirect": "39bf6221-0986-4d16-9c23-0476710ea58f@6c48a",
+    "type": "texture"
+  },
+  "uuid": "39bf6221-0986-4d16-9c23-0476710ea58f",
+  "ver": "1.0.27"
+}

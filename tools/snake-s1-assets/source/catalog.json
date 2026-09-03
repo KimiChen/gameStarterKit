@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "6367f65bf210d75ba39c0e48ecace5b30b538a06",
+  "approval": {
+    "evidence": "docs/snakeoff/08-source-and-asset-provenance.md#7-直接素材复用登记模板",
+    "approvedAt": "2026-09-02",
+    "responsible": "KimiChen",
+    "legalStatus": "已引入，待验收"
+  },
+  "skins": [
+    { "skinId": 1, "contentVersion": 1, "publicationState": "active", "isDefault": true, "sortOrder": 1, "playerUsable": true, "technicalLabel": "皮肤 1", "aiEligible": false, "fallbackSkinId": null, "textureAsset": "snakeoff/snake_skin_01", "targetFile": "snake_skin_01.png" },
+    { "skinId": 2, "contentVersion": 1, "publicationState": "active", "isDefault": false, "sortOrder": 2, "playerUsable": true, "technicalLabel": "皮肤 2", "aiEligible": false, "fallbackSkinId": 1, "textureAsset": "snakeoff/snake_skin_02", "targetFile": "snake_skin_02.png" },
+    { "skinId": 3, "contentVersion": 1, "publicationState": "active", "isDefault": false, "sortOrder": 3, "playerUsable": true, "technicalLabel": "皮肤 3", "aiEligible": false, "fallbackSkinId": 1, "textureAsset": "snakeoff/snake_skin_03", "targetFile": "snake_skin_03.png" },
+    { "skinId": 4, "contentVersion": 1, "publicationState": "active", "isDefault": false, "sortOrder": 4, "playerUsable": true, "technicalLabel": "皮肤 4", "aiEligible": false, "fallbackSkinId": 1, "textureAsset": "snakeoff/snake_skin_04", "targetFile": "snake_skin_04.png" },
+    { "skinId": 10, "contentVersion": 1, "publicationState": "active", "isDefault": false, "sortOrder": 10, "playerUsable": true, "technicalLabel": "皮肤 10", "aiEligible": false, "fallbackSkinId": 1, "textureAsset": "snakeoff/snake_skin_10", "targetFile": "snake_skin_10.png" },
+    { "skinId": 11, "contentVersion": 1, "publicationState": "active", "isDefault": false, "sortOrder": 11, "playerUsable": true, "technicalLabel": "皮肤 11", "aiEligible": false, "fallbackSkinId": 1, "textureAsset": "snakeoff/snake_skin_11", "targetFile": "snake_skin_11.png" },
+    { "skinId": 101, "contentVersion": 1, "publicationState": "active", "isDefault": false, "sortOrder": 101, "playerUsable": true, "technicalLabel": "皮肤 101", "aiEligible": true, "fallbackSkinId": 1, "textureAsset": "snakeoff/snake_skin_101", "targetFile": "snake_skin_101.png" },
+    { "skinId": 111, "contentVersion": 1, "publicationState": "active", "isDefault": false, "sortOrder": 111, "playerUsable": true, "technicalLabel": "皮肤 111", "aiEligible": true, "fallbackSkinId": 1, "textureAsset": "snakeoff/snake_skin_111", "targetFile": "snake_skin_111.png" },
+    { "skinId": 112, "contentVersion": 1, "publicationState": "active", "isDefault": false, "sortOrder": 112, "playerUsable": true, "technicalLabel": "皮肤 112", "aiEligible": true, "fallbackSkinId": 1, "textureAsset": "snakeoff/snake_skin_112", "targetFile": "snake_skin_112.png" },
+    { "skinId": 132, "contentVersion": 1, "publicationState": "active", "isDefault": false, "sortOrder": 132, "playerUsable": true, "technicalLabel": "皮肤 132", "aiEligible": true, "fallbackSkinId": 1, "textureAsset": "snakeoff/snake_skin_132", "targetFile": "snake_skin_132.png" },
+    { "skinId": 133, "contentVersion": 1, "publicationState": "active", "isDefault": false, "sortOrder": 133, "playerUsable": true, "technicalLabel": "皮肤 133", "aiEligible": true, "fallbackSkinId": 1, "textureAsset": "snakeoff/snake_skin_133", "targetFile": "snake_skin_133.png" },
+    { "skinId": 139, "contentVersion": 1, "publicationState": "active", "isDefault": false, "sortOrder": 139, "playerUsable": true, "technicalLabel": "皮肤 139", "aiEligible": true, "fallbackSkinId": 1, "textureAsset": "snakeoff/snake_skin_139", "targetFile": "snake_skin_139.png" },
+    { "skinId": 401, "contentVersion": 1, "publicationState": "active", "isDefault": false, "sortOrder": 401, "playerUsable": true, "technicalLabel": "皮肤 401", "aiEligible": true, "fallbackSkinId": 1, "textureAsset": "snakeoff/snake_skin_401", "targetFile": "snake_skin_401.png" },
+    { "skinId": 403, "contentVersion": 1, "publicationState": "active", "isDefault": false, "sortOrder": 403, "playerUsable": true, "technicalLabel": "皮肤 403", "aiEligible": true, "fallbackSkinId": 1, "textureAsset": "snakeoff/snake_skin_403", "targetFile": "snake_skin_403.png" },
+    { "skinId": 411, "contentVersion": 1, "publicationState": "active", "isDefault": false, "sortOrder": 411, "playerUsable": true, "technicalLabel": "皮肤 411", "aiEligible": true, "fallbackSkinId": 1, "textureAsset": "snakeoff/snake_skin_411", "targetFile": "snake_skin_411.png" },
+    { "skinId": 701, "contentVersion": 1, "publicationState": "active", "isDefault": false, "sortOrder": 701, "playerUsable": true, "technicalLabel": "皮肤 701", "aiEligible": true, "fallbackSkinId": 1, "textureAsset": "snakeoff/snake_skin_ai", "targetFile": "snake_skin_ai.png" }
+  ],
+  "presentation": {
+    "gridSpacing": 32,
+    "mapMargin": 16,
+    "food": {
+      "logicalPath": "foods_new",
+      "targetFile": "snake_foods_new.png",
+      "dotFrames": ["1", "2", "3", "4", "5", "6", "7"],
+      "dotDisplaySize": 16,
+      "starFrame": "star",
+      "starDisplaySize": 42,
+      "batchCapacity": 1030
+    },
+    "wreck": {
+      "speedDisplaySize": 22,
+      "aiDeathDisplaySize": 34
+    },
+    "speedFx": {
+      "logicalPath": "speed",
+      "targetFile": "snake_speed_fx.png",
+      "frames": ["rocket_speed_down", "rocket_speed_up", "speed_up"]
+    },
+    "extras": {
+      "logicalPath": "snake_extras",
+      "targetFile": "snake_extras.png",
+      "frames": ["protect"]
+    },
+    "walls": [
+      { "theme": "light", "sourceRelativePath": "remoteBundles/gameClassic/native/43/43bd6cef-1ea5-49a8-9ee6-35fe332b39c6.png", "targetFile": "snake_wall_block_1.png" },
+      { "theme": "dark", "sourceRelativePath": "remoteBundles/gameClassic/native/ae/aed7b327-a69a-4b9c-a8e3-310bf6cd5cf1.png", "targetFile": "snake_wall_block_2.png" }
+    ],
+    "audio": [
+      { "event": "eat-food", "sourceRelativePath": "remoteBundles/audio/native/88/88c98762-8c62-4dd6-a0c0-237a778cc8b6.mp3", "targetFile": "snake_sfx_eat_food.mp3", "policy": "resource" },
+      { "event": "eat-wreck", "sourceRelativePath": "remoteBundles/audio/native/fa/fa4e17a1-8c3e-4340-922d-50fcf4dfa538.mp3", "targetFile": "snake_sfx_eat_wreck.mp3", "policy": "resource" },
+      { "event": "kill", "sourceRelativePath": "remoteBundles/audio/native/45/454df9b6-56c4-43c8-9dfe-8adfc4ecdf43.mp3", "targetFile": "snake_sfx_kill.mp3", "policy": "resource" },
+      { "event": "death", "sourceRelativePath": "remoteBundles/audio/native/3b/3b1fa3f8-94a9-4b68-9bae-9c91c58c0914.mp3", "targetFile": "snake_sfx_end.mp3", "policy": "resource" },
+      { "event": "button", "sourceRelativePath": "remoteBundles/audio/native/c2/c280b506-d28c-4947-8f4b-d8b6f490f5ca.mp3", "targetFile": "snake_sfx_button.mp3", "policy": "resource" },
+      { "event": "personal-run-result", "targetFile": null, "policy": "silent" },
+      { "event": "time-over", "sourceRelativePath": "remoteBundles/audio/native/d1/d1effd86-7e5e-4c82-bb88-9a27c2ca4e4b.mp3", "targetFile": "snake_sfx_time_over.mp3", "policy": "historical-unused" }
+    ],
+    "palette": {
+      "light": { "outside": [108, 36, 31, 255], "map": [235, 236, 244, 255], "grid": [205, 205, 214, 255], "gridLineWidth": 1, "border": null, "borderWidth": 0 },
+      "dark": { "outside": [0, 0, 0, 255], "map": [36, 55, 107, 255], "grid": [29, 44, 97, 255], "gridLineWidth": 1, "border": [235, 79, 113, 255], "borderWidth": 4 }
+    }
+  }
+}

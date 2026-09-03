@@ -10,7 +10,7 @@
  *  - 硬上限全部来自 SNAKE_RULESET：身体点/食物/残骸/蛇数，超限的补刷延后而非截断。
  */
 import { SeededRandom } from "@game/shared";
-import { quantizeSnake, SNAKE_RULESET } from "@game/shared/gameplays/snake/ruleset";
+import { quantizeSnake, SNAKE_RULESET, type SnakeRuleset } from "@game/shared/gameplays/snake/ruleset";
 import {
     boostAccepted,
     boostLengthCost,
@@ -138,11 +138,11 @@ export interface SnakeWorldOptions {
     readonly matchSeed: number;
     readonly events?: SnakeWorldEvents;
     /** 测试注入：覆盖规则表（⛔ 生产恒为 SNAKE_RULESET 缺省）。 */
-    readonly ruleset?: typeof SNAKE_RULESET;
+    readonly ruleset?: SnakeRuleset;
 }
 
 export class SnakeWorld {
-    readonly ruleset: typeof SNAKE_RULESET;
+    readonly ruleset: SnakeRuleset;
     tick = 0;
     /** 移动解禁 tick（开局倒计时期间世界冻结、食物已铺好）。 */
     readonly movementStartTick: number;

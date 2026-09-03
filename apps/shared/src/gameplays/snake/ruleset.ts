@@ -94,4 +94,7 @@ export const SNAKE_RULESET = Object.freeze({
     snapshotMaxBytes: 65536, // 64 KiB 预算；达到预算降采样而非截断关键头部
 } as const);
 
-export type SnakeRuleset = typeof SNAKE_RULESET;
+/** 保留完整键集但放宽常量字面量，供确定性测试/诊断注入数值覆写。 */
+export type SnakeRuleset = Readonly<{
+    [Key in keyof typeof SNAKE_RULESET]: number;
+}>;

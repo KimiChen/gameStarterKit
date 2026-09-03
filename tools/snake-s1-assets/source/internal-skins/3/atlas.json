@@ -1,0 +1,74 @@
+{
+  "frames": [
+    {
+      "name": "body",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        48,
+        48
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        59,
+        1,
+        48,
+        48
+      ],
+      "rotated": false
+    },
+    {
+      "name": "head",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        56,
+        52
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        1,
+        1,
+        56,
+        52
+      ],
+      "rotated": false
+    },
+    {
+      "name": "wreck",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        16,
+        16
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        109,
+        1,
+        16,
+        16
+      ],
+      "rotated": false
+    }
+  ],
+  "texture": {
+    "height": 54,
+    "width": 126
+  }
+}

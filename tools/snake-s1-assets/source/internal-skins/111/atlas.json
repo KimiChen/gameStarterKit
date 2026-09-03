@@ -1,0 +1,74 @@
+{
+  "frames": [
+    {
+      "name": "cat_body01",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        48,
+        48
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        67,
+        1,
+        48,
+        48
+      ],
+      "rotated": false
+    },
+    {
+      "name": "cat_body02",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        48,
+        48
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        117,
+        1,
+        48,
+        48
+      ],
+      "rotated": false
+    },
+    {
+      "name": "cat_head",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        64,
+        60
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        1,
+        1,
+        64,
+        60
+      ],
+      "rotated": false
+    }
+  ],
+  "texture": {
+    "height": 62,
+    "width": 166
+  }
+}

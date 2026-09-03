@@ -2,9 +2,11 @@
 
 > [返回总目录](README.md) · [上一篇：竖版美术方向](07-art-direction.md)
 
-> 台账日期：2026-08-31<br>
+> 台账日期：2026-09-03<br>
 > 借鉴源根目录：`/Users/kimi/work/tanchishe/wegameVersion`（即 `~/work/tanchishe/wegameVersion`）<br>
-> 当前直接复用状态：2026-09-02 起按用户授权指令引入 31 项素材（图片 25 + 音效 6，见 §7 登记表）；源代码仍零复制（规则思路按 §3 登记独立重写）。
+> 当前直接复用状态：2026-09-02 起按用户授权指令引入首批 31 项素材；2026-09-03 的 Snake V2 S1
+> 又闭合 16 套皮肤、atlas/body 配置、表现资源与预览的机器可读台账。§7 保留首批人读表，S1 全量续表见
+> [`docs/s/evidence/s1/provenance.json`](../s/evidence/s1/provenance.json)；源代码仍零复制。
 
 ## 1. 来源性质
 
@@ -41,7 +43,7 @@
 | 交互参考 | 阅读页面层级、提示和控制方式，重新做竖版 UI | 否；仅进入策划 |
 | 候选素材 | 已定位原始像素文件，但权利/授权尚未确认 | 否 |
 | 明确不复用 | 平台、协议、旧引擎元数据、品牌或不符合目标规则 | 否，且禁止引入 |
-| 已直接复用 | 有授权、hash、源/目标和转换记录的实际文件 | 当前没有 |
+| 已直接复用 | 有授权、hash、源/目标和转换记录的实际文件 | 是；首批 31 项及 S1 机器可读续表 |
 
 本文的“借鉴”不代表版权许可、官方合作、代码兼容或资产可发布。
 
@@ -290,6 +292,21 @@ SpriteFrame metadata pack：
 | `/Users/kimi/work/tanchishe/wegameVersion/remoteBundles/audio/native/3b/3b1fa3f8-94a9-4b68-9bae-9c91c58c0914.mp3` | `audio/end` | `e7efb684164c4bd63db627eb03131fa743b3e55ce75daa6bce30450788c9406c` | 用户会话指令（2026-09-02，项目与源游戏权利方）：「所有素材可采用源游戏的素材」 | 2026-09-02 / KimiChen | `apps/Cocos/assets/resources/snakeoff/snake_sfx_end.mp3` | 原样复制 native 像素源 + 重命名 `snake_*`；未复制旧 import/UUID/.meta；.meta 按 Creator 3.8 格式合成（uuid 已入库，待 Creator 打开确认） | 合成（见左） | 已引入，待验收 |
 | `/Users/kimi/work/tanchishe/wegameVersion/remoteBundles/audio/native/c2/c280b506-d28c-4947-8f4b-d8b6f490f5ca.mp3` | `audio/button_click` | `00428dcf5dc443a71e4ef0df3f70f886bba5da81194f12be97fa738dfa070dcf` | 用户会话指令（2026-09-02，项目与源游戏权利方）：「所有素材可采用源游戏的素材」 | 2026-09-02 / KimiChen | `apps/Cocos/assets/resources/snakeoff/snake_sfx_button.mp3` | 原样复制 native 像素源 + 重命名 `snake_*`；未复制旧 import/UUID/.meta；.meta 按 Creator 3.8 格式合成（uuid 已入库，待 Creator 打开确认） | 合成（见左） | 已引入，待验收 |
 
+### 7.1 S1 机器可读续表（2026-09-03）
+
+S1 没有把新增几十行压回上述历史表，而以
+[`provenance.json`](../s/evidence/s1/provenance.json) 作为同一台账的机器可读续表。当前续表逐项登记：
+
+- 27 个实际 PNG/音频资源复制目标；
+- 35 个从原作 JsonAsset/SpriteAtlas 提取的仓内中立 atlas/body 输入；
+- 16 个由这些仓内输入确定性生成的运行时预览；
+- shared/server/client 三层 catalog 生成物。
+
+共 78 行均包含稳定逻辑名、源绝对/相对路径、源与输出 SHA-256、授权证据、批准日期/负责人、转换说明、
+`.meta` 状态与合法状态值。冻结来源的 68 个实际读取文件另由
+[`source/manifest.json`](../../tools/snake-s1-assets/source/manifest.json) 完整登记；普通生成与检查只读仓内输入，
+不会访问该绝对路径。新资源 `.meta` 全部由目标仓生成，未复制旧 UUID；Creator 3.8.8 实际导入确认仍归 S5。
+
 
 合法状态只允许：
 
@@ -307,7 +324,10 @@ SpriteFrame metadata pack：
 
 | 源文件 | 阅读目的 | 提取的行为/公式 | 舍弃的依赖 | 目标测试向量 | 目标实现文件 | 评审结论 |
 | --- | --- | --- | --- | --- | --- | --- |
-| 待新增 |  |  |  |  |  |  |
+| `subpackages/loading/bundle/_r/loader/Loader.js` | S1 帧时基与缺省锚点 | `durationFrames=max(1, frame_time)`；缺省 `headAnchorY=0.5` | Cocos Loader、全局 Store、旧资源对象 | 0/6 帧、缺锚点、异常结构 | `tools/snake-s1-assets/core.mjs` · converter fixture | 只提取行为并独立实现，源文件 hash 见 S1 manifest |
+| `subpackages/loading/bundle/_r/game/util/GameUtil.js` | S1 NormalRepeat 布局 | 基础体宽 36、normal head/body/tail 与有符号 distance 推导路径点距离 | 旧实体、引擎节点、其他 render type | `bodyScale=1.0..2.8`、正 pointDistance、boost 不改几何 | `SnakePresentationCatalog.ts` | 只复刻 renderType=2 公式，其他类型 fail-fast |
+| `subpackages/loading/bundle/_r/store/FeedGameStore.js` | S1 AI 候选集合 | Feed V2 `ai_flag=1` 的固定 ID | 原作 Feed/活动/网络状态 | 精确 10-ID 集合 | `skinBusinessCatalog.ts` | 与 SkinStore 交叉核对，不按 ID 猜测 |
+| `subpackages/loading/bundle/_r/store/SkinStore.js` | S1 AI 可用判定 | `canAiUse` 对 16 ID 的显式映射 | 原商城、所有权、付费逻辑 | 10 true / 6 false 与漂移反例 | `skinBusinessCatalog.ts` | 仅形成业务目录 draft，经济写保持关闭 |
 
 目标提交中不得出现：
 
@@ -330,15 +350,16 @@ SpriteFrame metadata pack：
 
 ## 10. 当前审计结论
 
-截至 2026-08-31：
+截至 2026-09-03，旧的“未复制素材、许可未确认”结论已被 2026-09-02 权利方授权和实际引入记录取代：
 
-- 已确认借鉴根目录为 `/Users/kimi/work/tanchishe/wegameVersion`。
-- 已定位房间号、蛇身体、移动、碰撞、食物、输入、快照和控制相关代码文件。
-- 已定位操控、房间 UI、食物/蛇 atlas 和横版背景的 catalog/native 对应。
-- 已确认源为横版、房号输入上限 8、UGC 房间显示 5 席位。
-- 已确认参考真人碰撞分支存在 AI 条件，不能自动当成四真人规则。
-- 已确认文档编写期间没有向本仓复制源代码或素材。
-- 所有源素材的权利/许可状态仍未确认，因此只能作为视觉候选或审计证据。
+- 冻结来源仍为 `/Users/kimi/work/tanchishe/wegameVersion`，S1 refresh 强制校验 clean commit
+  `6367f65bf210d75ba39c0e48ecace5b30b538a06`；普通构建不依赖该路径。
+- 首批 31 项人读表继续保留；S1 新读取、转换与目标文件以 §7.1 的 manifest/provenance 为准，状态统一为
+  `已引入，待验收`。
+- 没有复制旧项目源码、`.meta`、UUID、import cache、私有网络或平台实现；四个源 JS 仅用于行为/公式取证，
+  目标 TypeScript 是按本仓边界独立实现。
+- 16 套预览和技术 contact sheet 已完成无头检查；Cocos Creator 3.8.8 导入、混合、pivot 与 UUID 往返确认
+  明确保留给 S5，不能据当前记录宣称 Creator 验收通过。
 
 ---
 

@@ -1,6 +1,6 @@
 # Snake 竖版新版无尽 V2 与养成专项阶段任务
 
-> **状态：`[进行中]`。更新时间：2026-09-03。S0 已完成，S1～S5 尚未实施。**<br>
+> **状态：`[进行中]`。更新时间：2026-09-03。S0、S1 已完成，S2～S5 尚未实施。**<br>
 > 本目录把原根计划拆成可独立实施、验证和回写证据的 S0～S5 阶段任务。根
 > [plan-s.md](../../plan-s.md) 只保留兼容入口，不再维护第二份正文。阶段状态只以本页、对应阶段证据表和
 > [plan-v5.md](../../plan-v5.md) 的一致结论为准。
@@ -81,7 +81,7 @@ S1 的转换脚本可在 S0 尾期并行；S2R 的数据库与 shell 设计可�
 | 阶段文档 | 状态 | 主要结果 | 关键退出门 | 预计 |
 |---|---|---|---|---:|
 | [S0 · 复刻基线](s0-replication-baseline.md) | `[已完成]` | 命名配置、来源 fixture、横/竖 golden、差异决策表 | 34 个来源身份、71 项路径表、14 张 golden、55 文件逐字节复建通过 | 3–4 人日 |
-| [S1 · 素材与目录](s1-assets-and-catalog.md) | `[已拍板·待实施]` | 16 皮肤及表现目录、转换产物、资源/授权台账 | 全目录生成以及 rect/resource/hash 校验通过 | 3–5 人日 |
+| [S1 · 素材与目录](s1-assets-and-catalog.md) | `[已完成]` | 16 皮肤及表现目录、转换产物、资源/授权台账 | 16/16 完整；三层 hash、rect/resource/fallback 与 repo-only freshness 全绿 | 3–5 人日 |
 | [S2 · 战场与无尽生命周期](s2-battle-and-endless-lifecycle.md) | `[已拍板·待实施]` | 4096² V2 世界、17 蛇、1030 食物、中央操作区、无尽/死亡状态机、wire v2 | world golden、输入/竞态、容量/重连与定向测试通过 | 9–13 人日 |
 | [S2R · 可靠金币复活](s2r-reliable-coin-relive.md) | `[已拍板·待实施]` | awaited hooks、最小 run/checkpoint、decision/receipt、扣费/应用/激活/退款恢复 | 所有崩溃窗口不吞币、不双扣、不重复复活 | 4–6 人日 |
 | [S3 · 衣柜与装备](s3-wardrobe-and-equipment.md) | `[已拍板·待实施]` | `snakeCosmetic` Feature/RPC、Bag/User 存储、解锁/装备、FGUI | 权威装备、并发、重连与 fallback 测试通过 | 6–10 人日 |
@@ -159,8 +159,8 @@ shared 继续保持零依赖，客户端 View/Logic 与 FairyGUI 动态加载边
 
 | 阶段 | 状态 | commit | 自动验证 | Creator/真栈证据 | 备注 |
 |---|---|---|---|---|---|
-| S0 | `[已完成]` | `7a04131` | unit 10/10；evidence rebuild 55/55 byte-identical；SHA 54/54；inventory 14/5 | [14 张来源驱动静态重建及 metadata](evidence/s0/goldens/manifest.json) | 组合 hash `2319d173…f87e2`；仅证据基线完成，S1/S2 运行时未实施 |
-| S1 | `[已拍板·待实施]` | — | — | — | — |
+| S0 | `[已完成]` | `7a04131` | unit 10/10；evidence rebuild 55/55 byte-identical；SHA 54/54；inventory 14/5 | [14 张来源驱动静态重建及 metadata](evidence/s0/goldens/manifest.json) | 组合 hash `2319d173…f87e2`；证据基线完成，S2 运行时尚未实施 |
+| S1 | `[已完成]` | 本次提交 | converter 8/8、S1 server 5/5、client catalog 8/8；全量 typecheck/test/sync/inventory 通过 | [16 张预览与两张 contact sheet](evidence/s1/README.md)；Creator 终验留 S5 | public `a1cdecbc…b075`、server `9ed3762e…fa19`、client `62e1a668…2efe`；S3 内容审批仍未开始 |
 | S2 | `[已拍板·待实施]` | — | — | — | — |
 | S2R | `[已拍板·待实施]` | — | — | — | 只产出技术资格；实际开关保持关闭至 S5 |
 | S3 | `[已拍板·待实施]` | — | — | — | — |

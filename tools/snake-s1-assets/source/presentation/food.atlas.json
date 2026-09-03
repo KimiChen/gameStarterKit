@@ -1,0 +1,184 @@
+{
+  "frames": [
+    {
+      "name": "1",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        16,
+        16
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "rotated": false
+    },
+    {
+      "name": "2",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        16,
+        16
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        16,
+        0,
+        16,
+        16
+      ],
+      "rotated": false
+    },
+    {
+      "name": "3",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        16,
+        16
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        32,
+        0,
+        16,
+        16
+      ],
+      "rotated": false
+    },
+    {
+      "name": "4",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        16,
+        16
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        0,
+        16,
+        16,
+        16
+      ],
+      "rotated": false
+    },
+    {
+      "name": "5",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        16,
+        16
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        16,
+        16,
+        16,
+        16
+      ],
+      "rotated": false
+    },
+    {
+      "name": "6",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        16,
+        16
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        32,
+        16,
+        16,
+        16
+      ],
+      "rotated": false
+    },
+    {
+      "name": "7",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        16,
+        16
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        0,
+        32,
+        16,
+        16
+      ],
+      "rotated": false
+    },
+    {
+      "name": "star",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        42,
+        42
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        16,
+        32,
+        42,
+        42
+      ],
+      "rotated": false
+    }
+  ],
+  "texture": {
+    "height": 74,
+    "width": 58
+  }
+}

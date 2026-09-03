@@ -1,0 +1,30 @@
+{
+  "aiPool": [
+    101,
+    111,
+    112,
+    132,
+    133,
+    139,
+    401,
+    403,
+    411,
+    701
+  ],
+  "checks": [
+    "public exact validation",
+    "cross-layer public hash parity",
+    "server business hash",
+    "client presentation hash",
+    "atlas bounds including rotated frames",
+    "NormalRepeat-only render type",
+    "known animation structures",
+    "registered resource SHA and Cocos metadata"
+  ],
+  "defaultSkinId": 1,
+  "previewCount": 16,
+  "resourceCount": 27,
+  "skinCount": 16,
+  "sourceCommit": "6367f65bf210d75ba39c0e48ecace5b30b538a06",
+  "status": "passed"
+}

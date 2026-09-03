@@ -1,0 +1,1253 @@
+{
+  "approval": {
+    "approvedAt": "2026-09-02",
+    "evidence": "docs/snakeoff/08-source-and-asset-provenance.md#7-直接素材复用登记模板",
+    "legalStatus": "已引入，待验收",
+    "responsible": "KimiChen"
+  },
+  "copiedResources": [
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "presentation/extras/texture",
+      "outputSha256": "01c89919e26b4aeea08c5381b26f098aa18ffc4661896c6f7d9d7abd334b9288",
+      "sourceRelativePath": "remoteBundles/atlas/native/67/67069467-2aa8-4d48-b05e-b6baa743e0f4.png",
+      "sourceSha256": "01c89919e26b4aeea08c5381b26f098aa18ffc4661896c6f7d9d7abd334b9288",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_extras.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "presentation/food/texture",
+      "outputSha256": "66db78f30a3b0fcc17f2d0913f2dd782377b3cb904ef9206b47f54dc9c58a4b0",
+      "sourceRelativePath": "remoteBundles/atlas/native/5d/5dbc7df2-bb0c-428c-a3b6-d69c30c2aba4.png",
+      "sourceSha256": "66db78f30a3b0fcc17f2d0913f2dd782377b3cb904ef9206b47f54dc9c58a4b0",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_foods_new.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "audio/button",
+      "outputSha256": "00428dcf5dc443a71e4ef0df3f70f886bba5da81194f12be97fa738dfa070dcf",
+      "sourceRelativePath": "remoteBundles/audio/native/c2/c280b506-d28c-4947-8f4b-d8b6f490f5ca.mp3",
+      "sourceSha256": "00428dcf5dc443a71e4ef0df3f70f886bba5da81194f12be97fa738dfa070dcf",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_sfx_button.mp3"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "audio/eat-food",
+      "outputSha256": "33a86d8e738ea9120d1abd09c1b6234c83e972b09e071c4ecbcd05ba0e575822",
+      "sourceRelativePath": "remoteBundles/audio/native/88/88c98762-8c62-4dd6-a0c0-237a778cc8b6.mp3",
+      "sourceSha256": "33a86d8e738ea9120d1abd09c1b6234c83e972b09e071c4ecbcd05ba0e575822",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_sfx_eat_food.mp3"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "audio/eat-wreck",
+      "outputSha256": "b556777b04899444bfee3a68a9829fa646fc46f772b34abad8f19612dc867ea6",
+      "sourceRelativePath": "remoteBundles/audio/native/fa/fa4e17a1-8c3e-4340-922d-50fcf4dfa538.mp3",
+      "sourceSha256": "b556777b04899444bfee3a68a9829fa646fc46f772b34abad8f19612dc867ea6",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_sfx_eat_wreck.mp3"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "audio/death",
+      "outputSha256": "e7efb684164c4bd63db627eb03131fa743b3e55ce75daa6bce30450788c9406c",
+      "sourceRelativePath": "remoteBundles/audio/native/3b/3b1fa3f8-94a9-4b68-9bae-9c91c58c0914.mp3",
+      "sourceSha256": "e7efb684164c4bd63db627eb03131fa743b3e55ce75daa6bce30450788c9406c",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_sfx_end.mp3"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "audio/kill",
+      "outputSha256": "41e06994f05a12898dd3dddfdbba11b9fdee783efe4d63c499349d2cfe09d3a0",
+      "sourceRelativePath": "remoteBundles/audio/native/45/454df9b6-56c4-43c8-9dfe-8adfc4ecdf43.mp3",
+      "sourceSha256": "41e06994f05a12898dd3dddfdbba11b9fdee783efe4d63c499349d2cfe09d3a0",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_sfx_kill.mp3"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "audio/time-over",
+      "outputSha256": "e687e745fe6d93925eea349ef67857da780379bd086c37f27186b91a3e301a8f",
+      "sourceRelativePath": "remoteBundles/audio/native/d1/d1effd86-7e5e-4c82-bb88-9a27c2ca4e4b.mp3",
+      "sourceSha256": "e687e745fe6d93925eea349ef67857da780379bd086c37f27186b91a3e301a8f",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_sfx_time_over.mp3"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "skin/1/texture",
+      "outputSha256": "0a5ccf9e5b838353d674b8b8225ae556ed7d5a705acb6094d93f748448829aab",
+      "sourceRelativePath": "remoteBundles/internalSkins/native/4e/4e50d45b-da2a-44b2-b03d-0213b2525c83.png",
+      "sourceSha256": "0a5ccf9e5b838353d674b8b8225ae556ed7d5a705acb6094d93f748448829aab",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_skin_01.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "skin/2/texture",
+      "outputSha256": "ab289b3cb4e105cd8b757da2428a1c6e722e02f569be27e94f5a8dbb57576bf9",
+      "sourceRelativePath": "remoteBundles/internalSkins/native/94/9444d0fe-5a5b-49a0-92e5-63371e113dee.png",
+      "sourceSha256": "ab289b3cb4e105cd8b757da2428a1c6e722e02f569be27e94f5a8dbb57576bf9",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_skin_02.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "skin/3/texture",
+      "outputSha256": "e933fbf2321d4f913f6b5d8af84bf5d12d83d15df7daf42c94e1bf180501389b",
+      "sourceRelativePath": "remoteBundles/internalSkins/native/de/deeeb088-93e9-45bf-87ad-0b68223cc8d6.png",
+      "sourceSha256": "e933fbf2321d4f913f6b5d8af84bf5d12d83d15df7daf42c94e1bf180501389b",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_skin_03.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "skin/4/texture",
+      "outputSha256": "be275750f2fa11548e97ef390c3afe527e690cfe6ef03ec37bfdf012f2822718",
+      "sourceRelativePath": "remoteBundles/internalSkins/native/cd/cde2f284-0c19-475c-be40-d6f5effceeae.png",
+      "sourceSha256": "be275750f2fa11548e97ef390c3afe527e690cfe6ef03ec37bfdf012f2822718",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_skin_04.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "skin/10/texture",
+      "outputSha256": "d1b0ac5c76c451f749af93ac28d911d4f0ccfcab9dd18d013280c7a366602f7e",
+      "sourceRelativePath": "remoteBundles/internalSkins/native/eb/eba7f350-2372-44f2-bedf-7c7e58c2b0df.png",
+      "sourceSha256": "d1b0ac5c76c451f749af93ac28d911d4f0ccfcab9dd18d013280c7a366602f7e",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_skin_10.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "skin/101/texture",
+      "outputSha256": "6fcc926e289b9f6d1f4c6c8d23b4ac1dfc5288d9f4c23ef811b66cb84188fddf",
+      "sourceRelativePath": "remoteBundles/internalSkins/native/50/50ab8f5b-b702-4a77-9fbf-b4edea518ec2.png",
+      "sourceSha256": "6fcc926e289b9f6d1f4c6c8d23b4ac1dfc5288d9f4c23ef811b66cb84188fddf",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_skin_101.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "skin/11/texture",
+      "outputSha256": "49fe36223cf02e6d31f3a5be8b19c787a0f12310a5a6f6c91d93cbe24c0a81bf",
+      "sourceRelativePath": "remoteBundles/internalSkins/native/c6/c6b650b1-3a1b-411c-b669-ab954ce39ec1.png",
+      "sourceSha256": "49fe36223cf02e6d31f3a5be8b19c787a0f12310a5a6f6c91d93cbe24c0a81bf",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_skin_11.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "skin/111/texture",
+      "outputSha256": "44499cc094537e1a83b210de97e34d9456bd39cc587ad584ce4a3aa7f3c745b1",
+      "sourceRelativePath": "remoteBundles/internalSkins/native/f6/f6ae987f-03ea-4abc-ab5f-14519d4f528f.png",
+      "sourceSha256": "44499cc094537e1a83b210de97e34d9456bd39cc587ad584ce4a3aa7f3c745b1",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_skin_111.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "skin/112/texture",
+      "outputSha256": "df6b073b29cd8789ce68c8a9853931238cd6d86720bffac461b9ffa1d2a8e618",
+      "sourceRelativePath": "remoteBundles/internalSkins/native/38/386c0342-9c00-42e2-a182-7363f92592dc.png",
+      "sourceSha256": "df6b073b29cd8789ce68c8a9853931238cd6d86720bffac461b9ffa1d2a8e618",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_skin_112.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "skin/132/texture",
+      "outputSha256": "7b09fc5eb565ab27fc0d4517c8b5231c6d22c3033e3e3a2e57973d236372fba0",
+      "sourceRelativePath": "remoteBundles/internalSkins/native/d9/d9e48000-cea0-4005-8944-6b13071341df.png",
+      "sourceSha256": "7b09fc5eb565ab27fc0d4517c8b5231c6d22c3033e3e3a2e57973d236372fba0",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_skin_132.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "skin/133/texture",
+      "outputSha256": "ca79e87ef9fe4d26e49011fdf4985d5ec41619a2c857d2e8d3d6e6fe5f267397",
+      "sourceRelativePath": "remoteBundles/internalSkins/native/0b/0b656626-a645-44a7-93d0-4693e3de0752.png",
+      "sourceSha256": "ca79e87ef9fe4d26e49011fdf4985d5ec41619a2c857d2e8d3d6e6fe5f267397",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_skin_133.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "skin/139/texture",
+      "outputSha256": "87fd6ed02f2f3ef7b730802e0dd4e447e6f69ac689779934df84ea0254805578",
+      "sourceRelativePath": "remoteBundles/internalSkins/native/b5/b5af9822-d47b-4be5-a586-1640cd18e117.png",
+      "sourceSha256": "87fd6ed02f2f3ef7b730802e0dd4e447e6f69ac689779934df84ea0254805578",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_skin_139.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "skin/401/texture",
+      "outputSha256": "a5d2fe784ce17ce7bb63aea04a5a98a0119a11fa274b7f8fc3da6803219dd991",
+      "sourceRelativePath": "remoteBundles/internalSkins/native/80/8064c44e-b475-43dd-a5be-7a6b60a8d947.png",
+      "sourceSha256": "a5d2fe784ce17ce7bb63aea04a5a98a0119a11fa274b7f8fc3da6803219dd991",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_skin_401.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "skin/403/texture",
+      "outputSha256": "22b5b3d117adae765b46a9bd92ced15af9e518b5ec89a0322159a6563a3e7e9e",
+      "sourceRelativePath": "remoteBundles/internalSkins/native/24/24f75358-7947-4b88-b9f5-c153f892d215.png",
+      "sourceSha256": "22b5b3d117adae765b46a9bd92ced15af9e518b5ec89a0322159a6563a3e7e9e",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_skin_403.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "skin/411/texture",
+      "outputSha256": "f4bffb4dd21285379367e21759d11c102d7e06b440d8d5099ba7b1b05d0d3111",
+      "sourceRelativePath": "remoteBundles/internalSkins/native/6b/6bccd73e-6254-4978-8ddf-2e968e6eedb8.png",
+      "sourceSha256": "f4bffb4dd21285379367e21759d11c102d7e06b440d8d5099ba7b1b05d0d3111",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_skin_411.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "skin/701/texture",
+      "outputSha256": "e7519f28b0fa5da9220ccd933a1a6203cd62a58fb55a5ff42d1282b4c42731ee",
+      "sourceRelativePath": "remoteBundles/internalSkins/native/10/10103e1e-6a50-4066-946f-db737489e951.png",
+      "sourceSha256": "e7519f28b0fa5da9220ccd933a1a6203cd62a58fb55a5ff42d1282b4c42731ee",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_skin_ai.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "presentation/speedFx/texture",
+      "outputSha256": "56677edbe061bd252f506aeded7a5b964e0f152ec9de1566d8707e19b396035e",
+      "sourceRelativePath": "remoteBundles/atlas/native/61/61d6e125-ee8e-475a-9ff2-354fb4cddab2.png",
+      "sourceSha256": "56677edbe061bd252f506aeded7a5b964e0f152ec9de1566d8707e19b396035e",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_speed_fx.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "wall/light",
+      "outputSha256": "3e05de6038c643c725ba59782d024959e949f89bf8087b51f3db310bf4703ede",
+      "sourceRelativePath": "remoteBundles/gameClassic/native/43/43bd6cef-1ea5-49a8-9ee6-35fe332b39c6.png",
+      "sourceSha256": "3e05de6038c643c725ba59782d024959e949f89bf8087b51f3db310bf4703ede",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_wall_block_1.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "wall/dark",
+      "outputSha256": "e02ebb01563ab418947b86f131bcb50598bd2446687f51ab022c0b5110ceeaf1",
+      "sourceRelativePath": "remoteBundles/gameClassic/native/ae/aed7b327-a69a-4b9c-a8e3-310bf6cd5cf1.png",
+      "sourceSha256": "e02ebb01563ab418947b86f131bcb50598bd2446687f51ab022c0b5110ceeaf1",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_wall_block_2.png"
+    }
+  ],
+  "generatedBy": "tools/snake-s1-assets/cli.mjs --refresh-source",
+  "normalizedInputs": [
+    {
+      "atlasInput": "tools/snake-s1-assets/source/internal-skins/1/atlas.json",
+      "atlasOutputSha256": "1c84b9ed3c988e61e306c57a0d12c39a861c11770286b1c643a832b0c96fd9c4",
+      "atlasPath": "remoteBundles/internalSkins/import/0b/0bc85f195.json",
+      "bodyInput": "tools/snake-s1-assets/source/internal-skins/1/body.json",
+      "bodyOutputSha256": "b9694a487ee120359ada5c3736cb562a6fe7da4ea4daa66d96944b54cb4bb803",
+      "bodyPath": "remoteBundles/internalSkins/import/b5/b5170172-b297-4e5d-a47a-0197c9195a9d.json",
+      "logicalName": "skin/1",
+      "skinId": 1,
+      "texturePath": "remoteBundles/internalSkins/native/4e/4e50d45b-da2a-44b2-b03d-0213b2525c83.png"
+    },
+    {
+      "atlasInput": "tools/snake-s1-assets/source/internal-skins/2/atlas.json",
+      "atlasOutputSha256": "0989ffbdc9aec567f5d79ca3e9dcba42173e749270e866ed327f81f000f48789",
+      "atlasPath": "remoteBundles/internalSkins/import/06/061ae6f08.json",
+      "bodyInput": "tools/snake-s1-assets/source/internal-skins/2/body.json",
+      "bodyOutputSha256": "e2892ea37b3ffd724bbb659fb056a4cf8017f422c789e426bf7bc4df32fc8a24",
+      "bodyPath": "remoteBundles/internalSkins/import/72/72b80015-cabc-4d99-bce7-b6bb7a02e311.json",
+      "logicalName": "skin/2",
+      "skinId": 2,
+      "texturePath": "remoteBundles/internalSkins/native/94/9444d0fe-5a5b-49a0-92e5-63371e113dee.png"
+    },
+    {
+      "atlasInput": "tools/snake-s1-assets/source/internal-skins/3/atlas.json",
+      "atlasOutputSha256": "a5d9d2e3b7744bee35f8d642062cf37c72a2b4d6856e3dcfe38a358f99a3fe7f",
+      "atlasPath": "remoteBundles/internalSkins/import/07/072e2aaaf.json",
+      "bodyInput": "tools/snake-s1-assets/source/internal-skins/3/body.json",
+      "bodyOutputSha256": "14f598c0bf87d5a622ce3f95c2a35090dc2d693969ad2d2fb9c517091edc52ac",
+      "bodyPath": "remoteBundles/internalSkins/import/98/98cc5f28-9a15-4d48-985a-337b3bf6b540.json",
+      "logicalName": "skin/3",
+      "skinId": 3,
+      "texturePath": "remoteBundles/internalSkins/native/de/deeeb088-93e9-45bf-87ad-0b68223cc8d6.png"
+    },
+    {
+      "atlasInput": "tools/snake-s1-assets/source/internal-skins/4/atlas.json",
+      "atlasOutputSha256": "c4629c3b3fdf74b47d7c6c767714b41be59505d4384bf1a359227ce24c5377d1",
+      "atlasPath": "remoteBundles/internalSkins/import/02/02df142b0.json",
+      "bodyInput": "tools/snake-s1-assets/source/internal-skins/4/body.json",
+      "bodyOutputSha256": "7ec07a3c162f3c591e07daf68fa35705f98bdd9f6ad473dc1c9588f52fb3b264",
+      "bodyPath": "remoteBundles/internalSkins/import/05/05349dc4-1bb3-4a17-acb8-c90f04af3ca4.json",
+      "logicalName": "skin/4",
+      "skinId": 4,
+      "texturePath": "remoteBundles/internalSkins/native/cd/cde2f284-0c19-475c-be40-d6f5effceeae.png"
+    },
+    {
+      "atlasInput": "tools/snake-s1-assets/source/internal-skins/10/atlas.json",
+      "atlasOutputSha256": "58a0bcf2ae91d4a57c9f1a6a4088beb139b961ce22b84001369423424ee61d85",
+      "atlasPath": "remoteBundles/internalSkins/import/07/07765dd68.json",
+      "bodyInput": "tools/snake-s1-assets/source/internal-skins/10/body.json",
+      "bodyOutputSha256": "4ee2e1d6446a98b1b8e2fbecfaf16b5eea8b9aa65cfb8b9cdcb83dbd2beb353c",
+      "bodyPath": "remoteBundles/internalSkins/import/86/86ea2dd3-88d9-4c03-bf06-87d9afe31ba1.json",
+      "logicalName": "skin/10",
+      "skinId": 10,
+      "texturePath": "remoteBundles/internalSkins/native/eb/eba7f350-2372-44f2-bedf-7c7e58c2b0df.png"
+    },
+    {
+      "atlasInput": "tools/snake-s1-assets/source/internal-skins/11/atlas.json",
+      "atlasOutputSha256": "a128e76652ae22244c1986548ac5fb1ac2513165281b9acd38d0ef96e9a5d27f",
+      "atlasPath": "remoteBundles/internalSkins/import/09/09cc34992.json",
+      "bodyInput": "tools/snake-s1-assets/source/internal-skins/11/body.json",
+      "bodyOutputSha256": "1487025249510193ae93c5eb88116d03cc0a718c4c88de0a6146ac4ef1b473d4",
+      "bodyPath": "remoteBundles/internalSkins/import/e6/e6908136-e5cf-4a43-9930-1fbe506c4801.json",
+      "logicalName": "skin/11",
+      "skinId": 11,
+      "texturePath": "remoteBundles/internalSkins/native/c6/c6b650b1-3a1b-411c-b669-ab954ce39ec1.png"
+    },
+    {
+      "atlasInput": "tools/snake-s1-assets/source/internal-skins/101/atlas.json",
+      "atlasOutputSha256": "9754e5af6ff72b3806428c29d724838edc6b409cd7fb6da2b49688194b11e486",
+      "atlasPath": "remoteBundles/internalSkins/import/07/078073f21.json",
+      "bodyInput": "tools/snake-s1-assets/source/internal-skins/101/body.json",
+      "bodyOutputSha256": "6b0d8f0256a84e7ca94a0dec351c2da73016968ef4435997f5a7d49ca568664c",
+      "bodyPath": "remoteBundles/internalSkins/import/ef/efd6ab21-1c5f-420a-b053-da998f595ae2.json",
+      "logicalName": "skin/101",
+      "skinId": 101,
+      "texturePath": "remoteBundles/internalSkins/native/50/50ab8f5b-b702-4a77-9fbf-b4edea518ec2.png"
+    },
+    {
+      "atlasInput": "tools/snake-s1-assets/source/internal-skins/111/atlas.json",
+      "atlasOutputSha256": "c7cce4bbaa4c6ae484718959c80ce6b9b4be0f29777bab90387e8ab9724626c5",
+      "atlasPath": "remoteBundles/internalSkins/import/0c/0c3882a0d.json",
+      "bodyInput": "tools/snake-s1-assets/source/internal-skins/111/body.json",
+      "bodyOutputSha256": "88f82b827c30513d2ac8f5563c780e5d48ea4973f1634bcaf909bd672d589a9c",
+      "bodyPath": "remoteBundles/internalSkins/import/ce/cebd7b05-ca0f-4feb-b530-2b4e873631bf.json",
+      "logicalName": "skin/111",
+      "skinId": 111,
+      "texturePath": "remoteBundles/internalSkins/native/f6/f6ae987f-03ea-4abc-ab5f-14519d4f528f.png"
+    },
+    {
+      "atlasInput": "tools/snake-s1-assets/source/internal-skins/112/atlas.json",
+      "atlasOutputSha256": "6228f705d40a6be689ef54572fa7947a9705bfeb7e7cb470b81e4579d67cbe80",
+      "atlasPath": "remoteBundles/internalSkins/import/0a/0ad5a7ac9.json",
+      "bodyInput": "tools/snake-s1-assets/source/internal-skins/112/body.json",
+      "bodyOutputSha256": "eea40d19caffce6b4878e7b9ac9d5d1bd2b9fc19062d43946035f9017d23c4f6",
+      "bodyPath": "remoteBundles/internalSkins/import/53/53d852cd-470d-4cab-b1de-31e44f882c8c.json",
+      "logicalName": "skin/112",
+      "skinId": 112,
+      "texturePath": "remoteBundles/internalSkins/native/38/386c0342-9c00-42e2-a182-7363f92592dc.png"
+    },
+    {
+      "atlasInput": "tools/snake-s1-assets/source/internal-skins/132/atlas.json",
+      "atlasOutputSha256": "7e7f202689ee38322a8065b1a7d0bcdfedb71e73188abaabb125ab98f9e6c39c",
+      "atlasPath": "remoteBundles/internalSkins/import/09/091c078dd.json",
+      "bodyInput": "tools/snake-s1-assets/source/internal-skins/132/body.json",
+      "bodyOutputSha256": "60852e67e2fd745061ad37488ebdb88ddc2641ef7170a6e9a355b036831fada7",
+      "bodyPath": "remoteBundles/internalSkins/import/f4/f48d469e-77d2-4495-b444-ef109e9d1286.json",
+      "logicalName": "skin/132",
+      "skinId": 132,
+      "texturePath": "remoteBundles/internalSkins/native/d9/d9e48000-cea0-4005-8944-6b13071341df.png"
+    },
+    {
+      "atlasInput": "tools/snake-s1-assets/source/internal-skins/133/atlas.json",
+      "atlasOutputSha256": "6f97781a4b11497c901853f0735b56f51ece4d28bf33bd35eaf069400c7d8494",
+      "atlasPath": "remoteBundles/internalSkins/import/0e/0e89f167e.json",
+      "bodyInput": "tools/snake-s1-assets/source/internal-skins/133/body.json",
+      "bodyOutputSha256": "2450f50791e56bbb5a5b83fed811687cb9056c0a29d87592845d8493ae691836",
+      "bodyPath": "remoteBundles/internalSkins/import/51/51278874-0447-45ae-9970-7faddb02cbb1.json",
+      "logicalName": "skin/133",
+      "skinId": 133,
+      "texturePath": "remoteBundles/internalSkins/native/0b/0b656626-a645-44a7-93d0-4693e3de0752.png"
+    },
+    {
+      "atlasInput": "tools/snake-s1-assets/source/internal-skins/139/atlas.json",
+      "atlasOutputSha256": "55d2ef512fd4a408c46151bc6dfa7fa400257862665456a3d1aabbe58cf0d216",
+      "atlasPath": "remoteBundles/internalSkins/import/0f/0f761deb7.json",
+      "bodyInput": "tools/snake-s1-assets/source/internal-skins/139/body.json",
+      "bodyOutputSha256": "4b7640654739c6e11bbf2157f9aed04830235f108da525eb654529e9daedbbd0",
+      "bodyPath": "remoteBundles/internalSkins/import/41/41f3c97e-520e-43a7-9254-4497febebcb1.json",
+      "logicalName": "skin/139",
+      "skinId": 139,
+      "texturePath": "remoteBundles/internalSkins/native/b5/b5af9822-d47b-4be5-a586-1640cd18e117.png"
+    },
+    {
+      "atlasInput": "tools/snake-s1-assets/source/internal-skins/401/atlas.json",
+      "atlasOutputSha256": "a6accc41c907aee99d7fc1c1964effb52af0dddc4f8fb52c70d10082314a7975",
+      "atlasPath": "remoteBundles/internalSkins/import/0a/0ab684d73.json",
+      "bodyInput": "tools/snake-s1-assets/source/internal-skins/401/body.json",
+      "bodyOutputSha256": "be64494e85f18c6011c9f5079b15edf7f41dd00c3fde6cd97fc79f78c6d07d22",
+      "bodyPath": "remoteBundles/internalSkins/import/ab/abd9f59c-c538-48fa-a9ca-b82577e44254.json",
+      "logicalName": "skin/401",
+      "skinId": 401,
+      "texturePath": "remoteBundles/internalSkins/native/80/8064c44e-b475-43dd-a5be-7a6b60a8d947.png"
+    },
+    {
+      "atlasInput": "tools/snake-s1-assets/source/internal-skins/403/atlas.json",
+      "atlasOutputSha256": "556c2241b80565778edb83f3ed0066f9ad2db235038593a0117d33c37dff83f9",
+      "atlasPath": "remoteBundles/internalSkins/import/0a/0a5a50d4d.json",
+      "bodyInput": "tools/snake-s1-assets/source/internal-skins/403/body.json",
+      "bodyOutputSha256": "8c88b90f488ff8c30c576840eefaff05f913ca065de7acd374ec7988c28bf87d",
+      "bodyPath": "remoteBundles/internalSkins/import/fc/fc911c16-c9a6-478f-b313-332a1484a9da.json",
+      "logicalName": "skin/403",
+      "skinId": 403,
+      "texturePath": "remoteBundles/internalSkins/native/24/24f75358-7947-4b88-b9f5-c153f892d215.png"
+    },
+    {
+      "atlasInput": "tools/snake-s1-assets/source/internal-skins/411/atlas.json",
+      "atlasOutputSha256": "d100b8908a9aca4d1cba71276487c1e8b27bd31348efed23c47723027484ba1a",
+      "atlasPath": "remoteBundles/internalSkins/import/05/05f0031a5.json",
+      "bodyInput": "tools/snake-s1-assets/source/internal-skins/411/body.json",
+      "bodyOutputSha256": "d57c38fe1ac8b3dc1e0b0c8442813c89c3065d59f7e36f4d45a750519cfae6cd",
+      "bodyPath": "remoteBundles/internalSkins/import/3c/3c46fd33-1bce-422f-aa65-d6e2071edf73.json",
+      "logicalName": "skin/411",
+      "skinId": 411,
+      "texturePath": "remoteBundles/internalSkins/native/6b/6bccd73e-6254-4978-8ddf-2e968e6eedb8.png"
+    },
+    {
+      "atlasInput": "tools/snake-s1-assets/source/internal-skins/701/atlas.json",
+      "atlasOutputSha256": "0de3070d1bc06f0091cb3080b45e6bb3cb1b3e69ae507a3e83062c5ec1c0d8b0",
+      "atlasPath": "remoteBundles/internalSkins/import/04/04d4563cb.json",
+      "bodyInput": "tools/snake-s1-assets/source/internal-skins/701/body.json",
+      "bodyOutputSha256": "d4265d0376478491ecf0566f6bf68bb0bdec63747514cc2ab8d79a6a328a25f9",
+      "bodyPath": "remoteBundles/internalSkins/import/dd/dd46d749-76a7-47ea-b91a-fcfbdc331f44.json",
+      "logicalName": "skin/701",
+      "skinId": 701,
+      "texturePath": "remoteBundles/internalSkins/native/10/10103e1e-6a50-4066-946f-db737489e951.png"
+    },
+    {
+      "atlasInput": "tools/snake-s1-assets/source/presentation/food.atlas.json",
+      "atlasOutputSha256": "a7f67edd8588d26d2c44b55d947319f910d6b3dcd7090ba92a8eb24518dd8e5f",
+      "atlasPath": "remoteBundles/atlas/import/0b/0b5b8ce00.json",
+      "logicalName": "presentation/food",
+      "presentation": "food",
+      "texturePath": "remoteBundles/atlas/native/5d/5dbc7df2-bb0c-428c-a3b6-d69c30c2aba4.png"
+    },
+    {
+      "atlasInput": "tools/snake-s1-assets/source/presentation/speedFx.atlas.json",
+      "atlasOutputSha256": "94619baf940f06d201a625a419a71d5aebca75ca4ddc9577a5563d3d1da0519f",
+      "atlasPath": "remoteBundles/atlas/import/0c/0cadb6adc.json",
+      "logicalName": "presentation/speedFx",
+      "presentation": "speedFx",
+      "texturePath": "remoteBundles/atlas/native/61/61d6e125-ee8e-475a-9ff2-354fb4cddab2.png"
+    },
+    {
+      "atlasInput": "tools/snake-s1-assets/source/presentation/extras.atlas.json",
+      "atlasOutputSha256": "578265768234e954a1aaaef57dc444efc433ff6ceb21368978281c2896e34df6",
+      "atlasPath": "remoteBundles/atlas/import/0d/0d5fad07d.json",
+      "logicalName": "presentation/extras",
+      "presentation": "extras",
+      "texturePath": "remoteBundles/atlas/native/67/67069467-2aa8-4d48-b05e-b6baa743e0f4.png"
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceArchiveRoot": "/Users/kimi/work/tanchishe/wegameVersion",
+  "sourceFiles": [
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/atlas/config.json",
+      "purposes": [
+        "resolve food and effect presentation resources"
+      ],
+      "resolvedPath": "remoteBundles/atlas/config.json",
+      "resolvedSha256": "228866ebddfc1fbcdd4d19a361af6bb9dd2debfa945d9cf9e59c0d961c5d55db",
+      "sha256": "228866ebddfc1fbcdd4d19a361af6bb9dd2debfa945d9cf9e59c0d961c5d55db",
+      "size": 11514
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/atlas/import/0b/0b5b8ce00.json",
+      "purposes": [
+        "food presentation frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/atlas/import/0b/0b5b8ce00.json",
+      "resolvedSha256": "17466e2ede3324ea6a28857cc80a28ebac94d42285a61f4f7d18a3c71f0c098b",
+      "sha256": "17466e2ede3324ea6a28857cc80a28ebac94d42285a61f4f7d18a3c71f0c098b",
+      "size": 5570
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/atlas/import/0c/0cadb6adc.json",
+      "purposes": [
+        "speedFx presentation frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/atlas/import/0c/0cadb6adc.json",
+      "resolvedSha256": "b4e0327651bc6bd7a36f78ccb22845e6187ad93163625defcb0455e9eb750e27",
+      "sha256": "b4e0327651bc6bd7a36f78ccb22845e6187ad93163625defcb0455e9eb750e27",
+      "size": 2491
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/atlas/import/0d/0d5fad07d.json",
+      "purposes": [
+        "extras presentation frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/atlas/import/0d/0d5fad07d.json",
+      "resolvedSha256": "ba2949ebd1408e8ec6c9c0b9af98c2a9d09bbe2e7f88bacc8d3006a151e32409",
+      "sha256": "ba2949ebd1408e8ec6c9c0b9af98c2a9d09bbe2e7f88bacc8d3006a151e32409",
+      "size": 14630
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/atlas/native/5d/5dbc7df2-bb0c-428c-a3b6-d69c30c2aba4.png",
+      "purposes": [
+        "presentation/food/texture"
+      ],
+      "resolvedPath": "remoteBundles/atlas/native/5d/5dbc7df2-bb0c-428c-a3b6-d69c30c2aba4.png",
+      "resolvedSha256": "66db78f30a3b0fcc17f2d0913f2dd782377b3cb904ef9206b47f54dc9c58a4b0",
+      "sha256": "66db78f30a3b0fcc17f2d0913f2dd782377b3cb904ef9206b47f54dc9c58a4b0",
+      "size": 2540
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/atlas/native/61/61d6e125-ee8e-475a-9ff2-354fb4cddab2.png",
+      "purposes": [
+        "presentation/speedFx/texture"
+      ],
+      "resolvedPath": "remoteBundles/atlas/native/61/61d6e125-ee8e-475a-9ff2-354fb4cddab2.png",
+      "resolvedSha256": "56677edbe061bd252f506aeded7a5b964e0f152ec9de1566d8707e19b396035e",
+      "sha256": "56677edbe061bd252f506aeded7a5b964e0f152ec9de1566d8707e19b396035e",
+      "size": 3803
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/atlas/native/67/67069467-2aa8-4d48-b05e-b6baa743e0f4.png",
+      "purposes": [
+        "presentation/extras/texture"
+      ],
+      "resolvedPath": "remoteBundles/atlas/native/67/67069467-2aa8-4d48-b05e-b6baa743e0f4.png",
+      "resolvedSha256": "01c89919e26b4aeea08c5381b26f098aa18ffc4661896c6f7d9d7abd334b9288",
+      "sha256": "01c89919e26b4aeea08c5381b26f098aa18ffc4661896c6f7d9d7abd334b9288",
+      "size": 11726
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/audio/native/3b/3b1fa3f8-94a9-4b68-9bae-9c91c58c0914.mp3",
+      "purposes": [
+        "audio/death"
+      ],
+      "resolvedPath": "remoteBundles/audio/native/3b/3b1fa3f8-94a9-4b68-9bae-9c91c58c0914.mp3",
+      "resolvedSha256": "e7efb684164c4bd63db627eb03131fa743b3e55ce75daa6bce30450788c9406c",
+      "sha256": "e7efb684164c4bd63db627eb03131fa743b3e55ce75daa6bce30450788c9406c",
+      "size": 1715
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/audio/native/45/454df9b6-56c4-43c8-9dfe-8adfc4ecdf43.mp3",
+      "purposes": [
+        "audio/kill"
+      ],
+      "resolvedPath": "remoteBundles/audio/native/45/454df9b6-56c4-43c8-9dfe-8adfc4ecdf43.mp3",
+      "resolvedSha256": "41e06994f05a12898dd3dddfdbba11b9fdee783efe4d63c499349d2cfe09d3a0",
+      "sha256": "41e06994f05a12898dd3dddfdbba11b9fdee783efe4d63c499349d2cfe09d3a0",
+      "size": 59604
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/audio/native/88/88c98762-8c62-4dd6-a0c0-237a778cc8b6.mp3",
+      "purposes": [
+        "audio/eat-food"
+      ],
+      "resolvedPath": "remoteBundles/audio/native/88/88c98762-8c62-4dd6-a0c0-237a778cc8b6.mp3",
+      "resolvedSha256": "33a86d8e738ea9120d1abd09c1b6234c83e972b09e071c4ecbcd05ba0e575822",
+      "sha256": "33a86d8e738ea9120d1abd09c1b6234c83e972b09e071c4ecbcd05ba0e575822",
+      "size": 23850
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/audio/native/c2/c280b506-d28c-4947-8f4b-d8b6f490f5ca.mp3",
+      "purposes": [
+        "audio/button"
+      ],
+      "resolvedPath": "remoteBundles/audio/native/c2/c280b506-d28c-4947-8f4b-d8b6f490f5ca.mp3",
+      "resolvedSha256": "00428dcf5dc443a71e4ef0df3f70f886bba5da81194f12be97fa738dfa070dcf",
+      "sha256": "00428dcf5dc443a71e4ef0df3f70f886bba5da81194f12be97fa738dfa070dcf",
+      "size": 50984
+    },
+    {
+      "kind": "symbolicLink",
+      "linkTarget": "../3f/3f508484-06e4-4a64-b2ea-46e4e25fe41d.mp3",
+      "path": "remoteBundles/audio/native/d1/d1effd86-7e5e-4c82-bb88-9a27c2ca4e4b.mp3",
+      "purposes": [
+        "audio/time-over"
+      ],
+      "resolvedPath": "remoteBundles/audio/native/3f/3f508484-06e4-4a64-b2ea-46e4e25fe41d.mp3",
+      "resolvedSha256": "e687e745fe6d93925eea349ef67857da780379bd086c37f27186b91a3e301a8f",
+      "sha256": "e687e745fe6d93925eea349ef67857da780379bd086c37f27186b91a3e301a8f",
+      "size": 11633
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/audio/native/fa/fa4e17a1-8c3e-4340-922d-50fcf4dfa538.mp3",
+      "purposes": [
+        "audio/eat-wreck"
+      ],
+      "resolvedPath": "remoteBundles/audio/native/fa/fa4e17a1-8c3e-4340-922d-50fcf4dfa538.mp3",
+      "resolvedSha256": "b556777b04899444bfee3a68a9829fa646fc46f772b34abad8f19612dc867ea6",
+      "sha256": "b556777b04899444bfee3a68a9829fa646fc46f772b34abad8f19612dc867ea6",
+      "size": 21741
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/gameClassic/native/43/43bd6cef-1ea5-49a8-9ee6-35fe332b39c6.png",
+      "purposes": [
+        "wall/light"
+      ],
+      "resolvedPath": "remoteBundles/gameClassic/native/43/43bd6cef-1ea5-49a8-9ee6-35fe332b39c6.png",
+      "resolvedSha256": "3e05de6038c643c725ba59782d024959e949f89bf8087b51f3db310bf4703ede",
+      "sha256": "3e05de6038c643c725ba59782d024959e949f89bf8087b51f3db310bf4703ede",
+      "size": 498
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/gameClassic/native/ae/aed7b327-a69a-4b9c-a8e3-310bf6cd5cf1.png",
+      "purposes": [
+        "wall/dark"
+      ],
+      "resolvedPath": "remoteBundles/gameClassic/native/ae/aed7b327-a69a-4b9c-a8e3-310bf6cd5cf1.png",
+      "resolvedSha256": "e02ebb01563ab418947b86f131bcb50598bd2446687f51ab022c0b5110ceeaf1",
+      "sha256": "e02ebb01563ab418947b86f131bcb50598bd2446687f51ab022c0b5110ceeaf1",
+      "size": 498
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/config.json",
+      "purposes": [
+        "resolve the 16 frozen internal skin resources"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/config.json",
+      "resolvedSha256": "090a55321f58e8b75677cc54b3b40152f493edabe0549bd3cee4ed6aa8c1fdaa",
+      "sha256": "090a55321f58e8b75677cc54b3b40152f493edabe0549bd3cee4ed6aa8c1fdaa",
+      "size": 7929
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/02/02df142b0.json",
+      "purposes": [
+        "skin 4 atlas frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/02/02df142b0.json",
+      "resolvedSha256": "28445fe63a7d2fc7b5b911ae84759e491dd6d39dd3682c07bd0b874216506375",
+      "sha256": "28445fe63a7d2fc7b5b911ae84759e491dd6d39dd3682c07bd0b874216506375",
+      "size": 2201
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/04/04d4563cb.json",
+      "purposes": [
+        "skin 701 atlas frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/04/04d4563cb.json",
+      "resolvedSha256": "11a4e7332bc6ed4fb5ceb941b3159a55e93fbf263dd1c3820dde4a0332c73297",
+      "sha256": "11a4e7332bc6ed4fb5ceb941b3159a55e93fbf263dd1c3820dde4a0332c73297",
+      "size": 7771
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/05/05349dc4-1bb3-4a17-acb8-c90f04af3ca4.json",
+      "purposes": [
+        "skin 4 body configuration"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/05/05349dc4-1bb3-4a17-acb8-c90f04af3ca4.json",
+      "resolvedSha256": "9ead46f065bb577d16d3bb4f23deb5cddcc44b4615e3f88ba10110c50d743f7d",
+      "sha256": "9ead46f065bb577d16d3bb4f23deb5cddcc44b4615e3f88ba10110c50d743f7d",
+      "size": 1049
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/05/05f0031a5.json",
+      "purposes": [
+        "skin 411 atlas frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/05/05f0031a5.json",
+      "resolvedSha256": "75dd0daf9a2bcdb8f5a90bc49292000869cd0b84cbfbb7d2e6c4e56923d4ad43",
+      "sha256": "75dd0daf9a2bcdb8f5a90bc49292000869cd0b84cbfbb7d2e6c4e56923d4ad43",
+      "size": 5926
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/06/061ae6f08.json",
+      "purposes": [
+        "skin 2 atlas frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/06/061ae6f08.json",
+      "resolvedSha256": "7838030fcb2819eaeff751af2788f912f1b230d646a7466cc18cb28738814fa8",
+      "sha256": "7838030fcb2819eaeff751af2788f912f1b230d646a7466cc18cb28738814fa8",
+      "size": 2249
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/07/072e2aaaf.json",
+      "purposes": [
+        "skin 3 atlas frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/07/072e2aaaf.json",
+      "resolvedSha256": "b66c75383a0a13e67a5630ed111c10d372495f15abef67621b077a9facf6b0b8",
+      "sha256": "b66c75383a0a13e67a5630ed111c10d372495f15abef67621b077a9facf6b0b8",
+      "size": 2201
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/07/07765dd68.json",
+      "purposes": [
+        "skin 10 atlas frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/07/07765dd68.json",
+      "resolvedSha256": "027bfa0da42088fdbbd1a5f7d68a034fd65b18e103b7558bdee61b0ae0074b31",
+      "sha256": "027bfa0da42088fdbbd1a5f7d68a034fd65b18e103b7558bdee61b0ae0074b31",
+      "size": 1656
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/07/078073f21.json",
+      "purposes": [
+        "skin 101 atlas frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/07/078073f21.json",
+      "resolvedSha256": "62a3e23325a50c24611c670511faa295bd19a8b75354c7af82daf87964e6ece3",
+      "sha256": "62a3e23325a50c24611c670511faa295bd19a8b75354c7af82daf87964e6ece3",
+      "size": 4163
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/09/091c078dd.json",
+      "purposes": [
+        "skin 132 atlas frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/09/091c078dd.json",
+      "resolvedSha256": "ca32dcaee7b0e9339938dadc658420d213731218be89e22c42cfcdab6dac04ab",
+      "sha256": "ca32dcaee7b0e9339938dadc658420d213731218be89e22c42cfcdab6dac04ab",
+      "size": 2863
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/09/09cc34992.json",
+      "purposes": [
+        "skin 11 atlas frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/09/09cc34992.json",
+      "resolvedSha256": "4768f6b7f3865eec6059b8685e770a0b9d2e2865d4d7a1486076c70aa7c32b7d",
+      "sha256": "4768f6b7f3865eec6059b8685e770a0b9d2e2865d4d7a1486076c70aa7c32b7d",
+      "size": 2249
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/0a/0a5a50d4d.json",
+      "purposes": [
+        "skin 403 atlas frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/0a/0a5a50d4d.json",
+      "resolvedSha256": "a31adeba0ff155d018fa9e1784e3c1277507412aead820d0077077cc38206139",
+      "sha256": "a31adeba0ff155d018fa9e1784e3c1277507412aead820d0077077cc38206139",
+      "size": 3519
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/0a/0ab684d73.json",
+      "purposes": [
+        "skin 401 atlas frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/0a/0ab684d73.json",
+      "resolvedSha256": "dea5510b4bd4bcb30c83cbaf1045703a912e6691edbabf727fc86165e85e807e",
+      "sha256": "dea5510b4bd4bcb30c83cbaf1045703a912e6691edbabf727fc86165e85e807e",
+      "size": 3474
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/0a/0ad5a7ac9.json",
+      "purposes": [
+        "skin 112 atlas frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/0a/0ad5a7ac9.json",
+      "resolvedSha256": "ee33b70a51cc6097529d2d362590272b296a520ca2eb3741c735f1f064f51cdd",
+      "sha256": "ee33b70a51cc6097529d2d362590272b296a520ca2eb3741c735f1f064f51cdd",
+      "size": 2257
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/0b/0bc85f195.json",
+      "purposes": [
+        "skin 1 atlas frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/0b/0bc85f195.json",
+      "resolvedSha256": "3fecf433e3a6b2ffd4e452d0f946113b0a013a04a5fe3c3cddef39693bac5925",
+      "sha256": "3fecf433e3a6b2ffd4e452d0f946113b0a013a04a5fe3c3cddef39693bac5925",
+      "size": 2255
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/0c/0c3882a0d.json",
+      "purposes": [
+        "skin 111 atlas frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/0c/0c3882a0d.json",
+      "resolvedSha256": "b0a506b659cad75fdec880939dd14e5c79b8725c7feba0162a58ab0698a313d7",
+      "sha256": "b0a506b659cad75fdec880939dd14e5c79b8725c7feba0162a58ab0698a313d7",
+      "size": 2248
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/0e/0e89f167e.json",
+      "purposes": [
+        "skin 133 atlas frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/0e/0e89f167e.json",
+      "resolvedSha256": "b0f77a98fe07b8cd9b6b1d5a2313ec0309e51a2a14c79a5a6cb63cfb6023ef57",
+      "sha256": "b0f77a98fe07b8cd9b6b1d5a2313ec0309e51a2a14c79a5a6cb63cfb6023ef57",
+      "size": 2863
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/0f/0f761deb7.json",
+      "purposes": [
+        "skin 139 atlas frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/0f/0f761deb7.json",
+      "resolvedSha256": "9e8646a8a4305d8c69b95faf7434de9ad8a251fca43cfa8989c3e4d0290e0ce0",
+      "sha256": "9e8646a8a4305d8c69b95faf7434de9ad8a251fca43cfa8989c3e4d0290e0ce0",
+      "size": 2863
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/3c/3c46fd33-1bce-422f-aa65-d6e2071edf73.json",
+      "purposes": [
+        "skin 411 body configuration"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/3c/3c46fd33-1bce-422f-aa65-d6e2071edf73.json",
+      "resolvedSha256": "dea1c904d8c4c0a3b25cd6e5f9c653b33c41bd39f27847460f6f111e5eb9c906",
+      "sha256": "dea1c904d8c4c0a3b25cd6e5f9c653b33c41bd39f27847460f6f111e5eb9c906",
+      "size": 4201
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/41/41f3c97e-520e-43a7-9254-4497febebcb1.json",
+      "purposes": [
+        "skin 139 body configuration"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/41/41f3c97e-520e-43a7-9254-4497febebcb1.json",
+      "resolvedSha256": "edfd7178e1982b9a74bd78bb2f2743a37d19029d54f50e2d46ce5841a8fb903c",
+      "sha256": "edfd7178e1982b9a74bd78bb2f2743a37d19029d54f50e2d46ce5841a8fb903c",
+      "size": 2636
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/51/51278874-0447-45ae-9970-7faddb02cbb1.json",
+      "purposes": [
+        "skin 133 body configuration"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/51/51278874-0447-45ae-9970-7faddb02cbb1.json",
+      "resolvedSha256": "b48be08e19f89a1b22f0d6cc3f50f6f670b07c7609ff823a62990fbef95443dd",
+      "sha256": "b48be08e19f89a1b22f0d6cc3f50f6f670b07c7609ff823a62990fbef95443dd",
+      "size": 2066
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/53/53d852cd-470d-4cab-b1de-31e44f882c8c.json",
+      "purposes": [
+        "skin 112 body configuration"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/53/53d852cd-470d-4cab-b1de-31e44f882c8c.json",
+      "resolvedSha256": "baa32bfb826b1d56f64d63167a1e34a37943087e34a39bf5e03d59b7b776fefc",
+      "sha256": "baa32bfb826b1d56f64d63167a1e34a37943087e34a39bf5e03d59b7b776fefc",
+      "size": 2083
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/72/72b80015-cabc-4d99-bce7-b6bb7a02e311.json",
+      "purposes": [
+        "skin 2 body configuration"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/72/72b80015-cabc-4d99-bce7-b6bb7a02e311.json",
+      "resolvedSha256": "00deff420ab86f85cabecf93f43b0a96be09a112e45502dc0bb87d7620b1ea0c",
+      "sha256": "00deff420ab86f85cabecf93f43b0a96be09a112e45502dc0bb87d7620b1ea0c",
+      "size": 1566
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/86/86ea2dd3-88d9-4c03-bf06-87d9afe31ba1.json",
+      "purposes": [
+        "skin 10 body configuration"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/86/86ea2dd3-88d9-4c03-bf06-87d9afe31ba1.json",
+      "resolvedSha256": "f3dc63ee3a53c8d1ab7fb1ed97bd3e3be3fb8071462bb3e387d852f15e7e5c1e",
+      "sha256": "f3dc63ee3a53c8d1ab7fb1ed97bd3e3be3fb8071462bb3e387d852f15e7e5c1e",
+      "size": 1579
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/98/98cc5f28-9a15-4d48-985a-337b3bf6b540.json",
+      "purposes": [
+        "skin 3 body configuration"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/98/98cc5f28-9a15-4d48-985a-337b3bf6b540.json",
+      "resolvedSha256": "8fbcb3d0a25a2455a56cf907af77dbe042643ef89cadc1d5846d4fd8e46b0ef7",
+      "sha256": "8fbcb3d0a25a2455a56cf907af77dbe042643ef89cadc1d5846d4fd8e46b0ef7",
+      "size": 1043
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/ab/abd9f59c-c538-48fa-a9ca-b82577e44254.json",
+      "purposes": [
+        "skin 401 body configuration"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/ab/abd9f59c-c538-48fa-a9ca-b82577e44254.json",
+      "resolvedSha256": "bd424bf4efb218ab6193850954f311126575dc3177246a5ffc177711a70c2c21",
+      "sha256": "bd424bf4efb218ab6193850954f311126575dc3177246a5ffc177711a70c2c21",
+      "size": 3171
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/b5/b5170172-b297-4e5d-a47a-0197c9195a9d.json",
+      "purposes": [
+        "skin 1 body configuration"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/b5/b5170172-b297-4e5d-a47a-0197c9195a9d.json",
+      "resolvedSha256": "5be2b6fb8c84442c85c26d8e87934af54e17be8363bc5ead36d0a02ab49b0c87",
+      "sha256": "5be2b6fb8c84442c85c26d8e87934af54e17be8363bc5ead36d0a02ab49b0c87",
+      "size": 1737
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/ce/cebd7b05-ca0f-4feb-b530-2b4e873631bf.json",
+      "purposes": [
+        "skin 111 body configuration"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/ce/cebd7b05-ca0f-4feb-b530-2b4e873631bf.json",
+      "resolvedSha256": "968e9f7a23486a08b3aab14ad5afd9ad5c379fa81abd2c3326c52d385706e806",
+      "sha256": "968e9f7a23486a08b3aab14ad5afd9ad5c379fa81abd2c3326c52d385706e806",
+      "size": 2068
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/dd/dd46d749-76a7-47ea-b91a-fcfbdc331f44.json",
+      "purposes": [
+        "skin 701 body configuration"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/dd/dd46d749-76a7-47ea-b91a-fcfbdc331f44.json",
+      "resolvedSha256": "cbaa22dfca521de6bb880e4f5687ff18b892f8a4d2926b563cb89626c585f935",
+      "sha256": "cbaa22dfca521de6bb880e4f5687ff18b892f8a4d2926b563cb89626c585f935",
+      "size": 2872
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/e6/e6908136-e5cf-4a43-9930-1fbe506c4801.json",
+      "purposes": [
+        "skin 11 body configuration"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/e6/e6908136-e5cf-4a43-9930-1fbe506c4801.json",
+      "resolvedSha256": "d955e352de1778c401ef5177f4abca36070fc69f0e490d7c7f7e45015de277cb",
+      "sha256": "d955e352de1778c401ef5177f4abca36070fc69f0e490d7c7f7e45015de277cb",
+      "size": 2064
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/ef/efd6ab21-1c5f-420a-b053-da998f595ae2.json",
+      "purposes": [
+        "skin 101 body configuration"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/ef/efd6ab21-1c5f-420a-b053-da998f595ae2.json",
+      "resolvedSha256": "880c2c0a0aa8f93fd744ad51d45bf70c7dcb443f8e772566fa1c24bfde3173ea",
+      "sha256": "880c2c0a0aa8f93fd744ad51d45bf70c7dcb443f8e772566fa1c24bfde3173ea",
+      "size": 4650
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/f4/f48d469e-77d2-4495-b444-ef109e9d1286.json",
+      "purposes": [
+        "skin 132 body configuration"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/f4/f48d469e-77d2-4495-b444-ef109e9d1286.json",
+      "resolvedSha256": "d84880d7d8789b6db86dc38796c6583b0acbb420e99f7f97b38bf93142b8301b",
+      "sha256": "d84880d7d8789b6db86dc38796c6583b0acbb420e99f7f97b38bf93142b8301b",
+      "size": 2066
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/fc/fc911c16-c9a6-478f-b313-332a1484a9da.json",
+      "purposes": [
+        "skin 403 body configuration"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/fc/fc911c16-c9a6-478f-b313-332a1484a9da.json",
+      "resolvedSha256": "263d79a84df78fea67af3e5320bfda4c010ba4f9ef0e642e94877ed99d412266",
+      "sha256": "263d79a84df78fea67af3e5320bfda4c010ba4f9ef0e642e94877ed99d412266",
+      "size": 2554
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/native/0b/0b656626-a645-44a7-93d0-4693e3de0752.png",
+      "purposes": [
+        "skin/133/texture"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/native/0b/0b656626-a645-44a7-93d0-4693e3de0752.png",
+      "resolvedSha256": "ca79e87ef9fe4d26e49011fdf4985d5ec41619a2c857d2e8d3d6e6fe5f267397",
+      "sha256": "ca79e87ef9fe4d26e49011fdf4985d5ec41619a2c857d2e8d3d6e6fe5f267397",
+      "size": 3371
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/native/10/10103e1e-6a50-4066-946f-db737489e951.png",
+      "purposes": [
+        "skin/701/texture"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/native/10/10103e1e-6a50-4066-946f-db737489e951.png",
+      "resolvedSha256": "e7519f28b0fa5da9220ccd933a1a6203cd62a58fb55a5ff42d1282b4c42731ee",
+      "sha256": "e7519f28b0fa5da9220ccd933a1a6203cd62a58fb55a5ff42d1282b4c42731ee",
+      "size": 8748
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/native/24/24f75358-7947-4b88-b9f5-c153f892d215.png",
+      "purposes": [
+        "skin/403/texture"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/native/24/24f75358-7947-4b88-b9f5-c153f892d215.png",
+      "resolvedSha256": "22b5b3d117adae765b46a9bd92ced15af9e518b5ec89a0322159a6563a3e7e9e",
+      "sha256": "22b5b3d117adae765b46a9bd92ced15af9e518b5ec89a0322159a6563a3e7e9e",
+      "size": 3665
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/native/38/386c0342-9c00-42e2-a182-7363f92592dc.png",
+      "purposes": [
+        "skin/112/texture"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/native/38/386c0342-9c00-42e2-a182-7363f92592dc.png",
+      "resolvedSha256": "df6b073b29cd8789ce68c8a9853931238cd6d86720bffac461b9ffa1d2a8e618",
+      "sha256": "df6b073b29cd8789ce68c8a9853931238cd6d86720bffac461b9ffa1d2a8e618",
+      "size": 2862
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/native/4e/4e50d45b-da2a-44b2-b03d-0213b2525c83.png",
+      "purposes": [
+        "skin/1/texture"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/native/4e/4e50d45b-da2a-44b2-b03d-0213b2525c83.png",
+      "resolvedSha256": "0a5ccf9e5b838353d674b8b8225ae556ed7d5a705acb6094d93f748448829aab",
+      "sha256": "0a5ccf9e5b838353d674b8b8225ae556ed7d5a705acb6094d93f748448829aab",
+      "size": 4134
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/native/50/50ab8f5b-b702-4a77-9fbf-b4edea518ec2.png",
+      "purposes": [
+        "skin/101/texture"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/native/50/50ab8f5b-b702-4a77-9fbf-b4edea518ec2.png",
+      "resolvedSha256": "6fcc926e289b9f6d1f4c6c8d23b4ac1dfc5288d9f4c23ef811b66cb84188fddf",
+      "sha256": "6fcc926e289b9f6d1f4c6c8d23b4ac1dfc5288d9f4c23ef811b66cb84188fddf",
+      "size": 4646
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/native/6b/6bccd73e-6254-4978-8ddf-2e968e6eedb8.png",
+      "purposes": [
+        "skin/411/texture"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/native/6b/6bccd73e-6254-4978-8ddf-2e968e6eedb8.png",
+      "resolvedSha256": "f4bffb4dd21285379367e21759d11c102d7e06b440d8d5099ba7b1b05d0d3111",
+      "sha256": "f4bffb4dd21285379367e21759d11c102d7e06b440d8d5099ba7b1b05d0d3111",
+      "size": 8045
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/native/80/8064c44e-b475-43dd-a5be-7a6b60a8d947.png",
+      "purposes": [
+        "skin/401/texture"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/native/80/8064c44e-b475-43dd-a5be-7a6b60a8d947.png",
+      "resolvedSha256": "a5d2fe784ce17ce7bb63aea04a5a98a0119a11fa274b7f8fc3da6803219dd991",
+      "sha256": "a5d2fe784ce17ce7bb63aea04a5a98a0119a11fa274b7f8fc3da6803219dd991",
+      "size": 3722
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/native/94/9444d0fe-5a5b-49a0-92e5-63371e113dee.png",
+      "purposes": [
+        "skin/2/texture"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/native/94/9444d0fe-5a5b-49a0-92e5-63371e113dee.png",
+      "resolvedSha256": "ab289b3cb4e105cd8b757da2428a1c6e722e02f569be27e94f5a8dbb57576bf9",
+      "sha256": "ab289b3cb4e105cd8b757da2428a1c6e722e02f569be27e94f5a8dbb57576bf9",
+      "size": 2480
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/native/b5/b5af9822-d47b-4be5-a586-1640cd18e117.png",
+      "purposes": [
+        "skin/139/texture"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/native/b5/b5af9822-d47b-4be5-a586-1640cd18e117.png",
+      "resolvedSha256": "87fd6ed02f2f3ef7b730802e0dd4e447e6f69ac689779934df84ea0254805578",
+      "sha256": "87fd6ed02f2f3ef7b730802e0dd4e447e6f69ac689779934df84ea0254805578",
+      "size": 3586
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/native/c6/c6b650b1-3a1b-411c-b669-ab954ce39ec1.png",
+      "purposes": [
+        "skin/11/texture"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/native/c6/c6b650b1-3a1b-411c-b669-ab954ce39ec1.png",
+      "resolvedSha256": "49fe36223cf02e6d31f3a5be8b19c787a0f12310a5a6f6c91d93cbe24c0a81bf",
+      "sha256": "49fe36223cf02e6d31f3a5be8b19c787a0f12310a5a6f6c91d93cbe24c0a81bf",
+      "size": 3206
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/native/cd/cde2f284-0c19-475c-be40-d6f5effceeae.png",
+      "purposes": [
+        "skin/4/texture"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/native/cd/cde2f284-0c19-475c-be40-d6f5effceeae.png",
+      "resolvedSha256": "be275750f2fa11548e97ef390c3afe527e690cfe6ef03ec37bfdf012f2822718",
+      "sha256": "be275750f2fa11548e97ef390c3afe527e690cfe6ef03ec37bfdf012f2822718",
+      "size": 2272
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/native/d9/d9e48000-cea0-4005-8944-6b13071341df.png",
+      "purposes": [
+        "skin/132/texture"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/native/d9/d9e48000-cea0-4005-8944-6b13071341df.png",
+      "resolvedSha256": "7b09fc5eb565ab27fc0d4517c8b5231c6d22c3033e3e3a2e57973d236372fba0",
+      "sha256": "7b09fc5eb565ab27fc0d4517c8b5231c6d22c3033e3e3a2e57973d236372fba0",
+      "size": 2581
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/native/de/deeeb088-93e9-45bf-87ad-0b68223cc8d6.png",
+      "purposes": [
+        "skin/3/texture"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/native/de/deeeb088-93e9-45bf-87ad-0b68223cc8d6.png",
+      "resolvedSha256": "e933fbf2321d4f913f6b5d8af84bf5d12d83d15df7daf42c94e1bf180501389b",
+      "sha256": "e933fbf2321d4f913f6b5d8af84bf5d12d83d15df7daf42c94e1bf180501389b",
+      "size": 2467
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/native/eb/eba7f350-2372-44f2-bedf-7c7e58c2b0df.png",
+      "purposes": [
+        "skin/10/texture"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/native/eb/eba7f350-2372-44f2-bedf-7c7e58c2b0df.png",
+      "resolvedSha256": "d1b0ac5c76c451f749af93ac28d911d4f0ccfcab9dd18d013280c7a366602f7e",
+      "sha256": "d1b0ac5c76c451f749af93ac28d911d4f0ccfcab9dd18d013280c7a366602f7e",
+      "size": 3631
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/native/f6/f6ae987f-03ea-4abc-ab5f-14519d4f528f.png",
+      "purposes": [
+        "skin/111/texture"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/native/f6/f6ae987f-03ea-4abc-ab5f-14519d4f528f.png",
+      "resolvedSha256": "44499cc094537e1a83b210de97e34d9456bd39cc587ad584ce4a3aa7f3c745b1",
+      "sha256": "44499cc094537e1a83b210de97e34d9456bd39cc587ad584ce4a3aa7f3c745b1",
+      "size": 3049
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "subpackages/loading/bundle/_r/game/util/GameUtil.js",
+      "purposes": [
+        "NormalRepeat layout interpretation provenance only; never executed"
+      ],
+      "resolvedPath": "subpackages/loading/bundle/_r/game/util/GameUtil.js",
+      "resolvedSha256": "477aff04238c410d3e283ab4316cfa403481b7fae5a42be685b1e388cd8e062a",
+      "sha256": "477aff04238c410d3e283ab4316cfa403481b7fae5a42be685b1e388cd8e062a",
+      "size": 10642
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "subpackages/loading/bundle/_r/loader/Loader.js",
+      "purposes": [
+        "frame-time and head-anchor interpretation provenance only; never executed"
+      ],
+      "resolvedPath": "subpackages/loading/bundle/_r/loader/Loader.js",
+      "resolvedSha256": "78384f9fdb964c1fb0e2f5b3c0acd746162e8aec594db946d893c00b13130910",
+      "sha256": "78384f9fdb964c1fb0e2f5b3c0acd746162e8aec594db946d893c00b13130910",
+      "size": 24835
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "subpackages/loading/bundle/_r/store/FeedGameStore.js",
+      "purposes": [
+        "frozen AI skin pool provenance only; never executed"
+      ],
+      "resolvedPath": "subpackages/loading/bundle/_r/store/FeedGameStore.js",
+      "resolvedSha256": "576253be0954937e36698dddcd4ef6a82bcb7f434f9392164e72686738b75694",
+      "sha256": "576253be0954937e36698dddcd4ef6a82bcb7f434f9392164e72686738b75694",
+      "size": 117736
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "subpackages/loading/bundle/_r/store/SkinStore.js",
+      "purposes": [
+        "frozen AI eligibility provenance only; never executed"
+      ],
+      "resolvedPath": "subpackages/loading/bundle/_r/store/SkinStore.js",
+      "resolvedSha256": "dba9cc99420ec204583a06c67e28cc9b394a649fe5a16a81763dd44835408482",
+      "sha256": "dba9cc99420ec204583a06c67e28cc9b394a649fe5a16a81763dd44835408482",
+      "size": 42305
+    }
+  ],
+  "sourceIdentity": {
+    "actualCommit": "6367f65bf210d75ba39c0e48ecace5b30b538a06",
+    "clean": true
+  }
+}

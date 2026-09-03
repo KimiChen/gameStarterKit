@@ -1,0 +1,206 @@
+{
+  "frames": [
+    {
+      "name": "snakebody0",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        48,
+        48
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        197,
+        1,
+        48,
+        48
+      ],
+      "rotated": false
+    },
+    {
+      "name": "snakebody1",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        48,
+        48
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        197,
+        51,
+        48,
+        48
+      ],
+      "rotated": false
+    },
+    {
+      "name": "snakefood",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        16,
+        16
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        197,
+        101,
+        16,
+        16
+      ],
+      "rotated": false
+    },
+    {
+      "name": "snakehead0",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        96,
+        86
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        1,
+        1,
+        96,
+        86
+      ],
+      "rotated": false
+    },
+    {
+      "name": "snakehead1",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        96,
+        86
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        99,
+        1,
+        96,
+        86
+      ],
+      "rotated": false
+    },
+    {
+      "name": "snakehead2",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        96,
+        86
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        1,
+        89,
+        96,
+        86
+      ],
+      "rotated": false
+    },
+    {
+      "name": "snakehead3",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        96,
+        86
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        99,
+        89,
+        96,
+        86
+      ],
+      "rotated": false
+    },
+    {
+      "name": "snakehead4",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        96,
+        86
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        1,
+        177,
+        96,
+        86
+      ],
+      "rotated": false
+    },
+    {
+      "name": "snakehead5",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        96,
+        86
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        99,
+        177,
+        96,
+        86
+      ],
+      "rotated": false
+    }
+  ],
+  "texture": {
+    "height": 512,
+    "width": 256
+  }
+}
