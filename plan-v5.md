@@ -70,6 +70,17 @@ verify:sync 镜像一致、inventory 全绿）；`test:int` 169/169（本地真 
 > 全量客户端 380/380、服务端 489/489、typecheck/sync/inventory/SHA 均通过，S1 标记为 `[已完成]`，S2
 > 前置门已解除。Creator 3.8.8 的 aura 层级/混合/真机观感仍归 S5，不冒充无头完成证据。
 
+> 更新（2026-09-03，Snake 新版无尽专项 S2）：`snake@2` 战场与无尽生命周期已完成。当前运行时已经替换为
+> 4096²、1000 Dot + 30 Star、稳定态 17 蛇、无房级 deadline、真人个人死亡/复活/run 终局、AI 独立 40 tick
+> 重生、Star/磁铁 `320/3 unit/s` 确定性运动、磁铁三次必发与后续 gate、分块基线/有序 delta，以及中央操作区、
+> 设备本地左右手和多指 owner。`onlineEndlessDropInV2@2` layer hash 为
+> `3a61016ceb2e9fc1ffe8a342ed5b174fabec1cff4581346a8224f97a2b19a53f`，五层组合 hash 为
+> `2c74f005c0375f98a07250c4c14ede9d0075a238d9f355ff6f07c9935d97e8e7`；四个 S0 层保持不变。
+> `test:int` 本地真栈 171/171 通过；`verify:all` exit 0（client 384/384、server 495/495、FGUI 66/66、
+> inventory 110/110），gameplay codegen、protocol fingerprint、sync、S1 freshness 均通过。S2 只启用非资产
+> 确定性测试经济；生产无法绑定该端口，`onlineCoinRelive5V1` 面向玩家的发布开关
+> 保持关闭。S2R 可靠金币复活、S3 衣柜、S4 可靠奖励、S5 Creator/真机与发布验收仍未实施。
+
 ---
 
 ## A. 可排期的工程项（无头环境可做）
@@ -94,7 +105,7 @@ verify:sync 镜像一致、inventory 全绿）；`test:int` 169/169（本地真 
 
 | # | 条目 | 现状 |
 |---|---|---|
-| C1 | snakeoff（竖版贪吃蛇）玩法实现 | ✅ **首版已实现**（2026-09-02，S0–S5：素材与台账 `e9ab40f`、shared 契约 `f0c2111`、SnakeWorld 模拟 `3d2affe`、房间集成 `08b48e4`、客户端战斗链路 `b062f2a`、默认入口切换）。当前代码口径仍是：drop-in 自由加入（8 人、首人即开局、Playing 可入）+ 90s 限时计分 + 死亡 2s 复活保分 + AI 填充。下一轮竖版新版无尽 V2 专项已完成 **S0 复刻证据基线**（`7a04131`）及 **完整 S1 素材/三层目录**（原基线 `d18846a` + 磁铁增量 `bc5bb97`，[证据](docs/s/evidence/s1/README.md)）；S1 当前为 `[已完成]`，表现目录已升至 v2 且公共/服务端业务 hash 不变。S2 无尽运行时（含 Star/磁铁精确运动与设备本地左右手设置）、S2R 金币选择复活、S3 衣柜、S4 可靠奖励和 S5 发布均未实施，详细状态见 [docs/s/README.md](docs/s/README.md)。首版剩余尾巴：Creator 预览人工证据与真机联调（归 C3/S5）、数值手感调优（随预览进行） |
+| C1 | snakeoff（竖版贪吃蛇）玩法实现 | ✅ **首版已实现**（2026-09-02，S0–S5：素材与台账 `e9ab40f`、shared 契约 `f0c2111`、SnakeWorld 模拟 `3d2affe`、房间集成 `08b48e4`、客户端战斗链路 `b062f2a`、默认入口切换）。下一轮竖版新版无尽 V2 专项已完成 **S0 复刻证据基线**（`7a04131`）、**完整 S1 素材/三层目录**（原基线 `d18846a` + 磁铁增量 `bc5bb97`，[证据](docs/s/evidence/s1/README.md)）及 **S2 战场/无尽生命周期**。当前代码口径为 `snake@2`：8 真人 drop-in、稳定态 17 蛇、4096²、1030 食物、无房级 deadline、个人 run、Star/磁铁精确运动、测试经济复活和设备本地左右手。S2R 真实金币收据/恢复、S3 衣柜、S4 可靠奖励和 S5 Creator/真机/发布仍未实施，`onlineCoinRelive5V1` 发布开关保持关闭；详细状态见 [docs/s/README.md](docs/s/README.md)。剩余尾巴：Creator 预览人工证据与真机联调（归 C3/S5）、数值手感调优（随预览进行） |
 | C2 | undergroundIdle 玩法实现 | wsrpc 迁移入口路线次之（同一拍板）；美术生产流程与规格文档在 `docs/undergroundIdle/`（在途） |
 | C3 | 两玩法的**真机联调** | 承接 plan-v4「遗留待办」表的 `真机 / 阶段 10` 行。原表已定性为「既定范围外，随玩法实现另立计划」，故归入 C 而非 B——⛔ 但必须被点名：B 类全是编辑器/Creator 项，不点名它就会随抽离一起消失 |
 

@@ -77,7 +77,60 @@ class FakeLabel {
 }
 
 class FakeTexture2D {
-    constructor(readonly width = 328, readonly height = 328) {}
+    constructor(readonly width = 2048, readonly height = 2048) {}
+}
+
+class FakeJsonAsset {
+    json: unknown = {
+        recipeVersion: 1,
+        logicalName: "magnet-active",
+        animation: {
+            durationSeconds: 1 / 3,
+            wrapMode: "loop",
+            tracks: [{
+                nodePath: "x_lighting01",
+                properties: [{ property: "opacity", keyframes: [{ time: 0, value: 255 }, { time: 1 / 3, value: 0 }] }],
+            }],
+        },
+        root: {
+            name: "SnakeMagnet", opacity: 255,
+            transform: {
+                eulerDegrees: { x: 0, y: 0, z: 0 }, position: { x: 0, y: 0, z: 0 }, scale: { x: 1, y: 1, z: 1 },
+            },
+            components: [],
+            children: [{
+                name: "x_lighting01", opacity: 255, children: [],
+                transform: {
+                    eulerDegrees: { x: 0, y: 0, z: 0 }, position: { x: 0, y: 40, z: 0 }, scale: { x: 1, y: 1, z: 1 },
+                },
+                components: [{ type: "sprite", texture: "x_lighting01" }],
+            }],
+        },
+        textureDependencies: [
+            "x_lighting01", "x_lighting02", "x_lighting03", "xt_s_lighting", "xt_s_lighting02",
+        ].map((logicalName) => ({
+            logicalName,
+            textureAsset: `snakeoff/snake_magnet_aura_${logicalName}`,
+            frame: {
+                sourceFrameName: logicalName,
+                rect: { x: 0, y: 0, width: 16, height: 16 },
+                pivot: { x: 0.5, y: 0.5 },
+                trimOffset: { x: 0, y: 0 },
+                originalSize: { width: 16, height: 16 },
+                rotated: false,
+                trimmed: false,
+            },
+        })),
+    };
+}
+
+class FakeAudioClip {}
+
+class FakeAudioSource {
+    node!: FakeNode;
+    plays = 0;
+
+    playOneShot(_clip: FakeAudioClip, _volume = 1): void { this.plays += 1; }
 }
 
 class FakeSpriteFrame {
@@ -90,6 +143,21 @@ class FakeSprite {
     enabled = true;
     spriteFrame: FakeSpriteFrame | null = null;
     color: FakeColor | null = null;
+}
+
+class FakeMesh {
+    readonly subMeshes = [{ update: () => undefined }];
+}
+
+class FakeMaterial {
+    initialize(_options: unknown): void {}
+    setProperty(_name: string, _value: unknown): void {}
+}
+
+class FakeUIMeshRenderer {
+    node!: FakeNode;
+    mesh: unknown;
+    material: unknown;
 }
 
 class FakeNode {
@@ -178,16 +246,35 @@ function findNode(root: FakeNode, name: string): FakeNode | null {
     return null;
 }
 
+function countNodes(root: FakeNode, name: string): number {
+    return (root.name === name ? 1 : 0) + root.children.reduce((sum, child) => sum + countNodes(child, name), 0);
+}
+
 test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触摸回流", async () => {
     const loadedPaths: string[] = [];
     const input = makeInput();
+    const game = makeInput();
+    const storage = new Map<string, string>();
+    const missingResources = new Set<string>();
     const resources = {
         load(
             path: string,
-            _Type: typeof FakeTexture2D,
-            callback: (error: Error | null, asset?: FakeTexture2D) => void,
+            Type: typeof FakeTexture2D | typeof FakeJsonAsset | typeof FakeAudioClip,
+            callback: (error: Error | null, asset?: FakeTexture2D | FakeJsonAsset | FakeAudioClip) => void,
         ): void {
             loadedPaths.push(path);
+            if (missingResources.has(path)) {
+                callback(new Error(`missing test resource: ${path}`));
+                return;
+            }
+            if (Type === FakeJsonAsset && path === "snakeoff/snake_magnet_aura") {
+                callback(null, new FakeJsonAsset());
+                return;
+            }
+            if (Type === FakeAudioClip && path === "snakeoff/snake_sfx_collect_magnet") {
+                callback(null, new FakeAudioClip());
+                return;
+            }
             if (!path.endsWith("/texture")) {
                 callback(new Error(`not a Texture2D resource: ${path}`));
                 return;
@@ -198,6 +285,7 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
     const fakeCc = {
         Color: FakeColor,
         EventTouch: class {},
+        Game: { EVENT_HIDE: "game-hide" },
         Graphics: FakeGraphics,
         Input: {
             EventType: {
@@ -207,6 +295,9 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
                 TOUCH_CANCEL: "touch-cancel",
             },
         },
+        JsonAsset: FakeJsonAsset,
+        AudioClip: FakeAudioClip,
+        AudioSource: FakeAudioSource,
         Label: FakeLabel,
         Node: FakeNode,
         Rect: FakeRect,
@@ -220,12 +311,19 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
             AttributeName: {},
             Format: {},
         },
-        Material: class {},
-        Mesh: class {},
-        UIMeshRenderer: class {},
-        utils: { createMesh: () => ({}) },
+        Material: FakeMaterial,
+        Mesh: FakeMesh,
+        UIMeshRenderer: FakeUIMeshRenderer,
+        utils: { createMesh: () => new FakeMesh() },
         input,
+        game,
         resources,
+        sys: {
+            localStorage: {
+                getItem: (key: string) => storage.get(key) ?? null,
+                setItem: (key: string, value: string) => { storage.set(key, value); },
+            },
+        },
         view: { getVisibleSize: () => ({ width: 750, height: 1624 }) },
     };
 
@@ -239,44 +337,121 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
 
     try {
         const { SnakeWorldView } = await import("../src/view/rooms/snake/SnakeWorldView");
+        const { CLIENT_SNAKE_PRESENTATION_CATALOG } = await import("../src/logic/rooms/snake/SnakePresentationCatalog");
         const host = new FakeNode("host");
         // Creator 的 Canvas 锚点在可见区中心，触摸坐标则以左下角为原点。
         host.setPosition(375, 812, 0);
         const dispatched: unknown[] = [];
-        const presentation = new SnakeWorldView(host as never, (value) => dispatched.push(value), () => {});
+        let sfxEnabled = true;
+        const presentation = new SnakeWorldView(host as never, (value) => dispatched.push(value), () => {}, () => sfxEnabled);
 
         presentation.mount();
         await new Promise<void>((resolve) => setImmediate(resolve));
 
-        assert.deepEqual(loadedPaths, [
-            "snakeoff/snake_skin_classic_1/texture",
-            "snakeoff/snake_skin_classic_2/texture",
-            "snakeoff/snake_skin_classic_3/texture",
+        assert.equal(loadedPaths.length, CLIENT_SNAKE_PRESENTATION_CATALOG.length + 16);
+        assert.ok(loadedPaths.filter((path) => path !== "snakeoff/snake_magnet_aura"
+            && path !== "snakeoff/snake_sfx_collect_magnet")
+            .every((path) => path.endsWith("/texture")));
+        for (const required of [
+            "snakeoff/snake_foods_new/texture",
             "snakeoff/snake_control_joystick_base/texture",
             "snakeoff/snake_control_joystick_knob/texture",
             "snakeoff/snake_control_boost/texture",
-            "snakeoff/snake_result_bg/texture",
-            "snakeoff/snake_btn_blue/texture",
-        ]);
-        for (const name of ["SnakeWorld.JoystickBase", "SnakeWorld.JoystickKnob", "SnakeWorld.Boost"]) {
+            "snakeoff/snake_magnet_tools/texture",
+            "snakeoff/snake_magnet_aura",
+            "snakeoff/snake_sfx_collect_magnet",
+            "snakeoff/snake_speed_fx/texture",
+            "snakeoff/snake_extras/texture",
+        ]) assert.ok(loadedPaths.includes(required), `缺少 ${required}`);
+        for (const name of ["SnakeWorld.JoystickBase", "SnakeWorld.JoystickKnob", "SnakeWorld.S4"]) {
             const node = findNode(host, name);
             const sprite = node?.getComponent(FakeSprite);
             assert.ok(sprite?.spriteFrame?.texture, `${name} 必须挂载已加载纹理的 Sprite`);
         }
         assert.equal(input.count(), 4, "mount 必须登记完整触摸监听");
 
-        const touch = (x: number, y: number) => ({
-            getID: () => 1,
+        presentation.render({
+            tick: 0,
+            envelopeTick: 0,
+            seq: 1,
+            snakes: [],
+            foods: [
+                { id: 1, kind: 0, variant: 7, x: 10, y: 20 },
+                { id: 2, kind: 1, variant: 1, x: -10, y: -20 },
+            ],
+            wrecks: [],
+            tools: [],
+            runs: [],
+            displayRank: [],
+        }, {
+            countdownSeconds: 0,
+            inStartCountdown: false,
+            hasRoomDeadline: false,
+            entries: [],
+            selfAlive: false,
+            selfBoost: false,
+            runState: null,
+            magnetRemainingTicks: 0,
+            protectionRemainingTicks: 0,
+        }, null);
+        assert.equal(countNodes(host, "snake-food-batch"), 1,
+            "Dot/Star 必须共享一个 atlas mesh，不能按食物创建节点");
+
+        const snakeFrame = (magnetCollected: number) => ({
+            tick: 20 + magnetCollected,
+            envelopeTick: 20 + magnetCollected,
+            seq: 2 + magnetCollected,
+            snakes: [{
+                id: "self", name: "我", skinId: 403, ai: false, aiLevel: null, alive: true,
+                score: 10, length: 80, boost: magnetCollected > 0, bodyScale: 1,
+                magnetUntilTick: magnetCollected > 0 ? 100 : null, protectUntilTick: magnetCollected > 0 ? 100 : null,
+                points: [{ x: 10, y: 0 }, { x: 2, y: 0 }, { x: -6, y: 0 }],
+            }],
+            foods: [], wrecks: [], tools: [],
+            runs: [{
+                id: "self", runId: "run-self", state: "active", stateVersion: 2,
+                deathSeq: 0, deathCause: "", magnetCollected, starCollected: 0,
+                magnetUntilTick: magnetCollected > 0 ? 100 : null,
+            }],
+            displayRank: [{ rank: 1, id: "self", name: "我", score: 10, length: 80, ai: false, self: true }],
+        });
+        const activeHud = {
+            countdownSeconds: 0, inStartCountdown: false, hasRoomDeadline: false,
+            entries: [{ rank: 1, id: "self", name: "我", score: 10, isSelf: true, isAi: false }],
+            selfAlive: true, selfBoost: false, runState: "active" as const,
+            magnetRemainingTicks: 0, protectionRemainingTicks: 0,
+        };
+        presentation.render(snakeFrame(0) as never, activeHud as never, null);
+        assert.ok(findNode(host, "snake-head-self"), "head 必须由同一稳定 skinId 的动态帧创建");
+        assert.ok(findNode(host, "snake-tail-self"), "有 tail 的 skin 403 必须消费 tail track");
+        presentation.render(snakeFrame(1) as never, { ...activeHud, magnetRemainingTicks: 79 } as never, null);
+        assert.ok(findNode(host, "snake-magnet-aura"), "magnet-active 必须实例化 recipe 节点树而非猜测圆环");
+        assert.ok(findNode(host, "snake-boost-self"), "boost 必须消费 presentation effect 帧");
+        assert.ok(findNode(host, "snake-protection-self"), "保护期必须消费 presentation protection 帧");
+        assert.equal(findNode(host, "SnakeWorld")?.getComponent(FakeAudioSource)?.plays, 1,
+            "magnetCollected 单调增加时播放一次 catalog collect-magnet 音效");
+        sfxEnabled = false;
+        presentation.render(snakeFrame(2) as never, { ...activeHud, magnetRemainingTicks: 78 } as never, null);
+        assert.equal(findNode(host, "SnakeWorld")?.getComponent(FakeAudioSource)?.plays, 1,
+            "sfxOn=false 时 magnetCollected 增长也必须静默");
+        presentation.render({ ...snakeFrame(2), tick: 23, envelopeTick: 23, seq: 5, snakes: [] } as never,
+            { ...activeHud, entries: [], selfAlive: false } as never, null);
+        assert.equal(findNode(host, "snake-head-self"), null, "实体从 frame 消失后必须清理 head");
+        assert.equal(findNode(host, "snake-tail-self"), null, "实体从 frame 消失后必须清理 tail");
+        assert.equal(findNode(host, "snake-mesh-self"), null, "实体从 frame 消失后必须清理 mesh");
+
+        const touch = (id: number, x: number, y: number) => ({
+            getID: () => id,
             getUILocation: () => ({ x, y }),
         });
 
-        // 可见区 750×1624 时摇杆中心是 UI 坐标 (170, 220)。中心落点只取得
+        // 可见区 750×1624 时摇杆中心是 UI 坐标 (375, 220)。中心落点只取得
         // pointer ownership，死区内不发方向；随后四向移动必须保持屏幕/世界同轴。
-        input.emit("touch-start", touch(170, 220));
+        input.emit("touch-start", touch(1, 375, 220));
         assert.equal(dispatched.length, 0, "摇杆中心落点位于死区，不应改变方向");
 
         const assertDirection = (x: number, y: number, dirX: number, dirY: number): void => {
-            input.emit("touch-move", touch(x, y));
+            input.emit("touch-move", touch(1, x, y));
             const steer = dispatched[dispatched.length - 1] as {
                 type: string;
                 dirX: number;
@@ -288,16 +463,35 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
             assert.ok(Math.abs(steer.dirY - dirY) < 1e-9, `dirY 应为 ${dirY}，实际 ${steer.dirY}`);
             assert.equal(steer.boost, false);
         };
-        assertDirection(60, 220, -1, 0); // 左
-        assertDirection(280, 220, 1, 0); // 右
-        assertDirection(170, 330, 0, 1); // 上
-        assertDirection(170, 110, 0, -1); // 下
+        assertDirection(265, 220, -1, 0); // 左
+        assertDirection(485, 220, 1, 0); // 右
+        assertDirection(375, 330, 0, 1); // 上
+        assertDirection(375, 110, 0, -1); // 下
 
-        input.emit("touch-end", touch(170, 110));
-        assert.equal(dispatched.length, 4);
+        input.emit("touch-start", touch(2, 620, 410));
+        assert.equal((dispatched.at(-1) as { boost: boolean }).boost, true, "第二指按住 S4 加速");
+        input.emit("touch-move", touch(1, 375, 330));
+        assert.equal((dispatched.at(-1) as { boost: boolean }).boost, true, "转向与加速可持续并行");
+        input.emit("touch-end", touch(2, 620, 410));
+        assert.deepEqual(dispatched.at(-1), { type: "release-boost" });
+        input.emit("touch-end", touch(1, 375, 110));
 
         presentation.unmount();
         assert.equal(input.count(), 0, "unmount 必须释放全部触摸监听");
+        assert.equal(game.count(), 0, "unmount 必须释放失焦监听");
+
+        missingResources.add("snakeoff/snake_magnet_tools/texture");
+        const failedHost = new FakeNode("failed-host");
+        failedHost.setPosition(375, 812, 0);
+        const missingMagnet = new SnakeWorldView(failedHost as never, () => {}, () => {});
+        missingMagnet.mount();
+        await new Promise<void>((resolve) => setImmediate(resolve));
+        assert.ok(findNode(failedHost, "SnakeWorld.RequiredResourceFailure"),
+            "required magnet world texture 缺失必须阻断 V2 战斗，而不是画猜测占位");
+        assert.equal(findNode(failedHost, "SnakeWorld.Controls")?.active, false);
+        missingMagnet.unmount();
+        assert.equal(input.count(), 0);
+        assert.equal(game.count(), 0);
     } finally {
         moduleApi._load = originalLoad;
     }

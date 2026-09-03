@@ -1,23 +1,21 @@
-/**
- * SnakeWorld：snake 玩法的服务端权威世界（docs/snakeoff/03 §2/§3、05）。
- *
- * 设计要点：
- *  - 纯 TypeScript、零引擎依赖：⛔ 不 import cc/Colyseus Schema——Schema 摘要投影在
- *    index.ts（mode 装配层）完成，本文件的世界状态可脱离房间独立回放/测试；
- *  - 固定 tick 更新顺序（03 §3.1 十步），相同 seed + 相同输入序列 → 相同终局
- *    （`hashWorld` 供确定性测试）；一切随机性来自构造时注入的命名子流
- *    （`SeededRandom.stream`，流名见代码注释，⛔ 不用 Math.random/Date.now()）；
- *  - 硬上限全部来自 SNAKE_RULESET：身体点/食物/残骸/蛇数，超限的补刷延后而非截断。
- */
-import { SeededRandom } from "@game/shared";
-import { quantizeSnake, SNAKE_RULESET, type SnakeRuleset } from "@game/shared/gameplays/snake/ruleset";
+/** Snake V2 服务端权威世界：4096²、17 蛇、1030 食物、Star/磁铁确定性运动与 AI 独立重生。 */
+import { SeededRandom, type ISnakeRunDelta, type ISnakeWorldSnapshot } from "@game/shared";
 import {
+    directionVector,
+    nextSnakeMotionStepMilli,
+    quantizeSnake,
+    snakeBodyScale,
+    snakeMicroToWire,
+    SNAKE_AI_LINEUP,
+    SNAKE_RULESET,
+    type SnakeRuleset,
+} from "@game/shared/gameplays/snake/ruleset";
+import {
+    aiDeathWreckValues,
     boostAccepted,
     boostLengthCost,
     compareSnakeRank,
-    deathDropPlan,
     directionFromInput,
-    directionVector,
     eatDistance,
     headRadius,
     normalizeDegrees,
@@ -29,174 +27,253 @@ import {
     type SnakeRankEntry,
 } from "./rules";
 
-// ── 实体 ─────────────────────────────────────────────────────────────────
-
-export interface SnakePoint {
-    x: number;
-    y: number;
-}
+export interface SnakePoint { x: number; y: number }
 
 export interface SnakeBody {
-    readonly id: string; // 真人 = sessionId；AI = "ai-N"（match 内不复用）
+    readonly id: string;
+    readonly entityId: number;
     readonly isAi: boolean;
+    readonly aiLevel: number | null;
     readonly name: string;
-    skin: number;
+    skinId: number;
     alive: boolean;
     score: number;
     killCount: number;
     deathCount: number;
-    length: number; // 逻辑长度（计分/消耗）
-    boostDebt: number; // 加速消耗的分数债务（小数累进）
-    direction: number; // 当前方向角 [0, 360)
-    targetDirection: number; // 目标方向角
-    boostIntent: boolean; // 本 tick 请求的加速意图
-    boostActive: boolean; // 服务端接受的加速（快照/表现用）
-    aiBoostTicksLeft: number; // AI 随机加速剩余 tick
-    /** 路径点列，头在 [0]；间距 pointSpacing，尾部按几何长度截断。 */
+    length: number;
+    boostDebt: number;
+    direction: number;
+    targetDirection: number;
+    boostIntent: boolean;
+    boostActive: boolean;
+    aiBoostTicksLeft: number;
     points: SnakePoint[];
-    protectUntilTick: number; // 出生/复活保护截止 tick（不接受/不造成蛇间碰撞，墙仍杀）
-    respawnAtTick: number; // >0 = 等待该 tick 复活；0 = 在场/永久死亡（终局前）
-    lastAcceptedSeq: number; // 真人输入序号（重连续发依据）；AI 无意义
-    lastScoreTick: number; // 最后一次得分变化的 tick（排名 tie-break）
-    joinedTick: number; // 入场 tick（AI 让位选最低分时的稳定次序参考）
+    protectUntilTick: number;
+    magnetUntilTick: number;
+    respawnAtTick: number;
+    lastAcceptedSeq: number;
+    lastScoreTick: number;
+    joinedTick: number;
 }
 
-export type FoodKind = 0 | 1; // 0 = Dot，1 = Star
+export type FoodKind = 0 | 1;
+
+interface MovingEntity {
+    xMicro: number;
+    yMicro: number;
+    directionMilliX: number;
+    directionMilliY: number;
+    headingDeg: number;
+    remainingDirectionTicks: number;
+    distanceMilliRemainder: number;
+    readonly rng: SeededRandom;
+}
 
 export interface SnakeFood {
     readonly id: number;
     readonly kind: FoodKind;
-    readonly x: number;
-    readonly y: number;
+    readonly variant: number;
+    x: number;
+    y: number;
+    readonly motion: MovingEntity | null;
 }
 
 export interface SnakeWreck {
     readonly id: number;
-    readonly value: number; // 聚合价值（1 wreck = +value 长度 +value 分）
+    value: number;
+    readonly kind: 0 | 1;
+    readonly variant: number;
+    readonly sourceSkinId?: number;
     readonly x: number;
     readonly y: number;
 }
 
-export interface SnakeWorldEvents {
-    /** 有蛇死亡（掉落已生成）；killerId 仅蛇间碰撞时存在。 */
-    onDeath?(snake: SnakeBody, killerId: string | null): void;
-    /** 有蛇吃到东西（表现音效用）。 */
-    onEat?(snake: SnakeBody, kind: "dot" | "star" | "wreck", value: number): void;
+export interface SnakeTool {
+    readonly id: number;
+    readonly toolId: 10001;
+    x: number;
+    y: number;
+    readonly spawnTick: number;
+    readonly expireTick: number;
+    readonly motion: MovingEntity;
 }
 
-// ── 空间网格（03 §7.1：cell 邻格 broad-phase）─────────────────────────────
+export interface SnakeSpawnPoint { readonly x: number; readonly y: number; readonly direction: number }
 
-const GRID_CELL = 150; // unit；world 1920×3264 → 13×22 格
-const BODY_SAMPLE_STRIDE = 2; // 身体点按此步长抽稀入格（≈36u 间隔，碰撞半径 18u 不穿透）
+export interface SnakeMagnetGateRun {
+    readonly state: string;
+    readonly length: number;
+}
+
+export interface SnakeMagnetTriggerRecord {
+    readonly relativeTick: number;
+    readonly ordinal: number;
+    readonly unconditional: boolean;
+    readonly spawned: boolean;
+}
+
+export interface SnakeWorldEvents {
+    onDeath?(snake: SnakeBody, killerId: string | null, cause: "wall" | "collision" | "forced"): void;
+    onEat?(snake: SnakeBody, kind: "dot" | "star" | "wreck", value: number): void;
+    onMagnetPickup?(snake: SnakeBody, tool: SnakeTool): void;
+}
 
 class SpatialGrid {
-    private readonly cells = new Map<string, number[]>(); // cellKey → snake 下标数组（脏标记重建）
+    private readonly cells = new Map<string, number[]>();
 
-    static key(x: number, y: number): string {
-        return `${Math.floor(x / GRID_CELL)},${Math.floor(y / GRID_CELL)}`;
+    constructor(private readonly cellSize: number) {}
+
+    private key(x: number, y: number): string {
+        return `${Math.floor(x / this.cellSize)},${Math.floor(y / this.cellSize)}`;
     }
 
-    /** 每 tick 全量重建（8 蛇 × ≤512 点 × 抽稀 ≈ 2k 插入，量级安全；增量是无谓复杂度）。 */
     rebuild(snakes: readonly SnakeBody[]): void {
         this.cells.clear();
-        for (let index = 0; index < snakes.length; index++) {
+        for (let index = 0; index < snakes.length; index += 1) {
             const snake = snakes[index];
             if (!snake.alive) continue;
-            // 头单独入格（头对头判定用）
             this.insert(snake.points[0], index);
-            for (let i = BODY_SAMPLE_STRIDE; i < snake.points.length; i += BODY_SAMPLE_STRIDE) {
-                this.insert(snake.points[i], index);
+            for (let pointIndex = 2; pointIndex < snake.points.length; pointIndex += 2) {
+                this.insert(snake.points[pointIndex], index);
             }
         }
     }
 
     private insert(point: SnakePoint, snakeIndex: number): void {
-        const key = SpatialGrid.key(point.x, point.y);
+        const key = this.key(point.x, point.y);
         const list = this.cells.get(key);
         if (list) list.push(snakeIndex);
         else this.cells.set(key, [snakeIndex]);
     }
 
-    /** 查询点周围 3×3 邻格的蛇下标（去重）。 */
-    queryNeighbors(x: number, y: number): number[] {
-        const cx = Math.floor(x / GRID_CELL);
-        const cy = Math.floor(y / GRID_CELL);
-        const out = new Set<number>();
-        for (let dx = -1; dx <= 1; dx++) {
-            for (let dy = -1; dy <= 1; dy++) {
+    queryNeighbors(x: number, y: number): readonly number[] {
+        const cx = Math.floor(x / this.cellSize);
+        const cy = Math.floor(y / this.cellSize);
+        const result = new Set<number>();
+        for (let dx = -1; dx <= 1; dx += 1) {
+            for (let dy = -1; dy <= 1; dy += 1) {
                 const list = this.cells.get(`${cx + dx},${cy + dy}`);
-                if (list) for (const index of list) out.add(index);
+                if (list) for (const index of list) result.add(index);
             }
         }
-        return [...out].sort((a, b) => a - b); // 稳定次序（⛔ 不受 Set 遍历序影响）
+        return [...result].sort((left, right) => left - right);
     }
 }
 
-// ── 世界 ─────────────────────────────────────────────────────────────────
-
 export interface SnakeWorldOptions {
     readonly matchSeed: number;
+    readonly playingStartedTick?: number;
     readonly events?: SnakeWorldEvents;
-    /** 测试注入：覆盖规则表（⛔ 生产恒为 SNAKE_RULESET 缺省）。 */
     readonly ruleset?: SnakeRuleset;
+    readonly aiSkinPool?: readonly number[];
 }
 
 export class SnakeWorld {
     readonly ruleset: SnakeRuleset;
-    tick = 0;
-    /** 移动解禁 tick（开局倒计时期间世界冻结、食物已铺好）。 */
+    readonly playingStartedTick: number;
     readonly movementStartTick: number;
-    readonly endTick: number;
-    readonly snakes: SnakeBody[] = []; // 稳定次序 = 入场序（确定性依赖，⛔ 不改排序）
+    /** Endless 明确没有可比较的 endTick。 */
+    readonly endTick: null = null;
+    tick = 0;
+    readonly snakes: SnakeBody[] = [];
+    readonly magnetTriggers: SnakeMagnetTriggerRecord[] = [];
     private readonly snakeById = new Map<string, SnakeBody>();
     private readonly foods = new Map<number, SnakeFood>();
     private readonly wrecks = new Map<number, SnakeWreck>();
+    private readonly tools = new Map<number, SnakeTool>();
+    private readonly pendingAiRespawns: SnakeBody[] = [];
+    private readonly fakeRanks: Array<{ id: string; name: string; score: number }> = [];
     private nextFoodId = 1;
     private nextWreckId = 1;
+    private nextToolId = 1;
+    private nextSnakeEntityId = 1;
     private nextAiOrdinal = 0;
-    private readonly grid = new SpatialGrid();
+    private magnetTriggerOrdinal = 0;
+    private readonly matchSeed: number;
     private readonly events: SnakeWorldEvents;
-    // 命名子流（⛔ 流名是确定性契约，改字面量 = 改种子）
-    private readonly rngSpawn: SeededRandom; // 出生点选择与抖动
-    private readonly rngFood: SeededRandom; // 食物/残骸位置
-    /** AI 游走/加速决策子流（ai.ts 用；世界容器代为持有以保持流序稳定） */
+    private readonly grid: SpatialGrid;
+    private readonly rngSpawn: SeededRandom;
+    private readonly rngFood: SeededRandom;
+    private readonly rngToolPlacement: SeededRandom;
+    private readonly rngFakeRank: SeededRandom;
+    private readonly rngAiSkin: SeededRandom;
     readonly rngAi: SeededRandom;
-    private readonly pendingRespawns: SnakeBody[] = []; // 等待复活的蛇（按死亡先后）
+    private readonly aiSkinCycle: number[];
+    private aiSkinCursor = 0;
 
     constructor(options: SnakeWorldOptions) {
         this.ruleset = options.ruleset ?? SNAKE_RULESET;
+        this.matchSeed = options.matchSeed >>> 0;
+        this.playingStartedTick = options.playingStartedTick ?? 0;
+        this.movementStartTick = this.playingStartedTick + this.ruleset.countdownTicks;
         this.events = options.events ?? {};
-        this.tick = 0;
-        this.movementStartTick = this.ruleset.countdownTicks;
-        this.endTick = this.ruleset.countdownTicks + this.ruleset.matchTicks;
-        const seed = options.matchSeed >>> 0;
-        this.rngSpawn = SeededRandom.stream(seed, "snake.spawn");
-        this.rngFood = SeededRandom.stream(seed, "snake.food");
-        this.rngAi = SeededRandom.stream(seed, "snake.ai");
-        for (let i = 0; i < this.ruleset.dotTarget; i++) this.spawnFood(0);
-        for (let i = 0; i < this.ruleset.starTarget; i++) this.spawnFood(1);
+        this.grid = new SpatialGrid(this.ruleset.broadphaseGridCell);
+        this.rngSpawn = SeededRandom.stream(this.matchSeed, "snake.spawn");
+        this.rngFood = SeededRandom.stream(this.matchSeed, "snake.food");
+        this.rngToolPlacement = SeededRandom.stream(this.matchSeed, "snake.tool.spawn");
+        this.rngFakeRank = SeededRandom.stream(this.matchSeed, "snake.fake-rank");
+        this.rngAiSkin = SeededRandom.stream(this.matchSeed, "snake.ai.skin");
+        this.rngAi = SeededRandom.stream(this.matchSeed, "snake.ai");
+        this.aiSkinCycle = this.shuffleAiSkins(options.aiSkinPool ?? [1]);
+        for (let index = 0; index < this.ruleset.dotTarget; index += 1) this.spawnFood(0);
+        for (let index = 0; index < this.ruleset.starTarget; index += 1) this.spawnFood(1);
+        for (let index = 0; index < this.ruleset.fakeSnakeCount; index += 1) {
+            this.fakeRanks.push({
+                id: `rank-fake-${index + 1}`,
+                name: `玩家${String(index + 1).padStart(2, "0")}`,
+                score: this.rngFakeRank.nextInt(this.ruleset.fakeSnakeInitMin, this.ruleset.fakeSnakeInitMaxExclusive),
+            });
+        }
     }
 
-    // ── 蛇的生命周期 ──────────────────────────────────────────────────────
-
-    /** 真人入座：在安全点出生一条玩家蛇（spawnLength 起步，带出生保护）。 */
-    addPlayerSnake(sessionId: string, name: string, joinOrdinal: number): SnakeBody {
-        return this.createSnake(sessionId, false, name, joinOrdinal % 8);
+    private shuffleAiSkins(pool: readonly number[]): number[] {
+        const values = [...new Set(pool.filter((id) => Number.isSafeInteger(id) && id > 0))];
+        if (values.length === 0) values.push(1);
+        for (let index = values.length - 1; index > 0; index -= 1) {
+            const other = this.rngAiSkin.nextInt(0, index + 1);
+            const value = values[index];
+            values[index] = values[other];
+            values[other] = value;
+        }
+        return values;
     }
 
-    /** AI 填充：id 为 `ai-N`（match 内单调不复用，快照 id 唯一性契约）。 */
-    addAiSnake(): SnakeBody {
+    private nextAiSkin(): number {
+        const usedByHumans = new Set(this.snakes.filter((snake) => !snake.isAi).map((snake) => snake.skinId));
+        for (let attempt = 0; attempt < this.aiSkinCycle.length; attempt += 1) {
+            const skinId = this.aiSkinCycle[this.aiSkinCursor % this.aiSkinCycle.length];
+            this.aiSkinCursor += 1;
+            if (!usedByHumans.has(skinId)) return skinId;
+        }
+        const skinId = this.aiSkinCycle[this.aiSkinCursor % this.aiSkinCycle.length];
+        this.aiSkinCursor += 1;
+        return skinId;
+    }
+
+    addPlayerSnake(sessionId: string, name: string, skinId = 1): SnakeBody {
+        return this.createSnake(sessionId, false, null, name, skinId);
+    }
+
+    addAiSnake(aiLevel = 401): SnakeBody {
         this.nextAiOrdinal += 1;
-        return this.createSnake(`ai-${this.nextAiOrdinal}`, true, `AI-${this.nextAiOrdinal}`, 15);
+        return this.createSnake(`ai-${this.nextAiOrdinal}`, true, aiLevel, `AI-${this.nextAiOrdinal}`, this.nextAiSkin());
     }
 
-    private createSnake(id: string, isAi: boolean, name: string, skin: number): SnakeBody {
+    addInitialAiLineup(): void {
+        for (const entry of SNAKE_AI_LINEUP) {
+            for (let count = 0; count < entry.count; count += 1) this.addAiSnake(entry.level);
+        }
+    }
+
+    private createSnake(id: string, isAi: boolean, aiLevel: number | null, name: string, skinId: number): SnakeBody {
         const spawn = this.pickSpawnPoint();
         const snake: SnakeBody = {
             id,
+            entityId: this.nextSnakeEntityId++,
             isAi,
+            aiLevel,
             name,
-            skin,
+            skinId,
             alive: true,
             score: 0,
             killCount: 0,
@@ -208,8 +285,11 @@ export class SnakeWorld {
             boostIntent: false,
             boostActive: false,
             aiBoostTicksLeft: 0,
-            points: this.buildInitialBody(spawn),
-            protectUntilTick: this.tick + this.ruleset.spawnProtectionTicks,
+            points: this.buildInitialBody(spawn, this.ruleset.spawnLength),
+            // 半开区间从下一次真实 movement tick 开始；准备期不得提前消耗首次保护。
+            protectUntilTick: Math.max(this.tick + 1, this.movementStartTick + 1)
+                + this.ruleset.spawnProtectionTicks,
+            magnetUntilTick: 0,
             respawnAtTick: 0,
             lastAcceptedSeq: 0,
             lastScoreTick: this.tick,
@@ -220,544 +300,698 @@ export class SnakeWorld {
         return snake;
     }
 
-    /**
-     * 初始身体：沿出生方向反向往后排。⚠ 竖版小场 + 出生方向朝场心 ⇒ 径向尾长
-     * （spawnLength 30 ≈ 540u）可能越出窄边——逐点钳进可玩边界（墙判定线）内，
-     * 贴墙尾部静止不动是合法的（身体点只服务碰撞与渲染，头部永远先于它们撞墙）。
-     */
-    private buildInitialBody(spawn: { x: number; y: number; direction: number }): SnakePoint[] {
-        const bounds = wallBounds();
-        const clampPoint = (value: number, half: number): number =>
-            quantizeSnake(Math.max(-half, Math.min(half, value)));
-        const points: SnakePoint[] = [{
-            x: clampPoint(spawn.x, bounds.halfWidth),
-            y: clampPoint(spawn.y, bounds.halfHeight),
-        }];
+    private buildInitialBody(spawn: SnakeSpawnPoint, length: number): SnakePoint[] {
+        const bounds = wallBounds(length);
+        const clamp = (value: number, half: number): number => quantizeSnake(Math.max(-half, Math.min(half, value)));
+        const points: SnakePoint[] = [{ x: clamp(spawn.x, bounds.halfWidth), y: clamp(spawn.y, bounds.halfHeight) }];
         const back = directionVector(normalizeDegrees(spawn.direction + 180));
-        const count = visiblePointCount(this.ruleset.spawnLength);
-        for (let i = 1; i < count; i++) {
+        const count = Math.min(this.ruleset.maxBodyPoints, Math.max(this.ruleset.initialPointCount, visiblePointCount(length)));
+        for (let index = 1; index < count; index += 1) {
             points.push({
-                x: clampPoint(spawn.x + back.x * this.ruleset.pointSpacing * i, bounds.halfWidth),
-                y: clampPoint(spawn.y + back.y * this.ruleset.pointSpacing * i, bounds.halfHeight),
+                x: clamp(spawn.x + back.x * this.ruleset.pointSpacing * index, bounds.halfWidth),
+                y: clamp(spawn.y + back.y * this.ruleset.pointSpacing * index, bounds.halfHeight),
             });
         }
         return points;
     }
 
-    get(id: string): SnakeBody | undefined {
-        return this.snakeById.get(id);
-    }
+    get(id: string): SnakeBody | undefined { return this.snakeById.get(id); }
+    foodList(): readonly SnakeFood[] { return [...this.foods.values()]; }
+    wreckList(): readonly SnakeWreck[] { return [...this.wrecks.values()]; }
+    toolList(): readonly SnakeTool[] { return [...this.tools.values()]; }
+    get pendingAiRespawnCount(): number { return this.pendingAiRespawns.length; }
+    get nextToolEntityId(): number { return this.nextToolId; }
 
-    foodList(): readonly SnakeFood[] {
-        return [...this.foods.values()];
-    }
-
-    wreckList(): readonly SnakeWreck[] {
-        return [...this.wrecks.values()];
-    }
-
-    /** 真人在席数（宽限断线仍占席——调用方按 connected 语义传）。 */
     aiTargetCount(humanSeatCount: number): number {
         return Math.max(0, this.ruleset.aiFillTarget - humanSeatCount);
     }
 
-    countAi(): number {
-        let count = 0;
-        for (const snake of this.snakes) if (snake.isAi) count++;
-        return count;
-    }
+    countAi(): number { return this.snakes.reduce((count, snake) => count + (snake.isAi ? 1 : 0), 0); }
+    countHumans(): number { return this.snakes.reduce((count, snake) => count + (!snake.isAi ? 1 : 0), 0); }
+    countActiveSnakes(): number { return this.snakes.reduce((count, snake) => count + (snake.alive ? 1 : 0), 0); }
 
-    countHumans(): number {
-        let count = 0;
-        for (const snake of this.snakes) if (!snake.isAi) count++;
-        return count;
-    }
-
-    /**
-     * AI 让位（真人加入导致超编）：选分数最低、最早入场的在场 AI 死亡掉落并**永久移除**
-     * ——⛔ 不进复活队列（让位是永久性的，不是死亡循环）；掉落留在场上
-     * （给新加入者留食物，也让「目标消失」有可视解释）。
-     */
+    /** 真人加入只淘汰一条 level-401 AI；ID、位置和 motion RNG 都不被复用。 */
     cullAiForJoin(): SnakeBody | null {
-        const candidates = this.snakes.filter((snake) => snake.isAi && snake.alive);
+        const candidates = this.snakes.filter((snake) => snake.isAi && snake.aiLevel === 401);
         if (candidates.length === 0) return null;
-        candidates.sort((a, b) => a.score - b.score || a.joinedTick - b.joinedTick || (a.id < b.id ? -1 : 1));
+        candidates.sort((left, right) => Number(right.alive) - Number(left.alive)
+            || left.score - right.score || left.joinedTick - right.joinedTick || left.entityId - right.entityId);
         const victim = candidates[0];
-        this.killSnake(victim, null);
-        victim.respawnAtTick = -1; // 永不复活
-        const pendingIndex = this.pendingRespawns.indexOf(victim);
-        if (pendingIndex >= 0) this.pendingRespawns.splice(pendingIndex, 1);
-        this.snakeById.delete(victim.id);
-        const index = this.snakes.indexOf(victim);
-        if (index >= 0) this.snakes.splice(index, 1);
+        // 入座让位是 roster 退休，不是玩法死亡：不增加 deathCount、不产残骸、不发死亡事件。
+        victim.alive = false;
+        victim.boostActive = false;
+        victim.boostIntent = false;
+        victim.magnetUntilTick = 0;
+        this.removeSnakeEntity(victim);
         return victim;
     }
 
-    /** 真人最终离开：其蛇死亡掉落并移出世界（⛔ 不再复活）。 */
     removePlayerSnake(sessionId: string): void {
         const snake = this.snakeById.get(sessionId);
-        if (!snake) return;
-        if (snake.alive) this.killSnake(snake, null);
-        snake.respawnAtTick = -1; // 标记永不复活
-        this.snakeById.delete(sessionId);
+        if (!snake || snake.isAi) return;
+        snake.alive = false;
+        snake.boostActive = false;
+        snake.boostIntent = false;
+        snake.magnetUntilTick = 0;
+        this.removeSnakeEntity(snake);
+    }
+
+    private removeSnakeEntity(snake: SnakeBody): void {
+        const pending = this.pendingAiRespawns.indexOf(snake);
+        if (pending >= 0) this.pendingAiRespawns.splice(pending, 1);
+        this.snakeById.delete(snake.id);
         const index = this.snakes.indexOf(snake);
         if (index >= 0) this.snakes.splice(index, 1);
     }
 
-    // ── 输入（真人与 AI 共用同一意图通道，03 §4.1）───────────────────────
-
     applyInput(id: string, dirX: number, dirY: number, boost: boolean, seq: number): boolean {
         const snake = this.snakeById.get(id);
-        if (!snake || !snake.alive || snake.isAi) return false;
-        if (seq <= snake.lastAcceptedSeq) return false; // 重复/倒退输入不改变状态
+        if (!snake || snake.isAi || !snake.alive || seq <= snake.lastAcceptedSeq) return false;
         snake.lastAcceptedSeq = seq;
         this.applyIntent(snake, dirX, dirY, boost);
         return true;
     }
 
-    /** AI 意图入口（无 seq 约束）。 */
     applyAiIntent(id: string, dirX: number, dirY: number, boost: boolean): void {
         const snake = this.snakeById.get(id);
-        if (!snake || !snake.alive) return;
+        if (!snake || !snake.isAi || !snake.alive) return;
         this.applyIntent(snake, dirX, dirY, boost);
     }
 
     private applyIntent(snake: SnakeBody, dirX: number, dirY: number, boost: boolean): void {
         const direction = directionFromInput(dirX, dirY);
-        if (direction !== null) snake.targetDirection = direction; // 近零向量保持上一方向
+        if (direction !== null) snake.targetDirection = direction;
         snake.boostIntent = boost;
     }
 
-    // ── 主时钟（03 §3.1 固定十步序）──────────────────────────────────────
+    disconnectHuman(id: string): void {
+        const snake = this.snakeById.get(id);
+        if (!snake || snake.isAi) return;
+        snake.boostIntent = false;
+        snake.boostActive = false;
+    }
 
-    /** 推进一个 fixed-step。返回 true 表示到达 endTick（mode 层据此冻结结算）。 */
-    step(): boolean {
+    /** fixed-step：trigger 先读取调用方传入的“上一 tick 已提交”run 快照。Endless 永远返回 false。 */
+    step(gateRuns: readonly SnakeMagnetGateRun[] = []): false {
         this.tick += 1;
+        this.expireTools();
+        this.triggerMagnetWave(gateRuns);
+        this.moveWorldEntities();
         if (this.tick > this.movementStartTick) {
-            // 1. 输入已在 step 前由各通道写入 intent；AI 意图由 mode 层在 step 前计算。
-            // 2. 转向与 boost 状态
             for (const snake of this.snakes) {
                 if (!snake.alive) continue;
                 snake.direction = turnTowards(snake.direction, snake.targetDirection, this.ruleset.maxTurnDegPerTick);
                 snake.boostActive = boostAccepted(snake.boostIntent, snake.alive, snake.length);
             }
-            // 2.5 头对头预检：两条对头接近的蛇在离散位移下会互穿（各自落在对方上一 tick
-            // 的头部位置），事后按新位置检测必漏——必须在位移前按「接近且相向」收集候选。
             const headOnPairs = this.collectHeadOnPairs();
-            // 3. 积分蛇头候选位置
-            for (const snake of this.snakes) {
-                if (!snake.alive) continue;
-                this.moveSnake(snake);
-            }
-            // 4. 身体队列更新已随 moveSnake 完成；加速消耗与掉落：
-            for (const snake of this.snakes) {
-                if (!snake.alive || !snake.boostActive) continue;
-                this.applyBoostCost(snake);
-            }
-            // 5. 重建空间网格
+            for (const snake of this.snakes) if (snake.alive) this.moveSnake(snake);
+            for (const snake of this.snakes) if (snake.alive && snake.boostActive) this.applyBoostCost(snake);
             this.grid.rebuild(this.snakes);
-            // 6. 统一碰撞判定（先收集候选再结算，⛔ 不边遍历边杀）
             this.resolveCollisions(headOnPairs);
-            // 7. 食物/残骸拾取（同 tick 争抢稳定决胜）
-            this.resolvePickups();
-            // 8. 复活结算
-            this.resolveRespawns();
-            // 9. 补充食物
+            this.resolveToolPickups();
+            this.resolveFoodAndWreckPickups();
+            this.resolveAiRespawns();
             this.replenishFood();
         }
-        // 10. 结束条件
-        return this.tick >= this.endTick;
+        if ((this.tick - this.playingStartedTick) > 0 && (this.tick - this.playingStartedTick) % 20 === 0) {
+            this.stepFakeRanks();
+        }
+        return false;
+    }
+
+    private triggerMagnetWave(gateRuns: readonly SnakeMagnetGateRun[]): void {
+        const relativeTick = this.tick - this.playingStartedTick;
+        const unconditional = relativeTick === this.ruleset.magnetFirstWaveTick
+            || relativeTick === this.ruleset.magnetSecondWaveTick
+            || relativeTick === this.ruleset.magnetThirdWaveTick;
+        const recurring = relativeTick >= this.ruleset.magnetRecurringFirstTick
+            && (relativeTick - this.ruleset.magnetRecurringFirstTick) % this.ruleset.magnetRecurringTicks === 0;
+        if (!unconditional && !recurring) return;
+        this.magnetTriggerOrdinal += 1;
+        const eligible = unconditional || gateRuns.some((run) => this.isMagnetGateEligible(run));
+        const canSpawn = eligible && this.tools.size === 0;
+        this.magnetTriggers.push({
+            relativeTick,
+            ordinal: this.magnetTriggerOrdinal,
+            unconditional,
+            spawned: canSpawn,
+        });
+        if (!canSpawn) return;
+        for (let count = 0; count < this.ruleset.magnetWaveCount; count += 1) this.spawnTool();
+    }
+
+    private isMagnetGateEligible(run: SnakeMagnetGateRun): boolean {
+        return (run.state === "active" || run.state === "deadPresentation" || run.state === "reliveOffering"
+            || run.state === "pendingRelive" || run.state === "reliveSpawning" || run.state === "reliveCommitting"
+            || run.state === "reliveReady")
+            && Number.isFinite(run.length) && run.length < this.ruleset.magnetGateMaxLengthExclusive;
+    }
+
+    private expireTools(): void {
+        for (const [id, tool] of this.tools) if (this.tick >= tool.expireTick) this.tools.delete(id);
+    }
+
+    private spawnTool(): void {
+        if (this.tools.size >= this.ruleset.magnetMaxAlive) return;
+        const id = this.nextToolId++;
+        const point = this.placeEntity(this.ruleset.magnetRadius, this.rngToolPlacement, id);
+        const motion = this.createMotion("magnet", id, point.x, point.y);
+        this.tools.set(id, {
+            id,
+            toolId: this.ruleset.magnetToolId as 10001,
+            x: point.x,
+            y: point.y,
+            spawnTick: this.tick,
+            expireTick: this.tick + this.ruleset.magnetExpireTicks,
+            motion,
+        });
+    }
+
+    private createMotion(kind: "star" | "magnet", id: number, x: number, y: number): MovingEntity {
+        const rng = SeededRandom.stream(this.matchSeed, `snake.motion.${kind}:${id}`);
+        const headingDeg = rng.nextInt(0, 360);
+        const holdTicks = rng.nextInt(this.ruleset.motionHoldMinTicks, this.ruleset.motionHoldMaxExclusive);
+        const direction = directionVector(headingDeg);
+        return {
+            xMicro: Math.round(x * 1_000_000),
+            yMicro: Math.round(y * 1_000_000),
+            directionMilliX: Math.round(direction.x * 1000),
+            directionMilliY: Math.round(direction.y * 1000),
+            headingDeg,
+            remainingDirectionTicks: holdTicks,
+            distanceMilliRemainder: 0,
+            rng,
+        };
+    }
+
+    private moveWorldEntities(): void {
+        for (const food of this.foods.values()) {
+            if (food.kind === 1 && food.motion) this.moveEntity(food, food.motion, this.ruleset.starRadius);
+        }
+        for (const tool of this.tools.values()) this.moveEntity(tool, tool.motion, this.ruleset.magnetRadius);
+    }
+
+    private moveEntity(entity: { x: number; y: number }, motion: MovingEntity, radius: number): void {
+        if (motion.remainingDirectionTicks === 0) {
+            const headingDeg = motion.rng.nextInt(0, 360);
+            const holdTicks = motion.rng.nextInt(this.ruleset.motionHoldMinTicks, this.ruleset.motionHoldMaxExclusive);
+            const direction = directionVector(headingDeg);
+            motion.headingDeg = headingDeg;
+            motion.directionMilliX = Math.round(direction.x * 1000);
+            motion.directionMilliY = Math.round(direction.y * 1000);
+            motion.remainingDirectionTicks = holdTicks;
+        }
+        const distance = nextSnakeMotionStepMilli(motion.distanceMilliRemainder);
+        motion.distanceMilliRemainder = distance.remainder;
+        let nextX = motion.xMicro + motion.directionMilliX * distance.stepMilli;
+        let nextY = motion.yMicro + motion.directionMilliY * distance.stepMilli;
+        const limitX = Math.round((this.ruleset.worldWidth / 2 - radius) * 1_000_000);
+        const limitY = Math.round((this.ruleset.worldHeight / 2 - radius) * 1_000_000);
+        let reflected = false;
+        if (nextX > limitX) {
+            nextX = limitX - (nextX - limitX);
+            motion.directionMilliX = -motion.directionMilliX;
+            reflected = true;
+        } else if (nextX < -limitX) {
+            nextX = -limitX + (-limitX - nextX);
+            motion.directionMilliX = -motion.directionMilliX;
+            reflected = true;
+        }
+        if (nextY > limitY) {
+            nextY = limitY - (nextY - limitY);
+            motion.directionMilliY = -motion.directionMilliY;
+            reflected = true;
+        } else if (nextY < -limitY) {
+            nextY = -limitY + (-limitY - nextY);
+            motion.directionMilliY = -motion.directionMilliY;
+            reflected = true;
+        }
+        motion.xMicro = nextX;
+        motion.yMicro = nextY;
+        entity.x = snakeMicroToWire(nextX);
+        entity.y = snakeMicroToWire(nextY);
+        if (reflected) {
+            motion.headingDeg = normalizeDegrees((Math.atan2(motion.directionMilliY, motion.directionMilliX) * 180) / Math.PI);
+            motion.remainingDirectionTicks = motion.rng.nextInt(
+                this.ruleset.motionHoldMinTicks,
+                this.ruleset.motionHoldMaxExclusive,
+            );
+        } else {
+            motion.remainingDirectionTicks -= 1;
+        }
     }
 
     private moveSnake(snake: SnakeBody): void {
-        const step = stepDistance(snake.boostActive);
+        const distance = stepDistance(snake.boostActive);
         const direction = directionVector(snake.direction);
         const head = snake.points[0];
-        const next = {
-            x: quantizeSnake(head.x + direction.x * step),
-            y: quantizeSnake(head.y + direction.y * step),
-        };
-        // 头进：新头点入列；尾部按几何长度截断（点距采样模型）。
-        snake.points.unshift(next);
-        const maxPoints = visiblePointCount(snake.length);
+        snake.points.unshift({
+            x: quantizeSnake(head.x + direction.x * distance),
+            y: quantizeSnake(head.y + direction.y * distance),
+        });
+        const maxPoints = Math.min(this.ruleset.maxBodyPoints, Math.max(this.ruleset.initialPointCount, visiblePointCount(snake.length)));
         while (snake.points.length > maxPoints) snake.points.pop();
     }
 
     private applyBoostCost(snake: SnakeBody): void {
-        const { cost, debt } = boostLengthCost(snake.boostDebt);
-        snake.boostDebt = debt;
-        if (cost <= 0) return;
-        snake.length = Math.max(0, snake.length - cost);
-        // 长度耗尽立即失去加速资格（下一 tick 生效）；残骸掉在尾部（受全房上限约束）。
-        for (let i = 0; i < cost; i++) {
+        const result = boostLengthCost(snake.boostDebt);
+        snake.boostDebt = result.debt;
+        if (result.cost <= 0) return;
+        snake.length = Math.max(this.ruleset.spawnLength, snake.length - result.cost);
+        for (let index = 0; index < result.cost; index += 1) {
             const tail = snake.points[snake.points.length - 1];
-            this.spawnWreck(tail.x, tail.y, this.ruleset.boostWreckValue);
+            this.spawnWreck(tail.x, tail.y, this.ruleset.boostWreckValue, 0, snake.skinId);
         }
     }
 
-    /**
-     * 头对头预检（位移前）：两蛇头部距离 ≤ 双方单步之和 + 碰撞距离，且相向而行
-     * （方向向量夹角 > 120° 且各自朝对方去）。03 §7.4：较短者死，等长双死。
-     */
     private collectHeadOnPairs(): Array<[SnakeBody, SnakeBody]> {
-        const pairs: Array<[SnakeBody, SnakeBody]> = [];
+        const result: Array<[SnakeBody, SnakeBody]> = [];
         const maxStep = stepDistance(true);
-        const threshold = maxStep * 2 + snakeCollisionDistance();
-        for (let i = 0; i < this.snakes.length; i++) {
-            const a = this.snakes[i];
+        for (let first = 0; first < this.snakes.length; first += 1) {
+            const a = this.snakes[first];
             if (!a.alive || this.tick < a.protectUntilTick) continue;
-            for (let j = i + 1; j < this.snakes.length; j++) {
-                const b = this.snakes[j];
+            for (let second = first + 1; second < this.snakes.length; second += 1) {
+                const b = this.snakes[second];
                 if (!b.alive || this.tick < b.protectUntilTick) continue;
                 const dx = b.points[0].x - a.points[0].x;
                 const dy = b.points[0].y - a.points[0].y;
-                const distance = Math.hypot(dx, dy);
-                if (distance > threshold || distance < 1e-9) continue;
+                if (Math.hypot(dx, dy) > maxStep * 2 + snakeCollisionDistance(a.length, b.length)) continue;
                 const dirA = directionVector(a.direction);
                 const dirB = directionVector(b.direction);
-                // 相向：a 朝 b、b 朝 a（各自方向与连线的点积 > 0），且方向大体相反
-                const toward = (dirA.x * dx + dirA.y * dy) > 0 && (dirB.x * -dx + dirB.y * -dy) > 0;
-                const opposed = (dirA.x * dirB.x + dirA.y * dirB.y) < -0.5;
-                if (toward && opposed) pairs.push([a, b]);
+                if ((dirA.x * dx + dirA.y * dy) > 0 && (dirB.x * -dx + dirB.y * -dy) > 0
+                    && (dirA.x * dirB.x + dirA.y * dirB.y) < -0.5) result.push([a, b]);
             }
         }
-        return pairs;
+        return result;
     }
 
-    private resolveCollisions(preMoveHeadPairs: Array<[SnakeBody, SnakeBody]>): void {
-        const bounds = wallBounds();
-        const collisionDistance = snakeCollisionDistance();
-        const deaths: Array<{ snake: SnakeBody; killer: SnakeBody | null }> = [];
-        const headPairs: Array<[SnakeBody, SnakeBody]> = [...preMoveHeadPairs];
-        // 头对头候选对之间本 tick 豁免身体判定：对头互冲在离散位移下双方头部会互换位置，
-        // 各自落在对方上一 tick 的头部（此刻已成颈部路径点）——那正是头对头接触本身，
-        // ⛔ 不能再按「撞身体」重复结算（否则较短者/等长双死的规则被身体判定抢先）。
-        const headOnPairKeys = new Set<string>();
+    private resolveCollisions(preMovePairs: Array<[SnakeBody, SnakeBody]>): void {
+        const deaths: Array<{ snake: SnakeBody; killer: SnakeBody | null; cause: "wall" | "collision" }> = [];
+        const headPairs = [...preMovePairs];
+        const pairKeys = new Set<string>();
         for (const [a, b] of headPairs) {
-            headOnPairKeys.add(`${a.id}|${b.id}`);
-            headOnPairKeys.add(`${b.id}|${a.id}`);
+            pairKeys.add(`${a.id}|${b.id}`);
+            pairKeys.add(`${b.id}|${a.id}`);
         }
-
         for (const snake of this.snakes) {
             if (!snake.alive) continue;
             const head = snake.points[0];
-            // 墙（保护期也生效）
+            const bounds = wallBounds(snake.length);
             if (Math.abs(head.x) > bounds.halfWidth || Math.abs(head.y) > bounds.halfHeight) {
-                deaths.push({ snake, killer: null });
+                deaths.push({ snake, killer: null, cause: "wall" });
                 continue;
             }
-            if (this.tick < snake.protectUntilTick) continue; // 出生保护：不参与蛇间碰撞（双向）
-            // 自身（跳过头部紧邻的一段——连续路径天然重叠；03 §7.3）
+            if (this.tick < snake.protectUntilTick) continue;
             const selfSkip = Math.max(4, Math.ceil((2 * this.ruleset.bodyWidth) / this.ruleset.pointSpacing));
-            let selfHit = false;
-            for (let i = selfSkip; i < snake.points.length; i++) {
-                if (this.dist(head, snake.points[i]) < collisionDistance) { selfHit = true; break; }
-            }
-            if (selfHit) {
-                deaths.push({ snake, killer: null });
+            const selfDistance = snakeCollisionDistance(snake.length, snake.length);
+            if (snake.points.slice(selfSkip).some((point) => this.dist(head, point) < selfDistance)) {
+                deaths.push({ snake, killer: null, cause: "collision" });
                 continue;
             }
-            // 他蛇身体（保护期蛇的身体也不造成碰撞——上面的 continue 保证它们不在候选里）
-            let bodyKiller: SnakeBody | null = null;
-            let bodyKillerDistance = Infinity;
+            let killer: SnakeBody | null = null;
+            let bestDistance = Infinity;
             for (const otherIndex of this.grid.queryNeighbors(head.x, head.y)) {
                 const other = this.snakes[otherIndex];
-                if (!other || other.id === snake.id || !other.alive) continue;
-                if (this.tick < other.protectUntilTick) continue;
-                if (headOnPairKeys.has(`${snake.id}|${other.id}`)) continue; // 头对头对，豁免身体判定
-                for (let i = 1; i < other.points.length; i++) { // i=0 是头，头对头单独判定
-                    const distance = this.dist(head, other.points[i]);
-                    if (distance < collisionDistance && distance < bodyKillerDistance) {
-                        bodyKiller = other;
-                        bodyKillerDistance = distance;
+                if (!other || other === snake || !other.alive || this.tick < other.protectUntilTick
+                    || pairKeys.has(`${snake.id}|${other.id}`)) continue;
+                const threshold = snakeCollisionDistance(snake.length, other.length);
+                for (let pointIndex = 1; pointIndex < other.points.length; pointIndex += 1) {
+                    const distance = this.dist(head, other.points[pointIndex]);
+                    if (distance < threshold && distance < bestDistance) {
+                        killer = other;
+                        bestDistance = distance;
                     }
                 }
             }
-            if (bodyKiller) {
-                deaths.push({ snake, killer: bodyKiller });
-                continue;
+            if (killer) deaths.push({ snake, killer, cause: "collision" });
+        }
+        for (const [a, b] of headPairs) {
+            if (a.length < b.length) deaths.push({ snake: a, killer: b, cause: "collision" });
+            else if (b.length < a.length) deaths.push({ snake: b, killer: a, cause: "collision" });
+            else {
+                deaths.push({ snake: a, killer: b, cause: "collision" });
+                deaths.push({ snake: b, killer: a, cause: "collision" });
             }
-            // 头对头候选（同 tick 统一结算：较短者死，等长双死）
-            for (const otherIndex of this.grid.queryNeighbors(head.x, head.y)) {
-                const other = this.snakes[otherIndex];
-                if (!other || other.id === snake.id || !other.alive) continue;
-                if (this.tick < other.protectUntilTick) continue;
-                if (snake.id < other.id && this.dist(head, other.points[0]) < collisionDistance
-                    && !headPairs.some(([a, b]) => (a === snake && b === other) || (a === other && b === snake))) {
-                    headPairs.push([snake, other]); // 每对只收一次（id 序 + 预检去重）
+        }
+        for (const death of deaths) if (death.snake.alive) this.killSnake(death.snake, death.killer, death.cause);
+    }
+
+    private resolveToolPickups(): void {
+        const orderedSnakes = this.snakes.filter((snake) => snake.alive)
+            .sort((left, right) => left.entityId - right.entityId);
+        for (const [toolId, tool] of this.tools) {
+            let winner: SnakeBody | null = null;
+            for (const snake of orderedSnakes) {
+                if (this.dist(snake.points[0], tool) < eatDistance(this.ruleset.magnetRadius, snake.length, false)) {
+                    winner = snake;
+                    break;
                 }
             }
-        }
-
-        for (const [a, b] of headPairs) {
-            const aDoomed = deaths.some((entry) => entry.snake === a);
-            const bDoomed = deaths.some((entry) => entry.snake === b);
-            if (a.length < b.length) {
-                if (!aDoomed) deaths.push({ snake: a, killer: b });
-            } else if (b.length < a.length) {
-                if (!bDoomed) deaths.push({ snake: b, killer: a });
-            } else {
-                if (!aDoomed) deaths.push({ snake: a, killer: b });
-                if (!bDoomed) deaths.push({ snake: b, killer: a });
-            }
-        }
-
-        // 统一应用死亡（稳定次序：snakes 入场序）
-        for (const { snake, killer } of deaths) {
-            if (!snake.alive) continue; // 同 tick 已死（头对头双死等）
-            this.killSnake(snake, killer);
+            if (!winner) continue;
+            this.tools.delete(toolId);
+            winner.magnetUntilTick = Math.max(winner.magnetUntilTick, this.tick + this.ruleset.magnetEffectTicks);
+            this.events.onMagnetPickup?.(winner, tool);
         }
     }
 
-    private resolvePickups(): void {
-        // 同 tick 多蛇覆盖同一食物：最小头心距离优先，其次 id 字典序（03 §5.3）。
-        const claims = new Map<number, { snake: SnakeBody; kind: "food" | "wreck"; distance: number }>();
-        const consider = (entityId: number, kind: "food" | "wreck", x: number, y: number, radius: number): void => {
+    private resolveFoodAndWreckPickups(): void {
+        const claims = new Map<string, { snake: SnakeBody; distance: number }>();
+        const claim = (key: string, x: number, y: number, radius: number): void => {
             for (const snake of this.snakes) {
                 if (!snake.alive) continue;
                 const distance = this.dist(snake.points[0], { x, y });
-                if (distance >= eatDistance(radius)) continue;
-                const existing = claims.get(entityId);
-                if (!existing || distance < existing.distance
-                    || (distance === existing.distance && snake.id < existing.snake.id)) {
-                    claims.set(entityId, { snake, kind, distance });
+                const magnet = this.tick < snake.magnetUntilTick;
+                if (distance >= eatDistance(radius, snake.length, magnet)) continue;
+                const previous = claims.get(key);
+                if (!previous || distance < previous.distance
+                    || (distance === previous.distance && snake.entityId < previous.snake.entityId)) {
+                    claims.set(key, { snake, distance });
                 }
             }
         };
-        for (const food of this.foods.values()) {
-            consider(food.id, "food", food.x, food.y,
-                food.kind === 0 ? this.ruleset.dotRadius : this.ruleset.starRadius);
-        }
-        for (const wreck of this.wrecks.values()) {
-            consider(-wreck.id, "wreck", wreck.x, wreck.y, this.ruleset.wreckRadius); // 负 id 防与 food 撞键
-        }
-        // 稳定应用顺序：实体 id 升序
-        const ordered = [...claims.entries()].sort((a, b) => a[0] - b[0]);
-        for (const [entityId, claim] of ordered) {
-            const snake = claim.snake;
-            if (!snake.alive) continue;
-            if (claim.kind === "food") {
-                const food = this.foods.get(entityId);
+        for (const food of this.foods.values()) claim(`f:${food.id}`, food.x, food.y,
+            food.kind === 0 ? this.ruleset.dotRadius : this.ruleset.starRadius);
+        for (const wreck of this.wrecks.values()) claim(`w:${wreck.id}`, wreck.x, wreck.y, this.ruleset.wreckRadius);
+        for (const [key, winner] of [...claims.entries()].sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0)) {
+            if (!winner.snake.alive) continue;
+            const [kind, rawId] = key.split(":");
+            const id = Number(rawId);
+            if (kind === "f") {
+                const food = this.foods.get(id);
                 if (!food) continue;
-                const growth = food.kind === 0 ? this.ruleset.dotGrowth : this.ruleset.starGrowth;
+                winner.snake.length = Math.min(this.ruleset.maxLength, winner.snake.length
+                    + (food.kind === 0 ? this.ruleset.dotGrowth : this.ruleset.starGrowth));
                 const score = food.kind === 0 ? this.ruleset.dotScore : this.ruleset.starScore;
-                snake.length += growth;
-                this.addScore(snake, score);
-                this.foods.delete(entityId);
-                this.events.onEat?.(snake, food.kind === 0 ? "dot" : "star", score);
+                this.addScore(winner.snake, score);
+                this.foods.delete(id);
+                this.events.onEat?.(winner.snake, food.kind === 0 ? "dot" : "star", score);
             } else {
-                const wreck = this.wrecks.get(-entityId);
+                const wreck = this.wrecks.get(id);
                 if (!wreck) continue;
-                snake.length += wreck.value;
-                this.addScore(snake, wreck.value);
-                this.wrecks.delete(-entityId);
-                this.events.onEat?.(snake, "wreck", wreck.value);
+                winner.snake.length = Math.min(this.ruleset.maxLength, winner.snake.length + wreck.value);
+                this.addScore(winner.snake, wreck.value);
+                this.wrecks.delete(id);
+                this.events.onEat?.(winner.snake, "wreck", wreck.value);
             }
         }
     }
 
-    private resolveRespawns(): void {
-        for (let i = 0; i < this.pendingRespawns.length; i++) {
-            const snake = this.pendingRespawns[i];
-            if (snake.respawnAtTick <= 0 || this.tick < snake.respawnAtTick) continue;
-            if (this.tick + this.ruleset.respawnDelayTicks >= this.endTick) {
-                // 倒计时剩余不足复活延迟：不再复活（03 §8.2），移出等待队列
-                this.pendingRespawns.splice(i, 1);
-                i--;
-                continue;
-            }
+    private resolveAiRespawns(): void {
+        for (let index = 0; index < this.pendingAiRespawns.length; index += 1) {
+            const snake = this.pendingAiRespawns[index];
+            if (this.tick < snake.respawnAtTick) continue;
             const spawn = this.tryPickSpawnPoint();
-            if (!spawn) continue; // 无安全点：下一 tick 再试（03 §6.2 延后语义）
-            this.pendingRespawns.splice(i, 1);
-            i--;
+            if (!spawn) continue;
+            this.pendingAiRespawns.splice(index, 1);
+            index -= 1;
             snake.alive = true;
-            snake.length = this.ruleset.spawnLength; // 复活回初始长度，分数保留（拍板）
+            snake.length = this.ruleset.spawnLength;
             snake.boostDebt = 0;
             snake.direction = spawn.direction;
             snake.targetDirection = spawn.direction;
             snake.boostIntent = false;
             snake.boostActive = false;
-            snake.points = this.buildInitialBody(spawn);
-            snake.protectUntilTick = this.tick + this.ruleset.spawnProtectionTicks;
+            snake.aiBoostTicksLeft = 0;
+            snake.points = this.buildInitialBody(spawn, snake.length);
+            snake.protectUntilTick = this.tick + 1 + this.ruleset.spawnProtectionTicks;
+            snake.magnetUntilTick = 0;
             snake.respawnAtTick = 0;
         }
     }
 
-    private replenishFood(): void {
-        let budget = this.ruleset.foodReplenishPerTick;
-        while (this.foodCount(0) < this.ruleset.dotTarget && budget > 0) {
-            this.spawnFood(0);
-            budget--;
-        }
-        while (this.foodCount(1) < this.ruleset.starTarget && budget > 0) {
-            this.spawnFood(1);
-            budget--;
-        }
+    tryPickHumanReliveSpawn(): SnakeSpawnPoint | null { return this.tryPickSpawnPoint(); }
+
+    reviveHumanAt(
+        id: string,
+        spawn: SnakeSpawnPoint,
+        snapshot: { readonly length: number; readonly score: number; readonly killCount: number },
+        protectStartTick: number,
+    ): SnakeBody | null {
+        const snake = this.snakeById.get(id);
+        if (!snake || snake.isAi || snake.alive) return null;
+        snake.alive = true;
+        snake.length = Math.min(this.ruleset.maxLength, Math.max(this.ruleset.spawnLength, snapshot.length));
+        snake.score = Math.max(0, snapshot.score);
+        snake.killCount = Math.max(0, snapshot.killCount);
+        snake.boostDebt = 0;
+        snake.direction = spawn.direction;
+        snake.targetDirection = spawn.direction;
+        snake.boostIntent = false;
+        snake.boostActive = false;
+        snake.points = this.buildInitialBody(spawn, snake.length);
+        snake.protectUntilTick = protectStartTick + this.ruleset.reliveProtectionTicks;
+        snake.magnetUntilTick = 0;
+        snake.respawnAtTick = 0;
+        return snake;
     }
 
-    // ── 内部机制 ─────────────────────────────────────────────────────────
+    forceKill(id: string): boolean {
+        const snake = this.snakeById.get(id);
+        if (!snake || !snake.alive) return false;
+        this.killSnake(snake, null, "forced");
+        return true;
+    }
 
-    private killSnake(snake: SnakeBody, killer: SnakeBody | null): void {
+    private killSnake(
+        snake: SnakeBody,
+        killer: SnakeBody | null,
+        cause: "wall" | "collision" | "forced",
+        suppressRespawn = false,
+    ): void {
         if (!snake.alive) return;
         snake.alive = false;
         snake.deathCount += 1;
         snake.boostActive = false;
         snake.boostIntent = false;
-        if (killer && killer.id !== snake.id) killer.killCount += 1;
-        // 死亡掉落：沿身体均匀采样（03 §6.4；价值聚合，不为每个身体点建对象）
-        const plan = deathDropPlan(snake.length);
-        if (plan.count > 0) {
-            for (let i = 0; i < plan.count; i++) {
-                const index = Math.min(snake.points.length - 1,
-                    Math.floor((i + 0.5) * (snake.points.length / plan.count)));
-                const point = snake.points[Math.max(0, index)];
-                this.spawnWreck(point.x, point.y, plan.valuePerWreck);
+        snake.magnetUntilTick = 0;
+        if (killer && killer !== snake) killer.killCount += 1;
+        if (snake.isAi) {
+            const values = aiDeathWreckValues(snake.score, Math.max(1, snake.points.length));
+            for (let index = 0; index < values.length; index += 1) {
+                const pointIndex = Math.min(snake.points.length - 1,
+                    Math.floor((index + 0.5) * snake.points.length / values.length));
+                const point = snake.points[Math.max(0, pointIndex)];
+                this.spawnWreck(point.x, point.y, values[index], 1, snake.skinId);
             }
+            if (!suppressRespawn) {
+                snake.respawnAtTick = this.tick + this.ruleset.aiRespawnDelayTicks;
+                this.pendingAiRespawns.push(snake);
+            }
+        } else {
+            snake.respawnAtTick = 0;
         }
-        // 复活资格：终局前不足复活延迟则不再复活
-        if (snake.respawnAtTick >= 0 && this.tick + this.ruleset.respawnDelayTicks < this.endTick) {
-            snake.respawnAtTick = this.tick + this.ruleset.respawnDelayTicks;
-            this.pendingRespawns.push(snake);
-        }
-        this.events.onDeath?.(snake, killer?.id ?? null); // 让位/离场同样公告（客户端表现一致）
+        this.events.onDeath?.(snake, killer?.id ?? null, cause);
     }
 
     private addScore(snake: SnakeBody, delta: number): void {
         if (delta <= 0) return;
-        snake.score += delta;
+        snake.score = quantizeSnake(snake.score + delta);
         snake.lastScoreTick = this.tick;
     }
 
     private spawnFood(kind: FoodKind): void {
         const radius = kind === 0 ? this.ruleset.dotRadius : this.ruleset.starRadius;
-        const point = this.tryPlaceEntity(radius, this.rngFood);
-        if (!point) return; // 尝试上限：延后补充（03 §6.2）
         const id = this.nextFoodId++;
-        this.foods.set(id, { id, kind, x: point.x, y: point.y });
+        const point = this.placeEntity(radius, this.rngFood, id);
+        this.foods.set(id, {
+            id,
+            kind,
+            variant: this.rngFood.nextInt(1, 8),
+            x: point.x,
+            y: point.y,
+            motion: kind === 1 ? this.createMotion("star", id, point.x, point.y) : null,
+        });
     }
 
-    private spawnWreck(x: number, y: number, value: number): void {
-        if (this.wrecks.size >= this.ruleset.wreckRoomCap) return; // 全房上限：丢弃（03 §2.3 硬上限）
+    private spawnWreck(x: number, y: number, value: number, kind: 0 | 1, sourceSkinId?: number): void {
+        const normalized = quantizeSnake(value);
+        if (normalized <= 0) return;
+        if (this.wrecks.size >= this.ruleset.wreckRoomCap) {
+            const first = this.wrecks.values().next().value as SnakeWreck | undefined;
+            if (first) first.value = quantizeSnake(first.value + normalized);
+            return;
+        }
         const id = this.nextWreckId++;
-        this.wrecks.set(id, { id, value, x: quantizeSnake(x), y: quantizeSnake(y) });
+        this.wrecks.set(id, {
+            id,
+            value: normalized,
+            kind,
+            variant: ((id - 1) % 7) + 1,
+            ...(sourceSkinId === undefined ? {} : { sourceSkinId }),
+            x: quantizeSnake(x),
+            y: quantizeSnake(y),
+        });
+    }
+
+    private replenishFood(): void {
+        let budget = this.ruleset.foodReplenishPerTick;
+        while (this.foodCount(0) < this.ruleset.dotTarget && budget > 0) { this.spawnFood(0); budget -= 1; }
+        while (this.foodCount(1) < this.ruleset.starTarget && budget > 0) { this.spawnFood(1); budget -= 1; }
     }
 
     private foodCount(kind: FoodKind): number {
         let count = 0;
-        for (const food of this.foods.values()) if (food.kind === kind) count++;
+        for (const food of this.foods.values()) if (food.kind === kind) count += 1;
         return count;
     }
 
-    /** 出生点：竖向分散的候选区 + 安全距离过滤 + 子流抖动。 */
-    private pickSpawnPoint(): { x: number; y: number; direction: number } {
-        return this.tryPickSpawnPoint() ?? { x: 0, y: 0, direction: 90 }; // 中心兜底（世界初创必安全）
+    private pickSpawnPoint(): SnakeSpawnPoint {
+        return this.tryPickSpawnPoint() ?? { x: 0, y: 0, direction: 90 };
     }
 
-    private tryPickSpawnPoint(): { x: number; y: number; direction: number } | null {
-        const bounds = wallBounds();
+    private tryPickSpawnPoint(): SnakeSpawnPoint | null {
+        const bounds = wallBounds(this.ruleset.spawnLength);
         const safe = this.ruleset.spawnSafeDistance;
-        for (let attempt = 0; attempt < this.ruleset.foodSpawnMaxAttempts; attempt++) {
-            const x = quantizeSnake(this.rngSpawn.next() * (bounds.halfWidth - safe) * 2
-                - (bounds.halfWidth - safe));
-            const y = quantizeSnake(this.rngSpawn.next() * (bounds.halfHeight - safe) * 2
-                - (bounds.halfHeight - safe));
-            let clear = true;
-            for (const snake of this.snakes) {
-                if (!snake.alive) continue;
-                if (this.dist({ x, y }, snake.points[0]) < safe) { clear = false; break; }
-            }
-            if (!clear) continue;
-            // 出生方向指向场地中心（03 §8.1）
+        for (let attempt = 0; attempt < this.ruleset.foodSpawnMaxAttempts; attempt += 1) {
+            const x = quantizeSnake(this.rngSpawn.next() * (bounds.halfWidth - safe) * 2 - (bounds.halfWidth - safe));
+            const y = quantizeSnake(this.rngSpawn.next() * (bounds.halfHeight - safe) * 2 - (bounds.halfHeight - safe));
+            if (this.snakes.some((snake) => snake.alive && this.dist({ x, y }, snake.points[0]) < safe)) continue;
             return { x, y, direction: normalizeDegrees((Math.atan2(-y, -x) * 180) / Math.PI) };
         }
         return null;
     }
 
-    /** 实体摆放：不与墙安全边距/蛇头/现有实体严重重叠，尝试上限后放弃（本 tick）。 */
-    private tryPlaceEntity(radius: number, rng: SeededRandom): { x: number; y: number } | null {
-        const bounds = wallBounds();
-        for (let attempt = 0; attempt < this.ruleset.foodSpawnMaxAttempts; attempt++) {
-            const x = quantizeSnake(rng.next() * (bounds.halfWidth - radius) * 2 - (bounds.halfWidth - radius));
-            const y = quantizeSnake(rng.next() * (bounds.halfHeight - radius) * 2 - (bounds.halfHeight - radius));
-            let clear = true;
-            for (const snake of this.snakes) {
-                if (!snake.alive) continue;
-                if (this.dist({ x, y }, snake.points[0]) < headRadius() + radius + 20) { clear = false; break; }
-            }
-            if (clear) return { x, y };
+    private placeEntity(radius: number, rng: SeededRandom, salt: number): { readonly x: number; readonly y: number } {
+        const halfW = this.ruleset.worldWidth / 2 - radius;
+        const halfH = this.ruleset.worldHeight / 2 - radius;
+        for (let attempt = 0; attempt < this.ruleset.foodSpawnMaxAttempts; attempt += 1) {
+            const x = quantizeSnake(rng.next() * halfW * 2 - halfW);
+            const y = quantizeSnake(rng.next() * halfH * 2 - halfH);
+            if (!this.snakes.some((snake) => snake.alive
+                && this.dist({ x, y }, snake.points[0]) < headRadius(snake.length) + radius + 20)) return { x, y };
         }
-        return null;
+        // 必发波不能因拥挤少于 10 个；确定性格点兜底仍保证实体半径留在边界内。
+        return {
+            x: quantizeSnake(-halfW + ((salt * 977) % Math.max(1, Math.floor(halfW * 2)))),
+            y: quantizeSnake(-halfH + ((salt * 1597) % Math.max(1, Math.floor(halfH * 2)))),
+        };
     }
 
-    private dist(a: { x: number; y: number }, b: { x: number; y: number }): number {
-        return Math.hypot(a.x - b.x, a.y - b.y);
+    private dist(left: { x: number; y: number }, right: { x: number; y: number }): number {
+        return Math.hypot(left.x - right.x, left.y - right.y);
     }
 
-    // ── 排名与快照 ───────────────────────────────────────────────────────
+    private stepFakeRanks(): void {
+        for (const entry of this.fakeRanks) {
+            if (this.rngFakeRank.nextInt(0, 1000) < this.ruleset.fakeSnakeResetRatePermille) {
+                entry.score = this.ruleset.fakeSnakeResetScore;
+            } else {
+                entry.score += this.rngFakeRank.nextInt(
+                    this.ruleset.fakeSnakeIncrementMin,
+                    this.ruleset.fakeSnakeIncrementMaxExclusive,
+                );
+            }
+        }
+    }
 
-    /** 稳定排名（含死亡/等待复活的蛇——它们仍有分数；AI 上榜）。 */
+    displayRanking(selfId?: string): ISnakeWorldSnapshot["displayRank"] {
+        const active = this.snakes.map((snake) => ({
+            id: snake.id,
+            name: snake.name,
+            score: snake.score,
+            length: snake.length,
+            ai: snake.isAi,
+        }));
+        const activeMax = active.reduce((max, entry) => Math.max(max, entry.length), 0);
+        const fake = this.fakeRanks.filter((entry) => entry.score < activeMax).map((entry) => ({
+            ...entry,
+            length: entry.score,
+            ai: false,
+        }));
+        const ranked = [...active, ...fake]
+            .sort((left, right) => right.score - left.score || right.length - left.length
+                || (left.id < right.id ? -1 : left.id > right.id ? 1 : 0));
+        const shown = ranked.slice(0, 10).map((entry, index) => ({
+            ...entry,
+            rank: index + 1,
+            self: entry.id === selfId,
+        }));
+        if (selfId && !shown.some((entry) => entry.self)) {
+            const index = ranked.findIndex((entry) => entry.id === selfId);
+            if (index >= 0) shown.push({ ...ranked[index], rank: index + 1, self: true });
+        }
+        return shown;
+    }
+
     ranking(): readonly SnakeRankEntry[] {
-        const entries: SnakeRankEntry[] = this.snakes.map((snake) => ({
+        return this.snakes.map((snake) => ({
             id: snake.id,
             score: snake.score,
             length: snake.length,
             deathCount: snake.deathCount,
             scoreTick: snake.lastScoreTick,
-        }));
-        return entries.sort(compareSnakeRank);
+        })).sort(compareSnakeRank);
     }
 
-    /** 世界快照（S2C；全部实体坐标量化整数——wire validator 烧死 WIRE_INTEGER）。
-     *  超 64KiB 预算时按 stride 降采样非头点（03 §2.3）。 */
-    buildSnapshot(matchId: string, seq: number): {
-        matchId: string;
-        tick: number;
-        seq: number;
-        snakes: Array<{
-            id: string; name: string; skin: number; ai: boolean; alive: boolean;
-            score: number; length: number; boost: boolean;
-            points: Array<{ x: number; y: number }>;
-        }>;
-        foods: Array<{ id: number; kind: number; x: number; y: number }>;
-        wrecks: Array<{ id: number; value: number; x: number; y: number }>;
-    } {
-        const roundPoint = (point: SnakePoint) => ({ x: Math.round(point.x), y: Math.round(point.y) });
-        const build = (stride: number) => this.snakes.map((snake) => ({
-            id: snake.id,
-            name: snake.name,
-            skin: snake.skin,
-            ai: snake.isAi,
-            alive: snake.alive,
-            score: snake.score,
-            length: Math.round(snake.length),
-            boost: snake.boostActive,
-            points: snake.alive
-                ? snake.points.filter((_, index) => index % stride === 0
-                    || index === snake.points.length - 1).map(roundPoint)
-                : [roundPoint(snake.points[0])], // 死亡蛇只留头部位置（死亡表现锚点）
-        }));
-        let stride = 1;
-        let snakes = build(stride);
-        // 粗估字节（msgpack 数量级）：点 ~10B、食物/残骸 ~12B；超预算则升 stride 降采样
-        const estimate = () => snakes.reduce((sum, snake) => sum + snake.points.length * 10 + 60, 0)
-            + (this.foods.size + this.wrecks.size) * 12;
-        while (estimate() > this.ruleset.snapshotMaxBytes && stride < 8) {
-            stride *= 2;
-            snakes = build(stride);
-        }
+    buildSnapshot(roomEpochId: string, seq: number, runs: readonly ISnakeRunDelta[] = []): ISnakeWorldSnapshot {
+        const wirePoint = (point: SnakePoint) => ({ x: quantizeSnake(point.x), y: quantizeSnake(point.y) });
         return {
-            matchId,
+            roomEpochId,
+            matchId: roomEpochId,
             tick: this.tick,
+            envelopeTick: this.tick,
             seq,
-            snakes,
+            snakes: this.snakes.map((snake) => ({
+                id: snake.id,
+                name: snake.name,
+                skinId: snake.skinId,
+                ai: snake.isAi,
+                aiLevel: snake.aiLevel,
+                alive: snake.alive,
+                score: snake.score,
+                length: snake.length,
+                boost: snake.boostActive,
+                bodyScale: snakeBodyScale(snake.length),
+                magnetUntilTick: snake.alive && this.tick < snake.magnetUntilTick ? snake.magnetUntilTick : null,
+                protectUntilTick: snake.alive && this.tick < snake.protectUntilTick ? snake.protectUntilTick : null,
+                points: snake.alive ? snake.points.map(wirePoint) : [],
+            })),
             foods: this.foodList().map((food) => ({
-                id: food.id, kind: food.kind,
-                x: Math.round(food.x), y: Math.round(food.y),
+                id: food.id,
+                kind: food.kind,
+                variant: food.variant,
+                x: food.x,
+                y: food.y,
             })),
             wrecks: this.wreckList().map((wreck) => ({
-                id: wreck.id, value: wreck.value,
-                x: Math.round(wreck.x), y: Math.round(wreck.y),
+                id: wreck.id,
+                value: wreck.value,
+                kind: wreck.kind,
+                variant: wreck.variant,
+                ...(wreck.sourceSkinId === undefined ? {} : { sourceSkinId: wreck.sourceSkinId }),
+                x: wreck.x,
+                y: wreck.y,
             })),
+            tools: this.toolList().map((tool) => ({
+                id: tool.id,
+                toolId: tool.toolId,
+                x: tool.x,
+                y: tool.y,
+                expireTick: tool.expireTick,
+            })),
+            runs,
+            displayRank: this.displayRanking(),
+        };
+    }
+
+    /** 测试/诊断观察面：不暴露 RNG 对象，只返回可重放状态。 */
+    motionProbe(kind: "star" | "magnet", id: number): Readonly<{
+        xMicro: number;
+        yMicro: number;
+        directionMilliX: number;
+        directionMilliY: number;
+        remainingDirectionTicks: number;
+        distanceMilliRemainder: number;
+    }> | null {
+        const motion = kind === "star" ? this.foods.get(id)?.motion : this.tools.get(id)?.motion;
+        if (!motion) return null;
+        return {
+            xMicro: motion.xMicro,
+            yMicro: motion.yMicro,
+            directionMilliX: motion.directionMilliX,
+            directionMilliY: motion.directionMilliY,
+            remainingDirectionTicks: motion.remainingDirectionTicks,
+            distanceMilliRemainder: motion.distanceMilliRemainder,
         };
     }
 }

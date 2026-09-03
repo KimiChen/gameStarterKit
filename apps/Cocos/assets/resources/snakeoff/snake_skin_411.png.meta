@@ -1,10 +1,12 @@
 {
+  "ver": "1.0.27",
+  "importer": "image",
+  "imported": true,
+  "uuid": "f564426c-9a47-4633-89d5-b0344af16998",
   "files": [
     ".json",
     ".png"
   ],
-  "imported": true,
-  "importer": "image",
   "subMetas": {
     "6c48a": {
       "displayName": "snake_skin_411",
@@ -36,7 +38,5 @@
     "hasAlpha": true,
     "redirect": "f564426c-9a47-4633-89d5-b0344af16998@6c48a",
     "type": "texture"
-  },
-  "uuid": "f564426c-9a47-4633-89d5-b0344af16998",
-  "ver": "1.0.27"
+  }
 }

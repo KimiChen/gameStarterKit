@@ -881,7 +881,12 @@ function reachedGameplayInput(type: C2SType, phase: GamePhaseType, ownerId: stri
                     player.name = `matrix-${sessionId}`;
                     return player;
                 },
-                commands: { [C2S.SnakeInput]: capture(C2S.SnakeInput) },
+                commands: {
+                    [C2S.SnakeInput]: capture(C2S.SnakeInput),
+                    [C2S.SnakeReliveDecision]: capture(C2S.SnakeReliveDecision),
+                    [C2S.SnakeEndRun]: capture(C2S.SnakeEndRun),
+                    [C2S.SnakeBaselineRequest]: capture(C2S.SnakeBaselineRequest),
+                },
             }
             : {
                 ...createBallMoveGameMode(),
@@ -905,6 +910,14 @@ const MATRIX_VALID_PAYLOAD: Record<string, unknown> = {
     [C2S.CastSkill]: { skillId: 1 },
     [C2S.IdlePulse]: {},
     [C2S.SnakeInput]: { dirX: 1, dirY: 0, boost: false, seq: 1 },
+    [C2S.SnakeReliveDecision]: {
+        runId: "matrix-run",
+        deathSeq: 1,
+        clientReqId: "matrix-relive",
+        decision: "decline",
+    },
+    [C2S.SnakeEndRun]: { runId: "matrix-run", clientReqId: "matrix-end" },
+    [C2S.SnakeBaselineRequest]: { roomEpochId: "matrix-epoch", afterSeq: 0 },
 };
 
 test("shell 不再认识具体玩法输入：IdlePulse 只对 owner mode 开放", () => {

@@ -8,107 +8,74 @@
       "validatorName": "validateSnakePlayerState",
       "defaultPath": "snakePlayer",
       "fields": [
+        { "name": "id", "kind": "string", "default": "", "minLength": 1, "maxLength": 64, "description": "Colyseus sessionId（真人席位；AI 不进本 map）" },
+        { "name": "name", "kind": "string", "default": "", "minLength": 1, "maxLength": 128 },
+        { "name": "joinOrdinal", "kind": "integer", "default": 0, "min": 0 },
+        { "name": "connected", "kind": "boolean", "default": true, "description": "重连宽限内为 false，run 与席位保留" },
+        { "name": "alive", "kind": "boolean", "default": false },
+        { "name": "score", "kind": "number", "default": 0, "min": 0, "max": "MAX_SAFE_INTEGER", "description": "真人可拾取 AI 千分位 wreck，分数允许确定性小数" },
+        { "name": "length", "kind": "integer", "default": 0, "min": 0 },
+        { "name": "deathCount", "kind": "integer", "default": 0, "min": 0 },
+        { "name": "killCount", "kind": "integer", "default": 0, "min": 0 },
+        { "name": "headX", "kind": "number", "default": 0, "min": "MIN_SAFE_INTEGER", "max": "MAX_SAFE_INTEGER" },
+        { "name": "headY", "kind": "number", "default": 0, "min": "MIN_SAFE_INTEGER", "max": "MAX_SAFE_INTEGER" },
+        { "name": "direction", "kind": "number", "default": 0, "min": 0, "max": 360 },
+        { "name": "boost", "kind": "boolean", "default": false },
+        { "name": "ackSeq", "kind": "integer", "default": 0, "min": 0 },
+        { "name": "skinId", "kind": "integer", "default": 1, "min": 1 },
+        { "name": "magnetUntilTick", "kind": "integer", "default": 0, "min": 0, "description": "0=null；否则为权威绝对失效 tick" },
+        { "name": "protectUntilTick", "kind": "integer", "default": 0, "min": 0 },
+        { "name": "runId", "kind": "string", "default": "pending", "minLength": 1, "maxLength": 128 },
         {
-          "name": "id",
-          "kind": "string",
-          "default": "",
-          "minLength": 1,
-          "maxLength": 64,
-          "description": "Colyseus sessionId（真人席位；AI 不进本 map）"
+          "name": "runState",
+          "kind": "enum",
+          "enumObject": "SnakeRunState",
+          "enumType": "SnakeRunStateType",
+          "members": ["Preparing", "Cancelled", "Active", "DeadPresentation", "ReliveOffering", "PendingRelive", "ReliveSpawning", "ReliveCommitting", "ReliveReady", "Finalizing", "Finalized"],
+          "default": "Preparing",
+          "errorCode": "STATE_SNAKE_RUN_STATE"
         },
+        { "name": "stateVersion", "kind": "integer", "default": 1, "min": 1 },
+        { "name": "runStartedTick", "kind": "integer", "default": 0, "min": 0, "description": "0=null while preparing/cancelled" },
+        { "name": "activeTicks", "kind": "integer", "default": 0, "min": 0 },
+        { "name": "deathSeq", "kind": "integer", "default": 0, "min": 0 },
         {
-          "name": "name",
-          "kind": "string",
-          "default": "",
-          "minLength": 1,
-          "maxLength": 128
+          "name": "deathCause",
+          "kind": "enum",
+          "enumObject": "SnakeDeathCause",
+          "enumType": "SnakeDeathCauseType",
+          "members": ["None", "Wall", "Collision", "Forced"],
+          "default": "None",
+          "errorCode": "STATE_SNAKE_DEATH_CAUSE"
         },
+        { "name": "relivesUsed", "kind": "integer", "default": 0, "min": 0, "max": 5 },
+        { "name": "magnetCollected", "kind": "integer", "default": 0, "min": 0 },
+        { "name": "starCollected", "kind": "integer", "default": 0, "min": 0 },
+        { "name": "relivePolicyVersion", "kind": "integer", "default": 1, "min": 1 },
         {
-          "name": "joinOrdinal",
-          "kind": "integer",
-          "default": 0,
-          "min": 0,
-          "description": "入座次序（稳定排序用）"
+          "name": "terminalIntent",
+          "kind": "enum",
+          "enumObject": "SnakeRunEndReason",
+          "enumType": "SnakeRunEndReasonType",
+          "members": ["None", "ExplicitExit", "DisconnectTimeout", "SessionReplaced", "ModerationKick", "ReliveDeclined", "ReliveTimeout", "DeathNoOffer", "ReliveSpawnFailed", "ReliveSystemFailed", "ForcedDeath", "Escape", "ServerDrain", "RoomFault"],
+          "default": "None",
+          "errorCode": "STATE_SNAKE_END_REASON"
         },
+        { "name": "resolveAtTick", "kind": "integer", "default": 0, "min": 0 },
+        { "name": "reliveIndex", "kind": "integer", "default": 0, "min": 0, "max": 5 },
+        { "name": "coinCost", "kind": "integer", "default": 0, "min": 0 },
+        { "name": "offeredTick", "kind": "integer", "default": 0, "min": 0 },
+        { "name": "decisionDeadlineTick", "kind": "integer", "default": 0, "min": 0 },
+        { "name": "decisionClientReqId", "kind": "string", "default": "", "minLength": 0, "maxLength": 128 },
+        { "name": "receiptId", "kind": "string", "default": "", "minLength": 0, "maxLength": 128 },
         {
-          "name": "connected",
-          "kind": "boolean",
-          "default": true,
-          "description": "重连宽限内为 false（席位保留）"
-        },
-        {
-          "name": "alive",
-          "kind": "boolean",
-          "default": true
-        },
-        {
-          "name": "score",
-          "kind": "integer",
-          "default": 0,
-          "min": 0,
-          "description": "累计得分（死亡不清零，复活保留）"
-        },
-        {
-          "name": "length",
-          "kind": "integer",
-          "default": 0,
-          "min": 0,
-          "description": "当前逻辑长度（复活回 spawnLength）"
-        },
-        {
-          "name": "deathCount",
-          "kind": "integer",
-          "default": 0,
-          "min": 0
-        },
-        {
-          "name": "killCount",
-          "kind": "integer",
-          "default": 0,
-          "min": 0
-        },
-        {
-          "name": "headX",
-          "kind": "number",
-          "default": 0,
-          "min": "MIN_SAFE_INTEGER",
-          "max": "MAX_SAFE_INTEGER",
-          "description": "头部摘要（HUD/排名轻量用；完整蛇身走 S2C 快照）"
-        },
-        {
-          "name": "headY",
-          "kind": "number",
-          "default": 0,
-          "min": "MIN_SAFE_INTEGER",
-          "max": "MAX_SAFE_INTEGER"
-        },
-        {
-          "name": "direction",
-          "kind": "number",
-          "default": 0,
-          "min": 0,
-          "max": 360,
-          "description": "角度制，[0, 360)"
-        },
-        {
-          "name": "boost",
-          "kind": "boolean",
-          "default": false,
-          "description": "服务端是否接受了加速（非客户端按钮态）"
-        },
-        {
-          "name": "ackSeq",
-          "kind": "integer",
-          "default": 0,
-          "min": 0,
-          "description": "服务端已接受的最新输入 seq（重连后续发依据）"
-        },
-        {
-          "name": "respawnTick",
-          "kind": "integer",
-          "default": 0,
-          "min": 0,
-          "description": "0 = 在局；>0 = 该 tick 复活（死亡等待期）"
+          "name": "reliveReceiptState",
+          "kind": "enum",
+          "enumObject": "SnakeReliveReceiptState",
+          "enumType": "SnakeReliveReceiptStateType",
+          "members": ["None", "Processing", "Charged", "Applying", "Applied", "Activated", "Refunding", "Refunded"],
+          "default": "None",
+          "errorCode": "STATE_SNAKE_RECEIPT_STATE"
         }
       ],
       "serverOnly": []
@@ -119,13 +86,7 @@
       "validatorName": "validateSnakeRoomState",
       "defaultPath": "snakeState",
       "fields": [
-        {
-          "name": "tick",
-          "kind": "integer",
-          "default": 0,
-          "min": 0,
-          "description": "Logical frame number（20Hz）"
-        },
+        { "name": "tick", "kind": "integer", "default": 0, "min": 0 },
         {
           "name": "phase",
           "kind": "enum",
@@ -133,56 +94,42 @@
           "enumType": "GamePhaseType",
           "members": ["Waiting", "Playing", "Settle"],
           "default": "Waiting",
-          "errorCode": "STATE_PHASE",
-          "description": "Room phase"
+          "errorCode": "STATE_PHASE"
         },
-        {
-          "name": "matchId",
-          "kind": "string",
-          "default": "",
-          "minLength": 0,
-          "maxLength": 128,
-          "description": "Stable match id; empty while waiting"
-        },
-        {
-          "name": "endTick",
-          "kind": "integer",
-          "default": 0,
-          "min": 0,
-          "description": "tick >= endTick 时冻结结算（90s 限时）"
-        },
-        {
-          "name": "countdownEndTick",
-          "kind": "integer",
-          "default": 0,
-          "min": 0,
-          "description": "开局倒计时结束的 tick（0 = 不在倒计时）"
-        },
-        {
-          "name": "snapshotSeq",
-          "kind": "integer",
-          "default": 0,
-          "min": 0,
-          "description": "最近一份世界快照的序号（单调）"
-        },
-        {
-          "name": "winnerId",
-          "kind": "string",
-          "default": "",
-          "minLength": 0,
-          "maxLength": 64,
-          "description": "结算后的第一名 sessionId；未结算为空"
-        },
+        { "name": "matchId", "kind": "string", "default": "", "minLength": 0, "maxLength": 128 },
+        { "name": "roomEpochId", "kind": "string", "default": "", "minLength": 0, "maxLength": 128 },
+        { "name": "playingStartedTick", "kind": "integer", "default": 0, "min": 0 },
+        { "name": "countdownEndTick", "kind": "integer", "default": 0, "min": 0 },
+        { "name": "totalTime", "kind": "integer", "default": 0, "min": 0, "max": 0 },
+        { "name": "matchDurationTicks", "kind": "integer", "default": 0, "min": 0, "max": 0 },
+        { "name": "hasDeadline", "kind": "boolean", "default": false },
+        { "name": "endTick", "kind": "integer", "default": 0, "min": 0, "description": "兼容投影；hasDeadline=false 时禁止参与比较" },
+        { "name": "battlefieldConfigId", "kind": "string", "default": "newEndlessPortraitV2Map4096", "minLength": 1, "maxLength": 64 },
+        { "name": "lifecycleConfigId", "kind": "string", "default": "sourceEndlessTotalTime0", "minLength": 1, "maxLength": 64 },
+        { "name": "reliveFlowConfigId", "kind": "string", "default": "sourceEndlessReliveFlow", "minLength": 1, "maxLength": 64 },
+        { "name": "relivePolicyId", "kind": "string", "default": "onlineCoinRelive5V1", "minLength": 1, "maxLength": 64 },
+        { "name": "onlineAdaptationId", "kind": "string", "default": "onlineEndlessDropInV2", "minLength": 1, "maxLength": 64 },
+        { "name": "battlefieldLayerVersion", "kind": "integer", "default": 1, "min": 1, "max": 1 },
+        { "name": "lifecycleLayerVersion", "kind": "integer", "default": 1, "min": 1, "max": 1 },
+        { "name": "reliveFlowLayerVersion", "kind": "integer", "default": 1, "min": 1, "max": 1 },
+        { "name": "relivePolicyLayerVersion", "kind": "integer", "default": 1, "min": 1, "max": 1 },
+        { "name": "onlineAdaptationLayerVersion", "kind": "integer", "default": 2, "min": 2, "max": 2 },
+        { "name": "battlefieldLayerHash", "kind": "string", "default": "6750cb34f7b454902a0263b17ddd9745942eb511b56e1510aed5a886ea72a07e", "minLength": 64, "maxLength": 64 },
+        { "name": "lifecycleLayerHash", "kind": "string", "default": "efc56090b06e92c5ba0027330b7719d6f857c5709045ddb850d64a46e551b477", "minLength": 64, "maxLength": 64 },
+        { "name": "reliveFlowLayerHash", "kind": "string", "default": "9b33262d53fd0de440a8adc6ca6bf7c09493d32d0b0034dd20677c10915eb865", "minLength": 64, "maxLength": 64 },
+        { "name": "relivePolicyLayerHash", "kind": "string", "default": "e668f382989f593802dc6ab608524811a0fb39756d70a5afe9e6ce2737bbc646", "minLength": 64, "maxLength": 64 },
+        { "name": "onlineAdaptationLayerHash", "kind": "string", "default": "3a61016ceb2e9fc1ffe8a342ed5b174fabec1cff4581346a8224f97a2b19a53f", "minLength": 64, "maxLength": 64 },
+        { "name": "configHash", "kind": "string", "default": "2c74f005c0375f98a07250c4c14ede9d0075a238d9f355ff6f07c9935d97e8e7", "minLength": 64, "maxLength": 64 },
+        { "name": "snapshotSeq", "kind": "integer", "default": 0, "min": 0 },
+        { "name": "baselineSeq", "kind": "integer", "default": 0, "min": 0 },
+        { "name": "draining", "kind": "boolean", "default": false },
+        { "name": "onlineCoinReliveEnabled", "kind": "boolean", "default": false, "description": "S2/S2R 均保持面向玩家发布开关关闭" },
         {
           "name": "players",
           "kind": "map",
           "valueType": "SnakePlayerState",
           "errorCode": "STATE_PLAYERS",
-          "key": {
-            "field": "id",
-            "errorCode": "STATE_PLAYER_ID"
-          },
-          "description": "真人玩家摘要（roster 动态，drop-in）；AI 不进入本 map"
+          "key": { "field": "id", "errorCode": "STATE_PLAYER_ID" }
         }
       ],
       "serverOnly": []

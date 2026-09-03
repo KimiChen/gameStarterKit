@@ -313,6 +313,8 @@ export class GameRoom extends Room {
     private stateSerializerConfigured = false;
     private selectedStateModeId: string | null = null;
     private creationConfigured = false;
+    /** 仅 roomLifecycle capability 玩法使用；在 onCreate/admission 前生成且永不重钉。 */
+    private roomEpochId: string | null = null;
     /** Sessions for which the mode admission hook has acquired ownership. */
     private readonly modeAdmissions = new Set<string>();
     private readonly messageBudget = new Map<string, { windowStart: number; count: number }>();
@@ -432,6 +434,7 @@ export class GameRoom extends Room {
             sId: this.sId,
             fixedStepMs: this.fixedStepMs,
             matchSeed: this.matchSeed,
+            roomEpochId: this.roomEpochId,
             // ⚠ 闭包转发而非快照：initializeMatchState 会重建 this.rng（match 流），
             // mode 捕获旧 context 后仍必须消费当前流，否则出生点抽签序与 replay 漂移。
             random: {
@@ -1053,6 +1056,15 @@ export class GameRoom extends Room {
         // 更新 listing 的 accessor，而生产房的 mode 直到这里才选定。
         this.maxClients = mode.roster.max;
         this.sId = sId;
+        if (mode.roomLifecycle?.stableRoomEpoch) {
+            const roomEpochId = this.matchIdFactory();
+            this.roomEpochId = roomEpochId;
+            this.state.matchId = roomEpochId;
+            mode.roomLifecycle.onRoomInitialize({
+                ...this.modeContext(),
+                roomEpochId,
+            });
+        }
         this.creationConfigured = true;
         this.setSimulationInterval((dt) => this.update(dt), this.fixedStepMs);
         this.schedulePrivateRoomTimer();
@@ -1294,6 +1306,8 @@ export class GameRoom extends Room {
         player: RuntimeModePlayer,
         acceptedTick: number,
         duringMatch: boolean,
+        closeCode: number,
+        consented: boolean,
     ): void {
         if (!mode.onPlayerLeaving) return;
         try {
@@ -1303,10 +1317,32 @@ export class GameRoom extends Room {
                 player,
                 acceptedTick,
                 duringMatch,
+                closeCode,
+                consented,
             });
             if (isPromiseLike(result)) this.observeModePromise(result, "player-leaving");
         } catch (error) {
             console.error(`[GameRoom ${this.roomId}] mode ${mode.id} player-leaving hook failed`, error);
+        }
+    }
+
+    private runModeConnectionChanged(
+        mode: RuntimeGameMode,
+        client: Client,
+        player: RuntimeModePlayer,
+        connected: boolean,
+    ): void {
+        if (!mode.onConnectionChanged) return;
+        try {
+            const result = mode.onConnectionChanged({
+                ...this.modeContext(),
+                client,
+                player,
+                connected,
+            });
+            if (isPromiseLike(result)) this.observeModePromise(result, "connection-changed");
+        } catch (error) {
+            console.error(`[GameRoom ${this.roomId}] mode ${mode.id} connection-changed hook failed`, error);
         }
     }
 
@@ -1605,6 +1641,10 @@ export class GameRoom extends Room {
         const mode = this.requireMode();
         const consented = code === CloseCode.CONSENTED;
         if (!consented) {
+            const disconnectedPlayer = this.state.players.get(client.sessionId) as RuntimeModePlayer | undefined;
+            if (disconnectedPlayer) {
+                this.runModeConnectionChanged(mode, client, disconnectedPlayer, false);
+            }
             // §6.4：可重试 transport close 进入宽限——seat/owner/Ready 保留，但 connected=false
             // 并推进 connectionRevision（在途 Start 据此失效；离线成员存在时不能 Start）。
             // 必须在 allowReconnection await **之前**的同步段完成。
@@ -1631,6 +1671,10 @@ export class GameRoom extends Room {
                         view.connectionRevision++; // reconnect 再次推进（§6.4 推进点表）
                     }
                 }
+                const reconnectedPlayer = this.state.players.get(client.sessionId) as RuntimeModePlayer | undefined;
+                if (reconnectedPlayer) {
+                    this.runModeConnectionChanged(mode, client, reconnectedPlayer, true);
+                }
                 console.log(`[GameRoom ${this.roomId}] ${client.sessionId} 断线后重连成功`);
                 return; // seat/owner/Ready 原样保留，无其余簿记
             } catch {
@@ -1645,7 +1689,7 @@ export class GameRoom extends Room {
             // ⚠ mode 的离场证据簿记住在 onPlayerLeaving 里，且必须消费 context 携带的
             // **捕获时** player 引用（钩子可同步删 players 条目；重取会漏记阵亡 →
             // 整局证据被静默丢弃）。shell 只负责传引用，不再有任何玩法分支。
-            this.runModePlayerLeaving(mode, client, player, acceptedTick, leftDuringMatch);
+            this.runModePlayerLeaving(mode, client, player, acceptedTick, leftDuringMatch, code, consented);
         }
         // Waiting 离开没有结算证据需求，参与者快照也必须删除；Playing/Settle
         // 则保留 participantUserId，供退房者的最终名次回读 uid。
@@ -1970,7 +2014,15 @@ export class GameRoom extends Room {
     private async initializeMatchState(): Promise<void> {
         const mode = this.requireMode();
         this.state.tick = 0;
-        this.state.matchId = this.matchIdFactory();
+        // 生产房已在 onCreate/admission 前生成；无头 harness 可能直接 startMatch，
+        // 因此这里保留一次等价的 lazy capability 边界。
+        if (mode.roomLifecycle?.stableRoomEpoch && this.roomEpochId === null) {
+            const roomEpochId = this.matchIdFactory();
+            this.roomEpochId = roomEpochId;
+            this.state.matchId = roomEpochId;
+            mode.roomLifecycle.onRoomInitialize({ ...this.modeContext(), roomEpochId });
+        }
+        this.state.matchId = this.roomEpochId ?? this.matchIdFactory();
         this.simulationAccumulatorMs = 0;
         this.messageBudget.clear();
         // ⚠ 在调用 mode.onMatchInitialize 之前重建 match 流：mode 经 context.random 消费的
@@ -1989,7 +2041,7 @@ export class GameRoom extends Room {
     private async rollbackMatchState(): Promise<void> {
         const mode = this.requireMode();
         this.state.phase = GamePhase.Waiting;
-        this.state.matchId = "";
+        this.state.matchId = this.roomEpochId ?? "";
         this.state.tick = 0;
         this.simulationAccumulatorMs = 0;
         this.messageBudget.clear();

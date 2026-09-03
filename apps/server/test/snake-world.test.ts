@@ -1,377 +1,404 @@
-/**
- * SnakeWorld 行为与确定性测试（docs/snakeoff/03 §11 / 06 §2.2–2.4）。
- *
- * 覆盖：出生安全距离、输入 seq 闸、加速消耗与掉落、吃食成长、墙/自身/他蛇/头对头碰撞、
- * 出生保护、复活保留分数、AI 让位/补刷/移除语义、快照有界与 id 唯一、限时到点、
- * 以及同 seed + 同输入序列 → 逐字节相同的终局（确定性）。
- * 房间层（drop-in 全链/断线宽限/撮合）在 snake-room.test.ts 与 int（S3）。
- */
+/** Snake Endless V2 权威世界：运动、工具、roster、残骸与容量。 */
 import assert from "node:assert/strict";
-import { test } from "node:test";
 import { createHash } from "node:crypto";
-import { SNAKE_RULESET } from "@game/shared/gameplays/snake/ruleset";
+import { test } from "node:test";
+import { SeededRandom } from "@game/shared";
+import {
+    directionVector,
+    SNAKE_AI_LINEUP,
+    SNAKE_MAGNET_ELIGIBLE_RUN_STATES,
+    SNAKE_RULESET,
+} from "@game/shared/gameplays/snake/ruleset";
+import { aiDeathWreckValues, eatDistance } from "../src/rooms/modes/snake/rules";
 import { SnakeWorld, type SnakeBody } from "../src/rooms/modes/snake/world";
-import { stepDistance } from "../src/rooms/modes/snake/rules";
 
-const MOVE_START = SNAKE_RULESET.countdownTicks;
-
-/** 推进到移动解禁（跳过开局倒计时冻结窗）。 */
-function warmUp(world: SnakeWorld): void {
-    for (let i = 0; i <= MOVE_START; i++) world.step();
+function advance(world: SnakeWorld, targetTick: number, gate: readonly { state: string; length: number }[] = []): void {
+    while (world.tick < targetTick) world.step(gate);
 }
 
-/** 测试侧确定性 hash：世界可观测状态的规范化 JSON（键序固定）。 */
-function worldHash(world: SnakeWorld): string {
-    const canon = {
-        tick: world.tick,
-        snakes: world.snakes.map((snake) => ({
-            id: snake.id,
-            alive: snake.alive,
-            score: snake.score,
-            length: snake.length,
-            direction: snake.direction,
-            points: snake.points.map((point) => [point.x, point.y]),
-        })),
-        foods: world.foodList().map((food) => [food.id, food.kind, food.x, food.y]),
-        wrecks: world.wreckList().map((wreck) => [wreck.id, wreck.value, wreck.x, wreck.y]),
-    };
-    return createHash("sha256").update(JSON.stringify(canon)).digest("hex");
-}
-
-/** 把蛇瞬移到指定位置朝指定方向（测试手术：直接改写路径点列）。 */
-function teleport(snake: SnakeBody, x: number, y: number, direction: number): void {
+function teleport(snake: SnakeBody, x: number, y: number, direction = 0): void {
     snake.points = [{ x, y }];
     snake.direction = direction;
     snake.targetDirection = direction;
 }
 
-test("确定性：同 seed + 同输入序列 → 逐字节相同终局（含 AI 与食物补充）", () => {
-    const script = (world: SnakeWorld): void => {
-        world.addPlayerSnake("p1", "甲", 0);
-        world.addPlayerSnake("p2", "乙", 1);
-        world.addAiSnake();
-        world.addAiSnake();
-        warmUp(world);
-        for (let tick = 0; tick < 300; tick++) {
-            if (tick === 10) world.applyInput("p1", 1, 0, false, 1);
-            if (tick === 40) world.applyInput("p1", 0, 1, true, 2);
-            if (tick === 80) world.applyInput("p2", -1, 0, false, 1);
-            if (tick === 120) world.applyInput("p1", 0.3, -0.5, false, 3);
-            world.step();
+function digest(world: SnakeWorld): string {
+    return createHash("sha256").update(JSON.stringify({
+        tick: world.tick,
+        snakes: world.snakes.map((snake) => [snake.id, snake.alive, snake.skinId, snake.aiLevel,
+            snake.score, snake.length, snake.magnetUntilTick, snake.points]),
+        foods: world.foodList().map((food) => [food.id, food.kind, food.variant, food.x, food.y]),
+        wrecks: world.wreckList(),
+        tools: world.toolList().map((tool) => [tool.id, tool.x, tool.y, tool.expireTick]),
+        triggers: world.magnetTriggers,
+    })).digest("hex");
+}
+
+test("同 seed/输入的 Star、磁铁、AI 与世界字节级可重放", () => {
+    const run = (): SnakeWorld => {
+        const world = new SnakeWorld({ matchSeed: 20260903, aiSkinPool: [1, 2, 3, 4] });
+        world.addPlayerSnake("p1", "甲", 1);
+        world.addInitialAiLineup();
+        for (let tick = 0; tick < 420; tick += 1) {
+            if (tick === 80) world.applyInput("p1", 1, 0, false, 1);
+            if (tick === 140) world.applyInput("p1", 0, 1, true, 2);
+            world.step([{ state: "active", length: 80 }]);
         }
+        return world;
     };
-    const a = new SnakeWorld({ matchSeed: 20260902 });
-    const b = new SnakeWorld({ matchSeed: 20260902 });
-    script(a);
-    script(b);
-    assert.equal(worldHash(a), worldHash(b), "同 seed 同输入必须逐字节一致");
-    const c = new SnakeWorld({ matchSeed: 20260903 });
-    script(c);
-    assert.notEqual(worldHash(a), worldHash(c), "不同 seed 必须产生不同世界");
+    const first = run();
+    const second = run();
+    assert.equal(digest(first), digest(second));
+    const other = new SnakeWorld({ matchSeed: 20260904 });
+    advance(other, 420, [{ state: "active", length: 80 }]);
+    assert.notEqual(digest(first), digest(other));
 });
 
-test("出生点：距现存蛇头与墙满足安全距离，方向指向场心", () => {
-    const world = new SnakeWorld({ matchSeed: 7 });
-    const first = world.addPlayerSnake("p1", "甲", 0);
-    for (let i = 1; i <= 8; i++) world.addPlayerSnake(`p${i + 1}`, `玩家${i + 1}`, i);
-    for (const snake of world.snakes) {
-        if (snake === first) continue;
-        assert.ok(
-            Math.hypot(snake.points[0].x - first.points[0].x, snake.points[0].y - first.points[0].y)
-                >= SNAKE_RULESET.spawnSafeDistance,
-            `出生点距现存蛇头必须 ≥ ${SNAKE_RULESET.spawnSafeDistance}`,
-        );
-    }
-    // 方向指向场心：head + dir 应比 head 更靠近原点
-    const direction = { x: Math.cos((first.direction * Math.PI) / 180), y: Math.sin((first.direction * Math.PI) / 180) };
-    const ahead = Math.hypot(first.points[0].x + direction.x * 10, first.points[0].y + direction.y * 10);
-    assert.ok(ahead < Math.hypot(first.points[0].x, first.points[0].y), "出生方向必须指向场心");
-});
-
-test("倒计时冻结：movementStartTick 前世界不推进（位置不变、tick 照走）", () => {
+test("稳态严格 1000 Dot + 30 Star，variant 与独立运动流合法", () => {
     const world = new SnakeWorld({ matchSeed: 11 });
-    const snake = world.addPlayerSnake("p1", "甲", 0);
-    const head = { ...snake.points[0] };
-    for (let i = 0; i < MOVE_START; i++) world.step();
-    assert.deepEqual(snake.points[0], head, "倒计时期间位置不得变化");
-    assert.equal(world.tick, MOVE_START);
-    world.step();
-    assert.notDeepEqual(snake.points[0], head, "解禁后第一步必须移动");
-});
-
-test("输入闸：seq 倒退/重复拒绝；零向量保持方向；未入场 id 拒绝", () => {
-    const world = new SnakeWorld({ matchSeed: 13 });
-    warmUp(world);
-    const snake = world.addPlayerSnake("p1", "甲", 0);
-    assert.equal(world.applyInput("p1", 1, 0, false, 5), true);
-    assert.equal(snake.lastAcceptedSeq, 5);
-    assert.equal(world.applyInput("p1", 0, 1, false, 5), false, "重复 seq 拒绝");
-    assert.equal(world.applyInput("p1", 0, 1, false, 4), false, "倒退 seq 拒绝");
-    assert.equal(snake.targetDirection, 0, "被拒输入不得改状态");
-    const before = snake.targetDirection;
-    assert.equal(world.applyInput("p1", 0, 0, true, 6), true, "零向量是合法输入（保持方向）");
-    assert.equal(snake.targetDirection, before, "零向量保持上一方向");
-    assert.equal(snake.boostIntent, true);
-    assert.equal(world.applyInput("ghost", 1, 0, false, 1), false, "未入场 id 拒绝");
-});
-
-test("吃食成长：朝最近食物转向的蛇长度与分数增加", () => {
-    const world = new SnakeWorld({ matchSeed: 17 });
-    const snake = world.addPlayerSnake("p1", "甲", 0);
-    warmUp(world);
-    let seq = 0;
-    const scoreBefore = snake.score;
-    for (let tick = 0; tick < 600 && snake.score === scoreBefore; tick++) {
-        // 每 tick 朝最近食物转（测试驱动，不是 AI）
-        const head = snake.points[0];
-        let nearest: { x: number; y: number } | null = null;
-        let nearestDistance = Infinity;
-        for (const food of world.foodList()) {
-            const distance = Math.hypot(food.x - head.x, food.y - head.y);
-            if (distance < nearestDistance) { nearest = food; nearestDistance = distance; }
-        }
-        if (nearest) {
-            const target = Math.atan2(nearest.y - head.y, nearest.x - head.x);
-            world.applyInput("p1", Math.cos(target), Math.sin(target), false, ++seq);
-        }
-        // 撞墙/撞死会中断测试目标——撞墙即fail（场地足够大，600 tick 内应吃到）
-        assert.ok(snake.alive || snake.respawnAtTick > 0, "寻食途中意外死亡（应只在撞墙时发生）");
+    assert.equal(world.foodList().filter((food) => food.kind === 0).length, 1000);
+    assert.equal(world.foodList().filter((food) => food.kind === 1).length, 30);
+    assert.equal(world.foodList().length, 1030);
+    assert.ok(world.foodList().every((food) => food.variant >= 1 && food.variant <= 7));
+    const star = world.foodList().find((food) => food.kind === 1);
+    assert.ok(star);
+    const initial = world.motionProbe("star", star.id);
+    assert.ok(initial && initial.remainingDirectionTicks >= 34 && initial.remainingDirectionTicks <= 67);
+    const remainders: number[] = [];
+    for (let index = 0; index < 3; index += 1) {
         world.step();
+        remainders.push(world.motionProbe("star", star.id)?.distanceMilliRemainder ?? -1);
     }
-    assert.ok(snake.score > scoreBefore, "吃到食物必须加分");
-    assert.ok(snake.length > SNAKE_RULESET.spawnLength, "吃食必须增长");
+    assert.deepEqual(remainders, [1, 2, 0]);
 });
 
-test("加速消耗：长度减少、尾部掉 Wreck、长度到下限自动停加速", () => {
-    // 无食物 + 超大图 ruleset 覆写：本用例只验证「消耗→下限停加速」语义本身，
-    // 途中吃食（密度随地图复原变化）与撞墙（大图直行必达边界）都会混淆它。
-    const noFood = { ...SNAKE_RULESET, dotTarget: 0, starTarget: 0, worldWidth: 100000, worldHeight: 100000 };
-    const world = new SnakeWorld({ matchSeed: 19, ruleset: noFood });
-    const snake = world.addPlayerSnake("p1", "甲", 0);
-    warmUp(world);
-    snake.length = 40; // 手术：给出加速余量
-    const wrecksBefore = world.wreckList().length;
-    let seq = 0;
-    // 全程直行加速：1s = 3 长度 → 从 40 降到 ≤ 20 后多走一步，该 tick 即停加速
-    for (let tick = 0; tick < 200; tick++) {
-        world.applyInput("p1", 1, 0, true, ++seq);
-        world.step();
-        if (snake.length <= SNAKE_RULESET.minBoostLength) break;
-    }
-    world.step(); // 下限以下的下一 tick：boostAccepted 已判 false
-    assert.ok(snake.length < 40, "加速必须消耗长度");
-    assert.ok(snake.length >= SNAKE_RULESET.minBoostLength - 1, "长度消耗在下限附近停住");
-    assert.equal(snake.boostActive, false, "到达下限后加速必须停止");
-    assert.ok(world.wreckList().length > wrecksBefore, "加速必须在尾部掉 Wreck");
-});
-
-test("撞墙死亡 → 2s 后复活：复活回初始长度、保留分数", () => {
-    const world = new SnakeWorld({ matchSeed: 23 });
-    const snake = world.addPlayerSnake("p1", "甲", 0);
-    warmUp(world);
-    snake.score = 42;
-    // 朝最近一面墙直冲（出生方向朝场心，反向即朝墙）
-    const away = { x: -Math.cos((snake.direction * Math.PI) / 180), y: -Math.sin((snake.direction * Math.PI) / 180) };
-    let seq = 0;
-    world.applyInput("p1", away.x, away.y, false, ++seq);
-    let died = false;
-    let scoreAtDeath = 0;
-    for (let tick = 0; tick < 600; tick++) {
-        world.step();
-        if (!snake.alive && !died) {
-            died = true;
-            scoreAtDeath = snake.score; // 途中可能吃到食物——以死亡时刻的分断言「不减少」
-            assert.ok(snake.respawnAtTick > world.tick, "死亡必须进入复活等待");
+test("Star 独立子流严格按 heading→hold 抽取，34/67 都驱动完整 movement 次数", () => {
+    for (const [seed, expectedHold] of [[89, 34], [130, 67]] as const) {
+        const ruleset = { ...SNAKE_RULESET, dotTarget: 0, starTarget: 1, fakeSnakeCount: 0 };
+        const world = new SnakeWorld({ matchSeed: seed, ruleset });
+        const star = world.foodList()[0];
+        const replay = SeededRandom.stream(seed, `snake.motion.star:${star.id}`);
+        const heading = replay.nextInt(0, 360);
+        const hold = replay.nextInt(34, 68);
+        const vector = directionVector(heading);
+        assert.equal(hold, expectedHold);
+        assert.deepEqual(world.motionProbe("star", star.id), {
+            xMicro: Math.round(star.x * 1_000_000),
+            yMicro: Math.round(star.y * 1_000_000),
+            directionMilliX: Math.round(vector.x * 1000),
+            directionMilliY: Math.round(vector.y * 1000),
+            remainingDirectionTicks: hold,
+            distanceMilliRemainder: 0,
+        });
+        for (let moved = 1; moved <= hold; moved += 1) {
+            world.step();
+            assert.equal(world.motionProbe("star", star.id)?.remainingDirectionTicks, hold - moved);
         }
-        if (died && snake.alive) break;
-    }
-    assert.ok(died, "直冲墙必须死亡");
-    assert.equal(snake.alive, true, "复活延迟后必须复活");
-    assert.equal(snake.length, SNAKE_RULESET.spawnLength, "复活回初始长度");
-    assert.equal(snake.score, scoreAtDeath, "死亡不清分、复活保留累计分数（拍板规则）");
-    assert.ok(scoreAtDeath >= 42);
-    assert.equal(snake.deathCount, 1);
-});
-
-test("蛇间碰撞：头撞他蛇身体 → 移动者死、对方记 kill", () => {
-    const world = new SnakeWorld({ matchSeed: 29 });
-    const a = world.addPlayerSnake("a", "A", 0);
-    const b = world.addPlayerSnake("b", "B", 1);
-    warmUp(world);
-    a.protectUntilTick = 0;
-    b.protectUntilTick = 0;
-    // B 横放一条身体线；A 的头朝 B 身体直冲
-    b.points = [];
-    for (let i = 0; i < 20; i++) b.points.push({ x: i * SNAKE_RULESET.pointSpacing, y: 0 });
-    teleport(a, 100, -SNAKE_RULESET.pointSpacing, 90); // 头在 (100,-18) 朝上，下一步进 B 身体
-    a.length = 60; // 手术：死亡掉落的折算基数与途中是否吃食无关（大地图密度实测教训）
-    const killsBefore = b.killCount;
-    world.step();
-    assert.equal(a.alive, false, "撞他蛇身体的一方必须死");
-    assert.equal(b.alive, true);
-    assert.equal(b.killCount, killsBefore + 1, "被撞方记 kill");
-    assert.ok(world.wreckList().length > 0, "死亡必须产生掉落");
-});
-
-test("头对头：较短者死；等长双死", () => {
-    // 对头互冲在离散位移下会互穿（各自落在对方上一 tick 的头部位置）——世界的
-    // 头对头判定在位移前预检（接近 + 相向），本用例的身体拖尾刻意远离相遇点，
-    // 保证只有头对头规则在起作用。
-    const headOn = (lengthA: number, lengthB: number): { a: SnakeBody; b: SnakeBody } => {
-        const world = new SnakeWorld({ matchSeed: 31 });
-        const a = world.addPlayerSnake("a", "A", 0);
-        const b = world.addPlayerSnake("b", "B", 1);
-        warmUp(world);
-        a.protectUntilTick = 0;
-        b.protectUntilTick = 0;
-        a.length = lengthA;
-        b.length = lengthB;
-        // a 头在 (-4,0) 朝东、身体向西拖尾；b 头在 (4,0) 朝西、身体向东拖尾
-        a.points = [];
-        b.points = [];
-        for (let i = 0; i < 10; i++) {
-            a.points.push({ x: -4 - i * SNAKE_RULESET.pointSpacing, y: 0 });
-            b.points.push({ x: 4 + i * SNAKE_RULESET.pointSpacing, y: 0 });
-        }
-        a.direction = 0;
-        a.targetDirection = 0;
-        b.direction = 180;
-        b.targetDirection = 180;
+        const nextHeading = replay.nextInt(0, 360);
+        const nextHold = replay.nextInt(34, 68);
         world.step();
-        return { a, b };
+        const next = world.motionProbe("star", star.id);
+        const nextVector = directionVector(nextHeading);
+        assert.equal(next?.directionMilliX, Math.round(nextVector.x * 1000));
+        assert.equal(next?.directionMilliY, Math.round(nextVector.y * 1000));
+        assert.equal(next?.remainingDirectionTicks, nextHold - 1);
+    }
+});
+
+test("计划变向与角落反射同 tick：方向/hold 后再仅抽一次反射 hold", () => {
+    type MutableMotion = {
+        xMicro: number; yMicro: number; directionMilliX: number; directionMilliY: number;
+        remainingDirectionTicks: number; distanceMilliRemainder: number;
     };
-    const shorter = headOn(30, 100);
-    assert.equal(shorter.a.alive, false, "头对头较短者死");
-    assert.equal(shorter.b.alive, true, "较长者存活");
-    const equal = headOn(50, 50);
-    assert.equal(equal.a.alive, false, "等长头对头双死");
-    assert.equal(equal.b.alive, false);
-});
-
-test("出生保护：保护期内蛇间碰撞双向不生效，墙仍杀", () => {
-    const world = new SnakeWorld({ matchSeed: 37 });
-    const a = world.addPlayerSnake("a", "A", 0);
-    const b = world.addPlayerSnake("b", "B", 1);
-    warmUp(world);
-    a.protectUntilTick = world.tick + 100; // 手术：a 处于保护期
-    b.protectUntilTick = 0;
-    b.points = [];
-    for (let i = 0; i < 20; i++) b.points.push({ x: i * SNAKE_RULESET.pointSpacing, y: 0 });
-    teleport(a, 100, -SNAKE_RULESET.pointSpacing, 90);
+    type InternalWorld = { foods: Map<number, { x: number; y: number; motion: MutableMotion }> };
+    const ruleset = {
+        ...SNAKE_RULESET,
+        worldWidth: 100,
+        worldHeight: 100,
+        dotTarget: 0,
+        starTarget: 1,
+        fakeSnakeCount: 0,
+    };
+    const world = new SnakeWorld({ matchSeed: 9, ruleset });
+    const star = world.foodList()[0];
+    const internal = (world as unknown as InternalWorld).foods.get(star.id);
+    assert.ok(internal?.motion);
+    const replay = SeededRandom.stream(9, `snake.motion.star:${star.id}`);
+    replay.nextInt(0, 360);
+    replay.nextInt(34, 68);
+    const plannedHeading = replay.nextInt(0, 360);
+    replay.nextInt(34, 68); // 计划变向 hold 会被同 tick 反射覆盖，但 draw 必须消费。
+    const reflectedHold = replay.nextInt(34, 68);
+    const planned = directionVector(plannedHeading);
+    const limit = (ruleset.worldWidth / 2 - ruleset.starRadius) * 1_000_000;
+    internal.motion.xMicro = Math.sign(planned.x) * (limit - 1);
+    internal.motion.yMicro = Math.sign(planned.y) * (limit - 1);
+    internal.motion.remainingDirectionTicks = 0;
+    internal.motion.distanceMilliRemainder = 0;
     world.step();
-    assert.equal(a.alive, true, "保护期内不受蛇间碰撞");
-    // 同一条保护期蛇冲墙仍死
-    teleport(a, SNAKE_RULESET.worldWidth / 2 + 10, 0, 0);
-    world.step();
-    assert.equal(a.alive, false, "保护期不豁免墙");
+    const probe = world.motionProbe("star", star.id);
+    assert.ok(probe);
+    assert.ok(Math.abs(probe.xMicro) <= limit && Math.abs(probe.yMicro) <= limit);
+    assert.equal(probe.directionMilliX, -Math.round(planned.x * 1000));
+    assert.equal(probe.directionMilliY, -Math.round(planned.y * 1000));
+    assert.equal(probe.remainingDirectionTicks, reflectedHold, "角落双轴反射只能再消费一个 hold，且当 tick 不递减");
+    assert.equal(probe.distanceMilliRemainder, 1, "反射不得清空标量位移余数");
 });
 
-test("自身碰撞：头回到早期路径点即死；紧邻头部段豁免", () => {
-    const world = new SnakeWorld({ matchSeed: 41 });
-    const snake = world.addPlayerSnake("p1", "甲", 0);
-    warmUp(world);
-    snake.protectUntilTick = 0;
-    // 稠密路径：头在 (0,0) 朝东，身体向西拖尾；把「早期身体点」（skip 范围外）
-    // 放到下一步头所在位置 → 必须死
-    const skip = Math.max(4, Math.ceil((2 * SNAKE_RULESET.bodyWidth) / SNAKE_RULESET.pointSpacing));
-    snake.points = [];
-    for (let i = 0; i <= skip + 2; i++) snake.points.push({ x: -i * SNAKE_RULESET.pointSpacing, y: 0 });
-    snake.points[skip + 1] = { x: stepDistance(false), y: 0 };
-    snake.direction = 0;
-    snake.targetDirection = 0;
-    world.step();
-    assert.equal(snake.alive, false, "头撞自身早期身体必须死");
-
-    // 紧邻头部段（skip 内）不判死：同样的布局，但重叠点在 skip 范围内
-    const world2 = new SnakeWorld({ matchSeed: 43 });
-    const snake2 = world2.addPlayerSnake("p1", "甲", 0);
-    warmUp(world2);
-    snake2.protectUntilTick = 0;
-    snake2.points = [];
-    for (let i = 0; i <= skip + 2; i++) snake2.points.push({ x: -i * SNAKE_RULESET.pointSpacing, y: 0 });
-    snake2.points[2] = { x: stepDistance(false), y: 0 }; // skip=4 范围内
-    snake2.direction = 0;
-    snake2.targetDirection = 0;
-    world2.step();
-    assert.equal(snake2.alive, true, "紧邻头部段必须豁免（连续路径天然重叠）");
-});
-
-test("AI 让位与补刷：真人加入 → 最低分 AI 死亡掉落；真人离开 → 补刷", () => {
-    const world = new SnakeWorld({ matchSeed: 47 });
-    warmUp(world);
-    const ai1 = world.addAiSnake();
-    const ai2 = world.addAiSnake();
-    ai1.score = 5;
-    ai2.score = 99;
-    ai1.length = 100; // 手术：让位死亡要有掉落，长度须超 spawnLength（价值折算自超出部分）
-    ai2.length = 100;
-    assert.equal(world.countAi(), 2);
-    // 真人在席 0 → 目标 8；加两个真人后目标 6，需要让位 0 条（2 AI ≤ 6）——先超编：
-    assert.equal(world.aiTargetCount(0), 8);
-    // 手术超编：真人加入 7 人，AI 2 → 目标 1，需让位 1
-    for (let i = 0; i < 7; i++) world.addPlayerSnake(`p${i}`, `P${i}`, i);
-    assert.equal(world.aiTargetCount(world.countHumans()), 1);
-    const wrecksBefore = world.wreckList().length;
-    const culled = world.cullAiForJoin();
-    assert.equal(culled?.id, ai1.id, "让位必须选分数最低的 AI");
-    assert.equal(ai1.alive, false, "让位 = 死亡掉落（不凭空消失）");
-    assert.ok(world.wreckList().length > wrecksBefore);
-    assert.equal(ai2.alive, true, "高分 AI 不被让位");
-});
-
-test("removePlayerSnake：最终离开死亡掉落且永不复活", () => {
-    const world = new SnakeWorld({ matchSeed: 53 });
-    const snake = world.addPlayerSnake("p1", "甲", 0);
-    warmUp(world);
-    world.removePlayerSnake("p1");
-    assert.equal(world.get("p1"), undefined);
-    assert.equal(world.snakes.includes(snake), false, "移出世界（不进快照）");
-    for (let i = 0; i < 200; i++) world.step();
-    assert.equal(snake.alive, false, "最终离开不复活");
-});
-
-test("快照：id 唯一、集合有界、死亡蛇只留头部锚点、坐标为整数", () => {
-    const world = new SnakeWorld({ matchSeed: 59 });
-    world.addPlayerSnake("p1", "甲", 0);
-    const ai = world.addAiSnake();
-    warmUp(world);
-    ai.alive = false; // 手术：AI 死亡态
-    const snapshot = world.buildSnapshot("m-test", 1);
-    const ids = new Set(snapshot.snakes.map((snake) => snake.id));
-    assert.equal(ids.size, snapshot.snakes.length, "快照 snake id 必须唯一");
-    assert.ok(snapshot.foods.length <= SNAKE_RULESET.snapshotMaxFoods);
-    assert.ok(snapshot.snakes.length <= SNAKE_RULESET.snapshotMaxSnakes);
-    const dead = snapshot.snakes.find((snake) => snake.id === ai.id);
-    assert.equal(dead?.alive, false);
-    assert.equal(dead?.points.length, 1, "死亡蛇只保留头部位置（死亡表现锚点）");
-    for (const snake of snapshot.snakes) {
-        for (const point of snake.points) {
-            assert.ok(Number.isInteger(point.x) && Number.isInteger(point.y), "快照坐标必须量化整数");
+test("Star 小地图长驻反弹保持实体半径在四边内，反弹只重抽一次 hold", () => {
+    const ruleset = { ...SNAKE_RULESET, worldWidth: 100, worldHeight: 100, dotTarget: 0, starTarget: 1 };
+    const world = new SnakeWorld({ matchSeed: 9, ruleset });
+    const star = world.foodList()[0];
+    let reflected = false;
+    let previous = world.motionProbe("star", star.id);
+    for (let tick = 0; tick < 500; tick += 1) {
+        world.step();
+        const probe = world.motionProbe("star", star.id);
+        assert.ok(probe);
+        assert.ok(Math.abs(probe.xMicro) <= (50 - SNAKE_RULESET.starRadius) * 1_000_000);
+        assert.ok(Math.abs(probe.yMicro) <= (50 - SNAKE_RULESET.starRadius) * 1_000_000);
+        if (previous && (Math.sign(previous.directionMilliX) !== Math.sign(probe.directionMilliX)
+            || Math.sign(previous.directionMilliY) !== Math.sign(probe.directionMilliY))) {
+            reflected = true;
+            assert.ok(probe.remainingDirectionTicks >= 34 && probe.remainingDirectionTicks <= 67);
+            break;
         }
+        previous = probe;
     }
+    assert.equal(reflected, true, "长驻轨迹必须到达并反射边界");
 });
 
-test("限时：step 在第 endTick 返回 true（倒计时 + 90s 正式计时）", () => {
-    const world = new SnakeWorld({ matchSeed: 61 });
-    let done = false;
-    let steps = 0;
-    while (!done && steps < SNAKE_RULESET.countdownTicks + SNAKE_RULESET.matchTicks + 10) {
-        done = world.step();
-        steps++;
-    }
-    assert.ok(done, "到达 endTick 必须返回 true");
-    assert.equal(world.tick, SNAKE_RULESET.countdownTicks + SNAKE_RULESET.matchTicks);
-});
-
-test("终局前不足复活延迟的死亡不再复活（03 §8.2）", () => {
-    const world = new SnakeWorld({ matchSeed: 67 });
-    const snake = world.addPlayerSnake("p1", "甲", 0);
-    warmUp(world);
-    // 快进到临近终局
-    while (world.tick < world.endTick - SNAKE_RULESET.respawnDelayTicks + 5) world.step();
-    snake.protectUntilTick = 0;
-    teleport(snake, SNAKE_RULESET.worldWidth / 2 + 10, 0, 0); // 冲墙
+test("磁铁 300/1200/3000 必发、400 tick 半开过期，6000 gate 跳过不耗 ID", () => {
+    const world = new SnakeWorld({ matchSeed: 31 });
+    advance(world, 299);
+    assert.equal(world.toolList().length, 0);
     world.step();
-    assert.equal(snake.alive, false);
-    assert.equal(snake.respawnAtTick, 0, "终局窗口内的死亡不再排队复活");
+    assert.equal(world.toolList().length, 10);
+    assert.ok(world.toolList().every((tool) => tool.spawnTick === 300 && tool.expireTick === 700));
+    assert.equal(world.motionProbe("magnet", 1)?.distanceMilliRemainder, 1,
+        "新磁铁在 trigger tick 已完成第一次移动");
+    advance(world, 699);
+    assert.equal(world.toolList().length, 10);
+    world.step();
+    assert.equal(world.toolList().length, 0, "[spawn, expire) 在 700 排除");
+    advance(world, 1200);
+    assert.deepEqual(world.toolList().map((tool) => tool.id), [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]);
+    advance(world, 3000);
+    assert.deepEqual(world.toolList().map((tool) => tool.id), [21, 22, 23, 24, 25, 26, 27, 28, 29, 30]);
+    advance(world, 6000);
+    assert.equal(world.toolList().length, 0);
+    assert.equal(world.nextToolEntityId, 31, "无资格 gate 跳过不得分配实体 ID");
+    assert.deepEqual(world.magnetTriggers.map((entry) => [entry.relativeTick, entry.ordinal, entry.spawned]), [
+        [300, 1, true], [1200, 2, true], [3000, 3, true], [6000, 4, false],
+    ]);
+});
+
+test("6000 gate 精确区分真人资格状态与 49999/50000", () => {
+    const eligible = new SnakeWorld({ matchSeed: 41 });
+    advance(eligible, 5999);
+    eligible.step([{ state: "reliveReady", length: 49999 }]);
+    assert.equal(eligible.toolList().length, 10);
+    assert.equal(eligible.nextToolEntityId, 41);
+
+    const boundary = new SnakeWorld({ matchSeed: 41 });
+    advance(boundary, 5999);
+    boundary.step([{ state: "active", length: 50000 }, { state: "finalized", length: 1 }]);
+    assert.equal(boundary.toolList().length, 0);
+    assert.equal(boundary.nextToolEntityId, 31);
+    assert.equal(boundary.magnetTriggers.at(-1)?.ordinal, 4, "跳过仍消费触发序号");
+});
+
+test("循环 gate 覆盖七种资格与四种排除状态，AI/跳过均不补发", () => {
+    for (const state of SNAKE_MAGNET_ELIGIBLE_RUN_STATES) {
+        const world = new SnakeWorld({ matchSeed: 43, ruleset: {
+            ...SNAKE_RULESET, dotTarget: 0, starTarget: 0, fakeSnakeCount: 0,
+        } });
+        world.tick = 5999;
+        world.step([{ state, length: 49999 }]);
+        assert.equal(world.toolList().length, 10, `${state} 应通过循环 gate`);
+    }
+    for (const state of ["preparing", "cancelled", "finalizing", "finalized"]) {
+        const world = new SnakeWorld({ matchSeed: 43, ruleset: {
+            ...SNAKE_RULESET, dotTarget: 0, starTarget: 0, fakeSnakeCount: 0,
+        } });
+        world.tick = 5999;
+        world.step([{ state, length: 1 }]);
+        assert.equal(world.toolList().length, 0, `${state} 必须被循环 gate 排除`);
+        assert.equal(world.nextToolEntityId, 1);
+    }
+});
+
+test("trigger 使用调用前快照；新磁铁当 tick 可拾取，buff 同 tick 扩大食物圈且重拾只刷新", () => {
+    const ruleset = {
+        ...SNAKE_RULESET,
+        baseSpeed: 0,
+        dotTarget: 1,
+        starTarget: 0,
+        fakeSnakeCount: 0,
+        foodReplenishPerTick: 0,
+    };
+    let pickups = 0;
+    const world = new SnakeWorld({
+        matchSeed: 47,
+        ruleset,
+        events: { onMagnetPickup: () => { pickups += 1; } },
+    });
+    const snake = world.addPlayerSnake("human", "真人", 1);
+    teleport(snake, 0, 0);
+    snake.protectUntilTick = 1_000;
+    snake.length = 50000; // 本 step 内的当前值不得反向覆盖调用方给出的上一 tick 快照 49999。
+    const baseFoodDistance = eatDistance(ruleset.dotRadius, snake.length, false);
+    const food = world.foodList()[0];
+    food.x = baseFoodDistance + 10;
+    food.y = 0;
+    const internal = world as unknown as {
+        placeEntity(radius: number, rng: SeededRandom, salt: number): { x: number; y: number };
+    };
+    internal.placeEntity = (_radius, _rng, salt) => ({ x: salt === 1 ? 0 : salt === 2 ? 200 : 1000, y: 0 });
+    world.tick = 299;
+    world.step([{ state: "active", length: 49999 }]);
+    assert.equal(world.magnetTriggers.at(-1)?.spawned, true);
+    assert.equal(pickups, 1, "trigger tick 新实体必须先移动再可被拾取");
+    assert.equal(world.toolList().length, 9);
+    assert.equal(world.foodList().some((entry) => entry.id === food.id), false,
+        "同 tick 获得的磁铁 buff 应在食物拾取阶段扩大范围 86.4");
+    assert.equal(snake.magnetUntilTick, 300 + ruleset.magnetEffectTicks);
+    const second = world.toolList().find((tool) => tool.id === 2);
+    assert.ok(second, "已生效 buff 不能扩大磁铁自身拾取圈");
+    teleport(snake, second.x, second.y);
+    world.step([{ state: "active", length: snake.length }]);
+    assert.equal(pickups, 2);
+    assert.equal(snake.magnetUntilTick, 301 + ruleset.magnetEffectTicks,
+        "重拾只刷新为 pickupTick+160，不能在旧值上叠加 160");
+
+    const skipped = new SnakeWorld({ matchSeed: 47, ruleset });
+    skipped.tick = 5999;
+    skipped.step([{ state: "active", length: 50000 }]);
+    assert.equal(skipped.toolList().length, 0, "上一 tick gate 快照为 50000 时，即便本 tick 后续缩短也必须跳过");
+});
+
+test("同 tick 磁铁唯一胜者按稳定 entityId；buff 为 160 tick 且不扩大磁铁拾取圈", () => {
+    const ruleset = { ...SNAKE_RULESET, baseSpeed: 0, dotTarget: 0, starTarget: 0 };
+    let humanPickups = 0;
+    const world = new SnakeWorld({
+        matchSeed: 51,
+        ruleset,
+        events: { onMagnetPickup: (snake) => { if (!snake.isAi) humanPickups += 1; } },
+    });
+    advance(world, 300);
+    const tool = world.toolList()[0];
+    const first = world.addPlayerSnake("first", "甲", 1);
+    const second = world.addPlayerSnake("second", "乙", 2);
+    teleport(first, tool.x, tool.y);
+    teleport(second, tool.x, tool.y);
+    world.step();
+    assert.equal(world.toolList().some((entry) => entry.id === tool.id), false);
+    assert.equal(first.magnetUntilTick, 301 + SNAKE_RULESET.magnetEffectTicks);
+    assert.equal(second.magnetUntilTick, 0);
+    assert.equal(humanPickups, 1);
+    world.removePlayerSnake("second");
+    teleport(first, 0, 0);
+    advance(world, first.magnetUntilTick - 1);
+    assert.ok(world.buildSnapshot("epoch", 1).snakes[0].magnetUntilTick !== null);
+    world.step();
+    assert.equal(world.buildSnapshot("epoch", 2).snakes[0].magnetUntilTick, null);
+});
+
+test("首人 + 16 AI 阵容；2～8 真人只替换 401，活动蛇始终 17", () => {
+    const world = new SnakeWorld({ matchSeed: 61, aiSkinPool: [1, 2, 3, 4, 5] });
+    world.addPlayerSnake("p1", "玩家1", 1);
+    world.addInitialAiLineup();
+    const counts = (): Map<number | null, number> => {
+        const result = new Map<number | null, number>();
+        for (const snake of world.snakes.filter((entry) => entry.isAi)) {
+            result.set(snake.aiLevel, (result.get(snake.aiLevel) ?? 0) + 1);
+        }
+        return result;
+    };
+    assert.deepEqual([...counts()], SNAKE_AI_LINEUP.map((entry) => [entry.level, entry.count]));
+    assert.equal(world.countActiveSnakes(), 17);
+    for (let human = 2; human <= 8; human += 1) {
+        const wrecksBefore = world.wreckList().length;
+        assert.equal(world.cullAiForJoin()?.aiLevel, 401);
+        assert.equal(world.wreckList().length, wrecksBefore, "AI 让位不是玩法死亡，不得注入残骸");
+        world.addPlayerSnake(`p${human}`, `玩家${human}`, human);
+        assert.equal(world.snakes.length, 17);
+        assert.equal(world.countHumans(), human);
+        assert.equal(world.countAi(), 17 - human);
+    }
+    assert.equal(counts().get(401), 1);
+    assert.equal(counts().get(402), 4);
+    assert.equal(counts().get(403), 2);
+    assert.equal(counts().get(404), 2);
+});
+
+test("真人无自动重生/无计分残骸；AI 独立 40 tick 重生并守恒掉落", () => {
+    const world = new SnakeWorld({ matchSeed: 71 });
+    const human = world.addPlayerSnake("human", "真人", 1);
+    const ai = world.addAiSnake(401);
+    advance(world, SNAKE_RULESET.countdownTicks + 1);
+    ai.score = 100;
+    const before = world.wreckList().length;
+    assert.equal(world.forceKill(human.id), true);
+    assert.equal(world.pendingAiRespawnCount, 0);
+    assert.equal(world.wreckList().length, before);
+    assert.equal(world.forceKill(ai.id), true);
+    assert.equal(world.pendingAiRespawnCount, 1);
+    assert.ok(world.wreckList().length > before);
+    const respawnTick = ai.respawnAtTick;
+    advance(world, respawnTick - 1);
+    assert.equal(ai.alive, false);
+    world.step();
+    assert.equal(ai.alive, true);
+    assert.equal(ai.magnetUntilTick, 0);
+    advance(world, respawnTick + 100);
+    assert.equal(human.alive, false, "真人永不进入 AI 自动重生集合");
+});
+
+test("AI 残骸达到房间 cap 时只合并实体，逐点 min=3 后的总分严格守恒", () => {
+    const ruleset = {
+        ...SNAKE_RULESET,
+        dotTarget: 0,
+        starTarget: 0,
+        fakeSnakeCount: 0,
+        wreckRoomCap: 2,
+    };
+    const world = new SnakeWorld({ matchSeed: 73, ruleset });
+    const ai = world.addAiSnake(401);
+    ai.score = 80;
+    ai.points = Array.from({ length: 10 }, (_unused, index) => ({ x: index, y: 0 }));
+    const expected = aiDeathWreckValues(ai.score, ai.points.length)
+        .reduce((sum, value) => sum + value, 0);
+    world.forceKill(ai.id);
+    assert.equal(world.wreckList().length, 2);
+    assert.equal(
+        Math.round(world.wreckList().reduce((sum, wreck) => sum + wreck.value, 0) * 1000),
+        Math.round(expected * 1000),
+    );
+});
+
+test("无尽世界跨越 1799/1800/1801 且从不返回房级完成", () => {
+    const world = new SnakeWorld({ matchSeed: 81 });
+    let completed = false;
+    for (let tick = 0; tick < 1901; tick += 1) completed ||= world.step();
+    assert.equal(world.tick, 1901);
+    assert.equal(world.endTick, null);
+    assert.equal(completed, false);
+});
+
+test("最大路径 fixture 可承载 17×5186=88162 点且工具不计入 food cap", () => {
+    const world = new SnakeWorld({ matchSeed: 91 });
+    for (let index = 0; index < 17; index += 1) {
+        const snake = world.addPlayerSnake(`p${index}`, `P${index}`, 1);
+        world.forceKill(snake.id);
+        assert.ok(world.reviveHumanAt(snake.id, { x: 0, y: 0, direction: 0 },
+            { length: 100000, score: 0, killCount: 0 }, 1));
+    }
+    const snapshot = world.buildSnapshot("epoch-cap", 1);
+    assert.equal(snapshot.snakes.length, 17);
+    assert.equal(snapshot.snakes.reduce((sum, snake) => sum + snake.points.length, 0), 88162);
+    assert.equal(snapshot.foods.length, 1030);
+    assert.equal(snapshot.tools.length, 0);
+    assert.ok(snapshot.displayRank.every((entry) => !entry.id.startsWith("rank-fake-") ||
+        !snapshot.snakes.some((snake) => snake.id === entry.id)), "假榜永不进入实体数组");
 });
