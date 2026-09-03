@@ -130,6 +130,15 @@ interface SnakePlayerRunCheckpoint {
 }
 ```
 
+`magnetCollected` 与 `starCollected` 是目标契约的唯一字段名，分别映射来源字段 `eatMagnetCount` 与
+`eatStarCount`；它们记录**当前真人 run 的累计拾取次数**，每次真人权威拾取只递增一次，AI 拾取不写入玩家
+run。死亡快照和成功复活恢复这两个累计计数，但不恢复死亡时尚未耗尽的磁铁 8 秒效果：磁铁剩余效果属于
+单生命瞬态，死亡时清零，也不进入
+`CanonicalSnakeDeathSnapshot`。真人仍存活时的断线/宽限重连则不同：S2 的活动蛇状态以绝对服务端
+`magnetUntilTick` 表示结束点，断线期间 world tick 继续：重连时仅当
+`currentTick < magnetUntilTick` 才保留该绝对结束 tick 并显示 `magnetUntilTick-currentTick` 的剩余时间；若
+`currentTick >= magnetUntilTick` 则权威归一为 `null`。禁止保留 0/负数剩余值、暂停、刷新或重新给予完整 8 秒。
+
 S2R 沿用 S2 的唯一 `RunSkinResolver` 准入接缝：S3 交付前，真人解析为服务端默认皮肤 `1`，服务端测试夹具可
 显式覆盖；客户端 join 数据永远不能决定该值。`skinIdAtRunStart` 在持久创建 run 时写入，此后死亡快照、复活、
 宽限重连和最终结果都复用这一不可变值。S3 只替换同一 resolver 为 Bag/User 权威读取，并在同一 run 上增加
@@ -339,6 +348,8 @@ Promise。
 - 同 uid/session/generation 并发 admission 只有一个 OPEN run。
 - 宽限内重连沿用 run；最终离开后重入创建新 run。
 - run、实体与每次 death snapshot 的皮肤都等于 `skinIdAtRunStart`；join 自报值无效，S3 前默认值为 `1`。
+- death snapshot 的 `magnetCollected/starCollected` 与死亡前当前 run 累计完全一致；复活恢复计数但不恢复
+  `magnetUntilTick`。存活断线重连只按绝对结束 tick 恢复剩余效果，不刷新 8 秒。
 - Preparing 离开只 Cancelled，不创建 settlement/reward；checkpoint 不产生 reward intent。
 
 ### S2R-03：建立 decision 与 receipt 表和不变量
@@ -450,6 +461,7 @@ Promise。
 
 - apply 前/中/提交后 kill 只会恢复同一 apply 或进入退款，不免费多开档。
 - `relivesUsed/reliveCoinSpent` 只在 applied 事务推进一次。
+- apply 恢复 `magnetCollected/starCollected` 时不重放拾取事件、不重复累计，也不恢复死亡前磁铁剩余效果。
 - 普通 death/offer checkpoint 不能被误识别为 apply 证明。
 
 ### S2R-09：实现单 step activation gate
@@ -584,6 +596,8 @@ Promise。
 | offer snapshot 提交回包丢失 | 自然键/状态回读 | 同一 snapshot/hash/deadline |
 | offer 3000 ms 超时 | systemFailed | 不发窗、不扣费 |
 | offer push 丢失 | schema 重建同一 offer | 不追加 100 tick |
+| 磁铁生效期间真人死亡并复活 | 恢复累计计数，清除 active buff | 不刷新/延续死亡前 `magnetUntilTick` |
+| 磁铁生效期间存活断线/宽限重连 | 绝对结束 tick 继续流逝 | 只恢复剩余 tick，不暂停或重发完整 8 秒 |
 | 20 tick 无安全点 | spawnFailed | 不创建 receipt、不扣费 |
 | 候选点在 DB await 中失效 | 剩余窗口重找或退款/终局 | 不在危险点复活 |
 | spawn 后、charge 前终局意图 | 取消 | 无 receipt/ledger |
@@ -628,6 +642,8 @@ Promise。
 - [ ] admission 在实体创建前持久创建/恢复唯一 OPEN run；final leave 在释放席位前完成 durable freeze。
 - [ ] `snake_player_run` 是 S4 将扩展的唯一账本；Preparing/Cancelled、checkpoint 和 S2R finalize 不产生奖励。
 - [ ] offer 的完整 death snapshot/hash/档位/策略在展示前可靠持久；3 秒失败路径不发窗、不扣费。
+- [ ] `magnetCollected/starCollected` 作为当前 run 累计在死亡、持久快照、apply 与复活后精确一致；复活不恢复
+  磁铁剩余 buff，存活断线重连仅按绝对 `magnetUntilTick` 恢复剩余时间。
 - [ ] decision 请求绑定、自然 receipt 键、canonical payload/opId、owner/generation/lease 和数据库唯一约束全部生效。
 - [ ] 五档真实扣费分别为 100/200/300/300/300；余额不足、spawnFailed、未扣费失败和退款均不消耗档位。
 - [ ] charged/applying/applied/activated/refunded 在所有 kill 窗口中只能收敛为一个 activated 或一个 refunded。
