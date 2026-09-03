@@ -116,6 +116,10 @@ interface DecisionRecord {
         | { readonly kind: "resolved"; readonly payload: ISnakeReliveResolved };
 }
 
+interface SnakeAdmissionIdentity {
+    readonly uid: string;
+}
+
 export interface SnakeGameModeOptions {
     readonly reliveEconomy?: ReliveEconomyPort;
     readonly runSkinResolver?: SnakeRunSkinResolver;
@@ -158,6 +162,7 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
     const spawnAttempts = new Map<string, number>();
     const pendingSpawns = new Map<string, SnakeSpawnPoint>();
     const decisionRecords = new Map<string, DecisionRecord>();
+    const admissionIdentities = new Map<string, SnakeAdmissionIdentity>();
     const streamCursors = new Map<string, StreamCursor>();
     const baselineNeeded = new Set<string>();
     const queuedDeaths: Array<{ snake: SnakeBody; cause: "wall" | "collision" | "forced" }> = [];
@@ -166,6 +171,12 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
 
     const playerView = (context: SnakeContext, sessionId: string): SnakePlayerState | undefined =>
         context.state.players.get(sessionId);
+
+    const identityOf = (context: SnakeContext, sessionId: string): SnakeAdmissionIdentity => {
+        const uid = admissionIdentities.get(sessionId)?.uid ?? context.userIdOf(sessionId);
+        if (!uid) throw new Error("[snake] authenticated uid missing for relive economy");
+        return { uid };
+    };
 
     const decisionKey = (runId: string, deathSeq: number, clientReqId: string): string =>
         `${runId}\u0000${deathSeq}\u0000${clientReqId}`;
@@ -500,6 +511,7 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
         transition(player, SnakeRunState.ReliveCommitting);
         player.reliveReceiptState = SnakeReliveReceiptState.Processing;
         const result = economy.commit({
+            ...identityOf(context, player.id),
             roomEpochId,
             runId: player.runId,
             deathSeq: player.deathSeq,
@@ -509,6 +521,7 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
         if (result.kind === "insufficientCoins" || result.kind === "retryableFailure") {
             player.reliveReceiptState = SnakeReliveReceiptState.None;
             transition(player, SnakeRunState.PendingRelive);
+            if (result.kind === "insufficientCoins") player.coinBalance = result.balanceAfter;
             const payload: ISnakeReliveDecisionResult = {
                 runId: player.runId,
                 deathSeq: player.deathSeq,
@@ -529,6 +542,7 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
             return;
         }
         player.receiptId = result.receiptId;
+        player.coinBalance = result.balanceAfter;
         player.reliveReceiptState = SnakeReliveReceiptState.Applied;
         transition(player, SnakeRunState.ReliveReady);
         pendingSpawns.set(player.id, spawn);
@@ -639,6 +653,8 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
         player.resolveAtTick = 0;
         player.reliveIndex = 0;
         player.coinCost = 0;
+        const identity = admissionIdentities.get(player.id);
+        player.coinBalance = identity ? economy.balance(identity) : 0;
         player.offeredTick = 0;
         player.decisionDeadlineTick = 0;
         player.decisionClientReqId = "";
@@ -657,6 +673,15 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
                 context.state.matchId = roomEpochId;
                 context.state.onlineCoinReliveEnabled = ONLINE_COIN_RELIVE_PLAYER_RELEASED;
             },
+        },
+
+        onAdmission: (context): boolean => {
+            const auth = (context.client as unknown as {
+                auth?: { readonly userId?: unknown; readonly sId?: unknown };
+            }).auth;
+            if (typeof auth?.userId !== "string" || auth.userId.length === 0 || auth.sId !== context.sId) return false;
+            admissionIdentities.set(context.client.sessionId, { uid: auth.userId });
+            return true;
         },
 
         createPlayer: ({ sessionId, name }) => {
@@ -857,6 +882,10 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
             }
         },
 
+        onLeave: (context): void => {
+            admissionIdentities.delete(context.client.sessionId);
+        },
+
         shouldSettle: (): boolean => false,
 
         onDispose: (context): void => {
@@ -871,6 +900,7 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
             spawnAttempts.clear();
             pendingSpawns.clear();
             decisionRecords.clear();
+            admissionIdentities.clear();
             queuedDeaths.length = 0;
             queuedEats.length = 0;
             queuedMagnets.length = 0;

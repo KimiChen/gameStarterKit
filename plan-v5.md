@@ -79,7 +79,19 @@ verify:sync 镜像一致、inventory 全绿）；`test:int` 169/169（本地真 
 > `test:int` 本地真栈 171/171 通过；`verify:all` exit 0（client 384/384、server 495/495、FGUI 66/66、
 > inventory 110/110），gameplay codegen、protocol fingerprint、sync、S1 freshness 均通过。S2 只启用非资产
 > 确定性测试经济；生产无法绑定该端口，`onlineCoinRelive5V1` 面向玩家的发布开关
-> 保持关闭。S2R 可靠金币复活、S3 衣柜、S4 可靠奖励、S5 Creator/真机与发布验收仍未实施。
+> 保持关闭。当时 S2R～S5 尚未实施；下面的后续更新取代这一状态。
+
+> 更新（2026-09-03，Snake S2R demo）：当前运行时升为 `snake@3`，开发环境接入按认证 `uid` 共享的
+> `RedisDemoReliveEconomy`。复活先同步扣减进程内 demo 余额，再将唯一字段 `coinBalance` best-effort 写入
+> Redis 逻辑 key `snake:user:{uid}`；key、field 和 value 都不增加 `sId`。同一进程内同一业务死亡只扣一次，
+> Redis 写失败只告警且不回滚玩法结果。该简化实现不新增 MySQL 表、不修改通用 `GameMode`/`GameRoom`、
+> 不接任务调度或跨进程恢复；`eligibleForEnable=false` 且 `onlineCoinRelive5V1` 继续关闭。S3、S4、S5 仍未实施。
+> S3～S5 的阶段文档也已按相同 demo 原则收敛：衣柜和养成数据只保存在当前进程，终局奖励同步应用，
+> S5 只验收内部 demo 与 Creator 桌面预览。S3/S4 可在同一个 `snake:user:{uid}` HASH 中增加
+> `equippedSkinId/ownedSkinIds/fragmentBalances/snakeXp/achievementProgress`，全部不含 `sId`；
+> 仍不增加其他 Snake key，也不把生产级持久化、补偿或后台处理列为阶段门禁。
+> 本地 `verify:all` exit 0（client 384/384、server 499/499、FGUI 66/66、inventory 110/110），真栈
+> `test:int` 172/172；bootstrap 仍为既有 11 张表，受限文件与 SQL schema 均无差异。
 
 ---
 
@@ -105,7 +117,7 @@ verify:sync 镜像一致、inventory 全绿）；`test:int` 169/169（本地真 
 
 | # | 条目 | 现状 |
 |---|---|---|
-| C1 | snakeoff（竖版贪吃蛇）玩法实现 | ✅ **首版已实现**（2026-09-02，S0–S5：素材与台账 `e9ab40f`、shared 契约 `f0c2111`、SnakeWorld 模拟 `3d2affe`、房间集成 `08b48e4`、客户端战斗链路 `b062f2a`、默认入口切换）。下一轮竖版新版无尽 V2 专项已完成 **S0 复刻证据基线**（`7a04131`）、**完整 S1 素材/三层目录**（原基线 `d18846a` + 磁铁增量 `bc5bb97`，[证据](docs/s/evidence/s1/README.md)）及 **S2 战场/无尽生命周期**。当前代码口径为 `snake@2`：8 真人 drop-in、稳定态 17 蛇、4096²、1030 食物、无房级 deadline、个人 run、Star/磁铁精确运动、测试经济复活和设备本地左右手。S2R 真实金币收据/恢复、S3 衣柜、S4 可靠奖励和 S5 Creator/真机/发布仍未实施，`onlineCoinRelive5V1` 发布开关保持关闭；详细状态见 [docs/s/README.md](docs/s/README.md)。剩余尾巴：Creator 预览人工证据与真机联调（归 C3/S5）、数值手感调优（随预览进行） |
+| C1 | snakeoff（竖版贪吃蛇）玩法实现 | ✅ **首版已实现**（2026-09-02，S0–S5：素材与台账 `e9ab40f`、shared 契约 `f0c2111`、SnakeWorld 模拟 `3d2affe`、房间集成 `08b48e4`、客户端战斗链路 `b062f2a`、默认入口切换）。下一轮竖版新版无尽 V2 专项已完成 **S0 复刻证据基线**（`7a04131`）、**完整 S1 素材/三层目录**（原基线 `d18846a` + 磁铁增量 `bc5bb97`，[证据](docs/s/evidence/s1/README.md)）、**S2 战场/无尽生命周期**与 **S2R demo 金币复活**。当前代码口径为 `snake@3`：8 真人 drop-in、稳定态 17 蛇、4096²、1030 食物、无房级 deadline、个人 run、Star/磁铁精确运动、按 uid 的 demo 金币余额和设备本地左右手。S2R 当前仅 best-effort 镜像 Redis 余额；S3/S4 将以同一 HASH 镜像 demo 衣柜/养成 profile，S5 Creator demo 验收仍未实施，`onlineCoinRelive5V1` 发布开关保持关闭；详细状态见 [docs/s/README.md](docs/s/README.md)。剩余尾巴：Creator 预览人工证据与真机联调（归 C3/S5）、数值手感调优（随预览进行） |
 | C2 | undergroundIdle 玩法实现 | wsrpc 迁移入口路线次之（同一拍板）；美术生产流程与规格文档在 `docs/undergroundIdle/`（在途） |
 | C3 | 两玩法的**真机联调** | 承接 plan-v4「遗留待办」表的 `真机 / 阶段 10` 行。原表已定性为「既定范围外，随玩法实现另立计划」，故归入 C 而非 B——⛔ 但必须被点名：B 类全是编辑器/Creator 项，不点名它就会随抽离一起消失 |
 

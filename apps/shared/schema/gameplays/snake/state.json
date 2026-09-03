@@ -64,6 +64,7 @@
         { "name": "resolveAtTick", "kind": "integer", "default": 0, "min": 0 },
         { "name": "reliveIndex", "kind": "integer", "default": 0, "min": 0, "max": 5 },
         { "name": "coinCost", "kind": "integer", "default": 0, "min": 0 },
+        { "name": "coinBalance", "kind": "integer", "default": 0, "min": 0, "description": "demo 进程内余额；成功复活后 best-effort 镜像到 Redis" },
         { "name": "offeredTick", "kind": "integer", "default": 0, "min": 0 },
         { "name": "decisionDeadlineTick", "kind": "integer", "default": 0, "min": 0 },
         { "name": "decisionClientReqId", "kind": "string", "default": "", "minLength": 0, "maxLength": 128 },

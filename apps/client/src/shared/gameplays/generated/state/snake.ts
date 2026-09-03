@@ -44,6 +44,8 @@ export interface ISnakePlayerState {
     resolveAtTick: number;
     reliveIndex: number;
     coinCost: number;
+    /** demo 进程内余额；成功复活后 best-effort 镜像到 Redis */
+    coinBalance: number;
     offeredTick: number;
     decisionDeadlineTick: number;
     decisionClientReqId: string;
@@ -160,7 +162,7 @@ function entriesOfSnakeRoomStatePlayers(input: unknown, path: string): Array<[st
 export function validateSnakePlayerState(input: unknown, path = "snakePlayer"): ISnakePlayerState {
     return guardWire(path, () => {
         const value = stateRecord(input, path);
-        assertExactKeys(value, ["id","name","joinOrdinal","connected","alive","score","length","deathCount","killCount","headX","headY","direction","boost","ackSeq","skinId","magnetUntilTick","protectUntilTick","runId","runState","stateVersion","runStartedTick","activeTicks","deathSeq","deathCause","relivesUsed","magnetCollected","starCollected","relivePolicyVersion","terminalIntent","resolveAtTick","reliveIndex","coinCost","offeredTick","decisionDeadlineTick","decisionClientReqId","receiptId","reliveReceiptState"], [], path);
+        assertExactKeys(value, ["id","name","joinOrdinal","connected","alive","score","length","deathCount","killCount","headX","headY","direction","boost","ackSeq","skinId","magnetUntilTick","protectUntilTick","runId","runState","stateVersion","runStartedTick","activeTicks","deathSeq","deathCause","relivesUsed","magnetCollected","starCollected","relivePolicyVersion","terminalIntent","resolveAtTick","reliveIndex","coinCost","coinBalance","offeredTick","decisionDeadlineTick","decisionClientReqId","receiptId","reliveReceiptState"], [], path);
         const id = boundedString(value.id, path + ".id", 1, 64);
         const name = boundedString(value.name, path + ".name", 1, 128);
         const joinOrdinal = finiteInteger(value.joinOrdinal, path + ".joinOrdinal", 0);
@@ -205,6 +207,7 @@ export function validateSnakePlayerState(input: unknown, path = "snakePlayer"): 
         const resolveAtTick = finiteInteger(value.resolveAtTick, path + ".resolveAtTick", 0);
         const reliveIndex = finiteInteger(value.reliveIndex, path + ".reliveIndex", 0, 5);
         const coinCost = finiteInteger(value.coinCost, path + ".coinCost", 0);
+        const coinBalance = finiteInteger(value.coinBalance, path + ".coinBalance", 0);
         const offeredTick = finiteInteger(value.offeredTick, path + ".offeredTick", 0);
         const decisionDeadlineTick = finiteInteger(value.decisionDeadlineTick, path + ".decisionDeadlineTick", 0);
         const decisionClientReqId = boundedString(value.decisionClientReqId, path + ".decisionClientReqId", 0, 128);
@@ -246,6 +249,7 @@ export function validateSnakePlayerState(input: unknown, path = "snakePlayer"): 
             resolveAtTick,
             reliveIndex,
             coinCost,
+            coinBalance,
             offeredTick,
             decisionDeadlineTick,
             decisionClientReqId,

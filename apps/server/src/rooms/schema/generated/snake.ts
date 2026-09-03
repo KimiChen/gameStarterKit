@@ -40,6 +40,8 @@ export class SnakePlayerState extends Schema {
     @type("number") resolveAtTick: number = 0;
     @type("number") reliveIndex: number = 0;
     @type("number") coinCost: number = 0;
+    /** demo 进程内余额；成功复活后 best-effort 镜像到 Redis */
+    @type("number") coinBalance: number = 0;
     @type("number") offeredTick: number = 0;
     @type("number") decisionDeadlineTick: number = 0;
     @type("string") decisionClientReqId: string = "";
