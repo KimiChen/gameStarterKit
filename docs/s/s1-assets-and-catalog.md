@@ -5,11 +5,12 @@
 
 > **状态：`[已拍板·待实施]`**<br>
 > **预计：3–5 人日**<br>
-> **依赖：S0 已冻结来源归档、场景表现基线、目标配置和规则差异。**<br>
+> **依赖：S0 已完成并产出可重复核验的 [evidence bundle](evidence/s0/README.md)，已冻结来源归档、场景表现基线、
+> 目标配置和规则差异。**<br>
 > **主要输入：** S0 evidence bundle、原作 internal skins/atlas/body config、现有
 > `apps/Cocos/assets/resources/snakeoff/` 首批资源、来源与授权台账。<br>
 > **主要输出：** 16 套稳定皮肤的分层 catalog、标准化 atlas rect/body config、预览、七色 Dot/Star/
-> 残骸/墙块/背景/音效表现目录、确定性转换与校验器、资源与授权 SHA 台账。<br>
+> 残骸/墙块/背景/音效表现目录、确定性转换与校验器、公共/业务/表现 hash、资源与授权 SHA 台账。<br>
 > **阶段纪律：** 只改手写真源并通过既有 codegen/sync 动线产生镜像；不得手改 generated registry、
 > `apps/client/src/shared/` 或 `apps/Cocos/assets/src/`。Creator 最终导入验收在 S5 收口，S1 仍须完成
 > 无头可验证的资源、rect、fallback 和 hash 门禁。
@@ -25,8 +26,8 @@ S1 的目标是把“散落的 PNG 和原作 atlas 信息”变成稳定、可�
 本阶段必须完成：
 
 - 补齐 16 个 internal skin 稳定内容 ID 对应的 PNG、atlas JSON、身体配置和预览。
-- 解析原作 atlas/body config，确定性生成 head/body/tail 帧、动画和身体序列。
-- 建立 shared 公共、服务端业务、客户端资源三层目录，并生成稳定 catalog hash。
+- 解析原作 atlas/body config，确定性生成 normal/boost 的 head/body/可选 tail、动画和身体序列。
+- 建立 shared 公共、服务端业务、客户端资源三层目录，并分别生成稳定 hash。
 - 补齐七色 Dot、Star、加速残骸、AI 死亡残骸、墙块、背景/网格主题和已批准音效的表现登记。
 - 建立 ID、默认皮肤、AI 池、资源、rect、fallback、hash 和确定性生成门禁。
 - 逐文件维护来源绝对路径、逻辑名、SHA-256、授权、目标路径、转换和 `.meta` 状态。
@@ -35,7 +36,8 @@ S1 的目标是把“散落的 PNG 和原作 atlas 信息”变成稳定、可�
 
 - 不在 S1 实现 1030 食物批渲染、Star 移动、相机、皮肤 mesh 或 AI 分配；这些属于 S2。
 - 不在 S1 实现 Bag/User 所有权、解锁、购买、装备或衣柜 RPC；这些属于 S3。
-- 不按数字 ID 猜稀有度、价格或获取方式；16 套预览齐备后再由产品/美术分配。
+- 不在 S1 拍板最终展示名、稀有度、价格或获取方式；S1 只生成预览和技术审阅输入，最终内容审阅是
+  S1 完成后、S3-01 开始前的进入门，不阻塞 S1 或 S2/S2R。
 - 不允许不同皮肤拥有不同速度、碰撞体、初始长度、转向、攻击范围或得分收益。
 - 不复制原作旧 import metadata、UUID、运行时代码或平台依赖。
 - 不继续假设所有皮肤纹理都是 `216 × 72` 三等分，也不手抄大量 rect。
@@ -55,54 +57,146 @@ S1 的目标是把“散落的 PNG 和原作 atlas 信息”变成稳定、可�
 112, 132, 133, 139, 401, 403, 411, 701
 ```
 
-`skinId` 是跨 shared、server、client、持久化和快照的稳定内容 ID：
+`skinId` 是跨 shared、server、client、持久化和快照的稳定内容 ID。首发初始矩阵固定如下，S1/S2/S3
+不得重新分配：
+
+| 字段 | 冻结值 |
+|---|---|
+| `publicationState` / 公共目录成员 | 16 套全部为 `active` 并进入公共目录；进入公共目录不表示已可购买或解锁 |
+| `playerUsable` | 16 套全部 `true` |
+| `defaultSkinId` | 唯一为 `1` |
+| `sortOrder` | 按 §2.1 数字 ID 升序排列 |
+| `contentVersion` | 16 套初始均为 `1` |
+| `fallbackSkinId` | 皮肤 1 为 `null` 终点；其余 15 套全部直接指向 `1` |
+
+原作 Feed V2 的 `ai_flag=1` 列表和 `SkinStore.canAiUse` 映射共同冻结 AI 池：
+
+```text
+101, 111, 112, 132, 133, 139, 401, 403, 411, 701
+```
+
+来源证据分别位于固定归档
+`subpackages/loading/bundle/_r/store/FeedGameStore.js:68` 和
+`subpackages/loading/bundle/_r/store/SkinStore.js:79`，实现和测试不得改用“全部皮肤”或按 ID 推断。
+
+其余 `1, 2, 3, 4, 10, 11` 固定 `aiEligible=false`；16 套仍全部可由玩家使用。随后遵守：
 
 - 不依赖目录顺序、文件名补零、数组下标、`joinOrdinal` 或 `% 3`。
 - 目录排序只由 `sortOrder` 决定；修改排序不改变所有权和装备身份。
-- 皮肤 1 是统一运行时 fallback 候选；S1 校验它资源完整且可由真人/AI 安全显示。
-- 是否 `playerUsable`、是否 `aiEligible` 是明确字段，不根据 ID 大小推断。
-- 增删或改变内容解释必须提升相应 `contentVersion` 并更新 catalog hash。
+- 皮肤 1 是统一运行时 fallback；S1 校验它资源完整且可由真人/AI 安全显示。
+- `playerUsable` 和 `aiEligible` 必须逐项生成上述显式值，不能根据 ID 大小推断。
+- 增删或改变内容解释必须提升相应 `contentVersion` 并更新 `publicCatalogHash`。
 
-当前资源目录已有首批皮肤、食物、墙块、操作图和音效，但不等于 16 套均完整，也不等于 atlas/body config
-已经接线。以 [当前资源目录](../../apps/Cocos/assets/resources/snakeoff/) 和
-[来源台账](../snakeoff/08-source-and-asset-provenance.md#7-直接素材复用登记模板) 为审计起点，不以现有文件名推断完成率。
+来源 `remoteBundles/internalSkins/config.json` 已确认恰好覆盖这 16 个 ID，每个 ID 都能定位 Texture2D、
+SpriteAtlas、body config 和 native PNG；因此 S1 开工前没有素材缺口决策。当前目标资源已引入
+`1, 2, 4, 10, 11, 133, 139, 401, 701`，待补齐 `3, 101, 111, 112, 132, 403, 411`，仍须在 S1
+逐项复算 SHA 和接线 atlas/body config。以 [当前资源目录](../../apps/Cocos/assets/resources/snakeoff/) 和
+[来源台账](../snakeoff/08-source-and-asset-provenance.md#7-直接素材复用登记模板) 为审计起点，不以现有文件名推断
+完成率：现有 `snake_skin_classic_1/2/3` 是 legacy/history 资源，不映射 internal skin 1/2/3；
+`snake_skin_ai.png` 对应稳定 ID 701，文件名不赋予它 AI-only 语义。
 
-### 2.2 `SnakeSkinCatalog` 最小定义
+### 2.2 三层 catalog 最小定义
 
-每个皮肤至少包含：
+禁止用一个 `SnakeSkinDefinition` 混装公共身份、服务端业务与客户端资源。S1 分别建立以下三类数据；符号名可按
+现有目录约定落位，但字段归属、可空性和枚举语义不得改变：
 
 ```ts
-interface SnakeSkinDefinition {
+interface PublicSkinIdentity {
   skinId: number;
   contentVersion: number;
-  displayName: string;
-  rarity: string;
+  publicationState: "active" | "retired";
+  isDefault: boolean;
   sortOrder: number;
+  playerUsable: boolean;
+  technicalLabel: string;
+}
+
+type DisplayNameValue = {
+  state: "source" | "technical-draft" | "approved";
+  value: string;
+};
+
+type DecisionValue<T> =
+  | { state: "draft" | "unavailable"; value: null }
+  | { state: "approved"; value: T };
+
+interface ServerSkinBusinessDraft {
+  skinId: number;
+  aiEligible: boolean;
+  displayName: DisplayNameValue;
+  rarity: DecisionValue<string>;
+  ownershipItemId: DecisionValue<number>;
+  fragmentItemId: DecisionValue<number>;
+  acquisition: DecisionValue<string>;
+  saleState: DecisionValue<"on-sale" | "off-sale">;
+  price: DecisionValue<number>;
+}
+
+interface TimedFrameDefinition extends FrameDefinition {
+  durationFrames: number;
+}
+
+interface SkinPartTrack {
+  level: number;
+  sourceDistance: number;
+  frames: readonly TimedFrameDefinition[];
+}
+
+interface SkinMotionPresentation {
+  head: SkinPartTrack;
+  body: readonly SkinPartTrack[];
+  tail: SkinPartTrack | null;
+  bodySequence: readonly number[];
+  sourceBodyOffset: number;
+}
+
+interface ClientSkinPresentation {
+  skinId: number;
   previewAsset: string;
   textureAsset: string;
-  headFrames: readonly FrameDefinition[];
-  bodyFrames: readonly FrameDefinition[];
-  tailFrames: readonly FrameDefinition[];
-  bodySequence: readonly number[];
-  animationFrameMs: number;
-  bodyDistance: number;
-  pivotX: number;
-  pivotY: number;
+  normal: SkinMotionPresentation;
+  boost: SkinMotionPresentation;
+  boostSource: "source" | "inherit-normal";
+  bodyRenderWidthRate: number;
+  bodyRenderType: 2;
+  headAnchorY: number;
   visualScale: number;
-  playerUsable: boolean;
-  aiEligible: boolean;
-  fallbackSkinId: number;
+  fallbackSkinId: number | null;
 }
+
+interface SkinLayoutMetrics {
+  firstBodyPointDistance: number;
+  repeatedBodyPointDistance: number;
+  tailPointDistance: number | null;
+}
+
+declare function deriveSkinLayoutMetrics(
+  presentation: ClientSkinPresentation,
+  bodyScale: number,
+  pointDistance: number,
+): SkinLayoutMetrics;
 ```
 
-`FrameDefinition` 必须能无歧义表达纹理内 rect、pivot/anchor、旋转标志和必要的源帧名；具体 TypeScript
-形状在实现时遵守 shared ES2017、零依赖和 exact validation 约束。
+`FrameDefinition` 必须能无歧义表达纹理内 rect、pivot/anchor、trim、原始尺寸、旋转标志和源帧名。
+`durationFrames = max(1, source.frame_time)`，单位是原作渲染帧保持次数，不得改名或解释成毫秒；源原始值仍写入
+转换证据。`sourceDistance` 和 `sourceBodyOffset` 保留源文件允许的负数位移，只校验为有限数，不能把源负 offset
+直接当正间距。`deriveSkinLayoutMetrics` 复刻原作 `GameUtil.calSkinSizeInfo` 的对应分支，根据帧尺寸、身体基础宽度
+36、`bodyRenderWidthRate`、运行时 `bodyScale` 与正 `pointDistance` 推导三个有限正路径点距离；
+与原作一致，几何只读取 normal 的 head/body/tail 和 `body_distance`，boost 只切换纹理而不重排路径点，尾部不存在时
+返回 `null`。`body_speed_distance` 仍作为来源字段保存在 boost profile 与转换证据中，但首发不参与布局计算。
+首发 16 套 `body_render_type` 均固定为 `2`（NormalRepeat）；该布局分支不消费 `headAnchorY`，字段只用于头部绘制
+锚点，读取 `head_anchor_y_pos`，源缺失时按原作 Loader 固定为 `0.5`。其他 render type 在本阶段 fail-fast，
+不得套用 NormalRepeat 公式。具体类型仍须遵守 shared ES2017、零依赖和 exact validation 约束。帧归一证据位于
+`subpackages/loading/bundle/_r/loader/Loader.js:190`，布局证据位于
+`subpackages/loading/bundle/_r/game/util/GameUtil.js:23-28`；均以 S0 固定来源 commit 中的内容为准。
 
 冻结渲染解释：
 
-- 同一个 `skinId` 同时决定头、身体、尾部和动画；不能按实体 id 再选择身体材质。
-- 身体帧次序由 `bodySequence` 决定；不能默认单帧或简单循环所有 rect。
-- `bodyDistance`、pivot 和 `visualScale` 属于表现目录；玩法碰撞和全局身体缩放仍由 shared/server 权威规则决定。
+- 同一个 `skinId` 同时决定 normal/boost 的头、身体、可选尾部和动画；不能按实体 id 再选择身体材质。
+- 身体帧次序由各 motion 的 `bodySequence`、`level` 和 `sourceDistance` 决定；不能默认单帧或简单循环所有 rect。
+- 源缺少 boost 组时必须写 `boostSource="inherit-normal"` 并完整继承 normal，不能生成空动画或猜帧。
+- `sourceBodyOffset`、布局推导、逐帧 pivot 和 `visualScale` 属于表现目录；玩法碰撞和全局身体缩放仍由
+  shared/server 权威规则决定。
 - 原作彩色素材默认使用白色 tint；真人/AI/席位身份不得通过改皮肤原色表达。
 - 未知 ID、资源加载失败或 rect 非法统一回退皮肤 1，并产生受控诊断。
 
@@ -110,18 +204,28 @@ interface SnakeSkinDefinition {
 
 | 层 | 允许内容 | 禁止内容 |
 |---|---|---|
-| Shared 公共目录 | 稳定 `skinId`、公开/退休状态、`contentVersion`、共享校验字段、公共 catalog hash | Cocos/DOM/Node API、纹理对象、商城价格、数据库访问 |
-| 服务端业务目录 | ownership itemId、碎片 itemId、获取方式、价格、上下架时间、`aiEligible`、服务端 catalog hash | 客户端资源加载、SpriteFrame/Texture2D、相信客户端自报拥有 |
-| 客户端资源目录 | 预览/纹理逻辑路径、head/body/tail rect、pivot、帧时间、body sequence、fallback、客户端 hash | 永久所有权真相、扣费结果、玩法属性 |
+| Shared 公共目录 | 稳定 `skinId`、active/retired 状态、`contentVersion`、排序、玩家可用性、技术标签、`publicCatalogHash` | Cocos/DOM/Node API、纹理对象、商城价格、数据库访问 |
+| 服务端业务目录 | ownership/fragment itemId、展示名状态、稀有度、获取方式、价格、上下架、`aiEligible`、`serverBusinessHash` | 客户端资源加载、SpriteFrame/Texture2D、相信客户端自报拥有 |
+| 客户端资源目录 | 预览/纹理逻辑路径、normal/boost 的 head/body/tail、rect、pivot、帧保持次数、身体序列/位移/间距、fallback、`clientPresentationHash` | 永久所有权真相、扣费结果、玩法属性 |
 
-S1 建立三层可关联的内容身份和校验。S3 才为所有权、价格、碎片和上下架填入最终业务值；S1 期间这些字段
-若尚未拍板，必须是显式 unavailable/draft 状态，不能用 ID 推断假数据。
+S1 建立三层可关联的内容身份和校验。每套 `technicalLabel` 均固定为 `皮肤 <ID>`；没有可核验源名称时，
+`displayName` 使用该技术标签但不得把它当成获批玩家展示名；已能核验的源名称标为 `source`。S1 中
+`displayName.state` 只能是 `source` 或
+`technical-draft`，其他业务决策字段必须是 `{ state: "draft" | "unavailable", value: null }`；禁止用空串、0、
+哨兵 itemId 或默认枚举冒充最终值。S3 才根据内容审阅结果写入最终名称、所有权、价格、碎片和上下架业务值。
 
 ### 2.4 皮肤素材转换规则
 
-- 读取每套皮肤的原作 atlas JSON 与身体配置，转换为规范化帧和身体序列。
+- 字段映射固定为：`head_frame/body_frame/tail_frame/body_distance` 进入 normal，
+  `head_speed_frame/body_speed_frame/tail_speed_frame/body_speed_distance` 进入 boost；每个 part 的 `level`、
+  `distance` 和 frame 原序保留。
+- 读取每套皮肤的原作 atlas JSON 与身体配置，分别转换 normal/boost 的 head/body/可选 tail、身体序列、
+  `level`、有符号 `distance` 和逐帧 `durationFrames`。
 - 对 source rect 的 x/y/width/height、旋转、trim、原始尺寸和 pivot 做显式转换；不能只读取 PNG 尺寸。
-- 原作可能存在多身体帧、动画头、独立尾部和不同身体间距；转换器必须逐结构支持或明确 fail-fast。
+- 原作可能存在多身体帧、动画头、独立尾部和不同身体位移；转换器必须逐结构支持或明确 fail-fast。
+- 首发已知结构必须成为回归 fixture：403 有独立 tail；其他 15 套 tail 为 `null`，不得伪造尾帧；411 的 boost
+  head 为 12 帧；701 的 normal/boost head 分别为 2/7 帧；3、4 缺 boost 组时显式继承 normal。
+- `frame_time=0` 按原作 Loader 归一为 1 帧；大于 0 的值原样保留为帧保持次数，不在 S1 换算毫秒。
 - 转换结果排序和序列化必须稳定，不依赖文件系统遍历顺序或对象属性偶然顺序。
 - 可在运行时由 Texture2D + rect 构建 SpriteFrame，减少手工切片 `.meta`；仍需在 S5 用 Creator 3.8.8
   确认资源、UUID、pivot、动画、混合和层级。
@@ -146,16 +250,19 @@ S1 只定义资源帧、尺寸和主题；数量、移动及权威分值由 S2 �
 
 ### 2.6 AI 皮肤所需目录能力
 
+AI 候选集合必须严格等于 §2.1 冻结的 10 个 ID；“非空”只是最低结构校验，不能用来接受多余或缺失 ID。
 S2 的 AI 规则要求目录支持：
 
-1. 过滤 `aiEligible=true`。
+1. 过滤 `aiEligible=true`，结果与冻结 10-ID 集合严格相等。
 2. 排除本房真人已装备的皮肤。
 3. 用独立 `snake.ai.skin` seeded RNG 洗牌并轮换，池不足时循环。
 4. AI 重生时保持当前房间生命周期内的 `skinId`。
 5. 皮肤随机流不消费移动、出生、食物或碰撞随机流。
 
-S1 因此必须保证 AI 池非空、所有 AI entry 可解析到完整纹理/帧/fallback。AI 身份通过名字、名牌或头像表现，
-不能靠统一灰化皮肤。`fake_snake_count=86` 不需要世界皮肤实体，不得被 catalog 生成器误算为 86 条活动 AI。
+排除真人外观后的候选不足时只循环剩余候选；若未来规则变化导致过滤后为空，则退回完整的冻结 10-ID 池，
+不得临时启用 6 个 `aiEligible=false` 的 ID。S1 必须保证 10 个 AI entry 全部可解析到完整纹理/帧/fallback。
+AI 身份通过名字、名牌或头像表现，不能靠统一灰化皮肤。`fake_snake_count=86` 不需要世界皮肤实体，不得被
+catalog 生成器误算为 86 条活动 AI。
 
 ### 2.7 音效与其他表现
 
@@ -165,12 +272,15 @@ presentation catalog 至少登记：
 - 吃残骸。
 - 击杀。
 - 真人死亡。
-- 退出/个人 run 结果。
+- 个人 run 结果：固定登记为显式 `none/silent`，不加载或播放资源。
 - 按钮点击。
-- 加速拖尾、出生/复活保护、死亡爆散等已批准视觉资源（若首批存在）。
+- 基础加速、出生/复活保护、死亡爆散等战斗表现资源（若首批存在）；不创建可收藏的 trail/deathFx/killFx 槽位内容。
 
-所有音效必须有稳定逻辑名、资源路径、hash、授权和 fallback/缺失策略，并遵守现有 `sfxOn`。限时时间结束音效
-即使已在资源目录，也不得进入 `totalTime=0` 的目标播放映射；可以保留为来源/历史资产，但必须标为未使用。
+实际映射资源的音效必须有稳定逻辑名、资源路径、hash、授权和 fallback/缺失策略，并遵守现有 `sfxOn`；
+`none/silent` 项只登记稳定逻辑名、状态和原因，不能伪造资源路径/hash。限时时间结束音效即使已在资源目录，
+也不得进入 `totalTime=0` 的目标播放映射，更不得被个人结果复用；可以保留为来源/历史资产，但必须标为未使用。
+若后续为“退出”定义独立逻辑事件，必须另有明确资源或 `none` 记录，不能自动继承个人结果、真人死亡或
+`time_over` 的映射。
 
 ### 2.8 来源、授权和 `.meta` 状态
 
@@ -200,14 +310,27 @@ presentation catalog 至少登记：
 权威台账入口是
 [08 · 来源与素材借鉴台账](../snakeoff/08-source-and-asset-provenance.md#7-直接素材复用登记模板)。
 
+现有用户会话与台账已由项目及源游戏权利方批准复用
+`/Users/kimi/work/tanchishe/wegameVersion/` 冻结来源归档中的素材；对该归档内的 16 套皮肤、atlas/body config、
+食物、墙块、背景、音频和必要转换产物无需逐项再次请求产品授权，但仍必须逐文件登记来源、SHA、转换和目标。
+只有新增冻结归档外来源时才进入 `待授权，不得引入` 并重新请求授权。
+
 ### 2.9 hash、fallback 与发布门禁
 
-- 生成器对规范化 shared 公共目录和客户端/服务端内容身份分别计算稳定 hash。
-- 服务端与客户端目录 hash 不一致时，禁止购买、解锁、装备等外观目录相关经济写；S3 必须复用此门禁。
-- 战斗读取未知/退休/缺失资源时允许回退皮肤 1，避免纯资源问题阻塞房间，但要记录受控诊断。
-- fallback 链必须有界且无环；fallback 目标必须存在且资源完整。首发建议所有非默认 entry 直接指向皮肤 1。
-- 退休皮肤停止新获取但保留既有所有权和装备显示能力；删除资源前必须提供兼容 fallback 和迁移说明。
-- 资源顺序、JSON 空白、文件系统遍历顺序不得改变规范化 hash；内容或解释变化必须改变 hash。
+- `publicCatalogHash` 只覆盖规范化公共身份，在 shared、server、client 三层生成相同值；下游文档和接口简称
+  `catalogHash` 时均指该值。跨端兼容及外观经济写门禁只比较这一同构 hash，不能直接比较异构目录全集。
+- `serverBusinessHash` 覆盖服务端业务目录，`clientPresentationHash` 覆盖客户端表现目录；二者分别用于本层
+  freshness/审计，天然不要求相等。任何会改变公共身份或资源解释的变化都必须提升对应 `contentVersion`，使
+  `publicCatalogHash` 随之变化。
+- 服务端与客户端的 `publicCatalogHash` 不一致时，禁止购买、解锁、装备等外观目录相关经济写；S3 必须复用此门禁。
+- 构建期声明资源缺失、损坏或 rect 非法必须让 validator 失败，不能靠 fallback 放行不完整 catalog。运行时只有
+  未知 ID、部署损坏、加载失败或非法 rect 才确定性回退皮肤 1，留下受控诊断，且不改写权威
+  `equippedSkinId` / `skinIdAtRunStart`。
+- fallback 固定为皮肤 1 的 `fallbackSkinId=null`，其余 15 套 `fallbackSkinId=1`；validator 将 `null` 视为
+  唯一终点并拒绝自环、多终点、缺失目标或更长链。
+- 退休皮肤只停止新增获取；资源完整时，既有所有者仍按原 `skinId` 装备和显示，不因退休触发表现 fallback。
+  删除资源前必须另有兼容 fallback 和迁移说明。
+- 资源顺序、JSON 空白、文件系统遍历顺序不得改变各自规范化 hash；内容或解释变化必须改变对应 hash。
 
 ### 2.10 生成与同步边界
 
@@ -235,6 +358,24 @@ S1 不应为了纯资源目录提前创建 `snakeCosmetic` feature；该 feature
 
 资源真源位于 Cocos 资源树时，不得由 `sync:client` 反向覆盖；代码真源仍以 `apps/client/src` 为准。
 
+外部绝对路径只允许用于显式 import/refresh 和来源台账审计。S1 工具与仓内配置输入根固定为
+`tools/snake-s1-assets/`：`source/manifest.json` 记录来源 commit、逐文件路径/hash 和目标映射，
+`source/internal-skins/<id>/atlas.json` 与 `body.json` 保存 16 套可重放转换输入；实际 PNG/音频字节真源位于
+`apps/Cocos/assets/resources/snakeoff/`。S1-02 完成后，常规 generate、`--check`、测试和 CI 只读这些仓内
+相对路径，不得依赖 `/Users/kimi/work/tanchishe/wegameVersion/` 存在。客户端代码生成物先写入
+`apps/client/src` 真源再走 `sync:client`；不得直接写 `apps/Cocos/assets/src` 镜像。
+
+S1 的生成证据固定写入 `docs/s/evidence/s1/`，包括转换报告、三类 hash、来源/输出 SHA、完整性矩阵、预览和
+contact sheet；不得改写 `docs/s/evidence/s0/` 的历史基线。S1 source manifest 可引用 S0 已登记的文件身份，
+但必须独立补齐本阶段实际消费的全部 16 套素材与配置。
+
+### 2.11 S1 → S3 内容审阅门
+
+S1-09 只负责生成统一预览/contact sheet、完成头/身/可选尾、动画、pivot、间距和 fallback 的技术检查，并输出
+内容审阅包。S1 完成后、S3-01 开始前，由用户或美术/产品结合预览确定最终展示名、稀有度和获取方式分配；
+该审阅不阻塞 S1 退出，也不阻塞 S2/S2R 开发，但未完成时不得开始 S3-01。S3-01 对默认皮肤、AI 池和
+fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
+
 ---
 
 ## 3. 详细任务
@@ -243,10 +384,12 @@ S1 不应为了纯资源目录提前创建 `snakeCosmetic` feature；该 feature
 
 **动作**
 
-- [ ] 以 §2.1 的 16 个 ID 为唯一集合，逐个定位原作 catalog、atlas JSON、native PNG、body config 和名称。
+- [ ] 以 §2.1 的 16 个 ID 为唯一集合，逐个定位原作 catalog、atlas JSON、native PNG、body config 和可核验名称证据；
+  源名称缺失不是素材阻塞，使用 `皮肤 <ID>` 技术标签并标记 `technical-draft`。
 - [ ] 对照目标资源目录，标明“已存在且已登记、已存在但缺配置、缺 PNG、缺 atlas、缺 body config、缺预览”。
 - [ ] 识别逻辑重复/字节重复素材和 source alias，不以相近文件名合并不同 `skinId`。
 - [ ] 对无法定位或结构异常的 entry 记录阻塞原因，禁止用 classic 三等分素材临时冒充。
+- [ ] 核对已知基线：目标已有 9 套、待补 7 套；legacy classic 不映射 internal ID，`snake_skin_ai.png` 只映射 701。
 
 **产物**
 
@@ -256,7 +399,7 @@ S1 不应为了纯资源目录提前创建 `snakeCosmetic` feature；该 feature
 **验证**
 
 - ID 集合与冻结列表严格相等：无缺失、无额外、无重复。
-- 每个 entry 至少能定位到纹理、atlas/body 配置或明确阻塞；“文件看起来相似”不算映射证据。
+- 每个 entry 均能定位到纹理与 atlas/body 配置；“文件看起来相似”不算映射证据，缺正式名称只进入 draft 标签。
 - 已有资源逐个与来源台账和 SHA 对上，不凭文件名认领。
 
 ### S1-02 · 闭合来源、授权与 SHA 台账
@@ -266,15 +409,20 @@ S1 不应为了纯资源目录提前创建 `snakeCosmetic` feature；该 feature
 - [ ] 对所有源文件和目标文件复算 SHA-256，并与现有首批 31 项记录比较。
 - [ ] 为新增的皮肤 PNG、atlas JSON、body config、预览、食物帧、墙块、背景和音效逐文件新增台账行。
 - [ ] 补齐批准来源、日期/负责人、转换步骤、新 `.meta` 状态和合法状态值。
-- [ ] 若 hash 不符或授权证据缺失，将 entry 标为 `待授权，不得引入`，移出可发布目录输入。
+- [ ] 对冻结来源归档复用既有权利方授权并逐文件引用证据；只有新增范围外来源或无法关联既有授权时，才将 entry
+  标为 `待授权，不得引入` 并移出可发布目录输入。
 - [ ] 对已授权缺口执行实际引入：把缺失的皮肤 PNG、atlas JSON 和 body config 复制/转换到明确的手写真源或
   资源真源路径，再由标准生成/同步流程物化目标；禁止沿用原作 UUID、import cache、旧 `.meta` 或运行时绝对路径。
+- [ ] 将来源映射写入 `tools/snake-s1-assets/source/manifest.json`，将逐 ID atlas/body 输入写入
+  `tools/snake-s1-assets/source/internal-skins/<id>/`，并把实际 PNG/音频字节放入 Cocos snakeoff 资源真源；
+  外部绝对路径仅保留在 import/refresh 审计记录中。
+- [ ] 以 S0 source manifest 为已核验证据输入但不修改其文件；S1 对新增读取和全部 16 套转换输入建立独立清单。
 
 **产物**
 
 - 无缺字段的资源/授权/SHA 台账。
 - 源 hash、转换输入 hash、目标输出 hash 和逻辑 catalog entry 的可追踪链。
-- 已补齐的 16 套转换输入集合，以及每个新引入文件对应的仓内真源路径。
+- 已补齐的 16 套仓内转换输入集合，以及每个新引入文件对应的仓内真源路径。
 
 **验证**
 
@@ -283,21 +431,30 @@ S1 不应为了纯资源目录提前创建 `snakeCosmetic` feature；该 feature
   `已引入，待验收`。
 - 全仓不存在未登记的源 UUID/native hash 文件名，也不存在指向参考目录的软链接或运行时 URL。
 - 每个批准补齐项的仓内文件 hash 与来源/转换台账一致；完整性矩阵不再把已引入文件列为缺口。
+- 移走或不可访问外部参考目录后，常规 generate、`--check`、测试和 CI 仍能只凭仓内输入通过。
 
 ### S1-03 · 实现确定性 atlas/body 转换器
 
 **动作**
 
 - [ ] 解析原作 atlas JSON、trim/rotate/originalSize/pivot 信息和每套身体配置。
-- [ ] 生成规范化 head/body/tail frame、`bodySequence`、帧时间、`bodyDistance`、pivot 和 `visualScale`。
+- [ ] 分别生成 normal/boost 的 head/body/可选 tail、`bodySequence`、`level`、有符号源 distance/offset、
+  `durationFrames`、逐帧 pivot、`headAnchorY` 和 `visualScale`，并提供只按 normal 几何计算的确定性
+  `deriveSkinLayoutMetrics`。
+- [ ] 按 `durationFrames=max(1, source.frame_time)` 保留帧时基；禁止输出 `animationFrameMs` 或提前换算毫秒。
+- [ ] 校验 16 套 `body_render_type=2` 并只复刻 NormalRepeat 布局分支；其他值或未知 render type fail-fast。
+- [ ] 缺 boost 时显式 `inherit-normal` 并让解析器引用 normal，缺 tail 时输出 `null`；禁止复制 normal 后伪装成
+  `boostSource="source"`，也禁止用 body 伪造 tail。
 - [ ] 对未知结构 fail-fast，并输出带 `skinId`、源路径和字段位置的稳定错误；禁止猜默认 rect 后继续。
 - [ ] 把输入排序、数字格式、JSON key 顺序、换行和输出排序固定；支持只读 `--check` 或等价 freshness 模式。
-- [ ] 转换器只读取参考/手写真源并写明确目标，不扫描或改写生成镜像。
+- [ ] 常规转换器只读取仓内手写真源并写明确目标，不扫描外部参考目录，也不改写生成镜像；外部读取仅属于显式
+  import/refresh 入口。
 
 **产物**
 
 - 可重复运行的转换器、规范化 catalog 中间格式和 fixture。
-- 至少覆盖单帧、多个身体帧、动画头、独立尾部、trim/rotate 和异常 rect 的测试样例。
+- 覆盖单帧、多身体层级、normal/boost 动画头、可选尾部、trim/rotate、帧保持计数、负 distance 和异常 rect
+  的测试样例。
 
 **验证**
 
@@ -305,35 +462,42 @@ S1 不应为了纯资源目录提前创建 `snakeCosmetic` feature；该 feature
 - 打乱源文件遍历顺序后输出不变。
 - 修改一个 rect、body sequence 或源 hash 时 `--check` 失败且诊断指向正确 entry。
 - 非 `216×72`、多帧和旋转/trim fixture 均被正确解析；越界和未知结构必须失败。
+- 已知结构断言通过：403 有 tail、其余 15 套 tail 为 `null`；411 boost head 12 帧；701 normal/boost head
+  为 2/7 帧；3、4 标记 `inherit-normal`；`frame_time` 的 0/6 分别生成 1/6 `durationFrames`；负 distance 保留；
+  缺少 `head_anchor_y_pos` 时生成 `headAnchorY=0.5`；16 套 `bodyRenderType` 均严格为 2。
 
 ### S1-04 · 建立 Shared 公共目录
 
 **动作**
 
-- [ ] 在 shared 手写真源中定义稳定 ID、公开/退休状态、`contentVersion` 和客户端/服务端共用校验数据。
+- [ ] 在 shared 手写真源中定义 `PublicSkinIdentity`、稳定 ID、公开/退休状态、`contentVersion`、默认标志、排序、
+  玩家可用性和技术标签。
+- [ ] 固定并生成 16 套均 active、均进入公共目录、`playerUsable=true`、唯一默认 1、升序 `sortOrder`、
+  初始 `contentVersion=1`。
 - [ ] 保持 shared 零依赖、ES2017、无 Node/DOM/Cocos 全局、无 `const enum`。
-- [ ] 为 exact validation、唯一 ID、稳定排序和 catalog hash 建立单测。
+- [ ] 为 exact validation、唯一 ID、唯一默认、稳定排序和 `publicCatalogHash` 建立单测。
 - [ ] 明确皮肤目录变更与 gameplay wire/mode version 的关系；仅资源补齐不应无理由升级 wire。
 
 **产物**
 
-- 16-entry 公共目录和规范化 shared hash。
+- 16-entry 公共目录和规范化 `publicCatalogHash`。
 - 可由 server/client 导入的稳定查询 API，不要求调用方遍历数组猜 ID。
 
 **验证**
 
 - shared typecheck 和对应测试通过；目录无第三方/宿主依赖。
 - 任意未知 ID exact reject 或进入显式 fallback API，不通过 `%`、下标或字符串解析接受。
-- 调整 `sortOrder` 不改变 `skinId`；内容版本/公开状态变化按约定改变 hash。
+- 调整 `sortOrder` 不改变 `skinId`；任一公共字段或内容解释变化按约定提升版本并改变 `publicCatalogHash`。
 
 ### S1-05 · 建立服务端业务目录骨架
 
 **动作**
 
 - [ ] 为每个 `skinId` 建立 ownership itemId、碎片 itemId、获取方式、价格、上下架和 `aiEligible` 的明确槽位。
-- [ ] 未经 S3 拍板的获取/价格字段使用显式 draft/unavailable，不填伪造值。
-- [ ] 固定唯一默认皮肤和非空 AI 池；退休状态不删除历史 entry。
-- [ ] 生成或计算服务端 catalog hash，并提供与 shared/客户端身份对比的门禁输入。
+- [ ] 未经 S3 拍板的名称使用 `DisplayNameValue` 的 source/technical-draft；稀有度、itemId、获取方式、上下架和
+  价格使用 `DecisionValue` 的 draft/unavailable + `value:null`，不填空串、0 或伪造值。
+- [ ] 固定唯一默认皮肤 1 和 §2.1 的精确 10-ID AI 池；退休状态不删除历史 entry。
+- [ ] 生成 `serverBusinessHash`，并嵌入与 shared 相同的 `publicCatalogHash` 作为跨端门禁输入。
 
 **产物**
 
@@ -343,29 +507,33 @@ S1 不应为了纯资源目录提前创建 `snakeCosmetic` feature；该 feature
 **验证**
 
 - 16 个公共 ID 在服务端一一有 entry；无孤儿业务 entry。
-- AI 池非空，且每个 eligible entry 都能通过客户端资源/fallback 校验。
+- AI 池严格等于 `101,111,112,132,133,139,401,403,411,701`，其余 6 套明确 false；每个 eligible entry
+  都能通过客户端资源/fallback 校验。
 - draft 获取字段不能被购买/解锁代码当作有效配置；经济写门禁默认关闭直到 S3 完成。
 
 ### S1-06 · 生成客户端皮肤资源目录
 
 **动作**
 
-- [ ] 为每个 `skinId` 关联 preview、texture、head/body/tail frames、body sequence、帧时间、pivot、间距、
-  `visualScale` 和 fallback。
+- [ ] 为每个 `skinId` 关联 preview、texture、normal/boost 的 head/body/可选 tail、body sequence、
+  `durationFrames`、逐帧 pivot、有符号源 distance/offset、`headAnchorY`、`visualScale` 和 fallback。
 - [ ] 使用稳定逻辑资源路径，不把源 native hash 文件名或绝对路径暴露给运行时。
 - [ ] 确认全部彩色素材默认白 tint；身份轮廓/箭头/名牌作为独立表现能力登记。
-- [ ] 生成客户端 catalog hash 和可控诊断码，供未知 ID、加载失败和非法 rect 回退。
+- [ ] 生成 `clientPresentationHash`、嵌入的 `publicCatalogHash` 和可控诊断码，供未知 ID、加载失败和非法 rect 回退。
 
 **产物**
 
-- 16-entry 客户端资源目录、纹理/帧映射和 hash。
-- 供 S2 renderer 消费的 `skinId -> head/body/tail/animation` 单一解析入口。
+- 16-entry 客户端资源目录、纹理/帧映射、`clientPresentationHash` 和 `publicCatalogHash`。
+- 供 S2 renderer 消费的 `skinId -> normal/boost/head/body/tail/animation` 单一解析入口和布局推导函数。
 
 **验证**
 
-- 每个 entry 的所有 rect 均在纹理边界内，序列索引合法，帧时间和间距为有限正值。
-- 同一 ID 的头、身、尾不能解析到不同皮肤；不再存在 `% 3` 或实体 id 决定材质的目录 API。
-- 任意未知/缺失/非法 entry 都确定性回退皮肤 1，并只产生受控诊断。
+- 每个 entry 的所有 rect 均在纹理边界内，序列索引合法；`durationFrames` 为有限正值，源 distance/offset
+  只要求有限并允许负数；布局只读取 normal 几何，在目标 `bodyScale=1.0..2.8` 和正 `pointDistance` fixture 下
+  返回有限正值，切换 boost 纹理不改变路径点索引。
+- 同一 ID 的头、身、可选尾不能解析到不同皮肤；不再存在 `% 3` 或实体 id 决定材质的目录 API。
+- 皮肤 1 的 fallback 为 `null`、其余 15 套为 1；资源完整的 retired entry 仍解析自身。构建期缺失/非法 entry
+  使验证失败，运行时未知/部署缺失/非法 entry 才确定性回退皮肤 1 并只产生受控诊断。
 
 ### S1-07 · 补齐食物、残骸、墙块与背景目录
 
@@ -393,79 +561,96 @@ S1 不应为了纯资源目录提前创建 `snakeCosmetic` feature；该 feature
 
 **动作**
 
-- [ ] 为吃食物、吃残骸、击杀、死亡、个人结果和按钮登记稳定逻辑名、资源、hash、授权、音量/并发策略。
-- [ ] 登记加速拖尾、保护、死亡爆散和复活视觉资源；缺失项显式标为后续或 fallback。
+- [ ] 为吃食物、吃残骸、击杀、死亡和按钮登记稳定逻辑名、资源、hash、授权、音量/并发策略。
+- [ ] 将个人 run 结果固定登记为 `none/silent`，无 asset、无声音 fallback；不得借用其他事件音效。退出若成为
+  独立事件则另行登记，不继承个人结果、真人死亡或 `time_over`。
+- [ ] 登记基础加速、保护、死亡爆散和复活视觉资源；缺失项显式标为 `none` 或后续，不创建收藏型特效内容。
 - [ ] 将 `time_over` 标为历史/未使用资源，禁止映射到目标 Endless 生命周期。
 - [ ] 保持 View/Logic 边界和 `sfxOn` 语义，不把播放状态写进素材 catalog。
 
 **产物**
 
-- 音效/FX presentation catalog 和缺失/fallback 表。
+- 音效/FX presentation catalog 和资源/`none`/fallback 表。
 - S2/S5 可用于播放映射、资源加载和 `totalTime=0` 禁播的测试向量。
 
 **验证**
 
-- 所有目标逻辑事件最多有一个默认音效映射；缺失不会导致战斗初始化失败。
-- `time_over` 在目标事件映射中不可达。
-- 所有已引用音频/FX 资源均存在、hash 匹配且有授权状态。
+- 所有目标逻辑事件最多有一个默认音效映射；`none/silent` 或缺失不会触发资源加载，也不会导致战斗初始化失败。
+- 个人结果不会播放声音，`time_over` 在目标事件映射中不可达。
+- 所有实际引用的音频/FX 资源均存在、hash 匹配且有授权状态；`none` 项不伪造资源/hash。
 
-### S1-09 · 生成 16 套预览并完成内容审阅
+### S1-09 · 生成 16 套预览与内容审阅输入
 
 **动作**
 
 - [ ] 用规范化 catalog 生成统一背景、统一方向、统一长度/缩放和统一光照规则下的 16 套预览。
 - [ ] 同时输出头部动画、身体序列、尾部、pivot 和间距的检查图/contact sheet。
-- [ ] 由美术/产品按实际视觉质量标注 displayName、稀有度候选和获取方式候选，不按 ID 猜测。
+- [ ] 完成头/身/可选尾、normal/boost 动画、pivot、间距、白边、trim 和 fallback 的技术审阅并关闭阻塞问题。
+- [ ] 汇总来源名称证据、`皮肤 <ID>` 技术标签和统一预览，形成 S3-01 使用的展示名、稀有度、获取方式审阅包；
+  S1 内不要求用户/美术产品给出最终标注。
 - [ ] 缺帧、错序、白边、trim、pivot、缩放或 fallback 问题回到转换真源修复，不手改预览结果。
 
 **产物**
 
-- 16 套预览、统一 contact sheet 和审阅问题单。
-- S3 分配“默认 1 / 等级 3 / 金币 4 / 成就 4 / 碎片或活动 4”的视觉输入；配额仍由 S3 最终拍板。
+- `docs/s/evidence/s1/` 下的 16 套预览、统一 contact sheet、已关闭的技术问题单和待产品审阅包。
+- S3 分配“默认 1 / 等级 3 / 金币 4 / 成就 4 / 碎片或活动 4”的视觉输入；最终展示名、稀有度、获取方式
+  与具体分配在 S1 完成后、S3-01 开始前审阅。
 
 **验证**
 
-- 16 个冻结 ID 各有且只有一套可识别预览；预览使用的 hash 与目录 hash 一致。
-- 每套预览能确认头、身、尾来自同一 `skinId`，动画/序列没有越界或错位。
+- 16 个冻结 ID 各有且只有一套可识别预览；预览记录的表现 hash 与 `clientPresentationHash` 一致。
+- 每套预览能确认头、身、可选尾来自同一 `skinId`，normal/boost 动画和序列没有越界或错位。
 - 修复后从真源重生预览能复现结果，不存在仅修改导出 PNG 的漂移。
+- `displayName.state` 仍为 `source|technical-draft`；稀有度、获取方式等 `DecisionValue` 仍为
+  `draft|unavailable` 且 `value:null`。未审批不使 S1 失败，但不得进入 S3-01。
 
 ### S1-10 · 建立全目录校验与 hash 门禁
 
 **动作**
 
-- [ ] 校验 ID 唯一、唯一默认皮肤、AI 池非空、资源存在、rect/索引合法、fallback 无环且目标完整。
-- [ ] 校验 shared/server/client 的 entry 集合、内容版本和公共身份一致。
-- [ ] 计算稳定 hash；对 JSON 空白、key 顺序和文件遍历顺序做规范化。
-- [ ] 增加 hash mismatch 策略测试：外观目录相关经济写 fail-closed，战斗确定性回退皮肤 1；金币复活由
+- [ ] 校验 ID 唯一、唯一默认皮肤、精确 10-ID AI 池、资源存在、rect/索引合法、normal/boost 完整、
+  fallback 以皮肤 1 的 `null` 为唯一终点。
+- [ ] 校验 shared/server/client 的 entry 集合、内容版本和公共身份一致；16 套初始状态、排序和玩家可用性与
+  §2.1 严格相等。
+- [ ] 分别计算稳定 `publicCatalogHash`、`serverBusinessHash`、`clientPresentationHash`；对 JSON 空白、key
+  顺序和文件遍历顺序做规范化，不比较异构业务/表现 hash 是否相等。
+- [ ] 增加 `publicCatalogHash` mismatch 策略测试：外观目录相关经济写 fail-closed，战斗确定性回退皮肤 1；金币复活由
   独立 room config/policy/receipt 守门，不错误耦合 cosmetic catalog。
+- [ ] 区分 retired 与损坏：资源完整的 retired entry 保持自身解析，未知/部署损坏/加载失败/非法 rect 才运行时回退。
 - [ ] 将校验器接入适当的测试/verify 链；命令名称以实际实现为准并回写证据表。
 
 **产物**
 
-- 全目录 validator、freshness/hash 检查和正反 fixture。
+- 全目录 validator、三类 freshness/hash 检查和正反 fixture。
 - 可由 S2/S3 直接复用的 catalog compatibility gate。
 
 **验证**
 
-- 正常 16-entry 目录全绿；重复 ID、第二默认、空 AI 池、缺资源、越界 rect、fallback 环、孤儿 entry
-  和跨层 hash mismatch 分别稳定失败。
-- 相同语义的不同输入顺序得到相同 hash；内容变化得到不同 hash。
-- hash mismatch 时测试证明外观目录相关经济写不会进入，战斗仍只回退默认且留下诊断。
+- 正常 16-entry 目录全绿；重复 ID、第二默认、AI 集合漂移、缺资源、越界 rect、错误 normal/boost、
+  fallback 自环/多终点、孤儿 entry 和公共 hash mismatch 分别稳定失败。
+- 相同语义的不同输入顺序得到相同的对应 hash；业务 draft 单独变化只改变 `serverBusinessHash`；公共字段或
+  表现资源/解释变化则提升对应 `contentVersion`，同时改变 `publicCatalogHash`，表现变化还改变
+  `clientPresentationHash`。
+- `publicCatalogHash` mismatch 时测试证明外观目录相关经济写不会进入，战斗仍只回退默认且留下诊断；
+  `serverBusinessHash` 与 `clientPresentationHash` 不做相等断言。
+- retired entry 正常渲染自身；构建期损坏 fail-fast；运行时模拟部署损坏才触发 fallback 且不改写权威 skin ID。
 
 ### S1-11 · 执行同步、无头验证与阶段交接
 
 **动作**
 
 - [ ] 只修改手写真源；按实际改动运行必要的 gameplay codegen、shared sync、protocol fingerprint 和 client sync。
-- [ ] 运行转换器 freshness、catalog validator、资源 hash、inventory、sync、类型检查和客户端测试。
+- [ ] 在外部参考目录不可访问的条件下运行转换器 freshness、catalog validator、资源 hash、inventory、sync、
+  类型检查和客户端测试，证明常规链只依赖仓内输入。
 - [ ] 核对生成 diff 只包含预期产物，未手改受保护镜像，未混入未授权或未登记文件。
 - [ ] 在证据表登记实际命令、commit、预览/contact sheet、hash 和尚待 Creator 验收项。
-- [ ] 将 catalog API、hash、fallback、材质分组和未解决 Creator 风险交接给 S2/S3/S5。
+- [ ] 将转换报告、三类 hash、SHA、完整性矩阵和预览统一写入 `docs/s/evidence/s1/`，不改写 S0 evidence。
+- [ ] 将 catalog API、三类 hash、fallback、材质分组、S3 内容审阅包和未解决 Creator 风险交接给 S2/S3/S5。
 
 **产物**
 
 - 可消费且 freshness 通过的 S1 catalog/asset bundle。
-- 完整交接说明和真实验证输出。
+- 完整交接说明、S3-01 前置内容审阅包和真实验证输出。
 
 **验证**
 
@@ -474,7 +659,7 @@ S1 不应为了纯资源目录提前创建 `snakeCosmetic` feature；该 feature
 - 若修改 gameplay schema，额外运行并记录
   `npm --workspace @game/server run codegen:gameplays` 及相关服务端测试。
 - 若修改 protocol，显式运行 fingerprint 写入/检查动线；不得隐式重钉。
-- 对同一输入从零重生资源目录，输出和 catalog hash 与提交内容一致。
+- 对同一输入从零重生资源目录，输出和三类 catalog hash 与提交内容一致。
 
 ---
 
@@ -484,15 +669,26 @@ S1 不应为了纯资源目录提前创建 `snakeCosmetic` feature；该 feature
 
 - [ ] 16 个冻结 internal skin ID 均有完整来源映射、PNG、atlas/body config、规范化 entry 和预览。
 - [ ] 所有资源逐文件具备源路径、逻辑名、SHA-256、授权、目标路径、转换、`.meta` 状态和合法状态值。
-- [ ] 转换器能处理实际多帧/动画/trim/rotate/body sequence，并对未知结构 fail-fast。
+- [ ] 16 套均为 active、均进入公共目录、`playerUsable=true`、初始 `contentVersion=1` 并按数字 ID 升序；
+  唯一默认皮肤为 1。
+- [ ] `aiEligible=true` 集合严格等于 `101,111,112,132,133,139,401,403,411,701`，其余 6 套明确为 false。
+- [ ] 转换器能处理 normal/boost、多帧动画、逐帧保持次数、trim/rotate、body level/sequence、有符号
+  distance/offset 和可选 tail，并对未知结构 fail-fast。
 - [ ] 转换器和规范化目录在重复运行、乱序输入下仍字节确定。
+- [ ] 常规 generate、`--check`、测试和 CI 只依赖仓内输入，不读取外部绝对路径。
 - [ ] Shared、服务端和客户端三层目录的 ID/版本/公共身份一致，且 ownership 与资源所有权边界明确。
-- [ ] 唯一默认皮肤存在且完整，AI 池非空，未知/缺失/非法资源稳定回退皮肤 1。
-- [ ] 所有 rect、pivot、序列、帧时间、body distance、资源存在性和 fallback 链校验通过。
-- [ ] Dot `1..7`、Star、两类残骸、墙块、背景/网格主题和目标音效/FX 均进入 presentation catalog。
-- [ ] `time_over` 不可从目标 `totalTime=0` 事件映射触发。
-- [ ] 服务端/客户端 catalog hash mismatch 时外观目录相关经济写 fail-closed、战斗 fallback 的测试通过。
-- [ ] 16 套统一预览/contact sheet 完成，稀有度/获取方式没有按 ID 猜测。
+- [ ] 皮肤 1 完整且 `fallbackSkinId=null`，其余 15 套全部直接 fallback 到 1；构建期不完整目录 fail-fast，
+  运行时未知/部署损坏/非法资源稳定回退 1，retired 完整资源仍显示自身。
+- [ ] 所有 rect、pivot、序列、`durationFrames`、有符号 distance/offset、布局推导、资源存在性和 fallback 链
+  校验通过。
+- [ ] Dot `1..7`、Star、两类残骸、墙块、背景/网格主题和目标音效/FX 的资源或显式 `none` 策略均进入
+  presentation catalog。
+- [ ] 个人结果固定 `none/silent`，`time_over` 不可从目标 `totalTime=0` 事件映射触发。
+- [ ] 三类 hash 各自稳定、三层 `publicCatalogHash` 相同；公共 hash mismatch 时外观目录相关经济写
+  fail-closed、战斗 fallback 的测试通过，异构业务/表现 hash 不做相等比较。
+- [ ] 16 套统一预览/contact sheet、技术问题关闭记录和 S3 内容审阅包完成；名称保持
+  `source|technical-draft`，稀有度/获取方式保持 `draft|unavailable` 且 `value:null`，不按 ID 猜测，也不作为
+  S1 退出门。
 - [ ] 所有 codegen/sync/typecheck/test/verify 按实际改动运行并留存原始输出；生成 diff 已审阅。
 - [ ] Creator 尚未执行的资源/UUID/pivot/混合确认明确留给 S5，不能登记为已通过。
 
@@ -507,13 +703,19 @@ S1 不应为了纯资源目录提前创建 `snakeCosmetic` feature；该 feature
 | 根据文件名或 ID 合并素材 | 皮肤身份错配、历史所有权不可迁移 | 只按源 catalog 和 SHA 证据映射；字节去重仍保留逻辑别名 |
 | 缺授权资源进入发布目录 | 发布风险或后续返工 | `待授权，不得引入` fail-closed；使用已批准 fallback，不用“同机可见”补证 |
 | 复制旧 `.meta`/UUID/import cache | Cocos 资源冲突或跨工程幽灵引用 | 只复制/转换源字节，新建目标 `.meta`；S5 用 Creator 重导入确认 |
-| 资源和 catalog hash 漂移 | 白图、错皮肤、外观资产争议 | 规范化 hash 与 freshness 门禁；外观目录相关经济禁写，战斗回退皮肤 1 |
-| fallback 缺失或成环 | 加载失败递归、无法开局 | validator 强制默认唯一、fallback 有界无环且目标完整 |
-| AI 皮肤池为空或消费玩法 RNG | AI 无法生成，新增皮肤改变对局轨迹 | 非空门禁；S2 使用独立 `snake.ai.skin` RNG，目录仅提供候选 |
+| 资源和 catalog hash 漂移 | 白图、错皮肤、外观资产争议 | 三类规范化 hash 与 freshness 门禁；公共 hash 不符时外观经济禁写，战斗回退皮肤 1 |
+| 把异构业务/表现 hash 直接比较 | 永久 mismatch 或错误开启经济写 | 跨端只比较同构 `publicCatalogHash`；其余 hash 只守本层 freshness/审计 |
+| fallback 缺失或成环 | 加载失败递归、无法开局 | 皮肤 1 以 `null` 作为唯一终点，其余 15 套直达 1；validator 拒绝其他形状 |
+| AI 皮肤池漂移或消费玩法 RNG | AI 外观偏离来源，新增皮肤改变对局轨迹 | 精确 10-ID 集合门禁；S2 使用独立 `snake.ai.skin` RNG，目录仅提供候选 |
+| 把 `frame_time` 当毫秒 | 动画速度严重偏离来源 | 归一为 `durationFrames=max(1, frame_time)` 并以 0/6 fixture 守门 |
+| 拒绝负 distance 或混成正间距 | 身体布局错位或转换器误报 | 有符号源 offset/distance 只校验有限；路径点距离由 `deriveSkinLayoutMetrics` 独立推导和校验 |
+| 合并 normal/boost 或伪造 tail | 加速动画、411/701 多帧或 403 尾部错误 | 双 profile、显式继承和可选 tail；以已知结构 fixture 守门 |
+| 把 retired 当作损坏资源 | 既有所有者换装或显示被错误改写 | retired 只停新增获取，资源完整时继续解析自身；损坏才运行时 fallback |
+| 常规构建依赖开发机绝对路径 | CI/他机无法重生目录 | 转换输入和 manifest 入仓；绝对路径仅用于显式 import/refresh 与台账审计 |
 | 真人/AI tint 改写原皮颜色 | 与 golden 不一致且身份提示依赖颜色 | catalog 默认白 tint；身份提示作为独立轮廓/箭头/名牌资源 |
 | 每个食物独立 Sprite/material | 1030 食物导致节点和 draw call 失控 | S1 按 atlas/material 批次组织；不满足批渲染的目录不得交给 S2 |
 | 把 `time_over` 音效接入 Endless | 暗示不存在的限时终局 | 明确标为历史/未使用；事件映射测试不可达 |
-| 提前写死价格/稀有度 | S3 被未经评审的内容决策绑架 | S1 使用 draft/unavailable；预览审阅后由 S3 拍板 |
+| 提前写死名称/价格/稀有度 | S3 被未经评审的内容决策绑架 | S1 使用 source/technical-draft/unavailable；S1 后、S3-01 前完成内容审阅 |
 | 手改 generated 或同步镜像 | 后续 codegen/sync 覆盖、真源漂移 | 只改手写真源；发现镜像单独 diff 时回退该 diff 并从标准动线重生 |
 
 ---
