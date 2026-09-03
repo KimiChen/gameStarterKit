@@ -21,8 +21,9 @@
 > 但按用户拍板把源地图 `4896 × 4896` 覆盖为 `4096 × 4096`；1000 Dot + 30 Star、出生长度 80、
 > 相机 `1.3 → 0.6 @ 100000`、蛇身
 > `1.0 → 2.8 @ 100000`、16 条 AI；生命周期直接采用新版无尽的 `totalTime=0`：不显示剩余时间、
-> 不因时长到点结束、也不存在第 1800 tick 自动收局。最多 8 真人、首人开局、Playing 可入和死亡 2 秒
-> 自动复活属于联机适配；场内真人增加时替换 AI，目标活动蛇总量固定为 17。
+> 不因时长到点结束、也不存在第 1800 tick 自动收局。最多 8 真人、首人开局和 Playing 可入属于联机适配；
+> 真人死亡不再 2 秒自动复活，改为原作式限时复活选择，选择成功才延续当前 run，放弃、超时或次数用尽则
+> 结束该真人 run；AI 仍按原作约 2 秒重生。场内真人增加时替换 AI，目标稳定态活动蛇总量为 17。
 >
 > **证据口径：** 文内源码行号是建档时快照，后续复核应按符号重新定位。固定状态标签为
 > `[已拍板·待实施]`、`[进行中]`、`[已完成]`、`[阻塞·需 Creator]`、`[有意不做]`；
@@ -55,6 +56,8 @@
 - 不允许客户端在 join 数据中自报一个未经服务端验证的 `skinId`。
 - 不为不同皮肤设置不同碰撞体、速度或攻击范围。
 - 不在运行时接入原服动态难度 AB；首发冻结 V2 的 K1 level 0 AI 阵容。
+- 不接入原作复活广告、分享、广告券、钻石、月卡额外次数或新手免费复活 AB；首发从 Feed 内置
+  `relive_config_b` 样例冻结五档金币阶梯，并复刻选择、状态恢复与保护的核心流程。
 - 不把 86 个假榜条目当作场内 AI 或结算参与者。
 - 不再组合原作独立的 TimeLimit 90 秒模式，也不保留当前第 1800 tick 自动收局作为隐藏兜底。
 - 不把 `totalTime=0` 理解为“永不结算、永不回收”：玩家 run 与房间生命周期必须分别闭环。
@@ -156,7 +159,7 @@ S2/S3 比两侧肩位高 80，形成按钮位于摇杆上方的浅弧，同时�
 | K1 level 0 AI | `aiLevel 401×8, 402×4, 403×2, 404×2` | 同源值 | 原作单人场内的 16 条活动 AI |
 | `fake_snake_count` | `86` | `86` | 仅假榜池，不生成场内实体、不参与奖励 |
 | 假榜初始/增长/重置 | `100..50000 / 10..100 / 0.02` | 同源值 | 每次刷新增长；2% 时重置到 80 |
-| `endless_wreck_score_rate_a / b` | `0.8 / 2` | `0.8 / 2` | 死亡残骸总分公式的指数与倍率 |
+| `endless_wreck_score_rate_a / b` | `0.8 / 2` | `0.8 / 2` | AI 死亡残骸总分公式的指数与倍率 |
 | `point_step_config` | 71 项有序分段表 | 同源表 | 完整镜像源数组；`*_max_point_step=1240` 不当作已消费规则 |
 
 保持 1030 个食物而把地图边长从 4896 改为 4096，会让单位面积食物密度变为原 V2 的约 1.43 倍；
@@ -172,20 +175,30 @@ S2/S3 比两侧肩位高 80，形成按钮位于摇杆上方的浅弧，同时�
   明确不包含 `gameModeTimeLimit`。
 - 原作即使 `totalTime=0` 也继续正向累计 `gameTime` 供事件、AI 与临时保存使用；只有 `totalTime > 0`
   才显示剩余时间 HUD 并触发 `timeIsOver`。因此 0 表示无截止时间，不是停止世界时钟。
-- V2 真人死亡走 `relive_config_b`：选择窗默认 5 秒、AB 可为 8/10 秒，成功后恢复死亡前长度、分数、击杀等，
-  并获得 3 秒保护；实际默认路由中的 AI 在死亡约 2 秒后重生。相关归档证据位于
+- 原作真人复活由顶层 `endless_config`、平台能力与运行态共同决定：不可付费 Endless 的基础档位读取
+  `relive_config_b`，可付费 Endless 改读 `relive_config`；广告/分享可用性及新手/月卡资格另行判断。该配置
+  与 `single_game_config.new_endless_config_abtest` 的 V2 战场配置分别注入，不能误读 V2 对象内同名字段作为
+  已消费的复活表。选择窗代码默认 5 秒、AB 可为 8/10 秒，归档不能证明线上用户固定命中哪组；成功后恢复
+  明确的长度、分数、击杀、磁铁/星星累计等字段，并按归档默认获得 3 秒保护。AI 则在死亡约 2 秒后重生。
+  相关归档证据位于
   `/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/utils/GameEntryUtil.js:107-116`、
+  `/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/store/ConfigStore.js:65-68`、
+  `/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/prefab/game/relive/ReliveStore.js:21-41`、
+  `/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/prefab/game/relive/ReliveAlert.js:69,380-401`、
   `/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/store/GameStore.js:174-176`、
-  `/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/scene/Game.js:168-189,306-311,349-352,410-414`
-  和 `/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/game/snake/SnakeManager.js:165-176`。
+  `/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/scene/Game.js:349-385`、
+  `/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/game/snake/SnakeManager.js:165-181`
+  和 `/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/game/snake/Snake.js:79-81,92-96`。
 
-本项目最终命名配置为 `newEndlessPortraitV2Map4096TotalTime0`，由三个可审计层组成：
+本项目最终命名配置为 `newEndlessPortraitV2Map4096TotalTime0`，由五个可审计层组成：
 
 | 配置层 | 来源 | 冻结口径 |
 |---|---|---|
 | `newEndlessPortraitV2Map4096` | 原作新版无尽 + 用户地图覆盖 | 除地图改为 4096² 外，沿用 V2 的食物、蛇身、相机、AI、假榜及对应表现 |
-| `sourceEndlessTotalTime0` | 原作 `gameModeEndless` | `totalTime=0`、无剩余时间 HUD、无时长到点和超时禁复活 |
-| `onlineEndlessDropInV1` | 本项目联机约束 | 首人启动、3 秒准备、最多 8 真人、活动总量 17、Playing 可加入、死亡 2 秒自动复活、真人 run 独立结算、空房回收 |
+| `sourceEndlessTotalTime0` | 原作 `gameModeEndless` | `totalTime=0`、无剩余时间 HUD、无整局到点和终局末段禁复活 |
+| `sourceEndlessReliveFlow` | 原作 Endless 代码路径 | 普通且有资格的真人死亡约 200ms 后进入复活交互；成功恢复明确累计字段并获得默认 3 秒碰撞保护，拒绝/超时结束原作本局，本项目映射为个人 run 终局 |
+| `onlineCoinRelive5V1` | Feed 内置 B 表样例 + 本项目渠道裁剪 | 五档金币 `100/200/300/300/300`、固定 5 秒；不声称是普通线上 V2 恒定默认，不运行 8/10 秒 AB |
+| `onlineEndlessDropInV2` | 本项目联机约束 | 首人启动、3 秒准备、最多 8 真人、稳定态活动总量 17、Playing 可加入、真人复活选择只暂停本人、个人 run 独立结算、空房回收 |
 
 组合后的联机无尽语义固定如下：
 
@@ -196,9 +209,9 @@ S2/S3 比两侧肩位高 80，形成按钮位于摇杆上方的浅弧，同时�
    mode 也不按 `matchTicks` 调用 `context.settle()`。第 1800 tick、第 1801 tick 与后续 tick 正常推进。
 3. 默认不显示剩余时间 HUD。若以后增加本次游玩时长，只能显示从权威 `runStartedTick` 推导的正向计时，
    且不得作为结束条件。
-4. 真人死亡后沿用本项目 2 秒自动复活并保留当前 run 累计分，资格判断改为
-   `!hasDeadline || tick + respawnDelayTicks < endTick`。死亡本身不结束真人 run；该规则是为了联机连续性
-   保留的适配，不伪称为原作真人的选择式付费/广告复活流程。
+4. 真人死亡后禁止现有 2 秒自动复活，改走 2.5 节的服务端权威复活选择；接受并成功扣除当档金币才恢复
+   当前 run，放弃、选择超时、无剩余档位以及强制/逃跑结束都 finalize 该真人 run。AI 约 2 秒重生是独立策略，
+   不得复用到真人。
 5. 世界不因某个玩家死亡或退出而整体结束。每位真人在最终准入、创建蛇实体前建立唯一 `runId`；主动“结束本次”、
    断线重连宽限耗尽、被服务端移出或运维 drain 时，先冻结该玩家 run 证据并可靠入队，再从世界移除。
    宽限内重连继续原 `runId`，离开后重新加入必须创建新 `runId`。
@@ -210,6 +223,83 @@ S2/S3 比两侧肩位高 80，形成按钮位于摇杆上方的浅弧，同时�
    静默丢奖，也不得把技术中断伪装成限时结算。
 8. 正常玩法不设置 arena 最大时长。只有部署/运维指令或 tick、snapshotSeq、joinOrdinal 等单调字段接近其
    协议安全上界时才进入 Draining；阈值随 wire 版本冻结并由边界测试守门，不能复用为日常限时局。
+
+### 2.5 真人死亡、复活选择与联机适配
+
+#### 2.5.1 源流程与首发冻结策略
+
+`ConfigStore.setConfigs` 实际把顶层 `endless_config` 交给 `ReliveStore`。本项目不接原作可付费平台的
+`relive_config` 钻石路线，明确选择不可付费 Endless 的 B 路线；每次死亡按 `reliveTimes + 1` 读取
+`relive_config_b`。普通启动会在线请求配置，仓内没有其线上响应快照；下表数值来自 Feed 快捷模式的内置样例，
+因此作为本项目 `onlineCoinRelive5V1` 的显式冻结值，而不是“普通 V2 线上恒定默认”。只有复活成功才递增
+`reliveTimes`。来源分别见
+`/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/Loading.js:232-236`、
+`/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/api/AppApi.js:53` 与
+`/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/store/FeedGameStore.js:56-74,100`：
+
+| 第几次成功复活 | Feed 样例 `coin_relive` | Feed 样例 `ad_card` | 本项目首发按钮 |
+|---:|---:|---:|---|
+| 1 | 100 | 1 | `100 金币复活` |
+| 2 | 200 | 1 | `200 金币复活` |
+| 3 | 300 | 2 | `300 金币复活` |
+| 4 | 300 | 3 | `300 金币复活` |
+| 5 | 300 | 4 | `300 金币复活` |
+
+原作会按平台、广告库存、分享额度、广告券、钻石/月卡和实验状态动态选择支付入口。本项目首发没有这些商业
+依赖，只保留同一 B 表样例中的金币入口和“放弃复活”；`ad_card` 仅作为来源证据冻结，不进入目标扣费。
+第五次成功后再次死亡不再弹窗，直接结束个人 run；不移植月卡追加次数和新手免费复活。默认选择窗固定
+`5 秒 = 100 tick @ 20 Hz`，不接入原作 8/10 秒 AB。
+
+#### 2.5.2 权威状态机
+
+```text
+active
+  -> deadPresentation (4 tick / 200 ms，只提交一次死亡事件与表现)
+      -> reliveOffering                                  // 普通死亡且有可用档位
+          -> pendingRelive                               // 快照/offer 持久成功，激活 100 tick 选择窗
+              -> finalizing -> finalized                // 放弃或超时
+              -> reliveSpawning
+                  -> finalizing -> finalized            // 20 tick 内无安全点，spawnFailed 且未扣费
+                  -> reliveCommitting
+                      -> pendingRelive                   // 余额不足/可重试失败，且原 deadline 未到
+                      -> reliveReady                     // 扣费与复活权已原子持久应用
+                          -> [internal activation gate]  // 恰好一个受保护 provisional Active tick，随后冻结
+                              -> active                  // activated 持久确认后才持续 Active/发送 revived
+                          -> finalizing -> finalized     // activation 前终局/不可恢复，先退款
+                      -> finalizing -> finalized         // 系统失败：未扣费直接结束，已扣费先退款
+          -> finalizing -> finalized                    // offer 持久化系统失败，不发窗、不扣费
+      -> finalizing -> finalized                        // 第六次死亡 / force / escape，不发窗
+```
+
+1. 死亡 tick 立即停止该真人输入、加速和碰撞，递增 `deathSeq/deaths`，冻结不可变 `deathSnapshot`；
+   `4 tick / 200 ms` 死亡演出后，只有普通死亡且仍有可用档位才发复活 offer，第六次、force/escape 则直接
+   Finalizing。原作真人走 `snakeDie(false, ...)`，因此真人死亡不生成可拾取的计分残骸；重复事件、重连和
+   请求重试也不得重复播放权威死亡事件。AI 的计分残骸另按 §4.3 处理。
+2. `deathSnapshot` 明确保留原作已恢复的长度、分数、击杀、磁铁/星星累计等字段；最高长度等只属于 run
+   账本的累计证据。复活成功保持同一 `roomEpochId/runId/skinId`，在服务端安全出生位恢复明确字段，清零
+   连杀、持续击杀和攻击/碰撞等单条生命瞬态，并获得 `60 tick / 3 秒`蛇身/首领碰撞保护；该保护不伪称
+   为对墙等所有死亡来源绝对无敌。原作普通路径使用中心 `(0,0)`，本项目为多人碰撞安全改用服务端安全出生位；
+   不重置为基础长度 80。
+3. offer 携带 `runId/deathSeq/reliveIndex/coinCost/decisionDeadlineTick/relivePolicyVersion`。普通且有档位的
+   死亡先以 `reliveOffering` 持久化完整版本化 `deathSnapshot` 及 hash；提交成功后才在下一个权威 tick 冻结
+   `offeredTick` 和 `decisionDeadlineTick=offeredTick+100`、切入 `pendingRelive` 并下发 offer。持久化失败在
+   有界重试后以 `reliveSystemFailed` 结束，不能展示一个恢复后无法重建的选择窗。接受只在
+   `currentTick < decisionDeadlineTick` 有效；达到 deadline 的 tick 由超时优先 finalize，客户端倒计时只显示，
+   无权延长截止、决定费用或自行生成蛇。
+4. `accept` 先以 CAS 把该次死亡从 `pendingRelive` 切到 `reliveSpawning`，在最多
+   `reliveSpawnMaxWaitTicks=20` 内找出并保留安全出生点；找不到则以 `reliveSpawnFailed` 结束且不扣费。取得
+   出生点后转 `reliveCommitting`，由 mode-owned tracked task 原子扣金币并写唯一复活收据。成功只恢复一次；
+   余额不足且原 deadline 未过时回到同一 offer、不消耗档位，已过时则按 timeout 结束；基础设施失败不得
+   扣款或免费复活，并按 6.6 节的有界恢复/退款策略以 `reliveSystemFailed` 收口。已在 deadline 前被服务端接受的决策不会被并发 timeout
+   抢走，但客户端时间戳不能挽救服务端晚到请求。
+5. `decline`、复活窗内“结束本次”、倒计时超时或已经用完五档，都只结束该真人 run 并进入个人结算；`decline`
+   只在 `pendingRelive` 有效，进入生成/扣费后由终局意图与退款规则收口，不能反向覆盖已获胜的 accept。房间
+   phase 继续 Playing，其他真人、AI、食物和 world tick 均不暂停。原作单机的全场暂停不能照搬到联机房。
+6. ReliveOffering/PendingRelive 期间本人蛇保持死亡且不可交互，`activeTicks` 暂停；断线不冻结已激活的服务端
+   deadline。宽限内重连
+   若 offer 尚有效则重放同一 `deathSeq`，已超时则展示对应 runResult，不另送一次复活机会。
+7. AI 不进入上述状态机、不扣玩家金币、不占真人复活次数；AI 继续走独立约 `40 tick / 2 秒`重生策略，
+   并按 AI 配置恢复长度/分数。真人代码中不得再保留同样的 40 tick 自动重生分支。
 
 ---
 
@@ -232,6 +322,10 @@ S2/S3 比两侧肩位高 80，形成按钮位于摇杆上方的浅弧，同时�
   [apps/server/src/rooms/modes/snake/world.ts](apps/server/src/rooms/modes/snake/world.ts#L182)。
 - 当前规则把 `matchTicks=1800` 写死；`SnakeWorld` 构造 `endTick`、`step()` 到点返回 done，mode 随即调用
   `context.settle()`。死亡与复活也直接拿 `endTick` 判断末段禁复活，不能靠把字段改成 0 实现无尽。
+- 当前真人和 AI 共用 `pendingRespawns` 的约 40 tick 自动重生路径；目标必须删除真人分支，新增
+  `deadPresentation/reliveOffering/pendingRelive/reliveSpawning/reliveCommitting/reliveReady`、五档复活策略、
+  权威扣费与个人结束，
+  AI 重生策略则独立保留。
 - 当前 room schema 的 `endTick/winnerId` 和客户端的 `phase===Settle` 结果页均绑定整房限时收局，需要改为
   `hasDeadline=false` 与个人 `runResult`，同时保持其他玩家的 room phase 为 Playing。
 - 当前 gameplay command handler 只允许同步 `void`；若直接把 `endRun` 写成 async，dispatcher 不会等待其
@@ -241,7 +335,7 @@ S2/S3 比两侧肩位高 80，形成按钮位于摇杆上方的浅弧，同时�
 - 当前 Snake 结算没有能覆盖中途加入/离开的可靠真人 run 账本，不能直接承诺永久 run 结束奖励。
 - 当前 Playing 离场仍保留部分 shell participant 索引，`removePlayerSnake` 也没有从所有 pending 集合移除实体；
   在固定时长房间中有界的问题会在长驻无尽房中随 churn 累积。finalize 成功后必须清理 participant、蛇、
-  pendingRespawns、输入、快照游标和内存 run 账本中的全部引用。
+  `pendingAiRespawns`、真人复活状态/任务、输入、快照游标和内存 run 账本中的全部引用。
 - 当前 Snake 的 `connected` 投影没有完整接上 GameRoom drop/reconnect 状态；无尽 run 必须真正实现宽限期内
   停止 boost、保持既定移动语义，并让奖励 `activeTicks` 排除断线时间。
 
@@ -331,7 +425,7 @@ cameraScale = max(
 | Dot | 1000 | 16 | 1 | `1..7` 彩色帧按原作确定性随机分布 |
 | Star | 30 | 42 | 原作 10；是否同步规则见 §4.7 | star 帧、移动、随机变向、撞边反弹 |
 | 加速残骸 | 有界补充 | 22 | 1 | 原作对应素材/帧 |
-| 死亡残骸 | 房间 cap 内 | 34 | 每个至少 3，按死亡蛇分数公式分摊 | 区分死亡掉落表现 |
+| AI 死亡残骸 | 房间 cap 内 | 34 | 每个至少 3，按死亡 AI 分数公式分摊 | 真人死亡不生成可拾取计分残骸 |
 
 实现约束：
 
@@ -341,15 +435,17 @@ cameraScale = max(
 - 1030 个常驻食物必须使用同一 atlas/material 的批量 mesh；不得创建 1030 个 Sprite 节点或 draw call。
 - 食物素材 rect、尺寸和 atlas 边界加入自动校验。
 
-原作已消费 V2 的死亡残骸参数，场内公式不是待猜测的真人 run 奖励规则：
+原作已消费 V2 的死亡残骸参数；在所选单人源路径中真人调用 `snakeDie(false, ...)`，AI 才调用
+`snakeDie(true, ...)` 生成可拾取残骸。场内公式不是待猜测的真人 run 奖励规则：
 
 ```text
 totalDeathWreckScore = pow(deadSnakeScore, 0.8) * 2
 perWreckScore = max(totalDeathWreckScore / bodyCount, 3)
 ```
 
-本项目在 shared/server 中以确定性定点数口径实现并补齐边界向量；若受房间残骸上限影响而合并实体，必须
-守恒该次死亡产生的总残骸分值。该分值只参与场内拾取和 run 分数，不直接等同于 §8 的资产奖励。
+本项目在 shared/server 中以确定性定点数口径实现并补齐边界向量；若受房间残骸上限影响而合并 AI 残骸，
+必须守恒该次 AI 死亡产生的总残骸分值。真人只播放死亡表现，符合资格时追加复活选择；不会向多人场额外注入可拾取分数。
+该分值只参与场内拾取和 run 分数，不直接等同于 §8 的资产奖励。
 
 ### 4.4 皮肤目录与渲染
 
@@ -413,10 +509,12 @@ interface SnakeSkinDefinition {
 原作在 `GameStore.generateGameSnakeInfos` 中从其他蛇皮肤池轮换 AI 外观，并对名字、头像做不重复抽取。
 本项目采用等价但可确定性重放的规则：
 
-- `maxPlayers=8` 只限制真人；Playing 阶段目标活动实体总量固定为 17。
+- `maxPlayers=8` 只限制真人；Playing 阶段目标稳定态活动实体总量为 17。
 - 首位真人开局时生成 16 条 AI，冻结 K1 level 0 阵容：`aiLevel 401×8、402×4、403×2、404×2`。
 - 第 2～8 位真人加入时，每人替换一条 aiLevel 401 AI；公式为 `AI 数 = 17 - 真人数`，因此满 8 真人时
   仍有 9 条 AI。真人离开且席位释放后，补回对应 aiLevel 401 AI，维持总量。
+- 真人处于 `deadPresentation/reliveOffering/pendingRelive/reliveSpawning/reliveCommitting/reliveReady` 时仍占原席位，不临时补 AI；
+  因此这段短暂窗口内存活蛇可少于 17。只有个人 run 最终完成并释放席位后才补 AI，避免 5 秒内反复增删。
 - 不启用 K2 或运行时动态难度 AB；未来调整必须形成新的命名配置版本。
 - `fake_snake_count=86` 仅创建展示榜数据，可用于原作风格 Top 10/个人名次表现；它们没有世界坐标、
   碰撞、皮肤实体或奖励资格，绝不能混入活动蛇数组。
@@ -450,11 +548,12 @@ AI 不再统一灰化；若需要区分 AI，通过名牌标记、名字池或�
 
 ### 4.7 表现复刻与规则复刻的边界
 
-本次配置选择已拍板同步以下 V2 字段：除地图尺寸外的常驻食物数量、出生/最大长度、相机缩放、身体缩放、
-路径点增长配置、K1 level 0 活动 AI 阵容、假榜参数和 `totalTime=0` 生命周期。目标地图 4096²、最多 8 真人、
-首人启动、Playing 可入、真人死亡 2 秒自动复活与按真人 run 独立结算，分别属于用户地图覆盖或明确标注的
-`onlineEndlessDropInV1`。不得重新混入 TimeLimit 的倒计时、超时禁复活或整房统一结算，也不得把联机适配
-伪装成原作原生规则。
+本次配置选择已拍板同步以下 V2 战场字段：除地图尺寸外的常驻食物数量、出生/最大长度、相机缩放、身体缩放、
+路径点增长配置、K1 level 0 活动 AI 阵容和假榜参数。生命周期另采用原作 `totalTime=0` 与真人复活交互核心，
+并由 `onlineCoinRelive5V1` 冻结五档金币样例。目标地图 4096²、最多 8 真人、首人启动、Playing 可入、
+复活只暂停本人及按真人 run 独立结算，分别属于用户地图覆盖或明确标注的 `onlineEndlessDropInV2`。原作
+广告/分享/月卡分支改为金币阶梯是明确的首发渠道裁剪；不得
+重新混入 TimeLimit 的整局倒计时、终局末段禁复活或整房统一结算，也不得把联机适配伪装成原作原生规则。
 
 当前规则还调整过速度、转向、加速、出生保护和 Star 价值，见
 [apps/shared/src/gameplays/snake/ruleset.ts](apps/shared/src/gameplays/snake/ruleset.ts#L32)。V2 对这些字段没有形成一套可直接
@@ -465,7 +564,7 @@ AI 不再统一灰化；若需要区分 AI，通过名牌标记、名字池或�
 - 当前加速倍率 1.6，原作静态默认为 2。
 - 当前转向速度和出生保护也经过竖版/联机收敛。
 
-`endless_wreck_score_rate_a=0.8`、`b=2` 已在原作场内死亡残骸路径消费：总残骸分值为
+`endless_wreck_score_rate_a=0.8`、`b=2` 已在原作场内 AI 死亡残骸路径消费：总残骸分值为
 `pow(deadSnakeScore, 0.8) * 2`，再按身体数量分摊且单个至少为 3。该公式随 V2 快照冻结，接入前补齐
 定点数、房间上限下分值守恒与确定性测试；不得误接到真人 run 资产结算。任何规则同步均需更新 shared 真源、
 测试和版本说明。
@@ -613,6 +712,84 @@ RPC descriptor 是契约真源，按标准流程生成 registry、服务端路�
 3. outbox 向 Bag 发放永久所有权。
 4. 重放时由唯一收据和 applied/payload 共同保证不重复扣款和不重复发放。
 
+### 6.6 金币复活扣费与恢复
+
+金币复活是 S2R 的独立玩法写路径，不与 S4 的 run 结束奖励混成一笔事务。复用 MySQL `user_currency`、
+`currency_ledger`、`withUser(fence)`、`withRcTx`、`debitInTx/creditInTx`，并新增 `snake_relive_receipt`
+（或等价通用业务收据）和跨进程请求绑定表 `snake_relive_decision`：
+
+```text
+唯一业务键 = (uid, sId, roomEpochId, runId, deathSeq)
+请求绑定键 = (uid, sId, clientReqId) + canonical payload hash
+canonical payload = command/decision/uid/sId/roomEpochId/runId/deathSeq/reliveIndex/coinCost/relivePolicyVersion
+reliveIndex = relivesUsed + 1（1-based）
+chargeOpId = stableHash(uid/sId/roomEpochId/runId/deathSeq/"charge")
+receipt state = charged | applying | applied | activated | refunded
+decision state = processing(owner/generation/lease) | resolved(canonical result)
+有界参数 = reliveOfferPersistTimeoutMs 3000 / reliveCommitTimeoutMs 5000 / reliveApplyLeaseMs 15000
+```
+
+1. 普通且有档位的死亡先进入 `reliveOffering`，持久化 `runId/deathSeq/deathSnapshotVersion`、完整 canonical
+   `deathSnapshot`、`deathSnapshotHash/reliveIndex/relivePolicyVersion`；成功后才在下一个权威 tick 冻结并持久化
+   `offeredTick/decisionDeadlineTick=offeredTick+100`，CAS 到 `pendingRelive` 后下发 offer。offer task 按
+   `runId + deathSeq` 去重并受 generation/token 约束；持久化有界失败直接走 `reliveSystemFailed`，不得先发窗。
+2. 每个客户端命令先以唯一 `(uid,sId,clientReqId)` 写/读 `snake_relive_decision`，保存完整 canonical payload、
+   payload hash、processing/terminal result 与关联 receiptId。它负责跨重启重放 decline、余额不足和可重试失败；
+   同 id 同 payload 返回原结果，同 id 异 payload 返回冲突。已记录失败的同一 id 不重新尝试，用户再次点击必须
+   产生新 `clientReqId`；提交结果不明时必须保持 processing 并按自然键查明，不能先记录 retryableFailure 再让
+   同一业务扣费继续。processing 行使用 owner/generation/lease；启动、重连和周期恢复器 claim 过期行后，按
+   durable runState/terminalIntent/receipt 收敛：Pending 时在 deadline/CAS 守门下重放同一命令，
+   Spawning/Committing 时恢复同一 task，已有 receipt 时转入收据恢复，已终局或已激活时补写对应 canonical
+   result。world 的 `runId + deathSeq` CAS 仍负责让 accept、decline 或 timeout 只有一个赢家。
+3. `reliveSpawning` 在扣费前最多 20 tick 寻找候选安全点；只有搜索耗尽才在不创建收据的前提下以
+   `reliveSpawnFailed` 收口。endRun、断线宽限耗尽、moderation 或 drain 等生命周期取消同样不创建收据，但
+   必须保留已锁存的 `terminalIntent`。候选点不是持久权利，任何 DB await 后都必须复验
+   room generation、task token 和当前碰撞，必要时重找。accept 取得 token 后不再接受反向 decline，也不被
+   原 decision deadline 抢占。
+4. tracked task 通过 `withUser` 取得最新 fence，再在 RC 事务中按自然键 `SELECT/INSERT` receipt 并完整比对
+   canonical payload；调用 `debitInTx` 扣金币、写 debit ledger，把 receipt 写为 `charged` 并记录
+   `balanceAfter/applyExpiresAt`。余额不足、旧 fence 或事务失败必须使 receipt、ledger、余额全部零写入；提交
+   结果不明时按自然键回读，不能盲目重扣。charge 成功提交后 best-effort 调用
+   `invalidateBalanceCache(uid,sId)`；receipt 的 `balanceAfter` 只用于本次响应，不能替代缓存失效。
+5. `charged` 只能由持有 `applyOwner/generation/applyLeaseUntil` 的 task CAS claim 为 `applying`。应用事务必须
+   原子写入完整版本化 `deathSnapshot` 及 hash、`state=reliveReady`、`reliveAppliedDeathSeq=deathSeq`、
+   `relivesUsed=reliveIndex`、`reliveCoinSpent += coinCost`，并把 receipt 置为 `applied`；不能在事务外递增档位。
+   `applied` 表示“复活权已持久化”，不是已经向玩家交付可操作蛇，也不得据此提前发送成功结果。
+6. 匹配 room generation 的 mode task 从 durable `reliveReady` 重建实体并重新验证安全点。内部 activation gate
+   在 fixed step 开始再次检查 task token 和 `terminalIntent IS NULL`，只允许**恰好一个**带复活碰撞保护的
+   provisional Active step，并记录 `reliveFirstActiveTick`；该 step 结束立即转入仅服务端内部的
+   activationCommitting，冻结输入、拾取、得分及后续碰撞，RC await 无论跨多少 step 都不能继续游玩。随后事务
+   CAS `run.state=reliveReady AND terminalIntent IS NULL`，原子写 `run.state=active/reliveFirstActiveTick` 与
+   receipt `activated`；提交后才保持 Active、重新开放输入并发送 `revived`。提交前的单 step 不作为不可退款
+   交付证明；崩溃或 CAS 失败按用户有利原则退款并移除临时蛇，该 step 已发生的确定性世界副作用不反向回滚。
+   提交成功但 push 丢失时，active checkpoint 是重连 canonical 结果；`activeTicks` 从提交后的下一 step 才累计。
+7. 若进程恢复后仍能恢复同一 room generation，必须继续消费同一 `reliveReady`，不得再扣费或新开一档；若
+   generation 已不可恢复、安全点重找耗尽，或终局意图在 activated 前获胜，则退款事务必须原子 CAS receipt
+   为 `refunded`、按 `reliveAppliedDeathSeq/deathSeq/reliveIndex` 回滚本次 `relivesUsed/reliveCoinSpent`、把
+   run 从 `reliveCommitting/reliveReady`（或匹配该 receipt 的 `finalizing`/未确认 activation gate）收敛到
+   `finalizing`，保留最高优先级
+   terminalIntent，写 `reliveCompensatedDeathSeq=deathSeq` 并清空当前 `reliveAppliedDeathSeq`。若没有其他终局
+   原因则写 `reliveSystemFailed`；不得留下 refunded + ReliveReady 供迟到 task
+   再次激活。只有带 `reliveFirstActiveTick` 的 `activated` 才是不可反转的复活交付证明。
+8. 默认启用 reconciler，通过 `(status, applyExpiresAt)` 索引批量 claim 过期 `charged/applying/applied`，并在
+   启动、登录和重连时 lazy reconcile。**只有** run checkpoint 的
+   `reliveAppliedDeathSeq==deathSeq` 且 snapshot hash、策略版本和 receipt 全部匹配，才能把 applying 补成
+   `applied/reliveReady`；普通死亡或 offer checkpoint 即使含同一 `deathSeq` 也绝不是应用证明。不能恢复/激活时
+   以 `refundOpId=stableHash(chargeOpId,"refund")` 调用 `creditInTx` 写反向 ledger 幂等退款；退款提交后同样
+   best-effort 失效余额缓存。receipt CAS、apply lease 与 run fence 必须保证恢复器和迟到 task 只有一个胜者。
+9. 余额不足且原 deadline 未过时恢复 `pendingRelive` 并显示“金币不足”，已过则 `reliveTimeout`；普通瞬时故障
+   在 `reliveCommitTimeoutMs` 内维持唯一 task。超过边界且尚未扣费时以 `reliveSystemFailed` 结束；已经扣费则
+   必须先完成或可靠恢复幂等退款，再以 `reliveSystemFailed` 产生个人结果，不能伪装成玩家超时。退款暂不可提交
+   时保持 run `state=finalizing`，且 receipt 保持原 `charged/applying/applied` 状态供恢复器 claim；完成退款
+   事务后再发最终结果，不能用只存在内存的伪退款终态或“免费复活”解除悬挂。
+10. drain/leave/endRun/finalize/onDispose 必须先写 durable `terminalIntent` 并 join mode-owned relive task。若终局
+   意图在 activation 前获胜，未扣费直接取消、已扣费先退款；若 `activated` 先获胜，仍立即按终局意图 finalize，
+   不能忽略退出或留下僵尸 Active。任何已锁存终局意图都禁止恢复输入或再次发 offer；进程在 charge 提交前退出
+   整笔回滚，提交回包丢失按自然键回读。不能先删 run 再遗留悬空扣费，也不能把生成蛇伪装成 gameplay outbox Effect。
+
+该路径首发只接受 `paymentType="coin"`；广告、分享、广告券、钻石、现金支付、月卡和无限复活卡均不定义
+伪协议或占位成功分支。未来若增加渠道，必须新建复活策略版本和独立可审计收据类型。
+
 ---
 
 ## 7. 入房、快照和版本演进
@@ -640,12 +817,12 @@ OPEN run 持久化失败时准入必须 fail closed，不能先产生一个无�
 局中换装规则：
 
 - 衣柜写入立即生效于账号，但只影响下一次创建的 Snake。
-- 当前 run 实体的 `skinId` 冻结；重生、断线重连继续使用该值。
+- 当前 run 实体的 `skinId` 冻结；真人成功复活、AI 自动重生及断线重连都继续使用该值。
 - 若外观被服务端撤下，下一次创建实体时回退默认并可在用户锁内修复装备字段。
 
 ### 7.2 Snake wire v2 与 V2 容量
 
-建议将字段语义从临时索引收敛为稳定内容 ID，并提升 `snake.modeVersion`：
+S2 将字段语义从临时索引收敛为稳定内容 ID，并把 gameplay contract 一次提升为 `snake@2`：
 
 ```ts
 interface ISnakeSnapshotSnake {
@@ -663,38 +840,104 @@ interface ISnakeSnapshotWreck {
   sourceSkinId?: number;
 }
 
+type SnakeRunEndReason = "explicitExit" | "disconnectTimeout" | "sessionReplaced" | "moderationKick"
+  | "reliveDeclined" | "reliveTimeout" | "deathNoOffer" | "reliveSpawnFailed"
+  | "reliveSystemFailed" | "forcedDeath" | "escape" | "serverDrain" | "roomFault";
+
 interface ISnakeEndlessRoomMeta {
   roomEpochId: string;
   battlefieldConfigId: "newEndlessPortraitV2Map4096";
   lifecycleConfigId: "sourceEndlessTotalTime0";
-  onlineAdaptationId: "onlineEndlessDropInV1";
+  reliveFlowConfigId: "sourceEndlessReliveFlow";
+  relivePolicyId: "onlineCoinRelive5V1";
+  onlineAdaptationId: "onlineEndlessDropInV2";
   configHash: string;
   totalTime: 0;
   matchDurationTicks: 0;
   hasDeadline: false;
 }
 
-type ISnakePlayerRunState =
-  | { runId: string; state: "preparing" | "cancelled"; runStartedTick: null }
-  | { runId: string; state: "active" | "finalizing" | "finalized"; runStartedTick: number };
+type ISnakePlayerRunState = {
+  runId: string;
+  stateVersion: number;
+  deathSeq: number;
+  relivesUsed: number;
+  relivePolicyVersion: number;
+  terminalIntent: SnakeRunEndReason | null;
+} & (
+  | { state: "preparing" | "cancelled"; runStartedTick: null }
+  | { state: "active"; runStartedTick: number }
+  | { state: "deadPresentation"; runStartedTick: number; resolveAtTick: number }
+  | { state: "reliveOffering"; runStartedTick: number; reliveIndex: number; coinCost: number }
+  | { state: "pendingRelive"; runStartedTick: number; reliveIndex: number; coinCost: number;
+      offeredTick: number; decisionDeadlineTick: number }
+  | { state: "reliveSpawning" | "reliveCommitting"; runStartedTick: number;
+      decisionDeadlineTick: number; decisionClientReqId: string; receiptId?: string }
+  | { state: "reliveReady"; runStartedTick: number; decisionClientReqId: string; receiptId: string }
+  | { state: "finalizing" | "finalized"; runStartedTick: number }
+);
 ```
 
 - 房间元数据显式下发 `battlefieldConfigId=newEndlessPortraitV2Map4096`、
-  `lifecycleConfigId=sourceEndlessTotalTime0`、`onlineAdaptationId=onlineEndlessDropInV1`、配置 hash、
-  `totalTime=0`、`matchDurationTicks=0` 与 `hasDeadline=false`，重连客户端不得靠本地默认猜配置。
+  `lifecycleConfigId=sourceEndlessTotalTime0`、`reliveFlowConfigId=sourceEndlessReliveFlow`、
+  `relivePolicyId=onlineCoinRelive5V1`、
+  `onlineAdaptationId=onlineEndlessDropInV2`、配置 hash、`totalTime=0`、`matchDurationTicks=0` 与
+  `hasDeadline=false`，重连客户端不得靠本地默认猜配置。
 - Snake 房间在创建完成、开放任何 admission 之前生成一次 `roomEpochId`。通过通用 mode lifecycle capability
   把现有 `state.matchId` 前移并赋同一个值；首次 auto-start 的 `initializeMatchState` 不得再次覆盖，其他玩法仍
   保持原 matchId 生成边界。这样首个 OPEN run 持久化前已有稳定 epoch，又不产生两个同义 ID。
 - `endTick/winnerId` 不再承担本模式的整房结束语义；兼容期若 schema 仍保留字段，必须由 `hasDeadline=false`
   守门，客户端不得把 `endTick=0` 显示成 `0:00` 或据此进入结果页。
-- 新增 typed `c2s.snake.endRun`、`s2c.snake.runFinalizing` 与 `s2c.snake.runResult`。command handler 保持同步：
-  校验后原子切换 Finalizing、停止输入、按 runId 登记 mode-owned tracked Promise，并立即回 `runFinalizing`；
+- 新增 typed 消息：
+
+  ```text
+  c2s.snake.reliveDecision(runId, deathSeq, clientReqId, "accept" | "decline")
+  s2c.snake.reliveOffered(runId, deathSeq, offeredTick, decisionDeadlineTick,
+                          reliveIndex, relivesRemaining, coinCost, relivePolicyVersion)
+  s2c.snake.reliveDecisionResult(runId, deathSeq, clientReqId,
+                                 insufficientCoins | retryableFailure,
+                                 retryable, balanceAfter?)
+  s2c.snake.reliveResolved(runId, deathSeq, clientReqId?,
+                           revived | declined | timeout | ineligible | spawnFailed | systemFailed,
+                           resolvedTick, protectUntilTick?, receiptId?)
+  c2s.snake.endRun(runId, clientReqId)
+  s2c.snake.runFinalizing / s2c.snake.runResult
+  ```
+
+  普通且无档位的初始分支不发送 `reliveOffered`，直接以 `endReason=deathNoOffer` 产生个人结果；
+  `reliveResolved.ineligible` 只用于客户端迟到/竞态 decision 的 canonical 回应，并明确映射同一
+  `deathNoOffer` 终局，不能另造第二种结算原因。
+
+  `reliveOffered` 必须同时投影进权威 player state，不能只靠易丢的 push；`reliveOffering/reliveReady` 对客户端
+  统一表现为“复活处理中”，重连用 schema 中的 `runState/deathSeq/decisionDeadlineTick/relivesUsed` 重建同一
+  弹窗或等待态。旧 `respawnTick` 删除或限定为服务端 AI
+  内部字段，不得继续驱动真人 HUD。
+- `reliveDecision` 的 command handler 同步校验 `runId/deathSeq/deadline`，并按 §6.6 写/读跨进程
+  `snake_relive_decision`；用 CAS 让一个 accept task 或
+  decline/服务端 timeout 独占当前状态；接受才登记按 `(roomEpochId, runId, deathSeq)` 去重的 spawn/debit
+  tracked task。余额不足或可重试故障且 deadline 尚未过时可以安全退回 PendingRelive，再接受新的 decision；
+  一旦 activated 或终局 resolved，迟到/相反 decision 只返回既有结果。同 `clientReqId + payload` 重放同一
+  canonical result，异 payload 冲突，不重复死亡事件、扣费、复活或结算。边界固定为
+  `< decisionDeadlineTick` 可接受，`==` 时 timeout 获胜；已在边界前取得 accept token 的 task 不被并发 timeout
+  抢占。
+- `endRun` 的 command handler 同样保持同步：
+  校验后原子锁存 `terminalIntent`、停止输入、按 runId 登记 mode-owned tracked Promise，并立即回
+  `runFinalizing`；
   Promise 完成后异步推送唯一 receipt。重复 endRun 和 `preparePlayerFinalLeave` 必须 join 同一任务，mode task
-  registry 在 dispose/drain 前收口，不得产生 detached Promise。客户端收到结果后离房；未按时离开则由服务端
-  在有界确认窗后关闭连接。断线超时等无在线客户端场景把 receipt 留到下一次账号 snapshot 展示。
+  registry 在 dispose/drain 前收口，不得产生 detached Promise。PendingRelive 中的 endRun 等价于 decline；
+  ReliveOffering/ReliveSpawning/ReliveCommitting/ReliveReady 中则按 §6.6 取消或退款并 join 已胜出的 task，禁止
+  绕过 charged/applying/applied receipt。若 activation 已先完成，仍立即 finalize，不能忽略退出。客户端收到结果后离房；
+  未按时离开则由服务端在有界确认窗后关闭连接。断线超时等无在线客户端场景把 receipt 留到下一次账号
+  snapshot 展示。
+- `terminalIntent` 使用持久 CAS 锁存且在 settlement 冻结前允许高优先级原因覆盖低优先级原因：
+  `moderationKick > sessionReplaced > serverDrain/roomFault > explicitExit/disconnectTimeout > 玩法死亡原因`；同一
+  层级以首次 CAS 为准。Offering/Spawning/Committing/Ready 中出现终局意图时不得再开放输入；安全、会话或
+  运维终局不会被较早的 decline/timeout 掩盖，已经 activated 的复活也不能吞掉随后的退出。
 - 个人 run 结果不得借 room `phase=Settle` 广播；同房其他玩家始终保持 Playing。
-- drop/reconnect 必须投影到 Snake player state：宽限内保留最后合法方向、强制关闭 boost、暂停奖励
-  `activeTicks`，成功重连后继续原 run；宽限耗尽只 finalize 一次。
+- shell 增加通用 `onPlayerDisconnected/onPlayerReconnected`（或等价 connectionChanged）玩法钩子，drop/reconnect
+  投影到 Snake player state：存活时保留最后合法方向、强制关闭 boost；复活待选时服务端 deadline 继续走，
+  重连重放同一 offer 或权威结果。两种状态都暂停奖励 `activeTicks`，宽限耗尽只 finalize 一次，禁止在
+  GameRoom 硬编码 Snake 分支。
 - validator 按 catalog 成员或稳定 ID 上界校验，不能继续限制 `0..15`。
 - `bodyScale` 若能由 shared 长度公式确定，可不占快照字段；若规则可热版本化，则显式下发规则版本。
 - 素材目录不在当前 gameplay contract digest 内，需额外携带 `presentationVersion/catalogHash`。
@@ -707,8 +950,9 @@ type ISnakePlayerRunState =
 - 升级 wire 时为 chunk 数、总实体数、单蛇路径点数、全房路径点总数和序号分别设置 validator 上限；
   fixture 必须覆盖 `17 条蛇 / 1030 个食物 / 单蛇 5186 点 / 全房理论上限 88162 点`，以及缺块、重复块、
   乱序 delta、重连恢复和旧客户端版本拒绝。
-- 长驻房的实体删除必须同时移除 participant 索引、pendingRespawns、输入状态和快照游标；已 durable finalize
-  的 run 内存记录及时驱逐。fixture 用大量 join/leave/reconnect 循环验证集合回到当前在线规模。
+- 长驻房的实体删除必须同时移除 participant 索引、`pendingAiRespawns`、真人 relive 状态/任务、输入状态和
+  快照游标；已 durable finalize 的 run 内存记录及时驱逐。fixture 用大量 join/leave/reconnect/死亡选择循环
+  验证集合回到当前在线规模。
 
 ### 7.3 生成流程
 
@@ -750,23 +994,52 @@ type ISnakePlayerRunState =
 每次最终准入先创建唯一 `runId`，持久成功后才入座；重连延续该 run，最终离开后重新准入创建新 run：
 
 ```ts
+interface CanonicalSnakeDeathSnapshot {
+  version: number;
+  skinId: number;
+  length: number;
+  score: number;
+  kills: number;
+  magnetCollected: number;
+  starCollected: number;
+  mostEarn: number;
+  mostLiveTime: number;
+  // 仅列入源流程会恢复的累计字段；连杀、攻击和碰撞等单生命瞬态不持久恢复
+}
+
 interface SnakePlayerRunLedger {
   roomEpochId: string;
   runId: string;
-  state: "preparing" | "active" | "finalizing" | "finalized" | "cancelled";
+  state: "preparing" | "active" | "deadPresentation" | "reliveOffering" | "pendingRelive"
+    | "reliveSpawning" | "reliveCommitting" | "reliveReady"
+    | "finalizing" | "finalized" | "cancelled";
   uid: string;
-  sId: string;
+  sId: number;
   sessionId: string;
   runStartedTick: number | null;
   runEndedTick: number | null;
-  endReason: "explicitExit" | "disconnectTimeout" | "sessionReplaced" | "moderationKick"
-    | "serverDrain" | "roomFault" | null;
+  terminalIntent: SnakeRunEndReason | null;
+  endReason: SnakeRunEndReason | null;
   activeTicks: number;
   score: number;
   finalLength: number;
   maxLength: number;
   kills: number;
   deaths: number;
+  deathSeq: number;
+  lastDeathTick: number | null;
+  deathSnapshotVersion: number | null;
+  deathSnapshot: CanonicalSnakeDeathSnapshot | null;
+  deathSnapshotHash: string | null;
+  relivesUsed: number;
+  reliveCoinSpent: number;
+  relivePolicyVersion: number;
+  offeredTick: number | null;
+  decisionDeadlineTick: number | null;
+  reliveAppliedDeathSeq: number | null;
+  reliveCompensatedDeathSeq: number | null;
+  reliveFirstActiveTick: number | null;
+  reliveReceiptId: string | null;
   equippedSkinId: number;
   catalogVersion: number;
   rewardPolicyVersion: number;
@@ -777,18 +1050,23 @@ interface SnakePlayerRunLedger {
 
 OPEN run 在准入阶段先以 `state=preparing, runStartedTick=null` 持久创建；首位真人在 3 秒准备结束后的第一个
 可操作 tick、后续 drop-in 真人在实际出生且可操作的 tick，以 CAS 原子写入 `runStartedTick` 并转为 `active`。
-只有 `active/finalizing/finalized` 记录允许非空 `runStartedTick`。Preparing 阶段离场以 CAS 转为 `cancelled`，
+除 `preparing/cancelled` 外的状态都要求非空 `runStartedTick`。Preparing 阶段离场以 CAS 转为 `cancelled`，
 不生成 settlement 或奖励；最终 settlement 一律拒绝空 `runStartedTick`。
 
-`activeTicks` 只累计 3 秒准备完成后同时满足 `connected && alive && runState=active` 的模拟 tick；死亡后的
-40 tick 等待、断线宽限和 Finalizing 均不计奖励时长。`runStartedTick` 是时间轴锚，不可直接相减冒充
-`activeTicks`。
+`activeTicks` 在每个 fixed step 开始时，只为同时满足 `connected && alive && runState=active` 的真人累计一次；
+因此本 step 内发生死亡的 tick 计入，随后
+`deadPresentation/reliveOffering/pendingRelive/reliveSpawning/reliveCommitting/reliveReady`、
+断线宽限和 Finalizing 均不计。成功生成并切回 Active 后，从下一模拟 tick 恢复累计。`runStartedTick` 是
+时间轴锚，不可直接相减冒充 `activeTicks`。
 
 账本至少在关键里程碑和固定 checkpoint 间隔写入单调版本的持久证据；结束有效 run 时用 fence/CAS 执行
-`active → finalizing → finalized`，确保主动退出、断线超时和并发顶号只能有一个结束者；Preparing 只允许
-`preparing → active` 或 `preparing → cancelled`，不得伪造 `runStartedTick`。进程异常恢复时以最后一个已确认
-checkpoint 关闭或恢复 run，不得把同一 `runId` 当成新参赛记录重复发奖。硬崩溃不会执行 leave/dispose，
-只能结算到 `confirmedThroughTick`；方案承诺已确认进度不漏不重，不声称未持久化的 checkpoint 窗口也能恢复。
+任一 live state `→ finalizing → finalized`，确保复活拒绝/超时、主动退出、断线超时和并发顶号只能有一个
+结束者。正常复活只允许
+`active → deadPresentation → reliveOffering → pendingRelive → reliveSpawning → reliveCommitting → reliveReady → active`；无剩余档位从
+`deadPresentation → finalizing`，force/escape 也在死亡演出后从 `deadPresentation → finalizing`，Preparing 只允许
+`preparing → active/cancelled`。进程异常恢复时以最后一个已确认 checkpoint 和 §6.6 receipt 关闭或恢复 run，
+不得把同一 `runId/deathSeq` 当成新记录重复发奖、扣费或退款。硬崩溃不会执行 leave/dispose，只能结算到
+`confirmedThroughTick`；方案承诺已确认进度不漏不重，不声称未持久化的 checkpoint 窗口也能恢复。
 
 ### 8.3 结算协议
 
@@ -797,15 +1075,20 @@ checkpoint 关闭或恢复 run，不得把同一 `runId` 当成新参赛记录�
 后才释放实体/席位；不得在 `GameRoom` 硬编码 Snake 分支。
 
 1. checkpoint 只更新 canonical evidence 与 `confirmedThroughTick`，不得生成奖励 intent 或占用最终 opId。
-2. 在从 world 移除真人前，先冻结该 `SnakePlayerRunLedger`；只有首次取得 `active → finalizing` fence 的
-   执行者可以创建最终奖励，事务成功后才写 `finalized`；`preparing → cancelled` 不创建奖励。
-3. 同一 MySQL 事务写 `snake_run_settlement`、金币 ledger 和 Redis effect outbox intent；房内其他玩家不参与。
+2. 在从 world 移除真人前，先锁存 `terminalIntent` 并冻结该 `SnakePlayerRunLedger`；只有首次取得任一 live state `→ finalizing`
+   fence 的执行者可以创建最终奖励，事务成功后才写 `finalized`；`preparing → cancelled` 不创建奖励。
+   如果状态是 ReliveOffering/ReliveSpawning/ReliveCommitting/ReliveReady，必须先 join 同一复活 task，并按
+   terminalIntent 收敛 charged/applying/applied receipt，不能让 finalize、应用复活和退款并行；如果 activated
+   先获胜，仍继续 finalize。
+3. 同一 MySQL 事务写 `snake_run_settlement`、金币 ledger 和 MySQL `gameplay_outbox` intent；relayer 后续才把
+   Redis effect 应用到目标存储，房内其他玩家不参与。
 4. opId 至少绑定 `(sId, roomEpochId, runId, uid, rewardPolicyVersion)`；重复 finalize 必须回读并比对 canonical
    evidence/effect，异 payload 冲突进入隔离而不是覆盖。
 5. 经验、碎片和熟练度映射为 Bag additive item，或先扩展有界 additive grant effect；禁止延迟执行会覆盖
    新值的 absolute setField。
-6. `endReason` 使用显式奖励资格矩阵：反作弊/封禁类 `moderationKick` 不发奖，普通退出、断线超时、会话替换、
-   serverDrain 和 roomFault 按已确认进度结算。
+6. `endReason` 使用显式奖励资格矩阵：反作弊/封禁类 `moderationKick` 不发奖；`reliveDeclined`、
+   `reliveTimeout`、`deathNoOffer`、`reliveSpawnFailed`、`reliveSystemFailed`、`forcedDeath`、`escape`、普通退出、断线超时、会话替换、
+   serverDrain 和 roomFault 均按各自已确认进度结算。复活成功不是结算原因，只更新同一 run 的 checkpoint。
 7. 进程崩溃后由 relayer 重放；超过重试阈值进入 dead 告警和人工 replay SOP，客户端可按 runId 查询
    `pending/applied/dead` reward status 与 receipt。
 8. 最后一名真人离开时，必须先完成所有 run 的 durable freeze，再允许房间 autoDispose。
@@ -833,12 +1116,19 @@ reward
 
 ## 9. 客户端 Feature 与页面
 
-新增独立 `features/snakeCosmetic/feature.json`，按非侵入式 feature 动线接入。
+衣柜新增独立 `features/snakeCosmetic/feature.json`，按非侵入式 feature 动线接入；死亡/复活窗属于正在运行的
+Snake gameplay View/Logic 和 snake typed wire，不另造 Lobby RPC，也不塞进衣柜 feature 的资产写路径。
 
 ### 9.1 Logic
 
 - 拉取权威 snapshot 并验证 catalog hash。
 - 读取 `hasDeadline=false` 后关闭旧倒计时逻辑；world tick 只用于插值、重连校正和当前 run 正向时长。
+- 依据权威 `runState/deathSeq/decisionDeadlineTick` 建立复活 ViewModel；用服务端 tick 插值显示剩余秒数，
+  不用本地墙钟延长选择窗。重连、重复 offer 和 resolved push 乱序时都以更高 `deathSeq/stateVersion` 收敛。
+- 以稳定 `clientReqId` 发送 `reliveDecision(accept|decline)`；同一次点击的网络超时重试复用同一 ID 并锁定按钮。
+  收到 `reliveDecisionResult` 后按结果解锁；金币不足或可重试失败且 deadline 尚未过时，用户再次点击必须生成
+  新 ID。accept 已进入处理后保持“复活中”，直到收到 `revived` 且服务端投影 Active；终局才等待对应 resolved，
+  客户端不自行创建蛇或扣余额。
 - 发送幂等 `endRun(runId, clientReqId)`，只由匹配 runId 的 `runResult` 打开个人结算；不得等待或伪造
   room `phase=Settle`。
 - 构造不可变衣柜 ViewModel。
@@ -854,6 +1144,13 @@ reward
 - 详情区展示获取方式、碎片进度、装备/解锁按钮。
 - 当前装备、首次获得和新解锁具有明确状态与红点。
 - 状态版本冲突时禁用重复点击，刷新后恢复。
+- 真人死亡立即释放所有 pointer、关闭 boost 并锁住战斗输入；只有普通死亡且仍有可用档位时，4 tick 演出及
+  offer checkpoint 完成后才显示原作风格模态复活窗，内容至少包含死亡原因、当前长度/分数、第几档、金币费用、
+  服务器倒计时、`金币复活` 和 `放弃复活`。第六次、force/escape 不弹窗，直接等待个人结果；弹窗不暂停其他玩家。
+- accept 获胜后展示“复活中”，`revived`/Active 后关闭弹窗并显示 3 秒碰撞保护；
+  declined/timeout/ineligible/spawnFailed/systemFailed 等待对应个人 `runResult` 后进入结果页。断线重连从 schema
+  重建，不重复播放扣费成功或发起新请求；退款待处理文案由 `runState=finalizing` 与 receipt 仍为
+  `charged/applying/applied` 的组合 ViewModel 推导，不另造内存协议终态，并明确显示“复活失败，金币退回处理中”。
 - 战斗 HUD 不显示 `0:00` 或剩余时间；“结束本次”需要二次确认，结果页展示 runId 对应的奖励 receipt。
 
 ### 9.3 页面动线
@@ -866,6 +1163,11 @@ Home
       -> 解锁/装备
   -> 开始游戏
       -> 使用服务端锁存装备
+  -> 真人死亡
+      -> 普通死亡且有剩余档位：复活选择（金币复活 / 放弃，5 秒）
+          -> 成功：同一 run 继续，恢复明确累计字段 + 3 秒碰撞保护
+          -> 放弃/超时/生成或系统失败：个人 run 结算
+      -> 第六次死亡 / force / escape：不弹复活窗，直接个人 run 结算
   -> 主动结束本次 / 最终离场
   -> 真人 run 结算
       -> 展示经验、碎片、等级进度和新解锁
@@ -885,12 +1187,13 @@ Home
 |---|---|---|---|---|---:|
 | S0 | [已拍板·待实施] | 冻结基线、取证、差异表 | `newEndlessPortraitV2Map4096TotalTime0`、原作/竖版 golden、规则差异表 | 配置来源、`totalTime=0` 和截图均可重复核验 | 3–4 人日 |
 | S1 | [已拍板·待实施] | 素材目录与转换 | 16 皮肤 catalog、atlas rect/body config 生成、资源/授权台账 | 全目录生成和资源/rect/hash 校验通过 | 3–5 人日 |
-| S2 | [已拍板·待实施] | V2 战场与无尽生命周期 | 4096² 世界、1030 食物、17 活动蛇、V2 相机/身体、中央操作区与多点触控、分块基线、持续世界与空房回收 | 定向测试、操作布局/双指测试通过且竖版 world golden 达标 | 8–12 人日 |
+| S2 | [已拍板·待实施] | V2 战场与无尽生命周期 | 4096² 世界、1030 食物、17 稳定态活动蛇、V2 相机/身体、中央操作区与多点触控、真人复活状态机、AI 独立重生、分块基线、持续世界与空房回收 | 复活决策竞态、定向测试、操作布局/双指测试通过且竖版 world golden 达标 | 9–13 人日 |
+| S2R | [已拍板·待实施] | 可靠金币复活 | awaited 准入/离场钩子、基础真人 run/checkpoint、五档策略、decision/charge/apply/activate/refund 收据、恢复器、真实余额 UI | 扣费/生成全崩溃窗口不吞币、不双扣、不重复复活；完成前发布开关保持关闭 | 4–6 人日 |
 | S3 | [已拍板·待实施] | 衣柜与装备 | Feature、FGUI、snapshot/equip/unlock、Bag/User 存储、准入锁存 | 权威装备、并发、重连、fallback 测试通过 | 6–10 人日 |
-| S4 | [已拍板·待实施] | 可靠养成奖励 | 真人 run 账本/checkpoint、durable run settlement、金币/经验/碎片 outbox | 已确认进度在各结束原因与结算崩溃窗口不漏奖、不双发 | 7–11 人日 |
+| S4 | [已拍板·待实施] | 可靠养成奖励 | 扩展真人 run 账本/checkpoint、durable run settlement、金币/经验/碎片 outbox | 已确认进度在各结束原因与结算崩溃窗口不漏奖、不双发 | 7–11 人日 |
 | S5 | [已拍板·待实施] | 验收与发布 | 自动测试、Creator、故障演练与兼容证据 | 全量门禁与 Creator 证据齐全 | 2–3 人日 |
 
-完整首发合计约 29–46 人日。S3 可用于内部试玩，面向玩家宣称“养成系统完成”必须等 S4 的可靠奖励闭环完成。
+完整首发合计约 34–52 人日。S3 可用于内部试玩，面向玩家宣称“养成系统完成”必须等 S4 的可靠奖励闭环完成。
 
 ### S0：复刻基线
 
@@ -899,9 +1202,11 @@ Home
   竖屏布局稿。
 - [ ] 从场景序列化数据提取背景、网格和边界颜色。
 - [ ] 固化 `newEndlessV2Source4896`、`newEndlessPortraitV2Map4096`、`sourceEndlessTotalTime0`、
-  `onlineEndlessDropInV1` 及组合配置 hash。
-- [ ] 用逐项 fixture 校验 V2 归档对象、71 项路径表及 Endless 的 `totalTime=0` 消费路径。
-- [ ] 列出原作 V2 无尽与本项目 drop-in、2 秒自动复活、真人 run 结算的差异，禁止混入 TimeLimit 规则。
+  `sourceEndlessReliveFlow`、`onlineCoinRelive5V1`、`onlineEndlessDropInV2` 及组合配置 hash。
+- [ ] 用逐项 fixture 校验 V2 归档对象、71 项路径表、Endless 的 `totalTime=0` 消费路径，以及 Feed B 表只是
+  首发冻结样例而非普通线上 V2 默认的来源边界。
+- [ ] 列出原作符合资格的普通真人死亡约 200ms 后选择复活、AI 约 2 秒重生，与本项目 drop-in/个人 run 结算的适配差异，禁止
+  混入 TimeLimit 规则或继续保留真人 2 秒自动复活。
 
 ### S1：素材与目录
 
@@ -928,33 +1233,75 @@ Home
 - [ ] 接入 `1.3→0.6` 相机、`1.0→2.8` 身体缩放和 71 项路径增长，并同步权威碰撞。
 - [ ] 实现 17 条活动蛇、真人替换 aiLevel 401 AI、离开补位，以及与奖励榜隔离的 86 条 `displayRank` 假榜池。
 - [ ] AI 皮肤使用独立 seeded RNG。
-- [ ] 下发 `totalTime=0`、`matchDurationTicks=0`、`hasDeadline=false`，让 `endTick` 缺省；所有结束/复活比较
-  先检查 `hasDeadline`，移除第 1800 tick 收局、末段禁复活和剩余时间 HUD。
+- [ ] 下发 `totalTime=0`、`matchDurationTicks=0`、`hasDeadline=false`，让房级 `endTick` 缺省；仅房级时长结束
+  比较检查 `hasDeadline`，移除第 1800 tick 收局、终局末段禁复活和剩余时间 HUD。个人
+  `decisionDeadlineTick` 在无尽模式下仍必须正常执行。
+- [ ] 拆除真人 40 tick 自动重生，保留并重命名 AI 的 `pendingAiRespawns`；真人实现
+  `deadPresentation → reliveOffering → pendingRelive → reliveSpawning → reliveCommitting → reliveReady → active/finalizing`，4/100/20/60 tick
+  边界均由 fixture 守门，真人死亡不生成计分残骸。
+- [ ] 接入 `onlineCoinRelive5V1` 五档金币、typed offer/decision/resolved、服务端 deadline 和
+  `(roomEpochId,runId,deathSeq)` 决策 CAS；覆盖 accept/decline/timeout/迟到/相反决定/重复请求及第六次死亡。
+- [ ] 实现 gameplay 复活 ViewModel 与原作风格模态窗：权威 5 秒倒计时、费用/档位、金币复活、放弃、处理中、
+  无资格直达结果，以及重连按 schema 恢复；S2 使用 `ReliveEconomyPort` 返回的测试余额/收据。
+- [ ] 以 `ReliveEconomyPort` 的确定性测试实现跑通状态机；S2R 完成前 `onlineCoinRelive5V1` 对外发布开关保持
+  关闭，不得用免费成功或客户端扣款临时代替。
 - [ ] 通过通用 mode lifecycle capability 在 admission 前生成 Snake `roomEpochId/state.matchId`，首人 auto-start
   不再覆盖，其他玩法保持现有 matchId 生成边界。
-- [ ] 实现真人 run 创建/重连延续/最终离场冻结、其他玩家不中断、最后真人离场后停止世界并回收房间。
-- [ ] 修复 drop/reconnect 状态投影；宽限内停止 boost、保持最后合法方向，并暂停奖励 `activeTicks`。
-- [ ] 离场同步清理 participant、pendingRespawns、输入、游标和 finalized run 引用，以 churn fixture 守门。
+- [ ] 先以 in-memory `ReliveEconomyPort`/测试账本跑通真人 run 创建、重连延续、最终离场冻结、其他玩家不中断、
+  最后真人离场后停止世界并回收房间；真实持久化与 awaited shell 边界在 S2R 完成。
+- [ ] 增加通用 connectionChanged 投影并修复 drop/reconnect：存活时停止 boost、保持最后合法方向；待复活时
+  deadline 不暂停，重连重建同一 offer/result；两种断线状态都暂停奖励 `activeTicks`。
+- [ ] 离场同步清理 participant、`pendingAiRespawns`、真人 relive 状态/任务、输入、游标和 finalized run 引用，
+  以 churn + death/decision fixture 守门。
 - [ ] 提升 wire 版本，完成 17 蛇/1030 食物/单蛇 5186 点/全房 88162 点上限的分块基线、delta 与重连恢复。
+
+### S2R：可靠金币复活
+
+- [ ] 在通用 mode/shell 新增并验证带超时、generation 复验的 awaited `preparePlayerAdmission` 与无奖励版
+  `preparePlayerFinalLeave`；前者在实体创建前持久创建/恢复 OPEN run，后者在释放席位前 durable freeze。
+- [ ] 建立最小 `snake_player_run`/checkpoint，确保 offer 发出前已持久记录
+  `deathSeq/deathSnapshotVersion`、完整 `deathSnapshot` 及 hash、`reliveIndex/relivePolicyVersion`，并实现
+  `reliveOffering/reliveReady/terminalIntent`；S4 在此基础上扩展奖励证据，不重复建账本。
+- [ ] 按 6.6 建 `snake_relive_decision` 与 `snake_relive_receipt`、请求/自然幂等键、
+  `charged/applying/applied/activated/refunded`、apply owner/lease、货币行锁、debit/refund ledger 和提交结果
+  不明后的自然键回读。
+- [ ] 把复活 UI 从测试端口接到真实 receipt：展示 `balanceAfter`，区分 insufficient/retryable、复活处理中、
+  `revived`、`systemFailed` 与退款处理中/已退回；单次网络重试复用 ID，用户再次点击生成新 ID。
+- [ ] 将 relive task 纳入 mode-owned registry；disconnect、final leave、drain 和 onDispose 必须 join，不能留下
+  detached 扣费或迟到生成。
+- [ ] 默认注册启动/周期过期扫描并在登录/重连 lazy reconcile；过期 charged/applying/applied 只允许恢复同一
+  `reliveReady`、完成 activation 或幂等退款，恢复健康状态纳入开服闸门。
+- [ ] 真栈故障测试覆盖：同/异 requestId 并发、同 id 异 payload、processing 写入后/CAS 后/task 登记前 kill 与
+  owner lease 恢复、余额不足、五档只按 applied 事务推进且退款可回滚、offer checkpoint 持久化超时/重启
+  （不发窗、不扣费并以 systemFailed 收口）、事务提交前后 kill、
+  spawn/apply/首个活动 tick/activated checkpoint 前后 kill、activation RC await 跨多 tick 仍只运行一个
+  provisional step、退款中 kill、过期 lease 与迟到 task、跨区隔离、charge/refund 后
+  余额缓存失效，以及 endRun/disconnect/moderation/drain/finalize 竞争。
+- [ ] S2R 全部门禁、两个 awaited hook 和恢复器健康检查全部通过后才开启 `onlineCoinRelive5V1`；客户端展示
+  receipt `balanceAfter`，后续余额查询仍走已失效/刷新的缓存。
 
 ### S3：衣柜与装备
 
 - [ ] 增加 shared catalog 与 `snakeCosmetic` RPC descriptor。
 - [ ] 实现 Bag 所有权/碎片查询和 User equipped/version store。
 - [ ] 实现 equip CAS 与专用 unlock Lua。
-- [ ] 增加通用异步 `preparePlayerAdmission` hook。
-- [ ] 提升 Snake modeVersion，生成和同步所有镜像。
+- [ ] 复用 S2R 的 `preparePlayerAdmission` 加载并锁存权威装备；不得另造 Snake 专属准入旁路。
+- [ ] 生成和同步 `snakeCosmetic` Lobby feature；若只新增 Lobby RPC/素材目录，不再次提升 gameplay
+  `modeVersion`，只有新增 Snake wire 字段时才升级为 `snake@3`。
 - [ ] 完成衣柜 Logic、FGUI View、动态预览和首页 route 入口。
 - [ ] 完成重连、run 中换装只影响下一次实体创建、未知素材 fallback。
 
 ### S4：可靠奖励
 
-- [ ] 建立动态 roster 的 `SnakePlayerRunLedger` 与持久 checkpoint。
-- [ ] 建立带 `endReason` 的 durable run settlement/evidence。
-- [ ] 接入 awaited `preparePlayerFinalLeave`、幂等 `endRun` 与可补领的 `runResult` receipt。
+- [ ] 扩展 S2R 的动态 roster `SnakePlayerRunLedger` 与持久 checkpoint，加入完整奖励证据和版本迁移。
+- [ ] 建立覆盖 `reliveDeclined/reliveTimeout/deathNoOffer/reliveSpawnFailed/reliveSystemFailed/forcedDeath/escape` 的 durable run
+  settlement/evidence；成功复活只更新同一 run checkpoint，不触发结算。
+- [ ] 扩展 S2R 的 awaited `preparePlayerFinalLeave`，接入幂等 `endRun`、reward settlement 与可补领的
+  `runResult` receipt。
 - [ ] 在同一 MySQL 事务写 run settlement、金币 ledger 与 gameplay outbox；checkpoint 不触发奖励。
 - [ ] 建立 rewardPolicyVersion 及绑定 `sId/roomEpochId/runId/uid` 的幂等 opId。
-- [ ] 覆盖主动结束、断线超时、并发顶号、moderationKick、drain、房间故障、重连、dead replay 和重复 finalize。
+- [ ] 覆盖死亡选择与 endRun/断线超时/并发顶号/moderationKick/drain/房间故障的竞争、重连、relive receipt
+  收敛、dead replay 和重复 finalize。
 - [ ] 完成首轮经验、等级、碎片和成就表调优。
 
 ### S5：验收与发布
@@ -1009,24 +1356,47 @@ Home
 - 房间声明 `totalTime=0`、`matchDurationTicks=0`、`hasDeadline=false` 且无有效 `endTick`；3 秒准备结束后
   持续推进，第 1800、1801 tick 均不触发收局，客户端不显示剩余时间 HUD 或 `0:00`。
 - `world.step()` 只有 `hasDeadline && tick >= endTick` 才可按时间返回 done；无尽 mode 不从该路径调用
-  `context.settle()`。任意 tick 死亡都可在 40 tick 后按联机规则复活，不存在临近 endTick 禁止复活分支。
-- 房间同时声明 V2 战场层、原作 Endless `totalTime=0` 层和 drop-in 联机适配层，任何 hash 不一致均不能
-  静默 fallback 到 Classic 或 TimeLimit。
+  `context.settle()`。房级无 deadline 不影响真人 `decisionDeadlineTick`；禁止把 `totalTime=0` 传播成复活窗永不
+  超时，也不存在临近房级 endTick 禁止复活分支。
+- 房间同时声明 V2 战场层、原作 Endless `totalTime=0`/复活流程证据层、`onlineCoinRelive5V1` 和 drop-in
+  联机适配层，任何 hash 不一致均不能静默 fallback 到 Classic、TimeLimit 或真人自动复活。
+- 真人死亡立即失去输入/碰撞且不生成计分残骸；只有普通死亡且尚有档位才在 4 tick 后进入
+  ReliveOffering，完整死亡快照及 offer 依据持久成功后进入 PendingRelive，deadline 精确为
+  `offeredTick + 100`。第六次、force/escape 不发 offer，直接进入个人结算。
+- 第 1～5 次成功复活分别权威扣除 `100/200/300/300/300` 金币。余额不足和普通请求失败不消耗档位；
+  applied 事务原子递增 `relivesUsed`/花费并形成 ReliveReady，activation 前退款则原子回滚本档，只有
+  带 `reliveFirstActiveTick` 的 activated checkpoint 成功后才下发 `revived`；确认前崩溃按用户有利原则退款。
+- 真人没有 40 tick 自动复活分支。有效 accept 保持同一 `runId/skinId`，恢复冻结的长度、分数、击杀、
+  磁铁/星星累计等明确字段，清零单生命瞬态，并获得 60 tick 蛇身/首领碰撞保护；放弃、100 tick 超时、
+  无剩余档位、force/escape、spawnFailed 或 systemFailed 只 finalize 本人的 run；已扣费的 systemFailed 必须
+  先幂等退款，退款暂不可提交时显示处理中而不伪造 timeout 结果。
+- accept/decline/服务端 timeout 在同一 `runId + deathSeq` 上只有一个 CAS 胜者；同请求重放 canonical decision result
+  （存在扣费时再关联 receipt），
+  异 payload 冲突，迟到/相反决定不重复死亡表现、扣费、生成或结算；`snake_relive_decision` 保证余额不足等
+  失败结果跨进程按同 requestId 重放。扣费、生成和 checkpoint 各崩溃窗口中，receipt 最终只能恢复同一
+  ReliveReady 并 activated，或幂等 refunded，用户不被吞币或双扣。
+- AI 死亡不发真人 offer、不扣币、不占真人档位，独立在约 40 tick 后按 AI 配置重生并保持 AI skin；只有
+  符合源路径的 AI 死亡残骸按 `pow(deadSnakeScore, 0.8) * 2` 计算总值、按身体数分摊且单个至少 3，合并前后
+  总分守恒。
+- ReliveOffering/PendingRelive/Spawning/Committing/Ready 只冻结本人，其他玩家和 world tick 继续；本人暂时仍占席，不补短命 AI。
+  断线不暂停 offer deadline，重连只恢复同一 offer 或 resolved/runResult。
+- endRun、断线宽限耗尽、顶号、moderation、drain 与房间故障在复活处理中按 durable `terminalIntent` 优先级
+  唯一收口；activation 前取消/退款，activation 后也立即 finalize，任何终局意图都不能被迟到 task 重新打开输入。
 - 17 蛇、1030 食物、单蛇 5186 点及全房理论上限 88162 个逻辑路径点可完成首包/重连；缺块、乱序或
   校验失败会重取基线。
-- 死亡残骸按 `pow(deadSnakeScore, 0.8) * 2` 计算总值、按身体数分摊且单个至少 3；实体合并前后总分守恒。
 - `skinId` 使用稳定内容 ID，不依赖目录顺序或 `% 3`。
 - 客户端伪造未拥有皮肤不能进入战场。
 - 同/不同 requestId 并发装备、重复解锁和状态版本冲突行为确定。
 - 碎片不足时所有字段零写入。
 - 冷用户 thaw、冻结归档、跨区隔离和退休皮肤均有测试。
-- 中途换装只影响下一次实体创建；重连和重生保持当前 run 外观。
+- 中途换装只影响下一次新 run 创建；真人成功复活、AI 自动重生和断线重连都保持当前 run 外观。
 - 单人主动退出只结束自己的 run，其他真人世界继续；最后一名真人离开后才停止世界并回收房间。
 - 宽限内重连延续同一 `runId`，最终离开后重入生成新 `runId`；已确认进度在各结束原因与结算崩溃窗口
   不漏奖、不双发。
 - 个人结果只由对应 `runResult`/receipt 驱动；room phase 在仍有真人时保持 Playing，不向其他玩家广播结算页。
-- `activeTicks` 排除准备期、死亡等待、断线宽限和 Finalizing；大量 join/leave/reconnect 后所有内存集合回落到
-  当前在线规模，不残留 finalized run 或永久 pendingRespawns。
+- `activeTicks` 只在 step 开始满足 connected/alive/Active 时累计；排除准备、死亡演出、ReliveOffering、PendingRelive、
+  Spawning/Committing/Ready、断线宽限和 Finalizing。大量 join/leave/reconnect/death-decision 后所有内存集合回落到
+  当前在线规模，不残留 finalized run、永久 `pendingAiRespawns` 或真人 relive task。
 - checkpoint 不发奖；首次 finalize 原子地产生 settlement/ledger/outbox，重复同 payload 返回同 receipt，
   异 payload 隔离，dead 状态可查询并可按 SOP 重放。
 
@@ -1044,6 +1414,19 @@ Home
 | 混用 Classic 静态默认、本地调试模板与 V2 快照 | 永远无法定义“一致” | 冻结命名配置、hash 和截图基线，逐字段 fixture 守门 |
 | 把目标 4096² 写成原作 V2 原值或把 4896² 整体缩放 | 来源与视觉比例失真 | 分离 `newEndlessV2Source4896` 与 `newEndlessPortraitV2Map4096`；只覆盖边界，不缩放世界单位 |
 | 仍在第 1800 tick 收局或保留 TimeLimit HUD | 实际仍是 90 秒模式，违反已选 `totalTime=0` | 使用 `sourceEndlessTotalTime0`，测试 1800/1801 tick 连续推进并禁止 TimeLimit fallback |
+| 把 Feed B 表写成普通线上 V2 恒定默认 | 来源证据失真、后续无法解释渠道差异 | 命名为 `onlineCoinRelive5V1` 冻结样例；单列源动态路由和项目渠道裁剪 |
+| 继续让真人复用 AI 的 40 tick 自动重生 | 违反原作死亡选择，无法形成个人终局 | 拆 `pendingAiRespawns` 与真人 relive 状态机；测试真人永不自动、AI 约 2 秒重生 |
+| 把 `totalTime=0` 传播为 `decisionDeadlineTick=0/无效` | 复活窗永久悬挂、占席和内存泄漏 | 房级 deadline 与个人 100 tick deadline 分型，分别测试且禁止共用字段 |
+| 为复刻单机暂停而停整房 world | 一人死亡冻结所有联机玩家 | 只暂停死亡真人的输入、碰撞和 activeTicks；其他实体与 world tick 继续 |
+| 真人死亡沿用 AI 计分残骸 | 多人场凭空增加可拾取分数 | 真人只播死亡表现；可拾取残骸仅走源 AI 路径和 V2 公式 |
+| accept/decline/timeout 或相反请求同时获胜 | 双扣、复活后又结算或重复生成 | 以 runId/deathSeq CAS 决唯一结果，clientReqId 做 payload 绑定，晚到请求回放 canonical result |
+| offer 先展示、死亡快照后落库 | 重启后无法恢复同一选择或恢复错误数值 | 增加 ReliveOffering；完整版本化快照和 offer 依据提交后才激活 100 tick 选择窗 |
+| 扣费完成但蛇未持久确认 | 玩家吞币或恢复器与迟到 task 双向处理 | 专用 charged/applying/applied/activated/refunded receipt、ReliveReady、owner lease、同事务 checkpoint 和确定性退款 |
+| DB 先写 activated、玩家尚未得到活动 tick | 进程崩溃后有扣费终态却从未交付复活 | 先投影首个活动 tick，再以 `reliveFirstActiveTick` 原子确认；确认前崩溃按用户有利原则退款 |
+| 普通 offer checkpoint 被误认成复活应用证明 | 恢复器免费应用或不当吞币 | 只接受 `reliveAppliedDeathSeq` 与 snapshot/policy/receipt 全匹配；否则恢复同一 task 或退款 |
+| decision processing 无 owner/lease | 写请求后崩溃会让同 requestId 或整个 run 永久卡住 | 持久绑定 command/decision/payload，租约恢复器按 runState、terminalIntent 与 receipt 重建同一 task/result |
+| 复活 task 与退出/drain 竞争 | 已退出玩家被迟到 task 重新激活或留悬空扣费 | durable terminalIntent、明确优先级、activation 前取消/退款、activation 后仍立即 finalize |
+| charge/refund 后余额缓存未失效 | 后续页面读到旧金币余额 | 事务提交后 best-effort 失效余额缓存，receipt.balanceAfter 只服务本次响应，并做缓存回归测试 |
 | 继续沿用 8 蛇/315 食物/512 路径点快照上限 | 合法 V2 世界被拒绝或静默截断 | wire 升版，分别守门单蛇 5186 点和全房 88162 点，使用有校验的分块基线和有序 delta |
 | 把 86 个假榜条目生成为活动 AI | 世界数量、碰撞和奖励全部错误 | 假榜使用独立模型；活动蛇硬上限 17 |
 | 把 `1240` 当作路径点或长度上限 | 蛇身、相机与碰撞公式错误 | 镜像 71 项源表并以边界向量验证真实消费算法 |
@@ -1056,7 +1439,7 @@ Home
 | 把 `endRun` 直接实现成 async command handler | dispatcher 不等待并错误回复，finalize 变成 detached task | command 同步切 Finalizing并登记按 runId 去重的 mode-owned tracked Promise，leave/drain 复用并等待 |
 | `totalTime=0` 被误解为房间永不回收 | 空房和 AI 世界泄漏 | AI 不计房间存活；最后真人 run 冻结后停止 tick 并允许 autoDispose |
 | 运维发布直接关闭长驻 Playing 房 | 活跃 run 无结束证据 | 内部 Active→Draining 停准入，冻结 run 后再关闭；客户端按 `serverDrain` 展示结果 |
-| 把 `runStartedTick` 到当前 tick 全算活跃时长 | 死亡等待、断线与挂机获得额外奖励 | 只累计 connected、alive、active 的权威 `activeTicks` |
+| 把 `runStartedTick` 到当前 tick 全算活跃时长 | 复活选择/提交、断线与挂机获得额外奖励 | 只累计 step 开始时 connected、alive、Active 的权威 `activeTicks` |
 | 硬崩溃前尚未确认 checkpoint | 最近进度无法凭空恢复 | receipt 显示 `confirmedThroughTick`；只承诺已确认进度，缩短窗口需另行调整持久化策略 |
 | 普通 Shop SKU 重复购买唯一皮肤 | 多次扣款 | 专用 entitlement receipt 唯一键 |
 | 资源版本与服务端目录不一致 | 白图、崩溃、经济争议 | catalog hash 闸门；经济禁写、战斗 fallback |
@@ -1076,11 +1459,13 @@ Home
 | S0 | [已拍板·待实施] | — | — | — | — |
 | S1 | [已拍板·待实施] | — | — | — | — |
 | S2 | [已拍板·待实施] | — | — | — | — |
+| S2R | [已拍板·待实施] | — | — | — | — |
 | S3 | [已拍板·待实施] | — | — | — | — |
 | S4 | [已拍板·待实施] | — | — | — | — |
 | S5 | [已拍板·待实施] | — | — | — | — |
 
 建议的最终发布口径：
 
-> **竖版新版无尽 V2 战场（4096² 地图覆盖）+ 原作 `totalTime=0` 无尽生命周期 + drop-in 联机适配 +
-> 16 套原作皮肤 + 纯外观养成 + 服务端权威装备 + 可靠真人 run 奖励。**
+> **竖版新版无尽 V2 战场（4096² 地图覆盖）+ 原作 `totalTime=0` 无尽生命周期 + 真人死亡限时选择复活 +
+> AI 独立约 2 秒重生 + drop-in 联机适配 + 16 套原作皮肤 + 纯外观养成 + 服务端权威装备 +
+> 可靠真人 run 奖励。**
