@@ -2,7 +2,7 @@
 
 > [返回专项总目录](README.md) · [下一阶段：S1 素材与目录](s1-assets-and-catalog.md)
 
-> **状态：`[已拍板·待实施]`**<br>
+> **状态：`[已完成]`（2026-09-03，实施 commit `7a04131`）**<br>
 > **预计：3–4 人日**<br>
 > **依赖：无；这是 S1、S2、S2R、S3、S4 的共同前置阶段。**<br>
 > **主要输入：** 固定在 commit `6367f65bf210d75ba39c0e48ecace5b30b538a06` 的原作归档
@@ -12,6 +12,12 @@
 > 场景色与边界取证、规则差异表、逐字段 fixture 和证据清单。<br>
 > **阶段纪律：** 文档完成不等于阶段完成；未实际运行的命令、未实际生成的截图和未核验的 hash
 > 不得登记为通过。源码行号仅是建档快照，复核时按符号重新定位。
+
+实施结论：S0 已生成并复验 [evidence bundle](evidence/s0/README.md)。锁定来源共读取 34 个文件身份
+（含 1 个符号链接），V2 对象为 28 字段、路径表为 71 项；五层组合 hash 为
+`2319d173326602d85fc4c6a85f5b4ca16452cd778f0794896398294a1d5f87e2`。横版、正交旋转竖版和独立
+UI 标注共 14 张 PNG，均带 `sourceDerivedStaticReconstruction` sidecar。`--check` 已在全新临时目录重建
+55 个文件并逐字节一致。该结论只完成证据基线；S1 素材目录和 S2 玩法运行时仍未实施。
 
 ---
 
@@ -304,15 +310,15 @@ Star `5/5`、基础速度 `160`、加速 `1.6`、转向 `9°/tick` 和从实体�
 
 **动作**
 
-- [ ] 校验参考仓仍位于 commit `6367f65bf210d75ba39c0e48ecace5b30b538a06`，并生成覆盖本阶段已读取配置、
+- [x] 校验参考仓仍位于 commit `6367f65bf210d75ba39c0e48ecace5b30b538a06`，并生成覆盖本阶段已读取配置、
   源码、场景序列化文件和素材的路径 + SHA-256 清单。
-- [ ] 确认参考根目录按流程只读；所有解析、生成和重放只写入临时输出目录或临时副本，不对原目录执行
+- [x] 确认参考根目录按流程只读；所有解析、生成和重放只写入临时输出目录或临时副本，不对原目录执行
   `chmod` 或内容修改。
-- [ ] hash 清单对普通文件记录原始字节 SHA-256；对符号链接同时记录链接路径、链接目标字符串和解析后目标
+- [x] hash 清单对普通文件记录原始字节 SHA-256；对符号链接同时记录链接路径、链接目标字符串和解析后目标
   文件的 SHA-256，避免复制方式改变证据身份。
-- [ ] 逐项登记 §2.3、§2.6、§2.7 使用的源文件、符号、读取目的和源值；不能只登记行号。
-- [ ] 标明哪些事实来自原作、哪些来自用户地图覆盖、哪些是本项目联机适配。
-- [ ] 确认目标仓不存在运行时 import、软链接、package dependency 或 URL 指向参考根目录。
+- [x] 逐项登记 §2.3、§2.6、§2.7 使用的源文件、符号、读取目的和源值；不能只登记行号。
+- [x] 标明哪些事实来自原作、哪些来自用户地图覆盖、哪些是本项目联机适配。
+- [x] 确认目标仓不存在运行时 import、软链接、package dependency 或 URL 指向参考根目录。
 
 **产物**
 
@@ -329,12 +335,12 @@ Star `5/5`、基础速度 `160`、加速 `1.6`、转向 `9°/tick` 和从实体�
 
 **动作**
 
-- [ ] 使用锁定的原作源码、场景序列化数据和素材建立确定性离线重建器；不得依赖微信运行时、线上账号、
+- [x] 使用锁定的原作源码、场景序列化数据和素材建立确定性离线重建器；不得依赖微信运行时、线上账号、
   私有插件或未登记的手工图层。
-- [ ] 固定 V2 对象、随机种子、实体 fixture、`1624 × 750` 设计视口、浅色主题
+- [x] 固定 V2 对象、随机种子、实体 fixture、`1624 × 750` 设计视口、浅色主题
   `blackBackground=0`、相机长度档位和截图时刻。
-- [ ] 至少留存出生态、普通游玩态、长蛇缩放态、边界态、Star/残骸态和 AI 多皮肤态。
-- [ ] 截图旁记录 `evidenceKind=sourceDerivedStaticReconstruction`、来源 commit/文件 hash、重建器版本、配置
+- [x] 至少留存出生态、普通游玩态、长蛇缩放态、边界态、Star/残骸态和 AI 多皮肤态。
+- [x] 截图旁记录 `evidenceKind=sourceDerivedStaticReconstruction`、来源 commit/文件 hash、重建器版本、配置
   hash、种子、实体坐标/长度、相机参数和获取步骤。
 
 **产物**
@@ -354,10 +360,10 @@ Star `5/5`、基础速度 `160`、加速 `1.6`、转向 `9°/tick` 和从实体�
 
 **动作**
 
-- [ ] 对 S0-02 静态重建 fixture 的世界实体按 `(x,y) -> (-y,x)` 转换，以 `750 × 1624` 目标视口生成参照。
-- [ ] 目标 4096² 只裁定新边界和重新生成范围，不对 4896² 源世界应用 `4096/4896` 缩放。
-- [ ] 单独制作 UI 标注稿，注明 Safe Area、可见尺寸、命中半径、左右手镜像和世界/HUD 分层。
-- [ ] 对落在目标边界内的固定实体保留源/目标坐标对照；对外围 400 单位建立独立边界 fixture。
+- [x] 对 S0-02 静态重建 fixture 的世界实体按 `(x,y) -> (-y,x)` 转换，以 `750 × 1624` 目标视口生成参照。
+- [x] 目标 4096² 只裁定新边界和重新生成范围，不对 4896² 源世界应用 `4096/4896` 缩放。
+- [x] 单独制作 UI 标注稿，注明 Safe Area、可见尺寸、命中半径、左右手镜像和世界/HUD 分层。
+- [x] 对落在目标边界内的固定实体保留源/目标坐标对照；对外围 400 单位建立独立边界 fixture。
 
 **产物**
 
@@ -375,11 +381,12 @@ Star `5/5`、基础速度 `160`、加速 `1.6`、转向 `9°/tick` 和从实体�
 
 **动作**
 
-- [ ] 从原作 Game 场景序列化组件提取明/暗地图色、网格色、地图外背景色、边界色及透明度。
-- [ ] 记录主题选择入口、纹理/墙块逻辑名、平铺或线框规则；默认主题固定为来源 fresh-install 的
+- [x] 从原作 Game 场景序列化组件定位 `bgGraphics/bgSprite/bgMaskSprite` 绑定，并从其明确的 draw strategy
+  提取明/暗地图色、网格色、地图外背景色、边界色及透明度；不把组件绑定误写成颜色常量来源。
+- [x] 记录主题选择入口、纹理/墙块逻辑名、平铺或线框规则；默认主题固定为来源 fresh-install 的
   `blackBackground=0` 浅色地图，暗色值仍完整进入 presentation 基线。
-- [ ] 区分视觉网格 `32`、地图边距 `16` 与服务端 broadphase `GRID_CELL=150`，后者不是视觉规格。
-- [ ] 将颜色记录为精确通道值和色彩空间/透明度，不用截图吸管近似替代源码证据。
+- [x] 区分视觉网格 `32`、地图边距 `16` 与服务端 broadphase `GRID_CELL=150`，后者不是视觉规格。
+- [x] 将颜色记录为精确通道值和色彩空间/透明度，不用截图吸管近似替代源码证据。
 
 **产物**
 
@@ -397,11 +404,11 @@ Star `5/5`、基础速度 `160`、加速 `1.6`、转向 `9°/tick` 和从实体�
 
 **动作**
 
-- [ ] 保存不改写的 `newEndlessV2Source4896`，再通过单一、显式的地图覆盖生成
+- [x] 保存不改写的 `newEndlessV2Source4896`，再通过单一、显式的地图覆盖生成
   `newEndlessPortraitV2Map4096`。
-- [ ] 对 §2.3 每个字段建立来源值、目标值、覆盖原因和类型校验。
-- [ ] 完整镜像 71 项 `point_step_config`，保留重复端点和尾部兼容项。
-- [ ] 分别计算源快照、地图覆盖层、路径表和组合结果的稳定 hash。
+- [x] 对 §2.3 每个字段建立来源值、目标值、覆盖原因和类型校验。
+- [x] 完整镜像 71 项 `point_step_config`，保留重复端点和尾部兼容项。
+- [x] 分别计算源快照、地图覆盖层、路径表和组合结果的稳定 hash。
 
 **产物**
 
@@ -419,10 +426,10 @@ Star `5/5`、基础速度 `160`、加速 `1.6`、转向 `9°/tick` 和从实体�
 
 **动作**
 
-- [ ] 沿入口、mode switch、`isNewEndless`、HUD 和 `timeIsOver` 路径记录控制流证据。
-- [ ] 建立 Endless 与 TimeLimit 对照，证明 V2 战场配置与局长模式是正交选择。
-- [ ] 在目标差异表中明确 `hasDeadline/endTick/context.settle()`、1800/1801 tick、HUD 和正向 world tick 行为。
-- [ ] 单独记录个人复活 deadline 与房级 deadline 的分型要求。
+- [x] 沿入口、mode switch、`isNewEndless`、HUD 和 `timeIsOver` 路径记录控制流证据。
+- [x] 建立 Endless 与 TimeLimit 对照，证明 V2 战场配置与局长模式是正交选择。
+- [x] 在目标差异表中明确 `hasDeadline/endTick/context.settle()`、1800/1801 tick、HUD 和正向 world tick 行为。
+- [x] 单独记录个人复活 deadline 与房级 deadline 的分型要求。
 
 **产物**
 
@@ -439,11 +446,11 @@ Star `5/5`、基础速度 `160`、加速 `1.6`、转向 `9°/tick` 和从实体�
 
 **动作**
 
-- [ ] 还原顶层 `endless_config` 到 `ReliveStore` 的路由，分开记录 B 表样例和 V2 战场对象。
-- [ ] 固定 `100/200/300/300/300`、5 秒、最多五次成功复活和真人成功复活后 3 秒保护；把 `ad_card`
+- [x] 还原顶层 `endless_config` 到 `ReliveStore` 的路由，分开记录 B 表样例和 V2 战场对象。
+- [x] 固定 `100/200/300/300/300`、5 秒、最多五次成功复活和真人成功复活后 3 秒保护；把 `ad_card`
   标为仅来源证据。
-- [ ] 对普通真人、无资格/第六次死亡、AI 死亡、放弃、超时、强制/逃跑分别形成源行为和项目目标对照。
-- [ ] 明确真人无计分残骸、AI 约 40 tick 重生和 AI 残骸公式；明确单人暂停不能冻结联机世界。
+- [x] 对普通真人、无资格/第六次死亡、AI 死亡、放弃、超时、强制/逃跑分别形成源行为和项目目标对照。
+- [x] 明确真人无计分残骸、AI 约 40 tick 重生和 AI 残骸公式；明确单人暂停不能冻结联机世界。
 
 **产物**
 
@@ -461,10 +468,10 @@ Star `5/5`、基础速度 `160`、加速 `1.6`、转向 `9°/tick` 和从实体�
 
 **动作**
 
-- [ ] 按 §2.8 的证据入口重新定位当前符号，记录实际类型、上限、默认值和调用者。
-- [ ] 覆盖 shared/schema、server world/mode、client Logic/View、资源和测试，不只比较画面。
-- [ ] 为每条差异指定归属阶段、预期真源、生成/同步边界和最小验证。
-- [ ] 标出不得手改的 generated/shared/client/Cocos 镜像。
+- [x] 按 §2.8 的证据入口重新定位当前符号，记录实际类型、上限、默认值和调用者。
+- [x] 覆盖 shared/schema、server world/mode、client Logic/View、资源和测试，不只比较画面。
+- [x] 为每条差异指定归属阶段、预期真源、生成/同步边界和最小验证。
+- [x] 标出不得手改的 generated/shared/client/Cocos 镜像。
 
 **产物**
 
@@ -481,13 +488,13 @@ Star `5/5`、基础速度 `160`、加速 `1.6`、转向 `9°/tick` 和从实体�
 
 **动作**
 
-- [ ] 将 §2.9 的 Star `10/10`、基础速度 `160 unit/s`、加速 `2`、转向 `9°/tick`、首次出生保护
+- [x] 将 §2.9 的 Star `10/10`、基础速度 `160 unit/s`、加速 `2`、转向 `9°/tick`、首次出生保护
   `30 个活动 tick` 和真人复活保护 `60 tick` 写入版本化差异表，并登记 2026-09-03 用户批准来源。
-- [ ] 分别标记“采用来源”与“项目适配”，记录玩法影响和显式回退 ruleset；不得把基础速度或转向描述为
+- [x] 分别标记“采用来源”与“项目适配”，记录玩法影响和显式回退 ruleset；不得把基础速度或转向描述为
   从原作逐帧值精确换算所得。
-- [ ] 将首次出生保护起点定义为该蛇 `firstActiveTick`，将真人复活保护起点定义为
+- [x] 将首次出生保护起点定义为该蛇 `firstActiveTick`，将真人复活保护起点定义为
   `reliveFirstActiveTick`；两者都使用半开区间且不被准备期/提交等待期消耗。
-- [ ] 为所有批准值定义 shared/server/client 一致性与 §2.9 的确定性测试向量。
+- [x] 为所有批准值定义 shared/server/client 一致性与 §2.9 的确定性测试向量。
 
 **产物**
 
@@ -506,10 +513,10 @@ Star `5/5`、基础速度 `160`、加速 `1.6`、转向 `9°/tick` 和从实体�
 
 **动作**
 
-- [ ] 汇总五层配置、组合 hash、来源驱动静态重建 golden、调色板、差异表、规则拍板和 fixture 结果。
-- [ ] 从干净临时输出目录重跑所有生成/取证步骤，禁止依赖未登记的手工中间文件。
-- [ ] 在本页证据表回写真正的 commit、命令结果、截图/日志路径和未完成项。
-- [ ] 将全仓当前真相摘要回写到 [plan-v5.md](../../plan-v5.md)，但不得把 S1/S2 未实施内容写成完成。
+- [x] 汇总五层配置、组合 hash、来源驱动静态重建 golden、调色板、差异表、规则拍板和 fixture 结果。
+- [x] 从干净临时输出目录重跑所有生成/取证步骤，禁止依赖未登记的手工中间文件。
+- [x] 在本页证据表回写真正的 commit、命令结果、截图/日志路径和未完成项。
+- [x] 将全仓当前真相摘要回写到 [plan-v5.md](../../plan-v5.md)，但不得把 S1/S2 未实施内容写成完成。
 
 **产物**
 
@@ -528,22 +535,22 @@ Star `5/5`、基础速度 `160`、加速 `1.6`、转向 `9°/tick` 和从实体�
 
 以下条件必须全部满足，S0 才能标记为 `[已完成]`：
 
-- [ ] 原作归档 HEAD 为 `6367f65bf210d75ba39c0e48ecace5b30b538a06`，所有已读取文件及符号链接有
+- [x] 原作归档 HEAD 为 `6367f65bf210d75ba39c0e48ecace5b30b538a06`，所有已读取文件及符号链接有
   可复算 hash，取证过程未修改参考目录，且目标仓没有对其形成运行时依赖。
-- [ ] 来源驱动静态重建的横版 golden、竖版世界参照、UI 标注稿和边界 fixture 可重复生成；元数据明确
+- [x] 来源驱动静态重建的横版 golden、竖版世界参照、UI 标注稿和边界 fixture 可重复生成；元数据明确
   `sourceDerivedStaticReconstruction`，没有冒充原作实际运行截图。
-- [ ] 世界转换严格为正交旋转；目标 4096² 是独立边界覆盖，没有 `4096/4896` 全局缩放。
-- [ ] 场景背景、网格、地图外背景、边界色和透明度均来自序列化事实，不是视觉近似。
-- [ ] `newEndlessV2Source4896`、`newEndlessPortraitV2Map4096`、`sourceEndlessTotalTime0`、
+- [x] 世界转换严格为正交旋转；目标 4096² 是独立边界覆盖，没有 `4096/4896` 全局缩放。
+- [x] 场景背景、网格、地图外背景、边界色和透明度均来自场景序列化绑定与明确 draw strategy，不是视觉近似。
+- [x] `newEndlessV2Source4896`、`newEndlessPortraitV2Map4096`、`sourceEndlessTotalTime0`、
   `sourceEndlessReliveFlow`、`onlineCoinRelive5V1`、`onlineEndlessDropInV2` 及组合 hash 已冻结。
-- [ ] V2 逐字段 fixture、71 项路径表和七个路径点边界向量全部通过。
-- [ ] 已证明 `totalTime=0` 属于 Endless，不是 TimeLimit；1800/1801 tick、HUD 和个人 deadline 的目标断言完整。
-- [ ] 真人复活、AI 重生、残骸、个人 run 与联机继续运行的差异矩阵没有含糊项。
-- [ ] Star `10/10`、基础速度 `160 unit/s`、加速倍率 `2`、转向 `9°/tick`、首次出生保护
+- [x] V2 逐字段 fixture、71 项路径表和七个路径点边界向量全部通过。
+- [x] 已证明 `totalTime=0` 属于 Endless，不是 TimeLimit；1800/1801 tick、HUD 和个人 deadline 的目标断言完整。
+- [x] 真人复活、AI 重生、残骸、个人 run 与联机继续运行的差异矩阵没有含糊项。
+- [x] Star `10/10`、基础速度 `160 unit/s`、加速倍率 `2`、转向 `9°/tick`、首次出生保护
   `[firstActiveTick, firstActiveTick+30)` 和真人复活保护
   `[reliveFirstActiveTick, reliveFirstActiveTick+60)` 均进入版本化差异表并有 §2.9 测试向量。
-- [ ] 当前实现差异全部分配给明确阶段和真源，没有把候选或文档落盘写成已实现。
-- [ ] 证据表已回写真正 commit、命令、截图/日志路径；未运行项仍保持未通过。
+- [x] 当前实现差异全部分配给明确阶段和真源，没有把候选或文档落盘写成已实现。
+- [x] 证据表已回写真正 commit、命令、截图/日志路径；未运行项仍保持未通过。
 
 ---
 
@@ -571,22 +578,22 @@ Star `5/5`、基础速度 `160`、加速 `1.6`、转向 `9°/tick` 和从实体�
 
 | 任务 | 状态 | commit | 自动验证/命令 | 截图、hash 或其他证据 | 备注 |
 |---|---|---|---|---|---|
-| S0-01 | [已拍板·待实施] | — | — | — | — |
-| S0-02 | [已拍板·待实施] | — | — | — | 来源驱动静态重建，非原作运行截图 |
-| S0-03 | [已拍板·待实施] | — | — | — | — |
-| S0-04 | [已拍板·待实施] | — | — | — | — |
-| S0-05 | [已拍板·待实施] | — | — | — | — |
-| S0-06 | [已拍板·待实施] | — | — | — | — |
-| S0-07 | [已拍板·待实施] | — | — | — | — |
-| S0-08 | [已拍板·待实施] | — | — | — | — |
-| S0-09 | [已拍板·待实施] | — | — | — | `10/10 · 160 · 2 · 9°/tick · 30/60 tick` 已批准，待证据落盘 |
-| S0-10 | [已拍板·待实施] | — | — | — | — |
+| S0-01 | [已完成] | `7a04131` | `--write/--check` exit 0；34 inputs、1 symlink | [来源清单](evidence/s0/source-manifest.json) · [符号索引](evidence/s0/source-evidence-index.json) · runtime/source link 0 命中 | 来源 HEAD/clean/读取后不变均由生成器 fail-fast 守门 |
+| S0-02 | [已完成] | `7a04131` | `--check` byte-for-byte，14 PNG | [golden 清单](evidence/s0/goldens/manifest.json) | 来源驱动静态重建，非原作运行截图；6 个横版状态均落盘 |
+| S0-03 | [已完成] | `7a04131` | 坐标/PNG fixture 与 unit test 通过 | [坐标向量](evidence/s0/fixtures/coordinate-vectors.json) · [竖版/UI golden](evidence/s0/goldens/manifest.json) | 6 个竖版世界参照、左右手 UI 2 张；边界单独取证 |
+| S0-04 | [已完成] | `7a04131` | 精确 RGBA/32/16 断言通过 | [presentation 基线](evidence/s0/presentation/palette.json) · [atlas 帧](evidence/s0/presentation/source-atlas-frames.json) | 场景包负责组件绑定，运行时 draw strategy 负责精确颜色/线宽；二者分别留 hash |
+| S0-05 | [已完成] | `7a04131` | 28 字段、71 项、7 向量；diff 仅 2 字段 | [配置 hash](evidence/s0/config/config-hashes.json) · [逐字段 diff](evidence/s0/config/v2-field-comparison.json) · [路径向量](evidence/s0/fixtures/path-point-vectors.json) | 组合 hash `2319d173…f87e2`；1030 食物与约 1.43× 密度已记录 |
+| S0-06 | [已完成] | `7a04131` | 1800/1801 与个人 100 tick deadline 测试通过 | [Endless 控制流](evidence/s0/fixtures/endless-control-flow.json) · [deadline 向量](evidence/s0/fixtures/deadline-vectors.json) | 明确禁止 Classic、TimeLimit、当前 90 秒 fallback |
+| S0-07 | [已完成] | `7a04131` | B 表、5 档、4/40/60/100 tick 断言通过 | [复活来源/目标矩阵](evidence/s0/fixtures/relive-source-and-target.json) | 真人、AI、放弃、超时、第六次、强制/逃跑均有独立结论 |
+| S0-08 | [已完成] | `7a04131` | 固定 target commit 的 12 个快照文件通过符号断言 | [当前差异矩阵](evidence/s0/current-gap-matrix.json) | 12 类差异均含阶段、真源、同步边界、验证和未实施状态 |
+| S0-09 | [已完成] | `7a04131` | `node --test ...` 10/10 | [版本化规则差异](evidence/s0/fixtures/approved-ruleset-diff.json) · [规则向量](evidence/s0/fixtures/ruleset-vectors.json) | `10/10 · 160 · 2 · 9°/tick · 30/60 tick` 仅冻结，S2/S2R 尚未实现 |
+| S0-10 | [已完成] | `7a04131` | write exit 0；check exit 0、55/55；`shasum -a 256 -c` 54/54 | [构建报告](evidence/s0/build-report.json) · [bundle manifest](evidence/s0/bundle-manifest.json) · [SHA256SUMS](evidence/s0/SHA256SUMS) | `npm run verify:inventory` exit 0（14 capabilities、5 entries） |
 
 阶段汇总：
 
 | 阶段 | 状态 | commit | 自动验证 | Creator/视觉证据 | 备注 |
 |---|---|---|---|---|---|
-| S0 | [已拍板·待实施] | — | — | — | — |
+| S0 | [已完成] | `7a04131` | unit 10/10；rebuild 55/55 byte-identical；SHA 54/54；inventory 14/5 | 14 张静态重建 PNG 已人工检查尺寸、浅色网格、七色 Dot、Star/残骸、多皮肤、边界和 UI 命中区；[清单](evidence/s0/goldens/manifest.json) | 不需要 Creator 才能关闭 S0；Creator/真机运行证据仍归 S2/S5 |
 
 ---
 

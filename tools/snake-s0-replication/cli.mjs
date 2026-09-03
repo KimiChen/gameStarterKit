@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { compareDirectories, stableJson } from "./core.mjs";
 import { buildEvidence } from "./build.mjs";
