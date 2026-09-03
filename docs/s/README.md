@@ -160,7 +160,7 @@ shared 继续保持零依赖，客户端 View/Logic 与 FairyGUI 动态加载边
 | 阶段 | 状态 | commit | 自动验证 | Creator/真栈证据 | 备注 |
 |---|---|---|---|---|---|
 | S0 | `[已完成]` | `7a04131` | unit 10/10；evidence rebuild 55/55 byte-identical；SHA 54/54；inventory 14/5 | [14 张来源驱动静态重建及 metadata](evidence/s0/goldens/manifest.json) | 组合 hash `2319d173…f87e2`；证据基线完成，S2 运行时尚未实施 |
-| S1 | `[已完成]` | 本次提交 | converter 8/8、S1 server 5/5、client catalog 8/8；全量 typecheck/test/sync/inventory 通过 | [16 张预览与两张 contact sheet](evidence/s1/README.md)；Creator 终验留 S5 | public `a1cdecbc…b075`、server `9ed3762e…fa19`、client `62e1a668…2efe`；S3 内容审批仍未开始 |
+| S1 | `[已完成]` | `d18846a` | converter 8/8、S1 server 5/5、client catalog 8/8；全量 typecheck/test/sync/inventory 通过 | [16 张预览与两张 contact sheet](evidence/s1/README.md)；Creator 终验留 S5 | public `a1cdecbc…b075`、server `9ed3762e…fa19`、client `62e1a668…2efe`；S3 内容审批仍未开始 |
 | S2 | `[已拍板·待实施]` | — | — | — | — |
 | S2R | `[已拍板·待实施]` | — | — | — | 只产出技术资格；实际开关保持关闭至 S5 |
 | S3 | `[已拍板·待实施]` | — | — | — | — |

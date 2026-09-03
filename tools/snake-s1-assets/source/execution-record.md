@@ -18,6 +18,8 @@ Date: 2026-09-03 (Asia/Shanghai). Commands ran from `/Users/kimi/work/gameStarte
 | `npm run verify:sync` | 0 | shared/client mirrors consistent; checked-in `.meta` files complete |
 | `npm run verify:inventory` | 0 | `inventory 14 项能力、5 个默认入口校验通过` |
 | `(cd docs/s/evidence/s1 && shasum -a 256 -c SHA256SUMS)` | 0 | all 28 generated evidence entries reported `OK` |
+| `git commit -m "新增：完成 Snake S1 素材与三层目录"` | 0 | `[new d18846a]` (148 S1-scoped files) |
+| `git push` | 0 | `859e803..d18846a  new -> new` |
 
 Focused catalog gates, also included by the full suites:
 

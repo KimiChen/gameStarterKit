@@ -735,23 +735,23 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
 
 | 任务 | 状态 | commit | 自动验证/命令 | catalog、hash、预览或授权证据 | 备注 |
 |---|---|---|---|---|---|
-| S1-01 | [已完成] | 本次提交 | `--refresh-source` 精确 commit/clean 校验；16/16 完整 | [完整性矩阵](evidence/s1/completeness-matrix.json) · [来源 manifest](../../tools/snake-s1-assets/source/manifest.json) | 目标已有 9/缺 7、legacy 与 701 别名均按来源身份闭合 |
-| S1-02 | [已完成] | 本次提交 | 68 个冻结源文件、27 个实际资源、78 行资源/转换/预览续表复算通过 | [机器可读续表](evidence/s1/provenance.json) · [SHA 清单](evidence/s1/SHA256SUMS) | 新 `.meta` 为仓库所有；未复制旧 UUID/import cache；状态均为「已引入，待验收」 |
-| S1-03 | [已完成] | 本次提交 | `node --test tools/snake-s1-assets/snake-s1-assets.test.mjs` 8/8；`--check` exit 0 | [转换报告](evidence/s1/conversion-report.json) · [技术审阅](evidence/s1/technical-review.json) | 覆盖乱序、非 216×72、多 body、动画、403 tail、rotate/trim、0/6 帧、负 offset 与反例 |
-| S1-04 | [已完成] | 本次提交 | shared/client typecheck；exact/default/order/hash 正反测试 | [公共目录](../../apps/shared/src/cosmetics/snakeSkinCatalog.ts) · [hash](evidence/s1/catalog-hashes.json) | 16 active、唯一默认 1、版本 1；未改 gameplay wire/schema/protocol |
-| S1-05 | [已完成] | 本次提交 | server S1 5/5；AI drift/orphan/sentinel/hash mismatch 反例通过 | [服务端业务目录](../../apps/server/src/rooms/modes/snake/skinBusinessCatalog.ts) | 10-ID AI 池精确；全部业务值保持 draft/unavailable；经济写默认关闭 |
-| S1-06 | [已完成] | 本次提交 | client catalog 8/8；rect/sequence/layout/fallback/mismatch 通过 | [客户端表现目录](../../apps/client/src/logic/rooms/snake/SnakePresentationCatalog.ts) | 运行时诊断不改权威 ID；retired 完整 entry 按自身解析；彩色素材固定白 tint |
-| S1-07 | [已完成] | 本次提交 | 七色 Dot、Star 主题、22/34 wreck、墙/背景精确值 fixture 通过 | [表现生成物](../../apps/client/src/logic/rooms/snake/SnakePresentationCatalog.generated.ts) | 网格 32、边距 16；单 atlas/material 容量 1030；无 broadphase 150 泄漏 |
-| S1-08 | [已完成] | 本次提交 | 音效/FX 唯一映射、hash、静默/不可达策略测试通过 | [来源续表](evidence/s1/provenance.json) | personal result=`silent`；`time-over=historical-unused/unreachable`；死亡爆散显式 none |
-| S1-09 | [已完成] | 本次提交 | 16/16 preview；normal/boost 技术 contact sheet 人工检查通过、阻塞 0 | [预览总览](evidence/s1/contact-sheet.png) · [技术总览](evidence/s1/technical-contact-sheet.png) · [S3 审阅包](evidence/s1/content-review-package.json) | 名称仍为 technical-draft，产品名/稀有度/获取/价格未冒充审批 |
-| S1-10 | [已完成] | 本次提交 | repo-only freshness + shared/server/client 正反 validator/hash/fallback tests | [验证报告](evidence/s1/validation-report.json) · [三类 hash](evidence/s1/catalog-hashes.json) | 只比较同构公共 hash；业务/表现 hash 独立；构建损坏 fail-fast，部署损坏才 fallback |
-| S1-11 | [已完成] | 本次提交 | `sync:shared`、`sync:client`、`typecheck`、`test:client`、server test、`verify:sync`、`verify:inventory` 均 exit 0 | [执行记录](evidence/s1/execution-record.md) · [证据入口](evidence/s1/README.md) | gameplay schema 与 protocol 未改，故 gameplay codegen/fingerprint 重钉不适用；Creator 终验留 S5 |
+| S1-01 | [已完成] | `d18846a` | `--refresh-source` 精确 commit/clean 校验；16/16 完整 | [完整性矩阵](evidence/s1/completeness-matrix.json) · [来源 manifest](../../tools/snake-s1-assets/source/manifest.json) | 目标已有 9/缺 7、legacy 与 701 别名均按来源身份闭合 |
+| S1-02 | [已完成] | `d18846a` | 68 个冻结源文件、27 个实际资源、78 行资源/转换/预览续表复算通过 | [机器可读续表](evidence/s1/provenance.json) · [SHA 清单](evidence/s1/SHA256SUMS) | 新 `.meta` 为仓库所有；未复制旧 UUID/import cache；状态均为「已引入，待验收」 |
+| S1-03 | [已完成] | `d18846a` | `node --test tools/snake-s1-assets/snake-s1-assets.test.mjs` 8/8；`--check` exit 0 | [转换报告](evidence/s1/conversion-report.json) · [技术审阅](evidence/s1/technical-review.json) | 覆盖乱序、非 216×72、多 body、动画、403 tail、rotate/trim、0/6 帧、负 offset 与反例 |
+| S1-04 | [已完成] | `d18846a` | shared/client typecheck；exact/default/order/hash 正反测试 | [公共目录](../../apps/shared/src/cosmetics/snakeSkinCatalog.ts) · [hash](evidence/s1/catalog-hashes.json) | 16 active、唯一默认 1、版本 1；未改 gameplay wire/schema/protocol |
+| S1-05 | [已完成] | `d18846a` | server S1 5/5；AI drift/orphan/sentinel/hash mismatch 反例通过 | [服务端业务目录](../../apps/server/src/rooms/modes/snake/skinBusinessCatalog.ts) | 10-ID AI 池精确；全部业务值保持 draft/unavailable；经济写默认关闭 |
+| S1-06 | [已完成] | `d18846a` | client catalog 8/8；rect/sequence/layout/fallback/mismatch 通过 | [客户端表现目录](../../apps/client/src/logic/rooms/snake/SnakePresentationCatalog.ts) | 运行时诊断不改权威 ID；retired 完整 entry 按自身解析；彩色素材固定白 tint |
+| S1-07 | [已完成] | `d18846a` | 七色 Dot、Star 主题、22/34 wreck、墙/背景精确值 fixture 通过 | [表现生成物](../../apps/client/src/logic/rooms/snake/SnakePresentationCatalog.generated.ts) | 网格 32、边距 16；单 atlas/material 容量 1030；无 broadphase 150 泄漏 |
+| S1-08 | [已完成] | `d18846a` | 音效/FX 唯一映射、hash、静默/不可达策略测试通过 | [来源续表](evidence/s1/provenance.json) | personal result=`silent`；`time-over=historical-unused/unreachable`；死亡爆散显式 none |
+| S1-09 | [已完成] | `d18846a` | 16/16 preview；normal/boost 技术 contact sheet 人工检查通过、阻塞 0 | [预览总览](evidence/s1/contact-sheet.png) · [技术总览](evidence/s1/technical-contact-sheet.png) · [S3 审阅包](evidence/s1/content-review-package.json) | 名称仍为 technical-draft，产品名/稀有度/获取/价格未冒充审批 |
+| S1-10 | [已完成] | `d18846a` | repo-only freshness + shared/server/client 正反 validator/hash/fallback tests | [验证报告](evidence/s1/validation-report.json) · [三类 hash](evidence/s1/catalog-hashes.json) | 只比较同构公共 hash；业务/表现 hash 独立；构建损坏 fail-fast，部署损坏才 fallback |
+| S1-11 | [已完成] | `d18846a` | `sync:shared`、`sync:client`、`typecheck`、`test:client`、server test、`verify:sync`、`verify:inventory` 均 exit 0 | [执行记录](evidence/s1/execution-record.md) · [证据入口](evidence/s1/README.md) | gameplay schema 与 protocol 未改，故 gameplay codegen/fingerprint 重钉不适用；Creator 终验留 S5 |
 
 阶段汇总：
 
 | 阶段 | 状态 | commit | 自动验证 | Creator/视觉证据 | 备注 |
 |---|---|---|---|---|---|
-| S1 | [已完成] | 本次提交 | converter 8/8；S1 server 5/5；client catalog 8/8；全量 typecheck/test/sync/inventory 通过 | 16 张单图 + 两张 contact sheet 已人工检查；Creator 3.8.8 导入/混合/UUID/pivot 终验明确留 S5 | S2/S3 可分别消费客户端表现/服务端业务骨架；S3-01 必须先完成内容审批 |
+| S1 | [已完成] | `d18846a` | converter 8/8；S1 server 5/5；client catalog 8/8；全量 typecheck/test/sync/inventory 通过 | 16 张单图 + 两张 contact sheet 已人工检查；Creator 3.8.8 导入/混合/UUID/pivot 终验明确留 S5 | S2/S3 可分别消费客户端表现/服务端业务骨架；S3-01 必须先完成内容审批 |
 
 ---
 
