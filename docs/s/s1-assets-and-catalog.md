@@ -3,26 +3,32 @@
 > [返回专项总目录](README.md) · [上一阶段：S0 复刻基线](s0-replication-baseline.md) ·
 > [下一阶段：S2 战场与无尽生命周期](s2-battle-and-endless-lifecycle.md)
 
-> **状态：`[已完成]`（2026-09-03，无头验收闭合；Creator 资源导入终验仍按计划归 S5）**<br>
-> **预计：3–5 人日**<br>
+> **状态：`[已拍板·待实施]`（S1-01～S1-11 于 2026-09-03 完成；因首发磁铁已拍板纳入 S2，现重开
+> S1-12 补齐其表现资产、目录与 hash，完成前不得开始 S2）**<br>
+> **预计：4–7 人日；其中 S1-01～S1-11 原估 3–5 人日，S1-12 追加 1–2 人日；历史完成记录不冒充工时实绩**<br>
 > **依赖：S0 已完成并产出可重复核验的 [evidence bundle](evidence/s0/README.md)，已冻结来源归档、场景表现基线、
 > 目标配置和规则差异。**<br>
-> **主要输入：** S0 evidence bundle、原作 internal skins/atlas/body config、现有
+> **主要输入：** S0 evidence bundle、原作 internal skins/atlas/body config、`tools/10001` 磁铁帧、
+> `SnakeMagnet` 持续效果依赖、`eat_tool` 音频、现有
 > `apps/Cocos/assets/resources/snakeoff/` 首批资源、来源与授权台账。<br>
 > **主要输出：** 16 套稳定皮肤的分层 catalog、标准化 atlas rect/body config、预览、七色 Dot/Star/
-> 残骸/墙块/背景/音效表现目录、确定性转换与校验器、公共/业务/表现 hash、资源与授权 SHA 台账。<br>
+> 磁铁/残骸/墙块/背景/音效表现目录、确定性转换与校验器、公共/业务/表现 hash、资源与授权 SHA 台账。<br>
 > **阶段纪律：** 只改手写真源并通过既有 codegen/sync 动线产生镜像；不得手改 generated registry、
 > `apps/client/src/shared/` 或 `apps/Cocos/assets/src/`。Creator 最终导入验收在 S5 收口，S1 仍须完成
 > 无头可验证的资源、rect、fallback 和 hash 门禁。
 
-实现结果：冻结来源 commit `6367f65bf210d75ba39c0e48ecace5b30b538a06` 的 68 个实际读取文件已形成
-仓内可重放输入；16 套皮肤、27 个实际表现资源、78 行资源/转换/预览台账和 16 张预览均已闭合。三类 hash 为：
+既有实现基线：S1-01～S1-11 已在 commit `d18846a` 闭合；冻结来源 commit
+`6367f65bf210d75ba39c0e48ecace5b30b538a06` 的 68 个实际读取文件已形成仓内可重放输入，16 套皮肤、
+27 个实际表现资源、78 行资源/转换/预览台账和 16 张预览均已闭合。以下是 **S1-12 扩展前历史基线**，
+不得当作重开后的最终 hash：
 
-- `publicCatalogHash=a1cdecbc5e31db3f90ac2fd15465768ef9206b2520000d4ab9f88d6c2135b075`
-- `serverBusinessHash=9ed3762e5f5d24d168aafd14fcaccac1d4de83413d0acb17f6308cea1ccbfa19`
-- `clientPresentationHash=62e1a6683a71db3ef0724cd6030114b7d9a64845723b14fa8c7c6d58a9302efe`
+- `publicCatalogHash=a1cdecbc5e31db3f90ac2fd15465768ef9206b2520000d4ab9f88d6c2135b075`；S1-12 完成后必须保持不变。
+- `serverBusinessHash=9ed3762e5f5d24d168aafd14fcaccac1d4de83413d0acb17f6308cea1ccbfa19`；S1-12 完成后必须保持不变。
+- `clientPresentationHash=62e1a6683a71db3ef0724cd6030114b7d9a64845723b14fa8c7c6d58a9302efe`；仅为扩展前值，
+  S1-12 完成时必须按新目录重算并回写真实值，禁止预填。
 
-权威无头证据入口见 [S1 evidence bundle](evidence/s1/README.md)。
+既有无头证据入口见 [S1 evidence bundle](evidence/s1/README.md)；S1-12 完成后须原地更新该 bundle，并保留
+扩展前 commit/hash 的历史说明。
 
 ---
 
@@ -37,13 +43,16 @@ S1 的目标是把“散落的 PNG 和原作 atlas 信息”变成稳定、可�
 - 补齐 16 个 internal skin 稳定内容 ID 对应的 PNG、atlas JSON、身体配置和预览。
 - 解析原作 atlas/body config，确定性生成 normal/boost 的 head/body/可选 tail、动画和身体序列。
 - 建立 shared 公共、服务端业务、客户端资源三层目录，并分别生成稳定 hash。
-- 补齐七色 Dot、Star、加速残骸、AI 死亡残骸、墙块、背景/网格主题和已批准音效的表现登记。
+- 补齐七色 Dot、Star、磁铁场内帧/被动状态图标/持续效果、加速残骸、AI 死亡残骸、墙块、背景/网格主题和
+  已批准音效的表现登记。
 - 建立 ID、默认皮肤、AI 池、资源、rect、fallback、hash 和确定性生成门禁。
 - 逐文件维护来源绝对路径、逻辑名、SHA-256、授权、目标路径、转换和 `.meta` 状态。
 
 ### 1.1 非目标
 
 - 不在 S1 实现 1030 食物批渲染、Star 移动、相机、皮肤 mesh 或 AI 分配；这些属于 S2。
+- 不在 S1 实现磁铁生成、移动、拾取判定、8 秒权威效果、AI 生效、复活/重连恢复或 wire；这些属于 S2。
+  S1 只交付可由 S2 直接消费且完整受 hash/来源门禁保护的磁铁表现资产与目录。
 - 不在 S1 实现 Bag/User 所有权、解锁、购买、装备或衣柜 RPC；这些属于 S3。
 - 不在 S1 拍板最终展示名、稀有度、价格或获取方式；S1 只生成预览和技术审阅输入，最终内容审阅是
   S1 完成后、S3-01 开始前的进入门，不阻塞 S1 或 S2/S2R。
@@ -97,9 +106,10 @@ S1 的目标是把“散落的 PNG 和原作 atlas 信息”变成稳定、可�
 - 增删或改变内容解释必须提升相应 `contentVersion` 并更新 `publicCatalogHash`。
 
 来源 `remoteBundles/internalSkins/config.json` 已确认恰好覆盖这 16 个 ID，每个 ID 都能定位 Texture2D、
-SpriteAtlas、body config 和 native PNG；因此 S1 开工前没有素材缺口决策。当前目标资源已引入
-`1, 2, 4, 10, 11, 133, 139, 401, 701`，待补齐 `3, 101, 111, 112, 132, 403, 411`，仍须在 S1
-逐项复算 SHA 和接线 atlas/body config。以 [当前资源目录](../../apps/Cocos/assets/resources/snakeoff/) 和
+SpriteAtlas、body config 和 native PNG；因此 S1 开工前没有素材缺口决策。以下保留为 **S1 开工前差距快照**：
+当时目标资源已引入 `1, 2, 4, 10, 11, 133, 139, 401, 701`，尚待补齐
+`3, 101, 111, 112, 132, 403, 411`；这些缺口后来已由 S1-01～S1-11 在 `d18846a` 闭合并逐项复算 SHA、接线
+atlas/body config，不是当前待办。以 [当前资源目录](../../apps/Cocos/assets/resources/snakeoff/) 和
 [来源台账](../snakeoff/08-source-and-asset-provenance.md#7-直接素材复用登记模板) 为审计起点，不以现有文件名推断
 完成率：现有 `snake_skin_classic_1/2/3` 是 legacy/history 资源，不映射 internal skin 1/2/3；
 `snake_skin_ai.png` 对应稳定 ID 701，文件名不赋予它 AI-only 语义。
@@ -186,6 +196,11 @@ declare function deriveSkinLayoutMetrics(
 ): SkinLayoutMetrics;
 ```
 
+客户端表现目录顶层必须新增显式 `presentationVersion`，并生成同值常量 `SNAKE_PRESENTATION_VERSION`。
+S1-01～S1-11 已闭合、尚未携带该字段的历史 envelope 只在迁移解释中视为隐式版本 `1`；S1-12 在加入磁铁
+世界帧、被动状态图标、持续效果与拾取音频后直接生成显式版本 `2`，不回写旧证据冒充当时已有字段。该版本
+描述整个客户端表现 envelope，不属于任一皮肤，也不得借此提升 16 套皮肤的 `contentVersion`。
+
 `FrameDefinition` 必须能无歧义表达纹理内 rect、pivot/anchor、trim、原始尺寸、旋转标志和源帧名。
 `durationFrames = max(1, source.frame_time)`，单位是原作渲染帧保持次数，不得改名或解释成毫秒；源原始值仍写入
 转换证据。`sourceDistance` 和 `sourceBodyOffset` 保留源文件允许的负数位移，只校验为有限数，不能把源负 offset
@@ -215,7 +230,7 @@ declare function deriveSkinLayoutMetrics(
 |---|---|---|
 | Shared 公共目录 | 稳定 `skinId`、active/retired 状态、`contentVersion`、排序、玩家可用性、技术标签、`publicCatalogHash` | Cocos/DOM/Node API、纹理对象、商城价格、数据库访问 |
 | 服务端业务目录 | ownership/fragment itemId、展示名状态、稀有度、获取方式、价格、上下架、`aiEligible`、`serverBusinessHash` | 客户端资源加载、SpriteFrame/Texture2D、相信客户端自报拥有 |
-| 客户端资源目录 | 预览/纹理逻辑路径、normal/boost 的 head/body/tail、rect、pivot、帧保持次数、身体序列/位移/间距、fallback、`clientPresentationHash` | 永久所有权真相、扣费结果、玩法属性 |
+| 客户端资源目录 | 顶层 `presentationVersion`，预览/纹理逻辑路径，normal/boost 的 head/body/tail、rect、pivot、帧保持次数、身体序列/位移/间距、磁铁表现、fallback、`clientPresentationHash` | 永久所有权真相、扣费结果、玩法属性与磁铁权威规则 |
 
 S1 建立三层可关联的内容身份和校验。每套 `technicalLabel` 均固定为 `皮肤 <ID>`；没有可核验源名称时，
 `displayName` 使用该技术标签但不得把它当成获批玩家展示名；已能核验的源名称标为 `source`。S1 中
@@ -241,7 +256,7 @@ S1 建立三层可关联的内容身份和校验。每套 `technicalLabel` 均�
 - 源 PNG 可原样复制或按已登记步骤转换，但不能复制旧项目 `.meta`、import cache 或 UUID。
 - 同字节素材可去重，但必须在台账中说明逻辑别名、唯一物理目标和相同 SHA，而不是静默丢行。
 
-### 2.5 食物、残骸与地图表现目录
+### 2.5 食物、磁铁、残骸与地图表现目录
 
 S1 只定义资源帧、尺寸和主题；数量、移动及权威分值由 S2 实现。
 
@@ -249,6 +264,7 @@ S1 只定义资源帧、尺寸和主题；数量、移动及权威分值由 S2 �
 |---|---|---:|---|
 | Dot | 普通食物 `1..7` | 16 | 七帧均存在、rect 合法、逻辑 ID 稳定；同种子/实体 id 可由 S2 决定性选取 |
 | Star | `star` 及所选主题变体 | 42 | 明确默认帧、主题覆盖和 fallback |
+| 磁铁 | `tools` atlas 的 `10001` | 70 | 世界 kind 固定为 `magnet`；被动状态 icon 只做同帧逻辑别名，不复制纹理字节 |
 | 加速残骸 | 原作对应素材/帧 | 22 | 与 Dot、AI 死亡残骸使用不同稳定 kind |
 | AI 死亡残骸 | 原作对应素材/帧 | 34 | 支持必要 `variant` 或 `sourceSkinId` 表现；真人死亡不使用该目录生成计分残骸 |
 | 墙块/边界 | 已批准 wall block 或主题线框 | 由主题拼接规则决定 | 记录平铺/拼接、边界方向、默认主题和 fallback |
@@ -256,6 +272,69 @@ S1 只定义资源帧、尺寸和主题；数量、移动及权威分值由 S2 �
 
 1030 个常驻食物在 S2 必须由同一 atlas/material 的批量 mesh 渲染，不能建立 1030 个 Sprite 节点或 draw call。
 因此 S1 的 atlas 分组、材质兼容性和 frame 数据必须支持批渲染，而不是只适合逐节点 SpriteFrame。
+
+#### 2.5.1 磁铁表现目录与已核验来源
+
+磁铁的表现身份固定如下；S2 只能按这些逻辑名取资源，不能再次解析原作文件名或把磁铁做成主动道具按钮：
+
+```ts
+interface MagnetPresentation {
+  kind: "magnet";
+  sourceToolId: 10001;
+  world: {
+    logicalName: "magnet";
+    textureAsset: "snakeoff/snake_magnet_tools";
+    frame: FrameDefinition;
+    displaySize: 70;
+  };
+  statusIcon: {
+    logicalName: "magnet-status-icon";
+    logicalAliasOf: "magnet";
+    role: "passive-indicator";
+    interactive: false;
+  };
+  activeEffect: {
+    event: "magnet-active";
+    policy: "resource";
+    recipeAsset: "snakeoff/snake_magnet_aura";
+    fallback: {
+      logicalName: "magnet-status-icon";
+      placement: "over-head";
+    };
+  };
+}
+```
+
+- 世界帧的稳定逻辑名为 `magnet`，源 `toolId=10001`，取 `tools` atlas 的 `10001`；规范化 rect 精确为
+  `[x=346, y=256, width=84, height=92]`，世界显示尺寸固定为 `70`，运行时纹理路径固定为
+  `snakeoff/snake_magnet_tools`。
+- `magnet-status-icon` 与世界 `magnet` 必须指向同一 texture、同一 frame 定义，台账登记
+  `logicalAliasOf="magnet"`；不得裁出或复制第二份 PNG。它只显示 8 秒被动效果剩余状态，不可点击、不占中央四槽，
+  也不改变“首发主动操作只开放加速”的口径。
+- `magnet-active` 是蛇头随附的磁力 aura，与状态 icon 分开登记。转换器从原作 `prefab/SnakeMagnet` 提取层级、
+  混合、动画和五个纹理依赖，输出仓内规范化 recipe；客户端表现目录以稳定
+  `recipeAsset="snakeoff/snake_magnet_aura"` 引用其生成后的 Cocos JsonAsset，Cocos 3.8.8 据此重建，
+  禁止复制 Cocos 2 prefab、
+  UUID、`.meta` 或 import cache。五个源逻辑纹理固定为 `x_lighting01`、`x_lighting02`、`x_lighting03`、
+  `xt_s_lighting`、`xt_s_lighting02`，不得借用 boost/protection 表现冒充。
+- world item、status icon 与 aura 分别登记批次/material 归属；共享 frame 只表示共享纹理字节，不表示 UI 与世界
+  必须合并 draw call。构建期缺 frame、越界 rect、别名分叉或 aura 依赖不全一律 fail-fast；仅运行时部署损坏时，
+  aura 可退为头顶 `magnet-status-icon`，世界拾取物缺失则拒绝进入目标战斗，禁止生成不可见磁铁。
+
+以下路径均相对 S0 冻结来源归档 `/Users/kimi/work/tanchishe/wegameVersion/`；SHA-256 已只读核验，S1-12 实施时
+仍须由工具复算并写入 manifest/provenance，不能把本表当成生成证据：
+
+| 用途/源逻辑名 | 冻结来源路径 | SHA-256 |
+|---|---|---|
+| `tools` atlas texture；`magnet` 与 `magnet-status-icon` 共用 | `remoteBundles/atlas/native/14/1473c6a2-0588-411d-b295-2b7517dc029b.png` | `e954359e45836981a574101f7397906da997d07c52498e682b4a1c98b1ee4090` |
+| `tools` atlas pack；规范化时只提取 `10001` | `remoteBundles/atlas/import/06/069cb84df.json` | `9d1e12c5d141653450b0af0ff7d3be572a2b92e78674d2e02fa0f1f03e2e3748` |
+| `SnakeMagnet` prefab pack；仅作 recipe/依赖来源 | `remoteBundles/game/import/03/0365be86c.json` | `9daafc4c3ce38d76427c02ed40b82c2aa15ce3463fdf832ccd06b802fd4b536f` |
+| `x_lighting01` | `remoteBundles/game/native/ca/cae4c893-2179-4fca-9b76-44472a335923.png` | `f86fb2768cc1c9228ca99d7588c01f37c86e1a088e306076bbde05d94c35aa5b` |
+| `x_lighting02` | `remoteBundles/game/native/f1/f1b42444-7757-4bdb-b713-c4606298d4f0.png` | `8bf1c195d4dfc2bf7ad8db4740a0faaa1743d092ac715f9e562a0bccee2c3194` |
+| `x_lighting03` | `remoteBundles/game/native/3a/3a12368b-8ef7-4bf6-91a9-191ef071ec99.png` | `15331a741d25de8e08ed903f9c88cab46ebad60bc57c40005fc96f839dd5b45d` |
+| `xt_s_lighting` | `remoteBundles/game/native/ae/ae0301dd-05fa-45c7-90f5-bb39e23422ca.png` | `11b9fdc1983d39bb1a578ded1fa7e4962fae95da44895f40b819f507c1a5425c` |
+| `xt_s_lighting02` | `remoteBundles/game/native/4e/4e216bd4-1dae-4211-bd44-976710bd9889.png` | `4e77f9fbd45a66be64f8cd4311e4e761ffdb91e76580e4e8334d582dd7eaebc0` |
+| `eat_tool`；目标事件 `collect-magnet` | `remoteBundles/audio/native/dc/dc5e02f9-c04f-4bc5-b6e8-3f9016ea8e94.mp3` | `7ca26a88922302ec4492ed31117f57410268109d47645b689318e6138bb5c113` |
 
 ### 2.6 AI 皮肤所需目录能力
 
@@ -270,8 +349,9 @@ S2 的 AI 规则要求目录支持：
 
 排除真人外观后的候选不足时只循环剩余候选；若未来规则变化导致过滤后为空，则退回完整的冻结 10-ID 池，
 不得临时启用 6 个 `aiEligible=false` 的 ID。S1 必须保证 10 个 AI entry 全部可解析到完整纹理/帧/fallback。
-AI 身份通过名字、名牌或头像表现，不能靠统一灰化皮肤。`fake_snake_count=86` 不需要世界皮肤实体，不得被
-catalog 生成器误算为 86 条活动 AI。
+身份表现随 S1-12 一并收敛：自机只使用不改皮肤原色的细白轮廓，不显示额外箭头；AI 只使用文字名字，不使用
+头像、箭头或轮廓。其他真人可保留文字名字，但不得套用自机轮廓。该选择是客户端本机身份投影，不进入公共皮肤
+身份、服务端业务目录或 wire。`fake_snake_count=86` 不需要世界皮肤实体，不得被 catalog 生成器误算为 86 条活动 AI。
 
 ### 2.7 音效与其他表现
 
@@ -279,6 +359,8 @@ presentation catalog 至少登记：
 
 - 吃普通食物。
 - 吃残骸。
+- 拾取磁铁：稳定事件名 `collect-magnet`，独立使用来源 `eat_tool`，不能借用吃食物或吃残骸音效。
+- 磁铁持续期间：显式 `none/silent`，不播放循环音；视觉剩余状态由被动 icon/aura 表达。
 - 击杀。
 - 真人死亡。
 - 个人 run 结果：固定登记为显式 `none/silent`，不加载或播放资源。
@@ -289,7 +371,8 @@ presentation catalog 至少登记：
 `none/silent` 项只登记稳定逻辑名、状态和原因，不能伪造资源路径/hash。限时时间结束音效即使已在资源目录，
 也不得进入 `totalTime=0` 的目标播放映射，更不得被个人结果复用；可以保留为来源/历史资产，但必须标为未使用。
 若后续为“退出”定义独立逻辑事件，必须另有明确资源或 `none` 记录，不能自动继承个人结果、真人死亡或
-`time_over` 的映射。
+`time_over` 的映射。`collect-magnet` 固定受 `sfxOn` 控制，并复用现有音效系统的有界单实例/并发策略，
+防止重复 push 造成爆音；该策略只影响本地播放，不影响权威拾取结果。
 
 ### 2.8 来源、授权和 `.meta` 状态
 
@@ -321,7 +404,8 @@ presentation catalog 至少登记：
 
 现有用户会话与台账已由项目及源游戏权利方批准复用
 `/Users/kimi/work/tanchishe/wegameVersion/` 冻结来源归档中的素材；对该归档内的 16 套皮肤、atlas/body config、
-食物、墙块、背景、音频和必要转换产物无需逐项再次请求产品授权，但仍必须逐文件登记来源、SHA、转换和目标。
+食物、磁铁 `tools/10001`、`SnakeMagnet` aura 纹理、墙块、背景、音频和必要转换产物无需逐项再次请求产品授权，
+但仍必须逐文件登记来源、SHA、转换和目标。
 只有新增冻结归档外来源时才进入 `待授权，不得引入` 并重新请求授权。
 
 ### 2.9 hash、fallback 与发布门禁
@@ -329,8 +413,13 @@ presentation catalog 至少登记：
 - `publicCatalogHash` 只覆盖规范化公共身份，在 shared、server、client 三层生成相同值；下游文档和接口简称
   `catalogHash` 时均指该值。跨端兼容及外观经济写门禁只比较这一同构 hash，不能直接比较异构目录全集。
 - `serverBusinessHash` 覆盖服务端业务目录，`clientPresentationHash` 覆盖客户端表现目录；二者分别用于本层
-  freshness/审计，天然不要求相等。任何会改变公共身份或资源解释的变化都必须提升对应 `contentVersion`，使
-  `publicCatalogHash` 随之变化。
+  freshness/审计，天然不要求相等。皮肤公共身份或某个皮肤资源解释变化时才提升该皮肤 `contentVersion`，并使
+  `publicCatalogHash` 随之变化；磁铁、地图、音效等非皮肤表现变化只提升顶层 `presentationVersion` 并改变
+  `clientPresentationHash`。
+- S1-12 的变更边界固定为隐式 `presentationVersion: 1` 迁移到显式 `2`，生成
+  `SNAKE_PRESENTATION_VERSION=2`；现有 hash 常量中只允许 `CLIENT_SNAKE_PRESENTATION_HASH` 发生变化，
+  `PUBLIC_SNAKE_SKIN_CATALOG_HASH`、`SERVER_SNAKE_SKIN_BUSINESS_HASH` 和 16 套皮肤
+  `contentVersion=1` 必须保持扩展前值。任一不应变化项漂移均使 validator 失败。
 - 服务端与客户端的 `publicCatalogHash` 不一致时，禁止购买、解锁、装备等外观目录相关经济写；S3 必须复用此门禁。
 - 构建期声明资源缺失、损坏或 rect 非法必须让 validator 失败，不能靠 fallback 放行不完整 catalog。运行时只有
   未知 ID、部署损坏、加载失败或非法 rect 才确定性回退皮肤 1，留下受控诊断，且不改写权威
@@ -370,11 +459,14 @@ S1 不应为了纯资源目录提前创建 `snakeCosmetic` feature；该 feature
 外部绝对路径只允许用于显式 import/refresh 和来源台账审计。S1 工具与仓内配置输入根固定为
 `tools/snake-s1-assets/`：`source/manifest.json` 记录来源 commit、逐文件路径/hash 和目标映射，
 `source/internal-skins/<id>/atlas.json` 与 `body.json` 保存 16 套可重放转换输入；实际 PNG/音频字节真源位于
-`apps/Cocos/assets/resources/snakeoff/`。S1-02 完成后，常规 generate、`--check`、测试和 CI 只读这些仓内
+`apps/Cocos/assets/resources/snakeoff/`。S1-12 另将 `tools/10001` 规范化为
+`source/presentation/magnet.atlas.json`，将 `SnakeMagnet` 层级/混合/动画依赖规范化为
+`source/presentation/magnet-aura.json`；常规 generate、`--check`、测试和 CI 只读这些仓内
 相对路径，不得依赖 `/Users/kimi/work/tanchishe/wegameVersion/` 存在。客户端代码生成物先写入
 `apps/client/src` 真源再走 `sync:client`；不得直接写 `apps/Cocos/assets/src` 镜像。
 
-S1 的生成证据固定写入 `docs/s/evidence/s1/`，包括转换报告、三类 hash、来源/输出 SHA、完整性矩阵、预览和
+S1 的生成证据固定写入 `docs/s/evidence/s1/`，包括转换报告、顶层 `presentationVersion`、三类 hash、
+来源/输出 SHA、完整性矩阵、磁铁 frame/aura/audio 完整性、预览和
 contact sheet；不得改写 `docs/s/evidence/s0/` 的历史基线。S1 source manifest 可引用 S0 已登记的文件身份，
 但必须独立补齐本阶段实际消费的全部 16 套素材与配置。
 
@@ -527,7 +619,7 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
 - [x] 为每个 `skinId` 关联 preview、texture、normal/boost 的 head/body/可选 tail、body sequence、
   `durationFrames`、逐帧 pivot、有符号源 distance/offset、`headAnchorY`、`visualScale` 和 fallback。
 - [x] 使用稳定逻辑资源路径，不把源 native hash 文件名或绝对路径暴露给运行时。
-- [x] 确认全部彩色素材默认白 tint；身份轮廓/箭头/名牌作为独立表现能力登记。
+- [x] 确认全部彩色素材默认白 tint；扩展前的轮廓/箭头/名牌作为独立表现能力登记。
 - [x] 生成 `clientPresentationHash`、嵌入的 `publicCatalogHash` 和可控诊断码，供未知 ID、加载失败和非法 rect 回退。
 
 **产物**
@@ -638,8 +730,9 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
 - 正常 16-entry 目录全绿；重复 ID、第二默认、AI 集合漂移、缺资源、越界 rect、错误 normal/boost、
   fallback 自环/多终点、孤儿 entry 和公共 hash mismatch 分别稳定失败。
 - 相同语义的不同输入顺序得到相同的对应 hash；业务 draft 单独变化只改变 `serverBusinessHash`；公共字段或
-  表现资源/解释变化则提升对应 `contentVersion`，同时改变 `publicCatalogHash`，表现变化还改变
-  `clientPresentationHash`。
+  某个皮肤的资源解释变化则提升对应 `contentVersion`、改变 `publicCatalogHash`，表现变化还改变
+  `clientPresentationHash`。此项只记录 S1-10 当时已验证的皮肤目录规则；非皮肤表现的顶层
+  `presentationVersion` 规则待 S1-12 验证。
 - `publicCatalogHash` mismatch 时测试证明外观目录相关经济写不会进入，战斗仍只回退默认且留下诊断；
   `serverBusinessHash` 与 `clientPresentationHash` 不做相等断言。
 - retired entry 正常渲染自身；构建期损坏 fail-fast；运行时模拟部署损坏才触发 fallback 且不改写权威 skin ID。
@@ -670,6 +763,72 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
 - 若修改 protocol，显式运行 fingerprint 写入/检查动线；不得隐式重钉。
 - 对同一输入从零重生资源目录，输出和三类 catalog hash 与提交内容一致。
 
+### S1-12 · 补齐磁铁表现资产并重封目录
+
+S1-01～S1-11 的完成记录是历史事实，不回退或伪改；本任务是首发磁铁范围拍板后新增的 S2 强前置。
+
+**动作**
+
+- [ ] 扩展显式 `--refresh-source`：从 §2.5.1 已核验路径读取 `tools` texture/atlas pack、
+  `SnakeMagnet` prefab pack 与五个 aura PNG、`eat_tool` MP3；复算源 SHA，并将每次实际读取的文件、用途和来源
+  commit 写入 `tools/snake-s1-assets/source/manifest.json`。
+- [ ] 只提取 `tools` atlas 的 `10001` 为 `tools/snake-s1-assets/source/presentation/magnet.atlas.json`；输出必须保留
+  rect、pivot、trim、originalSize 和 rotate，不能在运行时解析整包或手抄第二份 frame。
+- [ ] 将 `SnakeMagnet` 的 Cocos 2 层级、混合、关键帧/粒子参数和五个纹理依赖转换为仓内规范化
+  `tools/snake-s1-assets/source/presentation/magnet-aura.json`；遇未知组件或无法表达的动画字段 fail-fast，不静默丢弃。
+- [ ] 将实际资源字节复制到明确真源：`snake_magnet_tools.png`、
+  `snake_magnet_aura_x_lighting01.png`、`snake_magnet_aura_x_lighting02.png`、
+  `snake_magnet_aura_x_lighting03.png`、`snake_magnet_aura_xt_s_lighting.png`、
+  `snake_magnet_aura_xt_s_lighting02.png` 和 `snake_sfx_collect_magnet.mp3`；同时把规范化 recipe 生成为
+  `snake_magnet_aura.json`。这 8 个运行时资源只生成仓库自己的新 `.meta`，不复制旧 prefab、UUID、
+  `.meta` 或 import cache。
+- [ ] 在客户端表现目录的 `tools` 分组加入稳定逻辑项 `magnet`（规范化 catalog path 为 `tools.magnet`）：
+  world kind=`magnet`、sourceToolId=`10001`、textureAsset=`snakeoff/snake_magnet_tools`、displaySize=`70`；
+  `magnet-status-icon` 写成同 texture/frame 的 `logicalAliasOf="magnet"`，role=`passive-indicator`、interactive=`false`；
+  `magnet-active` 以 recipeAsset=`snakeoff/snake_magnet_aura` 关联规范化 aura recipe，并登记运行时 aura 损坏时的结构化 fallback：逻辑资源仍是已登记的
+  `magnet-status-icon`，placement=`over-head`，不得另造 `magnet-status-icon-over-head` 资源名。
+- [ ] 重封 presentation identity：`self` 只启用 `fine-white` outline 且 arrow=`none`；`otherHuman` 只保留文字名字；
+  `ai` 也只保留文字名字且 arrow/outline=`none`。自机选择由本地 View 身份决定，不新增共享皮肤字段或 wire 字段。
+- [ ] 为 `collect-magnet` 登记 `snake_sfx_collect_magnet`、资源 SHA、`sfxOn` 和有界单实例/并发策略，
+  missing=`silent`；为持续态另记 `magnet-active-loop=none/silent`，禁止创建或猜测循环音资源。
+- [ ] 将历史无该字段的 envelope 按迁移规则解释为隐式 `presentationVersion=1`，再生成显式
+  `presentationVersion=2`，重算并生成新的
+  `CLIENT_SNAKE_PRESENTATION_HASH`；以固定断言保证 `PUBLIC_SNAKE_SKIN_CATALOG_HASH`、
+  `SERVER_SNAKE_SKIN_BUSINESS_HASH` 和全部皮肤 `contentVersion` 字节级保持既有值。
+- [ ] 更新 converter fixture、catalog validator、资源 inventory、provenance、SHA256SUMS、validation report、
+  execution record 与 evidence README；扩展前数字/hash 只保留为带 commit 的历史基线，不覆盖成新结果。
+- [ ] 只改手写真源并经标准生成/sync 动线物化结果；磁铁不新增 shared 皮肤身份、不创建 cosmetic feature，
+  gameplay/wire 由 S2 实现。Creator 3.8.8 的 aura 混合、层级和真机观感终验仍明确交给 S5。
+
+**产物**
+
+- 仓内可重放的磁铁 atlas 输入、aura recipe，以及世界纹理、五个 aura 纹理、拾取音频、生成 recipe
+  共 8 个运行时资源文件和仓库自有 `.meta`。
+- `presentationVersion=2` 的客户端表现目录，以及 world frame、被动 icon alias、aura 和音频的单一解析入口。
+- 更新后的来源/授权/SHA 台账、完整性报告和真实 `CLIENT_SNAKE_PRESENTATION_HASH`；公共/业务 hash 不变证据。
+
+**验证**
+
+- `magnet` 恰好解析到 `10001`，rect 恰好 `[346,256,84,92]`、displaySize 恰好 `70` 且位于 `468×769`
+  texture 内；额外/缺失 world entry、手改 rect、错误尺寸和 frame 越界分别稳定失败。
+- `magnet-status-icon` 与 `magnet` 的 textureAsset/frame 规范化值完全相同且只有一个物理资源；复制字节、别名指向
+  其他 frame、`interactive=true` 或把它登记进主动按钮槽均使测试失败。
+- `magnet-active.recipeAsset` 恒为 `snakeoff/snake_magnet_aura`，解析的 recipe 精确引用五个冻结逻辑纹理，
+  每个目标字节 hash 与来源/台账相符；缺依赖、未知组件、fallback 自环或
+  复制旧 UUID 均 fail-fast。运行时部署损坏 fixture 只允许 aura 回退头顶 icon，不允许生成不可见 world item。
+- identity 目录只允许自机细白轮廓和 AI 文字名字；旧 human arrow、AI outline、AI avatar 任一重新可达都使测试失败，
+  并证明选择自机轮廓不改变皮肤 tint、公共目录或 wire。
+- `collect-magnet` 只解析到已登记 `eat_tool` 字节，重复触发遵守配置的有界单实例/并发策略；持续 8 秒不触发循环音，
+  `sfxOn=false` 时不播放但不影响资源目录初始化。
+- 相同输入连续生成及乱序输入的输出字节与新 `CLIENT_SNAKE_PRESENTATION_HASH` 相同；删除/修改任一磁铁
+  frame、aura recipe/纹理或音频时 freshness/hash 检查失败。
+- `presentationVersion` 恰好为 `2`，新 `CLIENT_SNAKE_PRESENTATION_HASH` 与扩展前值不同；
+  `PUBLIC_SNAKE_SKIN_CATALOG_HASH`、`SERVER_SNAKE_SKIN_BUSINESS_HASH` 和 16 个 `contentVersion=1` 与扩展前
+  基线严格相同。
+- 移走或禁止访问外部来源归档后，`node tools/snake-s1-assets/cli.mjs --check`、转换器测试、client catalog 测试、
+  `npm run typecheck`、`npm run test:client`、`npm run verify:sync` 与 `npm run verify:inventory` 仍通过；实际命令、
+  suite 数和 exit code 原样写回 evidence，未运行项不得伪造。
+
 ---
 
 ## 4. 退出条件
@@ -677,7 +836,8 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
 以下条件必须全部满足，S1 才能标记为 `[已完成]`：
 
 - [x] 16 个冻结 internal skin ID 均有完整来源映射、PNG、atlas/body config、规范化 entry 和预览。
-- [x] 所有资源逐文件具备源路径、逻辑名、SHA-256、授权、目标路径、转换、`.meta` 状态和合法状态值。
+- [x] S1-01～S1-11 既有资源逐文件具备源路径、逻辑名、SHA-256、授权、目标路径、转换、`.meta` 状态和
+  合法状态值。
 - [x] 16 套均为 active、均进入公共目录、`playerUsable=true`、初始 `contentVersion=1` 并按数字 ID 升序；
   唯一默认皮肤为 1。
 - [x] `aiEligible=true` 集合严格等于 `101,111,112,132,133,139,401,403,411,701`，其余 6 套明确为 false。
@@ -692,13 +852,24 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
   校验通过。
 - [x] Dot `1..7`、Star、两类残骸、墙块、背景/网格主题和目标音效/FX 的资源或显式 `none` 策略均进入
   presentation catalog。
+- [ ] 磁铁 `10001` world frame 以 rect `[346,256,84,92]`、displaySize `70` 进入表现目录；
+  `magnet-status-icon` 是同帧、同纹理、无复制字节的被动逻辑别名，且不占主动按钮槽。
+- [ ] `SnakeMagnet` 五个 aura 纹理与规范化 Cocos 3 recipe、`collect-magnet/eat_tool` 音频及持续态
+  `none/silent` 均完成来源/SHA/授权/资源/fallback 校验，外部归档不可访问时仍可重生。
+- [ ] presentation identity 已收敛为自机细白轮廓、AI 仅文字名字；旧自机箭头、AI 轮廓/头像不可达，且该投影
+  不进入公共皮肤身份、业务目录或 wire。
 - [x] 个人结果固定 `none/silent`，`time_over` 不可从目标 `totalTime=0` 事件映射触发。
-- [x] 三类 hash 各自稳定、三层 `publicCatalogHash` 相同；公共 hash mismatch 时外观目录相关经济写
+- [x] S1-01～S1-11 扩展前三类 hash 各自稳定、三层 `publicCatalogHash` 相同；公共 hash mismatch 时外观目录相关经济写
   fail-closed、战斗 fallback 的测试通过，异构业务/表现 hash 不做相等比较。
+- [ ] 表现目录显式升级到 `presentationVersion=2` 并产出真实的新 `CLIENT_SNAKE_PRESENTATION_HASH`；
+  `PUBLIC_SNAKE_SKIN_CATALOG_HASH`、`SERVER_SNAKE_SKIN_BUSINESS_HASH` 与 16 个皮肤 `contentVersion=1`
+  均与扩展前基线严格相同。
 - [x] 16 套统一预览/contact sheet、技术问题关闭记录和 S3 内容审阅包完成；名称保持
   `source|technical-draft`，稀有度/获取方式保持 `draft|unavailable` 且 `value:null`，不按 ID 猜测，也不作为
   S1 退出门。
-- [x] 所有 codegen/sync/typecheck/test/verify 按实际改动运行并留存原始输出；生成 diff 已审阅。
+- [x] S1-01～S1-11 的 codegen/sync/typecheck/test/verify 已按实际改动运行并留存原始输出；生成 diff 已审阅。
+- [ ] S1-12 的 converter/catalog/hash/inventory/sync/typecheck/test/verify 已按实际改动运行并留存原始输出；
+  生成 diff 已审阅且未伪造未运行结果。
 - [x] Creator 尚未执行的资源/UUID/pivot/混合确认明确留给 S5，不能登记为已通过。
 
 ---
@@ -712,7 +883,7 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
 | 根据文件名或 ID 合并素材 | 皮肤身份错配、历史所有权不可迁移 | 只按源 catalog 和 SHA 证据映射；字节去重仍保留逻辑别名 |
 | 缺授权资源进入发布目录 | 发布风险或后续返工 | `待授权，不得引入` fail-closed；使用已批准 fallback，不用“同机可见”补证 |
 | 复制旧 `.meta`/UUID/import cache | Cocos 资源冲突或跨工程幽灵引用 | 只复制/转换源字节，新建目标 `.meta`；S5 用 Creator 重导入确认 |
-| 资源和 catalog hash 漂移 | 白图、错皮肤、外观资产争议 | 三类规范化 hash 与 freshness 门禁；公共 hash 不符时外观经济禁写，战斗回退皮肤 1 |
+| 皮肤资源和 catalog hash 漂移 | 白图、错皮肤、外观资产争议 | 三类规范化 hash 与 freshness 门禁；公共 hash 不符时外观经济禁写，只有皮肤解析按规则回退皮肤 1；磁铁按 world/aura/audio 分型处置 |
 | 把异构业务/表现 hash 直接比较 | 永久 mismatch 或错误开启经济写 | 跨端只比较同构 `publicCatalogHash`；其余 hash 只守本层 freshness/审计 |
 | fallback 缺失或成环 | 加载失败递归、无法开局 | 皮肤 1 以 `null` 作为唯一终点，其余 15 套直达 1；validator 拒绝其他形状 |
 | AI 皮肤池漂移或消费玩法 RNG | AI 外观偏离来源，新增皮肤改变对局轨迹 | 精确 10-ID 集合门禁；S2 使用独立 `snake.ai.skin` RNG，目录仅提供候选 |
@@ -721,8 +892,12 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
 | 合并 normal/boost 或伪造 tail | 加速动画、411/701 多帧或 403 尾部错误 | 双 profile、显式继承和可选 tail；以已知结构 fixture 守门 |
 | 把 retired 当作损坏资源 | 既有所有者换装或显示被错误改写 | retired 只停新增获取，资源完整时继续解析自身；损坏才运行时 fallback |
 | 常规构建依赖开发机绝对路径 | CI/他机无法重生目录 | 转换输入和 manifest 入仓；绝对路径仅用于显式 import/refresh 与台账审计 |
-| 真人/AI tint 改写原皮颜色 | 与 golden 不一致且身份提示依赖颜色 | catalog 默认白 tint；身份提示作为独立轮廓/箭头/名牌资源 |
+| 真人/AI tint 改写原皮颜色，或旧箭头/AI 轮廓重新可达 | 与 golden 和冻结身份口径不一致 | catalog 默认白 tint；仅本机自机选择细白轮廓，AI 只显示文字名字，validator 拒绝旧表现分支 |
 | 每个食物独立 Sprite/material | 1030 食物导致节点和 draw call 失控 | S1 按 atlas/material 批次组织；不满足批渲染的目录不得交给 S2 |
+| S0 目标配置保留磁铁但 S1 未交付表现目录 | S2 生成不可见道具或临时解析原作资源 | S1-12 成为 S2 强前置；world/icon/aura/audio 全部进入仓内 catalog、SHA 和 freshness 门禁 |
+| 把磁铁被动状态 icon 做成主动按钮 | 四槽语义与“首发仅加速”口径漂移 | icon 固定 `passive-indicator`、`interactive=false`，validator 拒绝主动槽登记 |
+| 复制旧 `SnakeMagnet` prefab、UUID 或 `.meta` | Cocos 2/3 结构不兼容、资源身份冲突 | 只提取五个纹理与规范化 recipe，在 Cocos 3 重建并由 S5 终验 |
+| 磁铁扩展误改公共/业务 hash | 无关外观经济被错误 fail-closed 或皮肤版本漂移 | 只提升 `presentationVersion` 和重算客户端表现 hash；公共/业务 hash 与皮肤版本设固定不变断言 |
 | 把 `time_over` 音效接入 Endless | 暗示不存在的限时终局 | 明确标为历史/未使用；事件映射测试不可达 |
 | 提前写死名称/价格/稀有度 | S3 被未经评审的内容决策绑架 | S1 使用 source/technical-draft/unavailable；S1 后、S3-01 前完成内容审阅 |
 | 手改 generated 或同步镜像 | 后续 codegen/sync 覆盖、真源漂移 | 只改手写真源；发现镜像单独 diff 时回退该 diff 并从标准动线重生 |
@@ -746,12 +921,13 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
 | S1-09 | [已完成] | `d18846a` | 16/16 preview；normal/boost 技术 contact sheet 人工检查通过、阻塞 0 | [预览总览](evidence/s1/contact-sheet.png) · [技术总览](evidence/s1/technical-contact-sheet.png) · [S3 审阅包](evidence/s1/content-review-package.json) | 名称仍为 technical-draft，产品名/稀有度/获取/价格未冒充审批 |
 | S1-10 | [已完成] | `d18846a` | repo-only freshness + shared/server/client 正反 validator/hash/fallback tests | [验证报告](evidence/s1/validation-report.json) · [三类 hash](evidence/s1/catalog-hashes.json) | 只比较同构公共 hash；业务/表现 hash 独立；构建损坏 fail-fast，部署损坏才 fallback |
 | S1-11 | [已完成] | `d18846a` | `sync:shared`、`sync:client`、`typecheck`、`test:client`、server test、`verify:sync`、`verify:inventory` 均 exit 0 | [执行记录](evidence/s1/execution-record.md) · [证据入口](evidence/s1/README.md) | gameplay schema 与 protocol 未改，故 gameplay codegen/fingerprint 重钉不适用；Creator 终验留 S5 |
+| S1-12 | [已拍板·待实施] | — | 待执行；不得预填 hash、suite 数或 exit code | 待更新 `manifest/provenance/SHA256SUMS/catalog-hashes/validation-report/execution-record` | 补齐 magnet world/icon/aura/audio；完成后才解除 S2 前置门 |
 
 阶段汇总：
 
 | 阶段 | 状态 | commit | 自动验证 | Creator/视觉证据 | 备注 |
 |---|---|---|---|---|---|
-| S1 | [已完成] | `d18846a` | converter 8/8；S1 server 5/5；client catalog 8/8；全量 typecheck/test/sync/inventory 通过 | 16 张单图 + 两张 contact sheet 已人工检查；Creator 3.8.8 导入/混合/UUID/pivot 终验明确留 S5 | S2/S3 可分别消费客户端表现/服务端业务骨架；S3-01 必须先完成内容审批 |
+| S1 | [已拍板·待实施] | 既有 `d18846a`；S1-12 待提交 | S1-01～11 的 converter 8/8、server 5/5、client catalog 8/8 与全量验证是扩展前历史证据；S1-12 未运行 | 16 张皮肤单图 + 两张 contact sheet 已人工检查；磁铁 aura 的 Creator 3.8.8 混合/层级终验留 S5 | S2 必须等待 S1-12 闭合；S3-01 仍必须先完成内容审批 |
 
 ---
 

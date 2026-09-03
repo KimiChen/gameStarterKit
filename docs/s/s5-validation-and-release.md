@@ -6,7 +6,7 @@
 >
 > **预计：2–3 人日**
 >
-> **依赖：S0～S4 的自动化、真栈和非 Creator 退出条件均已满足；前序阶段明确移交的 Creator-only 用例可在 S5 收口，除此之外不得留缺口。`onlineCoinRelive5V1` 在本阶段最终放行前仍保持关闭。**
+> **依赖：进入 S5 前，S0～S4 的自动化、真栈和非 Creator 退出条件必须全部满足；前序阶段明确移交的 Creator-only 用例可在 S5 收口，除此之外不得留缺口。当前 S1-12 与 S2～S4 尚未完成，`onlineCoinRelive5V1` 在本阶段最终放行前仍保持关闭。**
 
 ## 1. 目标与非目标
 
@@ -24,13 +24,14 @@ Classic、TimeLimit、真人 40 tick 自动复活或客户端扣款。若发现�
 
 | 层 | 冻结 ID | 不可漂移的核心语义 |
 |---|---|---|
-| 战场 | `newEndlessPortraitV2Map4096` | 来源快照 4896²，目标只覆盖为 4096²；世界单位不整体缩放 |
+| 战场 | `newEndlessPortraitV2Map4096` | 与 S0 快照一致：来源 4896²、目标只覆盖为 4096²、世界单位不整体缩放，并保留来源磁铁前三波；不承载后续循环 gate |
 | 生命周期 | `sourceEndlessTotalTime0` | `totalTime=0`、`matchDurationTicks=0`、`hasDeadline=false`、无有效 `endTick` |
 | 复活流程 | `sourceEndlessReliveFlow` | 真人限时选择且无自动复活；AI 约 40 tick 独立重生 |
 | 首发复活策略 | `onlineCoinRelive5V1` | 五档 `100/200/300/300/300` 金币、100 tick 选择窗；Feed B 表是冻结样例而非线上恒定默认 |
-| 联机适配 | `onlineEndlessDropInV2` | 3 秒准备、最多 8 真人、稳定态 17 蛇、Playing 可入、个人 run 结算、空房回收 |
+| 联机适配 | `onlineEndlessDropInV2` | 稳定 ID、层内 `version: 2`：3 秒准备、最多 8 真人、稳定态 17 蛇、Playing 可入、个人 run 结算、空房回收，以及 Star/磁铁 20 Hz 确定性移动与后续循环 gate |
 
-发布候选还必须冻结 catalog/presentation、gameplay wire/mode、relive policy、reward policy、evidence schema、
+另外四个配置层的 version/hash 必须与 S0 相同；联机适配层及组合 hash 必须采用 S2 实际生成的新值，禁止把
+S0 历史组合 hash `2319d173…f87e2` 当作候选目标。发布候选还必须冻结 catalog/presentation、gameplay wire/mode、relive policy、reward policy、evidence schema、
 数据库 migration、协议 fingerprint 和客户端资源版本。任一 hash/version 对不上，不得通过运行时降级改变玩法
 语义；应停止放量并回滚到上一套完整兼容构建。
 
@@ -76,29 +77,29 @@ npm run test:faults:int
 - [ ] **动作：** 运行 S5-VIS 矩阵：固定视口、实体位置和 RNG seed，比对旋转后的原作 world golden、目标边界、
   数量/尺寸/颜色、皮肤、AI、相机/身体缩放和批渲染性能。
 - **产物：** golden/diff、fixture 输出、catalog/atlas 校验、节点/draw-call/帧耗证据和差异说明。
-- **验证：** S5-VIS-01～09 全部通过；任何人工阈值豁免必须退回 S0/S1/S2 形成新冻结版本，不能在 S5 口头放行。
+- **验证：** S5-VIS-01～10 全部通过；任何人工阈值豁免必须退回 S0/S1/S2 形成新冻结版本，不能在 S5 口头放行。
 
 ### S5-05：执行操作区与多指输入验收
 
-- [ ] **动作：** 在默认/左手模式、不同 Safe Area 和触控取消场景运行 S5-IN 矩阵，自动断言节点位置、可见尺寸、
-  圆形命中、pointer owner 与 boost 生命周期。
+- [ ] **动作：** 在默认右手/左手模式、不同 Safe Area 和触控取消场景运行 S5-IN 矩阵，自动断言节点位置、
+  可见尺寸、圆形命中、pointer owner、boost 生命周期及仅设备本地的操作习惯持久化。
 - **产物：** 输入 fixture、事件轨迹、布局截图和旧命中规则不存在的静态/行为证据。
-- **验证：** S5-IN-01～06 全部通过；一指转向、另一指持续加速、第三指点击辅助入口互不抢占。
+- **验证：** S5-IN-01～07 全部通过；一指转向、另一指持续加速、第三指点击辅助入口互不抢占。
 
 ### S5-06：执行无尽生命周期、wire 容量与重连验收
 
 - [ ] **动作：** 运行 S5-NET 矩阵，覆盖 1800/1801 tick、房级/个人 deadline 分型、五层 meta/hash、17 蛇与
-  1030 食物、5186/88162 路径点、chunk/delta 校验、旧客户端拒绝和重连恢复；记录候选实际 modeVersion 及其
+  1030 食物、磁铁波次/效果、5186/88162 路径点、chunk/delta 校验、旧客户端拒绝和重连恢复；记录候选实际 modeVersion 及其
   逐版本兼容矩阵，不以阶段编号推测版本号。
 - **产物：** world/wire fixture、首包与 delta 抓包、checksum/重取日志、版本拒绝证据和内存水位报告。
-- **验证：** S5-NET-01～09 全部通过；合法 V2 世界不被旧 8/315/512 上限拒绝或静默截断。
+- **验证：** S5-NET-01～10 全部通过；合法 V2 世界不被旧 8/315/512 上限拒绝或静默截断。
 
 ### S5-07：执行金币复活真栈故障验收
 
 - [ ] **动作：** 运行 S5-REL 矩阵，对 offer、decision、spawn、charge、apply、首个 provisional tick、activated、
   refund、owner lease、缓存失效和所有终局竞争逐点 kill/restart/replay。
 - **产物：** 每个注入点的 decision/receipt/run/ledger/balance 最终态、恢复器日志和客户端表现记录。
-- **验证：** S5-REL-01～12 全部通过；不吞币、不双扣、不重复复活、不免费复活，退款未确认时不伪造终局。
+- **验证：** S5-REL-01～13 全部通过；不吞币、不双扣、不重复复活、不免费复活，退款未确认时不伪造终局。
 
 ### S5-08：执行衣柜、权威装备与可靠奖励验收
 
@@ -148,12 +149,13 @@ npm run test:faults:int
 | [ ] S5-VIS-01 | 固定实体/seed 在 `750 × 1624` 下把原作横版世界层正交旋转 90° 后，与目标重合区按 1:1 世界单位叠图；不得乘 `4096/4896` | 原图、目标图、diff；原作外围每边 400 单位排除说明和独立 4096² 边界 fixture |
 | [ ] S5-VIS-02 | 同时保留来源 `4896 × 4896` 快照与目标 `4096 × 4096`；稳定态恰有 1000 Dot + 30 Star，不回落 Classic 300 + 15 | 配置 hash、实体计数断言 |
 | [ ] S5-VIS-03 | 视觉网格间距 32 世界单位、地图边距 16；背景/明暗网格/边界/外围色取自原作序列化数据，不是肉眼近似；顶部 Safe Area 内排行榜/状态 HUD 不遮挡战场 | 颜色提取 fixture、像素采样、HUD 布局值和截图 |
-| [ ] S5-VIS-04 | Dot/Star 显示尺寸分别为 16/42，七种 Dot 帧均可出现；Star 移动、变向和撞边反弹由服务端确定 | 固定 seed 分布、尺寸和轨迹测试 |
-| [ ] S5-VIS-05 | 每条蛇的 head/body/tail/animation 始终来自同一稳定 `skinId`；原皮白 tint，AI 不统一灰化，自机用非换色提示 | 16 皮肤动态预览、同局 AI 截图 |
+| [ ] S5-VIS-04 | Dot/Star 显示尺寸分别为 16/42，七种 Dot 帧均可出现；Star/磁铁权威速度为 `320/3 unit/s`，按 milli/micro-unit 余数产生 `5.333/5.333/5.334` 步长。motion RNG 由 matchSeed+kind+entityId 命名子流派生：出生/计划变向先抽 `[0,360)` 整数度方向、再抽闭区间 `34..67 tick`；反射不重抽方向、只抽一次 hold，计划变向与反射同 tick 时则先消费方向+hold、再消费反射 hold。remaining=hold，未撞边移动后递减；撞边 tick 的镜像反射属于上一段候选移动，不计入新 hold，tick 末保持 remaining=hold，新 hold 从下一 tick 起恰驱动 34/67 次完整移动，不产生 35/68。Star 半径 21、磁铁半径 35 的反弹、角落及同 tick draw order 不依赖客户端帧率 | 固定 seed 分布、子流名/draw order、34/67 边界、尺寸、余数状态、逐 tick 长驻轨迹和四边/角落反弹测试 |
+| [ ] S5-VIS-05 | 每条蛇的 head/body/tail/animation 始终来自同一稳定 `skinId`；原皮白 tint，AI 不统一灰化，自机用细白轮廓、AI 用名字提示 | 16 皮肤动态预览、同局 AI 截图 |
 | [ ] S5-VIS-06 | 单真人时 16 AI/共 17 蛇；2～8 真人仅替换 aiLevel 401，满 8 真人仍 9 AI；86 假榜无世界实体、碰撞或奖励资格 | roster/displayRank/world 三模型断言 |
 | [ ] S5-VIS-07 | 出生长度 80；相机 `1.3→0.6@100000`、身体 `1.0→2.8@100000`、蛇头中心跟随、地图外背景和路径边界向量全部匹配 | 长度边界 fixture、golden/轨迹日志 |
-| [ ] S5-VIS-08 | 未知 ID、资源加载失败或非法 rect 回退皮肤 1，不阻塞战斗；权威装备不被客户端 fallback 改写 | 缺资源注入、受控诊断和账号快照 |
+| [ ] S5-VIS-08 | 未知皮肤 ID、皮肤资源加载失败或皮肤 rect 非法时回退皮肤 1，不阻塞战斗；权威装备不被客户端 fallback 改写 | 缺皮肤资源注入、受控诊断和账号快照 |
 | [ ] S5-VIS-09 | 1030 常驻食物走同 atlas/material 批量 mesh，不创建 1030 Sprite 节点/draw call；皮肤 RNG 不消费移动/出生/食物/碰撞随机流 | 节点/draw-call/帧耗采样；增删皮肤前后玩法轨迹一致 |
+| [ ] S5-VIS-10 | 磁铁 `10001` 的 frame、rect、显示尺寸、icon、aura 和拾取音频来自通过 S1-12 门禁的 presentation catalog；160 tick/8 秒权威持续时间只来自 gameplay configHash。required world frame 缺失拒绝 V2，aura-only 损坏退头顶 icon，音频缺失 silent，均不回退皮肤 1。自机为细白轮廓、AI 以名字识别，无额外箭头或 AI 轮廓 | 磁铁分型故障、资源/hash/rect 与 gameplay config 校验、拾取与效果录屏、自机/AI 对照截图 |
 
 ### 4.2 操作布局与触控
 
@@ -162,23 +164,25 @@ npm run test:faults:int
 | [ ] S5-IN-01 | `750 × 1624` 下摇杆中心 `(375,220)`、底盘 Ø220、帽约 Ø92、独立命中半径 155；最大位移钳制，抬起回正帽但保留最后合法方向 | 坐标/半径断言、输入轨迹 |
 | [ ] S5-IN-02 | 默认 S1 `(130,410)`/Ø88/命中56，S2 `(295,490)`/Ø104/64，S3 `(455,490)`/Ø104/64，S4 `(620,410)`/Ø144/88；命中区互不重叠且不侵入摇杆 | 节点树、圆形几何 fixture |
 | [ ] S5-IN-03 | `controlShiftY=max(0,safeBottom+161-220)` 整组上移；横向中心、弧形相对距离、尺寸和世界单位不变 | 至少两组 Safe Area 布局截图/数值 |
-| [ ] S5-IN-04 | 不可用槽位不渲染、不命中且不补位；默认/左手模式摇杆均 `x=375`，左手只把功能顺序镜像为 `[加速、护盾、主动道具、表情]` | 两种模式 slot/owner fixture |
+| [ ] S5-IN-04 | 不可用槽位不渲染、不命中且不补位；默认/左手模式摇杆均 `x=375`，左手把 S1～S4 功能顺序镜像为 `[加速、护盾、主动道具、表情]`。首发唯一开放的加速因此在右手 S4、左手 S1 可见，其他三个物理槽隐藏 | 两种模式 slot/owner fixture |
 | [ ] S5-IN-05 | pointer 按 S1→S2→S3→S4→摇杆优先级精确命中，一指一 owner 至 END/CANCEL；一指转向、另一指按住加速、第三指点辅助入口互不抢控 | 多指事件序列和最终 intent |
 | [ ] S5-IN-06 | END/CANCEL、失焦、死亡、断线、重连、场景切换、模态窗和 run 结束清空 owner/boost；实现中不存在“左半屏摇杆”或加速半径 200 | 自动回归、静态搜索和状态快照 |
+| [ ] S5-IN-07 | 全新设备状态默认右手；切换先写后用，只有设备本地写入成功才原子应用左/右手布局并跨场景/重启恢复，写入失败保持/回滚右手且不显示保存成功。退出或切换账号不上传、不覆盖；清除本地设置后回到右手。磁铁自动拾取且不占槽；首发右手只显示 S4 加速、左手只显示 S1 加速 | 本地存储成功/失败前后值、同帧布局、重启/换账号矩阵、受控诊断、slot 节点与命中证据 |
 
 ### 4.3 无尽生命周期、协议与容量
 
 | 检查 ID | 可执行断言 | 必留证据 |
 |---|---|---|
-| [ ] S5-NET-01 | meta 同时携带五层 ID/hash、`totalTime=0`、`matchDurationTicks=0`、`hasDeadline=false` 且无有效 `endTick`；客户端不显示 `0:00` | 建房/重连 meta 抓包和 HUD 截图 |
+| [ ] S5-NET-01 | meta 同时携带五层 ID/version/hash 与新组合 hash：前四层 version 1/hash 等于 S0，`onlineEndlessDropInV2` 为 version 2/新 hash，组合 hash 不等于 S0 历史值；同时有 `totalTime=0`、`matchDurationTicks=0`、`hasDeadline=false` 且无有效 `endTick`，客户端不显示 `0:00` | 建房/重连 meta 抓包、S0/S2 hash diff 和 HUD 截图 |
 | [ ] S5-NET-02 | 3 秒只用于首次准备；world 第 1800、1801 及后续 tick 正常推进；只有 `hasDeadline && tick >= endTick` 才可按时间 done，Snake 不从此调用 `context.settle()` | 定向 world/mode fixture |
 | [ ] S5-NET-03 | 房级无 deadline 不影响 `decisionDeadlineTick`；不存在临近房级 endTick 禁复活分支 | 100 tick 边界与无房级 deadline 组合测试 |
 | [ ] S5-NET-04 | `roomEpochId/state.matchId` 在开放 admission 前只生成一次，首人 auto-start 不覆盖；首个 OPEN run 已有稳定 epoch | 首人/后续 drop-in/重连生命周期日志 |
-| [ ] S5-NET-05 | wire 使用稳定 skin ID、food variant、wreck kind/variant/source；validator 不再限制 skin `0..15`；manifest 记录实际 modeVersion，任何新增语义都从当时版本递增且有兼容矩阵 | schema/validator 边界测试、版本矩阵和旧客户端拒绝 |
+| [ ] S5-NET-05 | wire 使用稳定 skin ID、food variant、wreck kind/variant/source；服务端准入/run/出站严格限制为公共 catalog 成员，客户端 wire 只验安全非负整数并把未知 ID 交 renderer 回退，两者都不使用 `0..15` 这类上界猜测。tool 必须满足 `envelopeTick < expireTick <= envelopeTick+400`；buff 必须满足 `envelopeTick < magnetUntilTick <= envelopeTick+160` 且只允许 active 真人或存活 AI，死亡、待重生与终局必须为 null。`ISnakeSnapshotTool.id` 在 roomEpoch 内唯一且不复用，每个实例的 `toolId` 恒为 `10001`；拾取 removal 与胜者 buff 在同一 seq 原子可见，真人胜出才同 seq 更新其 run `magnetCollected`，AI 胜出不写真人 run 计数。manifest 记录实际 modeVersion，新增语义从当时版本递增且有兼容矩阵 | schema/validator 分层、未知皮肤兼容回退、tool/buff 半开边界、真人/AI 胜者对照、到达时间反例、拆包/乱序拾取、entity ID 复用测试、版本矩阵和旧客户端拒绝 |
 | [ ] S5-NET-06 | 首包/重连可承载 17 蛇、1030 食物、单蛇 5186 点、全房理论上限 88162 点；不沿用 8/315/512 限制 | 最大容量 fixture 和内存/包大小证据 |
 | [ ] S5-NET-07 | baseline 按 `begin→ordered chunks→end(checksum)`；后续 delta 有序；缺块、重复、乱序或 checksum 失败会请求新 baseline | 丢包/乱序/重复注入日志 |
 | [ ] S5-NET-08 | `point_step_config` 完整保留 71 项；`80→52、300→200、3000→960、18900→1954、19200→1964、20100→1990、100000→5186`；`1240` 不作路径/长度上限 | 源数组 hash、边界向量 |
 | [ ] S5-NET-09 | world 集合删除同时清 participant、AI respawn、真人 relive/task、输入、游标和 finalized run；循环后水位回落 | churn 前后集合计数 |
+| [ ] S5-NET-10 | 磁铁在首次 Playing 后第 15/60/150 秒各无条件生成 10 个，即使无资格真人或真人全长 50000 也不例外；之后于 300/450……秒每 150 秒重复。后续波次只接受 active/deadPresentation/reliveOffering/pendingRelive/reliveSpawning/reliveCommitting/reliveReady 且长度 `<50000` 的真人 run；active（含断线宽限）读当前长度，其余六态读同一 deathSnapshot.length，preparing/cancelled/finalizing/finalized、AI 与假榜排除。trigger 在 fixed-step 开头读取上一 tick 提交快照；新磁铁当 tick 移动且可拾取，跳过不分配 tool entity ID、不耗位置/motion RNG且永不补发。单体 20 秒过期、拾取后效果 8 秒，真人/AI 均可拾取；基线/delta/重取保持位置、过期和 effect tick 一致 | 无条件前三波、资格/排除状态、49999→50000 同 tick、跳过前后 RNG、AI 对照、过期/拾取、baseline/delta/重连 fixture |
 
 ### 4.4 真人死亡与可靠金币复活
 
@@ -196,13 +200,14 @@ npm run test:faults:int
 | [ ] S5-REL-10 | systemFailed 若已扣费必须先退款；退款中保持 Finalizing 和可 claim receipt；charge/refund 后余额缓存失效，receipt.balanceAfter 仅用于本次响应 | 退款中 kill、缓存读回和 UI 文案 |
 | [ ] S5-REL-11 | AI 不进入真人 offer/扣费/档位，约 40 tick 后保持 AI skin 重生；仅符合源路径的 AI 死亡残骸按 `pow(deadSnakeScore,0.8)*2` 分摊、单个至少 3，cap 合并前后总值守恒 | 真人/AI 对照、定点边界与合并守恒 fixture |
 | [ ] S5-REL-12 | decision/receipt/ledger 按 uid、sId、roomEpochId、runId、deathSeq 隔离；跨区、错账号或错 epoch 的重放不能读取、扣除或恢复另一 run | 跨区/跨账号/跨 epoch 真栈注入 |
+| [ ] S5-REL-13 | `magnetCollected/starCollected` 是当前真人 run 的累计次数，AI 拾取不写这两个字段；death snapshot/apply/复活不丢失或重复，复活清除死亡前磁铁剩余 buff。存活断线期间绝对 `magnetUntilTick` 继续流逝，宽限重连只恢复剩余 tick，不刷新 8 秒 | 真人/AI 拾取对照、拾取→死亡→复活与拾取→断线→重连逐 tick 快照、客户端效果时长录屏 |
 
 ### 4.5 衣柜、装备、run 与奖励
 
 | 检查 ID | 可执行断言 | 必留证据 |
 |---|---|---|
 | [ ] S5-ECO-01 | 服务端准入忽略客户端 join skin，读取拥有/装备后在实体创建前持久锁存不可变 `skinIdAtRunStart/catalogVersionAtRunStart`；伪造未拥有皮肤不能进战场 | admission 请求、run/账号/实体快照 |
-| [ ] S5-ECO-02 | catalog hash 不一致时装备/解锁等经济写 fail closed；未知资源时战斗/预览回退皮肤 1 | mismatch 与缺资源注入 |
+| [ ] S5-ECO-02 | 皮肤 catalog hash 不一致时装备/解锁等经济写 fail closed；未知皮肤资源时战斗/预览回退皮肤 1，不把该规则套用到磁铁资源 | mismatch 与缺皮肤资源注入 |
 | [ ] S5-ECO-03 | equip/unlock 同/异 requestId、同 ID 异 payload、expectedVersion 冲突行为确定；碎片不足时所有字段零写入 | 并发前后 Bag/User/version 快照 |
 | [ ] S5-ECO-04 | 冷用户、thaw、跨区、退休皮肤有确定读取；默认隐式拥有；既有退休所有者仍可装备 | 用户矩阵和 snapshot |
 | [ ] S5-ECO-05 | run 中换装只影响下一新 run；真人复活、AI 重生和宽限重连保持当前 `skinIdAtRunStart/catalogVersionAtRunStart`，结算也不重读当前装备 | 连续两 run、中途换装和结算录像/日志 |
@@ -229,12 +234,12 @@ npm run test:faults:int
 | 检查 ID | 人工步骤 | 必留证据 |
 |---|---|---|
 | [ ] S5-CR-01 | 打开工程并等待资源导入完成，检查同步 `.meta`/UUID、动态包和 SpriteFrame rect 未丢失 | Creator 版本、导入日志、资源检查截图 |
-| [ ] S5-CR-02 | `750 × 1624` 预览固定 seed 战场，检查背景、网格、边界、食物、16 皮肤、AI、自机提示、相机和身体缩放；顶部 Safe Area 内显示排行榜/状态，首次 3 秒准备提示保持屏幕居中 | 战场 golden、准备期与 HUD 截图/录屏 |
-| [ ] S5-CR-03 | 在默认/左手与底部 Safe Area 场景测试摇杆、四槽、双/三指和全部取消路径 | 触控录屏、设备/模拟器信息 |
+| [ ] S5-CR-02 | `750 × 1624` 预览固定 seed 战场，检查背景、网格、边界、食物、Star 确定性轨迹、磁铁、16 皮肤、AI 名字、细白自机轮廓、相机和身体缩放；顶部 Safe Area 内显示排行榜/状态且不显示游玩时长，首次 3 秒准备提示保持屏幕居中 | 战场 golden、Star/磁铁轨迹、准备期与 HUD 截图/录屏 |
+| [ ] S5-CR-03 | 在默认右手/左手与底部 Safe Area 场景测试摇杆、四槽、双/三指和全部取消路径；重启验证左手偏好仅设备本地持久，并注入一次写入失败确认布局保持/回滚右手且不显示保存成功；磁铁不占操作槽 | 触控录屏、本地设置成功/失败前后值、诊断、设备/模拟器信息 |
 | [ ] S5-CR-04 | 打开衣柜，检查虚拟列表、动态 head/body/tail 预览、动画、rect/pivot、筛选、装备/解锁、冲突和 fallback | 衣柜截图/录屏 |
 | [ ] S5-CR-05 | 走完普通死亡、五档费用、复活窗的死亡原因/当前长度/分数/服务器倒计时、复活中、保护、放弃/超时/第六次/systemFailed退款中以及重连恢复；“结束本次”必须二次确认 | 状态序列录屏、倒计时抓包与服务端日志 |
-| [ ] S5-CR-06 | 验证个人 runResult、pending/applied/dead、断线重连和资源缺失；同房另一真人不进入结算页 | 双客户端证据、结果页截图 |
-| [ ] S5-CR-07 | 检查吃食物/残骸、击杀、死亡、退出结算和按钮音效遵守 `sfxOn`，且无 TimeLimit 到时提示；视觉插值不改变权威 tick/命中 | 开关前后录屏、事件与音频触发日志 |
+| [ ] S5-CR-06 | 验证个人 runResult、pending/applied/dead、断线重连和皮肤资源缺失；同房另一真人不进入结算页 | 双客户端证据、结果页截图 |
+| [ ] S5-CR-07 | 检查吃食物/残骸、`collect-magnet`、击杀、死亡和按钮音效遵守 `sfxOn`；个人 run 结果固定 `none/silent`，退出只有存在另行登记的独立事件时才验证其 `sfxOn`，否则也静默。磁铁持续 8 秒不播放循环音，且无 TimeLimit 到时提示；视觉插值不改变权威 tick/命中 | 开关前后录屏、个人结果/退出静默证据、磁铁拾取/持续期事件与音频触发日志 |
 
 ## 5. 跨阶段风险与发布回退矩阵
 
@@ -258,6 +263,7 @@ npm run test:faults:int
 | `runStartedTick` 相减、未确认 checkpoint 被承诺、AI/排名进入奖励 | S5-ECO-07～10、S5-OPS-06 | 隔离错误 settlement，按 SOP 修复/补领，不扩大错误发奖 |
 | 唯一皮肤用普通 Shop SKU 重复购买 | S3 明确未开放 purchase | 下线购买入口；S3 退出不受后续购买能力影响 |
 | 每食物一节点或皮肤 RNG 污染玩法 RNG | S5-VIS-09 | no-go；恢复批渲染/独立 seeded 子流 |
+| 磁铁波次/真人门槛漂移、占用操作槽，或 Star/磁铁使用客户端帧率推进 | S5-VIS-04/10、S5-IN-07、S5-NET-10 | no-go；退回 S1/S2 修正资源目录、权威 tick 与 wire |
 | 仍存在左半屏摇杆、半径 200 加速或 pointer 残留 | S5-IN-01～06 | no-go；退回 S2 输入实现 |
 | 手改生成物或镜像不一致 | S5-02、`verify:sync`/protected paths | 从真源重新生成，禁止提交手改镜像 |
 
@@ -281,7 +287,7 @@ npm run test:faults:int
 - [ ] 最终对外口径只描述已验证能力：
 
   > **竖版新版无尽 V2 战场（4096² 地图覆盖）+ 原作 `totalTime=0` 无尽生命周期 + 真人死亡限时选择复活 +
-  > AI 独立约 2 秒重生 + drop-in 联机适配 + 16 套原作皮肤 + 纯外观养成 + 服务端权威装备 +
+  > AI 独立约 2 秒重生 + 场内自动拾取磁铁 + drop-in 联机适配 + 16 套原作皮肤 + 纯外观养成 + 服务端权威装备 +
   > 可靠真人 run 奖励。**
 
 ## 7. 证据回写
