@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "evidenceVersion": "snake-s0-replication@1",
+  "evidenceDate": "2026-09-03",
+  "sourceCommit": "6367f65bf210d75ba39c0e48ecace5b30b538a06",
+  "targetBaselineCommit": "ecd75148efc3c355ab8dc2d36c98cd3395509c52",
+  "configId": "newEndlessPortraitV2Map4096TotalTime0",
+  "seed": 20260903,
+  "source": {
+    "world": { "width": 4896, "height": 4896 },
+    "viewport": { "width": 1624, "height": 750 },
+    "freshInstallBlackBackground": 0,
+    "frameRate": 60,
+    "requestedFrameRate": 59
+  },
+  "target": {
+    "world": { "width": 4096, "height": 4096 },
+    "viewport": { "width": 750, "height": 1624 },
+    "tickRate": 20
+  },
+  "presentation": {
+    "gridSpacing": 32,
+    "mapMargin": 16,
+    "light": {
+      "outside": [108, 36, 31, 255],
+      "map": [235, 236, 244, 255],
+      "grid": [205, 205, 214, 255],
+      "gridLineWidth": 1,
+      "boundary": { "mode": "colorDiscontinuity", "explicitStroke": false }
+    },
+    "dark": {
+      "outside": [0, 0, 0, 255],
+      "map": [36, 55, 107, 255],
+      "grid": [29, 44, 97, 255],
+      "gridLineWidth": 1,
+      "boundary": {
+        "mode": "explicitStroke",
+        "explicitStroke": true,
+        "color": [235, 79, 113, 255],
+        "lineWidth": 4
+      }
+    }
+  },
+  "portraitControls": {
+    "safeAreaExample": { "top": 54, "bottom": 34 },
+    "controlShiftFormula": "max(0, safeBottom + 161 - 220)",
+    "joystick": { "x": 375, "baseY": 220, "diameter": 220, "knobDiameter": 92, "hitRadius": 155 },
+    "buttons": [
+      { "id": "S1", "x": 130, "baseY": 410, "diameter": 88, "hitRadius": 56, "rightHand": "emoji", "leftHand": "boost" },
+      { "id": "S2", "x": 295, "baseY": 490, "diameter": 104, "hitRadius": 64, "rightHand": "active", "leftHand": "shield" },
+      { "id": "S3", "x": 455, "baseY": 490, "diameter": 104, "hitRadius": 64, "rightHand": "shield", "leftHand": "active" },
+      { "id": "S4", "x": 620, "baseY": 410, "diameter": 144, "hitRadius": 88, "rightHand": "boost", "leftHand": "emoji" }
+    ]
+  },
+  "approvedRules": {
+    "dotLength": 1,
+    "dotScore": 1,
+    "starLength": 10,
+    "starScore": 10,
+    "baseSpeedWorldUnitsPerSecond": 160,
+    "boostMultiplier": 2,
+    "turnDegreesPerTick": 9,
+    "firstActiveProtectionTicks": 30,
+    "reliveProtectionTicks": 60,
+    "humanDeathPresentationTicks": 4,
+    "aiRespawnTicks": 40,
+    "reliveDecisionTicks": 100,
+    "maxSuccessfulRelives": 5
+  },
+  "goldenSkinIds": [1, 2, 401, 403]
+}

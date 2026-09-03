@@ -1,0 +1,169 @@
+{
+  "aiWreckAssetPolicy": "AI wreck score is in-room gameplay value only and never a player asset/reward.",
+  "caseMatrix": [
+    {
+      "case": "eligible human death",
+      "ownerStage": "S2/S2R",
+      "personalRunResult": "pending until choice",
+      "source": "about 200ms then source choice UI",
+      "target": "4-tick presentation then authoritative 100-tick choice",
+      "worldContinues": true
+    },
+    {
+      "case": "successful human relive 1..5",
+      "ownerStage": "S2R",
+      "personalRunResult": "continues",
+      "source": "selected source channel restores fields and grants 3-second protection",
+      "target": "coin receipt applies once, same run resumes, 60-tick half-open protection",
+      "worldContinues": true
+    },
+    {
+      "case": "ineligible or death after five successful relives",
+      "ownerStage": "S2/S2R",
+      "personalRunResult": "final",
+      "source": "no next B-table entry",
+      "target": "no choice and no sixth price tier",
+      "worldContinues": true
+    },
+    {
+      "case": "human decline",
+      "ownerStage": "S2",
+      "personalRunResult": "final",
+      "source": "source local game over",
+      "target": "only that personal run becomes final",
+      "worldContinues": true
+    },
+    {
+      "case": "human choice timeout",
+      "ownerStage": "S2/S2R",
+      "personalRunResult": "final",
+      "source": "default source countdown is 5 seconds",
+      "target": "100 ticks at 20Hz, independent from room deadline",
+      "worldContinues": true
+    },
+    {
+      "case": "force/escape",
+      "ownerStage": "S2",
+      "personalRunResult": "final with explicit reason",
+      "source": "skips ordinary relive branch",
+      "target": "no relive offer",
+      "worldContinues": true
+    },
+    {
+      "case": "AI death",
+      "ownerStage": "S2",
+      "personalRunResult": "not applicable",
+      "source": "about 2000ms automatic relive and source wreck generation",
+      "target": "40-tick AI-only respawn; wreck score stays in-room",
+      "worldContinues": true
+    }
+  ],
+  "humanWreckPolicy": "Human death creates no collectible scoring wreck in the target.",
+  "priceTierRule": "The number of successful relives chooses the next tier; death count does not.",
+  "schemaVersion": 1,
+  "sourcePayReliveConfig": [
+    {
+      "ad_card": 1,
+      "coin_relive": 100,
+      "diamond": 10
+    },
+    {
+      "ad_card": 1,
+      "coin_relive": 200,
+      "diamond": 10
+    },
+    {
+      "ad_card": 2,
+      "coin_relive": 300,
+      "diamond": 20
+    },
+    {
+      "ad_card": 3,
+      "coin_relive": 300,
+      "diamond": 20
+    },
+    {
+      "ad_card": 4,
+      "coin_relive": 300,
+      "diamond": 30
+    }
+  ],
+  "sourceReliveConfigB": [
+    {
+      "ad_card": 1,
+      "coin_relive": 100,
+      "diamond": 0
+    },
+    {
+      "ad_card": 1,
+      "coin_relive": 200,
+      "diamond": 0
+    },
+    {
+      "ad_card": 2,
+      "coin_relive": 300,
+      "diamond": 0
+    },
+    {
+      "ad_card": 3,
+      "coin_relive": 300,
+      "diamond": 0
+    },
+    {
+      "ad_card": 4,
+      "coin_relive": 300,
+      "diamond": 0
+    }
+  ],
+  "targetCoinPolicy": {
+    "coinCosts": [
+      100,
+      200,
+      300,
+      300,
+      300
+    ],
+    "decisionSecondsAt20Hz": 5,
+    "decisionTicks": 100,
+    "id": "onlineCoinRelive5V1",
+    "maxSuccessfulRelives": 5,
+    "omittedChannels": [
+      "advertisement",
+      "share",
+      "ad-card",
+      "diamond",
+      "monthly-card",
+      "novice-free-relive",
+      "8/10-second-AB"
+    ],
+    "sourceEvidence": [
+      {
+        "adCard": 1,
+        "coinRelive": 100
+      },
+      {
+        "adCard": 1,
+        "coinRelive": 200
+      },
+      {
+        "adCard": 2,
+        "coinRelive": 300
+      },
+      {
+        "adCard": 3,
+        "coinRelive": 300
+      },
+      {
+        "adCard": 4,
+        "coinRelive": 300
+      }
+    ],
+    "sourceTable": "Feed endless_config.relive_config_b sample",
+    "version": 1
+  },
+  "targetDifferences": {
+    "ai": "40-tick automatic respawn; never enters coin/reward flow",
+    "human": "4-tick presentation then authoritative choice; no automatic 40-tick respawn",
+    "online": "choice and run state are per-human; other humans and world tick continue"
+  }
+}

@@ -1,0 +1,145 @@
+{
+  "approvedRules": {
+    "aiRespawnTicks": 40,
+    "baseSpeedWorldUnitsPerSecond": 160,
+    "boostMultiplier": 2,
+    "dotLength": 1,
+    "dotScore": 1,
+    "firstActiveProtectionTicks": 30,
+    "humanDeathPresentationTicks": 4,
+    "maxSuccessfulRelives": 5,
+    "reliveDecisionTicks": 100,
+    "reliveProtectionTicks": 60,
+    "starLength": 10,
+    "starScore": 10,
+    "turnDegreesPerTick": 9
+  },
+  "cameraAndBodyScale": [
+    {
+      "bodyScale": 1,
+      "cameraScale": 1.3,
+      "length": 80
+    },
+    {
+      "bodyScale": 1.0165732586068854,
+      "cameraScale": 1.2935548438751001,
+      "length": 1000
+    },
+    {
+      "bodyScale": 1.899279423538831,
+      "cameraScale": 0.9502802241793435,
+      "length": 50000
+    },
+    {
+      "bodyScale": 2.8,
+      "cameraScale": 0.6,
+      "length": 100000
+    }
+  ],
+  "decisionRecord": {
+    "approvedBy": "user",
+    "approvedDate": "2026-09-03",
+    "rollbackBaseline": "current snake@1 values: star 5/5, speed 160, boost 1.6, turn 9 degrees/tick, entity-creation-based protection 30; relive release flag remains off",
+    "rulesetVersion": "newEndlessPortraitV2Ruleset@1"
+  },
+  "firstActiveProtection": [
+    {
+      "protected": true,
+      "tick": 700
+    },
+    {
+      "protected": true,
+      "tick": 729
+    },
+    {
+      "protected": false,
+      "tick": 730
+    }
+  ],
+  "food": {
+    "dot": {
+      "length": 1,
+      "score": 1
+    },
+    "star": {
+      "length": 10,
+      "score": 10
+    }
+  },
+  "motion": {
+    "baseSpeedWorldUnitsPerSecond": 160,
+    "boostDistancePerTick": 16,
+    "boostMultiplier": 2,
+    "normalDistancePerTick": 8,
+    "provenance": {
+      "baseSpeed": "project adaptation; deliberately not converted from source unit/frame",
+      "boost": "source unitless ratio",
+      "turn": "project adaptation; deliberately not converted from source degree/frame"
+    },
+    "tickRate": 20,
+    "turnDegreesPerTick": 9,
+    "turnVectors": [
+      {
+        "from": 10,
+        "resultAfterOneTick": 19,
+        "target": 30
+      },
+      {
+        "from": 10,
+        "resultAfterOneTick": 17,
+        "target": 17
+      },
+      {
+        "from": 358,
+        "path": "shortest arc across 360/0",
+        "resultAfterOneTick": 4,
+        "target": 4
+      },
+      {
+        "from": 350,
+        "path": "shortest arc across 360/0 capped at 9",
+        "resultAfterOneTick": 359,
+        "target": 10
+      }
+    ]
+  },
+  "protectionCollisionPolicy": {
+    "firstActiveAndReliveDurationsUseSeparateFields": true,
+    "snakeToSnakeCauseAndReceiveBlocked": true,
+    "wallStillLethal": true
+  },
+  "reliveProtection": [
+    {
+      "protected": true,
+      "tick": 700
+    },
+    {
+      "protected": true,
+      "tick": 759
+    },
+    {
+      "protected": false,
+      "tick": 760
+    }
+  ],
+  "wreck": [
+    {
+      "bodyCount": 10,
+      "perWreckScore": 6.660425659214987,
+      "score": 80,
+      "totalDeathWreckScore": 66.60425659214987
+    },
+    {
+      "bodyCount": 30,
+      "perWreckScore": 16.745909543397207,
+      "score": 1000,
+      "totalDeathWreckScore": 502.3772863019162
+    },
+    {
+      "bodyCount": 100,
+      "perWreckScore": 114.86983549970356,
+      "score": 50000,
+      "totalDeathWreckScore": 11486.983549970355
+    }
+  ]
+}

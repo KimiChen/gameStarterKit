@@ -1,0 +1,933 @@
+{
+  "changedFields": [
+    {
+      "path": "map_height",
+      "source": 4896,
+      "target": 4096
+    },
+    {
+      "path": "map_width",
+      "source": 4896,
+      "target": 4096
+    }
+  ],
+  "configId": "newEndlessPortraitV2Map4096TotalTime0",
+  "fieldComparison": [
+    {
+      "field": "body_scale_snake_max_length",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": 100000,
+      "target": 100000,
+      "type": "number"
+    },
+    {
+      "field": "body_scale_snake_max_point_step",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": 1240,
+      "target": 1240,
+      "type": "number"
+    },
+    {
+      "field": "camera_init_scale",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": 1.3,
+      "target": 1.3,
+      "type": "number"
+    },
+    {
+      "field": "camera_min_scale",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": 0.6,
+      "target": 0.6,
+      "type": "number"
+    },
+    {
+      "field": "camera_scale_snake_max_length",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": 100000,
+      "target": 100000,
+      "type": "number"
+    },
+    {
+      "field": "camera_scale_snake_max_point_step",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": 1240,
+      "target": 1240,
+      "type": "number"
+    },
+    {
+      "field": "endless_ai_count_config_list",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": [
+        {
+          "count": 8,
+          "level": 401
+        },
+        {
+          "count": 4,
+          "level": 402
+        },
+        {
+          "count": 2,
+          "level": 403
+        },
+        {
+          "count": 2,
+          "level": 404
+        }
+      ],
+      "target": [
+        {
+          "count": 8,
+          "level": 401
+        },
+        {
+          "count": 4,
+          "level": 402
+        },
+        {
+          "count": 2,
+          "level": 403
+        },
+        {
+          "count": 2,
+          "level": 404
+        }
+      ],
+      "type": "array"
+    },
+    {
+      "field": "endless_dot_count",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": 1000,
+      "target": 1000,
+      "type": "number"
+    },
+    {
+      "field": "endless_snake_max_length",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": 100000,
+      "target": 100000,
+      "type": "number"
+    },
+    {
+      "field": "endless_snake_max_point_step",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": 1240,
+      "target": 1240,
+      "type": "number"
+    },
+    {
+      "field": "endless_snake_min_length",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": 80,
+      "target": 80,
+      "type": "number"
+    },
+    {
+      "field": "endless_star_count",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": 30,
+      "target": 30,
+      "type": "number"
+    },
+    {
+      "field": "endless_step_length",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": 300,
+      "target": 300,
+      "type": "number"
+    },
+    {
+      "field": "endless_step_start",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": 3,
+      "target": 3,
+      "type": "number"
+    },
+    {
+      "field": "endless_tool_config",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": [
+        {
+          "appear_time": 15,
+          "tool_list": [
+            {
+              "ai_effect": 1,
+              "count": 10,
+              "duration": 8,
+              "exist_time": 20,
+              "id": 10001,
+              "name": "磁铁"
+            }
+          ]
+        },
+        {
+          "appear_time": 60,
+          "tool_list": [
+            {
+              "ai_effect": 1,
+              "count": 10,
+              "duration": 8,
+              "exist_time": 20,
+              "id": 10001,
+              "name": "磁铁"
+            }
+          ]
+        },
+        {
+          "appear_time": 150,
+          "tool_list": [
+            {
+              "ai_effect": 1,
+              "count": 10,
+              "duration": 8,
+              "exist_time": 20,
+              "id": 10001,
+              "name": "磁铁"
+            }
+          ]
+        }
+      ],
+      "target": [
+        {
+          "appear_time": 15,
+          "tool_list": [
+            {
+              "ai_effect": 1,
+              "count": 10,
+              "duration": 8,
+              "exist_time": 20,
+              "id": 10001,
+              "name": "磁铁"
+            }
+          ]
+        },
+        {
+          "appear_time": 60,
+          "tool_list": [
+            {
+              "ai_effect": 1,
+              "count": 10,
+              "duration": 8,
+              "exist_time": 20,
+              "id": 10001,
+              "name": "磁铁"
+            }
+          ]
+        },
+        {
+          "appear_time": 150,
+          "tool_list": [
+            {
+              "ai_effect": 1,
+              "count": 10,
+              "duration": 8,
+              "exist_time": 20,
+              "id": 10001,
+              "name": "磁铁"
+            }
+          ]
+        }
+      ],
+      "type": "array"
+    },
+    {
+      "field": "endless_wreck_score_rate_a",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": 0.8,
+      "target": 0.8,
+      "type": "number"
+    },
+    {
+      "field": "endless_wreck_score_rate_b",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": 2,
+      "target": 2,
+      "type": "number"
+    },
+    {
+      "field": "fake_snake_count",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": 86,
+      "target": 86,
+      "type": "number"
+    },
+    {
+      "field": "fake_snake_inc_score_end",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": 100,
+      "target": 100,
+      "type": "number"
+    },
+    {
+      "field": "fake_snake_inc_score_start",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": 10,
+      "target": 10,
+      "type": "number"
+    },
+    {
+      "field": "fake_snake_init_score_end",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": 50000,
+      "target": 50000,
+      "type": "number"
+    },
+    {
+      "field": "fake_snake_init_score_start",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": 100,
+      "target": 100,
+      "type": "number"
+    },
+    {
+      "field": "fake_snake_reset_score_rate",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": 0.02,
+      "target": 0.02,
+      "type": "number"
+    },
+    {
+      "field": "map_height",
+      "reason": "2026-09-03 user-approved 4096-square map boundary override; not coordinate scaling",
+      "relation": "approvedOverride",
+      "source": 4896,
+      "target": 4096,
+      "type": "number"
+    },
+    {
+      "field": "map_width",
+      "reason": "2026-09-03 user-approved 4096-square map boundary override; not coordinate scaling",
+      "relation": "approvedOverride",
+      "source": 4896,
+      "target": 4096,
+      "type": "number"
+    },
+    {
+      "field": "point_step_config",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": [
+        {
+          "max_length": 300,
+          "step_length": 3
+        },
+        {
+          "max_length": 600,
+          "step_length": 4
+        },
+        {
+          "max_length": 900,
+          "step_length": 5
+        },
+        {
+          "max_length": 1200,
+          "step_length": 6
+        },
+        {
+          "max_length": 1500,
+          "step_length": 7
+        },
+        {
+          "max_length": 1800,
+          "step_length": 8
+        },
+        {
+          "max_length": 2100,
+          "step_length": 9
+        },
+        {
+          "max_length": 2400,
+          "step_length": 10
+        },
+        {
+          "max_length": 2700,
+          "step_length": 11
+        },
+        {
+          "max_length": 3000,
+          "step_length": 12
+        },
+        {
+          "max_length": 3300,
+          "step_length": 13
+        },
+        {
+          "max_length": 3600,
+          "step_length": 14
+        },
+        {
+          "max_length": 3900,
+          "step_length": 15
+        },
+        {
+          "max_length": 4200,
+          "step_length": 16
+        },
+        {
+          "max_length": 4500,
+          "step_length": 17
+        },
+        {
+          "max_length": 4800,
+          "step_length": 18
+        },
+        {
+          "max_length": 5100,
+          "step_length": 19
+        },
+        {
+          "max_length": 5400,
+          "step_length": 20
+        },
+        {
+          "max_length": 5700,
+          "step_length": 21
+        },
+        {
+          "max_length": 6000,
+          "step_length": 22
+        },
+        {
+          "max_length": 6300,
+          "step_length": 23
+        },
+        {
+          "max_length": 6600,
+          "step_length": 24
+        },
+        {
+          "max_length": 6900,
+          "step_length": 25
+        },
+        {
+          "max_length": 7200,
+          "step_length": 26
+        },
+        {
+          "max_length": 7500,
+          "step_length": 27
+        },
+        {
+          "max_length": 7800,
+          "step_length": 28
+        },
+        {
+          "max_length": 8100,
+          "step_length": 29
+        },
+        {
+          "max_length": 8400,
+          "step_length": 30
+        },
+        {
+          "max_length": 8700,
+          "step_length": 31
+        },
+        {
+          "max_length": 9000,
+          "step_length": 32
+        },
+        {
+          "max_length": 9300,
+          "step_length": 33
+        },
+        {
+          "max_length": 9600,
+          "step_length": 34
+        },
+        {
+          "max_length": 9900,
+          "step_length": 35
+        },
+        {
+          "max_length": 10200,
+          "step_length": 36
+        },
+        {
+          "max_length": 10500,
+          "step_length": 37
+        },
+        {
+          "max_length": 10800,
+          "step_length": 38
+        },
+        {
+          "max_length": 11100,
+          "step_length": 39
+        },
+        {
+          "max_length": 11400,
+          "step_length": 40
+        },
+        {
+          "max_length": 11700,
+          "step_length": 41
+        },
+        {
+          "max_length": 12000,
+          "step_length": 42
+        },
+        {
+          "max_length": 12300,
+          "step_length": 43
+        },
+        {
+          "max_length": 12600,
+          "step_length": 44
+        },
+        {
+          "max_length": 12900,
+          "step_length": 45
+        },
+        {
+          "max_length": 13200,
+          "step_length": 46
+        },
+        {
+          "max_length": 13500,
+          "step_length": 47
+        },
+        {
+          "max_length": 13800,
+          "step_length": 48
+        },
+        {
+          "max_length": 14100,
+          "step_length": 49
+        },
+        {
+          "max_length": 14400,
+          "step_length": 50
+        },
+        {
+          "max_length": 14700,
+          "step_length": 51
+        },
+        {
+          "max_length": 15000,
+          "step_length": 52
+        },
+        {
+          "max_length": 15300,
+          "step_length": 53
+        },
+        {
+          "max_length": 15600,
+          "step_length": 54
+        },
+        {
+          "max_length": 15900,
+          "step_length": 55
+        },
+        {
+          "max_length": 16200,
+          "step_length": 56
+        },
+        {
+          "max_length": 16500,
+          "step_length": 57
+        },
+        {
+          "max_length": 16800,
+          "step_length": 58
+        },
+        {
+          "max_length": 17100,
+          "step_length": 59
+        },
+        {
+          "max_length": 17400,
+          "step_length": 60
+        },
+        {
+          "max_length": 17700,
+          "step_length": 61
+        },
+        {
+          "max_length": 18000,
+          "step_length": 62
+        },
+        {
+          "max_length": 18300,
+          "step_length": 63
+        },
+        {
+          "max_length": 18600,
+          "step_length": 64
+        },
+        {
+          "max_length": 18900,
+          "step_length": 65
+        },
+        {
+          "max_length": 18900,
+          "step_length": 66
+        },
+        {
+          "max_length": 19200,
+          "step_length": 67
+        },
+        {
+          "max_length": 19500,
+          "step_length": 68
+        },
+        {
+          "max_length": 19800,
+          "step_length": 69
+        },
+        {
+          "max_length": 20100,
+          "step_length": 70
+        },
+        {
+          "max_length": 100000,
+          "step_length": 50
+        },
+        {
+          "max_length": 200000,
+          "step_length": 100
+        },
+        {
+          "max_length": 300000,
+          "step_length": 100
+        }
+      ],
+      "target": [
+        {
+          "max_length": 300,
+          "step_length": 3
+        },
+        {
+          "max_length": 600,
+          "step_length": 4
+        },
+        {
+          "max_length": 900,
+          "step_length": 5
+        },
+        {
+          "max_length": 1200,
+          "step_length": 6
+        },
+        {
+          "max_length": 1500,
+          "step_length": 7
+        },
+        {
+          "max_length": 1800,
+          "step_length": 8
+        },
+        {
+          "max_length": 2100,
+          "step_length": 9
+        },
+        {
+          "max_length": 2400,
+          "step_length": 10
+        },
+        {
+          "max_length": 2700,
+          "step_length": 11
+        },
+        {
+          "max_length": 3000,
+          "step_length": 12
+        },
+        {
+          "max_length": 3300,
+          "step_length": 13
+        },
+        {
+          "max_length": 3600,
+          "step_length": 14
+        },
+        {
+          "max_length": 3900,
+          "step_length": 15
+        },
+        {
+          "max_length": 4200,
+          "step_length": 16
+        },
+        {
+          "max_length": 4500,
+          "step_length": 17
+        },
+        {
+          "max_length": 4800,
+          "step_length": 18
+        },
+        {
+          "max_length": 5100,
+          "step_length": 19
+        },
+        {
+          "max_length": 5400,
+          "step_length": 20
+        },
+        {
+          "max_length": 5700,
+          "step_length": 21
+        },
+        {
+          "max_length": 6000,
+          "step_length": 22
+        },
+        {
+          "max_length": 6300,
+          "step_length": 23
+        },
+        {
+          "max_length": 6600,
+          "step_length": 24
+        },
+        {
+          "max_length": 6900,
+          "step_length": 25
+        },
+        {
+          "max_length": 7200,
+          "step_length": 26
+        },
+        {
+          "max_length": 7500,
+          "step_length": 27
+        },
+        {
+          "max_length": 7800,
+          "step_length": 28
+        },
+        {
+          "max_length": 8100,
+          "step_length": 29
+        },
+        {
+          "max_length": 8400,
+          "step_length": 30
+        },
+        {
+          "max_length": 8700,
+          "step_length": 31
+        },
+        {
+          "max_length": 9000,
+          "step_length": 32
+        },
+        {
+          "max_length": 9300,
+          "step_length": 33
+        },
+        {
+          "max_length": 9600,
+          "step_length": 34
+        },
+        {
+          "max_length": 9900,
+          "step_length": 35
+        },
+        {
+          "max_length": 10200,
+          "step_length": 36
+        },
+        {
+          "max_length": 10500,
+          "step_length": 37
+        },
+        {
+          "max_length": 10800,
+          "step_length": 38
+        },
+        {
+          "max_length": 11100,
+          "step_length": 39
+        },
+        {
+          "max_length": 11400,
+          "step_length": 40
+        },
+        {
+          "max_length": 11700,
+          "step_length": 41
+        },
+        {
+          "max_length": 12000,
+          "step_length": 42
+        },
+        {
+          "max_length": 12300,
+          "step_length": 43
+        },
+        {
+          "max_length": 12600,
+          "step_length": 44
+        },
+        {
+          "max_length": 12900,
+          "step_length": 45
+        },
+        {
+          "max_length": 13200,
+          "step_length": 46
+        },
+        {
+          "max_length": 13500,
+          "step_length": 47
+        },
+        {
+          "max_length": 13800,
+          "step_length": 48
+        },
+        {
+          "max_length": 14100,
+          "step_length": 49
+        },
+        {
+          "max_length": 14400,
+          "step_length": 50
+        },
+        {
+          "max_length": 14700,
+          "step_length": 51
+        },
+        {
+          "max_length": 15000,
+          "step_length": 52
+        },
+        {
+          "max_length": 15300,
+          "step_length": 53
+        },
+        {
+          "max_length": 15600,
+          "step_length": 54
+        },
+        {
+          "max_length": 15900,
+          "step_length": 55
+        },
+        {
+          "max_length": 16200,
+          "step_length": 56
+        },
+        {
+          "max_length": 16500,
+          "step_length": 57
+        },
+        {
+          "max_length": 16800,
+          "step_length": 58
+        },
+        {
+          "max_length": 17100,
+          "step_length": 59
+        },
+        {
+          "max_length": 17400,
+          "step_length": 60
+        },
+        {
+          "max_length": 17700,
+          "step_length": 61
+        },
+        {
+          "max_length": 18000,
+          "step_length": 62
+        },
+        {
+          "max_length": 18300,
+          "step_length": 63
+        },
+        {
+          "max_length": 18600,
+          "step_length": 64
+        },
+        {
+          "max_length": 18900,
+          "step_length": 65
+        },
+        {
+          "max_length": 18900,
+          "step_length": 66
+        },
+        {
+          "max_length": 19200,
+          "step_length": 67
+        },
+        {
+          "max_length": 19500,
+          "step_length": 68
+        },
+        {
+          "max_length": 19800,
+          "step_length": 69
+        },
+        {
+          "max_length": 20100,
+          "step_length": 70
+        },
+        {
+          "max_length": 100000,
+          "step_length": 50
+        },
+        {
+          "max_length": 200000,
+          "step_length": 100
+        },
+        {
+          "max_length": 300000,
+          "step_length": 100
+        }
+      ],
+      "type": "array"
+    },
+    {
+      "field": "snake_body_init_scale",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": 1,
+      "target": 1,
+      "type": "number"
+    },
+    {
+      "field": "snake_body_max_scale",
+      "reason": "preserved byte-equivalent data value from the locked V2 source object",
+      "relation": "unchanged",
+      "source": 2.8,
+      "target": 2.8,
+      "type": "number"
+    }
+  ],
+  "ignoredMetadata": [
+    "body_scale_snake_max_point_step",
+    "camera_scale_snake_max_point_step",
+    "endless_snake_max_point_step"
+  ],
+  "pointStepCount": 71,
+  "schemaVersion": 1,
+  "sourceKeyCount": 28
+}

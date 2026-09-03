@@ -1,0 +1,19 @@
+{
+  "aiPolicy": "independent automatic respawn; never enters human charging/reward flow",
+  "clearLifeTransients": true,
+  "firstActiveProtectionInterval": "[reliveFirstActiveTick, reliveFirstActiveTick + 60)",
+  "humanPolicy": "eligible death enters an authoritative choice; success resumes the same run; reject/timeout/exhaustion ends only that run",
+  "id": "sourceEndlessReliveFlow",
+  "restoreFields": [
+    "length",
+    "score",
+    "killCount",
+    "eatMagnetCount",
+    "eatStarCount",
+    "reliveCount"
+  ],
+  "sourceAiRespawnDelayMs": 2000,
+  "sourceHumanDeathDelayMs": 200,
+  "sourceProtectionSeconds": 3,
+  "version": 1
+}

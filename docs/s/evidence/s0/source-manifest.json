@@ -1,0 +1,418 @@
+{
+  "cleanAtBuildStart": true,
+  "commit": "6367f65bf210d75ba39c0e48ecace5b30b538a06",
+  "files": [
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "app-config.json",
+      "purposes": [
+        "orientation evidence"
+      ],
+      "resolvedPath": "app-config.json",
+      "resolvedSha256": "a4fa22f5ea416564e591688a606d3764ae67f937f25e33b690e4056e2a4e5f01",
+      "sha256": "a4fa22f5ea416564e591688a606d3764ae67f937f25e33b690e4056e2a4e5f01",
+      "size": 1884
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "game/main.js",
+      "purposes": [
+        "frame-rate evidence"
+      ],
+      "resolvedPath": "game/main.js",
+      "resolvedSha256": "350fb50c30d795851ba5b5acfe332c83c4f0375f79a78923a2d47a4c3a784553",
+      "sha256": "350fb50c30d795851ba5b5acfe332c83c4f0375f79a78923a2d47a4c3a784553",
+      "size": 3257
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "game/src/settings.js",
+      "purposes": [
+        "orientation evidence"
+      ],
+      "resolvedPath": "game/src/settings.js",
+      "resolvedSha256": "d52a9704cc6e2128390064030616331bb5b408df2dcfce54603079b8e242444b",
+      "sha256": "d52a9704cc6e2128390064030616331bb5b408df2dcfce54603079b8e242444b",
+      "size": 10408
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/atlas/config.json",
+      "purposes": [
+        "food atlas discovery"
+      ],
+      "resolvedPath": "remoteBundles/atlas/config.json",
+      "resolvedSha256": "228866ebddfc1fbcdd4d19a361af6bb9dd2debfa945d9cf9e59c0d961c5d55db",
+      "sha256": "228866ebddfc1fbcdd4d19a361af6bb9dd2debfa945d9cf9e59c0d961c5d55db",
+      "size": 11514
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/atlas/import/01/01dc158bd.json",
+      "purposes": [
+        "food atlas frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/atlas/import/01/01dc158bd.json",
+      "resolvedSha256": "c902460cb9265e78436b76e096f6efbf82020d98514f0c560bf9e8e6a9e7df1c",
+      "sha256": "c902460cb9265e78436b76e096f6efbf82020d98514f0c560bf9e8e6a9e7df1c",
+      "size": 6230
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/atlas/native/97/979c0e19-9df3-4990-817d-10edb06ee05c.png",
+      "purposes": [
+        "food atlas pixels"
+      ],
+      "resolvedPath": "remoteBundles/atlas/native/97/979c0e19-9df3-4990-817d-10edb06ee05c.png",
+      "resolvedSha256": "36d444e74894ac6f9592e07a98551dd28937bcd33a0fb1a0a36def79d2f87571",
+      "sha256": "36d444e74894ac6f9592e07a98551dd28937bcd33a0fb1a0a36def79d2f87571",
+      "size": 7004
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/game/config.json",
+      "purposes": [
+        "Game scene discovery"
+      ],
+      "resolvedPath": "remoteBundles/game/config.json",
+      "resolvedSha256": "bd8d91dce0f644264f5ab0d7ae20fead981956debc23a6cab814f579b227e77b",
+      "sha256": "bd8d91dce0f644264f5ab0d7ae20fead981956debc23a6cab814f579b227e77b",
+      "size": 114556
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/game/import/09/09a479024.json",
+      "purposes": [
+        "serialized Game scene presentation bindings"
+      ],
+      "resolvedPath": "remoteBundles/game/import/09/09a479024.json",
+      "resolvedSha256": "9ebaf4fa9000f7098956b92a13b521e4d3421f52d570f1afad826017be0f75d9",
+      "sha256": "9ebaf4fa9000f7098956b92a13b521e4d3421f52d570f1afad826017be0f75d9",
+      "size": 56121
+    },
+    {
+      "kind": "symbolicLink",
+      "linkTarget": "../38/3838e867-b693-4c7c-9833-a146ba682ee3.png",
+      "path": "remoteBundles/gameClassic/native/a1/a126f45c-a4ee-443e-ab55-a7c289e5c41f.png",
+      "purposes": [
+        "symlink-aware source identity proof"
+      ],
+      "resolvedPath": "remoteBundles/gameClassic/native/38/3838e867-b693-4c7c-9833-a146ba682ee3.png",
+      "resolvedSha256": "cde58013d1868e9b6e122cd35558c766c6a7c71d68ea759c470ab14629fdf3b7",
+      "sha256": "cde58013d1868e9b6e122cd35558c766c6a7c71d68ea759c470ab14629fdf3b7",
+      "size": 4145
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/config.json",
+      "purposes": [
+        "skin atlas discovery"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/config.json",
+      "resolvedSha256": "090a55321f58e8b75677cc54b3b40152f493edabe0549bd3cee4ed6aa8c1fdaa",
+      "sha256": "090a55321f58e8b75677cc54b3b40152f493edabe0549bd3cee4ed6aa8c1fdaa",
+      "size": 7929
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/06/061ae6f08.json",
+      "purposes": [
+        "skin 2 frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/06/061ae6f08.json",
+      "resolvedSha256": "7838030fcb2819eaeff751af2788f912f1b230d646a7466cc18cb28738814fa8",
+      "sha256": "7838030fcb2819eaeff751af2788f912f1b230d646a7466cc18cb28738814fa8",
+      "size": 2249
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/0a/0a5a50d4d.json",
+      "purposes": [
+        "skin 403 frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/0a/0a5a50d4d.json",
+      "resolvedSha256": "a31adeba0ff155d018fa9e1784e3c1277507412aead820d0077077cc38206139",
+      "sha256": "a31adeba0ff155d018fa9e1784e3c1277507412aead820d0077077cc38206139",
+      "size": 3519
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/0a/0ab684d73.json",
+      "purposes": [
+        "skin 401 frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/0a/0ab684d73.json",
+      "resolvedSha256": "dea5510b4bd4bcb30c83cbaf1045703a912e6691edbabf727fc86165e85e807e",
+      "sha256": "dea5510b4bd4bcb30c83cbaf1045703a912e6691edbabf727fc86165e85e807e",
+      "size": 3474
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/import/0b/0bc85f195.json",
+      "purposes": [
+        "skin 1 frame metadata"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/import/0b/0bc85f195.json",
+      "resolvedSha256": "3fecf433e3a6b2ffd4e452d0f946113b0a013a04a5fe3c3cddef39693bac5925",
+      "sha256": "3fecf433e3a6b2ffd4e452d0f946113b0a013a04a5fe3c3cddef39693bac5925",
+      "size": 2255
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/native/24/24f75358-7947-4b88-b9f5-c153f892d215.png",
+      "purposes": [
+        "skin 403 atlas pixels"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/native/24/24f75358-7947-4b88-b9f5-c153f892d215.png",
+      "resolvedSha256": "22b5b3d117adae765b46a9bd92ced15af9e518b5ec89a0322159a6563a3e7e9e",
+      "sha256": "22b5b3d117adae765b46a9bd92ced15af9e518b5ec89a0322159a6563a3e7e9e",
+      "size": 3665
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/native/4e/4e50d45b-da2a-44b2-b03d-0213b2525c83.png",
+      "purposes": [
+        "skin 1 atlas pixels"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/native/4e/4e50d45b-da2a-44b2-b03d-0213b2525c83.png",
+      "resolvedSha256": "0a5ccf9e5b838353d674b8b8225ae556ed7d5a705acb6094d93f748448829aab",
+      "sha256": "0a5ccf9e5b838353d674b8b8225ae556ed7d5a705acb6094d93f748448829aab",
+      "size": 4134
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/native/80/8064c44e-b475-43dd-a5be-7a6b60a8d947.png",
+      "purposes": [
+        "skin 401 atlas pixels"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/native/80/8064c44e-b475-43dd-a5be-7a6b60a8d947.png",
+      "resolvedSha256": "a5d2fe784ce17ce7bb63aea04a5a98a0119a11fa274b7f8fc3da6803219dd991",
+      "sha256": "a5d2fe784ce17ce7bb63aea04a5a98a0119a11fa274b7f8fc3da6803219dd991",
+      "size": 3722
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/internalSkins/native/94/9444d0fe-5a5b-49a0-92e5-63371e113dee.png",
+      "purposes": [
+        "skin 2 atlas pixels"
+      ],
+      "resolvedPath": "remoteBundles/internalSkins/native/94/9444d0fe-5a5b-49a0-92e5-63371e113dee.png",
+      "resolvedSha256": "ab289b3cb4e105cd8b757da2428a1c6e722e02f569be27e94f5a8dbb57576bf9",
+      "sha256": "ab289b3cb4e105cd8b757da2428a1c6e722e02f569be27e94f5a8dbb57576bf9",
+      "size": 2480
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "subpackages/loading/bundle/_r/api/AppApi.js",
+      "purposes": [
+        "source relive API boundary"
+      ],
+      "resolvedPath": "subpackages/loading/bundle/_r/api/AppApi.js",
+      "resolvedSha256": "0294377e189264fc9b4f69cd1c3c530d38028fcbcff84301efe8a6f721a6061a",
+      "sha256": "0294377e189264fc9b4f69cd1c3c530d38028fcbcff84301efe8a6f721a6061a",
+      "size": 87740
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "subpackages/loading/bundle/_r/config/GameConstant.js",
+      "purposes": [
+        "presentation and motion constants"
+      ],
+      "resolvedPath": "subpackages/loading/bundle/_r/config/GameConstant.js",
+      "resolvedSha256": "69861c721541be3ad78d51b0b7df3703f70b8273e9904eb45032a470112795f9",
+      "sha256": "69861c721541be3ad78d51b0b7df3703f70b8273e9904eb45032a470112795f9",
+      "size": 9860
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "subpackages/loading/bundle/_r/game/snake/Snake.js",
+      "purposes": [
+        "relive field restoration and protection"
+      ],
+      "resolvedPath": "subpackages/loading/bundle/_r/game/snake/Snake.js",
+      "resolvedSha256": "fc699bc14678df29ec9ba4e3c563a822add167e1d3e5bfc282b0606f7f092422",
+      "sha256": "fc699bc14678df29ec9ba4e3c563a822add167e1d3e5bfc282b0606f7f092422",
+      "size": 83791
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "subpackages/loading/bundle/_r/game/snake/SnakeManager.js",
+      "purposes": [
+        "human/AI death timing"
+      ],
+      "resolvedPath": "subpackages/loading/bundle/_r/game/snake/SnakeManager.js",
+      "resolvedSha256": "94a5b628511f065708c8602172068f93de3b912c6fd92720d9b82cc5a0ebeb2d",
+      "sha256": "94a5b628511f065708c8602172068f93de3b912c6fd92720d9b82cc5a0ebeb2d",
+      "size": 45700
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "subpackages/loading/bundle/_r/game/util/GameUtil.js",
+      "purposes": [
+        "path-point consumption"
+      ],
+      "resolvedPath": "subpackages/loading/bundle/_r/game/util/GameUtil.js",
+      "resolvedSha256": "477aff04238c410d3e283ab4316cfa403481b7fae5a42be685b1e388cd8e062a",
+      "sha256": "477aff04238c410d3e283ab4316cfa403481b7fae5a42be685b1e388cd8e062a",
+      "size": 10642
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "subpackages/loading/bundle/_r/gameplay/strategy/mapStrategy/BaseMapDrawStrategy.js",
+      "purposes": [
+        "exact presentation palette"
+      ],
+      "resolvedPath": "subpackages/loading/bundle/_r/gameplay/strategy/mapStrategy/BaseMapDrawStrategy.js",
+      "resolvedSha256": "00c918199f6173cac33051ac3904d1d6ee7065059f3860e3f8d95720331c6d52",
+      "sha256": "00c918199f6173cac33051ac3904d1d6ee7065059f3860e3f8d95720331c6d52",
+      "size": 5003
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "subpackages/loading/bundle/_r/gameplay/strategy/mapStrategy/DefaultMapDrawStrategy.js",
+      "purposes": [
+        "default presentation flow"
+      ],
+      "resolvedPath": "subpackages/loading/bundle/_r/gameplay/strategy/mapStrategy/DefaultMapDrawStrategy.js",
+      "resolvedSha256": "43bcc2930f3c52c6d8a2ce3a6b3b4682cfcc6630aafbe300c7c9059eaab17fb4",
+      "sha256": "43bcc2930f3c52c6d8a2ce3a6b3b4682cfcc6630aafbe300c7c9059eaab17fb4",
+      "size": 1256
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "subpackages/loading/bundle/_r/prefab/game/relive/ReliveAlert.js",
+      "purposes": [
+        "relive choice presentation"
+      ],
+      "resolvedPath": "subpackages/loading/bundle/_r/prefab/game/relive/ReliveAlert.js",
+      "resolvedSha256": "5aedf680ba68d9147ba03480d789709b1984659d44e94d96095c67a9a01eaefa",
+      "sha256": "5aedf680ba68d9147ba03480d789709b1984659d44e94d96095c67a9a01eaefa",
+      "size": 55590
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "subpackages/loading/bundle/_r/prefab/game/relive/ReliveStore.js",
+      "purposes": [
+        "relive policy selection"
+      ],
+      "resolvedPath": "subpackages/loading/bundle/_r/prefab/game/relive/ReliveStore.js",
+      "resolvedSha256": "c601b4b28ea47f3996ad7547d601368829fcd5456eee2bc315c497dec085d640",
+      "sha256": "c601b4b28ea47f3996ad7547d601368829fcd5456eee2bc315c497dec085d640",
+      "size": 3815
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "subpackages/loading/bundle/_r/scene/Game.js",
+      "purposes": [
+        "Endless clock and V2 consumption"
+      ],
+      "resolvedPath": "subpackages/loading/bundle/_r/scene/Game.js",
+      "resolvedSha256": "d6a0218ace20dd06136918c2594b49f2397f73ba0a8098d26c38619a5c00c566",
+      "sha256": "d6a0218ace20dd06136918c2594b49f2397f73ba0a8098d26c38619a5c00c566",
+      "size": 166772
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "subpackages/loading/bundle/_r/store/ConfigStore.js",
+      "purposes": [
+        "configuration injection path"
+      ],
+      "resolvedPath": "subpackages/loading/bundle/_r/store/ConfigStore.js",
+      "resolvedSha256": "09181057afe49ad9f9db6f4af2c025f5e0c4635594a62d27327310277c66232e",
+      "sha256": "09181057afe49ad9f9db6f4af2c025f5e0c4635594a62d27327310277c66232e",
+      "size": 19970
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "subpackages/loading/bundle/_r/store/FeedGameStore.js",
+      "purposes": [
+        "frozen inline configuration",
+        "parse frozen V2 and relive literals"
+      ],
+      "resolvedPath": "subpackages/loading/bundle/_r/store/FeedGameStore.js",
+      "resolvedSha256": "576253be0954937e36698dddcd4ef6a82bcb7f434f9392164e72686738b75694",
+      "sha256": "576253be0954937e36698dddcd4ef6a82bcb7f434f9392164e72686738b75694",
+      "size": 117736
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "subpackages/loading/bundle/_r/store/GameStore.js",
+      "purposes": [
+        "new-Endless predicate"
+      ],
+      "resolvedPath": "subpackages/loading/bundle/_r/store/GameStore.js",
+      "resolvedSha256": "ed05282232518aaf5073bc465b23bdb97b3e5ec097c592526d1213be8a981eea",
+      "sha256": "ed05282232518aaf5073bc465b23bdb97b3e5ec097c592526d1213be8a981eea",
+      "size": 40693
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "subpackages/loading/bundle/_r/store/SettingStore.js",
+      "purposes": [
+        "fresh-install theme"
+      ],
+      "resolvedPath": "subpackages/loading/bundle/_r/store/SettingStore.js",
+      "resolvedSha256": "22b344e18a012f1af4221bcfcb395cfc2cab84374b6080cfefb35b1954dcd5dc",
+      "sha256": "22b344e18a012f1af4221bcfcb395cfc2cab84374b6080cfefb35b1954dcd5dc",
+      "size": 6972
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "subpackages/loading/bundle/_r/utils/GameEntryUtil.js",
+      "purposes": [
+        "mode-to-scene routing"
+      ],
+      "resolvedPath": "subpackages/loading/bundle/_r/utils/GameEntryUtil.js",
+      "resolvedSha256": "3408f5d2abd22d272b892cb69a9900032c0f361a4f1b2e44a1758413eaaa7419",
+      "sha256": "3408f5d2abd22d272b892cb69a9900032c0f361a4f1b2e44a1758413eaaa7419",
+      "size": 8725
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "subpackages/loading/bundle/Loading.js",
+      "purposes": [
+        "frame-rate request evidence"
+      ],
+      "resolvedPath": "subpackages/loading/bundle/Loading.js",
+      "resolvedSha256": "5f8aefe17dadfe3f13c9a96040e362e7504f7a659d7a17018bcc3c6b6077de3e",
+      "sha256": "5f8aefe17dadfe3f13c9a96040e362e7504f7a659d7a17018bcc3c6b6077de3e",
+      "size": 55988
+    }
+  ],
+  "root": "source-relative paths under the supplied locked archive",
+  "schemaVersion": 1,
+  "unchangedAfterRead": true
+}

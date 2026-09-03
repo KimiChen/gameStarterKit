@@ -1,0 +1,11 @@
+{
+  "endTick": null,
+  "hasDeadline": false,
+  "id": "sourceEndlessTotalTime0",
+  "matchDurationTicks": 0,
+  "runElapsedTime": "positive authoritative tick delta; display-only",
+  "showRemainingTimeHud": false,
+  "totalTime": 0,
+  "version": 1,
+  "worldDoneExpression": "hasDeadline && endTick !== null && tick >= endTick"
+}
