@@ -24,11 +24,67 @@
     },
     {
       "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "presentation/magnet/aura/x_lighting01",
+      "outputSha256": "f86fb2768cc1c9228ca99d7588c01f37c86e1a088e306076bbde05d94c35aa5b",
+      "sourceRelativePath": "remoteBundles/game/native/ca/cae4c893-2179-4fca-9b76-44472a335923.png",
+      "sourceSha256": "f86fb2768cc1c9228ca99d7588c01f37c86e1a088e306076bbde05d94c35aa5b",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_magnet_aura_x_lighting01.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "presentation/magnet/aura/x_lighting02",
+      "outputSha256": "8bf1c195d4dfc2bf7ad8db4740a0faaa1743d092ac715f9e562a0bccee2c3194",
+      "sourceRelativePath": "remoteBundles/game/native/f1/f1b42444-7757-4bdb-b713-c4606298d4f0.png",
+      "sourceSha256": "8bf1c195d4dfc2bf7ad8db4740a0faaa1743d092ac715f9e562a0bccee2c3194",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_magnet_aura_x_lighting02.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "presentation/magnet/aura/x_lighting03",
+      "outputSha256": "15331a741d25de8e08ed903f9c88cab46ebad60bc57c40005fc96f839dd5b45d",
+      "sourceRelativePath": "remoteBundles/game/native/3a/3a12368b-8ef7-4bf6-91a9-191ef071ec99.png",
+      "sourceSha256": "15331a741d25de8e08ed903f9c88cab46ebad60bc57c40005fc96f839dd5b45d",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_magnet_aura_x_lighting03.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "presentation/magnet/aura/xt_s_lighting",
+      "outputSha256": "11b9fdc1983d39bb1a578ded1fa7e4962fae95da44895f40b819f507c1a5425c",
+      "sourceRelativePath": "remoteBundles/game/native/ae/ae0301dd-05fa-45c7-90f5-bb39e23422ca.png",
+      "sourceSha256": "11b9fdc1983d39bb1a578ded1fa7e4962fae95da44895f40b819f507c1a5425c",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_magnet_aura_xt_s_lighting.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "presentation/magnet/aura/xt_s_lighting02",
+      "outputSha256": "4e77f9fbd45a66be64f8cd4311e4e761ffdb91e76580e4e8334d582dd7eaebc0",
+      "sourceRelativePath": "remoteBundles/game/native/4e/4e216bd4-1dae-4211-bd44-976710bd9889.png",
+      "sourceSha256": "4e77f9fbd45a66be64f8cd4311e4e761ffdb91e76580e4e8334d582dd7eaebc0",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_magnet_aura_xt_s_lighting02.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "presentation/magnet/world",
+      "outputSha256": "e954359e45836981a574101f7397906da997d07c52498e682b4a1c98b1ee4090",
+      "sourceRelativePath": "remoteBundles/atlas/native/14/1473c6a2-0588-411d-b295-2b7517dc029b.png",
+      "sourceSha256": "e954359e45836981a574101f7397906da997d07c52498e682b4a1c98b1ee4090",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_magnet_tools.png"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
       "logicalName": "audio/button",
       "outputSha256": "00428dcf5dc443a71e4ef0df3f70f886bba5da81194f12be97fa738dfa070dcf",
       "sourceRelativePath": "remoteBundles/audio/native/c2/c280b506-d28c-4947-8f4b-d8b6f490f5ca.mp3",
       "sourceSha256": "00428dcf5dc443a71e4ef0df3f70f886bba5da81194f12be97fa738dfa070dcf",
       "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_sfx_button.mp3"
+    },
+    {
+      "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
+      "logicalName": "audio/collect-magnet",
+      "outputSha256": "7ca26a88922302ec4492ed31117f57410268109d47645b689318e6138bb5c113",
+      "sourceRelativePath": "remoteBundles/audio/native/dc/dc5e02f9-c04f-4bc5-b6e8-3f9016ea8e94.mp3",
+      "sourceSha256": "7ca26a88922302ec4492ed31117f57410268109d47645b689318e6138bb5c113",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_sfx_collect_magnet.mp3"
     },
     {
       "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
@@ -224,6 +280,15 @@
     }
   ],
   "generatedBy": "tools/snake-s1-assets/cli.mjs --refresh-source",
+  "logicalAliases": [
+    {
+      "logicalAliasOf": "presentation/magnet/world",
+      "logicalName": "presentation/magnet/status-icon",
+      "outputSha256": "e954359e45836981a574101f7397906da997d07c52498e682b4a1c98b1ee4090",
+      "reason": "passive status icon reuses the world frame and texture bytes",
+      "targetRelativePath": "apps/Cocos/assets/resources/snakeoff/snake_magnet_tools.png"
+    }
+  ],
   "normalizedInputs": [
     {
       "atlasInput": "tools/snake-s1-assets/source/internal-skins/1/atlas.json",
@@ -424,9 +489,24 @@
       "logicalName": "presentation/extras",
       "presentation": "extras",
       "texturePath": "remoteBundles/atlas/native/67/67069467-2aa8-4d48-b05e-b6baa743e0f4.png"
+    },
+    {
+      "atlasInput": "tools/snake-s1-assets/source/presentation/magnet.atlas.json",
+      "atlasOutputSha256": "cfba6a254ddd1e84bfec04189d2c4b68a111f69816bcdb20ae7570d42fbbff8a",
+      "atlasPath": "remoteBundles/atlas/import/06/069cb84df.json",
+      "logicalName": "presentation/magnet",
+      "presentation": "magnet",
+      "texturePath": "remoteBundles/atlas/native/14/1473c6a2-0588-411d-b295-2b7517dc029b.png"
+    },
+    {
+      "logicalName": "presentation/magnet-aura",
+      "prefabPath": "remoteBundles/game/import/03/0365be86c.json",
+      "presentation": "magnet-aura",
+      "recipeInput": "tools/snake-s1-assets/source/presentation/magnet-aura.json",
+      "recipeOutputSha256": "16dca7fdc0794aad441dc362516ef1f88ed6d1f1911f1c05a9c75330816fcd23"
     }
   ],
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "sourceArchiveRoot": "/Users/kimi/work/tanchishe/wegameVersion",
   "sourceFiles": [
     {
@@ -440,6 +520,18 @@
       "resolvedSha256": "228866ebddfc1fbcdd4d19a361af6bb9dd2debfa945d9cf9e59c0d961c5d55db",
       "sha256": "228866ebddfc1fbcdd4d19a361af6bb9dd2debfa945d9cf9e59c0d961c5d55db",
       "size": 11514
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/atlas/import/06/069cb84df.json",
+      "purposes": [
+        "presentation/magnet/tools-atlas frame 10001"
+      ],
+      "resolvedPath": "remoteBundles/atlas/import/06/069cb84df.json",
+      "resolvedSha256": "9d1e12c5d141653450b0af0ff7d3be572a2b92e78674d2e02fa0f1f03e2e3748",
+      "sha256": "9d1e12c5d141653450b0af0ff7d3be572a2b92e78674d2e02fa0f1f03e2e3748",
+      "size": 25586
     },
     {
       "kind": "file",
@@ -476,6 +568,18 @@
       "resolvedSha256": "ba2949ebd1408e8ec6c9c0b9af98c2a9d09bbe2e7f88bacc8d3006a151e32409",
       "sha256": "ba2949ebd1408e8ec6c9c0b9af98c2a9d09bbe2e7f88bacc8d3006a151e32409",
       "size": 14630
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/atlas/native/14/1473c6a2-0588-411d-b295-2b7517dc029b.png",
+      "purposes": [
+        "presentation/magnet/world"
+      ],
+      "resolvedPath": "remoteBundles/atlas/native/14/1473c6a2-0588-411d-b295-2b7517dc029b.png",
+      "resolvedSha256": "e954359e45836981a574101f7397906da997d07c52498e682b4a1c98b1ee4090",
+      "sha256": "e954359e45836981a574101f7397906da997d07c52498e682b4a1c98b1ee4090",
+      "size": 112676
     },
     {
       "kind": "file",
@@ -576,6 +680,18 @@
     {
       "kind": "file",
       "linkTarget": null,
+      "path": "remoteBundles/audio/native/dc/dc5e02f9-c04f-4bc5-b6e8-3f9016ea8e94.mp3",
+      "purposes": [
+        "audio/collect-magnet"
+      ],
+      "resolvedPath": "remoteBundles/audio/native/dc/dc5e02f9-c04f-4bc5-b6e8-3f9016ea8e94.mp3",
+      "resolvedSha256": "7ca26a88922302ec4492ed31117f57410268109d47645b689318e6138bb5c113",
+      "sha256": "7ca26a88922302ec4492ed31117f57410268109d47645b689318e6138bb5c113",
+      "size": 15151
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
       "path": "remoteBundles/audio/native/fa/fa4e17a1-8c3e-4340-922d-50fcf4dfa538.mp3",
       "purposes": [
         "audio/eat-wreck"
@@ -584,6 +700,78 @@
       "resolvedSha256": "b556777b04899444bfee3a68a9829fa646fc46f772b34abad8f19612dc867ea6",
       "sha256": "b556777b04899444bfee3a68a9829fa646fc46f772b34abad8f19612dc867ea6",
       "size": 21741
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/game/import/03/0365be86c.json",
+      "purposes": [
+        "presentation/magnet/aura SnakeMagnet hierarchy, blend, animation and particles"
+      ],
+      "resolvedPath": "remoteBundles/game/import/03/0365be86c.json",
+      "resolvedSha256": "9daafc4c3ce38d76427c02ed40b82c2aa15ce3463fdf832ccd06b802fd4b536f",
+      "sha256": "9daafc4c3ce38d76427c02ed40b82c2aa15ce3463fdf832ccd06b802fd4b536f",
+      "size": 80113
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/game/native/3a/3a12368b-8ef7-4bf6-91a9-191ef071ec99.png",
+      "purposes": [
+        "presentation/magnet/aura/x_lighting03"
+      ],
+      "resolvedPath": "remoteBundles/game/native/3a/3a12368b-8ef7-4bf6-91a9-191ef071ec99.png",
+      "resolvedSha256": "15331a741d25de8e08ed903f9c88cab46ebad60bc57c40005fc96f839dd5b45d",
+      "sha256": "15331a741d25de8e08ed903f9c88cab46ebad60bc57c40005fc96f839dd5b45d",
+      "size": 3981
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/game/native/4e/4e216bd4-1dae-4211-bd44-976710bd9889.png",
+      "purposes": [
+        "presentation/magnet/aura/xt_s_lighting02"
+      ],
+      "resolvedPath": "remoteBundles/game/native/4e/4e216bd4-1dae-4211-bd44-976710bd9889.png",
+      "resolvedSha256": "4e77f9fbd45a66be64f8cd4311e4e761ffdb91e76580e4e8334d582dd7eaebc0",
+      "sha256": "4e77f9fbd45a66be64f8cd4311e4e761ffdb91e76580e4e8334d582dd7eaebc0",
+      "size": 8349
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/game/native/ae/ae0301dd-05fa-45c7-90f5-bb39e23422ca.png",
+      "purposes": [
+        "presentation/magnet/aura/xt_s_lighting"
+      ],
+      "resolvedPath": "remoteBundles/game/native/ae/ae0301dd-05fa-45c7-90f5-bb39e23422ca.png",
+      "resolvedSha256": "11b9fdc1983d39bb1a578ded1fa7e4962fae95da44895f40b819f507c1a5425c",
+      "sha256": "11b9fdc1983d39bb1a578ded1fa7e4962fae95da44895f40b819f507c1a5425c",
+      "size": 877
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/game/native/ca/cae4c893-2179-4fca-9b76-44472a335923.png",
+      "purposes": [
+        "presentation/magnet/aura/x_lighting01"
+      ],
+      "resolvedPath": "remoteBundles/game/native/ca/cae4c893-2179-4fca-9b76-44472a335923.png",
+      "resolvedSha256": "f86fb2768cc1c9228ca99d7588c01f37c86e1a088e306076bbde05d94c35aa5b",
+      "sha256": "f86fb2768cc1c9228ca99d7588c01f37c86e1a088e306076bbde05d94c35aa5b",
+      "size": 2150
+    },
+    {
+      "kind": "file",
+      "linkTarget": null,
+      "path": "remoteBundles/game/native/f1/f1b42444-7757-4bdb-b713-c4606298d4f0.png",
+      "purposes": [
+        "presentation/magnet/aura/x_lighting02"
+      ],
+      "resolvedPath": "remoteBundles/game/native/f1/f1b42444-7757-4bdb-b713-c4606298d4f0.png",
+      "resolvedSha256": "8bf1c195d4dfc2bf7ad8db4740a0faaa1743d092ac715f9e562a0bccee2c3194",
+      "sha256": "8bf1c195d4dfc2bf7ad8db4740a0faaa1743d092ac715f9e562a0bccee2c3194",
+      "size": 3313
     },
     {
       "kind": "file",

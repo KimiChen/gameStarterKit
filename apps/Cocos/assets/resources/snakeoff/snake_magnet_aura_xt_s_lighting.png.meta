@@ -1,0 +1,42 @@
+{
+  "files": [
+    ".json",
+    ".png"
+  ],
+  "imported": true,
+  "importer": "image",
+  "subMetas": {
+    "6c48a": {
+      "displayName": "snake_magnet_aura_xt_s_lighting",
+      "files": [
+        ".json"
+      ],
+      "id": "6c48a",
+      "imported": true,
+      "importer": "texture",
+      "name": "texture",
+      "subMetas": {},
+      "userData": {
+        "anisotropy": 0,
+        "imageUuidOrDatabaseUri": "fa578076-83fd-426a-9b01-fe189c084aa3",
+        "isUuid": true,
+        "magfilter": "linear",
+        "minfilter": "linear",
+        "mipfilter": "none",
+        "visible": false,
+        "wrapModeS": "repeat",
+        "wrapModeT": "repeat"
+      },
+      "uuid": "fa578076-83fd-426a-9b01-fe189c084aa3@6c48a",
+      "ver": "1.0.22"
+    }
+  },
+  "userData": {
+    "fixAlphaTransparencyArtifacts": false,
+    "hasAlpha": true,
+    "redirect": "fa578076-83fd-426a-9b01-fe189c084aa3@6c48a",
+    "type": "texture"
+  },
+  "uuid": "fa578076-83fd-426a-9b01-fe189c084aa3",
+  "ver": "1.0.27"
+}

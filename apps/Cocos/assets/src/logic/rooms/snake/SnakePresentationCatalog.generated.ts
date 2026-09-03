@@ -3973,6 +3973,7 @@ export const CLIENT_SNAKE_PRESENTATION_CATALOG_DATA = [
 ] as const;
 
 export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
+  "presentationVersion": 2,
   "grid": {
     "spacing": 32,
     "mapMargin": 16,
@@ -4038,15 +4039,106 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       255
     ],
     "seatTinting": "forbidden",
-    "human": {
-      "arrow": "procedural",
-      "nameplate": "text",
-      "outline": "procedural"
+    "self": {
+      "arrow": "none",
+      "nameplate": "none",
+      "outline": "fine-white"
     },
-    "ai": {
+    "otherHuman": {
       "arrow": "none",
       "nameplate": "text",
-      "outline": "procedural"
+      "outline": "none"
+    },
+    "ai": {
+      "avatar": "none",
+      "arrow": "none",
+      "nameplate": "text",
+      "outline": "none"
+    }
+  },
+  "tools": {
+    "magnet": {
+      "kind": "magnet",
+      "sourceToolId": 10001,
+      "world": {
+        "logicalName": "magnet",
+        "textureAsset": "snakeoff/snake_magnet_tools",
+        "frame": {
+          "sourceFrameName": "10001",
+          "rect": {
+            "x": 346,
+            "y": 256,
+            "width": 84,
+            "height": 92
+          },
+          "pivot": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "trimOffset": {
+            "x": 0,
+            "y": 0
+          },
+          "originalSize": {
+            "width": 84,
+            "height": 92
+          },
+          "rotated": false,
+          "trimmed": false
+        },
+        "displaySize": 70,
+        "rendering": {
+          "batchGroup": "world-tools",
+          "material": "sprite-alpha"
+        }
+      },
+      "statusIcon": {
+        "logicalName": "magnet-status-icon",
+        "logicalAliasOf": "magnet",
+        "textureAsset": "snakeoff/snake_magnet_tools",
+        "frame": {
+          "sourceFrameName": "10001",
+          "rect": {
+            "x": 346,
+            "y": 256,
+            "width": 84,
+            "height": 92
+          },
+          "pivot": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "trimOffset": {
+            "x": 0,
+            "y": 0
+          },
+          "originalSize": {
+            "width": 84,
+            "height": 92
+          },
+          "rotated": false,
+          "trimmed": false
+        },
+        "role": "passive-indicator",
+        "interactive": false,
+        "rendering": {
+          "batchGroup": "passive-status-ui",
+          "material": "sprite-alpha"
+        }
+      },
+      "activeEffect": {
+        "event": "magnet-active",
+        "policy": "resource",
+        "recipeAsset": "snakeoff/snake_magnet_aura",
+        "rendering": {
+          "batchGroup": "snake-head-effects",
+          "material": "recipe-defined"
+        },
+        "fallback": {
+          "logicalName": "magnet-status-icon",
+          "placement": "over-head"
+        }
+      }
     }
   },
   "food": {
@@ -4870,8 +4962,11 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       "asset": "snakeoff/snake_sfx_eat_food",
       "resourceHash": "33a86d8e738ea9120d1abd09c1b6234c83e972b09e071c4ecbcd05ba0e575822",
       "volume": 1,
+      "sfxOnGuarded": true,
+      "playback": "bounded-concurrent",
       "maxConcurrent": 4,
       "missingPolicy": "silent",
+      "reason": null,
       "endlessReachability": "mapped"
     },
     {
@@ -4880,8 +4975,11 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       "asset": "snakeoff/snake_sfx_eat_wreck",
       "resourceHash": "b556777b04899444bfee3a68a9829fa646fc46f772b34abad8f19612dc867ea6",
       "volume": 1,
+      "sfxOnGuarded": true,
+      "playback": "bounded-concurrent",
       "maxConcurrent": 4,
       "missingPolicy": "silent",
+      "reason": null,
       "endlessReachability": "mapped"
     },
     {
@@ -4890,8 +4988,11 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       "asset": "snakeoff/snake_sfx_kill",
       "resourceHash": "41e06994f05a12898dd3dddfdbba11b9fdee783efe4d63c499349d2cfe09d3a0",
       "volume": 1,
+      "sfxOnGuarded": true,
+      "playback": "bounded-concurrent",
       "maxConcurrent": 4,
       "missingPolicy": "silent",
+      "reason": null,
       "endlessReachability": "mapped"
     },
     {
@@ -4900,8 +5001,11 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       "asset": "snakeoff/snake_sfx_end",
       "resourceHash": "e7efb684164c4bd63db627eb03131fa743b3e55ce75daa6bce30450788c9406c",
       "volume": 1,
+      "sfxOnGuarded": true,
+      "playback": "bounded-concurrent",
       "maxConcurrent": 4,
       "missingPolicy": "silent",
+      "reason": null,
       "endlessReachability": "mapped"
     },
     {
@@ -4910,9 +5014,38 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       "asset": "snakeoff/snake_sfx_button",
       "resourceHash": "00428dcf5dc443a71e4ef0df3f70f886bba5da81194f12be97fa738dfa070dcf",
       "volume": 1,
+      "sfxOnGuarded": true,
+      "playback": "bounded-concurrent",
       "maxConcurrent": 2,
       "missingPolicy": "silent",
+      "reason": null,
       "endlessReachability": "mapped"
+    },
+    {
+      "event": "collect-magnet",
+      "policy": "resource",
+      "asset": "snakeoff/snake_sfx_collect_magnet",
+      "resourceHash": "7ca26a88922302ec4492ed31117f57410268109d47645b689318e6138bb5c113",
+      "volume": 1,
+      "sfxOnGuarded": true,
+      "playback": "single-instance",
+      "maxConcurrent": 1,
+      "missingPolicy": "silent",
+      "reason": null,
+      "endlessReachability": "mapped"
+    },
+    {
+      "event": "magnet-active-loop",
+      "policy": "silent",
+      "asset": null,
+      "resourceHash": null,
+      "volume": null,
+      "sfxOnGuarded": null,
+      "playback": null,
+      "maxConcurrent": null,
+      "missingPolicy": "silent",
+      "reason": "no-approved-loop-audio",
+      "endlessReachability": "silent"
     },
     {
       "event": "personal-run-result",
@@ -4920,8 +5053,11 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       "asset": null,
       "resourceHash": null,
       "volume": null,
+      "sfxOnGuarded": null,
+      "playback": null,
       "maxConcurrent": null,
       "missingPolicy": "silent",
+      "reason": "no-approved-result-audio",
       "endlessReachability": "silent"
     },
     {
@@ -4930,8 +5066,11 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       "asset": "snakeoff/snake_sfx_time_over",
       "resourceHash": "e687e745fe6d93925eea349ef67857da780379bd086c37f27186b91a3e301a8f",
       "volume": null,
+      "sfxOnGuarded": null,
+      "playback": null,
       "maxConcurrent": null,
       "missingPolicy": "silent",
+      "reason": null,
       "endlessReachability": "unreachable"
     }
   ],
@@ -5075,6 +5214,8 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
   ]
 } as const;
 
+export const SNAKE_PRESENTATION_VERSION = 2 as const;
+
 export const EMBEDDED_PUBLIC_SNAKE_SKIN_CATALOG_HASH = "a1cdecbc5e31db3f90ac2fd15465768ef9206b2520000d4ab9f88d6c2135b075";
 
-export const CLIENT_SNAKE_PRESENTATION_HASH = "62e1a6683a71db3ef0724cd6030114b7d9a64845723b14fa8c7c6d58a9302efe";
+export const CLIENT_SNAKE_PRESENTATION_HASH = "8615596acd12651307cc885bdc606517f6094bba47e729fb8cb59203c93ed629";

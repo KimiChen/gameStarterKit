@@ -1,658 +1,895 @@
-[
-  {
-    "bodyRenderType": 2,
-    "bodyRenderWidthRate": 1,
-    "boost": {
-      "bodyTracks": 1,
-      "headFrames": 1,
-      "sourceBodyOffset": -18,
-      "tail": false
+{
+  "magnet": {
+    "atlas": {
+      "frame": {
+        "originalSize": {
+          "height": 92,
+          "width": 84
+        },
+        "pivot": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "rect": {
+          "height": 92,
+          "width": 84,
+          "x": 346,
+          "y": 256
+        },
+        "rotated": false,
+        "sourceFrameName": "10001",
+        "trimOffset": {
+          "x": 0,
+          "y": 0
+        },
+        "trimmed": false
+      },
+      "sourceFrameName": "10001",
+      "texture": {
+        "height": 769,
+        "width": 468
+      }
     },
-    "boostSource": "source",
-    "normal": {
-      "bodyTracks": 1,
-      "headFrames": 1,
-      "sourceBodyOffset": -18,
-      "tail": false
-    },
-    "normalizedDurationFrames": [
-      1,
-      1,
-      1,
-      1
-    ],
-    "normalizedHeadAnchorY": 0.5,
-    "rotatedFrameCount": 0,
-    "skinId": 1,
-    "sourceFrameTimes": [
-      0,
-      0,
-      0,
-      0
-    ],
-    "sourceHeadAnchorMissing": false,
-    "status": "converted-and-validated"
+    "aura": {
+      "animationPaths": [
+        "all_Node01/x_lighting01",
+        "all_Node01/x_lighting01_2",
+        "all_Node01/x_lighting01_3",
+        "all_Node01/x_lighting02",
+        "all_Node01/x_lighting03",
+        "all_Node02/x_lighting01",
+        "all_Node02/x_lighting01_2",
+        "all_Node02/x_lighting01_3",
+        "all_Node02/x_lighting02",
+        "all_Node02/x_lighting03",
+        "x_lighting01",
+        "x_lighting01_2",
+        "x_lighting01_3",
+        "x_lighting02",
+        "x_lighting03",
+        "xt_s_lighting02",
+        "xt_s_lighting02_2"
+      ],
+      "nodePaths": [
+        "SnakeMagnet",
+        "SnakeMagnet/xt_s_lighting02",
+        "SnakeMagnet/xt_s_lighting02_2",
+        "SnakeMagnet/all_Node01",
+        "SnakeMagnet/all_Node01/x_lighting02",
+        "SnakeMagnet/all_Node01/x_lighting03",
+        "SnakeMagnet/all_Node01/x_lighting01",
+        "SnakeMagnet/all_Node01/x_lighting01_2",
+        "SnakeMagnet/all_Node01/x_lighting01_3",
+        "SnakeMagnet/all_Node02",
+        "SnakeMagnet/all_Node02/x_lighting02",
+        "SnakeMagnet/all_Node02/x_lighting03",
+        "SnakeMagnet/all_Node02/x_lighting01",
+        "SnakeMagnet/all_Node02/x_lighting01_2",
+        "SnakeMagnet/all_Node02/x_lighting01_3",
+        "SnakeMagnet/xt_lizi_on",
+        "SnakeMagnet/xt_lizi_on/xt_lizi"
+      ],
+      "textureDependencies": [
+        {
+          "frame": {
+            "originalSize": {
+              "height": 26,
+              "width": 54
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "rect": {
+              "height": 26,
+              "width": 44,
+              "x": 6,
+              "y": 0
+            },
+            "rotated": false,
+            "sourceFrameName": "x_lighting01",
+            "trimOffset": {
+              "x": 1,
+              "y": 0
+            },
+            "trimmed": true
+          },
+          "logicalName": "x_lighting01",
+          "resourceHash": "f86fb2768cc1c9228ca99d7588c01f37c86e1a088e306076bbde05d94c35aa5b",
+          "textureAsset": "snakeoff/snake_magnet_aura_x_lighting01",
+          "textureSize": {
+            "height": 26,
+            "width": 54
+          }
+        },
+        {
+          "frame": {
+            "originalSize": {
+              "height": 34,
+              "width": 78
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "rect": {
+              "height": 34,
+              "width": 71,
+              "x": 3,
+              "y": 0
+            },
+            "rotated": false,
+            "sourceFrameName": "x_lighting02",
+            "trimOffset": {
+              "x": -0.5,
+              "y": 0
+            },
+            "trimmed": true
+          },
+          "logicalName": "x_lighting02",
+          "resourceHash": "8bf1c195d4dfc2bf7ad8db4740a0faaa1743d092ac715f9e562a0bccee2c3194",
+          "textureAsset": "snakeoff/snake_magnet_aura_x_lighting02",
+          "textureSize": {
+            "height": 34,
+            "width": 78
+          }
+        },
+        {
+          "frame": {
+            "originalSize": {
+              "height": 64,
+              "width": 56
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "rect": {
+              "height": 59,
+              "width": 55,
+              "x": 1,
+              "y": 1
+            },
+            "rotated": false,
+            "sourceFrameName": "x_lighting03",
+            "trimOffset": {
+              "x": 0.5,
+              "y": 1.5
+            },
+            "trimmed": true
+          },
+          "logicalName": "x_lighting03",
+          "resourceHash": "15331a741d25de8e08ed903f9c88cab46ebad60bc57c40005fc96f839dd5b45d",
+          "textureAsset": "snakeoff/snake_magnet_aura_x_lighting03",
+          "textureSize": {
+            "height": 64,
+            "width": 56
+          }
+        },
+        {
+          "frame": {
+            "originalSize": {
+              "height": 40,
+              "width": 40
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "rect": {
+              "height": 31,
+              "width": 30,
+              "x": 5,
+              "y": 4
+            },
+            "rotated": false,
+            "sourceFrameName": "xt_s_lighting",
+            "trimOffset": {
+              "x": 0,
+              "y": 0.5
+            },
+            "trimmed": true
+          },
+          "logicalName": "xt_s_lighting",
+          "resourceHash": "11b9fdc1983d39bb1a578ded1fa7e4962fae95da44895f40b819f507c1a5425c",
+          "textureAsset": "snakeoff/snake_magnet_aura_xt_s_lighting",
+          "textureSize": {
+            "height": 40,
+            "width": 40
+          }
+        },
+        {
+          "frame": {
+            "originalSize": {
+              "height": 128,
+              "width": 128
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "rect": {
+              "height": 123,
+              "width": 121,
+              "x": 3,
+              "y": 1
+            },
+            "rotated": false,
+            "sourceFrameName": "xt_s_lighting02",
+            "trimOffset": {
+              "x": -0.5,
+              "y": 1.5
+            },
+            "trimmed": true
+          },
+          "logicalName": "xt_s_lighting02",
+          "resourceHash": "4e77f9fbd45a66be64f8cd4311e4e761ffdb91e76580e4e8334d582dd7eaebc0",
+          "textureAsset": "snakeoff/snake_magnet_aura_xt_s_lighting02",
+          "textureSize": {
+            "height": 128,
+            "width": 128
+          }
+        }
+      ]
+    }
   },
-  {
-    "bodyRenderType": 2,
-    "bodyRenderWidthRate": 1,
-    "boost": {
-      "bodyTracks": 1,
-      "headFrames": 1,
-      "sourceBodyOffset": -18,
-      "tail": false
+  "presentationVersion": 2,
+  "skins": [
+    {
+      "bodyRenderType": 2,
+      "bodyRenderWidthRate": 1,
+      "boost": {
+        "bodyTracks": 1,
+        "headFrames": 1,
+        "sourceBodyOffset": -18,
+        "tail": false
+      },
+      "boostSource": "source",
+      "normal": {
+        "bodyTracks": 1,
+        "headFrames": 1,
+        "sourceBodyOffset": -18,
+        "tail": false
+      },
+      "normalizedDurationFrames": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "normalizedHeadAnchorY": 0.5,
+      "rotatedFrameCount": 0,
+      "skinId": 1,
+      "sourceFrameTimes": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sourceHeadAnchorMissing": false,
+      "status": "converted-and-validated"
     },
-    "boostSource": "source",
-    "normal": {
-      "bodyTracks": 1,
-      "headFrames": 1,
-      "sourceBodyOffset": -18,
-      "tail": false
+    {
+      "bodyRenderType": 2,
+      "bodyRenderWidthRate": 1,
+      "boost": {
+        "bodyTracks": 1,
+        "headFrames": 1,
+        "sourceBodyOffset": -18,
+        "tail": false
+      },
+      "boostSource": "source",
+      "normal": {
+        "bodyTracks": 1,
+        "headFrames": 1,
+        "sourceBodyOffset": -18,
+        "tail": false
+      },
+      "normalizedDurationFrames": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "normalizedHeadAnchorY": 0.5,
+      "rotatedFrameCount": 0,
+      "skinId": 2,
+      "sourceFrameTimes": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sourceHeadAnchorMissing": true,
+      "status": "converted-and-validated"
     },
-    "normalizedDurationFrames": [
-      1,
-      1,
-      1,
-      1
-    ],
-    "normalizedHeadAnchorY": 0.5,
-    "rotatedFrameCount": 0,
-    "skinId": 2,
-    "sourceFrameTimes": [
-      0,
-      0,
-      0,
-      0
-    ],
-    "sourceHeadAnchorMissing": true,
-    "status": "converted-and-validated"
-  },
-  {
-    "bodyRenderType": 2,
-    "bodyRenderWidthRate": 1,
-    "boost": {
-      "bodyTracks": 1,
-      "headFrames": 1,
-      "sourceBodyOffset": -18,
-      "tail": false
+    {
+      "bodyRenderType": 2,
+      "bodyRenderWidthRate": 1,
+      "boost": {
+        "bodyTracks": 1,
+        "headFrames": 1,
+        "sourceBodyOffset": -18,
+        "tail": false
+      },
+      "boostSource": "inherit-normal",
+      "normal": {
+        "bodyTracks": 1,
+        "headFrames": 1,
+        "sourceBodyOffset": -18,
+        "tail": false
+      },
+      "normalizedDurationFrames": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "normalizedHeadAnchorY": 0.5,
+      "rotatedFrameCount": 0,
+      "skinId": 3,
+      "sourceFrameTimes": [
+        0,
+        0
+      ],
+      "sourceHeadAnchorMissing": true,
+      "status": "converted-and-validated"
     },
-    "boostSource": "inherit-normal",
-    "normal": {
-      "bodyTracks": 1,
-      "headFrames": 1,
-      "sourceBodyOffset": -18,
-      "tail": false
+    {
+      "bodyRenderType": 2,
+      "bodyRenderWidthRate": 1,
+      "boost": {
+        "bodyTracks": 1,
+        "headFrames": 1,
+        "sourceBodyOffset": -18.7,
+        "tail": false
+      },
+      "boostSource": "inherit-normal",
+      "normal": {
+        "bodyTracks": 1,
+        "headFrames": 1,
+        "sourceBodyOffset": -18.7,
+        "tail": false
+      },
+      "normalizedDurationFrames": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "normalizedHeadAnchorY": 0.5,
+      "rotatedFrameCount": 0,
+      "skinId": 4,
+      "sourceFrameTimes": [
+        0,
+        0
+      ],
+      "sourceHeadAnchorMissing": true,
+      "status": "converted-and-validated"
     },
-    "normalizedDurationFrames": [
-      1,
-      1,
-      1,
-      1
-    ],
-    "normalizedHeadAnchorY": 0.5,
-    "rotatedFrameCount": 0,
-    "skinId": 3,
-    "sourceFrameTimes": [
-      0,
-      0
-    ],
-    "sourceHeadAnchorMissing": true,
-    "status": "converted-and-validated"
-  },
-  {
-    "bodyRenderType": 2,
-    "bodyRenderWidthRate": 1,
-    "boost": {
-      "bodyTracks": 1,
-      "headFrames": 1,
-      "sourceBodyOffset": -18.7,
-      "tail": false
+    {
+      "bodyRenderType": 2,
+      "bodyRenderWidthRate": 1,
+      "boost": {
+        "bodyTracks": 1,
+        "headFrames": 1,
+        "sourceBodyOffset": -56,
+        "tail": false
+      },
+      "boostSource": "source",
+      "normal": {
+        "bodyTracks": 1,
+        "headFrames": 1,
+        "sourceBodyOffset": -56,
+        "tail": false
+      },
+      "normalizedDurationFrames": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "normalizedHeadAnchorY": 0.5,
+      "rotatedFrameCount": 0,
+      "skinId": 10,
+      "sourceFrameTimes": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sourceHeadAnchorMissing": true,
+      "status": "converted-and-validated"
     },
-    "boostSource": "inherit-normal",
-    "normal": {
-      "bodyTracks": 1,
-      "headFrames": 1,
-      "sourceBodyOffset": -18.7,
-      "tail": false
+    {
+      "bodyRenderType": 2,
+      "bodyRenderWidthRate": 1,
+      "boost": {
+        "bodyTracks": 1,
+        "headFrames": 1,
+        "sourceBodyOffset": -13.95,
+        "tail": false
+      },
+      "boostSource": "source",
+      "normal": {
+        "bodyTracks": 1,
+        "headFrames": 1,
+        "sourceBodyOffset": -13.95,
+        "tail": false
+      },
+      "normalizedDurationFrames": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "normalizedHeadAnchorY": 0.5,
+      "rotatedFrameCount": 0,
+      "skinId": 11,
+      "sourceFrameTimes": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "sourceHeadAnchorMissing": true,
+      "status": "converted-and-validated"
     },
-    "normalizedDurationFrames": [
-      1,
-      1,
-      1,
-      1
-    ],
-    "normalizedHeadAnchorY": 0.5,
-    "rotatedFrameCount": 0,
-    "skinId": 4,
-    "sourceFrameTimes": [
-      0,
-      0
-    ],
-    "sourceHeadAnchorMissing": true,
-    "status": "converted-and-validated"
-  },
-  {
-    "bodyRenderType": 2,
-    "bodyRenderWidthRate": 1,
-    "boost": {
-      "bodyTracks": 1,
-      "headFrames": 1,
-      "sourceBodyOffset": -56,
-      "tail": false
+    {
+      "bodyRenderType": 2,
+      "bodyRenderWidthRate": 1,
+      "boost": {
+        "bodyTracks": 4,
+        "headFrames": 1,
+        "sourceBodyOffset": -13.2,
+        "tail": false
+      },
+      "boostSource": "source",
+      "normal": {
+        "bodyTracks": 4,
+        "headFrames": 1,
+        "sourceBodyOffset": -12,
+        "tail": false
+      },
+      "normalizedDurationFrames": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "normalizedHeadAnchorY": 0.5,
+      "rotatedFrameCount": 0,
+      "skinId": 101,
+      "sourceFrameTimes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "sourceHeadAnchorMissing": true,
+      "status": "converted-and-validated"
     },
-    "boostSource": "source",
-    "normal": {
-      "bodyTracks": 1,
-      "headFrames": 1,
-      "sourceBodyOffset": -56,
-      "tail": false
+    {
+      "bodyRenderType": 2,
+      "bodyRenderWidthRate": 1,
+      "boost": {
+        "bodyTracks": 2,
+        "headFrames": 1,
+        "sourceBodyOffset": -16.8,
+        "tail": false
+      },
+      "boostSource": "source",
+      "normal": {
+        "bodyTracks": 2,
+        "headFrames": 1,
+        "sourceBodyOffset": -16.8,
+        "tail": false
+      },
+      "normalizedDurationFrames": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "normalizedHeadAnchorY": 0.5,
+      "rotatedFrameCount": 0,
+      "skinId": 111,
+      "sourceFrameTimes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "sourceHeadAnchorMissing": true,
+      "status": "converted-and-validated"
     },
-    "normalizedDurationFrames": [
-      1,
-      1,
-      1,
-      1
-    ],
-    "normalizedHeadAnchorY": 0.5,
-    "rotatedFrameCount": 0,
-    "skinId": 10,
-    "sourceFrameTimes": [
-      0,
-      0,
-      0,
-      0
-    ],
-    "sourceHeadAnchorMissing": true,
-    "status": "converted-and-validated"
-  },
-  {
-    "bodyRenderType": 2,
-    "bodyRenderWidthRate": 1,
-    "boost": {
-      "bodyTracks": 1,
-      "headFrames": 1,
-      "sourceBodyOffset": -13.95,
-      "tail": false
+    {
+      "bodyRenderType": 2,
+      "bodyRenderWidthRate": 1,
+      "boost": {
+        "bodyTracks": 2,
+        "headFrames": 1,
+        "sourceBodyOffset": -20.4,
+        "tail": false
+      },
+      "boostSource": "source",
+      "normal": {
+        "bodyTracks": 2,
+        "headFrames": 1,
+        "sourceBodyOffset": -20.4,
+        "tail": false
+      },
+      "normalizedDurationFrames": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "normalizedHeadAnchorY": 0.5,
+      "rotatedFrameCount": 0,
+      "skinId": 112,
+      "sourceFrameTimes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "sourceHeadAnchorMissing": true,
+      "status": "converted-and-validated"
     },
-    "boostSource": "source",
-    "normal": {
-      "bodyTracks": 1,
-      "headFrames": 1,
-      "sourceBodyOffset": -13.95,
-      "tail": false
+    {
+      "bodyRenderType": 2,
+      "bodyRenderWidthRate": 1,
+      "boost": {
+        "bodyTracks": 2,
+        "headFrames": 1,
+        "sourceBodyOffset": -18,
+        "tail": false
+      },
+      "boostSource": "source",
+      "normal": {
+        "bodyTracks": 2,
+        "headFrames": 1,
+        "sourceBodyOffset": -18,
+        "tail": false
+      },
+      "normalizedDurationFrames": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "normalizedHeadAnchorY": 0.5,
+      "rotatedFrameCount": 0,
+      "skinId": 132,
+      "sourceFrameTimes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "sourceHeadAnchorMissing": true,
+      "status": "converted-and-validated"
     },
-    "normalizedDurationFrames": [
-      1,
-      1,
-      1,
-      1
-    ],
-    "normalizedHeadAnchorY": 0.5,
-    "rotatedFrameCount": 0,
-    "skinId": 11,
-    "sourceFrameTimes": [
-      0,
-      0,
-      0,
-      0
-    ],
-    "sourceHeadAnchorMissing": true,
-    "status": "converted-and-validated"
-  },
-  {
-    "bodyRenderType": 2,
-    "bodyRenderWidthRate": 1,
-    "boost": {
-      "bodyTracks": 4,
-      "headFrames": 1,
-      "sourceBodyOffset": -13.2,
-      "tail": false
+    {
+      "bodyRenderType": 2,
+      "bodyRenderWidthRate": 1,
+      "boost": {
+        "bodyTracks": 2,
+        "headFrames": 1,
+        "sourceBodyOffset": -36,
+        "tail": false
+      },
+      "boostSource": "source",
+      "normal": {
+        "bodyTracks": 2,
+        "headFrames": 1,
+        "sourceBodyOffset": -36,
+        "tail": false
+      },
+      "normalizedDurationFrames": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "normalizedHeadAnchorY": 0.5,
+      "rotatedFrameCount": 0,
+      "skinId": 133,
+      "sourceFrameTimes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "sourceHeadAnchorMissing": true,
+      "status": "converted-and-validated"
     },
-    "boostSource": "source",
-    "normal": {
-      "bodyTracks": 4,
-      "headFrames": 1,
-      "sourceBodyOffset": -12,
-      "tail": false
+    {
+      "bodyRenderType": 2,
+      "bodyRenderWidthRate": 1,
+      "boost": {
+        "bodyTracks": 2,
+        "headFrames": 1,
+        "sourceBodyOffset": -15.45,
+        "tail": false
+      },
+      "boostSource": "source",
+      "normal": {
+        "bodyTracks": 2,
+        "headFrames": 1,
+        "sourceBodyOffset": -15.45,
+        "tail": false
+      },
+      "normalizedDurationFrames": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "normalizedHeadAnchorY": 0.5,
+      "rotatedFrameCount": 0,
+      "skinId": 139,
+      "sourceFrameTimes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "sourceHeadAnchorMissing": true,
+      "status": "converted-and-validated"
     },
-    "normalizedDurationFrames": [
-      1,
-      1,
-      1,
-      1,
-      1,
-      1,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6
-    ],
-    "normalizedHeadAnchorY": 0.5,
-    "rotatedFrameCount": 0,
-    "skinId": 101,
-    "sourceFrameTimes": [
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6
-    ],
-    "sourceHeadAnchorMissing": true,
-    "status": "converted-and-validated"
-  },
-  {
-    "bodyRenderType": 2,
-    "bodyRenderWidthRate": 1,
-    "boost": {
-      "bodyTracks": 2,
-      "headFrames": 1,
-      "sourceBodyOffset": -16.8,
-      "tail": false
+    {
+      "bodyRenderType": 2,
+      "bodyRenderWidthRate": 1,
+      "boost": {
+        "bodyTracks": 3,
+        "headFrames": 1,
+        "sourceBodyOffset": -22.5,
+        "tail": false
+      },
+      "boostSource": "source",
+      "normal": {
+        "bodyTracks": 3,
+        "headFrames": 1,
+        "sourceBodyOffset": -22.5,
+        "tail": false
+      },
+      "normalizedDurationFrames": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "normalizedHeadAnchorY": 0.5,
+      "rotatedFrameCount": 0,
+      "skinId": 401,
+      "sourceFrameTimes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "sourceHeadAnchorMissing": true,
+      "status": "converted-and-validated"
     },
-    "boostSource": "source",
-    "normal": {
-      "bodyTracks": 2,
-      "headFrames": 1,
-      "sourceBodyOffset": -16.8,
-      "tail": false
+    {
+      "bodyRenderType": 2,
+      "bodyRenderWidthRate": 1,
+      "boost": {
+        "bodyTracks": 2,
+        "headFrames": 1,
+        "sourceBodyOffset": -35,
+        "tail": true
+      },
+      "boostSource": "source",
+      "normal": {
+        "bodyTracks": 2,
+        "headFrames": 1,
+        "sourceBodyOffset": -35,
+        "tail": true
+      },
+      "normalizedDurationFrames": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "normalizedHeadAnchorY": 0.5,
+      "rotatedFrameCount": 4,
+      "skinId": 403,
+      "sourceFrameTimes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "sourceHeadAnchorMissing": true,
+      "status": "converted-and-validated"
     },
-    "normalizedDurationFrames": [
-      1,
-      1,
-      1,
-      1,
-      1,
-      1
-    ],
-    "normalizedHeadAnchorY": 0.5,
-    "rotatedFrameCount": 0,
-    "skinId": 111,
-    "sourceFrameTimes": [
-      0,
-      0,
-      0,
-      0,
-      0,
-      0
-    ],
-    "sourceHeadAnchorMissing": true,
-    "status": "converted-and-validated"
-  },
-  {
-    "bodyRenderType": 2,
-    "bodyRenderWidthRate": 1,
-    "boost": {
-      "bodyTracks": 2,
-      "headFrames": 1,
-      "sourceBodyOffset": -20.4,
-      "tail": false
+    {
+      "bodyRenderType": 2,
+      "bodyRenderWidthRate": 1,
+      "boost": {
+        "bodyTracks": 2,
+        "headFrames": 12,
+        "sourceBodyOffset": -31,
+        "tail": false
+      },
+      "boostSource": "source",
+      "normal": {
+        "bodyTracks": 2,
+        "headFrames": 1,
+        "sourceBodyOffset": -31,
+        "tail": false
+      },
+      "normalizedDurationFrames": [
+        60,
+        60,
+        60,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        60,
+        60
+      ],
+      "normalizedHeadAnchorY": 0.5,
+      "rotatedFrameCount": 0,
+      "skinId": 411,
+      "sourceFrameTimes": [
+        60,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        60,
+        60,
+        60,
+        60
+      ],
+      "sourceHeadAnchorMissing": true,
+      "status": "converted-and-validated"
     },
-    "boostSource": "source",
-    "normal": {
-      "bodyTracks": 2,
-      "headFrames": 1,
-      "sourceBodyOffset": -20.4,
-      "tail": false
-    },
-    "normalizedDurationFrames": [
-      1,
-      1,
-      1,
-      1,
-      1,
-      1
-    ],
-    "normalizedHeadAnchorY": 0.5,
-    "rotatedFrameCount": 0,
-    "skinId": 112,
-    "sourceFrameTimes": [
-      0,
-      0,
-      0,
-      0,
-      0,
-      0
-    ],
-    "sourceHeadAnchorMissing": true,
-    "status": "converted-and-validated"
-  },
-  {
-    "bodyRenderType": 2,
-    "bodyRenderWidthRate": 1,
-    "boost": {
-      "bodyTracks": 2,
-      "headFrames": 1,
-      "sourceBodyOffset": -18,
-      "tail": false
-    },
-    "boostSource": "source",
-    "normal": {
-      "bodyTracks": 2,
-      "headFrames": 1,
-      "sourceBodyOffset": -18,
-      "tail": false
-    },
-    "normalizedDurationFrames": [
-      1,
-      1,
-      1,
-      1,
-      1,
-      1
-    ],
-    "normalizedHeadAnchorY": 0.5,
-    "rotatedFrameCount": 0,
-    "skinId": 132,
-    "sourceFrameTimes": [
-      0,
-      0,
-      0,
-      0,
-      0,
-      0
-    ],
-    "sourceHeadAnchorMissing": true,
-    "status": "converted-and-validated"
-  },
-  {
-    "bodyRenderType": 2,
-    "bodyRenderWidthRate": 1,
-    "boost": {
-      "bodyTracks": 2,
-      "headFrames": 1,
-      "sourceBodyOffset": -36,
-      "tail": false
-    },
-    "boostSource": "source",
-    "normal": {
-      "bodyTracks": 2,
-      "headFrames": 1,
-      "sourceBodyOffset": -36,
-      "tail": false
-    },
-    "normalizedDurationFrames": [
-      1,
-      1,
-      1,
-      1,
-      1,
-      1
-    ],
-    "normalizedHeadAnchorY": 0.5,
-    "rotatedFrameCount": 0,
-    "skinId": 133,
-    "sourceFrameTimes": [
-      0,
-      0,
-      0,
-      0,
-      0,
-      0
-    ],
-    "sourceHeadAnchorMissing": true,
-    "status": "converted-and-validated"
-  },
-  {
-    "bodyRenderType": 2,
-    "bodyRenderWidthRate": 1,
-    "boost": {
-      "bodyTracks": 2,
-      "headFrames": 1,
-      "sourceBodyOffset": -15.45,
-      "tail": false
-    },
-    "boostSource": "source",
-    "normal": {
-      "bodyTracks": 2,
-      "headFrames": 1,
-      "sourceBodyOffset": -15.45,
-      "tail": false
-    },
-    "normalizedDurationFrames": [
-      1,
-      1,
-      1,
-      1,
-      1,
-      1
-    ],
-    "normalizedHeadAnchorY": 0.5,
-    "rotatedFrameCount": 0,
-    "skinId": 139,
-    "sourceFrameTimes": [
-      0,
-      0,
-      0,
-      0,
-      0,
-      0
-    ],
-    "sourceHeadAnchorMissing": true,
-    "status": "converted-and-validated"
-  },
-  {
-    "bodyRenderType": 2,
-    "bodyRenderWidthRate": 1,
-    "boost": {
-      "bodyTracks": 3,
-      "headFrames": 1,
-      "sourceBodyOffset": -22.5,
-      "tail": false
-    },
-    "boostSource": "source",
-    "normal": {
-      "bodyTracks": 3,
-      "headFrames": 1,
-      "sourceBodyOffset": -22.5,
-      "tail": false
-    },
-    "normalizedDurationFrames": [
-      1,
-      1,
-      1,
-      1,
-      1,
-      1,
-      1,
-      1
-    ],
-    "normalizedHeadAnchorY": 0.5,
-    "rotatedFrameCount": 0,
-    "skinId": 401,
-    "sourceFrameTimes": [
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0
-    ],
-    "sourceHeadAnchorMissing": true,
-    "status": "converted-and-validated"
-  },
-  {
-    "bodyRenderType": 2,
-    "bodyRenderWidthRate": 1,
-    "boost": {
-      "bodyTracks": 2,
-      "headFrames": 1,
-      "sourceBodyOffset": -35,
-      "tail": true
-    },
-    "boostSource": "source",
-    "normal": {
-      "bodyTracks": 2,
-      "headFrames": 1,
-      "sourceBodyOffset": -35,
-      "tail": true
-    },
-    "normalizedDurationFrames": [
-      1,
-      1,
-      1,
-      1,
-      1,
-      1,
-      1,
-      1
-    ],
-    "normalizedHeadAnchorY": 0.5,
-    "rotatedFrameCount": 4,
-    "skinId": 403,
-    "sourceFrameTimes": [
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0
-    ],
-    "sourceHeadAnchorMissing": true,
-    "status": "converted-and-validated"
-  },
-  {
-    "bodyRenderType": 2,
-    "bodyRenderWidthRate": 1,
-    "boost": {
-      "bodyTracks": 2,
-      "headFrames": 12,
-      "sourceBodyOffset": -31,
-      "tail": false
-    },
-    "boostSource": "source",
-    "normal": {
-      "bodyTracks": 2,
-      "headFrames": 1,
-      "sourceBodyOffset": -31,
-      "tail": false
-    },
-    "normalizedDurationFrames": [
-      60,
-      60,
-      60,
-      3,
-      3,
-      3,
-      3,
-      3,
-      3,
-      3,
-      3,
-      3,
-      3,
-      3,
-      3,
-      60,
-      60
-    ],
-    "normalizedHeadAnchorY": 0.5,
-    "rotatedFrameCount": 0,
-    "skinId": 411,
-    "sourceFrameTimes": [
-      60,
-      3,
-      3,
-      3,
-      3,
-      3,
-      3,
-      3,
-      3,
-      3,
-      3,
-      3,
-      3,
-      60,
-      60,
-      60,
-      60
-    ],
-    "sourceHeadAnchorMissing": true,
-    "status": "converted-and-validated"
-  },
-  {
-    "bodyRenderType": 2,
-    "bodyRenderWidthRate": 1,
-    "boost": {
-      "bodyTracks": 2,
-      "headFrames": 7,
-      "sourceBodyOffset": -32,
-      "tail": false
-    },
-    "boostSource": "source",
-    "normal": {
-      "bodyTracks": 2,
-      "headFrames": 2,
-      "sourceBodyOffset": -32,
-      "tail": false
-    },
-    "normalizedDurationFrames": [
-      6,
-      6,
-      1,
-      1,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      1,
-      1
-    ],
-    "normalizedHeadAnchorY": 0.5,
-    "rotatedFrameCount": 0,
-    "skinId": 701,
-    "sourceFrameTimes": [
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      6,
-      0,
-      0,
-      0,
-      0
-    ],
-    "sourceHeadAnchorMissing": true,
-    "status": "converted-and-validated"
-  }
-]
+    {
+      "bodyRenderType": 2,
+      "bodyRenderWidthRate": 1,
+      "boost": {
+        "bodyTracks": 2,
+        "headFrames": 7,
+        "sourceBodyOffset": -32,
+        "tail": false
+      },
+      "boostSource": "source",
+      "normal": {
+        "bodyTracks": 2,
+        "headFrames": 2,
+        "sourceBodyOffset": -32,
+        "tail": false
+      },
+      "normalizedDurationFrames": [
+        6,
+        6,
+        1,
+        1,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        1,
+        1
+      ],
+      "normalizedHeadAnchorY": 0.5,
+      "rotatedFrameCount": 0,
+      "skinId": 701,
+      "sourceFrameTimes": [
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        0,
+        0,
+        0,
+        0
+      ],
+      "sourceHeadAnchorMissing": true,
+      "status": "converted-and-validated"
+    }
+  ]
+}

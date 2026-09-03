@@ -6,8 +6,41 @@
       3,
       4
     ],
+    "magnetAuraAnimationTrackCount": 17,
+    "magnetAuraNodeCount": 17,
+    "magnetAuraTextureDependencies": [
+      "x_lighting01",
+      "x_lighting02",
+      "x_lighting03",
+      "xt_s_lighting",
+      "xt_s_lighting02"
+    ],
+    "magnetWorldFrame": {
+      "originalSize": {
+        "height": 92,
+        "width": 84
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "rect": {
+        "height": 92,
+        "width": 84,
+        "x": 346,
+        "y": 256
+      },
+      "rotated": false,
+      "sourceFrameName": "10001",
+      "trimOffset": {
+        "x": 0,
+        "y": 0
+      },
+      "trimmed": false
+    },
     "minimumDurationFrames": 1,
     "normalRepeatOnly": true,
+    "presentationVersion": 2,
     "preservedSixFrameDuration": true,
     "rotatedFrames": [
       "snakehead",
