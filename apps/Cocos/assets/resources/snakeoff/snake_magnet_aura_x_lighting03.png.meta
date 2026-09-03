@@ -1,10 +1,12 @@
 {
+  "ver": "1.0.27",
+  "importer": "image",
+  "imported": true,
+  "uuid": "cdc75548-b0ff-45ed-894e-05a82db450ef",
   "files": [
     ".json",
     ".png"
   ],
-  "imported": true,
-  "importer": "image",
   "subMetas": {
     "6c48a": {
       "displayName": "snake_magnet_aura_x_lighting03",
@@ -36,7 +38,5 @@
     "hasAlpha": true,
     "redirect": "cdc75548-b0ff-45ed-894e-05a82db450ef@6c48a",
     "type": "texture"
-  },
-  "uuid": "cdc75548-b0ff-45ed-894e-05a82db450ef",
-  "ver": "1.0.27"
+  }
 }

@@ -10,7 +10,7 @@ import {
 import { defineS2C, type GameplayC2SToken, type GameplayS2CToken } from "../defineGameplayWire";
 import { CastSkill, Move, SkillResult, type ICastSkillReq, type IMoveReq, type ISkillResultRes } from "../ballMove/wire";
 import { IdlePulse, type IIdlePulseReq } from "../idle/wire";
-import { SnakeInput, SnakeSnapshot, type ISnakeInputReq, type ISnakeWorldSnapshot } from "../snake/wire";
+import { SnakeBaselineBegin, SnakeBaselineChunk, SnakeBaselineEnd, SnakeBaselineRequest, SnakeDelta, SnakeEndRun, SnakeInput, SnakeReliveDecision, SnakeReliveDecisionResult, SnakeReliveOffered, SnakeReliveResolved, SnakeRunFinalizing, SnakeRunResult, type ISnakeBaselineBegin, type ISnakeBaselineChunk, type ISnakeBaselineEnd, type ISnakeBaselineRequestReq, type ISnakeEndRunReq, type ISnakeInputReq, type ISnakeReliveDecisionReq, type ISnakeReliveDecisionResult, type ISnakeReliveOffered, type ISnakeReliveResolved, type ISnakeRunFinalizing, type ISnakeRunResultV1, type ISnakeWorldDelta } from "../snake/wire";
 
 /** 客户端 → 服务端 消息名（core + 各玩法 wire token 的显式字面量聚合） */
 export const C2S = {
@@ -22,6 +22,9 @@ export const C2S = {
     CastSkill: "c2s.castSkill",
     IdlePulse: "c2s.idle.pulse",
     SnakeInput: "c2s.snake.input",
+    SnakeReliveDecision: "c2s.snake.reliveDecision",
+    SnakeEndRun: "c2s.snake.endRun",
+    SnakeBaselineRequest: "c2s.snake.baselineRequest",
 } as const;
 
 /** 服务端 → 客户端 消息名 */
@@ -33,7 +36,15 @@ export const S2C = {
     RoomError: "s2c.room.error",
     RoomCodeInvalidated: "s2c.room.codeInvalidated",
     SkillResult: "s2c.skillResult",
-    SnakeSnapshot: "s2c.snake.snapshot",
+    SnakeBaselineBegin: "s2c.snake.baselineBegin",
+    SnakeBaselineChunk: "s2c.snake.baselineChunk",
+    SnakeBaselineEnd: "s2c.snake.baselineEnd",
+    SnakeDelta: "s2c.snake.delta",
+    SnakeReliveOffered: "s2c.snake.reliveOffered",
+    SnakeReliveDecisionResult: "s2c.snake.reliveDecisionResult",
+    SnakeReliveResolved: "s2c.snake.reliveResolved",
+    SnakeRunFinalizing: "s2c.snake.runFinalizing",
+    SnakeRunResult: "s2c.snake.runResult",
 } as const;
 
 export type C2SType = (typeof C2S)[keyof typeof C2S];
@@ -49,6 +60,9 @@ export interface C2SPayloadMap {
     "c2s.castSkill": ICastSkillReq;
     "c2s.idle.pulse": IIdlePulseReq;
     "c2s.snake.input": ISnakeInputReq;
+    "c2s.snake.reliveDecision": ISnakeReliveDecisionReq;
+    "c2s.snake.endRun": ISnakeEndRunReq;
+    "c2s.snake.baselineRequest": ISnakeBaselineRequestReq;
 }
 
 export interface S2CPayloadMap {
@@ -59,7 +73,15 @@ export interface S2CPayloadMap {
     "s2c.room.error": CoreS2CPayloadMap["s2c.room.error"];
     "s2c.room.codeInvalidated": CoreS2CPayloadMap["s2c.room.codeInvalidated"];
     "s2c.skillResult": ISkillResultRes;
-    "s2c.snake.snapshot": ISnakeWorldSnapshot;
+    "s2c.snake.baselineBegin": ISnakeBaselineBegin;
+    "s2c.snake.baselineChunk": ISnakeBaselineChunk;
+    "s2c.snake.baselineEnd": ISnakeBaselineEnd;
+    "s2c.snake.delta": ISnakeWorldDelta;
+    "s2c.snake.reliveOffered": ISnakeReliveOffered;
+    "s2c.snake.reliveDecisionResult": ISnakeReliveDecisionResult;
+    "s2c.snake.reliveResolved": ISnakeReliveResolved;
+    "s2c.snake.runFinalizing": ISnakeRunFinalizing;
+    "s2c.snake.runResult": ISnakeRunResultV1;
 }
 
 export type C2SPayload<T extends C2SType> = C2SPayloadMap[T];
@@ -75,6 +97,9 @@ export const C2S_RUNTIME_VALIDATORS: { [K in C2SType]: RuntimeValidator<C2SPaylo
     "c2s.castSkill": CastSkill.validate,
     "c2s.idle.pulse": IdlePulse.validate,
     "c2s.snake.input": SnakeInput.validate,
+    "c2s.snake.reliveDecision": SnakeReliveDecision.validate,
+    "c2s.snake.endRun": SnakeEndRun.validate,
+    "c2s.snake.baselineRequest": SnakeBaselineRequest.validate,
 };
 
 /** S2C runtime validators. Client state/message adapters must validate before dispatching callbacks. */
@@ -86,7 +111,15 @@ export const S2C_RUNTIME_VALIDATORS: { [K in S2CType]: RuntimeValidator<S2CPaylo
     "s2c.room.error": CORE_S2C_WIRE["s2c.room.error"],
     "s2c.room.codeInvalidated": CORE_S2C_WIRE["s2c.room.codeInvalidated"],
     "s2c.skillResult": SkillResult.validate,
-    "s2c.snake.snapshot": SnakeSnapshot.validate,
+    "s2c.snake.baselineBegin": SnakeBaselineBegin.validate,
+    "s2c.snake.baselineChunk": SnakeBaselineChunk.validate,
+    "s2c.snake.baselineEnd": SnakeBaselineEnd.validate,
+    "s2c.snake.delta": SnakeDelta.validate,
+    "s2c.snake.reliveOffered": SnakeReliveOffered.validate,
+    "s2c.snake.reliveDecisionResult": SnakeReliveDecisionResult.validate,
+    "s2c.snake.reliveResolved": SnakeReliveResolved.validate,
+    "s2c.snake.runFinalizing": SnakeRunFinalizing.validate,
+    "s2c.snake.runResult": SnakeRunResult.validate,
 };
 
 export function validateC2SPayload<T extends C2SType>(type: T, input: unknown): C2SPayload<T> {
@@ -115,6 +148,9 @@ export const GAME_WIRE_OWNERS = {
     "c2s.castSkill": "ballMove",
     "c2s.idle.pulse": "idle",
     "c2s.snake.input": "snake",
+    "c2s.snake.reliveDecision": "snake",
+    "c2s.snake.endRun": "snake",
+    "c2s.snake.baselineRequest": "snake",
     "s2c.pong": "core",
     "s2c.welcome": "core",
     "s2c.chat": "core",
@@ -122,7 +158,15 @@ export const GAME_WIRE_OWNERS = {
     "s2c.room.error": "core",
     "s2c.room.codeInvalidated": "core",
     "s2c.skillResult": "ballMove",
-    "s2c.snake.snapshot": "snake",
+    "s2c.snake.baselineBegin": "snake",
+    "s2c.snake.baselineChunk": "snake",
+    "s2c.snake.baselineEnd": "snake",
+    "s2c.snake.delta": "snake",
+    "s2c.snake.reliveOffered": "snake",
+    "s2c.snake.reliveDecisionResult": "snake",
+    "s2c.snake.reliveResolved": "snake",
+    "s2c.snake.runFinalizing": "snake",
+    "s2c.snake.runResult": "snake",
 } as const;
 
 export type GameWireType = keyof typeof GAME_WIRE_OWNERS;
@@ -133,6 +177,9 @@ export const GAME_WIRE_PHASES = {
     "c2s.castSkill": [GamePhase.Playing],
     "c2s.idle.pulse": [GamePhase.Playing],
     "c2s.snake.input": [GamePhase.Playing],
+    "c2s.snake.reliveDecision": [GamePhase.Playing],
+    "c2s.snake.endRun": [GamePhase.Playing],
+    "c2s.snake.baselineRequest": [GamePhase.Playing],
 } as const satisfies { readonly [type: string]: readonly GamePhaseType[] };
 
 /** 玩法 C2S 的预算成本（rateCost；机制为高频输入留位）。 */
@@ -141,6 +188,9 @@ export const GAME_WIRE_RATE_COST = {
     "c2s.castSkill": 1,
     "c2s.idle.pulse": 1,
     "c2s.snake.input": 1,
+    "c2s.snake.reliveDecision": 2,
+    "c2s.snake.endRun": 2,
+    "c2s.snake.baselineRequest": 4,
 } as const satisfies { readonly [type: string]: number };
 
 /** 每玩法 C2S token 表（GameMode.commands 键派生与校验用）。 */
@@ -158,6 +208,9 @@ export const gameplayC2STokens = {
     },
     "snake": {
         "c2s.snake.input": SnakeInput,
+        "c2s.snake.reliveDecision": SnakeReliveDecision,
+        "c2s.snake.endRun": SnakeEndRun,
+        "c2s.snake.baselineRequest": SnakeBaselineRequest,
     },
 } as const satisfies { readonly [mode: string]: { readonly [type: string]: GameplayC2SToken<unknown> } };
 
@@ -173,7 +226,15 @@ export const gameplayS2CTokens = {
     "privateFixture": {
     },
     "snake": {
-        "s2c.snake.snapshot": SnakeSnapshot,
+        "s2c.snake.baselineBegin": SnakeBaselineBegin,
+        "s2c.snake.baselineChunk": SnakeBaselineChunk,
+        "s2c.snake.baselineEnd": SnakeBaselineEnd,
+        "s2c.snake.delta": SnakeDelta,
+        "s2c.snake.reliveOffered": SnakeReliveOffered,
+        "s2c.snake.reliveDecisionResult": SnakeReliveDecisionResult,
+        "s2c.snake.reliveResolved": SnakeReliveResolved,
+        "s2c.snake.runFinalizing": SnakeRunFinalizing,
+        "s2c.snake.runResult": SnakeRunResult,
     },
 } as const satisfies { readonly [mode: string]: { readonly [type: string]: GameplayS2CToken<unknown> } };
 

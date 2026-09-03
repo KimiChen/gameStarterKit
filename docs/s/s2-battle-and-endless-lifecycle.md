@@ -7,9 +7,9 @@
 
 | 项目 | 口径 |
 |---|---|
-| 状态 | `[已拍板·待实施]` |
+| 状态 | `[已完成]`（2026-09-03） |
 | 预计 | 11–16 人日；不含最终 FGUI 美术制作与反复数值调优 |
-| 前置依赖 | [S0 复刻基线](s0-replication-baseline.md) 已冻结命名配置、来源证据、规则差异表与 golden；[S1 素材与目录](s1-assets-and-catalog.md) 的原基线已完成，但必须先完成 S1-12 磁铁表现资源与目录增量，才可开始 S2 |
+| 前置依赖 | [S0 复刻基线](s0-replication-baseline.md) 已冻结命名配置、来源证据、规则差异表与 golden；[S1 素材与目录](s1-assets-and-catalog.md)（含 S1-12 磁铁表现资源与目录增量）已完成 |
 | 本阶段输出 | `snake@2`、4096² V2 战场、无房级 deadline 的持续世界、17 条稳定态活动蛇、确定性 Star 运动与磁铁刷新/扩圈拾取周期、中央操作区、设备本地左右手设置、多点触控、测试经济端口上的真人复活状态机、分块基线与增量同步 |
 | 后续依赖方 | S2R 将测试经济端口替换为真实扣费/收据/恢复链；S3 复用稳定皮肤 ID；S4 扩展真人 run 账本并发奖 |
 | 发布门禁 | **本阶段不得开放 `onlineCoinRelive5V1`。S2 只连接确定性的测试 `ReliveEconomyPort`；S2R 负责取得真实金币链路的技术放行资格，实际开关只能由 S5 在最终 go/no-go 后开启。** |
@@ -916,41 +916,41 @@ S2 使用纯测试端口验证玩法状态唯一性，不声称覆盖真实数�
 
 ## 退出条件
 
-以下条件必须全部满足，S2 才能标记 `[已完成]`：
+以下条件已经全部满足，S2 标记为 `[已完成]`：
 
-- [ ] S1-12 磁铁资源/目录增量已完成，`SNAKE_PRESENTATION_VERSION=2` 与实际新
+- [x] S1-12 磁铁资源/目录增量已完成，`SNAKE_PRESENTATION_VERSION=2` 与实际新
   `CLIENT_SNAKE_PRESENTATION_HASH` 由生成/校验证据回写；未改公共皮肤 hash 或 skin contentVersion。
-- [ ] 四个未变层的 ID/payload/hash 与 S0 完全相同；`onlineEndlessDropInV2` 保持 ID、层内显式
+- [x] 四个未变层的 ID/payload/hash 与 S0 完全相同；`onlineEndlessDropInV2` 保持 ID、层内显式
   `version: 1 -> 2` 并生成新 layer hash，五层版本/hash 产生新的真实组合 hash。S0 旧 hash 仅作历史证据；不存在
   Classic、TimeLimit 或动态 AB 隐式 fallback。
-- [ ] 4096²、32 网格、1000+30 食物、80/100000 长度、相机/身体/路径公式和 AI 残骸公式均有确定性测试。
-- [ ] Star/磁铁 `320/3 unit/s` 的 milli/micro-unit 余数算法、matchSeed+kind+entityId 子流、0..359 整数度 draw order、
+- [x] 4096²、32 网格、1000+30 食物、80/100000 长度、相机/身体/路径公式和 AI 残骸公式均有确定性测试。
+- [x] Star/磁铁 `320/3 unit/s` 的 milli/micro-unit 余数算法、matchSeed+kind+entityId 子流、0..359 整数度 draw order、
   remaining 计数器的 34/67 次移动边界、实体半径边界、四边/角落反弹和同 tick 顺序经长驻 fixture 后仍精确可重放。
-- [ ] 磁铁首三波在无资格真人/全长 50000 时仍无条件生成；后续 150 秒 gate 的七种资格状态、人类 `<50000`、
+- [x] 磁铁首三波在无资格真人/全长 50000 时仍无条件生成；后续 150 秒 gate 的七种资格状态、人类 `<50000`、
   四种排除状态、AI 排除、跳过不补发、400/160 tick、上限 10、同 tick 唯一拾取、+86.4 范围和重拾刷新不叠层
   均有正反测试。
-- [ ] trigger 在 fixed-step 开头使用上一 tick 已提交快照；新磁铁当 tick 移动且可拾取，跳过不分配 tool entity ID、不消费
+- [x] trigger 在 fixed-step 开头使用上一 tick 已提交快照；新磁铁当 tick 移动且可拾取，跳过不分配 tool entity ID、不消费
   位置/motion RNG，但触发序号继续。
-- [ ] 1～8 真人下稳定态始终为 17 条活动蛇；AI 阵容、皮肤 RNG、假榜隔离和独立重生均通过。
-- [ ] 真人复活状态机的 4/100/20/60 tick 边界、含 provisional 首 tick 的保护半开区间和
+- [x] 1～8 真人下稳定态始终为 17 条活动蛇；AI 阵容、皮肤 RNG、假榜隔离和独立重生均通过。
+- [x] 真人复活状态机的 4/100/20/60 tick 边界、含 provisional 首 tick 的保护半开区间和
   accept/decline/timeout CAS 竞态全部通过。
-- [ ] 真人不存在 40 tick 自动重生，真人死亡不产生可拾取计分残骸。
-- [ ] 房间在 1800/1801 tick 继续，客户端不显示剩余时间或等待 room Settle。
-- [ ] `snake@2` 可承载 17 蛇、1030 食物、最多 10 个磁铁、单蛇 5186 点、全房 88162 点，并完整声明后续 receipt/result
+- [x] 真人不存在 40 tick 自动重生，真人死亡不产生可拾取计分残骸。
+- [x] 房间在 1800/1801 tick 继续，客户端不显示剩余时间或等待 room Settle。
+- [x] `snake@2` 可承载 17 蛇、1030 食物、最多 10 个磁铁、单蛇 5186 点、全房 88162 点，并完整声明后续 receipt/result
   envelope；基线/delta 故障可重同步，后续版本按实际语义递增而非硬编码 `snake@3`。
-- [ ] tool/buff validator 只按权威 envelope tick 判断半开区间；`ISnakeSnapshotTool.id` 在 roomEpoch 内不复用，
+- [x] tool/buff validator 只按权威 envelope tick 判断半开区间；`ISnakeSnapshotTool.id` 在 roomEpoch 内不复用，
   而每个实例的 `toolId` 恒为 `10001`；拾取 removal 与
   胜者 `magnetUntilTick` 在同一 seq 原子可见，真人胜出才同 seq 更新其 run `magnetCollected`，AI 不写该计数。
-- [ ] 中央摇杆、四槽、Safe Area、默认右手/本地左右手切换、双指持续操作和第三指辅助入口均有自动输入回归；
+- [x] 中央摇杆、四槽、Safe Area、默认右手/本地左右手切换、双指持续操作和第三指辅助入口均有自动输入回归；
   偏好不进入 User/RPC/wire/DB。
-- [ ] 首发 HUD 不显示本次游玩时长；磁铁仅显示被动状态，不占四槽且不存在主动使用消息。
-- [ ] 自机只使用不改原色的细白轮廓，AI 只用名字识别；无额外自机箭头或 AI 轮廓。
-- [ ] 死亡/复活保留 `magnetCollected/starCollected` 累计但清空磁铁 buff；存活断线/重连只恢复绝对 tick 下的剩余效果。
-- [ ] 断线、重连、最终离场、Draining、空房回收与 churn 清理不留实体、任务、pointer 或游标。
-- [ ] 客户端复活窗仅以权威 player state/tick 驱动，重复和乱序消息不产生第二结果。
-- [ ] 测试 `ReliveEconomyPort` 与生产资产实现物理隔离，生产启动/配置检查无法误绑。
-- [ ] **`onlineCoinRelive5V1` 面向玩家的发布开关仍为关闭。** 文档、UI 和测试结果不得声称已完成真实扣费。
-- [ ] 相关生成、同步、类型检查、server/client/FGUI、容量与性能门禁通过，Creator 待验证项有明确证据位。
+- [x] 首发 HUD 不显示本次游玩时长；磁铁仅显示被动状态，不占四槽且不存在主动使用消息。
+- [x] 自机只使用不改原色的细白轮廓，AI 只用名字识别；无额外自机箭头或 AI 轮廓。
+- [x] 死亡/复活保留 `magnetCollected/starCollected` 累计但清空磁铁 buff；存活断线/重连只恢复绝对 tick 下的剩余效果。
+- [x] 断线、重连、最终离场、Draining、空房回收与 churn 清理不留实体、任务、pointer 或游标。
+- [x] 客户端复活窗仅以权威 player state/tick 驱动，重复和乱序消息不产生第二结果。
+- [x] 测试 `ReliveEconomyPort` 与生产资产实现物理隔离，生产启动/配置检查无法误绑。
+- [x] **`onlineCoinRelive5V1` 面向玩家的发布开关仍为关闭。** 文档、UI 和测试结果没有声称已完成真实扣费。
+- [x] 相关生成、同步、类型检查、server/client/FGUI、容量与性能门禁通过；Creator 待验证项已明确留给 S5。
 
 S2 完成只表示“战场与测试经济状态机可内部试玩”。S2R 真实收据、恢复与全崩溃窗口门禁完成后只取得技术
 放行资格；实际对外开关仍由 S5 在最终 go/no-go 后开启。
@@ -987,13 +987,13 @@ S2 完成只表示“战场与测试经济状态机可内部试玩”。S2R 真�
 
 | 任务/范围 | 状态 | commit | 自动验证（命令 + 结果） | golden / Creator / 日志 | 备注 |
 |---|---|---|---|---|---|
-| S2-01～S2-03 配置、生命周期、几何 | `[已拍板·待实施]` | — | — | — | — |
-| S2-04～S2-06 食物、Star/磁铁、表现、AI/假榜 | `[已拍板·待实施]` | — | — | — | — |
-| S2-07～S2-08 复活与 run 生命周期 | `[已拍板·待实施]` | — | — | — | 测试端口；发布开关必须关闭 |
-| S2-09～S2-10 wire 与同步 | `[已拍板·待实施]` | — | — | — | — |
-| S2-11～S2-14 输入、本地左右手设置、UI、连接与清理 | `[已拍板·待实施]` | — | — | — | — |
-| S2-15 阶段回归 | `[已拍板·待实施]` | — | — | — | — |
-| S2 阶段结论 | `[已拍板·待实施]` | — | — | — | 不代表 S2R 经济可靠性完成 |
+| S2-01～S2-03 配置、生命周期、几何 | `[已完成]` | 本次提交 | `snake-rules`/`snake-world` 确定性 fixture；layer/config hash 重算；1800/1801 tick 持续 Playing | S0 14 张来源 golden 作为冻结输入；目标几何由无头 world fixture 对照 | online layer `3a61016ceb2e9fc1ffe8a342ed5b174fabec1cff4581346a8224f97a2b19a53f`；组合 `2c74f005c0375f98a07250c4c14ede9d0075a238d9f355ff6f07c9935d97e8e7` |
+| S2-04～S2-06 食物、Star/磁铁、表现、AI/假榜 | `[已完成]` | 本次提交 | server world/rules/room fixture 覆盖 1030 食物、定点移动、波次/gate/拾取、17 蛇 roster；client presentation fixture 通过 | S1 runtime 资源 freshness 通过；Creator aura 混合与真机观感留 S5 | required world 磁铁 fail closed；aura/icon 与音频按角色降级 |
+| S2-07～S2-08 复活与 run 生命周期 | `[已完成]` | 本次提交 | 4/100/20/60、五档费用、第六次无窗、竞态/断线/final leave fixture 通过 | 无 Creator 依赖 | 仅非资产测试端口；生产误绑断言通过，发布开关关闭 |
+| S2-09～S2-10 wire 与同步 | `[已完成]` | 本次提交 | `snake@2` codegen `--check`、protocol fingerprint `--check`、sync 与最大容量/损坏重取 fixture 通过 | 无 Creator 依赖 | baseline begin/chunk/end + ordered delta；tool/run removal 原子收敛 |
+| S2-11～S2-14 输入、本地左右手设置、UI、连接与清理 | `[已完成]` | 本次提交 | client input/gameplay/presentation、server room churn 与真栈 Snake 场景通过 | `750 × 1624` 无头布局/资源 fixture 通过；Creator 输入与视觉终验留 S5 | 默认右手、本地先写后用、cancel-all、多指 owner 与 SFX 偏好已覆盖 |
+| S2-15 阶段回归 | `[已完成]` | 本次提交 | 2026-09-03：`npm run verify:all` exit 0（client 384/384、server 495/495、FGUI 66/66、inventory 110/110）；`npm --workspace @game/server run test:int` 171/171；codegen/fingerprint/S1 freshness/diff checks 全绿 | Creator 3.8.8、真机与最终截图仍归 S5 | 全量最终计数已同步至专项索引 |
+| S2 阶段结论 | `[已完成]` | 本次提交 | 无头与本地真栈门禁全部通过 | Creator/S5 证据位保留 | 战场与测试经济状态机可内部试玩；不代表 S2R 经济可靠性或对外发布完成 |
 
 证据至少包括：组合 config hash、1800/1801 tick 日志、最大容量 fixture、Star/磁铁定点余数与边界长驻轨迹、
 磁铁无条件前三波/资格 gate/envelope tick/原子拾取/扩圈/重连记录、复活竞态测试、AI roster/churn 统计、

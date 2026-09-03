@@ -26,6 +26,11 @@ export interface GameModeContext<TState = GameRoomState> {
     /** 本局种子（进证据链供 verifier 重放）。 */
     readonly matchSeed: number;
     /**
+     * 可选的房级稳定 epoch。声明 roomLifecycle capability 的玩法会在 admission 开放前
+     * 获得一次值，并在整个房间生命周期内保持不变；普通玩法为 null。
+     */
+    readonly roomEpochId?: string | null;
+    /**
      * 正式对局确定性随机流。⚠ 房间在 initializeMatchState 里**重建**该流，context 的
      * 两个方法始终转发到当前流（闭包引用，非快照）——mode 不得自己缓存底层流对象。
      */
@@ -60,6 +65,23 @@ export interface GameModePlayerLeavingContext<TState, TPlayer> extends GameModeC
     readonly player: TPlayer;
     readonly acceptedTick: number;
     readonly duringMatch: boolean;
+    readonly closeCode: number;
+    readonly consented: boolean;
+}
+
+export interface GameModeConnectionChangedContext<TState, TPlayer> extends GameModeContext<TState> {
+    readonly client: Client;
+    readonly player: TPlayer;
+    readonly connected: boolean;
+}
+
+/**
+ * 只有需要跨个人 run 保持房级身份的玩法才声明此能力。shell 负责在 onCreate 内、
+ * 首个 admission 之前生成 epoch 并前移 state.matchId；玩法只负责投影自有字段。
+ */
+export interface GameModeRoomLifecycleCapability<TState> {
+    readonly stableRoomEpoch: true;
+    onRoomInitialize(context: GameModeContext<TState> & { readonly roomEpochId: string }): void;
 }
 
 /** commands handler 收到的 context：房间 context + 发送方连接。 */
@@ -146,6 +168,7 @@ export interface GameMode<TState = GameRoomState, TPlayer = PlayerState> {
     createPlayer(context: GameModePlayerFactoryContext): TPlayer;
     /** 可选证据能力；未声明的 mode settle 时不产出证据。 */
     readonly evidence?: GameModeEvidenceCapability;
+    readonly roomLifecycle?: GameModeRoomLifecycleCapability<TState>;
     /** Return false to reject the client after auth but before state mutation. */
     onAdmission?(context: GameModeContext<TState> & { readonly client: Client }): boolean | void;
     /** Runs after common tick/match bookkeeping has been reset. */
@@ -161,6 +184,8 @@ export interface GameMode<TState = GameRoomState, TPlayer = PlayerState> {
     onStep?(context: GameModeContext<TState> & { readonly dtMs: number }): void;
     /** Synchronous state transition before the departing player is removed. */
     onPlayerLeaving?(context: GameModePlayerLeavingContext<TState, TPlayer>): void;
+    /** 断线宽限开始/重连成功边界；最终离场仍只走 onPlayerLeaving。 */
+    onConnectionChanged?(context: GameModeConnectionChangedContext<TState, TPlayer>): void;
     /** Mode-owned settlement predicate, evaluated after a real leave. */
     shouldSettle?(context: GameModeContext<TState>): boolean;
     onLeave?(context: GameModeContext<TState> & { readonly client: Client }): void | Promise<void>;

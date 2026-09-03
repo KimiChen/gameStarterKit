@@ -75,5 +75,6 @@ async function createSnakePresentation(
                 console.error("[snake] 结算退出失败：", error);
             });
         },
+        () => services.session.getSessionProfile()?.sfxOn ?? true,
     );
 }

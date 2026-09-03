@@ -1,7 +1,7 @@
 # Snake 竖版新版无尽 V2 与养成专项阶段任务
 
-> **状态：`[进行中]`。更新时间：2026-09-03。S0 与完整 S1（含 S1-12 磁铁增量）已完成，
-> S2～S5 尚未实施。**<br>
+> **状态：`[进行中]`。更新时间：2026-09-03。S0、完整 S1（含 S1-12 磁铁增量）与 S2 已完成，
+> S2R～S5 尚未实施。**<br>
 > 本目录把原根计划拆成可独立实施、验证和回写证据的 S0～S5 阶段任务。根
 > [plan-s.md](../../plan-s.md) 只保留兼容入口，不再维护第二份正文。阶段状态只以本页、对应阶段证据表和
 > [plan-v5.md](../../plan-v5.md) 的一致结论为准。
@@ -29,9 +29,10 @@
 首发纳入场内自动拾取磁铁；Star 与磁铁共用 `320/3 unit/s` 的确定性移动内核；操作习惯默认右手，左手切换只在设备
 本地持久化；首发不显示正向游玩时长，自机使用细白轮廓、AI 使用名字识别。
 
-当前代码基线是：drop-in 自由加入、最多 8 真人、真人不足由 AI 填到 8 条活动蛇、首人开局、Playing 可入、
-90 秒限时计分、死亡约 2 秒自动复活并保分。该事实以 [plan-v5.md](../../plan-v5.md) 为准，是本专项要替换的
-现状，不是目标生命周期。
+当前代码基线已经是 S2 的 `snake@2`：drop-in 自由加入、最多 8 真人、稳定态 17 条活动蛇、首人开局、
+Playing 可入、4096² 无房级 deadline 世界、1000 Dot + 30 Star、场内磁铁，以及真人个人死亡/测试复活/run
+终局状态机。生产环境无法绑定 S2 测试经济，`onlineCoinRelive5V1` 面向玩家的发布开关仍关闭；真实金币
+收据/恢复、衣柜、可靠奖励与最终发布分别仍属于 S2R～S5。
 
 本专项唯一目标组合为 `newEndlessPortraitV2Map4096TotalTime0`：
 
@@ -43,8 +44,8 @@
 | 首发复活策略 | `onlineCoinRelive5V1` | Feed B 表样例冻结为 `100/200/300/300/300` 金币、5 秒选择窗；不接广告、分享、钻石、月卡与 AB |
 | 联机适配 | `onlineEndlessDropInV2` | 保持 ID，S2 将层内显式 `version: 1` 升为 `version: 2`：首人启动、3 秒准备、最多 8 真人、Playing 可入、稳定态 17 条活动蛇、个人 run 结算、空房回收，以及 Star/磁铁 20 Hz 确定性移动和后续循环 gate |
 
-S0 的旧五层/组合 hash 只作历史证据。S2 实施时另外四层保持 version 1 与原 hash，联机适配层生成 version 2
-的新 layer hash，并据五层 ID/version/hash 生成新的真实组合 hash；新值不得在实施前预填或反写 S0 evidence。
+S0 的旧五层/组合 hash 只作历史证据。S2 已保持另外四层 version 1 与原 hash，把联机适配层升为 version 2，
+生成 layer hash `3a61016c…a53f` 与组合 hash `2c74f005…e8e7`；没有反写 S0 evidence。
 
 ## 3. 首发目标与非目标
 
@@ -84,15 +85,15 @@ S0 复刻基线
                       -> S5 验收与发布
 ```
 
-S1（含新增 S1-12 的磁铁资源、表现目录和 hash 门禁）已经完成，S2 前置门已解除。S2R 的数据库与 shell
-设计可在 S2 后段并行，但集成必须建立在 S2
-死亡/run 状态机之上；S4 的奖励策略设计可在 S3 UI 后段并行，但发布门禁仍要求 S3、S4 全部完成。
+S1（含新增 S1-12 的磁铁资源、表现目录和 hash 门禁）与 S2 已经完成，S2R 前置门已解除。S2R 的数据库与
+shell 集成必须建立在现有 S2 死亡/run 状态机和端口之上；S4 的奖励策略设计可在 S3 UI 后段并行，但发布
+门禁仍要求 S2R、S3、S4 全部完成。
 
 | 阶段文档 | 状态 | 主要结果 | 关键退出门 | 预计 |
 |---|---|---|---|---:|
 | [S0 · 复刻基线](s0-replication-baseline.md) | `[已完成]` | 命名配置、来源 fixture、横/竖 golden、差异决策表 | 34 个来源身份、71 项路径表、14 张 golden、55 文件逐字节复建通过 | 3–4 人日 |
 | [S1 · 素材与目录](s1-assets-and-catalog.md) | `[已完成]` | 16 皮肤及表现目录，以及磁铁 `10001` 世界帧/被动 icon/aura/音效增量 | 16/16、8 个磁铁 runtime 资源、`presentationVersion=2`、三层 hash/fallback/freshness 均闭合 | 4–7 人日（估算；非工时实绩） |
-| [S2 · 战场与无尽生命周期](s2-battle-and-endless-lifecycle.md) | `[已拍板·待实施]` | 4096² V2 世界、17 蛇、1030 食物、磁铁、中央操作区、无尽/死亡状态机、wire v2 | world golden、Star/磁铁确定性、输入/竞态、容量/重连与定向测试通过 | 11–16 人日 |
+| [S2 · 战场与无尽生命周期](s2-battle-and-endless-lifecycle.md) | `[已完成]` | 4096² V2 世界、17 蛇、1030 食物、磁铁、中央操作区、无尽/死亡状态机、wire v2 | config/wire/world/Star/磁铁、输入/竞态、容量/重连测试与真栈 171/171 通过 | 11–16 人日（估算；非工时实绩） |
 | [S2R · 可靠金币复活](s2r-reliable-coin-relive.md) | `[已拍板·待实施]` | awaited hooks、最小 run/checkpoint、decision/receipt、扣费/应用/激活/退款恢复 | 所有崩溃窗口不吞币、不双扣、不重复复活 | 4–6 人日 |
 | [S3 · 衣柜与装备](s3-wardrobe-and-equipment.md) | `[已拍板·待实施]` | `snakeCosmetic` Feature/RPC、Bag/User 存储、解锁/装备、FGUI | 权威装备、并发、重连与 fallback 测试通过 | 6–10 人日 |
 | [S4 · 可靠养成奖励](s4-reliable-progression-rewards.md) | `[已拍板·待实施]` | 完整 run 账本、durable settlement、金币/经验/碎片 outbox | 各结束原因和崩溃窗口不漏奖、不双发 | 7–11 人日 |
@@ -180,9 +181,9 @@ shared 继续保持零依赖，客户端 View/Logic 与 FairyGUI 动态加载边
 
 | 阶段 | 状态 | commit | 自动验证 | Creator/真栈证据 | 备注 |
 |---|---|---|---|---|---|
-| S0 | `[已完成]` | `7a04131` | unit 10/10；evidence rebuild 55/55 byte-identical；SHA 54/54；inventory 14/5 | [14 张来源驱动静态重建及 metadata](evidence/s0/goldens/manifest.json) | 组合 hash `2319d173…f87e2`；证据基线完成，S2 运行时尚未实施 |
+| S0 | `[已完成]` | `7a04131` | unit 10/10；evidence rebuild 55/55 byte-identical；SHA 54/54；inventory 14/5 | [14 张来源驱动静态重建及 metadata](evidence/s0/goldens/manifest.json) | 组合 hash `2319d173…f87e2`；作为已冻结历史输入，S2 未反写 |
 | S1 | `[已完成]` | `d18846a`（原基线）+ `bc5bb97`（S1-12） | converter 13/13、S1 server 5/5、client catalog 11/11；全量 client 380/380、server 489/489；typecheck/sync/inventory/SHA 全绿 | [16 张预览、两张 contact sheet 与磁铁完整性证据](evidence/s1/README.md)；Creator aura 终验留 S5 | public `a1cdecbc…b075`、server `9ed3762e…fa19` 保持不变；client 升为 `8615596a…d629`，`presentationVersion=2` |
-| S2 | `[已拍板·待实施]` | — | — | — | — |
+| S2 | `[已完成]` | 本次提交 | `verify:all` exit 0：client 384/384、server 495/495、FGUI 66/66、inventory 110/110；真栈 `test:int` 171/171；codegen/fingerprint/S1 freshness 全绿 | `750 × 1624` 无头 View/输入/资源 fixture 已通过；Creator 3.8.8 与真机视觉终验仍归 S5 | `snake@2`；online layer `3a61016c…a53f`；组合 `2c74f005…e8e7`；仅测试经济，发布开关关闭 |
 | S2R | `[已拍板·待实施]` | — | — | — | 只产出技术资格；实际开关保持关闭至 S5 |
 | S3 | `[已拍板·待实施]` | — | — | — | — |
 | S4 | `[已拍板·待实施]` | — | — | — | — |

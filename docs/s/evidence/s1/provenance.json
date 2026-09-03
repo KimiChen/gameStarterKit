@@ -489,7 +489,7 @@
     "catalogLogicalName": "presentation/magnet/aura/x_lighting01",
     "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
     "meta": {
-      "sha256": "faf86f06540acdd1815520ff1e2506c3b72fe70567e6f49e998c1ce7a5a9abe7",
+      "sha256": "d508dce24b61a1d2d11c70f6e8bce4c7560fb7d6b8bece1ff2dedaa848d111a1",
       "state": "仓库新生成/持有，待 S5 Creator 确认"
     },
     "outputSha256": "f86fb2768cc1c9228ca99d7588c01f37c86e1a088e306076bbde05d94c35aa5b",
@@ -507,7 +507,7 @@
     "catalogLogicalName": "presentation/magnet/aura/x_lighting02",
     "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
     "meta": {
-      "sha256": "d88257f03225ee20e77264c30d1c1e6a59acea91ac5ab9828dbbd0eb5969f033",
+      "sha256": "92ef0a69787684be5727be95309033d80d6f6cd5884567039991228749f9eb29",
       "state": "仓库新生成/持有，待 S5 Creator 确认"
     },
     "outputSha256": "8bf1c195d4dfc2bf7ad8db4740a0faaa1743d092ac715f9e562a0bccee2c3194",
@@ -525,7 +525,7 @@
     "catalogLogicalName": "presentation/magnet/aura/x_lighting03",
     "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
     "meta": {
-      "sha256": "3446196ba1445e64e792a8e059a11448b130c5a1dcfc0b4e2889a4f9b2cf86b6",
+      "sha256": "879019a33731fa4908c8cdb74ddd43705058f12940ee1ff4dc8db5b9b56a8712",
       "state": "仓库新生成/持有，待 S5 Creator 确认"
     },
     "outputSha256": "15331a741d25de8e08ed903f9c88cab46ebad60bc57c40005fc96f839dd5b45d",
@@ -543,7 +543,7 @@
     "catalogLogicalName": "presentation/magnet/aura/xt_s_lighting",
     "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
     "meta": {
-      "sha256": "b40ebadc0bff0c79d16fed4e7260068bff2be943b905498f288a02348b863ba6",
+      "sha256": "718e5a5d511b0108f61f322bb1c9d7503e3b7db4ce5e6533e45c0091d1ec8f1c",
       "state": "仓库新生成/持有，待 S5 Creator 确认"
     },
     "outputSha256": "11b9fdc1983d39bb1a578ded1fa7e4962fae95da44895f40b819f507c1a5425c",
@@ -561,7 +561,7 @@
     "catalogLogicalName": "presentation/magnet/aura/xt_s_lighting02",
     "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
     "meta": {
-      "sha256": "73ff02279670f077397546325f4b0547de01f5c47afb830a1fa046e5409b7192",
+      "sha256": "f9c886236e80663075df7be936fb14fbd5344b35da165a00bd5bb5eaaf2e476b",
       "state": "仓库新生成/持有，待 S5 Creator 确认"
     },
     "outputSha256": "4e77f9fbd45a66be64f8cd4311e4e761ffdb91e76580e4e8334d582dd7eaebc0",
@@ -620,7 +620,7 @@
     "conversion": "logical alias only; no second physical byte copy (passive status icon reuses the world frame and texture bytes)",
     "logicalAliasOf": "presentation/magnet/world",
     "meta": {
-      "sha256": "5777d23d05056ed0c74e1e05174687dacc734815927540b313cd66c12cd69b18",
+      "sha256": "f9986c4935fb682a6c3a4e63037decea97f956424eeb36e24755f7761e2afb46",
       "state": "仓库新生成/持有，待 S5 Creator 确认"
     },
     "outputSha256": "e954359e45836981a574101f7397906da997d07c52498e682b4a1c98b1ee4090",
@@ -638,7 +638,7 @@
     "catalogLogicalName": "presentation/magnet/world",
     "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
     "meta": {
-      "sha256": "5777d23d05056ed0c74e1e05174687dacc734815927540b313cd66c12cd69b18",
+      "sha256": "f9986c4935fb682a6c3a4e63037decea97f956424eeb36e24755f7761e2afb46",
       "state": "仓库新生成/持有，待 S5 Creator 确认"
     },
     "outputSha256": "e954359e45836981a574101f7397906da997d07c52498e682b4a1c98b1ee4090",
@@ -674,7 +674,7 @@
     "catalogLogicalName": "audio/collect-magnet",
     "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
     "meta": {
-      "sha256": "c211d542b6faeae0a8bad2e54d5091bdce96f889d4a5ae4c68e0b2c6192f4830",
+      "sha256": "16b3ac71ab86be4b2c372488f077eac4f857f877407294793ee384fe4c2ae396",
       "state": "仓库新生成/持有，待 S5 Creator 确认"
     },
     "outputSha256": "7ca26a88922302ec4492ed31117f57410268109d47645b689318e6138bb5c113",
@@ -818,7 +818,7 @@
     "catalogLogicalName": "skin/3/texture",
     "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
     "meta": {
-      "sha256": "29b413ce450790b4fc80d6e4bf7e71fd6cadf36d51fb803d2bd3e72217c14aab",
+      "sha256": "731dccdf861f3b091872050fc30686b3173a2d7df5581e60a794fd9701f70ab3",
       "state": "仓库新生成/持有，待 S5 Creator 确认"
     },
     "outputSha256": "e933fbf2321d4f913f6b5d8af84bf5d12d83d15df7daf42c94e1bf180501389b",
@@ -872,7 +872,7 @@
     "catalogLogicalName": "skin/101/texture",
     "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
     "meta": {
-      "sha256": "513efb5b71cc95513dfade81df9cd98e1b2347eff1d95911de001015b7b5207d",
+      "sha256": "e66ccdade35d5a545ebf3d24236105c05a667245aa235755dc5e9e806d799c0a",
       "state": "仓库新生成/持有，待 S5 Creator 确认"
     },
     "outputSha256": "6fcc926e289b9f6d1f4c6c8d23b4ac1dfc5288d9f4c23ef811b66cb84188fddf",
@@ -908,7 +908,7 @@
     "catalogLogicalName": "skin/111/texture",
     "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
     "meta": {
-      "sha256": "a35c3134074fe5b5663bcde63f4b71fc201cb55f992530ed412872d599b3a408",
+      "sha256": "be2cb092d563434585c3de8705a8549f910818db6f66cbcab9e3c5331c305381",
       "state": "仓库新生成/持有，待 S5 Creator 确认"
     },
     "outputSha256": "44499cc094537e1a83b210de97e34d9456bd39cc587ad584ce4a3aa7f3c745b1",
@@ -926,7 +926,7 @@
     "catalogLogicalName": "skin/112/texture",
     "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
     "meta": {
-      "sha256": "b22873cd1d8acadac551374ec43dfa0da5438f5f9327eec2bbee0181ab2be0d6",
+      "sha256": "d361b020a72e8bc4efaef952b8afb24444a55e485029b19046b6c08f14924cbf",
       "state": "仓库新生成/持有，待 S5 Creator 确认"
     },
     "outputSha256": "df6b073b29cd8789ce68c8a9853931238cd6d86720bffac461b9ffa1d2a8e618",
@@ -944,7 +944,7 @@
     "catalogLogicalName": "skin/132/texture",
     "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
     "meta": {
-      "sha256": "b12705c2a5cd804bec419894125d80fa6579e153e4d76f958e8411d12ba0599b",
+      "sha256": "fabbf386bb86c17fa4f4fcd5883f7257f8f655852c2d82fafda15600c2ea0dad",
       "state": "仓库新生成/持有，待 S5 Creator 确认"
     },
     "outputSha256": "7b09fc5eb565ab27fc0d4517c8b5231c6d22c3033e3e3a2e57973d236372fba0",
@@ -1016,7 +1016,7 @@
     "catalogLogicalName": "skin/403/texture",
     "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
     "meta": {
-      "sha256": "51a736664f342743906ebf84293e0c8935bcaf1f49b6fe8fc7afa735c91d1398",
+      "sha256": "8b02c81b2befe9c959042638977dfb1d8329a38ce4dc15085f36e3195ed25959",
       "state": "仓库新生成/持有，待 S5 Creator 确认"
     },
     "outputSha256": "22b5b3d117adae765b46a9bd92ced15af9e518b5ec89a0322159a6563a3e7e9e",
@@ -1034,7 +1034,7 @@
     "catalogLogicalName": "skin/411/texture",
     "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
     "meta": {
-      "sha256": "06154ee8e860de3fadec7b6cdb3f544abf349f9c494010c946667228c6f819cf",
+      "sha256": "fca27ab51a1aa97aa14c2c2275f103aa6037933826d89ea3893784c438fdcfb9",
       "state": "仓库新生成/持有，待 S5 Creator 确认"
     },
     "outputSha256": "f4bffb4dd21285379367e21759d11c102d7e06b440d8d5099ba7b1b05d0d3111",
@@ -1070,7 +1070,7 @@
     "catalogLogicalName": "presentation/speedFx/texture",
     "conversion": "byte-for-byte copy; Cocos .meta is repository-owned and never copied",
     "meta": {
-      "sha256": "14dcc162fae7e3abb016965481d50e990780c4875b26ce2faf32b2ee68114c7c",
+      "sha256": "bad81629e01eeefc9ca55bf26ef78c31f5720b957944867730eacb3d370fcd38",
       "state": "仓库新生成/持有，待 S5 Creator 确认"
     },
     "outputSha256": "56677edbe061bd252f506aeded7a5b964e0f152ec9de1566d8707e19b396035e",

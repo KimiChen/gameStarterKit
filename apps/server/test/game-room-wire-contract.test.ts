@@ -72,7 +72,12 @@ function handledByGameRoom(type: C2SType, value: unknown): {
                     player.name = `probe-${sessionId}`;
                     return player;
                 },
-                commands: { [C2S.SnakeInput]: capture(C2S.SnakeInput) },
+                commands: {
+                    [C2S.SnakeInput]: capture(C2S.SnakeInput),
+                    [C2S.SnakeReliveDecision]: capture(C2S.SnakeReliveDecision),
+                    [C2S.SnakeEndRun]: capture(C2S.SnakeEndRun),
+                    [C2S.SnakeBaselineRequest]: capture(C2S.SnakeBaselineRequest),
+                },
             }
             : {
             ...createBallMoveGameMode(),
@@ -220,6 +225,26 @@ const c2sVectors: Record<C2SType, readonly Vector[]> = {
         { label: "missing seq", value: { dirX: 0, dirY: 0, boost: false }, accepted: false },
         { label: "extra key", value: { dirX: 0, dirY: 0, boost: false, seq: 0, tick: 1 }, accepted: false },
         { label: "symbol key", value: symbolExtra({ dirX: 0, dirY: 0, boost: false, seq: 0 }), accepted: false },
+    ],
+    [C2S.SnakeReliveDecision]: [
+        { label: "accept", value: { runId: "run-1", deathSeq: 1, clientReqId: "req-1", decision: "accept" }, accepted: true },
+        { label: "decline", value: { runId: "run-1", deathSeq: 2, clientReqId: "req-2", decision: "decline" }, accepted: true },
+        { label: "zero death", value: { runId: "run-1", deathSeq: 0, clientReqId: "req-1", decision: "accept" }, accepted: false },
+        { label: "unknown decision", value: { runId: "run-1", deathSeq: 1, clientReqId: "req-1", decision: "later" }, accepted: false },
+        { label: "extra key", value: { runId: "run-1", deathSeq: 1, clientReqId: "req-1", decision: "accept", coinCost: 1 }, accepted: false },
+    ],
+    [C2S.SnakeEndRun]: [
+        { label: "valid", value: { runId: "run-1", clientReqId: "req-1" }, accepted: true },
+        { label: "empty run", value: { runId: "", clientReqId: "req-1" }, accepted: false },
+        { label: "missing request", value: { runId: "run-1" }, accepted: false },
+        { label: "extra key", value: { runId: "run-1", clientReqId: "req-1", force: true }, accepted: false },
+    ],
+    [C2S.SnakeBaselineRequest]: [
+        { label: "initial", value: { roomEpochId: "epoch-1", afterSeq: 0 }, accepted: true },
+        { label: "resume", value: { roomEpochId: "epoch-1", afterSeq: 7 }, accepted: true },
+        { label: "negative seq", value: { roomEpochId: "epoch-1", afterSeq: -1 }, accepted: false },
+        { label: "empty epoch", value: { roomEpochId: "", afterSeq: 0 }, accepted: false },
+        { label: "extra key", value: { roomEpochId: "epoch-1", afterSeq: 0, baselineId: "x" }, accepted: false },
     ],
 };
 

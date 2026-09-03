@@ -15,7 +15,16 @@ import {
     validateRoomStateForMode,
     type ISnakePlayerState,
     type ISnakeRoomState,
-    type ISnakeWorldSnapshot,
+    type ISnakeBaselineBegin,
+    type ISnakeBaselineChunk,
+    type ISnakeBaselineEnd,
+    type ISnakeReliveDecisionReq,
+    type ISnakeReliveDecisionResult,
+    type ISnakeReliveOffered,
+    type ISnakeReliveResolved,
+    type ISnakeRunFinalizing,
+    type ISnakeRunResultV1,
+    type ISnakeWorldDelta,
     type S2CPayloadMap,
 } from "../../shared/index";
 import { getToken } from "../../core/http";
@@ -23,7 +32,8 @@ import { RoomClient, type GameRoomOwnership, type TypedGameRoom } from "../RoomC
 import { gameRoomModeVersion } from "./matchmaking";
 import { getCurrentGameWsUrl, getCurrentServer } from "../serverSession";
 
-export type SnakeOutbound = typeof C2S.Ping | typeof C2S.Chat | typeof C2S.SnakeInput;
+export type SnakeOutbound = typeof C2S.Ping | typeof C2S.Chat | typeof C2S.SnakeInput
+    | typeof C2S.SnakeReliveDecision | typeof C2S.SnakeEndRun | typeof C2S.SnakeBaselineRequest;
 
 export type SnakeTypedRoom = TypedGameRoom<typeof GameplayModeId.Snake, SnakeOutbound>;
 
@@ -44,7 +54,14 @@ export interface SnakeRoomAdapter {
 
 class DefaultSnakeRoomAdapter implements SnakeRoomAdapter {
     readonly mode = GameplayModeId.Snake;
-    readonly outbound = [C2S.Ping, C2S.Chat, C2S.SnakeInput] as const;
+    readonly outbound = [
+        C2S.Ping,
+        C2S.Chat,
+        C2S.SnakeInput,
+        C2S.SnakeReliveDecision,
+        C2S.SnakeEndRun,
+        C2S.SnakeBaselineRequest,
+    ] as const;
     private seq = 0;
     private desired: { dirX: number; dirY: number; boost: boolean } = { dirX: 0, dirY: 0, boost: false };
 
@@ -118,10 +135,21 @@ export interface SnakeRoom {
     state(): ISnakeRoomState | null;
     onWelcome(callback: (message: S2CPayloadMap[typeof S2C.Welcome]) => void): MessageOff;
     onError(callback: (message: S2CPayloadMap[typeof S2C.Error]) => void): MessageOff;
-    onSnapshot(callback: (snapshot: ISnakeWorldSnapshot) => void): MessageOff;
+    onBaselineBegin(callback: (message: ISnakeBaselineBegin) => void): MessageOff;
+    onBaselineChunk(callback: (message: ISnakeBaselineChunk) => void): MessageOff;
+    onBaselineEnd(callback: (message: ISnakeBaselineEnd) => void): MessageOff;
+    onDelta(callback: (message: ISnakeWorldDelta) => void): MessageOff;
+    onReliveOffered(callback: (message: ISnakeReliveOffered) => void): MessageOff;
+    onReliveDecisionResult(callback: (message: ISnakeReliveDecisionResult) => void): MessageOff;
+    onReliveResolved(callback: (message: ISnakeReliveResolved) => void): MessageOff;
+    onRunFinalizing(callback: (message: ISnakeRunFinalizing) => void): MessageOff;
+    onRunResult(callback: (message: ISnakeRunResultV1) => void): MessageOff;
     /** 状态变化订阅（phase/players 摘要驱动 HUD 与结算；返回解绑）。 */
     onStateChange(callback: (state: ISnakeRoomState) => void): MessageOff;
     sendInput(dirX: number, dirY: number, boost: boolean): number;
+    sendReliveDecision(payload: ISnakeReliveDecisionReq): boolean;
+    sendEndRun(runId: string, clientReqId: string): boolean;
+    requestBaseline(roomEpochId: string, afterSeq: number): boolean;
     clearBoost(): void;
     ping(): void;
 }
@@ -148,7 +176,15 @@ export function createSnakeRoom(room: SnakeTypedRoom, adapter: SnakeRoomAdapter)
         state: () => (room.current ? (room.state as ISnakeRoomState) : null),
         onWelcome: (callback) => onMessage(S2C.Welcome, callback),
         onError: (callback) => onMessage(S2C.Error, callback),
-        onSnapshot: (callback) => onMessage(S2C.SnakeSnapshot, callback),
+        onBaselineBegin: (callback) => onMessage(S2C.SnakeBaselineBegin, callback),
+        onBaselineChunk: (callback) => onMessage(S2C.SnakeBaselineChunk, callback),
+        onBaselineEnd: (callback) => onMessage(S2C.SnakeBaselineEnd, callback),
+        onDelta: (callback) => onMessage(S2C.SnakeDelta, callback),
+        onReliveOffered: (callback) => onMessage(S2C.SnakeReliveOffered, callback),
+        onReliveDecisionResult: (callback) => onMessage(S2C.SnakeReliveDecisionResult, callback),
+        onReliveResolved: (callback) => onMessage(S2C.SnakeReliveResolved, callback),
+        onRunFinalizing: (callback) => onMessage(S2C.SnakeRunFinalizing, callback),
+        onRunResult: (callback) => onMessage(S2C.SnakeRunResult, callback),
         onStateChange(callback) {
             const stateApi = room.state$() as {
                 onChange?: (listener: () => void) => MessageOff | void;
@@ -159,6 +195,9 @@ export function createSnakeRoom(room: SnakeTypedRoom, adapter: SnakeRoomAdapter)
             return typeof off === "function" ? off : () => {};
         },
         sendInput: (dirX, dirY, boost) => adapter.pushInput(room, dirX, dirY, boost),
+        sendReliveDecision: (payload) => room.send(C2S.SnakeReliveDecision, payload),
+        sendEndRun: (runId, clientReqId) => room.send(C2S.SnakeEndRun, { runId, clientReqId }),
+        requestBaseline: (roomEpochId, afterSeq) => room.send(C2S.SnakeBaselineRequest, { roomEpochId, afterSeq }),
         clearBoost: () => adapter.clearBoost(room),
         ping() {
             if (isCurrent()) room.send(C2S.Ping, { clientTime: Date.now() });
@@ -194,4 +233,3 @@ export function createSnakeRoomJoiner(
         },
     };
 }
-
