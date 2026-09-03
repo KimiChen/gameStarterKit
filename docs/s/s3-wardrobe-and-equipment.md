@@ -18,6 +18,8 @@
 [S4](s4-reliable-progression-rewards.md)。以下事项不是 S3 退出条件：
 
 - 永久皮肤金币购买、现金支付、广告、限时试用、赛季通行证和随机宝箱。
+- 万能/稀有度通用碎片、皮肤碎片兑换金币，以及已拥有皮肤碎片的自动转换或清零。
+- 衣柜红点的账号级同步；首发只在设备本地记录已查看皮肤 ID。
 - 皮肤熟练度，以及 `trailId`、`deathFxId`、`killFxId`、`nameplateId`、`emoteSetId` 对应内容。
 - 用皮肤改变速度、初始长度、转向、碰撞、攻击范围或得分；所有皮肤必须保持纯表现。
 - 为 Snake 另造准入旁路、直接信任 join `skinId`，或手改生成 registry/客户端镜像。
@@ -26,18 +28,56 @@
 
 ### 2.1 首发内容和产品边界
 
-S1 生成全部 16 套预览后，由美术和产品按视觉质量分配获取方式，不根据数字 ID 猜稀有度。首发建议配额是：
+S1 生成的 16 套预览已于 2026-09-03 完成用户内容审批。下表名称是本项目获批的玩家展示名，不声明为原作
+商品名；稀有度、获取方式和合成门槛同样是本项目首发产品口径。S1 冻结的 active 状态、按 ID 升序、默认皮肤
+`1`、10-ID AI 池和全部直达皮肤 1 的 fallback 不因本次审批改变。
 
-| 获取方式 | 数量 | 口径 |
-|---|---:|---|
-| 默认永久拥有 | 1 | 新账号、旧账号缺字段和异常场景的稳定 fallback |
-| 新手/等级里程碑 | 3 | S4 奖励闭环后开放来源 |
-| 金币购买 | 4 | 仅保留产品分配；购买写路径不属于 S3 退出条件 |
-| 成就解锁 | 4 | S4 冻结奖励/成就证据后开放来源 |
-| 碎片合成/活动 | 4 | S3 只实现确定性的碎片合成，不做随机宝箱 |
+| `skinId` | 获批展示名 | 稀有度（枚举） | 获取方式 | 合成门槛 |
+|---:|---|---|---|---:|
+| `1` | 经典红 | 普通（`common`） | 默认永久拥有 | — |
+| `2` | 海洋蓝 | 普通（`common`） | 新手/等级里程碑；S4 后开放 | — |
+| `3` | 阳光黄 | 普通（`common`） | 新手/等级里程碑；S4 后开放 | — |
+| `4` | 樱花粉 | 普通（`common`） | 新手/等级里程碑；S4 后开放 | — |
+| `10` | 木乃伊 | 稀有（`rare`） | 未来金币购买 | — |
+| `11` | 独眼外星人 | 稀有（`rare`） | 未来金币购买 | — |
+| `101` | 扑克国王 | 史诗（`epic`） | 成就解锁；S4 后开放 | — |
+| `111` | 灰白猫 | 稀有（`rare`） | 未来金币购买 | — |
+| `112` | 红方仔 | 稀有（`rare`） | 未来金币购买 | — |
+| `132` | 奶油猫 | 稀有（`rare`） | 成就解锁；S4 后开放 | — |
+| `133` | 太空漫游 | 史诗（`epic`） | 专属碎片合成/活动 | `300` |
+| `139` | 樱花少女 | 史诗（`epic`） | 成就解锁；S4 后开放 | — |
+| `401` | 彩虹派对 | 史诗（`epic`） | 专属碎片合成/活动 | `10` |
+| `403` | 薄荷甜筒 | 史诗（`epic`） | 专属碎片合成/活动 | `120` |
+| `411` | 熊猫学者 | 传说（`legendary`） | 专属碎片合成/活动 | `300` |
+| `701` | 招财猫 | 传说（`legendary`） | 成就解锁；S4 后开放 | — |
+
+配额固定为默认 1、新手/等级里程碑 3、未来金币购买 4、成就 4、碎片合成/活动 4。所有 16 套在 S3 都是
+`saleState=off-sale`、`price=unavailable`；“未来金币购买”只保留产品归类，不注册 purchase RPC 或价格。
+
+原作只读调研确认其客户端主流程采用**每皮肤专属碎片**：`user_skin_chips[].item_id` 与皮肤配置的 `item_id`
+一一匹配，合成门槛来自该皮肤的 `total_chip_num`；本项目再把该 `item_id` 映射为稳定 `skinId`。本次对解包客户端
+bundle 的全量引用搜索没有发现万能或按稀有度共享的余额/合成路径；原包的 `itemTypeMultSkinChip` 文案实际表示
+“翻倍皮肤碎片数量”，不能解释成万能碎片。该结论只限定于所审计的客户端包。证据见原包
+`/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/store/SkinStore.js:79,99-114,142,169-175` 与
+`/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/skcore/Constant/ItemConstant.js:17`。
+2026-09-03 从原包 `/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/store/FeedGameStore.js:100`
+引用的 `https://wxsnake.tcsdzz.com//minigame/resource_test_2_1740995044745.json` 读取响应，SHA-256 为
+`7fdf4905168f071ba324670217d7a589dbc5bca5335ce17b36588e6cd608c5bb`。响应中的完整可合成集合是
+`101→300、111→120、132→120、133→300、401→10、403→120、411→300`；`112/139/701` 为不可合成，
+`1/2/3/4/10/11` 不在该响应中。本项目没有照搬七款，而是在已批准的四款配额内选取
+`133/401/403/411`，并把原先候选 `701` 调入成就组。该远端响应只作本次产品取值参考，运行时不得依赖原作 URL，
+最终值必须进入仓内业务 catalog。
+
+原作客户端还为已拥有皮肤的剩余专属碎片提供手动“全部兑换金币”，但没有自动换币证据；证据见原包
+`/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/store/SkinStore.js:157-164` 与
+`/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/ExchangeAlert.js:30-49`。本项目已明确批准 S3
+不采纳该兑换路径，也不采纳碎片抵购买价等商业能力。原客户端的合成请求不携带扣除数量，服务端实际如何处理超额
+碎片在所审计包中不可见；§2.4 的“精确扣门槛并保留超额”是本项目批准规则，不是从原包反推的行为。S1 的
+`content-review-package.json` 保留“审批前交接包”历史语义，本节是 S3 产品审批真相。
 
 默认皮肤使用稳定内容 ID `1`，视为隐式永久拥有。退休皮肤停止新增获取，但既有所有权和装备能力保留。
-重复取得唯一皮肤必须被业务唯一性拒绝，不能静默转化，也不能二次扣款。
+本项目批准的重复策略是：重复取得唯一皮肤必须被业务唯一性拒绝，不能静默转化，也不能二次扣款；该策略不声明为
+原作服务端行为。
 
 养成展示仍遵守纯外观边界：蛇等级是累计 XP 派生的全局成长线，只解锁外观和展示内容；收藏进度按永久拥有
 皮肤的稀有度累计，只用于头像框、名牌或徽章；皮肤熟练度留待后续按该皮肤的有效参赛累积。不得同时保存会
@@ -53,15 +93,17 @@ S1 生成全部 16 套预览后，由美术和产品按视觉质量分配获取�
 
 | 数据 | 权威位置 | 编码与读取规则 |
 |---|---|---|
-| 永久皮肤所有权 | `bag:{uid}:N` | `ownershipItemId >= 1` 表示拥有；默认皮肤可隐式拥有 |
-| 皮肤碎片 | `bag:{uid}:N` | `fragmentItemId` 为可累加数量 |
+| 永久皮肤所有权 | `bag:{uid}:N` | 全部 16 套固定 `ownershipItemId = 100000 + skinId`；数量 `>=1` 表示拥有；默认皮肤仍可隐式拥有 |
+| 皮肤碎片 | `bag:{uid}:N` | 仅 `133/401/403/411` 使用 `fragmentItemId = 200000 + skinId`，即 `200133/200401/200403/200411`；其他皮肤为 `unavailable/null`，不得用 `0` 冒充 |
 | 当前装备 | `user:{uid}.snakeEquippedSkinId` | 缺失、非法、已禁用时回退默认皮肤 |
 | 外观状态版本 | `user:{uid}.snakeCosmeticVersion` | 缺失视为 `0`；每次成功写递增 |
+| 衣柜已查看集合 | 设备本地 `snakeCosmetic.viewedSkinIds.v1` | 稳定 `skinId[]` 去重集合；不进入 User、Bag、RPC snapshot 或 `stateVersion` |
 | 蛇经验/养成奖励 | Bag additive item 或有界 additive grant | S4 写入；禁止延迟 absolute `setField` 覆盖新值；皮肤熟练度仍属后续 |
 | 金币与购买收据 | MySQL currency/ledger/entitlement receipt | 后续商业化阶段实现，不属于 S3 退出条件 |
 
 新增 User 字段是可选业务字段，不要求批量回填。Snake cosmetic store 必须显式读取这些开放字段，不能假设
-现有通用 `readUser` 会自动返回它们。
+现有通用 `readUser` 会自动返回它们。catalog validator 还必须证明上述两个保留段均在 Bag 合法范围内、彼此不重叠，
+并且与实施时已有 item catalog 全局唯一；不得因公式已冻结而跳过碰撞检查。
 
 ### 2.3 `snakeCosmetic` 契约
 
@@ -70,15 +112,25 @@ S1 生成全部 16 套预览后，由美术和产品按视觉质量分配获取�
 ```text
 snakeCosmetic.getSnapshot
   -> catalogVersion/catalogHash
+  -> catalogEntries[] { skinId, displayName, rarity, acquisition, saleState, fragmentRequired: number | null }
   -> stateVersion
   -> equippedSkinId
   -> ownedSkinIds
-  -> fragmentBalances
+  -> fragmentBalances[] { skinId, amount }
   -> snakeXp / derivedLevel
 
-snakeCosmetic.equip(clientReqId, skinId, expectedStateVersion)
-snakeCosmetic.unlock(clientReqId, skinId, expectedStateVersion)
+snakeCosmetic.equip(clientReqId, skinId, expectedStateVersion, expectedCatalogVersion, expectedCatalogHash)
+snakeCosmetic.unlock(clientReqId, skinId, expectedStateVersion, expectedCatalogVersion, expectedCatalogHash)
 ```
+
+`catalogEntries` 是服务端业务 catalog 的客户端安全投影，只包含展示所需字段；`ownershipItemId`、`fragmentItemId`
+等内部映射不得下发。`fragmentRequired` 是门槛唯一客户端真源：四款取 §2.1 的正整数，其他 12 款必须显式为
+`null`，不得省略或使用 `0`。`fragmentBalances` 只返回四个可合成皮肤的余额并按 `skinId` 升序，客户端以
+`skinId` 关联对应 catalog entry，不能提交门槛或扣除数量。
+首个获批业务目录固定 `catalogVersion=1`；`catalogHash` 覆盖 S1 公共身份 hash、客户端安全投影及未下发的内部
+item 映射，客户端只把 hash 当作不透明值回显。任一获批字段或内部映射变化都必须提升版本并重算 hash，不得预填
+未经生成器计算的值。写请求回显 version/hash，使服务端能够实际执行 `CATALOG_VERSION_MISMATCH`，而不是只声明
+无法判定的错误码。
 
 首发领域错误码至少包含：
 
@@ -98,19 +150,33 @@ Snake wire 语义时，才从**实施当时的实际 modeVersion** 递增并补�
 
 ### 2.4 装备、解锁和当前 run 语义
 
-装备写在现有 `withUser` 用户锁/UoW 内完成：校验 catalog 版本、皮肤存在且可用、永久拥有、
+装备写在现有 `withUser` 用户锁/UoW 内完成：校验 catalog 版本/hash、皮肤存在且可用、永久拥有、
 `expectedStateVersion`，随后写 `snakeEquippedSkinId`、递增版本并返回完整新快照。同一
 `clientReqId + canonical payload` 重放同一结果；同 ID 异 payload 必须冲突。
 
-碎片合成使用专用同槽 Lua，一次性完成“校验版本与皮肤 → 确认未拥有 → 确认碎片足够 → 扣碎片 →
+以下扣除与超额规则是本项目批准策略，不是原包服务端行为推断。碎片合成只接受 `133/401/403/411`，门槛由
+catalog 分别解析为 `300/10/120/300`。专用同槽 Lua 一次性完成
+“校验版本与皮肤 → 确认未拥有 → 确认碎片足够 → 精确扣除门槛数量 →
 写永久所有权 → 递增版本 → 写 applied/payload 幂等绑定”。碎片不足、版本冲突或已经拥有时整笔零写入；
-不能复用会先扣后补的通用负 item effect。
+不能复用会先扣后补的通用负 item effect。超过门槛的余额必须保留，例如 `401` 的 `15` 片合成后剩 `5` 片；
+不得清零、自动换金币或静默转换。S3 不实现原作的手动全量换币；本项目批准的 S4 下游约束是只从尚未拥有的
+碎片皮肤中选择，四套都已拥有时该次碎片奖励分量为 `0`。
 
 衣柜写入立即作用于账号，但只影响下一次创建的新 run。当前 run 的 `skinIdAtRunStart` 已冻结；真人成功复活、
 AI 自动重生和断线宽限内重连继续使用原值。服务端撤下外观时，只在下一次准入回退默认皮肤，并可在用户锁内
 修复装备字段。S3 还在同一 run 上持久新增 `catalogVersionAtRunStart`，两者共同构成后续结算与审计快照。
 
-### 2.5 catalog 与客户端边界
+### 2.5 设备本地红点语义
+
+衣柜红点只由客户端设备本地集合计算：`newlyOwnedSkinIds = ownedSkinIds - viewedSkinIds`。本地 key 首次不存在时，
+把当时 snapshot 的全部已拥有皮肤写为已查看，避免旧用户首次升级集中亮红点；之后首次取得的新皮肤保持未查看，
+用户打开**当前已拥有**皮肤的详情时才把 ID 加入集合并立即刷新列表/首页红点；查看未拥有皮肤的锁定详情不得写入
+集合，之后首次取得它时仍须出现红点。集合只接受当前公共 catalog 中的整数 ID，读取到
+损坏 JSON、重复或未知 ID 时过滤并重写；本地写失败只保留当次内存状态和受控诊断，不得阻塞 snapshot、装备或合成。
+卸载、清缓存或换设备后红点可以重置，这是获批的设备本地语义。Logic 只依赖注入的 `ViewedSkinStorePort`，实际
+Cocos/宿主本地存储 adapter 留在允许依赖引擎的平台/View 边界，禁止为红点把 `cc`、DOM 或宿主全局引入 `logic/`。
+
+### 2.6 catalog 与客户端边界
 
 - shared 公共目录只暴露稳定 `skinId`、公开状态、版本/hash 和跨端校验字段；业务 item/价格只在服务端目录；
   纹理、rect、pivot、帧时间和 fallback 只在客户端资源目录。
@@ -123,18 +189,21 @@ AI 自动重生和断线宽限内重连继续使用原值。服务端撤下外�
 
 ## 3. 详细任务
 
-### S3-01：冻结首发产品分配与 catalog 业务映射
+### S3-01：落地已批准的首发产品分配与 catalog 业务映射
 
-- [ ] **动作：** 为 S1 的 16 个稳定 `skinId` 补齐显示名、稀有度、排序、公开状态、默认/AI/fallback、
-  `ownershipItemId`、`fragmentItemId`、合成数量与获取方式；由预览评审决定分配，不从 ID 推断稀有度。
+- [ ] **动作：** 严格按 §2.1～§2.2 为 S1 的 16 个稳定 `skinId` 补齐获批展示名、稀有度、获取方式、
+  `ownershipItemId`、四个 `fragmentItemId` 和门槛；复用已冻结的排序、公开状态、默认/AI/fallback，不再等待二次预览评审。
 - **产物：** 复用并冻结 S1 已生成的 shared 公共目录与客户端资源目录，在其上补齐服务端业务映射、唯一 catalog
   hash 和首发/后续来源清单；不得另建第二套资源身份目录。
-- **验证：** 校验 ID 唯一、唯一默认皮肤、fallback 无环、所有公开皮肤都有业务映射和资源映射；皮肤属性表中
-  不出现玩法数值差异。
+- **验证：** 校验 ID/两个 Bag item 段全局唯一、唯一默认皮肤、fallback 无环、配额为 `1/3/4/4/4`、碎片组精确为
+  `133/401/403/411` 且门槛为 `300/10/120/300`；逐项断言全部 16 个
+  `ownershipItemId=100000+skinId`、四个 `fragmentItemId=200000+skinId`，并断言其他 12 个 fragment 显式为
+  `unavailable/null`；所有公开皮肤都有业务/资源映射且不出现玩法数值差异。
 
 ### S3-02：建立 `snakeCosmetic` RPC 契约和 Feature 登记
 
-- [ ] **动作：** 新增 getSnapshot/equip/unlock descriptor、请求/响应类型和领域错误码；登记
+- [ ] **动作：** 按 §2.3 新增 getSnapshot/equip/unlock descriptor、客户端安全 catalog/碎片投影、写请求的预期
+  catalog version/hash、请求/响应类型和领域错误码；登记
   `features/snakeCosmetic/feature.json`，按仓库标准流程生成 registry、服务端路由、客户端 façade 和能力文档。
 - **产物：** shared 手写真源、生成的 Lobby RPC registry/客户端 feature、协议 fingerprint 变更记录（仅实际改
   `protocol/` 时）。
@@ -158,10 +227,11 @@ AI 自动重生和断线宽限内重连继续使用原值。服务端撤下外�
 
 ### S3-05：实现碎片合成的同槽原子 Lua
 
-- [ ] **动作：** 实现专用脚本，在同一原子边界完成检查、扣碎片、授予唯一所有权、递增版本与幂等绑定。
+- [ ] **动作：** 实现专用脚本，在同一原子边界按服务端 catalog 门槛完成检查、精确扣除、授予唯一所有权、
+  保留超额余额、递增版本与幂等绑定；非碎片组皮肤不可走 unlock。
 - **产物：** Lua 真源、typed adapter、错误映射和测试 fixture。
-- **验证：** 碎片不足、重复拥有、版本冲突、同 ID 异 payload 时所有字段零写入；并发只成功一次，碎片和所有权
-  不出现负数、双扣或双发。
+- **验证：** 四个边界值逐一覆盖 `required-1/required/required+N`；错皮肤碎片不能混用，`701` 等非碎片皮肤返回
+  `SKIN_UNAVAILABLE`；重复拥有、版本冲突、同 ID 异 payload 时所有字段零写入；并发只成功一次，不负数、不双扣/双发。
 
 ### S3-06：复用 S2R awaited 准入并锁存装备
 
@@ -176,16 +246,17 @@ AI 自动重生和断线宽限内重连继续使用原值。服务端撤下外�
 ### S3-07：完成客户端衣柜 Logic 与恢复 journal
 
 - [ ] **动作：** 拉取并校验 catalog hash，构造不可变 ViewModel，提供“全部/已拥有/未拥有/可合成”筛选与稳定
-  排序；执行装备/解锁、版本冲突刷新和领域错误映射；写请求先进入 `PendingOperationJournal`。
-- **产物：** 无引擎依赖 Logic、筛选/排序模型、pending/重试状态和恢复适配。
-- **验证：** 网络超时以相同 ID/payload 重放；恢复后不会生成第二个业务操作；状态冲突刷新后才能重试；Logic
-  import 图不含 `cc`/`fairygui-cc`。
+  排序；通过注入的 `ViewedSkinStorePort` 按 §2.5 维护设备本地 viewed-ID 集合；执行装备/解锁、版本冲突刷新和
+  领域错误映射；写请求先进入 `PendingOperationJournal`。
+- **产物：** 无引擎依赖 Logic、筛选/排序模型、viewed-ID port 与宿主 adapter、pending/重试状态和恢复适配。
+- **验证：** 网络超时以相同 ID/payload 重放；恢复后不会生成第二个业务操作；状态冲突刷新后才能重试；首次本地
+  初始化、损坏数据、未知 ID、清缓存和写失败均符合 §2.5；Logic import 图不含 `cc`/`fairygui-cc`。
 
 ### S3-08：完成 FGUI 衣柜 View 与首页 route
 
 - [ ] **动作：** 用虚拟列表展示预览、稀有度、拥有/锁定/可合成状态；中央动态预览同时显示头、身、尾、动画和
-  长度增长；详情区展示来源、碎片、装备/解锁按钮；增加当前装备、首次获得、新解锁和红点状态；通过 feature
-  route 接入首页。
+  长度增长；详情区展示来源、专属碎片余额/门槛、装备/解锁按钮；增加当前装备、首次获得、新解锁和设备本地红点；
+  已拥有皮肤的剩余碎片只读展示且不出现兑换按钮；通过 feature route 接入首页。
 - **产物：** `.view.json` sidecar、FGUI 组件/契约、动态 View 注册、首页 route contribution 和资源缺失 UI。
 - **验证：** `test:client`/`test:fgui` 覆盖虚拟列表复用、状态冲突禁点、动态加载/关闭、route 失败回滚和 fallback；
   本阶段产出纹理 rect、pivot、动画与不同长度预览的可执行 Creator 用例，实际断言和证据由 S5-CR-04 完成。
@@ -203,7 +274,8 @@ AI 自动重生和断线宽限内重连继续使用原值。服务端撤下外�
 - **动作：** 商业化阶段若开放金币购买，在 MySQL 建
   `(uid, sId, skinId, entitlementGeneration)` 唯一业务收据；同一事务扣金币、写 ledger/outbox，由 outbox 向 Bag
   发永久所有权，并用 receipt 与 applied/payload 共同守住重放。未来契约形状为
-  `snakeCosmetic.purchase(clientReqId, skinId, expectedStateVersion)`，本阶段不把它注册成可成功调用的 RPC。
+  `snakeCosmetic.purchase(clientReqId, skinId, expectedStateVersion, expectedCatalogVersion, expectedCatalogHash)`，本阶段
+  不把它注册成可成功调用的 RPC。
 - **产物：** 后续设计记录；S3 首发不创建可调用的 purchase 成功路径，不注册占位支付协议。
 - **验证：** 设计评审必须证明不同 `clientReqId` 购买同一唯一皮肤也不会二次扣款；本项未实施不阻塞 S3，且不能
   被登记为首发已完成能力。
@@ -218,24 +290,36 @@ AI 自动重生和断线宽限内重连继续使用原值。服务端撤下外�
 | 同 ID 异 payload | 重用 requestId 改 skin 或数量 | 冲突，任何资产和版本均不改变 | S3-04/05 |
 | 装备并发 | 两个 expectedVersion 同时写不同皮肤 | 恰有一个成功，失败方刷新完整 snapshot | S3-04/07 |
 | 碎片不足 | 合成数量少 1 | 碎片、所有权、版本和幂等状态全部零写入 | S3-05 |
+| 错皮肤/非碎片皮肤 | 用另一皮肤余额合成，或对 `701` 调 unlock | 专属余额不互通；返回 `INSUFFICIENT_FRAGMENTS` 或 `SKIN_UNAVAILABLE`，全部零写入 | S3-02/05 |
+| 精确/超额门槛 | 四款分别以 required 和 required+N 合成 | 精确扣 `300/10/120/300`；授予一次所有权，超额 N 原样保留 | S3-05 |
 | 重复合成 | 同/不同 ID 并发获取同一皮肤 | 所有权只建立一次，不双扣碎片 | S3-05 |
+| 已拥有后的剩余碎片 | 合成后仍有余额或历史余额存在 | 余额保留且只读；没有自动转换、清零、金币写或可调用兑换入口 | S3-05/08 |
 | 冷用户/旧数据 | User 无新增字段、Bag 无默认皮肤项 | snapshot 推导默认拥有/装备，不要求批量回填 | S3-03 |
 | 退休皮肤 | 既有用户与新用户分别读取/装备 | 既有所有者可继续装备；无所有权用户不能新增获取 | S3-03/04 |
 | run 中换装 | 活跃或待复活时装备另一皮肤 | 账号快照更新；当前 run/复活/重连保持原 skin，下个新 run 才变化 | S3-06/09 |
 | 准入存储失败 | prepare admission 超时或错误 | fail closed，不创建 Snake/OPEN run 半成品 | S3-06 |
 | 资源缺失 | 客户端未知 ID、rect 或纹理加载失败 | 战斗和衣柜回退皮肤 1、记录诊断；不以客户端 fallback 改写权威装备 | S3-08/09 |
 | Feature 恢复 | 页面写请求中断后重建 View | journal 以原 ID/payload 恢复，View 不重复发业务写 | S3-07/08 |
+| 本地红点首次初始化 | 旧用户首次升级且本地 key 不存在 | 当前已拥有皮肤全部种为已读，不出现历史红点风暴 | S3-07/08 |
+| 锁定预览后首次获得 | 先打开未拥有皮肤详情，再通过 fixture 合法获得 | 锁定预览不写 viewed 集合；获得后仍亮红点，打开已拥有详情后才消除 | S3-07/08 |
+| 本地红点损坏/写失败 | 注入非法 JSON、未知 ID 或存储异常 | 过滤/重建或内存降级并诊断；账号 snapshot、装备和合成不受影响 | S3-07/08 |
 
 ## 5. 退出条件
 
 - [ ] S3-01～S3-09 全部完成；S3-10 明确保持“后续/非退出条件”，没有伪成功协议或可调用占位实现。
 - [ ] `snakeCosmetic` descriptor、codegen、sync、双端类型检查、客户端/FGUI/服务端单测全部通过。
-- [ ] Bag/User snapshot、equip CAS、unlock Lua 的同/异 requestId、版本冲突、碎片不足与并发 fixture 全绿。
+- [ ] §2.1 的 16 项名称/稀有度/获取方式、`1/3/4/4/4` 配额、全部 16 个
+  `ownershipItemId=100000+skinId`、四个 `fragmentItemId=200000+skinId`、其他 12 个 `unavailable/null` 与
+  `300/10/120/300` 门槛均有精确 catalog fixture；全部 S3 皮肤保持 off-sale/无价格。
+- [ ] Bag/User snapshot、equip CAS、unlock Lua 的同/异 requestId、版本冲突、错皮肤、非碎片皮肤、
+  `required-1/required/required+N`、剩余余额与并发 fixture 全绿；没有碎片兑换或自动转换写路径。
 - [ ] S2R 的 `preparePlayerAdmission` 被复用；伪造 join skin、失败准入、重连、最终离开后重入和 run 中换装均按
   `skinIdAtRunStart/catalogVersionAtRunStart` 冻结语义运行，没有第二套 Snake 准入或 run 账本。
 - [ ] catalog hash 不一致时经济禁写；未知资源稳定 fallback；冷用户、thaw、跨区和退休皮肤测试通过。
 - [ ] 衣柜 Logic 保持无引擎依赖，FGUI 通过动态入口打开；无头环境已完成可执行的契约/资源校验，并把动态预览、
   rect/pivot/动画的精确 Creator 用例交给 S5。实际 Creator 结果属于 S5 退出条件，不使 S3 与 S5 形成互相前置。
+- [ ] 设备本地红点已覆盖首次种子、锁定详情不写入、获得后未读、仅已拥有详情标记已读、损坏/未知 ID、清缓存/
+  换设备和写失败降级；没有新增 User/Bag 字段或红点 RPC。
 - [ ] 阶段证据已回写本页，并在 [README 状态表](README.md#8-总状态与证据汇总) 汇总；只可宣称“衣柜与权威装备
   可内部试玩”，不得提前宣称养成奖励闭环完成。
 
@@ -246,6 +330,8 @@ AI 自动重生和断线宽限内重连继续使用原值。服务端撤下外�
 | 直接信任 join `skinId` 导致越权 | awaited 准入读取 Bag/User 并锁存 | 拒绝准入或皮肤 1；绝不采用客户端值 |
 | catalog 版本漂移造成白图或经济争议 | hash 闸门、三层目录、生成校验 | 经济 fail closed；战斗只做可诊断视觉 fallback |
 | 通用负 item effect 发生部分扣减 | 专用同槽 Lua、零写入断言 | 整笔失败，刷新权威 snapshot |
+| 专属碎片串用、超额被清零或隐式换币 | 四个独立 itemId、服务端门槛、精确扣除与余额断言 | 拒绝合成并刷新 snapshot；S3 不开放任何兑换入口 |
+| 本地红点损坏阻断衣柜 | 过滤重建、内存降级、红点与账号状态隔离 | 仅清理本地红点状态，装备/合成继续使用权威 snapshot |
 | 当前 run 因换装中途改变外观 | `runId + skinIdAtRunStart + catalogVersionAtRunStart` 一次锁存 | 保持当前 run 值，下次准入再读取 |
 | 唯一皮肤被普通 Shop SKU 重复购买 | S3 不开放购买；后续唯一 entitlement receipt | 下线购买入口，不影响装备/解锁 |
 | Logic/View 或静态 FGUI 依赖越界 | import 守门、动态 View registry | 禁用衣柜 feature；战斗入口保持可用 |
@@ -258,7 +344,7 @@ AI 自动重生和断线宽限内重连继续使用原值。服务端撤下外�
 
 | 状态 | commit | 自动验证（命令、exit code、计数、日期） | Creator/人工证据 | 备注 |
 |---|---|---|---|---|
-| `[已拍板·待实施]` | — | — | — | S3-10 不计退出条件 |
+| `[已拍板·待实施]` | — | — | 2026-09-03：16 套预览、展示名、稀有度、`1/3/4/4/4` 获取分配、专属碎片与本地红点口径已获用户批准 | `133/701` 已交换获取组；S3-10 不计退出条件 |
 
 ---
 
