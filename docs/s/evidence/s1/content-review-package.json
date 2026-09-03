@@ -1,0 +1,95 @@
+{
+  "catalogHash": "62e1a6683a71db3ef0724cd6030114b7d9a64845723b14fa8c7c6d58a9302efe",
+  "decisionsRequired": [
+    "product display names",
+    "acquisition and pricing",
+    "default ownership and wardrobe sorting",
+    "final art acceptance"
+  ],
+  "labels": [
+    {
+      "productDisplayName": null,
+      "skinId": 1,
+      "technicalLabel": "皮肤 1"
+    },
+    {
+      "productDisplayName": null,
+      "skinId": 2,
+      "technicalLabel": "皮肤 2"
+    },
+    {
+      "productDisplayName": null,
+      "skinId": 3,
+      "technicalLabel": "皮肤 3"
+    },
+    {
+      "productDisplayName": null,
+      "skinId": 4,
+      "technicalLabel": "皮肤 4"
+    },
+    {
+      "productDisplayName": null,
+      "skinId": 10,
+      "technicalLabel": "皮肤 10"
+    },
+    {
+      "productDisplayName": null,
+      "skinId": 11,
+      "technicalLabel": "皮肤 11"
+    },
+    {
+      "productDisplayName": null,
+      "skinId": 101,
+      "technicalLabel": "皮肤 101"
+    },
+    {
+      "productDisplayName": null,
+      "skinId": 111,
+      "technicalLabel": "皮肤 111"
+    },
+    {
+      "productDisplayName": null,
+      "skinId": 112,
+      "technicalLabel": "皮肤 112"
+    },
+    {
+      "productDisplayName": null,
+      "skinId": 132,
+      "technicalLabel": "皮肤 132"
+    },
+    {
+      "productDisplayName": null,
+      "skinId": 133,
+      "technicalLabel": "皮肤 133"
+    },
+    {
+      "productDisplayName": null,
+      "skinId": 139,
+      "technicalLabel": "皮肤 139"
+    },
+    {
+      "productDisplayName": null,
+      "skinId": 401,
+      "technicalLabel": "皮肤 401"
+    },
+    {
+      "productDisplayName": null,
+      "skinId": 403,
+      "technicalLabel": "皮肤 403"
+    },
+    {
+      "productDisplayName": null,
+      "skinId": 411,
+      "technicalLabel": "皮肤 411"
+    },
+    {
+      "productDisplayName": null,
+      "skinId": 701,
+      "technicalLabel": "皮肤 701"
+    }
+  ],
+  "previewContactSheet": "docs/s/evidence/s1/contact-sheet.png",
+  "status": "ready-for-product-review-not-approved",
+  "targetStage": "S3",
+  "technicalContactSheet": "docs/s/evidence/s1/technical-contact-sheet.png"
+}

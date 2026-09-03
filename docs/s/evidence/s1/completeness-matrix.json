@@ -1,0 +1,402 @@
+[
+  {
+    "aiEligible": false,
+    "atlasInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/1/atlas.json",
+      "sha256": "1c84b9ed3c988e61e306c57a0d12c39a861c11770286b1c643a832b0c96fd9c4"
+    },
+    "bodyInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/1/body.json",
+      "sha256": "b9694a487ee120359ada5c3736cb562a6fe7da4ea4daa66d96944b54cb4bb803"
+    },
+    "contentVersion": 1,
+    "fallbackSkinId": null,
+    "playerUsable": true,
+    "preview": {
+      "path": "docs/s/evidence/s1/previews/skin-1.png",
+      "sha256": "92530185f8c0c6a8ecfdc431ad02e1f77ce76a58f1dcdbbdebd6487f60e794a1"
+    },
+    "publicationState": "active",
+    "skinId": 1,
+    "status": "complete",
+    "texture": {
+      "path": "apps/Cocos/assets/resources/snakeoff/snake_skin_01.png",
+      "sha256": "0a5ccf9e5b838353d674b8b8225ae556ed7d5a705acb6094d93f748448829aab"
+    }
+  },
+  {
+    "aiEligible": false,
+    "atlasInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/2/atlas.json",
+      "sha256": "0989ffbdc9aec567f5d79ca3e9dcba42173e749270e866ed327f81f000f48789"
+    },
+    "bodyInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/2/body.json",
+      "sha256": "e2892ea37b3ffd724bbb659fb056a4cf8017f422c789e426bf7bc4df32fc8a24"
+    },
+    "contentVersion": 1,
+    "fallbackSkinId": 1,
+    "playerUsable": true,
+    "preview": {
+      "path": "docs/s/evidence/s1/previews/skin-2.png",
+      "sha256": "937a20ac1f0a295895aee9dca6a58506659f37567bc0b3e172c63d3fe56dab65"
+    },
+    "publicationState": "active",
+    "skinId": 2,
+    "status": "complete",
+    "texture": {
+      "path": "apps/Cocos/assets/resources/snakeoff/snake_skin_02.png",
+      "sha256": "ab289b3cb4e105cd8b757da2428a1c6e722e02f569be27e94f5a8dbb57576bf9"
+    }
+  },
+  {
+    "aiEligible": false,
+    "atlasInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/3/atlas.json",
+      "sha256": "a5d9d2e3b7744bee35f8d642062cf37c72a2b4d6856e3dcfe38a358f99a3fe7f"
+    },
+    "bodyInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/3/body.json",
+      "sha256": "14f598c0bf87d5a622ce3f95c2a35090dc2d693969ad2d2fb9c517091edc52ac"
+    },
+    "contentVersion": 1,
+    "fallbackSkinId": 1,
+    "playerUsable": true,
+    "preview": {
+      "path": "docs/s/evidence/s1/previews/skin-3.png",
+      "sha256": "ecabdf69f85e31a8fd8d6a6449a7e7c8b1c6d6cb9e281ebb54e388afed3963d1"
+    },
+    "publicationState": "active",
+    "skinId": 3,
+    "status": "complete",
+    "texture": {
+      "path": "apps/Cocos/assets/resources/snakeoff/snake_skin_03.png",
+      "sha256": "e933fbf2321d4f913f6b5d8af84bf5d12d83d15df7daf42c94e1bf180501389b"
+    }
+  },
+  {
+    "aiEligible": false,
+    "atlasInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/4/atlas.json",
+      "sha256": "c4629c3b3fdf74b47d7c6c767714b41be59505d4384bf1a359227ce24c5377d1"
+    },
+    "bodyInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/4/body.json",
+      "sha256": "7ec07a3c162f3c591e07daf68fa35705f98bdd9f6ad473dc1c9588f52fb3b264"
+    },
+    "contentVersion": 1,
+    "fallbackSkinId": 1,
+    "playerUsable": true,
+    "preview": {
+      "path": "docs/s/evidence/s1/previews/skin-4.png",
+      "sha256": "67dfc6838c7253a76b84b2a1dbdd6db722a34357a24ac4867f23afac9489d513"
+    },
+    "publicationState": "active",
+    "skinId": 4,
+    "status": "complete",
+    "texture": {
+      "path": "apps/Cocos/assets/resources/snakeoff/snake_skin_04.png",
+      "sha256": "be275750f2fa11548e97ef390c3afe527e690cfe6ef03ec37bfdf012f2822718"
+    }
+  },
+  {
+    "aiEligible": false,
+    "atlasInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/10/atlas.json",
+      "sha256": "58a0bcf2ae91d4a57c9f1a6a4088beb139b961ce22b84001369423424ee61d85"
+    },
+    "bodyInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/10/body.json",
+      "sha256": "4ee2e1d6446a98b1b8e2fbecfaf16b5eea8b9aa65cfb8b9cdcb83dbd2beb353c"
+    },
+    "contentVersion": 1,
+    "fallbackSkinId": 1,
+    "playerUsable": true,
+    "preview": {
+      "path": "docs/s/evidence/s1/previews/skin-10.png",
+      "sha256": "138d005a0fb3b2bc8fa735b9a49210037de2fbb55dfd7d6fe7957c8d3986814c"
+    },
+    "publicationState": "active",
+    "skinId": 10,
+    "status": "complete",
+    "texture": {
+      "path": "apps/Cocos/assets/resources/snakeoff/snake_skin_10.png",
+      "sha256": "d1b0ac5c76c451f749af93ac28d911d4f0ccfcab9dd18d013280c7a366602f7e"
+    }
+  },
+  {
+    "aiEligible": false,
+    "atlasInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/11/atlas.json",
+      "sha256": "a128e76652ae22244c1986548ac5fb1ac2513165281b9acd38d0ef96e9a5d27f"
+    },
+    "bodyInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/11/body.json",
+      "sha256": "1487025249510193ae93c5eb88116d03cc0a718c4c88de0a6146ac4ef1b473d4"
+    },
+    "contentVersion": 1,
+    "fallbackSkinId": 1,
+    "playerUsable": true,
+    "preview": {
+      "path": "docs/s/evidence/s1/previews/skin-11.png",
+      "sha256": "e5429135fa8025b5cefd1a242db778d93ce83239bb7e53983ec37143ac2703c7"
+    },
+    "publicationState": "active",
+    "skinId": 11,
+    "status": "complete",
+    "texture": {
+      "path": "apps/Cocos/assets/resources/snakeoff/snake_skin_11.png",
+      "sha256": "49fe36223cf02e6d31f3a5be8b19c787a0f12310a5a6f6c91d93cbe24c0a81bf"
+    }
+  },
+  {
+    "aiEligible": true,
+    "atlasInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/101/atlas.json",
+      "sha256": "9754e5af6ff72b3806428c29d724838edc6b409cd7fb6da2b49688194b11e486"
+    },
+    "bodyInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/101/body.json",
+      "sha256": "6b0d8f0256a84e7ca94a0dec351c2da73016968ef4435997f5a7d49ca568664c"
+    },
+    "contentVersion": 1,
+    "fallbackSkinId": 1,
+    "playerUsable": true,
+    "preview": {
+      "path": "docs/s/evidence/s1/previews/skin-101.png",
+      "sha256": "111243789dc667838e3feab3cac03177361f849dda7be00ecc4b3139f532edef"
+    },
+    "publicationState": "active",
+    "skinId": 101,
+    "status": "complete",
+    "texture": {
+      "path": "apps/Cocos/assets/resources/snakeoff/snake_skin_101.png",
+      "sha256": "6fcc926e289b9f6d1f4c6c8d23b4ac1dfc5288d9f4c23ef811b66cb84188fddf"
+    }
+  },
+  {
+    "aiEligible": true,
+    "atlasInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/111/atlas.json",
+      "sha256": "c7cce4bbaa4c6ae484718959c80ce6b9b4be0f29777bab90387e8ab9724626c5"
+    },
+    "bodyInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/111/body.json",
+      "sha256": "88f82b827c30513d2ac8f5563c780e5d48ea4973f1634bcaf909bd672d589a9c"
+    },
+    "contentVersion": 1,
+    "fallbackSkinId": 1,
+    "playerUsable": true,
+    "preview": {
+      "path": "docs/s/evidence/s1/previews/skin-111.png",
+      "sha256": "2807b39a65f8733d9d573f502bd5f6b9e06917891322ef875a3c160be18af1b2"
+    },
+    "publicationState": "active",
+    "skinId": 111,
+    "status": "complete",
+    "texture": {
+      "path": "apps/Cocos/assets/resources/snakeoff/snake_skin_111.png",
+      "sha256": "44499cc094537e1a83b210de97e34d9456bd39cc587ad584ce4a3aa7f3c745b1"
+    }
+  },
+  {
+    "aiEligible": true,
+    "atlasInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/112/atlas.json",
+      "sha256": "6228f705d40a6be689ef54572fa7947a9705bfeb7e7cb470b81e4579d67cbe80"
+    },
+    "bodyInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/112/body.json",
+      "sha256": "eea40d19caffce6b4878e7b9ac9d5d1bd2b9fc19062d43946035f9017d23c4f6"
+    },
+    "contentVersion": 1,
+    "fallbackSkinId": 1,
+    "playerUsable": true,
+    "preview": {
+      "path": "docs/s/evidence/s1/previews/skin-112.png",
+      "sha256": "13892bc6b9569f2e56756924096bf4021d7a7c8fe8d63391684e4253f2b91f37"
+    },
+    "publicationState": "active",
+    "skinId": 112,
+    "status": "complete",
+    "texture": {
+      "path": "apps/Cocos/assets/resources/snakeoff/snake_skin_112.png",
+      "sha256": "df6b073b29cd8789ce68c8a9853931238cd6d86720bffac461b9ffa1d2a8e618"
+    }
+  },
+  {
+    "aiEligible": true,
+    "atlasInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/132/atlas.json",
+      "sha256": "7e7f202689ee38322a8065b1a7d0bcdfedb71e73188abaabb125ab98f9e6c39c"
+    },
+    "bodyInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/132/body.json",
+      "sha256": "60852e67e2fd745061ad37488ebdb88ddc2641ef7170a6e9a355b036831fada7"
+    },
+    "contentVersion": 1,
+    "fallbackSkinId": 1,
+    "playerUsable": true,
+    "preview": {
+      "path": "docs/s/evidence/s1/previews/skin-132.png",
+      "sha256": "958925e23ac69ec2bc7d477adfee6fcecd55ea771f8b79b4e4713b62886a6419"
+    },
+    "publicationState": "active",
+    "skinId": 132,
+    "status": "complete",
+    "texture": {
+      "path": "apps/Cocos/assets/resources/snakeoff/snake_skin_132.png",
+      "sha256": "7b09fc5eb565ab27fc0d4517c8b5231c6d22c3033e3e3a2e57973d236372fba0"
+    }
+  },
+  {
+    "aiEligible": true,
+    "atlasInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/133/atlas.json",
+      "sha256": "6f97781a4b11497c901853f0735b56f51ece4d28bf33bd35eaf069400c7d8494"
+    },
+    "bodyInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/133/body.json",
+      "sha256": "2450f50791e56bbb5a5b83fed811687cb9056c0a29d87592845d8493ae691836"
+    },
+    "contentVersion": 1,
+    "fallbackSkinId": 1,
+    "playerUsable": true,
+    "preview": {
+      "path": "docs/s/evidence/s1/previews/skin-133.png",
+      "sha256": "254210302ca3b1a6b820e7b57ad17bcbc2e912d876a36991d288a73c29e8d2d1"
+    },
+    "publicationState": "active",
+    "skinId": 133,
+    "status": "complete",
+    "texture": {
+      "path": "apps/Cocos/assets/resources/snakeoff/snake_skin_133.png",
+      "sha256": "ca79e87ef9fe4d26e49011fdf4985d5ec41619a2c857d2e8d3d6e6fe5f267397"
+    }
+  },
+  {
+    "aiEligible": true,
+    "atlasInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/139/atlas.json",
+      "sha256": "55d2ef512fd4a408c46151bc6dfa7fa400257862665456a3d1aabbe58cf0d216"
+    },
+    "bodyInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/139/body.json",
+      "sha256": "4b7640654739c6e11bbf2157f9aed04830235f108da525eb654529e9daedbbd0"
+    },
+    "contentVersion": 1,
+    "fallbackSkinId": 1,
+    "playerUsable": true,
+    "preview": {
+      "path": "docs/s/evidence/s1/previews/skin-139.png",
+      "sha256": "7a68c30e56bc551aa85562eaf0d1b9c3981ba25f74c7c13edfbac308ec776e18"
+    },
+    "publicationState": "active",
+    "skinId": 139,
+    "status": "complete",
+    "texture": {
+      "path": "apps/Cocos/assets/resources/snakeoff/snake_skin_139.png",
+      "sha256": "87fd6ed02f2f3ef7b730802e0dd4e447e6f69ac689779934df84ea0254805578"
+    }
+  },
+  {
+    "aiEligible": true,
+    "atlasInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/401/atlas.json",
+      "sha256": "a6accc41c907aee99d7fc1c1964effb52af0dddc4f8fb52c70d10082314a7975"
+    },
+    "bodyInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/401/body.json",
+      "sha256": "be64494e85f18c6011c9f5079b15edf7f41dd00c3fde6cd97fc79f78c6d07d22"
+    },
+    "contentVersion": 1,
+    "fallbackSkinId": 1,
+    "playerUsable": true,
+    "preview": {
+      "path": "docs/s/evidence/s1/previews/skin-401.png",
+      "sha256": "a688eb8ed594b4eb1162f205cf823a23897e1ed6f0d439dd11644ac88b2a5948"
+    },
+    "publicationState": "active",
+    "skinId": 401,
+    "status": "complete",
+    "texture": {
+      "path": "apps/Cocos/assets/resources/snakeoff/snake_skin_401.png",
+      "sha256": "a5d2fe784ce17ce7bb63aea04a5a98a0119a11fa274b7f8fc3da6803219dd991"
+    }
+  },
+  {
+    "aiEligible": true,
+    "atlasInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/403/atlas.json",
+      "sha256": "556c2241b80565778edb83f3ed0066f9ad2db235038593a0117d33c37dff83f9"
+    },
+    "bodyInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/403/body.json",
+      "sha256": "8c88b90f488ff8c30c576840eefaff05f913ca065de7acd374ec7988c28bf87d"
+    },
+    "contentVersion": 1,
+    "fallbackSkinId": 1,
+    "playerUsable": true,
+    "preview": {
+      "path": "docs/s/evidence/s1/previews/skin-403.png",
+      "sha256": "a6f5cf345aefb23e3acd5d72ef2964c1d9dba91a181a95eecccdd14dc56c0e35"
+    },
+    "publicationState": "active",
+    "skinId": 403,
+    "status": "complete",
+    "texture": {
+      "path": "apps/Cocos/assets/resources/snakeoff/snake_skin_403.png",
+      "sha256": "22b5b3d117adae765b46a9bd92ced15af9e518b5ec89a0322159a6563a3e7e9e"
+    }
+  },
+  {
+    "aiEligible": true,
+    "atlasInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/411/atlas.json",
+      "sha256": "d100b8908a9aca4d1cba71276487c1e8b27bd31348efed23c47723027484ba1a"
+    },
+    "bodyInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/411/body.json",
+      "sha256": "d57c38fe1ac8b3dc1e0b0c8442813c89c3065d59f7e36f4d45a750519cfae6cd"
+    },
+    "contentVersion": 1,
+    "fallbackSkinId": 1,
+    "playerUsable": true,
+    "preview": {
+      "path": "docs/s/evidence/s1/previews/skin-411.png",
+      "sha256": "31d8d30e6b24fc868caec8207230ef3b6e22de0939177c00407d1638b14f5350"
+    },
+    "publicationState": "active",
+    "skinId": 411,
+    "status": "complete",
+    "texture": {
+      "path": "apps/Cocos/assets/resources/snakeoff/snake_skin_411.png",
+      "sha256": "f4bffb4dd21285379367e21759d11c102d7e06b440d8d5099ba7b1b05d0d3111"
+    }
+  },
+  {
+    "aiEligible": true,
+    "atlasInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/701/atlas.json",
+      "sha256": "0de3070d1bc06f0091cb3080b45e6bb3cb1b3e69ae507a3e83062c5ec1c0d8b0"
+    },
+    "bodyInput": {
+      "path": "tools/snake-s1-assets/source/internal-skins/701/body.json",
+      "sha256": "d4265d0376478491ecf0566f6bf68bb0bdec63747514cc2ab8d79a6a328a25f9"
+    },
+    "contentVersion": 1,
+    "fallbackSkinId": 1,
+    "playerUsable": true,
+    "preview": {
+      "path": "docs/s/evidence/s1/previews/skin-701.png",
+      "sha256": "c9dd358a8901fe9089bd5a38dd8f374d0c259edeb0f8482a0ef3654b08244cef"
+    },
+    "publicationState": "active",
+    "skinId": 701,
+    "status": "complete",
+    "texture": {
+      "path": "apps/Cocos/assets/resources/snakeoff/snake_skin_ai.png",
+      "sha256": "e7519f28b0fa5da9220ccd933a1a6203cd62a58fb55a5ff42d1282b4c42731ee"
+    }
+  }
+]

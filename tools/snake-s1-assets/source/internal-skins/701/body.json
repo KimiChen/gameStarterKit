@@ -1,0 +1,102 @@
+{
+  "skin": {
+    "body_distance": -32,
+    "body_frame": [
+      {
+        "distance": -16,
+        "frame": [
+          {
+            "frame_time": 0,
+            "texture_name": "snakebody0.png"
+          }
+        ],
+        "level": 4
+      },
+      {
+        "distance": -16,
+        "frame": [
+          {
+            "frame_time": 0,
+            "texture_name": "snakebody1.png"
+          }
+        ],
+        "level": 3
+      }
+    ],
+    "body_render_type": 2,
+    "body_render_width_rate": "1.000",
+    "body_speed_distance": -32,
+    "body_speed_frame": [
+      {
+        "distance": -16,
+        "frame": [
+          {
+            "frame_time": 0,
+            "texture_name": "snakebody0.png"
+          }
+        ],
+        "level": 4
+      },
+      {
+        "distance": -16,
+        "frame": [
+          {
+            "frame_time": 0,
+            "texture_name": "snakebody1.png"
+          }
+        ],
+        "level": 3
+      }
+    ],
+    "head_frame": {
+      "distance": 0,
+      "frame": [
+        {
+          "frame_time": 6,
+          "texture_name": "snakehead0.png"
+        },
+        {
+          "frame_time": 6,
+          "texture_name": "snakehead1.png"
+        }
+      ],
+      "level": 0
+    },
+    "head_speed_frame": {
+      "distance": 0,
+      "frame": [
+        {
+          "frame_time": 6,
+          "texture_name": "snakehead2.png"
+        },
+        {
+          "frame_time": 6,
+          "texture_name": "snakehead3.png"
+        },
+        {
+          "frame_time": 6,
+          "texture_name": "snakehead4.png"
+        },
+        {
+          "frame_time": 6,
+          "texture_name": "snakehead5.png"
+        },
+        {
+          "frame_time": 6,
+          "texture_name": "snakehead6.png"
+        },
+        {
+          "frame_time": 6,
+          "texture_name": "snakehead7.png"
+        },
+        {
+          "frame_time": 6,
+          "texture_name": "snakehead8.png"
+        }
+      ],
+      "level": 0
+    },
+    "wreck_name": "snakefood.png"
+  },
+  "skinId": 701
+}

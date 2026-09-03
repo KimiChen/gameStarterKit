@@ -1,0 +1,162 @@
+{
+  "skin": {
+    "body_distance": -12,
+    "body_frame": [
+      {
+        "distance": -10.8,
+        "frame": [
+          {
+            "frame_time": 0,
+            "texture_name": "20170315043643.png"
+          }
+        ],
+        "level": 4
+      },
+      {
+        "distance": -10.8,
+        "frame": [
+          {
+            "frame_time": 0,
+            "texture_name": "20170315043646.png"
+          }
+        ],
+        "level": 3
+      },
+      {
+        "distance": -10.8,
+        "frame": [
+          {
+            "frame_time": 0,
+            "texture_name": "20170315043649.png"
+          }
+        ],
+        "level": 2
+      },
+      {
+        "distance": -10.8,
+        "frame": [
+          {
+            "frame_time": 0,
+            "texture_name": "20170315043651.png"
+          }
+        ],
+        "level": 1
+      }
+    ],
+    "body_render_type": 2,
+    "body_render_width_rate": "1.000",
+    "body_speed_distance": -13.2,
+    "body_speed_frame": [
+      {
+        "distance": -10.8,
+        "frame": [
+          {
+            "frame_time": 6,
+            "texture_name": "20170315043643.png"
+          },
+          {
+            "frame_time": 6,
+            "texture_name": "20170315043646.png"
+          },
+          {
+            "frame_time": 6,
+            "texture_name": "20170315043649.png"
+          },
+          {
+            "frame_time": 6,
+            "texture_name": "20170315043651.png"
+          }
+        ],
+        "level": 4
+      },
+      {
+        "distance": -10.8,
+        "frame": [
+          {
+            "frame_time": 6,
+            "texture_name": "20170315043646.png"
+          },
+          {
+            "frame_time": 6,
+            "texture_name": "20170315043649.png"
+          },
+          {
+            "frame_time": 6,
+            "texture_name": "20170315043651.png"
+          },
+          {
+            "frame_time": 6,
+            "texture_name": "20170315043643.png"
+          }
+        ],
+        "level": 3
+      },
+      {
+        "distance": -10.8,
+        "frame": [
+          {
+            "frame_time": 6,
+            "texture_name": "20170315043649.png"
+          },
+          {
+            "frame_time": 6,
+            "texture_name": "20170315043651.png"
+          },
+          {
+            "frame_time": 6,
+            "texture_name": "20170315043643.png"
+          },
+          {
+            "frame_time": 6,
+            "texture_name": "20170315043646.png"
+          }
+        ],
+        "level": 2
+      },
+      {
+        "distance": -10.8,
+        "frame": [
+          {
+            "frame_time": 6,
+            "texture_name": "20170315043651.png"
+          },
+          {
+            "frame_time": 6,
+            "texture_name": "20170315043643.png"
+          },
+          {
+            "frame_time": 6,
+            "texture_name": "20170315043646.png"
+          },
+          {
+            "frame_time": 6,
+            "texture_name": "20170315043649.png"
+          }
+        ],
+        "level": 1
+      }
+    ],
+    "head_frame": {
+      "distance": 0,
+      "frame": [
+        {
+          "frame_time": 0,
+          "texture_name": "20170315043443.png"
+        }
+      ],
+      "level": 0
+    },
+    "head_speed_frame": {
+      "distance": 0,
+      "frame": [
+        {
+          "frame_time": 0,
+          "texture_name": "20170315043446.png"
+        }
+      ],
+      "level": 0
+    },
+    "wreck_name": "20170315043643.png"
+  },
+  "skinId": 101
+}

@@ -1,0 +1,52 @@
+{
+  "frames": [
+    {
+      "name": "munaiyi_body",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        48,
+        48
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        1,
+        113,
+        48,
+        48
+      ],
+      "rotated": false
+    },
+    {
+      "name": "munaiyi_head",
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        78,
+        110
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "rect": [
+        1,
+        1,
+        78,
+        110
+      ],
+      "rotated": false
+    }
+  ],
+  "texture": {
+    "height": 162,
+    "width": 80
+  }
+}

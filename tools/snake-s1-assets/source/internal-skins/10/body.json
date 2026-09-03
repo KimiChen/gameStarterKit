@@ -1,0 +1,54 @@
+{
+  "skin": {
+    "body_distance": -56,
+    "body_frame": [
+      {
+        "distance": -17,
+        "frame": [
+          {
+            "frame_time": 0,
+            "texture_name": "munaiyi_body.png"
+          }
+        ],
+        "level": 4
+      }
+    ],
+    "body_render_type": 2,
+    "body_render_width_rate": "1.000",
+    "body_speed_distance": -56,
+    "body_speed_frame": [
+      {
+        "distance": -17,
+        "frame": [
+          {
+            "frame_time": 0,
+            "texture_name": "munaiyi_body.png"
+          }
+        ],
+        "level": 4
+      }
+    ],
+    "head_frame": {
+      "distance": 0,
+      "frame": [
+        {
+          "frame_time": 0,
+          "texture_name": "munaiyi_head.png"
+        }
+      ],
+      "level": 0
+    },
+    "head_speed_frame": {
+      "distance": 0,
+      "frame": [
+        {
+          "frame_time": 0,
+          "texture_name": "munaiyi_head.png"
+        }
+      ],
+      "level": 0
+    },
+    "wreck_name": "munaiyi_body.png"
+  },
+  "skinId": 10
+}

@@ -3,7 +3,7 @@
 > [返回专项总目录](README.md) · [上一阶段：S0 复刻基线](s0-replication-baseline.md) ·
 > [下一阶段：S2 战场与无尽生命周期](s2-battle-and-endless-lifecycle.md)
 
-> **状态：`[已拍板·待实施]`**<br>
+> **状态：`[已完成]`（2026-09-03，无头验收闭合；Creator 资源导入终验仍按计划归 S5）**<br>
 > **预计：3–5 人日**<br>
 > **依赖：S0 已完成并产出可重复核验的 [evidence bundle](evidence/s0/README.md)，已冻结来源归档、场景表现基线、
 > 目标配置和规则差异。**<br>
@@ -14,6 +14,15 @@
 > **阶段纪律：** 只改手写真源并通过既有 codegen/sync 动线产生镜像；不得手改 generated registry、
 > `apps/client/src/shared/` 或 `apps/Cocos/assets/src/`。Creator 最终导入验收在 S5 收口，S1 仍须完成
 > 无头可验证的资源、rect、fallback 和 hash 门禁。
+
+实现结果：冻结来源 commit `6367f65bf210d75ba39c0e48ecace5b30b538a06` 的 68 个实际读取文件已形成
+仓内可重放输入；16 套皮肤、27 个实际表现资源、78 行资源/转换/预览台账和 16 张预览均已闭合。三类 hash 为：
+
+- `publicCatalogHash=a1cdecbc5e31db3f90ac2fd15465768ef9206b2520000d4ab9f88d6c2135b075`
+- `serverBusinessHash=9ed3762e5f5d24d168aafd14fcaccac1d4de83413d0acb17f6308cea1ccbfa19`
+- `clientPresentationHash=62e1a6683a71db3ef0724cd6030114b7d9a64845723b14fa8c7c6d58a9302efe`
+
+权威无头证据入口见 [S1 evidence bundle](evidence/s1/README.md)。
 
 ---
 
@@ -384,12 +393,12 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
 
 **动作**
 
-- [ ] 以 §2.1 的 16 个 ID 为唯一集合，逐个定位原作 catalog、atlas JSON、native PNG、body config 和可核验名称证据；
+- [x] 以 §2.1 的 16 个 ID 为唯一集合，逐个定位原作 catalog、atlas JSON、native PNG、body config 和可核验名称证据；
   源名称缺失不是素材阻塞，使用 `皮肤 <ID>` 技术标签并标记 `technical-draft`。
-- [ ] 对照目标资源目录，标明“已存在且已登记、已存在但缺配置、缺 PNG、缺 atlas、缺 body config、缺预览”。
-- [ ] 识别逻辑重复/字节重复素材和 source alias，不以相近文件名合并不同 `skinId`。
-- [ ] 对无法定位或结构异常的 entry 记录阻塞原因，禁止用 classic 三等分素材临时冒充。
-- [ ] 核对已知基线：目标已有 9 套、待补 7 套；legacy classic 不映射 internal ID，`snake_skin_ai.png` 只映射 701。
+- [x] 对照目标资源目录，标明“已存在且已登记、已存在但缺配置、缺 PNG、缺 atlas、缺 body config、缺预览”。
+- [x] 识别逻辑重复/字节重复素材和 source alias，不以相近文件名合并不同 `skinId`。
+- [x] 对无法定位或结构异常的 entry 记录阻塞原因，禁止用 classic 三等分素材临时冒充。
+- [x] 核对已知基线：目标已有 9 套、待补 7 套；legacy classic 不映射 internal ID，`snake_skin_ai.png` 只映射 701。
 
 **产物**
 
@@ -406,17 +415,17 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
 
 **动作**
 
-- [ ] 对所有源文件和目标文件复算 SHA-256，并与现有首批 31 项记录比较。
-- [ ] 为新增的皮肤 PNG、atlas JSON、body config、预览、食物帧、墙块、背景和音效逐文件新增台账行。
-- [ ] 补齐批准来源、日期/负责人、转换步骤、新 `.meta` 状态和合法状态值。
-- [ ] 对冻结来源归档复用既有权利方授权并逐文件引用证据；只有新增范围外来源或无法关联既有授权时，才将 entry
+- [x] 对所有源文件和目标文件复算 SHA-256，并与现有首批 31 项记录比较。
+- [x] 为新增的皮肤 PNG、atlas JSON、body config、预览、食物帧、墙块、背景和音效逐文件新增台账行。
+- [x] 补齐批准来源、日期/负责人、转换步骤、新 `.meta` 状态和合法状态值。
+- [x] 对冻结来源归档复用既有权利方授权并逐文件引用证据；只有新增范围外来源或无法关联既有授权时，才将 entry
   标为 `待授权，不得引入` 并移出可发布目录输入。
-- [ ] 对已授权缺口执行实际引入：把缺失的皮肤 PNG、atlas JSON 和 body config 复制/转换到明确的手写真源或
+- [x] 对已授权缺口执行实际引入：把缺失的皮肤 PNG、atlas JSON 和 body config 复制/转换到明确的手写真源或
   资源真源路径，再由标准生成/同步流程物化目标；禁止沿用原作 UUID、import cache、旧 `.meta` 或运行时绝对路径。
-- [ ] 将来源映射写入 `tools/snake-s1-assets/source/manifest.json`，将逐 ID atlas/body 输入写入
+- [x] 将来源映射写入 `tools/snake-s1-assets/source/manifest.json`，将逐 ID atlas/body 输入写入
   `tools/snake-s1-assets/source/internal-skins/<id>/`，并把实际 PNG/音频字节放入 Cocos snakeoff 资源真源；
   外部绝对路径仅保留在 import/refresh 审计记录中。
-- [ ] 以 S0 source manifest 为已核验证据输入但不修改其文件；S1 对新增读取和全部 16 套转换输入建立独立清单。
+- [x] 以 S0 source manifest 为已核验证据输入但不修改其文件；S1 对新增读取和全部 16 套转换输入建立独立清单。
 
 **产物**
 
@@ -437,17 +446,17 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
 
 **动作**
 
-- [ ] 解析原作 atlas JSON、trim/rotate/originalSize/pivot 信息和每套身体配置。
-- [ ] 分别生成 normal/boost 的 head/body/可选 tail、`bodySequence`、`level`、有符号源 distance/offset、
+- [x] 解析原作 atlas JSON、trim/rotate/originalSize/pivot 信息和每套身体配置。
+- [x] 分别生成 normal/boost 的 head/body/可选 tail、`bodySequence`、`level`、有符号源 distance/offset、
   `durationFrames`、逐帧 pivot、`headAnchorY` 和 `visualScale`，并提供只按 normal 几何计算的确定性
   `deriveSkinLayoutMetrics`。
-- [ ] 按 `durationFrames=max(1, source.frame_time)` 保留帧时基；禁止输出 `animationFrameMs` 或提前换算毫秒。
-- [ ] 校验 16 套 `body_render_type=2` 并只复刻 NormalRepeat 布局分支；其他值或未知 render type fail-fast。
-- [ ] 缺 boost 时显式 `inherit-normal` 并让解析器引用 normal，缺 tail 时输出 `null`；禁止复制 normal 后伪装成
+- [x] 按 `durationFrames=max(1, source.frame_time)` 保留帧时基；禁止输出 `animationFrameMs` 或提前换算毫秒。
+- [x] 校验 16 套 `body_render_type=2` 并只复刻 NormalRepeat 布局分支；其他值或未知 render type fail-fast。
+- [x] 缺 boost 时显式 `inherit-normal` 并让解析器引用 normal，缺 tail 时输出 `null`；禁止复制 normal 后伪装成
   `boostSource="source"`，也禁止用 body 伪造 tail。
-- [ ] 对未知结构 fail-fast，并输出带 `skinId`、源路径和字段位置的稳定错误；禁止猜默认 rect 后继续。
-- [ ] 把输入排序、数字格式、JSON key 顺序、换行和输出排序固定；支持只读 `--check` 或等价 freshness 模式。
-- [ ] 常规转换器只读取仓内手写真源并写明确目标，不扫描外部参考目录，也不改写生成镜像；外部读取仅属于显式
+- [x] 对未知结构 fail-fast，并输出带 `skinId`、源路径和字段位置的稳定错误；禁止猜默认 rect 后继续。
+- [x] 把输入排序、数字格式、JSON key 顺序、换行和输出排序固定；支持只读 `--check` 或等价 freshness 模式。
+- [x] 常规转换器只读取仓内手写真源并写明确目标，不扫描外部参考目录，也不改写生成镜像；外部读取仅属于显式
   import/refresh 入口。
 
 **产物**
@@ -470,13 +479,13 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
 
 **动作**
 
-- [ ] 在 shared 手写真源中定义 `PublicSkinIdentity`、稳定 ID、公开/退休状态、`contentVersion`、默认标志、排序、
+- [x] 在 shared 手写真源中定义 `PublicSkinIdentity`、稳定 ID、公开/退休状态、`contentVersion`、默认标志、排序、
   玩家可用性和技术标签。
-- [ ] 固定并生成 16 套均 active、均进入公共目录、`playerUsable=true`、唯一默认 1、升序 `sortOrder`、
+- [x] 固定并生成 16 套均 active、均进入公共目录、`playerUsable=true`、唯一默认 1、升序 `sortOrder`、
   初始 `contentVersion=1`。
-- [ ] 保持 shared 零依赖、ES2017、无 Node/DOM/Cocos 全局、无 `const enum`。
-- [ ] 为 exact validation、唯一 ID、唯一默认、稳定排序和 `publicCatalogHash` 建立单测。
-- [ ] 明确皮肤目录变更与 gameplay wire/mode version 的关系；仅资源补齐不应无理由升级 wire。
+- [x] 保持 shared 零依赖、ES2017、无 Node/DOM/Cocos 全局、无 `const enum`。
+- [x] 为 exact validation、唯一 ID、唯一默认、稳定排序和 `publicCatalogHash` 建立单测。
+- [x] 明确皮肤目录变更与 gameplay wire/mode version 的关系；仅资源补齐不应无理由升级 wire。
 
 **产物**
 
@@ -493,11 +502,11 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
 
 **动作**
 
-- [ ] 为每个 `skinId` 建立 ownership itemId、碎片 itemId、获取方式、价格、上下架和 `aiEligible` 的明确槽位。
-- [ ] 未经 S3 拍板的名称使用 `DisplayNameValue` 的 source/technical-draft；稀有度、itemId、获取方式、上下架和
+- [x] 为每个 `skinId` 建立 ownership itemId、碎片 itemId、获取方式、价格、上下架和 `aiEligible` 的明确槽位。
+- [x] 未经 S3 拍板的名称使用 `DisplayNameValue` 的 source/technical-draft；稀有度、itemId、获取方式、上下架和
   价格使用 `DecisionValue` 的 draft/unavailable + `value:null`，不填空串、0 或伪造值。
-- [ ] 固定唯一默认皮肤 1 和 §2.1 的精确 10-ID AI 池；退休状态不删除历史 entry。
-- [ ] 生成 `serverBusinessHash`，并嵌入与 shared 相同的 `publicCatalogHash` 作为跨端门禁输入。
+- [x] 固定唯一默认皮肤 1 和 §2.1 的精确 10-ID AI 池；退休状态不删除历史 entry。
+- [x] 生成 `serverBusinessHash`，并嵌入与 shared 相同的 `publicCatalogHash` 作为跨端门禁输入。
 
 **产物**
 
@@ -515,11 +524,11 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
 
 **动作**
 
-- [ ] 为每个 `skinId` 关联 preview、texture、normal/boost 的 head/body/可选 tail、body sequence、
+- [x] 为每个 `skinId` 关联 preview、texture、normal/boost 的 head/body/可选 tail、body sequence、
   `durationFrames`、逐帧 pivot、有符号源 distance/offset、`headAnchorY`、`visualScale` 和 fallback。
-- [ ] 使用稳定逻辑资源路径，不把源 native hash 文件名或绝对路径暴露给运行时。
-- [ ] 确认全部彩色素材默认白 tint；身份轮廓/箭头/名牌作为独立表现能力登记。
-- [ ] 生成 `clientPresentationHash`、嵌入的 `publicCatalogHash` 和可控诊断码，供未知 ID、加载失败和非法 rect 回退。
+- [x] 使用稳定逻辑资源路径，不把源 native hash 文件名或绝对路径暴露给运行时。
+- [x] 确认全部彩色素材默认白 tint；身份轮廓/箭头/名牌作为独立表现能力登记。
+- [x] 生成 `clientPresentationHash`、嵌入的 `publicCatalogHash` 和可控诊断码，供未知 ID、加载失败和非法 rect 回退。
 
 **产物**
 
@@ -539,10 +548,10 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
 
 **动作**
 
-- [ ] 从原作 atlas 确认 Dot `1..7`、Star/主题 Star、加速残骸、AI 死亡残骸和墙块 tile rect。
-- [ ] 记录世界显示尺寸 16/42/22/34、稳定 kind/variant 和默认/fallback 帧。
-- [ ] 将 S0 的明暗背景、网格、地图外背景、透明度、墙块平铺/线框规则写入 presentation catalog。
-- [ ] 按单 atlas/material 批渲染需求组织帧和材质；避免让 S2 只能逐节点加载。
+- [x] 从原作 atlas 确认 Dot `1..7`、Star/主题 Star、加速残骸、AI 死亡残骸和墙块 tile rect。
+- [x] 记录世界显示尺寸 16/42/22/34、稳定 kind/variant 和默认/fallback 帧。
+- [x] 将 S0 的明暗背景、网格、地图外背景、透明度、墙块平铺/线框规则写入 presentation catalog。
+- [x] 按单 atlas/material 批渲染需求组织帧和材质；避免让 S2 只能逐节点加载。
 
 **产物**
 
@@ -561,12 +570,12 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
 
 **动作**
 
-- [ ] 为吃食物、吃残骸、击杀、死亡和按钮登记稳定逻辑名、资源、hash、授权、音量/并发策略。
-- [ ] 将个人 run 结果固定登记为 `none/silent`，无 asset、无声音 fallback；不得借用其他事件音效。退出若成为
+- [x] 为吃食物、吃残骸、击杀、死亡和按钮登记稳定逻辑名、资源、hash、授权、音量/并发策略。
+- [x] 将个人 run 结果固定登记为 `none/silent`，无 asset、无声音 fallback；不得借用其他事件音效。退出若成为
   独立事件则另行登记，不继承个人结果、真人死亡或 `time_over`。
-- [ ] 登记基础加速、保护、死亡爆散和复活视觉资源；缺失项显式标为 `none` 或后续，不创建收藏型特效内容。
-- [ ] 将 `time_over` 标为历史/未使用资源，禁止映射到目标 Endless 生命周期。
-- [ ] 保持 View/Logic 边界和 `sfxOn` 语义，不把播放状态写进素材 catalog。
+- [x] 登记基础加速、保护、死亡爆散和复活视觉资源；缺失项显式标为 `none` 或后续，不创建收藏型特效内容。
+- [x] 将 `time_over` 标为历史/未使用资源，禁止映射到目标 Endless 生命周期。
+- [x] 保持 View/Logic 边界和 `sfxOn` 语义，不把播放状态写进素材 catalog。
 
 **产物**
 
@@ -583,12 +592,12 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
 
 **动作**
 
-- [ ] 用规范化 catalog 生成统一背景、统一方向、统一长度/缩放和统一光照规则下的 16 套预览。
-- [ ] 同时输出头部动画、身体序列、尾部、pivot 和间距的检查图/contact sheet。
-- [ ] 完成头/身/可选尾、normal/boost 动画、pivot、间距、白边、trim 和 fallback 的技术审阅并关闭阻塞问题。
-- [ ] 汇总来源名称证据、`皮肤 <ID>` 技术标签和统一预览，形成 S3-01 使用的展示名、稀有度、获取方式审阅包；
+- [x] 用规范化 catalog 生成统一背景、统一方向、统一长度/缩放和统一光照规则下的 16 套预览。
+- [x] 同时输出头部动画、身体序列、尾部、pivot 和间距的检查图/contact sheet。
+- [x] 完成头/身/可选尾、normal/boost 动画、pivot、间距、白边、trim 和 fallback 的技术审阅并关闭阻塞问题。
+- [x] 汇总来源名称证据、`皮肤 <ID>` 技术标签和统一预览，形成 S3-01 使用的展示名、稀有度、获取方式审阅包；
   S1 内不要求用户/美术产品给出最终标注。
-- [ ] 缺帧、错序、白边、trim、pivot、缩放或 fallback 问题回到转换真源修复，不手改预览结果。
+- [x] 缺帧、错序、白边、trim、pivot、缩放或 fallback 问题回到转换真源修复，不手改预览结果。
 
 **产物**
 
@@ -608,16 +617,16 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
 
 **动作**
 
-- [ ] 校验 ID 唯一、唯一默认皮肤、精确 10-ID AI 池、资源存在、rect/索引合法、normal/boost 完整、
+- [x] 校验 ID 唯一、唯一默认皮肤、精确 10-ID AI 池、资源存在、rect/索引合法、normal/boost 完整、
   fallback 以皮肤 1 的 `null` 为唯一终点。
-- [ ] 校验 shared/server/client 的 entry 集合、内容版本和公共身份一致；16 套初始状态、排序和玩家可用性与
+- [x] 校验 shared/server/client 的 entry 集合、内容版本和公共身份一致；16 套初始状态、排序和玩家可用性与
   §2.1 严格相等。
-- [ ] 分别计算稳定 `publicCatalogHash`、`serverBusinessHash`、`clientPresentationHash`；对 JSON 空白、key
+- [x] 分别计算稳定 `publicCatalogHash`、`serverBusinessHash`、`clientPresentationHash`；对 JSON 空白、key
   顺序和文件遍历顺序做规范化，不比较异构业务/表现 hash 是否相等。
-- [ ] 增加 `publicCatalogHash` mismatch 策略测试：外观目录相关经济写 fail-closed，战斗确定性回退皮肤 1；金币复活由
+- [x] 增加 `publicCatalogHash` mismatch 策略测试：外观目录相关经济写 fail-closed，战斗确定性回退皮肤 1；金币复活由
   独立 room config/policy/receipt 守门，不错误耦合 cosmetic catalog。
-- [ ] 区分 retired 与损坏：资源完整的 retired entry 保持自身解析，未知/部署损坏/加载失败/非法 rect 才运行时回退。
-- [ ] 将校验器接入适当的测试/verify 链；命令名称以实际实现为准并回写证据表。
+- [x] 区分 retired 与损坏：资源完整的 retired entry 保持自身解析，未知/部署损坏/加载失败/非法 rect 才运行时回退。
+- [x] 将校验器接入适当的测试/verify 链；命令名称以实际实现为准并回写证据表。
 
 **产物**
 
@@ -639,13 +648,13 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
 
 **动作**
 
-- [ ] 只修改手写真源；按实际改动运行必要的 gameplay codegen、shared sync、protocol fingerprint 和 client sync。
-- [ ] 在外部参考目录不可访问的条件下运行转换器 freshness、catalog validator、资源 hash、inventory、sync、
+- [x] 只修改手写真源；按实际改动运行必要的 gameplay codegen、shared sync、protocol fingerprint 和 client sync。
+- [x] 在外部参考目录不可访问的条件下运行转换器 freshness、catalog validator、资源 hash、inventory、sync、
   类型检查和客户端测试，证明常规链只依赖仓内输入。
-- [ ] 核对生成 diff 只包含预期产物，未手改受保护镜像，未混入未授权或未登记文件。
-- [ ] 在证据表登记实际命令、commit、预览/contact sheet、hash 和尚待 Creator 验收项。
-- [ ] 将转换报告、三类 hash、SHA、完整性矩阵和预览统一写入 `docs/s/evidence/s1/`，不改写 S0 evidence。
-- [ ] 将 catalog API、三类 hash、fallback、材质分组、S3 内容审阅包和未解决 Creator 风险交接给 S2/S3/S5。
+- [x] 核对生成 diff 只包含预期产物，未手改受保护镜像，未混入未授权或未登记文件。
+- [x] 在证据表登记实际命令、commit、预览/contact sheet、hash 和尚待 Creator 验收项。
+- [x] 将转换报告、三类 hash、SHA、完整性矩阵和预览统一写入 `docs/s/evidence/s1/`，不改写 S0 evidence。
+- [x] 将 catalog API、三类 hash、fallback、材质分组、S3 内容审阅包和未解决 Creator 风险交接给 S2/S3/S5。
 
 **产物**
 
@@ -667,30 +676,30 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
 
 以下条件必须全部满足，S1 才能标记为 `[已完成]`：
 
-- [ ] 16 个冻结 internal skin ID 均有完整来源映射、PNG、atlas/body config、规范化 entry 和预览。
-- [ ] 所有资源逐文件具备源路径、逻辑名、SHA-256、授权、目标路径、转换、`.meta` 状态和合法状态值。
-- [ ] 16 套均为 active、均进入公共目录、`playerUsable=true`、初始 `contentVersion=1` 并按数字 ID 升序；
+- [x] 16 个冻结 internal skin ID 均有完整来源映射、PNG、atlas/body config、规范化 entry 和预览。
+- [x] 所有资源逐文件具备源路径、逻辑名、SHA-256、授权、目标路径、转换、`.meta` 状态和合法状态值。
+- [x] 16 套均为 active、均进入公共目录、`playerUsable=true`、初始 `contentVersion=1` 并按数字 ID 升序；
   唯一默认皮肤为 1。
-- [ ] `aiEligible=true` 集合严格等于 `101,111,112,132,133,139,401,403,411,701`，其余 6 套明确为 false。
-- [ ] 转换器能处理 normal/boost、多帧动画、逐帧保持次数、trim/rotate、body level/sequence、有符号
+- [x] `aiEligible=true` 集合严格等于 `101,111,112,132,133,139,401,403,411,701`，其余 6 套明确为 false。
+- [x] 转换器能处理 normal/boost、多帧动画、逐帧保持次数、trim/rotate、body level/sequence、有符号
   distance/offset 和可选 tail，并对未知结构 fail-fast。
-- [ ] 转换器和规范化目录在重复运行、乱序输入下仍字节确定。
-- [ ] 常规 generate、`--check`、测试和 CI 只依赖仓内输入，不读取外部绝对路径。
-- [ ] Shared、服务端和客户端三层目录的 ID/版本/公共身份一致，且 ownership 与资源所有权边界明确。
-- [ ] 皮肤 1 完整且 `fallbackSkinId=null`，其余 15 套全部直接 fallback 到 1；构建期不完整目录 fail-fast，
+- [x] 转换器和规范化目录在重复运行、乱序输入下仍字节确定。
+- [x] 常规 generate、`--check`、测试和 CI 只依赖仓内输入，不读取外部绝对路径。
+- [x] Shared、服务端和客户端三层目录的 ID/版本/公共身份一致，且 ownership 与资源所有权边界明确。
+- [x] 皮肤 1 完整且 `fallbackSkinId=null`，其余 15 套全部直接 fallback 到 1；构建期不完整目录 fail-fast，
   运行时未知/部署损坏/非法资源稳定回退 1，retired 完整资源仍显示自身。
-- [ ] 所有 rect、pivot、序列、`durationFrames`、有符号 distance/offset、布局推导、资源存在性和 fallback 链
+- [x] 所有 rect、pivot、序列、`durationFrames`、有符号 distance/offset、布局推导、资源存在性和 fallback 链
   校验通过。
-- [ ] Dot `1..7`、Star、两类残骸、墙块、背景/网格主题和目标音效/FX 的资源或显式 `none` 策略均进入
+- [x] Dot `1..7`、Star、两类残骸、墙块、背景/网格主题和目标音效/FX 的资源或显式 `none` 策略均进入
   presentation catalog。
-- [ ] 个人结果固定 `none/silent`，`time_over` 不可从目标 `totalTime=0` 事件映射触发。
-- [ ] 三类 hash 各自稳定、三层 `publicCatalogHash` 相同；公共 hash mismatch 时外观目录相关经济写
+- [x] 个人结果固定 `none/silent`，`time_over` 不可从目标 `totalTime=0` 事件映射触发。
+- [x] 三类 hash 各自稳定、三层 `publicCatalogHash` 相同；公共 hash mismatch 时外观目录相关经济写
   fail-closed、战斗 fallback 的测试通过，异构业务/表现 hash 不做相等比较。
-- [ ] 16 套统一预览/contact sheet、技术问题关闭记录和 S3 内容审阅包完成；名称保持
+- [x] 16 套统一预览/contact sheet、技术问题关闭记录和 S3 内容审阅包完成；名称保持
   `source|technical-draft`，稀有度/获取方式保持 `draft|unavailable` 且 `value:null`，不按 ID 猜测，也不作为
   S1 退出门。
-- [ ] 所有 codegen/sync/typecheck/test/verify 按实际改动运行并留存原始输出；生成 diff 已审阅。
-- [ ] Creator 尚未执行的资源/UUID/pivot/混合确认明确留给 S5，不能登记为已通过。
+- [x] 所有 codegen/sync/typecheck/test/verify 按实际改动运行并留存原始输出；生成 diff 已审阅。
+- [x] Creator 尚未执行的资源/UUID/pivot/混合确认明确留给 S5，不能登记为已通过。
 
 ---
 
@@ -726,23 +735,23 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
 
 | 任务 | 状态 | commit | 自动验证/命令 | catalog、hash、预览或授权证据 | 备注 |
 |---|---|---|---|---|---|
-| S1-01 | [已拍板·待实施] | — | — | — | — |
-| S1-02 | [已拍板·待实施] | — | — | — | — |
-| S1-03 | [已拍板·待实施] | — | — | — | — |
-| S1-04 | [已拍板·待实施] | — | — | — | — |
-| S1-05 | [已拍板·待实施] | — | — | — | — |
-| S1-06 | [已拍板·待实施] | — | — | — | — |
-| S1-07 | [已拍板·待实施] | — | — | — | — |
-| S1-08 | [已拍板·待实施] | — | — | — | — |
-| S1-09 | [已拍板·待实施] | — | — | — | — |
-| S1-10 | [已拍板·待实施] | — | — | — | — |
-| S1-11 | [已拍板·待实施] | — | — | — | — |
+| S1-01 | [已完成] | 本次提交 | `--refresh-source` 精确 commit/clean 校验；16/16 完整 | [完整性矩阵](evidence/s1/completeness-matrix.json) · [来源 manifest](../../tools/snake-s1-assets/source/manifest.json) | 目标已有 9/缺 7、legacy 与 701 别名均按来源身份闭合 |
+| S1-02 | [已完成] | 本次提交 | 68 个冻结源文件、27 个实际资源、78 行资源/转换/预览续表复算通过 | [机器可读续表](evidence/s1/provenance.json) · [SHA 清单](evidence/s1/SHA256SUMS) | 新 `.meta` 为仓库所有；未复制旧 UUID/import cache；状态均为「已引入，待验收」 |
+| S1-03 | [已完成] | 本次提交 | `node --test tools/snake-s1-assets/snake-s1-assets.test.mjs` 8/8；`--check` exit 0 | [转换报告](evidence/s1/conversion-report.json) · [技术审阅](evidence/s1/technical-review.json) | 覆盖乱序、非 216×72、多 body、动画、403 tail、rotate/trim、0/6 帧、负 offset 与反例 |
+| S1-04 | [已完成] | 本次提交 | shared/client typecheck；exact/default/order/hash 正反测试 | [公共目录](../../apps/shared/src/cosmetics/snakeSkinCatalog.ts) · [hash](evidence/s1/catalog-hashes.json) | 16 active、唯一默认 1、版本 1；未改 gameplay wire/schema/protocol |
+| S1-05 | [已完成] | 本次提交 | server S1 5/5；AI drift/orphan/sentinel/hash mismatch 反例通过 | [服务端业务目录](../../apps/server/src/rooms/modes/snake/skinBusinessCatalog.ts) | 10-ID AI 池精确；全部业务值保持 draft/unavailable；经济写默认关闭 |
+| S1-06 | [已完成] | 本次提交 | client catalog 8/8；rect/sequence/layout/fallback/mismatch 通过 | [客户端表现目录](../../apps/client/src/logic/rooms/snake/SnakePresentationCatalog.ts) | 运行时诊断不改权威 ID；retired 完整 entry 按自身解析；彩色素材固定白 tint |
+| S1-07 | [已完成] | 本次提交 | 七色 Dot、Star 主题、22/34 wreck、墙/背景精确值 fixture 通过 | [表现生成物](../../apps/client/src/logic/rooms/snake/SnakePresentationCatalog.generated.ts) | 网格 32、边距 16；单 atlas/material 容量 1030；无 broadphase 150 泄漏 |
+| S1-08 | [已完成] | 本次提交 | 音效/FX 唯一映射、hash、静默/不可达策略测试通过 | [来源续表](evidence/s1/provenance.json) | personal result=`silent`；`time-over=historical-unused/unreachable`；死亡爆散显式 none |
+| S1-09 | [已完成] | 本次提交 | 16/16 preview；normal/boost 技术 contact sheet 人工检查通过、阻塞 0 | [预览总览](evidence/s1/contact-sheet.png) · [技术总览](evidence/s1/technical-contact-sheet.png) · [S3 审阅包](evidence/s1/content-review-package.json) | 名称仍为 technical-draft，产品名/稀有度/获取/价格未冒充审批 |
+| S1-10 | [已完成] | 本次提交 | repo-only freshness + shared/server/client 正反 validator/hash/fallback tests | [验证报告](evidence/s1/validation-report.json) · [三类 hash](evidence/s1/catalog-hashes.json) | 只比较同构公共 hash；业务/表现 hash 独立；构建损坏 fail-fast，部署损坏才 fallback |
+| S1-11 | [已完成] | 本次提交 | `sync:shared`、`sync:client`、`typecheck`、`test:client`、server test、`verify:sync`、`verify:inventory` 均 exit 0 | [执行记录](evidence/s1/execution-record.md) · [证据入口](evidence/s1/README.md) | gameplay schema 与 protocol 未改，故 gameplay codegen/fingerprint 重钉不适用；Creator 终验留 S5 |
 
 阶段汇总：
 
 | 阶段 | 状态 | commit | 自动验证 | Creator/视觉证据 | 备注 |
 |---|---|---|---|---|---|
-| S1 | [已拍板·待实施] | — | — | — | — |
+| S1 | [已完成] | 本次提交 | converter 8/8；S1 server 5/5；client catalog 8/8；全量 typecheck/test/sync/inventory 通过 | 16 张单图 + 两张 contact sheet 已人工检查；Creator 3.8.8 导入/混合/UUID/pivot 终验明确留 S5 | S2/S3 可分别消费客户端表现/服务端业务骨架；S3-01 必须先完成内容审批 |
 
 ---
 
