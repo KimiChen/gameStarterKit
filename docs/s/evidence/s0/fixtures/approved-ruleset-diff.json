@@ -1,0 +1,66 @@
+{
+  "approval": {
+    "authority": "user",
+    "date": "2026-09-03"
+  },
+  "implementationStatus": "frozen for S2/S2R; not implemented by S0",
+  "rollback": "current snake@1 values: star 5/5, speed 160, boost 1.6, turn 9 degrees/tick, entity-creation-based protection 30; relive release flag remains off",
+  "rows": [
+    {
+      "current": "5/5",
+      "nature": "adopt source unitless values",
+      "ownerStage": "S2",
+      "rule": "Star length/score",
+      "sourceReference": "10/10",
+      "target": "10/10",
+      "test": "one Star adds exactly 10 length and 10 score"
+    },
+    {
+      "current": "160 unit/s",
+      "nature": "project adaptation; no frame conversion",
+      "ownerStage": "S2",
+      "rule": "base speed",
+      "sourceReference": "4.5 unit/frame under 60 engine / 59 requested platform frame rate",
+      "target": "160 unit/s",
+      "test": "160/20 = 8 units per tick"
+    },
+    {
+      "current": "1.6",
+      "nature": "adopt source unitless ratio",
+      "ownerStage": "S2",
+      "rule": "boost multiplier",
+      "sourceReference": "2",
+      "target": "2",
+      "test": "8*2 = 16 units per tick"
+    },
+    {
+      "current": "9 degrees/tick",
+      "nature": "project adaptation; no frame conversion",
+      "ownerStage": "S2",
+      "rule": "turn cap",
+      "sourceReference": "10 degrees/frame, no fixed-step equivalent",
+      "target": "9 degrees/tick",
+      "test": "cap, exact arrival, and shortest arc across 360/0"
+    },
+    {
+      "current": "30 ticks from entity creation",
+      "nature": "project adaptation",
+      "ownerStage": "S2",
+      "rule": "first spawn protection",
+      "sourceReference": "no directly portable fixed-step value",
+      "target": "30 active ticks from firstActiveTick",
+      "test": "start/start+29 protected; start+30 unprotected; wall remains lethal"
+    },
+    {
+      "current": "shares 30-tick spawn field",
+      "nature": "source duration mapped at approved 20Hz; separate field",
+      "ownerStage": "S2/S2R",
+      "rule": "human relive protection",
+      "sourceReference": "3 seconds",
+      "target": "60 ticks from reliveFirstActiveTick",
+      "test": "start/start+59 protected; start+60 unprotected; wall remains lethal"
+    }
+  ],
+  "schemaVersion": 1,
+  "version": "newEndlessPortraitV2Ruleset@1"
+}

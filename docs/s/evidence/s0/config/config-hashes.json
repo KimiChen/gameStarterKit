@@ -1,0 +1,58 @@
+{
+  "canonicalization": "recursively lexicographically sorted JSON object keys; arrays retain order; two-space indent; LF; final newline",
+  "combination": {
+    "configId": "newEndlessPortraitV2Map4096TotalTime0",
+    "layerHashes": [
+      {
+        "id": "newEndlessPortraitV2Map4096",
+        "sha256": "6750cb34f7b454902a0263b17ddd9745942eb511b56e1510aed5a886ea72a07e"
+      },
+      {
+        "id": "sourceEndlessTotalTime0",
+        "sha256": "efc56090b06e92c5ba0027330b7719d6f857c5709045ddb850d64a46e551b477"
+      },
+      {
+        "id": "sourceEndlessReliveFlow",
+        "sha256": "9b33262d53fd0de440a8adc6ca6bf7c09493d32d0b0034dd20677c10915eb865"
+      },
+      {
+        "id": "onlineCoinRelive5V1",
+        "sha256": "e668f382989f593802dc6ab608524811a0fb39756d70a5afe9e6ce2737bbc646"
+      },
+      {
+        "id": "onlineEndlessDropInV2",
+        "sha256": "ead2a5b2205bc8ec2e2aa84606e0bab610bad42a09cab44577b8785af0153a9a"
+      }
+    ]
+  },
+  "combinationSha256": "2319d173326602d85fc4c6a85f5b4ca16452cd778f0794896398294a1d5f87e2",
+  "components": {
+    "mapOverrideSha256": "720dae2e93e002574bf1abf694ce41ee4070dcbdcda468f18ac02a8163fe41ab",
+    "pointStepConfigSha256": "f1a2411dfd6693bccac5b6fde85e994eeec7dd399bf4c1ddff45c71fcdd86b7f",
+    "sourceV2SnapshotSha256": "b7cc5ff2bcee64ede89a5d85260849c71653bc80e4ade83840fb7c2bf4aca4ef",
+    "targetV2SnapshotSha256": "c494152b80982b0fae327725f966b68db5ea2a6c79a8f1a34088a7f2afd2600a"
+  },
+  "layers": [
+    {
+      "id": "newEndlessPortraitV2Map4096",
+      "sha256": "6750cb34f7b454902a0263b17ddd9745942eb511b56e1510aed5a886ea72a07e"
+    },
+    {
+      "id": "sourceEndlessTotalTime0",
+      "sha256": "efc56090b06e92c5ba0027330b7719d6f857c5709045ddb850d64a46e551b477"
+    },
+    {
+      "id": "sourceEndlessReliveFlow",
+      "sha256": "9b33262d53fd0de440a8adc6ca6bf7c09493d32d0b0034dd20677c10915eb865"
+    },
+    {
+      "id": "onlineCoinRelive5V1",
+      "sha256": "e668f382989f593802dc6ab608524811a0fb39756d70a5afe9e6ce2737bbc646"
+    },
+    {
+      "id": "onlineEndlessDropInV2",
+      "sha256": "ead2a5b2205bc8ec2e2aa84606e0bab610bad42a09cab44577b8785af0153a9a"
+    }
+  ],
+  "schemaVersion": 1
+}

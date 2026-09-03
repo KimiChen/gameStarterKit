@@ -1,0 +1,327 @@
+{
+  "definition": "ordered coverage: floor(sum(segmentCoverage / step_length)) * STEP_POINT_COUNT(2); duplicate endpoint is retained",
+  "pointStepConfig": [
+    {
+      "max_length": 300,
+      "step_length": 3
+    },
+    {
+      "max_length": 600,
+      "step_length": 4
+    },
+    {
+      "max_length": 900,
+      "step_length": 5
+    },
+    {
+      "max_length": 1200,
+      "step_length": 6
+    },
+    {
+      "max_length": 1500,
+      "step_length": 7
+    },
+    {
+      "max_length": 1800,
+      "step_length": 8
+    },
+    {
+      "max_length": 2100,
+      "step_length": 9
+    },
+    {
+      "max_length": 2400,
+      "step_length": 10
+    },
+    {
+      "max_length": 2700,
+      "step_length": 11
+    },
+    {
+      "max_length": 3000,
+      "step_length": 12
+    },
+    {
+      "max_length": 3300,
+      "step_length": 13
+    },
+    {
+      "max_length": 3600,
+      "step_length": 14
+    },
+    {
+      "max_length": 3900,
+      "step_length": 15
+    },
+    {
+      "max_length": 4200,
+      "step_length": 16
+    },
+    {
+      "max_length": 4500,
+      "step_length": 17
+    },
+    {
+      "max_length": 4800,
+      "step_length": 18
+    },
+    {
+      "max_length": 5100,
+      "step_length": 19
+    },
+    {
+      "max_length": 5400,
+      "step_length": 20
+    },
+    {
+      "max_length": 5700,
+      "step_length": 21
+    },
+    {
+      "max_length": 6000,
+      "step_length": 22
+    },
+    {
+      "max_length": 6300,
+      "step_length": 23
+    },
+    {
+      "max_length": 6600,
+      "step_length": 24
+    },
+    {
+      "max_length": 6900,
+      "step_length": 25
+    },
+    {
+      "max_length": 7200,
+      "step_length": 26
+    },
+    {
+      "max_length": 7500,
+      "step_length": 27
+    },
+    {
+      "max_length": 7800,
+      "step_length": 28
+    },
+    {
+      "max_length": 8100,
+      "step_length": 29
+    },
+    {
+      "max_length": 8400,
+      "step_length": 30
+    },
+    {
+      "max_length": 8700,
+      "step_length": 31
+    },
+    {
+      "max_length": 9000,
+      "step_length": 32
+    },
+    {
+      "max_length": 9300,
+      "step_length": 33
+    },
+    {
+      "max_length": 9600,
+      "step_length": 34
+    },
+    {
+      "max_length": 9900,
+      "step_length": 35
+    },
+    {
+      "max_length": 10200,
+      "step_length": 36
+    },
+    {
+      "max_length": 10500,
+      "step_length": 37
+    },
+    {
+      "max_length": 10800,
+      "step_length": 38
+    },
+    {
+      "max_length": 11100,
+      "step_length": 39
+    },
+    {
+      "max_length": 11400,
+      "step_length": 40
+    },
+    {
+      "max_length": 11700,
+      "step_length": 41
+    },
+    {
+      "max_length": 12000,
+      "step_length": 42
+    },
+    {
+      "max_length": 12300,
+      "step_length": 43
+    },
+    {
+      "max_length": 12600,
+      "step_length": 44
+    },
+    {
+      "max_length": 12900,
+      "step_length": 45
+    },
+    {
+      "max_length": 13200,
+      "step_length": 46
+    },
+    {
+      "max_length": 13500,
+      "step_length": 47
+    },
+    {
+      "max_length": 13800,
+      "step_length": 48
+    },
+    {
+      "max_length": 14100,
+      "step_length": 49
+    },
+    {
+      "max_length": 14400,
+      "step_length": 50
+    },
+    {
+      "max_length": 14700,
+      "step_length": 51
+    },
+    {
+      "max_length": 15000,
+      "step_length": 52
+    },
+    {
+      "max_length": 15300,
+      "step_length": 53
+    },
+    {
+      "max_length": 15600,
+      "step_length": 54
+    },
+    {
+      "max_length": 15900,
+      "step_length": 55
+    },
+    {
+      "max_length": 16200,
+      "step_length": 56
+    },
+    {
+      "max_length": 16500,
+      "step_length": 57
+    },
+    {
+      "max_length": 16800,
+      "step_length": 58
+    },
+    {
+      "max_length": 17100,
+      "step_length": 59
+    },
+    {
+      "max_length": 17400,
+      "step_length": 60
+    },
+    {
+      "max_length": 17700,
+      "step_length": 61
+    },
+    {
+      "max_length": 18000,
+      "step_length": 62
+    },
+    {
+      "max_length": 18300,
+      "step_length": 63
+    },
+    {
+      "max_length": 18600,
+      "step_length": 64
+    },
+    {
+      "max_length": 18900,
+      "step_length": 65
+    },
+    {
+      "max_length": 18900,
+      "step_length": 66
+    },
+    {
+      "max_length": 19200,
+      "step_length": 67
+    },
+    {
+      "max_length": 19500,
+      "step_length": 68
+    },
+    {
+      "max_length": 19800,
+      "step_length": 69
+    },
+    {
+      "max_length": 20100,
+      "step_length": 70
+    },
+    {
+      "max_length": 100000,
+      "step_length": 50
+    },
+    {
+      "max_length": 200000,
+      "step_length": 100
+    },
+    {
+      "max_length": 300000,
+      "step_length": 100
+    }
+  ],
+  "schemaVersion": 1,
+  "vectors": [
+    {
+      "expectedPointCount": 52,
+      "length": 80,
+      "pointCount": 52
+    },
+    {
+      "expectedPointCount": 200,
+      "length": 300,
+      "pointCount": 200
+    },
+    {
+      "expectedPointCount": 960,
+      "length": 3000,
+      "pointCount": 960
+    },
+    {
+      "expectedPointCount": 1954,
+      "length": 18900,
+      "pointCount": 1954
+    },
+    {
+      "expectedPointCount": 1964,
+      "length": 19200,
+      "pointCount": 1964
+    },
+    {
+      "expectedPointCount": 1990,
+      "length": 20100,
+      "pointCount": 1990
+    },
+    {
+      "expectedPointCount": 5186,
+      "length": 100000,
+      "pointCount": 5186
+    }
+  ]
+}

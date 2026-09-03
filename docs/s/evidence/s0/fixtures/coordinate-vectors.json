@@ -1,0 +1,96 @@
+{
+  "globalScaleForbidden": true,
+  "schemaVersion": 1,
+  "transform": "source (x,y) -> portrait (-y,x)",
+  "vectors": [
+    {
+      "portrait": {
+        "x": 0,
+        "y": 0
+      },
+      "portraitDistanceFromOrigin": 0,
+      "scaleFactor": 1,
+      "source": {
+        "x": 0,
+        "y": 0
+      },
+      "sourceDistanceFromOrigin": 0
+    },
+    {
+      "portrait": {
+        "x": 0,
+        "y": 32
+      },
+      "portraitDistanceFromOrigin": 32,
+      "scaleFactor": 1,
+      "source": {
+        "x": 32,
+        "y": 0
+      },
+      "sourceDistanceFromOrigin": 32
+    },
+    {
+      "portrait": {
+        "x": 456.25,
+        "y": 123.5
+      },
+      "portraitDistanceFromOrigin": 472.66934795901466,
+      "scaleFactor": 1,
+      "source": {
+        "x": 123.5,
+        "y": -456.25
+      },
+      "sourceDistanceFromOrigin": 472.66934795901466
+    },
+    {
+      "portrait": {
+        "x": -2048,
+        "y": -2048
+      },
+      "portraitDistanceFromOrigin": 2896.309375740099,
+      "scaleFactor": 1,
+      "source": {
+        "x": -2048,
+        "y": 2048
+      },
+      "sourceDistanceFromOrigin": 2896.309375740099
+    },
+    {
+      "portrait": {
+        "x": 2448,
+        "y": 2448
+      },
+      "portraitDistanceFromOrigin": 3461.994800689337,
+      "scaleFactor": 1,
+      "source": {
+        "x": 2448,
+        "y": -2448
+      },
+      "sourceDistanceFromOrigin": 3461.994800689337
+    }
+  ],
+  "viewport": {
+    "portrait": {
+      "height": 1624,
+      "width": 750
+    },
+    "source": {
+      "height": 750,
+      "width": 1624
+    }
+  },
+  "world": {
+    "rotatedEvidence": {
+      "height": 4896,
+      "width": 4896
+    },
+    "sourceEvidence": {
+      "height": 4896,
+      "width": 4896
+    },
+    "targetBounds": {
+      "height": 4096,
+      "width": 4096
+    }
+  }
+}

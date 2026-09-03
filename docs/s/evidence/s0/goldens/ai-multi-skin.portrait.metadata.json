@@ -1,0 +1,491 @@
+{
+  "camera": {
+    "scale": 0.82,
+    "x": 0,
+    "y": 0
+  },
+  "captureTick": 1800,
+  "claimIsOriginalRuntimeScreenshot": false,
+  "configCombinationSha256": "2319d173326602d85fc4c6a85f5b4ca16452cd778f0794896398294a1d5f87e2",
+  "configId": "newEndlessPortraitV2Map4096TotalTime0",
+  "coordinateTransform": "source (x,y) -> portrait (-y,x); no scaling",
+  "evidenceKind": "sourceDerivedStaticReconstruction",
+  "fixture": "ai-multi-skin",
+  "mapSize": 4096,
+  "notes": [
+    "Four representative source atlases",
+    "Target stable-state composition is 17 active snakes, not rendered in full here"
+  ],
+  "orientation": "portrait",
+  "reconstructionVersion": "snake-s0-replication@1",
+  "renderedEntityState": {
+    "foodCount": 58,
+    "foods": [
+      {
+        "kind": "star",
+        "variant": 0,
+        "x": -317.0465867687017,
+        "y": -834.3937362078577
+      },
+      {
+        "kind": "dot",
+        "variant": 1,
+        "x": 60.66570231691003,
+        "y": 506.1821086797863
+      },
+      {
+        "kind": "dot",
+        "variant": 2,
+        "x": 352.79082771390676,
+        "y": 8.073440752923489
+      },
+      {
+        "kind": "dot",
+        "variant": 3,
+        "x": -409.3295583128929,
+        "y": -177.6410442776978
+      },
+      {
+        "kind": "dot",
+        "variant": 4,
+        "x": -341.69270837213844,
+        "y": -42.375904228538275
+      },
+      {
+        "kind": "dot",
+        "variant": 5,
+        "x": 295.1152127748355,
+        "y": -703.5182985942811
+      },
+      {
+        "kind": "dot",
+        "variant": 6,
+        "x": 185.0045089656487,
+        "y": 638.4060197509825
+      },
+      {
+        "kind": "dot",
+        "variant": 0,
+        "x": -150.43586352840066,
+        "y": 385.980374738574
+      },
+      {
+        "kind": "dot",
+        "variant": 1,
+        "x": 195.61434141360223,
+        "y": 304.5447723940015
+      },
+      {
+        "kind": "dot",
+        "variant": 2,
+        "x": 344.9521969165653,
+        "y": 712.8707448486239
+      },
+      {
+        "kind": "dot",
+        "variant": 3,
+        "x": -391.0702270735055,
+        "y": -747.1221436746418
+      },
+      {
+        "kind": "dot",
+        "variant": 4,
+        "x": 193.39228372089565,
+        "y": 691.0336805507541
+      },
+      {
+        "kind": "dot",
+        "variant": 5,
+        "x": 362.4561250396073,
+        "y": 749.2460391484201
+      },
+      {
+        "kind": "star",
+        "variant": 6,
+        "x": -3.153773797675967,
+        "y": -752.0811994560063
+      },
+      {
+        "kind": "dot",
+        "variant": 0,
+        "x": -138.96642989479005,
+        "y": -783.5838231258094
+      },
+      {
+        "kind": "dot",
+        "variant": 1,
+        "x": 182.51523367129266,
+        "y": -423.2844132464379
+      },
+      {
+        "kind": "dot",
+        "variant": 2,
+        "x": 63.894041697494686,
+        "y": -20.11911990121007
+      },
+      {
+        "kind": "dot",
+        "variant": 3,
+        "x": 52.93899864889681,
+        "y": -165.39905676618218
+      },
+      {
+        "kind": "dot",
+        "variant": 4,
+        "x": 58.4493974596262,
+        "y": -795.7044448703527
+      },
+      {
+        "kind": "dot",
+        "variant": 5,
+        "x": 188.5589070757851,
+        "y": 558.3321640267968
+      },
+      {
+        "kind": "dot",
+        "variant": 6,
+        "x": 12.291839183308184,
+        "y": -721.3616119232029
+      },
+      {
+        "kind": "dot",
+        "variant": 0,
+        "x": 409.22018475364894,
+        "y": 358.2853257190436
+      },
+      {
+        "kind": "dot",
+        "variant": 1,
+        "x": 135.3507159370929,
+        "y": -482.26207438856363
+      },
+      {
+        "kind": "dot",
+        "variant": 2,
+        "x": -292.8459675889462,
+        "y": -496.94043807685375
+      },
+      {
+        "kind": "dot",
+        "variant": 3,
+        "x": -236.26796126831323,
+        "y": 758.7145567405969
+      },
+      {
+        "kind": "dot",
+        "variant": 4,
+        "x": -78.92825935967267,
+        "y": -704.3566586449742
+      },
+      {
+        "kind": "star",
+        "variant": 5,
+        "x": 192.5281941704452,
+        "y": 792.2280295751989
+      },
+      {
+        "kind": "dot",
+        "variant": 6,
+        "x": 209.18487733229995,
+        "y": 153.21873659268022
+      },
+      {
+        "kind": "dot",
+        "variant": 0,
+        "x": 64.78761424310505,
+        "y": 198.95177450962365
+      },
+      {
+        "kind": "dot",
+        "variant": 1,
+        "x": 107.38941390533,
+        "y": 654.7149653546512
+      },
+      {
+        "kind": "dot",
+        "variant": 2,
+        "x": 44.942644853144884,
+        "y": -828.0347307678312
+      },
+      {
+        "kind": "dot",
+        "variant": 3,
+        "x": 328.62224815413356,
+        "y": -372.1496213693172
+      },
+      {
+        "kind": "dot",
+        "variant": 4,
+        "x": 83.66134418174624,
+        "y": -724.396088020876
+      },
+      {
+        "kind": "dot",
+        "variant": 5,
+        "x": 374.8835802730173,
+        "y": 623.4035148750991
+      },
+      {
+        "kind": "dot",
+        "variant": 6,
+        "x": 353.88026376254857,
+        "y": -19.11979462020099
+      },
+      {
+        "kind": "dot",
+        "variant": 0,
+        "x": 150.5947876116261,
+        "y": -262.478921469301
+      },
+      {
+        "kind": "dot",
+        "variant": 1,
+        "x": 229.77377948816866,
+        "y": 313.3985876105726
+      },
+      {
+        "kind": "dot",
+        "variant": 2,
+        "x": 276.98851177003235,
+        "y": 148.08977795764804
+      },
+      {
+        "kind": "dot",
+        "variant": 3,
+        "x": 37.87896081339568,
+        "y": -314.92949360981584
+      },
+      {
+        "kind": "star",
+        "variant": 4,
+        "x": 176.20686053298414,
+        "y": -440.82377487793565
+      },
+      {
+        "kind": "dot",
+        "variant": 5,
+        "x": -392.3476711753756,
+        "y": -13.185970019549131
+      },
+      {
+        "kind": "dot",
+        "variant": 6,
+        "x": -405.0809053052217,
+        "y": -821.4574811048806
+      },
+      {
+        "kind": "dot",
+        "variant": 0,
+        "x": 397.8990777442232,
+        "y": 717.7348424680531
+      },
+      {
+        "kind": "dot",
+        "variant": 1,
+        "x": -206.71275381930172,
+        "y": -101.63234788924456
+      },
+      {
+        "kind": "dot",
+        "variant": 2,
+        "x": -202.28264536242932,
+        "y": -73.24852938763797
+      },
+      {
+        "kind": "dot",
+        "variant": 3,
+        "x": 286.3397673238069,
+        "y": -63.61529482528567
+      },
+      {
+        "kind": "dot",
+        "variant": 4,
+        "x": 125.04608198534697,
+        "y": -22.33870066702366
+      },
+      {
+        "kind": "dot",
+        "variant": 5,
+        "x": -318.55695120990276,
+        "y": -254.82902373187244
+      },
+      {
+        "kind": "dot",
+        "variant": 6,
+        "x": -67.81128369271755,
+        "y": 790.7389455009252
+      },
+      {
+        "kind": "dot",
+        "variant": 0,
+        "x": 326.7518944805488,
+        "y": 493.0703725665808
+      },
+      {
+        "kind": "dot",
+        "variant": 1,
+        "x": 405.32038550358266,
+        "y": 482.98345282673836
+      },
+      {
+        "kind": "dot",
+        "variant": 2,
+        "x": -306.2916613277048,
+        "y": -153.13173453323543
+      },
+      {
+        "kind": "star",
+        "variant": 3,
+        "x": 124.32672821450979,
+        "y": 117.66711180098355
+      },
+      {
+        "kind": "dot",
+        "variant": 4,
+        "x": 107.95633834786713,
+        "y": -872.8380823507905
+      },
+      {
+        "kind": "dot",
+        "variant": 5,
+        "x": -346.389868138358,
+        "y": 231.369808036834
+      },
+      {
+        "kind": "dot",
+        "variant": 6,
+        "x": -334.9284680839628,
+        "y": 233.40510930866003
+      },
+      {
+        "kind": "dot",
+        "variant": 0,
+        "x": -290.53522798698395,
+        "y": -286.63418549112976
+      },
+      {
+        "kind": "dot",
+        "variant": 1,
+        "x": 392.0826739864424,
+        "y": -484.86453043296933
+      }
+    ],
+    "representativeOnly": true,
+    "snakes": [
+      {
+        "ai": true,
+        "bodyPointCount": 12,
+        "bodyScale": 1,
+        "directionRadians": 1.7707963267948965,
+        "head": {
+          "x": -180,
+          "y": -470
+        },
+        "id": "ai-skin-1",
+        "logicalLength": 180,
+        "skinId": 1
+      },
+      {
+        "ai": true,
+        "bodyPointCount": 12,
+        "bodyScale": 1,
+        "directionRadians": 2.7707963267948967,
+        "head": {
+          "x": 180,
+          "y": -100
+        },
+        "id": "ai-skin-2",
+        "logicalLength": 210,
+        "skinId": 2
+      },
+      {
+        "ai": true,
+        "bodyPointCount": 14,
+        "bodyScale": 1,
+        "directionRadians": 0.8707963267948966,
+        "head": {
+          "x": -180,
+          "y": 260
+        },
+        "id": "ai-level-401",
+        "logicalLength": 320,
+        "skinId": 401
+      },
+      {
+        "ai": true,
+        "bodyPointCount": 13,
+        "bodyScale": 1,
+        "directionRadians": 4.270796326794897,
+        "head": {
+          "x": 160,
+          "y": 500
+        },
+        "id": "ai-level-403",
+        "logicalLength": 270,
+        "skinId": 403
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "seed": 20260903,
+  "sourceCommit": "6367f65bf210d75ba39c0e48ecace5b30b538a06",
+  "sourceFileHashes": [
+    {
+      "path": "remoteBundles/atlas/import/01/01dc158bd.json",
+      "sha256": "c902460cb9265e78436b76e096f6efbf82020d98514f0c560bf9e8e6a9e7df1c"
+    },
+    {
+      "path": "remoteBundles/atlas/native/97/979c0e19-9df3-4990-817d-10edb06ee05c.png",
+      "sha256": "36d444e74894ac6f9592e07a98551dd28937bcd33a0fb1a0a36def79d2f87571"
+    },
+    {
+      "path": "remoteBundles/internalSkins/import/06/061ae6f08.json",
+      "sha256": "7838030fcb2819eaeff751af2788f912f1b230d646a7466cc18cb28738814fa8"
+    },
+    {
+      "path": "remoteBundles/internalSkins/import/0a/0a5a50d4d.json",
+      "sha256": "a31adeba0ff155d018fa9e1784e3c1277507412aead820d0077077cc38206139"
+    },
+    {
+      "path": "remoteBundles/internalSkins/import/0a/0ab684d73.json",
+      "sha256": "dea5510b4bd4bcb30c83cbaf1045703a912e6691edbabf727fc86165e85e807e"
+    },
+    {
+      "path": "remoteBundles/internalSkins/import/0b/0bc85f195.json",
+      "sha256": "3fecf433e3a6b2ffd4e452d0f946113b0a013a04a5fe3c3cddef39693bac5925"
+    },
+    {
+      "path": "remoteBundles/internalSkins/native/24/24f75358-7947-4b88-b9f5-c153f892d215.png",
+      "sha256": "22b5b3d117adae765b46a9bd92ced15af9e518b5ec89a0322159a6563a3e7e9e"
+    },
+    {
+      "path": "remoteBundles/internalSkins/native/4e/4e50d45b-da2a-44b2-b03d-0213b2525c83.png",
+      "sha256": "0a5ccf9e5b838353d674b8b8225ae556ed7d5a705acb6094d93f748448829aab"
+    },
+    {
+      "path": "remoteBundles/internalSkins/native/80/8064c44e-b475-43dd-a5be-7a6b60a8d947.png",
+      "sha256": "a5d2fe784ce17ce7bb63aea04a5a98a0119a11fa274b7f8fc3da6803219dd991"
+    },
+    {
+      "path": "remoteBundles/internalSkins/native/94/9444d0fe-5a5b-49a0-92e5-63371e113dee.png",
+      "sha256": "ab289b3cb4e105cd8b757da2428a1c6e722e02f569be27e94f5a8dbb57576bf9"
+    },
+    {
+      "path": "subpackages/loading/bundle/_r/config/GameConstant.js",
+      "sha256": "69861c721541be3ad78d51b0b7df3703f70b8273e9904eb45032a470112795f9"
+    },
+    {
+      "path": "subpackages/loading/bundle/_r/gameplay/strategy/mapStrategy/BaseMapDrawStrategy.js",
+      "sha256": "00c918199f6173cac33051ac3904d1d6ee7065059f3860e3f8d95720331c6d52"
+    },
+    {
+      "path": "subpackages/loading/bundle/_r/gameplay/strategy/mapStrategy/DefaultMapDrawStrategy.js",
+      "sha256": "43bcc2930f3c52c6d8a2ce3a6b3b4682cfcc6630aafbe300c7c9059eaab17fb4"
+    }
+  ],
+  "targetBaselineCommit": "ecd75148efc3c355ab8dc2d36c98cd3395509c52",
+  "viewport": {
+    "height": 1624,
+    "width": 750
+  }
+}

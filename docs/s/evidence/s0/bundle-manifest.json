@@ -1,0 +1,277 @@
+{
+  "combinationSha256": "2319d173326602d85fc4c6a85f5b4ca16452cd778f0794896398294a1d5f87e2",
+  "configId": "newEndlessPortraitV2Map4096TotalTime0",
+  "evidenceDate": "2026-09-03",
+  "evidenceVersion": "snake-s0-replication@1",
+  "payload": [
+    {
+      "path": "README.md",
+      "sha256": "0dc217f4c35339edc7b433152bb5b0c486698471c6825dca4519076a7ff39e96",
+      "size": 2506
+    },
+    {
+      "path": "build-report.json",
+      "sha256": "9cd7a16d91dcb7d6fb084e04fee1f3ac843fd36722794a04c50469647a0519a0",
+      "size": 505
+    },
+    {
+      "path": "config/config-hashes.json",
+      "sha256": "4d41d3f766725f0d610bdf6e793adfdbcfa4c6491e3a4e1c10ab1b038e3d7d78",
+      "size": 2172
+    },
+    {
+      "path": "config/layers/newEndlessPortraitV2Map4096.json",
+      "sha256": "6750cb34f7b454902a0263b17ddd9745942eb511b56e1510aed5a886ea72a07e",
+      "size": 7298
+    },
+    {
+      "path": "config/layers/onlineCoinRelive5V1.json",
+      "sha256": "e668f382989f593802dc6ab608524811a0fb39756d70a5afe9e6ce2737bbc646",
+      "size": 727
+    },
+    {
+      "path": "config/layers/onlineEndlessDropInV2.json",
+      "sha256": "ead2a5b2205bc8ec2e2aa84606e0bab610bad42a09cab44577b8785af0153a9a",
+      "size": 524
+    },
+    {
+      "path": "config/layers/sourceEndlessReliveFlow.json",
+      "sha256": "9b33262d53fd0de440a8adc6ca6bf7c09493d32d0b0034dd20677c10915eb865",
+      "size": 635
+    },
+    {
+      "path": "config/layers/sourceEndlessTotalTime0.json",
+      "sha256": "efc56090b06e92c5ba0027330b7719d6f857c5709045ddb850d64a46e551b477",
+      "size": 325
+    },
+    {
+      "path": "config/map-override.json",
+      "sha256": "36c8030428948fb673b9a7ed49a96ce34926ee2759495f8ea2be7e4a398f537c",
+      "size": 1019
+    },
+    {
+      "path": "config/new-endless-portrait-v2-map-4096.json",
+      "sha256": "c494152b80982b0fae327725f966b68db5ea2a6c79a8f1a34088a7f2afd2600a",
+      "size": 6368
+    },
+    {
+      "path": "config/new-endless-v2-source-4896.json",
+      "sha256": "b7cc5ff2bcee64ede89a5d85260849c71653bc80e4ade83840fb7c2bf4aca4ef",
+      "size": 6368
+    },
+    {
+      "path": "config/v2-field-comparison.json",
+      "sha256": "6af7b64a7893f3eec0f72999ebe94e2f253e87c8eddda619fde778da43d8b516",
+      "size": 20831
+    },
+    {
+      "path": "current-gap-matrix.json",
+      "sha256": "52745e4110460cf47a06f3e69ac77589a9bb8550dd8beef4b12a632ad1533e49",
+      "size": 36696
+    },
+    {
+      "path": "fixtures/approved-ruleset-diff.json",
+      "sha256": "d738a1d6d7941e3c62af1af44ed8def44d4c7c4fd4d889ae3bdaf0b956146852",
+      "size": 2301
+    },
+    {
+      "path": "fixtures/coordinate-vectors.json",
+      "sha256": "1519205124396f0ae640251167bb7f3cb61650d90320a26eb946269df271faec",
+      "size": 1810
+    },
+    {
+      "path": "fixtures/deadline-vectors.json",
+      "sha256": "8e788a0a96de7cc4311cffb6426cd8e02dca9d418ec92798a8f762754a840188",
+      "size": 775
+    },
+    {
+      "path": "fixtures/endless-control-flow.json",
+      "sha256": "01c255003f1737efdc4cc183fd8d729d9b0c3bd5a25ba313ae72e0f7fdcddf10",
+      "size": 2050
+    },
+    {
+      "path": "fixtures/path-point-vectors.json",
+      "sha256": "0c47f7c5acc0b685361d4c09f6a314e573ca4f992acf50226ddb1c1a8362faed",
+      "size": 5362
+    },
+    {
+      "path": "fixtures/relive-source-and-target.json",
+      "sha256": "f48557afdd88dcc4bfbbdb4eb437cb3b4226169ba56c26e889922ca58de0fb2a",
+      "size": 4236
+    },
+    {
+      "path": "fixtures/ruleset-vectors.json",
+      "sha256": "838448da041396b75349ebf4cdbd1c1e613700244de04cec6af4b895177e4ba8",
+      "size": 3250
+    },
+    {
+      "path": "goldens/ai-multi-skin.landscape.metadata.json",
+      "sha256": "97ea2debedb7f5fc4b36b99baa6d1ccec096f784a60f7000b6b11b48d0f29afb",
+      "size": 11838
+    },
+    {
+      "path": "goldens/ai-multi-skin.landscape.png",
+      "sha256": "aa606e3aa0172548abcb1c05fc586f698040822924c4492f824d8357ce24c764",
+      "size": 59925
+    },
+    {
+      "path": "goldens/ai-multi-skin.portrait.metadata.json",
+      "sha256": "397a42b21df5c2d433730e32a7edb060ac9ad3dd0bb1a4d8964014f370511d9c",
+      "size": 11902
+    },
+    {
+      "path": "goldens/ai-multi-skin.portrait.png",
+      "sha256": "de0fb80053473c9089adb9f59698f954ade6516206545571fbb75cb43bf431aa",
+      "size": 58122
+    },
+    {
+      "path": "goldens/boundary.landscape.metadata.json",
+      "sha256": "0e8c61cfdf3e16bb882244e507fe690ecb2f36d4aaa78719d08d922b75075331",
+      "size": 8479
+    },
+    {
+      "path": "goldens/boundary.landscape.png",
+      "sha256": "c68031ea5604724efc4e3c26c277d7be5c570f391ad84e10055f9ebe34aabea8",
+      "size": 31433
+    },
+    {
+      "path": "goldens/boundary.portrait.metadata.json",
+      "sha256": "ad6c3970218a076a7be5bbcadb33cd9353c4cd17b223ca04d484bc2f85e1a4e2",
+      "size": 8498
+    },
+    {
+      "path": "goldens/boundary.portrait.png",
+      "sha256": "c51b51b86c8e9e85d48c6543620933750d945327c1c478cfda40ff62e0930b42",
+      "size": 24485
+    },
+    {
+      "path": "goldens/long-snake.landscape.metadata.json",
+      "sha256": "3cf02f8c2fed7c1cefbeb3333895a7180653ff1d72b97b8e75c029212cd42d88",
+      "size": 11461
+    },
+    {
+      "path": "goldens/long-snake.landscape.png",
+      "sha256": "a07e8d2dca26a854ef1b8239e008fe897335596e6585efc0ce9b532fbed96ce7",
+      "size": 50427
+    },
+    {
+      "path": "goldens/long-snake.portrait.metadata.json",
+      "sha256": "5e28eb1a6e23a86e7c824ce8b796834fa29660b01b0692b1729275bc096d7f0f",
+      "size": 11546
+    },
+    {
+      "path": "goldens/long-snake.portrait.png",
+      "sha256": "4c443af8e346a2b251a8991db18973c18575537ce4b97ccc19dc5dc3201d945d",
+      "size": 52343
+    },
+    {
+      "path": "goldens/manifest.json",
+      "sha256": "f233e8559bb72799f21adb7fda597f8849aecef5377ab47779a28d30e02fc491",
+      "size": 7180
+    },
+    {
+      "path": "goldens/normal.landscape.metadata.json",
+      "sha256": "d1d5de89bce2cd02d81b93913f885aad0d86dce7b09e9af709fd8fabeca751bd",
+      "size": 10738
+    },
+    {
+      "path": "goldens/normal.landscape.png",
+      "sha256": "ef2f0795f76ce0e11808f3df9b3333912b95dd5717083243097d458de8597926",
+      "size": 56428
+    },
+    {
+      "path": "goldens/normal.portrait.metadata.json",
+      "sha256": "efcb2eff26f49e675f485942c66973d3bd46b2b3a66d3e01fece9d05f63dd3ef",
+      "size": 10764
+    },
+    {
+      "path": "goldens/normal.portrait.png",
+      "sha256": "8fb469ce23a3ad68f1adbf8110d86a99e792e8ef0fd8858d807fbc67640e905d",
+      "size": 53984
+    },
+    {
+      "path": "goldens/portrait-ui-left-hand.metadata.json",
+      "sha256": "9603d98996e740c14e3122ae3029a3522f3a00d3e67a2f0892cc59a1650c085a",
+      "size": 4401
+    },
+    {
+      "path": "goldens/portrait-ui-left-hand.png",
+      "sha256": "348b5d48c4dac5b2f3c8ad126b13d2c2e87ecc9475a6b84264c4270af3f0954b",
+      "size": 13511
+    },
+    {
+      "path": "goldens/portrait-ui-right-hand.metadata.json",
+      "sha256": "941632bcd5e63d75b10764121d60c8fe3421d272bd2a753fc5cba192eff79766",
+      "size": 4403
+    },
+    {
+      "path": "goldens/portrait-ui-right-hand.png",
+      "sha256": "5407a139d6c16c0352b03021199bb84a647c59ddafd88e18ecc4f3e0dcfce2a2",
+      "size": 13539
+    },
+    {
+      "path": "goldens/spawn.landscape.metadata.json",
+      "sha256": "0f076f9e8dc0e822c1a4855fb17eed883c2b721985dc9d48d9afcfb6f37ba1c6",
+      "size": 10433
+    },
+    {
+      "path": "goldens/spawn.landscape.png",
+      "sha256": "677fe860e13c44cfbb317d70a3bf65a6b608e92711d103ed057c8e93ba9751a4",
+      "size": 42272
+    },
+    {
+      "path": "goldens/spawn.portrait.metadata.json",
+      "sha256": "e974e3bf75bc86d710ff265b4e4741ffb93b4584a4497cc41a717f1ec94f366c",
+      "size": 10478
+    },
+    {
+      "path": "goldens/spawn.portrait.png",
+      "sha256": "f0fdb0b0dfdba5e983c87d2d4f521d5ac4ea3267b490f836724beff8ead2d742",
+      "size": 42565
+    },
+    {
+      "path": "goldens/star-wreck.landscape.metadata.json",
+      "sha256": "4579005fcd356357c168a62c9b2d4b3adffb6fa06f5700425d4b654ab1162bbe",
+      "size": 8606
+    },
+    {
+      "path": "goldens/star-wreck.landscape.png",
+      "sha256": "9cb2a64aa2ff0b85813182fe0c011dd585e562b4a1a6e9aa5ce5d1d62d7951a9",
+      "size": 47191
+    },
+    {
+      "path": "goldens/star-wreck.portrait.metadata.json",
+      "sha256": "af19e6c64f85724fe97f4840a39c0bda9926056cdcc1cf481242b45f39be2342",
+      "size": 8641
+    },
+    {
+      "path": "goldens/star-wreck.portrait.png",
+      "sha256": "7daf6f335436f2a32f81714ac89cff950e47dfc63f801660bb41a423e723e77c",
+      "size": 47064
+    },
+    {
+      "path": "presentation/palette.json",
+      "sha256": "7c2672da361bbbb57a1224d94b793ab77fdc6d4b9fd3f2743ebd4c64d352f026",
+      "size": 2661
+    },
+    {
+      "path": "presentation/source-atlas-frames.json",
+      "sha256": "87e67390204cb26554c1575d103590351572f6f2e74a7dace83c4a303950f550",
+      "size": 3193
+    },
+    {
+      "path": "source-evidence-index.json",
+      "sha256": "acd21dc7500dfb20b5761fdc5d0732d6a2e3deaec36eab2a1d96b00566c8b63b",
+      "size": 12916
+    },
+    {
+      "path": "source-manifest.json",
+      "sha256": "dc112697809fe1fbbe4140113ddbf177398cc3ba82ce021819dfc0107015f64e",
+      "size": 16279
+    }
+  ],
+  "payloadScope": "all files except bundle-manifest.json and SHA256SUMS",
+  "schemaVersion": 1,
+  "sourceCommit": "6367f65bf210d75ba39c0e48ecace5b30b538a06",
+  "targetBaselineCommit": "ecd75148efc3c355ab8dc2d36c98cd3395509c52"
+}

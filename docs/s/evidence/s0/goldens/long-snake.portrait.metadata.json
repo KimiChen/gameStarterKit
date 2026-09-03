@@ -1,0 +1,476 @@
+{
+  "camera": {
+    "scale": 0.68,
+    "x": -360,
+    "y": -220
+  },
+  "captureTick": 5000,
+  "claimIsOriginalRuntimeScreenshot": false,
+  "configCombinationSha256": "2319d173326602d85fc4c6a85f5b4ca16452cd778f0794896398294a1d5f87e2",
+  "configId": "newEndlessPortraitV2Map4096TotalTime0",
+  "coordinateTransform": "source (x,y) -> portrait (-y,x); no scaling",
+  "evidenceKind": "sourceDerivedStaticReconstruction",
+  "fixture": "long-snake",
+  "mapSize": 4096,
+  "notes": [
+    "Long-snake evidence uses reduced camera scale",
+    "Body grows independently from skin identity"
+  ],
+  "orientation": "portrait",
+  "reconstructionVersion": "snake-s0-replication@1",
+  "renderedEntityState": {
+    "foodCount": 62,
+    "foods": [
+      {
+        "kind": "star",
+        "variant": 0,
+        "x": -736.0806763824075,
+        "y": 228.5870628617704
+      },
+      {
+        "kind": "dot",
+        "variant": 1,
+        "x": -672.7120988350362,
+        "y": 289.9153934745118
+      },
+      {
+        "kind": "dot",
+        "variant": 2,
+        "x": -22.806456959806383,
+        "y": 364.19291065074503
+      },
+      {
+        "kind": "dot",
+        "variant": 3,
+        "x": -589.6040334692225,
+        "y": -700.3964514750987
+      },
+      {
+        "kind": "dot",
+        "variant": 4,
+        "x": -182.68946685362607,
+        "y": -1204.8424655152485
+      },
+      {
+        "kind": "dot",
+        "variant": 5,
+        "x": -89.41708899103105,
+        "y": -566.0247290553525
+      },
+      {
+        "kind": "dot",
+        "variant": 6,
+        "x": 64.62398521136492,
+        "y": -610.4325032839552
+      },
+      {
+        "kind": "dot",
+        "variant": 0,
+        "x": -455.0432027410716,
+        "y": -954.4239733880386
+      },
+      {
+        "kind": "dot",
+        "variant": 1,
+        "x": -273.2096510520205,
+        "y": -409.582368102856
+      },
+      {
+        "kind": "dot",
+        "variant": 2,
+        "x": -575.3529241867363,
+        "y": 600.8192673511803
+      },
+      {
+        "kind": "dot",
+        "variant": 3,
+        "x": 106.40392350032926,
+        "y": -157.0403168257326
+      },
+      {
+        "kind": "dot",
+        "variant": 4,
+        "x": -244.37408537603915,
+        "y": -443.700637021102
+      },
+      {
+        "kind": "dot",
+        "variant": 5,
+        "x": -124.51669428031892,
+        "y": 729.4755847845227
+      },
+      {
+        "kind": "star",
+        "variant": 6,
+        "x": -267.3999065021053,
+        "y": -132.64890001621097
+      },
+      {
+        "kind": "dot",
+        "variant": 0,
+        "x": 62.65122206415981,
+        "y": -996.6167431604117
+      },
+      {
+        "kind": "dot",
+        "variant": 1,
+        "x": -148.41566058807075,
+        "y": 792.4508442590013
+      },
+      {
+        "kind": "dot",
+        "variant": 2,
+        "x": -814.8626478109509,
+        "y": -330.7229186920449
+      },
+      {
+        "kind": "dot",
+        "variant": 3,
+        "x": -697.6338264159858,
+        "y": -662.7173705073074
+      },
+      {
+        "kind": "dot",
+        "variant": 4,
+        "x": -357.3176721762866,
+        "y": -639.796871393919
+      },
+      {
+        "kind": "dot",
+        "variant": 5,
+        "x": -453.7701113242656,
+        "y": -1222.8404596727341
+      },
+      {
+        "kind": "dot",
+        "variant": 6,
+        "x": -589.4745783973485,
+        "y": -579.9448329536244
+      },
+      {
+        "kind": "dot",
+        "variant": 0,
+        "x": 13.493110910058022,
+        "y": -487.2344740713015
+      },
+      {
+        "kind": "dot",
+        "variant": 1,
+        "x": 34.90227030124515,
+        "y": -368.7982949241996
+      },
+      {
+        "kind": "dot",
+        "variant": 2,
+        "x": -110.34432345535606,
+        "y": 43.402841123752296
+      },
+      {
+        "kind": "dot",
+        "variant": 3,
+        "x": 88.1961424369365,
+        "y": -535.1855101808906
+      },
+      {
+        "kind": "dot",
+        "variant": 4,
+        "x": 73.48846062552184,
+        "y": 747.8357532247901
+      },
+      {
+        "kind": "star",
+        "variant": 5,
+        "x": 44.37997771427035,
+        "y": -264.3564663641155
+      },
+      {
+        "kind": "dot",
+        "variant": 6,
+        "x": -253.38930992409587,
+        "y": -757.0482195634395
+      },
+      {
+        "kind": "dot",
+        "variant": 0,
+        "x": -691.2379682529718,
+        "y": 683.7901280680671
+      },
+      {
+        "kind": "dot",
+        "variant": 1,
+        "x": -615.4021998681128,
+        "y": -682.2922395356
+      },
+      {
+        "kind": "dot",
+        "variant": 2,
+        "x": -680.2599468221888,
+        "y": -522.0877813454717
+      },
+      {
+        "kind": "dot",
+        "variant": 3,
+        "x": -142.94003069400787,
+        "y": -131.09661073423922
+      },
+      {
+        "kind": "dot",
+        "variant": 4,
+        "x": 97.66953194513917,
+        "y": -642.334808926098
+      },
+      {
+        "kind": "dot",
+        "variant": 5,
+        "x": -429.3873451091349,
+        "y": 111.61802529357374
+      },
+      {
+        "kind": "dot",
+        "variant": 6,
+        "x": -176.99671150185168,
+        "y": -864.812021125108
+      },
+      {
+        "kind": "dot",
+        "variant": 0,
+        "x": -725.6239794194698,
+        "y": -1198.127832338214
+      },
+      {
+        "kind": "dot",
+        "variant": 1,
+        "x": -118.83653918281198,
+        "y": 815.9963198658079
+      },
+      {
+        "kind": "dot",
+        "variant": 2,
+        "x": -294.4689993467182,
+        "y": -481.96993249468505
+      },
+      {
+        "kind": "dot",
+        "variant": 3,
+        "x": -460.5430515529588,
+        "y": -75.72424621786922
+      },
+      {
+        "kind": "star",
+        "variant": 4,
+        "x": -433.5839441418648,
+        "y": -249.49703191407025
+      },
+      {
+        "kind": "dot",
+        "variant": 5,
+        "x": -83.62312430515885,
+        "y": -85.90662675444037
+      },
+      {
+        "kind": "dot",
+        "variant": 6,
+        "x": -295.2260301169008,
+        "y": 283.87222757562995
+      },
+      {
+        "kind": "dot",
+        "variant": 0,
+        "x": -526.2379988655448,
+        "y": -236.93214876577258
+      },
+      {
+        "kind": "dot",
+        "variant": 1,
+        "x": -340.90655907522887,
+        "y": 17.07605446688831
+      },
+      {
+        "kind": "dot",
+        "variant": 2,
+        "x": -595.0273157982156,
+        "y": 747.9726908914745
+      },
+      {
+        "kind": "dot",
+        "variant": 3,
+        "x": -96.93359851837158,
+        "y": 140.04124397877604
+      },
+      {
+        "kind": "dot",
+        "variant": 4,
+        "x": -324.28740608505905,
+        "y": -750.8454402256757
+      },
+      {
+        "kind": "dot",
+        "variant": 5,
+        "x": -781.925751240924,
+        "y": 654.982499377802
+      },
+      {
+        "kind": "dot",
+        "variant": 6,
+        "x": -810.863434523344,
+        "y": -53.41110448818654
+      },
+      {
+        "kind": "dot",
+        "variant": 0,
+        "x": -286.27608955837786,
+        "y": -432.3859684448689
+      },
+      {
+        "kind": "dot",
+        "variant": 1,
+        "x": -157.58860476780683,
+        "y": -1136.296006878838
+      },
+      {
+        "kind": "dot",
+        "variant": 2,
+        "x": -767.1728527871892,
+        "y": -643.0654003331438
+      },
+      {
+        "kind": "star",
+        "variant": 3,
+        "x": -472.5070838071406,
+        "y": 12.492898404598236
+      },
+      {
+        "kind": "dot",
+        "variant": 4,
+        "x": -642.62655059807,
+        "y": -231.56755255069584
+      },
+      {
+        "kind": "dot",
+        "variant": 5,
+        "x": -717.0776363508776,
+        "y": 101.01080589927733
+      },
+      {
+        "kind": "dot",
+        "variant": 6,
+        "x": -525.9742943570018,
+        "y": -463.04764673579484
+      },
+      {
+        "kind": "dot",
+        "variant": 0,
+        "x": -459.7179854940623,
+        "y": 649.3519125459716
+      },
+      {
+        "kind": "dot",
+        "variant": 1,
+        "x": -701.0889745038003,
+        "y": 389.176453249529
+      },
+      {
+        "kind": "dot",
+        "variant": 2,
+        "x": -211.18800002150238,
+        "y": 510.7930701877922
+      },
+      {
+        "kind": "dot",
+        "variant": 3,
+        "x": -320.66225786693394,
+        "y": -348.4483791794628
+      },
+      {
+        "kind": "dot",
+        "variant": 4,
+        "x": -15.519185741432011,
+        "y": -807.1826278744265
+      },
+      {
+        "kind": "dot",
+        "variant": 5,
+        "x": -743.85675504338,
+        "y": -122.33043013140559
+      }
+    ],
+    "representativeOnly": true,
+    "snakes": [
+      {
+        "ai": false,
+        "bodyPointCount": 48,
+        "bodyScale": 1.9,
+        "directionRadians": 1.7707963267948965,
+        "head": {
+          "x": -360,
+          "y": -220
+        },
+        "id": "player",
+        "logicalLength": 50000,
+        "skinId": 401
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "seed": 20260903,
+  "sourceCommit": "6367f65bf210d75ba39c0e48ecace5b30b538a06",
+  "sourceFileHashes": [
+    {
+      "path": "remoteBundles/atlas/import/01/01dc158bd.json",
+      "sha256": "c902460cb9265e78436b76e096f6efbf82020d98514f0c560bf9e8e6a9e7df1c"
+    },
+    {
+      "path": "remoteBundles/atlas/native/97/979c0e19-9df3-4990-817d-10edb06ee05c.png",
+      "sha256": "36d444e74894ac6f9592e07a98551dd28937bcd33a0fb1a0a36def79d2f87571"
+    },
+    {
+      "path": "remoteBundles/internalSkins/import/06/061ae6f08.json",
+      "sha256": "7838030fcb2819eaeff751af2788f912f1b230d646a7466cc18cb28738814fa8"
+    },
+    {
+      "path": "remoteBundles/internalSkins/import/0a/0a5a50d4d.json",
+      "sha256": "a31adeba0ff155d018fa9e1784e3c1277507412aead820d0077077cc38206139"
+    },
+    {
+      "path": "remoteBundles/internalSkins/import/0a/0ab684d73.json",
+      "sha256": "dea5510b4bd4bcb30c83cbaf1045703a912e6691edbabf727fc86165e85e807e"
+    },
+    {
+      "path": "remoteBundles/internalSkins/import/0b/0bc85f195.json",
+      "sha256": "3fecf433e3a6b2ffd4e452d0f946113b0a013a04a5fe3c3cddef39693bac5925"
+    },
+    {
+      "path": "remoteBundles/internalSkins/native/24/24f75358-7947-4b88-b9f5-c153f892d215.png",
+      "sha256": "22b5b3d117adae765b46a9bd92ced15af9e518b5ec89a0322159a6563a3e7e9e"
+    },
+    {
+      "path": "remoteBundles/internalSkins/native/4e/4e50d45b-da2a-44b2-b03d-0213b2525c83.png",
+      "sha256": "0a5ccf9e5b838353d674b8b8225ae556ed7d5a705acb6094d93f748448829aab"
+    },
+    {
+      "path": "remoteBundles/internalSkins/native/80/8064c44e-b475-43dd-a5be-7a6b60a8d947.png",
+      "sha256": "a5d2fe784ce17ce7bb63aea04a5a98a0119a11fa274b7f8fc3da6803219dd991"
+    },
+    {
+      "path": "remoteBundles/internalSkins/native/94/9444d0fe-5a5b-49a0-92e5-63371e113dee.png",
+      "sha256": "ab289b3cb4e105cd8b757da2428a1c6e722e02f569be27e94f5a8dbb57576bf9"
+    },
+    {
+      "path": "subpackages/loading/bundle/_r/config/GameConstant.js",
+      "sha256": "69861c721541be3ad78d51b0b7df3703f70b8273e9904eb45032a470112795f9"
+    },
+    {
+      "path": "subpackages/loading/bundle/_r/gameplay/strategy/mapStrategy/BaseMapDrawStrategy.js",
+      "sha256": "00c918199f6173cac33051ac3904d1d6ee7065059f3860e3f8d95720331c6d52"
+    },
+    {
+      "path": "subpackages/loading/bundle/_r/gameplay/strategy/mapStrategy/DefaultMapDrawStrategy.js",
+      "sha256": "43bcc2930f3c52c6d8a2ce3a6b3b4682cfcc6630aafbe300c7c9059eaab17fb4"
+    }
+  ],
+  "targetBaselineCommit": "ecd75148efc3c355ab8dc2d36c98cd3395509c52",
+  "viewport": {
+    "height": 1624,
+    "width": 750
+  }
+}

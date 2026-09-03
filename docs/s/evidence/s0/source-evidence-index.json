@@ -1,0 +1,468 @@
+{
+  "commit": "6367f65bf210d75ba39c0e48ecace5b30b538a06",
+  "entries": [
+    {
+      "facts": [
+        "source application is landscape"
+      ],
+      "locators": [
+        {
+          "line": 2,
+          "snippet": "\"deviceOrientation\": \"landscape\""
+        }
+      ],
+      "path": "app-config.json",
+      "purpose": "orientation evidence",
+      "sha256": "a4fa22f5ea416564e591688a606d3764ae67f937f25e33b690e4056e2a4e5f01",
+      "symbols": [
+        "deviceOrientation"
+      ]
+    },
+    {
+      "facts": [
+        "engine settings are landscape"
+      ],
+      "locators": [
+        {
+          "line": 32,
+          "snippet": "orientation: \"landscape\""
+        }
+      ],
+      "path": "game/src/settings.js",
+      "purpose": "orientation evidence",
+      "sha256": "d52a9704cc6e2128390064030616331bb5b408df2dcfce54603079b8e242444b",
+      "symbols": [
+        "orientation"
+      ]
+    },
+    {
+      "facts": [
+        "engine frame rate is 60"
+      ],
+      "locators": [
+        {
+          "line": 43,
+          "snippet": "frameRate: 60"
+        }
+      ],
+      "path": "game/main.js",
+      "purpose": "frame-rate evidence",
+      "sha256": "350fb50c30d795851ba5b5acfe332c83c4f0375f79a78923a2d47a4c3a784553",
+      "symbols": [
+        "frameRate"
+      ]
+    },
+    {
+      "facts": [
+        "platform frame-rate request is 59"
+      ],
+      "locators": [
+        {
+          "line": 162,
+          "snippet": "setFrameRate(59)"
+        }
+      ],
+      "path": "subpackages/loading/bundle/Loading.js",
+      "purpose": "frame-rate request evidence",
+      "sha256": "5f8aefe17dadfe3f13c9a96040e362e7504f7a659d7a17018bcc3c6b6077de3e",
+      "symbols": [
+        "platformApi.setFrameRate"
+      ]
+    },
+    {
+      "facts": [
+        "V2 battlefield object and built-in relive samples are separate config objects"
+      ],
+      "locators": [
+        {
+          "line": 100,
+          "snippet": "new_endless_config_abtest:"
+        },
+        {
+          "line": 100,
+          "snippet": "relive_config_b:"
+        }
+      ],
+      "path": "subpackages/loading/bundle/_r/store/FeedGameStore.js",
+      "purpose": "frozen inline configuration",
+      "sha256": "576253be0954937e36698dddcd4ef6a82bcb7f434f9392164e72686738b75694",
+      "symbols": [
+        "single_game_config.new_endless_config_abtest",
+        "endless_config"
+      ]
+    },
+    {
+      "facts": [
+        "server-selected V2 object is stored without a local AB re-selection",
+        "top-level endless_config is injected into ReliveStore"
+      ],
+      "locators": [
+        {
+          "line": 67,
+          "snippet": "ReliveStore.setReliveConfig(e.endless_config"
+        },
+        {
+          "line": 68,
+          "snippet": "newEndlessConfigAbTest = t.singleGameConfig.new_endless_config_abtest"
+        },
+        {
+          "line": 72,
+          "snippet": "getNewEndlessConfig"
+        }
+      ],
+      "path": "subpackages/loading/bundle/_r/store/ConfigStore.js",
+      "purpose": "configuration injection path",
+      "sha256": "09181057afe49ad9f9db6f4af2c025f5e0c4635594a62d27327310277c66232e",
+      "symbols": [
+        "ConfigStore.setConfigs",
+        "ConfigStore.getNewEndlessConfig"
+      ]
+    },
+    {
+      "facts": [
+        "Endless and TimeLimit route to the same Game scene"
+      ],
+      "locators": [
+        {
+          "line": 108,
+          "snippet": "gameModeEndless, { bundleName:"
+        },
+        {
+          "line": 108,
+          "snippet": "sceneName: \"Game\""
+        },
+        {
+          "line": 111,
+          "snippet": "gameModeTimeLimit, { bundleName:"
+        }
+      ],
+      "path": "subpackages/loading/bundle/_r/utils/GameEntryUtil.js",
+      "purpose": "mode-to-scene routing",
+      "sha256": "3408f5d2abd22d272b892cb69a9900032c0f361a4f1b2e44a1758413eaaa7419",
+      "symbols": [
+        "GameEntryUtil"
+      ]
+    },
+    {
+      "facts": [
+        "predicate includes Endless/UGC families and does not include TimeLimit"
+      ],
+      "locators": [
+        {
+          "line": 174,
+          "snippet": "isNewEndless = function()"
+        },
+        {
+          "line": 174,
+          "snippet": "endless_snake_min_length > 0"
+        }
+      ],
+      "path": "subpackages/loading/bundle/_r/store/GameStore.js",
+      "purpose": "new-Endless predicate",
+      "sha256": "ed05282232518aaf5073bc465b23bdb97b3e5ec097c592526d1213be8a981eea",
+      "symbols": [
+        "GameStore.isNewEndless"
+      ]
+    },
+    {
+      "facts": [
+        "Endless writes totalTime=0",
+        "time HUD and time-over require positive totalTime",
+        "gameTime still increases",
+        "V2 map/food/camera values are consumed"
+      ],
+      "locators": [
+        {
+          "line": 179,
+          "snippet": "this.totalTime = 0"
+        },
+        {
+          "line": 230,
+          "snippet": "this.timeLabel.node.active = this.totalTime > 0"
+        },
+        {
+          "line": 309,
+          "snippet": "this.totalTime > 0 && this.gameTime == this.totalTime"
+        },
+        {
+          "line": 309,
+          "snippet": "this.gameTime++"
+        },
+        {
+          "line": 187,
+          "snippet": "getNewEndlessConfig"
+        }
+      ],
+      "path": "subpackages/loading/bundle/_r/scene/Game.js",
+      "purpose": "Endless clock and V2 consumption",
+      "sha256": "d6a0218ace20dd06136918c2594b49f2397f73ba0a8098d26c38619a5c00c566",
+      "symbols": [
+        "Game.init",
+        "Game.update",
+        "Game.assignByConfigs"
+      ]
+    },
+    {
+      "facts": [
+        "ordered point_step_config segments are accumulated with floor and STEP_POINT_COUNT"
+      ],
+      "locators": [
+        {
+          "line": 34,
+          "snippet": "calNewEndlessPointCountByLength"
+        },
+        {
+          "line": 34,
+          "snippet": ".point_step_config"
+        },
+        {
+          "line": 34,
+          "snippet": "STEP_POINT_COUNT"
+        }
+      ],
+      "path": "subpackages/loading/bundle/_r/game/util/GameUtil.js",
+      "purpose": "path-point consumption",
+      "sha256": "477aff04238c410d3e283ab4316cfa403481b7fae5a42be685b1e388cd8e062a",
+      "symbols": [
+        "GameUtil.calNewEndlessPointCountByLength"
+      ]
+    },
+    {
+      "facts": [
+        "non-pay Endless reads relive_config_b",
+        "default choice window is 5 seconds; AB branches are 8/10"
+      ],
+      "locators": [
+        {
+          "line": 30,
+          "snippet": "relive_config_b"
+        },
+        {
+          "line": 41,
+          "snippet": "endlessReliveCountdownDefaultSeconds = 5"
+        },
+        {
+          "line": 36,
+          "snippet": "return 8"
+        },
+        {
+          "line": 38,
+          "snippet": "return 10"
+        }
+      ],
+      "path": "subpackages/loading/bundle/_r/prefab/game/relive/ReliveStore.js",
+      "purpose": "relive policy selection",
+      "sha256": "c601b4b28ea47f3996ad7547d601368829fcd5456eee2bc315c497dec085d640",
+      "symbols": [
+        "ReliveStore.getReliveConfig",
+        "ReliveStore.getEndlessReliveCountdownSeconds"
+      ]
+    },
+    {
+      "facts": [
+        "choice UI obtains its countdown from ReliveStore"
+      ],
+      "locators": [
+        {
+          "line": 69,
+          "snippet": "getEndlessReliveCountdownSeconds"
+        },
+        {
+          "line": 69,
+          "snippet": "reliveCountDownSeconds"
+        }
+      ],
+      "path": "subpackages/loading/bundle/_r/prefab/game/relive/ReliveAlert.js",
+      "purpose": "relive choice presentation",
+      "sha256": "5aedf680ba68d9147ba03480d789709b1984659d44e94d96095c67a9a01eaefa",
+      "symbols": [
+        "ReliveAlert.initReliveCountDown"
+      ]
+    },
+    {
+      "facts": [
+        "human game-over presentation is 200ms",
+        "AI relive branch is 2000ms"
+      ],
+      "locators": [
+        {
+          "line": 167,
+          "snippet": "}), 200)"
+        },
+        {
+          "line": 176,
+          "snippet": "}), 2e3)"
+        },
+        {
+          "line": 176,
+          "snippet": "reliveMySnake"
+        }
+      ],
+      "path": "subpackages/loading/bundle/_r/game/snake/SnakeManager.js",
+      "purpose": "human/AI death timing",
+      "sha256": "94a5b628511f065708c8602172068f93de3b912c6fd92720d9b82cc5a0ebeb2d",
+      "symbols": [
+        "SnakeManager.snakeDie",
+        "SnakeManager.reliveMySnake"
+      ]
+    },
+    {
+      "facts": [
+        "relive restores score/length/kill/magnet/star fields, clears life transients, and requests 3-second protection"
+      ],
+      "locators": [
+        {
+          "line": 81,
+          "snippet": "eatMagnetCount = p"
+        },
+        {
+          "line": 81,
+          "snippet": "eatStarCount = h"
+        },
+        {
+          "line": 81,
+          "snippet": "reliveCount++"
+        },
+        {
+          "line": 81,
+          "snippet": "generateProtect(A.CommonUtil.getFrameCountTarget(3))"
+        }
+      ],
+      "path": "subpackages/loading/bundle/_r/game/snake/Snake.js",
+      "purpose": "relive field restoration and protection",
+      "sha256": "fc699bc14678df29ec9ba4e3c563a822add167e1d3e5bfc282b0606f7f092422",
+      "symbols": [
+        "Snake.reliveWithSnakeLength"
+      ]
+    },
+    {
+      "facts": [
+        "source relive calls an authenticated score API; it is evidence only and is not imported"
+      ],
+      "locators": [
+        {
+          "line": 125,
+          "snippet": "/score_api/relive"
+        }
+      ],
+      "path": "subpackages/loading/bundle/_r/api/AppApi.js",
+      "purpose": "source relive API boundary",
+      "sha256": "0294377e189264fc9b4f69cd1c3c530d38028fcbcff84301efe8a6f721a6061a",
+      "symbols": [
+        "AppApi.relive"
+      ]
+    },
+    {
+      "facts": [
+        "grid=32, margin=16, dot size/value=16/1, star size/value=42/10, speed multiplier=2, path multiplier=2"
+      ],
+      "locators": [
+        {
+          "line": 51,
+          "snippet": "t.MAP_SPACE = 32"
+        },
+        {
+          "line": 51,
+          "snippet": "t.MAP_BORDER = 16"
+        },
+        {
+          "line": 51,
+          "snippet": "t.FOOD_STAR_LENGTH = 10"
+        },
+        {
+          "line": 51,
+          "snippet": "t.FOOD_STAR_SCORE = 10"
+        },
+        {
+          "line": 54,
+          "snippet": "t.SPEED_UP = 2"
+        },
+        {
+          "line": 54,
+          "snippet": "t.STEP_POINT_COUNT = 2"
+        }
+      ],
+      "path": "subpackages/loading/bundle/_r/config/GameConstant.js",
+      "purpose": "presentation and motion constants",
+      "sha256": "69861c721541be3ad78d51b0b7df3703f70b8273e9904eb45032a470112795f9",
+      "symbols": [
+        "GameConstant"
+      ]
+    },
+    {
+      "facts": [
+        "light/dark outside, map, grid, and dark boundary values are source literals"
+      ],
+      "locators": [
+        {
+          "line": 35,
+          "snippet": "cc.color(108, 36, 31)"
+        },
+        {
+          "line": 35,
+          "snippet": "cc.color(235, 236, 244)"
+        },
+        {
+          "line": 35,
+          "snippet": "cc.color(205, 205, 214)"
+        },
+        {
+          "line": 32,
+          "snippet": "cc.color(36, 55, 107)"
+        },
+        {
+          "line": 32,
+          "snippet": "cc.color(29, 44, 97)"
+        },
+        {
+          "line": 23,
+          "snippet": "cc.color(235, 79, 113)"
+        }
+      ],
+      "path": "subpackages/loading/bundle/_r/gameplay/strategy/mapStrategy/BaseMapDrawStrategy.js",
+      "purpose": "exact presentation palette",
+      "sha256": "00c918199f6173cac33051ac3904d1d6ee7065059f3860e3f8d95720331c6d52",
+      "symbols": [
+        "BaseMapDrawStrategy.drawWhiteBackground",
+        "BaseMapDrawStrategy.drawBlackBackground",
+        "BaseMapDrawStrategy.drawGrid"
+      ]
+    },
+    {
+      "facts": [
+        "fresh-install style selects white/black fill then draws the grid; light mode has no explicit border call"
+      ],
+      "locators": [
+        {
+          "line": 17,
+          "snippet": "drawBlackBackground(t) : this.drawWhiteBackground(t), this.drawGrid(t)"
+        }
+      ],
+      "path": "subpackages/loading/bundle/_r/gameplay/strategy/mapStrategy/DefaultMapDrawStrategy.js",
+      "purpose": "default presentation flow",
+      "sha256": "43bcc2930f3c52c6d8a2ce3a6b3b4682cfcc6630aafbe300c7c9059eaab17fb4",
+      "symbols": [
+        "DefaultMapDrawStrategy.draw"
+      ]
+    },
+    {
+      "facts": [
+        "fresh-install blackBackground is 0 (light)"
+      ],
+      "locators": [
+        {
+          "line": 44,
+          "snippet": "blackBackground: 0"
+        }
+      ],
+      "path": "subpackages/loading/bundle/_r/store/SettingStore.js",
+      "purpose": "fresh-install theme",
+      "sha256": "22b344e18a012f1af4221bcfcb395cfc2cab84374b6080cfefb35b1954dcd5dc",
+      "symbols": [
+        "SettingStore.settingInfo"
+      ]
+    }
+  ],
+  "note": "Line numbers are build-time locators only; revalidation is symbol/pattern and hash based.",
+  "schemaVersion": 1
+}
