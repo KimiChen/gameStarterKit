@@ -3,8 +3,8 @@
 > [返回专项总目录](README.md) · [上一阶段：S0 复刻基线](s0-replication-baseline.md) ·
 > [下一阶段：S2 战场与无尽生命周期](s2-battle-and-endless-lifecycle.md)
 
-> **状态：`[已拍板·待实施]`（S1-01～S1-11 于 2026-09-03 完成；因首发磁铁已拍板纳入 S2，现重开
-> S1-12 补齐其表现资产、目录与 hash，完成前不得开始 S2）**<br>
+> **状态：`[已完成]`（S1-01～S1-11 于 2026-09-03 完成；S1-12 磁铁表现资产、目录与 hash 已在
+> `bc5bb97` 完成无头闭环，Creator 3.8.8 终验仍按约定留给 S5）**<br>
 > **预计：4–7 人日；其中 S1-01～S1-11 原估 3–5 人日，S1-12 追加 1–2 人日；历史完成记录不冒充工时实绩**<br>
 > **依赖：S0 已完成并产出可重复核验的 [evidence bundle](evidence/s0/README.md)，已冻结来源归档、场景表现基线、
 > 目标配置和规则差异。**<br>
@@ -27,8 +27,11 @@
 - `clientPresentationHash=62e1a6683a71db3ef0724cd6030114b7d9a64845723b14fa8c7c6d58a9302efe`；仅为扩展前值，
   S1-12 完成时必须按新目录重算并回写真实值，禁止预填。
 
-既有无头证据入口见 [S1 evidence bundle](evidence/s1/README.md)；S1-12 完成后须原地更新该 bundle，并保留
-扩展前 commit/hash 的历史说明。
+S1-12 已在 `bc5bb97` 把来源清单扩为 77 个实际读取文件，交付 7 个磁铁复制资源与 1 个生成 recipe，显式升级
+`presentationVersion=2`，并生成
+`clientPresentationHash=8615596acd12651307cc885bdc606517f6094bba47e729fb8cb59203c93ed629`。公共与服务端业务 hash
+保持上述历史值不变。完整无头结果及扩展前 commit/hash 说明见更新后的
+[S1 evidence bundle](evidence/s1/README.md)。
 
 ---
 
@@ -732,7 +735,7 @@ fallback 只复用并验证 S1 冻结值，不得借内容审阅重新分配。
 - 相同语义的不同输入顺序得到相同的对应 hash；业务 draft 单独变化只改变 `serverBusinessHash`；公共字段或
   某个皮肤的资源解释变化则提升对应 `contentVersion`、改变 `publicCatalogHash`，表现变化还改变
   `clientPresentationHash`。此项只记录 S1-10 当时已验证的皮肤目录规则；非皮肤表现的顶层
-  `presentationVersion` 规则待 S1-12 验证。
+  `presentationVersion` 规则已由 S1-12 的版本迁移与 hash 正反例补齐。
 - `publicCatalogHash` mismatch 时测试证明外观目录相关经济写不会进入，战斗仍只回退默认且留下诊断；
   `serverBusinessHash` 与 `clientPresentationHash` 不做相等断言。
 - retired entry 正常渲染自身；构建期损坏 fail-fast；运行时模拟部署损坏才触发 fallback 且不改写权威 skin ID。
@@ -769,35 +772,35 @@ S1-01～S1-11 的完成记录是历史事实，不回退或伪改；本任务是
 
 **动作**
 
-- [ ] 扩展显式 `--refresh-source`：从 §2.5.1 已核验路径读取 `tools` texture/atlas pack、
+- [x] 扩展显式 `--refresh-source`：从 §2.5.1 已核验路径读取 `tools` texture/atlas pack、
   `SnakeMagnet` prefab pack 与五个 aura PNG、`eat_tool` MP3；复算源 SHA，并将每次实际读取的文件、用途和来源
   commit 写入 `tools/snake-s1-assets/source/manifest.json`。
-- [ ] 只提取 `tools` atlas 的 `10001` 为 `tools/snake-s1-assets/source/presentation/magnet.atlas.json`；输出必须保留
+- [x] 只提取 `tools` atlas 的 `10001` 为 `tools/snake-s1-assets/source/presentation/magnet.atlas.json`；输出必须保留
   rect、pivot、trim、originalSize 和 rotate，不能在运行时解析整包或手抄第二份 frame。
-- [ ] 将 `SnakeMagnet` 的 Cocos 2 层级、混合、关键帧/粒子参数和五个纹理依赖转换为仓内规范化
+- [x] 将 `SnakeMagnet` 的 Cocos 2 层级、混合、关键帧/粒子参数和五个纹理依赖转换为仓内规范化
   `tools/snake-s1-assets/source/presentation/magnet-aura.json`；遇未知组件或无法表达的动画字段 fail-fast，不静默丢弃。
-- [ ] 将实际资源字节复制到明确真源：`snake_magnet_tools.png`、
+- [x] 将实际资源字节复制到明确真源：`snake_magnet_tools.png`、
   `snake_magnet_aura_x_lighting01.png`、`snake_magnet_aura_x_lighting02.png`、
   `snake_magnet_aura_x_lighting03.png`、`snake_magnet_aura_xt_s_lighting.png`、
   `snake_magnet_aura_xt_s_lighting02.png` 和 `snake_sfx_collect_magnet.mp3`；同时把规范化 recipe 生成为
   `snake_magnet_aura.json`。这 8 个运行时资源只生成仓库自己的新 `.meta`，不复制旧 prefab、UUID、
   `.meta` 或 import cache。
-- [ ] 在客户端表现目录的 `tools` 分组加入稳定逻辑项 `magnet`（规范化 catalog path 为 `tools.magnet`）：
+- [x] 在客户端表现目录的 `tools` 分组加入稳定逻辑项 `magnet`（规范化 catalog path 为 `tools.magnet`）：
   world kind=`magnet`、sourceToolId=`10001`、textureAsset=`snakeoff/snake_magnet_tools`、displaySize=`70`；
   `magnet-status-icon` 写成同 texture/frame 的 `logicalAliasOf="magnet"`，role=`passive-indicator`、interactive=`false`；
   `magnet-active` 以 recipeAsset=`snakeoff/snake_magnet_aura` 关联规范化 aura recipe，并登记运行时 aura 损坏时的结构化 fallback：逻辑资源仍是已登记的
   `magnet-status-icon`，placement=`over-head`，不得另造 `magnet-status-icon-over-head` 资源名。
-- [ ] 重封 presentation identity：`self` 只启用 `fine-white` outline 且 arrow=`none`；`otherHuman` 只保留文字名字；
+- [x] 重封 presentation identity：`self` 只启用 `fine-white` outline 且 arrow=`none`；`otherHuman` 只保留文字名字；
   `ai` 也只保留文字名字且 arrow/outline=`none`。自机选择由本地 View 身份决定，不新增共享皮肤字段或 wire 字段。
-- [ ] 为 `collect-magnet` 登记 `snake_sfx_collect_magnet`、资源 SHA、`sfxOn` 和有界单实例/并发策略，
+- [x] 为 `collect-magnet` 登记 `snake_sfx_collect_magnet`、资源 SHA、`sfxOn` 和有界单实例/并发策略，
   missing=`silent`；为持续态另记 `magnet-active-loop=none/silent`，禁止创建或猜测循环音资源。
-- [ ] 将历史无该字段的 envelope 按迁移规则解释为隐式 `presentationVersion=1`，再生成显式
+- [x] 将历史无该字段的 envelope 按迁移规则解释为隐式 `presentationVersion=1`，再生成显式
   `presentationVersion=2`，重算并生成新的
   `CLIENT_SNAKE_PRESENTATION_HASH`；以固定断言保证 `PUBLIC_SNAKE_SKIN_CATALOG_HASH`、
   `SERVER_SNAKE_SKIN_BUSINESS_HASH` 和全部皮肤 `contentVersion` 字节级保持既有值。
-- [ ] 更新 converter fixture、catalog validator、资源 inventory、provenance、SHA256SUMS、validation report、
+- [x] 更新 converter fixture、catalog validator、资源 inventory、provenance、SHA256SUMS、validation report、
   execution record 与 evidence README；扩展前数字/hash 只保留为带 commit 的历史基线，不覆盖成新结果。
-- [ ] 只改手写真源并经标准生成/sync 动线物化结果；磁铁不新增 shared 皮肤身份、不创建 cosmetic feature，
+- [x] 只改手写真源并经标准生成/sync 动线物化结果；磁铁不新增 shared 皮肤身份、不创建 cosmetic feature，
   gameplay/wire 由 S2 实现。Creator 3.8.8 的 aura 混合、层级和真机观感终验仍明确交给 S5。
 
 **产物**
@@ -852,23 +855,23 @@ S1-01～S1-11 的完成记录是历史事实，不回退或伪改；本任务是
   校验通过。
 - [x] Dot `1..7`、Star、两类残骸、墙块、背景/网格主题和目标音效/FX 的资源或显式 `none` 策略均进入
   presentation catalog。
-- [ ] 磁铁 `10001` world frame 以 rect `[346,256,84,92]`、displaySize `70` 进入表现目录；
+- [x] 磁铁 `10001` world frame 以 rect `[346,256,84,92]`、displaySize `70` 进入表现目录；
   `magnet-status-icon` 是同帧、同纹理、无复制字节的被动逻辑别名，且不占主动按钮槽。
-- [ ] `SnakeMagnet` 五个 aura 纹理与规范化 Cocos 3 recipe、`collect-magnet/eat_tool` 音频及持续态
+- [x] `SnakeMagnet` 五个 aura 纹理与规范化 Cocos 3 recipe、`collect-magnet/eat_tool` 音频及持续态
   `none/silent` 均完成来源/SHA/授权/资源/fallback 校验，外部归档不可访问时仍可重生。
-- [ ] presentation identity 已收敛为自机细白轮廓、AI 仅文字名字；旧自机箭头、AI 轮廓/头像不可达，且该投影
+- [x] presentation identity 已收敛为自机细白轮廓、AI 仅文字名字；旧自机箭头、AI 轮廓/头像不可达，且该投影
   不进入公共皮肤身份、业务目录或 wire。
 - [x] 个人结果固定 `none/silent`，`time_over` 不可从目标 `totalTime=0` 事件映射触发。
 - [x] S1-01～S1-11 扩展前三类 hash 各自稳定、三层 `publicCatalogHash` 相同；公共 hash mismatch 时外观目录相关经济写
   fail-closed、战斗 fallback 的测试通过，异构业务/表现 hash 不做相等比较。
-- [ ] 表现目录显式升级到 `presentationVersion=2` 并产出真实的新 `CLIENT_SNAKE_PRESENTATION_HASH`；
+- [x] 表现目录显式升级到 `presentationVersion=2` 并产出真实的新 `CLIENT_SNAKE_PRESENTATION_HASH`；
   `PUBLIC_SNAKE_SKIN_CATALOG_HASH`、`SERVER_SNAKE_SKIN_BUSINESS_HASH` 与 16 个皮肤 `contentVersion=1`
   均与扩展前基线严格相同。
 - [x] 16 套统一预览/contact sheet、技术问题关闭记录和 S3 内容审阅包完成；名称保持
   `source|technical-draft`，稀有度/获取方式保持 `draft|unavailable` 且 `value:null`，不按 ID 猜测，也不作为
   S1 退出门。
 - [x] S1-01～S1-11 的 codegen/sync/typecheck/test/verify 已按实际改动运行并留存原始输出；生成 diff 已审阅。
-- [ ] S1-12 的 converter/catalog/hash/inventory/sync/typecheck/test/verify 已按实际改动运行并留存原始输出；
+- [x] S1-12 的 converter/catalog/hash/inventory/sync/typecheck/test/verify 已按实际改动运行并留存原始输出；
   生成 diff 已审阅且未伪造未运行结果。
 - [x] Creator 尚未执行的资源/UUID/pivot/混合确认明确留给 S5，不能登记为已通过。
 
@@ -921,13 +924,13 @@ S1-01～S1-11 的完成记录是历史事实，不回退或伪改；本任务是
 | S1-09 | [已完成] | `d18846a` | 16/16 preview；normal/boost 技术 contact sheet 人工检查通过、阻塞 0 | [预览总览](evidence/s1/contact-sheet.png) · [技术总览](evidence/s1/technical-contact-sheet.png) · [S3 审阅包](evidence/s1/content-review-package.json) | 名称仍为 technical-draft，产品名/稀有度/获取/价格未冒充审批 |
 | S1-10 | [已完成] | `d18846a` | repo-only freshness + shared/server/client 正反 validator/hash/fallback tests | [验证报告](evidence/s1/validation-report.json) · [三类 hash](evidence/s1/catalog-hashes.json) | 只比较同构公共 hash；业务/表现 hash 独立；构建损坏 fail-fast，部署损坏才 fallback |
 | S1-11 | [已完成] | `d18846a` | `sync:shared`、`sync:client`、`typecheck`、`test:client`、server test、`verify:sync`、`verify:inventory` 均 exit 0 | [执行记录](evidence/s1/execution-record.md) · [证据入口](evidence/s1/README.md) | gameplay schema 与 protocol 未改，故 gameplay codegen/fingerprint 重钉不适用；Creator 终验留 S5 |
-| S1-12 | [已拍板·待实施] | — | 待执行；不得预填 hash、suite 数或 exit code | 待更新 `manifest/provenance/SHA256SUMS/catalog-hashes/validation-report/execution-record` | 补齐 magnet world/icon/aura/audio；完成后才解除 S2 前置门 |
+| S1-12 | [已完成] | `bc5bb97` | refresh 77 文件；converter 13/13；client catalog 11/11；全量 client 380/380、server 489/489；typecheck/sync/inventory/freshness 均 exit 0 | [磁铁完整性](evidence/s1/magnet-completeness.json) · [三类 hash](evidence/s1/catalog-hashes.json) · [执行记录](evidence/s1/execution-record.md) | 8 个 runtime 资源闭合；`presentationVersion=2`，仅 client hash 改变；Creator aura 终验留 S5 |
 
 阶段汇总：
 
 | 阶段 | 状态 | commit | 自动验证 | Creator/视觉证据 | 备注 |
 |---|---|---|---|---|---|
-| S1 | [已拍板·待实施] | 既有 `d18846a`；S1-12 待提交 | S1-01～11 的 converter 8/8、server 5/5、client catalog 8/8 与全量验证是扩展前历史证据；S1-12 未运行 | 16 张皮肤单图 + 两张 contact sheet 已人工检查；磁铁 aura 的 Creator 3.8.8 混合/层级终验留 S5 | S2 必须等待 S1-12 闭合；S3-01 仍必须先完成内容审批 |
+| S1 | [已完成] | `d18846a`（原基线）+ `bc5bb97`（S1-12） | converter 13/13、server S1 5/5、client catalog 11/11；全量 client 380/380、server 489/489；typecheck/sync/inventory/SHA 全绿 | 16 张皮肤单图 + 两张 contact sheet 已人工检查；磁铁 aura 的 Creator 3.8.8 混合/层级终验留 S5 | S2 前置门已解除；S3-01 仍必须先完成内容审批 |
 
 ---
 
