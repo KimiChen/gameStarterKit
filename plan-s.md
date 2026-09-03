@@ -11,15 +11,14 @@
 >
 > **当前实现基线：** drop-in 自由加入、8 蛇总量（真人不足由 AI 填充）、首人开局、Playing 可入、
 > 90 秒限时计分、死亡 2 秒复活保分。该口径已在 [plan-v5.md](plan-v5.md#c-玩法实现既定范围外随玩法立项另立计划)
-> 登记。
+> 登记；这是本专项要替换的现状，不是目标生命周期。
 >
-> **本专项已选组合：`newEndlessPortraitV2Map4096TimeLimit90`。** 战场层采用原作归档的新版无尽 V2，
+> **本专项已选组合：`newEndlessPortraitV2Map4096TotalTime0`。** 战场层采用原作归档的新版无尽 V2，
 > 但按用户拍板把源地图 `4896 × 4896` 覆盖为 `4096 × 4096`；1000 Dot + 30 Star、出生长度 80、
 > 相机 `1.3 → 0.6 @ 100000`、蛇身
-> `1.0 → 2.8 @ 100000`、16 条 AI；局制层采用原作独立限时模式的 `90s` 上限、剩余时间 HUD 与
-> 到点不可复活规则。两者在原作中是两个模式，本项目显式组合而不伪称原作已有同名模式；连续
-> 1800 Playing tick 则是本项目的联机适配。最多 8 真人、首人开局、Playing 可入也属于联机适配；
-> 场内真人增加时替换 AI，目标活动蛇总量固定为 17。
+> `1.0 → 2.8 @ 100000`、16 条 AI；生命周期直接采用新版无尽的 `totalTime=0`：不显示剩余时间、
+> 不因时长到点结束、也不存在第 1800 tick 自动收局。最多 8 真人、首人开局、Playing 可入和死亡 2 秒
+> 自动复活属于联机适配；场内真人增加时替换 AI，目标活动蛇总量固定为 17。
 >
 > **证据口径：** 文内源码行号是建档时快照，后续复核应按符号重新定位。固定状态标签为
 > `[已拍板·待实施]`、`[进行中]`、`[已完成]`、`[阻塞·需 Creator]`、`[有意不做]`；
@@ -33,15 +32,15 @@
 
 1. **先建立竖版复刻基线。** 修复格距、背景、食物、皮肤、AI 外观、相机和残骸等表现差异，
    建立可自动验证的素材与表现目录。
-2. **再建立纯外观养成。** 在同一套稳定皮肤目录上实现收藏、预览、解锁、装备、赛后经验与碎片，
+2. **再建立纯外观养成。** 在同一套稳定皮肤目录上实现收藏、预览、解锁、装备、真人 run 结束经验与碎片，
    皮肤不提供速度、初始长度、转向、碰撞或得分优势。
 
 首发范围：
 
-- 固定 `newEndlessPortraitV2Map4096TimeLimit90`：V2 战场层（地图覆盖为 4096²）+ 原作 TimeLimit 的
-  90 秒上限/HUD/到点不可复活规则 + 本项目连续 1800 tick 联机适配，不在运行时跟随原服 AB 漂移。
+- 固定 `newEndlessPortraitV2Map4096TotalTime0`：V2 战场层（地图覆盖为 4096²）+ 原作新版无尽
+  `totalTime=0` 生命周期 + 本项目 drop-in 联机适配，不在运行时跟随原服 AB 漂移。
 - 接入原作 internal skins 的 16 个稳定内容 ID。
-- 完成衣柜、永久所有权、装备、AI 皮肤和可靠赛后奖励。
+- 完成衣柜、永久所有权、装备、AI 皮肤和可靠 run 结束奖励。
 - 预留拖尾、击杀/死亡特效、名牌、表情、皮肤熟练度等槽位，但首发不展开。
 - 经典静态默认值只作为历史差异证据，不作为首发 fallback 配置。
 
@@ -53,7 +52,8 @@
 - 不为不同皮肤设置不同碰撞体、速度或攻击范围。
 - 不在运行时接入原服动态难度 AB；首发冻结 V2 的 K1 level 0 AI 阵容。
 - 不把 86 个假榜条目当作场内 AI 或结算参与者。
-- 不声称原作存在“V2 新版无尽 + 90 秒联机”这一完整预设；本项目必须记录组合层和联机适配差异。
+- 不再组合原作独立的 TimeLimit 90 秒模式，也不保留当前第 1800 tick 自动收局作为隐藏兜底。
+- 不把 `totalTime=0` 理解为“永不结算、永不回收”：玩家 run 与房间生命周期必须分别闭环。
 - 不以手改生成镜像或生成 registry 的方式接入功能。
 
 ---
@@ -85,7 +85,7 @@ portrait design viewport:  750 × 1624
 ### 2.2 竖屏布局
 
 - 战场世界层按 `750 × 1624` 设计视口显示，不为填满屏幕而二次拉伸世界。
-- 排行榜、时间和状态放置在顶部安全区。
+- 排行榜与状态放置在顶部安全区；3 秒准备提示居中显示，进入 Playing 后不保留局长倒计时。
 - 摇杆、加速与辅助按钮放置在底部安全区，左右手布局可继续由设置控制。
 - HUD、弹窗和摇杆不得跟随世界层相机缩放。
 - 不同视口宽高比只调整安全区与 UI 密度，不修改世界单位。
@@ -119,54 +119,54 @@ portrait design viewport:  750 × 1624
 保持 1030 个食物而把地图边长从 4896 改为 4096，会让单位面积食物密度变为原 V2 的约 1.43 倍；
 这是本次地图覆盖的直接结果，不自动把食物数按面积降到约 721。若以后调整食物数，必须另建配置版本。
 
-### 2.4 90 秒局制的原作依据与组合规则
+### 2.4 `totalTime=0` 的原作依据与联机落地规则
 
-原作不是用 V2 无尽配置直接产生 90 秒局，而是把两类模式明确分开：
+原作新版无尽和独立 TimeLimit 是两类模式；本专项只选择前者：
 
-- 该归档的默认入口把 Endless 和 TimeLimit 都路由到旧 `Game` 场景；其模式 switch 对 Endless 写
-  `totalTime=0`，`isNewEndless` 分支只覆盖 V2 的地图、食物和相机，因此 V2 新版无尽本身不自动结束。
-  `GameNew` 中保留的 `BaseGameDataStrategy/EndlessModeStrategy` 也得出 `totalTime=0`，但只作为旁证，
-  不把未走的路由误写成默认消费路径。
-- `GameConstant.TIME_LIMIT_MODE_TOTAL_TIME=90` 是原作独立 `gameModeTimeLimit` 的准确时长；
-  `Game/GameSingle.onLoad` 对无尽写 `0`、对限时模式写 `90`。
+- 归档默认入口把 Endless 路由到旧 `Game` 场景，其模式 switch 对 Endless 写 `totalTime=0`；
+  `isNewEndless` 随后覆盖 V2 地图、食物、相机等配置，因此新版无尽没有整局倒计时。
 - `GameStore.isNewEndless()` 只把 Endless/UGC 等模式与 `endless_snake_min_length > 0` 组合为新版无尽，
-  明确不包含 TimeLimit；原作 90 秒模式也不会自动消费 V2 地图、食物和相机配置。
-- `Game.updateGameTime` 达到 90 后调用 `SnakeManager.timeIsOver`；后者使用 `deathTypeTimeOver` 结束玩家本局，
-  `Game.gameOver` 在时间耗尽时拒绝再次复活并进入上传/结算。
-- 原作 TimeLimit 的 90 是有效玩法时长上限，不保证每次现实时间都跑满：玩家可在此前死亡并拒绝/耗尽复活后
-  提前结算，复活选择期间 `isGameOver=true`，`gameTime` 暂停，成功复活后才继续。
-- 原作仅在 `totalTime > 0` 时显示时间 HUD，按 `totalTime - gameTime` 展示剩余时间；限时成绩进入独立的
-  historical/weekly 排行。相关归档证据位于
+  明确不包含 `gameModeTimeLimit`。
+- 原作即使 `totalTime=0` 也继续正向累计 `gameTime` 供事件、AI 与临时保存使用；只有 `totalTime > 0`
+  才显示剩余时间 HUD 并触发 `timeIsOver`。因此 0 表示无截止时间，不是停止世界时钟。
+- V2 真人死亡走 `relive_config_b`：选择窗默认 5 秒、AB 可为 8/10 秒，成功后恢复死亡前长度、分数、击杀等，
+  并获得 3 秒保护；实际默认路由中的 AI 在死亡约 2 秒后重生。相关归档证据位于
   `/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/utils/GameEntryUtil.js:107-116`、
-  `/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/config/GameConstant.js:54`、
   `/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/store/GameStore.js:174-176`、
   `/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/scene/Game.js:168-189,306-311,349-352,410-414`
   和 `/Users/kimi/work/tanchishe/wegameVersion/subpackages/loading/bundle/_r/game/snake/SnakeManager.js:165-176`。
 
-因此本项目最终命名配置为 `newEndlessPortraitV2Map4096TimeLimit90`，由三个可审计层组合：
+本项目最终命名配置为 `newEndlessPortraitV2Map4096TotalTime0`，由三个可审计层组成：
 
 | 配置层 | 来源 | 冻结口径 |
 |---|---|---|
 | `newEndlessPortraitV2Map4096` | 原作新版无尽 + 用户地图覆盖 | 除地图改为 4096² 外，沿用 V2 的食物、蛇身、相机、AI、假榜及对应表现 |
-| `sourceTimeLimit90` | 原作 `gameModeTimeLimit` | `totalTime=90` 有效玩法时长上限、剩余时间 HUD、到点不可复活 |
-| `onlineAdaptationV1` | 本项目联机约束 | 连续 1800 tick、首人开局、3 秒准备倒计时、最多 8 真人、活动总量 17 且真人替换 aiLevel 401、Playing 可加入、死亡 2 秒自动复活保局分、服务端统一结算 |
+| `sourceEndlessTotalTime0` | 原作 `gameModeEndless` | `totalTime=0`、无剩余时间 HUD、无时长到点和超时禁复活 |
+| `onlineEndlessDropInV1` | 本项目联机约束 | 首人启动、3 秒准备、最多 8 真人、活动总量 17、Playing 可加入、死亡 2 秒自动复活、真人 run 独立结算、空房回收 |
 
-组合后的联机 90 秒语义固定如下；“连续跑满 1800 tick”属于 `onlineAdaptationV1`，不是原作
-`sourceTimeLimit90` 的单人死亡/复活流程：
+组合后的联机无尽语义固定如下：
 
-1. 3 秒准备倒计时不计入 90 秒；进入 Playing 时把 `elapsedPlayingTicks` 置 0。
-2. 20 Hz 下恰好执行 1800 个 Playing tick，真人死亡后的 2 秒等待仍计时；第 1800 个 tick 完成后冻结输入和世界，
-   禁止第 1801 个 tick。
-3. HUD 显示 `ceil((1800 - elapsedPlayingTicks) / 20)`，并以服务端 phase/tick 校正，客户端本地时钟不决定结束。
-4. 超时后不再受理复活、加入或食物结算；先冻结最终分数，再仅对真人参赛账本按“分数降序 → 达成该分数的
-   tick 升序 → 稳定实体 ID 升序”生成 `settlementRank`，随后进入统一结算。
-5. 原作限时模式在 90 秒前死亡时使用独立 `limit_relive_config`，到点后不可复活；V2 玩家死亡则进入
-   `relive_config_b`，选择窗默认 5 秒、AB 为 8/10 秒，成功后恢复死亡前长度、分数等并获得 3 秒保护。
-   实际默认 V2 路由中的 AI 在死亡约 2 秒后重生，但真人没有固定 2 秒自动复活。本项目不移植广告/付费复活，
-   将该 AI 延迟借用为所有真人“死亡 2 秒自动复活、保留局分”的节奏只能算 `onlineAdaptationV1`，
-   不得写成原作真人复活规则。
-6. 若以后选择纯 V2 真无尽，必须建立新的生命周期配置并解决房间回收、退出结算和长期参赛账本，不能把
-   `90` 改成 `0` 就宣称完成。
+1. 3 秒只用于首次创建世界后的操作准备，不是局长倒计时；进入 Playing 后下发 `totalTime=0`、
+   `matchDurationTicks=0` 与 `hasDeadline=false`。`endTick` 使用 `null`/缺省语义，不得把数值 0 送进现有
+   `tick >= endTick` 比较；服务端继续保留单调 world tick 作为确定性模拟序号和正向游玩时长来源。
+2. 世界结束判断必须显式写成 `hasDeadline && tick >= endTick`；本配置下 `world.step()` 不按时间返回 done，
+   mode 也不按 `matchTicks` 调用 `context.settle()`。第 1800 tick、第 1801 tick 与后续 tick 正常推进。
+3. 默认不显示剩余时间 HUD。若以后增加本次游玩时长，只能显示从权威 `runStartedTick` 推导的正向计时，
+   且不得作为结束条件。
+4. 真人死亡后沿用本项目 2 秒自动复活并保留当前 run 累计分，资格判断改为
+   `!hasDeadline || tick + respawnDelayTicks < endTick`。死亡本身不结束真人 run；该规则是为了联机连续性
+   保留的适配，不伪称为原作真人的选择式付费/广告复活流程。
+5. 世界不因某个玩家死亡或退出而整体结束。每位真人在最终准入、创建蛇实体前建立唯一 `runId`；主动“结束本次”、
+   断线重连宽限耗尽、被服务端移出或运维 drain 时，先冻结该玩家 run 证据并可靠入队，再从世界移除。
+   宽限内重连继续原 `runId`，离开后重新加入必须创建新 `runId`。
+6. 至少还有一名真人时，其他玩家继续游戏，AI 按规则补位；最后一名真人完成 run 冻结并离开后，由
+   Colyseus `autoDispose` 触发 mode `onDispose` 停止 tick 和清理世界。不得调用整房 `context.settle()` 代替回收，
+   AI 和假榜也不能单独维持房间存活。
+7. `totalTime=0` 只表示没有玩法时长上限。进程关闭、房间故障和运维 drain 使用房级内部
+   `Active → Draining`：先停止新准入，在有界 drain deadline 内冻结活跃 run，再关闭连接并回收房间；不得
+   静默丢奖，也不得把技术中断伪装成限时结算。
+8. 正常玩法不设置 arena 最大时长。只有部署/运维指令或 tick、snapshotSeq、joinOrdinal 等单调字段接近其
+   协议安全上界时才进入 Draining；阈值随 wire 版本冻结并由边界测试守门，不能复用为日常限时局。
 
 ---
 
@@ -187,8 +187,20 @@ portrait design viewport:  750 × 1624
 - 食物快照只有 `kind=0/1`，没有彩点帧 `variant`；残骸没有加速/死亡种类或来源外观。
 - 真人皮肤按 `joinOrdinal % 8` 临时分配，AI 固定 `skin=15`，没有读取玩家所有权和装备，见
   [apps/server/src/rooms/modes/snake/world.ts](apps/server/src/rooms/modes/snake/world.ts#L182)。
-- 当前 drop-in 中途准入没有可 await 的玩法档案准备钩子，不能在创建 Snake 前可靠加载装备。
-- 当前 Snake 结算没有能覆盖中途加入/离开的可靠参赛账本，不能直接承诺永久赛后奖励。
+- 当前规则把 `matchTicks=1800` 写死；`SnakeWorld` 构造 `endTick`、`step()` 到点返回 done，mode 随即调用
+  `context.settle()`。死亡与复活也直接拿 `endTick` 判断末段禁复活，不能靠把字段改成 0 实现无尽。
+- 当前 room schema 的 `endTick/winnerId` 和客户端的 `phase===Settle` 结果页均绑定整房限时收局，需要改为
+  `hasDeadline=false` 与个人 `runResult`，同时保持其他玩家的 room phase 为 Playing。
+- 当前 gameplay command handler 只允许同步 `void`；若直接把 `endRun` 写成 async，dispatcher 不会等待其
+  durable finalize。必须使用 mode-owned tracked task，或先扩展并验证通用 awaited command 契约。
+- 当前 drop-in 中途准入没有可 await 的玩法档案准备钩子，且现有同步 admission 明确不能返回 Promise；
+  无法在创建 Snake 前可靠加载装备并持久创建 OPEN run。
+- 当前 Snake 结算没有能覆盖中途加入/离开的可靠真人 run 账本，不能直接承诺永久 run 结束奖励。
+- 当前 Playing 离场仍保留部分 shell participant 索引，`removePlayerSnake` 也没有从所有 pending 集合移除实体；
+  在固定时长房间中有界的问题会在长驻无尽房中随 churn 累积。finalize 成功后必须清理 participant、蛇、
+  pendingRespawns、输入、快照游标和内存 run 账本中的全部引用。
+- 当前 Snake 的 `connected` 投影没有完整接上 GameRoom drop/reconnect 状态；无尽 run 必须真正实现宽限期内
+  停止 boost、保持既定移动语义，并让奖励 `activeTicks` 排除断线时间。
 
 ### 3.2 客户端表现
 
@@ -286,7 +298,7 @@ cameraScale = max(
 - 1030 个常驻食物必须使用同一 atlas/material 的批量 mesh；不得创建 1030 个 Sprite 节点或 draw call。
 - 食物素材 rect、尺寸和 atlas 边界加入自动校验。
 
-原作已消费 V2 的死亡残骸参数，场内公式不是待猜测的赛后结算规则：
+原作已消费 V2 的死亡残骸参数，场内公式不是待猜测的真人 run 奖励规则：
 
 ```text
 totalDeathWreckScore = pow(deadSnakeScore, 0.8) * 2
@@ -294,7 +306,7 @@ perWreckScore = max(totalDeathWreckScore / bodyCount, 3)
 ```
 
 本项目在 shared/server 中以确定性定点数口径实现并补齐边界向量；若受房间残骸上限影响而合并实体，必须
-守恒该次死亡产生的总残骸分值。该分值只参与局内拾取和局分，不直接等同于 §8 的赛后资产奖励。
+守恒该次死亡产生的总残骸分值。该分值只参与场内拾取和 run 分数，不直接等同于 §8 的资产奖励。
 
 ### 4.4 皮肤目录与渲染
 
@@ -366,13 +378,14 @@ interface SnakeSkinDefinition {
 - `fake_snake_count=86` 仅创建展示榜数据，可用于原作风格 Top 10/个人名次表现；它们没有世界坐标、
   碰撞、皮肤实体或奖励资格，绝不能混入活动蛇数组。
 
-展示榜与赛后奖励榜必须分为两个模型：
+展示榜与真人 run 奖励必须分为两个模型：
 
 - `displayRank` 只服务局内排行榜。服务端每秒刷新一次：每条假榜记录有 2% 概率把分数重置到出生长度 80，
   否则增加 `10..100`；取当前活动蛇最大长度作为门槛，仅合并分数小于该门槛的假榜记录，再与活动蛇按分数
   降序排列，向客户端下发 Top 10 和本人位置。假榜记录只是假数据显示，不能进入 world 或奖励证据。
-- `settlementRank` 只从完整真人参赛账本生成，排序固定为“分数降序 → 达成该分数的 tick 升序 → 稳定实体
-  ID 升序”。AI 和假榜都不进入该集合；奖励公式中的 `rankBonus` 只能读取 `settlementRank`。
+- `runSettlement` 只冻结单个真人从 `runStartedTick` 到 `runEndedTick` 的权威统计。无尽房间没有全员同刻结束，
+  因而不生成伪造的全局 `settlementRank`，奖励也不按退出瞬间名次发放；若界面记录真人实时名次，只能作为
+  展示或成就证据，AI 和假榜不得进入资产计算。
 
 活动 AI 的皮肤分配规则：
 
@@ -380,14 +393,14 @@ interface SnakeSkinDefinition {
 2. 优先排除本房真人已经装备的皮肤。
 3. 使用独立 `snake.ai.skin` seeded RNG 洗牌。
 4. 按洗牌结果轮换；池不足时才循环。
-5. AI 重生和重连期间保持本局 `skinId`。
+5. AI 重生期间保持当前房间生命周期内的 `skinId`。
 6. 皮肤随机流不得消费移动、出生、食物或碰撞随机流。
 
 AI 不再统一灰化；若需要区分 AI，通过名牌标记、名字池或头像表现，不修改皮肤原色。
 
 ### 4.6 音效与其他表现
 
-- 接入已登记的吃食物、吃残骸、击杀、时间结束、结算、按钮等音效。
+- 接入已登记的吃食物、吃残骸、击杀、死亡、退出结算、按钮等音效；不播放限时时间结束提示。
 - 音效遵守现有 `sfxOn` 设置和 View/Logic 边界。
 - 加速拖尾、出生保护、死亡爆散与复活表现可使用原作已授权素材，但必须进入 presentation catalog。
 - 动画只做视觉插值，玩法状态和命中仍以服务端 tick 为准。
@@ -395,10 +408,10 @@ AI 不再统一灰化；若需要区分 AI，通过名牌标记、名字池或�
 ### 4.7 表现复刻与规则复刻的边界
 
 本次配置选择已拍板同步以下 V2 字段：除地图尺寸外的常驻食物数量、出生/最大长度、相机缩放、身体缩放、
-路径点增长配置、K1 level 0 活动 AI 阵容和假榜参数。90 秒时长、剩余时间 HUD 与超时不可复活来自
-原作 `gameModeTimeLimit`，但原作可提前结束且复活选择期间暂停计时；目标地图 4096²、连续 1800 Playing tick、
-最多 8 真人、首人开局、Playing 可入和真人死亡 2 秒自动复活属于明确标注的 `onlineAdaptationV1` 或
-用户地图覆盖。不得把 V2 的 `totalTime=0` 误写成 90，也不得把联机适配伪装成原作原生规则。
+路径点增长配置、K1 level 0 活动 AI 阵容、假榜参数和 `totalTime=0` 生命周期。目标地图 4096²、最多 8 真人、
+首人启动、Playing 可入、真人死亡 2 秒自动复活与按真人 run 独立结算，分别属于用户地图覆盖或明确标注的
+`onlineEndlessDropInV1`。不得重新混入 TimeLimit 的倒计时、超时禁复活或整房统一结算，也不得把联机适配
+伪装成原作原生规则。
 
 当前规则还调整过速度、转向、加速、出生保护和 Star 价值，见
 [apps/shared/src/gameplays/snake/ruleset.ts](apps/shared/src/gameplays/snake/ruleset.ts#L32)。V2 对这些字段没有形成一套可直接
@@ -411,7 +424,7 @@ AI 不再统一灰化；若需要区分 AI，通过名牌标记、名字池或�
 
 `endless_wreck_score_rate_a=0.8`、`b=2` 已在原作场内死亡残骸路径消费：总残骸分值为
 `pow(deadSnakeScore, 0.8) * 2`，再按身体数量分摊且单个至少为 3。该公式随 V2 快照冻结，接入前补齐
-定点数、房间上限下分值守恒与确定性测试；不得误接到赛后资产结算。任何规则同步均需更新 shared 真源、
+定点数、房间上限下分值守恒与确定性测试；不得误接到真人 run 资产结算。任何规则同步均需更新 shared 真源、
 测试和版本说明。
 
 ---
@@ -421,12 +434,12 @@ AI 不再统一灰化；若需要区分 AI，通过名牌标记、名字池或�
 ### 5.1 核心循环
 
 ```text
-参加比赛
+开始一次无尽 run
   -> 获得蛇经验、金币或碎片
   -> 提升蛇等级 / 完成成就
   -> 解锁或合成皮肤
   -> 在衣柜预览、装备
-  -> 下一局以新皮肤出战
+  -> 下一次创建蛇实体时以新皮肤出战
 ```
 
 ### 5.2 首发内容分配
@@ -438,7 +451,7 @@ AI 不再统一灰化；若需要区分 AI，通过名牌标记、名字池或�
 | 默认永久拥有 | 1 | 新账号与所有异常场景的稳定 fallback |
 | 新手/等级里程碑 | 3 | 让前期养成快速形成反馈 |
 | 金币购买 | 4 | 建立基础货币消耗点 |
-| 成就解锁 | 4 | 引导分数、排名、场次、击杀等目标 |
+| 成就解锁 | 4 | 引导分数、有效时长、run 次数、击杀等目标 |
 | 碎片合成/活动 | 4 | 中长期追求；首发不做随机宝箱 |
 
 原则：
@@ -450,7 +463,7 @@ AI 不再统一灰化；若需要区分 AI，通过名牌标记、名字池或�
 
 ### 5.3 蛇等级、收藏和熟练度
 
-- **蛇等级：** 全局成长线，经验来自有效参赛、分数和排名；等级只解锁外观和展示内容。
+- **蛇等级：** 全局成长线，经验来自有效 `activeTicks`、分数和击杀/里程碑；等级只解锁外观和展示内容。
 - **收藏进度：** 按永久拥有皮肤的稀有度累计，用于头像框、名牌或徽章，不改变战斗属性。
 - **皮肤熟练度：** 后续阶段按装备该皮肤的有效参赛累积，可解锁徽章、拖尾或专属展示动作。
 - 等级由累计经验表派生，避免同时保存可漂移的 `level` 与 `xp` 两份权威值。
@@ -566,22 +579,26 @@ RPC descriptor 是契约真源，按标准流程生成 registry、服务端路�
 客户端可以上传 `clientCatalogVersion` 用于兼容性检查，但不得把 join 中的 `skinId` 当权威。正确准入顺序：
 
 ```text
+房间创建 -> initializeRoomEpoch（admission 前生成且整房不轮换）
 鉴权成功
 -> preparePlayerAdmission(uid, session/generation)
 -> 读取 equippedSkinId 与所有权
 -> 校验 catalog 和资源版本
--> 创建本局 Snake(skinId)
--> 将 skinId 锁存在本局实体
+-> startOrResumePlayerRun：持久创建或读取唯一 OPEN run
+-> 创建当前 run 的 Snake(skinId)
+-> 将 runId 与 skinId 锁存在实体
 ```
 
 当前初始阵容可使用已被 await 的 `onMatchInitialize`，但 Playing 中途加入只有同步 admission/createPlayer。
-应新增通用、限时的异步 `preparePlayerAdmission` hook，在鉴权后、实体创建前执行；不得在 `GameRoom` 写 Snake 专属分支。
+应新增通用、带超时边界的异步 `preparePlayerAdmission` hook，在鉴权后、实体创建前执行；不得在 `GameRoom` 写 Snake 专属分支。
+OPEN run 持久化失败时准入必须 fail closed，不能先产生一个无账本蛇实体；断线重连按 `runId + generation`
+恢复同一 run，不得重复创建。
 
 局中换装规则：
 
 - 衣柜写入立即生效于账号，但只影响下一次创建的 Snake。
-- 当前局实体的 `skinId` 冻结；重生、断线重连继续使用该值。
-- 若外观被服务端撤下，下一局回退默认并可在用户锁内修复装备字段。
+- 当前 run 实体的 `skinId` 冻结；重生、断线重连继续使用该值。
+- 若外观被服务端撤下，下一次创建实体时回退默认并可在用户锁内修复装备字段。
 
 ### 7.2 Snake wire v2 与 V2 容量
 
@@ -602,10 +619,39 @@ interface ISnakeSnapshotWreck {
   variant?: number;
   sourceSkinId?: number;
 }
+
+interface ISnakeEndlessRoomMeta {
+  roomEpochId: string;
+  battlefieldConfigId: "newEndlessPortraitV2Map4096";
+  lifecycleConfigId: "sourceEndlessTotalTime0";
+  onlineAdaptationId: "onlineEndlessDropInV1";
+  configHash: string;
+  totalTime: 0;
+  matchDurationTicks: 0;
+  hasDeadline: false;
+}
+
+type ISnakePlayerRunState =
+  | { runId: string; state: "preparing" | "cancelled"; runStartedTick: null }
+  | { runId: string; state: "active" | "finalizing" | "finalized"; runStartedTick: number };
 ```
 
-- 房间元数据显式下发 `battlefieldConfigId=newEndlessPortraitV2Map4096`、`lifecycleConfigId=sourceTimeLimit90`、
-  `onlineAdaptationId=onlineAdaptationV1`、配置 hash 与 `matchDurationTicks=1800`，重连客户端不得靠本地默认猜配置。
+- 房间元数据显式下发 `battlefieldConfigId=newEndlessPortraitV2Map4096`、
+  `lifecycleConfigId=sourceEndlessTotalTime0`、`onlineAdaptationId=onlineEndlessDropInV1`、配置 hash、
+  `totalTime=0`、`matchDurationTicks=0` 与 `hasDeadline=false`，重连客户端不得靠本地默认猜配置。
+- Snake 房间在创建完成、开放任何 admission 之前生成一次 `roomEpochId`。通过通用 mode lifecycle capability
+  把现有 `state.matchId` 前移并赋同一个值；首次 auto-start 的 `initializeMatchState` 不得再次覆盖，其他玩法仍
+  保持原 matchId 生成边界。这样首个 OPEN run 持久化前已有稳定 epoch，又不产生两个同义 ID。
+- `endTick/winnerId` 不再承担本模式的整房结束语义；兼容期若 schema 仍保留字段，必须由 `hasDeadline=false`
+  守门，客户端不得把 `endTick=0` 显示成 `0:00` 或据此进入结果页。
+- 新增 typed `c2s.snake.endRun`、`s2c.snake.runFinalizing` 与 `s2c.snake.runResult`。command handler 保持同步：
+  校验后原子切换 Finalizing、停止输入、按 runId 登记 mode-owned tracked Promise，并立即回 `runFinalizing`；
+  Promise 完成后异步推送唯一 receipt。重复 endRun 和 `preparePlayerFinalLeave` 必须 join 同一任务，mode task
+  registry 在 dispose/drain 前收口，不得产生 detached Promise。客户端收到结果后离房；未按时离开则由服务端
+  在有界确认窗后关闭连接。断线超时等无在线客户端场景把 receipt 留到下一次账号 snapshot 展示。
+- 个人 run 结果不得借 room `phase=Settle` 广播；同房其他玩家始终保持 Playing。
+- drop/reconnect 必须投影到 Snake player state：宽限内保留最后合法方向、强制关闭 boost、暂停奖励
+  `activeTicks`，成功重连后继续原 run；宽限耗尽只 finalize 一次。
 - validator 按 catalog 成员或稳定 ID 上界校验，不能继续限制 `0..15`。
 - `bodyScale` 若能由 shared 长度公式确定，可不占快照字段；若规则可热版本化，则显式下发规则版本。
 - 素材目录不在当前 gameplay contract digest 内，需额外携带 `presentationVersion/catalogHash`。
@@ -618,6 +664,8 @@ interface ISnakeSnapshotWreck {
 - 升级 wire 时为 chunk 数、总实体数、单蛇路径点数、全房路径点总数和序号分别设置 validator 上限；
   fixture 必须覆盖 `17 条蛇 / 1030 个食物 / 单蛇 5186 点 / 全房理论上限 88162 点`，以及缺块、重复块、
   乱序 delta、重连恢复和旧客户端版本拒绝。
+- 长驻房的实体删除必须同时移除 participant 索引、pendingRespawns、输入状态和快照游标；已 durable finalize
+  的 run 内存记录及时驱逐。fixture 用大量 join/leave/reconnect 循环验证集合回到当前在线规模。
 
 ### 7.3 生成流程
 
@@ -645,62 +693,97 @@ interface ISnakeSnapshotWreck {
 
 ---
 
-## 8. 可靠赛后奖励
+## 8. 可靠的真人 run 结算与奖励
 
-### 8.1 为什么不能直接在现有 settle 后发奖
+### 8.1 为什么不能继续依赖整房 settle
 
-Snake 是动态 roster：玩家可以中途加入和离开；当前离开会从 world 删除，最终 world 排名不能覆盖早退玩家。
-现有 drop-in 又不与冻结 initialRoster 的 evidence capability 组合。因此正式养成奖励必须先增加 Snake 自持的
-完整参赛账本，不能使用 detached best-effort Redis 发放冒充可靠闭环。
+`totalTime=0` 后房间没有共同结束时刻，玩家又可以中途加入和离开；当前离开会从 world 删除，等待整房
+`context.settle()` 将导致先离开的玩家无法及时结算，长时间有人在线时甚至永远不会结算。因此正式养成奖励
+必须改成 Snake 自持的每真人 run 证据。该无尽 mode 全程不因奖励或空房回收调用 `context.settle()`；最后一个
+客户端离开后由 Colyseus `autoDispose` 调用 `onDispose` 清理。运维退役则走独立 Draining/close 流程。
 
-### 8.2 参赛账本
+### 8.2 真人 run 账本
 
-每位本局参与者即使离开 world，也保留：
+每次最终准入先创建唯一 `runId`，持久成功后才入座；重连延续该 run，最终离开后重新准入创建新 run：
 
 ```ts
-interface SnakeParticipantLedger {
+interface SnakePlayerRunLedger {
+  roomEpochId: string;
+  runId: string;
+  state: "preparing" | "active" | "finalizing" | "finalized" | "cancelled";
   uid: string;
+  sId: string;
   sessionId: string;
-  joinedTick: number;
-  leftTick: number | null;
+  runStartedTick: number | null;
+  runEndedTick: number | null;
+  endReason: "explicitExit" | "disconnectTimeout" | "sessionReplaced" | "moderationKick"
+    | "serverDrain" | "roomFault" | null;
   activeTicks: number;
   score: number;
-  settlementRank: number | null;
+  finalLength: number;
+  maxLength: number;
   kills: number;
+  deaths: number;
   equippedSkinId: number;
   catalogVersion: number;
   rewardPolicyVersion: number;
+  evidenceVersion: number;
+  confirmedThroughTick: number;
 }
 ```
 
-需要定义重连合并、同 uid 多 session、防并发顶号、中途退出和房间异常 dispose 的语义。
+OPEN run 在准入阶段先以 `state=preparing, runStartedTick=null` 持久创建；首位真人在 3 秒准备结束后的第一个
+可操作 tick、后续 drop-in 真人在实际出生且可操作的 tick，以 CAS 原子写入 `runStartedTick` 并转为 `active`。
+只有 `active/finalizing/finalized` 记录允许非空 `runStartedTick`。Preparing 阶段离场以 CAS 转为 `cancelled`，
+不生成 settlement 或奖励；最终 settlement 一律拒绝空 `runStartedTick`。
+
+`activeTicks` 只累计 3 秒准备完成后同时满足 `connected && alive && runState=active` 的模拟 tick；死亡后的
+40 tick 等待、断线宽限和 Finalizing 均不计奖励时长。`runStartedTick` 是时间轴锚，不可直接相减冒充
+`activeTicks`。
+
+账本至少在关键里程碑和固定 checkpoint 间隔写入单调版本的持久证据；结束有效 run 时用 fence/CAS 执行
+`active → finalizing → finalized`，确保主动退出、断线超时和并发顶号只能有一个结束者；Preparing 只允许
+`preparing → active` 或 `preparing → cancelled`，不得伪造 `runStartedTick`。进程异常恢复时以最后一个已确认
+checkpoint 关闭或恢复 run，不得把同一 `runId` 当成新参赛记录重复发奖。硬崩溃不会执行 leave/dispose，
+只能结算到 `confirmedThroughTick`；方案承诺已确认进度不漏不重，不声称未持久化的 checkpoint 窗口也能恢复。
 
 ### 8.3 结算协议
 
-1. 先持久化 `snake_match_settlement` 或通用动态参赛 evidence。
-2. 为每位玩家生成确定性奖励 intent。
-3. opId 至少绑定 `(matchId, uid, sId, rewardPolicyVersion)`。
-4. 金币在 MySQL 同一事务入账并写 ledger。
-5. 经验、碎片、熟练度等 Redis 资产通过 gameplay outbox 应用。
-6. 进程崩溃后由 relayer 重放，最终必须不漏奖、不双发。
+现有 `onPlayerLeaving` 是同步钩子，不能承载该顺序；应在通用 `GameMode`/shell 增加可 await、带超时和 generation
+复验的 `preparePlayerFinalLeave` 边界。Snake 进入该边界即把 run 标为 Finalizing 并停止输入，完成 durable freeze
+后才释放实体/席位；不得在 `GameRoom` 硬编码 Snake 分支。
+
+1. checkpoint 只更新 canonical evidence 与 `confirmedThroughTick`，不得生成奖励 intent 或占用最终 opId。
+2. 在从 world 移除真人前，先冻结该 `SnakePlayerRunLedger`；只有首次取得 `active → finalizing` fence 的
+   执行者可以创建最终奖励，事务成功后才写 `finalized`；`preparing → cancelled` 不创建奖励。
+3. 同一 MySQL 事务写 `snake_run_settlement`、金币 ledger 和 Redis effect outbox intent；房内其他玩家不参与。
+4. opId 至少绑定 `(sId, roomEpochId, runId, uid, rewardPolicyVersion)`；重复 finalize 必须回读并比对 canonical
+   evidence/effect，异 payload 冲突进入隔离而不是覆盖。
+5. 经验、碎片和熟练度映射为 Bag additive item，或先扩展有界 additive grant effect；禁止延迟执行会覆盖
+   新值的 absolute setField。
+6. `endReason` 使用显式奖励资格矩阵：反作弊/封禁类 `moderationKick` 不发奖，普通退出、断线超时、会话替换、
+   serverDrain 和 roomFault 按已确认进度结算。
+7. 进程崩溃后由 relayer 重放；超过重试阈值进入 dead 告警和人工 replay SOP，客户端可按 runId 查询
+   `pending/applied/dead` reward status 与 receipt。
+8. 最后一名真人离开时，必须先完成所有 run 的 durable freeze，再允许房间 autoDispose。
 
 ### 8.4 奖励公式形状
 
-首轮数值不在计划中硬编码，先根据真实 90 秒局分数分布调参；公式结构固定为：
+首轮数值不在计划中硬编码，先根据真实 V2 无尽 run 的时长、得分和击杀分布调参；公式结构固定为：
 
 ```text
 reward
   = baseParticipation
   + activeTimeComponent
   + cappedScoreComponent
-  + rankBonus
-  + firstWinOrAchievementBonus
+  + cappedKillOrMilestoneComponent
+  + firstRunOrAchievementBonus
 ```
 
-- 晚加入按有效时长折算。
-- 无输入、无移动贡献且无得分的账号不获得完整奖励。
-- 分数组件必须封顶，避免单局异常值冲击经济。
-- `rankBonus` 只读取真人参赛账本的 `settlementRank`；`displayRank`、AI 和假榜分数均不得进入经济写路径。
+- 有效时长只读取账本 `activeTicks`，不受房间已运行多久影响。
+- 无输入、无移动贡献且无得分的账号不获得参与奖励；重复短 run 不得反复领取 base。
+- 时间、分数和击杀组件使用软上限或硬封顶，避免无限挂机和超长 run 冲击经济。
+- 无尽房间没有共同终局，不设置 `rankBonus` 或 `firstWin`；`displayRank`、AI 和假榜分数不得进入经济写路径。
 - 每次调参提升 `rewardPolicyVersion`，历史结算按原版本重放。
 
 ---
@@ -712,6 +795,9 @@ reward
 ### 9.1 Logic
 
 - 拉取权威 snapshot 并验证 catalog hash。
+- 读取 `hasDeadline=false` 后关闭旧倒计时逻辑；world tick 只用于插值、重连校正和当前 run 正向时长。
+- 发送幂等 `endRun(runId, clientReqId)`，只由匹配 runId 的 `runResult` 打开个人结算；不得等待或伪造
+  room `phase=Settle`。
 - 构造不可变衣柜 ViewModel。
 - 提供“全部/已拥有/未拥有/可合成”筛选和稳定排序。
 - 执行装备、解锁、冲突刷新和错误映射。
@@ -725,6 +811,7 @@ reward
 - 详情区展示获取方式、碎片进度、装备/解锁按钮。
 - 当前装备、首次获得和新解锁具有明确状态与红点。
 - 状态版本冲突时禁用重复点击，刷新后恢复。
+- 战斗 HUD 不显示 `0:00` 或剩余时间；“结束本次”需要二次确认，结果页展示 runId 对应的奖励 receipt。
 
 ### 9.3 页面动线
 
@@ -736,7 +823,8 @@ Home
       -> 解锁/装备
   -> 开始游戏
       -> 使用服务端锁存装备
-  -> 结算
+  -> 主动结束本次 / 最终离场
+  -> 真人 run 结算
       -> 展示经验、碎片、等级进度和新解锁
 ```
 
@@ -752,24 +840,24 @@ Home
 
 | 阶段 | 状态 | 工作 | 主要交付物 | 退出条件 | 预计 |
 |---|---|---|---|---|---:|
-| S0 | [已拍板·待实施] | 冻结基线、取证、差异表 | `newEndlessPortraitV2Map4096TimeLimit90`、原作/竖版 golden、规则差异表 | 组合来源、固定配置和截图均可重复核验 | 3–4 人日 |
+| S0 | [已拍板·待实施] | 冻结基线、取证、差异表 | `newEndlessPortraitV2Map4096TotalTime0`、原作/竖版 golden、规则差异表 | 配置来源、`totalTime=0` 和截图均可重复核验 | 3–4 人日 |
 | S1 | [已拍板·待实施] | 素材目录与转换 | 16 皮肤 catalog、atlas rect/body config 生成、资源/授权台账 | 全目录生成和资源/rect/hash 校验通过 | 3–5 人日 |
-| S2 | [已拍板·待实施] | V2 战场与 90 秒局制 | 4096² 世界、1030 食物、17 活动蛇、V2 相机/身体、分块基线、限时结束 | 定向测试通过且竖版 world golden 达标 | 7–10 人日 |
+| S2 | [已拍板·待实施] | V2 战场与无尽生命周期 | 4096² 世界、1030 食物、17 活动蛇、V2 相机/身体、分块基线、持续世界与空房回收 | 定向测试通过且竖版 world golden 达标 | 8–12 人日 |
 | S3 | [已拍板·待实施] | 衣柜与装备 | Feature、FGUI、snapshot/equip/unlock、Bag/User 存储、准入锁存 | 权威装备、并发、重连、fallback 测试通过 | 6–10 人日 |
-| S4 | [已拍板·待实施] | 可靠养成奖励 | 参赛账本、durable settlement、金币/经验/碎片 outbox | 各崩溃窗口恢复后不漏奖、不双发 | 6–10 人日 |
+| S4 | [已拍板·待实施] | 可靠养成奖励 | 真人 run 账本/checkpoint、durable run settlement、金币/经验/碎片 outbox | 已确认进度在各结束原因与结算崩溃窗口不漏奖、不双发 | 7–11 人日 |
 | S5 | [已拍板·待实施] | 验收与发布 | 自动测试、Creator、故障演练与兼容证据 | 全量门禁与 Creator 证据齐全 | 2–3 人日 |
 
-完整首发合计约 27–42 人日。S3 可用于内部试玩，面向玩家宣称“养成系统完成”必须等 S4 的可靠奖励闭环完成。
+完整首发合计约 29–46 人日。S3 可用于内部试玩，面向玩家宣称“养成系统完成”必须等 S4 的可靠奖励闭环完成。
 
 ### S0：复刻基线
 
 - [ ] 在原作固定构建和配置下截取横版战场 golden。
 - [ ] 生成只旋转世界层后的竖版参照图；UI 单独给出竖屏布局稿。
 - [ ] 从场景序列化数据提取背景、网格和边界颜色。
-- [ ] 固化 `newEndlessV2Source4896`、`newEndlessPortraitV2Map4096`、`sourceTimeLimit90`、
-  `onlineAdaptationV1` 及组合配置 hash。
-- [ ] 用逐项 fixture 校验 V2 归档对象、71 项路径表及 90 秒限时消费路径。
-- [ ] 列出 V2 无尽、原作限时模式与本项目联机适配的差异，禁止把组合配置误标成原作单一模式。
+- [ ] 固化 `newEndlessV2Source4896`、`newEndlessPortraitV2Map4096`、`sourceEndlessTotalTime0`、
+  `onlineEndlessDropInV1` 及组合配置 hash。
+- [ ] 用逐项 fixture 校验 V2 归档对象、71 项路径表及 Endless 的 `totalTime=0` 消费路径。
+- [ ] 列出原作 V2 无尽与本项目 drop-in、2 秒自动复活、真人 run 结算的差异，禁止混入 TimeLimit 规则。
 
 ### S1：素材与目录
 
@@ -791,7 +879,13 @@ Home
 - [ ] 接入 `1.3→0.6` 相机、`1.0→2.8` 身体缩放和 71 项路径增长，并同步权威碰撞。
 - [ ] 实现 17 条活动蛇、真人替换 aiLevel 401 AI、离开补位，以及与奖励榜隔离的 86 条 `displayRank` 假榜池。
 - [ ] AI 皮肤使用独立 seeded RNG。
-- [ ] 实现 1800 Playing tick、倒计时不计时、超时冻结/禁复活、同分排序与剩余时间 HUD。
+- [ ] 下发 `totalTime=0`、`matchDurationTicks=0`、`hasDeadline=false`，让 `endTick` 缺省；所有结束/复活比较
+  先检查 `hasDeadline`，移除第 1800 tick 收局、末段禁复活和剩余时间 HUD。
+- [ ] 通过通用 mode lifecycle capability 在 admission 前生成 Snake `roomEpochId/state.matchId`，首人 auto-start
+  不再覆盖，其他玩法保持现有 matchId 生成边界。
+- [ ] 实现真人 run 创建/重连延续/最终离场冻结、其他玩家不中断、最后真人离场后停止世界并回收房间。
+- [ ] 修复 drop/reconnect 状态投影；宽限内停止 boost、保持最后合法方向，并暂停奖励 `activeTicks`。
+- [ ] 离场同步清理 participant、pendingRespawns、输入、游标和 finalized run 引用，以 churn fixture 守门。
 - [ ] 提升 wire 版本，完成 17 蛇/1030 食物/单蛇 5186 点/全房 88162 点上限的分块基线、delta 与重连恢复。
 
 ### S3：衣柜与装备
@@ -802,15 +896,16 @@ Home
 - [ ] 增加通用异步 `preparePlayerAdmission` hook。
 - [ ] 提升 Snake modeVersion，生成和同步所有镜像。
 - [ ] 完成衣柜 Logic、FGUI View、动态预览和首页 route 入口。
-- [ ] 完成重连、局中换装只影响下一局、未知素材 fallback。
+- [ ] 完成重连、run 中换装只影响下一次实体创建、未知素材 fallback。
 
 ### S4：可靠奖励
 
-- [ ] 建立动态 roster 参赛账本。
-- [ ] 建立 durable match settlement/evidence。
-- [ ] 使用 MySQL ledger + gameplay outbox 发放奖励。
-- [ ] 建立 rewardPolicyVersion 和幂等 opId。
-- [ ] 覆盖中途加入、早退、重连、崩溃窗口和重复结算。
+- [ ] 建立动态 roster 的 `SnakePlayerRunLedger` 与持久 checkpoint。
+- [ ] 建立带 `endReason` 的 durable run settlement/evidence。
+- [ ] 接入 awaited `preparePlayerFinalLeave`、幂等 `endRun` 与可补领的 `runResult` receipt。
+- [ ] 在同一 MySQL 事务写 run settlement、金币 ledger 与 gameplay outbox；checkpoint 不触发奖励。
+- [ ] 建立 rewardPolicyVersion 及绑定 `sId/roomEpochId/runId/uid` 的幂等 opId。
+- [ ] 覆盖主动结束、断线超时、并发顶号、moderationKick、drain、房间故障、重连、dead replay 和重复 finalize。
 - [ ] 完成首轮经验、等级、碎片和成就表调优。
 
 ### S5：验收与发布
@@ -838,18 +933,20 @@ Home
 - 每条蛇的头、身、尾和动画始终来自同一 `skinId`。
 - 单真人时 16 AI、共 17 条活动蛇；新增真人只替换 aiLevel 401 AI，满 8 真人时仍有 9 AI。
 - AI 不再统一灰色；同局皮肤池具有足够多样性；86 个假榜条目从不出现在世界实体或结算参与者中。
-- 局内 `displayRank` 可合并符合门槛的假榜记录；资产奖励只读取真人 `settlementRank`，AI 与假榜对奖励无影响。
+- 局内 `displayRank` 可合并符合门槛的假榜记录；资产奖励只读取单个真人的冻结 run 证据，AI、假榜和
+  退出瞬间名次均不影响奖励。
 - 出生长度 80；相机 `1.3→0.6@100000`、身体 `1.0→2.8@100000`、蛇头中心跟随和边界外围背景
   均可由 fixture 自动断言。
 - 未知皮肤和资源加载失败稳定回退默认，不阻塞战斗。
 
 ### 11.2 协议与数据正确性
 
-- 准备倒计时结束才开始计时，按本项目联机适配连续运行恰好 1800 个 Playing tick；超时后不再受理加入、
-  复活、输入或得分事件。测试同时证明这不是原作 TimeLimit“死亡可提前结束、复活选择暂停计时”的原样移植。
-- 剩余时间 HUD 由服务端 tick 校正；最终同分顺序与重复结算结果稳定。
-- 房间同时声明 V2 战场层、原作 TimeLimit 的 90 秒上限/HUD 层和联机适配层，任何 hash 不一致均不能
-  静默 fallback 到 Classic。
+- 房间声明 `totalTime=0`、`matchDurationTicks=0`、`hasDeadline=false` 且无有效 `endTick`；3 秒准备结束后
+  持续推进，第 1800、1801 tick 均不触发收局，客户端不显示剩余时间 HUD 或 `0:00`。
+- `world.step()` 只有 `hasDeadline && tick >= endTick` 才可按时间返回 done；无尽 mode 不从该路径调用
+  `context.settle()`。任意 tick 死亡都可在 40 tick 后按联机规则复活，不存在临近 endTick 禁止复活分支。
+- 房间同时声明 V2 战场层、原作 Endless `totalTime=0` 层和 drop-in 联机适配层，任何 hash 不一致均不能
+  静默 fallback 到 Classic 或 TimeLimit。
 - 17 蛇、1030 食物、单蛇 5186 点及全房理论上限 88162 个逻辑路径点可完成首包/重连；缺块、乱序或
   校验失败会重取基线。
 - 死亡残骸按 `pow(deadSnakeScore, 0.8) * 2` 计算总值、按身体数分摊且单个至少 3；实体合并前后总分守恒。
@@ -858,8 +955,15 @@ Home
 - 同/不同 requestId 并发装备、重复解锁和状态版本冲突行为确定。
 - 碎片不足时所有字段零写入。
 - 冷用户 thaw、冻结归档、跨区隔离和退休皮肤均有测试。
-- 中途换装只影响下一次实体创建；重连和重生保持本局外观。
-- 结算在每个崩溃窗口恢复后不漏奖、不双发。
+- 中途换装只影响下一次实体创建；重连和重生保持当前 run 外观。
+- 单人主动退出只结束自己的 run，其他真人世界继续；最后一名真人离开后才停止世界并回收房间。
+- 宽限内重连延续同一 `runId`，最终离开后重入生成新 `runId`；已确认进度在各结束原因与结算崩溃窗口
+  不漏奖、不双发。
+- 个人结果只由对应 `runResult`/receipt 驱动；room phase 在仍有真人时保持 Playing，不向其他玩家广播结算页。
+- `activeTicks` 排除准备期、死亡等待、断线宽限和 Finalizing；大量 join/leave/reconnect 后所有内存集合回落到
+  当前在线规模，不残留 finalized run 或永久 pendingRespawns。
+- checkpoint 不发奖；首次 finalize 原子地产生 settlement/ledger/outbox，重复同 payload 返回同 receipt，
+  异 payload 隔离，dead 状态可查询并可按 SOP 重放。
 
 ### 11.3 Creator 与可复现证据
 
@@ -874,7 +978,7 @@ Home
 |---|---|---|
 | 混用 Classic 静态默认、本地调试模板与 V2 快照 | 永远无法定义“一致” | 冻结命名配置、hash 和截图基线，逐字段 fixture 守门 |
 | 把目标 4096² 写成原作 V2 原值或把 4896² 整体缩放 | 来源与视觉比例失真 | 分离 `newEndlessV2Source4896` 与 `newEndlessPortraitV2Map4096`；只覆盖边界，不缩放世界单位 |
-| 把 V2 的 `totalTime=0` 写成原作 V2 自带 90 秒 | 来源与验收口径失真 | 分离 `newEndlessPortraitV2Map4096` 与 `sourceTimeLimit90`，显式声明组合层 |
+| 仍在第 1800 tick 收局或保留 TimeLimit HUD | 实际仍是 90 秒模式，违反已选 `totalTime=0` | 使用 `sourceEndlessTotalTime0`，测试 1800/1801 tick 连续推进并禁止 TimeLimit fallback |
 | 继续沿用 8 蛇/315 食物/512 路径点快照上限 | 合法 V2 世界被拒绝或静默截断 | wire 升版，分别守门单蛇 5186 点和全房 88162 点，使用有校验的分块基线和有序 delta |
 | 把 86 个假榜条目生成为活动 AI | 世界数量、碰撞和奖励全部错误 | 假榜使用独立模型；活动蛇硬上限 17 |
 | 把 `1240` 当作路径点或长度上限 | 蛇身、相机与碰撞公式错误 | 镜像 71 项源表并以边界向量验证真实消费算法 |
@@ -882,7 +986,13 @@ Home
 | 原皮 atlas 布局不一致 | 头身错位、动画错误 | 解析原 atlas/body config，生成 catalog，rect 自动验界 |
 | 只改客户端体型 | 视觉和碰撞不一致 | 全局缩放公式由 shared/server 权威，或明确保持固定体宽 |
 | 直接信任 join skinId | 越权使用未拥有皮肤 | 服务端异步准入读取并锁存装备 |
-| drop-in 早退丢失记录 | 漏奖、排名和成就错误 | world 外保留完整参赛账本，durable settlement 后再发奖 |
+| drop-in 最终离场时直接删实体 | 真人 run 漏奖或重复发奖 | world 外维护持久 run 账本，先以 fence/CAS durable finalize，再移除实体 |
+| 直接在同步 `onPlayerLeaving` 中异步发奖 | 离场删除与持久化竞态，进程退出后丢证据 | 增加通用 awaited `preparePlayerFinalLeave`，带 generation 复验、超时和幂等恢复 |
+| 把 `endRun` 直接实现成 async command handler | dispatcher 不等待并错误回复，finalize 变成 detached task | command 同步切 Finalizing并登记按 runId 去重的 mode-owned tracked Promise，leave/drain 复用并等待 |
+| `totalTime=0` 被误解为房间永不回收 | 空房和 AI 世界泄漏 | AI 不计房间存活；最后真人 run 冻结后停止 tick 并允许 autoDispose |
+| 运维发布直接关闭长驻 Playing 房 | 活跃 run 无结束证据 | 内部 Active→Draining 停准入，冻结 run 后再关闭；客户端按 `serverDrain` 展示结果 |
+| 把 `runStartedTick` 到当前 tick 全算活跃时长 | 死亡等待、断线与挂机获得额外奖励 | 只累计 connected、alive、active 的权威 `activeTicks` |
+| 硬崩溃前尚未确认 checkpoint | 最近进度无法凭空恢复 | receipt 显示 `confirmedThroughTick`；只承诺已确认进度，缩短窗口需另行调整持久化策略 |
 | 普通 Shop SKU 重复购买唯一皮肤 | 多次扣款 | 专用 entitlement receipt 唯一键 |
 | 资源版本与服务端目录不一致 | 白图、崩溃、经济争议 | catalog hash 闸门；经济禁写、战斗 fallback |
 | 每食物一个节点 | 节点和提交数量失控 | 单 atlas/material 批量 mesh |
@@ -906,5 +1016,5 @@ Home
 
 建议的最终发布口径：
 
-> **竖版新版无尽 V2 战场（4096² 地图覆盖）+ 原作 TimeLimit 90 秒上限/HUD + 联机连续 90 秒适配 +
-> 16 套原作皮肤 + 纯外观养成 + 服务端权威装备 + 可靠赛后奖励。**
+> **竖版新版无尽 V2 战场（4096² 地图覆盖）+ 原作 `totalTime=0` 无尽生命周期 + drop-in 联机适配 +
+> 16 套原作皮肤 + 纯外观养成 + 服务端权威装备 + 可靠真人 run 奖励。**
