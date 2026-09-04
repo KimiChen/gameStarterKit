@@ -1,0 +1,152 @@
+/**
+ * 插件命令（workspace 脚本，⛔ 不新增根命令）：
+ *   npm --workspace @game/server run plugin -- pack <id> (--out <zip> | --out-dir <dir>)
+ *   npm --workspace @game/server run plugin -- install <zip|dir> [--allow-downgrade] [--no-git] [--no-postinstall] [--dry-run]
+ *   npm --workspace @game/server run plugin -- uninstall <id> [--force] [--no-git] [--no-postinstall] [--dry-run]
+ *   npm --workspace @game/server run plugin -- check
+ * 全部子命令接受 --root <dir>（测试 fixture seam）。
+ *
+ * 设计基线见 docs/PLUGIN.md §5；判据与推导见 tools/plugin/ownership.ts。
+ */
+import path from "node:path";
+import process from "node:process";
+import { fileURLToPath } from "node:url";
+import { checkInstalledPlugins } from "./check";
+import { installPlugin } from "./install";
+import { packPlugin } from "./pack";
+import { uninstallPlugin } from "./uninstall";
+
+const TOOL_REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
+
+export type PluginCliArguments =
+  | { readonly command: "pack"; readonly root: string; readonly id: string; readonly outFile?: string; readonly outDir?: string }
+  | { readonly command: "install"; readonly root: string; readonly source: string; readonly allowDowngrade: boolean; readonly git: boolean; readonly postinstall: boolean; readonly dryRun: boolean }
+  | { readonly command: "uninstall"; readonly root: string; readonly id: string; readonly force: boolean; readonly git: boolean; readonly postinstall: boolean; readonly dryRun: boolean }
+  | { readonly command: "check"; readonly root: string };
+
+const USAGE = [
+  "用法：npm --workspace @game/server run plugin -- <pack|install|uninstall|check> …",
+  "  pack <id> (--out <zip> | --out-dir <dir>)",
+  "  install <zip|dir> [--allow-downgrade] [--no-git] [--no-postinstall] [--dry-run]",
+  "  uninstall <id> [--force] [--no-git] [--no-postinstall] [--dry-run]",
+  "  check",
+  "  （均可带 --root <dir>）",
+].join("\n");
+
+export function parseCli(argv: readonly string[]): PluginCliArguments {
+  const [command, ...rest] = argv;
+  let root = TOOL_REPOSITORY_ROOT;
+  const positional: string[] = [];
+  const flags = new Map<string, string | true>();
+  for (let index = 0; index < rest.length; index += 1) {
+    const arg = rest[index];
+    if (arg === "--root" || arg === "--out" || arg === "--out-dir") {
+      const value = rest[++index];
+      if (!value) throw new Error(`${arg} 需要一个值`);
+      if (flags.has(arg)) throw new Error(`duplicate argument: ${arg}`);
+      flags.set(arg, value);
+    } else if (arg.startsWith("--")) {
+      if (flags.has(arg)) throw new Error(`duplicate argument: ${arg}`);
+      flags.set(arg, true);
+    } else {
+      positional.push(arg);
+    }
+  }
+  const rootFlag = flags.get("--root");
+  if (typeof rootFlag === "string") root = path.resolve(rootFlag);
+  const known = (allowed: readonly string[]): void => {
+    for (const flag of flags.keys()) {
+      if (flag !== "--root" && !allowed.includes(flag)) throw new Error(`unknown argument: ${flag}\n${USAGE}`);
+    }
+  };
+  if (command === "pack") {
+    known(["--out", "--out-dir"]);
+    if (positional.length !== 1) throw new Error(`pack 需要且只需要一个 <id>\n${USAGE}`);
+    const outFile = flags.get("--out");
+    const outDir = flags.get("--out-dir");
+    return {
+      command: "pack",
+      root,
+      id: positional[0],
+      ...(typeof outFile === "string" ? { outFile } : {}),
+      ...(typeof outDir === "string" ? { outDir } : {}),
+    };
+  }
+  if (command === "install") {
+    known(["--allow-downgrade", "--no-git", "--no-postinstall", "--dry-run"]);
+    if (positional.length !== 1) throw new Error(`install 需要且只需要一个 <zip|dir>\n${USAGE}`);
+    return {
+      command: "install",
+      root,
+      source: path.resolve(positional[0]),
+      allowDowngrade: flags.has("--allow-downgrade"),
+      git: !flags.has("--no-git"),
+      postinstall: !flags.has("--no-postinstall"),
+      dryRun: flags.has("--dry-run"),
+    };
+  }
+  if (command === "uninstall") {
+    known(["--force", "--no-git", "--no-postinstall", "--dry-run"]);
+    if (positional.length !== 1) throw new Error(`uninstall 需要且只需要一个 <id>\n${USAGE}`);
+    return {
+      command: "uninstall",
+      root,
+      id: positional[0],
+      force: flags.has("--force"),
+      git: !flags.has("--no-git"),
+      postinstall: !flags.has("--no-postinstall"),
+      dryRun: flags.has("--dry-run"),
+    };
+  }
+  if (command === "check") {
+    known([]);
+    if (positional.length !== 0) throw new Error(`check 不接受位置参数\n${USAGE}`);
+    return { command: "check", root };
+  }
+  throw new Error(USAGE);
+}
+
+export function runCli(args: PluginCliArguments): number {
+  if (args.command === "pack") {
+    const result = packPlugin({ root: args.root, id: args.id, ...(args.outFile ? { outFile: args.outFile } : {}), ...(args.outDir ? { outDir: args.outDir } : {}) });
+    console.log(`[plugin] packed ${result.manifest.id}@${result.manifest.version}: ${result.entries.length} files → ${result.output}`);
+    if (result.skipped.length > 0) console.log(`[plugin] ⚠ 跳过不可随包分发的文件（生成物/硬排除）：${result.skipped.join(", ")}`);
+    return 0;
+  }
+  if (args.command === "install") {
+    const report = installPlugin({ root: args.root, source: args.source, allowDowngrade: args.allowDowngrade, git: args.git, postinstall: args.postinstall, dryRun: args.dryRun });
+    const verb = report.previousVersion ? `upgraded ${report.previousVersion} → ${report.version}` : `installed ${report.version}`;
+    console.log(`[plugin] ${args.dryRun ? "(dry-run) " : ""}${report.id}: ${verb}; written ${report.written.length}, unchanged ${report.unchanged.length}, deleted ${report.deleted.length}`);
+    for (const relative of report.deleted) console.log(`[plugin]   deleted ${relative}`);
+    console.log("[plugin] 下一步（人工）：");
+    for (const step of report.nextSteps) console.log(`[plugin]   - ${step}`);
+    return 0;
+  }
+  if (args.command === "uninstall") {
+    const report = uninstallPlugin({ root: args.root, id: args.id, force: args.force, git: args.git, postinstall: args.postinstall, dryRun: args.dryRun });
+    console.log(`[plugin] ${args.dryRun ? "(dry-run) " : ""}uninstalled ${report.id}@${report.version}: ${report.deleted.length} files（--allow-delete ${report.allowDelete.join(", ") || "-"}）`);
+    if (report.missing.length > 0) console.log(`[plugin] ⚠ 锁登记但工作树已缺失：${report.missing.join(", ")}`);
+    console.log("[plugin] 下一步（人工）：node scripts/protocol-fingerprint.mjs --write（若 registry 变化）、node scripts/fgui-manifest.mjs --write（若删了 FGUI 包）、npm run verify:all");
+    return 0;
+  }
+  const report = checkInstalledPlugins(args.root);
+  if (report.plugins.length === 0) {
+    console.log("[plugin] 没有已安装插件（scripts/plugins/ 为空）");
+    return 0;
+  }
+  for (const plugin of report.plugins) {
+    console.log(`[plugin] ${plugin.id}@${plugin.version}: ${plugin.problems.length === 0 ? "✔ 一致" : "✖ 有问题"}`);
+    for (const problem of plugin.problems) console.log(`[plugin]   - ${problem}`);
+  }
+  return report.ok ? 0 : 1;
+}
+
+const invokedFile = process.argv[1] ? path.resolve(process.argv[1]) : "";
+if (invokedFile === fileURLToPath(import.meta.url)) {
+  try {
+    process.exitCode = runCli(parseCli(process.argv.slice(2)));
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  }
+}
