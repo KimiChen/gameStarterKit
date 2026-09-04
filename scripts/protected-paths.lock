@@ -2,7 +2,7 @@
 # writer: node scripts/protected-paths-lock.mjs --write ；checker: --check（npm run verify:protected-paths）
 # 每行 `<路径> <sha256>`（内容哈希，可用 shasum -a 256 复核）；范围见 scripts/protected-paths.json。
 apps/client/src/Main.ts 19adaceb8ddc11d25296ca911e733b9fa64867da489ffabbd6b1ae27ee547a63
-apps/client/src/app/AppRuntime.ts 937a2f1e791c3c3a28c4a3d600bd70386a4bdf6a258aeb264e84872006b61e08
+apps/client/src/app/AppRuntime.ts 2c60b14c5f969cf52e85c319e57dc6d8127f20078b7c349d73583531046d58a9
 apps/client/src/app/CocosLifecycleBridge.ts 333e689f1657019ab7e2f6dbf87a524b87af3988a2a1a6748b5fbf1c6e72361d
 apps/client/src/app/FeatureHost.ts 3fb2d55c87945bfdd1434e2497d410685a6317144027342d3957b5f81df0c15f
 apps/client/src/app/FeatureRegistry.ts e3b990152050ae8e1173d5690a5dd507e1f08363367c5844efd04e1b8f764381
@@ -15,7 +15,7 @@ apps/client/src/app/SessionCoordinator.ts e6939ce6760160552e75c95f9ff55134bc825a
 apps/client/src/app/appGeneration.ts d305935b381780a644e03cad8fd5fb87152b9965b04c43d3df95d26fc73d1d4b
 apps/client/src/app/bootstrap.ts e0dbbba16e949b457b322f8fe66e58edb8e312c3da959530b2f15293e0506fda
 apps/client/src/app/builtinFeature.ts d476168f5f84b39d5e21ae1ea1b4aad50f19de336b9431f814978b9a0a658325
-apps/client/src/app/loginFlow.ts 9671c2764f9c07bc707525ace90d0dd0196c3d1c6554fed161cae21c943f3d83
+apps/client/src/app/loginFlow.ts f35e0ca43c2987cef2d3f2667c588b2bdb5999ed44f7849462a0e4a6c4494418
 apps/client/src/app/ports.ts 0e0c5cd82e3ac4446cf2e10f94686cdc73522cc3ad0a6b2e8ccc2f1ebc38d0d3
 apps/client/src/app/wiring.ts d958e29cb74b6521a4a35668d09fa3d05d104520d1918f569c66bc93805dbcca
 apps/client/src/gameplay/catalog.ts 5cd68321b5fc2de84a389e7cc97c6874132953382e34661325ce1baef90e308f

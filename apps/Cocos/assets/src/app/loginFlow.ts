@@ -27,7 +27,11 @@ import type { LoginView } from "../view/LoginView";
 import type { AreaListView } from "../view/AreaListView";
 import type { LoginNoticeView } from "../view/LoginNoticeView";
 import type { HomeView } from "../view/HomeView";
+import type { PromoHomeView } from "../view/PromoHomeView";
+import type { SettingsView } from "../view/SettingsView";
 import type { ConfirmView } from "../view/ConfirmView";
+import { PromoHomeLogic } from "../logic/page/PromoHomeLogic";
+import { SettingsLogic, type SettingsProfilePatch } from "../logic/page/SettingsLogic";
 import { reconcileSessionProfile } from "../logic/page/SessionReconcileLogic";
 import {
   joinSelectedServerLobby,
@@ -47,6 +51,7 @@ import {
   commitSessionProfile,
   getSessionIdentity,
   getSessionGeneration,
+  getSessionProfile,
   isSessionIdentityCurrent,
   returnToLogin,
   setSession,
@@ -105,6 +110,40 @@ export function setHomeMenuRuntime(runtime: HomeMenuRuntime): () => void {
   return () => {
     if (homeMenuRuntime === runtime) homeMenuRuntime = null;
   };
+}
+
+/**
+ * 设置面板的**写路径**接线面：宿主接 `ports.lobbyRpc.sendIdempotent(user.updateProfile)`
+ * ——幂等 clientReqId 与 PendingOperationJournal 的 write-ahead 都在那条通道里（§7.2
+ * 约束 1），⛔ 本模块不自己拼 rpcIdem。无宿主（无头 pages 测试/工具路径）时写路径不可用，
+ * 由 SettingsLogic 走它的失败回滚分支。
+ */
+export interface ProfileWriteRuntime {
+  updateProfile(patch: SettingsProfilePatch): Promise<void>;
+}
+
+let profileWriteRuntime: ProfileWriteRuntime | null = null;
+
+/** 注册当前宿主的档案写接线；返回身份守卫的注销器（与菜单接线同形）。 */
+export function setProfileWriteRuntime(runtime: ProfileWriteRuntime): () => void {
+  profileWriteRuntime = runtime;
+  return () => {
+    if (profileWriteRuntime === runtime) profileWriteRuntime = null;
+  };
+}
+
+/**
+ * 设置面板的音频偏好写：幂等写成功后，把**刚被服务端接受的那两个字段**回写进会话快照，
+ * 这样重开面板不会显示回旧值。⛔ 不猜测其它字段（`ver` 由下一次 GetInfo 权威刷新）；
+ * 世代已换时 commitSessionProfile 自己会拒绝。
+ */
+async function writeProfilePreferences(patch: SettingsProfilePatch): Promise<void> {
+  const runtime = profileWriteRuntime;
+  if (!runtime) throw new Error("[pages] 档案写路径未接线（无宿主）");
+  const identity = getSessionIdentity();
+  await runtime.updateProfile(patch);
+  const profile = getSessionProfile();
+  if (identity && profile) commitSessionProfile(identity, { ...profile, ...patch });
 }
 
 /** authenticated base 的刷新合流器（对账 GetInfo 与回前台刷新共用同一 key 空间）。 */
@@ -657,20 +696,21 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
         h.close();
         // Closing Login synchronously invalidates its lifecycle context.  From
         // this point the page flight and session generation own the navigation;
-        // consulting the closed context would make Home unreachable.
+        // consulting the closed context would make the base page unreachable.
         if (!isFlightActive(flight) || getSessionGeneration() !== flowSessionGen) return;
-        let homeHandle: NavRouteHandle;
+        let baseHandle: NavRouteHandle;
         try {
-          homeHandle = await openHome(() => flight.onEnterBattle(), r.userId, user);
+          // authenticated base = 宣传首屏（PLUGIN.md §6）；旧 FGUI Home 仍是可达 route。
+          baseHandle = await openPromoHome(r.userId, user);
         } catch (e) {
           if (!isFlightActive(flight) || getSessionGeneration() !== flowSessionGen) return;
-          console.error("[pages] Home 打开失败，回滚登录事务：", e);
+          console.error("[pages] 首屏打开失败，回滚登录事务：", e);
           await returnToLogin({ kind: "BATTLE_JOIN_FAILED" });
           return;
         }
-        // Home 的动态加载也有 await；期间若收到失效事件，handler 会关闭大厅并重开
-        // Login。这里再核对一次，避免迟到的 Home 把新登录页覆盖回来。
-        if (!isFlightActive(flight) || getSessionGeneration() !== flowSessionGen) homeHandle.close();
+        // 首屏的动态加载也有 await；期间若收到失效事件，handler 会关闭大厅并重开
+        // Login。这里再核对一次，避免迟到的首屏把新登录页覆盖回来。
+        if (!isFlightActive(flight) || getSessionGeneration() !== flowSessionGen) baseHandle.close();
       })();
       enterInFlight = p;
       p.then(
@@ -690,7 +730,79 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
   if (!isFlightActive(flight)) h.close();
 }
 
-/** 主界面：展示真实账号/档案摘要，「进入游戏」→ 已登记玩法。 */
+/**
+ * 宣传首屏（框架默认形态的 authenticated base，docs/PLUGIN.md §6）：
+ * ⛔ 不摆玩法入口——玩法/插件入口全在设置面板，本页只有宣传内容 + 右上角设置按钮。
+ *
+ * ⚠ 它同时是最终断线对账后的恢复目标：base 登记先于打开，恢复经
+ * restoreAuthenticatedBase 走同一入口并带回刷新后的角色快照（会话摘要行消费它）。
+ */
+export async function openPromoHome(
+  userId = "", user: IUserView | null = null,
+): Promise<NavRouteHandle> {
+  appNavigation.setAuthenticatedBase("promoHome", (restoreContext) => {
+    const restore = (restoreContext ?? {}) as {
+      readonly userId?: string;
+      readonly user?: IUserView | null;
+    };
+    return openPromoHome(restore.userId ?? "", restore.user ?? null);
+  });
+  const h = await appNavigation.open("promoHome");
+  const view = h.view as PromoHomeView;
+  await h.run((_openedView, context) => {
+    const logic = new PromoHomeLogic();
+    const cur = getCurrentServer();
+    logic.setSession({ serverName: cur?.name ?? "", userId, profile: user });
+    logic.onOpenSettings = async () => {
+      if (!context.isActive()) return;
+      await openSettings();
+    };
+    view.setup(logic);
+  });
+  return h;
+}
+
+/**
+ * 设置面板（docs/PLUGIN.md §6.1）：宿主固定区块 + 插件入口列表。
+ *
+ * 插件入口的数据源仍是 generated menu contribution（⛔ 无第二真源），但排序由
+ * SettingsLogic 按 featureId 字母序重排——插件只声明入口身份，位置归宿主。
+ * 可用性叠加与 launch 都复用 Home 那条 HomeMenuRuntime 接线（同一个 FeatureHost 闸）。
+ */
+export async function openSettings(): Promise<NavRouteHandle> {
+  const h = await appNavigation.open("settings");
+  const view = h.view as SettingsView;
+  await h.run((_openedView, context) => {
+    const logic = new SettingsLogic({
+      updateProfile: (patch) => writeProfilePreferences(patch),
+      availabilityOf: (featureId) =>
+        (homeMenuRuntime ? homeMenuRuntime.availabilityOf(featureId) : "available"),
+    });
+    logic.setProfile(getSessionProfile());
+    logic.setEntries(appFeatureRegistry.menuContributions().map((item) => ({
+      entryId: item.entryId,
+      featureId: item.featureId,
+      label: item.label,
+      // 无宿主（无头 pages 测试/工具路径）时是 no-op：设置面板没有 Home 那条
+      // onEnterBattle 回退通道，⛔ 也不该编一个。
+      launch: () => {
+        if (!context.isActive()) return;
+        return homeMenuRuntime ? homeMenuRuntime.launch(item.launch) : undefined;
+      },
+    })));
+    view.onClose = () => h.close();
+    view.setup(logic);
+  });
+  return h;
+}
+
+/**
+ * 旧 FGUI 主界面：展示真实账号/档案摘要，「进入游戏」→ 已登记玩法。
+ *
+ * ⚠ 登录后的 authenticated base 已改为 `openPromoHome`（PLUGIN.md §6 的框架默认形态）。
+ * 本入口**保留**为可达 route：它是 ballMove 的现成入口，也是 §6.2 (1) 说的开发调试
+ * 快捷入口。⛔ 不删（大量测试以它钉住 Home 视觉与菜单叠加语义）。
+ */
 export async function openHome(
   onEnterBattle: () => void | Promise<void>, userId = "", user: IUserView | null = null,
 ): Promise<NavRouteHandle> {
