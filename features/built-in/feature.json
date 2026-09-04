@@ -11,6 +11,7 @@
     "apps/client/src/view/LoginNoticeView.view.json",
     "apps/client/src/view/HomeView.view.json",
     "apps/client/src/view/ConfirmView.view.json",
+    "apps/client/src/view/SettingsView.view.json",
     "apps/client/src/view/rooms/ballMove/BallMoveView.view.json"
   ],
   "owners": [
@@ -22,6 +23,7 @@
     { "id": "areaList", "view": "AreaList" },
     { "id": "loginNotice", "view": "LoginNotice" },
     { "id": "home", "view": "Home" },
+    { "id": "settings", "view": "Settings" },
     { "id": "confirm", "view": "Confirm" }
   ],
   "menu": [

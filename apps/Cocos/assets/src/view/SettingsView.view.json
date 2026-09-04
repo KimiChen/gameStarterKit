@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "owner": "builtin",
+  "kind": "cocos",
+  "layer": "popup",
+  "fullscreen": true,
+  "onlyOne": true,
+  "permanent": false,
+  "interactive": false,
+  "logic": "apps/client/src/logic/page/SettingsLogic.ts",
+  "group": "authenticated",
+  "restore": "discard"
+}
