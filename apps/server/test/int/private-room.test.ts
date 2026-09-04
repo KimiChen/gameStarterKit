@@ -15,6 +15,7 @@ import { WebSocketTransport } from "@colyseus/ws-transport";
 import { Client as SDKClient, type Room as SDKRoom } from "@colyseus/sdk";
 import {
     C2S,
+    GAMEPLAY_CATALOG,
     GamePhase,
     GAME_ROOM_PROTOCOL_VERSION,
     RoomName,
@@ -51,6 +52,8 @@ import { PrivateFixturePlayerState, type PrivateFixtureState } from "../../src/r
 import { assertRedisUp, issueSession, sleep, testUid } from "./helpers";
 
 const FIXTURE_MODE_ID = "privateFixture";
+// per-mode 契约版本取 catalog 单源（manifest.json）：⛔ 不写字面量，否则 manifest 一改就红。
+const FIXTURE_MODE_VERSION = GAMEPLAY_CATALOG.privateFixture.modeVersion;
 /** 每次运行独享一段码空间，避免与历史残留/并行运行互踩（清理仍然逐 key UNLINK）。 */
 const codeBase = 100000 + (Date.now() % 800000);
 let codeSeq = 0;
@@ -104,7 +107,7 @@ test("邀请码分配：碰撞重试有上限，耗尽 fail-closed 且 ⛔ 不�
     const code = trackedCode();
     // 预占该码：后续 codeFactory 恒返回同码 → 每次尝试都碰撞。
     const first = await inviteCodeService.allocate({
-        sId: SID, roomId: "occupier", mode: FIXTURE_MODE_ID, modeVersion: 1, profile: "private",
+        sId: SID, roomId: "occupier", mode: FIXTURE_MODE_ID, modeVersion: FIXTURE_MODE_VERSION, profile: "private",
         codeFactory: () => code,
     });
     assert.equal(first.code, code);
@@ -112,7 +115,7 @@ test("邀请码分配：碰撞重试有上限，耗尽 fail-closed 且 ⛔ 不�
     const exhaustedBefore = inviteCodeMetrics.allocExhausted;
     await assert.rejects(
         inviteCodeService.allocate({
-            sId: SID, roomId: "collider", mode: FIXTURE_MODE_ID, modeVersion: 1, profile: "private",
+            sId: SID, roomId: "collider", mode: FIXTURE_MODE_ID, modeVersion: FIXTURE_MODE_VERSION, profile: "private",
             codeFactory: () => { attempts.push(code); return code; },
         }),
         (error: unknown) => error instanceof InviteCodePoolExhaustedError,
@@ -129,7 +132,7 @@ test("Lua CAS：旧 lease 不能 renew/release 删除后重用同码的新 lease
     const code = trackedCode();
     const roomA = "cas-room-a";
     const leaseA = await inviteCodeService.allocate({
-        sId: SID, roomId: roomA, mode: FIXTURE_MODE_ID, modeVersion: 1, profile: "private",
+        sId: SID, roomId: roomA, mode: FIXTURE_MODE_ID, modeVersion: FIXTURE_MODE_VERSION, profile: "private",
         codeFactory: () => code,
     });
     assert.equal(leaseA.generation, 1);
@@ -142,7 +145,7 @@ test("Lua CAS：旧 lease 不能 renew/release 删除后重用同码的新 lease
     assert.equal(await readInviteLease(SID, code), "unavailable", "隔离期内 resolve 一律折叠");
     await assert.rejects(
         inviteCodeService.allocate({
-            sId: SID, roomId: "reuse-too-early", mode: FIXTURE_MODE_ID, modeVersion: 1, profile: "private",
+            sId: SID, roomId: "reuse-too-early", mode: FIXTURE_MODE_ID, modeVersion: FIXTURE_MODE_VERSION, profile: "private",
             codeFactory: () => code,
         }),
         (error: unknown) => error instanceof InviteCodePoolExhaustedError,
@@ -151,7 +154,7 @@ test("Lua CAS：旧 lease 不能 renew/release 删除后重用同码的新 lease
     await sleep(120); // 隔离期满由 TTL 自然回收
     const roomB = "cas-room-b";
     const leaseB = await inviteCodeService.allocate({
-        sId: SID, roomId: roomB, mode: FIXTURE_MODE_ID, modeVersion: 1, profile: "private",
+        sId: SID, roomId: roomB, mode: FIXTURE_MODE_ID, modeVersion: FIXTURE_MODE_VERSION, profile: "private",
         codeFactory: () => code,
     });
     assert.equal(leaseB.generation, 2, "generation 独立 INCR，永不重置（在途引用可识别上一代分配）");
@@ -171,14 +174,14 @@ test("崩溃回收：短 lease TTL 到期后 key 消失，同码可重新分配�
     await assertRedisUp();
     const code = trackedCode();
     await inviteCodeService.allocate({
-        sId: SID, roomId: "crash-room", mode: FIXTURE_MODE_ID, modeVersion: 1, profile: "private",
+        sId: SID, roomId: "crash-room", mode: FIXTURE_MODE_ID, modeVersion: FIXTURE_MODE_VERSION, profile: "private",
         leaseTtlMs: 60,
         codeFactory: () => code,
     });
     await sleep(120);
     assert.equal(await coordClient().exists(kInviteCode(SID, code)), 0, "进程崩溃由短 TTL 回收（无隔离期是刻意取舍）");
     const again = await inviteCodeService.allocate({
-        sId: SID, roomId: "crash-room-2", mode: FIXTURE_MODE_ID, modeVersion: 1, profile: "private",
+        sId: SID, roomId: "crash-room-2", mode: FIXTURE_MODE_ID, modeVersion: FIXTURE_MODE_VERSION, profile: "private",
         codeFactory: () => code,
     });
     assert.equal(again.generation, 2);
@@ -191,7 +194,7 @@ test("access ticket jti 状态机：并发 claim、重放、失败重试与 expi
     usedQuotaUids.push(uid);
     // creation ticket：issued → claimed（一次性）→ seated；重复 claim 拒绝。
     const issued = await issueCreationTicket({
-        sId: SID, uid, mode: FIXTURE_MODE_ID, modeVersion: 1, profile: "private", nowMs: Date.now(),
+        sId: SID, uid, mode: FIXTURE_MODE_ID, modeVersion: FIXTURE_MODE_VERSION, profile: "private", nowMs: Date.now(),
     });
     assert.equal(issued.kind, "ok");
     const creation = issued as { kind: "ok"; ticket: string };
@@ -203,7 +206,7 @@ test("access ticket jti 状态机：并发 claim、重放、失败重试与 expi
     const claim = await accessTicketService.claimCreation({
         sId: SID, ticket: creation.ticket, roomId: "jti-room", mode: FIXTURE_MODE_ID, profile: "private",
     });
-    assert.deepEqual(claim, { kind: "ok", uid, modeVersion: 1 });
+    assert.deepEqual(claim, { kind: "ok", uid, modeVersion: FIXTURE_MODE_VERSION });
     const replayCreate = await accessTicketService.claimCreation({
         sId: SID, ticket: creation.ticket, roomId: "jti-room-2", mode: FIXTURE_MODE_ID, profile: "private",
     });
@@ -212,7 +215,7 @@ test("access ticket jti 状态机：并发 claim、重放、失败重试与 expi
     // join ticket：issued → pending(session) → seated；并发第二 claim 拒绝；安全失败退回 issued。
     const joinUid = testUid("ticket-joiner");
     const joinTicket = await issueJoinTicket({
-        sId: SID, uid: joinUid, roomId: "jti-room", mode: FIXTURE_MODE_ID, modeVersion: 1,
+        sId: SID, uid: joinUid, roomId: "jti-room", mode: FIXTURE_MODE_ID, modeVersion: FIXTURE_MODE_VERSION,
         profile: "private", code: "000000", generation: 1, nowMs: Date.now(),
     });
     usedTicketHashes.push(accessTicketHash(joinTicket.ticket));
@@ -239,7 +242,7 @@ test("access ticket jti 状态机：并发 claim、重放、失败重试与 expi
 
     // expiry：短 TTL join ticket 到期后 claim 必须拒绝。
     const shortLived = await issueJoinTicket({
-        sId: SID, uid: joinUid, roomId: "jti-room", mode: FIXTURE_MODE_ID, modeVersion: 1,
+        sId: SID, uid: joinUid, roomId: "jti-room", mode: FIXTURE_MODE_ID, modeVersion: FIXTURE_MODE_VERSION,
         profile: "private", code: "000000", generation: 1, nowMs: Date.now(), ttlMs: 60,
     });
     usedTicketHashes.push(accessTicketHash(shortLived.ticket));
@@ -256,7 +259,7 @@ test("配额：单账号活跃私房 + 未消费 creation ticket 原子计数，
     const uid = testUid("quota");
     usedQuotaUids.push(uid);
     const issue = (ttlMs?: number) => issueCreationTicket({
-        sId: SID, uid, mode: FIXTURE_MODE_ID, modeVersion: 1, profile: "private", nowMs: Date.now(),
+        sId: SID, uid, mode: FIXTURE_MODE_ID, modeVersion: FIXTURE_MODE_VERSION, profile: "private", nowMs: Date.now(),
         ...(ttlMs === undefined ? {} : { ttlMs }),
     });
     const tickets: string[] = [];
@@ -282,7 +285,7 @@ test("resolve：折叠类五因（不存在/隔离期/过期/mode 不匹配/区�
     const missingCode = trackedCode(); // ① 不存在（从未分配）
     const tombCode = trackedCode(); // ② 隔离期
     const tombLease = await inviteCodeService.allocate({
-        sId: SID, roomId: "fold-tomb", mode: FIXTURE_MODE_ID, modeVersion: 1, profile: "private",
+        sId: SID, roomId: "fold-tomb", mode: FIXTURE_MODE_ID, modeVersion: FIXTURE_MODE_VERSION, profile: "private",
         codeFactory: () => tombCode,
     });
     await inviteCodeService.releaseToTombstone({
@@ -290,7 +293,7 @@ test("resolve：折叠类五因（不存在/隔离期/过期/mode 不匹配/区�
     });
     const expiredCode = trackedCode(); // ③ 过期（短 TTL 已回收 = 不存在同形）
     await inviteCodeService.allocate({
-        sId: SID, roomId: "fold-expired", mode: FIXTURE_MODE_ID, modeVersion: 1, profile: "private",
+        sId: SID, roomId: "fold-expired", mode: FIXTURE_MODE_ID, modeVersion: FIXTURE_MODE_VERSION, profile: "private",
         leaseTtlMs: 60, codeFactory: () => expiredCode,
     });
     await sleep(120);
@@ -302,7 +305,7 @@ test("resolve：折叠类五因（不存在/隔离期/过期/mode 不匹配/区�
     const zoneCode = trackedCode(); // ⑤ 区不匹配（码在另一区分配，本区 resolve）
     const otherZone = 9;
     await inviteCodeService.allocate({
-        sId: otherZone, roomId: "fold-zone", mode: FIXTURE_MODE_ID, modeVersion: 1, profile: "private",
+        sId: otherZone, roomId: "fold-zone", mode: FIXTURE_MODE_ID, modeVersion: FIXTURE_MODE_VERSION, profile: "private",
         codeFactory: () => zoneCode,
     });
 
@@ -356,7 +359,7 @@ test("resolve：专用速率桶（fail/ok/全区 fail 三桶独立于通用 RPC 
         // 成功预算：命中即消耗 ok 桶（容量 RESOLVE_OK_CAPACITY），独立于失败预算。
         const okCode = trackedCode();
         await inviteCodeService.allocate({
-            sId: SID, roomId: "bucket-room", mode: FIXTURE_MODE_ID, modeVersion: 1, profile: "private",
+            sId: SID, roomId: "bucket-room", mode: FIXTURE_MODE_ID, modeVersion: FIXTURE_MODE_VERSION, profile: "private",
             codeFactory: () => okCode,
         });
         const okUid = testUid("bucket-ok");
@@ -417,7 +420,7 @@ test("端到端：private 房不进 joinOrCreate 撮合、driver 回查 private=
         // §6.9 房主流程：prepareCreate（配额原子检查 + creation ticket）→ create。
         usedQuotaUids.push(ownerUid);
         const prepared = await issueCreationTicket({
-            sId: SID, uid: ownerUid, mode: FIXTURE_MODE_ID, modeVersion: 1, profile: "private", nowMs: Date.now(),
+            sId: SID, uid: ownerUid, mode: FIXTURE_MODE_ID, modeVersion: FIXTURE_MODE_VERSION, profile: "private", nowMs: Date.now(),
         });
         assert.equal(prepared.kind, "ok");
         const creationTicket = (prepared as { kind: "ok"; ticket: string }).ticket;
@@ -429,7 +432,7 @@ test("端到端：private 房不进 joinOrCreate 撮合、driver 回查 private=
             v: GAME_ROOM_PROTOCOL_VERSION,
             sId: SID,
             mode: FIXTURE_MODE_ID,
-            modeVersion: 1,
+            modeVersion: FIXTURE_MODE_VERSION,
             profile: "private",
             access: { kind: "create", ticket: creationTicket },
         };
@@ -454,7 +457,7 @@ test("端到端：private 房不进 joinOrCreate 撮合、driver 回查 private=
         strangerClient.auth.token = friendToken;
         await assert.rejects(
             strangerClient.joinOrCreate(RoomName.Game, {
-                v: GAME_ROOM_PROTOCOL_VERSION, sId: SID, mode: FIXTURE_MODE_ID, modeVersion: 1, profile: "private",
+                v: GAME_ROOM_PROTOCOL_VERSION, sId: SID, mode: FIXTURE_MODE_ID, modeVersion: FIXTURE_MODE_VERSION, profile: "private",
             }),
             "joinOrCreate 不得撮合进 private 房，也不能白手创建私房",
         );
@@ -469,7 +472,7 @@ test("端到端：private 房不进 joinOrCreate 撮合、driver 回查 private=
             v: GAME_ROOM_PROTOCOL_VERSION,
             sId: SID,
             mode: FIXTURE_MODE_ID,
-            modeVersion: 1,
+            modeVersion: FIXTURE_MODE_VERSION,
             profile: "private",
             access: { kind: "join", ticket: resolved.joinTicket },
         });

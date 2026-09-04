@@ -14,14 +14,15 @@ export const RoomName = {
 
 export type RoomNameType = (typeof RoomName)[keyof typeof RoomName];
 
-/** Starter 中已装配的玩法 mode id；作为 join/matchmaking wire 值的双端单源。 */
-export const GameplayModeId = {
-    BallMove: "ballMove",
-    Idle: "idle",
-    Snake: "snake",
-} as const;
-
-export type GameplayModeIdType = (typeof GameplayModeId)[keyof typeof GameplayModeId];
+/**
+ * Starter 中已装配的玩法 mode id；作为 join/matchmaking wire 值的双端单源。
+ *
+ * ⚠ 稳定 façade：真源是各玩法 manifest 的 `wireExposed`（缺省 true），由
+ * `codegen:gameplays` 渲染成零依赖的 `gameplays/generated/modeIds.generated.ts`。
+ * ⛔ 不得在本文件手写常量表（codegen 期 fail-fast），也 ⛔ 不得改成 import
+ * `gameplays/catalog.generated`——catalog → generated/state → protocol/http 会成环。
+ */
+export { GameplayModeId, type GameplayModeIdType } from "../gameplays/generated/modeIds.generated";
 
 /**
  * 双端协议身份（Non-intrusive §4.8：两个人工判定的兼容整数）。房间 onAuth 以此挡

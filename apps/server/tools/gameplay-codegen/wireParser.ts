@@ -304,13 +304,42 @@ export function parseCoreWireNames(source: string, label: string): CoreWireNames
 }
 
 /**
- * 从 shared/protocol/rooms.ts 语法读取 canonical `GameplayModeId` 值集（阶段 9：
- * 客户端 GameplayModule 装配集 = canonical ∩ catalog，与服务端生产 mode registry
- * 的同集断言同一口径）。⛔ 只语法读取，不执行模块。
+ * 语法读取一份模块里 `GameplayModeId` 常量表的值集。⛔ 只语法读取，不执行模块。
+ * 现用于生成器的自查：回读刚渲染出的 modeIds.generated.ts，与 manifest 的 wireExposed 集对拍。
  */
 export function parseGameplayModeIds(source: string, label: string): readonly string[] {
   const sourceFile = ts.createSourceFile(label, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
   return parseCoreNameTable(sourceFile, "GameplayModeId", label).map((entry) => entry.type);
+}
+
+/**
+ * `apps/shared/src/protocol/rooms.ts` 必须只是 `GameplayModeId` 的一行 re-export façade。
+ *
+ * 单源已经搬到 manifest 的 `wireExposed`，若谁在 rooms.ts 里重新手写一张常量表，两边就会
+ * 各自演化（正是本轮要消灭的形态）——这里把它变成 codegen 期的失败。⛔ 只语法读取。
+ */
+export function assertGameplayModeIdFacade(source: string, label: string, moduleSpecifier: string): void {
+  const sourceFile = ts.createSourceFile(label, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  let facade = false;
+  for (const statement of sourceFile.statements) {
+    if (ts.isVariableStatement(statement)) {
+      for (const declaration of statement.declarationList.declarations) {
+        if (ts.isIdentifier(declaration.name) && declaration.name.text === "GameplayModeId") {
+          fail(label, "GameplayModeId 的单源是 manifest.wireExposed，⛔ 不得在此手写常量表");
+        }
+      }
+    }
+    if (!ts.isExportDeclaration(statement)) continue;
+    const specifier = statement.moduleSpecifier;
+    if (!specifier || !ts.isStringLiteral(specifier) || specifier.text !== moduleSpecifier) continue;
+    if (!statement.exportClause || !ts.isNamedExports(statement.exportClause)) continue;
+    for (const element of statement.exportClause.elements) {
+      if (element.name.text === "GameplayModeId") facade = true;
+    }
+  }
+  if (!facade) {
+    fail(label, `必须从 "${moduleSpecifier}" re-export GameplayModeId（生成物是唯一单源）`);
+  }
 }
 
 /**

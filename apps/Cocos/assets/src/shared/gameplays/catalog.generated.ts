@@ -49,11 +49,11 @@ export const GAMEPLAY_CATALOG = {
     "dropInFixture": {
         id: "dropInFixture",
         constantName: "DropInFixture",
-        modeVersion: 1,
+        modeVersion: 2,
         maxPlayers: 8,
         profiles: ["dropIn"],
         stateFragments: [],
-        contractDigest: "10a6c06129af42a6f473481239d8a6570a08f2c70e5a5100d511e8e48300badb",
+        contractDigest: "af9fcc0be748fbed155af39397601af6a6364a5994eb9ac90dbb1d0d02dbb2fb",
     },
     "idle": {
         id: "idle",
@@ -67,11 +67,11 @@ export const GAMEPLAY_CATALOG = {
     "privateFixture": {
         id: "privateFixture",
         constantName: "PrivateFixture",
-        modeVersion: 1,
+        modeVersion: 2,
         maxPlayers: 4,
         profiles: ["default", "private"],
         stateFragments: ["ownerReady", "inviteRoom"],
-        contractDigest: "93c50eb5f5de997cb09c843bb187b599efdf7111e65228668a958b84cc1597ed",
+        contractDigest: "d1df12c9dcfdbecd1ff5f6363876335efae1bb4a75c2123d037a4319d6130c8d",
     },
     "snake": {
         id: "snake",
