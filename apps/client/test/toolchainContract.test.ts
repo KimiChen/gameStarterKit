@@ -163,6 +163,7 @@ const CHAIN_LOAD_BEARING: Record<string, string[]> = {
     "npm run verify:ecs",
     "npm run verify:vendor",
     "npm run verify:fgui",
+    "npm run verify:protected-paths",
     "npm run test:fgui",
     "npm run verify:inventory",
     "npm run test:inventory",

@@ -131,6 +131,7 @@
         "script": "verify:core",
         "requires": [
           { "kind": "root", "script": "verify:vendor" },
+          { "kind": "root", "script": "verify:protected-paths" },
           { "kind": "root", "script": "verify:inventory" },
           { "kind": "root", "script": "test:inventory" },
           { "kind": "root", "script": "test:client" }

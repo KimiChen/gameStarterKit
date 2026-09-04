@@ -82,6 +82,7 @@ apps/client/src
 | 客户端 ES2017 运行时下限探针（Creator legacy 配置） | `npm run typecheck:client:legacy` |
 | 工具链版本与聚合命令图 | `npm run verify:core` 首闸（`scripts/verify-toolchain.mjs`） |
 | FGUI 设计源、导出物和 registry/codegen 契约 | `npm run verify:fgui`、`npm run test:fgui` |
+| 受保护手写路径未被静默改动 | `npm run verify:protected-paths` |
 | 能力清单与默认入口登记 | `npm run verify:inventory`、`npm run test:inventory` |
 | 门禁判定 vs 真实行为矩阵（启动器 / npm 引用 / 聚合链 / 同步镜像 / 运行时） | `npm run test:launcher-matrix` 等 5 个 `test:*-matrix` |
 | 服务端路由、协议与一致性规则 | `npm --workspace @game/server run test` |

@@ -195,4 +195,11 @@ declare module "*.mjs" {
   export const TOOLCHAIN_RUNTIME_MATRIX_COMMAND: string;
   export const CHAIN_SCRIPTS: Record<string, string[]>;
   export const EXACT_SCRIPTS: Record<string, string>;
+  // scripts/protected-paths-lock.mjs（受保护手写路径的字节锁）
+  export const LOCK_RELATIVE: string;
+  export function collectLockedFiles(root?: string): string[];
+  export function computeLockEntries(root?: string): Map<string, string>;
+  export function parseLock(text: string): Map<string, string>;
+  export function renderLock(entries: Map<string, string>): string;
+  export function diffLock(locked: Map<string, string>, current: Map<string, string>): string[];
 }

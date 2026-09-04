@@ -979,6 +979,7 @@ property、spread 或顶层副作用形态直接拒绝。validator 函数本身�
 | `scripts/protocol.fingerprint` | shared protocol 真源 + 协议版本 | protocol fingerprint writer | fingerprint test | 显式协议审计锁 |
 | `scripts/fgui.manifest.json` | art、FGUI 导出物和 View AUTO 区 | FGUI manifest writer | `verify:fgui` | 显式资源审计锁 |
 | 保护路径规则（如 `scripts/protected-paths.json`） | 人工评审 | 人工（提交中显式声明） | 无侵入矩阵测试 | 显式治理锁 |
+| `scripts/protected-paths.lock` | 两组手写保护路径的当前字节 | protected-paths lock writer | `verify:protected-paths` | 显式治理锁的执行力（改受保护文件必留 diff） |
 | `apps/client/src/shared/**` | `apps/shared/src/**` | `sync:shared` | `verify:sync` | 生成镜像 |
 | `apps/Cocos/assets/src/**` | `apps/client/src/**` | `sync:client` | `verify:sync` | 生成镜像 |
 
