@@ -56,12 +56,29 @@ export type FeatureCapabilityFragment = {
 export type FeatureManifest = {
   readonly schemaVersion: 1;
   readonly id: string;
-  /** 能力索引用的结构分类；缺省 extra（core 身份必须显式声明，today 仅 built-in）。 */
+  /**
+   * 能力索引用的结构分类；缺省 extra（core 身份必须显式声明）。
+   *
+   * gameplay feature 的取值语义（`features/snake/` 落地时定）：**当前范围内的玩法**
+   * （根 README「项目边界」与 CLAUDE.md「当前范围」已登记者，如默认入口 snake）声明
+   * `core`；仓外/非承诺的额外玩法声明 `extra`，并按 verify-inventory 的合并规则把
+   * `docs/EXTRAFEATURES.md` 登记为权威边界。
+   * ⚠ 本字段只喂能力索引渲染；capability fragment 的 core/extra 另有 fail-closed 规则
+   * （fragment 通道只能 extra，见 scripts/verify-inventory.mjs），二者⛔ 不互推。
+   */
   readonly category: "core" | "extra";
   /** 能力索引用的权威文档链接（仓库相对路径）；缺省空。 */
   readonly docs: readonly string[];
   /** capability fragment 声明（§5.7）；缺省空——built-in 不产 capability fragment。 */
   readonly capabilities: readonly FeatureCapabilityFragment[];
+  /**
+   * 常驻（FeatureHost 语义）：`true` = 不随 route refcount 归零释放。
+   *
+   * 取值语义：**宿主页面 feature**（built-in：Login/Home/Confirm 等，整个会话都在）声明
+   * `true`；**gameplay feature**（只在进入该玩法期间活跃，且不拥有任何 route）声明
+   * `false`——它没有 route，refcount 通知永不到达，`false` 是如实描述而非省电开关
+   * （⛔ 不要为了「保险」把玩法写成常驻，那会把语义变成第二套 built-in）。
+   */
   readonly resident: boolean;
   readonly dependencies: readonly string[];
   readonly viewDirs: readonly string[];

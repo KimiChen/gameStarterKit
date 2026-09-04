@@ -19,6 +19,7 @@ capability fragment 的合并规则由 `npm run verify:inventory` fail-closed �
 | feature | category | 状态 | 权威文档 |
 | --- | --- | --- | --- |
 | `builtin` | core | registered | [docs/CLIENT.md](./CLIENT.md) |
+| `snake` | core | registered | [docs/snakeoff/README.md](./snakeoff/README.md) |
 
 ## capability fragment
 

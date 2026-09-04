@@ -275,6 +275,10 @@ Cocos Creator 3.8.8 的 TypeScript 源工程。它适合用于梳理玩法规则
    ⚠ **唯一例外**：若新玩法要在 Home 出现可见入口，它需要往菜单 contribution 集合登记一条——该集合按
    §3.1 交汇点表归 §7.4 拥有。「登记一条 contribution」属于生成侵入还是人工侵入，取决于 §7.4 最终把
    contribution 的手写真源放在哪里；实施时必须明确，⛔ 不能默认它是零成本。
+   > 注记（2026-09-04，已关闭）：`features/snake/feature.json` 落地后，玩法自持 views/owners/menu
+   > contribution，登记入口只写自己的 manifest，⛔ 不再碰 `features/built-in/feature.json`——本例外不再需要。
+   > 上面的正文保留为历史设计记录（当时确实未定），闭合断言见 `apps/client/test/homeMenu.test.ts` 的
+   > 「contribution 归属」用例：玩法只要有自己的 feature，入口搬回 built-in 即红。
 
 
 ### 3.3 非目标
@@ -1981,6 +1985,13 @@ gameplay 的**实现**仍走 GameRoom 动线（见 §6），但它的 Home 入�
 §3.2 第 8 条与 §12.2 的「不再因玩法名修改中央清单」必须相应保留那条例外（已登记）；
 若不会碰（contribution 的手写真源在玩法自己的 manifest 里），则那条例外可以删除。⛔ 不能默认它是零成本。
 
+> 注记（2026-09-04，本问句已答）：答案是**不会碰**——contribution 的手写真源就在玩法自己的
+> `features/<id>/feature.json`（snake 已落地）；生成器把各 manifest 的 menu 汇总排序进
+> `GENERATED_MENU_CONTRIBUTIONS`，Home 与默认 launch target 都只读这一份汇总值。
+> 因此 §3.2 第 8 条与 §12.2 的那条例外**已关闭**（两处均就地加了注记，正文作为历史设计记录保留）。
+> 代价如实登记：不是零成本，成本 = 新增一个 `features/<id>/` 目录 + 一次 `codegen:features`
+> + 客户端 generated 与 Cocos 镜像 diff；⛔ 但它不再是**中央清单**的手改。
+
 若图标来自跨包资源，manifest 必须声明 URL，由生成器计算 entry package dependency；Home route composer 在
 render 前通过受控 package loader 按当前可见 entry 合流加载。**失败时显示明确占位**——占位有两种触发因素：
 图标包加载失败，以及 §7.2 所说的 feature 已 `disabled` / `failed`。⛔ 不允许静默空白，也不允许显示一个必然
@@ -2948,6 +2959,10 @@ apps/client/src/app/**
 两条边界要一起记住：**本清单约束的是「新增普通玩法 / feature」的动线**，§9 的框架改造阶段本身属于**显式框架侵入**，
 不适用本清单；而「Home 可见入口」的登记按 §3.2 第 8 条是唯一例外。保护集合的机检真源见 §8.5，
 ⛔ 本节散文不是第二真源。
+
+> 注记（2026-09-04，例外已关闭）：snake 的 views/owners/menu 已搬进 `features/snake/feature.json`，
+> Home 可见入口不再需要手改中央 `features/built-in/feature.json`；本段「唯一例外」的表述保留为历史
+> 设计记录。⚠ 例外关闭只覆盖**菜单入口登记**这一格，本节其余「不再因玩法名发生修改」的边界不变。
 
 
 ### 12.3 仍然应当侵入框架的情况

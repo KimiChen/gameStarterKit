@@ -63,4 +63,5 @@ export const VIEW_SOURCE_RECORDS: readonly GeneratedViewSourceRecord[] = [
 /** manifest 声明的 view 目录（守门测试的递归比对根）。 */
 export const VIEW_SOURCE_DIRS: readonly string[] = [
     "apps/client/src/view",
+    "apps/client/src/view/rooms/snake",
 ];
