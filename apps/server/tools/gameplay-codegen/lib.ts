@@ -80,6 +80,13 @@ export type GameplayDescriptor = {
    * 且聚合 barrel 必须 re-export 它——服务端侧产物从 `@game/shared` 解析这些枚举符号。
    */
   readonly hasGameplayEnumModule: boolean;
+  /**
+   * `apps/shared/src/gameplays/<id>/` 下**手写**模块的基名（无扩展名），按 barrel re-export 顺序：
+   * `ruleset` → `wire` → 其余字母序。`*.generated.ts` 刻意排除——生成数据模块只由同目录的手写
+   * façade 消费，⛔ 不进公共导出面（同 `generated/` 目录的 façade 约定）。
+   * 这条自动发现是「玩法自持」的落点：玩法新增一个自有 shared 模块，⛔ 不需要改框架任何文件。
+   */
+  readonly sharedModules: readonly string[];
   /** sha256(manifest.json + "\0" + state.json + "\0" + wire.ts 字节)，per-mode 契约身份。 */
   readonly contractDigest: string;
   readonly sourceLabel: string;
@@ -123,6 +130,40 @@ function assertRegularFile(file: string, label: string): void {
   }
   if (stat.isSymbolicLink()) fail(label, "symlink escape is not allowed");
   if (!stat.isFile()) fail(label, "must be a regular file");
+}
+
+/** barrel re-export 的依赖序前缀：其余手写模块跟在后面按字母序（`export *` 名字空间与顺序无关，
+ *  这里只是让产物字节稳定且读起来符合 ruleset → wire → state 的依赖方向）。 */
+const SHARED_MODULE_ORDER = ["ruleset", "wire"] as const;
+
+/**
+ * 自动发现 `apps/shared/src/gameplays/<id>/` 下的手写模块（barrel 要 re-export 的集合）。
+ *
+ * ⚠ 这是「玩法自持自己的 shared 面」的落点：玩法新增一个自有模块（皮肤目录、规则表…）
+ * 只需把文件放进自己的目录，⛔ 不必回来改本生成器或任何中央清单。
+ * 排除项只有两类：`*.generated.ts`（生成数据模块，由同目录手写 façade 消费，不进公共导出面）
+ * 与 `*.d.ts`（无运行时导出）。目录不存在 = 该玩法没有手写 shared 模块。
+ */
+function readGameplaySharedModules(root: string, id: string): readonly string[] {
+  const dirLabel = `${SHARED_GAMEPLAYS_DIR_RELATIVE}/${id}`;
+  const dir = path.join(root, SHARED_GAMEPLAYS_DIR_RELATIVE, id);
+  let children: fs.Dirent[];
+  try {
+    children = fs.readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+  const modules: string[] = [];
+  for (const child of children.slice().sort((left, right) => (left.name < right.name ? -1 : left.name > right.name ? 1 : 0))) {
+    if (!child.name.endsWith(".ts")) continue;
+    if (child.name.endsWith(".generated.ts") || child.name.endsWith(".d.ts")) continue;
+    const childLabel = `${dirLabel}/${child.name}`;
+    if (child.isSymbolicLink()) fail(childLabel, "symlink escape is not allowed");
+    if (!child.isFile()) fail(childLabel, "must be a regular file");
+    modules.push(child.name.slice(0, -".ts".length));
+  }
+  const ordered = SHARED_MODULE_ORDER.filter((name) => modules.includes(name));
+  return [...ordered, ...modules.filter((name) => !ordered.includes(name as (typeof SHARED_MODULE_ORDER)[number]))];
 }
 
 /** 发现并解析全部玩法单源目录；输出按 id 稳定排序。 */
@@ -215,6 +256,10 @@ export function readGameplayDescriptors(options: GameplayCodegenOptions = {}): r
       if (!rulesetStat.isFile()) fail(rulesetLabel, "must be a regular file");
     }
 
+    // 手写 shared 模块自动发现（barrel re-export 集合）。⛔ 不进 contractDigest：
+    // digest 是 wire/state 契约身份，玩法自有模块的内容变化不该逼 modeVersion bump。
+    const sharedModules = readGameplaySharedModules(root, entry.name);
+
     const contractDigest = crypto.createHash("sha256")
       .update(manifestRaw.bytes)
       .update("\0")
@@ -229,6 +274,7 @@ export function readGameplayDescriptors(options: GameplayCodegenOptions = {}): r
       wire,
       hasWireModule,
       hasGameplayEnumModule,
+      sharedModules,
       contractDigest,
       sourceLabel: `${SCHEMA_DIR_RELATIVE}/${manifest.id}/{manifest.json,state.json}`,
     });
@@ -456,9 +502,8 @@ function renderSharedIndex(gameplays: readonly GameplayDescriptor[]): string {
     "export * from \"./generated/wire-catalog.generated\";",
   ];
   for (const gameplay of gameplays) {
-    // 依赖序：ruleset（玩法自有枚举/规则）→ wire（import 它）→ generated state（import 它）。
-    if (gameplay.hasGameplayEnumModule) lines.push(`export * from "./${gameplay.id}/ruleset";`);
-    if (gameplay.hasWireModule) lines.push(`export * from "./${gameplay.id}/wire";`);
+    // 依赖序：ruleset（玩法自有枚举/规则）→ wire（import 它）→ 其余手写模块 → generated state。
+    for (const module of gameplay.sharedModules) lines.push(`export * from "./${gameplay.id}/${module}";`);
     lines.push(`export * from "./generated/state/${gameplay.id}";`);
   }
   return `${lines.join("\n").trimEnd()}\n`;
