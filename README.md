@@ -19,6 +19,7 @@
 - [额外功能说明](docs/EXTRAFEATURES.md)
 - [《Underground Idle》玩法策划案（未实现）](docs/undergroundIdle/README.md)
 - [非侵入式框架改造方案（框架侧阶段 0-9 已实施，两玩法未实现）](docs/Non-intrusive.md)
+- [插件机制设计基线（判据与包格式，未实现）](docs/PLUGIN.md)
 - [《Snake Off》首版策划与来源台账](docs/snakeoff/README.md)
 - [Snake 竖版新版无尽 V2 与养成专项阶段任务（待实施）](docs/s/README.md)
 - [Godogen 对照吸收计划（未实现的额外能力）](todo-godogen.md)
