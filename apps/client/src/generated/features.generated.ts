@@ -50,6 +50,7 @@ export const GENERATED_FEATURES: readonly GeneratedFeatureDescriptor[] = [
             { id: "areaList", view: "AreaList", group: "authenticated", restore: "discard" },
             { id: "loginNotice", view: "LoginNotice", group: "authenticated", restore: "discard" },
             { id: "home", view: "Home", group: "authenticated", restore: "reopen" },
+            { id: "promoHome", view: "PromoHome", group: "authenticated", restore: "reopen" },
             { id: "settings", view: "Settings", group: "authenticated", restore: "discard" },
             { id: "confirm", view: "Confirm", group: "system", restore: "discard" },
         ],

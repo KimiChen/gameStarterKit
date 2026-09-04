@@ -33,7 +33,7 @@ import {
     type GameplayServicesContext,
 } from "../gameplay/services";
 import type { GameRoomConnectionSnapshot } from "../net/connectionEvents";
-import { joinErrText } from "../shared/index";
+import { joinErrText, UserRpc } from "../shared/index";
 import {
     getSessionGeneration,
     onAuthInvalid,
@@ -56,6 +56,7 @@ import {
     openLogin,
     refreshAuthenticatedBaseProfile,
     setHomeMenuRuntime,
+    setProfileWriteRuntime,
     type PageSessionScope,
 } from "./loginFlow";
 import type { NavigationService } from "./NavigationService";
@@ -163,6 +164,15 @@ export class AppRuntime {
         this.unsubs.push(setHomeMenuRuntime({
             launch: (target) => this.ports.launch.launch(target),
             availabilityOf: (featureId) => this.featureAvailability(featureId),
+        }));
+        // 设置面板的档案写接线：走 ports.lobbyRpc.sendIdempotent（clientReqId +
+        // PendingOperationJournal write-ahead 都在那条通道里），⛔ 不直调 rpcIdem。
+        // ok=false 是服务端的确定性拒绝，必须当失败抛出去让面板回滚 UI。
+        this.unsubs.push(setProfileWriteRuntime({
+            updateProfile: async (patch) => {
+                const result = await this.ports.lobbyRpc.sendIdempotent(UserRpc.UpdateProfile, patch);
+                if (!result.ok) throw new Error("[AppRuntime] user.updateProfile 被拒绝（ok=false）");
+            },
         }));
     }
 

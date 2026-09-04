@@ -10,6 +10,7 @@
     "apps/client/src/view/AreaListView.view.json",
     "apps/client/src/view/LoginNoticeView.view.json",
     "apps/client/src/view/HomeView.view.json",
+    "apps/client/src/view/PromoHomeView.view.json",
     "apps/client/src/view/ConfirmView.view.json",
     "apps/client/src/view/SettingsView.view.json",
     "apps/client/src/view/rooms/ballMove/BallMoveView.view.json"
@@ -23,6 +24,7 @@
     { "id": "areaList", "view": "AreaList" },
     { "id": "loginNotice", "view": "LoginNotice" },
     { "id": "home", "view": "Home" },
+    { "id": "promoHome", "view": "PromoHome" },
     { "id": "settings", "view": "Settings" },
     { "id": "confirm", "view": "Confirm" }
   ],

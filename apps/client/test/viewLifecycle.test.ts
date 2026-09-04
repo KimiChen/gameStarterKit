@@ -1185,7 +1185,7 @@ test("page navigation boundary observes rejected async actions without unhandled
   }
 });
 
-test("pages login flight：重复打开与重复进入只完成一次 Home 导航", async () => {
+test("pages login flight：重复打开与重复进入只完成一次首屏导航", async () => {
   const runtime = await loadViewRuntime();
   const pages = await import("../src/view/pages");
   const { initPortal } = await import("../src/core/http");
@@ -1253,7 +1253,8 @@ test("pages login flight：重复打开与重复进入只完成一次 Home 导�
   let joinCalls = 0;
   let rpcCalls = 0;
   let loginOpens = 0;
-  let homeOpens = 0;
+  let promoOpens = 0;
+  let settingsOpens = 0;
   let loginCloses = 0;
   let loginActive = true;
   let firstBattle = 0;
@@ -1267,16 +1268,24 @@ test("pages login flight：重复打开与重复进入只完成一次 Home 导�
     setup: () => {},
     showCurrentServer: () => {},
   };
-  const homeView: any = { onEnterBattle: null, setup: () => {} };
+  // 宣传首屏的 setup 只收 PromoHomeLogic（⛔ 无 onEnterBattle 字段——首屏不摆玩法入口）。
+  let promoLogic: any = null;
+  const promoView: any = { setup: (logic: any) => { promoLogic = logic; } };
+  const settingsView: any = { onClose: null, setup: () => {} };
   const loginController = new AbortController();
   const loginContext = {
     signal: loginController.signal,
     generation: 1,
     isActive: () => loginActive,
   };
-  const homeContext = {
+  const promoContext = {
     signal: new AbortController().signal,
     generation: 2,
+    isActive: () => true,
+  };
+  const settingsContext = {
+    signal: new AbortController().signal,
+    generation: 3,
     isActive: () => true,
   };
   const handle = (view: any, context: any, close: () => void): any => ({
@@ -1321,9 +1330,13 @@ test("pages login flight：重复打开与重复进入只完成一次 Home 导�
           loginController.abort();
         });
       }
-      if (name === "Home") {
-        homeOpens++;
-        return handle(homeView, homeContext, () => {});
+      if (name === "PromoHome") {
+        promoOpens++;
+        return handle(promoView, promoContext, () => {});
+      }
+      if (name === "Settings") {
+        settingsOpens++;
+        return handle(settingsView, settingsContext, () => {});
       }
       throw new Error(`unexpected page ${name}`);
     };
@@ -1361,12 +1374,21 @@ test("pages login flight：重复打开与重复进入只完成一次 Home 导�
     assert.equal(rpcCalls, 1);
     assert.equal(loginCloses, 1, "成功登录只关闭一次 Login");
     assert.equal(loginActive, false, "假句柄必须复现真实 close 的同步 context 失效");
-    assert.equal(homeOpens, 1, "关闭 Login 后仍必须且只能导航一次 Home");
+    assert.equal(promoOpens, 1, "关闭 Login 后仍必须且只能导航一次首屏");
 
-    await homeView.onEnterBattle?.();
-    assert.equal(firstBattle, 0, "合流 flight 不得保留旧 Main 回调");
-    assert.equal(latestBattle, 0, "setup 前的回调必须继续允许后续 openLogin 覆盖");
-    assert.equal(postSetupBattle, 1, "Home 必须绑定 Enter 在途期间最新一次 openLogin 的回调");
+    // ⚠ authenticated base 从 FGUI Home 改为宣传首屏（docs/PLUGIN.md §6）后，「首屏绑定
+    // 哪个 enterBattle 回调」这个判据随调用点一起消失——首屏 ⛔ 不摆玩法入口，也就不再
+    // 绑定任何 enterBattle。这里把断言翻转成新契约的机检：三个计数都必须是 0，谁把玩法
+    // 入口塞回首屏（重新绑上 flight 回调）就会红。
+    assert.equal((promoView as { onEnterBattle?: unknown }).onEnterBattle, undefined,
+      "宣传首屏 ⛔ 不得出现 onEnterBattle 绑定面（玩法入口只在设置面板）");
+    assert.deepEqual({ firstBattle, latestBattle, postSetupBattle }, { firstBattle: 0, latestBattle: 0, postSetupBattle: 0 },
+      "首屏不摆玩法入口：任何 Main enterBattle 回调都不得被首屏触发");
+
+    // 首屏上唯一的动作是右上角设置按钮 → settings 路由。
+    assert.equal(typeof promoLogic?.openSettings, "function", "首屏必须拿到 PromoHomeLogic");
+    await promoLogic.openSettings();
+    assert.equal(settingsOpens, 1, "首屏设置按钮必须打开 settings 路由");
   } finally {
     scope.dispose();
     clearSession();
@@ -1381,11 +1403,12 @@ test("pages login flight：重复打开与重复进入只完成一次 Home 导�
   }
 });
 
-type PageFlowHomeFailure = "open" | "setup";
+type PageFlowBaseFailure = "open" | "setup";
 
 interface PageFlowHarnessOptions {
-  homeFailure?: PageFlowHomeFailure;
-  homeGate?: Deferred<void>;
+  /** authenticated base（宣传首屏）在 open / setup 阶段失败一次。 */
+  baseFailure?: PageFlowBaseFailure;
+  baseGate?: Deferred<void>;
 }
 
 async function waitForPageFlow(predicate: () => boolean, message: string): Promise<void> {
@@ -1510,17 +1533,18 @@ async function createPageFlowHarness(runtime: ViewRuntime, options: PageFlowHarn
   };
 
   const loginHandles: any[] = [];
-  const homeHandles: any[] = [];
+  const baseHandles: any[] = [];
   const confirmLogics: any[] = [];
   const namedCloses: string[] = [];
   const currentHandles = new Map<string, any>();
-  let homeAttempts = 0;
+  let baseAttempts = 0;
   let joinCalls = 0;
   let reconcileJoinCalls = 0;
   let rpcCalls = 0;
   let leaveCalls = 0;
   let rootDisposals = 0;
-  const homeSetups: string[] = [];
+  /** authenticated base 每次 setup 消费到的会话摘要行（对账后必须是刷新过的快照）。 */
+  const baseSetups: string[] = [];
 
   socket.init = () => {};
   socket.join = async () => { joinCalls++; };
@@ -1564,23 +1588,23 @@ async function createPageFlowHarness(runtime: ViewRuntime, options: PageFlowHarn
       currentHandles.set(name, handle);
       return handle;
     }
-    if (name === "Home") {
-      homeAttempts++;
-      if (homeAttempts === 1 && options.homeFailure === "open") {
-        throw new Error("Home open failed");
+    if (name === "PromoHome") {
+      baseAttempts++;
+      if (baseAttempts === 1 && options.baseFailure === "open") {
+        throw new Error("PromoHome open failed");
       }
-      const failSetup = homeAttempts === 1 && options.homeFailure === "setup";
+      const failSetup = baseAttempts === 1 && options.baseFailure === "setup";
       const view: any = {
-        onEnterBattle: null,
-        setup: (summary: string) => {
-          if (failSetup) throw new Error("Home setup failed");
-          homeSetups.push(summary);
+        // 首屏的 setup 收 PromoHomeLogic；会话摘要行就是它消费权威快照的地方。
+        setup: (logic: any) => {
+          if (failSetup) throw new Error("PromoHome setup failed");
+          baseSetups.push(logic.sessionLine());
         },
       };
       const handle = makeHandle(view);
-      homeHandles.push(handle);
+      baseHandles.push(handle);
       currentHandles.set(name, handle);
-      if (homeAttempts === 1 && options.homeGate) await options.homeGate.promise;
+      if (baseAttempts === 1 && options.baseGate) await options.baseGate.promise;
       return handle;
     }
     if (name === "Confirm") {
@@ -1593,8 +1617,8 @@ async function createPageFlowHarness(runtime: ViewRuntime, options: PageFlowHarn
     namedCloses.push(name);
     currentHandles.get(name)?.close();
   };
-  // Keep pending Home independent from the fake root so a non-cancellable load
-  // can report a late success after the production page scope has been disposed.
+  // Keep the pending base page independent from the fake root so a non-cancellable
+  // load can report a late success after the production page scope has been disposed.
   mgr.disposeViewRoot = () => { rootDisposals++; };
 
   (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = PageFlowXhr;
@@ -1609,16 +1633,16 @@ async function createPageFlowHarness(runtime: ViewRuntime, options: PageFlowHarn
     scope,
     requests,
     loginHandles,
-    homeHandles,
+    baseHandles,
     confirmLogics,
     namedCloses,
-    get homeAttempts() { return homeAttempts; },
+    get baseAttempts() { return baseAttempts; },
     get joinCalls() { return joinCalls; },
     get reconcileJoinCalls() { return reconcileJoinCalls; },
     get rpcCalls() { return rpcCalls; },
     get leaveCalls() { return leaveCalls; },
     get rootDisposals() { return rootDisposals; },
-    homeSetups,
+    baseSetups,
     cleanup: () => {
       scope.dispose();
       session.clearSession();
@@ -1635,7 +1659,7 @@ async function createPageFlowHarness(runtime: ViewRuntime, options: PageFlowHarn
   };
 }
 
-test("pages Lobby 最终断线：复用 session 对账 GetInfo 并刷新 Home，不重新签发登录", async () => {
+test("pages Lobby 最终断线：复用 session 对账 GetInfo 并刷新首屏，不重新签发登录", async () => {
   const runtime = await loadViewRuntime();
   const harness = await createPageFlowHarness(runtime);
   try {
@@ -1643,14 +1667,14 @@ test("pages Lobby 最终断线：复用 session 对账 GetInfo 并刷新 Home，
     await harness.loginHandles[0].view.onEnter();
     assert.equal(harness.session.isLoggedIn(), true);
     assert.equal(harness.rpcCalls, 1);
-    assert.equal(harness.homeAttempts, 1);
+    assert.equal(harness.baseAttempts, 1);
     const loginPostsBefore = harness.requests.filter((request) => request.method === "POST").length;
 
     harness.session.notifyConnLost();
-    // Home 恢复经 NavigationService.restoreAuthenticatedBase（多几跳微任务），以
-    // setup 完成为恢复完成的判据（断言意图不变：GetInfo 对账 + Home 消费新快照）。
-    await waitForPageFlow(() => harness.rpcCalls === 2 && harness.homeSetups.length === 2,
-      "最终断线后必须完成 Lobby rejoin、GetInfo 和 Home 恢复");
+    // base 恢复经 NavigationService.restoreAuthenticatedBase（多几跳微任务），以
+    // setup 完成为恢复完成的判据（断言意图不变：GetInfo 对账 + 首屏消费新快照）。
+    await waitForPageFlow(() => harness.rpcCalls === 2 && harness.baseSetups.length === 2,
+      "最终断线后必须完成 Lobby rejoin、GetInfo 和首屏恢复");
 
     assert.equal(harness.reconcileJoinCalls, 1);
     assert.equal(harness.joinCalls, 1, "reconciliation 不应重跑初始隐式 join 流程");
@@ -1658,17 +1682,19 @@ test("pages Lobby 最终断线：复用 session 对账 GetInfo 并刷新 Home，
       "有效 token 对账不能重新调用会签发 token 的登录 HTTP");
     assert.equal(harness.session.isLoggedIn(), true);
     assert.equal(harness.session.getSessionProfile()?.ver, 2);
-    assert.match(harness.homeSetups.at(-1) ?? "", /2胜0负/, "Home 必须消费刷新后的角色快照");
+    assert.equal(harness.session.getSessionProfile()?.wins, 2);
+    assert.match(harness.baseSetups.at(-1) ?? "", /2胜0负/,
+      "authenticated base 必须消费刷新后的角色快照（首屏的会话摘要行）");
     assert.equal(harness.confirmLogics.length, 0, "成功对账不应弹回登录提示");
   } finally {
     harness.cleanup();
   }
 });
 
-test("pages Home open/setup 失败：清理会话与 Lobby 后提示并重开可用 Login", async () => {
+test("pages 首屏 open/setup 失败：清理会话与 Lobby 后提示并重开可用 Login", async () => {
   const runtime = await loadViewRuntime();
   for (const failure of ["open", "setup"] as const) {
-    const harness = await createPageFlowHarness(runtime, { homeFailure: failure });
+    const harness = await createPageFlowHarness(runtime, { baseFailure: failure });
     try {
       await harness.pages.openLogin(() => {}, harness.scope);
       const firstLogin = harness.loginHandles[0];
@@ -1676,7 +1702,7 @@ test("pages Home open/setup 失败：清理会话与 Lobby 后提示并重开可
 
       const entering = firstLogin.view.onEnter() as Promise<void>;
       await waitForPageFlow(() => harness.confirmLogics.length === 1,
-        `${failure}: Home 失败后必须进入可确认的回登录提示`);
+        `${failure}: 首屏失败后必须进入可确认的回登录提示`);
 
       assert.equal(harness.session.isLoggedIn(), false, `${failure}: 提示前必须已清理会话`);
       assert.equal(harness.session.getUserId(), "", `${failure}: 不得保留旧 userId`);
@@ -1695,8 +1721,8 @@ test("pages Home open/setup 失败：清理会话与 Lobby 后提示并重开可
       assert.equal(typeof reopened.view.onEnter, "function", `${failure}: 重开 Login 必须可再次进入`);
 
       await reopened.view.onEnter();
-      assert.equal(harness.homeAttempts, 2, `${failure}: 重试必须能完成新的 Home 导航`);
-      assert.equal(harness.homeHandles.at(-1)?.isActive(), true, `${failure}: 重试后 Home 必须保持打开`);
+      assert.equal(harness.baseAttempts, 2, `${failure}: 重试必须能完成新的首屏导航`);
+      assert.equal(harness.baseHandles.at(-1)?.isActive(), true, `${failure}: 重试后首屏必须保持打开`);
       assert.equal(harness.session.isLoggedIn(), true, `${failure}: 新登录会话必须可用`);
       assert.equal(harness.joinCalls, 2);
       assert.equal(harness.rpcCalls, 2);
@@ -1706,30 +1732,30 @@ test("pages Home open/setup 失败：清理会话与 Lobby 后提示并重开可
   }
 });
 
-test("pages Home 迟到成功：scope/session 失效后只关闭旧 Home handle", async () => {
+test("pages 首屏迟到成功：scope/session 失效后只关闭旧首屏 handle", async () => {
   const runtime = await loadViewRuntime();
   for (const invalidation of ["scope", "session"] as const) {
-    const homeGate = deferred<void>();
-    const harness = await createPageFlowHarness(runtime, { homeGate });
+    const baseGate = deferred<void>();
+    const harness = await createPageFlowHarness(runtime, { baseGate });
     try {
       await harness.pages.openLogin(() => {}, harness.scope);
       const entering = harness.loginHandles[0].view.onEnter() as Promise<void>;
-      await waitForPageFlow(() => harness.homeAttempts === 1,
-        `${invalidation}: Home open Promise 必须进入在途状态`);
-      assert.equal(harness.homeHandles[0]?.isActive(), true);
+      await waitForPageFlow(() => harness.baseAttempts === 1,
+        `${invalidation}: 首屏 open Promise 必须进入在途状态`);
+      assert.equal(harness.baseHandles[0]?.isActive(), true);
 
       if (invalidation === "scope") harness.scope.dispose();
       else harness.session.clearSession();
-      homeGate.resolve(undefined);
+      baseGate.resolve(undefined);
       await entering;
 
-      assert.equal(harness.namedCloses.filter((name: string) => name === "Home").length, 0,
-        `${invalidation}: 旧 continuation 不得按名误关可能属于新世代的 Home`);
-      assert.equal(harness.homeHandles[0].isActive(), false,
-        `${invalidation}: 迟到 Home 必须通过自己的 handle 关闭`);
+      assert.equal(harness.namedCloses.filter((name: string) => name === "PromoHome").length, 0,
+        `${invalidation}: 旧 continuation 不得按名误关可能属于新世代的首屏`);
+      assert.equal(harness.baseHandles[0].isActive(), false,
+        `${invalidation}: 迟到的首屏必须通过自己的 handle 关闭`);
       assert.equal(harness.confirmLogics.length, 0, `${invalidation}: 过期成功不应误报进入失败`);
     } finally {
-      homeGate.resolve(undefined);
+      baseGate.resolve(undefined);
       harness.cleanup();
     }
   }
