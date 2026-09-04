@@ -9,9 +9,14 @@ import {
   ApiPath,
   C2S,
   C2S_RUNTIME_VALIDATORS,
+  CORE_C2S,
+  CORE_S2C,
   EFFECT_RESERVED_FIELDS,
   EFFECT_MAX_VALUE_BYTES,
+  GAMEPLAY_CATALOG,
   GAME_WIRE_OWNERS,
+  gameplayC2STokens,
+  gameplayS2CTokens,
   GameHttpContractMap,
   GamePhase,
   GameplayModeId,
@@ -147,17 +152,62 @@ test("C2S/S2C：每个消息都有 exact runtime validator，坏包不进入回�
   assertInvalid(() => validateS2CPayload(S2C.Error, { code: 1, message: "x", extra: true }), "WIRE_KEYS");
   assertInvalid(() => validateS2CPayload("s2c.unknown" as never, {}), "MESSAGE_TYPE");
   // 全集来源变了：阶段 2b 起消息名由生成的 wire catalog 聚合（core + 各玩法 wire token），
-  // validator 表必须与聚合常量精确同集，且 owner 表覆盖每一条消息
-  //（阶段 8：core 增 c2s.room.ready/start 与 s2c.room.error/codeInvalidated → 7/7；
-  //  Snake S2 契约为 4 条 C2S 与 9 条 S2C，聚合后分别为 11/16）。
+  // validator 表必须与聚合常量精确同集，且 owner 表覆盖每一条消息。
   assert.deepEqual(Object.keys(C2S_RUNTIME_VALIDATORS).sort(), [...Object.values(C2S)].sort());
   assert.deepEqual(Object.keys(S2C_RUNTIME_VALIDATORS).sort(), [...Object.values(S2C)].sort());
   assert.deepEqual(
     Object.keys(GAME_WIRE_OWNERS).sort(),
     [...Object.values(C2S), ...Object.values(S2C)].sort(),
   );
-  assert.equal(Object.keys(C2S_RUNTIME_VALIDATORS).length, 11);
-  assert.equal(Object.keys(S2C_RUNTIME_VALIDATORS).length, 16);
+});
+
+test("wire catalog 闭合：validator 表 ≡ core 表 ∪ 各玩法 token 表，且 owner 双向一致", () => {
+  // ⚠ 这里刻意**不**写 `length === 11 / 16` 这类随玩法数增长的魔数：每加一个玩法都要回来
+  // 改数字，改错了也只是数字对不上，说不出是哪条消息漏了。判别力意图不变——
+  //   · 绕过 wire catalog 直接往 validator 表塞消息（无 owner / 不属任何 token 表）→ 必红；
+  //   · 声明了 owner 却没进 validator 表（token 表有、validator 表无）→ 必红。
+  // 左右两侧来自**不同投影**，⛔ 不是同义反复：
+  //   左 = CORE_C2S/CORE_S2C（手写单源 protocol/messages.ts）∪ gameplay*Tokens（每玩法 wire.ts）
+  //   右 = C2S/S2C_RUNTIME_VALIDATORS（生成的 validator 字面量块）
+  const modes = Object.keys(GAMEPLAY_CATALOG).sort();
+  const owners = GAME_WIRE_OWNERS as Readonly<Record<string, string>>;
+
+  for (const [direction, coreTable, tokenTable, validators] of [
+    ["c2s", CORE_C2S, gameplayC2STokens, C2S_RUNTIME_VALIDATORS],
+    ["s2c", CORE_S2C, gameplayS2CTokens, S2C_RUNTIME_VALIDATORS],
+  ] as const) {
+    const tokens = tokenTable as Readonly<Record<string, Readonly<Record<string, unknown>>>>;
+    // token 表的 mode 键必须就是 catalog 的玩法集——否则「Σ 各玩法」会静默漏掉一个玩法，
+    // 那条玩法的消息就能既不在左侧、也不被下面的并集断言察觉。
+    assert.deepEqual(Object.keys(tokens).sort(), modes, `${direction}: token table modes must equal catalog modes`);
+
+    const coreKeys = [...Object.values(coreTable)] as string[];
+    const gameplayKeys = modes.flatMap((mode) => Object.keys(tokens[mode]!));
+    const expected = [...coreKeys, ...gameplayKeys];
+    // 并集内不得有重名（core 与玩法、或两个玩法撞名会让「和 === 总数」虚假成立）。
+    assert.equal(new Set(expected).size, expected.length, `${direction}: duplicate message name across owners`);
+
+    const actual = Object.keys(validators);
+    // 恰好等于：无遗漏（token 表有而 validator 表无）、无孤儿（validator 表有而无人声明）。
+    assert.deepEqual(expected.slice().sort(), actual.slice().sort(), `${direction}: validator set must equal core ∪ gameplay tokens`);
+    // 数量以「core 条数 + Σ 各玩法条数 === validator 键数」表达，与玩法数无关。
+    assert.equal(
+      coreKeys.length + modes.reduce((sum, mode) => sum + Object.keys(tokens[mode]!).length, 0),
+      actual.length,
+      `${direction}: core + Σ gameplay counts must equal validator count`,
+    );
+
+    for (const key of actual) {
+      const owner = owners[key];
+      // 每条 validator 都要有 owner，且 owner ∈ {"core"} ∪ catalog。
+      assert.ok(owner !== undefined, `${direction}: ${key} has no owner in GAME_WIRE_OWNERS`);
+      assert.ok(owner === "core" || modes.includes(owner), `${direction}: ${key} has unknown owner ${owner}`);
+      // 双向一致：owner 说 core 就必须在 core 表里，说某玩法就必须在该玩法 token 表里。
+      // 单看「有 owner」不够——owner 写错玩法仍会被这条抓住。
+      const declaredBy = owner === "core" ? coreKeys : Object.keys(tokens[owner]!);
+      assert.ok(declaredBy.includes(key), `${direction}: ${key} claims owner ${owner} but that source does not declare it`);
+    }
+  }
 });
 
 test("wire helpers：revoked/throwing Proxy 按非法 shape 处理，不泄漏原生 Proxy 异常", () => {
