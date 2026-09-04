@@ -6,6 +6,9 @@
 > 与 [docs/Non-intrusive.md](Non-intrusive.md) 的关系：那份是「框架如何做到新增玩法/feature 不侵入」的
 > 改造方案（框架侧阶段 0-9 已实施）；本文接着回答下一个问题——**外部包能否直接装进本项目跑起来**。
 > 判据一旦落地，`scripts/protected-paths.json` 就是它的机检真源。
+>
+> 审阅记录：[docs/PLUGIN-REVIEW.md](PLUGIN-REVIEW.md)（2026-09-05）。该审阅对本文多处表述给出了带代码证据的修正与推荐实现方案，
+> 实施状态登记在 [plan-v5.md](../plan-v5.md)。
 
 ## 1. 核心判据
 

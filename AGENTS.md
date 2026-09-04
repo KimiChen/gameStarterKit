@@ -10,6 +10,7 @@
 > - [docs/undergroundIdle/README.md](docs/undergroundIdle/README.md)：未实现的玩法策划案与扩展草案
 > - [docs/Non-intrusive.md](docs/Non-intrusive.md)：非侵入式框架改造方案（feature 与实时 Room 玩法；框架侧阶段 0-9 已实施，两玩法未实现，编辑器/真机待办见 plan-v5.md）
 > - [docs/PLUGIN.md](docs/PLUGIN.md)：插件机制设计基线（「插件只能消费不能定义」判据、构建期装载与包格式；设计基线，未实现）
+> - [docs/PLUGIN-REVIEW.md](docs/PLUGIN-REVIEW.md)：PLUGIN.md 的审阅记录（2026-09-05；经验证的问题清单与推荐实现方案，实施状态登记在 plan-v5.md）
 > - [docs/snakeoff/README.md](docs/snakeoff/README.md)：Snake 首版策划与来源台账
 > - [docs/s/README.md](docs/s/README.md)：Snake 竖版新版无尽 V2 与养成专项的 S0～S5 阶段任务（待实施）
 > - [todo-godogen.md](todo-godogen.md)：未实现的外部项目对照吸收计划，不构成核心能力承诺
