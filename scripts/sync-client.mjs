@@ -11,7 +11,8 @@
  *  - 保留 Cocos 生成的 .meta 文件（uuid 稳定，引用不丢失）
  *  - 源目录缺失时 fail-fast，拒绝执行（防止把 DEST 判孤儿清空）
  *  - --watch 监听 apps/client/src 持续同步；单轮清理量异常大时熔断（防切分支中间态误删成批 .meta）
- *  - --check 只读校验（npm run verify:sync）：镜像漂移/孤儿 = 红；入库文件缺入库 .meta = 红
+ *  - --check 只读校验（npm run verify:sync）：镜像漂移/孤儿 = 红；入库文件缺入库 .meta = 红；
+ *    入库 .meta 内容坏（解析失败/缺 uuid/形状非法）或 uuid 在 assets 树内撞车 = 红
  *
  * 用法：
  *  node scripts/sync-client.mjs           # 同步一次
@@ -27,6 +28,10 @@ import { breakerMessage, breakerTripped, forceRequested } from "./lib/sync-break
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SRC = path.join(ROOT, "apps/client/src");
 const DEST = path.join(ROOT, "apps/Cocos/assets/src");
+/** uuid 唯一性的判定范围：整棵 assets 树，不止镜像目录。
+ *  Creator 的 uuid 命名空间是**整个资源库**，src/ 里的脚本与 resources/ 里的贴图撞 uuid，
+ *  后果与两个脚本互撞完全一样（引用解析到错的资源），所以判定范围必须与命名空间一致。 */
+const ASSETS = path.join(ROOT, "apps/Cocos/assets");
 
 const BANNER_FILE = "README.md";
 const BANNER = `# ⚠ 本目录由脚本生成，禁止手改
@@ -189,6 +194,65 @@ function syncOnce(fromWatch = false) {
     console.log(`[sync-client ${time}] 同步完成：${srcFiles.length} 个文件（写入 ${toWrite.length}，清理 ${toRemove.length + removedDirs}）`);
 }
 
+/** git 已跟踪（含暂存）的文件清单，返回仓库相对的 POSIX 路径。 */
+function trackedUnder(absDir) {
+    const rel = path.relative(ROOT, absDir);
+    return execFileSync("git", ["ls-files", "-z", "--", rel], { cwd: ROOT })
+        .toString("utf8").split("\0").filter(Boolean);
+}
+
+/** Creator 写进 .meta 的 uuid 形态：小写 8-4-4-4-12 十六进制。
+ *  正则按仓内实况定：本轮扫描 306 个已跟踪 .meta，全部命中此形（无一例外，无压缩形态）。
+ *  子资源的 `<uuid>@<id>` 只出现在 subMetas 内部，从不作为顶层 uuid ——`@` 被本正则拒绝是刻意的。
+ *  ⛔ 刻意不钉版本位（第 3 段首字符 4）与 variant 位：那属 uuid 生成器的实现细节，
+ *  Creator 换生成器时会变成假红；本闸要挡的是空串/截断/占位符/手贴错行这类**坏内容**。 */
+const META_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/u;
+
+/**
+ * 入库 .meta 的**内容**校验（缺失校验在 checkOnce 里，两者互补）：
+ *  ① JSON 可解析——半截/冲突标记未解的 .meta 会让 Creator 导入期重铸 uuid；
+ *  ② 有 uuid 字段且是字符串；
+ *  ③ uuid 形状合法；
+ *  ④ 在整棵 assets 树内唯一——撞车时 Creator 只认一个，另一个的场景/prefab 引用静默解析到错资源。
+ * 三方合并把同一个 .meta 的两侧都保留、复制粘贴 .meta 改文件名、脚本批量生成 .meta 忘换 uuid
+ * 都会产出重复 uuid，且**看不出来**：文件都在、内容都合法 JSON、旧的缺失校验全绿。
+ * 只查已跟踪文件，与缺失校验同一口径（不打扰「新文件还没开过 Creator」的本地迭代）。
+ */
+function checkMetaContents(problems) {
+    const byUuid = new Map(); // uuid → 仓库相对路径清单
+    for (const file of trackedUnder(ASSETS)) {
+        if (!file.endsWith(".meta")) continue;
+        const abs = path.join(ROOT, file);
+        if (!fs.existsSync(abs)) continue; // 已 git rm 但索引未刷新等中间态，交给别的闸
+        let meta;
+        try {
+            meta = JSON.parse(fs.readFileSync(abs, "utf8"));
+        } catch (err) {
+            problems.push(`.meta 解析失败：${file}（${err.message}）`);
+            continue;
+        }
+        if (meta === null || typeof meta !== "object" || Array.isArray(meta)) {
+            problems.push(`.meta 内容非对象：${file}`);
+            continue;
+        }
+        if (typeof meta.uuid !== "string") {
+            problems.push(`.meta 缺 uuid 字段：${file}（Creator 重新导入一次即可生成）`);
+            continue;
+        }
+        if (!META_UUID_RE.test(meta.uuid)) {
+            problems.push(`.meta uuid 形状非法：${file}（uuid=${JSON.stringify(meta.uuid)}，应为小写 8-4-4-4-12 十六进制）`);
+            continue;
+        }
+        if (!byUuid.has(meta.uuid)) byUuid.set(meta.uuid, []);
+        byUuid.get(meta.uuid).push(file);
+    }
+    for (const [uuid, files] of byUuid) {
+        if (files.length < 2) continue;
+        problems.push(`.meta uuid 撞车：${uuid} 同时出现在 ${files.length} 个文件 → ${files.join("、")}`
+            + `（删掉其中一个的 .meta 让 Creator 重铸；⛔ 别手编 uuid）`);
+    }
+}
+
 /**
  * --check：只读校验（npm run verify:sync 的 client 段），任一问题即退出码 1：
  *  1. 镜像漂移——忘跑 sync:client / 手改 apps/Cocos/assets/src（下次同步会被静默覆盖的那种）；
@@ -196,6 +260,8 @@ function syncOnce(fromWatch = false) {
  *  2. 入库 .meta 缺失——git 里有 assets/src 下的文件但没有配套 .meta：
  *     多台机器各自打开 Creator 会铸出不同 uuid，场景/prefab 引用断裂。
  *     只查 git 已跟踪（含暂存）的文件，不打扰「新文件还没开过 Creator」的本地迭代。
+ *  3. 入库 .meta 内容坏——见 checkMetaContents。「在」与「对」是两件事：
+ *     缺失校验只数数，.meta 内容是坏的（解析失败/无 uuid/uuid 撞车）时它全绿。
  */
 function checkOnce() {
     const { srcHasReadme, toWrite, toRemove } = diffOnce();
@@ -214,8 +280,7 @@ function checkOnce() {
     }
 
     const destRel = path.relative(ROOT, DEST);
-    const tracked = execFileSync("git", ["ls-files", "-z", "--", destRel], { cwd: ROOT })
-        .toString("utf8").split("\0").filter(Boolean)
+    const tracked = trackedUnder(DEST)
         .map((p) => path.relative(destRel, p).split(path.sep).join("/"));
     const trackedSet = new Set(tracked);
     const trackedDirs = new Set();
@@ -229,6 +294,7 @@ function checkOnce() {
     for (const dir of trackedDirs) {
         if (!trackedSet.has(dir + ".meta")) problems.push(`缺目录 .meta：${dir}/（开一次 Creator 生成后连同提交）`);
     }
+    checkMetaContents(problems);
 
     if (problems.length > 0) {
         console.error(`[sync-client --check] ✘ ${problems.length} 处问题：`);
@@ -236,7 +302,7 @@ function checkOnce() {
         process.exitCode = 1; // 不用 process.exit：POSIX 管道下 stdout/stderr 异步，exit 会截断明细
         return;
     }
-    console.log(`[sync-client --check] ✔ 镜像一致，入库 .meta 齐全`);
+    console.log(`[sync-client --check] ✔ 镜像一致，入库 .meta 齐全且 uuid 互不撞车`);
 }
 
 const CHECK_MODE = process.argv.includes("--check");

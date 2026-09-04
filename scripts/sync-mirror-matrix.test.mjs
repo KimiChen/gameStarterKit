@@ -220,7 +220,57 @@ const CLIENT_SCENARIOS = [
       execFileSync("git", ["rm", "--cached", "-q", "--", meta], { cwd: root, stdio: "ignore" });
     },
   },
+
+  // ↓ 上一条只判「.meta 在不在」；下面三条判「.meta 对不对」。两者不能互相代替：
+  //   一个内容坏掉 / uuid 撞车的 .meta 在缺失校验眼里完全合格（文件在、路径对）。
+  {
+    // uuid 是 Creator 的资源身份证。撞车时它只认一个，另一个的场景/prefab 引用会静默解析到
+    // 错资源——文件都在、都是合法 JSON、缺失校验全绿，肉眼与 review 都看不出来。
+    // 真实来路：三方合并把 .meta 两侧都留下、复制 .meta 改文件名、脚本批量造 .meta 忘换 uuid。
+    // 刻意跨 src/ 与 resources/ 撞：uuid 命名空间是整个资源库，判定范围若只盯镜像目录，
+    // 这条必假绿——这条同时钉住检查的**范围**。
+    name: "两个入库 .meta 的 uuid 撞车（跨 src/ 与 resources/）",
+    expectClean: false,
+    syncCannotFix: ".meta 由 Cocos 编辑器生成，同步脚本不改写 uuid——check 红但同步无改动",
+    mutate: (root, t) => {
+      const mirrorMeta = join(root, `${t.mirror}/${t.sample}.meta`);
+      assert.ok(existsSync(mirrorMeta), `夹具前提不成立：找不到 ${t.mirror}/${t.sample}.meta`);
+      const victim = firstTrackedMetaOutside(root, t.mirror);
+      const meta = JSON.parse(readFileSync(victim, "utf8"));
+      meta.uuid = JSON.parse(readFileSync(mirrorMeta, "utf8")).uuid;
+      writeFileSync(victim, `${JSON.stringify(meta, null, 2)}\n`);
+    },
+  },
+  {
+    // 半截写入 / 未解的冲突标记：Creator 导入期会当作无 .meta 处理并重铸 uuid，引用全断。
+    name: "入库 .meta 不是合法 JSON",
+    expectClean: false,
+    syncCannotFix: ".meta 由 Cocos 编辑器生成，同步脚本不会修复它——check 红但同步无改动",
+    mutate: (root, t) => writeFileSync(join(root, `${t.mirror}/${t.sample}.meta`), '{ "uuid": "半截\n'),
+  },
+  {
+    // 手编 / 占位符 uuid：JSON 合法、字段也在，只有形状能拆穿它。
+    name: "入库 .meta 的 uuid 形状非法",
+    expectClean: false,
+    syncCannotFix: ".meta 由 Cocos 编辑器生成，同步脚本不改写 uuid——check 红但同步无改动",
+    mutate: (root, t) => {
+      const file = join(root, `${t.mirror}/${t.sample}.meta`);
+      const meta = JSON.parse(readFileSync(file, "utf8"));
+      meta.uuid = "TODO-填一个";
+      writeFileSync(file, `${JSON.stringify(meta, null, 2)}\n`);
+    },
+  },
 ];
+
+/** 夹具内第一个**不在镜像目录下**的已跟踪 .meta（用于制造跨目录 uuid 撞车）。 */
+function firstTrackedMetaOutside(root, mirror) {
+  const tracked = execFileSync("git", ["ls-files", "-z", "--", "apps/Cocos/assets"], {
+    cwd: root, encoding: "buffer",
+  }).toString().split("\0").filter(Boolean);
+  const hit = tracked.find((file) => file.endsWith(".meta") && !file.startsWith(`${mirror}/`));
+  assert.ok(hit, `夹具前提不成立：apps/Cocos/assets 下找不到 ${mirror}/ 之外的入库 .meta`);
+  return join(root, hit);
+}
 
 function appendTo(file, text) {
   assert.ok(existsSync(file), `夹具前提不成立：找不到 ${file}`);

@@ -105,7 +105,7 @@ WebPlatform**。要联调真实外部身份服务时，另行启动与当前契�
 | `npm run typecheck:client:legacy` | 客户端 Creator 兼容 legacy 类型检查（ES2017 下限） |
 | `npm run perf:client` | 在 Node 无头环境运行 ballMove ECS/快照分配/Graphics 命令性能基线（默认 100/500 entity）；用 `npm run --silent perf:client -- --json --output <file>` 保存纯 JSON 结果 |
 | `npm run verify:project` | 校验项目元数据、生成区和第三方来源登记 |
-| `npm run verify:sync` | 检查镜像漂移、孤儿和 `.meta` |
+| `npm run verify:sync` | 检查镜像漂移、孤儿，以及入库 `.meta` 的缺失、内容与 uuid 唯一性 |
 | `npm run verify:vendor` | 校验锁定的第三方运行时内容、文件集合和本地契约 tarball 完整性 |
 | `npm run verify:fgui` | 校验 FairyGUI 设计源、导出物和 View AUTO 区块 manifest |
 | `npm run verify:inventory` | 校验能力清单、默认入口、文档和验证命令登记 |

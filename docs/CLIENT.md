@@ -372,7 +372,9 @@ npm run --silent perf:client -- --json --deterministic --output docs/perf/client
   并校验镜像；`apps/client/test/clientTypecheckConfig.test.ts` 分别守门两套配置的文件集合，防止新增源码或
   测试脱离 include。legacy 配置以递归 `src/**/*.ts` 覆盖 Main、全部 View 和 gameplay，并另外守住 Creator
   运行时的 ES2017 API 下限。
-- `verify:sync` 检查漂移、孤儿和 `.meta`。
+- `verify:sync` 检查漂移、孤儿和 `.meta`：既查入库文件缺不缺配套 `.meta`，也查已入库 `.meta` 的内容
+  （可解析、有 uuid、形状合法）与 uuid 在整棵 `apps/Cocos/assets` 树内的唯一性——撞 uuid 时 Creator
+  只认一个，另一个的场景/prefab 引用会静默解析到错资源。
 - `test:client` 运行全部客户端无头行为测试；`test:fgui` 只运行 codegen/registry/结构契约专项测试，
   两者都通过 `tsx` 执行。
 - `verify:ecs` 检查 vendored bitECS 文件。
