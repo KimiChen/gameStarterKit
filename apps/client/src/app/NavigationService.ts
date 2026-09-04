@@ -17,16 +17,18 @@
  * 登录恢复不再固定打开 Home：最终断线对账成功后走 `restoreAuthenticatedBase()`，
  * 当前实现恢复 authenticated base 栈顶（今天即 Home），行为与旧实现等价但机制通用。
  */
-import type { FguiView, ViewLifecycleContext } from "../view/FguiView";
+// 页面基类而非 FguiView：kind:"cocos" 的路由页面（纯 Cocos 节点）与 FGUI 页面共用
+// 同一套生命周期，navigation 只搬 handle，不认渲染栈；调用方按已知页面类型断言。
+import type { ViewBase, ViewLifecycleContext } from "../view/ViewBase";
 import type { FeatureRegistry, ResolvedFeatureRoute } from "./FeatureRegistry";
 
 /** ViewMgr 模块的最小结构面（懒加载后缓存；⛔ 不静态 import 真模块）。 */
 interface ViewHandleLike {
-    readonly view: FguiView;
+    readonly view: ViewBase;
     readonly signal: AbortSignal;
     readonly generation: number;
     close(): void;
-    run<T>(action: (view: FguiView, context: ViewLifecycleContext) => T | Promise<T>): Promise<T>;
+    run<T>(action: (view: ViewBase, context: ViewLifecycleContext) => T | Promise<T>): Promise<T>;
 }
 
 interface ViewMgrLike {
@@ -45,12 +47,12 @@ export interface NavRouteHandle {
     readonly routeId: string;
     readonly featureId: string;
     readonly group: string;
-    readonly view: FguiView;
+    readonly view: ViewBase;
     readonly signal: AbortSignal;
     /** route-handle generation（导航层自己的世代，RefreshCoordinator key 的一维）。 */
     readonly generation: number;
     close(): void;
-    run<T>(action: (view: FguiView, context: ViewLifecycleContext) => T | Promise<T>): Promise<T>;
+    run<T>(action: (view: ViewBase, context: ViewLifecycleContext) => T | Promise<T>): Promise<T>;
 }
 
 interface RouteStackEntry {

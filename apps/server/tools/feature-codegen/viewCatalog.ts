@@ -42,8 +42,8 @@ const VIEW_NAME = /^[A-Z][A-Za-z0-9]{0,63}$/u;
 const FEATURE_DIR_NAME = /^[a-z][a-z0-9-]{0,63}$/u;
 const VIEW_LAYERS = ["base", "popup", "top"] as const;
 const RESTORE_KINDS = ["keep-mounted", "reopen", "fallback", "discard"] as const;
-/** view/ 下的机械件（非页面视图），双向发现时豁免（与 viewRegistry.test 的 MACHINERY 同源语义）。 */
-const VIEW_MACHINERY = new Set(["FguiView.ts"]);
+/** view/ 下的机械件（渲染栈基类，非页面视图），双向发现时豁免（与 viewRegistry.test 的 MACHINERY 同源语义）。 */
+const VIEW_MACHINERY = new Set(["FguiView.ts", "CocosView.ts"]);
 
 function fail(pathLabel: string, message: string): never {
   throw new Error(`[feature-codegen] ${pathLabel}: ${message}`);
@@ -698,7 +698,7 @@ export function renderViews(catalog: ViewCatalog): string {
   for (const entry of pages) {
     const sidecar = entry.sidecar;
     lines.push(`    ${entry.name}: defineView({`);
-    lines.push(`        name: ${JSON.stringify(entry.name)}, contract: ${contractConstName(entry.name)}, layer: ${JSON.stringify(sidecar.layer)},`);
+    lines.push(`        name: ${JSON.stringify(entry.name)}, kind: ${JSON.stringify(sidecar.kind)}, contract: ${contractConstName(entry.name)}, layer: ${JSON.stringify(sidecar.layer)},`);
     lines.push(`        fullscreen: ${sidecar.fullscreen}, onlyOne: ${sidecar.onlyOne}, permanent: ${sidecar.permanent}, interactive: ${sidecar.interactive},`);
     if (sidecar.sharedPkgs !== undefined) {
       lines.push(`        sharedPkgs: ${JSON.stringify(sidecar.sharedPkgs)},`);

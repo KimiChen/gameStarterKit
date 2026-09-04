@@ -7,29 +7,38 @@
  *
  * 分层：GRoot 下按 VIEW_LAYERS 顺序懒建 base/popup/top 三个全屏容器（顺序即 z 序，
  * 尺寸 relation 跟随 GRoot）；GRoot 随场景重载销毁时容器/缓存整体重建。
+ * 渲染栈：`kind:"fgui"` 页面走 ensurePackages → FguiView.create → 挂 GComponent 容器；
+ * `kind:"cocos"` 页面（被 feature routes 引用的纯节点页）跳过这两步，直接实例化并挂到
+ * 层容器的 `.node` 下。⚠ 两条分支只在「造实例」和「挂哪里」不同，其余事务序
+ * （beginLifecycle → runCreate → mount → 登记 → runOpen → setup）与错误/取消回滚逐段一致，
+ * 生命周期实现也只有 ViewBase 一套——⛔ 不为任一渲染栈另起一条。
  * 交互输入：任一 interactive 页在开 → 启用 FGUI 输入（同时挡住背后游戏触摸——
  * fairygui 单 InputProcessor 的现实，见 FguiView.ensureRoot 注释），全部关闭 → 恢复。
  * 在途去重：onlyOne/permanent 页面加载期间的重复 open（双击竞态）合流到同一 Promise。
  */
 import { GComponent, GRoot, RelationType } from "db://fairygui-cc/fairygui.mjs";
-import { FguiView, type ViewLifecycleContext } from "./FguiView";
+import { FguiView } from "./FguiView";
+import type { ViewBase, ViewLifecycleContext } from "./ViewBase";
+// 类型面引用（运行时实例由 meta.load() 的动态 import 提供）：本模块 ⛔ 不静态 import cc。
+import type { CocosView } from "./CocosView";
 import { VIEW_LAYERS, type ViewLayer } from "./layers";
 import type { ViewMeta } from "./defineView";
 import { VIEW_REGISTRY } from "./viewRegistry";
 
 /** open 的返回句柄：关闭唯一入口（幂等）。 */
 export interface ViewHandle {
-  readonly view: FguiView;
+  /** FGUI 页面是 FguiView 子类，cocos 页面是 CocosView 子类；调用方按已知页面类型断言。 */
+  readonly view: ViewBase;
   /** 本次打开的取消信号与世代；可传给 Area/Notice/Guild 等异步 Logic。 */
   readonly signal: AbortSignal;
   readonly generation: number;
   close(): void;
   /** 在打开事务内运行 setup/render；失败会自动关闭并回滚页面。 */
-  run<T>(action: (view: FguiView, context: ViewLifecycleContext) => T | Promise<T>): Promise<T>;
+  run<T>(action: (view: ViewBase, context: ViewLifecycleContext) => T | Promise<T>): Promise<T>;
 }
 
 interface Entry {
-  view: FguiView;
+  view: ViewBase;
   mounted: boolean;
   meta: ViewMeta;
   handle: ViewHandle;
@@ -82,7 +91,7 @@ export class ViewOpenCancelledError extends Error {
   }
 }
 
-type ViewSetup = (view: FguiView, context: ViewLifecycleContext) => unknown | Promise<unknown>;
+type ViewSetup = (view: ViewBase, context: ViewLifecycleContext) => unknown | Promise<unknown>;
 
 /**
  * Invalidate the current FGUI root and every page owned by it. This is used
@@ -183,8 +192,22 @@ function ensureLayers(): void {
   }
 }
 
+/**
+ * 把 view 接到层容器上。这是 fgui / cocos 两条分支在挂载段的**唯一**差异：
+ * FGUI 页面挂 GComponent 容器（全屏页由 Size relation 跟随），cocos 页面挂容器的 `.node`
+ * 并按容器当前尺寸铺满。租约回滚（unmount）与销毁对两者同形，故留在 mount 里共用。
+ */
+function attach(view: ViewBase, meta: ViewMeta, parent: GComponent): void {
+  if (meta.kind === "cocos") {
+    (view as CocosView).mountToLayer(parent.node, parent.width, parent.height, meta.fullscreen);
+    return;
+  }
+  const fgui = view as FguiView;
+  if (meta.fullscreen) { fgui.mountFullScreenTo(parent); } else { fgui.mountTo(parent); }
+}
+
 /** 挂载并返回可回滚的 lease；任何中途异常都会摘下组件且归还 interactive 租约。 */
-function mount(view: FguiView, meta: ViewMeta): () => void {
+function mount(view: ViewBase, meta: ViewMeta): () => void {
   ensureLayers();
   FguiView.healRoot(); // 尺寸/置顶自愈：老路径 mountFullScreen 每次挂载都做，这里保持等价
   // A non-cacheable handle may outlive a scene/root reload.  Its release must
@@ -195,7 +218,7 @@ function mount(view: FguiView, meta: ViewMeta): () => void {
   let mounted = false;
   let leased = false;
   try {
-    if (meta.fullscreen) { view.mountFullScreenTo(parent); } else { view.mountTo(parent); }
+    attach(view, meta, parent);
     mounted = true;
     if (meta.interactive) {
       interactiveCount++;
@@ -236,19 +259,19 @@ function closeEffects(meta: ViewMeta): void {
 
 function makeHandle(
   name: string,
-  view: FguiView,
+  view: ViewBase,
   context: ViewLifecycleContext,
   cacheable: boolean,
   releaseMount: (() => void) | null,
   onClosed?: () => void,
 ): {
   handle: ViewHandle;
-  runDuringOpen<T>(action: (view: FguiView, context: ViewLifecycleContext) => T | Promise<T>): Promise<T>;
+  runDuringOpen<T>(action: (view: ViewBase, context: ViewLifecycleContext) => T | Promise<T>): Promise<T>;
 } {
   const state = { context, closed: false, releaseMount };
   let handle!: ViewHandle;
   const runAction = async <T>(
-    action: (view: FguiView, context: ViewLifecycleContext) => T | Promise<T>,
+    action: (view: ViewBase, context: ViewLifecycleContext) => T | Promise<T>,
     closeOnFailure: boolean,
   ): Promise<T> => {
     const activeContext = state.context;
@@ -299,7 +322,7 @@ function makeHandle(
         }
       }
     },
-    async run<T>(action: (v: FguiView, c: ViewLifecycleContext) => T | Promise<T>): Promise<T> {
+    async run<T>(action: (v: ViewBase, c: ViewLifecycleContext) => T | Promise<T>): Promise<T> {
       return runAction(action, true);
     },
   };
@@ -392,14 +415,14 @@ async function open(name: string, setup?: ViewSetup): Promise<ViewHandle> {
   };
   pendingAll.add(rec);
   const p = (async (): Promise<ViewHandle> => {
-    let view: FguiView | null = null;
+    let view: ViewBase | null = null;
     let lease: (() => void) | null = null;
     let entry: Entry | null = null;
     let uncachedHandle: ViewHandle | null = null;
     let context: ViewLifecycleContext | null = null;
     let cancelLifecycle: (() => void) | null = null;
     try {
-      if (meta.sharedPkgs && meta.sharedPkgs.length > 0) {
+      if (meta.kind === "fgui" && meta.sharedPkgs && meta.sharedPkgs.length > 0) {
         // Pass the pending open's signal through the package boundary. FairyGUI
         // cannot abort its underlying request, but this releases this waiter
         // immediately when close() or a root/scene generation change occurs.
@@ -408,15 +431,19 @@ async function open(name: string, setup?: ViewSetup): Promise<ViewHandle> {
       }
       ensurePendingActive(rec);
       // load 闭包 = 铁律 10 的动态 import 边界，也是将来分包的加载点；构造器真实类型在此收敛
-      const ctor = (await meta.load()) as new (root: GComponent) => FguiView;
+      const ctor = await meta.load();
       ensurePendingActive(rec);
-      view = await FguiView.create(
-        ctor,
-        `ui/${meta.contract.pkg}`,
-        meta.contract.pkg,
-        meta.contract.comp,
-        { signal: rec.controller.signal },
-      );
+      // cocos 页面没有 FGUI 段：跳过 ensurePackages 与组件创建，直接实例化（根节点由
+      // CocosView 自建，挂载在下面的 mount 段完成）。后续每一段与 fgui 分支完全共用。
+      view = meta.kind === "cocos"
+        ? new (ctor as new () => CocosView)()
+        : await FguiView.create(
+          ctor as new (root: GComponent) => FguiView,
+          `ui/${meta.contract.pkg}`,
+          meta.contract.pkg,
+          meta.contract.comp,
+          { signal: rec.controller.signal },
+        );
       ensurePendingActive(rec);
       context = view.beginLifecycle(rec.generation);
       // close(name)/root 重载可能发生在 setup 或 onOpen 等后续 await 期间；把 pending

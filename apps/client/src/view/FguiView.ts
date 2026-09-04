@@ -11,6 +11,7 @@
  */
 import { Canvas, director, sys, view } from "cc";
 import { GComponent, GObject, GRoot, RelationType, UIPackage } from "db://fairygui-cc/fairygui.mjs";
+import { ViewBase } from "./ViewBase";
 import {
   FguiPackageCancelledError,
   FguiPackageLoader,
@@ -25,6 +26,7 @@ export {
   FguiPackageTimeoutError,
   isFguiPackageLoadError,
 } from "./packageLoader";
+export type { ViewLifecycleContext } from "./ViewBase";
 export type {
   FguiPackageErrorCode,
   FguiPackageLoadOptions,
@@ -33,27 +35,7 @@ export type {
   FguiPackageScheduler,
 } from "./packageLoader";
 
-/**
- * 一次页面打开的生命周期上下文。
- *
- * `signal` 供 HTTP/RPC 等依赖取消；`generation` 用于在依赖不支持 AbortSignal 时做迟到结果隔离。
- * `isActive()` 比单看 signal 更严格：同一个 View permanent 重开时，旧上下文会立即失效。
- */
-export interface ViewLifecycleContext {
-  readonly generation: number;
-  readonly signal: AbortSignal;
-  isActive(): boolean;
-}
-
-type LifecycleState = {
-  readonly generation: number;
-  readonly controller: AbortController;
-  readonly context: ViewLifecycleContext;
-  active: boolean;
-  closePromise: Promise<void> | null;
-};
-
-export abstract class FguiView {
+export abstract class FguiView extends ViewBase {
   /**
    * 懒启动 GRoot：**只在第一个 FairyGUI 视图真正挂载时**才建，没用 FairyGUI 时它绝不常驻（避免全屏
    * GRoot/InputProcessor 干扰游戏输入，如战斗拖拽）。等价官方 `GRoot.create()` 但规避其硬编码找场景直接
@@ -91,183 +73,13 @@ export abstract class FguiView {
 
   /** FairyGUI 组件根（由 `UIPackage.createObject(...).asCom` 传入）。 */
   protected readonly root: GComponent;
-  private lifecycle: LifecycleState | null = null;
-  private created = false;
-  private createFlight: Promise<void> | null = null;
-  private disposed = false;
 
   constructor(root: GComponent) {
+    super();
     this.root = root;
     // ⚠ 不在此调 bind()：`useDefineForClassFields`(Cocos 3.8 默认)下，子类字段声明会在 super() 之后
     //   被编译成 `this.xxx = undefined`，把 super 里 bind() 绑好的值清掉。故 bind 必须在**构造完成后**调
     //   （见 `create`/`fromComponent`）。
-  }
-
-  /** 页面实例创建后只调用一次；子类可在这里初始化与页面实例同寿命的资源。 */
-  protected onCreate(_context: ViewLifecycleContext): void | Promise<void> {}
-
-  /** 每次挂载/打开调用一次；抛错会由 ViewMgr 统一回滚。 */
-  protected onOpen(_context: ViewLifecycleContext): void | Promise<void> {}
-
-  /** 每次关闭调用一次；返回的 Promise 由 ViewMgr 观察，不能阻塞输入租约回收。
-   *
-   * 页面现有公开 API 也使用 `onClose` 作为按钮回调，因此生命周期实现采用这个不冲突的
-   * 内部 hook；若子类没有同名实例属性，仍会兼容调用其自定义 `onClose(context)` 方法。
-   */
-  protected onCloseLifecycle(_context: ViewLifecycleContext): void | Promise<void> {}
-
-  /** 构造一个新的打开世代。仅 ViewMgr 应调用。 */
-  beginLifecycle(generation: number): ViewLifecycleContext {
-    if (this.disposed) throw new Error("[FguiView] 已销毁的 View 不能重新打开");
-    const previous = this.lifecycle;
-    if (previous?.active) {
-      // Replacing an active generation is a close as well as an abort.  Keep
-      // the hook tied to the old state so a permanent view cannot skip cleanup
-      // when it is reopened from an asynchronous transition.
-      this.startClose(previous);
-    }
-    const controller = new AbortController();
-    let state!: LifecycleState;
-    const context: ViewLifecycleContext = {
-      generation,
-      signal: controller.signal,
-      isActive: () => this.lifecycle === state && state.active && !controller.signal.aborted && !this.disposed,
-    };
-    state = { generation, controller, context, active: true, closePromise: null };
-    this.lifecycle = state;
-    return context;
-  }
-
-  /** 运行 onCreate；永久页面重挂时不会重复执行。 */
-  async runCreate(context: ViewLifecycleContext): Promise<void> {
-    if (this.created) {
-      this.assertCurrent(context);
-      return;
-    }
-    this.assertCurrent(context);
-    // The create hook belongs to the view instance, not to one open
-    // generation.  Defer invocation by one microtask before publishing the
-    // promise so even a synchronously re-entrant runCreate() shares it.  If
-    // the first generation is closed while the hook awaits, a successful hook
-    // still marks the instance created; only the stale caller's final
-    // assertCurrent() fails, and a permanent remount will not run the hook a
-    // second time.
-    let attempt = this.createFlight;
-    if (!attempt) {
-      attempt = Promise.resolve()
-        .then(() => this.onCreate(context))
-        .then(() => { this.created = true; });
-      this.createFlight = attempt;
-      // The caller observes the attempt; this defensive handler prevents a
-      // superseded generation from creating an unhandled rejection.
-      attempt.catch(() => undefined);
-    }
-    try {
-      await attempt;
-    } catch (error) {
-      // A failed hook can be retried on a later open.  Keep a successful
-      // flight forever, even if its original context was superseded.
-      if (this.createFlight === attempt && !this.created) this.createFlight = null;
-      throw error;
-    }
-    this.assertCurrent(context);
-  }
-
-  /** 运行本次打开 hook。 */
-  async runOpen(context: ViewLifecycleContext): Promise<void> {
-    this.assertCurrent(context);
-    await this.onOpen(context);
-    this.assertCurrent(context);
-  }
-
-  /**
-   * 使本次打开世代失效并运行 onClose。调用幂等；返回 Promise 便于测试/宿主等待，
-   * 但关闭路径本身不依赖它完成（输入租约须立即释放）。
-   */
-  closeLifecycle(): Promise<void> {
-    const state = this.lifecycle;
-    if (!state) return Promise.resolve();
-    return this.startClose(state);
-  }
-
-  private startClose(state: LifecycleState): Promise<void> {
-    if (state.closePromise) return state.closePromise;
-
-    // Publish the close promise before aborting or invoking user code. Both
-    // operations can synchronously re-enter closeLifecycle (for example an
-    // AbortSignal listener may call back into the view, or a cleanup hook may
-    // defensively call dispose()). Without this placeholder every re-entry
-    // would invoke onClose again and can recurse indefinitely.
-    let resolveClose!: () => void;
-    let rejectClose!: (reason?: unknown) => void;
-    const closePromise = new Promise<void>((resolve, reject) => {
-      resolveClose = resolve;
-      rejectClose = reject;
-    });
-    state.closePromise = closePromise;
-    // Callers are allowed to use synchronous handle.close(); keep a rejection
-    // observer attached even when no caller awaits the returned Promise.
-    closePromise.catch((e) => console.error("[FguiView] onClose 回调异常", e));
-
-    state.active = false;
-    let abortError: unknown = null;
-    try { state.controller.abort(); } catch (e) {
-      // AbortController implementations normally report listener failures
-      // asynchronously, but a host/polyfill may throw synchronously. Continue
-      // cleanup and surface the error through the close Promise.
-      abortError = e;
-    }
-    let result: void | Promise<void>;
-    try { result = this.invokeCloseHook(state.context); }
-    catch (e) {
-      rejectClose(e);
-      return closePromise;
-    }
-
-    // A hook returning closeLifecycle() would otherwise create a promise that
-    // waits on itself. Treat that self-reference as an already-completed close;
-    // the hook has synchronously run and all future calls are idempotent.
-    if (result === closePromise) {
-      if (abortError) rejectClose(abortError);
-      else resolveClose();
-      return closePromise;
-    }
-
-    Promise.resolve(result).then(
-      () => {
-        if (abortError) rejectClose(abortError);
-        else resolveClose();
-      },
-      (error) => rejectClose(error),
-    );
-    return closePromise;
-  }
-
-  /** 当前打开世代（仅供装配层传递给 Logic）。 */
-  get lifecycleContext(): ViewLifecycleContext | null {
-    return this.lifecycle?.context ?? null;
-  }
-
-  get isDisposed(): boolean {
-    return this.disposed;
-  }
-
-  private assertCurrent(context: ViewLifecycleContext): void {
-    if (this.lifecycle?.context !== context || !context.isActive()) {
-      throw new Error("[FguiView] 页面打开世代已失效");
-    }
-  }
-
-  private invokeCloseHook(context: ViewLifecycleContext): void | Promise<void> {
-    // 兼容测试/业务子类直接实现 protected onClose(context)，同时避开页面按钮字段 onClose。
-    const own = Object.prototype.hasOwnProperty.call(this, "onClose");
-    if (!own) {
-      const candidate = (this as unknown as { onClose?: unknown }).onClose;
-      if (typeof candidate === "function") {
-        return (candidate as (ctx: ViewLifecycleContext) => void | Promise<void>).call(this, context);
-      }
-    }
-    return this.onCloseLifecycle(context);
   }
 
   /** 子类实现（codegen 生成）：按 AUTO BIND 用 `getChild` 绑定字段。构造完成后由工厂调一次。 */
@@ -303,18 +115,6 @@ export abstract class FguiView {
   /** 点击绑定（写在子类 registerEvent 里）。 */
   protected onClick(obj: GObject, cb: () => unknown): void {
     obj.onClick(() => this.observeAsync(cb, "click"), this);
-  }
-
-  /** 事件系统不会 await handler；统一观察同步异常和 Promise rejection。 */
-  protected observeAsync(action: () => unknown, label = "event"): void {
-    try {
-      const result = action();
-      if (result && typeof (result as { then?: unknown }).then === "function") {
-        Promise.resolve(result).catch((e) => console.error(`[FguiView] ${label} handler rejection`, e));
-      }
-    } catch (e) {
-      console.error(`[FguiView] ${label} handler exception`, e);
-    }
   }
 
   /** 挂到 GRoot（或指定父容器）。GRoot 懒启动：此时才建（若还没建）。 */
@@ -394,13 +194,8 @@ export abstract class FguiView {
     if (node && parent) { node.setSiblingIndex(parent.children.length - 1); }
   }
 
-  /** 销毁：从父移除 + dispose FairyGUI 对象树。 */
-  dispose(): void {
-    if (this.disposed) return;
-    this.disposed = true;
-    // closeLifecycle owns abort/hook idempotence; disposal of the component
-    // tree remains synchronous and does not wait for an async hook.
-    if (this.lifecycle) this.startClose(this.lifecycle);
+  /** 释放渲染根：从父移除 + dispose FairyGUI 对象树（世代关闭由 ViewBase.dispose 负责）。 */
+  protected disposeRoot(): void {
     try { this.root.removeFromParent(); } catch (e) {
       console.error("[FguiView] removeFromParent 异常", e);
     }
