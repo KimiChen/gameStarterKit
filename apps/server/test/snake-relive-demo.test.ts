@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { setImmediate as waitImmediate } from "node:timers/promises";
 import { test } from "node:test";
-import { kSnakeUser, zoneCtx } from "../src/core/infra/keys";
+import { zoneCtx } from "../src/core/infra/keys";
+import { kSnakeUser } from "../src/rooms/modes/snake/keys";
 import {
     RedisDemoReliveEconomy,
     type DemoRelivePersistenceRecord,
@@ -56,11 +57,15 @@ test("Redis demo balance is shared by mode-local economy instances", () => {
     assert.equal(secondRoom.balance({ uid }), 150);
 });
 
-test("Snake demo Redis key is independent of sId", () => {
+// Snake 钱包刻意是跨区共享的单份余额（rooms/modes/snake/keys.ts 显式选 zone: "global"）。
+// 把它改成 "per-zone" 是语义变更而非重构，本用例就是那条变更的红灯。
+test("Snake demo Redis key is global: no zone prefix and identical across sId", () => {
     const uid = `demo-key-${Date.now()}`;
     const globalKey = kSnakeUser(uid);
     const zonedKey = zoneCtx.run({ sId: 3 }, () => kSnakeUser(uid));
     assert.equal(zonedKey, globalKey);
-    assert.equal(globalKey.endsWith(`snake:user:{${uid}}`), true);
-    assert.equal(globalKey.includes("s3_snake:user"), false);
+    assert.equal(globalKey.endsWith(`gp:snake:user:{${uid}}`), true);
+    // 区前缀是 `<PROJECT_ID>_s{sId}_`，紧贴逻辑键名之前；global 键任何 sId 下都不得出现它。
+    assert.doesNotMatch(globalKey, /_s\d+_gp:snake:/u);
+    assert.doesNotMatch(zonedKey, /_s\d+_gp:snake:/u);
 });
