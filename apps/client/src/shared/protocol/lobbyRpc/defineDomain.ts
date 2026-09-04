@@ -49,6 +49,12 @@ export interface LobbyPushDescriptor<TData = unknown> {
 /** 域 descriptor（defineLobbyRpcDomain 的返回值；契约测试与 generated 表双向对拍）。 */
 export interface LobbyRpcDomainDescriptor {
     readonly domain: string;
+    /**
+     * 域契约版本（缺省 1）：codegen:features 以 `domains/<域>.ts` 的字节 digest 为契约身份，
+     * digest 变化而本值未递增即拒绝生成（与 gameplay 的 contractDigest/modeVersion 闸对称，
+     * docs/PLUGIN.md §8/§9）。⛔ 只是 codegen 层的人工确认闸，不进 wire、不进 join 信封。
+     */
+    readonly contractVersion: number;
     readonly errorCodes: readonly string[];
     /** 本域拥有的 operation group（§6.13：受拥有 id，跨域重复声明由 codegen 拒绝）。 */
     readonly ownsOperationGroups: readonly string[];
@@ -121,7 +127,8 @@ export function defineLobbyPush<TData>(
 }
 
 /**
- * 域声明入口；pushes / ownsOperationGroups / exposesOperationGroupTo 可省（缺省空集）。
+ * 域声明入口；contractVersion / pushes / ownsOperationGroups / exposesOperationGroupTo 可省
+ * （缺省 1 / 空集）。
  *
  * operation group 所有权规则（§6.13，codegen:features 校验，任一违反即拒绝生成）：
  *  1. group 是受拥有 id：由且仅由一个域在 `ownsOperationGroups` 声明，跨域重复即拒；
@@ -133,6 +140,7 @@ export function defineLobbyPush<TData>(
  */
 export function defineLobbyRpcDomain(descriptor: {
     readonly domain: string;
+    readonly contractVersion?: number;
     readonly errorCodes: readonly string[];
     readonly ownsOperationGroups?: readonly string[];
     readonly exposesOperationGroupTo?: { readonly [group: string]: readonly string[] };
@@ -141,6 +149,7 @@ export function defineLobbyRpcDomain(descriptor: {
 }): LobbyRpcDomainDescriptor {
     return {
         domain: descriptor.domain,
+        contractVersion: descriptor.contractVersion ?? 1,
         errorCodes: descriptor.errorCodes,
         ownsOperationGroups: descriptor.ownsOperationGroups ?? [],
         exposesOperationGroupTo: descriptor.exposesOperationGroupTo ?? {},

@@ -109,6 +109,15 @@ export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number
     "user.updateProfile": 1,
 };
 
+/** 域契约身份（codegen 闸：domains/<域>.ts 的 sha256 变化必须伴随 contractVersion 递增；⛔ 不进 wire）。 */
+export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly contractVersion: number; readonly digest: string } } = {
+    guild: { contractVersion: 1, digest: "4a996a135ffd900eb39c0b83697ee03d4d4587829da88ce537f363d56ceb4bde" },
+    mail: { contractVersion: 1, digest: "d6401c80a558ce24849ad9c038bd34e2adc09bd9b006abef773cbecf409b7ab4" },
+    room: { contractVersion: 1, digest: "8655531a80f2ffc6a941247c2c2ef00ad44dfb3842b722741556430bf2c12ff2" },
+    shop: { contractVersion: 1, digest: "80f5bc9c74300aecd0bf2caf8dea93506657c5e9a4d64e91931760e8c06544cf" },
+    user: { contractVersion: 1, digest: "ce1f3ff0528a15836c188d111ddbe29bfb8c97c4f68d69c3e77a9432fe157a28" },
+};
+
 /** idempotent-write 路由 → operation group（§6.13 inspect 机制的元数据；未声明不入表）。 */
 export const LOBBY_RPC_OPERATION_GROUPS: { readonly [K in LobbyRpcType]?: string } = {
 };

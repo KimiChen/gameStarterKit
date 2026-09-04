@@ -46,6 +46,8 @@ export type PushDeclaration = {
 
 export type DomainDeclaration = {
   readonly domain: string;
+  /** 域契约版本（缺省 1）：digest 闸的人工确认位，见 lib.ts assertDomainContractVersionBumped。 */
+  readonly contractVersion: number;
   readonly errorCodes: readonly string[];
   /** 本域拥有的 operation group（§6.13 受拥有 id；跨域重复由 lib 拒绝）。 */
   readonly ownsOperationGroups: readonly string[];
@@ -422,13 +424,24 @@ export function parseDomainModule(source: string, label: string): DomainDeclarat
   if (call.arguments.length !== 1) fail(label, "defineLobbyRpcDomain 必须是单对象参数形态");
   const descriptor = objectEntries(call.arguments[0], label, "defineLobbyRpcDomain 的参数");
   for (const key of descriptor.keys()) {
-    if (!["domain", "errorCodes", "ownsOperationGroups", "exposesOperationGroupTo", "pushes", "routes"].includes(key)) {
+    if (!["domain", "contractVersion", "errorCodes", "ownsOperationGroups", "exposesOperationGroupTo", "pushes", "routes"].includes(key)) {
       fail(label, `defineLobbyRpcDomain 含未知键：${key}`);
     }
   }
   const domainNode = descriptor.get("domain");
   if (!domainNode || !ts.isStringLiteral(domainNode)) fail(label, "domain 必须是字符串字面量");
   const domain = domainNode.text;
+
+  let contractVersion = 1;
+  const contractVersionNode = descriptor.get("contractVersion");
+  if (contractVersionNode) {
+    if (!ts.isNumericLiteral(contractVersionNode)) fail(label, "域 contractVersion 必须是数字字面量（正整数）");
+    const parsed = Number(contractVersionNode.text);
+    if (!Number.isSafeInteger(parsed) || parsed < 1) {
+      fail(label, `域 contractVersion 必须是 ≥1 的安全整数（读到 "${contractVersionNode.text}"）`);
+    }
+    contractVersion = parsed;
+  }
 
   const errorCodesNode = descriptor.get("errorCodes");
   if (!errorCodesNode) fail(label, "errorCodes 必须显式声明（可为空数组）");
@@ -464,7 +477,7 @@ export function parseDomainModule(source: string, label: string): DomainDeclarat
   }
   if (routes.length === 0) fail(label, "routes 不得为空");
 
-  return { domain, errorCodes, ownsOperationGroups, exposesOperationGroupTo, pushes, routes };
+  return { domain, contractVersion, errorCodes, ownsOperationGroups, exposesOperationGroupTo, pushes, routes };
 }
 
 function findExportedConst(sourceFile: ts.SourceFile, name: string, label: string): ts.Expression {

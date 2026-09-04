@@ -19,6 +19,7 @@ import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import {
   ALL_LOBBY_RPC_TYPES,
+  LOBBY_RPC_DOMAIN_CONTRACTS,
   LOBBY_RPC_CONTRACT_VERSIONS,
   LOBBY_RPC_DOMAINS,
   LOBBY_RPC_INSPECTABLE,
@@ -120,7 +121,10 @@ test("--check 只读：stale/missing/extra 三态失败并点名", () => {
   // stale：shop 域加一个错误码，registry 未再生成
   const shopFile = path.join(root, LOBBY_RPC_DIR, "domains/shop.ts");
   const shopSource = fs.readFileSync(shopFile, "utf8");
-  fs.writeFileSync(shopFile, shopSource.replace('"ORDER_MISMATCH",', '"ORDER_MISMATCH",\n        "SHOP_TEST_ONLY",'));
+  // 改 descriptor 必须同批 bump 域 contractVersion，否则会先被域契约闸拦住（单独有用例钉闸）。
+  fs.writeFileSync(shopFile, shopSource
+    .replace('"ORDER_MISMATCH",', '"ORDER_MISMATCH",\n        "SHOP_TEST_ONLY",')
+    .replace('    domain: "shop",', '    domain: "shop",\n    contractVersion: 2,'));
   const registryFile = path.join(root, REGISTRY_RELATIVE);
   const registryBytes = fs.readFileSync(registryFile, "utf8");
   assert.throws(() => assertFeatureArtifactsFresh(options), /stale: .*registry\.generated\.ts/u);
@@ -152,6 +156,10 @@ test("descriptor 运行时值 ⇔ generated 表双向相等（route/mode/errorCo
     }),
   );
   assert.deepEqual(domains.map((d) => d.domain).sort(), [...LOBBY_RPC_DOMAINS].sort());
+  for (const domain of domains) {
+    assert.equal(LOBBY_RPC_DOMAIN_CONTRACTS[domain.domain]?.contractVersion, domain.contractVersion,
+      `${domain.domain} 的域 contractVersion 必须与 generated LOBBY_RPC_DOMAIN_CONTRACTS 一致`);
+  }
 
   // routes/mode：双向
   const declaredModes = new Map<string, string>();
@@ -517,6 +525,7 @@ function stage4Domain(descriptor: string): string {
 const STAGE4_ROOM_DOMAIN = stage4Domain([
   "export default defineLobbyRpcDomain({",
   '    domain: "room",',
+  "    contractVersion: 2,",
   "    errorCodes: [],",
   '    ownsOperationGroups: ["roomOps"],',
   "    routes: [",
@@ -1132,6 +1141,37 @@ test("宿主 placement（features/host.json）：缺失即 fail-fast；defaultLa
   const rendered = renderViewCatalogArtifacts(readViewCatalog(root)).get(FEATURES_RELATIVE) ?? "";
   assert.match(rendered, /defaultLaunch: \{ kind: "gameplay", gameplayId: "ballMove" \}/u);
   assert.match(rendered, /\{ featureId: "builtin", entryId: "ballMove" \},\n {8}\{ featureId: "snake", entryId: "snake" \},/u);
+});
+
+test("域契约闸：descriptor 字节变化而 contractVersion 未增，writer 与只读闸都拒绝；bump 后放行并渲染 LOBBY_RPC_DOMAIN_CONTRACTS", () => {
+  const { root, options } = createFixture();
+  try {
+    assertFeatureArtifactsFresh(options);
+    const guildFile = path.join(root, LOBBY_RPC_DIR, "domains/guild.ts");
+    const original = fs.readFileSync(guildFile, "utf8");
+    // 只改一个注释也算：digest 与 gameplay 的 wire.ts 同口径按字节算（⛔ 不做语义豁免）。
+    fs.writeFileSync(guildFile, `${original}// touched\n`, "utf8");
+    const gate = /domains\/guild\.ts: domain contract digest changed but contractVersion did not increase \(kept 1, previous 1\)/u;
+    assert.throws(() => assertFeatureArtifactsFresh(options), gate);
+    assert.throws(() => writeFeatureArtifacts(options), gate);
+    // 显式 bump → 放行；registry 记录新版本与新 digest。
+    fs.writeFileSync(guildFile, `${original.replace('    domain: "guild",', '    domain: "guild",\n    contractVersion: 2,')}// touched\n`, "utf8");
+    const result = writeFeatureArtifacts(options);
+    assert.ok(result.changed.includes(REGISTRY_RELATIVE));
+    const registry = fs.readFileSync(path.join(root, REGISTRY_RELATIVE), "utf8");
+    assert.match(registry, /^ {4}guild: \{ contractVersion: 2, digest: "[0-9a-f]{64}" \},$/mu);
+    assert.doesNotThrow(() => assertFeatureArtifactsFresh(options));
+    // 降版本同样拒绝（只允许递增）。
+    fs.writeFileSync(guildFile, `${original.replace('    domain: "guild",', '    domain: "guild",\n    contractVersion: 1,')}// touched twice\n`, "utf8");
+    assert.throws(() => assertFeatureArtifactsFresh(options), /kept 1, previous 2/u);
+    // 非法 contractVersion 形态在 AST 层点名。
+    fs.writeFileSync(guildFile, original.replace('    domain: "guild",', '    domain: "guild",\n    contractVersion: 0,'), "utf8");
+    assert.throws(() => readFeatureDescriptors(options), /域 contractVersion 必须是 ≥1 的安全整数/u);
+    fs.writeFileSync(guildFile, original.replace('    domain: "guild",', '    domain: "guild",\n    contractVersion: "2",'), "utf8");
+    assert.throws(() => readFeatureDescriptors(options), /域 contractVersion 必须是数字字面量/u);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test("CLI 沿用惯例：--check、--root <dir>/--root=<dir>、--allow-delete；重复/未知参数 throw", () => {

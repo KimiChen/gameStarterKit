@@ -165,7 +165,7 @@ files.lock       清单：每行 <仓库相对路径> <sha256>（与 protected-p
   ⛔ 没有「kind 二分」；
 - `requires` 只钉两个 schemaVersion（feature-schema-v1 / gameplay-schema-v1）。协议整数不是插件的兼容轴：
   gameplay 的契约身份是 per-mode `contractDigest`/`modeVersion`（既有闸），Lobby 域的契约身份是
-  §9 待补的 codegen 层 digest → contractVersion 闸；
+  codegen 层的域 descriptor digest → 域级 `contractVersion` 闸（`LOBBY_RPC_DOMAIN_CONTRACTS`，✅ 2026-09-05）；
 - ⛔ 不放路径映射（仓库布局不能成为第二真源），⛔ 不放 slot/order（位置归宿主，§6）；
 - `plugin.json` 同时以 `plugins/<id>/plugin.json` 落在仓库（作者侧手写、`pack` 的输入、`install` 原样落回），
   包的自证由 `files.lock` 承担：清单外条目、哈希不符一律拒绝。
@@ -296,7 +296,7 @@ npm --workspace @game/server run plugin -- check
 | FGUI 包名与 `ui://` 命名空间 | ✅ `scripts/fgui-manifest.mjs` 已查 package 名/id 与资源名/id 重复；安装侧靠所有权推导（只允许声明的 `fguiPackages`）挡住同名包解压覆盖 |
 | 插件间依赖顺序与环 | ✅ codegen 查环与不存在的依赖；FeatureHost 运行期按依赖顺序装载/逆序卸载 |
 | 文件级越权与残留 | ✅ allowlist 整包拒绝；已安装锁让升级按清单删、卸载按清单删 |
-| Lobby 域契约漂移（feature 侧） | ⚠ 当前只有 route 级 `contractVersion`（幂等 v2 消费），无「digest 变则须 bump」的 codegen 闸——见 §9 |
+| Lobby 域契约漂移（feature 侧） | ✅ codegen 闸：`domains/<域>.ts` 字节 digest 变化必须伴随域级 `contractVersion` 递增（`LOBBY_RPC_DOMAIN_CONTRACTS`，与 gameplay 的 modeVersion 闸对称）；join 信封侧仍共用协议整数（Non-intrusive §4.8，⛔ 不各自新增版本闸） |
 | MySQL 表 | ⛔ 不开口：需要新表的能力不是插件，是框架 PR（Non-intrusive §12.3） |
 
 ## 9. 缺口清单（做插件机制前要补的）
@@ -309,7 +309,8 @@ npm --workspace @game/server run plugin -- check
 - ✅ 默认 launch target 重定位（`host.json.defaultLaunch`）与 slot/order 退役；
 - ✅ `launch.kind:"route"`（纯 feature 入口）；
 - ✅ `dependencies` 运行期消费；
-- ✅ §8 两条「待核实」定论（FGUI 包名重复已查、依赖已消费）。
+- ✅ §8 两条「待核实」定论（FGUI 包名重复已查、依赖已消费）；
+- ✅ feature 侧契约闸（codegen 层域 descriptor digest → 域级 `contractVersion`，`LOBBY_RPC_DOMAIN_CONTRACTS`）。
 
 仍开放（登记在 [plan-v5.md](../plan-v5.md) E 类）：
 
@@ -322,9 +323,9 @@ npm --workspace @game/server run plugin -- check
    之前它只是装饰；一旦要做，它就成了契约——缺的是 LocalizePort 契约与 locales 载体，
    并**必须先于第一个第三方插件落地**，否则每个插件都会硬编码一种语言。
 4. **框架默认加载页**：全新 route，与 FGUI 包预热策略绑定（§6.2 第 2 条）。
-5. **feature 侧契约闸**：codegen 层「域 descriptor digest 变化 ⇒ 必须 bump contractVersion」（与 gameplay 的
-   digest/modeVersion 闸对称）；join 信封侧的版本比对属协议 PR（Non-intrusive §4.8：两类实体共用协议整数，
-   ⛔ 不各自新增版本闸）。
+5. **join 信封侧的 feature 契约比对**：codegen 层的闸已落地（上表），但 Lobby join 仍只比对 `LOBBY_PROTOCOL_VERSION`
+   整数——按 Non-intrusive §4.8 两类实体共用协议整数、⛔ 不各自新增版本闸，域契约变化要不要反映到
+   `LOBBY_PROTOCOL_VERSION` 是人工决策（`plugin -- install` 在域变化时会提示）。
 
 ## 10. 非目标
 

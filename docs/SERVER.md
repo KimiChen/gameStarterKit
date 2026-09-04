@@ -204,7 +204,11 @@ tsx 直接执行和运行时文件系统扫描，不是打包产物装载器。
    （它们是稳定 façade）。core 通用错误码与 core 推送在 `coreErrors.ts`。
 2. 运行 `npm --workspace @game/server run codegen:features` 刷新
    `apps/shared/src/protocol/lobbyRpc/registry.generated.ts`（路由/模式/validator map/错误码/
-   推送全集的生成聚合；freshness 由 `apps/server/test/feature-codegen.test.ts` 只读守门），
+   推送全集的生成聚合；freshness 由 `apps/server/test/feature-codegen.test.ts` 只读守门）。
+   ⚠ **域契约闸**：registry 记录每个域 descriptor 文件的 sha256 与域级 `contractVersion`
+   （`LOBBY_RPC_DOMAIN_CONTRACTS`）；改动既有 `domains/<domain>.ts` 的任何字节都必须同批在
+   `defineLobbyRpcDomain({ contractVersion: N+1, … })` 递增版本，否则 writer 与只读闸都拒绝并点名
+   （与 gameplay 的 contractDigest/modeVersion 闸对称；新增域首次生成放行）。
    然后 `node scripts/protocol-fingerprint.mjs --write` 重钉协议指纹（--check 只读比对），
    再 `npm run sync:shared`。
 3. 新建 `websocket/<domain>/<method>.ts`，`defineRpc(type, { handler })` 只写领域行为——
