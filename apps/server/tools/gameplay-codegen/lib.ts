@@ -357,6 +357,23 @@ function rootType(gameplay: GameplayDescriptor): { readonly sharedName: string; 
   return type;
 }
 
+/**
+ * root 的 `players` map value 类型 = 该玩法的 player Schema 类。
+ * 存在性由 stateRenderer 的 ROOT_LIFECYCLE_FIELDS / PLAYER_LIFECYCLE_FIELDS 断言保证
+ * （每个 root 必须有 `players` map，其 value 类型必须声明 id/name），这里只做渲染期兜底。
+ */
+function playerType(gameplay: GameplayDescriptor): { readonly name: string } {
+  const root = rootType(gameplay);
+  const rootDescriptor = gameplay.state.types.find((candidate) => candidate.name === root.name);
+  const players = rootDescriptor?.fields.find((field) => field.name === "players");
+  if (players?.kind !== "map") {
+    fail(`gameplays.${gameplay.id}`, `root ${root.name} must declare a "players" map while rendering`);
+  }
+  const type = gameplay.state.types.find((candidate) => candidate.name === players.valueType);
+  if (!type) fail(`gameplays.${gameplay.id}`, `missing player type while rendering: ${players.valueType}`);
+  return type;
+}
+
 function renderCatalogEntries(gameplays: readonly GameplayDescriptor[]): string[] {
   const lines: string[] = [];
   for (const gameplay of gameplays) {
@@ -629,7 +646,7 @@ function renderServerAggregate(gameplays: readonly GameplayDescriptor[]): string
     "import { type GamePhaseType, type RoomStateMode } from \"@game/shared\";",
   ];
   for (const gameplay of gameplays) {
-    lines.push(`import { ${rootType(gameplay).name} } from "./generated/${gameplay.id}";`);
+    lines.push(`import { ${rootType(gameplay).name}, ${playerType(gameplay).name} } from "./generated/${gameplay.id}";`);
   }
   lines.push("");
   for (const gameplay of gameplays) {
@@ -706,6 +723,31 @@ function renderServerAggregate(gameplays: readonly GameplayDescriptor[]): string
     "    const Root = (ROOM_STATE_ROOT_CONSTRUCTORS as Readonly<Partial<Record<string, RoomStateRootConstructor>>>)[mode];",
     "    if (!Root) throw new TypeError(`[room-state] unsupported gameplay mode: ${mode}`);",
     "    return new Root();",
+    "}",
+    "",
+    // player 侧与 root 侧同构：来源都是 state.json（player = root 的 players map value 类型）。
+    // ⛔ 没有这张表时，任何需要「按 mode 造一个 player」的通用代码（GameRoom shell 之外，
+    // 尤其是玩法无关的测试探针）只能手写 `new SnakePlayerState()`——那正是中央测试长出
+    // 具名玩法分支的根因。
+    "/** mode → player Schema 类；与 ROOM_STATE_ROOT_CONSTRUCTORS 同源于 state.json。 */",
+    "export const ROOM_STATE_PLAYER_CONSTRUCTORS = Object.freeze({",
+  );
+  for (const gameplay of gameplays) {
+    lines.push(`    ${JSON.stringify(gameplay.id)}: ${playerType(gameplay).name},`);
+  }
+  lines.push(
+    "} as const satisfies Record<RoomStateMode, new () => Schema>);",
+    "",
+    "export type RoomStatePlayerForMode<M extends RoomStateMode> = InstanceType<(typeof ROOM_STATE_PLAYER_CONSTRUCTORS)[M]>;",
+    "export type RoomStatePlayer = RoomStatePlayerForMode<RoomStateMode>;",
+    "type RoomStatePlayerConstructor = (typeof ROOM_STATE_PLAYER_CONSTRUCTORS)[RoomStateMode];",
+    "",
+    "export function createRoomPlayerForMode<M extends RoomStateMode>(mode: M): RoomStatePlayerForMode<M>;",
+    "export function createRoomPlayerForMode(mode: string): RoomStatePlayer;",
+    "export function createRoomPlayerForMode(mode: string): RoomStatePlayer {",
+    "    const Player = (ROOM_STATE_PLAYER_CONSTRUCTORS as Readonly<Partial<Record<string, RoomStatePlayerConstructor>>>)[mode];",
+    "    if (!Player) throw new TypeError(`[room-state] unsupported gameplay mode: ${mode}`);",
+    "    return new Player();",
     "}",
     "",
   );
