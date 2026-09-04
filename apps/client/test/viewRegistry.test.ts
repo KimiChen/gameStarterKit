@@ -45,9 +45,13 @@ function viewFilesUnder(dir: string): string[] {
 
 test("manifest 目录递归发现的 *View.ts ⇔ generated 登记条目 双向相等", () => {
   assert.ok(VIEW_SOURCE_DIRS.length >= 1, "manifest 必须声明至少一个 view 目录");
-  const discovered = VIEW_SOURCE_DIRS
+  // ⚠ VIEW_SOURCE_DIRS 允许嵌套（built-in 声明 view/ 全树，玩法 feature 只声明自己的
+  // view/rooms/<id>/ 子树）：同一文件会被两条目录各发现一次。比对的不变式是**集合相等**，
+  // 去重是如实建模而非弱化——registered 侧本就是一 View 一条（一 View 一 manifest 由
+  // 生成器 fail-fast 保证），任一侧多出/少一个文件仍必红。
+  const discovered = [...new Set(VIEW_SOURCE_DIRS
     .flatMap((dir) => viewFilesUnder(join(REPO_ROOT, dir)))
-    .map((full) => full.slice(REPO_ROOT.length).split("\\").join("/"))
+    .map((full) => full.slice(REPO_ROOT.length).split("\\").join("/")))]
     .sort();
   const registered = VIEW_SOURCE_RECORDS.map((record) => record.path).slice().sort();
   assert.deepEqual(discovered, registered,

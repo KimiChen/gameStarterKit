@@ -11,13 +11,11 @@
     "apps/client/src/view/LoginNoticeView.view.json",
     "apps/client/src/view/HomeView.view.json",
     "apps/client/src/view/ConfirmView.view.json",
-    "apps/client/src/view/rooms/ballMove/BallMoveView.view.json",
-    "apps/client/src/view/rooms/snake/SnakeWorldView.view.json"
+    "apps/client/src/view/rooms/ballMove/BallMoveView.view.json"
   ],
   "owners": [
     { "id": "builtin", "logicDir": "apps/client/src/logic/page" },
-    { "id": "ballMove", "logicDir": "apps/client/src/logic/rooms/ballMove" },
-    { "id": "snake", "logicDir": "apps/client/src/logic/rooms/snake" }
+    { "id": "ballMove", "logicDir": "apps/client/src/logic/rooms/ballMove" }
   ],
   "routes": [
     { "id": "login", "view": "Login" },
@@ -34,14 +32,6 @@
       "label": "进入战斗",
       "labelKey": "menu.enterBattle",
       "launch": { "kind": "gameplay", "gameplayId": "ballMove" }
-    },
-    {
-      "entryId": "snake",
-      "slot": 0,
-      "order": 0,
-      "label": "贪吃蛇大作战",
-      "labelKey": "menu.snakeOff",
-      "launch": { "kind": "gameplay", "gameplayId": "snake" }
     }
   ]
 }

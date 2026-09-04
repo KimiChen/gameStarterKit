@@ -12,6 +12,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  FEATURE_IDS,
   GENERATED_MENU_CONTRIBUTIONS,
   type GeneratedMenuContribution,
 } from "../src/generated/features.generated";
@@ -63,7 +64,7 @@ test("generated contributions 已按 slot → order → featureId → entryId �
   // 与内部回归样例（⛔ 不物理删除）。
   const primary = GENERATED_MENU_CONTRIBUTIONS[0];
   assert.equal(primary.entryId, "snake");
-  assert.equal(primary.featureId, "builtin");
+  assert.equal(primary.featureId, "snake");
   assert.equal(primary.label, "贪吃蛇大作战");
   assert.deepEqual(primary.launch, { kind: "gameplay", gameplayId: "snake" },
     "launch target 必须指向已登记玩法（Home 不分支 gameplay，target 进 LaunchPort）");
@@ -72,6 +73,22 @@ test("generated contributions 已按 slot → order → featureId → entryId �
   assert.deepEqual([...registry.menuContributions()], [...GENERATED_MENU_CONTRIBUTIONS]);
   // ballMove 保留为可选 contribution（内部回归样例）。
   assert.ok(BUILTIN_FEATURE.menu.some((item) => item.entryId === "ballMove"));
+});
+
+test("contribution 归属：拥有自己 feature 的玩法，菜单入口必须由该 feature 贡献（⛔ 不得留在 builtin）", () => {
+  // §3.2 第 8 条的例外已关闭（features/snake/ 落地）：玩法只要有自己的 features/<id>/，
+  // 它的 Home 入口就必须写在自己的 manifest 里，⛔ 不得再回写 built-in 的中央菜单表。
+  // 反之，尚无独立 feature 的玩法（ballMove：保留为可选入口与内部回归样例）不受此约束。
+  const featureIds = new Set(FEATURE_IDS);
+  const misplaced = GENERATED_MENU_CONTRIBUTIONS
+    .filter((item) => featureIds.has(item.launch.gameplayId) && item.featureId !== item.launch.gameplayId)
+    .map((item) => `${item.featureId}/${item.entryId} → ${item.launch.gameplayId}`);
+  assert.deepEqual(misplaced, [],
+    "玩法自持 feature 时其 contribution 必须由自己贡献（把入口搬回 features/built-in 即红）");
+  // 自洽闭合：本仓当前确实存在这样一个玩法（否则上面的过滤恒空，断言退化为永真）。
+  const selfOwned = GENERATED_MENU_CONTRIBUTIONS
+    .filter((item) => featureIds.has(item.launch.gameplayId));
+  assert.ok(selfOwned.length >= 1, "至少一个玩法拥有自己的 feature（否则本断言无判别力）");
 });
 
 test("菜单排序：多 contribution fixture 按 slot → order → featureId → entryId（FeatureRegistry 汇总）", () => {
