@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { test } from "node:test";
 import {
+  artifactMatches,
   assertContentVersionTransition,
   assertPresentationVersionTransition,
   buildArtifacts,
@@ -283,4 +284,24 @@ test("registered resource guards reject deletion/mutation and collect-magnet rem
   const changed = Buffer.from(data);
   changed[changed.length - 1] ^= 1;
   assert.throws(() => validateRegisteredResource(record, changed), /SHA mismatch/);
+});
+
+test("`.meta` 按语义比对（Creator 是共同写者），容忍面不外溢到其余产物", () => {
+  const META = "apps/Cocos/assets/resources/snakeoff/previews/snake_skin_1_preview.png.meta";
+  const canonical = Buffer.from('{\n  "files": [\n    ".json"\n  ],\n  "importer": "json",\n  "uuid": "u-1",\n  "ver": "2.0.1"\n}\n');
+  // Creator 重新导入后的落盘形态：同一份语义，键序按它自己的模板。
+  const creatorOrder = Buffer.from('{\n  "ver": "2.0.1",\n  "importer": "json",\n  "uuid": "u-1",\n  "files": [\n    ".json"\n  ]\n}\n');
+  assert.equal(artifactMatches(META, canonical, canonical), true);
+  // 变异：把 artifactMatches 改回 actual.equals(expected) → 本行红（这正是「开一次 Creator 测试就红一次」的原形）。
+  assert.equal(artifactMatches(META, creatorOrder, canonical), true);
+  // 真实语义变化仍必须红：uuid 换了、数组顺序变了、少一个键。
+  assert.equal(artifactMatches(META, Buffer.from(canonical.toString().replace("u-1", "u-2")), canonical), false);
+  assert.equal(artifactMatches(META, Buffer.from('{"files":[".json",".png"],"importer":"json","uuid":"u-1","ver":"2.0.1"}'), canonical), false);
+  assert.equal(artifactMatches(META, Buffer.from('{"importer":"json","uuid":"u-1","ver":"2.0.1"}'), canonical), false);
+  // 磁盘上的 .meta 损坏 = 不匹配，⛔ 不得因为「解析失败」被当成新鲜放过。
+  assert.equal(artifactMatches(META, Buffer.from("{ not json"), canonical), false);
+  // 容忍面严格限定 .meta：本工具独占写者的产物，同样的键序重排必须红。
+  // 变异：把 artifactMatches 里的 endsWith(".meta") 去掉 → 本行红。
+  assert.equal(artifactMatches("docs/s/evidence/s1/catalog-hashes.json", creatorOrder, canonical), false);
+  assert.equal(artifactMatches("apps/shared/src/gameplays/snake/snakeSkinCatalog.generated.ts", creatorOrder, canonical), false);
 });
