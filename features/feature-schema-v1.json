@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "feature.json v1（Non-intrusive §5.1/§7.1：跨层登记信息，禁业务逻辑/可执行回调）",
+  "title": "feature.json v1（Non-intrusive §5.1/§7.1：跨层登记信息，禁业务逻辑/可执行回调；menu 只声明入口身份，⛔ 无 slot/order——位置归宿主 features/host.json，docs/PLUGIN.md §6）",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "id", "viewDirs", "views", "owners", "routes", "menu"],
@@ -72,21 +72,20 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["entryId", "slot", "order", "label", "labelKey", "launch"],
+        "required": ["entryId", "label", "labelKey", "launch"],
         "properties": {
           "entryId": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]{0,63}$" },
-          "slot": { "type": "integer", "minimum": 0, "maximum": 999 },
-          "order": { "type": "integer", "minimum": 0, "maximum": 9999 },
           "label": { "type": "string", "pattern": "^.{1,64}$" },
           "labelKey": { "type": "string", "pattern": "^[a-z][A-Za-z0-9.]{0,127}$" },
           "icon": { "type": "string", "pattern": "^ui://[A-Za-z0-9_]+/[A-Za-z0-9_.-]+$" },
           "launch": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["kind", "gameplayId"],
+            "required": ["kind"],
             "properties": {
-              "kind": { "const": "gameplay" },
-              "gameplayId": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]{0,63}$" }
+              "kind": { "type": "string", "pattern": "^(gameplay|route)$" },
+              "gameplayId": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]{0,63}$" },
+              "routeId": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]{0,63}$" }
             }
           }
         }

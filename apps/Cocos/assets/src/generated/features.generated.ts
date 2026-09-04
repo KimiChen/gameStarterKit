@@ -8,18 +8,15 @@ export interface GeneratedFeatureRoute {
     readonly restore: "keep-mounted" | "reopen" | "fallback" | "discard";
 }
 
-/** 玩法启动目标（LaunchPort.launch 的载荷；§7.4 点击唯一出口）。 */
-export interface GeneratedLaunchTarget {
-    readonly kind: "gameplay";
-    readonly gameplayId: string;
-}
+/** 入口启动目标（LaunchPort.launch 的载荷；§7.4 点击唯一出口）：进入玩法，或打开一个 feature route。 */
+export type GeneratedLaunchTarget =
+    | { readonly kind: "gameplay"; readonly gameplayId: string }
+    | { readonly kind: "route"; readonly routeId: string };
 
-/** Home 菜单入口贡献（§7.4：菜单唯一数据源）。 */
+/** 菜单入口贡献（§7.4：菜单唯一数据源）；只有身份与元数据，⛔ 无位置字段（位置见 GENERATED_HOST）。 */
 export interface GeneratedMenuContribution {
     readonly entryId: string;
     readonly featureId: string;
-    readonly slot: number;
-    readonly order: number;
     readonly label: string;
     readonly labelKey: string;
     readonly icon?: string;
@@ -55,7 +52,7 @@ export const GENERATED_FEATURES: readonly GeneratedFeatureDescriptor[] = [
             { id: "confirm", view: "Confirm", group: "system", restore: "discard" },
         ],
         menu: [
-            { entryId: "ballMove", featureId: "builtin", slot: 0, order: 1, label: "进入战斗", labelKey: "menu.enterBattle", launch: { kind: "gameplay", gameplayId: "ballMove" } },
+            { entryId: "ballMove", featureId: "builtin", label: "进入战斗", labelKey: "menu.enterBattle", launch: { kind: "gameplay", gameplayId: "ballMove" } },
         ],
     },
     {
@@ -65,13 +62,32 @@ export const GENERATED_FEATURES: readonly GeneratedFeatureDescriptor[] = [
         routes: [
         ],
         menu: [
-            { entryId: "snake", featureId: "snake", slot: 0, order: 0, label: "贪吃蛇大作战", labelKey: "menu.snakeOff", launch: { kind: "gameplay", gameplayId: "snake" } },
+            { entryId: "snake", featureId: "snake", label: "贪吃蛇大作战", labelKey: "menu.snakeOff", launch: { kind: "gameplay", gameplayId: "snake" } },
         ],
     },
 ];
 
-/** 全仓菜单贡献（已按 slot → order → featureId → entryId 排序）。 */
+/** 全仓菜单贡献（已按 featureId → entryId 排序；⛔ 不含位置——首屏顺序见 GENERATED_HOST.home）。 */
 export const GENERATED_MENU_CONTRIBUTIONS: readonly GeneratedMenuContribution[] = [
-    { entryId: "snake", featureId: "snake", slot: 0, order: 0, label: "贪吃蛇大作战", labelKey: "menu.snakeOff", launch: { kind: "gameplay", gameplayId: "snake" } },
-    { entryId: "ballMove", featureId: "builtin", slot: 0, order: 1, label: "进入战斗", labelKey: "menu.enterBattle", launch: { kind: "gameplay", gameplayId: "ballMove" } },
+    { entryId: "ballMove", featureId: "builtin", label: "进入战斗", labelKey: "menu.enterBattle", launch: { kind: "gameplay", gameplayId: "ballMove" } },
+    { entryId: "snake", featureId: "snake", label: "贪吃蛇大作战", labelKey: "menu.snakeOff", launch: { kind: "gameplay", gameplayId: "snake" } },
 ];
+
+/** 首屏 Home 上的一条入口（宿主 placement 的展开形态）。 */
+export interface GeneratedHostHomeEntry {
+    readonly featureId: string;
+    readonly entryId: string;
+}
+
+/** 宿主 placement（features/host.json）：默认玩法与首屏入口顺序的唯一来源（docs/PLUGIN.md §6）。 */
+export interface GeneratedHostDescriptor {
+    readonly defaultLaunch: { readonly kind: "gameplay"; readonly gameplayId: string };
+    readonly home: readonly GeneratedHostHomeEntry[];
+}
+
+export const GENERATED_HOST: GeneratedHostDescriptor = {
+    defaultLaunch: { kind: "gameplay", gameplayId: "snake" },
+    home: [
+        { featureId: "snake", entryId: "snake" },
+    ],
+};

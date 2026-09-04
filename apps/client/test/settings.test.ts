@@ -1,8 +1,7 @@
 /**
  * 设置面板逻辑（docs/PLUGIN.md §6/§6.1 的机检）：
- *  - 插件入口排序取 **featureId 字母序**，⛔ 不是 contribution 的 slot/order 序——
- *    本仓当前两种序**恰好相反**（snake 的 order 更小、builtin 的 featureId 更小），
- *    所以这条断言真的有判别力（用例内先自洽核对「两序不同」，否则退化为永真）；
+ *  - 插件入口列表是**全量** contribution 按 **featureId 字母序**（⛔ 不是宿主 placement 的
+ *    首屏序，也不是声明序）：用例内自洽核对「全量 > 首屏 placement」与「独立重算的字母序」；
  *  - 点击走注入的 launch；不可用（failed/disabled）条目置灰且 activate 拒绝，
  *    显式 retry 仍走**同一条** launch 通道（宿主侧 userIntent 闸）；
  *  - 音乐/音效开关：成功保留乐观值、失败**回滚 UI** 并给可重试提示；
@@ -10,7 +9,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { GENERATED_MENU_CONTRIBUTIONS } from "../src/generated/features.generated";
+import { GENERATED_HOST, GENERATED_MENU_CONTRIBUTIONS } from "../src/generated/features.generated";
 import {
   SETTINGS_PLACEHOLDERS,
   SettingsLogic,
@@ -71,16 +70,20 @@ function contributionEntries(): SettingsPluginEntryInput[] {
   }));
 }
 
-test("插件入口按 featureId 字母序（⛔ 不是 contribution 的 slot/order 序）", () => {
-  const contributionOrder = GENERATED_MENU_CONTRIBUTIONS.map((item) => item.featureId);
-  const alphabetical = [...contributionOrder].sort();
-  // 自洽闭合：两种序必须真的不同，否则本用例没有判别力（菜单被掏空/顺序恰好一致）。
-  assert.notDeepEqual(contributionOrder, alphabetical,
-    "本仓的 contribution 序与 featureId 字母序必须不同，否则本断言退化为永真");
+test("插件入口是全量 contribution 按 featureId 字母序（⛔ 不是宿主 placement 的首屏序）", () => {
+  const alphabetical = [...GENERATED_MENU_CONTRIBUTIONS]
+    .map((item) => `${item.featureId}/${item.entryId}`)
+    .sort();
+  // 自洽闭合：全量入口必须多于首屏 placement，否则「全量 vs 首屏」无判别力（菜单被掏空/全上首屏）。
+  assert.ok(GENERATED_MENU_CONTRIBUTIONS.length > GENERATED_HOST.home.length,
+    "全量 contribution 必须多于 host.json 的 home placement");
 
   const harness = makeHarness(contributionEntries());
-  assert.deepEqual(harness.logic.pluginEntries().map((entry) => entry.featureId), alphabetical,
-    "设置面板列表必须取 featureId 字母序（把排序改回声明/slot 序即红）");
+  assert.deepEqual(harness.logic.pluginEntries().map((entry) => `${entry.featureId}/${entry.entryId}`), alphabetical,
+    "设置面板列表必须是全量入口的 featureId 字母序（按 placement 裁剪或改成声明序即红）");
+  const placed = new Set(GENERATED_HOST.home.map((entry) => entry.entryId));
+  assert.ok(harness.logic.pluginEntries().some((entry) => !placed.has(entry.entryId)),
+    "未上首屏的入口（回归样例 ballMove 一类）必须仍出现在设置面板");
 });
 
 test("同一 feature 的多条入口以 entryId 兜底排序（确定性，与语言无关）", () => {

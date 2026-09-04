@@ -1,62 +1,80 @@
 # 插件机制设计基线
 
-> 状态：**设计基线**（2026-09-04 讨论定稿）。本文只回答「什么能做成插件、装载时机在哪、包长什么样」，
-> ⛔ 不承诺实现时间表，也不改变任何既有约束。
+> 状态：**设计基线 + 分节实施状态**（2026-09-04 讨论定稿；2026-09-05 按 [docs/PLUGIN-REVIEW.md](PLUGIN-REVIEW.md)
+> 修订并实施推荐方案 ①～④）。本文回答「什么能做成插件、装载时机在哪、包长什么样、入口放哪」，
+> ⛔ 不改变任何既有约束。
+>
+> | 节 | 状态 |
+> | --- | --- |
+> | §1 判据 / §2 分层 / §3 例证 | 设计基线；措辞按审阅修正（机检真源改为所有权推导 allowlist） |
+> | §4 装载时机 | 设计基线；措辞按审阅修正 |
+> | §5 包格式与安装流程 | ✅ 已实现（`apps/server/tools/plugin/`，`plugin -- pack/install/uninstall/check`） |
+> | §6 入口与位置 | ✅ 已实施（设置面板、宿主 `features/host.json`、slot/order 退役、route 形态 launch、依赖装载） |
+> | §7 生命周期 | ✅ 已实现（已安装锁 `scripts/plugins/<id>.lock`） |
+> | §8 冲突面 | 按实际机检状态改写 |
+> | §9 缺口 | 已分「已补 / 仍开放」，开放项登记在 [plan-v5.md](../plan-v5.md) E 类 |
 >
 > 与 [docs/Non-intrusive.md](Non-intrusive.md) 的关系：那份是「框架如何做到新增玩法/feature 不侵入」的
 > 改造方案（框架侧阶段 0-9 已实施）；本文接着回答下一个问题——**外部包能否直接装进本项目跑起来**。
-> 判据一旦落地，`scripts/protected-paths.json` 就是它的机检真源。
+> 判据的机检真源是 §5.2 的所有权推导（`apps/server/tools/plugin/ownership.ts`），`scripts/protected-paths.json`
+> 只是它之外的第二道闸。
 >
-> 审阅记录：[docs/PLUGIN-REVIEW.md](PLUGIN-REVIEW.md)（2026-09-05）。该审阅对本文多处表述给出了带代码证据的修正与推荐实现方案，
-> 实施状态登记在 [plan-v5.md](../plan-v5.md)。
+> 审阅记录：[docs/PLUGIN-REVIEW.md](PLUGIN-REVIEW.md)（2026-09-05）。
 
 ## 1. 核心判据
 
 > **插件只能「消费」，不能「定义」。要定义就是框架 PR。**
 
 这条判据不是新发明的规矩，而是把前面十几轮改造**已经形成的结构**说出来：框架把「消费一层能力」做成了声明式
-（manifest / feature.json 里一行），把「定义一层能力」留在了受保护的中央文件里。两者的分界线恰好就是插件
-边界。
+（manifest / feature.json 里一行），把「定义一层能力」留在了中央文件里。两者的分界线恰好就是插件边界。
 
 除「能不能」之外还有第三类：**⛔ 责任不可转移**——技术上完全能做成插件，但责任在发行方，不该外包给
 插件（服务条款、隐私政策、推送授权、日志上报，见 §6.1）。
 
-判据可机检：安装脚本拿 `scripts/protected-paths.json` 一挡——包内命中受保护路径即拒绝安装。⛔ 没有这道闸，
-插件通道就是绕过全部保护路径的后门（一个 zip 里塞一份改过的 `GameRoom.ts`，解压就悄悄改了框架）。
+**判据可机检，但机检形态是 allowlist 而不是 denylist**：插件能写入的路径集合由它的身份纯函数推导（§5.2），
+不在推导集内的路径整包拒绝。`scripts/protected-paths.json` 自述只约束「普通 feature/gameplay 的新增动线」，
+它拦不住 zip 用相对路径写 `scripts/`、`package.json`、`RoomProfile.ts` 这类根本不在名单里的文件
+（PLUGIN-REVIEW F03/F04），所以它只作为 allowlist 之外的第二道闸。威胁模型见 §5.1：作者可信、包不可信，
+闸门防的是非预期写入与静默漂移，⛔ 不是沙箱。
 
 ## 2. 分层：哪些层可消费、哪些层只能定义
 
 | 层 | 插件能否自持 | 落点 |
 | --- | --- | --- |
-| gameplay module（实时玩法：manifest/state/wire + 三端模块） | ✅ 可消费 | `apps/shared/schema/gameplays/<id>/` 等玩法自有目录 |
-| feature（大厅页面 + RPC domain + View + 路由 + 菜单） | ✅ 可消费 | `features/<id>/feature.json` + 自有源码目录 |
+| gameplay module（实时玩法：manifest/state/wire + 三端模块） | ✅ 可消费 | `apps/shared/schema/gameplays/<id>/`、`apps/shared/src/gameplays/<id>/`、`apps/server/src/rooms/modes/<id>/`（导出 `register<Constant>GameMode`，`codegen:gameplays` 生成 `modes/catalog.generated.ts` 收录）、`apps/client/src/gameplay/modes/<id>/`、`logic/rooms/<id>/`、`view/rooms/<id>/`、`net/rooms/<Constant>Room.ts`、`apps/Cocos/assets/resources/<id>/` |
+| feature（大厅页面 + RPC domain + View + 路由 + 菜单） | ✅ 可消费 | `features/<id>/feature.json`、`apps/client/src/features/<id>/`、`apps/server/src/core/<id>/`（自有键经 `kFeatureUser`/`kFeatureShared`）；每个 domain：`apps/shared/src/protocol/lobbyRpc/domains/<d>.ts`、`apps/server/src/websocket/<d>/`、`apps/server/test/lobbyRpcVectors/<d>.ts`（`codegen:features` 生成向量登记表收录）；FGUI 包：`apps/art/fairygui/assets/<Pkg>/` + `resources/ui/<Pkg>.bin`/图集 |
+| 入口（菜单 contribution） | ✅ 可消费 | feature.json 的 `menu`：只有身份（entryId/label/labelKey/icon/launch），launch 可为 `gameplay` 或 `route`；位置见 §6 |
 | profile 声明（选用已有的房型策略组合） | ✅ 可消费 | manifest 的 `profiles` 一行 |
 | state fragment 声明（选用已有的公共状态片段） | ✅ 可消费 | state.json 的 `fragments` 一行 |
 | room policy 定义（新的 Start/Access 策略） | ⛔ 只能定义 | `apps/server/src/rooms/core/RoomProfile.ts` |
 | state fragment 定义（新的公共状态片段） | ⛔ 只能定义 | gameplay-codegen 的 stateRenderer |
 | core wire 定义（房内公共消息） | ⛔ 只能定义 | `apps/shared/src/protocol/messages.ts` |
 | shell 生命周期钩子定义 | ⛔ 只能定义 | `apps/server/src/rooms/GameMode.ts` 的钩子表 |
+| 入口位置（首屏摆什么、默认进哪个玩法） | ⛔ 归宿主 | `features/host.json`（§6） |
+| npm 依赖 / 根命令 / 协议信封 / SQL 表 | ⛔ 框架 PR | Non-intrusive §12.3；§5.2 的硬排除让它们根本进不了包 |
 
-上四行是声明式、零侵入；下四行全部落在受保护路径上，属 Non-intrusive §12.3 的「显式框架侵入」。
+上五行是声明式、零侵入；「只能定义」四行**不在任何插件的可写前缀内**（不是「都在受保护路径上」——
+`RoomProfile.ts` 与 stateRenderer 本就不在 protected-paths 名单里，靠的是 allowlist 推导集不含它们）。
 
 ## 3. 判据的例证（讨论中逐个验过）
 
 | 需求 | 判定 | 依据 |
 | --- | --- | --- |
-| 大厅聊天面板 | **消费型 → 插件可做** | feature 层完备，零框架改动 |
+| 大厅聊天面板 | **消费型 → 插件可做** | feature 层完备：feature.json + domain + websocket 端点 + 向量 sidecar + 客户端 View，零中央文件改动（§2 feature 行） |
 | 房内聊天增强（频道/私聊/表情） | 定义型 → 框架 PR | 房内聊天今天是 core wire（`CORE_C2S.Chat`），要扩展就得改 `protocol/messages.ts` |
-| 蛇增加「邀请好友内战」 | **消费型 → 插件可做** | 服务端侧只需两行声明，见 §3.1 |
+| 蛇增加「邀请好友内战」 | **消费型 → 插件可做** | 服务端侧只需声明，但代价如实见 §3.1 |
 | 做一个「给任意玩法加内战」的通用插件 | 定义型 → 框架 PR | 要同时贡献 room policy + state fragment + core wire |
 | 无尽模式要的 `roomLifecycle` 能力 | 定义型 → 框架 PR | 属实：当初改了 `GameRoom.ts`/`GameMode.ts` 共 80 行 |
+| 兑换码 / 纯页面型功能 | **消费型 → 插件标准形态** | 一条 idempotent-write RPC domain + 一个 View + 一条 `launch.kind:"route"` 的入口（§6） |
 
 ### 3.1 「蛇加内战」的实际代价（消费型样本）
 
-邀请好友内战的**实现全在框架里**（阶段 8 已交付）：邀请码租约与 access ticket 在 `core/rooms/invite/`、
+邀请好友内战的**框架部分**已交付（阶段 8）：邀请码租约与 access ticket 在 `core/rooms/invite/`、
 `room.prepareCreate`/`room.resolve` 在框架 core domain `lobbyRpc/domains/room.ts`、Ready/Start 是 core wire、
 `ownerReady`/`inviteRoom` 是 codegen 注入的公共 fragment、`private` profile（invite-code + owner-ready）
 在 `RoomProfile.ts` 注册表里已经现成。
 
-玩法侧只做声明：
+玩法侧的声明：
 
 ```jsonc
 // apps/shared/schema/gameplays/snake/manifest.json
@@ -65,25 +83,34 @@
 "fragments": ["ownerReady", "inviteRoom"]
 ```
 
-跑一次 `codegen:gameplays` 即生效，**服务端零中央文件改动**；漏声明 fragment 时 `RoomProfile.ts` 的启动期
-断言会直接点名缺哪个。`privateFixture` 是这条路径的现成实证。
+**服务端零中央文件改动**属实（漏声明 fragment 时 `RoomProfile.ts` 的启动期断言会直接点名缺哪个；
+`privateFixture` 是这条路径的现成实证），但「跑一次 codegen 即生效」不成立，代价如实登记
+（PLUGIN-REVIEW F07/F08）：
 
-⚠ 客户端侧仍有两项自带成本：需要玩法自己的输码/房间页 View（框架原设想的 `PrivateRoomLobby` 模板属编辑器
-待办、尚未做），以及 §6 的 `launch.profile` 缺口。
+- state 加 fragment 会改 per-mode `contractDigest`，`codegen:gameplays` 要求同批 bump `modeVersion`，
+  旧客户端会被 join 版本闸拒绝——这是契约变更，不是零成本；
+- snake 自己的代码要改：服务端 AI 填充与 `shouldSettle` 恒 false 的无尽结算策略要为私房分支、
+  客户端 `SnakeRoom.ts` 的 joiner 写死 `profile: "dropIn"` 且没有 Ready/Start 出站消息（`RoomClient` 运行时
+  拒发未声明的 C2S）——这些是玩法自有代码的工作，不是框架的；
+- 客户端还需要玩法自己的输码/房间页 View（`PrivateRoomLobby` 模板属编辑器待办，plan-v5 B3），
+  以及 §9 仍开放的 `launch.profile`。
 
 ## 4. 装载时机：只做构建期插件
 
 | 层 | 能做到什么 | 约束 |
 | --- | --- | --- |
-| **构建期插件**（本文取此） | 解压 → 一条命令 → 跑起来 | 多一条命令；全部静态门禁、类型检查、指纹保留 |
-| 服务端运行时插件 | 服务端启动扫描目录并动态 import（`websocket/loader.ts` 已有先例） | 在持有 Redis/MySQL 凭证的进程里执行外部代码，需信任模型 |
-| 客户端运行时插件 | **当前技术栈做不到** | Cocos Creator 在构建期定死模块图；铁律 10 与 Non-intrusive §5.3 明令 ⛔ 运行时 `fs`/目录扫描/`import.meta.glob` |
+| **构建期插件**（本文取此） | 解包 → `plugin -- install` → codegen/sync → 人工重钉指纹/FGUI 锁 → `verify:all` | 全部静态门禁、类型检查、指纹保留；⚠ 它不是沙箱——构建期只是多了一个 review 窗口，插件源码仍与框架同进程运行 |
+| 服务端运行时插件 | 启动期扫描目录并动态 import | 在持有 Redis/MySQL 凭证的进程里执行外部代码，需独立的信任模型。⚠ `websocket/loader.ts` 不是先例：它是「端点全集必须等于 shared 声明集」的静态注册表闸，只是用运行时发现来实现，⛔ 不接受未声明的端点 |
+| 客户端运行时插件 | **当前技术栈做不到** | Cocos Creator 在构建期定死模块图；Non-intrusive §5.3 明令 ⛔ 运行时 `fs`/目录扫描/`import.meta.glob`（铁律 10 说的是 FGUI 只走动态 import，与此是两件事） |
 
-客户端唯一的引擎出路是 Asset Bundle 远程加载，但 bundle 里的脚本仍由**本工程构建管线**产出——能做到「主壳
-发版一次、玩法 bundle 远程更新」，做不到「第三方任意 zip 解压即用」。平台合规（小游戏/应用商店）是另一个
-需按发布目标单独核实的变量。
+客户端的引擎出路是 Asset Bundle 远程加载，但 bundle 里的脚本仍由**本工程构建管线**产出——能做到「主壳
+发版一次、玩法 bundle 远程更新」，做不到「第三方任意 zip 解压即用」；这类远程代码下载本就在 §10 非目标内。
+平台合规（小游戏/应用商店）是另一个需按发布目标单独核实的变量。
 
-**既定取舍**：接受「安装后始终要开一次 Creator」（生成客户端镜像的 `.meta`），换取全部构建期审计能力。
+**`.meta` 的取舍**（修正旧表述「安装后始终要开一次 Creator」）：`.meta` 由作者侧 Creator 产出并**随包分发**，
+安装侧 ⛔ 不合成；`sync-client --check` 的 `.meta` 断言只遍历 git 已跟踪文件，`plugin -- install` 落盘后
+`git add`，无头 CI 上 `verify:all` 即可通过。打开 Creator 是**确认**（它只会重写 `.meta` 的键序/版本，uuid 不变），
+不是前置。
 
 ## 5. 包格式与安装流程
 
@@ -181,88 +208,129 @@ npm --workspace @game/server run plugin -- check
 
 ## 6. 入口与位置：插件声明身份，宿主决定去处
 
-**框架默认形态**（本仓自带、供接手者替换）：默认加载页 → 默认首屏（本项目的宣传内容，右上角一个设置
-按钮）→ 设置面板，**插件入口默认收纳在设置面板的入口列表里**。
+> 状态：✅ 已实施（2026-09-05）——设置面板（`logic/page/SettingsLogic.ts`，eacb687）、宿主 placement
+> `features/host.json`（`codegen:features` 生成 `GENERATED_HOST`）、slot/order 从 schema/codegen/
+> FeatureRegistry/AppRuntime/Main 全部退役、`launch.kind:"route"`、FeatureHost 按 `dependencies` 装载。
+> 机检：`apps/client/test/homeMenu.test.ts`、`settings.test.ts`、`featureHost.test.ts`、
+> `apps/server/test/feature-codegen.test.ts`「入口治理闸」。
 
-由此确定贡献模型：
+**框架默认形态**（本仓自带、供接手者替换）：默认首屏（本项目的宣传内容 `PromoHome`，右上角一个设置
+按钮）→ 设置面板，**插件入口默认收纳在设置面板的入口列表里**；旧 FGUI `Home` 保留为可达 route（ballMove
+的现成入口、开发调试快捷入口）。
+
+贡献模型：
 
 > 插件只声明入口的**身份与元数据**（`entryId` / `label` / `labelKey` / 图标 / `launch`），
 > ⛔ **不声明位置**。位置归宿主。
 
-因此 `slot` / `order` 从插件 manifest **移除**——插件本就不该有权把自己塞进首屏。位置竞争这一整类冲突
-随之消失（旧表述见 §8）。⚠ 框架默认首屏是宣传页、不摆玩法入口，所以框架层**不需要**「谁上首屏」的
-白名单；真实产品的首屏由接手的开发者自己写，那是他们的项目代码，不需要框架给配置位。
+- `launch` 两种形态：`{ kind:"gameplay", gameplayId }` 进玩法；`{ kind:"route", routeId }` 打开一个 feature
+  route（纯 feature 插件——兑换码/聊天面板一类——的唯一入口形态；AppRuntime 先让 route 归属的 feature
+  过 FeatureHost 闸再打开）。
+- **位置归宿主的机检形态**是 `features/host.json`（不是「宿主自己写代码硬编码 entryId」）：
 
-设置面板列表的排序取 **`featureId` 字母序**：确定、无冲突、与语言无关（按显示名排会随语言变动）。
+  ```jsonc
+  { "schemaVersion": 1,
+    "defaultLaunch": { "kind": "gameplay", "gameplayId": "snake" },   // 默认玩法（Main.gameplayId 留空时的兜底）
+    "home": ["snake/snake"] }                                          // 首屏 Home 入口，qualified id 有序列表
+  ```
+
+  `codegen:features` 校验 defaultLaunch 有唯一贡献者、home 每条都存在且不重复，并渲染为 `GENERATED_HOST`；
+  换默认玩法/首屏顺序 = 改 host.json + 重跑 codegen，**零代码改动**。真实产品替换首屏时也只改这一份。
+- codegen 另闸：**entryId 全仓唯一**（宿主与设置面板都按裸 entryId 引用）、**一 gameplayId 一贡献者**
+  （launch → feature 的映射不靠排序裁决）。
+- 全量入口列表（设置面板）按 **`featureId` → `entryId` 字母序**：确定、无冲突、与语言无关；⛔ 不裁剪——
+  未上首屏的入口（回归样例 ballMove）仍出现在设置面板。
+- feature.json 的 `dependencies` 由 FeatureHost 真正消费：launch 先按声明序装依赖，任一依赖非 active 则本
+  feature failed 且不装；dispose 按安装完成逆序（依赖方先拆）。codegen 侧查环与不存在的依赖。
 
 ### 6.1 设置面板里的条目归属
 
 | 条目 | 归属 | 依据 |
 | --- | --- | --- |
-| 关闭音乐 / 音效 | 框架已有存储位 | `musicOn` / `sfxOn` 已在 user profile，`user.updateProfile` 即幂等写路由 |
-| 兑换码 | **消费型 → 插件标准形态** | 一条 idempotent-write RPC domain + 一个 View |
-| 日志上报 | 消费型（偏框架） | 客户端诊断 + 一个 endpoint |
+| 关闭音乐 / 音效 | 框架已有存储位 | `musicOn` / `sfxOn` 已在 user profile，`user.updateProfile` 即幂等写路由（✅ 已接线） |
+| 兑换码 | **消费型 → 插件标准形态** | 一条 idempotent-write RPC domain + 一个 View + `launch.kind:"route"` 入口 |
+| 日志上报 | 消费型（偏框架），但 HTTP 端点契约表 `protocol/http.ts` 是手写中央文件——需要新 HTTP endpoint 的形态属框架 PR，走 Lobby RPC domain 的形态才是插件 | 客户端诊断 + 一条 RPC |
 | 选择语言 | 框架横切能力，**当前是空位** | `labelKey` 字段已存在但客户端无任何 i18n 实现，实际渲染用的是硬编码 `label`（见 §9） |
 | 是否打开推送 | 框架 + 平台能力 | 现有 push 只有下行机制，无「订阅开关」语义；真推送还需平台 token |
 | 服务条款 / 隐私政策 | **⛔ 责任不可转移，宿主自负** | 需版本化的「已同意」状态；插件改了条款文本，责任归属无法解释 |
 
-合规四项（条款 / 隐私 / 推送 / 日志）应当是设置面板的**宿主固定区块**，插件入口列表是它下面的另一个区块。
+合规四项（条款 / 隐私 / 推送 / 日志）是设置面板的**宿主固定区块**（当前置灰占位、逐条带原因，⛔ 不做假实现），
+插件入口列表是它下面的另一个区块。
 
-### 6.2 三个连带后果
+### 6.2 连带后果（状态）
 
-1. **「默认玩法」将失去数据来源。** `AppRuntime` 现在的默认 launch target 读「排序最前的 contribution」，
-   slot/order 移除后该表达式无输入；而首屏不摆玩法入口，「默认进哪个玩法」也失去产品含义。建议把
-   `Main.ts` 的 `@property gameplayId` 与 `enterBattle()` 回退通道**降格为开发调试快捷入口**并改名注释，
-   ⛔ 不要留一个语义悬空的字段。
-2. **加载页是全新 route。** 现有链路是 Login → AreaList → LoginNotice → Home，没有加载页。它要承担 FGUI
-   包预加载与进度——⚠ 本仓 FGUI 包**只有加载路径、没有卸载路径**（包闭包是 app session 内常驻），所以
-   「开局预热哪些包」是加载页的实质决策，设计时须与 `packageLoader` 的既有能力对齐。
+1. **默认玩法的数据来源**：✅ 已重定位为 `features/host.json` 的 `defaultLaunch`（`DEFAULT_LAUNCH_GAMEPLAY_ID`
+   读 `GENERATED_HOST`，⛔ 不再从排序推导——否则退役 slot/order 后会静默翻成回归样例 ballMove，
+   PLUGIN-REVIEW F16）。`Main.ts` 的 `@property gameplayId` 已降格为**开发调试快捷入口**（tooltip/注释改写；
+   删除 @property 属场景资产 diff，需 Creator）。
+2. **加载页是全新 route**：仍开放（§9）。现有链路是 Login → AreaList → LoginNotice → PromoHome，没有加载页。
+   它要承担 FGUI 包预加载与进度——⚠ 本仓 FGUI 包**只有加载路径、没有卸载路径**（包闭包是 app session
+   内常驻），所以「开局预热哪些包」是加载页的实质决策，设计时须与 `packageLoader` 的既有能力对齐。
 3. **宣传首屏注定被整体替换**，这与 `HomeView.ts` / `HomeLogic.ts` 在保护清单里并不矛盾，但两件事必须
-   分开讲：**普通插件不得改 Home**（保护清单管的是这个）；**项目开发者替换 Home 是他们自己的项目**，
-   不受插件约束。⛔ 不要把后者误读成「框架不让改首屏」。
+   分开讲：**普通插件不得改 Home**（保护清单与 §5.2 硬排除管的是这个）；**项目开发者替换首屏是他们自己的
+   项目**，且首屏入口顺序仍从 `host.json` 读，不必硬编码。
 
 ⚠ 定位提醒：在框架默认形态里，设置面板实质承担了「入口大厅」的职责。**这是框架默认长这样，不是产品
-应该长这样**——真实产品多半会把主要玩法直接摆首屏。
+应该长这样**——真实产品多半会把主要玩法直接摆首屏（改 `host.json.home`）。
 
 ## 7. 生命周期取舍：安装为主，卸载罕见
 
 游戏项目一旦引入某个插件包（如聊天），基本不会卸载。这条事实反转了两个取舍：
 
-1. **卸载路径不值得投资**。在「基本不卸载」的世界里，目录消失最可能的成因是**误删或包没拉全**，此时静默
-   收缩生成物比报错糟糕得多——所以删除保护要留着。
-2. **升级取代卸载成为第二高频操作**，因此包必须带版本与兼容声明；且**多插件长期共存是常态**，冲突面（§8）
-   才是主战场。
+1. **卸载路径保持显式**（`plugin -- uninstall`，按已安装锁的清单删，⛔ 不做「删目录自动收缩生成物」）。
+   在「基本不卸载」的世界里，目录消失最可能的成因是**误删或包没拉全**，此时静默收缩生成物比报错糟糕得多
+   ——所以两个 codegen 的 `--allow-delete` 删除保护要留着，卸载命令显式传它。
+2. **升级取代卸载成为第二高频操作**，因此包必须带版本；**已安装状态是一把锁**（`scripts/plugins/<id>.lock`：
+   版本 + 全部文件的 sha256），升级 = 三方比对（§5.4），本地改动、同版本不同内容、降级都被点名。
+   多插件长期共存是常态，冲突面（§8）才是主战场。
 
 ## 8. 冲突面（多包共存时的真正战场）
 
 | 冲突面 | 现状 |
 | --- | --- |
-| 玩法/feature id、RPC domain、route 名 | ✅ codegen 已 fail-fast |
-| Redis key 命名空间 | ✅ gameplay 侧有 `kGameplay` 工厂；⛔ feature 侧仍各写各的 |
-| 菜单 slot/order | ✅ **已消解**——插件不再声明位置（§6），位置竞争这一整类冲突消失 |
-| FGUI 包名与 `ui://` 命名空间 | ⚠ 有闭包校验，同名包冲突的防护**待核实** |
-| 插件间依赖顺序与环 | ⚠ feature manifest 已有 `dependencies` 字段，是否被真正消费（顺序/环检测）**待核实** |
+| 玩法/feature id、RPC domain、route 名、View 名、错误码、operationGroup | ✅ codegen fail-fast（含大小写归一化） |
+| menu entryId | ✅ codegen 全仓唯一（2026-09-05） |
+| 同一 gameplayId 多贡献者 | ✅ codegen 拒绝（一 gameplayId 一贡献者） |
+| 入口位置 | ✅ 已消解——插件不声明位置，`features/host.json` 是唯一声明处 |
+| Redis key 命名空间 | ✅ gameplay 侧 `kGameplay`（`gp:`）、feature 侧 `kFeatureUser`/`kFeatureShared`（`ft:`）两个工厂，命名空间互不可达 |
+| FGUI 包名与 `ui://` 命名空间 | ✅ `scripts/fgui-manifest.mjs` 已查 package 名/id 与资源名/id 重复；安装侧靠所有权推导（只允许声明的 `fguiPackages`）挡住同名包解压覆盖 |
+| 插件间依赖顺序与环 | ✅ codegen 查环与不存在的依赖；FeatureHost 运行期按依赖顺序装载/逆序卸载 |
+| 文件级越权与残留 | ✅ allowlist 整包拒绝；已安装锁让升级按清单删、卸载按清单删 |
+| Lobby 域契约漂移（feature 侧） | ⚠ 当前只有 route 级 `contractVersion`（幂等 v2 消费），无「digest 变则须 bump」的 codegen 闸——见 §9 |
+| MySQL 表 | ⛔ 不开口：需要新表的能力不是插件，是框架 PR（Non-intrusive §12.3） |
 
-## 9. 做插件机制前要补的缺口
+## 9. 缺口清单（做插件机制前要补的）
 
-1. **`launch.profile`**：菜单条目的 `launch` 现在只有 `{ kind, gameplayId }`，不带房型。因此一个玩法在 Home
-   只能出一个入口——蛇要同时提供「快速开始」（dropIn）与「邀请好友」（private）就需要它。补丁很小：生成器
-   加可选字段 → AppRuntime 传下去 → 让 target 覆盖 services 的 `launchDefaults`。
-2. **`PrivateRoomLobby` 模板**（Non-intrusive §7.5 的编辑器待办）：不做的话，每个用 private profile 的玩法
-   都要自画输码/房间页。
-3. **`modes/catalog.ts` 生成化**：服务端玩法注册目前仍是手写三行；改由 codegen 从目录发现后，「加目录自动进」
-   才成立。
-4. **i18n / LocalizePort 空位**：`labelKey` 有字段、无实现，实际渲染的是硬编码 `label`。做「选择语言」
-   之前它只是装饰；一旦要做，它就成了契约——且**必须先于插件机制落地**，否则每个插件都会硬编码一种语言。
-5. **默认 launch target 的去处**：随 slot/order 移除一并重定位（§6.2 第 1 条）。
-6. **框架默认加载页**：全新 route，与 FGUI 包预热策略绑定（§6.2 第 2 条）。
-7. §8 的两条待核实项。
+已补（2026-09-05，证据在各自测试）：
+
+- ✅ `modes/catalog.ts` 生成化（`codegen:gameplays` → `modes/catalog.generated.ts`）；
+- ✅ RPC 向量登记表生成化（`codegen:features` → `lobbyRpcVectors/index.generated.ts`）——新增域不再手改中央测试；
+- ✅ feature 侧 Redis 键工厂；
+- ✅ 默认 launch target 重定位（`host.json.defaultLaunch`）与 slot/order 退役；
+- ✅ `launch.kind:"route"`（纯 feature 入口）；
+- ✅ `dependencies` 运行期消费；
+- ✅ §8 两条「待核实」定论（FGUI 包名重复已查、依赖已消费）。
+
+仍开放（登记在 [plan-v5.md](../plan-v5.md) E 类）：
+
+1. **`launch.profile`**：入口的 gameplay launch 不带房型，一个玩法只能出一个入口——蛇要同时提供「快速开始」
+   （dropIn）与「邀请好友」（private）就需要它。客户端现状是各玩法 joiner 写死 profile（`SnakeRoom.ts`），
+   补丁：生成器加可选字段 → AppRuntime 传下去 → 玩法 joiner 按 target 选 profile。
+2. **`PrivateRoomLobby` 模板**（plan-v5 B3，编辑器待办）：不做的话，每个用 private profile 的玩法都要自画
+   输码/房间页。
+3. **i18n / LocalizePort 空位**：`labelKey` 有字段、无实现，实际渲染的是硬编码 `label`。做「选择语言」
+   之前它只是装饰；一旦要做，它就成了契约——缺的是 LocalizePort 契约与 locales 载体，
+   并**必须先于第一个第三方插件落地**，否则每个插件都会硬编码一种语言。
+4. **框架默认加载页**：全新 route，与 FGUI 包预热策略绑定（§6.2 第 2 条）。
+5. **feature 侧契约闸**：codegen 层「域 descriptor digest 变化 ⇒ 必须 bump contractVersion」（与 gameplay 的
+   digest/modeVersion 闸对称）；join 信封侧的版本比对属协议 PR（Non-intrusive §4.8：两类实体共用协议整数，
+   ⛔ 不各自新增版本闸）。
 
 ## 10. 非目标
 
 沿用 [docs/Non-intrusive.md](Non-intrusive.md) §3.3 的既定边界并在此重申：
 
 - ⛔ 不实现运行时热插拔、远程代码下载或脚本热更新；
-- ⛔ 不承诺支持**不可信第三方包**——当前判据只覆盖「自己与合作方编写的包」，服务端代码沙箱是另一个量级的
-  议题，需独立立项；
+- ⛔ 不承诺支持**不可信第三方包**——威胁模型是「作者可信、包不可信」（§5.1），服务端代码沙箱是另一个
+  量级的议题，需独立立项；
 - ⛔ 不把 codegen 产物、协议指纹、镜像 diff 隐藏掉——它们是 review 的可见面（Non-intrusive §1 的既有论证）。

@@ -14,8 +14,9 @@
  */
 import {
     GENERATED_FEATURES,
-    GENERATED_MENU_CONTRIBUTIONS,
+    GENERATED_HOST,
     type GeneratedFeatureDescriptor,
+    type GeneratedHostDescriptor,
 } from "../generated/features.generated";
 
 export type {
@@ -23,10 +24,15 @@ export type {
     GeneratedMenuContribution as FeatureMenuContribution,
     GeneratedLaunchTarget as FeatureLaunchTarget,
     GeneratedFeatureDescriptor as FeatureDescriptor,
+    GeneratedHostDescriptor as HostDescriptor,
+    GeneratedHostHomeEntry as HostHomeEntry,
 } from "../generated/features.generated";
 
 /** 应用装配的全部 feature 描述符（generated 单源）。 */
 export const APP_FEATURES: readonly GeneratedFeatureDescriptor[] = GENERATED_FEATURES;
+
+/** 宿主 placement（features/host.json 经 codegen:features 生成）：默认玩法 + 首屏入口顺序。 */
+export const APP_HOST: GeneratedHostDescriptor = GENERATED_HOST;
 
 function requireFeature(id: string): GeneratedFeatureDescriptor {
     const descriptor = GENERATED_FEATURES.find((feature) => feature.id === id);
@@ -38,20 +44,14 @@ function requireFeature(id: string): GeneratedFeatureDescriptor {
 export const BUILTIN_FEATURE: GeneratedFeatureDescriptor = requireFeature("builtin");
 
 /**
- * 默认 launch target 的玩法 id（§7.4：菜单是入口的唯一数据源）。
+ * 默认 launch target 的玩法 id：**宿主显式声明**（features/host.json 的 defaultLaunch，经
+ * codegen:features 生成为 GENERATED_HOST；生成器校验它必须有唯一贡献者）。
  *
- * 取**已排序**菜单贡献的第一条——即 Home 渲染到主入口的那条（排序 slot → order →
- * featureId → entryId 由生成器完成，⛔ 此处不重排、不筛选、不硬编码任何玩法名）。
- * 换默认入口 = 改 `features/<id>/feature.json` 的 slot/order 数值 + 重跑 codegen:features，
- * **零代码改动**（闭合断言见 apps/client/test/homeMenu.test.ts）。
- *
- * 菜单为空是生成器闸挡住的不可达态（FEATURE_IDS 删除保护 + built-in 必有 contribution）；
- * 真为空时回退空串，交给 RoomController.startRegistered 的「未登记玩法 id」拒绝路径报错，
- * ⛔ 不在此处编一个玩法名兜底——那正是本次要消灭的硬编码。
+ * ⛔ 不再从菜单排序推导（docs/PLUGIN.md §6.2 / PLUGIN-REVIEW F16：位置声明退役后，排序首条
+ * 会静默翻成回归样例 ballMove）。换默认入口 = 改 features/host.json + 重跑 codegen:features，
+ * **零代码改动**（闭合断言见 apps/client/test/homeMenu.test.ts）。⛔ 此处不硬编码任何玩法名。
  */
-export const DEFAULT_LAUNCH_GAMEPLAY_ID: string = GENERATED_MENU_CONTRIBUTIONS.length > 0
-    ? GENERATED_MENU_CONTRIBUTIONS[0].launch.gameplayId
-    : "";
+export const DEFAULT_LAUNCH_GAMEPLAY_ID: string = GENERATED_HOST.defaultLaunch.gameplayId;
 
 /**
  * 默认 launch target 解析：显式 id（Main 的 `gameplayId` @property / AppRuntime options）

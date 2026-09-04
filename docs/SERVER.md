@@ -281,7 +281,8 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
   `GameRoom.assertDropInModeCompatible`）。settle 仍归 `mode.shouldSettle`、清房走 autoDispose；
   waitingDeadline/邀请码机制对 drop-in 不接线。profile `"dropIn"`（drop-in + matchmaking）由
   fixture gameplay `dropInFixture` 驱动测试（manifest `maxPlayers: 8` → roster.max → maxClients，
-  8 人上限是玩法 manifest 配置参数而非框架常量；⛔ 不进生产 registry/默认撮合池）。验收见
+  8 人上限是玩法 manifest 配置参数而非框架常量；⛔ 不进生产 registry/默认撮合池的是该 fixture 玩法，
+  profile `"dropIn"` 本身是生产可用的——snake 正以它上生产）。验收见
   `test/drop-in.test.ts` 与 `test/int/drop-in.test.ts`（8 人同房/第 9 人新房/空位回填/宽限占座真栈）。
 - `onCreate` 在首次 handshake 前按 mode 选择一次 root；公共入口之后禁止替换 root。两种状态只共享
   tick/phase/matchId/players 生命周期语义，不共享 player 字段或结算判定。

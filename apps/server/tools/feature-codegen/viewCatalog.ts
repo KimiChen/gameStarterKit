@@ -14,7 +14,8 @@
  *    ⚠ catalog 收录面 = FGUI 页面 ∪ **被 feature routes 引用的** cocos View；未被引用的
  *    cocos View（BallMove/SnakeWorld 这类玩法表现件）只进源文件清单，不进 catalog；
  *  - `apps/client/src/generated/features.generated.ts`：feature/route/menu contribution 数据
- *    （menu 排序 slot → order → featureId → entryId）。
+ *    （menu 只声明身份，排序 featureId → entryId；位置归宿主 `features/host.json`，渲染为
+ *    GENERATED_HOST：defaultLaunch + 首屏 home placement，docs/PLUGIN.md §6）。
  *
  * 校验 fail-fast（§7.5）：重复 qualified View id、一 View 一 manifest、logic 路径存在且位于
  * owner 声明目录、sidecar⇔View 文件双向（viewDirs 递归发现，未登记红）、`ui://` 引用 ⊆
@@ -28,7 +29,13 @@ import fs from "node:fs";
 import path from "node:path";
 import { parseFguiComponent } from "../../../../tools/fgui-codegen/parseFgui";
 import { bindingFields } from "../../../../tools/fgui-codegen/binding";
-import { parseFeatureManifest, type FeatureManifest } from "./featureManifestSchema";
+import {
+  parseFeatureManifest,
+  readHostManifest,
+  type FeatureManifest,
+  type FeatureManifestLaunch,
+  type HostManifest,
+} from "./featureManifestSchema";
 
 const FEATURES_DIR_RELATIVE = "features";
 const ART_DIR_RELATIVE = "apps/art/fairygui/assets";
@@ -378,6 +385,8 @@ export type ViewCatalog = {
   readonly viewDirs: readonly string[];
   /** 仓库根（绝对路径）：能力索引渲染时做 fragment defaultEntry 的存在性判定，⛔ 不进产物字节。 */
   readonly root: string;
+  /** 宿主 placement（features/host.json）：默认玩法 + 首屏入口顺序，⛔ 插件 manifest 无权声明位置。 */
+  readonly host: HostManifest;
 };
 
 function detectDependencyCycle(features: readonly FeatureManifest[]): void {
@@ -605,6 +614,8 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
   const routeIds = new Map<string, string>();
   const routeViews = new Map<string, string>();
   const menuEntryIds = new Map<string, string>();
+  const gameplayContributors = new Map<string, string>();
+  // route 先全部登记（launch.kind:"route" 可以引用他 feature 的 route），再校验 menu。
   for (const feature of features) {
     const label = `${FEATURES_DIR_RELATIVE}/${feature.id}/feature.json`;
     for (const route of feature.routes) {
@@ -621,14 +632,44 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
         fail(entry.sidecarPath, `被 route "${route.id}" 引用的 View 必须在 sidecar 声明 group 与 restore`);
       }
     }
+  }
+  for (const feature of features) {
+    const label = `${FEATURES_DIR_RELATIVE}/${feature.id}/feature.json`;
     for (const item of feature.menu) {
-      const key = `${feature.id}/${item.entryId}`;
-      if (menuEntryIds.has(key)) fail(label, `menu entryId "${item.entryId}" 重复`);
-      menuEntryIds.set(key, feature.id);
+      // entryId 全仓唯一（PLUGIN-REVIEW F24）：宿主 placement 与设置面板都按裸 entryId 引用/查找。
+      const clash = menuEntryIds.get(item.entryId);
+      if (clash) {
+        fail(label, clash === feature.id
+          ? `menu entryId "${item.entryId}" 重复`
+          : `menu entryId "${item.entryId}" 已被 feature "${clash}" 使用（entryId 全仓唯一）`);
+      }
+      menuEntryIds.set(item.entryId, feature.id);
+      if (item.launch.kind === "gameplay") {
+        // 一 gameplayId 一贡献者（F17）：launch→feature 映射不能靠排序裁决。
+        const owner = gameplayContributors.get(item.launch.gameplayId);
+        if (owner && owner !== feature.id) {
+          fail(label, `玩法 "${item.launch.gameplayId}" 的入口已由 feature "${owner}" 贡献（一 gameplayId 一贡献者）`);
+        }
+        gameplayContributors.set(item.launch.gameplayId, feature.id);
+      } else if (!routeIds.has(item.launch.routeId)) {
+        fail(label, `menu entryId "${item.entryId}" 的 launch 引用未登记的 route "${item.launch.routeId}"`);
+      }
     }
   }
 
-  return { features, entries, viewDirs: allViewDirs, root };
+  // 宿主 placement：默认玩法必须有唯一贡献者；home 里每个 qualified id 必须真实存在。
+  const host = readHostManifest(root);
+  if (!gameplayContributors.has(host.defaultLaunch.gameplayId)) {
+    fail("features/host.json", `defaultLaunch 指向没有任何 feature 贡献入口的玩法 "${host.defaultLaunch.gameplayId}"`);
+  }
+  for (const qualified of host.home) {
+    const [featureId, entryId] = qualified.split("/");
+    if (menuEntryIds.get(entryId) !== featureId) {
+      fail("features/host.json", `home 引用不存在的入口 "${qualified}"（形态 featureId/entryId，须与某条 menu contribution 一致）`);
+    }
+  }
+
+  return { features, entries, viewDirs: allViewDirs, root, host };
 }
 
 // ── 渲染 ────────────────────────────────────────────────────────────────────
@@ -759,15 +800,19 @@ export function renderViews(catalog: ViewCatalog): string {
   return `${lines.join("\n")}\n`;
 }
 
-/** menu contribution 排序：slot → order → featureId → entryId（§7.4）。 */
+/** menu contribution 排序：featureId → entryId（确定、与语言无关；位置不由插件声明，docs/PLUGIN.md §6）。 */
 function compareContributions(
-  left: { slot: number; order: number; featureId: string; entryId: string },
-  right: { slot: number; order: number; featureId: string; entryId: string },
+  left: { featureId: string; entryId: string },
+  right: { featureId: string; entryId: string },
 ): number {
-  if (left.slot !== right.slot) return left.slot - right.slot;
-  if (left.order !== right.order) return left.order - right.order;
   if (left.featureId !== right.featureId) return left.featureId < right.featureId ? -1 : 1;
   return left.entryId < right.entryId ? -1 : (left.entryId > right.entryId ? 1 : 0);
+}
+
+function renderLaunch(launch: FeatureManifestLaunch): string {
+  return launch.kind === "gameplay"
+    ? `launch: { kind: "gameplay", gameplayId: ${JSON.stringify(launch.gameplayId)} }`
+    : `launch: { kind: "route", routeId: ${JSON.stringify(launch.routeId)} }`;
 }
 
 export function renderFeatures(catalog: ViewCatalog): string {
@@ -782,18 +827,15 @@ export function renderFeatures(catalog: ViewCatalog): string {
   lines.push(`    readonly restore: "keep-mounted" | "reopen" | "fallback" | "discard";`);
   lines.push("}");
   lines.push("");
-  lines.push("/** 玩法启动目标（LaunchPort.launch 的载荷；§7.4 点击唯一出口）。 */");
-  lines.push("export interface GeneratedLaunchTarget {");
-  lines.push(`    readonly kind: "gameplay";`);
-  lines.push("    readonly gameplayId: string;");
-  lines.push("}");
+  lines.push("/** 入口启动目标（LaunchPort.launch 的载荷；§7.4 点击唯一出口）：进入玩法，或打开一个 feature route。 */");
+  lines.push("export type GeneratedLaunchTarget =");
+  lines.push(`    | { readonly kind: "gameplay"; readonly gameplayId: string }`);
+  lines.push(`    | { readonly kind: "route"; readonly routeId: string };`);
   lines.push("");
-  lines.push("/** Home 菜单入口贡献（§7.4：菜单唯一数据源）。 */");
+  lines.push("/** 菜单入口贡献（§7.4：菜单唯一数据源）；只有身份与元数据，⛔ 无位置字段（位置见 GENERATED_HOST）。 */");
   lines.push("export interface GeneratedMenuContribution {");
   lines.push("    readonly entryId: string;");
   lines.push("    readonly featureId: string;");
-  lines.push("    readonly slot: number;");
-  lines.push("    readonly order: number;");
   lines.push("    readonly label: string;");
   lines.push("    readonly labelKey: string;");
   lines.push("    readonly icon?: string;");
@@ -832,27 +874,49 @@ export function renderFeatures(catalog: ViewCatalog): string {
       .sort(compareContributions);
     for (const item of menu) {
       lines.push(`            { entryId: ${JSON.stringify(item.entryId)}, featureId: ${JSON.stringify(feature.id)}, `
-        + `slot: ${item.slot}, order: ${item.order}, label: ${JSON.stringify(item.label)}, labelKey: ${JSON.stringify(item.labelKey)}, `
+        + `label: ${JSON.stringify(item.label)}, labelKey: ${JSON.stringify(item.labelKey)}, `
         + (item.icon === undefined ? "" : `icon: ${JSON.stringify(item.icon)}, `)
-        + `launch: { kind: "gameplay", gameplayId: ${JSON.stringify(item.launch.gameplayId)} } },`);
+        + `${renderLaunch(item.launch)} },`);
     }
     lines.push("        ],");
     lines.push("    },");
   }
   lines.push("];");
   lines.push("");
-  lines.push("/** 全仓菜单贡献（已按 slot → order → featureId → entryId 排序）。 */");
+  lines.push("/** 全仓菜单贡献（已按 featureId → entryId 排序；⛔ 不含位置——首屏顺序见 GENERATED_HOST.home）。 */");
   lines.push("export const GENERATED_MENU_CONTRIBUTIONS: readonly GeneratedMenuContribution[] = [");
   const all = catalog.features
     .flatMap((feature) => feature.menu.map((item) => ({ ...item, featureId: feature.id })))
     .sort(compareContributions);
   for (const item of all) {
     lines.push(`    { entryId: ${JSON.stringify(item.entryId)}, featureId: ${JSON.stringify(item.featureId)}, `
-      + `slot: ${item.slot}, order: ${item.order}, label: ${JSON.stringify(item.label)}, labelKey: ${JSON.stringify(item.labelKey)}, `
+      + `label: ${JSON.stringify(item.label)}, labelKey: ${JSON.stringify(item.labelKey)}, `
       + (item.icon === undefined ? "" : `icon: ${JSON.stringify(item.icon)}, `)
-      + `launch: { kind: "gameplay", gameplayId: ${JSON.stringify(item.launch.gameplayId)} } },`);
+      + `${renderLaunch(item.launch)} },`);
   }
   lines.push("];");
+  lines.push("");
+  lines.push("/** 首屏 Home 上的一条入口（宿主 placement 的展开形态）。 */");
+  lines.push("export interface GeneratedHostHomeEntry {");
+  lines.push("    readonly featureId: string;");
+  lines.push("    readonly entryId: string;");
+  lines.push("}");
+  lines.push("");
+  lines.push("/** 宿主 placement（features/host.json）：默认玩法与首屏入口顺序的唯一来源（docs/PLUGIN.md §6）。 */");
+  lines.push("export interface GeneratedHostDescriptor {");
+  lines.push(`    readonly defaultLaunch: { readonly kind: "gameplay"; readonly gameplayId: string };`);
+  lines.push("    readonly home: readonly GeneratedHostHomeEntry[];");
+  lines.push("}");
+  lines.push("");
+  lines.push("export const GENERATED_HOST: GeneratedHostDescriptor = {");
+  lines.push(`    defaultLaunch: { kind: "gameplay", gameplayId: ${JSON.stringify(catalog.host.defaultLaunch.gameplayId)} },`);
+  lines.push("    home: [");
+  for (const qualified of catalog.host.home) {
+    const [featureId, entryId] = qualified.split("/");
+    lines.push(`        { featureId: ${JSON.stringify(featureId)}, entryId: ${JSON.stringify(entryId)} },`);
+  }
+  lines.push("    ],");
+  lines.push("};");
   return `${lines.join("\n")}\n`;
 }
 

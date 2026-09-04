@@ -63,16 +63,17 @@ import type { NavigationService } from "./NavigationService";
 
 /**
  * launch target(gameplayId) → 贡献它的 feature id：menu contribution 是唯一映射源
- * （§7.4）。同一 gameplayId 多贡献者取**菜单排序最前**（slot → order → featureId →
- * entryId）的贡献者——⛔ 不是「先声明者」：menuContributions() 返回前已按上述规则
- * 排序。已知语义：FeatureLaunchTarget 只带 gameplayId，第二贡献者的入口点击会经
- * 排序最前者的 feature 过闸。无贡献者的 target 不受 feature 闸管控。
+ * （§7.4）。codegen:features 已闸「一 gameplayId 一贡献者」（PLUGIN-REVIEW F17），映射不再
+ * 需要靠排序裁决；这里保留「先到者不被覆盖」只是对手工 fixture 的防御。route 形态的
+ * target 不进此表（它按 route 归属 feature 过闸，见 launch()）。无贡献者的 target 不受
+ * feature 闸管控。
  */
 export function deriveLaunchFeatureIds(
     contributions: readonly FeatureMenuContribution[],
 ): ReadonlyMap<string, string> {
     const map = new Map<string, string>();
     for (const item of contributions) {
+        if (item.launch.kind !== "gameplay") continue;
         if (!map.has(item.launch.gameplayId)) map.set(item.launch.gameplayId, item.featureId);
     }
     return map;
@@ -81,7 +82,7 @@ export function deriveLaunchFeatureIds(
 export interface AppRuntimeOptions {
     /** 玩法 presentation 挂载节点（Main 传入；本类不 import cc 值）。 */
     readonly node: Node;
-    /** 要进入的已登记玩法 id；缺省 = 排序最前的 menu contribution（DEFAULT_LAUNCH_GAMEPLAY_ID）。 */
+    /** 要进入的已登记玩法 id；缺省 = 宿主 features/host.json 的 defaultLaunch（DEFAULT_LAUNCH_GAMEPLAY_ID）。 */
     readonly gameplayId?: string;
     /** §7.8 show 三态判定的战斗连接快照 seam（测试注入；生产缺省读 gameplay services 的 roomClient）。 */
     readonly battleConnection?: () => GameRoomConnectionSnapshot;
@@ -144,6 +145,8 @@ export class AppRuntime {
             ?? appFeatureRegistry.featureIds().map((id) => ({
                 id,
                 resident: appFeatureRegistry.featureOf(id)?.resident ?? false,
+                // feature.json 的 dependencies：FeatureHost 按它先装依赖、逆序拆（codegen 已查环）。
+                dependencies: appFeatureRegistry.featureOf(id)?.dependencies ?? [],
             }));
         this.featureHost = new FeatureHost(hostedFeatures, {
             ports: this.ports,
@@ -409,6 +412,7 @@ export class AppRuntime {
      */
     async launch(target: FeatureLaunchTarget): Promise<void> {
         if (this.disposed) return;
+        if (target.kind === "route") return this.launchRoute(target.routeId);
         const featureId = this.launchFeatureIds.get(target.gameplayId) ?? null;
         // 映射指向未托管 feature 时不误伤、直通——与渲染侧 featureAvailability 对未登记
         // id 返回 "available" 的防御裁定一致（⛔ 不用 try/catch 吞异常：真实 install
@@ -429,7 +433,30 @@ export class AppRuntime {
         return this.launchGameplay(target);
     }
 
-    private launchGameplay(target: FeatureLaunchTarget | null): Promise<void> {
+    /**
+     * route 形态的入口（纯 feature 插件的唯一入口形态，docs/PLUGIN.md §6 / PLUGIN-REVIEW F23）：
+     * 先让 route 归属的 feature 过同一道 FeatureHost 闸（userIntent），再经 navigation 打开 route。
+     * 未登记的 route 不猜测、不打开（生成器已闸，这里只是防御）。
+     */
+    private async launchRoute(routeId: string): Promise<void> {
+        if (!appFeatureRegistry.hasRoute(routeId)) {
+            console.error(`[AppRuntime] launch 引用未登记的 route ${routeId}，忽略`);
+            return;
+        }
+        const featureId = appFeatureRegistry.routeOf(routeId).featureId;
+        if (this.featureHost.hosts(featureId)) {
+            const sessionGeneration = getSessionGeneration();
+            const status = await this.featureHost.launch(featureId, { userIntent: true });
+            if (this.disposed || getSessionGeneration() !== sessionGeneration) return;
+            if (status !== "active") {
+                console.error(`[AppRuntime] feature ${featureId} 不可用（${status}），取消打开 route ${routeId}`);
+                return;
+            }
+        }
+        await this.navigation.open(routeId);
+    }
+
+    private launchGameplay(target: { readonly kind: "gameplay"; readonly gameplayId: string } | null): Promise<void> {
         if (this.disposed) return Promise.resolve();
         if (this.battleTransition) return this.battleTransition;
         const abort = new AbortController();
@@ -465,8 +492,8 @@ export class AppRuntime {
         if (!isCurrent()) return;
 
         // launch target（generated contribution）优先；Main 的 gameplayId @property 仍是
-        // 默认 launch target 的兜底（阶段 9 评估删除）。两级都走 resolveLaunchGameplayId：
-        // 未填/空白最终回落到菜单排序最前那条，⛔ 此处不再硬编码玩法名。
+        // 默认 launch target 的兜底（开发调试快捷入口）。两级都走 resolveLaunchGameplayId：
+        // 未填/空白最终回落到宿主 features/host.json 的 defaultLaunch，⛔ 此处不再硬编码玩法名。
         const requestedId = resolveLaunchGameplayId(
             typeof targetGameplayId === "string" && targetGameplayId.trim().length > 0
                 ? targetGameplayId

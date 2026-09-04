@@ -55,7 +55,8 @@
   `privateFixture` 驱动测试，⛔ 不进生产 registry）；"dropIn" = drop-in+matchmaking（自由加入：
   首人即开局、开局 ⛔ 不 lock、动态 roster、Playing 中可入座到 roster.max，满员排除/减员回填完全
   交给 Colyseus 按 maxClients 的自动锁——由 fixture gameplay `dropInFixture` 驱动测试，manifest
-  `maxPlayers: 8` 实证「上限是玩法配置参数」，同样 ⛔ 不进生产 registry；互斥：⛔ 不与 invite-code、
+  `maxPlayers: 8` 实证「上限是玩法配置参数」，该 fixture 同样 ⛔ 不进生产 registry——profile 本身生产可用，
+  snake 正以 dropIn 上生产；互斥：⛔ 不与 invite-code、
   ⛔ 不与 mode.evidence 组合，注册期 fail-fast，语义详表见 docs/SERVER.md「StartPolicy 三变体」）。
   owner-ready 的 Ready/Start core wire、fence 元组
   开局事务、邀请码 lease 生命周期与 access ticket 准入时序见 `GameRoom.ts` 与
