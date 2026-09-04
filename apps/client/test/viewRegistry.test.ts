@@ -26,6 +26,7 @@ import {
   VIEW_SOURCE_DIRS,
   VIEW_SOURCE_RECORDS,
 } from "../src/generated/views.generated";
+import { GENERATED_FEATURES } from "../src/generated/features.generated";
 import { parseFguiComponent } from "../../../tools/fgui-codegen/parseFgui";
 import { regenerateViewSource } from "../../../tools/fgui-codegen/binding";
 
@@ -79,13 +80,24 @@ test("manifest 逐条 logic 路径存在 + sidecar 文件存在（View↔Logic �
   }
 });
 
-test("稳定 façade 与 generated 单源：VIEW_REGISTRY ⇔ catalog ⇔ manifest fgui 条目 ⇔ FGUI_CONTRACTS", () => {
+test("稳定 façade 与 generated 单源：VIEW_REGISTRY ⇔ catalog ⇔ manifest 页面条目 ⇔ FGUI_CONTRACTS", () => {
   assert.equal(VIEW_REGISTRY, GENERATED_VIEW_CATALOG,
     "viewRegistry 必须是 generated catalog 的稳定 façade（不许出现第二份手写全集）");
-  const fguiNames = VIEW_SOURCE_RECORDS.filter((record) => record.kind === "fgui")
+  // catalog 收录面 = fgui 条目 ∪ 被 feature routes 引用的 cocos 条目。「被 routes 引用」
+  // 就是「是页面而非玩法表现件」的判别信号——BallMove/SnakeWorld 不在任何 routes 里，
+  // 天然排除，⛔ 不靠额外标记字段。
+  const routedViews = new Set(GENERATED_FEATURES.flatMap((feature) => feature.routes.map((route) => route.view)));
+  const pageNames = VIEW_SOURCE_RECORDS
+    .filter((record) => record.kind === "fgui" || routedViews.has(record.name))
     .map((record) => record.name).sort();
-  assert.deepEqual(Object.keys(VIEW_REGISTRY).sort(), fguiNames,
-    "catalog 键必须等于 manifest 的 fgui 条目集合（cocos 条目不进 ViewMgr catalog）");
+  assert.deepEqual(Object.keys(VIEW_REGISTRY).sort(), pageNames,
+    "catalog 键必须等于「manifest 的 fgui 条目 ∪ 被 routes 引用的 cocos 条目」");
+  const unroutedCocos = VIEW_SOURCE_RECORDS
+    .filter((record) => record.kind === "cocos" && !routedViews.has(record.name)).map((record) => record.name);
+  for (const name of unroutedCocos) {
+    assert.equal(name in VIEW_REGISTRY, false,
+      `${name}: 未被任何 route 引用的 cocos View 是玩法表现件，⛔ 不得进 ViewMgr catalog`);
+  }
   for (const [key, meta] of Object.entries(VIEW_REGISTRY)) {
     assert.equal(meta.name, key, `注册键与 meta.name 不一致: ${key}`);
     assert.ok((VIEW_LAYERS as readonly string[]).includes(meta.layer), `${key}: 非法 layer ${meta.layer}`);

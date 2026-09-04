@@ -698,6 +698,74 @@ function addFixtureView(root: string): void {
   fs.writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
 }
 
+/**
+ * 在隔离根加入一个 fixture cocos view（无 FGUI 段；可选挂路由 / 可选声明 group+restore）。
+ * `route:true` 是「它是页面」的唯一信号——⛔ sidecar 里没有第二个标记字段可用。
+ */
+function addFixtureCocosView(
+  root: string,
+  options: { readonly route?: boolean; readonly restore?: boolean } = {},
+): void {
+  fs.writeFileSync(path.join(root, "apps/client/src/view/CxView.ts"), "export class CxView {}\n");
+  fs.writeFileSync(
+    path.join(root, "apps/client/src/view/CxView.view.json"),
+    `${JSON.stringify({
+      schemaVersion: 1,
+      owner: "builtin",
+      kind: "cocos",
+      layer: "base",
+      fullscreen: true,
+      onlyOne: true,
+      permanent: false,
+      interactive: false,
+      logic: "apps/client/src/logic/page/CxLogic.ts",
+      ...(options.restore === false ? {} : { group: "authenticated", restore: "reopen" }),
+    }, null, 2)}\n`,
+  );
+  fs.writeFileSync(path.join(root, "apps/client/src/logic/page/CxLogic.ts"), "export class CxLogic {}\n");
+  const manifestFile = path.join(root, "features/built-in/feature.json");
+  const manifest = JSON.parse(fs.readFileSync(manifestFile, "utf8"));
+  manifest.views.push("apps/client/src/view/CxView.view.json");
+  if (options.route) manifest.routes.push({ id: "cx", view: "Cx" });
+  fs.writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
+}
+
+test("cocos View 进 ViewMgr catalog 的判别信号 = 被 feature routes 引用（⛔ 无标记字段）", () => {
+  {
+    // 未挂路由：玩法表现件形态（BallMove/SnakeWorld 同款）——只进源文件清单。
+    const { root, options } = createFixture();
+    addFixtureCocosView(root, { restore: false });
+    writeFeatureArtifacts(options);
+    const views = fs.readFileSync(path.join(root, VIEWS_RELATIVE), "utf8");
+    assert.match(views, /\{ name: "Cx", owner: "builtin", kind: "cocos", /u,
+      "未挂路由的 cocos View 仍必须出现在 VIEW_SOURCE_RECORDS");
+    assert.doesNotMatch(views, /^ {4}Cx: defineView\(\{/mu,
+      "未被任何 route 引用的 cocos View ⛔ 不得进 ViewMgr catalog");
+  }
+  {
+    // 挂了路由：页面形态——进 catalog，且结构上没有 FGUI 段。
+    const { root, options } = createFixture();
+    addFixtureCocosView(root, { route: true });
+    writeFeatureArtifacts(options);
+    const views = fs.readFileSync(path.join(root, VIEWS_RELATIVE), "utf8");
+    const entry = /^ {4}Cx: defineView\(\{\n([\s\S]*?)^ {4}\}\),$/mu.exec(views);
+    assert.ok(entry, "被 route 引用的 cocos View 必须进 ViewMgr catalog");
+    assert.match(entry[1], /name: "Cx", kind: "cocos", layer: "base",/u);
+    assert.doesNotMatch(entry[1], /contract:|sharedPkgs:/u,
+      "cocos catalog 条目 ⛔ 不得带 FGUI 段（ViewMeta 判别联合里 CocosViewMeta 没有这些字段）");
+    assert.match(entry[1], /load: \(\) => import\("\.\.\/view\/CxView"\)\.then\(\(m\) => m\.CxView\),/u);
+    const features = fs.readFileSync(path.join(root, FEATURES_RELATIVE), "utf8");
+    assert.match(features, /\{ id: "cx", view: "Cx", group: "authenticated", restore: "reopen" \}/u,
+      "cocos 路由与 fgui 路由同形：group/restore 逐字来自 sidecar");
+  }
+  {
+    // 收录放宽 ⛔ 不放宽 group/restore 闸：被路由引用就必须声明恢复策略。
+    const { root } = createFixture();
+    addFixtureCocosView(root, { route: true, restore: false });
+    assert.throws(() => readViewCatalog(root), /必须在 sidecar 声明 group 与 restore/u);
+  }
+});
+
 test("checked-in client view artifacts are fresh（客户端 freshness 由 server 侧断言，§5.4 口径）", () => {
   // assertFeatureArtifactsFresh 已覆盖四件产物；此处显式核对三件客户端产物在盘上存在。
   for (const relative of CLIENT_ARTIFACTS) {
