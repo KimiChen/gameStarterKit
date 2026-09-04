@@ -328,3 +328,75 @@ export const SNAKE_RULESET = Object.freeze({
 
 /** 保留完整数值键集但放宽数字字面量，供确定性测试注入小型世界。 */
 export type SnakeRuleset = Readonly<{ [Key in keyof typeof SNAKE_RULESET]: number }>;
+
+// ── Snake 自有 wire 枚举（state.json 以 enumSource:"gameplay" 引用；桶导出保持 @game/shared 面不变） ──
+
+/** Snake Endless 个人 run 状态；Schema 与 typed message 共用，禁止客户端自造分支。 */
+export const SnakeRunState = {
+    Preparing: "preparing",
+    Cancelled: "cancelled",
+    Active: "active",
+    DeadPresentation: "deadPresentation",
+    ReliveOffering: "reliveOffering",
+    PendingRelive: "pendingRelive",
+    ReliveSpawning: "reliveSpawning",
+    ReliveCommitting: "reliveCommitting",
+    ReliveReady: "reliveReady",
+    Finalizing: "finalizing",
+    Finalized: "finalized",
+} as const;
+
+export type SnakeRunStateType = (typeof SnakeRunState)[keyof typeof SnakeRunState];
+
+/** 当前生命的权威死亡原因；仅用于死亡演出/复活窗，不替代 run 终局原因。 */
+export const SnakeDeathCause = {
+    None: "",
+    Wall: "wall",
+    Collision: "collision",
+    Forced: "forced",
+} as const;
+
+export type SnakeDeathCauseType = (typeof SnakeDeathCause)[keyof typeof SnakeDeathCause];
+
+export const SnakeRunEndReason = {
+    None: "",
+    ExplicitExit: "explicitExit",
+    DisconnectTimeout: "disconnectTimeout",
+    SessionReplaced: "sessionReplaced",
+    ModerationKick: "moderationKick",
+    ReliveDeclined: "reliveDeclined",
+    ReliveTimeout: "reliveTimeout",
+    DeathNoOffer: "deathNoOffer",
+    ReliveSpawnFailed: "reliveSpawnFailed",
+    ReliveSystemFailed: "reliveSystemFailed",
+    ForcedDeath: "forcedDeath",
+    Escape: "escape",
+    ServerDrain: "serverDrain",
+    RoomFault: "roomFault",
+} as const;
+
+export type SnakeRunEndReasonType = (typeof SnakeRunEndReason)[keyof typeof SnakeRunEndReason];
+export type SnakeTerminalEndReasonType = Exclude<SnakeRunEndReasonType, "">;
+
+export const SnakeReliveReceiptState = {
+    None: "none",
+    Processing: "processing",
+    Charged: "charged",
+    Applying: "applying",
+    Applied: "applied",
+    Activated: "activated",
+    Refunding: "refunding",
+    Refunded: "refunded",
+} as const;
+
+export type SnakeReliveReceiptStateType =
+    (typeof SnakeReliveReceiptState)[keyof typeof SnakeReliveReceiptState];
+
+export const SnakeRewardStatus = {
+    NotEnabled: "notEnabled",
+    Pending: "pending",
+    Applied: "applied",
+    Dead: "dead",
+} as const;
+
+export type SnakeRewardStatusType = (typeof SnakeRewardStatus)[keyof typeof SnakeRewardStatus];

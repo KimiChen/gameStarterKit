@@ -43,11 +43,22 @@ type BooleanField = {
   readonly description?: string;
 };
 
+/**
+ * enum 符号的归属来源。决定 **shared 侧**产物从哪个模块 import 该枚举：
+ *  - `"core"`（缺省，向后兼容）：`apps/shared/src/constants/game.ts`——跨玩法通用符号（GamePhase…）。
+ *  - `"gameplay"`：`apps/shared/src/gameplays/<id>/ruleset.ts`——该玩法自有符号，⛔ 不污染中央常量。
+ * 服务端侧产物两者都走 `@game/shared` 桶，故不受本键影响。
+ */
+export type EnumSource = "core" | "gameplay";
+
+export const ENUM_SOURCES: readonly EnumSource[] = ["core", "gameplay"];
+
 type EnumField = {
   readonly name: string;
   readonly kind: "enum";
   readonly enumObject: string;
   readonly enumType: string;
+  readonly enumSource: EnumSource;
   readonly members: readonly string[];
   readonly default: string;
   readonly errorCode: string;
@@ -244,7 +255,7 @@ function parseWireField(input: unknown, pathLabel: string): WireField {
     exactKeys(
       value,
       ["name", "kind", "enumObject", "enumType", "members", "default", "errorCode"],
-      ["description"],
+      ["description", "enumSource"],
       pathLabel,
     );
     if (!Array.isArray(value.members) || value.members.length === 0) fail(`${pathLabel}.members`, "must be a non-empty array");
@@ -252,11 +263,21 @@ function parseWireField(input: unknown, pathLabel: string): WireField {
     if (new Set(members).size !== members.length) fail(`${pathLabel}.members`, "contains duplicate enum members");
     const defaultMember = identifier(value.default, `${pathLabel}.default`);
     if (!members.includes(defaultMember)) fail(`${pathLabel}.default`, "must name a declared enum member");
+    // 缺省 "core" 保持既有 state.json 逐字节等价（ballMove/idle/snake 的 GamePhase 都不写本键）。
+    let enumSource: EnumSource = "core";
+    if (Object.prototype.hasOwnProperty.call(value, "enumSource")) {
+      const raw = stringValue(value.enumSource, `${pathLabel}.enumSource`);
+      if (raw !== "core" && raw !== "gameplay") {
+        fail(`${pathLabel}.enumSource`, `must be one of ${ENUM_SOURCES.join(" | ")}, got "${raw}"`);
+      }
+      enumSource = raw;
+    }
     return {
       name,
       kind,
       enumObject: identifier(value.enumObject, `${pathLabel}.enumObject`),
       enumType: identifier(value.enumType, `${pathLabel}.enumType`),
+      enumSource,
       members,
       default: defaultMember,
       errorCode: errorCode(value.errorCode, `${pathLabel}.errorCode`),
@@ -547,6 +568,17 @@ const ROOT_PHASE_ENUM_OBJECT = "GamePhase";
 const ROOT_PHASE_ENUM_TYPE = "GamePhaseType";
 const ROOT_PHASE_REQUIRED_MEMBERS = ["Waiting", "Playing", "Settle"] as const;
 
+/**
+ * 该玩法是否声明了 `enumSource: "gameplay"` 的字段。
+ * 为真时 `apps/shared/src/gameplays/<id>/ruleset.ts` 必须存在（shared 侧产物 import 它），
+ * 且聚合桶必须导出它（服务端侧产物走 `@game/shared` 解析同名符号）。
+ */
+export function hasGameplaySourcedEnum(descriptor: GameplayStateDescriptor): boolean {
+  return descriptor.types.some(
+    (type) => type.fields.some((field) => field.kind === "enum" && field.enumSource === "gameplay"),
+  );
+}
+
 /** shell 只读 player 的这两个字段（chat 广播与证据 roster 都只要它们）。 */
 export const PLAYER_LIFECYCLE_FIELDS = [
   { name: "id", kind: "string" },
@@ -578,6 +610,15 @@ function assertRootLifecycle(descriptor: GameplayStateDescriptor): void {
           `root phase must use ${ROOT_PHASE_ENUM_OBJECT}/${ROOT_PHASE_ENUM_TYPE}, `
           + `got ${field.enumObject}/${field.enumType} `
           + "(the generic shell writes GamePhase.* unconditionally)",
+        );
+      }
+      // 归属闸：phase 恒属 core。声明 "gameplay" 会让 shared 侧产物去 <id>/ruleset 找 GamePhase，
+      // 而通用 shell 写入的是 constants/game 的那一个——两个同名符号会各自独立演化。
+      if (field.enumSource !== "core") {
+        fail(
+          `state.types.${type.name}.phase`,
+          `root phase is always core-owned, got enumSource "${field.enumSource}" `
+          + `(${ROOT_PHASE_ENUM_OBJECT} lives in constants/game.ts and the generic shell writes it)`,
         );
       }
       for (const member of ROOT_PHASE_REQUIRED_MEMBERS) {
@@ -804,23 +845,29 @@ export function renderSharedStateModule(
   const byName = new Map(types.map((type) => [type.name, type]));
   const rootType = byName.get(descriptor.root);
   if (!rootType) fail(`gameplays.${gameplayId}`, `missing root type while rendering: ${descriptor.root}`);
-  const sharedValues = new Set<string>();
-  const sharedTypes = new Set<string>();
+  // 按归属分组：core → 中央常量；gameplay → 该玩法自有 ruleset（铁律 3：⛔ 不带扩展名）。
+  const bySource = new Map<EnumSource, { values: Set<string>; types: Set<string> }>();
+  for (const source of ENUM_SOURCES) bySource.set(source, { values: new Set(), types: new Set() });
   for (const type of types) {
     for (const field of type.fields) {
       if (field.kind === "enum") {
-        sharedValues.add(field.enumObject);
-        sharedTypes.add(field.enumType);
+        const bucket = bySource.get(field.enumSource)!;
+        bucket.values.add(field.enumObject);
+        bucket.types.add(field.enumType);
       }
     }
   }
   const lines = [generatedHeader(sourceLabel)];
-  if (sharedValues.size > 0 || sharedTypes.size > 0) {
+  // ENUM_SOURCES 固定序 + 组内字母序 ⇒ 字节确定性（与分组前的单组产物逐字节等价）。
+  for (const source of ENUM_SOURCES) {
+    const bucket = bySource.get(source)!;
+    if (bucket.values.size === 0 && bucket.types.size === 0) continue;
     const importNames = [
-      ...[...sharedValues].sort(),
-      ...[...sharedTypes].sort().map((name) => `type ${name}`),
+      ...[...bucket.values].sort(),
+      ...[...bucket.types].sort().map((name) => `type ${name}`),
     ];
-    lines.push(`import { ${importNames.join(", ")} } from "../../../constants/game";`);
+    const from = source === "core" ? "../../../constants/game" : `../../${gameplayId}/ruleset`;
+    lines.push(`import { ${importNames.join(", ")} } from "${from}";`);
   }
   // noUnusedLocals：只导入本 mode 实际用到的积木。
   const httpImports = [

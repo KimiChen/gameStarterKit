@@ -39,7 +39,7 @@ import {
   type GameplayCodegenOptions,
 } from "../tools/gameplay-codegen/lib";
 import { parseGameplayManifest } from "../tools/gameplay-codegen/manifestSchema";
-import { parseGameplayStateDescriptor } from "../tools/gameplay-codegen/stateRenderer";
+import { parseGameplayStateDescriptor, renderSharedStateModule } from "../tools/gameplay-codegen/stateRenderer";
 
 const REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const SCHEMA_DIR = path.join(REPOSITORY_ROOT, "apps/shared/schema/gameplays");
@@ -139,6 +139,16 @@ function createFixture(): { readonly root: string; readonly options: GameplayCod
     if (fs.existsSync(wire)) {
       fs.mkdirSync(path.join(root, "apps/shared/src/gameplays", id), { recursive: true });
       fs.copyFileSync(wire, path.join(root, "apps/shared/src/gameplays", id, "wire.ts"));
+    }
+  }
+  // ruleset.ts：state.json 一旦声明 enumSource:"gameplay"，它就是硬依赖（存在性闸），
+  // fixture 必须带上——snake 的 4 个自有枚举正是这么声明的。⚠ 与 wire.ts 不同，
+  // snake 的 ruleset 必须复制：缺了它 readGameplayDescriptors 直接 fail-fast。
+  for (const id of ["ballMove", "idle", "snake"]) {
+    const ruleset = path.join(REPOSITORY_ROOT, "apps/shared/src/gameplays", id, "ruleset.ts");
+    if (fs.existsSync(ruleset)) {
+      fs.mkdirSync(path.join(root, "apps/shared/src/gameplays", id), { recursive: true });
+      fs.copyFileSync(ruleset, path.join(root, "apps/shared/src/gameplays", id, "ruleset.ts"));
     }
   }
   // client module：canonical GameplayModeId ∩ modes/ 目录必须双向同集——canonical
@@ -776,6 +786,72 @@ test("root 的 phase 必须是 GamePhase 本身，⛔ 「是个 enum」不够", 
     (state) => { typeField(stateType(state, "GameRoomState"), "phase").enumType = "PuzzlePhaseType"; },
     /root phase must use GamePhase\/GamePhaseType/,
   );
+});
+
+test("enumSource:\"gameplay\" 的字段：shared 侧产物 import 指向该玩法自有 ruleset", () => {
+  // 判别力：玩法自有枚举必须从 <id>/ruleset 进 shared 产物。若渲染无条件走 core，
+  // 生成的 import 会指回 constants/game——那正是本轮要拆掉的中央耦合（снake 枚举
+  // 曾把 70 行 Snake-only 符号钉在跨玩法常量文件里）。
+  const state = parseGameplayStateDescriptor(stateFixture("snake"));
+  const rendered = renderSharedStateModule("snake", 8, state, "fixture");
+  // 玩法组：指向自有 ruleset，⛔ 不带扩展名（铁律 3）。
+  assert.match(
+    rendered,
+    /^import \{ SnakeDeathCause, SnakeReliveReceiptState, SnakeRunEndReason, SnakeRunState, type SnakeDeathCauseType, type SnakeReliveReceiptStateType, type SnakeRunEndReasonType, type SnakeRunStateType \} from "\.\.\/\.\.\/snake\/ruleset";$/mu,
+  );
+  // core 组仍走中央常量，且 Snake 符号一个都不许再出现在这条 import 里。
+  assert.match(rendered, /^import \{ GamePhase, type GamePhaseType \} from "\.\.\/\.\.\/\.\.\/constants\/game";$/mu);
+  const coreImport = rendered.split("\n").find((line) => line.includes('"../../../constants/game"'));
+  assert.ok(coreImport && !coreImport.includes("Snake"), "core import must not carry Snake symbols");
+
+  // 缺省（不写 enumSource）必须仍然整组走 core——向后兼容，ballMove/idle 产物零变。
+  const idle = parseGameplayStateDescriptor(stateFixture("idle"));
+  const idleRendered = renderSharedStateModule("idle", 4, idle, "fixture");
+  assert.match(idleRendered, /from "\.\.\/\.\.\/\.\.\/constants\/game";/u);
+  assert.doesNotMatch(idleRendered, /\/ruleset";/u);
+});
+
+test("enumSource 取值闭合，且 root 的 phase 恒属 core", () => {
+  // 反例①：非法取值必须点名拒绝，⛔ 不静默当成 core。
+  assertStateError(
+    "snake",
+    (state) => { typeField(stateType(state, "SnakePlayerState"), "runState").enumSource = "elsewhere"; },
+    /enumSource: must be one of core \| gameplay, got "elsewhere"/,
+  );
+  // 反例②：root phase 声明 gameplay 归属必须被点名拒绝。放行的话，shared 侧产物会去
+  // <id>/ruleset 找 GamePhase，而通用 shell 写入的是 constants/game 的那一个——
+  // 两个同名符号各自独立演化，运行期是「phase 比较恒假」的静默错。
+  assertStateError(
+    "snake",
+    (state) => { typeField(stateType(state, "SnakeRoomState"), "phase").enumSource = "gameplay"; },
+    /root phase is always core-owned, got enumSource "gameplay"/,
+  );
+  // 显式写 "core" 与缺省等价，必须放行（向后兼容的另一半）。
+  const explicitCore = stateFixture("snake");
+  typeField(stateType(explicitCore, "SnakeRoomState"), "phase").enumSource = "core";
+  assert.doesNotThrow(() => parseGameplayStateDescriptor(explicitCore));
+});
+
+test("声明 enumSource:\"gameplay\" 但 ruleset.ts 缺失：codegen 必须点名拒绝", () => {
+  // 存在性闸：shared 侧产物 import 它、聚合 barrel re-export 它，缺失就是断链。
+  // ⛔ 不留到 tsc 阶段——codegen 期就要指出是哪个玩法的哪个文件。
+  const { root, options } = createFixture();
+  const ruleset = path.join(root, "apps/shared/src/gameplays/snake/ruleset.ts");
+  assert.ok(fs.existsSync(ruleset), "fixture must start with snake ruleset present");
+  // 先证明有 ruleset 时是绿的，再删除——否则测不出是「缺失」导致的红。
+  assert.doesNotThrow(() => readGameplayDescriptors(options));
+  fs.rmSync(ruleset);
+  assert.throws(
+    () => readGameplayDescriptors(options),
+    /apps\/shared\/schema\/gameplays\/snake\/state\.json: declares enumSource "gameplay" but apps\/shared\/src\/gameplays\/snake\/ruleset\.ts is missing/,
+  );
+  // 反向对照：ballMove 不声明 gameplay 归属，没有 ruleset.ts 也必须照常通过——
+  // 存在性闸只在真正声明时收紧，⛔ 不给所有玩法强加一个文件。
+  assert.ok(!fs.existsSync(path.join(root, "apps/shared/src/gameplays/ballMove/ruleset.ts")));
+  fs.rmSync(path.join(root, "apps/shared/schema/gameplays/snake"), { recursive: true });
+  fs.rmSync(path.join(root, CLIENT_MODES_DIR, "snake"), { recursive: true });
+  assert.doesNotThrow(() => readGameplayDescriptors(options));
+  fs.rmSync(root, { recursive: true, force: true });
 });
 
 test("root 的 phase 必须声明 shell 会写入的全部成员，缺一个都不行", () => {
