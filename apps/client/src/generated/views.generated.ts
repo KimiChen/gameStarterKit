@@ -5,31 +5,31 @@ import { AREALIST_CONTRACT, CONFIRM_CONTRACT, HOME_CONTRACT, LOGINNOTICE_CONTRAC
 /** 不可变 View catalog（ViewMgr 的默认查询源；铁律 10：load 是字面量动态 import 闭包）。 */
 export const GENERATED_VIEW_CATALOG: Readonly<Record<string, ViewMeta>> = {
     AreaList: defineView({
-        name: "AreaList", contract: AREALIST_CONTRACT, layer: "popup",
+        name: "AreaList", kind: "fgui", contract: AREALIST_CONTRACT, layer: "popup",
         fullscreen: true, onlyOne: true, permanent: false, interactive: true,
         sharedPkgs: ["ui/Common_Btn","ui/Common_RGBA","ui/Dynamic_Login"],
         load: () => import("../view/AreaListView").then((m) => m.AreaListView),
     }),
     Confirm: defineView({
-        name: "Confirm", contract: CONFIRM_CONTRACT, layer: "top",
+        name: "Confirm", kind: "fgui", contract: CONFIRM_CONTRACT, layer: "top",
         fullscreen: true, onlyOne: false, permanent: false, interactive: true,
         sharedPkgs: ["ui/Common_Btn","ui/Common_RGBA"],
         load: () => import("../view/ConfirmView").then((m) => m.ConfirmView),
     }),
     Home: defineView({
-        name: "Home", contract: HOME_CONTRACT, layer: "base",
+        name: "Home", kind: "fgui", contract: HOME_CONTRACT, layer: "base",
         fullscreen: true, onlyOne: true, permanent: false, interactive: true,
         sharedPkgs: ["ui/Common_Btn","ui/Common_RGBA"],
         load: () => import("../view/HomeView").then((m) => m.HomeView),
     }),
     Login: defineView({
-        name: "Login", contract: LOGIN_CONTRACT, layer: "base",
+        name: "Login", kind: "fgui", contract: LOGIN_CONTRACT, layer: "base",
         fullscreen: true, onlyOne: true, permanent: false, interactive: true,
         sharedPkgs: ["ui/Common_Btn","ui/Common_Component","ui/Common_RGBA","ui/Dynamic_Login","ui/Dynamic_Spine","ui/L10n_zh_hans"],
         load: () => import("../view/LoginView").then((m) => m.LoginView),
     }),
     LoginNotice: defineView({
-        name: "LoginNotice", contract: LOGINNOTICE_CONTRACT, layer: "popup",
+        name: "LoginNotice", kind: "fgui", contract: LOGINNOTICE_CONTRACT, layer: "popup",
         fullscreen: true, onlyOne: true, permanent: false, interactive: true,
         sharedPkgs: ["ui/Common_Btn","ui/Common_RGBA","ui/Common_ComboBox","ui/L10n_zh_hans"],
         load: () => import("../view/LoginNoticeView").then((m) => m.LoginNoticeView),

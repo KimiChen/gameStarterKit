@@ -82,6 +82,7 @@ declare module "cc" {
         angle: number;
         static EventType: { TOUCH_START: string; TOUCH_MOVE: string; TOUCH_END: string; TOUCH_CANCEL: string };
         addChild(child: Node): void;
+        removeFromParent(): void;
         destroy(): boolean;
         setSiblingIndex(index: number): void;
         setPosition(x: number, y: number, z?: number): void;

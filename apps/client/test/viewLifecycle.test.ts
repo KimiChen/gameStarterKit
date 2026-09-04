@@ -21,6 +21,8 @@ type FakeListener = { callback: (...args: any[]) => unknown; target?: unknown };
 
 interface ViewRuntime {
   FguiView: any;
+  CocosView: any;
+  UITransform: any;
   ViewMgr: any;
   setViewCatalog: (catalog: Record<string, any> | null) => void;
   VIEW_REGISTRY: Record<string, any>;
@@ -37,6 +39,10 @@ interface ViewRuntime {
   makeText(name?: string): any;
   makeProgress(name?: string): any;
   getInputEnabled(): boolean;
+  /** ViewMgr 层容器的 Cocos 节点（cocos 页面的挂载父节点）。 */
+  getLayerNode(layer: string): any;
+  /** UIPackage.createObject 调用次数：cocos 分支必须一次都不碰 FGUI 组件工厂。 */
+  fguiObjectsCreated(): number;
 }
 
 let installedRuntime: ViewRuntime | null = null;
@@ -140,6 +146,42 @@ async function loadViewRuntime(): Promise<ViewRuntime> {
       siblings.splice(old, 1);
       siblings.splice(Math.max(0, Math.min(index, siblings.length)), 0, this);
     }
+
+    // ── CocosView 用到的最小 cc.Node 面 ──────────────────────────────────
+    private readonly components = new Map<unknown, unknown>();
+
+    removeFromParent(): void {
+      this.parent?.removeChild(this);
+    }
+
+    setPosition(x: number, y: number): void {
+      this.x = x;
+      this.y = y;
+    }
+
+    x = 0;
+    y = 0;
+
+    getComponent(type: unknown): unknown {
+      return this.components.get(type) ?? null;
+    }
+
+    addComponent(type: any): unknown {
+      const component = new type();
+      this.components.set(type, component);
+      return component;
+    }
+
+    destroy(): boolean {
+      this.removeFromParent();
+      this.isValid = false;
+      return true;
+    }
+  }
+
+  class FakeUITransform {
+    width = 0;
+    height = 0;
   }
 
   class FakeGObject {
@@ -307,6 +349,7 @@ async function loadViewRuntime(): Promise<ViewRuntime> {
   }
 
   const packages = new Map<string, object>();
+  let fguiObjectsCreated = 0;
   const fakeFgui = {
     GObject: FakeGObject,
     GComponent: FakeGComponent,
@@ -329,11 +372,13 @@ async function loadViewRuntime(): Promise<ViewRuntime> {
         packages.set(name, pkg);
         callback(null, pkg);
       },
-      createObject(): FakeGComponent { return new FakeGComponent(); },
+      createObject(): FakeGComponent { fguiObjectsCreated += 1; return new FakeGComponent(); },
     },
   };
   const canvasNode = new FakeNode("Canvas");
   const cc = {
+    Node: FakeNode,
+    UITransform: FakeUITransform,
     Canvas: class { readonly node = canvasNode; },
     director: {
       getScene(): { getComponentInChildren(): { node: FakeNode } } {
@@ -356,8 +401,9 @@ async function loadViewRuntime(): Promise<ViewRuntime> {
     return originalLoad.call(this, request, parent, isMain);
   };
   try {
-    const [{ FguiView }, { ViewMgr, setViewCatalog }, { VIEW_REGISTRY }, { LoginView }, { HomeView }, { AreaListView }, { LoginNoticeView }, { observePageAction }] = await Promise.all([
+    const [{ FguiView }, { CocosView }, { ViewMgr, setViewCatalog }, { VIEW_REGISTRY }, { LoginView }, { HomeView }, { AreaListView }, { LoginNoticeView }, { observePageAction }] = await Promise.all([
       import("../src/view/FguiView"),
+      import("../src/view/CocosView"),
       import("../src/view/ViewMgr"),
       import("../src/view/viewRegistry"),
       import("../src/view/LoginView"),
@@ -368,6 +414,8 @@ async function loadViewRuntime(): Promise<ViewRuntime> {
     ]);
     installedRuntime = {
       FguiView,
+      CocosView,
+      UITransform: FakeUITransform,
       ViewMgr,
       setViewCatalog,
       VIEW_REGISTRY: VIEW_REGISTRY as Record<string, any>,
@@ -407,6 +455,8 @@ async function loadViewRuntime(): Promise<ViewRuntime> {
         return progress;
       },
       getInputEnabled: () => FakeGRoot.inst.inputProcessor.enabled,
+      getLayerNode: (layer: string) => FakeGRoot.inst.node.children.find((child) => child.name === `layer_${layer}`),
+      fguiObjectsCreated: () => fguiObjectsCreated,
       LoginView,
       HomeView,
       AreaListView,
@@ -593,6 +643,143 @@ test("ViewMgr catalog 注入 seam：替身 catalog 不触碰生产 catalog，复
     handle?.close();
     setViewCatalog(null);
     ViewMgr.disposeViewRoot();
+  }
+});
+
+/** cocos 路由页面的元数据：⛔ 无 FGUI 段（contract/sharedPkgs 是 FguiViewMeta 才有的字段）。 */
+function cocosRouteMeta(name: string, ctor: unknown, overrides: Record<string, unknown> = {}): any {
+  return {
+    name,
+    kind: "cocos",
+    layer: "base",
+    fullscreen: true,
+    onlyOne: true,
+    permanent: false,
+    // cocos 页面固定 interactive:false：FGUI 的 InputProcessor 一开就全屏吞指针，
+    // 自建节点上的 Cocos 事件收不到（见 CocosView 类注释）。
+    interactive: false,
+    load: async () => ctor,
+    ...overrides,
+  };
+}
+
+test("ViewMgr kind:\"cocos\" 路由页面：跳过 FGUI 创建、挂层容器节点，事务序与 FGUI 分支逐段一致", async () => {
+  const runtime = await loadViewRuntime();
+  const name = "__cocos_route_probe__";
+  const hooks: string[] = [];
+  const created: any[] = [];
+  class ProbeCocosView extends runtime.CocosView {
+    constructor() {
+      super();
+      created.push(this);
+    }
+
+    protected onCreate(): void { hooks.push("create"); }
+    protected onOpen(): void { hooks.push("open"); }
+    protected onCloseLifecycle(): void { hooks.push("close"); }
+  }
+  runtime.VIEW_REGISTRY[name] = cocosRouteMeta(name, ProbeCocosView);
+  let handle: any = null;
+  let reopened: any = null;
+  try {
+    runtime.ViewMgr.disposeViewRoot();
+    const fguiObjectsBefore = runtime.fguiObjectsCreated();
+    handle = await runtime.ViewMgr.open(name, () => { hooks.push("setup"); });
+
+    assert.ok(handle.view instanceof ProbeCocosView,
+      "cocos 页面必须由 catalog 的 load 闭包直接实例化（⛔ 不经 UIPackage.createObject）");
+    assert.equal(runtime.fguiObjectsCreated(), fguiObjectsBefore,
+      "cocos 分支必须跳过 FGUI 组件创建（ensurePackages/createObject 一次都不碰）");
+    assert.deepEqual(hooks, ["create", "open", "setup"],
+      "事务序 runCreate → mount → runOpen → setup 必须与 FGUI 分支一致");
+
+    const layerNode = runtime.getLayerNode("base");
+    assert.ok(layerNode, "base 层容器必须已建立");
+    assert.equal(handle.view.root.parent, layerNode,
+      "cocos 页面必须挂在层容器的 .node 下（⛔ 不挂 GComponent）");
+    const transform = handle.view.root.getComponent(runtime.UITransform);
+    assert.equal(transform.width, 750, "全屏 cocos 页面必须按层容器尺寸铺满（宽）");
+    assert.equal(transform.height, 1334, "全屏 cocos 页面必须按层容器尺寸铺满（高）");
+    assert.equal(runtime.getInputEnabled(), false,
+      "interactive:false 的 cocos 页面 ⛔ 不得启用 FGUI 输入（否则自建节点收不到触摸）");
+
+    const first = handle.view;
+    handle.close();
+    handle.close();
+    assert.deepEqual(hooks, ["create", "open", "setup", "close"], "二次 close 幂等");
+    assert.equal(first.isDisposed, true, "关闭非 permanent 的 cocos 页面必须销毁实例");
+    assert.equal(first.root.isValid, false, "close 必须销毁 cocos 节点树");
+    assert.equal(first.root.parent, null, "close 必须把节点从层容器摘下");
+    assert.equal(runtime.ViewMgr.isOpen(name), false);
+
+    reopened = await runtime.ViewMgr.open(name);
+    assert.notEqual(reopened.view, first, "重开必须得到新实例（非 permanent）");
+    assert.equal(created.length, 2);
+    assert.equal(reopened.view.root.parent, runtime.getLayerNode("base"));
+  } finally {
+    handle?.close();
+    reopened?.close();
+    runtime.ViewMgr.disposeViewRoot();
+    delete runtime.VIEW_REGISTRY[name];
+  }
+});
+
+test("ViewMgr cocos 路由页面：在途 close 在实例化前拦截；teardown 关闭并销毁节点树", async () => {
+  const runtime = await loadViewRuntime();
+  const name = "__cocos_cancel_probe__";
+  const created: any[] = [];
+  let closeCalls = 0;
+  let gate: Deferred<void> | null = null;
+  class ProbeCocosView extends runtime.CocosView {
+    constructor() {
+      super();
+      created.push(this);
+    }
+
+    protected onCloseLifecycle(): void { closeCalls += 1; }
+  }
+  runtime.VIEW_REGISTRY[name] = cocosRouteMeta(name, ProbeCocosView, {
+    load: async () => {
+      if (gate) await gate.promise;
+      return ProbeCocosView;
+    },
+  });
+  let opened: any = null;
+  let afterTeardown: any = null;
+  try {
+    runtime.ViewMgr.disposeViewRoot();
+
+    // 在途取消：与 FGUI 分支同一段（load 之后的 ensurePendingActive）拦截，⛔ 不留幽灵实例。
+    gate = deferred<void>();
+    const opening = runtime.ViewMgr.open(name);
+    runtime.ViewMgr.close(name);
+    gate.resolve();
+    await assert.rejects(opening, /页面打开已取消/);
+    assert.equal(created.length, 0, "在途取消必须在实例化前拦截（不得建出无人回收的节点树）");
+    assert.equal(runtime.ViewMgr.isOpen(name), false);
+    gate = null;
+
+    // teardown：场景/GRoot 重载时 cocos 页面与 FGUI 页面同批关闭并销毁。
+    opened = await runtime.ViewMgr.open(name);
+    const view = opened.view;
+    assert.equal(opened.signal.aborted, false);
+    runtime.ViewMgr.disposeViewRoot();
+    assert.equal(opened.signal.aborted, true);
+    assert.equal(closeCalls, 1, "teardown 必须且只能关闭一次");
+    assert.equal(view.isDisposed, true);
+    assert.equal(view.root.isValid, false, "teardown 必须销毁 cocos 节点树");
+
+    afterTeardown = await runtime.ViewMgr.open(name);
+    assert.notEqual(afterTeardown.view, view, "teardown 后必须能在新层容器上重开");
+    assert.equal(afterTeardown.view.root.parent, runtime.getLayerNode("base"));
+    afterTeardown.close();
+    assert.equal(closeCalls, 2);
+  } finally {
+    gate?.resolve();
+    opened?.close();
+    afterTeardown?.close();
+    runtime.ViewMgr.disposeViewRoot();
+    delete runtime.VIEW_REGISTRY[name];
   }
 });
 

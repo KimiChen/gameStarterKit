@@ -17,6 +17,7 @@ import { test } from "node:test";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { FguiViewMeta } from "../src/view/defineView";
 import { VIEW_LAYERS } from "../src/view/layers";
 import { FGUI_CONTRACTS } from "../src/view/fguiContracts";
 import { VIEW_REGISTRY } from "../src/view/viewRegistry";
@@ -30,8 +31,18 @@ import { regenerateViewSource } from "../../../tools/fgui-codegen/binding";
 
 const REPO_ROOT = fileURLToPath(new URL("../../..", import.meta.url));
 const ART_DIR = join(REPO_ROOT, "apps/art/fairygui/assets");
-/** view 目录下的机械件（非页面视图），不参与文件⇔manifest 比对 */
-const MACHINERY = new Set(["FguiView.ts"]);
+/** view 目录下的机械件（渲染栈基类，非页面视图），不参与文件⇔manifest 比对 */
+const MACHINERY = new Set(["FguiView.ts", "CocosView.ts"]);
+
+/**
+ * catalog 里的 FGUI 条目。`kind:"cocos"` 的路由页面没有 FGUI 段（无 contract/sharedPkgs），
+ * 契约单源、包闭包、AUTO 区块这几条断言只对 FGUI 条目成立——按 kind 判别后再断言，
+ * ⛔ 不把 cocos 页面当成「契约缺失的 FGUI 页面」误判。
+ */
+function fguiCatalogEntries(): Array<readonly [string, FguiViewMeta]> {
+  return Object.entries(GENERATED_VIEW_CATALOG)
+    .filter((pair): pair is [string, FguiViewMeta] => pair[1].kind === "fgui");
+}
 
 function viewFilesUnder(dir: string): string[] {
   const out: string[] = [];
@@ -82,17 +93,17 @@ test("稳定 façade 与 generated 单源：VIEW_REGISTRY ⇔ catalog ⇔ manife
   }
   // contract 单源：catalog 条目的 contract 与 FGUI_CONTRACTS 是同一批对象（⛔ 第二份全集）
   const keyOf = (c: { pkg: string; comp: string }): string => `${c.pkg}/${c.comp}`;
-  const fromRegistry = Object.values(VIEW_REGISTRY).map((m) => keyOf(m.contract)).sort();
+  const fromRegistry = fguiCatalogEntries().map(([, m]) => keyOf(m.contract)).sort();
   const declared = FGUI_CONTRACTS.map(keyOf).sort();
   assert.deepEqual(fromRegistry, declared, "catalog 契约与 FGUI_CONTRACTS 必须同集合");
   const byIdentity = new Set(FGUI_CONTRACTS);
-  for (const meta of Object.values(VIEW_REGISTRY)) {
+  for (const [, meta] of fguiCatalogEntries()) {
     assert.ok(byIdentity.has(meta.contract),
       `${meta.name}: catalog 的 contract 必须与 FGUI_CONTRACTS 是同一对象（单源，非副本）`);
   }
   // manifest 的 pkg/comp 与 contract 一致（fgui-manifest.mjs 消费同一份记录）
   const recordByName = new Map(VIEW_SOURCE_RECORDS.map((record) => [record.name, record]));
-  for (const [key, meta] of Object.entries(VIEW_REGISTRY)) {
+  for (const [key, meta] of fguiCatalogEntries()) {
     const record = recordByName.get(key);
     assert.equal(record?.pkg, meta.contract.pkg, `${key}: manifest pkg 与 contract 不一致`);
     assert.equal(record?.comp, meta.contract.comp, `${key}: manifest comp 与 contract 不一致`);
@@ -161,7 +172,7 @@ test("generated 条目 sharedPkgs ⊇ art 依赖传递闭包（独立重算，�
     return seen;
   };
   const name2id = new Map([...id2name.entries()].map(([id, name]) => [name, id]));
-  for (const [key, meta] of Object.entries(GENERATED_VIEW_CATALOG)) {
+  for (const [key, meta] of fguiCatalogEntries()) {
     const need = closure(meta.contract.pkg);
     // 生成器把 assetUrls 所属包并入闭包；独立重算保持同一口径。
     for (const url of meta.contract.assetUrls ?? []) {
@@ -180,7 +191,7 @@ test("代码内 ui://Pkg/ 引用 ⊆ 本页包 ∪ sharedPkgs（写错包名不�
   // art XML 闭包抓不到**代码里手写**的跨包 ui:// URL（icon/GLoader.url 等）——
   // 曾漏检真实 bug：login_status_* 写成页面自己的包名，测试全绿、运行时图标空白。
   const recordByName = new Map(VIEW_SOURCE_RECORDS.map((record) => [record.name, record]));
-  for (const [key, meta] of Object.entries(GENERATED_VIEW_CATALOG)) {
+  for (const [key, meta] of fguiCatalogEntries()) {
     const record = recordByName.get(key)!;
     const src = readFileSync(join(REPO_ROOT, record.path), "utf8");
     const allowed = new Set([meta.contract.pkg, ...(meta.sharedPkgs ?? []).map((p) => p.replace(/^ui\//, ""))]);
@@ -196,7 +207,7 @@ test("代码内 ui://Pkg/ 引用 ⊆ 本页包 ∪ sharedPkgs（写错包名不�
 
 test("已登记页面的 AUTO 区块与 .fui 同步且未被手改（双向漂移机检）", () => {
   const recordByName = new Map(VIEW_SOURCE_RECORDS.map((record) => [record.name, record]));
-  for (const [key, meta] of Object.entries(GENERATED_VIEW_CATALOG)) {
+  for (const [key, meta] of fguiCatalogEntries()) {
     const record = recordByName.get(key)!;
     const viewPath = join(REPO_ROOT, record.path);
     const xmlPath = join(ART_DIR, meta.contract.pkg, `${meta.contract.comp}.xml`);
