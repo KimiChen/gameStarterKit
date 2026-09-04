@@ -2,7 +2,8 @@
   "schemaVersion": 1,
   "id": "privateFixture",
   "constantName": "PrivateFixture",
-  "modeVersion": 1,
+  "modeVersion": 2,
+  "wireExposed": false,
   "maxPlayers": 4,
   "profiles": ["default", "private"]
 }

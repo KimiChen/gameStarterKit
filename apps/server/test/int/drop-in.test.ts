@@ -17,6 +17,7 @@ import { matchMaker, Server } from "colyseus";
 import { WebSocketTransport } from "@colyseus/ws-transport";
 import { Client as SDKClient, type Room as SDKRoom } from "@colyseus/sdk";
 import {
+    GAMEPLAY_CATALOG,
     GamePhase,
     GAME_ROOM_PROTOCOL_VERSION,
     RoomName,
@@ -29,6 +30,8 @@ import { DropInFixturePlayerState, type DropInFixtureState } from "../../src/roo
 import { assertRedisUp, issueSession, sleep, testUid } from "./helpers";
 
 const FIXTURE_MODE_ID = "dropInFixture";
+// per-mode 契约版本取 catalog 单源（manifest.json）：⛔ 不写字面量，否则 manifest 一改就红。
+const FIXTURE_MODE_VERSION = GAMEPLAY_CATALOG.dropInFixture.modeVersion;
 const SID = 0;
 
 after(async () => {
@@ -39,7 +42,7 @@ const joinOptions = (): IGameRoomJoinOptions => ({
     v: GAME_ROOM_PROTOCOL_VERSION,
     sId: SID,
     mode: FIXTURE_MODE_ID,
-    modeVersion: 1,
+    modeVersion: FIXTURE_MODE_VERSION,
     profile: "dropIn",
 });
 

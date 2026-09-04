@@ -17,6 +17,7 @@ import { test } from "node:test";
 import ts from "typescript";
 import {
   GAMEPLAY_CATALOG,
+  GameplayModeId,
   ROOM_STATE_VALIDATORS,
   validateRoomStateForMode,
   type IGameRoomState,
@@ -39,6 +40,7 @@ import {
   readCoreWireNames,
   readGameplayDescriptors,
   renderGameplayArtifacts,
+  wireExposedGameplays,
   writeGameplayArtifacts,
   type GameplayCodegenOptions,
 } from "../tools/gameplay-codegen/lib";
@@ -56,6 +58,7 @@ const SHARED_WIRE_CATALOG = "apps/shared/src/gameplays/generated/wire-catalog.ge
 const SERVER_AGGREGATE = "apps/server/src/rooms/schema/GameRoomState.ts";
 const CLIENT_CATALOG = "apps/client/src/gameplay/catalog.generated.ts";
 const CLIENT_MODES_DIR = "apps/client/src/gameplay/modes";
+const SHARED_MODE_IDS = "apps/shared/src/gameplays/generated/modeIds.generated.ts";
 
 /** writeGameplayArtifacts 的产物清单（相对仓根，路径排序与实现一致）。 */
 const FIXTURE_ARTIFACTS = [
@@ -67,6 +70,7 @@ const FIXTURE_ARTIFACTS = [
   `${SERVER_SCHEMA_DIR}/privateFixture.ts`,
   `${SERVER_SCHEMA_DIR}/snake.ts`,
   SHARED_CATALOG,
+  SHARED_MODE_IDS,
   `${SHARED_STATE_DIR}/ballMove.ts`,
   `${SHARED_STATE_DIR}/dropInFixture.ts`,
   `${SHARED_STATE_DIR}/idle.ts`,
@@ -132,8 +136,8 @@ function createFixture(): { readonly root: string; readonly options: GameplayCod
     path.join(REPOSITORY_ROOT, "apps/shared/src/protocol/messages.ts"),
     path.join(root, "apps/shared/src/protocol/messages.ts"),
   );
-  // 阶段 9：client catalog 的两个额外单源——canonical GameplayModeId（protocol/rooms.ts）
-  // 与各玩法客户端 module（gameplay/modes/<id>/index.ts，语法级校验）。
+  // 阶段 9：client catalog 的两个额外单源——canonical GameplayModeId façade（protocol/rooms.ts，
+  // 真源已是 manifest.wireExposed）与各玩法客户端 module（gameplay/modes/<id>/index.ts，语法级校验）。
   fs.copyFileSync(
     path.join(REPOSITORY_ROOT, "apps/shared/src/protocol/rooms.ts"),
     path.join(root, "apps/shared/src/protocol/rooms.ts"),
@@ -155,7 +159,7 @@ function createFixture(): { readonly root: string; readonly options: GameplayCod
       fs.copyFileSync(ruleset, path.join(root, "apps/shared/src/gameplays", id, "ruleset.ts"));
     }
   }
-  // client module：canonical GameplayModeId ∩ modes/ 目录必须双向同集——canonical
+  // client module：canonical（manifest.wireExposed）∩ modes/ 目录必须双向同集——canonical
   // 每加一个玩法，这里必须同步复制其 module（fixture 复刻真仓约束；snake 的 wire.ts
   // 刻意不复制：fixture 内它是无 wire 的 mode，与 dropInFixture 同形）。
   for (const id of ["ballMove", "idle", "snake"]) {
@@ -253,6 +257,10 @@ function puzzleManifest(): MutableManifest {
     constantName: "Puzzle",
     modeVersion: 1,
     maxPlayers: 6,
+    // codegen 夹具默认 ⛔ 不进对外 wire 枚举：与 dropInFixture/privateFixture 同口径，
+    // 这样增量断言组不必为一个只测生成器的 mode 造客户端 module。
+    // 「新增 canonical 玩法」的退出条件测试单独把它翻成 true。
+    wireExposed: false,
     profiles: [],
   };
 }
@@ -540,7 +548,8 @@ test("跨 mode 重名符号与重名 constantName 必须 fail——聚合 barrel
   try {
     // 直接复用 idle 的 state.json（类型名与 idle 完全同名）——按 id 排序 idle 先声明，zzClash 撞闸
     addFixtureMode(fixture.root, "zzClash", {
-      schemaVersion: 1, id: "zzClash", constantName: "ZzClash", modeVersion: 1, maxPlayers: 4, profiles: [],
+      schemaVersion: 1, id: "zzClash", constantName: "ZzClash", modeVersion: 1, maxPlayers: 4,
+      wireExposed: false, profiles: [],
     }, stateFixture("idle"));
     assert.throws(
       () => readGameplayDescriptors(fixture.options),
@@ -1149,6 +1158,46 @@ test("阶段 2b 退出条件：fixture mode 新增 C2S/S2C 只加 wire.ts（+man
 
 // ── 阶段 9：client GameplayModule 装配集（canonical ∩ catalog 双向同集与语法闸）──
 
+test("GameplayModeId 的单源是 manifest.wireExposed：闭合、⊆ catalog，rooms.ts 只是 façade", () => {
+  const gameplays = readGameplayDescriptors({ repositoryRoot: REPOSITORY_ROOT });
+  const exposed = wireExposedGameplays(gameplays).map((gameplay) => gameplay.id).sort();
+  // ① 生成的对外枚举 ⇔ wireExposed manifest 集：双向相等。
+  assert.deepEqual(Object.values(GameplayModeId).slice().sort(), exposed,
+    "GameplayModeId 成员集必须等于 {wireExposed: true} 的 manifest id 集");
+  // ② ⊆ GAMEPLAY_CATALOG：对外枚举不得出现 catalog 之外的 id。
+  for (const id of exposed) {
+    assert.ok(id in GAMEPLAY_CATALOG, `${id} 必须在 GAMEPLAY_CATALOG 里`);
+  }
+  // ③ 刻意取舍仍成立：两个验收 fixture 玩法在 catalog 里，但 ⛔ 不在对外枚举里。
+  for (const id of ["dropInFixture", "privateFixture"] as const) {
+    assert.ok(id in GAMEPLAY_CATALOG, `${id} 必须仍在 catalog 里`);
+    assert.ok(!exposed.includes(id), `${id} 必须声明 wireExposed:false，⛔ 不进对外 wire 枚举`);
+  }
+  // ④ protocol/rooms.ts 只是一行 re-export façade：谁在那里重新手写常量表就 fail-fast。
+  const fixture = createFixture();
+  try {
+    assert.doesNotThrow(() => writeGameplayArtifacts(fixture.options));
+    const roomsFile = path.join(fixture.root, "apps/shared/src/protocol/rooms.ts");
+    const rooms = fs.readFileSync(roomsFile, "utf8");
+    fs.writeFileSync(
+      roomsFile,
+      `export const GameplayModeId = {\n    BallMove: "ballMove",\n} as const;\n${rooms}`,
+      "utf8",
+    );
+    assert.throws(
+      () => writeGameplayArtifacts(fixture.options),
+      /GameplayModeId 的单源是 manifest\.wireExposed/,
+    );
+    fs.writeFileSync(roomsFile, rooms.replace(/^export \{ GameplayModeId.*$/mu, ""), "utf8");
+    assert.throws(
+      () => writeGameplayArtifacts(fixture.options),
+      /必须从 ".*modeIds\.generated" re-export GameplayModeId/,
+    );
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
 test("client module 集 = canonical GameplayModeId：真仓 modes/ 目录双向同集，渲染进 GAMEPLAY_MODULES", () => {
   const gameplays = readGameplayDescriptors({ repositoryRoot: REPOSITORY_ROOT });
   const modules = readClientGameplayModules(gameplays, { repositoryRoot: REPOSITORY_ROOT });
@@ -1209,15 +1258,9 @@ test("阶段 9 退出条件：新增 canonical 玩法 = 单源目录 + modes/<id
   const fixture = createFixture();
   try {
     writeGameplayArtifacts(fixture.options);
-    // canonical 增员：GameplayModeId 加 Puzzle（模拟真实新增玩法的 shared 常量登记）。
-    const roomsFile = path.join(fixture.root, "apps/shared/src/protocol/rooms.ts");
-    const rooms = fs.readFileSync(roomsFile, "utf8");
-    fs.writeFileSync(
-      roomsFile,
-      rooms.replace("Idle: \"idle\",", "Idle: \"idle\",\n    Puzzle: \"puzzle\","),
-      "utf8",
-    );
-    addFixtureMode(fixture.root, "puzzle", puzzleManifest(), puzzleState());
+    // canonical 增员：只在**玩法自己的 manifest** 里声明 wireExposed（⛔ 不再改 rooms.ts
+    // 或任何中央文件——GameplayModeId 现在由 manifest.wireExposed 生成）。
+    addFixtureMode(fixture.root, "puzzle", { ...puzzleManifest(), wireExposed: true }, puzzleState());
 
     // canonical ∩ catalog 命中 puzzle 但 module 缺失 → fail-fast（缺口不可静默）。
     assert.throws(
@@ -1244,6 +1287,9 @@ test("阶段 9 退出条件：新增 canonical 玩法 = 单源目录 + modes/<id
       assert.equal(readFixtureText(fixture.root, relative), snapshot.get(relative),
         `${relative} 必须保持字节不动`);
     }
+    // 生成的对外枚举随 manifest 增员，⛔ 零中央文件改动。
+    const modeIds = readFixtureText(fixture.root, SHARED_MODE_IDS);
+    assert.match(modeIds, /Puzzle: "puzzle",/);
     const clientCatalog = readFixtureText(fixture.root, CLIENT_CATALOG);
     assert.match(clientCatalog, /"puzzle": createPuzzleGameplayModule,/);
     assert.match(clientCatalog, /registerGameplayModule\(registry, createPuzzleGameplayModule\(services\), services\.controllerBridge\)/);

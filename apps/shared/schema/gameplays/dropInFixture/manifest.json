@@ -2,7 +2,8 @@
   "schemaVersion": 1,
   "id": "dropInFixture",
   "constantName": "DropInFixture",
-  "modeVersion": 1,
+  "modeVersion": 2,
+  "wireExposed": false,
   "maxPlayers": 8,
   "profiles": ["dropIn"]
 }

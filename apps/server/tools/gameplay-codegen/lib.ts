@@ -32,6 +32,7 @@ import {
 } from "./stateRenderer";
 import {
   assertClientGameplayModuleSource,
+  assertGameplayModeIdFacade,
   parseCoreWireNames,
   parseGameplayModeIds,
   parseGameplayWireModule,
@@ -47,6 +48,9 @@ const SHARED_GENERATED_DIR_RELATIVE = "apps/shared/src/gameplays/generated";
 const SHARED_CATALOG_RELATIVE = "apps/shared/src/gameplays/catalog.generated.ts";
 const SHARED_INDEX_RELATIVE = "apps/shared/src/gameplays/index.ts";
 const SHARED_WIRE_CATALOG_RELATIVE = "apps/shared/src/gameplays/generated/wire-catalog.generated.ts";
+const SHARED_MODE_IDS_RELATIVE = "apps/shared/src/gameplays/generated/modeIds.generated.ts";
+/** 上一行产物在 protocol/rooms.ts 里的相对路径（铁律 3：相对导入不带扩展名）。 */
+const SHARED_MODE_IDS_MODULE_FROM_PROTOCOL = "../gameplays/generated/modeIds.generated";
 const CORE_MESSAGES_RELATIVE = "apps/shared/src/protocol/messages.ts";
 const SERVER_SCHEMA_DIR_RELATIVE = "apps/server/src/rooms/schema/generated";
 const SERVER_AGGREGATE_RELATIVE = "apps/server/src/rooms/schema/GameRoomState.ts";
@@ -280,10 +284,9 @@ export type ClientGameplayModule = {
 
 /**
  * 发现客户端 GameplayModule 装配集（§7.6 阶段 9）：
- *  - canonical 集 = shared/protocol/rooms.ts 的 `GameplayModeId` 值（语法读取）——
- *    与服务端生产 mode registry 的同集断言同一口径；
- *  - 装配集 = canonical ∩ catalog（交集容纳 --allow-delete 的过渡窗口：目录已删、
- *    GameplayModeId 尚未同批清理时不误伤）；
+ *  - canonical 集 = manifest 声明 `wireExposed !== false` 的玩法（= 生成的 `GameplayModeId`
+ *    成员集）——与服务端生产 mode registry 的同集断言同一口径；
+ *  - `protocol/rooms.ts` 必须只是该生成物的 re-export façade（手写常量表即 fail-fast）；
  *  - 装配集内每个 id 的 `apps/client/src/gameplay/modes/<id>/index.ts` 必须存在且
  *    （语法级）导出 `createGameplayModule`，缺失 fail-fast。
  * 真仓的「modes/ 目录 == canonical 集」双向同集由 gameplay-codegen.test 守门。
@@ -299,14 +302,13 @@ export function readClientGameplayModules(
     roomsSource = fs.readFileSync(roomsFile, "utf8");
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
-    fail(SHARED_ROOMS_RELATIVE, `cannot read canonical GameplayModeId source: ${detail}`);
+    fail(SHARED_ROOMS_RELATIVE, `cannot read canonical GameplayModeId façade: ${detail}`);
   }
-  const canonical = parseGameplayModeIds(roomsSource, SHARED_ROOMS_RELATIVE);
-  const byId = new Map(gameplays.map((gameplay) => [gameplay.id, gameplay]));
+  assertGameplayModeIdFacade(roomsSource, SHARED_ROOMS_RELATIVE, SHARED_MODE_IDS_MODULE_FROM_PROTOCOL);
+  const canonical = wireExposedGameplays(gameplays);
   const modules: ClientGameplayModule[] = [];
-  for (const id of [...canonical].sort()) {
-    const gameplay = byId.get(id);
-    if (!gameplay) continue;
+  for (const gameplay of [...canonical].sort((left, right) => (left.id < right.id ? -1 : 1))) {
+    const id = gameplay.id;
     const label = `${CLIENT_MODES_DIR_RELATIVE}/${id}/index.ts`;
     const file = path.join(root, CLIENT_MODES_DIR_RELATIVE, id, "index.ts");
     assertRegularFile(file, label);
@@ -818,6 +820,72 @@ function renderClientCatalog(
   return `${lines.join("\n").trimEnd()}\n`;
 }
 
+/**
+ * 对外 wire 枚举 `GameplayModeId` 的成员集：manifest 声明 `wireExposed !== false` 的玩法。
+ *
+ * 这是「哪些 mode id 允许出现在 join/matchmaking wire 值里」的唯一判据。fixture 玩法
+ * （dropInFixture/privateFixture）显式 `wireExposed: false`：它们走完整 catalog 链但 ⛔ 不进
+ * 对外枚举——这条既有的刻意取舍此前只写在手写的 protocol/rooms.ts 里，现在归位到各自 manifest。
+ */
+export function wireExposedGameplays(gameplays: readonly GameplayDescriptor[]): readonly GameplayDescriptor[] {
+  return gameplays.filter((gameplay) => gameplay.manifest.wireExposed);
+}
+
+/**
+ * 闭合断言：`GameplayModeId` 成员集 === `{wireExposed: true}` 的 manifest id 集，且 ⊆ catalog。
+ * 渲染完成后按渲染结果**回读**再比一次——渲染器写歪（漏一个/多一个/名字对不上）当场炸，
+ * ⛔ 不依赖「生成器不会错」的信任。
+ */
+function assertWireExposedClosure(gameplays: readonly GameplayDescriptor[], rendered: string): void {
+  const catalogIds = new Set(gameplays.map((gameplay) => gameplay.id));
+  const exposed = wireExposedGameplays(gameplays);
+  if (exposed.length === 0) {
+    fail(SHARED_MODE_IDS_RELATIVE, "no gameplay declares wireExposed — GameplayModeId 不得为空");
+  }
+  for (const gameplay of exposed) {
+    if (!catalogIds.has(gameplay.id)) {
+      fail(SHARED_MODE_IDS_RELATIVE, `wireExposed gameplay "${gameplay.id}" 不在 GAMEPLAY_CATALOG 里`);
+    }
+  }
+  const declared = [...parseGameplayModeIds(rendered, SHARED_MODE_IDS_RELATIVE)].sort();
+  const expected = exposed.map((gameplay) => gameplay.id).sort();
+  if (declared.length !== expected.length || declared.some((id, index) => id !== expected[index])) {
+    fail(
+      SHARED_MODE_IDS_RELATIVE,
+      `GameplayModeId 成员集 [${declared.join(", ")}] 必须等于 wireExposed manifest 集 [${expected.join(", ")}]`,
+    );
+  }
+}
+
+/**
+ * 对外 wire 枚举模块（**零依赖**：只含字面量常量与类型，⛔ 不 import 任何东西）。
+ *
+ * ⚠ 为什么单独一个模块而不是直接放进 catalog.generated.ts：`protocol/rooms.ts` 需要
+ * `GameplayModeId`，而 catalog → generated/state → protocol/http 已经指回 protocol/，
+ * 让 rooms.ts 反过来 import catalog 会成环。零依赖模块 + rooms.ts 的一行 re-export façade
+ * 是无环的（实测：apps/shared tsc 与两端 typecheck 通过）。
+ */
+function renderSharedModeIds(gameplays: readonly GameplayDescriptor[]): string {
+  const lines = [
+    generatedHeader(`${AGGREGATE_SOURCE_LABEL} (manifest.wireExposed)`),
+    "",
+    "/**",
+    " * Starter 中已装配的玩法 mode id；作为 join/matchmaking wire 值的双端单源。",
+    " * 成员 = manifest 声明 `wireExposed !== false` 的玩法（缺省 true）。",
+    " * ⚠ 本模块零依赖：`protocol/rooms.ts` 只做一行 re-export façade，⛔ 不得反向 import catalog",
+    " * （catalog → generated/state → protocol/http 已指回 protocol/，那样会成环）。",
+    " */",
+    "export const GameplayModeId = {",
+    ...gameplays.map((gameplay) =>
+      `    ${gameplay.manifest.constantName}: ${JSON.stringify(gameplay.id)},`),
+    "} as const;",
+    "",
+    "export type GameplayModeIdType = (typeof GameplayModeId)[keyof typeof GameplayModeId];",
+    "",
+  ];
+  return `${lines.join("\n").trimEnd()}\n`;
+}
+
 /** 全部产物（相对仓根路径 → 内容），键按路径稳定排序。 */
 export function renderGameplayArtifacts(
   gameplays: readonly GameplayDescriptor[],
@@ -836,6 +904,9 @@ export function renderGameplayArtifacts(
       renderServerSchemaModule(gameplay.id, gameplay.state, gameplay.sourceLabel),
     );
   }
+  const modeIds = renderSharedModeIds(wireExposedGameplays(gameplays));
+  assertWireExposedClosure(gameplays, modeIds);
+  artifacts.set(SHARED_MODE_IDS_RELATIVE, modeIds);
   artifacts.set(SHARED_CATALOG_RELATIVE, renderSharedCatalog(gameplays));
   artifacts.set(SHARED_INDEX_RELATIVE, renderSharedIndex(gameplays));
   artifacts.set(SERVER_AGGREGATE_RELATIVE, renderServerAggregate(gameplays));

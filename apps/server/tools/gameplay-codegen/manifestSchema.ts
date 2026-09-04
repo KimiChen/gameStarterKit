@@ -21,6 +21,13 @@ export type GameplayManifest = {
   readonly modeVersion: number;
   readonly maxPlayers: number;
   readonly profiles: readonly string[];
+  /**
+   * 该玩法 id 是否进对外 wire 枚举 `GameplayModeId`（缺省 true）。
+   * 验收 fixture 玩法（dropInFixture/privateFixture）显式 false：它们走完整 catalog 链，
+   * 但 ⛔ 不进对外 mode id 枚举，也不装配客户端 module——这是既有的刻意取舍，本键把它
+   * 从「散在中央文件里的手写事实」搬回玩法自己的 manifest。
+   */
+  readonly wireExposed: boolean;
 };
 
 function fail(pathLabel: string, message: string): never {
@@ -97,6 +104,10 @@ function validateNode(schema: JsonRecord, value: unknown, pathLabel: string): vo
     }
     return;
   }
+  if (type === "boolean") {
+    if (typeof value !== "boolean") fail(pathLabel, "must be a boolean");
+    return;
+  }
   if (type === "integer") {
     if (!Number.isSafeInteger(value)) fail(pathLabel, "must be a safe integer");
     const numeric = value as number;
@@ -126,5 +137,6 @@ export function parseGameplayManifest(input: unknown, pathLabel = "manifest"): G
     modeVersion: value.modeVersion as number,
     maxPlayers: value.maxPlayers as number,
     profiles: Array.isArray(value.profiles) ? [...(value.profiles as string[])] : [],
+    wireExposed: value.wireExposed !== false,
   };
 }
