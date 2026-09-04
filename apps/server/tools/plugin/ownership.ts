@@ -277,11 +277,14 @@ export function classifyPath(
   const relative = normalizePackagePath(rawRelative);
   const hard = hardExclusionReason(relative, rules);
   if (hard) return { allowed: false, reason: hard };
-  for (const protectedPath of protectedPaths) {
-    if (matchesProtected(relative, protectedPath)) return { allowed: false, reason: `受保护路径 ${protectedPath}` };
-  }
   const { source, meta, mirror } = sourceOf(relative);
   if (mirror && !source.startsWith(`${CLIENT_SRC}/`)) return { allowed: false, reason: "镜像路径无对应客户端真源" };
+  // 受保护路径按原始路径与真源路径**都**查：镜像继承真源的保护（否则 logic/gameplay/<id>/ 这类受保护
+  // 目录的镜像会从 allowlist 漏出去）。
+  for (const protectedPath of protectedPaths) {
+    if (matchesProtected(relative, protectedPath)) return { allowed: false, reason: `受保护路径 ${protectedPath}` };
+    if (mirror && matchesProtected(source, protectedPath)) return { allowed: false, reason: `受保护路径 ${protectedPath}（镜像继承真源的保护）` };
+  }
   for (const rule of rules) {
     if (matchesRule(source, rule)) {
       return { allowed: true, reason: `${rule.reason}${mirror ? "（Cocos 镜像）" : ""}${meta ? "（.meta）" : ""}` };

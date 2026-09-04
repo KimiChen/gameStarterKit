@@ -199,8 +199,10 @@ export function previousDomainContracts(options: FeatureCodegenOptions = {}): Re
 
 /**
  * 域 descriptor 的字节 digest 变化必须伴随 `contractVersion` 递增；首次生成（无旧记录）放行。
- * 这是 feature 侧唯一的契约变更确认位（PLUGIN.md §9）：改了 request/response/错误码/推送而不 bump，
- * writer 与只读闸都拒绝并点名——⛔ 不做「注释也算」的豁免：digest 与 gameplay 的 wire.ts 同口径按字节算。
+ * 这是 feature 侧 codegen 层的契约变更确认位（PLUGIN.md §8/§9）——⛔ 不做「注释也算」的豁免：digest 与
+ * gameplay 的 wire.ts 同口径**只按域 descriptor 文件自身字节**算。覆盖面如实登记：跨文件复用的
+ * validator/类型（primitives.ts / economy.ts / ../http，或被他域 import 的域文件如 mail→shop）变化
+ * 不会触发本闸，只由 protocol-fingerprint 点名漂移，其语义兼容靠路由级 contractVersion 与向量测试。
  */
 export function assertDomainContractVersionBumped(
   descriptors: FeatureDescriptors,

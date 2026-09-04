@@ -389,6 +389,43 @@ export type ViewCatalog = {
   readonly host: HostManifest;
 };
 
+/** 玩法 id 集合：canonical（wireExposed !== false，可作入口）与 fixture（wireExposed:false，⛔ 不得作入口）。 */
+type GameplayIdSets = { readonly canonical: ReadonlySet<string>; readonly fixture: ReadonlySet<string> };
+
+/**
+ * 只读每玩法 manifest 的 id/wireExposed（launch.gameplayId 与 host.defaultLaunch 的存在性/可入口性闸）：
+ * 拼错的 id 与 fixture 玩法都不该进 GENERATED_HOST / contribution——它们不在 GameplayModeId、不在两端装配集。
+ * ⛔ 不复用 gameplay-codegen 的完整读取（那会把 state/wire 校验也拉进来），只做最小解析。
+ */
+function readGameplayIdSets(root: string): GameplayIdSets {
+  const schemaDir = path.join(root, "apps/shared/schema/gameplays");
+  if (!fs.existsSync(schemaDir)) fail("apps/shared/schema/gameplays", "gameplay schema directory is missing（feature 入口校验需要玩法 manifest）");
+  const canonical = new Set<string>();
+  const fixture = new Set<string>();
+  for (const entry of fs.readdirSync(schemaDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const manifestFile = path.join(schemaDir, entry.name, "manifest.json");
+    if (!fs.existsSync(manifestFile)) continue;
+    let parsed: { readonly id?: unknown; readonly wireExposed?: unknown };
+    try {
+      parsed = JSON.parse(fs.readFileSync(manifestFile, "utf8")) as { readonly id?: unknown; readonly wireExposed?: unknown };
+    } catch (error) {
+      fail(`apps/shared/schema/gameplays/${entry.name}/manifest.json`, `cannot read valid JSON: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    if (typeof parsed.id !== "string") continue;
+    (parsed.wireExposed === false ? fixture : canonical).add(parsed.id);
+  }
+  return { canonical, fixture };
+}
+
+function assertLaunchableGameplay(label: string, gameplayId: string, sets: GameplayIdSets, context: string): void {
+  if (sets.canonical.has(gameplayId)) return;
+  if (sets.fixture.has(gameplayId)) {
+    fail(label, `${context} 引用 fixture 玩法 "${gameplayId}"（manifest wireExposed:false，不装配客户端 module / 服务端 mode，⛔ 不得作为入口）`);
+  }
+  fail(label, `${context} 引用未登记的玩法 "${gameplayId}"（apps/shared/schema/gameplays/ 下没有该 manifest）`);
+}
+
 function detectDependencyCycle(features: readonly FeatureManifest[]): void {
   const byId = new Map(features.map((feature) => [feature.id, feature]));
   const visiting = new Set<string>();
@@ -615,6 +652,7 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
   const routeViews = new Map<string, string>();
   const menuEntryIds = new Map<string, string>();
   const gameplayContributors = new Map<string, string>();
+  const gameplayIds = readGameplayIdSets(root);
   // route 先全部登记（launch.kind:"route" 可以引用他 feature 的 route），再校验 menu。
   for (const feature of features) {
     const label = `${FEATURES_DIR_RELATIVE}/${feature.id}/feature.json`;
@@ -645,6 +683,7 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
       }
       menuEntryIds.set(item.entryId, feature.id);
       if (item.launch.kind === "gameplay") {
+        assertLaunchableGameplay(label, item.launch.gameplayId, gameplayIds, `menu entryId "${item.entryId}" 的 launch`);
         // 一 gameplayId 一贡献者（F17）：launch→feature 映射不能靠排序裁决。
         const owner = gameplayContributors.get(item.launch.gameplayId);
         if (owner && owner !== feature.id) {
@@ -659,6 +698,7 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
 
   // 宿主 placement：默认玩法必须有唯一贡献者；home 里每个 qualified id 必须真实存在。
   const host = readHostManifest(root);
+  assertLaunchableGameplay("features/host.json", host.defaultLaunch.gameplayId, gameplayIds, "defaultLaunch");
   if (!gameplayContributors.has(host.defaultLaunch.gameplayId)) {
     fail("features/host.json", `defaultLaunch 指向没有任何 feature 贡献入口的玩法 "${host.defaultLaunch.gameplayId}"`);
   }

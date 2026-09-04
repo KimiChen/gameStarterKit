@@ -72,7 +72,7 @@ const ALL_ARTIFACTS = [REGISTRY_RELATIVE, ...CLIENT_ARTIFACTS, FEATURE_INDEX_REL
  */
 function createFixture(): { readonly root: string; readonly options: FeatureCodegenOptions } {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "feature-codegen-"));
-  for (const dir of [LOBBY_RPC_DIR, "features", "apps/client/src/view", "apps/client/src/logic", "apps/client/src/generated", VECTORS_DIR]) {
+  for (const dir of [LOBBY_RPC_DIR, "features", "apps/client/src/view", "apps/client/src/logic", "apps/client/src/generated", VECTORS_DIR, "apps/shared/schema/gameplays"]) {
     fs.cpSync(path.join(REPOSITORY_ROOT, dir), path.join(root, dir), { recursive: true });
   }
   fs.mkdirSync(path.join(root, "docs"), { recursive: true });
@@ -1102,6 +1102,15 @@ test("入口治理闸：entryId 全仓唯一、一 gameplayId 一贡献者、rou
     () => readViewCatalog(withSnakeMenu((menu) => { menu[0].launch = { kind: "gameplay", gameplayId: "snake", routeId: "settings" }; })),
     /kind:"gameplay" 不得同时声明 routeId/u,
   );
+  // launch.gameplayId 必须是 canonical 玩法：fixture 玩法（wireExposed:false）与拼错的 id 都拒绝。
+  assert.throws(
+    () => readViewCatalog(withSnakeMenu((menu) => { menu[0].launch = { kind: "gameplay", gameplayId: "privateFixture" }; })),
+    /引用 fixture 玩法 "privateFixture"/u,
+  );
+  assert.throws(
+    () => readViewCatalog(withSnakeMenu((menu) => { menu[0].launch = { kind: "gameplay", gameplayId: "snak" }; })),
+    /引用未登记的玩法 "snak"/u,
+  );
   // 位置字段已退役：manifest 出现 slot/order 即 schema 拒绝。
   assert.throws(
     () => readViewCatalog(withSnakeMenu((menu) => { menu[0].slot = 0; })),
@@ -1123,6 +1132,14 @@ test("宿主 placement（features/host.json）：缺失即 fail-fast；defaultLa
   assert.throws(
     () => readViewCatalog(withHost({ schemaVersion: 1, defaultLaunch: { kind: "gameplay", gameplayId: "idle" }, home: [] })),
     /defaultLaunch 指向没有任何 feature 贡献入口的玩法 "idle"/u,
+  );
+  assert.throws(
+    () => readViewCatalog(withHost({ schemaVersion: 1, defaultLaunch: { kind: "gameplay", gameplayId: "dropInFixture" }, home: [] })),
+    /defaultLaunch 引用 fixture 玩法 "dropInFixture"/u,
+  );
+  assert.throws(
+    () => readViewCatalog(withHost({ schemaVersion: 1, defaultLaunch: { kind: "gameplay", gameplayId: "nope" }, home: [] })),
+    /defaultLaunch 引用未登记的玩法 "nope"/u,
   );
   assert.throws(
     () => readViewCatalog(withHost({ schemaVersion: 1, defaultLaunch: { kind: "gameplay", gameplayId: "snake" }, home: ["builtin/snake"] })),

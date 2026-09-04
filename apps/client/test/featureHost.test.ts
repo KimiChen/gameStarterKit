@@ -175,6 +175,82 @@ test("dependencies：launch 先装依赖（顺序 = 声明序），依赖失败�
   assert.deepEqual(installed, []);
 });
 
+test("dependencies 生命周期：依赖方在位时依赖不随 refcount 归零释放（级联释放）；重装后 disposeAll 仍依赖方先拆", async () => {
+  const disposed: string[] = [];
+  const makeFeature = (id: string, dependencies: readonly string[] = []) => ({
+    id,
+    dependencies,
+    load: (): FeatureModule => ({ install: () => {}, dispose: () => { disposed.push(id); } }),
+  });
+  const host = new FeatureHost([makeFeature("top", ["base"]), makeFeature("base")], { ports, appGeneration: 1 });
+  assert.equal(await host.launch("top"), "active");
+  // base 自己的最后一个 route 关闭：依赖方 top 仍 active → 不拆，只记请求。
+  await host.releaseIfIdle("base", 0);
+  assert.equal(host.statusOf("base"), "active", "仍有依赖方在位的 feature ⛔ 不得被 route refcount 归零拆掉");
+  assert.deepEqual(disposed, []);
+  // base 又开了 route → 释放请求作废。
+  await host.releaseIfIdle("base", 1);
+  await host.releaseIfIdle("top", 0);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.deepEqual(disposed, ["top"], "top 拆掉后 base 有 route 打开，不级联");
+  // 再次：base 请求释放后 top 拆掉 → 级联释放 base。
+  assert.equal(await host.launch("top"), "active");
+  await host.releaseIfIdle("base", 0);
+  await host.releaseIfIdle("top", 0);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.deepEqual(disposed, ["top", "top", "base"], "依赖方拆完后必须级联释放被推迟的依赖");
+
+  // 重装 base（installOrder 倒置）后 disposeAll 仍按依赖拓扑：top 先拆。
+  disposed.splice(0);
+  assert.equal(await host.launch("base"), "active");
+  assert.equal(await host.launch("top"), "active");
+  await host.releaseIfIdle("base", 0);
+  assert.equal(host.statusOf("base"), "active");
+  // 制造倒置：单独重装 base（先让 top 拆掉再装回来）。
+  await host.releaseIfIdle("top", 0);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  disposed.splice(0);
+  assert.equal(await host.launch("base"), "active");
+  assert.equal(await host.launch("top"), "active");
+  await host.disposeAll();
+  assert.deepEqual(disposed, ["top", "base"], "disposeAll 必须依赖方先拆（⛔ 不能只看 installOrder）");
+});
+
+test("dependencies 生命周期：依赖正在 dispose 时 launch 依赖方 → 等拆完再装（⛔ 不卡 loading）；运行期环点名 failed", async () => {
+  let release: (() => void) | null = null;
+  const installed: string[] = [];
+  const host = new FeatureHost([
+    {
+      id: "base",
+      load: (): FeatureModule => ({
+        install: () => { installed.push("base"); },
+        dispose: () => new Promise<void>((resolve) => { release = resolve; }),
+      }),
+    },
+    { id: "top", dependencies: ["base"], load: (): FeatureModule => ({ install: () => { installed.push("top"); } }) },
+    { id: "a", dependencies: ["b"], load: (): FeatureModule => ({ install: () => {} }) },
+    { id: "b", dependencies: ["a"], load: (): FeatureModule => ({ install: () => {} }) },
+  ], { ports, appGeneration: 1 });
+  assert.equal(await host.launch("base"), "active");
+  const disposing = host.releaseIfIdle("base", 0);
+  assert.equal(host.statusOf("base"), "disposing");
+  const launching = host.launch("top", { userIntent: true });
+  assert.equal(host.statusOf("top"), "loading");
+  (release as unknown as (() => void))();
+  await disposing;
+  assert.equal(await launching, "active", "依赖拆完后必须重新装载并让依赖方 active");
+  assert.deepEqual(installed, ["base", "base", "top"]);
+  assert.equal(host.statusOf("base"), "active");
+
+  // 运行期环（codegen 查不到手工 HostedFeature）：点名结算 failed，⛔ 不递归到栈溢出。
+  assert.equal(await host.launch("a"), "failed");
+  // 环在内层被点名（b 装依赖 a 时 a 已在链上），外层以「依赖不可用」结算——两端都不残留 loading。
+  assert.match(String(host.lastErrorOf("b")), /依赖环：a → b → a/u);
+  assert.match(String(host.lastErrorOf("a")), /依赖 b 不可用（failed）/u);
+  assert.equal(host.statusOf("a"), "failed", "failed 之后不得残留 loading");
+  assert.equal(host.statusOf("b"), "failed");
+});
+
 test("dispose：按安装完成逆序执行且幂等；releaseIfIdle 常驻豁免、refcount 归零停用", async () => {
   const disposed: string[] = [];
   const makeFeature = (id: string) => ({

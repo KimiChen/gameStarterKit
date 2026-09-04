@@ -9,8 +9,9 @@
  *  - `failed` 两条出路写死：显式用户意图（userIntent launch）回 `loading`；每个
  *    app generation 的自动重试次数有上限，超限置 `disabled(app-generation)`，
  *    直到下一个 app generation（noteAppGeneration）才复位；
- *  - launch 先按 feature.json dependencies 装依赖（任一非 active ⇒ failed），
- *    dispose 幂等并按安装完成的**逆序**执行（依赖逆序：依赖方后装先拆）；
+ *  - launch 先按 feature.json dependencies 装依赖（任一非 active ⇒ failed；运行期环点名结算 failed；
+ *    依赖正在 dispose 时等它拆完再装）；releaseIfIdle 对仍有依赖方在位的 feature 只记请求、不拆，
+ *    依赖方拆完后级联释放；disposeAll 按依赖拓扑（依赖方先拆）+ 同层安装逆序，幂等；
  *  - 停用由 route refcount 决定：NavigationService 关闭 feature 最后一个 route 时
  *    调 releaseIfIdle；resident（built-in）与 keep-mounted route 豁免；
  *    session 结束与 app dispose 是强制释放点（disposeAll）。
@@ -67,9 +68,11 @@ interface FeatureSlot {
     disposers: Array<() => void>;
     error: unknown;
     autoRetries: number;
-    /** 安装完成序号：disposeAll 的逆序依据。 */
+    /** 安装完成序号：disposeAll 同层的逆序依据（层由依赖拓扑决定）。 */
     installOrder: number;
     disposing: Promise<void> | null;
+    /** route refcount 已归零但因仍有依赖方 active 而被推迟的释放请求；依赖方拆完后级联释放。 */
+    releaseRequested: boolean;
 }
 
 export interface FeatureHostOptions {
@@ -83,6 +86,8 @@ const DEFAULT_MAX_AUTO_RETRIES = 2;
 
 export class FeatureHost {
     private readonly slots = new Map<string, FeatureSlot>();
+    /** 反向依赖表：feature id → 声明依赖它的 feature id（releaseIfIdle 保活与 disposeAll 拓扑的依据）。 */
+    private readonly dependents = new Map<string, string[]>();
     private readonly maxAutoRetries: number;
     private appGeneration: number;
     private installSeq = 0;
@@ -90,6 +95,13 @@ export class FeatureHost {
     constructor(features: readonly HostedFeature[], private readonly options: FeatureHostOptions) {
         this.maxAutoRetries = options.maxAutoRetries ?? DEFAULT_MAX_AUTO_RETRIES;
         this.appGeneration = options.appGeneration;
+        for (const descriptor of features) {
+            for (const dependency of descriptor.dependencies ?? []) {
+                const list = this.dependents.get(dependency) ?? [];
+                list.push(descriptor.id);
+                this.dependents.set(dependency, list);
+            }
+        }
         for (const descriptor of features) {
             if (this.slots.has(descriptor.id)) {
                 throw new Error(`[FeatureHost] 重复 feature id: ${descriptor.id}`);
@@ -106,8 +118,17 @@ export class FeatureHost {
                 autoRetries: 0,
                 installOrder: descriptor.load ? -1 : ++this.installSeq,
                 disposing: null,
+                releaseRequested: false,
             });
         }
+    }
+
+    /** 处于 active/loading/disposing 的依赖方（它们仍需要该 feature 在位）。 */
+    private activeDependents(id: string): readonly string[] {
+        return (this.dependents.get(id) ?? []).filter((dependent) => {
+            const status = this.slots.get(dependent)?.status;
+            return status === "active" || status === "loading" || status === "disposing";
+        });
     }
 
     statusOf(id: string): FeatureStatus {
@@ -134,8 +155,21 @@ export class FeatureHost {
      * 返回结算后的状态（active/failed/disabled）。
      */
     launch(id: string, options: FeatureLaunchOptions = {}): Promise<FeatureStatus> {
+        return this.launchInternal(id, options, new Set());
+    }
+
+    /**
+     * @param visiting 本条依赖链上正在装载的 feature id（运行期环检测：codegen 只查 feature.json 的环，
+     *   手工构造的 HostedFeature 仍可能成环——命中即以点名错误结算 failed，⛔ 不递归到栈溢出）。
+     */
+    private launchInternal(id: string, options: FeatureLaunchOptions, visiting: ReadonlySet<string>): Promise<FeatureStatus> {
         const slot = this.slot(id);
         if (slot.status === "active") return Promise.resolve("active");
+        if (visiting.has(id)) {
+            slot.error = new Error(`[FeatureHost] 依赖环：${[...visiting, id].join(" → ")}`);
+            if (slot.status !== "loading") slot.status = "failed";
+            return Promise.resolve("failed");
+        }
         // 并发合流：loading 中的重复 launch 共享同一 flight（用户点击合流是期望行为）。
         // ⛔ feature install() 内不得 await 对自身 gameplay target 的 ports.launch——
         // AppRuntime.launch 的闸会走到这里与自身 in-flight 合流，install 等它自己完成，
@@ -143,6 +177,10 @@ export class FeatureHost {
         // ports.ts 的 launch port 文档有同款警告）。
         if (slot.status === "loading" && slot.loading) return slot.loading;
         if (slot.status === "disposing") {
+            // 正在拆（如用户关掉最后一个 route 后立刻点依赖它的入口）：等拆完再重新装，⛔ 不 reject——
+            // reject 会让依赖方卡在 loading 且无 in-flight。
+            const disposing = slot.disposing;
+            if (disposing) return disposing.then(() => this.launchInternal(id, options, visiting));
             return Promise.reject(new Error(`[FeatureHost] ${id} 正在 dispose，不可启动`));
         }
         if (slot.status === "disabled") {
@@ -161,13 +199,17 @@ export class FeatureHost {
         const dependencies = slot.descriptor.dependencies ?? [];
         if (!slot.descriptor.load && dependencies.length === 0) {
             slot.status = "active";
+            slot.releaseRequested = false;
             return Promise.resolve("active");
         }
         slot.status = "loading";
         slot.error = null;
-        // 依赖先装（feature.json dependencies，codegen 已查环）：任一依赖非 active ⇒ 本 feature failed，
-        // ⛔ 不装一半；依赖的 installOrder 必然小于本 feature，disposeAll 的逆序即「依赖方后装先拆」。
-        const flight = this.launchDependencies(slot, dependencies, options).then((ready) => {
+        slot.releaseRequested = false;
+        // 依赖先装（feature.json dependencies）：任一依赖非 active ⇒ 本 feature failed，⛔ 不装一半；
+        // 依赖的 installOrder 必然小于本 feature。⚠ 任何异常都必须结算成 failed——
+        // 「loading 且无 in-flight」是非法态（可用性叠加会把它显示成 available）。
+        const chain = new Set([...visiting, id]);
+        const flight = this.launchDependencies(slot, dependencies, options, chain).then((ready) => {
             if (!ready) {
                 if (slot.status === "loading") slot.status = "failed";
                 return "failed" as const;
@@ -179,12 +221,13 @@ export class FeatureHost {
                 return "active" as const;
             }
             return this.runInstall(slot);
+        }).catch((error: unknown) => {
+            slot.error = error;
+            if (slot.status === "loading") slot.status = "failed";
+            return "failed" as const;
         }).then((status) => {
             if (slot.loading === flight) slot.loading = null;
             return status;
-        }, (error) => {
-            if (slot.loading === flight) slot.loading = null;
-            throw error;
         });
         slot.loading = flight;
         return flight;
@@ -194,13 +237,18 @@ export class FeatureHost {
         slot: FeatureSlot,
         dependencies: readonly string[],
         options: FeatureLaunchOptions,
+        visiting: ReadonlySet<string>,
     ): Promise<boolean> {
         for (const dependency of dependencies) {
-            if (dependency === slot.descriptor.id || !this.slots.has(dependency)) {
+            if (!this.slots.has(dependency)) {
                 slot.error = new Error(`[FeatureHost] ${slot.descriptor.id} 的依赖 ${dependency} 未托管`);
                 return false;
             }
-            const status = await this.launch(dependency, options);
+            if (visiting.has(dependency)) {
+                slot.error = new Error(`[FeatureHost] 依赖环：${[...visiting, dependency].join(" → ")}`);
+                return false;
+            }
+            const status = await this.launchInternal(dependency, options, visiting);
             if (status !== "active") {
                 slot.error = new Error(`[FeatureHost] ${slot.descriptor.id} 的依赖 ${dependency} 不可用（${status}）`);
                 return false;
@@ -269,8 +317,17 @@ export class FeatureHost {
     releaseIfIdle(id: string, openRouteCount: number): Promise<void> {
         const slot = this.slot(id);
         if (slot.descriptor.resident) return Promise.resolve();
-        if (openRouteCount > 0) return Promise.resolve();
+        if (openRouteCount > 0) {
+            slot.releaseRequested = false;
+            return Promise.resolve();
+        }
         if (slot.status !== "active") return Promise.resolve();
+        // 依赖保活：仍有依赖方在位时不拆（否则依赖方会在依赖已被拆掉的情况下继续运行）；
+        // 记下释放请求，依赖方拆完后级联释放（disposeFeature 的收尾）。
+        if (this.activeDependents(id).length > 0) {
+            slot.releaseRequested = true;
+            return Promise.resolve();
+        }
         return this.disposeFeature(slot);
     }
 
@@ -312,18 +369,43 @@ export class FeatureHost {
         })().then(() => {
             slot.disposing = null;
             slot.status = "unloaded";
+            this.releaseIdleDependencies(slot);
         });
         slot.disposing = run;
         return run;
     }
 
-    /** 强制释放点（session 结束 / app dispose）：按安装完成逆序，幂等。 */
+    /** 依赖方拆完后的级联：其依赖若早已被 route refcount 请求释放且再无别的依赖方在位，则补拆。 */
+    private releaseIdleDependencies(slot: FeatureSlot): void {
+        for (const dependency of slot.descriptor.dependencies ?? []) {
+            const target = this.slots.get(dependency);
+            if (!target || target.descriptor.resident || !target.releaseRequested) continue;
+            if (target.status !== "active" || this.activeDependents(dependency).length > 0) continue;
+            target.releaseRequested = false;
+            void this.disposeFeature(target).catch((error) => {
+                console.error("[FeatureHost] 级联释放依赖失败", error);
+            });
+        }
+    }
+
+    /**
+     * 强制释放点（session 结束 / app dispose）：按**依赖拓扑**拆——依赖方先于其依赖，同层按安装完成逆序；
+     * 幂等。⛔ 不能只按 installOrder：依赖被单独重装后序号会倒置，in-flight 依赖方的序号还是 -1。
+     */
     async disposeAll(): Promise<void> {
-        const ordered = [...this.slots.values()]
-            .filter((slot) => slot.status === "active" || slot.status === "loading" || slot.status === "disposing")
-            .sort((a, b) => b.installOrder - a.installOrder);
-        for (const slot of ordered) {
-            await this.disposeFeature(slot);
+        const remaining = new Set(
+            [...this.slots.values()]
+                .filter((slot) => slot.status === "active" || slot.status === "loading" || slot.status === "disposing")
+                .map((slot) => slot.descriptor.id),
+        );
+        while (remaining.size > 0) {
+            let ready = [...remaining].filter((id) => (this.dependents.get(id) ?? []).every((dependent) => !remaining.has(dependent)));
+            if (ready.length === 0) ready = [...remaining]; // 运行期环：退化为全部并列，仍保证终止
+            ready.sort((a, b) => this.slot(b).installOrder - this.slot(a).installOrder);
+            for (const id of ready) {
+                remaining.delete(id);
+                await this.disposeFeature(this.slot(id));
+            }
         }
     }
 

@@ -8,7 +8,7 @@
 > | --- | --- |
 > | §1 判据 / §2 分层 / §3 例证 | 设计基线；措辞按审阅修正（机检真源改为所有权推导 allowlist） |
 > | §4 装载时机 | 设计基线；措辞按审阅修正 |
-> | §5 包格式与安装流程 | ✅ 已实现（`apps/server/tools/plugin/`，`plugin -- pack/install/uninstall/check`） |
+> | §5 包格式与安装流程 | ✅ 已实现（`apps/server/tools/plugin/`，`plugin -- pack/install/uninstall/check`；隔离 fixture 验证，真实包端到端实证仍开放，见 §9 第 6 条 / plan-v5 E5） |
 > | §6 入口与位置 | ✅ 已实施（设置面板、宿主 `features/host.json`、slot/order 退役、route 形态 launch、依赖装载） |
 > | §7 生命周期 | ✅ 已实现（已安装锁 `scripts/plugins/<id>.lock`） |
 > | §8 冲突面 | 按实际机检状态改写 |
@@ -107,10 +107,11 @@
 发版一次、玩法 bundle 远程更新」，做不到「第三方任意 zip 解压即用」；这类远程代码下载本就在 §10 非目标内。
 平台合规（小游戏/应用商店）是另一个需按发布目标单独核实的变量。
 
-**`.meta` 的取舍**（修正旧表述「安装后始终要开一次 Creator」）：`.meta` 由作者侧 Creator 产出并**随包分发**，
-安装侧 ⛔ 不合成；`sync-client --check` 的 `.meta` 断言只遍历 git 已跟踪文件，`plugin -- install` 落盘后
-`git add`，无头 CI 上 `verify:all` 即可通过。打开 Creator 是**确认**（它只会重写 `.meta` 的键序/版本，uuid 不变），
-不是前置。
+**`.meta` 的取舍**（修正旧表述「安装后始终要开一次 Creator」）：包自带的文件由作者侧 Creator 产出 `.meta` 并**随包分发**，
+安装侧 ⛔ 不合成；`sync-client --check` 的 `.meta` 断言只遍历 git 已跟踪文件——`plugin -- install` 只 `git add`
+包内文件与已跟踪镜像的改动，`sync:shared` 为 shared 变化**新建**的镜像文件保持未跟踪，因此无头 CI 上安装后
+`verify:all` 可通过；提交前仍要开一次 Creator 为这些新镜像（以及首个 feature 插件的共享祖先目录
+`apps/Cocos/assets/src/features.meta`）生成 `.meta` 再 `git add`。Creator 对随包 `.meta` 只会重写键序/版本，uuid 不变。
 
 ## 5. 包格式与安装流程
 
@@ -165,7 +166,9 @@ files.lock       清单：每行 <仓库相对路径> <sha256>（与 protected-p
   ⛔ 没有「kind 二分」；
 - `requires` 只钉两个 schemaVersion（feature-schema-v1 / gameplay-schema-v1）。协议整数不是插件的兼容轴：
   gameplay 的契约身份是 per-mode `contractDigest`/`modeVersion`（既有闸），Lobby 域的契约身份是
-  codegen 层的域 descriptor digest → 域级 `contractVersion` 闸（`LOBBY_RPC_DOMAIN_CONTRACTS`，✅ 2026-09-05）；
+  codegen 层的域 descriptor digest → 域级 `contractVersion` 闸（`LOBBY_RPC_DOMAIN_CONTRACTS`，✅ 2026-09-05；
+  覆盖面 = 域 descriptor 文件自身字节，与 gameplay 只算 wire.ts 同口径——跨文件复用的 validator/类型变化由
+  protocol-fingerprint 点名但不强制 bump）；
 - ⛔ 不放路径映射（仓库布局不能成为第二真源），⛔ 不放 slot/order（位置归宿主，§6）；
 - `plugin.json` 同时以 `plugins/<id>/plugin.json` 落在仓库（作者侧手写、`pack` 的输入、`install` 原样落回），
   包的自证由 `files.lock` 承担：清单外条目、哈希不符一律拒绝。
@@ -192,14 +195,20 @@ npm --workspace @game/server run plugin -- check
    降级须 `--allow-downgrade`；旧锁有、新包无的文件 ⇒ 按清单删除（陈旧文件不残留）；
    首装时目标路径已存在且不属本插件 ⇒ 拒绝（所有权冲突，⛔ 不覆盖）；
 4. 受影响路径的工作树必须干净（`git status`），任何失败都发生在落盘之前；
-5. 原子落盘 → 写 `scripts/plugins/<id>.lock`（已安装插件的唯一登记面）→ `git add`
-   → `codegen:gameplays`（含 gameplay）/ `codegen:features`（含 feature）→ `sync:shared`；
+   升级时旧锁的每条路径也要重过 §5.2 闸（锁是仓内明文，被改过/规则演进即拒绝，⛔ 不按可疑的锁删文件）；
+   锁登记的文件在树中缺失 ⇒ 拒绝（先 `plugin -- check` 修锁或 `uninstall --force`）；推导集内已有不属本插件的
+   文件（含 id/domain 与框架目录同名的目录级占用）⇒ 所有权冲突拒绝；
+5. 原子落盘 → 写 `scripts/plugins/<id>.lock`（已安装插件的唯一登记面）→ `git add`（只加存在或已跟踪的路径）
+   → `codegen:gameplays`（含 gameplay）/ `codegen:features`（含 feature）→ `sync:shared`（Cocos 镜像只 `git add -u`：
+   新建的镜像文件没有 `.meta`，保持未跟踪）；
 6. 停下，打印**人工**下一步：域变化时人工决定是否 bump `LOBBY_PROTOCOL_VERSION` 后
    `node scripts/protocol-fingerprint.mjs --write`（⛔ 脚本不隐式重钉）、带 FGUI 包时
-   `node scripts/fgui-manifest.mjs --write`、`npm run verify:all`、开一次 Creator 确认随包 `.meta` 的 uuid 稳定
-   （Creator 只会重写键序/版本，uuid 不变；无头 CI 安装后 `verify:all` 即可通过，开 Creator 是确认而非前置）。
+   `node scripts/fgui-manifest.mjs --write`、`npm run verify:all`、提交前开一次 Creator 为 `sync:shared` 新建的
+   镜像（与首个 feature 插件的 `features.meta`）生成 `.meta` 后 `git add apps/Cocos/assets/src`，并确认随包 `.meta`
+   的 uuid 稳定（Creator 只会重写键序/版本，uuid 不变）。
 
-**`uninstall`**：按锁清单删除（⛔ 不按目录猜）、删 `plugins/<id>/` 与锁，然后用显式 `--allow-delete`
+**`uninstall`**：先让锁的每条路径重过 §5.2 闸并要求受影响路径的工作树干净（未提交的锁改动尤其可疑），
+再按锁清单删除（⛔ 不按目录猜）、删 `plugins/<id>/` 与锁，然后用显式 `--allow-delete`
 （gameplay id / feature id / 各 domain / feature.json 登记的 View 名）驱动两个 codegen 收缩生成物，
 `SYNC_FORCE=1` 放行 sync 熔断（成批删除是有意的）。本地改动过的文件默认拒绝删除（`--force` 放行）。
 
@@ -240,8 +249,10 @@ npm --workspace @game/server run plugin -- check
   （launch → feature 的映射不靠排序裁决）。
 - 全量入口列表（设置面板）按 **`featureId` → `entryId` 字母序**：确定、无冲突、与语言无关；⛔ 不裁剪——
   未上首屏的入口（回归样例 ballMove）仍出现在设置面板。
-- feature.json 的 `dependencies` 由 FeatureHost 真正消费：launch 先按声明序装依赖，任一依赖非 active 则本
-  feature failed 且不装；dispose 按安装完成逆序（依赖方先拆）。codegen 侧查环与不存在的依赖。
+- feature.json 的 `dependencies` 由 FeatureHost 真正消费：launch 先按声明序装依赖（依赖正在 dispose 则等它拆完
+  再装；运行期环点名结算 failed），任一依赖非 active 则本 feature failed 且不装；仍有依赖方在位的 feature 不随
+  route refcount 归零释放（记请求，依赖方拆完后级联释放）；disposeAll 按依赖拓扑拆（依赖方先拆）。codegen 侧
+  查环与不存在的依赖。
 
 ### 6.1 设置面板里的条目归属
 
@@ -296,7 +307,7 @@ npm --workspace @game/server run plugin -- check
 | FGUI 包名与 `ui://` 命名空间 | ✅ `scripts/fgui-manifest.mjs` 已查 package 名/id 与资源名/id 重复；安装侧靠所有权推导（只允许声明的 `fguiPackages`）挡住同名包解压覆盖 |
 | 插件间依赖顺序与环 | ✅ codegen 查环与不存在的依赖；FeatureHost 运行期按依赖顺序装载/逆序卸载 |
 | 文件级越权与残留 | ✅ allowlist 整包拒绝；已安装锁让升级按清单删、卸载按清单删 |
-| Lobby 域契约漂移（feature 侧） | ✅ codegen 闸：`domains/<域>.ts` 字节 digest 变化必须伴随域级 `contractVersion` 递增（`LOBBY_RPC_DOMAIN_CONTRACTS`，与 gameplay 的 modeVersion 闸对称）；join 信封侧仍共用协议整数（Non-intrusive §4.8，⛔ 不各自新增版本闸） |
+| Lobby 域契约漂移（feature 侧） | ✅ codegen 闸：`domains/<域>.ts` **自身字节** digest 变化必须伴随域级 `contractVersion` 递增（`LOBBY_RPC_DOMAIN_CONTRACTS`，与 gameplay 只算 wire.ts 的 modeVersion 闸同口径）；跨文件复用的 validator/类型（primitives/economy/../http、被他域 import 的域文件）变化由 protocol-fingerprint 点名但不强制 bump；join 信封侧仍共用协议整数（Non-intrusive §4.8，⛔ 不各自新增版本闸） |
 | MySQL 表 | ⛔ 不开口：需要新表的能力不是插件，是框架 PR（Non-intrusive §12.3） |
 
 ## 9. 缺口清单（做插件机制前要补的）
@@ -326,6 +337,8 @@ npm --workspace @game/server run plugin -- check
 5. **join 信封侧的 feature 契约比对**：codegen 层的闸已落地（上表），但 Lobby join 仍只比对 `LOBBY_PROTOCOL_VERSION`
    整数——按 Non-intrusive §4.8 两类实体共用协议整数、⛔ 不各自新增版本闸，域契约变化要不要反映到
    `LOBBY_PROTOCOL_VERSION` 是人工决策（`plugin -- install` 在域变化时会提示）。
+6. **第一个真实插件的端到端实证**（plan-v5 E5）：命令与闸门目前只由隔离 fixture 驱动（`plugin-tool.test.ts`），
+   尚无仓外真实包走完 pack → install → verify:all → Creator 确认。
 
 ## 10. 非目标
 
