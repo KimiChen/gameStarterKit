@@ -6,14 +6,15 @@
  * 本文件是它登记的 checker：随 `npm run test:client` 进入 `verify:core` 链。
  *
  * 守的形态（先例：verify-inventory 的「解析 Markdown 表 ⇔ package.json 双向 deepEqual」）：
- * 1. docs/Non-intrusive.md §11.3「在这条动线中，不应再修改」代码块 ⇔ 规则文件
- *    featureFlow.paths **双向 deepEqual**——从任一侧删掉 `pages.ts` 都转红；
+ * 1. docs/Non-intrusive.md §11.3 与 §12.2 的两个散文代码块 ⇔ 规则文件的 featureFlow.paths
+ *    与 gameplayFlow.paths **各自双向 deepEqual**——从任一侧删掉 `pages.ts` 或
+ *    `gameplay/services.ts` 都转红（⛔ 封死「先删规则条目、再重钉字节锁」的绕过路径）；
  * 2. §12.2 点名的中央文件（`GameRoom.ts` 等反引号 codespan）必须被规则文件覆盖；
  * 3. 每条保护路径都真实存在（改名/收敛后清单静默漂移即红）；
  * 4. generatedWriterOwned 的生成物存在、Do not edit 抬头在位、writer 命令真实可执行。
  *
  * ⛔ 本矩阵约束的是「普通 feature / gameplay module 新增动线」的禁改集合；显式框架侵入
- * （Non-intrusive §12.3）必须同批更新规则文件与 §11.3 散文视图，本矩阵因此保持绿。
+ * （Non-intrusive §12.3）必须同批更新规则文件与对应散文视图，本矩阵因此保持绿。
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -33,7 +34,7 @@ interface WriterOwnedEntry {
 
 interface ProtectedPathRules {
   readonly featureFlow: { readonly prose: { readonly marker: string }; readonly paths: readonly string[] };
-  readonly gameplayFlow: { readonly paths: readonly string[] };
+  readonly gameplayFlow: { readonly prose: { readonly marker: string }; readonly paths: readonly string[] };
   readonly generatedWriterOwned: { readonly entries: readonly WriterOwnedEntry[] };
   readonly semantics: Readonly<Record<string, string>>;
 }
@@ -55,15 +56,26 @@ function walkFiles(dir: string): string[] {
   });
 }
 
-test("§11.3 散文清单 ⇔ featureFlow.paths 双向 deepEqual（任一侧单方面增删即红）", () => {
-  const marker = rules.featureFlow.prose.marker;
-  assert.ok(marker.length > 0, "规则文件必须声明散文 marker");
+/**
+ * 散文视图 ⇔ 规则清单的双向 deepEqual。两条动线共用同一形态：
+ * marker 必须在文档里恰好出现一次，其后紧跟的 ```text 块就是该动线的散文视图。
+ * ⛔ 这是「先从规则文件删条目、再重钉 protected-paths.lock」那条绕过路径的封堵点——
+ * 删条目必须同批删散文，否则本断言红（反之亦然）。
+ */
+function assertProseMatchesPaths(
+  label: string,
+  prose: { readonly marker: string },
+  paths: readonly string[],
+  minEntries: number,
+): void {
+  const marker = prose.marker;
+  assert.ok(marker.length > 0, `${label}：规则文件必须声明散文 marker`);
   const occurrences = doc.split(marker).length - 1;
   assert.equal(occurrences, 1, `Non-intrusive.md 里 marker「${marker}」必须恰好出现一次，实际 ${occurrences} 次`);
 
   const after = doc.slice(doc.indexOf(marker) + marker.length);
   const block = after.match(/```text\r?\n([\s\S]*?)```/u);
-  assert.ok(block, "§11.3 marker 之后必须紧跟一个 ```text 代码块（散文视图）");
+  assert.ok(block, `${label}：marker 之后必须紧跟一个 \`\`\`text 代码块（散文视图）`);
   const proseList = block[1]
     .split(/\r?\n/u)
     .map((line) => line.trim())
@@ -71,11 +83,19 @@ test("§11.3 散文清单 ⇔ featureFlow.paths 双向 deepEqual（任一侧单�
 
   // 双向：deepEqual 同时守「散文有而规则漏」与「规则有而散文漏」，且顺序一致。
   assert.deepStrictEqual(
-    [...rules.featureFlow.paths],
+    [...paths],
     proseList,
-    "scripts/protected-paths.json featureFlow.paths 与 §11.3 散文清单不一致——两者必须同批修改（散文只是视图，规则文件是真源）",
+    `scripts/protected-paths.json ${label} 与其散文清单不一致——两者必须同批修改（散文只是视图，规则文件是真源）`,
   );
-  assert.ok(proseList.length >= 10, "散文清单条目数异常（<10）——解析被架空或清单被掏空");
+  assert.ok(proseList.length >= minEntries, `${label}：散文清单条目数异常（<${minEntries}）——解析被架空或清单被掏空`);
+}
+
+test("§11.3 散文清单 ⇔ featureFlow.paths 双向 deepEqual（任一侧单方面增删即红）", () => {
+  assertProseMatchesPaths("featureFlow.paths", rules.featureFlow.prose, rules.featureFlow.paths, 10);
+});
+
+test("§12.2 散文清单 ⇔ gameplayFlow.paths 双向 deepEqual（封死「删条目再重钉」的绕过路径）", () => {
+  assertProseMatchesPaths("gameplayFlow.paths", rules.gameplayFlow.prose, rules.gameplayFlow.paths, 5);
 });
 
 test("§12.2 点名的中央文件必须被保护集合覆盖（散文 → 规则第二方向）", () => {
