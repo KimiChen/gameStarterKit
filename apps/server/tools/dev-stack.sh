@@ -122,14 +122,19 @@ pid_alive() {
   pid_valid "$1" && kill -0 "$1" 2>/dev/null
 }
 
+# ⚠ `ps -o lstart=` 的日期格式**随 locale 变化**（C 下是 `Sat Sep  5 00:11:27 2026`，
+# zh_CN.UTF-8 下是 `六  9月/ 5 00:11:27 2026`）。归属校验把这个字符串逐字写进 .owner 再逐字
+# 比对，所以**必须钉死 C locale**：否则「英文 shell 启动、中文 shell 检查」会互相判成
+# 「不是本栈实例」——start 拒绝覆盖、stop 拒绝停止，双向死锁只能手工 kill。
+# ⛔ 不要删掉这里的 LC_ALL=C；process_command 同理（两处保持一致，便于整体推理）。
 process_started_at() {
   local pid="$1"
-  ps -ww -p "$pid" -o lstart= 2>/dev/null | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | head -n 1
+  LC_ALL=C ps -ww -p "$pid" -o lstart= 2>/dev/null | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | head -n 1
 }
 
 process_command() {
   local pid="$1"
-  ps -ww -p "$pid" -o command= 2>/dev/null | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | head -n 1
+  LC_ALL=C ps -ww -p "$pid" -o command= 2>/dev/null | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | head -n 1
 }
 
 redis_runtime_value() {
