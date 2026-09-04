@@ -31,12 +31,13 @@ import { registerDefaultGameModes } from "../src/rooms/modes/catalog";
 import { createBallMoveGameMode, registerBallMoveGameMode } from "../src/rooms/modes/ballMove/index";
 import { createIdleGameMode, registerIdleGameMode } from "../src/rooms/modes/IdleGameMode";
 import {
+    createRoomPlayerForMode,
     GameRoomState,
     IdlePlayerState,
     IdleRoomState,
     ROOM_STATE_ROOT_CONSTRUCTORS,
-    SnakePlayerState,
 } from "../src/rooms/schema/GameRoomState";
+import { discoverAdmissionPayloads } from "./wire-vectors/index";
 
 type FakeClient = {
     sessionId: string;
@@ -859,7 +860,14 @@ test("注入式 mode 的 commands 也必须过同一道闸", () => {
     );
 });
 
-/** owner 独占 + token phases 的行为探针：owner mode 声明全量 capture commands。 */
+/**
+ * owner 独占 + token phases 的行为探针：owner mode 声明该 owner 的全量 capture commands。
+ *
+ * 探针 mode 玩法无关——commands 键取自生成的 wire catalog，player 走生成的
+ * `createRoomPlayerForMode`，roster 上限取 catalog 的 maxPlayers。⛔ 刻意不依赖任何
+ * 玩法 mode 的真实实现（owner 闸/phase/exact validate 都是 shell 行为），也 ⛔ 不得
+ * 在此写 `ownerId === "<某玩法>"` 分支。
+ */
 function reachedGameplayInput(type: C2SType, phase: GamePhaseType, ownerId: string): {
     reached: boolean;
     errors: number;
@@ -867,31 +875,23 @@ function reachedGameplayInput(type: C2SType, phase: GamePhaseType, ownerId: stri
     const seen: C2SType[] = [];
     const errors: unknown[][] = [];
     const capture = (captured: C2SType) => () => { seen.push(captured); };
-    const mode = ownerId === IDLE_GAME_MODE_ID
-        ? { ...createIdleGameMode(), commands: { [C2S.IdlePulse]: capture(C2S.IdlePulse) } }
-        : ownerId === "snake"
-            ? {
-                // 探针 mode 只供 dispatcher 准入矩阵（owner 闸/phase/exact validate
-                // 都是 shell 行为，刻意不依赖 snake mode 的真实实现）。
-                id: "snake",
-                roster: { min: 1, max: 8, autoStart: 1 },
-                createPlayer: ({ sessionId }: { sessionId: string }) => {
-                    const player = new SnakePlayerState();
-                    player.id = sessionId;
-                    player.name = `matrix-${sessionId}`;
-                    return player;
-                },
-                commands: {
-                    [C2S.SnakeInput]: capture(C2S.SnakeInput),
-                    [C2S.SnakeReliveDecision]: capture(C2S.SnakeReliveDecision),
-                    [C2S.SnakeEndRun]: capture(C2S.SnakeEndRun),
-                    [C2S.SnakeBaselineRequest]: capture(C2S.SnakeBaselineRequest),
-                },
-            }
-            : {
-                ...createBallMoveGameMode(),
-                commands: { [C2S.Move]: capture(C2S.Move), [C2S.CastSkill]: capture(C2S.CastSkill) },
-            };
+    const catalogEntry = (GAMEPLAY_CATALOG as Readonly<Partial<Record<string, { readonly maxPlayers: number }>>>)[ownerId];
+    if (!catalogEntry) throw new Error(`[game-mode] wire owner ${ownerId} 不在 GAMEPLAY_CATALOG 里`);
+    const commands: Record<string, () => void> = {};
+    for (const [token, tokenOwner] of Object.entries(GAME_WIRE_OWNERS)) {
+        if (tokenOwner === ownerId && token.startsWith("c2s.")) commands[token] = capture(token as C2SType);
+    }
+    const mode = {
+        id: ownerId,
+        roster: { min: 1, max: catalogEntry.maxPlayers, autoStart: 1 },
+        createPlayer: ({ sessionId }: { sessionId: string }) => {
+            const player = createRoomPlayerForMode(ownerId);
+            player.id = sessionId;
+            player.name = `matrix-${sessionId}`;
+            return player;
+        },
+        commands,
+    };
     const room = new GameRoom({ seed: 1, clock: () => 0, mode: mode as never });
     stubSimulation(room);
     room.state.phase = phase;
@@ -905,20 +905,11 @@ function reachedGameplayInput(type: C2SType, phase: GamePhaseType, ownerId: stri
 }
 
 // 每条玩法消息一份**合法** payload——⛔ 必须合法，否则会先撞 exact validator，测不到准入闸。
-const MATRIX_VALID_PAYLOAD: Record<string, unknown> = {
-    [C2S.Move]: { dirX: 1, dirY: 0 },
-    [C2S.CastSkill]: { skillId: 1 },
-    [C2S.IdlePulse]: {},
-    [C2S.SnakeInput]: { dirX: 1, dirY: 0, boost: false, seq: 1 },
-    [C2S.SnakeReliveDecision]: {
-        runId: "matrix-run",
-        deathSeq: 1,
-        clientReqId: "matrix-relive",
-        decision: "decline",
-    },
-    [C2S.SnakeEndRun]: { runId: "matrix-run", clientReqId: "matrix-end" },
-    [C2S.SnakeBaselineRequest]: { roomEpochId: "matrix-epoch", afterSeq: 0 },
-};
+// 数据住 test/wire-vectors/<owner>.ts 的 admission 段（玩法自有），本文件只做发现与闭合断言。
+const MATRIX_ADMISSION = discoverAdmissionPayloads();
+const MATRIX_VALID_PAYLOAD: Record<string, unknown> = Object.fromEntries(
+    [...MATRIX_ADMISSION].map(([type, entry]) => [type, entry.value]),
+);
 
 test("shell 不再认识具体玩法输入：IdlePulse 只对 owner mode 开放", () => {
     // ① 非 owner 的 mode（ballMove）：⛔ 必须在 owner 闸就拒，不得到达 commands
@@ -955,6 +946,21 @@ test("wire catalog 穷尽矩阵：owner 独占 + token phases 决定玩法输入
         .filter(([type, owner]) => owner === "core" && type.startsWith("c2s."))
         .map(([type]) => type);
     assert.deepEqual(coreC2S.sort(), [C2S.Chat, C2S.Ping, C2S.RoomReady, C2S.RoomStart].sort());
+
+    // 归属闸：每份 sidecar 的 admission 只装自己 owner 的消息。
+    for (const [type, entry] of MATRIX_ADMISSION) {
+        assert.equal(
+            (GAME_WIRE_OWNERS as Readonly<Partial<Record<string, string>>>)[type],
+            entry.owner,
+            `${type} 的准入 payload 放错了 sidecar 文件（wire-vectors/${entry.owner}.ts）`,
+        );
+    }
+    // ⚠ 双向 deepEqual，⛔ 不许弱化成「payload 可选」：漏一条与多一条无主 payload 都必须红。
+    assert.deepEqual(
+        [...MATRIX_ADMISSION.keys()].sort(),
+        gameplayInputs.slice().sort(),
+        "wire-vectors/ 的 admission 并集必须与玩法 C2S 全集双向相等",
+    );
 
     for (const type of gameplayInputs) {
         assert.ok(type in MATRIX_VALID_PAYLOAD, `新增玩法 C2S ${type} 必须在本矩阵补一份合法 payload`);
