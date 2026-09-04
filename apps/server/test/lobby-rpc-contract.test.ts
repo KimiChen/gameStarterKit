@@ -21,20 +21,13 @@ import {
 } from "@game/shared";
 import { collectEndpoints } from "../src/websocket/loader";
 import { defineRpc } from "../src/websocket/rpc";
-import guildVectors from "./lobbyRpcVectors/guild";
-import mailVectors from "./lobbyRpcVectors/mail";
-import roomVectors from "./lobbyRpcVectors/room";
-import shopVectors from "./lobbyRpcVectors/shop";
-import userVectors from "./lobbyRpcVectors/user";
+import { LOBBY_RPC_VECTOR_FILES } from "./lobbyRpcVectors/index.generated";
 
-/** sidecar 向量合并视图（集合完备性由 lobby-rpc-vectors.test.ts 双向断言）。 */
-const vectors: Record<string, { request: unknown; response: unknown } | undefined> = {
-  ...guildVectors,
-  ...mailVectors,
-  ...roomVectors,
-  ...shopVectors,
-  ...userVectors,
-};
+/** sidecar 向量合并视图（登记表由 codegen:features 生成；集合完备性由 lobby-rpc-vectors.test.ts 双向断言）。 */
+const vectors: Record<string, { request: unknown; response: unknown } | undefined> = Object.assign(
+  {},
+  ...Object.values(LOBBY_RPC_VECTOR_FILES),
+);
 
 test("端点全集与 shared 声明集合相等，路由名与文件路径一致", async () => {
   const defs = await collectEndpoints(); // 内部已做双向集合校验 + 路径一致校验

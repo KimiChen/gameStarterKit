@@ -998,6 +998,11 @@ request 与 response 最小合法向量时，存量 12 条路由的 request/resp
 apps/server/test/lobbyRpcVectors/undergroundIdle.ts
 ```
 
+> 注记（2026-09-05）：sidecar 发现已落地为生成物——`codegen:features` 按 domain 集合发现
+> `lobbyRpcVectors/<域>.ts` 并渲染 `lobbyRpcVectors/index.generated.ts`（domain ⇔ sidecar 双向对齐），
+> `lobby-rpc-vectors.test.ts` / `lobby-rpc-contract.test.ts` 只消费该表；此前两份测试各手写一张登记表的
+> 形态（PLUGIN-REVIEW F06）已删除。
+
 该目录为拟新增路径，当前不存在；`test/` 已整体在服务端 tsconfig include 内，新建后常规 typecheck 即覆盖它。不得把 vectors 放进
 shared/runtime descriptor 或同步到 Cocos。
 
@@ -2212,7 +2217,7 @@ provenance 白名单里单列说明它是人工项。⛔ 不建议把它改成 g
 | `apps/server/src/rooms/GameRoom.ts` | 混有 ballMove、逐条消息登记、两人自动开始和集中 evidence | 只保留安全不变量、catch-all dispatch、policy、start transaction 和受限 mode lifecycle |
 | `apps/server/src/rooms/GameMode.ts` | `usesDefaultBallMoveRules` 让公共接口以 ballMove 为默认 | 改为 typed `GamePlugin + RoomProfile + policy + capability` 契约；未登记 fail-fast |
 | `apps/server/src/rooms/ballMoveRules.ts` | 当前由 GameRoom 直接消费 | 移入 `rooms/modes/ballMove/**`，成为 ballMove 私有实现 |
-| `apps/server/src/rooms/modes/catalog.ts` | 手工只登记 idle；ballMove 由 `GameMode.ts` 的**模块顶层副作用** `gameModeRegistry.register(...)` 隐式成为默认——正是 §5.4 明令禁止的自注册形态 | 改为 generated catalog 的稳定 façade，显式登记全部 mode |
+| `apps/server/src/rooms/modes/catalog.ts` | 手工只登记 idle；ballMove 由 `GameMode.ts` 的**模块顶层副作用** `gameModeRegistry.register(...)` 隐式成为默认——正是 §5.4 明令禁止的自注册形态 | 改为 generated catalog 的稳定 façade，显式登记全部 mode（✅ 2026-09-05 已实施：`codegen:gameplays` 按 manifest.wireExposed 发现 `modes/<id>/index.ts` 的 `register<Constant>GameMode` 生成 `modes/catalog.generated.ts`，`catalog.ts` 只 re-export；`catalog.ts` 与 `app.config.ts` 同批进 §12.2 保护清单） |
 | `apps/server/src/app.config.ts` | 进程根手工调用 mode catalog，普通撮合只按 `sId/mode` 隔离 | 一次性切换 generated bootstrap；仍只注册一个 `RoomName.Game`，多 profile 后按 `sId/mode/profile` 隔离 |
 | `apps/server/src/core/infra/keys.ts`、相关 config/Redis script | 没有邀请码租约 key、TTL 和 CAS | 增加按项目/区隔离的 key、配置校验、lease renew/release Lua |
 | `apps/server/src/core/errors.ts` | Lobby domain 异常仍映射到中央错误表 | 按 §9 的顺序，generated error 已在阶段 3 落地，邀请码只贡献 `domains/room.ts` 的 `errorCodes`，本文件 ⛔ 不需要再改 |
@@ -2968,6 +2973,8 @@ apps/client/src/net/rooms/GameRoomTransport.ts
 apps/client/src/gameplay/catalog.ts
 apps/client/src/gameplay/services.ts
 apps/client/src/logic/gameplay/**
+apps/server/src/rooms/modes/catalog.ts
+apps/server/src/app.config.ts
 ```
 
 ⚠ 本块是 `scripts/protected-paths.json` 的 `gameplayFlow.paths` 的散文视图，由无侵入矩阵做**双向

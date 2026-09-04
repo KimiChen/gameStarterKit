@@ -30,11 +30,7 @@ import {
   type LobbyPushType,
   type LobbyRpcType,
 } from "@game/shared";
-import guildDomain from "../../shared/src/protocol/lobbyRpc/domains/guild";
-import mailDomain from "../../shared/src/protocol/lobbyRpc/domains/mail";
-import roomDomain from "../../shared/src/protocol/lobbyRpc/domains/room";
-import shopDomain from "../../shared/src/protocol/lobbyRpc/domains/shop";
-import userDomain from "../../shared/src/protocol/lobbyRpc/domains/user";
+import type { LobbyRpcDomainDescriptor } from "../../shared/src/protocol/lobbyRpc/defineDomain";
 import {
   CORE_LOBBY_PUSHES,
   CORE_RPC_ERROR_CODES,
@@ -46,7 +42,9 @@ import {
   assertWriterOutputSetSafe,
   parseCli,
   readFeatureDescriptors,
+  readVectorSidecars,
   renderFeatureArtifacts,
+  VECTORS_INDEX_RELATIVE,
   writeFeatureArtifacts,
   type FeatureCodegenOptions,
 } from "../tools/feature-codegen/lib";
@@ -63,7 +61,8 @@ const REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)
 const LOBBY_RPC_DIR = "apps/shared/src/protocol/lobbyRpc";
 const REGISTRY_RELATIVE = `${LOBBY_RPC_DIR}/registry.generated.ts`;
 const CLIENT_ARTIFACTS = [FGUI_CONTRACTS_RELATIVE, VIEWS_RELATIVE, FEATURES_RELATIVE] as const;
-const ALL_ARTIFACTS = [REGISTRY_RELATIVE, ...CLIENT_ARTIFACTS, FEATURE_INDEX_RELATIVE] as const;
+const VECTORS_DIR = "apps/server/test/lobbyRpcVectors";
+const ALL_ARTIFACTS = [REGISTRY_RELATIVE, ...CLIENT_ARTIFACTS, FEATURE_INDEX_RELATIVE, VECTORS_INDEX_RELATIVE] as const;
 
 /**
  * 隔离根：拷贝生成器的全部输入面（lobbyRpc + features + 客户端 view/logic/generated +
@@ -71,7 +70,7 @@ const ALL_ARTIFACTS = [REGISTRY_RELATIVE, ...CLIENT_ARTIFACTS, FEATURE_INDEX_REL
  */
 function createFixture(): { readonly root: string; readonly options: FeatureCodegenOptions } {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "feature-codegen-"));
-  for (const dir of [LOBBY_RPC_DIR, "features", "apps/client/src/view", "apps/client/src/logic", "apps/client/src/generated"]) {
+  for (const dir of [LOBBY_RPC_DIR, "features", "apps/client/src/view", "apps/client/src/logic", "apps/client/src/generated", VECTORS_DIR]) {
     fs.cpSync(path.join(REPOSITORY_ROOT, dir), path.join(root, dir), { recursive: true });
   }
   fs.mkdirSync(path.join(root, "docs"), { recursive: true });
@@ -100,7 +99,7 @@ function snapshotHandwritten(root: string): Map<string, string> {
       out.set(relative, fs.readFileSync(full, "utf8"));
     }
   };
-  for (const dir of [LOBBY_RPC_DIR, "features", "apps/client/src/view", "apps/client/src/logic", "apps/client/src/generated", "apps/art/fairygui/assets", "docs"]) {
+  for (const dir of [LOBBY_RPC_DIR, "features", "apps/client/src/view", "apps/client/src/logic", "apps/client/src/generated", "apps/art/fairygui/assets", "docs", VECTORS_DIR]) {
     const base = path.join(root, dir);
     if (fs.existsSync(base)) walk(base);
   }
@@ -141,8 +140,16 @@ test("--check 只读：stale/missing/extra 三态失败并点名", () => {
 
 // ── 运行时 descriptor ⇔ generated 表双向对拍 ────────────────────────────────
 
-test("descriptor 运行时值 ⇔ generated 表双向相等（route/mode/errorCodes/pushes 全覆盖）", () => {
-  const domains = [guildDomain, mailDomain, roomDomain, shopDomain, userDomain];
+test("descriptor 运行时值 ⇔ generated 表双向相等（route/mode/errorCodes/pushes 全覆盖）", async () => {
+  // ⛔ 不手写域列表：按 generated LOBBY_RPC_DOMAINS 发现并动态 import 各域 descriptor（新增域本文件不动）。
+  const domains = await Promise.all(
+    [...LOBBY_RPC_DOMAINS].sort().map(async (domain) => {
+      const module = await import(`../../shared/src/protocol/lobbyRpc/domains/${domain}`) as {
+        readonly default: LobbyRpcDomainDescriptor;
+      };
+      return module.default;
+    }),
+  );
   assert.deepEqual(domains.map((d) => d.domain).sort(), [...LOBBY_RPC_DOMAINS].sort());
 
   // routes/mode：双向
@@ -410,15 +417,65 @@ const FIXTURE_CHAMBER_DOMAIN = [
   "",
 ].join("\n");
 
-test("退出条件：新增 fixture domain 只加 domains/chamber.ts，生成 registry 即收录，人工中央源码零改", () => {
+/** annex 域（阶段 4 跨域 inspects 夹具）的最小向量 sidecar：domain 一旦写盘就必须配对，否则生成器点名缺失。 */
+const FIXTURE_ANNEX_VECTORS = [
+  'import type { LobbyRpcVectorFile } from "./vectorTypes";',
+  "",
+  "export default {",
+  '  "annex.peek": { request: {}, response: { ok: true } },',
+  "} satisfies LobbyRpcVectorFile;",
+  "",
+].join("\n");
+
+/** chamber 域的最小向量 sidecar（fixture 内只做存在性/登记表断言，⛔ 不执行）。 */
+const FIXTURE_CHAMBER_VECTORS = [
+  'import type { LobbyRpcVectorFile } from "./vectorTypes";',
+  "",
+  "export default {",
+  '  "chamber.peek": { request: {}, response: { ok: true } },',
+  '  "chamber.commit": { request: { clientReqId: "c1" }, response: { ok: true } },',
+  "} satisfies LobbyRpcVectorFile;",
+  "",
+].join("\n");
+
+test("向量 sidecar ⇔ domain 双向对齐：孤儿 sidecar 与缺失 sidecar 都必须 fail-fast", () => {
+  const { root, options } = createFixture();
+  try {
+    assertFeatureArtifactsFresh(options);
+    // 孤儿：sidecar 没有对应 domain（域已删除但向量没删）。
+    fs.writeFileSync(path.join(root, VECTORS_DIR, "ghost.ts"), FIXTURE_CHAMBER_VECTORS);
+    assert.throws(() => assertFeatureArtifactsFresh(options), /lobbyRpcVectors\/ghost\.ts.*没有对应的 domain descriptor/u);
+    assert.throws(() => writeFeatureArtifacts(options), /ghost\.ts/u);
+    fs.rmSync(path.join(root, VECTORS_DIR, "ghost.ts"));
+    // 缺失：domain 在、sidecar 没了。
+    fs.rmSync(path.join(root, VECTORS_DIR, "guild.ts"));
+    assert.throws(() => assertFeatureArtifactsFresh(options), /lobbyRpcVectors\/guild\.ts: missing required file/u);
+    // 只读发现函数直接暴露同一判定（供其他工具复用）。
+    assert.throws(() => readVectorSidecars(root, readFeatureDescriptors(options)), /guild\.ts/u);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("退出条件：新增 fixture domain 只加 domains/chamber.ts + 向量 sidecar，生成 registry/向量表即收录，人工中央源码零改", () => {
   const { root, options } = createFixture();
   const before = snapshotHandwritten(root);
   fs.writeFileSync(path.join(root, LOBBY_RPC_DIR, "domains/chamber.ts"), FIXTURE_CHAMBER_DOMAIN);
+  // 只有 descriptor 没有向量 sidecar：生成器点名缺失（新增域必须同批带最小合法向量），⛔ 不静默。
+  assert.throws(() => writeFeatureArtifacts(options), /lobbyRpcVectors\/chamber\.ts: missing required file/u);
+  fs.writeFileSync(path.join(root, VECTORS_DIR, "chamber.ts"), FIXTURE_CHAMBER_VECTORS);
   const result = writeFeatureArtifacts(options);
-  assert.deepEqual(result.changed, [REGISTRY_RELATIVE], "只允许 registry 一件产物变化");
+  assert.deepEqual(result.changed, [REGISTRY_RELATIVE, VECTORS_INDEX_RELATIVE],
+    "只允许 registry 与向量登记表两件产物变化");
   assert.deepEqual(result.deleted, []);
   const after = snapshotHandwritten(root);
-  assert.deepEqual([...after.keys()].filter((key) => !before.has(key)), [`${LOBBY_RPC_DIR}/domains/chamber.ts`]);
+  assert.deepEqual(
+    [...after.keys()].filter((key) => !before.has(key)).sort(),
+    [`${VECTORS_DIR}/chamber.ts`, `${LOBBY_RPC_DIR}/domains/chamber.ts`].sort(),
+  );
+  const vectorsIndex = fs.readFileSync(path.join(root, VECTORS_INDEX_RELATIVE), "utf8");
+  assert.match(vectorsIndex, /^import chamberVectors from "\.\/chamber";$/mu, "向量登记表静态 import 新 sidecar");
+  assert.match(vectorsIndex, /^ {4}chamber: chamberVectors,$/mu);
   for (const [key, bytes] of before) {
     assert.equal(after.get(key), bytes, `人工源码被生成器改动：${key}`);
   }
@@ -597,6 +654,7 @@ test("跨域 inspects：缺 exposesOperationGroupTo 即 fail closed，显式暴�
       '    ownsOperationGroups: ["roomOps"],\n    exposesOperationGroupTo: { roomOps: ["annex"] },',
     ));
     fs.writeFileSync(path.join(root, LOBBY_RPC_DIR, "domains/annex.ts"), annexInspects);
+    fs.writeFileSync(path.join(root, VECTORS_DIR, "annex.ts"), FIXTURE_ANNEX_VECTORS);
     writeFeatureArtifacts(options);
     const registry = fs.readFileSync(path.join(root, REGISTRY_RELATIVE), "utf8");
     assert.match(registry, /^ {4}"annex\.peek": "roomOps",$/mu, "获准跨域查询的路由进 LOBBY_RPC_INSPECTS");
@@ -621,8 +679,16 @@ test("删除保护：域源文件消失必须显式 --allow-delete，放行后 r
   const { root, options } = createFixture();
   fs.rmSync(path.join(root, LOBBY_RPC_DIR, "domains/guild.ts"));
   assert.throws(() => writeFeatureArtifacts(options), /--allow-delete/u);
+  // 域删了但向量 sidecar 还在：即使显式 --allow-delete 也拒绝——sidecar 必须同批删除（⛔ 不留孤儿）。
+  assert.throws(
+    () => writeFeatureArtifacts({ ...options, allowDelete: ["guild"] }),
+    /lobbyRpcVectors\/guild\.ts.*没有对应的 domain descriptor/u,
+  );
+  fs.rmSync(path.join(root, VECTORS_DIR, "guild.ts"));
   const result = writeFeatureArtifacts({ ...options, allowDelete: ["guild"] });
   assert.deepEqual(result.deleted, ["guild"]);
+  assert.ok(!fs.readFileSync(path.join(root, VECTORS_INDEX_RELATIVE), "utf8").includes("guildVectors"),
+    "向量登记表必须随域删除收缩");
   const registry = fs.readFileSync(path.join(root, REGISTRY_RELATIVE), "utf8");
   assert.ok(!registry.includes('"guild.join"'), "guild 路由必须随域删除消失");
   assert.ok(!/^ {4}"guild",$/mu.test(registry));

@@ -28,7 +28,7 @@ import {
     IDLE_MAX_PULSE_GOAL,
     createIdleGameMode,
     registerIdleGameMode,
-} from "../src/rooms/modes/IdleGameMode";
+} from "../src/rooms/modes/idle/index";
 import {
     GameRoomState,
     IdlePlayerState,

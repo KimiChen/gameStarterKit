@@ -53,7 +53,9 @@
       "apps/client/src/net/rooms/GameRoomTransport.ts",
       "apps/client/src/gameplay/catalog.ts",
       "apps/client/src/gameplay/services.ts",
-      "apps/client/src/logic/gameplay/**"
+      "apps/client/src/logic/gameplay/**",
+      "apps/server/src/rooms/modes/catalog.ts",
+      "apps/server/src/app.config.ts"
     ]
   },
   "generatedWriterOwned": {
@@ -65,9 +67,11 @@
       { "path": "apps/server/src/rooms/schema/GameRoomState.ts", "writer": "npm --workspace @game/server run codegen:gameplays", "autoHeader": true },
       { "path": "apps/server/src/rooms/schema/generated/**", "writer": "npm --workspace @game/server run codegen:gameplays", "autoHeader": true },
       { "path": "apps/client/src/gameplay/catalog.generated.ts", "writer": "npm --workspace @game/server run codegen:gameplays", "autoHeader": true },
+      { "path": "apps/server/src/rooms/modes/catalog.generated.ts", "writer": "npm --workspace @game/server run codegen:gameplays", "autoHeader": true },
       { "path": "apps/shared/src/protocol/lobbyRpc/registry.generated.ts", "writer": "npm --workspace @game/server run codegen:features", "autoHeader": true },
       { "path": "apps/client/src/generated/**", "writer": "npm --workspace @game/server run codegen:features", "autoHeader": true },
       { "path": "docs/features.generated.md", "writer": "npm --workspace @game/server run codegen:features", "autoHeader": true },
+      { "path": "apps/server/test/lobbyRpcVectors/index.generated.ts", "writer": "npm --workspace @game/server run codegen:features", "autoHeader": true },
       { "path": "apps/server/src/http/manifest.generated.ts", "writer": "npm --workspace @game/server run codegen:http", "autoHeader": true },
       { "path": "apps/shared/src/project.ts", "writer": "npm run init:project", "autoHeader": true },
       { "path": "apps/shared/src/gameplays/snake/snakeSkinCatalog.generated.ts", "writer": "node tools/snake-s1-assets/cli.mjs --write", "autoHeader": true },
@@ -97,6 +101,8 @@
     "apps/client/src/net/rooms/GameRoomTransport.ts": "通用 join/leave ownership 与 mode adapter 契约；新玩法只新增 net/rooms/<Mode>Room.ts",
     "apps/client/src/gameplay/catalog.ts": "阶段 9 起为废弃零状态 façade（登记走 catalog.generated.ts 的 registerGeneratedGameplays）",
     "apps/client/src/gameplay/services.ts": "GameplayServicesContext 稳定服务注入面；⛔ 不得出现逐玩法字段",
-    "apps/client/src/logic/gameplay/**": "GameplayModule/GameplayRegistry/RoomController 中央契约；新玩法只新增 gameplay/modes/<id>/ 模块文件"
+    "apps/client/src/logic/gameplay/**": "GameplayModule/GameplayRegistry/RoomController 中央契约；新玩法只新增 gameplay/modes/<id>/ 模块文件",
+    "apps/server/src/rooms/modes/catalog.ts": "阶段 9 收敛后为生成物 modes/catalog.generated.ts 的稳定 façade（登记全集按 manifest.wireExposed 发现 modes/<id>/index.ts 的 register<Constant>GameMode）；新增玩法只新增 modes/<id>/index.ts 并重跑 codegen:gameplays",
+    "apps/server/src/app.config.ts": "进程组合根（registerDefaultGameModes + assertRoomProfilesConfigured + 单一 RoomName.Game 定义）；玩法经 generated catalog 进入，⛔ 不因玩法名修改"
   }
 }

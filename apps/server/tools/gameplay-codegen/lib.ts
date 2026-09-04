@@ -1,6 +1,8 @@
 /**
  * codegen:gameplays 的编排层：发现每玩法单源目录、digest/modeVersion 闸、
- * 三端产物渲染、freshness（--check 只读）与原子写盘（--write）。
+ * 三端产物渲染（含服务端 `modes/catalog.generated.ts`：按 manifest.wireExposed 发现
+ * `modes/<id>/index.ts` 的 `register<Constant>GameMode`，Non-intrusive §5.4/§8.2）、
+ * freshness（--check 只读）与原子写盘（--write）。
  *
  * §5.5 通用约束的落点：
  *  - 稳定排序（mode 按 id 排序）⇒ 相同输入字节级相同输出；
@@ -33,6 +35,7 @@ import {
 import {
   assertClientGameplayModuleSource,
   assertGameplayModeIdFacade,
+  assertServerGameModeModuleSource,
   parseCoreWireNames,
   parseGameplayModeIds,
   parseGameplayWireModule,
@@ -56,6 +59,8 @@ const SERVER_SCHEMA_DIR_RELATIVE = "apps/server/src/rooms/schema/generated";
 const SERVER_AGGREGATE_RELATIVE = "apps/server/src/rooms/schema/GameRoomState.ts";
 const CLIENT_CATALOG_RELATIVE = "apps/client/src/gameplay/catalog.generated.ts";
 const CLIENT_MODES_DIR_RELATIVE = "apps/client/src/gameplay/modes";
+const SERVER_MODES_DIR_RELATIVE = "apps/server/src/rooms/modes";
+const SERVER_CATALOG_RELATIVE = "apps/server/src/rooms/modes/catalog.generated.ts";
 const SHARED_ROOMS_RELATIVE = "apps/shared/src/protocol/rooms.ts";
 
 const MODE_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/u;
@@ -360,6 +365,41 @@ export function readClientGameplayModules(
     assertRegularFile(file, label);
     assertClientGameplayModuleSource(fs.readFileSync(file, "utf8"), label);
     modules.push({ id, constantName: gameplay.manifest.constantName });
+  }
+  return modules;
+}
+
+/** 已装配服务端 GameMode 的玩法（= canonical GameplayModeId ∩ catalog；与客户端装配集同口径）。 */
+export type ServerGameplayModule = {
+  readonly id: string;
+  readonly constantName: string;
+  /** 约定导出符号：`register<ConstantName>GameMode`。 */
+  readonly registerSymbol: string;
+};
+
+/**
+ * 发现服务端 GameMode 装配集（Non-intrusive §5.4/§8.2：`modes/catalog.ts` 生成化）：
+ *  - 装配集 = manifest 声明 `wireExposed !== false` 的玩法（= 生成的 `GameplayModeId` 成员集），
+ *    与客户端 `GAMEPLAY_MODULES` 同集——fixture 玩法（wireExposed:false）⛔ 不进生产 registry；
+ *  - 装配集内每个 id 的 `apps/server/src/rooms/modes/<id>/index.ts` 必须存在且（语法级）导出
+ *    `register<ConstantName>GameMode`，缺失 fail-fast。
+ * 真仓的「modes/ 目录 == 装配集」双向同集由 gameplay-codegen.test 守门。
+ */
+export function readServerGameplayModules(
+  gameplays: readonly GameplayDescriptor[],
+  options: GameplayCodegenOptions = {},
+): readonly ServerGameplayModule[] {
+  const root = resolvedRoot(options);
+  const canonical = wireExposedGameplays(gameplays);
+  const modules: ServerGameplayModule[] = [];
+  for (const gameplay of [...canonical].sort((left, right) => (left.id < right.id ? -1 : 1))) {
+    const id = gameplay.id;
+    const registerSymbol = `register${gameplay.manifest.constantName}GameMode`;
+    const label = `${SERVER_MODES_DIR_RELATIVE}/${id}/index.ts`;
+    const file = path.join(root, SERVER_MODES_DIR_RELATIVE, id, "index.ts");
+    assertRegularFile(file, label);
+    assertServerGameModeModuleSource(fs.readFileSync(file, "utf8"), label, registerSymbol);
+    modules.push({ id, constantName: gameplay.manifest.constantName, registerSymbol });
   }
   return modules;
 }
@@ -865,6 +905,51 @@ function renderClientCatalog(
   return `${lines.join("\n").trimEnd()}\n`;
 }
 
+// ⚠ 标签会进 `/** … */` 块注释：⛔ 不能写 `*/`。
+const SERVER_SOURCE_LABEL =
+  `${SCHEMA_DIR_RELATIVE}/<id>/manifest.json (wireExposed) + ${SERVER_MODES_DIR_RELATIVE}/<id>/index.ts`;
+
+/**
+ * 服务端 mode catalog（`modes/catalog.generated.ts`）：静态字面量 import 各 mode 的
+ * `register<Constant>GameMode`，在进程组合根一次登记全集（Non-intrusive §5.4：显式、排序稳定的
+ * 静态 import；⛔ 无副作用式自注册、⛔ 无运行时目录扫描）。`modes/catalog.ts` 是它的稳定 façade。
+ */
+function renderServerCatalog(serverModules: readonly ServerGameplayModule[]): string {
+  const lines = [
+    generatedHeader(SERVER_SOURCE_LABEL),
+    "import type { GameModeRegistry } from \"../GameMode\";",
+  ];
+  for (const module of serverModules) {
+    lines.push(`import { ${module.registerSymbol} } from "./${module.id}/index";`);
+  }
+  lines.push(
+    "",
+    "/** 已装配服务端 GameMode 的玩法 id（= canonical GameplayModeId；fixture 玩法不在此表）。 */",
+    "export const GENERATED_GAME_MODE_IDS: readonly string[] = [",
+    ...serverModules.map((module) => `    ${JSON.stringify(module.id)},`),
+    "];",
+    "",
+    "/**",
+    " * 在进程组合根登记全部 generated 服务端 GameMode（缺省登记进生产 gameModeRegistry；",
+    " * 测试可注入自己的 registry）：后续登记失败回滚本次已登记项（逆序），⛔ 不影响调用前已有登记。",
+    " */",
+    "export function registerGeneratedGameModes(registry?: GameModeRegistry): () => void {",
+    "    const disposers: Array<() => void> = [];",
+    "    try {",
+    ...serverModules.map((module) => `        disposers.push(${module.registerSymbol}(registry));`),
+    "    } catch (error) {",
+    "        for (const dispose of disposers.splice(0).reverse()) dispose();",
+    "        throw error;",
+    "    }",
+    "    return () => {",
+    "        for (const dispose of disposers.splice(0).reverse()) dispose();",
+    "    };",
+    "}",
+    "",
+  );
+  return `${lines.join("\n").trimEnd()}\n`;
+}
+
 /**
  * 对外 wire 枚举 `GameplayModeId` 的成员集：manifest 声明 `wireExposed !== false` 的玩法。
  *
@@ -936,6 +1021,7 @@ export function renderGameplayArtifacts(
   gameplays: readonly GameplayDescriptor[],
   core: CoreWireNames,
   clientModules: readonly ClientGameplayModule[],
+  serverModules: readonly ServerGameplayModule[],
 ): ReadonlyMap<string, string> {
   const artifacts = new Map<string, string>();
   artifacts.set(SHARED_WIRE_CATALOG_RELATIVE, renderWireCatalog(gameplays, core));
@@ -956,7 +1042,24 @@ export function renderGameplayArtifacts(
   artifacts.set(SHARED_INDEX_RELATIVE, renderSharedIndex(gameplays));
   artifacts.set(SERVER_AGGREGATE_RELATIVE, renderServerAggregate(gameplays));
   artifacts.set(CLIENT_CATALOG_RELATIVE, renderClientCatalog(gameplays, clientModules));
+  assertModuleSetsAligned(clientModules, serverModules);
+  artifacts.set(SERVER_CATALOG_RELATIVE, renderServerCatalog(serverModules));
   return new Map([...artifacts.entries()].sort(([left], [right]) => (left < right ? -1 : 1)));
+}
+
+/** 三端一致闸：客户端 module 装配集与服务端 mode 装配集必须精确同集（两者都 = canonical）。 */
+function assertModuleSetsAligned(
+  clientModules: readonly ClientGameplayModule[],
+  serverModules: readonly ServerGameplayModule[],
+): void {
+  const client = clientModules.map((module) => module.id).sort();
+  const server = serverModules.map((module) => module.id).sort();
+  if (client.length !== server.length || client.some((id, index) => id !== server[index])) {
+    fail(
+      SERVER_CATALOG_RELATIVE,
+      `客户端 module 装配集 [${client.join(", ")}] 与服务端 mode 装配集 [${server.join(", ")}] 不同集`,
+    );
+  }
 }
 
 // ── digest/modeVersion 闸 ───────────────────────────────────────────────────
@@ -1048,7 +1151,12 @@ export function assertGameplayArtifactsFresh(options: GameplayCodegenOptions = {
   assertModeVersionBumped(gameplays, previousCatalogRecords(options));
   const { stale, missing, extra } = diffArtifacts(
     root,
-    renderGameplayArtifacts(gameplays, readCoreWireNames(options), readClientGameplayModules(gameplays, options)),
+    renderGameplayArtifacts(
+      gameplays,
+      readCoreWireNames(options),
+      readClientGameplayModules(gameplays, options),
+      readServerGameplayModules(gameplays, options),
+    ),
   );
   const problems: string[] = [];
   if (stale.length > 0) problems.push(`stale: ${stale.join(", ")}`);
@@ -1094,6 +1202,7 @@ export function writeGameplayArtifacts(options: GameplayCodegenOptions = {}): Ga
     gameplays,
     readCoreWireNames(options),
     readClientGameplayModules(gameplays, options),
+    readServerGameplayModules(gameplays, options),
   );
   // extra 清理：生成目录里不再被任何 mode 拥有的文件。允许删除名单里的 mode 产物删除；
   // 其余一律拒绝——普通 --write 不得静默吞掉未知文件。

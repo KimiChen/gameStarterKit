@@ -40,7 +40,9 @@
   - `index.ts`：`createBallMoveGameMode(options?)` 返回 GameMode + harness API
     （`injectInput`/`setInputSource`/`getAcceptedInputs`）的 mode 句柄，`registerBallMoveGameMode`
     供组合根登记。
-- `modes/catalog.ts` / `modes/IdleGameMode.ts`：生产 mode catalog（ballMove 与 idle 都在此登记）与最小
+- `modes/catalog.generated.ts`（`codegen:gameplays` 生成：按 manifest.wireExposed 发现 `modes/<id>/index.ts`
+  导出的 `register<Constant>GameMode`，`registerGeneratedGameModes()` 在组合根一次登记全集；fixture 玩法
+  不进生产 registry）与其稳定 façade `modes/catalog.ts`（⛔ 不再逐玩法手写 import）；`modes/idle/index.ts` 是最小
   第二玩法。Idle 使用独立 `IdleRoomState`、strict `IdlePulse` 和 pulse/真实离场结算，不声明 evidence
   capability，也不写任何收局证据。
 - `core/`（阶段 8a，Non-intrusive §6.2）：房间组合 policy 层——`StartPolicy.ts`（auto / owner-ready /

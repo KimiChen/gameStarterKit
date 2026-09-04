@@ -32,7 +32,7 @@ import { createDevAuthProvider, devUidOf } from "../../src/platform/devAuthProvi
 import { closeWebPlatformClient, installWebPlatformClient } from "../../src/platform/webPlatformClient";
 import { GameRoom } from "../../src/rooms/GameRoom";
 import { gameModeRegistry } from "../../src/rooms/GameMode";
-import { createIdleGameMode } from "../../src/rooms/modes/IdleGameMode";
+import { createIdleGameMode } from "../../src/rooms/modes/idle/index";
 import { LobbyRoom } from "../../src/websocket/LobbyRoom";
 import { assertRedisUp, sleep } from "./helpers";
 
