@@ -46,11 +46,11 @@ export const GAMEPLAY_CATALOG = {
     "snake": {
         id: "snake",
         constantName: "Snake",
-        modeVersion: 3,
+        modeVersion: 4,
         maxPlayers: 8,
         profiles: ["dropIn"],
         stateFragments: [],
-        contractDigest: "7ce7fc7083ee30137c1e114b28705fc93fbf29a5d87161431869c0b0b5ee3fe5",
+        contractDigest: "bb7e7c3b5a9dbabc341510e85bddd48794e39fab57935cfb88e45050f7b4b2d8",
     },
 } as const;
 

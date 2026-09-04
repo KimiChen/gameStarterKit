@@ -1,15 +1,5 @@
 /** snake@3 房内 wire：无尽世界、分块 baseline/有序 delta 与 demo 金币复活/run 结果。 */
-import {
-    GamePhase,
-    SnakeDeathCause,
-    SnakeRewardStatus,
-    SnakeRunEndReason,
-    SnakeRunState,
-    type SnakeRewardStatusType,
-    type SnakeDeathCauseType,
-    type SnakeRunStateType,
-    type SnakeTerminalEndReasonType,
-} from "../../constants/game";
+import { GamePhase } from "../../constants/game";
 import {
     assertExactKeys,
     boundedString,
@@ -20,7 +10,19 @@ import {
     type PlainRecord,
 } from "../../protocol/http";
 import { defineC2S, defineS2C } from "../defineGameplayWire";
-import { snakeBodyScale, SNAKE_ENDLESS_CONFIG, SNAKE_RULESET } from "./ruleset";
+import {
+    snakeBodyScale,
+    SnakeDeathCause,
+    SnakeRewardStatus,
+    SnakeRunEndReason,
+    SnakeRunState,
+    SNAKE_ENDLESS_CONFIG,
+    SNAKE_RULESET,
+    type SnakeDeathCauseType,
+    type SnakeRewardStatusType,
+    type SnakeRunStateType,
+    type SnakeTerminalEndReasonType,
+} from "./ruleset";
 
 export interface ISnakeInputReq {
     readonly dirX: number;

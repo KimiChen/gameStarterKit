@@ -23,6 +23,7 @@ import { fileURLToPath } from "node:url";
 import { parseGameplayManifest, type GameplayManifest } from "./manifestSchema";
 import {
   generatedHeader,
+  hasGameplaySourcedEnum,
   parseGameplayStateDescriptor,
   posixPath,
   renderSharedStateModule,
@@ -69,6 +70,12 @@ export type GameplayDescriptor = {
   readonly wire: GameplayWireDeclarations;
   /** 该 mode 是否存在手写 wire.ts（决定聚合 barrel 是否 re-export 它）。 */
   readonly hasWireModule: boolean;
+  /**
+   * 该 mode 是否声明了 `enumSource: "gameplay"` 的 state 字段。
+   * 为真时 `<id>/ruleset.ts` 必存在（已在 readGameplayDescriptors 校验），
+   * 且聚合 barrel 必须 re-export 它——服务端侧产物从 `@game/shared` 解析这些枚举符号。
+   */
+  readonly hasGameplayEnumModule: boolean;
   /** sha256(manifest.json + "\0" + state.json + "\0" + wire.ts 字节)，per-mode 契约身份。 */
   readonly contractDigest: string;
   readonly sourceLabel: string;
@@ -180,6 +187,30 @@ export function readGameplayDescriptors(options: GameplayCodegenOptions = {}): r
       hasWireModule = true;
     }
 
+    // ruleset.ts（手写）：仅当 state.json 声明了 enumSource:"gameplay" 时才是硬依赖。
+    // shared 侧产物会 import 它、聚合 barrel 会 re-export 它，缺失就是一条断链——点名拒绝，
+    // ⛔ 不留到 tsc 阶段（符号级存在性交给 typecheck，这里只保证模块在）。
+    const hasGameplayEnumModule = hasGameplaySourcedEnum(state);
+    if (hasGameplayEnumModule) {
+      const rulesetLabel = `${SHARED_GAMEPLAYS_DIR_RELATIVE}/${entry.name}/ruleset.ts`;
+      const rulesetFile = path.join(root, SHARED_GAMEPLAYS_DIR_RELATIVE, entry.name, "ruleset.ts");
+      let rulesetStat: fs.Stats | null = null;
+      try {
+        rulesetStat = fs.lstatSync(rulesetFile);
+      } catch {
+        rulesetStat = null;
+      }
+      if (!rulesetStat) {
+        fail(
+          `${entryLabel}/state.json`,
+          `declares enumSource "gameplay" but ${rulesetLabel} is missing `
+          + "(gameplay-owned enums must live in that module)",
+        );
+      }
+      if (rulesetStat.isSymbolicLink()) fail(rulesetLabel, "symlink escape is not allowed");
+      if (!rulesetStat.isFile()) fail(rulesetLabel, "must be a regular file");
+    }
+
     const contractDigest = crypto.createHash("sha256")
       .update(manifestRaw.bytes)
       .update("\0")
@@ -193,6 +224,7 @@ export function readGameplayDescriptors(options: GameplayCodegenOptions = {}): r
       state,
       wire,
       hasWireModule,
+      hasGameplayEnumModule,
       contractDigest,
       sourceLabel: `${SCHEMA_DIR_RELATIVE}/${manifest.id}/{manifest.json,state.json}`,
     });
@@ -405,6 +437,8 @@ function renderSharedIndex(gameplays: readonly GameplayDescriptor[]): string {
     "export * from \"./generated/wire-catalog.generated\";",
   ];
   for (const gameplay of gameplays) {
+    // 依赖序：ruleset（玩法自有枚举/规则）→ wire（import 它）→ generated state（import 它）。
+    if (gameplay.hasGameplayEnumModule) lines.push(`export * from "./${gameplay.id}/ruleset";`);
     if (gameplay.hasWireModule) lines.push(`export * from "./${gameplay.id}/wire";`);
     lines.push(`export * from "./generated/state/${gameplay.id}";`);
   }
