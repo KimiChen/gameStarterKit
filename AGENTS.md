@@ -120,12 +120,14 @@ npm --workspace @game/server run test:int
    - `apps/Cocos/assets/src/` 来自 `apps/client/src`，包括随目录提交的 `.meta`。
    - 修改真源后使用 `sync:shared` / `sync:client`。
    - `apps/shared/src/gameplays/`、`apps/server/src/rooms/schema/GameRoomState.ts` 与
-     `apps/server/src/rooms/schema/generated/`、`apps/client/src/gameplay/catalog.generated.ts` 来自
+     `apps/server/src/rooms/schema/generated/`、`apps/client/src/gameplay/catalog.generated.ts`、
+     `apps/server/src/rooms/modes/catalog.generated.ts` 来自
      `apps/shared/schema/gameplays/<id>/`（manifest.json + state.json）与各玩法手写的
      `apps/shared/src/gameplays/<id>/wire.ts`，用
      `npm --workspace @game/server run codegen:gameplays` 刷新。⚠ `gameplays/` 下的
      `defineGameplayWire.ts` 与 `<id>/wire.ts` 是手写真源（不是生成物），其余
-     （catalog.generated.ts / index.ts / generated/）禁手改。
+     （catalog.generated.ts / index.ts / generated/）禁手改；服务端 `modes/catalog.ts` 是生成物的稳定
+     façade（登记全集按 manifest.wireExposed 发现 `modes/<id>/index.ts`），⛔ 不再逐玩法手写。
    - `apps/shared/src/protocol/lobbyRpc/registry.generated.ts`、`apps/client/src/generated/`
      （views/fguiContracts/features）与 `docs/features.generated.md` 来自
      `features/<id>/feature.json` + View 同目录 `.view.json` sidecar + FGUI XML + 各域

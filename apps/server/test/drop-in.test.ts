@@ -265,7 +265,7 @@ test("drop-in：Settle 后 join 被 GameAlreadyStarted 拒绝", async () => {
 // ── 既有两策略行为零变：auto 的 Playing 拒入闸原样（回归钉）──────────────────
 // 变异验证：把 onJoin 的 phase 闸整体替换成 drop-in 的宽松版（对所有策略放行 Playing）→ 转红。
 test("回归钉：auto 房 Playing 中 join 仍被 GameAlreadyStarted 拒绝", async () => {
-    const { createIdleGameMode } = await import("../src/rooms/modes/IdleGameMode");
+    const { createIdleGameMode } = await import("../src/rooms/modes/idle/index");
     const room = new GameRoom({ seed: 5, clock: () => 0, mode: createIdleGameMode() });
     const internals = room as unknown as {
         setSimulationInterval(callback: () => void, delay: number): void;

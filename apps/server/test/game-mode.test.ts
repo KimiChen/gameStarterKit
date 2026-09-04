@@ -27,9 +27,9 @@ import {
     type GameMode,
 } from "../src/rooms/GameMode";
 import { GameRoom, type GameRoomRuntimeOptions } from "../src/rooms/GameRoom";
-import { registerDefaultGameModes } from "../src/rooms/modes/catalog";
+import { GENERATED_GAME_MODE_IDS, registerDefaultGameModes } from "../src/rooms/modes/catalog";
 import { createBallMoveGameMode, registerBallMoveGameMode } from "../src/rooms/modes/ballMove/index";
-import { createIdleGameMode, registerIdleGameMode } from "../src/rooms/modes/IdleGameMode";
+import { createIdleGameMode, registerIdleGameMode } from "../src/rooms/modes/idle/index";
 import {
     createRoomPlayerForMode,
     GameRoomState,
@@ -125,8 +125,22 @@ test("生产 mode catalog 与 shared/state 生成映射保持精确同集", () =
         // 或建房（不出现在默认撮合池，§10.7）。
         // dropInFixture 是 drop-in（自由加入）房型验收的 fixture gameplay（同 privateFixture 隔离
         // 方式：进 catalog/生成映射走完整单源链，⛔ 不进生产 mode registry/默认撮合池）。
-        const catalogModes = [...canonicalModes, "privateFixture", "dropInFixture"].sort();
+        // ⛔ 不写死 fixture 玩法名：从每玩法 manifest 读 wireExposed:false 的集合（真源），
+        // 生产 registry = canonical、catalog = canonical ∪ fixture，两边都由生成器/组合根派生。
+        const schemaDir = fileURLToPath(new URL("../../shared/schema/gameplays", import.meta.url));
+        const fixtureModes = readdirSync(schemaDir, { withFileTypes: true })
+            .filter((entry) => entry.isDirectory())
+            .map((entry) => JSON.parse(readFileSync(joinPath(schemaDir, entry.name, "manifest.json"), "utf8")) as {
+                readonly id: string;
+                readonly wireExposed?: boolean;
+            })
+            .filter((manifest) => manifest.wireExposed === false)
+            .map((manifest) => manifest.id);
+        assert.ok(fixtureModes.length >= 1, "至少一个 fixture 玩法（wireExposed:false）驱动本闸");
+        const catalogModes = [...canonicalModes, ...fixtureModes].sort();
         assert.deepEqual(gameModeRegistry.list(), canonicalModes);
+        assert.deepEqual([...GENERATED_GAME_MODE_IDS].sort(), canonicalModes,
+            "generated 服务端 catalog 的装配集必须 = canonical GameplayModeId");
         assert.deepEqual(Object.keys(GAMEPLAY_CATALOG).sort(), catalogModes);
         assert.deepEqual(Object.keys(ROOM_STATE_VALIDATORS).sort(), catalogModes);
         assert.deepEqual(Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS).sort(), catalogModes);

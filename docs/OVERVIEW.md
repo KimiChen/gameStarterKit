@@ -183,13 +183,15 @@ shared 登记 canonical mode id + 新建 apps/shared/schema/gameplays/<id>/{mani
     消息名、payload validator、允许 phases 与 rateCost（准入随 token 声明走，⛔ 不改任何中央表）
   → npm --workspace @game/server run codegen:gameplays 生成 mode→root constructor / validator 映射、
     三端 catalog 与 wire catalog（C2S/S2C 全集聚合 + owner/phases/rateCost 表）
-  → server modes/<Mode> + modes/catalog.ts：mode 的 commands（typed handler map，键 = 本玩法 wire token）
-    消费消息；⛔ 不改 GameRoom——它只有一个 catch-all dispatcher，按 wire catalog 分发
+  → server modes/<id>/index.ts（导出 register<Constant>GameMode）：mode 的 commands（typed handler map，
+    键 = 本玩法 wire token）消费消息；⛔ 不改 GameRoom——它只有一个 catch-all dispatcher，按 wire catalog
+    分发；⛔ 也不改 modes/catalog.ts——它是 codegen:gameplays 生成的 modes/catalog.generated.ts 的稳定 façade
   → client logic/rooms/<mode> + net/rooms/<Mode>Room.ts
   → client mode adapter 注入 raw exact validator / reconcile
   → client gameplay/modes/<id>/index.ts 导出 createGameplayModule(services)（装配层：
     validateLaunch + joiner + createPlugin；presentation 用字面量动态 import），再跑一次
-    codegen:gameplays 让 catalog.generated.ts 收录（catalog.ts 是废弃 façade，⛔ 不手改）
+    codegen:gameplays 让双端 catalog.generated.ts 同批收录（客户端 GAMEPLAY_MODULES + 服务端
+    registerGeneratedGameModes；两个 catalog.ts 都是 façade，⛔ 不手改）
   → sync:shared / sync:client + 双端 mode/lifecycle 测试
 ```
 

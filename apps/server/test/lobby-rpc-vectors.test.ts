@@ -2,7 +2,8 @@
  * Lobby RPC 向量 sidecar 通用测试（Non-intrusive §5.6 阶段 3）。
  *
  * 中央向量表（原 wire-contract 的 requestFixtures/responseFixtures 与 lobby-rpc-contract
- * 的 validPayloads）已迁入 test/lobbyRpcVectors/<域>.ts；本文件按清单自动验证：
+ * 的 validPayloads）已迁入 test/lobbyRpcVectors/<域>.ts，登记表由 codegen:features 生成
+ * （lobbyRpcVectors/index.generated.ts）；本文件按清单自动验证：
  *  ① sidecar 文件集合 ⇔ registry 域集合双向相等；
  *  ② 路由 ⇔ 向量双向相等（漏 / 多 / 未知路由都红）；
  *  ③ 全部 request/response 向量通过 shared validator；
@@ -26,23 +27,15 @@ import {
   type LobbyRpcType,
 } from "@game/shared";
 import { collectEndpoints } from "../src/websocket/loader";
-import guildVectors from "./lobbyRpcVectors/guild";
-import mailVectors from "./lobbyRpcVectors/mail";
-import roomVectors from "./lobbyRpcVectors/room";
-import shopVectors from "./lobbyRpcVectors/shop";
-import userVectors from "./lobbyRpcVectors/user";
-import type { LobbyRpcVectorFile } from "./lobbyRpcVectors/vectorTypes";
+import { LOBBY_RPC_VECTOR_FILES } from "./lobbyRpcVectors/index.generated";
 
 const VECTORS_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "lobbyRpcVectors");
 
-/** 域 → sidecar default（新增域：建 lobbyRpcVectors/<域>.ts 并在此登记一行；漏登记由 ① 抓红）。 */
-const VECTOR_FILES: Record<string, LobbyRpcVectorFile> = {
-  guild: guildVectors,
-  mail: mailVectors,
-  room: roomVectors,
-  shop: shopVectors,
-  user: userVectors,
-};
+/**
+ * 域 → sidecar default：来自 `codegen:features` 生成的登记表（新增域只新建 lobbyRpcVectors/<域>.ts
+ * 并重跑 codegen，⛔ 本文件不再手写登记行；生成器已做 domain ⇔ sidecar 双向对齐，① 再核一遍）。
+ */
+const VECTOR_FILES = LOBBY_RPC_VECTOR_FILES;
 
 const assertInvalid = (fn: () => unknown, code?: string): void => {
   assert.throws(fn, (error: unknown) => {
@@ -67,11 +60,11 @@ function mergedVectors(): Map<LobbyRpcType, { request: unknown; response: unknow
 
 test("① sidecar 文件集合 ⇔ registry 域集合双向相等", () => {
   const files = fs.readdirSync(VECTORS_DIR)
-    .filter((name) => name.endsWith(".ts") && name !== "vectorTypes.ts")
+    .filter((name) => name.endsWith(".ts") && name !== "vectorTypes.ts" && !name.endsWith(".generated.ts"))
     .map((name) => name.slice(0, -".ts".length))
     .sort();
   assert.deepEqual(files, [...LOBBY_RPC_DOMAINS].sort(), "lobbyRpcVectors/ 文件集合必须与 LOBBY_RPC_DOMAINS 相等");
-  assert.deepEqual(Object.keys(VECTOR_FILES).sort(), files, "VECTOR_FILES 登记表必须覆盖全部 sidecar 文件");
+  assert.deepEqual(Object.keys(VECTOR_FILES).sort(), files, "生成的 LOBBY_RPC_VECTOR_FILES 登记表必须覆盖全部 sidecar 文件");
 });
 
 test("② 路由 ⇔ 向量双向相等（漏/多/未知路由都红）", () => {
@@ -134,7 +127,7 @@ test("⑦ endpoint 无法覆盖 schema/mode/idem：def.mode/def.idem 必须与 r
 test("NaN/未知路由/响应越界（自 wire-contract 中央表用例迁移）", () => {
   assertInvalid(() => validateLobbyRpcRequest("mail.list", { limit: Number.NaN }), "WIRE_INTEGER");
   assertInvalid(() => validateLobbyRpcRequest("unknown.route" as never, {}), "RPC_TYPE");
-  const purchase = (shopVectors["shop.queryOp"] as { response: Record<string, unknown> }).response;
+  const purchase = (VECTOR_FILES.shop["shop.queryOp"] as unknown as { response: Record<string, unknown> }).response;
   assertInvalid(
     () => validateLobbyRpcResponse("shop.queryOp", { ...purchase, balance: Number.POSITIVE_INFINITY }),
     "WIRE_INTEGER",

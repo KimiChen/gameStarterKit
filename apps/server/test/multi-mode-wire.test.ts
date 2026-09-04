@@ -27,7 +27,7 @@ import {
     IDLE_GAME_MODE_ID,
 } from "../src/rooms/GameMode";
 import { registerBallMoveGameMode } from "../src/rooms/modes/ballMove/index";
-import { registerIdleGameMode } from "../src/rooms/modes/IdleGameMode";
+import { registerIdleGameMode } from "../src/rooms/modes/idle/index";
 import {
     GameRoomState,
     IdleRoomState,

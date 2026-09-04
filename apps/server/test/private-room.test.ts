@@ -881,7 +881,7 @@ test("私房：无 fragment 的 mode 配 owner-ready/invite profile 在 onCreate
 // ── auto/default profile 行为零变：Ready/Start 对 default 房是 BadRequest ─────
 // （v8 起 profile 必填（§4.4），显式 "default" 的行为与历史缺省语义一致。）
 test("default profile：显式 profile=default 行为与历史一致，Ready/Start 回 BadRequest", async () => {
-    const { createIdleGameMode } = await import("../src/rooms/modes/IdleGameMode");
+    const { createIdleGameMode } = await import("../src/rooms/modes/idle/index");
     const room = new GameRoom({ seed: 5, clock: () => 0, mode: createIdleGameMode() });
     (room as unknown as { setSimulationInterval(callback: () => void, delay: number): void })
         .setSimulationInterval = () => undefined;
@@ -909,7 +909,7 @@ test("default profile：显式 profile=default 行为与历史一致，Ready/Sta
 // 变异验证：去掉 onJoin 的 profile 双查 → 两个方向的断言都转红。
 test("profile 双查：joinById 带另一 profile 的 auth 进不了 default 房，也进不了 private 房", async () => {
     // ① default（idle）房：auth.profile="private" 直连 → BadRequest。
-    const { createIdleGameMode } = await import("../src/rooms/modes/IdleGameMode");
+    const { createIdleGameMode } = await import("../src/rooms/modes/idle/index");
     const room = new GameRoom({ seed: 6, clock: () => 0, mode: createIdleGameMode() });
     (room as unknown as { setSimulationInterval(callback: () => void, delay: number): void })
         .setSimulationInterval = () => undefined;

@@ -210,9 +210,10 @@ tsx 直接执行和运行时文件系统扫描，不是打包产物装载器。
 3. 新建 `websocket/<domain>/<method>.ts`，`defineRpc(type, { handler })` 只写领域行为——
    request schema、响应校验与幂等行为全部由 registry 派生，endpoint 无法（编译期拒绝）自填
    `schema` / `idem` / `mode`。
-4. 补 `apps/server/test/lobbyRpcVectors/<domain>.ts` 的最小合法 request/response 向量
-   （通用测试 `lobby-rpc-vectors.test.ts` 自动做正反向与幂等断言），再加错误映射及需要的
-   数据库测试。
+4. 补 `apps/server/test/lobbyRpcVectors/<domain>.ts` 的最小合法 request/response 向量——
+   `codegen:features` 把它收进生成的登记表 `lobbyRpcVectors/index.generated.ts`（domain ⇔ sidecar
+   双向对齐，缺一侧即 fail-fast；两份 vectors 测试只消费此表，⛔ 不再手改任何中央测试登记行），
+   通用测试 `lobby-rpc-vectors.test.ts` 自动做正反向与幂等断言；再加错误映射及需要的数据库测试。
 
 读写分路：纯读使用 `readUser` / `readUserReadonly` / `loadFields`；单用户热档写使用 `withUser` 和 UoW；
 MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可序列化、无 IO 的纯 CPU 计算；“跨用户写”
@@ -335,7 +336,9 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
 2. 运行 `npm --workspace @game/server run codegen:gameplays` 重新生成 `apps/shared/src/gameplays/`
    （per-mode state + catalog/index + `generated/wire-catalog.generated.ts` 的 `C2S`/`S2C`/
    validator 全集聚合与 owner/phases/rateCost 表）、`apps/server/src/rooms/schema/GameRoomState.ts` 与
-   `apps/server/src/rooms/schema/generated/`、`apps/client/src/gameplay/catalog.generated.ts`
+   `apps/server/src/rooms/schema/generated/`、`apps/client/src/gameplay/catalog.generated.ts` 与
+   `apps/server/src/rooms/modes/catalog.generated.ts`（服务端 mode 登记全集：按 manifest.wireExposed 发现
+   `modes/<id>/index.ts` 导出的 `register<Constant>GameMode`，`modes/catalog.ts` 只是它的 façade）
    （都是生成物，禁手改；契约 digest = sha256(manifest + state + wire.ts) 变化必须同批 bump
    manifest.modeVersion），再运行 `npm run sync:shared`。
    ⚠ 新增 root 时，它**必须**声明 `tick`/`phase`/`matchId`/`players`，其 player 类型必须声明 `id`/`name`
@@ -578,7 +581,8 @@ structured-clone、无 IO、无副作用的纯 CPU 工作。周期任务、批�
 ### R — Redis
 
 - **09·R1–R9**：key 只由构造器产出（框架键在 `keys.ts`，玩法键经 `kGameplay` 工厂在
-  `rooms/modes/<id>/keys.ts` 定义；⛔ 业务代码一律禁手拼）；按需字段读；相关 Lua key 同槽；durable/cache 语义隔离；
+  `rooms/modes/<id>/keys.ts` 定义，feature 键经 `kFeatureUser` / `kFeatureShared` 工厂在
+  `core/<featureId>/keys.ts` 定义；⛔ 业务代码一律禁手拼）；按需字段读；相关 Lua key 同槽；durable/cache 语义隔离；
   scan/stream 有界；脚本用 SHA 并处理 `NOSCRIPT`。
 
 Snake S2R demo 是明确登记的非生产例外：`kSnakeUser(uid)`（定义在 `apps/server/src/rooms/modes/snake/keys.ts`，
@@ -664,7 +668,7 @@ Game HTTP request schema 已由 shared validator 同源生成并直接注入带 
 | RPC 错误码 | core 码在 `apps/shared/src/protocol/lobbyRpc/coreErrors.ts`（`CORE_RPC_ERROR_CODES` + 历史顺序钉 `RPC_ERR_CODE_ORDER`），领域码在各域 descriptor 的 `errorCodes`（现仅 shop：INSUFFICIENT_BALANCE/GRANTING/ORDER_MISMATCH）；聚合 `RPC_ERR_CODES`（17 个）生成在 `lobbyRpc/registry.generated.ts`；异常→码映射在 `core/errors.ts` 的 `ERR_MAP`（覆盖 11 个），另有阶段 4 的 `RpcFault(code)` 带 runtime whitelist 直接产出任意白名单码（读取点：dispatcher 与 LobbyRoom 的 `rpcErrorCode`，都经 `toRpcFaultCode`），其余落 `INTERNAL` 兜底。阶段 4 新增 `OPERATION_CONFLICT` / `OPERATION_RESULT_EXPIRED`（幂等 v2，见 §8.1）只经 `RpcFault` 产出、不进 `ERR_MAP`。其中 `GRANTING` 当前没有任何产出点，`AUTH_EPOCH_STALE` 服务端已停产、只保留客户端分支，`ORDER_MISMATCH` 只由可选的 `http/pay/wxNotify.ts` 直接返回，不经 `ERR_MAP` |
 | Colyseus state 形状 | `apps/shared/schema/gameplays/<id>/{manifest.json,state.json}`；纯数据镜像 `apps/shared/src/gameplays/generated/state/<id>.ts` + catalog、运行时 Schema `apps/server/src/rooms/schema/generated/<id>.ts` 与聚合器 `GameRoomState.ts` 都是 `apps/server/tools/gameplay-codegen/` 的生成物（首行带 AUTO-GENERATED 标记，禁手改），改单源后运行 `npm --workspace @game/server run codegen:gameplays` |
 | `ballMove` v3 evidence schema/validator/replay | `apps/server/src/core/match/matchEvidence.ts`、`matchReplay.ts`；流生产消费在 `matchConsumer.ts` |
-| Redis key | 框架键在 `apps/server/src/core/infra/keys.ts`；**玩法自有键不在该文件登记**，由中央工厂 `kGameplay(modeId, name, uid, { zone })` 构造、各玩法在 `apps/server/src/rooms/modes/<id>/keys.ts` 定义。逻辑形态 `gp:<modeId>:<name>:{uid}`：`gp:` 命名空间段隔开框架键族，`modeId` 是按玩法前缀 scan/清理的唯一依据，`{uid}` hash-tag 必须是末段（09·R3 同槽），⛔ 分段顺序不可改。`zone` **必须显式**、⛔ 无缺省：`"per-zone"` 走 `P()`（每区独立经济，同 `kUser`/`kBag`），`"global"` 走项目前缀（跨区共享单份）——两者在 `sId=0` 的单形态下前缀相等，缺省值会让分类错误静默通过。Snake demo：`kSnakeUser(uid)` = `kGameplay("snake", "user", uid, { zone: "global" })` → `gp:snake:user:{uid}`，**选 global 是因为 demo 钱包是跨区共享的单份余额**（同一 uid 在任何区读到同一个数），全局 uid 口径、不含 `sId`；当前 S2R 只写 `coinBalance`，S3/S4 规划可在同一 HASH 增加 `equippedSkinId/ownedSkinIds/fragmentBalances/snakeXp/achievementProgress`。幂等 v2 键族（阶段 4）：记录键沿用 `kIdemUser`（值升级为 §8.1 的 StoredIdem JSON），新增同 `{uid}` 槽计数键 `kIdemPending`（`idem:pending:{uid}`，per-uid pending 上限护栏）。私房键族（阶段 8，全部 **coordination Redis** + **`sId` 显式参数**，⛔ 不走 `zoneCtx`——GameRoom 不在 `zoneCtx.run` 内而 Lobby RPC 在，ambient 读取会打到不同 key）：`kInviteCode(sId, code)`（`room:code:{s<sId>:<code>}`，lease/tombstone JSON，PX=lease TTL 或 cooldown）、`kInviteCodeGen(sId, code)`（`room:code:gen:{s<sId>:<code>}`，per-(sId,code) 分配代号 INCR，永不重置/删除）、`kRoomTicket(sId, ticketSha256)`（`room:ticket:s<sId>:<sha256hex>`，creation/join ticket 记录 JSON，PX=exp；键名只含 ticket 的 sha256，⛔ 不含 ticket 原文）、`kRoomTicketQuota(sId, uid)`（`room:quota:s<sId>:{<uid>}` ZSET，member=`t:<jti>`/`r:<roomId>`、score=过期时刻，§6.8 配额原子检查）。resolve 专用限流桶复用 `kRl`，scope=`room:resolve:fail:<uid>`/`room:resolve:ok:<uid>`/`room:resolve:zonefail:s<sId>`（⛔ 与通用 `rpc:<uid>` 桶分离） |
+| Redis key | 框架键在 `apps/server/src/core/infra/keys.ts`；**玩法自有键不在该文件登记**，由中央工厂 `kGameplay(modeId, name, uid, { zone })` 构造、各玩法在 `apps/server/src/rooms/modes/<id>/keys.ts` 定义；**feature 自有键同样不在该文件登记**，由对称的中央工厂 `kFeatureUser(featureId, name, uid, { zone })`（逻辑形态 `ft:<featureId>:<name>:{uid}`，`{uid}` 末段同槽）与 `kFeatureShared(featureId, name, { zone }, key?)`（逻辑形态 `ft:<featureId>:<name>:{<featureId>}[:key]`，hash-tag 取 featureId 使同 feature 共享键同槽）构造、各 feature 在 `apps/server/src/core/<featureId>/keys.ts` 定义；`ft:` 与 `gp:` 命名空间互不可达，`zone` 同样必须显式（契约测试 `apps/server/test/feature-keys.test.ts`）。逻辑形态 `gp:<modeId>:<name>:{uid}`：`gp:` 命名空间段隔开框架键族，`modeId` 是按玩法前缀 scan/清理的唯一依据，`{uid}` hash-tag 必须是末段（09·R3 同槽），⛔ 分段顺序不可改。`zone` **必须显式**、⛔ 无缺省：`"per-zone"` 走 `P()`（每区独立经济，同 `kUser`/`kBag`），`"global"` 走项目前缀（跨区共享单份）——两者在 `sId=0` 的单形态下前缀相等，缺省值会让分类错误静默通过。Snake demo：`kSnakeUser(uid)` = `kGameplay("snake", "user", uid, { zone: "global" })` → `gp:snake:user:{uid}`，**选 global 是因为 demo 钱包是跨区共享的单份余额**（同一 uid 在任何区读到同一个数），全局 uid 口径、不含 `sId`；当前 S2R 只写 `coinBalance`，S3/S4 规划可在同一 HASH 增加 `equippedSkinId/ownedSkinIds/fragmentBalances/snakeXp/achievementProgress`。幂等 v2 键族（阶段 4）：记录键沿用 `kIdemUser`（值升级为 §8.1 的 StoredIdem JSON），新增同 `{uid}` 槽计数键 `kIdemPending`（`idem:pending:{uid}`，per-uid pending 上限护栏）。私房键族（阶段 8，全部 **coordination Redis** + **`sId` 显式参数**，⛔ 不走 `zoneCtx`——GameRoom 不在 `zoneCtx.run` 内而 Lobby RPC 在，ambient 读取会打到不同 key）：`kInviteCode(sId, code)`（`room:code:{s<sId>:<code>}`，lease/tombstone JSON，PX=lease TTL 或 cooldown）、`kInviteCodeGen(sId, code)`（`room:code:gen:{s<sId>:<code>}`，per-(sId,code) 分配代号 INCR，永不重置/删除）、`kRoomTicket(sId, ticketSha256)`（`room:ticket:s<sId>:<sha256hex>`，creation/join ticket 记录 JSON，PX=exp；键名只含 ticket 的 sha256，⛔ 不含 ticket 原文）、`kRoomTicketQuota(sId, uid)`（`room:quota:s<sId>:{<uid>}` ZSET，member=`t:<jti>`/`r:<roomId>`、score=过期时刻，§6.8 配额原子检查）。resolve 专用限流桶复用 `kRl`，scope=`room:resolve:fail:<uid>`/`room:resolve:ok:<uid>`/`room:resolve:zonefail:s<sId>`（⛔ 与通用 `rpc:<uid>` 桶分离） |
 | Asset effect schema/validator | `apps/shared/src/protocol/lobbyRpc/economy.ts`；Lua 镜像在 `apps/server/src/core/infra/redisScripts.ts` |
 | 跨模块服务端配置 | `apps/server/src/core/infra/config.ts`；少量模块私有常量仍在实现文件内 |
 | Lua | `apps/server/src/core/infra/redisScripts.ts` 与模块专属 script 文件；认证组 sess fence 在 `core/auth/session.ts`、幂等 v2 三条（IDEM_V2_ACQUIRE/COMPLETE/RELEASE）在 `core/idem.ts`，私房邀请码/ticket 六条（INVITE_CODE_ALLOCATE / INVITE_CODE_RENEW / INVITE_CODE_TOMBSTONE / TICKET_ISSUE_CREATION / TICKET_CLAIM / TICKET_TRANSITION）在 `core/rooms/invite/redisScripts.ts`（跑在 coordination Redis 单实例上，TICKET_ISSUE_CREATION 刻意跨 hash-tag——⛔ 不得搬到 cluster 化的 durable 实例），都以 `defineScript` 登记并统一经 `evalshaWithReload` 执行 |

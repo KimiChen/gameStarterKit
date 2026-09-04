@@ -347,17 +347,33 @@ export function assertGameplayModeIdFacade(source: string, label: string, module
  * `createGameplayModule`（函数声明或 const 均可）。⛔ 不执行模块。
  */
 export function assertClientGameplayModuleSource(source: string, label: string): void {
+  if (hasExportedSymbol(source, label, "createGameplayModule")) return;
+  fail(label, "必须导出约定符号 createGameplayModule（GameplayServicesContext → GameplayModule）");
+}
+
+/**
+ * 服务端 mode 模块（`apps/server/src/rooms/modes/<id>/index.ts`）的语法级约定：必须导出
+ * `register<ConstantName>GameMode`（`(registry?: GameModeRegistry) => () => void`），生成的
+ * `modes/catalog.generated.ts` 用静态字面量 import 它——⛔ 不执行模块、不做类型检查
+ * （签名由 tsc 在生成物编译时把关）。
+ */
+export function assertServerGameModeModuleSource(source: string, label: string, registerSymbol: string): void {
+  if (hasExportedSymbol(source, label, registerSymbol)) return;
+  fail(label, `必须导出约定符号 ${registerSymbol}（(registry?: GameModeRegistry) => () => void）`);
+}
+
+/** 顶层 `export function <name>` / `export const <name>` 是否存在（语法级；⛔ 不求值）。 */
+function hasExportedSymbol(source: string, label: string, name: string): boolean {
   const sourceFile = ts.createSourceFile(label, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
   for (const statement of sourceFile.statements) {
-    if (ts.isFunctionDeclaration(statement) && isExported(statement)
-      && statement.name?.text === "createGameplayModule") {
-      return;
+    if (ts.isFunctionDeclaration(statement) && isExported(statement) && statement.name?.text === name) {
+      return true;
     }
     if (ts.isVariableStatement(statement) && isExported(statement)) {
       for (const declaration of statement.declarationList.declarations) {
-        if (ts.isIdentifier(declaration.name) && declaration.name.text === "createGameplayModule") return;
+        if (ts.isIdentifier(declaration.name) && declaration.name.text === name) return true;
       }
     }
   }
-  fail(label, "必须导出约定符号 createGameplayModule（GameplayServicesContext → GameplayModule）");
+  return false;
 }

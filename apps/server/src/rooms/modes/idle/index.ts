@@ -2,14 +2,14 @@ import { IdlePulse, MAX_PLAYERS, gameplayC2STokens } from "@game/shared";
 import {
     IdlePlayerState,
     IdleRoomState,
-} from "../schema/GameRoomState";
+} from "../../schema/GameRoomState";
 import {
     IDLE_GAME_MODE_ID,
     gameModeRegistry,
     type GameMode,
     type GameModeRegistry,
     type GameplayCommandsFor,
-} from "../GameMode";
+} from "../../GameMode";
 
 export const IDLE_DEFAULT_PULSE_GOAL = 3;
 export const IDLE_MAX_PULSE_GOAL = 1_000;
