@@ -1962,10 +1962,32 @@ export function buildArtifacts() {
   return { artifacts, publicCatalog, businessCatalog, clientCatalog, presentationCatalog, hashes: { publicCatalogHash, serverBusinessHash, clientPresentationHash } };
 }
 
+// `.meta` 是**双写者文件**：本工具只负责首次合成一份规范占位（provenance 里记的状态就是
+// 「仓库新生成，待 S5 Creator 确认」），落盘形态的权威写者是 Cocos Creator——开发者每打开一次
+// 编辑器，Creator 就按自己的键序重新写回同一份语义内容。逐字节比对会把这种纯键序重排判成
+// 「产物过期」：开一次 Creator 测试就红一次，而唯一的「修法」是把 Creator 的权威输出改回工具
+// 的键序——把资产导入的真相倒过来伺候生成器。所以 `.meta` 改成**解析后语义比对**。
+// ⛔ 容忍面严格限定在 `.meta`：其余产物（catalog .ts / recipe .json / png / evidence）本工具是
+//   唯一写者，继续逐字节比对，任何差异都必须红。
+// ⛔ 数组顺序仍是语义（stableJson 只递归排序对象键，不动数组），`files: [".json"]` 之类的变化照红。
+// ⛔ 磁盘上的 `.meta` 解析失败 = 不匹配：宁可报过期，也不能把损坏文件当新鲜。
+export function artifactMatches(relativePath, actual, expected) {
+  if (actual.equals(expected)) return true;
+  if (!relativePath.endsWith(".meta")) return false;
+  try {
+    return stableJson(JSON.parse(actual.toString("utf8"))) === stableJson(JSON.parse(expected.toString("utf8")));
+  } catch {
+    return false;
+  }
+}
+
 export function writeArtifacts() {
   const { artifacts, ...summary } = buildArtifacts();
   for (const [relativePath, data] of artifacts) {
     const target = path.join(REPO_ROOT, relativePath);
+    // 语义已一致就保留磁盘上的字节：`.meta` 的落盘形态归 Creator，⛔ 不要写回工具键序，
+    // 否则 --write 与 Creator 每轮互踩、各自制造一次 diff。
+    if (fs.existsSync(target) && artifactMatches(relativePath, fs.readFileSync(target), data)) continue;
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.writeFileSync(target, data);
   }
@@ -1978,7 +2000,7 @@ export function checkArtifacts() {
   for (const [relativePath, expected] of artifacts) {
     const target = path.join(REPO_ROOT, relativePath);
     if (!fs.existsSync(target)) differences.push(`${relativePath} (missing)`);
-    else if (!fs.readFileSync(target).equals(expected)) differences.push(`${relativePath} (different)`);
+    else if (!artifactMatches(relativePath, fs.readFileSync(target), expected)) differences.push(`${relativePath} (different)`);
   }
   if (differences.length > 0) fail("check", `generated artifacts are stale:\n${differences.join("\n")}`);
   return { ...summary, artifactCount: artifacts.size };
