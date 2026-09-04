@@ -87,15 +87,97 @@
 
 ## 5. 包格式与安装流程
 
-- zip 内部**直接用仓库相对路径**（解压即到位——「目录即所有权」本来就是契约），另加一个薄 `plugin.json`：
-  id / version / kind（gameplay | feature）/ 兼容声明（框架版本、`GAME_ROOM_PROTOCOL_VERSION` 或
-  `LOBBY_PROTOCOL_VERSION` 范围）。⛔ **不放路径映射**，否则仓库布局会变成第二真源。
-- `install` 即 **install-or-upgrade**（覆盖同目录 → 重跑 codegen），契约变化交给既有的 digest / modeVersion
-  闸去发现。
-- 安装流程：校验兼容 → **拿 protected-paths 挡住越界写入** → 解包 → `codegen:gameplays` + `codegen:features`
-  → `sync:shared` → 合成 `.meta` → `verify:all` → 提示开一次 Creator。
-- 卸载：**保持显式命令**，沿用 codegen 现有的 `--allow-delete` 删除保护。⛔ 不做「删目录自动收缩生成物」——
-  见 §7。
+> 状态：✅ 已实现（2026-09-05）——`apps/server/tools/plugin/`，命令 `npm --workspace @game/server run plugin`，
+> 契约测试 `apps/server/test/plugin-tool.test.ts`，已安装锁的新鲜度随 `apps/server/test/plugin-lock.test.ts`
+> 进 `verify:all`。本节按实现改写，旧表述（denylist 闸、覆盖同目录、合成 .meta）已被
+> [PLUGIN-REVIEW](PLUGIN-REVIEW.md) F03/F04/F11/F12/F14/F21 推翻。
+
+### 5.1 威胁模型（先说清闸门防什么）
+
+**作者可信、包不可信**：插件由自己与合作方编写（§10 不承诺不可信第三方），闸门防的是**非预期写入与
+静默漂移**——一个 zip 因疏忽（或恶意）夹带了不属于它的文件、覆盖了别人的目录、升级时残留旧文件、
+本地改动被静默冲掉。⛔ 不承诺沙箱：插件源码与框架同进程运行，运行期信任与「构建期插件」无关
+（构建期只是多了一个 review 窗口，不是隔离边界）。
+
+### 5.2 所有权由身份推导（allowlist，fail-closed）
+
+插件能写入仓库的路径集合由 `plugin.json` 的身份 (id, kinds, constantName, domains, fguiPackages) 与
+`features/<id>/feature.json` 声明的客户端目录**纯函数推导**（`tools/plugin/ownership.ts`）——这就是
+「目录即所有权」的机检形态：
+
+| kind | 推导出的可写落点 |
+| --- | --- |
+| 共有 | `plugins/<id>/`、`docs/<id>/`、`apps/server/test/<id>*.ts`、`apps/server/test/int/<id>*.ts`、`apps/client/test/<id>*.ts` |
+| gameplay | `apps/shared/schema/gameplays/<id>/`、`apps/shared/src/gameplays/<id>/`、`apps/server/src/rooms/modes/<id>/`、`apps/client/src/gameplay/modes/<id>/`、`apps/client/src/logic/rooms/<id>/`、`apps/client/src/view/rooms/<id>/`、`apps/client/src/net/rooms/<Constant>Room.ts`、`apps/Cocos/assets/resources/<id>/` |
+| feature | `features/<id>/`、`apps/client/src/features/<id>/`、`apps/server/src/core/<id>/`；每个声明的 domain：`apps/shared/src/protocol/lobbyRpc/domains/<d>.ts`、`apps/server/src/websocket/<d>/`、`apps/server/test/lobbyRpcVectors/<d>.ts`；feature.json 的 viewDirs/logicDir 必须 ⊆ `apps/client/src/features/<id>/**` 或 `apps/client/src/{view,logic}/**/<id>` |
+| fguiPackages | `apps/art/fairygui/assets/<Pkg>/`、`apps/Cocos/assets/resources/ui/<Pkg>.bin`、`<Pkg>_atlas*` |
+| 镜像 / `.meta` | 由真源推导：`apps/client/src/X` 可写 ⇒ `apps/Cocos/assets/src/X` 与 `X.meta` 可写；插件专属目录的目录 `.meta` 可写，共享祖先目录（如 `view/rooms.meta`）⛔ 不随包 |
+
+推导之前先过**硬排除**：`scripts/`、`tools/`、`apps/server/tools/`、`.github/`、`vendor/`、`node_modules`、
+`package*.json`、`.npmrc`、`tsconfig*`、`.env*`、`*.generated.*`、`*.lock|*.fingerprint|*.sha256`、
+`scene.scene`、`apps/client/src/{shared,lib,generated,app}`、`apps/shared/src/{generated,protocol}`（域 descriptor
+按 allowlist 精确放行）、`apps/server/src/{rooms/schema,rooms/core,core/infra}`；再过 `scripts/protected-paths.json`
+的两组保护路径与全部 writer 产物。⛔ 任一路径被拒即**整包拒绝**并逐条点名；「新增 npm 依赖 / 改根命令 /
+改协议信封」在这套闸下根本进不了包——它们是框架 PR（Non-intrusive §12.3）。
+
+`apps/server/test/plugin-tool.test.ts` 钉住：真仓 protected-paths.json 的每条路径对任何插件身份都不可写。
+
+### 5.3 包格式
+
+zip（或已解开的目录，两者等价）根部两件元数据 + 仓库相对路径的文件：
+
+```text
+plugin.json      身份：{ schemaVersion:1, id, version(semver), kinds:["gameplay"|"feature",…],
+                       constantName?(gameplay 必填), domains?, fguiPackages?,
+                       requires?:{ featureSchemaVersion, gameplaySchemaVersion }, description? }
+files.lock       清单：每行 <仓库相对路径> <sha256>（与 protected-paths.lock 同形态）
+<仓库相对路径>…  文件本体（含客户端镜像与 Creator 产出的 .meta）
+```
+
+- `kinds` 可同时含 gameplay 与 feature——一个玩法插件天然是「manifest/state/wire + feature.json」的组合，
+  ⛔ 没有「kind 二分」；
+- `requires` 只钉两个 schemaVersion（feature-schema-v1 / gameplay-schema-v1）。协议整数不是插件的兼容轴：
+  gameplay 的契约身份是 per-mode `contractDigest`/`modeVersion`（既有闸），Lobby 域的契约身份是
+  §9 待补的 codegen 层 digest → contractVersion 闸；
+- ⛔ 不放路径映射（仓库布局不能成为第二真源），⛔ 不放 slot/order（位置归宿主，§6）；
+- `plugin.json` 同时以 `plugins/<id>/plugin.json` 落在仓库（作者侧手写、`pack` 的输入、`install` 原样落回），
+  包的自证由 `files.lock` 承担：清单外条目、哈希不符一律拒绝。
+
+### 5.4 命令与动线
+
+```text
+npm --workspace @game/server run plugin -- pack <id> (--out <zip> | --out-dir <dir>)
+npm --workspace @game/server run plugin -- install <zip|dir> [--allow-downgrade] [--no-git] [--no-postinstall] [--dry-run]
+npm --workspace @game/server run plugin -- uninstall <id> [--force] [--no-git] [--no-postinstall] [--dry-run]
+npm --workspace @game/server run plugin -- check
+```
+
+**作者侧 `pack`**：按推导集从工作树采集（含镜像与 `.meta`；缺 `.meta` 即失败——先开一次 Creator 让它落盘；
+`*.generated.*` 等硬排除形态即使在自己目录里也不采集），写 `files.lock`，用与 install 相同的校验自检一遍，
+写出确定性 zip（同一工作树两次 pack 字节级相同）。
+
+**宿主侧 `install`**（= install-or-upgrade，「zip 清单 ⟷ 已安装锁 ⟷ 工作树」三方比对）：
+
+1. 读包并自证（`files.lock`）；身份交叉校验（feature.json / manifest.json 的 id、constantName、viewDirs；
+   每个 domain 的 descriptor 与向量 sidecar 同批在包内；每个 FGUI 包的 ART 源与发布物同批在包内）；
+2. 每个路径过 §5.2 闸；镜像与真源字节相同、`.meta` 齐全；
+3. 已安装锁 `scripts/plugins/<id>.lock` 存在时：工作树与旧锁不符（本地改动）⇒ 拒绝；同版本不同内容 ⇒ 拒绝；
+   降级须 `--allow-downgrade`；旧锁有、新包无的文件 ⇒ 按清单删除（陈旧文件不残留）；
+   首装时目标路径已存在且不属本插件 ⇒ 拒绝（所有权冲突，⛔ 不覆盖）；
+4. 受影响路径的工作树必须干净（`git status`），任何失败都发生在落盘之前；
+5. 原子落盘 → 写 `scripts/plugins/<id>.lock`（已安装插件的唯一登记面）→ `git add`
+   → `codegen:gameplays`（含 gameplay）/ `codegen:features`（含 feature）→ `sync:shared`；
+6. 停下，打印**人工**下一步：域变化时人工决定是否 bump `LOBBY_PROTOCOL_VERSION` 后
+   `node scripts/protocol-fingerprint.mjs --write`（⛔ 脚本不隐式重钉）、带 FGUI 包时
+   `node scripts/fgui-manifest.mjs --write`、`npm run verify:all`、开一次 Creator 确认随包 `.meta` 的 uuid 稳定
+   （Creator 只会重写键序/版本，uuid 不变；无头 CI 安装后 `verify:all` 即可通过，开 Creator 是确认而非前置）。
+
+**`uninstall`**：按锁清单删除（⛔ 不按目录猜）、删 `plugins/<id>/` 与锁，然后用显式 `--allow-delete`
+（gameplay id / feature id / 各 domain / feature.json 登记的 View 名）驱动两个 codegen 收缩生成物，
+`SYNC_FORCE=1` 放行 sync 熔断（成批删除是有意的）。本地改动过的文件默认拒绝删除（`--force` 放行）。
+
+**`check`**（只读；`plugin-lock.test.ts` 随 `verify:all` 跑同一逻辑）：每把锁的清单文件都在且哈希一致、
+`plugins/<id>/plugin.json` 与锁一致、锁内路径仍在推导集内。没有插件 = 空通过。
 
 ## 6. 入口与位置：插件声明身份，宿主决定去处
 

@@ -438,12 +438,14 @@ test("inventory verifier rejects synchronized removal of the state codegen regis
       const file = join(root, filename);
       const text = readFileSync(file, "utf8").replace(
         "   - `apps/shared/src/gameplays/`、`apps/server/src/rooms/schema/GameRoomState.ts` 与\n"
-        + "     `apps/server/src/rooms/schema/generated/`、`apps/client/src/gameplay/catalog.generated.ts` 来自\n"
+        + "     `apps/server/src/rooms/schema/generated/`、`apps/client/src/gameplay/catalog.generated.ts`、\n"
+        + "     `apps/server/src/rooms/modes/catalog.generated.ts` 来自\n"
         + "     `apps/shared/schema/gameplays/<id>/`（manifest.json + state.json）与各玩法手写的\n"
         + "     `apps/shared/src/gameplays/<id>/wire.ts`，用\n"
         + "     `npm --workspace @game/server run codegen:gameplays` 刷新。⚠ `gameplays/` 下的\n"
         + "     `defineGameplayWire.ts` 与 `<id>/wire.ts` 是手写真源（不是生成物），其余\n"
-        + "     （catalog.generated.ts / index.ts / generated/）禁手改。\n",
+        + "     （catalog.generated.ts / index.ts / generated/）禁手改；服务端 `modes/catalog.ts` 是生成物的稳定\n"
+        + "     façade（登记全集按 manifest.wireExposed 发现 `modes/<id>/index.ts`），⛔ 不再逐玩法手写。\n",
         "",
       );
       writeFileSync(file, text);

@@ -21,6 +21,7 @@
     "codegen:http": "tsx tools/http-endpoint-manifest.ts",
     "codegen:gameplays": "node --import tsx tools/gameplay-codegen/cli.ts",
     "codegen:features": "node --import tsx tools/feature-codegen/cli.ts",
+    "plugin": "node --import tsx tools/plugin/cli.ts",
     "typecheck": "tsc --noEmit",
     "loadtest": "tsx loadtest/bot.ts --endpoint ws://localhost:2568 --room game --numClients 20",
     "dev:server-only": "tsx watch src/index.ts"

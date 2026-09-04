@@ -12,6 +12,7 @@ provenance——它们不是普通生成物，每一份都有显式的 writer �
 | `fgui.manifest.json` | FGUI 设计源、导出物与 View AUTO 区 | `node scripts/fgui-manifest.mjs --write` | `npm run verify:fgui` | 显式资源审计锁 |
 | `bitecs.sha256` | 上游 bitECS + 项目补丁 | 维护团队人工 | `npm run verify:ecs` | 内容锁 |
 | `vendor.sha256` | 锁定的 Colyseus/FairyGUI 运行时 | `fetch:*` 脚本（维护团队显式升级时） | `npm run verify:vendor` / `test:vendor` | 内容锁 |
+| `plugins/<id>.lock` | 已安装插件 `<id>` 的 plugin.json 归一化值 + 全部写入文件的 sha256 清单 | `npm --workspace @game/server run plugin -- install`（uninstall 删除） | `apps/server/test/plugin-lock.test.ts`（随 `npm --workspace @game/server run test` 进 `verify:all`）与 `plugin -- check` | 已安装插件登记面 + 内容锁（docs/PLUGIN.md §5） |
 
 ## protected-paths.json（保护路径规则）
 

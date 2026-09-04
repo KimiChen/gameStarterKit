@@ -238,6 +238,11 @@
       "command": { "kind": "workspace", "workspace": "@game/server", "script": "loadtest" },
       "documentedIn": "docs/EXTRAFEATURES.md",
       "reason": "当前入房参数已失效，登记为不可用工具而非开发动线命令"
+    },
+    {
+      "command": { "kind": "workspace", "workspace": "@game/server", "script": "plugin" },
+      "documentedIn": "docs/PLUGIN.md",
+      "reason": "插件 pack/install/uninstall/check 命令，登记在插件机制设计基线的包格式与安装流程章节而非日常命令表"
     }
   ]
 }
