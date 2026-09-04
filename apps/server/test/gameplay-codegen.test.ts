@@ -23,9 +23,13 @@ import {
   type IIdleRoomState,
 } from "@game/shared";
 import {
+  createRoomPlayerForMode,
   createRoomStateForMode,
   GameRoomState,
+  IdlePlayerState,
   IdleRoomState,
+  PlayerState,
+  ROOM_STATE_PLAYER_CONSTRUCTORS,
   ROOM_STATE_ROOT_CONSTRUCTORS,
 } from "../src/rooms/schema/GameRoomState";
 import {
@@ -651,10 +655,14 @@ test("generated root maps are frozen, type-safe and reject unknown modes", () =>
     ["ballMove", "dropInFixture", "idle", "privateFixture", "snake"]);
   assert.deepEqual(Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS),
     ["ballMove", "dropInFixture", "idle", "privateFixture", "snake"]);
+  // player 侧与 root 侧必须同集：任何「有 root 无 player」的玩法都会让按 mode 造 player
+  // 的通用代码退回手写具名类。
+  assert.deepEqual(Object.keys(ROOM_STATE_PLAYER_CONSTRUCTORS), Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS));
   assert.deepEqual(Object.keys(GAMEPLAY_CATALOG),
     ["ballMove", "dropInFixture", "idle", "privateFixture", "snake"]);
   assert.equal(Object.isFrozen(ROOM_STATE_VALIDATORS), true);
   assert.equal(Object.isFrozen(ROOM_STATE_ROOT_CONSTRUCTORS), true);
+  assert.equal(Object.isFrozen(ROOM_STATE_PLAYER_CONSTRUCTORS), true);
 
   const ballMove: GameRoomState = createRoomStateForMode("ballMove");
   const idle: IdleRoomState = createRoomStateForMode("idle");
@@ -668,6 +676,19 @@ test("generated root maps are frozen, type-safe and reject unknown modes", () =>
   assert.throws(
     () => createRoomStateForMode("missing-mode"),
     /unsupported gameplay mode: missing-mode/,
+  );
+
+  const ballMovePlayer: PlayerState = createRoomPlayerForMode("ballMove");
+  const idlePlayer: IdlePlayerState = createRoomPlayerForMode("idle");
+  assert.ok(ballMovePlayer instanceof PlayerState);
+  assert.ok(idlePlayer instanceof IdlePlayerState);
+  // 每个 player 都带 shell 依赖的生命周期字段（id/name），这是通用探针能用它的前提。
+  assert.equal(typeof ballMovePlayer.id, "string");
+  assert.equal(typeof idlePlayer.name, "string");
+  assert.throws(
+    () => createRoomPlayerForMode("missing-mode"),
+    /unsupported gameplay mode: missing-mode/,
+    "未知 mode 必须拒——静默返回 undefined 会让通用探针在运行期才炸",
   );
   assert.throws(
     () => validateRoomStateForMode("missing-mode", {}),
