@@ -33,7 +33,7 @@ import {
     type GameplayServicesContext,
 } from "../gameplay/services";
 import type { GameRoomConnectionSnapshot } from "../net/connectionEvents";
-import { GameplayModeId, joinErrText } from "../shared/index";
+import { joinErrText } from "../shared/index";
 import {
     getSessionGeneration,
     onAuthInvalid,
@@ -41,6 +41,7 @@ import {
     onConnLost,
     returnToLogin,
 } from "./SessionCoordinator";
+import { resolveLaunchGameplayId } from "./builtinFeature";
 import type { FeatureLaunchTarget, FeatureMenuContribution } from "./builtinFeature";
 import { FeatureHost, type FeatureStatus, type HostedFeature } from "./FeatureHost";
 import { FrameScheduler } from "./FrameScheduler";
@@ -79,7 +80,7 @@ export function deriveLaunchFeatureIds(
 export interface AppRuntimeOptions {
     /** 玩法 presentation 挂载节点（Main 传入；本类不 import cc 值）。 */
     readonly node: Node;
-    /** 要进入的已登记玩法 id；默认 snake（Snake Off 已拍板替代 ballMove 成默认入口）。 */
+    /** 要进入的已登记玩法 id；缺省 = 排序最前的 menu contribution（DEFAULT_LAUNCH_GAMEPLAY_ID）。 */
     readonly gameplayId?: string;
     /** §7.8 show 三态判定的战斗连接快照 seam（测试注入；生产缺省读 gameplay services 的 roomClient）。 */
     readonly battleConnection?: () => GameRoomConnectionSnapshot;
@@ -119,7 +120,7 @@ export class AppRuntime {
     readonly ports: AppPorts;
 
     constructor(options: AppRuntimeOptions) {
-        this.gameplayId = options.gameplayId ?? GameplayModeId.Snake;
+        this.gameplayId = resolveLaunchGameplayId(options.gameplayId);
         this.battleConnection = options.battleConnection ?? null;
         // Claim page/session ownership：构造即递增 app generation；旧场景的 scope 被
         // supersede（其异步 transition 先失效再返回）。
@@ -454,13 +455,13 @@ export class AppRuntime {
         if (!isCurrent()) return;
 
         // launch target（generated contribution）优先；Main 的 gameplayId @property 仍是
-        // 默认 launch target 的兜底（阶段 9 评估删除）。
-        const fallbackId = typeof this.gameplayId === "string" && this.gameplayId.trim().length > 0
-            ? this.gameplayId.trim()
-            : GameplayModeId.Snake;
-        const requestedId = typeof targetGameplayId === "string" && targetGameplayId.trim().length > 0
-            ? targetGameplayId.trim()
-            : fallbackId;
+        // 默认 launch target 的兜底（阶段 9 评估删除）。两级都走 resolveLaunchGameplayId：
+        // 未填/空白最终回落到菜单排序最前那条，⛔ 此处不再硬编码玩法名。
+        const requestedId = resolveLaunchGameplayId(
+            typeof targetGameplayId === "string" && targetGameplayId.trim().length > 0
+                ? targetGameplayId
+                : this.gameplayId,
+        );
         const result = await reconcileGameplayStartResult(
             controller.startRegistered(registry, requestedId, signal),
             {

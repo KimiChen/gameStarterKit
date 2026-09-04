@@ -7,7 +7,7 @@
 import { _decorator, Component, ResolutionPolicy, view } from "cc";
 import { installWeChatCompat } from "./core/wechat-compat";
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from "./designSpec";
-import { GameplayModeId } from "./shared/index";
+import { DEFAULT_LAUNCH_GAMEPLAY_ID } from "./app/builtinFeature";
 import { createAppRuntime } from "./app/bootstrap";
 import type { AppRuntime } from "./app/AppRuntime";
 
@@ -28,8 +28,13 @@ export class Main extends Component {
     // 优先），本字段只剩「默认 launch target 兜底」职责，Home 数据驱动稳定后可删——
     // 但删除 @property 属场景资产 diff（scene.scene 由 Creator 重新序列化并人工审查，
     // 见 docs/Non-intrusive.md §8），⛔ 不在无头批次中机械删除。
-    @property({ tooltip: "要进入的已登记玩法 id；默认 snake，可替换为 ballMove/idle。" })
-    gameplayId = GameplayModeId.Snake;
+    // 缺省值取排序最前的 menu contribution（⛔ 不硬编码玩法名）：换默认入口只改
+    // features/<id>/feature.json 的 slot/order 并重跑 codegen:features。
+    // ⚠ 语义边界：一旦有人在 Creator 里填过这个字段，值会写进 scene.scene 并覆盖本缺省
+    // （当前 apps/Cocos/assets/scene.scene 只序列化了 serverUrl/portalUrl，未序列化本字段，
+    // 所以现在生效的就是这里的生成缺省）。要换默认入口请改 feature.json，⛔ 不要改这里。
+    @property({ tooltip: "要进入的已登记玩法 id；留空 = 跟随 Home 菜单排序最前的入口。" })
+    gameplayId: string = DEFAULT_LAUNCH_GAMEPLAY_ID;
 
     private runtime: AppRuntime | null = null;
 

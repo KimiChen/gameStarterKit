@@ -1,8 +1,9 @@
 /**
  * Home 数据驱动机制（Non-intrusive §7.4 阶段 6；fixture 驱动）：
  *  - 菜单唯一数据源 = generated menu contributions；排序 slot → order → featureId →
- *    entryId 由独立比较器重算核对；
- *  - contribution[0]（ballMove）的标题/launch target 是渲染到现 btn_enter 的那条；
+ *    entryId 由独立比较器重算核对，并与手写 features/<dir>/feature.json 双向核对；
+ *  - contribution[0] 是渲染到现 btn_enter 的那条，也是默认 launch target
+ *    （⛔ 本文件不写死是哪个玩法：谁在最前由 manifest 的 slot/order 决定）；
  *  - HomeLogic：主入口点击唯一走 entry.launch；disabled/failed 叠加 = handler 拒绝
  *    （无 FGUI 视觉时以拒绝 + 状态查询断言表达；GList 视觉是编辑器待办）；
  *  - FeatureHost 运行时可用性叠加：install 失败的 fixture feature → failed → 入口不可用；
@@ -11,12 +12,20 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   FEATURE_IDS,
   GENERATED_MENU_CONTRIBUTIONS,
   type GeneratedMenuContribution,
 } from "../src/generated/features.generated";
-import { APP_FEATURES, BUILTIN_FEATURE } from "../src/app/builtinFeature";
+import {
+  APP_FEATURES,
+  BUILTIN_FEATURE,
+  DEFAULT_LAUNCH_GAMEPLAY_ID,
+  resolveLaunchGameplayId,
+} from "../src/app/builtinFeature";
 import { FeatureRegistry } from "../src/app/FeatureRegistry";
 import { FeatureHost, type FeatureModule } from "../src/app/FeatureHost";
 import { FrameScheduler } from "../src/app/FrameScheduler";
@@ -46,6 +55,24 @@ function makePorts(overrides: {
   });
 }
 
+const REPO_ROOT = fileURLToPath(new URL("../../..", import.meta.url));
+
+/**
+ * 手写真源侧的菜单全集：直接读 `features/<dir>/feature.json`，按 feature id 附上 featureId。
+ * ⛔ 不复用生成物——本文件要守的正是「生成汇总 ⇔ 手写 manifest」这一格。
+ */
+function readManifestMenu(): GeneratedMenuContribution[] {
+  const featuresDir = join(REPO_ROOT, "features");
+  return readdirSync(featuresDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .flatMap((entry) => {
+      const manifest = JSON.parse(
+        readFileSync(join(featuresDir, entry.name, "feature.json"), "utf8"),
+      ) as { id: string; menu: ReadonlyArray<Omit<GeneratedMenuContribution, "featureId">> };
+      return manifest.menu.map((item) => ({ ...item, featureId: manifest.id }));
+    });
+}
+
 function sortedByRule(items: readonly GeneratedMenuContribution[]): GeneratedMenuContribution[] {
   return [...items].sort((left, right) => {
     if (left.slot !== right.slot) return left.slot - right.slot;
@@ -56,23 +83,57 @@ function sortedByRule(items: readonly GeneratedMenuContribution[]): GeneratedMen
   });
 }
 
-test("generated contributions 已按 slot → order → featureId → entryId 排序，contribution[0] 是 snake", () => {
+test("generated contributions 已排序，且 contribution[0] = 手写 manifest 中 slot/order 最小者", () => {
   assert.ok(GENERATED_MENU_CONTRIBUTIONS.length >= 1, "菜单不得为空（Home 渲染 contribution[0]）");
   assert.deepEqual([...GENERATED_MENU_CONTRIBUTIONS], sortedByRule(GENERATED_MENU_CONTRIBUTIONS),
     "generated 排序必须与独立重算一致");
-  // Snake Off 已拍板替代 ballMove 成为默认入口（2026-08-31）；ballMove 保留为可选入口
-  // 与内部回归样例（⛔ 不物理删除）。
+
+  // ⛔ 不写死玩法 id：从**手写真源** features/<dir>/feature.json 重算菜单全集，
+  // 与生成汇总逐条 deepEqual——「谁是默认入口」由 slot/order 数值决定，不由本文件决定。
+  const manifestMenu = readManifestMenu();
+  assert.deepEqual([...GENERATED_MENU_CONTRIBUTIONS], sortedByRule(manifestMenu),
+    "generated 菜单必须 = 手写 manifest 菜单并集按规则排序（改 order 即换顺序，⛔ 无第二真源）");
   const primary = GENERATED_MENU_CONTRIBUTIONS[0];
-  assert.equal(primary.entryId, "snake");
-  assert.equal(primary.featureId, "snake");
-  assert.equal(primary.label, "贪吃蛇大作战");
-  assert.deepEqual(primary.launch, { kind: "gameplay", gameplayId: "snake" },
-    "launch target 必须指向已登记玩法（Home 不分支 gameplay，target 进 LaunchPort）");
+  assert.deepEqual(primary, sortedByRule(manifestMenu)[0],
+    "contribution[0] 必须是 manifest 中 slot/order 最小者");
+  assert.equal(primary.launch.kind, "gameplay",
+    "launch target 必须是玩法启动（Home 不分支 gameplay，target 原样进 LaunchPort）");
+
   // FeatureRegistry 暴露同一数据源（openHome 的读取面）。
   const registry = new FeatureRegistry(APP_FEATURES);
   assert.deepEqual([...registry.menuContributions()], [...GENERATED_MENU_CONTRIBUTIONS]);
-  // ballMove 保留为可选 contribution（内部回归样例）。
+  // ballMove 保留为可选 contribution（内部回归样例，⛔ 不物理删除）——这是「不得删除」
+  // 的登记断言，不是「谁是默认入口」的断言。
   assert.ok(BUILTIN_FEATURE.menu.some((item) => item.entryId === "ballMove"));
+});
+
+test("默认 launch target = contribution[0]：AppRuntime/Main 兜底只读生成值，⛔ 不硬编码玩法名", () => {
+  // ① 值：默认兜底恒等于菜单排序最前那条的 launch target。
+  assert.equal(DEFAULT_LAUNCH_GAMEPLAY_ID, GENERATED_MENU_CONTRIBUTIONS[0].launch.gameplayId,
+    "默认 launch target 必须跟随菜单排序最前那条（改 feature.json 的 order 即换默认入口）");
+  // ② 解析规则：未填 / 空白 → 生成缺省；显式 id → 原样（trim）。
+  assert.equal(resolveLaunchGameplayId(undefined), DEFAULT_LAUNCH_GAMEPLAY_ID);
+  assert.equal(resolveLaunchGameplayId(""), DEFAULT_LAUNCH_GAMEPLAY_ID);
+  assert.equal(resolveLaunchGameplayId("   "), DEFAULT_LAUNCH_GAMEPLAY_ID);
+  const other = GENERATED_MENU_CONTRIBUTIONS[GENERATED_MENU_CONTRIBUTIONS.length - 1].launch.gameplayId;
+  assert.equal(resolveLaunchGameplayId(` ${other} `), other, "显式 id 优先且被 trim");
+
+  // ③ 无硬编码闸（③ 是 ① 抓不到的那格：默认入口恰好等于被写死的那个名字时，值断言
+  //    看不出差别；这里直接读两处兜底的源码）。候选字面量集来自生成菜单本身，⛔ 不是手列
+  //    的玩法名单——AppRuntime 里的 "idle" 是连接状态字面量，不在候选集内故不会误伤。
+  const candidates = [...new Set(GENERATED_MENU_CONTRIBUTIONS.map((item) => item.launch.gameplayId))];
+  assert.ok(candidates.length >= 2, "候选入口 <2 时本闸判别力不足（菜单被掏空？）");
+  for (const relative of ["apps/client/src/app/AppRuntime.ts", "apps/client/src/Main.ts"]) {
+    const source = readFileSync(join(REPO_ROOT, relative), "utf8");
+    assert.match(source, /DEFAULT_LAUNCH_GAMEPLAY_ID|resolveLaunchGameplayId/u,
+      `${relative} 的默认 launch target 必须读生成值（DEFAULT_LAUNCH_GAMEPLAY_ID / resolveLaunchGameplayId）`);
+    assert.ok(!/\bGameplayModeId\b/u.test(source),
+      `${relative} 不得再引用 GameplayModeId 做默认入口（那是本轮消灭的硬编码）`);
+    for (const id of candidates) {
+      assert.ok(!source.includes(`"${id}"`) && !source.includes(`'${id}'`),
+        `${relative} 出现玩法 id 字面量 ${JSON.stringify(id)}：默认入口必须来自菜单数据`);
+    }
+  }
 });
 
 test("contribution 归属：拥有自己 feature 的玩法，菜单入口必须由该 feature 贡献（⛔ 不得留在 builtin）", () => {
