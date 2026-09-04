@@ -20,7 +20,7 @@ import {
   type PluginIdentity,
 } from "./ownership";
 import { assertManifestCompatible, identityOf, parsePluginManifest, type PluginManifest } from "./manifest";
-import { PACKAGE_FILES_LOCK, PACKAGE_MANIFEST, parseFilesLock, sha256, type LockEntry } from "./lock";
+import { PACKAGE_FILES_LOCK, PACKAGE_MANIFEST, parseFilesLock, sha256, type InstalledLock, type LockEntry } from "./lock";
 import { readZip } from "./zip";
 
 export interface PluginPackage {
@@ -136,6 +136,10 @@ export function featureDeclarations(files: ReadonlyMap<string, Buffer>, id: stri
 export function validatePackage(pkg: PluginPackage, root: string): ValidatedPackage {
   const { manifest, files } = pkg;
   assertManifestCompatible(manifest);
+  // 仓内自述必须随包且与根 plugin.json 字节相同：否则安装后的树与锁登记的身份不一致（check 才红）。
+  const authored = files.get(`plugins/${manifest.id}/${PACKAGE_MANIFEST}`);
+  if (!authored) fail(`包内缺少 plugins/${manifest.id}/${PACKAGE_MANIFEST}（须与包根 plugin.json 同批分发）`);
+  if (!authored.equals(pkg.manifestBytes)) fail(`包内 plugins/${manifest.id}/${PACKAGE_MANIFEST} 与包根 plugin.json 字节不同`);
   let clientDirs: readonly string[] = [];
   let viewNames: readonly string[] = [];
   if (manifest.kinds.includes("feature")) {
@@ -194,8 +198,17 @@ function assertMirrorsAndMetas(
       dir = path.posix.dirname(dir);
     }
   };
+  const COCOS_SRC = "apps/Cocos/assets/src";
   for (const [relative, data] of files) {
     if (relative.endsWith(".meta")) continue;
+    if (relative.startsWith(`${COCOS_SRC}/`)) {
+      // 反向：镜像文件必须有同批、字节相同的客户端真源（镜像才是 Creator 实际编译的代码，⛔ 不能只带镜像）。
+      const source = `${CLIENT_SRC}${relative.slice(COCOS_SRC.length)}`;
+      const sourceBytes = files.get(source);
+      if (!sourceBytes) problems.push(`镜像 ${relative} 没有同批的客户端真源 ${source}（⛔ 不得只带镜像）`);
+      else if (!sourceBytes.equals(data)) problems.push(`镜像与真源字节不同：${relative}`);
+      continue;
+    }
     if (relative.startsWith(`${CLIENT_SRC}/`)) {
       const mirror = mirrorPathOf(relative);
       if (!mirror) continue;
@@ -212,4 +225,31 @@ function assertMirrorsAndMetas(
     }
   }
   if (problems.length > 0) fail(`包的镜像/.meta 不自洽：\n  ${[...new Set(problems)].join("\n  ")}`);
+}
+
+/**
+ * 已安装锁的所有权复核（install 升级路径与 uninstall 的删除前置）：锁是仓内明文，可能被误改/合并错/规则演进，
+ * 而 install 的「旧有新无」删除与 uninstall 的逐条删除都以它为依据——删除面必须与写入面过同一道 allowlist，
+ * 任一条不在推导集内即拒绝（先用 plugin -- check 核对并修正锁），⛔ 不按可疑的锁删任何文件。
+ */
+export function assertInstalledLockOwned(root: string, lock: InstalledLock, action: string): void {
+  const { manifest } = lock;
+  let clientDirs: readonly string[] = [];
+  if (manifest.kinds.includes("feature")) {
+    const featureFile = path.join(root, `features/${manifest.id}/feature.json`);
+    if (fs.existsSync(featureFile)) {
+      clientDirs = featureDeclarations(new Map([[`features/${manifest.id}/feature.json`, fs.readFileSync(featureFile)]]), manifest.id).clientDirs;
+    }
+  }
+  const rules = deriveOwnership(identityOf(manifest, clientDirs));
+  const protectedPaths = readProtectedPaths(root);
+  const denied: string[] = [];
+  for (const entry of lock.entries) {
+    const verdict = classifyPath(entry.path, rules, protectedPaths);
+    if (!verdict.allowed) denied.push(`${entry.path}（${verdict.reason}）`);
+  }
+  if (denied.length > 0) {
+    fail(`${action}拒绝：已安装锁 scripts/plugins/${manifest.id}.lock 登记了不在插件所有权推导集内的路径（锁被改过或规则演进），`
+      + `⛔ 不按此锁删除任何文件——先用 plugin -- check 核对并修正锁：\n  ${denied.join("\n  ")}`);
+  }
 }

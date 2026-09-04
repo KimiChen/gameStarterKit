@@ -466,6 +466,109 @@ test("install：越权路径整包拒绝并点名（脚本 / 受保护文件 / �
   }
 });
 
+test("审阅后加固：篡改锁 → install/uninstall 拒绝且不删；锁登记文件缺失 → install 拒绝", () => {
+  const { author, target } = makeFixture("1.0.0");
+  try {
+    const v1 = path.join(author, "out/v1.zip");
+    packPlugin({ root: author, id: "chamber", outFile: v1 });
+    installPlugin({ root: target, source: v1, git: false, postinstall: false });
+    // 把一个框架文件塞进锁（sha 与工作树一致，verifyLockAgainstTree 不会报 modified）。
+    write(target, "apps/client/src/Main.ts", "// framework file\n");
+    const lockFile = path.join(target, "scripts/plugins/chamber.lock");
+    fs.appendFileSync(lockFile, `apps/client/src/Main.ts ${sha256("// framework file\n")}\n`);
+    assert.equal(checkInstalledPlugins(target).ok, false, "check 必须点名锁内越权路径");
+    const manifestFile = path.join(author, "plugins/chamber/plugin.json");
+    fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.1.0"'));
+    const v2 = path.join(author, "out/v2.zip");
+    packPlugin({ root: author, id: "chamber", outFile: v2 });
+    assert.throws(() => installPlugin({ root: target, source: v2, git: false, postinstall: false }), /升级拒绝：已安装锁.*不在插件所有权推导集内/su);
+    assert.ok(fs.existsSync(path.join(target, "apps/client/src/Main.ts")), "升级被拒时 ⛔ 不得删除锁内越权路径");
+    assert.throws(() => uninstallPlugin({ root: target, id: "chamber", git: false, postinstall: false }), /卸载拒绝：已安装锁.*不在插件所有权推导集内/su);
+    assert.ok(fs.existsSync(path.join(target, "apps/client/src/Main.ts")), "卸载被拒时 ⛔ 不得删除锁内越权路径");
+    // 修回锁后：锁登记的文件在树中缺失 → 升级拒绝（先修锁或 uninstall --force）。
+    const lockText = fs.readFileSync(lockFile, "utf8").split("\n").filter((line) => !line.includes("apps/client/src/Main.ts")).join("\n");
+    fs.writeFileSync(lockFile, lockText, "utf8");
+    fs.rmSync(path.join(target, "docs/chamber/README.md"));
+    assert.throws(() => installPlugin({ root: target, source: v2, git: false, postinstall: false }), /拒绝升级：已安装锁登记的文件在工作树缺失/u);
+  } finally {
+    cleanup(author, target);
+  }
+});
+
+test("审阅后加固：只带镜像无真源、受保护目录的镜像、根 plugin.json 与仓内自述不一致 → 整包拒绝", () => {
+  const { author, target } = makeFixture();
+  try {
+    const dirOut = path.join(author, "out/pkg");
+    packPlugin({ root: author, id: "chamber", outDir: dirOut });
+    const relock = (mutate: () => void): void => {
+      const before = readPackage(dirOut).entries;
+      mutate();
+      const walk = (dir: string): string[] => fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+        const full = path.join(dir, entry.name);
+        return entry.isDirectory() ? walk(full) : [path.relative(dirOut, full).split(path.sep).join("/")];
+      });
+      const present = walk(dirOut).filter((relative) => relative !== "plugin.json" && relative !== "files.lock");
+      const known = new Map(before.map((entry) => [entry.path, entry.sha256]));
+      fs.writeFileSync(path.join(dirOut, "files.lock"), renderFilesLock(present.map((relative) => ({
+        path: relative,
+        sha256: known.get(relative) ?? sha256(fs.readFileSync(path.join(dirOut, relative))),
+      }))), "utf8");
+    };
+    // 只带镜像、无真源。
+    relock(() => {
+      write(dirOut, "apps/Cocos/assets/src/features/chamber/evil.ts", "export const evil = 1;\n");
+      write(dirOut, "apps/Cocos/assets/src/features/chamber/evil.ts.meta", meta("typescript"));
+    });
+    assert.throws(() => validatePackage(readPackage(dirOut), target), /镜像 .*evil\.ts 没有同批的客户端真源/u);
+    relock(() => {
+      fs.rmSync(path.join(dirOut, "apps/Cocos/assets/src/features/chamber/evil.ts"));
+      fs.rmSync(path.join(dirOut, "apps/Cocos/assets/src/features/chamber/evil.ts.meta"));
+    });
+    assert.doesNotThrow(() => validatePackage(readPackage(dirOut), target));
+    // 根 plugin.json 改 version 而仓内自述不变 → 拒绝。
+    const rootManifest = path.join(dirOut, "plugin.json");
+    const original = fs.readFileSync(rootManifest, "utf8");
+    fs.writeFileSync(rootManifest, original.replace('"1.0.0"', '"9.9.9"'), "utf8");
+    assert.throws(() => validatePackage(readPackage(dirOut), target), /plugins\/chamber\/plugin\.json 与包根 plugin\.json 字节不同/u);
+    fs.writeFileSync(rootManifest, original, "utf8");
+    // 受保护目录的镜像：logic/gameplay/<id> 的真源被 gameplayFlow 保护，镜像必须继承。
+    const rules = deriveOwnership({ ...FEATURE_IDENTITY, clientDirs: ["apps/client/src/logic/gameplay/chamber"] });
+    assert.ok(!classifyPath("apps/client/src/logic/gameplay/chamber/x.ts", rules, PROTECTED).allowed);
+    assert.ok(!classifyPath("apps/Cocos/assets/src/logic/gameplay/chamber/x.ts", rules, PROTECTED).allowed, "镜像必须继承真源的受保护路径");
+    assert.ok(!classifyPath("apps/Cocos/assets/src/logic/gameplay/chamber/x.ts.meta", rules, PROTECTED).allowed);
+  } finally {
+    cleanup(author, target);
+  }
+});
+
+test("审阅后加固：插件 id/domain 与框架既有目录同名 → 目录级所有权冲突拒绝（⛔ 不混入框架目录）", () => {
+  const { author, target } = makeFixture();
+  try {
+    // 目标树里 core/chamber 已被"框架"占用（不在任何锁里）。
+    write(target, "apps/server/src/core/chamber/session.ts", "// framework owned\n");
+    const zipFile = path.join(author, "out/chamber.zip");
+    packPlugin({ root: author, id: "chamber", outFile: zipFile });
+    assert.throws(
+      () => installPlugin({ root: target, source: zipFile, git: false, postinstall: false }),
+      /所有权冲突.*apps\/server\/src\/core\/chamber\/session\.ts/su,
+      "推导集内已有不属本插件的文件（即使包里没有同名文件）也必须拒绝",
+    );
+    fs.rmSync(path.join(target, "apps/server/src/core/chamber"), { recursive: true });
+    // 镜像侧同样检查：目标树已有插件专属镜像目录的陌生文件。
+    write(target, "apps/Cocos/assets/src/features/chamber/stale.ts", "// someone else\n");
+    assert.throws(
+      () => installPlugin({ root: target, source: zipFile, git: false, postinstall: false }),
+      /所有权冲突.*apps\/Cocos\/assets\/src\/features\/chamber\/stale\.ts/su,
+    );
+    fs.rmSync(path.join(target, "apps/Cocos/assets/src/features/chamber"), { recursive: true });
+    assert.doesNotThrow(() => installPlugin({ root: target, source: zipFile, git: false, postinstall: false }));
+    // 升级时本插件自己的文件（在旧锁里）不算冲突。
+    assert.doesNotThrow(() => installPlugin({ root: target, source: zipFile, git: false, postinstall: false }));
+  } finally {
+    cleanup(author, target);
+  }
+});
+
 test("manifest：schema 校验、kinds 语义、requires 兼容轴、版本比较", () => {
   const valid = parsePluginManifest({ schemaVersion: 1, id: "chamber", version: "1.2.3", kinds: ["feature"] });
   assert.equal(valid.constantName, null);

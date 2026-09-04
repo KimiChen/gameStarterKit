@@ -159,7 +159,7 @@ FeatureHost 按 `dependencies` 装载）、feature 侧域契约闸（`LOBBY_RPC_
 | E2 | i18n / LocalizePort 契约 | `labelKey` 有字段无实现，渲染用硬编码 `label`；缺 LocalizePort 契约与 locales 载体。必须先于第一个第三方插件落地，否则每个插件硬编码一种语言 | PLUGIN.md §9.3 / PLUGIN-REVIEW F28 |
 | E3 | 框架默认加载页 | 全新 route，与 FGUI 包预热策略绑定（本仓 FGUI 包只有加载路径无卸载路径） | PLUGIN.md §6.2 (2) |
 | E4 | join 信封侧的 feature 契约比对 | codegen 层域契约闸已落地（`LOBBY_RPC_DOMAIN_CONTRACTS`）；Lobby join 仍只比对 `LOBBY_PROTOCOL_VERSION`，域契约变化是否 bump 该整数是人工决策（Non-intrusive §4.8 ⛔ 不各自新增版本闸） | PLUGIN.md §9.5 / PLUGIN-REVIEW F14 |
-| E5 | 第一个真实插件的端到端实证 | 命令与闸门只由隔离 fixture 驱动（`plugin-tool.test.ts`）；尚无仓外真实包走完 pack → install → verify:all → Creator 确认 | PLUGIN.md §5.4 |
+| E5 | 第一个真实插件的端到端实证 | 命令与闸门只由隔离 fixture 驱动（`plugin-tool.test.ts`）；尚无仓外真实包走完 pack → install → verify:all → Creator 确认 | PLUGIN.md §9.6 |
 
 `PrivateRoomLobby` 模板仍是 B3（编辑器待办），不重复登记。
 
