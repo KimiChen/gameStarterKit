@@ -340,11 +340,11 @@ test("launch 闸 await 窗口的活性复验：换代/dispose 后迟到的 insta
   assert.equal(third.started(), 0, "闸 await 期间 dispose 后不得启动玩法");
 });
 
-test("deriveLaunchFeatureIds：生产派生 ballMove→builtin；多贡献者取菜单排序最前者", async () => {
+test("deriveLaunchFeatureIds：生产派生 ballMove→builtin；多贡献者取先到者（生成器已闸一 gameplayId 一贡献者）", async () => {
   // 缺口（变异 M4/M5 存活）：此前派生内联在构造函数里，生产路径（不注入
   // launchFeatureMap seam）零覆盖——把 map 键改成 featureId（M4）或去掉 !map.has
-  // 守卫（M5）全绿存活；且旧注释写「取先声明者」，实际 menuContributions() 已按
-  // slot → order → featureId → entryId 排序，取的是排序最前者。
+  // 守卫（M5）全绿存活。codegen:features 已拒绝同一 gameplayId 的第二贡献者，
+  // 这里的「先到者不被覆盖」只是对手工 fixture 的防御语义。
   const { appRuntime, loginFlow, makeNode } = await loadAppHost();
 
   // ① 生产派生（杀 M4）：不注入任何 seam 构造 AppRuntime，内部映射必须含
@@ -360,15 +360,20 @@ test("deriveLaunchFeatureIds：生产派生 ballMove→builtin；多贡献者取
     runtime.dispose();
   }
 
-  // ② 多贡献者（杀 M5）：同 gameplayId 两条 contribution，输入已按菜单规则排序
-  // （B 在前）→ 取 B；去掉 !map.has 守卫会被后来者覆盖成 A。
-  const contribution = (featureId: string, entryId: string, order: number) => ({
-    entryId, featureId, slot: 0, order, label: entryId, labelKey: `menu.${entryId}`,
+  // ② 多贡献者（杀 M5）：同 gameplayId 两条 contribution（B 在前）→ 取 B；
+  // 去掉 !map.has 守卫会被后来者覆盖成 A。route 形态的 contribution ⛔ 不进表。
+  const contribution = (featureId: string, entryId: string) => ({
+    entryId, featureId, label: entryId, labelKey: `menu.${entryId}`,
     launch: { kind: "gameplay" as const, gameplayId: "sharedGame" },
   });
-  const sorted = [contribution("featB", "bEntry", 0), contribution("featA", "aEntry", 1)];
+  const sorted = [contribution("featB", "bEntry"), contribution("featA", "aEntry")];
   assert.equal(appRuntime.deriveLaunchFeatureIds(sorted).get("sharedGame"), "featB",
-    "同一 gameplayId 多贡献者必须取菜单排序最前的贡献者");
+    "同一 gameplayId 多贡献者必须取先到的贡献者");
+  const routeOnly = [{
+    entryId: "panel", featureId: "featC", label: "panel", labelKey: "menu.panel",
+    launch: { kind: "route" as const, routeId: "panel" },
+  }];
+  assert.equal(appRuntime.deriveLaunchFeatureIds(routeOnly).size, 0, "route 形态的入口不进 gameplayId 映射");
 });
 
 test("launch 点击恒为 userIntent：连续点击不计入自动重试上限，永不进 disabled", async () => {

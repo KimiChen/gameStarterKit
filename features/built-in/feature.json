@@ -31,8 +31,6 @@
   "menu": [
     {
       "entryId": "ballMove",
-      "slot": 0,
-      "order": 1,
       "label": "进入战斗",
       "labelKey": "menu.enterBattle",
       "launch": { "kind": "gameplay", "gameplayId": "ballMove" }

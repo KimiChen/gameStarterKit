@@ -9,7 +9,8 @@
  *  - `failed` 两条出路写死：显式用户意图（userIntent launch）回 `loading`；每个
  *    app generation 的自动重试次数有上限，超限置 `disabled(app-generation)`，
  *    直到下一个 app generation（noteAppGeneration）才复位；
- *  - dispose 幂等并按安装完成的**逆序**执行（依赖逆序：依赖方后装先拆）；
+ *  - launch 先按 feature.json dependencies 装依赖（任一非 active ⇒ failed），
+ *    dispose 幂等并按安装完成的**逆序**执行（依赖逆序：依赖方后装先拆）；
  *  - 停用由 route refcount 决定：NavigationService 关闭 feature 最后一个 route 时
  *    调 releaseIfIdle；resident（built-in）与 keep-mounted route 豁免；
  *    session 结束与 app dispose 是强制释放点（disposeAll）。
@@ -157,13 +158,28 @@ export class FeatureHost {
                 slot.autoRetries++;
             }
         }
-        if (!slot.descriptor.load) {
+        const dependencies = slot.descriptor.dependencies ?? [];
+        if (!slot.descriptor.load && dependencies.length === 0) {
             slot.status = "active";
             return Promise.resolve("active");
         }
         slot.status = "loading";
         slot.error = null;
-        const flight = this.runInstall(slot).then((status) => {
+        // 依赖先装（feature.json dependencies，codegen 已查环）：任一依赖非 active ⇒ 本 feature failed，
+        // ⛔ 不装一半；依赖的 installOrder 必然小于本 feature，disposeAll 的逆序即「依赖方后装先拆」。
+        const flight = this.launchDependencies(slot, dependencies, options).then((ready) => {
+            if (!ready) {
+                if (slot.status === "loading") slot.status = "failed";
+                return "failed" as const;
+            }
+            if (!slot.descriptor.load) {
+                if (slot.status !== "loading") return slot.status;
+                slot.status = "active";
+                slot.installOrder = ++this.installSeq;
+                return "active" as const;
+            }
+            return this.runInstall(slot);
+        }).then((status) => {
             if (slot.loading === flight) slot.loading = null;
             return status;
         }, (error) => {
@@ -172,6 +188,25 @@ export class FeatureHost {
         });
         slot.loading = flight;
         return flight;
+    }
+
+    private async launchDependencies(
+        slot: FeatureSlot,
+        dependencies: readonly string[],
+        options: FeatureLaunchOptions,
+    ): Promise<boolean> {
+        for (const dependency of dependencies) {
+            if (dependency === slot.descriptor.id || !this.slots.has(dependency)) {
+                slot.error = new Error(`[FeatureHost] ${slot.descriptor.id} 的依赖 ${dependency} 未托管`);
+                return false;
+            }
+            const status = await this.launch(dependency, options);
+            if (status !== "active") {
+                slot.error = new Error(`[FeatureHost] ${slot.descriptor.id} 的依赖 ${dependency} 不可用（${status}）`);
+                return false;
+            }
+        }
+        return true;
     }
 
     private async runInstall(slot: FeatureSlot): Promise<FeatureStatus> {

@@ -9,7 +9,7 @@
 > - [docs/EXTRAFEATURES.md](docs/EXTRAFEATURES.md)：可选额外功能、现有实现与非承诺说明
 > - [docs/undergroundIdle/README.md](docs/undergroundIdle/README.md)：未实现的玩法策划案与扩展草案
 > - [docs/Non-intrusive.md](docs/Non-intrusive.md)：非侵入式框架改造方案（feature 与实时 Room 玩法；框架侧阶段 0-9 已实施，两玩法未实现，编辑器/真机待办见 plan-v5.md）
-> - [docs/PLUGIN.md](docs/PLUGIN.md)：插件机制设计基线（「插件只能消费不能定义」判据、构建期装载与包格式；设计基线，未实现）
+> - [docs/PLUGIN.md](docs/PLUGIN.md)：插件机制设计基线（「插件只能消费不能定义」判据、构建期装载；§5 包格式与 `plugin -- pack/install/uninstall/check` 命令、§6 宿主 placement 已实施，开放项见 plan-v5 E 类）
 > - [docs/PLUGIN-REVIEW.md](docs/PLUGIN-REVIEW.md)：PLUGIN.md 的审阅记录（2026-09-05；经验证的问题清单与推荐实现方案，实施状态登记在 plan-v5.md）
 > - [docs/snakeoff/README.md](docs/snakeoff/README.md)：Snake 首版策划与来源台账
 > - [docs/s/README.md](docs/s/README.md)：Snake 竖版新版无尽 V2 与养成专项的 S0～S5 阶段任务（待实施）
@@ -129,9 +129,12 @@ npm --workspace @game/server run test:int
      （catalog.generated.ts / index.ts / generated/）禁手改；服务端 `modes/catalog.ts` 是生成物的稳定
      façade（登记全集按 manifest.wireExposed 发现 `modes/<id>/index.ts`），⛔ 不再逐玩法手写。
    - `apps/shared/src/protocol/lobbyRpc/registry.generated.ts`、`apps/client/src/generated/`
-     （views/fguiContracts/features）与 `docs/features.generated.md` 来自
-     `features/<id>/feature.json` + View 同目录 `.view.json` sidecar + FGUI XML + 各域
-     RPC descriptor，用 `npm --workspace @game/server run codegen:features` 刷新。
+     （views/fguiContracts/features）、`docs/features.generated.md` 与
+     `apps/server/test/lobbyRpcVectors/index.generated.ts` 来自
+     `features/<id>/feature.json` + 宿主 placement `features/host.json`（默认玩法与首屏入口顺序，
+     ⛔ feature.json 无 slot/order）+ View 同目录 `.view.json` sidecar + FGUI XML + 各域
+     RPC descriptor + 各域向量 sidecar `apps/server/test/lobbyRpcVectors/<域>.ts`，用
+     `npm --workspace @game/server run codegen:features` 刷新。
      `lobbyRpc/index.ts`、`envelope.ts`、`push.ts`、客户端 `view/viewRegistry.ts`、
      `view/fguiContracts.ts`、`view/pages.ts` 是稳定 façade，普通 feature 不手改
      （机检真源 `scripts/protected-paths.json`，随 `test:client` 无侵入矩阵校验）。

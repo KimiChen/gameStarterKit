@@ -24,16 +24,16 @@ export class Main extends Component {
 
     @property({ tooltip: "WebPlatform Public http(s) 地址（登录 + 选服）。留空 = 跟随 PORT（dev 下即游戏服自身）；联调外部身份服务时填写。" })
     portalUrl = "";
-    // 阶段 9 登记：Home 菜单已数据驱动（generated menu contribution 的 launch target
-    // 优先），本字段只剩「默认 launch target 兜底」职责，Home 数据驱动稳定后可删——
-    // 但删除 @property 属场景资产 diff（scene.scene 由 Creator 重新序列化并人工审查，
+    // 开发调试快捷入口（docs/PLUGIN.md §6.2 (1)）：Home 菜单已数据驱动（generated menu
+    // contribution 的 launch target 优先），本字段只剩「默认 launch target 兜底」职责——
+    // 删除 @property 属场景资产 diff（scene.scene 由 Creator 重新序列化并人工审查，
     // 见 docs/Non-intrusive.md §8），⛔ 不在无头批次中机械删除。
-    // 缺省值取排序最前的 menu contribution（⛔ 不硬编码玩法名）：换默认入口只改
-    // features/<id>/feature.json 的 slot/order 并重跑 codegen:features。
+    // 缺省值 = 宿主 features/host.json 的 defaultLaunch（经 codegen:features 生成，⛔ 不硬编码
+    // 玩法名）：换默认入口只改 host.json 并重跑 codegen:features。
     // ⚠ 语义边界：一旦有人在 Creator 里填过这个字段，值会写进 scene.scene 并覆盖本缺省
     // （当前 apps/Cocos/assets/scene.scene 只序列化了 serverUrl/portalUrl，未序列化本字段，
-    // 所以现在生效的就是这里的生成缺省）。要换默认入口请改 feature.json，⛔ 不要改这里。
-    @property({ tooltip: "要进入的已登记玩法 id；留空 = 跟随 Home 菜单排序最前的入口。" })
+    // 所以现在生效的就是这里的生成缺省）。要换默认入口请改 host.json，⛔ 不要改这里。
+    @property({ tooltip: "开发调试：要进入的已登记玩法 id；留空 = 跟随 features/host.json 的 defaultLaunch。" })
     gameplayId: string = DEFAULT_LAUNCH_GAMEPLAY_ID;
 
     private runtime: AppRuntime | null = null;

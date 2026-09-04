@@ -21,19 +21,31 @@ export type FeatureManifestRoute = {
   readonly view: string;
 };
 
-export type FeatureManifestLaunch = {
-  readonly kind: "gameplay";
-  readonly gameplayId: string;
-};
+/**
+ * 入口启动目标（docs/PLUGIN.md §6 / PLUGIN-REVIEW F23）：gameplay = 进入已登记玩法；
+ * route = 打开一个 feature route（纯 feature 插件——兑换码/聊天面板一类——的唯一入口形态）。
+ */
+export type FeatureManifestLaunch =
+  | { readonly kind: "gameplay"; readonly gameplayId: string }
+  | { readonly kind: "route"; readonly routeId: string };
 
+/**
+ * 菜单入口贡献：只声明**身份与元数据**（entryId / label / labelKey / icon / launch），
+ * ⛔ 没有 slot/order——位置归宿主（features/host.json），插件本就不该有权把自己塞进首屏。
+ */
 export type FeatureManifestMenuItem = {
   readonly entryId: string;
-  readonly slot: number;
-  readonly order: number;
   readonly label: string;
   readonly labelKey: string;
   readonly icon?: string;
   readonly launch: FeatureManifestLaunch;
+};
+
+/** 宿主 placement（features/host.json）：默认玩法 + 首屏 Home 入口的有序 qualified id（`featureId/entryId`）。 */
+export type HostManifest = {
+  readonly schemaVersion: 1;
+  readonly defaultLaunch: { readonly kind: "gameplay"; readonly gameplayId: string };
+  readonly home: readonly string[];
 };
 
 /**
@@ -180,22 +192,70 @@ function validateNode(schema: JsonRecord, value: unknown, pathLabel: string): vo
   fail(pathLabel, `schema declares unsupported type: ${String(type)}`);
 }
 
+/** launch 判别联合的跨字段规则（schema 解释器无 oneOf：kind 决定哪个 id 必填、另一个必须缺席）。 */
+function parseLaunch(launch: JsonRecord, pathLabel: string): FeatureManifestLaunch {
+  if (launch.kind === "gameplay") {
+    if (typeof launch.gameplayId !== "string") fail(pathLabel, `kind:"gameplay" 必须声明 gameplayId`);
+    if (launch.routeId !== undefined) fail(pathLabel, `kind:"gameplay" 不得同时声明 routeId`);
+    return { kind: "gameplay", gameplayId: launch.gameplayId };
+  }
+  if (launch.kind === "route") {
+    if (typeof launch.routeId !== "string") fail(pathLabel, `kind:"route" 必须声明 routeId`);
+    if (launch.gameplayId !== undefined) fail(pathLabel, `kind:"route" 不得同时声明 gameplayId`);
+    return { kind: "route", routeId: launch.routeId };
+  }
+  fail(pathLabel, `未知 launch.kind：${String(launch.kind)}`);
+}
+
+export function loadHostManifestSchema(repositoryRoot: string): JsonRecord {
+  const schemaFile = path.join(repositoryRoot, "features/host-schema-v1.json");
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(fs.readFileSync(schemaFile, "utf8"));
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    fail("features/host-schema-v1.json", `cannot read valid JSON: ${detail}`);
+  }
+  assertSupportedSchema(parsed, "features/host-schema-v1.json");
+  return parsed;
+}
+
+/** 读取并校验宿主 placement（features/host.json）；文件缺失即 fail-fast——默认玩法必须显式声明（F16）。 */
+export function readHostManifest(repositoryRoot: string): HostManifest {
+  const file = path.join(repositoryRoot, "features/host.json");
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    fail("features/host.json", `cannot read valid JSON（宿主必须显式声明 defaultLaunch 与 home placement）: ${detail}`);
+  }
+  validateNode(loadHostManifestSchema(repositoryRoot), parsed, "features/host.json");
+  const value = parsed as JsonRecord;
+  const home = [...(value.home as string[])];
+  const seen = new Set<string>();
+  for (const entry of home) {
+    if (seen.has(entry)) fail("features/host.json", `home 重复登记 "${entry}"`);
+    seen.add(entry);
+  }
+  return {
+    schemaVersion: 1,
+    defaultLaunch: { kind: "gameplay", gameplayId: (value.defaultLaunch as JsonRecord).gameplayId as string },
+    home,
+  };
+}
+
 /** 校验并归一化一份 feature manifest；可选字段给出确定缺省。 */
 export function parseFeatureManifest(repositoryRoot: string, input: unknown, pathLabel: string): FeatureManifest {
   const schema = loadFeatureManifestSchema(repositoryRoot);
   validateNode(schema, input, pathLabel);
   const value = input as JsonRecord;
-  const menu = (value.menu as JsonRecord[]).map((item) => ({
+  const menu = (value.menu as JsonRecord[]).map((item, index) => ({
     entryId: item.entryId as string,
-    slot: item.slot as number,
-    order: item.order as number,
     label: item.label as string,
     labelKey: item.labelKey as string,
     ...(item.icon === undefined ? {} : { icon: item.icon as string }),
-    launch: {
-      kind: "gameplay" as const,
-      gameplayId: (item.launch as JsonRecord).gameplayId as string,
-    },
+    launch: parseLaunch(item.launch as JsonRecord, `${pathLabel}.menu[${index}].launch`),
   }));
   return {
     schemaVersion: 1,

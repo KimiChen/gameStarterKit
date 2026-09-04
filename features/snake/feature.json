@@ -15,8 +15,6 @@
   "menu": [
     {
       "entryId": "snake",
-      "slot": 0,
-      "order": 0,
       "label": "贪吃蛇大作战",
       "labelKey": "menu.snakeOff",
       "launch": { "kind": "gameplay", "gameplayId": "snake" }

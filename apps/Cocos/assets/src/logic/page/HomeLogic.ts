@@ -23,7 +23,7 @@ export class HomeLogic {
     userId = "";
     /** 点「进入游戏」按钮回调——无菜单入口数据时的回退通道（迁移期兼容） */
     onEnterBattle: () => void | Promise<void> = () => {};
-    /** 数据驱动入口（已按 slot → order → featureId → entryId 排序） */
+    /** 数据驱动入口（顺序 = 宿主 placement，features/host.json；⛔ 插件 manifest 无位置字段） */
     entries: readonly HomeMenuEntryModel[] = [];
 
     setUserId(uid: string): void {
@@ -34,7 +34,7 @@ export class HomeLogic {
         this.entries = entries;
     }
 
-    /** 渲染到现 btn_enter 的主入口（contribution[0]）。 */
+    /** 渲染到现 btn_enter 的主入口（宿主 placement 的第一条）。 */
     primaryEntry(): HomeMenuEntryModel | null {
         return this.entries[0] ?? null;
     }

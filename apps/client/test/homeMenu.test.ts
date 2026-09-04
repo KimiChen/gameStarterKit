@@ -1,9 +1,9 @@
 /**
  * Home 数据驱动机制（Non-intrusive §7.4 阶段 6；fixture 驱动）：
- *  - 菜单唯一数据源 = generated menu contributions；排序 slot → order → featureId →
- *    entryId 由独立比较器重算核对，并与手写 features/<dir>/feature.json 双向核对；
- *  - contribution[0] 是渲染到现 btn_enter 的那条，也是默认 launch target
- *    （⛔ 本文件不写死是哪个玩法：谁在最前由 manifest 的 slot/order 决定）；
+ *  - 菜单唯一数据源 = generated menu contributions；排序 featureId → entryId 由独立比较器
+ *    重算核对，并与手写 features/<dir>/feature.json 双向核对（⛔ manifest 无 slot/order）；
+ *  - **位置归宿主**（docs/PLUGIN.md §6）：首屏入口顺序与默认 launch target 都来自手写
+ *    features/host.json（经 codegen 生成 GENERATED_HOST），⛔ 本文件不写死是哪个玩法；
  *  - HomeLogic：主入口点击唯一走 entry.launch；disabled/failed 叠加 = handler 拒绝
  *    （无 FGUI 视觉时以拒绝 + 状态查询断言表达；GList 视觉是编辑器待办）；
  *  - FeatureHost 运行时可用性叠加：install 失败的 fixture feature → failed → 入口不可用；
@@ -17,6 +17,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   FEATURE_IDS,
+  GENERATED_HOST,
   GENERATED_MENU_CONTRIBUTIONS,
   type GeneratedMenuContribution,
 } from "../src/generated/features.generated";
@@ -25,6 +26,7 @@ import {
   BUILTIN_FEATURE,
   DEFAULT_LAUNCH_GAMEPLAY_ID,
   resolveLaunchGameplayId,
+  type FeatureLaunchTarget,
 } from "../src/app/builtinFeature";
 import { FeatureRegistry } from "../src/app/FeatureRegistry";
 import { FeatureHost, type FeatureModule } from "../src/app/FeatureHost";
@@ -36,7 +38,7 @@ import { HomeLogic, type HomeMenuEntryModel } from "../src/logic/page/HomeLogic"
 
 function makePorts(overrides: {
   enterBattle?: () => Promise<void>;
-  launch?: (target: { kind: "gameplay"; gameplayId: string }) => Promise<void>;
+  launch?: (target: FeatureLaunchTarget) => Promise<void>;
 } = {}): AppPorts {
   return createAppPorts({
     navigation: {
@@ -75,31 +77,28 @@ function readManifestMenu(): GeneratedMenuContribution[] {
 
 function sortedByRule(items: readonly GeneratedMenuContribution[]): GeneratedMenuContribution[] {
   return [...items].sort((left, right) => {
-    if (left.slot !== right.slot) return left.slot - right.slot;
-    if (left.order !== right.order) return left.order - right.order;
     if (left.featureId !== right.featureId) return left.featureId < right.featureId ? -1 : 1;
     if (left.entryId === right.entryId) return 0;
     return left.entryId < right.entryId ? -1 : 1;
   });
 }
 
-test("generated contributions 已排序，且 contribution[0] = 手写 manifest 中 slot/order 最小者", () => {
-  assert.ok(GENERATED_MENU_CONTRIBUTIONS.length >= 1, "菜单不得为空（Home 渲染 contribution[0]）");
+/** 手写真源侧的宿主 placement：直接读 features/host.json（⛔ 不复用生成物）。 */
+function readHostManifest(): { defaultLaunch: { gameplayId: string }; home: string[] } {
+  return JSON.parse(readFileSync(join(REPO_ROOT, "features/host.json"), "utf8"));
+}
+
+test("generated contributions 按 featureId → entryId 排序且 = 手写 manifest 并集；manifest ⛔ 无 slot/order", () => {
+  assert.ok(GENERATED_MENU_CONTRIBUTIONS.length >= 1, "菜单不得为空");
   assert.deepEqual([...GENERATED_MENU_CONTRIBUTIONS], sortedByRule(GENERATED_MENU_CONTRIBUTIONS),
     "generated 排序必须与独立重算一致");
-
-  // ⛔ 不写死玩法 id：从**手写真源** features/<dir>/feature.json 重算菜单全集，
-  // 与生成汇总逐条 deepEqual——「谁是默认入口」由 slot/order 数值决定，不由本文件决定。
   const manifestMenu = readManifestMenu();
   assert.deepEqual([...GENERATED_MENU_CONTRIBUTIONS], sortedByRule(manifestMenu),
-    "generated 菜单必须 = 手写 manifest 菜单并集按规则排序（改 order 即换顺序，⛔ 无第二真源）");
-  const primary = GENERATED_MENU_CONTRIBUTIONS[0];
-  assert.deepEqual(primary, sortedByRule(manifestMenu)[0],
-    "contribution[0] 必须是 manifest 中 slot/order 最小者");
-  assert.equal(primary.launch.kind, "gameplay",
-    "launch target 必须是玩法启动（Home 不分支 gameplay，target 原样进 LaunchPort）");
-
-  // FeatureRegistry 暴露同一数据源（openHome 的读取面）。
+    "generated 菜单必须 = 手写 manifest 菜单并集按 featureId → entryId 排序（⛔ 无第二真源）");
+  for (const item of manifestMenu as unknown as Record<string, unknown>[]) {
+    assert.ok(!("slot" in item) && !("order" in item), `manifest 入口不得再声明位置字段（slot/order）：${String(item.entryId)}`);
+  }
+  // FeatureRegistry 暴露同一数据源（设置面板的读取面）。
   const registry = new FeatureRegistry(APP_FEATURES);
   assert.deepEqual([...registry.menuContributions()], [...GENERATED_MENU_CONTRIBUTIONS]);
   // ballMove 保留为可选 contribution（内部回归样例，⛔ 不物理删除）——这是「不得删除」
@@ -107,21 +106,50 @@ test("generated contributions 已排序，且 contribution[0] = 手写 manifest 
   assert.ok(BUILTIN_FEATURE.menu.some((item) => item.entryId === "ballMove"));
 });
 
-test("默认 launch target = contribution[0]：AppRuntime/Main 兜底只读生成值，⛔ 不硬编码玩法名", () => {
-  // ① 值：默认兜底恒等于菜单排序最前那条的 launch target。
-  assert.equal(DEFAULT_LAUNCH_GAMEPLAY_ID, GENERATED_MENU_CONTRIBUTIONS[0].launch.gameplayId,
-    "默认 launch target 必须跟随菜单排序最前那条（改 feature.json 的 order 即换默认入口）");
+test("位置归宿主：首屏入口顺序 = 手写 features/host.json 的 home；每条都能解析到一条 contribution", () => {
+  const host = readHostManifest();
+  assert.deepEqual(GENERATED_HOST.home.map((entry) => `${entry.featureId}/${entry.entryId}`), host.home,
+    "GENERATED_HOST.home 必须逐字来自手写 host.json（⛔ 无第二真源）");
+  const registry = new FeatureRegistry(APP_FEATURES);
+  assert.deepEqual(
+    registry.homeContributions().map((item) => `${item.featureId}/${item.entryId}`),
+    host.home,
+    "Home 渲染顺序 = 宿主 placement，⛔ 不是 contribution 的字母序/声明序",
+  );
+  assert.ok(registry.homeContributions().length >= 1, "框架默认宿主至少在首屏摆一条入口（Home 视觉渲染第一条）");
+  const primary = registry.homeContributions()[0];
+  assert.equal(primary.launch.kind, "gameplay", "首屏主入口必须是玩法启动（Home 不分支 gameplay，target 原样进 LaunchPort）");
+  // 设置面板列表是全量（含未上首屏的 ballMove 回归样例）：placement 只决定首屏，不裁剪入口集合。
+  assert.ok(registry.menuContributions().length > registry.homeContributions().length,
+    "全量 contribution 必须多于首屏 placement（否则「位置归宿主」无判别力）");
+});
+
+test("默认 launch target = features/host.json 的 defaultLaunch：AppRuntime/Main 兜底只读生成值，⛔ 不硬编码玩法名", () => {
+  // ① 值：默认兜底恒等于宿主手写声明（⛔ 不再从菜单排序推导——排序首条会静默翻成回归样例）。
+  const host = readHostManifest();
+  assert.equal(DEFAULT_LAUNCH_GAMEPLAY_ID, host.defaultLaunch.gameplayId,
+    "默认 launch target 必须跟随 features/host.json 的 defaultLaunch（改 host.json 即换默认入口）");
+  assert.equal(new FeatureRegistry(APP_FEATURES).defaultLaunchGameplayId(), host.defaultLaunch.gameplayId);
+  assert.ok(
+    GENERATED_MENU_CONTRIBUTIONS.some((item) => item.launch.kind === "gameplay" && item.launch.gameplayId === host.defaultLaunch.gameplayId),
+    "defaultLaunch 必须有 contribution 贡献入口（生成器闸）",
+  );
   // ② 解析规则：未填 / 空白 → 生成缺省；显式 id → 原样（trim）。
   assert.equal(resolveLaunchGameplayId(undefined), DEFAULT_LAUNCH_GAMEPLAY_ID);
   assert.equal(resolveLaunchGameplayId(""), DEFAULT_LAUNCH_GAMEPLAY_ID);
   assert.equal(resolveLaunchGameplayId("   "), DEFAULT_LAUNCH_GAMEPLAY_ID);
-  const other = GENERATED_MENU_CONTRIBUTIONS[GENERATED_MENU_CONTRIBUTIONS.length - 1].launch.gameplayId;
+  const other = GENERATED_MENU_CONTRIBUTIONS
+    .map((item) => (item.launch.kind === "gameplay" ? item.launch.gameplayId : null))
+    .filter((id): id is string => id !== null && id !== DEFAULT_LAUNCH_GAMEPLAY_ID)[0];
+  assert.ok(other, "至少还有一个非默认玩法入口（否则「显式 id 优先」无判别力）");
   assert.equal(resolveLaunchGameplayId(` ${other} `), other, "显式 id 优先且被 trim");
 
   // ③ 无硬编码闸（③ 是 ① 抓不到的那格：默认入口恰好等于被写死的那个名字时，值断言
   //    看不出差别；这里直接读两处兜底的源码）。候选字面量集来自生成菜单本身，⛔ 不是手列
   //    的玩法名单——AppRuntime 里的 "idle" 是连接状态字面量，不在候选集内故不会误伤。
-  const candidates = [...new Set(GENERATED_MENU_CONTRIBUTIONS.map((item) => item.launch.gameplayId))];
+  const candidates = [...new Set(GENERATED_MENU_CONTRIBUTIONS
+    .map((item) => (item.launch.kind === "gameplay" ? item.launch.gameplayId : null))
+    .filter((id): id is string => id !== null))];
   assert.ok(candidates.length >= 2, "候选入口 <2 时本闸判别力不足（菜单被掏空？）");
   for (const relative of ["apps/client/src/app/AppRuntime.ts", "apps/client/src/Main.ts"]) {
     const source = readFileSync(join(REPO_ROOT, relative), "utf8");
@@ -141,36 +169,59 @@ test("contribution 归属：拥有自己 feature 的玩法，菜单入口必须�
   // 它的 Home 入口就必须写在自己的 manifest 里，⛔ 不得再回写 built-in 的中央菜单表。
   // 反之，尚无独立 feature 的玩法（ballMove：保留为可选入口与内部回归样例）不受此约束。
   const featureIds = new Set(FEATURE_IDS);
-  const misplaced = GENERATED_MENU_CONTRIBUTIONS
-    .filter((item) => featureIds.has(item.launch.gameplayId) && item.featureId !== item.launch.gameplayId)
-    .map((item) => `${item.featureId}/${item.entryId} → ${item.launch.gameplayId}`);
+  const gameplayItems = GENERATED_MENU_CONTRIBUTIONS
+    .map((item) => (item.launch.kind === "gameplay" ? { item, gameplayId: item.launch.gameplayId } : null))
+    .filter((entry): entry is { item: GeneratedMenuContribution; gameplayId: string } => entry !== null);
+  const misplaced = gameplayItems
+    .filter(({ item, gameplayId }) => featureIds.has(gameplayId) && item.featureId !== gameplayId)
+    .map(({ item, gameplayId }) => `${item.featureId}/${item.entryId} → ${gameplayId}`);
   assert.deepEqual(misplaced, [],
     "玩法自持 feature 时其 contribution 必须由自己贡献（把入口搬回 features/built-in 即红）");
   // 自洽闭合：本仓当前确实存在这样一个玩法（否则上面的过滤恒空，断言退化为永真）。
-  const selfOwned = GENERATED_MENU_CONTRIBUTIONS
-    .filter((item) => featureIds.has(item.launch.gameplayId));
+  const selfOwned = gameplayItems.filter(({ gameplayId }) => featureIds.has(gameplayId));
   assert.ok(selfOwned.length >= 1, "至少一个玩法拥有自己的 feature（否则本断言无判别力）");
 });
 
-test("菜单排序：多 contribution fixture 按 slot → order → featureId → entryId（FeatureRegistry 汇总）", () => {
-  const fixture = (featureId: string, entryId: string, slot: number, order: number): GeneratedMenuContribution => ({
-    entryId, featureId, slot, order, label: entryId, labelKey: `menu.${entryId}`,
-    launch: { kind: "gameplay", gameplayId: "ballMove" },
+test("菜单排序：多 contribution fixture 按 featureId → entryId；首屏顺序只听宿主 placement；引用不存在的入口 fail-fast", () => {
+  const fixture = (featureId: string, entryId: string): GeneratedMenuContribution => ({
+    entryId, featureId, label: entryId, labelKey: `menu.${entryId}`,
+    launch: { kind: "gameplay", gameplayId: `${entryId}Game` },
   });
-  const registry = new FeatureRegistry([
+  const descriptors = [
     {
       id: "zeta", resident: false, dependencies: [], routes: [],
-      menu: [fixture("zeta", "aEntry", 0, 5), fixture("zeta", "bEntry", 0, 0)],
+      menu: [fixture("zeta", "zA"), fixture("zeta", "zB")],
     },
     {
       id: "alpha", resident: false, dependencies: [], routes: [],
-      menu: [fixture("alpha", "cEntry", 1, 0), fixture("alpha", "dEntry", 0, 5), fixture("alpha", "aEntry", 0, 5)],
+      menu: [fixture("alpha", "aC"), fixture("alpha", "aD"), fixture("alpha", "aA")],
     },
-  ]);
+  ];
+  const host = {
+    defaultLaunch: { kind: "gameplay" as const, gameplayId: "zBGame" },
+    home: [{ featureId: "zeta", entryId: "zB" }, { featureId: "alpha", entryId: "aD" }],
+  };
+  const registry = new FeatureRegistry(descriptors, host);
   assert.deepEqual(
     registry.menuContributions().map((item) => `${item.featureId}/${item.entryId}`),
-    ["zeta/bEntry", "alpha/aEntry", "alpha/dEntry", "zeta/aEntry", "alpha/cEntry"],
-    "slot 先行，order 次之，featureId 再次，entryId 兜底",
+    ["alpha/aA", "alpha/aC", "alpha/aD", "zeta/zA", "zeta/zB"],
+    "全量列表：featureId 先行，entryId 兜底（⛔ 无 slot/order）",
+  );
+  assert.deepEqual(
+    registry.homeContributions().map((item) => `${item.featureId}/${item.entryId}`),
+    ["zeta/zB", "alpha/aD"],
+    "首屏顺序 = 宿主 placement 逐字（与字母序无关）",
+  );
+  assert.equal(registry.defaultLaunchGameplayId(), "zBGame");
+  assert.throws(
+    () => new FeatureRegistry(descriptors, { ...host, home: [{ featureId: "alpha", entryId: "zB" }] }).homeContributions(),
+    /宿主 placement 引用不存在的入口: alpha\/zB/u,
+    "placement 的 featureId/entryId 必须与某条 contribution 精确一致",
+  );
+  assert.throws(
+    () => new FeatureRegistry([descriptors[0], { ...descriptors[1], menu: [fixture("alpha", "zA")] }], { ...host, home: [] }),
+    /重复 menu entryId: zA/u,
+    "entryId 全仓唯一（跨 feature 撞名即 fail-fast）",
   );
 });
 
@@ -227,7 +278,7 @@ test("FeatureHost 可用性叠加（fixture）：install 失败 → failed 入�
     launch: () => { launched++; },
   });
   const contribution: GeneratedMenuContribution = {
-    entryId: "fxEntry", featureId: "fx", slot: 0, order: 0, label: "夹具玩法", labelKey: "menu.fx",
+    entryId: "fxEntry", featureId: "fx", label: "夹具玩法", labelKey: "menu.fx",
     launch: { kind: "gameplay", gameplayId: "ballMove" },
   };
 
@@ -248,7 +299,7 @@ test("FeatureHost 可用性叠加（fixture）：install 失败 → failed 入�
 });
 
 test("LaunchPort.launch：注入专用通道即走它并携带 target；未注入回退 enterBattle", async () => {
-  const seen: Array<{ kind: string; gameplayId: string }> = [];
+  const seen: FeatureLaunchTarget[] = [];
   let entered = 0;
   const withLaunch = makePorts({
     enterBattle: async () => { entered++; },

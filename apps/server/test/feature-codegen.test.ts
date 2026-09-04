@@ -55,6 +55,7 @@ import {
   VIEWS_RELATIVE,
   readViewCatalog,
   renderFeatureIndex,
+  renderViewCatalogArtifacts,
 } from "../tools/feature-codegen/viewCatalog";
 
 const REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -1044,6 +1045,93 @@ test("路由/菜单校验：route 引用未登记 View、缺 group\\/restore、m
     fs.writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
     assert.throws(() => readViewCatalog(root), /menu entryId "ballMove" 重复/u);
   }
+});
+
+test("入口治理闸：entryId 全仓唯一、一 gameplayId 一贡献者、route 形态 launch 必须引用已登记 route", () => {
+  const withSnakeMenu = (mutate: (menu: Record<string, unknown>[]) => void): string => {
+    const { root } = createFixture();
+    const manifestFile = path.join(root, "features/snake/feature.json");
+    const manifest = JSON.parse(fs.readFileSync(manifestFile, "utf8"));
+    mutate(manifest.menu);
+    fs.writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
+    return root;
+  };
+  // entryId 与 builtin 的 ballMove 撞名（跨 feature）。
+  assert.throws(
+    () => readViewCatalog(withSnakeMenu((menu) => menu.push({
+      entryId: "ballMove", label: "x", labelKey: "menu.x", launch: { kind: "gameplay", gameplayId: "idle" },
+    }))),
+    /menu entryId "ballMove" 已被 feature "builtin" 使用（entryId 全仓唯一）/u,
+  );
+  // 同一 gameplayId 第二贡献者。
+  assert.throws(
+    () => readViewCatalog(withSnakeMenu((menu) => menu.push({
+      entryId: "snakeAgain", label: "x", labelKey: "menu.x", launch: { kind: "gameplay", gameplayId: "ballMove" },
+    }))),
+    /玩法 "ballMove" 的入口已由 feature "builtin" 贡献（一 gameplayId 一贡献者）/u,
+  );
+  // route 形态：引用未登记 route 拒绝；引用他 feature 的已登记 route 放行并渲染。
+  assert.throws(
+    () => readViewCatalog(withSnakeMenu((menu) => menu.push({
+      entryId: "snakePanel", label: "x", labelKey: "menu.x", launch: { kind: "route", routeId: "nowhere" },
+    }))),
+    /launch 引用未登记的 route "nowhere"/u,
+  );
+  const root = withSnakeMenu((menu) => menu.push({
+    entryId: "snakePanel", label: "面板", labelKey: "menu.snakePanel", launch: { kind: "route", routeId: "settings" },
+  }));
+  const catalog = readViewCatalog(root);
+  const rendered = renderViewCatalogArtifacts(catalog).get(FEATURES_RELATIVE) ?? "";
+  assert.match(rendered, /entryId: "snakePanel".*launch: \{ kind: "route", routeId: "settings" \}/u);
+  assert.doesNotMatch(rendered, /slot:|order:/u, "生成物不得再出现位置字段");
+  // launch 判别联合的跨字段规则：kind 与 id 必须配对。
+  assert.throws(
+    () => readViewCatalog(withSnakeMenu((menu) => { menu[0].launch = { kind: "route", gameplayId: "snake" }; })),
+    /kind:"route" 必须声明 routeId/u,
+  );
+  assert.throws(
+    () => readViewCatalog(withSnakeMenu((menu) => { menu[0].launch = { kind: "gameplay", gameplayId: "snake", routeId: "settings" }; })),
+    /kind:"gameplay" 不得同时声明 routeId/u,
+  );
+  // 位置字段已退役：manifest 出现 slot/order 即 schema 拒绝。
+  assert.throws(
+    () => readViewCatalog(withSnakeMenu((menu) => { menu[0].slot = 0; })),
+    /unknown key\(s\): slot/u,
+  );
+});
+
+test("宿主 placement（features/host.json）：缺失即 fail-fast；defaultLaunch 须有贡献者；home 引用必须存在且渲染进 GENERATED_HOST", () => {
+  {
+    const { root } = createFixture();
+    fs.rmSync(path.join(root, "features/host.json"));
+    assert.throws(() => readViewCatalog(root), /features\/host\.json.*宿主必须显式声明 defaultLaunch/u);
+  }
+  const withHost = (host: unknown): string => {
+    const { root } = createFixture();
+    fs.writeFileSync(path.join(root, "features/host.json"), `${JSON.stringify(host, null, 2)}\n`);
+    return root;
+  };
+  assert.throws(
+    () => readViewCatalog(withHost({ schemaVersion: 1, defaultLaunch: { kind: "gameplay", gameplayId: "idle" }, home: [] })),
+    /defaultLaunch 指向没有任何 feature 贡献入口的玩法 "idle"/u,
+  );
+  assert.throws(
+    () => readViewCatalog(withHost({ schemaVersion: 1, defaultLaunch: { kind: "gameplay", gameplayId: "snake" }, home: ["builtin/snake"] })),
+    /home 引用不存在的入口 "builtin\/snake"/u,
+  );
+  assert.throws(
+    () => readViewCatalog(withHost({ schemaVersion: 1, defaultLaunch: { kind: "gameplay", gameplayId: "snake" }, home: ["snake/snake", "snake/snake"] })),
+    /home 重复登记/u,
+  );
+  assert.throws(
+    () => readViewCatalog(withHost({ schemaVersion: 1, defaultLaunch: { kind: "gameplay", gameplayId: "snake" }, home: [], slot: 0 })),
+    /unknown key\(s\): slot/u,
+  );
+  // 宿主可以把回归样例 ballMove 摆到首屏并换默认玩法——零代码，只改 host.json。
+  const root = withHost({ schemaVersion: 1, defaultLaunch: { kind: "gameplay", gameplayId: "ballMove" }, home: ["builtin/ballMove", "snake/snake"] });
+  const rendered = renderViewCatalogArtifacts(readViewCatalog(root)).get(FEATURES_RELATIVE) ?? "";
+  assert.match(rendered, /defaultLaunch: \{ kind: "gameplay", gameplayId: "ballMove" \}/u);
+  assert.match(rendered, /\{ featureId: "builtin", entryId: "ballMove" \},\n {8}\{ featureId: "snake", entryId: "snake" \},/u);
 });
 
 test("CLI 沿用惯例：--check、--root <dir>/--root=<dir>、--allow-delete；重复/未知参数 throw", () => {

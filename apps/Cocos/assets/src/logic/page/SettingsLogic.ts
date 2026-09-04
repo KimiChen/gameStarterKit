@@ -6,9 +6,9 @@
  *  1. **宿主固定项**（⛔ 不可由插件提供）：音乐/音效走 user profile 的 musicOn/sfxOn
  *     幂等写；语言/推送/条款/隐私/兑换码/日志上报当前**没有实现**，一律置灰并逐条
  *     标注原因（⛔ 不做假实现——一个点了没反应的开关比没有这个开关更糟）。
- *  2. **插件入口列表**：数据源仍是 generated menu contributions，但排序取
- *     **featureId 字母序**（§6：插件只声明入口身份，位置归宿主；slot/order 是旧的
- *     位置声明，本层 ⛔ 不读）。不可用（FeatureHost failed/disabled）的条目置灰，
+ *  2. **插件入口列表**：数据源仍是 generated menu contributions（全量），排序取
+ *     **featureId 字母序**（§6：插件只声明入口身份，位置归宿主——首屏位置是 features/host.json
+ *     的事，本层 ⛔ 不看）。不可用（FeatureHost failed/disabled）的条目置灰，
  *     另给显式「重试」——重试走的就是同一条 launch 通道（宿主侧 userIntent 闸）。
  *
  * 渲染归 view/SettingsView.ts；本文件 ⛔ 不 import cc / fairygui（铁律 9）。
@@ -135,7 +135,7 @@ export class SettingsLogic {
 
     /**
      * 插件入口列表：**featureId 字母序**（PLUGIN.md §6；同一 feature 内以 entryId 兜底
-     * 保证确定性）。⛔ 不读 slot/order——那是插件声明位置的旧模型，位置归宿主。
+     * 保证确定性）。⛔ 不看宿主 placement——首屏位置归 Home，本列表是全量入口的稳定序。
      */
     pluginEntries(): readonly SettingsPluginEntryModel[] {
         return [...this.entries]

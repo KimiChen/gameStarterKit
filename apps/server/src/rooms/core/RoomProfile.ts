@@ -43,7 +43,8 @@ const PROFILE_POLICIES: Readonly<Record<string, {
     },
     // "dropIn" = drop-in + matchmaking（自由加入：首人即开局、不锁房、动态 roster、Playing 可入座）。
     // 由 fixture mode（dropInFixture，roster {min:1,max:8,autoStart:1}）驱动测试；8 人上限是该
-    // 玩法 manifest 的 maxPlayers 配置参数，不是框架常量。⛔ 不进生产 registry/默认撮合池。
+    // 玩法 manifest 的 maxPlayers 配置参数，不是框架常量。⚠ 主语是 fixture 玩法 dropInFixture
+    // ⛔ 不进生产 registry/默认撮合池；profile 本身是生产可用的（snake 以 dropIn 上生产）。
     "dropIn": {
         startPolicy: DROP_IN_START_POLICY,
         accessPolicy: MATCHMAKING_ACCESS_POLICY,

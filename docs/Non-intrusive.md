@@ -1987,6 +1987,11 @@ gameplay 的**实现**仍走 GameRoom 动线（见 §6），但它的 Home 入�
 以**同一形状**的 menu contribution 登记——**菜单只有一个数据源**。排序固定为
 `slot → order → featureId → entryId`。
 
+> 注记（2026-09-05，排序字段已退役）：contribution 不再声明 `slot/order`（docs/PLUGIN.md §6
+> 「插件只声明身份、位置归宿主」）。全量列表排序改为 `featureId → entryId`；首屏顺序与默认玩法由宿主
+> `features/host.json` 声明并生成为 `GENERATED_HOST`；launch 增 `route` 形态（纯 feature 入口）；
+> codegen 另闸 entryId 全仓唯一与一 gameplayId 一贡献者。上文 `slot → order` 表述保留为历史设计记录。
+
 ⚠ 实施时必须明确写出：新玩法登记入口时**是否会碰** `features/built-in/feature.json`。若会碰，则
 §3.2 第 8 条与 §12.2 的「不再因玩法名修改中央清单」必须相应保留那条例外（已登记）；
 若不会碰（contribution 的手写真源在玩法自己的 manifest 里），则那条例外可以删除。⛔ 不能默认它是零成本。

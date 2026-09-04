@@ -132,6 +132,49 @@ test("failed 两条出路：显式 launch 重回 loading；自动重试上限后
     "显式用户意图必须允许 failed → loading，即使自动重试上限为 0");
 });
 
+test("dependencies：launch 先装依赖（顺序 = 声明序），依赖失败则本 feature failed 且不装；dispose 依赖方先拆", async () => {
+  const installed: string[] = [];
+  const disposed: string[] = [];
+  let baseFails = false;
+  const makeFeature = (id: string, dependencies: readonly string[] = []) => ({
+    id,
+    dependencies,
+    load: (): FeatureModule => ({
+      install: () => {
+        if (id === "base" && baseFails) throw new Error("base install failed");
+        installed.push(id);
+      },
+      dispose: () => { disposed.push(id); },
+    }),
+  });
+  const host = new FeatureHost([
+    makeFeature("top", ["mid", "base"]),
+    makeFeature("mid", ["base"]),
+    makeFeature("base"),
+    { id: "orphan", dependencies: ["nowhere"], load: (): FeatureModule => ({ install: () => { installed.push("orphan"); } }) },
+  ], { ports, appGeneration: 1 });
+
+  assert.equal(await host.launch("top"), "active");
+  assert.deepEqual(installed, ["base", "mid", "top"], "依赖先装：base → mid → top（重复依赖只装一次）");
+  for (const id of ["base", "mid", "top"]) assert.equal(host.statusOf(id), "active");
+  await host.disposeAll();
+  assert.deepEqual(disposed, ["top", "mid", "base"], "拆除按安装完成逆序：依赖方先拆");
+
+  // 依赖失败：本 feature failed 且自己的 install ⛔ 不执行；错误点名依赖。
+  baseFails = true;
+  installed.splice(0);
+  assert.equal(await host.launch("mid", { userIntent: true }), "failed");
+  assert.equal(host.statusOf("base"), "failed");
+  assert.equal(host.statusOf("mid"), "failed");
+  assert.deepEqual(installed, [], "依赖失败时依赖方的 install 不得执行");
+  assert.match(String(host.lastErrorOf("mid")), /依赖 base 不可用/u);
+
+  // 未托管的依赖：failed 并点名（⛔ 不静默跳过）。
+  assert.equal(await host.launch("orphan"), "failed");
+  assert.match(String(host.lastErrorOf("orphan")), /依赖 nowhere 未托管/u);
+  assert.deepEqual(installed, []);
+});
+
 test("dispose：按安装完成逆序执行且幂等；releaseIfIdle 常驻豁免、refcount 归零停用", async () => {
   const disposed: string[] = [];
   const makeFeature = (id: string) => ({

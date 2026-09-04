@@ -128,9 +128,11 @@ reconcile；新增玩法只新增 `modes/<id>/` 模块文件与自己的 logic/r
 1. `view/XxxView.ts`：结构绑定（codegen 维护四个 AUTO 区块）与手写接线。
 2. 同目录 `XxxView.view.json` sidecar：owner/layer/实例策略/logic 指向与手写契约段
    （manualRequired/nested/listItems/controllers/relations/assetUrls）的唯一手写真源。
-3. `features/<id>/feature.json`：把 sidecar、路由（group/restore 在 sidecar）与 Home 入口
-   contribution 登记进 feature；`npm --workspace @game/server run codegen:features` 据此生成
-   `src/generated/{views,fguiContracts,features}.generated.ts`。`view/viewRegistry.ts` 与
+3. `features/<id>/feature.json`：把 sidecar、路由（group/restore 在 sidecar）与入口
+   contribution（只有身份：entryId/label/labelKey/icon/launch，launch 可为 gameplay 或 route，
+   ⛔ 无 slot/order）登记进 feature；首屏入口顺序与默认玩法由宿主 `features/host.json` 声明
+   （docs/PLUGIN.md §6「位置归宿主」）；`npm --workspace @game/server run codegen:features` 据此生成
+   `src/generated/{views,fguiContracts,features}.generated.ts`（含 `GENERATED_HOST`）。`view/viewRegistry.ts` 与
    `view/fguiContracts.ts` 只是生成值的稳定 façade，⛔ 禁止手改。
 
 页面打开经 feature route / `app/NavigationService`；登录/选区/公告等既有页面的组合根在
@@ -254,8 +256,9 @@ apps/art/fairygui 中修改设计源
 
 GameRoom 的通用 join/leave ownership 与 mode adapter 契约位于 `net/rooms/GameRoomTransport.ts`；
 `BallMoveRoom.ts`、`IdleRoom.ts` 只把一个已捕获的物理 room 适配成各玩法能力。玩法启动目标经
-Home 菜单 contribution → `LaunchPort.launch` → AppRuntime launch 通道选择（`Main.gameplayId`
-只是默认 launch target 的 @property 兜底；删除属场景资产 diff，需 Creator）。adapter 必须把对应
+Home 菜单 contribution → `LaunchPort.launch` → AppRuntime launch 通道选择（gameplay target 进玩法，
+route target 经 FeatureHost 闸后打开 route；`Main.gameplayId` 只是默认 launch target 的开发调试
+@property 兜底，缺省 = `features/host.json` 的 defaultLaunch；删除属场景资产 diff，需 Creator）。adapter 必须把对应
 `mode`、生成的 state 类型/validator 和允许的 C2S 集合传给 Game join，不能依赖服务端默认值；
 Game join 信封（v8）必填 `mode/modeVersion/profile`——默认撮合由 `joinGameRoom` 按 catalog 注入，
 私房由 `net/rooms/PrivateRoomService.ts`（prepareCreate→create / resolve→joinById，携带 access

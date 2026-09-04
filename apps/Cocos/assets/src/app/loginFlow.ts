@@ -765,8 +765,8 @@ export async function openPromoHome(
 /**
  * 设置面板（docs/PLUGIN.md §6.1）：宿主固定区块 + 插件入口列表。
  *
- * 插件入口的数据源仍是 generated menu contribution（⛔ 无第二真源），但排序由
- * SettingsLogic 按 featureId 字母序重排——插件只声明入口身份，位置归宿主。
+ * 插件入口的数据源仍是 generated menu contribution（⛔ 无第二真源）：全量、featureId 字母序
+ * ——插件只声明入口身份；宿主决定的首屏位置是 Home 那一份（homeContributions），这里不看。
  * 可用性叠加与 launch 都复用 Home 那条 HomeMenuRuntime 接线（同一个 FeatureHost 闸）。
  */
 export async function openSettings(): Promise<NavRouteHandle> {
@@ -824,11 +824,11 @@ export async function openHome(
       if (!context.isActive()) return;
       return onEnterBattle();
     };
-    // §7.4 数据驱动入口：菜单唯一数据源是 generated contributions（FeatureRegistry
-    // 暴露，已按 slot → order → featureId → entryId 排序）；点击统一走
+    // §7.4 数据驱动入口：菜单唯一数据源是 generated contributions，**首屏顺序归宿主**
+    // （features/host.json → FeatureRegistry.homeContributions()，docs/PLUGIN.md §6）；点击统一走
     // LaunchPort.launch(target)（经 HomeMenuRuntime 接线），无宿主回退旧回调。
     // disabled/failed 是 FeatureHost 的运行时叠加层，不回写不可变 catalog。
-    const entries: HomeMenuEntryModel[] = appFeatureRegistry.menuContributions().map((item) => ({
+    const entries: HomeMenuEntryModel[] = appFeatureRegistry.homeContributions().map((item) => ({
       entryId: item.entryId,
       featureId: item.featureId,
       label: item.label,
