@@ -1,7 +1,8 @@
 import "./env-setup";
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
-import { kSnakeUser, zoneCtx } from "../../src/core/infra/keys";
+import { zoneCtx } from "../../src/core/infra/keys";
+import { kSnakeUser } from "../../src/rooms/modes/snake/keys";
 import { clientFor, closeRedis } from "../../src/core/infra/redisRoute";
 import { RedisDemoReliveEconomy } from "../../src/rooms/modes/snake/lifecycle";
 import { assertRedisUp, sleep, testUid } from "./helpers";

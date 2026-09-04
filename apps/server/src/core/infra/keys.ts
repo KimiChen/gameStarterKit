@@ -1,7 +1,8 @@
 /**
  * Redis key 构造器 —— 登记点与分类约束见 docs/SERVER.md §3/§12–§13。
  *
- * ⛔ 业务代码禁止手拼 key（09·R5：新增 key 必须先更新契约登记，再进本文件）。
+ * ⛔ 业务代码禁止手拼 key（09·R5：新增 key 必须先更新契约登记，再进构造器）。框架键定义在本文件；
+ * 玩法自有键 ⛔ 不进本文件，由下方 `kGameplay` 工厂在 `rooms/modes/<id>/keys.ts` 里构造。
  *
  * **项目前缀**：全部键带 `${PROJECT_ID}_` 运行时前缀（config.REDIS_KEY_PREFIX，缺省 `gono_`）：
  * 多项目共用一套 Redis 实例时按项目隔离，文档登记的是去前缀的逻辑键名。本文件是唯一拼接点。
@@ -14,6 +15,8 @@
  *   限流 `rl`（含登录 by-IP，前置区）、可靠流 `stream:*`（跨用户/跨区消费）、
  *   角色登记修复 `repair:character:due|attempts`（member 自带 serverId，调度不依赖区上下文）、
  *   通用幂等占位 `idem:{scope}:{key}`（非 uid 作用域；当前无调用点）。
+ * - **玩法自有键（`kGameplay`）**：分区语义由玩法在调用点显式选（`{ zone }`），⛔ 无缺省——
+ *   框架不替玩法猜，调用点在各玩法自己的 `rooms/modes/<id>/keys.ts` 里，⛔ 玩法名不进本文件。
  *
  * ⚠ 过渡期：`zoneCtx` 未设置即回退项目前缀（sId=0 语义，行为同现网）；多区硬化步改为
  * fail-fast + 全入口（LobbyRoom.messages / room / worker）`zoneCtx.run` 包裹，开 GROUP_ZONES 前必做。
@@ -53,12 +56,43 @@ const P = (): string => {
 /** 全局键前缀（不随区变，= 项目前缀）：sess / 限流 / 可靠流。 */
 const G = REDIS_KEY_PREFIX;
 
+// ── 玩法自有键工厂（玩法 key 由玩法自己在 rooms/modes/<id>/keys.ts 定义，
+//    中央本文件只提供构造器与分段契约，⛔ 不再逐玩法登记具名 key） ─────────────────
+
+/**
+ * 玩法键的分区语义。**⛔ 无隐式缺省**：跨区共享（global）与每区独立（per-zone）是两种互不兼容
+ * 的经济语义，不同玩法的取舍不同；给缺省值等于让其中一方静默拿错前缀（per-zone 写落基础前缀，
+ * 或 global 读被叠上 `s{sId}_`），而 sId=0 的单形态测试恰好测不出来（文件头 §3.5 分类风险）。
+ */
+export type GameplayKeyScope = { readonly zone: "per-zone" | "global" };
+
+/** 分段字面量闸：空串或含 `:` / `{` / `}` 会让 `gp:<modeId>:<name>` 变成可歧义前缀（两个玩法拼出同一物理键）。 */
+const assertGameplayKeySegment = (value: string, label: string): void => {
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(value)) {
+    throw new Error(`kGameplay ${label} "${value}" 非法：只允许 [A-Za-z0-9._-] 且首字符为字母数字（分段不得含 ':' / '{' / '}'）`);
+  }
+};
+
+/**
+ * 玩法自有 per-user 键：逻辑名 `gp:<modeId>:<name>:{uid}`（物理键再带项目前缀，per-zone 时另带区前缀）。
+ *
+ * ⚠ 分段顺序是契约（同 `kIdemUser`）：`gp:` 命名空间段把玩法键族与框架键族隔开（框架新增 `user:` /
+ * `bag:` 一类顶层名时永不与玩法撞名）、`modeId` 紧随其后（按玩法前缀 scan/清理的唯一依据）、
+ * **`{uid}` hash-tag 必须是末段**（09·R3 与该 uid 的框架键同槽）。⛔ 禁改分段或挪动末段。
+ *
+ * `scope.zone` 由调用方显式给：`"per-zone"` 走 `P()`（每区独立，同 kUser/kBag，继承其 fail-fast）；
+ * `"global"` 走 `G`（跨区共享单份，玩法自己承担「同一 uid 在任何区看到同一份」的语义）。
+ */
+export const kGameplay = (modeId: string, name: string, uid: string, scope: GameplayKeyScope): string => {
+  assertGameplayKeySegment(modeId, "modeId");
+  assertGameplayKeySegment(name, "name");
+  return `${scope.zone === "per-zone" ? P() : G}gp:${modeId}:${name}:{${uid}}`;
+};
+
 // ── durable 实例 · per-zone 键（P()：角色档 + 每区经济，09·R3 同 {uid} 槽） ──────────────
 
 /** 玩法档【真源】HASH，无 TTL。含 fence / ver / schemaVersion 字段。 */
 export const kUser = (uid: string) => `${P()}user:{${uid}}`;
-/** Snake demo user balance HASH (`coinBalance` only), no TTL and no sId segment. */
-export const kSnakeUser = (uid: string) => `${G}snake:user:{${uid}}`;
 /** 背包分片 HASH（field=itemId, value=count），无 TTL。shard = itemId % BAG_SHARDS。 */
 export const kBag = (uid: string, shard: number) => `${P()}bag:{${uid}}:${shard}`;
 /** 全部背包分片（Lua KEYS 用，顺序 = shard 0..N-1）。 */

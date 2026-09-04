@@ -1,8 +1,8 @@
 /** Snake personal-run economy boundary. Production always disables the demo adapter. */
 
 import { createHash } from "node:crypto";
-import { kSnakeUser } from "../../../core/infra/keys";
 import { clientFor } from "../../../core/infra/redisRoute";
+import { kSnakeUser } from "./keys";
 
 export const ONLINE_COIN_RELIVE_PLAYER_RELEASED = false;
 
