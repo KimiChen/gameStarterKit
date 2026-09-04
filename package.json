@@ -28,6 +28,7 @@
     "verify:ecs": "node scripts/verify-ecs.mjs",
     "verify:vendor": "node scripts/vendor-lock.mjs --check",
     "verify:fgui": "node scripts/fgui-manifest.mjs --check",
+    "verify:protected-paths": "node scripts/protected-paths-lock.mjs --check",
     "verify:inventory": "node scripts/verify-inventory.mjs",
     "test:inventory": "node --test scripts/verify-inventory.test.mjs",
     "test:launcher-matrix": "node --test scripts/launcher-matrix.test.mjs",
@@ -46,7 +47,7 @@
     "test:fgui": "cd apps/server && node --import tsx --test ../../scripts/fgui-manifest.test.mjs ../../scripts/fgui-roundtrip.test.mjs ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/fguiContract.test.ts ../client/test/viewRegistry.test.ts",
     "test:faults": "node scripts/fault-matrix.mjs",
     "test:faults:int": "node scripts/fault-matrix.mjs --integration",
-    "verify:core": "node scripts/verify-toolchain.mjs && npm run verify:project && npm run typecheck && npm run verify:ecs && npm run verify:vendor && npm run verify:fgui && npm run test:fgui && npm run verify:inventory && npm run test:inventory && npm run test:launcher-matrix && npm run test:npm-reference-matrix && npm run test:aggregate-chain-matrix && npm run test:sync-mirror-matrix && npm run test:toolchain-runtime-matrix && npm run verify:perf && npm run test:client",
+    "verify:core": "node scripts/verify-toolchain.mjs && npm run verify:project && npm run typecheck && npm run verify:ecs && npm run verify:vendor && npm run verify:fgui && npm run verify:protected-paths && npm run test:fgui && npm run verify:inventory && npm run test:inventory && npm run test:launcher-matrix && npm run test:npm-reference-matrix && npm run test:aggregate-chain-matrix && npm run test:sync-mirror-matrix && npm run test:toolchain-runtime-matrix && npm run verify:perf && npm run test:client",
     "verify:all": "npm run verify:core && npm --workspace @game/server run test"
   },
   "engines": {

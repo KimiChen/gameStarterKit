@@ -60,6 +60,12 @@ const CHECK_SCRIPT_EXEMPTIONS = {
   "scripts/vendor-lock.mjs":
     "其写模式是「重新祝福当前字节」而非从独立真源恢复镜像——本矩阵的源/镜像场景表不适用；"
     + "产物集合不匹配时写模式直接抛错（vendor-lock.mjs:205-209），覆盖由 vendor-lock.test.mjs 承担",
+  "scripts/protected-paths-lock.mjs":
+    "与 vendor-lock 同形：写模式是「重新祝福受保护文件的当前字节」，没有可供恢复的独立真源，"
+    + "因此本矩阵的核心断言（--check 红 ⟺ 同步会改动镜像）在它身上无从成立——它的 --write "
+    + "永远不会去改那些受保护文件，只会接受它们。判别力覆盖由 "
+    + "apps/client/test/protectedPathsLock.test.ts 承担（锁缺失/内容漂移/增删受保护文件"
+    + "各自点名、--check 只读、--write 幂等、空锁与畸形行 fail closed）",
   "scripts/fgui-manifest.mjs":
     "manifest 新鲜度闸，产物是单文件而非镜像树，覆盖由 scripts/fgui-manifest.test.mjs 承担",
   "tools/excel-to-json.mjs":

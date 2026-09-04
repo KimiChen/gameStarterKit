@@ -8,6 +8,7 @@ provenance——它们不是普通生成物，每一份都有显式的 writer �
 | --- | --- | --- | --- | --- |
 | `protected-paths.json` | 人工评审 | 人工（提交中显式声明改了哪条、为什么） | `apps/client/test/protectedPaths.test.ts` 无侵入矩阵（随 `npm run test:client` 进 `verify:core`） | 显式治理锁 |
 | `protocol.fingerprint` | `apps/shared/src/protocol/**` + 双协议身份整数 | `node scripts/protocol-fingerprint.mjs --write` | `--check` 与 `protocolFingerprint.test.ts` | 显式协议审计锁 |
+| `protected-paths.lock` | `protected-paths.json` 两组手写保护路径的当前字节 | `node scripts/protected-paths-lock.mjs --write` | `npm run verify:protected-paths`（`--check`） | 显式治理锁的执行力 |
 | `fgui.manifest.json` | FGUI 设计源、导出物与 View AUTO 区 | `node scripts/fgui-manifest.mjs --write` | `npm run verify:fgui` | 显式资源审计锁 |
 | `bitecs.sha256` | 上游 bitECS + 项目补丁 | 维护团队人工 | `npm run verify:ecs` | 内容锁 |
 | `vendor.sha256` | 锁定的 Colyseus/FairyGUI 运行时 | `fetch:*` 脚本（维护团队显式升级时） | `npm run verify:vendor` / `test:vendor` | 内容锁 |

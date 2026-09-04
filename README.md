@@ -108,6 +108,7 @@ WebPlatform**。要联调真实外部身份服务时，另行启动与当前契�
 | `npm run verify:sync` | 检查镜像漂移、孤儿，以及入库 `.meta` 的缺失、内容与 uuid 唯一性 |
 | `npm run verify:vendor` | 校验锁定的第三方运行时内容、文件集合和本地契约 tarball 完整性 |
 | `npm run verify:fgui` | 校验 FairyGUI 设计源、导出物和 View AUTO 区块 manifest |
+| `npm run verify:protected-paths` | 比对受保护手写路径的字节锁，改动未重钉即红 |
 | `npm run verify:inventory` | 校验能力清单、默认入口、文档和验证命令登记 |
 | `npm run test:inventory` | 在临时 checkout fixture 中验证能力清单漂移会被拒绝 |
 | `npm run test:launcher-matrix` | 逐条比对启动器判定与真实 bash/node 的行为，背离即失败 |
