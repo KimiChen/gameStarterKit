@@ -5,29 +5,24 @@ import {
     C2S_RUNTIME_VALIDATORS,
     ErrorCode,
     GAME_WIRE_OWNERS,
+    GAME_WIRE_PHASES,
+    GAMEPLAY_CATALOG,
     GamePhase,
     S2C,
     validateGameRoomState,
     validatePlayerState,
     validateS2CPayload,
     type C2SType,
+    type GamePhaseType,
     type S2CType,
 } from "@game/shared";
 import { GameRoom } from "../src/rooms/GameRoom";
-import { createBallMoveGameMode } from "../src/rooms/modes/ballMove/index";
-import { createIdleGameMode } from "../src/rooms/modes/IdleGameMode";
 import {
+    createRoomPlayerForMode,
     GameRoomState,
-    IdlePlayerState,
     PlayerState,
-    SnakePlayerState,
 } from "../src/rooms/schema/GameRoomState";
-
-type Vector = {
-    label: string;
-    value: unknown;
-    accepted: boolean;
-};
+import { discoverC2SVectors } from "./wire-vectors/index";
 
 function acceptedBy(validator: (value: unknown) => unknown, value: unknown): { accepted: boolean; data?: unknown } {
     try {
@@ -37,11 +32,44 @@ function acceptedBy(validator: (value: unknown) => unknown, value: unknown): { a
     }
 }
 
+/** wire owner 全集来自生成的 catalog；玩法 owner = core 之外的那些。⛔ 不手写玩法名。 */
+const GAMEPLAY_OWNERS = [...new Set(Object.values(GAME_WIRE_OWNERS))].filter((owner) => owner !== "core").sort();
+
+type CaptureHandler = (context: unknown, payload: unknown) => void;
+
+/**
+ * 玩法无关的探针 mode：commands 由该 owner 在 wire catalog 里的**全部** C2S token 自动
+ * 构造，player 走生成的 `createRoomPlayerForMode`，roster 上限取 catalog 的 maxPlayers。
+ *
+ * ⛔ 刻意不依赖任何玩法 mode 的真实实现：本矩阵只验 dispatcher 准入与归一化
+ * （owner 闸 / phase / exact validate 都是 shell 行为）。⛔ 也不得在这里写
+ * `owner === "<某玩法>"` 分支——那正是本轮要拆掉的耦合。
+ */
+function probeMode(owner: string, capture: (type: C2SType) => CaptureHandler) {
+    const entry = (GAMEPLAY_CATALOG as Readonly<Partial<Record<string, { readonly maxPlayers: number }>>>)[owner];
+    if (!entry) throw new Error(`[wire-contract] wire owner ${owner} 不在 GAMEPLAY_CATALOG 里`);
+    const commands: Record<string, CaptureHandler> = {};
+    for (const [type, tokenOwner] of Object.entries(GAME_WIRE_OWNERS)) {
+        if (tokenOwner === owner && type.startsWith("c2s.")) commands[type] = capture(type as C2SType);
+    }
+    return {
+        id: owner,
+        roster: { min: 1, max: entry.maxPlayers, autoStart: 1 },
+        createPlayer: ({ sessionId }: { sessionId: string }) => {
+            const player = createRoomPlayerForMode(owner);
+            player.id = sessionId;
+            player.name = `probe-${sessionId}`;
+            return player;
+        },
+        commands,
+    };
+}
+
 /**
  * 真 GameRoom + catch-all 单入口的行为探针。owner 分发是 wire catalog 的事实：
- * Move/CastSkill 只有 ballMove 房能收，IdlePulse 只有 idle 房能收，Ping/Chat 属 core
- * （任何 mode 的房都收）。玩法消息经 commands 捕获归一化 payload；core 消息按 shell
- * 行为断言（Ping→Pong 回包，Chat→广播）。
+ * 每条玩法消息只有它自己的 owner 房能收，Ping/Chat 属 core（任何 mode 的房都收）。
+ * 玩法消息经 commands 捕获归一化 payload；core 消息按 shell 行为断言（Ping→Pong 回包，
+ * Chat→广播）。owner/phase 全部读生成的 wire catalog，⛔ 无具名玩法分支。
  */
 function handledByGameRoom(type: C2SType, value: unknown): {
     captured: Array<{ type: C2SType; payload: unknown }>;
@@ -55,42 +83,16 @@ function handledByGameRoom(type: C2SType, value: unknown): {
         captured.push({ type: messageType, payload });
     };
     const owner = GAME_WIRE_OWNERS[type];
-    const mode = owner === "idle"
-        ? {
-            ...createIdleGameMode(),
-            commands: { [C2S.IdlePulse]: capture(C2S.IdlePulse) },
-        }
-        : owner === "snake"
-            ? {
-                // 探针 mode 只验 dispatcher 准入与归一化（owner 闸/phase/exact
-                // validate 都是 shell 行为，刻意不依赖 snake mode 的真实实现）。
-                id: "snake",
-                roster: { min: 1, max: 8, autoStart: 1 },
-                createPlayer: ({ sessionId }: { sessionId: string }) => {
-                    const player = new SnakePlayerState();
-                    player.id = sessionId;
-                    player.name = `probe-${sessionId}`;
-                    return player;
-                },
-                commands: {
-                    [C2S.SnakeInput]: capture(C2S.SnakeInput),
-                    [C2S.SnakeReliveDecision]: capture(C2S.SnakeReliveDecision),
-                    [C2S.SnakeEndRun]: capture(C2S.SnakeEndRun),
-                    [C2S.SnakeBaselineRequest]: capture(C2S.SnakeBaselineRequest),
-                },
-            }
-            : {
-            ...createBallMoveGameMode(),
-            commands: {
-                [C2S.Move]: capture(C2S.Move),
-                [C2S.CastSkill]: capture(C2S.CastSkill),
-            },
-        };
+    // core 消息在任何 mode 的房里都由 shell 处理；探针固定用排序后的第一个玩法 owner 承载。
+    const hostOwner = owner === "core" ? GAMEPLAY_OWNERS[0] : owner;
+    const mode = probeMode(hostOwner, capture);
     const room = new GameRoom({ seed: 1, clock: () => 0, mode: mode as never });
-    room.state.phase = owner === "core" ? GamePhase.Waiting : GamePhase.Playing;
+    // 玩法消息取该 token 自己声明的首个合法 phase；core 消息的 phase 规则归 shell。
+    const declaredPhases = (GAME_WIRE_PHASES as Readonly<Partial<Record<string, readonly GamePhaseType[]>>>)[type];
+    room.state.phase = declaredPhases?.[0] ?? GamePhase.Waiting;
     if (type === C2S.Chat) {
         // shell 的 Chat 广播要求发送者已入座（读 player.name）。
-        const player = owner === "idle" ? new IdlePlayerState() : new PlayerState();
+        const player = createRoomPlayerForMode(hostOwner);
         player.id = "wire-client";
         player.name = "契约探针";
         room.state.players.set(player.id, player as PlayerState);
@@ -112,161 +114,37 @@ function handledByGameRoom(type: C2SType, value: unknown): {
     return { captured, sent, broadcasts };
 }
 
-function symbolExtra(value: Record<string, unknown>): Record<string, unknown> {
-    (value as Record<PropertyKey, unknown>)[Symbol("extra")] = true;
-    return value;
-}
-
-const pingClass = class {
-    clientTime = 0;
-};
-const inheritedPing = Object.create({ clientTime: 0 }) as Record<string, unknown>;
-const nonEnumerablePing: Record<string, unknown> = {};
-Object.defineProperty(nonEnumerablePing, "clientTime", { value: 0, enumerable: false });
-
-const c2sVectors: Record<C2SType, readonly Vector[]> = {
-    [C2S.Ping]: [
-        { label: "zero", value: { clientTime: 0 }, accepted: true },
-        { label: "safe integer max", value: { clientTime: Number.MAX_SAFE_INTEGER }, accepted: true },
-        { label: "negative", value: { clientTime: -1 }, accepted: false },
-        { label: "unsafe integer", value: { clientTime: Number.MAX_SAFE_INTEGER + 1 }, accepted: false },
-        { label: "fraction", value: { clientTime: 1.5 }, accepted: false },
-        { label: "nan", value: { clientTime: Number.NaN }, accepted: false },
-        { label: "infinity", value: { clientTime: Number.POSITIVE_INFINITY }, accepted: false },
-        { label: "wrong type", value: { clientTime: "1" }, accepted: false },
-        { label: "missing", value: {}, accepted: false },
-        { label: "extra key", value: { clientTime: 0, extra: true }, accepted: false },
-        { label: "symbol key", value: symbolExtra({ clientTime: 0 }), accepted: false },
-        { label: "class instance", value: new pingClass(), accepted: false },
-        { label: "inherited required key", value: inheritedPing, accepted: false },
-        { label: "known non-enumerable key", value: nonEnumerablePing, accepted: true },
-        { label: "null prototype", value: Object.assign(Object.create(null), { clientTime: 0 }), accepted: true },
-    ],
-    [C2S.Move]: [
-        { label: "both lower", value: { dirX: -1, dirY: -1 }, accepted: true },
-        { label: "both upper", value: { dirX: 1, dirY: 1 }, accepted: true },
-        { label: "fraction", value: { dirX: 0.25, dirY: -0.25 }, accepted: true },
-        { label: "x below", value: { dirX: -1.01, dirY: 0 }, accepted: false },
-        { label: "y above", value: { dirX: 0, dirY: 1.01 }, accepted: false },
-        { label: "nan", value: { dirX: Number.NaN, dirY: 0 }, accepted: false },
-        { label: "infinity", value: { dirX: Number.POSITIVE_INFINITY, dirY: 0 }, accepted: false },
-        { label: "wrong type", value: { dirX: 0, dirY: "0" }, accepted: false },
-        { label: "missing", value: { dirX: 0 }, accepted: false },
-        { label: "extra key", value: { dirX: 0, dirY: 0, tick: 1 }, accepted: false },
-        { label: "symbol key", value: symbolExtra({ dirX: 0, dirY: 0 }), accepted: false },
-    ],
-    [C2S.IdlePulse]: [
-        { label: "empty object", value: {}, accepted: true },
-        { label: "null prototype", value: Object.create(null), accepted: true },
-        { label: "extra key", value: { count: 1 }, accepted: false },
-        { label: "symbol key", value: symbolExtra({}), accepted: false },
-        { label: "array", value: [], accepted: false },
-        { label: "null", value: null, accepted: false },
-    ],
-    [C2S.CastSkill]: [
-        { label: "skill lower", value: { skillId: 0 }, accepted: true },
-        { label: "skill upper", value: { skillId: 0xffff }, accepted: true },
-        { label: "target lower", value: { skillId: 1, targetId: "a" }, accepted: true },
-        { label: "target upper", value: { skillId: 1, targetId: "t".repeat(64) }, accepted: true },
-        { label: "explicit undefined target", value: { skillId: 1, targetId: undefined }, accepted: true },
-        { label: "skill negative", value: { skillId: -1 }, accepted: false },
-        { label: "skill above", value: { skillId: 0x10000 }, accepted: false },
-        { label: "skill fraction", value: { skillId: 1.5 }, accepted: false },
-        { label: "skill nan", value: { skillId: Number.NaN }, accepted: false },
-        { label: "target empty", value: { skillId: 1, targetId: "" }, accepted: false },
-        { label: "target overlong", value: { skillId: 1, targetId: "t".repeat(65) }, accepted: false },
-        { label: "target wrong type", value: { skillId: 1, targetId: 1 }, accepted: false },
-        { label: "extra key", value: { skillId: 1, tick: 1 }, accepted: false },
-        { label: "symbol key", value: symbolExtra({ skillId: 1 }), accepted: false },
-    ],
-    [C2S.Chat]: [
-        { label: "one character", value: { text: "x" }, accepted: true },
-        { label: "max length", value: { text: "x".repeat(100) }, accepted: true },
-        { label: "trimmed content", value: { text: " x " }, accepted: true },
-        { label: "empty", value: { text: "" }, accepted: false },
-        { label: "only spaces", value: { text: " ".repeat(100) }, accepted: false },
-        { label: "only control whitespace", value: { text: " \t\n" }, accepted: false },
-        { label: "overlong", value: { text: "x".repeat(101) }, accepted: false },
-        { label: "wrong type", value: { text: 1 }, accepted: false },
-        { label: "extra key", value: { text: "x", channel: "global" }, accepted: false },
-        { label: "symbol key", value: symbolExtra({ text: "x" }), accepted: false },
-    ],
-    // §10.1：Ready/Start payload 均 exact（去掉任一 exact-keys 断言 → 本矩阵转红）。
-    [C2S.RoomReady]: [
-        { label: "ready true", value: { ready: true }, accepted: true },
-        { label: "ready false", value: { ready: false }, accepted: true },
-        { label: "missing", value: {}, accepted: false },
-        { label: "wrong type", value: { ready: 1 }, accepted: false },
-        { label: "stringly bool", value: { ready: "true" }, accepted: false },
-        { label: "extra key", value: { ready: true, seat: 1 }, accepted: false },
-        { label: "symbol key", value: symbolExtra({ ready: true }), accepted: false },
-        { label: "null", value: null, accepted: false },
-    ],
-    [C2S.RoomStart]: [
-        { label: "empty object", value: {}, accepted: true },
-        { label: "null prototype", value: Object.create(null), accepted: true },
-        { label: "extra key", value: { force: true }, accepted: false },
-        { label: "symbol key", value: symbolExtra({}), accepted: false },
-        { label: "array", value: [], accepted: false },
-        { label: "null", value: null, accepted: false },
-    ],
-    // SnakeInput（03 §4.1）：方向 [-1,1] 连续值 + boost 布尔 + seq 严格递增整数。
-    [C2S.SnakeInput]: [
-        { label: "zero vector", value: { dirX: 0, dirY: 0, boost: false, seq: 0 }, accepted: true },
-        { label: "fraction direction", value: { dirX: 0.5, dirY: -0.5, boost: true, seq: 1 }, accepted: true },
-        { label: "both bounds", value: { dirX: -1, dirY: 1, boost: false, seq: 2 }, accepted: true },
-        { label: "dir below", value: { dirX: -1.01, dirY: 0, boost: false, seq: 0 }, accepted: false },
-        { label: "dir above", value: { dirX: 0, dirY: 1.01, boost: false, seq: 0 }, accepted: false },
-        { label: "dir nan", value: { dirX: Number.NaN, dirY: 0, boost: false, seq: 0 }, accepted: false },
-        { label: "dir infinity", value: { dirX: 0, dirY: Number.POSITIVE_INFINITY, boost: false, seq: 0 }, accepted: false },
-        { label: "boost wrong type", value: { dirX: 0, dirY: 0, boost: 1, seq: 0 }, accepted: false },
-        { label: "seq negative", value: { dirX: 0, dirY: 0, boost: false, seq: -1 }, accepted: false },
-        { label: "seq fraction", value: { dirX: 0, dirY: 0, boost: false, seq: 1.5 }, accepted: false },
-        { label: "missing seq", value: { dirX: 0, dirY: 0, boost: false }, accepted: false },
-        { label: "extra key", value: { dirX: 0, dirY: 0, boost: false, seq: 0, tick: 1 }, accepted: false },
-        { label: "symbol key", value: symbolExtra({ dirX: 0, dirY: 0, boost: false, seq: 0 }), accepted: false },
-    ],
-    [C2S.SnakeReliveDecision]: [
-        { label: "accept", value: { runId: "run-1", deathSeq: 1, clientReqId: "req-1", decision: "accept" }, accepted: true },
-        { label: "decline", value: { runId: "run-1", deathSeq: 2, clientReqId: "req-2", decision: "decline" }, accepted: true },
-        { label: "zero death", value: { runId: "run-1", deathSeq: 0, clientReqId: "req-1", decision: "accept" }, accepted: false },
-        { label: "unknown decision", value: { runId: "run-1", deathSeq: 1, clientReqId: "req-1", decision: "later" }, accepted: false },
-        { label: "extra key", value: { runId: "run-1", deathSeq: 1, clientReqId: "req-1", decision: "accept", coinCost: 1 }, accepted: false },
-    ],
-    [C2S.SnakeEndRun]: [
-        { label: "valid", value: { runId: "run-1", clientReqId: "req-1" }, accepted: true },
-        { label: "empty run", value: { runId: "", clientReqId: "req-1" }, accepted: false },
-        { label: "missing request", value: { runId: "run-1" }, accepted: false },
-        { label: "extra key", value: { runId: "run-1", clientReqId: "req-1", force: true }, accepted: false },
-    ],
-    [C2S.SnakeBaselineRequest]: [
-        { label: "initial", value: { roomEpochId: "epoch-1", afterSeq: 0 }, accepted: true },
-        { label: "resume", value: { roomEpochId: "epoch-1", afterSeq: 7 }, accepted: true },
-        { label: "negative seq", value: { roomEpochId: "epoch-1", afterSeq: -1 }, accepted: false },
-        { label: "empty epoch", value: { roomEpochId: "", afterSeq: 0 }, accepted: false },
-        { label: "extra key", value: { roomEpochId: "epoch-1", afterSeq: 0, baselineId: "x" }, accepted: false },
-    ],
-};
-
 test("GameRoom C2S boundary is sourced from the generated wire catalog", () => {
     const room = new GameRoom({ seed: 1, clock: () => 0 });
-    // 三方一致：wire catalog 的 C2S 键集 == runtime validator 键集 == 本向量矩阵覆盖集。
+    const discovered = discoverC2SVectors();
+    // 归属闸：每份 sidecar 只装自己 owner 的消息（放错文件 = 下一次按 owner 找向量时找不到）。
+    for (const [type, entry] of discovered) {
+        assert.equal(
+            (GAME_WIRE_OWNERS as Readonly<Partial<Record<string, string>>>)[type],
+            entry.owner,
+            `${type} 的向量放错了 sidecar 文件（wire-vectors/${entry.owner}.ts）`,
+        );
+    }
+    // 三方一致：wire catalog 的 C2S 键集 == runtime validator 键集 == 发现到的向量并集。
     const catalogC2S = Object.keys(GAME_WIRE_OWNERS).filter((type) => type.startsWith("c2s."));
     assert.deepEqual(
         catalogC2S.sort(),
         Object.keys(C2S_RUNTIME_VALIDATORS).sort(),
         "wire catalog and shared validators must register the same C2S message set",
     );
+    // ⚠ 双向 deepEqual，⛔ 不许弱化成「向量可选」：少一条向量与多一条无向量的 validator
+    //   都必须红（判别力实测见本轮 commit message）。
     assert.deepEqual(
-        Object.keys(c2sVectors).sort(),
+        [...discovered.keys()].sort(),
         Object.keys(C2S_RUNTIME_VALIDATORS).sort(),
-        "the vector matrix must cover the complete C2S message set",
+        "wire-vectors/ 发现到的向量并集必须与 C2S validator 全集双向相等",
     );
     // 阶段 2b：房间只注册 catch-all 单入口，任何具名 handler 都是绕闸暗道。
     assert.deepEqual(Object.keys(room.messages), ["_"]);
 
-    for (const [rawType, vectors] of Object.entries(c2sVectors)) {
+    for (const [rawType, entry] of discovered) {
         const type = rawType as C2SType;
+        const vectors = entry.value;
         const shared = C2S_RUNTIME_VALIDATORS[type] as (value: unknown) => unknown;
         for (const vector of vectors) {
             const sharedResult = acceptedBy(shared, vector.value);
