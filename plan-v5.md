@@ -151,14 +151,14 @@ verify:sync 镜像一致、inventory 全绿）；`test:int` 169/169（本地真 
 `lobbyRpcVectors/index.generated.ts`、`kFeatureUser`/`kFeatureShared`、插件命令
 `npm --workspace @game/server run plugin -- pack|install|uninstall|check`（所有权推导 allowlist +
 `scripts/plugins/<id>.lock`）、宿主 placement `features/host.json`（slot/order 退役、`launch.kind:"route"`、
-FeatureHost 按 `dependencies` 装载）。⛔ 本表只登记仍开放的项。
+FeatureHost 按 `dependencies` 装载）、feature 侧域契约闸（`LOBBY_RPC_DOMAIN_CONTRACTS`）。⛔ 本表只登记仍开放的项。
 
 | # | 条目 | 现状 / 为什么留着 | 出处 |
 |---|---|---|---|
 | E1 | `launch.profile`：一个玩法多房型入口 | 入口 gameplay launch 不带房型；客户端各玩法 joiner 写死 profile（`apps/client/src/net/rooms/SnakeRoom.ts`）。补丁：生成器加可选字段 → AppRuntime 传下去 → joiner 按 target 选 profile。PLUGIN-REVIEW F19 判定当前分层是有意接缝，非断点 | PLUGIN.md §9.1 |
 | E2 | i18n / LocalizePort 契约 | `labelKey` 有字段无实现，渲染用硬编码 `label`；缺 LocalizePort 契约与 locales 载体。必须先于第一个第三方插件落地，否则每个插件硬编码一种语言 | PLUGIN.md §9.3 / PLUGIN-REVIEW F28 |
 | E3 | 框架默认加载页 | 全新 route，与 FGUI 包预热策略绑定（本仓 FGUI 包只有加载路径无卸载路径） | PLUGIN.md §6.2 (2) |
-| E4 | feature 侧契约闸 | codegen 层「域 descriptor digest 变化 ⇒ 必须 bump contractVersion」（与 gameplay digest/modeVersion 闸对称）；join 信封侧比对属协议 PR（Non-intrusive §4.8） | PLUGIN.md §9.5 / PLUGIN-REVIEW F14 |
+| E4 | join 信封侧的 feature 契约比对 | codegen 层域契约闸已落地（`LOBBY_RPC_DOMAIN_CONTRACTS`）；Lobby join 仍只比对 `LOBBY_PROTOCOL_VERSION`，域契约变化是否 bump 该整数是人工决策（Non-intrusive §4.8 ⛔ 不各自新增版本闸） | PLUGIN.md §9.5 / PLUGIN-REVIEW F14 |
 | E5 | 第一个真实插件的端到端实证 | 命令与闸门只由隔离 fixture 驱动（`plugin-tool.test.ts`）；尚无仓外真实包走完 pack → install → verify:all → Creator 确认 | PLUGIN.md §5.4 |
 
 `PrivateRoomLobby` 模板仍是 B3（编辑器待办），不重复登记。

@@ -20,6 +20,8 @@
  *  - 重复 domain/route/error/push id（含大小写归一化）、路径越界、符号链接逃逸拒绝；
  *  - domain 文件形态违规（computed/spread/顶层副作用）由 astReader 点名拒绝；
  *  - 已登记域的源文件消失必须显式 `--allow-delete <域>`；
+ *  - 域契约闸：`domains/<域>.ts` 字节 digest 变化必须伴随 defineLobbyRpcDomain 的 contractVersion 递增
+ *    （registry 渲染 LOBBY_RPC_DOMAIN_CONTRACTS 作为历史记录；与 gameplay 的 modeVersion 闸对称）；
  *  - 生成文件带「AUTO-GENERATED … Do not edit」抬头与来源。
  *
  * ⚠ 与 gameplay-codegen 相同的职责偏差（docs/Non-intrusive.md §5.5 已登记）：生成器住在
@@ -29,6 +31,7 @@
  * ⚠ registry 落在 protocol/ 内 ⇒ `--write` 后必须 `node scripts/protocol-fingerprint.mjs --write`
  * 重钉协议指纹（--check ⛔ 不碰指纹，那是显式审计锁）。
  */
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
@@ -74,9 +77,18 @@ export type FeatureCodegenOptions = {
   readonly allowDelete?: readonly string[];
 };
 
+/** 域契约身份：`domains/<域>.ts` 的字节 digest + 人工 contractVersion（与 gameplay 的 contractDigest/modeVersion 对称）。 */
+export type DomainContract = {
+  readonly domain: string;
+  readonly contractVersion: number;
+  readonly digest: string;
+};
+
 export type FeatureDescriptors = {
   readonly domains: readonly DomainDeclaration[];
   readonly core: CoreErrorsDeclaration;
+  /** 按域名排序；与 domains 同集。 */
+  readonly contracts: readonly DomainContract[];
 };
 
 export type FeatureWriteResult = {
@@ -119,6 +131,7 @@ export function readFeatureDescriptors(options: FeatureCodegenOptions = {}): Fea
     .map((entry) => entry.name)
     .sort();
   const domains: DomainDeclaration[] = [];
+  const contracts: DomainContract[] = [];
   const seenNormalized = new Map<string, string>();
   for (const name of entries) {
     const label = `${DOMAINS_DIR_RELATIVE}/${name}`;
@@ -132,10 +145,16 @@ export function readFeatureDescriptors(options: FeatureCodegenOptions = {}): Fea
     if (clash) fail(label, `域名与 "${clash}" 大小写归一化后冲突`);
     seenNormalized.set(normalized, id);
 
-    const declaration = parseDomainModule(fs.readFileSync(file, "utf8"), label);
+    const bytes = fs.readFileSync(file);
+    const declaration = parseDomainModule(bytes.toString("utf8"), label);
     if (declaration.domain !== id) {
       fail(label, `descriptor.domain ("${declaration.domain}") 必须等于文件名 ("${id}")`);
     }
+    contracts.push({
+      domain: id,
+      contractVersion: declaration.contractVersion,
+      digest: crypto.createHash("sha256").update(bytes).digest("hex"),
+    });
     for (const route of declaration.routes) {
       const prefix = `${id}.`;
       if (!route.type.startsWith(prefix) || !ROUTE_METHOD.test(route.type.slice(prefix.length))) {
@@ -159,7 +178,45 @@ export function readFeatureDescriptors(options: FeatureCodegenOptions = {}): Fea
   assertErrorCodeOrderPin(domains, core);
   assertOperationGroupOwnership(domains);
   assertImportSymbolUniqueness(domains, core);
-  return { domains, core };
+  contracts.sort((left, right) => (left.domain < right.domain ? -1 : 1));
+  return { domains, core, contracts };
+}
+
+// ── 域契约闸（digest 变化必须伴随 contractVersion 递增；与 gameplay-codegen 的 modeVersion 闸对称）──
+
+/** 从既有 registry 生成物恢复 per-domain 契约记录（生成物格式由本生成器唯一拥有；解析不动 = 无历史）。 */
+export function previousDomainContracts(options: FeatureCodegenOptions = {}): ReadonlyMap<string, DomainContract> {
+  const file = path.join(resolvedRoot(options), REGISTRY_RELATIVE);
+  const records = new Map<string, DomainContract>();
+  if (!fs.existsSync(file)) return records;
+  const text = fs.readFileSync(file, "utf8");
+  const entry = /^ {4}([A-Za-z0-9]+): \{ contractVersion: (\d+), digest: "([0-9a-f]{64})" \},$/gmu;
+  for (const match of text.matchAll(entry)) {
+    records.set(match[1], { domain: match[1], contractVersion: Number(match[2]), digest: match[3] });
+  }
+  return records;
+}
+
+/**
+ * 域 descriptor 的字节 digest 变化必须伴随 `contractVersion` 递增；首次生成（无旧记录）放行。
+ * 这是 feature 侧唯一的契约变更确认位（PLUGIN.md §9）：改了 request/response/错误码/推送而不 bump，
+ * writer 与只读闸都拒绝并点名——⛔ 不做「注释也算」的豁免：digest 与 gameplay 的 wire.ts 同口径按字节算。
+ */
+export function assertDomainContractVersionBumped(
+  descriptors: FeatureDescriptors,
+  previous: ReadonlyMap<string, DomainContract>,
+): void {
+  for (const contract of descriptors.contracts) {
+    const record = previous.get(contract.domain);
+    if (!record) continue;
+    if (record.digest === contract.digest) continue;
+    if (contract.contractVersion > record.contractVersion) continue;
+    fail(
+      `${DOMAINS_DIR_RELATIVE}/${contract.domain}.ts`,
+      `domain contract digest changed but contractVersion did not increase (kept ${contract.contractVersion}, `
+      + `previous ${record.contractVersion}). Bump contractVersion in defineLobbyRpcDomain({ domain: "${contract.domain}", contractVersion: ${record.contractVersion + 1}, … })`,
+    );
+  }
 }
 
 function assertCrossDescriptorUniqueness(domains: readonly DomainDeclaration[], core: CoreErrorsDeclaration): void {
@@ -490,6 +547,13 @@ function renderRegistry(descriptors: FeatureDescriptors): string {
   for (const route of routes) lines.push(`    "${route.type}": ${route.contractVersion},`);
   lines.push("};");
   lines.push("");
+  lines.push("/** 域契约身份（codegen 闸：domains/<域>.ts 的 sha256 变化必须伴随 contractVersion 递增；⛔ 不进 wire）。 */");
+  lines.push("export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly contractVersion: number; readonly digest: string } } = {");
+  for (const contract of descriptors.contracts) {
+    lines.push(`    ${contract.domain}: { contractVersion: ${contract.contractVersion}, digest: ${JSON.stringify(contract.digest)} },`);
+  }
+  lines.push("};");
+  lines.push("");
 
   const groupRoutes = idemRoutes.filter((route) => route.operationGroup !== null);
   lines.push("/** idempotent-write 路由 → operation group（§6.13 inspect 机制的元数据；未声明不入表）。 */");
@@ -742,6 +806,7 @@ function diffArtifacts(root: string, expected: ReadonlyMap<string, string>): {
 export function assertFeatureArtifactsFresh(options: FeatureCodegenOptions = {}): void {
   const root = resolvedRoot(options);
   const descriptors = readFeatureDescriptors(options);
+  assertDomainContractVersionBumped(descriptors, previousDomainContracts(options));
   const catalog = readViewCatalog(root);
   const expected = renderFeatureArtifacts(descriptors, catalog);
   assertWriterOutputSetSafe([...expected.keys()]);
@@ -772,6 +837,7 @@ export function writeFeatureArtifacts(options: FeatureCodegenOptions = {}): Feat
   const root = resolvedRoot(options);
   const allowDelete = new Set(options.allowDelete ?? []);
   const descriptors = readFeatureDescriptors(options);
+  assertDomainContractVersionBumped(descriptors, previousDomainContracts(options));
   const catalog = readViewCatalog(root);
   const currentIds = new Set(descriptors.domains.map((domain) => domain.domain));
   const removed = previousRegistryDomains(options).filter((id) => !currentIds.has(id));
