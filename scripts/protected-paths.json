@@ -42,7 +42,8 @@
     "prose": {
       "doc": "docs/Non-intrusive.md",
       "section": "12.2",
-      "note": "§12.2 边界（『不再因玩法名发生修改』）的机读化 + 阶段 9 收敛后的等价保护点。§12.2 点名的 Main.ts / pages.ts / Home 已在 featureFlow.paths，此处不重复。"
+      "marker": "新增普通玩法的动线中，不应再修改：",
+      "note": "§12.2 边界（『不再因玩法名发生修改』）的机读化 + 阶段 9 收敛后的等价保护点。§12.2 点名的 Main.ts / pages.ts / Home 已在 featureFlow.paths，此处不重复。 本清单与 §12.2 的散文块由无侵入矩阵做双向 deepEqual，⛔ 单方面增删即红。"
     },
     "paths": [
       "apps/shared/src/protocol/messages.ts",

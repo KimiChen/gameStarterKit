@@ -2957,6 +2957,25 @@ apps/client/src/app/**
 只剩可预测的 generated catalog、协议指纹、FGUI 清单和镜像；这就是本项目在静态 TypeScript + Cocos 技术栈下
 可验证、可维护的“更多无侵入性”。
 
+新增普通玩法的动线中，不应再修改：
+
+```text
+apps/shared/src/protocol/messages.ts
+apps/server/src/rooms/GameRoom.ts
+apps/server/src/rooms/GameMode.ts
+apps/client/src/net/RoomClient.ts
+apps/client/src/net/rooms/GameRoomTransport.ts
+apps/client/src/gameplay/catalog.ts
+apps/client/src/gameplay/services.ts
+apps/client/src/logic/gameplay/**
+```
+
+⚠ 本块是 `scripts/protected-paths.json` 的 `gameplayFlow.paths` 的散文视图，由无侵入矩阵做**双向
+deepEqual**——任一侧单方面增删即红（⛔ 堵住「先从规则文件删条目、再重钉 `protected-paths.lock`」
+这条绕过路径）。§12.2 点名的 `Main.ts` / `pages.ts` / Home 属 feature 动线，列在 §11.3 的清单里，
+此处不重复。
+
+
 两条边界要一起记住：**本清单约束的是「新增普通玩法 / feature」的动线**，§9 的框架改造阶段本身属于**显式框架侵入**，
 不适用本清单；而「Home 可见入口」的登记按 §3.2 第 8 条是唯一例外。保护集合的机检真源见 §8.5，
 ⛔ 本节散文不是第二真源。
