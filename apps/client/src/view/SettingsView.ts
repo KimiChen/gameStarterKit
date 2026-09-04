@@ -1,0 +1,207 @@
+/**
+ * 设置面板（`kind:"cocos"` 纯节点页，⛔ 无 FGUI 资源）。
+ *
+ * ⚠ 手搓粗糙版：FGUI 编辑器当前不可用，这版用 Cocos 节点直接堆（先例
+ * SnakeWorldView）。目标是**能跑能点**，视觉后续出图再换 FGUI 实现——所以这里没有
+ * 九宫、没有字体、没有滚动容器，只有 Graphics 色块 + Label。
+ *
+ * 布局取 750×1624 设计基线的**相对定位**：一切坐标由 `layerWidth/layerHeight` 按比例
+ * 算出（CocosView 挂载时按层容器尺寸铺满），⛔ 不写死像素、不贴边（留安全区）。
+ * 行数超过面板高度时按行数等分行高——⛔ 没有滚动，这是本版已知的粗糙点。
+ *
+ * 分工（铁律 9）：本文件只管节点与事件；两个区块的数据、排序、可用性叠加与
+ * 失败回滚全在 logic/page/SettingsLogic.ts。
+ */
+import { Color, Graphics, Label, Node, UITransform } from "cc";
+import { CocosView } from "./CocosView";
+import type { SettingsLogic } from "../logic/page/SettingsLogic";
+
+const SCRIM = new Color(6, 9, 18, 190);
+const PANEL = new Color(24, 30, 44, 245);
+const ROW = new Color(38, 46, 66, 255);
+const ROW_OFF = new Color(30, 34, 44, 255);
+const ACCENT = new Color(70, 130, 210, 255);
+const TEXT = new Color(238, 243, 255, 255);
+const DIM = new Color(132, 143, 166, 255);
+const WARN = new Color(240, 176, 96, 255);
+
+export class SettingsView extends CocosView {
+    /** 关闭按钮回调（opener 注入 handle.close()）。 */
+    onClose: () => void | Promise<void> = () => {};
+
+    private content: Node | null = null;
+    private contentWidth = 0;
+    private contentHeight = 0;
+    private logic: SettingsLogic | null = null;
+
+    /**
+     * ⚠ 节点在 **onOpen** 里搭，不在 onCreate：ViewMgr 的事务序是
+     * runCreate → mount → runOpen，`layerWidth/layerHeight` 要挂载后才有值。
+     */
+    protected onOpen(): void {
+        this.buildChrome();
+        this.render();
+    }
+
+    /** 接线：渲染两个区块，并把 Logic 的重绘通知接到本视图。 */
+    setup(logic: SettingsLogic): void {
+        this.logic = logic;
+        logic.onChanged = () => this.render();
+        this.render();
+    }
+
+    protected onCloseLifecycle(): void {
+        if (this.logic) this.logic.onChanged = () => {};
+        this.logic = null;
+    }
+
+    // ── 节点搭建 ──────────────────────────────────────────────────────────
+
+    private buildChrome(): void {
+        for (const child of [...this.root.children]) {
+            child.removeFromParent();
+            child.destroy();
+        }
+        const width = this.layerWidth;
+        const height = this.layerHeight;
+        // 全屏压暗层：同时充当「点面板外不穿透到首屏」的挡板。
+        this.plate(this.root, width, height, SCRIM, 0, 0);
+
+        const panelWidth = width * 0.88;
+        const panelHeight = height * 0.84;
+        const panel = this.node("panel", this.root, panelWidth, panelHeight);
+        this.plate(panel, panelWidth, panelHeight, PANEL, 0, 0);
+
+        const titleY = panelHeight * 0.5 - panelHeight * 0.05;
+        this.label(panel, "设置", Math.round(width * 0.048), TEXT, -panelWidth * 0.5 + panelWidth * 0.06, titleY);
+        this.button(panel, "关闭", panelWidth * 0.2, panelHeight * 0.07,
+            panelWidth * 0.5 - panelWidth * 0.13, titleY,
+            () => this.observeAsync(() => this.onClose(), "settings-close"));
+
+        this.contentWidth = panelWidth;
+        this.contentHeight = panelHeight * 0.84;
+        const content = this.node("content", panel, this.contentWidth, this.contentHeight);
+        content.setPosition(0, -panelHeight * 0.05, 0);
+        this.content = content;
+    }
+
+    /** 每次数据变化整块重建行（粗糙版取舍：⛔ 无差量更新，面板行数很少）。 */
+    private render(): void {
+        const content = this.content;
+        const logic = this.logic;
+        if (!content || !logic) return;
+        for (const child of [...content.children]) {
+            child.removeFromParent();
+            child.destroy();
+        }
+
+        const toggles = logic.audioToggles();
+        const placeholders = logic.placeholders();
+        const entries = logic.pluginEntries();
+        const notice = logic.noticeText();
+        // 行数 = 2 个区块标题 + 音频开关 + 占位项 + 插件入口（空列表也占一行提示）+ 提示行
+        const rows = 2 + toggles.length + placeholders.length + Math.max(1, entries.length) + 1;
+        const width = this.contentWidth;
+        const height = this.contentHeight;
+        const rowHeight = height / rows;
+        const rowWidth = width * 0.88;
+        let index = 0;
+        const nextY = (): number => height * 0.5 - rowHeight * (index++ + 0.5);
+
+        this.sectionLabel(content, "宿主固定项（⛔ 插件不可提供）", rowWidth, nextY());
+        for (const toggle of toggles) {
+            const y = nextY();
+            const row = this.row(content, rowWidth, rowHeight, y, toggle.pending ? ROW_OFF : ROW);
+            this.label(row, toggle.label, Math.round(rowHeight * 0.42), TEXT, -rowWidth * 0.5 + rowWidth * 0.05, 0);
+            const state = toggle.pending ? "保存中…" : (toggle.on ? "开" : "关");
+            this.button(row, state, rowWidth * 0.24, rowHeight * 0.72, rowWidth * 0.5 - rowWidth * 0.16, 0,
+                () => this.observeAsync(() => logic.toggleAudio(toggle.key), "settings-audio"),
+                toggle.on ? ACCENT : ROW_OFF, toggle.pending);
+        }
+        for (const item of placeholders) {
+            const y = nextY();
+            // 置灰占位：⛔ 不注册任何点击回调——点不动就是「没实现」最诚实的表达。
+            const row = this.row(content, rowWidth, rowHeight, y, ROW_OFF);
+            this.label(row, item.label, Math.round(rowHeight * 0.4), DIM, -rowWidth * 0.5 + rowWidth * 0.05, rowHeight * 0.16);
+            this.label(row, item.reason, Math.round(rowHeight * 0.26), DIM, -rowWidth * 0.5 + rowWidth * 0.05, -rowHeight * 0.18);
+        }
+
+        this.sectionLabel(content, "插件入口（featureId 字母序）", rowWidth, nextY());
+        if (entries.length === 0) {
+            this.label(content, "（当前没有登记任何插件入口）", Math.round(rowHeight * 0.32), DIM, 0, nextY());
+        }
+        for (const entry of entries) {
+            const y = nextY();
+            const row = this.row(content, rowWidth, rowHeight, y, entry.enabled ? ROW : ROW_OFF);
+            this.label(row, `${entry.label}  ·  ${entry.featureId}`, Math.round(rowHeight * 0.4),
+                entry.enabled ? TEXT : DIM, -rowWidth * 0.5 + rowWidth * 0.05, entry.enabled ? 0 : rowHeight * 0.16);
+            if (entry.enabled) {
+                this.button(row, "进入", rowWidth * 0.22, rowHeight * 0.72, rowWidth * 0.5 - rowWidth * 0.15, 0,
+                    () => this.observeAsync(() => logic.activate(entry.entryId), "settings-launch"), ACCENT);
+            } else {
+                this.label(row, entry.disabledReason ?? "不可用", Math.round(rowHeight * 0.26), WARN,
+                    -rowWidth * 0.5 + rowWidth * 0.05, -rowHeight * 0.18);
+                // 不可用条目置灰但保留显式「重试」——走的仍是同一条 launch 通道。
+                this.button(row, "重试", rowWidth * 0.22, rowHeight * 0.72, rowWidth * 0.5 - rowWidth * 0.15, 0,
+                    () => this.observeAsync(() => logic.retry(entry.entryId), "settings-retry"), WARN);
+            }
+        }
+
+        this.label(content, notice, Math.round(rowHeight * 0.32), WARN, 0, nextY());
+    }
+
+    // ── 小件 ─────────────────────────────────────────────────────────────
+
+    private node(name: string, parent: Node, width: number, height: number): Node {
+        const node = new Node(name);
+        node.layer = parent.layer;
+        const transform = node.addComponent(UITransform);
+        transform.width = width;
+        transform.height = height;
+        parent.addChild(node);
+        return node;
+    }
+
+    private plate(parent: Node, width: number, height: number, color: Color, x: number, y: number): Node {
+        const node = this.node("plate", parent, width, height);
+        node.setPosition(x, y, 0);
+        const graphics = node.addComponent(Graphics);
+        graphics.fillColor = color;
+        graphics.rect(-width / 2, -height / 2, width, height);
+        graphics.fill();
+        return node;
+    }
+
+    private row(parent: Node, width: number, height: number, y: number, color: Color): Node {
+        const node = this.node("row", parent, width, height * 0.86);
+        node.setPosition(0, y, 0);
+        this.plate(node, width, height * 0.86, color, 0, 0);
+        return node;
+    }
+
+    private sectionLabel(parent: Node, text: string, width: number, y: number): void {
+        this.label(parent, text, Math.round(width * 0.045), ACCENT, -width * 0.5 + width * 0.02, y);
+    }
+
+    private label(parent: Node, text: string, size: number, color: Color, x: number, y: number): Label {
+        const node = this.node("label", parent, size * Math.max(1, text.length), size * 1.4);
+        node.setPosition(x, y, 0);
+        const label = node.addComponent(Label);
+        label.string = text;
+        label.fontSize = size;
+        label.color = color;
+        return label;
+    }
+
+    private button(
+        parent: Node, text: string, width: number, height: number, x: number, y: number,
+        onTap: () => void, color: Color = ACCENT, grayed = false,
+    ): Node {
+        const node = this.node(`btn-${text}`, parent, width, height);
+        node.setPosition(x, y, 0);
+        this.plate(node, width, height, grayed ? ROW_OFF : color, 0, 0);
+        this.label(node, text, Math.round(height * 0.44), grayed ? DIM : TEXT, 0, 0);
+        if (!grayed) node.on(Node.EventType.TOUCH_END, onTap, this);
+        return node;
+    }
+}
