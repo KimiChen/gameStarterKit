@@ -10,7 +10,9 @@
  * 产物（全部经 lib.ts 的原子写盘与 freshness 闸）：
  *  - `apps/client/src/generated/fguiContracts.generated.ts`：FguiContract 全集；
  *  - `apps/client/src/generated/views.generated.ts`：不可变 View catalog（load 是字面量
- *    动态 import，铁律 10）+ View 源文件清单（fgui-manifest.mjs 与守门测试的路径单源）；
+ *    动态 import，铁律 10）+ View 源文件清单（fgui-manifest.mjs 与守门测试的路径单源）。
+ *    ⚠ catalog 收录面 = FGUI 页面 ∪ **被 feature routes 引用的** cocos View；未被引用的
+ *    cocos View（BallMove/SnakeWorld 这类玩法表现件）只进源文件清单，不进 catalog；
  *  - `apps/client/src/generated/features.generated.ts`：feature/route/menu contribution 数据
  *    （menu 排序 slot → order → featureId → entryId）。
  *
@@ -598,7 +600,7 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
     walk(base);
   }
 
-  // route 校验：view 必须是已登记 fgui View，group/restore 由其 sidecar 声明。
+  // route 校验：view 必须是已登记 View（fgui 或 cocos 均可），group/restore 由其 sidecar 声明。
   const entryByName = new Map(entries.map((entry) => [entry.name, entry]));
   const routeIds = new Map<string, string>();
   const routeViews = new Map<string, string>();
@@ -614,7 +616,6 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
       routeViews.set(route.view, feature.id);
       const entry = entryByName.get(route.view);
       if (!entry) fail(label, `route "${route.id}" 引用未登记的 View "${route.view}"`);
-      if (entry.sidecar.kind !== "fgui") fail(label, `route "${route.id}" 引用的 View "${route.view}" 不是 fgui 页面`);
       if (entry.feature !== feature.id) fail(label, `route "${route.id}" 引用了 feature "${entry.feature}" 登记的 View`);
       if (entry.sidecar.group === undefined || entry.sidecar.restore === undefined) {
         fail(entry.sidecarPath, `被 route "${route.id}" 引用的 View 必须在 sidecar 声明 group 与 restore`);
@@ -661,6 +662,18 @@ function fguiEntries(catalog: ViewCatalog): readonly ViewCatalogEntry[] {
   return catalog.entries.filter((entry) => entry.sidecar.kind === "fgui");
 }
 
+/**
+ * 进入 ViewMgr catalog 的条目 = FGUI 页面 ∪ **被某个 feature 的 routes 引用的** cocos View。
+ *
+ * 「被 routes 引用」就是「这是页面、不是玩法表现件」的判别信号：BallMoveView /
+ * SnakeWorldView 不在任何 routes 里，天然排除，仍只经 gameplay presentation 挂载。
+ * ⛔ 不为此新发明 sidecar 标记字段——多一个可以说谎的字段就是多一处漂移源。
+ */
+function catalogEntries(catalog: ViewCatalog): readonly ViewCatalogEntry[] {
+  const routed = new Set(catalog.features.flatMap((feature) => feature.routes.map((route) => route.view)));
+  return catalog.entries.filter((entry) => entry.sidecar.kind === "fgui" || routed.has(entry.name));
+}
+
 export function renderFguiContracts(catalog: ViewCatalog): string {
   const lines: string[] = [generatedClientHeader()];
   lines.push(`import type { FguiContract } from "../view/fguiContracts";`);
@@ -687,20 +700,25 @@ function loadSpecifier(viewPath: string): string {
 }
 
 export function renderViews(catalog: ViewCatalog): string {
-  const pages = fguiEntries(catalog);
+  const pages = catalogEntries(catalog);
   const lines: string[] = [generatedClientHeader()];
   lines.push(`import { defineView, type ViewMeta } from "../view/defineView";`);
-  const constNames = pages.map((entry) => contractConstName(entry.name)).sort();
-  lines.push(`import { ${constNames.join(", ")} } from "./fguiContracts.generated";`);
+  const constNames = pages.filter((entry) => entry.sidecar.kind === "fgui")
+    .map((entry) => contractConstName(entry.name)).sort();
+  if (constNames.length > 0) {
+    lines.push(`import { ${constNames.join(", ")} } from "./fguiContracts.generated";`);
+  }
   lines.push("");
   lines.push("/** 不可变 View catalog（ViewMgr 的默认查询源；铁律 10：load 是字面量动态 import 闭包）。 */");
   lines.push("export const GENERATED_VIEW_CATALOG: Readonly<Record<string, ViewMeta>> = {");
   for (const entry of pages) {
     const sidecar = entry.sidecar;
     lines.push(`    ${entry.name}: defineView({`);
-    lines.push(`        name: ${JSON.stringify(entry.name)}, kind: ${JSON.stringify(sidecar.kind)}, contract: ${contractConstName(entry.name)}, layer: ${JSON.stringify(sidecar.layer)},`);
+    // cocos 页面结构上没有 FGUI 段（无 contract / 无 sharedPkgs）——ViewMeta 判别联合在检。
+    const contractSegment = sidecar.kind === "fgui" ? `contract: ${contractConstName(entry.name)}, ` : "";
+    lines.push(`        name: ${JSON.stringify(entry.name)}, kind: ${JSON.stringify(sidecar.kind)}, ${contractSegment}layer: ${JSON.stringify(sidecar.layer)},`);
     lines.push(`        fullscreen: ${sidecar.fullscreen}, onlyOne: ${sidecar.onlyOne}, permanent: ${sidecar.permanent}, interactive: ${sidecar.interactive},`);
-    if (sidecar.sharedPkgs !== undefined) {
+    if (sidecar.kind === "fgui" && sidecar.sharedPkgs !== undefined) {
       lines.push(`        sharedPkgs: ${JSON.stringify(sidecar.sharedPkgs)},`);
     }
     lines.push(`        load: () => import(${JSON.stringify(loadSpecifier(entry.viewPath))}).then((m) => m.${entry.name}View),`);
