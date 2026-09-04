@@ -57,6 +57,9 @@ export class SettingsView extends CocosView {
 
     // ── 节点搭建 ──────────────────────────────────────────────────────────
 
+    /** 遮罩的空回调：只为参与命中测试（见 buildChrome 注释），⛔ 不做任何事。 */
+    private readonly swallowTouch = (): void => {};
+
     private buildChrome(): void {
         for (const child of [...this.root.children]) {
             child.removeFromParent();
@@ -64,8 +67,11 @@ export class SettingsView extends CocosView {
         }
         const width = this.layerWidth;
         const height = this.layerHeight;
-        // 全屏压暗层：同时充当「点面板外不穿透到首屏」的挡板。
-        this.plate(this.root, width, height, SCRIM, 0, 0);
+        // 全屏压暗层：注册一个空 TOUCH_END 让它参与命中测试，指针就停在本层，⛔ 不会
+        // 穿到底下首屏的设置按钮上。⚠ Cocos 只把触摸派发给命中的**最上层有监听**节点，
+        // 没有监听的节点根本不进候选——所以「画一块全屏色块」本身挡不住任何东西。
+        const scrim = this.plate(this.root, width, height, SCRIM, 0, 0, "scrim");
+        scrim.on(Node.EventType.TOUCH_END, this.swallowTouch, this);
 
         const panelWidth = width * 0.88;
         const panelHeight = height * 0.84;
@@ -111,7 +117,7 @@ export class SettingsView extends CocosView {
         this.sectionLabel(content, "宿主固定项（⛔ 插件不可提供）", rowWidth, nextY());
         for (const toggle of toggles) {
             const y = nextY();
-            const row = this.row(content, rowWidth, rowHeight, y, toggle.pending ? ROW_OFF : ROW);
+            const row = this.row(content, rowWidth, rowHeight, y, toggle.pending ? ROW_OFF : ROW, "audio");
             this.label(row, toggle.label, Math.round(rowHeight * 0.42), TEXT, -rowWidth * 0.5 + rowWidth * 0.05, 0);
             const state = toggle.pending ? "保存中…" : (toggle.on ? "开" : "关");
             this.button(row, state, rowWidth * 0.24, rowHeight * 0.72, rowWidth * 0.5 - rowWidth * 0.16, 0,
@@ -121,7 +127,7 @@ export class SettingsView extends CocosView {
         for (const item of placeholders) {
             const y = nextY();
             // 置灰占位：⛔ 不注册任何点击回调——点不动就是「没实现」最诚实的表达。
-            const row = this.row(content, rowWidth, rowHeight, y, ROW_OFF);
+            const row = this.row(content, rowWidth, rowHeight, y, ROW_OFF, "placeholder");
             this.label(row, item.label, Math.round(rowHeight * 0.4), DIM, -rowWidth * 0.5 + rowWidth * 0.05, rowHeight * 0.16);
             this.label(row, item.reason, Math.round(rowHeight * 0.26), DIM, -rowWidth * 0.5 + rowWidth * 0.05, -rowHeight * 0.18);
         }
@@ -132,7 +138,7 @@ export class SettingsView extends CocosView {
         }
         for (const entry of entries) {
             const y = nextY();
-            const row = this.row(content, rowWidth, rowHeight, y, entry.enabled ? ROW : ROW_OFF);
+            const row = this.row(content, rowWidth, rowHeight, y, entry.enabled ? ROW : ROW_OFF, "entry");
             this.label(row, `${entry.label}  ·  ${entry.featureId}`, Math.round(rowHeight * 0.4),
                 entry.enabled ? TEXT : DIM, -rowWidth * 0.5 + rowWidth * 0.05, entry.enabled ? 0 : rowHeight * 0.16);
             if (entry.enabled) {
@@ -162,8 +168,10 @@ export class SettingsView extends CocosView {
         return node;
     }
 
-    private plate(parent: Node, width: number, height: number, color: Color, x: number, y: number): Node {
-        const node = this.node("plate", parent, width, height);
+    private plate(
+        parent: Node, width: number, height: number, color: Color, x: number, y: number, name = "plate",
+    ): Node {
+        const node = this.node(name, parent, width, height);
         node.setPosition(x, y, 0);
         const graphics = node.addComponent(Graphics);
         graphics.fillColor = color;
@@ -172,8 +180,8 @@ export class SettingsView extends CocosView {
         return node;
     }
 
-    private row(parent: Node, width: number, height: number, y: number, color: Color): Node {
-        const node = this.node("row", parent, width, height * 0.86);
+    private row(parent: Node, width: number, height: number, y: number, color: Color, kind: string): Node {
+        const node = this.node(`row-${kind}`, parent, width, height * 0.86);
         node.setPosition(0, y, 0);
         this.plate(node, width, height * 0.86, color, 0, 0);
         return node;
