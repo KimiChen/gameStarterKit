@@ -325,6 +325,43 @@ test("checked-in gameplay artifacts are fresh", () => {
   assert.doesNotThrow(() => assertGameplayArtifactsFresh({ repositoryRoot: REPOSITORY_ROOT }));
 });
 
+test("玩法自有 shared 模块自动进 barrel：新增手写模块零框架改动，*.generated.ts 排除在导出面外", () => {
+  const fixture = createFixture();
+  try {
+    const dir = path.join(fixture.root, "apps/shared/src/gameplays/idle");
+    // 玩法往自己目录里放一个手写模块 + 一个生成数据模块，⛔ 不碰生成器、manifest 或任何中央清单。
+    fs.writeFileSync(path.join(dir, "cosmetics.ts"), "export const IDLE_SKIN = 1;\n", "utf8");
+    fs.writeFileSync(path.join(dir, "palette.generated.ts"), "export const IDLE_PALETTE_DATA = [];\n", "utf8");
+
+    const gameplays = readGameplayDescriptors(fixture.options);
+    const artifacts = renderGameplayArtifacts(
+      gameplays,
+      readCoreWireNames(fixture.options),
+      readClientGameplayModules(gameplays, fixture.options),
+    );
+    const barrel = artifacts.get("apps/shared/src/gameplays/index.ts");
+    assert.ok(barrel);
+    assert.ok(barrel.includes('export * from "./idle/cosmetics";'), `手写模块必须自动进 barrel：\n${barrel}`);
+    assert.equal(
+      barrel.includes("palette.generated"),
+      false,
+      "生成数据模块 ⛔ 不进公共导出面（只由同目录手写 façade 消费）",
+    );
+    // 依赖序：ruleset → wire → 其余手写模块字母序 → generated state，产物字节必须稳定。
+    const idleLines = barrel.split("\n").filter((line) => line.includes('"./idle/') || line.includes('state/idle'));
+    assert.deepEqual(idleLines, [
+      'export * from "./idle/wire";',
+      'export * from "./idle/cosmetics";',
+      'export * from "./generated/state/idle";',
+    ]);
+    // 生成物身份（contractDigest）⛔ 不受玩法自有模块影响——否则加一个皮肤表就要 bump modeVersion。
+    const idle = gameplays.find((gameplay) => gameplay.id === "idle");
+    assert.equal(idle?.contractDigest, GAMEPLAY_CATALOG.idle.contractDigest);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
 test("catalog contractDigest 就是 sha256(manifest + NUL + state + NUL + wire)，⛔ 不是另一套口径", () => {
   for (const id of ["ballMove", "idle"] as const) {
     const wireFile = path.join(REPOSITORY_ROOT, "apps/shared/src/gameplays", id, "wire.ts");
