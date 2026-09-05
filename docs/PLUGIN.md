@@ -348,6 +348,10 @@ npm --workspace @game/server run plugin -- check
    值导入、错误码顺序测试不再硬编码域清单——即「新插件不得需要改中央源码/中央测试」的判据真的成立了。
    仍欠 Creator 侧确认（随包 `.meta` 的 uuid 稳定；脚本合成的共享祖先 `.meta` 占位待 Creator 重写），
    归 plan-v5 B4/B6 类 Creator 人工证据。
+7. **同仓「作者=宿主」的插件迭代动线**（plan-v5 E6）：已安装锁锁住插件自有文件后，在宿主仓内直接改
+   `plugins/<id>` 所有权内的任何文件（哪怕是 `docs/<id>/README.md` 一行）都会让 `plugin-lock.test.ts` 红，
+   而 `install` 对「树≠锁」直接拒绝——同仓作者没有合法的迭代路径。E5 实证当天即撞上（只能回退措辞）。
+   候选方案见 plan-v5 E6，需拍板后实施。
 
 ## 10. 非目标
 
