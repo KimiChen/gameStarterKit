@@ -227,8 +227,8 @@ CI 对所有未下架版本重跑一遍并追加。CLI 安装时比较本地检�
 | --- | --- |
 | §1-3 reinstall-from-tree 吞并框架文件 | ✅ 2026-09-05：身份变化闸（`--allow-identity-change`）+ git 跟踪闸（`--adopt-tracked`）+ `check` 身份漂移比对；钉：`plugin-tool.test.ts`「§1-3」用例（git fixture 重放 guild 场景） |
 | §1-4 裸前缀所有权 / 锁间两两不交 | ✅ 2026-09-05：测试前缀改为 `<id>-*` / `<id>.*`（`matchesPrefixRule` 三处共用），pack/install/check 引入「其它已安装锁」（重叠即拒绝/点名），`registry` 保留 id；redeem 1.0.4 / tally 1.0.3 随之改名客户端测试并 `--reinstall-from-tree --adopt-tracked` 重钉；钉：「§1-4」用例（chamber 与 chamberBoard 共存） |
-| §1-1 postinstall 失败回滚 | ⏳ |
-| §1-2 升级删除面传 `--allow-delete` | ⏳ |
+| §1-1 postinstall 失败回滚 | ✅ 2026-09-05：落盘日志 + 索引同步 + 生成物「本次新变脏」回退（用户 WIP 留下）；卸载后未提交的暂存删除视为干净；`InstallOptions.runner` 测试接缝；钉：「§1-1」两用例（无 git / git） |
+| §1-2 升级删除面传 `--allow-delete` | ✅ 2026-09-05：`allowDeleteFor`（与 uninstall 同口径）、kinds 并集跑 codegen、`SYNC_FORCE=1`、报告/CLI/dry-run 打印删除面；钉：「§1-2」用例 + `allowDeleteFor` 单元 |
 | §1-5 锁 `source` 抬头与分叉语义 | ⏳ |
 | §1-9 `requires` 必填、进锁、check 复核 | ⏳ |
 | §1-11 `.meta` uuid 闸 | ⏳ |
