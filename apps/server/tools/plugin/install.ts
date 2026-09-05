@@ -166,11 +166,24 @@ function removeFileAndEmptyDirs(root: string, relative: string): void {
   }
 }
 
-/** 安装后的人工步骤清单（按包身份与工作树现状派生）。 */
-export function nextStepsFor(pkg: ValidatedPackage, root: string): readonly string[] {
+/** 协议指纹是否已过期（只读 --check 的退出码）；postinstall 没跑时不知道，返回 null。 */
+export function protocolFingerprintStale(root: string): boolean {
+  const result = spawnSync(process.execPath, ["scripts/protocol-fingerprint.mjs", "--check"], { cwd: root, encoding: "utf8" });
+  return result.status !== 0;
+}
+
+export interface NextStepsContext {
+  /** true = --check 已报过期；false = 未变化；null = 未跑 codegen（dry-run / --no-postinstall），只能给条件提示。 */
+  readonly protocolStale: boolean | null;
+}
+
+/** 安装后的人工步骤清单（按包身份、工作树现状与 postinstall 的实际结果派生；⛔ 不按「带 domain 就一定变了」猜）。 */
+export function nextStepsFor(pkg: ValidatedPackage, root: string, context: NextStepsContext = { protocolStale: null }): readonly string[] {
   const steps: string[] = [];
-  if (pkg.manifest.domains.length > 0) {
-    steps.push("registry.generated.ts 已随新域变化：人工决定是否 bump LOBBY_PROTOCOL_VERSION，然后 node scripts/protocol-fingerprint.mjs --write");
+  if (context.protocolStale === true) {
+    steps.push("协议指纹已过期（protocol/ 生成物随本插件变化）：人工决定是否 bump LOBBY_PROTOCOL_VERSION，然后 node scripts/protocol-fingerprint.mjs --write");
+  } else if (context.protocolStale === null && (pkg.manifest.domains.length > 0 || pkg.manifest.kinds.includes("gameplay"))) {
+    steps.push("本次未跑 codegen：跑完后若 protocol/ 生成物变化（codegen 会提示），人工决定是否 bump LOBBY_PROTOCOL_VERSION，然后 node scripts/protocol-fingerprint.mjs --write");
   }
   if (pkg.manifest.fguiPackages.length > 0) {
     steps.push("新 FGUI 包已入仓：node scripts/fgui-manifest.mjs --write 重钉 FGUI 发布闭包锁");
@@ -236,24 +249,25 @@ export function installPlugin(options: InstallOptions): InstallReport {
     }
     written.push(relative);
   }
-  const report: InstallReport = {
+  const base = {
     id,
     version: manifest.version,
     previousVersion: previous?.manifest.version ?? null,
     written: written.sort(),
     unchanged: unchanged.sort(),
     deleted: stale.sort(),
-    nextSteps: nextStepsFor(pkg, root),
   };
-  if (options.dryRun) return report;
+  if (options.dryRun) return { ...base, nextSteps: nextStepsFor(pkg, root) };
 
   for (const relative of written) atomicWrite(path.join(root, relative), pkg.files.get(relative) as Buffer);
   for (const relative of stale) removeFileAndEmptyDirs(root, relative);
   writeInstalledLock(root, { manifest, entries: pkg.entries });
 
   if (useGit) gitAddExisting(root, affected);
-  if (options.postinstall !== false) runPostinstall(root, manifest.kinds, useGit);
-  return report;
+  if (options.postinstall === false) return { ...base, nextSteps: nextStepsFor(pkg, root) };
+  runPostinstall(root, manifest.kinds, useGit);
+  // nextSteps 按 postinstall 的实际结果派生：指纹是否真的过期由 --check 说了算。
+  return { ...base, nextSteps: nextStepsFor(pkg, root, { protocolStale: protocolFingerprintStale(root) }) };
 }
 
 /**
@@ -301,22 +315,22 @@ export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallRep
   if (conflicts.length > 0) fail(`拒绝：以下路径在插件 "${id}" 的推导集内却既不在旧锁也不在树上采集结果里（生成物/硬排除混入插件目录？）：\n  ${conflicts.join("\n  ")}`);
 
   const lockRelative = path.posix.join(INSTALLED_LOCK_DIR, `${id}.lock`);
-  const report: InstallReport = {
+  const base = {
     id,
     version: manifest.version,
     previousVersion: previous.manifest.version,
-    written: [],
+    written: [] as readonly string[],
     unchanged: pkg.entries.map((entry) => entry.path).filter((relative) => !added.includes(relative) && !changed.includes(relative)),
     deleted: stale,
-    nextSteps: nextStepsFor(pkg, root),
     adopted: { added, changed },
   };
-  if (options.dryRun) return report;
+  if (options.dryRun) return { ...base, nextSteps: nextStepsFor(pkg, root) };
 
   // 旧锁登记、树上已删的文件：树就是真相，只需把可能残留的空目录清掉（文件已不存在时 removeFileAndEmptyDirs 只清目录）。
   for (const relative of stale) removeFileAndEmptyDirs(root, relative);
   writeInstalledLock(root, { manifest, entries: pkg.entries });
   if (useGit) gitAddExisting(root, [...pkg.files.keys(), ...stale, lockRelative]);
-  if (options.postinstall !== false) runPostinstall(root, manifest.kinds, useGit);
-  return report;
+  if (options.postinstall === false) return { ...base, nextSteps: nextStepsFor(pkg, root) };
+  runPostinstall(root, manifest.kinds, useGit);
+  return { ...base, nextSteps: nextStepsFor(pkg, root, { protocolStale: protocolFingerprintStale(root) }) };
 }
