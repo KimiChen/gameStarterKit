@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "redeem",
+  "category": "extra",
+  "docs": ["docs/redeem/README.md"],
+  "resident": false,
+  "module": "apps/client/src/features/redeem/index.ts",
+  "viewDirs": ["apps/client/src/features/redeem/view"],
+  "views": [
+    "apps/client/src/features/redeem/view/RedeemView.view.json"
+  ],
+  "owners": [
+    { "id": "redeem", "logicDir": "apps/client/src/features/redeem/logic" }
+  ],
+  "routes": [
+    { "id": "redeem", "view": "Redeem" }
+  ],
+  "menu": [
+    {
+      "entryId": "redeem",
+      "label": "兑换码",
+      "labelKey": "menu.redeem",
+      "launch": { "kind": "route", "routeId": "redeem" }
+    }
+  ]
+}

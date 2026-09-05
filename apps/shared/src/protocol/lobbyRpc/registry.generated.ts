@@ -6,6 +6,7 @@ import { validateForceLogoutPush, validateServerNoticePush, type IForceLogoutPus
 import type { IPurchaseResult } from "./economy";
 import { validateEventsRes, validateGuildEventPush, validateGuildEventsReq, validateGuildJoinReq, validateGuildLeaveReq, validateGuildLeaveRes, validateJoinRes, type IGuildEventPush, type IGuildGetEventsReq, type IGuildGetEventsRes, type IGuildJoinReq, type IGuildJoinRes, type IGuildLeaveReq, type IGuildLeaveRes } from "./domains/guild";
 import { validateMailClaimAttachRes, validateMailClaimReq, validateMailListReq, validateMailListRes, validateMailMarkReadRes, validateMailMarkReq, validateMailNewPush, type IMailClaimAttachReq, type IMailListReq, type IMailListRes, type IMailMarkReadReq, type IMailMarkReadRes, type IMailNewPush } from "./domains/mail";
+import { validateRedeemClaimReq, validateRedeemClaimRes, type IRedeemClaimReq, type IRedeemClaimRes } from "./domains/redeem";
 import { validatePrepareCreateReq, validatePrepareCreateRes, validateResolveReq, validateResolveRes, type IRoomPrepareCreateReq, type IRoomPrepareCreateRes, type IRoomResolveReq, type IRoomResolveRes } from "./domains/room";
 import { validatePurchaseResult, validateShopPurchaseReq, validateShopQueryReq, type IShopPurchaseReq, type IShopQueryOpReq } from "./domains/shop";
 import { validateGetInfoReq, validateGetInfoRes, validateGetProfileReq, validateGetUserIdReq, validateGetUserIdRes, validateProfileRes, validateUpdateProfileReq, validateUpdateRes, type IGetInfoReq, type IGetInfoRes, type IGetProfileReq, type IGetProfileRes, type IGetUserIdReq, type IGetUserIdRes, type IUpdateProfileReq, type IUpdateProfileRes } from "./domains/user";
@@ -14,6 +15,7 @@ import { validateGetInfoReq, validateGetInfoRes, validateGetProfileReq, validate
 export const LOBBY_RPC_DOMAINS: readonly string[] = [
     "guild",
     "mail",
+    "redeem",
     "room",
     "shop",
     "user",
@@ -27,6 +29,7 @@ export interface LobbyRpcMap {
     "mail.list": { req: IMailListReq; res: IMailListRes };
     "mail.claimAttach": { req: IMailClaimAttachReq; res: IPurchaseResult };
     "mail.markRead": { req: IMailMarkReadReq; res: IMailMarkReadRes };
+    "redeem.claim": { req: IRedeemClaimReq; res: IRedeemClaimRes };
     "room.prepareCreate": { req: IRoomPrepareCreateReq; res: IRoomPrepareCreateRes };
     "room.resolve": { req: IRoomResolveReq; res: IRoomResolveRes };
     "shop.purchase": { req: IShopPurchaseReq; res: IPurchaseResult };
@@ -46,6 +49,7 @@ export type LobbyRpcIdemType =
     | "guild.join"
     | "guild.leave"
     | "mail.claimAttach"
+    | "redeem.claim"
     | "room.prepareCreate"
     | "shop.purchase"
     | "user.updateProfile";
@@ -62,6 +66,7 @@ export const LOBBY_RPC_ROUTE_MODES: { readonly [K in LobbyRpcType]: LobbyRpcRout
     "mail.list": "query",
     "mail.claimAttach": "idempotent-write",
     "mail.markRead": "natural-write",
+    "redeem.claim": "idempotent-write",
     "room.prepareCreate": "idempotent-write",
     "room.resolve": "query",
     "shop.purchase": "idempotent-write",
@@ -80,6 +85,7 @@ export const ALL_LOBBY_RPC_TYPES: readonly LobbyRpcType[] = [
     "mail.list",
     "mail.claimAttach",
     "mail.markRead",
+    "redeem.claim",
     "room.prepareCreate",
     "room.resolve",
     "shop.purchase",
@@ -99,6 +105,7 @@ export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number
     "mail.list": 1,
     "mail.claimAttach": 1,
     "mail.markRead": 1,
+    "redeem.claim": 1,
     "room.prepareCreate": 1,
     "room.resolve": 1,
     "shop.purchase": 1,
@@ -113,6 +120,7 @@ export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number
 export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly contractVersion: number; readonly digest: string } } = {
     guild: { contractVersion: 1, digest: "4a996a135ffd900eb39c0b83697ee03d4d4587829da88ce537f363d56ceb4bde" },
     mail: { contractVersion: 1, digest: "d6401c80a558ce24849ad9c038bd34e2adc09bd9b006abef773cbecf409b7ab4" },
+    redeem: { contractVersion: 1, digest: "e7e74dc98acf6cfb1d5bfd0261930d6bbc5bb07e2efa79dec0e91be485596514" },
     room: { contractVersion: 1, digest: "8655531a80f2ffc6a941247c2c2ef00ad44dfb3842b722741556430bf2c12ff2" },
     shop: { contractVersion: 1, digest: "80f5bc9c74300aecd0bf2caf8dea93506657c5e9a4d64e91931760e8c06544cf" },
     user: { contractVersion: 1, digest: "ce1f3ff0528a15836c188d111ddbe29bfb8c97c4f68d69c3e77a9432fe157a28" },
@@ -138,6 +146,7 @@ export const LOBBY_RPC_REQUEST_VALIDATORS: { readonly [K in LobbyRpcType]: Runti
     "mail.list": guardRpcValidator("payload", validateMailListReq),
     "mail.claimAttach": guardRpcValidator("payload", validateMailClaimReq),
     "mail.markRead": guardRpcValidator("payload", validateMailMarkReq),
+    "redeem.claim": guardRpcValidator("payload", validateRedeemClaimReq),
     "room.prepareCreate": guardRpcValidator("payload", validatePrepareCreateReq),
     "room.resolve": guardRpcValidator("payload", validateResolveReq),
     "shop.purchase": guardRpcValidator("payload", validateShopPurchaseReq),
@@ -156,6 +165,7 @@ export const LOBBY_RPC_RESPONSE_VALIDATORS: { readonly [K in LobbyRpcType]: Runt
     "mail.list": guardRpcValidator("response", validateMailListRes),
     "mail.claimAttach": guardRpcValidator("response", validateMailClaimAttachRes),
     "mail.markRead": guardRpcValidator("response", validateMailMarkReadRes),
+    "redeem.claim": guardRpcValidator("response", validateRedeemClaimRes),
     "room.prepareCreate": guardRpcValidator("response", validatePrepareCreateRes),
     "room.resolve": guardRpcValidator("response", validateResolveRes),
     "shop.purchase": guardRpcValidator("response", validatePurchaseResult),
@@ -202,6 +212,8 @@ export const RPC_ERR_CODES = [
     "INTERNAL",
     "OPERATION_CONFLICT",
     "OPERATION_RESULT_EXPIRED",
+    "REDEEM_CODE_INVALID",
+    "REDEEM_CODE_USED",
     "ROOM_CODE_UNAVAILABLE",
     "ROOM_FULL",
     "ROOM_START_IN_PROGRESS",

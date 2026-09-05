@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "redeem",
+  "version": "1.0.0",
+  "kinds": ["feature"],
+  "domains": ["redeem"],
+  "requires": { "featureSchemaVersion": 1 },
+  "description": "兑换码：输入兑换码换取奖励——docs/PLUGIN.md §3/§6.1 所称「插件标准形态」的端到端实证（plan-v5 E5）"
+}

@@ -206,6 +206,8 @@ guard 要求显式区清单。每区 `archive_zone_usage` 在 freeze singleton l
 
 - `ballMove`、技能伤害与 GameRoom 是当前可运行的示例玩法；
 - notice 展示页面，以及 mail/guild/shop/outbox 的 Logic、RPC、事件或领域接缝；
+- 「兑换码」插件 `plugins/redeem`（feature 插件标准形态的端到端样本：静态码表 + 本 feature 钱包，
+  ⛔ 不接经济主钱包；见 [docs/redeem/README.md](redeem/README.md)）；
 - Guild 当前只有 Logic/服务端样例，没有完整页面；部分页面控件也只是结构绑定。其事件流的 `INCR` 发号与
   `LPUSH` 入表非原子，读侧可能拿到「已发号未入表」的 `latestSeq` 并据此抬水位，从而永久跳过该条事件
   （见 [SERVER §10](SERVER.md#10-广播与事件)）；权威状态必须能靠全量刷新自愈。
