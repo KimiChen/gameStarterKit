@@ -230,6 +230,6 @@ CI 对所有未下架版本重跑一遍并追加。CLI 安装时比较本地检�
 | §1-1 postinstall 失败回滚 | ✅ 2026-09-05：落盘日志 + 索引同步 + 生成物「本次新变脏」回退（用户 WIP 留下）；卸载后未提交的暂存删除视为干净；`InstallOptions.runner` 测试接缝；钉：「§1-1」两用例（无 git / git） |
 | §1-2 升级删除面传 `--allow-delete` | ✅ 2026-09-05：`allowDeleteFor`（与 uninstall 同口径）、kinds 并集跑 codegen、`SYNC_FORCE=1`、报告/CLI/dry-run 打印删除面；钉：「§1-2」用例 + `allowDeleteFor` 单元 |
 | §1-5 锁 `source` 抬头与分叉语义 | ✅ 2026-09-05：`LockSource`（package / tree + forkedFrom + 预留 registry 子对象）、`filesLockSha256Of`、`install --replace-local-fork`、`check` 显示来源；旧锁 = unknown（redeem / tally 在 §1-9 重钉时补上）；钉：「§1-5」用例 |
-| §1-9 `requires` 必填、进锁、check 复核 | ⏳ |
-| §1-11 `.meta` uuid 闸 | ⏳ |
+| §1-9 `requires` 必填、进锁、check 复核 | ✅ 2026-09-05：schema `requires` 必填 + kind 相关轴必填，`CURRENT_*` 读自两个 schema 文件的 const，锁抬头登记 requires，`check` 复核两侧并点名旧锁；tally 补 `gameplaySchemaVersion`（1.0.4），redeem no-op 重写补齐锁抬头（两把锁同时得到 `# source`）；钉：manifest 用例 + 「§1-9」用例 |
+| §1-11 `.meta` uuid 闸 | ✅ 2026-09-05：`tools/plugin/meta.ts`（正则与 sync-client 逐字相等由测试钉住）、validatePackage 的形状/importer/包内唯一闸、install/reinstall 的宿主 uuid 撞车闸（落盘前拒绝）；fixture `.meta` 改为按路径派生的真 uuid；钉：「§1-11」用例 |
 | v0 / v1 / v2 | 未开始 |

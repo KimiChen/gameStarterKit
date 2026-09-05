@@ -6,7 +6,8 @@
  *     每个 domain ⇒ descriptor + 向量 sidecar 同批在包内；每个 FGUI 包 ⇒ ART 源 + 发布物在包内；
  *  3. 每个路径过 ownership.classifyPath（硬排除 → 受保护路径 → allowlist），任一拒绝即整包拒绝并逐条点名；
  *  4. 镜像自洽：`apps/client/src/**` 的每个文件必须带字节相同的 `apps/Cocos/assets/src/**` 镜像及其 `.meta`，
- *     插件专属目录必须带目录 `.meta`；resources 资源同样必须带 `.meta`（Creator 产出、随包分发，安装侧 ⛔ 不合成）。
+ *     插件专属目录必须带目录 `.meta`；resources 资源同样必须带 `.meta`（Creator 产出、随包分发，安装侧 ⛔ 不合成）；
+ *  5. `.meta` 内容闸（tools/plugin/meta.ts）：JSON / uuid 形状 / importer 与目标类型相符 / 包内 uuid 互不重复。
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -21,6 +22,7 @@ import {
 } from "./ownership";
 import { assertManifestCompatible, identityOf, parsePluginManifest, type PluginManifest } from "./manifest";
 import { PACKAGE_FILES_LOCK, PACKAGE_MANIFEST, parseFilesLock, sha256, type InstalledLock, type LockEntry } from "./lock";
+import { expectedImporter, parseMeta } from "./meta";
 import { readZip } from "./zip";
 
 export interface PluginPackage {
@@ -224,7 +226,39 @@ function assertMirrorsAndMetas(
       requireOwnedAncestorMetas(relative);
     }
   }
+  // .meta 内容闸：形状、importer、包内 uuid 唯一（与宿主树的比对在 install 侧，那里才有宿主）。
+  const byUuid = new Map<string, string[]>();
+  for (const [relative, data] of files) {
+    if (!relative.endsWith(".meta")) continue;
+    const target = relative.slice(0, -".meta".length);
+    let summary;
+    try {
+      summary = parseMeta(data, relative);
+    } catch (error) {
+      problems.push(error instanceof Error ? error.message : String(error));
+      continue;
+    }
+    const isDirectory = !files.has(target) && [...files.keys()].some((other) => other.startsWith(`${target}/`));
+    const expected = expectedImporter(target, isDirectory);
+    if (expected !== null && summary.importer !== expected) {
+      problems.push(`${relative} 的 importer 是 ${JSON.stringify(summary.importer)}，${isDirectory ? "目录" : `"${path.posix.extname(target)}" 文件`}的 .meta 应为 "${expected}"（Creator 打开工程会重写它，锁即红）`);
+    }
+    if (!byUuid.has(summary.uuid)) byUuid.set(summary.uuid, []);
+    (byUuid.get(summary.uuid) as string[]).push(relative);
+  }
+  for (const [uuid, paths] of byUuid) {
+    if (paths.length > 1) problems.push(`.meta uuid 撞车（包内）：${uuid} 同时出现在 ${paths.join("、")}（脚本批量生成 .meta 忘换 uuid？⛔ 别手编，让 Creator 重铸）`);
+  }
   if (problems.length > 0) fail(`包的镜像/.meta 不自洽：\n  ${[...new Set(problems)].join("\n  ")}`);
+}
+
+/** 包内全部 .meta 的 uuid → 包内路径（validatePackage 已保证可解析且互不重复）。 */
+export function packageMetaUuids(files: ReadonlyMap<string, Buffer>): ReadonlyMap<string, string> {
+  const out = new Map<string, string>();
+  for (const [relative, data] of files) {
+    if (relative.endsWith(".meta")) out.set(parseMeta(data, relative).uuid, relative);
+  }
+  return out;
 }
 
 /**

@@ -11,7 +11,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { classifyPath, deriveOwnership, readProtectedPaths } from "./ownership";
-import { identityDifferences, identityOf, parsePluginManifest } from "./manifest";
+import { assertManifestCompatible, identityDifferences, identityOf, parsePluginManifest } from "./manifest";
 import { listInstalledLocks, verifyLockAgainstTree } from "./lock";
 import { featureDeclarations } from "./package";
 
@@ -64,6 +64,18 @@ export function checkInstalledPlugins(root: string): PluginCheckReport {
         if (authored.version !== lock.manifest.version) problems.push(`plugins/${id}/plugin.json 的 version（${authored.version}）与锁（${lock.manifest.version}）不一致`);
         for (const difference of identityDifferences(lock.manifest, authored)) {
           problems.push(`plugins/${id}/plugin.json 的身份与锁不一致（先 install --reinstall-from-tree ${id} --allow-identity-change 重写锁）：${difference}`);
+        }
+        // 兼容轴：树上 plugin.json 与本仓两个 schemaVersion 比对；锁登记的 requires 也要与之一致（旧锁未登记即点名）。
+        try {
+          assertManifestCompatible(authored, `plugins/${id}/plugin.json`);
+        } catch (error) {
+          problems.push(error instanceof Error ? error.message : String(error));
+        }
+        const lockRequires = lock.manifest.requires;
+        if ((lock.manifest.kinds.includes("feature") && lockRequires.featureSchemaVersion === null) || (lock.manifest.kinds.includes("gameplay") && lockRequires.gameplaySchemaVersion === null)) {
+          problems.push(`锁未登记 requires（旧锁形态）：install --reinstall-from-tree ${id} 重写锁即补上`);
+        } else if (lockRequires.featureSchemaVersion !== authored.requires.featureSchemaVersion || lockRequires.gameplaySchemaVersion !== authored.requires.gameplaySchemaVersion) {
+          problems.push(`plugins/${id}/plugin.json 的 requires 与锁不一致：锁 ${JSON.stringify(lockRequires)} vs 树 ${JSON.stringify(authored.requires)}`);
         }
       } catch (error) {
         problems.push(`plugins/${id}/plugin.json 无法解析：${error instanceof Error ? error.message : String(error)}`);
