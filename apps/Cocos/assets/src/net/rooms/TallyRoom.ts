@@ -8,6 +8,7 @@ import { TALLY_GAMEPLAY_ID } from "../../logic/rooms/tally/TallyGameplay";
 import {
     C2S,
     GameplayModeId,
+    S2C,
     validateRoomStateForMode,
     type ITallyPlayerState,
 } from "../../shared/index";
@@ -67,6 +68,11 @@ function observeTally(room: TallyTypedRoom, observer: TallyRoomObserver, isCurre
         if (!isActive()) return;
         observer.root(room.state.phase, room.state.tapGoal, room.state.winnerId);
     };
+    // shell 公共 S2C：welcome 不消费但要登记（否则 SDK 每局告警 onMessage() not registered），error 记日志。
+    const offWelcome = room.onMessage(S2C.Welcome, () => undefined);
+    const offError = room.onMessage(S2C.Error, (message) => {
+        if (isActive()) console.warn(`[tally] 服务端错误 ${String(message.code)}: ${message.message}`);
+    });
     const offRoot = state(room.state).onChange(emitRoot);
     const offAdd = state(room.state).players.onAdd((player: ITallyPlayerState, sessionId: string) => {
         if (!isActive()) return;
@@ -87,7 +93,7 @@ function observeTally(room: TallyTypedRoom, observer: TallyRoomObserver, isCurre
     return () => {
         if (!active) return;
         active = false;
-        for (const off of [offRoot, offAdd, offRemove, ...playerChanges.values()]) {
+        for (const off of [offWelcome, offError, offRoot, offAdd, offRemove, ...playerChanges.values()]) {
             if (typeof off !== "function") continue;
             try { off(); } catch (error) { console.error("[TallyRoom] Schema 解绑异常", error); }
         }
