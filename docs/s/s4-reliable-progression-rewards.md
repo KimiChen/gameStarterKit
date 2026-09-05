@@ -231,28 +231,35 @@ XP、等级、碎片、成就与新解锁皮肤。没有领取按钮；奖励在
 
 ### S4-01：补齐当前 run 统计
 
-- [ ] 在 Snake mode 内维护 `activeTicks`、长度、得分、击杀、磁铁、Star 和有效输入计数。
-- [ ] 只使用房间内状态，不增加持久 run 或周期快照。
+- [x] `activeTicks`/长度/得分/击杀/磁铁/Star 原本就在 schema；本步补 `maxLength`、
+      `meaningfulInputCount`、`reliveCoinSpent` 三项。
+      ⚠ `meaningfulInputCount` ⛔ 不逐包计数（客户端每 tick 都发，逐包会让判据恒真），
+      只在朝向或加速**真的变化**时 +1。
+- [x] 只使用房间内状态：三项都在 mode 内存，⛔ 不进 `state.json`（否则触发 `modeVersion` bump，与 B0 冲突）。
 
 ### S4-02：实现 demo reward policy
 
-- [ ] 在 shared 真源定义固定参数、资格条件、硬顶、等级、成就和碎片公式。
-- [ ] 覆盖边界、溢出保护、AI/假榜排除和不合格 run 的 0 奖励。
+- [x] `apps/shared/src/gameplays/snake/progression.ts`：冻结参数 + 全部纯函数。
+      ⚠ 手写 shared 模块不进 `contractDigest`，故本步⛔ 未 bump。
+- [x] fixture 覆盖上下界、溢出保护（`1e12`/`Infinity` 不得穿透硬顶）、`moderationKick` 排除
+      与不合格 run 的 0 奖励。AI/假榜由调用点保证：只对有认证 uid 的真人 run 调结算。
 
 ### S4-03：实现 progression、Redis 投影与去重
 
-- [ ] 扩展 S3 profile，按 run key 同步应用一次金币、XP、碎片、进度和解锁。
-- [ ] 用单条 `HSET` best-effort 镜像余额、拥有、碎片、XP 和成就；失败只记录警告。
+- [x] `runRewards.ts`：读旧值 → 算增量 → 一次同步替换 profile → 缓存结果，
+      去重键 `uid + roomEpochId + runId`，重复终局返回**同一个**缓存对象。
+- [x] 单条 `HSET` 写六项白名单；写失败只告警、⛔ 不撤销已发奖励。
 
 ### S4-04：实现结果 wire 与页面
 
-- [ ] 通过 gameplay codegen 增加简化结果类型和本人 push。
-- [ ] 完成结果 Logic/View、“再来一局”和“返回首页”。
+- [x] `resultVersion: 2` + 同 token 名；`modeVersion` 4 → 5（B0 攒下的唯一一次）。
+- [x] 结果 Logic 把奖励翻译成可渲染行（不合格 run 说明原因，⛔ 不静默显示一排 0）；
+      View 逐行画。⚠ 按 §9.6 **C-a 默认只放「返回首页」**，⛔ 未做「再来一局」。
 
 ### S4-05：验证与同步
 
-- [ ] 运行 codegen、sync、双端 typecheck、客户端/FGUI/服务端测试。
-- [ ] 把完整结果页和连续两局的 Creator 证据留给 S5。
+- [x] codegen/sync/双端 typecheck/全量测试均已跑：`verify:all` exit 0。
+- [ ] 完整结果页与连续两局的 Creator 证据 —— **归 S5**。
 
 ## 验收条件
 
