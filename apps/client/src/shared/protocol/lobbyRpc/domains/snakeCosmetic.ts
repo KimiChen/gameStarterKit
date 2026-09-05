@@ -49,6 +49,30 @@ export interface ISnakeCosmeticProfileRes {
     readonly profile: ISnakeCosmeticProfile;
 }
 
+/**
+ * 目录条目（展示用）。业务真源在**服务端**生成物，客户端没有这份数据——衣柜要显示稀有度与
+ * 获取方式就只能由服务端下发，⛔ 客户端不得自建第二份目录。
+ *
+ * ⚠ 下发目录**不削弱**拍板 A 的安全模型：判定仍全在服务端（写入只认 skinId，价格/门槛/拥有集
+ * 都由服务端裁决），这里下发的只是展示文本与数值。
+ */
+export interface ISnakeCosmeticCatalogEntry {
+    readonly skinId: number;
+    /** 无原作实测名的皮肤是技术占位（`皮肤 N`）。 */
+    readonly displayName: string;
+    /** 原作 6 档制 `0..5`（普通/稀有/史诗/传说/典藏/至臻）。 */
+    readonly rarity: number;
+    /** demo 自设枚举：default / levelUnlock / achievementUnlock / fragmentCraft / locked。 */
+    readonly acquisition: string;
+    /** 仅 `fragmentCraft` 皮肤有门槛，其余为 `null`。 */
+    readonly fragmentThreshold: number | null;
+}
+
+export interface ISnakeCosmeticSnapshotRes {
+    readonly profile: ISnakeCosmeticProfile;
+    readonly catalog: readonly ISnakeCosmeticCatalogEntry[];
+}
+
 /** wire 侧规模硬顶。⛔ 不是业务判据——碎片皮肤集合的真源在服务端，shared 看不到。 */
 const MAX_OWNED_SKIN_IDS = 512;
 const MAX_FRAGMENT_KEYS = 64;
@@ -104,9 +128,46 @@ export const validateSnakeCosmeticProfileRes: RuntimeValidator<ISnakeCosmeticPro
     return { profile: validateSnakeCosmeticProfile(value.profile, "response.profile") };
 };
 
+const MAX_CATALOG_ENTRIES = 256;
+
+function validateSnakeCosmeticCatalogEntry(input: unknown, path: string): ISnakeCosmeticCatalogEntry {
+    const value = rpcRecord(input, path);
+    assertExactKeys(value, ["skinId", "displayName", "rarity", "acquisition", "fragmentThreshold"], [], path);
+    const threshold: unknown = value.fragmentThreshold;
+    if (typeof value.displayName !== "string" || value.displayName.length === 0 || value.displayName.length > 64) {
+        throw new WireValidationError("WIRE_STRING", `${path}.displayName`);
+    }
+    if (typeof value.acquisition !== "string" || value.acquisition.length === 0 || value.acquisition.length > 32) {
+        throw new WireValidationError("WIRE_STRING", `${path}.acquisition`);
+    }
+    return {
+        skinId: finiteInteger(value.skinId, `${path}.skinId`, 1),
+        displayName: value.displayName,
+        rarity: finiteInteger(value.rarity, `${path}.rarity`, 0, 5),
+        acquisition: value.acquisition,
+        fragmentThreshold: threshold === null ? null : finiteInteger(threshold, `${path}.fragmentThreshold`, 1),
+    };
+}
+
+export const validateSnakeCosmeticSnapshotRes: RuntimeValidator<ISnakeCosmeticSnapshotRes> = (input) => {
+    const value = rpcRecord(input, "response");
+    assertExactKeys(value, ["profile", "catalog"], [], "response");
+    const catalogRaw: unknown = value.catalog;
+    if (!Array.isArray(catalogRaw) || catalogRaw.length > MAX_CATALOG_ENTRIES) {
+        throw new WireValidationError("WIRE_ARRAY", "response.catalog");
+    }
+    return {
+        profile: validateSnakeCosmeticProfile(value.profile, "response.profile"),
+        catalog: (catalogRaw as readonly unknown[]).map(
+            (item, index) => validateSnakeCosmeticCatalogEntry(item, `response.catalog[${index}]`),
+        ),
+    };
+};
+
 export default defineLobbyRpcDomain({
     domain: "snakeCosmetic",
-    contractVersion: 1,
+    // v2：getSnapshot 响应增加 catalog（衣柜要显示稀有度/获取方式，而业务真源在服务端）。
+    contractVersion: 2,
     errorCodes: [
         "SNAKE_SKIN_UNKNOWN",
         "SNAKE_SKIN_NOT_OWNED",
@@ -117,7 +178,7 @@ export default defineLobbyRpcDomain({
     routes: [
         defineRpcQuery(SnakeCosmeticRpc.GetSnapshot, {
             request: validateSnakeCosmeticGetSnapshotReq,
-            response: validateSnakeCosmeticProfileRes,
+            response: validateSnakeCosmeticSnapshotRes,
         }),
         defineRpcNaturalWrite(SnakeCosmeticRpc.Equip, {
             request: validateSnakeCosmeticSkinReq,

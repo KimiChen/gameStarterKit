@@ -7,10 +7,27 @@
  * 真状态在 `cosmeticProfile.ts` 的模块级 Map，本单例只持四个回调；
  * ⛔ 构造期不得建连接/读盘/起定时器——端点模块会被 `collectEndpoints()` 在纯内存测试里 import。
  */
+import type { ISnakeCosmeticCatalogEntry } from "@game/shared/protocol/lobbyRpc/domains/snakeCosmetic";
 import { RpcFault } from "../../../core/errors";
 import { SnakeDemoCosmeticStore, type SnakeCosmeticFailure } from "./cosmeticProfile";
+import { SNAKE_SKIN_BUSINESS_CATALOG } from "./skinBusinessCatalog";
 
 export const snakeCosmeticStore = new SnakeDemoCosmeticStore();
+
+/**
+ * 业务目录 → wire 展示目录。常量投影，进程内算一次。
+ *
+ * ⚠ 只下发展示用字段。判定材料（拥有集、门槛裁决）仍全在服务端，⛔ 下发目录不改变拍板 A 的
+ * 安全模型——客户端拿到门槛数值也无法据此少扣碎片，扣减发生在 store 内。
+ */
+export const SNAKE_COSMETIC_WIRE_CATALOG: readonly ISnakeCosmeticCatalogEntry[] =
+    SNAKE_SKIN_BUSINESS_CATALOG.map((entry) => ({
+        skinId: entry.skinId,
+        displayName: entry.displayName.value,
+        rarity: entry.rarity.value,
+        acquisition: entry.acquisition.value,
+        fragmentThreshold: entry.fragmentThreshold.state === "approved" ? entry.fragmentThreshold.value : null,
+    }));
 
 /**
  * 领域失败 → `RpcFault`。msg 是有界可公开文本（⛔ 不含 Redis key、payload、内部路径或栈）；
