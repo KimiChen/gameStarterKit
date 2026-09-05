@@ -102,13 +102,17 @@ Redis 继续使用 S2R 已创建的同一个 HASH。S3 实施后的允许字段�
 
 ## RPC 与玩法接入
 
-> ⛔ **待拍板 A（[README §9.1](README.md#91-三项必须先拍板的问题)，未定不进 S3-1）**：不变量 8
-> 「catalog hash 不一致时禁止外观经济写」目前**没有活的判据**——战斗路径调
-> `resolveServerBattleSkin(requestedSkin)` 不传 `peerHash`，而形参默认值就是本进程常量，比对恒真；
-> `canWriteSnakeSkinCosmetics` 生产调用点为 0；Snake wire 里也没有客户端上报皮肤目录 hash 的通道
-> （`layerHashes`/`configHash` 是 ruleset 配置 hash，不是皮肤目录 hash）。下面三个接口若不带
-> `catalogHash`，S3 落地后该不变量将被静默架空。选项：① `equip`/`unlock` 请求加必选 `catalogHash`
-> （要改域 descriptor 与向量 sidecar，**形状定了不好改**）；② 显式承认该判据只在文档层并降级不变量 8。
+> ✅ **拍板 A（2026-09-05，结论见 [README §9.1](README.md#91-三项拍板结论2026-09-05-用户拍板已生效)）：
+> 采用「服务端单方面权威」。** 下面三个接口的入参**只有 `skinId`，⛔ 不加 `catalogHash`**，
+> 也不引入「客户端自报、服务端采信」的信任方向。
+>
+> 安全性可证：判定材料全在服务端——公共目录加载期保证 ID 唯一与默认皮肤唯一、查不到即拒；
+> 业务值（价格、碎片门槛）**只存在于服务端生成物**，客户端没有这份数据、骗不出低价；owned 集合服务端读写。
+>
+> 不变量 8 此前描述的跨端 hash 比对**双端都是死判据**（服务端 `resolveServerBattleSkin` 与客户端
+> `resolveClientSnakeSkinPresentation` 的 hash 形参默认值都等于本进程常量，全部生产调用点都不传该参）。
+> 它今后应锚到真正活着的 `SNAKE_SKIN_COSMETIC_WRITES_ENABLED` 与双端加载期 fail-closed。
+> ⛔ 实施时不要删 `canWriteSnakeSkinCosmetics`——S3-01 要**保留并启用**它。
 
 `snakeCosmetic` demo Feature 只需要三个接口：
 
