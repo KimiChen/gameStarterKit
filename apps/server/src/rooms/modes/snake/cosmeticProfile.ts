@@ -256,10 +256,37 @@ export class SnakeDemoCosmeticStore {
     }
 }
 
+/**
+ * 玩法侧**同步**读取当前装备皮肤（S3-03 的 run 起始锁存用）。
+ *
+ * ⚠ 只读进程内已预热的 profile：`createPlayer` 是同步的，⛔ 不能在这里 await Redis 回灌。
+ * 未预热（客户端没先调 `snakeCosmetic.getSnapshot`）、uid 缺失、或装备值因目录漂移而失效时，
+ * 一律回退默认皮肤 1——⛔ 绝不因为衣柜数据异常而让玩家进不了房。
+ */
+export function equippedSkinIdOf(uid: string | null): number {
+    if (uid === null) return DEFAULT_SNAKE_SKIN.skinId;
+    const profile = profiles.get(uid);
+    if (!profile) return DEFAULT_SNAKE_SKIN.skinId;
+    const { equippedSkinId } = profile;
+    // 防御性复核：store 的写路径已保证「已拥有且可用」，但目录可能在两次发布之间漂移。
+    if (!isPlayerUsableSnakeSkin(equippedSkinId) || !profile.ownedSkinIds.includes(equippedSkinId)) {
+        return DEFAULT_SNAKE_SKIN.skinId;
+    }
+    return equippedSkinId;
+}
+
 /** 测试 seam：清空模块级状态。⛔ 运行时不要调用。 */
 export function __resetSnakeCosmeticProfilesForTest(): void {
     profiles.clear();
     hydrated.clear();
+}
+
+/**
+ * 测试 seam：绕过 equip 的校验直接写装备值，用于构造「目录漂移导致装备值失效」的场景。
+ * ⛔ 运行时不要调用——正常写路径是 `equip()`，它保证「已拥有且可用」。
+ */
+export function __forceEquippedSkinIdForTest(uid: string, skinId: number): void {
+    ensure(uid).equippedSkinId = skinId;
 }
 
 /** 测试 seam：直接注入碎片余额（S4 才有真正的发放路径）。⛔ 运行时不要调用。 */
