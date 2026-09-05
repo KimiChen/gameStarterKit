@@ -63,10 +63,12 @@ test("S3-1 展示名只用原作实测值，其余保留技术占位（⛔ 不�
     assert.deepEqual(craft.map((e) => [e.skinId, e.fragmentThreshold.value]), [[133, 300], [401, 10], [403, 120], [411, 300]]);
 });
 
-test("S1 cosmetic writes fail closed while battle reads use deterministic skin-1 fallback", () => {
-    assert.equal(SNAKE_SKIN_COSMETIC_WRITES_ENABLED, false);
-    assert.equal(canWriteSnakeSkinCosmetics(PUBLIC_SNAKE_SKIN_CATALOG_HASH), false, "S3 has not enabled writes");
-    assert.equal(canWriteSnakeSkinCosmetics("stale"), false);
+test("S3 收尾后外观写总闸开启；战斗读仍是确定性皮肤 1 回退", () => {
+    // S3 收尾已翻开总闸（不变量 8 的锚点）；⛔ 改回 false 会让衣柜整条写路径 fail-closed。
+    assert.equal(SNAKE_SKIN_COSMETIC_WRITES_ENABLED, true);
+    assert.equal(canWriteSnakeSkinCosmetics(), true, "服务端单方面权威：无 peer 目录不构成拒绝理由");
+    assert.equal(canWriteSnakeSkinCosmetics(PUBLIC_SNAKE_SKIN_CATALOG_HASH), true);
+    assert.equal(canWriteSnakeSkinCosmetics("stale"), false, "显式传入且不一致仍须拒");
     assert.doesNotThrow(() => assertSnakeSkinPublicHash(PUBLIC_SNAKE_SKIN_CATALOG_HASH));
     assert.throws(() => assertSnakeSkinPublicHash("stale"), /operation rejected/);
     assert.deepEqual(resolveServerBattleSkin(701), { requestedSkinId: 701, resolvedSkinId: 701, usedFallback: false, reason: "ok" });

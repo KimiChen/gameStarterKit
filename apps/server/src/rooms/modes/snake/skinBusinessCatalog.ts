@@ -43,8 +43,17 @@ export interface SnakeSkinBusinessEntry {
     readonly price: SnakeSkinPendingDecision;
 }
 
-/** S3 完成前，任何购买/解锁/装备写入均 fail-closed。 */
-export const SNAKE_SKIN_COSMETIC_WRITES_ENABLED = false;
+/**
+ * 外观经济写（装备/解锁/购买）的运行期 fail-closed 总闸。
+ *
+ * **这是不变量 8 的锚点**（拍板 A，docs/s/README.md §9.1）：此前描述的「双端 catalog hash 比对」
+ * 在两侧都是死判据（hash 形参默认值等于本进程常量、生产调用点都不传该参），⛔ 不要再把不变量 8
+ * 理解成那条比对。真正活着的判据是本开关 + 双端模块加载期的目录 fail-closed。
+ *
+ * S3-01 冻结业务目录时**有意未翻**（那时还没有写路径，翻了等于宣称一个不存在的能力）；
+ * S3-02/03/04 的 store、RPC 端点与衣柜页面落地后于 S3 收尾翻开。
+ */
+export const SNAKE_SKIN_COSMETIC_WRITES_ENABLED = true;
 export { SERVER_SNAKE_SKIN_BUSINESS_HASH };
 
 function fail(message: string): never {
@@ -161,8 +170,16 @@ export function assertSnakeSkinPublicHash(peerHash: string): void {
     if (peerHash !== PUBLIC_SNAKE_SKIN_CATALOG_HASH) fail("public catalog hash mismatch; cosmetic operation rejected");
 }
 
-export function canWriteSnakeSkinCosmetics(peerHash: string): boolean {
-    return SNAKE_SKIN_COSMETIC_WRITES_ENABLED && peerHash === PUBLIC_SNAKE_SKIN_CATALOG_HASH;
+/**
+ * 外观经济写的运行期判据。
+ *
+ * `peerHash` **可选**（哨兵形态）：拍板 A 下服务端单方面权威，没有对端目录可比时
+ * 「无 peer」⛔ 不构成拒绝理由；只有显式传入且不一致才拒。⚠ 不要把它改回必选参数——
+ * 那会让生产调用点被迫编造一个等于本进程常量的实参，判据重新退化成恒真。
+ */
+export function canWriteSnakeSkinCosmetics(peerHash: string | null = null): boolean {
+    if (!SNAKE_SKIN_COSMETIC_WRITES_ENABLED) return false;
+    return peerHash === null || peerHash === PUBLIC_SNAKE_SKIN_CATALOG_HASH;
 }
 
 export interface ServerBattleSkinResolution {
