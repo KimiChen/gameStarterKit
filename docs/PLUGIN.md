@@ -357,8 +357,12 @@ npm --workspace @game/server run plugin -- check
    实证过程暴露并补齐的框架前置（`5c6df35`）：feature.json 可选 `module`（FeatureHost 装载器由生成器渲染，
    AppRuntime 透传）、logic/sidecar 可落 `apps/client/src/features/<id>/`、feature View 只豁免 cc/fairygui
    值导入、错误码顺序测试不再硬编码域清单——即「新插件不得需要改中央源码/中央测试」的判据真的成立了。
-   仍欠 Creator 侧确认（随包 `.meta` 的 uuid 稳定；脚本合成的共享祖先 `.meta` 占位待 Creator 重写），
-   归 plan-v5 B4/B6 类 Creator 人工证据。
+   Creator 侧确认已于当天下午闭合（见 plan-v5 E5 行与 docs/evidence/creator-2026-09-05）。
+   **gameplay 形态**同日由第二个真实插件「点数赛」`plugins/tally` 走通同一条动线（`fb903db`，
+   [docs/tally/README.md](tally/README.md)）：它逼出了两处此前 feature 形态没碰到的中央清单——
+   `apps/server/test/wire-vectors/index.ts` 的手写 import 表（改为 `codegen:gameplays` 生成 `index.generated.ts`，
+   sidecar `wire-vectors/<id>.ts` 进 gameplay 所有权）与 `gameplay-codegen.test.ts` 的硬编码玩法集（改为按 schema
+   目录发现）。至此 §3 的判据在两种 kind 上都有真实包背书。
 7. **同仓「作者=宿主」的插件迭代动线**（plan-v5 E6）：✅ 已按方案 ② 实施（2026-09-05）——
    `install --reinstall-from-tree <id>`（§5.4）。E5 实证当天撞上的现场（改 `docs/redeem/README.md` 一行即锁红、
    只能回退）已用它重放闭合：bump 1.0.0 → 1.0.1 后以树重写锁。仍开放的同类尾巴：随包 `.meta` 在锁内，Creator

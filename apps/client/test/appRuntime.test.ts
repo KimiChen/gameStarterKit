@@ -483,3 +483,46 @@ test("bootstrap：?server= 查询参数覆盖 serverUrl（LAN 调试），portal
     else globalWithLocation.location = savedLocation;
   }
 });
+
+test("玩法侧退出（controllerBridge.requestStop）后恢复 authenticated base；未登录 / 无 base / 已 dispose 不恢复", async () => {
+  // 2026-09-05 Creator 预览实测：结算/离开经 host.requestExit → controller.stop 后整屏黑——closed{voluntary}
+  // 不触发导航、stop 也不导航，没人把 launchGameplay 进战斗前关掉的 authenticated 组恢复回来。
+  const { appRuntime, makeNode } = await loadAppHost();
+  const runtime = new appRuntime.AppRuntime({ node: makeNode() }) as unknown as Record<string, any>;
+  const restores: unknown[] = [];
+  let hasBase = true;
+  runtime.navigation = Object.assign(Object.create(runtime.navigation), {
+    hasAuthenticatedBase: () => hasBase,
+    restoreAuthenticatedBase: async (context: unknown) => { restores.push(context); return null; },
+  });
+  let loggedIn = true;
+  runtime.ports = {
+    ...runtime.ports,
+    session: Object.assign(Object.create(runtime.ports.session), {
+      isLoggedIn: () => loggedIn,
+      getUserId: () => "u-1",
+      getSessionProfile: () => ({ stamina: 7 }),
+    }),
+  };
+  const bridge = runtime.gameplayServices.controllerBridge;
+  try {
+    await bridge.requestStop({ kind: "manual" });
+    assert.deepEqual(restores, [{ userId: "u-1", user: { stamina: 7 } }], "玩法侧退出后必须恢复 authenticated base");
+
+    loggedIn = false;
+    await bridge.requestStop({ kind: "manual" });
+    assert.equal(restores.length, 1, "未登录不恢复");
+    loggedIn = true;
+
+    hasBase = false;
+    await bridge.requestStop({ kind: "manual" });
+    assert.equal(restores.length, 1, "从未登记 base（开发快捷入口）不恢复");
+    hasBase = true;
+
+    runtime.dispose();
+    await bridge.requestStop({ kind: "manual" });
+    assert.equal(restores.length, 1, "dispose 后不恢复");
+  } finally {
+    runtime.dispose();
+  }
+});
