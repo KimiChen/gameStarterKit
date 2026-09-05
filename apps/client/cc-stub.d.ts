@@ -61,25 +61,57 @@ declare module "cc" {
       static EventType: { EDITING_DID_BEGAN: string; TEXT_CHANGED: string; EDITING_DID_ENDED: string; EDITING_RETURN: string };
     }
     export class AudioClip { duration: number; }
-  export class Mesh { subMeshes: Array<{ update(): void }>; }
-  export class Material {
-    initialize(options: { effectName: string; defines?: Record<string, unknown> }): void;
-    setProperty(name: string, value: unknown): void;
+  /** 动态网格的逐帧几何。⚠ 索引字段叫 indices16/indices32，⛔ 没有 indices。 */
+  export interface DynamicGeometry {
+    positions: Float32Array;
+    uvs?: Float32Array;
+    colors?: Float32Array;
+    indices16?: Uint16Array;
+    minPos?: Vec3;
+    maxPos?: Vec3;
   }
-  export class UIMeshRenderer extends Component { mesh: Mesh | null; material: Material | null; }
+  export class Mesh {
+    /** ⚠ 只有 createDynamicMesh 造出的网格能更新；静态网格会被引擎 warnID(14200) 拒绝。 */
+    updateSubMesh(primitiveIndex: number, geometry: DynamicGeometry): void;
+    destroy(): boolean;
+  }
+  export class Material {
+    initialize(options: {
+      effectName: string;
+      technique?: number;
+      defines?: Record<string, unknown>;
+      states?: Record<string, unknown>;
+    }): void;
+    setProperty(name: string, value: unknown): void;
+    destroy(): boolean;
+  }
+  export class EffectAsset {
+    static get(name: string): { techniques: ReadonlyArray<{ name?: string }> } | null;
+  }
+  /**
+   * ⚠ 引擎侧的 UIMeshRenderer **既没有 mesh 也没有 material**——它只是 UI 桥，在 onLoad 里查一次
+   * 同节点的 ModelRenderer。⛔ 别再往它身上写这两个字段（那是 S5-05 记录的 F2 缺陷）。
+   */
+  export class UIMeshRenderer extends Component {}
+  /** ⚠ 在 cc 模块里导出，但**不在** cc 全局对象上（全局那份的旧名是 ModelComponent）。 */
+  export class MeshRenderer extends Component {
+      mesh: Mesh | null; material: Material | null;
+      /** ⚠ 每次 mesh.updateSubMesh 之后必须调用：它才会把新的顶点/索引数同步进 InputAssembler。 */
+      onGeometryChanged(): void;
+    }
   export namespace gfx {
-    class Attribute { constructor(name: string, format: number); }
-    const AttributeName: { ATTR_POSITION: string; ATTR_TEX_COORD: string; ATTR_COLOR: string };
-    const Format: { RGB32F: number; RG32F: number; RGBA32F: number };
+    const CullMode: { NONE: number; FRONT: number; BACK: number };
   }
   export const utils: {
-    createMesh(data: {
-      attributes: gfx.Attribute[];
-      positions: Float32Array;
-      uvs?: Float32Array;
-      colors?: Float32Array;
-      indices?: Uint16Array;
-    }): Mesh;
+    MeshUtils: {
+      /** ⚠ options 是整体默认、不是逐字段合并，三个字段必须一起给全。 */
+      createDynamicMesh(
+        primitiveIndex: number,
+        geometry: DynamicGeometry,
+        out: Mesh | undefined,
+        options: { maxSubMeshes: number; maxSubMeshVertices: number; maxSubMeshIndices: number },
+      ): Mesh;
+    };
   };
     export class AudioSource extends Component { playOneShot(clip: AudioClip, volumeScale?: number): void; play(): void; stop(): void; }
     export const resources: {
@@ -120,7 +152,10 @@ declare module "cc" {
 
     export class Canvas extends Component {}
 
-    export const director: { getScene(): Node | null };
+    export const director: {
+      /** ⚠ 场景根同时挂着渲染全局设置；`globals` 在部分宿主下可能缺席，调用方需可选取值。 */
+      getScene(): (Node & { globals?: { postSettings?: { toneMappingType: number } } }) | null;
+    };
     export const view: {
         setDesignResolutionSize(width: number, height: number, policy: unknown): void;
         getVisibleSize(): { width: number; height: number };

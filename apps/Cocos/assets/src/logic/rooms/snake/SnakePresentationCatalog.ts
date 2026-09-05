@@ -55,7 +55,15 @@ export interface ClientSkinPresentation {
 }
 
 export interface SkinLayoutMetrics {
+    /**
+     * 源像素 → 世界单位的换算系数：`36 * bodyRenderWidthRate / body[0].帧宽 * bodyScale`。
+     * 它同时决定了身体精灵该画多大——某帧的世界尺寸就是 `rect.width/height * frameScale`。
+     * ⚠ 分母固定取 `body[0]` 的帧宽（原作同款口径），所以同一皮肤内不同 body 轨道共用一个系数。
+     */
+    readonly frameScale: number;
+    /** 蛇头点(索引 0)到**第一个身体精灵**之间隔多少个路径点。 */
     readonly firstBodyPointDistance: number;
+    /** 相邻两个身体精灵之间隔多少个路径点。⚠ 是「隔几个点」，不是世界距离。 */
     readonly repeatedBodyPointDistance: number;
     readonly tailPointDistance: number | null;
 }
@@ -385,7 +393,7 @@ export function deriveSkinLayoutMetrics(
         ["repeatedBodyPointDistance", repeatedBodyPointDistance],
         ...(tailPointDistance === null ? [] : [["tailPointDistance", tailPointDistance] as const]),
     ] as const) positive(value, `skin ${presentation.skinId}.${name}`);
-    return { firstBodyPointDistance, repeatedBodyPointDistance, tailPointDistance };
+    return { frameScale, firstBodyPointDistance, repeatedBodyPointDistance, tailPointDistance };
 }
 
 export type SnakePresentationAvailability = "available" | "missing" | "invalid";
