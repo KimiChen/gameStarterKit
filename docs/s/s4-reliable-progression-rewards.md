@@ -11,7 +11,7 @@
 | 实现范围 | 当前进程内的 run 统计、金币/XP/碎片/成就奖励与个人结果页 |
 | 数据来源 | S2 房间内已有的真人 run 状态和权威计数 |
 | 账号状态 | S3/S4 共用的模块级内存 profile，并 best-effort 镜像到 Redis |
-| Redis | 复用 `snake:user:{uid}`，增加 XP 与成就字段 |
+| Redis | 复用 `gp:snake:user:{uid}`，增加 XP 与成就字段 |
 | 发布口径 | Demo 奖励，不承诺进程崩溃或跨实例一致性 |
 
 S4 不再假定 S2R 已建立持久 run、checkpoint 或通用生命周期接口。本阶段直接消费房间内当前 run，
@@ -19,7 +19,7 @@ S4 不再假定 S2R 已建立持久 run、checkpoint 或通用生命周期接口
 
 ## 冻结决策
 
-1. 不新增数据库表或 Redis key；继续复用 `snake:user:{uid}` HASH。
+1. 不新增数据库表或 Redis key；继续复用 `gp:snake:user:{uid}` HASH。
 2. S4 允许在该 HASH 增加 `snakeXp` 和 `achievementProgress`，并更新 S3 已允许的皮肤/碎片字段。
 3. 不修改 `apps/server/src/rooms/GameMode.ts` 和 `apps/server/src/rooms/GameRoom.ts`。
 4. 奖励计算和 profile 更新在 Snake mode 的同步终局路径完成，不登记后台处理流程。
@@ -142,7 +142,7 @@ interface SnakeDemoProgression {
 第一次终局按“读取旧值、计算全部增量、一次替换 profile、缓存结果”的顺序同步完成。重复终局直接返回缓存值。
 没有跨进程竞争处理；这是明确的 demo 限制。
 
-S4 实施后 `snake:user:{uid}` 的完整允许字段为：
+S4 实施后 `gp:snake:user:{uid}` 的完整允许字段为：
 
 | field | 编码 |
 |---|---|
@@ -157,6 +157,15 @@ S4 实施后 `snake:user:{uid}` 的完整允许字段为：
 字段；缺失采用 0，损坏则告警并对该 progression profile 使用默认值。
 
 ## 个人结果契约
+
+> ⛔ **待拍板 B / C（[README §9.1](README.md#91-三项必须先拍板的问题)，未定不进 S4-04）**
+>
+> - **B｜扩 v1 还是造 v2**：现有 `ISnakeRunResultV1`（`apps/shared/src/gameplays/snake/wire.ts`）
+>   已预留 `rewardPolicyVersion` / `rewardReceiptId` / `rewardSummary` 三个可选字段。扩 v1 不动
+>   token 名、不动客户端订阅；下面写的 `resultVersion: 2` 需要 bump `modeVersion` 并联动三处生成镜像。
+> - **C｜「再来一局」怎么实现**：服务端当前**没有**房内重开 run 的能力——`runId` 只在 `createPlayer`
+>   分配，Finalized 之后玩家留在房里但没有任何命令能开新 run。选「离房重进」则 S4 零服务端改动；
+>   选「房内重开」要新增命令与状态机分支。下面「页面提供『再来一局』」一句在 C 拍板前不成立。
 
 结果只表达最终值，不包含中间状态：
 
@@ -209,7 +218,7 @@ XP、等级、碎片、成就与新解锁皮肤。没有领取按钮；奖励在
   -> 计算 qualified 与全部奖励
   -> 同步替换内存 profile
   -> 同步生成并缓存个人结果
-  -> best-effort 单条 HSET snake:user:{uid} <完整变化字段>
+  -> best-effort 单条 HSET gp:snake:user:{uid} <完整变化字段>
   -> 只向本人推送结果
 ```
 
@@ -245,7 +254,7 @@ XP、等级、碎片、成就与新解锁皮肤。没有领取按钮；奖励在
 - [ ] 同一 run 在当前进程内重复终局只加一次奖励。
 - [ ] 金币、XP、等级、四项成就和碎片公式的上下界有精确 fixture。
 - [ ] AI、假榜、`displayRank`、不合格 run 和成功复活不会错误发奖。
-- [ ] Redis 仍只有 `snake:user:{uid}` 一个 Snake key，字段严格匹配本阶段六项白名单且不含 `sId`。
+- [ ] Redis 仍只有 `gp:snake:user:{uid}` 一个 Snake key，字段严格匹配本阶段六项白名单且不含 `sId`。
 - [ ] Redis 写失败不影响已经生成的奖励结果。
 - [ ] 结果只发给本人，其他玩家和房间 phase 不受影响。
 - [ ] 受限通用房间文件无差异，生成镜像新鲜。

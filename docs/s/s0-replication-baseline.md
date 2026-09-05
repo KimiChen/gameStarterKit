@@ -19,6 +19,21 @@
 UI 标注共 14 张 PNG，均带 `sourceDerivedStaticReconstruction` sidecar。`--check` 已在全新临时目录重建
 55 个文件并逐字节一致。该结论只完成证据基线；S1 素材目录和 S2 玩法运行时仍未实施。
 
+> ⚠ **本页 byte-for-byte 结论的有效范围（2026-09-05 核对补注）**
+>
+> 1. **逐字节结论绑定 `7a04131` 当时的 PNG 编码器。** `f731658` 把 `tools/snake-s0-replication/png.mjs`
+>    的 IDAT 编码从 Node `zlib.deflateSync` 换成仓内确定性 deflate，只重钉了 S1 的 PNG；
+>    `evidence/s0/goldens/` 的 14 张 PNG 仍是旧 zlib 字节（zlib 头 `78 da`，新编码器只产 `78 01`）。
+>    **像素不变，字节已变**：本页 §6 的「`--check` 55/55 逐字节一致」对当前工具链不再成立，
+>    待归档恢复后重钉 `SHA256SUMS` + `goldens/manifest.json` + `bundle-manifest.json`。
+> 2. **S0 证据当前不可重新生成。** `tools/snake-s0-replication/cli.mjs` 的 `--write` 与 `--check`
+>    都强制 `--source <锁定归档>`，而该归档在本机已不存在，也就无法复算 34 个来源身份、14 张 golden
+>    或验证归档 HEAD 仍为 `6367f65`。目前只剩两项可自证：bundle 内部 `shasum -a 256 -c` 54/54
+>    （2026-09-05 实测通过）与 10 个不依赖归档的单测。⚠ S1 工具相反，其 `--write`/`--check` 是
+>    repo-only，`evidence/s1` 可以重钉——这个不对称在排期时不要混淆。
+> 3. **⛔ 不要编辑 `evidence/s0/` 里的任何文件**（含其 `README.md`）：该目录的 `SHA256SUMS` 覆盖自身
+>    全部 payload，改一个字节就红，而重钉需要上一条已不可用的归档。加注一律写在本页。
+
 ---
 
 ## 1. 目标与阶段边界
@@ -103,8 +118,13 @@ portrait design viewport:  750 × 1624
 - 横版静态重建和竖版参照都固定使用来源 fresh-install 的浅色主题 `blackBackground=0`；暗色主题只作为
   presentation 基线的另一套精确来源值。
 
-当前代码仍是经典默认世界的竖版转置 `1920 × 3264`，证据入口为
-[ruleset.ts](../../apps/shared/src/gameplays/snake/ruleset.ts#L19)。
+> ⚠ **时点声明**：本节及 §2.8 差异表「当前事实」列描述的是 **2026-09-03 建档时**（实现 baseline
+> `ecd7514`）的运行时，**已被 S2 全部取代**——现在是 4096²、1000 Dot + 30 Star、出生长度 80、
+> 稳定态 17 蛇、1030 食物、`matchTicks=0`。这些列作为差异决策的历史输入保留，⛔ 不要当成现状读；
+> 现状以 `apps/shared/src/gameplays/snake/ruleset.ts` 与 [S2](s2-battle-and-endless-lifecycle.md) 为准。
+
+（建档时点）当前代码仍是经典默认世界的竖版转置 `1920 × 3264`，证据入口为
+[ruleset.ts](../../apps/shared/src/gameplays/snake/ruleset.ts)（原锚点 `#L19` 已随 S2 漂移，按符号定位）。
 
 ### 2.3 V2 战场配置快照
 
@@ -254,7 +274,11 @@ S0 只冻结来源与目标差异，状态机和可靠扣费分别在 S2、S2R �
 
 ### 2.8 当前实现差距基线
 
-| 维度 | 当前事实 | 目标事实 | 证据入口 |
+> ⚠ **「当前事实」列 = 2026-09-03 建档时（baseline `ecd7514`）的快照，已被 S2 全部实现**，本表因此
+> 是**已闭合的历史差异台账**，不是待办清单。`evidence/s0/current-gap-matrix.json` 按当时 commit 固化，
+> 不需要也不应改动（见本页开头第 3 条：⛔ 不编辑 `evidence/s0/`）。行号锚点已随 S2 漂移，按符号定位。
+
+| 维度 | 当前事实（2026-09-03 建档快照） | 目标事实（S2 已达成） | 证据入口 |
 |---|---|---|---|
 | gameplay/profile | `snake@1`、最多 8 真人、`dropIn` | 保持真人上限与 drop-in，升级目标 wire/config | [manifest.json](../../apps/shared/schema/gameplays/snake/manifest.json#L1) |
 | 世界与食物 | `1920×3264`、300 Dot + 15 Star、出生长度 30、8 条活动蛇 | `4096²`、1000 + 30、出生长度 80、稳定态 17 条活动蛇 | [ruleset.ts](../../apps/shared/src/gameplays/snake/ruleset.ts#L19) |

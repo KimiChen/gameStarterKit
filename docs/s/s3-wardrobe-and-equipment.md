@@ -11,7 +11,7 @@
 | 实现范围 | 16 套皮肤的浏览、拥有、碎片合成、装备与当前 run 外观锁存 |
 | 账号状态 | 当前进程内 profile；成功时 best-effort 镜像到 Redis |
 | 客户端本地状态 | 只保存已查看皮肤 ID 与筛选偏好 |
-| Redis | 复用 `snake:user:{uid}` HASH，不增加其他 Snake key |
+| Redis | 复用 `gp:snake:user:{uid}` HASH，不增加其他 Snake key |
 | 发布口径 | 仅供 demo 和内部试玩，不承诺每次 Redis 写入成功或多实例一致 |
 
 S3 延续 S2R 的简化原则：实现可玩的衣柜闭环，但不建设生产账号资产链路，也不扩展通用房间框架。
@@ -19,13 +19,16 @@ S3 延续 S2R 的简化原则：实现可玩的衣柜闭环，但不建设生产
 ## 冻结决策
 
 1. 不新增数据库表，不复用现有 Bag/User 作为 Snake demo 的存储。
-2. 只复用 Redis HASH `snake:user:{uid}`，S3 允许增加 `equippedSkinId`、`ownedSkinIds` 和
+2. 只复用 Redis HASH `gp:snake:user:{uid}`，S3 允许增加 `equippedSkinId`、`ownedSkinIds` 和
    `fragmentBalances`；不新建其他 Snake key。
 3. 账号身份只取认证后的 `uid`。Redis key/value、内存 profile、RPC 和玩法投影都不增加 `sId`。
 4. 不修改 `apps/server/src/rooms/GameMode.ts` 和 `apps/server/src/rooms/GameRoom.ts`。
 5. 皮肤读取与锁存在 Snake mode 内同步完成，不新增通用准入/离场接口或后台处理流程。
 6. 同一进程内，以模块级 `Map<uid, profile>` 共享衣柜状态；首次普通 Lobby RPC 尝试从 Redis
-   `HGETALL` 回灌，失败或数据非法时告警并使用默认 profile。
+   **`HMGET`**（按字段白名单取 `equippedSkinId` / `ownedSkinIds` / `fragmentBalances`）回灌，
+   失败或数据非法时告警并使用默认 profile。⛔ 不用 `HGETALL`：全仓明文禁令（09·R1，
+   `apps/server/src/core/userRecord.ts` 抬头与 [docs/SERVER.md](../SERVER.md)「按需 HMGET 并只写
+   dirty 字段；禁止 HGETALL 后整档覆盖」），源码零使用；白名单读顺带满足本阶段「字段严格限制」验收条。
 7. 装备或合成先同步更新内存，再用一条不等待结果的 `HSET` 写完整相关字段；写失败只告警，
    不回滚已经返回的 demo 结果。
 8. 皮肤只改变表现，不改变速度、初始长度、转向、碰撞、攻击范围或得分。
@@ -99,6 +102,14 @@ Redis 继续使用 S2R 已创建的同一个 HASH。S3 实施后的允许字段�
 
 ## RPC 与玩法接入
 
+> ⛔ **待拍板 A（[README §9.1](README.md#91-三项必须先拍板的问题)，未定不进 S3-1）**：不变量 8
+> 「catalog hash 不一致时禁止外观经济写」目前**没有活的判据**——战斗路径调
+> `resolveServerBattleSkin(requestedSkin)` 不传 `peerHash`，而形参默认值就是本进程常量，比对恒真；
+> `canWriteSnakeSkinCosmetics` 生产调用点为 0；Snake wire 里也没有客户端上报皮肤目录 hash 的通道
+> （`layerHashes`/`configHash` 是 ruleset 配置 hash，不是皮肤目录 hash）。下面三个接口若不带
+> `catalogHash`，S3 落地后该不变量将被静默架空。选项：① `equip`/`unlock` 请求加必选 `catalogHash`
+> （要改域 descriptor 与向量 sidecar，**形状定了不好改**）；② 显式承认该判据只在文档层并降级不变量 8。
+
 `snakeCosmetic` demo Feature 只需要三个接口：
 
 ```text
@@ -108,7 +119,7 @@ snakeCosmetic.unlock(skinId)
 ```
 
 服务端从认证上下文取得 `uid`，客户端不能提交账号身份。首次 `getSnapshot` 在 profile 尚未载入时
-尝试 `HGETALL` 并填充模块级缓存；后续请求直接使用当前进程内值。接口不要求持久请求记录；网络重试依靠
+按字段白名单 `HMGET` 并填充模块级缓存；后续请求直接使用当前进程内值。接口不要求持久请求记录；网络重试依靠
 操作自身的结果幂等性：重复装备是 no-op，重复解锁已拥有皮肤不会再次扣碎片。
 
 客户端在发起 Snake join 前调用这个普通 Lobby RPC 预热 profile。Redis 不可用时仍返回默认 profile；
@@ -146,7 +157,20 @@ sync 命令刷新。
 
 ### S3-01：冻结 demo catalog
 
-- [ ] 在 shared 手写真源登记 16 套业务投影、四项碎片门槛、获取方式和严格 validator。
+> ⚠ **真源订正（2026-09-05 核对）**：业务投影**不在 shared**，而是服务端生成物
+> `apps/server/src/rooms/modes/snake/skinBusinessCatalog.generated.ts`，其值由
+> `tools/snake-s1-assets/core.mjs` 硬编码产出，`--write` 重生；`skinBusinessCatalog.ts` 的 validator
+> 当前**主动拒绝**任何被填值的业务字段（`rarity`/`acquisition`/`fragmentItemId`/… 必须是
+> `{state, value:null}`），这是设计好的 S1→S3 门禁，注释写明「S3 更新业务值时仍从这里扩展」。
+> ⛔ 不要按旧措辞去 `apps/shared` 另手写一份业务目录——那会造出第二份目录并绕开公共 hash。
+
+- [ ] 改 `tools/snake-s1-assets/core.mjs` 产出 16 套真实业务值（展示名、稀有度、获取方式、
+      四项碎片门槛），跑 `node tools/snake-s1-assets/cli.mjs --write` 重生服务端业务目录。
+- [ ] 放宽 `skinBusinessCatalog.ts` validator 的 approved 分支（保留 fail-closed 缺省），并翻转
+      `SNAKE_SKIN_COSMETIC_WRITES_ENABLED`。
+- [ ] **同批**更新 `apps/server/test/snake-s1-assets.test.ts` 里被硬钉的
+      `SERVER_SNAKE_SKIN_BUSINESS_HASH` 与 `canWriteSnakeSkinCosmetics(...) === false` 断言，
+      否则服务端测试直接红；新 hash 回写专项 README §8 与 `evidence/s1`。
 - [ ] 验证目录 ID 唯一、默认皮肤唯一、fallback 无环且皮肤没有玩法数值字段。
 
 ### S3-02：实现 profile、Redis 投影与 RPC
@@ -172,7 +196,7 @@ sync 命令刷新。
 
 ## 验收条件
 
-- [ ] Redis 只使用 `snake:user:{uid}`，字段严格限制为本阶段允许的
+- [ ] Redis 只使用 `gp:snake:user:{uid}`，字段严格限制为本阶段允许的
   `coinBalance/equippedSkinId/ownedSkinIds/fragmentBalances`。
 - [ ] Redis 投影不含 `sId`；JSON 字段稳定排序且损坏输入安全回退。
 - [ ] 默认、装备、解锁、碎片门槛、重复操作和非法请求在当前进程内结果正确。
