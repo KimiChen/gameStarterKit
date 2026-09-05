@@ -167,12 +167,15 @@ export const validateSnakeCosmeticSnapshotRes: RuntimeValidator<ISnakeCosmeticSn
 export default defineLobbyRpcDomain({
     domain: "snakeCosmetic",
     // v2：getSnapshot 响应增加 catalog（衣柜要显示稀有度/获取方式，而业务真源在服务端）。
-    contractVersion: 2,
+    // v3：外观经济写总闸落地，增加 SNAKE_COSMETIC_WRITES_DISABLED。
+    contractVersion: 3,
     errorCodes: [
         "SNAKE_SKIN_UNKNOWN",
         "SNAKE_SKIN_NOT_OWNED",
         "SNAKE_SKIN_NOT_CRAFTABLE",
         "SNAKE_SKIN_FRAGMENTS_INSUFFICIENT",
+        // 运行期总闸（不变量 8 的锚点）关闭时的拒绝码；⛔ 不是用户可修复的状态。
+        "SNAKE_COSMETIC_WRITES_DISABLED",
     ],
     pushes: [],
     routes: [

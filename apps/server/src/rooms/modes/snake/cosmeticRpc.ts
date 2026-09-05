@@ -10,7 +10,7 @@
 import type { ISnakeCosmeticCatalogEntry } from "@game/shared/protocol/lobbyRpc/domains/snakeCosmetic";
 import { RpcFault } from "../../../core/errors";
 import { SnakeDemoCosmeticStore, type SnakeCosmeticFailure } from "./cosmeticProfile";
-import { SNAKE_SKIN_BUSINESS_CATALOG } from "./skinBusinessCatalog";
+import { SNAKE_SKIN_BUSINESS_CATALOG, canWriteSnakeSkinCosmetics } from "./skinBusinessCatalog";
 
 export const snakeCosmeticStore = new SnakeDemoCosmeticStore();
 
@@ -28,6 +28,18 @@ export const SNAKE_COSMETIC_WIRE_CATALOG: readonly ISnakeCosmeticCatalogEntry[] 
         acquisition: entry.acquisition.value,
         fragmentThreshold: entry.fragmentThreshold.state === "approved" ? entry.fragmentThreshold.value : null,
     }));
+
+/**
+ * 外观经济写总闸——**不变量 8 的活判据**（拍板 A）。关闭时整条写路径 fail-closed。
+ *
+ * ⚠ 只挡玩家发起的装备/解锁（RPC 写路径），⛔ 不挡 S4 的奖励发放：那是系统授予，
+ * 与「外观目录相关经济写」不是同一件事，混在一起会让关闸顺带停掉结算。
+ */
+export function assertSnakeCosmeticWritesEnabled(): void {
+    if (!canWriteSnakeSkinCosmetics()) {
+        throw new RpcFault("SNAKE_COSMETIC_WRITES_DISABLED", "衣柜暂时不可用");
+    }
+}
 
 /**
  * 领域失败 → `RpcFault`。msg 是有界可公开文本（⛔ 不含 Redis key、payload、内部路径或栈）；
