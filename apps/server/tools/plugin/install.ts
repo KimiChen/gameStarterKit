@@ -13,11 +13,11 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { compareVersions } from "./manifest";
-import { INSTALLED_LOCK_DIR, readInstalledLock, verifyLockAgainstTree, writeInstalledLock, type LockEntry } from "./lock";
+import { compareVersions, identityDifferences } from "./manifest";
+import { INSTALLED_LOCK_DIR, foreignLockOwners, readInstalledLock, verifyLockAgainstTree, writeInstalledLock, type LockEntry } from "./lock";
 import { packPlugin } from "./pack";
 import { assertInstalledLockOwned, readPackage, validatePackage, type ValidatedPackage } from "./package";
-import { mirrorPathOf, type OwnershipRule } from "./ownership";
+import { matchesPrefixRule, mirrorPathOf, type OwnershipRule } from "./ownership";
 
 export interface InstallOptions {
   readonly root: string;
@@ -49,6 +49,10 @@ export interface ReinstallFromTreeOptions {
   readonly git?: boolean;
   readonly postinstall?: boolean;
   readonly dryRun?: boolean;
+  /** 树上 plugin.json 的身份（kinds / constantName / domains / fguiPackages）与旧锁不同时必须显式放行。 */
+  readonly allowIdentityChange?: boolean;
+  /** 把「git 已跟踪但不在旧锁」的推导集内文件吸收进锁（缺省视为框架文件而拒绝）。 */
+  readonly adoptTracked?: boolean;
 }
 
 function fail(message: string): never {
@@ -106,7 +110,12 @@ export function gitAddExisting(root: string, paths: readonly string[]): void {
  * 文件级比对挡不住「插件 id/domain 与框架既有目录同名」（core/auth、resources/ui …）——那会把插件代码
  * 放进框架目录随 tsc/测试链一起编译（PLUGIN-REVIEW 实施后审阅）。镜像目录按真源规则一并检查。
  */
-function ownershipConflicts(root: string, rules: readonly OwnershipRule[], owned: ReadonlySet<string>): readonly string[] {
+export function ownershipConflicts(
+  root: string,
+  rules: readonly OwnershipRule[],
+  owned: ReadonlySet<string>,
+  foreign: ReadonlyMap<string, string> = new Map(),
+): readonly string[] {
   const conflicts = new Set<string>();
   const listFiles = (relativeDir: string): string[] => {
     const base = path.join(root, relativeDir);
@@ -123,7 +132,9 @@ function ownershipConflicts(root: string, rules: readonly OwnershipRule[], owned
     return out;
   };
   const check = (relative: string): void => {
-    if (!owned.has(relative)) conflicts.add(relative);
+    if (owned.has(relative)) return;
+    const owner = foreign.get(relative);
+    conflicts.add(owner ? `${relative}（属于插件 ${owner}）` : relative);
   };
   for (const rule of rules) {
     const targets = [rule.path];
@@ -140,12 +151,28 @@ function ownershipConflicts(root: string, rules: readonly OwnershipRule[], owned
         const dir = path.join(root, target);
         if (!fs.existsSync(dir)) continue;
         for (const name of fs.readdirSync(dir)) {
-          if (name.startsWith(rule.prefix ?? "") && name !== rule.prefix && fs.statSync(path.join(dir, name)).isFile()) check(`${target}/${name}`);
+          if (matchesPrefixRule(name, rule) && fs.statSync(path.join(dir, name)).isFile()) check(`${target}/${name}`);
         }
       }
     }
   }
   return [...conflicts].sort();
+}
+
+/** 推导集采集根下 git 已跟踪的文件集合（`git ls-files`；不是 git 仓时由调用方决定退路）。 */
+export function gitTrackedFiles(root: string, paths: readonly string[]): ReadonlySet<string> {
+  if (paths.length === 0) return new Set();
+  const result = spawnSync("git", ["ls-files", "-z", "--", ...paths], { cwd: root, encoding: "utf8" });
+  if (result.error || result.status !== 0) fail(`git ls-files 失败（不是 git 仓库？用 --no-git 跳过）：${result.stderr ?? result.error?.message ?? ""}`);
+  return new Set(result.stdout.split("\0").filter((line) => line !== ""));
+}
+
+/** 包内文件与其它已安装插件锁的交集：同一路径不可能同时属于两个插件（PLUGIN-REGISTRY §1-4）。 */
+function assertNoForeignClash(id: string, files: Iterable<string>, foreign: ReadonlyMap<string, string>): void {
+  const clash = [...files].filter((relative) => foreign.has(relative)).sort();
+  if (clash.length > 0) {
+    fail(`拒绝：插件 "${id}" 的包内文件已被其它已安装插件的锁登记（同一路径不可能属于两个插件）：\n  ${clash.map((relative) => `${relative}（属于插件 ${foreign.get(relative) as string}）`).join("\n  ")}`);
+  }
 }
 
 function atomicWrite(file: string, data: Buffer): void {
@@ -227,8 +254,11 @@ export function installPlugin(options: InstallOptions): InstallReport {
     }
   }
 
-  // 所有权冲突：推导集内（含镜像）已有不属本插件的文件——文件级同名与目录级占用（id/domain 撞框架目录）都拒绝。
-  const conflicts = ownershipConflicts(root, pkg.rules, new Set(previousEntries.keys()));
+  // 所有权冲突：推导集内（含镜像）已有不属本插件的文件——文件级同名与目录级占用（id/domain 撞框架目录）都拒绝；
+  // 别的插件锁登记的路径先单独点名（两个插件的推导集相交是硬错误，不是「谁先装谁赢」）。
+  const foreign = foreignLockOwners(root, id);
+  assertNoForeignClash(id, pkg.files.keys(), foreign);
+  const conflicts = ownershipConflicts(root, pkg.rules, new Set(previousEntries.keys()), foreign);
   if (conflicts.length > 0) fail(`拒绝：以下目标路径已存在且不属插件 "${id}"（所有权冲突，⛔ 不覆盖、不混入框架目录）：\n  ${conflicts.join("\n  ")}`);
 
   const stale = [...previousEntries.keys()].filter((relative) => !pkg.files.has(relative));
@@ -300,6 +330,12 @@ export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallRep
   if (cmp < 0 && !options.allowDowngrade) {
     fail(`拒绝降级：已安装 ${id}@${previous.manifest.version}，树上 plugin.json 为 ${manifest.version}（显式 --allow-downgrade 才放行）`);
   }
+  // 身份变化闸：kinds / constantName / domains / fguiPackages 一变，推导集就变——树上把一个框架域写进 domains
+  // 会让采集把框架文件当成「本插件新增」吸进锁（审阅实证：domains 加 guild ⇒ added 7），必须显式放行。
+  const identityChanges = identityDifferences(previous.manifest, manifest);
+  if (identityChanges.length > 0 && !options.allowIdentityChange) {
+    fail(`拒绝：树上 plugins/${id}/plugin.json 的身份与已安装锁不同（推导集随之变化，显式 --allow-identity-change 才放行）：\n  ${identityChanges.join("\n  ")}`);
+  }
   const previousByPath = new Map(previous.entries.map((entry) => [entry.path, entry.sha256]));
   const added = pkg.entries.map((entry) => entry.path).filter((relative) => !previousByPath.has(relative)).sort();
   const changed = pkg.entries
@@ -311,7 +347,20 @@ export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallRep
     fail(`拒绝：树上内容与已安装 ${id}@${previous.manifest.version} 不同但版本未变——同仓迭代也必须 bump plugins/${id}/plugin.json 的 version\n`
       + `  新增 ${added.length}、变化 ${changed.length}、删除 ${stale.length}：\n  ${[...added, ...changed, ...stale].join("\n  ")}`);
   }
-  const conflicts = ownershipConflicts(root, pkg.rules, new Set([...previousByPath.keys(), ...pkg.files.keys()]));
+  // 谁算「本插件的」：旧锁条目一定是；树上新采集到的文件只有在 git **未跟踪**时才是作者刚写的新文件——已跟踪
+  // 却不在旧锁的文件默认视为框架（或别的提交）所有，⛔ 不能仅因落在推导集内就吸收（--adopt-tracked 显式放行；
+  // --no-git 时无从判定跟踪状态，退化为全部吸收，与 --adopt-tracked 等价）。
+  const foreign = foreignLockOwners(root, id);
+  assertNoForeignClash(id, pkg.files.keys(), foreign);
+  const collected = [...pkg.files.keys()];
+  const tracked = useGit && !options.adoptTracked ? gitTrackedFiles(root, collected) : new Set<string>();
+  const owned = new Set([...previousByPath.keys(), ...collected.filter((relative) => !tracked.has(relative))]);
+  const trackedNotOwned = collected.filter((relative) => !owned.has(relative)).sort();
+  if (trackedNotOwned.length > 0) {
+    fail(`拒绝：以下文件落在插件 "${id}" 的推导集内、已被 git 跟踪却不在已安装锁里——像是框架（或另一次提交）的文件，`
+      + `⛔ 不静默吸收进插件锁。确认它们确属本插件后用 --adopt-tracked 显式吸收：\n  ${trackedNotOwned.join("\n  ")}`);
+  }
+  const conflicts = ownershipConflicts(root, pkg.rules, owned, foreign);
   if (conflicts.length > 0) fail(`拒绝：以下路径在插件 "${id}" 的推导集内却既不在旧锁也不在树上采集结果里（生成物/硬排除混入插件目录？）：\n  ${conflicts.join("\n  ")}`);
 
   const lockRelative = path.posix.join(INSTALLED_LOCK_DIR, `${id}.lock`);

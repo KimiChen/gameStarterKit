@@ -26,7 +26,7 @@
 | `apps/client/src/features/redeem/index.ts` | feature module：install 时把 ports 组装成 RedeemRuntime |
 | `apps/client/src/features/redeem/logic/{RedeemLogic,redeemRuntime}.ts` | 纯 TS 逻辑（铁律 9） |
 | `apps/client/src/features/redeem/view/RedeemView.ts` + `.view.json` | Cocos 纯节点页 + sidecar（owner `redeem`） |
-| `apps/client/test/redeemLogic.test.ts` | 客户端逻辑测试 |
+| `apps/client/test/redeem-logic.test.ts` | 客户端逻辑测试 |
 | `docs/redeem/README.md` | 本文 |
 
 生成物（registry/features/views/fguiContracts/vectors index/features.generated.md、shared→client 镜像、

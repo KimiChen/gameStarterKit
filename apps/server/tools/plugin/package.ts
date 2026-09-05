@@ -245,6 +245,9 @@ export function assertInstalledLockOwned(root: string, lock: InstalledLock, acti
   const protectedPaths = readProtectedPaths(root);
   const denied: string[] = [];
   for (const entry of lock.entries) {
+    // 工作树里已不存在的路径构不成「按锁误删」的风险：规则演进（如测试前缀收紧）后作者改名了旧文件，
+    // 旧锁条目自然漂出推导集——reinstall-from-tree 正是吸收这种变化的路径，⛔ 不能被它自己挡住。
+    if (!fs.existsSync(path.join(root, entry.path))) continue;
     const verdict = classifyPath(entry.path, rules, protectedPaths);
     if (!verdict.allowed) denied.push(`${entry.path}（${verdict.reason}）`);
   }

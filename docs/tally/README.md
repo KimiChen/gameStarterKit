@@ -25,7 +25,7 @@ feature 形态。
 | `apps/client/src/logic/rooms/tally/TallyGameplay.ts` | 纯 TS 玩法插件（铁律 9） |
 | `apps/client/src/net/rooms/TallyRoom.ts` | adapter + joiner（`joinGameRoom` 复用，⛔ 不改 GameRoomTransport） |
 | `apps/client/src/view/rooms/tally/TallyView.ts` + `.view.json` | Cocos 纯节点 presentation |
-| `apps/client/test/tallyGameplay.test.ts` | 客户端插件测试 |
+| `apps/client/test/tally-gameplay.test.ts` | 客户端插件测试 |
 | `features/tally/feature.json` | 入口：menu `tally` → `launch.kind:"gameplay"` |
 | `docs/tally/README.md` | 本文 |
 
