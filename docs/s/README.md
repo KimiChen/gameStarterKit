@@ -1,7 +1,8 @@
 # Snake 竖版新版无尽 V2 与养成专项阶段任务
 
 > **状态：`[进行中]`。更新时间：2026-09-05。S0、完整 S1（含 S1-12 磁铁增量）、S2 与
-> S2R demo 已完成；**S3-0 收口进行中**，S3～S5 尚未实施。下一步工作计划见 §9。**<br>
+> S2R demo 已完成；**S3-0 已收口（含 A/B/C 三项拍板）**，S3～S5 尚未实施。
+> 下一步工作计划见 §9，拍板结论见 §9.1，剩余待决项见 §9.6。**<br>
 > 本目录把原根计划拆成可独立实施、验证和回写证据的 S0～S5 阶段任务。根
 > [plan-s.md](../../plan-s.md) 只保留兼容入口，不再维护第二份正文。阶段状态只以本页、对应阶段证据表和
 > [plan-v5.md](../../plan-v5.md) 的一致结论为准。
@@ -96,7 +97,7 @@ S2 死亡/run 状态机和同步端口，不扩展通用 shell。按 2026-09-03 
 | [S1 · 素材与目录](s1-assets-and-catalog.md) | `[已完成]` | 16 皮肤及表现目录，以及磁铁 `10001` 世界帧/被动 icon/aura/音效增量 | 16/16、8 个磁铁 runtime 资源、`presentationVersion=2`、三层 hash/fallback/freshness 均闭合 | 4–7 人日（估算；非工时实绩） |
 | [S2 · 战场与无尽生命周期](s2-battle-and-endless-lifecycle.md) | `[已完成]` | 4096² V2 世界、17 蛇、1030 食物、磁铁、中央操作区、无尽/死亡状态机、wire v2 | config/wire/world/Star/磁铁、输入/竞态、容量/重连测试与真栈 171/171 通过 | 11–16 人日（估算；非工时实绩） |
 | [S2R · Demo 金币复活](s2r-reliable-coin-relive.md) | `[已完成]` | uid 进程内余额、同步扣费、Redis 单字段 best-effort 镜像、余额 UI | 同一进程同一死亡只扣一次；Redis 失败不影响复活 | demo 简化实现 |
-| S3-0 · 开工前收口（§9） | `[进行中]` | 文档漂移订正、S0 证据可复现性加注、A/B/C 三项拍板 | 5 处漂移全改；键名 grep 门无输出；三项拍板各有落笔 | 0.5–1 人日 |
+| S3-0 · 开工前收口（§9） | `[已完成]` | 文档漂移订正、S0 证据可复现性加注、A/B/C 三项拍板 | 5 处漂移全改；键名 grep 门无输出；三项拍板结论见 §9.1 | 0.5–1 人日 |
 | [S3 · Demo 衣柜与装备](s3-wardrobe-and-equipment.md) | `[已拍板·待实施]` | 内存 profile、Redis 镜像、解锁/装备、衣柜页面 | 同一 HASH 保存装备/拥有/碎片，不含 `sId` | demo 简化实现 |
 | [S4 · Demo 养成奖励](s4-reliable-progression-rewards.md) | `[已拍板·待实施]` | 同步 run 奖励、内存去重、Redis profile、个人结果 | 同一进程同一 run 只奖一次 | demo 简化实现 |
 | [S5 · Demo 验收](s5-validation-and-release.md) | `[已拍板·待实施]` | 自动化、Redis profile 检查与 Creator 桌面预览 | Demo 门禁和人工证据齐全 | demo 简化验收 |
@@ -189,7 +190,7 @@ shared 继续保持零依赖，客户端 View/Logic 与 FairyGUI 动态加载边
 | S1 | `[已完成]` | `d18846a`（原基线）+ `bc5bb97`（S1-12） | converter 13/13、S1 server 5/5、client catalog 11/11；全量 client 380/380、server 489/489；typecheck/sync/inventory/SHA 全绿 | [16 张预览、两张 contact sheet 与磁铁完整性证据](evidence/s1/README.md)；Creator aura 终验留 S5 | public `a1cdecbc…b075`、server `9ed3762e…fa19` 保持不变；client 升为 `8615596a…d629`，`presentationVersion=2` |
 | S2 | `[已完成]` | `04072d4` | `verify:all` exit 0：client 384/384、server 495/495、FGUI 66/66、inventory 110/110；真栈 `test:int` 171/171；codegen/fingerprint/S1 freshness 全绿 | `750 × 1624` 无头 View/输入/资源 fixture 已通过；Creator 3.8.8 与真机视觉终验仍归 S5 | `snake@2`；online layer `3a61016c…a53f`；组合 `2c74f005…e8e7`；仅测试经济，发布开关关闭 |
 | S2R | `[已完成]` | `0b19440` | `verify:all` exit 0：client 384/384、server 499/499、FGUI 66/66、inventory 110/110；typecheck/codegen/sync 全绿 | 真栈 `test:int` 172/172，含 Redis 仅 `coinBalance` 用例 | `snake@3` demo；`eligibleForEnable=false`；发布开关关闭 |
-| S3-0 | `[进行中]` | 本次 | 建档基线 `verify:all` exit 0：client 423/423、server 541/541、FGUI 66/66、inventory 14 能力/5 入口（2026-09-05 实测；README §8 上面各行的 384/499 等计数是钉在各自 commit 的历史值，不代表 HEAD） | 不适用（纯文档订正） | 见 §9；A/B/C 三项拍板未完成前不进 S3-1 |
+| S3-0 | `[已完成]` | `89b9b03`（漂移订正）+ 本次（拍板回写） | 建档基线 `verify:all` exit 0：client 423/423、server 541/541、FGUI 66/66、inventory 14 能力/5 入口（2026-09-05 实测于 `f262be1`；README §8 上面各行的 384/499 等计数是钉在各自 commit 的历史值，不代表 HEAD） | 不适用（纯文档订正与拍板登记） | A=服务端单方面权威、B=B2a+B0、C=① 离房重进（§9.1）；剩余待决项 §9.6 不阻塞 S3-1 |
 | S3 | `[已拍板·待实施]` | — | — | — | 内存先记；同一 HASH 镜像衣柜字段 |
 | S4 | `[已拍板·待实施]` | — | — | — | 内存同步奖励；同一 HASH 镜像养成字段 |
 | S5 | `[已拍板·待实施]` | — | — | — | 内部 demo 验收；不含生产发布 |
@@ -205,13 +206,70 @@ shared 继续保持零依赖，客户端 View/Logic 与 FairyGUI 动态加载边
 本节来源：对 docs/s/ 全部 8 份文档逐条核对源码后的结论。⚠ 与前面各节冲突时以本节为准，
 前面各节的订正已随 S3-0 完成。
 
-### 9.1 三项必须先拍板的问题（⛔ 未拍板不进 S3-1）
+### 9.1 三项拍板结论（2026-09-05 用户拍板，已生效）
 
-| ID | 问题 | 现状证据 | 选项 |
-|---|---|---|---|
-| **A** | 不变量 8「catalog hash 不一致时禁止外观经济写」目前**没有活的判据** | `index.ts` 调 `resolveServerBattleSkin(requestedSkin)` **不传 peerHash**，而形参默认值就是 `PUBLIC_SNAKE_SKIN_CATALOG_HASH` → 比对恒真；`canWriteSnakeSkinCosmetics` 生产调用点为 0；Snake wire 里没有客户端上报皮肤目录 hash 的通道（`layerHashes`/`configHash` 是 ruleset 配置 hash，不是皮肤目录 hash） | ① `equip/unlock` 请求加必选 `catalogHash`（改域 descriptor + 向量 sidecar，形状定了不好改）；② 显式承认该判据只在文档层，删去或降级不变量 8 |
-| **B** | 个人结果契约扩 v1 还是造 v2 | `ISnakeRunResultV1` 已预留 `rewardPolicyVersion` / `rewardReceiptId` / `rewardSummary` 三个可选字段；S4 文档写的是新造 `resultVersion: 2` 的 `ISnakeDemoRunResult` | ① 扩 v1：不动 token 名与客户端订阅；② 造 v2：要 bump `modeVersion` 并联动三处生成镜像 |
-| **C** | 「再来一局」的实现路径 | 服务端**没有**房内重开 run 的能力：`runId` 只在 `createPlayer` 分配，Finalized 后玩家留在房里但没有任何命令能开新 run | ① 离房重进：S4 零服务端改动；② 房内重开：新增命令 + 状态机分支 |
+> 拍板依据是一轮源码核对 + 一轮对抗复核。⚠ **两条此前流传的说法在核对中被源码证伪**，结论按证伪后的
+> 事实定；下面凡标「证伪」处，⛔ 不要再按旧说法排期。所有门禁结论来自读判据代码，未实跑。
+
+#### A｜外观经济写不引入客户端自报 hash —— **采用「服务端单方面权威」**
+
+- **拍板**：`equip`/`unlock` 的入参只有 `skinId`，⛔ 不加 `catalogHash`，⛔ 不引入「客户端自报、
+  服务端采信」的信任方向。S3-03 经已导出的接缝 `SnakeGameModeOptions.runSkinResolver` 注入
+  「读 uid → profile」的 resolver 即可，不碰 `GameMode` / `GameRoom`。
+- **为什么安全（可证，不是赌）**：判定材料全在服务端——公共目录加载期即保证 ID 唯一与默认皮肤唯一、
+  查不到即拒；业务值（价格、碎片门槛）**只存在于服务端生成物**，客户端根本没有这份数据，骗不出低价；
+  owned 集合由服务端读写。不变量 8 字面担心的「装备了服务端没有的皮肤」在此模型下不可能发生。
+- **不变量 8 重锚**：它此前描述的跨端比对**双端都是死判据**——服务端 `resolveServerBattleSkin` 与
+  客户端 `resolveClientSnakeSkinPresentation` 的 hash 形参都有「等于本进程常量」的默认值，
+  而全部生产调用点都不传该参，mismatch 分支不可达。今后不变量 8 应锚到**真正活着的**两处：
+  ① `SNAKE_SKIN_COSMETIC_WRITES_ENABLED` 这个运行期 fail-closed 发布开关（S3-01 排期要翻转它）；
+  ② 双端模块加载期的三层目录 fail-closed + `verify:all` 链上的 S1 `--check`。
+- **证伪 1**：「形状现在不定死就没退路」不成立——`assertExactKeys(value, required, optional)` 第三参
+  就是可选键列表，且**已经用在一条幂等写请求上**（`user.updateProfile` = `required:[clientReqId]`
+  + 5 个 optional）。将来若要收紧，就是「加 optional → 再改必选 + `contractVersion` +1」。
+- **证伪 2**：三个「看似可免费复用」的通用机制经核实全部不可用——`LOBBY_RPC_DOMAIN_CONTRACTS`
+  明令不进 wire（消费点只有 codegen 与测试）；`LOBBY_RPC_CONTRACT_VERSIONS` 比的是服务端自己的
+  幂等记录、客户端从不发送；`protocol-fingerprint` 范围是 `apps/shared/src/protocol`，皮肤目录不在内。
+- **⛔ 实施注意**：不要顺手删 `canWriteSnakeSkinCosmetics` —— S3-01 的计划是**保留并启用**它。
+  处理那两个死参时用哨兵变体（`peerHash: string | null = null`，null = 未提供、跳过比对）而不是改必选：
+  改必选会红掉 `apps/client/test/snakeSkinCatalog.test.ts` 的 5 个调用点 + 3 个生产调用点。
+- **未采纳但保留在案**：若日后判断「已发布旧客户端 vs 新服务端的部署代差」是真实风险，最省的加法是把
+  目录 hash 挂到 `GET /version`（客户端 `request<T>` 只做类型断言、对响应无运行期校验，加字段
+  现在免费、将来也免费），⛔ 不要走 Lobby RPC 请求字段。
+
+#### B｜个人结果契约 —— **采用 B2a：造 `resultVersion: 2`，沿用同一 token 名**
+
+- **拍板**：新建 `resultVersion: 2` 的 interface，**沿用同一个 token 名 `s2c.snake.runResult`**
+  （⛔ 不新增并存 token，避免两套 interface / validator / 订阅长期分叉）。
+- **证伪（决定性）**：「扩 v1 不用 bump `modeVersion`，造 v2 才要」**是错的**。
+  `contractDigest = sha256(manifest.json 字节 ‖ \0 ‖ state.json 字节 ‖ \0 ‖ **wire.ts 原始字节**)`，
+  那条「不进 digest」的注释豁免的只是 `cosmetics.ts` / `ruleset.ts` 一类玩法自有模块，**不豁免
+  `wire.ts`**；`assertModeVersionBumped` 挂在只读与写盘两条路径上。⇒ **动 `wire.ts` 一个字节
+  （哪怕只加可选字段、甚至只改注释）两个选项都必须把 `manifest.json` 的 `modeVersion` 4 → 5。**
+  差价不存在，所以按契约卫生选，不按成本选。
+- **第二个事实**：三个预留字段**装不下** S4 的形状。`rewardSummary` 是
+  `{itemId: string, amount: int ≥ 1}[]`，而 S4 需要布尔 `qualified`、可为 `null` 的
+  `fragmentSkinId`、以及十余个**日常就是 0** 的整数（不合格 run 明写「所有奖励为 0」）。
+  硬编码偏移能塞进去，但那是两端手写一套无 validator 约束的约定——⛔ 不走。
+  另：`rewardPolicyVersion` / `rewardReceiptId` 全仓零消费者。
+- **同时采用 B0（排期，与选项正交）**：bump / 5 个生成物 / 两条 sync / 两处测试的成本是**按次**计的，
+  而 S4 的字段清单在实施中几乎必然反复。⇒ 先用当前 v1 占位把服务端 profile 与 UI 打通，
+  **形状稳定后一次性改 `wire.ts`、只付一次 bump**。S4-04 因此排在 S4 末尾。
+
+#### C｜「再来一局」 —— **采用 ① 离房重进**
+
+- **拍板**：不新增房内重开能力，玩家经「结束 → 回首屏 → 重新进入」开始新一局。
+- **对 S4 去重键安全（已核实）**：主动离房是 consented close，**跳过 10 秒重连宽限**
+  （`GameRoom.onLeave` 的 `const consented = code === CloseCode.CONSENTED; if (!consented) {…}`），
+  因此重进走 `createPlayer` → `++runCounter` 拿到**新 `runId`**，不会落回已结束的旧 run。
+  去重键 `uid + roomEpochId + runId` 保持有效。宽限内的**断线重连**仍延续原 run，这是 S2 既定语义。
+- **前置已闭合**：`ed62892` 已修好「玩法退出后恢复首屏」（`requestStop` 现在会调
+  `restoreAuthenticatedBaseAfterGameplay()`），此前结算/离开后整屏黑。⇒ ① 的回程链路现在是通的。
+- ⚠ **遗留子决策见 §9.6**：结果页要不要放一个「再来一局」按钮（自动重进）——那需要在玩法内拿到
+  当前没有的「起新局」能力面，代价不为零。默认按**只放「返回首页」**推进。
+
+**拍板顺序已消化**：A 已在动手写域 descriptor 之前定案（新建域首次生成时 `contractVersion` 闸不响，
+窗口就在 S3-3 那一次 `codegen:features`）；C 选 ① 不改 `wire.ts`，因此与 B 的 bump 无耦合，两者可独立排期。
 
 ### 9.2 两个不可执行的陷阱（⛔ 排期时不要踩）
 
@@ -232,7 +290,7 @@ shared 继续保持零依赖，客户端 View/Logic 与 FairyGUI 动态加载边
 | 0.2 | 修漂移 ①②⑤：Redis 逻辑键 → `gp:snake:user:{uid}`；`kSnakeUser` 真源路径；`snake@3` 时点标注 | `grep -rn 'snake:user' docs/ plan-v5.md \| grep -v 'gp:snake:user'` 无输出。⚠ ⛔ 判据不能写成 `…:{uid}` 的整串：s2r 的示例占位是 `{user-42}`，整串模式会漏掉唯一一条可直接粘进 redis-cli 的命令 |
 | 0.3 | 修漂移 ③④：S3-01 业务目录真源指向服务端生成器；`HGETALL` → 白名单 `HMGET`；`skinIdAtRunStart` 统一口径 | `grep -rn 'HGETALL' docs/s/ \| grep -viE '禁\|⛔\|不用'` 无输出——即 ⛔ 剩余提及必须**全部**落在禁令语境里，不得出现在任何「尝试/使用 HGETALL」的动作句 |
 | 0.4 | S0 页加注：byte-for-byte 结论的绑定 commit、golden 待重钉、§2.2/§2.8「当前事实」列的时点声明 | 加注只落在 `docs/s/*.md`，`docs/s/evidence/s0/` 零改动 |
-| 0.5 | 拍板 §9.1 的 A / B / C | 三项各有明确落笔 |
+| 0.5 | 拍板 §9.1 的 A / B / C | ✅ 已完成（2026-09-05）：A=服务端单方面权威、B=B2a+B0、C=① 离房重进；结论见 §9.1，遗留子决策见 §9.6 |
 
 ### 9.4 S3 主线（拍板后）
 
@@ -240,14 +298,17 @@ shared 继续保持零依赖，客户端 View/Logic 与 FairyGUI 动态加载边
 |---|---|---|
 | S3-1 | 冻结 demo 业务目录：改 `tools/snake-s1-assets/core.mjs` 产出真实 rarity/acquisition/碎片门槛 → `--write` 重生；放宽 `skinBusinessCatalog.ts` validator 的 approved 分支；翻 `SNAKE_SKIN_COSMETIC_WRITES_ENABLED`；**同批**改 `snake-s1-assets.test.ts` 的 hash 与 `false` 断言 | 服务端测试全绿；新的 server business hash 回写 §8 与 `evidence/s1` |
 | S3-2 | 新建 `rooms/modes/snake/cosmeticProfile.ts`：模块级 `Map<uid, profile>` + `HMGET` 回灌 + 单条 `HSET` best-effort。⚠ 读函数必须返回**深拷贝**；⛔ 本步只写三个 cosmetic field，`coinBalance` 的合并留到 S4（提前合并会造出新的覆盖窗口） | 单测覆盖默认值 / 损坏 JSON / 未拥有 / 碎片边界 / 重复操作 / 返回副本 |
-| S3-3 | **同批**新建域 descriptor + 向量 sidecar + 三个 ws 端点；跑 `codegen:features` → `protocol-fingerprint.mjs --write` | 服务端可启动；lobbyRpc 契约与向量测试全绿 |
-| S3-4 | mode 接入：resolver 入参加 uid，读已预热 profile，校验存在且已拥有，非法回退皮肤 1，run 内锁存 | join 自报皮肤无效；run 中换装不改当前蛇的 fixture |
+| S3-3 | **同批**新建域 descriptor + 向量 sidecar + 三个 ws 端点；跑 `codegen:features` → `protocol-fingerprint.mjs --write`。⛔ 按 §9.1-A：请求**不含** `catalogHash` | 服务端可启动；lobbyRpc 契约与向量测试全绿 |
+| S3-4 | mode 接入：经 `SnakeGameModeOptions.runSkinResolver` 注入「读 uid → profile」的 resolver，校验存在且已拥有，非法回退皮肤 1，run 内锁存；⛔ 不碰 `GameMode` / `GameRoom` | join 自报皮肤无效；run 中换装不改当前蛇的 fixture |
 | S3-5 | 客户端衣柜 feature（首版取 `kind: "cocos"` 纯节点页——仓内没有衣柜 FGUI 包）+ feature 登记；再跑 `codegen:features` + `sync:shared` | `test:client` / `test:fgui` 绿 |
 | S3-6 | 为新增镜像文件补 `.meta` | `verify:sync` 绿。⚠ 风险已降低：2026-09-05 Creator 会话实测未重写脚本合成的 `.meta`（[证据](../evidence/creator-2026-09-05/README.md)），可优先按 `features/redeem` 的合成先例做，Creator 只做确认 |
 
 S4 顺序：S4-02（shared 纯公式 + fixture，零副作用可独立测）→ S4-01（补 `maxLength` / `meaningfulInputCount` /
 `reliveCoinSpent`；其余 run 统计 schema 里已有）→ S4-03（progression + 去重）→ S4-04（结果 wire 与页面）。
 奖励必须插在 run 转入 Finalized 之后、下发 `SnakeRunResult` 之前。
+⚠ 按 §9.1-B 的 B0：**S4-04 排在最后且一次成型**——在它之前不要动 `apps/shared/src/gameplays/snake/wire.ts`
+（动一个字节就要 bump 一次 `modeVersion` 并联动 5 个生成物 + 两条 sync + 两处测试，成本按次计）。
+S4-01 若只在 mode 内部记统计、不进 `state.json`，同样不触发 bump。
 
 ### 9.5 四条需纳入 S5 的遗漏项
 
@@ -258,6 +319,15 @@ S4 顺序：S4-02（shared 纯公式 + fixture，零副作用可独立测）→ 
   链里 → S5-04「注入 Redis 写失败」只能是构造器注入，永远进不了自动门禁，需在 S5 写明。
 - `apps/server/sql/schema.sql` 不在 `verify:protected-paths` 覆盖内 → S5 退出条件「SQL schema 无本专项
   差异」没有机检，需标为人工核对项。
+
+### 9.6 剩余待决项（不阻塞 S3 开工）
+
+| ID | 待决 | 何时必须定 | 默认（未决时按此推进） |
+|---|---|---|---|
+| **C-a** | 结果页要不要「再来一局」按钮（自动重进），还是只放「返回首页」让玩家自己再点入口 | S4-04 画结果页时 | **只放「返回首页」**。做按钮的话要在玩法内拿到「起新局」能力面——`GameplayInstanceHost` 只有 `requestExit`、`GameplayControllerBridge` 只有 `requestStop`，唯一能起局的是 `AppRuntime` 的私有 `launchGameplay`；开这条路要动 `apps/client/src/app/**`（受保护路径），并跑 `protected-paths-lock.mjs --write` + `verify:protected-paths` |
+| **A-a** | 是否把皮肤目录 hash 挂到 `GET /version` 做部署代差自检 | 任何时候（永不破坏） | **不做**。只有当「已发布旧客户端 vs 新服务端」成为真实运维风险时才值得；客户端对 game HTTP 响应不做 exact 校验，加字段现在和将来都免费，⛔ 不必为它抢窗口 |
+| **S3-b** | 衣柜登记为 `inventory` capability（core）还是走 feature.json 的 capability fragment（仅 `category=extra` 可用，全仓尚无先例） | S3-5 写 `feature.json` 时 | **不登记为 core capability**，按 `redeem` 先例走普通 feature；不登记不会让 `verify:inventory` 变红 |
+| **S3-c** | 衣柜页面首版是 `kind:"cocos"` 纯节点还是等 FGUI 包 | S3-5 | **`kind:"cocos"`**：仓内没有衣柜 FGUI 包，且 FGUI 真源需编辑器导出。⚠ 这是实施选型，**不是**框架缺 FGUI 能力——动态 FGUI 注册入口存在且在跑 |
 
 ---
 
