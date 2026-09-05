@@ -3,12 +3,14 @@ import type { GameModeRegistry } from "../GameMode";
 import { registerBallMoveGameMode } from "./ballMove/index";
 import { registerIdleGameMode } from "./idle/index";
 import { registerSnakeGameMode } from "./snake/index";
+import { registerTallyGameMode } from "./tally/index";
 
 /** 已装配服务端 GameMode 的玩法 id（= canonical GameplayModeId；fixture 玩法不在此表）。 */
 export const GENERATED_GAME_MODE_IDS: readonly string[] = [
     "ballMove",
     "idle",
     "snake",
+    "tally",
 ];
 
 /**
@@ -21,6 +23,7 @@ export function registerGeneratedGameModes(registry?: GameModeRegistry): () => v
         disposers.push(registerBallMoveGameMode(registry));
         disposers.push(registerIdleGameMode(registry));
         disposers.push(registerSnakeGameMode(registry));
+        disposers.push(registerTallyGameMode(registry));
     } catch (error) {
         for (const dispose of disposers.splice(0).reverse()) dispose();
         throw error;

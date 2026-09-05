@@ -6,12 +6,14 @@ import { DropInFixtureState, DropInFixturePlayerState } from "./generated/dropIn
 import { IdleRoomState, IdlePlayerState } from "./generated/idle";
 import { PrivateFixtureState, PrivateFixturePlayerState } from "./generated/privateFixture";
 import { SnakeRoomState, SnakePlayerState } from "./generated/snake";
+import { TallyRoomState, TallyPlayerState } from "./generated/tally";
 
 export { PlayerState, GameRoomState } from "./generated/ballMove";
 export { DropInFixturePlayerState, DropInFixtureState } from "./generated/dropInFixture";
 export { IdlePlayerState, IdleRoomState } from "./generated/idle";
 export { PrivateFixturePlayerState, PrivateFixtureState } from "./generated/privateFixture";
 export { SnakePlayerState, SnakeRoomState } from "./generated/snake";
+export { TallyPlayerState, TallyRoomState } from "./generated/tally";
 
 /** Fields every root declares; the gameplay-agnostic GameRoom shell may only touch these. */
 export interface RoomStatePlayerLifecycle {
@@ -61,6 +63,7 @@ export const ROOM_STATE_FRAGMENTS = Object.freeze({
     "idle": [],
     "privateFixture": ["ownerReady", "inviteRoom"],
     "snake": [],
+    "tally": [],
 } as const satisfies Record<RoomStateMode, readonly string[]>);
 
 export const ROOM_STATE_ROOT_CONSTRUCTORS = Object.freeze({
@@ -69,6 +72,7 @@ export const ROOM_STATE_ROOT_CONSTRUCTORS = Object.freeze({
     "idle": IdleRoomState,
     "privateFixture": PrivateFixtureState,
     "snake": SnakeRoomState,
+    "tally": TallyRoomState,
 } as const satisfies Record<RoomStateMode, new () => Schema>);
 
 export type RoomStateRootForMode<M extends RoomStateMode> = InstanceType<(typeof ROOM_STATE_ROOT_CONSTRUCTORS)[M]>;
@@ -90,6 +94,7 @@ export const ROOM_STATE_PLAYER_CONSTRUCTORS = Object.freeze({
     "idle": IdlePlayerState,
     "privateFixture": PrivateFixturePlayerState,
     "snake": SnakePlayerState,
+    "tally": TallyPlayerState,
 } as const satisfies Record<RoomStateMode, new () => Schema>);
 
 export type RoomStatePlayerForMode<M extends RoomStateMode> = InstanceType<(typeof ROOM_STATE_PLAYER_CONSTRUCTORS)[M]>;

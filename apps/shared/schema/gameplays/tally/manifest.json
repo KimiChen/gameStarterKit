@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "tally",
+  "constantName": "Tally",
+  "modeVersion": 1,
+  "maxPlayers": 4,
+  "profiles": ["default"]
+}

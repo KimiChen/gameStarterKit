@@ -65,7 +65,7 @@ function runPostinstall(root: string, kinds: readonly string[], useGit: boolean)
   if (kinds.includes("feature")) runCommand(root, "npm", ["--workspace", "@game/server", "run", "codegen:features"]);
   runCommand(root, "npm", ["run", "sync:shared"]);
   if (useGit) {
-    runCommand(root, "git", ["add", "-A", "--", "apps/shared/src", "apps/server/src", "apps/client/src", "docs/features.generated.md", "apps/server/test/lobbyRpcVectors"]);
+    runCommand(root, "git", ["add", "-A", "--", "apps/shared/src", "apps/server/src", "apps/client/src", "docs/features.generated.md", "apps/server/test/lobbyRpcVectors", "apps/server/test/wire-vectors"]);
     // Cocos 镜像只暂存已跟踪文件的改动：sync:shared 新建的镜像没有 .meta，暂存它会让 verify:sync 红
     //（.meta 断言只遍历已跟踪文件）；新镜像文件等 Creator 生成 .meta 后再由人 git add（nextSteps）。
     runCommand(root, "git", ["add", "-u", "--", "apps/Cocos/assets/src"]);

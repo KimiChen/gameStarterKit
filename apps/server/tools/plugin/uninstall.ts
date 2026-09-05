@@ -89,7 +89,7 @@ export function uninstallPlugin(options: UninstallOptions): UninstallReport {
     }
     runCommand(root, "npm", ["run", "sync:shared"], { SYNC_FORCE: "1" });
     if (useGit) {
-      runCommand(root, "git", ["add", "-A", "--", "apps/shared/src", "apps/server/src", "apps/client/src", "docs/features.generated.md", "apps/server/test/lobbyRpcVectors"]);
+      runCommand(root, "git", ["add", "-A", "--", "apps/shared/src", "apps/server/src", "apps/client/src", "docs/features.generated.md", "apps/server/test/lobbyRpcVectors", "apps/server/test/wire-vectors"]);
       runCommand(root, "git", ["add", "-u", "--", "apps/Cocos/assets/src"]);
     }
   }
