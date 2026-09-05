@@ -62,8 +62,8 @@ function allowed(relative: string, identity: PluginIdentity): boolean {
 
 test("allowlist：feature 插件的推导集覆盖 feature/domain/客户端/FGUI/测试/文档落点，镜像与 .meta 随真源", () => {
   for (const relative of [
-    "plugins/chamber/plugin.json",
-    "features/chamber/feature.json",
+    "apps/plugins/chamber/plugin.json",
+    "apps/plugins/chamber/feature.json",
     "apps/shared/src/protocol/lobbyRpc/domains/chamber.ts",
     "apps/server/src/websocket/chamber/peek.ts",
     "apps/server/src/core/chamber/keys.ts",
@@ -83,7 +83,7 @@ test("allowlist：feature 插件的推导集覆盖 feature/domain/客户端/FGUI
     "apps/Cocos/assets/resources/ui/Chamber.bin.meta",
     "apps/Cocos/assets/resources/ui/Chamber_atlas0.png",
     "apps/Cocos/assets/resources/ui/Chamber_atlas0.png.meta",
-    "docs/chamber/README.md",
+    "apps/plugins/chamber/README.md",
   ]) {
     assert.ok(allowed(relative, FEATURE_IDENTITY), `应放行：${relative}`);
   }
@@ -101,7 +101,7 @@ test("allowlist：feature 插件的推导集覆盖 feature/domain/客户端/FGUI
     "apps/client/test/chamberLogic.test.ts",
     "apps/Cocos/assets/resources/ui/Common_Btn.bin",
     "apps/Cocos/assets/resources/ui/Chamber2.bin",
-    "features/chamber2/feature.json",
+    "apps/plugins/chamber2/feature.json",
     "docs/PLUGIN.md",
   ]) {
     assert.ok(!allowed(relative, FEATURE_IDENTITY), `应拒绝：${relative}`);
@@ -110,8 +110,8 @@ test("allowlist：feature 插件的推导集覆盖 feature/domain/客户端/FGUI
 
 test("allowlist：gameplay 插件的推导集覆盖 manifest/shared/server mode/client module/logic/view/<Constant>Room/resources", () => {
   for (const relative of [
-    "apps/shared/schema/gameplays/puzzle/manifest.json",
-    "apps/shared/schema/gameplays/puzzle/state.json",
+    "apps/plugins/puzzle/gameplay/manifest.json",
+    "apps/plugins/puzzle/gameplay/state.json",
     "apps/shared/src/gameplays/puzzle/wire.ts",
     "apps/server/src/rooms/modes/puzzle/index.ts",
     "apps/client/src/gameplay/modes/puzzle/index.ts",
@@ -124,7 +124,7 @@ test("allowlist：gameplay 插件的推导集覆盖 manifest/shared/server mode/
     "apps/Cocos/assets/resources/puzzle/tiles.png",
     "apps/Cocos/assets/resources/puzzle/tiles.png.meta",
     "apps/Cocos/assets/resources/puzzle.meta",
-    "features/puzzle/feature.json",
+    "apps/plugins/puzzle/feature.json",
   ]) {
     assert.ok(allowed(relative, GAMEPLAY_IDENTITY), `应放行：${relative}`);
   }
@@ -158,7 +158,7 @@ test("硬排除与受保护路径永远拒绝：真仓 protected-paths.json 的�
     "tools/fgui-codegen/cli.ts", "apps/server/tools/plugin/install.ts", "apps/Cocos/assets/scene.scene",
     "apps/client/src/lib/bitecs/index.ts", "apps/client/src/shared/protocol/rooms.ts", "apps/client/src/app/AppRuntime.ts",
     "apps/shared/src/protocol/rooms.ts", "apps/shared/src/protocol/lobbyRpc/index.ts", "apps/server/src/core/infra/keys.ts",
-    "node_modules/x/index.js", "features/chamber/node_modules/x.js", "scripts/protocol.fingerprint", "vendor/x.tgz",
+    "node_modules/x/index.js", "apps/plugins/chamber/node_modules/x.js", "scripts/protocol.fingerprint", "vendor/x.tgz",
     "docs/features.generated.md", "apps/client/src/generated/features.generated.ts",
   ]) {
     assert.ok(!classifyPath(relative, rules, PROTECTED).allowed, `必须拒绝：${relative}`);
@@ -186,7 +186,7 @@ test("包内路径形态闸：zip-slip / 绝对路径 / 反斜杠 / 控制字符
   for (const raw of ["../x", "a/../b", "/etc/passwd", "C:/x", "a\\b", "a//b", "./a", "", "a/\u0000"]) {
     assert.throws(() => normalizePackagePath(raw), `应拒绝：${JSON.stringify(raw)}`);
   }
-  assert.equal(normalizePackagePath("features/chamber/feature.json"), "features/chamber/feature.json");
+  assert.equal(normalizePackagePath("apps/plugins/chamber/feature.json"), "apps/plugins/chamber/feature.json");
 });
 
 // ── zip ───────────────────────────────────────────────────────────────────
@@ -267,11 +267,11 @@ function meta(importer: string, key: string): string {
 /** 作者侧工作树：一个带 RPC 域 + 客户端 View/Logic + 镜像 .meta + 测试 + 文档的 feature 插件（id 可换，默认 chamber）。 */
 function authorTree(root: string, version: string, id = "chamber"): void {
   const Constant = id.charAt(0).toUpperCase() + id.slice(1);
-  write(root, `plugins/${id}/plugin.json`, `${JSON.stringify({
+  write(root, `apps/plugins/${id}/plugin.json`, `${JSON.stringify({
     schemaVersion: 1, id, version, kinds: ["feature"], domains: [id],
     requires: { featureSchemaVersion: 1 }, description: "fixture feature plugin",
   }, null, 2)}\n`);
-  write(root, `features/${id}/feature.json`, `${JSON.stringify({
+  write(root, `apps/plugins/${id}/feature.json`, `${JSON.stringify({
     schemaVersion: 1, id, category: "extra", resident: false,
     viewDirs: [`apps/client/src/features/${id}/view`],
     views: [`apps/client/src/features/${id}/view/${Constant}View.view.json`],
@@ -283,7 +283,7 @@ function authorTree(root: string, version: string, id = "chamber"): void {
   write(root, `apps/server/src/core/${id}/keys.ts`, `export const k${Constant}Seq = 1;\n`);
   write(root, `apps/server/test/lobbyRpcVectors/${id}.ts`, "export default {};\n");
   write(root, `apps/server/test/${id}-peek.test.ts`, "// fixture test\n");
-  write(root, `docs/${id}/README.md`, `# ${id} ${version}\n`);
+  write(root, `apps/plugins/${id}/README.md`, `# ${id} ${version}\n`);
   const clientFiles: Record<string, string> = {
     [`apps/client/src/features/${id}/index.ts`]: `export const ${id} = 1;\n`,
     [`apps/client/src/features/${id}/view/${Constant}View.ts`]: `export class ${Constant}View {}\n`,
@@ -335,8 +335,8 @@ test("pack：采集所有权推导集 + 镜像 + .meta，写出确定性 zip 与
     assert.equal(result.manifest.version, "1.0.0");
     const paths = result.entries.map((entry) => entry.path);
     for (const expected of [
-      "plugins/chamber/plugin.json",
-      "features/chamber/feature.json",
+      "apps/plugins/chamber/plugin.json",
+      "apps/plugins/chamber/feature.json",
       "apps/shared/src/protocol/lobbyRpc/domains/chamber.ts",
       "apps/server/test/lobbyRpcVectors/chamber.ts",
       "apps/client/src/features/chamber/view/ChamberView.ts",
@@ -344,7 +344,7 @@ test("pack：采集所有权推导集 + 镜像 + .meta，写出确定性 zip 与
       "apps/Cocos/assets/src/features/chamber/view/ChamberView.ts.meta",
       "apps/Cocos/assets/src/features/chamber.meta",
       "apps/Cocos/assets/src/features/chamber/view.meta",
-      "docs/chamber/README.md",
+      "apps/plugins/chamber/README.md",
     ]) {
       assert.ok(paths.includes(expected), `包应含 ${expected}`);
     }
@@ -374,13 +374,13 @@ test("install：首装落盘 + 锁 + plugins/<id>/plugin.json；check 通过；�
     packPlugin({ root: author, id: "chamber", outFile: zipFile });
     const dry = installPlugin({ root: target, source: zipFile, git: false, postinstall: false, dryRun: true });
     assert.equal(dry.previousVersion, null);
-    assert.ok(!fs.existsSync(path.join(target, "features/chamber/feature.json")), "dry-run 不落盘");
+    assert.ok(!fs.existsSync(path.join(target, "apps/plugins/chamber/feature.json")), "dry-run 不落盘");
 
     const report = installPlugin({ root: target, source: zipFile, git: false, postinstall: false });
     assert.equal(report.version, "1.0.0");
-    assert.ok(report.written.includes("features/chamber/feature.json"));
+    assert.ok(report.written.includes("apps/plugins/chamber/feature.json"));
     assert.ok(fs.existsSync(path.join(target, "apps/Cocos/assets/src/features/chamber/view/ChamberView.ts.meta")));
-    assert.ok(fs.existsSync(path.join(target, "plugins/chamber/plugin.json")));
+    assert.ok(fs.existsSync(path.join(target, "apps/plugins/chamber/plugin.json")));
     const lock = readInstalledLock(target, "chamber");
     assert.ok(lock && lock.manifest.version === "1.0.0" && lock.entries.length === report.written.length);
     assert.ok(fs.readFileSync(path.join(target, "scripts/plugins/chamber.lock"), "utf8").includes("Do not edit"));
@@ -411,23 +411,23 @@ test("upgrade：旧有新无按清单删除、同版本不同内容拒绝、降�
     installPlugin({ root: target, source: v1, git: false, postinstall: false });
 
     // 同版本不同内容 → 拒绝。
-    fs.writeFileSync(path.join(author, "docs/chamber/README.md"), "# chamber changed but version kept\n");
+    fs.writeFileSync(path.join(author, "apps/plugins/chamber/README.md"), "# chamber changed but version kept\n");
     const v1b = path.join(author, "out/v1b.zip");
     packPlugin({ root: author, id: "chamber", outFile: v1b });
     assert.throws(() => installPlugin({ root: target, source: v1b, git: false, postinstall: false }), /版本相同但内容不同/u);
 
     // 1.1.0：删 README、加 CHANGELOG。
-    fs.rmSync(path.join(author, "docs/chamber/README.md"));
-    fs.writeFileSync(path.join(author, "docs/chamber/CHANGELOG.md"), "# 1.1.0\n");
-    const manifestFile = path.join(author, "plugins/chamber/plugin.json");
+    fs.rmSync(path.join(author, "apps/plugins/chamber/README.md"));
+    fs.writeFileSync(path.join(author, "apps/plugins/chamber/CHANGELOG.md"), "# 1.1.0\n");
+    const manifestFile = path.join(author, "apps/plugins/chamber/plugin.json");
     fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.1.0"'));
     const v2 = path.join(author, "out/v2.zip");
     packPlugin({ root: author, id: "chamber", outFile: v2 });
     const upgrade = installPlugin({ root: target, source: v2, git: false, postinstall: false });
     assert.equal(upgrade.previousVersion, "1.0.0");
-    assert.deepEqual(upgrade.deleted, ["docs/chamber/README.md"]);
-    assert.ok(upgrade.written.includes("docs/chamber/CHANGELOG.md"));
-    assert.ok(!fs.existsSync(path.join(target, "docs/chamber/README.md")), "旧有新无必须删除");
+    assert.deepEqual(upgrade.deleted, ["apps/plugins/chamber/README.md"]);
+    assert.ok(upgrade.written.includes("apps/plugins/chamber/CHANGELOG.md"));
+    assert.ok(!fs.existsSync(path.join(target, "apps/plugins/chamber/README.md")), "旧有新无必须删除");
     assert.equal(readInstalledLock(target, "chamber")?.manifest.version, "1.1.0");
     assert.equal(checkInstalledPlugins(target).ok, true);
 
@@ -435,17 +435,17 @@ test("upgrade：旧有新无按清单删除、同版本不同内容拒绝、降�
     assert.throws(() => installPlugin({ root: target, source: v1, git: false, postinstall: false }), /拒绝降级/u);
     const downgrade = installPlugin({ root: target, source: v1, git: false, postinstall: false, allowDowngrade: true });
     assert.equal(downgrade.version, "1.0.0");
-    assert.ok(fs.existsSync(path.join(target, "docs/chamber/README.md")));
-    assert.ok(!fs.existsSync(path.join(target, "docs/chamber/CHANGELOG.md")));
+    assert.ok(fs.existsSync(path.join(target, "apps/plugins/chamber/README.md")));
+    assert.ok(!fs.existsSync(path.join(target, "apps/plugins/chamber/CHANGELOG.md")));
 
     // uninstall：按锁删除、目录清空、锁与 plugin.json 消失；--allow-delete 集合含 feature/domain/View。
     const removal = uninstallPlugin({ root: target, id: "chamber", git: false, postinstall: false });
     assert.deepEqual(removal.allowDelete, ["Chamber", "chamber"]);
-    assert.ok(!fs.existsSync(path.join(target, "features/chamber")));
+    assert.ok(!fs.existsSync(path.join(target, "apps/plugins/chamber")));
     assert.ok(!fs.existsSync(path.join(target, "apps/Cocos/assets/src/features/chamber")));
     assert.ok(!fs.existsSync(path.join(target, "apps/Cocos/assets/src/features/chamber.meta")));
     assert.ok(!fs.existsSync(path.join(target, "scripts/plugins/chamber.lock")));
-    assert.ok(!fs.existsSync(path.join(target, "plugins/chamber")));
+    assert.ok(!fs.existsSync(path.join(target, "apps/plugins/chamber")));
     assert.equal(checkInstalledPlugins(target).plugins.length, 0);
     assert.throws(() => uninstallPlugin({ root: target, id: "chamber", git: false, postinstall: false }), /未安装/u);
   } finally {
@@ -463,17 +463,17 @@ test("reinstall-from-tree（E6 方案 ②）：同仓改动不 bump 拒绝并点
     assert.ok(baseline);
 
     // 宿主仓内直接改插件自有文档：check 红、普通 install 拒绝——这就是 E6 的现场。
-    fs.writeFileSync(path.join(target, "docs/chamber/README.md"), "# chamber edited in host repo\n");
+    fs.writeFileSync(path.join(target, "apps/plugins/chamber/README.md"), "# chamber edited in host repo\n");
     assert.equal(checkInstalledPlugins(target).ok, false);
     assert.throws(() => installPlugin({ root: target, source: v1, git: false, postinstall: false }), /本地改动会被覆盖丢失/u);
     // 不 bump 就想吸收 → 拒绝并点名改动面。
     assert.throws(
       () => reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false }),
-      /版本未变[\s\S]*docs\/chamber\/README\.md/u,
+      /版本未变[\s\S]*apps\/plugins\/chamber\/README\.md/u,
     );
 
     // bump 到 1.0.1，同时新增一个服务端文件、删掉一个测试：dry-run 只报告不写。
-    const manifestFile = path.join(target, "plugins/chamber/plugin.json");
+    const manifestFile = path.join(target, "apps/plugins/chamber/plugin.json");
     fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.0.1"'));
     write(target, "apps/server/src/core/chamber/extra.ts", "export const extra = 2;\n");
     fs.rmSync(path.join(target, "apps/server/test/chamber-peek.test.ts"));
@@ -481,7 +481,7 @@ test("reinstall-from-tree（E6 方案 ②）：同仓改动不 bump 拒绝并点
     assert.equal(dry.previousVersion, "1.0.0");
     assert.equal(dry.version, "1.0.1");
     assert.deepEqual(dry.written, [], "从树重装 ⛔ 不写任何插件文件");
-    assert.deepEqual(dry.adopted?.changed, ["docs/chamber/README.md", "plugins/chamber/plugin.json"]);
+    assert.deepEqual(dry.adopted?.changed, ["apps/plugins/chamber/README.md", "apps/plugins/chamber/plugin.json"]);
     assert.deepEqual(dry.adopted?.added, ["apps/server/src/core/chamber/extra.ts"]);
     assert.deepEqual(dry.deleted, ["apps/server/test/chamber-peek.test.ts"]);
     assert.equal(readInstalledLock(target, "chamber")?.manifest.version, "1.0.0", "dry-run 不改锁");
@@ -494,7 +494,7 @@ test("reinstall-from-tree（E6 方案 ②）：同仓改动不 bump 拒绝并点
     assert.equal(rewritten.entries.length, baseline.entries.length + 1 - 1);
     assert.ok(rewritten.entries.some((entry) => entry.path === "apps/server/src/core/chamber/extra.ts"));
     assert.ok(!rewritten.entries.some((entry) => entry.path === "apps/server/test/chamber-peek.test.ts"));
-    assert.equal(rewritten.entries.find((entry) => entry.path === "docs/chamber/README.md")?.sha256, sha256("# chamber edited in host repo\n"));
+    assert.equal(rewritten.entries.find((entry) => entry.path === "apps/plugins/chamber/README.md")?.sha256, sha256("# chamber edited in host repo\n"));
     assert.equal(checkInstalledPlugins(target).ok, true, "重写后 check 必须绿");
     // 树 ≡ 新锁：再来一次是幂等 no-op（同版本同内容放行）。
     const again = reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false });
@@ -568,9 +568,9 @@ test("install：越权路径整包拒绝并点名（脚本 / 受保护文件 / �
     assert.throws(() => validatePackage(readPackage(dirOut), target), /features\/other\/index\.ts（不在插件所有权推导集内）/u);
     remove("apps/client/src/features/other/index.ts");
     // 包依赖注入：package.json 永远拒绝。
-    inject("features/chamber/package.json", "{}\n");
+    inject("apps/plugins/chamber/package.json", "{}\n");
     assert.throws(() => validatePackage(readPackage(dirOut), target), /package\.json（硬排除文件名形态/u);
-    remove("features/chamber/package.json");
+    remove("apps/plugins/chamber/package.json");
     assert.doesNotThrow(() => validatePackage(readPackage(dirOut), target));
 
     // 所有权冲突：目标树已有同路径文件且不属本插件。
@@ -592,7 +592,7 @@ test("审阅后加固：篡改锁 → install/uninstall 拒绝且不删；锁登
     const lockFile = path.join(target, "scripts/plugins/chamber.lock");
     fs.appendFileSync(lockFile, `apps/client/src/Main.ts ${sha256("// framework file\n")}\n`);
     assert.equal(checkInstalledPlugins(target).ok, false, "check 必须点名锁内越权路径");
-    const manifestFile = path.join(author, "plugins/chamber/plugin.json");
+    const manifestFile = path.join(author, "apps/plugins/chamber/plugin.json");
     fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.1.0"'));
     const v2 = path.join(author, "out/v2.zip");
     packPlugin({ root: author, id: "chamber", outFile: v2 });
@@ -603,7 +603,7 @@ test("审阅后加固：篡改锁 → install/uninstall 拒绝且不删；锁登
     // 修回锁后：锁登记的文件在树中缺失 → 升级拒绝（先修锁或 uninstall --force）。
     const lockText = fs.readFileSync(lockFile, "utf8").split("\n").filter((line) => !line.includes("apps/client/src/Main.ts")).join("\n");
     fs.writeFileSync(lockFile, lockText, "utf8");
-    fs.rmSync(path.join(target, "docs/chamber/README.md"));
+    fs.rmSync(path.join(target, "apps/plugins/chamber/README.md"));
     assert.throws(() => installPlugin({ root: target, source: v2, git: false, postinstall: false }), /拒绝升级：已安装锁登记的文件在工作树缺失/u);
   } finally {
     cleanup(author, target);
@@ -698,7 +698,7 @@ test("PLUGIN-REGISTRY §1-3：reinstall-from-tree 的身份变化闸与 git 跟�
     assert.equal(checkInstalledPlugins(target).ok, true);
 
     // 作者在树上把 guild 写进 domains 并 bump：身份变化 → 拒绝；显式放行后 → guild 文件已被 git 跟踪却不在锁里 → 拒绝并点名。
-    const manifestFile = path.join(target, "plugins/chamber/plugin.json");
+    const manifestFile = path.join(target, "apps/plugins/chamber/plugin.json");
     fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.0.1"').replace('"chamber"\n  ]', '"chamber",\n    "guild"\n  ]'));
     assert.match(JSON.parse(fs.readFileSync(manifestFile, "utf8")).domains.join(","), /guild/u, "fixture 自检：domains 已含 guild");
     assert.throws(() => reinstallFromTree({ root: target, id: "chamber", git: true, postinstall: false }), /身份与已安装锁不同[\s\S]*domains: chamber → chamber,guild/u);
@@ -742,13 +742,13 @@ test("PLUGIN-REGISTRY §1-4：互为前缀的两个插件共存——各自升�
     assert.ok(fs.existsSync(path.join(target, "apps/server/test/chamberBoard-peek.test.ts")));
 
     // chamber 升级：chamberBoard 的测试文件不算 chamber 推导集内的冲突。
-    const manifestA = path.join(authorA, "plugins/chamber/plugin.json");
+    const manifestA = path.join(authorA, "apps/plugins/chamber/plugin.json");
     fs.writeFileSync(manifestA, fs.readFileSync(manifestA, "utf8").replace('"1.0.0"', '"1.1.0"'));
     const zipA2 = path.join(authorA, "out/a2.zip");
     packPlugin({ root: authorA, id: "chamber", outFile: zipA2 });
     assert.doesNotThrow(() => installPlugin({ root: target, source: zipA2, git: false, postinstall: false }));
     // chamber 从树重装：⛔ 不采集 chamberBoard 的文件。
-    const manifestT = path.join(target, "plugins/chamber/plugin.json");
+    const manifestT = path.join(target, "apps/plugins/chamber/plugin.json");
     fs.writeFileSync(manifestT, fs.readFileSync(manifestT, "utf8").replace('"1.1.0"', '"1.1.1"'));
     const rewritten = reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false });
     assert.ok(!rewritten.adopted?.added.some((relative) => relative.includes("chamberBoard")), "从树重装不得吸收别的插件的文件");
@@ -796,7 +796,7 @@ test("PLUGIN-REGISTRY §1-1：postinstall 失败即回滚——无 git：文件�
       if (args.includes("codegen:features")) throw new Error("route id 重复：chamber（模拟跨插件冲突）");
     });
     assert.throws(() => installPlugin({ root: target, source: v1, git: false, runner: boom }), /postinstall失败，已回滚到操作前[\s\S]*route id 重复/u);
-    for (const relative of ["features/chamber/feature.json", "apps/server/src/core/chamber/keys.ts", "scripts/plugins/chamber.lock", "plugins/chamber/plugin.json", "apps/Cocos/assets/src/features/chamber.meta"]) {
+    for (const relative of ["apps/plugins/chamber/feature.json", "apps/server/src/core/chamber/keys.ts", "scripts/plugins/chamber.lock", "apps/plugins/chamber/plugin.json", "apps/Cocos/assets/src/features/chamber.meta"]) {
       assert.ok(!fs.existsSync(path.join(target, relative)), `回滚后不得残留：${relative}`);
     }
     assert.ok(!fs.existsSync(path.join(target, "apps/Cocos/assets/src/features/chamber")), "空目录也清掉");
@@ -834,13 +834,13 @@ test("PLUGIN-REGISTRY §1-2：升级删掉域 / View / kind 时 postinstall 以�
     installPlugin({ root: target, source: v1, git: false, postinstall: false });
 
     // v2：去掉 chamber 域（descriptor / 端点 / 向量都不在包里）、View 改名 ChamberView → ChamberPanelView。
-    const manifestFile = path.join(author, "plugins/chamber/plugin.json");
+    const manifestFile = path.join(author, "apps/plugins/chamber/plugin.json");
     fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.1.0"').replace('"domains": [\n    "chamber"\n  ]', '"domains": []'));
     assert.deepEqual(JSON.parse(fs.readFileSync(manifestFile, "utf8")).domains, [], "fixture 自检：domains 已清空");
     for (const relative of ["apps/shared/src/protocol/lobbyRpc/domains/chamber.ts", "apps/server/src/websocket/chamber/peek.ts", "apps/server/test/lobbyRpcVectors/chamber.ts"]) {
       fs.rmSync(path.join(author, relative));
     }
-    const featureFile = path.join(author, "features/chamber/feature.json");
+    const featureFile = path.join(author, "apps/plugins/chamber/feature.json");
     fs.writeFileSync(featureFile, fs.readFileSync(featureFile, "utf8").replaceAll("ChamberView", "ChamberPanelView").replace('"view": "Chamber"', '"view": "ChamberPanel"'));
     for (const base of ["apps/client/src/features/chamber/view", "apps/Cocos/assets/src/features/chamber/view"]) {
       for (const suffix of [".ts", ".view.json"]) {
@@ -914,8 +914,8 @@ test("PLUGIN-REGISTRY §1-5：锁的 source 抬头——install 写 package、re
     assert.equal(checkInstalledPlugins(target).plugins[0].source, "package");
 
     // 宿主本地改一行 + bump → reinstall：source=tree，forkedFrom = 原 package 来源。
-    fs.writeFileSync(path.join(target, "docs/chamber/README.md"), "# host fork\n");
-    const manifestFile = path.join(target, "plugins/chamber/plugin.json");
+    fs.writeFileSync(path.join(target, "apps/plugins/chamber/README.md"), "# host fork\n");
+    const manifestFile = path.join(target, "apps/plugins/chamber/plugin.json");
     fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.0.1"'));
     reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false });
     const lock2 = readInstalledLock(target, "chamber");
@@ -929,11 +929,11 @@ test("PLUGIN-REGISTRY §1-5：锁的 source 抬头——install 写 package、re
     assert.ok(lock3source.kind === "tree" && lock3source.forkedFrom?.kind === "package");
 
     // 上游发 1.1.0：默认拒绝并列出会被覆盖/删除的分叉文件；--replace-local-fork 放行后 source 回到 package。
-    const upstream = path.join(author, "plugins/chamber/plugin.json");
+    const upstream = path.join(author, "apps/plugins/chamber/plugin.json");
     fs.writeFileSync(upstream, fs.readFileSync(upstream, "utf8").replace('"1.0.0"', '"1.1.0"'));
     const v2 = path.join(author, "out/v2.zip");
     packPlugin({ root: author, id: "chamber", outFile: v2 });
-    assert.throws(() => installPlugin({ root: target, source: v2, git: false, postinstall: false }), /本地分叉[\s\S]*覆盖 2[\s\S]*docs\/chamber\/README\.md/u);
+    assert.throws(() => installPlugin({ root: target, source: v2, git: false, postinstall: false }), /本地分叉[\s\S]*覆盖 2[\s\S]*apps\/plugins\/chamber\/README\.md/u);
     assert.equal(readInstalledLock(target, "chamber")?.manifest.version, "1.0.2", "被拒时锁不动");
     // 同版本不同内容：分叉 bump 到 1.0.2，上游也发 1.0.2 → 同样走分叉闸（不是「必须 bump」）。
     fs.writeFileSync(upstream, fs.readFileSync(upstream, "utf8").replace('"1.1.0"', '"1.0.2"'));
@@ -942,7 +942,7 @@ test("PLUGIN-REGISTRY §1-5：锁的 source 抬头——install 写 package、re
     assert.throws(() => installPlugin({ root: target, source: v2same, git: false, postinstall: false }), /本地分叉/u);
     const replaced = installPlugin({ root: target, source: v2same, git: false, postinstall: false, replaceLocalFork: true });
     assert.equal(replaced.source.kind, "package");
-    assert.equal(fs.readFileSync(path.join(target, "docs/chamber/README.md"), "utf8"), "# chamber 1.0.0\n", "分叉被上游覆盖");
+    assert.equal(fs.readFileSync(path.join(target, "apps/plugins/chamber/README.md"), "utf8"), "# chamber 1.0.0\n", "分叉被上游覆盖");
     assert.equal(checkInstalledPlugins(target).ok, true);
 
     // 旧锁没有 source 行：解析为 null，check 报 unknown；带 registry 子对象的 source 原样往返。
@@ -967,7 +967,7 @@ test("PLUGIN-REGISTRY §1-9：requires 进已安装锁并被 check 复核；旧�
     assert.deepEqual(readInstalledLock(target, "chamber")?.manifest.requires, { featureSchemaVersion: 1, gameplaySchemaVersion: null });
     assert.equal(checkInstalledPlugins(target).ok, true);
     // 树上 plugin.json 把 requires 改成不兼容的值：check 点名两条（不兼容 + 与锁不一致）。
-    const manifestFile = path.join(target, "plugins/chamber/plugin.json");
+    const manifestFile = path.join(target, "apps/plugins/chamber/plugin.json");
     const original = fs.readFileSync(manifestFile, "utf8");
     fs.writeFileSync(manifestFile, original.replace('"featureSchemaVersion": 1', '"featureSchemaVersion": 99'));
     const bad = checkInstalledPlugins(target).plugins[0].problems.join("\n");
@@ -1040,14 +1040,14 @@ test("PLUGIN-REGISTRY §1-11：随包 .meta 的内容闸——uuid 形状 / impo
     // 与宿主撞车：目标树某个框架资源的 .meta 与包内 ChamberView.ts.meta 同 uuid → install 落盘前拒绝并点名两侧。
     write(target, "apps/Cocos/assets/resources/ui/Common.bin.meta", originalView.toString("utf8"));
     assert.throws(() => installPlugin({ root: target, source: dirOut, git: false, postinstall: false }), /uuid 与宿主资源撞车[\s\S]*ChamberView\.ts\.meta ⟷ 宿主 apps\/Cocos\/assets\/resources\/ui\/Common\.bin\.meta/u);
-    assert.ok(!fs.existsSync(path.join(target, "features/chamber/feature.json")), "撞车在落盘前拒绝");
+    assert.ok(!fs.existsSync(path.join(target, "apps/plugins/chamber/feature.json")), "撞车在落盘前拒绝");
     fs.rmSync(path.join(target, "apps/Cocos/assets/resources/ui/Common.bin.meta"));
     assert.doesNotThrow(() => installPlugin({ root: target, source: dirOut, git: false, postinstall: false }));
     // 升级：本插件自己旧锁里的 .meta 不算撞车（同 uuid 同路径是正常的）。
     assert.doesNotThrow(() => installPlugin({ root: target, source: dirOut, git: false, postinstall: false }));
     // 从树重装：树上（非本插件）资源与包内撞车同样拒绝。
     write(target, "apps/Cocos/assets/resources/ui/Other.bin.meta", originalView.toString("utf8"));
-    const manifestFile = path.join(target, "plugins/chamber/plugin.json");
+    const manifestFile = path.join(target, "apps/plugins/chamber/plugin.json");
     fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.0.1"'));
     assert.throws(() => reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false }), /uuid 与宿主资源撞车/u);
   } finally {
@@ -1126,12 +1126,12 @@ test("加固 §1-1：落盘阶段失败（锁目录不可写 / 包内文件与�
       if (fs.existsSync(lockDir)) fs.chmodSync(lockDir, 0o755); // 回滚会把清空的锁目录一并收掉
     }
     assert.equal(gitPorcelain(target), porcelainBefore, "落盘失败后树回到操作前");
-    assert.ok(!fs.existsSync(path.join(target, "features/chamber/feature.json")));
+    assert.ok(!fs.existsSync(path.join(target, "apps/plugins/chamber/feature.json")));
     assert.doesNotThrow(() => installPlugin({ root: target, source: v1, git: true, postinstall: false }), "恢复权限后同一包直接重装");
 
     // 文件与其子路径并存的包（只能以 zip 构造）：读包阶段拒绝（⛔ 不走到写盘）。
     const packed = readPackage(v1);
-    const nested = { path: "docs/chamber/README.md/nested.md", data: Buffer.from("x\n") };
+    const nested = { path: "apps/plugins/chamber/README.md/nested.md", data: Buffer.from("x\n") };
     const evilZip = writeZip([
       ...[...packed.files.entries()].map(([relative, data]) => ({ path: relative, data })),
       nested,
@@ -1171,23 +1171,23 @@ test("加固 §1-1：仅大小写不同的改名升级在大小写不敏感文�
     const v1 = path.join(author, "out/v1.zip");
     packPlugin({ root: author, id: "chamber", outFile: v1 });
     installPlugin({ root: target, source: v1, git: false, postinstall: false });
-    fs.renameSync(path.join(author, "docs/chamber/README.md"), path.join(author, "docs/chamber/Readme.tmp"));
-    fs.renameSync(path.join(author, "docs/chamber/Readme.tmp"), path.join(author, "docs/chamber/Readme.md"));
-    const manifestFile = path.join(author, "plugins/chamber/plugin.json");
+    fs.renameSync(path.join(author, "apps/plugins/chamber/README.md"), path.join(author, "apps/plugins/chamber/Readme.tmp"));
+    fs.renameSync(path.join(author, "apps/plugins/chamber/Readme.tmp"), path.join(author, "apps/plugins/chamber/Readme.md"));
+    const manifestFile = path.join(author, "apps/plugins/chamber/plugin.json");
     fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.1.0"'));
     const v2 = path.join(author, "out/v2.zip");
     packPlugin({ root: author, id: "chamber", outFile: v2 });
     // 回滚路径：postinstall 失败 → 树回到 README.md。
     const boom = fakeRunner((args) => { if (args.includes("sync:shared")) throw new Error("boom"); });
     assert.throws(() => installPlugin({ root: target, source: v2, git: false, runner: boom }), /已回滚到操作前/u);
-    assert.deepEqual(fs.readdirSync(path.join(target, "docs/chamber")), ["README.md"]);
+    assert.deepEqual(fs.readdirSync(path.join(target, "apps/plugins/chamber")).filter((name) => name.toLowerCase().endsWith(".md")), ["README.md"]);
     assert.equal(checkInstalledPlugins(target).ok, true);
     // 成功路径：目录里只剩 Readme.md，锁与树一致。
     const report = installPlugin({ root: target, source: v2, git: false, postinstall: false });
-    assert.deepEqual(report.written, ["docs/chamber/Readme.md", "plugins/chamber/plugin.json"]);
-    assert.deepEqual(report.deleted, ["docs/chamber/README.md"]);
-    assert.deepEqual(fs.readdirSync(path.join(target, "docs/chamber")), ["Readme.md"]);
-    assert.equal(fs.readFileSync(path.join(target, "docs/chamber/Readme.md"), "utf8"), "# chamber 1.0.0\n");
+    assert.deepEqual(report.written, ["apps/plugins/chamber/Readme.md", "apps/plugins/chamber/plugin.json"]);
+    assert.deepEqual(report.deleted, ["apps/plugins/chamber/README.md"]);
+    assert.deepEqual(fs.readdirSync(path.join(target, "apps/plugins/chamber")).filter((name) => name.toLowerCase().endsWith(".md")), ["Readme.md"]);
+    assert.equal(fs.readFileSync(path.join(target, "apps/plugins/chamber/Readme.md"), "utf8"), "# chamber 1.0.0\n");
     assert.equal(checkInstalledPlugins(target).ok, true, caseInsensitive ? "大小写不敏感卷上改名升级后 check 必须绿" : "大小写敏感卷");
   } finally {
     cleanup(author, target);
@@ -1202,7 +1202,7 @@ test("加固 §1-3 / §1-2：reinstall-from-tree 不替作者删仍在磁盘的�
     packPlugin({ root: author, id: "chamber", outFile: v1 });
     installPlugin({ root: target, source: v1, git: true, postinstall: false });
     gitCommit(target, "install chamber");
-    const manifestFile = path.join(target, "plugins/chamber/plugin.json");
+    const manifestFile = path.join(target, "apps/plugins/chamber/plugin.json");
     // 去掉域但域文件还在磁盘 → 拒绝并点名（⛔ 不替作者删）。
     fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.1.0"').replace('"domains": [\n    "chamber"\n  ]', '"domains": []'));
     assert.throws(
@@ -1229,7 +1229,7 @@ test("加固 §1-3 / §1-2：reinstall-from-tree 不替作者删仍在磁盘的�
     // View 改名（树上）：删除面从旧锁的 sidecar 推出 → --allow-delete Chamber。
     assert.deepEqual(viewNamesFromEntries(readInstalledLock(target, "chamber")?.entries ?? []), ["Chamber"]);
     fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.1.0"', '"1.2.0"'));
-    const featureFile = path.join(target, "features/chamber/feature.json");
+    const featureFile = path.join(target, "apps/plugins/chamber/feature.json");
     fs.writeFileSync(featureFile, fs.readFileSync(featureFile, "utf8").replaceAll("ChamberView", "ChamberPanelView").replace('"view": "Chamber"', '"view": "ChamberPanel"'));
     for (const base of ["apps/client/src/features/chamber/view", "apps/Cocos/assets/src/features/chamber/view"]) {
       for (const suffix of [".ts", ".view.json"]) fs.renameSync(path.join(target, `${base}/ChamberView${suffix}`), path.join(target, `${base}/ChamberPanelView${suffix}`));
@@ -1260,8 +1260,8 @@ test("加固 §1-5：分叉不能被「内容相同的包」洗白；旧锁（�
     const v1 = path.join(author, "out/v1.zip");
     packPlugin({ root: author, id: "chamber", outFile: v1 });
     installPlugin({ root: target, source: v1, git: false, postinstall: false });
-    fs.writeFileSync(path.join(target, "docs/chamber/README.md"), "# HOST FORK\n");
-    const manifestFile = path.join(target, "plugins/chamber/plugin.json");
+    fs.writeFileSync(path.join(target, "apps/plugins/chamber/README.md"), "# HOST FORK\n");
+    const manifestFile = path.join(target, "apps/plugins/chamber/plugin.json");
     fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.0.1"'));
     reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false });
     const forkSource = readInstalledLock(target, "chamber")?.source;
@@ -1273,7 +1273,7 @@ test("加固 §1-5：分叉不能被「内容相同的包」洗白；旧锁（�
     assert.deepEqual(same.source, forkSource);
     assert.equal(same.previousSource?.kind, "tree");
     assert.equal(readInstalledLock(target, "chamber")?.source?.kind, "tree");
-    const upstream = path.join(author, "plugins/chamber/plugin.json");
+    const upstream = path.join(author, "apps/plugins/chamber/plugin.json");
     fs.writeFileSync(upstream, fs.readFileSync(upstream, "utf8").replace('"1.0.0"', '"1.1.0"'));
     const v2 = path.join(author, "out/v2.zip");
     packPlugin({ root: author, id: "chamber", outFile: v2 });
@@ -1306,7 +1306,7 @@ test("加固 §1-5：分叉不能被「内容相同的包」洗白；旧锁（�
     assert.equal(checkInstalledPlugins(target).ok, true);
 
     // uninstall 报告来源（tree 时 CLI 提醒）。
-    fs.writeFileSync(path.join(target, "docs/chamber/README.md"), "# fork again\n");
+    fs.writeFileSync(path.join(target, "apps/plugins/chamber/README.md"), "# fork again\n");
     fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.1.0"', '"1.1.1"'));
     reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false });
     assert.equal(uninstallPlugin({ root: target, id: "chamber", git: false, postinstall: false, dryRun: true }).source, "tree");
@@ -1329,7 +1329,7 @@ test("加固 §1-9 / §1-11：requires 与随包 feature.json / manifest.json �
       fs.writeFileSync(path.join(dirOut, "files.lock"), renderFilesLock(present.map((relative) => ({ path: relative, sha256: sha256(fs.readFileSync(path.join(dirOut, relative))) }))), "utf8");
     };
     // feature.json schemaVersion=2 而 requires.featureSchemaVersion=1 → 整包拒绝；check 对树上也点名。
-    const featureFile = path.join(dirOut, "features/chamber/feature.json");
+    const featureFile = path.join(dirOut, "apps/plugins/chamber/feature.json");
     const featureOriginal = fs.readFileSync(featureFile, "utf8");
     fs.writeFileSync(featureFile, featureOriginal.replace('"schemaVersion": 1', '"schemaVersion": 2'));
     relock();
@@ -1350,7 +1350,7 @@ test("加固 §1-9 / §1-11：requires 与随包 feature.json / manifest.json �
     fs.rmSync(path.join(target, "apps/Cocos/assets/resources/ui/Weird.bin.meta"));
     installPlugin({ root: target, source: dirOut, git: false, postinstall: false });
     // check 对树上 feature.json schemaVersion 漂移点名。
-    const treeFeature = path.join(target, "features/chamber/feature.json");
+    const treeFeature = path.join(target, "apps/plugins/chamber/feature.json");
     fs.writeFileSync(treeFeature, fs.readFileSync(treeFeature, "utf8").replace('"schemaVersion": 1', '"schemaVersion": 2'));
     assert.match(checkInstalledPlugins(target).plugins[0].problems.join("\n"), /feature\.json 的 schemaVersion（2）与 requires\.featureSchemaVersion（1）不一致/u);
     fs.writeFileSync(treeFeature, featureOriginal);
@@ -1359,7 +1359,7 @@ test("加固 §1-9 / §1-11：requires 与随包 feature.json / manifest.json �
     // 升级时同路径 .meta 换 uuid：装得上，但 uuidChanged 报出来。
     const viewMeta = "apps/Cocos/assets/src/features/chamber/view/ChamberView.ts.meta";
     write(dirOut, viewMeta, meta("typescript", "rewritten by creator"));
-    const manifestFile = path.join(dirOut, "plugins/chamber/plugin.json");
+    const manifestFile = path.join(dirOut, "apps/plugins/chamber/plugin.json");
     const bumped = fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.0.1"');
     fs.writeFileSync(manifestFile, bumped);
     fs.writeFileSync(path.join(dirOut, "plugin.json"), bumped);

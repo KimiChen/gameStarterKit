@@ -51,14 +51,33 @@ import { parseGameplayStateDescriptor, renderSharedStateModule } from "../tools/
 
 const REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const SCHEMA_DIR = path.join(REPOSITORY_ROOT, "apps/shared/schema/gameplays");
+const PLUGINS_DIR = path.join(REPOSITORY_ROOT, "apps/plugins");
+/** 玩法单源目录：schema 目录的每个子目录 ∪ 插件目录里带 gameplay/ 的插件（PLUGIN.md §5.5 阶段 1）。 */
+function gameplaySourceDirs(): ReadonlyMap<string, string> {
+  const out = new Map<string, string>();
+  for (const entry of fs.readdirSync(SCHEMA_DIR, { withFileTypes: true })) {
+    if (entry.isDirectory()) out.set(entry.name, `apps/shared/schema/gameplays/${entry.name}`);
+  }
+  if (fs.existsSync(PLUGINS_DIR)) {
+    for (const entry of fs.readdirSync(PLUGINS_DIR, { withFileTypes: true })) {
+      if (entry.isDirectory() && fs.existsSync(path.join(PLUGINS_DIR, entry.name, "gameplay", "manifest.json"))) out.set(entry.name, `apps/plugins/${entry.name}/gameplay`);
+    }
+  }
+  return out;
+}
+const GAMEPLAY_SOURCES = gameplaySourceDirs();
+function sourceDirOf(id: string): string {
+  const relative = GAMEPLAY_SOURCES.get(id);
+  if (!relative) throw new Error(`unknown gameplay id in fixture: ${id}`);
+  return path.join(REPOSITORY_ROOT, relative);
+}
 
 const SHARED_STATE_DIR = "apps/shared/src/gameplays/generated/state";
 const SERVER_SCHEMA_DIR = "apps/server/src/rooms/schema/generated";
 const WIRE_VECTORS_DIR = "apps/server/test/wire-vectors";
 const WIRE_VECTORS_INDEX = `${WIRE_VECTORS_DIR}/index.generated.ts`;
-/** 真仓玩法 id 全集 = schema 目录发现（⛔ 不硬编码：插件玩法进来不得需要改本测试）。 */
-const EXPECTED_GAMEPLAY_IDS = fs.readdirSync(SCHEMA_DIR, { withFileTypes: true })
-  .filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
+/** 真仓玩法 id 全集 = 两个发现根（⛔ 不硬编码：插件玩法进来不得需要改本测试）。 */
+const EXPECTED_GAMEPLAY_IDS = [...GAMEPLAY_SOURCES.keys()].sort();
 const SHARED_CATALOG = "apps/shared/src/gameplays/catalog.generated.ts";
 const SHARED_INDEX = "apps/shared/src/gameplays/index.ts";
 const SHARED_WIRE_CATALOG = "apps/shared/src/gameplays/generated/wire-catalog.generated.ts";
@@ -106,11 +125,11 @@ function readJson<T>(file: string): T {
 }
 
 function stateFixture(id: string): MutableState {
-  return readJson<MutableState>(path.join(SCHEMA_DIR, id, "state.json"));
+  return readJson<MutableState>(path.join(sourceDirOf(id), "state.json"));
 }
 
 function manifestFixture(id: string): MutableManifest {
-  return readJson<MutableManifest>(path.join(SCHEMA_DIR, id, "manifest.json"));
+  return readJson<MutableManifest>(path.join(sourceDirOf(id), "manifest.json"));
 }
 
 function stateType(state: MutableState, name: string): MutableType {
@@ -134,7 +153,7 @@ function assertStateError(id: string, change: (state: MutableState) => void, pat
 /** 真仓 canonical 玩法（manifest.wireExposed !== false）：客户端 module 与服务端 mode 必须同集存在。 */
 function canonicalGameplayIds(): readonly string[] {
   return EXPECTED_GAMEPLAY_IDS.filter((id) => {
-    const manifest = JSON.parse(fs.readFileSync(path.join(SCHEMA_DIR, id, "manifest.json"), "utf8")) as { wireExposed?: boolean };
+    const manifest = JSON.parse(fs.readFileSync(path.join(sourceDirOf(id), "manifest.json"), "utf8")) as { wireExposed?: boolean };
     return manifest.wireExposed !== false;
   });
 }
@@ -142,6 +161,11 @@ function canonicalGameplayIds(): readonly string[] {
 function createFixture(): { readonly root: string; readonly options: GameplayCodegenOptions } {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "gameplay-codegen-"));
   fs.cpSync(SCHEMA_DIR, path.join(root, "apps/shared/schema/gameplays"), { recursive: true });
+  // 插件玩法单源：按插件目录形态复制（apps/plugins/<id>/gameplay/），生成器的第二个发现根。
+  for (const [id, relative] of GAMEPLAY_SOURCES) {
+    if (!relative.startsWith("apps/plugins/")) continue;
+    fs.cpSync(sourceDirOf(id), path.join(root, relative), { recursive: true });
+  }
   // wire catalog 的两个额外单源：core 消息名表（protocol/messages.ts）与各玩法手写 wire.ts。
   fs.mkdirSync(path.join(root, "apps/shared/src/protocol"), { recursive: true });
   fs.copyFileSync(
@@ -381,9 +405,9 @@ test("catalog contractDigest 就是 sha256(manifest + NUL + state + NUL + wire)�
   for (const id of ["ballMove", "idle"] as const) {
     const wireFile = path.join(REPOSITORY_ROOT, "apps/shared/src/gameplays", id, "wire.ts");
     const digest = crypto.createHash("sha256")
-      .update(fs.readFileSync(path.join(SCHEMA_DIR, id, "manifest.json")))
+      .update(fs.readFileSync(path.join(sourceDirOf(id), "manifest.json")))
       .update("\0")
-      .update(fs.readFileSync(path.join(SCHEMA_DIR, id, "state.json")))
+      .update(fs.readFileSync(path.join(sourceDirOf(id), "state.json")))
       .update("\0")
       .update(fs.existsSync(wireFile) ? fs.readFileSync(wireFile) : Buffer.alloc(0))
       .digest("hex");

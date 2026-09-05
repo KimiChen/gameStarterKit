@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "tally",
   "category": "extra",
-  "docs": ["docs/tally/README.md"],
+  "docs": ["apps/plugins/tally/README.md"],
   "resident": false,
   "viewDirs": ["apps/client/src/view/rooms/tally"],
   "views": [

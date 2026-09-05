@@ -1,7 +1,7 @@
-# scripts/plugins/tally.lock —— 已安装插件 tally@1.0.4 的登记与文件清单锁。Do not edit by hand.
+# scripts/plugins/tally.lock —— 已安装插件 tally@1.0.5 的登记与文件清单锁。Do not edit by hand.
 # writer: npm --workspace @game/server run plugin -- install ；checker: apps/server/test/plugin-lock.test.ts（随 verify:all）与 plugin -- check
-# manifest {"id":"tally","version":"1.0.4","kinds":["gameplay","feature"],"constantName":"Tally","domains":[],"fguiPackages":[],"requires":{"featureSchemaVersion":1,"gameplaySchemaVersion":1}}
-# source {"kind":"tree","filesLockSha256":"649395e6a11d88395b3bfdc67d589b8c49429f66ef08fe1582f3748eb8c4a879","forkedFrom":null}
+# manifest {"id":"tally","version":"1.0.5","kinds":["gameplay","feature"],"constantName":"Tally","domains":[],"fguiPackages":[],"requires":{"featureSchemaVersion":1,"gameplaySchemaVersion":1}}
+# source {"kind":"tree","filesLockSha256":"6732b969086d5bcbb062692cffc10ea634794d125ecef4cca23085f12b8d9b1a","forkedFrom":null}
 apps/Cocos/assets/src/gameplay/modes/tally.meta 43718a7eae3669713948f2f534c32190c441514dd3d07f2084726460639de83f
 apps/Cocos/assets/src/gameplay/modes/tally/index.ts b60114eeaf0f1273e12883038fe4dce6d1aa36bc1cdf09dafaa149d33bcbce2d
 apps/Cocos/assets/src/gameplay/modes/tally/index.ts.meta 60e61dc411b1954d4bb92cc8cfb2d97c407e0fd6c03fb5e33bcabf30890a9e2b
@@ -21,12 +21,12 @@ apps/client/src/net/rooms/TallyRoom.ts ce30bb820c881b51b1705d4668a03abd5f461caa1
 apps/client/src/view/rooms/tally/TallyView.ts 0fae164953a18b2b58f7282e39c2257313637748a907df9dbb158a6c94a5e879
 apps/client/src/view/rooms/tally/TallyView.view.json 65a5625153929d69f0c51ab3ef829b6a0b1d9a5427d9abfe44e256d53d821a47
 apps/client/test/tally-gameplay.test.ts a83070510e0a899f14f0e33b648793600d8401a9803a951a867d51761452f173
+apps/plugins/tally/README.md 53205c1538db026e0f6dfd4901e2afbf9884a1e5412a72f830eb83114b96a095
+apps/plugins/tally/feature.json abd7b339d8066e8c341942c0cdb139527ed984a3fe36681f7cfaad594513bc9a
+apps/plugins/tally/gameplay/manifest.json 48384d17f4b9d928fb55d276500c3699d42e6606c45c141be52cc25550b34993
+apps/plugins/tally/gameplay/state.json 6e87bd158b00148aaa5440141df9c856646860c08ede847258151d8aefcf6d1c
+apps/plugins/tally/plugin.json 8196a382f730ac1ba7a22734926fe64b1aca7204f8954328cad4dca222f5fc4f
 apps/server/src/rooms/modes/tally/index.ts bee538ec4aacbbd80c02e5cc44607a7465fbaa15a46765cbb99c177e220311b1
 apps/server/test/tally-game-mode.test.ts bcb670a91a971647d36304a05dd8ad8189db1d6d77c1df2cebcb1e20355bddc5
 apps/server/test/wire-vectors/tally.ts 3cc37d956548e46166773d15de34d2e26f77513b57372a405121580c7e58bf20
-apps/shared/schema/gameplays/tally/manifest.json 48384d17f4b9d928fb55d276500c3699d42e6606c45c141be52cc25550b34993
-apps/shared/schema/gameplays/tally/state.json 6e87bd158b00148aaa5440141df9c856646860c08ede847258151d8aefcf6d1c
 apps/shared/src/gameplays/tally/wire.ts 1658cae39ad8e6c0b672e2da0ea16560b8b4658f8649850337e9013f2f7c439c
-docs/tally/README.md 2f3117b4abfe2e087afdceabd0db06ef6b0f0de88344febd9cb97f06d4e7a047
-features/tally/feature.json f1de6440f59a64bb4486c75978d81f4af911ac5e38af9e2399a025f0202204a0
-plugins/tally/plugin.json 001ced05df2b703273d78a86b33721c6bbfdf6e1308c66c08628d7cd3067e555

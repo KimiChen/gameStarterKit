@@ -73,8 +73,8 @@ const ALL_ARTIFACTS = [REGISTRY_RELATIVE, ...CLIENT_ARTIFACTS, FEATURE_INDEX_REL
 function createFixture(): { readonly root: string; readonly options: FeatureCodegenOptions } {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "feature-codegen-"));
   // apps/client/src/features 是 feature 目录形态（PLUGIN.md §6.1 插件标准形态）的源目录：真仓无插件时不存在，按需拷。
-  for (const dir of [LOBBY_RPC_DIR, "features", "apps/client/src/view", "apps/client/src/logic", "apps/client/src/features", "apps/client/src/generated", VECTORS_DIR, "apps/shared/schema/gameplays"]) {
-    if (dir === "apps/client/src/features" && !fs.existsSync(path.join(REPOSITORY_ROOT, dir))) continue;
+  for (const dir of [LOBBY_RPC_DIR, "features", "apps/plugins", "apps/client/src/view", "apps/client/src/logic", "apps/client/src/features", "apps/client/src/generated", VECTORS_DIR, "apps/shared/schema/gameplays"]) {
+    if ((dir === "apps/client/src/features" || dir === "apps/plugins") && !fs.existsSync(path.join(REPOSITORY_ROOT, dir))) continue;
     fs.cpSync(path.join(REPOSITORY_ROOT, dir), path.join(root, dir), { recursive: true });
   }
   fs.mkdirSync(path.join(root, "docs"), { recursive: true });
@@ -103,7 +103,7 @@ function snapshotHandwritten(root: string): Map<string, string> {
       out.set(relative, fs.readFileSync(full, "utf8"));
     }
   };
-  for (const dir of [LOBBY_RPC_DIR, "features", "apps/client/src/view", "apps/client/src/logic", "apps/client/src/features", "apps/client/src/generated", "apps/art/fairygui/assets", "docs", VECTORS_DIR]) {
+  for (const dir of [LOBBY_RPC_DIR, "features", "apps/plugins", "apps/client/src/view", "apps/client/src/logic", "apps/client/src/features", "apps/client/src/generated", "apps/art/fairygui/assets", "docs", VECTORS_DIR]) {
     const base = path.join(root, dir);
     if (fs.existsSync(base)) walk(base);
   }

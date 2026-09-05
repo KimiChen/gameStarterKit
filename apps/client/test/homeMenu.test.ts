@@ -1,7 +1,7 @@
 /**
  * Home 数据驱动机制（Non-intrusive §7.4 阶段 6；fixture 驱动）：
  *  - 菜单唯一数据源 = generated menu contributions；排序 featureId → entryId 由独立比较器
- *    重算核对，并与手写 features/<dir>/feature.json 双向核对（⛔ manifest 无 slot/order）；
+ *    重算核对，并与手写 features/<dir>/feature.json + apps/plugins/<id>/feature.json 双向核对（⛔ manifest 无 slot/order）；
  *  - **位置归宿主**（docs/PLUGIN.md §6）：首屏入口顺序与默认 launch target 都来自手写
  *    features/host.json（经 codegen 生成 GENERATED_HOST），⛔ 本文件不写死是哪个玩法；
  *  - HomeLogic：主入口点击唯一走 entry.launch；disabled/failed 叠加 = handler 拒绝
@@ -12,7 +12,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -60,19 +60,26 @@ function makePorts(overrides: {
 const REPO_ROOT = fileURLToPath(new URL("../../..", import.meta.url));
 
 /**
- * 手写真源侧的菜单全集：直接读 `features/<dir>/feature.json`，按 feature id 附上 featureId。
+ * 手写真源侧的菜单全集：直接读 `features/<dir>/feature.json`（宿主）与 `apps/plugins/<id>/feature.json`（插件，
+ * PLUGIN.md §5.5 阶段 1；插件目录有 feature.json 才算），按 feature id 附上 featureId。
  * ⛔ 不复用生成物——本文件要守的正是「生成汇总 ⇔ 手写 manifest」这一格。
  */
 function readManifestMenu(): GeneratedMenuContribution[] {
-  const featuresDir = join(REPO_ROOT, "features");
-  return readdirSync(featuresDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .flatMap((entry) => {
-      const manifest = JSON.parse(
-        readFileSync(join(featuresDir, entry.name, "feature.json"), "utf8"),
-      ) as { id: string; menu: ReadonlyArray<Omit<GeneratedMenuContribution, "featureId">> };
-      return manifest.menu.map((item) => ({ ...item, featureId: manifest.id }));
-    });
+  const roots = [
+    { dir: join(REPO_ROOT, "features"), optional: false },
+    { dir: join(REPO_ROOT, "apps/plugins"), optional: true },
+  ];
+  return roots.flatMap(({ dir, optional }) => {
+    if (optional && !existsSync(dir)) return [];
+    return readdirSync(dir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && existsSync(join(dir, entry.name, "feature.json")))
+      .flatMap((entry) => {
+        const manifest = JSON.parse(
+          readFileSync(join(dir, entry.name, "feature.json"), "utf8"),
+        ) as { id: string; menu: ReadonlyArray<Omit<GeneratedMenuContribution, "featureId">> };
+        return manifest.menu.map((item) => ({ ...item, featureId: manifest.id }));
+      });
+  });
 }
 
 function sortedByRule(items: readonly GeneratedMenuContribution[]): GeneratedMenuContribution[] {

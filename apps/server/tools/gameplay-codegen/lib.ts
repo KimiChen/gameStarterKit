@@ -45,6 +45,9 @@ import {
 
 const TOOL_REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 const SCHEMA_DIR_RELATIVE = "apps/shared/schema/gameplays";
+/** 插件根（PLUGIN.md §5.5 阶段 1）：`apps/plugins/<id>/gameplay/{manifest.json,state.json}` 与 schema 目录同等发现。 */
+export const PLUGINS_DIR_RELATIVE = "apps/plugins";
+const PLUGIN_GAMEPLAY_SUBDIR = "gameplay";
 const SHARED_GAMEPLAYS_DIR_RELATIVE = "apps/shared/src/gameplays";
 const SHARED_STATE_DIR_RELATIVE = "apps/shared/src/gameplays/generated/state";
 const SHARED_GENERATED_DIR_RELATIVE = "apps/shared/src/gameplays/generated";
@@ -101,6 +104,8 @@ export type GameplayDescriptor = {
   /** sha256(manifest.json + "\0" + state.json + "\0" + wire.ts 字节)，per-mode 契约身份。 */
   readonly contractDigest: string;
   readonly sourceLabel: string;
+  /** 单源目录标签（`apps/shared/schema/gameplays/<id>` 或 `apps/plugins/<id>/gameplay`），错误信息据此点名。 */
+  readonly sourceDir: string;
 };
 
 export type GameplayWriteResult = {
@@ -178,28 +183,60 @@ function readGameplaySharedModules(root: string, id: string): readonly string[] 
 }
 
 /** 发现并解析全部玩法单源目录；输出按 id 稳定排序。 */
-export function readGameplayDescriptors(options: GameplayCodegenOptions = {}): readonly GameplayDescriptor[] {
-  const root = resolvedRoot(options);
+interface GameplaySource {
+  readonly id: string;
+  readonly entryPath: string;
+  readonly entryLabel: string;
+}
+
+/** 两个发现根：schema 目录（每个子目录都必须是玩法）与插件目录（有 gameplay/ 子目录的插件才算）。 */
+function discoverGameplaySources(root: string): readonly GameplaySource[] {
   const schemaDir = path.join(root, SCHEMA_DIR_RELATIVE);
   if (!fs.existsSync(schemaDir)) {
     fail(SCHEMA_DIR_RELATIVE, "gameplay schema directory does not exist");
   }
+  const sources: GameplaySource[] = [];
   const entries = fs.readdirSync(schemaDir, { withFileTypes: true })
     .slice()
     .sort((left, right) => (left.name < right.name ? -1 : left.name > right.name ? 1 : 0));
-  const gameplays: GameplayDescriptor[] = [];
-  const normalizedIds = new Map<string, string>();
   for (const entry of entries) {
     const entryLabel = `${SCHEMA_DIR_RELATIVE}/${entry.name}`;
     const entryPath = path.join(schemaDir, entry.name);
     if (fs.lstatSync(entryPath).isSymbolicLink()) fail(entryLabel, "symlink escape is not allowed");
     if (!entry.isDirectory()) fail(entryLabel, "only per-gameplay directories are allowed here");
-    if (!MODE_ID.test(entry.name)) fail(entryLabel, `invalid gameplay mode id: ${entry.name}`);
     // 防御性路径闸：id 正则已排除路径分隔符，这里再钉一次解析结果必须留在 schema 根之下。
     const resolvedEntry = path.resolve(schemaDir, entry.name);
     if (resolvedEntry !== path.join(schemaDir, entry.name) || !resolvedEntry.startsWith(schemaDir + path.sep)) {
       fail(entryLabel, "path escapes the gameplay schema root");
     }
+    sources.push({ id: entry.name, entryPath, entryLabel });
+  }
+  const pluginsDir = path.join(root, PLUGINS_DIR_RELATIVE);
+  if (fs.existsSync(pluginsDir)) {
+    const pluginEntries = fs.readdirSync(pluginsDir, { withFileTypes: true })
+      .slice()
+      .sort((left, right) => (left.name < right.name ? -1 : left.name > right.name ? 1 : 0));
+    for (const entry of pluginEntries) {
+      if (!entry.isDirectory()) continue;
+      const entryPath = path.join(pluginsDir, entry.name, PLUGIN_GAMEPLAY_SUBDIR);
+      if (!fs.existsSync(entryPath)) continue;
+      const entryLabel = `${PLUGINS_DIR_RELATIVE}/${entry.name}/${PLUGIN_GAMEPLAY_SUBDIR}`;
+      if (fs.lstatSync(path.join(pluginsDir, entry.name)).isSymbolicLink() || fs.lstatSync(entryPath).isSymbolicLink()) fail(entryLabel, "symlink escape is not allowed");
+      if (!fs.statSync(entryPath).isDirectory()) fail(entryLabel, "gameplay must be a directory");
+      sources.push({ id: entry.name, entryPath, entryLabel });
+    }
+  }
+  return sources;
+}
+
+export function readGameplayDescriptors(options: GameplayCodegenOptions = {}): readonly GameplayDescriptor[] {
+  const root = resolvedRoot(options);
+  const gameplays: GameplayDescriptor[] = [];
+  const normalizedIds = new Map<string, string>();
+  for (const source of discoverGameplaySources(root)) {
+    const { entryPath, entryLabel } = source;
+    const entry = { name: source.id };
+    if (!MODE_ID.test(entry.name)) fail(entryLabel, `invalid gameplay mode id: ${entry.name}`);
     const normalized = entry.name.toLowerCase();
     const clash = normalizedIds.get(normalized);
     if (clash !== undefined) {
@@ -287,7 +324,8 @@ export function readGameplayDescriptors(options: GameplayCodegenOptions = {}): r
       hasGameplayEnumModule,
       sharedModules,
       contractDigest,
-      sourceLabel: `${SCHEMA_DIR_RELATIVE}/${manifest.id}/{manifest.json,state.json}`,
+      sourceLabel: `${entryLabel}/{manifest.json,state.json}`,
+      sourceDir: entryLabel,
     });
   }
   if (gameplays.length === 0) fail(SCHEMA_DIR_RELATIVE, "no gameplay directories found");
@@ -308,7 +346,7 @@ function assertCrossGameplayUniqueness(gameplays: readonly GameplayDescriptor[])
   const constantNames = new Map<string, string>();
   const wireTypes = new Map<string, string>();
   for (const gameplay of gameplays) {
-    const label = `${SCHEMA_DIR_RELATIVE}/${gameplay.id}`;
+    const label = gameplay.sourceDir;
     const constantClash = constantNames.get(gameplay.manifest.constantName);
     if (constantClash !== undefined) {
       fail(label, `constantName "${gameplay.manifest.constantName}" already used by gameplay "${constantClash}"`);
@@ -443,7 +481,7 @@ function assertCoreWireUniqueness(gameplays: readonly GameplayDescriptor[], core
 // ── 渲染 ────────────────────────────────────────────────────────────────────
 
 // ⚠ 标签会进 `/** … */` 块注释：⛔ 不能写 `*/`（glob 星号 + 斜杠会提前终止注释）。
-const AGGREGATE_SOURCE_LABEL = `${SCHEMA_DIR_RELATIVE}/<id>/{manifest.json,state.json}`;
+const AGGREGATE_SOURCE_LABEL = `${SCHEMA_DIR_RELATIVE}/<id>/{manifest.json,state.json} + ${PLUGINS_DIR_RELATIVE}/<id>/${PLUGIN_GAMEPLAY_SUBDIR}/{manifest.json,state.json}`;
 
 function rootType(gameplay: GameplayDescriptor): { readonly sharedName: string; readonly validatorName: string; readonly name: string } {
   const type = gameplay.state.types.find((candidate) => candidate.name === gameplay.state.root);
@@ -1163,9 +1201,9 @@ export function assertModeVersionBumped(
     if (record.contractDigest === gameplay.contractDigest) continue;
     if (gameplay.manifest.modeVersion > record.modeVersion) continue;
     fail(
-      `${SCHEMA_DIR_RELATIVE}/${gameplay.id}`,
+      gameplay.sourceDir,
       `contract digest changed but modeVersion did not increase (kept ${gameplay.manifest.modeVersion}, `
-      + `previous ${record.modeVersion}). Bump modeVersion in ${SCHEMA_DIR_RELATIVE}/${gameplay.id}/manifest.json`,
+      + `previous ${record.modeVersion}). Bump modeVersion in ${gameplay.sourceDir}/manifest.json`,
     );
   }
 }
