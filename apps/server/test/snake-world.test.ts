@@ -35,8 +35,8 @@ function digest(world: SnakeWorld): string {
 }
 
 test("同 seed/输入的 Star、磁铁、AI 与世界字节级可重放", () => {
-    const run = (): SnakeWorld => {
-        const world = new SnakeWorld({ matchSeed: 20260903, aiSkinPool: [1, 2, 3, 4] });
+    const run = (matchSeed = 20260903): SnakeWorld => {
+        const world = new SnakeWorld({ matchSeed, aiSkinPool: [1, 2, 3, 4] });
         world.addPlayerSnake("p1", "甲", 1);
         world.addInitialAiLineup();
         for (let tick = 0; tick < 420; tick += 1) {
@@ -48,10 +48,11 @@ test("同 seed/输入的 Star、磁铁、AI 与世界字节级可重放", () => 
     };
     const first = run();
     const second = run();
-    assert.equal(digest(first), digest(second));
-    const other = new SnakeWorld({ matchSeed: 20260904 });
-    advance(other, 420, [{ state: "active", length: 80 }]);
-    assert.notEqual(digest(first), digest(other));
+    assert.equal(digest(first), digest(second), "同 seed 同输入必须字节级可重放");
+    // ⚠ 异 seed 必须走**完全相同的构造与输入**，只换种子——早先这里另起了一个空世界
+    // （不加玩家、不加 AI 阵容、不喂输入），digest 不同是构造不同导致的，与种子无关：
+    // 那样即便 matchSeed 被完全忽略，断言也照样绿，证明不了种子敏感性。
+    assert.notEqual(digest(first), digest(run(20260904)), "换种子必须改变世界演化");
 });
 
 test("稳态严格 1000 Dot + 30 Star，variant 与独立运动流合法", () => {
