@@ -236,6 +236,13 @@ kinds / constantName / domains / fguiPackages 与锁不同即拒绝，显式 `--
 （`--no-git` 无从判定，退化为全部吸收）。锁内已不存在于树的越权条目不再拦 reinstall（构不成误删风险；规则演进后
 改名的旧文件正是这种形态），登记了树上存在的越权文件仍拒绝。
 
+**锁的来源抬头 `# source`**（2026-09-05，PLUGIN-REGISTRY §1-5 / §4.2）：`install <zip|dir>` 写
+`{"kind":"package","filesLockSha256":…}`（内容身份 = 包内 files.lock 规范文本的 sha256，宿主可从锁 entries 离线复算；
+`install --from-registry` 落地后再带 `registry` 子对象），`--reinstall-from-tree` 写 `{"kind":"tree",…,"forkedFrom":<上一来源>}`
+（树 ≡ 锁的 no-op 保留原来源）。**分叉之上的升级**：锁 `source.kind === "tree"` 时，内容不同的来包默认拒绝并列出会被
+覆盖/删除的分叉文件，显式 `--replace-local-fork` 才放行（同版本不同内容也放行——分叉 bump 到的版本号可能恰与上游撞车；
+⛔ 不引入 `-local.N` 版本后缀）。旧锁没有这一行 ⇒ `check` 显示 `unknown`。
+
 **报告里的 `nextSteps` 按事实派生**（2026-09-05 小修）：协议指纹一项不再按「带 domain 就一定变了」猜——postinstall
 跑完后脚本执行 `node scripts/protocol-fingerprint.mjs --check`，只有真报过期才写「协议指纹已过期 … `--write`」，
 未变化则一句不提；`--dry-run` / `--no-postinstall` 没跑 codegen、无从判断，对带 domain 或 gameplay 形态的包给条件式
