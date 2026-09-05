@@ -191,14 +191,17 @@ sync 命令刷新。
 > `{state, value:null}`），这是设计好的 S1→S3 门禁，注释写明「S3 更新业务值时仍从这里扩展」。
 > ⛔ 不要按旧措辞去 `apps/shared` 另手写一份业务目录——那会造出第二份目录并绕开公共 hash。
 
-- [ ] 改 `tools/snake-s1-assets/core.mjs` 产出 16 套真实业务值（展示名、稀有度、获取方式、
-      四项碎片门槛），跑 `node tools/snake-s1-assets/cli.mjs --write` 重生服务端业务目录。
-- [ ] 放宽 `skinBusinessCatalog.ts` validator 的 approved 分支（保留 fail-closed 缺省），并翻转
-      `SNAKE_SKIN_COSMETIC_WRITES_ENABLED`。
-- [ ] **同批**更新 `apps/server/test/snake-s1-assets.test.ts` 里被硬钉的
-      `SERVER_SNAKE_SKIN_BUSINESS_HASH` 与 `canWriteSnakeSkinCosmetics(...) === false` 断言，
-      否则服务端测试直接红；新 hash 回写专项 README §8 与 `evidence/s1`。
-- [ ] 验证目录 ID 唯一、默认皮肤唯一、fallback 无环且皮肤没有玩法数值字段。
+- [x] 改 `tools/snake-s1-assets/core.mjs` 产出 16 套业务值（`SNAKE_S3_DEMO_BUSINESS`，逐格标注
+      「原作实测」/「本仓自设」），跑 `node tools/snake-s1-assets/cli.mjs --write` 重生服务端业务目录。
+      hash 守卫由「必须等于 S1 草稿值」改为「必须不同于 S1 草稿值」（沿用 client 层同款写法）。
+- [x] 放宽 `skinBusinessCatalog.ts` validator 的 approved 分支，保留 fail-closed：
+      `{state:"approved", value:null}` 一律拒；`ownershipItemId`/`fragmentItemId`/`price` 继续拒绝任何填值；
+      `fragmentCraft` 必须带正门槛、非 `fragmentCraft` 必须不带。
+      ⚠ **`SNAKE_SKIN_COSMETIC_WRITES_ENABLED` 有意未翻转**——按 §9.1-A 它现在是不变量 8 的锚点，
+      在 equip/unlock 写路径落地前翻转会让锚点宣称一个不存在的能力。留到写路径可用后再翻。
+- [x] **同批**更新 `apps/server/test/snake-s1-assets.test.ts` 的硬钉断言；新 hash
+      `b851e345…9d2c` 已回写专项 README §8 与 `evidence/s1`（后者由同一生成器重钉）。
+- [x] 验证目录 ID 唯一、默认皮肤唯一、fallback 无环且皮肤没有玩法数值字段。
 
 ### S3-02：实现 profile、Redis 投影与 RPC
 
@@ -217,8 +220,12 @@ sync 命令刷新。
 
 ### S3-03：接入 Snake mode
 
-- [ ] 在 Snake 自有目录内把认证 `uid` 交给同步皮肤 resolver，并锁存 `skinIdAtRunStart`。
-- [ ] 不修改通用 `GameMode` / `GameRoom`，不从 join 数据读取皮肤。
+- [x] 在 Snake 自有目录内把认证 `uid` 交给**同步**皮肤 resolver（`createPlayer` 在同步路径建实体，
+      ⛔ 不能 await Redis），并在 run 起始锁存。
+      ⚠ 承载字段仍是 schema 的 `skinId`（README §9.1 命名口径）：它只在 `createPlayer` 写一次，
+      此后只被读，⛔ 全文件无第二处写入——所以「run 中换装不改当前蛇」是**结构性成立**，不靠约定。
+- [x] 未预热 / uid 缺失 / 装备值因目录漂移失效 → 回退默认皮肤 1，⛔ 不因衣柜数据异常阻塞进房。
+- [x] 不修改通用 `GameMode` / `GameRoom`，不从 join 数据读取皮肤（join options 里根本没有皮肤字段）。
 
 ### S3-04：完成衣柜 Logic / View
 
