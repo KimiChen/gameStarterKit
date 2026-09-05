@@ -6,8 +6,10 @@
  * 全部假红（2026-09-05，34 张像素完全相同的 PNG 全部 different）。本模块只依赖 ES 标准库，
  * 输出由算法定义：同一输入在任何 Node 版本上字节相同。
  *
- * 取舍：只用固定 Huffman 码（BTYPE=01），不做动态 Huffman，压缩率略逊于 zlib level 9，但对
- * 大面积透明/纯色的精灵图差距很小；解码走任何标准 inflate（含 `zlib.inflateSync`）。
+ * 取舍：只用固定 Huffman 码（BTYPE=01），不做动态 Huffman，压缩率略逊于 zlib level 9（实测精灵图/
+ * contact sheet 约 1.35～1.6×），对大面积透明/纯色的精灵图可接受；⛔ 不要拿它编码照片类内容。
+ * 有效匹配窗口是 32767（distance 32768 虽合法但有意不发，`candidate > minimumIndex`），已被
+ * 2026-09-05 的对抗审阅确认为无害并随钉住的证据字节一起固定。解码走任何标准 inflate（含 `zlib.inflateSync`）。
  * ⛔ 改动本文件的匹配策略（链长、lazy 规则、窗口）都会改变输出字节，等于改了所有被钉证据的
  *   PNG——必须同时 `--write` 重钉并在提交信息里说明。
  */
@@ -69,8 +71,9 @@ class BitWriter {
     this.buffer = grown;
   }
 
-  /** 按 deflate 规则 LSB-first 写 `count`（≤16）个比特。 */
+  /** 按 deflate 规则 LSB-first 写 `count`（≤13）个比特；value 必须落在 count 位内，否则流会静默损坏。 */
   writeBits(value, count) {
+    if (value < 0 || value >= (1 << count)) throw new RangeError(`writeBits: ${value} 超出 ${count} 位`);
     this.bitBuffer |= value << this.bitCount;
     this.bitCount += count;
     while (this.bitCount >= 8) {
@@ -154,11 +157,14 @@ export function deflateRawDeterministic(input) {
         if (matched > bestLength) {
           bestLength = matched;
           bestDistance = index - candidate;
-          if (matched >= NICE_LENGTH) break;
+          // 达到 nice 长度或已到本位置可匹配上限（258 或到输入末尾）就不再沿链找：后者也避免快速比较读到 input[length]。
+          if (matched >= NICE_LENGTH || matched >= limit) break;
         }
       }
       const next = prev[candidate & WINDOW_MASK];
-      if (next >= candidate) break; // 环链保护（窗口回绕后残留的旧槽位）
+      // 防御性守卫：候选 c 只在 c > index-32768 时被访问，此时 c+32768 > index 尚未插入，prev[c&MASK] 必是 insert(c)
+      // 自己写的更小下标——因此本分支正常不可达（对抗审阅实测 0 次触发），留作链表被破坏时的兜底。
+      if (next >= candidate) break;
       candidate = next;
     }
     return bestLength >= MIN_MATCH ? { length: bestLength, distance: bestDistance } : { length: 0, distance: 0 };
