@@ -151,6 +151,7 @@ export function deriveOwnership(identity: PluginIdentity): readonly OwnershipRul
       { kind: "dir", path: `${CLIENT_SRC}/logic/rooms/${id}`, reason: "客户端玩法 Logic" },
       { kind: "dir", path: `${CLIENT_SRC}/view/rooms/${id}`, reason: "客户端玩法 View" },
       { kind: "file", path: `${CLIENT_SRC}/net/rooms/${constant}Room.ts`, reason: "客户端玩法 joiner/adapter（<Constant>Room.ts）" },
+      { kind: "file", path: `apps/server/test/wire-vectors/${id}.ts`, reason: "玩法 wire 向量 sidecar（随 codegen:gameplays 汇入 wire-vectors/index.generated.ts）" },
       { kind: "dir", path: `${RESOURCES}/${id}`, reason: "玩法运行时资源（resources/<id>/）" },
     );
   }

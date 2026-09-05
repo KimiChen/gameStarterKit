@@ -62,6 +62,12 @@ const CLIENT_MODES_DIR_RELATIVE = "apps/client/src/gameplay/modes";
 const SERVER_MODES_DIR_RELATIVE = "apps/server/src/rooms/modes";
 const SERVER_CATALOG_RELATIVE = "apps/server/src/rooms/modes/catalog.generated.ts";
 const SHARED_ROOMS_RELATIVE = "apps/shared/src/protocol/rooms.ts";
+/** 玩法 wire 向量 sidecar 目录：core.ts + 每个声明了 C2S wire 的玩法一份 <id>.ts；登记表由本生成器渲染。 */
+const WIRE_VECTORS_DIR_RELATIVE = "apps/server/test/wire-vectors";
+export const WIRE_VECTORS_INDEX_RELATIVE = `${WIRE_VECTORS_DIR_RELATIVE}/index.generated.ts`;
+const WIRE_VECTORS_SOURCE_LABEL = `${WIRE_VECTORS_DIR_RELATIVE}/<owner>.ts（owner = core + 声明了 C2S wire 的玩法 id）`;
+/** wire-vectors/ 下不是 sidecar 的固定文件。 */
+const WIRE_VECTORS_NON_SIDECAR = new Set(["index.ts", "index.generated.ts", "vectorTypes.ts"]);
 
 const MODE_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/u;
 const RUN_HINT = "Run npm --workspace @game/server run codegen:gameplays";
@@ -1016,15 +1022,73 @@ function renderSharedModeIds(gameplays: readonly GameplayDescriptor[]): string {
   return `${lines.join("\n").trimEnd()}\n`;
 }
 
+/**
+ * 发现玩法 wire 向量 sidecar（`apps/server/test/wire-vectors/<owner>.ts`）并与 wire owner 集合双向对齐：
+ * owner = core + 每个声明了 ≥1 个 C2S token 的玩法。缺 sidecar / 孤儿 sidecar 都 fail-fast——
+ * 中央测试的「向量并集 ⇔ validator 全集」双向相等以前靠人工维护 index.ts 的 import 表，插件加不进去
+ * （PLUGIN.md §3：插件只加文件不改中央源码），现在由本生成器按目录发现并渲染登记表。
+ */
+export function readWireVectorOwners(
+  gameplays: readonly GameplayDescriptor[],
+  options: GameplayCodegenOptions = {},
+): readonly string[] {
+  const root = resolvedRoot(options);
+  const dir = path.join(root, WIRE_VECTORS_DIR_RELATIVE);
+  if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
+    fail(WIRE_VECTORS_DIR_RELATIVE, "wire-vectors directory does not exist");
+  }
+  const required = ["core", ...gameplays.filter((gameplay) => gameplay.wire.c2s.length > 0).map((gameplay) => gameplay.id)]
+    .sort((left, right) => (left < right ? -1 : left > right ? 1 : 0));
+  const present = fs.readdirSync(dir)
+    .filter((name) => name.endsWith(".ts") && !WIRE_VECTORS_NON_SIDECAR.has(name))
+    .map((name) => name.slice(0, -".ts".length))
+    .sort();
+  const missing = required.filter((owner) => !present.includes(owner));
+  if (missing.length > 0) {
+    fail(
+      WIRE_VECTORS_DIR_RELATIVE,
+      `missing wire vector sidecar(s): ${missing.map((owner) => `${owner}.ts`).join(", ")}. `
+      + "每个声明了 C2S wire 的玩法（与 core）必须自带 apps/server/test/wire-vectors/<owner>.ts",
+    );
+  }
+  const orphans = present.filter((owner) => !required.includes(owner));
+  if (orphans.length > 0) {
+    fail(
+      WIRE_VECTORS_DIR_RELATIVE,
+      `orphan wire vector sidecar(s) without a C2S wire owner: ${orphans.map((owner) => `${owner}.ts`).join(", ")}. `
+      + "玩法删除时连它的 sidecar 一起删（uninstall 按锁删；手工删除也要一并删）",
+    );
+  }
+  return required;
+}
+
+/** 向量登记表 `wire-vectors/index.generated.ts`：owner → sidecar default（两份 wire 测试经 index.ts façade 唯一消费）。 */
+function renderWireVectorsIndex(owners: readonly string[]): string {
+  const lines = [generatedHeader(WIRE_VECTORS_SOURCE_LABEL)];
+  for (const owner of owners) lines.push(`import ${owner}Vectors from "./${owner}";`);
+  lines.push(
+    'import type { WireVectorFile } from "./vectorTypes";',
+    "",
+    "/** owner → sidecar default（core + 声明了 C2S wire 的玩法；新增玩法只新增 wire-vectors/<id>.ts 并重跑 codegen:gameplays）。 */",
+    "export const WIRE_VECTOR_FILES: Readonly<Record<string, WireVectorFile>> = {",
+    ...owners.map((owner) => `    ${owner}: ${owner}Vectors,`),
+    "};",
+    "",
+  );
+  return lines.join("\n");
+}
+
 /** 全部产物（相对仓根路径 → 内容），键按路径稳定排序。 */
 export function renderGameplayArtifacts(
   gameplays: readonly GameplayDescriptor[],
   core: CoreWireNames,
   clientModules: readonly ClientGameplayModule[],
   serverModules: readonly ServerGameplayModule[],
+  wireVectorOwners: readonly string[],
 ): ReadonlyMap<string, string> {
   const artifacts = new Map<string, string>();
   artifacts.set(SHARED_WIRE_CATALOG_RELATIVE, renderWireCatalog(gameplays, core));
+  artifacts.set(WIRE_VECTORS_INDEX_RELATIVE, renderWireVectorsIndex(wireVectorOwners));
   for (const gameplay of gameplays) {
     artifacts.set(
       `${SHARED_STATE_DIR_RELATIVE}/${gameplay.id}.ts`,
@@ -1156,6 +1220,7 @@ export function assertGameplayArtifactsFresh(options: GameplayCodegenOptions = {
       readCoreWireNames(options),
       readClientGameplayModules(gameplays, options),
       readServerGameplayModules(gameplays, options),
+      readWireVectorOwners(gameplays, options),
     ),
   );
   const problems: string[] = [];
@@ -1203,6 +1268,7 @@ export function writeGameplayArtifacts(options: GameplayCodegenOptions = {}): Ga
     readCoreWireNames(options),
     readClientGameplayModules(gameplays, options),
     readServerGameplayModules(gameplays, options),
+    readWireVectorOwners(gameplays, options),
   );
   // extra 清理：生成目录里不再被任何 mode 拥有的文件。允许删除名单里的 mode 产物删除；
   // 其余一律拒绝——普通 --write 不得静默吞掉未知文件。
