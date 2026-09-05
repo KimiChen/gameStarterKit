@@ -109,6 +109,7 @@ write_owner() {
     printf 'data_dir=%s\n' "$data_dir"
     printf 'pid_file=%s\n' "$pid_file"
     printf 'started_at=%s\n' "$started"
+    printf 'started_epoch=%s\n' "$(started_epoch_of "$started")"
     printf 'binary=%s\n' "$binary"
     [ -n "$server_id" ] && printf 'server_id=%s\n' "$server_id"
   } > "$tmp"
@@ -135,6 +136,59 @@ process_started_at() {
 process_command() {
   local pid="$1"
   LC_ALL=C ps -ww -p "$pid" -o command= 2>/dev/null | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | head -n 1
+}
+
+# 把 C locale 的 lstart 字符串（`Sat Sep  5 00:11:27 2026`）解析成 epoch 秒：跨 locale、跨版本都稳定的
+# 归属比对口径。macOS 用 `date -j -f`，GNU date 用 `-d`；解析不出返回空（调用方按不匹配处理）。
+started_epoch_of() {
+  local started="$1" epoch
+  [ -n "$started" ] || return 0
+  epoch="$(LC_ALL=C date -j -f '%a %b %d %H:%M:%S %Y' "$started" '+%s' 2>/dev/null || true)"
+  [ -n "$epoch" ] || epoch="$(LC_ALL=C date -d "$started" '+%s' 2>/dev/null || true)"
+  printf '%s\n' "$epoch"
+}
+
+# 进程启动时间是否与 .owner 记录一致。三级判定：
+#  1. C locale 字符串逐字相等（01fda6b 起写入的都是 C 格式）；
+#  2. `started_epoch` 相等（本次新增字段，⛔ 与 locale 无关，是今后的主判据）；
+#  3. 旧格式 .owner（01fda6b 之前按当时 locale 写入，如 `三  9月/ 2 17:56:33 2026`，且没有 started_epoch）：
+#     字符串本就不可比——此时**其余身份项已全部通过**（instance_id / pid=pidfile / 运行时自证：redis 配置内
+#     的实例标记、mysql 的 datadir+socket+server_id / 二进制与命令行），据此采纳并把 .owner 升级为新格式。
+#     ⚠ 只对「没有 started_epoch」的旧文件放行；带 started_epoch 却对不上的，一律视为 pid 复用/外部实例。
+# 修复的现场（2026-09-05）：栈是 9 月 2 日中文 shell 起的，01fda6b 后 start/stop 双向拒绝，`npm run dev` 必败于
+# stack 步，而实例明明是本栈的。
+owner_started_matches() {
+  local file="$1" pid="$2" recorded actual recorded_epoch actual_epoch
+  recorded="$(owner_value "$file" started_at 2>/dev/null || true)"
+  actual="$(process_started_at "$pid")"
+  [ -n "$actual" ] || return 1
+  [ "$actual" = "$recorded" ] && return 0
+  recorded_epoch="$(owner_value "$file" started_epoch 2>/dev/null || true)"
+  actual_epoch="$(started_epoch_of "$actual")"
+  if [ -n "$recorded_epoch" ]; then
+    [ -n "$actual_epoch" ] && [ "$recorded_epoch" = "$actual_epoch" ]
+    return $?
+  fi
+  # 旧格式：无 started_epoch。调用方已核过其余身份项，这里只做「旧字符串形态确实不是 C locale」的最低门槛，
+  # 然后自愈重写。
+  case "$recorded" in
+    "") return 1 ;;
+    [A-Z][a-z][a-z]" "*) return 1 ;;  # 已是 C 格式却不相等 → 真的不是同一个进程
+  esac
+  heal_owner_started "$file" "$pid" "$actual"
+}
+
+# 把旧格式 .owner 的 started_at 升级为 C locale + started_epoch（其余字段原样保留）。
+heal_owner_started() {
+  local file="$1" pid="$2" actual="$3" tmp="$1.$$"
+  awk -F= -v started="$actual" -v epoch="$(started_epoch_of "$actual")" '
+    $1 == "started_at" { print "started_at=" started; printed_at = 1; next }
+    $1 == "started_epoch" { next }
+    $1 == "binary" && !printed_epoch { print "started_epoch=" epoch; printed_epoch = 1 }
+    { print }
+    END { if (!printed_epoch) print "started_epoch=" epoch }
+  ' "$file" > "$tmp" && chmod 600 "$tmp" && mv -f "$tmp" "$file"
+  echo "$(owner_value "$file" service) 的 .owner 是旧 locale 格式（pid=$pid 身份其余项全部匹配），已升级为 C locale + started_epoch" >&2
 }
 
 redis_runtime_value() {
@@ -180,11 +234,11 @@ redis_owned() {
   pid="$(owner_value "$file" pid 2>/dev/null || true)"
   [ "$(cat "$pidfile" 2>/dev/null || true)" = "$pid" ] || return 1
   redis_runtime_matches "$name" "$port" "$dir" "$config" "$pidfile" "$pid" || return 1
-  started="$(process_started_at "$pid")"
-  [ -n "$started" ] && [ "$started" = "$(owner_value "$file" started_at 2>/dev/null || true)" ] || return 1
   command="$(process_command "$pid")"
   [ "$(owner_value "$file" binary 2>/dev/null || true)" = "$REDIS_SERVER" ] || return 1
   case "$command" in "$REDIS_SERVER"|"$REDIS_SERVER "*|*/redis-server|*/redis-server\ *) : ;; *) return 1 ;; esac
+  # 启动时间放最后：其余身份项全过后，旧格式 .owner 才允许自愈（见 owner_started_matches）。
+  owner_started_matches "$file" "$pid" || return 1
 }
 
 mysql_query_row() {
@@ -229,9 +283,8 @@ mysql_owned() {
   pid="$(owner_value "$file" pid 2>/dev/null || true)"
   [ "$(cat "$pidfile" 2>/dev/null || true)" = "$pid" ] || return 1
   mysql_runtime_matches "$port" "$dir" "$pidfile" "$pid" || return 1
-  started="$(process_started_at "$pid")"
-  [ -n "$started" ] && [ "$started" = "$(owner_value "$file" started_at 2>/dev/null || true)" ] || return 1
   [ "$(owner_value "$file" binary 2>/dev/null || true)" = "$MYSQL_BIN/mysqld" ] || return 1
+  owner_started_matches "$file" "$pid" || return 1
 }
 
 BREW_PREFIX="$(brew --prefix)"
@@ -402,9 +455,29 @@ case "${1:-}" in
     ;;
   status)
     read_stack_id && echo "stack instance=$STACK_ID" || echo "stack instance=unknown"
-    "$REDIS_CLI" -p "$DURABLE_PORT" ping 2>/dev/null && echo "redis-durable: up" || echo "redis-durable: down"
-    "$REDIS_CLI" -p "$CACHE_PORT"   ping 2>/dev/null && echo "redis-cache: up"   || echo "redis-cache: down"
-    "$MYSQL_BIN/mysqladmin" --host=127.0.0.1 --port="$MYSQL_PORT" -uroot ping 2>/dev/null && echo "mysql: up" || echo "mysql: down"
+    status_redis() { # $1=name $2=port —— up 时顺带说明是否本栈（归属判定与 start/stop 同一函数）
+      local name="$1" port="$2" dir="$DATA/redis-$1"
+      dir="$(canonical_path "$dir")"
+      if ! "$REDIS_CLI" -p "$port" ping >/dev/null 2>&1; then echo "redis-${name}(${port}): down"; return; fi
+      if redis_owned "$name" "$port" "$dir" "$dir/redis.conf" "$dir/redis.pid" 2>/dev/null; then
+        echo "redis-${name}(${port}): up（本栈）"
+      else
+        echo "redis-${name}(${port}): up（⚠ 非本栈实例或身份不匹配：start/stop 都会拒绝）"
+      fi
+    }
+    status_mysql() {
+      local dir="$DATA/mysql"
+      dir="$(canonical_path "$dir")"
+      if ! "$MYSQL_BIN/mysqladmin" --host=127.0.0.1 --port="$MYSQL_PORT" -uroot ping >/dev/null 2>&1; then echo "mysql(${MYSQL_PORT}): down"; return; fi
+      if mysql_owned "$MYSQL_PORT" "$dir" "$dir/mysql.pid" 2>/dev/null; then
+        echo "mysql(${MYSQL_PORT}): up（本栈）"
+      else
+        echo "mysql(${MYSQL_PORT}): up（⚠ 非本栈实例或身份不匹配：start/stop 都会拒绝）"
+      fi
+    }
+    status_redis durable "$DURABLE_PORT"
+    status_redis cache "$CACHE_PORT"
+    status_mysql
     ;;
   *)
     echo "用法: $0 start|stop|status"; exit 1
