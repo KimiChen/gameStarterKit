@@ -301,7 +301,7 @@ shared 继续保持零依赖，客户端 View/Logic 与 FairyGUI 动态加载边
 | S3-2 | ✅ **已完成**：新建 `rooms/modes/snake/cosmeticProfile.ts`（模块级 `Map<uid, profile>` + 白名单 `HMGET` 回灌 + 单条 `HSET` best-effort，读函数深拷贝，只写三个 cosmetic field）；碎片皮肤与门槛由业务目录派生 `SNAKE_FRAGMENT_SKIN_THRESHOLDS`，⛔ 不另处硬编码 | `snake-cosmetic-profile` 12/12（默认值 / 深拷贝 / 回灌一次性 / 五类损坏输入 / Redis 读写失败 / 未拥有 / 碎片边界 / 重复操作 / 镜像不含 `coinBalance` / 跨房间共享）；`verify:all` exit 0（client 427/427、server 560/560） |
 | S3-3 | ✅ **已完成**（并入 S3-02 提交）：`domains/snakeCosmetic.ts` + `lobbyRpcVectors/snakeCosmetic.ts` + 三个 ws 端点同批落地；`getSnapshot`=query，`equip`/`unlock`=**natural-write**（`defineRpcIdempotentWrite` 强制 `clientReqId`，与「入参只有 skinId」互斥）；按 §9.1-A 请求**不含** `catalogHash` | `verify:all` exit 0（client 427/427、server 567/567）。⚠ 新镜像 `.ts.meta` 仓内无 writer，已按 plan-v5 E5 先例合成占位（uuid 全树去重），S3-6 的 Creator 会话须确认 |
 | S3-4 | ✅ **已完成**：`SnakeRunSkinResolver` 入参加 `uid`（新增 `SnakeRunSkinResolverInput`），默认实现读进程内已预热 profile；`createPlayer` 从 `admissionIdentities` 反查 uid；新增同步 `equippedSkinIdOf()` 做防御性复核（uid 缺失/未预热/目录漂移 → 回退皮肤 1）。⛔ 未碰 `GameMode`/`GameRoom`；仍沿用 schema 字段 `skinId` 承载锁存语义（不新立字段，与 B0 一致） | `verify:all` exit 0（client 427/427、server 579/579）。锁存用例：预热装备 401 → 入房锁 401；run 中换装回 1 → 当前蛇仍 401；未预热回退 1；并钉住 join options 无皮肤字段 |
-| S3-5 | 客户端衣柜 feature（首版取 `kind: "cocos"` 纯节点页——仓内没有衣柜 FGUI 包）+ feature 登记；再跑 `codegen:features` + `sync:shared` | `test:client` / `test:fgui` 绿 |
+| S3-5 | ✅ **已完成**：feature `snakeCosmetic`（注册目录 `features/snake-cosmetic`）+ 纯 TS `WardrobeLogic` + 手搓 `WardrobeView`（`kind:"cocos"`，§9.6 S3-c 默认）。域升 `contractVersion: 2`——`getSnapshot` 增 `catalog`（衣柜要显示稀有度/获取方式，业务真源在服务端，⛔ 客户端不得自建第二份） | `verify:all` exit 0（client 435/435、server 587/587）。Logic 8 条单测。⚠ 补合成 8 个镜像 `.meta` |
 | S3-6 | 为新增镜像文件补 `.meta` | `verify:sync` 绿。⚠ 风险已降低：2026-09-05 Creator 会话实测未重写脚本合成的 `.meta`（[证据](../evidence/creator-2026-09-05/README.md)），可优先按 `features/redeem` 的合成先例做，Creator 只做确认 |
 
 S4 顺序：S4-02（shared 纯公式 + fixture，零副作用可独立测）→ S4-01（补 `maxLength` / `meaningfulInputCount` /
@@ -328,7 +328,8 @@ S4-01 若只在 mode 内部记统计、不进 `state.json`，同样不触发 bum
 | **C-a** | 结果页要不要「再来一局」按钮（自动重进），还是只放「返回首页」让玩家自己再点入口 | S4-04 画结果页时 | **只放「返回首页」**。做按钮的话要在玩法内拿到「起新局」能力面——`GameplayInstanceHost` 只有 `requestExit`、`GameplayControllerBridge` 只有 `requestStop`，唯一能起局的是 `AppRuntime` 的私有 `launchGameplay`；开这条路要动 `apps/client/src/app/**`（受保护路径），并跑 `protected-paths-lock.mjs --write` + `verify:protected-paths` |
 | **A-a** | 是否把皮肤目录 hash 挂到 `GET /version` 做部署代差自检 | 任何时候（永不破坏） | **不做**。只有当「已发布旧客户端 vs 新服务端」成为真实运维风险时才值得；客户端对 game HTTP 响应不做 exact 校验，加字段现在和将来都免费，⛔ 不必为它抢窗口 |
 | **S3-b** | 衣柜登记为 `inventory` capability（core）还是走 feature.json 的 capability fragment（仅 `category=extra` 可用，全仓尚无先例） | S3-5 写 `feature.json` 时 | **不登记为 core capability**，按 `redeem` 先例走普通 feature；不登记不会让 `verify:inventory` 变红 |
-| **S3-c** | 衣柜页面首版是 `kind:"cocos"` 纯节点还是等 FGUI 包 | S3-5 | **`kind:"cocos"`**：仓内没有衣柜 FGUI 包，且 FGUI 真源需编辑器导出。⚠ 这是实施选型，**不是**框架缺 FGUI 能力——动态 FGUI 注册入口存在且在跑 |
+| **S3-c** | 衣柜页面首版是 `kind:"cocos"` 纯节点还是等 FGUI 包 | S3-5 | ✅ 已按默认落地为 **`kind:"cocos"`**。⚠ 这是实施选型，**不是**框架缺 FGUI 能力——动态 FGUI 注册入口存在且在跑 |
+| **S3-d** | 是否补一个「Snake join 前预热 profile」的接缝 | S4 或 S5 前 | **暂不补**。当前预热只发生在打开衣柜时（feature 非 resident，且 `resident` 只豁免 idle-release、**不等于**启动期装载）。冷启动直接进 snake 会用默认皮肤 1——服务端 resolver 的回退路径已覆盖，不阻塞进房，只是换装后没进过衣柜就直接开局会看不到新皮肤 |
 
 ---
 
