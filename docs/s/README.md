@@ -313,15 +313,29 @@ S4 ✅ **四步全部完成**（顺序即下文，B0 生效：前三步没碰 `w
 （动一个字节就要 bump 一次 `modeVersion` 并联动 5 个生成物 + 两条 sync + 两处测试，成本按次计）。
 S4-01 若只在 mode 内部记统计、不进 `state.json`，同样不触发 bump。
 
-### 9.5 四条需纳入 S5 的遗漏项
+### 9.5 四条遗漏项的处置（2026-09-05 逐条核实后结案）
 
-- 表现目录里 `walls[]`、`star.themeVariants`、`identity` 被 catalog 严格校验，但 `view/` 零消费 —— 是
-  「已登记但永不渲染」的死条目，S5 收口前要么接上要么显式标注。
-- `SnakeWorldView` 的背景绘制写死 `palette.dark`，目录里另有 light 分支，该选择当前无处登记。
-- `scripts/fault-matrix.config.json` 无 snake 条目，且 `test:faults` **不在** `verify:core` / `verify:all`
-  链里 → S5-04「注入 Redis 写失败」只能是构造器注入，永远进不了自动门禁，需在 S5 写明。
-- `apps/server/sql/schema.sql` 不在 `verify:protected-paths` 覆盖内 → S5 退出条件「SQL schema 无本专项
-  差异」没有机检，需标为人工核对项。
+> ⚠ 初稿把四条都写成「缺陷」，逐条回源后**有两条性质被推翻**。下面是修正后的结论。
+
+- **`walls[]` / `star.themeVariants`：✅ 结论是「有意不渲染」，⛔ 不接线。**
+  `walls[]` 是 S1 素材台账义务，不是渲染义务——边界渲染按 S0 冻结的 bgGraphics 策略走
+  （dark = 4px 描边），本专项**明确不做墙块平铺**。`themeVariants` 是退化别名（light/dark 同帧），
+  食物渲染直接用 `star.frame` 即已满足。⇒ 两段都不是死条目，是**台账与预留**。
+- **`identity`：性质被推翻——它不是「永不渲染」。** 细白自机轮廓、AI 名字识别、顶点恒白都在跑。
+  真问题是**目录与 View 各存一份真相、无机检绑住**（改了目录 View 不会跟着变，且没人发现）。
+  归 S5 前补一条把 View 行为绑到目录值的用例。
+- **`SnakeWorldView` 背景主题：✅ 已登记。** 现为显式常量 `BACKGROUND_THEME = "dark"` 并写明理由：
+  目录里 light/dark 两套都有、本仓无运行时主题接缝，故必须在代码里二选一。
+  ⚠ 与来源 fresh-install 默认（light）不同，但 S0 只对**复刻产物**冻结 light、⛔ 未约束 V2 运行时渲染，
+  所以这不是与冻结基线冲突。目视确认归 S5-05。
+- **fault-matrix：⚠ 原措辞两头都不准，需按形态分开说。**
+  ① **内存构造器注入的三条断言早已随 `verify:all` 跑**（复活/衣柜/结算各一条「Redis 失败只告警不回滚」），
+  ⛔ 不是「永远进不了自动门禁」。
+  ② **但真 Redis 形态的故障注入确实零自动覆盖**，且 `test:faults:int` 是**有意**留在链外的历史决策
+  （见 plan-v3 归档），⛔ 不要顺手把它接进 `verify:all`。⇒ S5-04 应如实写成「内存形态已自动覆盖；
+  真栈形态为人工步骤」。
+- **`apps/server/sql/schema.sql`：从「人工核对」升级为机检**（见下）。⚠ 它的价值是**防未来误改**，
+  ⛔ 不是「现在有差异」——S2R 冻结决策 1 本就禁止本专项动任何 MySQL 表。
 
 ### 9.6 剩余待决项（不阻塞 S3 开工）
 

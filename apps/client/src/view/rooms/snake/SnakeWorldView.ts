@@ -75,6 +75,16 @@ interface LoadedAssets {
     readonly protectionEffect: SpriteFrame | null;
 }
 
+/**
+ * 战场底色主题。⚠ 这是一次**实施选型**，不是从数据推导出来的：目录里 light/dark 两套都有，
+ * 本仓没有任何运行时主题/换肤接缝（`apps/{client,shared,server}/src` 内 `theme` 只作为生成目录
+ * 数据出现），所以必须在代码里二选一。首发固定 dark。
+ *
+ * ⚠ 与来源 fresh-install 默认（light）不同。S0 只对**复刻产物**冻结 light，⛔ 未约束 V2 运行时渲染，
+ * 所以这不是与冻结基线冲突。要改成可配置需要先有主题接缝，归后续阶段。
+ */
+const BACKGROUND_THEME = "dark" as const;
+
 export class SnakeWorldView implements SnakePresentation {
     readonly handednessPreference: HandednessPreferencePort = {
         read: (key) => sys.localStorage.getItem(key),
@@ -627,7 +637,7 @@ export class SnakeWorldView implements SnakePresentation {
     private paintBackground(graphics: Graphics): void {
         const halfW = SNAKE_RULESET.worldWidth / 2;
         const halfH = SNAKE_RULESET.worldHeight / 2;
-        const palette = SNAKE_ENTITY_PRESENTATION_CATALOG.grid.palette.dark;
+        const palette = SNAKE_ENTITY_PRESENTATION_CATALOG.grid.palette[BACKGROUND_THEME];
         graphics.fillColor = colorOf(palette.outside);
         graphics.rect(-halfW * 3, -halfH * 3, halfW * 6, halfH * 6);
         graphics.fill();

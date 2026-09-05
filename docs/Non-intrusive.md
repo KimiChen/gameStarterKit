@@ -2981,6 +2981,7 @@ apps/client/src/gameplay/services.ts
 apps/client/src/logic/gameplay/**
 apps/server/src/rooms/modes/catalog.ts
 apps/server/src/app.config.ts
+apps/server/sql/schema.sql
 ```
 
 ⚠ 本块是 `scripts/protected-paths.json` 的 `gameplayFlow.paths` 的散文视图，由无侵入矩阵做**双向
