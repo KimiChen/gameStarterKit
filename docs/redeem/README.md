@@ -2,7 +2,8 @@
 
 「兑换码」是 [docs/PLUGIN.md](../PLUGIN.md) §6.1 点名的**插件标准形态**，本目录是它的首个真实实现，
 同时充当 PLUGIN.md §9.6 / [plan-v5.md](../../plan-v5.md) E5「第一个真实插件端到端实证」的样本：
-作者侧在本仓内编写 → `plugin -- pack` 打包 → 干净树上 `plugin -- install` → `verify:all` 全绿。
+作者侧在本仓内编写 → `plugin -- pack` 打包 → 干净树上 `plugin -- install` → `verify:all` 通过（当时两条既有
+环境基线除外，根因与处置登记在 plan-v5「当前验证基线」；两条基线随后已在 `661e542`/`f731658` 闭合）。
 
 ## 玩家可见行为
 

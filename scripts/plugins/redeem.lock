@@ -1,6 +1,6 @@
-# scripts/plugins/redeem.lock —— 已安装插件 redeem@1.0.0 的登记与文件清单锁。Do not edit by hand.
+# scripts/plugins/redeem.lock —— 已安装插件 redeem@1.0.1 的登记与文件清单锁。Do not edit by hand.
 # writer: npm --workspace @game/server run plugin -- install ；checker: apps/server/test/plugin-lock.test.ts（随 verify:all）与 plugin -- check
-# manifest {"id":"redeem","version":"1.0.0","kinds":["feature"],"constantName":null,"domains":["redeem"],"fguiPackages":[]}
+# manifest {"id":"redeem","version":"1.0.1","kinds":["feature"],"constantName":null,"domains":["redeem"],"fguiPackages":[]}
 apps/Cocos/assets/src/features/redeem.meta 639172d3ae01bb4b2390beb1f10e5b847d28238a601c5521f4610d27ac66a6b4
 apps/Cocos/assets/src/features/redeem/index.ts 2c950c4e5695748d495f114fe6049049af56d8a0c338562f174b91518ef7b4b2
 apps/Cocos/assets/src/features/redeem/index.ts.meta 7d02df934e31940ab85a30f8f5482ef445342604bc3723753a40c75e2950da24
@@ -27,6 +27,6 @@ apps/server/src/websocket/redeem/claim.ts 5f292f9c1d6e23ec23a97d5aaaf35acb9fba8a
 apps/server/test/lobbyRpcVectors/redeem.ts 356bb48acbbc8a7ffc2f5e56f23cfe8a6ac123fffce936990dcc8fc15e2d14b8
 apps/server/test/redeem-claim.test.ts 8110f796f52049c5ed4e9353fcf96b13132602372807d9424ee80482e0d8b8d0
 apps/shared/src/protocol/lobbyRpc/domains/redeem.ts e7e74dc98acf6cfb1d5bfd0261930d6bbc5bb07e2efa79dec0e91be485596514
-docs/redeem/README.md e317d771815b1d8a5f300c5ff3056506d6ca130dfde24b93dc3b916b918d2a9d
+docs/redeem/README.md 8b9da04741f190ccbeec9c3d8cf56aeeac0f2dc430e9eb1bdeabf0c943b8e31a
 features/redeem/feature.json 2155ab0f280bc2078d924471961b45a585e94bd41c618955b0799342094633e6
-plugins/redeem/plugin.json b393141a698f35e6e0775b0bc3e27c18b75b02de6f72a77388e8ff981a854302
+plugins/redeem/plugin.json 81271aa8dfb5353c18e8aea50e8c1fc3547ca1520c60a7fce6e7fe0275f32f50

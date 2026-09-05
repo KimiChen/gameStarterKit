@@ -6,12 +6,16 @@
  *  - 写盘前工作树受影响路径必须干净（git status），失败前不碰工作树；
  *  - 落盘后写 scripts/plugins/<id>.lock、git add，再跑 codegen:gameplays / codegen:features / sync:shared；
  *    协议指纹与 FGUI manifest 的重钉是人的决策（⛔ 脚本不隐式 --write），只打印下一步。
+ *  - `install --reinstall-from-tree <id>`（plan-v5 E6 方案 ②）：同仓「作者=宿主」迭代——以工作树为真相
+ *    重写已安装锁，等价于「pack 当前树 → install 该包」但不要求树≡旧锁；版本规则原样保留。
  */
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { compareVersions } from "./manifest";
 import { INSTALLED_LOCK_DIR, readInstalledLock, verifyLockAgainstTree, writeInstalledLock, type LockEntry } from "./lock";
+import { packPlugin } from "./pack";
 import { assertInstalledLockOwned, readPackage, validatePackage, type ValidatedPackage } from "./package";
 import { mirrorPathOf, type OwnershipRule } from "./ownership";
 
@@ -34,10 +38,38 @@ export interface InstallReport {
   readonly unchanged: readonly string[];
   readonly deleted: readonly string[];
   readonly nextSteps: readonly string[];
+  /** 仅 --reinstall-from-tree：被锁吸收的树上改动（新增 / 内容变化），文件本身不被写。 */
+  readonly adopted?: { readonly added: readonly string[]; readonly changed: readonly string[] };
+}
+
+export interface ReinstallFromTreeOptions {
+  readonly root: string;
+  readonly id: string;
+  readonly allowDowngrade?: boolean;
+  readonly git?: boolean;
+  readonly postinstall?: boolean;
+  readonly dryRun?: boolean;
 }
 
 function fail(message: string): never {
   throw new Error(`[plugin] ${message}`);
+}
+
+function sameEntries(left: readonly LockEntry[], right: readonly LockEntry[]): boolean {
+  return left.length === right.length
+    && left.every((entry, index) => entry.path === right[index].path && entry.sha256 === right[index].sha256);
+}
+
+function runPostinstall(root: string, kinds: readonly string[], useGit: boolean): void {
+  if (kinds.includes("gameplay")) runCommand(root, "npm", ["--workspace", "@game/server", "run", "codegen:gameplays"]);
+  if (kinds.includes("feature")) runCommand(root, "npm", ["--workspace", "@game/server", "run", "codegen:features"]);
+  runCommand(root, "npm", ["run", "sync:shared"]);
+  if (useGit) {
+    runCommand(root, "git", ["add", "-A", "--", "apps/shared/src", "apps/server/src", "apps/client/src", "docs/features.generated.md", "apps/server/test/lobbyRpcVectors"]);
+    // Cocos 镜像只暂存已跟踪文件的改动：sync:shared 新建的镜像没有 .meta，暂存它会让 verify:sync 红
+    //（.meta 断言只遍历已跟踪文件）；新镜像文件等 Creator 生成 .meta 后再由人 git add（nextSteps）。
+    runCommand(root, "git", ["add", "-u", "--", "apps/Cocos/assets/src"]);
+  }
 }
 
 export function runCommand(root: string, command: string, args: readonly string[], env: NodeJS.ProcessEnv = {}): void {
@@ -171,8 +203,7 @@ export function installPlugin(options: InstallOptions): InstallReport {
     if (cmp < 0 && !options.allowDowngrade) {
       fail(`拒绝降级：已安装 ${id}@${previous.manifest.version}，包为 ${manifest.version}（显式 --allow-downgrade 才放行）`);
     }
-    const sameContent = previous.entries.length === pkg.entries.length
-      && previous.entries.every((entry, index) => entry.path === pkg.entries[index].path && entry.sha256 === pkg.entries[index].sha256);
+    const sameContent = sameEntries(previous.entries, pkg.entries);
     if (cmp === 0 && !sameContent) fail(`拒绝：包版本 ${manifest.version} 与已安装版本相同但内容不同——升级必须 bump version`);
     const verification = verifyLockAgainstTree(root, previous.entries);
     if (verification.modified.length > 0) {
@@ -221,16 +252,71 @@ export function installPlugin(options: InstallOptions): InstallReport {
   writeInstalledLock(root, { manifest, entries: pkg.entries });
 
   if (useGit) gitAddExisting(root, affected);
-  if (options.postinstall !== false) {
-    if (manifest.kinds.includes("gameplay")) runCommand(root, "npm", ["--workspace", "@game/server", "run", "codegen:gameplays"]);
-    if (manifest.kinds.includes("feature")) runCommand(root, "npm", ["--workspace", "@game/server", "run", "codegen:features"]);
-    runCommand(root, "npm", ["run", "sync:shared"]);
-    if (useGit) {
-      runCommand(root, "git", ["add", "-A", "--", "apps/shared/src", "apps/server/src", "apps/client/src", "docs/features.generated.md", "apps/server/test/lobbyRpcVectors"]);
-      // Cocos 镜像只暂存已跟踪文件的改动：sync:shared 新建的镜像没有 .meta，暂存它会让 verify:sync 红
-      //（.meta 断言只遍历已跟踪文件）；新镜像文件等 Creator 生成 .meta 后再由人 git add（nextSteps）。
-      runCommand(root, "git", ["add", "-u", "--", "apps/Cocos/assets/src"]);
-    }
+  if (options.postinstall !== false) runPostinstall(root, manifest.kinds, useGit);
+  return report;
+}
+
+/**
+ * 同仓「作者=宿主」迭代（plan-v5 E6 方案 ②）：以工作树为真相重写已安装锁。
+ *
+ * 与 install 的差别只有两处：不要求「树 ≡ 旧锁」（本地改动正是要吸收的东西），也不要求受影响路径
+ * git 干净。其余闸门一个不少：采集与自检走 pack 同一条路（缺 .meta / 越权 / 镜像不一致即拒绝）、
+ * 锁被篡改即拒绝、同版本不同内容拒绝（同仓迭代也必须 bump plugin.json version）、降级须显式、
+ * 目录级所有权冲突拒绝。⛔ 不写任何插件文件（它们本来就在树上），只重写 scripts/plugins/<id>.lock，
+ * 然后照常 postinstall（codegen / sync）并 git add。
+ */
+export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallReport {
+  const root = path.resolve(options.root);
+  const { id } = options;
+  const useGit = options.git !== false;
+  const previous = readInstalledLock(root, id);
+  if (!previous) fail(`插件 "${id}" 未安装（没有 ${INSTALLED_LOCK_DIR}/${id}.lock）；首装请用 install <zip|dir>`);
+  assertInstalledLockOwned(root, previous, "从树重装");
+
+  const staging = fs.mkdtempSync(path.join(os.tmpdir(), `plugin-reinstall-${id}-`));
+  let pkg: ValidatedPackage;
+  try {
+    packPlugin({ root, id, outDir: staging });
+    pkg = validatePackage(readPackage(staging), root);
+  } finally {
+    fs.rmSync(staging, { recursive: true, force: true });
   }
+  const { manifest } = pkg;
+  const cmp = compareVersions(manifest.version, previous.manifest.version);
+  if (cmp < 0 && !options.allowDowngrade) {
+    fail(`拒绝降级：已安装 ${id}@${previous.manifest.version}，树上 plugin.json 为 ${manifest.version}（显式 --allow-downgrade 才放行）`);
+  }
+  const previousByPath = new Map(previous.entries.map((entry) => [entry.path, entry.sha256]));
+  const added = pkg.entries.map((entry) => entry.path).filter((relative) => !previousByPath.has(relative)).sort();
+  const changed = pkg.entries
+    .filter((entry) => previousByPath.has(entry.path) && previousByPath.get(entry.path) !== entry.sha256)
+    .map((entry) => entry.path)
+    .sort();
+  const stale = [...previousByPath.keys()].filter((relative) => !pkg.files.has(relative)).sort();
+  if (cmp === 0 && !sameEntries(previous.entries, pkg.entries)) {
+    fail(`拒绝：树上内容与已安装 ${id}@${previous.manifest.version} 不同但版本未变——同仓迭代也必须 bump plugins/${id}/plugin.json 的 version\n`
+      + `  新增 ${added.length}、变化 ${changed.length}、删除 ${stale.length}：\n  ${[...added, ...changed, ...stale].join("\n  ")}`);
+  }
+  const conflicts = ownershipConflicts(root, pkg.rules, new Set([...previousByPath.keys(), ...pkg.files.keys()]));
+  if (conflicts.length > 0) fail(`拒绝：以下路径在插件 "${id}" 的推导集内却既不在旧锁也不在树上采集结果里（生成物/硬排除混入插件目录？）：\n  ${conflicts.join("\n  ")}`);
+
+  const lockRelative = path.posix.join(INSTALLED_LOCK_DIR, `${id}.lock`);
+  const report: InstallReport = {
+    id,
+    version: manifest.version,
+    previousVersion: previous.manifest.version,
+    written: [],
+    unchanged: pkg.entries.map((entry) => entry.path).filter((relative) => !added.includes(relative) && !changed.includes(relative)),
+    deleted: stale,
+    nextSteps: nextStepsFor(pkg, root),
+    adopted: { added, changed },
+  };
+  if (options.dryRun) return report;
+
+  // 旧锁登记、树上已删的文件：树就是真相，只需把可能残留的空目录清掉（文件已不存在时 removeFileAndEmptyDirs 只清目录）。
+  for (const relative of stale) removeFileAndEmptyDirs(root, relative);
+  writeInstalledLock(root, { manifest, entries: pkg.entries });
+  if (useGit) gitAddExisting(root, [...pkg.files.keys(), ...stale, lockRelative]);
+  if (options.postinstall !== false) runPostinstall(root, manifest.kinds, useGit);
   return report;
 }

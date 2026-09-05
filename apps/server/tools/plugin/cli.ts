@@ -2,6 +2,7 @@
  * 插件命令（workspace 脚本，⛔ 不新增根命令）：
  *   npm --workspace @game/server run plugin -- pack <id> (--out <zip> | --out-dir <dir>)
  *   npm --workspace @game/server run plugin -- install <zip|dir> [--allow-downgrade] [--no-git] [--no-postinstall] [--dry-run]
+ *   npm --workspace @game/server run plugin -- install --reinstall-from-tree <id> [--allow-downgrade] [--no-git] [--no-postinstall] [--dry-run]
  *   npm --workspace @game/server run plugin -- uninstall <id> [--force] [--no-git] [--no-postinstall] [--dry-run]
  *   npm --workspace @game/server run plugin -- check
  * 全部子命令接受 --root <dir>（测试 fixture seam）。
@@ -12,7 +13,7 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { checkInstalledPlugins } from "./check";
-import { installPlugin } from "./install";
+import { installPlugin, reinstallFromTree } from "./install";
 import { packPlugin } from "./pack";
 import { uninstallPlugin } from "./uninstall";
 
@@ -21,6 +22,7 @@ const TOOL_REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta
 export type PluginCliArguments =
   | { readonly command: "pack"; readonly root: string; readonly id: string; readonly outFile?: string; readonly outDir?: string }
   | { readonly command: "install"; readonly root: string; readonly source: string; readonly allowDowngrade: boolean; readonly git: boolean; readonly postinstall: boolean; readonly dryRun: boolean }
+  | { readonly command: "reinstall-from-tree"; readonly root: string; readonly id: string; readonly allowDowngrade: boolean; readonly git: boolean; readonly postinstall: boolean; readonly dryRun: boolean }
   | { readonly command: "uninstall"; readonly root: string; readonly id: string; readonly force: boolean; readonly git: boolean; readonly postinstall: boolean; readonly dryRun: boolean }
   | { readonly command: "check"; readonly root: string };
 
@@ -28,6 +30,7 @@ const USAGE = [
   "用法：npm --workspace @game/server run plugin -- <pack|install|uninstall|check> …",
   "  pack <id> (--out <zip> | --out-dir <dir>)",
   "  install <zip|dir> [--allow-downgrade] [--no-git] [--no-postinstall] [--dry-run]",
+  "  install --reinstall-from-tree <id> [--allow-downgrade] [--no-git] [--no-postinstall] [--dry-run]（同仓作者迭代：以工作树重写已安装锁）",
   "  uninstall <id> [--force] [--no-git] [--no-postinstall] [--dry-run]",
   "  check",
   "  （均可带 --root <dir>）",
@@ -73,7 +76,20 @@ export function parseCli(argv: readonly string[]): PluginCliArguments {
     };
   }
   if (command === "install") {
-    known(["--allow-downgrade", "--no-git", "--no-postinstall", "--dry-run"]);
+    known(["--allow-downgrade", "--no-git", "--no-postinstall", "--dry-run", "--reinstall-from-tree"]);
+    if (flags.has("--reinstall-from-tree")) {
+      if (positional.length !== 1) throw new Error(`install --reinstall-from-tree 需要且只需要一个已安装插件 <id>\n${USAGE}`);
+      if (positional[0].includes("/") || positional[0].endsWith(".zip")) throw new Error(`install --reinstall-from-tree 的参数是插件 id，不是包路径：${positional[0]}\n${USAGE}`);
+      return {
+        command: "reinstall-from-tree",
+        root,
+        id: positional[0],
+        allowDowngrade: flags.has("--allow-downgrade"),
+        git: !flags.has("--no-git"),
+        postinstall: !flags.has("--no-postinstall"),
+        dryRun: flags.has("--dry-run"),
+      };
+    }
     if (positional.length !== 1) throw new Error(`install 需要且只需要一个 <zip|dir>\n${USAGE}`);
     return {
       command: "install",
@@ -117,6 +133,17 @@ export function runCli(args: PluginCliArguments): number {
     const report = installPlugin({ root: args.root, source: args.source, allowDowngrade: args.allowDowngrade, git: args.git, postinstall: args.postinstall, dryRun: args.dryRun });
     const verb = report.previousVersion ? `upgraded ${report.previousVersion} → ${report.version}` : `installed ${report.version}`;
     console.log(`[plugin] ${args.dryRun ? "(dry-run) " : ""}${report.id}: ${verb}; written ${report.written.length}, unchanged ${report.unchanged.length}, deleted ${report.deleted.length}`);
+    for (const relative of report.deleted) console.log(`[plugin]   deleted ${relative}`);
+    console.log("[plugin] 下一步（人工）：");
+    for (const step of report.nextSteps) console.log(`[plugin]   - ${step}`);
+    return 0;
+  }
+  if (args.command === "reinstall-from-tree") {
+    const report = reinstallFromTree({ root: args.root, id: args.id, allowDowngrade: args.allowDowngrade, git: args.git, postinstall: args.postinstall, dryRun: args.dryRun });
+    const adopted = report.adopted ?? { added: [], changed: [] };
+    console.log(`[plugin] ${args.dryRun ? "(dry-run) " : ""}${report.id}: lock rewritten from tree ${report.previousVersion} → ${report.version}; adopted changed ${adopted.changed.length}, added ${adopted.added.length}, deleted ${report.deleted.length}, unchanged ${report.unchanged.length}`);
+    for (const relative of adopted.changed) console.log(`[plugin]   changed ${relative}`);
+    for (const relative of adopted.added) console.log(`[plugin]   added ${relative}`);
     for (const relative of report.deleted) console.log(`[plugin]   deleted ${relative}`);
     console.log("[plugin] 下一步（人工）：");
     for (const step of report.nextSteps) console.log(`[plugin]   - ${step}`);
