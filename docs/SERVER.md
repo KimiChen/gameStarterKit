@@ -593,7 +593,7 @@ structured-clone、无 IO、无副作用的纯 CPU 工作。周期任务、批�
 Snake S2R demo 是明确登记的非生产例外：`kSnakeUser(uid)`（定义在 `apps/server/src/rooms/modes/snake/keys.ts`，
 经中央工厂 `kGameplay("snake", "user", uid, { zone: "global" })` 构造）生成项目全局逻辑 key
 `gp:snake:user:{uid}`（物理 key 仅增加 `<PROJECT_ID>_`，不读取 `zoneCtx`、不含 `sId`）。
-当前 `snake@3` 只写 `coinBalance`；规划中的 S3/S4 demo 仍复用该 HASH，可增加
+当前 `snake@4` 只写 `coinBalance`；规划中的 S3/S4 demo 仍复用该 HASH，可增加
 `equippedSkinId/ownedSkinIds/fragmentBalances/snakeXp/achievementProgress`，不得增加其他 Snake key
 或运行过程字段。玩法先更新进程内 profile，再 fire-and-forget 单条 `HSET`；失败只告警，不回滚、不补偿，
 不能作为生产资产一致性实现。

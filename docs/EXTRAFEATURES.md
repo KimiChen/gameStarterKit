@@ -310,13 +310,14 @@ B 最初只解析 `ui://`，于是「被引用但未导出」的资源同时逃�
 
 ### 3.11 《Snake Off》竖版贪吃蛇玩法策划案
 
-状态：**未实现**。
+状态：**首版已实现，且是当前默认玩法 `snake`**（V2 无尽版 S0～S2R 已完成，S3～S5 待实施，见
+[docs/s/README.md](s/README.md)）。
 
-`docs/snakeoff/` 是竖版贪吃蛇玩法的方案草案（产品/规则/房间流程/协议/数据/测试路线/美术方向/来源台账），
-不是当前可运行的游戏模块。它没有对应的客户端页面、服务端 endpoint、默认入口、workspace package 或验证命令，
-因此不登记为 `docs/inventory.json` 的活跃能力，也不改变核心框架的完成定义。其实现路径的技术方案由
-`docs/Non-intrusive.md`（非侵入式框架改造方案，框架侧阶段 0–9 已实施；Snake 玩法本身仍未实现）承担；真正实现时仍须按当前
-shared 契约、GameRoom/GameMode 接缝、协议指纹与 View/Logic 约束重新评审，不能把文档中的接口规划当成已交付协议。
+`docs/snakeoff/` 是竖版贪吃蛇首版的策划案与来源台账（产品/规则/房间流程/协议/数据/测试路线/美术方向）。
+玩法运行时不在本节登记为额外能力：它是当前默认玩法（shared 契约 `apps/shared/schema/gameplays/snake`、
+服务端 `modes/snake`、客户端 snake 目录），归 CLAUDE.md「当前范围」与 plan-v5 C1 管辖，`docs/inventory.json`
+的默认入口登记随之。其技术方案由 `docs/Non-intrusive.md`（非侵入式框架改造方案，框架侧阶段 0–9 已实施）承担；
+策划案里的接口规划以代码与 shared 契约为准，不能把文档中的规划当成已交付协议。
 
 ## 4. 明确不提供的能力
 

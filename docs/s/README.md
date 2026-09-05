@@ -29,7 +29,7 @@
 首发纳入场内自动拾取磁铁；Star 与磁铁共用 `320/3 unit/s` 的确定性移动内核；操作习惯默认右手，左手切换只在设备
 本地持久化；首发不显示正向游玩时长，自机使用细白轮廓、AI 使用名字识别。
 
-当前代码基线是 `snake@3`：在 S2 的 drop-in、4096² 无尽世界、17 条稳定态活动蛇、1030 个食物、场内磁铁
+当前代码基线是 `snake@4`（S2R 落地时为 `snake@3`；`f2639ae` 因 state 枚举归属重构而递增 modeVersion，玩法规则不变）：在 S2 的 drop-in、4096² 无尽世界、17 条稳定态活动蛇、1030 个食物、场内磁铁
 和个人 run 状态机之上，增加了 demo 金币余额与复活。开发环境先在进程内同步扣费，再把唯一余额字段
 best-effort 写入 Redis `snake:user:{uid}`；key 和数据均不含 `sId`。生产环境无法绑定 demo economy，
 `onlineCoinRelive5V1` 面向玩家的发布开关仍关闭。Demo 衣柜、养成奖励与 Creator 验收仍属于 S3～S5。
@@ -182,8 +182,8 @@ shared 继续保持零依赖，客户端 View/Logic 与 FairyGUI 动态加载边
 |---|---|---|---|---|---|
 | S0 | `[已完成]` | `7a04131` | unit 10/10；evidence rebuild 55/55 byte-identical；SHA 54/54；inventory 14/5 | [14 张来源驱动静态重建及 metadata](evidence/s0/goldens/manifest.json) | 组合 hash `2319d173…f87e2`；作为已冻结历史输入，S2 未反写 |
 | S1 | `[已完成]` | `d18846a`（原基线）+ `bc5bb97`（S1-12） | converter 13/13、S1 server 5/5、client catalog 11/11；全量 client 380/380、server 489/489；typecheck/sync/inventory/SHA 全绿 | [16 张预览、两张 contact sheet 与磁铁完整性证据](evidence/s1/README.md)；Creator aura 终验留 S5 | public `a1cdecbc…b075`、server `9ed3762e…fa19` 保持不变；client 升为 `8615596a…d629`，`presentationVersion=2` |
-| S2 | `[已完成]` | 本次提交 | `verify:all` exit 0：client 384/384、server 495/495、FGUI 66/66、inventory 110/110；真栈 `test:int` 171/171；codegen/fingerprint/S1 freshness 全绿 | `750 × 1624` 无头 View/输入/资源 fixture 已通过；Creator 3.8.8 与真机视觉终验仍归 S5 | `snake@2`；online layer `3a61016c…a53f`；组合 `2c74f005…e8e7`；仅测试经济，发布开关关闭 |
-| S2R | `[已完成]` | 本次提交 | `verify:all` exit 0：client 384/384、server 499/499、FGUI 66/66、inventory 110/110；typecheck/codegen/sync 全绿 | 真栈 `test:int` 172/172，含 Redis 仅 `coinBalance` 用例 | `snake@3` demo；`eligibleForEnable=false`；发布开关关闭 |
+| S2 | `[已完成]` | `04072d4` | `verify:all` exit 0：client 384/384、server 495/495、FGUI 66/66、inventory 110/110；真栈 `test:int` 171/171；codegen/fingerprint/S1 freshness 全绿 | `750 × 1624` 无头 View/输入/资源 fixture 已通过；Creator 3.8.8 与真机视觉终验仍归 S5 | `snake@2`；online layer `3a61016c…a53f`；组合 `2c74f005…e8e7`；仅测试经济，发布开关关闭 |
+| S2R | `[已完成]` | `0b19440` | `verify:all` exit 0：client 384/384、server 499/499、FGUI 66/66、inventory 110/110；typecheck/codegen/sync 全绿 | 真栈 `test:int` 172/172，含 Redis 仅 `coinBalance` 用例 | `snake@3` demo；`eligibleForEnable=false`；发布开关关闭 |
 | S3 | `[已拍板·待实施]` | — | — | — | 内存先记；同一 HASH 镜像衣柜字段 |
 | S4 | `[已拍板·待实施]` | — | — | — | 内存同步奖励；同一 HASH 镜像养成字段 |
 | S5 | `[已拍板·待实施]` | — | — | — | 内部 demo 验收；不含生产发布 |

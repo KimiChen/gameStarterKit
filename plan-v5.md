@@ -93,6 +93,19 @@ verify:sync 镜像一致、inventory 全绿）；`test:int` 169/169（本地真 
 > 本地 `verify:all` exit 0（client 384/384、server 499/499、FGUI 66/66、inventory 110/110），真栈
 > `test:int` 172/172；bootstrap 仍为既有 11 张表，受限文件与 SQL schema 均无差异。
 
+> 更新（2026-09-04，`f2639ae`）：state 生成器支持玩法自有枚举、snake 枚举搬回 ruleset，契约 digest 变化按闸递增
+> `modeVersion` 3→4；当前运行时口径为 `snake@4`，玩法规则与 S2R 的 `snake@3` 相同。
+
+> 更新（2026-09-05，本机验证基线的两条环境红项，登记根因）：
+> - `test:launcher-matrix`（`verify:core` 第 11 步）在本机 1/78 假红：探针以「输出含 marker」判定入口执行，
+>   而 bash 5.3.15 对 `--pretty-print` 只回显源码（含 marker 字面量）并 exit 0。已在 `661e542` 修探针
+>   （marker 运行期拼接，门禁规则零改动）。在此之前 `verify:all` 链在这台机器上从未跑过第 11 步之后。
+> - `apps/server/test/snake-s1-assets.test.ts`「repo-only S1 generator check is fresh」：34 张预览 PNG 像素与
+>   钉住的完全相同，字节不同源于 PNG 编码用 `zlib.deflateSync`，本机 Node v26.5.0 与仓库钉子 `.node-version`=22
+>   的 deflate 输出不同。已拍板修法：预览 PNG 改用仓内确定性编码器（不依赖 zlib 版本）后 `--write` 重钉。
+> 2026-09-05 的插件机制与兑换码实证提交（`4c586e0`…`dfa98cf`）按「除这两条外全绿」口径验收：verify:core 其余
+> 步骤、四个矩阵、perf、客户端 419/419、服务端 539/540。
+
 ---
 
 ## A. 可排期的工程项（无头环境可做）
@@ -117,7 +130,7 @@ verify:sync 镜像一致、inventory 全绿）；`test:int` 169/169（本地真 
 
 | # | 条目 | 现状 |
 |---|---|---|
-| C1 | snakeoff（竖版贪吃蛇）玩法实现 | ✅ **首版已实现**（2026-09-02，S0–S5：素材与台账 `e9ab40f`、shared 契约 `f0c2111`、SnakeWorld 模拟 `3d2affe`、房间集成 `08b48e4`、客户端战斗链路 `b062f2a`、默认入口切换）。下一轮竖版新版无尽 V2 专项已完成 **S0 复刻证据基线**（`7a04131`）、**完整 S1 素材/三层目录**（原基线 `d18846a` + 磁铁增量 `bc5bb97`，[证据](docs/s/evidence/s1/README.md)）、**S2 战场/无尽生命周期**与 **S2R demo 金币复活**。当前代码口径为 `snake@3`：8 真人 drop-in、稳定态 17 蛇、4096²、1030 食物、无房级 deadline、个人 run、Star/磁铁精确运动、按 uid 的 demo 金币余额和设备本地左右手。S2R 当前仅 best-effort 镜像 Redis 余额；S3/S4 将以同一 HASH 镜像 demo 衣柜/养成 profile，S5 Creator demo 验收仍未实施，`onlineCoinRelive5V1` 发布开关保持关闭；详细状态见 [docs/s/README.md](docs/s/README.md)。剩余尾巴：Creator 预览人工证据与真机联调（归 C3/S5）、数值手感调优（随预览进行） |
+| C1 | snakeoff（竖版贪吃蛇）玩法实现 | ✅ **首版已实现**（2026-09-02，S0–S5：素材与台账 `e9ab40f`、shared 契约 `f0c2111`、SnakeWorld 模拟 `3d2affe`、房间集成 `08b48e4`、客户端战斗链路 `b062f2a`、默认入口切换）。下一轮竖版新版无尽 V2 专项已完成 **S0 复刻证据基线**（`7a04131`）、**完整 S1 素材/三层目录**（原基线 `d18846a` + 磁铁增量 `bc5bb97`，[证据](docs/s/evidence/s1/README.md)）、**S2 战场/无尽生命周期**与 **S2R demo 金币复活**。当前代码口径为 `snake@4`（`f2639ae` state 枚举归属重构递增 modeVersion，规则同 S2R 的 `snake@3`）：8 真人 drop-in、稳定态 17 蛇、4096²、1030 食物、无房级 deadline、个人 run、Star/磁铁精确运动、按 uid 的 demo 金币余额和设备本地左右手。S2R 当前仅 best-effort 镜像 Redis 余额；S3/S4 将以同一 HASH 镜像 demo 衣柜/养成 profile，S5 Creator demo 验收仍未实施，`onlineCoinRelive5V1` 发布开关保持关闭；详细状态见 [docs/s/README.md](docs/s/README.md)。剩余尾巴：Creator 预览人工证据与真机联调（归 C3/S5）、数值手感调优（随预览进行） |
 | C2 | undergroundIdle 玩法实现 | wsrpc 迁移入口路线次之（同一拍板）；美术生产流程与规格文档在 `docs/undergroundIdle/`（在途） |
 | C3 | 两玩法的**真机联调** | 承接 plan-v4「遗留待办」表的 `真机 / 阶段 10` 行。原表已定性为「既定范围外，随玩法实现另立计划」，故归入 C 而非 B——⛔ 但必须被点名：B 类全是编辑器/Creator 项，不点名它就会随抽离一起消失 |
 
