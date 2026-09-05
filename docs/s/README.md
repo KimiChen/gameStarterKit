@@ -100,7 +100,7 @@ S2 死亡/run 状态机和同步端口，不扩展通用 shell。按 2026-09-03 
 | S3-0 · 开工前收口（§9） | `[已完成]` | 文档漂移订正、S0 证据可复现性加注、A/B/C 三项拍板 | 5 处漂移全改；键名 grep 门无输出；三项拍板结论见 §9.1 | 0.5–1 人日 |
 | [S3 · Demo 衣柜与装备](s3-wardrobe-and-equipment.md) | `[已拍板·待实施]` | 内存 profile、Redis 镜像、解锁/装备、衣柜页面 | 同一 HASH 保存装备/拥有/碎片，不含 `sId` | demo 简化实现 |
 | [S4 · Demo 养成奖励](s4-reliable-progression-rewards.md) | `[已完成]` | 同步 run 奖励、内存去重、Redis profile、个人结果 | 同一进程同一 run 只奖一次 | demo 简化实现 |
-| [S5 · Demo 验收](s5-validation-and-release.md) | `[已拍板·待实施]` | 自动化、Redis profile 检查与 Creator 桌面预览 | Demo 门禁和人工证据齐全 | demo 简化验收 |
+| [S5 · Demo 验收](s5-validation-and-release.md) | `[进行中]` | 自动化、Redis profile 检查与 Creator 桌面预览 | Demo 门禁和人工证据齐全 | demo 简化验收 |
 
 S3～S5 不再沿用原生产级方案的工期估算，实际工程量在各阶段实现时回写。S3 完成后可试玩衣柜，
 S4 完成后可试玩养成结果，S5 只验收内部 demo。任何阶段都不产生生产金币或养成资产的技术放行资格，
@@ -194,7 +194,7 @@ shared 继续保持零依赖，客户端 View/Logic 与 FairyGUI 动态加载边
 | S3-0 | `[已完成]` | `89b9b03`（漂移订正）+ 本次（拍板回写） | 建档基线 `verify:all` exit 0：client 423/423、server 541/541、FGUI 66/66、inventory 14 能力/5 入口（2026-09-05 实测于 `f262be1`；README §8 上面各行的 384/499 等计数是钉在各自 commit 的历史值，不代表 HEAD） | 不适用（纯文档订正与拍板登记） | A=服务端单方面权威、B=B2a+B0、C=① 离房重进（§9.1）；剩余待决项 §9.6 不阻塞 S3-1 |
 | S3 | `[已拍板·待实施]` | — | — | — | 内存先记；同一 HASH 镜像衣柜字段 |
 | S4 | `[已拍板·待实施]` | — | — | — | 内存同步奖励；同一 HASH 镜像养成字段 |
-| S5 | `[已拍板·待实施]` | — | — | — | 内部 demo 验收；不含生产发布 |
+| S5 | `[进行中]` | `80d78e2` | S5-01 候选已冻结；S5-02 `verify:all` exit 0（client 435/435、server 604/604、FGUI 66/66、inventory 110/110） | ⛔ 真栈 int 未跑（本机无 Redis）；Creator 预览未做 | S5-03/04/05 未做；⛔ 不得据此宣称 demo 可放行 |
 
 内部 demo 口径只能在 S5 全部退出条件满足并经用户确认后使用：
 
