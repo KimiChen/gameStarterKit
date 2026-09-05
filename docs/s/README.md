@@ -187,7 +187,8 @@ shared 继续保持零依赖，客户端 View/Logic 与 FairyGUI 动态加载边
 | 阶段 | 状态 | commit | 自动验证 | Creator/真栈证据 | 备注 |
 |---|---|---|---|---|---|
 | S0 | `[已完成]` | `7a04131` | unit 10/10；evidence rebuild 55/55 byte-identical；SHA 54/54；inventory 14/5 | [14 张来源驱动静态重建及 metadata](evidence/s0/goldens/manifest.json) | 组合 hash `2319d173…f87e2`；作为已冻结历史输入，S2 未反写 |
-| S1 | `[已完成]` | `d18846a`（原基线）+ `bc5bb97`（S1-12） | converter 13/13、S1 server 5/5、client catalog 11/11；全量 client 380/380、server 489/489；typecheck/sync/inventory/SHA 全绿 | [16 张预览、两张 contact sheet 与磁铁完整性证据](evidence/s1/README.md)；Creator aura 终验留 S5 | public `a1cdecbc…b075`、server `9ed3762e…fa19` 保持不变；client 升为 `8615596a…d629`，`presentationVersion=2` |
+| S1 | `[已完成]` | `d18846a`（原基线）+ `bc5bb97`（S1-12） | converter 13/13、S1 server 5/5、client catalog 11/11；全量 client 380/380、server 489/489；typecheck/sync/inventory/SHA 全绿 | [16 张预览、两张 contact sheet 与磁铁完整性证据](evidence/s1/README.md)；Creator aura 终验留 S5 | public `a1cdecbc…b075`、server `9ed3762e…fa19` 保持不变；client 升为 `8615596a…d629`，`presentationVersion=2`。⚠ **server 业务层 hash 已于 S3-01 搬到 `b851e345…9d2c`**（业务值填入），`evidence/s1` 随之重钉；public 与 client 两层至今未变 |
+| S3-01 | `[已完成]` | 本次 | `snake-s1-assets` 7/7；服务端 typecheck 0 错；`evidence/s1` `shasum -c` 29/29；`verify:all` 中仅 `tally` 插件锁一条红（他人在途工作，与本改动无关：client 427/427、server 546/547） | 不适用 | 16 行 demo 业务值冻结；稀有度改用原作 6 档制；展示名只填原作实测的 `1 小红` / `701 招财喵` |
 | S2 | `[已完成]` | `04072d4` | `verify:all` exit 0：client 384/384、server 495/495、FGUI 66/66、inventory 110/110；真栈 `test:int` 171/171；codegen/fingerprint/S1 freshness 全绿 | `750 × 1624` 无头 View/输入/资源 fixture 已通过；Creator 3.8.8 与真机视觉终验仍归 S5 | `snake@2`；online layer `3a61016c…a53f`；组合 `2c74f005…e8e7`；仅测试经济，发布开关关闭 |
 | S2R | `[已完成]` | `0b19440` | `verify:all` exit 0：client 384/384、server 499/499、FGUI 66/66、inventory 110/110；typecheck/codegen/sync 全绿 | 真栈 `test:int` 172/172，含 Redis 仅 `coinBalance` 用例 | `snake@3` demo；`eligibleForEnable=false`；发布开关关闭 |
 | S3-0 | `[已完成]` | `89b9b03`（漂移订正）+ 本次（拍板回写） | 建档基线 `verify:all` exit 0：client 423/423、server 541/541、FGUI 66/66、inventory 14 能力/5 入口（2026-09-05 实测于 `f262be1`；README §8 上面各行的 384/499 等计数是钉在各自 commit 的历史值，不代表 HEAD） | 不适用（纯文档订正与拍板登记） | A=服务端单方面权威、B=B2a+B0、C=① 离房重进（§9.1）；剩余待决项 §9.6 不阻塞 S3-1 |
@@ -296,7 +297,7 @@ shared 继续保持零依赖，客户端 View/Logic 与 FairyGUI 动态加载边
 
 | 步 | 内容 | 退出门 |
 |---|---|---|
-| S3-1 | 冻结 demo 业务目录：改 `tools/snake-s1-assets/core.mjs` 产出真实 rarity/acquisition/碎片门槛 → `--write` 重生；放宽 `skinBusinessCatalog.ts` validator 的 approved 分支；翻 `SNAKE_SKIN_COSMETIC_WRITES_ENABLED`；**同批**改 `snake-s1-assets.test.ts` 的 hash 与 `false` 断言 | 服务端测试全绿；新的 server business hash 回写 §8 与 `evidence/s1` |
+| S3-1 | ✅ **已完成**：`core.mjs` 新增 `SNAKE_S3_DEMO_BUSINESS` 16 行 → `--write` 重生；validator 放开 rarity/acquisition/fragmentThreshold/saleState 的 approved 分支（`ownershipItemId`/`fragmentItemId`/`price` 继续 fail-closed）；hash 守卫由「必须等于 S1 值」改为「必须不同于 S1 值」。⚠ `SNAKE_SKIN_COSMETIC_WRITES_ENABLED` **有意不翻转**，留到写路径落地的 S3-2/S3-3 | 服务端 `snake-s1-assets` 7/7；`evidence/s1` `shasum -c` 29/29；新 hash `b851e345…9d2c` 已回写 §8 |
 | S3-2 | 新建 `rooms/modes/snake/cosmeticProfile.ts`：模块级 `Map<uid, profile>` + `HMGET` 回灌 + 单条 `HSET` best-effort。⚠ 读函数必须返回**深拷贝**；⛔ 本步只写三个 cosmetic field，`coinBalance` 的合并留到 S4（提前合并会造出新的覆盖窗口） | 单测覆盖默认值 / 损坏 JSON / 未拥有 / 碎片边界 / 重复操作 / 返回副本 |
 | S3-3 | **同批**新建域 descriptor + 向量 sidecar + 三个 ws 端点；跑 `codegen:features` → `protocol-fingerprint.mjs --write`。⛔ 按 §9.1-A：请求**不含** `catalogHash` | 服务端可启动；lobbyRpc 契约与向量测试全绿 |
 | S3-4 | mode 接入：经 `SnakeGameModeOptions.runSkinResolver` 注入「读 uid → profile」的 resolver，校验存在且已拥有，非法回退皮肤 1，run 内锁存；⛔ 不碰 `GameMode` / `GameRoom` | join 自报皮肤无效；run 中换装不改当前蛇的 fixture |

@@ -9,7 +9,7 @@ Generated deterministically from repository-owned inputs by `node tools/snake-s1
 - Copied resources: 34; S1-12 magnet runtime resources: 8 (7 copied + 1 generated recipe)
 - Individual previews: 16
 - Public hash: `a1cdecbc5e31db3f90ac2fd15465768ef9206b2520000d4ab9f88d6c2135b075` (unchanged from `d18846a`)
-- Server business hash: `9ed3762e5f5d24d168aafd14fcaccac1d4de83413d0acb17f6308cea1ccbfa19` (unchanged from `d18846a`)
+- Server business hash: `b851e3453a39071a01771d0e8e5127343a95cba5fbe502cea9885f372f2d9d2c` (unchanged from `d18846a`)
 - Client presentation hash: `8615596acd12651307cc885bdc606517f6094bba47e729fb8cb59203c93ed629`
 - Historical pre-S1-12 client hash at `d18846a`: `62e1a6683a71db3ef0724cd6030114b7d9a64845723b14fa8c7c6d58a9302efe`
 - Creator import/final aura blending, hierarchy and device validation: explicitly deferred to S5.

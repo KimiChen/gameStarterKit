@@ -14,17 +14,32 @@ export type SnakeSkinPendingDecision = Readonly<{
     state: "draft" | "unavailable";
     value: null;
 }>;
+/** 已拍板的业务值。⛔ `state: "approved"` 时 `value` 不得为 null——fail-closed 由 validator 强制。 */
+export type SnakeSkinApprovedDecision<T> = Readonly<{ state: "approved"; value: T }>;
+
+/**
+ * 稀有度采用**原作 6 档制**：`0 普通 / 1 稀有 / 2 史诗 / 3 传说 / 4 典藏 / 5 至臻`
+ * （旧字母名 `C/B/A/S/SS/SSS`）。demo 只用到 `0..3`，`4/5` 无对应皮肤属有意留空。
+ */
+export type SnakeSkinRarity = 0 | 1 | 2 | 3 | 4 | 5;
+export const SNAKE_SKIN_RARITY_NAMES: readonly string[] = ["普通", "稀有", "史诗", "传说", "典藏", "至臻"];
+export const SNAKE_SKIN_RARITY_OLD_NAMES: readonly string[] = ["C", "B", "A", "S", "SS", "SSS"];
+/** demo 自设的获取方式（⛔ 不是原作 GetMethod/GetMethodV2——那两套由原作服务端下发）。 */
+export type SnakeSkinAcquisition = "default" | "levelUnlock" | "achievementUnlock" | "fragmentCraft" | "locked";
+const ACQUISITIONS: readonly string[] = ["default", "levelUnlock", "achievementUnlock", "fragmentCraft", "locked"];
 
 export interface SnakeSkinBusinessEntry {
     readonly skinId: number;
     readonly aiEligible: boolean;
-    /** S1 仅是技术占位名；正式展示名归 S3 产品审查。 */
-    readonly displayName: Readonly<{ state: "technical-draft"; value: string }>;
-    readonly rarity: SnakeSkinPendingDecision;
+    /** 只有原作实测到名字的皮肤是 `approved`（1「小红」、701「招财喵」）；其余保留技术占位。 */
+    readonly displayName: Readonly<{ state: "technical-draft" | "approved"; value: string }>;
+    readonly rarity: SnakeSkinApprovedDecision<SnakeSkinRarity>;
     readonly ownershipItemId: SnakeSkinPendingDecision;
     readonly fragmentItemId: SnakeSkinPendingDecision;
-    readonly acquisition: SnakeSkinPendingDecision;
-    readonly saleState: SnakeSkinPendingDecision;
+    readonly acquisition: SnakeSkinApprovedDecision<SnakeSkinAcquisition>;
+    /** 仅 `fragmentCraft` 皮肤有门槛；其余为 `unavailable`。demo 自设值，原作无本地门槛数据。 */
+    readonly fragmentThreshold: SnakeSkinApprovedDecision<number> | SnakeSkinPendingDecision;
+    readonly saleState: SnakeSkinApprovedDecision<"off-sale">;
     readonly price: SnakeSkinPendingDecision;
 }
 
@@ -36,7 +51,7 @@ function fail(message: string): never {
     throw new Error(`[snake-skin-business] ${message}`);
 }
 
-const BUSINESS_KEYS = ["acquisition", "aiEligible", "displayName", "fragmentItemId", "ownershipItemId", "price", "rarity", "saleState", "skinId"];
+const BUSINESS_KEYS = ["acquisition", "aiEligible", "displayName", "fragmentItemId", "fragmentThreshold", "ownershipItemId", "price", "rarity", "saleState", "skinId"];
 const DECISION_KEYS = ["state", "value"];
 const EXPECTED_AI_POOL = [101, 111, 112, 132, 133, 139, 401, 403, 411, 701];
 
@@ -47,6 +62,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function hasExactKeys(value: Record<string, unknown>, expected: readonly string[]): boolean {
     const keys = Object.keys(value).sort();
     return keys.length === expected.length && keys.every((key, index) => key === expected[index]);
+}
+
+/** approved 且 value 非 null——⛔ `{state:"approved", value:null}` 一律当作未拍板拒绝。 */
+function isApproved(decision: unknown): decision is { state: "approved"; value: unknown } {
+    return isRecord(decision) && hasExactKeys(decision, DECISION_KEYS)
+        && decision.state === "approved" && decision.value !== null;
 }
 
 /** 可复用的 fail-closed validator；S3 更新业务值时仍从这里扩展，而非绕过公共 hash。 */
@@ -67,14 +88,38 @@ export function validateSnakeSkinBusinessCatalog(value: unknown, embeddedPublicH
         if (!publicIds.has(entry.skinId) || seen.has(entry.skinId)) fail(`unknown or duplicate skinId ${entry.skinId}`);
         if (entry.skinId !== PUBLIC_SNAKE_SKIN_CATALOG[index].skinId) fail(`skin ${entry.skinId} is out of public catalog order`);
         if (!isRecord(entry.displayName) || !hasExactKeys(entry.displayName as unknown as Record<string, unknown>, DECISION_KEYS)
-            || entry.displayName.state !== "technical-draft" || typeof entry.displayName.value !== "string" || entry.displayName.value.length === 0) {
-            fail(`skin ${entry.skinId} must retain a non-empty technical-draft display name in S1`);
+            || (entry.displayName.state !== "technical-draft" && entry.displayName.state !== "approved")
+            || typeof entry.displayName.value !== "string" || entry.displayName.value.length === 0) {
+            fail(`skin ${entry.skinId} must carry a non-empty technical-draft or approved display name`);
         }
-        for (const decision of [entry.rarity, entry.ownershipItemId, entry.fragmentItemId, entry.acquisition, entry.saleState, entry.price]) {
+        // 仍未拍板的三项保持 fail-closed：⛔ 一旦被填值即拒（S3 只放开下面显式列出的字段）。
+        for (const decision of [entry.ownershipItemId, entry.fragmentItemId, entry.price]) {
             if (!isRecord(decision) || !hasExactKeys(decision as unknown as Record<string, unknown>, DECISION_KEYS)
                 || (decision.state !== "draft" && decision.state !== "unavailable") || decision.value !== null) {
-                fail(`skin ${entry.skinId} contains an approved or sentinel business value before S3`);
+                fail(`skin ${entry.skinId} contains an approved or sentinel business value for a field S3 did not open`);
             }
+        }
+        if (!isApproved(entry.rarity) || !Number.isSafeInteger(entry.rarity.value)
+            || entry.rarity.value < 0 || entry.rarity.value > 5) {
+            fail(`skin ${entry.skinId}.rarity must be an approved 0..5 tier (原作 6 档制)`);
+        }
+        if (!isApproved(entry.acquisition) || !ACQUISITIONS.includes(entry.acquisition.value as string)) {
+            fail(`skin ${entry.skinId}.acquisition must be one of ${ACQUISITIONS.join("/")}`);
+        }
+        if (!isApproved(entry.saleState) || entry.saleState.value !== "off-sale") {
+            fail(`skin ${entry.skinId}.saleState must stay approved off-sale in the demo`);
+        }
+        if (!isRecord(entry.fragmentThreshold) || !hasExactKeys(entry.fragmentThreshold as unknown as Record<string, unknown>, DECISION_KEYS)) {
+            fail(`skin ${entry.skinId}.fragmentThreshold has unexpected keys`);
+        }
+        const craftable = entry.acquisition.value === "fragmentCraft";
+        if (craftable) {
+            if (!isApproved(entry.fragmentThreshold) || !Number.isSafeInteger(entry.fragmentThreshold.value)
+                || (entry.fragmentThreshold.value as number) <= 0) {
+                fail(`skin ${entry.skinId} is fragmentCraft and needs an approved positive threshold`);
+            }
+        } else if (entry.fragmentThreshold.state !== "unavailable" || entry.fragmentThreshold.value !== null) {
+            fail(`skin ${entry.skinId} is not fragmentCraft and must leave fragmentThreshold unavailable`);
         }
         if (typeof entry.aiEligible !== "boolean") fail(`skin ${entry.skinId}.aiEligible must be boolean`);
         seen.add(entry.skinId);

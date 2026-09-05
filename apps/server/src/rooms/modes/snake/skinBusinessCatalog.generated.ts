@@ -6,12 +6,12 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
     "skinId": 1,
     "aiEligible": false,
     "displayName": {
-      "state": "technical-draft",
-      "value": "皮肤 1"
+      "state": "approved",
+      "value": "小红"
     },
     "rarity": {
-      "state": "draft",
-      "value": null
+      "state": "approved",
+      "value": 0
     },
     "ownershipItemId": {
       "state": "unavailable",
@@ -22,12 +22,16 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": null
     },
     "acquisition": {
+      "state": "approved",
+      "value": "default"
+    },
+    "fragmentThreshold": {
       "state": "unavailable",
       "value": null
     },
     "saleState": {
-      "state": "unavailable",
-      "value": null
+      "state": "approved",
+      "value": "off-sale"
     },
     "price": {
       "state": "unavailable",
@@ -42,8 +46,8 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": "皮肤 2"
     },
     "rarity": {
-      "state": "draft",
-      "value": null
+      "state": "approved",
+      "value": 0
     },
     "ownershipItemId": {
       "state": "unavailable",
@@ -54,12 +58,16 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": null
     },
     "acquisition": {
+      "state": "approved",
+      "value": "levelUnlock"
+    },
+    "fragmentThreshold": {
       "state": "unavailable",
       "value": null
     },
     "saleState": {
-      "state": "unavailable",
-      "value": null
+      "state": "approved",
+      "value": "off-sale"
     },
     "price": {
       "state": "unavailable",
@@ -74,8 +82,8 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": "皮肤 3"
     },
     "rarity": {
-      "state": "draft",
-      "value": null
+      "state": "approved",
+      "value": 0
     },
     "ownershipItemId": {
       "state": "unavailable",
@@ -86,12 +94,16 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": null
     },
     "acquisition": {
+      "state": "approved",
+      "value": "levelUnlock"
+    },
+    "fragmentThreshold": {
       "state": "unavailable",
       "value": null
     },
     "saleState": {
-      "state": "unavailable",
-      "value": null
+      "state": "approved",
+      "value": "off-sale"
     },
     "price": {
       "state": "unavailable",
@@ -106,8 +118,8 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": "皮肤 4"
     },
     "rarity": {
-      "state": "draft",
-      "value": null
+      "state": "approved",
+      "value": 0
     },
     "ownershipItemId": {
       "state": "unavailable",
@@ -118,12 +130,16 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": null
     },
     "acquisition": {
+      "state": "approved",
+      "value": "levelUnlock"
+    },
+    "fragmentThreshold": {
       "state": "unavailable",
       "value": null
     },
     "saleState": {
-      "state": "unavailable",
-      "value": null
+      "state": "approved",
+      "value": "off-sale"
     },
     "price": {
       "state": "unavailable",
@@ -138,8 +154,8 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": "皮肤 10"
     },
     "rarity": {
-      "state": "draft",
-      "value": null
+      "state": "approved",
+      "value": 1
     },
     "ownershipItemId": {
       "state": "unavailable",
@@ -150,12 +166,16 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": null
     },
     "acquisition": {
+      "state": "approved",
+      "value": "locked"
+    },
+    "fragmentThreshold": {
       "state": "unavailable",
       "value": null
     },
     "saleState": {
-      "state": "unavailable",
-      "value": null
+      "state": "approved",
+      "value": "off-sale"
     },
     "price": {
       "state": "unavailable",
@@ -170,8 +190,8 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": "皮肤 11"
     },
     "rarity": {
-      "state": "draft",
-      "value": null
+      "state": "approved",
+      "value": 1
     },
     "ownershipItemId": {
       "state": "unavailable",
@@ -182,12 +202,16 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": null
     },
     "acquisition": {
+      "state": "approved",
+      "value": "locked"
+    },
+    "fragmentThreshold": {
       "state": "unavailable",
       "value": null
     },
     "saleState": {
-      "state": "unavailable",
-      "value": null
+      "state": "approved",
+      "value": "off-sale"
     },
     "price": {
       "state": "unavailable",
@@ -202,8 +226,8 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": "皮肤 101"
     },
     "rarity": {
-      "state": "draft",
-      "value": null
+      "state": "approved",
+      "value": 2
     },
     "ownershipItemId": {
       "state": "unavailable",
@@ -214,12 +238,16 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": null
     },
     "acquisition": {
+      "state": "approved",
+      "value": "achievementUnlock"
+    },
+    "fragmentThreshold": {
       "state": "unavailable",
       "value": null
     },
     "saleState": {
-      "state": "unavailable",
-      "value": null
+      "state": "approved",
+      "value": "off-sale"
     },
     "price": {
       "state": "unavailable",
@@ -234,8 +262,8 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": "皮肤 111"
     },
     "rarity": {
-      "state": "draft",
-      "value": null
+      "state": "approved",
+      "value": 1
     },
     "ownershipItemId": {
       "state": "unavailable",
@@ -246,12 +274,16 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": null
     },
     "acquisition": {
+      "state": "approved",
+      "value": "locked"
+    },
+    "fragmentThreshold": {
       "state": "unavailable",
       "value": null
     },
     "saleState": {
-      "state": "unavailable",
-      "value": null
+      "state": "approved",
+      "value": "off-sale"
     },
     "price": {
       "state": "unavailable",
@@ -266,8 +298,8 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": "皮肤 112"
     },
     "rarity": {
-      "state": "draft",
-      "value": null
+      "state": "approved",
+      "value": 1
     },
     "ownershipItemId": {
       "state": "unavailable",
@@ -278,12 +310,16 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": null
     },
     "acquisition": {
+      "state": "approved",
+      "value": "locked"
+    },
+    "fragmentThreshold": {
       "state": "unavailable",
       "value": null
     },
     "saleState": {
-      "state": "unavailable",
-      "value": null
+      "state": "approved",
+      "value": "off-sale"
     },
     "price": {
       "state": "unavailable",
@@ -298,8 +334,8 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": "皮肤 132"
     },
     "rarity": {
-      "state": "draft",
-      "value": null
+      "state": "approved",
+      "value": 1
     },
     "ownershipItemId": {
       "state": "unavailable",
@@ -310,12 +346,16 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": null
     },
     "acquisition": {
+      "state": "approved",
+      "value": "achievementUnlock"
+    },
+    "fragmentThreshold": {
       "state": "unavailable",
       "value": null
     },
     "saleState": {
-      "state": "unavailable",
-      "value": null
+      "state": "approved",
+      "value": "off-sale"
     },
     "price": {
       "state": "unavailable",
@@ -330,8 +370,8 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": "皮肤 133"
     },
     "rarity": {
-      "state": "draft",
-      "value": null
+      "state": "approved",
+      "value": 2
     },
     "ownershipItemId": {
       "state": "unavailable",
@@ -342,12 +382,16 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": null
     },
     "acquisition": {
-      "state": "unavailable",
-      "value": null
+      "state": "approved",
+      "value": "fragmentCraft"
+    },
+    "fragmentThreshold": {
+      "state": "approved",
+      "value": 300
     },
     "saleState": {
-      "state": "unavailable",
-      "value": null
+      "state": "approved",
+      "value": "off-sale"
     },
     "price": {
       "state": "unavailable",
@@ -362,8 +406,8 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": "皮肤 139"
     },
     "rarity": {
-      "state": "draft",
-      "value": null
+      "state": "approved",
+      "value": 2
     },
     "ownershipItemId": {
       "state": "unavailable",
@@ -374,12 +418,16 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": null
     },
     "acquisition": {
+      "state": "approved",
+      "value": "achievementUnlock"
+    },
+    "fragmentThreshold": {
       "state": "unavailable",
       "value": null
     },
     "saleState": {
-      "state": "unavailable",
-      "value": null
+      "state": "approved",
+      "value": "off-sale"
     },
     "price": {
       "state": "unavailable",
@@ -394,8 +442,8 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": "皮肤 401"
     },
     "rarity": {
-      "state": "draft",
-      "value": null
+      "state": "approved",
+      "value": 2
     },
     "ownershipItemId": {
       "state": "unavailable",
@@ -406,12 +454,16 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": null
     },
     "acquisition": {
-      "state": "unavailable",
-      "value": null
+      "state": "approved",
+      "value": "fragmentCraft"
+    },
+    "fragmentThreshold": {
+      "state": "approved",
+      "value": 10
     },
     "saleState": {
-      "state": "unavailable",
-      "value": null
+      "state": "approved",
+      "value": "off-sale"
     },
     "price": {
       "state": "unavailable",
@@ -426,8 +478,8 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": "皮肤 403"
     },
     "rarity": {
-      "state": "draft",
-      "value": null
+      "state": "approved",
+      "value": 2
     },
     "ownershipItemId": {
       "state": "unavailable",
@@ -438,12 +490,16 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": null
     },
     "acquisition": {
-      "state": "unavailable",
-      "value": null
+      "state": "approved",
+      "value": "fragmentCraft"
+    },
+    "fragmentThreshold": {
+      "state": "approved",
+      "value": 120
     },
     "saleState": {
-      "state": "unavailable",
-      "value": null
+      "state": "approved",
+      "value": "off-sale"
     },
     "price": {
       "state": "unavailable",
@@ -458,8 +514,8 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": "皮肤 411"
     },
     "rarity": {
-      "state": "draft",
-      "value": null
+      "state": "approved",
+      "value": 3
     },
     "ownershipItemId": {
       "state": "unavailable",
@@ -470,12 +526,16 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": null
     },
     "acquisition": {
-      "state": "unavailable",
-      "value": null
+      "state": "approved",
+      "value": "fragmentCraft"
+    },
+    "fragmentThreshold": {
+      "state": "approved",
+      "value": 300
     },
     "saleState": {
-      "state": "unavailable",
-      "value": null
+      "state": "approved",
+      "value": "off-sale"
     },
     "price": {
       "state": "unavailable",
@@ -486,12 +546,12 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
     "skinId": 701,
     "aiEligible": true,
     "displayName": {
-      "state": "technical-draft",
-      "value": "皮肤 701"
+      "state": "approved",
+      "value": "招财喵"
     },
     "rarity": {
-      "state": "draft",
-      "value": null
+      "state": "approved",
+      "value": 3
     },
     "ownershipItemId": {
       "state": "unavailable",
@@ -502,12 +562,16 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
       "value": null
     },
     "acquisition": {
+      "state": "approved",
+      "value": "achievementUnlock"
+    },
+    "fragmentThreshold": {
       "state": "unavailable",
       "value": null
     },
     "saleState": {
-      "state": "unavailable",
-      "value": null
+      "state": "approved",
+      "value": "off-sale"
     },
     "price": {
       "state": "unavailable",
@@ -518,4 +582,4 @@ export const SNAKE_SKIN_BUSINESS_CATALOG_DATA = [
 
 export const EMBEDDED_PUBLIC_SNAKE_SKIN_CATALOG_HASH = "a1cdecbc5e31db3f90ac2fd15465768ef9206b2520000d4ab9f88d6c2135b075";
 
-export const SERVER_SNAKE_SKIN_BUSINESS_HASH = "9ed3762e5f5d24d168aafd14fcaccac1d4de83413d0acb17f6308cea1ccbfa19";
+export const SERVER_SNAKE_SKIN_BUSINESS_HASH = "b851e3453a39071a01771d0e8e5127343a95cba5fbe502cea9885f372f2d9d2c";
