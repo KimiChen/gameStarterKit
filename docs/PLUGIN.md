@@ -218,6 +218,11 @@ npm --workspace @game/server run plugin -- check
 改文件 → bump version → `install --reinstall-from-tree <id>` → `check` ✔ → 提交；之后从同一棵树 `pack` 出的包
 与新锁逐条相同，仍可分发给别的宿主。
 
+**报告里的 `nextSteps` 按事实派生**（2026-09-05 小修）：协议指纹一项不再按「带 domain 就一定变了」猜——postinstall
+跑完后脚本执行 `node scripts/protocol-fingerprint.mjs --check`，只有真报过期才写「协议指纹已过期 … `--write`」，
+未变化则一句不提；`--dry-run` / `--no-postinstall` 没跑 codegen、无从判断，对带 domain 或 gameplay 形态的包给条件式
+提示「本次未跑 codegen：跑完后若 protocol/ 生成物变化 …」。钉：`plugin-tool.test.ts` 的 `nextStepsFor` 用例。
+
 **`uninstall`**：先让锁的每条路径重过 §5.2 闸并要求受影响路径的工作树干净（未提交的锁改动尤其可疑），
 再按锁清单删除（⛔ 不按目录猜）、删 `plugins/<id>/` 与锁，然后用显式 `--allow-delete`
 （gameplay id / feature id / 各 domain / feature.json 登记的 View 名）驱动两个 codegen 收缩生成物，
