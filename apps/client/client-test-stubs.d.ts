@@ -9,6 +9,7 @@ declare module "cc" {
   export class Color { constructor(r?: number, g?: number, b?: number, a?: number); r: number; g: number; b: number; a: number; }
   export class Rect { constructor(x?: number, y?: number, width?: number, height?: number); x: number; y: number; width: number; height: number; }
   export class Node {
+    getChildByName(name: string): Node | null;
     constructor(name?: string);
     name: string; layer: number; active: boolean; parent: Node | null; children: Node[]; isValid: boolean;
     position: Vec3; scale: Vec3; angle: number;
@@ -36,9 +37,13 @@ declare module "cc" {
   export class JsonAsset { json: unknown; }
   export class SpriteFrame { texture: Texture2D | null; rect: Rect; }
   export class Sprite extends Component { spriteFrame: SpriteFrame | null; color: Color; sizeMode: number; type: number; }
-  export class Label extends Component { string: string; fontSize: number; color: Color; horizontalAlign: number; }
+  export class Label extends Component {
+    string: string; fontSize: number; color: Color; horizontalAlign: number; verticalAlign: number;
+    static HorizontalAlign: { LEFT: number; CENTER: number; RIGHT: number };
+    static VerticalAlign: { TOP: number; CENTER: number; BOTTOM: number };
+  }
   export class EditBox extends Component {
-    string: string; placeholder: string; maxLength: number;
+    string: string; placeholder: string; maxLength: number; textLabel: Label | null; placeholderLabel: Label | null;
     static EventType: { EDITING_DID_BEGAN: string; TEXT_CHANGED: string; EDITING_DID_ENDED: string; EDITING_RETURN: string };
   }
   export class AudioClip { duration: number; }

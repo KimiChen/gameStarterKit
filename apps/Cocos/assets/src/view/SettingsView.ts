@@ -79,7 +79,7 @@ export class SettingsView extends CocosView {
         this.plate(panel, panelWidth, panelHeight, PANEL, 0, 0);
 
         const titleY = panelHeight * 0.5 - panelHeight * 0.05;
-        this.label(panel, "设置", Math.round(width * 0.048), TEXT, -panelWidth * 0.5 + panelWidth * 0.06, titleY);
+        this.label(panel, "设置", Math.round(width * 0.048), TEXT, -panelWidth * 0.5 + panelWidth * 0.06, titleY, "left");
         this.button(panel, "关闭", panelWidth * 0.2, panelHeight * 0.07,
             panelWidth * 0.5 - panelWidth * 0.13, titleY,
             () => this.observeAsync(() => this.onClose(), "settings-close"));
@@ -118,7 +118,7 @@ export class SettingsView extends CocosView {
         for (const toggle of toggles) {
             const y = nextY();
             const row = this.row(content, rowWidth, rowHeight, y, toggle.pending ? ROW_OFF : ROW, "audio");
-            this.label(row, toggle.label, Math.round(rowHeight * 0.42), TEXT, -rowWidth * 0.5 + rowWidth * 0.05, 0);
+            this.label(row, toggle.label, Math.round(rowHeight * 0.42), TEXT, -rowWidth * 0.5 + rowWidth * 0.05, 0, "left");
             const state = toggle.pending ? "保存中…" : (toggle.on ? "开" : "关");
             this.button(row, state, rowWidth * 0.24, rowHeight * 0.72, rowWidth * 0.5 - rowWidth * 0.16, 0,
                 () => this.observeAsync(() => logic.toggleAudio(toggle.key), "settings-audio"),
@@ -128,8 +128,8 @@ export class SettingsView extends CocosView {
             const y = nextY();
             // 置灰占位：⛔ 不注册任何点击回调——点不动就是「没实现」最诚实的表达。
             const row = this.row(content, rowWidth, rowHeight, y, ROW_OFF, "placeholder");
-            this.label(row, item.label, Math.round(rowHeight * 0.4), DIM, -rowWidth * 0.5 + rowWidth * 0.05, rowHeight * 0.16);
-            this.label(row, item.reason, Math.round(rowHeight * 0.26), DIM, -rowWidth * 0.5 + rowWidth * 0.05, -rowHeight * 0.18);
+            this.label(row, item.label, Math.round(rowHeight * 0.4), DIM, -rowWidth * 0.5 + rowWidth * 0.05, rowHeight * 0.16, "left");
+            this.label(row, item.reason, Math.round(rowHeight * 0.26), DIM, -rowWidth * 0.5 + rowWidth * 0.05, -rowHeight * 0.18, "left");
         }
 
         this.sectionLabel(content, "插件入口（featureId 字母序）", rowWidth, nextY());
@@ -140,13 +140,13 @@ export class SettingsView extends CocosView {
             const y = nextY();
             const row = this.row(content, rowWidth, rowHeight, y, entry.enabled ? ROW : ROW_OFF, "entry");
             this.label(row, `${entry.label}  ·  ${entry.featureId}`, Math.round(rowHeight * 0.4),
-                entry.enabled ? TEXT : DIM, -rowWidth * 0.5 + rowWidth * 0.05, entry.enabled ? 0 : rowHeight * 0.16);
+                entry.enabled ? TEXT : DIM, -rowWidth * 0.5 + rowWidth * 0.05, entry.enabled ? 0 : rowHeight * 0.16, "left");
             if (entry.enabled) {
                 this.button(row, "进入", rowWidth * 0.22, rowHeight * 0.72, rowWidth * 0.5 - rowWidth * 0.15, 0,
                     () => this.observeAsync(() => logic.activate(entry.entryId), "settings-launch"), ACCENT);
             } else {
                 this.label(row, entry.disabledReason ?? "不可用", Math.round(rowHeight * 0.26), WARN,
-                    -rowWidth * 0.5 + rowWidth * 0.05, -rowHeight * 0.18);
+                    -rowWidth * 0.5 + rowWidth * 0.05, -rowHeight * 0.18, "left");
                 // 不可用条目置灰但保留显式「重试」——走的仍是同一条 launch 通道。
                 this.button(row, "重试", rowWidth * 0.22, rowHeight * 0.72, rowWidth * 0.5 - rowWidth * 0.15, 0,
                     () => this.observeAsync(() => logic.retry(entry.entryId), "settings-retry"), WARN);
@@ -188,16 +188,27 @@ export class SettingsView extends CocosView {
     }
 
     private sectionLabel(parent: Node, text: string, width: number, y: number): void {
-        this.label(parent, text, Math.round(width * 0.045), ACCENT, -width * 0.5 + width * 0.02, y);
+        this.label(parent, text, Math.round(width * 0.045), ACCENT, -width * 0.5 + width * 0.02, y, "left");
     }
 
-    private label(parent: Node, text: string, size: number, color: Color, x: number, y: number): Label {
+    /**
+     * align="left" 时 x 是文字**左边缘**（节点锚点 (0,0.5) + 左对齐）；缺省 "center" 时 x 是中心。
+     * Creator 预览实测：此前一律中心锚，把左边缘坐标当中心用，行标签/提示语被面板左缘切掉一半。
+     */
+    private label(
+        parent: Node, text: string, size: number, color: Color, x: number, y: number, align: "left" | "center" = "center",
+    ): Label {
         const node = this.node("label", parent, size * Math.max(1, text.length), size * 1.4);
         node.setPosition(x, y, 0);
         const label = node.addComponent(Label);
         label.string = text;
         label.fontSize = size;
         label.color = color;
+        if (align === "left") {
+            const transform = node.getComponent(UITransform);
+            if (transform) transform.anchorX = 0;
+            label.horizontalAlign = Label.HorizontalAlign.LEFT;
+        }
         return label;
     }
 
