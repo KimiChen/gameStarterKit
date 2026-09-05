@@ -180,7 +180,8 @@ shared 契约
 
 ## 当前范围
 
-- 当前默认玩法是 `snake`（Snake Off 竖版贪吃蛇，drop-in 自由加入 + AI 填充 + 90s 限时计分）；
+- 当前默认玩法是 `snake`（Snake Off 竖版贪吃蛇，drop-in 自由加入 + AI 填充 + 无尽个人 run，V2 无房级 deadline；
+  实施状态见 [docs/s/README.md](docs/s/README.md)）；
   `ballMove` + 技能结算保留为可选入口与内部回归样例，`idle` 是最小第二 mode 证明。
 - 本地账号示例只使用外部服务提供的开发会话契约。
 - 本仓核心是开发期基础框架，详细范围见根 [README.md](README.md#项目边界)；仓库中的可选额外功能
