@@ -35,3 +35,29 @@ test("dev-stack.sh：解析 ps 输出的调用必须钉死 LC_ALL=C（跨 locale
     "以下 ps 调用未钉 LC_ALL=C：其输出格式随 locale 变化，会让归属校验在不同语言的 shell 之间互相判为「外部实例」",
   );
 });
+
+test("dev-stack.sh：归属校验以 started_epoch 为主判据，旧 locale 格式的 .owner 只在其余身份项全过后自愈", () => {
+  // 缺口来源（真实故障，2026-09-05）：栈是 9 月 2 日中文 shell 起的，.owner 里 started_at 是
+  // `三  9月/ 2 17:56:33 2026`；01fda6b 起脚本用 LC_ALL=C 读 lstart，逐字比对永远不等 ⇒ start/stop 双向拒绝，
+  // `npm run dev` 必败于 stack 步。修法：写入/比对 epoch，旧文件在其余身份项全过后升级。
+  const source = readFileSync(SCRIPT, "utf8");
+  const code = source.split(/\r?\n/u).filter((line) => !line.trim().startsWith("#")).join("\n");
+  assert.match(code, /printf 'started_epoch=%s\\n' "\$\(started_epoch_of "\$started"\)"/u, "write_owner 必须写 started_epoch");
+  assert.match(code, /owner_value "\$file" started_epoch/u, "归属校验必须读 started_epoch");
+  // 两个 owned 判定都必须经 owner_started_matches，且它在其余身份项之后调用（旧格式自愈的前提）。
+  for (const fn of ["redis_owned", "mysql_owned"]) {
+    const body = code.slice(code.indexOf(`${fn}() {`), code.indexOf("\n}", code.indexOf(`${fn}() {`)));
+    assert.match(body, /owner_started_matches "\$file" "\$pid" \|\| return 1/u, `${fn} 必须经 owner_started_matches`);
+    const runtimeCheck = fn === "redis_owned" ? "redis_runtime_matches" : "mysql_runtime_matches";
+    assert.ok(body.indexOf(runtimeCheck) < body.indexOf("owner_started_matches"), `${fn}：启动时间判定必须放在运行时自证之后`);
+    assert.doesNotMatch(body, /\[ "\$started" = /u, `${fn} 不得再逐字比对 lstart 字符串`);
+  }
+  // 解析 lstart 的 date 调用同样必须钉 LC_ALL=C。
+  const dateLines = code.split("\n").filter((line) => /(^|[^A-Za-z_])date\s+-/u.test(line));
+  assert.ok(dateLines.length >= 2, "started_epoch_of 应有 macOS/GNU 两条 date 解析");
+  assert.deepEqual(dateLines.filter((line) => !line.includes("LC_ALL=C date")), [], "date 解析未钉 LC_ALL=C");
+  // 带 started_epoch 却不等的文件 ⛔ 不得自愈（pid 复用/外部实例）；只有没有 started_epoch 的旧文件才走 heal。
+  const matcher = code.slice(code.indexOf("owner_started_matches() {"), code.indexOf("\n}", code.indexOf("owner_started_matches() {")));
+  assert.match(matcher, /if \[ -n "\$recorded_epoch" \]; then[\s\S]*return \$\?/u, "有 started_epoch 时只按 epoch 判定，不走自愈");
+  assert.match(matcher, /heal_owner_started "\$file" "\$pid" "\$actual"/u);
+});
