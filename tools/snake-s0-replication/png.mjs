@@ -1,4 +1,11 @@
+/**
+ * 最小 PNG 编解码（RGBA8、非隔行）。
+ * 编码侧的 IDAT 用仓内确定性 deflate（./deflate.mjs）：⛔ 不用 `zlib.deflateSync`——其字节随 Node 自带
+ * zlib 版本变化，会让「逐字节新鲜度」门禁在换 Node 后对像素完全相同的 PNG 假红。解码侧仍用 zlib
+ * inflate（解码结果由格式定义，与实现无关）。
+ */
 import zlib from "node:zlib";
+import { deflateDeterministic } from "./deflate.mjs";
 
 const PNG_SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
@@ -132,7 +139,7 @@ export function encodePng(image) {
   return Buffer.concat([
     PNG_SIGNATURE,
     chunk("IHDR", header),
-    chunk("IDAT", zlib.deflateSync(raw, { level: 9 })),
+    chunk("IDAT", deflateDeterministic(raw)),
     chunk("IEND"),
   ]);
 }
