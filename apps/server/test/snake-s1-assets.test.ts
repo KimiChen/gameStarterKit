@@ -26,19 +26,41 @@ test("server business catalog owns the exact frozen AI pool and no gameplay attr
     assert.deepEqual(SNAKE_AI_SKIN_POOL, AI_IDS);
     assert.equal(EMBEDDED_PUBLIC_SNAKE_SKIN_CATALOG_HASH, PUBLIC_SNAKE_SKIN_CATALOG_HASH);
     assert.equal(PUBLIC_SNAKE_SKIN_CATALOG_HASH, "a1cdecbc5e31db3f90ac2fd15465768ef9206b2520000d4ab9f88d6c2135b075");
-    assert.equal(SERVER_SNAKE_SKIN_BUSINESS_HASH, "9ed3762e5f5d24d168aafd14fcaccac1d4de83413d0acb17f6308cea1ccbfa19");
+    // S3-1 起业务层已填值，hash 随之搬家；⛔ 与 S1 草稿 hash 9ed3762e… 必须不同。
+    assert.equal(SERVER_SNAKE_SKIN_BUSINESS_HASH, "b851e3453a39071a01771d0e8e5127343a95cba5fbe502cea9885f372f2d9d2c");
+    assert.notEqual(SERVER_SNAKE_SKIN_BUSINESS_HASH, "9ed3762e5f5d24d168aafd14fcaccac1d4de83413d0acb17f6308cea1ccbfa19");
     assert.match(SERVER_SNAKE_SKIN_BUSINESS_HASH, /^[a-f0-9]{64}$/);
     for (const entry of SNAKE_SKIN_BUSINESS_CATALOG) {
-        assert.deepEqual(Object.keys(entry).sort(), ["acquisition", "aiEligible", "displayName", "fragmentItemId", "ownershipItemId", "price", "rarity", "saleState", "skinId"]);
-        assert.equal(entry.displayName.state, "technical-draft");
-        assert.equal(entry.displayName.value, `皮肤 ${entry.skinId}`);
-        for (const decision of [entry.rarity, entry.ownershipItemId, entry.fragmentItemId, entry.acquisition, entry.saleState, entry.price]) {
+        assert.deepEqual(Object.keys(entry).sort(), ["acquisition", "aiEligible", "displayName", "fragmentItemId", "fragmentThreshold", "ownershipItemId", "price", "rarity", "saleState", "skinId"]);
+        // 未开放的三项保持 fail-closed。
+        for (const decision of [entry.ownershipItemId, entry.fragmentItemId, entry.price]) {
             assert.equal(decision.value, null);
         }
+        assert.equal(entry.saleState.value, "off-sale");
+        assert.ok(entry.rarity.value >= 0 && entry.rarity.value <= 5, `skin ${entry.skinId} rarity in 原作 6 档`);
         assert.equal("speed" in entry, false);
         assert.equal("score" in entry, false);
         assert.equal("collision" in entry, false);
     }
+});
+
+test("S3-1 展示名只用原作实测值，其余保留技术占位（⛔ 不编造产品名）", () => {
+    const byId = new Map(SNAKE_SKIN_BUSINESS_CATALOG.map((entry) => [entry.skinId, entry]));
+    // 全归档带名字的皮肤记录只有 701/702/703（FeedGameStore bounty_config.skin_list），
+    // 加上 Constant.defaultSkinName = "小红" 对应皮肤 1；702/703 不在冻结 16 之列。
+    assert.deepEqual(
+        SNAKE_SKIN_BUSINESS_CATALOG.filter((e) => e.displayName.state === "approved").map((e) => [e.skinId, e.displayName.value]),
+        [[1, "小红"], [701, "招财喵"]],
+    );
+    for (const entry of SNAKE_SKIN_BUSINESS_CATALOG) {
+        if (entry.displayName.state === "approved") continue;
+        assert.equal(entry.displayName.value, `皮肤 ${entry.skinId}`, `skin ${entry.skinId} 没有原作实测名，须保留技术占位`);
+    }
+    // 701 的稀有度是原作实测 worth_level=3（传说/S），⛔ 改动前先回源。
+    assert.equal(byId.get(701)?.rarity.value, 3);
+    // 四款碎片皮肤门槛齐备，其余一律 unavailable。
+    const craft = SNAKE_SKIN_BUSINESS_CATALOG.filter((e) => e.acquisition.value === "fragmentCraft");
+    assert.deepEqual(craft.map((e) => [e.skinId, e.fragmentThreshold.value]), [[133, 300], [401, 10], [403, 120], [411, 300]]);
 });
 
 test("S1 cosmetic writes fail closed while battle reads use deterministic skin-1 fallback", () => {
@@ -75,6 +97,41 @@ test("business validator rejects orphan IDs, AI drift, sentinel decisions and pu
         assert.throws(() => validateSnakeSkinBusinessCatalog(entries, PUBLIC_SNAKE_SKIN_CATALOG_HASH), /sentinel business value/);
     }
     assert.throws(() => validateSnakeSkinBusinessCatalog(clone(), "stale"), /embedded public catalog hash/);
+});
+
+test("S3-1 放开的字段仍然 fail-closed：approved 空值、越界稀有度、门槛错配一律拒", () => {
+    const clone = (): Array<Record<string, unknown>> => JSON.parse(JSON.stringify(SNAKE_SKIN_BUSINESS_CATALOG_DATA)) as Array<Record<string, unknown>>;
+    const idx = (skinId: number): number => SNAKE_SKIN_BUSINESS_CATALOG.findIndex((e) => e.skinId === skinId);
+    {   // ⛔ approved 但 value=null：不能靠「填了 state」蒙混过关
+        const entries = clone();
+        entries[0].rarity = { state: "approved", value: null };
+        assert.throws(() => validateSnakeSkinBusinessCatalog(entries, PUBLIC_SNAKE_SKIN_CATALOG_HASH), /rarity must be an approved/);
+    }
+    {   // 原作只有 0..5 六档
+        const entries = clone();
+        entries[0].rarity = { state: "approved", value: 6 };
+        assert.throws(() => validateSnakeSkinBusinessCatalog(entries, PUBLIC_SNAKE_SKIN_CATALOG_HASH), /rarity must be an approved/);
+    }
+    {   // 获取方式必须在 demo 枚举内
+        const entries = clone();
+        entries[0].acquisition = { state: "approved", value: "buy" };
+        assert.throws(() => validateSnakeSkinBusinessCatalog(entries, PUBLIC_SNAKE_SKIN_CATALOG_HASH), /acquisition must be one of/);
+    }
+    {   // fragmentCraft 皮肤丢了门槛
+        const entries = clone();
+        entries[idx(401)].fragmentThreshold = { state: "unavailable", value: null };
+        assert.throws(() => validateSnakeSkinBusinessCatalog(entries, PUBLIC_SNAKE_SKIN_CATALOG_HASH), /needs an approved positive threshold/);
+    }
+    {   // 非 fragmentCraft 皮肤不得带门槛
+        const entries = clone();
+        entries[idx(1)].fragmentThreshold = { state: "approved", value: 10 };
+        assert.throws(() => validateSnakeSkinBusinessCatalog(entries, PUBLIC_SNAKE_SKIN_CATALOG_HASH), /must leave fragmentThreshold unavailable/);
+    }
+    {   // demo 期间不得开卖
+        const entries = clone();
+        entries[0].saleState = { state: "approved", value: "on-sale" };
+        assert.throws(() => validateSnakeSkinBusinessCatalog(entries, PUBLIC_SNAKE_SKIN_CATALOG_HASH), /saleState must stay approved off-sale/);
+    }
 });
 
 test("repo-only S1 generator check is fresh and never requires the external source archive", () => {
