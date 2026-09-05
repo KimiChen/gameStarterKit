@@ -70,26 +70,19 @@ const SERVER_MODES_DIR = "apps/server/src/rooms/modes";
 const SHARED_MODE_IDS = "apps/shared/src/gameplays/generated/modeIds.generated.ts";
 
 /** writeGameplayArtifacts 的产物清单（相对仓根，路径排序与实现一致）。 */
+/** fixture 首次 --write 的全部产物：按真仓玩法集派生（⛔ 不硬编码 id），排序与生成器一致（路径字符串序）。 */
 const FIXTURE_ARTIFACTS = [
   CLIENT_CATALOG,
   SERVER_CATALOG,
   SERVER_AGGREGATE,
-  `${SERVER_SCHEMA_DIR}/ballMove.ts`,
-  `${SERVER_SCHEMA_DIR}/dropInFixture.ts`,
-  `${SERVER_SCHEMA_DIR}/idle.ts`,
-  `${SERVER_SCHEMA_DIR}/privateFixture.ts`,
-  `${SERVER_SCHEMA_DIR}/snake.ts`,
+  ...EXPECTED_GAMEPLAY_IDS.map((id) => `${SERVER_SCHEMA_DIR}/${id}.ts`),
   WIRE_VECTORS_INDEX,
   SHARED_CATALOG,
   SHARED_MODE_IDS,
-  `${SHARED_STATE_DIR}/ballMove.ts`,
-  `${SHARED_STATE_DIR}/dropInFixture.ts`,
-  `${SHARED_STATE_DIR}/idle.ts`,
-  `${SHARED_STATE_DIR}/privateFixture.ts`,
-  `${SHARED_STATE_DIR}/snake.ts`,
+  ...EXPECTED_GAMEPLAY_IDS.map((id) => `${SHARED_STATE_DIR}/${id}.ts`),
   SHARED_WIRE_CATALOG,
   SHARED_INDEX,
-] as const;
+].sort((left, right) => (left < right ? -1 : 1));
 
 type MutableField = Record<string, unknown>;
 type MutableType = {
@@ -138,6 +131,14 @@ function assertStateError(id: string, change: (state: MutableState) => void, pat
   assert.throws(() => parseGameplayStateDescriptor(state), pattern);
 }
 
+/** 真仓 canonical 玩法（manifest.wireExposed !== false）：客户端 module 与服务端 mode 必须同集存在。 */
+function canonicalGameplayIds(): readonly string[] {
+  return EXPECTED_GAMEPLAY_IDS.filter((id) => {
+    const manifest = JSON.parse(fs.readFileSync(path.join(SCHEMA_DIR, id, "manifest.json"), "utf8")) as { wireExposed?: boolean };
+    return manifest.wireExposed !== false;
+  });
+}
+
 function createFixture(): { readonly root: string; readonly options: GameplayCodegenOptions } {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "gameplay-codegen-"));
   fs.cpSync(SCHEMA_DIR, path.join(root, "apps/shared/schema/gameplays"), { recursive: true });
@@ -153,46 +154,31 @@ function createFixture(): { readonly root: string; readonly options: GameplayCod
     path.join(REPOSITORY_ROOT, "apps/shared/src/protocol/rooms.ts"),
     path.join(root, "apps/shared/src/protocol/rooms.ts"),
   );
-  for (const id of ["ballMove", "idle"]) {
-    const wire = path.join(REPOSITORY_ROOT, "apps/shared/src/gameplays", id, "wire.ts");
-    if (fs.existsSync(wire)) {
-      fs.mkdirSync(path.join(root, "apps/shared/src/gameplays", id), { recursive: true });
-      fs.copyFileSync(wire, path.join(root, "apps/shared/src/gameplays", id, "wire.ts"));
-    }
-  }
-  // wire 向量 sidecar：core + fixture 里带 wire.ts 的玩法各一份（登记表 index.generated.ts 由生成器渲染，
-  // 缺/孤儿都 fail-fast——snake 的 wire.ts 没进 fixture，所以它的 sidecar 也不能进）。
+  // 各玩法手写 shared 模块（wire.ts / ruleset.ts）与 wire 向量 sidecar：按真仓玩法集发现（⛔ 不硬编码 id——
+  // 插件玩法进来不得需要改本 fixture）。ruleset 是 state.json enumSource:"gameplay" 的硬依赖；
+  // sidecar 由生成器按「声明了 C2S wire 的玩法 + core」双向对齐，真仓里恰好每个 c2s owner 一份。
   fs.mkdirSync(path.join(root, "apps/server/test/wire-vectors"), { recursive: true });
-  for (const owner of ["core", "ballMove", "idle"]) {
-    fs.copyFileSync(
-      path.join(REPOSITORY_ROOT, "apps/server/test/wire-vectors", `${owner}.ts`),
-      path.join(root, "apps/server/test/wire-vectors", `${owner}.ts`),
-    );
-  }
-  // ruleset.ts：state.json 一旦声明 enumSource:"gameplay"，它就是硬依赖（存在性闸），
-  // fixture 必须带上——snake 的 4 个自有枚举正是这么声明的。⚠ 与 wire.ts 不同，
-  // snake 的 ruleset 必须复制：缺了它 readGameplayDescriptors 直接 fail-fast。
-  for (const id of ["ballMove", "idle", "snake"]) {
-    const ruleset = path.join(REPOSITORY_ROOT, "apps/shared/src/gameplays", id, "ruleset.ts");
-    if (fs.existsSync(ruleset)) {
+  fs.copyFileSync(
+    path.join(REPOSITORY_ROOT, "apps/server/test/wire-vectors/core.ts"),
+    path.join(root, "apps/server/test/wire-vectors/core.ts"),
+  );
+  for (const id of EXPECTED_GAMEPLAY_IDS) {
+    for (const name of ["wire.ts", "ruleset.ts"]) {
+      const file = path.join(REPOSITORY_ROOT, "apps/shared/src/gameplays", id, name);
+      if (!fs.existsSync(file)) continue;
       fs.mkdirSync(path.join(root, "apps/shared/src/gameplays", id), { recursive: true });
-      fs.copyFileSync(ruleset, path.join(root, "apps/shared/src/gameplays", id, "ruleset.ts"));
+      fs.copyFileSync(file, path.join(root, "apps/shared/src/gameplays", id, name));
     }
+    const vectors = path.join(REPOSITORY_ROOT, "apps/server/test/wire-vectors", `${id}.ts`);
+    if (fs.existsSync(vectors)) fs.copyFileSync(vectors, path.join(root, "apps/server/test/wire-vectors", `${id}.ts`));
   }
-  // client module：canonical（manifest.wireExposed）∩ modes/ 目录必须双向同集——canonical
-  // 每加一个玩法，这里必须同步复制其 module（fixture 复刻真仓约束；snake 的 wire.ts
-  // 刻意不复制：fixture 内它是无 wire 的 mode，与 dropInFixture 同形）。
-  for (const id of ["ballMove", "idle", "snake"]) {
-    const clientModule = path.join(REPOSITORY_ROOT, CLIENT_MODES_DIR, id, "index.ts");
+  // client module / server mode：canonical（manifest.wireExposed）∩ modes/ 目录必须双向同集——
+  // fixture 复刻真仓约束，canonical 玩法的两端装配件都复制（语法级校验，不解析 import）。
+  for (const id of canonicalGameplayIds()) {
     fs.mkdirSync(path.join(root, CLIENT_MODES_DIR, id), { recursive: true });
-    fs.copyFileSync(clientModule, path.join(root, CLIENT_MODES_DIR, id, "index.ts"));
-  }
-  // server mode：与客户端 module 同集约束（canonical ⇔ modes/<id>/index.ts 导出
-  // register<Constant>GameMode，语法级校验）——服务端 catalog 生成化后 fixture 同样必须带上。
-  for (const id of ["ballMove", "idle", "snake"]) {
-    const serverModule = path.join(REPOSITORY_ROOT, SERVER_MODES_DIR, id, "index.ts");
+    fs.copyFileSync(path.join(REPOSITORY_ROOT, CLIENT_MODES_DIR, id, "index.ts"), path.join(root, CLIENT_MODES_DIR, id, "index.ts"));
     fs.mkdirSync(path.join(root, SERVER_MODES_DIR, id), { recursive: true });
-    fs.copyFileSync(serverModule, path.join(root, SERVER_MODES_DIR, id, "index.ts"));
+    fs.copyFileSync(path.join(REPOSITORY_ROOT, SERVER_MODES_DIR, id, "index.ts"), path.join(root, SERVER_MODES_DIR, id, "index.ts"));
   }
   return { root, options: { repositoryRoot: root } };
 }
