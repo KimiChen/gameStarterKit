@@ -199,13 +199,20 @@ npm --workspace @game/server run plugin -- check
 3. 已安装锁 `scripts/plugins/<id>.lock` 存在时：工作树与旧锁不符（本地改动）⇒ 拒绝；同版本不同内容 ⇒ 拒绝；
    降级须 `--allow-downgrade`；旧锁有、新包无的文件 ⇒ 按清单删除（陈旧文件不残留）；
    首装时目标路径已存在且不属本插件 ⇒ 拒绝（所有权冲突，⛔ 不覆盖）；
-4. 受影响路径的工作树必须干净（`git status`），任何失败都发生在落盘之前；
+4. 受影响路径的工作树必须干净（`git status`；索引里已暂存删除且工作树不存在的路径视为干净——uninstall 后未提交即可
+   重装），校验类失败都发生在落盘之前；
    升级时旧锁的每条路径也要重过 §5.2 闸（锁是仓内明文，被改过/规则演进即拒绝，⛔ 不按可疑的锁删文件）；
    锁登记的文件在树中缺失 ⇒ 拒绝（先 `plugin -- check` 修锁或 `uninstall --force`）；推导集内已有不属本插件的
    文件（含 id/domain 与框架目录同名的目录级占用）⇒ 所有权冲突拒绝；
 5. 原子落盘 → 写 `scripts/plugins/<id>.lock`（已安装插件的唯一登记面）→ `git add`（只加存在或已跟踪的路径）
-   → `codegen:gameplays`（含 gameplay）/ `codegen:features`（含 feature）→ `sync:shared`（Cocos 镜像只 `git add -u`：
-   新建的镜像文件没有 `.meta`，保持未跟踪）；
+   → `codegen:gameplays`（含 gameplay）/ `codegen:features`（含 feature；kinds 按新旧并集跑，升级去掉某 kind 时对应
+   codegen 仍跑一次收缩）→ `sync:shared`（Cocos 镜像只 `git add -u`：新建的镜像文件没有 `.meta`，保持未跟踪）。
+   **升级删除面显式交给 codegen**（2026-09-05，PLUGIN-REGISTRY §1-2）：旧身份 / 旧 feature.json 有、新包没有的
+   gameplay id / feature id / 域 / View 名按 uninstall 同一算法算成 `--allow-delete` 集合传下去（成批删除时
+   `SYNC_FORCE=1`），报告与 `--dry-run` 都打印它。**postinstall 失败即精确回滚**（PLUGIN-REGISTRY §1-1）：本次写入 /
+   删除的插件文件与锁按落盘前字节复原、受影响路径的 git 索引重新同步、生成物 writer 路径里「本次新变脏」的部分
+   restore / 删除（之前就脏的用户 WIP 原样留下），然后把 codegen 的原错误连同回滚清单抛出——树回到安装前，同一包可
+   直接重来，⛔ 不留「文件已写、锁已写、生成物过期」的半安装态；
 6. 停下，打印**人工**下一步：域变化时人工决定是否 bump `LOBBY_PROTOCOL_VERSION` 后
    `node scripts/protocol-fingerprint.mjs --write`（⛔ 脚本不隐式重钉）、带 FGUI 包时
    `node scripts/fgui-manifest.mjs --write`、`npm run verify:all`、提交前开一次 Creator 为 `sync:shared` 新建的
@@ -317,7 +324,8 @@ kinds / constantName / domains / fguiPackages 与锁不同即拒绝，显式 `--
 
 1. **卸载路径保持显式**（`plugin -- uninstall`，按已安装锁的清单删，⛔ 不做「删目录自动收缩生成物」）。
    在「基本不卸载」的世界里，目录消失最可能的成因是**误删或包没拉全**，此时静默收缩生成物比报错糟糕得多
-   ——所以两个 codegen 的 `--allow-delete` 删除保护要留着，卸载命令显式传它。
+   ——所以两个 codegen 的 `--allow-delete` 删除保护要留着，卸载命令显式传它；升级删掉域 / View / kind 时 install
+   也按同一算法显式传（§5.4 第 5 条）。
 2. **升级取代卸载成为第二高频操作**，因此包必须带版本；**已安装状态是一把锁**（`scripts/plugins/<id>.lock`：
    版本 + 全部文件的 sha256），升级 = 三方比对（§5.4），本地改动、同版本不同内容、降级都被点名。
    多插件长期共存是常态，冲突面（§8）才是主战场。
