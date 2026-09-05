@@ -147,6 +147,8 @@ export class AppRuntime {
                 resident: appFeatureRegistry.featureOf(id)?.resident ?? false,
                 // feature.json 的 dependencies：FeatureHost 按它先装依赖、逆序拆（codegen 已查环）。
                 dependencies: appFeatureRegistry.featureOf(id)?.dependencies ?? [],
+                // feature.json 的 module：generated 静态字面量 loader（无 = 静态常驻，与 built-in 同形）。
+                ...(appFeatureRegistry.featureOf(id)?.load ? { load: appFeatureRegistry.featureOf(id)!.load } : {}),
             }));
         this.featureHost = new FeatureHost(hostedFeatures, {
             ports: this.ports,

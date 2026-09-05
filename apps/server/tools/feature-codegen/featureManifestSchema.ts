@@ -92,6 +92,13 @@ export type FeatureManifest = {
    * （⛔ 不要为了「保险」把玩法写成常驻，那会把语义变成第二套 built-in）。
    */
   readonly resident: boolean;
+  /**
+   * 客户端 feature module（可选）：`apps/client/src/features/<id>/index.ts`，须导出
+   * `createFeatureModule(): FeatureModule`。生成器渲染为静态字面量 `load: () => import(...)`
+   * （Non-intrusive §5.3：loader 必须是生成的静态字面量），FeatureHost 据此 install/dispose；
+   * 无 module = 静态常驻（built-in 形态）。
+   */
+  readonly module: string | null;
   readonly dependencies: readonly string[];
   readonly viewDirs: readonly string[];
   readonly views: readonly string[];
@@ -275,6 +282,7 @@ export function parseFeatureManifest(repositoryRoot: string, input: unknown, pat
       }))
       : [],
     resident: value.resident === true,
+    module: typeof value.module === "string" ? value.module : null,
     dependencies: Array.isArray(value.dependencies) ? [...(value.dependencies as string[])] : [],
     viewDirs: [...(value.viewDirs as string[])],
     views: [...(value.views as string[])],

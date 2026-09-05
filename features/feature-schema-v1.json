@@ -31,6 +31,7 @@
       }
     },
     "resident": { "type": "boolean" },
+    "module": { "type": "string", "pattern": "^apps/client/src/features/[a-z][A-Za-z0-9]{0,63}/index\\.ts$" },
     "dependencies": {
       "type": "array",
       "items": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]{0,63}$" }
@@ -51,7 +52,7 @@
         "required": ["id", "logicDir"],
         "properties": {
           "id": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]{0,63}$" },
-          "logicDir": { "type": "string", "pattern": "^apps/client/src/logic/[A-Za-z0-9_/.-]+$" }
+          "logicDir": { "type": "string", "pattern": "^apps/client/src/(logic|features)/[A-Za-z0-9_/.-]+$" }
         }
       }
     },

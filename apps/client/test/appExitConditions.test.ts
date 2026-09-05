@@ -5,7 +5,8 @@
  *  - late subscriber 能立即读取连接状态（订阅即回放）；
  *  - app destroy 后 connection/session/route/ticker 订阅计数归零；
  *  - 静态门禁雏形：feature fixture ⛔ 不得值导入 WebSocketClient/RoomClient/cc/
- *    fairygui/colyseus（覆盖 test/fixtures 与未来 src/features，形态参考 serverImportBan）。
+ *    fairygui/colyseus（覆盖 test/fixtures 与 src/features，形态参考 serverImportBan）；
+ *    src/features/<id>/view/** 是引擎绑定层，只豁免 cc/fairygui，transport 仍禁。
  */
 import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -201,14 +202,35 @@ function collectTs(dir: string): string[] {
   return out;
 }
 
-test("静态门禁：feature fixture（与未来 src/features）不得值导入 WebSocketClient/RoomClient/cc/fairygui", () => {
+/**
+ * feature 目录下的 View（`src/features/<id>/view/**`，经 .view.json sidecar 登记进 ViewMgr catalog）
+ * 是引擎绑定层（铁律 9），cc/fairygui 值导入是其职责本身；对它们只禁 transport（net 客户端 /
+ * colyseus）——能力仍只经 ports（logic 层由 logic-purity 另闸 cc/fairygui）。
+ */
+const BANNED_VALUE_IMPORT_VIEW =
+  /(?:^|\n)\s*import\s+(?!type\b)[^;]*?from\s*["'](?:[^"']*\/net\/WebSocketClient|[^"']*\/net\/RoomClient|colyseus|@colyseus\/[^"']*)["']|require\s*\(\s*["'](?:colyseus|@colyseus\/[^"']*)["']\s*\)/;
+
+const isFeatureViewFile = (file: string): boolean =>
+  /[\\/]src[\\/]features[\\/][^\\/]+[\\/]view[\\/]/.test(file);
+
+test("静态门禁：feature fixture（与 src/features）不得值导入 WebSocketClient/RoomClient/cc/fairygui；feature View 只豁免引擎模块", () => {
   const files = [...collectTs(FIXTURES_DIR), ...collectTs(FUTURE_FEATURES_DIR)];
   assert.ok(files.length >= 1, "扫描目标为空：fixtures 目录丢失（门禁空转）");
   for (const file of files) {
     const source = readFileSync(file, "utf8");
+    if (isFeatureViewFile(file)) {
+      assert.doesNotMatch(source, BANNED_VALUE_IMPORT_VIEW,
+        `${file} 含被禁的 transport 值导入（feature View 只豁免 cc/fairygui，能力仍只经 ports）`);
+      continue;
+    }
     assert.doesNotMatch(source, BANNED_VALUE_IMPORT,
       `${file} 含被禁的值导入（feature 只能经 ports 取得能力）`);
   }
+  assert.ok(isFeatureViewFile("/x/src/features/redeem/view/RedeemView.ts"));
+  assert.ok(!isFeatureViewFile("/x/src/features/redeem/logic/RedeemLogic.ts"));
+  assert.ok(!isFeatureViewFile("/x/src/features/redeem/index.ts"));
+  assert.match('\nimport { RoomClient } from "../../../net/RoomClient";\n', BANNED_VALUE_IMPORT_VIEW);
+  assert.doesNotMatch('\nimport { Node } from "cc";\n', BANNED_VALUE_IMPORT_VIEW);
 });
 
 test("静态门禁正则自测：值导入判违规、type-only 放行", () => {

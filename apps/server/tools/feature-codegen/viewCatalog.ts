@@ -27,6 +27,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import ts from "typescript";
 import { parseFguiComponent } from "../../../../tools/fgui-codegen/parseFgui";
 import { bindingFields } from "../../../../tools/fgui-codegen/binding";
 import {
@@ -208,8 +209,10 @@ function parseSidecar(input: unknown, label: string): ViewSidecar {
   for (const key of ["fullscreen", "onlyOne", "permanent", "interactive"] as const) {
     if (typeof input[key] !== "boolean") fail(label, `${key} must be a boolean`);
   }
-  if (typeof input.logic !== "string" || !input.logic.startsWith("apps/client/src/logic/") || !input.logic.endsWith(".ts")) {
-    fail(label, "logic must be a repo-relative path under apps/client/src/logic/ ending in .ts");
+  // logic 落点：中央 logic/ 或 feature 自持目录 features/<id>/（Non-intrusive §11.3 的插件形态）。
+  if (typeof input.logic !== "string" || !input.logic.endsWith(".ts")
+    || !(input.logic.startsWith("apps/client/src/logic/") || input.logic.startsWith("apps/client/src/features/"))) {
+    fail(label, "logic must be a repo-relative path under apps/client/src/logic/ or apps/client/src/features/ ending in .ts");
   }
   if (input.kind === "fgui") {
     if (typeof input.package !== "string" || input.package === "") fail(label, "fgui sidecar requires package");
@@ -426,6 +429,22 @@ function assertLaunchableGameplay(label: string, gameplayId: string, sets: Gamep
   fail(label, `${context} 引用未登记的玩法 "${gameplayId}"（apps/shared/schema/gameplays/ 下没有该 manifest）`);
 }
 
+/** 顶层 `export function <name>` / `export const <name>` 是否存在（语法级，⛔ 不执行客户端 TS）。 */
+function hasExportedFunction(source: string, label: string, name: string): boolean {
+  const sourceFile = ts.createSourceFile(label, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const isExported = (statement: ts.Statement): boolean =>
+    (ts.canHaveModifiers(statement) ? ts.getModifiers(statement) ?? [] : []).some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
+  for (const statement of sourceFile.statements) {
+    if (ts.isFunctionDeclaration(statement) && isExported(statement) && statement.name?.text === name) return true;
+    if (ts.isVariableStatement(statement) && isExported(statement)) {
+      for (const declaration of statement.declarationList.declarations) {
+        if (ts.isIdentifier(declaration.name) && declaration.name.text === name) return true;
+      }
+    }
+  }
+  return false;
+}
+
 function detectDependencyCycle(features: readonly FeatureManifest[]): void {
   const byId = new Map(features.map((feature) => [feature.id, feature]));
   const visiting = new Set<string>();
@@ -494,6 +513,15 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
     for (const owner of feature.owners) {
       if (ownerDirs.has(owner.id)) fail(featureLabel, `owners 重复声明 "${owner.id}"`);
       ownerDirs.set(owner.id, owner.logicDir);
+    }
+    if (feature.module !== null) {
+      const expected = `${CLIENT_SRC_RELATIVE}/features/${feature.id}/index.ts`;
+      if (feature.module !== expected) fail(featureLabel, `module 必须是本 feature 自己的 ${expected}（读到 ${feature.module}）`);
+      const moduleFile = path.resolve(root, feature.module);
+      assertRegularFile(moduleFile, `${featureLabel}/feature.json → ${feature.module}`);
+      if (!hasExportedFunction(fs.readFileSync(moduleFile, "utf8"), feature.module, "createFeatureModule")) {
+        fail(`${featureLabel}/feature.json → ${feature.module}`, "feature module 必须导出约定符号 createFeatureModule（() => FeatureModule）");
+      }
     }
     for (const dir of feature.viewDirs) {
       const resolved = path.resolve(root, dir);
@@ -858,6 +886,10 @@ function renderLaunch(launch: FeatureManifestLaunch): string {
 export function renderFeatures(catalog: ViewCatalog): string {
   const entryByName = new Map(catalog.entries.map((entry) => [entry.name, entry]));
   const lines: string[] = [generatedClientHeader()];
+  if (catalog.features.some((feature) => feature.module !== null)) {
+    // ⚠ noUnusedLocals：只有存在 module 时才引入类型（generated-purity：type-only import 放行）。
+    lines.push("import type { FeatureModule } from \"../app/FeatureHost\";");
+  }
   lines.push("");
   lines.push("/** 单条业务路由声明：view 名对应 View catalog 键；group/restore 逐字来自该 View 的 sidecar。 */");
   lines.push("export interface GeneratedFeatureRoute {");
@@ -888,6 +920,8 @@ export function renderFeatures(catalog: ViewCatalog): string {
   lines.push("    readonly dependencies: readonly string[];");
   lines.push("    readonly routes: readonly GeneratedFeatureRoute[];");
   lines.push("    readonly menu: readonly GeneratedMenuContribution[];");
+  lines.push("    /** feature module 加载器（静态字面量动态 import，Non-intrusive §5.3）；无 = 静态常驻。 */");
+  lines.push(`    readonly load?: () => Promise<${catalog.features.some((feature) => feature.module !== null) ? "FeatureModule" : "never"}>;`);
   lines.push("}");
   lines.push("");
   lines.push("/** feature 全集（生成器删除保护锚）。 */");
@@ -900,6 +934,10 @@ export function renderFeatures(catalog: ViewCatalog): string {
     lines.push("    {");
     lines.push(`        id: ${JSON.stringify(feature.id)},`);
     lines.push(`        resident: ${feature.resident},`);
+    if (feature.module !== null) {
+      const specifier = path.posix.relative(GENERATED_DIR_RELATIVE, feature.module.slice(0, -".ts".length));
+      lines.push(`        load: () => import(${JSON.stringify(specifier.startsWith(".") ? specifier : `./${specifier}`)}).then((m) => m.createFeatureModule()),`);
+    }
     lines.push(`        dependencies: ${JSON.stringify(feature.dependencies)},`);
     lines.push("        routes: [");
     for (const route of feature.routes) {

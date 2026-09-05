@@ -2,7 +2,7 @@
 # writer: node scripts/protected-paths-lock.mjs --write ；checker: --check（npm run verify:protected-paths）
 # 每行 `<路径> <sha256>`（内容哈希，可用 shasum -a 256 复核）；范围见 scripts/protected-paths.json。
 apps/client/src/Main.ts dadb9bd0820b8757463232e671ffbf0fb0137f4450372d2f43578d5c80513856
-apps/client/src/app/AppRuntime.ts 53dac860208fd2a50102e849fd175674f1c4c3305ea1de0993113644960c54a4
+apps/client/src/app/AppRuntime.ts d94ba7f62e16e62922ca3facd6cf095b27a1c88eb711c88e2b05b48b0a576df9
 apps/client/src/app/CocosLifecycleBridge.ts 333e689f1657019ab7e2f6dbf87a524b87af3988a2a1a6748b5fbf1c6e72361d
 apps/client/src/app/FeatureHost.ts 41843d200946a3532a66f0f4f1d5b536d00e42fe408ad3877cd066b33bba4c47
 apps/client/src/app/FeatureRegistry.ts 14e6ddda3eae8dec6083b3bdf4d81e0da3af0bb7a5fe765e94a8d9feba15727a

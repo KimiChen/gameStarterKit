@@ -72,7 +72,9 @@ const ALL_ARTIFACTS = [REGISTRY_RELATIVE, ...CLIENT_ARTIFACTS, FEATURE_INDEX_REL
  */
 function createFixture(): { readonly root: string; readonly options: FeatureCodegenOptions } {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "feature-codegen-"));
-  for (const dir of [LOBBY_RPC_DIR, "features", "apps/client/src/view", "apps/client/src/logic", "apps/client/src/generated", VECTORS_DIR, "apps/shared/schema/gameplays"]) {
+  // apps/client/src/features 是 feature 目录形态（PLUGIN.md §6.1 插件标准形态）的源目录：真仓无插件时不存在，按需拷。
+  for (const dir of [LOBBY_RPC_DIR, "features", "apps/client/src/view", "apps/client/src/logic", "apps/client/src/features", "apps/client/src/generated", VECTORS_DIR, "apps/shared/schema/gameplays"]) {
+    if (dir === "apps/client/src/features" && !fs.existsSync(path.join(REPOSITORY_ROOT, dir))) continue;
     fs.cpSync(path.join(REPOSITORY_ROOT, dir), path.join(root, dir), { recursive: true });
   }
   fs.mkdirSync(path.join(root, "docs"), { recursive: true });
@@ -101,7 +103,7 @@ function snapshotHandwritten(root: string): Map<string, string> {
       out.set(relative, fs.readFileSync(full, "utf8"));
     }
   };
-  for (const dir of [LOBBY_RPC_DIR, "features", "apps/client/src/view", "apps/client/src/logic", "apps/client/src/generated", "apps/art/fairygui/assets", "docs", VECTORS_DIR]) {
+  for (const dir of [LOBBY_RPC_DIR, "features", "apps/client/src/view", "apps/client/src/logic", "apps/client/src/features", "apps/client/src/generated", "apps/art/fairygui/assets", "docs", VECTORS_DIR]) {
     const base = path.join(root, dir);
     if (fs.existsSync(base)) walk(base);
   }
@@ -175,21 +177,21 @@ test("descriptor 运行时值 ⇔ generated 表双向相等（route/mode/errorCo
   // 「core 声明序 → 域名序 → 域内声明序」追加（阶段 4 新增两个 core 码不上钉）
   const declaredCodes = [...CORE_RPC_ERROR_CODES, ...domains.flatMap((d) => [...d.errorCodes])];
   assert.deepEqual(new Set(RPC_ERR_CODES), new Set(declaredCodes));
+  // 未上钉尾段按规则独立重算（⛔ 不再硬编码域清单：插件域进来不得需要改本测试——PLUGIN.md §3）。
+  const pinned = new Set<string>(RPC_ERR_CODE_ORDER);
+  const unpinnedCore = CORE_RPC_ERROR_CODES.filter((code) => !pinned.has(code));
+  const unpinnedByDomain = [...domains]
+    .sort((a, b) => (a.domain < b.domain ? -1 : a.domain > b.domain ? 1 : 0))
+    .flatMap((d) => [...d.errorCodes].filter((code) => !pinned.has(code)));
   assert.deepEqual(
     [...RPC_ERR_CODES],
-    [
-      ...RPC_ERR_CODE_ORDER,
-      "OPERATION_CONFLICT",
-      "OPERATION_RESULT_EXPIRED",
-      // 阶段 8：room 域错误码（未上钉——域名序 room 唯一新域、域内声明序）
-      "ROOM_CODE_UNAVAILABLE",
-      "ROOM_FULL",
-      "ROOM_START_IN_PROGRESS",
-      "ROOM_QUOTA_EXCEEDED",
-      "ROOM_SERVICE_UNAVAILABLE",
-      "ROOM_RESULT_UNKNOWN",
-    ],
+    [...RPC_ERR_CODE_ORDER, ...unpinnedCore, ...unpinnedByDomain],
     "钉表 15 码逐字复现拆分前 envelope.ts 顺序；未上钉新码按「core 声明序 → 域名序 → 域内声明序」追加");
+  // 历史回归钉：阶段 4 的两个 core 码紧随钉表；阶段 8 的 room 域码按域内声明序连续出现。
+  assert.deepEqual(unpinnedCore, ["OPERATION_CONFLICT", "OPERATION_RESULT_EXPIRED"]);
+  const roomCodes = ["ROOM_CODE_UNAVAILABLE", "ROOM_FULL", "ROOM_START_IN_PROGRESS", "ROOM_QUOTA_EXCEEDED", "ROOM_SERVICE_UNAVAILABLE", "ROOM_RESULT_UNKNOWN"];
+  const roomStart = RPC_ERR_CODES.indexOf("ROOM_CODE_UNAVAILABLE");
+  assert.deepEqual([...RPC_ERR_CODES].slice(roomStart, roomStart + roomCodes.length), roomCodes);
 
   // pushes：key/type/validator 双向
   const declaredPushes = [...CORE_LOBBY_PUSHES, ...domains.flatMap((d) => [...d.pushes])];
@@ -1116,6 +1118,61 @@ test("入口治理闸：entryId 全仓唯一、一 gameplayId 一贡献者、rou
     () => readViewCatalog(withSnakeMenu((menu) => { menu[0].slot = 0; })),
     /unknown key\(s\): slot/u,
   );
+});
+
+test("feature module：module 必须是本 feature 的 features/<id>/index.ts 且导出 createFeatureModule，渲染为静态字面量 load", () => {
+  const withModule = (mutate: (root: string, manifest: Record<string, unknown>) => void): { root: string; options: FeatureCodegenOptions } => {
+    const { root, options } = createFixture();
+    const manifestFile = path.join(root, "features/snake/feature.json");
+    const manifest = JSON.parse(fs.readFileSync(manifestFile, "utf8"));
+    mutate(root, manifest);
+    fs.writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
+    return { root, options };
+  };
+  const writeModule = (root: string, id: string, source: string): void => {
+    fs.mkdirSync(path.join(root, `apps/client/src/features/${id}`), { recursive: true });
+    fs.writeFileSync(path.join(root, `apps/client/src/features/${id}/index.ts`), source, "utf8");
+  };
+  // 指向别的 feature 目录 → 拒绝。
+  assert.throws(
+    () => readViewCatalog(withModule((root, manifest) => {
+      writeModule(root, "other", "export function createFeatureModule() { return {}; }\n");
+      manifest.module = "apps/client/src/features/other/index.ts";
+    }).root),
+    /module 必须是本 feature 自己的 apps\/client\/src\/features\/snake\/index\.ts/u,
+  );
+  // 文件缺失 → 拒绝。
+  assert.throws(
+    () => readViewCatalog(withModule((_root, manifest) => { manifest.module = "apps/client/src/features/snake/index.ts"; }).root),
+    /features\/snake\/index\.ts: missing required file/u,
+  );
+  // 未导出约定符号 → 拒绝。
+  assert.throws(
+    () => readViewCatalog(withModule((root, manifest) => {
+      writeModule(root, "snake", "export const somethingElse = 1;\n");
+      manifest.module = "apps/client/src/features/snake/index.ts";
+    }).root),
+    /必须导出约定符号 createFeatureModule/u,
+  );
+  // 形态非法（不是 features/<id>/index.ts）→ schema 拒绝。
+  assert.throws(
+    () => readViewCatalog(withModule((_root, manifest) => { manifest.module = "apps/client/src/logic/page/HomeLogic.ts"; }).root),
+    /module.*does not match pattern/u,
+  );
+  // 合法：渲染 load 静态字面量 + type-only import；无 module 的 feature 不带 load。
+  const { root, options } = withModule((root, manifest) => {
+    writeModule(root, "snake", "export function createFeatureModule(): { install(): void } {\n  return { install() {} };\n}\n");
+    manifest.module = "apps/client/src/features/snake/index.ts";
+  });
+  writeFeatureArtifacts(options);
+  const rendered = fs.readFileSync(path.join(root, FEATURES_RELATIVE), "utf8");
+  assert.match(rendered, /^import type \{ FeatureModule \} from "\.\.\/app\/FeatureHost";$/mu);
+  assert.match(rendered, /readonly load\?: \(\) => Promise<FeatureModule>;/u);
+  assert.match(rendered, /id: "snake",\n {8}resident: false,\n {8}load: \(\) => import\("\.\.\/features\/snake\/index"\)\.then\(\(m\) => m\.createFeatureModule\(\)\),/u);
+  assert.doesNotMatch(rendered, /id: "builtin",\n {8}resident: true,\n {8}load:/u, "无 module 的 feature ⛔ 不带 load");
+  // 真仓（当前无 module）：不引入未使用的类型（noUnusedLocals）。
+  const real = fs.readFileSync(path.join(REPOSITORY_ROOT, FEATURES_RELATIVE), "utf8");
+  if (!real.includes("load: () => import(")) assert.doesNotMatch(real, /import type \{ FeatureModule \}/u);
 });
 
 test("宿主 placement（features/host.json）：缺失即 fail-fast；defaultLaunch 须有贡献者；home 引用必须存在且渲染进 GENERATED_HOST", () => {
