@@ -13,11 +13,18 @@
 
 import { clientFor } from "../../../core/infra/redisRoute";
 import { kSnakeUser } from "./keys";
+import { SNAKE_ACHIEVEMENTS } from "@game/shared/gameplays/snake/progression";
 import { SNAKE_FRAGMENT_SKIN_IDS, SNAKE_FRAGMENT_SKIN_THRESHOLDS } from "./skinBusinessCatalog";
 import { DEFAULT_SNAKE_SKIN, isPlayerUsableSnakeSkin } from "@game/shared";
 
-/** Redis HASH 中本阶段允许的三个 field，⛔ 不含 `sId`、run、状态或时间戳。 */
+/** S3 的三个 cosmetic field，⛔ 不含 `sId`、run、状态或时间戳。 */
 export const SNAKE_COSMETIC_FIELDS = Object.freeze(["equippedSkinId", "ownedSkinIds", "fragmentBalances"] as const);
+/** S4 追加的两个 progression field。合起来就是 S5 验收的六项白名单（含 S2R 的 coinBalance）。 */
+export const SNAKE_PROGRESSION_FIELDS = Object.freeze(["snakeXp", "achievementProgress"] as const);
+
+/** 四个成就皮肤 ID 的十进制字符串键，⛔ 由 shared 公式层派生，不另处硬编码。 */
+export const SNAKE_ACHIEVEMENT_KEYS: readonly string[] =
+    SNAKE_ACHIEVEMENTS.map((entry) => String(entry.skinId)).sort();
 
 export type SnakeFragmentBalances = Readonly<Record<string, number>>;
 
@@ -46,7 +53,16 @@ type MutableProfile = {
     equippedSkinId: number;
     ownedSkinIds: number[];
     fragmentBalances: Record<string, number>;
+    /** S4 追加。⚠ ⛔ 不进 `snapshot()`——那是 wire 形状，加字段会撞 `assertExactKeys`。 */
+    xp: number;
+    achievementProgress: Record<string, number>;
 };
+
+/** 含 progression 的完整进程内 profile（S4 结算与镜像用，⛔ 不是 wire 形状）。 */
+export interface SnakeDemoFullProfile extends SnakeDemoCosmeticProfile {
+    readonly xp: number;
+    readonly achievementProgress: Readonly<Record<string, number>>;
+}
 
 const profiles = new Map<string, MutableProfile>();
 /** 已尝试过 Redis 回灌的 uid：失败也记，避免每次 RPC 重复打 Redis。 */
@@ -55,11 +71,19 @@ const hydrated = new Set<string>();
 const defaultFragmentBalances = (): Record<string, number> =>
     Object.fromEntries(SNAKE_FRAGMENT_SKIN_IDS.map((skinId) => [String(skinId), 0]));
 
+const defaultAchievementProgress = (): Record<string, number> => {
+    const out: Record<string, number> = {};
+    for (const key of SNAKE_ACHIEVEMENT_KEYS) out[key] = 0;
+    return out;
+};
+
 const defaultProfile = (): MutableProfile => ({
     version: 0,
     equippedSkinId: DEFAULT_SNAKE_SKIN.skinId,
     ownedSkinIds: [DEFAULT_SNAKE_SKIN.skinId],
     fragmentBalances: defaultFragmentBalances(),
+    xp: 0,
+    achievementProgress: defaultAchievementProgress(),
 });
 
 /** 对外快照：深拷贝 + 升序，⛔ 调用方拿到的任何改动都不会回流到模块内。 */
@@ -69,6 +93,42 @@ const snapshot = (profile: MutableProfile): SnakeDemoCosmeticProfile => ({
     ownedSkinIds: [...profile.ownedSkinIds].sort((a, b) => a - b),
     fragmentBalances: { ...profile.fragmentBalances },
 });
+
+/** 含 progression 的完整快照（深拷贝）。 */
+export function fullSnapshotOf(uid: string): SnakeDemoFullProfile {
+    const profile = ensure(uid);
+    return { ...snapshot(profile), xp: profile.xp, achievementProgress: { ...profile.achievementProgress } };
+}
+
+/** S4 结算的受控变更入口：⚠ 一次同步替换，⛔ 中途不得有半写状态。 */
+export interface SnakeRunGrant {
+    readonly xpGained: number;
+    readonly newlyOwnedSkinIds: readonly number[];
+    readonly fragmentSkinId: number | null;
+    readonly fragmentAmount: number;
+    readonly achievementProgressAfter: Readonly<Record<string, number>>;
+}
+
+export function applyRunGrantToProfile(uid: string, grant: SnakeRunGrant): SnakeDemoFullProfile {
+    const profile = ensure(uid);
+    profile.xp += Math.max(0, Math.floor(grant.xpGained));
+    for (const key of SNAKE_ACHIEVEMENT_KEYS) {
+        const next = grant.achievementProgressAfter[key];
+        if (typeof next === "number" && Number.isSafeInteger(next) && next >= 0) profile.achievementProgress[key] = next;
+    }
+    for (const skinId of grant.newlyOwnedSkinIds) {
+        if (!profile.ownedSkinIds.includes(skinId)) profile.ownedSkinIds.push(skinId);
+    }
+    profile.ownedSkinIds.sort((a, b) => a - b);
+    if (grant.fragmentSkinId !== null && grant.fragmentAmount > 0) {
+        const key = String(grant.fragmentSkinId);
+        if (key in profile.fragmentBalances) {
+            profile.fragmentBalances[key] = (profile.fragmentBalances[key] ?? 0) + grant.fragmentAmount;
+        }
+    }
+    profile.version += 1;
+    return fullSnapshotOf(uid);
+}
 
 const ensure = (uid: string): MutableProfile => {
     let profile = profiles.get(uid);
@@ -128,6 +188,32 @@ const parseEquippedSkinId = (raw: string, owned: readonly number[]): number | nu
     return value;
 };
 
+const parseAchievementProgress = (raw: string): Record<string, number> | null => {
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(raw);
+    } catch {
+        return null;
+    }
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null;
+    const record = parsed as Record<string, unknown>;
+    const keys = Object.keys(record).sort();
+    if (keys.length !== SNAKE_ACHIEVEMENT_KEYS.length
+        || keys.some((key, index) => key !== SNAKE_ACHIEVEMENT_KEYS[index])) return null;
+    const out: Record<string, number> = {};
+    for (const key of SNAKE_ACHIEVEMENT_KEYS) {
+        const value = record[key];
+        if (!Number.isSafeInteger(value) || (value as number) < 0) return null;
+        out[key] = value as number;
+    }
+    return out;
+};
+
+const parseXp = (raw: string): number | null => {
+    const value = Number(raw);
+    return Number.isSafeInteger(value) && value >= 0 ? value : null;
+};
+
 export interface SnakeCosmeticPersistenceRecord {
     readonly uid: string;
     readonly equippedSkinId: number;
@@ -150,7 +236,7 @@ const persistToRedis: SnakeCosmeticPersistence = async (record): Promise<void> =
 
 /** 白名单 `HMGET`，⛔ 不用 `HGETALL`。 */
 const hydrateFromRedis: SnakeCosmeticHydration = async (uid) =>
-    clientFor(uid).hmget(kSnakeUser(uid), ...SNAKE_COSMETIC_FIELDS);
+    clientFor(uid).hmget(kSnakeUser(uid), ...SNAKE_COSMETIC_FIELDS, ...SNAKE_PROGRESSION_FIELDS);
 
 export interface SnakeCosmeticStoreOptions {
     readonly persistence?: SnakeCosmeticPersistence;
@@ -197,7 +283,7 @@ export class SnakeDemoCosmeticStore {
             return this.getSnapshot(uid);
         }
         const profile = ensure(uid);
-        const [equippedRaw, ownedRaw, fragmentsRaw] = raw;
+        const [equippedRaw, ownedRaw, fragmentsRaw, xpRaw, achievementsRaw] = raw;
         if (ownedRaw !== null && ownedRaw !== undefined) {
             const owned = parseOwnedSkinIds(ownedRaw);
             if (owned === null) this.reportCorrupt(uid, "ownedSkinIds");
@@ -212,6 +298,17 @@ export class SnakeDemoCosmeticStore {
             const equipped = parseEquippedSkinId(equippedRaw, profile.ownedSkinIds);
             if (equipped === null) this.reportCorrupt(uid, "equippedSkinId");
             else profile.equippedSkinId = equipped;
+        }
+        // S4 字段：缺失采用默认 0，损坏则告警并保留默认 progression。
+        if (xpRaw !== null && xpRaw !== undefined) {
+            const xp = parseXp(xpRaw);
+            if (xp === null) this.reportCorrupt(uid, "snakeXp");
+            else profile.xp = xp;
+        }
+        if (achievementsRaw !== null && achievementsRaw !== undefined) {
+            const progress = parseAchievementProgress(achievementsRaw);
+            if (progress === null) this.reportCorrupt(uid, "achievementProgress");
+            else profile.achievementProgress = progress;
         }
         return this.getSnapshot(uid);
     }

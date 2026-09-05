@@ -169,6 +169,29 @@ export class RedisDemoReliveEconomy implements ReliveEconomyPort {
     }
 }
 
+/**
+ * S4 结算加币：直接落到 S2R 共用的进程内余额，返回新余额。
+ * ⚠ ⛔ 本函数不写 Redis——S4 终局用**一条** HSET 连同 cosmetic/progression 字段一起镜像，
+ * 在这里各写各的会造出「两条 fire-and-forget 各持过期快照互相覆盖」的窗口。
+ */
+export function grantDemoCoins(uid: string, amount: number, initialBalance = SNAKE_DEMO_INITIAL_COINS): number {
+    const gain = Number.isSafeInteger(amount) && amount > 0 ? amount : 0;
+    const next = (demoBalances.get(uid) ?? initialBalance) + gain;
+    demoBalances.set(uid, next);
+    return next;
+}
+
+/** 当前进程内 demo 余额（S4 结算读；⛔ 不触发任何写）。 */
+export function demoCoinBalanceOf(uid: string, initialBalance = SNAKE_DEMO_INITIAL_COINS): number {
+    return demoBalances.get(uid) ?? initialBalance;
+}
+
+/** 测试 seam：清空 demo 钱包。⛔ 运行时不要调用。 */
+export function __resetDemoCoinsForTest(): void {
+    demoBalances.clear();
+    demoResults.clear();
+}
+
 export const DISABLED_RELIVE_ECONOMY: ReliveEconomyPort = Object.freeze({
     kind: "disabled" as const,
     balance: (): number => 0,
