@@ -1,0 +1,274 @@
+{
+  "tool": "tools/creator-preview/run.mjs",
+  "scenario": "all",
+  "startedAt": "2026-09-05T08:30:03.586Z",
+  "options": {
+    "scenario": "all",
+    "out": "docs/evidence/creator-2026-09-05/replay",
+    "code": "WELCOME2026",
+    "format": "jpeg",
+    "devtools": "http://127.0.0.1:9222",
+    "preview": "http://localhost:7456",
+    "scene": null,
+    "bootTimeoutMs": 300000,
+    "stepTimeoutMs": 20000,
+    "reuse": false
+  },
+  "scene": "33a6cd88-ca61-42f3-97e1-6b18a9096a34",
+  "ok": true,
+  "steps": [
+    {
+      "name": "加载预览场景（Fetch 改写 settings.js?scene=）",
+      "ok": true,
+      "startedAt": "2026-09-05T08:30:03.684Z",
+      "detail": {
+        "frames": 73,
+        "canvas": {
+          "x": 658,
+          "y": 49.5546875,
+          "width": 375,
+          "height": 803.4453125
+        },
+        "visible": {
+          "width": 750,
+          "height": 1606
+        },
+        "topLevel": [
+          "Canvas"
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-05T08:30:06.182Z"
+    },
+    {
+      "name": "登录页可见（FGUI btn_login）",
+      "ok": true,
+      "startedAt": "2026-09-05T08:30:06.184Z",
+      "detail": {
+        "via": "fgui:btn_login",
+        "shot": "01-login.jpg"
+      },
+      "screenshots": [
+        "01-login.jpg"
+      ],
+      "finishedAt": "2026-09-05T08:30:06.512Z"
+    },
+    {
+      "name": "点「开始游戏」",
+      "ok": true,
+      "startedAt": "2026-09-05T08:30:06.512Z",
+      "detail": {
+        "tapped": "btn_login",
+        "at": [
+          845,
+          702
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-05T08:30:06.588Z"
+    },
+    {
+      "name": "首屏 PromoHomeView 挂载",
+      "ok": true,
+      "startedAt": "2026-09-05T08:30:06.588Z",
+      "detail": {
+        "card": [
+          "gameStarterKit",
+          "Cocos Creator + Colyseus 实时游戏脚手架",
+          "协议 game v8 · lobby v7 · 已登记玩法 6",
+          "本地开发服 · dev-63bfdde39b49cc16 · 体力 30 · 0胜0负"
+        ],
+        "protocolLine": "协议 game v8 · lobby v7 · 已登记玩法 6",
+        "shot": "02-home.jpg"
+      },
+      "screenshots": [
+        "02-home.jpg"
+      ],
+      "finishedAt": "2026-09-05T08:30:07.307Z"
+    },
+    {
+      "name": "点首屏「设置」",
+      "ok": true,
+      "startedAt": "2026-09-05T08:30:07.308Z",
+      "detail": {
+        "tapped": "设置",
+        "at": [
+          973,
+          90
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-05T08:30:07.390Z"
+    },
+    {
+      "name": "设置面板与插件入口",
+      "ok": true,
+      "startedAt": "2026-09-05T08:30:07.390Z",
+      "detail": {
+        "entries": [
+          {
+            "label": "进入战斗",
+            "featureId": "builtin"
+          },
+          {
+            "label": "兑换码",
+            "featureId": "redeem"
+          },
+          {
+            "label": "贪吃蛇大作战",
+            "featureId": "snake"
+          },
+          {
+            "label": "点数赛",
+            "featureId": "tally"
+          }
+        ],
+        "shot": "03-settings.jpg"
+      },
+      "screenshots": [
+        "03-settings.jpg"
+      ],
+      "finishedAt": "2026-09-05T08:30:07.727Z"
+    },
+    {
+      "name": "进入「兑换码 · redeem」",
+      "ok": true,
+      "startedAt": "2026-09-05T08:30:07.735Z",
+      "detail": {
+        "tapped": "进入 @ /·\\s*redeem$/u",
+        "at": [
+          947,
+          627
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-05T08:30:07.806Z"
+    },
+    {
+      "name": "RedeemView 挂载（route 形态：FeatureHost 动态装载后打开）",
+      "ok": true,
+      "startedAt": "2026-09-05T08:30:07.806Z",
+      "detail": {
+        "editboxText": "",
+        "labels": [
+          "兑换码",
+          "关闭",
+          "输入兑换码（4～32 位字母/数字）",
+          "输入兑换码后点「兑换」",
+          "兑换"
+        ],
+        "shot": "04-redeem-empty.jpg"
+      },
+      "screenshots": [
+        "04-redeem-empty.jpg"
+      ],
+      "finishedAt": "2026-09-05T08:30:08.109Z"
+    },
+    {
+      "name": "输入兑换码 WELCOME2026",
+      "ok": true,
+      "startedAt": "2026-09-05T08:30:08.109Z",
+      "detail": {
+        "code": "WELCOME2026",
+        "shot": "05-redeem-typed.jpg"
+      },
+      "screenshots": [
+        "05-redeem-typed.jpg"
+      ],
+      "finishedAt": "2026-09-05T08:30:09.183Z"
+    },
+    {
+      "name": "点「兑换」并读取结果",
+      "ok": true,
+      "startedAt": "2026-09-05T08:30:09.183Z",
+      "detail": {
+        "code": "WELCOME2026",
+        "outcome": "already-claimed",
+        "text": "这个兑换码你已经使用过了",
+        "shot": "06-redeem-already-claimed.jpg"
+      },
+      "screenshots": [
+        "06-redeem-already-claimed.jpg"
+      ],
+      "finishedAt": "2026-09-05T08:30:09.984Z"
+    },
+    {
+      "name": "「关闭」回到设置面板",
+      "ok": true,
+      "startedAt": "2026-09-05T08:30:09.984Z",
+      "detail": {
+        "settingsStillOpen": true
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-05T08:30:10.053Z"
+    },
+    {
+      "name": "进入「点数赛 · tally」",
+      "ok": true,
+      "startedAt": "2026-09-05T08:30:10.058Z",
+      "detail": {
+        "tapped": "进入 @ /·\\s*tally$/u",
+        "at": [
+          947,
+          708
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-05T08:30:10.140Z"
+    },
+    {
+      "name": "TallyView 挂载并开局（gameplay 形态：FeatureHost 装载 → 加入 GameRoom）",
+      "ok": true,
+      "startedAt": "2026-09-05T08:30:10.140Z",
+      "detail": {
+        "headline": "目标 10 次 · 你已点 0",
+        "tapGoal": 10,
+        "shot": "07-tally-start.jpg"
+      },
+      "screenshots": [
+        "07-tally-start.jpg"
+      ],
+      "finishedAt": "2026-09-05T08:30:10.852Z"
+    },
+    {
+      "name": "连点 TAP 直到判胜（目标 10 次）",
+      "ok": true,
+      "startedAt": "2026-09-05T08:30:10.852Z",
+      "detail": {
+        "taps": 10,
+        "midShot": "08-tally-match.jpg",
+        "settleText": "你赢了！",
+        "shot": "09-tally-settle.jpg"
+      },
+      "screenshots": [
+        "08-tally-match.jpg",
+        "09-tally-settle.jpg"
+      ],
+      "finishedAt": "2026-09-05T08:30:16.285Z"
+    },
+    {
+      "name": "结算倒计时结束后回到首屏（AppRuntime 恢复 authenticated base）",
+      "ok": true,
+      "startedAt": "2026-09-05T08:30:16.285Z",
+      "detail": {
+        "card": [
+          "gameStarterKit",
+          "Cocos Creator + Colyseus 实时游戏脚手架",
+          "协议 game v8 · lobby v7 · 已登记玩法 6",
+          "本地开发服 · dev-63bfdde39b49cc16 · 体力 30 · 0胜0负"
+        ],
+        "shot": "10-tally-back-home.jpg"
+      },
+      "screenshots": [
+        "10-tally-back-home.jpg"
+      ],
+      "finishedAt": "2026-09-05T08:30:18.216Z"
+    }
+  ],
+  "console": [],
+  "tab": {
+    "id": "CE23D13598A214868F4F016F9A9714AC",
+    "created": true
+  },
+  "finishedAt": "2026-09-05T08:30:18.218Z"
+}
