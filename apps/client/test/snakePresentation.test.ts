@@ -524,3 +524,39 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
         moduleApi._load = originalLoad;
     }
 });
+
+test("目录里每个 frame 的 pivot 必须居中——SnakeWorldView 删除 pivot 转写的前提", async () => {
+    // ⚠ 这条用例守的是 SnakeWorldView.definedFrame 里那段注释的前提，不是目录自身的美学约束。
+    // Cocos 3.8 的 SpriteFrame.pivot 只有 getter，⛔ 不可赋值；引擎按节点 anchorPoint 摆放精灵。
+    // 只要目录里所有 pivot 都等于默认锚点 (0.5, 0.5)，「不转写 pivot」就是行为等价的。
+    // 真出现偏心 pivot 时本用例转红，那时必须把 pivot 转写到消费节点的 UITransform.anchorPoint 上，
+    // ⛔ 而不是把断言放宽。
+    const { CLIENT_SNAKE_PRESENTATION_CATALOG, SNAKE_ENTITY_PRESENTATION_CATALOG } =
+        await import("../src/logic/rooms/snake/SnakePresentationCatalog");
+
+    const offenders: string[] = [];
+    let seen = 0;
+    const walk = (value: unknown, path: string): void => {
+        if (Array.isArray(value)) {
+            value.forEach((item, index) => walk(item, `${path}[${index}]`));
+            return;
+        }
+        if (!value || typeof value !== "object") return;
+        const record = value as Record<string, unknown>;
+        const pivot = record.pivot as { x?: unknown; y?: unknown } | undefined;
+        if (pivot && typeof pivot.x === "number" && typeof pivot.y === "number") {
+            seen += 1;
+            if (pivot.x !== 0.5 || pivot.y !== 0.5) {
+                const name = typeof record.sourceFrameName === "string" ? record.sourceFrameName : path;
+                offenders.push(`${name} pivot=(${pivot.x}, ${pivot.y})`);
+            }
+        }
+        for (const [key, child] of Object.entries(record)) walk(child, `${path}.${key}`);
+    };
+    walk(CLIENT_SNAKE_PRESENTATION_CATALOG, "skins");
+    walk(SNAKE_ENTITY_PRESENTATION_CATALOG, "entities");
+
+    // 非空闸：walk 若因目录结构变动而没走到任何 frame，断言会恒真——这里先证明它确实遍历到了。
+    assert.ok(seen >= 100, `pivot 遍历只命中 ${seen} 处，远少于预期，walk 可能没走到目录深处`);
+    assert.deepEqual(offenders, [], "存在偏心 pivot：必须转写到消费节点的 anchorPoint，不能直接忽略");
+});

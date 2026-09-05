@@ -163,7 +163,11 @@ export class SnakeWorldView implements SnakePresentation {
         input.on(Input.EventType.TOUCH_END, this.onTouchEnd, this);
         input.on(Input.EventType.TOUCH_CANCEL, this.onTouchCancel, this);
         game.on(Game.EVENT_HIDE, this.cancelInput, this);
-        void this.loadAssets();
+        // ⚠ 必须接管：loadAssets 内任何抛出都会让 this.assets 永不赋值、整局退化成默认视觉。
+        // 曾经是裸 `void`，真引擎里的 pivot TypeError 就只表现为一条无来源的 PromiseRejectionEvent。
+        void this.loadAssets().catch((error: unknown) => {
+            console.error("[snake] 资源装载失败，本局将以默认视觉降级运行", error);
+        });
     }
 
     render(frame: SnakeRenderFrame, hud: SnakeHudModel, relive: SnakeReliveViewModel | null): void {
@@ -866,12 +870,16 @@ export class SnakeWorldView implements SnakePresentation {
         const existing = this.skinFrameCache.get(key);
         if (existing) return existing;
         const frame = this.frame(texture, definition.rect);
-        const mutable = frame as unknown as {
-            rotated?: boolean;
-            pivot?: { x: number; y: number };
-        };
-        mutable.rotated = definition.rotated;
-        mutable.pivot = { x: definition.pivot.x, y: definition.pivot.y };
+        frame.rotated = definition.rotated;
+        // ⛔ 不要写 frame.pivot：Cocos 3.8 的 SpriteFrame.pivot 只有 getter，ES module 是严格模式，
+        // 赋值直接抛 TypeError。本函数在 loadAssets() 里建 magnet aura 帧时就会被调用，一抛就让整条
+        // 资源装载链 reject、this.assets 永不赋值，结果是 11 个皮肤全报 default-unavailable、蛇渲染成
+        // 白色（S5-05 真引擎取证实测；此前两套 cc 桩都没声明 SpriteFrame.pivot，配合 `as unknown as`
+        // 强制转换，typecheck 与单测双双漏过）。
+        // 引擎按节点 UITransform.anchorPoint 摆放精灵，⛔ 并不消费 SpriteFrame.pivot；且目录里 156 处
+        // pivot 全是 (0.5, 0.5)，正好等于默认锚点，故删除赋值是行为等价的。⚠ 该前提由
+        // snakePresentation.test.ts 的「目录 pivot 必须居中」用例机检钉住——真出现偏心 pivot 时它转红，
+        // 那时才需要把 pivot 转写到消费节点的 anchorPoint 上。
         this.skinFrameCache.set(key, frame);
         return frame;
     }
