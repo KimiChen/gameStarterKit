@@ -31,7 +31,7 @@
     "allSkinContentVersionsRemainOne": true,
     "clientPresentationChanged": true,
     "publicCatalogUnchanged": true,
-    "serverBusinessUnchanged": true
+    "serverBusinessUnchanged": false
   },
   "presentationVersion": 2,
   "previewCount": 16,

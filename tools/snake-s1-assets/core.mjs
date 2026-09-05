@@ -30,7 +30,54 @@ export const EXPECTED_SKIN_IDS = Object.freeze([1, 2, 3, 4, 10, 11, 101, 111, 11
 export const EXPECTED_AI_SKIN_IDS = Object.freeze([101, 111, 112, 132, 133, 139, 401, 403, 411, 701]);
 export const SNAKE_PRESENTATION_VERSION = 2;
 export const HISTORICAL_PUBLIC_CATALOG_HASH = "a1cdecbc5e31db3f90ac2fd15465768ef9206b2520000d4ab9f88d6c2135b075";
+/** S1 草稿期的业务层 hash（全字段 null）。S3-1 起业务层已填值，故此常量只作历史下界：⛔ 新 hash 必须与它不同。 */
 export const HISTORICAL_SERVER_BUSINESS_HASH = "9ed3762e5f5d24d168aafd14fcaccac1d4de83413d0acb17f6308cea1ccbfa19";
+
+/**
+ * S3-1 冻结的 demo 业务值（2026-09-05 用户拍板）。
+ *
+ * **稀有度采用原作 6 档制**：`0 普通 / 1 稀有 / 2 史诗 / 3 传说 / 4 典藏 / 5 至臻`
+ * （原作旧字母名 `C/B/A/S/SS/SSS`），出处
+ * `subpackages/loading/bundle/_r/prefab/show/Constant/ShowConstant.js` 的
+ * `RARE_LEVEL_NAMES` / `RARE_LEVEL_OLD_NAMES`，值域 0..5 由 `PrefabUtil` 钳制。
+ * ⚠ 本 demo 只用到 0..3；`4 典藏` / `5 至臻` 无对应皮肤，属**有意留空**而非遗漏。
+ *
+ * **展示名只填原作实测值**：全归档带名字的皮肤记录只有 `701/702/703`
+ * （`_r/store/FeedGameStore.js` 的 `bounty_config.skin_list`，702/703 不在冻结 16 之列），
+ * 另有 `_r/_r/Constant.js` 的 `defaultSkinName = "小红"` 对应皮肤 1。
+ * ⇒ 只有 `1` 与 `701` 有 approved 展示名，其余 14 个保留 S1 技术占位 `皮肤 N`。
+ * ⛔ 不要为它们编造产品名——原作里这 16 个 ID 是 `Constant.internalSkinIds`
+ *（贴图随包内置的资源本地性白名单 + AI 换皮池），**不是**一个商店档位或稀有度分组。
+ *
+ * **acquisition 与 fragmentThreshold 是本仓自设**：原作这两项均由服务端下发，
+ * 全归档 `chip_infos: [有内容]` 与 `has_chip: 1` 命中均为 0，客户端没有任何门槛常量。
+ * ⚠ 唯一例外是 `701` 的原作实测获取方式为 `get_method=5 happyCoin`「赏金模式专属」、
+ * 售价 1e6 快乐币——demo 没有快乐币系统，故此处仍用本仓自设的成就解锁，差异登记在 docs/s/s3。
+ */
+const SNAKE_S3_DEMO_BUSINESS = Object.freeze({
+  // skinId: { displayName（null = 原作无实测名，退回技术占位）, rarity(0..5), acquisition, fragmentThreshold }
+  1: { displayName: "小红", rarity: 0, acquisition: "default", fragmentThreshold: null },
+  2: { displayName: null, rarity: 0, acquisition: "levelUnlock", fragmentThreshold: null },
+  3: { displayName: null, rarity: 0, acquisition: "levelUnlock", fragmentThreshold: null },
+  4: { displayName: null, rarity: 0, acquisition: "levelUnlock", fragmentThreshold: null },
+  10: { displayName: null, rarity: 1, acquisition: "locked", fragmentThreshold: null },
+  11: { displayName: null, rarity: 1, acquisition: "locked", fragmentThreshold: null },
+  101: { displayName: null, rarity: 2, acquisition: "achievementUnlock", fragmentThreshold: null },
+  111: { displayName: null, rarity: 1, acquisition: "locked", fragmentThreshold: null },
+  112: { displayName: null, rarity: 1, acquisition: "locked", fragmentThreshold: null },
+  132: { displayName: null, rarity: 1, acquisition: "achievementUnlock", fragmentThreshold: null },
+  133: { displayName: null, rarity: 2, acquisition: "fragmentCraft", fragmentThreshold: 300 },
+  139: { displayName: null, rarity: 2, acquisition: "achievementUnlock", fragmentThreshold: null },
+  401: { displayName: null, rarity: 2, acquisition: "fragmentCraft", fragmentThreshold: 10 },
+  403: { displayName: null, rarity: 2, acquisition: "fragmentCraft", fragmentThreshold: 120 },
+  411: { displayName: null, rarity: 3, acquisition: "fragmentCraft", fragmentThreshold: 300 },
+  // 701 的稀有度 3（传说）是原作实测 worth_level=3 / rare_level=3，⛔ 改动前先回源。
+  701: { displayName: "招财喵", rarity: 3, acquisition: "achievementUnlock", fragmentThreshold: null },
+});
+/** demo 自设的获取方式枚举（⛔ 不是原作 GetMethod/GetMethodV2，那两套是服务端下发口径）。 */
+export const SNAKE_S3_ACQUISITIONS = Object.freeze(["default", "levelUnlock", "achievementUnlock", "fragmentCraft", "locked"]);
+/** 原作 6 档稀有度上界（`SpriteFrame.skinLevelMax = 5`）。 */
+export const SNAKE_RARITY_MAX = 5;
 export const HISTORICAL_CLIENT_PRESENTATION_HASH = "62e1a6683a71db3ef0724cd6030114b7d9a64845723b14fa8c7c6d58a9302efe";
 
 const MAGNET_TEXTURE_NAMES = Object.freeze(["x_lighting01", "x_lighting02", "x_lighting03", "xt_s_lighting", "xt_s_lighting02"]);
@@ -1577,19 +1624,31 @@ export function buildArtifacts() {
   const publicCatalog = catalog.skins.map(({ skinId, contentVersion, publicationState, isDefault, sortOrder, playerUsable, technicalLabel }) => ({ skinId, contentVersion, publicationState, isDefault, sortOrder, playerUsable, technicalLabel }));
   const publicCatalogHash = sha256(stableJson(publicCatalog));
   if (publicCatalogHash !== HISTORICAL_PUBLIC_CATALOG_HASH) fail("publicCatalogHash", `S1-12 must preserve ${HISTORICAL_PUBLIC_CATALOG_HASH}, got ${publicCatalogHash}`);
-  const businessCatalog = catalog.skins.map(({ skinId, technicalLabel, aiEligible }) => ({
-    skinId,
-    aiEligible,
-    displayName: { state: "technical-draft", value: technicalLabel },
-    rarity: { state: "draft", value: null },
-    ownershipItemId: { state: "unavailable", value: null },
-    fragmentItemId: { state: "unavailable", value: null },
-    acquisition: { state: "unavailable", value: null },
-    saleState: { state: "unavailable", value: null },
-    price: { state: "unavailable", value: null },
-  }));
+  const businessCatalog = catalog.skins.map(({ skinId, technicalLabel, aiEligible }) => {
+    const demo = SNAKE_S3_DEMO_BUSINESS[skinId];
+    if (!demo) fail("businessCatalog", `skin ${skinId} has no S3 demo business row`);
+    return {
+      skinId,
+      aiEligible,
+      // 只有原作实测到展示名的皮肤才 approved；其余保留 S1 技术占位，⛔ 不编造产品名。
+      displayName: demo.displayName === null
+        ? { state: "technical-draft", value: technicalLabel }
+        : { state: "approved", value: demo.displayName },
+      rarity: { state: "approved", value: demo.rarity },
+      ownershipItemId: { state: "unavailable", value: null },
+      fragmentItemId: { state: "unavailable", value: null },
+      acquisition: { state: "approved", value: demo.acquisition },
+      fragmentThreshold: demo.fragmentThreshold === null
+        ? { state: "unavailable", value: null }
+        : { state: "approved", value: demo.fragmentThreshold },
+      saleState: { state: "approved", value: "off-sale" },
+      price: { state: "unavailable", value: null },
+    };
+  });
   const serverBusinessHash = sha256(stableJson({ publicCatalogHash, businessCatalog }));
-  if (serverBusinessHash !== HISTORICAL_SERVER_BUSINESS_HASH) fail("serverBusinessHash", `S1-12 must preserve ${HISTORICAL_SERVER_BUSINESS_HASH}, got ${serverBusinessHash}`);
+  if (serverBusinessHash === HISTORICAL_SERVER_BUSINESS_HASH) {
+    fail("serverBusinessHash", `S3-1 must move the business layer off the S1 draft hash ${HISTORICAL_SERVER_BUSINESS_HASH}`);
+  }
 
   const converted = [];
   const textures = new Map();
