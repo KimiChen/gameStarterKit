@@ -88,7 +88,8 @@ test("repo-only S1 generator check is fresh and never requires the external sour
 });
 
 test("S1 converter fixture suite passes from the server test gate", () => {
-    const result = spawnSync(process.execPath, ["--test", "tools/snake-s1-assets/snake-s1-assets.test.mjs"], {
+    // 确定性 deflate（tools/snake-s0-replication/deflate.mjs）是 S1/S0 全部 PNG 产物的字节来源：它的契约测试随本闸一起跑。
+    const result = spawnSync(process.execPath, ["--test", "tools/snake-s1-assets/snake-s1-assets.test.mjs", "tools/snake-s0-replication/deflate.test.mjs"], {
         cwd: REPO_ROOT,
         encoding: "utf8",
     });
