@@ -138,6 +138,15 @@ verify:sync 镜像一致、inventory 全绿）；`test:int` 169/169（本地真 
 >    装载 module 在真实引擎里的首次运行证据（无头侧已由 `featureModuleLoad.test.ts` 钉住装载链）。
 > 3. 顺手清 B4：动态加载/取消回滚/输入租约/跨包资源各留一段录屏；B6 的 uuid 集合往返自检按其行的判定方式做。
 > 4. 会话结束把上述结果（尤其 1-② 的 diff）贴回来，由无头侧登记证据并处理 E6。
+>
+> **执行结果（2026-09-05 下午，用户打开 Creator 3.8.8 后由 Claude 经 Chrome 9222 + CDP 驱动预览；证据与环境
+> 见 [docs/evidence/creator-2026-09-05/README.md](docs/evidence/creator-2026-09-05/README.md)）**：
+> 1-①/②/③ Creator **未重写任何 `.meta`**（合成占位形态与 3.8.8 落盘一致；随包 13 个 `.meta` 未被重排，锁全程 ✔）；
+> 2 全链路走通：dev 登录 → 首屏 → 设置面板插件入口 → RedeemView 输入/兑换成功/重兑被拒/关闭，服务端 Redis 记账一致；
+> 3 只覆盖了「动态加载」，取消回滚/输入租约/跨包资源与 B6 未做。实测暴露三处真实引擎缺陷并已修：CocosView 页面
+> 按父层锚点居中（`e9e6900`）、行标签左锚（此前被面板左缘切半）、代码创建的 EditBox 需显式 textLabel/placeholderLabel。
+> 预览 `index.html` 写死 `settings.js?scene=current_scene`：编辑器没打开场景时预览是空场景，需在编辑器里打开
+> `scene.scene` 或（如本次）改写该查询参数。
 
 
 | # | 待办 | 现状 | 出处 |
@@ -146,7 +155,7 @@ verify:sync 镜像一致、inventory 全绿）；`test:int` 169/169（本地真 
 | B2 | failed 入口的「可手动重试」UX | 逻辑闸已接通（`47dc934`/`7c3065b`：启动通道经 FeatureHost，点击 = userIntent）；failed 入口当前渲染为不可点击占位（§7.4 既定），重试交互随 B1 一并出图 | plan-v4 仍然开放 |
 | B3 | `PrivateRoomLobby` FGUI 包与模板 View | 服务端/客户端 transport 已就绪（`e387d08`/`05591e2`，headless 测试覆盖）；页面视觉需编辑器出图后按阶段 6 动线接入 | plan-v4 仍然开放 |
 | B4 | Creator 预览人工证据：动态加载/取消回滚/输入租约/跨包资源 | 机制有无头测试；真实引擎与资源验证需 Creator 本地预览留证 | plan-v4 遗留待办表 |
-| B5 | 合成 `.meta` 的 Creator 确认 | Non-intrusive 阶段 8a/9 由脚本合成的镜像 `.meta` 需打开一次 Creator 确认 uuid 稳定后随提交固化 | plan-v4 遗留待办表 |
+| B5 | 合成 `.meta` 的 Creator 确认 | Non-intrusive 阶段 8a/9 由脚本合成的镜像 `.meta` 需打开一次 Creator 确认 uuid 稳定后随提交固化。2026-09-05 Creator 3.8.8 打开工程并多次刷新资源库：未重写任何合成 `.meta`（含镜像与 features.meta 占位），形态与其落盘格式一致——见 [证据](docs/evidence/creator-2026-09-05/README.md)；B5 可视为闭合，保留待下次 Creator 版本升级复核 | plan-v4 遗留待办表 |
 | B6 | `.meta` uuid 集合 ↔ Cocos 场景序列化往返自检 | 需要真实 Creator 引擎，属 Creator 运行证据方向 | plan-v4 仍然开放条目 5 |
 
 ## C. 玩法实现（既定范围外，随玩法立项另立计划）
@@ -197,7 +206,7 @@ FeatureHost 按 `dependencies` 装载）、feature 侧域契约闸（`LOBBY_RPC_
 | E3 | 框架默认加载页 | 全新 route，与 FGUI 包预热策略绑定（本仓 FGUI 包只有加载路径无卸载路径） | PLUGIN.md §6.2 (2) |
 | E4 | join 信封侧的 feature 契约比对 | codegen 层域契约闸已落地（`LOBBY_RPC_DOMAIN_CONTRACTS`）；Lobby join 仍只比对 `LOBBY_PROTOCOL_VERSION`，域契约变化是否 bump 该整数是人工决策（Non-intrusive §4.8 ⛔ 不各自新增版本闸） | PLUGIN.md §9.5 / PLUGIN-REVIEW F14 |
 | E6 | 同仓「作者=宿主」的插件迭代动线 | ✅ **已实施方案 ②**（用户拍板，2026-09-05）：`install --reinstall-from-tree <id>` 以工作树为真相重写已安装锁——采集/自检走 pack 同一条路，锁被篡改/越权/目录级冲突照拒，同版本不同内容拒绝并点名改动面（必须 bump `plugins/<id>/plugin.json`），降级须显式，⛔ 不写插件文件只重写锁，然后 git add + postinstall（`apps/server/tools/plugin/install.ts` `reinstallFromTree`，契约测试 `plugin-tool.test.ts`）。现场重放：`docs/redeem/README.md` 措辞修正 + bump 1.0.1 → 锁重写 → `check` ✔。背景：此前只改一行即 `plugin-lock.test.ts` 红（`b5b73f5` 后实测）、普通 install 对「树≠锁」直接拒绝。仍开放的同类尾巴：随包 `.meta` 在锁内，Creator 重排键序即锁红（B 节清单 1-② 待实测后决定 `.meta` 是否按语义比对）；卸载后须先提交才能重装 | `apps/server/tools/plugin/{install,cli}.ts`；PLUGIN.md §5.4 |
-| E5 | 第一个真实插件的端到端实证 | ✅ **已完成**（2026-09-05）：「兑换码」插件 `plugins/redeem`（[docs/redeem/README.md](docs/redeem/README.md)）作者侧 `pack`（29 文件）→ 干净树 `plugin -- install`（postinstall 重生全部生成物）→ `protocol-fingerprint --write` → `verify:all` 通过（两条既有环境基线除外）；框架前置补齐见 `5c6df35`（feature.json `module` 装载器、feature 目录形态放行、测试闸去中央清单）。补证（2026-09-05 下午）：① 一次性 worktree 上 `pack` 已安装树 ⇔ `redeem.lock` 29 条逐条相同；`uninstall` 删 29 文件 + postinstall 收缩生成物（sync 清理 3 个镜像文件含共享祖先 `features.meta`）→ 提交 → `fingerprint --write` → 从同一包 `install` → 与卸载前 HEAD 的 diff 只剩两个仓库持有的 `.meta`（`features.meta`、镜像 `domains/redeem.ts.meta`，按设计由 Creator 生成、不随包）；`check` ✔。⚠ 卸载后不能在同一未提交树上直接重装（install 要求受影响路径干净），动线是「卸载 → 提交 → 安装」。② 客户端装载链 `generated load → createFeatureModule → FeatureHost.install → AppRuntime.launch({kind:"route"}) → navigation.open` 由框架级测试 `apps/client/test/featureModuleLoad.test.ts` 钉住（只读 generated 表，不点名插件）。剩余尾巴：Creator 打开一次确认随包 `.meta` uuid 稳定、用 Creator 生成的共享祖先 `apps/Cocos/assets/src/features.meta` 替换脚本合成占位（归 B4/B6 类 Creator 人工证据） | PLUGIN.md §9.6 |
+| E5 | 第一个真实插件的端到端实证 | ✅ **已完成**（2026-09-05）：「兑换码」插件 `plugins/redeem`（[docs/redeem/README.md](docs/redeem/README.md)）作者侧 `pack`（29 文件）→ 干净树 `plugin -- install`（postinstall 重生全部生成物）→ `protocol-fingerprint --write` → `verify:all` 通过（两条既有环境基线除外）；框架前置补齐见 `5c6df35`（feature.json `module` 装载器、feature 目录形态放行、测试闸去中央清单）。补证（2026-09-05 下午）：① 一次性 worktree 上 `pack` 已安装树 ⇔ `redeem.lock` 29 条逐条相同；`uninstall` 删 29 文件 + postinstall 收缩生成物（sync 清理 3 个镜像文件含共享祖先 `features.meta`）→ 提交 → `fingerprint --write` → 从同一包 `install` → 与卸载前 HEAD 的 diff 只剩两个仓库持有的 `.meta`（`features.meta`、镜像 `domains/redeem.ts.meta`，按设计由 Creator 生成、不随包）；`check` ✔。⚠ 卸载后不能在同一未提交树上直接重装（install 要求受影响路径干净），动线是「卸载 → 提交 → 安装」。② 客户端装载链 `generated load → createFeatureModule → FeatureHost.install → AppRuntime.launch({kind:"route"}) → navigation.open` 由框架级测试 `apps/client/test/featureModuleLoad.test.ts` 钉住（只读 generated 表，不点名插件）。Creator 侧尾巴已闭合（2026-09-05 下午，[证据](docs/evidence/creator-2026-09-05/README.md)）：Creator 3.8.8 打开工程后未重写随包 13 个 `.meta` 与两个脚本合成的占位 `.meta`（形态与其落盘一致、uuid 稳定、锁全程 ✔）；RedeemView 在真实引擎里跑通成功/已使用/不存在三条路径。实测修掉三处真机缺陷（CocosView 父锚居中、行标签左锚、EditBox 显式 Label），RedeemView 两次经 `--reinstall-from-tree` 迭代到 1.0.3 | PLUGIN.md §9.6 |
 
 `PrivateRoomLobby` 模板仍是 B3（编辑器待办），不重复登记。
 
