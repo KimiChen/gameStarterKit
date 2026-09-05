@@ -19,9 +19,28 @@ export interface LockEntry {
   readonly sha256: string;
 }
 
+/** 注册表来源（PLUGIN-REGISTRY §4.2；`install --from-registry` 写入，本地 zip 安装没有）。 */
+export interface LockSourceRegistry {
+  readonly url: string;
+  readonly version: string;
+  readonly zipSha256: string;
+  readonly publisher?: string;
+}
+
+/**
+ * 已安装锁的来源抬头（`# source <json>`）：
+ *  - `package`：由某个包（zip / 目录）安装，`filesLockSha256` = 该包 files.lock 规范文本的 sha256（内容身份，可离线复算）；
+ *  - `tree`：经 `install --reinstall-from-tree` 以工作树为真相重写（本地分叉），`forkedFrom` 保留上一把锁的来源。
+ * 旧锁没有这一行 ⇒ null（未知来源）。
+ */
+export type LockSource =
+  | { readonly kind: "package"; readonly filesLockSha256: string; readonly registry?: LockSourceRegistry }
+  | { readonly kind: "tree"; readonly filesLockSha256: string; readonly forkedFrom: LockSource | null };
+
 export interface InstalledLock {
   readonly manifest: PluginManifest;
   readonly entries: readonly LockEntry[];
+  readonly source?: LockSource | null;
 }
 
 export function sha256(data: Buffer | string): string {
@@ -74,6 +93,11 @@ export function parseFilesLock(text: string): readonly LockEntry[] {
   return parseEntries(text.split(/\r?\n/u), PACKAGE_FILES_LOCK);
 }
 
+/** 内容身份：files.lock 规范文本的 sha256（pack 产物里的 files.lock 字节正是它；宿主从已安装锁 entries 可离线复算）。 */
+export function filesLockSha256Of(entries: readonly LockEntry[]): string {
+  return sha256(renderFilesLock(entries));
+}
+
 /** 已安装锁：抬头 `# manifest <json>` 承载 plugin.json 的归一化值。 */
 export function renderInstalledLock(lock: InstalledLock): string {
   const { manifest } = lock;
@@ -89,9 +113,18 @@ export function renderInstalledLock(lock: InstalledLock): string {
     `# ${INSTALLED_LOCK_DIR}/${manifest.id}.lock —— 已安装插件 ${manifest.id}@${manifest.version} 的登记与文件清单锁。Do not edit by hand.`,
     "# writer: npm --workspace @game/server run plugin -- install ；checker: apps/server/test/plugin-lock.test.ts（随 verify:all）与 plugin -- check",
     `# manifest ${summary}`,
+    ...(lock.source ? [`# source ${JSON.stringify(lock.source)}`] : []),
     renderEntries(lock.entries),
     "",
   ].join("\n");
+}
+
+function parseLockSource(line: string | undefined, label: string): LockSource | null {
+  if (!line) return null;
+  const value = JSON.parse(line.slice("# source ".length)) as LockSource;
+  if (value.kind !== "package" && value.kind !== "tree") throw new Error(`[plugin] ${label} 的 "# source" 抬头 kind 非法：${String((value as { kind: unknown }).kind)}`);
+  if (typeof value.filesLockSha256 !== "string") throw new Error(`[plugin] ${label} 的 "# source" 抬头缺 filesLockSha256`);
+  return value;
 }
 
 export function parseInstalledLock(text: string, label: string): InstalledLock {
@@ -117,7 +150,7 @@ export function parseInstalledLock(text: string, label: string): InstalledLock {
     requires: { featureSchemaVersion: null, gameplaySchemaVersion: null },
     description: "",
   };
-  return { manifest, entries: parseEntries(lines, label) };
+  return { manifest, entries: parseEntries(lines, label), source: parseLockSource(lines.find((line) => line.startsWith("# source ")), label) };
 }
 
 export function readInstalledLock(root: string, id: string): InstalledLock | null {

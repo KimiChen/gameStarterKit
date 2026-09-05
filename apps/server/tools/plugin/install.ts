@@ -17,7 +17,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { compareVersions, identityDifferences } from "./manifest";
-import { INSTALLED_LOCK_DIR, foreignLockOwners, readInstalledLock, verifyLockAgainstTree, writeInstalledLock, type LockEntry } from "./lock";
+import { INSTALLED_LOCK_DIR, filesLockSha256Of, foreignLockOwners, readInstalledLock, verifyLockAgainstTree, writeInstalledLock, type LockEntry, type LockSource, type LockSourceRegistry } from "./lock";
 import { packPlugin } from "./pack";
 import { assertInstalledLockOwned, readPackage, validatePackage, type ValidatedPackage } from "./package";
 import { matchesPrefixRule, mirrorPathOf, readGeneratedWriterPaths, type OwnershipRule } from "./ownership";
@@ -44,6 +44,10 @@ export interface InstallOptions {
   readonly dryRun?: boolean;
   /** 测试接缝：替换 postinstall 里的 npm/git 调用（缺省 runCommand）。 */
   readonly runner?: CommandRunner;
+  /** 已安装锁 source.kind === "tree"（本地分叉）时，内容不同的包默认拒绝；显式放行后按三方比对覆盖分叉。 */
+  readonly replaceLocalFork?: boolean;
+  /** 注册表来源（`install --from-registry` 填；本地 zip 安装省略），原样写进锁的 `# source`。 */
+  readonly registry?: LockSourceRegistry;
 }
 
 export interface InstallReport {
@@ -56,6 +60,8 @@ export interface InstallReport {
   readonly nextSteps: readonly string[];
   /** 升级时交给 codegen 的显式删除面（首装为空）。 */
   readonly allowDelete: AllowDelete;
+  /** 本次写进锁的来源抬头（dry-run 也算出来）。 */
+  readonly source: LockSource;
   /** 仅 --reinstall-from-tree：被锁吸收的树上改动（新增 / 内容变化），文件本身不被写。 */
   readonly adopted?: { readonly added: readonly string[]; readonly changed: readonly string[] };
 }
@@ -387,7 +393,20 @@ export function installPlugin(options: InstallOptions): InstallReport {
       fail(`拒绝降级：已安装 ${id}@${previous.manifest.version}，包为 ${manifest.version}（显式 --allow-downgrade 才放行）`);
     }
     const sameContent = sameEntries(previous.entries, pkg.entries);
-    if (cmp === 0 && !sameContent) fail(`拒绝：包版本 ${manifest.version} 与已安装版本相同但内容不同——升级必须 bump version`);
+    // 本地分叉（锁由 --reinstall-from-tree 写出）：来包内容不同即视为「上游会覆盖宿主改动」，默认拒绝并列出分叉面；
+    // --replace-local-fork 显式放行（同版本不同内容也放行：分叉 bump 到的版本号可能恰与上游撞车）。
+    if (previous.source?.kind === "tree" && !sameContent) {
+      const incoming = new Map(pkg.entries.map((entry) => [entry.path, entry.sha256]));
+      const overwritten = previous.entries.filter((entry) => incoming.has(entry.path) && incoming.get(entry.path) !== entry.sha256).map((entry) => entry.path);
+      const removed = previous.entries.filter((entry) => !incoming.has(entry.path)).map((entry) => entry.path);
+      if (!options.replaceLocalFork) {
+        fail(`拒绝：已安装 ${id}@${previous.manifest.version} 是本地分叉（锁 source=tree，宿主曾以 --reinstall-from-tree 吸收改动），`
+          + `来包会覆盖/删除这些分叉文件；确认要放弃本地改动再用 --replace-local-fork：\n`
+          + `  覆盖 ${overwritten.length}：\n  ${overwritten.join("\n  ") || "-"}\n  删除 ${removed.length}：\n  ${removed.join("\n  ") || "-"}`);
+      }
+    } else if (cmp === 0 && !sameContent) {
+      fail(`拒绝：包版本 ${manifest.version} 与已安装版本相同但内容不同——升级必须 bump version`);
+    }
     const verification = verifyLockAgainstTree(root, previous.entries);
     if (verification.modified.length > 0) {
       fail(`拒绝升级：以下文件与已安装锁不符（本地改动会被覆盖丢失，请先提交/回退或改走框架 PR）：\n  ${verification.modified.join("\n  ")}`);
@@ -428,6 +447,7 @@ export function installPlugin(options: InstallOptions): InstallReport {
     written.push(relative);
   }
   const lockRelative = path.posix.join(INSTALLED_LOCK_DIR, `${id}.lock`);
+  const source: LockSource = { kind: "package", filesLockSha256: filesLockSha256Of(pkg.entries), ...(options.registry ? { registry: options.registry } : {}) };
   const base = {
     id,
     version: manifest.version,
@@ -436,13 +456,14 @@ export function installPlugin(options: InstallOptions): InstallReport {
     unchanged: unchanged.sort(),
     deleted: stale.sort(),
     allowDelete,
+    source,
   };
   if (options.dryRun) return { ...base, nextSteps: nextStepsFor(pkg, root) };
 
   const journal = [...written, ...stale, lockRelative].map((relative) => snapshot(root, relative));
   for (const relative of written) atomicWrite(path.join(root, relative), pkg.files.get(relative) as Buffer);
   for (const relative of stale) removeFileAndEmptyDirs(root, relative);
-  writeInstalledLock(root, { manifest, entries: pkg.entries });
+  writeInstalledLock(root, { manifest, entries: pkg.entries, source });
 
   if (useGit) gitAddExisting(root, affected);
   if (options.postinstall === false) return { ...base, nextSteps: nextStepsFor(pkg, root) };
@@ -519,6 +540,11 @@ export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallRep
   // 同仓迭代删 View 时作者自己跑 codegen:features -- --allow-delete <View>）。
   const allowDelete = allowDeleteFor({ manifest: previous.manifest, viewNames: [] }, { manifest, viewNames: pkg.viewNames });
   const postinstallKinds = [...new Set([...previous.manifest.kinds, ...manifest.kinds])];
+  // 来源抬头：树 ≡ 旧锁的幂等 no-op 保留原来源（⛔ 不把 package 悄悄改成 tree）；真有改动才标 tree 并把上一来源放进 forkedFrom。
+  const noop = sameEntries(previous.entries, pkg.entries) && previous.manifest.version === manifest.version;
+  const source: LockSource = noop && previous.source
+    ? previous.source
+    : { kind: "tree", filesLockSha256: filesLockSha256Of(pkg.entries), forkedFrom: previous.source?.kind === "tree" ? previous.source.forkedFrom : (previous.source ?? null) };
   const base = {
     id,
     version: manifest.version,
@@ -527,6 +553,7 @@ export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallRep
     unchanged: pkg.entries.map((entry) => entry.path).filter((relative) => !added.includes(relative) && !changed.includes(relative)),
     deleted: stale,
     allowDelete,
+    source,
     adopted: { added, changed },
   };
   if (options.dryRun) return { ...base, nextSteps: nextStepsFor(pkg, root) };
@@ -534,7 +561,7 @@ export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallRep
   // 旧锁登记、树上已删的文件：树就是真相，只需把可能残留的空目录清掉（文件已不存在时 removeFileAndEmptyDirs 只清目录）。
   const journal = [snapshot(root, lockRelative)];
   for (const relative of stale) removeFileAndEmptyDirs(root, relative);
-  writeInstalledLock(root, { manifest, entries: pkg.entries });
+  writeInstalledLock(root, { manifest, entries: pkg.entries, source });
   const affected = [...pkg.files.keys(), ...stale, lockRelative];
   if (useGit) gitAddExisting(root, affected);
   if (options.postinstall === false) return { ...base, nextSteps: nextStepsFor(pkg, root) };

@@ -16,7 +16,7 @@ import { test } from "node:test";
 import { checkInstalledPlugins } from "../tools/plugin/check";
 import { parseCli } from "../tools/plugin/cli";
 import { allowDeleteFor, installPlugin, nextStepsFor, reinstallFromTree, runCommand, type CommandRunner } from "../tools/plugin/install";
-import { readInstalledLock, renderFilesLock, sha256 } from "../tools/plugin/lock";
+import { filesLockSha256Of, parseInstalledLock, readInstalledLock, renderFilesLock, renderInstalledLock, sha256 } from "../tools/plugin/lock";
 import { compareVersions, parsePluginManifest } from "../tools/plugin/manifest";
 import {
   classifyPath,
@@ -892,6 +892,62 @@ test("PLUGIN-REGISTRY §1-1 附带：uninstall 后未提交（索引里是暂存
   }
 });
 
+test("PLUGIN-REGISTRY §1-5：锁的 source 抬头——install 写 package、reinstall-from-tree 写 tree（forkedFrom 保留上一来源、no-op 不改）；分叉之上的升级默认拒绝，--replace-local-fork 放行；旧锁无 source ⇒ unknown", () => {
+  const { author, target } = makeFixture("1.0.0");
+  try {
+    const v1 = path.join(author, "out/v1.zip");
+    packPlugin({ root: author, id: "chamber", outFile: v1 });
+    const installed = installPlugin({ root: target, source: v1, git: false, postinstall: false });
+    const lock1 = readInstalledLock(target, "chamber");
+    assert.ok(lock1?.source && lock1.source.kind === "package");
+    assert.equal(lock1.source.filesLockSha256, filesLockSha256Of(lock1.entries), "内容身份可从锁 entries 离线复算");
+    assert.equal(installed.source.filesLockSha256, sha256(readPackage(v1).entries.length > 0 ? renderFilesLock(readPackage(v1).entries) : ""), "= 包内 files.lock 规范文本的 sha256");
+    assert.ok(fs.readFileSync(path.join(target, "scripts/plugins/chamber.lock"), "utf8").includes('# source {"kind":"package"'));
+    assert.equal(checkInstalledPlugins(target).plugins[0].source, "package");
+
+    // 宿主本地改一行 + bump → reinstall：source=tree，forkedFrom = 原 package 来源。
+    fs.writeFileSync(path.join(target, "docs/chamber/README.md"), "# host fork\n");
+    const manifestFile = path.join(target, "plugins/chamber/plugin.json");
+    fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.0.1"'));
+    reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false });
+    const lock2 = readInstalledLock(target, "chamber");
+    assert.ok(lock2?.source && lock2.source.kind === "tree");
+    assert.deepEqual(lock2.source.forkedFrom, lock1.source, "分叉记住它从哪个包分出来");
+    assert.equal(checkInstalledPlugins(target).plugins[0].source, "tree");
+    // 树 ≡ 锁的 no-op 重装不改来源；再改一次仍是 tree 且 forkedFrom 不层层嵌套。
+    assert.deepEqual(reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false }).source, lock2.source);
+    fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.1"', '"1.0.2"'));
+    const lock3source = reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false }).source;
+    assert.ok(lock3source.kind === "tree" && lock3source.forkedFrom?.kind === "package");
+
+    // 上游发 1.1.0：默认拒绝并列出会被覆盖/删除的分叉文件；--replace-local-fork 放行后 source 回到 package。
+    const upstream = path.join(author, "plugins/chamber/plugin.json");
+    fs.writeFileSync(upstream, fs.readFileSync(upstream, "utf8").replace('"1.0.0"', '"1.1.0"'));
+    const v2 = path.join(author, "out/v2.zip");
+    packPlugin({ root: author, id: "chamber", outFile: v2 });
+    assert.throws(() => installPlugin({ root: target, source: v2, git: false, postinstall: false }), /本地分叉[\s\S]*覆盖 2[\s\S]*docs\/chamber\/README\.md/u);
+    assert.equal(readInstalledLock(target, "chamber")?.manifest.version, "1.0.2", "被拒时锁不动");
+    // 同版本不同内容：分叉 bump 到 1.0.2，上游也发 1.0.2 → 同样走分叉闸（不是「必须 bump」）。
+    fs.writeFileSync(upstream, fs.readFileSync(upstream, "utf8").replace('"1.1.0"', '"1.0.2"'));
+    const v2same = path.join(author, "out/v2same.zip");
+    packPlugin({ root: author, id: "chamber", outFile: v2same });
+    assert.throws(() => installPlugin({ root: target, source: v2same, git: false, postinstall: false }), /本地分叉/u);
+    const replaced = installPlugin({ root: target, source: v2same, git: false, postinstall: false, replaceLocalFork: true });
+    assert.equal(replaced.source.kind, "package");
+    assert.equal(fs.readFileSync(path.join(target, "docs/chamber/README.md"), "utf8"), "# chamber 1.0.0\n", "分叉被上游覆盖");
+    assert.equal(checkInstalledPlugins(target).ok, true);
+
+    // 旧锁没有 source 行：解析为 null，check 报 unknown；带 registry 子对象的 source 原样往返。
+    const legacy = parseInstalledLock(renderInstalledLock({ manifest: lock1.manifest, entries: lock1.entries }), "legacy");
+    assert.equal(legacy.source, null);
+    const withRegistry = { kind: "package" as const, filesLockSha256: "ab".repeat(32), registry: { url: "https://plugin.gono.games", version: "1.0.0", zipSha256: "cd".repeat(32), publisher: "alice" } };
+    assert.deepEqual(parseInstalledLock(renderInstalledLock({ manifest: lock1.manifest, entries: lock1.entries, source: withRegistry }), "x").source, withRegistry);
+    assert.throws(() => parseInstalledLock(renderInstalledLock({ manifest: lock1.manifest, entries: lock1.entries }).replace("# manifest", '# source {"kind":"nope","filesLockSha256":"x"}\n# manifest'), "bad"), /kind 非法/u);
+  } finally {
+    cleanup(author, target);
+  }
+});
+
 test("manifest：schema 校验、kinds 语义、requires 兼容轴、版本比较", () => {
   const valid = parsePluginManifest({ schemaVersion: 1, id: "chamber", version: "1.2.3", kinds: ["feature"] });
   assert.equal(valid.constantName, null);
@@ -928,6 +984,9 @@ test("CLI 参数：四个子命令、--root seam、重复/未知参数 throw", (
   const gated = parseCli(["install", "--reinstall-from-tree", "chamber", "--allow-identity-change", "--adopt-tracked"]);
   assert.ok(gated.command === "reinstall-from-tree" && gated.allowIdentityChange && gated.adoptTracked);
   assert.throws(() => parseCli(["install", "pkg.zip", "--adopt-tracked"]), /只对 install --reinstall-from-tree 有效/u);
+  const fork = parseCli(["install", "pkg.zip", "--replace-local-fork"]);
+  assert.ok(fork.command === "install" && fork.replaceLocalFork);
+  assert.throws(() => parseCli(["install", "--reinstall-from-tree", "chamber", "--replace-local-fork"]), /只对 install <zip\|dir> 有效/u);
   assert.throws(() => parseCli(["install", "--reinstall-from-tree"]), /只需要一个已安装插件/u);
 });
 
