@@ -29,6 +29,8 @@ export interface GeneratedFeatureDescriptor {
     readonly dependencies: readonly string[];
     readonly routes: readonly GeneratedFeatureRoute[];
     readonly menu: readonly GeneratedMenuContribution[];
+    /** feature module 加载器（静态字面量动态 import，Non-intrusive §5.3）；无 = 静态常驻。 */
+    readonly load?: () => Promise<never>;
 }
 
 /** feature 全集（生成器删除保护锚）。 */

@@ -179,11 +179,11 @@ test("音频写单飞：在途期间的重复点击被忽略（⛔ 不排队第�
   assert.equal(logic.audioToggles()[0].pending, false);
 });
 
-test("宿主固定占位项：合规四项 + 语言 + 兑换码全部置灰且逐条带未实现原因", () => {
+test("宿主固定占位项：合规四项 + 语言全部置灰且逐条带未实现原因（兑换码是插件，⛔ 不在宿主占位里）", () => {
   const harness = makeHarness();
   const ids = harness.logic.placeholders().map((item) => item.id);
-  assert.deepEqual(ids, ["language", "push", "terms", "privacy", "redeemCode", "logUpload"],
-    "占位项集合来自 PLUGIN.md §6.1 的宿主固定区块");
+  assert.deepEqual(ids, ["language", "push", "terms", "privacy", "logUpload"],
+    "占位项集合来自 PLUGIN.md §6.1 的宿主固定区块；兑换码由 features/redeem 插件提供，不得再占位");
   for (const item of SETTINGS_PLACEHOLDERS) {
     assert.ok(item.label.length > 0, `${item.id}: 占位项必须有标题`);
     assert.match(item.reason, /未实现/u,

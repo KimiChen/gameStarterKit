@@ -5,7 +5,8 @@
  * 两个区块，边界来自 PLUGIN.md §6.1：
  *  1. **宿主固定项**（⛔ 不可由插件提供）：音乐/音效走 user profile 的 musicOn/sfxOn
  *     幂等写；语言/推送/条款/隐私/兑换码/日志上报当前**没有实现**，一律置灰并逐条
- *     标注原因（⛔ 不做假实现——一个点了没反应的开关比没有这个开关更糟）。
+ *     标注原因（⛔ 不做假实现——一个点了没反应的开关比没有这个开关更糟）。兑换码 ⛔ 不在此列：
+ *     它是插件标准形态（PLUGIN.md §6.1），由 features/redeem 以 launch.kind:"route" 的入口进插件列表。
  *  2. **插件入口列表**：数据源仍是 generated menu contributions（全量），排序取
  *     **featureId 字母序**（§6：插件只声明入口身份，位置归宿主——首屏位置是 features/host.json
  *     的事，本层 ⛔ 不看）。不可用（FeatureHost failed/disabled）的条目置灰，
@@ -83,7 +84,6 @@ export const SETTINGS_PLACEHOLDERS: readonly SettingsPlaceholderModel[] = [
     { id: "push", label: "推送通知", reason: "未实现：现有 push 只有下行机制，无订阅开关语义，且需平台 token" },
     { id: "terms", label: "服务条款", reason: "未实现：缺版本化的「已同意」状态存储" },
     { id: "privacy", label: "隐私政策", reason: "未实现：缺版本化的「已同意」状态存储" },
-    { id: "redeemCode", label: "兑换码", reason: "未实现：需要一条 idempotent-write RPC 域与兑换页" },
     { id: "logUpload", label: "日志上报", reason: "未实现：客户端诊断采集与上报 endpoint 都还没有" },
 ];
 

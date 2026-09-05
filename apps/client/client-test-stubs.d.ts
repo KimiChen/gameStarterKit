@@ -37,6 +37,10 @@ declare module "cc" {
   export class SpriteFrame { texture: Texture2D | null; rect: Rect; }
   export class Sprite extends Component { spriteFrame: SpriteFrame | null; color: Color; sizeMode: number; type: number; }
   export class Label extends Component { string: string; fontSize: number; color: Color; horizontalAlign: number; }
+  export class EditBox extends Component {
+    string: string; placeholder: string; maxLength: number;
+    static EventType: { EDITING_DID_BEGAN: string; TEXT_CHANGED: string; EDITING_DID_ENDED: string; EDITING_RETURN: string };
+  }
   export class AudioClip { duration: number; }
   export class Mesh { subMeshes: Array<{ update(): void }>; }
   export class Material {
