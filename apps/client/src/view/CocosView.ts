@@ -48,7 +48,13 @@ export abstract class CocosView extends ViewBase {
       transform.width = width;
       transform.height = height;
     }
-    this.root.setPosition(0, 0);
+    // 层容器是 FGUI GComponent 的节点：锚点 (0,1)、原点在左上角（y 向下为负）。本页根节点锚点 (0.5,0.5)，
+    // 直接放 (0,0) 会把页面中心钉在容器左上角、只露出右下四分之一（2026-09-05 Creator 预览实测）。
+    // 按父节点锚点把根节点居中：父锚 (ax,ay) → 位置 ((0.5-ax)·W, (0.5-ay)·H)；无 UITransform 时按中心锚处理。
+    const parentTransform = parent.getComponent(UITransform);
+    const anchorX = parentTransform?.anchorX ?? 0.5;
+    const anchorY = parentTransform?.anchorY ?? 0.5;
+    this.root.setPosition((0.5 - anchorX) * width, (0.5 - anchorY) * height);
     parent.addChild(this.root);
   }
 
