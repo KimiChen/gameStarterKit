@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "root": "TallyRoomState",
+  "types": [
+    {
+      "name": "TallyPlayerState",
+      "sharedName": "ITallyPlayerState",
+      "validatorName": "validateTallyPlayerState",
+      "defaultPath": "tallyPlayer",
+      "fields": [
+        {
+          "name": "id",
+          "kind": "string",
+          "default": "",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Colyseus sessionId"
+        },
+        {
+          "name": "name",
+          "kind": "string",
+          "default": "",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        {
+          "name": "taps",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "max": "MAX_SAFE_INTEGER",
+          "description": "Accepted tap count this match"
+        }
+      ],
+      "serverOnly": []
+    },
+    {
+      "name": "TallyRoomState",
+      "sharedName": "ITallyRoomState",
+      "validatorName": "validateTallyRoomState",
+      "defaultPath": "tallyState",
+      "fields": [
+        {
+          "name": "tick",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "description": "Logical frame number"
+        },
+        {
+          "name": "phase",
+          "kind": "enum",
+          "enumObject": "GamePhase",
+          "enumType": "GamePhaseType",
+          "members": ["Waiting", "Playing", "Settle"],
+          "default": "Waiting",
+          "errorCode": "STATE_PHASE",
+          "description": "Room phase"
+        },
+        {
+          "name": "matchId",
+          "kind": "string",
+          "default": "",
+          "minLength": 0,
+          "maxLength": 128,
+          "description": "Stable match id; empty while waiting"
+        },
+        {
+          "name": "tapGoal",
+          "kind": "integer",
+          "default": 10,
+          "min": 1,
+          "max": "MAX_SAFE_INTEGER",
+          "description": "Taps required to win"
+        },
+        {
+          "name": "winnerId",
+          "kind": "string",
+          "default": "",
+          "minLength": 0,
+          "maxLength": 128,
+          "description": "Winning sessionId; empty before settlement"
+        },
+        {
+          "name": "players",
+          "kind": "map",
+          "valueType": "TallyPlayerState",
+          "errorCode": "STATE_PLAYERS",
+          "key": {
+            "field": "id",
+            "errorCode": "STATE_PLAYER_ID"
+          },
+          "description": "Tally players keyed by sessionId"
+        }
+      ],
+      "serverOnly": []
+    }
+  ]
+}

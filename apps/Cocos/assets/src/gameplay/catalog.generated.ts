@@ -4,6 +4,7 @@ import type { AppGameplayRegistry, GameplayServicesContext } from "./services";
 import { createGameplayModule as createBallMoveGameplayModule } from "./modes/ballMove/index";
 import { createGameplayModule as createIdleGameplayModule } from "./modes/idle/index";
 import { createGameplayModule as createSnakeGameplayModule } from "./modes/snake/index";
+import { createGameplayModule as createTallyGameplayModule } from "./modes/tally/index";
 
 /** Per-gameplay catalog mirror. contractDigest = sha256(manifest.json + "\0" + state.json + "\0" + wire.ts). */
 export const GAMEPLAY_CATALOG = {
@@ -52,6 +53,15 @@ export const GAMEPLAY_CATALOG = {
         stateFragments: [],
         contractDigest: "bb7e7c3b5a9dbabc341510e85bddd48794e39fab57935cfb88e45050f7b4b2d8",
     },
+    "tally": {
+        id: "tally",
+        constantName: "Tally",
+        modeVersion: 1,
+        maxPlayers: 4,
+        profiles: ["default"],
+        stateFragments: [],
+        contractDigest: "7ad4475966b16783bd73ab6dff8925d5b6e3c010236ff2ceba8c08792f66bc1b",
+    },
 } as const;
 
 export type GameplayCatalogId = keyof typeof GAMEPLAY_CATALOG;
@@ -61,6 +71,7 @@ export const GAMEPLAY_MODULES = {
     "ballMove": createBallMoveGameplayModule,
     "idle": createIdleGameplayModule,
     "snake": createSnakeGameplayModule,
+    "tally": createTallyGameplayModule,
 } as const;
 
 export type GameplayModuleId = keyof typeof GAMEPLAY_MODULES;
@@ -78,6 +89,7 @@ export function registerGeneratedGameplays(
         disposers.push(registerGameplayModule(registry, createBallMoveGameplayModule(services), services.controllerBridge));
         disposers.push(registerGameplayModule(registry, createIdleGameplayModule(services), services.controllerBridge));
         disposers.push(registerGameplayModule(registry, createSnakeGameplayModule(services), services.controllerBridge));
+        disposers.push(registerGameplayModule(registry, createTallyGameplayModule(services), services.controllerBridge));
     } catch (error) {
         for (const dispose of disposers.splice(0).reverse()) dispose();
         throw error;

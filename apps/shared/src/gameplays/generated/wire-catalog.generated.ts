@@ -11,6 +11,7 @@ import { defineS2C, type GameplayC2SToken, type GameplayS2CToken } from "../defi
 import { CastSkill, Move, SkillResult, type ICastSkillReq, type IMoveReq, type ISkillResultRes } from "../ballMove/wire";
 import { IdlePulse, type IIdlePulseReq } from "../idle/wire";
 import { SnakeBaselineBegin, SnakeBaselineChunk, SnakeBaselineEnd, SnakeBaselineRequest, SnakeDelta, SnakeEndRun, SnakeInput, SnakeReliveDecision, SnakeReliveDecisionResult, SnakeReliveOffered, SnakeReliveResolved, SnakeRunFinalizing, SnakeRunResult, type ISnakeBaselineBegin, type ISnakeBaselineChunk, type ISnakeBaselineEnd, type ISnakeBaselineRequestReq, type ISnakeEndRunReq, type ISnakeInputReq, type ISnakeReliveDecisionReq, type ISnakeReliveDecisionResult, type ISnakeReliveOffered, type ISnakeReliveResolved, type ISnakeRunFinalizing, type ISnakeRunResultV1, type ISnakeWorldDelta } from "../snake/wire";
+import { TallyTap, type ITallyTapReq } from "../tally/wire";
 
 /** 客户端 → 服务端 消息名（core + 各玩法 wire token 的显式字面量聚合） */
 export const C2S = {
@@ -25,6 +26,7 @@ export const C2S = {
     SnakeReliveDecision: "c2s.snake.reliveDecision",
     SnakeEndRun: "c2s.snake.endRun",
     SnakeBaselineRequest: "c2s.snake.baselineRequest",
+    TallyTap: "c2s.tally.tap",
 } as const;
 
 /** 服务端 → 客户端 消息名 */
@@ -63,6 +65,7 @@ export interface C2SPayloadMap {
     "c2s.snake.reliveDecision": ISnakeReliveDecisionReq;
     "c2s.snake.endRun": ISnakeEndRunReq;
     "c2s.snake.baselineRequest": ISnakeBaselineRequestReq;
+    "c2s.tally.tap": ITallyTapReq;
 }
 
 export interface S2CPayloadMap {
@@ -100,6 +103,7 @@ export const C2S_RUNTIME_VALIDATORS: { [K in C2SType]: RuntimeValidator<C2SPaylo
     "c2s.snake.reliveDecision": SnakeReliveDecision.validate,
     "c2s.snake.endRun": SnakeEndRun.validate,
     "c2s.snake.baselineRequest": SnakeBaselineRequest.validate,
+    "c2s.tally.tap": TallyTap.validate,
 };
 
 /** S2C runtime validators. Client state/message adapters must validate before dispatching callbacks. */
@@ -151,6 +155,7 @@ export const GAME_WIRE_OWNERS = {
     "c2s.snake.reliveDecision": "snake",
     "c2s.snake.endRun": "snake",
     "c2s.snake.baselineRequest": "snake",
+    "c2s.tally.tap": "tally",
     "s2c.pong": "core",
     "s2c.welcome": "core",
     "s2c.chat": "core",
@@ -180,6 +185,7 @@ export const GAME_WIRE_PHASES = {
     "c2s.snake.reliveDecision": [GamePhase.Playing],
     "c2s.snake.endRun": [GamePhase.Playing],
     "c2s.snake.baselineRequest": [GamePhase.Playing],
+    "c2s.tally.tap": [GamePhase.Playing],
 } as const satisfies { readonly [type: string]: readonly GamePhaseType[] };
 
 /** 玩法 C2S 的预算成本（rateCost；机制为高频输入留位）。 */
@@ -191,6 +197,7 @@ export const GAME_WIRE_RATE_COST = {
     "c2s.snake.reliveDecision": 2,
     "c2s.snake.endRun": 2,
     "c2s.snake.baselineRequest": 4,
+    "c2s.tally.tap": 1,
 } as const satisfies { readonly [type: string]: number };
 
 /** 每玩法 C2S token 表（GameMode.commands 键派生与校验用）。 */
@@ -211,6 +218,9 @@ export const gameplayC2STokens = {
         "c2s.snake.reliveDecision": SnakeReliveDecision,
         "c2s.snake.endRun": SnakeEndRun,
         "c2s.snake.baselineRequest": SnakeBaselineRequest,
+    },
+    "tally": {
+        "c2s.tally.tap": TallyTap,
     },
 } as const satisfies { readonly [mode: string]: { readonly [type: string]: GameplayC2SToken<unknown> } };
 
@@ -235,6 +245,8 @@ export const gameplayS2CTokens = {
         "s2c.snake.reliveResolved": SnakeReliveResolved,
         "s2c.snake.runFinalizing": SnakeRunFinalizing,
         "s2c.snake.runResult": SnakeRunResult,
+    },
+    "tally": {
     },
 } as const satisfies { readonly [mode: string]: { readonly [type: string]: GameplayS2CToken<unknown> } };
 

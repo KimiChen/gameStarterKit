@@ -10,6 +10,7 @@ export const GameplayModeId = {
     BallMove: "ballMove",
     Idle: "idle",
     Snake: "snake",
+    Tally: "tally",
 } as const;
 
 export type GameplayModeIdType = (typeof GameplayModeId)[keyof typeof GameplayModeId];
