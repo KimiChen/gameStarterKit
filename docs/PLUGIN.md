@@ -42,7 +42,7 @@
 | 层 | 插件能否自持 | 落点 |
 | --- | --- | --- |
 | gameplay module（实时玩法：manifest/state/wire + 三端模块） | ✅ 可消费 | `apps/shared/schema/gameplays/<id>/`、`apps/shared/src/gameplays/<id>/`、`apps/server/src/rooms/modes/<id>/`（导出 `register<Constant>GameMode`，`codegen:gameplays` 生成 `modes/catalog.generated.ts` 收录）、`apps/client/src/gameplay/modes/<id>/`、`logic/rooms/<id>/`、`view/rooms/<id>/`、`net/rooms/<Constant>Room.ts`、`apps/server/test/wire-vectors/<id>.ts`（wire 向量 sidecar，`codegen:gameplays` 汇入 `index.generated.ts`）、`apps/Cocos/assets/resources/<id>/` |
-| feature（大厅页面 + RPC domain + View + 路由 + 菜单） | ✅ 可消费 | `features/<id>/feature.json`、`apps/client/src/features/<id>/`、`apps/server/src/core/<id>/`（自有键经 `kFeatureUser`/`kFeatureShared`）；每个 domain：`apps/shared/src/protocol/lobbyRpc/domains/<d>.ts`、`apps/server/src/websocket/<d>/`、`apps/server/test/lobbyRpcVectors/<d>.ts`（`codegen:features` 生成向量登记表收录）；FGUI 包：`apps/art/fairygui/assets/<Pkg>/` + `resources/ui/<Pkg>.bin`/图集 |
+| feature（大厅页面 + RPC domain + View + 路由 + 菜单） | ✅ 可消费 | `apps/plugins/<id>/feature.json`、`apps/client/src/features/<id>/`、`apps/server/src/core/<id>/`（自有键经 `kFeatureUser`/`kFeatureShared`）；每个 domain：`apps/shared/src/protocol/lobbyRpc/domains/<d>.ts`、`apps/server/src/websocket/<d>/`、`apps/server/test/lobbyRpcVectors/<d>.ts`（`codegen:features` 生成向量登记表收录）；FGUI 包：`apps/art/fairygui/assets/<Pkg>/` + `resources/ui/<Pkg>.bin`/图集 |
 | 入口（菜单 contribution） | ✅ 可消费 | feature.json 的 `menu`：只有身份（entryId/label/labelKey/icon/launch），launch 可为 `gameplay` 或 `route`；位置见 §6 |
 | profile 声明（选用已有的房型策略组合） | ✅ 可消费 | manifest 的 `profiles` 一行 |
 | state fragment 声明（选用已有的公共状态片段） | ✅ 可消费 | state.json 的 `fragments` 一行 |
@@ -118,7 +118,7 @@
 > 状态：✅ 已实现（2026-09-05）——`apps/server/tools/plugin/`，命令 `npm --workspace @game/server run plugin`，
 > 契约测试 `apps/server/test/plugin-tool.test.ts`，已安装锁的新鲜度随 `apps/server/test/plugin-lock.test.ts`
 > 进 `verify:all`。本节按实现改写，旧表述（denylist 闸、覆盖同目录、合成 .meta）已被
-> [PLUGIN-REVIEW](PLUGIN-REVIEW.md) F03/F04/F11/F12/F14/F21 推翻。首个真实包实证：`plugins/redeem`（§9.6）。
+> [PLUGIN-REVIEW](PLUGIN-REVIEW.md) F03/F04/F11/F12/F14/F21 推翻。首个真实包实证：`apps/plugins/redeem`（§9.6）。
 
 ### 5.1 威胁模型（先说清闸门防什么）
 
@@ -130,14 +130,14 @@
 ### 5.2 所有权由身份推导（allowlist，fail-closed）
 
 插件能写入仓库的路径集合由 `plugin.json` 的身份 (id, kinds, constantName, domains, fguiPackages) 与
-`features/<id>/feature.json` 声明的客户端目录**纯函数推导**（`tools/plugin/ownership.ts`）——这就是
+`apps/plugins/<id>/feature.json` 声明的客户端目录**纯函数推导**（`tools/plugin/ownership.ts`）——这就是
 「目录即所有权」的机检形态：
 
 | kind | 推导出的可写落点 |
 | --- | --- |
-| 共有 | `plugins/<id>/`、`docs/<id>/`、`apps/server/test/<id>-*.test.ts`、`apps/server/test/int/<id>-*.test.ts`、`apps/client/test/<id>-*.test.ts`（前缀后**必须**紧跟 `-` 或 `.`，⛔ 不是裸 startsWith：`tally` 不拥有 `tallyBoard-*`、`red` 不拥有 `redis-*`；2026-09-05 收紧，PLUGIN-REGISTRY §1-4） |
-| gameplay | `apps/shared/schema/gameplays/<id>/`、`apps/shared/src/gameplays/<id>/`、`apps/server/src/rooms/modes/<id>/`、`apps/client/src/gameplay/modes/<id>/`、`apps/client/src/logic/rooms/<id>/`、`apps/client/src/view/rooms/<id>/`、`apps/client/src/net/rooms/<Constant>Room.ts`、`apps/server/test/wire-vectors/<id>.ts`、`apps/Cocos/assets/resources/<id>/` |
-| feature | `features/<id>/`、`apps/client/src/features/<id>/`、`apps/server/src/core/<id>/`；每个声明的 domain：`apps/shared/src/protocol/lobbyRpc/domains/<d>.ts`、`apps/server/src/websocket/<d>/`、`apps/server/test/lobbyRpcVectors/<d>.ts`；feature.json 的 viewDirs/logicDir 必须 ⊆ `apps/client/src/features/<id>/**` 或 `apps/client/src/{view,logic}/**/<id>` |
+| 共有 | `apps/plugins/<id>/`（plugin.json / feature.json / README.md / gameplay 单源，§5.5）、`apps/server/test/<id>-*.test.ts`、`apps/server/test/int/<id>-*.test.ts`、`apps/client/test/<id>-*.test.ts`（前缀后**必须**紧跟 `-` 或 `.`，⛔ 不是裸 startsWith：`tally` 不拥有 `tallyBoard-*`、`red` 不拥有 `redis-*`；2026-09-05 收紧，PLUGIN-REGISTRY §1-4） |
+| gameplay | `apps/shared/src/gameplays/<id>/`、`apps/server/src/rooms/modes/<id>/`、`apps/client/src/gameplay/modes/<id>/`、`apps/client/src/logic/rooms/<id>/`、`apps/client/src/view/rooms/<id>/`、`apps/client/src/net/rooms/<Constant>Room.ts`、`apps/server/test/wire-vectors/<id>.ts`、`apps/Cocos/assets/resources/<id>/` |
+| feature | `apps/client/src/features/<id>/`、`apps/server/src/core/<id>/`；每个声明的 domain：`apps/shared/src/protocol/lobbyRpc/domains/<d>.ts`、`apps/server/src/websocket/<d>/`、`apps/server/test/lobbyRpcVectors/<d>.ts`；feature.json 的 viewDirs/logicDir 必须 ⊆ `apps/client/src/features/<id>/**` 或 `apps/client/src/{view,logic}/**/<id>` |
 | fguiPackages | `apps/art/fairygui/assets/<Pkg>/`、`apps/Cocos/assets/resources/ui/<Pkg>.bin`、`<Pkg>_atlas*` |
 | 镜像 / `.meta` | 由真源推导：`apps/client/src/X` 可写 ⇒ `apps/Cocos/assets/src/X` 与 `X.meta` 可写；插件专属目录的目录 `.meta` 可写，共享祖先目录（如 `view/rooms.meta`）⛔ 不随包 |
 
@@ -177,7 +177,7 @@ files.lock       清单：每行 <仓库相对路径> <sha256>（与 protected-p
   覆盖面 = 域 descriptor 文件自身字节，与 gameplay 只算 wire.ts 同口径——跨文件复用的 validator/类型变化由
   protocol-fingerprint 点名但不强制 bump）；
 - ⛔ 不放路径映射（仓库布局不能成为第二真源），⛔ 不放 slot/order（位置归宿主，§6）；
-- `plugin.json` 同时以 `plugins/<id>/plugin.json` 落在仓库（作者侧手写、`pack` 的输入、`install` 原样落回），
+- `plugin.json` 同时以 `apps/plugins/<id>/plugin.json` 落在仓库（作者侧手写、`pack` 的输入、`install` 原样落回），
   包的自证由 `files.lock` 承担：清单外条目、哈希不符一律拒绝。
 
 ### 5.4 命令与动线
@@ -228,10 +228,10 @@ npm --workspace @game/server run plugin -- check
    的 uuid 稳定（Creator 只会重写键序/版本，uuid 不变）。
 
 **同仓迭代 `install --reinstall-from-tree <id>`**（plan-v5 E6 方案 ②，2026-09-05；两道新闸见段末）：已安装锁把插件自有文件锁死后，
-宿主仓内直接改其中任何一个文件（哪怕 `docs/<id>/README.md` 一行）都会让 `check`/`plugin-lock.test.ts` 红，而普通
+宿主仓内直接改其中任何一个文件（哪怕 `apps/plugins/<id>/README.md` 一行）都会让 `check`/`plugin-lock.test.ts` 红，而普通
 `install` 对「树≠锁」直接拒绝——同仓「作者=宿主」需要一条合法路径。本形态以**工作树为真相**重写已安装锁：
 等价于「`pack` 当前树 → `install` 该包」，采集与自检走 pack 同一条路（缺 `.meta` / 越权 / 镜像不一致即拒绝），
-锁被篡改即拒绝，目录级所有权冲突拒绝；**版本规则原样保留**——树上内容与锁不同但 `plugins/<id>/plugin.json`
+锁被篡改即拒绝，目录级所有权冲突拒绝；**版本规则原样保留**——树上内容与锁不同但 `apps/plugins/<id>/plugin.json`
 的 version 未 bump ⇒ 拒绝并点名改动面（新增/变化/删除），降级须 `--allow-downgrade`。它 ⛔ 不写任何插件文件
 （文件本来就在树上），只重写 `scripts/plugins/<id>.lock`，然后照常 `git add` + postinstall。动线：
 改文件 → bump version → `install --reinstall-from-tree <id>` → `check` ✔ → 提交；之后从同一棵树 `pack` 出的包
@@ -269,12 +269,43 @@ View 改名的删除面从旧锁 sidecar 推出，吸收了共享命名空间（
 提示「本次未跑 codegen：跑完后若 protocol/ 生成物变化 …」。钉：`plugin-tool.test.ts` 的 `nextStepsFor` 用例。
 
 **`uninstall`**：先让锁的每条路径重过 §5.2 闸并要求受影响路径的工作树干净（未提交的锁改动尤其可疑），
-再按锁清单删除（⛔ 不按目录猜）、删 `plugins/<id>/` 与锁，然后用显式 `--allow-delete`
+再按锁清单删除（⛔ 不按目录猜）、删 `apps/plugins/<id>/` 与锁，然后用显式 `--allow-delete`
 （gameplay id / feature id / 各 domain / feature.json 登记的 View 名）驱动两个 codegen 收缩生成物，
 `SYNC_FORCE=1` 放行 sync 熔断（成批删除是有意的）。本地改动过的文件默认拒绝删除（`--force` 放行）。
 
 **`check`**（只读；`plugin-lock.test.ts` 随 `verify:all` 跑同一逻辑）：每把锁的清单文件都在且哈希一致、
-`plugins/<id>/plugin.json` 与锁一致、锁内路径仍在推导集内。没有插件 = 空通过。
+`apps/plugins/<id>/plugin.json` 与锁一致、锁内路径仍在推导集内。没有插件 = 空通过。
+
+### 5.5 目录形态：一个插件一个目录（阶段 1，2026-09-05）
+
+插件的**登记面**全部收进 `apps/plugins/<id>/`：
+
+```text
+apps/plugins/<id>/
+  plugin.json                   身份（§5.3）
+  feature.json                  kinds 含 feature 时的登记面（原 features/<id>/feature.json）
+  README.md                     插件自述（原 docs/<id>/README.md；feature.json 的 docs 指向它）
+  gameplay/manifest.json        kinds 含 gameplay 时的玩法单源（原 apps/shared/schema/gameplays/<id>/）
+  gameplay/state.json
+```
+
+两个 codegen 各有两个发现根：`codegen:features` 读 `features/<dir>/feature.json`（宿主自有 feature）∪
+`apps/plugins/<id>/feature.json`（插件，目录名 = id），`codegen:gameplays` 读 `apps/shared/schema/gameplays/<id>/` ∪
+`apps/plugins/<id>/gameplay/`；id 在两根之间仍全仓唯一（含大小写归一）。`features/` 目录从此只有宿主自己的 feature、
+`host.json` 与 schema；`docs/<id>/` 不再给插件用。`apps/` 之所以是插件的家：npm workspaces 是显式列举而非 `apps/*`
+通配、Creator 只看 `apps/Cocos/assets`、仓内没有 `apps/*` 形态的通配规则，而且到阶段 3 时 `apps/plugins/<id>/{shared,server,client}`
+正好与 `apps/shared`、`apps/server`、`apps/client` 并排。
+
+**为什么不是软链接**：三个 sync 脚本都用 `Dirent.isDirectory()` 遍历（符号链接目录被跳过）、`pack` 拒绝符号链接、Creator
+资源库不认链接目录、git 符号链接在 Windows 上要特权、TypeScript 按真实路径判 `rootDir`。本仓对「同一份代码出现在两处」
+的既定答案是复制 + 新鲜度闸（`sync:shared` / `sync:client`），插件的后续阶段沿用同一模式：
+
+- 阶段 2：gameplay 插件的客户端四件（gameplay/logic/view/net）允许全部放在 `apps/client/src/features/<id>/`，生成的
+  catalog 与 `<Constant>Room` 引用指向那里（源 + Cocos 镜像两处，与全仓一致）；
+- 阶段 3（plugin-api 门面落地后，PLUGIN-REGISTRY §4.3）：`apps/plugins/<id>/{shared,server,test}` + `sync:plugins` 物化
+  到框架固定位置（物化副本登记为 writer 产物，手改即红），锁只登记 `apps/plugins/<id>/**`。前提是插件代码只 import
+  `@game/plugin-api/*` 这类稳定说明符——相对导入在原地与物化后无法同时成立；客户端受 Cocos 编译链只认相对导入的限制，
+  源码收到 `apps/client/src/features/<id>/` 为止。
 
 ## 6. 入口与位置：插件声明身份，宿主决定去处
 
@@ -400,7 +431,7 @@ View 改名的删除面从旧锁 sidecar 推出，吸收了共享命名空间（
    整数——按 Non-intrusive §4.8 两类实体共用协议整数、⛔ 不各自新增版本闸，域契约变化要不要反映到
    `LOBBY_PROTOCOL_VERSION` 是人工决策（`plugin -- install` 在域变化时会提示）。
 6. **第一个真实插件的端到端实证**（plan-v5 E5）：✅ 已完成（2026-09-05）——「兑换码」插件
-   `plugins/redeem`（kinds `feature`、domains `redeem`；文件清单与取舍见 [docs/redeem/README.md](redeem/README.md)）
+   `apps/plugins/redeem`（kinds `feature`、domains `redeem`；文件清单与取舍见 [apps/plugins/redeem/README.md](../apps/plugins/redeem/README.md)）
    在作者侧 `plugin -- pack` 成 29 文件的包，再从**干净树**以 `plugin -- install` 进仓：postinstall 链
    （codegen:features → sync:shared）重生全部生成物，人工步骤只剩 `protocol-fingerprint --write`
    （新增域为纯追加，未 bump `LOBBY_PROTOCOL_VERSION`）与共享祖先 `apps/Cocos/assets/src/features.meta`；
@@ -409,13 +440,13 @@ View 改名的删除面从旧锁 sidecar 推出，吸收了共享命名空间（
    AppRuntime 透传）、logic/sidecar 可落 `apps/client/src/features/<id>/`、feature View 只豁免 cc/fairygui
    值导入、错误码顺序测试不再硬编码域清单——即「新插件不得需要改中央源码/中央测试」的判据真的成立了。
    Creator 侧确认已于当天下午闭合（见 plan-v5 E5 行与 docs/evidence/creator-2026-09-05）。
-   **gameplay 形态**同日由第二个真实插件「点数赛」`plugins/tally` 走通同一条动线（`fb903db`，
-   [docs/tally/README.md](tally/README.md)）：它逼出了两处此前 feature 形态没碰到的中央清单——
+   **gameplay 形态**同日由第二个真实插件「点数赛」`apps/plugins/tally` 走通同一条动线（`fb903db`，
+   [apps/plugins/tally/README.md](../apps/plugins/tally/README.md)）：它逼出了两处此前 feature 形态没碰到的中央清单——
    `apps/server/test/wire-vectors/index.ts` 的手写 import 表（改为 `codegen:gameplays` 生成 `index.generated.ts`，
    sidecar `wire-vectors/<id>.ts` 进 gameplay 所有权）与 `gameplay-codegen.test.ts` 的硬编码玩法集（改为按 schema
    目录发现）。至此 §3 的判据在两种 kind 上都有真实包背书。
 7. **同仓「作者=宿主」的插件迭代动线**（plan-v5 E6）：✅ 已按方案 ② 实施（2026-09-05）——
-   `install --reinstall-from-tree <id>`（§5.4）。E5 实证当天撞上的现场（改 `docs/redeem/README.md` 一行即锁红、
+   `install --reinstall-from-tree <id>`（§5.4）。E5 实证当天撞上的现场（改插件 README 一行即锁红、
    只能回退）已用它重放闭合：bump 1.0.0 → 1.0.1 后以树重写锁。仍开放的同类尾巴：随包 `.meta` 在锁内，Creator
    重排键序即锁红（plan-v5 B 节清单 1-② 待实测后决定 `.meta` 是否按语义比对）。
 

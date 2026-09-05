@@ -6,7 +6,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { INSTALLED_LOCK_DIR, installedLockPath, readInstalledLock, verifyLockAgainstTree } from "./lock";
-import { assertInstalledLockOwned, featureDeclarations } from "./package";
+import { assertInstalledLockOwned, featureDeclarations, featureManifestPath } from "./package";
+import { pluginDir } from "./ownership";
 import { gitAddExisting, gitStatusDirty, runCommand } from "./install";
 
 export interface UninstallOptions {
@@ -52,7 +53,7 @@ export function uninstallPlugin(options: UninstallOptions): UninstallReport {
   assertInstalledLockOwned(root, lock, "卸载");
   const useGit = options.git !== false;
   if (useGit && !options.dryRun) {
-    const dirty = gitStatusDirty(root, [...lock.entries.map((entry) => entry.path), `plugins/${id}`, `${INSTALLED_LOCK_DIR}/${id}.lock`]);
+    const dirty = gitStatusDirty(root, [...lock.entries.map((entry) => entry.path), pluginDir(id), `${INSTALLED_LOCK_DIR}/${id}.lock`]);
     if (dirty.length > 0) fail(`拒绝卸载：受影响路径的工作树不干净（先提交或清理；未提交的锁改动尤其可疑）：\n  ${dirty.join("\n  ")}`);
   }
   const verification = verifyLockAgainstTree(root, lock.entries);
@@ -63,9 +64,9 @@ export function uninstallPlugin(options: UninstallOptions): UninstallReport {
   const allowFeatures: string[] = [];
   if (lock.manifest.kinds.includes("feature")) {
     allowFeatures.push(id, ...lock.manifest.domains);
-    const featureFile = path.join(root, `features/${id}/feature.json`);
+    const featureFile = path.join(root, featureManifestPath(id));
     if (fs.existsSync(featureFile)) {
-      allowFeatures.push(...featureDeclarations(new Map([[`features/${id}/feature.json`, fs.readFileSync(featureFile)]]), id).viewNames);
+      allowFeatures.push(...featureDeclarations(new Map([[featureManifestPath(id), fs.readFileSync(featureFile)]]), id).viewNames);
     }
   }
   const report: UninstallReport = {
@@ -79,10 +80,10 @@ export function uninstallPlugin(options: UninstallOptions): UninstallReport {
   if (options.dryRun) return report;
 
   for (const entry of lock.entries) removeFileAndEmptyDirs(root, entry.path);
-  removeFileAndEmptyDirs(root, `plugins/${id}/plugin.json`);
+  removeFileAndEmptyDirs(root, `${pluginDir(id)}/plugin.json`);
   fs.rmSync(installedLockPath(root, id));
 
-  if (useGit) gitAddExisting(root, [...lock.entries.map((entry) => entry.path), `plugins/${id}/plugin.json`, `${INSTALLED_LOCK_DIR}/${id}.lock`]);
+  if (useGit) gitAddExisting(root, [...lock.entries.map((entry) => entry.path), `${pluginDir(id)}/plugin.json`, `${INSTALLED_LOCK_DIR}/${id}.lock`]);
   if (options.postinstall !== false) {
     if (lock.manifest.kinds.includes("gameplay")) {
       runCommand(root, "npm", ["--workspace", "@game/server", "run", "codegen:gameplays", "--", "--allow-delete", id]);

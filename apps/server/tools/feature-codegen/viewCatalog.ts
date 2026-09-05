@@ -2,7 +2,8 @@
  * View/FGUI catalog 读取与渲染（Non-intrusive §7.1/§7.4/§7.5 阶段 6）。
  *
  * 输入（唯一真源）：
- *  - `features/<dir>/feature.json`（经 features/feature-schema-v1.json 真实 JSON Schema 校验）；
+ *  - `features/<dir>/feature.json`（宿主自有 feature）∪ `apps/plugins/<id>/feature.json`（插件；PLUGIN.md §5.5
+ *    阶段 1：插件的登记面收进自己的目录），都经 features/feature-schema-v1.json 真实 JSON Schema 校验；
  *  - 每个 View 同目录的 `<Name>View.view.json` sidecar（手写 metadata，逐字进产物）；
  *  - `apps/art/fairygui/assets` 的 FGUI XML（复用 tools/fgui-codegen 的 parseFgui/binding
  *    计算 direct required；⛔ 不执行任何客户端 TS）。
@@ -39,6 +40,50 @@ import {
 } from "./featureManifestSchema";
 
 const FEATURES_DIR_RELATIVE = "features";
+/** 插件根（PLUGIN.md §5.5）：`apps/plugins/<id>/feature.json` 与 `features/<dir>/feature.json` 同等发现，id 全仓唯一。 */
+export const PLUGINS_DIR_RELATIVE = "apps/plugins";
+const PLUGIN_DIR_NAME = /^[a-z][A-Za-z0-9]{0,63}$/u;
+
+interface FeatureSource {
+  readonly label: string;
+  readonly dirLabel: string;
+  readonly file: string;
+  readonly dirName: string;
+  readonly plugin: boolean;
+}
+
+/** 两个发现根：宿主 features/<dir>（目录名 kebab-case）与插件 apps/plugins/<id>（目录名 = 插件 id，有 feature.json 才算）。 */
+function discoverFeatureSources(root: string): readonly FeatureSource[] {
+  const featuresDir = path.join(root, FEATURES_DIR_RELATIVE);
+  if (!fs.existsSync(featuresDir)) fail(FEATURES_DIR_RELATIVE, "features directory is missing");
+  const sources: FeatureSource[] = fs.readdirSync(featuresDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort()
+    .map((dirName) => ({
+      label: `${FEATURES_DIR_RELATIVE}/${dirName}/feature.json`,
+      dirLabel: `${FEATURES_DIR_RELATIVE}/${dirName}`,
+      file: path.join(featuresDir, dirName, "feature.json"),
+      dirName,
+      plugin: false,
+    }));
+  const pluginsDir = path.join(root, PLUGINS_DIR_RELATIVE);
+  if (fs.existsSync(pluginsDir)) {
+    for (const entry of fs.readdirSync(pluginsDir, { withFileTypes: true }).sort((left, right) => (left.name < right.name ? -1 : 1))) {
+      if (!entry.isDirectory()) continue;
+      const file = path.join(pluginsDir, entry.name, "feature.json");
+      if (!fs.existsSync(file)) continue;
+      sources.push({
+        label: `${PLUGINS_DIR_RELATIVE}/${entry.name}/feature.json`,
+        dirLabel: `${PLUGINS_DIR_RELATIVE}/${entry.name}`,
+        file,
+        dirName: entry.name,
+        plugin: true,
+      });
+    }
+  }
+  return sources;
+}
 const ART_DIR_RELATIVE = "apps/art/fairygui/assets";
 const CLIENT_SRC_RELATIVE = "apps/client/src";
 const GENERATED_DIR_RELATIVE = "apps/client/src/generated";
@@ -405,15 +450,26 @@ function readGameplayIdSets(root: string): GameplayIdSets {
   if (!fs.existsSync(schemaDir)) fail("apps/shared/schema/gameplays", "gameplay schema directory is missing（feature 入口校验需要玩法 manifest）");
   const canonical = new Set<string>();
   const fixture = new Set<string>();
+  // 与 gameplay-codegen 同一对发现根：schema 目录 ∪ apps/plugins/<id>/gameplay/（PLUGIN.md §5.5 阶段 1）。
+  const manifests: { readonly file: string; readonly label: string }[] = [];
   for (const entry of fs.readdirSync(schemaDir, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
-    const manifestFile = path.join(schemaDir, entry.name, "manifest.json");
-    if (!fs.existsSync(manifestFile)) continue;
+    manifests.push({ file: path.join(schemaDir, entry.name, "manifest.json"), label: `apps/shared/schema/gameplays/${entry.name}/manifest.json` });
+  }
+  const pluginsDir = path.join(root, PLUGINS_DIR_RELATIVE);
+  if (fs.existsSync(pluginsDir)) {
+    for (const entry of fs.readdirSync(pluginsDir, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      manifests.push({ file: path.join(pluginsDir, entry.name, "gameplay", "manifest.json"), label: `${PLUGINS_DIR_RELATIVE}/${entry.name}/gameplay/manifest.json` });
+    }
+  }
+  for (const { file, label } of manifests) {
+    if (!fs.existsSync(file)) continue;
     let parsed: { readonly id?: unknown; readonly wireExposed?: unknown };
     try {
-      parsed = JSON.parse(fs.readFileSync(manifestFile, "utf8")) as { readonly id?: unknown; readonly wireExposed?: unknown };
+      parsed = JSON.parse(fs.readFileSync(file, "utf8")) as { readonly id?: unknown; readonly wireExposed?: unknown };
     } catch (error) {
-      fail(`apps/shared/schema/gameplays/${entry.name}/manifest.json`, `cannot read valid JSON: ${error instanceof Error ? error.message : String(error)}`);
+      fail(label, `cannot read valid JSON: ${error instanceof Error ? error.message : String(error)}`);
     }
     if (typeof parsed.id !== "string") continue;
     (parsed.wireExposed === false ? fixture : canonical).add(parsed.id);
@@ -426,7 +482,7 @@ function assertLaunchableGameplay(label: string, gameplayId: string, sets: Gamep
   if (sets.fixture.has(gameplayId)) {
     fail(label, `${context} 引用 fixture 玩法 "${gameplayId}"（manifest wireExposed:false，不装配客户端 module / 服务端 mode，⛔ 不得作为入口）`);
   }
-  fail(label, `${context} 引用未登记的玩法 "${gameplayId}"（apps/shared/schema/gameplays/ 下没有该 manifest）`);
+  fail(label, `${context} 引用未登记的玩法 "${gameplayId}"（apps/shared/schema/gameplays/ 与 apps/plugins/<id>/gameplay/ 下都没有该 manifest）`);
 }
 
 /** 顶层 `export function <name>` / `export const <name>` 是否存在（语法级，⛔ 不执行客户端 TS）。 */
@@ -466,34 +522,35 @@ function detectDependencyCycle(features: readonly FeatureManifest[]): void {
 /** 发现并校验全部 feature manifest 与 view sidecar；返回稳定排序的 catalog。 */
 export function readViewCatalog(repositoryRoot: string): ViewCatalog {
   const root = path.resolve(repositoryRoot);
-  const featuresDir = path.join(root, FEATURES_DIR_RELATIVE);
-  if (!fs.existsSync(featuresDir)) fail(FEATURES_DIR_RELATIVE, "features directory is missing");
-
-  const featureDirs = fs.readdirSync(featuresDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name)
-    .sort();
   const features: FeatureManifest[] = [];
   const seenFeatureIds = new Map<string, string>();
-  for (const dirName of featureDirs) {
-    const label = `${FEATURES_DIR_RELATIVE}/${dirName}/feature.json`;
-    if (!FEATURE_DIR_NAME.test(dirName)) fail(label, `feature 目录名 "${dirName}" 必须是小写短横线标识符`);
-    const manifestFile = path.join(featuresDir, dirName, "feature.json");
-    assertRegularFile(manifestFile, label);
+  /** feature id → 其登记目录标签（features/<dir> 或 apps/plugins/<id>），错误信息据此点名真源。 */
+  const dirLabelById = new Map<string, string>();
+  for (const source of discoverFeatureSources(root)) {
+    const { label, dirName } = source;
+    if (source.plugin) {
+      if (!PLUGIN_DIR_NAME.test(dirName)) fail(label, `插件目录名 "${dirName}" 必须是合法插件 id`);
+    } else if (!FEATURE_DIR_NAME.test(dirName)) {
+      fail(label, `feature 目录名 "${dirName}" 必须是小写短横线标识符`);
+    }
+    assertRegularFile(source.file, label);
     let parsed: unknown;
     try {
-      parsed = JSON.parse(fs.readFileSync(manifestFile, "utf8"));
+      parsed = JSON.parse(fs.readFileSync(source.file, "utf8"));
     } catch (error) {
       fail(label, `cannot read valid JSON: ${error instanceof Error ? error.message : String(error)}`);
     }
     const manifest = parseFeatureManifest(root, parsed, label);
-    if (dirName.replace(/-/g, "") !== manifest.id.toLowerCase()) {
+    if (source.plugin) {
+      if (manifest.id !== dirName) fail(label, `插件 feature id ("${manifest.id}") 必须等于插件目录名 ("${dirName}")`);
+    } else if (dirName.replace(/-/g, "") !== manifest.id.toLowerCase()) {
       fail(label, `feature id ("${manifest.id}") 必须与目录名 ("${dirName}"，忽略短横线）一致`);
     }
     const normalized = manifest.id.toLowerCase();
     const clash = seenFeatureIds.get(normalized);
-    if (clash) fail(label, `feature id 与 "${clash}" 大小写归一化后冲突`);
+    if (clash) fail(label, `feature id 与 "${clash}" 大小写归一化后冲突（${dirLabelById.get(clash) ?? "?"} ⟷ ${source.dirLabel}）`);
     seenFeatureIds.set(normalized, manifest.id);
+    dirLabelById.set(manifest.id, source.dirLabel);
     features.push(manifest);
   }
   features.sort((left, right) => (left.id < right.id ? -1 : 1));
@@ -508,7 +565,7 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
   const nameOwners = new Map<string, string>();
   const sidecarOwners = new Map<string, string>();
   for (const feature of features) {
-    const featureLabel = `${FEATURES_DIR_RELATIVE}/${feature.id}`;
+    const featureLabel = dirLabelById.get(feature.id) ?? `${FEATURES_DIR_RELATIVE}/${feature.id}`;
     const ownerDirs = new Map<string, string>();
     for (const owner of feature.owners) {
       if (ownerDirs.has(owner.id)) fail(featureLabel, `owners 重复声明 "${owner.id}"`);
@@ -683,7 +740,7 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
   const gameplayIds = readGameplayIdSets(root);
   // route 先全部登记（launch.kind:"route" 可以引用他 feature 的 route），再校验 menu。
   for (const feature of features) {
-    const label = `${FEATURES_DIR_RELATIVE}/${feature.id}/feature.json`;
+    const label = `${dirLabelById.get(feature.id) ?? `${FEATURES_DIR_RELATIVE}/${feature.id}`}/feature.json`;
     for (const route of feature.routes) {
       const clash = routeIds.get(route.id);
       if (clash) fail(label, `route id "${route.id}" 与 feature "${clash}" 重复`);
@@ -700,7 +757,7 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
     }
   }
   for (const feature of features) {
-    const label = `${FEATURES_DIR_RELATIVE}/${feature.id}/feature.json`;
+    const label = `${dirLabelById.get(feature.id) ?? `${FEATURES_DIR_RELATIVE}/${feature.id}`}/feature.json`;
     for (const item of feature.menu) {
       // entryId 全仓唯一（PLUGIN-REVIEW F24）：宿主 placement 与设置面板都按裸 entryId 引用/查找。
       const clash = menuEntryIds.get(item.entryId);
@@ -744,7 +801,7 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
 
 function generatedClientHeader(): string {
   return "/** AUTO-GENERATED by apps/server/tools/feature-codegen/cli.ts from"
-    + " features/<dir>/feature.json + <Name>View.view.json sidecars + apps/art/fairygui/assets. Do not edit. */";
+    + " features/<dir>/feature.json + apps/plugins/<id>/feature.json + <Name>View.view.json sidecars + apps/art/fairygui/assets. Do not edit. */";
 }
 
 function contractConstName(viewName: string): string {
@@ -1013,11 +1070,11 @@ function indexDocLink(doc: string): string {
 
 export function renderFeatureIndex(catalog: ViewCatalog): string {
   const lines: string[] = [];
-  lines.push("<!-- AUTO-GENERATED by apps/server/tools/feature-codegen/cli.ts from features/<dir>/feature.json. Do not edit. -->");
+  lines.push("<!-- AUTO-GENERATED by apps/server/tools/feature-codegen/cli.ts from features/<dir>/feature.json + apps/plugins/<id>/feature.json. Do not edit. -->");
   lines.push("");
   lines.push("# 能力索引（features 生成）");
   lines.push("");
-  lines.push("由 `npm --workspace @game/server run codegen:features` 从 `features/<dir>/feature.json` 生成。");
+  lines.push("由 `npm --workspace @game/server run codegen:features` 从 `features/<dir>/feature.json`（宿主）与 `apps/plugins/<id>/feature.json`（插件）生成。");
   lines.push("状态字段只描述可机检的**结构状态**（词汇表仅 `planned` / `registered` / `source-present` 三值），");
   lines.push("不代表测试实跑或人工验收结论；实跑证据、开放问题与完成判断由人工维护在");
   lines.push("`docs/inventory.json` 的 `routeOfTruth.corePlan` 指向的当前计划文件里（本生成器⛔ 不写任何 plan-*.md）。");

@@ -8,10 +8,10 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { classifyPath, deriveOwnership, hardExclusionReason, matchesPrefixRule, mirrorPathOf, readProtectedPaths, type OwnershipRule } from "./ownership";
+import { classifyPath, deriveOwnership, hardExclusionReason, matchesPrefixRule, mirrorPathOf, pluginDir, readProtectedPaths, type OwnershipRule } from "./ownership";
 import { identityOf, parsePluginManifest, type PluginManifest } from "./manifest";
 import { PACKAGE_FILES_LOCK, PACKAGE_MANIFEST, foreignLockOwners, renderFilesLock, sha256, type LockEntry } from "./lock";
-import { featureDeclarations, validatePackage, type PluginPackage } from "./package";
+import { featureDeclarations, featureManifestPath, validatePackage, type PluginPackage } from "./package";
 import { writeZip } from "./zip";
 
 export interface PackOptions {
@@ -53,13 +53,14 @@ function listFiles(root: string, relativeDir: string): string[] {
   return out;
 }
 
-/** 读取作者侧 plugins/<id>/plugin.json。 */
+/** 读取作者侧 apps/plugins/<id>/plugin.json。 */
 export function readAuthoredManifest(root: string, id: string): { readonly manifest: PluginManifest; readonly bytes: Buffer } {
-  const file = path.join(root, "plugins", id, PACKAGE_MANIFEST);
-  if (!fs.existsSync(file)) fail(`找不到 plugins/${id}/${PACKAGE_MANIFEST}（作者侧插件自述）`);
+  const relative = `${pluginDir(id)}/${PACKAGE_MANIFEST}`;
+  const file = path.join(root, relative);
+  if (!fs.existsSync(file)) fail(`找不到 ${relative}（作者侧插件自述）`);
   const bytes = fs.readFileSync(file);
-  const manifest = parsePluginManifest(JSON.parse(bytes.toString("utf8")), `plugins/${id}/${PACKAGE_MANIFEST}`);
-  if (manifest.id !== id) fail(`plugins/${id}/${PACKAGE_MANIFEST} 的 id（${manifest.id}）与目录名不一致`);
+  const manifest = parsePluginManifest(JSON.parse(bytes.toString("utf8")), relative);
+  if (manifest.id !== id) fail(`${relative} 的 id（${manifest.id}）与目录名不一致`);
   return { manifest, bytes };
 }
 
@@ -71,7 +72,7 @@ export function collectPluginFiles(root: string, manifest: PluginManifest): {
 } {
   let clientDirs: readonly string[] = [];
   if (manifest.kinds.includes("feature")) {
-    const featureFile = `features/${manifest.id}/feature.json`;
+    const featureFile = featureManifestPath(manifest.id);
     const full = path.join(root, featureFile);
     if (!fs.existsSync(full)) fail(`工作树缺少 ${featureFile}`);
     clientDirs = featureDeclarations(new Map([[featureFile, fs.readFileSync(full)]]), manifest.id).clientDirs;
@@ -151,7 +152,7 @@ export function packPlugin(options: PackOptions): PackResult {
   const collected = collectPluginFiles(root, manifest);
   const { skipped } = collected;
   const files = new Map<string, Buffer>(collected.files);
-  files.set(`plugins/${id}/${PACKAGE_MANIFEST}`, manifestBytes);
+  files.set(`${pluginDir(id)}/${PACKAGE_MANIFEST}`, manifestBytes);
   const entries: LockEntry[] = [...files.entries()]
     .map(([relative, data]) => ({ path: relative, sha256: sha256(data) }))
     .sort((left, right) => (left.path < right.path ? -1 : 1));

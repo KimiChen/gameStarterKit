@@ -50,7 +50,7 @@ export interface PathVerdict {
 }
 
 const ID = /^[a-z][A-Za-z0-9]{0,63}$/u;
-/** 保留 id：与注册表/工具自身的落点同名会让 `plugins/<id>/` 与配置文件混淆（PLUGIN-REGISTRY §2.2）。 */
+/** 保留 id：与注册表/工具自身的落点同名会让 `apps/plugins/<id>/` 与配置文件混淆（PLUGIN-REGISTRY §2.2）。 */
 export const RESERVED_IDS: readonly string[] = ["registry"];
 /** prefix 规则（缺省边界）允许的续接字符：`<id>-x.test.ts` / `<id>.x.test.ts`。 */
 const PREFIX_SEPARATORS: readonly string[] = ["-", "."];
@@ -62,6 +62,14 @@ const CONTROL_CHARS = /[\u0000-\u001f\u007f]/u;
 const CLIENT_SRC = "apps/client/src";
 const COCOS_SRC = "apps/Cocos/assets/src";
 const RESOURCES = "apps/Cocos/assets/resources";
+/**
+ * 插件根（PLUGIN.md §5.5 阶段 1）：`apps/plugins/<id>/` 装插件自己的登记面——plugin.json、feature.json、README.md、
+ * gameplay/{manifest,state}.json；⛔ 不再散落到 features/、docs/、apps/shared/schema/gameplays/。
+ */
+export const PLUGINS_ROOT = "apps/plugins";
+export function pluginDir(id: string): string {
+  return `${PLUGINS_ROOT}/${id}`;
+}
 
 /** 永远不可由包写入的路径前缀（目录）。 */
 export const HARD_EXCLUDED_DIRS: readonly string[] = [
@@ -147,8 +155,7 @@ export function deriveOwnership(identity: PluginIdentity): readonly OwnershipRul
   assertPluginIdentity(identity);
   const { id } = identity;
   const rules: OwnershipRule[] = [
-    { kind: "dir", path: `plugins/${id}`, reason: "插件自述（plugin.json）" },
-    { kind: "dir", path: `docs/${id}`, reason: "插件自有文档" },
+    { kind: "dir", path: pluginDir(id), reason: "插件目录（plugin.json / feature.json / README.md / gameplay 单源）" },
     { kind: "prefix", path: "apps/server/test", prefix: id, reason: "插件自有服务端测试（<id>-*.test.ts / <id>.*.test.ts）" },
     { kind: "prefix", path: "apps/server/test/int", prefix: id, reason: "插件自有集成测试（<id>-*.test.ts / <id>.*.test.ts）" },
     { kind: "prefix", path: "apps/client/test", prefix: id, reason: "插件自有客户端测试（<id>-*.test.ts / <id>.*.test.ts）" },
@@ -156,7 +163,6 @@ export function deriveOwnership(identity: PluginIdentity): readonly OwnershipRul
   if (identity.kinds.includes("gameplay")) {
     const constant = identity.constantName as string;
     rules.push(
-      { kind: "dir", path: `apps/shared/schema/gameplays/${id}`, reason: "玩法单源（manifest.json + state.json）" },
       { kind: "dir", path: `apps/shared/src/gameplays/${id}`, reason: "玩法自有 shared 模块（wire.ts / ruleset.ts …）" },
       { kind: "dir", path: `apps/server/src/rooms/modes/${id}`, reason: "服务端 GameMode（index.ts 导出 register<Constant>GameMode）" },
       { kind: "dir", path: `${CLIENT_SRC}/gameplay/modes/${id}`, reason: "客户端 GameplayModule 装配件" },
@@ -169,7 +175,6 @@ export function deriveOwnership(identity: PluginIdentity): readonly OwnershipRul
   }
   if (identity.kinds.includes("feature")) {
     rules.push(
-      { kind: "dir", path: `features/${id}`, reason: "feature 登记（feature.json）" },
       { kind: "dir", path: `${CLIENT_SRC}/features/${id}`, reason: "feature 客户端源码（index/logic/net/view）" },
       { kind: "dir", path: `apps/server/src/core/${id}`, reason: "feature 服务端领域逻辑与自有键（keys.ts 经 kFeature* 工厂）" },
     );

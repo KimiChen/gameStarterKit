@@ -1,8 +1,8 @@
-# 点数赛插件（plugins/tally）
+# 点数赛插件（apps/plugins/tally）
 
-[docs/PLUGIN.md](../PLUGIN.md) §9.6 / [plan-v5.md](../../plan-v5.md) E5 的**第二个真实插件样本**：`kinds: ["gameplay","feature"]`，
+[docs/PLUGIN.md](../../../docs/PLUGIN.md) §9.6 / [plan-v5.md](../../../plan-v5.md) E5 的**第二个真实插件样本**：`kinds: ["gameplay","feature"]`，
 用来证明 gameplay 形态（manifest/state/wire + 三端模块 + `<Constant>Room.ts` + wire 向量 sidecar + 入口）也能
-「只加文件、不改中央源码」地 pack → 干净树 install → verify:all → Creator 预览。兑换码（`plugins/redeem`）只证明了
+「只加文件、不改中央源码」地 pack → 干净树 install → verify:all → Creator 预览。兑换码（`apps/plugins/redeem`）只证明了
 feature 形态。
 
 ## 规则
@@ -15,8 +15,8 @@ feature 形态。
 
 | 路径 | 角色 |
 | --- | --- |
-| `plugins/tally/plugin.json` | 插件身份：id `tally`、constantName `Tally`、kinds gameplay+feature |
-| `apps/shared/schema/gameplays/tally/{manifest,state}.json` | 玩法单源（modeVersion 1、maxPlayers 4、profiles default） |
+| `apps/plugins/tally/plugin.json` | 插件身份：id `tally`、constantName `Tally`、kinds gameplay+feature |
+| `apps/plugins/tally/gameplay/{manifest,state}.json` | 玩法单源（modeVersion 1、maxPlayers 4、profiles default） |
 | `apps/shared/src/gameplays/tally/wire.ts` | `c2s.tally.tap`（无参数、Playing 期、rateCost 1） |
 | `apps/server/src/rooms/modes/tally/index.ts` | GameMode：计数 / 结算 / 离开判胜 / rollback |
 | `apps/server/test/wire-vectors/tally.ts` | wire 向量 sidecar（`codegen:gameplays` 汇入 `index.generated.ts`） |
@@ -26,8 +26,8 @@ feature 形态。
 | `apps/client/src/net/rooms/TallyRoom.ts` | adapter + joiner（`joinGameRoom` 复用，⛔ 不改 GameRoomTransport） |
 | `apps/client/src/view/rooms/tally/TallyView.ts` + `.view.json` | Cocos 纯节点 presentation |
 | `apps/client/test/tally-gameplay.test.ts` | 客户端插件测试 |
-| `features/tally/feature.json` | 入口：menu `tally` → `launch.kind:"gameplay"` |
-| `docs/tally/README.md` | 本文 |
+| `apps/plugins/tally/feature.json` | 入口：menu `tally` → `launch.kind:"gameplay"` |
+| `apps/plugins/tally/README.md` | 本文 |
 
 生成物（wire-catalog / modeIds / catalog / GameRoomState 聚合 / per-mode state & schema / 客户端 catalog / 服务端
 modes catalog / wire-vectors 登记表 / features 三产物）⛔ 不在包内，由 install 的 postinstall 链重生。

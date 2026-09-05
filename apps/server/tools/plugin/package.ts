@@ -1,8 +1,8 @@
 /**
  * 插件包的读取与校验（zip 或已解开的目录两种来源，内容形态相同）：
  *  1. 包根必须有 plugin.json 与 files.lock；files.lock 逐条校验 sha256，清单外条目一律拒绝（包自证）；
- *  2. 身份交叉校验：kinds 含 feature ⇒ `features/<id>/feature.json` 且 id 一致、viewDirs/logicDir 在插件命名空间；
- *     kinds 含 gameplay ⇒ `apps/shared/schema/gameplays/<id>/{manifest,state}.json` 且 id/constantName 一致；
+ *  2. 身份交叉校验：kinds 含 feature ⇒ `apps/plugins/<id>/feature.json` 且 id 一致、viewDirs/logicDir 在插件命名空间；
+ *     kinds 含 gameplay ⇒ `apps/plugins/<id>/gameplay/{manifest,state}.json` 且 id/constantName 一致；
  *     每个 domain ⇒ descriptor + 向量 sidecar 同批在包内；每个 FGUI 包 ⇒ ART 源 + 发布物在包内；
  *  3. 每个路径过 ownership.classifyPath（硬排除 → 受保护路径 → allowlist），任一拒绝即整包拒绝并逐条点名；
  *  4. 镜像自洽：`apps/client/src/**` 的每个文件必须带字节相同的 `apps/Cocos/assets/src/**` 镜像及其 `.meta`，
@@ -16,6 +16,7 @@ import {
   deriveOwnership,
   mirrorPathOf,
   normalizePackagePath,
+  pluginDir,
   readProtectedPaths,
   type OwnershipRule,
   type PluginIdentity,
@@ -116,12 +117,20 @@ function readJson(files: ReadonlyMap<string, Buffer>, relative: string): unknown
   }
 }
 
+/** 插件登记面在插件目录内的路径（PLUGIN.md §5.5）。 */
+export function featureManifestPath(id: string): string {
+  return `${pluginDir(id)}/feature.json`;
+}
+export function gameplaySourceDir(id: string): string {
+  return `${pluginDir(id)}/gameplay`;
+}
+
 /** 从包内 feature.json 抽取客户端目录声明与 View 名（安装/卸载都要）。 */
 export function featureDeclarations(files: ReadonlyMap<string, Buffer>, id: string): {
   readonly clientDirs: readonly string[];
   readonly viewNames: readonly string[];
 } {
-  const relative = `features/${id}/feature.json`;
+  const relative = featureManifestPath(id);
   const feature = readJson(files, relative) as {
     readonly id?: unknown;
     readonly viewDirs?: unknown;
@@ -147,9 +156,10 @@ export function validatePackage(pkg: PluginPackage, root: string): ValidatedPack
   const { manifest, files } = pkg;
   assertManifestCompatible(manifest);
   // 仓内自述必须随包且与根 plugin.json 字节相同：否则安装后的树与锁登记的身份不一致（check 才红）。
-  const authored = files.get(`plugins/${manifest.id}/${PACKAGE_MANIFEST}`);
-  if (!authored) fail(`包内缺少 plugins/${manifest.id}/${PACKAGE_MANIFEST}（须与包根 plugin.json 同批分发）`);
-  if (!authored.equals(pkg.manifestBytes)) fail(`包内 plugins/${manifest.id}/${PACKAGE_MANIFEST} 与包根 plugin.json 字节不同`);
+  const authoredPath = `${pluginDir(manifest.id)}/${PACKAGE_MANIFEST}`;
+  const authored = files.get(authoredPath);
+  if (!authored) fail(`包内缺少 ${authoredPath}（须与包根 plugin.json 同批分发）`);
+  if (!authored.equals(pkg.manifestBytes)) fail(`包内 ${authoredPath} 与包根 plugin.json 字节不同`);
   let clientDirs: readonly string[] = [];
   let viewNames: readonly string[] = [];
   if (manifest.kinds.includes("feature")) {
@@ -157,13 +167,13 @@ export function validatePackage(pkg: PluginPackage, root: string): ValidatedPack
     clientDirs = declarations.clientDirs;
     viewNames = declarations.viewNames;
     // requires 不是自述：随包 feature.json 的 schemaVersion 必须与声明的兼容轴一致（否则索引会把 v2 形态的包登记为 v1「兼容」）。
-    const feature = readJson(files, `features/${manifest.id}/feature.json`) as { readonly schemaVersion?: unknown };
+    const feature = readJson(files, featureManifestPath(manifest.id)) as { readonly schemaVersion?: unknown };
     if (feature.schemaVersion !== manifest.requires.featureSchemaVersion) {
-      fail(`features/${manifest.id}/feature.json 的 schemaVersion（${String(feature.schemaVersion)}）与 plugin.json requires.featureSchemaVersion（${String(manifest.requires.featureSchemaVersion)}）不一致`);
+      fail(`${featureManifestPath(manifest.id)} 的 schemaVersion（${String(feature.schemaVersion)}）与 plugin.json requires.featureSchemaVersion（${String(manifest.requires.featureSchemaVersion)}）不一致`);
     }
   }
   if (manifest.kinds.includes("gameplay")) {
-    const relative = `apps/shared/schema/gameplays/${manifest.id}/manifest.json`;
+    const relative = `${gameplaySourceDir(manifest.id)}/manifest.json`;
     const gameplay = readJson(files, relative) as { readonly id?: unknown; readonly constantName?: unknown; readonly schemaVersion?: unknown };
     if (gameplay.id !== manifest.id) fail(`${relative} 的 id（${String(gameplay.id)}）必须等于插件 id`);
     if (gameplay.schemaVersion !== manifest.requires.gameplaySchemaVersion) {
@@ -172,7 +182,7 @@ export function validatePackage(pkg: PluginPackage, root: string): ValidatedPack
     if (gameplay.constantName !== manifest.constantName) {
       fail(`${relative} 的 constantName（${String(gameplay.constantName)}）必须等于 plugin.json 的 constantName（${String(manifest.constantName)}）`);
     }
-    if (!files.has(`apps/shared/schema/gameplays/${manifest.id}/state.json`)) fail(`包内缺少 apps/shared/schema/gameplays/${manifest.id}/state.json`);
+    if (!files.has(`${gameplaySourceDir(manifest.id)}/state.json`)) fail(`包内缺少 ${gameplaySourceDir(manifest.id)}/state.json`);
   }
   for (const domain of manifest.domains) {
     for (const required of [`apps/shared/src/protocol/lobbyRpc/domains/${domain}.ts`, `apps/server/test/lobbyRpcVectors/${domain}.ts`]) {
@@ -291,9 +301,9 @@ export function assertInstalledLockOwned(root: string, lock: InstalledLock, acti
   const { manifest } = lock;
   let clientDirs: readonly string[] = [];
   if (manifest.kinds.includes("feature")) {
-    const featureFile = path.join(root, `features/${manifest.id}/feature.json`);
+    const featureFile = path.join(root, featureManifestPath(manifest.id));
     if (fs.existsSync(featureFile)) {
-      clientDirs = featureDeclarations(new Map([[`features/${manifest.id}/feature.json`, fs.readFileSync(featureFile)]]), manifest.id).clientDirs;
+      clientDirs = featureDeclarations(new Map([[featureManifestPath(manifest.id), fs.readFileSync(featureFile)]]), manifest.id).clientDirs;
     }
   }
   const rules = deriveOwnership(identityOf(manifest, clientDirs));
