@@ -1,6 +1,7 @@
 # scripts/plugins/redeem.lock —— 已安装插件 redeem@1.0.4 的登记与文件清单锁。Do not edit by hand.
 # writer: npm --workspace @game/server run plugin -- install ；checker: apps/server/test/plugin-lock.test.ts（随 verify:all）与 plugin -- check
-# manifest {"id":"redeem","version":"1.0.4","kinds":["feature"],"constantName":null,"domains":["redeem"],"fguiPackages":[]}
+# manifest {"id":"redeem","version":"1.0.4","kinds":["feature"],"constantName":null,"domains":["redeem"],"fguiPackages":[],"requires":{"featureSchemaVersion":1,"gameplaySchemaVersion":null}}
+# source {"kind":"tree","filesLockSha256":"d5540b92b6647c62bd96eb4a5598a25a659fb9658c5449cc26f3c79789afeefe","forkedFrom":null}
 apps/Cocos/assets/src/features/redeem.meta 639172d3ae01bb4b2390beb1f10e5b847d28238a601c5521f4610d27ac66a6b4
 apps/Cocos/assets/src/features/redeem/index.ts 2c950c4e5695748d495f114fe6049049af56d8a0c338562f174b91518ef7b4b2
 apps/Cocos/assets/src/features/redeem/index.ts.meta 7d02df934e31940ab85a30f8f5482ef445342604bc3723753a40c75e2950da24

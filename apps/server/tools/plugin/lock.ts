@@ -108,6 +108,7 @@ export function renderInstalledLock(lock: InstalledLock): string {
     constantName: manifest.constantName,
     domains: manifest.domains,
     fguiPackages: manifest.fguiPackages,
+    requires: manifest.requires,
   });
   return [
     `# ${INSTALLED_LOCK_DIR}/${manifest.id}.lock —— 已安装插件 ${manifest.id}@${manifest.version} 的登记与文件清单锁。Do not edit by hand.`,
@@ -138,6 +139,7 @@ export function parseInstalledLock(text: string, label: string): InstalledLock {
     readonly constantName: string | null;
     readonly domains: readonly string[];
     readonly fguiPackages: readonly string[];
+    readonly requires?: { readonly featureSchemaVersion?: number | null; readonly gameplaySchemaVersion?: number | null };
   };
   const manifest: PluginManifest = {
     schemaVersion: 1,
@@ -147,7 +149,11 @@ export function parseInstalledLock(text: string, label: string): InstalledLock {
     constantName: summary.constantName ?? null,
     domains: summary.domains ?? [],
     fguiPackages: summary.fguiPackages ?? [],
-    requires: { featureSchemaVersion: null, gameplaySchemaVersion: null },
+    // 旧锁没有 requires ⇒ 两轴 null（check 点名为「未登记」，reinstall-from-tree 重写即补上）。
+    requires: {
+      featureSchemaVersion: typeof summary.requires?.featureSchemaVersion === "number" ? summary.requires.featureSchemaVersion : null,
+      gameplaySchemaVersion: typeof summary.requires?.gameplaySchemaVersion === "number" ? summary.requires.gameplaySchemaVersion : null,
+    },
     description: "",
   };
   return { manifest, entries: parseEntries(lines, label), source: parseLockSource(lines.find((line) => line.startsWith("# source ")), label) };

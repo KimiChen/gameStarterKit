@@ -6,7 +6,9 @@
  *  - `kinds` 允许同时含 gameplay 与 feature（一个玩法插件天然 = manifest/state/wire + feature.json，
  *    PLUGIN-REVIEW F14 的 kind 二分不成立）；
  *  - `requires.*SchemaVersion` 只钉两个 schemaVersion（feature-schema-v1 / gameplay-schema-v1）——
- *    协议整数范围不是插件的兼容轴（F22）；
+ *    协议整数范围不是插件的兼容轴（F22）；`requires` 必填且 fail-closed：kinds 含 feature ⇒ featureSchemaVersion 必填，
+ *    含 gameplay ⇒ gameplaySchemaVersion 必填；比对基准从两个 schema 文件的 `schemaVersion.const` 读取，⛔ 不是
+ *    手抄常量（PLUGIN-REGISTRY §1-9）；
  *  - ⛔ 不放路径映射（仓库布局不能成为第二真源），⛔ 不放 slot/order（位置归宿主，§6）。
  */
 import fs from "node:fs";
@@ -14,11 +16,23 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { PluginIdentity, PluginKind } from "./ownership";
 
-const SCHEMA_FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), "plugin-schema-v1.json");
+const TOOL_DIR = path.dirname(fileURLToPath(import.meta.url));
+const SCHEMA_FILE = path.join(TOOL_DIR, "plugin-schema-v1.json");
+/** 两个兼容轴的真源：feature.json 与 gameplay manifest.json 各自 schema 的 `properties.schemaVersion.const`。 */
+export const FEATURE_SCHEMA_FILE = path.resolve(TOOL_DIR, "../../../../features/feature-schema-v1.json");
+export const GAMEPLAY_SCHEMA_FILE = path.resolve(TOOL_DIR, "../gameplay-codegen/gameplay-schema-v1.json");
 
-/** 当前仓库支持的两个 manifest schemaVersion（plugin.json.requires 的比对基准）。 */
-export const CURRENT_FEATURE_SCHEMA_VERSION = 1;
-export const CURRENT_GAMEPLAY_SCHEMA_VERSION = 1;
+function readSchemaVersionConst(file: string): number {
+  if (!fs.existsSync(file)) throw new Error(`[plugin] 兼容轴真源缺失：${file}`);
+  const parsed = JSON.parse(fs.readFileSync(file, "utf8")) as { readonly properties?: { readonly schemaVersion?: { readonly const?: unknown } } };
+  const value = parsed.properties?.schemaVersion?.const;
+  if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 1) throw new Error(`[plugin] ${file} 的 properties.schemaVersion.const 不是正整数`);
+  return value;
+}
+
+/** 当前仓库支持的两个 manifest schemaVersion（plugin.json.requires 的比对基准；读自 schema 文件，⛔ 不手抄）。 */
+export const CURRENT_FEATURE_SCHEMA_VERSION: number = readSchemaVersionConst(FEATURE_SCHEMA_FILE);
+export const CURRENT_GAMEPLAY_SCHEMA_VERSION: number = readSchemaVersionConst(GAMEPLAY_SCHEMA_FILE);
 
 type JsonRecord = Record<string, unknown>;
 
@@ -123,6 +137,9 @@ export function parsePluginManifest(input: unknown, pathLabel = "plugin.json"): 
   const kinds = [...(value.kinds as PluginKind[])];
   if (kinds.length === 0) fail(pathLabel, "kinds 不能为空");
   const requires = isRecord(value.requires) ? value.requires : {};
+  // 兼容轴 fail-closed：相关 kind 的 schemaVersion 必须显式声明（缺省「视为当前版本」= 对任何宿主都通过，等于没有闸）。
+  if (kinds.includes("feature") && typeof requires.featureSchemaVersion !== "number") fail(pathLabel, "kinds 含 feature 时 requires.featureSchemaVersion 必填");
+  if (kinds.includes("gameplay") && typeof requires.gameplaySchemaVersion !== "number") fail(pathLabel, "kinds 含 gameplay 时 requires.gameplaySchemaVersion 必填");
   return {
     schemaVersion: 1,
     id: value.id as string,
@@ -139,9 +156,14 @@ export function parsePluginManifest(input: unknown, pathLabel = "plugin.json"): 
   };
 }
 
-/** requires 与当前仓库两个 schemaVersion 的兼容比对（缺省视为当前版本）。 */
+/**
+ * requires 与当前仓库两个 schemaVersion 的兼容比对。parsePluginManifest 已保证相关 kind 的轴非 null；
+ * null 只可能来自旧形态的已安装锁（未登记 requires），由 check 单独点名。
+ */
 export function assertManifestCompatible(manifest: PluginManifest, pathLabel = "plugin.json"): void {
   const { featureSchemaVersion, gameplaySchemaVersion } = manifest.requires;
+  if (manifest.kinds.includes("feature") && featureSchemaVersion === null) fail(pathLabel, "kinds 含 feature 但 requires.featureSchemaVersion 未登记");
+  if (manifest.kinds.includes("gameplay") && gameplaySchemaVersion === null) fail(pathLabel, "kinds 含 gameplay 但 requires.gameplaySchemaVersion 未登记");
   if (featureSchemaVersion !== null && featureSchemaVersion !== CURRENT_FEATURE_SCHEMA_VERSION) {
     fail(pathLabel, `requires.featureSchemaVersion=${featureSchemaVersion} 与本仓 feature-schema-v${CURRENT_FEATURE_SCHEMA_VERSION} 不兼容`);
   }
