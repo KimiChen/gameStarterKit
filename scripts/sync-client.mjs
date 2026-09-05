@@ -74,6 +74,14 @@ function assertSrcPresent() {
 /** 统一 POSIX 分隔符（git ls-files 与报错信息均以 / 记路径） */
 const posix = (rel) => rel.split(path.sep).join("/");
 
+/**
+ * 操作系统自动生成、与源码无关的垃圾文件：本脚本按**文件系统**遍历（⛔ 不读 .gitignore），
+ * 所以 `.gitignore` 里已忽略的 `.DS_Store` 照样会被判成「镜像漂移」把 verify:sync 弄红。
+ * ⚠ 触发条件极日常：用 Finder 点进 `apps/client/src` 或 `apps/Cocos/assets/src` 任一层即可复现。
+ * ⛔ 这里只跳过 OS 垃圾，不要顺手扩成通配忽略——真正的镜像漂移必须继续报红。
+ */
+const OS_JUNK = new Set([".DS_Store", "Thumbs.db", "desktop.ini"]);
+
 /** 递归收集目录下所有文件的相对路径 */
 function collectFiles(dir, base = dir) {
     const out = [];
@@ -81,7 +89,7 @@ function collectFiles(dir, base = dir) {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
         const full = path.join(dir, entry.name);
         if (entry.isDirectory()) out.push(...collectFiles(full, base));
-        else out.push(path.relative(base, full));
+        else if (!OS_JUNK.has(entry.name)) out.push(path.relative(base, full));
     }
     return out;
 }
