@@ -194,7 +194,7 @@ shared 继续保持零依赖，客户端 View/Logic 与 FairyGUI 动态加载边
 | S3-0 | `[已完成]` | `89b9b03`（漂移订正）+ 本次（拍板回写） | 建档基线 `verify:all` exit 0：client 423/423、server 541/541、FGUI 66/66、inventory 14 能力/5 入口（2026-09-05 实测于 `f262be1`；README §8 上面各行的 384/499 等计数是钉在各自 commit 的历史值，不代表 HEAD） | 不适用（纯文档订正与拍板登记） | A=服务端单方面权威、B=B2a+B0、C=① 离房重进（§9.1）；剩余待决项 §9.6 不阻塞 S3-1 |
 | S3 | `[已拍板·待实施]` | — | — | — | 内存先记；同一 HASH 镜像衣柜字段 |
 | S4 | `[已拍板·待实施]` | — | — | — | 内存同步奖励；同一 HASH 镜像养成字段 |
-| S5 | `[进行中]` | `80d78e2` | S5-01 候选已冻结；S5-02 `verify:all` exit 0（client 435/435、server 604/604、FGUI 66/66、inventory 110/110） | ⛔ 真栈 int 未跑（本机无 Redis）；Creator 预览未做 | S5-03/04/05 未做；⛔ 不得据此宣称 demo 可放行 |
+| S5 | `[进行中]` | 本次 | S5-01 候选已冻结；S5-02 `verify:all` exit 0（client 436/436、server 609/609、FGUI 66/66、inventory 110/110） | Creator 3.8.8 预览首跑完成，8 张证据见 `evidence/s5/creator/`；⛔ 真栈 int 仍未跑 | S5-05 首跑修复 F1（`SpriteFrame.pivot` 只读赋值废掉整条资源装载链），新发现 F2～F8 未修——**F2 使皮肤身体纹理在真引擎零渲染（头/尾贴图正常）**；⛔ 不得据此宣称 demo 可放行 |
 
 内部 demo 口径只能在 S5 全部退出条件满足并经用户确认后使用：
 
