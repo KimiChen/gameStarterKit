@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { checkInstalledPlugins } from "../tools/plugin/check";
 import { parseCli } from "../tools/plugin/cli";
-import { installPlugin, reinstallFromTree } from "../tools/plugin/install";
+import { installPlugin, nextStepsFor, reinstallFromTree } from "../tools/plugin/install";
 import { readInstalledLock, renderFilesLock, sha256 } from "../tools/plugin/lock";
 import { compareVersions, parsePluginManifest } from "../tools/plugin/manifest";
 import {
@@ -355,7 +355,7 @@ test("install：首装落盘 + 锁 + plugins/<id>/plugin.json；check 通过；�
     const lock = readInstalledLock(target, "chamber");
     assert.ok(lock && lock.manifest.version === "1.0.0" && lock.entries.length === report.written.length);
     assert.ok(fs.readFileSync(path.join(target, "scripts/plugins/chamber.lock"), "utf8").includes("Do not edit"));
-    assert.ok(report.nextSteps.some((step) => step.includes("protocol-fingerprint")), "带 domain 的插件提示重钉指纹");
+    assert.ok(report.nextSteps.some((step) => step.includes("protocol-fingerprint") && step.includes("本次未跑 codegen")), "postinstall:false 时带 domain 的插件只给条件式的指纹提示（没跑 codegen 无从知道是否真变了）");
     assert.equal(checkInstalledPlugins(target).ok, true);
 
     // 同一包重装 = 幂等（同版本同内容）。
@@ -681,4 +681,23 @@ test("CLI 参数：四个子命令、--root seam、重复/未知参数 throw", (
   assert.ok(fromTree.command === "reinstall-from-tree" && fromTree.id === "chamber" && fromTree.git === false && fromTree.postinstall === true);
   assert.throws(() => parseCli(["install", "--reinstall-from-tree", "./chamber.zip"]), /插件 id，不是包路径/u);
   assert.throws(() => parseCli(["install", "--reinstall-from-tree"]), /只需要一个已安装插件/u);
+});
+
+test("nextStepsFor：协议指纹提示按 --check 的实际结果派生，⛔ 不按「带 domain 就一定变了」猜", () => {
+  const fake = (manifest: { domains: string[]; kinds: string[] }) =>
+    ({ manifest: { ...manifest, fguiPackages: [] }, files: new Map<string, Buffer>(), entries: [] }) as unknown as Parameters<typeof nextStepsFor>[0];
+  const root = os.tmpdir();
+  const withDomain = fake({ domains: ["chamber"], kinds: ["feature"] });
+  const stale = nextStepsFor(withDomain, root, { protocolStale: true });
+  assert.ok(stale.some((step) => step.startsWith("协议指纹已过期") && step.includes("protocol-fingerprint.mjs --write")), "过期 ⇒ 明确要求重钉");
+  const fresh = nextStepsFor(withDomain, root, { protocolStale: false });
+  assert.deepEqual(fresh.filter((step) => step.includes("protocol-fingerprint")), [], "--check 通过 ⇒ 不再要求重钉");
+  const unknown = nextStepsFor(withDomain, root, { protocolStale: null });
+  assert.ok(unknown.some((step) => step.startsWith("本次未跑 codegen") && step.includes("protocol-fingerprint.mjs --write")), "未跑 codegen ⇒ 条件式提示");
+  assert.deepEqual(nextStepsFor(withDomain, root).filter((step) => step.includes("protocol-fingerprint")), unknown.filter((step) => step.includes("protocol-fingerprint")), "缺省上下文 = 未知");
+  // gameplay 形态没有 domain 也会改 protocol/（modeIds 等）：未知时同样给条件提示；纯 feature 无 domain 则一句不提。
+  assert.ok(nextStepsFor(fake({ domains: [], kinds: ["gameplay"] }), root).some((step) => step.startsWith("本次未跑 codegen")));
+  assert.deepEqual(nextStepsFor(fake({ domains: [], kinds: ["feature"] }), root).filter((step) => step.includes("protocol-fingerprint")), []);
+  // 过期判定不看 manifest：无 domain 的纯 feature 若 --check 报红也要提示。
+  assert.ok(nextStepsFor(fake({ domains: [], kinds: ["feature"] }), root, { protocolStale: true }).some((step) => step.startsWith("协议指纹已过期")));
 });
