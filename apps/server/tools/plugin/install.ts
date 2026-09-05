@@ -21,8 +21,8 @@ import { INSTALLED_LOCK_DIR, filesLockSha256Of, foreignLockOwners, parseInstalle
 import { packPlugin } from "./pack";
 import { assertInstalledLockOwned, packageMetaUuids, readPackage, validatePackage, type ValidatedPackage } from "./package";
 import { hostMetaUuids, parseMeta } from "./meta";
-import { matchesPrefixRule, mirrorPathOf, readGeneratedWriterPaths, type OwnershipRule } from "./ownership";
-import { featureDeclarations } from "./package";
+import { matchesPrefixRule, mirrorPathOf, pluginDir, readGeneratedWriterPaths, type OwnershipRule } from "./ownership";
+import { featureDeclarations, featureManifestPath } from "./package";
 import type { PluginManifest } from "./manifest";
 
 /** 外部命令执行器（npm / git）；测试 fixture 用它替换掉真实的 codegen/sync 以模拟 postinstall 失败与参数断言。 */
@@ -151,9 +151,9 @@ export function allowDeleteFor(
 
 /** 树上（升级前）的 feature.json 登记的 View 名；文件不在（旧包没有 feature kind）则为空。 */
 function treeViewNames(root: string, id: string): readonly string[] {
-  const featureFile = path.join(root, `features/${id}/feature.json`);
+  const featureFile = path.join(root, featureManifestPath(id));
   if (!fs.existsSync(featureFile)) return [];
-  return featureDeclarations(new Map([[`features/${id}/feature.json`, fs.readFileSync(featureFile)]]), id).viewNames;
+  return featureDeclarations(new Map([[featureManifestPath(id), fs.readFileSync(featureFile)]]), id).viewNames;
 }
 
 /** 落盘日志：每个被本次安装触碰的路径的落盘前字节（null = 原本不存在），回滚就是按它逐条复原。 */
@@ -335,7 +335,7 @@ function blockingDirty(root: string, id: string, entries: readonly StatusEntry[]
   let owned: ReadonlySet<string> | null = null;
   return entries.filter((entry) => {
     if (entry.status !== "D " || fs.existsSync(path.join(root, entry.path))) return true;
-    if (entry.path === lockRelative || entry.path === `plugins/${id}/plugin.json`) return false;
+    if (entry.path === lockRelative || entry.path === `${pluginDir(id)}/plugin.json`) return false;
     owned ??= headLockPaths(root, id);
     return !owned.has(entry.path);
   });
@@ -547,8 +547,8 @@ export function nextStepsFor(pkg: ValidatedPackage, root: string, context: NextS
 
 /** 推导集里与框架/其它插件共用父目录的落点（按前缀或域名归属，而不是 <id> 专属目录）。 */
 export function isSharedNamespace(relative: string, id: string): boolean {
-  const exclusive = [`plugins/${id}/`, `docs/${id}/`, `features/${id}/`, `apps/client/src/features/${id}/`, `apps/Cocos/assets/src/features/${id}/`,
-    `apps/server/src/core/${id}/`, `apps/shared/schema/gameplays/${id}/`, `apps/shared/src/gameplays/${id}/`, `apps/server/src/rooms/modes/${id}/`,
+  const exclusive = [`${pluginDir(id)}/`, `apps/client/src/features/${id}/`, `apps/Cocos/assets/src/features/${id}/`,
+    `apps/server/src/core/${id}/`, `apps/shared/src/gameplays/${id}/`, `apps/server/src/rooms/modes/${id}/`,
     `apps/client/src/gameplay/modes/${id}/`, `apps/client/src/logic/rooms/${id}/`, `apps/client/src/view/rooms/${id}/`,
     `apps/Cocos/assets/src/gameplay/modes/${id}/`, `apps/Cocos/assets/src/logic/rooms/${id}/`, `apps/Cocos/assets/src/view/rooms/${id}/`,
     `apps/Cocos/assets/resources/${id}/`];
@@ -703,7 +703,7 @@ export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallRep
   // 会让采集把框架文件当成「本插件新增」吸进锁（审阅实证：domains 加 guild ⇒ added 7），必须显式放行。
   const identityChanges = identityDifferences(previous.manifest, manifest);
   if (identityChanges.length > 0 && !options.allowIdentityChange) {
-    fail(`拒绝：树上 plugins/${id}/plugin.json 的身份与已安装锁不同（推导集随之变化，显式 --allow-identity-change 才放行）：\n  ${identityChanges.join("\n  ")}`);
+    fail(`拒绝：树上 ${pluginDir(id)}/plugin.json 的身份与已安装锁不同（推导集随之变化，显式 --allow-identity-change 才放行）：\n  ${identityChanges.join("\n  ")}`);
   }
   const previousByPath = new Map(previous.entries.map((entry) => [entry.path, entry.sha256]));
   const added = pkg.entries.map((entry) => entry.path).filter((relative) => !previousByPath.has(relative)).sort();
@@ -713,7 +713,7 @@ export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallRep
     .sort();
   const stale = [...previousByPath.keys()].filter((relative) => !pkg.files.has(relative)).sort();
   if (cmp === 0 && !sameEntries(previous.entries, pkg.entries)) {
-    fail(`拒绝：树上内容与已安装 ${id}@${previous.manifest.version} 不同但版本未变——同仓迭代也必须 bump plugins/${id}/plugin.json 的 version\n`
+    fail(`拒绝：树上内容与已安装 ${id}@${previous.manifest.version} 不同但版本未变——同仓迭代也必须 bump ${pluginDir(id)}/plugin.json 的 version\n`
       + `  新增 ${added.length}、变化 ${changed.length}、删除 ${stale.length}：\n  ${[...added, ...changed, ...stale].join("\n  ")}`);
   }
   // 谁算「本插件的」：旧锁条目一定是；树上新采集到的文件只有在 git **未跟踪**时才是作者刚写的新文件——已跟踪
@@ -738,7 +738,7 @@ export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallRep
   // 已不在推导集内，⛔ 不能替作者删——拒绝并点名，让作者删文件或改回 plugin.json。
   const staleOnDisk = stale.filter((relative) => fs.existsSync(path.join(root, relative)));
   if (staleOnDisk.length > 0) {
-    fail(`拒绝：以下文件在已安装锁里、已不在插件 "${id}" 的推导集内、却仍在磁盘上——从树重装不替作者删文件；先删掉它们或改回 plugins/${id}/plugin.json：\n  ${staleOnDisk.join("\n  ")}`);
+    fail(`拒绝：以下文件在已安装锁里、已不在插件 "${id}" 的推导集内、却仍在磁盘上——从树重装不替作者删文件；先删掉它们或改回 ${pluginDir(id)}/plugin.json：\n  ${staleOnDisk.join("\n  ")}`);
   }
   // 删除面：旧锁身份 vs 树上身份，旧 View 名从旧锁的 sidecar 条目推出（树上 feature.json 已是新的）。
   const allowDelete = allowDeleteFor({ manifest: previous.manifest, viewNames: viewNamesFromEntries(previous.entries) }, { manifest, viewNames: pkg.viewNames });

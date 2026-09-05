@@ -1,7 +1,7 @@
-# 兑换码插件（plugins/redeem）
+# 兑换码插件（apps/plugins/redeem）
 
-「兑换码」是 [docs/PLUGIN.md](../PLUGIN.md) §6.1 点名的**插件标准形态**，本目录是它的首个真实实现，
-同时充当 PLUGIN.md §9.6 / [plan-v5.md](../../plan-v5.md) E5「第一个真实插件端到端实证」的样本：
+「兑换码」是 [docs/PLUGIN.md](../../../docs/PLUGIN.md) §6.1 点名的**插件标准形态**，本目录是它的首个真实实现，
+同时充当 PLUGIN.md §9.6 / [plan-v5.md](../../../plan-v5.md) E5「第一个真实插件端到端实证」的样本：
 作者侧在本仓内编写 → `plugin -- pack` 打包 → 干净树上 `plugin -- install` → `verify:all` 通过（当时两条既有
 环境基线除外，根因与处置登记在 plan-v5「当前验证基线」；两条基线随后已在 `661e542`/`f731658` 闭合）。
 
@@ -16,8 +16,8 @@
 
 | 路径 | 角色 |
 | --- | --- |
-| `plugins/redeem/plugin.json` | 插件身份：id `redeem`、kinds `["feature"]`、domains `["redeem"]` |
-| `features/redeem/feature.json` | feature 登记：route `redeem` → View `Redeem`；menu 入口；`module` 指向 feature 自己的 index.ts |
+| `apps/plugins/redeem/plugin.json` | 插件身份：id `redeem`、kinds `["feature"]`、domains `["redeem"]` |
+| `apps/plugins/redeem/feature.json` | feature 登记：route `redeem` → View `Redeem`；menu 入口；`module` 指向 feature 自己的 index.ts |
 | `apps/shared/src/protocol/lobbyRpc/domains/redeem.ts` | 域契约：`redeem.claim` idempotent-write，errorCodes 两条，contractVersion 1 |
 | `apps/server/src/core/redeem/{codes,store,claim}.ts` | 码表（静态）/ Redis Lua 原子记账（`kFeatureUser` 两键同槽）/ 用例 |
 | `apps/server/src/websocket/redeem/claim.ts` | 端点：`defineRpc(RedeemRpc.Claim)` |
@@ -27,7 +27,7 @@
 | `apps/client/src/features/redeem/logic/{RedeemLogic,redeemRuntime}.ts` | 纯 TS 逻辑（铁律 9） |
 | `apps/client/src/features/redeem/view/RedeemView.ts` + `.view.json` | Cocos 纯节点页 + sidecar（owner `redeem`） |
 | `apps/client/test/redeem-logic.test.ts` | 客户端逻辑测试 |
-| `docs/redeem/README.md` | 本文 |
+| `apps/plugins/redeem/README.md` | 本文 |
 
 生成物（registry/features/views/fguiContracts/vectors index/features.generated.md、shared→client 镜像、
 client→Cocos 镜像）⛔ 不在包内，由 install 的 postinstall 链在宿主仓重生。

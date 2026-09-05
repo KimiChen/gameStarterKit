@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "redeem",
   "category": "extra",
-  "docs": ["docs/redeem/README.md"],
+  "docs": ["apps/plugins/redeem/README.md"],
   "resident": false,
   "module": "apps/client/src/features/redeem/index.ts",
   "viewDirs": ["apps/client/src/features/redeem/view"],

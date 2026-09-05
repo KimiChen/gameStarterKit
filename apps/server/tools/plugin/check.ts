@@ -10,10 +10,10 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { classifyPath, deriveOwnership, readProtectedPaths } from "./ownership";
+import { classifyPath, deriveOwnership, pluginDir, readProtectedPaths } from "./ownership";
 import { assertManifestCompatible, identityDifferences, identityOf, parsePluginManifest } from "./manifest";
 import { filesLockSha256Of, listInstalledLocks, verifyLockAgainstTree } from "./lock";
-import { featureDeclarations } from "./package";
+import { featureDeclarations, featureManifestPath, gameplaySourceDir } from "./package";
 
 export interface PluginCheckEntry {
   readonly id: string;
@@ -71,20 +71,21 @@ export function checkInstalledPlugins(root: string): PluginCheckReport {
       problems.push(`锁的 "# source" filesLockSha256 与清单不符（合并错或手改）：${lock.source.filesLockSha256} vs ${filesLockSha256Of(lock.entries)}`);
     }
 
-    const manifestFile = path.join(root, "plugins", id, "plugin.json");
+    const manifestRelative = `${pluginDir(id)}/plugin.json`;
+    const manifestFile = path.join(root, manifestRelative);
     let clientDirs: readonly string[] = [];
     if (!fs.existsSync(manifestFile)) {
-      problems.push(`缺少 plugins/${id}/plugin.json`);
+      problems.push(`缺少 ${manifestRelative}`);
     } else {
       try {
-        const authored = parsePluginManifest(JSON.parse(fs.readFileSync(manifestFile, "utf8")), `plugins/${id}/plugin.json`);
-        if (authored.version !== lock.manifest.version) problems.push(`plugins/${id}/plugin.json 的 version（${authored.version}）与锁（${lock.manifest.version}）不一致`);
+        const authored = parsePluginManifest(JSON.parse(fs.readFileSync(manifestFile, "utf8")), manifestRelative);
+        if (authored.version !== lock.manifest.version) problems.push(`${manifestRelative} 的 version（${authored.version}）与锁（${lock.manifest.version}）不一致`);
         for (const difference of identityDifferences(lock.manifest, authored)) {
-          problems.push(`plugins/${id}/plugin.json 的身份与锁不一致（先 install --reinstall-from-tree ${id} --allow-identity-change 重写锁）：${difference}`);
+          problems.push(`${manifestRelative} 的身份与锁不一致（先 install --reinstall-from-tree ${id} --allow-identity-change 重写锁）：${difference}`);
         }
         // 兼容轴：树上 plugin.json 与本仓两个 schemaVersion 比对；锁登记的 requires 也要与之一致（旧锁未登记即点名）。
         try {
-          assertManifestCompatible(authored, `plugins/${id}/plugin.json`);
+          assertManifestCompatible(authored, manifestRelative);
         } catch (error) {
           problems.push(error instanceof Error ? error.message : String(error));
         }
@@ -92,7 +93,7 @@ export function checkInstalledPlugins(root: string): PluginCheckReport {
         if ((lock.manifest.kinds.includes("feature") && lockRequires.featureSchemaVersion === null) || (lock.manifest.kinds.includes("gameplay") && lockRequires.gameplaySchemaVersion === null)) {
           problems.push(`锁未登记 requires（旧锁形态）：install --reinstall-from-tree ${id} 重写锁即补上`);
         } else if (lockRequires.featureSchemaVersion !== authored.requires.featureSchemaVersion || lockRequires.gameplaySchemaVersion !== authored.requires.gameplaySchemaVersion) {
-          problems.push(`plugins/${id}/plugin.json 的 requires 与锁不一致：锁 ${JSON.stringify(lockRequires)} vs 树 ${JSON.stringify(authored.requires)}`);
+          problems.push(`${manifestRelative} 的 requires 与锁不一致：锁 ${JSON.stringify(lockRequires)} vs 树 ${JSON.stringify(authored.requires)}`);
         }
         // requires 不是自述：树上 feature.json / gameplay manifest.json 的 schemaVersion 必须与之一致。
         const artifactVersion = (relative: string): unknown => {
@@ -105,22 +106,22 @@ export function checkInstalledPlugins(root: string): PluginCheckReport {
           }
         };
         if (authored.kinds.includes("feature")) {
-          const actual = artifactVersion(`features/${id}/feature.json`);
-          if (actual !== undefined && actual !== authored.requires.featureSchemaVersion) problems.push(`features/${id}/feature.json 的 schemaVersion（${String(actual)}）与 requires.featureSchemaVersion（${String(authored.requires.featureSchemaVersion)}）不一致`);
+          const actual = artifactVersion(featureManifestPath(id));
+          if (actual !== undefined && actual !== authored.requires.featureSchemaVersion) problems.push(`${featureManifestPath(id)} 的 schemaVersion（${String(actual)}）与 requires.featureSchemaVersion（${String(authored.requires.featureSchemaVersion)}）不一致`);
         }
         if (authored.kinds.includes("gameplay")) {
-          const actual = artifactVersion(`apps/shared/schema/gameplays/${id}/manifest.json`);
-          if (actual !== undefined && actual !== authored.requires.gameplaySchemaVersion) problems.push(`apps/shared/schema/gameplays/${id}/manifest.json 的 schemaVersion（${String(actual)}）与 requires.gameplaySchemaVersion（${String(authored.requires.gameplaySchemaVersion)}）不一致`);
+          const actual = artifactVersion(`${gameplaySourceDir(id)}/manifest.json`);
+          if (actual !== undefined && actual !== authored.requires.gameplaySchemaVersion) problems.push(`${gameplaySourceDir(id)}/manifest.json 的 schemaVersion（${String(actual)}）与 requires.gameplaySchemaVersion（${String(authored.requires.gameplaySchemaVersion)}）不一致`);
         }
       } catch (error) {
-        problems.push(`plugins/${id}/plugin.json 无法解析：${error instanceof Error ? error.message : String(error)}`);
+        problems.push(`${manifestRelative} 无法解析：${error instanceof Error ? error.message : String(error)}`);
       }
     }
     if (lock.manifest.kinds.includes("feature")) {
-      const featureFile = path.join(root, `features/${id}/feature.json`);
+      const featureFile = path.join(root, featureManifestPath(id));
       if (fs.existsSync(featureFile)) {
         try {
-          clientDirs = featureDeclarations(new Map([[`features/${id}/feature.json`, fs.readFileSync(featureFile)]]), id).clientDirs;
+          clientDirs = featureDeclarations(new Map([[featureManifestPath(id), fs.readFileSync(featureFile)]]), id).clientDirs;
         } catch (error) {
           problems.push(error instanceof Error ? error.message : String(error));
         }
