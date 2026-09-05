@@ -7,6 +7,7 @@
  *  - 包内出现越权路径（脚本 / 受保护文件）整包拒绝并点名。
  */
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -66,8 +67,8 @@ test("allowlist：feature 插件的推导集覆盖 feature/domain/客户端/FGUI
     "apps/server/src/core/chamber/keys.ts",
     "apps/server/test/lobbyRpcVectors/chamber.ts",
     "apps/server/test/chamber-peek.test.ts",
-    "apps/server/test/int/chamberFlow.test.ts",
-    "apps/client/test/chamberLogic.test.ts",
+    "apps/server/test/int/chamber-flow.test.ts",
+    "apps/client/test/chamber-logic.test.ts",
     "apps/client/src/features/chamber/index.ts",
     "apps/client/src/features/chamber/view/ChamberView.ts",
     "apps/client/src/features/chamber/view/ChamberView.view.json",
@@ -93,6 +94,9 @@ test("allowlist：feature 插件的推导集覆盖 feature/domain/客户端/FGUI
     "apps/server/test/lobbyRpcVectors/user.ts",
     "apps/server/test/user.test.ts",
     "apps/server/test/chamber", // prefix 规则要求真实文件名长于前缀
+    "apps/server/test/chamberx-peek.test.ts", // 前缀后必须紧跟分隔符：tally ⛔ 不吞 tallyBoard-*、red ⛔ 不拥有 redis-*
+    "apps/server/test/int/chamberFlow.test.ts",
+    "apps/client/test/chamberLogic.test.ts",
     "apps/Cocos/assets/resources/ui/Common_Btn.bin",
     "apps/Cocos/assets/resources/ui/Chamber2.bin",
     "features/chamber2/feature.json",
@@ -162,6 +166,7 @@ test("硬排除与受保护路径永远拒绝：真仓 protected-paths.json 的�
 test("身份形态闸：坏 id / 缺 constantName / feature 客户端目录越出命名空间 / 非 feature 声明 domains 一律拒绝", () => {
   assert.throws(() => deriveOwnership({ ...FEATURE_IDENTITY, id: "Chamber" }), /id "Chamber" 非法/u);
   assert.throws(() => deriveOwnership({ ...FEATURE_IDENTITY, id: "a/b" }), /id "a\/b" 非法/u);
+  assert.throws(() => deriveOwnership({ ...FEATURE_IDENTITY, id: "registry", domains: [] }), /保留字/u);
   assert.throws(() => deriveOwnership({ ...GAMEPLAY_IDENTITY, constantName: null }), /必须声明 constantName/u);
   assert.throws(() => deriveOwnership({ ...FEATURE_IDENTITY, constantName: "Chamber" }), /才声明 constantName/u);
   assert.throws(() => deriveOwnership({ ...FEATURE_IDENTITY, kinds: [] }), /kinds 不能为空/u);
@@ -251,30 +256,31 @@ function meta(importer: string): string {
   return `${JSON.stringify({ ver: "4.0.24", importer, imported: true, uuid: sha256(importer).slice(0, 36), files: [], subMetas: {}, userData: {} }, null, 2)}\n`;
 }
 
-/** 作者侧工作树：一个带 RPC 域 + 客户端 View/Logic + 镜像 .meta + 测试 + 文档的 feature 插件。 */
-function authorTree(root: string, version: string): void {
-  write(root, "plugins/chamber/plugin.json", `${JSON.stringify({
-    schemaVersion: 1, id: "chamber", version, kinds: ["feature"], domains: ["chamber"],
+/** 作者侧工作树：一个带 RPC 域 + 客户端 View/Logic + 镜像 .meta + 测试 + 文档的 feature 插件（id 可换，默认 chamber）。 */
+function authorTree(root: string, version: string, id = "chamber"): void {
+  const Constant = id.charAt(0).toUpperCase() + id.slice(1);
+  write(root, `plugins/${id}/plugin.json`, `${JSON.stringify({
+    schemaVersion: 1, id, version, kinds: ["feature"], domains: [id],
     requires: { featureSchemaVersion: 1 }, description: "fixture feature plugin",
   }, null, 2)}\n`);
-  write(root, "features/chamber/feature.json", `${JSON.stringify({
-    schemaVersion: 1, id: "chamber", category: "extra", resident: false,
-    viewDirs: ["apps/client/src/features/chamber/view"],
-    views: ["apps/client/src/features/chamber/view/ChamberView.view.json"],
-    owners: [{ id: "chamber", logicDir: "apps/client/src/features/chamber/logic" }],
-    routes: [{ id: "chamber", view: "Chamber" }], menu: [],
+  write(root, `features/${id}/feature.json`, `${JSON.stringify({
+    schemaVersion: 1, id, category: "extra", resident: false,
+    viewDirs: [`apps/client/src/features/${id}/view`],
+    views: [`apps/client/src/features/${id}/view/${Constant}View.view.json`],
+    owners: [{ id, logicDir: `apps/client/src/features/${id}/logic` }],
+    routes: [{ id, view: Constant }], menu: [],
   }, null, 2)}\n`);
-  write(root, "apps/shared/src/protocol/lobbyRpc/domains/chamber.ts", "export default {} as never;\n");
-  write(root, "apps/server/src/websocket/chamber/peek.ts", "export default {} as never;\n");
-  write(root, "apps/server/src/core/chamber/keys.ts", "export const kChamberSeq = 1;\n");
-  write(root, "apps/server/test/lobbyRpcVectors/chamber.ts", "export default {};\n");
-  write(root, "apps/server/test/chamber-peek.test.ts", "// fixture test\n");
-  write(root, "docs/chamber/README.md", `# chamber ${version}\n`);
+  write(root, `apps/shared/src/protocol/lobbyRpc/domains/${id}.ts`, "export default {} as never;\n");
+  write(root, `apps/server/src/websocket/${id}/peek.ts`, "export default {} as never;\n");
+  write(root, `apps/server/src/core/${id}/keys.ts`, `export const k${Constant}Seq = 1;\n`);
+  write(root, `apps/server/test/lobbyRpcVectors/${id}.ts`, "export default {};\n");
+  write(root, `apps/server/test/${id}-peek.test.ts`, "// fixture test\n");
+  write(root, `docs/${id}/README.md`, `# ${id} ${version}\n`);
   const clientFiles: Record<string, string> = {
-    "apps/client/src/features/chamber/index.ts": "export const chamber = 1;\n",
-    "apps/client/src/features/chamber/view/ChamberView.ts": "export class ChamberView {}\n",
-    "apps/client/src/features/chamber/view/ChamberView.view.json": "{ \"kind\": \"cocos\" }\n",
-    "apps/client/src/features/chamber/logic/ChamberLogic.ts": "export class ChamberLogic {}\n",
+    [`apps/client/src/features/${id}/index.ts`]: `export const ${id} = 1;\n`,
+    [`apps/client/src/features/${id}/view/${Constant}View.ts`]: `export class ${Constant}View {}\n`,
+    [`apps/client/src/features/${id}/view/${Constant}View.view.json`]: "{ \"kind\": \"cocos\" }\n",
+    [`apps/client/src/features/${id}/logic/${Constant}Logic.ts`]: `export class ${Constant}Logic {}\n`,
   };
   for (const [relative, content] of Object.entries(clientFiles)) {
     write(root, relative, content);
@@ -282,9 +288,24 @@ function authorTree(root: string, version: string): void {
     write(root, mirror, content);
     write(root, `${mirror}.meta`, meta(relative.endsWith(".json") ? "json" : "typescript"));
   }
-  for (const dir of ["apps/Cocos/assets/src/features/chamber", "apps/Cocos/assets/src/features/chamber/view", "apps/Cocos/assets/src/features/chamber/logic"]) {
+  for (const dir of [`apps/Cocos/assets/src/features/${id}`, `apps/Cocos/assets/src/features/${id}/view`, `apps/Cocos/assets/src/features/${id}/logic`]) {
     write(root, `${dir}.meta`, meta("directory"));
   }
+}
+
+/** 把 fixture 根变成 git 仓并提交现状（git 口径的闸：干净检查、跟踪判定、暂存）。 */
+function gitInit(root: string): void {
+  const run = (...args: string[]): void => {
+    const result = spawnSync("git", ["-c", "user.name=fixture", "-c", "user.email=fixture@example.invalid", ...args], { cwd: root, encoding: "utf8" });
+    if (result.status !== 0) throw new Error(`git ${args.join(" ")} 失败：${result.stderr}`);
+  };
+  run("init", "-q");
+  run("add", "-A");
+  run("commit", "-q", "--allow-empty", "-m", "fixture baseline");
+}
+
+function gitPorcelain(root: string): string {
+  return spawnSync("git", ["status", "--porcelain", "--untracked-files=all"], { cwd: root, encoding: "utf8" }).stdout.trim();
 }
 
 function makeFixture(version = "1.0.0"): Fixture {
@@ -480,10 +501,18 @@ test("reinstall-from-tree（E6 方案 ②）：同仓改动不 bump 拒绝并点
     assert.throws(() => reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false }), /拒绝降级/u);
     assert.equal(reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false, allowDowngrade: true }).version, "0.9.0");
 
-    // 篡改锁 → 拒绝（与 install/uninstall 同一道 allowlist）。
+    // 篡改锁 → 拒绝（与 install/uninstall 同一道 allowlist）：登记了树上存在的越权文件即拒绝；
+    // 树上已不存在的越权条目构不成误删风险（规则演进后改名的旧文件正是这种形态），不拦。
     const lockFile = path.join(target, "scripts/plugins/chamber.lock");
     fs.appendFileSync(lockFile, "scripts/evil.mjs 0000000000000000000000000000000000000000000000000000000000000000\n");
+    fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"0.9.0"', '"0.9.1"'));
+    const dropped = reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false });
+    assert.deepEqual(dropped.deleted, ["scripts/evil.mjs"], "不存在的越权条目随重写被丢弃（旧有新无）");
+    assert.ok(!readInstalledLock(target, "chamber")?.entries.some((entry) => entry.path === "scripts/evil.mjs"));
+    fs.appendFileSync(lockFile, "scripts/evil.mjs 0000000000000000000000000000000000000000000000000000000000000000\n");
+    write(target, "scripts/evil.mjs", "process.exit(1)\n");
     assert.throws(() => reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false }), /锁/u);
+    fs.rmSync(path.join(target, "scripts/evil.mjs"));
 
     // 未安装 → 拒绝（首装必须走 install <zip>）。
     const fresh = makeRoot();
@@ -647,6 +676,96 @@ test("审阅后加固：插件 id/domain 与框架既有目录同名 → 目录�
   }
 });
 
+test("PLUGIN-REGISTRY §1-3：reinstall-from-tree 的身份变化闸与 git 跟踪闸——扩 domains 到框架域不能把框架文件吸进插件锁", () => {
+  const { author, target } = makeFixture("1.0.0");
+  try {
+    // 目标树里 guild 是框架自己的域（已提交），chamber 是插件。
+    write(target, "apps/shared/src/protocol/lobbyRpc/domains/guild.ts", "export default {} as never;\n");
+    write(target, "apps/server/src/websocket/guild/join.ts", "export default {} as never;\n");
+    write(target, "apps/server/test/lobbyRpcVectors/guild.ts", "export default {};\n");
+    gitInit(target);
+    const v1 = path.join(author, "out/v1.zip");
+    packPlugin({ root: author, id: "chamber", outFile: v1 });
+    installPlugin({ root: target, source: v1, git: true, postinstall: false });
+    assert.equal(checkInstalledPlugins(target).ok, true);
+
+    // 作者在树上把 guild 写进 domains 并 bump：身份变化 → 拒绝；显式放行后 → guild 文件已被 git 跟踪却不在锁里 → 拒绝并点名。
+    const manifestFile = path.join(target, "plugins/chamber/plugin.json");
+    fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.0.1"').replace('"chamber"\n  ]', '"chamber",\n    "guild"\n  ]'));
+    assert.match(JSON.parse(fs.readFileSync(manifestFile, "utf8")).domains.join(","), /guild/u, "fixture 自检：domains 已含 guild");
+    assert.throws(() => reinstallFromTree({ root: target, id: "chamber", git: true, postinstall: false }), /身份与已安装锁不同[\s\S]*domains: chamber → chamber,guild/u);
+    assert.throws(
+      () => reinstallFromTree({ root: target, id: "chamber", git: true, postinstall: false, allowIdentityChange: true }),
+      /已被 git 跟踪却不在已安装锁里[\s\S]*websocket\/guild\/join\.ts[\s\S]*lobbyRpcVectors\/guild\.ts[\s\S]*domains\/guild\.ts/u,
+    );
+    assert.equal(readInstalledLock(target, "chamber")?.manifest.version, "1.0.0", "被拒时锁不动");
+    // check 也点名树上 plugin.json 与锁的身份漂移。
+    const drift = checkInstalledPlugins(target);
+    assert.equal(drift.ok, false);
+    assert.match(drift.plugins[0].problems.join("\n"), /身份与锁不一致.*domains: chamber → chamber,guild/u);
+    // 两个 flag 都给才吸收（显式决定，可 review）。
+    const adopted = reinstallFromTree({ root: target, id: "chamber", git: true, postinstall: false, allowIdentityChange: true, adoptTracked: true });
+    assert.ok(adopted.adopted?.added.includes("apps/server/src/websocket/guild/join.ts"));
+
+    // 对照：作者新写的未跟踪文件不需要任何 flag 就能吸收（这才是 reinstall-from-tree 的日常）。
+    fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.1"', '"1.0.2"'));
+    write(target, "apps/server/src/core/chamber/extra.ts", "export const extra = 2;\n");
+    const plain = reinstallFromTree({ root: target, id: "chamber", git: true, postinstall: false });
+    assert.deepEqual(plain.adopted?.added, ["apps/server/src/core/chamber/extra.ts"]);
+  } finally {
+    cleanup(author, target);
+  }
+});
+
+test("PLUGIN-REGISTRY §1-4：互为前缀的两个插件共存——各自升级、从树重装、卸载其一都不动另一者；锁间重叠被 pack/install/check 点名", () => {
+  const authorA = makeRoot();
+  const authorB = makeRoot();
+  const target = makeRoot();
+  try {
+    authorTree(authorA, "1.0.0", "chamber");
+    authorTree(authorB, "1.0.0", "chamberBoard");
+    const zipA = path.join(authorA, "out/a.zip");
+    const zipB = path.join(authorB, "out/b.zip");
+    packPlugin({ root: authorA, id: "chamber", outFile: zipA });
+    packPlugin({ root: authorB, id: "chamberBoard", outFile: zipB });
+    installPlugin({ root: target, source: zipA, git: false, postinstall: false });
+    installPlugin({ root: target, source: zipB, git: false, postinstall: false });
+    assert.equal(checkInstalledPlugins(target).ok, true);
+    assert.ok(fs.existsSync(path.join(target, "apps/server/test/chamberBoard-peek.test.ts")));
+
+    // chamber 升级：chamberBoard 的测试文件不算 chamber 推导集内的冲突。
+    const manifestA = path.join(authorA, "plugins/chamber/plugin.json");
+    fs.writeFileSync(manifestA, fs.readFileSync(manifestA, "utf8").replace('"1.0.0"', '"1.1.0"'));
+    const zipA2 = path.join(authorA, "out/a2.zip");
+    packPlugin({ root: authorA, id: "chamber", outFile: zipA2 });
+    assert.doesNotThrow(() => installPlugin({ root: target, source: zipA2, git: false, postinstall: false }));
+    // chamber 从树重装：⛔ 不采集 chamberBoard 的文件。
+    const manifestT = path.join(target, "plugins/chamber/plugin.json");
+    fs.writeFileSync(manifestT, fs.readFileSync(manifestT, "utf8").replace('"1.1.0"', '"1.1.1"'));
+    const rewritten = reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false });
+    assert.ok(!rewritten.adopted?.added.some((relative) => relative.includes("chamberBoard")), "从树重装不得吸收别的插件的文件");
+    assert.ok(!readInstalledLock(target, "chamber")?.entries.some((entry) => entry.path.includes("chamberBoard")));
+    // 卸载 chamber：chamberBoard 文件与锁完好。
+    uninstallPlugin({ root: target, id: "chamber", git: false, postinstall: false });
+    assert.ok(fs.existsSync(path.join(target, "apps/server/test/chamberBoard-peek.test.ts")));
+    assert.ok(fs.existsSync(path.join(target, "apps/server/src/core/chamberBoard/keys.ts")));
+    assert.equal(checkInstalledPlugins(target).ok, true);
+
+    // 锁间重叠：把 chamber 的一个路径塞进 chamberBoard 的锁（模拟规则演进/合并错），install chamber 拒绝并点名所有者；
+    // check 报锁间重叠；作者侧 pack 遇到推导集与他锁重叠也拒绝。
+    installPlugin({ root: target, source: zipA2, git: false, postinstall: false });
+    const lockB = path.join(target, "scripts/plugins/chamberBoard.lock");
+    fs.appendFileSync(lockB, `apps/server/src/core/chamber/keys.ts ${sha256("export const kChamberSeq = 1;\n")}\n`);
+    const overlapping = checkInstalledPlugins(target);
+    assert.equal(overlapping.ok, false);
+    assert.match(overlapping.plugins.flatMap((plugin) => plugin.problems).join("\n"), /锁间重叠：apps\/server\/src\/core\/chamber\/keys\.ts 同时登记在 chamber 与 chamberBoard/u);
+    assert.throws(() => installPlugin({ root: target, source: zipA2, git: false, postinstall: false }), /已被其它已安装插件的锁登记[\s\S]*属于插件 chamberBoard/u);
+    assert.throws(() => packPlugin({ root: target, id: "chamber", outFile: path.join(target, "out/x.zip") }), /与其它已安装插件的锁重叠[\s\S]*属于插件 chamberBoard/u);
+  } finally {
+    cleanup(authorA, authorB, target);
+  }
+});
+
 test("manifest：schema 校验、kinds 语义、requires 兼容轴、版本比较", () => {
   const valid = parsePluginManifest({ schemaVersion: 1, id: "chamber", version: "1.2.3", kinds: ["feature"] });
   assert.equal(valid.constantName, null);
@@ -680,6 +799,9 @@ test("CLI 参数：四个子命令、--root seam、重复/未知参数 throw", (
   assert.equal(fromTree.command, "reinstall-from-tree");
   assert.ok(fromTree.command === "reinstall-from-tree" && fromTree.id === "chamber" && fromTree.git === false && fromTree.postinstall === true);
   assert.throws(() => parseCli(["install", "--reinstall-from-tree", "./chamber.zip"]), /插件 id，不是包路径/u);
+  const gated = parseCli(["install", "--reinstall-from-tree", "chamber", "--allow-identity-change", "--adopt-tracked"]);
+  assert.ok(gated.command === "reinstall-from-tree" && gated.allowIdentityChange && gated.adoptTracked);
+  assert.throws(() => parseCli(["install", "pkg.zip", "--adopt-tracked"]), /只对 install --reinstall-from-tree 有效/u);
   assert.throws(() => parseCli(["install", "--reinstall-from-tree"]), /只需要一个已安装插件/u);
 });
 

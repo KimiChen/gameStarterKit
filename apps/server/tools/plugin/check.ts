@@ -2,13 +2,16 @@
  * 已安装插件的只读核对（`plugin -- check` 与 apps/server/test/plugin-lock.test.ts 共用）：
  *  - 每把 scripts/plugins/<id>.lock 的清单文件都在且哈希一致（本地改动 / 缺失点名）；
  *  - plugins/<id>/plugin.json 在场且与锁抬头一致；
- *  - 锁内每条路径仍在该插件的所有权推导集内（规则演进不得让已安装文件变成无主）。
+ *  - 锁内每条路径仍在该插件的所有权推导集内（规则演进不得让已安装文件变成无主）；
+ *  - plugins/<id>/plugin.json 的身份分量（kinds / constantName / domains / fguiPackages）与锁抬头一致
+ *    （树上悄悄扩 domains 而锁未重写 = 推导集与登记面脱节，PLUGIN-REGISTRY §1-3）；
+ *  - 各锁的清单两两不交（同一路径不可能属于两个插件，PLUGIN-REGISTRY §1-4）。
  * 无插件 = 空报告（通过）。
  */
 import fs from "node:fs";
 import path from "node:path";
 import { classifyPath, deriveOwnership, readProtectedPaths } from "./ownership";
-import { identityOf, parsePluginManifest } from "./manifest";
+import { identityDifferences, identityOf, parsePluginManifest } from "./manifest";
 import { listInstalledLocks, verifyLockAgainstTree } from "./lock";
 import { featureDeclarations } from "./package";
 
@@ -25,8 +28,25 @@ export interface PluginCheckReport {
 
 export function checkInstalledPlugins(root: string): PluginCheckReport {
   const plugins: PluginCheckEntry[] = [];
-  for (const lock of listInstalledLocks(root)) {
-    const problems: string[] = [];
+  const locks = listInstalledLocks(root);
+  // 锁间两两不交：路径 → 首个登记它的插件；之后再出现即双方都点名。
+  const claimed = new Map<string, string>();
+  const overlaps = new Map<string, string[]>();
+  for (const lock of locks) {
+    for (const entry of lock.entries) {
+      const owner = claimed.get(entry.path);
+      if (owner === undefined) {
+        claimed.set(entry.path, lock.manifest.id);
+        continue;
+      }
+      for (const id of [owner, lock.manifest.id]) {
+        if (!overlaps.has(id)) overlaps.set(id, []);
+        (overlaps.get(id) as string[]).push(`锁间重叠：${entry.path} 同时登记在 ${owner} 与 ${lock.manifest.id} 的锁里`);
+      }
+    }
+  }
+  for (const lock of locks) {
+    const problems: string[] = [...(overlaps.get(lock.manifest.id) ?? [])];
     const { id } = lock.manifest;
     const verification = verifyLockAgainstTree(root, lock.entries);
     for (const relative of verification.modified) problems.push(`本地改动（与锁不符）：${relative}`);
@@ -40,7 +60,9 @@ export function checkInstalledPlugins(root: string): PluginCheckReport {
       try {
         const authored = parsePluginManifest(JSON.parse(fs.readFileSync(manifestFile, "utf8")), `plugins/${id}/plugin.json`);
         if (authored.version !== lock.manifest.version) problems.push(`plugins/${id}/plugin.json 的 version（${authored.version}）与锁（${lock.manifest.version}）不一致`);
-        if (authored.kinds.join(",") !== lock.manifest.kinds.join(",")) problems.push(`plugins/${id}/plugin.json 的 kinds 与锁不一致`);
+        for (const difference of identityDifferences(lock.manifest, authored)) {
+          problems.push(`plugins/${id}/plugin.json 的身份与锁不一致（先 install --reinstall-from-tree ${id} --allow-identity-change 重写锁）：${difference}`);
+        }
       } catch (error) {
         problems.push(`plugins/${id}/plugin.json 无法解析：${error instanceof Error ? error.message : String(error)}`);
       }

@@ -6,7 +6,9 @@
  * 这是 allowlist，⛔ 不是「protected-paths.json 挡一下」的 denylist（PLUGIN-REVIEW F03/F04）。
  *
  * 推导集与仓库既有的 per-id 目录约定同构（gameplay-codegen / feature-codegen 发现的正是这些目录）；
- * 扁平目录（net/rooms、lobbyRpc/domains、websocket、test）按「文件名以 id / ConstantName 开头」归属。
+ * 扁平目录（net/rooms、lobbyRpc/domains、websocket）按精确文件名归属；测试目录按 `<id>-*` / `<id>.*`
+ * 前缀归属——前缀后**必须**紧跟分隔符（`-` 或 `.`），⛔ 不是裸 startsWith：否则 `tally` 会吞掉
+ * `tallyBoard-*.test.ts`、`red` 会拥有 `redis-route.test.ts`（PLUGIN-REGISTRY §1-4）。
  * 镜像（apps/Cocos/assets/src/**）与 `.meta` 由对应真源路径的归属推导，⛔ 不单独声明。
  *
  * 硬排除先于 allowlist 求值：脚本、工具、包清单、生成物、锁、场景文件与全部受保护路径永远不可由包写入。
@@ -34,6 +36,11 @@ export interface OwnershipRule {
   /** dir：目录（含其下全部文件）；file：精确文件；prefix：`path` 目录下以 `prefix` 开头的文件。 */
   readonly path: string;
   readonly prefix?: string;
+  /**
+   * prefix 规则的边界：`separator`（缺省）要求前缀后紧跟 `-` 或 `.`；`any` 允许任意续接
+   * （只给 FGUI 发布物 `<Pkg>_atlas*` 这种自带分隔符的前缀用）。
+   */
+  readonly boundary?: "separator" | "any";
   readonly reason: string;
 }
 
@@ -43,6 +50,10 @@ export interface PathVerdict {
 }
 
 const ID = /^[a-z][A-Za-z0-9]{0,63}$/u;
+/** 保留 id：与注册表/工具自身的落点同名会让 `plugins/<id>/` 与配置文件混淆（PLUGIN-REGISTRY §2.2）。 */
+export const RESERVED_IDS: readonly string[] = ["registry"];
+/** prefix 规则（缺省边界）允许的续接字符：`<id>-x.test.ts` / `<id>.x.test.ts`。 */
+const PREFIX_SEPARATORS: readonly string[] = ["-", "."];
 const CONSTANT = /^[A-Z][A-Za-z0-9]{0,63}$/u;
 const FGUI_PACKAGE = /^[A-Za-z0-9_]{1,64}$/u;
 // eslint-disable-next-line no-control-regex
@@ -92,6 +103,7 @@ function assertSegment(value: string, pattern: RegExp, label: string): void {
 /** 校验身份分量的字面量形态（推导前置：坏 id 会让 allowlist 变成任意前缀）。 */
 export function assertPluginIdentity(identity: PluginIdentity): void {
   assertSegment(identity.id, ID, "id");
+  if (RESERVED_IDS.includes(identity.id)) throw new Error(`[plugin] id "${identity.id}" 是保留字（${RESERVED_IDS.join(", ")}）`);
   if (identity.kinds.length === 0) throw new Error("[plugin] kinds 不能为空");
   for (const kind of identity.kinds) {
     if (kind !== "gameplay" && kind !== "feature") throw new Error(`[plugin] 未知 kind: ${String(kind)}`);
@@ -137,9 +149,9 @@ export function deriveOwnership(identity: PluginIdentity): readonly OwnershipRul
   const rules: OwnershipRule[] = [
     { kind: "dir", path: `plugins/${id}`, reason: "插件自述（plugin.json）" },
     { kind: "dir", path: `docs/${id}`, reason: "插件自有文档" },
-    { kind: "prefix", path: "apps/server/test", prefix: id, reason: "插件自有服务端测试（文件名以 id 开头）" },
-    { kind: "prefix", path: "apps/server/test/int", prefix: id, reason: "插件自有集成测试（文件名以 id 开头）" },
-    { kind: "prefix", path: "apps/client/test", prefix: id, reason: "插件自有客户端测试（文件名以 id 开头）" },
+    { kind: "prefix", path: "apps/server/test", prefix: id, reason: "插件自有服务端测试（<id>-*.test.ts / <id>.*.test.ts）" },
+    { kind: "prefix", path: "apps/server/test/int", prefix: id, reason: "插件自有集成测试（<id>-*.test.ts / <id>.*.test.ts）" },
+    { kind: "prefix", path: "apps/client/test", prefix: id, reason: "插件自有客户端测试（<id>-*.test.ts / <id>.*.test.ts）" },
   ];
   if (identity.kinds.includes("gameplay")) {
     const constant = identity.constantName as string;
@@ -175,7 +187,7 @@ export function deriveOwnership(identity: PluginIdentity): readonly OwnershipRul
     rules.push(
       { kind: "dir", path: `apps/art/fairygui/assets/${pkg}`, reason: `FGUI 包源（${pkg}）` },
       { kind: "file", path: `${RESOURCES}/ui/${pkg}.bin`, reason: `FGUI 发布物（${pkg}.bin）` },
-      { kind: "prefix", path: `${RESOURCES}/ui`, prefix: `${pkg}_atlas`, reason: `FGUI 图集（${pkg}_atlas*）` },
+      { kind: "prefix", path: `${RESOURCES}/ui`, prefix: `${pkg}_atlas`, boundary: "any", reason: `FGUI 图集（${pkg}_atlas*）` },
     );
   }
   const dedup = new Map<string, OwnershipRule>();
@@ -183,12 +195,19 @@ export function deriveOwnership(identity: PluginIdentity): readonly OwnershipRul
   return [...dedup.values()].sort((left, right) => (left.path < right.path ? -1 : left.path > right.path ? 1 : 0));
 }
 
+/** prefix 规则对一个文件名（不含目录）的判定；pack 采集 / install 冲突扫描 / classifyPath 共用同一判据。 */
+export function matchesPrefixRule(base: string, rule: OwnershipRule): boolean {
+  if (rule.kind !== "prefix") return false;
+  const prefix = rule.prefix ?? "";
+  if (prefix === "" || !base.startsWith(prefix) || base === prefix) return false;
+  if (rule.boundary === "any") return true;
+  return PREFIX_SEPARATORS.includes(base.charAt(prefix.length));
+}
+
 function matchesRule(relative: string, rule: OwnershipRule): boolean {
   if (rule.kind === "dir") return relative === rule.path || relative.startsWith(`${rule.path}/`);
   if (rule.kind === "file") return relative === rule.path;
-  const dir = path.posix.dirname(relative);
-  const base = path.posix.basename(relative);
-  return dir === rule.path && base.startsWith(rule.prefix ?? "") && base !== rule.prefix;
+  return path.posix.dirname(relative) === rule.path && matchesPrefixRule(path.posix.basename(relative), rule);
 }
 
 /** 规范化并校验包内相对路径形态（zip-slip / 绝对路径 / 反斜杠 / 空段 / 控制字符）。 */

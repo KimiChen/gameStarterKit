@@ -8,9 +8,9 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { classifyPath, deriveOwnership, hardExclusionReason, mirrorPathOf, readProtectedPaths, type OwnershipRule } from "./ownership";
+import { classifyPath, deriveOwnership, hardExclusionReason, matchesPrefixRule, mirrorPathOf, readProtectedPaths, type OwnershipRule } from "./ownership";
 import { identityOf, parsePluginManifest, type PluginManifest } from "./manifest";
-import { PACKAGE_FILES_LOCK, PACKAGE_MANIFEST, renderFilesLock, sha256, type LockEntry } from "./lock";
+import { PACKAGE_FILES_LOCK, PACKAGE_MANIFEST, foreignLockOwners, renderFilesLock, sha256, type LockEntry } from "./lock";
 import { featureDeclarations, validatePackage, type PluginPackage } from "./package";
 import { writeZip } from "./zip";
 
@@ -88,9 +88,16 @@ export function collectPluginFiles(root: string, manifest: PluginManifest): {
       if (!fs.existsSync(dir)) continue;
       for (const name of fs.readdirSync(dir)) {
         const full = path.join(dir, name);
-        if (fs.statSync(full).isFile() && name.startsWith(rule.prefix ?? "") && name !== rule.prefix) candidates.add(`${rule.path}/${name}`);
+        if (fs.statSync(full).isFile() && matchesPrefixRule(name, rule)) candidates.add(`${rule.path}/${name}`);
       }
     }
+  }
+  // 别的已安装插件锁登记的文件永远不是本插件的：推导集若与之重叠（两个插件的规则相交），是硬错误，
+  // ⛔ 不静默采集进本包（否则本包的锁会「拥有」别人的文件，卸载时连带删掉；PLUGIN-REGISTRY §1-4）。
+  const foreign = foreignLockOwners(root, manifest.id);
+  const overlap = [...candidates].filter((relative) => foreign.has(relative)).sort();
+  if (overlap.length > 0) {
+    fail(`插件 "${manifest.id}" 的所有权推导集与其它已安装插件的锁重叠，拒绝采集：\n  ${overlap.map((relative) => `${relative}（属于插件 ${foreign.get(relative) as string}）`).join("\n  ")}`);
   }
   const files = new Map<string, Buffer>();
   const skipped: string[] = [];

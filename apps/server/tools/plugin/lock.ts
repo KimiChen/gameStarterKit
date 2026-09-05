@@ -151,6 +151,16 @@ export function listInstalledLocks(root: string): readonly InstalledLock[] {
     });
 }
 
+/** 其它已安装插件的锁登记的路径 → 所属插件 id（本插件 id 除外；pack/install/check 的「两两不交」依据）。 */
+export function foreignLockOwners(root: string, id: string): ReadonlyMap<string, string> {
+  const owners = new Map<string, string>();
+  for (const lock of listInstalledLocks(root)) {
+    if (lock.manifest.id === id) continue;
+    for (const entry of lock.entries) owners.set(entry.path, lock.manifest.id);
+  }
+  return owners;
+}
+
 export interface LockVerification {
   readonly modified: readonly string[];
   readonly missing: readonly string[];
