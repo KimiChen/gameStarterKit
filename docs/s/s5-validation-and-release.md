@@ -31,7 +31,7 @@ S5 只回答“这个 demo 是否能完整演示并通过仓库门禁”。它�
 
 数据口径固定为：
 
-- Redis 逻辑 key 只有 `snake:user:{uid}`，允许字段精确为 `coinBalance`、`equippedSkinId`、
+- Redis 逻辑 key 只有 `gp:snake:user:{uid}`，允许字段精确为 `coinBalance`、`equippedSkinId`、
   `ownedSkinIds`、`fragmentBalances`、`snakeXp` 和 `achievementProgress`。
 - key、field 和 value 都不增加 `sId`；集合/映射字段使用经过严格校验的 JSON。
 - 当前 profile 先在进程内更新，再 best-effort 镜像 Redis；run 去重和最近结果只在当前进程内存在。
@@ -119,7 +119,7 @@ node --import tsx --test --test-concurrency=1 test/int/snake-*-demo.test.ts
 | ID | 断言 | 证据 |
 |---|---|---|
 | S5-GROW-01 | 客户端自报皮肤无效，装备只影响下一 run | 连续两局快照 |
-| S5-GROW-02 | 四款碎片门槛、超额保留和重复解锁正确，并写入同一 Redis HASH | profile 与 `HGETALL` 前后值 |
+| S5-GROW-02 | 四款碎片门槛、超额保留和重复解锁正确，并写入同一 Redis HASH | profile 与 `HKEYS` + 白名单 `HMGET` 前后值（⛔ 判据不用 `HGETALL`，09·R1 全仓禁令） |
 | S5-GROW-03 | 同一 run 只奖一次，AI/假榜/排名不发账号奖励 | 重复终局 fixture |
 | S5-GROW-04 | 金币/XP 硬顶、等级、成就和碎片公式边界正确 | 参数化测试 |
 | S5-GROW-05 | 结果只推送本人，其他玩家继续 Playing | 双真人 fixture |

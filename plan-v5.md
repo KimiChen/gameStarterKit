@@ -83,11 +83,11 @@ verify:sync 镜像一致、inventory 全绿）；`test:int` 169/169（本地真 
 
 > 更新（2026-09-03，Snake S2R demo）：当前运行时升为 `snake@3`，开发环境接入按认证 `uid` 共享的
 > `RedisDemoReliveEconomy`。复活先同步扣减进程内 demo 余额，再将唯一字段 `coinBalance` best-effort 写入
-> Redis 逻辑 key `snake:user:{uid}`；key、field 和 value 都不增加 `sId`。同一进程内同一业务死亡只扣一次，
+> Redis 逻辑 key `gp:snake:user:{uid}`；key、field 和 value 都不增加 `sId`。同一进程内同一业务死亡只扣一次，
 > Redis 写失败只告警且不回滚玩法结果。该简化实现不新增 MySQL 表、不修改通用 `GameMode`/`GameRoom`、
 > 不接任务调度或跨进程恢复；`eligibleForEnable=false` 且 `onlineCoinRelive5V1` 继续关闭。S3、S4、S5 仍未实施。
 > S3～S5 的阶段文档也已按相同 demo 原则收敛：衣柜和养成数据只保存在当前进程，终局奖励同步应用，
-> S5 只验收内部 demo 与 Creator 桌面预览。S3/S4 可在同一个 `snake:user:{uid}` HASH 中增加
+> S5 只验收内部 demo 与 Creator 桌面预览。S3/S4 可在同一个 `gp:snake:user:{uid}` HASH 中增加
 > `equippedSkinId/ownedSkinIds/fragmentBalances/snakeXp/achievementProgress`，全部不含 `sId`；
 > 仍不增加其他 Snake key，也不把生产级持久化、补偿或后台处理列为阶段门禁。
 > 本地 `verify:all` exit 0（client 384/384、server 499/499、FGUI 66/66、inventory 110/110），真栈
