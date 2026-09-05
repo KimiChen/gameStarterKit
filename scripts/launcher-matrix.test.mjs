@@ -26,6 +26,17 @@ import { after, test } from "node:test";
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const VERIFY_SCRIPT = join(REPO_ROOT, "scripts", "verify-inventory.mjs");
 const MARKER = "LAUNCHER_MATRIX_MARKER";
+/**
+ * 探针源码里 ⛔ 不能出现完整 marker 字面量：bash 5.x 的 `--pretty-print`（以及任何「回显源码」
+ * 形态）会把脚本原文打到 stdout 并 exit 0 而不执行，若源码含 marker，探针就会把「回显」误判成
+ * 「执行」（2026-09-05 在 bash 5.3.15 上实测的假红）。因此 marker 由两段在**运行期**拼接：
+ * 只有真的执行到 echo/console.log 才会出现完整串；`-v`/`-x` 的源码回显与 trace 不受影响（它们仍执行）。
+ */
+const MARKER_HEAD = MARKER.slice(0, 12);
+const MARKER_TAIL = MARKER.slice(12);
+if (`${MARKER_HEAD}${MARKER_TAIL}` !== MARKER || MARKER.includes(MARKER_HEAD + '""' + MARKER_TAIL)) {
+  throw new Error("MARKER 拆分自检失败");
+}
 /** inventory 里 outbox-relayer 的 defaultEntry，相对 `apps/server`。 */
 const ENTRY = "src/core/economy/relayer.ts";
 
@@ -104,8 +115,12 @@ function setup() {
   probeDir = mkdtempSync(join(tmpdir(), "launcher-probe-"));
   // marker 刻意放在**第二行**：我们要判的是「入口被跑完」，不是「跑了第一条命令」。
   // `bash -t` 只执行第一条就退出，marker 因此不出现——与门禁把它判为「未启动」一致。
-  writeFileSync(join(probeDir, "entry.sh"), `: first command\necho ${MARKER}\n`);
-  writeFileSync(join(probeDir, "entry.mjs"), `console.log(${JSON.stringify(MARKER)});\n`);
+  // 源码里只有 "LAUNCHER_MAT""RIX_MARKER" 这种拆开的写法（见 MARKER_HEAD/TAIL 注释）。
+  writeFileSync(join(probeDir, "entry.sh"), `: first command\necho "${MARKER_HEAD}""${MARKER_TAIL}"\n`);
+  writeFileSync(
+    join(probeDir, "entry.mjs"),
+    `console.log([${JSON.stringify(MARKER_HEAD)}, ${JSON.stringify(MARKER_TAIL)}].join(""));\n`,
+  );
   // 诱饵：验证「入口出现在真正被执行的脚本之后」时不算启动。
   writeFileSync(join(probeDir, "decoy.mjs"), "void 0;\n");
   // 诱饵脚本：存在、能跑完、但绝不打 marker——用于「入口前有操作数」的形态。
@@ -193,4 +208,11 @@ test("探针本身有判别力：marker 判定不是恒真", () => {
   setup();
   assert.equal(reallyLaunched("shell", []), true, "裸 bash 必须真的执行入口");
   assert.equal(reallyLaunched("shell", ["-n"]), false, "bash -n 不执行入口，探针必须能看出来");
+  assert.equal(reallyLaunched("shell", ["-v"]), true, "bash -v 回显源码但仍执行，探针不能被回显干扰");
+  assert.equal(reallyLaunched("shell", ["-t"]), false, "bash -t 只跑第一条命令，marker 在第二行不应出现");
+  // 回显源码不算执行：探针源码里没有完整 marker，任何「打印脚本原文」的形态都不能骗过探针。
+  for (const file of ["entry.sh", "entry.mjs"]) {
+    assert.ok(!readFileSync(join(probeDir, file), "utf8").includes(MARKER), `${file} 源码不得含完整 marker`);
+  }
+  assert.equal(reallyLaunched("node", ["--check"]), false, "node --check 不执行入口");
 });
