@@ -99,7 +99,7 @@ S2 死亡/run 状态机和同步端口，不扩展通用 shell。按 2026-09-03 
 | [S2R · Demo 金币复活](s2r-reliable-coin-relive.md) | `[已完成]` | uid 进程内余额、同步扣费、Redis 单字段 best-effort 镜像、余额 UI | 同一进程同一死亡只扣一次；Redis 失败不影响复活 | demo 简化实现 |
 | S3-0 · 开工前收口（§9） | `[已完成]` | 文档漂移订正、S0 证据可复现性加注、A/B/C 三项拍板 | 5 处漂移全改；键名 grep 门无输出；三项拍板结论见 §9.1 | 0.5–1 人日 |
 | [S3 · Demo 衣柜与装备](s3-wardrobe-and-equipment.md) | `[已拍板·待实施]` | 内存 profile、Redis 镜像、解锁/装备、衣柜页面 | 同一 HASH 保存装备/拥有/碎片，不含 `sId` | demo 简化实现 |
-| [S4 · Demo 养成奖励](s4-reliable-progression-rewards.md) | `[已拍板·待实施]` | 同步 run 奖励、内存去重、Redis profile、个人结果 | 同一进程同一 run 只奖一次 | demo 简化实现 |
+| [S4 · Demo 养成奖励](s4-reliable-progression-rewards.md) | `[已完成]` | 同步 run 奖励、内存去重、Redis profile、个人结果 | 同一进程同一 run 只奖一次 | demo 简化实现 |
 | [S5 · Demo 验收](s5-validation-and-release.md) | `[已拍板·待实施]` | 自动化、Redis profile 检查与 Creator 桌面预览 | Demo 门禁和人工证据齐全 | demo 简化验收 |
 
 S3～S5 不再沿用原生产级方案的工期估算，实际工程量在各阶段实现时回写。S3 完成后可试玩衣柜，
@@ -304,8 +304,10 @@ shared 继续保持零依赖，客户端 View/Logic 与 FairyGUI 动态加载边
 | S3-5 | ✅ **已完成**：feature `snakeCosmetic`（注册目录 `features/snake-cosmetic`）+ 纯 TS `WardrobeLogic` + 手搓 `WardrobeView`（`kind:"cocos"`，§9.6 S3-c 默认）。域升 `contractVersion: 2`——`getSnapshot` 增 `catalog`（衣柜要显示稀有度/获取方式，业务真源在服务端，⛔ 客户端不得自建第二份） | `verify:all` exit 0（client 435/435、server 587/587）。Logic 8 条单测。⚠ 补合成 8 个镜像 `.meta` |
 | S3-6 | 为新增镜像文件补 `.meta` | `verify:sync` 绿。⚠ 风险已降低：2026-09-05 Creator 会话实测未重写脚本合成的 `.meta`（[证据](../evidence/creator-2026-09-05/README.md)），可优先按 `features/redeem` 的合成先例做，Creator 只做确认 |
 
-S4 顺序：S4-02（shared 纯公式 + fixture，零副作用可独立测）→ S4-01（补 `maxLength` / `meaningfulInputCount` /
-`reliveCoinSpent`；其余 run 统计 schema 里已有）→ S4-03（progression + 去重）→ S4-04（结果 wire 与页面）。
+S4 ✅ **四步全部完成**（顺序即下文，B0 生效：前三步没碰 `wire.ts`，改动攒到 S4-04 一次成型，
+只付了一次 `modeVersion` bump 4→5）：S4-02（shared 纯公式 + fixture）→ S4-01（补 `maxLength` /
+`meaningfulInputCount` / `reliveCoinSpent`，只在房间内存、不进 `state.json`）→ S4-03（结算 +
+`uid+roomEpochId+runId` 去重 + 单条六字段 HSET）→ S4-04（结果 wire v2 + 结果页）。
 奖励必须插在 run 转入 Finalized 之后、下发 `SnakeRunResult` 之前。
 ⚠ 按 §9.1-B 的 B0：**S4-04 排在最后且一次成型**——在它之前不要动 `apps/shared/src/gameplays/snake/wire.ts`
 （动一个字节就要 bump 一次 `modeVersion` 并联动 5 个生成物 + 两条 sync + 两处测试，成本按次计）。
