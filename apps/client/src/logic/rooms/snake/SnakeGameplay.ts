@@ -12,7 +12,7 @@ import {
     type ISnakePlayerState,
     type ISnakeRoomState,
     type ISnakeRunFinalizing,
-    type ISnakeRunResultV1,
+    type ISnakeRunResultV2,
     type ISnakeWorldDelta,
 } from "../../../shared/index";
 import {
@@ -69,7 +69,7 @@ export interface SnakeRoomLike {
     onReliveDecisionResult(callback: (message: ISnakeReliveDecisionResult) => void): () => void;
     onReliveResolved(callback: (message: ISnakeReliveResolved) => void): () => void;
     onRunFinalizing(callback: (message: ISnakeRunFinalizing) => void): () => void;
-    onRunResult(callback: (message: ISnakeRunResultV1) => void): () => void;
+    onRunResult(callback: (message: ISnakeRunResultV2) => void): () => void;
     onStateChange(callback: (state: ISnakeRoomState) => void): () => void;
     sendInput(dirX: number, dirY: number, boost: boolean): number;
     sendReliveDecision(payload: {

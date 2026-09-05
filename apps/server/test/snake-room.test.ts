@@ -302,7 +302,16 @@ test("五次金币复活费用 100/200/300/300/300；第六死无 offer，buff �
     assert.equal(player.runState, SnakeRunState.Finalized);
     assert.equal(player.terminalIntent, SnakeRunEndReason.DeathNoOffer);
     assert.equal(messages(first, S2C.SnakeReliveOffered).length, offeredBeforeSixth);
-    assert.equal(messages<{ rewardStatus: string }>(first, S2C.SnakeRunResult).at(-1)?.rewardStatus, "notEnabled");
+    // S4-04 起结算真的落地：rewardStatus 从 notEnabled 变成 applied，结果里带上本局统计与复活消耗。
+    const finalResult = messages<{
+        rewardStatus: string;
+        resultVersion: number;
+        stats: { relivesUsed: number; reliveCoinSpent: number };
+    }>(first, S2C.SnakeRunResult).at(-1);
+    assert.equal(finalResult?.resultVersion, 2);
+    assert.equal(finalResult?.rewardStatus, "applied");
+    assert.equal(finalResult?.stats.relivesUsed, 5);
+    assert.equal(finalResult?.stats.reliveCoinSpent, 1_200, "100+200+300+300+300");
     assert.equal(harness.economy.commitCount, 5);
     assert.equal(harness.economy.testBalance, 8_800);
     assert.equal(player.coinBalance, 8_800);
