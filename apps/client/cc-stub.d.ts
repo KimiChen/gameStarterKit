@@ -46,6 +46,8 @@ declare module "cc" {
     export class Sprite extends Component { spriteFrame: SpriteFrame | null; color: Color; sizeMode: number; type: number; }
     export class Label extends Component {
         string: string; fontSize: number; color: Color; horizontalAlign: number; verticalAlign: number;
+        lineHeight: number; overflow: number; enableWrapText: boolean;
+        static Overflow: { NONE: number; CLAMP: number; SHRINK: number; RESIZE_HEIGHT: number };
         static HorizontalAlign: { LEFT: number; CENTER: number; RIGHT: number };
         static VerticalAlign: { TOP: number; CENTER: number; BOTTOM: number };
     }
