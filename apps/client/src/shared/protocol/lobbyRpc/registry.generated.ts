@@ -9,6 +9,7 @@ import { validateMailClaimAttachRes, validateMailClaimReq, validateMailListReq, 
 import { validateRedeemClaimReq, validateRedeemClaimRes, type IRedeemClaimReq, type IRedeemClaimRes } from "./domains/redeem";
 import { validatePrepareCreateReq, validatePrepareCreateRes, validateResolveReq, validateResolveRes, type IRoomPrepareCreateReq, type IRoomPrepareCreateRes, type IRoomResolveReq, type IRoomResolveRes } from "./domains/room";
 import { validatePurchaseResult, validateShopPurchaseReq, validateShopQueryReq, type IShopPurchaseReq, type IShopQueryOpReq } from "./domains/shop";
+import { validateSnakeCosmeticGetSnapshotReq, validateSnakeCosmeticProfileRes, validateSnakeCosmeticSkinReq, type ISnakeCosmeticGetSnapshotReq, type ISnakeCosmeticProfileRes, type ISnakeCosmeticSkinReq } from "./domains/snakeCosmetic";
 import { validateGetInfoReq, validateGetInfoRes, validateGetProfileReq, validateGetUserIdReq, validateGetUserIdRes, validateProfileRes, validateUpdateProfileReq, validateUpdateRes, type IGetInfoReq, type IGetInfoRes, type IGetProfileReq, type IGetProfileRes, type IGetUserIdReq, type IGetUserIdRes, type IUpdateProfileReq, type IUpdateProfileRes } from "./domains/user";
 
 /** 领域全集（生成器删除保护锚 + 向量 sidecar 的域集合闸）。 */
@@ -18,6 +19,7 @@ export const LOBBY_RPC_DOMAINS: readonly string[] = [
     "redeem",
     "room",
     "shop",
+    "snakeCosmetic",
     "user",
 ];
 
@@ -34,6 +36,9 @@ export interface LobbyRpcMap {
     "room.resolve": { req: IRoomResolveReq; res: IRoomResolveRes };
     "shop.purchase": { req: IShopPurchaseReq; res: IPurchaseResult };
     "shop.queryOp": { req: IShopQueryOpReq; res: IPurchaseResult };
+    "snakeCosmetic.getSnapshot": { req: ISnakeCosmeticGetSnapshotReq; res: ISnakeCosmeticProfileRes };
+    "snakeCosmetic.equip": { req: ISnakeCosmeticSkinReq; res: ISnakeCosmeticProfileRes };
+    "snakeCosmetic.unlock": { req: ISnakeCosmeticSkinReq; res: ISnakeCosmeticProfileRes };
     "user.getUserId": { req: IGetUserIdReq; res: IGetUserIdRes };
     "user.getInfo": { req: IGetInfoReq; res: IGetInfoRes };
     "user.getProfile": { req: IGetProfileReq; res: IGetProfileRes };
@@ -56,7 +61,9 @@ export type LobbyRpcIdemType =
 
 /** natural-write 路由子集（写入天然可安全重复；不进通用幂等层） */
 export type LobbyRpcNaturalWriteType =
-    | "mail.markRead";
+    | "mail.markRead"
+    | "snakeCosmetic.equip"
+    | "snakeCosmetic.unlock";
 
 /** 路由 → 执行模式（服务端 defineRpc 据此派生 schema/幂等行为，endpoint 不再自填） */
 export const LOBBY_RPC_ROUTE_MODES: { readonly [K in LobbyRpcType]: LobbyRpcRouteMode } = {
@@ -71,6 +78,9 @@ export const LOBBY_RPC_ROUTE_MODES: { readonly [K in LobbyRpcType]: LobbyRpcRout
     "room.resolve": "query",
     "shop.purchase": "idempotent-write",
     "shop.queryOp": "query",
+    "snakeCosmetic.getSnapshot": "query",
+    "snakeCosmetic.equip": "natural-write",
+    "snakeCosmetic.unlock": "natural-write",
     "user.getUserId": "query",
     "user.getInfo": "query",
     "user.getProfile": "query",
@@ -90,6 +100,9 @@ export const ALL_LOBBY_RPC_TYPES: readonly LobbyRpcType[] = [
     "room.resolve",
     "shop.purchase",
     "shop.queryOp",
+    "snakeCosmetic.getSnapshot",
+    "snakeCosmetic.equip",
+    "snakeCosmetic.unlock",
     "user.getUserId",
     "user.getInfo",
     "user.getProfile",
@@ -110,6 +123,9 @@ export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number
     "room.resolve": 1,
     "shop.purchase": 1,
     "shop.queryOp": 1,
+    "snakeCosmetic.getSnapshot": 1,
+    "snakeCosmetic.equip": 1,
+    "snakeCosmetic.unlock": 1,
     "user.getUserId": 1,
     "user.getInfo": 1,
     "user.getProfile": 1,
@@ -123,6 +139,7 @@ export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly
     redeem: { contractVersion: 1, digest: "e7e74dc98acf6cfb1d5bfd0261930d6bbc5bb07e2efa79dec0e91be485596514" },
     room: { contractVersion: 1, digest: "8655531a80f2ffc6a941247c2c2ef00ad44dfb3842b722741556430bf2c12ff2" },
     shop: { contractVersion: 1, digest: "80f5bc9c74300aecd0bf2caf8dea93506657c5e9a4d64e91931760e8c06544cf" },
+    snakeCosmetic: { contractVersion: 1, digest: "05062f48f19aa9418b3528dba1a846f862db05768741ca036eeb8281472dea77" },
     user: { contractVersion: 1, digest: "ce1f3ff0528a15836c188d111ddbe29bfb8c97c4f68d69c3e77a9432fe157a28" },
 };
 
@@ -151,6 +168,9 @@ export const LOBBY_RPC_REQUEST_VALIDATORS: { readonly [K in LobbyRpcType]: Runti
     "room.resolve": guardRpcValidator("payload", validateResolveReq),
     "shop.purchase": guardRpcValidator("payload", validateShopPurchaseReq),
     "shop.queryOp": guardRpcValidator("payload", validateShopQueryReq),
+    "snakeCosmetic.getSnapshot": guardRpcValidator("payload", validateSnakeCosmeticGetSnapshotReq),
+    "snakeCosmetic.equip": guardRpcValidator("payload", validateSnakeCosmeticSkinReq),
+    "snakeCosmetic.unlock": guardRpcValidator("payload", validateSnakeCosmeticSkinReq),
     "user.getUserId": guardRpcValidator("payload", validateGetUserIdReq),
     "user.getInfo": guardRpcValidator("payload", validateGetInfoReq),
     "user.getProfile": guardRpcValidator("payload", validateGetProfileReq),
@@ -170,6 +190,9 @@ export const LOBBY_RPC_RESPONSE_VALIDATORS: { readonly [K in LobbyRpcType]: Runt
     "room.resolve": guardRpcValidator("response", validateResolveRes),
     "shop.purchase": guardRpcValidator("response", validatePurchaseResult),
     "shop.queryOp": guardRpcValidator("response", validatePurchaseResult),
+    "snakeCosmetic.getSnapshot": guardRpcValidator("response", validateSnakeCosmeticProfileRes),
+    "snakeCosmetic.equip": guardRpcValidator("response", validateSnakeCosmeticProfileRes),
+    "snakeCosmetic.unlock": guardRpcValidator("response", validateSnakeCosmeticProfileRes),
     "user.getUserId": guardRpcValidator("response", validateGetUserIdRes),
     "user.getInfo": guardRpcValidator("response", validateGetInfoRes),
     "user.getProfile": guardRpcValidator("response", validateProfileRes),
@@ -220,6 +243,10 @@ export const RPC_ERR_CODES = [
     "ROOM_QUOTA_EXCEEDED",
     "ROOM_SERVICE_UNAVAILABLE",
     "ROOM_RESULT_UNKNOWN",
+    "SNAKE_SKIN_UNKNOWN",
+    "SNAKE_SKIN_NOT_OWNED",
+    "SNAKE_SKIN_NOT_CRAFTABLE",
+    "SNAKE_SKIN_FRAGMENTS_INSUFFICIENT",
 ] as const;
 
 export type RpcErrCode = (typeof RPC_ERR_CODES)[number];

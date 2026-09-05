@@ -4,6 +4,7 @@ import mailVectors from "./mail";
 import redeemVectors from "./redeem";
 import roomVectors from "./room";
 import shopVectors from "./shop";
+import snakeCosmeticVectors from "./snakeCosmetic";
 import userVectors from "./user";
 import type { LobbyRpcVectorFile } from "./vectorTypes";
 
@@ -14,5 +15,6 @@ export const LOBBY_RPC_VECTOR_FILES: Readonly<Record<string, LobbyRpcVectorFile>
     redeem: redeemVectors,
     room: roomVectors,
     shop: shopVectors,
+    snakeCosmetic: snakeCosmeticVectors,
     user: userVectors,
 };
