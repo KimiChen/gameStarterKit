@@ -2,16 +2,34 @@
 
 import { createHash } from "node:crypto";
 import { clientFor } from "../../../core/infra/redisRoute";
+import { equippedSkinIdOf } from "./cosmeticProfile";
 import { kSnakeUser } from "./keys";
 
 export const ONLINE_COIN_RELIVE_PLAYER_RELEASED = false;
 
-export interface SnakeRunSkinResolver {
-    resolve(input: { readonly roomEpochId: string; readonly sessionId: string }): number;
+/**
+ * run 起始皮肤解析。⛔ 永不读取 join 自报值——`uid` 由服务端从认证上下文反查后传入
+ * （拍板 A「服务端单方面权威」，docs/s/README.md §9.1）。
+ *
+ * ⚠ `resolve` 必须是**同步**的：`createPlayer` 在同步路径上建实体，不能在这里 await Redis。
+ */
+export interface SnakeRunSkinResolverInput {
+    readonly roomEpochId: string;
+    readonly sessionId: string;
+    /** 认证 uid；未认证或测试 fixture 未注入身份时为 `null`。 */
+    readonly uid: string | null;
 }
 
+export interface SnakeRunSkinResolver {
+    resolve(input: SnakeRunSkinResolverInput): number;
+}
+
+/**
+ * 自 S3-03 起读进程内已预热的衣柜 profile（由普通 Lobby RPC `snakeCosmetic.getSnapshot` 预热）。
+ * 未预热、uid 缺失或装备值失效时回退默认皮肤 1，⛔ 绝不因衣柜数据异常阻塞进房。
+ */
 export const DEFAULT_SNAKE_RUN_SKIN_RESOLVER: SnakeRunSkinResolver = Object.freeze({
-    resolve: () => 1,
+    resolve: ({ uid }: SnakeRunSkinResolverInput) => equippedSkinIdOf(uid),
 });
 
 export interface ReliveEconomyInput {

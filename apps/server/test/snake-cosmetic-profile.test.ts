@@ -3,10 +3,13 @@ import { test } from "node:test";
 import {
     SNAKE_COSMETIC_FIELDS,
     SnakeDemoCosmeticStore,
+    __forceEquippedSkinIdForTest,
     __grantSnakeFragmentsForTest,
     __resetSnakeCosmeticProfilesForTest,
+    equippedSkinIdOf,
     type SnakeCosmeticPersistenceRecord,
 } from "../src/rooms/modes/snake/cosmeticProfile";
+import { DEFAULT_SNAKE_RUN_SKIN_RESOLVER } from "../src/rooms/modes/snake/lifecycle";
 import { SNAKE_FRAGMENT_SKIN_IDS, SNAKE_FRAGMENT_SKIN_THRESHOLDS } from "../src/rooms/modes/snake/skinBusinessCatalog";
 
 /** 不碰真 Redis：记录每次镜像写入，并可注入回灌值与失败。 */
@@ -183,4 +186,37 @@ test("同一进程内不同房间共享同一 uid 的 profile", () => {
     __grantSnakeFragmentsForTest("u1", 401, threshold);
     h.store.unlock("u1", 401);
     assert.deepEqual(other.getSnapshot("u1").ownedSkinIds, [1, 401]);
+});
+
+test("equippedSkinIdOf：uid 缺失 / 未预热 / 装备值失效都回退默认皮肤 1", () => {
+    const h = harness();
+    assert.equal(equippedSkinIdOf(null), 1, "未认证 fixture 回退默认皮肤");
+    assert.equal(equippedSkinIdOf("never-hydrated"), 1, "未预热 uid 回退默认皮肤");
+
+    const threshold = SNAKE_FRAGMENT_SKIN_THRESHOLDS.get(133)!;
+    __grantSnakeFragmentsForTest("u1", 133, threshold);
+    h.store.unlock("u1", 133);
+    h.store.equip("u1", 133);
+    assert.equal(equippedSkinIdOf("u1"), 133, "已预热则读装备值");
+
+    // 防御性复核：直接把内部装备值改成未拥有的皮肤（模拟目录在两次发布之间漂移）。
+    const leaked = h.store.getSnapshot("u1");
+    assert.equal(leaked.ownedSkinIds.includes(701), false);
+    __forceEquippedSkinIdForTest("u1", 701);
+    assert.equal(equippedSkinIdOf("u1"), 1, "装备了未拥有的皮肤 → 回退，⛔ 不得把它带进战斗");
+
+    __forceEquippedSkinIdForTest("u1", 99999);
+    assert.equal(equippedSkinIdOf("u1"), 1, "目录里不存在的皮肤 → 回退");
+});
+
+test("DEFAULT_SNAKE_RUN_SKIN_RESOLVER 是同步的，且只认服务端传入的 uid", () => {
+    const h = harness();
+    const threshold = SNAKE_FRAGMENT_SKIN_THRESHOLDS.get(403)!;
+    __grantSnakeFragmentsForTest("u9", 403, threshold);
+    h.store.unlock("u9", 403);
+    h.store.equip("u9", 403);
+    const resolved = DEFAULT_SNAKE_RUN_SKIN_RESOLVER.resolve({ roomEpochId: "e1", sessionId: "s1", uid: "u9" });
+    assert.equal(resolved, 403);
+    assert.equal(typeof resolved, "number", "⛔ 必须同步返回：createPlayer 不能 await");
+    assert.equal(DEFAULT_SNAKE_RUN_SKIN_RESOLVER.resolve({ roomEpochId: "e1", sessionId: "s1", uid: null }), 1);
 });

@@ -686,7 +686,12 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
 
         createPlayer: ({ sessionId, name }) => {
             if (!roomEpochId) throw new Error("[snake] room epoch must exist before admission");
-            const requestedSkin = skinResolver.resolve({ roomEpochId, sessionId });
+            // uid 由服务端从准入身份反查，⛔ 不读 join 自报皮肤（拍板 A）。未认证 fixture 为 null。
+            const requestedSkin = skinResolver.resolve({
+                roomEpochId,
+                sessionId,
+                uid: admissionIdentities.get(sessionId)?.uid ?? null,
+            });
             const skin = resolveServerBattleSkin(requestedSkin);
             if (skin.usedFallback && requestedSkin !== skin.resolvedSkinId) {
                 throw new Error(`[snake] RunSkinResolver returned unpublished skinId ${String(requestedSkin)}`);
