@@ -149,8 +149,12 @@ snakeCosmetic.unlock(skinId)
 按字段白名单 `HMGET` 并填充模块级缓存；后续请求直接使用当前进程内值。接口不要求持久请求记录；网络重试依靠
 操作自身的结果幂等性：重复装备是 no-op，重复解锁已拥有皮肤不会再次扣碎片。
 
-客户端在发起 Snake join 前调用这个普通 Lobby RPC 预热 profile。Redis 不可用时仍返回默认 profile；
-这不是 `GameRoom` 的异步准入 hook，也不会修改通用房间生命周期。
+⚠ **预热口径（2026-09-05 订正）**：原文这里写的是**设计意图**，⛔ 不是当前实现——今天预热只发生在
+**打开衣柜时**（feature 非 resident，且 `resident` 只豁免 idle-release、**不等于**启动期装载）。
+冷启动直接进 snake 会用默认皮肤 1，服务端 resolver 的回退路径已覆盖、不阻塞进房。
+是否补一个 join 前预热接缝见 [README §9.6](README.md#96-剩余待决项不阻塞-s3-开工) 的 **S3-d**。
+无论走哪条，Redis 不可用时都仍返回默认 profile；这不是 `GameRoom` 的异步准入 hook，
+也不会修改通用房间生命周期。
 
 真人进入 Snake 时，mode 复用现有认证身份映射，在创建实体前同步读取 profile：
 
