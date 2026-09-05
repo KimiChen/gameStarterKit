@@ -6,7 +6,7 @@
 
 | 项目 | 口径 |
 |---|---|
-| 状态 | `[已拍板·待实施]` |
+| 状态 | `[进行中]`（S5-01 已冻结、S5-02 自动门禁部分已跑；S5-02 真栈、S5-03/04/05 未做） |
 | 目标 | 验证 S0～S4 的 demo 动线、生成镜像、自动测试和 Creator 3.8.8 桌面预览 |
 | 数据范围 | 进程内衣柜/养成 + Redis 单 HASH profile 投影 |
 | 交付物 | 一个可复现的内部 demo 候选和证据记录 |
@@ -42,8 +42,26 @@ S5 只回答“这个 demo 是否能完整演示并通过仓库门禁”。它�
 
 ### S5-01：冻结 demo 候选
 
-- [ ] 记录 commit、五层 ID/hash、catalog、gameplay modeVersion、协议 fingerprint 和客户端资源版本。
-- [ ] 确认 S0～S4 的状态、实现和证据一致，未完成项不能被 S5 文案标成通过。
+- [x] 候选身份已冻结（2026-09-05，commit `80d78e2`）：
+
+| 项 | 值 |
+|---|---|
+| commit | `80d78e2` |
+| gameplay | `snake@5`（S4-04 的结果 wire v2 触发 4→5，是 S4 唯一一次 bump） |
+| 战场层 | `newEndlessPortraitV2Map4096` · `6750cb34…a07e` |
+| 生命周期层 | `sourceEndlessTotalTime0` · `efc56090…b477` |
+| 复活流程层 | `sourceEndlessReliveFlow` · `9b33262d…b865` |
+| 复活策略层 | `onlineCoinRelive5V1` · `e668f382…c646` |
+| 联机适配层 | `onlineEndlessDropInV2@2` · `3a61016c…a53f` |
+| 五层组合 hash | `2c74f005…e8e7`（S0 旧值 `2319d173…f87e2` 仅作历史证据） |
+| public 皮肤目录 | `a1cdecbc…b075`（S1 起未变） |
+| server 业务目录 | **`b851e345…9d2c`**（S3-01 填入业务值后搬家，⛔ 不再是 S1 的 `9ed3762e…fa19`） |
+| client 表现目录 | `8615596a…d629`，`presentationVersion=2`（S1-12 起未变） |
+| 协议指纹 | `g8 l7 57af8eb6…357b` |
+
+- [x] S0～S4 状态与实现一致（见 [专项 README §8](README.md#8-总状态与证据汇总)）。
+      ⚠ 两处**未完成项不得被 S5 文案标成通过**：① S0 证据不可重新生成（归档非 git 检出）；
+      ② 皮肤预览是静态合成图、底色不透明。
 
 ### S5-02：执行仓库自动门禁
 
@@ -62,7 +80,12 @@ cd apps/server
 node --import tsx --test --test-concurrency=1 test/int/snake-*-demo.test.ts
 ```
 
-- [ ] 记录日期、exit code 和关键测试计数。未运行的命令不得写“通过”。
+- [x] **已跑（2026-09-05 · `80d78e2`）**：`npm run verify:all` **exit 0** —— client 435/435、
+      server 604/604、FGUI 66/66、inventory 110/110（能力 14 项 / 默认入口 5 个）、
+      sync-mirror-matrix 5/5，零失败。`verify:sync` 与 `test:fgui` 均含在该链内并通过。
+- [ ] ⛔ **未跑**：`test/int/snake-*-demo.test.ts` —— 本机**没有运行中的 Redis**
+      （`redis-cli ping` 无响应、无本地栈容器）。按本页规矩「未运行的命令不得写通过」，
+      本条保持未勾选；需先 `npm --workspace @game/server run stack` 起本地 Redis/MySQL 再跑。
 
 ### S5-03：执行无头玩法验收
 
@@ -161,9 +184,14 @@ node --import tsx --test --test-concurrency=1 test/int/snake-*-demo.test.ts
 
 ## 证据回写
 
-| 状态 | commit | 自动验证 | Redis / Creator 证据 | 备注 |
-|---|---|---|---|---|
-| `[已拍板·待实施]` | - | - | - | 内部 demo 候选；不含物理真机和生产发布 |
+| 项 | 状态 | commit | 自动验证 | Redis / Creator 证据 | 备注 |
+|---|---|---|---|---|---|
+| S5-01 冻结候选 | `[已完成]` | `80d78e2` | 不适用（台账） | 不适用 | 五层 + 三层目录 + 指纹见上表 |
+| S5-02 自动门禁 | `[进行中]` | `80d78e2` | `verify:all` **exit 0**：client 435/435、server 604/604、FGUI 66/66、inventory 110/110 | 不适用 | ⛔ 真栈 int 用例**未跑**：本机无运行中的 Redis |
+| S5-03 无头玩法验收 | `[未开始]` | - | - | - | 需逐条对照现有用例，⛔ 不能用 grep 计数冒充覆盖 |
+| S5-04 demo 数据检查 | `[阻塞·需本地栈]` | - | - | - | 全部条目都要真 Redis |
+| S5-05 Creator 预览 | `[阻塞·需 Creator]` | - | - | - | 纯人工，需你打开 Creator 3.8.8 |
+| S5-06 回写结论 | `[未开始]` | - | - | - | 待前五项齐备 |
 
 ---
 
