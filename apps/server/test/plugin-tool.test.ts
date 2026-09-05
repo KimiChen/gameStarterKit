@@ -112,6 +112,7 @@ test("allowlist：gameplay 插件的推导集覆盖 manifest/shared/server mode/
     "apps/client/src/logic/rooms/puzzle/PuzzleLogic.ts",
     "apps/client/src/view/rooms/puzzle/PuzzleWorldView.ts",
     "apps/client/src/net/rooms/PuzzleRoom.ts",
+    "apps/server/test/wire-vectors/puzzle.ts",
     "apps/Cocos/assets/src/net/rooms/PuzzleRoom.ts.meta",
     "apps/Cocos/assets/src/view/rooms/puzzle.meta",
     "apps/Cocos/assets/resources/puzzle/tiles.png",
@@ -131,6 +132,9 @@ test("allowlist：gameplay 插件的推导集覆盖 manifest/shared/server mode/
     "apps/client/src/net/rooms/GameRoomTransport.ts",
     "apps/client/src/net/rooms/SnakeRoom.ts",
     "apps/Cocos/assets/src/net/rooms.meta",
+    "apps/server/test/wire-vectors/index.generated.ts",
+    "apps/server/test/wire-vectors/index.ts",
+    "apps/server/test/wire-vectors/core.ts",
   ]) {
     assert.ok(!allowed(relative, GAMEPLAY_IDENTITY), `应拒绝：${relative}`);
   }

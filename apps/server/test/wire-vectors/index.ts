@@ -1,24 +1,18 @@
 /**
- * owner → 向量 sidecar 的聚合登记。
+ * owner → 向量 sidecar 的聚合登记（稳定 façade）。
  *
- * 显式静态 import，⛔ 不用 fs 扫描（tsx/Node 都能静态解析，测试无隐式 IO）。
- * 新增 wire owner：建 `wire-vectors/<owner>.ts` 并在下表加一行——这一行属该玩法
- * 自有登记；漏登记由中央测试的「向量并集 ⇔ validator 全集」双向 deepEqual 抓红。
+ * 登记表本体是 `index.generated.ts`，由 `codegen:gameplays` 按目录发现渲染：owner = core + 每个声明了
+ * C2S wire 的玩法。新增玩法只新增 `wire-vectors/<id>.ts` 并重跑 codegen，⛔ 不再手改本文件——
+ * 此前这里是手写 import 表，插件（PLUGIN.md §3「只加文件不改中央源码」）加不进去。
+ * 缺 sidecar / 孤儿 sidecar 由生成器 fail-fast；漏向量由中央测试的「向量并集 ⇔ validator 全集」双向
+ * deepEqual 抓红。
  */
-import ballMove from "./ballMove";
-import core from "./core";
-import idle from "./idle";
-import snake from "./snake";
+import { WIRE_VECTOR_FILES } from "./index.generated";
 import type { WireVector, WireVectorFile } from "./vectorTypes";
 
-export const WIRE_VECTORS = {
-  ballMove,
-  core,
-  idle,
-  snake,
-} as const satisfies { readonly [owner: string]: WireVectorFile };
+export const WIRE_VECTORS: Readonly<Record<string, WireVectorFile>> = WIRE_VECTOR_FILES;
 
-export type WireVectorOwner = keyof typeof WIRE_VECTORS;
+export type WireVectorOwner = string;
 
 function mergeByOwner<T>(
   pick: (file: WireVectorFile) => { readonly [type: string]: T | undefined } | undefined,
