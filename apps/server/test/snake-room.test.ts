@@ -22,6 +22,12 @@ import {
     RedisDemoReliveEconomy,
     resolveS2ReliveEconomy,
 } from "../src/rooms/modes/snake/lifecycle";
+import {
+    SnakeDemoCosmeticStore,
+    __grantSnakeFragmentsForTest,
+    __resetSnakeCosmeticProfilesForTest,
+} from "../src/rooms/modes/snake/cosmeticProfile";
+import { SNAKE_FRAGMENT_SKIN_THRESHOLDS } from "../src/rooms/modes/snake/skinBusinessCatalog";
 import { resolveRoomProfile, type RoomProfile } from "../src/rooms/core/RoomProfile";
 import { SnakeRoomState } from "../src/rooms/schema/GameRoomState";
 
@@ -558,4 +564,39 @@ test("结束本次只终结本人；生产环境不能绑定测试或 demo 经�
     assert.throws(() => resolveS2ReliveEconomy(new RedisDemoReliveEconomy(), "production"),
         /production cannot bind/u);
     assert.equal(resolveS2ReliveEconomy(undefined, "production").kind, "disabled");
+});
+
+test("S3-03 run 起始锁存装备皮肤：join ⛔ 无自报通道；run 中换装不改当前蛇，下一 run 才生效", async () => {
+    __resetSnakeCosmeticProfilesForTest();
+    const store = new SnakeDemoCosmeticStore({
+        persistence: async () => {},
+        hydration: async () => [null, null, null],
+    });
+    // 预热 u-p1 的衣柜：解锁并装备 401（uid 形态由 harness 的 auth.userId 决定）。
+    __grantSnakeFragmentsForTest("u-p1", 401, SNAKE_FRAGMENT_SKIN_THRESHOLDS.get(401)!);
+    assert.equal(store.unlock("u-p1", 401).kind, "ok");
+    assert.equal(store.equip("u-p1", 401).kind, "ok");
+
+    const harness = await buildSnakeRoom();
+    await seat(harness, "p1");
+    const player = harness.view().players.get("p1");
+    assert.ok(player);
+    assert.equal(player.skinId, 401, "createPlayer 必须锁存已预热 profile 的装备皮肤");
+
+    // ⛔ join 自报皮肤无效：IGameRoomJoinOptions 里根本没有皮肤字段，
+    // 连伪造一个都进不了 mode——服务端只认从准入身份反查的 uid（拍板 A）。
+    assert.equal("skinId" in joinOptions(), false);
+    assert.equal("skin" in joinOptions(), false);
+
+    // run 中换装：profile 变了，但当前蛇的锁存值不动。
+    assert.equal(store.equip("u-p1", 1).kind, "ok");
+    assert.equal(store.getSnapshot("u-p1").equippedSkinId, 1);
+    step(harness.room, 20);
+    assert.equal(harness.view().players.get("p1")?.skinId, 401, "⛔ 换装不得改变当前 run 的外观");
+
+    // 未预热的 uid 回退默认皮肤 1，⛔ 不因衣柜缺数据阻塞进房。
+    await seat(harness, "p2");
+    assert.equal(harness.view().players.get("p2")?.skinId, 1);
+
+    __resetSnakeCosmeticProfilesForTest();
 });
