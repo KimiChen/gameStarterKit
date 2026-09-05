@@ -158,14 +158,19 @@ S4 实施后 `gp:snake:user:{uid}` 的完整允许字段为：
 
 ## 个人结果契约
 
-> ⛔ **待拍板 B / C（[README §9.1](README.md#91-三项必须先拍板的问题)，未定不进 S4-04）**
+> ✅ **拍板 B / C（2026-09-05，结论见 [README §9.1](README.md#91-三项拍板结论2026-09-05-用户拍板已生效)）**
 >
-> - **B｜扩 v1 还是造 v2**：现有 `ISnakeRunResultV1`（`apps/shared/src/gameplays/snake/wire.ts`）
->   已预留 `rewardPolicyVersion` / `rewardReceiptId` / `rewardSummary` 三个可选字段。扩 v1 不动
->   token 名、不动客户端订阅；下面写的 `resultVersion: 2` 需要 bump `modeVersion` 并联动三处生成镜像。
-> - **C｜「再来一局」怎么实现**：服务端当前**没有**房内重开 run 的能力——`runId` 只在 `createPlayer`
->   分配，Finalized 之后玩家留在房里但没有任何命令能开新 run。选「离房重进」则 S4 零服务端改动；
->   选「房内重开」要新增命令与状态机分支。下面「页面提供『再来一局』」一句在 C 拍板前不成立。
+> - **B = B2a**：造 `resultVersion: 2` 的新 interface，但**沿用同一个 token 名 `s2c.snake.runResult`**。
+>   ⚠ 「扩 v1 不用 bump `modeVersion`」已被源码证伪：`contractDigest` 包含 **`wire.ts` 原始字节**，
+>   动一个字节两条路都要把 `modeVersion` 4 → 5，差价不存在。且三个预留字段装不下 S4 的形状
+>   （`rewardSummary` 是 `{itemId, amount≥1}[]`，而这里需要布尔、可为 null、以及大量日常为 0 的整数）。
+> - **同时采用 B0**：本节的 wire 形状**推迟到 S4 末尾一次成型**——在 S4-04 之前不要动 `wire.ts`，
+>   先用当前 v1 占位把服务端 profile 与 UI 打通，只付一次 bump。
+> - **C = ① 离房重进**：不新增房内重开能力。主动离房是 consented close、**跳过 10 秒重连宽限**，
+>   重进走 `createPlayer` 拿新 `runId`，因此下面的去重键 `uid + roomEpochId + runId` 保持有效
+>   （宽限内的**断线重连**仍延续原 run，是 S2 既定语义）。
+>   ⚠ 下面「页面提供『再来一局』」按 [README §9.6](README.md#96-剩余待决项不阻塞-s3-开工) 的 **C-a**
+>   默认收敛为**只放「返回首页」**；要做自动重进按钮需另开玩法内「起新局」能力面（受保护路径）。
 
 结果只表达最终值，不包含中间状态：
 
