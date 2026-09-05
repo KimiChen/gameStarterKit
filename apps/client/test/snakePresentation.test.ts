@@ -337,7 +337,7 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
 
     try {
         const { SnakeWorldView } = await import("../src/view/rooms/snake/SnakeWorldView");
-        const { CLIENT_SNAKE_PRESENTATION_CATALOG } = await import("../src/logic/rooms/snake/SnakePresentationCatalog");
+        const { CLIENT_SNAKE_PRESENTATION_CATALOG, SNAKE_ENTITY_PRESENTATION_CATALOG } = await import("../src/logic/rooms/snake/SnakePresentationCatalog");
         const host = new FakeNode("host");
         // Creator 的 Canvas 锚点在可见区中心，触摸坐标则以左下角为原点。
         host.setPosition(375, 812, 0);
@@ -434,6 +434,34 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
         presentation.render(snakeFrame(2) as never, { ...activeHud, magnetRemainingTicks: 78 } as never, null);
         assert.equal(findNode(host, "SnakeWorld")?.getComponent(FakeAudioSource)?.plays, 1,
             "sfxOn=false 时 magnetCollected 增长也必须静默");
+        // ── identity：把 View 的可观察行为绑到 presentation catalog 的声明值 ──────────────
+        // ⚠ 这三段（self.outline / self.nameplate / otherHuman.nameplate）此前只有 catalog 侧的
+        // 值校验，View 侧是各写各的本地常量——改了目录 View 不会跟着变，也没人会发现。本用例补上这条绑定。
+        const identity = SNAKE_ENTITY_PRESENTATION_CATALOG.identity;
+        assert.equal(identity.self.outline, "fine-white", "目录改了自机轮廓口径就必须同步改 SnakeWorldView");
+        assert.equal(identity.self.nameplate, "none", "自机 ⛔ 不挂名牌");
+        assert.equal(identity.otherHuman.nameplate, "text", "他人靠名字识别");
+        assert.equal(identity.ai.nameplate, "text", "AI 同样靠名字识别");
+
+        const twoSnakes = {
+            ...snakeFrame(0),
+            tick: 30, envelopeTick: 30, seq: 9,
+            snakes: [
+                { ...snakeFrame(0).snakes[0] },
+                {
+                    id: "rival", name: "对手", skinId: 401, ai: false, aiLevel: null, alive: true,
+                    score: 5, length: 80, boost: false, bodyScale: 1,
+                    magnetUntilTick: null, protectUntilTick: null,
+                    points: [{ x: 200, y: 0 }, { x: 192, y: 0 }, { x: 184, y: 0 }],
+                },
+            ],
+        };
+        presentation.render(twoSnakes as never, activeHud as never, null);
+        assert.equal(findNode(host, "label-我"), null,
+            "identity.self.nameplate=none：自机 ⛔ 不得出现世界内名牌");
+        assert.ok(findNode(host, "label-对手"),
+            "identity.otherHuman.nameplate=text：他人必须有世界内名牌");
+
         presentation.render({ ...snakeFrame(2), tick: 23, envelopeTick: 23, seq: 5, snakes: [] } as never,
             { ...activeHud, entries: [], selfAlive: false } as never, null);
         assert.equal(findNode(host, "snake-head-self"), null, "实体从 frame 消失后必须清理 head");

@@ -5,8 +5,9 @@
  * 分工（铁律 9）：本文件只管节点与事件；筛选、提交闸、错误翻译与红点在 ../logic/WardrobeLogic.ts。
  * 宿主接线自 ../logic/snakeCosmeticRuntime.ts 读取（feature module install 时注入）。
  */
-import { Color, Graphics, Label, Node, UITransform } from "cc";
+import { Color, Graphics, Label, Node, Rect, Sprite, SpriteFrame, Texture2D, UITransform, resources } from "cc";
 import { CocosView } from "../../../view/CocosView";
+import { getClientSnakeSkinPresentation } from "../../../logic/rooms/snake/SnakePresentationCatalog";
 import { WardrobeLogic, type WardrobeFilter, type WardrobeRow } from "../logic/WardrobeLogic";
 import { getSnakeCosmeticRuntime } from "../logic/snakeCosmeticRuntime";
 
@@ -40,9 +41,22 @@ const FILTERS: readonly { readonly id: WardrobeFilter; readonly label: string }[
 
 const VISIBLE_ROWS = 6;
 
+/**
+ * 预览图裁剪：S1 生成的 420×160 技术图顶部有 28px 的 `SKIN <id> NORMAL` 标题条，
+ * 衣柜里要裁掉它只留下方的 tail+body+head 合成条。
+ * ⚠ 该图底色是**不透明深蓝**（烘死在 PNG 里），贴在行底板上会有一块矩形色差——
+ * 要透明底得改 `tools/snake-s1-assets/core.mjs` 重出 16 张 PNG，那会动 S1 证据字节，
+ * 不在本步范围。⛔ 别把这块色差当渲染 bug 修。
+ */
+const PREVIEW_SOURCE_WIDTH = 420;
+const PREVIEW_BANNER_HEIGHT = 28;
+const PREVIEW_BODY_HEIGHT = 160 - PREVIEW_BANNER_HEIGHT;
+
 export class WardrobeView extends CocosView {
     private logic: WardrobeLogic | null = null;
     private body: Node | null = null;
+    /** skinId → 预览帧；`null` = 已尝试过且失败或在途，⛔ 不重复 load。 */
+    private readonly previewFrames = new Map<number, SpriteFrame | null>();
     private bodyWidth = 0;
     private bodyHeight = 0;
     private scrollTop = 0;
@@ -62,6 +76,37 @@ export class WardrobeView extends CocosView {
         if (this.logic) this.logic.onChanged = () => {};
         this.logic = null;
         this.body = null;
+        this.previewFrames.clear();
+    }
+
+    /**
+     * 懒加载预览帧。首次返回 null，load 完成后触发一次重绘。
+     * ⛔ 失败不回退到默认皮肤——`resolveClientSnakeSkinPresentation` 的「退皮肤 1」语义在战斗里
+     * 正确，但在衣柜里会把皮肤 1 的形象画在别的皮肤行上，是**错误信息**。这里的 fallback 是「不画图」。
+     */
+    private ensurePreview(skinId: number): SpriteFrame | null {
+        const cached = this.previewFrames.get(skinId);
+        if (cached !== undefined) return cached;
+        const asset = getClientSnakeSkinPresentation(skinId)?.previewAsset;
+        if (!asset) {
+            this.previewFrames.set(skinId, null);
+            return null;
+        }
+        this.previewFrames.set(skinId, null); // 占位防重入
+        resources.load(`${asset}/texture`, Texture2D, (error, texture) => {
+            // 关页后落地的回调直接丢弃（onCloseLifecycle 已把 logic 置 null，这是仓内既有的陈旧信号）。
+            if (!this.logic) return;
+            if (error || !texture) {
+                console.warn(`[wardrobe] preview texture missing ${asset}`, error);
+                return;
+            }
+            const frame = new SpriteFrame();
+            frame.texture = texture;
+            frame.rect = new Rect(0, PREVIEW_BANNER_HEIGHT, PREVIEW_SOURCE_WIDTH, PREVIEW_BODY_HEIGHT);
+            this.previewFrames.set(skinId, frame);
+            this.render();
+        });
+        return null;
     }
 
     private readonly swallowTouch = (): void => {};
@@ -159,7 +204,19 @@ export class WardrobeView extends CocosView {
         this.plate(node, width * 0.012, height * 0.7, RARITY_COLORS[row.rarity] ?? DIM,
             -width * 0.5 + width * 0.014, 0, "rarity");
 
-        const nameX = -width * 0.5 + width * 0.04;
+        const previewWidth = width * 0.24;
+        const previewHeight = previewWidth * PREVIEW_BODY_HEIGHT / PREVIEW_SOURCE_WIDTH;
+        const frame = this.ensurePreview(row.skinId);
+        if (frame) {
+            const preview = this.node(`preview-${row.skinId}`, node, previewWidth, previewHeight);
+            preview.setPosition(-width * 0.5 + width * 0.035 + previewWidth * 0.5, 0, 0);
+            const sprite = preview.addComponent(Sprite);
+            sprite.spriteFrame = frame;
+            // CUSTOM：按 UITransform 尺寸缩放，⛔ 不用贴图原始 420×132。
+            sprite.sizeMode = Sprite.SizeMode.CUSTOM;
+        }
+        // 给预览让位；预览缺失时文字仍从这里起排，⛔ 不做两套布局。
+        const nameX = -width * 0.5 + width * 0.30;
         const size = Math.round(height * 0.28);
         this.label(node, row.displayName, size, row.owned ? TEXT : DIM, nameX, height * 0.16, "left");
         const detail = row.fragments
