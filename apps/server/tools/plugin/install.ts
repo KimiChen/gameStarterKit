@@ -19,7 +19,8 @@ import path from "node:path";
 import { compareVersions, identityDifferences } from "./manifest";
 import { INSTALLED_LOCK_DIR, filesLockSha256Of, foreignLockOwners, readInstalledLock, verifyLockAgainstTree, writeInstalledLock, type LockEntry, type LockSource, type LockSourceRegistry } from "./lock";
 import { packPlugin } from "./pack";
-import { assertInstalledLockOwned, readPackage, validatePackage, type ValidatedPackage } from "./package";
+import { assertInstalledLockOwned, packageMetaUuids, readPackage, validatePackage, type ValidatedPackage } from "./package";
+import { hostMetaUuids } from "./meta";
 import { matchesPrefixRule, mirrorPathOf, readGeneratedWriterPaths, type OwnershipRule } from "./ownership";
 import { featureDeclarations } from "./package";
 import type { PluginManifest } from "./manifest";
@@ -316,6 +317,24 @@ export function gitTrackedFiles(root: string, paths: readonly string[]): Readonl
   return new Set(result.stdout.split("\0").filter((line) => line !== ""));
 }
 
+/**
+ * 随包 .meta 的 uuid 与宿主 assets 树的比对（PLUGIN-REGISTRY §1-11）：Creator 的 uuid 命名空间是整个资源库，
+ * 撞车时另一资源的引用会静默解析到错资源；本插件旧锁登记的与本包将覆盖的 .meta 不算。落盘前拒绝并点名两侧路径。
+ */
+function assertNoHostUuidCollision(root: string, id: string, pkg: ValidatedPackage, skip: ReadonlySet<string>): void {
+  const incoming = packageMetaUuids(pkg.files);
+  if (incoming.size === 0) return;
+  const host = hostMetaUuids(root, "apps/Cocos/assets", skip);
+  const clashes: string[] = [];
+  for (const [uuid, relative] of incoming) {
+    const holders = host.get(uuid);
+    if (holders) clashes.push(`${uuid}：包内 ${relative} ⟷ 宿主 ${holders.join("、")}`);
+  }
+  if (clashes.length > 0) {
+    fail(`拒绝：插件 "${id}" 随包 .meta 的 uuid 与宿主资源撞车（Creator 只认一个 uuid，另一个的引用会静默指错；作者侧删掉包内那个 .meta 让 Creator 重铸后重新 pack）：\n  ${clashes.join("\n  ")}`);
+  }
+}
+
 /** 包内文件与其它已安装插件锁的交集：同一路径不可能同时属于两个插件（PLUGIN-REGISTRY §1-4）。 */
 function assertNoForeignClash(id: string, files: Iterable<string>, foreign: ReadonlyMap<string, string>): void {
   const clash = [...files].filter((relative) => foreign.has(relative)).sort();
@@ -422,6 +441,7 @@ export function installPlugin(options: InstallOptions): InstallReport {
   assertNoForeignClash(id, pkg.files.keys(), foreign);
   const conflicts = ownershipConflicts(root, pkg.rules, new Set(previousEntries.keys()), foreign);
   if (conflicts.length > 0) fail(`拒绝：以下目标路径已存在且不属插件 "${id}"（所有权冲突，⛔ 不覆盖、不混入框架目录）：\n  ${conflicts.join("\n  ")}`);
+  assertNoHostUuidCollision(root, id, pkg, new Set([...previousEntries.keys(), ...pkg.files.keys()]));
 
   const stale = [...previousEntries.keys()].filter((relative) => !pkg.files.has(relative));
   const affected = [...pkg.files.keys(), ...stale, path.posix.join(INSTALLED_LOCK_DIR, `${id}.lock`)];
@@ -534,6 +554,7 @@ export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallRep
   }
   const conflicts = ownershipConflicts(root, pkg.rules, owned, foreign);
   if (conflicts.length > 0) fail(`拒绝：以下路径在插件 "${id}" 的推导集内却既不在旧锁也不在树上采集结果里（生成物/硬排除混入插件目录？）：\n  ${conflicts.join("\n  ")}`);
+  assertNoHostUuidCollision(root, id, pkg, new Set([...previousByPath.keys(), ...collected]));
 
   const lockRelative = path.posix.join(INSTALLED_LOCK_DIR, `${id}.lock`);
   // 树就是真相：删除面只能从「旧锁身份 vs 树上身份 / feature.json」推出（树上 feature.json 已是新的，View 删除面无从得知——

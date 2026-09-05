@@ -3,7 +3,7 @@
   "title": "plugin.json v1（docs/PLUGIN.md §5：插件只声明身份、版本、kinds 与兼容轴，⛔ 不放路径映射、不放位置）",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "id", "version", "kinds"],
+  "required": ["schemaVersion", "id", "version", "kinds", "requires"],
   "properties": {
     "schemaVersion": { "const": 1 },
     "id": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]{0,63}$" },

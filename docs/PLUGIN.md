@@ -168,7 +168,10 @@ files.lock       清单：每行 <仓库相对路径> <sha256>（与 protected-p
 
 - `kinds` 可同时含 gameplay 与 feature——一个玩法插件天然是「manifest/state/wire + feature.json」的组合，
   ⛔ 没有「kind 二分」；
-- `requires` 只钉两个 schemaVersion（feature-schema-v1 / gameplay-schema-v1）。协议整数不是插件的兼容轴：
+- `requires` 只钉两个 schemaVersion（feature-schema-v1 / gameplay-schema-v1），**必填且 fail-closed**（2026-09-05，
+  PLUGIN-REGISTRY §1-9）：kinds 含 feature ⇒ `featureSchemaVersion` 必填，含 gameplay ⇒ `gameplaySchemaVersion` 必填，
+  缺省不再「视为当前版本」；比对基准读自两个 schema 文件的 `schemaVersion.const`（⛔ 不手抄常量）；值进已安装锁抬头，
+  `check` 复核树上 plugin.json 与锁两侧（旧锁未登记即点名，`--reinstall-from-tree` 重写即补上）。协议整数不是插件的兼容轴：
   gameplay 的契约身份是 per-mode `contractDigest`/`modeVersion`（既有闸），Lobby 域的契约身份是
   codegen 层的域 descriptor digest → 域级 `contractVersion` 闸（`LOBBY_RPC_DOMAIN_CONTRACTS`，✅ 2026-09-05；
   覆盖面 = 域 descriptor 文件自身字节，与 gameplay 只算 wire.ts 同口径——跨文件复用的 validator/类型变化由
@@ -195,7 +198,12 @@ npm --workspace @game/server run plugin -- check
 
 1. 读包并自证（`files.lock`）；身份交叉校验（feature.json / manifest.json 的 id、constantName、viewDirs；
    每个 domain 的 descriptor 与向量 sidecar 同批在包内；每个 FGUI 包的 ART 源与发布物同批在包内）；
-2. 每个路径过 §5.2 闸；镜像与真源字节相同、`.meta` 齐全；
+2. 每个路径过 §5.2 闸；镜像与真源字节相同、`.meta` 齐全；**`.meta` 内容闸**（2026-09-05，PLUGIN-REGISTRY §1-11，
+   `tools/plugin/meta.ts`）：JSON 可解析、uuid 是小写 8-4-4-4-12（与 `scripts/sync-client.mjs` 同一正则，测试钉住相等）、
+   importer 与目标类型相符（`.ts`→typescript、`.json`→json、目录→directory、图片→image、`.bin`→buffer …）、包内 uuid
+   互不重复；安装（含从树重装）再把包内 uuid 与宿主 `apps/Cocos/assets` 树比对（本插件旧锁与本包将覆盖的路径除外），
+   撞车在落盘前拒绝并点名两侧路径——修法在作者侧（删掉包内那个 `.meta` 让 Creator 重铸后重新 pack），⛔ 不再是
+   verify:sync 事后报错与插件锁互相矛盾；
 3. 已安装锁 `scripts/plugins/<id>.lock` 存在时：工作树与旧锁不符（本地改动）⇒ 拒绝；同版本不同内容 ⇒ 拒绝；
    降级须 `--allow-downgrade`；旧锁有、新包无的文件 ⇒ 按清单删除（陈旧文件不残留）；
    首装时目标路径已存在且不属本插件 ⇒ 拒绝（所有权冲突，⛔ 不覆盖）；
