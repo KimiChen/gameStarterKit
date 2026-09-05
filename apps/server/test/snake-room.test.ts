@@ -16,6 +16,7 @@ import {
     type ISnakeWorldDelta,
 } from "@game/shared";
 import { SNAKE_MAGNET_ELIGIBLE_RUN_STATES, SNAKE_RELIVE_COIN_COSTS, SNAKE_RULESET } from "@game/shared/gameplays/snake/ruleset";
+import { CloseCode } from "colyseus";
 import { GameRoom } from "../src/rooms/GameRoom";
 import { createSnakeGameMode, type SnakeGameMode } from "../src/rooms/modes/snake/index";
 import {
@@ -717,4 +718,97 @@ test("S5-03 磁铁 gate 只认真人合格 run；AI 死亡 ⛔ 不进复活/发�
     const next = world.magnetTriggers.at(-1);
     assert.equal(next?.relativeTick, 9000, "第三波之后按 3000 tick 周期继续");
     assert.equal(next?.spawned, true);
+});
+
+test("S5-03 复活成功恢复当前 run（runId 不变），⛔ 不是新开一局", async () => {
+    __resetRunRewardsForTest();
+    __resetDemoCoinsForTest();
+    const harness = await buildSnakeRoom();
+    const joiner = await seat(harness, "r1");
+    const player = harness.view().players.get("r1");
+    assert.ok(player);
+    step(harness.room, 100);
+    const runIdBefore = player.runId;
+    const scoreBefore = harness.mode.__probeWorld()?.get("r1")?.score ?? 0;
+
+    killByWall(harness, "r1");
+    advanceToOffer(harness, "r1");
+    acceptCurrentOffer(harness, joiner, "keep-run");
+    step(harness.room, 10);
+
+    assert.equal(player.runId, runIdBefore, "复活 ⛔ 不得换 runId——那等于把一局拆成两局，S4 会重复发奖");
+    assert.equal(player.relivesUsed, 1);
+    assert.notEqual(player.runState, SnakeRunState.Finalized, "复活成功后 run 仍在继续");
+    assert.equal(messages(joiner, S2C.SnakeRunResult).length, 0, "复活成功 ⛔ 不产生个人结果");
+    assert.equal(harness.mode.__probeWorld()?.get("r1")?.score, scoreBefore, "同一 run 的得分延续，⛔ 不清零");
+});
+
+test("S5-03 余额不足：保留选择窗、回当前余额，⛔ 不终结 run 也不扣费", async () => {
+    __resetRunRewardsForTest();
+    __resetDemoCoinsForTest();
+    // 首档复活要 100 金币，给 50 必然不足。
+    const harness = await buildSnakeRoom(new DeterministicTestReliveEconomy(50));
+    const joiner = await seat(harness, "poor");
+    const player = harness.view().players.get("poor");
+    assert.ok(player);
+    step(harness.room, 100);
+    killByWall(harness, "poor");
+    advanceToOffer(harness, "poor");
+
+    dispatch(harness.room, C2S.SnakeReliveDecision, joiner, {
+        runId: player.runId,
+        deathSeq: player.deathSeq,
+        clientReqId: `${player.runId}:accept:poor`,
+        decision: "accept",
+    });
+    harness.room.stepFixed();
+
+    const result = messages<{ outcome: string; retryable: boolean; balanceAfter?: number }>(
+        joiner, S2C.SnakeReliveDecisionResult).at(-1);
+    assert.equal(result?.outcome, "insufficientCoins");
+    assert.equal(result?.retryable, false);
+    assert.equal(result?.balanceAfter, 50, "必须把当前余额回给客户端，供 UI 显示差额");
+    assert.equal(player.coinBalance, 50, "⛔ 余额不足不得扣费");
+    assert.equal(harness.economy.testBalance, 50);
+    assert.equal(player.runState, SnakeRunState.PendingRelive, "保留选择窗，⛔ 不终结 run");
+    assert.equal(player.terminalIntent, SnakeRunEndReason.None);
+    assert.equal(messages(joiner, S2C.SnakeRunResult).length, 0, "⛔ 尚未产生个人结果");
+});
+
+test("S5-03 连续两局：第一局中换装 → 离房重进后第二局生效（拍板 C=离房重进）", async () => {
+    __resetSnakeCosmeticProfilesForTest();
+    __resetRunRewardsForTest();
+    __resetDemoCoinsForTest();
+    const store = new SnakeDemoCosmeticStore({
+        persistence: async () => {},
+        hydration: async () => [null, null, null],
+    });
+    // 先让 u-g1 拥有两件皮肤：默认 1 与碎片合成的 403。
+    __grantSnakeFragmentsForTest("u-g1", 403, SNAKE_FRAGMENT_SKIN_THRESHOLDS.get(403)!);
+    assert.equal(store.unlock("u-g1", 403).kind, "ok");
+
+    const harness = await buildSnakeRoom();
+    const first = await seat(harness, "g1");
+    const firstRunId = harness.view().players.get("g1")?.runId;
+    // 第一局用默认皮肤 1。
+    assert.equal(harness.view().players.get("g1")?.skinId, 1);
+
+    // run 中换装到 403：当前蛇 ⛔ 不变。
+    assert.equal(store.equip("u-g1", 403).kind, "ok");
+    step(harness.room, 20);
+    assert.equal(harness.view().players.get("g1")?.skinId, 1, "run 中换装 ⛔ 不改当前蛇");
+
+    // 离房（consented，跳过 10 秒宽限）→ 重进 = 新 run。
+    await harness.room.onLeave(first as never, CloseCode.CONSENTED);
+    const clients = harness.room.clients as unknown as FakeClient[];
+    const index = clients.indexOf(first);
+    if (index >= 0) clients.splice(index, 1);
+
+    await seat(harness, "g1");
+    const second = harness.view().players.get("g1");
+    assert.ok(second);
+    // ⚠ 断言 403 而不是「≠1」：1 同时是「uid 缺失/未预热/装备值失效」的回退值，
+    // 断言 ≠1 无法区分「换装生效」与「回退没触发」。
+    assert.equal(second.skinId, 403, "第二局必须采用新装备的皮肤");
+    assert.notEqual(second.runId, firstRunId, "离房重进必须是新 run（S4 去重键据此区分两局）");
 });

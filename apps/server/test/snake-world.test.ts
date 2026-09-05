@@ -403,3 +403,43 @@ test("最大路径 fixture 可承载 17×5186=88162 点且工具不计入 food c
     assert.ok(snapshot.displayRank.every((entry) => !entry.id.startsWith("rank-fake-") ||
         !snapshot.snakes.some((snake) => snake.id === entry.id)), "假榜永不进入实体数组");
 });
+
+test("S5-03 出生保护 30 tick 是半开区间，且只护碰撞 ⛔ 不护墙", () => {
+    const ruleset = { ...SNAKE_RULESET, dotTarget: 0, starTarget: 0, fakeSnakeCount: 0 };
+    assert.equal(SNAKE_RULESET.spawnProtectionTicks, 30, "口径变了就必须同步改本用例");
+
+    {   // ⚠ 墙**不受**保护期庇护：world.ts 的越界判定排在保护判定之前，先出界先死。
+        // ⛔ 不要把这条改成「保护期内撞墙不死」——那与实现相反（本用例初版就写错了）。
+        const world = new SnakeWorld({ matchSeed: 7, ruleset });
+        const snake = world.addPlayerSnake("solo", "甲", 1);
+        // ⚠ 必须先跨过 3 秒准备期：movementStartTick 之前世界不推进碰撞，测不出任何东西。
+        advance(world, world.movementStartTick + 5);
+        assert.ok(world.tick < snake.protectUntilTick, "前置：已开跑但仍在保护期内");
+        teleport(snake, ruleset.worldWidth, 0, 0);
+        world.step();
+        assert.equal(snake.alive, false, "保护期内出界照样死");
+    }
+
+    // 保护期真正庇护的是蛇-蛇碰撞，边界为半开区间 [start, protectUntilTick)。
+    const world = new SnakeWorld({ matchSeed: 7, ruleset });
+    const a = world.addPlayerSnake("p1", "甲", 1);
+    const b = world.addPlayerSnake("p2", "乙", 1);
+    const limit = a.protectUntilTick;
+    // 保护窗以「首个活动 tick」为起点，⛔ 不被 3 秒准备期消耗。
+    assert.equal(limit, Math.max(world.tick + 1, world.movementStartTick + 1) + SNAKE_RULESET.spawnProtectionTicks);
+    const overlap = (): void => {
+        for (const snake of [a, b]) teleport(snake, 0, 0, 0);
+    };
+
+    // ⚠ step() 先推进 tick 再判定，所以按「步进后的 tick」对齐边界。
+    advance(world, limit - 2);
+    overlap();
+    world.step();
+    assert.equal(world.tick, limit - 1);
+    assert.equal(a.alive && b.alive, true, "tick = protectUntilTick - 1 仍免疫碰撞（半开区间内）");
+
+    overlap();
+    world.step();
+    assert.equal(world.tick, limit);
+    assert.equal(a.alive || b.alive, false, "tick = protectUntilTick 起碰撞生效（半开区间上界）");
+});
