@@ -194,10 +194,16 @@ export class SnakeWorldView implements SnakePresentation {
         this.resultLayer = layer;
         const size = view.getVisibleSize();
         if (this.assets?.resultBg) this.newSprite(layer, this.assets.resultBg, 0, 0);
-        this.newLabel(layer, "本次游玩结束", 0, size.height * 0.2, 42, TEXT);
-        this.newLabel(layer, `原因：${model.endReason}`, 0, size.height * 0.12, 26, DIM);
-        this.newLabel(layer, "奖励：本阶段未开放", 0, size.height * 0.06, 24, DIM);
-        const exit = this.newLabel(layer, "返回主页", 0, -size.height * 0.18, 34, TEXT).node;
+        this.newLabel(layer, "本次游玩结束", 0, size.height * 0.24, 42, TEXT);
+        this.newLabel(layer, `原因：${model.endReason}`, 0, size.height * 0.17, 26, DIM);
+        // 逐行画 Logic 已翻译好的展示行；⛔ View 不自己算奖励（铁律 9）。
+        model.lines.forEach((line, index) => {
+            this.newLabel(layer, line, 0, size.height * (0.10 - index * 0.055), 24,
+                index === 0 ? TEXT : DIM);
+        });
+        // ⚠ 按 README §9.6 的 C-a 默认：只放「返回主页」，⛔ 不做「再来一局」——
+        // 玩法内没有起新局的能力面，那要动受保护的 app 层。
+        const exit = this.newLabel(layer, "返回主页", 0, -size.height * 0.22, 34, TEXT).node;
         exit.on(Node.EventType.TOUCH_END, () => this.requestExit(), this);
     }
 

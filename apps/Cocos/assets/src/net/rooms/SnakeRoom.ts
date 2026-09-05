@@ -23,7 +23,7 @@ import {
     type ISnakeReliveOffered,
     type ISnakeReliveResolved,
     type ISnakeRunFinalizing,
-    type ISnakeRunResultV1,
+    type ISnakeRunResultV2,
     type ISnakeWorldDelta,
     type S2CPayloadMap,
 } from "../../shared/index";
@@ -143,7 +143,7 @@ export interface SnakeRoom {
     onReliveDecisionResult(callback: (message: ISnakeReliveDecisionResult) => void): MessageOff;
     onReliveResolved(callback: (message: ISnakeReliveResolved) => void): MessageOff;
     onRunFinalizing(callback: (message: ISnakeRunFinalizing) => void): MessageOff;
-    onRunResult(callback: (message: ISnakeRunResultV1) => void): MessageOff;
+    onRunResult(callback: (message: ISnakeRunResultV2) => void): MessageOff;
     /** 状态变化订阅（phase/players 摘要驱动 HUD 与结算；返回解绑）。 */
     onStateChange(callback: (state: ISnakeRoomState) => void): MessageOff;
     sendInput(dirX: number, dirY: number, boost: boolean): number;

@@ -263,15 +263,58 @@ export interface ISnakeRunFinalizing {
     readonly reliveReceiptState?: "none" | "processing" | "charged" | "applying" | "applied" | "activated" | "refunding" | "refunded";
 }
 
-export interface ISnakeRunResultV1 {
-    readonly resultVersion: 1;
+/** 本局统计（S4-01：三项只在房间内存累计，⛔ 不在 Colyseus schema 里）。 */
+export interface ISnakeRunResultStats {
+    /** run 起始锁存的皮肤（schema 字段名是 `skinId`，此处用语义名）。 */
+    readonly skinIdAtRunStart: number;
+    readonly activeTicks: number;
+    readonly score: number;
+    readonly finalLength: number;
+    readonly maxLength: number;
+    readonly kills: number;
+    readonly deaths: number;
+    readonly relivesUsed: number;
+    readonly reliveCoinSpent: number;
+    readonly magnetCollected: number;
+    readonly starCollected: number;
+    readonly meaningfulInputCount: number;
+}
+
+export interface ISnakeRunResultCoin {
+    /** 本局获得值，⛔ 不减去复活消耗。 */
+    readonly amount: number;
+    readonly balanceAfter: number;
+}
+
+export interface ISnakeRunResultProgression {
+    readonly xpAmount: number;
+    readonly xpAfter: number;
+    readonly levelBefore: number;
+    readonly levelAfter: number;
+    /** 本局碎片投向的皮肤；四款全拥有或不合格 run 时为 `null`。 */
+    readonly fragmentSkinId: number | null;
+    readonly fragmentAmount: number;
+    /** 键 = 成就皮肤 ID 十进制字符串；键集合由服务端权威决定。 */
+    readonly achievementProgressAfter: Readonly<Record<string, number>>;
+    readonly newlyUnlockedSkinIds: readonly number[];
+}
+
+/**
+ * 个人 run 结果 v2（S4-04）。⚠ 结果只表达**最终值**，⛔ 不含中间状态。
+ * 按拍板 B2a：造新 interface 但**沿用同一个 token 名** `s2c.snake.runResult`，
+ * ⛔ 不新增并存 token（避免两套 interface / validator / 订阅长期分叉）。
+ */
+export interface ISnakeRunResultV2 {
+    readonly resultVersion: 2;
     readonly runId: string;
     readonly endReason: SnakeTerminalEndReasonType;
     readonly confirmedThroughTick: number;
     readonly rewardStatus: SnakeRewardStatusType;
-    readonly rewardPolicyVersion?: number;
-    readonly rewardReceiptId?: string;
-    readonly rewardSummary?: readonly { readonly itemId: string; readonly amount: number }[];
+    /** 不合格 run 仍下发统计，但各项奖励为 0。 */
+    readonly qualified: boolean;
+    readonly stats: ISnakeRunResultStats;
+    readonly coin: ISnakeRunResultCoin;
+    readonly progression: ISnakeRunResultProgression;
 }
 
 function recordOf(input: unknown, path = "payload"): PlainRecord {
@@ -811,40 +854,87 @@ function validateRunFinalizing(input: unknown): ISnakeRunFinalizing {
     };
 }
 
-function validateRunResult(input: unknown): ISnakeRunResultV1 {
+const MAX_ACHIEVEMENT_KEYS = 32;
+const MAX_NEW_UNLOCKS = 64;
+
+function validateRunResultStats(input: unknown, path: string): ISnakeRunResultStats {
+    const value = recordOf(input, path);
+    assertExactKeys(value, ["skinIdAtRunStart", "activeTicks", "score", "finalLength", "maxLength", "kills",
+        "deaths", "relivesUsed", "reliveCoinSpent", "magnetCollected", "starCollected", "meaningfulInputCount"], [], path);
+    const nonNegative = (key: keyof ISnakeRunResultStats): number =>
+        finiteInteger(value[key], `${path}.${key}`, 0, Number.MAX_SAFE_INTEGER);
+    return {
+        skinIdAtRunStart: finiteInteger(value.skinIdAtRunStart, `${path}.skinIdAtRunStart`, 1, Number.MAX_SAFE_INTEGER),
+        activeTicks: nonNegative("activeTicks"),
+        score: nonNegative("score"),
+        finalLength: nonNegative("finalLength"),
+        maxLength: nonNegative("maxLength"),
+        kills: nonNegative("kills"),
+        deaths: nonNegative("deaths"),
+        relivesUsed: nonNegative("relivesUsed"),
+        reliveCoinSpent: nonNegative("reliveCoinSpent"),
+        magnetCollected: nonNegative("magnetCollected"),
+        starCollected: nonNegative("starCollected"),
+        meaningfulInputCount: nonNegative("meaningfulInputCount"),
+    };
+}
+
+function validateRunResultProgression(input: unknown, path: string): ISnakeRunResultProgression {
+    const value = recordOf(input, path);
+    assertExactKeys(value, ["xpAmount", "xpAfter", "levelBefore", "levelAfter", "fragmentSkinId",
+        "fragmentAmount", "achievementProgressAfter", "newlyUnlockedSkinIds"], [], path);
+    const progressPath = `${path}.achievementProgressAfter`;
+    const progressRaw = recordOf(value.achievementProgressAfter, progressPath);
+    const keys = Object.keys(progressRaw);
+    if (keys.length > MAX_ACHIEVEMENT_KEYS) throw new WireValidationError("MESSAGE_FIELD_RANGE", progressPath);
+    const achievementProgressAfter: Record<string, number> = {};
+    // ⚠ 正则内联在函数体里：gameplay wire.ts 的顶层 const 只允许字面量或 defineC2S/defineS2C 调用。
+    const achievementKeyPattern = /^[1-9][0-9]{0,8}$/u;
+    for (const key of keys) {
+        if (!achievementKeyPattern.test(key)) throw new WireValidationError("MESSAGE_FIELD_RANGE", progressPath);
+        achievementProgressAfter[key] = finiteInteger(progressRaw[key], `${progressPath}.${key}`, 0, Number.MAX_SAFE_INTEGER);
+    }
+    return {
+        xpAmount: finiteInteger(value.xpAmount, `${path}.xpAmount`, 0, Number.MAX_SAFE_INTEGER),
+        xpAfter: finiteInteger(value.xpAfter, `${path}.xpAfter`, 0, Number.MAX_SAFE_INTEGER),
+        levelBefore: finiteInteger(value.levelBefore, `${path}.levelBefore`, 1, 99),
+        levelAfter: finiteInteger(value.levelAfter, `${path}.levelAfter`, 1, 99),
+        fragmentSkinId: value.fragmentSkinId === null
+            ? null
+            : finiteInteger(value.fragmentSkinId, `${path}.fragmentSkinId`, 1, Number.MAX_SAFE_INTEGER),
+        fragmentAmount: finiteInteger(value.fragmentAmount, `${path}.fragmentAmount`, 0, Number.MAX_SAFE_INTEGER),
+        achievementProgressAfter,
+        newlyUnlockedSkinIds: arrayOf(value.newlyUnlockedSkinIds, `${path}.newlyUnlockedSkinIds`, MAX_NEW_UNLOCKS,
+            (item, itemPath) => finiteInteger(item, itemPath, 1, Number.MAX_SAFE_INTEGER)),
+    };
+}
+
+function validateRunResult(input: unknown): ISnakeRunResultV2 {
     const value = recordOf(input);
-    assertExactKeys(value, ["resultVersion", "runId", "endReason", "confirmedThroughTick", "rewardStatus"], ["rewardPolicyVersion", "rewardReceiptId", "rewardSummary"], "payload");
-    if (value.resultVersion !== 1) throw new WireValidationError("MESSAGE_FIELD_RANGE", "payload.resultVersion");
+    assertExactKeys(value, ["resultVersion", "runId", "endReason", "confirmedThroughTick", "rewardStatus",
+        "qualified", "stats", "coin", "progression"], [], "payload");
+    if (value.resultVersion !== 2) throw new WireValidationError("MESSAGE_FIELD_RANGE", "payload.resultVersion");
     const statuses = Object.keys(SnakeRewardStatus).map((key) => SnakeRewardStatus[key as keyof typeof SnakeRewardStatus]);
     if (typeof value.rewardStatus !== "string" || !statuses.includes(value.rewardStatus as SnakeRewardStatusType)) {
         throw new WireValidationError("MESSAGE_FIELD_RANGE", "payload.rewardStatus");
     }
-    const rewardSummary = value.rewardSummary === undefined ? undefined : arrayOf(
-        value.rewardSummary,
-        "payload.rewardSummary",
-        64,
-        (item, path) => {
-            const reward = recordOf(item, path);
-            assertExactKeys(reward, ["itemId", "amount"], [], path);
-            return {
-                itemId: boundedString(reward.itemId, `${path}.itemId`, 1, 128),
-                amount: finiteInteger(reward.amount, `${path}.amount`, 1, Number.MAX_SAFE_INTEGER),
-            };
-        },
-    );
+    if (typeof value.qualified !== "boolean") throw new WireValidationError("MESSAGE_FIELD_TYPE", "payload.qualified");
+    const coinPath = "payload.coin";
+    const coin = recordOf(value.coin, coinPath);
+    assertExactKeys(coin, ["amount", "balanceAfter"], [], coinPath);
     return {
-        resultVersion: 1,
+        resultVersion: 2,
         runId: boundedString(value.runId, "payload.runId", 1, 128),
         endReason: terminalReason(value.endReason, "payload.endReason"),
         confirmedThroughTick: finiteInteger(value.confirmedThroughTick, "payload.confirmedThroughTick", 0, Number.MAX_SAFE_INTEGER),
         rewardStatus: value.rewardStatus as SnakeRewardStatusType,
-        ...(value.rewardPolicyVersion === undefined ? {} : {
-            rewardPolicyVersion: finiteInteger(value.rewardPolicyVersion, "payload.rewardPolicyVersion", 1, Number.MAX_SAFE_INTEGER),
-        }),
-        ...(value.rewardReceiptId === undefined ? {} : {
-            rewardReceiptId: boundedString(value.rewardReceiptId, "payload.rewardReceiptId", 1, 128),
-        }),
-        ...(rewardSummary === undefined ? {} : { rewardSummary }),
+        qualified: value.qualified,
+        stats: validateRunResultStats(value.stats, "payload.stats"),
+        coin: {
+            amount: finiteInteger(coin.amount, `${coinPath}.amount`, 0, Number.MAX_SAFE_INTEGER),
+            balanceAfter: finiteInteger(coin.balanceAfter, `${coinPath}.balanceAfter`, 0, Number.MAX_SAFE_INTEGER),
+        },
+        progression: validateRunResultProgression(value.progression, "payload.progression"),
     };
 }
 

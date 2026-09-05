@@ -6,7 +6,7 @@ import {
     type ISnakeReliveResolved,
     type ISnakeRoomState,
     type ISnakeRunFinalizing,
-    type ISnakeRunResultV1,
+    type ISnakeRunResultV2,
     type SnakeRunStateType,
     type SnakeDeathCauseType,
 } from "../../../shared/index";
@@ -50,11 +50,18 @@ export interface SnakeReliveViewModel {
     readonly processing: boolean;
 }
 
+/** 结果页可渲染投影。⚠ 只表达最终值，⛔ View 不再自己算任何奖励。 */
 export interface SnakePersonalResultModel {
     readonly runId: string;
-    readonly endReason: ISnakeRunResultV1["endReason"];
+    readonly endReason: ISnakeRunResultV2["endReason"];
     readonly confirmedThroughTick: number;
-    readonly rewardStatus: "notEnabled";
+    readonly rewardStatus: ISnakeRunResultV2["rewardStatus"];
+    readonly qualified: boolean;
+    readonly stats: ISnakeRunResultV2["stats"];
+    readonly coin: ISnakeRunResultV2["coin"];
+    readonly progression: ISnakeRunResultV2["progression"];
+    /** 已经翻译好的展示行（含奖励与解锁），View 逐行画即可。 */
+    readonly lines: readonly string[];
 }
 
 export type SnakeRunNotice = ISnakeReliveOffered | ISnakeReliveDecisionResult
@@ -124,12 +131,34 @@ export function deriveSnakeRelive(
     };
 }
 
-export function deriveSnakePersonalResult(message: ISnakeRunResultV1): SnakePersonalResultModel {
-    return {
-        runId: message.runId,
-        endReason: message.endReason,
-        confirmedThroughTick: message.confirmedThroughTick,
-        // S2 的 renderer 只接受未发布结果；真实奖励状态由后续阶段启用。
-        rewardStatus: "notEnabled",
-    };
+/** 20 Hz → 秒（只用于展示；⛔ 不参与任何判定）。 */
+function secondsOf(ticks: number): number {
+    return Math.floor(ticks / 20);
+}
+
+export function deriveSnakePersonalResult(message: ISnakeRunResultV2): SnakePersonalResultModel {
+    const { stats, coin, progression } = message;
+    const lines: string[] = [
+        `本局：${secondsOf(stats.activeTicks)} 秒 · ${stats.score} 分 · ${stats.kills} 击杀`,
+        `最长 ${stats.maxLength} · 星星 ${stats.starCollected} · 磁铁 ${stats.magnetCollected}`,
+    ];
+    if (stats.relivesUsed > 0) lines.push(`复活 ${stats.relivesUsed} 次，消耗 ${stats.reliveCoinSpent} 金币`);
+    if (!message.qualified) {
+        // 不合格 run 仍展示统计，但要说清为什么没有奖励，⛔ 不静默显示 0。
+        lines.push("本局不计奖励（时长不足或无有效操作）");
+        return { runId: message.runId, endReason: message.endReason, confirmedThroughTick: message.confirmedThroughTick,
+            rewardStatus: message.rewardStatus, qualified: false, stats, coin, progression, lines };
+    }
+    lines.push(`金币 +${coin.amount}（余额 ${coin.balanceAfter}）`);
+    lines.push(progression.levelAfter > progression.levelBefore
+        ? `经验 +${progression.xpAmount}，升到 ${progression.levelAfter} 级`
+        : `经验 +${progression.xpAmount}（${progression.xpAfter}，${progression.levelAfter} 级）`);
+    if (progression.fragmentSkinId !== null && progression.fragmentAmount > 0) {
+        lines.push(`皮肤 ${progression.fragmentSkinId} 碎片 +${progression.fragmentAmount}`);
+    }
+    if (progression.newlyUnlockedSkinIds.length > 0) {
+        lines.push(`新解锁皮肤：${progression.newlyUnlockedSkinIds.join("、")}`);
+    }
+    return { runId: message.runId, endReason: message.endReason, confirmedThroughTick: message.confirmedThroughTick,
+        rewardStatus: message.rewardStatus, qualified: true, stats, coin, progression, lines };
 }
