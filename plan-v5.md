@@ -173,6 +173,7 @@ FeatureHost 按 `dependencies` 装载）、feature 侧域契约闸（`LOBBY_RPC_
 | E2 | i18n / LocalizePort 契约 | `labelKey` 有字段无实现，渲染用硬编码 `label`；缺 LocalizePort 契约与 locales 载体。必须先于第一个第三方插件落地，否则每个插件硬编码一种语言 | PLUGIN.md §9.3 / PLUGIN-REVIEW F28 |
 | E3 | 框架默认加载页 | 全新 route，与 FGUI 包预热策略绑定（本仓 FGUI 包只有加载路径无卸载路径） | PLUGIN.md §6.2 (2) |
 | E4 | join 信封侧的 feature 契约比对 | codegen 层域契约闸已落地（`LOBBY_RPC_DOMAIN_CONTRACTS`）；Lobby join 仍只比对 `LOBBY_PROTOCOL_VERSION`，域契约变化是否 bump 该整数是人工决策（Non-intrusive §4.8 ⛔ 不各自新增版本闸） | PLUGIN.md §9.5 / PLUGIN-REVIEW F14 |
+| E6 | 同仓「作者=宿主」的插件迭代动线 | 已安装锁按 files.lock 锁住插件自有文件（含 docs/<id>）；2026-09-05 只改了 `docs/redeem/README.md` 一行措辞，`plugin-lock.test.ts` 即在 verify:all 中红（`b5b73f5` 之后实测），只能回退到锁内字节。`check` 只核锁内条目、`install` 对「树≠锁」直接拒绝，源码又只在树上——在宿主仓内迭代已安装插件（改文档/修 bug/升版本）没有规范动线。候选：① 独立作者克隆里改 → bump → pack → 宿主还原到锁 → install；② 给 install 加显式 `--reinstall-from-tree`（bump 后以树为准重写锁）；③ docs/<id> 移出所有权。需拍板 | 本轮实测；`apps/server/tools/plugin/{check,install}.ts` |
 | E5 | 第一个真实插件的端到端实证 | ✅ **已完成**（2026-09-05）：「兑换码」插件 `plugins/redeem`（[docs/redeem/README.md](docs/redeem/README.md)）作者侧 `pack`（29 文件）→ 干净树 `plugin -- install`（postinstall 重生全部生成物）→ `protocol-fingerprint --write` → `verify:all` 通过（两条既有环境基线除外）；框架前置补齐见 `5c6df35`（feature.json `module` 装载器、feature 目录形态放行、测试闸去中央清单）。剩余尾巴：Creator 打开一次确认随包 `.meta` uuid 稳定、用 Creator 生成的共享祖先 `apps/Cocos/assets/src/features.meta` 替换脚本合成占位（归 B4/B6 类 Creator 人工证据） | PLUGIN.md §9.6 |
 
 `PrivateRoomLobby` 模板仍是 B3（编辑器待办），不重复登记。
