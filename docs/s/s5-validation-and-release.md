@@ -76,6 +76,10 @@ node --import tsx --test --test-concurrency=1 test/int/snake-*-demo.test.ts
 - [ ] 用非零 `sId` 进入房间，确认 Redis key 与 `sId=0` 时相同。
 - [ ] 确认 Redis HASH 只有六项允许字段，没有 `sId`、run、结果、处理标记或请求字段。
 - [ ] 注入 Redis 写失败，确认复活与奖励结果仍成功，且留下受控 warning。
+      ⚠ **按形态分开记，⛔ 不要笼统写「已覆盖」或「无法覆盖」**：
+      ① **内存形态已自动覆盖**——复活/衣柜/结算各有一条「写失败只告警、不回滚」用例，随 `verify:all` 跑；
+      ② **真 Redis 形态零自动覆盖**，本条是**人工步骤**。`test:faults:int` 是有意留在 verify 链外的
+      历史决策（见 plan-v3 归档），⛔ 不要顺手把它接进 `verify:all`。
 - [ ] 在当前进程重复提交同一死亡和同一 run 终局，分别确认只扣一次、只奖一次。
 - [ ] 重启开发进程，确认写成功的衣柜/养成 profile 可回灌，而 run 去重与最近结果会重置。
 
@@ -83,6 +87,7 @@ node --import tsx --test --test-concurrency=1 test/int/snake-*-demo.test.ts
 
 - [ ] 用 `750 x 1624` 视口和 `safeBottom=0/100` 验证战场、HUD、操作区和弹窗不重叠。
 - [ ] 检查 16 套皮肤预览、装备、合成、红点、资源 fallback 和动态 FGUI 打开/关闭。
+      ⚠ 另需目视确认：战场底色 dark 主题、`walls[]` **有意不渲染**（边界走 4px 描边，不是墙块平铺）。
 - [ ] 走完死亡、金币复活、余额不足、放弃、超时、第六次死亡和个人结果页。
 - [ ] 连续完成两局，验证 XP、等级、碎片、成就、新解锁皮肤及下一局外观。
 - [ ] 记录 Creator 版本、commit、视口、操作步骤、截图/录屏和控制台日志。
@@ -133,12 +138,15 @@ node --import tsx --test --test-concurrency=1 test/int/snake-*-demo.test.ts
 | S5-CR-02 | `750 x 1624` 下 HUD、摇杆、按钮和弹窗无重叠 | 两组 Safe Area 录屏 |
 | S5-CR-03 | 16 套皮肤、衣柜、复活和结果页完整可操作 | 流程录屏 |
 | S5-CR-04 | 资源缺失时有稳定 fallback，不阻断退出 | 故障截图/日志 |
+| S5-CR-05 | 战场底色为 `BACKGROUND_THEME = "dark"`（⚠ 与来源 fresh-install 的 light 不同，是已登记的实施选型） | 截图 |
+| S5-CR-06 | 衣柜行的皮肤预览与长名排版不挤压按钮区 | 截图；⚠ 预览未接时本条只核对色条+文本布局 |
 
 ## 退出条件
 
 - [ ] S5-01～S5-06 全部完成，验收矩阵均有真实证据。
 - [ ] 全量自动门禁和 Snake Redis profile 用例通过，生成镜像无漂移。
-- [ ] `GameMode.ts`、`GameRoom.ts` 和 SQL schema 无本专项差异。
+- [ ] `GameMode.ts`、`GameRoom.ts` 和 SQL schema 无本专项差异 —— ✅ **三者现已全部机检**：
+      `npm run verify:protected-paths`（`apps/server/sql/schema.sql` 于 2026-09-05 加入 `gameplayFlow.paths`）。
 - [ ] Creator 3.8.8 桌面预览完成；没有用无头测试冒充 Creator 证据。
 - [ ] 文档只宣称内部 demo，不宣称生产金币或养成数据可靠。
 - [ ] 用户基于绑定 commit 的证据明确接受后，S5 才能标记 `[已完成]`。

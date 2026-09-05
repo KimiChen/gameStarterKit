@@ -55,7 +55,8 @@
       "apps/client/src/gameplay/services.ts",
       "apps/client/src/logic/gameplay/**",
       "apps/server/src/rooms/modes/catalog.ts",
-      "apps/server/src/app.config.ts"
+      "apps/server/src/app.config.ts",
+      "apps/server/sql/schema.sql"
     ]
   },
   "generatedWriterOwned": {
@@ -88,6 +89,7 @@
     ]
   },
   "semantics": {
+    "apps/server/sql/schema.sql": "Snake 专项冻结决策：不新建 snake_player_run、不新增或修改任何 MySQL 表（docs/s/s2r-reliable-coin-relive.md）。⚠ 本条是防未来误改的机检，把 S5 退出条件「SQL schema 无本专项差异」从人工核对升级为字节锁；⛔ 不禁止框架层正常的 schema 演进——真要改就同批重钉 protected-paths.lock 并在提交里说明。",
     "apps/shared/src/protocol/lobbyRpc/index.ts": "阶段 3 起为稳定 façade；façade 同样受保护——新增域只新建 domains/<domain>.ts",
     "apps/shared/src/protocol/lobbyRpc/envelope.ts": "阶段 3 起为稳定 façade（信封与错误常量经 coreErrors/registry 聚合）",
     "apps/shared/src/protocol/lobbyRpc/push.ts": "阶段 3 起为稳定 façade；域推送在各域 descriptor 声明",
