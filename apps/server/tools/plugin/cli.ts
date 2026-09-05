@@ -1,7 +1,7 @@
 /**
  * 插件命令（workspace 脚本，⛔ 不新增根命令）：
  *   npm --workspace @game/server run plugin -- pack <id> (--out <zip> | --out-dir <dir>)
- *   npm --workspace @game/server run plugin -- install <zip|dir> [--allow-downgrade] [--no-git] [--no-postinstall] [--dry-run]
+ *   npm --workspace @game/server run plugin -- install <zip|dir> [--allow-downgrade] [--replace-local-fork] [--no-git] [--no-postinstall] [--dry-run]
  *   npm --workspace @game/server run plugin -- install --reinstall-from-tree <id> [--allow-identity-change] [--adopt-tracked] [--allow-downgrade] [--no-git] [--no-postinstall] [--dry-run]
  *   npm --workspace @game/server run plugin -- uninstall <id> [--force] [--no-git] [--no-postinstall] [--dry-run]
  *   npm --workspace @game/server run plugin -- check
@@ -21,7 +21,7 @@ const TOOL_REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta
 
 export type PluginCliArguments =
   | { readonly command: "pack"; readonly root: string; readonly id: string; readonly outFile?: string; readonly outDir?: string }
-  | { readonly command: "install"; readonly root: string; readonly source: string; readonly allowDowngrade: boolean; readonly git: boolean; readonly postinstall: boolean; readonly dryRun: boolean }
+  | { readonly command: "install"; readonly root: string; readonly source: string; readonly allowDowngrade: boolean; readonly git: boolean; readonly postinstall: boolean; readonly dryRun: boolean; readonly replaceLocalFork: boolean }
   | { readonly command: "reinstall-from-tree"; readonly root: string; readonly id: string; readonly allowDowngrade: boolean; readonly git: boolean; readonly postinstall: boolean; readonly dryRun: boolean; readonly allowIdentityChange: boolean; readonly adoptTracked: boolean }
   | { readonly command: "uninstall"; readonly root: string; readonly id: string; readonly force: boolean; readonly git: boolean; readonly postinstall: boolean; readonly dryRun: boolean }
   | { readonly command: "check"; readonly root: string };
@@ -29,7 +29,7 @@ export type PluginCliArguments =
 const USAGE = [
   "用法：npm --workspace @game/server run plugin -- <pack|install|uninstall|check> …",
   "  pack <id> (--out <zip> | --out-dir <dir>)",
-  "  install <zip|dir> [--allow-downgrade] [--no-git] [--no-postinstall] [--dry-run]",
+  "  install <zip|dir> [--allow-downgrade] [--replace-local-fork] [--no-git] [--no-postinstall] [--dry-run]",
   "  install --reinstall-from-tree <id> [--allow-identity-change] [--adopt-tracked] [--allow-downgrade] [--no-git] [--no-postinstall] [--dry-run]（同仓作者迭代：以工作树重写已安装锁）",
   "  uninstall <id> [--force] [--no-git] [--no-postinstall] [--dry-run]",
   "  check",
@@ -76,8 +76,9 @@ export function parseCli(argv: readonly string[]): PluginCliArguments {
     };
   }
   if (command === "install") {
-    known(["--allow-downgrade", "--no-git", "--no-postinstall", "--dry-run", "--reinstall-from-tree", "--allow-identity-change", "--adopt-tracked"]);
+    known(["--allow-downgrade", "--no-git", "--no-postinstall", "--dry-run", "--reinstall-from-tree", "--allow-identity-change", "--adopt-tracked", "--replace-local-fork"]);
     if (flags.has("--reinstall-from-tree")) {
+      if (flags.has("--replace-local-fork")) throw new Error(`--replace-local-fork 只对 install <zip|dir> 有效（从树重装本身就是在写分叉）\n${USAGE}`);
       if (positional.length !== 1) throw new Error(`install --reinstall-from-tree 需要且只需要一个已安装插件 <id>\n${USAGE}`);
       if (positional[0].includes("/") || positional[0].endsWith(".zip")) throw new Error(`install --reinstall-from-tree 的参数是插件 id，不是包路径：${positional[0]}\n${USAGE}`);
       return {
@@ -104,6 +105,7 @@ export function parseCli(argv: readonly string[]): PluginCliArguments {
       git: !flags.has("--no-git"),
       postinstall: !flags.has("--no-postinstall"),
       dryRun: flags.has("--dry-run"),
+      replaceLocalFork: flags.has("--replace-local-fork"),
     };
   }
   if (command === "uninstall") {
@@ -140,7 +142,7 @@ export function runCli(args: PluginCliArguments): number {
     return 0;
   }
   if (args.command === "install") {
-    const report = installPlugin({ root: args.root, source: args.source, allowDowngrade: args.allowDowngrade, git: args.git, postinstall: args.postinstall, dryRun: args.dryRun });
+    const report = installPlugin({ root: args.root, source: args.source, allowDowngrade: args.allowDowngrade, git: args.git, postinstall: args.postinstall, dryRun: args.dryRun, replaceLocalFork: args.replaceLocalFork });
     const verb = report.previousVersion ? `upgraded ${report.previousVersion} → ${report.version}` : `installed ${report.version}`;
     console.log(`[plugin] ${args.dryRun ? "(dry-run) " : ""}${report.id}: ${verb}; written ${report.written.length}, unchanged ${report.unchanged.length}, deleted ${report.deleted.length}`);
     for (const relative of report.deleted) console.log(`[plugin]   deleted ${relative}`);
@@ -174,7 +176,7 @@ export function runCli(args: PluginCliArguments): number {
     return 0;
   }
   for (const plugin of report.plugins) {
-    console.log(`[plugin] ${plugin.id}@${plugin.version}: ${plugin.problems.length === 0 ? "✔ 一致" : "✖ 有问题"}`);
+    console.log(`[plugin] ${plugin.id}@${plugin.version} [${plugin.source}]: ${plugin.problems.length === 0 ? "✔ 一致" : "✖ 有问题"}`);
     for (const problem of plugin.problems) console.log(`[plugin]   - ${problem}`);
   }
   return report.ok ? 0 : 1;

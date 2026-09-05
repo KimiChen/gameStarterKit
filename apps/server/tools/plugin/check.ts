@@ -18,6 +18,8 @@ import { featureDeclarations } from "./package";
 export interface PluginCheckEntry {
   readonly id: string;
   readonly version: string;
+  /** 锁的来源抬头：package（由包安装）/ tree（本地分叉）/ unknown（旧锁无 source 行）。 */
+  readonly source: "package" | "tree" | "unknown";
   readonly problems: readonly string[];
 }
 
@@ -87,7 +89,7 @@ export function checkInstalledPlugins(root: string): PluginCheckReport {
     } catch (error) {
       problems.push(error instanceof Error ? error.message : String(error));
     }
-    plugins.push({ id, version: lock.manifest.version, problems });
+    plugins.push({ id, version: lock.manifest.version, source: lock.source?.kind ?? "unknown", problems });
   }
   return { plugins, ok: plugins.every((plugin) => plugin.problems.length === 0) };
 }
