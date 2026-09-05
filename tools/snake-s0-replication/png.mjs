@@ -124,6 +124,7 @@ export function decodePng(buffer) {
 
 export function encodePng(image) {
   const { width, height, data } = image;
+  if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1) throw new Error("Invalid PNG dimensions");
   if (!(data instanceof Uint8Array) || data.length !== width * height * 4) throw new Error("Invalid RGBA image");
   const raw = Buffer.alloc((width * 4 + 1) * height);
   for (let y = 0; y < height; y += 1) {
