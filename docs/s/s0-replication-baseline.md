@@ -26,11 +26,16 @@ UI 标注共 14 张 PNG，均带 `sourceDerivedStaticReconstruction` sidecar。`
 >    `evidence/s0/goldens/` 的 14 张 PNG 仍是旧 zlib 字节（zlib 头 `78 da`，新编码器只产 `78 01`）。
 >    **像素不变，字节已变**：本页 §6 的「`--check` 55/55 逐字节一致」对当前工具链不再成立，
 >    待归档恢复后重钉 `SHA256SUMS` + `goldens/manifest.json` + `bundle-manifest.json`。
-> 2. **S0 证据当前不可重新生成。** `tools/snake-s0-replication/cli.mjs` 的 `--write` 与 `--check`
->    都强制 `--source <锁定归档>`，而该归档在本机已不存在，也就无法复算 34 个来源身份、14 张 golden
->    或验证归档 HEAD 仍为 `6367f65`。目前只剩两项可自证：bundle 内部 `shasum -a 256 -c` 54/54
->    （2026-09-05 实测通过）与 10 个不依赖归档的单测。⚠ S1 工具相反，其 `--write`/`--check` 是
->    repo-only，`evidence/s1` 可以重钉——这个不对称在排期时不要混淆。
+> 2. **S0 证据当前不可重新生成，卡点是「归档不是 git 检出」。** `tools/snake-s0-replication/cli.mjs`
+>    的 `--write` 与 `--check` 都强制 `--source <锁定归档>`，且 `build.mjs` 会对该路径执行
+>    `git -C <source> rev-parse HEAD` 把来源 commit 钉进证据（这正是 `6367f65` 的来处）。
+>    2026-09-05 复核：归档**内容**在本机存在（`/Volumes/KimData/work/tanchishe_wegameVersion`，
+>    解包+反混淆的「完整可读版」，含 `remoteBundles/` 与去重符号链接，与 S0 记录的 34 身份/1 符号链接
+>    形态相符），但它**不是 git 仓库**，`--check` 因上述 `rev-parse` 直接失败退出 1。
+>    ⇒ 复原 S0 可复现性的条件是**拿到该归档的 git 检出**（或在等价内容上恢复出 `6367f65`），
+>    ⛔ 不是「找到文件就行」。在那之前只剩两项可自证：bundle 内部 `shasum -a 256 -c` 54/54
+>    （2026-09-05 实测通过）与 10 个不依赖归档的单测。
+>    ⚠ S1 工具相反，其 `--write`/`--check` 是 repo-only，`evidence/s1` 可以重钉——排期时不要混淆。
 > 3. **⛔ 不要编辑 `evidence/s0/` 里的任何文件**（含其 `README.md`）：该目录的 `SHA256SUMS` 覆盖自身
 >    全部 payload，改一个字节就红，而重钉需要上一条已不可用的归档。加注一律写在本页。
 
