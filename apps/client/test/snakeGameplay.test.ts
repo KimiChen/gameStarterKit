@@ -16,7 +16,7 @@ import {
     type ISnakeReliveResolved,
     type ISnakeRoomState,
     type ISnakeRunFinalizing,
-    type ISnakeRunResultV1,
+    type ISnakeRunResultV2,
     type ISnakeRunDelta,
     type ISnakeSnapshotSnake,
     type ISnakeWorldDelta,
@@ -420,7 +420,7 @@ interface FakeRoom extends SnakeRoomLike {
         decision: Array<(value: ISnakeReliveDecisionResult) => void>;
         resolved: Array<(value: ISnakeReliveResolved) => void>;
         finalizing: Array<(value: ISnakeRunFinalizing) => void>;
-        result: Array<(value: ISnakeRunResultV1) => void>;
+        result: Array<(value: ISnakeRunResultV2) => void>;
     };
 }
 
@@ -573,12 +573,25 @@ test("Gameplay：复活/终局 push 按 run、deathSeq、stateVersion 单调收�
     room.callbacks.finalizing[0]({ runId, stateVersion: 8, endReason: "reliveTimeout" });
     room.callbacks.finalizing[0]({ runId, stateVersion: 8, endReason: "reliveTimeout" });
     assert.equal(presentation.finalizing.length, 1);
-    const result: ISnakeRunResultV1 = {
-        resultVersion: 1,
+    const result: ISnakeRunResultV2 = {
+        resultVersion: 2,
         runId,
         endReason: "reliveTimeout",
         confirmedThroughTick: 210,
-        rewardStatus: "notEnabled",
+        rewardStatus: "applied",
+        qualified: true,
+        stats: {
+            skinIdAtRunStart: 1, activeTicks: 600, score: 120, finalLength: 90, maxLength: 110,
+            kills: 2, deaths: 1, relivesUsed: 1, reliveCoinSpent: 100,
+            magnetCollected: 1, starCollected: 3, meaningfulInputCount: 9,
+        },
+        coin: { amount: 17, balanceAfter: 9917 },
+        progression: {
+            xpAmount: 43, xpAfter: 43, levelBefore: 1, levelAfter: 1,
+            fragmentSkinId: 401, fragmentAmount: 2,
+            achievementProgressAfter: { "101": 2, "132": 600, "139": 3, "701": 120 },
+            newlyUnlockedSkinIds: [],
+        },
     };
     room.callbacks.result[0](result);
     room.callbacks.result[0](result);

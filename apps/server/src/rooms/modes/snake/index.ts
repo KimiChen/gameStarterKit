@@ -61,6 +61,7 @@ import {
     type SnakeRunSkinResolver,
 } from "./lifecycle";
 import { SNAKE_AI_SKIN_POOL, resolveServerBattleSkin } from "./skinBusinessCatalog";
+import { applyRunRewards, resolveRewardPersistence, type SnakeRewardPersistence } from "./runRewards";
 import { SnakeWorld, type SnakeBody, type SnakeSpawnPoint } from "./world";
 
 const MODE_ID = "snake";
@@ -123,6 +124,8 @@ interface SnakeAdmissionIdentity {
 export interface SnakeGameModeOptions {
     readonly reliveEconomy?: ReliveEconomyPort;
     readonly runSkinResolver?: SnakeRunSkinResolver;
+    /** S4 结算镜像的注入位；⛔ 测试必须走它或 `runtimeEnvironment: "test"`，否则会真连 Redis。 */
+    readonly rewardPersistence?: SnakeRewardPersistence;
     readonly runtimeEnvironment?: string;
 }
 
@@ -172,6 +175,7 @@ function indexed<T extends { readonly id: string | number }>(items: readonly T[]
 export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGameMode {
     const economy = resolveS2ReliveEconomy(options.reliveEconomy, options.runtimeEnvironment);
     const skinResolver = options.runSkinResolver ?? DEFAULT_SNAKE_RUN_SKIN_RESOLVER;
+    const rewardPersistence = resolveRewardPersistence(options.rewardPersistence, options.runtimeEnvironment);
     let roomEpochId = "";
     let world: SnakeWorld | null = null;
     let runCounter = 0;
@@ -453,12 +457,58 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
             reliveReceiptState: player.reliveReceiptState,
         });
         transition(player, SnakeRunState.Finalized);
+        // S4-03 结算：⚠ 必须在 transition→Finalized 之后、下发结果之前，且只对真人 run 调用
+        // （AI、假榜与 displayRank ⛔ 不进本路径）。同一 uid+roomEpochId+runId 只应用一次。
+        const stats = statsOf(player.id);
+        const uid = admissionIdentities.get(player.id)?.uid ?? null;
+        const runStatsPayload = {
+            activeTicks: player.activeTicks,
+            score: player.score,
+            kills: player.killCount,
+            starCollected: player.starCollected,
+            meaningfulInputCount: stats.meaningfulInputCount,
+        };
+        const rewards = uid === null
+            ? null
+            : applyRunRewards(
+                { uid, roomEpochId, runId: player.runId, endReason: reason, stats: runStatsPayload },
+                rewardPersistence ? { persistence: rewardPersistence } : {});
         context.sendS2C(client, SnakeRunResult, {
-            resultVersion: 1,
+            resultVersion: 2,
             runId: player.runId,
             endReason: reason,
             confirmedThroughTick: world?.tick ?? context.state.tick,
-            rewardStatus: SnakeRewardStatus.NotEnabled,
+            // 未认证 fixture 没有 uid，⛔ 不发奖也不谎报 applied。
+            rewardStatus: rewards === null ? SnakeRewardStatus.NotEnabled : SnakeRewardStatus.Applied,
+            qualified: rewards?.qualified ?? false,
+            stats: {
+                skinIdAtRunStart: player.skinId,
+                activeTicks: player.activeTicks,
+                score: player.score,
+                finalLength: player.length,
+                maxLength: Math.max(stats.maxLength, player.length),
+                kills: player.killCount,
+                deaths: player.deathCount,
+                relivesUsed: player.relivesUsed,
+                reliveCoinSpent: stats.reliveCoinSpent,
+                magnetCollected: player.magnetCollected,
+                starCollected: player.starCollected,
+                meaningfulInputCount: stats.meaningfulInputCount,
+            },
+            coin: {
+                amount: rewards?.coinAmount ?? 0,
+                balanceAfter: rewards?.coinBalanceAfter ?? player.coinBalance,
+            },
+            progression: {
+                xpAmount: rewards?.xpAmount ?? 0,
+                xpAfter: rewards?.xpAfter ?? 0,
+                levelBefore: rewards?.levelBefore ?? 1,
+                levelAfter: rewards?.levelAfter ?? 1,
+                fragmentSkinId: rewards?.fragmentSkinId ?? null,
+                fragmentAmount: rewards?.fragmentAmount ?? 0,
+                achievementProgressAfter: rewards?.achievementProgressAfter ?? {},
+                newlyUnlockedSkinIds: rewards?.newlyUnlockedSkinIds ?? [],
+            },
         });
         spawnAttempts.delete(player.id);
         pendingSpawns.delete(player.id);

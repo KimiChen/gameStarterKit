@@ -2,7 +2,9 @@
   "schemaVersion": 1,
   "id": "snake",
   "constantName": "Snake",
-  "modeVersion": 4,
+  "modeVersion": 5,
   "maxPlayers": 8,
-  "profiles": ["dropIn"]
+  "profiles": [
+    "dropIn"
+  ]
 }
