@@ -120,19 +120,58 @@ export function renderInstalledLock(lock: InstalledLock): string {
   ].join("\n");
 }
 
-function parseLockSource(line: string | undefined, label: string): LockSource | null {
-  if (!line) return null;
-  const value = JSON.parse(line.slice("# source ".length)) as LockSource;
-  if (value.kind !== "package" && value.kind !== "tree") throw new Error(`[plugin] ${label} 的 "# source" 抬头 kind 非法：${String((value as { kind: unknown }).kind)}`);
-  if (typeof value.filesLockSha256 !== "string") throw new Error(`[plugin] ${label} 的 "# source" 抬头缺 filesLockSha256`);
-  return value;
+const SHA256_HEX = /^[0-9a-f]{64}$/u;
+
+function assertLockSourceShape(value: unknown, label: string, depth = 0): LockSource {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) throw new Error(`[plugin] ${label} 的 "# source" 抬头不是对象`);
+  const record = value as Record<string, unknown>;
+  if (record.kind !== "package" && record.kind !== "tree") throw new Error(`[plugin] ${label} 的 "# source" 抬头 kind 非法：${String(record.kind)}`);
+  if (typeof record.filesLockSha256 !== "string" || !SHA256_HEX.test(record.filesLockSha256)) throw new Error(`[plugin] ${label} 的 "# source" 抬头 filesLockSha256 不是 64 位小写十六进制`);
+  if (record.kind === "package") {
+    if (record.registry !== undefined) {
+      const registry = record.registry as Record<string, unknown>;
+      if (typeof registry !== "object" || registry === null || typeof registry.url !== "string" || typeof registry.version !== "string"
+        || typeof registry.zipSha256 !== "string" || !SHA256_HEX.test(registry.zipSha256) || (registry.publisher !== undefined && typeof registry.publisher !== "string")) {
+        throw new Error(`[plugin] ${label} 的 "# source" 抬头 registry 子对象形状非法`);
+      }
+    }
+    return value as LockSource;
+  }
+  if (!("forkedFrom" in record)) throw new Error(`[plugin] ${label} 的 "# source" 抬头 kind=tree 缺 forkedFrom`);
+  if (record.forkedFrom !== null) {
+    if (depth > 4) throw new Error(`[plugin] ${label} 的 "# source" 抬头 forkedFrom 嵌套过深`);
+    assertLockSourceShape(record.forkedFrom, label, depth + 1);
+  }
+  return value as LockSource;
+}
+
+function parseLockSource(lines: readonly string[], label: string): LockSource | null {
+  const sourceLines = lines.filter((line) => line.startsWith("# source "));
+  if (sourceLines.length === 0) return null;
+  if (sourceLines.length > 1) throw new Error(`[plugin] ${label} 出现多行 "# source" 抬头（合并冲突未解？）`);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(sourceLines[0].slice("# source ".length));
+  } catch (error) {
+    throw new Error(`[plugin] ${label} 的 "# source" 抬头不是合法 JSON：${error instanceof Error ? error.message : String(error)}`);
+  }
+  return assertLockSourceShape(parsed, label);
 }
 
 export function parseInstalledLock(text: string, label: string): InstalledLock {
   const lines = text.split(/\r?\n/u);
-  const manifestLine = lines.find((line) => line.startsWith("# manifest "));
-  if (!manifestLine) throw new Error(`[plugin] ${label} 缺少 "# manifest" 抬头`);
-  const summary = JSON.parse(manifestLine.slice("# manifest ".length)) as {
+  const manifestLines = lines.filter((line) => line.startsWith("# manifest "));
+  if (manifestLines.length === 0) throw new Error(`[plugin] ${label} 缺少 "# manifest" 抬头`);
+  if (manifestLines.length > 1) throw new Error(`[plugin] ${label} 出现多行 "# manifest" 抬头（合并冲突未解？）`);
+  const manifestLine = manifestLines[0];
+  let parsedSummary: unknown;
+  try {
+    parsedSummary = JSON.parse(manifestLine.slice("# manifest ".length));
+  } catch (error) {
+    throw new Error(`[plugin] ${label} 的 "# manifest" 抬头不是合法 JSON：${error instanceof Error ? error.message : String(error)}`);
+  }
+  if (typeof parsedSummary !== "object" || parsedSummary === null) throw new Error(`[plugin] ${label} 的 "# manifest" 抬头不是对象`);
+  const summary = parsedSummary as {
     readonly id: string;
     readonly version: string;
     readonly kinds: readonly ("gameplay" | "feature")[];
@@ -141,6 +180,10 @@ export function parseInstalledLock(text: string, label: string): InstalledLock {
     readonly fguiPackages: readonly string[];
     readonly requires?: { readonly featureSchemaVersion?: number | null; readonly gameplaySchemaVersion?: number | null };
   };
+  if (typeof summary.id !== "string" || typeof summary.version !== "string") throw new Error(`[plugin] ${label} 的 "# manifest" 抬头缺 id / version`);
+  if (!Array.isArray(summary.kinds) || summary.kinds.length === 0 || summary.kinds.some((kind) => kind !== "gameplay" && kind !== "feature")) {
+    throw new Error(`[plugin] ${label} 的 "# manifest" 抬头 kinds 非法`);
+  }
   const manifest: PluginManifest = {
     schemaVersion: 1,
     id: summary.id,
@@ -156,7 +199,7 @@ export function parseInstalledLock(text: string, label: string): InstalledLock {
     },
     description: "",
   };
-  return { manifest, entries: parseEntries(lines, label), source: parseLockSource(lines.find((line) => line.startsWith("# source ")), label) };
+  return { manifest, entries: parseEntries(lines, label), source: parseLockSource(lines, label) };
 }
 
 export function readInstalledLock(root: string, id: string): InstalledLock | null {

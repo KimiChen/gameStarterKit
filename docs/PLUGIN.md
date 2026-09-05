@@ -184,8 +184,8 @@ files.lock       清单：每行 <仓库相对路径> <sha256>（与 protected-p
 
 ```text
 npm --workspace @game/server run plugin -- pack <id> (--out <zip> | --out-dir <dir>)
-npm --workspace @game/server run plugin -- install <zip|dir> [--allow-downgrade] [--no-git] [--no-postinstall] [--dry-run]
-npm --workspace @game/server run plugin -- install --reinstall-from-tree <id> [--allow-downgrade] [--no-git] [--no-postinstall] [--dry-run]
+npm --workspace @game/server run plugin -- install <zip|dir> [--allow-downgrade] [--replace-local-fork] [--no-git] [--no-postinstall] [--dry-run]
+npm --workspace @game/server run plugin -- install --reinstall-from-tree <id> [--allow-identity-change] [--adopt-tracked] [--allow-downgrade] [--no-git] [--no-postinstall] [--dry-run]
 npm --workspace @game/server run plugin -- uninstall <id> [--force] [--no-git] [--no-postinstall] [--dry-run]
 npm --workspace @game/server run plugin -- check
 ```
@@ -250,6 +250,18 @@ kinds / constantName / domains / fguiPackages 与锁不同即拒绝，显式 `--
 （树 ≡ 锁的 no-op 保留原来源）。**分叉之上的升级**：锁 `source.kind === "tree"` 时，内容不同的来包默认拒绝并列出会被
 覆盖/删除的分叉文件，显式 `--replace-local-fork` 才放行（同版本不同内容也放行——分叉 bump 到的版本号可能恰与上游撞车；
 ⛔ 不引入 `-local.N` 版本后缀）。旧锁没有这一行 ⇒ `check` 显示 `unknown`。
+
+**对抗验证后的加固**（2026-09-05 晚；三名审阅者对七条修复各自实跑绕过场景，击穿处全部收口，用例前缀「加固」）：
+回滚精确到**操作前**而不是 HEAD——插件文件与锁按落盘前字节复原，生成物根下操作前已脏的路径按操作前字节复原（用户已暂存 /
+未暂存的 WIP 逐字回来，索引也按 `git ls-files -s` 快照逐条恢复），只有本次新变脏的路径才按 HEAD 收回；落盘阶段（写文件 /
+删陈旧 / 写锁 / git add）与 postinstall 同一套回滚；`git status -z` 解析，非 ASCII 路径不再让回滚自己炸；「暂存删除算干净」
+只限 HEAD 里本插件锁登记过的路径；仅大小写不同的改名按「先删旧名再写新名」处理（大小写不敏感卷不丢文件）；读包阶段拒绝
+「文件与其子路径并存」。`--reinstall-from-tree` ⛔ 不替作者删仍在磁盘的旧锁文件（去掉域却留着域文件 ⇒ 拒绝并点名），
+View 改名的删除面从旧锁 sidecar 推出，吸收了共享命名空间（测试前缀 / 域目录 / resources/ui …）的新文件时点名请人确认。
+锁来源：与分叉内容相同的包 ⛔ 不能把 `tree` 洗白成 `package`（来源照旧，`--replace-local-fork` 才改标），无 `# source`
+的旧锁按分叉待遇 fail-closed，`check` 复核抬头形状、`filesLockSha256` 与清单一致、id 大小写归一不重复，`uninstall` 报告来源。
+`requires` 与随包 `feature.json` / gameplay `manifest.json` 的 `schemaVersion` 交叉核对（包与树两侧）；孤儿 `.meta` 拒绝；
+宿主 `.meta` 解析不了即拒绝装（撞车无从判定）；升级时同路径 `.meta` 换 uuid 只报告不拦。
 
 **报告里的 `nextSteps` 按事实派生**（2026-09-05 小修）：协议指纹一项不再按「带 domain 就一定变了」猜——postinstall
 跑完后脚本执行 `node scripts/protocol-fingerprint.mjs --check`，只有真报过期才写「协议指纹已过期 … `--write`」，
