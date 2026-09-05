@@ -131,6 +131,7 @@ export type SnakeGameMode = GameMode<SnakeRoomState, SnakePlayerState> & {
     __probeEconomy(): ReliveEconomyPort;
     __probeDiagnostics(): Readonly<{
         deathSnapshots: number;
+        runStats: number;
         spawnAttempts: number;
         pendingSpawns: number;
         decisionRecords: number;
@@ -141,6 +142,23 @@ export type SnakeGameMode = GameMode<SnakeRoomState, SnakePlayerState> & {
         pendingAiRespawns: number;
         tools: number;
     }>;
+    /** S4-01 的 per-run 统计读口（S4-03 结算与测试用；⛔ 这三项不在 Colyseus schema 里）。 */
+    __probeRunStats(sessionId: string): Readonly<{
+        maxLength: number;
+        meaningfulInputCount: number;
+        reliveCoinSpent: number;
+    }> | undefined;
+};
+
+/** 房间内存里的 per-run 统计累加器（⛔ 不进 Colyseus schema，见 runStats 注释）。 */
+type MutableRunStats = {
+    maxLength: number;
+    meaningfulInputCount: number;
+    reliveCoinSpent: number;
+    /** 上一次已接受输入的朝向/加速，用于判定「有效输入」而不是逐包计数。 */
+    lastDirX: number;
+    lastDirY: number;
+    lastBoost: boolean;
 };
 
 function changed<T>(left: T | undefined, right: T): boolean {
@@ -159,6 +177,21 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
     let runCounter = 0;
     let joinCounter = 0;
     const deathSnapshots = new Map<string, DeathSnapshot>();
+    /**
+     * S4-01 run 统计：schema 里已有 activeTicks/score/kills/deaths/star/magnet/relivesUsed，
+     * 这三项没有——⚠ 有意**只放房间内存、不进 state.json**：进 state 会改 contractDigest 并逼出
+     * 一次 modeVersion bump，与 B0「wire 改动压到 S4-04 一次成型」冲突。S4-04 由结果 wire 下发。
+     */
+    const runStats = new Map<string, MutableRunStats>();
+    const freshRunStats = (): MutableRunStats => ({
+        maxLength: 0, meaningfulInputCount: 0, reliveCoinSpent: 0,
+        lastDirX: Number.NaN, lastDirY: Number.NaN, lastBoost: false,
+    });
+    const statsOf = (sessionId: string): MutableRunStats => {
+        let entry = runStats.get(sessionId);
+        if (!entry) { entry = freshRunStats(); runStats.set(sessionId, entry); }
+        return entry;
+    };
     const spawnAttempts = new Map<string, number>();
     const pendingSpawns = new Map<string, SnakeSpawnPoint>();
     const decisionRecords = new Map<string, DecisionRecord>();
@@ -390,6 +423,10 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
             player.alive = snake.alive;
             player.score = snake.score;
             player.length = Math.round(snake.length);
+            {   // 本局峰值长度（S4 结算用；⛔ 不投影到 state）。
+                const stats = statsOf(player.id);
+                if (player.length > stats.maxLength) stats.maxLength = player.length;
+            }
             player.deathCount = snake.deathCount;
             player.killCount = snake.killCount;
             player.headX = snake.points[0]?.x ?? 0;
@@ -543,6 +580,8 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
         }
         player.receiptId = result.receiptId;
         player.coinBalance = result.balanceAfter;
+        // 本局累计复活消耗（S4 结果页展示；金币奖励⛔ 不减去它，见 S4 文档）。
+        statsOf(player.id).reliveCoinSpent += player.coinCost;
         player.reliveReceiptState = SnakeReliveReceiptState.Applied;
         transition(player, SnakeRunState.ReliveReady);
         pendingSpawns.set(player.id, spawn);
@@ -631,6 +670,7 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
     };
 
     const resetRunForMatch = (player: SnakePlayerState): void => {
+        runStats.set(player.id, freshRunStats());
         player.connected = true;
         player.alive = true;
         player.score = 0;
@@ -725,6 +765,15 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
                 if (!world || !player || !player.connected || player.runState !== SnakeRunState.Active) return;
                 if (world.applyInput(player.id, payload.dirX, payload.dirY, payload.boost, payload.seq)) {
                     player.ackSeq = payload.seq;
+                    // 「有效输入」= 真的改了朝向或切了加速，⛔ 不是逐包计数（客户端每 tick 都发）。
+                    const stats = statsOf(player.id);
+                    if (payload.boost !== stats.lastBoost
+                        || payload.dirX !== stats.lastDirX || payload.dirY !== stats.lastDirY) {
+                        stats.meaningfulInputCount += 1;
+                        stats.lastDirX = payload.dirX;
+                        stats.lastDirY = payload.dirY;
+                        stats.lastBoost = payload.boost;
+                    }
                 }
             },
             [SnakeReliveDecision.type]: (context: GameModeCommandContext<SnakeRoomState>, payload: ISnakeReliveDecisionReq): void => {
@@ -836,6 +885,7 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
             streamCursors.clear();
             baselineNeeded.clear();
             deathSnapshots.clear();
+            runStats.clear();
             spawnAttempts.clear();
             pendingSpawns.clear();
             decisionRecords.clear();
@@ -882,6 +932,7 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
             deathSnapshots.delete(context.player.id);
             spawnAttempts.delete(context.player.id);
             pendingSpawns.delete(context.player.id);
+            runStats.delete(context.player.id);
             for (const key of decisionRecords.keys()) {
                 if (key.startsWith(`${context.player.runId}\u0000`)) decisionRecords.delete(key);
             }
@@ -902,6 +953,7 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
             streamCursors.clear();
             baselineNeeded.clear();
             deathSnapshots.clear();
+            runStats.clear();
             spawnAttempts.clear();
             pendingSpawns.clear();
             decisionRecords.clear();
@@ -915,6 +967,7 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
         __probeEconomy: () => economy,
         __probeDiagnostics: () => ({
             deathSnapshots: deathSnapshots.size,
+            runStats: runStats.size,
             spawnAttempts: spawnAttempts.size,
             pendingSpawns: pendingSpawns.size,
             decisionRecords: decisionRecords.size,
@@ -925,6 +978,15 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
             pendingAiRespawns: world?.pendingAiRespawnCount ?? 0,
             tools: world?.toolList().length ?? 0,
         }),
+        __probeRunStats: (sessionId: string) => {
+            const entry = runStats.get(sessionId);
+            if (!entry) return undefined;
+            return {
+                maxLength: entry.maxLength,
+                meaningfulInputCount: entry.meaningfulInputCount,
+                reliveCoinSpent: entry.reliveCoinSpent,
+            };
+        },
     };
     return mode;
 }
