@@ -17,10 +17,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { compareVersions, identityDifferences } from "./manifest";
-import { INSTALLED_LOCK_DIR, filesLockSha256Of, foreignLockOwners, readInstalledLock, verifyLockAgainstTree, writeInstalledLock, type LockEntry, type LockSource, type LockSourceRegistry } from "./lock";
+import { INSTALLED_LOCK_DIR, filesLockSha256Of, foreignLockOwners, parseInstalledLock, readInstalledLock, verifyLockAgainstTree, writeInstalledLock, type LockEntry, type LockSource, type LockSourceRegistry } from "./lock";
 import { packPlugin } from "./pack";
 import { assertInstalledLockOwned, packageMetaUuids, readPackage, validatePackage, type ValidatedPackage } from "./package";
-import { hostMetaUuids } from "./meta";
+import { hostMetaUuids, parseMeta } from "./meta";
 import { matchesPrefixRule, mirrorPathOf, readGeneratedWriterPaths, type OwnershipRule } from "./ownership";
 import { featureDeclarations } from "./package";
 import type { PluginManifest } from "./manifest";
@@ -63,8 +63,15 @@ export interface InstallReport {
   readonly allowDelete: AllowDelete;
   /** 本次写进锁的来源抬头（dry-run 也算出来）。 */
   readonly source: LockSource;
-  /** 仅 --reinstall-from-tree：被锁吸收的树上改动（新增 / 内容变化），文件本身不被写。 */
-  readonly adopted?: { readonly added: readonly string[]; readonly changed: readonly string[] };
+  /** 旧锁的来源抬头（首装为 null；旧锁无 source 行也是 null）——CLI 据此打印 source 变迁。 */
+  readonly previousSource: LockSource | null;
+  /** 升级时同路径 .meta 的 uuid 变化（只报告）。 */
+  readonly uuidChanged: readonly UuidChange[];
+  /**
+   * 仅 --reinstall-from-tree：被锁吸收的树上改动（新增 / 内容变化），文件本身不被写；`review` 是新增里落在共享
+   * 命名空间（测试目录前缀 / 域目录 / resources/ui …）的路径——未跟踪即吸收，请人工确认它们确属本插件。
+   */
+  readonly adopted?: { readonly added: readonly string[]; readonly changed: readonly string[]; readonly review: readonly string[] };
 }
 
 export interface ReinstallFromTreeOptions {
@@ -90,6 +97,10 @@ function sameEntries(left: readonly LockEntry[], right: readonly LockEntry[]): b
     && left.every((entry, index) => entry.path === right[index].path && entry.sha256 === right[index].sha256);
 }
 
+function forkLikeSource(source: LockSource | null | undefined): boolean {
+  return source === null || source === undefined || source.kind === "tree";
+}
+
 const NO_DELETE: AllowDelete = { gameplays: [], features: [] };
 
 /**
@@ -106,10 +117,14 @@ function runPostinstall(root: string, kinds: readonly string[], useGit: boolean,
   const deleting = allowDelete.gameplays.length + allowDelete.features.length > 0;
   run(root, "npm", ["run", "sync:shared"], deleting ? { SYNC_FORCE: "1" } : {});
   if (useGit) {
-    run(root, "git", ["add", "-A", "--", "apps/shared/src", "apps/server/src", "apps/client/src", "docs/features.generated.md", "apps/server/test/lobbyRpcVectors", "apps/server/test/wire-vectors"]);
+    // 只把工作树里存在的 pathspec 交给 git（不存在的 pathspec 让 git add fatal；fixture 根未必齐全）。
+    const present = (paths: readonly string[]): readonly string[] => paths.filter((relative) => fs.existsSync(path.join(root, relative)));
+    const generated = present(["apps/shared/src", "apps/server/src", "apps/client/src", "docs/features.generated.md", "apps/server/test/lobbyRpcVectors", "apps/server/test/wire-vectors"]);
+    if (generated.length > 0) run(root, "git", ["add", "-A", "--", ...generated]);
     // Cocos 镜像只暂存已跟踪文件的改动：sync:shared 新建的镜像没有 .meta，暂存它会让 verify:sync 红
     //（.meta 断言只遍历已跟踪文件）；新镜像文件等 Creator 生成 .meta 后再由人 git add（nextSteps）。
-    run(root, "git", ["add", "-u", "--", "apps/Cocos/assets/src"]);
+    const mirror = present(["apps/Cocos/assets/src"]);
+    if (mirror.length > 0) run(root, "git", ["add", "-u", "--", ...mirror]);
   }
 }
 
@@ -148,8 +163,8 @@ interface JournalEntry {
 }
 
 function snapshot(root: string, relative: string): JournalEntry {
-  const file = path.join(root, relative);
-  return { path: relative, before: fs.existsSync(file) && fs.statSync(file).isFile() ? fs.readFileSync(file) : null };
+  // 按目录项真实名字判定：大小写不敏感文件系统上 Readme.md 不能「继承」README.md 的字节，否则回滚会把改名前的名字弄丢。
+  return { path: relative, before: readExact(root, relative) };
 }
 
 function restoreJournal(root: string, journal: readonly JournalEntry[]): void {
@@ -159,71 +174,203 @@ function restoreJournal(root: string, journal: readonly JournalEntry[]): void {
   }
 }
 
-/** `git status --porcelain` 一行 → { status, path }（重命名行取箭头右侧；带引号的路径去引号）。 */
-function parsePorcelain(line: string): { readonly status: string; readonly path: string } {
-  const status = line.slice(0, 2);
-  let rest = line.slice(3);
-  const arrow = rest.indexOf(" -> ");
-  if (arrow !== -1) rest = rest.slice(arrow + 4);
-  if (rest.startsWith('"') && rest.endsWith('"')) rest = JSON.parse(rest) as string;
-  return { status, path: rest };
+/** 大小写不敏感文件系统上 existsSync 会命中「同名异案」的文件：按目录项的真实名字判定存在与否。 */
+function readExact(root: string, relative: string): Buffer | null {
+  const file = path.join(root, relative);
+  if (!fs.existsSync(file) || !fs.statSync(file).isFile()) return null;
+  if (!fs.readdirSync(path.dirname(file)).includes(path.basename(file))) return null;
+  return fs.readFileSync(file);
 }
 
-/** 生成物路径里「本次新变脏」的部分：未跟踪的删掉，已跟踪的 restore 回索引与工作树；之前就脏的原样留下。 */
-function rollbackGenerated(root: string, dirtyBefore: ReadonlySet<string>, run: CommandRunner): readonly string[] {
-  const roots = readGeneratedWriterPaths(root).map((entry) => (entry.endsWith("/**") ? entry.slice(0, -3) : entry));
-  const now = gitStatusDirty(root, roots).filter((line) => !dirtyBefore.has(line));
-  const restored: string[] = [];
-  const tracked: string[] = [];
-  for (const line of now) {
-    const { status, path: relative } = parsePorcelain(line);
-    restored.push(relative);
-    if (status === "??") removeFileAndEmptyDirs(root, relative);
-    else tracked.push(relative);
+export interface StatusEntry {
+  readonly status: string;
+  readonly path: string;
+}
+
+/** `git status --porcelain -z`（NUL 分隔、不加引号，非 ASCII 路径不会被 C 风格转义；重命名条目跳过其原路径字段）。 */
+export function gitStatusEntries(root: string, paths: readonly string[]): readonly StatusEntry[] {
+  if (paths.length === 0) return [];
+  const result = spawnSync("git", ["status", "--porcelain", "-z", "--untracked-files=all", "--", ...paths], { cwd: root, encoding: "utf8" });
+  if (result.error || result.status !== 0) fail(`git status 失败（不是 git 仓库？用 --no-git 跳过）：${result.stderr ?? result.error?.message ?? ""}`);
+  const fields = result.stdout.split("\0").filter((field) => field !== "");
+  const entries: StatusEntry[] = [];
+  for (let index = 0; index < fields.length; index += 1) {
+    const field = fields[index];
+    const status = field.slice(0, 2);
+    entries.push({ status, path: field.slice(3) });
+    if (status.startsWith("R") || status.startsWith("C")) index += 1; // 下一字段是原路径
   }
-  if (tracked.length > 0) run(root, "git", ["restore", "--staged", "--worktree", "--", ...tracked]);
-  return restored.sort();
+  return entries;
+}
+
+interface IndexEntry {
+  readonly mode: string;
+  readonly sha: string;
+}
+
+/** 索引快照：路径 → { mode, blob sha }（`git ls-files -s`），回滚时逐条恢复到**操作前**的索引状态而不是 HEAD。 */
+function gitIndexSnapshot(root: string, paths: readonly string[]): ReadonlyMap<string, IndexEntry> {
+  const out = new Map<string, IndexEntry>();
+  const unique = [...new Set(paths)];
+  if (unique.length === 0) return out;
+  const result = spawnSync("git", ["ls-files", "-s", "-z", "--", ...unique], { cwd: root, encoding: "utf8" });
+  if (result.error || result.status !== 0) fail(`git ls-files -s 失败：${result.stderr ?? result.error?.message ?? ""}`);
+  for (const field of result.stdout.split("\0").filter((line) => line !== "")) {
+    const match = /^(\d{6}) ([0-9a-f]{40,64}) \d\t(.+)$/su.exec(field);
+    if (match) out.set(match[3], { mode: match[1], sha: match[2] });
+  }
+  return out;
+}
+
+function gitIndexRestore(root: string, before: ReadonlyMap<string, IndexEntry>, paths: readonly string[], run: CommandRunner): void {
+  const unique = [...new Set(paths)];
+  const absent = unique.filter((relative) => !before.has(relative));
+  if (absent.length > 0) run(root, "git", ["rm", "--cached", "-q", "--ignore-unmatch", "--", ...absent]);
+  for (const relative of unique) {
+    const entry = before.get(relative);
+    if (entry) run(root, "git", ["update-index", "--add", "--cacheinfo", `${entry.mode},${entry.sha},${relative}`]);
+  }
+}
+
+function generatedRootsOf(root: string): readonly string[] {
+  return readGeneratedWriterPaths(root).map((entry) => (entry.endsWith("/**") ? entry.slice(0, -3) : entry));
 }
 
 /**
- * 跑 postinstall；失败即回滚到落盘前（插件文件与锁按日志复原、受影响路径的索引重新同步、生成物只回退本次新变脏的部分），
- * 然后把原错误连同回滚清单一起抛出。⛔ 不留半安装态。
+ * 一次落盘（含 postinstall）的回滚上下文：插件文件与锁的落盘前字节、生成物根下**操作前已脏**路径的工作树字节、
+ * 以及这两组路径的索引快照。回滚 = 字节复原 + 索引复原到操作前（⛔ 不是 restore 到 HEAD：用户已暂存 / 未暂存的 WIP
+ * 必须逐字回来），生成物根下「本次新变脏」的路径按 HEAD 收回（未跟踪的删掉）。
  */
-function postinstallOrRollback(
-  root: string,
-  kinds: readonly string[],
-  useGit: boolean,
-  allowDelete: AllowDelete,
-  run: CommandRunner,
-  journal: readonly JournalEntry[],
-  affected: readonly string[],
-): void {
-  const generatedRoots = readGeneratedWriterPaths(root).map((entry) => (entry.endsWith("/**") ? entry.slice(0, -3) : entry));
-  const dirtyBefore = new Set(useGit ? gitStatusDirty(root, generatedRoots) : []);
+interface MutationContext {
+  readonly journal: readonly JournalEntry[];
+  readonly affected: readonly string[];
+  readonly generatedBefore: ReadonlyMap<string, Buffer | null>;
+  readonly indexBefore: ReadonlyMap<string, IndexEntry>;
+  readonly indexPaths: readonly string[];
+}
+
+function beginMutation(root: string, useGit: boolean, affected: readonly string[]): MutationContext {
+  const journal = affected.map((relative) => snapshot(root, relative));
+  const generatedBefore = new Map<string, Buffer | null>();
+  if (useGit) {
+    for (const entry of gitStatusEntries(root, generatedRootsOf(root))) {
+      const file = path.join(root, entry.path);
+      generatedBefore.set(entry.path, fs.existsSync(file) && fs.statSync(file).isFile() ? fs.readFileSync(file) : null);
+    }
+  }
+  const indexPaths = [...new Set([...affected, ...generatedBefore.keys()])];
+  const indexBefore = useGit ? gitIndexSnapshot(root, indexPaths) : new Map<string, IndexEntry>();
+  return { journal, affected, generatedBefore, indexBefore, indexPaths };
+}
+
+/** 回滚；返回生成物侧被收回的路径清单。任何一步失败都向上抛（调用方把它标成「回滚也失败」）。 */
+function rollback(root: string, useGit: boolean, context: MutationContext, run: CommandRunner): readonly string[] {
+  restoreJournal(root, context.journal);
+  if (!useGit) return [];
+  const restored: string[] = [];
+  const restoreToHead: string[] = [];
+  const dropFromIndex: string[] = [];
+  const affected = new Set(context.affected);
+  for (const entry of gitStatusEntries(root, generatedRootsOf(root))) {
+    if (affected.has(entry.path)) continue; // 插件自己的文件（含 Cocos 镜像）由日志与索引快照负责
+    if (context.generatedBefore.has(entry.path)) {
+      // 操作前就脏的路径：按操作前字节复原（用户 WIP 逐字回来）；没被碰过的不计入清单。
+      const bytes = context.generatedBefore.get(entry.path) ?? null;
+      const current = readExact(root, entry.path);
+      if (bytes === null ? current === null : current !== null && current.equals(bytes)) continue;
+      if (bytes === null) removeFileAndEmptyDirs(root, entry.path);
+      else atomicWrite(path.join(root, entry.path), bytes);
+      restored.push(entry.path);
+      continue;
+    }
+    restored.push(entry.path);
+    if (entry.status === "??") {
+      removeFileAndEmptyDirs(root, entry.path);
+    } else if (entry.status.startsWith("A")) {
+      removeFileAndEmptyDirs(root, entry.path);
+      dropFromIndex.push(entry.path);
+    } else {
+      restoreToHead.push(entry.path);
+    }
+  }
+  if (restoreToHead.length > 0) run(root, "git", ["restore", "--staged", "--worktree", "--", ...restoreToHead]);
+  if (dropFromIndex.length > 0) run(root, "git", ["rm", "--cached", "-q", "--ignore-unmatch", "--", ...dropFromIndex]);
+  gitIndexRestore(root, context.indexBefore, context.indexPaths, run);
+  return restored.sort();
+}
+
+/** 执行一个可能失败的阶段；失败即回滚并把原错误连同回滚清单一起抛出（回滚自身失败则如实说明半安装态）。 */
+function guarded(root: string, useGit: boolean, context: MutationContext, run: CommandRunner, stage: string, action: () => void): void {
   try {
-    runPostinstall(root, kinds, useGit, allowDelete, run);
+    action();
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     let restoredGenerated: readonly string[] = [];
     try {
-      restoreJournal(root, journal);
-      if (useGit) {
-        gitAddExisting(root, affected);
-        restoredGenerated = rollbackGenerated(root, dirtyBefore, run);
-      }
+      restoredGenerated = rollback(root, useGit, context, run);
     } catch (rollbackError) {
-      fail(`postinstall 失败：${message}\n⚠ 回滚也失败（树处于半安装态，请按 git status 手工收拾）：${rollbackError instanceof Error ? rollbackError.message : String(rollbackError)}`);
+      fail(`${stage}失败：${message}\n⚠ 回滚也失败（树处于半安装态，请按 git status 手工收拾）：${rollbackError instanceof Error ? rollbackError.message : String(rollbackError)}`);
     }
-    fail(`postinstall 失败，已回滚到安装前（插件文件 ${journal.length} 项按落盘前字节复原${restoredGenerated.length > 0 ? `，生成物回退 ${restoredGenerated.length} 项：${restoredGenerated.join("、")}` : ""}）：\n${message}`);
+    fail(`${stage}失败，已回滚到操作前（插件文件与锁 ${context.journal.length} 项按落盘前字节复原、索引复原${restoredGenerated.length > 0 ? `，生成物收回 ${restoredGenerated.length} 项：${restoredGenerated.join("、")}` : ""}）：\n${message}`);
   }
 }
 
-/** 干净检查里可忽略的形态：索引里已暂存删除且工作树也不存在（uninstall 后未提交即重装）——写入它等价于写入干净路径。 */
-function blockingDirty(root: string, lines: readonly string[]): readonly string[] {
-  return lines.filter((line) => {
-    const { status, path: relative } = parsePorcelain(line);
-    return !(status === "D " && !fs.existsSync(path.join(root, relative)));
+/** HEAD 里本插件锁登记的路径（uninstall 未提交即重装时，只有这些路径的暂存删除算干净）。 */
+function headLockPaths(root: string, id: string): ReadonlySet<string> {
+  const result = spawnSync("git", ["show", `HEAD:${INSTALLED_LOCK_DIR}/${id}.lock`], { cwd: root, encoding: "utf8" });
+  if (result.error || result.status !== 0) return new Set();
+  try {
+    return new Set(parseInstalledLock(result.stdout, `HEAD:${INSTALLED_LOCK_DIR}/${id}.lock`).entries.map((entry) => entry.path));
+  } catch {
+    return new Set();
+  }
+}
+
+/**
+ * 干净检查里可忽略的形态：索引里已暂存删除且工作树不存在——但只限 HEAD 里本插件自己的锁登记过的路径（uninstall 后未提交
+ * 即重装）；别人对框架文件的暂存删除不算干净（否则安装会把框架路径改写成插件内容并纳入锁）。
+ */
+function blockingDirty(root: string, id: string, entries: readonly StatusEntry[]): readonly StatusEntry[] {
+  const lockRelative = path.posix.join(INSTALLED_LOCK_DIR, `${id}.lock`);
+  let owned: ReadonlySet<string> | null = null;
+  return entries.filter((entry) => {
+    if (entry.status !== "D " || fs.existsSync(path.join(root, entry.path))) return true;
+    if (entry.path === lockRelative || entry.path === `plugins/${id}/plugin.json`) return false;
+    owned ??= headLockPaths(root, id);
+    return !owned.has(entry.path);
   });
+}
+
+/** 旧锁清单里的 View sidecar 路径 → View 名（与 featureDeclarations 同一 basename 规则）；reinstall 的删除面由此推出。 */
+export function viewNamesFromEntries(entries: readonly LockEntry[]): readonly string[] {
+  return [...new Set(entries
+    .map((entry) => entry.path)
+    .filter((relative) => relative.startsWith("apps/client/src/") && relative.endsWith("View.view.json"))
+    .map((relative) => path.posix.basename(relative).replace(/View\.view\.json$/u, "")))].sort();
+}
+
+/** 升级时同路径 .meta 的 uuid 变化（Creator 眼里就是「另一个资源」，宿主对它的引用会断）：只报告，不拦。 */
+export interface UuidChange {
+  readonly path: string;
+  readonly from: string;
+  readonly to: string;
+}
+
+function uuidChanges(root: string, pkg: ValidatedPackage, previousEntries: ReadonlyMap<string, LockEntry>): readonly UuidChange[] {
+  const changes: UuidChange[] = [];
+  for (const [relative, data] of pkg.files) {
+    if (!relative.endsWith(".meta") || !previousEntries.has(relative)) continue;
+    const file = path.join(root, relative);
+    if (!fs.existsSync(file)) continue;
+    try {
+      const from = parseMeta(fs.readFileSync(file), relative).uuid;
+      const to = parseMeta(data, relative).uuid;
+      if (from !== to) changes.push({ path: relative, from, to });
+    } catch {
+      // 树上的 .meta 坏了由 verify:sync / 宿主撞车闸负责，这里只比对能解析的。
+    }
+  }
+  return changes;
 }
 
 export function runCommand(root: string, command: string, args: readonly string[], env: NodeJS.ProcessEnv = {}): void {
@@ -325,9 +472,12 @@ function assertNoHostUuidCollision(root: string, id: string, pkg: ValidatedPacka
   const incoming = packageMetaUuids(pkg.files);
   if (incoming.size === 0) return;
   const host = hostMetaUuids(root, "apps/Cocos/assets", skip);
+  if (host.unreadable.length > 0) {
+    fail(`拒绝：宿主 apps/Cocos/assets 下有无法解析的 .meta，无从判定 uuid 撞车（先修好它们，或 verify:sync 会同样点名）：\n  ${host.unreadable.join("\n  ")}`);
+  }
   const clashes: string[] = [];
   for (const [uuid, relative] of incoming) {
-    const holders = host.get(uuid);
+    const holders = host.byUuid.get(uuid);
     if (holders) clashes.push(`${uuid}：包内 ${relative} ⟷ 宿主 ${holders.join("、")}`);
   }
   if (clashes.length > 0) {
@@ -395,6 +545,17 @@ export function nextStepsFor(pkg: ValidatedPackage, root: string, context: NextS
   return steps;
 }
 
+/** 推导集里与框架/其它插件共用父目录的落点（按前缀或域名归属，而不是 <id> 专属目录）。 */
+export function isSharedNamespace(relative: string, id: string): boolean {
+  const exclusive = [`plugins/${id}/`, `docs/${id}/`, `features/${id}/`, `apps/client/src/features/${id}/`, `apps/Cocos/assets/src/features/${id}/`,
+    `apps/server/src/core/${id}/`, `apps/shared/schema/gameplays/${id}/`, `apps/shared/src/gameplays/${id}/`, `apps/server/src/rooms/modes/${id}/`,
+    `apps/client/src/gameplay/modes/${id}/`, `apps/client/src/logic/rooms/${id}/`, `apps/client/src/view/rooms/${id}/`,
+    `apps/Cocos/assets/src/gameplay/modes/${id}/`, `apps/Cocos/assets/src/logic/rooms/${id}/`, `apps/Cocos/assets/src/view/rooms/${id}/`,
+    `apps/Cocos/assets/resources/${id}/`];
+  if (exclusive.some((prefix) => relative.startsWith(prefix) || relative === `${prefix.slice(0, -1)}.meta`)) return false;
+  return true;
+}
+
 export function installPlugin(options: InstallOptions): InstallReport {
   const root = path.resolve(options.root);
   const useGit = options.git !== false;
@@ -412,15 +573,20 @@ export function installPlugin(options: InstallOptions): InstallReport {
       fail(`拒绝降级：已安装 ${id}@${previous.manifest.version}，包为 ${manifest.version}（显式 --allow-downgrade 才放行）`);
     }
     const sameContent = sameEntries(previous.entries, pkg.entries);
-    // 本地分叉（锁由 --reinstall-from-tree 写出）：来包内容不同即视为「上游会覆盖宿主改动」，默认拒绝并列出分叉面；
-    // --replace-local-fork 显式放行（同版本不同内容也放行：分叉 bump 到的版本号可能恰与上游撞车）。
-    if (previous.source?.kind === "tree" && !sameContent) {
+    // 本地分叉（锁由 --reinstall-from-tree 写出）与来源未知的旧锁（无 # source 行，可能就是分叉）都 fail-closed：
+    // 来包内容不同即视为「上游会覆盖宿主改动」，默认拒绝并列出分叉面；--replace-local-fork 显式放行
+    //（同版本不同内容也放行：分叉 bump 到的版本号可能恰与上游撞车）。
+    const forkLike = previous.source === null || previous.source === undefined || previous.source.kind === "tree";
+    if (forkLike && !sameContent) {
       const incoming = new Map(pkg.entries.map((entry) => [entry.path, entry.sha256]));
       const overwritten = previous.entries.filter((entry) => incoming.has(entry.path) && incoming.get(entry.path) !== entry.sha256).map((entry) => entry.path);
       const removed = previous.entries.filter((entry) => !incoming.has(entry.path)).map((entry) => entry.path);
       if (!options.replaceLocalFork) {
-        fail(`拒绝：已安装 ${id}@${previous.manifest.version} 是本地分叉（锁 source=tree，宿主曾以 --reinstall-from-tree 吸收改动），`
-          + `来包会覆盖/删除这些分叉文件；确认要放弃本地改动再用 --replace-local-fork：\n`
+        const why = previous.source?.kind === "tree"
+          ? "是本地分叉（锁 source=tree，宿主曾以 --reinstall-from-tree 吸收改动）"
+          : "的锁没有来源抬头（§1-5 之前的旧锁形态，可能就是本地分叉）";
+        fail(`拒绝：已安装 ${id}@${previous.manifest.version} ${why}，`
+          + `来包会覆盖/删除这些文件；确认要放弃本地内容再用 --replace-local-fork：\n`
           + `  覆盖 ${overwritten.length}：\n  ${overwritten.join("\n  ") || "-"}\n  删除 ${removed.length}：\n  ${removed.join("\n  ") || "-"}`);
       }
     } else if (cmp === 0 && !sameContent) {
@@ -444,10 +610,11 @@ export function installPlugin(options: InstallOptions): InstallReport {
   assertNoHostUuidCollision(root, id, pkg, new Set([...previousEntries.keys(), ...pkg.files.keys()]));
 
   const stale = [...previousEntries.keys()].filter((relative) => !pkg.files.has(relative));
-  const affected = [...pkg.files.keys(), ...stale, path.posix.join(INSTALLED_LOCK_DIR, `${id}.lock`)];
+  const lockRelative = path.posix.join(INSTALLED_LOCK_DIR, `${id}.lock`);
+  const affected = [...pkg.files.keys(), ...stale, lockRelative];
   if (useGit) {
-    const dirty = blockingDirty(root, gitStatusDirty(root, affected));
-    if (dirty.length > 0) fail(`拒绝：受影响路径的工作树不干净（先提交或清理）：\n  ${dirty.join("\n  ")}`);
+    const dirty = blockingDirty(root, id, gitStatusEntries(root, affected));
+    if (dirty.length > 0) fail(`拒绝：受影响路径的工作树不干净（先提交或清理）：\n  ${dirty.map((entry) => `${entry.status} ${entry.path}`).join("\n  ")}`);
   }
   // 升级删除面（旧有新无的域 / View / kind）在覆盖 feature.json 之前从树上读出。
   const allowDelete = previous
@@ -455,19 +622,25 @@ export function installPlugin(options: InstallOptions): InstallReport {
     : NO_DELETE;
   const postinstallKinds = [...new Set([...(previous?.manifest.kinds ?? []), ...manifest.kinds])];
 
+  // 仅大小写不同的改名（README.md → Readme.md）：大小写不敏感文件系统上新名 existsSync 会命中旧文件——必须当作
+  // 「删旧写新」而不是 unchanged，且先删后写（同一 inode）。
+  const foldedStale = new Map(stale.map((relative) => [relative.toLowerCase(), relative]));
   const written: string[] = [];
   const unchanged: string[] = [];
   for (const [relative, data] of pkg.files) {
-    const target = path.join(root, relative);
-    const existing = fs.existsSync(target) ? fs.readFileSync(target) : null;
+    const oldName = foldedStale.get(relative.toLowerCase());
+    const existing = oldName !== undefined && oldName !== relative ? null : readExact(root, relative);
     if (existing && existing.equals(data)) {
       unchanged.push(relative);
       continue;
     }
     written.push(relative);
   }
-  const lockRelative = path.posix.join(INSTALLED_LOCK_DIR, `${id}.lock`);
-  const source: LockSource = { kind: "package", filesLockSha256: filesLockSha256Of(pkg.entries), ...(options.registry ? { registry: options.registry } : {}) };
+  const sameAsFork = previous !== null && forkLikeSource(previous.source) && sameEntries(previous.entries, pkg.entries) && !options.replaceLocalFork;
+  // 与分叉内容相同的包（宿主自己 pack 出来的）⛔ 不能把分叉「洗白」成 package：来源照旧，除非显式 --replace-local-fork。
+  const source: LockSource = sameAsFork && previous?.source
+    ? previous.source
+    : { kind: "package", filesLockSha256: filesLockSha256Of(pkg.entries), ...(options.registry ? { registry: options.registry } : {}) };
   const base = {
     id,
     version: manifest.version,
@@ -477,17 +650,21 @@ export function installPlugin(options: InstallOptions): InstallReport {
     deleted: stale.sort(),
     allowDelete,
     source,
+    previousSource: previous?.source ?? null,
+    uuidChanged: uuidChanges(root, pkg, previousEntries),
   };
   if (options.dryRun) return { ...base, nextSteps: nextStepsFor(pkg, root) };
 
-  const journal = [...written, ...stale, lockRelative].map((relative) => snapshot(root, relative));
-  for (const relative of written) atomicWrite(path.join(root, relative), pkg.files.get(relative) as Buffer);
-  for (const relative of stale) removeFileAndEmptyDirs(root, relative);
-  writeInstalledLock(root, { manifest, entries: pkg.entries, source });
-
-  if (useGit) gitAddExisting(root, affected);
+  const run = options.runner ?? runCommand;
+  const context = beginMutation(root, useGit, affected);
+  guarded(root, useGit, context, run, "落盘", () => {
+    for (const relative of stale) removeFileAndEmptyDirs(root, relative);
+    for (const relative of written) atomicWrite(path.join(root, relative), pkg.files.get(relative) as Buffer);
+    writeInstalledLock(root, { manifest, entries: pkg.entries, source });
+    if (useGit) gitAddExisting(root, affected);
+  });
   if (options.postinstall === false) return { ...base, nextSteps: nextStepsFor(pkg, root) };
-  postinstallOrRollback(root, postinstallKinds, useGit, allowDelete, options.runner ?? runCommand, journal, affected);
+  guarded(root, useGit, context, run, "postinstall", () => runPostinstall(root, postinstallKinds, useGit, allowDelete, run));
   // nextSteps 按 postinstall 的实际结果派生：指纹是否真的过期由 --check 说了算。
   return { ...base, nextSteps: nextStepsFor(pkg, root, { protocolStale: protocolFingerprintStale(root) }) };
 }
@@ -557,10 +734,17 @@ export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallRep
   assertNoHostUuidCollision(root, id, pkg, new Set([...previousByPath.keys(), ...collected]));
 
   const lockRelative = path.posix.join(INSTALLED_LOCK_DIR, `${id}.lock`);
-  // 树就是真相：删除面只能从「旧锁身份 vs 树上身份 / feature.json」推出（树上 feature.json 已是新的，View 删除面无从得知——
-  // 同仓迭代删 View 时作者自己跑 codegen:features -- --allow-delete <View>）。
-  const allowDelete = allowDeleteFor({ manifest: previous.manifest, viewNames: [] }, { manifest, viewNames: pkg.viewNames });
+  // 树就是真相：旧锁登记、树上采集不到、却仍在磁盘的文件（典型：--allow-identity-change 去掉一个域，域文件还留着）
+  // 已不在推导集内，⛔ 不能替作者删——拒绝并点名，让作者删文件或改回 plugin.json。
+  const staleOnDisk = stale.filter((relative) => fs.existsSync(path.join(root, relative)));
+  if (staleOnDisk.length > 0) {
+    fail(`拒绝：以下文件在已安装锁里、已不在插件 "${id}" 的推导集内、却仍在磁盘上——从树重装不替作者删文件；先删掉它们或改回 plugins/${id}/plugin.json：\n  ${staleOnDisk.join("\n  ")}`);
+  }
+  // 删除面：旧锁身份 vs 树上身份，旧 View 名从旧锁的 sidecar 条目推出（树上 feature.json 已是新的）。
+  const allowDelete = allowDeleteFor({ manifest: previous.manifest, viewNames: viewNamesFromEntries(previous.entries) }, { manifest, viewNames: pkg.viewNames });
   const postinstallKinds = [...new Set([...previous.manifest.kinds, ...manifest.kinds])];
+  // 新增里落在共享命名空间的路径：未跟踪即吸收（作者刚写的），但共享目录里也可能是别人刚写、尚未提交的文件——报出来请人确认。
+  const review = added.filter((relative) => isSharedNamespace(relative, id));
   // 来源抬头：树 ≡ 旧锁的幂等 no-op 保留原来源（⛔ 不把 package 悄悄改成 tree）；真有改动才标 tree 并把上一来源放进 forkedFrom。
   const noop = sameEntries(previous.entries, pkg.entries) && previous.manifest.version === manifest.version;
   const source: LockSource = noop && previous.source
@@ -575,17 +759,22 @@ export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallRep
     deleted: stale,
     allowDelete,
     source,
-    adopted: { added, changed },
+    previousSource: previous.source ?? null,
+    uuidChanged: [],
+    adopted: { added, changed, review },
   };
   if (options.dryRun) return { ...base, nextSteps: nextStepsFor(pkg, root) };
 
-  // 旧锁登记、树上已删的文件：树就是真相，只需把可能残留的空目录清掉（文件已不存在时 removeFileAndEmptyDirs 只清目录）。
-  const journal = [snapshot(root, lockRelative)];
-  for (const relative of stale) removeFileAndEmptyDirs(root, relative);
-  writeInstalledLock(root, { manifest, entries: pkg.entries, source });
+  const run = options.runner ?? runCommand;
+  // 触碰面 = 锁 + 树上已删的旧锁路径（只清空目录并暂存删除）+ 采集到的文件（只暂存）；索引快照覆盖全部，回滚回到操作前。
   const affected = [...pkg.files.keys(), ...stale, lockRelative];
-  if (useGit) gitAddExisting(root, affected);
+  const context = beginMutation(root, useGit, affected);
+  guarded(root, useGit, context, run, "落盘", () => {
+    for (const relative of stale) removeFileAndEmptyDirs(root, relative);
+    writeInstalledLock(root, { manifest, entries: pkg.entries, source });
+    if (useGit) gitAddExisting(root, affected);
+  });
   if (options.postinstall === false) return { ...base, nextSteps: nextStepsFor(pkg, root) };
-  postinstallOrRollback(root, postinstallKinds, useGit, allowDelete, options.runner ?? runCommand, journal, [lockRelative]);
+  guarded(root, useGit, context, run, "postinstall", () => runPostinstall(root, postinstallKinds, useGit, allowDelete, run));
   return { ...base, nextSteps: nextStepsFor(pkg, root, { protocolStale: protocolFingerprintStale(root) }) };
 }

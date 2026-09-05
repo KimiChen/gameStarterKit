@@ -95,6 +95,14 @@ export function readPackage(source: string): PluginPackage {
     if (!data) fail(`${PACKAGE_FILES_LOCK} 登记的文件不在包内：${entry.path}`);
     if (sha256(data) !== entry.sha256) fail(`包内文件与 ${PACKAGE_FILES_LOCK} 的 sha256 不符：${entry.path}`);
   }
+  // 文件与其子路径并存（`a` 与 `a/b`）：落盘时 mkdir 会撞上文件——在读包阶段就拒绝，⛔ 不让它走到写盘。
+  for (const relative of files.keys()) {
+    let dir = path.posix.dirname(relative);
+    while (dir !== "." && dir !== "") {
+      if (files.has(dir)) fail(`包内路径 ${relative} 的祖先 ${dir} 同时是一个文件条目（文件与其子路径并存）`);
+      dir = path.posix.dirname(dir);
+    }
+  }
   return { manifest, manifestBytes, files, entries };
 }
 
@@ -148,11 +156,19 @@ export function validatePackage(pkg: PluginPackage, root: string): ValidatedPack
     const declarations = featureDeclarations(files, manifest.id);
     clientDirs = declarations.clientDirs;
     viewNames = declarations.viewNames;
+    // requires 不是自述：随包 feature.json 的 schemaVersion 必须与声明的兼容轴一致（否则索引会把 v2 形态的包登记为 v1「兼容」）。
+    const feature = readJson(files, `features/${manifest.id}/feature.json`) as { readonly schemaVersion?: unknown };
+    if (feature.schemaVersion !== manifest.requires.featureSchemaVersion) {
+      fail(`features/${manifest.id}/feature.json 的 schemaVersion（${String(feature.schemaVersion)}）与 plugin.json requires.featureSchemaVersion（${String(manifest.requires.featureSchemaVersion)}）不一致`);
+    }
   }
   if (manifest.kinds.includes("gameplay")) {
     const relative = `apps/shared/schema/gameplays/${manifest.id}/manifest.json`;
-    const gameplay = readJson(files, relative) as { readonly id?: unknown; readonly constantName?: unknown };
+    const gameplay = readJson(files, relative) as { readonly id?: unknown; readonly constantName?: unknown; readonly schemaVersion?: unknown };
     if (gameplay.id !== manifest.id) fail(`${relative} 的 id（${String(gameplay.id)}）必须等于插件 id`);
+    if (gameplay.schemaVersion !== manifest.requires.gameplaySchemaVersion) {
+      fail(`${relative} 的 schemaVersion（${String(gameplay.schemaVersion)}）与 plugin.json requires.gameplaySchemaVersion（${String(manifest.requires.gameplaySchemaVersion)}）不一致`);
+    }
     if (gameplay.constantName !== manifest.constantName) {
       fail(`${relative} 的 constantName（${String(gameplay.constantName)}）必须等于 plugin.json 的 constantName（${String(manifest.constantName)}）`);
     }
@@ -239,6 +255,11 @@ function assertMirrorsAndMetas(
       continue;
     }
     const isDirectory = !files.has(target) && [...files.keys()].some((other) => other.startsWith(`${target}/`));
+    if (!isDirectory && !files.has(target)) {
+      // 孤儿 .meta：目标既不是包内文件也不是包内隐含目录——Creator 打开工程会删掉它，锁随即红。
+      problems.push(`孤儿 .meta：${relative} 的目标 ${target} 既不在包内也没有包内子路径`);
+      continue;
+    }
     const expected = expectedImporter(target, isDirectory);
     if (expected !== null && summary.importer !== expected) {
       problems.push(`${relative} 的 importer 是 ${JSON.stringify(summary.importer)}，${isDirectory ? "目录" : `"${path.posix.extname(target)}" 文件`}的 .meta 应为 "${expected}"（Creator 打开工程会重写它，锁即红）`);

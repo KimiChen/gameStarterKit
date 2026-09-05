@@ -24,6 +24,8 @@ export interface UninstallReport {
   readonly deleted: readonly string[];
   readonly missing: readonly string[];
   readonly allowDelete: readonly string[];
+  /** 锁的来源：tree / unknown 意味着被删的是宿主本地内容（分叉），CLI 据此提醒——卸载是显式删除意图，不额外要求 flag。 */
+  readonly source: "package" | "tree" | "unknown";
 }
 
 function fail(message: string): never {
@@ -69,6 +71,7 @@ export function uninstallPlugin(options: UninstallOptions): UninstallReport {
   const report: UninstallReport = {
     id,
     version: lock.manifest.version,
+    source: lock.source?.kind ?? "unknown",
     deleted: lock.entries.map((entry) => entry.path).filter((relative) => fs.existsSync(path.join(root, relative))),
     missing: verification.missing,
     allowDelete: [...new Set(allowFeatures)].sort(),

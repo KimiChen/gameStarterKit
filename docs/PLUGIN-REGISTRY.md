@@ -67,7 +67,7 @@
 
 **E. 小项**：`install --dry-run` 仍要求树干净；postinstall 对整棵 `apps/*/src` 做 `git add -A`；uninstall 的
 `--no-postinstall` 残留与「卸载 → 提交 → 重装」无提示；nextSteps 三处不准；atomicWrite 的 `.tmp-<pid>` 落在插件
-目录内；zip 未查「文件与其子路径并存」和 NFC/NFD 同名。
+目录内；~~zip 未查「文件与其子路径并存」~~（✅ 读包阶段拒绝）和 NFC/NFD 同名未查。
 
 ## 2. 制品布局（静态目录；https 与 `file://` 同一形态）
 
@@ -232,4 +232,5 @@ CI 对所有未下架版本重跑一遍并追加。CLI 安装时比较本地检�
 | §1-5 锁 `source` 抬头与分叉语义 | ✅ 2026-09-05：`LockSource`（package / tree + forkedFrom + 预留 registry 子对象）、`filesLockSha256Of`、`install --replace-local-fork`、`check` 显示来源；旧锁 = unknown（redeem / tally 在 §1-9 重钉时补上）；钉：「§1-5」用例 |
 | §1-9 `requires` 必填、进锁、check 复核 | ✅ 2026-09-05：schema `requires` 必填 + kind 相关轴必填，`CURRENT_*` 读自两个 schema 文件的 const，锁抬头登记 requires，`check` 复核两侧并点名旧锁；tally 补 `gameplaySchemaVersion`（1.0.4），redeem no-op 重写补齐锁抬头（两把锁同时得到 `# source`）；钉：manifest 用例 + 「§1-9」用例 |
 | §1-11 `.meta` uuid 闸 | ✅ 2026-09-05：`tools/plugin/meta.ts`（正则与 sync-client 逐字相等由测试钉住）、validatePackage 的形状/importer/包内唯一闸、install/reinstall 的宿主 uuid 撞车闸（落盘前拒绝）；fixture `.meta` 改为按路径派生的真 uuid；钉：「§1-11」用例 |
+| 对抗验证（三名审阅者实跑绕过） | ✅ 2026-09-05 晚：击穿 9 处全部收口——回滚精确到操作前（字节 + 索引快照，用户 WIP 逐字回来）、落盘阶段同套回滚、`git status -z`、暂存删除豁免限 HEAD 本插件锁、大小写改名不丢文件、包内「文件与子路径并存」拒绝、reinstall 不替作者删磁盘文件 + View 删除面从旧锁推出 + 共享命名空间吸收点名、分叉不可被同内容包洗白 + 旧锁 fail-closed + `check` 复核 source 形状/内容身份/id 大小写、requires ⟷ 随包 schemaVersion 交叉核对、孤儿 `.meta` 拒绝、宿主 `.meta` 不可解析即拒绝装、同路径 uuid 变化报告；未击穿：§1-3 git 跟踪闸、§1-4 前缀边界 / 锁间不交、§1-2 install 路径、§1-9 requires 形态。余留（记录，未做）：`--no-git` 与未跟踪文件的吸收仍是「全部吸收」（已点名 review）；subMetas 内 uuid 不在闸内（Creator 是否采信待验证）；NFC/NFD 同名未查 |
 | v0 / v1 / v2 | 未开始 |
