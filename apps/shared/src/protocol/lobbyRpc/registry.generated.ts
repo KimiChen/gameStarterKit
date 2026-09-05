@@ -139,7 +139,7 @@ export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly
     redeem: { contractVersion: 1, digest: "e7e74dc98acf6cfb1d5bfd0261930d6bbc5bb07e2efa79dec0e91be485596514" },
     room: { contractVersion: 1, digest: "8655531a80f2ffc6a941247c2c2ef00ad44dfb3842b722741556430bf2c12ff2" },
     shop: { contractVersion: 1, digest: "80f5bc9c74300aecd0bf2caf8dea93506657c5e9a4d64e91931760e8c06544cf" },
-    snakeCosmetic: { contractVersion: 2, digest: "f014bae578540ef3764238415f82acf967ae9676802a5821e2c380eecdc1cf36" },
+    snakeCosmetic: { contractVersion: 3, digest: "17949949b68946f630d82e9b6f4703dc87b44866e90bf08865eab91bb974e908" },
     user: { contractVersion: 1, digest: "ce1f3ff0528a15836c188d111ddbe29bfb8c97c4f68d69c3e77a9432fe157a28" },
 };
 
@@ -247,6 +247,7 @@ export const RPC_ERR_CODES = [
     "SNAKE_SKIN_NOT_OWNED",
     "SNAKE_SKIN_NOT_CRAFTABLE",
     "SNAKE_SKIN_FRAGMENTS_INSUFFICIENT",
+    "SNAKE_COSMETIC_WRITES_DISABLED",
 ] as const;
 
 export type RpcErrCode = (typeof RPC_ERR_CODES)[number];
