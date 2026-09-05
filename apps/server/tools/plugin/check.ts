@@ -12,7 +12,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { classifyPath, deriveOwnership, readProtectedPaths } from "./ownership";
 import { assertManifestCompatible, identityDifferences, identityOf, parsePluginManifest } from "./manifest";
-import { listInstalledLocks, verifyLockAgainstTree } from "./lock";
+import { filesLockSha256Of, listInstalledLocks, verifyLockAgainstTree } from "./lock";
 import { featureDeclarations } from "./package";
 
 export interface PluginCheckEntry {
@@ -31,10 +31,21 @@ export interface PluginCheckReport {
 export function checkInstalledPlugins(root: string): PluginCheckReport {
   const plugins: PluginCheckEntry[] = [];
   const locks = listInstalledLocks(root);
-  // 锁间两两不交：路径 → 首个登记它的插件；之后再出现即双方都点名。
+  // 锁间两两不交：路径 → 首个登记它的插件；之后再出现即双方都点名。id 按大小写归一也不得重复（codegen 同口径）。
   const claimed = new Map<string, string>();
   const overlaps = new Map<string, string[]>();
+  const foldedIds = new Map<string, string>();
   for (const lock of locks) {
+    const folded = lock.manifest.id.toLowerCase();
+    const other = foldedIds.get(folded);
+    if (other !== undefined && other !== lock.manifest.id) {
+      for (const id of [other, lock.manifest.id]) {
+        if (!overlaps.has(id)) overlaps.set(id, []);
+        (overlaps.get(id) as string[]).push(`id 大小写归一后重复：${other} 与 ${lock.manifest.id}（codegen 按归一化拒绝，锁也不允许并存）`);
+      }
+    } else {
+      foldedIds.set(folded, lock.manifest.id);
+    }
     for (const entry of lock.entries) {
       const owner = claimed.get(entry.path);
       if (owner === undefined) {
@@ -53,6 +64,12 @@ export function checkInstalledPlugins(root: string): PluginCheckReport {
     const verification = verifyLockAgainstTree(root, lock.entries);
     for (const relative of verification.modified) problems.push(`本地改动（与锁不符）：${relative}`);
     for (const relative of verification.missing) problems.push(`缺失：${relative}`);
+    // 来源抬头：缺失即旧锁形态（升级时按分叉待遇 fail-closed）；内容身份必须能从清单复算出来（合并错/手改即红）。
+    if (!lock.source) {
+      problems.push(`锁未登记 source（旧锁形态；升级时按本地分叉待遇）：install --reinstall-from-tree ${id} 重写锁即补上`);
+    } else if (lock.source.filesLockSha256 !== filesLockSha256Of(lock.entries)) {
+      problems.push(`锁的 "# source" filesLockSha256 与清单不符（合并错或手改）：${lock.source.filesLockSha256} vs ${filesLockSha256Of(lock.entries)}`);
+    }
 
     const manifestFile = path.join(root, "plugins", id, "plugin.json");
     let clientDirs: readonly string[] = [];
@@ -76,6 +93,24 @@ export function checkInstalledPlugins(root: string): PluginCheckReport {
           problems.push(`锁未登记 requires（旧锁形态）：install --reinstall-from-tree ${id} 重写锁即补上`);
         } else if (lockRequires.featureSchemaVersion !== authored.requires.featureSchemaVersion || lockRequires.gameplaySchemaVersion !== authored.requires.gameplaySchemaVersion) {
           problems.push(`plugins/${id}/plugin.json 的 requires 与锁不一致：锁 ${JSON.stringify(lockRequires)} vs 树 ${JSON.stringify(authored.requires)}`);
+        }
+        // requires 不是自述：树上 feature.json / gameplay manifest.json 的 schemaVersion 必须与之一致。
+        const artifactVersion = (relative: string): unknown => {
+          const file = path.join(root, relative);
+          if (!fs.existsSync(file)) return undefined;
+          try {
+            return (JSON.parse(fs.readFileSync(file, "utf8")) as { readonly schemaVersion?: unknown }).schemaVersion;
+          } catch {
+            return "<无法解析>";
+          }
+        };
+        if (authored.kinds.includes("feature")) {
+          const actual = artifactVersion(`features/${id}/feature.json`);
+          if (actual !== undefined && actual !== authored.requires.featureSchemaVersion) problems.push(`features/${id}/feature.json 的 schemaVersion（${String(actual)}）与 requires.featureSchemaVersion（${String(authored.requires.featureSchemaVersion)}）不一致`);
+        }
+        if (authored.kinds.includes("gameplay")) {
+          const actual = artifactVersion(`apps/shared/schema/gameplays/${id}/manifest.json`);
+          if (actual !== undefined && actual !== authored.requires.gameplaySchemaVersion) problems.push(`apps/shared/schema/gameplays/${id}/manifest.json 的 schemaVersion（${String(actual)}）与 requires.gameplaySchemaVersion（${String(authored.requires.gameplaySchemaVersion)}）不一致`);
         }
       } catch (error) {
         problems.push(`plugins/${id}/plugin.json 无法解析：${error instanceof Error ? error.message : String(error)}`);

@@ -15,7 +15,8 @@ import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { checkInstalledPlugins } from "../tools/plugin/check";
 import { parseCli } from "../tools/plugin/cli";
-import { allowDeleteFor, installPlugin, nextStepsFor, reinstallFromTree, runCommand, type CommandRunner } from "../tools/plugin/install";
+import { allowDeleteFor, gitStatusEntries, installPlugin, isSharedNamespace, nextStepsFor, reinstallFromTree, runCommand, viewNamesFromEntries, type CommandRunner } from "../tools/plugin/install";
+import { hostMetaUuids } from "../tools/plugin/meta";
 import { filesLockSha256Of, parseInstalledLock, readInstalledLock, renderFilesLock, renderInstalledLock, sha256 } from "../tools/plugin/lock";
 import { CURRENT_FEATURE_SCHEMA_VERSION, CURRENT_GAMEPLAY_SCHEMA_VERSION, FEATURE_SCHEMA_FILE, GAMEPLAY_SCHEMA_FILE, assertManifestCompatible, compareVersions, parsePluginManifest } from "../tools/plugin/manifest";
 import { META_UUID_RE, expectedImporter, parseMeta } from "../tools/plugin/meta";
@@ -497,7 +498,7 @@ test("reinstall-from-tree（E6 方案 ②）：同仓改动不 bump 拒绝并点
     assert.equal(checkInstalledPlugins(target).ok, true, "重写后 check 必须绿");
     // 树 ≡ 新锁：再来一次是幂等 no-op（同版本同内容放行）。
     const again = reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false });
-    assert.deepEqual(again.adopted, { added: [], changed: [] });
+    assert.deepEqual(again.adopted, { added: [], changed: [], review: [] });
     assert.deepEqual(again.deleted, []);
     // 从树 pack 出的包 ⇔ 新锁逐条相同（同仓迭代后仍可分发）。
     const repacked = packPlugin({ root: target, id: "chamber", outFile: path.join(target, "out/repacked.zip") });
@@ -794,7 +795,7 @@ test("PLUGIN-REGISTRY §1-1：postinstall 失败即回滚——无 git：文件�
     const boom = fakeRunner((args) => {
       if (args.includes("codegen:features")) throw new Error("route id 重复：chamber（模拟跨插件冲突）");
     });
-    assert.throws(() => installPlugin({ root: target, source: v1, git: false, runner: boom }), /postinstall 失败，已回滚到安装前[\s\S]*route id 重复/u);
+    assert.throws(() => installPlugin({ root: target, source: v1, git: false, runner: boom }), /postinstall失败，已回滚到操作前[\s\S]*route id 重复/u);
     for (const relative of ["features/chamber/feature.json", "apps/server/src/core/chamber/keys.ts", "scripts/plugins/chamber.lock", "plugins/chamber/plugin.json", "apps/Cocos/assets/src/features/chamber.meta"]) {
       assert.ok(!fs.existsSync(path.join(target, relative)), `回滚后不得残留：${relative}`);
     }
@@ -815,7 +816,7 @@ test("PLUGIN-REGISTRY §1-1：postinstall 失败即回滚——无 git：文件�
       write(root, "apps/shared/src/protocol/lobbyRpc/registry.generated.ts", "// new generated file\n");
       throw new Error("模拟 codegen 写到一半失败");
     });
-    assert.throws(() => installPlugin({ root: gitTarget, source: v1, git: true, runner: boomGit }), /已回滚到安装前[\s\S]*生成物回退 2 项/u);
+    assert.throws(() => installPlugin({ root: gitTarget, source: v1, git: true, runner: boomGit }), /已回滚到操作前[\s\S]*生成物收回 2 项/u);
     assert.equal(gitPorcelain(gitTarget), wipStatus, "回滚后 git 状态与安装前逐字相同（用户 WIP 原样留下，其余干净）");
     assert.equal(fs.readFileSync(path.join(gitTarget, "apps/client/src/generated/features.generated.ts"), "utf8"), "// generated baseline\n");
     assert.ok(!fs.existsSync(path.join(gitTarget, "apps/shared/src/protocol/lobbyRpc/registry.generated.ts")));
@@ -1051,6 +1052,339 @@ test("PLUGIN-REGISTRY §1-11：随包 .meta 的内容闸——uuid 形状 / impo
     assert.throws(() => reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false }), /uuid 与宿主资源撞车/u);
   } finally {
     cleanup(author, target);
+  }
+});
+
+// ── 对抗验证后加固（2026-09-05 晚，PLUGIN-REGISTRY §7「对抗验证」行）────────────────────────
+
+function gitCached(root: string): string {
+  return spawnSync("git", ["diff", "--cached", "--name-status"], { cwd: root, encoding: "utf8" }).stdout.trim();
+}
+
+function gitCommit(root: string, message: string): void {
+  const result = spawnSync("git", ["-c", "user.name=f", "-c", "user.email=f@example.invalid", "commit", "-q", "-m", message], { cwd: root, encoding: "utf8" });
+  if (result.status !== 0) throw new Error(`git commit 失败：${result.stderr}`);
+}
+
+test("加固 §1-1：回滚精确到操作前——已暂存 / 未暂存的生成物 WIP 逐字回来，失败点在 git add 之后也一样；非 ASCII 生成物路径不让回滚自己炸", () => {
+  const { author, target } = makeFixture("1.0.0");
+  try {
+    const v1 = path.join(author, "out/v1.zip");
+    packPlugin({ root: author, id: "chamber", outFile: v1 });
+    write(target, "apps/client/src/generated/staged.generated.ts", "// baseline staged\n");
+    write(target, "apps/client/src/generated/unstaged.generated.ts", "// baseline unstaged\n");
+    gitInit(target);
+    // 用户 WIP：一个已暂存、一个未暂存；两者都会被失败的 codegen 覆盖。
+    fs.writeFileSync(path.join(target, "apps/client/src/generated/staged.generated.ts"), "// USER STAGED WIP\n");
+    spawnSync("git", ["add", "--", "apps/client/src/generated/staged.generated.ts"], { cwd: target });
+    fs.writeFileSync(path.join(target, "apps/client/src/generated/unstaged.generated.ts"), "// USER UNSTAGED WIP\n");
+    const porcelainBefore = gitPorcelain(target);
+    const cachedBefore = gitCached(target);
+    const clobber = fakeRunner((args, root) => {
+      if (args.includes("codegen:features")) {
+        write(root, "apps/client/src/generated/staged.generated.ts", "// codegen half output\n");
+        write(root, "apps/client/src/generated/unstaged.generated.ts", "// codegen half output\n");
+        write(root, "apps/client/src/shared/gameplays/foo/测试.ts", "// 非 ASCII 路径\n");
+      }
+      if (args.includes("sync:shared")) throw new Error("模拟 sync 失败");
+    });
+    assert.throws(() => installPlugin({ root: target, source: v1, git: true, runner: clobber }), /已回滚到操作前/u);
+    assert.equal(gitPorcelain(target), porcelainBefore, "git status 与操作前逐字相同");
+    assert.equal(gitCached(target), cachedBefore, "索引与操作前逐字相同");
+    assert.equal(fs.readFileSync(path.join(target, "apps/client/src/generated/staged.generated.ts"), "utf8"), "// USER STAGED WIP\n");
+    assert.equal(fs.readFileSync(path.join(target, "apps/client/src/generated/unstaged.generated.ts"), "utf8"), "// USER UNSTAGED WIP\n");
+    assert.equal(spawnSync("git", ["show", ":apps/client/src/generated/staged.generated.ts"], { cwd: target, encoding: "utf8" }).stdout, "// USER STAGED WIP\n", "已暂存的 WIP 内容仍在索引里");
+    assert.ok(!fs.existsSync(path.join(target, "apps/client/src/shared/gameplays/foo/测试.ts")));
+
+    // 失败点在 postinstall 的 git add -A 之后（模拟 .git/index.lock 被并发进程占用）。
+    const lateFail = fakeRunner(() => { /* npm 都成功 */ });
+    const lateFailRunner: CommandRunner = (root, command, args, env) => {
+      if (command === "git" && args[0] === "add" && args[1] === "-u") throw new Error("模拟 index.lock 冲突");
+      lateFail(root, command, args, env);
+    };
+    assert.throws(() => installPlugin({ root: target, source: v1, git: true, runner: lateFailRunner }), /已回滚到操作前/u);
+    assert.equal(gitPorcelain(target), porcelainBefore);
+    assert.equal(gitCached(target), cachedBefore);
+  } finally {
+    cleanup(author, target);
+  }
+});
+
+test("加固 §1-1：落盘阶段失败（锁目录不可写 / 包内文件与其子路径并存）也回滚，不留无锁的半安装态", () => {
+  const { author, target } = makeFixture("1.0.0");
+  try {
+    const v1 = path.join(author, "out/v1.zip");
+    packPlugin({ root: author, id: "chamber", outFile: v1 });
+    gitInit(target);
+    const porcelainBefore = gitPorcelain(target);
+    const lockDir = path.join(target, "scripts/plugins");
+    fs.mkdirSync(lockDir, { recursive: true });
+    fs.chmodSync(lockDir, 0o500);
+    try {
+      assert.throws(() => installPlugin({ root: target, source: v1, git: true, postinstall: false }), /落盘失败，已回滚到操作前[\s\S]*EACCES|落盘失败，已回滚到操作前[\s\S]*EPERM/u);
+    } finally {
+      if (fs.existsSync(lockDir)) fs.chmodSync(lockDir, 0o755); // 回滚会把清空的锁目录一并收掉
+    }
+    assert.equal(gitPorcelain(target), porcelainBefore, "落盘失败后树回到操作前");
+    assert.ok(!fs.existsSync(path.join(target, "features/chamber/feature.json")));
+    assert.doesNotThrow(() => installPlugin({ root: target, source: v1, git: true, postinstall: false }), "恢复权限后同一包直接重装");
+
+    // 文件与其子路径并存的包（只能以 zip 构造）：读包阶段拒绝（⛔ 不走到写盘）。
+    const packed = readPackage(v1);
+    const nested = { path: "docs/chamber/README.md/nested.md", data: Buffer.from("x\n") };
+    const evilZip = writeZip([
+      ...[...packed.files.entries()].map(([relative, data]) => ({ path: relative, data })),
+      nested,
+      { path: "plugin.json", data: packed.manifestBytes },
+      { path: "files.lock", data: Buffer.from(renderFilesLock([...packed.entries, { path: nested.path, sha256: sha256(nested.data) }]), "utf8") },
+    ]);
+    const evilFile = path.join(author, "out/evil.zip");
+    fs.writeFileSync(evilFile, evilZip);
+    assert.throws(() => readPackage(evilFile), /文件与其子路径并存/u);
+  } finally {
+    cleanup(author, target);
+  }
+});
+
+test("加固 §1-1：暂存删除只对 HEAD 里本插件锁登记过的路径算干净——别人对框架文件的暂存删除仍拒绝", () => {
+  const { author, target } = makeFixture("1.0.0");
+  try {
+    write(target, "apps/server/src/core/chamber/keys.ts", "// framework owned\n");
+    gitInit(target);
+    spawnSync("git", ["rm", "-q", "--", "apps/server/src/core/chamber/keys.ts"], { cwd: target });
+    assert.match(gitPorcelain(target), /^D  apps\/server\/src\/core\/chamber\/keys\.ts/mu);
+    const v1 = path.join(author, "out/v1.zip");
+    packPlugin({ root: author, id: "chamber", outFile: v1 });
+    assert.throws(() => installPlugin({ root: target, source: v1, git: true, postinstall: false }), /工作树不干净[\s\S]*D  apps\/server\/src\/core\/chamber\/keys\.ts/u);
+  } finally {
+    cleanup(author, target);
+  }
+});
+
+test("加固 §1-1：仅大小写不同的改名升级在大小写不敏感文件系统上不丢文件（先删旧名再写新名），成功与回滚两条路径都正确", () => {
+  const { author, target } = makeFixture("1.0.0");
+  try {
+    const probe = path.join(target, "CaseProbe.txt");
+    fs.writeFileSync(probe, "x");
+    const caseInsensitive = fs.existsSync(path.join(target, "caseprobe.txt"));
+    fs.rmSync(probe);
+    const v1 = path.join(author, "out/v1.zip");
+    packPlugin({ root: author, id: "chamber", outFile: v1 });
+    installPlugin({ root: target, source: v1, git: false, postinstall: false });
+    fs.renameSync(path.join(author, "docs/chamber/README.md"), path.join(author, "docs/chamber/Readme.tmp"));
+    fs.renameSync(path.join(author, "docs/chamber/Readme.tmp"), path.join(author, "docs/chamber/Readme.md"));
+    const manifestFile = path.join(author, "plugins/chamber/plugin.json");
+    fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.1.0"'));
+    const v2 = path.join(author, "out/v2.zip");
+    packPlugin({ root: author, id: "chamber", outFile: v2 });
+    // 回滚路径：postinstall 失败 → 树回到 README.md。
+    const boom = fakeRunner((args) => { if (args.includes("sync:shared")) throw new Error("boom"); });
+    assert.throws(() => installPlugin({ root: target, source: v2, git: false, runner: boom }), /已回滚到操作前/u);
+    assert.deepEqual(fs.readdirSync(path.join(target, "docs/chamber")), ["README.md"]);
+    assert.equal(checkInstalledPlugins(target).ok, true);
+    // 成功路径：目录里只剩 Readme.md，锁与树一致。
+    const report = installPlugin({ root: target, source: v2, git: false, postinstall: false });
+    assert.deepEqual(report.written, ["docs/chamber/Readme.md", "plugins/chamber/plugin.json"]);
+    assert.deepEqual(report.deleted, ["docs/chamber/README.md"]);
+    assert.deepEqual(fs.readdirSync(path.join(target, "docs/chamber")), ["Readme.md"]);
+    assert.equal(fs.readFileSync(path.join(target, "docs/chamber/Readme.md"), "utf8"), "# chamber 1.0.0\n");
+    assert.equal(checkInstalledPlugins(target).ok, true, caseInsensitive ? "大小写不敏感卷上改名升级后 check 必须绿" : "大小写敏感卷");
+  } finally {
+    cleanup(author, target);
+  }
+});
+
+test("加固 §1-3 / §1-2：reinstall-from-tree 不替作者删仍在磁盘的旧锁文件；View 改名的删除面从旧锁 sidecar 推出；共享命名空间的吸收被点名；失败回滚回到操作前", () => {
+  const { author, target } = makeFixture("1.0.0");
+  try {
+    gitInit(target);
+    const v1 = path.join(author, "out/v1.zip");
+    packPlugin({ root: author, id: "chamber", outFile: v1 });
+    installPlugin({ root: target, source: v1, git: true, postinstall: false });
+    gitCommit(target, "install chamber");
+    const manifestFile = path.join(target, "plugins/chamber/plugin.json");
+    // 去掉域但域文件还在磁盘 → 拒绝并点名（⛔ 不替作者删）。
+    fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.1.0"').replace('"domains": [\n    "chamber"\n  ]', '"domains": []'));
+    assert.throws(
+      () => reinstallFromTree({ root: target, id: "chamber", git: true, postinstall: false, allowIdentityChange: true }),
+      /仍在磁盘上[\s\S]*websocket\/chamber\/peek\.ts/u,
+    );
+    assert.equal(fs.existsSync(path.join(target, "apps/server/src/websocket/chamber/peek.ts")), true);
+    // 作者自己删掉域文件后：成功路径的删除面含域；失败路径（codegen 抛错）回滚到操作前（含索引）。
+    for (const relative of ["apps/shared/src/protocol/lobbyRpc/domains/chamber.ts", "apps/server/src/websocket/chamber/peek.ts", "apps/server/test/lobbyRpcVectors/chamber.ts"]) {
+      fs.rmSync(path.join(target, relative));
+    }
+    const porcelainBefore = gitPorcelain(target);
+    const cachedBefore = gitCached(target);
+    const boom = fakeRunner((args) => { if (args.includes("codegen:features")) throw new Error("模拟 codegen 失败"); });
+    assert.throws(() => reinstallFromTree({ root: target, id: "chamber", git: true, allowIdentityChange: true, runner: boom }), /已回滚到操作前/u);
+    assert.equal(gitPorcelain(target), porcelainBefore, "回滚后 git status 与操作前逐字相同");
+    assert.equal(gitCached(target), cachedBefore);
+    assert.equal(readInstalledLock(target, "chamber")?.manifest.version, "1.0.0");
+    const calls: string[][] = [];
+    const ok = reinstallFromTree({ root: target, id: "chamber", git: true, allowIdentityChange: true, runner: fakeRunner((args) => { calls.push([...args]); }) });
+    assert.deepEqual(ok.allowDelete, { gameplays: [], features: ["chamber"] });
+    assert.equal(readInstalledLock(target, "chamber")?.manifest.version, "1.1.0");
+
+    // View 改名（树上）：删除面从旧锁的 sidecar 推出 → --allow-delete Chamber。
+    assert.deepEqual(viewNamesFromEntries(readInstalledLock(target, "chamber")?.entries ?? []), ["Chamber"]);
+    fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.1.0"', '"1.2.0"'));
+    const featureFile = path.join(target, "features/chamber/feature.json");
+    fs.writeFileSync(featureFile, fs.readFileSync(featureFile, "utf8").replaceAll("ChamberView", "ChamberPanelView").replace('"view": "Chamber"', '"view": "ChamberPanel"'));
+    for (const base of ["apps/client/src/features/chamber/view", "apps/Cocos/assets/src/features/chamber/view"]) {
+      for (const suffix of [".ts", ".view.json"]) fs.renameSync(path.join(target, `${base}/ChamberView${suffix}`), path.join(target, `${base}/ChamberPanelView${suffix}`));
+      if (base.startsWith("apps/Cocos")) for (const suffix of [".ts", ".view.json"]) fs.renameSync(path.join(target, `${base}/ChamberView${suffix}.meta`), path.join(target, `${base}/ChamberPanelView${suffix}.meta`));
+    }
+    calls.length = 0;
+    const renamed = reinstallFromTree({ root: target, id: "chamber", git: true, runner: fakeRunner((args) => { calls.push([...args]); }) });
+    assert.deepEqual(renamed.allowDelete, { gameplays: [], features: ["Chamber"] });
+    const featuresCall = calls.find((args) => args.includes("codegen:features"));
+    assert.ok(featuresCall && featuresCall.includes("--allow-delete") && featuresCall.includes("Chamber"));
+
+    // 共享命名空间的吸收：未跟踪的 apps/server/test/chamber-extra.test.ts 被吸收但点名 review；专属目录的新文件不点名。
+    fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.2.0"', '"1.3.0"'));
+    write(target, "apps/server/test/chamber-extra.test.ts", "// new shared-namespace test\n");
+    write(target, "apps/server/src/core/chamber/more.ts", "export const more = 1;\n");
+    const adopted = reinstallFromTree({ root: target, id: "chamber", git: true, postinstall: false });
+    assert.deepEqual(adopted.adopted?.review, ["apps/server/test/chamber-extra.test.ts"]);
+    assert.ok(isSharedNamespace("apps/server/src/websocket/chamber/x.ts", "chamber"));
+    assert.ok(!isSharedNamespace("apps/server/src/core/chamber/x.ts", "chamber"));
+  } finally {
+    cleanup(author, target);
+  }
+});
+
+test("加固 §1-5：分叉不能被「内容相同的包」洗白；旧锁（无 source）按分叉待遇 fail-closed；check 复核 source 抬头形状与内容身份；uninstall 报告来源", () => {
+  const { author, target } = makeFixture("1.0.0");
+  try {
+    const v1 = path.join(author, "out/v1.zip");
+    packPlugin({ root: author, id: "chamber", outFile: v1 });
+    installPlugin({ root: target, source: v1, git: false, postinstall: false });
+    fs.writeFileSync(path.join(target, "docs/chamber/README.md"), "# HOST FORK\n");
+    const manifestFile = path.join(target, "plugins/chamber/plugin.json");
+    fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.0.1"'));
+    reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false });
+    const forkSource = readInstalledLock(target, "chamber")?.source;
+    assert.equal(forkSource?.kind, "tree");
+    // 宿主自己 pack 出与分叉内容相同的包再 install：来源照旧是 tree（⛔ 不洗白），报告说明；上游 1.1.0 仍被拒。
+    const self = path.join(target, "out/self.zip");
+    packPlugin({ root: target, id: "chamber", outFile: self });
+    const same = installPlugin({ root: target, source: self, git: false, postinstall: false });
+    assert.deepEqual(same.source, forkSource);
+    assert.equal(same.previousSource?.kind, "tree");
+    assert.equal(readInstalledLock(target, "chamber")?.source?.kind, "tree");
+    const upstream = path.join(author, "plugins/chamber/plugin.json");
+    fs.writeFileSync(upstream, fs.readFileSync(upstream, "utf8").replace('"1.0.0"', '"1.1.0"'));
+    const v2 = path.join(author, "out/v2.zip");
+    packPlugin({ root: author, id: "chamber", outFile: v2 });
+    assert.throws(() => installPlugin({ root: target, source: v2, git: false, postinstall: false }), /本地分叉/u);
+    // 显式 --replace-local-fork 装同内容的自包 → 改标为 package。
+    assert.equal(installPlugin({ root: target, source: self, git: false, postinstall: false, replaceLocalFork: true }).source.kind, "package");
+
+    // 旧锁形态（删掉 # source 行）：check 点名，内容不同的来包按分叉待遇拒绝，--replace-local-fork 放行。
+    const lockFile = path.join(target, "scripts/plugins/chamber.lock");
+    const withSource = fs.readFileSync(lockFile, "utf8");
+    fs.writeFileSync(lockFile, withSource.split("\n").filter((line) => !line.startsWith("# source ")).join("\n"), "utf8");
+    assert.match(checkInstalledPlugins(target).plugins[0].problems.join("\n"), /锁未登记 source（旧锁形态/u);
+    assert.throws(() => installPlugin({ root: target, source: v2, git: false, postinstall: false }), /没有来源抬头[\s\S]*--replace-local-fork/u);
+    assert.equal(installPlugin({ root: target, source: v2, git: false, postinstall: false, replaceLocalFork: true }).version, "1.1.0");
+    assert.equal(checkInstalledPlugins(target).ok, true);
+
+    // 抬头形状与内容身份：sha 与清单不符 / 垃圾 JSON / 多行 / tree 缺 forkedFrom 都被点名或拒绝解析。
+    const good = fs.readFileSync(lockFile, "utf8");
+    fs.writeFileSync(lockFile, good.replace(/"filesLockSha256":"[0-9a-f]{64}"/u, `"filesLockSha256":"${"0".repeat(64)}"`), "utf8");
+    assert.match(checkInstalledPlugins(target).plugins[0].problems.join("\n"), /filesLockSha256 与清单不符/u);
+    fs.writeFileSync(lockFile, good.replace("# source {", "# source {not json {"), "utf8");
+    assert.throws(() => checkInstalledPlugins(target), /chamber\.lock 的 "# source" 抬头不是合法 JSON/u);
+    fs.writeFileSync(lockFile, good.replace(/^(# source .*)$/mu, "$1\n$1"), "utf8");
+    assert.throws(() => checkInstalledPlugins(target), /多行 "# source"/u);
+    fs.writeFileSync(lockFile, good.replace(/^# source .*$/mu, '# source {"kind":"tree","filesLockSha256":"' + "a".repeat(64) + '"}'), "utf8");
+    assert.throws(() => checkInstalledPlugins(target), /kind=tree 缺 forkedFrom/u);
+    fs.writeFileSync(lockFile, good.replace(/"kinds":\[[^\]]*\]/u, '"kinds":[]'), "utf8");
+    assert.throws(() => checkInstalledPlugins(target), /kinds 非法/u);
+    fs.writeFileSync(lockFile, good, "utf8");
+    assert.equal(checkInstalledPlugins(target).ok, true);
+
+    // uninstall 报告来源（tree 时 CLI 提醒）。
+    fs.writeFileSync(path.join(target, "docs/chamber/README.md"), "# fork again\n");
+    fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.1.0"', '"1.1.1"'));
+    reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false });
+    assert.equal(uninstallPlugin({ root: target, id: "chamber", git: false, postinstall: false, dryRun: true }).source, "tree");
+  } finally {
+    cleanup(author, target);
+  }
+});
+
+test("加固 §1-9 / §1-11：requires 与随包 feature.json / manifest.json 的 schemaVersion 交叉核对；孤儿 .meta 拒绝；宿主 .meta 不可解析即拒绝装；同路径 uuid 变化被报告", () => {
+  const { author, target } = makeFixture("1.0.0");
+  try {
+    const dirOut = path.join(author, "out/pkg");
+    packPlugin({ root: author, id: "chamber", outDir: dirOut });
+    const relock = (): void => {
+      const walk = (dir: string): string[] => fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+        const full = path.join(dir, entry.name);
+        return entry.isDirectory() ? walk(full) : [path.relative(dirOut, full).split(path.sep).join("/")];
+      });
+      const present = walk(dirOut).filter((relative) => relative !== "plugin.json" && relative !== "files.lock");
+      fs.writeFileSync(path.join(dirOut, "files.lock"), renderFilesLock(present.map((relative) => ({ path: relative, sha256: sha256(fs.readFileSync(path.join(dirOut, relative))) }))), "utf8");
+    };
+    // feature.json schemaVersion=2 而 requires.featureSchemaVersion=1 → 整包拒绝；check 对树上也点名。
+    const featureFile = path.join(dirOut, "features/chamber/feature.json");
+    const featureOriginal = fs.readFileSync(featureFile, "utf8");
+    fs.writeFileSync(featureFile, featureOriginal.replace('"schemaVersion": 1', '"schemaVersion": 2'));
+    relock();
+    assert.throws(() => validatePackage(readPackage(dirOut), target), /feature\.json 的 schemaVersion（2）与 plugin\.json requires\.featureSchemaVersion（1）不一致/u);
+    fs.writeFileSync(featureFile, featureOriginal);
+    // 孤儿 .meta（无目标文件、无子路径）→ 拒绝。
+    write(dirOut, "apps/Cocos/assets/src/features/chamber/view/Nope.ts.meta", meta("typescript", "nope"));
+    relock();
+    assert.throws(() => validatePackage(readPackage(dirOut), target), /孤儿 \.meta[\s\S]*Nope\.ts\.meta/u);
+    fs.rmSync(path.join(dirOut, "apps/Cocos/assets/src/features/chamber/view/Nope.ts.meta"));
+    relock();
+    assert.doesNotThrow(() => validatePackage(readPackage(dirOut), target));
+
+    // 宿主 assets 里有解析不了的 .meta（大写 uuid）→ 撞车无从判定 → 拒绝装。
+    write(target, "apps/Cocos/assets/resources/ui/Weird.bin.meta", meta("buffer", "weird").replace(uuidFor("weird"), uuidFor("weird").toUpperCase()));
+    assert.throws(() => installPlugin({ root: target, source: dirOut, git: false, postinstall: false }), /无法解析的 \.meta[\s\S]*Weird\.bin\.meta/u);
+    assert.deepEqual(hostMetaUuids(target).unreadable.length, 1);
+    fs.rmSync(path.join(target, "apps/Cocos/assets/resources/ui/Weird.bin.meta"));
+    installPlugin({ root: target, source: dirOut, git: false, postinstall: false });
+    // check 对树上 feature.json schemaVersion 漂移点名。
+    const treeFeature = path.join(target, "features/chamber/feature.json");
+    fs.writeFileSync(treeFeature, fs.readFileSync(treeFeature, "utf8").replace('"schemaVersion": 1', '"schemaVersion": 2'));
+    assert.match(checkInstalledPlugins(target).plugins[0].problems.join("\n"), /feature\.json 的 schemaVersion（2）与 requires\.featureSchemaVersion（1）不一致/u);
+    fs.writeFileSync(treeFeature, featureOriginal);
+    assert.equal(checkInstalledPlugins(target).ok, true);
+
+    // 升级时同路径 .meta 换 uuid：装得上，但 uuidChanged 报出来。
+    const viewMeta = "apps/Cocos/assets/src/features/chamber/view/ChamberView.ts.meta";
+    write(dirOut, viewMeta, meta("typescript", "rewritten by creator"));
+    const manifestFile = path.join(dirOut, "plugins/chamber/plugin.json");
+    const bumped = fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.0.1"');
+    fs.writeFileSync(manifestFile, bumped);
+    fs.writeFileSync(path.join(dirOut, "plugin.json"), bumped);
+    relock();
+    const report = installPlugin({ root: target, source: dirOut, git: false, postinstall: false });
+    assert.deepEqual(report.uuidChanged.map((change) => change.path), [viewMeta]);
+    assert.equal(report.uuidChanged[0].to, uuidFor("rewritten by creator"));
+  } finally {
+    cleanup(author, target);
+  }
+});
+
+test("加固：git status -z 解析（非 ASCII / 重命名条目）", () => {
+  const root = makeRoot();
+  try {
+    write(root, "a/测试 文件.ts", "x\n");
+    gitInit(root);
+    fs.renameSync(path.join(root, "a/测试 文件.ts"), path.join(root, "a/renamed.ts"));
+    write(root, "b/新.ts", "y\n");
+    spawnSync("git", ["add", "-A"], { cwd: root });
+    const entries = gitStatusEntries(root, ["a", "b"]);
+    assert.deepEqual(entries.map((entry) => entry.path).sort(), ["a/renamed.ts", "b/新.ts"]);
+    assert.ok(entries.some((entry) => entry.status.startsWith("R") && entry.path === "a/renamed.ts"));
+  } finally {
+    cleanup(root);
   }
 });
 

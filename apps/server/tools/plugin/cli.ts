@@ -13,7 +13,7 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { checkInstalledPlugins } from "./check";
-import { installPlugin, reinstallFromTree } from "./install";
+import { installPlugin, reinstallFromTree, type InstallReport } from "./install";
 import { packPlugin } from "./pack";
 import { uninstallPlugin } from "./uninstall";
 
@@ -130,8 +130,21 @@ export function parseCli(argv: readonly string[]): PluginCliArguments {
 }
 
 function printAllowDelete(allowDelete: { readonly gameplays: readonly string[]; readonly features: readonly string[] }): void {
-  if (allowDelete.gameplays.length + allowDelete.features.length === 0) return;
+  if (allowDeleteCount(allowDelete) === 0) return;
   console.log(`[plugin]   升级删除面 → codegen --allow-delete：gameplays ${allowDelete.gameplays.join(", ") || "-"}；features ${allowDelete.features.join(", ") || "-"}`);
+}
+
+function allowDeleteCount(allowDelete: { readonly gameplays: readonly string[]; readonly features: readonly string[] }): number {
+  return allowDelete.gameplays.length + allowDelete.features.length;
+}
+
+/** source 变迁与 uuid 变化：都是宿主该看一眼的事实（不拦，只讲清）。 */
+function printProvenance(report: InstallReport): void {
+  const before = report.previousSource?.kind ?? (report.previousVersion === null ? null : "unknown");
+  if (before !== null && before !== report.source.kind) console.log(`[plugin]   锁来源变迁：${before} → ${report.source.kind}`);
+  else if (before === "tree" && report.source.kind === "tree" && report.adopted === undefined) console.log("[plugin]   锁来源：仍是本地分叉（tree）——与分叉内容相同的包不改变来源，--replace-local-fork 才改标为 package");
+  for (const change of report.uuidChanged) console.log(`[plugin]   ⚠ 同路径 .meta 的 uuid 变了（Creator 视为另一个资源，宿主对它的引用会断）：${change.path} ${change.from} → ${change.to}`);
+  for (const relative of report.adopted?.review ?? []) console.log(`[plugin]   ⚠ 吸收了共享命名空间里的新文件（未跟踪即吸收）：${relative}——请确认它确属本插件`);
 }
 
 export function runCli(args: PluginCliArguments): number {
@@ -147,6 +160,7 @@ export function runCli(args: PluginCliArguments): number {
     console.log(`[plugin] ${args.dryRun ? "(dry-run) " : ""}${report.id}: ${verb}; written ${report.written.length}, unchanged ${report.unchanged.length}, deleted ${report.deleted.length}`);
     for (const relative of report.deleted) console.log(`[plugin]   deleted ${relative}`);
     printAllowDelete(report.allowDelete);
+    printProvenance(report);
     console.log("[plugin] 下一步（人工）：");
     for (const step of report.nextSteps) console.log(`[plugin]   - ${step}`);
     return 0;
@@ -159,13 +173,15 @@ export function runCli(args: PluginCliArguments): number {
     for (const relative of adopted.added) console.log(`[plugin]   added ${relative}`);
     for (const relative of report.deleted) console.log(`[plugin]   deleted ${relative}`);
     printAllowDelete(report.allowDelete);
+    printProvenance(report);
     console.log("[plugin] 下一步（人工）：");
     for (const step of report.nextSteps) console.log(`[plugin]   - ${step}`);
     return 0;
   }
   if (args.command === "uninstall") {
     const report = uninstallPlugin({ root: args.root, id: args.id, force: args.force, git: args.git, postinstall: args.postinstall, dryRun: args.dryRun });
-    console.log(`[plugin] ${args.dryRun ? "(dry-run) " : ""}uninstalled ${report.id}@${report.version}: ${report.deleted.length} files（--allow-delete ${report.allowDelete.join(", ") || "-"}）`);
+    console.log(`[plugin] ${args.dryRun ? "(dry-run) " : ""}uninstalled ${report.id}@${report.version} [${report.source}]: ${report.deleted.length} files（--allow-delete ${report.allowDelete.join(", ") || "-"}）`);
+    if (report.source !== "package") console.log(`[plugin]   ⚠ 锁来源是 ${report.source}：被删的是宿主本地内容（分叉 / 来源未知），⛔ 无法从任何包恢复——确认无误再提交`);
     if (report.missing.length > 0) console.log(`[plugin] ⚠ 锁登记但工作树已缺失：${report.missing.join(", ")}`);
     console.log("[plugin] 下一步（人工）：node scripts/protocol-fingerprint.mjs --write（若 registry 变化）、node scripts/fgui-manifest.mjs --write（若删了 FGUI 包）、npm run verify:all");
     return 0;

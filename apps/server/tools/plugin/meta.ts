@@ -52,26 +52,45 @@ export function expectedImporter(target: string, isDirectory: boolean): string |
   return IMPORTER_BY_EXTENSION.get(path.posix.extname(target).toLowerCase()) ?? null;
 }
 
-/** 宿主 assets 树上全部可解析的 .meta：uuid → 仓库相对路径（解析失败的跳过——那是 verify:sync 的事）。 */
-export function hostMetaUuids(root: string, assetsDir = "apps/Cocos/assets", skip: ReadonlySet<string> = new Set()): ReadonlyMap<string, string[]> {
+export interface HostMetaIndex {
+  /** uuid → 仓库相对路径清单。 */
+  readonly byUuid: ReadonlyMap<string, string[]>;
+  /** 解析失败的 .meta（大写 uuid、冲突标记、半截 JSON …）：调用方 fail-closed——撞车无从判定就不能装。 */
+  readonly unreadable: readonly string[];
+}
+
+/** 宿主 assets 树上全部 .meta 的 uuid 索引（符号链接按目标跟随；node_modules/.git 跳过；skip 里的路径不算）。 */
+export function hostMetaUuids(root: string, assetsDir = "apps/Cocos/assets", skip: ReadonlySet<string> = new Set()): HostMetaIndex {
   const byUuid = new Map<string, string[]>();
+  const unreadable: string[] = [];
   const base = path.join(root, assetsDir);
-  if (!fs.existsSync(base)) return byUuid;
+  if (!fs.existsSync(base)) return { byUuid, unreadable };
+  const seenDirs = new Set<string>();
   const walk = (dir: string): void => {
+    const real = fs.realpathSync(dir);
+    if (seenDirs.has(real)) return; // 符号链接成环
+    seenDirs.add(real);
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       if (entry.name === "node_modules" || entry.name === ".git") continue;
       const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
+      let stat: fs.Stats;
+      try {
+        stat = fs.statSync(full); // 跟随符号链接（pack 侧拒绝链接，宿主侧只管「树上到底有什么」）
+      } catch {
+        continue;
+      }
+      if (stat.isDirectory()) {
         walk(full);
         continue;
       }
-      if (!entry.isFile() || !entry.name.endsWith(".meta")) continue;
+      if (!stat.isFile() || !entry.name.endsWith(".meta")) continue;
       const relative = path.relative(root, full).split(path.sep).join("/");
       if (skip.has(relative)) continue;
       let summary: MetaSummary;
       try {
         summary = parseMeta(fs.readFileSync(full), relative);
-      } catch {
+      } catch (error) {
+        unreadable.push(`${relative}（${error instanceof Error ? error.message : String(error)}）`);
         continue;
       }
       if (!byUuid.has(summary.uuid)) byUuid.set(summary.uuid, []);
@@ -79,5 +98,5 @@ export function hostMetaUuids(root: string, assetsDir = "apps/Cocos/assets", ski
     }
   };
   walk(base);
-  return byUuid;
+  return { byUuid, unreadable: unreadable.sort() };
 }
