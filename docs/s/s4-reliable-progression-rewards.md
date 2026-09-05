@@ -7,7 +7,7 @@
 
 | 项目 | 口径 |
 |---|---|
-| 状态 | `[已拍板·待实施]` |
+| 状态 | `[已完成]` |
 | 实现范围 | 当前进程内的 run 统计、金币/XP/碎片/成就奖励与个人结果页 |
 | 数据来源 | S2 房间内已有的真人 run 状态和权威计数 |
 | 账号状态 | S3/S4 共用的模块级内存 profile，并 best-effort 镜像到 Redis |
@@ -274,9 +274,20 @@ XP、等级、碎片、成就与新解锁皮肤。没有领取按钮；奖励在
 
 ## 证据回写
 
-| 状态 | commit | 自动验证 | Creator 证据 | 备注 |
-|---|---|---|---|---|
-| `[已拍板·待实施]` | - | - | - | 进程内同步奖励；单 HASH best-effort Redis 投影 |
+| 阶段 | 状态 | commit | 自动验证 | Creator 证据 | 备注 |
+|---|---|---|---|---|---|
+| S4-02 公式层 | `[已完成]` | `be3f603` | `snake-progression` 7/7 | 不适用 | 手写 shared 模块不进 `contractDigest`，⛔ 未 bump |
+| S4-01 run 统计 | `[已完成]` | `6172176` | `snake-room` 16/16 | 不适用 | 三项只在房间内存，⛔ 不进 `state.json` |
+| S4-03 结算与去重 | `[已完成]` | `36f85e1` | `snake-run-rewards` 9/9 | 不适用 | 单条六字段 HSET；`coinBalance` 合并点在此兑现 |
+| S4-04 结果 wire 与页面 | `[已完成]` | `58e568d` | `verify:all` exit 0（client 435/435、server 604/604） | Creator 结果页终验归 S5 | `resultVersion: 2`，同 token 名；**唯一一次 `modeVersion` bump 4→5** |
+
+> ⚠ **已知限制（登记在案，非待补实现）**：`processedRuns` 与 `latestResultByUid` 只在进程内存，
+> 重启后去重与最近结果都会重置；多进程实例可能分别奖励同一账号或用旧 profile 覆盖 Redis。
+>
+> ⚠ **测试环境必须隔离结算镜像**：默认 persistence 经 `clientFor` 真开 Redis 连接。
+> `resolveRewardPersistence(injected, env)` 在 `test` 环境返回 no-op，另有
+> `SnakeGameModeOptions.rewardPersistence` 注入位。⛔ 删掉这条判据会让 server 套件直接挂死
+> （S4-04 实测踩过，跑满 600s 未结束）。
 
 ---
 
