@@ -178,6 +178,7 @@ files.lock       清单：每行 <仓库相对路径> <sha256>（与 protected-p
 ```text
 npm --workspace @game/server run plugin -- pack <id> (--out <zip> | --out-dir <dir>)
 npm --workspace @game/server run plugin -- install <zip|dir> [--allow-downgrade] [--no-git] [--no-postinstall] [--dry-run]
+npm --workspace @game/server run plugin -- install --reinstall-from-tree <id> [--allow-downgrade] [--no-git] [--no-postinstall] [--dry-run]
 npm --workspace @game/server run plugin -- uninstall <id> [--force] [--no-git] [--no-postinstall] [--dry-run]
 npm --workspace @game/server run plugin -- check
 ```
@@ -206,6 +207,16 @@ npm --workspace @game/server run plugin -- check
    `node scripts/fgui-manifest.mjs --write`、`npm run verify:all`、提交前开一次 Creator 为 `sync:shared` 新建的
    镜像（与首个 feature 插件的 `features.meta`）生成 `.meta` 后 `git add apps/Cocos/assets/src`，并确认随包 `.meta`
    的 uuid 稳定（Creator 只会重写键序/版本，uuid 不变）。
+
+**同仓迭代 `install --reinstall-from-tree <id>`**（plan-v5 E6 方案 ②，2026-09-05）：已安装锁把插件自有文件锁死后，
+宿主仓内直接改其中任何一个文件（哪怕 `docs/<id>/README.md` 一行）都会让 `check`/`plugin-lock.test.ts` 红，而普通
+`install` 对「树≠锁」直接拒绝——同仓「作者=宿主」需要一条合法路径。本形态以**工作树为真相**重写已安装锁：
+等价于「`pack` 当前树 → `install` 该包」，采集与自检走 pack 同一条路（缺 `.meta` / 越权 / 镜像不一致即拒绝），
+锁被篡改即拒绝，目录级所有权冲突拒绝；**版本规则原样保留**——树上内容与锁不同但 `plugins/<id>/plugin.json`
+的 version 未 bump ⇒ 拒绝并点名改动面（新增/变化/删除），降级须 `--allow-downgrade`。它 ⛔ 不写任何插件文件
+（文件本来就在树上），只重写 `scripts/plugins/<id>.lock`，然后照常 `git add` + postinstall。动线：
+改文件 → bump version → `install --reinstall-from-tree <id>` → `check` ✔ → 提交；之后从同一棵树 `pack` 出的包
+与新锁逐条相同，仍可分发给别的宿主。
 
 **`uninstall`**：先让锁的每条路径重过 §5.2 闸并要求受影响路径的工作树干净（未提交的锁改动尤其可疑），
 再按锁清单删除（⛔ 不按目录猜）、删 `plugins/<id>/` 与锁，然后用显式 `--allow-delete`
@@ -348,10 +359,10 @@ npm --workspace @game/server run plugin -- check
    值导入、错误码顺序测试不再硬编码域清单——即「新插件不得需要改中央源码/中央测试」的判据真的成立了。
    仍欠 Creator 侧确认（随包 `.meta` 的 uuid 稳定；脚本合成的共享祖先 `.meta` 占位待 Creator 重写），
    归 plan-v5 B4/B6 类 Creator 人工证据。
-7. **同仓「作者=宿主」的插件迭代动线**（plan-v5 E6）：已安装锁锁住插件自有文件后，在宿主仓内直接改
-   `plugins/<id>` 所有权内的任何文件（哪怕是 `docs/<id>/README.md` 一行）都会让 `plugin-lock.test.ts` 红，
-   而 `install` 对「树≠锁」直接拒绝——同仓作者没有合法的迭代路径。E5 实证当天即撞上（只能回退措辞）。
-   候选方案见 plan-v5 E6，需拍板后实施。
+7. **同仓「作者=宿主」的插件迭代动线**（plan-v5 E6）：✅ 已按方案 ② 实施（2026-09-05）——
+   `install --reinstall-from-tree <id>`（§5.4）。E5 实证当天撞上的现场（改 `docs/redeem/README.md` 一行即锁红、
+   只能回退）已用它重放闭合：bump 1.0.0 → 1.0.1 后以树重写锁。仍开放的同类尾巴：随包 `.meta` 在锁内，Creator
+   重排键序即锁红（plan-v5 B 节清单 1-② 待实测后决定 `.meta` 是否按语义比对）。
 
 ## 10. 非目标
 

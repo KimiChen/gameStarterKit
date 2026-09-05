@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { checkInstalledPlugins } from "../tools/plugin/check";
 import { parseCli } from "../tools/plugin/cli";
-import { installPlugin } from "../tools/plugin/install";
+import { installPlugin, reinstallFromTree } from "../tools/plugin/install";
 import { readInstalledLock, renderFilesLock, sha256 } from "../tools/plugin/lock";
 import { compareVersions, parsePluginManifest } from "../tools/plugin/manifest";
 import {
@@ -420,6 +420,80 @@ test("upgrade：旧有新无按清单删除、同版本不同内容拒绝、降�
   }
 });
 
+test("reinstall-from-tree（E6 方案 ②）：同仓改动不 bump 拒绝并点名；bump 后以树重写锁（吸收变化/新增/删除）；未安装、篡改锁、降级各自拒绝", () => {
+  const { author, target } = makeFixture("1.0.0");
+  try {
+    const v1 = path.join(author, "out/v1.zip");
+    packPlugin({ root: author, id: "chamber", outFile: v1 });
+    installPlugin({ root: target, source: v1, git: false, postinstall: false });
+    const baseline = readInstalledLock(target, "chamber");
+    assert.ok(baseline);
+
+    // 宿主仓内直接改插件自有文档：check 红、普通 install 拒绝——这就是 E6 的现场。
+    fs.writeFileSync(path.join(target, "docs/chamber/README.md"), "# chamber edited in host repo\n");
+    assert.equal(checkInstalledPlugins(target).ok, false);
+    assert.throws(() => installPlugin({ root: target, source: v1, git: false, postinstall: false }), /本地改动会被覆盖丢失/u);
+    // 不 bump 就想吸收 → 拒绝并点名改动面。
+    assert.throws(
+      () => reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false }),
+      /版本未变[\s\S]*docs\/chamber\/README\.md/u,
+    );
+
+    // bump 到 1.0.1，同时新增一个服务端文件、删掉一个测试：dry-run 只报告不写。
+    const manifestFile = path.join(target, "plugins/chamber/plugin.json");
+    fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.0.1"'));
+    write(target, "apps/server/src/core/chamber/extra.ts", "export const extra = 2;\n");
+    fs.rmSync(path.join(target, "apps/server/test/chamber-peek.test.ts"));
+    const dry = reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false, dryRun: true });
+    assert.equal(dry.previousVersion, "1.0.0");
+    assert.equal(dry.version, "1.0.1");
+    assert.deepEqual(dry.written, [], "从树重装 ⛔ 不写任何插件文件");
+    assert.deepEqual(dry.adopted?.changed, ["docs/chamber/README.md", "plugins/chamber/plugin.json"]);
+    assert.deepEqual(dry.adopted?.added, ["apps/server/src/core/chamber/extra.ts"]);
+    assert.deepEqual(dry.deleted, ["apps/server/test/chamber-peek.test.ts"]);
+    assert.equal(readInstalledLock(target, "chamber")?.manifest.version, "1.0.0", "dry-run 不改锁");
+
+    const report = reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false });
+    assert.equal(report.version, "1.0.1");
+    const rewritten = readInstalledLock(target, "chamber");
+    assert.ok(rewritten);
+    assert.equal(rewritten.manifest.version, "1.0.1");
+    assert.equal(rewritten.entries.length, baseline.entries.length + 1 - 1);
+    assert.ok(rewritten.entries.some((entry) => entry.path === "apps/server/src/core/chamber/extra.ts"));
+    assert.ok(!rewritten.entries.some((entry) => entry.path === "apps/server/test/chamber-peek.test.ts"));
+    assert.equal(rewritten.entries.find((entry) => entry.path === "docs/chamber/README.md")?.sha256, sha256("# chamber edited in host repo\n"));
+    assert.equal(checkInstalledPlugins(target).ok, true, "重写后 check 必须绿");
+    // 树 ≡ 新锁：再来一次是幂等 no-op（同版本同内容放行）。
+    const again = reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false });
+    assert.deepEqual(again.adopted, { added: [], changed: [] });
+    assert.deepEqual(again.deleted, []);
+    // 从树 pack 出的包 ⇔ 新锁逐条相同（同仓迭代后仍可分发）。
+    const repacked = packPlugin({ root: target, id: "chamber", outFile: path.join(target, "out/repacked.zip") });
+    assert.deepEqual(repacked.entries, rewritten.entries);
+
+    // 降级：树上版本比锁小 → 拒绝，显式放行。
+    fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.1"', '"0.9.0"'));
+    assert.throws(() => reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false }), /拒绝降级/u);
+    assert.equal(reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false, allowDowngrade: true }).version, "0.9.0");
+
+    // 篡改锁 → 拒绝（与 install/uninstall 同一道 allowlist）。
+    const lockFile = path.join(target, "scripts/plugins/chamber.lock");
+    fs.appendFileSync(lockFile, "scripts/evil.mjs 0000000000000000000000000000000000000000000000000000000000000000\n");
+    assert.throws(() => reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false }), /锁/u);
+
+    // 未安装 → 拒绝（首装必须走 install <zip>）。
+    const fresh = makeRoot();
+    try {
+      authorTree(fresh, "1.0.0");
+      assert.throws(() => reinstallFromTree({ root: fresh, id: "chamber", git: false, postinstall: false }), /未安装/u);
+    } finally {
+      cleanup(fresh);
+    }
+  } finally {
+    cleanup(author, target);
+  }
+});
+
 test("install：越权路径整包拒绝并点名（脚本 / 受保护文件 / 他人目录）；目标已存在且不属本插件 → 所有权冲突", () => {
   const { author, target } = makeFixture();
   try {
@@ -598,4 +672,9 @@ test("CLI 参数：四个子命令、--root seam、重复/未知参数 throw", (
   assert.throws(() => parseCli(["check", "--root"]), /需要一个值/u);
   assert.throws(() => parseCli(["pack", "x", "--out", "a", "--out", "b"]), /duplicate argument/u);
   assert.throws(() => parseCli(["nope"]), /用法/u);
+  const fromTree = parseCli(["install", "--reinstall-from-tree", "chamber", "--no-git"]);
+  assert.equal(fromTree.command, "reinstall-from-tree");
+  assert.ok(fromTree.command === "reinstall-from-tree" && fromTree.id === "chamber" && fromTree.git === false && fromTree.postinstall === true);
+  assert.throws(() => parseCli(["install", "--reinstall-from-tree", "./chamber.zip"]), /插件 id，不是包路径/u);
+  assert.throws(() => parseCli(["install", "--reinstall-from-tree"]), /只需要一个已安装插件/u);
 });
