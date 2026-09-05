@@ -145,6 +145,18 @@ export function getSnakeSkinBusinessEntry(skinId: number): SnakeSkinBusinessEntr
     return BUSINESS_BY_ID.get(skinId);
 }
 
+/**
+ * 碎片合成皮肤及其门槛，按 `skinId` 升序。⛔ 不要另处硬编码这四个 ID——它们由业务目录派生，
+ * validator 已保证「`fragmentCraft` ⇔ 有正门槛」，改目录即自动改这里。
+ */
+export const SNAKE_FRAGMENT_SKIN_THRESHOLDS: ReadonlyMap<number, number> = new Map(
+    SNAKE_SKIN_BUSINESS_CATALOG
+        .filter((entry) => entry.acquisition.value === "fragmentCraft")
+        .map((entry) => [entry.skinId, entry.fragmentThreshold.value as number]),
+);
+/** 四个碎片皮肤 ID（升序），profile 的 `fragmentBalances` 固定用这组键。 */
+export const SNAKE_FRAGMENT_SKIN_IDS: readonly number[] = [...SNAKE_FRAGMENT_SKIN_THRESHOLDS.keys()].sort((a, b) => a - b);
+
 export function assertSnakeSkinPublicHash(peerHash: string): void {
     if (peerHash !== PUBLIC_SNAKE_SKIN_CATALOG_HASH) fail("public catalog hash mismatch; cosmetic operation rejected");
 }
