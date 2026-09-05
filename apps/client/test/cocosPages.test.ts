@@ -79,7 +79,11 @@ class FakeNode {
 }
 
 class FakeUITransform { width = 0; height = 0; anchorX = 0.5; anchorY = 0.5; }
-class FakeLabel { string = ""; fontSize = 0; color: unknown = null; }
+class FakeLabel {
+  static HorizontalAlign = { LEFT: 0, CENTER: 1, RIGHT: 2 };
+  static VerticalAlign = { TOP: 0, CENTER: 1, BOTTOM: 2 };
+  string = ""; fontSize = 0; color: unknown = null; horizontalAlign = 1; verticalAlign = 0;
+}
 class FakeGraphics {
   fillColor: unknown = null;
   strokeColor: unknown = null;
