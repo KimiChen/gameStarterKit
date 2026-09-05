@@ -78,7 +78,7 @@ class FakeNode {
   }
 }
 
-class FakeUITransform { width = 0; height = 0; }
+class FakeUITransform { width = 0; height = 0; anchorX = 0.5; anchorY = 0.5; }
 class FakeLabel { string = ""; fontSize = 0; color: unknown = null; }
 class FakeGraphics {
   fillColor: unknown = null;
@@ -272,4 +272,29 @@ test("SettingsView：按钮真的接上 Logic（关闭 / 音频开关 / 不可�
   tapAll(buttonNamed("btn-重试"));
   await Promise.resolve();
   assert.deepEqual(fixture.launched, ["bad"], "不可用条目的重试必须走 launch 通道");
+});
+
+test("CocosView：挂到 FGUI 层容器（锚点 (0,1)、原点左上）时根节点按父锚居中，⛔ 不再钉在左上角", async () => {
+  // 2026-09-05 Creator 预览实测：层容器是 FGUI GComponent 节点（anchor (0,1)），页面根节点 (0.5,0.5) 放 (0,0)
+  // 只露出右下四分之一。父锚 (ax,ay) → 根位置 ((0.5-ax)·W, (0.5-ay)·H)。
+  const { PromoHomeView } = await loadViews();
+  const fguiLayer = new FakeNode("layer_base");
+  const transform = fguiLayer.addComponent(FakeUITransform) as FakeUITransform;
+  transform.anchorX = 0;
+  transform.anchorY = 1;
+  const view = new PromoHomeView();
+  const context = view.beginLifecycle(1);
+  await view.runCreate(context);
+  view.mountToLayer(fguiLayer, 750, 1624, true);
+  const root = (view as unknown as { root: FakeNode }).root;
+  assert.equal(root.parent, fguiLayer);
+  assert.deepEqual([root.x, root.y], [375, -812], "父锚 (0,1)：根节点中心须落在容器中心 (W/2, -H/2)");
+
+  // 中心锚 / 无 UITransform 的父节点：保持 (0,0)（既有无头用例的口径）。
+  const centered = new FakeNode("layer_center");
+  const other = new PromoHomeView();
+  await other.runCreate(other.beginLifecycle(1));
+  other.mountToLayer(centered, 750, 1624, true);
+  const otherRoot = (other as unknown as { root: FakeNode }).root;
+  assert.deepEqual([otherRoot.x, otherRoot.y], [0, 0]);
 });

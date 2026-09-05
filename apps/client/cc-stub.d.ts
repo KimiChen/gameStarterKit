@@ -21,6 +21,8 @@ declare module "cc" {
     export class UITransform {
         width: number;
         height: number;
+        anchorX: number;
+        anchorY: number;
         convertToNodeSpaceAR(world: Vec3, out?: Vec3): Vec3;
     }
 

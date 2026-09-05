@@ -23,7 +23,7 @@ declare module "cc" {
   }
   export class Component { node: Node; enabled: boolean; destroy(): boolean; }
   export class UITransform {
-    width: number; height: number;
+    width: number; height: number; anchorX: number; anchorY: number;
     convertToNodeSpaceAR(world: Vec3, out?: Vec3): Vec3;
   }
   export class Graphics {
