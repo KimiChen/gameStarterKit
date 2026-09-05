@@ -146,18 +146,74 @@ class FakeSprite {
 }
 
 class FakeMesh {
-    readonly subMeshes = [{ update: () => undefined }];
+    uploads = 0;
+    lastVertexCount = 0;
+    /** 留副本供断言检查写入顺序；⚠ 必须拷贝——渲染器复用同一条缓冲，存引用会读到后续帧的值。 */
+    lastPositions: Float32Array = new Float32Array(0);
+    destroyed = false;
+
+    updateSubMesh(_index: number, geometry: { positions: Float32Array }): void {
+        this.uploads += 1;
+        this.lastVertexCount = geometry.positions.length / 3;
+        this.lastPositions = Float32Array.from(geometry.positions);
+    }
+
+    destroy(): boolean { this.destroyed = true; return true; }
 }
 
 class FakeMaterial {
-    initialize(_options: unknown): void {}
-    setProperty(_name: string, _value: unknown): void {}
+    effectName = "";
+    technique = -1;
+    readonly properties = new Map<string, unknown>();
+    destroyed = false;
+
+    /** ⚠ defines / states 必须记下来：漏传 USE_TEXTURE 会编译出不采样贴图的变体，
+     *  漏传 cullMode:NONE 会让缠绕方向相反的那一批整体消失——两者都是「写了但到不了 GPU」的同类缺陷。 */
+    defines: Record<string, unknown> = {};
+    states: { rasterizerState?: { cullMode?: number } } | null = null;
+
+    initialize(options: {
+        effectName: string;
+        technique?: number;
+        defines?: Record<string, unknown>;
+        states?: { rasterizerState?: { cullMode?: number } };
+    }): void {
+        this.effectName = options.effectName;
+        this.technique = options.technique ?? 0;
+        this.defines = options.defines ?? {};
+        this.states = options.states ?? null;
+    }
+
+    setProperty(name: string, value: unknown): void { this.properties.set(name, value); }
+    destroy(): boolean { this.destroyed = true; return true; }
 }
 
+/** ⚠ 复刻场景根上的渲染全局设置：缺省 0 = ACES，见 snakeQuadMesh.ensureLinearToneMapping。 */
+const fakeSceneGlobals = { postSettings: { toneMappingType: 0 } };
+const fakeDirector = { getScene: () => ({ globals: fakeSceneGlobals }) };
+
+class FakeMeshRenderer {
+    node!: FakeNode;
+    mesh: FakeMesh | null = null;
+    material: FakeMaterial | null = null;
+    /** ⚠ 引擎里这一步才把新的顶点/索引数同步进 InputAssembler；不调用则绘制数量永不收缩。 */
+    geometryNotifications = 0;
+
+    onGeometryChanged(): void { this.geometryNotifications += 1; }
+}
+
+/**
+ * ⚠ 复刻引擎契约（S5-05 F2）：真实的 UIMeshRenderer **没有** mesh / material，它在 onLoad 里
+ * 查**一次**同节点的 ModelRenderer 并缓存。⛔ 别把这个假件退回成能接收 mesh/material 的空壳，
+ * 那正是当初让整条蛇身网格死掉却全程绿灯的原因。
+ */
 class FakeUIMeshRenderer {
     node!: FakeNode;
-    mesh: unknown;
-    material: unknown;
+    modelComponent: FakeMeshRenderer | null = null;
+
+    onLoad(): void {
+        this.modelComponent = this.node.getComponent(FakeMeshRenderer);
+    }
 }
 
 class FakeNode {
@@ -188,9 +244,12 @@ class FakeNode {
     }
 
     addComponent<T>(Constructor: new () => T): T {
-        const component = new Constructor() as T & { node?: FakeNode };
+        const component = new Constructor() as T & { node?: FakeNode; onLoad?: () => void };
         if ("node" in component) component.node = this;
         this.components.push(component);
+        // ⚠ 引擎在组件挂上之后才跑 onLoad，UIMeshRenderer 正是在那时解析 ModelRenderer——
+        // 顺序必须一致，否则「先加 MeshRenderer」这条契约在测试里就验不出来。
+        component.onLoad?.();
         return component;
     }
 
@@ -307,14 +366,19 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
         UITransform: FakeUITransform,
         Vec3: FakeVec3,
         gfx: {
-            Attribute: class {},
-            AttributeName: {},
-            Format: {},
+            CullMode: { NONE: 0, FRONT: 1, BACK: 2 },
         },
+        director: fakeDirector,
         Material: FakeMaterial,
         Mesh: FakeMesh,
+        MeshRenderer: FakeMeshRenderer,
         UIMeshRenderer: FakeUIMeshRenderer,
-        utils: { createMesh: () => new FakeMesh() },
+        EffectAsset: {
+            get: (name: string) => name === "builtin-unlit"
+                ? { techniques: [{ name: "opaque" }, { name: "transparent" }, { name: "add" }, { name: "alpha-blend" }] }
+                : null,
+        },
+        utils: { MeshUtils: { createDynamicMesh: () => new FakeMesh() } },
         input,
         game,
         resources,
@@ -337,7 +401,9 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
 
     try {
         const { SnakeWorldView } = await import("../src/view/rooms/snake/SnakeWorldView");
-        const { CLIENT_SNAKE_PRESENTATION_CATALOG, SNAKE_ENTITY_PRESENTATION_CATALOG } = await import("../src/logic/rooms/snake/SnakePresentationCatalog");
+        const { CLIENT_SNAKE_PRESENTATION_CATALOG, SNAKE_ENTITY_PRESENTATION_CATALOG,
+            deriveSkinLayoutMetrics, getClientSnakeSkinPresentation } = await import("../src/logic/rooms/snake/SnakePresentationCatalog");
+        const { SNAKE_RULESET } = await import("../src/shared/gameplays/snake/ruleset");
         const host = new FakeNode("host");
         // Creator 的 Canvas 锚点在可见区中心，触摸坐标则以左下角为原点。
         host.setPosition(375, 812, 0);
@@ -396,8 +462,18 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
         }, null);
         assert.equal(countNodes(host, "snake-food-batch"), 1,
             "Dot/Star 必须共享一个 atlas mesh，不能按食物创建节点");
+        const foodBatch = findNode(host, "snake-food-batch");
+        const foodModel = foodBatch?.getComponent(FakeMeshRenderer);
+        assert.ok(foodModel?.mesh, "食物批次必须挂真正的 MeshRenderer 并绑定网格");
+        assert.equal(foodBatch?.getComponent(FakeUIMeshRenderer)?.modelComponent, foodModel,
+            "UIMeshRenderer 必须解析到同节点的 MeshRenderer");
+        // ⚠ 动态网格自建成起就是全零缓冲，不逐帧上传就一个食物都不画（正是原缺陷的形态）。
+        assert.ok((foodModel?.mesh?.uploads ?? 0) > 0, "食物批次必须逐帧上传几何");
+        assert.equal(foodModel?.mesh?.lastVertexCount, 2 * 4, "上传顶点数必须等于食物数 × 4");
+        assert.equal(foodModel?.mesh?.uploads, foodModel?.geometryNotifications,
+            "每次上传后都必须 onGeometryChanged，否则 InputAssembler 仍按满容量绘制");
 
-        const snakeFrame = (magnetCollected: number) => ({
+        const snakeFrame = (magnetCollected: number, pointCount = 20) => ({
             tick: 20 + magnetCollected,
             envelopeTick: 20 + magnetCollected,
             seq: 2 + magnetCollected,
@@ -405,7 +481,10 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
                 id: "self", name: "我", skinId: 403, ai: false, aiLevel: null, alive: true,
                 score: 10, length: 80, boost: magnetCollected > 0, bodyScale: 1,
                 magnetUntilTick: magnetCollected > 0 ? 100 : null, protectUntilTick: magnetCollected > 0 ? 100 : null,
-                points: [{ x: 10, y: 0 }, { x: 2, y: 0 }, { x: -6, y: 0 }],
+                // ⚠ 必须给足路径点：身体精灵按 firstBodyPointDistance/repeatedBodyPointDistance 布点，
+                // 皮肤 403 是 3/3，原来的 3 个点一个身体精灵都放不下（这是正确行为，短蛇只有头）。
+                // 20 个点、间距 = pointSpacing(8)，恰好落 6 个身体精灵；前三个点与旧 fixture 一致。
+                points: Array.from({ length: pointCount }, (_, index) => ({ x: 10 - index * 8, y: 0 })),
             }],
             foods: [], wrecks: [], tools: [],
             runs: [{
@@ -424,6 +503,73 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
         presentation.render(snakeFrame(0) as never, activeHud as never, null);
         assert.ok(findNode(host, "snake-head-self"), "head 必须由同一稳定 skinId 的动态帧创建");
         assert.ok(findNode(host, "snake-tail-self"), "有 tail 的 skin 403 必须消费 tail track");
+        // ── 蛇身网格接线（S5-05 F2/F3/F4 的回归闸）───────────────────────────────────────
+        // ⚠ 此前本文件只在蛇消失后断言 snake-mesh-self 为 null，蛇活着时从不断言它存在；配合
+        // renderSnake 把异常吞成 console.warn + Graphics 降级，整条身体网格在真引擎里零渲染而
+        // verify:all 全绿。⛔ 别把下面几条弱化回「节点存在」。
+        const bodyNode = findNode(host, "snake-mesh-self");
+        assert.ok(bodyNode, "蛇活着时必须存在身体网格节点");
+        const bodyModel = bodyNode?.getComponent(FakeMeshRenderer);
+        assert.ok(bodyModel, "身体网格必须挂真正的 MeshRenderer——UIMeshRenderer 自己不渲染任何东西");
+        assert.ok(bodyModel?.mesh, "MeshRenderer.mesh 必须被赋值");
+        assert.equal(bodyNode?.getComponent(FakeUIMeshRenderer)?.modelComponent, bodyModel,
+            "UIMeshRenderer 只在 onLoad 查一次 ModelRenderer，所以 MeshRenderer 必须先加");
+        assert.equal(bodyModel?.material?.effectName, "builtin-unlit",
+            "builtin-ui 不存在会得到零 pass 的材质；只有 builtin-unlit 把 mainTexture 声明为 per-material 贴图");
+        assert.equal(bodyModel?.material?.technique, 3,
+            "技法必须按名解析到 alpha-blend（假件里排第 4 位）——硬编码 transparent 会多画一个 planar-shadow pass");
+        assert.ok(bodyModel?.material?.properties.has("mainTexture"), "身体材质必须绑定皮肤贴图");
+        assert.equal(bodyModel?.material?.defines.USE_TEXTURE, true,
+            "必须开 USE_TEXTURE：builtin-unlit 的贴图采样整段包在 #if USE_TEXTURE 内，漏了就是纯白四边形");
+        assert.equal(bodyModel?.material?.states?.rasterizerState?.cullMode, 0,
+            "必须关背面剔除（CullMode.NONE=0）：缎带法线随转向翻正负，默认 BACK 会让一半段整体消失");
+        assert.equal(bodyModel?.mesh?.uploads, bodyModel?.geometryNotifications,
+            "每次上传后都必须 onGeometryChanged：updateSubMesh ⛔ 不动 InputAssembler，"
+            + "少这一步绘制数量永不收缩，蛇变短时残留上一帧的四边形");
+        // builtin-unlit 的输出走 CCFragOutput，缺省的 ACES 色调映射会把同一张图集渲染成另一组颜色
+        // （实测 255→229、128→156），而蛇头/蛇尾的 cc.Sprite 与 Graphics 降级都是原样输出——
+        // 不关掉就会出现「同一条蛇身体和头颜色不一致」。⛔ 别把这条删掉当成无关的全局设置。
+        assert.equal(fakeSceneGlobals.postSettings.toneMappingType, 1,
+            "建网格材质时必须把场景色调映射切成 LINEAR，否则身体与头/尾出现色差");
+        assert.ok((bodyModel?.mesh?.uploads ?? 0) > 0, "必须逐帧真的上传几何，⛔ 不是写完缓冲就完事");
+        assert.ok((bodyModel?.mesh?.lastVertexCount ?? 0) > 0,
+            "上传顶点数必须跟随实际用量；静态网格时代的「写满容量再清尾」已废弃");
+        // ── 身体几何：离散重叠精灵，⛔ 不是每段一个四边形（S5-05 F10 的回归闸）─────────────
+        // ⚠ 这条把渲染器绑到**目录声明的布局**上：身体精灵每隔 repeatedBodyPointDistance 个路径点
+        // 画一个，⛔ 不是每个路径段画一个。fixture 是皮肤 403 的 3 个点（索引 0 为蛇头），
+        // 按目录算恰好只放得下 1 个身体精灵 = 4 顶点；旧的按段实现会写 2 段 = 8 顶点。
+        // ⛔ 别把它弱化成 `> 0`——那正是 F10 能长期潜伏的原因。
+        const layout403 = deriveSkinLayoutMetrics(
+            getClientSnakeSkinPresentation(403)!, 1, SNAKE_RULESET.pointSpacing);
+        const bodyPointCount = snakeFrame(0).snakes[0].points.length - 1;
+        const expectedSprites = bodyPointCount < layout403.firstBodyPointDistance
+            ? 0
+            : Math.floor((bodyPointCount - layout403.firstBodyPointDistance) / layout403.repeatedBodyPointDistance) + 1;
+        assert.ok(expectedSprites > 0, "fixture 必须至少放得下一个身体精灵，否则下面的断言恒真");
+        assert.equal(bodyModel?.mesh?.lastVertexCount, expectedSprites * 4,
+            "身体精灵数必须由 repeatedBodyPointDistance 决定，⛔ 不得退回按路径段逐个四边形");
+        // 绘制顺序必须是尾 → 头：所有四边形共用一个 mesh、按索引顺序绘制且不写深度，
+        // 于是后写的盖住先写的。倒序才能让每个圆盖住身后那个、只露出朝尾一侧的圆弧
+        // （原作 `for (W = N-1; W >= 0; W--)` 与 S0 golden 同向）。⚠ 正序会让鳞片朝向翻转。
+        // fixture 里蛇头在 x=+10、身体沿 -x 延伸，所以先写的精灵中心 x 必须更小。
+        const written = bodyModel?.mesh?.lastPositions ?? new Float32Array(0);
+        const centerXOf = (sprite: number): number =>
+            (written[sprite * 12] + written[sprite * 12 + 9]) / 2; // 顶点 0 与顶点 3 是对角
+        assert.ok(centerXOf(0) < centerXOf(expectedSprites - 1),
+            "必须尾→头倒序写入身体精灵，⛔ 不得改成正序：单 mesh 内写入顺序即遮挡顺序");
+        // 相邻精灵的世界间距必须等于 repeatedBodyPointDistance × pointSpacing。
+        // ⚠ 只钉精灵「个数」是不够的：把 pointIndex 步长改成 1 时个数不变、顺序也不变，
+        // 但精灵会挤成一坨——本条专门堵这个变异。
+        assert.ok(
+            Math.abs(Math.abs(centerXOf(1) - centerXOf(0))
+                - layout403.repeatedBodyPointDistance * SNAKE_RULESET.pointSpacing) < 1e-6,
+            "相邻身体精灵的间距必须由 repeatedBodyPointDistance × pointSpacing 决定");
+        // 精灵横跨蛇身的宽度必须正好是 bodyWidth：frameScale 的定义就是把 body[0] 的帧宽
+        // 归一到 36。⚠ 漏乘 frameScale 时个数与间距都不变，只有本条会红。
+        // fixture 的蛇沿 -x 延伸，故「横跨」方向是 y：顶点 0 与顶点 1 的 y 差即整幅宽度。
+        const acrossExtent = Math.abs(written[1] - written[4]);
+        assert.ok(Math.abs(acrossExtent - SNAKE_RULESET.bodyWidth) < 1e-6,
+            `身体精灵宽度必须等于 bodyWidth=${SNAKE_RULESET.bodyWidth}，实测 ${acrossExtent}`);
         presentation.render(snakeFrame(1) as never, { ...activeHud, magnetRemainingTicks: 79 } as never, null);
         assert.ok(findNode(host, "snake-magnet-aura"), "magnet-active 必须实例化 recipe 节点树而非猜测圆环");
         assert.ok(findNode(host, "snake-boost-self"), "boost 必须消费 presentation effect 帧");
@@ -462,11 +608,26 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
         assert.ok(findNode(host, "label-对手"),
             "identity.otherHuman.nameplate=text：他人必须有世界内名牌");
 
+        // ── 蛇变短时绘制量必须跟着缩 ─────────────────────────────────────────────────
+        // ⚠ 删掉「逐帧把尾部顶点清零」之后，这是唯一的收缩机制：靠 subarray 长度 + onGeometryChanged
+        // 把 InputAssembler 的 indexCount 调下来。⛔ 少任何一环，变短的蛇都会拖着上一帧的残影。
+        const vertsWhenLong = bodyModel?.mesh?.lastVertexCount ?? 0;
+        presentation.render(snakeFrame(2, 8) as never, activeHud as never, null);
+        const vertsWhenShort = bodyModel?.mesh?.lastVertexCount ?? 0;
+        assert.ok(vertsWhenShort < vertsWhenLong,
+            `蛇变短后上传顶点数必须下降（长 ${vertsWhenLong} → 短 ${vertsWhenShort}）`);
+        assert.equal(bodyModel?.mesh?.uploads, bodyModel?.geometryNotifications,
+            "收缩帧同样要通知几何变化");
+
+        const bodyMesh = bodyModel?.mesh;
         presentation.render({ ...snakeFrame(2), tick: 23, envelopeTick: 23, seq: 5, snakes: [] } as never,
             { ...activeHud, entries: [], selfAlive: false } as never, null);
         assert.equal(findNode(host, "snake-head-self"), null, "实体从 frame 消失后必须清理 head");
         assert.equal(findNode(host, "snake-tail-self"), null, "实体从 frame 消失后必须清理 tail");
         assert.equal(findNode(host, "snake-mesh-self"), null, "实体从 frame 消失后必须清理 mesh");
+        // ⚠ Node.destroy ⛔ 不回收动态网格持有的 GPU 顶点/索引缓冲（本例容量下约 750KB/条）。
+        // 一局里反复死亡重开、换皮肤都会走这条路径，漏销毁就是持续增长的显存泄漏。
+        assert.equal(bodyMesh?.destroyed, true, "清理 mesh 节点时必须一并销毁动态网格");
 
         const touch = (id: number, x: number, y: number) => ({
             getID: () => id,

@@ -1,64 +1,47 @@
 /** 1030 个常驻食物的单 atlas / 单 material 批渲染；不为单个食物创建 Node。 */
-import { gfx, Material, Mesh, Node, Texture2D, UIMeshRenderer, utils } from "cc";
+import { Material, Mesh, MeshRenderer, Node, Texture2D } from "cc";
 import type { ISnakeSnapshotFood } from "../../../shared/index";
 import { SNAKE_RULESET } from "../../../shared/gameplays/snake/ruleset";
 import { SNAKE_ENTITY_PRESENTATION_CATALOG, type FrameDefinition } from "../../../logic/rooms/snake/SnakePresentationCatalog";
-
-const VERTICES_PER_QUAD = 4;
-const INDICES_PER_QUAD = 6;
-
-function flushMesh(mesh: Mesh): void {
-    const sub = (mesh as unknown as { subMeshes?: Array<{ update?: () => void }> }).subMeshes?.[0];
-    if (sub && typeof sub.update === "function") sub.update();
-    else (mesh as unknown as { updateSubMesh?: (index: number) => void }).updateSubMesh?.(0);
-}
+import {
+    allocateQuadBuffers,
+    attachQuadMesh,
+    createQuadMaterial,
+    createQuadMesh,
+    uploadQuads,
+    type QuadBuffers,
+} from "./snakeQuadMesh";
 
 export class SnakeFoodMeshRenderer {
     private readonly node: Node;
     private readonly mesh: Mesh;
-    private readonly positions: Float32Array;
-    private readonly uvs: Float32Array;
-    private readonly colors: Float32Array;
+    private readonly material: Material;
+    private readonly model: MeshRenderer;
+    private readonly buffers: QuadBuffers;
     private failed = false;
 
     constructor(parent: Node, uiLayer: number, private readonly texture: Texture2D) {
         const capacity = SNAKE_RULESET.snapshotMaxFoods;
-        this.positions = new Float32Array(capacity * VERTICES_PER_QUAD * 3);
-        this.uvs = new Float32Array(capacity * VERTICES_PER_QUAD * 2);
-        this.colors = new Float32Array(capacity * VERTICES_PER_QUAD * 4);
-        const indices = new Uint16Array(capacity * INDICES_PER_QUAD);
-        for (let index = 0; index < capacity; index += 1) {
-            const vertex = index * VERTICES_PER_QUAD;
-            indices.set([vertex, vertex + 1, vertex + 2, vertex + 2, vertex + 1, vertex + 3],
-                index * INDICES_PER_QUAD);
-        }
-        this.mesh = utils.createMesh({
-            attributes: [
-                new gfx.Attribute(gfx.AttributeName.ATTR_POSITION, gfx.Format.RGB32F),
-                new gfx.Attribute(gfx.AttributeName.ATTR_TEX_COORD, gfx.Format.RG32F),
-                new gfx.Attribute(gfx.AttributeName.ATTR_COLOR, gfx.Format.RGBA32F),
-            ],
-            positions: this.positions,
-            uvs: this.uvs,
-            colors: this.colors,
-            indices,
-        });
+        this.buffers = allocateQuadBuffers(capacity);
+        this.mesh = createQuadMesh(this.buffers, capacity);
+        this.material = createQuadMaterial(texture);
         this.node = new Node("snake-food-batch");
         this.node.layer = uiLayer;
+        // ⚠ 先入场景再挂组件：UIMeshRenderer 的 onLoad 只查一次 ModelRenderer，见 snakeQuadMesh 文件头。
         parent.addChild(this.node);
-        const renderer = this.node.addComponent(UIMeshRenderer);
-        (renderer as unknown as { mesh?: unknown }).mesh = this.mesh;
-        const material = new Material();
-        material.initialize({ effectName: "builtin-ui", defines: { USE_TEXTURE: true } });
-        material.setProperty("mainTexture", texture);
-        (renderer as unknown as { material?: unknown }).material = material;
+        this.model = attachQuadMesh(this.node, this.mesh, this.material);
     }
 
     get available(): boolean { return !this.failed; }
     get batchNodeCount(): 1 { return 1; }
 
     render(foods: readonly ISnakeSnapshotFood[]): boolean {
-        if (this.failed || foods.length > SNAKE_RULESET.snapshotMaxFoods) return false;
+        if (this.failed) return false;
+        if (foods.length > SNAKE_RULESET.snapshotMaxFoods) {
+            // ⚠ 必须先熄灭本批：调用方接到 false 会改用 Graphics 全量补画，留着上一帧的四边形会重影。
+            this.node.active = false;
+            return false;
+        }
         try {
             let vertex = 0;
             for (const food of foods) {
@@ -68,15 +51,8 @@ export class SnakeFoodMeshRenderer {
                 if (!presentation) throw new Error(`missing food presentation kind=${food.kind} variant=${food.variant}`);
                 vertex = this.writeQuad(vertex, food.x, food.y, presentation.displaySize, presentation.frame);
             }
-            const capacityVertices = SNAKE_RULESET.snapshotMaxFoods * VERTICES_PER_QUAD;
-            for (let index = vertex; index < capacityVertices; index += 1) {
-                this.positions[index * 3] = 0;
-                this.positions[index * 3 + 1] = 0;
-                this.positions[index * 3 + 2] = 0;
-                this.colors[index * 4 + 3] = 0;
-            }
             this.node.active = foods.length > 0;
-            flushMesh(this.mesh);
+            uploadQuads(this.model, this.mesh, this.buffers, foods.length);
             return true;
         } catch (error) {
             console.warn("[snake] food atlas batch failed; using graphics fallback", error);
@@ -86,7 +62,12 @@ export class SnakeFoodMeshRenderer {
         }
     }
 
-    dispose(): void { this.node.destroy(); }
+    dispose(): void {
+        this.node.destroy();
+        // ⚠ Node.destroy 不回收网格与材质持有的 GPU 缓冲；每次 mount 都会重建本渲染器。
+        this.mesh.destroy();
+        this.material.destroy();
+    }
 
     private writeQuad(vertex: number, x: number, y: number, displaySize: number, frame: FrameDefinition): number {
         const half = displaySize / 2;
@@ -102,9 +83,9 @@ export class SnakeFoodMeshRenderer {
     }
 
     private writeVertex(vertex: number, x: number, y: number, u: number, v: number): number {
-        this.positions.set([x, y, 0], vertex * 3);
-        this.uvs.set([u, v], vertex * 2);
-        this.colors.set([1, 1, 1, 1], vertex * 4);
+        this.buffers.positions.set([x, y, 0], vertex * 3);
+        this.buffers.uvs.set([u, v], vertex * 2);
+        this.buffers.colors.set([1, 1, 1, 1], vertex * 4);
         return vertex + 1;
     }
 }
