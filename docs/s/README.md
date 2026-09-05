@@ -298,7 +298,7 @@ shared 继续保持零依赖，客户端 View/Logic 与 FairyGUI 动态加载边
 | 步 | 内容 | 退出门 |
 |---|---|---|
 | S3-1 | ✅ **已完成**：`core.mjs` 新增 `SNAKE_S3_DEMO_BUSINESS` 16 行 → `--write` 重生；validator 放开 rarity/acquisition/fragmentThreshold/saleState 的 approved 分支（`ownershipItemId`/`fragmentItemId`/`price` 继续 fail-closed）；hash 守卫由「必须等于 S1 值」改为「必须不同于 S1 值」。⚠ `SNAKE_SKIN_COSMETIC_WRITES_ENABLED` **有意不翻转**，留到写路径落地的 S3-2/S3-3 | 服务端 `snake-s1-assets` 7/7；`evidence/s1` `shasum -c` 29/29；新 hash `b851e345…9d2c` 已回写 §8 |
-| S3-2 | 新建 `rooms/modes/snake/cosmeticProfile.ts`：模块级 `Map<uid, profile>` + `HMGET` 回灌 + 单条 `HSET` best-effort。⚠ 读函数必须返回**深拷贝**；⛔ 本步只写三个 cosmetic field，`coinBalance` 的合并留到 S4（提前合并会造出新的覆盖窗口） | 单测覆盖默认值 / 损坏 JSON / 未拥有 / 碎片边界 / 重复操作 / 返回副本 |
+| S3-2 | ✅ **已完成**：新建 `rooms/modes/snake/cosmeticProfile.ts`（模块级 `Map<uid, profile>` + 白名单 `HMGET` 回灌 + 单条 `HSET` best-effort，读函数深拷贝，只写三个 cosmetic field）；碎片皮肤与门槛由业务目录派生 `SNAKE_FRAGMENT_SKIN_THRESHOLDS`，⛔ 不另处硬编码 | `snake-cosmetic-profile` 12/12（默认值 / 深拷贝 / 回灌一次性 / 五类损坏输入 / Redis 读写失败 / 未拥有 / 碎片边界 / 重复操作 / 镜像不含 `coinBalance` / 跨房间共享）；`verify:all` exit 0（client 427/427、server 560/560） |
 | S3-3 | **同批**新建域 descriptor + 向量 sidecar + 三个 ws 端点；跑 `codegen:features` → `protocol-fingerprint.mjs --write`。⛔ 按 §9.1-A：请求**不含** `catalogHash` | 服务端可启动；lobbyRpc 契约与向量测试全绿 |
 | S3-4 | mode 接入：经 `SnakeGameModeOptions.runSkinResolver` 注入「读 uid → profile」的 resolver，校验存在且已拥有，非法回退皮肤 1，run 内锁存；⛔ 不碰 `GameMode` / `GameRoom` | join 自报皮肤无效；run 中换装不改当前蛇的 fixture |
 | S3-5 | 客户端衣柜 feature（首版取 `kind: "cocos"` 纯节点页——仓内没有衣柜 FGUI 包）+ feature 登记；再跑 `codegen:features` + `sync:shared` | `test:client` / `test:fgui` 绿 |
