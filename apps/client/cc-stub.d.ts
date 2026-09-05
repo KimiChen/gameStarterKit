@@ -42,7 +42,9 @@ declare module "cc" {
 
     export class Texture2D { width: number; height: number; }
     export class JsonAsset { json: unknown; }
-    export class SpriteFrame { texture: Texture2D | null; rect: Rect; }
+    export class SpriteFrame { texture: Texture2D | null; rect: Rect; rotated: boolean;
+        /** ⚠ 引擎侧只有 getter：赋值会抛 TypeError，故声明为 readonly 让 typecheck 拦下。 */
+        readonly pivot: Vec2; }
     export class Sprite extends Component {
         spriteFrame: SpriteFrame | null; color: Color; sizeMode: number; type: number;
         static SizeMode: { CUSTOM: number; TRIMMED: number; RAW: number };
