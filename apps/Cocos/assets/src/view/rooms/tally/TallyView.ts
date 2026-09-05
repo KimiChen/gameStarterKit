@@ -122,6 +122,8 @@ export class TallyView implements TallyPresentation {
         const label = node.addComponent(Label);
         label.string = text;
         label.fontSize = size;
+        // 缺省 lineHeight 是 40：TAP 按钮字号 ≈47 时上下被裁（Creator 预览实测），行高必须跟随字号。
+        label.lineHeight = size;
         label.color = color;
         if (align === "left") {
             const transform = node.getComponent(UITransform);

@@ -82,7 +82,9 @@ class FakeUITransform { width = 0; height = 0; anchorX = 0.5; anchorY = 0.5; }
 class FakeLabel {
   static HorizontalAlign = { LEFT: 0, CENTER: 1, RIGHT: 2 };
   static VerticalAlign = { TOP: 0, CENTER: 1, BOTTOM: 2 };
+  static Overflow = { NONE: 0, CLAMP: 1, SHRINK: 2, RESIZE_HEIGHT: 3 };
   string = ""; fontSize = 0; color: unknown = null; horizontalAlign = 1; verticalAlign = 0;
+  lineHeight = 40; overflow = 0; enableWrapText = true;
 }
 class FakeGraphics {
   fillColor: unknown = null;
