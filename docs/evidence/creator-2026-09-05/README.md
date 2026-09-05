@@ -60,6 +60,15 @@ GameplayModule.ts 注释里所说的「controller.stop → 恢复已登录 Home 
 同一条 `requestExit("settled")`，此前从未在真实引擎跑到这一步。修法：AppRuntime 的 controllerBridge.requestStop
 在 stop 完成后（会话代未变、未 dispose、已登录且登记过 base）`navigation.restoreAuthenticatedBase({userId,user})`。
 
+## 重放（同日晚些）：驱动脚本入仓
+
+上面两轮用的临时 CDP 脚本已整理为 [tools/creator-preview/](../../../tools/creator-preview/README.md)（定位改为按节点/文本，
+唯一坐标兜底是登录按钮且报告里会标注）。`node tools/creator-preview/run.mjs all --out docs/evidence/creator-2026-09-05/replay`
+在同一 Creator/Chrome/本地栈上一次跑通 15 步（约 35 s，含场景加载），产物见 [replay/](replay/)：`01`～`10` 截图 +
+[`report.json`](replay/report.json)（每步判据、读到的文本、点击坐标；页面 console 无 error）。兑换结果是
+`already-claimed`（同一 dev 账号 `WELCOME2026` 已在第一轮用掉，属预期）；tally 10 次判胜后回到首屏「已登记玩法 6」，
+即上文第 4 处缺陷修复后的状态。⛔ 该生成器不进 verify:core；进门禁的只有其纯函数钉 `apps/server/test/creator-preview-tool.test.ts`。
+
 ## 未闭合
 
 - B4 的取消回滚 / 输入租约 / 跨包资源，B6 的 uuid 往返自检：仍归 plan-v5 B 表。
