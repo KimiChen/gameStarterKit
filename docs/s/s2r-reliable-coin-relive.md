@@ -10,7 +10,7 @@
 | 状态 | `[已完成]` |
 | 实现范围 | 开发环境中的 demo 金币余额、扣费复活、余额展示与 Redis best-effort 写入 |
 | 前置依赖 | S2 已交付的个人 run、死亡选择窗、五档费用和同步 `ReliveEconomyPort` |
-| 玩法版本 | `snake@3` |
+| 玩法版本 | `snake@3`（S2R 落地时点；`f2639ae` 因 state 枚举归属重构把 `modeVersion` 递增为 **4**，玩法规则不变。⛔ 不要据本行判断当前运行时版本） |
 | 发布门禁 | `onlineCoinRelive5V1` 保持关闭；本实现不具备生产金币链路的发布资格 |
 
 本阶段按 2026-09-03 用户决策收敛为 demo。它只验证“死亡后按余额选择金币复活”的完整演示动线，
@@ -19,7 +19,7 @@
 ## 冻结决策
 
 1. 不新建 `snake_player_run`，也不新增或修改任何 MySQL 表。
-2. 用户余额只写 Redis 逻辑 key `snake:user:{uid}`，类型为 HASH，唯一 field 是 `coinBalance`。
+2. 用户余额只写 Redis 逻辑 key `gp:snake:user:{uid}`，类型为 HASH，唯一 field 是 `coinBalance`。
 3. 该 key 只按 `uid` 标识账号，不增加 `sId`；`keys.ts` 仍按仓库约定添加项目级
    `<PROJECT_ID>_` 前缀，但不会添加区服前缀。
 4. 不修改 `apps/server/src/rooms/GameMode.ts` 和 `apps/server/src/rooms/GameRoom.ts`。
@@ -33,8 +33,8 @@
 唯一新增 Redis 数据如下：
 
 ```text
-logical key: snake:user:{uid}
-physical key: <PROJECT_ID>_snake:user:{uid}
+logical key: gp:snake:user:{uid}
+physical key: <PROJECT_ID>_gp:snake:user:{uid}
 type: HASH
 field: coinBalance
 value: 非负安全整数的十进制字符串
@@ -44,7 +44,7 @@ TTL: 无
 示例：
 
 ```text
-HSET gono_snake:user:{user-42} coinBalance 9700
+HSET gono_gp:snake:user:{user-42} coinBalance 9700
 ```
 
 禁止向这个 HASH 写入 `sId`、run、death、request、receipt、状态或时间戳字段。业务身份来自认证后的
@@ -67,7 +67,7 @@ HSET gono_snake:user:{user-42} coinBalance 9700
   -> 按 100 / 200 / 300 / 300 / 300 检查进程内余额
   -> 余额不足：保留选择窗并返回当前余额
   -> 余额足够：同步扣减、确认复活并更新玩家 coinBalance
-  -> fire-and-forget HSET snake:user:{uid} coinBalance <余额>
+  -> fire-and-forget HSET gp:snake:user:{uid} coinBalance <余额>
   -> Redis 失败：记录 warning，玩法结果保持成功
 ```
 
@@ -91,7 +91,7 @@ HSET gono_snake:user:{user-42} coinBalance 9700
 
 | 内容 | 真源 |
 |---|---|
-| Redis key | `apps/server/src/core/infra/keys.ts` 的 `kSnakeUser(uid)` |
+| Redis key | `apps/server/src/rooms/modes/snake/keys.ts` 的 `kSnakeUser(uid)` = `kGameplay("snake", "user", uid, { zone: "global" })`；中央 `apps/server/src/core/infra/keys.ts` 只提供 `kGameplay` 工厂与分段契约，⛔ 玩法名不进该文件（`e8455f0` 搬家，S2R 落地时的旧位置已失效） |
 | demo economy | `apps/server/src/rooms/modes/snake/lifecycle.ts` 的 `RedisDemoReliveEconomy` |
 | Snake 接入 | `apps/server/src/rooms/modes/snake/index.ts` |
 | schema | `apps/shared/schema/gameplays/snake/{manifest.json,state.json}` |
