@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { checkInstalledPlugins } from "../tools/plugin/check";
 import { parseCli } from "../tools/plugin/cli";
-import { installPlugin, nextStepsFor, reinstallFromTree } from "../tools/plugin/install";
+import { allowDeleteFor, installPlugin, nextStepsFor, reinstallFromTree, runCommand, type CommandRunner } from "../tools/plugin/install";
 import { readInstalledLock, renderFilesLock, sha256 } from "../tools/plugin/lock";
 import { compareVersions, parsePluginManifest } from "../tools/plugin/manifest";
 import {
@@ -763,6 +763,132 @@ test("PLUGIN-REGISTRY §1-4：互为前缀的两个插件共存——各自升�
     assert.throws(() => packPlugin({ root: target, id: "chamber", outFile: path.join(target, "out/x.zip") }), /与其它已安装插件的锁重叠[\s\S]*属于插件 chamberBoard/u);
   } finally {
     cleanup(authorA, authorB, target);
+  }
+});
+
+/** 只拦 npm（codegen / sync），git 照常执行：postinstall 失败与参数断言都靠它。 */
+function fakeRunner(onNpm: (args: readonly string[], root: string) => void): CommandRunner {
+  return (root, command, args, env) => {
+    if (command === "npm") {
+      onNpm(args, root);
+      return;
+    }
+    runCommand(root, command, args, env);
+  };
+}
+
+test("PLUGIN-REGISTRY §1-1：postinstall 失败即回滚——无 git：文件与锁按落盘前字节复原；有 git：索引同步、生成物只回退本次新变脏的部分", () => {
+  const { author, target } = makeFixture("1.0.0");
+  const gitTarget = makeRoot();
+  try {
+    const v1 = path.join(author, "out/v1.zip");
+    packPlugin({ root: author, id: "chamber", outFile: v1 });
+    // 无 git：codegen 抛错 → 树上不留任何插件文件、锁、plugins/<id>。
+    const boom = fakeRunner((args) => {
+      if (args.includes("codegen:features")) throw new Error("route id 重复：chamber（模拟跨插件冲突）");
+    });
+    assert.throws(() => installPlugin({ root: target, source: v1, git: false, runner: boom }), /postinstall 失败，已回滚到安装前[\s\S]*route id 重复/u);
+    for (const relative of ["features/chamber/feature.json", "apps/server/src/core/chamber/keys.ts", "scripts/plugins/chamber.lock", "plugins/chamber/plugin.json", "apps/Cocos/assets/src/features/chamber.meta"]) {
+      assert.ok(!fs.existsSync(path.join(target, relative)), `回滚后不得残留：${relative}`);
+    }
+    assert.ok(!fs.existsSync(path.join(target, "apps/Cocos/assets/src/features/chamber")), "空目录也清掉");
+    // 回滚后同一包可以直接重装（不再「受影响路径不干净」）。
+    assert.doesNotThrow(() => installPlugin({ root: target, source: v1, git: false, postinstall: false }));
+
+    // 有 git：基线里有一个已跟踪的生成物与一个用户 WIP 改过的生成物；失败的 codegen 改了前者、新建了一个未跟踪生成物。
+    write(gitTarget, "apps/client/src/generated/features.generated.ts", "// generated baseline\n");
+    write(gitTarget, "apps/client/src/generated/wip.generated.ts", "// wip baseline\n");
+    gitInit(gitTarget);
+    fs.writeFileSync(path.join(gitTarget, "apps/client/src/generated/wip.generated.ts"), "// user WIP, must survive\n");
+    const wipStatus = gitPorcelain(gitTarget);
+    assert.match(wipStatus, /wip\.generated\.ts/u);
+    const boomGit = fakeRunner((args, root) => {
+      if (!args.includes("codegen:features")) return;
+      write(root, "apps/client/src/generated/features.generated.ts", "// half-written by failing codegen\n");
+      write(root, "apps/shared/src/protocol/lobbyRpc/registry.generated.ts", "// new generated file\n");
+      throw new Error("模拟 codegen 写到一半失败");
+    });
+    assert.throws(() => installPlugin({ root: gitTarget, source: v1, git: true, runner: boomGit }), /已回滚到安装前[\s\S]*生成物回退 2 项/u);
+    assert.equal(gitPorcelain(gitTarget), wipStatus, "回滚后 git 状态与安装前逐字相同（用户 WIP 原样留下，其余干净）");
+    assert.equal(fs.readFileSync(path.join(gitTarget, "apps/client/src/generated/features.generated.ts"), "utf8"), "// generated baseline\n");
+    assert.ok(!fs.existsSync(path.join(gitTarget, "apps/shared/src/protocol/lobbyRpc/registry.generated.ts")));
+    assert.ok(!fs.existsSync(path.join(gitTarget, "scripts/plugins/chamber.lock")));
+  } finally {
+    cleanup(author, target, gitTarget);
+  }
+});
+
+test("PLUGIN-REGISTRY §1-2：升级删掉域 / View / kind 时 postinstall 以显式 --allow-delete 交给 codegen（并集 kinds 都跑）", () => {
+  const { author, target } = makeFixture("1.0.0");
+  try {
+    const v1 = path.join(author, "out/v1.zip");
+    packPlugin({ root: author, id: "chamber", outFile: v1 });
+    installPlugin({ root: target, source: v1, git: false, postinstall: false });
+
+    // v2：去掉 chamber 域（descriptor / 端点 / 向量都不在包里）、View 改名 ChamberView → ChamberPanelView。
+    const manifestFile = path.join(author, "plugins/chamber/plugin.json");
+    fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.1.0"').replace('"domains": [\n    "chamber"\n  ]', '"domains": []'));
+    assert.deepEqual(JSON.parse(fs.readFileSync(manifestFile, "utf8")).domains, [], "fixture 自检：domains 已清空");
+    for (const relative of ["apps/shared/src/protocol/lobbyRpc/domains/chamber.ts", "apps/server/src/websocket/chamber/peek.ts", "apps/server/test/lobbyRpcVectors/chamber.ts"]) {
+      fs.rmSync(path.join(author, relative));
+    }
+    const featureFile = path.join(author, "features/chamber/feature.json");
+    fs.writeFileSync(featureFile, fs.readFileSync(featureFile, "utf8").replaceAll("ChamberView", "ChamberPanelView").replace('"view": "Chamber"', '"view": "ChamberPanel"'));
+    for (const base of ["apps/client/src/features/chamber/view", "apps/Cocos/assets/src/features/chamber/view"]) {
+      for (const suffix of [".ts", ".view.json"]) {
+        fs.renameSync(path.join(author, `${base}/ChamberView${suffix}`), path.join(author, `${base}/ChamberPanelView${suffix}`));
+      }
+      if (base.startsWith("apps/Cocos")) {
+        for (const suffix of [".ts", ".view.json"]) fs.renameSync(path.join(author, `${base}/ChamberView${suffix}.meta`), path.join(author, `${base}/ChamberPanelView${suffix}.meta`));
+      }
+    }
+    const v2 = path.join(author, "out/v2.zip");
+    packPlugin({ root: author, id: "chamber", outFile: v2 });
+
+    const calls: string[][] = [];
+    const recorder = fakeRunner((args) => { calls.push([...args]); });
+    const dry = installPlugin({ root: target, source: v2, git: false, dryRun: true, runner: recorder });
+    assert.deepEqual(dry.allowDelete, { gameplays: [], features: ["Chamber", "chamber"] }, "dry-run 就报告删除面");
+    const report = installPlugin({ root: target, source: v2, git: false, runner: recorder });
+    assert.deepEqual(report.allowDelete, { gameplays: [], features: ["Chamber", "chamber"] });
+    const features = calls.find((args) => args.includes("codegen:features"));
+    assert.ok(features, "跑了 codegen:features");
+    assert.deepEqual(features.slice(features.indexOf("--") + 1), ["--allow-delete", "Chamber", "--allow-delete", "chamber"]);
+    assert.ok(!calls.some((args) => args.includes("codegen:gameplays")), "纯 feature 插件不跑 gameplay codegen");
+    assert.ok(calls.some((args) => args.includes("sync:shared")));
+    assert.ok(readInstalledLock(target, "chamber")?.entries.some((entry) => entry.path.endsWith("ChamberPanelView.ts")));
+
+    // 首装无删除面；再装同版本（幂等）也无删除面。
+    const again = installPlugin({ root: target, source: v2, git: false, postinstall: false });
+    assert.deepEqual(again.allowDelete, { gameplays: [], features: [] });
+  } finally {
+    cleanup(author, target);
+  }
+});
+
+test("allowDeleteFor：去掉 gameplay kind ⇒ codegen:gameplays --allow-delete <id>；去掉 feature kind ⇒ feature id + 全部域 + 全部 View", () => {
+  const both = parsePluginManifest({ schemaVersion: 1, id: "puzzle", version: "1.0.0", kinds: ["gameplay", "feature"], constantName: "Puzzle", domains: ["puzzle"], requires: { featureSchemaVersion: 1, gameplaySchemaVersion: 1 } });
+  const featureOnly = parsePluginManifest({ schemaVersion: 1, id: "puzzle", version: "1.1.0", kinds: ["feature"], domains: ["puzzle"], requires: { featureSchemaVersion: 1 } });
+  const gameplayOnly = parsePluginManifest({ schemaVersion: 1, id: "puzzle", version: "1.2.0", kinds: ["gameplay"], constantName: "Puzzle", requires: { gameplaySchemaVersion: 1 } });
+  assert.deepEqual(allowDeleteFor({ manifest: both, viewNames: ["PuzzleWorld"] }, { manifest: featureOnly, viewNames: ["PuzzleWorld"] }), { gameplays: ["puzzle"], features: [] });
+  assert.deepEqual(allowDeleteFor({ manifest: both, viewNames: ["PuzzleWorld"] }, { manifest: gameplayOnly, viewNames: [] }), { gameplays: [], features: ["PuzzleWorld", "puzzle"] });
+  assert.deepEqual(allowDeleteFor({ manifest: both, viewNames: ["A", "B"] }, { manifest: both, viewNames: ["B"] }), { gameplays: [], features: ["A"] });
+});
+
+test("PLUGIN-REGISTRY §1-1 附带：uninstall 后未提交（索引里是暂存删除）即可重装，不再被「受影响路径不干净」拦住", () => {
+  const { author, target } = makeFixture("1.0.0");
+  try {
+    gitInit(target);
+    const v1 = path.join(author, "out/v1.zip");
+    packPlugin({ root: author, id: "chamber", outFile: v1 });
+    installPlugin({ root: target, source: v1, git: true, postinstall: false });
+    spawnSync("git", ["-c", "user.name=f", "-c", "user.email=f@example.invalid", "commit", "-q", "-m", "install chamber"], { cwd: target });
+    uninstallPlugin({ root: target, id: "chamber", git: true, postinstall: false });
+    assert.match(gitPorcelain(target), /^D  /mu, "卸载后是暂存删除");
+    assert.doesNotThrow(() => installPlugin({ root: target, source: v1, git: true, postinstall: false }));
+    assert.equal(gitPorcelain(target), "", "重装同一包后索引与 HEAD 一致");
+  } finally {
+    cleanup(author, target);
   }
 });
 

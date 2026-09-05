@@ -127,6 +127,11 @@ export function parseCli(argv: readonly string[]): PluginCliArguments {
   throw new Error(USAGE);
 }
 
+function printAllowDelete(allowDelete: { readonly gameplays: readonly string[]; readonly features: readonly string[] }): void {
+  if (allowDelete.gameplays.length + allowDelete.features.length === 0) return;
+  console.log(`[plugin]   升级删除面 → codegen --allow-delete：gameplays ${allowDelete.gameplays.join(", ") || "-"}；features ${allowDelete.features.join(", ") || "-"}`);
+}
+
 export function runCli(args: PluginCliArguments): number {
   if (args.command === "pack") {
     const result = packPlugin({ root: args.root, id: args.id, ...(args.outFile ? { outFile: args.outFile } : {}), ...(args.outDir ? { outDir: args.outDir } : {}) });
@@ -139,6 +144,7 @@ export function runCli(args: PluginCliArguments): number {
     const verb = report.previousVersion ? `upgraded ${report.previousVersion} → ${report.version}` : `installed ${report.version}`;
     console.log(`[plugin] ${args.dryRun ? "(dry-run) " : ""}${report.id}: ${verb}; written ${report.written.length}, unchanged ${report.unchanged.length}, deleted ${report.deleted.length}`);
     for (const relative of report.deleted) console.log(`[plugin]   deleted ${relative}`);
+    printAllowDelete(report.allowDelete);
     console.log("[plugin] 下一步（人工）：");
     for (const step of report.nextSteps) console.log(`[plugin]   - ${step}`);
     return 0;
@@ -150,6 +156,7 @@ export function runCli(args: PluginCliArguments): number {
     for (const relative of adopted.changed) console.log(`[plugin]   changed ${relative}`);
     for (const relative of adopted.added) console.log(`[plugin]   added ${relative}`);
     for (const relative of report.deleted) console.log(`[plugin]   deleted ${relative}`);
+    printAllowDelete(report.allowDelete);
     console.log("[plugin] 下一步（人工）：");
     for (const step of report.nextSteps) console.log(`[plugin]   - ${step}`);
     return 0;

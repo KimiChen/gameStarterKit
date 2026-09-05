@@ -5,7 +5,10 @@
  *    旧锁有、新包无 ⇒ 按清单删除（陈旧文件不残留）；
  *  - 写盘前工作树受影响路径必须干净（git status），失败前不碰工作树；
  *  - 落盘后写 scripts/plugins/<id>.lock、git add，再跑 codegen:gameplays / codegen:features / sync:shared；
- *    协议指纹与 FGUI manifest 的重钉是人的决策（⛔ 脚本不隐式 --write），只打印下一步。
+ *    协议指纹与 FGUI manifest 的重钉是人的决策（⛔ 脚本不隐式 --write），只打印下一步；
+ *  - postinstall（codegen / sync）失败 ⇒ **精确回滚**：本次写入/删除的插件文件与锁按落盘前字节复原、git 索引同步、
+ *    生成物路径里「本次新变脏」的部分 restore/删除——树回到安装前，⛔ 不留「文件已写、锁已写、生成物过期」的半安装态
+ *    （PLUGIN-REGISTRY §1-1）；升级删掉的域 / View / feature / gameplay 以显式 --allow-delete 交给 codegen（§1-2）。
  *  - `install --reinstall-from-tree <id>`（plan-v5 E6 方案 ②）：同仓「作者=宿主」迭代——以工作树为真相
  *    重写已安装锁，等价于「pack 当前树 → install 该包」但不要求树≡旧锁；版本规则原样保留。
  */
@@ -17,7 +20,18 @@ import { compareVersions, identityDifferences } from "./manifest";
 import { INSTALLED_LOCK_DIR, foreignLockOwners, readInstalledLock, verifyLockAgainstTree, writeInstalledLock, type LockEntry } from "./lock";
 import { packPlugin } from "./pack";
 import { assertInstalledLockOwned, readPackage, validatePackage, type ValidatedPackage } from "./package";
-import { matchesPrefixRule, mirrorPathOf, type OwnershipRule } from "./ownership";
+import { matchesPrefixRule, mirrorPathOf, readGeneratedWriterPaths, type OwnershipRule } from "./ownership";
+import { featureDeclarations } from "./package";
+import type { PluginManifest } from "./manifest";
+
+/** 外部命令执行器（npm / git）；测试 fixture 用它替换掉真实的 codegen/sync 以模拟 postinstall 失败与参数断言。 */
+export type CommandRunner = (root: string, command: string, args: readonly string[], env?: NodeJS.ProcessEnv) => void;
+
+/** 升级删除面：交给两个 codegen 的显式 --allow-delete 集合（uninstall 同口径）。 */
+export interface AllowDelete {
+  readonly gameplays: readonly string[];
+  readonly features: readonly string[];
+}
 
 export interface InstallOptions {
   readonly root: string;
@@ -28,6 +42,8 @@ export interface InstallOptions {
   /** 缺省 true：落盘后跑 codegen 与 sync:shared。 */
   readonly postinstall?: boolean;
   readonly dryRun?: boolean;
+  /** 测试接缝：替换 postinstall 里的 npm/git 调用（缺省 runCommand）。 */
+  readonly runner?: CommandRunner;
 }
 
 export interface InstallReport {
@@ -38,6 +54,8 @@ export interface InstallReport {
   readonly unchanged: readonly string[];
   readonly deleted: readonly string[];
   readonly nextSteps: readonly string[];
+  /** 升级时交给 codegen 的显式删除面（首装为空）。 */
+  readonly allowDelete: AllowDelete;
   /** 仅 --reinstall-from-tree：被锁吸收的树上改动（新增 / 内容变化），文件本身不被写。 */
   readonly adopted?: { readonly added: readonly string[]; readonly changed: readonly string[] };
 }
@@ -53,6 +71,7 @@ export interface ReinstallFromTreeOptions {
   readonly allowIdentityChange?: boolean;
   /** 把「git 已跟踪但不在旧锁」的推导集内文件吸收进锁（缺省视为框架文件而拒绝）。 */
   readonly adoptTracked?: boolean;
+  readonly runner?: CommandRunner;
 }
 
 function fail(message: string): never {
@@ -64,16 +83,140 @@ function sameEntries(left: readonly LockEntry[], right: readonly LockEntry[]): b
     && left.every((entry, index) => entry.path === right[index].path && entry.sha256 === right[index].sha256);
 }
 
-function runPostinstall(root: string, kinds: readonly string[], useGit: boolean): void {
-  if (kinds.includes("gameplay")) runCommand(root, "npm", ["--workspace", "@game/server", "run", "codegen:gameplays"]);
-  if (kinds.includes("feature")) runCommand(root, "npm", ["--workspace", "@game/server", "run", "codegen:features"]);
-  runCommand(root, "npm", ["run", "sync:shared"]);
+const NO_DELETE: AllowDelete = { gameplays: [], features: [] };
+
+/**
+ * codegen（按新旧 kinds 的并集跑：升级去掉某个 kind 时对应 codegen 仍要跑一次来收缩）→ sync:shared → git add。
+ * 删除面以显式 --allow-delete 交给 codegen；成批删除时 SYNC_FORCE=1 放行 sync 熔断（与 uninstall 同口径）。
+ */
+function runPostinstall(root: string, kinds: readonly string[], useGit: boolean, allowDelete: AllowDelete, run: CommandRunner): void {
+  const withAllowDelete = (script: string, ids: readonly string[]): readonly string[] => {
+    const extra = ids.flatMap((id) => ["--allow-delete", id]);
+    return ["--workspace", "@game/server", "run", script, ...(extra.length > 0 ? ["--", ...extra] : [])];
+  };
+  if (kinds.includes("gameplay")) run(root, "npm", withAllowDelete("codegen:gameplays", allowDelete.gameplays));
+  if (kinds.includes("feature")) run(root, "npm", withAllowDelete("codegen:features", allowDelete.features));
+  const deleting = allowDelete.gameplays.length + allowDelete.features.length > 0;
+  run(root, "npm", ["run", "sync:shared"], deleting ? { SYNC_FORCE: "1" } : {});
   if (useGit) {
-    runCommand(root, "git", ["add", "-A", "--", "apps/shared/src", "apps/server/src", "apps/client/src", "docs/features.generated.md", "apps/server/test/lobbyRpcVectors", "apps/server/test/wire-vectors"]);
+    run(root, "git", ["add", "-A", "--", "apps/shared/src", "apps/server/src", "apps/client/src", "docs/features.generated.md", "apps/server/test/lobbyRpcVectors", "apps/server/test/wire-vectors"]);
     // Cocos 镜像只暂存已跟踪文件的改动：sync:shared 新建的镜像没有 .meta，暂存它会让 verify:sync 红
     //（.meta 断言只遍历已跟踪文件）；新镜像文件等 Creator 生成 .meta 后再由人 git add（nextSteps）。
-    runCommand(root, "git", ["add", "-u", "--", "apps/Cocos/assets/src"]);
+    run(root, "git", ["add", "-u", "--", "apps/Cocos/assets/src"]);
   }
+}
+
+/** 升级删除面：旧身份/旧 feature.json 有、新包没有的 gameplay / feature / 域 / View（与 uninstall 的 allowDelete 同口径）。 */
+export function allowDeleteFor(
+  previous: { readonly manifest: PluginManifest; readonly viewNames: readonly string[] },
+  next: { readonly manifest: PluginManifest; readonly viewNames: readonly string[] },
+): AllowDelete {
+  const id = previous.manifest.id;
+  const gameplays = previous.manifest.kinds.includes("gameplay") && !next.manifest.kinds.includes("gameplay") ? [id] : [];
+  const features = new Set<string>();
+  if (previous.manifest.kinds.includes("feature")) {
+    const keepsFeature = next.manifest.kinds.includes("feature");
+    if (!keepsFeature) features.add(id);
+    for (const domain of previous.manifest.domains) {
+      if (!keepsFeature || !next.manifest.domains.includes(domain)) features.add(domain);
+    }
+    for (const view of previous.viewNames) {
+      if (!keepsFeature || !next.viewNames.includes(view)) features.add(view);
+    }
+  }
+  return { gameplays, features: [...features].sort() };
+}
+
+/** 树上（升级前）的 feature.json 登记的 View 名；文件不在（旧包没有 feature kind）则为空。 */
+function treeViewNames(root: string, id: string): readonly string[] {
+  const featureFile = path.join(root, `features/${id}/feature.json`);
+  if (!fs.existsSync(featureFile)) return [];
+  return featureDeclarations(new Map([[`features/${id}/feature.json`, fs.readFileSync(featureFile)]]), id).viewNames;
+}
+
+/** 落盘日志：每个被本次安装触碰的路径的落盘前字节（null = 原本不存在），回滚就是按它逐条复原。 */
+interface JournalEntry {
+  readonly path: string;
+  readonly before: Buffer | null;
+}
+
+function snapshot(root: string, relative: string): JournalEntry {
+  const file = path.join(root, relative);
+  return { path: relative, before: fs.existsSync(file) && fs.statSync(file).isFile() ? fs.readFileSync(file) : null };
+}
+
+function restoreJournal(root: string, journal: readonly JournalEntry[]): void {
+  for (const entry of journal) {
+    if (entry.before === null) removeFileAndEmptyDirs(root, entry.path);
+    else atomicWrite(path.join(root, entry.path), entry.before);
+  }
+}
+
+/** `git status --porcelain` 一行 → { status, path }（重命名行取箭头右侧；带引号的路径去引号）。 */
+function parsePorcelain(line: string): { readonly status: string; readonly path: string } {
+  const status = line.slice(0, 2);
+  let rest = line.slice(3);
+  const arrow = rest.indexOf(" -> ");
+  if (arrow !== -1) rest = rest.slice(arrow + 4);
+  if (rest.startsWith('"') && rest.endsWith('"')) rest = JSON.parse(rest) as string;
+  return { status, path: rest };
+}
+
+/** 生成物路径里「本次新变脏」的部分：未跟踪的删掉，已跟踪的 restore 回索引与工作树；之前就脏的原样留下。 */
+function rollbackGenerated(root: string, dirtyBefore: ReadonlySet<string>, run: CommandRunner): readonly string[] {
+  const roots = readGeneratedWriterPaths(root).map((entry) => (entry.endsWith("/**") ? entry.slice(0, -3) : entry));
+  const now = gitStatusDirty(root, roots).filter((line) => !dirtyBefore.has(line));
+  const restored: string[] = [];
+  const tracked: string[] = [];
+  for (const line of now) {
+    const { status, path: relative } = parsePorcelain(line);
+    restored.push(relative);
+    if (status === "??") removeFileAndEmptyDirs(root, relative);
+    else tracked.push(relative);
+  }
+  if (tracked.length > 0) run(root, "git", ["restore", "--staged", "--worktree", "--", ...tracked]);
+  return restored.sort();
+}
+
+/**
+ * 跑 postinstall；失败即回滚到落盘前（插件文件与锁按日志复原、受影响路径的索引重新同步、生成物只回退本次新变脏的部分），
+ * 然后把原错误连同回滚清单一起抛出。⛔ 不留半安装态。
+ */
+function postinstallOrRollback(
+  root: string,
+  kinds: readonly string[],
+  useGit: boolean,
+  allowDelete: AllowDelete,
+  run: CommandRunner,
+  journal: readonly JournalEntry[],
+  affected: readonly string[],
+): void {
+  const generatedRoots = readGeneratedWriterPaths(root).map((entry) => (entry.endsWith("/**") ? entry.slice(0, -3) : entry));
+  const dirtyBefore = new Set(useGit ? gitStatusDirty(root, generatedRoots) : []);
+  try {
+    runPostinstall(root, kinds, useGit, allowDelete, run);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    let restoredGenerated: readonly string[] = [];
+    try {
+      restoreJournal(root, journal);
+      if (useGit) {
+        gitAddExisting(root, affected);
+        restoredGenerated = rollbackGenerated(root, dirtyBefore, run);
+      }
+    } catch (rollbackError) {
+      fail(`postinstall 失败：${message}\n⚠ 回滚也失败（树处于半安装态，请按 git status 手工收拾）：${rollbackError instanceof Error ? rollbackError.message : String(rollbackError)}`);
+    }
+    fail(`postinstall 失败，已回滚到安装前（插件文件 ${journal.length} 项按落盘前字节复原${restoredGenerated.length > 0 ? `，生成物回退 ${restoredGenerated.length} 项：${restoredGenerated.join("、")}` : ""}）：\n${message}`);
+  }
+}
+
+/** 干净检查里可忽略的形态：索引里已暂存删除且工作树也不存在（uninstall 后未提交即重装）——写入它等价于写入干净路径。 */
+function blockingDirty(root: string, lines: readonly string[]): readonly string[] {
+  return lines.filter((line) => {
+    const { status, path: relative } = parsePorcelain(line);
+    return !(status === "D " && !fs.existsSync(path.join(root, relative)));
+  });
 }
 
 export function runCommand(root: string, command: string, args: readonly string[], env: NodeJS.ProcessEnv = {}): void {
@@ -264,9 +407,14 @@ export function installPlugin(options: InstallOptions): InstallReport {
   const stale = [...previousEntries.keys()].filter((relative) => !pkg.files.has(relative));
   const affected = [...pkg.files.keys(), ...stale, path.posix.join(INSTALLED_LOCK_DIR, `${id}.lock`)];
   if (useGit) {
-    const dirty = gitStatusDirty(root, affected);
+    const dirty = blockingDirty(root, gitStatusDirty(root, affected));
     if (dirty.length > 0) fail(`拒绝：受影响路径的工作树不干净（先提交或清理）：\n  ${dirty.join("\n  ")}`);
   }
+  // 升级删除面（旧有新无的域 / View / kind）在覆盖 feature.json 之前从树上读出。
+  const allowDelete = previous
+    ? allowDeleteFor({ manifest: previous.manifest, viewNames: treeViewNames(root, id) }, { manifest, viewNames: pkg.viewNames })
+    : NO_DELETE;
+  const postinstallKinds = [...new Set([...(previous?.manifest.kinds ?? []), ...manifest.kinds])];
 
   const written: string[] = [];
   const unchanged: string[] = [];
@@ -279,6 +427,7 @@ export function installPlugin(options: InstallOptions): InstallReport {
     }
     written.push(relative);
   }
+  const lockRelative = path.posix.join(INSTALLED_LOCK_DIR, `${id}.lock`);
   const base = {
     id,
     version: manifest.version,
@@ -286,16 +435,18 @@ export function installPlugin(options: InstallOptions): InstallReport {
     written: written.sort(),
     unchanged: unchanged.sort(),
     deleted: stale.sort(),
+    allowDelete,
   };
   if (options.dryRun) return { ...base, nextSteps: nextStepsFor(pkg, root) };
 
+  const journal = [...written, ...stale, lockRelative].map((relative) => snapshot(root, relative));
   for (const relative of written) atomicWrite(path.join(root, relative), pkg.files.get(relative) as Buffer);
   for (const relative of stale) removeFileAndEmptyDirs(root, relative);
   writeInstalledLock(root, { manifest, entries: pkg.entries });
 
   if (useGit) gitAddExisting(root, affected);
   if (options.postinstall === false) return { ...base, nextSteps: nextStepsFor(pkg, root) };
-  runPostinstall(root, manifest.kinds, useGit);
+  postinstallOrRollback(root, postinstallKinds, useGit, allowDelete, options.runner ?? runCommand, journal, affected);
   // nextSteps 按 postinstall 的实际结果派生：指纹是否真的过期由 --check 说了算。
   return { ...base, nextSteps: nextStepsFor(pkg, root, { protocolStale: protocolFingerprintStale(root) }) };
 }
@@ -364,6 +515,10 @@ export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallRep
   if (conflicts.length > 0) fail(`拒绝：以下路径在插件 "${id}" 的推导集内却既不在旧锁也不在树上采集结果里（生成物/硬排除混入插件目录？）：\n  ${conflicts.join("\n  ")}`);
 
   const lockRelative = path.posix.join(INSTALLED_LOCK_DIR, `${id}.lock`);
+  // 树就是真相：删除面只能从「旧锁身份 vs 树上身份 / feature.json」推出（树上 feature.json 已是新的，View 删除面无从得知——
+  // 同仓迭代删 View 时作者自己跑 codegen:features -- --allow-delete <View>）。
+  const allowDelete = allowDeleteFor({ manifest: previous.manifest, viewNames: [] }, { manifest, viewNames: pkg.viewNames });
+  const postinstallKinds = [...new Set([...previous.manifest.kinds, ...manifest.kinds])];
   const base = {
     id,
     version: manifest.version,
@@ -371,15 +526,18 @@ export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallRep
     written: [] as readonly string[],
     unchanged: pkg.entries.map((entry) => entry.path).filter((relative) => !added.includes(relative) && !changed.includes(relative)),
     deleted: stale,
+    allowDelete,
     adopted: { added, changed },
   };
   if (options.dryRun) return { ...base, nextSteps: nextStepsFor(pkg, root) };
 
   // 旧锁登记、树上已删的文件：树就是真相，只需把可能残留的空目录清掉（文件已不存在时 removeFileAndEmptyDirs 只清目录）。
+  const journal = [snapshot(root, lockRelative)];
   for (const relative of stale) removeFileAndEmptyDirs(root, relative);
   writeInstalledLock(root, { manifest, entries: pkg.entries });
-  if (useGit) gitAddExisting(root, [...pkg.files.keys(), ...stale, lockRelative]);
+  const affected = [...pkg.files.keys(), ...stale, lockRelative];
+  if (useGit) gitAddExisting(root, affected);
   if (options.postinstall === false) return { ...base, nextSteps: nextStepsFor(pkg, root) };
-  runPostinstall(root, manifest.kinds, useGit);
+  postinstallOrRollback(root, postinstallKinds, useGit, allowDelete, options.runner ?? runCommand, journal, [lockRelative]);
   return { ...base, nextSteps: nextStepsFor(pkg, root, { protocolStale: protocolFingerprintStale(root) }) };
 }

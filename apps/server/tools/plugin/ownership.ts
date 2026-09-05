@@ -264,6 +264,17 @@ export function readProtectedPaths(root: string): readonly string[] {
   ];
 }
 
+/**
+ * 生成物 writer 登记的路径（含 Cocos 镜像；不含插件锁目录）：postinstall 失败回滚时只看这些路径「新变脏」的部分，
+ * ⛔ 不整目录 restore（用户无关的 WIP 必须原样留下）。
+ */
+export function readGeneratedWriterPaths(root: string): readonly string[] {
+  const file = path.join(root, "scripts/protected-paths.json");
+  if (!fs.existsSync(file)) return [];
+  const rules = JSON.parse(fs.readFileSync(file, "utf8")) as ProtectedRules;
+  return (rules.generatedWriterOwned?.entries ?? []).map((entry) => entry.path).filter((entry) => !entry.startsWith("scripts/plugins/"));
+}
+
 function matchesProtected(relative: string, protectedPath: string): boolean {
   if (protectedPath.endsWith("/**")) {
     const dir = protectedPath.slice(0, -3);
