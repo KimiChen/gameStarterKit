@@ -72,6 +72,7 @@
       { "path": "apps/client/src/generated/**", "writer": "npm --workspace @game/server run codegen:features", "autoHeader": true },
       { "path": "docs/features.generated.md", "writer": "npm --workspace @game/server run codegen:features", "autoHeader": true },
       { "path": "apps/server/test/lobbyRpcVectors/index.generated.ts", "writer": "npm --workspace @game/server run codegen:features", "autoHeader": true },
+      { "path": "apps/server/test/wire-vectors/index.generated.ts", "writer": "npm --workspace @game/server run codegen:gameplays", "autoHeader": true },
       { "path": "apps/server/src/http/manifest.generated.ts", "writer": "npm --workspace @game/server run codegen:http", "autoHeader": true },
       { "path": "apps/shared/src/project.ts", "writer": "npm run init:project", "autoHeader": true },
       { "path": "apps/shared/src/gameplays/snake/snakeSkinCatalog.generated.ts", "writer": "node tools/snake-s1-assets/cli.mjs --write", "autoHeader": true },

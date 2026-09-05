@@ -39,6 +39,7 @@ import {
   readClientGameplayModules,
   readCoreWireNames,
   readGameplayDescriptors,
+  readWireVectorOwners,
   readServerGameplayModules,
   renderGameplayArtifacts,
   wireExposedGameplays,
@@ -53,6 +54,11 @@ const SCHEMA_DIR = path.join(REPOSITORY_ROOT, "apps/shared/schema/gameplays");
 
 const SHARED_STATE_DIR = "apps/shared/src/gameplays/generated/state";
 const SERVER_SCHEMA_DIR = "apps/server/src/rooms/schema/generated";
+const WIRE_VECTORS_DIR = "apps/server/test/wire-vectors";
+const WIRE_VECTORS_INDEX = `${WIRE_VECTORS_DIR}/index.generated.ts`;
+/** 真仓玩法 id 全集 = schema 目录发现（⛔ 不硬编码：插件玩法进来不得需要改本测试）。 */
+const EXPECTED_GAMEPLAY_IDS = fs.readdirSync(SCHEMA_DIR, { withFileTypes: true })
+  .filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
 const SHARED_CATALOG = "apps/shared/src/gameplays/catalog.generated.ts";
 const SHARED_INDEX = "apps/shared/src/gameplays/index.ts";
 const SHARED_WIRE_CATALOG = "apps/shared/src/gameplays/generated/wire-catalog.generated.ts";
@@ -73,6 +79,7 @@ const FIXTURE_ARTIFACTS = [
   `${SERVER_SCHEMA_DIR}/idle.ts`,
   `${SERVER_SCHEMA_DIR}/privateFixture.ts`,
   `${SERVER_SCHEMA_DIR}/snake.ts`,
+  WIRE_VECTORS_INDEX,
   SHARED_CATALOG,
   SHARED_MODE_IDS,
   `${SHARED_STATE_DIR}/ballMove.ts`,
@@ -152,6 +159,15 @@ function createFixture(): { readonly root: string; readonly options: GameplayCod
       fs.mkdirSync(path.join(root, "apps/shared/src/gameplays", id), { recursive: true });
       fs.copyFileSync(wire, path.join(root, "apps/shared/src/gameplays", id, "wire.ts"));
     }
+  }
+  // wire 向量 sidecar：core + fixture 里带 wire.ts 的玩法各一份（登记表 index.generated.ts 由生成器渲染，
+  // 缺/孤儿都 fail-fast——snake 的 wire.ts 没进 fixture，所以它的 sidecar 也不能进）。
+  fs.mkdirSync(path.join(root, "apps/server/test/wire-vectors"), { recursive: true });
+  for (const owner of ["core", "ballMove", "idle"]) {
+    fs.copyFileSync(
+      path.join(REPOSITORY_ROOT, "apps/server/test/wire-vectors", `${owner}.ts`),
+      path.join(root, "apps/server/test/wire-vectors", `${owner}.ts`),
+    );
   }
   // ruleset.ts：state.json 一旦声明 enumSource:"gameplay"，它就是硬依赖（存在性闸），
   // fixture 必须带上——snake 的 4 个自有枚举正是这么声明的。⚠ 与 wire.ts 不同，
@@ -350,6 +366,7 @@ test("玩法自有 shared 模块自动进 barrel：新增手写模块零框架�
       readCoreWireNames(fixture.options),
       readClientGameplayModules(gameplays, fixture.options),
       readServerGameplayModules(gameplays, fixture.options),
+      readWireVectorOwners(gameplays, fixture.options),
     );
     const barrel = artifacts.get("apps/shared/src/gameplays/index.ts");
     assert.ok(barrel);
@@ -516,6 +533,12 @@ test("catalog 里已有的 mode 目录消失：writer 必须拒绝；--allow-del
     // 拒绝时不得动盘：idle 产物仍在
     assert.ok(fs.existsSync(path.join(fixture.root, `${SHARED_STATE_DIR}/idle.ts`)));
 
+    // 删玩法要连它的 wire 向量 sidecar 一起删（uninstall 按锁就是这么做的）；留着即孤儿 → 生成器点名拒绝。
+    assert.throws(
+      () => writeGameplayArtifacts({ ...fixture.options, allowDelete: ["idle"] }),
+      /orphan wire vector sidecar\(s\).*idle\.ts/u,
+    );
+    fs.rmSync(path.join(fixture.root, "apps/server/test/wire-vectors/idle.ts"));
     const result = writeGameplayArtifacts({ ...fixture.options, allowDelete: ["idle"] });
     assert.deepEqual(result.deleted, [`${SERVER_SCHEMA_DIR}/idle.ts`, `${SHARED_STATE_DIR}/idle.ts`]);
     assert.equal(fs.existsSync(path.join(fixture.root, `${SHARED_STATE_DIR}/idle.ts`)), false);
@@ -709,15 +732,12 @@ test("generated root maps are frozen, type-safe and reject unknown modes", () =>
   // privateFixture：阶段 8 私房验收 fixture gameplay；dropInFixture：drop-in（自由加入）验收
   // fixture gameplay（catalog 全链收录，⛔ 都不进生产 mode registry）。
   // snake：Snake Off 玩法（S4 起 canonical + 生产 registry 登记）。
-  assert.deepEqual(Object.keys(ROOM_STATE_VALIDATORS),
-    ["ballMove", "dropInFixture", "idle", "privateFixture", "snake"]);
-  assert.deepEqual(Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS),
-    ["ballMove", "dropInFixture", "idle", "privateFixture", "snake"]);
+  assert.deepEqual(Object.keys(ROOM_STATE_VALIDATORS), EXPECTED_GAMEPLAY_IDS);
+  assert.deepEqual(Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS), EXPECTED_GAMEPLAY_IDS);
   // player 侧与 root 侧必须同集：任何「有 root 无 player」的玩法都会让按 mode 造 player
   // 的通用代码退回手写具名类。
   assert.deepEqual(Object.keys(ROOM_STATE_PLAYER_CONSTRUCTORS), Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS));
-  assert.deepEqual(Object.keys(GAMEPLAY_CATALOG),
-    ["ballMove", "dropInFixture", "idle", "privateFixture", "snake"]);
+  assert.deepEqual(Object.keys(GAMEPLAY_CATALOG), EXPECTED_GAMEPLAY_IDS);
   assert.equal(Object.isFrozen(ROOM_STATE_VALIDATORS), true);
   assert.equal(Object.isFrozen(ROOM_STATE_ROOT_CONSTRUCTORS), true);
   assert.equal(Object.isFrozen(ROOM_STATE_PLAYER_CONSTRUCTORS), true);
@@ -761,6 +781,7 @@ test("generated validator keys exactly equal runtime decorated keys and exclude 
     readCoreWireNames({ repositoryRoot: REPOSITORY_ROOT }),
     readClientGameplayModules(gameplays, { repositoryRoot: REPOSITORY_ROOT }),
     readServerGameplayModules(gameplays, { repositoryRoot: REPOSITORY_ROOT }),
+    readWireVectorOwners(gameplays, { repositoryRoot: REPOSITORY_ROOT }),
   );
   for (const gameplay of gameplays) {
     const shared = artifacts.get(`${SHARED_STATE_DIR}/${gameplay.id}.ts`);
@@ -790,6 +811,7 @@ test("map entry helpers are unique per owner type when roots share a field name"
     readCoreWireNames({ repositoryRoot: REPOSITORY_ROOT }),
     readClientGameplayModules(realGameplays, { repositoryRoot: REPOSITORY_ROOT }),
     readServerGameplayModules(realGameplays, { repositoryRoot: REPOSITORY_ROOT }),
+    readWireVectorOwners(realGameplays, { repositoryRoot: REPOSITORY_ROOT }),
   );
   const ballMove = artifacts.get(`${SHARED_STATE_DIR}/ballMove.ts`) ?? "";
   const idle = artifacts.get(`${SHARED_STATE_DIR}/idle.ts`) ?? "";
@@ -1007,6 +1029,7 @@ test("生成的 RoomStateLifecycle 是独立接口，⛔ 不得是某个具体 r
     readCoreWireNames({ repositoryRoot: REPOSITORY_ROOT }),
     readClientGameplayModules(realGameplays, { repositoryRoot: REPOSITORY_ROOT }),
     readServerGameplayModules(realGameplays, { repositoryRoot: REPOSITORY_ROOT }),
+    readWireVectorOwners(realGameplays, { repositoryRoot: REPOSITORY_ROOT }),
   );
   const aggregate = artifacts.get(SERVER_AGGREGATE) ?? "";
   assert.match(aggregate, /export interface RoomStateLifecycle \{/u);
@@ -1027,6 +1050,10 @@ function writeFixtureWire(root: string, id: string, source: string): void {
   const dir = path.join(root, "apps/shared/src/gameplays", id);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, "wire.ts"), source, "utf8");
+  // 声明了 C2S wire 的玩法必须自带向量 sidecar（生成器按目录发现，缺即 fail）。
+  const vectors = path.join(root, "apps/server/test/wire-vectors", `${id}.ts`);
+  fs.mkdirSync(path.dirname(vectors), { recursive: true });
+  fs.writeFileSync(vectors, "export default { c2s: {}, admission: {} };\n", "utf8");
 }
 
 const PUZZLE_WIRE = `import { GamePhase } from "../../constants/game";
@@ -1287,6 +1314,7 @@ test("client module 集 = canonical GameplayModeId：真仓 modes/ 目录双向�
     readCoreWireNames({ repositoryRoot: REPOSITORY_ROOT }),
     modules,
     serverModules,
+    readWireVectorOwners(gameplays, { repositoryRoot: REPOSITORY_ROOT }),
   );
   const serverCatalog = artifacts.get(SERVER_CATALOG) ?? "";
   for (const module of serverModules) {
