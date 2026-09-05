@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "snakeCosmetic",
+  "category": "extra",
+  "docs": ["docs/s/s3-wardrobe-and-equipment.md"],
+  "resident": false,
+  "module": "apps/client/src/features/snakeCosmetic/index.ts",
+  "viewDirs": ["apps/client/src/features/snakeCosmetic/view"],
+  "views": [
+    "apps/client/src/features/snakeCosmetic/view/WardrobeView.view.json"
+  ],
+  "owners": [
+    { "id": "snakeCosmetic", "logicDir": "apps/client/src/features/snakeCosmetic/logic" }
+  ],
+  "routes": [
+    { "id": "snakeCosmetic", "view": "Wardrobe" }
+  ],
+  "menu": [
+    {
+      "entryId": "snakeCosmetic",
+      "label": "衣柜",
+      "labelKey": "menu.snakeCosmetic",
+      "launch": { "kind": "route", "routeId": "snakeCosmetic" }
+    }
+  ]
+}

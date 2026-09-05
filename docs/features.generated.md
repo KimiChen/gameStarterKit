@@ -21,6 +21,7 @@ capability fragment 的合并规则由 `npm run verify:inventory` fail-closed �
 | `builtin` | core | registered | [docs/CLIENT.md](./CLIENT.md) |
 | `redeem` | extra | registered | [docs/redeem/README.md](./redeem/README.md) |
 | `snake` | core | registered | [docs/snakeoff/README.md](./snakeoff/README.md) |
+| `snakeCosmetic` | extra | registered | [docs/s/s3-wardrobe-and-equipment.md](./s/s3-wardrobe-and-equipment.md) |
 | `tally` | extra | registered | [docs/tally/README.md](./tally/README.md) |
 
 ## capability fragment

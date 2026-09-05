@@ -9,7 +9,7 @@ import { validateMailClaimAttachRes, validateMailClaimReq, validateMailListReq, 
 import { validateRedeemClaimReq, validateRedeemClaimRes, type IRedeemClaimReq, type IRedeemClaimRes } from "./domains/redeem";
 import { validatePrepareCreateReq, validatePrepareCreateRes, validateResolveReq, validateResolveRes, type IRoomPrepareCreateReq, type IRoomPrepareCreateRes, type IRoomResolveReq, type IRoomResolveRes } from "./domains/room";
 import { validatePurchaseResult, validateShopPurchaseReq, validateShopQueryReq, type IShopPurchaseReq, type IShopQueryOpReq } from "./domains/shop";
-import { validateSnakeCosmeticGetSnapshotReq, validateSnakeCosmeticProfileRes, validateSnakeCosmeticSkinReq, type ISnakeCosmeticGetSnapshotReq, type ISnakeCosmeticProfileRes, type ISnakeCosmeticSkinReq } from "./domains/snakeCosmetic";
+import { validateSnakeCosmeticGetSnapshotReq, validateSnakeCosmeticProfileRes, validateSnakeCosmeticSkinReq, validateSnakeCosmeticSnapshotRes, type ISnakeCosmeticGetSnapshotReq, type ISnakeCosmeticProfileRes, type ISnakeCosmeticSkinReq, type ISnakeCosmeticSnapshotRes } from "./domains/snakeCosmetic";
 import { validateGetInfoReq, validateGetInfoRes, validateGetProfileReq, validateGetUserIdReq, validateGetUserIdRes, validateProfileRes, validateUpdateProfileReq, validateUpdateRes, type IGetInfoReq, type IGetInfoRes, type IGetProfileReq, type IGetProfileRes, type IGetUserIdReq, type IGetUserIdRes, type IUpdateProfileReq, type IUpdateProfileRes } from "./domains/user";
 
 /** 领域全集（生成器删除保护锚 + 向量 sidecar 的域集合闸）。 */
@@ -36,7 +36,7 @@ export interface LobbyRpcMap {
     "room.resolve": { req: IRoomResolveReq; res: IRoomResolveRes };
     "shop.purchase": { req: IShopPurchaseReq; res: IPurchaseResult };
     "shop.queryOp": { req: IShopQueryOpReq; res: IPurchaseResult };
-    "snakeCosmetic.getSnapshot": { req: ISnakeCosmeticGetSnapshotReq; res: ISnakeCosmeticProfileRes };
+    "snakeCosmetic.getSnapshot": { req: ISnakeCosmeticGetSnapshotReq; res: ISnakeCosmeticSnapshotRes };
     "snakeCosmetic.equip": { req: ISnakeCosmeticSkinReq; res: ISnakeCosmeticProfileRes };
     "snakeCosmetic.unlock": { req: ISnakeCosmeticSkinReq; res: ISnakeCosmeticProfileRes };
     "user.getUserId": { req: IGetUserIdReq; res: IGetUserIdRes };
@@ -139,7 +139,7 @@ export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly
     redeem: { contractVersion: 1, digest: "e7e74dc98acf6cfb1d5bfd0261930d6bbc5bb07e2efa79dec0e91be485596514" },
     room: { contractVersion: 1, digest: "8655531a80f2ffc6a941247c2c2ef00ad44dfb3842b722741556430bf2c12ff2" },
     shop: { contractVersion: 1, digest: "80f5bc9c74300aecd0bf2caf8dea93506657c5e9a4d64e91931760e8c06544cf" },
-    snakeCosmetic: { contractVersion: 1, digest: "05062f48f19aa9418b3528dba1a846f862db05768741ca036eeb8281472dea77" },
+    snakeCosmetic: { contractVersion: 2, digest: "f014bae578540ef3764238415f82acf967ae9676802a5821e2c380eecdc1cf36" },
     user: { contractVersion: 1, digest: "ce1f3ff0528a15836c188d111ddbe29bfb8c97c4f68d69c3e77a9432fe157a28" },
 };
 
@@ -190,7 +190,7 @@ export const LOBBY_RPC_RESPONSE_VALIDATORS: { readonly [K in LobbyRpcType]: Runt
     "room.resolve": guardRpcValidator("response", validateResolveRes),
     "shop.purchase": guardRpcValidator("response", validatePurchaseResult),
     "shop.queryOp": guardRpcValidator("response", validatePurchaseResult),
-    "snakeCosmetic.getSnapshot": guardRpcValidator("response", validateSnakeCosmeticProfileRes),
+    "snakeCosmetic.getSnapshot": guardRpcValidator("response", validateSnakeCosmeticSnapshotRes),
     "snakeCosmetic.equip": guardRpcValidator("response", validateSnakeCosmeticProfileRes),
     "snakeCosmetic.unlock": guardRpcValidator("response", validateSnakeCosmeticProfileRes),
     "user.getUserId": guardRpcValidator("response", validateGetUserIdRes),
