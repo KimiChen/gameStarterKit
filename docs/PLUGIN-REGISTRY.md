@@ -225,8 +225,8 @@ CI 对所有未下架版本重跑一遍并追加。CLI 安装时比较本地检�
 
 | 项 | 状态 |
 | --- | --- |
-| §1-3 reinstall-from-tree 吞并框架文件 | ⏳ |
-| §1-4 裸前缀所有权 / 锁间两两不交 | ⏳ |
+| §1-3 reinstall-from-tree 吞并框架文件 | ✅ 2026-09-05：身份变化闸（`--allow-identity-change`）+ git 跟踪闸（`--adopt-tracked`）+ `check` 身份漂移比对；钉：`plugin-tool.test.ts`「§1-3」用例（git fixture 重放 guild 场景） |
+| §1-4 裸前缀所有权 / 锁间两两不交 | ✅ 2026-09-05：测试前缀改为 `<id>-*` / `<id>.*`（`matchesPrefixRule` 三处共用），pack/install/check 引入「其它已安装锁」（重叠即拒绝/点名），`registry` 保留 id；redeem 1.0.4 / tally 1.0.3 随之改名客户端测试并 `--reinstall-from-tree --adopt-tracked` 重钉；钉：「§1-4」用例（chamber 与 chamberBoard 共存） |
 | §1-1 postinstall 失败回滚 | ⏳ |
 | §1-2 升级删除面传 `--allow-delete` | ⏳ |
 | §1-5 锁 `source` 抬头与分叉语义 | ⏳ |

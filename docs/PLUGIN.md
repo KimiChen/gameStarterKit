@@ -135,7 +135,7 @@
 
 | kind | 推导出的可写落点 |
 | --- | --- |
-| 共有 | `plugins/<id>/`、`docs/<id>/`、`apps/server/test/<id>*.ts`、`apps/server/test/int/<id>*.ts`、`apps/client/test/<id>*.ts` |
+| 共有 | `plugins/<id>/`、`docs/<id>/`、`apps/server/test/<id>-*.test.ts`、`apps/server/test/int/<id>-*.test.ts`、`apps/client/test/<id>-*.test.ts`（前缀后**必须**紧跟 `-` 或 `.`，⛔ 不是裸 startsWith：`tally` 不拥有 `tallyBoard-*`、`red` 不拥有 `redis-*`；2026-09-05 收紧，PLUGIN-REGISTRY §1-4） |
 | gameplay | `apps/shared/schema/gameplays/<id>/`、`apps/shared/src/gameplays/<id>/`、`apps/server/src/rooms/modes/<id>/`、`apps/client/src/gameplay/modes/<id>/`、`apps/client/src/logic/rooms/<id>/`、`apps/client/src/view/rooms/<id>/`、`apps/client/src/net/rooms/<Constant>Room.ts`、`apps/server/test/wire-vectors/<id>.ts`、`apps/Cocos/assets/resources/<id>/` |
 | feature | `features/<id>/`、`apps/client/src/features/<id>/`、`apps/server/src/core/<id>/`；每个声明的 domain：`apps/shared/src/protocol/lobbyRpc/domains/<d>.ts`、`apps/server/src/websocket/<d>/`、`apps/server/test/lobbyRpcVectors/<d>.ts`；feature.json 的 viewDirs/logicDir 必须 ⊆ `apps/client/src/features/<id>/**` 或 `apps/client/src/{view,logic}/**/<id>` |
 | fguiPackages | `apps/art/fairygui/assets/<Pkg>/`、`apps/Cocos/assets/resources/ui/<Pkg>.bin`、`<Pkg>_atlas*` |
@@ -149,6 +149,10 @@
 改协议信封」在这套闸下根本进不了包——它们是框架 PR（Non-intrusive §12.3）。
 
 `apps/server/test/plugin-tool.test.ts` 钉住：真仓 protected-paths.json 的每条路径对任何插件身份都不可写。
+
+**多插件共存的所有权账本**（2026-09-05，PLUGIN-REGISTRY §1-4）：别的已安装插件锁登记的路径永远不是本插件的——
+`pack` 遇到推导集与他锁重叠即拒绝采集（⛔ 不静默把别人的文件打进自己的包），`install` 对包内文件与他锁的交集单独点名
+（「属于插件 X」），`check` 断言各锁清单两两不交。`registry` 是保留 id。
 
 ### 5.3 包格式
 
@@ -208,7 +212,7 @@ npm --workspace @game/server run plugin -- check
    镜像（与首个 feature 插件的 `features.meta`）生成 `.meta` 后 `git add apps/Cocos/assets/src`，并确认随包 `.meta`
    的 uuid 稳定（Creator 只会重写键序/版本，uuid 不变）。
 
-**同仓迭代 `install --reinstall-from-tree <id>`**（plan-v5 E6 方案 ②，2026-09-05）：已安装锁把插件自有文件锁死后，
+**同仓迭代 `install --reinstall-from-tree <id>`**（plan-v5 E6 方案 ②，2026-09-05；两道新闸见段末）：已安装锁把插件自有文件锁死后，
 宿主仓内直接改其中任何一个文件（哪怕 `docs/<id>/README.md` 一行）都会让 `check`/`plugin-lock.test.ts` 红，而普通
 `install` 对「树≠锁」直接拒绝——同仓「作者=宿主」需要一条合法路径。本形态以**工作树为真相**重写已安装锁：
 等价于「`pack` 当前树 → `install` 该包」，采集与自检走 pack 同一条路（缺 `.meta` / 越权 / 镜像不一致即拒绝），
@@ -217,6 +221,13 @@ npm --workspace @game/server run plugin -- check
 （文件本来就在树上），只重写 `scripts/plugins/<id>.lock`，然后照常 `git add` + postinstall。动线：
 改文件 → bump version → `install --reinstall-from-tree <id>` → `check` ✔ → 提交；之后从同一棵树 `pack` 出的包
 与新锁逐条相同，仍可分发给别的宿主。
+两道闸（2026-09-05，PLUGIN-REGISTRY §1-3；对抗审阅实证：树上把框架域 guild 写进 domains 并 bump，旧实现会把 guild 的
+7 个框架文件「adopted」进插件锁，之后 `uninstall` 会按锁删掉框架功能）：① **身份变化闸**——树上 `plugin.json` 的
+kinds / constantName / domains / fguiPackages 与锁不同即拒绝，显式 `--allow-identity-change` 才放行（`check` 同时点名
+这种漂移）；② **git 跟踪闸**——谁算「本插件的」：旧锁条目一定是，树上新采集到的文件只有在 git **未跟踪**时才算作者
+刚写的新文件；已跟踪却不在旧锁的文件视为框架（或别的提交）所有，拒绝并点名，确认后 `--adopt-tracked` 显式吸收
+（`--no-git` 无从判定，退化为全部吸收）。锁内已不存在于树的越权条目不再拦 reinstall（构不成误删风险；规则演进后
+改名的旧文件正是这种形态），登记了树上存在的越权文件仍拒绝。
 
 **报告里的 `nextSteps` 按事实派生**（2026-09-05 小修）：协议指纹一项不再按「带 domain 就一定变了」猜——postinstall
 跑完后脚本执行 `node scripts/protocol-fingerprint.mjs --check`，只有真报过期才写「协议指纹已过期 … `--write`」，

@@ -162,6 +162,22 @@ export function identityOf(manifest: PluginManifest, clientDirs: readonly string
   };
 }
 
+/** 身份分量（版本以外的一切）：reinstall-from-tree 的身份变化闸与 check 的漂移比对共用（PLUGIN-REGISTRY §1-3）。 */
+export function identitySummary(manifest: PluginManifest): Record<string, string> {
+  return {
+    kinds: manifest.kinds.join(","),
+    constantName: manifest.constantName ?? "-",
+    domains: manifest.domains.join(",") || "-",
+    fguiPackages: manifest.fguiPackages.join(",") || "-",
+  };
+}
+
+export function identityDifferences(previous: PluginManifest, next: PluginManifest): readonly string[] {
+  const before = identitySummary(previous);
+  const after = identitySummary(next);
+  return Object.keys(before).filter((key) => before[key] !== after[key]).map((key) => `${key}: ${before[key]} → ${after[key]}`);
+}
+
 /** semver 三段比较：负 = left 旧，0 = 相等，正 = left 新。 */
 export function compareVersions(left: string, right: string): number {
   const parse = (value: string): number[] => value.split(".").map((part) => Number(part));
