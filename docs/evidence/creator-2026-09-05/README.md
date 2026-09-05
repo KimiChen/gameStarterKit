@@ -42,6 +42,24 @@
 `09-redeem-after-fix-invalid.jpg`（`NOSUCHCODE1` → 「兑换码不存在」，REDEEM_CODE_INVALID 路径）。成功/已使用两条路径
 见 `06`/`07`（修复前截图，功能已通）；修复后又以 `SNAKE90`（+90，余额 190）与 `DEVTEST`（+1，余额 191）各兑换一次成功。
 
+## 第二轮（同日下午晚些）：gameplay 形态插件「点数赛」plugins/tally
+
+同一 Creator 会话、同一驱动方式（Chrome 重启过一次，仍经 9222），插件经 pack → 干净树 install 进仓后：
+
+| 步骤 | 结果 | 证据 |
+| --- | --- | --- |
+| 设置面板插件入口出现「点数赛 · tally」（featureId 字母序第 4 行） | ✅ | `09b-settings-with-tally.jpg` |
+| 「进入」→ FeatureHost 装载 → 加入 GameRoom（服务端日志：房间创建、玩家加入、首人即开局） → TallyView 挂载 | ✅ 「目标 10 次 · 你已点 0」，玩家列表标出自己 | — |
+| 连点 TAP：本地计数随服务端状态回流实时更新 | ✅ 4 次后「你已点 4」 | `10-tally-match.jpg` |
+| 点满 10 次：服务端判胜、房间 Settle；客户端「你赢了！」+ 倒计时 | ✅ | `11-tally-settle.jpg` |
+| 倒计时结束经 `host.requestExit("settled")` 回大厅 | ❌ **整屏黑**（修复前，`12-tally-after-exit-before-fix.jpg`）→ ✅ 修复后回到首屏，首屏「已登记玩法 6」（`13-tally-back-home-after-fix.jpg`）；服务端日志：玩家主动离开、房间销毁 | `12`/`13` |
+
+实测暴露并修复的第 4 处缺陷（框架级，所有玩法共用）：**玩法退出后没人恢复首屏**。`launchGameplay` 进战斗前
+`closeGroup("authenticated")`，而 `closed{voluntary}` 按设计不触发导航、`RoomController.stop` 也不导航——
+GameplayModule.ts 注释里所说的「controller.stop → 恢复已登录 Home 通用恢复路径」并不存在。snake 的结算退出走的是
+同一条 `requestExit("settled")`，此前从未在真实引擎跑到这一步。修法：AppRuntime 的 controllerBridge.requestStop
+在 stop 完成后（会话代未变、未 dispose、已登录且登记过 base）`navigation.restoreAuthenticatedBase({userId,user})`。
+
 ## 未闭合
 
 - B4 的取消回滚 / 输入租约 / 跨包资源，B6 的 uuid 往返自检：仍归 plan-v5 B 表。
