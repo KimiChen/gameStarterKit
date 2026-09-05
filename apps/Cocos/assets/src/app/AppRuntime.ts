@@ -368,7 +368,13 @@ export class AppRuntime {
             currentGeneration: () => this.roomController?.currentGeneration ?? 0,
             dispatchInput: (input) => this.dispatchGameplayInput(input),
             requestStop: async (reason) => {
+                const sessionGeneration = getSessionGeneration();
                 await this.roomController?.stop(reason);
+                // 玩法侧发起的退出（user-exit / settled → manual）：局已停、房已离，把 authenticated base
+                // （首屏）恢复回来。此前 closed{voluntary} 不触发导航、controller.stop 也不导航，
+                // 2026-09-05 Creator 预览实测：结算/离开后整屏黑（tally、snake 同一条路径）。
+                if (this.disposed || getSessionGeneration() !== sessionGeneration) return;
+                await this.restoreAuthenticatedBaseAfterGameplay();
             },
         };
         const presentationHost = {
@@ -531,6 +537,22 @@ export class AppRuntime {
             },
             returnToLogin: () => returnToLogin({ kind: "BATTLE_JOIN_FAILED" }),
         });
+    }
+
+    /**
+     * 玩法退出后恢复 authenticated base 栈顶（launchGameplay 进战斗前 closeGroup("authenticated") 的对称
+     * 操作）。未登录 / 从未登记 base（Main 的开发快捷入口）时无事可做；失败只记日志，⛔ 不回登录页。
+     */
+    private async restoreAuthenticatedBaseAfterGameplay(): Promise<void> {
+        if (!this.ports.session.isLoggedIn() || !this.navigation.hasAuthenticatedBase()) return;
+        try {
+            await this.navigation.restoreAuthenticatedBase({
+                userId: this.ports.session.getUserId(),
+                user: this.ports.session.getSessionProfile(),
+            });
+        } catch (error) {
+            console.error("[AppRuntime] 玩法退出后恢复首屏失败：", error);
+        }
     }
 
     private stopGameplay(kind: "cancelled" | "room-lost"): void {
