@@ -39,6 +39,7 @@ export const FEATURE_IDS: readonly string[] = [
     "builtin",
     "redeem",
     "snake",
+    "tally",
 ];
 
 export const GENERATED_FEATURES: readonly GeneratedFeatureDescriptor[] = [
@@ -81,6 +82,16 @@ export const GENERATED_FEATURES: readonly GeneratedFeatureDescriptor[] = [
             { entryId: "snake", featureId: "snake", label: "贪吃蛇大作战", labelKey: "menu.snakeOff", launch: { kind: "gameplay", gameplayId: "snake" } },
         ],
     },
+    {
+        id: "tally",
+        resident: false,
+        dependencies: [],
+        routes: [
+        ],
+        menu: [
+            { entryId: "tally", featureId: "tally", label: "点数赛", labelKey: "menu.tally", launch: { kind: "gameplay", gameplayId: "tally" } },
+        ],
+    },
 ];
 
 /** 全仓菜单贡献（已按 featureId → entryId 排序；⛔ 不含位置——首屏顺序见 GENERATED_HOST.home）。 */
@@ -88,6 +99,7 @@ export const GENERATED_MENU_CONTRIBUTIONS: readonly GeneratedMenuContribution[] 
     { entryId: "ballMove", featureId: "builtin", label: "进入战斗", labelKey: "menu.enterBattle", launch: { kind: "gameplay", gameplayId: "ballMove" } },
     { entryId: "redeem", featureId: "redeem", label: "兑换码", labelKey: "menu.redeem", launch: { kind: "route", routeId: "redeem" } },
     { entryId: "snake", featureId: "snake", label: "贪吃蛇大作战", labelKey: "menu.snakeOff", launch: { kind: "gameplay", gameplayId: "snake" } },
+    { entryId: "tally", featureId: "tally", label: "点数赛", labelKey: "menu.tally", launch: { kind: "gameplay", gameplayId: "tally" } },
 ];
 
 /** 首屏 Home 上的一条入口（宿主 placement 的展开形态）。 */

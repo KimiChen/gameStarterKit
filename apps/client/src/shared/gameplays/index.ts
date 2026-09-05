@@ -13,3 +13,5 @@ export * from "./snake/ruleset";
 export * from "./snake/wire";
 export * from "./snake/cosmetics";
 export * from "./generated/state/snake";
+export * from "./tally/wire";
+export * from "./generated/state/tally";
