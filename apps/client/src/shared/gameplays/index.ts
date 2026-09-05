@@ -12,6 +12,7 @@ export * from "./generated/state/privateFixture";
 export * from "./snake/ruleset";
 export * from "./snake/wire";
 export * from "./snake/cosmetics";
+export * from "./snake/progression";
 export * from "./generated/state/snake";
 export * from "./tally/wire";
 export * from "./generated/state/tally";
