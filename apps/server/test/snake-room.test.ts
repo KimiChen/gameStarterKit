@@ -519,6 +519,7 @@ test("final-leave/churn 集合回落；dispose 进入 Draining 并释放世界�
         const diagnostics = harness.mode.__probeDiagnostics();
         assert.equal(harness.view().players.size, 0);
         assert.equal(diagnostics.deathSnapshots, 0);
+        assert.equal(diagnostics.runStats, 0, "S4-01 的 per-run 统计不得随 churn 泄漏");
         assert.equal(diagnostics.spawnAttempts, 0);
         assert.equal(diagnostics.pendingSpawns, 0);
         assert.equal(diagnostics.decisionRecords, 0);
@@ -532,6 +533,7 @@ test("final-leave/churn 集合回落；dispose 进入 Draining 并释放世界�
     assert.equal(harness.view().draining, true);
     assert.deepEqual(harness.mode.__probeDiagnostics(), {
         deathSnapshots: 0,
+        runStats: 0,
         spawnAttempts: 0,
         pendingSpawns: 0,
         decisionRecords: 0,
@@ -599,4 +601,37 @@ test("S3-03 run 起始锁存装备皮肤：join ⛔ 无自报通道；run 中换
     assert.equal(harness.view().players.get("p2")?.skinId, 1);
 
     __resetSnakeCosmeticProfilesForTest();
+});
+
+test("S4-01 per-run 统计：峰值长度、有效输入去重计数、复活消耗累计，且随新 run 归零", async () => {
+    const harness = await buildSnakeRoom();
+    const joiner = await seat(harness, "s4");
+    const player = harness.view().players.get("s4");
+    assert.ok(player);
+    // 必须跨过 3 秒准备期：Preparing 状态下输入命令直接被丢弃。
+    step(harness.room, 100);
+    assert.equal(player.runState, SnakeRunState.Active);
+
+    const first = harness.mode.__probeRunStats("s4");
+    assert.ok(first, `runStats 应已建立，probe=${JSON.stringify(harness.mode.__probeDiagnostics())}`);
+    assert.ok(first.maxLength >= SNAKE_RULESET.spawnLength, "峰值长度至少是出生长度");
+    assert.equal(first.reliveCoinSpent, 0);
+
+    // 有效输入按「朝向/加速变化」计数，⛔ 不逐包累加：连发同一个方向只算一次。
+    const before = harness.mode.__probeRunStats("s4")!.meaningfulInputCount;
+    dispatch(harness.room, C2S.SnakeInput, joiner, { dirX: 1, dirY: 0, boost: false, seq: 1 });
+    dispatch(harness.room, C2S.SnakeInput, joiner, { dirX: 1, dirY: 0, boost: false, seq: 2 });
+    dispatch(harness.room, C2S.SnakeInput, joiner, { dirX: 1, dirY: 0, boost: false, seq: 3 });
+    harness.room.stepFixed();
+    const afterSameDir = harness.mode.__probeRunStats("s4")!.meaningfulInputCount;
+    assert.equal(afterSameDir, before + 1, "重复同一朝向只计一次");
+
+    dispatch(harness.room, C2S.SnakeInput, joiner, { dirX: 0, dirY: 1, boost: true, seq: 4 });
+    harness.room.stepFixed();
+    assert.equal(harness.mode.__probeRunStats("s4")!.meaningfulInputCount, afterSameDir + 1, "换向 + 加速算新的一次");
+
+    // 玩家离开后统计随之清理，⛔ 不泄漏。
+    await harness.room.onLeave(joiner as never, 4000);
+    assert.equal(harness.mode.__probeRunStats("s4"), undefined);
+    assert.equal(harness.mode.__probeDiagnostics().runStats, 0);
 });
