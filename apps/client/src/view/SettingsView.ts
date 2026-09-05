@@ -129,7 +129,7 @@ export class SettingsView extends CocosView {
             // 置灰占位：⛔ 不注册任何点击回调——点不动就是「没实现」最诚实的表达。
             const row = this.row(content, rowWidth, rowHeight, y, ROW_OFF, "placeholder");
             this.label(row, item.label, Math.round(rowHeight * 0.4), DIM, -rowWidth * 0.5 + rowWidth * 0.05, rowHeight * 0.16, "left");
-            this.label(row, item.reason, Math.round(rowHeight * 0.26), DIM, -rowWidth * 0.5 + rowWidth * 0.05, -rowHeight * 0.18, "left");
+            this.label(row, item.reason, Math.round(rowHeight * 0.26), DIM, -rowWidth * 0.5 + rowWidth * 0.05, -rowHeight * 0.18, "left", rowWidth * 0.9);
         }
 
         this.sectionLabel(content, "插件入口（featureId 字母序）", rowWidth, nextY());
@@ -140,13 +140,13 @@ export class SettingsView extends CocosView {
             const y = nextY();
             const row = this.row(content, rowWidth, rowHeight, y, entry.enabled ? ROW : ROW_OFF, "entry");
             this.label(row, `${entry.label}  ·  ${entry.featureId}`, Math.round(rowHeight * 0.4),
-                entry.enabled ? TEXT : DIM, -rowWidth * 0.5 + rowWidth * 0.05, entry.enabled ? 0 : rowHeight * 0.16, "left");
+                entry.enabled ? TEXT : DIM, -rowWidth * 0.5 + rowWidth * 0.05, entry.enabled ? 0 : rowHeight * 0.16, "left", rowWidth * 0.62);
             if (entry.enabled) {
                 this.button(row, "进入", rowWidth * 0.22, rowHeight * 0.72, rowWidth * 0.5 - rowWidth * 0.15, 0,
                     () => this.observeAsync(() => logic.activate(entry.entryId), "settings-launch"), ACCENT);
             } else {
                 this.label(row, entry.disabledReason ?? "不可用", Math.round(rowHeight * 0.26), WARN,
-                    -rowWidth * 0.5 + rowWidth * 0.05, -rowHeight * 0.18, "left");
+                    -rowWidth * 0.5 + rowWidth * 0.05, -rowHeight * 0.18, "left", rowWidth * 0.62);
                 // 不可用条目置灰但保留显式「重试」——走的仍是同一条 launch 通道。
                 this.button(row, "重试", rowWidth * 0.22, rowHeight * 0.72, rowWidth * 0.5 - rowWidth * 0.15, 0,
                     () => this.observeAsync(() => logic.retry(entry.entryId), "settings-retry"), WARN);
@@ -197,13 +197,21 @@ export class SettingsView extends CocosView {
      */
     private label(
         parent: Node, text: string, size: number, color: Color, x: number, y: number, align: "left" | "center" = "center",
+        maxWidth?: number,
     ): Label {
-        const node = this.node("label", parent, size * Math.max(1, text.length), size * 1.4);
+        // maxWidth 给定时节点宽度封顶并按 SHRINK 单行缩排（Creator 预览实测：长说明文字曾溢出面板右缘）。
+        const naturalWidth = size * Math.max(1, text.length);
+        const node = this.node("label", parent, maxWidth === undefined ? naturalWidth : Math.min(naturalWidth, maxWidth), size * 1.4);
         node.setPosition(x, y, 0);
         const label = node.addComponent(Label);
         label.string = text;
         label.fontSize = size;
+        label.lineHeight = size;
         label.color = color;
+        if (maxWidth !== undefined) {
+            label.enableWrapText = false;
+            label.overflow = Label.Overflow.SHRINK;
+        }
         if (align === "left") {
             const transform = node.getComponent(UITransform);
             if (transform) transform.anchorX = 0;
