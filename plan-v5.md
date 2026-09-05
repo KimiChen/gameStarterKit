@@ -151,7 +151,8 @@ verify:sync 镜像一致、inventory 全绿）；`test:int` 169/169（本地真 
 `lobbyRpcVectors/index.generated.ts`、`kFeatureUser`/`kFeatureShared`、插件命令
 `npm --workspace @game/server run plugin -- pack|install|uninstall|check`（所有权推导 allowlist +
 `scripts/plugins/<id>.lock`）、宿主 placement `features/host.json`（slot/order 退役、`launch.kind:"route"`、
-FeatureHost 按 `dependencies` 装载）、feature 侧域契约闸（`LOBBY_RPC_DOMAIN_CONTRACTS`）。⛔ 本表只登记仍开放的项。
+FeatureHost 按 `dependencies` 装载）、feature 侧域契约闸（`LOBBY_RPC_DOMAIN_CONTRACTS`）、首个真实插件
+`plugins/redeem`（兑换码，E5）。⛔ 本表只登记仍开放的项（E5 保留一行只为登记 Creator 侧尾巴）。
 
 | # | 条目 | 现状 / 为什么留着 | 出处 |
 |---|---|---|---|
@@ -159,7 +160,7 @@ FeatureHost 按 `dependencies` 装载）、feature 侧域契约闸（`LOBBY_RPC_
 | E2 | i18n / LocalizePort 契约 | `labelKey` 有字段无实现，渲染用硬编码 `label`；缺 LocalizePort 契约与 locales 载体。必须先于第一个第三方插件落地，否则每个插件硬编码一种语言 | PLUGIN.md §9.3 / PLUGIN-REVIEW F28 |
 | E3 | 框架默认加载页 | 全新 route，与 FGUI 包预热策略绑定（本仓 FGUI 包只有加载路径无卸载路径） | PLUGIN.md §6.2 (2) |
 | E4 | join 信封侧的 feature 契约比对 | codegen 层域契约闸已落地（`LOBBY_RPC_DOMAIN_CONTRACTS`）；Lobby join 仍只比对 `LOBBY_PROTOCOL_VERSION`，域契约变化是否 bump 该整数是人工决策（Non-intrusive §4.8 ⛔ 不各自新增版本闸） | PLUGIN.md §9.5 / PLUGIN-REVIEW F14 |
-| E5 | 第一个真实插件的端到端实证 | 命令与闸门只由隔离 fixture 驱动（`plugin-tool.test.ts`）；尚无仓外真实包走完 pack → install → verify:all → Creator 确认 | PLUGIN.md §9.6 |
+| E5 | 第一个真实插件的端到端实证 | ✅ **已完成**（2026-09-05）：「兑换码」插件 `plugins/redeem`（[docs/redeem/README.md](docs/redeem/README.md)）作者侧 `pack`（29 文件）→ 干净树 `plugin -- install`（postinstall 重生全部生成物）→ `protocol-fingerprint --write` → `verify:all` 通过（两条既有环境基线除外）；框架前置补齐见 `5c6df35`（feature.json `module` 装载器、feature 目录形态放行、测试闸去中央清单）。剩余尾巴：Creator 打开一次确认随包 `.meta` uuid 稳定、用 Creator 生成的共享祖先 `apps/Cocos/assets/src/features.meta` 替换脚本合成占位（归 B4/B6 类 Creator 人工证据） | PLUGIN.md §9.6 |
 
 `PrivateRoomLobby` 模板仍是 B3（编辑器待办），不重复登记。
 

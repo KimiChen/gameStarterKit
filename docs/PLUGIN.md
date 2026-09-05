@@ -118,7 +118,7 @@
 > 状态：✅ 已实现（2026-09-05）——`apps/server/tools/plugin/`，命令 `npm --workspace @game/server run plugin`，
 > 契约测试 `apps/server/test/plugin-tool.test.ts`，已安装锁的新鲜度随 `apps/server/test/plugin-lock.test.ts`
 > 进 `verify:all`。本节按实现改写，旧表述（denylist 闸、覆盖同目录、合成 .meta）已被
-> [PLUGIN-REVIEW](PLUGIN-REVIEW.md) F03/F04/F11/F12/F14/F21 推翻。
+> [PLUGIN-REVIEW](PLUGIN-REVIEW.md) F03/F04/F11/F12/F14/F21 推翻。首个真实包实证：`plugins/redeem`（§9.6）。
 
 ### 5.1 威胁模型（先说清闸门防什么）
 
@@ -337,8 +337,17 @@ npm --workspace @game/server run plugin -- check
 5. **join 信封侧的 feature 契约比对**：codegen 层的闸已落地（上表），但 Lobby join 仍只比对 `LOBBY_PROTOCOL_VERSION`
    整数——按 Non-intrusive §4.8 两类实体共用协议整数、⛔ 不各自新增版本闸，域契约变化要不要反映到
    `LOBBY_PROTOCOL_VERSION` 是人工决策（`plugin -- install` 在域变化时会提示）。
-6. **第一个真实插件的端到端实证**（plan-v5 E5）：命令与闸门目前只由隔离 fixture 驱动（`plugin-tool.test.ts`），
-   尚无仓外真实包走完 pack → install → verify:all → Creator 确认。
+6. **第一个真实插件的端到端实证**（plan-v5 E5）：✅ 已完成（2026-09-05）——「兑换码」插件
+   `plugins/redeem`（kinds `feature`、domains `redeem`；文件清单与取舍见 [docs/redeem/README.md](redeem/README.md)）
+   在作者侧 `plugin -- pack` 成 29 文件的包，再从**干净树**以 `plugin -- install` 进仓：postinstall 链
+   （codegen:features → sync:shared）重生全部生成物，人工步骤只剩 `protocol-fingerprint --write`
+   （新增域为纯追加，未 bump `LOBBY_PROTOCOL_VERSION`）与共享祖先 `apps/Cocos/assets/src/features.meta`；
+   `verify:all` 通过（launcher-matrix `bash --pretty-print` 与 S1 素材新鲜度两条为既有环境基线）。
+   实证过程暴露并补齐的框架前置（`5c6df35`）：feature.json 可选 `module`（FeatureHost 装载器由生成器渲染，
+   AppRuntime 透传）、logic/sidecar 可落 `apps/client/src/features/<id>/`、feature View 只豁免 cc/fairygui
+   值导入、错误码顺序测试不再硬编码域清单——即「新插件不得需要改中央源码/中央测试」的判据真的成立了。
+   仍欠 Creator 侧确认（随包 `.meta` 的 uuid 稳定；脚本合成的共享祖先 `.meta` 占位待 Creator 重写），
+   归 plan-v5 B4/B6 类 Creator 人工证据。
 
 ## 10. 非目标
 

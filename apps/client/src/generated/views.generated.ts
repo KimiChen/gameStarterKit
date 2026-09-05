@@ -39,6 +39,11 @@ export const GENERATED_VIEW_CATALOG: Readonly<Record<string, ViewMeta>> = {
         fullscreen: true, onlyOne: true, permanent: false, interactive: false,
         load: () => import("../view/PromoHomeView").then((m) => m.PromoHomeView),
     }),
+    Redeem: defineView({
+        name: "Redeem", kind: "cocos", layer: "popup",
+        fullscreen: true, onlyOne: true, permanent: false, interactive: false,
+        load: () => import("../features/redeem/view/RedeemView").then((m) => m.RedeemView),
+    }),
     Settings: defineView({
         name: "Settings", kind: "cocos", layer: "popup",
         fullscreen: true, onlyOne: true, permanent: false, interactive: false,
@@ -68,12 +73,14 @@ export const VIEW_SOURCE_RECORDS: readonly GeneratedViewSourceRecord[] = [
     { name: "Login", owner: "builtin", kind: "fgui", pkg: "View_AreaList_Login", comp: "Login", path: "apps/client/src/view/LoginView.ts", logic: "apps/client/src/logic/page/LoginLogic.ts", sidecar: "apps/client/src/view/LoginView.view.json" },
     { name: "LoginNotice", owner: "builtin", kind: "fgui", pkg: "View_AreaList_LoginNotice", comp: "LoginNotice", path: "apps/client/src/view/LoginNoticeView.ts", logic: "apps/client/src/logic/page/LoginNoticeLogic.ts", sidecar: "apps/client/src/view/LoginNoticeView.view.json" },
     { name: "PromoHome", owner: "builtin", kind: "cocos", path: "apps/client/src/view/PromoHomeView.ts", logic: "apps/client/src/logic/page/PromoHomeLogic.ts", sidecar: "apps/client/src/view/PromoHomeView.view.json" },
+    { name: "Redeem", owner: "redeem", kind: "cocos", path: "apps/client/src/features/redeem/view/RedeemView.ts", logic: "apps/client/src/features/redeem/logic/RedeemLogic.ts", sidecar: "apps/client/src/features/redeem/view/RedeemView.view.json" },
     { name: "Settings", owner: "builtin", kind: "cocos", path: "apps/client/src/view/SettingsView.ts", logic: "apps/client/src/logic/page/SettingsLogic.ts", sidecar: "apps/client/src/view/SettingsView.view.json" },
     { name: "SnakeWorld", owner: "snake", kind: "cocos", path: "apps/client/src/view/rooms/snake/SnakeWorldView.ts", logic: "apps/client/src/logic/rooms/snake/SnakeGameplay.ts", sidecar: "apps/client/src/view/rooms/snake/SnakeWorldView.view.json" },
 ];
 
 /** manifest 声明的 view 目录（守门测试的递归比对根）。 */
 export const VIEW_SOURCE_DIRS: readonly string[] = [
+    "apps/client/src/features/redeem/view",
     "apps/client/src/view",
     "apps/client/src/view/rooms/snake",
 ];
