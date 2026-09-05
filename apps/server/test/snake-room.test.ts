@@ -10,11 +10,12 @@ import {
     S2C,
     SnakeRunEndReason,
     SnakeRunState,
+    validateGameRoomJoinOptions,
     validateSnakeRoomState,
     type IGameRoomJoinOptions,
     type ISnakeWorldDelta,
 } from "@game/shared";
-import { SNAKE_RELIVE_COIN_COSTS, SNAKE_RULESET } from "@game/shared/gameplays/snake/ruleset";
+import { SNAKE_MAGNET_ELIGIBLE_RUN_STATES, SNAKE_RELIVE_COIN_COSTS, SNAKE_RULESET } from "@game/shared/gameplays/snake/ruleset";
 import { GameRoom } from "../src/rooms/GameRoom";
 import { createSnakeGameMode, type SnakeGameMode } from "../src/rooms/modes/snake/index";
 import {
@@ -28,6 +29,8 @@ import {
     __resetSnakeCosmeticProfilesForTest,
 } from "../src/rooms/modes/snake/cosmeticProfile";
 import { SNAKE_FRAGMENT_SKIN_THRESHOLDS } from "../src/rooms/modes/snake/skinBusinessCatalog";
+import { __resetRunRewardsForTest, processedRunCount } from "../src/rooms/modes/snake/runRewards";
+import { __resetDemoCoinsForTest } from "../src/rooms/modes/snake/lifecycle";
 import { resolveRoomProfile, type RoomProfile } from "../src/rooms/core/RoomProfile";
 import { SnakeRoomState } from "../src/rooms/schema/GameRoomState";
 
@@ -594,10 +597,16 @@ test("S3-03 run 起始锁存装备皮肤：join ⛔ 无自报通道；run 中换
     assert.ok(player);
     assert.equal(player.skinId, 401, "createPlayer 必须锁存已预热 profile 的装备皮肤");
 
-    // ⛔ join 自报皮肤无效：IGameRoomJoinOptions 里根本没有皮肤字段，
-    // 连伪造一个都进不了 mode——服务端只认从准入身份反查的 uid（拍板 A）。
-    assert.equal("skinId" in joinOptions(), false);
-    assert.equal("skin" in joinOptions(), false);
+    // ⛔ join 自报皮肤无效——⚠ 这里必须断言**服务端的拒绝行为**：
+    // 早先写成 `assert.equal("skinId" in joinOptions(), false)` 是恒真的（joinOptions() 是本文件
+    // 自己造的字面量，断言它没有我没写进去的键，什么也证明不了）。真正的保护在 wire 层的
+    // exact-keys：伪造 skinId 直接 WIRE_KEYS 拒绝，根本进不到 mode。
+    assert.throws(
+        () => validateGameRoomJoinOptions({ ...joinOptions(), skinId: 999 } as never),
+        (error: unknown) => (error as { code?: string }).code === "WIRE_KEYS",
+        "伪造的 skinId 必须在 wire 层被拒",
+    );
+    assert.doesNotThrow(() => validateGameRoomJoinOptions(joinOptions() as never), "合法 join 不受影响");
 
     // run 中换装：profile 变了，但当前蛇的锁存值不动。
     assert.equal(store.equip("u-p1", 1).kind, "ok");
@@ -643,4 +652,69 @@ test("S4-01 per-run 统计：峰值长度、有效输入去重计数、复活消
     await harness.room.onLeave(joiner as never, 4000);
     assert.equal(harness.mode.__probeRunStats("s4"), undefined);
     assert.equal(harness.mode.__probeDiagnostics().runStats, 0);
+});
+
+test("S5-03 磁铁 gate 只认真人合格 run；AI 死亡 ⛔ 不进复活/发奖路径", async () => {
+    __resetRunRewardsForTest();
+    __resetDemoCoinsForTest();
+    const harness = await buildSnakeRoom();
+    await seat(harness, "p1");
+    const world = harness.mode.__probeWorld();
+    assert.ok(world);
+    const player = harness.view().players.get("p1");
+    assert.ok(player);
+    step(harness.room, 100);
+    assert.equal(player.runState, SnakeRunState.Active);
+
+    // ── AI 死亡：既不产生 offer/结果，也不碰经济与结算账本 ─────────────────────────
+    const ai = world.snakes.find((snake) => snake.isAi && snake.alive);
+    assert.ok(ai, "阵容里必须有存活 AI");
+    const commitsBefore = harness.economy.commitCount;
+    world.forceKill(ai.id);
+    step(harness.room, 45);
+    assert.equal(harness.economy.commitCount, commitsBefore, "AI 死亡 ⛔ 不得触发任何扣费");
+    assert.equal(processedRunCount(), 0, "AI 死亡 ⛔ 不得进入 run 结算去重表");
+    assert.equal(messages(harness.room.clients[0] as never, S2C.SnakeReliveOffered).length, 0,
+        "AI 死亡 ⛔ 不得给真人发复活 offer");
+    assert.equal(messages(harness.room.clients[0] as never, S2C.SnakeRunResult).length, 0,
+        "AI 死亡 ⛔ 不得产生个人结果");
+    assert.equal(player.runState, SnakeRunState.Active, "AI 死亡不影响真人 run");
+
+    // ── 磁铁 gate：把唯一真人置为不合格状态后，周期波次不再生成 ────────────────────
+    // gate 由 context.state.players 构造，AI 根本不在其中（AI 只存在于 world.snakes）——
+    // 所以「16 条 AI 存活」也无法把波次顶起来。
+    assert.equal(SNAKE_MAGNET_ELIGIBLE_RUN_STATES.includes(SnakeRunState.Finalized as never), false,
+        "Finalized 必须是不合格状态，否则本用例前提不成立");
+    const aliveAi = world.snakes.filter((snake) => snake.isAi && snake.alive).length;
+    assert.ok(aliveAi > 0, "仍有存活 AI，用于证明 AI 不入 gate");
+
+    // ⚠ 前置必须坐实：canSpawn = eligible && tools.size === 0。若跳 tick 后旧波次的磁铁还在，
+    // 「没生成」就会是 tools 非空导致的，与 gate 无关——那样这条断言是恒真的（本用例初版正是如此，
+    // 变异测试中把 isMagnetGateEligible 改成恒真仍然全绿才暴露出来）。
+    player.runState = SnakeRunState.Finalized;
+    // ⚠ 必须精确落在 relativeTick=6000 那一步：5994 + 5 步 = 5999，再一步即 6000。
+    world.tick = world.playingStartedTick + 5994;
+    step(harness.room, 5); // 顺带让上一波磁铁走完 400 tick 的半开过期
+    assert.equal(world.toolList().length, 0, "前置：触发前场上必须没有存量磁铁，否则本断言恒真");
+
+    harness.room.stepFixed();
+    assert.equal(world.toolList().length, 0,
+        "唯一真人不合格时，⛔ 周期波次不得生成（16 条 AI 存活也顶不起来）");
+    const trigger = world.magnetTriggers.at(-1);
+    assert.equal(trigger?.relativeTick, 6000);
+    assert.equal(trigger?.spawned, false, "gate 无合格真人 → 记录触发但不生成");
+
+    // ── 正向对照：同一世界、同一 tick 算法下，真人恢复合格后下一波必须真的生成 ──────────
+    // ⚠ 没有这半边，上面的「不生成」是不可证伪的：两层 gate（mode 侧 filter + world 侧
+    // isMagnetGateEligible）各自都能独立拒绝，单独变异任一层都不会让上面的断言转红。
+    // 这一对正负断言合起来才证明 gate 真的有判别力。顺带覆盖「第三波之后按 3000 tick 周期继续」。
+    player.runState = SnakeRunState.Active;
+    world.tick = world.playingStartedTick + 8994;
+    step(harness.room, 5);
+    assert.equal(world.toolList().length, 0, "前置：9000 触发前场上无存量磁铁");
+    harness.room.stepFixed();
+    assert.equal(world.toolList().length, 10, "合格真人在场 → 周期波次必须生成 10 个磁铁");
+    const next = world.magnetTriggers.at(-1);
+    assert.equal(next?.relativeTick, 9000, "第三波之后按 3000 tick 周期继续");
+    assert.equal(next?.spawned, true);
 });
