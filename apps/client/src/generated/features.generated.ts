@@ -39,6 +39,7 @@ export const FEATURE_IDS: readonly string[] = [
     "builtin",
     "redeem",
     "snake",
+    "snakeCosmetic",
     "tally",
 ];
 
@@ -83,6 +84,18 @@ export const GENERATED_FEATURES: readonly GeneratedFeatureDescriptor[] = [
         ],
     },
     {
+        id: "snakeCosmetic",
+        resident: false,
+        load: () => import("../features/snakeCosmetic/index").then((m) => m.createFeatureModule()),
+        dependencies: [],
+        routes: [
+            { id: "snakeCosmetic", view: "Wardrobe", group: "authenticated", restore: "discard" },
+        ],
+        menu: [
+            { entryId: "snakeCosmetic", featureId: "snakeCosmetic", label: "衣柜", labelKey: "menu.snakeCosmetic", launch: { kind: "route", routeId: "snakeCosmetic" } },
+        ],
+    },
+    {
         id: "tally",
         resident: false,
         dependencies: [],
@@ -99,6 +112,7 @@ export const GENERATED_MENU_CONTRIBUTIONS: readonly GeneratedMenuContribution[] 
     { entryId: "ballMove", featureId: "builtin", label: "进入战斗", labelKey: "menu.enterBattle", launch: { kind: "gameplay", gameplayId: "ballMove" } },
     { entryId: "redeem", featureId: "redeem", label: "兑换码", labelKey: "menu.redeem", launch: { kind: "route", routeId: "redeem" } },
     { entryId: "snake", featureId: "snake", label: "贪吃蛇大作战", labelKey: "menu.snakeOff", launch: { kind: "gameplay", gameplayId: "snake" } },
+    { entryId: "snakeCosmetic", featureId: "snakeCosmetic", label: "衣柜", labelKey: "menu.snakeCosmetic", launch: { kind: "route", routeId: "snakeCosmetic" } },
     { entryId: "tally", featureId: "tally", label: "点数赛", labelKey: "menu.tally", launch: { kind: "gameplay", gameplayId: "tally" } },
 ];
 
