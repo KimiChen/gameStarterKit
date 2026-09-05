@@ -140,7 +140,10 @@ verify:sync 镜像一致、inventory 全绿）；`test:int` 169/169（本地真 
 > 4. 会话结束把上述结果（尤其 1-② 的 diff）贴回来，由无头侧登记证据并处理 E6。
 >
 > **执行结果（2026-09-05 下午，用户打开 Creator 3.8.8 后由 Claude 经 Chrome 9222 + CDP 驱动预览；证据与环境
-> 见 [docs/evidence/creator-2026-09-05/README.md](docs/evidence/creator-2026-09-05/README.md)）**：
+> 见 [docs/evidence/creator-2026-09-05/README.md](docs/evidence/creator-2026-09-05/README.md)；当天的 CDP 驱动脚本已入仓为
+> 可重放的证据生成器 [tools/creator-preview/](tools/creator-preview/README.md)——`node tools/creator-preview/run.mjs all --out <dir>`
+> 在真实引擎预览里重放登录 → 首屏 → 设置 → redeem → tally 并落盘截图 + `report.json`，⛔ 不进 verify:core，首个重放样本
+> [replay/](docs/evidence/creator-2026-09-05/replay/report.json)）**：
 > 1-①/②/③ Creator **未重写任何 `.meta`**（合成占位形态与 3.8.8 落盘一致；随包 13 个 `.meta` 未被重排，锁全程 ✔）；
 > 2 全链路走通：dev 登录 → 首屏 → 设置面板插件入口 → RedeemView 输入/兑换成功/重兑被拒/关闭，服务端 Redis 记账一致；
 > 3 只覆盖了「动态加载」，取消回滚/输入租约/跨包资源与 B6 未做。实测暴露三处真实引擎缺陷并已修：CocosView 页面
