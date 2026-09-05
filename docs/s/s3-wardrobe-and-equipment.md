@@ -202,9 +202,12 @@ sync 命令刷新。
 
 ### S3-02：实现 profile、Redis 投影与 RPC
 
-- [ ] 新增模块级 profile store、Redis codec 和 `getSnapshot/equip/unlock` descriptor/handler。
-- [ ] 首次读取尝试回灌；写操作先更新内存，再 best-effort `HSET` 完整相关字段。
-- [ ] 覆盖默认值、非法/损坏 Redis、未拥有、碎片边界、重复操作和返回副本测试。
+- [x] 新增模块级 profile store 与 Redis codec（`rooms/modes/snake/cosmeticProfile.ts`）。
+- [x] 首次读取按白名单 `HMGET` 回灌（每 uid 只打一次 Redis，失败也记，避免每次 RPC 重打）；
+      写操作先更新内存，再 best-effort 单条 `HSET` 写三个 cosmetic field。
+      ⛔ 不合并 `coinBalance`——两条 fire-and-forget 路径各持过期快照，合并写会互相覆盖，留到 S4。
+- [x] 覆盖默认值、非法/损坏 Redis、未拥有、碎片边界、重复操作和返回副本测试（12/12）。
+- [ ] `getSnapshot/equip/unlock` 的域 descriptor / 向量 sidecar / 三个 ws 端点（**必须同批提交**）。
 
 ### S3-03：接入 Snake mode
 
@@ -244,7 +247,9 @@ sync 命令刷新。
 | 阶段 | 状态 | commit | 自动验证 | Creator 证据 | 备注 |
 |---|---|---|---|---|---|
 | S3-01 | `[已完成]` | 本次 | `snake-s1-assets` 7/7（含新增 fail-closed 与展示名口径用例）；服务端 typecheck 0 错；`evidence/s1` `shasum -c` 29/29 | 不适用 | 业务层 hash `9ed3762e…fa19` → **`b851e345…9d2c`**；public `a1cdecbc…b075` 与 client `8615596a…d629` **未变** |
-| S3-02～05 | `[已拍板·待实施]` | - | - | - | 内存先记，单 HASH best-effort Redis 投影 |
+| S3-02（服务端 store 部分） | `[已完成]` | 本次 | `snake-cosmetic-profile` 12/12；`verify:all` exit 0（client 427/427、server 560/560） | 不适用 | 新建 `rooms/modes/snake/cosmeticProfile.ts`；白名单 `HMGET` 回灌、单条 `HSET` 只写三个 cosmetic field、读函数深拷贝 |
+| S3-02（RPC 域与端点部分） | `[已拍板·待实施]` | - | - | - | 域 descriptor + 向量 sidecar + 三个 ws 端点**必须同批**（README §9.2 陷阱 2） |
+| S3-03～05 | `[已拍板·待实施]` | - | - | - | 内存先记，单 HASH best-effort Redis 投影 |
 
 > ⚠ **`SNAKE_SKIN_COSMETIC_WRITES_ENABLED` 仍为 `false`**，S3-01 有意不翻转它：按 §9.1-A，它现在是
 > 不变量 8 的锚点，在 equip/unlock 写路径落地（S3-02/S3-03）之前翻转会让该锚点宣称一个不存在的能力。
