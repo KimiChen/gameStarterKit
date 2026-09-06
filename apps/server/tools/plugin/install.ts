@@ -16,12 +16,13 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { compareVersions, identityDifferences } from "./manifest";
-import { INSTALLED_LOCK_DIR, filesLockSha256Of, foreignLockOwners, parseInstalledLock, readInstalledLock, verifyLockAgainstTree, writeInstalledLock, type LockEntry, type LockManifestSummary, type LockSource, type LockSourceRegistry } from "./lock";
+import { compareVersions, identityDifferences, readTreePackageManifest, type PackageManifest } from "./manifest";
+import { EMPTY_REQUIRES, type KitApiSurface } from "../plugin-codegen/pluginManifestSchema";
+import { INSTALLED_LOCK_DIR, dependentsOfKit, filesLockSha256Of, foreignLockOwners, kitApiViolations, parseInstalledLock, readInstalledLock, verifyLockAgainstTree, writeInstalledLock, type LockEntry, type LockManifestSummary, type LockSource, type LockSourceRegistry } from "./lock";
 import { packPlugin } from "./pack";
-import { assertInstalledLockOwned, packageMetaUuids, pluginDeclarations, readPackage, readTreePluginManifest, validatePackage, type ValidatedPackage } from "./package";
+import { assertInstalledLockOwned, packageMetaUuids, pluginDeclarations, readPackage, validatePackage, type ValidatedPackage } from "./package";
 import { hostMetaUuids, parseMeta } from "./meta";
-import { matchesPrefixRule, mirrorPathOf, pluginDir, readGeneratedWriterPaths, type OwnershipRule, type PluginKind } from "./ownership";
+import { kitDir, matchesPrefixRule, mirrorPathOf, modesOf, packageManifestPath, pluginDir, readGeneratedWriterPaths, type OwnershipRule, type PackageClass, type PluginKind } from "./ownership";
 
 /** 外部命令执行器（npm / git）；测试 fixture 用它替换掉真实的 codegen/sync 以模拟 postinstall 失败与参数断言。 */
 export type CommandRunner = (root: string, command: string, args: readonly string[], env?: NodeJS.ProcessEnv) => void;
@@ -47,6 +48,8 @@ export interface InstallOptions {
   readonly replaceLocalFork?: boolean;
   /** 注册表来源（`install --from-registry` 填；本地 zip 安装省略），原样写进锁的 `# source`。 */
   readonly registry?: LockSourceRegistry;
+  /** kit 升级的反向闸（docs/KIT.md §4）：已安装插件对本 kit 的 api 声明落到新 [minSupported, version] 之外时默认拒绝，显式放行。 */
+  readonly breakDependents?: boolean;
 }
 
 export interface InstallReport {
@@ -70,6 +73,8 @@ export interface InstallReport {
    * 命名空间（测试目录前缀 / 域目录 / resources/ui …）的路径——未跟踪即吸收，请人工确认它们确属本插件。
    */
   readonly adopted?: { readonly added: readonly string[]; readonly changed: readonly string[]; readonly review: readonly string[] };
+  /** 仅 kit + --break-dependents：被本次升级破坏的插件依赖声明（CLI 打印；plugin -- check 也会红）。 */
+  readonly brokenDependents: readonly string[];
 }
 
 export interface ReinstallFromTreeOptions {
@@ -84,6 +89,8 @@ export interface ReinstallFromTreeOptions {
   /** 把「git 已跟踪但不在旧锁」的推导集内文件吸收进锁（缺省视为框架文件而拒绝）。 */
   readonly adoptTracked?: boolean;
   readonly runner?: CommandRunner;
+  /** 同 InstallOptions.breakDependents。 */
+  readonly breakDependents?: boolean;
 }
 
 function fail(message: string): never {
@@ -127,18 +134,25 @@ function runPostinstall(root: string, kinds: readonly string[], useGit: boolean,
   }
 }
 
-/** 删除面输入：身份摘要（派生 kinds / domains）+ 登记的 View 名。 */
+/** 删除面输入：身份摘要（派生 kinds / domains）+ 登记的 View 名 + 玩法 id 清单（省略 = 插件形态：kinds 含 gameplay ⇒ [id]）。 */
 export interface AllowDeleteSide {
   readonly id: string;
   readonly kinds: readonly PluginKind[];
   readonly domains: readonly string[];
   readonly viewNames: readonly string[];
+  readonly modes?: readonly string[];
 }
 
-/** 升级删除面：旧身份/旧登记有、新包没有的 gameplay / 插件 id / 域 / View（与 uninstall 的 allowDelete 同口径）。 */
+function modeIdsOf(side: AllowDeleteSide): readonly string[] {
+  if (side.modes) return side.modes;
+  return side.kinds.includes("gameplay") ? [side.id] : [];
+}
+
+/** 升级删除面：旧身份/旧登记有、新包没有的 gameplay（kit：逐个 mode）/ 包 id / 域 / View（与 uninstall 的 allowDelete 同口径）。 */
 export function allowDeleteFor(previous: AllowDeleteSide, next: AllowDeleteSide): AllowDelete {
   const id = previous.id;
-  const gameplays = previous.kinds.includes("gameplay") && !next.kinds.includes("gameplay") ? [id] : [];
+  const nextModes = new Set(modeIdsOf(next));
+  const gameplays = modeIdsOf(previous).filter((mode) => !nextModes.has(mode)).sort();
   const plugins = new Set<string>();
   const previousRegistered = previous.kinds.includes("client") || previous.domains.length > 0;
   if (previousRegistered) {
@@ -154,23 +168,73 @@ export function allowDeleteFor(previous: AllowDeleteSide, next: AllowDeleteSide)
   return { gameplays, plugins: [...plugins].sort() };
 }
 
-/** 树上（升级前）的 plugin.json 登记的 View 名；文件不在（旧包没有 plugin kind）则为空。 */
+/** 树上（升级前）的 plugin.json / kit.json 登记的 View 名；文件不在（旧包没有 client kind）则为空。 */
 function treeViewNames(root: string, id: string): readonly string[] {
-  const tree = readTreePluginManifest(root, id);
+  const tree = readTreePackageManifest(root, id);
   return tree ? pluginDeclarations(tree).viewNames : [];
 }
 
-/** 校验通过的包 → 锁抬头摘要（派生 kinds / constantName 已在 identity 里）。 */
+/** 校验通过的包 → 锁抬头摘要（派生 kinds / constantName / modes 已在 identity 里；kit 带 api，插件带 requires）。 */
 function summaryOf(pkg: ValidatedPackage): LockManifestSummary {
   const { manifest, identity } = pkg;
   return {
+    class: manifest.class,
     id: manifest.id,
     version: manifest.version as string,
     kinds: identity.kinds,
     constantName: identity.constantName,
+    modes: identity.modes,
     domains: manifest.domains,
     fguiPackages: manifest.fguiPackages,
+    api: manifest.class === "kit" ? manifest.api : {},
+    requires: manifest.class === "plugin" ? manifest.requires : EMPTY_REQUIRES,
   };
+}
+
+/**
+ * 宿主上一个 kit 提供的 api 面：已安装锁抬头优先；没有锁但树上有无 version 的 kit.json = 宿主自有 kit，也算提供；
+ * 都没有 = 未安装。锁存在却是插件 ⇒ 点名（requires.kits 只能指向 kit）。
+ */
+export function resolveKitApi(root: string, kitId: string): { readonly api: Readonly<Record<string, KitApiSurface>>; readonly source: "lock" | "host" } | null {
+  const lock = readInstalledLock(root, kitId);
+  if (lock) {
+    if (lock.manifest.class !== "kit") fail(`requires.kits 指向的 "${kitId}" 是已安装插件，不是 kit（插件之间 ⛔ 不做依赖解析，docs/KIT.md §4）`);
+    return { api: lock.manifest.api, source: "lock" };
+  }
+  const tree = readTreePackageManifest(root, kitId);
+  if (tree?.class === "kit" && tree.version === null) return { api: tree.api, source: "host" };
+  return null;
+}
+
+/** 插件正向闸（docs/KIT.md §4）：声明依赖的每个 kit 都在宿主上，且每个 api 面 `minSupported ≤ 声明 ≤ version`。 */
+export function assertKitRequirements(root: string, manifest: PackageManifest): void {
+  if (manifest.class !== "plugin") return;
+  const problems: string[] = [];
+  for (const [kitId, declared] of Object.entries(manifest.requires.kits)) {
+    const provided = resolveKitApi(root, kitId);
+    if (!provided) {
+      problems.push(`kit "${kitId}" 未安装（没有 ${INSTALLED_LOCK_DIR}/${kitId}.lock，树上也没有宿主自有的 ${packageManifestPath("kit", kitId)}）`);
+      continue;
+    }
+    for (const violation of kitApiViolations(declared, provided.api)) problems.push(`kit "${kitId}"：${violation}`);
+  }
+  if (problems.length > 0) fail(`拒绝：插件 "${manifest.id}" 声明的 kit 依赖无法满足（先安装 / 升级对应 kit）：\n  ${problems.join("\n  ")}`);
+}
+
+/**
+ * kit 反向闸（docs/KIT.md §4）：落盘前读全部已安装插件锁的 `requires.kits[本 kit]`，任一声明落到新 api 的
+ * [minSupported, version] 之外（或面被删）即拒绝并点名插件；显式 --break-dependents 才放行。
+ */
+export function assertKitDependentsCompatible(root: string, manifest: PackageManifest, breakDependents: boolean): readonly string[] {
+  if (manifest.class !== "kit") return [];
+  const broken: string[] = [];
+  for (const [pluginId, declared] of dependentsOfKit(root, manifest.id)) {
+    for (const violation of kitApiViolations(declared, manifest.api)) broken.push(`插件 "${pluginId}"：${violation}`);
+  }
+  if (broken.length > 0 && !breakDependents) {
+    fail(`拒绝：kit "${manifest.id}" 的新 api 面会破坏已安装插件的依赖声明（显式 --break-dependents 才放行，之后这些插件在 plugin -- check 里红，需各自升级）：\n  ${broken.join("\n  ")}`);
+  }
+  return broken;
 }
 
 /** 落盘日志：每个被本次安装触碰的路径的落盘前字节（null = 原本不存在），回滚就是按它逐条复原。 */
@@ -352,7 +416,7 @@ function blockingDirty(root: string, id: string, entries: readonly StatusEntry[]
   let owned: ReadonlySet<string> | null = null;
   return entries.filter((entry) => {
     if (entry.status !== "D " || fs.existsSync(path.join(root, entry.path))) return true;
-    if (entry.path === lockRelative || entry.path === `${pluginDir(id)}/plugin.json`) return false;
+    if (entry.path === lockRelative || entry.path === packageManifestPath("plugin", id) || entry.path === packageManifestPath("kit", id)) return false;
     owned ??= headLockPaths(root, id);
     return !owned.has(entry.path);
   });
@@ -550,10 +614,17 @@ export function nextStepsFor(pkg: ValidatedPackage, root: string, context: NextS
   if (pkg.manifest.fguiPackages.length > 0) {
     steps.push("新 FGUI 包已入仓：node scripts/fgui-manifest.mjs --write 重钉 FGUI 发布闭包锁");
   }
+  if (pkg.manifest.class === "kit" && pkg.manifest.sql.files.length > 0) {
+    steps.push("kit 带 SQL 迁移：npm --workspace @game/server run db:bootstrap（迁移账本 kit_migration 只应用未应用过的文件；install ⛔ 不碰数据库，docs/KIT.md §5）");
+  }
   steps.push("npm run verify:all（生成物新鲜度、镜像、协议指纹、测试全链；sync:shared 新建的 Cocos 镜像文件保持未跟踪，verify:sync 只查已跟踪文件）");
   const hasClientPluginDir = [...pkg.files.keys()].some((relative) => relative.startsWith("apps/client/src/plugins/"));
   if (hasClientPluginDir && !fs.existsSync(path.join(root, "apps/Cocos/assets/src/plugins.meta"))) {
     steps.push("首个 plugin 插件：打开一次 Cocos Creator 生成共享祖先目录 .meta（apps/Cocos/assets/src/plugins.meta）并提交——它由仓库持有，⛔ 不随包");
+  }
+  const hasClientKitDir = [...pkg.files.keys()].some((relative) => relative.startsWith("apps/client/src/kits/"));
+  if (hasClientKitDir && !fs.existsSync(path.join(root, "apps/Cocos/assets/src/kits.meta"))) {
+    steps.push("首个带客户端的 kit：打开一次 Cocos Creator 生成共享祖先目录 .meta（apps/Cocos/assets/src/kits.meta）并提交——它由仓库持有，⛔ 不随包");
   }
   if (pkg.identity.kinds.includes("gameplay") || pkg.manifest.domains.length > 0) {
     steps.push("提交前打开一次 Cocos Creator 为 sync:shared 新建的镜像文件（apps/Cocos/assets/src/shared/**）生成 .meta，再 git add apps/Cocos/assets/src");
@@ -562,13 +633,21 @@ export function nextStepsFor(pkg: ValidatedPackage, root: string, context: NextS
   return steps;
 }
 
-/** 推导集里与框架/其它插件共用父目录的落点（按前缀或域名归属，而不是 <id> 专属目录）。 */
-export function isSharedNamespace(relative: string, id: string): boolean {
-  const exclusive = [`${pluginDir(id)}/`, `apps/client/src/plugins/${id}/`, `apps/Cocos/assets/src/plugins/${id}/`,
-    `apps/server/src/core/${id}/`, `apps/shared/src/gameplays/${id}/`, `apps/server/src/rooms/modes/${id}/`,
-    `apps/client/src/gameplay/modes/${id}/`, `apps/client/src/logic/rooms/${id}/`, `apps/client/src/view/rooms/${id}/`,
-    `apps/Cocos/assets/src/gameplay/modes/${id}/`, `apps/Cocos/assets/src/logic/rooms/${id}/`, `apps/Cocos/assets/src/view/rooms/${id}/`,
-    `apps/Cocos/assets/resources/${id}/`];
+/** 一个玩法 id 的专属落点前缀（插件的单个玩法 / kit 的每个 mode 同形）。 */
+function gameplayExclusivePrefixes(modeId: string): readonly string[] {
+  return [`apps/shared/src/gameplays/${modeId}/`, `apps/server/src/rooms/modes/${modeId}/`,
+    `apps/client/src/gameplay/modes/${modeId}/`, `apps/client/src/logic/rooms/${modeId}/`, `apps/client/src/view/rooms/${modeId}/`,
+    `apps/Cocos/assets/src/gameplay/modes/${modeId}/`, `apps/Cocos/assets/src/logic/rooms/${modeId}/`, `apps/Cocos/assets/src/view/rooms/${modeId}/`,
+    `apps/Cocos/assets/resources/${modeId}/`];
+}
+
+/** 推导集里与框架/其它包共用父目录的落点（按前缀或域名归属，而不是 <id> 专属目录）。插件缺省 class=plugin、单玩法 = id。 */
+export function isSharedNamespace(relative: string, id: string, cls: PackageClass = "plugin", modeIds: readonly string[] = [id]): boolean {
+  const exclusive = cls === "kit"
+    ? [`${kitDir(id)}/`, `apps/client/src/kits/${id}/`, `apps/Cocos/assets/src/kits/${id}/`, `apps/shared/src/kits/${id}/`, `apps/server/src/kits/${id}/`,
+      `apps/server/src/core/compute/tasks/kits/${id}/`, `apps/Cocos/assets/resources/kits/${id}/`, ...modeIds.flatMap(gameplayExclusivePrefixes)]
+    : [`${pluginDir(id)}/`, `apps/client/src/plugins/${id}/`, `apps/Cocos/assets/src/plugins/${id}/`, `apps/server/src/core/${id}/`,
+      ...modeIds.flatMap(gameplayExclusivePrefixes)];
   if (exclusive.some((prefix) => relative.startsWith(prefix) || relative === `${prefix.slice(0, -1)}.meta`)) return false;
   return true;
 }
@@ -619,12 +698,20 @@ export function installPlugin(options: InstallOptions): InstallReport {
     }
   }
 
+  // 同一 id 不能既是已安装插件又来装 kit（反之亦然）：类别是身份，⛔ 不能升级着换。
+  if (previous && previous.manifest.class !== manifest.class) {
+    fail(`拒绝：已安装的 "${id}" 是 ${previous.manifest.class}，来包是 ${manifest.class}——先 uninstall 再装（类别不能升级着换）`);
+  }
+  // kit 依赖闸（docs/KIT.md §4）：插件正向（所需 kit 在场且 api 兼容），kit 反向（不破坏已安装插件的声明）。
+  assertKitRequirements(root, manifest);
+  const brokenDependents = assertKitDependentsCompatible(root, manifest, options.breakDependents === true);
+
   // 所有权冲突：推导集内（含镜像）已有不属本插件的文件——文件级同名与目录级占用（id/domain 撞框架目录）都拒绝；
   // 别的插件锁登记的路径先单独点名（两个插件的推导集相交是硬错误，不是「谁先装谁赢」）。
   const foreign = foreignLockOwners(root, id);
   assertNoForeignClash(id, pkg.files.keys(), foreign);
   const conflicts = ownershipConflicts(root, pkg.rules, new Set(previousEntries.keys()), foreign);
-  if (conflicts.length > 0) fail(`拒绝：以下目标路径已存在且不属插件 "${id}"（所有权冲突，⛔ 不覆盖、不混入框架目录）：\n  ${conflicts.join("\n  ")}`);
+  if (conflicts.length > 0) fail(`拒绝：以下目标路径已存在且不属${manifest.class === "kit" ? " kit" : "插件"} "${id}"（所有权冲突，⛔ 不覆盖、不混入框架目录）：\n  ${conflicts.join("\n  ")}`);
   assertNoHostUuidCollision(root, id, pkg, new Set([...previousEntries.keys(), ...pkg.files.keys()]));
 
   const stale = [...previousEntries.keys()].filter((relative) => !pkg.files.has(relative));
@@ -637,8 +724,8 @@ export function installPlugin(options: InstallOptions): InstallReport {
   // 升级删除面（旧有新无的域 / View / kind）在覆盖 plugin.json 之前从树上读出。
   const allowDelete = previous
     ? allowDeleteFor(
-      { id, kinds: previous.manifest.kinds, domains: previous.manifest.domains, viewNames: treeViewNames(root, id) },
-      { id, kinds: pkg.identity.kinds, domains: manifest.domains, viewNames: pkg.viewNames },
+      { id, kinds: previous.manifest.kinds, domains: previous.manifest.domains, viewNames: treeViewNames(root, id), modes: modesOf(previous.manifest).map((mode) => mode.id) },
+      { id, kinds: pkg.identity.kinds, domains: manifest.domains, viewNames: pkg.viewNames, modes: modesOf(pkg.identity).map((mode) => mode.id) },
     )
     : NO_DELETE;
   const postinstallKinds = [...new Set([...(previous?.manifest.kinds ?? []), ...pkg.identity.kinds])];
@@ -673,6 +760,7 @@ export function installPlugin(options: InstallOptions): InstallReport {
     source,
     previousSource: previous?.source ?? null,
     uuidChanged: uuidChanges(root, pkg, previousEntries),
+    brokenDependents,
   };
   if (options.dryRun) return { ...base, nextSteps: nextStepsFor(pkg, root) };
 
@@ -704,7 +792,7 @@ export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallRep
   const { id } = options;
   const useGit = options.git !== false;
   const previous = readInstalledLock(root, id);
-  if (!previous) fail(`插件 "${id}" 未安装（没有 ${INSTALLED_LOCK_DIR}/${id}.lock）；首装请用 install <zip|dir>`);
+  if (!previous) fail(`包 "${id}" 未安装（没有 ${INSTALLED_LOCK_DIR}/${id}.lock）；首装请用 install <zip|dir>`);
   assertInstalledLockOwned(root, previous, "从树重装");
 
   const staging = fs.mkdtempSync(path.join(os.tmpdir(), `plugin-reinstall-${id}-`));
@@ -717,16 +805,20 @@ export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallRep
   }
   const { manifest } = pkg;
   const summary = summaryOf(pkg);
+  const manifestRelative = packageManifestPath(manifest.class, id);
+  if (previous.manifest.class !== manifest.class) fail(`拒绝：已安装的 "${id}" 是 ${previous.manifest.class}，树上是 ${manifest.class}——先 uninstall 再装（类别不能升级着换）`);
   const cmp = compareVersions(summary.version, previous.manifest.version);
   if (cmp < 0 && !options.allowDowngrade) {
-    fail(`拒绝降级：已安装 ${id}@${previous.manifest.version}，树上 plugin.json 为 ${summary.version}（显式 --allow-downgrade 才放行）`);
+    fail(`拒绝降级：已安装 ${id}@${previous.manifest.version}，树上 ${manifestRelative} 为 ${summary.version}（显式 --allow-downgrade 才放行）`);
   }
-  // 身份变化闸：kinds / constantName / domains / fguiPackages 一变，推导集就变——树上把一个框架域写进 domains
-  // 会让采集把框架文件当成「本插件新增」吸进锁（审阅实证：domains 加 guild ⇒ added 7），必须显式放行。
+  // 身份变化闸：kinds / constantName / modes / domains / fguiPackages 一变，推导集就变——树上把一个前缀合规的域写进 domains
+  // 会让采集把树上同名域的文件当成「本插件新增」吸进锁（审阅实证：domains 加一个域 ⇒ added 7），必须显式放行。
   const identityChanges = identityDifferences(previous.manifest, pkg.identity);
   if (identityChanges.length > 0 && !options.allowIdentityChange) {
-    fail(`拒绝：树上 ${pluginDir(id)}/plugin.json 的身份与已安装锁不同（推导集随之变化，显式 --allow-identity-change 才放行）：\n  ${identityChanges.join("\n  ")}`);
+    fail(`拒绝：树上 ${manifestRelative} 的身份与已安装锁不同（推导集随之变化，显式 --allow-identity-change 才放行）：\n  ${identityChanges.join("\n  ")}`);
   }
+  assertKitRequirements(root, manifest);
+  const brokenDependents = assertKitDependentsCompatible(root, manifest, options.breakDependents === true);
   const previousByPath = new Map(previous.entries.map((entry) => [entry.path, entry.sha256]));
   const added = pkg.entries.map((entry) => entry.path).filter((relative) => !previousByPath.has(relative)).sort();
   const changed = pkg.entries
@@ -735,7 +827,7 @@ export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallRep
     .sort();
   const stale = [...previousByPath.keys()].filter((relative) => !pkg.files.has(relative)).sort();
   if (cmp === 0 && !sameEntries(previous.entries, pkg.entries)) {
-    fail(`拒绝：树上内容与已安装 ${id}@${previous.manifest.version} 不同但版本未变——同仓迭代也必须 bump ${pluginDir(id)}/plugin.json 的 version\n`
+    fail(`拒绝：树上内容与已安装 ${id}@${previous.manifest.version} 不同但版本未变——同仓迭代也必须 bump ${manifestRelative} 的 version\n`
       + `  新增 ${added.length}、变化 ${changed.length}、删除 ${stale.length}：\n  ${[...added, ...changed, ...stale].join("\n  ")}`);
   }
   // 谁算「本插件的」：旧锁条目一定是；树上新采集到的文件只有在 git **未跟踪**时才是作者刚写的新文件——已跟踪
@@ -760,16 +852,16 @@ export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallRep
   // 已不在推导集内，⛔ 不能替作者删——拒绝并点名，让作者删文件或改回 plugin.json。
   const staleOnDisk = stale.filter((relative) => fs.existsSync(path.join(root, relative)));
   if (staleOnDisk.length > 0) {
-    fail(`拒绝：以下文件在已安装锁里、已不在插件 "${id}" 的推导集内、却仍在磁盘上——从树重装不替作者删文件；先删掉它们或改回 ${pluginDir(id)}/plugin.json：\n  ${staleOnDisk.join("\n  ")}`);
+    fail(`拒绝：以下文件在已安装锁里、已不在包 "${id}" 的推导集内、却仍在磁盘上——从树重装不替作者删文件；先删掉它们或改回 ${manifestRelative}：\n  ${staleOnDisk.join("\n  ")}`);
   }
-  // 删除面：旧锁身份 vs 树上身份，旧 View 名从旧锁的 sidecar 条目推出（树上 plugin.json 已是新的）。
+  // 删除面：旧锁身份 vs 树上身份，旧 View 名从旧锁的 sidecar 条目推出（树上清单已是新的）。
   const allowDelete = allowDeleteFor(
-    { id, kinds: previous.manifest.kinds, domains: previous.manifest.domains, viewNames: viewNamesFromEntries(previous.entries) },
-    { id, kinds: pkg.identity.kinds, domains: manifest.domains, viewNames: pkg.viewNames },
+    { id, kinds: previous.manifest.kinds, domains: previous.manifest.domains, viewNames: viewNamesFromEntries(previous.entries), modes: modesOf(previous.manifest).map((mode) => mode.id) },
+    { id, kinds: pkg.identity.kinds, domains: manifest.domains, viewNames: pkg.viewNames, modes: modesOf(pkg.identity).map((mode) => mode.id) },
   );
   const postinstallKinds = [...new Set([...previous.manifest.kinds, ...pkg.identity.kinds])];
   // 新增里落在共享命名空间的路径：未跟踪即吸收（作者刚写的），但共享目录里也可能是别人刚写、尚未提交的文件——报出来请人确认。
-  const review = added.filter((relative) => isSharedNamespace(relative, id));
+  const review = added.filter((relative) => isSharedNamespace(relative, id, manifest.class, modesOf(pkg.identity).map((mode) => mode.id)));
   // 来源抬头：树 ≡ 旧锁的幂等 no-op 保留原来源（⛔ 不把 package 悄悄改成 tree）；真有改动才标 tree 并把上一来源放进 forkedFrom。
   const noop = sameEntries(previous.entries, pkg.entries) && previous.manifest.version === summary.version;
   const source: LockSource = noop && previous.source
@@ -787,6 +879,7 @@ export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallRep
     previousSource: previous.source ?? null,
     uuidChanged: [],
     adopted: { added, changed, review },
+    brokenDependents,
   };
   if (options.dryRun) return { ...base, nextSteps: nextStepsFor(pkg, root) };
 

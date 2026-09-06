@@ -8,9 +8,9 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { classifyPath, deriveOwnership, hardExclusionReason, matchesPrefixRule, mirrorPathOf, pluginDir, readProtectedPaths, type OwnershipRule } from "./ownership";
-import { identityOf, parsePluginManifest, readTreeGameplaySource, type PluginManifest } from "./manifest";
-import { PACKAGE_FILES_LOCK, PACKAGE_MANIFEST, foreignLockOwners, renderFilesLock, sha256, type LockEntry } from "./lock";
+import { classifyPath, deriveOwnership, hardExclusionReason, matchesPrefixRule, mirrorPathOf, packageManifestName, packageManifestPath, readProtectedPaths, type OwnershipRule } from "./ownership";
+import { assertKitModesConsistent, readTreeKitGameplayDirs, readTreePackageManifest, treeIdentityOf, type PackageManifest } from "./manifest";
+import { PACKAGE_FILES_LOCK, foreignLockOwners, renderFilesLock, sha256, type LockEntry } from "./lock";
 import { validatePackage, type PluginPackage } from "./package";
 import { writeZip } from "./zip";
 
@@ -24,7 +24,7 @@ export interface PackOptions {
 }
 
 export interface PackResult {
-  readonly manifest: PluginManifest;
+  readonly manifest: PackageManifest;
   readonly entries: readonly LockEntry[];
   readonly skipped: readonly string[];
   readonly output: string;
@@ -53,25 +53,27 @@ function listFiles(root: string, relativeDir: string): string[] {
   return out;
 }
 
-/** 读取作者侧 apps/plugins/<id>/plugin.json。 */
-export function readAuthoredManifest(root: string, id: string): { readonly manifest: PluginManifest; readonly bytes: Buffer } {
-  const relative = `${pluginDir(id)}/${PACKAGE_MANIFEST}`;
-  const file = path.join(root, relative);
-  if (!fs.existsSync(file)) fail(`找不到 ${relative}（作者侧插件自述）`);
-  const bytes = fs.readFileSync(file);
-  const manifest = parsePluginManifest(JSON.parse(bytes.toString("utf8")), relative);
+/** 读取作者侧 apps/plugins/<id>/plugin.json 或 apps/kits/<id>/kit.json。 */
+export function readAuthoredManifest(root: string, id: string): { readonly manifest: PackageManifest; readonly bytes: Buffer } {
+  const manifest = readTreePackageManifest(root, id);
+  if (!manifest) fail(`找不到 ${packageManifestPath("plugin", id)} 或 ${packageManifestPath("kit", id)}（作者侧包自述）`);
+  const relative = packageManifestPath(manifest.class, id);
+  const bytes = fs.readFileSync(path.join(root, relative));
   if (manifest.id !== id) fail(`${relative} 的 id（${manifest.id}）与目录名不一致`);
-  if (manifest.version === null) fail(`${relative} 没有 version：宿主自有插件不可打包（要分发就给它一个 semver）`);
+  if (manifest.version === null) fail(`${relative} 没有 version：宿主自有${manifest.class === "kit" ? " kit" : "插件"}不可打包（要分发就给它一个 semver）`);
+  if (manifest.class === "kit") {
+    assertKitModesConsistent(manifest, (file) => (fs.existsSync(path.join(root, file)) ? fs.readFileSync(path.join(root, file)) : null), readTreeKitGameplayDirs(root, id));
+  }
   return { manifest, bytes };
 }
 
-/** 从工作树采集插件文件（不写盘）。 */
-export function collectPluginFiles(root: string, manifest: PluginManifest): {
+/** 从工作树采集包文件（不写盘）。 */
+export function collectPluginFiles(root: string, manifest: PackageManifest): {
   readonly files: ReadonlyMap<string, Buffer>;
   readonly skipped: readonly string[];
   readonly rules: readonly OwnershipRule[];
 } {
-  const rules = deriveOwnership(identityOf(manifest, readTreeGameplaySource(root, manifest.id)));
+  const rules = deriveOwnership(treeIdentityOf(root, manifest));
   const protectedPaths = readProtectedPaths(root);
   const candidates = new Set<string>();
   for (const rule of rules) {
@@ -92,7 +94,7 @@ export function collectPluginFiles(root: string, manifest: PluginManifest): {
   const foreign = foreignLockOwners(root, manifest.id);
   const overlap = [...candidates].filter((relative) => foreign.has(relative)).sort();
   if (overlap.length > 0) {
-    fail(`插件 "${manifest.id}" 的所有权推导集与其它已安装插件的锁重叠，拒绝采集：\n  ${overlap.map((relative) => `${relative}（属于插件 ${foreign.get(relative) as string}）`).join("\n  ")}`);
+    fail(`${manifest.class === "kit" ? "kit" : "插件"} "${manifest.id}" 的所有权推导集与其它已安装插件的锁重叠，拒绝采集：\n  ${overlap.map((relative) => `${relative}（属于插件 ${foreign.get(relative) as string}）`).join("\n  ")}`);
   }
   const files = new Map<string, Buffer>();
   const skipped: string[] = [];
@@ -146,7 +148,8 @@ export function packPlugin(options: PackOptions): PackResult {
   const collected = collectPluginFiles(root, manifest);
   const { skipped } = collected;
   const files = new Map<string, Buffer>(collected.files);
-  files.set(`${pluginDir(id)}/${PACKAGE_MANIFEST}`, manifestBytes);
+  const manifestName = packageManifestName(manifest.class);
+  files.set(packageManifestPath(manifest.class, id), manifestBytes);
   const entries: LockEntry[] = [...files.entries()]
     .map(([relative, data]) => ({ path: relative, sha256: sha256(data) }))
     .sort((left, right) => (left.path < right.path ? -1 : 1));
@@ -163,13 +166,13 @@ export function packPlugin(options: PackOptions): PackResult {
       fs.mkdirSync(path.dirname(target), { recursive: true });
       fs.writeFileSync(target, data);
     }
-    fs.writeFileSync(path.join(dir, PACKAGE_MANIFEST), manifestBytes);
+    fs.writeFileSync(path.join(dir, manifestName), manifestBytes);
     fs.writeFileSync(path.join(dir, PACKAGE_FILES_LOCK), lockText, "utf8");
     return { manifest, entries, skipped, output: dir };
   }
   const zip = writeZip([
     ...[...files.entries()].map(([relative, data]) => ({ path: relative, data })),
-    { path: PACKAGE_MANIFEST, data: manifestBytes },
+    { path: manifestName, data: manifestBytes },
     { path: PACKAGE_FILES_LOCK, data: Buffer.from(lockText, "utf8") },
   ]);
   const outFile = path.resolve(options.outFile as string);
