@@ -12,7 +12,7 @@
   （`btn_`/`txt_`/`img_`/`ld_`/`ld3_`/`lst_`/`pg_`/`tge_`/`go_`/`jb_`，词表真源
   `tools/fgui-codegen/binding.ts`），无前缀 = 纯装饰、代码永远不碰。
 - 设计分辨率 **750×1624 竖屏 + MatchWidth**（编辑器 Adaptation 已配好，与代码 `designSpec.ts`
-  有机检比对）；Cocos `project.json` 尚未被这项测试读取，完整缺口见[根收口计划](../../../plan-v3.md)。
+  有机检比对）；Cocos `project.json` 尚未被这项测试读取，完整缺口见[收口计划](../../../docs/plan-v5.md)。
   ⛔ 新组件别照抄旧稿的 1136×640/750×1334 尺寸。
 
 ## 出图 checklist（每个组件导出前过一遍）

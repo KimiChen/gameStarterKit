@@ -16,7 +16,7 @@
  * 后缀写法曾让门禁把它记成 `root:X`，是第四轮修掉的一个真实假绿。
  *
  * 两类**已登记的有意背离**用 `failClosed` / `staticBlind` 显式钉住，而不是从表里删掉：
- * 将来谁把它们「修好」了，这里会红，提醒同步更新 plan-v3 的边界登记。
+ * 将来谁把它们「修好」了，这里会红，提醒同步更新 docs/EXTRAS.md §5.3 的保留边界登记。
  */
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
@@ -216,7 +216,7 @@ test("npm 引用判定与真实 npm 逐条一致", () => {
     if (gate === real) {
       if (failClosed || staticBlind) {
         divergences.push(`${form}\n    已登记的有意背离现在与真实 npm 一致了（gate=real=${real}）`
-          + `\n    请从 CASES 里去掉该标记并同步更新 plan-v3 的边界登记。`);
+          + `\n    请从 CASES 里去掉该标记并同步更新 docs/EXTRAS.md §5.3 的保留边界登记。`);
       }
       continue;
     }
