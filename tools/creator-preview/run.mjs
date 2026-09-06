@@ -181,7 +181,7 @@ async function scenarioSettings(runner) {
       .find({ pathIncludes: "row-entry", kind: "label" })
       .map((node) => node.text)
       .filter((text) => /·\s*\S+$/u.test(text))
-      .map((text) => ({ label: text.replace(/\s*·\s*\S+$/u, ""), featureId: text.match(/·\s*(\S+)$/u)[1] }));
+      .map((text) => ({ label: text.replace(/\s*·\s*\S+$/u, ""), pluginId: text.match(/·\s*(\S+)$/u)[1] }));
     if (entries.length === 0) throw new Error("设置面板没有任何插件入口行");
     const shot = await runner.shot("settings");
     return { entries, shot };
@@ -192,7 +192,7 @@ async function scenarioRedeem(runner) {
   await scenarioSettings(runner);
   const code = runner.options.code;
   await runner.step("进入「兑换码 · redeem」", () => runner.tapText("进入", { near: /·\s*redeem$/u }));
-  await runner.step("RedeemView 挂载（route 形态：FeatureHost 动态装载后打开）", async () => {
+  await runner.step("RedeemView 挂载（route 形态：PluginHost 动态装载后打开）", async () => {
     const editbox = await runner.waitFor("RedeemView 的输入框", (walk) => (selectNodes(walk, { name: "RedeemView" }).length > 0 ? selectNodes(walk, { kind: "editbox", pathIncludes: "RedeemView" })[0] ?? null : null));
     const shot = await runner.shot("redeem-empty");
     const labels = runner.find({ pathIncludes: "RedeemView", kind: "label" }).map((node) => node.text).filter(Boolean);
@@ -229,7 +229,7 @@ async function scenarioRedeem(runner) {
 async function scenarioTally(runner) {
   await scenarioSettings(runner);
   await runner.step("进入「点数赛 · tally」", () => runner.tapText("进入", { near: /·\s*tally$/u }));
-  const goal = await runner.step("TallyView 挂载并开局（gameplay 形态：FeatureHost 装载 → 加入 GameRoom）", async () => {
+  const goal = await runner.step("TallyView 挂载并开局（gameplay 形态：PluginHost 装载 → 加入 GameRoom）", async () => {
     const headline = await runner.waitFor("「目标 N 次」标题", (walk) => selectNodes(walk, { kind: "label", textMatches: /目标\s*\d+\s*次/u })[0] ?? null, 60_000);
     const tapGoal = Number(headline.text.match(/目标\s*(\d+)\s*次/u)[1]);
     const shot = await runner.shot("tally-start");

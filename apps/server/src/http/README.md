@@ -17,8 +17,8 @@ named-export helper 放在显式排除的 `_support/`，不得混进 domain 目�
 | `GET /version` | `misc/version.ts` | Demo 协议版本；由 `GameHttpContractMap.Version` 派生并验证 response |
 | `GET /clock/now` | `misc/clockNow.ts` | Demo 对时；由 `GameHttpContractMap.ClockNow` 派生并验证 response |
 | `GET /notice/list` | `notice/list.ts` | 静态公告 Demo；由 `GameHttpContractMap.NoticeList` 派生并验证 response |
-| `POST /admin/kick` | `admin/kick.ts` | 非核心强制下线参考，见 EXTRAFEATURES |
-| `POST /pay/wx-notify` | `pay/wxNotify.ts` | 默认关闭的非核心参考，见 EXTRAFEATURES |
+| `POST /admin/kick` | `admin/kick.ts` | 非核心强制下线参考，见 EXTRAS |
+| `POST /pay/wx-notify` | `pay/wxNotify.ts` | 默认关闭的非核心参考，见 EXTRAS |
 
 登录与选区由外部 WebPlatform Public API 提供，游戏服不挂兼容代理。Lobby 内的一问一答玩法数据使用
 `../websocket/` RPC；HTTP 是否适合某个新功能仍应按缓存、鉴权和交互语义判断，不能只按目录惯例决定。
@@ -31,4 +31,4 @@ named-export helper 放在显式排除的 `_support/`，不得混进 domain 目�
 
 完整 route matrix、限制和额外能力分类见
 [`docs/SERVER.md §6`](../../../../docs/SERVER.md#6-http-开发边界) 与
-[`docs/EXTRAFEATURES.md`](../../../../docs/EXTRAFEATURES.md)。
+[`docs/EXTRAS.md`](../../../../docs/EXTRAS.md)。

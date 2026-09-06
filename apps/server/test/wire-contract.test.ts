@@ -384,7 +384,7 @@ test("所有公开 wire validator：hostile getter/iterator 统一转为可判�
   assertInvalid(() => normalizeEffect(revokedEffectArray.proxy), "EFFECT_DATA_CORRUPT");
 });
 
-// Lobby 路由的 request/response 向量已迁入 feature-owned sidecar
+// Lobby 路由的 request/response 向量已迁入 plugin-owned sidecar
 // （test/lobbyRpcVectors/<域>.ts），正反向断言见 lobby-rpc-vectors.test.ts。
 
 test("push/state vectors：未知推送、非法 phase、状态 extra key 在渲染前拒绝", () => {

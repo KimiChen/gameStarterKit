@@ -43,7 +43,7 @@ plan-v3 §30 登记过一条教训：`plan-v2 → plan-v3` 的迁移**批准存�
   ⚠ **更正（迁移当轮的这段原文写过头了）**：当时写的是「本次不只按短语查，也按语义查」，
   但语义查实际只覆盖了 `plan-v3.md` 自身这一处。随后的对抗式复核又查出 19 处
   仍以现在时把 plan-v3 当作当前真相（已登记文档 15 处：`docs/OVERVIEW.md` 3 处、
-  `docs/EXTRAFEATURES.md` 4 处、`docs/CLIENT.md` 2 处、`docs/SERVER.md` 1 处、`todo-godogen.md`
+  `docs/EXTRAS.md` 4 处、`docs/CLIENT.md` 2 处、`docs/SERVER.md` 1 处、`todo-godogen.md`
   5 处；另有未登记的 `docs/snakeoff/` 4 处，其中 OVERVIEW 与 EXTRAFEATURES 是那一轮**本就改过**的
   文件），而 `verify:inventory` 全绿。
   这正是本仓反复点名的「断言写得比证据远」。已全部改正，并新增 `checkArchiveNotClaimedAsTruth`
@@ -350,7 +350,7 @@ quarantine 自身写失败降级为 `transport/V3_QUARANTINE_UNAVAILABLE`——�
 
 ## 5. FGUI 产物往返自检未实现
 
-**现状**：`docs/EXTRAFEATURES.md:241-267` §3.10 登记为未实现，并已写明它与哈希锁是两件事——
+**现状**：`docs/EXTRAS.md:241-267` §3.10 登记为未实现，并已写明它与哈希锁是两件事——
 「哈希回答『这个文件还是我记下的那个吗』，往返自检回答『这个产物解析回来还是我以为的那份内容吗』」。
 代码侧证实：`scripts/fgui-manifest.mjs` 对 `.bin` 只做存在性（`:321-324`）+ 字节哈希；
 「组件已导出」这个断言（`:315-317`）查的是**源 XML 的 `exported=true`**，不是产物。

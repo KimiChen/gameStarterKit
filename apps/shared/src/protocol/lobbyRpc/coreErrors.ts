@@ -1,7 +1,7 @@
 /**
  * Lobby RPC core descriptor（阶段 3）：通用错误码 + core 推送（ServerNotice/ForceLogout）。
  *
- * `codegen:features` 语法读取本文件与 `domains/*.ts` 生成 `registry.generated.ts`；
+ * `codegen:plugins` 语法读取本文件与 `domains/*.ts` 生成 `registry.generated.ts`；
  * 领域错误码（如 shop 的 INSUFFICIENT_BALANCE）归各域 descriptor，⛔ 不登记在这里。
  * 登记新 core 错误码顺序：此处 CORE_RPC_ERROR_CODES → 服务端 core/errors.ts 的 ERR_MAP 映射
  * → 按 docs/SERVER.md §13 登记点复核。

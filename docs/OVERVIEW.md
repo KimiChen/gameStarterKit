@@ -2,7 +2,7 @@
 
 > 本文只描述 gono 在**开发阶段**提供的代码结构、契约和本地验证方式；完整范围见
 > [根 README](../README.md#项目边界)，非核心参考实现见
-> [额外功能与参考实现](EXTRAFEATURES.md)。
+> [额外功能与参考实现](EXTRAS.md)。
 
 ## 1. 定位
 
@@ -62,12 +62,12 @@ apps/client/src
   contractDigest（= sha256(manifest + state + wire.ts)）+ manifest.modeVersion 承担。
 - Lobby RPC 面与页面/入口登记也是单源生成：各域 descriptor 在
   `apps/shared/src/protocol/lobbyRpc/domains/<domain>.ts`（core 错误码与推送在 `coreErrors.ts`），
-  feature/View/路由/Home 入口的手写真源是 `features/<id>/feature.json` + View 同目录
-  `<Name>View.view.json` sidecar + FGUI XML。`npm --workspace @game/server run codegen:features`
+  plugin/View/路由/Home 入口的手写真源是 `apps/plugins/<id>/plugin.json` + View 同目录
+  `<Name>View.view.json` sidecar + FGUI XML。`npm --workspace @game/server run codegen:plugins`
   据此生成 `lobbyRpc/registry.generated.ts`、客户端
-  `generated/{views,fguiContracts,features}.generated.ts` 与 `docs/features.generated.md`；
+  `generated/{views,fguiContracts,plugins}.generated.ts` 与 `docs/plugins.generated.md`；
   `lobbyRpc/index.ts`、`envelope.ts`、`push.ts` 与客户端 `view/viewRegistry.ts`、
-  `view/fguiContracts.ts`、`view/pages.ts` 均为稳定 façade，普通 feature ⛔ 不再手改
+  `view/fguiContracts.ts`、`view/pages.ts` 均为稳定 façade，普通 plugin ⛔ 不再手改
   （保护集合的机检真源是 `scripts/protected-paths.json`，随 `test:client` 的无侵入矩阵校验）。
 
 ### 3.2 约束可执行
@@ -108,7 +108,7 @@ apps/client/src
 客户端分成：
 
 - `view/`：允许依赖 `cc` 和 `fairygui-cc`，只做节点绑定、事件转发和数据搬运。
-- `app/`：AppRuntime 宿主与横切协调件（NavigationService、SessionCoordinator、FeatureHost、
+- `app/`：AppRuntime 宿主与横切协调件（NavigationService、SessionCoordinator、PluginHost、
   RefreshCoordinator、loginFlow 等）；`Main.ts` 只保留 @property 与转发。
 - `gameplay/`：每个玩法一个 `modes/<id>/index.ts` 模块（导出 `createGameplayModule(services)`：
   validateLaunch + joiner + createPlugin），由生成的 `catalog.generated.ts` 静态聚合登记；
@@ -116,11 +116,11 @@ apps/client/src
 - `logic/`：不依赖引擎/UI，承载页面行为和玩法规则，便于无头测试。
 - `net/`：房间、RPC 和 HTTP 的传输适配。
 - `core/`：HTTP 底座、生成的本地开发配置和宿主环境兼容桥。
-- `generated/`：`codegen:features` 的 View/契约/feature 注册表产物，禁手改。
+- `generated/`：`codegen:plugins` 的 View/契约/plugin 注册表产物，禁手改。
 - `view/ViewMgr.ts`：页面加载、分层、缓存和交互输入生命周期。
 
-新增页面通过 `.view.json` sidecar + `features/<id>/feature.json` 登记，经 `codegen:features`
-进入生成 catalog，打开走 feature route / NavigationService；不向通用入口堆静态 import
+新增页面通过 `.view.json` sidecar + `apps/plugins/<id>/plugin.json` 登记，经 `codegen:plugins`
+进入生成 catalog，打开走 plugin route / NavigationService；不向通用入口堆静态 import
 （`ViewMgr.open` 只允许 view/ 内部或动态 import 闭包调用）。
 
 ### 3.4 数据正确性优先
@@ -162,14 +162,14 @@ participants；热档/冷档 schema 迁移、asset effect 原子性与经济操�
    bump 该 mode 的 manifest.modeVersion），再重新 sync:shared
 5. 在 apps/server/src/websocket 或 http 增加 endpoint。新增 Lobby RPC 时先在
    apps/shared/src/protocol/lobbyRpc/domains/<domain>.ts 声明 descriptor，运行
-   npm --workspace @game/server run codegen:features 刷新 lobbyRpc/registry.generated.ts，
+   npm --workspace @game/server run codegen:plugins 刷新 lobbyRpc/registry.generated.ts，
    endpoint 只写 defineRpc(type, { handler })；新增 http endpoint 后运行
    npm --workspace @game/server run codegen:http 重新生成 apps/server/src/http/manifest.generated.ts
 6. 更新服务端登记点、key/config 与测试
 7. 在 apps/client/src/logic 增加行为
 8. 需要页面时经 npm run codegen:fgui 生成 View AUTO 区，写 <Name>View.view.json sidecar 并登记进
-   features/<id>/feature.json（路由/入口同表），再运行
-   npm --workspace @game/server run codegen:features 刷新生成注册表
+   apps/plugins/<id>/plugin.json（路由/入口同表），再运行
+   npm --workspace @game/server run codegen:plugins 刷新生成注册表
    （viewRegistry/fguiContracts/pages 是稳定 façade，⛔ 不手改）
 9. npm run sync:client
 10. 运行本地类型检查和相关测试
@@ -268,5 +268,5 @@ FairyGUI 编辑设计源
   只有单测覆盖，没有服务端或客户端调用点；被实际消费的是 logic 中的 math 工具与技能表/伤害公式，以及
   constants 中的 join 错误码工具。
 - 核心改进状态以 [plan-v5.md](../plan-v5.md) 为准；可选模块的准确状态见
-  [额外功能与参考实现](EXTRAFEATURES.md)。
+  [额外功能与参考实现](EXTRAS.md)。
 - 完整项目边界以根 README 为准。

@@ -45,7 +45,7 @@ export interface GameplayModuleRoomJoiner<TLaunch = unknown, TRoom = unknown> {
 }
 
 /**
- * 可选 lobby contribution（§7.6）：菜单入口已由 features 通道（generated menu
+ * 可选 lobby contribution（§7.6）：菜单入口已由 plugins 通道（generated menu
  * contribution）承载，本字段只承载 launch 参数装配（如私房 Lobby 页联动产出
  * roomId/ticket 等 launch 载荷）；无需要时省略。
  */

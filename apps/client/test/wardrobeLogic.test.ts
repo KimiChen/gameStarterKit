@@ -6,8 +6,8 @@ import {
     WardrobeLogic,
     describeWardrobeError,
     type WardrobeStorage,
-} from "../src/features/snakeCosmetic/logic/WardrobeLogic";
-import type { SnakeCosmeticRuntime } from "../src/features/snakeCosmetic/logic/snakeCosmeticRuntime";
+} from "../src/plugins/snakeCosmetic/logic/WardrobeLogic";
+import type { SnakeCosmeticRuntime } from "../src/plugins/snakeCosmetic/logic/snakeCosmeticRuntime";
 
 const CATALOG = [
     { skinId: 1, displayName: "小红", rarity: 0, acquisition: "default", fragmentThreshold: null },
@@ -45,7 +45,7 @@ function memoryStorage(seed?: string): WardrobeStorage & { store: Map<string, st
     };
 }
 
-test("未装载 feature：不就绪、行为 no-op、给出可读提示", async () => {
+test("未装载 plugin：不就绪、行为 no-op、给出可读提示", async () => {
     const logic = new WardrobeLogic(null);
     assert.equal(logic.isReady(), false);
     assert.equal(logic.currentNotice().kind, "error");

@@ -473,7 +473,7 @@ const allEntries = new Set();
 const capabilityEntries = new Map();
 
 /**
- * 单条能力条目的完整校验（中央 inventory 与 feature capability fragment 共用同一套断言，
+ * 单条能力条目的完整校验（中央 inventory 与 plugin capability fragment 共用同一套断言，
  * §5.7：fragment「并入 capability 检查集」而不是另起一套宽松规则）。
  * `fragmentContext` 非 null 时追加 fragment 专属的 fail-closed 规则。
  */
@@ -499,12 +499,12 @@ function checkCapabilityRecord(capability, labelBase, fragmentContext = null) {
   }
   if (!Array.isArray(capability.verification) || capability.verification.length === 0) fail(`能力 ${capability.id} 缺少 verification 命令`);
   for (const command of capability.verification ?? []) checkCommand(command, `能力 ${capability.id}`);
-  const hasExtraTruth = (capability.docs ?? []).some((doc) => doc === "docs/EXTRAFEATURES.md");
+  const hasExtraTruth = (capability.docs ?? []).some((doc) => doc === "docs/EXTRAS.md");
   if (capability.category === "extra" && !hasExtraTruth) {
-    fail(`额外能力 ${capability.id} 必须引用 docs/EXTRAFEATURES.md 作为权威边界`);
+    fail(`额外能力 ${capability.id} 必须引用 docs/EXTRAS.md 作为权威边界`);
   }
   if (capability.category === "core" && hasExtraTruth) {
-    fail(`核心能力 ${capability.id} 不得把 docs/EXTRAFEATURES.md 登记为权威能力文档`);
+    fail(`核心能力 ${capability.id} 不得把 docs/EXTRAS.md 登记为权威能力文档`);
   }
   if (capability.launch !== undefined) {
     if (capability.category !== "extra") {
@@ -518,15 +518,15 @@ function checkCapabilityRecord(capability, labelBase, fragmentContext = null) {
     }
   }
   if (fragmentContext !== null) {
-    // §5.7：verification fragment 只能引用**能实际发现该 feature 的固定聚合命令**——
-    // 登记一个存在但根本不扫 features/ 的脚本即假绿。发现 fragment 的命令是
+    // §5.7：verification fragment 只能引用**能实际发现该 plugin 的固定聚合命令**——
+    // 登记一个存在但根本不扫 plugins/ 的脚本即假绿。发现 fragment 的命令是
     // `verify:inventory`（本脚本自身）；沿既有 commandCovers（npm run 引用图递归）实证，
     // 至少一条 verification 必须覆盖它（verify:core / verify:all 等聚合链均满足）。
     const discovery = { kind: "root", script: "verify:inventory" };
     const verification = Array.isArray(capability.verification) ? capability.verification : [];
     if (verification.length > 0
       && !verification.some((command) => commandExists(command) && commandCovers(command, discovery))) {
-      fail(`feature fragment 能力 ${capability.id} 的 verification 未包含能实际发现 fragment 的聚合命令`
+      fail(`plugin fragment 能力 ${capability.id} 的 verification 未包含能实际发现 fragment 的聚合命令`
         + `（须经 npm run 引用链覆盖 root:verify:inventory）——${fragmentContext.file}`);
     }
   }
@@ -536,7 +536,7 @@ for (const [index, capability] of capabilities.entries()) {
   checkCapabilityRecord(capability, `capabilities[${index}]`);
 }
 
-checkFeatureCapabilityFragments();
+checkPluginCapabilityFragments();
 
 const registeredDefaults = new Set();
 const defaultDocs = new Set();
@@ -586,7 +586,7 @@ for (const entry of allEntries) if (!registeredDefaults.has(entry) && entry.star
 const corePlan = inventory?.routeOfTruth?.corePlan;
 const extra = inventory?.routeOfTruth?.extraCapabilities;
 if (corePlan !== "plan-v5.md") fail("routeOfTruth.corePlan 必须指向 plan-v5.md");
-if (!exists(corePlan) || !exists(extra)) fail("routeOfTruth 必须指向存在的核心计划与 EXTRAFEATURES.md");
+if (!exists(corePlan) || !exists(extra)) fail("routeOfTruth 必须指向存在的核心计划与 EXTRAS.md");
 else {
   const planText = fs.readFileSync(repoPath(corePlan), "utf8");
   const extraText = fs.readFileSync(repoPath(extra), "utf8");
@@ -596,18 +596,18 @@ else {
   if (!/唯一真相/.test(planText)) fail("plan-v5.md 未声明当前计划唯一真相");
   if (!readmeText.includes("[当前开发收口计划](plan-v5.md)")) fail("README.md 未登记 plan-v5.md 当前计划入口");
   if (!readmeText.includes("](todo-godogen.md)")) fail("README.md 未登记 todo-godogen.md 对照计划入口");
-  if (!/额外功能/.test(extraText)) fail("docs/EXTRAFEATURES.md 未声明额外能力真相");
+  if (!/额外功能/.test(extraText)) fail("docs/EXTRAS.md 未声明额外能力真相");
   if (!extraText.includes("](../todo-godogen.md)")) {
-    fail("docs/EXTRAFEATURES.md 未登记 todo-godogen.md 对照计划入口");
+    fail("docs/EXTRAS.md 未登记 todo-godogen.md 对照计划入口");
   }
-  if (/^##\s+路线图/m.test(extraText)) fail("EXTRAFEATURES.md 不得维护第二套路线图");
+  if (/^##\s+路线图/m.test(extraText)) fail("EXTRAS.md 不得维护第二套路线图");
 }
 
 /**
  * 已登记文档里不得把**历史归档**说成当前真相。
  *
  * 这是真相指针迁移的直接教训：`plan-v2 → plan-v3` 那轮漏了几处，本轮 `plan-v3 → plan-v4`
- * 又漏了 19 处（docs/OVERVIEW、docs/EXTRAFEATURES、docs/CLIENT、docs/SERVER、todo-godogen、
+ * 又漏了 19 处（docs/OVERVIEW、docs/EXTRAS、docs/CLIENT、docs/SERVER、todo-godogen、
  * docs/snakeoff/*），而两次的 verify:inventory 都是绿的——读者会被指去一份文首写着
  * 「不得从其中的完成标记推导当前状态」的归档。
  *
@@ -1115,42 +1115,42 @@ function checkCommand(command, owner, stack = new Set()) {
   }
 }
 
-// ── feature capability fragment（§5.7 阶段 7） ────────────────────────────────
+// ── plugin capability fragment（§5.7 阶段 7） ────────────────────────────────
 //
-// verifier 合并 `features/*/feature.json` 里的 capability fragment：普通 feature 只能
+// verifier 合并 `apps/plugins/*/plugin.json` 里的 capability fragment：普通 plugin 只能
 // 以 fragment 声明 extra 能力，⛔ 禁改 defaultModules/defaultScene/routeOfTruth/
 // workspaceCommandScope（中央 inventory 专属）；fragment 逐条并入上方同一套能力检查集
-// （fail closed），因此普通 extra feature 无需修改中央 docs/inventory.json。
+// （fail closed），因此普通 extra plugin 无需修改中央 docs/inventory.json。
 
 function isJsonRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function assertSupportedFeatureSchema(schema, label) {
-  // 解释器支持的 JSON Schema 关键字子集（与 feature-codegen/featureManifestSchema.ts 同口径）：
+function assertSupportedPluginSchema(schema, label) {
+  // 解释器支持的 JSON Schema 关键字子集（与 plugin-codegen/pluginManifestSchema.ts 同口径）：
   // schema 文件演进出认不得的关键字时先红，⛔ 不允许静默跳过一条约束。
   // 内联而非模块级 const：本函数经顶层驱动段调用，模块级 const 声明在驱动段之后会 TDZ 崩溃
   // （与 commandInvokesEntry 的启动器表同一约束）。
-  const FEATURE_SCHEMA_KEYWORDS = new Set([
+  const PLUGIN_SCHEMA_KEYWORDS = new Set([
     "$schema", "title", "type", "const", "pattern", "minimum", "maximum",
     "required", "properties", "additionalProperties", "items",
   ]);
   if (!isJsonRecord(schema)) throw new Error(`${label}: schema node must be an object`);
   for (const keyword of Object.keys(schema)) {
-    if (!FEATURE_SCHEMA_KEYWORDS.has(keyword)) {
+    if (!PLUGIN_SCHEMA_KEYWORDS.has(keyword)) {
       throw new Error(`${label}: schema uses unsupported keyword "${keyword}" — extend the interpreter before extending the schema`);
     }
   }
   if (isJsonRecord(schema.properties)) {
     for (const [key, child] of Object.entries(schema.properties)) {
-      assertSupportedFeatureSchema(child, `${label}.properties.${key}`);
+      assertSupportedPluginSchema(child, `${label}.properties.${key}`);
     }
   }
-  if (schema.items !== undefined) assertSupportedFeatureSchema(schema.items, `${label}.items`);
+  if (schema.items !== undefined) assertSupportedPluginSchema(schema.items, `${label}.items`);
 }
 
 /** 真实 JSON Schema 校验（首错即 throw；调用方转 fail）。 */
-function validateFeatureSchemaNode(schema, value, pathLabel) {
+function validatePluginSchemaNode(schema, value, pathLabel) {
   if (schema.const !== undefined) {
     if (value !== schema.const) throw new Error(`${pathLabel} must be ${JSON.stringify(schema.const)}`);
     return;
@@ -1170,7 +1170,7 @@ function validateFeatureSchemaNode(schema, value, pathLabel) {
     for (const [key, child] of Object.entries(properties)) {
       if (!Object.prototype.hasOwnProperty.call(value, key)) continue;
       if (!isJsonRecord(child)) throw new Error(`${pathLabel}.${key} invalid schema node`);
-      validateFeatureSchemaNode(child, value[key], `${pathLabel}.${key}`);
+      validatePluginSchemaNode(child, value[key], `${pathLabel}.${key}`);
     }
     return;
   }
@@ -1194,37 +1194,37 @@ function validateFeatureSchemaNode(schema, value, pathLabel) {
   if (type === "array") {
     if (!Array.isArray(value)) throw new Error(`${pathLabel} must be an array`);
     if (isJsonRecord(schema.items)) {
-      value.forEach((item, index) => validateFeatureSchemaNode(schema.items, item, `${pathLabel}[${index}]`));
+      value.forEach((item, index) => validatePluginSchemaNode(schema.items, item, `${pathLabel}[${index}]`));
     }
     return;
   }
   throw new Error(`${pathLabel} schema declares unsupported type: ${String(type)}`);
 }
 
-function checkFeatureCapabilityFragments() {
-  const featuresDir = path.join(ROOT, "features");
-  if (!fs.existsSync(featuresDir) || !fs.statSync(featuresDir).isDirectory()) {
-    fail("features/ 目录不存在：feature 单源目录是 capability fragment 的发现面（fail closed）");
+function checkPluginCapabilityFragments() {
+  const pluginsDir = path.join(ROOT, "apps/plugins");
+  if (!fs.existsSync(pluginsDir) || !fs.statSync(pluginsDir).isDirectory()) {
+    fail("apps/plugins/ 目录不存在：插件目录是 capability fragment 的发现面（fail closed）");
     return;
   }
-  const schemaFile = path.join(featuresDir, "feature-schema-v1.json");
+  const schemaFile = path.join(ROOT, "apps/server/tools/plugin/plugin-schema-v2.json");
   let schema;
   try {
     schema = readJson(schemaFile);
-    assertSupportedFeatureSchema(schema, "features/feature-schema-v1.json");
+    assertSupportedPluginSchema(schema, "apps/server/tools/plugin/plugin-schema-v2.json");
   } catch (error) {
-    fail(`features/feature-schema-v1.json 无法加载为受支持的 JSON Schema：${error instanceof Error ? error.message : error}`);
+    fail(`apps/server/tools/plugin/plugin-schema-v2.json 无法加载为受支持的 JSON Schema：${error instanceof Error ? error.message : error}`);
     return;
   }
 
-  const dirs = fs.readdirSync(featuresDir, { withFileTypes: true })
+  const dirs = fs.readdirSync(pluginsDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
     .sort();
   for (const dir of dirs) {
-    const relative = `features/${dir}/feature.json`;
-    const file = path.join(featuresDir, dir, "feature.json");
-    if (!fs.existsSync(file)) { fail(`${relative} 缺失：每个 feature 目录必须有 feature.json`); continue; }
+    const relative = `apps/plugins/${dir}/plugin.json`;
+    const file = path.join(pluginsDir, dir, "plugin.json");
+    if (!fs.existsSync(file)) { fail(`${relative} 缺失：每个插件目录必须有 plugin.json`); continue; }
     let manifest;
     try { manifest = readJson(file); } catch { fail(`${relative} 不是有效 JSON`); continue; }
     if (!isJsonRecord(manifest)) { fail(`${relative} 必须是 JSON object`); continue; }
@@ -1237,9 +1237,9 @@ function checkFeatureCapabilityFragments() {
       continue;
     }
     try {
-      validateFeatureSchemaNode(schema, manifest, relative);
+      validatePluginSchemaNode(schema, manifest, relative);
     } catch (error) {
-      fail(`${relative} 未通过 feature-schema-v1 校验：${error instanceof Error ? error.message : error}`);
+      fail(`${relative} 未通过 plugin-schema-v2 校验：${error instanceof Error ? error.message : error}`);
       continue;
     }
     const fragments = Array.isArray(manifest.capabilities) ? manifest.capabilities : [];

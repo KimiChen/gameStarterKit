@@ -1,7 +1,7 @@
 /**
  * FrameScheduler（Non-intrusive §7.2/§7.8 阶段 5b）：route-scoped ticker 注入。
  *
- * feature Logic ⛔ 不再修改 Main / 不见引擎帧循环——它经 ports.ticker 注册回调，
+ * plugin Logic ⛔ 不再修改 Main / 不见引擎帧循环——它经 ports.ticker 注册回调，
  * 并绑定 route handle 的 signal：close/session change 使 signal abort → 自动解绑。
  * 驱动源是 AppRuntime.tick(dt)（Main.update 转发）。
  *

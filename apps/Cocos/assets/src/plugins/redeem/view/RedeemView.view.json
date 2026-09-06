@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "owner": "redeem",
+  "kind": "cocos",
+  "layer": "popup",
+  "fullscreen": true,
+  "onlyOne": true,
+  "permanent": false,
+  "interactive": false,
+  "logic": "apps/client/src/plugins/redeem/logic/RedeemLogic.ts",
+  "group": "authenticated",
+  "restore": "discard"
+}

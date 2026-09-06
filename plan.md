@@ -36,7 +36,7 @@
 > 会话 fence 的 Lua SHA/NOSCRIPT、FGUI `checkManifest` 编排反例及 legacy 全源类型闸门均有定向测试；当前计划内缺口已全部闭合。
 > 第七轮（2026-08-29，HEAD `ca8251c`）对 `368d99e..ca8251c` 的 14 个提交逐 commit 独立复核（客户端 4 件、
 > 服务端 4 件、文档 4 件、仓库元数据 1 件 `6aea37f`、构建脚本 1 件 `808fcc3`；其中 `9884f26` 仅含本文件的
-> 第五轮复核记录，`ca8251c` 含第六轮记录与 `docs/EXTRAFEATURES.md` 的站点登记更新，约 25 条裁决）：
+> 第五轮复核记录，`ca8251c` 含第六轮记录与 `docs/EXTRAS.md` 的站点登记更新，约 25 条裁决）：
 > 机制与测试均真实落地。`verify:all`（服务端 203/203、客户端 217/217）与 `test:fgui`（47/47）有实测支撑；
 > `test:int`（102/102）与 `test:faults:int`（四组故障矩阵、共 13 个 fault point 全部实测执行）由实施方在本地 Redis/MySQL 栈上
 > 执行，复核方核对了新增用例增量（99+3=102、196+7=203、213+4=217、45+2=47）与 §3 一致。本轮修正三处条目
@@ -89,7 +89,7 @@
 ## 1. 计划边界
 
 本计划只给核心框架排优先级。托管、真实支付、渠道、GM、运行辅助、冷档、多区拓扑、Unity、配表和
-项目特定业务样例的现状统一记录在 [docs/EXTRAFEATURES.md](docs/EXTRAFEATURES.md)；`docs/undergroundIdle/`
+项目特定业务样例的现状统一记录在 [docs/EXTRAS.md](docs/EXTRAS.md)；`docs/undergroundIdle/`
 的玩法策划案同属额外内容，其状态和文档入口已由该文件统一记录。额外功能不构成核心完成
 门槛；但已经进入默认入口的可选代码仍必须可停止、可隔离，不能破坏核心构建和本地调试。
 
@@ -177,7 +177,7 @@ Node/Colyseus 运行时；若 schema decorator 在环境中触发既有兼容错
 10. Redis durable/cache/coord 语义分层、路由校验、Lua SHA 与 `NOSCRIPT` 恢复。
 
 后续维护应沿用这些接缝和登记点；新增能力不得建立第二套网络、协议、镜像或页面入口。明确未承诺的
-扩展边界见第 2 节和 `docs/EXTRAFEATURES.md`。
+扩展边界见第 2 节和 `docs/EXTRAS.md`。
 
 ## 5. P0：核心正确性
 
@@ -680,7 +680,7 @@ consumer 的 `gameHttpUrl` 仍在 `openAreaList` 选服接线中直接传给 `in
 
 每个核心能力必须能定位到活跃入口、真源、运行时边界和测试；每个默认活跃模块也必须在 OVERVIEW/就近
 README 标明。当前核心优先级真相为 [plan-v4.md](plan-v4.md)（见 `docs/inventory.json` 的
-`routeOfTruth.corePlan`），本文件与 `plan-v2.md`、`plan-v3.md` 均为历史归档；`docs/EXTRAFEATURES.md` 是额外能力真相，
+`routeOfTruth.corePlan`），本文件与 `plan-v2.md`、`plan-v3.md` 均为历史归档；`docs/EXTRAS.md` 是额外能力真相，
 不再维护第二套路线图。
 
 本轮已同步修正 AGENTS/CLAUDE、CLIENT/SERVER/WEBPLATFORM、第三方依赖域、说明站保留约定和失效链接，
@@ -707,7 +707,7 @@ FGUI、外部身份和 inventory 命令等必要条款；README 命令表已补 
 说明站边界已闭合：`apps/website/` 保留为新设计站点的本地 Sites checkout/构建工作区，由 `.gitignore`
 忽略，不进入 Git 索引、workspace、能力清单或核心验证；本仓不恢复 gitlink/submodule，也不删除该物理目录。
 额外文档边界也已闭合：`docs/undergroundIdle/` 已在 README、AGENTS/CLAUDE 和
-`docs/EXTRAFEATURES.md` 登记为未实现的玩法策划案，不伪装成活跃能力或默认入口。
+`docs/EXTRAS.md` 登记为未实现的玩法策划案，不伪装成活跃能力或默认入口。
 
 复核备注（已收口）：`apps/client/src/gameplay/` 的就近 README 由 `d770a09` 补入，Cocos 镜像由 `f574210`
 同步、`.meta` 由 `9d08be5` 补齐；文档说明 catalog、Logic/room/presentation 依赖方向和新增玩法验证动线，inventory 的
@@ -718,9 +718,9 @@ FGUI、外部身份和 inventory 命令等必要条款；README 命令表已补 
 任何机检覆盖内：它含 `## 3. 执行顺序` 与 `## 4. 任务` 下的 T1–T7（三条 P1、四条 P2），形式上构成第二份
 活跃待办，与本条「不再维护第二套路线图」以及 §10 完成定义第 1 条存在张力。当前处置是把它定性为对外部
 项目的对照吸收计划（不是本仓承诺、不与核心优先级竞争，见 §1）；其中「产物往返自检」一条已按
-`docs/undergroundIdle/` 的既有先例迁入 [`docs/EXTRAFEATURES.md` §3.10](docs/EXTRAFEATURES.md#310-产物往返自检导出物反序列化校验)
+`docs/undergroundIdle/` 的既有先例迁入 [`docs/EXTRAS.md` §3.10](docs/EXTRAS.md#310-产物往返自检导出物反序列化校验)
 （状态：未实现），可作为其余条目的处置样板。若长期保留其余内容，应同样在 README、AGENTS/CLAUDE 与
-`docs/EXTRAFEATURES.md` 登记，或迁入 `docs/` 后纳入链接检查。
+`docs/EXTRAS.md` 登记，或迁入 `docs/` 后纳入链接检查。
 
 保留边界：组合根发现不声称构建完整 TypeScript import graph，scene 发现不扫描动态 prefab，Markdown
 检查守住登记链接与锚点而不是通用语法解析。
@@ -809,7 +809,7 @@ mount 并执行真实 `BallMoveView`，将完整有序 trace 同无头路径及�
 本轮核心条目按以下定义完成并已由对应测试/门禁核对：
 
 1. 真源、生成镜像、登记表和就近文档一致，不手改生成目录；额外策划案和本地站点边界由
-   `docs/EXTRAFEATURES.md` 统一登记。
+   `docs/EXTRAS.md` 统一登记。
 2. 外部/wire 边界有 malformed、extra-key、NaN、timeout 和过大输入测试。
 3. 竞态由 deferred promise/fake clock 稳定复现，并断言最终领域状态而非仅调用次数。
 4. timer/listener/room/worker/request 都有明确 ownership、cancel 和 dispose 语义。

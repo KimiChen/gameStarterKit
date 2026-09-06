@@ -1,6 +1,6 @@
 /**
  * 设置面板逻辑（docs/PLUGIN.md §6/§6.1 的机检）：
- *  - 插件入口列表是**全量** contribution 按 **featureId 字母序**（⛔ 不是宿主 placement 的
+ *  - 插件入口列表是**全量** contribution 按 **pluginId 字母序**（⛔ 不是宿主 placement 的
  *    首屏序，也不是声明序）：用例内自洽核对「全量 > 首屏 placement」与「独立重算的字母序」；
  *  - 点击走注入的 launch；不可用（failed/disabled）条目置灰且 activate 拒绝，
  *    显式 retry 仍走**同一条** launch 通道（宿主侧 userIntent 闸）；
@@ -9,11 +9,11 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { GENERATED_HOST, GENERATED_MENU_CONTRIBUTIONS } from "../src/generated/features.generated";
+import { GENERATED_HOST, GENERATED_MENU_CONTRIBUTIONS } from "../src/generated/plugins.generated";
 import {
   SETTINGS_PLACEHOLDERS,
   SettingsLogic,
-  type FeatureAvailability,
+  type PluginAvailability,
   type SettingsDeps,
   type SettingsPluginEntryInput,
   type SettingsProfilePatch,
@@ -24,14 +24,14 @@ interface Harness {
   readonly patches: SettingsProfilePatch[];
   readonly launched: string[];
   readonly renders: () => number;
-  setAvailability(featureId: string, availability: FeatureAvailability): void;
+  setAvailability(pluginId: string, availability: PluginAvailability): void;
   failNextWrite(reason?: string): void;
 }
 
 function makeHarness(entries: readonly SettingsPluginEntryInput[] = []): Harness {
   const patches: SettingsProfilePatch[] = [];
   const launched: string[] = [];
-  const availability = new Map<string, FeatureAvailability>();
+  const availability = new Map<string, PluginAvailability>();
   let failWrite: string | null = null;
   let renders = 0;
   const deps: SettingsDeps = {
@@ -43,7 +43,7 @@ function makeHarness(entries: readonly SettingsPluginEntryInput[] = []): Harness
         throw new Error(reason);
       }
     },
-    availabilityOf: (featureId) => availability.get(featureId) ?? "available",
+    availabilityOf: (pluginId) => availability.get(pluginId) ?? "available",
   };
   const logic = new SettingsLogic(deps);
   logic.onChanged = () => { renders++; };
@@ -56,7 +56,7 @@ function makeHarness(entries: readonly SettingsPluginEntryInput[] = []): Harness
     patches,
     launched,
     renders: () => renders,
-    setAvailability: (featureId, value) => { availability.set(featureId, value); },
+    setAvailability: (pluginId, value) => { availability.set(pluginId, value); },
     failNextWrite: (reason = "network down") => { failWrite = reason; },
   };
 }
@@ -64,37 +64,37 @@ function makeHarness(entries: readonly SettingsPluginEntryInput[] = []): Harness
 function contributionEntries(): SettingsPluginEntryInput[] {
   return GENERATED_MENU_CONTRIBUTIONS.map((item) => ({
     entryId: item.entryId,
-    featureId: item.featureId,
+    pluginId: item.pluginId,
     label: item.label,
     launch: () => {},
   }));
 }
 
-test("插件入口是全量 contribution 按 featureId 字母序（⛔ 不是宿主 placement 的首屏序）", () => {
+test("插件入口是全量 contribution 按 pluginId 字母序（⛔ 不是宿主 placement 的首屏序）", () => {
   const alphabetical = [...GENERATED_MENU_CONTRIBUTIONS]
-    .map((item) => `${item.featureId}/${item.entryId}`)
+    .map((item) => `${item.pluginId}/${item.entryId}`)
     .sort();
   // 自洽闭合：全量入口必须多于首屏 placement，否则「全量 vs 首屏」无判别力（菜单被掏空/全上首屏）。
   assert.ok(GENERATED_MENU_CONTRIBUTIONS.length > GENERATED_HOST.home.length,
     "全量 contribution 必须多于 host.json 的 home placement");
 
   const harness = makeHarness(contributionEntries());
-  assert.deepEqual(harness.logic.pluginEntries().map((entry) => `${entry.featureId}/${entry.entryId}`), alphabetical,
-    "设置面板列表必须是全量入口的 featureId 字母序（按 placement 裁剪或改成声明序即红）");
+  assert.deepEqual(harness.logic.pluginEntries().map((entry) => `${entry.pluginId}/${entry.entryId}`), alphabetical,
+    "设置面板列表必须是全量入口的 pluginId 字母序（按 placement 裁剪或改成声明序即红）");
   const placed = new Set(GENERATED_HOST.home.map((entry) => entry.entryId));
   assert.ok(harness.logic.pluginEntries().some((entry) => !placed.has(entry.entryId)),
     "未上首屏的入口（回归样例 ballMove 一类）必须仍出现在设置面板");
 });
 
-test("同一 feature 的多条入口以 entryId 兜底排序（确定性，与语言无关）", () => {
-  const entry = (featureId: string, entryId: string): SettingsPluginEntryInput => ({
-    entryId, featureId, label: entryId, launch: () => {},
+test("同一 plugin 的多条入口以 entryId 兜底排序（确定性，与语言无关）", () => {
+  const entry = (pluginId: string, entryId: string): SettingsPluginEntryInput => ({
+    entryId, pluginId, label: entryId, launch: () => {},
   });
   const harness = makeHarness([
     entry("zeta", "bEntry"), entry("alpha", "zEntry"), entry("alpha", "aEntry"), entry("zeta", "aEntry"),
   ]);
   assert.deepEqual(
-    harness.logic.pluginEntries().map((item) => `${item.featureId}/${item.entryId}`),
+    harness.logic.pluginEntries().map((item) => `${item.pluginId}/${item.entryId}`),
     ["alpha/aEntry", "alpha/zEntry", "zeta/aEntry", "zeta/bEntry"],
   );
 });
@@ -106,7 +106,7 @@ test("可用条目点击走 launch；failed/disabled 条目置灰、activate 拒
   assert.deepEqual(harness.launched, [first.entryId], "可用条目点击必须走注入的 launch");
 
   for (const availability of ["failed", "disabled"] as const) {
-    harness.setAvailability(first.featureId, availability);
+    harness.setAvailability(first.pluginId, availability);
     const model = harness.logic.pluginEntries().find((item) => item.entryId === first.entryId);
     assert.equal(model?.enabled, false, `${availability}: 不可用条目必须置灰`);
     assert.ok((model?.disabledReason ?? "").length > 0, `${availability}: 置灰条目必须带原因`);
@@ -121,7 +121,7 @@ test("可用条目点击走 launch；failed/disabled 条目置灰、activate 拒
   }
 
   // 可用条目没有「重试」语义（重试只对置灰条目开放）。
-  harness.setAvailability(first.featureId, "available");
+  harness.setAvailability(first.pluginId, "available");
   const before = harness.launched.length;
   await harness.logic.retry(first.entryId);
   assert.equal(harness.launched.length, before, "可用条目不提供重试入口");
@@ -183,7 +183,7 @@ test("宿主固定占位项：合规四项 + 语言全部置灰且逐条带未�
   const harness = makeHarness();
   const ids = harness.logic.placeholders().map((item) => item.id);
   assert.deepEqual(ids, ["language", "push", "terms", "privacy", "logUpload"],
-    "占位项集合来自 PLUGIN.md §6.1 的宿主固定区块；兑换码由 features/redeem 插件提供，不得再占位");
+    "占位项集合来自 PLUGIN.md §6.1 的宿主固定区块；兑换码由 plugins/redeem 插件提供，不得再占位");
   for (const item of SETTINGS_PLACEHOLDERS) {
     assert.ok(item.label.length > 0, `${item.id}: 占位项必须有标题`);
     assert.match(item.reason, /未实现/u,

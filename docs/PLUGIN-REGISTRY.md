@@ -90,9 +90,8 @@
   "publisher": { "login": "alice", "githubId": 12345 },
   "publishedAt": "2026-09-05T08:00:00Z",
   "zipSha256": "…", "filesLockSha256": "…", "zipBytes": 123456,
-  "manifest": { "kinds": ["feature"], "constantName": null, "domains": ["redeem"], "fguiPackages": [],
-                "requires": { "featureSchemaVersion": 1, "gameplaySchemaVersion": null, "pluginApiVersion": 3 },
-                "description": "…" },
+  "manifest": { "schemaVersion": 2, "kinds": ["client"], "constantName": null, "domains": ["redeem"], "fguiPackages": [],
+                "requires": { "pluginApiVersion": 3 }, "description": "…" },
   "validatedAgainst": [
     { "at": "2026-09-05T08:00:01Z", "frameworkCommit": "75a64d3", "protectedPathsSha256": "…",
       "pluginApiVersion": 3, "result": "ok" }
@@ -101,8 +100,8 @@
 }
 ```
 
-- `manifest` 是包内 `plugin.json` 经 `parsePluginManifest` 归一化后的值（`requires` 缺省填校验时的当前值，⛔ 不出现
-  null 让读者猜），⛔ 不接受任何表单字段。
+- `manifest` 是包内 `plugin.json`（v2：身份 + 客户端登记）经 `parsePluginManifest` 归一化后的身份摘要：`kinds` / `constantName`
+  是派生值（PLUGIN.md §5.3），`requires` 只剩将来的 `pluginApiVersion`；⛔ 不接受任何表单字段。
 - `validatedAgainst` 是**追加式数组**：框架 `main` 每次前进，CI 对所有未下架版本复验并追加一条（§3.2）。
 - 索引字段一律由 `publish.json` / `owners.json` / `yank.json` 派生。
 
@@ -187,14 +186,14 @@ CI 对所有未下架版本重跑一遍并追加。CLI 安装时比较本地检�
   `registry`；`--reinstall-from-tree` 写 `tree` 并把上一把锁的 `source` 放进 `forkedFrom`（树 ≡ 锁的幂等 no-op 保留原 source）。
 - **分叉后的升级语义**：锁 `source.kind === "tree"` 时，普通 `install` 对「内容不同」的包一律拒绝并列出将被覆盖/删除的
   分叉文件，显式 `--replace-local-fork` 才放行（仍走三方比对与删除面 allowlist）。⛔ 不引入 `-local.N` 版本后缀
-  （schema 与 `compareVersions` 都不认，且 gameplay/feature 侧对 version 形态的假设未审）。
+  （schema 与 `compareVersions` 都不认，且 gameplay/plugin 侧对 version 形态的假设未审）。
 - `check` 保持离线，不校验 source 可达性；`outdated` 才用它。
 
 ### 4.3 框架 API 门面与「需要框架 ≥ X」（与注册表同期做）
 
 - 三处门面：`apps/shared/src/plugin-api/index.ts`、`apps/server/src/plugin-api/index.ts`、`apps/client/src/plugin-api/index.ts`
-  只 re-export 批准的表面（defineRpc / kFeatureUser / kFeatureShared / 受限 Redis 访问器 / GameMode 契约类型 /
-  RoomClient、joinGameRoom / CocosView / FeatureModule 类型 …）。
+  只 re-export 批准的表面（defineRpc / kPluginUser / kPluginShared / 受限 Redis 访问器 / GameMode 契约类型 /
+  RoomClient、joinGameRoom / CocosView / PluginModule 类型 …）。
 - `apps/shared/src/plugin-api/version.ts` 导出两个整数：`PLUGIN_API_VERSION`（门面任何变化都 +1，含纯追加）与
   `PLUGIN_API_MIN_SUPPORTED`（破坏性变化时抬高）。
 - 插件 `plugin.json.requires.pluginApiVersion` = 构建时依赖的门面版本。兼容判定（install / check / `validate` / 索引）：
@@ -230,8 +229,9 @@ CI 对所有未下架版本重跑一遍并追加。CLI 安装时比较本地检�
 | §1-1 postinstall 失败回滚 | ✅ 2026-09-05：落盘日志 + 索引同步 + 生成物「本次新变脏」回退（用户 WIP 留下）；卸载后未提交的暂存删除视为干净；`InstallOptions.runner` 测试接缝；钉：「§1-1」两用例（无 git / git） |
 | §1-2 升级删除面传 `--allow-delete` | ✅ 2026-09-05：`allowDeleteFor`（与 uninstall 同口径）、kinds 并集跑 codegen、`SYNC_FORCE=1`、报告/CLI/dry-run 打印删除面；钉：「§1-2」用例 + `allowDeleteFor` 单元 |
 | §1-5 锁 `source` 抬头与分叉语义 | ✅ 2026-09-05：`LockSource`（package / tree + forkedFrom + 预留 registry 子对象）、`filesLockSha256Of`、`install --replace-local-fork`、`check` 显示来源；旧锁 = unknown（redeem / tally 在 §1-9 重钉时补上）；钉：「§1-5」用例 |
-| §1-9 `requires` 必填、进锁、check 复核 | ✅ 2026-09-05：schema `requires` 必填 + kind 相关轴必填，`CURRENT_*` 读自两个 schema 文件的 const，锁抬头登记 requires，`check` 复核两侧并点名旧锁；tally 补 `gameplaySchemaVersion`（1.0.4），redeem no-op 重写补齐锁抬头（两把锁同时得到 `# source`）；钉：manifest 用例 + 「§1-9」用例 |
-| 目录形态阶段 1（PLUGIN.md §5.5）：插件目录搬到 `apps/plugins/<id>/`，feature.json / README / gameplay 单源收进插件目录 | ✅ 2026-09-05：两个 codegen 各加第二个发现根（`apps/plugins/<id>/feature.json`、`apps/plugins/<id>/gameplay/`），所有权规则只剩一条插件目录规则；redeem / tally 各 bump 1.0.5 并 `--reinstall-from-tree --adopt-tracked` 重钉；阶段 2 / 3 的取舍写在 §5.5 |
+| §1-9 `requires` 必填、进锁、check 复核 | ✅ 2026-09-05（同日晚随 plugin.json v2 合并再收敛：`requires.*SchemaVersion` 整个去掉，兼容轴 = plugin.json 自身 `schemaVersion` const + gameplay manifest `schemaVersion` 读时比对；派生 kinds / constantName 进锁抬头）。原实施：schema `requires` 必填 + kind 相关轴必填，`CURRENT_*` 读自两个 schema 文件的 const，锁抬头登记 requires，`check` 复核两侧并点名旧锁；tally 补 `gameplaySchemaVersion`（1.0.4），redeem no-op 重写补齐锁抬头（两把锁同时得到 `# source`）；钉：manifest 用例 + 「§1-9」用例 |
+| 目录形态阶段 1（PLUGIN.md §5.5）：插件目录搬到 `apps/plugins/<id>/`，plugin.json / README / gameplay 单源收进插件目录 | ✅ 2026-09-05：两个 codegen 各加第二个发现根（`apps/plugins/<id>/plugin.json`、`apps/plugins/<id>/gameplay/`），所有权规则只剩一条插件目录规则；redeem / tally 各 bump 1.0.5 并 `--reinstall-from-tree --adopt-tracked` 重钉；阶段 2 / 3 的取舍写在 §5.5 |
 | §1-11 `.meta` uuid 闸 | ✅ 2026-09-05：`tools/plugin/meta.ts`（正则与 sync-client 逐字相等由测试钉住）、validatePackage 的形状/importer/包内唯一闸、install/reinstall 的宿主 uuid 撞车闸（落盘前拒绝）；fixture `.meta` 改为按路径派生的真 uuid；钉：「§1-11」用例 |
+| feature → plugin 正名 + plugin.json v2（2026-09-05 晚，用户拍板）| ✅：登记单元并入 plugin.json（一个插件一个文件），宿主自有单元搬进 `apps/plugins/`（无 version = 不可打包/不进锁），`features/` 目录、`feature.json`、`FeatureHost`、`codegen:features`、`ft:` 前缀全部改名，`EXTRAS.md` → `EXTRAS.md`；`feature` 一词留给日常语义与地基层（kit，另开设计） |
 | 对抗验证（三名审阅者实跑绕过） | ✅ 2026-09-05 晚：击穿 9 处全部收口——回滚精确到操作前（字节 + 索引快照，用户 WIP 逐字回来）、落盘阶段同套回滚、`git status -z`、暂存删除豁免限 HEAD 本插件锁、大小写改名不丢文件、包内「文件与子路径并存」拒绝、reinstall 不替作者删磁盘文件 + View 删除面从旧锁推出 + 共享命名空间吸收点名、分叉不可被同内容包洗白 + 旧锁 fail-closed + `check` 复核 source 形状/内容身份/id 大小写、requires ⟷ 随包 schemaVersion 交叉核对、孤儿 `.meta` 拒绝、宿主 `.meta` 不可解析即拒绝装、同路径 uuid 变化报告；未击穿：§1-3 git 跟踪闸、§1-4 前缀边界 / 锁间不交、§1-2 install 路径、§1-9 requires 形态。余留（记录，未做）：`--no-git` 与未跟踪文件的吸收仍是「全部吸收」（已点名 review）；subMetas 内 uuid 不在闸内（Creator 是否采信待验证）；NFC/NFD 同名未查 |
 | v0 / v1 / v2 | 未开始 |

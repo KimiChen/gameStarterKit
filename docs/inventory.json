@@ -46,7 +46,7 @@
       "wireBoundary": "apps/server/src/core/economy/outbox.ts",
       "launch": { "kind": "workspace", "workspace": "@game/server", "script": "relayer" },
       "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test:int" }],
-      "docs": ["docs/EXTRAFEATURES.md", "docs/SERVER.md"]
+      "docs": ["docs/EXTRAS.md", "docs/SERVER.md"]
     },
     {
       "id": "character-ready",
@@ -170,7 +170,7 @@
   "defaultScene": "apps/Cocos/assets/scene.scene",
   "routeOfTruth": {
     "corePlan": "plan-v5.md",
-    "extraCapabilities": "docs/EXTRAFEATURES.md"
+    "extraCapabilities": "docs/EXTRAS.md"
   },
   "referenceDocs": ["plan.md", "plan-v2.md", "plan-v3.md", "plan-v4.md", "todo-godogen.md", "docs/Non-intrusive.md"],
   "workspaceCommandScope": [
@@ -206,17 +206,17 @@
     },
     {
       "command": { "kind": "workspace", "workspace": "@game/server", "script": "relayer" },
-      "documentedIn": "docs/EXTRAFEATURES.md",
+      "documentedIn": "docs/EXTRAS.md",
       "reason": "常驻 outbox relayer 进程，不随 dev 启动，属额外功能边界"
     },
     {
       "command": { "kind": "workspace", "workspace": "@game/server", "script": "freeze-worker" },
-      "documentedIn": "docs/EXTRAFEATURES.md",
+      "documentedIn": "docs/EXTRAS.md",
       "reason": "默认关闭的归档 worker，属额外功能边界"
     },
     {
       "command": { "kind": "workspace", "workspace": "@game/server", "script": "settle" },
-      "documentedIn": "docs/EXTRAFEATURES.md",
+      "documentedIn": "docs/EXTRAS.md",
       "reason": "常驻结算 consumer 进程，不随 dev 启动，属额外功能边界"
     },
     {
@@ -230,13 +230,13 @@
       "reason": "生成物刷新命令，登记在标准开发动线而非日常命令表"
     },
     {
-      "command": { "kind": "workspace", "workspace": "@game/server", "script": "codegen:features" },
+      "command": { "kind": "workspace", "workspace": "@game/server", "script": "codegen:plugins" },
       "documentedIn": "docs/SERVER.md",
       "reason": "生成物刷新命令，登记在 Lobby RPC 章节而非日常命令表"
     },
     {
       "command": { "kind": "workspace", "workspace": "@game/server", "script": "loadtest" },
-      "documentedIn": "docs/EXTRAFEATURES.md",
+      "documentedIn": "docs/EXTRAS.md",
       "reason": "当前入房参数已失效，登记为不可用工具而非开发动线命令"
     },
     {

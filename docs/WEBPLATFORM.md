@@ -2,7 +2,7 @@
 
 > `gono-webplatform` 是独立代码库。本文只说明 gono 在本地开发中如何消费其锁定 HTTP 契约；
 > 渠道登录、账号管理等生成契约中的额外 operation 见
-> [EXTRAFEATURES](EXTRAFEATURES.md)，不属于核心框架承诺。
+> [EXTRAS](EXTRAS.md)，不属于核心框架承诺。
 
 ## 1. 定位
 
@@ -96,7 +96,7 @@ LobbyRoom/GameRoom 经 `platform/webPlatformClient.ts` 发送：
 “存在/不存在”，不拥有或返回玩法档案。
 
 生成契约还包含核心开发链未使用或只作为额外参考的 operation。生成物存在不等于本仓已经实现对应业务；
-范围统一见 EXTRAFEATURES。
+范围统一见 EXTRAS。
 
 ## 4. 契约同步
 
@@ -193,4 +193,4 @@ Public URL 由客户端场景配置。游戏仓不得出现外部账号数据库
 ## 10. 范围
 
 本文只记录开发期 HTTP 接缝与代码所有权。总体边界见[根 README](../README.md#项目边界)，额外 operation
-及其非承诺说明见 [EXTRAFEATURES](EXTRAFEATURES.md)。
+及其非承诺说明见 [EXTRAS](EXTRAS.md)。

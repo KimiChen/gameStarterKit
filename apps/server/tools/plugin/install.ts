@@ -4,11 +4,11 @@
  *  - 升级：工作树与旧锁不符（本地改动）⇒ 拒绝；同版本不同内容 ⇒ 拒绝；降级须显式 --allow-downgrade；
  *    旧锁有、新包无 ⇒ 按清单删除（陈旧文件不残留）；
  *  - 写盘前工作树受影响路径必须干净（git status），失败前不碰工作树；
- *  - 落盘后写 scripts/plugins/<id>.lock、git add，再跑 codegen:gameplays / codegen:features / sync:shared；
+ *  - 落盘后写 scripts/plugins/<id>.lock、git add，再跑 codegen:gameplays / codegen:plugins / sync:shared；
  *    协议指纹与 FGUI manifest 的重钉是人的决策（⛔ 脚本不隐式 --write），只打印下一步；
  *  - postinstall（codegen / sync）失败 ⇒ **精确回滚**：本次写入/删除的插件文件与锁按落盘前字节复原、git 索引同步、
  *    生成物路径里「本次新变脏」的部分 restore/删除——树回到安装前，⛔ 不留「文件已写、锁已写、生成物过期」的半安装态
- *    （PLUGIN-REGISTRY §1-1）；升级删掉的域 / View / feature / gameplay 以显式 --allow-delete 交给 codegen（§1-2）。
+ *    （PLUGIN-REGISTRY §1-1）；升级删掉的域 / View / plugin / gameplay 以显式 --allow-delete 交给 codegen（§1-2）。
  *  - `install --reinstall-from-tree <id>`（plan-v5 E6 方案 ②）：同仓「作者=宿主」迭代——以工作树为真相
  *    重写已安装锁，等价于「pack 当前树 → install 该包」但不要求树≡旧锁；版本规则原样保留。
  */
@@ -17,13 +17,11 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { compareVersions, identityDifferences } from "./manifest";
-import { INSTALLED_LOCK_DIR, filesLockSha256Of, foreignLockOwners, parseInstalledLock, readInstalledLock, verifyLockAgainstTree, writeInstalledLock, type LockEntry, type LockSource, type LockSourceRegistry } from "./lock";
+import { INSTALLED_LOCK_DIR, filesLockSha256Of, foreignLockOwners, parseInstalledLock, readInstalledLock, verifyLockAgainstTree, writeInstalledLock, type LockEntry, type LockManifestSummary, type LockSource, type LockSourceRegistry } from "./lock";
 import { packPlugin } from "./pack";
-import { assertInstalledLockOwned, packageMetaUuids, readPackage, validatePackage, type ValidatedPackage } from "./package";
+import { assertInstalledLockOwned, packageMetaUuids, pluginDeclarations, readPackage, readTreePluginManifest, validatePackage, type ValidatedPackage } from "./package";
 import { hostMetaUuids, parseMeta } from "./meta";
-import { matchesPrefixRule, mirrorPathOf, pluginDir, readGeneratedWriterPaths, type OwnershipRule } from "./ownership";
-import { featureDeclarations, featureManifestPath } from "./package";
-import type { PluginManifest } from "./manifest";
+import { matchesPrefixRule, mirrorPathOf, pluginDir, readGeneratedWriterPaths, type OwnershipRule, type PluginKind } from "./ownership";
 
 /** 外部命令执行器（npm / git）；测试 fixture 用它替换掉真实的 codegen/sync 以模拟 postinstall 失败与参数断言。 */
 export type CommandRunner = (root: string, command: string, args: readonly string[], env?: NodeJS.ProcessEnv) => void;
@@ -31,7 +29,7 @@ export type CommandRunner = (root: string, command: string, args: readonly strin
 /** 升级删除面：交给两个 codegen 的显式 --allow-delete 集合（uninstall 同口径）。 */
 export interface AllowDelete {
   readonly gameplays: readonly string[];
-  readonly features: readonly string[];
+  readonly plugins: readonly string[];
 }
 
 export interface InstallOptions {
@@ -101,7 +99,7 @@ function forkLikeSource(source: LockSource | null | undefined): boolean {
   return source === null || source === undefined || source.kind === "tree";
 }
 
-const NO_DELETE: AllowDelete = { gameplays: [], features: [] };
+const NO_DELETE: AllowDelete = { gameplays: [], plugins: [] };
 
 /**
  * codegen（按新旧 kinds 的并集跑：升级去掉某个 kind 时对应 codegen 仍要跑一次来收缩）→ sync:shared → git add。
@@ -113,13 +111,14 @@ function runPostinstall(root: string, kinds: readonly string[], useGit: boolean,
     return ["--workspace", "@game/server", "run", script, ...(extra.length > 0 ? ["--", ...extra] : [])];
   };
   if (kinds.includes("gameplay")) run(root, "npm", withAllowDelete("codegen:gameplays", allowDelete.gameplays));
-  if (kinds.includes("feature")) run(root, "npm", withAllowDelete("codegen:features", allowDelete.features));
-  const deleting = allowDelete.gameplays.length + allowDelete.features.length > 0;
+  // 每个 apps/plugins/<id>/plugin.json 都是 codegen:plugins 的输入（登记面 + 域），所以它总要跑。
+  run(root, "npm", withAllowDelete("codegen:plugins", allowDelete.plugins));
+  const deleting = allowDelete.gameplays.length + allowDelete.plugins.length > 0;
   run(root, "npm", ["run", "sync:shared"], deleting ? { SYNC_FORCE: "1" } : {});
   if (useGit) {
     // 只把工作树里存在的 pathspec 交给 git（不存在的 pathspec 让 git add fatal；fixture 根未必齐全）。
     const present = (paths: readonly string[]): readonly string[] => paths.filter((relative) => fs.existsSync(path.join(root, relative)));
-    const generated = present(["apps/shared/src", "apps/server/src", "apps/client/src", "docs/features.generated.md", "apps/server/test/lobbyRpcVectors", "apps/server/test/wire-vectors"]);
+    const generated = present(["apps/shared/src", "apps/server/src", "apps/client/src", "docs/plugins.generated.md", "apps/server/test/lobbyRpcVectors", "apps/server/test/wire-vectors"]);
     if (generated.length > 0) run(root, "git", ["add", "-A", "--", ...generated]);
     // Cocos 镜像只暂存已跟踪文件的改动：sync:shared 新建的镜像没有 .meta，暂存它会让 verify:sync 红
     //（.meta 断言只遍历已跟踪文件）；新镜像文件等 Creator 生成 .meta 后再由人 git add（nextSteps）。
@@ -128,32 +127,50 @@ function runPostinstall(root: string, kinds: readonly string[], useGit: boolean,
   }
 }
 
-/** 升级删除面：旧身份/旧 feature.json 有、新包没有的 gameplay / feature / 域 / View（与 uninstall 的 allowDelete 同口径）。 */
-export function allowDeleteFor(
-  previous: { readonly manifest: PluginManifest; readonly viewNames: readonly string[] },
-  next: { readonly manifest: PluginManifest; readonly viewNames: readonly string[] },
-): AllowDelete {
-  const id = previous.manifest.id;
-  const gameplays = previous.manifest.kinds.includes("gameplay") && !next.manifest.kinds.includes("gameplay") ? [id] : [];
-  const features = new Set<string>();
-  if (previous.manifest.kinds.includes("feature")) {
-    const keepsFeature = next.manifest.kinds.includes("feature");
-    if (!keepsFeature) features.add(id);
-    for (const domain of previous.manifest.domains) {
-      if (!keepsFeature || !next.manifest.domains.includes(domain)) features.add(domain);
-    }
-    for (const view of previous.viewNames) {
-      if (!keepsFeature || !next.viewNames.includes(view)) features.add(view);
-    }
-  }
-  return { gameplays, features: [...features].sort() };
+/** 删除面输入：身份摘要（派生 kinds / domains）+ 登记的 View 名。 */
+export interface AllowDeleteSide {
+  readonly id: string;
+  readonly kinds: readonly PluginKind[];
+  readonly domains: readonly string[];
+  readonly viewNames: readonly string[];
 }
 
-/** 树上（升级前）的 feature.json 登记的 View 名；文件不在（旧包没有 feature kind）则为空。 */
+/** 升级删除面：旧身份/旧登记有、新包没有的 gameplay / 插件 id / 域 / View（与 uninstall 的 allowDelete 同口径）。 */
+export function allowDeleteFor(previous: AllowDeleteSide, next: AllowDeleteSide): AllowDelete {
+  const id = previous.id;
+  const gameplays = previous.kinds.includes("gameplay") && !next.kinds.includes("gameplay") ? [id] : [];
+  const plugins = new Set<string>();
+  const previousRegistered = previous.kinds.includes("client") || previous.domains.length > 0;
+  if (previousRegistered) {
+    const keeps = next.kinds.includes("client") || next.domains.length > 0;
+    if (!keeps) plugins.add(id);
+    for (const domain of previous.domains) {
+      if (!keeps || !next.domains.includes(domain)) plugins.add(domain);
+    }
+    for (const view of previous.viewNames) {
+      if (!keeps || !next.viewNames.includes(view)) plugins.add(view);
+    }
+  }
+  return { gameplays, plugins: [...plugins].sort() };
+}
+
+/** 树上（升级前）的 plugin.json 登记的 View 名；文件不在（旧包没有 plugin kind）则为空。 */
 function treeViewNames(root: string, id: string): readonly string[] {
-  const featureFile = path.join(root, featureManifestPath(id));
-  if (!fs.existsSync(featureFile)) return [];
-  return featureDeclarations(new Map([[featureManifestPath(id), fs.readFileSync(featureFile)]]), id).viewNames;
+  const tree = readTreePluginManifest(root, id);
+  return tree ? pluginDeclarations(tree).viewNames : [];
+}
+
+/** 校验通过的包 → 锁抬头摘要（派生 kinds / constantName 已在 identity 里）。 */
+function summaryOf(pkg: ValidatedPackage): LockManifestSummary {
+  const { manifest, identity } = pkg;
+  return {
+    id: manifest.id,
+    version: manifest.version as string,
+    kinds: identity.kinds,
+    constantName: identity.constantName,
+    domains: manifest.domains,
+    fguiPackages: manifest.fguiPackages,
+  };
 }
 
 /** 落盘日志：每个被本次安装触碰的路径的落盘前字节（null = 原本不存在），回滚就是按它逐条复原。 */
@@ -341,7 +358,7 @@ function blockingDirty(root: string, id: string, entries: readonly StatusEntry[]
   });
 }
 
-/** 旧锁清单里的 View sidecar 路径 → View 名（与 featureDeclarations 同一 basename 规则）；reinstall 的删除面由此推出。 */
+/** 旧锁清单里的 View sidecar 路径 → View 名（与 pluginDeclarations 同一 basename 规则）；reinstall 的删除面由此推出。 */
 export function viewNamesFromEntries(entries: readonly LockEntry[]): readonly string[] {
   return [...new Set(entries
     .map((entry) => entry.path)
@@ -527,18 +544,18 @@ export function nextStepsFor(pkg: ValidatedPackage, root: string, context: NextS
   const steps: string[] = [];
   if (context.protocolStale === true) {
     steps.push("协议指纹已过期（protocol/ 生成物随本插件变化）：人工决定是否 bump LOBBY_PROTOCOL_VERSION，然后 node scripts/protocol-fingerprint.mjs --write");
-  } else if (context.protocolStale === null && (pkg.manifest.domains.length > 0 || pkg.manifest.kinds.includes("gameplay"))) {
+  } else if (context.protocolStale === null && (pkg.manifest.domains.length > 0 || pkg.identity.kinds.includes("gameplay"))) {
     steps.push("本次未跑 codegen：跑完后若 protocol/ 生成物变化（codegen 会提示），人工决定是否 bump LOBBY_PROTOCOL_VERSION，然后 node scripts/protocol-fingerprint.mjs --write");
   }
   if (pkg.manifest.fguiPackages.length > 0) {
     steps.push("新 FGUI 包已入仓：node scripts/fgui-manifest.mjs --write 重钉 FGUI 发布闭包锁");
   }
   steps.push("npm run verify:all（生成物新鲜度、镜像、协议指纹、测试全链；sync:shared 新建的 Cocos 镜像文件保持未跟踪，verify:sync 只查已跟踪文件）");
-  const hasClientFeatureDir = [...pkg.files.keys()].some((relative) => relative.startsWith("apps/client/src/features/"));
-  if (hasClientFeatureDir && !fs.existsSync(path.join(root, "apps/Cocos/assets/src/features.meta"))) {
-    steps.push("首个 feature 插件：打开一次 Cocos Creator 生成共享祖先目录 .meta（apps/Cocos/assets/src/features.meta）并提交——它由仓库持有，⛔ 不随包");
+  const hasClientPluginDir = [...pkg.files.keys()].some((relative) => relative.startsWith("apps/client/src/plugins/"));
+  if (hasClientPluginDir && !fs.existsSync(path.join(root, "apps/Cocos/assets/src/plugins.meta"))) {
+    steps.push("首个 plugin 插件：打开一次 Cocos Creator 生成共享祖先目录 .meta（apps/Cocos/assets/src/plugins.meta）并提交——它由仓库持有，⛔ 不随包");
   }
-  if (pkg.manifest.kinds.includes("gameplay") || pkg.manifest.domains.length > 0) {
+  if (pkg.identity.kinds.includes("gameplay") || pkg.manifest.domains.length > 0) {
     steps.push("提交前打开一次 Cocos Creator 为 sync:shared 新建的镜像文件（apps/Cocos/assets/src/shared/**）生成 .meta，再 git add apps/Cocos/assets/src");
   }
   steps.push("打开一次 Cocos Creator 确认随包 .meta 的 uuid 稳定（Creator 只会重写键序/版本，uuid 不变）");
@@ -547,7 +564,7 @@ export function nextStepsFor(pkg: ValidatedPackage, root: string, context: NextS
 
 /** 推导集里与框架/其它插件共用父目录的落点（按前缀或域名归属，而不是 <id> 专属目录）。 */
 export function isSharedNamespace(relative: string, id: string): boolean {
-  const exclusive = [`${pluginDir(id)}/`, `apps/client/src/features/${id}/`, `apps/Cocos/assets/src/features/${id}/`,
+  const exclusive = [`${pluginDir(id)}/`, `apps/client/src/plugins/${id}/`, `apps/Cocos/assets/src/plugins/${id}/`,
     `apps/server/src/core/${id}/`, `apps/shared/src/gameplays/${id}/`, `apps/server/src/rooms/modes/${id}/`,
     `apps/client/src/gameplay/modes/${id}/`, `apps/client/src/logic/rooms/${id}/`, `apps/client/src/view/rooms/${id}/`,
     `apps/Cocos/assets/src/gameplay/modes/${id}/`, `apps/Cocos/assets/src/logic/rooms/${id}/`, `apps/Cocos/assets/src/view/rooms/${id}/`,
@@ -562,15 +579,16 @@ export function installPlugin(options: InstallOptions): InstallReport {
   const pkg = validatePackage(readPackage(options.source), root);
   const { manifest } = pkg;
   const id = manifest.id;
+  const summary = summaryOf(pkg);
 
   const previous = readInstalledLock(root, id);
   const previousEntries = new Map<string, LockEntry>((previous?.entries ?? []).map((entry) => [entry.path, entry]));
   if (previous) {
     // 删除面（旧有新无）必须与写入面过同一道 allowlist：锁被改过即拒绝，⛔ 不按可疑的锁删文件。
     assertInstalledLockOwned(root, previous, "升级");
-    const cmp = compareVersions(manifest.version, previous.manifest.version);
+    const cmp = compareVersions(summary.version, previous.manifest.version);
     if (cmp < 0 && !options.allowDowngrade) {
-      fail(`拒绝降级：已安装 ${id}@${previous.manifest.version}，包为 ${manifest.version}（显式 --allow-downgrade 才放行）`);
+      fail(`拒绝降级：已安装 ${id}@${previous.manifest.version}，包为 ${summary.version}（显式 --allow-downgrade 才放行）`);
     }
     const sameContent = sameEntries(previous.entries, pkg.entries);
     // 本地分叉（锁由 --reinstall-from-tree 写出）与来源未知的旧锁（无 # source 行，可能就是分叉）都 fail-closed：
@@ -590,7 +608,7 @@ export function installPlugin(options: InstallOptions): InstallReport {
           + `  覆盖 ${overwritten.length}：\n  ${overwritten.join("\n  ") || "-"}\n  删除 ${removed.length}：\n  ${removed.join("\n  ") || "-"}`);
       }
     } else if (cmp === 0 && !sameContent) {
-      fail(`拒绝：包版本 ${manifest.version} 与已安装版本相同但内容不同——升级必须 bump version`);
+      fail(`拒绝：包版本 ${summary.version} 与已安装版本相同但内容不同——升级必须 bump version`);
     }
     const verification = verifyLockAgainstTree(root, previous.entries);
     if (verification.modified.length > 0) {
@@ -616,11 +634,14 @@ export function installPlugin(options: InstallOptions): InstallReport {
     const dirty = blockingDirty(root, id, gitStatusEntries(root, affected));
     if (dirty.length > 0) fail(`拒绝：受影响路径的工作树不干净（先提交或清理）：\n  ${dirty.map((entry) => `${entry.status} ${entry.path}`).join("\n  ")}`);
   }
-  // 升级删除面（旧有新无的域 / View / kind）在覆盖 feature.json 之前从树上读出。
+  // 升级删除面（旧有新无的域 / View / kind）在覆盖 plugin.json 之前从树上读出。
   const allowDelete = previous
-    ? allowDeleteFor({ manifest: previous.manifest, viewNames: treeViewNames(root, id) }, { manifest, viewNames: pkg.viewNames })
+    ? allowDeleteFor(
+      { id, kinds: previous.manifest.kinds, domains: previous.manifest.domains, viewNames: treeViewNames(root, id) },
+      { id, kinds: pkg.identity.kinds, domains: manifest.domains, viewNames: pkg.viewNames },
+    )
     : NO_DELETE;
-  const postinstallKinds = [...new Set([...(previous?.manifest.kinds ?? []), ...manifest.kinds])];
+  const postinstallKinds = [...new Set([...(previous?.manifest.kinds ?? []), ...pkg.identity.kinds])];
 
   // 仅大小写不同的改名（README.md → Readme.md）：大小写不敏感文件系统上新名 existsSync 会命中旧文件——必须当作
   // 「删旧写新」而不是 unchanged，且先删后写（同一 inode）。
@@ -643,7 +664,7 @@ export function installPlugin(options: InstallOptions): InstallReport {
     : { kind: "package", filesLockSha256: filesLockSha256Of(pkg.entries), ...(options.registry ? { registry: options.registry } : {}) };
   const base = {
     id,
-    version: manifest.version,
+    version: summary.version,
     previousVersion: previous?.manifest.version ?? null,
     written: written.sort(),
     unchanged: unchanged.sort(),
@@ -660,7 +681,7 @@ export function installPlugin(options: InstallOptions): InstallReport {
   guarded(root, useGit, context, run, "落盘", () => {
     for (const relative of stale) removeFileAndEmptyDirs(root, relative);
     for (const relative of written) atomicWrite(path.join(root, relative), pkg.files.get(relative) as Buffer);
-    writeInstalledLock(root, { manifest, entries: pkg.entries, source });
+    writeInstalledLock(root, { manifest: summary, entries: pkg.entries, source });
     if (useGit) gitAddExisting(root, affected);
   });
   if (options.postinstall === false) return { ...base, nextSteps: nextStepsFor(pkg, root) };
@@ -695,13 +716,14 @@ export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallRep
     fs.rmSync(staging, { recursive: true, force: true });
   }
   const { manifest } = pkg;
-  const cmp = compareVersions(manifest.version, previous.manifest.version);
+  const summary = summaryOf(pkg);
+  const cmp = compareVersions(summary.version, previous.manifest.version);
   if (cmp < 0 && !options.allowDowngrade) {
-    fail(`拒绝降级：已安装 ${id}@${previous.manifest.version}，树上 plugin.json 为 ${manifest.version}（显式 --allow-downgrade 才放行）`);
+    fail(`拒绝降级：已安装 ${id}@${previous.manifest.version}，树上 plugin.json 为 ${summary.version}（显式 --allow-downgrade 才放行）`);
   }
   // 身份变化闸：kinds / constantName / domains / fguiPackages 一变，推导集就变——树上把一个框架域写进 domains
   // 会让采集把框架文件当成「本插件新增」吸进锁（审阅实证：domains 加 guild ⇒ added 7），必须显式放行。
-  const identityChanges = identityDifferences(previous.manifest, manifest);
+  const identityChanges = identityDifferences(previous.manifest, pkg.identity);
   if (identityChanges.length > 0 && !options.allowIdentityChange) {
     fail(`拒绝：树上 ${pluginDir(id)}/plugin.json 的身份与已安装锁不同（推导集随之变化，显式 --allow-identity-change 才放行）：\n  ${identityChanges.join("\n  ")}`);
   }
@@ -740,19 +762,22 @@ export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallRep
   if (staleOnDisk.length > 0) {
     fail(`拒绝：以下文件在已安装锁里、已不在插件 "${id}" 的推导集内、却仍在磁盘上——从树重装不替作者删文件；先删掉它们或改回 ${pluginDir(id)}/plugin.json：\n  ${staleOnDisk.join("\n  ")}`);
   }
-  // 删除面：旧锁身份 vs 树上身份，旧 View 名从旧锁的 sidecar 条目推出（树上 feature.json 已是新的）。
-  const allowDelete = allowDeleteFor({ manifest: previous.manifest, viewNames: viewNamesFromEntries(previous.entries) }, { manifest, viewNames: pkg.viewNames });
-  const postinstallKinds = [...new Set([...previous.manifest.kinds, ...manifest.kinds])];
+  // 删除面：旧锁身份 vs 树上身份，旧 View 名从旧锁的 sidecar 条目推出（树上 plugin.json 已是新的）。
+  const allowDelete = allowDeleteFor(
+    { id, kinds: previous.manifest.kinds, domains: previous.manifest.domains, viewNames: viewNamesFromEntries(previous.entries) },
+    { id, kinds: pkg.identity.kinds, domains: manifest.domains, viewNames: pkg.viewNames },
+  );
+  const postinstallKinds = [...new Set([...previous.manifest.kinds, ...pkg.identity.kinds])];
   // 新增里落在共享命名空间的路径：未跟踪即吸收（作者刚写的），但共享目录里也可能是别人刚写、尚未提交的文件——报出来请人确认。
   const review = added.filter((relative) => isSharedNamespace(relative, id));
   // 来源抬头：树 ≡ 旧锁的幂等 no-op 保留原来源（⛔ 不把 package 悄悄改成 tree）；真有改动才标 tree 并把上一来源放进 forkedFrom。
-  const noop = sameEntries(previous.entries, pkg.entries) && previous.manifest.version === manifest.version;
+  const noop = sameEntries(previous.entries, pkg.entries) && previous.manifest.version === summary.version;
   const source: LockSource = noop && previous.source
     ? previous.source
     : { kind: "tree", filesLockSha256: filesLockSha256Of(pkg.entries), forkedFrom: previous.source?.kind === "tree" ? previous.source.forkedFrom : (previous.source ?? null) };
   const base = {
     id,
-    version: manifest.version,
+    version: summary.version,
     previousVersion: previous.manifest.version,
     written: [] as readonly string[],
     unchanged: pkg.entries.map((entry) => entry.path).filter((relative) => !added.includes(relative) && !changed.includes(relative)),
@@ -771,7 +796,7 @@ export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallRep
   const context = beginMutation(root, useGit, affected);
   guarded(root, useGit, context, run, "落盘", () => {
     for (const relative of stale) removeFileAndEmptyDirs(root, relative);
-    writeInstalledLock(root, { manifest, entries: pkg.entries, source });
+    writeInstalledLock(root, { manifest: summary, entries: pkg.entries, source });
     if (useGit) gitAddExisting(root, affected);
   });
   if (options.postinstall === false) return { ...base, nextSteps: nextStepsFor(pkg, root) };

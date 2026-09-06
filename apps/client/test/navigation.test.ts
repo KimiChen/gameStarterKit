@@ -5,8 +5,8 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { BUILTIN_FEATURE } from "../src/app/builtinFeature";
-import { FeatureRegistry } from "../src/app/FeatureRegistry";
+import { BUILTIN_PLUGIN } from "../src/app/builtinPlugin";
+import { PluginRegistry } from "../src/app/PluginRegistry";
 import {
   NavigationService,
   type NavigationServiceOptions,
@@ -73,7 +73,7 @@ function makeFakeViews() {
 
 function makeNavigation() {
   const fake = makeFakeViews();
-  const registry = new FeatureRegistry([BUILTIN_FEATURE]);
+  const registry = new PluginRegistry([BUILTIN_PLUGIN]);
   const navigation = new NavigationService(registry, {
     loadViews: async () => fake.module,
   } as unknown as NavigationServiceOptions);
@@ -85,7 +85,7 @@ test("open：route → view 解析、栈登记；close/abort 即出栈（取消�
   const login = await navigation.open("login");
   assert.deepEqual(fake.opens, ["Login"], "route id 必须解析到注册 view 名");
   assert.equal(login.routeId, "login");
-  assert.equal(login.featureId, "builtin");
+  assert.equal(login.pluginId, "builtin");
   assert.equal(login.group, "authenticated");
   assert.ok(login.generation > 0, "route handle 必须携带导航世代");
   assert.deepEqual(navigation.openRoutes(), ["login"]);
@@ -105,7 +105,7 @@ test("closeGroup(authenticated)：按描述符声明顺序关闭原 closeLobby �
   await navigation.open("confirm");
   navigation.closeGroup("authenticated");
   // 原 closeLobby 硬编码数组的成员与顺序（Login/AreaList/LoginNotice/Home）逐字保留；
-  // 其后是后加入 authenticated 组的壳页面，同样按 feature.json 的 routes 声明顺序。
+  // 其后是后加入 authenticated 组的壳页面，同样按 plugin.json 的 routes 声明顺序。
   assert.deepEqual(fake.closes, ["Login", "AreaList", "LoginNotice", "Home", "PromoHome", "Settings"],
     "closeGroup 必须按描述符声明顺序关闭 authenticated 组全部成员（含原 closeLobby 四项）");
   assert.deepEqual(navigation.openRoutes(), ["confirm"],
@@ -157,18 +157,18 @@ test("authenticated base：登记/恢复/清除；恢复走登记的 reopen 而�
     /未登记的 route/, "base 只能登记已注册 route");
 });
 
-test("route observer：refcount 变化通知（FeatureHost 停用判定的地面真相）", async () => {
+test("route observer：refcount 变化通知（PluginHost 停用判定的地面真相）", async () => {
   const { navigation } = makeNavigation();
-  const notifications: Array<{ featureId: string; count: number }> = [];
-  navigation.setRouteObserver((featureId, count) => notifications.push({ featureId, count }));
+  const notifications: Array<{ pluginId: string; count: number }> = [];
+  navigation.setRouteObserver((pluginId, count) => notifications.push({ pluginId, count }));
   const login = await navigation.open("login");
   const home = await navigation.open("home");
   assert.equal(navigation.openRouteCountOf("builtin"), 2);
   login.close();
   home.close();
   assert.deepEqual(notifications, [
-    { featureId: "builtin", count: 1 },
-    { featureId: "builtin", count: 0 },
+    { pluginId: "builtin", count: 1 },
+    { pluginId: "builtin", count: 0 },
   ], "每次 route 关闭必须带当前 open 计数通知");
   navigation.setRouteObserver(null);
 });

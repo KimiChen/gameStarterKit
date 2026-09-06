@@ -27,11 +27,11 @@ npm run test:fgui                            # 跑 FGUI codegen/registry/结构�
 npm run codegen:fgui -- <Pkg> <Comp>       # 生成/幂等重写 view/<Comp>View.ts（[ViewClass] 可选第三参；--view-dir 可换输出目录）
 ```
 
-本工具只写 View AUTO 区（Non-intrusive §7.5）：契约/注册表是 `codegen:features` 的生成物
+本工具只写 View AUTO 区（Non-intrusive §7.5）：契约/注册表是 `codegen:plugins` 的生成物
 （`apps/client/src/generated/{fguiContracts,views}.generated.ts`，真源为 View 同目录的
-`<Name>View.view.json` sidecar + `features/<id>/feature.json`），⛔ 不再要求手改
+`<Name>View.view.json` sidecar + `apps/plugins/<id>/plugin.json`），⛔ 不再要求手改
 `fguiContracts.ts` / `viewRegistry.ts`（两者是稳定 façade）。AUTO 重写后可运行
-`npm --workspace @game/server run codegen:features -- --check` 校验生成物新鲜度；本工具
+`npm --workspace @game/server run codegen:plugins -- --check` 校验生成物新鲜度；本工具
 不覆盖 registry/contracts，也不自动执行 FGUI manifest `--write`（那是显式资源审计锁）。
 
 契约把关是**双向机检**（`apps/client/test/viewRegistry.test.ts`）：View 文件的 AUTO 区块对组件 XML 现状做

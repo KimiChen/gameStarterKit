@@ -23,7 +23,7 @@ import { collectEndpoints } from "../src/websocket/loader";
 import { defineRpc } from "../src/websocket/rpc";
 import { LOBBY_RPC_VECTOR_FILES } from "./lobbyRpcVectors/index.generated";
 
-/** sidecar 向量合并视图（登记表由 codegen:features 生成；集合完备性由 lobby-rpc-vectors.test.ts 双向断言）。 */
+/** sidecar 向量合并视图（登记表由 codegen:plugins 生成；集合完备性由 lobby-rpc-vectors.test.ts 双向断言）。 */
 const vectors: Record<string, { request: unknown; response: unknown } | undefined> = Object.assign(
   {},
   ...Object.values(LOBBY_RPC_VECTOR_FILES),

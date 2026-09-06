@@ -73,8 +73,8 @@ import {
 } from "../net/serverSession";
 import type { WebPlatformAreaServer } from "../shared/index";
 import { currentAppGeneration, nextAppGeneration } from "./appGeneration";
-import { APP_FEATURES, type FeatureLaunchTarget } from "./builtinFeature";
-import { FeatureRegistry } from "./FeatureRegistry";
+import { APP_PLUGINS, type PluginLaunchTarget } from "./builtinPlugin";
+import { PluginRegistry } from "./PluginRegistry";
 import type { HomeMenuEntryModel } from "../logic/page/HomeLogic";
 import { NavigationService, type NavRouteHandle } from "./NavigationService";
 import { RefreshCoordinator, type RefreshFlightKey } from "./RefreshCoordinator";
@@ -85,21 +85,21 @@ const NOTICE_DONT_REMIND_DATE_KEY = "game.notice.dont-remind-date";
  *  微信侧接入后此处换 wx.login 取 code → wxLogin(code)。 */
 const DEV_LOGIN_KEY = "dev_local";
 
-/** 应用级不可变 feature/route 目录（codegen:features 生成的 descriptor 单源）。 */
-export const appFeatureRegistry = new FeatureRegistry(APP_FEATURES);
+/** 应用级不可变 plugin/route 目录（codegen:plugins 生成的 descriptor 单源）。 */
+export const appPluginRegistry = new PluginRegistry(APP_PLUGINS);
 
 /** 应用级导航单例：唯一业务 route stack 所有者（AppRuntime 与本模块共用）。 */
-export const appNavigation = new NavigationService(appFeatureRegistry);
+export const appNavigation = new NavigationService(appPluginRegistry);
 
 /**
  * §7.4：Home 菜单的运行时接线面。AppRuntime 注册（launch 走 LaunchPort、可用性查
- * FeatureHost）；无宿主（无头 pages 测试/工具路径）时入口回退 flight 的
+ * PluginHost）；无宿主（无头 pages 测试/工具路径）时入口回退 flight 的
  * onEnterBattle 回调且恒可用。
  */
 export interface HomeMenuRuntime {
-  launch(target: FeatureLaunchTarget): Promise<void>;
-  /** FeatureHost 运行时可用性（catalog 之外的可变叠加层；built-in 恒 available）。 */
-  availabilityOf(featureId: string): "available" | "failed" | "disabled";
+  launch(target: PluginLaunchTarget): Promise<void>;
+  /** PluginHost 运行时可用性（catalog 之外的可变叠加层；built-in 恒 available）。 */
+  availabilityOf(pluginId: string): "available" | "failed" | "disabled";
 }
 
 let homeMenuRuntime: HomeMenuRuntime | null = null;
@@ -150,7 +150,7 @@ async function writeProfilePreferences(patch: SettingsProfilePatch): Promise<voi
 const sessionRefresh = new RefreshCoordinator();
 
 /** authenticated base 在刷新 key 空间的 route 槽位（单 base，固定 0；
- *  feature route 各自用 NavRouteHandle.generation）。 */
+ *  plugin route 各自用 NavRouteHandle.generation）。 */
 const AUTHENTICATED_BASE_ROUTE_SLOT = 0;
 
 function authenticatedBaseRefreshKey(identity: SessionReconcileIdentity): RefreshFlightKey {
@@ -765,9 +765,9 @@ export async function openPromoHome(
 /**
  * 设置面板（docs/PLUGIN.md §6.1）：宿主固定区块 + 插件入口列表。
  *
- * 插件入口的数据源仍是 generated menu contribution（⛔ 无第二真源）：全量、featureId 字母序
+ * 插件入口的数据源仍是 generated menu contribution（⛔ 无第二真源）：全量、pluginId 字母序
  * ——插件只声明入口身份；宿主决定的首屏位置是 Home 那一份（homeContributions），这里不看。
- * 可用性叠加与 launch 都复用 Home 那条 HomeMenuRuntime 接线（同一个 FeatureHost 闸）。
+ * 可用性叠加与 launch 都复用 Home 那条 HomeMenuRuntime 接线（同一个 PluginHost 闸）。
  */
 export async function openSettings(): Promise<NavRouteHandle> {
   const h = await appNavigation.open("settings");
@@ -775,13 +775,13 @@ export async function openSettings(): Promise<NavRouteHandle> {
   await h.run((_openedView, context) => {
     const logic = new SettingsLogic({
       updateProfile: (patch) => writeProfilePreferences(patch),
-      availabilityOf: (featureId) =>
-        (homeMenuRuntime ? homeMenuRuntime.availabilityOf(featureId) : "available"),
+      availabilityOf: (pluginId) =>
+        (homeMenuRuntime ? homeMenuRuntime.availabilityOf(pluginId) : "available"),
     });
     logic.setProfile(getSessionProfile());
-    logic.setEntries(appFeatureRegistry.menuContributions().map((item) => ({
+    logic.setEntries(appPluginRegistry.menuContributions().map((item) => ({
       entryId: item.entryId,
-      featureId: item.featureId,
+      pluginId: item.pluginId,
       label: item.label,
       // 无宿主（无头 pages 测试/工具路径）时是 no-op：设置面板没有 Home 那条
       // onEnterBattle 回退通道，⛔ 也不该编一个。
@@ -825,14 +825,14 @@ export async function openHome(
       return onEnterBattle();
     };
     // §7.4 数据驱动入口：菜单唯一数据源是 generated contributions，**首屏顺序归宿主**
-    // （features/host.json → FeatureRegistry.homeContributions()，docs/PLUGIN.md §6）；点击统一走
+    // （apps/plugins/host.json → PluginRegistry.homeContributions()，docs/PLUGIN.md §6）；点击统一走
     // LaunchPort.launch(target)（经 HomeMenuRuntime 接线），无宿主回退旧回调。
-    // disabled/failed 是 FeatureHost 的运行时叠加层，不回写不可变 catalog。
-    const entries: HomeMenuEntryModel[] = appFeatureRegistry.homeContributions().map((item) => ({
+    // disabled/failed 是 PluginHost 的运行时叠加层，不回写不可变 catalog。
+    const entries: HomeMenuEntryModel[] = appPluginRegistry.homeContributions().map((item) => ({
       entryId: item.entryId,
-      featureId: item.featureId,
+      pluginId: item.pluginId,
       label: item.label,
-      enabled: homeMenuRuntime ? homeMenuRuntime.availabilityOf(item.featureId) === "available" : true,
+      enabled: homeMenuRuntime ? homeMenuRuntime.availabilityOf(item.pluginId) === "available" : true,
       launch: () => {
         if (!context.isActive()) return;
         return homeMenuRuntime ? homeMenuRuntime.launch(item.launch) : onEnterBattle();
@@ -899,7 +899,7 @@ export async function openNotice(): Promise<void> {
 }
 
 /** 关闭全部大厅壳页面（进入玩法前调用，让出 GL 画布给玩法渲染）。
- *  原硬编码页面名数组已迁为 builtinFeature 的 group 声明（成员与顺序不变）。 */
+ *  原硬编码页面名数组已迁为 builtinPlugin 的 group 声明（成员与顺序不变）。 */
 export function closeLobby(): void {
   appNavigation.closeGroup("authenticated");
 }

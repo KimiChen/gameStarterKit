@@ -1,25 +1,23 @@
 /**
- * plugin.json 的真实 JSON Schema 校验（同目录 `plugin-schema-v1.json` 单源；解释器只实现该 schema
- * 用到的 draft-07 关键字子集并对未知关键字 fail-fast——与 gameplay-codegen/manifestSchema.ts 同口径）。
+ * plugin.json v2 = 一个插件一个文件：**身份**（id / version / domains / fguiPackages / description）+ **客户端登记**
+ *（entry / viewDirs / views / owners / routes / menu / dependencies / resident / category / docs / capabilities）。
+ * schema 单源在同目录 `plugin-schema-v2.json`，解释器复用 plugin-codegen/pluginManifestSchema.ts（同一份 schema、同一个
+ * 解释器，登记面由 codegen 消费、身份面由本工具消费）。
  *
- * plugin.json 只声明身份/版本/kinds/兼容轴：
- *  - `kinds` 允许同时含 gameplay 与 feature（一个玩法插件天然 = manifest/state/wire + feature.json，
- *    PLUGIN-REVIEW F14 的 kind 二分不成立）；
- *  - `requires.*SchemaVersion` 只钉两个 schemaVersion（feature-schema-v1 / gameplay-schema-v1）——
- *    协议整数范围不是插件的兼容轴（F22）；`requires` 必填且 fail-closed：kinds 含 feature ⇒ featureSchemaVersion 必填，
- *    含 gameplay ⇒ gameplaySchemaVersion 必填；比对基准从两个 schema 文件的 `schemaVersion.const` 读取，⛔ 不是
- *    手抄常量（PLUGIN-REGISTRY §1-9）；
- *  - ⛔ 不放路径映射（仓库布局不能成为第二真源），⛔ 不放 slot/order（位置归宿主，§6）。
+ *  - ⛔ 没有 `kinds`：有客户端登记（entry / views / routes / menu 任一）⇒ client，包或树上有 `gameplay/manifest.json`
+ *    ⇒ gameplay；⛔ 没有 `constantName`：从 gameplay manifest 派生；⛔ 没有 `requires.*SchemaVersion`：plugin.json
+ *    自己的 `schemaVersion` 是 const，gameplay manifest 的 schemaVersion 与 gameplay-schema 比对（PLUGIN.md §5.3）；
+ *  - 没有 `version` = 宿主自有插件（builtin / snake …）：可被 codegen 登记，⛔ 不可打包、不进锁；
+ *  - ⛔ 不放路径映射（仓库布局不能成为第二真源），⛔ 不放 slot/order（位置归宿主 apps/plugins/host.json，§6）。
  */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { PluginIdentity, PluginKind } from "./ownership";
+import { PLUGIN_SCHEMA_FILE, parsePluginRegistration, type PluginRegistration } from "../plugin-codegen/pluginManifestSchema";
 
 const TOOL_DIR = path.dirname(fileURLToPath(import.meta.url));
-const SCHEMA_FILE = path.join(TOOL_DIR, "plugin-schema-v1.json");
-/** 两个兼容轴的真源：feature.json 与 gameplay manifest.json 各自 schema 的 `properties.schemaVersion.const`。 */
-export const FEATURE_SCHEMA_FILE = path.resolve(TOOL_DIR, "../../../../features/feature-schema-v1.json");
+export { PLUGIN_SCHEMA_FILE };
 export const GAMEPLAY_SCHEMA_FILE = path.resolve(TOOL_DIR, "../gameplay-codegen/gameplay-schema-v1.json");
 
 function readSchemaVersionConst(file: string): number {
@@ -30,171 +28,133 @@ function readSchemaVersionConst(file: string): number {
   return value;
 }
 
-/** 当前仓库支持的两个 manifest schemaVersion（plugin.json.requires 的比对基准；读自 schema 文件，⛔ 不手抄）。 */
-export const CURRENT_FEATURE_SCHEMA_VERSION: number = readSchemaVersionConst(FEATURE_SCHEMA_FILE);
+/** 两个 schemaVersion 真源（读自 schema 文件，⛔ 不手抄）：plugin.json 自身与 gameplay manifest.json。 */
+export const CURRENT_PLUGIN_SCHEMA_VERSION: number = readSchemaVersionConst(PLUGIN_SCHEMA_FILE);
 export const CURRENT_GAMEPLAY_SCHEMA_VERSION: number = readSchemaVersionConst(GAMEPLAY_SCHEMA_FILE);
 
-type JsonRecord = Record<string, unknown>;
-
+/** 打包工具视角的 plugin.json：身份字段 + 完整登记面（登记面原样来自 codegen 的解析器）。 */
 export interface PluginManifest {
-  readonly schemaVersion: 1;
+  readonly schemaVersion: 2;
   readonly id: string;
-  readonly version: string;
-  readonly kinds: readonly PluginKind[];
-  readonly constantName: string | null;
+  /** null = 宿主自有插件（不可打包、不进锁）。 */
+  readonly version: string | null;
   readonly domains: readonly string[];
   readonly fguiPackages: readonly string[];
-  readonly requires: {
-    readonly featureSchemaVersion: number | null;
-    readonly gameplaySchemaVersion: number | null;
-  };
   readonly description: string;
+  readonly registration: PluginRegistration;
+}
+
+/** gameplay 单源（包内或树上的 gameplay/manifest.json）里与身份相关的两个字段。 */
+export interface GameplaySourceSummary {
+  readonly constantName: string;
+  readonly schemaVersion: number;
 }
 
 function fail(pathLabel: string, message: string): never {
   throw new Error(`[plugin] ${pathLabel}: ${message}`);
 }
 
-function isRecord(value: unknown): value is JsonRecord {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-const SUPPORTED_KEYWORDS = new Set([
-  "$schema", "title", "type", "const", "pattern", "minimum", "maximum",
-  "required", "properties", "additionalProperties", "items",
-]);
-
-function assertSupportedSchema(schema: unknown, label: string): asserts schema is JsonRecord {
-  if (!isRecord(schema)) fail(label, "schema node must be an object");
-  for (const keyword of Object.keys(schema)) {
-    if (!SUPPORTED_KEYWORDS.has(keyword)) fail(label, `schema uses unsupported keyword "${keyword}"`);
-  }
-  if (isRecord(schema.properties)) {
-    for (const [key, child] of Object.entries(schema.properties)) assertSupportedSchema(child, `${label}.properties.${key}`);
-  }
-  if (schema.items !== undefined) assertSupportedSchema(schema.items, `${label}.items`);
-}
-
-let cachedSchema: JsonRecord | null = null;
-
-export function loadPluginManifestSchema(): JsonRecord {
-  if (cachedSchema) return cachedSchema;
-  const parsed: unknown = JSON.parse(fs.readFileSync(SCHEMA_FILE, "utf8"));
-  assertSupportedSchema(parsed, "plugin-schema-v1.json");
-  cachedSchema = parsed;
-  return parsed;
-}
-
-function validateNode(schema: JsonRecord, value: unknown, pathLabel: string): void {
-  if (schema.const !== undefined) {
-    if (value !== schema.const) fail(pathLabel, `must be ${JSON.stringify(schema.const)}`);
-    return;
-  }
-  const type = schema.type;
-  if (type === "object") {
-    if (!isRecord(value)) fail(pathLabel, "must be an object");
-    const properties = isRecord(schema.properties) ? schema.properties : {};
-    if (schema.additionalProperties === false) {
-      const unknown = Object.keys(value).filter((key) => !Object.prototype.hasOwnProperty.call(properties, key));
-      if (unknown.length > 0) fail(pathLabel, `unknown key(s): ${unknown.join(", ")}`);
-    }
-    const required = Array.isArray(schema.required) ? schema.required : [];
-    const missing = required.filter((key) => typeof key === "string" && !Object.prototype.hasOwnProperty.call(value, key));
-    if (missing.length > 0) fail(pathLabel, `missing key(s): ${missing.join(", ")}`);
-    for (const [key, child] of Object.entries(properties)) {
-      if (!Object.prototype.hasOwnProperty.call(value, key)) continue;
-      if (!isRecord(child)) fail(`${pathLabel}.${key}`, "invalid schema node");
-      validateNode(child, value[key], `${pathLabel}.${key}`);
-    }
-    return;
-  }
-  if (type === "string") {
-    if (typeof value !== "string") fail(pathLabel, "must be a string");
-    if (typeof schema.pattern === "string" && !new RegExp(schema.pattern, "u").test(value)) {
-      fail(pathLabel, `does not match pattern ${schema.pattern}`);
-    }
-    return;
-  }
-  if (type === "integer") {
-    if (!Number.isSafeInteger(value)) fail(pathLabel, "must be a safe integer");
-    const numeric = value as number;
-    if (typeof schema.minimum === "number" && numeric < schema.minimum) fail(pathLabel, `must be >= ${schema.minimum}`);
-    if (typeof schema.maximum === "number" && numeric > schema.maximum) fail(pathLabel, `must be <= ${schema.maximum}`);
-    return;
-  }
-  if (type === "array") {
-    if (!Array.isArray(value)) fail(pathLabel, "must be an array");
-    if (isRecord(schema.items)) value.forEach((item, index) => validateNode(schema.items as JsonRecord, item, `${pathLabel}[${index}]`));
-    return;
-  }
-  fail(pathLabel, `schema declares unsupported type: ${String(type)}`);
-}
-
-/** 校验并归一化 plugin.json；语义规则（kinds 非空唯一、gameplay ⇒ constantName …）在 assertPluginIdentity。 */
+/** 校验并归一化 plugin.json v2（schema 校验 + 登记面解析都在 codegen 的解释器里，这里只补身份字段）。 */
 export function parsePluginManifest(input: unknown, pathLabel = "plugin.json"): PluginManifest {
-  validateNode(loadPluginManifestSchema(), input, pathLabel);
-  const value = input as JsonRecord;
-  const kinds = [...(value.kinds as PluginKind[])];
-  if (kinds.length === 0) fail(pathLabel, "kinds 不能为空");
-  const requires = isRecord(value.requires) ? value.requires : {};
-  // 兼容轴 fail-closed：相关 kind 的 schemaVersion 必须显式声明（缺省「视为当前版本」= 对任何宿主都通过，等于没有闸）。
-  if (kinds.includes("feature") && typeof requires.featureSchemaVersion !== "number") fail(pathLabel, "kinds 含 feature 时 requires.featureSchemaVersion 必填");
-  if (kinds.includes("gameplay") && typeof requires.gameplaySchemaVersion !== "number") fail(pathLabel, "kinds 含 gameplay 时 requires.gameplaySchemaVersion 必填");
+  const registration = parsePluginRegistration(input, pathLabel);
+  const value = input as Record<string, unknown>;
   return {
-    schemaVersion: 1,
-    id: value.id as string,
-    version: value.version as string,
-    kinds,
-    constantName: typeof value.constantName === "string" ? value.constantName : null,
+    schemaVersion: 2,
+    id: registration.id,
+    version: typeof value.version === "string" ? value.version : null,
     domains: Array.isArray(value.domains) ? [...(value.domains as string[])] : [],
     fguiPackages: Array.isArray(value.fguiPackages) ? [...(value.fguiPackages as string[])] : [],
-    requires: {
-      featureSchemaVersion: typeof requires.featureSchemaVersion === "number" ? requires.featureSchemaVersion : null,
-      gameplaySchemaVersion: typeof requires.gameplaySchemaVersion === "number" ? requires.gameplaySchemaVersion : null,
-    },
     description: typeof value.description === "string" ? value.description : "",
+    registration,
   };
 }
 
-/**
- * requires 与当前仓库两个 schemaVersion 的兼容比对。parsePluginManifest 已保证相关 kind 的轴非 null；
- * null 只可能来自旧形态的已安装锁（未登记 requires），由 check 单独点名。
- */
-export function assertManifestCompatible(manifest: PluginManifest, pathLabel = "plugin.json"): void {
-  const { featureSchemaVersion, gameplaySchemaVersion } = manifest.requires;
-  if (manifest.kinds.includes("feature") && featureSchemaVersion === null) fail(pathLabel, "kinds 含 feature 但 requires.featureSchemaVersion 未登记");
-  if (manifest.kinds.includes("gameplay") && gameplaySchemaVersion === null) fail(pathLabel, "kinds 含 gameplay 但 requires.gameplaySchemaVersion 未登记");
-  if (featureSchemaVersion !== null && featureSchemaVersion !== CURRENT_FEATURE_SCHEMA_VERSION) {
-    fail(pathLabel, `requires.featureSchemaVersion=${featureSchemaVersion} 与本仓 feature-schema-v${CURRENT_FEATURE_SCHEMA_VERSION} 不兼容`);
-  }
-  if (gameplaySchemaVersion !== null && gameplaySchemaVersion !== CURRENT_GAMEPLAY_SCHEMA_VERSION) {
-    fail(pathLabel, `requires.gameplaySchemaVersion=${gameplaySchemaVersion} 与本仓 gameplay-schema-v${CURRENT_GAMEPLAY_SCHEMA_VERSION} 不兼容`);
-  }
+/** 有没有客户端登记：entry / views / routes / menu 任一非空即算（纯 gameplay 插件四者皆空）。 */
+export function hasClientRegistration(manifest: PluginManifest): boolean {
+  const { registration } = manifest;
+  return registration.entry !== null || registration.views.length > 0 || registration.routes.length > 0 || registration.menu.length > 0;
 }
 
-/** plugin.json → 所有权身份（feature.json 声明的客户端目录由调用方补入 clientDirs）。 */
-export function identityOf(manifest: PluginManifest, clientDirs: readonly string[] = []): PluginIdentity {
+/** 从 gameplay/manifest.json 的字节读出身份相关字段（id 必须等于插件 id；schemaVersion 与 gameplay-schema 比对）。 */
+export function parseGameplaySource(bytes: Buffer, id: string, pathLabel: string): GameplaySourceSummary {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(bytes.toString("utf8"));
+  } catch (error) {
+    fail(pathLabel, `不是合法 JSON：${error instanceof Error ? error.message : String(error)}`);
+  }
+  const record = parsed as { readonly id?: unknown; readonly constantName?: unknown; readonly schemaVersion?: unknown };
+  if (record.id !== id) fail(pathLabel, `id（${String(record.id)}）必须等于插件 id（${id}）`);
+  if (typeof record.constantName !== "string") fail(pathLabel, "缺少 constantName");
+  if (record.schemaVersion !== CURRENT_GAMEPLAY_SCHEMA_VERSION) {
+    fail(pathLabel, `schemaVersion=${String(record.schemaVersion)} 与本仓 gameplay-schema-v${CURRENT_GAMEPLAY_SCHEMA_VERSION} 不兼容`);
+  }
+  return { constantName: record.constantName, schemaVersion: record.schemaVersion };
+}
+
+/** 派生的 kinds：client（有客户端登记）/ gameplay（有玩法单源）；两者皆无的插件没有任何写入范围，直接拒绝。 */
+export function derivedKinds(manifest: PluginManifest, gameplay: GameplaySourceSummary | null): readonly PluginKind[] {
+  const kinds: PluginKind[] = [];
+  if (hasClientRegistration(manifest)) kinds.push("client");
+  if (gameplay) kinds.push("gameplay");
+  if (kinds.length === 0) fail(`apps/plugins/${manifest.id}/plugin.json`, "既没有客户端登记（entry / views / routes / menu）也没有 gameplay/manifest.json——插件必须至少占一样");
+  return kinds;
+}
+
+/** plugin.json + gameplay 单源 → 所有权身份（clientDirs 来自登记面的 viewDirs / owners.logicDir）。 */
+export function identityOf(manifest: PluginManifest, gameplay: GameplaySourceSummary | null): PluginIdentity {
+  const { registration } = manifest;
+  const clientDirs = [...new Set([
+    ...registration.viewDirs.map((dir) => dir.replace(/\/+$/u, "")),
+    ...registration.owners.map((owner) => owner.logicDir.replace(/\/+$/u, "")),
+  ])].sort();
   return {
     id: manifest.id,
-    kinds: manifest.kinds,
-    constantName: manifest.constantName,
+    kinds: derivedKinds(manifest, gameplay),
+    constantName: gameplay?.constantName ?? null,
     domains: manifest.domains,
     fguiPackages: manifest.fguiPackages,
     clientDirs,
   };
 }
 
+/** 从已安装锁抬头（已含派生 kinds / constantName）还原身份：登记面已不在锁里，clientDirs 由调用方从树上补。 */
+export function identityFromSummary(summary: {
+  readonly id: string;
+  readonly kinds: readonly PluginKind[];
+  readonly constantName: string | null;
+  readonly domains: readonly string[];
+  readonly fguiPackages: readonly string[];
+}, clientDirs: readonly string[]): PluginIdentity {
+  return { id: summary.id, kinds: summary.kinds, constantName: summary.constantName, domains: summary.domains, fguiPackages: summary.fguiPackages, clientDirs };
+}
+
+/** 树上 apps/plugins/<id>/gameplay/manifest.json（可缺省 = 无玩法）。 */
+export function readTreeGameplaySource(root: string, id: string): GameplaySourceSummary | null {
+  const relative = `apps/plugins/${id}/gameplay/manifest.json`;
+  const file = path.join(root, relative);
+  if (!fs.existsSync(file)) return null;
+  return parseGameplaySource(fs.readFileSync(file), id, relative);
+}
+
 /** 身份分量（版本以外的一切）：reinstall-from-tree 的身份变化闸与 check 的漂移比对共用（PLUGIN-REGISTRY §1-3）。 */
-export function identitySummary(manifest: PluginManifest): Record<string, string> {
+export interface IdentitySummaryInput {
+  readonly kinds: readonly PluginKind[];
+  readonly constantName: string | null;
+  readonly domains: readonly string[];
+  readonly fguiPackages: readonly string[];
+}
+
+export function identitySummary(manifest: IdentitySummaryInput): Record<string, string> {
   return {
-    kinds: manifest.kinds.join(","),
+    kinds: [...manifest.kinds].sort().join(","),
     constantName: manifest.constantName ?? "-",
     domains: manifest.domains.join(",") || "-",
     fguiPackages: manifest.fguiPackages.join(",") || "-",
   };
 }
 
-export function identityDifferences(previous: PluginManifest, next: PluginManifest): readonly string[] {
+export function identityDifferences(previous: IdentitySummaryInput, next: IdentitySummaryInput): readonly string[] {
   const before = identitySummary(previous);
   const after = identitySummary(next);
   return Object.keys(before).filter((key) => before[key] !== after[key]).map((key) => `${key}: ${before[key]} → ${after[key]}`);

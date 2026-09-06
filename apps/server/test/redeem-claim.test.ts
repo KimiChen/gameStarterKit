@@ -29,8 +29,8 @@ test("redeem：首兑成功回显码与奖励；同码再兑 → REDEEM_CODE_USE
 });
 
 test("redeem：Redis 实现两键同 {uid} 槽，Lua 返回 ok/used 解析正确，异常形状 fail-fast", async () => {
-  assert.match(kRedeemClaimed("u9"), /ft:redeem:claimed:\{u9\}$/u);
-  assert.match(kRedeemWallet("u9"), /ft:redeem:wallet:\{u9\}$/u);
+  assert.match(kRedeemClaimed("u9"), /pl:redeem:claimed:\{u9\}$/u);
+  assert.match(kRedeemWallet("u9"), /pl:redeem:wallet:\{u9\}$/u);
   assert.equal(REDEEM_CLAIM.name, "redeemClaim");
   const calls: unknown[][] = [];
   let reply: unknown = ["ok", 42];

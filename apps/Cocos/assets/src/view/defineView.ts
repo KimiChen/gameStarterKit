@@ -46,7 +46,7 @@ export interface FguiViewMeta extends ViewMetaBase {
 /**
  * 纯 Cocos 节点页面：⛔ 无 FGUI 段（无 contract / 无 sharedPkgs）——ViewMgr 跳过
  * ensurePackages 与组件创建，直接实例化 CocosView 子类并挂到层容器节点下。
- * 只有**被某个 feature 的 routes 引用**的 cocos View 才是页面并进入 catalog；
+ * 只有**被某个 plugin 的 routes 引用**的 cocos View 才是页面并进入 catalog；
  * 未被引用的 cocos View 是玩法表现件，由 gameplay presentation 自行挂载。
  */
 export interface CocosViewMeta extends ViewMetaBase {

@@ -133,14 +133,14 @@ export class SettingsView extends CocosView {
             this.label(row, item.reason, Math.round(rowHeight * 0.26), DIM, -rowWidth * 0.5 + rowWidth * 0.05, -rowHeight * 0.18, "left", rowWidth * 0.9);
         }
 
-        this.sectionLabel(content, "插件入口（featureId 字母序）", rowWidth, nextY());
+        this.sectionLabel(content, "插件入口（pluginId 字母序）", rowWidth, nextY());
         if (entries.length === 0) {
             this.label(content, "（当前没有登记任何插件入口）", Math.round(rowHeight * 0.32), DIM, 0, nextY());
         }
         for (const entry of entries) {
             const y = nextY();
             const row = this.row(content, rowWidth, rowHeight, y, entry.enabled ? ROW : ROW_OFF, "entry");
-            this.label(row, `${entry.label}  ·  ${entry.featureId}`, Math.round(rowHeight * 0.4),
+            this.label(row, `${entry.label}  ·  ${entry.pluginId}`, Math.round(rowHeight * 0.4),
                 entry.enabled ? TEXT : DIM, -rowWidth * 0.5 + rowWidth * 0.05, entry.enabled ? 0 : rowHeight * 0.16, "left", rowWidth * 0.62);
             if (entry.enabled) {
                 this.button(row, "进入", rowWidth * 0.22, rowHeight * 0.72, rowWidth * 0.5 - rowWidth * 0.15, 0,

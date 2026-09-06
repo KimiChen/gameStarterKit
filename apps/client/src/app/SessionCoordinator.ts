@@ -267,7 +267,7 @@ export function returnToLogin(reason: ReturnToLoginReason): Promise<void> {
 }
 
 /**
- * 回登录原因 → 用户可见文案的唯一映射（§7.3：由 SessionCoordinator 拥有，feature
+ * 回登录原因 → 用户可见文案的唯一映射（§7.3：由 SessionCoordinator 拥有，plugin
  * 不参与）。分支逐字迁自原 view/pages.ts 的 returnToLogin 处理器（阶段 5b）：
  * AUTH_INVALID 子因（FORCE_BANNED/REPLACED/REVOKED/ACCOUNT_BANNED）/ BATTLE_LOST /
  * CONN_LOST / BATTLE_JOIN_FAILED。
