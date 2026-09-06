@@ -54,18 +54,26 @@ class FakeUITransform {
 }
 
 class FakeGraphics {
+    /** 真引擎里是 Graphics 的静态枚举；⛔ 别退回魔法数字。 */
+    static readonly LineJoin = { BEVEL: 0, ROUND: 1, MITER: 2 };
+    static readonly LineCap = { BUTT: 0, ROUND: 1, SQUARE: 2 };
+
     node!: FakeNode;
     fillColor: FakeColor | null = null;
     strokeColor: FakeColor | null = null;
     lineWidth = 0;
+    lineJoin = 2;
+    lineCap = 0;
+    /** 逐笔记录，供「⛔ 不许按点画圆」的回归用例读。 */
+    readonly ops: string[] = [];
 
-    clear(): void {}
-    rect(_x: number, _y: number, _width: number, _height: number): void {}
-    circle(_x: number, _y: number, _radius: number): void {}
-    moveTo(_x: number, _y: number): void {}
-    lineTo(_x: number, _y: number): void {}
-    fill(): void {}
-    stroke(): void {}
+    clear(): void { this.ops.push("clear"); }
+    rect(_x: number, _y: number, _width: number, _height: number): void { this.ops.push("rect"); }
+    circle(_x: number, _y: number, _radius: number): void { this.ops.push("circle"); }
+    moveTo(_x: number, _y: number): void { this.ops.push("moveTo"); }
+    lineTo(_x: number, _y: number): void { this.ops.push("lineTo"); }
+    fill(): void { this.ops.push("fill"); }
+    stroke(): void { this.ops.push(`stroke:${Math.round(this.lineWidth)}`); }
 }
 
 class FakeLabel {
@@ -694,6 +702,36 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
 
         // ⚠ 以下三段必须放在触摸/摇杆用例**之后**：showRunResult 会关掉 hudLayer 与
         // controlLayer 并 cancelInput，放前面会让方向与加速断言取不到输入。
+        // ── 自机细白轮廓：⛔ 顶点量不得随蛇长线性膨胀（真机 RangeError 回归闸）───────────
+        // 旧实现按点画描边圆：单个 r=20/lineWidth=3 实测 122 顶点，241 个 = 29402 顶点，
+        // 正好是真机 `Invalid typed array length: 235216`（29402×8）。改成一条圆头粗折线后，
+        // 顶点量与「圆的个数」脱钩。⛔ 别把 circle() 加回自机轮廓路径。
+        const fx = findNode(host, "SnakeWorld.Fx")?.getComponent(FakeGraphics);
+        assert.ok(fx, "fx Graphics 必须在位");
+        const opsOf = (pointCount: number): string[] => {
+            fx!.ops.length = 0;
+            presentation.render(snakeFrame(0, pointCount) as never, activeHud as never, null);
+            return [...fx!.ops];
+        };
+        const short = opsOf(20);
+        const long = opsOf(400);
+        assert.equal(short.filter((op) => op === "circle").length, 0,
+            "自机轮廓 ⛔ 不许再用 circle()——几百个独立闭合子路径会让 cc.Graphics 的 RenderData 停止扩容");
+        assert.equal(long.filter((op) => op === "circle").length, 0);
+        const outlineWidth = `stroke:${20 * 2}`;
+        assert.ok(short.includes(outlineWidth), `轮廓必须是一条 lineWidth=40 的粗折线（实际 ${short.join(",")}）`);
+        assert.equal(
+            long.filter((op) => op === "stroke:40").length,
+            short.filter((op) => op === "stroke:40").length,
+            "20 点与 400 点必须都只描一笔——描边次数 ⛔ 不随蛇长增长",
+        );
+        assert.equal(long.filter((op) => op === "lineTo").length, 399,
+            "折线点数随身体点走（moveTo 首点 + 其余每点一段），这是与蛇长成正比的**唯一**一项，且每点只 ~2 个顶点");
+        assert.equal(fx!.lineCap, FakeGraphics.LineCap.ROUND, "圆头：等价于原来每点一个圆的端点");
+        // 真引擎实测（5186 点，见 SnakeWorldView.strokeBodyCapsule 的表）：ROUND 每点 ~24 顶点会照样崩，
+        // MITER 每点 ~2 但急转弯甩尖刺；BEVEL 每点 ~4，两头都不占。
+        assert.equal(fx!.lineJoin, FakeGraphics.LineJoin.BEVEL, "⛔ 不许换成 ROUND（会崩）或 MITER（会甩刺）");
+
         // ── 复活提示必须有底（S5-05 F6）─────────────────────────────────────────────────
         // ⚠ 这两层显示期间 render() 并不早退，世界仍在逐帧渲染并跟随镜头移动；没有不透明底时
         // 蛇身会从「金币复活」字底下穿过，按钮直接读不出来。⛔ 别把断言弱化成「层存在」。

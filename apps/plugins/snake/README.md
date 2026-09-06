@@ -355,7 +355,7 @@ fail-closed 发布开关；② 双端模块加载期的三层目录 fail-closed�
 **S5 剩余缺口**：16 套皮肤逐一装备验证、`safeBottom=0/100` 两组对比、真栈 int 未跑。
 ⛔ 不得据此宣称 demo 可放行。
 
-### 8.2 Creator 3.8.8 真引擎缺陷台账（F1～F12）
+### 8.2 Creator 3.8.8 真引擎缺陷台账（F1～F14）
 
 ⚠ 这些缺陷的共同特征是「写了属性但到不了 GPU，且不抛异常」——Node 桩与 `verify:all` 全绿
 却在真引擎里坏掉。根因往往是**假件与 .d.ts 桩把不存在的引擎成员声明成存在的**。
@@ -375,6 +375,7 @@ fail-closed 发布开关；② 双端模块加载期的三层目录 fail-closed�
 | F10 | 蛇身两侧白齿 | 几何画成「每段一个压扁四边形」；应为「每隔 `repeatedBodyPointDistance` 个路径点画一个按朝向旋转的整帧」，且**写入顺序必须尾→头** | 已修 |
 | F11 | 同一条蛇身体与头有色差（实测 255→229、128→156） | `builtin-unlit` 走 `CCFragOutput`，缺省 ACES 色调映射叠加入口的 `SRGBToLinear` | 已修（场景 `toneMappingType` 置 LINEAR） |
 | F12 | 蛇变短时残留上一帧四边形 | `updateSubMesh` ⛔ 不同步 InputAssembler，而 `gl.drawElements` 读的正是它 | 已修（每次上传后 `onGeometryChanged()`） |
+| F14 | 蛇长到一定程度必崩：`RangeError: Invalid typed array length: 235216`（`Graphics._uploadData` → `_render` → `fillBuffers`） | 自机细白轮廓**按身体点逐个描边圆**。单个 r=20 / lineWidth=3 的描边圆实测 **122 顶点**，241 个正好 29402 顶点，×8 floats = 235216 —— 与报错数字逐位吻合。cc.Graphics 3.8.8 的 RenderData 到该量级后停止扩容（崩溃帧 vData 容量卡在 1152 顶点） | 已修（见 §8.4） |
 | F13 | **一局结算把 Redis 里的 `ownedSkinIds` / `fragmentBalances` / `coinBalance` 写回默认值**（实测：种 `[1,2]` → 只打一局、⛔ 没开过衣柜 → 键变回 `[1]`） | `applyRunRewards` 是**同步**的，读 `fullSnapshotOf(uid)` 拿进程内 profile，而 profile 只由 `snakeCosmetic.*` 三个 RPC 的 `hydrate` 回灌；玩家本进程内没开过衣柜时它就是默认档，随后那条「六字段 HSET」把默认档盖回 Redis。demo 钱包更彻底——它**从不**回灌，每局都写「初始余额 + 本局所得」。同一原因下 `equippedSkinIdOf` 也让回访玩家带默认皮肤开局 | 已修（见 §8.3） |
 
 ### 8.3 F13 的修法（2026-09-06 已修）
@@ -403,6 +404,28 @@ fail-closed 发布开关；② 双端模块加载期的三层目录 fail-closed�
 `createPlayer` 锁存存档皮肤 401 而不是默认 1）、`snake-run-rewards.test.ts` 三条（冷档 ⛔ 不写回、
 预热后照常写回、只热了一半也不写）、`snake-cosmetic-profile.test.ts` 与 `snake-relive-demo.test.ts`
 各两三条（并发共用一次回灌、失败不毒化可重试、键不存在算成功）。
+
+---
+
+### 8.4 F14 的修法（2026-09-06 已修）
+
+自机轮廓改成**沿身体点的一条圆头 BEVEL 折线**（`SnakeWorldView.strokeBodyCapsule`），
+宽度 = 2×半径，与「每点一个圆」的并集等价（点距 `pointSpacing`=8 ≪ 2×20，圆本来就重叠）；
+mesh 身体画在它之上，露出来的仍是那圈细白边。mesh 缺失时的降级身体填充同样改走这条路径。
+
+真引擎实测（3.8.8 预览经 CDP，`snapshotMaxPointsPerSnake` = 5186 为上限）：
+
+| 画法 | 每身体点顶点 | 242 点 | 5186 点 |
+| --- | --- | --- | --- |
+| 逐点描边圆（旧） | ~122 | **29402 ✖ 崩** | — |
+| 折线 + ROUND join | ~24 | 5804 ✔ | **124460 ✖ 崩** |
+| 折线 + BEVEL join（现） | ~4 | 1004 ✔ | **20780 ✔** |
+| 折线 + MITER join | ~2 | 524 ✔ | 10412 ✔，但急转弯甩尖刺（miterLimit 10 ⇒ 最长 10 倍半宽） |
+
+选 BEVEL：不甩刺，离失效区还有 3 倍余量。⛔ 别为省顶点换 MITER，也别为圆润换 ROUND。
+修复后真机重放 `Triangle` 从 35153 降到 3742，console 零 error。
+单测钉在 `snake-presentation.test.ts`：轮廓路径 ⛔ 不许出现 `circle()`，20 点与 400 点的描边**笔数相同**
+（只与蛇长成正比的是折线段数），且 `lineJoin` 必须是 BEVEL——三条都做过「改错必转红」验证。
 
 ---
 

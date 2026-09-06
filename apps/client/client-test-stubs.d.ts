@@ -28,7 +28,9 @@ declare module "cc" {
     convertToNodeSpaceAR(world: Vec3, out?: Vec3): Vec3;
   }
   export class Graphics {
-    node: Node; lineWidth: number; fillColor: Color; strokeColor: Color;
+    static LineJoin: { BEVEL: number; ROUND: number; MITER: number };
+    static LineCap: { BUTT: number; ROUND: number; SQUARE: number };
+    node: Node; lineWidth: number; lineJoin: number; lineCap: number; fillColor: Color; strokeColor: Color;
     clear(): void; moveTo(x: number, y: number): void; lineTo(x: number, y: number): void;
     stroke(): void; fill(): void; circle(x: number, y: number, radius: number): void;
     rect(x: number, y: number, width: number, height: number): void;

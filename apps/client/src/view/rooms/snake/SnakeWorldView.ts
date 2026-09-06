@@ -518,6 +518,39 @@ export class SnakeWorldView implements SnakePresentation {
         }
     }
 
+    /**
+     * 沿身体点画一条**圆头圆角的粗折线**，等价于「在每个身体点画一个半径 radius 的圆」的并集
+     * （点距 pointSpacing=8 ≪ 2*radius，圆本来就彼此重叠）。
+     *
+     * ⛔ **不要再退回「按点画圆」**：单个 r=20 / lineWidth=3 的描边圆实测 122 个顶点，241 个就是
+     * 29402 顶点 —— 真机崩溃 `RangeError: Invalid typed array length: 235216`（29402×8 floats，
+     * `Graphics._uploadData` 用 `vertexStart * componentPerVertex` 建 Float32Array 视图）正是它。
+     * 根因在引擎侧：cc.Graphics 3.8.8 的 RenderData 到某个量级后会停止扩容（崩溃那一帧实测
+     * vData 容量卡在 1152 顶点，而 vertexStart 已到 29402）。换算成玩法：身体点 242 个就必崩，
+     * 而 `snapshotMaxPointsPerSnake` 是 5186。
+     *
+     * ⚠ `lineJoin` 必须是 BEVEL，这是量出来的（3.8.8 预览真引擎，`snapshotMaxPointsPerSnake` 上限）：
+     * | join | 每点顶点 | 5186 点 | 结果 |
+     * | ROUND | ~24 | 124460 | ✖ 同样崩（圆角在每个折点铺一把扇形） |
+     * | BEVEL | ~4 | 20780 | ✔ |
+     * | MITER | ~2 | 10412 | ✔ 但急转弯会甩尖刺（miterLimit 10 ⇒ 最长 10 倍半宽） |
+     * 选 BEVEL：不甩刺，且离失效区还有 3 倍余量。⛔ 别为了省顶点换回 MITER，也别为了圆润换 ROUND。
+     */
+    private strokeBodyCapsule(graphics: Graphics, snake: SnakeRenderSnake, radius: number): void {
+        const points = snake.points;
+        if (points.length === 0) return;
+        graphics.lineWidth = radius * 2;
+        graphics.lineJoin = Graphics.LineJoin.BEVEL;
+        graphics.lineCap = Graphics.LineCap.ROUND;
+        graphics.moveTo(points[0].x, points[0].y);
+        // 单点蛇（刚出生/极短）没有线段，圆头 lineCap 需要一段零长度的线才会画出圆点。
+        if (points.length === 1) graphics.lineTo(points[0].x, points[0].y);
+        for (let index = 1; index < points.length; index += 1) {
+            graphics.lineTo(points[index].x, points[index].y);
+        }
+        graphics.stroke();
+    }
+
     private renderTools(frame: SnakeRenderFrame): void {
         const active = new Set(frame.tools.map((tool) => tool.id));
         for (const [id, sprite] of this.toolSprites) {
@@ -570,19 +603,14 @@ export class SnakeWorldView implements SnakePresentation {
             tick,
             snake.boost,
         ) !== true) {
-            graphics.fillColor = WHITE;
-            for (let index = 1; index < snake.points.length; index += 1) {
-                graphics.circle(snake.points[index].x, snake.points[index].y, 18 * bodyScale);
-            }
-            graphics.fill();
+            graphics.strokeColor = WHITE;
+            this.strokeBodyCapsule(graphics, snake, 18 * bodyScale);
         }
         if (snake.id === this.selfId) {
-            graphics.lineWidth = 3;
+            // 自机细白轮廓（README §5.5 `identity.self.outline = "fine-white"`）：半径比身体大 2，
+            // 画在 mesh 身体**之下**，露出来的就是那圈 2*bodyScale 的边。
             graphics.strokeColor = SELF;
-            for (let index = 1; index < snake.points.length; index += 1) {
-                graphics.circle(snake.points[index].x, snake.points[index].y, 20 * bodyScale);
-            }
-            graphics.stroke();
+            this.strokeBodyCapsule(graphics, snake, 20 * bodyScale);
         }
         const head = snake.points[0];
         const motion = presentation ? (snake.boost ? presentation.boost : presentation.normal) : null;
