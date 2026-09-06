@@ -165,8 +165,16 @@ return 'ok'
 /**
  * 共享 effect 契约的 Lua 侧镜像。这里不能只依赖 TypeScript validator：relayer 可能直接
  * 从 MySQL 读取历史 JSON，且所有字段写入必须在同一 Redis 脚本内完成。
- * KEYS = [user, applied, appliedPayload, bag0..bagN]。
+ * KEYS = [user, applied, appliedPayload, bag0..bagN, ...kitKeys]。
+ * ARGV = [opId, now_ms, effectJson, kitMapJson?]——ARGV[4]（docs/KIT.md §4「effect kind 登记通道」）是
+ * `{ "<kit:kitId:name>": { k: 1-based KEYS 序号, f: 字段, m: delta 上限 } }`，由 outbox.kitEffectKeysFor 从
+ * KIT_EFFECT_KINDS 投影（只含本 effect 出现的 kind）；缺省 / 空串 = 无 kit 键（既有调用形态不变）。
+ * kit 键必须紧随 bag 分片之后且被 map 一一引用：`#KEYS == LUA_KEY_COUNT + map 引用的去重键数`。
+ * kit grant = 对 KEYS[k] 的 HASH 字段 f 做整数累加（delta ∈ [1, m]），沿用「先验后写」而不是裸 HINCRBY：
+ * 坏的现值在首个写入前就拒绝，不会半途 WRONGTYPE / 非整数报错留下部分写入。
  */
+/** ARGV[4] 的 TS 侧形态（outbox.kitEffectKeysFor 产出）。 */
+export type KitEffectKeyMap = Readonly<Record<string, { readonly k: number; readonly f: string; readonly m: number }>>;
 const LUA_EFFECT_FIELDS = luaSet(EFFECT_FIELD_ALLOWLIST);
 const LUA_EFFECT_RESERVED = luaSet(EFFECT_RESERVED_FIELDS);
 const LUA_EFFECT_FIELD_RULES = `{${Object.entries(EFFECT_FIELD_VALUE_RULES).map(([field, rule]) => {
@@ -210,7 +218,31 @@ end
 -- A missing user is a normal cold result, but malformed effects are rejected before this script
 -- can create any applied/bag key. The three first keys are user/applied/payload-hash.
 if redis.call('EXISTS', KEYS[1]) == 0 then return 'cold' end
-if #KEYS ~= ${LUA_KEY_COUNT} then return invalid('EFFECT_DATA_CORRUPT') end
+-- kit effect kind 投影（ARGV[4]，可缺省）：kind -> { k = KEYS 序号, f = 字段, m = 上限 }。
+-- 键数校验 = 基础键数 + map 引用的去重 kit 键数；每个 kit 键序号都必须落在 bag 之后且被引用。
+local kitMap = {}
+local kitKeyCount = 0
+if ARGV[4] ~= nil and ARGV[4] ~= '' then
+  local kitDecoded, kitRaw = pcall(cjson.decode, ARGV[4])
+  if not kitDecoded or type(kitRaw) ~= 'table' then return invalid('EFFECT_DATA_CORRUPT') end
+  local seenKitKeys = {}
+  for kind, spec in pairs(kitRaw) do
+    if type(kind) ~= 'string' or string.sub(kind, 1, 4) ~= 'kit:' then return invalid('EFFECT_DATA_CORRUPT') end
+    if not exact(spec, { k = true, f = true, m = true }, 3) then return invalid('EFFECT_DATA_CORRUPT') end
+    if not intIn(spec.k, ${LUA_KEY_COUNT} + 1, #KEYS) then return invalid('EFFECT_DATA_CORRUPT') end
+    if type(spec.f) ~= 'string' or #spec.f < 1 or #spec.f > ${LUA_MAX_FIELD_LENGTH}
+      or not string.match(spec.f, '^[A-Za-z][A-Za-z0-9_]*$') then
+      return invalid('EFFECT_DATA_CORRUPT')
+    end
+    if not intIn(spec.m, 1, ${LUA_MAX_SAFE_INTEGER}) then return invalid('EFFECT_DATA_CORRUPT') end
+    if not seenKitKeys[spec.k] then
+      seenKitKeys[spec.k] = true
+      kitKeyCount = kitKeyCount + 1
+    end
+    kitMap[kind] = spec
+  end
+end
+if #KEYS ~= ${LUA_KEY_COUNT} + kitKeyCount then return invalid('EFFECT_DATA_CORRUPT') end
 -- Redis Lua does not roll back writes when a later command raises a WRONGTYPE error.
 -- Check every target up front; missing bag/applied keys are valid because HSET/ZADD
 -- creates them during the apply pass. No other client can change a key type while
@@ -242,7 +274,7 @@ if not exact(eff, { schemaVersion = true, grants = true }, 2) then return invali
 if eff.schemaVersion ~= ${LUA_EFFECT_VERSION} then return invalid('EFFECT_SCHEMA_VERSION') end
 if type(eff.grants) ~= 'table' then return invalid('EFFECT_GRANTS') end
 
-local N = #KEYS - 3
+local N = ${LUA_KEY_COUNT} - 3
 if N < 1 then return invalid('EFFECT_DATA_CORRUPT') end
 local applyAt = tonumber(ARGV[2])
 if not intIn(applyAt, 0, ${LUA_MAX_SAFE_INTEGER}) then return invalid('EFFECT_DATA_CORRUPT') end
@@ -266,6 +298,7 @@ local itemShards = {}
 local starDelta = 0
 local hasStar = false
 local setFields = {}
+local kitDeltas = {}
 local under = {}
 local quantity = 0
 
@@ -316,6 +349,17 @@ for i = 1, grantCount do
     end
     -- Last setField in the same effect wins, matching the deterministic array order in TS.
     setFields[g.field] = g.value
+  elseif string.sub(g.kind, 1, 4) == 'kit:' then
+    -- kit effect kind（KIT.md §4）：必须在 ARGV[4] 投影表内，否则与 TS validator 同码拒绝。
+    local spec = kitMap[g.kind]
+    if spec == nil then return invalid('EFFECT_UNKNOWN_KIND') end
+    if not exact(g, { kind = true, delta = true }, 2) then return invalid('EFFECT_GRANT_KEYS') end
+    if not intIn(g.delta, 1, spec.m) then return invalid('EFFECT_DELTA') end
+    quantity = quantity + g.delta
+    if quantity > ${LUA_MAX_QUANTITY} then return invalid('EFFECT_QUANTITY') end
+    local slot = kitDeltas[spec.k]
+    if slot == nil then slot = {}; kitDeltas[spec.k] = slot end
+    slot[spec.f] = (slot[spec.f] or 0) + g.delta
   else
     return invalid('EFFECT_UNKNOWN_KIND')
   end
@@ -367,6 +411,18 @@ if hasStar then
   end
   if not intIn(starValue, 0, ${LUA_MAX_SAFE_INTEGER}) then return invalid('EFFECT_DATA_CORRUPT') end
 end
+local kitValues = {}
+for keyIndex, fields in pairs(kitDeltas) do
+  local values = {}
+  for field, delta in pairs(fields) do
+    local currentRaw = redis.call('HGET', KEYS[keyIndex], field) or '0'
+    local current = tonumber(currentRaw)
+    if not intIn(current, 0, ${LUA_MAX_SAFE_INTEGER}) then return invalid('EFFECT_DATA_CORRUPT') end
+    if current > ${LUA_MAX_SAFE_INTEGER} - delta then return invalid('EFFECT_DATA_CORRUPT') end
+    values[field] = current + delta
+  end
+  kitValues[keyIndex] = values
+end
 
 -- Apply pass: all shape/range/current-value checks above have completed successfully.
 for field, value in pairs(itemValues) do
@@ -375,6 +431,11 @@ end
 if starValue ~= nil then redis.call('HSET', KEYS[1], 'star', tostring(starValue)) end
 for field, value in pairs(setFields) do
   redis.call('HSET', KEYS[1], field, value)
+end
+for keyIndex, fields in pairs(kitValues) do
+  for field, value in pairs(fields) do
+    redis.call('HSET', KEYS[keyIndex], field, tostring(value))
+  end
 end
 redis.call('HSET', KEYS[1], 'ver', tostring(ver + 1))
 redis.call('ZADD', KEYS[2], applyAt, ARGV[1])

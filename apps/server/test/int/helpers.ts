@@ -6,6 +6,9 @@ import { writeGroupSess } from "../../src/core/auth/session";
 import { writeDevTokenIndex } from "../../src/platform/devAuthProvider";
 import { kApplied, kAppliedPayload, kArchiveProof, kBagAll, kFence, kLock, kUser } from "../../src/core/infra/keys";
 import { clientFor } from "../../src/core/infra/redisRoute";
+import { kitUserKeyEntries } from "../../src/core/archive/archiveScripts";
+import { SERVER_KIT_CATALOG } from "../../src/kits/catalog.generated";
+import type { ServerKitCatalogEntry } from "../../src/kits/catalogTypes";
 import { AuthRequiredError } from "../../src/core/errors";
 import {
   installWebPlatformClientForTests,
@@ -66,9 +69,14 @@ export async function assertRedisUp(): Promise<void> {
   await Promise.race([ping, timeout]);
 }
 
-export async function cleanupUser(uid: string): Promise<void> {
+/** 清理 per-user 全部框架键 + 目录声明的 kit per-user 键（测试注入 fixture 目录时传 `catalog`）。 */
+export async function cleanupUser(
+  uid: string,
+  catalog: readonly ServerKitCatalogEntry[] = SERVER_KIT_CATALOG,
+): Promise<void> {
   await clientFor(uid).unlink(
     kUser(uid), kFence(uid), kArchiveProof(uid), kApplied(uid), kAppliedPayload(uid), kLock(uid), ...kBagAll(uid),
+    ...kitUserKeyEntries(uid, catalog).map((entry) => entry.key),
   );
   fakeCharacters.delete(uid);
   for (const [token, session] of fakeSessions) {

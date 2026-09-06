@@ -1,5 +1,5 @@
 /**
- * 建库 + 执行 sql/schema.sql（幂等，可重复跑）。
+ * 建库 + 执行 sql/schema.sql（幂等，可重复跑）+ kit SQL 迁移（账本驱动，tools/kit-migrations.ts，docs/KIT.md §5）。
  * 用法: npm --workspace @game/server run db:bootstrap
  * 连接目标取 MYSQL_URL（缺省 mysql://root@127.0.0.1:3316/game_<PROJECT_ID>，对齐 tools/dev-stack.sh）。
  */
@@ -8,6 +8,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import mysql from "mysql2/promise";
 import { MYSQL_URL } from "../src/core/infra/config";
+import { SERVER_KIT_CATALOG } from "../src/kits/catalog.generated";
+import { applyKitMigrations } from "./kit-migrations";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -635,6 +637,34 @@ async function main(): Promise<void> {
 
   // 存量清理：排行榜演示移除后遗留的 season_rotation 租约行（新库 schema 已不再预置；幂等）
   await conn.query("DELETE FROM singleton_lease WHERE lease_name = 'season_rotation'");
+
+  // kit SQL 迁移（docs/KIT.md §5）：账本驱动、db_bootstrap 租约下逐条语句执行。
+  // 单开一条 multipleStatements:false 的连接——kit 语句一条一次 query，⛔ 不借用上面 schema.sql 的多语句连接。
+  const kitConn = await mysql.createConnection({
+    host: url.hostname,
+    port: Number(url.port || 3306),
+    user: decodeURIComponent(url.username || "root"),
+    password: decodeURIComponent(url.password || ""),
+    database: dbName,
+    multipleStatements: false,
+  });
+  try {
+    const kitsRoot = join(here, "..", "..", "kits"); // apps/kits/<id>/<file>
+    const report = await applyKitMigrations({
+      conn: kitConn,
+      dbName,
+      catalog: SERVER_KIT_CATALOG,
+      readSqlFile: (kitId, file) => readFileSync(join(kitsRoot, kitId, file), "utf8"),
+      log: (line) => console.log(line),
+    });
+    console.log(
+      `✅ kit 迁移：${SERVER_KIT_CATALOG.length} 个 kit，新应用 ${report.applied.length} 个文件，跳过 ${report.skipped} 个`
+      + (report.orphanLedgerKits.length > 0 ? `，账本孤儿 kit：${report.orphanLedgerKits.join(", ")}` : ""),
+    );
+  } finally {
+    await kitConn.end();
+  }
+
   const [rows] = await conn.query<mysql.RowDataPacket[]>("SHOW TABLES");
   console.log(`✅ ${dbName} 就绪，共 ${rows.length} 张表:`, rows.map((r) => Object.values(r)[0]).join(", "));
   await conn.end();
