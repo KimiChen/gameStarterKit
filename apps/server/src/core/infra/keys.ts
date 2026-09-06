@@ -3,7 +3,9 @@
  *
  * ⛔ 业务代码禁止手拼 key（09·R5：新增 key 必须先更新契约登记，再进构造器）。框架键定义在本文件；
  * 玩法自有键 ⛔ 不进本文件，由下方 `kGameplay` 工厂在 `rooms/modes/<id>/keys.ts` 里构造；
- * plugin 自有键同样 ⛔ 不进本文件，由 `kPluginUser` / `kPluginShared` 工厂在 `core/<pluginId>/keys.ts` 里构造。
+ * plugin 自有键同样 ⛔ 不进本文件，由 `kPluginUser` / `kPluginShared` 工厂在 `core/<pluginId>/keys.ts` 里构造；
+ * kit 自有键（docs/KIT.md §2「Redis 键」行）也 ⛔ 不进本文件，由 `kKitUser` / `kKitShared` 工厂在
+ * `apps/server/src/kits/<kitId>/keys.ts` 里构造——前缀 `kt:` 与 `gp:` / `pl:` 互不可达，共享键强制分片 tag。
  *
  * **项目前缀**：全部键带 `${PROJECT_ID}_` 运行时前缀（config.REDIS_KEY_PREFIX，缺省 `gono_`）：
  * 多项目共用一套 Redis 实例时按项目隔离，文档登记的是去前缀的逻辑键名。本文件是唯一拼接点。
@@ -18,6 +20,9 @@
  *   通用幂等占位 `idem:{scope}:{key}`（非 uid 作用域；当前无调用点）。
  * - **玩法自有键（`kGameplay`）**：分区语义由玩法在调用点显式选（`{ zone }`），⛔ 无缺省——
  *   框架不替玩法猜，调用点在各玩法自己的 `rooms/modes/<id>/keys.ts` 里，⛔ 玩法名不进本文件。
+ * - **kit 自有键（`kKitUser` / `kKitShared`）**：同样显式 `{ zone }`；per-user 键 `kt:<kitId>:<name>:{uid}` 是
+ *   冷档 freeze/thaw 按 `kit.json.userKeys` 快照与 UNLINK 的对象（archive/archiveScripts.ts，KIT.md §5）；
+ *   共享键 ⛔ 不冻结。
  *
  * ⚠ 过渡期：`zoneCtx` 未设置即回退项目前缀（sId=0 语义，行为同现网）；多区硬化步改为
  * fail-fast + 全入口（LobbyRoom.messages / room / worker）`zoneCtx.run` 包裹，开 GROUP_ZONES 前必做。
@@ -128,6 +133,52 @@ export const kPluginShared = (pluginId: string, name: string, scope: PluginKeySc
   const suffix = key === undefined ? "" : `:${key}`;
   return `${scope.zone === "per-zone" ? P() : G}pl:${pluginId}:${name}:{${pluginId}}${suffix}`;
 };
+
+// ── kit 自有键工厂（kit 键由 kit 自己在 apps/server/src/kits/<kitId>/keys.ts 定义，中央本文件只提供
+//    构造器与分段契约——与 kGameplay / kPluginUser 对称；docs/KIT.md §2「Redis 键」行：前缀 `kt:`，
+//    与 `gp:` / `pl:` 互不可达；共享键的 hash-tag 必须带区或分片键，⛔ 不允许整 kit 一个 tag） ─────
+
+/** kit 键的分区语义（与 GameplayKeyScope 同形：⛔ 无隐式缺省，理由见 GameplayKeyScope）。 */
+export type KitKeyScope = GameplayKeyScope;
+
+/** kit 分段字面量闸：与玩法键 / plugin 键同一规则（`kKitShared` 的 shard 段同样过闸），错误信息点名 kKit。 */
+const assertKitKeySegment = (value: string, label: string): void => {
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(value)) {
+    throw new Error(`kKit ${label} "${value}" 非法：只允许 [A-Za-z0-9._-] 且首字符为字母数字（分段不得含 ':' / '{' / '}'）`);
+  }
+};
+
+/**
+ * kit 自有 per-user 键：逻辑名 `kt:<kitId>:<name>:{uid}`（物理键再带项目前缀，per-zone 时另带区前缀）。
+ *
+ * 分段顺序是契约（同 `kGameplay` / `kPluginUser`）：`kt:` 命名空间段把 kit 键族与框架键族 / 玩法键族（`gp:`）/
+ * plugin 键族（`pl:`）隔开、`kitId` 紧随其后（`uninstall --drop-data` 按 `kt:<kitId>:` 前缀 SCAN 清理的唯一依据）、
+ * **`{uid}` hash-tag 必须是末段**（09·R3 与该 uid 的框架键同槽——冷档 FREEZE_COMMIT / THAW_RESTORE 把它们与
+ * user/bag 放进同一条 Lua）。⛔ 禁改分段或挪动末段。
+ *
+ * 冷档：`name` ∈ `kit.json.userKeys` 且 `{ zone: "per-zone" }` 的键由 freeze 快照、UNLINK，thaw 恢复（KIT.md §5）；
+ * 快照要求它是 HASH（或不存在），其它类型 freeze 拒绝。
+ */
+export function kKitUser(kitId: string, name: string, uid: string, scope: KitKeyScope): string {
+  assertKitKeySegment(kitId, "kitId"); assertKitKeySegment(name, "name");
+  return `${scope.zone === "per-zone" ? P() : G}kt:${kitId}:${name}:{${uid}}`;
+}
+
+/**
+ * kit 自有共享键（非 per-user）：hash-tag **强制带分片键**（KIT.md §2：⛔ 不允许整 kit 一个 tag，
+ * 否则一个 kit 的全部共享数据落同一 slot / 同一实例）：
+ * - per-zone：`kt:<kitId>:<name>:{<kitId>:s<sId>:<shard>}`（sId = 当前区上下文，tag 里带区使跨区键永不同槽）；
+ * - global：`kt:<kitId>:<name>:{<kitId>:<shard>}`。
+ * `shard` 是必填非空分段（走同一字面量闸）——tag 里恒有分片键，整 kit 单 tag 在构造上不可能。
+ * 同 (kitId, shard) 的共享键同槽，可进同一条 Lua；tag 以 kitId 开头，永不与任何 `{uid}` 槽混淆。
+ */
+export function kKitShared(kitId: string, name: string, shard: string, scope: KitKeyScope): string {
+  assertKitKeySegment(kitId, "kitId"); assertKitKeySegment(name, "name"); assertKitKeySegment(shard, "shard");
+  if (scope.zone === "per-zone") {
+    return `${P()}kt:${kitId}:${name}:{${kitId}:s${currentZoneId()}:${shard}}`;
+  }
+  return `${G}kt:${kitId}:${name}:{${kitId}:${shard}}`;
+}
 
 // ── durable 实例 · per-zone 键（P()：角色档 + 每区经济，09·R3 同 {uid} 槽） ──────────────
 

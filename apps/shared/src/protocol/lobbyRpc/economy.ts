@@ -1,13 +1,28 @@
 /**
  * 经济操作结果 —— mail.claimAttach / shop.purchase / shop.queryOp 共用的响应形状（真源）。
  * 服务端 core/economy/outbox.ts 的 Grant/PurchaseResult 即本文件类型的别名（04 三阶段协议读侧）。
+ *
+ * kit effect kind（docs/KIT.md §4「effect kind 登记通道」）：`kit:<kitId>:<name>` 由构建期
+ * `codegen:plugins` 从 `apps/kits/<id>/kit.json.effects` 汇入 `kits/catalog.generated.ts` 的
+ * `KIT_EFFECT_KINDS`；本文件的 validator 与服务端 Lua 镜像按同一表判。`kinds` 参数可注入，
+ * 缺省即生成表——单测注入自己的表，⛔ 生产调用不传。
  */
+import { KIT_EFFECT_KINDS } from "../../kits/catalog.generated";
+import { KIT_EFFECT_KIND_PREFIX, type KitEffectSpec } from "../../kits/catalogTypes";
 
-/** 一次发放的单条玩法副作用。货币不在此（权威在 MySQL，09·A2）。 */
+/** kit 登记的 effect kind 表（`kit:<kitId>:<name>` → 规格）；缺省 = 生成物 KIT_EFFECT_KINDS。 */
+export type KitEffectKinds = Readonly<Record<string, KitEffectSpec>>;
+
+/**
+ * 一次发放的单条玩法副作用。货币不在此（权威在 MySQL，09·A2）。
+ * `kit:<kitId>:<name>`：对该 kit 的 per-user HASH 键（`kKitUser(kitId, spec.userKey, uid)`）的
+ * `spec.field` 做整数累加，`delta` ∈ [1, spec.max]（只加不减：kit 世界状态的扣减走 kit 自己的 SQL）。
+ */
 export type IGrant =
     | { kind: "item"; itemId: number; count: number }
     | { kind: "star"; delta: number }
-    | { kind: "setField"; field: string; value: string };
+    | { kind: "setField"; field: string; value: string }
+    | { kind: `kit:${string}`; delta: number };
 
 /**
  * Effect 的 wire/schema 版本。它与 user 档 schemaVersion 独立演进；
@@ -152,6 +167,16 @@ const asciiField = (value: unknown): value is string =>
 
 const decimalInteger = /^-?[0-9]+$/;
 
+const hasOwn = (record: object, key: string): boolean =>
+    Object.prototype.hasOwnProperty.call(record, key);
+
+/** 只按自有属性查表：`kit:` 前缀已保证不撞原型链名，这里再补一道，Proxy/异常由调用方边界兜。 */
+export function lookupKitEffectKind(kind: string, kinds: KitEffectKinds): KitEffectSpec | undefined {
+    if (typeof kind !== "string" || !kind.startsWith(KIT_EFFECT_KIND_PREFIX)) { return undefined; }
+    if (!hasOwn(kinds, kind)) { return undefined; }
+    return kinds[kind];
+}
+
 /**
  * Count the bytes a JavaScript string occupies when encoded as UTF-8.
  * This is deliberately implemented without TextEncoder so shared stays ES2017-only.
@@ -231,7 +256,7 @@ export function validateEffectFieldValue(field: string, value: unknown, path = "
  * primitive public prevents the response validator from accepting a weaker
  * shape than the write path.
  */
-export function validateGrant(input: unknown, path = "grant"): IGrant {
+export function validateGrant(input: unknown, path = "grant", kinds: KitEffectKinds = KIT_EFFECT_KINDS): IGrant {
     try {
         if (!isRecord(input)) { fail("EFFECT_GRANT_NOT_OBJECT", path); }
         const grant = input as RecordLike;
@@ -266,6 +291,16 @@ export function validateGrant(input: unknown, path = "grant"): IGrant {
             const value = validateEffectFieldValue(grant.field as string, grant.value, `${path}.value`);
             return { kind: "setField", field: grant.field as string, value };
         }
+        const kind = grant.kind as string;
+        if (kind.startsWith(KIT_EFFECT_KIND_PREFIX)) {
+            const spec = lookupKitEffectKind(kind, kinds);
+            if (spec === undefined) { fail("EFFECT_UNKNOWN_KIND", `${path}.kind`); }
+            if (!exactKeys(grant, ["kind", "delta"])) { fail("EFFECT_GRANT_KEYS", path); }
+            if (!finiteIntegerIn(grant.delta, 1, (spec as KitEffectSpec).max)) {
+                fail("EFFECT_DELTA", `${path}.delta`);
+            }
+            return { kind: kind as `kit:${string}`, delta: grant.delta as number };
+        }
         return fail("EFFECT_UNKNOWN_KIND", `${path}.kind`);
     } catch (error) {
         if (isEffectValidationError(error)) throw error;
@@ -277,7 +312,7 @@ export function validateGrant(input: unknown, path = "grant"): IGrant {
  * 严格校验带版本的 effect envelope，并返回防止调用方后续 mutate 的规范化副本。
  * ⛔ 这里刻意不接受裸数组；存量数组由 normalizeEffect 显式升格到当前版本。
  */
-export function validateEffect(input: unknown): IEffect {
+export function validateEffect(input: unknown, kinds: KitEffectKinds = KIT_EFFECT_KINDS): IEffect {
     try {
         if (!isRecord(input)) { fail("EFFECT_NOT_OBJECT", "effect"); }
         const effect = input as RecordLike;
@@ -297,9 +332,10 @@ export function validateEffect(input: unknown): IEffect {
         for (let i = 0; i < grantsInput.length; i++) {
             const raw = grantsInput[i];
             const path = `effect.grants[${i}]`;
-            const grant = validateGrant(raw, path);
+            const grant = validateGrant(raw, path, kinds);
             if (grant.kind === "item") quantity += Math.abs(grant.count);
             else if (grant.kind === "star") quantity += Math.abs(grant.delta);
+            else if (grant.kind !== "setField") quantity += grant.delta; // kit：delta 已限 ≥ 1
             grants.push(grant);
             if (quantity > EFFECT_MAX_QUANTITY) { fail("EFFECT_QUANTITY", "effect.grants"); }
         }
@@ -311,7 +347,7 @@ export function validateEffect(input: unknown): IEffect {
 }
 
 /** 兼容历史 outbox/mail JSON 数组；所有新写入在返回后都使用 envelope。 */
-export function normalizeEffect(input: unknown): IEffect {
+export function normalizeEffect(input: unknown, kinds: KitEffectKinds = KIT_EFFECT_KINDS): IEffect {
     try {
         let value = input;
         if (typeof value === "string") {
@@ -321,9 +357,9 @@ export function normalizeEffect(input: unknown): IEffect {
         // Keep Array.isArray and any array Proxy trap inside the same effect
         // error boundary as the rest of normalization.
         if (Array.isArray(value)) {
-            return validateEffect({ schemaVersion: EFFECT_SCHEMA_VERSION, grants: value });
+            return validateEffect({ schemaVersion: EFFECT_SCHEMA_VERSION, grants: value }, kinds);
         }
-        return validateEffect(value);
+        return validateEffect(value, kinds);
     } catch (error) {
         if (isEffectValidationError(error)) throw error;
         return fail("EFFECT_DATA_CORRUPT", "effect");
@@ -331,12 +367,12 @@ export function normalizeEffect(input: unknown): IEffect {
 }
 
 /** 仅在需要返回旧版 API 形状时取 grants；仍先经过完整校验。 */
-export function effectGrants(input: unknown): IGrant[] {
-    return normalizeEffect(input).grants;
+export function effectGrants(input: unknown, kinds: KitEffectKinds = KIT_EFFECT_KINDS): IGrant[] {
+    return normalizeEffect(input, kinds).grants;
 }
 
-export function isValidEffect(input: unknown): boolean {
-    try { normalizeEffect(input); return true; }
+export function isValidEffect(input: unknown, kinds: KitEffectKinds = KIT_EFFECT_KINDS): boolean {
+    try { normalizeEffect(input, kinds); return true; }
     catch { return false; }
 }
 

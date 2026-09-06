@@ -7,9 +7,9 @@
  * N-k 老档拉回 N 的地方（在线档由 S1 的双读/灰度双写覆盖，只保证 N 与 N-1）。
  *
  * 实际迁移步骤与热档共用 `core/userSchema.ts` 的 registry；本文件只负责 archive
- * 容器（bag/applied/payload）深校验与不可变地替换 migrated user。
+ * 容器（bag/applied/payload/kits）深校验与不可变地替换 migrated user。
  */
-import type { ArchiveSnapshot } from "./archiveScripts";
+import { splitKitSnapshotName, type ArchiveSnapshot } from "./archiveScripts";
 import { BAG_SHARDS, SCHEMA_VERSION } from "../infra/config";
 import { storedInt } from "../infra/numbers";
 import { migrateUserSchemaToCurrent, validateUserSchema } from "../userSchema";
@@ -27,6 +27,24 @@ function validateStringRecord(value: unknown, label: string): asserts value is R
   }
 }
 
+/** 与 keys.ts 的分段闸同一正则：`kits` 成员名 `<kitId>:<name>` 的两段都必须能进 kKitUser。 */
+const KIT_KEY_SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]*$/u;
+
+/**
+ * 可选顶层成员 `kits`（KIT.md §5）：`<kitId>:<name>` → string→string HASH。pre-K0 快照没有它；
+ * 有则每个成员名必须是合法的两段（thaw 会按它拼 kKitUser，畸形名在这里 fail-closed，⛔ 不能带进 Lua）。
+ */
+function validateKitsMember(value: unknown): asserts value is Record<string, Record<string, string>> {
+  if (!isRecord(value)) { throw new Error("archive snapshot.kits 形状非法"); }
+  for (const [snapshotName, hash] of Object.entries(value)) {
+    const { kitId, name } = splitKitSnapshotName(snapshotName);
+    if (!KIT_KEY_SEGMENT.test(kitId) || !KIT_KEY_SEGMENT.test(name)) {
+      throw new Error(`archive snapshot.kits 键名非法：「${snapshotName}」（分段不得含 ':' / '{' / '}'）`);
+    }
+    validateStringRecord(hash, `archive snapshot.kits[${snapshotName}]`);
+  }
+}
+
 export function validateArchiveSnapshotSchema(
   snapshot: ArchiveSnapshot,
   fromVersion: number,
@@ -39,7 +57,7 @@ export function validateArchiveSnapshotSchema(
   if (!isRecord(snapshot)) { throw new Error("archive snapshot 形状非法"); }
   const keys = Object.keys(snapshot);
   if (!keys.includes("user") || !keys.includes("bag") || !keys.includes("applied")
-    || keys.some((key) => !["user", "bag", "applied", "appliedPayload"].includes(key))) {
+    || keys.some((key) => !["user", "bag", "applied", "appliedPayload", "kits"].includes(key))) {
     throw new Error("archive snapshot 字段集合非法");
   }
   validateStringRecord(snapshot.user, "archive snapshot.user");
@@ -72,6 +90,9 @@ export function validateArchiveSnapshotSchema(
   }
   if (snapshot.appliedPayload !== undefined) {
     validateStringRecord(snapshot.appliedPayload, "archive snapshot.appliedPayload");
+  }
+  if (snapshot.kits !== undefined) {
+    validateKitsMember(snapshot.kits);
   }
 }
 

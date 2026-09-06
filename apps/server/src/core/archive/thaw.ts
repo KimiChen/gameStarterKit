@@ -23,7 +23,11 @@ import { withUserLock } from "../locks";
 import {
   ArchiveAuthorityConflictError, BusyError, ThawingError, UserDataLostError,
 } from "../errors";
-import { thawRestore, type ArchiveSnapshot } from "./archiveScripts";
+import {
+  kitUserKeyEntries, thawRestore, unknownSnapshotKits, type ArchiveSnapshot,
+} from "./archiveScripts";
+import { SERVER_KIT_CATALOG } from "../../kits/catalog.generated";
+import type { ServerKitCatalogEntry } from "../../kits/catalogTypes";
 import { lazyMigrateSchema, validateArchiveSnapshotSchema } from "./lazyMigrate";
 import { webPlatformClient } from "../../platform/webPlatformClient";
 import { optionalStoredInt, storedInt } from "../infra/numbers";
@@ -140,6 +144,7 @@ function authorityConflict(
 async function validateDualStateLiveBranch(
   redis: Redis,
   uid: string,
+  catalog: readonly ServerKitCatalogEntry[],
 ): Promise<{ valid: true } | { valid: false; reason: string }> {
   try {
     const read = await readLiveUserFields(uid, []);
@@ -155,6 +160,8 @@ async function validateDualStateLiveBranch(
     [kApplied(uid), "zset"],
     [kAppliedPayload(uid), "hash"],
     ...kBagAll(uid).map((key) => [key, "hash"] as const),
+    // kit per-user 键（KIT.md §5）：快照只能表达 HASH，其它类型在这里与 bag 一样按具名原因拒绝
+    ...kitUserKeyEntries(uid, catalog).map((entry) => [entry.key, "hash"] as const),
   ];
   const types = await Promise.all(typedKeys.map(([key]) => redis.type(key)));
   for (let index = 0; index < typedKeys.length; index++) {
@@ -179,7 +186,11 @@ async function validateDualStateLiveBranch(
  * 后续/失败 attempt 写入别的成员不会遮蔽本行，Redis PITR 丢失该成员时 COMMITTED 行重新成为权威。
  * LEGACY 双存和 PREPARED+proof mismatch 都无法证明先后，必须 CONFLICT、保留两侧。
  */
-export async function resolve(uid: string, sId = currentZoneId()): Promise<{ kind: UserState; row?: ArchiveRow }> {
+export async function resolve(
+  uid: string,
+  sId = currentZoneId(),
+  catalog: readonly ServerKitCatalogEntry[] = SERVER_KIT_CATALOG,
+): Promise<{ kind: UserState; row?: ArchiveRow }> {
   const r = clientFor(uid);
   const live = (await r.exists(kUser(uid))) === 1;
   const [rows] = await getPool().query<RowDataPacket[]>(
@@ -190,7 +201,7 @@ export async function resolve(uid: string, sId = currentZoneId()): Promise<{ kin
   const row: ArchiveRow | undefined = rows.length === 1 ? archiveRowOf(rows[0]) : undefined;
 
   if (live && !row) {
-    const liveBranch = await validateDualStateLiveBranch(r, uid);
+    const liveBranch = await validateDualStateLiveBranch(r, uid, catalog);
     if (!liveBranch.valid) {
       throw new Error(`live user schema/key 非法 uid=${uid} sId=${sId}: ${liveBranch.reason}`);
     }
@@ -200,7 +211,7 @@ export async function resolve(uid: string, sId = currentZoneId()): Promise<{ kin
   if (!live && !row) { return { kind: "ABSENT" }; }
 
   if (row!.phase === ARCHIVE_PHASE_LEGACY) { return authorityConflict(uid, sId, row!); }
-  const liveBranch = await validateDualStateLiveBranch(r, uid);
+  const liveBranch = await validateDualStateLiveBranch(r, uid, catalog);
   if (!liveBranch.valid) {
     return authorityConflict(uid, sId, row!, liveBranch.reason);
   }
@@ -288,9 +299,13 @@ export async function invalidateUserNegcache(uid: string): Promise<void> {
  *
  * thaw 成功后 archive 行**删除**而非保留——08 的 ensureLive 与崩溃分析表都以「删行为最后一步、
  * 残留行由 resolve→LIVE 收敛」为准；保留行只会让每次 ensureLive 都掉进慢路径比 fence。
+ *
+ * kit per-user 键（KIT.md §5）：快照 `kits` 成员随 user/bag 在同一条 Lua 里恢复；快照含目录里已没有的 kit
+ * （卸载后 thaw）时**照样恢复**并告警——数据永不静默丢弃，pre-K0 无 `kits` 的快照原样可 thaw。
  */
 export async function restoreFromArchive(
   uid: string, myFence: number, row: ArchiveRow, overwrite: boolean,
+  catalog: readonly ServerKitCatalogEntry[] = SERVER_KIT_CATALOG,
 ): Promise<void> {
   if (currentZoneId() !== row.serverId) {
     throw new Error(`archive zone context mismatch uid=${uid} row=s${row.serverId} ctx=s${currentZoneId()}`);
@@ -298,6 +313,12 @@ export async function restoreFromArchive(
   // Validate/migrate before changing a LEGACY/PREPARED row. A future or corrupt
   // cold snapshot must leave both MySQL metadata and Redis completely untouched.
   const snapshot = await lazyMigrateSchema(row.snapshot, row.schemaVersion);
+  const unknownKits = unknownSnapshotKits(snapshot, catalog);
+  if (unknownKits.length > 0) {
+    console.warn(
+      `[thaw] 快照含目录未登记的 kit 键（仍恢复，⛔ 不丢数据）uid=${uid} sId=${row.serverId} kits=${unknownKits.join(",")}`,
+    );
+  }
   const materialized = await materializeArchiveIdentity(uid, row);
   const res = await thawRestore(
     uid,
@@ -306,6 +327,7 @@ export async function restoreFromArchive(
     snapshot,
     overwrite,
     materialized.freezeId!,
+    catalog,
   );
   if (res !== "ok") { throw new BusyError("thawRestore lost"); } // 锁已易主：零破坏，archive 完好，重试即可
   archiveCounters.thawed++;

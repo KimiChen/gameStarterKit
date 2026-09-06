@@ -10,14 +10,12 @@ import { CAS_DEL, TOKEN_BUCKET, defineScript, evalshaWithReload } from "../src/c
 import { closeMysql, getPool } from "../src/core/infra/mysql";
 import type { RowDataPacket } from "../src/core/infra/mysql";
 import { kLock, kRl } from "../src/core/infra/keys";
+import { allTables } from "../src/core/infra/zoneTables";
 
-const EXPECTED_TABLES = [
-  "user_currency", "currency_ledger", "gameplay_outbox", "singleton_lease",
-  "purchases", "match_index", "match_results", "mail",
-  "user_archive", "archive_zone_usage", "user_snapshot_readonly",
-];
+// 框架表 ∪ 已登记 kit 表（按区表登记，docs/KIT.md §5）；⛔ 不再手抄清单
+const EXPECTED_TABLES = allTables();
 const FORBIDDEN_ACCOUNT_TABLES = ["accounts", "account_sessions", "char_registry", "login_audit", "seq"];
-const EXPECTED_LEASES = ["outbox_relayer", "freeze_worker"];
+const EXPECTED_LEASES = ["outbox_relayer", "freeze_worker", "db_bootstrap"];
 
 let failed = false;
 const check = (name: string, ok: boolean, detail = ""): void => {

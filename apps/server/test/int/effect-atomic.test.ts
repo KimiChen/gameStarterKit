@@ -19,13 +19,14 @@ import { claimMailAttach, sendMail } from "../../src/core/economy/mailer";
 import { createUser } from "../../src/core/userRecord";
 import { CUR_GOLD, OUTBOX_DONE, SCHEMA_VERSION } from "../../src/core/infra/config";
 import {
-  kApplied, kAppliedPayload, kBagAll, kUser, zoneCtx,
+  kApplied, kAppliedPayload, kBagAll, kKitUser, kUser, zoneCtx,
 } from "../../src/core/infra/keys";
 import { APPLY_EFFECT, defineScript, evalshaWithReload } from "../../src/core/infra/redisScripts";
 import { clientFor, clientForKey, closeRedis } from "../../src/core/infra/redisRoute";
 import { closeMysql, getPool, withTx } from "../../src/core/infra/mysql";
 import type { RowDataPacket } from "../../src/core/infra/mysql";
 import { validateGrant } from "@game/shared";
+import type { KitEffectSpec } from "@game/shared/kits/catalogTypes";
 import { assertRedisUp, cleanupUser, testUid } from "./helpers";
 import { exerciseFaultPoint } from "../faultMatrix";
 
@@ -293,6 +294,55 @@ test("Lua apply 拒绝 ver/余额安全整数上界溢出，且不写 marker", a
     assert.equal(itemResult, "err:EFFECT_DATA_CORRUPT");
     assert.deepEqual(await dump(user), beforeBag, "item 计数器溢出不得产生部分写");
   });
+});
+
+test("kit effect kind：按注入表 HINCRBY 到 kKitUser 键、幂等 dup、未登记 kind 与键数不符均 fail-closed", async () => {
+  const user = await seed("kit");
+  const kinds: Readonly<Record<string, KitEffectSpec>> = {
+    "kit:arena:score": { kitId: "arena", name: "score", userKey: "stats", field: "score", max: 1000 },
+    "kit:arena:kills": { kitId: "arena", name: "kills", userKey: "stats", field: "kills", max: 50 },
+  };
+  const statsKey = kKitUser("arena", "stats", user, { zone: "per-zone" });
+  const redis = clientFor(user);
+  try {
+    const opId = deriveOpId(user, 0, "effect.kit", "one");
+    const effect = [
+      { kind: "kit:arena:score" as const, delta: 5 },
+      { kind: "item" as const, itemId: 3, count: 2 },
+      { kind: "kit:arena:score" as const, delta: 2 },
+      { kind: "kit:arena:kills" as const, delta: 1 },
+    ];
+    assert.equal(await redisApply(user, opId, effect, kinds), "ok");
+    assert.equal(await redisApply(user, opId, effect, kinds), "dup");
+    assert.deepEqual(await redis.hgetall(statsKey), { score: "7", kills: "1" });
+    const afterApply = await dump(user);
+    assert.equal(afterApply.user.ver, "1");
+    assert.equal(afterApply.bags[3 % 4]["3"], "2");
+
+    // 未登记 kit kind：TS validator 先拒，Redis 不动
+    await assert.rejects(
+      redisApply(user, deriveOpId(user, 0, "effect.kit", "unknown"), [{ kind: "kit:arena:coin", delta: 1 }], kinds),
+      (e: unknown) => e instanceof InvalidEffectError && e.message.includes("EFFECT_UNKNOWN_KIND"),
+    );
+    assert.deepEqual(await dump(user), afterApply);
+
+    // 越 max：Lua 镜像同码拒绝（绕过 TS validator 直打脚本）
+    const base = [kUser(user), kApplied(user), kAppliedPayload(user), ...kBagAll(user)];
+    const map = JSON.stringify({ "kit:arena:kills": { k: base.length + 1, f: "kills", m: 50 } });
+    const over = JSON.stringify({ schemaVersion: 1, grants: [{ kind: "kit:arena:kills", delta: 51 }] });
+    assert.equal(await evalshaWithReload(redis, APPLY_EFFECT, [...base, statsKey], ["op-over", "1", over, map]), "err:EFFECT_DELTA");
+    // 投影表引用了不存在的 KEYS 序号 / 键数与投影不符 ⇒ EFFECT_DATA_CORRUPT，不写任何键
+    const one = JSON.stringify({ schemaVersion: 1, grants: [{ kind: "kit:arena:kills", delta: 1 }] });
+    assert.equal(await evalshaWithReload(redis, APPLY_EFFECT, base, ["op-missing", "1", one, map]), "err:EFFECT_DATA_CORRUPT");
+    assert.equal(await evalshaWithReload(redis, APPLY_EFFECT, [...base, statsKey, kKitUser("arena", "x", user, { zone: "per-zone" })], ["op-extra", "1", one, map]), "err:EFFECT_DATA_CORRUPT");
+    // 投影表里没有的 kit kind ⇒ 既有 UNKNOWN_KIND 路径
+    const other = JSON.stringify({ schemaVersion: 1, grants: [{ kind: "kit:arena:score", delta: 1 }] });
+    assert.equal(await evalshaWithReload(redis, APPLY_EFFECT, [...base, statsKey], ["op-unknown", "1", other, map]), "err:EFFECT_UNKNOWN_KIND");
+    assert.deepEqual(await dump(user), afterApply, "拒绝路径不得改变任何状态");
+    assert.deepEqual(await redis.hgetall(statsKey), { score: "7", kills: "1" });
+  } finally {
+    await redis.unlink(statsKey, kKitUser("arena", "x", user, { zone: "per-zone" }));
+  }
 });
 
 test("同 op-id 并发只应用一次；不同 canonical payload 返回冲突且状态不变", async () => {

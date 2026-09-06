@@ -35,7 +35,11 @@ import {
   LeaseLostError, makeHolderId, tryAcquireLease, withLeaseTx, type SingletonLease,
 } from "../infra/lease";
 import { withUserLock } from "../locks";
-import { freezeCommit, prepareArchiveCandidate, type ArchiveSnapshot } from "./archiveScripts";
+import {
+  freezeCommit, kitUserKeyEntries, prepareArchiveCandidate, type ArchiveSnapshot,
+} from "./archiveScripts";
+import { SERVER_KIT_CATALOG } from "../../kits/catalog.generated";
+import type { ServerKitCatalogEntry } from "../../kits/catalogTypes";
 import {
   archiveCounters, InProcTokenBucket, resolve, restoreActiveIndex, restoreFromArchive,
 } from "./thaw";
@@ -140,6 +144,30 @@ async function readHashSafe(
   return out;
 }
 
+/**
+ * 读目录声明的 kit per-user HASH（KIT.md §5 冷档行）：缺席的键不占位；非 HASH 类型 = 快照无法表达，
+ * 与 bag 的 WRONGTYPE 同样让本轮 freeze 以具名错误失败（resolve 的 validateDualStateLiveBranch 已先按
+ * TYPE 拦一道，这里是读侧的第二道）。全部为空时返回 undefined，快照不带 `kits` 成员（与 pre-K0 字节形状一致）。
+ */
+async function readKitUserHashes(
+  r: Redis,
+  uid: string,
+  catalog: readonly ServerKitCatalogEntry[],
+): Promise<Record<string, Record<string, string>> | undefined> {
+  const kits: Record<string, Record<string, string>> = {};
+  let count = 0;
+  for (const entry of kitUserKeyEntries(uid, catalog)) {
+    const type = await r.type(entry.key);
+    if (type === "none") { continue; }
+    if (type !== "hash") {
+      throw new Error(`[freeze] kit 键类型非法 uid=${uid} key=${entry.name} type=${type}（期望 hash，KIT.md §5 冷档只快照 HASH）`);
+    }
+    kits[entry.name] = await readHashSafe(r, entry.key);
+    count++;
+  }
+  return count === 0 ? undefined : kits;
+}
+
 export type PinnedUserHashRead =
   | { readonly outcome: "ok"; readonly user: Record<string, string>; readonly verAtRead: string }
   | { readonly outcome: "empty"; readonly verAtRead: string }
@@ -203,6 +231,7 @@ export async function freezeUser(
   uid: string,
   lease: SingletonLease,
   sId = currentZoneId(),
+  catalog: readonly ServerKitCatalogEntry[] = SERVER_KIT_CATALOG,
 ): Promise<"frozen" | "skipped" | "lost"> {
   const zone = normalizeSId(sId);
   if (zone === null) { throw new RangeError(`freezeUser sId 非法：「${String(sId)}」`); }
@@ -211,10 +240,10 @@ export async function freezeUser(
 
     // ── 锁内双检（⚠ 锁外查一次不够：候选可能在排队等锁时刚提交 pending 行 / 刚上线，08 约束 2）──
     // 先按本区 fence 判权威。PITR 后 archive 较新时必须先恢复，绝不能把旧热档写回 archive。
-    const authority = await resolve(uid, zone);
+    const authority = await resolve(uid, zone, catalog);
     if (authority.kind === "ARCHIVE_NEWER") {
       archiveCounters.archiveNewerRestored++;
-      await restoreFromArchive(uid, fence, authority.row!, true);
+      await restoreFromArchive(uid, fence, authority.row!, true, catalog);
       freezeCounters.skipped++;
       return "skipped";
     }
@@ -264,7 +293,10 @@ export async function freezeUser(
     for (const k of kBagAll(uid)) { bag.push(await readHashSafe(r, k)); }
     const applied = await r.zrange(kApplied(uid), 0, -1, "WITHSCORES");
     const appliedPayload = await readHashSafe(r, kAppliedPayload(uid));
-    const snapshot: ArchiveSnapshot = { user, bag, applied, appliedPayload };
+    const kits = await readKitUserHashes(r, uid, catalog); // KIT.md §5：目录 userKeys 的 per-user HASH 随档冻结
+    const snapshot: ArchiveSnapshot = kits === undefined
+      ? { user, bag, applied, appliedPayload }
+      : { user, bag, applied, appliedPayload, kits };
     validateArchiveSnapshotSchema(snapshot, schemaVersion);
 
     const limits = _freezeTestHooks.capacityLimits ?? productionCapacityLimits;
@@ -378,7 +410,7 @@ export async function freezeUser(
     }
 
     // ── ③ Lua：复检锁归属 + ver 未变 → 才 UNLINK。原子，不可能盲删（09·L4）──
-    const res = await freezeCommit(uid, zone, fence, verAtRead, freezeId);
+    const res = await freezeCommit(uid, zone, fence, verAtRead, freezeId, catalog);
     if (res !== "ok") {
       // 只删除本次 PREPARED 行；迟到 worker 的 freeze_id 不能命中新一代行。
       const cleaned = await withLeaseTx(lease, (conn) => deleteArchiveWithUsage(

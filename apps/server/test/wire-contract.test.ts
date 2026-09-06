@@ -49,6 +49,8 @@ import {
   validateEffect,
   validateGrant,
 } from "@game/shared";
+import { kitEffectKind, type KitEffectSpec } from "@game/shared/kits/catalogTypes";
+import { KIT_EFFECT_KINDS } from "@game/shared/kits/catalog.generated";
 
 const assertInvalid = (fn: () => unknown, code?: string): void => {
   assert.throws(fn, (error: unknown) => {
@@ -298,6 +300,39 @@ test("setField：按字段值域拒绝数字垃圾、越界值和非规范开关
   assertInvalid(() => validateGrant({ kind: "setField", field: "musicOn", value: "true" }), "EFFECT_VALUE");
   assertInvalid(() => validateGrant({ kind: "setField", field: "guildId", value: "9007199254740992" }), "EFFECT_VALUE");
   assertInvalid(() => validateGrant({ kind: "setField", field: "nickname", value: "x".repeat(129) }), "EFFECT_VALUE");
+});
+
+test("kit effect kind：按注入表判——接受、未登记、delta 0 / 越 max / 非整数、extra key、缺省表为空", () => {
+  const kinds: Readonly<Record<string, KitEffectSpec>> = {
+    [kitEffectKind("arena", "score")]: { kitId: "arena", name: "score", userKey: "stats", field: "score", max: 1000 },
+  };
+  assert.equal(kitEffectKind("arena", "score"), "kit:arena:score");
+  assert.deepEqual(validateGrant({ kind: "kit:arena:score", delta: 1 }, "grant", kinds), { kind: "kit:arena:score", delta: 1 });
+  assert.deepEqual(validateGrant({ kind: "kit:arena:score", delta: 1000 }, "grant", kinds), { kind: "kit:arena:score", delta: 1000 });
+  assertInvalid(() => validateGrant({ kind: "kit:arena:kills", delta: 1 }, "grant", kinds), "EFFECT_UNKNOWN_KIND");
+  assertInvalid(() => validateGrant({ kind: "kit:slg:score", delta: 1 }, "grant", kinds), "EFFECT_UNKNOWN_KIND");
+  assertInvalid(() => validateGrant({ kind: "kit:", delta: 1 }, "grant", kinds), "EFFECT_UNKNOWN_KIND");
+  assertInvalid(() => validateGrant({ kind: "kit:arena:score", delta: 0 }, "grant", kinds), "EFFECT_DELTA");
+  assertInvalid(() => validateGrant({ kind: "kit:arena:score", delta: -1 }, "grant", kinds), "EFFECT_DELTA");
+  assertInvalid(() => validateGrant({ kind: "kit:arena:score", delta: 1001 }, "grant", kinds), "EFFECT_DELTA");
+  assertInvalid(() => validateGrant({ kind: "kit:arena:score", delta: 1.5 }, "grant", kinds), "EFFECT_DELTA");
+  assertInvalid(() => validateGrant({ kind: "kit:arena:score", delta: "1" }, "grant", kinds), "EFFECT_DELTA");
+  assertInvalid(() => validateGrant({ kind: "kit:arena:score", delta: 1, extra: 1 }, "grant", kinds), "EFFECT_GRANT_KEYS");
+  assertInvalid(() => validateGrant({ kind: "kit:arena:score" }, "grant", kinds), "EFFECT_GRANT_KEYS");
+  // 原型链上的名字不算登记（只认自有属性）
+  assertInvalid(() => validateGrant({ kind: "kit:constructor", delta: 1 }, "grant", kinds), "EFFECT_UNKNOWN_KIND");
+  // 缺省表 = 生成物（当前无 kit ⇒ 空 ⇒ 任何 kit kind 都未登记）
+  assert.deepEqual(KIT_EFFECT_KINDS, {});
+  assertInvalid(() => validateGrant({ kind: "kit:arena:score", delta: 1 }), "EFFECT_UNKNOWN_KIND");
+  // envelope 级：kinds 透传到 validateEffect / normalizeEffect；kit delta 计入 EFFECT_MAX_QUANTITY
+  const envelope = { schemaVersion: 1, grants: [{ kind: "kit:arena:score", delta: 7 }, { kind: "item", itemId: 1, count: 1 }] };
+  assert.deepEqual(validateEffect(envelope, kinds), envelope);
+  assert.deepEqual(normalizeEffect(JSON.stringify(envelope.grants), kinds), envelope);
+  assertInvalid(() => validateEffect(envelope), "EFFECT_UNKNOWN_KIND");
+  const wide: Readonly<Record<string, KitEffectSpec>> = {
+    "kit:arena:score": { kitId: "arena", name: "score", userKey: "stats", field: "score", max: Number.MAX_SAFE_INTEGER },
+  };
+  assertInvalid(() => validateEffect({ schemaVersion: 1, grants: [{ kind: "kit:arena:score", delta: 1_000_001 }] }, wide), "EFFECT_QUANTITY");
 });
 
 test("setField：角色登记 marker 与复核时间戳永久保留", () => {

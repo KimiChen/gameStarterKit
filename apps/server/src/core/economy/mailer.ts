@@ -6,7 +6,6 @@
  * 附件是玩法 Effect（货币不进 Effect，09·A2——带币邮件走 creditInTx 扩展，暂不在首版）。
  */
 import { randomUUID } from "node:crypto";
-import { OUTBOX_PENDING } from "../infra/config";
 import { K_STREAM_MAILWAKE, currentZoneId, zoneCtx } from "../infra/keys";
 import { withRcTx } from "../infra/mysql";
 import type { ResultSetHeader, RowDataPacket } from "../infra/mysql";
@@ -14,7 +13,7 @@ import { clientForKey } from "../infra/redisRoute";
 import { InvalidPayloadError } from "../errors";
 import { storedInt } from "../infra/numbers";
 import {
-  canonicalizeEffect, deriveOpId, markOutboxDone, readBack, redisApply,
+  canonicalizeEffect, deriveOpId, insertOutboxIntent, markOutboxDone, readBack, redisApply,
   type EffectInput, type PurchaseResult,
 } from "./outbox";
 import { ensureLive } from "../archive/thaw";
@@ -82,11 +81,8 @@ export async function claimMailAttach(uid: string, mailId: number): Promise<Purc
       [mailId, uid, sId]);
     if (upd.affectedRows === 0) { return { opId, effect, sId, fresh: false }; } // 并发双击输家
 
-    await conn.execute<ResultSetHeader>(
-      `INSERT INTO gameplay_outbox (op_id, user_id, server_id, effect, status)
-       VALUES (?,?,?,CAST(? AS JSON),?)
-       ON DUPLICATE KEY UPDATE op_id = op_id`,   // ⛔ 绝不 INSERT IGNORE（09·DB1）
-      [opId, uid, sId, JSON.stringify(effect), OUTBOX_PENDING]);
+    // ODKU no-op 兜底（⛔ 绝不 INSERT IGNORE，09·DB1）——insertOutboxIntent 的 "ignore" 形态即原 SQL。
+    await insertOutboxIntent(conn, { opId, uid, sId, effect, onDuplicate: "ignore" });
     return { opId, effect, sId, fresh: true };
   });
 

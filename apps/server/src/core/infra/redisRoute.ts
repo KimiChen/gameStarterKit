@@ -162,6 +162,19 @@ export function clientForKey(key: string): Redis {
   return durableForBucket(bucketOf(m ? m[1] : key));
 }
 
+/** 全部 durable 实例（按路由表去重，每个物理节点一个客户端）：只给「按前缀 SCAN 有界清理」类的
+ *  运维路径用（kit `--drop-data` 清 `kt:<id>:` 键，docs/KIT.md §5）；业务读写 ⛔ 仍走 clientFor/clientForKey。 */
+export function durableClients(): Redis[] {
+  const seen = new Set<string>();
+  const out: Redis[] = [];
+  for (const e of loadTable().durable) {
+    if (seen.has(e.url)) { continue; }
+    seen.add(e.url);
+    out.push(clientOf(e.url));
+  }
+  return out;
+}
+
 /** cache 实例（allkeys-lru，物理独立）。只放可再生数据。 */
 export function cacheClient(): Redis {
   return clientOf(loadTable().cacheUrl);
