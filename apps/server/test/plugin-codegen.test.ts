@@ -16,7 +16,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { test } from "node:test";
+import { after, test } from "node:test";
 import {
   ALL_LOBBY_RPC_TYPES,
   LOBBY_RPC_DOMAIN_CONTRACTS,
@@ -50,10 +50,13 @@ import {
   type PluginCodegenOptions,
 } from "../tools/plugin-codegen/lib";
 import {
+  KIT_CATALOG_SERVER_RELATIVE,
+  KIT_CATALOG_SHARED_RELATIVE,
   PLUGIN_INDEX_RELATIVE,
   PLUGINS_RELATIVE,
   FGUI_CONTRACTS_RELATIVE,
   VIEWS_RELATIVE,
+  assertDomainOwnership,
   readViewCatalog,
   renderPluginIndex,
   renderViewCatalogArtifacts,
@@ -64,17 +67,32 @@ const LOBBY_RPC_DIR = "apps/shared/src/protocol/lobbyRpc";
 const REGISTRY_RELATIVE = `${LOBBY_RPC_DIR}/registry.generated.ts`;
 const CLIENT_ARTIFACTS = [FGUI_CONTRACTS_RELATIVE, VIEWS_RELATIVE, PLUGINS_RELATIVE] as const;
 const VECTORS_DIR = "apps/server/test/lobbyRpcVectors";
-const ALL_ARTIFACTS = [REGISTRY_RELATIVE, ...CLIENT_ARTIFACTS, PLUGIN_INDEX_RELATIVE, VECTORS_INDEX_RELATIVE] as const;
+const KIT_ARTIFACTS = [KIT_CATALOG_SHARED_RELATIVE, KIT_CATALOG_SERVER_RELATIVE] as const;
+/** 生成物全集（顺序 = renderPluginArtifacts 的 Map 插入序：registry → 客户端三件 → 索引 → kit 双端 → 向量登记表）。 */
+const ALL_ARTIFACTS = [REGISTRY_RELATIVE, ...CLIENT_ARTIFACTS, PLUGIN_INDEX_RELATIVE, ...KIT_ARTIFACTS, VECTORS_INDEX_RELATIVE] as const;
+/** 生成器输入面里按需存在的目录（真仓当前无插件客户端目录 / 无 kit 时不存在，fixture 按需拷）。 */
+const OPTIONAL_INPUT_DIRS = new Set(["apps/client/src/plugins", "apps/client/src/kits", "apps/kits"]);
+const FIXTURE_INPUT_DIRS = [
+  LOBBY_RPC_DIR, "apps/plugins", "apps/kits", "apps/client/src/view", "apps/client/src/logic", "apps/client/src/plugins",
+  "apps/client/src/kits", "apps/client/src/generated", VECTORS_DIR, "apps/shared/schema/gameplays",
+  "apps/shared/src/kits", "apps/server/src/kits",
+] as const;
 
 /**
- * 隔离根：拷贝生成器的全部输入面（lobbyRpc + plugins + 客户端 view/logic/generated +
- * art XML——闭包计算只读 XML，图集/位图不拷）。
+ * 隔离根：拷贝生成器的全部输入面（lobbyRpc + plugins + kits + 客户端 view/logic/generated +
+ * kit catalog 双端生成物 + art XML——闭包计算只读 XML，图集/位图不拷）。
  */
+/** 本文件创建过的全部隔离根：文件级 after 钩子兜底删除（每个根是 ~1.3MB 的整棵输入树拷贝，⛔ 不泄漏到 os.tmpdir()）。 */
+const FIXTURE_ROOTS: string[] = [];
+after(() => {
+  for (const root of FIXTURE_ROOTS) fs.rmSync(root, { recursive: true, force: true });
+});
+
 function createFixture(): { readonly root: string; readonly options: PluginCodegenOptions } {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "plugin-codegen-"));
-  // apps/client/src/plugins 是 plugin 目录形态（PLUGIN.md §6.1 插件标准形态）的源目录：真仓无插件时不存在，按需拷。
-  for (const dir of [LOBBY_RPC_DIR, "apps/plugins", "apps/client/src/view", "apps/client/src/logic", "apps/client/src/plugins", "apps/client/src/generated", VECTORS_DIR, "apps/shared/schema/gameplays"]) {
-    if (dir === "apps/client/src/plugins" && !fs.existsSync(path.join(REPOSITORY_ROOT, dir))) continue;
+  FIXTURE_ROOTS.push(root);
+  for (const dir of FIXTURE_INPUT_DIRS) {
+    if (OPTIONAL_INPUT_DIRS.has(dir) && !fs.existsSync(path.join(REPOSITORY_ROOT, dir))) continue;
     fs.cpSync(path.join(REPOSITORY_ROOT, dir), path.join(root, dir), { recursive: true });
   }
   fs.mkdirSync(path.join(root, "docs"), { recursive: true });
@@ -90,7 +108,7 @@ function createFixture(): { readonly root: string; readonly options: PluginCodeg
   return { root, options: { repositoryRoot: root } };
 }
 
-/** 生成器输入/输出树里除四件生成物外全部文件的字节快照（证明生成器不改人工源码）。 */
+/** 生成器输入/输出树里除生成物外全部文件的字节快照（证明生成器不改人工源码）。 */
 function snapshotHandwritten(root: string): Map<string, string> {
   const out = new Map<string, string>();
   const generated = new Set<string>(ALL_ARTIFACTS);
@@ -103,7 +121,7 @@ function snapshotHandwritten(root: string): Map<string, string> {
       out.set(relative, fs.readFileSync(full, "utf8"));
     }
   };
-  for (const dir of [LOBBY_RPC_DIR, "apps/plugins", "apps/client/src/view", "apps/client/src/logic", "apps/client/src/plugins", "apps/client/src/generated", "apps/art/fairygui/assets", "docs", VECTORS_DIR]) {
+  for (const dir of [...FIXTURE_INPUT_DIRS, "apps/art/fairygui/assets", "docs"]) {
     const base = path.join(root, dir);
     if (fs.existsSync(base)) walk(base);
   }
@@ -1271,7 +1289,7 @@ test("能力索引：真仓在盘且新鲜；状态词汇表仅 planned/register
   assert.equal(fs.readFileSync(file, "utf8"), rendered, "能力索引不新鲜——重跑 codegen:plugins");
   // 阶段 7 退出条件：生成索引不得用 implemented/verified 冒充测试实跑或人工验收（§5.7）。
   assert.doesNotMatch(rendered, /implemented|verified/iu);
-  assert.match(rendered, /^\| `builtin` \| core \| registered \| /mu, "builtin plugin 行在索引中");
+  assert.match(rendered, /^\| `builtin` \| plugin \| core \| registered \| /mu, "builtin plugin 行在索引中（含 class 列）");
   assert.match(rendered, /planned/u);
   assert.match(rendered, /source-present/u);
 });
@@ -1315,7 +1333,7 @@ test("阶段 7：fixture extra plugin 只加新文件即进索引；fragment 状
     assert.equal(after.get(key), bytes, `人工源码被生成器改动：${key}`);
   }
   const index = fs.readFileSync(path.join(root, PLUGIN_INDEX_RELATIVE), "utf8");
-  assert.match(index, /^\| `fixtureExtra` \| extra \| registered \| /mu, "plugin 行收录");
+  assert.match(index, /^\| `fixtureExtra` \| plugin \| extra \| registered \| /mu, "plugin 行收录");
   assert.match(index,
     /^\| `fixture-extra-cap` \| `fixtureExtra` \| extra \| `apps\/client\/src\/logic\/page\/HomeLogic\.ts` \| source-present \| /mu,
     "defaultEntry 在仓内存在 ⇒ source-present");
@@ -1341,4 +1359,429 @@ test("⛔ 生成器不写当前计划文件：把 plan-v4.md 加进 writer 允�
   }
   assert.throws(() => assertWriterOutputSetSafe(["docs/other.generated.md"]), /不在生成器允许输出集合内/u);
   assert.throws(() => assertWriterOutputSetSafe(["apps/shared/src/protocol/rooms.ts"]), /不在生成器允许输出集合内/u);
+});
+
+// ── K0：kit 发现根（docs/KIT.md §3/§4/§7）——fixture kit `kfix` + 建在其 board 面上的插件 `kfixShop` ──
+
+/** kfix 域 descriptor（kit 声明 domains:["kfix"] 必须真有 descriptor + 向量 sidecar）。 */
+const FIXTURE_KFIX_DOMAIN = [
+  'import { type RuntimeValidator } from "../../http";',
+  'import { defineLobbyRpcDomain, defineRpcQuery } from "../defineDomain";',
+  "export interface IKfixPeekReq {}",
+  "export interface IKfixPeekRes { ok: boolean; }",
+  "export const validateKfixPeekReq: RuntimeValidator<IKfixPeekReq> = () => ({});",
+  "export const validateKfixPeekRes: RuntimeValidator<IKfixPeekRes> = () => ({ ok: true });",
+  "export default defineLobbyRpcDomain({",
+  '    domain: "kfix",',
+  "    errorCodes: [],",
+  "    routes: [",
+  '        defineRpcQuery("kfix.peek", { request: validateKfixPeekReq, response: validateKfixPeekRes }),',
+  "    ],",
+  "});",
+  "",
+].join("\n");
+
+const FIXTURE_KFIX_VECTORS = [
+  'import type { LobbyRpcVectorFile } from "./vectorTypes";',
+  "",
+  "export default {",
+  '  "kfix.peek": { request: {}, response: { ok: true } },',
+  "} satisfies LobbyRpcVectorFile;",
+  "",
+].join("\n");
+
+const KFIX_KIT_JSON = {
+  schemaVersion: 1,
+  id: "kfix",
+  version: "1.0.0",
+  description: "fixture kit：一张 per-zone 表 + 一个 mode + 一个 api 面",
+  api: { board: { version: 2, minSupported: 1 } },
+  domains: ["kfix"],
+  modes: [{ id: "kfixArena", constantName: "KfixArena" }],
+  sql: { files: ["sql/001-init.sql"], tables: [{ name: "k_kfix_board", zone: "per-zone" }] },
+  userKeys: ["board"],
+  effects: { bump: { userKey: "board", field: "score", max: 10 } },
+  category: "extra",
+  docs: ["docs/EXTRAS.md"],
+  resident: false,
+  entry: "apps/client/src/kits/kfix/index.ts",
+  viewDirs: ["apps/client/src/kits/kfix/view"],
+  views: ["apps/client/src/kits/kfix/view/KfixBoardView.view.json"],
+  owners: [{ id: "kfix", logicDir: "apps/client/src/kits/kfix/logic" }],
+  routes: [{ id: "kfixBoard", view: "KfixBoard" }],
+  menu: [{ entryId: "kfixBoard", label: "棋盘", labelKey: "menu.kfixBoard", launch: { kind: "route", routeId: "kfixBoard" } }],
+};
+
+const KFIX_SHOP_PLUGIN_JSON = {
+  schemaVersion: 2,
+  id: "kfixShop",
+  version: "1.0.0",
+  description: "建在 kfix.board 面上的插件",
+  category: "extra",
+  docs: ["docs/EXTRAS.md"],
+  resident: false,
+  requires: { kits: { kfix: { board: 1 } } },
+  entry: "apps/client/src/plugins/kfixShop/index.ts",
+  // 对 kit 的依赖只写在 requires.kits（⛔ 不写两遍）：dependencies 只列插件。
+  dependencies: ["snakeCosmetic"],
+  viewDirs: [],
+  views: [],
+  owners: [],
+  routes: [],
+  menu: [],
+};
+
+/** 一个测试里多次 createFixture() 时的统一回收器（⛔ 不泄漏 os.tmpdir()：每个根都是整棵输入树的拷贝）。 */
+function fixtureCollector(): { readonly create: () => ReturnType<typeof createFixture>; readonly dispose: () => void } {
+  const roots: string[] = [];
+  return {
+    create: () => {
+      const fixture = createFixture();
+      roots.push(fixture.root);
+      return fixture;
+    },
+    dispose: () => {
+      for (const root of roots) fs.rmSync(root, { recursive: true, force: true });
+    },
+  };
+}
+
+function writeJson(root: string, relative: string, value: unknown): void {
+  fs.mkdirSync(path.dirname(path.join(root, relative)), { recursive: true });
+  fs.writeFileSync(path.join(root, relative), `${JSON.stringify(value, null, 2)}\n`);
+}
+
+function writeText(root: string, relative: string, text: string): void {
+  fs.mkdirSync(path.dirname(path.join(root, relative)), { recursive: true });
+  fs.writeFileSync(path.join(root, relative), text);
+}
+
+const CREATE_MODULE_SOURCE = "export function createPluginModule(): { install(): void } {\n  return { install() {} };\n}\n";
+
+/** 在隔离根加入 fixture kit（kit.json + gameplays/kfixArena + 客户端 entry/view/logic + kfix 域与向量）。 */
+function addFixtureKit(root: string, kitJson: Record<string, unknown> = KFIX_KIT_JSON): void {
+  writeJson(root, "apps/kits/kfix/kit.json", kitJson);
+  writeJson(root, "apps/kits/kfix/gameplays/kfixArena/manifest.json", {
+    schemaVersion: 1, id: "kfixArena", constantName: "KfixArena", modeVersion: 1, maxPlayers: 2, wireExposed: false, profiles: [],
+  });
+  writeText(root, "apps/kits/kfix/gameplays/kfixArena/state.json", "{}\n");
+  writeText(root, "apps/client/src/kits/kfix/index.ts", CREATE_MODULE_SOURCE);
+  writeText(root, "apps/client/src/kits/kfix/view/KfixBoardView.ts", "export class KfixBoardView {}\n");
+  writeJson(root, "apps/client/src/kits/kfix/view/KfixBoardView.view.json", {
+    schemaVersion: 1, owner: "kfix", kind: "cocos", layer: "popup", fullscreen: true, onlyOne: true, permanent: false,
+    interactive: false, logic: "apps/client/src/kits/kfix/logic/KfixBoardLogic.ts", group: "authenticated", restore: "discard",
+  });
+  writeText(root, "apps/client/src/kits/kfix/logic/KfixBoardLogic.ts", "export class KfixBoardLogic {}\n");
+  writeText(root, `${LOBBY_RPC_DIR}/domains/kfix.ts`, FIXTURE_KFIX_DOMAIN);
+  writeText(root, `${VECTORS_DIR}/kfix.ts`, FIXTURE_KFIX_VECTORS);
+}
+
+function addFixtureKitShop(root: string, pluginJson: Record<string, unknown> = KFIX_SHOP_PLUGIN_JSON): void {
+  writeJson(root, "apps/plugins/kfixShop/plugin.json", pluginJson);
+  writeText(root, "apps/client/src/plugins/kfixShop/index.ts", CREATE_MODULE_SOURCE);
+}
+
+function mutateJson(root: string, relative: string, mutate: (value: Record<string, unknown>) => void): void {
+  const file = path.join(root, relative);
+  const value = JSON.parse(fs.readFileSync(file, "utf8")) as Record<string, unknown>;
+  mutate(value);
+  fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+test("K0 kit：真仓零 kit 时双端 kit catalog 与占位生成物字节相同且在盘新鲜", () => {
+  const rendered = renderViewCatalogArtifacts(readViewCatalog(REPOSITORY_ROOT));
+  for (const relative of KIT_ARTIFACTS) {
+    assert.equal(fs.readFileSync(path.join(REPOSITORY_ROOT, relative), "utf8"), rendered.get(relative), `${relative} 不新鲜`);
+  }
+  if (!fs.existsSync(path.join(REPOSITORY_ROOT, "apps/kits"))) {
+    assert.match(rendered.get(KIT_CATALOG_SHARED_RELATIVE) ?? "", /^export const KIT_CATALOG: readonly KitCatalogEntry\[\] = \[\];$/mu);
+    assert.match(rendered.get(KIT_CATALOG_SHARED_RELATIVE) ?? "", /^export const KIT_EFFECT_KINDS: Readonly<Record<string, KitEffectSpec>> = \{\};$/mu);
+    assert.match(rendered.get(KIT_CATALOG_SERVER_RELATIVE) ?? "", /^export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry\[\] = \[\];$/mu);
+  }
+});
+
+test("K0 kit：fixture kit + 建在其上的插件只加新文件 → 双端 kit catalog 收录、requires.kits 并入 dependencies（kit 先）、索引 class 列；手写源零 diff", () => {
+  const { root, options } = createFixture();
+  try {
+    const before = snapshotHandwritten(root);
+    addFixtureKit(root);
+    addFixtureKitShop(root);
+    const catalog = readViewCatalog(root);
+    const kfix = catalog.plugins.find((unit) => unit.id === "kfix");
+    const shop = catalog.plugins.find((unit) => unit.id === "kfixShop");
+    assert.equal(kfix?.class, "kit");
+    assert.equal(shop?.class, "plugin");
+    assert.deepEqual(shop?.dependencies, ["kfix", "snakeCosmetic"], "有效依赖 = required kit（有 entry）先 ++ 声明依赖，去重");
+    assert.deepEqual(catalog.plugins.map((unit) => unit.id), ["builtin", "kfix", "kfixShop", "redeem", "snake", "snakeCosmetic", "tally"]);
+
+    const result = writePluginArtifacts(options);
+    for (const relative of [...KIT_ARTIFACTS, PLUGINS_RELATIVE, PLUGIN_INDEX_RELATIVE, REGISTRY_RELATIVE, VECTORS_INDEX_RELATIVE, VIEWS_RELATIVE]) {
+      assert.ok(result.changed.includes(relative), `${relative} 应随 fixture kit 变化`);
+    }
+    const after = snapshotHandwritten(root);
+    for (const [key, bytes] of before) assert.equal(after.get(key), bytes, `人工源码被生成器改动：${key}`);
+
+    const shared = fs.readFileSync(path.join(root, KIT_CATALOG_SHARED_RELATIVE), "utf8");
+    assert.match(shared, /^\/\*\* AUTO-GENERATED by apps\/server\/tools\/plugin-codegen\/cli\.ts from apps\/kits\/<id>\/kit\.json\. Do not edit\. \*\/$/mu);
+    assert.match(shared, /^ {8}id: "kfix",\n {8}version: "1\.0\.0",\n {8}api: \{\n {12}board: \{ version: 2, minSupported: 1 \},\n {8}\},\n {8}modes: \[\n {12}\{ id: "kfixArena", constantName: "KfixArena" \},\n {8}\],\n {8}domains: \[\n {12}"kfix",\n {8}\],\n {8}effects: \[\n {12}\{ kitId: "kfix", name: "bump", userKey: "board", field: "score", max: 10 \},\n {8}\],\n {4}\},\n\];$/mu);
+    assert.match(shared, /^export const KIT_EFFECT_KINDS: Readonly<Record<string, KitEffectSpec>> = \{\n {4}"kit:kfix:bump": \{ kitId: "kfix", name: "bump", userKey: "board", field: "score", max: 10 \},\n\};$/mu);
+    const server = fs.readFileSync(path.join(root, KIT_CATALOG_SERVER_RELATIVE), "utf8");
+    assert.match(server, /^ {8}sqlFiles: \[\n {12}"sql\/001-init\.sql",\n {8}\],\n {8}sqlTables: \[\n {12}\{ name: "k_kfix_board", zone: "per-zone" \},\n {8}\],\n {8}userKeys: \[\n {12}"board",\n {8}\],/mu);
+    assert.match(server, /^export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry\[\] = \[\n {4}\{\n {8}id: "kfix",/mu);
+
+    const plugins = fs.readFileSync(path.join(root, PLUGINS_RELATIVE), "utf8");
+    assert.match(plugins, /^ {4}"kfix",\n {4}"kfixShop",/mu, "kit 与插件同进 PLUGIN_IDS（class 对 PluginHost 不可见）");
+    assert.match(plugins, /id: "kfix",\n {8}resident: false,\n {8}load: \(\) => import\("\.\.\/kits\/kfix\/index"\)\.then\(\(m\) => m\.createPluginModule\(\)\),/u, "kit entry 渲染为 kits/ 命名空间的静态字面量 load");
+    assert.match(plugins, /id: "kfixShop",\n {8}resident: false,\n {8}load: \(\) => import\("\.\.\/plugins\/kfixShop\/index"\)\.then\(\(m\) => m\.createPluginModule\(\)\),\n {8}dependencies: \["kfix","snakeCosmetic"\],/u);
+    assert.match(plugins, /entryId: "kfixBoard", pluginId: "kfix"/u, "kit 的菜单贡献照常进 contribution");
+    const index = fs.readFileSync(path.join(root, PLUGIN_INDEX_RELATIVE), "utf8");
+    assert.match(index, /^\| `kfix` \| kit \| extra \| registered \| /mu);
+    assert.match(index, /^\| `kfixShop` \| plugin \| extra \| registered \| /mu);
+    assertPluginArtifactsFresh(options);
+    // 渲染确定性：相同输入两次渲染字节相同。
+    const again = renderViewCatalogArtifacts(readViewCatalog(root));
+    for (const relative of KIT_ARTIFACTS) assert.equal(again.get(relative), fs.readFileSync(path.join(root, relative), "utf8"));
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("K0 kit：requires.kits 闸——kit 未安装 / api 面不存在 / 版本低于 minSupported / 高于 version 全部点名拒绝；dependencies 直接点名 kit 也拒绝（唯一通道）", () => {
+  const fixtures = fixtureCollector();
+  try {
+    const withRequires = (kits: Record<string, Record<string, number>>, kitApi?: Record<string, { version: number; minSupported: number }>): string => {
+      const { root } = fixtures.create();
+      addFixtureKit(root, kitApi === undefined ? KFIX_KIT_JSON : { ...KFIX_KIT_JSON, api: kitApi });
+      addFixtureKitShop(root, { ...KFIX_SHOP_PLUGIN_JSON, requires: { kits } });
+      return root;
+    };
+    assert.throws(() => readViewCatalog(withRequires({ ghost: { board: 1 } })), /插件 kfixShop 需要 kit ghost，但该 kit 未安装/u);
+    assert.throws(() => readViewCatalog(withRequires({ kfix: { ranking: 1 } })), /插件 kfixShop 需要 kit kfix 的 api 面 ranking 版本 1，宿主 kit 没有该 api 面（已有：board）/u);
+    assert.throws(() => readViewCatalog(withRequires({ kfix: { board: 1 } }, { board: { version: 2, minSupported: 2 } })), /插件 kfixShop 需要 kit kfix 的 api 面 board 版本 1，宿主 kit 提供 \[2, 2\]/u);
+    assert.throws(() => readViewCatalog(withRequires({ kfix: { board: 3 } })), /插件 kfixShop 需要 kit kfix 的 api 面 board 版本 3，宿主 kit 提供 \[1, 2\]/u);
+    // 边界：声明 == version 与 == minSupported 都放行。
+    assert.doesNotThrow(() => readViewCatalog(withRequires({ kfix: { board: 2 } })));
+    // 无 entry 的 kit（纯 SQL + 服务）不进装载序（PluginHost 没东西可装），但依赖闸照判。
+    const { root } = fixtures.create();
+    const { entry: _entry, ...headless } = KFIX_KIT_JSON;
+    addFixtureKit(root, { ...headless, viewDirs: [], views: [], owners: [], routes: [], menu: [] });
+    addFixtureKitShop(root, KFIX_SHOP_PLUGIN_JSON);
+    const shop = readViewCatalog(root).plugins.find((unit) => unit.id === "kfixShop");
+    assert.deepEqual(shop?.dependencies, ["snakeCosmetic"], "无 client entry 的 required kit 不并入 dependencies");
+    addFixtureKitShop(root, { ...KFIX_SHOP_PLUGIN_JSON, requires: { kits: { kfix: { ranking: 1 } } }, dependencies: [] });
+    assert.throws(() => readViewCatalog(root), /没有该 api 面/u, "无 entry 的 kit 的 api 面闸照判");
+    // requires.kits 是插件依赖 kit 的唯一通道：dependencies 直接点名 kit 会绕过 api 面版本闸与 plugin 工具的反向闸——
+    // 不管有没有同时写 requires.kits 都拒绝（⛔ 不写两遍）。
+    {
+      const { root: bypass } = fixtures.create();
+      addFixtureKit(bypass);
+      const { requires: _requires, ...noRequires } = KFIX_SHOP_PLUGIN_JSON;
+      addFixtureKitShop(bypass, { ...noRequires, dependencies: ["kfix"] });
+      assert.throws(() => readViewCatalog(bypass), /插件 kfixShop 的 dependencies 直接引用 kit "kfix"——对 kit 的依赖只能经 requires\.kits 声明/u);
+      addFixtureKitShop(bypass, { ...KFIX_SHOP_PLUGIN_JSON, dependencies: ["snakeCosmetic", "kfix"] });
+      assert.throws(() => readViewCatalog(bypass), /插件 kfixShop 的 dependencies 直接引用 kit "kfix"/u, "写两遍同样拒绝");
+      addFixtureKitShop(bypass, KFIX_SHOP_PLUGIN_JSON);
+      assert.deepEqual(readViewCatalog(bypass).plugins.find((unit) => unit.id === "kfixShop")?.dependencies, ["kfix", "snakeCosmetic"], "只经 requires.kits 声明 → 自动并入");
+    }
+  } finally {
+    fixtures.dispose();
+  }
+});
+
+test("K0 kit：kit.json.modes 必须 ≡ gameplays/ 子目录集（多目录 / 缺目录 / constantName 不一致 都点名 mode）", () => {
+  const fixtures = fixtureCollector();
+  try {
+    {
+      const { root } = fixtures.create();
+      addFixtureKit(root);
+      writeJson(root, "apps/kits/kfix/gameplays/kfixExtra/manifest.json", { schemaVersion: 1, id: "kfixExtra", constantName: "KfixExtra", modeVersion: 1, maxPlayers: 2, profiles: [] });
+      assert.throws(() => readViewCatalog(root), /gameplays\/kfixExtra\/ 存在但 modes\[\] 未登记该 mode/u);
+    }
+    {
+      const { root } = fixtures.create();
+      addFixtureKit(root);
+      fs.rmSync(path.join(root, "apps/kits/kfix/gameplays/kfixArena"), { recursive: true });
+      assert.throws(() => readViewCatalog(root), /modes\[\] 登记了 "kfixArena" 但 apps\/kits\/kfix\/gameplays\/kfixArena\/ 不存在/u);
+    }
+    {
+      const { root } = fixtures.create();
+      addFixtureKit(root);
+      mutateJson(root, "apps/kits/kfix/gameplays/kfixArena/manifest.json", (manifest) => { manifest.constantName = "Arena"; });
+      assert.throws(() => readViewCatalog(root), /mode "kfixArena" 的 constantName "KfixArena" 与 apps\/kits\/kfix\/gameplays\/kfixArena\/manifest\.json 的 constantName "Arena" 不一致/u);
+    }
+    {
+      const { root } = fixtures.create();
+      addFixtureKit(root);
+      mutateJson(root, "apps/kits/kfix/gameplays/kfixArena/manifest.json", (manifest) => { manifest.id = "arena"; });
+      assert.throws(() => readViewCatalog(root), /manifest\.id（"arena"）必须等于 mode 目录名 "kfixArena"/u);
+    }
+  } finally {
+    fixtures.dispose();
+  }
+});
+
+test("K0 kit：域名前缀规则 (i) 一域一主 (ii) 边界前缀 + 最长前缀单元 + descriptor 存在 (iii) 未声明域不得占带版本单元前缀；真仓与宿主自有单元豁免", () => {
+  const descriptorDomains = (root: string): readonly string[] => readPluginDescriptors({ repositoryRoot: root }).domains.map((domain) => domain.domain);
+  // 真仓：guild/mail/room/shop/user/snakeCosmetic 未声明（宿主自有 snakeCosmetic/snake 无 version 豁免），redeem 由带版本的 redeem 声明。
+  assert.doesNotThrow(() => assertDomainOwnership(descriptorDomains(REPOSITORY_ROOT), readViewCatalog(REPOSITORY_ROOT).plugins));
+  const fixtures = fixtureCollector();
+  try {
+    // writer 与只读闸都在渲染前跑 assertDomainOwnership；这里用 writer（放行用例要真的写盘才能证明「过闸后可生成」）。
+    const check = (mutate: (root: string) => void): (() => void) => {
+      const { root, options } = fixtures.create();
+      addFixtureKit(root);
+      mutate(root);
+      return () => { writePluginArtifacts(options); assertPluginArtifactsFresh(options); };
+    };
+    // (i)
+    assert.throws(check((root) => mutateJson(root, "apps/plugins/tally/plugin.json", (m) => { m.domains = ["kfix"]; })),
+      /域 "kfix" 同时被 kit "kfix" 与 plugin "tally" 声明/u);
+    // (ii) 边界：redeemx 不是 redeem 的边界前缀形态
+    assert.throws(check((root) => mutateJson(root, "apps/plugins/redeem/plugin.json", (m) => { m.domains = ["redeem", "redeemx"]; })),
+      /plugin "redeem" 声明的域 "redeemx" 必须等于其 id 或以其 id 开头并紧随大写字母\/数字/u);
+    // (ii) 最长前缀：snake 不能在 snakeCosmetic 存在时声明 snakeCosmetic（descriptor 真实存在，故不是「无 descriptor」触发）
+    assert.throws(check((root) => mutateJson(root, "apps/plugins/snake/plugin.json", (m) => { m.domains = ["snakeCosmetic"]; })),
+      /plugin "snake" 声明的域 "snakeCosmetic" 的最长前缀单元是 "snakeCosmetic"/u);
+    // (ii) 声明的域必须真有 descriptor
+    assert.throws(check((root) => mutateJson(root, "apps/kits/kfix/kit.json", (m) => { m.domains = ["kfix", "kfixAdmin"]; })),
+      /kit "kfix" 声明的域 "kfixAdmin" 没有 descriptor/u);
+    // (iii) 带版本单元 redeem 不声明 redeem 域 → 框架先占了可分发单元的前缀
+    assert.throws(check((root) => mutateJson(root, "apps/plugins/redeem/plugin.json", (m) => { m.domains = []; })),
+      /域 "redeem" 未被任何单元声明，却等于或以带版本的 plugin "redeem" 为前缀/u);
+    assert.throws(check((root) => mutateJson(root, "apps/kits/kfix/kit.json", (m) => { m.domains = []; })),
+      /域 "kfix" 未被任何单元声明，却等于或以带版本的 kit "kfix" 为前缀/u);
+    // (iii) 宿主自有（无 version）豁免：redeem 去掉 version 后不声明也放行
+    assert.doesNotThrow(check((root) => mutateJson(root, "apps/plugins/redeem/plugin.json", (m) => { delete m.version; m.domains = []; })));
+  } finally {
+    fixtures.dispose();
+  }
+  // 纯函数视角：(ii) 最长前缀按大小写归一比较；(iii) 边界前缀匹配（slgAdmin ∈ slg，slgx ∉ slg）。
+  const unit = (id: string, version: string | null, domains: readonly string[]): ReturnType<typeof readViewCatalog>["plugins"][number] => ({
+    class: "plugin", schemaVersion: 2, id, version, domains, requires: { pluginApiVersion: null, kits: {} }, category: "extra", docs: [],
+    capabilities: [], resident: false, entry: null, dependencies: [], viewDirs: [], views: [], owners: [], routes: [], menu: [],
+  });
+  assert.throws(() => assertDomainOwnership(["slg", "slgAdmin"], [unit("slg", "1.0.0", ["slg"])]), /域 "slgAdmin" 未被任何单元声明，却等于或以带版本的 plugin "slg" 为前缀/u);
+  assert.doesNotThrow(() => assertDomainOwnership(["slg", "slgx"], [unit("slg", "1.0.0", ["slg"])]), "slgx 不是 slg 的边界前缀形态，不算占用");
+  // 最长前缀按大小写归一找单元（slgadmin 归一后是 slgAdminOps 的更长前缀），边界字符仍按域原文判。
+  assert.throws(() => assertDomainOwnership(["slgAdminOps"], [unit("slg", null, ["slgAdminOps"]), unit("slgadmin", "1.0.0", [])]), /域 "slgAdminOps" 的最长前缀单元是 "slgadmin"/u);
+  assert.throws(() => assertDomainOwnership(["slgAdmin"], [unit("slg", null, ["slgAdmin"]), unit("slgAdmin", "1.0.0", [])]), /域 "slgAdmin" 的最长前缀单元是 "slgAdmin"/u);
+});
+
+test("K0 kit：kit 与 plugin 共享 id 空间（大小写归一撞名拒绝）、保留字拒绝、kit 目录缺 kit.json 拒绝、apps/kits 非目录拒绝、kit 不得依赖 kit 或插件", () => {
+  const fixtures = fixtureCollector();
+  try {
+    {
+      const { root } = fixtures.create();
+      writeJson(root, "apps/kits/snakE/kit.json", { schemaVersion: 1, id: "snakE" });
+      assert.throws(() => readViewCatalog(root), /kit id 与 "snake" 大小写归一化后冲突（apps\/plugins\/snake ⟷ apps\/kits\/snakE）/u);
+    }
+    {
+      const { root } = fixtures.create();
+      addFixtureKit(root);
+      writeJson(root, "apps/plugins/kFix/plugin.json", { schemaVersion: 2, id: "kFix" });
+      assert.throws(() => readViewCatalog(root), /大小写归一化后冲突（apps\/plugins\/kFix ⟷ apps\/kits\/kfix）|大小写归一化后冲突（apps\/kits\/kfix ⟷ apps\/plugins\/kFix）/u);
+    }
+    {
+      const { root } = fixtures.create();
+      writeJson(root, "apps/kits/registry/kit.json", { schemaVersion: 1, id: "registry" });
+      assert.throws(() => readViewCatalog(root), /kit id "registry" 是保留字/u);
+    }
+    {
+      const { root } = fixtures.create();
+      fs.mkdirSync(path.join(root, "apps/kits/ghost"), { recursive: true });
+      assert.throws(() => readViewCatalog(root), /apps\/kits\/ghost\/kit\.json: missing required file/u);
+    }
+    {
+      // 根存在但不是目录：⛔ 不当作「根缺席」放行，也不抛裸 ENOTDIR。
+      const { root } = fixtures.create();
+      writeText(root, "apps/kits", "not a directory\n");
+      assert.throws(() => readViewCatalog(root), /apps\/kits: must be a directory/u);
+    }
+    {
+      const { root } = fixtures.create();
+      addFixtureKit(root);
+      writeJson(root, "apps/kits/kfixTwo/kit.json", { schemaVersion: 1, id: "kfixTwo", dependencies: ["kfix"] });
+      assert.throws(() => readViewCatalog(root), /kit "kfixTwo" 不得依赖别的 kit "kfix"/u);
+      // kit 只依赖框架：依赖插件（会把地基排到插件之后装载）与依赖不存在的 id 同样拒绝。
+      writeJson(root, "apps/kits/kfixTwo/kit.json", { schemaVersion: 1, id: "kfixTwo", dependencies: ["snakeCosmetic"] });
+      assert.throws(() => readViewCatalog(root), /kit "kfixTwo" 不得依赖插件 "snakeCosmetic"（KIT\.md §1\/§4：kit 只依赖框架，依赖解析只做 plugin → kit 单向）/u);
+      writeJson(root, "apps/kits/kfixTwo/kit.json", { schemaVersion: 1, id: "kfixTwo", dependencies: ["ghost"] });
+      assert.throws(() => readViewCatalog(root), /kit "kfixTwo" 不得依赖插件 "ghost"/u);
+      writeJson(root, "apps/kits/kfixTwo/kit.json", { schemaVersion: 1, id: "kfixTwo", dependencies: [] });
+      assert.doesNotThrow(() => readViewCatalog(root), "空 dependencies 放行");
+    }
+    {
+      // kit entry 必须在 kits/ 命名空间；kit.json 的 requires 由 schema 直接拒绝。
+      const { root } = fixtures.create();
+      addFixtureKit(root, { ...KFIX_KIT_JSON, entry: "apps/client/src/plugins/kfix/index.ts" });
+      assert.throws(() => readViewCatalog(root), /entry.*does not match pattern/u);
+      addFixtureKit(root, { ...KFIX_KIT_JSON, requires: { kits: {} } });
+      assert.throws(() => readViewCatalog(root), /unknown key\(s\): requires/u);
+    }
+  } finally {
+    fixtures.dispose();
+  }
+});
+
+test("K0 kit：删除保护——同一 id 换类别（plugin → kit 与 kit → plugin）两个方向都要显式 --allow-delete", () => {
+  const fixtures = fixtureCollector();
+  try {
+    {
+      // plugin kfix → 删目录 → 加 kit kfix：PLUGIN_IDS 里 kfix 仍「在」，但类别翻了。
+      const { root, options } = fixtures.create();
+      writeJson(root, "apps/plugins/kfix/plugin.json", { schemaVersion: 2, id: "kfix", version: "1.0.0", entry: "apps/client/src/plugins/kfix/index.ts" });
+      writeText(root, "apps/client/src/plugins/kfix/index.ts", CREATE_MODULE_SOURCE);
+      writePluginArtifacts(options);
+      assert.match(fs.readFileSync(path.join(root, PLUGINS_RELATIVE), "utf8"), /^ {4}"kfix",$/mu);
+      fs.rmSync(path.join(root, "apps/plugins/kfix"), { recursive: true });
+      fs.rmSync(path.join(root, "apps/client/src/plugins/kfix"), { recursive: true });
+      addFixtureKit(root);
+      assert.throws(() => writePluginArtifacts(options), /已登记但真源消失的域\/plugin\/kit\/View：kfix。/u, "plugin → kit 不得被普通 --write 静默接受");
+      const result = writePluginArtifacts({ ...options, allowDelete: ["kfix"] });
+      assert.deepEqual(result.deleted, ["kfix"]);
+      assert.match(fs.readFileSync(path.join(root, KIT_CATALOG_SHARED_RELATIVE), "utf8"), /^ {8}id: "kfix",$/mu);
+      assertPluginArtifactsFresh(options);
+    }
+    {
+      // kit kfix → 删目录 → 加 plugin kfix（保留 kfix 域 descriptor 与向量，让插件声明该域，只翻类别）。
+      const { root, options } = fixtures.create();
+      addFixtureKit(root);
+      writePluginArtifacts(options);
+      fs.rmSync(path.join(root, "apps/kits"), { recursive: true });
+      fs.rmSync(path.join(root, "apps/client/src/kits"), { recursive: true });
+      writeJson(root, "apps/plugins/kfix/plugin.json", { schemaVersion: 2, id: "kfix", version: "1.0.0", domains: ["kfix"], entry: "apps/client/src/plugins/kfix/index.ts" });
+      writeText(root, "apps/client/src/plugins/kfix/index.ts", CREATE_MODULE_SOURCE);
+      assert.throws(() => writePluginArtifacts(options), /已登记但真源消失的域\/plugin\/kit\/View：kfix, KfixBoard。/u, "kit → plugin 不得被普通 --write 静默接受");
+      const result = writePluginArtifacts({ ...options, allowDelete: ["kfix", "KfixBoard"] });
+      assert.deepEqual(result.deleted, ["kfix", "KfixBoard"]);
+      assert.match(fs.readFileSync(path.join(root, KIT_CATALOG_SHARED_RELATIVE), "utf8"), /^export const KIT_CATALOG: readonly KitCatalogEntry\[\] = \[\];$/mu);
+      assert.match(fs.readFileSync(path.join(root, PLUGINS_RELATIVE), "utf8"), /^ {4}"kfix",$/mu);
+      assertPluginArtifactsFresh(options);
+    }
+  } finally {
+    fixtures.dispose();
+  }
+});
+
+test("K0 kit：删除保护——kit 真源消失必须显式 --allow-delete，放行后双端 kit catalog 收缩回占位字节", () => {
+  const { root, options } = createFixture();
+  try {
+    const placeholders = new Map(KIT_ARTIFACTS.map((relative) => [relative, fs.readFileSync(path.join(root, relative), "utf8")]));
+    addFixtureKit(root);
+    writePluginArtifacts(options);
+    for (const relative of KIT_ARTIFACTS) assert.notEqual(fs.readFileSync(path.join(root, relative), "utf8"), placeholders.get(relative));
+    fs.rmSync(path.join(root, "apps/kits"), { recursive: true });
+    fs.rmSync(path.join(root, "apps/client/src/kits"), { recursive: true });
+    fs.rmSync(path.join(root, `${LOBBY_RPC_DIR}/domains/kfix.ts`));
+    fs.rmSync(path.join(root, `${VECTORS_DIR}/kfix.ts`));
+    assert.throws(() => writePluginArtifacts(options), /已登记但真源消失的域\/plugin\/kit\/View：kfix, KfixBoard。/u, "域 kfix 与 kit kfix 同名，去重后只点名一次");
+    const result = writePluginArtifacts({ ...options, allowDelete: ["kfix", "KfixBoard"] });
+    assert.deepEqual(result.deleted, ["kfix", "KfixBoard"]);
+    for (const relative of KIT_ARTIFACTS) {
+      assert.equal(fs.readFileSync(path.join(root, relative), "utf8"), placeholders.get(relative), `${relative} 应收缩回占位字节`);
+    }
+    assertPluginArtifactsFresh(options);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });

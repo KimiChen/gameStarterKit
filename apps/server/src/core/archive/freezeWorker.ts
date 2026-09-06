@@ -125,8 +125,11 @@ export const _freezeTestHooks: {
  * HSCAN 非点时一致——快照期间若有 applyEffect 混入，靠 freezeCommit 的 ver 复检兜底
  * （所以调用方必须**先读 user（定格 verAtRead）再读 bag/applied**，见 freezeUser）。
  */
+/** 快照读侧只用到的 client 面（单测以桩注入，见 `readKitUserHashes`）。 */
+export type KitHashReader = Pick<Redis, "type" | "hlen" | "hgetall" | "hscan">;
+
 async function readHashSafe(
-  r: Redis,
+  r: Pick<Redis, "hlen" | "hgetall" | "hscan">,
   key: string,
   afterScanPage?: (cursor: string) => Promise<void>,
 ): Promise<Record<string, string>> {
@@ -147,10 +150,11 @@ async function readHashSafe(
 /**
  * 读目录声明的 kit per-user HASH（KIT.md §5 冷档行）：缺席的键不占位；非 HASH 类型 = 快照无法表达，
  * 与 bag 的 WRONGTYPE 同样让本轮 freeze 以具名错误失败（resolve 的 validateDualStateLiveBranch 已先按
- * TYPE 拦一道，这里是读侧的第二道）。全部为空时返回 undefined，快照不带 `kits` 成员（与 pre-K0 字节形状一致）。
+ * TYPE 拦一道，这里是读侧的第二道——两道之间键类型仍可能被翻转）。全部为空时返回 undefined，快照不带 `kits`
+ * 成员（与 pre-K0 字节形状一致）。导出仅供单测以桩 client 钉住第二道闸的具名错误（test/archive-kits.test.ts）。
  */
-async function readKitUserHashes(
-  r: Redis,
+export async function readKitUserHashes(
+  r: KitHashReader,
   uid: string,
   catalog: readonly ServerKitCatalogEntry[],
 ): Promise<Record<string, Record<string, string>> | undefined> {
@@ -409,8 +413,8 @@ export async function freezeUser(
       await r.hdel(kArchiveProof(uid), expectedArchive.freezeId);
     }
 
-    // ── ③ Lua：复检锁归属 + ver 未变 → 才 UNLINK。原子，不可能盲删（09·L4）──
-    const res = await freezeCommit(uid, zone, fence, verAtRead, freezeId, catalog);
+    // ── ③ Lua：复检锁归属 + ver 未变 + kit 键字段数未变 → 才 UNLINK。原子，不可能盲删（09·L4）──
+    const res = await freezeCommit(uid, zone, fence, verAtRead, freezeId, snapshot.kits, catalog);
     if (res !== "ok") {
       // 只删除本次 PREPARED 行；迟到 worker 的 freeze_id 不能命中新一代行。
       const cleaned = await withLeaseTx(lease, (conn) => deleteArchiveWithUsage(

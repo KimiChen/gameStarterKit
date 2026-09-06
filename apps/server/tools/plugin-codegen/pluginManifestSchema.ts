@@ -90,6 +90,9 @@ export type PluginRequires = {
 
 export const EMPTY_REQUIRES: PluginRequires = Object.freeze({ pluginApiVersion: null, kits: Object.freeze({}) });
 
+/** 登记单元的类别（docs/KIT.md §1 三层模型的后两层）：plugin.json ⇒ "plugin"，kit.json ⇒ "kit"。 */
+export type UnitClass = "plugin" | "kit";
+
 /** kit.json 相对 plugin.json 多出来的身份面（docs/KIT.md §3）。 */
 export type KitApiSurface = { readonly version: number; readonly minSupported: number };
 export type KitMode = { readonly id: string; readonly constantName: string };
@@ -108,6 +111,10 @@ export type KitRegistration = Omit<PluginRegistration, "schemaVersion" | "requir
 export type PluginRegistration = {
   readonly schemaVersion: 2;
   readonly id: string;
+  /** 包版本；null = 宿主自有单元（不可打包、不进锁；域名前缀规则 (iii) 对其豁免）。 */
+  readonly version: string | null;
+  /** 声明拥有的 Lobby RPC 域（docs/KIT.md §2 域名前缀规则的登记面；缺省空）。 */
+  readonly domains: readonly string[];
   /** 对 kit / 框架门面的依赖；缺省空。 */
   readonly requires: PluginRequires;
   /**
@@ -361,6 +368,8 @@ function parseRegistrationCommon(value: JsonRecord, pathLabel: string): Registra
   }));
   return {
     id: value.id as string,
+    version: typeof value.version === "string" ? value.version : null,
+    domains: assertUniqueStrings(Array.isArray(value.domains) ? [...(value.domains as string[])] : [], `${pathLabel}.domains`, "域"),
     category: value.category === "core" ? "core" : "extra",
     docs: Array.isArray(value.docs) ? [...(value.docs as string[])] : [],
     capabilities: Array.isArray(value.capabilities)
@@ -399,12 +408,13 @@ export function parsePluginRegistration(input: unknown, pathLabel: string): Plug
   return { schemaVersion: 2, ...parseRegistrationCommon(value, pathLabel), requires: parseRequires(value.requires, `${pathLabel}.requires`) };
 }
 
-function assertUniqueStrings(values: readonly string[], pathLabel: string, what: string): void {
+function assertUniqueStrings(values: readonly string[], pathLabel: string, what: string): readonly string[] {
   const seen = new Set<string>();
   for (const value of values) {
     if (seen.has(value)) fail(pathLabel, `${what} 重复：${value}`);
     seen.add(value);
   }
+  return values;
 }
 
 /**

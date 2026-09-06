@@ -1,7 +1,7 @@
 /**
  * M1 DoD 连通性冒烟（10·M1）：
  *  1. 连 durable + cache 两个 Redis，校验 maxmemory-policy 形态（09·R4）
- *  2. 连 MySQL，SHOW TABLES 与 schema.sql 清单齐全 + singleton_lease 预置行在
+ *  2. 连 MySQL，SHOW TABLES 与「框架表 ∪ 已登记 kit 表」（zoneTables.allTables）齐全 + singleton_lease 预置行在
  *  3. EVALSHA 走通 NOSCRIPT 重载路径（使用本次运行唯一脚本，不触碰共享实例的 SCRIPT 缓存）
  * 用法: npm --workspace @game/server run smoke:framework
  */

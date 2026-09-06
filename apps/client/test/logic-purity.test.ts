@@ -12,8 +12,9 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const LOGIC_DIR = fileURLToPath(new URL("../src/logic", import.meta.url));
-/** plugin 自持目录（Non-intrusive §11.3 / 插件形态）的 logic/ 同样受纯度门禁。 */
+/** plugin 自持目录（Non-intrusive §11.3 / 插件形态）与 kit 自持目录（docs/KIT.md §2）的 logic/ 同样受纯度门禁。 */
 const PLUGINS_DIR = fileURLToPath(new URL("../src/plugins", import.meta.url));
+const KITS_DIR = fileURLToPath(new URL("../src/kits", import.meta.url));
 // 静态 import/export ... from "cc"|"fairygui-cc"|"db://fairygui-cc/..."（全仓 fairygui 的唯一真实引用
 // 形态就是 db://，漏了它守门形同虚设）；动态 import("db://fairygui-cc/...")；
 // 以及任何指向 view/ 目录的相对引用——view/ 静态依赖 fairygui，经它间接引入与直引同等违规
@@ -26,12 +27,17 @@ function walk(dir: string): string[] {
       : e.name.endsWith(".ts") ? [join(dir, e.name)] : []);
 }
 
-test("logic/ 全目录禁 import cc / fairygui-cc（无头纯度守门）", () => {
-  const pluginLogicDirs = existsSync(PLUGINS_DIR)
-    ? readdirSync(PLUGINS_DIR, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory() && existsSync(join(PLUGINS_DIR, entry.name, "logic")))
-      .map((entry) => join(PLUGINS_DIR, entry.name, "logic"))
+/** `<root>/<id>/logic` 目录集（root 缺席 = 空）：plugins/ 与 kits/ 同一形态。 */
+function unitLogicDirs(root: string): string[] {
+  return existsSync(root)
+    ? readdirSync(root, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && existsSync(join(root, entry.name, "logic")))
+      .map((entry) => join(root, entry.name, "logic"))
     : [];
+}
+
+test("logic/ 全目录禁 import cc / fairygui-cc（无头纯度守门）", () => {
+  const pluginLogicDirs = [...unitLogicDirs(PLUGINS_DIR), ...unitLogicDirs(KITS_DIR)];
   const files = [...walk(LOGIC_DIR), ...pluginLogicDirs.flatMap((dir) => walk(dir))];
   assert.ok(files.length >= 3, "logic/ 下应至少有 ballMove 的三个文件");
   for (const f of files) {
