@@ -32,7 +32,7 @@ PLUGIN.md §1 的核心判据「插件只能消费不能定义」不变；kit �
 | shared 类型与校验器 | `apps/shared/src/kits/<id>/**` | 零依赖 shared 规则不变；跨包复用的类型只能从这里出 |
 | Lobby RPC 域 | `domains/<d>.ts` + `websocket/<d>/` + 向量 sidecar | 域名必须以包 id 开头（`slg`、`slgAdmin`）；**该规则对插件同样生效**（框架 PR，否则插件可先占 kit 的前缀） |
 | 持久世界状态（SQL） | `apps/kits/<id>/sql/NNN-<name>.sql` | 表名 `k_<id 小写>_*`；每张表在 `kit.json.sql.tables` 里声明 `zone`（§5）；**插件 ⛔ 不可** |
-| Redis 键 | `kKitUser` / `kKitShared` 工厂，前缀 `kt:` | 与 `gp:` / `pl:` 互不可达；共享键的 hash-tag 必须带区或分片键（`{<id>:s<sId>}` / `{<id>:<shard>}`），⛔ 不允许整 kit 一个 tag |
+| Redis 键 | `kKitUser` / `kKitShared` 工厂，前缀 `kt:` | 与 `gp:` / `pl:` 互不可达；`kKitUser(kitId, name, uid, { zone })` → `kt:<kitId>:<name>:{uid}`；`kKitShared(kitId, name, shard, { zone })` 的 hash-tag 恒带分片键——per-zone `{<kitId>:s<sId>:<shard>}`、global `{<kitId>:<shard>}`，`shard` 必填，⛔ 整 kit 一个 tag 在构造上不可能（契约测试 `apps/server/test/kit-keys.test.ts`） |
 | 服务端服务与任务 | `apps/server/src/kits/<id>/**`、`core/compute/tasks/kits/<id>/**` | 长计算仍走 compute 任务（铁律 11）；⛔ 不再给 `core/<id>/`（那是插件的落点） |
 | 玩法 | `apps/kits/<id>/gameplays/<modeId>/{manifest,state}.json` + 各玩法既有落点 | 一个 kit 可带多个 mode；modeId 是全仓玩法 id 空间的成员，⛔ 不得与任何包 id 大小写归一相等 |
 | 客户端基础页、端口、路由、菜单 | `apps/client/src/kits/<id>/**`，登记面写在 `kit.json` | 与插件登记面同一字段集，但命名空间是 `kits/` |
@@ -111,11 +111,11 @@ pattern、命名空间闸（`isKitClientDir`）、entry 形态都指向 `kits/`�
 
 | 项 | 规则 |
 | --- | --- |
-| 账本（框架 PR） | `schema.sql` 增加 `kit_migration(kit_id, file, sha256, applied_at)`；`db:bootstrap` 在 `singleton_lease('db_bootstrap')` 下、按 kit id + 文件序，只应用账本里没有的文件，逐条语句执行（`multipleStatements:false`），失败点名到语句；已应用文件 sha256 变化即 fail-closed（这就是「⛔ 不改已发布迁移」的机检形态） |
+| 账本（框架 PR） | `schema.sql` 增加 `kit_migration(kit_id, file, sha256, statement_count, applied_statements, applied_at)`；`db:bootstrap` 在 `singleton_lease('db_bootstrap')` 下、按 kit id + 文件序，只应用账本里没有（或没跑完）的文件，逐条语句执行（`multipleStatements:false`）并按语句推进进度——中途失败留下续跑点，下次从失败那条继续而不是重跑已提交的 DDL；失败点名到 kit / 文件 / 语句序号；已应用文件 sha256 变化即 fail-closed（这就是「⛔ 不改已发布迁移」的机检形态）；语句级白名单 lint（只放行 CREATE TABLE / ALTER TABLE ADD\|MODIFY COLUMN、ADD [UNIQUE] INDEX\|KEY / CREATE [UNIQUE] INDEX / INSERT [IGNORE] INTO，表名须已声明且带前缀，其余一律拒）在执行前跑完；实现 `apps/server/tools/kit-migrations.ts` |
 | 幂等 | 有账本后 `.sql` 不必自身幂等：`CREATE TABLE`、`ALTER TABLE ADD COLUMN` 都只跑一次。审核清单里的「应用两遍」改为「重跑 bootstrap 零 DDL」 |
 | 区 | `sql.tables[].zone` 无缺省：`per-zone` 表必须有 `server_id SMALLINT UNSIGNED NOT NULL` 且进主键与每个 UNIQUE；`global` 表不得有；框架维护「按区表登记」（框架 PR），关单区 / 统计 / 冷档遍历时自动汇入 kit 表 |
-| 卸载 | `uninstall` 删文件、收缩生成物，表**保留**；`uninstall --drop-data` 的 drop 清单来自账本 + `INFORMATION_SCHEMA` 的 `k_<id>_` 前缀（⛔ 不读已删的文件），同时按 `kt:<id>:` 前缀 SCAN 有界清理 Redis；`check`（或 bootstrap）对「账本有 kit X 而树无 kit X」告警 |
-| 冷档 | kit 的 per-user 键按 `kit.json.userKeys` 进 freeze 快照与 thaw 恢复（框架 PR）；共享键不冻结 |
+| 卸载 | `uninstall` 删文件、收缩生成物，表**保留**；`uninstall --drop-data` 的 drop 清单来自 `INFORMATION_SCHEMA` 的 `k_<id 小写>_` 前缀（⛔ 不读已删的文件；FOREIGN_KEY_CHECKS=0 成批 drop）并删账本行，同时 SCAN 粗匹配后按 `<前缀>(s<sId>_)?kt:<id>:` 精确过滤再有界 UNLINK Redis；`check`（或 bootstrap）对「账本有 kit X 而树无 kit X」告警。⚠ 卸载前 `gameplay_outbox` 里仍 pending 的 `kit:<id>:*` effect 会在 kit 的 effect kind 离开 `KIT_EFFECT_KINDS` 后成为 relayer 的永久 EFFECT_UNKNOWN_KIND 死信——先等 outbox 排空（K1 待做：uninstall 对 pending 行拒绝或告警） |
+| 冷档 | kit 的 per-user 键按 `kit.json.userKeys` 进 freeze 快照与 thaw 恢复（框架 PR）；共享键不冻结。**写侧硬契约**：对 `userKeys` 的每次写必须在 `withUserLock(uid)` 内，或在同一条 Lua 里先确认 `user:{uid}` 存在（缺席返回 'cold'）并 `HINCRBY user.ver 1`——`FREEZE_COMMIT` 只以 `user.ver` 加各 kit 键的字段数比对为判据，绕过它的直写会被冻结丢掉（`APPLY_EFFECT` 的 kit 分支满足该契约；kit 服务端代码 ⛔ 不得裸 HSET `kt:` per-user 键）。**已接受的缺口**：已卸载（未 `--drop-data`）kit 的残留 `kt:` 键在 overwrite 恢复时不被清理，只由 `--drop-data` 的 SCAN 清 |
 | 升级 | 新增迁移只追加文件；表结构演进用 `ALTER … ADD COLUMN`（账本保证只跑一次），需要守卫的复杂变更写成 TS 迁移步（沿用 db-bootstrap 的 INFORMATION_SCHEMA 先例） |
 
 ## 6. 审核线（注册表侧）
@@ -183,7 +183,7 @@ packages/<id>/<version>/reviews/NNN.json    仅 kit，追加式：{ action: "app
 | K0-1 锁目录合并 `scripts/packages/` | ✅ 2026-09-06（276faae：两把插件锁 git mv，`INSTALLED_LOCK_DIR` 改值） |
 | K0-2 基座：`kit-schema-v1.json` + 同一解释器（`patternProperties`）、plugin.json `requires`（v2 增量可选字段，⛔ 不 bump schemaVersion）、`apps/{shared,server}/src/kits/catalog.generated.ts` 占位与类型真源 | ✅ 2026-09-06（fc8d4fb） |
 | K0-3 工具：kit 类别（class/modes 身份、kits/ 命名空间推导、域名前缀规则对插件生效、锁抬头 class/api/modes/requires、正向 / 反向闸、依赖反查、`plugin -- test`） | ✅ 2026-09-06（78b2e53；`--drop-data` 待账本落地） |
-| K0-4 框架 PR（账本 + 租约 + 逐语句、按区表登记、freeze/thaw 读 userKeys、`kKit*`、`kit-api/server`、effect kind 通道）与四处发现根 | ⏳ 实施中 |
+| K0-4 框架 PR（账本 + 租约 + 逐语句、按区表登记、freeze/thaw 读 userKeys、`kKit*`、`kit-api/server`、effect kind 通道、域名前缀规则对插件生效）与四处发现根（codegen:plugins / codegen:gameplays / verify-inventory / homeMenu.test.ts） | ✅ 2026-09-06（14ef9e5 三区集成、c92a5c3 租约修复、4783122 第四区 + 三区对抗审阅修复：39 条发现全部消化）；`scripts/kits/allowed_signers` 随 K2 签名链一起做 |
 | K0-5 样本 `arena` kit + `arenaShop` 插件走通 pack → install → codegen → bootstrap → 插件建在其上 → uninstall | 未开始 |
 | K1 / K2 | 未开始 |
 
