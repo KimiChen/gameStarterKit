@@ -15,6 +15,7 @@
 > - [docs/KIT.md](docs/KIT.md)：kit（地基层）设计提案（2026-09-06；可分发但须 gono 团队审核；§2 划线、§3 kit.json、§4 kit-api 与 requires.kits、§6 审核线；实施状态只在其 §9 回写，⛔ 不进 plan-v5）
 > - [tools/creator-preview/README.md](tools/creator-preview/README.md)：Creator 预览证据生成器（CDP 驱动真实引擎预览重放登录 → 首屏 → 设置 → 插件入口，落盘截图 + report.json；⛔ 不进 verify:core）
 > - [apps/plugins/snake/README.md](apps/plugins/snake/README.md)：Snake 玩法唯一文档（素材授权台账、冻结数值、拍板记录、真引擎缺陷台账）
+> - [apps/kits/README.md](apps/kits/README.md)：kit 目录说明；首个样本 kit `arena` 见 [apps/kits/arena/README.md](apps/kits/arena/README.md)，建在其上的样本插件见 [apps/plugins/arenaShop/README.md](apps/plugins/arenaShop/README.md)
 > - [todo-godogen.md](todo-godogen.md)：未实现的外部项目对照吸收计划，不构成核心能力承诺
 > - [plan-v5.md](plan-v5.md)：当前开放问题、实施状态与验收证据的唯一真相
 > - [plan-v4.md](plan-v4.md)：上一轮实施状态与验收证据的历史归档
