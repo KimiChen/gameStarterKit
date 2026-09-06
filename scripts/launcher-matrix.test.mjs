@@ -17,7 +17,7 @@
  */
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -103,8 +103,13 @@ function setup() {
   for (const file of checkoutFiles) {
     if (file === "apps/website" || file.startsWith("apps/website/")) continue;
     if (file === ".env" || file.startsWith(".env.")) continue;
+    // .claude/ 是 Claude Code 的会话目录（worktrees/ 里是别的检出副本），⛔ 不属于被测检出。
+    if (file === ".claude" || file.startsWith(".claude/")) continue;
     const source = join(REPO_ROOT, file);
     if (!existsSync(source)) continue;
+    // git ls-files 把嵌套 git 仓库/worktree 整体报成一个「目录」条目（末尾带 /）；
+    // 按文件复制会 EISDIR 炸掉整个套件。这类条目从不属于被测检出。
+    if (statSync(source).isDirectory()) continue;
     const destination = join(fixture, file);
     mkdirSync(dirname(destination), { recursive: true });
     cpSync(source, destination);

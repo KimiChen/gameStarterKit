@@ -91,8 +91,13 @@ function createFixture() {
     if (file === "apps/website" || file.startsWith("apps/website/")) continue;
     if (file === ".env") continue; // 只排除含密钥的 .env；已入库的 .env.development 必须进夹具，
     // 否则「开发者改 PORT 并正常同步」的合法状态会被 devEnv 新鲜度检查按默认值重算成漂移（假红）。
+    // .claude/ 是 Claude Code 的会话目录（worktrees/ 里是别的检出副本），⛔ 不属于被测检出。
+    if (file === ".claude" || file.startsWith(".claude/")) continue;
     const source = join(REPO_ROOT, file);
     if (!existsSync(source)) continue;
+    // git ls-files 把嵌套 git 仓库/worktree 整体报成一个「目录」条目（末尾带 /）；
+    // 按文件复制会 EISDIR 炸掉整个套件。这类条目从不属于被测检出。
+    if (statSync(source).isDirectory()) continue;
     const destination = join(root, file);
     mkdirSync(dirname(destination), { recursive: true });
     writeFileSync(destination, readFileSync(source));
