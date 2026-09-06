@@ -2839,7 +2839,7 @@ apps/client/src/view/rooms/snake/
 └── SnakeLobbyView.ts            # 可选；默认复用框架 PrivateRoomLobby
 
 apps/art/fairygui/assets/<Snake-owned-packages>/**
-apps/Cocos/assets/resources/<snake-owned-assets>/**
+apps/Cocos/assets/resources/plugins/snake/**   # 2026-09-06 起按包分命名空间，见 docs/PLUGIN.md §5.5.3
 
 apps/server/test/snake-*.test.ts
 apps/server/test/int/snake-room-*.test.ts
