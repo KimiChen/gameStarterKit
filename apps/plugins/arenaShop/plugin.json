@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 2,
+  "id": "arenaShop",
+  "version": "1.0.0",
+  "description": "竞技场商店：花金币给自己占领的格子加守备——建在 arena kit `board` api 面上的插件（docs/KIT.md §8 K0-5 样本）",
+  "domains": [
+    "arenaShop"
+  ],
+  "requires": {
+    "kits": {
+      "arena": {
+        "board": 1
+      }
+    }
+  },
+  "category": "extra",
+  "docs": [
+    "apps/plugins/arenaShop/README.md"
+  ],
+  "resident": false,
+  "entry": "apps/client/src/plugins/arenaShop/index.ts",
+  "viewDirs": [
+    "apps/client/src/plugins/arenaShop/view"
+  ],
+  "views": [
+    "apps/client/src/plugins/arenaShop/view/ArenaShopView.view.json"
+  ],
+  "owners": [
+    {
+      "id": "arenaShop",
+      "logicDir": "apps/client/src/plugins/arenaShop/logic"
+    }
+  ],
+  "routes": [
+    {
+      "id": "arenaShop",
+      "view": "ArenaShop"
+    }
+  ],
+  "menu": [
+    {
+      "entryId": "arenaShop",
+      "label": "竞技场商店",
+      "labelKey": "menu.arenaShop",
+      "launch": {
+        "kind": "route",
+        "routeId": "arenaShop"
+      }
+    }
+  ]
+}

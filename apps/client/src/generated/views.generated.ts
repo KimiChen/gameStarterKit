@@ -10,6 +10,16 @@ export const GENERATED_VIEW_CATALOG: Readonly<Record<string, ViewMeta>> = {
         sharedPkgs: ["ui/Common_Btn","ui/Common_RGBA","ui/Dynamic_Login"],
         load: () => import("../view/AreaListView").then((m) => m.AreaListView),
     }),
+    ArenaBoard: defineView({
+        name: "ArenaBoard", kind: "cocos", layer: "popup",
+        fullscreen: true, onlyOne: true, permanent: false, interactive: false,
+        load: () => import("../kits/arena/view/ArenaBoardView").then((m) => m.ArenaBoardView),
+    }),
+    ArenaShop: defineView({
+        name: "ArenaShop", kind: "cocos", layer: "popup",
+        fullscreen: true, onlyOne: true, permanent: false, interactive: false,
+        load: () => import("../plugins/arenaShop/view/ArenaShopView").then((m) => m.ArenaShopView),
+    }),
     Confirm: defineView({
         name: "Confirm", kind: "fgui", contract: CONFIRM_CONTRACT, layer: "top",
         fullscreen: true, onlyOne: false, permanent: false, interactive: true,
@@ -72,6 +82,10 @@ export interface GeneratedViewSourceRecord {
 
 export const VIEW_SOURCE_RECORDS: readonly GeneratedViewSourceRecord[] = [
     { name: "AreaList", owner: "builtin", kind: "fgui", pkg: "View_AreaList_AreaList", comp: "AreaList", path: "apps/client/src/view/AreaListView.ts", logic: "apps/client/src/logic/page/AreaListLogic.ts", sidecar: "apps/client/src/view/AreaListView.view.json" },
+    { name: "ArenaBoard", owner: "arena", kind: "cocos", path: "apps/client/src/kits/arena/view/ArenaBoardView.ts", logic: "apps/client/src/kits/arena/logic/ArenaBoardLogic.ts", sidecar: "apps/client/src/kits/arena/view/ArenaBoardView.view.json" },
+    { name: "ArenaCapture", owner: "arenaCapture", kind: "cocos", path: "apps/client/src/view/rooms/arenaCapture/ArenaCaptureView.ts", logic: "apps/client/src/logic/rooms/arenaCapture/ArenaCaptureGameplay.ts", sidecar: "apps/client/src/view/rooms/arenaCapture/ArenaCaptureView.view.json" },
+    { name: "ArenaDuel", owner: "arenaDuel", kind: "cocos", path: "apps/client/src/view/rooms/arenaDuel/ArenaDuelView.ts", logic: "apps/client/src/logic/rooms/arenaDuel/ArenaDuelGameplay.ts", sidecar: "apps/client/src/view/rooms/arenaDuel/ArenaDuelView.view.json" },
+    { name: "ArenaShop", owner: "arenaShop", kind: "cocos", path: "apps/client/src/plugins/arenaShop/view/ArenaShopView.ts", logic: "apps/client/src/plugins/arenaShop/logic/ArenaShopLogic.ts", sidecar: "apps/client/src/plugins/arenaShop/view/ArenaShopView.view.json" },
     { name: "BallMove", owner: "ballMove", kind: "cocos", path: "apps/client/src/view/rooms/ballMove/BallMoveView.ts", logic: "apps/client/src/logic/rooms/ballMove/BallMoveGameplay.ts", sidecar: "apps/client/src/view/rooms/ballMove/BallMoveView.view.json" },
     { name: "Confirm", owner: "builtin", kind: "fgui", pkg: "View_SharedWidget_Confirm", comp: "Confirm", path: "apps/client/src/view/ConfirmView.ts", logic: "apps/client/src/logic/page/ConfirmLogic.ts", sidecar: "apps/client/src/view/ConfirmView.view.json" },
     { name: "Home", owner: "builtin", kind: "fgui", pkg: "View_Home_Home", comp: "Home", path: "apps/client/src/view/HomeView.ts", logic: "apps/client/src/logic/page/HomeLogic.ts", sidecar: "apps/client/src/view/HomeView.view.json" },
@@ -87,9 +101,13 @@ export const VIEW_SOURCE_RECORDS: readonly GeneratedViewSourceRecord[] = [
 
 /** manifest 声明的 view 目录（守门测试的递归比对根）。 */
 export const VIEW_SOURCE_DIRS: readonly string[] = [
+    "apps/client/src/kits/arena/view",
+    "apps/client/src/plugins/arenaShop/view",
     "apps/client/src/plugins/redeem/view",
     "apps/client/src/plugins/snakeCosmetic/view",
     "apps/client/src/view",
+    "apps/client/src/view/rooms/arenaCapture",
+    "apps/client/src/view/rooms/arenaDuel",
     "apps/client/src/view/rooms/snake",
     "apps/client/src/view/rooms/tally",
 ];

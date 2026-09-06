@@ -10,13 +10,24 @@
  *   2. `debit` / `credit`：经济主账本的事务内调用（currency.ts 的 debitInTx / creditInTx，sId 已绑定）。
  *   3. `enqueueEffect`：outbox intent 写入（outbox.insertOutboxIntent，sId 已绑定，ODKU no-op 形态 ⇒ "DUP"），
  *      与 1/2 同一事务 ⇒「世界状态在 SQL、经济在框架」之间的原子路径；阶段 2/3（redisApply / markOutboxDone）
- *      仍由调用方在事务外走 outbox 既有流程或留给 relayer 收敛。effect 里的 kit kind 必须属于本 kit
- *      （`kit:<本 kitId>:*`，⛔ 不给别的 kit 的 `kt:` 键记账），"DUP" 时回读既有 intent 比对规范化 JSON，
- *      同 opId 不同载荷 ⇒ EffectConflictError（与 purchaseTx 同一判定，⛔ 不静默吞）。
+ *      由事务**提交后**的 `applyKitEffect`（下）best-effort 收敛，失败 / cold 留给 relayer。effect 里的 kit kind
+ *      必须属于本 kit（`kit:<本 kitId>:*`，⛔ 不给别的 kit 的 `kt:` 键记账），"DUP" 时回读既有 intent 比对规范化
+ *      JSON，同 opId 不同载荷 ⇒ EffectConflictError（与 purchaseTx 同一判定，⛔ 不静默吞）。
+ * 之外再给两样只读 / 收尾门面（K0-5 样本对抗审阅后补，2026-09-06；没有它们 kit 只能越过门面去拿 clientFor /
+ * currentZoneId，与「⛔ kit 不直接 import core/infra 其他模块」自相矛盾）：
+ *   4. `applyKitEffect(kitId, uid, sId, opId, effect)`：对**已提交**的 intent 立即走阶段 2（redisApply，applied 集合
+ *      幂等）+ 阶段 3（markOutboxDone，best-effort），与 shop.purchase / mail.claim 的收尾同形——同一进程内
+ *      `npm run dev` 不起 relayer 也能看到 `kt:` 键更新；任何失败只返回 "failed"（⛔ 不抛：钱 / 世界状态已提交、
+ *      intent 已 durable，relayer 必定补发）。effect 的 kit kind 同样必须属于本 kit。⛔ 只能在 withKitTx 返回之后
+ *      调用（事务内调用会在提交前发货，崩溃窗口即双发）。
+ *   5. `readKitUserField(kitId, name, uid, field, scope)`：只读 HGET 本 kit 的 per-user 键（`kKitUser`）一个字段；
+ *      `name` 必须在本 kit 的 `kit.json.userKeys` 里（SERVER_KIT_CATALOG）。写侧仍只有 effect 通道（KIT.md §5）。
+ *   同时再导出 `currentZoneId`（RPC 端点把请求所在区交给 withKitTx 用）。
  * effect kind 登记通道（`kit:<id>:<name>`）在 shared economy.ts + KIT_EFFECT_KINDS + Lua 镜像，不在本文件。
  *
  * kit 从 `apps/server/src/kits/<id>/**` 以相对路径 `../../core/infra/kitApi` 导入本文件；kit 需要的错误类型、
- * CUR_GOLD 与 `kKitUser` 一并从这里再导出，⛔ kit 不直接 import core/infra 其他模块（K1 路径级边界机检）。
+ * CUR_GOLD、`kKitUser` 与 `currentZoneId` 一并从这里再导出，⛔ kit 不直接 import core/infra 其他模块
+ * （K1 路径级边界机检；K0 先由 `apps/server/test/kit-import-boundary.test.ts` 按 import 说明符钉住）。
  *
  * 表闸是**运行时 fail-closed 的表引用列表扫描**，不是完整 SQL 解析器：先剥掉字符串字面量与注释（`/*! … *\/`
  * 可执行注释与 `/*+ … *\/` 优化器提示服务端会真的执行/解析，⛔ 一律拒），再从每个表关键字起把整段
@@ -34,15 +45,19 @@ import type { IEffect, KitEffectKinds } from "@game/shared";
 import { lookupKitEffectKind } from "@game/shared";
 import { KIT_EFFECT_KINDS } from "@game/shared/kits/catalog.generated";
 import { creditInTx, debitInTx, invalidateBalanceCache } from "../economy/currency";
-import { assertOutboxIntentMatches, canonicalizeEffect, deriveOpId, insertOutboxIntent } from "../economy/outbox";
+import {
+  assertOutboxIntentMatches, canonicalizeEffect, deriveOpId, insertOutboxIntent, markOutboxDone, redisApply,
+} from "../economy/outbox";
 import { CUR_GOLD } from "./config";
 import {
   EffectConflictError, InsufficientBalanceError, InvalidEffectError, RpcFault, StaleFenceError,
 } from "../errors";
-import { kKitUser } from "./keys";
+import { type KitKeyScope, currentZoneId, kKitUser, zoneCtx } from "./keys";
+import { clientFor } from "./redisRoute";
+import { SERVER_KIT_CATALOG } from "../../kits/catalog.generated";
 
-export { CUR_GOLD, EffectConflictError, InsufficientBalanceError, InvalidEffectError, RpcFault, StaleFenceError, kKitUser };
-export type { IEffect, PoolConnection, ResultSetHeader, RowDataPacket };
+export { CUR_GOLD, EffectConflictError, InsufficientBalanceError, InvalidEffectError, RpcFault, StaleFenceError, currentZoneId, kKitUser };
+export type { IEffect, KitKeyScope, PoolConnection, ResultSetHeader, RowDataPacket };
 
 /** `tx.query()` 触到本 kit 前缀之外的表标识符（或识别不了的 SQL 形态）时抛出；⛔ 不带 SQL 原文下发。 */
 export class KitTableAccessError extends Error {
@@ -448,4 +463,84 @@ export async function withKitTx<T>(
   });
   for (const uid of touched) { await deps.invalidateBalanceCache(uid, sId); }
   return result;
+}
+
+// ── 事务之外的两样门面（文件头第 4 / 5 条）─────────────────────────────────────
+
+export type KitEffectApplyResult = "ok" | "dup" | "cold" | "failed";
+
+/** `applyKitEffect` 的可注入依赖（单测用假 redisApply / markOutboxDone；生产缺省即 outbox 既有实现）。 */
+export interface KitEffectApplyDeps {
+  readonly redisApply: (uid: string, opId: string, effect: IEffect) => Promise<"ok" | "dup" | "cold">;
+  readonly markOutboxDone: (opId: string, sId: number) => Promise<void>;
+  readonly kinds: KitEffectKinds;
+}
+
+const DEFAULT_APPLY_DEPS: KitEffectApplyDeps = {
+  redisApply: (uid, opId, effect) => redisApply(uid, opId, effect),
+  markOutboxDone,
+  kinds: KIT_EFFECT_KINDS,
+};
+
+/**
+ * 阶段 2/3 收尾（best-effort）：对 `withKitTx` 里已 `enqueueEffect` 且**已提交**的 intent 立即 redisApply
+ * （applied 集合幂等 ⇒ 与 relayer 并发重放安全）+ markOutboxDone。显式按 `sId` 包 zoneCtx（与 drainPendingFor
+ * 同理：⛔ 不信 ambient 区）。effect 先规范化并过本 kit 的 kind 闸（越界是编程错误，抛出）；之后任何失败
+ * （Redis / MySQL / cold）都只映射成返回值——intent 已 durable，relayer 必定补发。
+ */
+export async function applyKitEffect(
+  kitId: string, uid: string, sId: number, opId: string, effect: IEffect, deps: KitEffectApplyDeps = DEFAULT_APPLY_DEPS,
+): Promise<KitEffectApplyResult> {
+  kitTablePrefix(kitId); // kitId 形态闸
+  if (!Number.isInteger(sId) || sId < 0 || sId > 65535) { throw new TypeError(`sId ${sId} 非法`); }
+  const canonical = canonicalizeEffect(effect, deps.kinds);
+  assertKitEffectScope(kitId, canonical, deps.kinds);
+  try {
+    return await zoneCtx.run({ sId }, async () => {
+      const r = await deps.redisApply(uid, opId, canonical);
+      if (r === "ok" || r === "dup") {
+        try { await deps.markOutboxDone(opId, sId); } catch { /* 阶段 3 best-effort：relayer 重放判 dup 后补标 */ }
+      }
+      return r;
+    });
+  } catch {
+    return "failed";
+  }
+}
+
+/** `readKitUserField` 的可注入依赖（单测用假 HGET / 自己的 userKeys 表）。 */
+export interface KitUserReadDeps {
+  readonly hget: (uid: string, key: string, field: string) => Promise<string | null>;
+  readonly userKeysOf: (kitId: string) => readonly string[] | undefined;
+}
+
+const DEFAULT_READ_DEPS: KitUserReadDeps = {
+  hget: (uid, key, field) => clientFor(uid).hget(key, field),
+  userKeysOf: (kitId) => SERVER_KIT_CATALOG.find((kit) => kit.id === kitId)?.userKeys,
+};
+
+/** kit 读了未在自己 `kit.json.userKeys` 里登记的 per-user 键名时抛出（写侧 effect 通道只认登记过的键）。 */
+export class KitUserKeyScopeError extends Error {
+  readonly kitId: string;
+  readonly keyName: string;
+  constructor(kitId: string, keyName: string) {
+    super(`kit "${kitId}" 的 per-user 键越界：name "${keyName}" 不在其 kit.json.userKeys 里`);
+    this.name = "KitUserKeyScopeError";
+    this.kitId = kitId;
+    this.keyName = keyName;
+  }
+}
+
+/**
+ * 只读 HGET 本 kit 的 per-user HASH 一个字段（`kKitUser(kitId, name, uid, scope)`）；缺席 = null。
+ * `name` 必须是本 kit 登记的 userKey（未登记的 kit / 键名 ⇒ KitUserKeyScopeError）。写侧 ⛔ 无对应门面：
+ * `kt:` per-user 键只经 outbox effect 累加（KIT.md §5 写侧契约）。
+ */
+export async function readKitUserField(
+  kitId: string, name: string, uid: string, field: string, scope: KitKeyScope, deps: KitUserReadDeps = DEFAULT_READ_DEPS,
+): Promise<string | null> {
+  kitTablePrefix(kitId);
+  const userKeys = deps.userKeysOf(kitId);
+  if (userKeys === undefined || !userKeys.includes(name)) { throw new KitUserKeyScopeError(kitId, name); }
+  return deps.hget(uid, kKitUser(kitId, name, uid, scope), field);
 }

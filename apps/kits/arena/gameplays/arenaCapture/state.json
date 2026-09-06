@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "root": "ArenaCaptureRoomState",
+  "types": [
+    {
+      "name": "ArenaCapturePlayerState",
+      "sharedName": "IArenaCapturePlayerState",
+      "validatorName": "validateArenaCapturePlayerState",
+      "defaultPath": "arenaCapturePlayer",
+      "fields": [
+        {
+          "name": "id",
+          "kind": "string",
+          "default": "",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Colyseus sessionId"
+        },
+        {
+          "name": "name",
+          "kind": "string",
+          "default": "",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        {
+          "name": "captures",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "max": "MAX_SAFE_INTEGER",
+          "description": "Accepted capture count this match"
+        }
+      ],
+      "serverOnly": []
+    },
+    {
+      "name": "ArenaCaptureRoomState",
+      "sharedName": "IArenaCaptureRoomState",
+      "validatorName": "validateArenaCaptureRoomState",
+      "defaultPath": "arenaCaptureState",
+      "fields": [
+        {
+          "name": "tick",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "description": "Logical frame number"
+        },
+        {
+          "name": "phase",
+          "kind": "enum",
+          "enumObject": "GamePhase",
+          "enumType": "GamePhaseType",
+          "members": ["Waiting", "Playing", "Settle"],
+          "default": "Waiting",
+          "errorCode": "STATE_PHASE",
+          "description": "Room phase"
+        },
+        {
+          "name": "matchId",
+          "kind": "string",
+          "default": "",
+          "minLength": 0,
+          "maxLength": 128,
+          "description": "Stable match id; empty while waiting"
+        },
+        {
+          "name": "captureGoal",
+          "kind": "integer",
+          "default": 5,
+          "min": 1,
+          "max": "MAX_SAFE_INTEGER",
+          "description": "Captures required to win"
+        },
+        {
+          "name": "winnerId",
+          "kind": "string",
+          "default": "",
+          "minLength": 0,
+          "maxLength": 128,
+          "description": "Winning sessionId; empty before settlement"
+        },
+        {
+          "name": "players",
+          "kind": "map",
+          "valueType": "ArenaCapturePlayerState",
+          "errorCode": "STATE_PLAYERS",
+          "key": {
+            "field": "id",
+            "errorCode": "STATE_PLAYER_ID"
+          },
+          "description": "ArenaCapture players keyed by sessionId"
+        }
+      ],
+      "serverOnly": []
+    }
+  ]
+}

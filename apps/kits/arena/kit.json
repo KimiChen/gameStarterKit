@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "id": "arena",
+  "version": "1.0.0",
+  "description": "竞技场地基：一张 16 格的 per-zone 世界棋盘（SQL）+ 占领赛 / 决斗两个玩法 + board / ranking 两个 api 面——docs/KIT.md §8 K0-5 样本",
+  "api": {
+    "board": { "version": 1, "minSupported": 1 },
+    "ranking": { "version": 1, "minSupported": 1 }
+  },
+  "domains": ["arena"],
+  "modes": [
+    { "id": "arenaCapture", "constantName": "ArenaCapture" },
+    { "id": "arenaDuel", "constantName": "ArenaDuel" }
+  ],
+  "sql": {
+    "files": ["sql/001-init.sql"],
+    "tables": [
+      { "name": "k_arena_board", "zone": "per-zone" },
+      { "name": "k_arena_attempt", "zone": "per-zone" }
+    ]
+  },
+  "userKeys": ["stats"],
+  "effects": {
+    "trophy": { "userKey": "stats", "field": "trophies", "max": 1000000 }
+  },
+  "category": "extra",
+  "docs": ["apps/kits/arena/README.md"],
+  "resident": false,
+  "entry": "apps/client/src/kits/arena/index.ts",
+  "viewDirs": [
+    "apps/client/src/kits/arena/view",
+    "apps/client/src/view/rooms/arenaCapture",
+    "apps/client/src/view/rooms/arenaDuel"
+  ],
+  "views": [
+    "apps/client/src/kits/arena/view/ArenaBoardView.view.json",
+    "apps/client/src/view/rooms/arenaCapture/ArenaCaptureView.view.json",
+    "apps/client/src/view/rooms/arenaDuel/ArenaDuelView.view.json"
+  ],
+  "owners": [
+    { "id": "arena", "logicDir": "apps/client/src/kits/arena/logic" },
+    { "id": "arenaCapture", "logicDir": "apps/client/src/logic/rooms/arenaCapture" },
+    { "id": "arenaDuel", "logicDir": "apps/client/src/logic/rooms/arenaDuel" }
+  ],
+  "routes": [
+    { "id": "arena", "view": "ArenaBoard" }
+  ],
+  "menu": [
+    {
+      "entryId": "board",
+      "label": "竞技场",
+      "labelKey": "menu.arena.board",
+      "launch": { "kind": "route", "routeId": "arena" }
+    },
+    {
+      "entryId": "capture",
+      "label": "占领赛",
+      "labelKey": "menu.arena.capture",
+      "launch": { "kind": "gameplay", "gameplayId": "arenaCapture" }
+    },
+    {
+      "entryId": "duel",
+      "label": "决斗",
+      "labelKey": "menu.arena.duel",
+      "launch": { "kind": "gameplay", "gameplayId": "arenaDuel" }
+    }
+  ]
+}

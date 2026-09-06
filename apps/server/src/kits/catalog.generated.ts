@@ -2,4 +2,33 @@
 import type { ServerKitCatalogEntry } from "./catalogTypes";
 
 /** 已登记 kit（按 id 排序）；与 @game/shared/kits/catalog.generated 的 KIT_CATALOG 同源同序。 */
-export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [];
+export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
+    {
+        id: "arena",
+        version: "1.0.0",
+        api: {
+            board: { version: 1, minSupported: 1 },
+            ranking: { version: 1, minSupported: 1 },
+        },
+        modes: [
+            { id: "arenaCapture", constantName: "ArenaCapture" },
+            { id: "arenaDuel", constantName: "ArenaDuel" },
+        ],
+        domains: [
+            "arena",
+        ],
+        effects: [
+            { kitId: "arena", name: "trophy", userKey: "stats", field: "trophies", max: 1000000 },
+        ],
+        sqlFiles: [
+            "sql/001-init.sql",
+        ],
+        sqlTables: [
+            { name: "k_arena_board", zone: "per-zone" },
+            { name: "k_arena_attempt", zone: "per-zone" },
+        ],
+        userKeys: [
+            "stats",
+        ],
+    },
+];
