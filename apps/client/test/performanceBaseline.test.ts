@@ -139,6 +139,8 @@ async function loadBallMoveViewRuntime(): Promise<{
         layer = 0;
         destroyed = false;
         readonly children: FakeNode[] = [];
+        readonly components: unknown[] = [];
+        readonly position = { x: 0, y: 0, z: 0 };
         constructor(readonly name = "node") {}
 
         addChild(child: FakeNode): void { this.children.push(child); }
@@ -148,9 +150,26 @@ async function loadBallMoveViewRuntime(): Promise<{
                 component.node = this;
                 mountedGraphics = component;
             }
+            this.components.push(component);
             return component;
         }
+        /** 视图会给「离开」按钮取 host 的 UITransform 并摆位；桩要覆盖到这两个面。 */
+        getComponent<T>(Component: new () => T): T | null {
+            return (this.components.find((component) => component instanceof Component) as T | undefined) ?? null;
+        }
+        setPosition(x: number, y: number, z = 0): void {
+            this.position.x = x; this.position.y = y; this.position.z = z;
+        }
+        on(): void {}
+        off(): void {}
         destroy(): void { this.destroyed = true; }
+    }
+
+    class FakeLabel {
+        string = "";
+        fontSize = 0;
+        lineHeight = 0;
+        color: FakeColor | null = null;
     }
 
     const fakeCc = {
@@ -165,7 +184,8 @@ async function loadBallMoveViewRuntime(): Promise<{
                 TOUCH_CANCEL: "touch-cancel",
             },
         },
-        Node: FakeNode,
+        Label: FakeLabel,
+        Node: Object.assign(FakeNode, { EventType: { TOUCH_END: "touch-end" } }),
         UITransform: FakeUITransform,
         Vec3: FakeVec3,
         input: { on(): void {}, off(): void {} },

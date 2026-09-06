@@ -90,6 +90,15 @@ export interface SnakeGameplayOptions {
 
 const PING_INTERVAL_SECONDS = 5;
 const RENDER_LAG_TICKS = 2;
+/**
+ * 结束请求看门狗（真机实证 2026-09-06）：服务端对 runId 不匹配或已 Finalized 的 `c2s.snake.endRun`
+ * 是**静默丢弃**（`apps/server/src/rooms/modes/snake/index.ts` 的 SnakeEndRun 分支），而客户端点完确认就
+ * 把确认框关了——玩家看到的是「点了没反应」（预览重放里首击必须重试一次才生效）。这里补自愈：
+ * 发出后若 `END_RUN_RETRY_SECONDS` 内没进入终局，先用**当前** runId 重发一次；仍无效就把确认框还给玩家，
+ * ⛔ 不再静默吞掉这次操作。
+ */
+const END_RUN_RETRY_SECONDS = 1.5;
+const END_RUN_MAX_ATTEMPTS = 2;
 
 export class SnakeGameplay implements GameplayPlugin<SnakeRoomLike, SnakeInput> {
     readonly id = SNAKE_GAMEPLAY_ID;
@@ -105,6 +114,8 @@ export class SnakeGameplay implements GameplayPlugin<SnakeRoomLike, SnakeInput> 
     private presentationMounted = false;
     private reconnecting = false;
     private endRunConfirmation = false;
+    /** 已发出、尚未见到终局的结束请求（看门狗状态；null = 没有在途请求）。 */
+    private endRunPending: { runId: string; elapsed: number; attempts: number } | null = null;
     private pingTimer = 0;
     private requestSeq = 0;
     private noticeRunId: string | null = null;
@@ -187,12 +198,14 @@ export class SnakeGameplay implements GameplayPlugin<SnakeRoomLike, SnakeInput> 
             }));
             this.track(context.room.onRunFinalizing((message) => {
                 if (!active() || !this.acceptFinalizing(message.runId, message.stateVersion)) return;
+                this.endRunPending = null;
                 presentation.cancelInput();
                 context.room.clearBoost();
                 presentation.showRunFinalizing(message);
             }));
             this.track(context.room.onRunResult((message) => {
                 if (!active() || !this.acceptRunResult(message.runId)) return;
+                this.endRunPending = null;
                 presentation.cancelInput();
                 context.room.clearBoost();
                 presentation.showRunResult(deriveSnakePersonalResult(message));
@@ -245,7 +258,7 @@ export class SnakeGameplay implements GameplayPlugin<SnakeRoomLike, SnakeInput> 
             if (!this.endRunConfirmation || !player) return;
             this.endRunConfirmation = false;
             this.presentation?.showEndRunConfirmation(false);
-            this.room.sendEndRun(player.runId, this.nextRequestId("end"));
+            this.sendEndRunRequest(player.runId, 1);
         } else if (input.type === "set-handedness") {
             const preference = this.preference;
             if (!preference) return;
@@ -282,7 +295,38 @@ export class SnakeGameplay implements GameplayPlugin<SnakeRoomLike, SnakeInput> 
                 this.pingTimer %= PING_INTERVAL_SECONDS;
                 context.room.ping();
             }
+            this.pumpEndRunWatchdog(dt, context);
         }
+    }
+
+    /** 发结束请求并起看门狗（`attempts` 是本次是第几次尝试）。 */
+    private sendEndRunRequest(runId: string, attempts: number): void {
+        this.room?.sendEndRun(runId, this.nextRequestId("end"));
+        this.endRunPending = { runId, elapsed: 0, attempts };
+    }
+
+    /**
+     * 在途结束请求超时后的自愈：已进入终局就收摊；还没到就用当前 runId 再发一次；两次都没生效就把确认框
+     * 重新弹给玩家（⛔ 不静默）。断线期间不计时——那段时间发什么都到不了服务端。
+     */
+    private pumpEndRunWatchdog(dt: number, context: GameplayContext<SnakeRoomLike>): void {
+        const pending = this.endRunPending;
+        if (!pending) return;
+        pending.elapsed += dt;
+        if (pending.elapsed < END_RUN_RETRY_SECONDS) return;
+        const player = context.room.state()?.players.get(context.room.sessionId);
+        if (!player || player.runState === SnakeRunState.Finalized) {
+            // 终局已到（或本人已不在房里）：结算流程接手，看门狗退出。
+            this.endRunPending = null;
+            return;
+        }
+        if (pending.attempts < END_RUN_MAX_ATTEMPTS) {
+            this.sendEndRunRequest(player.runId, pending.attempts + 1);
+            return;
+        }
+        this.endRunPending = null;
+        this.endRunConfirmation = true;
+        this.presentation?.showEndRunConfirmation(true);
     }
 
     stop(_reason: GameplayStopReason, context: GameplayContext<SnakeRoomLike>): void {
@@ -373,6 +417,8 @@ export class SnakeGameplay implements GameplayPlugin<SnakeRoomLike, SnakeInput> 
         if (this.tornDown) return;
         this.tornDown = true;
         this.started = false;
+        this.endRunPending = null;
+        this.endRunConfirmation = false;
         const room = this.room;
         const presentation = this.presentation;
         this.room = null;

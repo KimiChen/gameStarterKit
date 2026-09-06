@@ -4,6 +4,7 @@ import { test } from "node:test";
 import {
     SnakeDeathCause,
     SnakeDelta,
+    SnakeRunEndReason,
     SnakeRunState,
     snakeWireChecksum,
     type ISnakeBaselineBegin,
@@ -631,4 +632,53 @@ test("容量常量仍覆盖 17 蛇/1030 food/10 tool/88162 点", () => {
     assert.equal(SNAKE_RULESET.snapshotMaxTools, 10);
     assert.equal(SNAKE_RULESET.snapshotMaxPointsPerSnake, 5186);
     assert.equal(SNAKE_RULESET.snapshotMaxPointsTotal, 88162);
+});
+
+test("Gameplay：结束请求看门狗——超时先用当前 runId 重发一次，两次都没进终局就把确认框还给玩家", async () => {
+    // 真机实证 2026-09-06：服务端对 runId 不匹配 / 已 Finalized 的 endRun 是静默丢弃，
+    // 客户端点完确认就关框 ⇒ 玩家看到「点了没反应」。这里钉住自愈：重发一次 + 兜底重开确认框。
+    const presentation = fakePresentation();
+    const room = fakeRoom();
+    const gameplay = createSnakeGameplay({ presentationFactory: () => presentation });
+    const ctx = context(room);
+    await gameplay.start(ctx);
+    gameplay.handleInput({ type: "request-end-run" }, ctx);
+    gameplay.handleInput({ type: "confirm-end-run" }, ctx);
+    assert.equal(room.endRuns.length, 1, "确认即发一次");
+    assert.deepEqual(presentation.confirmations, [true, false]);
+
+    // 服务端静默丢弃：不给任何终局消息。第一次超时 → 用**当前** runId 重发。
+    const player = room.stateValue.players.get("self")!;
+    (player as { runId: string }).runId = `${player.runId}:next`;
+    gameplay.tick(1.6, ctx);
+    assert.equal(room.endRuns.length, 2, "超时后重发一次");
+    const [first, second] = room.endRuns as Array<{ runId: string; clientReqId: string }>;
+    assert.equal(second.runId, player.runId, "重发用的是当前 runId，⛔ 不是发第一次时的旧值");
+    assert.notEqual(second.clientReqId, first.clientReqId);
+
+    // 还是没反应：把确认框重新弹回来，⛔ 不静默吞掉这次操作。
+    gameplay.tick(1.6, ctx);
+    assert.equal(room.endRuns.length, 2, "只重发一次");
+    assert.deepEqual(presentation.confirmations, [true, false, true], "兜底重开确认框");
+    gameplay.tick(1.6, ctx);
+    assert.deepEqual(presentation.confirmations, [true, false, true], "看门狗已收摊，⛔ 不反复弹");
+    gameplay.dispose();
+});
+
+test("Gameplay：终局消息到达即收摊看门狗（⛔ 不再重发、不再弹确认框）", async () => {
+    const presentation = fakePresentation();
+    const room = fakeRoom();
+    const gameplay = createSnakeGameplay({ presentationFactory: () => presentation });
+    const ctx = context(room);
+    await gameplay.start(ctx);
+    const player = room.stateValue.players.get("self")!;
+    gameplay.handleInput({ type: "request-end-run" }, ctx);
+    gameplay.handleInput({ type: "confirm-end-run" }, ctx);
+    assert.equal(room.endRuns.length, 1);
+    room.callbacks.finalizing[0]({ runId: player.runId, stateVersion: 3, reason: SnakeRunEndReason.ExplicitExit } as never);
+    gameplay.tick(1.6, ctx);
+    gameplay.tick(1.6, ctx);
+    assert.equal(room.endRuns.length, 1, "终局已到：⛔ 不重发");
+    assert.deepEqual(presentation.confirmations, [true, false], "⛔ 不再弹确认框");
+    gameplay.dispose();
 });
