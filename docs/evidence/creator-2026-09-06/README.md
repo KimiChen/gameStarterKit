@@ -10,6 +10,7 @@
 | `replay-all/` | **修复前**的全量重放（`run.mjs all --code DEVTEST`），ok=true、console 零 error；下面三条问题就是在它里面暴露的 |
 | `replay-fixed/` | **修复后**的全量重放（同一套场景，13 场景 61 步 40 图），ok=true、console 零 error：snake 首击不再需要重试（`retried: false`）、ballMove 有「离开」按钮并回首屏、衣柜可翻页 |
 | `replay-arenashop-insufficient/` | 补充对照：dev 账号 0 金时买加固 → 「金币不足」（`tx.debit` 经主账本拒绝） |
+| `replay-snake-plugin/` | **snake 迁插件标准之后**的复验（`run.mjs snake`，7 步 7 图）：ok=true、console 零 error、`retried: false`——玩法单源搬进 `apps/plugins/snake/gameplay/`、三个冻结数据表改名之后，真引擎里的 snake 一路照旧 |
 
 ## 环境
 
