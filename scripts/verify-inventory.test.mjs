@@ -7,6 +7,7 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  statSync,
   symlinkSync,
   writeFileSync,
 } from "node:fs";
@@ -36,10 +37,15 @@ function createFixture() {
   for (const file of checkoutFiles) {
     if (file === "apps/website" || file.startsWith("apps/website/")) continue;
     if (file === ".env" || file.startsWith(".env.")) continue;
+    // .claude/ 是 Claude Code 的会话目录（worktrees/ 里是别的检出副本），⛔ 不属于被测检出。
+    if (file === ".claude" || file.startsWith(".claude/")) continue;
     const source = join(REPO_ROOT, file);
     // A tracked deletion is still present in the index until commit; it is not
     // part of the checkout that the verifier must evaluate.
     if (!existsSync(source)) continue;
+    // git ls-files 把嵌套 git 仓库/worktree 整体报成一个「目录」条目（末尾带 /）；
+    // cpSync 不带 recursive 会 ERR_FS_EISDIR 炸掉整个套件。这类条目从不属于被测检出。
+    if (statSync(source).isDirectory()) continue;
     const destination = join(root, file);
     mkdirSync(dirname(destination), { recursive: true });
     cpSync(source, destination);
