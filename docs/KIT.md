@@ -37,7 +37,7 @@ PLUGIN.md §1 的核心判据「插件只能消费不能定义」不变；kit �
 | 玩法 | `apps/kits/<id>/gameplays/<modeId>/{manifest,state}.json` + 各玩法既有落点 | 一个 kit 可带多个 mode；modeId 是全仓玩法 id 空间的成员，⛔ 不得与任何包 id 大小写归一相等 |
 | 客户端基础页、端口、路由、菜单 | `apps/client/src/kits/<id>/**`，登记面写在 `kit.json` | 与插件登记面同一字段集，但命名空间是 `kits/` |
 | 给插件用的 API | `apps/{shared,server,client}/src/kits/<id>/api/<surface>/index.ts` | §4 |
-| FGUI 包、资源、配表 | `apps/art/fairygui/assets/<Pkg>/`、`resources/kits/<id>/`、配表 `<id>_*` | 与插件同一形态 |
+| FGUI 包、资源、配表 | `apps/art/fairygui/assets/<Pkg>/`、`resources/kits/<id>/`、配表 `<id>_*` | 与插件同一形态：插件是 `resources/plugins/<id>/`（2026-09-06 起；此前是与宿主目录平级的 `resources/<modeId>/`，见 PLUGIN.md §5.5.3）。⚠ kit 的 mode 资源也归 `resources/kits/<kitId>/`，⛔ 不另给 `resources/<modeId>/` |
 
 **不可以（硬排除，与插件相同再加四条）**
 
