@@ -3,7 +3,7 @@
   "id": "snake",
   "category": "core",
   "docs": [
-    "docs/snakeoff/README.md"
+    "apps/plugins/snake/README.md"
   ],
   "resident": false,
   "viewDirs": [

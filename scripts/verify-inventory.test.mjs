@@ -253,14 +253,17 @@ test("inventory verifier rejects a registered doc that points at an archive as c
   }
 });
 
-test("inventory verifier scans unregistered docs too (snakeoff 那类两次漏网的目录)", () => {
+test("inventory verifier scans unregistered docs too (未登记目录也要扫)", () => {
   // 这条闸原本只扫 inventory 登记的文档，于是 docs/snakeoff/ 在 plan-v3→v4 与 plan-v4→v5
   // **两次迁移里各漏了一次**——同样的文件、同样的原因，第一次还专门写进计划说「人工改的」。
+  // ⚠ 夹具原本用 docs/snakeoff/README.md，该目录已于 2026-09-06 随文档归并删除；
+  // 换成 docs/undergroundIdle/README.md。⛔ 替身必须同样是**未登记**文档：登记文档会额外触发
+  // checkMarkdownLinks，下一条用例正依赖「链接指向不存在的文件也应 exit 0」。
   const root = createFixture();
   try {
-    const doc = join(root, "docs/snakeoff/README.md");
+    const doc = join(root, "docs/undergroundIdle/README.md");
     writeFileSync(doc, `${readFileSync(doc, "utf8")}\n\n- [当前实施状态与开放问题](../../plan-v4.md)\n`);
-    assertRejected(root, /docs\/snakeoff\/README\.md:\d+ 把历史归档 plan-v4\.md 说成当前真相/);
+    assertRejected(root, /docs\/undergroundIdle\/README\.md:\d+ 把历史归档 plan-v4\.md 说成当前真相/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -271,7 +274,7 @@ test("inventory verifier 不因文件名子串误红（live-plan.md 不是 plan.
   // plan.md——仓内真实存在这样一行，扩大扫描面时它是唯一的假阳。
   const root = createFixture();
   try {
-    const doc = join(root, "docs/snakeoff/README.md");
+    const doc = join(root, "docs/undergroundIdle/README.md");
     writeFileSync(
       doc,
       `${readFileSync(doc, "utf8")}\n\n生产流程以 [活文档](10-image-to-fairygui-live-plan.md) 为准。\n`,

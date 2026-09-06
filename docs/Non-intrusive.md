@@ -3,7 +3,7 @@
 > 状态：**框架侧已实施**——§9 的阶段 0–9 全部落地（commit `37ed8b2`…`5fa943b`，逐阶段 commit、
 > 测试数字与变异锚点回写在 [plan-v4.md](../plan-v4.md) 的「Non-intrusive 阶段 0–9 实施证据」一节）。
 > 阶段 10：snakeoff 首版**已实现**并成为默认入口 `snake`（V2 无尽专项与养成阶段的状态见
-> [docs/s/README.md](s/README.md) 与 plan-v5 C1）；undergroundIdle 按既定范围**未实现**。阶段 11 的默认入口
+> [Snake 玩法文档](../apps/plugins/snake/README.md) 与 plan-v5 C1）；undergroundIdle 按既定范围**未实现**。阶段 11 的默认入口
 > 切换已随 snake 落地，`ballMove` 退为可选入口。FGUI 编辑器 / Creator / 真机侧的遗留待办（Home GList 视觉、
 > PrivateRoomLobby 包与视图、Creator 预览人工证据、合成 `.meta` 确认）见 plan-v4.md 同节。
 >
@@ -22,8 +22,8 @@
 > - **plugin** —— 已登录 Lobby 页面型能力，不进 GameRoom。直接需求来源是
 >   [《Underground Idle》策划案](undergroundIdle/README.md)。
 > - **gameplay module** —— 实时 Room 玩法，运行在 GameRoom 内。直接需求来源是
->   [《Snake Off》竖版贪吃蛇开房玩法策划案](snakeoff/README.md)（含邀请码房间；素材授权台账见
->   [08 · 来源与素材借鉴台账](snakeoff/08-source-and-asset-provenance.md)）。
+>   Snake 玩法（⚠ 原「开房/邀请码房间」提案已废弃；素材授权台账见
+>   [Snake 玩法文档 §2](../apps/plugins/snake/README.md)）。
 >
 > 两个策划案目录只负责各自的产品规则、数值与表现，**通用框架以本文为唯一技术基线**。两类实体的改造共享
 > 生成器、协议身份、View/FGUI 登记与保护路径等基础设施，因此放在同一份文档、同一条时间线里推进（§9）
@@ -2738,7 +2738,7 @@ WebPlatform；Creator/真机预览必须单列，不能由 Node 无头测试冒�
 ## 11. 两个玩法的落地形态
 
 本章是框架能力的**示例应用**，用来验证「只新增文件」的承诺。产品规则、数值与表现的真相在
-[snakeoff](snakeoff/README.md) 与 [undergroundIdle](undergroundIdle/README.md) 两个目录，⛔ 本章不与它们竞争。
+[Snake 玩法](../apps/plugins/snake/README.md) 与 [undergroundIdle](undergroundIdle/README.md)，⛔ 本章不与它们竞争。
 
 ### 11.1 实时玩法的权威模拟与竖版实现
 
@@ -3028,7 +3028,7 @@ deepEqual**——任一侧单方面增删即红（⛔ 堵住「先从规则文�
    第 7 条改回「持有到 dispose」，⛔ 不能只恢复一个不可达的错误码。
 5. 首期是否需要可信战绩/evidence；若不需要，应显式声明 `evidence: none`。
 6. 旧构建档案中哪些代码、音频、图片和动画已获授权复用；未确认资源不得进入本仓
-   （台账见 [snakeoff/08](snakeoff/08-source-and-asset-provenance.md)）。
+   （台账见 [Snake 玩法文档 §2](../apps/plugins/snake/README.md)）。
 
 命名（含 FGUI 包、组件、stableKey 与资源目录）不在此列——它由 §3.1 的命名规则直接确定，⛔ 不是产品可选项。
 

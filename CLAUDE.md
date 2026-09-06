@@ -14,8 +14,7 @@
 > - [docs/PLUGIN-REGISTRY.md](docs/PLUGIN-REGISTRY.md)：插件分享平台 plugin.gono.games 设计提案（2026-09-05；§1 机制余留问题清单与七条前置修复、§2-4 制品布局/自建服务/CLI/锁 source/plugin-api 门面；实施状态只在其 §7 回写，⛔ 不进 plan-v5）
 > - [docs/KIT.md](docs/KIT.md)：kit（地基层）设计提案（2026-09-06；可分发但须 gono 团队审核；§2 划线、§3 kit.json、§4 kit-api 与 requires.kits、§6 审核线；实施状态只在其 §9 回写，⛔ 不进 plan-v5）
 > - [tools/creator-preview/README.md](tools/creator-preview/README.md)：Creator 预览证据生成器（CDP 驱动真实引擎预览重放登录 → 首屏 → 设置 → 插件入口，落盘截图 + report.json；⛔ 不进 verify:core）
-> - [docs/snakeoff/README.md](docs/snakeoff/README.md)：Snake 首版策划与来源台账
-> - [docs/s/README.md](docs/s/README.md)：Snake 竖版新版无尽 V2 与养成专项的 S0～S5 阶段任务（待实施）
+> - [apps/plugins/snake/README.md](apps/plugins/snake/README.md)：Snake 玩法唯一文档（素材授权台账、冻结数值、拍板记录、真引擎缺陷台账）
 > - [todo-godogen.md](todo-godogen.md)：未实现的外部项目对照吸收计划，不构成核心能力承诺
 > - [plan-v5.md](plan-v5.md)：当前开放问题、实施状态与验收证据的唯一真相
 > - [plan-v4.md](plan-v4.md)：上一轮实施状态与验收证据的历史归档
@@ -184,7 +183,7 @@ shared 契约
 ## 当前范围
 
 - 当前默认玩法是 `snake`（Snake Off 竖版贪吃蛇，drop-in 自由加入 + AI 填充 + 无尽个人 run，V2 无房级 deadline；
-  实施状态见 [docs/s/README.md](docs/s/README.md)）；
+  实施状态见 [apps/plugins/snake/README.md](apps/plugins/snake/README.md)）；
   `ballMove` + 技能结算保留为可选入口与内部回归样例，`idle` 是最小第二 mode 证明。
 - 本地账号示例只使用外部服务提供的开发会话契约。
 - 本仓核心是开发期基础框架，详细范围见根 [README.md](README.md#项目边界)；仓库中的可选额外功能
