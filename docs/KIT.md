@@ -180,7 +180,12 @@ packages/<id>/<version>/reviews/NNN.json    仅 kit，追加式：{ action: "app
 | 拍板前提（可分发 + gono 审核；`feature` 不作仓内概念） | ✅ 2026-09-06 用户决定 |
 | v1 → v2：对抗审阅（接缝 / 数据 / 审核线三视角，53 条） | ✅ 2026-09-06：SQL 落点统一到 kit 目录、迁移账本取代「幂等 .sql」、install 不碰 MySQL、多 mode 身份模型、api 命名面、锁目录合并、路径级导入边界、reviews/ 追加式 + 签名链 + revoke、GitHub OAuth 作身份源 |
 | §2 划线 / §3 格式 / §4 api / §5 数据 / §6 审核线 | ✅ 2026-09-06 用户拍板（下列五条全部同意） |
-| K0 / K1 / K2 / 样本 | 未开始 |
+| K0-1 锁目录合并 `scripts/packages/` | ✅ 2026-09-06（276faae：两把插件锁 git mv，`INSTALLED_LOCK_DIR` 改值） |
+| K0-2 基座：`kit-schema-v1.json` + 同一解释器（`patternProperties`）、plugin.json `requires`（v2 增量可选字段，⛔ 不 bump schemaVersion）、`apps/{shared,server}/src/kits/catalog.generated.ts` 占位与类型真源 | ✅ 2026-09-06（fc8d4fb） |
+| K0-3 工具：kit 类别（class/modes 身份、kits/ 命名空间推导、域名前缀规则对插件生效、锁抬头 class/api/modes/requires、正向 / 反向闸、依赖反查、`plugin -- test`） | ✅ 2026-09-06（78b2e53；`--drop-data` 待账本落地） |
+| K0-4 框架 PR（账本 + 租约 + 逐语句、按区表登记、freeze/thaw 读 userKeys、`kKit*`、`kit-api/server`、effect kind 通道）与四处发现根 | ⏳ 实施中 |
+| K0-5 样本 `arena` kit + `arenaShop` 插件走通 pack → install → codegen → bootstrap → 插件建在其上 → uninstall | 未开始 |
+| K1 / K2 | 未开始 |
 
 **已拍板**（2026-09-06，全部同意）：
 

@@ -182,11 +182,21 @@ files.lock       清单：每行 <仓库相对路径> <sha256>（与 protected-p
 
 ```text
 npm --workspace @game/server run plugin -- pack <id> (--out <zip> | --out-dir <dir>)
-npm --workspace @game/server run plugin -- install <zip|dir> [--allow-downgrade] [--replace-local-fork] [--no-git] [--no-postinstall] [--dry-run]
-npm --workspace @game/server run plugin -- install --reinstall-from-tree <id> [--allow-identity-change] [--adopt-tracked] [--allow-downgrade] [--no-git] [--no-postinstall] [--dry-run]
-npm --workspace @game/server run plugin -- uninstall <id> [--force] [--no-git] [--no-postinstall] [--dry-run]
+npm --workspace @game/server run plugin -- install <zip|dir> [--allow-downgrade] [--replace-local-fork] [--break-dependents] [--no-git] [--no-postinstall] [--dry-run]
+npm --workspace @game/server run plugin -- install --reinstall-from-tree <id> [--allow-identity-change] [--adopt-tracked] [--allow-downgrade] [--break-dependents] [--no-git] [--no-postinstall] [--dry-run]
+npm --workspace @game/server run plugin -- uninstall <id> [--force] [--drop-data] [--no-git] [--no-postinstall] [--dry-run]
 npm --workspace @game/server run plugin -- check
+npm --workspace @game/server run plugin -- test <id> [--int]
 ```
+
+同一套命令同时服务两种包类别：插件（`apps/plugins/<id>/plugin.json`）与 kit（`apps/kits/<id>/kit.json`，docs/KIT.md）；
+包根清单文件名（`plugin.json` / `kit.json`）就是类别，同一 id 只能是其一（树上并存、或装着 kit 来一个同 id 插件包，
+都拒绝）。kit 相对插件多出来的闸：`kit.json.modes` ≡ `gameplays/<modeId>/` 单源（id / constantName 逐个比对）、`sql.files`
+随包非空且 `sql/` 下没有清单外文件、插件 `requires.kits` 的正向闸（所需 kit 已安装或宿主自有，每个 api 面
+`minSupported ≤ 声明 ≤ version`）、kit 升级的反向闸（已安装插件的声明落到新区间外即拒绝，`--break-dependents` 放行并让
+`check` 对那些插件红）、`uninstall` 的依赖反查（还有插件锁声明依赖即拒绝，⛔ 无 flag 可绕）、`--drop-data`（仅 kit：
+卸载默认保留表与账本行）。`test <id>` 按已安装锁枚举包自带的 `apps/server/test/*.test.ts` 与 `apps/client/test/*.test.ts`
+单跑（`--int` 再加 `test/int/`），是审核清单里「测试通过」的机检形态。
 
 **作者侧 `pack`**：按推导集从工作树采集（含镜像与 `.meta`；缺 `.meta` 即失败——先开一次 Creator 让它落盘；
 `*.generated.*` 等硬排除形态即使在自己目录里也不采集），写 `files.lock`，用与 install 相同的校验自检一遍，
