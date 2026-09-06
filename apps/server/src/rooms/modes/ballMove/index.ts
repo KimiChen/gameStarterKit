@@ -1,6 +1,7 @@
 import type { Client } from "colyseus";
 import {
     CORE_S2C_TOKENS,
+    BALL_MOVE_MIN_PLAYERS,
     CastSkill,
     ErrorCode,
     ErrorMessage,
@@ -325,7 +326,7 @@ export function createBallMoveGameMode(options: BallMoveGameModeOptions = {}): B
 
     const mode = {
         id: BALL_MOVE_GAME_MODE_ID,
-        roster: { min: 2, max: MAX_PLAYERS, autoStart: 2 },
+        roster: { min: BALL_MOVE_MIN_PLAYERS, max: MAX_PLAYERS, autoStart: BALL_MOVE_MIN_PLAYERS },
         createPlayer: ({ sessionId, name, randomInt }: {
             sessionId: string;
             name: string;

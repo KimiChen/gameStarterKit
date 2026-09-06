@@ -7,6 +7,7 @@ import type {
 import type { GameplayInstanceHost } from "../../gameplay/GameplayModule";
 import type { GameplayRegistry } from "../../gameplay/GameplayRegistry";
 import {
+    BALL_MOVE_MIN_PLAYERS,
     MAP_HEIGHT,
     MAP_WIDTH,
     GamePhase,
@@ -101,6 +102,12 @@ export function renderBallMoveWorld<TColor>(
 export interface BallMovePresentation {
     mount(): void;
     render(world: BallMoveRenderWorld): void;
+    /**
+     * 未开局时的等待提示（`null` = 收起）。
+     * ⚠ 这个演示 roster 要 `BALL_MOVE_MIN_PLAYERS` 人才开局，单人进来会一直停在 Waiting：
+     * 没有这行提示，玩家只会看到「点了没反应」（还不如以前那一屏 1001 至少说明有事发生）。
+     */
+    showWaiting(text: string | null): void;
     unmount(): void;
 }
 
@@ -165,6 +172,9 @@ export class BallMoveGameplay implements GameplayPlugin<BallMoveRoom, BallMoveIn
     private readonly now: () => number;
     private room: BallMoveRoom | null = null;
     private target: { x: number; y: number } | null = null;
+    /** 房里现有人数（观察器维护）；只喂等待提示，⛔ 不参与任何判定。 */
+    private playerCount = 0;
+    private waitingText: string | null = null;
     private lastDirX = 0;
     private lastDirY = 0;
     private pingTimer = 0;
@@ -231,13 +241,17 @@ export class BallMoveGameplay implements GameplayPlugin<BallMoveRoom, BallMoveIn
             }));
             this.track(context.room.observePlayers({
                 add: (player, isSelf) => {
-                    if (active()) this.ecs.addPlayer(player, isSelf);
+                    if (!active()) return;
+                    this.ecs.addPlayer(player, isSelf);
+                    this.playerCount += 1;
                 },
                 change: (player) => {
                     if (active()) this.ecs.syncPlayer(player);
                 },
                 remove: (sessionId) => {
-                    if (active()) this.ecs.removePlayer(sessionId);
+                    if (!active()) return;
+                    this.ecs.removePlayer(sessionId);
+                    this.playerCount = Math.max(0, this.playerCount - 1);
                 },
             }));
             console.log(`[ballMove] 已加入房间 ${context.room.roomId}，我是 ${context.room.sessionId}`);
@@ -283,6 +297,7 @@ export class BallMoveGameplay implements GameplayPlugin<BallMoveRoom, BallMoveIn
         this.ecs.update(dt);
         this.steerToTarget(context.room);
         this.presentation?.render(this.ecs);
+        this.pumpWaitingNotice();
 
         if (!context.room.dropping) {
             this.pingTimer += dt;
@@ -319,6 +334,20 @@ export class BallMoveGameplay implements GameplayPlugin<BallMoveRoom, BallMoveIn
         if (this.room === room) this.sendDir(direction.x, direction.y);
     }
 
+    /**
+     * 未开局时把「等待另一名玩家（n/N）」推给展示层；已开局收起。
+     * ⚠ 只在文案变化时推：这是每帧调用的路径。
+     */
+    private pumpWaitingNotice(): void {
+        const playing = this.room?.phase() === GamePhase.Playing;
+        const text = playing
+            ? null
+            : `等待另一名玩家（${this.playerCount}/${BALL_MOVE_MIN_PLAYERS}）`;
+        if (text === this.waitingText) return;
+        this.waitingText = text;
+        this.presentation?.showWaiting(text);
+    }
+
     private sendDir(x: number, y: number): void {
         // ⚠ 阶段闸在**发之前**：⛔ 不更新 lastDir——否则等真开局了，同一个方向会被去重吃掉。
         if (this.room?.phase() !== GamePhase.Playing) return;
@@ -329,6 +358,8 @@ export class BallMoveGameplay implements GameplayPlugin<BallMoveRoom, BallMoveIn
     }
 
     private resetInput(): void {
+        this.playerCount = 0;
+        this.waitingText = null;
         this.target = null;
         this.lastDirX = 0;
         this.lastDirY = 0;

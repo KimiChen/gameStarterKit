@@ -295,7 +295,7 @@ test("§7.8：宿主输入闸拒绝的输入不产生 ballMove adapter seq（暂
         createPlugin: (host) => {
             hosts.push(host);
             return createBallMoveGameplay({
-                presentation: { mount() {}, render() {}, unmount() {} },
+                presentation: { mount() {}, render() {}, showWaiting() {}, unmount() {} },
                 ecs,
             });
         },

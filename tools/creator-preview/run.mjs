@@ -757,8 +757,14 @@ async function scenarioBallMove(runner) {
       90_000,
     );
     const exit = runner.find({ name: "BallMove.Exit" })[0] ?? null;
+    // 单人进这个演示时 roster 不满（要 2 人），必须有「等待另一名玩家（n/2）」这行字——
+    // 否则玩家只看到「点了没反应」（客户端已不再把 move 发出去，见 F17）。
+    const waiting = runner.find({ pathIncludes: "BallMove.Waiting", kind: "label" })[0] ?? null;
+    if (!waiting || !/等待另一名玩家（\d+\/\d+）/u.test(waiting.text ?? "")) {
+      throw new Error(`未开局时应显示等待提示，实际：${JSON.stringify(waiting && waiting.text)}`);
+    }
     const shot = await runner.shot("ballmove");
-    return { shot, hasExitButton: exit !== null, note: "画布演示无文本，判据是 PlayersLayer 挂载 + 左上角「离开」按钮在位" };
+    return { shot, hasExitButton: exit !== null, waiting: waiting.text, note: "画布演示无文本，判据是 PlayersLayer 挂载 + 「离开」按钮 + 等待提示" };
   });
   // ⚠ 必须真的**动一下**：这个演示的输入是「点画布 → 朝那儿走」，而 c2s.move 只在 phase=Playing
   // 允许（ballMove roster 要 2 人才开局）。以前这个场景只挂载、只点「离开」，从不发输入，
