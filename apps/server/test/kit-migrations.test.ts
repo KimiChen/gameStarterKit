@@ -117,6 +117,9 @@ test("lintKitStatement：白名单语句放行", () => {
     // 字符串字面量里的关键字 / 结构字符不参与判定
     "INSERT INTO k_kfix_world (world_id, name) VALUES (1, 'like, drop (x); load_file')",
   ];
+  // 显式 InnoDB 与不写 ENGINE（交服务端缺省，由 verifyKitTableShapes 按实际引擎兜底）都放行。
+  ok.push("CREATE TABLE k_kfix_tile (id INT, PRIMARY KEY(id)) ENGINE=InnoDB");
+  ok.push("CREATE TABLE k_kfix_tile (id INT, PRIMARY KEY(id)) ENGINE=innodb DEFAULT CHARSET=utf8mb4");
   for (const s of ok) { assert.doesNotThrow(() => lintKitStatement(s, "kfix", DECLARED), s); }
 });
 
@@ -146,6 +149,12 @@ test("lintKitStatement：禁用语句类型逐条拒绝（fail-closed）", () =>
     ["ALTER TABLE k_kfix_tile ADD COLUMN x INT, DROP INDEX i", /DROP/u],
     ["ALTER TABLE k_kfix_tile ADD FOREIGN KEY (x) REFERENCES k_kfix_world (id)", /ALTER TABLE 只允许/u],
     ["ALTER TABLE k_kfix_tile ENGINE=MyISAM", /ALTER TABLE 只允许/u],
+    // CREATE 侧同样要挡住非事务引擎：withKitTx 承诺「世界状态在 SQL、经济在框架」原子提交/回滚，
+    // MyISAM / MEMORY 下 kit 侧的写在框架回滚后会留下来（此前只有 ALTER 侧被拒，CREATE 侧放行）。
+    ["CREATE TABLE k_kfix_tile (id INT, PRIMARY KEY(id)) ENGINE=MyISAM", /只允许 ENGINE=InnoDB/u],
+    ["CREATE TABLE k_kfix_tile (id INT, PRIMARY KEY(id)) ENGINE=MEMORY", /只允许 ENGINE=InnoDB/u],
+    ["CREATE TABLE k_kfix_tile (id INT, PRIMARY KEY(id)) ENGINE = memory", /只允许 ENGINE=InnoDB/u],
+    ["CREATE TABLE k_kfix_tile (id INT, PRIMARY KEY(id)) DEFAULT CHARSET=utf8mb4 ENGINE=FEDERATED", /只允许 ENGINE=InnoDB/u],
     ["ALTER TABLE k_kfix_tile ADD COLUMN x INT, ALGORITHM=INSTANT, DROP COLUMN y", /DROP/u],
     ["CREATE VIEW v AS SELECT 1", /VIEW/u],
     ["CREATE TEMPORARY TABLE k_kfix_tile (id INT)", /TEMPORARY/u],
@@ -224,6 +233,8 @@ interface FakeConnOptions {
 
 interface SchemaAnswers {
   tables: string[];
+  /** 表 → ENGINE（缺省 InnoDB；显式 null 模拟 information_schema 取不到引擎）。 */
+  engines?: Record<string, string | null>;
   serverId: Record<string, { DATA_TYPE: string; COLUMN_TYPE: string; IS_NULLABLE: string }>;
   uniques: { TABLE_NAME: string; INDEX_NAME: string; COLUMN_NAME: string }[];
 }
@@ -286,7 +297,10 @@ function fakeConn(options: FakeConnOptions): SqlConn & { calls: Call[]; executed
       return [[...ids].map((kit_id) => ({ kit_id })), []];
     }
     if (head.includes("information_schema.TABLES")) {
-      return [schema.tables.map((TABLE_NAME) => ({ TABLE_NAME })), []];
+      return [schema.tables.map((TABLE_NAME) => ({
+        TABLE_NAME,
+        ENGINE: schema.engines !== undefined && TABLE_NAME in schema.engines ? schema.engines[TABLE_NAME] : "InnoDB",
+      })), []];
     }
     if (head.includes("information_schema.COLUMNS")) {
       return [Object.entries(schema.serverId).map(([TABLE_NAME, c]) => ({ TABLE_NAME, ...c })), []];
@@ -543,6 +557,27 @@ test("verifyKitTableShapes：per-zone 缺 server_id / 类型不对 / 不在 PK /
     verifyWith({ ...GOOD_SCHEMA, uniques: GOOD_SCHEMA.uniques.filter((u) => u.TABLE_NAME !== "k_kfix_tile") }),
     /k_kfix_tile 没有 PRIMARY KEY/u,
   );
+});
+
+test("verifyKitTableShapes：kit 表的实际引擎必须是 InnoDB（迁移文本看不见的既有表 / 带外建的表兜底）", async () => {
+  // withKitTx 的「世界状态在 SQL、经济在框架」原子路径依赖事务行锁；非事务引擎会让 kit 侧的写
+  // 在框架回滚后留下来。与框架自有表的 verifyArchiveTableEngines（db-bootstrap.ts）同一判据。
+  await assert.rejects(
+    verifyWith({ ...GOOD_SCHEMA, engines: { k_kfix_tile: "MyISAM" } }),
+    /kit "kfix" 的表 k_kfix_tile\.ENGINE 定义不匹配：期望 InnoDB，实际 MyISAM/u,
+  );
+  await assert.rejects(
+    verifyWith({ ...GOOD_SCHEMA, engines: { k_kfix_world: "MEMORY" } }),
+    /kit "kfix" 的表 k_kfix_world\.ENGINE 定义不匹配：期望 InnoDB，实际 MEMORY/u,
+  );
+  await assert.rejects(
+    verifyWith({ ...GOOD_SCHEMA, engines: { k_kfix_tile: null } }),
+    /kit "kfix" 的表 k_kfix_tile\.ENGINE 定义不匹配：期望 InnoDB，实际 missing/u,
+  );
+  // 大小写不敏感：information_schema 回 "InnoDB"，比对按小写
+  await assert.doesNotReject(verifyWith({ ...GOOD_SCHEMA, engines: { k_kfix_tile: "INNODB" } }));
+  // 框架表不归 kit 闸管（只判 catalog 声明的 kit 表）
+  await assert.doesNotReject(verifyWith({ ...GOOD_SCHEMA, engines: { user_currency: "MyISAM" } }));
 });
 
 test("verifyKitTableShapes：global 表带 server_id ⇒ 抛；未声明的 k_<id>_ 前缀表 ⇒ 抛", async () => {

@@ -210,6 +210,12 @@ export function lintKitStatement(statement: string, kitId: string, declaredTable
     // `(LIKE <t>)` 带括号形态会把任意表（含框架表）的定义复制进 kit 命名空间；列定义里用不到 LIKE
     if (/\bLIKE\b/u.test(upper)) { lintFail(kitId, "CREATE TABLE 不允许 LIKE（⛔ 复制别的表定义）", statement); }
     if (FILE_DIRECTORY_RE.test(upper)) { lintFail(kitId, "CREATE TABLE 不允许 DATA / INDEX DIRECTORY 表选项", statement); }
+    // withKitTx 承诺「世界状态在 SQL、经济在框架」同一事务里原子提交/回滚，依赖事务行锁：
+    // 非事务引擎（MyISAM / MEMORY / …）会让 kit 侧的写在回滚后**留下来**而框架侧撤销。
+    // 缺省不写 ENGINE 交给服务端缺省（MySQL 8 = InnoDB），由 verifyKitTableShapes 按实际引擎兜底。
+    for (const em of upper.matchAll(/\bENGINE\s*=\s*([A-Z0-9_]+)/gu)) {
+      if (em[1] !== "INNODB") { lintFail(kitId, `CREATE TABLE 只允许 ENGINE=InnoDB（实际 ${em[1]}；withKitTx 的原子路径依赖事务行锁）`, statement); }
+    }
     return;
   }
   if (/^CREATE\s+TABLE\b/iu.test(trimmed)) {
@@ -486,10 +492,13 @@ export async function verifyKitTableShapes(options: VerifyKitTableShapesOptions)
   const { conn, dbName, catalog } = options;
   assertKitTablePrefixesUnique(catalog);
   const [tableRows] = await conn.query(
-    "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'",
+    "SELECT TABLE_NAME, ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'",
     [dbName],
   );
   const existing = new Set(rowsOf(tableRows).map((r) => String(r.TABLE_NAME)));
+  // 引擎兜底：lint 只看得见迁移文本，库里既有的表（历史迁移 / 带外建的）按实际引擎再判一次，
+  // 与框架自有表的 verifyArchiveTableEngines（db-bootstrap.ts）同一判据。
+  const engineByTable = new Map(rowsOf(tableRows).map((r) => [String(r.TABLE_NAME), r.ENGINE == null ? null : String(r.ENGINE)]));
   const [columnRows] = await conn.query(
     `SELECT TABLE_NAME, DATA_TYPE, COLUMN_TYPE, IS_NULLABLE
        FROM information_schema.COLUMNS
@@ -525,6 +534,10 @@ export async function verifyKitTableShapes(options: VerifyKitTableShapesOptions)
     for (const table of kit.sqlTables) {
       if (!existing.has(table.name)) {
         throw new Error(`kit "${kit.id}" 声明的表未被迁移创建：${table.name}`);
+      }
+      const engine = engineByTable.get(table.name);
+      if (engine === undefined || engine === null || engine.toLowerCase() !== "innodb") {
+        throw new Error(`kit "${kit.id}" 的表 ${table.name}.ENGINE 定义不匹配：期望 InnoDB，实际 ${engine ?? "missing"}`);
       }
       verifyZoneShape(kit.id, table.name, table.zone, serverIdByTable.get(table.name), uniqueIndexes.get(table.name));
     }

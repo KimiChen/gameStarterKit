@@ -338,7 +338,9 @@ export function dependentsOfKit(root: string, kitId: string): ReadonlyMap<string
 export function kitApiViolations(declared: Readonly<Record<string, number>>, api: Readonly<Record<string, KitApiSurface>>): readonly string[] {
   const problems: string[] = [];
   for (const [surface, version] of Object.entries(declared)) {
-    const spec = api[surface];
+    // 只认自有属性：面名模式能匹配 toString / constructor 一类 Object.prototype 成员，
+    // 裸索引会读到继承来的函数（truthy）⇒「面不存在」与版本区间两道闸一起 fail-open。
+    const spec = Object.prototype.hasOwnProperty.call(api, surface) ? api[surface] : undefined;
     if (!spec) {
       problems.push(`api 面 "${surface}" 不存在（提供：${Object.keys(api).join(", ") || "-"}）`);
     } else if (version < spec.minSupported || version > spec.version) {
