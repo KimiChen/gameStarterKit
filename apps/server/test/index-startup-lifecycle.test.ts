@@ -95,7 +95,13 @@ test("index 顶层启动失败：进程退出前等待 lifecycle cleanup，并�
   const sandbox = mkdtempSync(join(tmpdir(), "game-index-startup-"));
   const cleanupMarker = join(sandbox, "cleanup-complete");
   try {
-    cpSync(join(SERVER_ROOT, "src"), join(sandbox, "src"), { recursive: true });
+    // ⚠ 沙箱必须与真仓同形：`server/` 与 `plugins/` 同级、`node_modules` 在根上。
+    // 生成的 modes/catalog.generated.ts 会静态 import 插件自带的服务端 mode
+    // （`../../../../plugins/<id>/server/index`，tally 试点起），只复制 apps/server/src 会在解析阶段炸。
+    // 这不是本用例要测的东西，但它如实记下一条代价：**服务端不再能单独搬走，插件目录是它的一部分**
+    // （docs/PLUGIN.md §5.5.4）。
+    cpSync(join(SERVER_ROOT, "src"), join(sandbox, "server/src"), { recursive: true });
+    cpSync(join(REPO_ROOT, "apps/plugins"), join(sandbox, "plugins"), { recursive: true });
     symlinkSync(join(REPO_ROOT, "node_modules"), join(sandbox, "node_modules"), "dir");
     writeFileSync(join(sandbox, "package.json"), '{"type":"module"}\n');
     writeFileSync(join(sandbox, "tsconfig.json"), JSON.stringify({
@@ -112,12 +118,12 @@ test("index 顶层启动失败：进程退出前等待 lifecycle cleanup，并�
     // disposer proves index.ts caught that startup error and awaited the real
     // default registry, rather than merely exiting on an unhandled top-level
     // rejection.
-    const invalidDomain = join(sandbox, "src/websocket/00_startup_fault");
+    const invalidDomain = join(sandbox, "server/src/websocket/00_startup_fault");
     mkdirSync(invalidDomain);
     writeFileSync(join(invalidDomain, "broken.ts"), "export default null;\n");
     writeFileSync(join(sandbox, "register-cleanup.mjs"), `
       import { writeFile } from "node:fs/promises";
-      import { defaultLifecycle } from "./src/core/infra/lifecycle.ts";
+      import { defaultLifecycle } from "./server/src/core/infra/lifecycle.ts";
       defaultLifecycle.register("startup-test-marker", async () => {
         await writeFile(process.env.STARTUP_CLEANUP_MARKER, "disposed\\n");
       });
@@ -125,7 +131,7 @@ test("index 顶层启动失败：进程退出前等待 lifecycle cleanup，并�
 
     const result = spawnSync(
       process.execPath,
-      ["--import", "tsx", "--import", "./register-cleanup.mjs", "src/index.ts"],
+      ["--import", "tsx", "--import", "./register-cleanup.mjs", "server/src/index.ts"],
       {
         cwd: sandbox,
         encoding: "utf8",

@@ -212,16 +212,31 @@ function createFixture(): { readonly root: string; readonly options: GameplayCod
       fs.mkdirSync(path.join(root, "apps/shared/src/gameplays", id), { recursive: true });
       fs.copyFileSync(file, path.join(root, "apps/shared/src/gameplays", id, name));
     }
+    // wire 向量 sidecar 有两个发现根（tally 试点起）：框架 test/wire-vectors/<id>.ts 或插件目录
+    // apps/plugins/<id>/test/wire-vectors.ts。夹具按真实落点复制，⛔ 不写死其中一处。
     const vectors = path.join(REPOSITORY_ROOT, "apps/server/test/wire-vectors", `${id}.ts`);
     if (fs.existsSync(vectors)) fs.copyFileSync(vectors, path.join(root, "apps/server/test/wire-vectors", `${id}.ts`));
+    const pluginVectors = path.join(REPOSITORY_ROOT, "apps/plugins", id, "test/wire-vectors.ts");
+    if (fs.existsSync(pluginVectors)) {
+      fs.mkdirSync(path.join(root, "apps/plugins", id, "test"), { recursive: true });
+      fs.copyFileSync(pluginVectors, path.join(root, "apps/plugins", id, "test/wire-vectors.ts"));
+    }
   }
   // client module / server mode：canonical（manifest.wireExposed）∩ modes/ 目录必须双向同集——
   // fixture 复刻真仓约束，canonical 玩法的两端装配件都复制（语法级校验，不解析 import）。
   for (const id of canonicalGameplayIds()) {
     fs.mkdirSync(path.join(root, CLIENT_MODES_DIR, id), { recursive: true });
     fs.copyFileSync(path.join(REPOSITORY_ROOT, CLIENT_MODES_DIR, id, "index.ts"), path.join(root, CLIENT_MODES_DIR, id, "index.ts"));
-    fs.mkdirSync(path.join(root, SERVER_MODES_DIR, id), { recursive: true });
-    fs.copyFileSync(path.join(REPOSITORY_ROOT, SERVER_MODES_DIR, id, "index.ts"), path.join(root, SERVER_MODES_DIR, id, "index.ts"));
+    // 服务端 GameMode 模块同样两个发现根：框架 modes/<id>/index.ts 或插件目录 apps/plugins/<id>/server/index.ts。
+    const frameworkMode = path.join(REPOSITORY_ROOT, SERVER_MODES_DIR, id, "index.ts");
+    const pluginMode = path.join(REPOSITORY_ROOT, "apps/plugins", id, "server/index.ts");
+    if (fs.existsSync(frameworkMode)) {
+      fs.mkdirSync(path.join(root, SERVER_MODES_DIR, id), { recursive: true });
+      fs.copyFileSync(frameworkMode, path.join(root, SERVER_MODES_DIR, id, "index.ts"));
+    } else {
+      fs.mkdirSync(path.join(root, "apps/plugins", id, "server"), { recursive: true });
+      fs.copyFileSync(pluginMode, path.join(root, "apps/plugins", id, "server/index.ts"));
+    }
   }
   return { root, options: { repositoryRoot: root } };
 }
@@ -1420,14 +1435,23 @@ test("client module 集 = canonical GameplayModeId：真仓 modes/ 目录双向�
     .sort();
   assert.deepEqual(moduleDirs, modules.map((module) => module.id).sort(),
     "gameplay/modes/ 目录必须与 canonical GameplayModeId 装配集精确同集");
-  // 真仓 modes/ 目录（服务端）必须与装配集双向同集：多出的目录 = 无主 mode，少了 = 装配缺口。
-  // ⚠ 服务端 modes/ 目录只认子目录（catalog.ts / catalog.generated.ts 是文件，不参与比对）。
+  // 真仓服务端 mode 模块必须与装配集双向同集：多出的 = 无主 mode，少了 = 装配缺口。
+  // ⚠ 服务端 mode 模块有**两个**发现根（tally 试点起，docs/PLUGIN.md §5.5.4）：
+  //   ① 框架 `rooms/modes/<id>/index.ts`（只认子目录，catalog*.ts 是文件不参与比对）
+  //   ② 插件自带 `apps/plugins/<id>/server/index.ts`
+  // 两处并集才是装配集；⛔ 不能只比 ① —— 那样插件把 mode 搬进自己目录就会误判成「装配缺口」。
   const serverModeDirs = fs.readdirSync(path.join(REPOSITORY_ROOT, SERVER_MODES_DIR), { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name)
-    .sort();
-  assert.deepEqual(serverModeDirs, canonical,
-    "rooms/modes/ 子目录必须与 canonical GameplayModeId 装配集精确同集");
+    .map((entry) => entry.name);
+  const pluginModeIds = fs.readdirSync(path.join(REPOSITORY_ROOT, "apps/plugins"), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory()
+      && fs.existsSync(path.join(REPOSITORY_ROOT, "apps/plugins", entry.name, "server/index.ts")))
+    .map((entry) => entry.name);
+  assert.deepEqual([...serverModeDirs, ...pluginModeIds].sort(), canonical,
+    "服务端 mode 模块（两个发现根的并集）必须与 canonical GameplayModeId 装配集精确同集");
+  for (const id of pluginModeIds) {
+    assert.ok(!serverModeDirs.includes(id), `mode "${id}" 两个发现根都有 = 歧义，⛔ 删掉其中一处`);
+  }
   const artifacts = renderGameplayArtifacts(
     gameplays,
     readCoreWireNames({ repositoryRoot: REPOSITORY_ROOT }),
@@ -1437,8 +1461,11 @@ test("client module 集 = canonical GameplayModeId：真仓 modes/ 目录双向�
   );
   const serverCatalog = artifacts.get(SERVER_CATALOG) ?? "";
   for (const module of serverModules) {
-    assert.match(serverCatalog, new RegExp(`import \\{ ${module.registerSymbol} \\} from "\\./${module.id}/index";`),
-      `服务端 catalog 必须静态 import ${module.registerSymbol}`);
+    // ⚠ 说明符跟着模块的真实落点走：框架根是 `./<id>/index`，插件根是
+    // `../../../../plugins/<id>/server/index`（tally 试点）。⛔ 不写死其中一种。
+    const escaped = module.specifier.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+    assert.match(serverCatalog, new RegExp(`import \\{ ${module.registerSymbol} \\} from "${escaped}";`),
+      `服务端 catalog 必须静态 import ${module.registerSymbol}（说明符 ${module.specifier}）`);
     assert.match(serverCatalog, new RegExp(`disposers\\.push\\(${module.registerSymbol}\\(registry\\)\\);`));
     assert.match(serverCatalog, new RegExp(`^ {4}${JSON.stringify(module.id)},$`, "mu"),
       "GENERATED_GAME_MODE_IDS 收录每个装配 mode");

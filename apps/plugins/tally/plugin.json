@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "id": "tally",
-  "version": "1.0.8",
+  "version": "1.1.0",
   "description": "点数赛：先点满目标次数者胜——gameplay 形态插件的端到端实证（plan-v5 E5 第二样本）",
   "category": "extra",
   "docs": [
