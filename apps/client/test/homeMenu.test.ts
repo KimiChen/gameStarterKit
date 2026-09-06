@@ -207,6 +207,7 @@ test("菜单排序：多 contribution fixture 按 pluginId → entryId；首屏�
   const host = {
     defaultLaunch: { kind: "gameplay" as const, gameplayId: "zBGame" },
     home: [{ pluginId: "zeta", entryId: "zB" }, { pluginId: "alpha", entryId: "aD" }],
+    groups: [],
   };
   const registry = new PluginRegistry(descriptors, host);
   assert.deepEqual(
@@ -229,6 +230,34 @@ test("菜单排序：多 contribution fixture 按 pluginId → entryId；首屏�
     () => new PluginRegistry([descriptors[0], { ...descriptors[1], menu: [fixture("alpha", "zA")] }], { ...host, home: [] }),
     /重复 menu entryId: zA/u,
     "entryId 全仓唯一（跨 plugin 撞名即 fail-fast）",
+  );
+
+  // ── 入口分组（宿主 placement §6.1）：跨 plugin 收进一个入口，成员按声明序 ──
+  const grouped = new PluginRegistry(descriptors, {
+    ...host,
+    groups: [{
+      id: "mixed",
+      label: "混合组",
+      labelKey: "menu.group.mixed",
+      members: [{ pluginId: "zeta", entryId: "zA" }, { pluginId: "alpha", entryId: "aC" }],
+    }],
+  });
+  const resolved = grouped.entryGroups();
+  assert.equal(resolved.length, 1);
+  assert.deepEqual(
+    resolved[0].members.map((item) => `${item.pluginId}/${item.entryId}`),
+    ["zeta/zA", "alpha/aC"],
+    "组内顺序 = placement 逐字（⛔ 不按字母序重排——这是宿主的编排意图）",
+  );
+  assert.equal(grouped.groupIdOf("zeta", "zA"), "mixed");
+  assert.equal(grouped.groupIdOf("alpha", "aA"), null, "没进组的入口返回 null");
+  assert.throws(
+    () => new PluginRegistry(descriptors, {
+      ...host,
+      groups: [{ id: "bad", label: "坏组", labelKey: "menu.group.bad", members: [{ pluginId: "alpha", entryId: "zB" }] }],
+    }).entryGroups(),
+    /宿主分组 bad 引用不存在的入口: alpha\/zB/u,
+    "分组成员同样要与某条 contribution 精确一致",
   );
 });
 

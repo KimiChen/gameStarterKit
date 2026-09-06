@@ -28,9 +28,11 @@ import type { AreaListView } from "../view/AreaListView";
 import type { LoginNoticeView } from "../view/LoginNoticeView";
 import type { HomeView } from "../view/HomeView";
 import type { PromoHomeView } from "../view/PromoHomeView";
+import type { EntryGroupView } from "../view/EntryGroupView";
 import type { SettingsView } from "../view/SettingsView";
 import type { ConfirmView } from "../view/ConfirmView";
 import { PromoHomeLogic } from "../logic/page/PromoHomeLogic";
+import { EntryGroupLogic } from "../logic/page/EntryGroupLogic";
 import { SettingsLogic, type SettingsProfilePatch } from "../logic/page/SettingsLogic";
 import { reconcileSessionProfile } from "../logic/page/SessionReconcileLogic";
 import {
@@ -763,11 +765,48 @@ export async function openPromoHome(
 }
 
 /**
+ * 入口分组页（docs/PLUGIN.md §6.1）：宿主 placement 声明的一个分组，成员按声明序列出。
+ *
+ * 设置面板里整组只占**一行**，点它打到这里。⛔ 本页不认识任何具体插件——组名与成员
+ * 全部来自 GENERATED_HOST.groups，launch 仍走 Home/设置那条同一个 HomeMenuRuntime 接线。
+ */
+export async function openEntryGroup(groupId: string): Promise<NavRouteHandle | null> {
+  const resolved = appPluginRegistry.entryGroups().find((item) => item.group.id === groupId);
+  if (!resolved) {
+    console.error(`[loginFlow] 未登记的入口分组 ${groupId}，忽略`);
+    return null;
+  }
+  const h = await appNavigation.open("entryGroup");
+  const view = h.view as EntryGroupView;
+  await h.run((_openedView, context) => {
+    const logic = new EntryGroupLogic({
+      availabilityOf: (pluginId) =>
+        (homeMenuRuntime ? homeMenuRuntime.availabilityOf(pluginId) : "available"),
+    }, resolved.group.label);
+    logic.setItems(resolved.members.map((item) => ({
+      entryId: item.entryId,
+      pluginId: item.pluginId,
+      label: item.label,
+      launch: () => {
+        if (!context.isActive()) return;
+        return homeMenuRuntime ? homeMenuRuntime.launch(item.launch) : undefined;
+      },
+    })));
+    view.onClose = () => h.close();
+    view.setup(logic);
+  });
+  return h;
+}
+
+/**
  * 设置面板（docs/PLUGIN.md §6.1）：宿主固定区块 + 插件入口列表。
  *
  * 插件入口的数据源仍是 generated menu contribution（⛔ 无第二真源）：全量、pluginId 字母序
  * ——插件只声明入口身份；宿主决定的首屏位置是 Home 那一份（homeContributions），这里不看。
  * 可用性叠加与 launch 都复用 Home 那条 HomeMenuRuntime 接线（同一个 PluginHost 闸）。
+ *
+ * ⚠ 宿主 placement 的**分组**在这一层落地：属于某组的入口 ⛔ 不在列表里单独出现，整组
+ * 折成一行，点它 openEntryGroup 打开二级页（一个产品级入口 = 一行）。
  */
 export async function openSettings(): Promise<NavRouteHandle> {
   const h = await appNavigation.open("settings");
@@ -779,10 +818,20 @@ export async function openSettings(): Promise<NavRouteHandle> {
         (homeMenuRuntime ? homeMenuRuntime.availabilityOf(pluginId) : "available"),
     });
     logic.setProfile(getSessionProfile());
+    logic.setGroups(appPluginRegistry.entryGroups().map(({ group, members }) => ({
+      groupId: group.id,
+      label: group.label,
+      pluginIds: [...new Set(members.map((item) => item.pluginId))],
+      launch: () => {
+        if (!context.isActive()) return;
+        return openEntryGroup(group.id).then(() => undefined);
+      },
+    })));
     logic.setEntries(appPluginRegistry.menuContributions().map((item) => ({
       entryId: item.entryId,
       pluginId: item.pluginId,
       label: item.label,
+      groupId: appPluginRegistry.groupIdOf(item.pluginId, item.entryId),
       // 无宿主（无头 pages 测试/工具路径）时是 no-op：设置面板没有 Home 那条
       // onEnterBattle 回退通道，⛔ 也不该编一个。
       launch: () => {

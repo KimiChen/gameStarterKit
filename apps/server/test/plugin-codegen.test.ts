@@ -1241,6 +1241,60 @@ test("宿主 placement（apps/plugins/host.json）：缺失即 fail-fast；defau
   assert.match(rendered, /\{ pluginId: "builtin", entryId: "ballMove" \},\n {8}\{ pluginId: "snake", entryId: "snake" \},/u);
 });
 
+/**
+ * 入口分组（docs/PLUGIN.md §6.1）：把跨 plugin/kit 的若干入口收成一个产品级入口。
+ * ⛔ 分组只能由宿主声明——arena 是 kit、arenaShop 是插件，kit ⛔ 不得依赖插件，
+ * 谁都没资格宣布「我们是一伙的」。
+ */
+test("宿主分组（host.json groups）：成员必须存在、⛔ 不得跨组重复、id ⛔ 不得与入口/单元撞名，且渲染进 GENERATED_HOST", () => {
+  const withHost = (host: unknown): string => {
+    const { root } = createFixture();
+    fs.writeFileSync(path.join(root, "apps/plugins/host.json"), `${JSON.stringify(host, null, 2)}\n`);
+    return root;
+  };
+  const base = { schemaVersion: 1, defaultLaunch: { kind: "gameplay", gameplayId: "snake" }, home: ["snake/snake"] };
+  const group = (over: Record<string, unknown> = {}): unknown =>
+    ({ id: "arenaHub", label: "竞技场", labelKey: "menu.group.arena", members: ["arena/board", "arenaShop/arenaShop"], ...over });
+
+  assert.throws(
+    () => readViewCatalog(withHost({ ...base, groups: [group({ members: ["arena/board", "arena/nope"] })] })),
+    /分组 "arenaHub" 引用不存在的入口 "arena\/nope"/u,
+  );
+  assert.throws(
+    () => readViewCatalog(withHost({ ...base, groups: [group({ members: ["arena/board"] })] })),
+    /至少要收 2 条入口/u,
+  );
+  assert.throws(
+    () => readViewCatalog(withHost({ ...base, groups: [group(), group({ id: "arenaHub2" })] })),
+    /入口 "arena\/board" 同时属于分组 "arenaHub" 与 "arenaHub2"/u,
+  );
+  assert.throws(
+    () => readViewCatalog(withHost({ ...base, groups: [group(), group({ id: "arenaHub", members: ["arena/capture", "arena/duel"] })] })),
+    /groups 重复登记 id "arenaHub"/u,
+  );
+  assert.throws(
+    () => readViewCatalog(withHost({ ...base, groups: [group({ id: "board" })] })),
+    /分组 id "board" 与入口 id 同名/u,
+  );
+  // ⚠ 这里 ⛔ 不能用 redeem：它同时是 plugin id 与 entry id，会先撞上上面那条入口同名闸，
+  // 测不到「与单元同名」这一条。builtin 是纯单元 id（它的入口叫 ballMove）。
+  assert.throws(
+    () => readViewCatalog(withHost({ ...base, groups: [group({ id: "builtin" })] })),
+    /分组 id "builtin" 与 plugin\/kit id 同名/u,
+  );
+  // 合法：整组按**声明序**渲染（⛔ 不重排——组内顺序是宿主的编排意图）。
+  const ok = withHost({ ...base, groups: [group({ members: ["arenaShop/arenaShop", "arena/duel", "arena/board"] })] });
+  const rendered = renderViewCatalogArtifacts(readViewCatalog(ok)).get(PLUGINS_RELATIVE) ?? "";
+  assert.match(rendered, /id: "arenaHub", label: "竞技场", labelKey: "menu\.group\.arena", members: \[/u);
+  assert.match(
+    rendered,
+    /\{ pluginId: "arenaShop", entryId: "arenaShop" \},\n {12}\{ pluginId: "arena", entryId: "duel" \},\n {12}\{ pluginId: "arena", entryId: "board" \},/u,
+  );
+  // 缺省（不写 groups）= 不分组，渲染成空数组。
+  const none = renderViewCatalogArtifacts(readViewCatalog(withHost(base))).get(PLUGINS_RELATIVE) ?? "";
+  assert.match(none, /groups: \[\n {4}\],/u);
+});
+
 test("域契约闸：descriptor 字节变化而 contractVersion 未增，writer 与只读闸都拒绝；bump 后放行并渲染 LOBBY_RPC_DOMAIN_CONTRACTS", () => {
   const { root, options } = createFixture();
   try {

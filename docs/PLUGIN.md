@@ -376,7 +376,10 @@ apps/plugins/
   ```jsonc
   { "schemaVersion": 1,
     "defaultLaunch": { "kind": "gameplay", "gameplayId": "snake" },   // 默认玩法（Main.gameplayId 留空时的兜底）
-    "home": ["snake/snake"] }                                          // 首屏 Home 入口，qualified id 有序列表
+    "home": ["snake/snake"],                                           // 首屏 Home 入口，qualified id 有序列表
+    "groups": [{                                                       // 入口分组（§6.1「一个产品入口 = 一行」）
+      "id": "arenaHub", "label": "竞技场", "labelKey": "menu.group.arena",
+      "members": ["arena/board", "arena/capture", "arena/duel", "arenaShop/arenaShop"] }] }
   ```
 
   `codegen:plugins` 校验 defaultLaunch 有唯一贡献者、home 每条都存在且不重复，并渲染为 `GENERATED_HOST`；
@@ -384,7 +387,19 @@ apps/plugins/
 - codegen 另闸：**entryId 全仓唯一**（宿主与设置面板都按裸 entryId 引用）、**一 gameplayId 一贡献者**
   （launch → plugin 的映射不靠排序裁决）。
 - 全量入口列表（设置面板）按 **`pluginId` → `entryId` 字母序**：确定、无冲突、与语言无关；⛔ 不裁剪——
-  未上首屏的入口（回归样例 ballMove）仍出现在设置面板。
+  未上首屏的入口（回归样例 ballMove）仍出现在设置面板。**唯一的例外是分组**（下条）：进了组的入口
+  在这一层折成一行，⛔ 不单独出现。
+- **入口分组 `groups`（2026-09-06）**：把若干条 contribution 收成**一个产品级入口**，设置面板里整组只占一行
+  （`entryId = pluginId = 组 id`，和别的行用同一把尺子排序），点它打开 `entryGroup` route 的二级页
+  （`view/EntryGroupView.ts` + `logic/page/EntryGroupLogic.ts`，宿主自有），组内**按声明序**列出成员，
+  点击走的仍是同一条 launch 通道。
+  ⛔ **分组只能由宿主声明**：竞技场那四条入口分属 kit `arena`（棋盘/占领赛/决斗）与 plugin `arenaShop`（商店），
+  而 kit ⛔ 不得依赖 plugin（docs/KIT.md §1/§4）——两边谁都没资格宣布「我们是一伙的」，只有宿主知道。
+  这正是 §6「插件声明身份、宿主决定去处」的直接推论。
+  codegen 闸：成员必须是真实 contribution、一条入口 ⛔ 不得进两个组、组 id ⛔ 不得与任何 entryId 或
+  plugin/kit id 撞名、每组至少 2 条（只收 1 条不是分组，只是多套一层页面）。
+  组行的可用性按「组内**还有**可用成员」判——⛔ 不能因为组里某个插件 failed 就把整个入口置灰，
+  那会连带屏蔽掉同组其他人的入口。
 - plugin.json 的 `dependencies` 由 PluginHost 真正消费：launch 先按声明序装依赖（依赖正在 dispose 则等它拆完
   再装；运行期环点名结算 failed），任一依赖非 active 则本 plugin failed 且不装；仍有依赖方在位的 plugin 不随
   route refcount 归零释放（记请求，依赖方拆完后级联释放）；disposeAll 按依赖拓扑拆（依赖方先拆）。codegen 侧

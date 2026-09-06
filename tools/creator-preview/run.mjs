@@ -334,15 +334,49 @@ async function enterFromSettings(runner, label, unitId, note) {
   return runner.step(`进入「${label} · ${unitId}」${note ? `（${note}）` : ""}`, () => runner.tapText("进入", { near: entryRow(label, unitId) }));
 }
 
-/** route 形态页面点「关闭」后回到设置面板。 */
+/**
+ * 经**入口分组页**进一条成员入口（2026-09-06 起 arena 四个入口收在「竞技场」一行后面）：
+ * 设置面板 →「竞技场」这一行的「进入」→ EntryGroupView →成员行的「进入」。
+ */
+async function enterFromGroup(runner, groupId, groupLabel, label, unitId, note) {
+  await scenarioSettings(runner);
+  await runner.walk();
+  // 上一个场景可能把分组页留在栈顶（gameplay 形态的入口不走 closeBackToSettings）：已经在分组页上
+  // 就直接点成员，⛔ 不要再点一次设置面板那一行（那一行此刻被分组页盖着）。
+  if (!runner.hasNode("EntryGroupView")) {
+    await runner.step(`设置面板进「${groupLabel}」分组页（组内 4 条入口只占一行）`, async () => {
+      await runner.tapText("进入", { near: entryRow(groupLabel, groupId) });
+      await runner.waitFor("EntryGroupView", (walk) => (selectNodes(walk, { name: "EntryGroupView" }).length > 0 ? true : null), 30_000);
+      const rows = runner.find({ pathIncludes: "EntryGroupView", kind: "label", textMatches: /\s+·\s+/u }).map((node) => node.text);
+      return { rows };
+    });
+  }
+  return runner.step(`分组页里进「${label} · ${unitId}」${note ? `（${note}）` : ""}`,
+    () => runner.tapText("进入", { near: entryRow(label, unitId) }));
+}
+
+/**
+ * route 形态页面点「关闭」后回到设置面板。
+ * ⚠ 如果这条入口是从**分组页**进的，关掉它露出来的是分组页——要再关一层才回到设置面板。
+ */
 async function closeBackToSettings(runner, viewName) {
   return runner.step(`「关闭」回到设置面板（${viewName} 卸载）`, async () => {
     await runner.tapText("关闭", { pathIncludes: viewName });
     await runner.waitFor(
-      `${viewName} 关闭且 SettingsView 仍在`,
-      (walk) => (selectNodes(walk, { name: viewName }).length === 0 && selectNodes(walk, { name: "SettingsView" }).length > 0 ? true : null),
+      `${viewName} 关闭`,
+      (walk) => (selectNodes(walk, { name: viewName }).length === 0 ? true : null),
     );
-    return { settingsStillOpen: true };
+    let viaGroup = false;
+    await runner.walk();
+    if (runner.hasNode("EntryGroupView")) {
+      viaGroup = true;
+      await runner.tapText("关闭", { pathIncludes: "EntryGroupView" });
+      await runner.waitFor("EntryGroupView 关闭",
+        (walk) => (selectNodes(walk, { name: "EntryGroupView" }).length === 0 ? true : null));
+    }
+    await runner.waitFor("SettingsView 仍在",
+      (walk) => (selectNodes(walk, { name: "SettingsView" }).length > 0 ? true : null));
+    return { settingsStillOpen: true, viaGroup };
   });
 }
 
@@ -469,7 +503,7 @@ async function scenarioCosmetic(runner) {
 
 /** kit 的 route 形态入口：棋盘页 + 占一格（走 arena.capture → withKitTx → k_arena_board → effect 奖杯）。 */
 async function scenarioArena(runner) {
-  await enterFromSettings(runner, "竞技场", "arena", "kit route 形态：kit 的客户端 entry 由 PluginHost 装载");
+  await enterFromGroup(runner, "arenaHub", "竞技场", "竞技场", "arena", "kit route 形态：kit 的客户端 entry 由 PluginHost 装载");
   const board = await runner.step("ArenaBoardView 挂载并读到棋盘（16 格 + 奖杯行）", async () => {
     await runner.waitFor(
       "ArenaBoardView 的棋盘格",
@@ -542,7 +576,7 @@ async function scenarioArena(runner) {
 
 /** kit 的第一个 gameplay 形态 mode。 */
 async function scenarioArenaCapture(runner) {
-  await enterFromSettings(runner, "占领赛", "arena", "kit gameplay 形态：加入 GameRoom");
+  await enterFromGroup(runner, "arenaHub", "竞技场", "占领赛", "arena", "kit gameplay 形态：加入 GameRoom");
   const start = await runner.step("ArenaCaptureView 挂载并开局", async () => {
     await runner.waitFor("「占领赛 · arenaCapture」标题", (walk) => selectNodes(walk, { kind: "label", text: "占领赛 · arenaCapture" })[0] ?? null, 60_000);
     const status = await runner.waitFor("「目标 N 格」状态行", (walk) => selectNodes(walk, { kind: "label", textMatches: /目标\s*\d+\s*格/u })[0] ?? null, 60_000);
@@ -555,7 +589,7 @@ async function scenarioArenaCapture(runner) {
 
 /** kit 的第二个 gameplay 形态 mode。 */
 async function scenarioArenaDuel(runner) {
-  await enterFromSettings(runner, "决斗", "arena", "kit gameplay 形态：加入 GameRoom");
+  await enterFromGroup(runner, "arenaHub", "竞技场", "决斗", "arena", "kit gameplay 形态：加入 GameRoom");
   const start = await runner.step("ArenaDuelView 挂载并开局", async () => {
     await runner.waitFor("「决斗 · arenaDuel」标题", (walk) => selectNodes(walk, { kind: "label", text: "决斗 · arenaDuel" })[0] ?? null, 60_000);
     const status = await runner.waitFor("「HP N」状态行", (walk) => selectNodes(walk, { kind: "label", textMatches: /HP\s*\d+/u })[0] ?? null, 60_000);
@@ -568,7 +602,7 @@ async function scenarioArenaDuel(runner) {
 
 /** 建在 kit 上的插件：读 kit 的 board 面拿自己的格，买加固走 kit 的 boostTile → tx.debit 扣金币。 */
 async function scenarioArenaShop(runner) {
-  await enterFromSettings(runner, "竞技场商店", "arenaShop", "plugin route 形态：requires.kits.arena.board");
+  await enterFromGroup(runner, "arenaHub", "竞技场", "竞技场商店", "arenaShop", "plugin route 形态：requires.kits.arena.board");
   const opened = await runner.step("ArenaShopView 挂载（经 kit 的 board 面读棋盘）", async () => {
     await runner.waitFor("ArenaShopView", (walk) => (selectNodes(walk, { name: "ArenaShopView" }).length > 0 ? true : null), 60_000);
     const empty = await runner.waitFor(
@@ -587,7 +621,7 @@ async function scenarioArenaShop(runner) {
     // 没有自己的格子就先去竞技场占一块（本插件的入口本来就依赖 kit 的数据）。
     await closeBackToSettings(runner, "ArenaShopView");
     await scenarioArena(runner);
-    await enterFromSettings(runner, "竞技场商店", "arenaShop", "占领后重开");
+    await enterFromGroup(runner, "arenaHub", "竞技场", "竞技场商店", "arenaShop", "占领后重开");
     await runner.step("ArenaShopView 重开并读到自有格", async () => {
       await runner.waitFor("自有格子行", (walk) => selectNodes(walk, { pathIncludes: "ArenaShopView", kind: "label", textMatches: /\+守备/u })[0] ?? null, 20_000);
       const shot = await runner.shot("arenaShop-owned");

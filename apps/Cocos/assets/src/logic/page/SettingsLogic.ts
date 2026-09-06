@@ -48,6 +48,23 @@ export interface SettingsPluginEntryInput {
     readonly pluginId: string;
     readonly label: string;
     readonly launch: () => void | Promise<void>;
+    /**
+     * 所属分组 id（宿主 placement，apps/plugins/host.json）。非空的入口 ⛔ 不在本列表单独出现——
+     * 它们被折进一条分组行，点进去才见（一个产品入口 = 一行，docs/PLUGIN.md §6.1）。
+     */
+    readonly groupId?: string | null;
+}
+
+/**
+ * 一条分组行的输入：宿主声明的分组，在设置面板里占**一行**，launch 打开分组页。
+ * `pluginIds` 是组内成员的贡献者集合——可用性按「组内还有可用成员」判：⛔ 不能因为
+ * 组里某个插件 failed 就把整个入口置灰，那会连带屏蔽掉别人的入口。
+ */
+export interface SettingsGroupEntryInput {
+    readonly groupId: string;
+    readonly label: string;
+    readonly pluginIds: readonly string[];
+    readonly launch: () => void | Promise<void>;
 }
 
 /** 已叠加运行时可用性的插件入口（渲染用）。 */
@@ -101,6 +118,7 @@ export class SettingsLogic {
     private pendingAudio: SettingsAudioKey | null = null;
     private notice = "";
     private entries: readonly SettingsPluginEntryInput[] = [];
+    private groups: readonly SettingsGroupEntryInput[] = [];
 
     /** 视图重绘钩子（View 注入；Logic 只通知，不知道怎么画）。 */
     onChanged: () => void = () => {};
@@ -114,6 +132,12 @@ export class SettingsLogic {
         if (!profile) return;
         this.music = profile.musicOn;
         this.sfx = profile.sfxOn;
+    }
+
+    /** 宿主分组行（缺省空 = 不分组，全部入口平铺）。 */
+    setGroups(groups: readonly SettingsGroupEntryInput[]): void {
+        this.groups = groups;
+        this.emit();
     }
 
     setEntries(entries: readonly SettingsPluginEntryInput[]): void {
@@ -134,16 +158,25 @@ export class SettingsLogic {
     }
 
     /**
-     * 插件入口列表：**pluginId 字母序**（PLUGIN.md §6；同一 plugin 内以 entryId 兜底
-     * 保证确定性）。⛔ 不看宿主 placement——首屏位置归 Home，本列表是全量入口的稳定序。
+     * 入口列表：**pluginId 字母序**（PLUGIN.md §6；同一 plugin 内以 entryId 兜底保证确定性）。
+     * ⛔ 不看首屏 placement——那是 Home 的事；但**分组**是本层要落地的 placement：
+     * 属于某个分组的入口在这里不单独出现，整组只占一行（entryId = pluginId = 组 id，
+     * 因此和其它入口用同一把尺子排序），点它打开分组页。
      */
     pluginEntries(): readonly SettingsPluginEntryModel[] {
-        return [...this.entries]
-            .sort((left, right) => {
-                if (left.pluginId !== right.pluginId) return left.pluginId < right.pluginId ? -1 : 1;
-                if (left.entryId === right.entryId) return 0;
-                return left.entryId < right.entryId ? -1 : 1;
-            })
+        const grouped: SettingsPluginEntryModel[] = this.groups.map((group) => {
+            // ⛔ 组内某个插件 failed 不该让整行置灰——那会连带屏蔽掉同组其它人的入口。
+            const usable = group.pluginIds.some((pluginId) => this.deps.availabilityOf(pluginId) === "available");
+            return {
+                entryId: group.groupId,
+                pluginId: group.groupId,
+                label: group.label,
+                enabled: usable,
+                disabledReason: usable ? null : "组内入口都不可用",
+            };
+        });
+        const loose: SettingsPluginEntryModel[] = this.entries
+            .filter((entry) => !entry.groupId)
             .map((entry) => {
                 const availability = this.deps.availabilityOf(entry.pluginId);
                 return {
@@ -154,6 +187,11 @@ export class SettingsLogic {
                     disabledReason: disabledReasonOf(availability),
                 };
             });
+        return [...grouped, ...loose].sort((left, right) => {
+            if (left.pluginId !== right.pluginId) return left.pluginId < right.pluginId ? -1 : 1;
+            if (left.entryId === right.entryId) return 0;
+            return left.entryId < right.entryId ? -1 : 1;
+        });
     }
 
     /** 可重试提示（空串 = 无）。 */
@@ -207,7 +245,10 @@ export class SettingsLogic {
     }
 
     private async runLaunch(entryId: string): Promise<void> {
-        const input = this.entries.find((item) => item.entryId === entryId);
+        const group = this.groups.find((item) => item.groupId === entryId);
+        const input = group
+            ? { launch: group.launch }
+            : this.entries.find((item) => item.entryId === entryId && !item.groupId);
         if (!input) return;
         try {
             await input.launch();

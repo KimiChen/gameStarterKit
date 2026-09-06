@@ -15,6 +15,7 @@ import {
   SettingsLogic,
   type PluginAvailability,
   type SettingsDeps,
+  type SettingsGroupEntryInput,
   type SettingsPluginEntryInput,
   type SettingsProfilePatch,
 } from "../src/logic/page/SettingsLogic";
@@ -84,6 +85,78 @@ test("插件入口是全量 contribution 按 pluginId 字母序（⛔ 不是宿�
   const placed = new Set(GENERATED_HOST.home.map((entry) => entry.entryId));
   assert.ok(harness.logic.pluginEntries().some((entry) => !placed.has(entry.entryId)),
     "未上首屏的入口（回归样例 ballMove 一类）必须仍出现在设置面板");
+});
+
+/**
+ * 入口分组（PLUGIN.md §6.1）：一个产品级入口在设置面板里只占**一行**。
+ * 竞技场由 kit `arena`（棋盘/占领赛/决斗）与插件 `arenaShop`（商店）共四条 contribution 组成，
+ * 平铺就是四行并列；宿主 placement 把它们收进 arenaHub 一行，点进去才见成员。
+ */
+test("分组：成员 ⛔ 不在设置面板单独出现，整组只占一行且点击走组的 launch", async () => {
+  const opened: string[] = [];
+  const entries: SettingsPluginEntryInput[] = [
+    { entryId: "board", pluginId: "arena", label: "竞技场", groupId: "arenaHub", launch: () => {} },
+    { entryId: "capture", pluginId: "arena", label: "占领赛", groupId: "arenaHub", launch: () => {} },
+    { entryId: "arenaShop", pluginId: "arenaShop", label: "竞技场商店", groupId: "arenaHub", launch: () => {} },
+    { entryId: "redeem", pluginId: "redeem", label: "兑换码", groupId: null, launch: () => {} },
+  ];
+  const harness = makeHarness(entries);
+  const groups: SettingsGroupEntryInput[] = [{
+    groupId: "arenaHub",
+    label: "竞技场",
+    pluginIds: ["arena", "arenaShop"],
+    launch: () => { opened.push("arenaHub"); },
+  }];
+  harness.logic.setGroups(groups);
+  assert.deepEqual(harness.logic.pluginEntries().map((item) => `${item.pluginId}/${item.entryId}`),
+    ["arenaHub/arenaHub", "redeem/redeem"],
+    "三条成员折成一行；未分组的入口照常在列表里");
+  assert.equal(harness.logic.pluginEntries()[0]?.label, "竞技场");
+  await harness.logic.activate("arenaHub");
+  assert.deepEqual(opened, ["arenaHub"], "点分组行走组的 launch（打开分组页）");
+  assert.deepEqual(harness.launched, [], "⛔ 不得顺手触发任何成员自己的 launch");
+  await harness.logic.activate("board");
+  assert.deepEqual(harness.launched, [], "成员已不在本列表里，activate 它必须是 no-op");
+});
+
+test("分组行可用性：组内还有可用成员就不置灰（⛔ 一个插件 failed 不该屏蔽同组其他人）", () => {
+  const entries: SettingsPluginEntryInput[] = [
+    { entryId: "board", pluginId: "arena", label: "竞技场", groupId: "arenaHub", launch: () => {} },
+    { entryId: "arenaShop", pluginId: "arenaShop", label: "竞技场商店", groupId: "arenaHub", launch: () => {} },
+  ];
+  const harness = makeHarness(entries);
+  harness.logic.setGroups([{ groupId: "arenaHub", label: "竞技场", pluginIds: ["arena", "arenaShop"], launch: () => {} }]);
+  harness.setAvailability("arenaShop", "failed");
+  assert.equal(harness.logic.pluginEntries()[0]?.enabled, true, "只坏了一个成员，分组入口仍可进");
+  harness.setAvailability("arena", "failed");
+  const row = harness.logic.pluginEntries()[0];
+  assert.equal(row?.enabled, false, "组内全不可用才置灰");
+  assert.equal(row?.disabledReason, "组内入口都不可用");
+});
+
+test("真仓 placement：host.json 的分组真的把 arena 四条入口收成了一行", () => {
+  assert.ok(GENERATED_HOST.groups.length > 0, "前置：host.json 必须真的声明了分组，否则本用例恒真");
+  const memberIds = new Set(
+    GENERATED_HOST.groups.flatMap((group) => group.members.map((item) => `${item.pluginId}/${item.entryId}`)));
+  const harness = makeHarness(contributionEntries().map((entry) => ({
+    ...entry,
+    groupId: memberIds.has(`${entry.pluginId}/${entry.entryId}`)
+      ? (GENERATED_HOST.groups.find((group) => group.members
+        .some((item) => item.pluginId === entry.pluginId && item.entryId === entry.entryId))?.id ?? null)
+      : null,
+  })));
+  harness.logic.setGroups(GENERATED_HOST.groups.map((group) => ({
+    groupId: group.id,
+    label: group.label,
+    pluginIds: [...new Set(group.members.map((item) => item.pluginId))],
+    launch: () => {},
+  })));
+  const rows = harness.logic.pluginEntries().map((item) => `${item.pluginId}/${item.entryId}`);
+  assert.equal(rows.length, GENERATED_MENU_CONTRIBUTIONS.length - memberIds.size + GENERATED_HOST.groups.length);
+  for (const member of memberIds) {
+    assert.equal(rows.includes(member), false, `组内成员 ${member} ⛔ 不得在设置面板单独出现`);
+  }
+  assert.ok(rows.includes("arenaHub/arenaHub"), "竞技场这一组必须在面板里占一行");
 });
 
 test("同一 plugin 的多条入口以 entryId 兜底排序（确定性，与语言无关）", () => {
