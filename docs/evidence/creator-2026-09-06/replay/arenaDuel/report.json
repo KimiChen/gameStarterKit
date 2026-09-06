@@ -1,0 +1,147 @@
+{
+  "tool": "tools/creator-preview/run.mjs",
+  "scenario": "arenaDuel",
+  "startedAt": "2026-09-06T10:47:26.429Z",
+  "options": {
+    "scenario": "arenaDuel",
+    "out": "/private/tmp/claude-501/-Volumes-KimData-work-gameStarterKit/6ceedd07-ccda-4b53-94e5-24758a423bb2/scratchpad/preview/arenaDuel",
+    "code": "WELCOME2026",
+    "format": "jpeg",
+    "devtools": "http://127.0.0.1:9222",
+    "preview": "http://localhost:7456",
+    "scene": null,
+    "bootTimeoutMs": 300000,
+    "stepTimeoutMs": 20000,
+    "reuse": true
+  },
+  "scene": "33a6cd88-ca61-42f3-97e1-6b18a9096a34",
+  "ok": true,
+  "steps": [
+    {
+      "name": "点首屏「设置」",
+      "ok": true,
+      "startedAt": "2026-09-06T10:47:26.459Z",
+      "detail": {
+        "tapped": "设置",
+        "at": [
+          973,
+          90
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T10:47:26.539Z"
+    },
+    {
+      "name": "设置面板与插件入口",
+      "ok": true,
+      "startedAt": "2026-09-06T10:47:26.539Z",
+      "detail": {
+        "entries": [
+          {
+            "label": "竞技场",
+            "pluginId": "arena"
+          },
+          {
+            "label": "占领赛",
+            "pluginId": "arena"
+          },
+          {
+            "label": "决斗",
+            "pluginId": "arena"
+          },
+          {
+            "label": "竞技场商店",
+            "pluginId": "arenaShop"
+          },
+          {
+            "label": "进入战斗",
+            "pluginId": "builtin"
+          },
+          {
+            "label": "兑换码",
+            "pluginId": "redeem"
+          },
+          {
+            "label": "贪吃蛇大作战",
+            "pluginId": "snake"
+          },
+          {
+            "label": "衣柜",
+            "pluginId": "snakeCosmetic"
+          },
+          {
+            "label": "点数赛",
+            "pluginId": "tally"
+          }
+        ],
+        "shot": "01-settings.jpg"
+      },
+      "screenshots": [
+        "01-settings.jpg"
+      ],
+      "finishedAt": "2026-09-06T10:47:26.897Z"
+    },
+    {
+      "name": "进入「决斗 · arena」（kit gameplay 形态：加入 GameRoom）",
+      "ok": true,
+      "startedAt": "2026-09-06T10:47:26.897Z",
+      "detail": {
+        "tapped": "进入 @ /^决斗\\s+·\\s+arena$/u",
+        "at": [
+          947,
+          545
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T10:47:26.983Z"
+    },
+    {
+      "name": "ArenaDuelView 挂载并开局",
+      "ok": true,
+      "startedAt": "2026-09-06T10:47:26.983Z",
+      "detail": {
+        "status": "HP 3 · 你已命中 0",
+        "hp": 3,
+        "shot": "02-arenaDuel-start.jpg"
+      },
+      "screenshots": [
+        "02-arenaDuel-start.jpg"
+      ],
+      "finishedAt": "2026-09-06T10:47:27.728Z"
+    },
+    {
+      "name": "连点「出击」直到判胜（上限 6 次）",
+      "ok": true,
+      "startedAt": "2026-09-06T10:47:27.728Z",
+      "detail": {
+        "taps": 3,
+        "midShot": "03-arenaDuel-match.jpg",
+        "settleText": "你赢了！",
+        "shot": "04-arenaDuel-settle.jpg"
+      },
+      "screenshots": [
+        "03-arenaDuel-match.jpg",
+        "04-arenaDuel-settle.jpg"
+      ],
+      "finishedAt": "2026-09-06T10:47:29.842Z"
+    },
+    {
+      "name": "结算倒计时结束后回到首屏（AppRuntime 恢复 authenticated base）",
+      "ok": true,
+      "startedAt": "2026-09-06T10:47:29.842Z",
+      "detail": {
+        "shot": "05-arenaDuel-back-home.jpg"
+      },
+      "screenshots": [
+        "05-arenaDuel-back-home.jpg"
+      ],
+      "finishedAt": "2026-09-06T10:47:31.370Z"
+    }
+  ],
+  "console": [],
+  "tab": {
+    "id": "3EDF9F214F39BA1CAA8B5DCF5072B462",
+    "created": false
+  },
+  "finishedAt": "2026-09-06T10:47:31.372Z"
+}

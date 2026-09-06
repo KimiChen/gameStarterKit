@@ -31,7 +31,9 @@ import {
 } from "./lib.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const SCENARIOS = ["home", "settings", "redeem", "tally", "all"];
+const SCENARIOS = ["home", "settings", "redeem", "tally", "cosmetic", "snake", "ballMove", "arena", "arenaCapture", "arenaDuel", "arenaShop", "all"];
+/** `all` 的顺序：先 route 形态再 gameplay 形态；arenaShop 排在 arena 之后（它要一块自己的格子）。 */
+const ALL_SEQUENCE = ["home", "settings", "redeem", "tally", "cosmetic", "arena", "arenaCapture", "arenaDuel", "arenaShop", "snake", "ballMove"];
 /** 登录页兜底坐标（设计 375×812）：只在找不到 FGUI 对象 btn_login 时使用，并在报告里标注。 */
 const LOGIN_BUTTON_DESIGN = { x: 184.7, y: 670 };
 
@@ -267,6 +269,254 @@ async function scenarioTally(runner) {
   });
 }
 
+/**
+ * 设置面板一行插件入口的锚点：行文本是 `${label}  ·  ${unitId}`（SettingsView）。
+ * ⛔ 不能只按 unitId 消歧——kit 的多个 menu 入口共用同一个包 id（arena 的 竞技场 / 占领赛 / 决斗）。
+ */
+const entryRow = (label, unitId) => new RegExp(`^${label}\\s+·\\s+${unitId}$`, "u");
+
+/** 从设置面板点某一行的「进入」。 */
+async function enterFromSettings(runner, label, unitId, note) {
+  await scenarioSettings(runner);
+  return runner.step(`进入「${label} · ${unitId}」${note ? `（${note}）` : ""}`, () => runner.tapText("进入", { near: entryRow(label, unitId) }));
+}
+
+/** route 形态页面点「关闭」后回到设置面板。 */
+async function closeBackToSettings(runner, viewName) {
+  return runner.step(`「关闭」回到设置面板（${viewName} 卸载）`, async () => {
+    await runner.tapText("关闭", { pathIncludes: viewName });
+    await runner.waitFor(
+      `${viewName} 关闭且 SettingsView 仍在`,
+      (walk) => (selectNodes(walk, { name: viewName }).length === 0 && selectNodes(walk, { name: "SettingsView" }).length > 0 ? true : null),
+    );
+    return { settingsStillOpen: true };
+  });
+}
+
+/** gameplay 形态的通用重放：连点动作按钮直到「你赢了！」，再等结算回首屏。 */
+async function playUntilWin(runner, { actionText, countLabel, shotPrefix, maxTaps }) {
+  await runner.step(`连点「${actionText}」直到判胜（上限 ${maxTaps} 次）`, async () => {
+    let taps = 0;
+    let midShot = null;
+    while (taps < maxTaps) {
+      await runner.tapText(actionText);
+      taps += 1;
+      const settled = await runner.waitFor(
+        `第 ${taps} 次点击后的状态回流`,
+        (walk) => {
+          if (selectNodes(walk, { kind: "label", textMatches: /你赢了/u }).length > 0) return "won";
+          return selectNodes(walk, { kind: "label", textMatches: new RegExp(`${countLabel}\\s*${taps}(\\D|$)`, "u") }).length > 0 ? "counted" : null;
+        },
+        8_000,
+      );
+      if (taps === Math.ceil(maxTaps / 2)) midShot = await runner.shot(`${shotPrefix}-match`);
+      if (settled === "won") break;
+    }
+    const won = runner.find({ kind: "label", textMatches: /你赢了/u })[0];
+    if (!won) throw new Error(`点了 ${taps} 次仍未判胜`);
+    const shot = await runner.shot(`${shotPrefix}-settle`);
+    return { taps, midShot, settleText: won.text, shot };
+  });
+  return runner.step("结算倒计时结束后回到首屏（AppRuntime 恢复 authenticated base）", async () => {
+    await runner.waitFor(
+      "PromoHomeView 回来且结算文案消失",
+      (walk) => (selectNodes(walk, { name: "PromoHomeView" }).length > 0 && selectNodes(walk, { textMatches: /你赢了/u }).length === 0 ? true : null),
+      45_000,
+    );
+    const shot = await runner.shot(`${shotPrefix}-back-home`);
+    return { shot };
+  });
+}
+
+async function scenarioCosmetic(runner) {
+  await enterFromSettings(runner, "衣柜", "snakeCosmetic", "宿主自有 plugin 的 route 形态");
+  await runner.step("WardrobeView 挂载并读到皮肤行", async () => {
+    await runner.waitFor("WardrobeView", (walk) => (selectNodes(walk, { name: "WardrobeView" }).length > 0 ? true : null), 60_000);
+    const labels = runner.find({ pathIncludes: "WardrobeView", kind: "label" }).map((node) => node.text).filter(Boolean);
+    if (labels.length === 0) throw new Error("衣柜面板没有任何文本");
+    const shot = await runner.shot("cosmetic");
+    return { labels: labels.slice(0, 24), shot };
+  });
+  return closeBackToSettings(runner, "WardrobeView");
+}
+
+/** kit 的 route 形态入口：棋盘页 + 占一格（走 arena.capture → withKitTx → k_arena_board → effect 奖杯）。 */
+async function scenarioArena(runner) {
+  await enterFromSettings(runner, "竞技场", "arena", "kit route 形态：kit 的客户端 entry 由 PluginHost 装载");
+  const board = await runner.step("ArenaBoardView 挂载并读到棋盘（16 格 + 奖杯行）", async () => {
+    await runner.waitFor(
+      "ArenaBoardView 的棋盘格",
+      (walk) => (selectNodes(walk, { name: "ArenaBoardView" }).length > 0 && selectNodes(walk, { namePrefix: "tile-" }).length > 0 ? true : null),
+      60_000,
+    );
+    const tiles = runner.find({ namePrefix: "tile-" }).map((node) => node.name.slice("tile-".length)).sort();
+    const trophy = runner.find({ pathIncludes: "ArenaBoardView", kind: "label", textMatches: /^奖杯\s/u })[0];
+    if (!trophy) throw new Error(`棋盘缺少「奖杯 N」行：${JSON.stringify(runner.find({ pathIncludes: "ArenaBoardView", kind: "label" }).map((n) => n.text))}`);
+    const shot = await runner.shot("arena-board");
+    return { tiles, tileCount: tiles.length, trophyLine: trophy.text, shot };
+  });
+  await runner.step("占一格（arena.capture：withKitTx 写 k_arena_board + kit effect 发奖杯）", async () => {
+    await runner.walk();
+    // 优先挑无主格；棋盘被占满时退到自己的格（加固路径，同样过 withKitTx）。
+    const emptyLabel = runner.find({ kind: "label", text: "无主", pathIncludes: "tile-" })[0];
+    const anyTile = runner.find({ namePrefix: "tile-" })[0];
+    const source = emptyLabel ?? anyTile;
+    if (!source) throw new Error("棋盘上没有可点的格子");
+    const tileName = source.path.match(/tile-[A-Z]\d+/u)?.[0];
+    if (!tileName) throw new Error(`无法从路径推出格子节点：${source.path}`);
+    const tile = runner.find({ name: tileName })[0];
+    const tapped = await runner.tap(tile, tileName);
+    const notice = await runner.waitFor(
+      "占领结果提示",
+      (walk) => selectNodes(walk, { pathIncludes: "ArenaBoardView", kind: "label", textMatches: /已占领|不是你的|失败|错误|稍后|未就绪/u })[0] ?? null,
+    );
+    const outcome = /已占领/u.test(notice.text) ? "captured" : "refused";
+    const trophy = runner.find({ pathIncludes: "ArenaBoardView", kind: "label", textMatches: /^奖杯\s/u })[0];
+    const shot = await runner.shot(`arena-${outcome}`);
+    return { tile: tileName.slice("tile-".length), via: emptyLabel ? "empty-tile" : "own-tile", tapped, outcome, notice: notice.text, trophyLine: trophy?.text ?? null, shot };
+  });
+  return closeBackToSettings(runner, "ArenaBoardView");
+}
+
+/** kit 的第一个 gameplay 形态 mode。 */
+async function scenarioArenaCapture(runner) {
+  await enterFromSettings(runner, "占领赛", "arena", "kit gameplay 形态：加入 GameRoom");
+  const start = await runner.step("ArenaCaptureView 挂载并开局", async () => {
+    await runner.waitFor("「占领赛 · arenaCapture」标题", (walk) => selectNodes(walk, { kind: "label", text: "占领赛 · arenaCapture" })[0] ?? null, 60_000);
+    const status = await runner.waitFor("「目标 N 格」状态行", (walk) => selectNodes(walk, { kind: "label", textMatches: /目标\s*\d+\s*格/u })[0] ?? null, 60_000);
+    const goal = Number(status.text.match(/目标\s*(\d+)\s*格/u)[1]);
+    const shot = await runner.shot("arenaCapture-start");
+    return { status: status.text, goal, shot };
+  });
+  return playUntilWin(runner, { actionText: "占领", countLabel: "你已占", shotPrefix: "arenaCapture", maxTaps: start.goal + 3 });
+}
+
+/** kit 的第二个 gameplay 形态 mode。 */
+async function scenarioArenaDuel(runner) {
+  await enterFromSettings(runner, "决斗", "arena", "kit gameplay 形态：加入 GameRoom");
+  const start = await runner.step("ArenaDuelView 挂载并开局", async () => {
+    await runner.waitFor("「决斗 · arenaDuel」标题", (walk) => selectNodes(walk, { kind: "label", text: "决斗 · arenaDuel" })[0] ?? null, 60_000);
+    const status = await runner.waitFor("「HP N」状态行", (walk) => selectNodes(walk, { kind: "label", textMatches: /HP\s*\d+/u })[0] ?? null, 60_000);
+    const hp = Number(status.text.match(/HP\s*(\d+)/u)[1]);
+    const shot = await runner.shot("arenaDuel-start");
+    return { status: status.text, hp, shot };
+  });
+  return playUntilWin(runner, { actionText: "出击", countLabel: "你已命中", shotPrefix: "arenaDuel", maxTaps: start.hp + 3 });
+}
+
+/** 建在 kit 上的插件：读 kit 的 board 面拿自己的格，买加固走 kit 的 boostTile → tx.debit 扣金币。 */
+async function scenarioArenaShop(runner) {
+  await enterFromSettings(runner, "竞技场商店", "arenaShop", "plugin route 形态：requires.kits.arena.board");
+  const opened = await runner.step("ArenaShopView 挂载（经 kit 的 board 面读棋盘）", async () => {
+    await runner.waitFor("ArenaShopView", (walk) => (selectNodes(walk, { name: "ArenaShopView" }).length > 0 ? true : null), 60_000);
+    const empty = await runner.waitFor(
+      "自有格子行或「还没有格子」提示",
+      (walk) => {
+        if (selectNodes(walk, { pathIncludes: "ArenaShopView", kind: "label", textIncludes: "还没有格子" }).length > 0) return "none";
+        return selectNodes(walk, { pathIncludes: "ArenaShopView", kind: "label", textMatches: /\+守备/u }).length > 0 ? "owned" : null;
+      },
+      20_000,
+    );
+    const labels = runner.find({ pathIncludes: "ArenaShopView", kind: "label" }).map((node) => node.text).filter(Boolean);
+    const shot = await runner.shot("arenaShop-open");
+    return { tiles: empty, labels: labels.slice(0, 20), shot };
+  });
+  if (opened.tiles === "none") {
+    // 没有自己的格子就先去竞技场占一块（本插件的入口本来就依赖 kit 的数据）。
+    await closeBackToSettings(runner, "ArenaShopView");
+    await scenarioArena(runner);
+    await enterFromSettings(runner, "竞技场商店", "arenaShop", "占领后重开");
+    await runner.step("ArenaShopView 重开并读到自有格", async () => {
+      await runner.waitFor("自有格子行", (walk) => selectNodes(walk, { pathIncludes: "ArenaShopView", kind: "label", textMatches: /\+守备/u })[0] ?? null, 20_000);
+      const shot = await runner.shot("arenaShop-owned");
+      return { shot };
+    });
+  }
+  await runner.step("点「+守备」买加固（arenaShop.buyBoost → kit boostTile → tx.debit）", async () => {
+    await runner.tapText(/^\+守备/u, { pathIncludes: "ArenaShopView" });
+    const notice = await runner.waitFor(
+      "购买结果提示",
+      (walk) => selectNodes(walk, { pathIncludes: "ArenaShopView", kind: "label", textMatches: /守备\s*\d+|金币不足|不是你的|失败|错误|稍后|未就绪/u })[0] ?? null,
+    );
+    const outcome = /余额|重放/u.test(notice.text) ? "bought" : /金币不足/u.test(notice.text) ? "insufficient-balance" : /不是你的/u.test(notice.text) ? "not-owned" : "other";
+    const shot = await runner.shot(`arenaShop-${outcome}`);
+    return { outcome, notice: notice.text, shot };
+  });
+  return closeBackToSettings(runner, "ArenaShopView");
+}
+
+/** 宿主自有的默认玩法：进入 → 结束本次（确认框）→ 结算页「返回主页」。 */
+async function scenarioSnake(runner) {
+  await enterFromSettings(runner, "贪吃蛇大作战", "snake", "宿主自有 gameplay plugin：默认玩法");
+  await runner.step("SnakeWorld 挂载并开跑（HUD 出现）", async () => {
+    await runner.waitFor(
+      "SnakeWorld 的 HUD「结束本次」",
+      (walk) => selectNodes(walk, { kind: "label", text: "结束本次", pathIncludes: "SnakeWorld.Hud" })[0] ?? null,
+      90_000,
+    );
+    const hud = runner.find({ pathIncludes: "SnakeWorld.Hud", kind: "label" }).map((node) => node.text).filter(Boolean);
+    const shot = await runner.shot("snake-run");
+    return { hud: hud.slice(0, 12), shot };
+  });
+  await runner.step("点「结束本次」→ 确认框", async () => {
+    await runner.tapText("结束本次", { pathIncludes: "SnakeWorld.Hud" });
+    await runner.waitFor("确认框「确定结束本次游玩吗？」", (walk) => selectNodes(walk, { kind: "label", text: "确定结束本次游玩吗？" })[0] ?? null, 15_000);
+    const shot = await runner.shot("snake-end-confirm");
+    return { shot };
+  });
+  await runner.step("确认结束 → 结算页", async () => {
+    // 确认框刚出现时点会被吞（实测：点下去框关了、局没结束）——先等它稳定一拍再点，仍无结算就重开重点一次并记进报告。
+    const tapConfirm = async () => {
+      await sleep(1_200);
+      await runner.tapText("结束本次", { pathIncludes: "SnakeWorld.EndRunConfirm" });
+      return runner
+        .waitFor("结算页 SnakeWorld.RunResult", (walk) => selectNodes(walk, { kind: "label", text: "返回主页" })[0] ?? null, 12_000)
+        .catch(() => null);
+    };
+    let back = await tapConfirm();
+    let retried = false;
+    if (!back) {
+      retried = true;
+      await runner.tapText("结束本次", { pathIncludes: "SnakeWorld.Hud" });
+      await runner.waitFor("确认框重新出现", (walk) => selectNodes(walk, { kind: "label", text: "确定结束本次游玩吗？" })[0] ?? null, 15_000);
+      back = await tapConfirm();
+    }
+    if (!back) throw new Error("确认结束后没有出现结算页「返回主页」");
+    const lines = runner.find({ pathIncludes: "SnakeWorld.RunResult", kind: "label" }).map((node) => node.text).filter((text) => text && text !== "返回主页");
+    const shot = await runner.shot("snake-result");
+    return { retried, backButtonAt: [Math.round(back.center.x), Math.round(back.center.y)], lines, shot };
+  });
+  return runner.step("「返回主页」回首屏", async () => {
+    await runner.tapText("返回主页");
+    await runner.waitFor("PromoHomeView 回来", (walk) => (selectNodes(walk, { name: "PromoHomeView" }).length > 0 ? true : null), 45_000);
+    const shot = await runner.shot("snake-back-home");
+    return { shot };
+  });
+}
+
+/**
+ * 宿主自有的 ballMove 演示入口（builtin 的 menu 条目）：只验「入口能进 + 房间加入 + 视图挂载」——
+ * 该演示没有退出 UI，退出靠重载预览页（下一个场景会重新登录）。
+ */
+async function scenarioBallMove(runner) {
+  await enterFromSettings(runner, "进入战斗", "builtin", "宿主自有 plugin 的 gameplay 入口（ballMove 演示）");
+  const mounted = await runner.step("BallMoveView 挂载（加入 GameRoom）", async () => {
+    await runner.waitFor(
+      "BallMoveView 的 PlayersLayer",
+      (walk) => (selectNodes(walk, { name: "PlayersLayer" }).length > 0 || selectNodes(walk, { name: "BallMoveView" }).length > 0 ? true : null),
+      90_000,
+    );
+    const shot = await runner.shot("ballmove");
+    return { shot, note: "ballMove 是无文本的画布演示，判据是 PlayersLayer/BallMoveView 节点挂载" };
+  });
+  await runner.step("重载预览页退出演示（该入口无退出 UI）", async () => {
+    await runner.client.send("Page.reload", { ignoreCache: false });
+    await sleep(3_000);
+    return { reloaded: true };
+  });
+  return mounted;
+}
+
 // ---------- 入口 ----------
 
 async function main() {
@@ -301,8 +551,13 @@ async function main() {
       });
     }
     await client.evaluate(consoleHookSource);
-    const scenarios = options.scenario === "all" ? ["home", "settings", "redeem", "tally"] : [options.scenario];
-    const table = { home: scenarioHome, settings: scenarioSettings, redeem: scenarioRedeem, tally: scenarioTally };
+    const scenarios = options.scenario === "all" ? ALL_SEQUENCE : [options.scenario];
+    const table = {
+      home: scenarioHome, settings: scenarioSettings, redeem: scenarioRedeem, tally: scenarioTally,
+      cosmetic: scenarioCosmetic, arena: scenarioArena, arenaCapture: scenarioArenaCapture,
+      arenaDuel: scenarioArenaDuel, arenaShop: scenarioArenaShop,
+      snake: scenarioSnake, ballMove: scenarioBallMove,
+    };
     for (const name of scenarios) await table[name](runner);
     report.ok = true;
   } catch (error) {

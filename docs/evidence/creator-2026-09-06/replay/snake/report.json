@@ -1,0 +1,179 @@
+{
+  "tool": "tools/creator-preview/run.mjs",
+  "scenario": "snake",
+  "startedAt": "2026-09-06T10:56:37.337Z",
+  "options": {
+    "scenario": "snake",
+    "out": "/private/tmp/claude-501/-Volumes-KimData-work-gameStarterKit/6ceedd07-ccda-4b53-94e5-24758a423bb2/scratchpad/preview/snake",
+    "code": "WELCOME2026",
+    "format": "jpeg",
+    "devtools": "http://127.0.0.1:9222",
+    "preview": "http://localhost:7456",
+    "scene": null,
+    "bootTimeoutMs": 300000,
+    "stepTimeoutMs": 20000,
+    "reuse": true
+  },
+  "scene": "33a6cd88-ca61-42f3-97e1-6b18a9096a34",
+  "ok": true,
+  "steps": [
+    {
+      "name": "点首屏「设置」",
+      "ok": true,
+      "startedAt": "2026-09-06T10:56:37.393Z",
+      "detail": {
+        "tapped": "设置",
+        "at": [
+          973,
+          90
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T10:56:37.465Z"
+    },
+    {
+      "name": "设置面板与插件入口",
+      "ok": true,
+      "startedAt": "2026-09-06T10:56:37.465Z",
+      "detail": {
+        "entries": [
+          {
+            "label": "竞技场",
+            "pluginId": "arena"
+          },
+          {
+            "label": "占领赛",
+            "pluginId": "arena"
+          },
+          {
+            "label": "决斗",
+            "pluginId": "arena"
+          },
+          {
+            "label": "竞技场商店",
+            "pluginId": "arenaShop"
+          },
+          {
+            "label": "进入战斗",
+            "pluginId": "builtin"
+          },
+          {
+            "label": "兑换码",
+            "pluginId": "redeem"
+          },
+          {
+            "label": "贪吃蛇大作战",
+            "pluginId": "snake"
+          },
+          {
+            "label": "衣柜",
+            "pluginId": "snakeCosmetic"
+          },
+          {
+            "label": "点数赛",
+            "pluginId": "tally"
+          }
+        ],
+        "shot": "01-settings.jpg"
+      },
+      "screenshots": [
+        "01-settings.jpg"
+      ],
+      "finishedAt": "2026-09-06T10:56:37.812Z"
+    },
+    {
+      "name": "进入「贪吃蛇大作战 · snake」（宿主自有 gameplay plugin：默认玩法）",
+      "ok": true,
+      "startedAt": "2026-09-06T10:56:37.812Z",
+      "detail": {
+        "tapped": "进入 @ /^贪吃蛇大作战\\s+·\\s+snake$/u",
+        "at": [
+          947,
+          664
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T10:56:37.902Z"
+    },
+    {
+      "name": "SnakeWorld 挂载并开跑（HUD 出现）",
+      "ok": true,
+      "startedAt": "2026-09-06T10:56:37.902Z",
+      "detail": {
+        "hud": [
+          "准备 3",
+          "保护 5s",
+          "1. AI-1 0",
+          "2. AI-10 0",
+          "3. AI-11 0",
+          "4. AI-12 0",
+          "5. AI-13 0",
+          "6. AI-14 0",
+          "7. AI-15 0",
+          "8. AI-16 0",
+          "9. AI-2 0",
+          "10. AI-3 0"
+        ],
+        "shot": "02-snake-run.jpg"
+      },
+      "screenshots": [
+        "02-snake-run.jpg"
+      ],
+      "finishedAt": "2026-09-06T10:56:38.635Z"
+    },
+    {
+      "name": "点「结束本次」→ 确认框",
+      "ok": true,
+      "startedAt": "2026-09-06T10:56:38.635Z",
+      "detail": {
+        "shot": "03-snake-end-confirm.jpg"
+      },
+      "screenshots": [
+        "03-snake-end-confirm.jpg"
+      ],
+      "finishedAt": "2026-09-06T10:56:39.053Z"
+    },
+    {
+      "name": "确认结束 → 结算页",
+      "ok": true,
+      "startedAt": "2026-09-06T10:56:39.053Z",
+      "detail": {
+        "retried": true,
+        "backButtonAt": [
+          846,
+          587
+        ],
+        "lines": [
+          "本次游玩结束",
+          "原因：explicitExit",
+          "本局：0 秒 · 0 分 · 0 击杀",
+          "最长 80 · 星星 0 · 磁铁 0",
+          "本局不计奖励（时长不足或无有效操作）"
+        ],
+        "shot": "04-snake-result.jpg"
+      },
+      "screenshots": [
+        "04-snake-result.jpg"
+      ],
+      "finishedAt": "2026-09-06T10:56:54.560Z"
+    },
+    {
+      "name": "「返回主页」回首屏",
+      "ok": true,
+      "startedAt": "2026-09-06T10:56:54.560Z",
+      "detail": {
+        "shot": "05-snake-back-home.jpg"
+      },
+      "screenshots": [
+        "05-snake-back-home.jpg"
+      ],
+      "finishedAt": "2026-09-06T10:56:55.380Z"
+    }
+  ],
+  "console": [],
+  "tab": {
+    "id": "3EDF9F214F39BA1CAA8B5DCF5072B462",
+    "created": false
+  },
+  "finishedAt": "2026-09-06T10:56:55.382Z"
+}
