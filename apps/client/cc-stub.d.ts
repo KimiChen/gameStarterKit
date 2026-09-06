@@ -27,8 +27,12 @@ declare module "cc" {
     }
 
     export class Graphics {
+        static LineJoin: { BEVEL: number; ROUND: number; MITER: number };
+        static LineCap: { BUTT: number; ROUND: number; SQUARE: number };
         node: Node;
         lineWidth: number;
+        lineJoin: number;
+        lineCap: number;
         fillColor: Color;
         strokeColor: Color;
         clear(): void;
