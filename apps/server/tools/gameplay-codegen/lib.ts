@@ -274,7 +274,9 @@ function discoverGameplaySources(root: string): readonly GameplaySource[] {
       }
     }
   }
-  return sources;
+  // 三个发现根汇总后按 id 全局排序：生成物的键序只取决于 id 集合，⛔ 不取决于玩法来自框架 / 插件 / kit
+  // （kit 的 mode 落在别的根之后会让「id 集合相同、产物字节不同」）。大小写归一撞名由 readGameplayDescriptors 拒绝。
+  return sources.sort((left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0));
 }
 
 export function readGameplayDescriptors(options: GameplayCodegenOptions = {}): readonly GameplayDescriptor[] {

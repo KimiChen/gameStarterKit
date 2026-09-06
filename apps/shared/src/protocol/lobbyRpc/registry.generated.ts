@@ -4,6 +4,8 @@ import type { LobbyRpcRouteMode } from "./defineDomain";
 import { guardRpcValidator, pushRecord } from "./primitives";
 import { validateForceLogoutPush, validateServerNoticePush, type IForceLogoutPush, type IServerNoticePush } from "./coreErrors";
 import type { IPurchaseResult } from "./economy";
+import { validateArenaBoardReq, validateArenaBoardRes, validateArenaCaptureReq, validateArenaCaptureRes, type IArenaBoardReq, type IArenaBoardRes, type IArenaCaptureReq, type IArenaCaptureRes } from "./domains/arena";
+import { validateArenaShopBuyBoostReq, validateArenaShopBuyBoostRes, type IArenaShopBuyBoostReq, type IArenaShopBuyBoostRes } from "./domains/arenaShop";
 import { validateEventsRes, validateGuildEventPush, validateGuildEventsReq, validateGuildJoinReq, validateGuildLeaveReq, validateGuildLeaveRes, validateJoinRes, type IGuildEventPush, type IGuildGetEventsReq, type IGuildGetEventsRes, type IGuildJoinReq, type IGuildJoinRes, type IGuildLeaveReq, type IGuildLeaveRes } from "./domains/guild";
 import { validateMailClaimAttachRes, validateMailClaimReq, validateMailListReq, validateMailListRes, validateMailMarkReadRes, validateMailMarkReq, validateMailNewPush, type IMailClaimAttachReq, type IMailListReq, type IMailListRes, type IMailMarkReadReq, type IMailMarkReadRes, type IMailNewPush } from "./domains/mail";
 import { validateRedeemClaimReq, validateRedeemClaimRes, type IRedeemClaimReq, type IRedeemClaimRes } from "./domains/redeem";
@@ -14,6 +16,8 @@ import { validateGetInfoReq, validateGetInfoRes, validateGetProfileReq, validate
 
 /** 领域全集（生成器删除保护锚 + 向量 sidecar 的域集合闸）。 */
 export const LOBBY_RPC_DOMAINS: readonly string[] = [
+    "arena",
+    "arenaShop",
     "guild",
     "mail",
     "redeem",
@@ -25,6 +29,9 @@ export const LOBBY_RPC_DOMAINS: readonly string[] = [
 
 /** 全量路由契约（服务端 defineRpc 与客户端 WebSocketClient.rpc 的公共类型域） */
 export interface LobbyRpcMap {
+    "arena.board": { req: IArenaBoardReq; res: IArenaBoardRes };
+    "arena.capture": { req: IArenaCaptureReq; res: IArenaCaptureRes };
+    "arenaShop.buyBoost": { req: IArenaShopBuyBoostReq; res: IArenaShopBuyBoostRes };
     "guild.join": { req: IGuildJoinReq; res: IGuildJoinRes };
     "guild.leave": { req: IGuildLeaveReq; res: IGuildLeaveRes };
     "guild.getEvents": { req: IGuildGetEventsReq; res: IGuildGetEventsRes };
@@ -51,6 +58,8 @@ export type RpcRes<T extends LobbyRpcType> = LobbyRpcMap[T]["res"];
 
 /** 幂等写路由子集（mode=idempotent-write 的显式字面量联合——由 metadata 生成，⛔ 非 clientReqId 结构推断） */
 export type LobbyRpcIdemType =
+    | "arena.capture"
+    | "arenaShop.buyBoost"
     | "guild.join"
     | "guild.leave"
     | "mail.claimAttach"
@@ -67,6 +76,9 @@ export type LobbyRpcNaturalWriteType =
 
 /** 路由 → 执行模式（服务端 defineRpc 据此派生 schema/幂等行为，endpoint 不再自填） */
 export const LOBBY_RPC_ROUTE_MODES: { readonly [K in LobbyRpcType]: LobbyRpcRouteMode } = {
+    "arena.board": "query",
+    "arena.capture": "idempotent-write",
+    "arenaShop.buyBoost": "idempotent-write",
     "guild.join": "idempotent-write",
     "guild.leave": "idempotent-write",
     "guild.getEvents": "query",
@@ -89,6 +101,9 @@ export const LOBBY_RPC_ROUTE_MODES: { readonly [K in LobbyRpcType]: LobbyRpcRout
 
 /** 运行时全集：服务端 loader 启动校验 + 契约测试用。新增路由若漏在此处，服务端拒绝启动。 */
 export const ALL_LOBBY_RPC_TYPES: readonly LobbyRpcType[] = [
+    "arena.board",
+    "arena.capture",
+    "arenaShop.buyBoost",
     "guild.join",
     "guild.leave",
     "guild.getEvents",
@@ -112,6 +127,9 @@ export const ALL_LOBBY_RPC_TYPES: readonly LobbyRpcType[] = [
 /** 路由 → 契约版本（§6.11：随 validator 语义变更人工 bump；幂等 v2 记录持久化并 fail-closed 比对，
  *  ⛔ 不进摘要 preimage、不进 Redis key）。缺省 1。 */
 export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number } = {
+    "arena.board": 1,
+    "arena.capture": 1,
+    "arenaShop.buyBoost": 1,
     "guild.join": 1,
     "guild.leave": 1,
     "guild.getEvents": 1,
@@ -134,6 +152,8 @@ export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number
 
 /** 域契约身份（codegen 闸：domains/<域>.ts 的 sha256 变化必须伴随 contractVersion 递增；⛔ 不进 wire）。 */
 export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly contractVersion: number; readonly digest: string } } = {
+    arena: { contractVersion: 1, digest: "b0df3a7d9b48719d53c095f3b1e89347416133dc2c3ae57aff6603f1cbe54a09" },
+    arenaShop: { contractVersion: 2, digest: "2cb9597e5558094b464d70a16a03a8a63c95c86fa2fbd523cc96d5b93c63dd73" },
     guild: { contractVersion: 1, digest: "4a996a135ffd900eb39c0b83697ee03d4d4587829da88ce537f363d56ceb4bde" },
     mail: { contractVersion: 1, digest: "d6401c80a558ce24849ad9c038bd34e2adc09bd9b006abef773cbecf409b7ab4" },
     redeem: { contractVersion: 1, digest: "e7e74dc98acf6cfb1d5bfd0261930d6bbc5bb07e2efa79dec0e91be485596514" },
@@ -157,6 +177,9 @@ export const LOBBY_RPC_INSPECTS: { readonly [K in LobbyRpcType]?: string } = {
 
 /** Route request validators: exact fields + finite/range checks, shared by client and server adapters. */
 export const LOBBY_RPC_REQUEST_VALIDATORS: { readonly [K in LobbyRpcType]: RuntimeValidator<RpcReq<K>> } = {
+    "arena.board": guardRpcValidator("payload", validateArenaBoardReq),
+    "arena.capture": guardRpcValidator("payload", validateArenaCaptureReq),
+    "arenaShop.buyBoost": guardRpcValidator("payload", validateArenaShopBuyBoostReq),
     "guild.join": guardRpcValidator("payload", validateGuildJoinReq),
     "guild.leave": guardRpcValidator("payload", validateGuildLeaveReq),
     "guild.getEvents": guardRpcValidator("payload", validateGuildEventsReq),
@@ -179,6 +202,9 @@ export const LOBBY_RPC_REQUEST_VALIDATORS: { readonly [K in LobbyRpcType]: Runti
 
 /** Route response validators. */
 export const LOBBY_RPC_RESPONSE_VALIDATORS: { readonly [K in LobbyRpcType]: RuntimeValidator<RpcRes<K>> } = {
+    "arena.board": guardRpcValidator("response", validateArenaBoardRes),
+    "arena.capture": guardRpcValidator("response", validateArenaCaptureRes),
+    "arenaShop.buyBoost": guardRpcValidator("response", validateArenaShopBuyBoostRes),
     "guild.join": guardRpcValidator("response", validateJoinRes),
     "guild.leave": guardRpcValidator("response", validateGuildLeaveRes),
     "guild.getEvents": guardRpcValidator("response", validateEventsRes),
@@ -235,6 +261,8 @@ export const RPC_ERR_CODES = [
     "INTERNAL",
     "OPERATION_CONFLICT",
     "OPERATION_RESULT_EXPIRED",
+    "ARENA_TILE_TAKEN",
+    "ARENA_SHOP_TILE_NOT_OWNED",
     "REDEEM_CODE_INVALID",
     "REDEEM_CODE_USED",
     "ROOM_CODE_UNAVAILABLE",

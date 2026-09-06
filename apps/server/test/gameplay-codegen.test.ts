@@ -179,6 +179,11 @@ function createFixture(): { readonly root: string; readonly options: GameplayCod
   for (const [id, relative] of GAMEPLAY_SOURCES) {
     if (relative.startsWith("apps/shared/schema/gameplays/")) continue;
     fs.cpSync(sourceDirOf(id), path.join(root, relative), { recursive: true });
+    // kit 的 mode 还要带上所属 kit 的 kit.json：第三发现根对「有 gameplays/ 没 kit.json 的目录」fail-closed。
+    const kitMatch = /^apps\/kits\/([^/]+)\//u.exec(relative);
+    if (kitMatch) {
+      fs.copyFileSync(path.join(KITS_DIR, kitMatch[1], "kit.json"), path.join(root, "apps/kits", kitMatch[1], "kit.json"));
+    }
   }
   // wire catalog 的两个额外单源：core 消息名表（protocol/messages.ts）与各玩法手写 wire.ts。
   fs.mkdirSync(path.join(root, "apps/shared/src/protocol"), { recursive: true });

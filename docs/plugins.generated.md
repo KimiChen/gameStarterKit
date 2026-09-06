@@ -18,6 +18,8 @@ capability fragment 的合并规则由 `npm run verify:inventory` fail-closed �
 
 | plugin | class | category | 状态 | 权威文档 |
 | --- | --- | --- | --- | --- |
+| `arena` | kit | extra | registered | [apps/kits/arena/README.md](../apps/kits/arena/README.md) |
+| `arenaShop` | plugin | extra | registered | [apps/plugins/arenaShop/README.md](../apps/plugins/arenaShop/README.md) |
 | `builtin` | plugin | core | registered | [docs/CLIENT.md](./CLIENT.md) |
 | `redeem` | plugin | extra | registered | [apps/plugins/redeem/README.md](../apps/plugins/redeem/README.md) |
 | `snake` | plugin | core | registered | [apps/plugins/snake/README.md](../apps/plugins/snake/README.md) |

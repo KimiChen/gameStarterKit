@@ -1,6 +1,6 @@
 /**
  * kit SQL 迁移账本回归（真实 MySQL，独立临时库；docs/KIT.md §5）：
- * - fresh 库跑一次 db:bootstrap（拿到 kit_migration 账本表 + db_bootstrap 租约行；生成目录为空 ⇒ 0 个 kit）；
+ * - fresh 库跑一次 db:bootstrap（拿到 kit_migration 账本表 + db_bootstrap 租约行；汇报的 kit 数 = 生成目录登记数）；
  * - 用 fixture kit `kfix`（一张 per-zone 表 + 一张 global 表）直接驱动 applyKitMigrations：
  *   首跑应用 1 个文件、账本 1 行、表形态校验通过；再跑应用 0、跳过 1；
  * - 改动已应用文件 ⇒ fail-closed 抛错，账本与表都不动；
@@ -20,6 +20,11 @@ import mysql from "mysql2/promise";
 
 import { MYSQL_URL } from "../../src/core/infra/config";
 import type { ServerKitCatalogEntry } from "../../src/kits/catalogTypes";
+import { SERVER_KIT_CATALOG } from "../../src/kits/catalog.generated";
+
+/** 生成目录登记的 kit id：throwaway 库的 bootstrap 会把它们的迁移入账，fixture 目录里没有它们 ⇒ 账本孤儿（按 id 排序）。 */
+const REGISTERED_KIT_IDS = SERVER_KIT_CATALOG.map((kit) => kit.id).sort();
+const orphans = (...extra: string[]): string[] => [...REGISTERED_KIT_IDS, ...extra].sort();
 import { applyKitMigrations, sha256Hex, verifyKitTableShapes } from "../../tools/kit-migrations";
 import { dropKitTables } from "../../tools/plugin/dropData";
 
@@ -114,7 +119,8 @@ test("kit 迁移账本：应用两遍第二遍零 DDL、改文件 fail-closed、
   try {
     const bootstrap = runBootstrap(dbName);
     assert.equal(bootstrap.status, 0, `bootstrap 应成功\n${bootstrap.stdout}\n${bootstrap.stderr}`);
-    assert.match(bootstrap.stdout, /kit 迁移：0 个 kit/u, "生成目录为空时 bootstrap 汇报 0 个 kit");
+    // 汇报的 kit 数 = 生成目录登记的 kit 数（样本 arena 入库后为 1；目录为空时为 0），⛔ 不写死。
+    assert.match(bootstrap.stdout, new RegExp(`kit 迁移：${SERVER_KIT_CATALOG.length} 个 kit`, "u"), "bootstrap 汇报生成目录里的 kit 数");
 
     const conn = await mysql.createConnection(connectionOptions(dbName));
     try {
@@ -123,8 +129,8 @@ test("kit 迁移账本：应用两遍第二遍零 DDL、改文件 fail-closed、
         conn, dbName, catalog: [KFIX], holder: "int-test",
         readSqlFile: fixture({ "kfix/sql/001-init.sql": INIT_SQL }),
       });
-      assert.deepEqual(first, { applied: [{ kitId: "kfix", file: "sql/001-init.sql" }], skipped: 0, orphanLedgerKits: [] });
-      const [ledger] = await conn.query<LedgerRow[]>("SELECT kit_id, file, sha256 FROM kit_migration ORDER BY kit_id, file");
+      assert.deepEqual(first, { applied: [{ kitId: "kfix", file: "sql/001-init.sql" }], skipped: 0, orphanLedgerKits: orphans() });
+      const [ledger] = await conn.query<LedgerRow[]>("SELECT kit_id, file, sha256 FROM kit_migration WHERE kit_id = 'kfix' ORDER BY kit_id, file");
       assert.deepEqual(ledger.map((r) => [r.kit_id, r.file, r.sha256]), [["kfix", "sql/001-init.sql", sha256Hex(INIT_SQL)]]);
       const [seed] = await conn.query<mysql.RowDataPacket[]>("SELECT name FROM k_kfix_world WHERE world_id = 1");
       assert.equal(seed[0]?.name, "seed");
@@ -141,7 +147,7 @@ test("kit 迁移账本：应用两遍第二遍零 DDL、改文件 fail-closed、
         conn, dbName, catalog: [KFIX], holder: "int-test",
         readSqlFile: fixture({ "kfix/sql/001-init.sql": INIT_SQL }),
       });
-      assert.deepEqual(second, { applied: [], skipped: 1, orphanLedgerKits: [] });
+      assert.deepEqual(second, { applied: [], skipped: 1, orphanLedgerKits: orphans() });
 
       // ③ 追加第二个文件只应用新文件；账本增 1 行
       const withAlter: ServerKitCatalogEntry = { ...KFIX, sqlFiles: ["sql/001-init.sql", "sql/002-hp.sql"] };
@@ -149,7 +155,7 @@ test("kit 迁移账本：应用两遍第二遍零 DDL、改文件 fail-closed、
         conn, dbName, catalog: [withAlter], holder: "int-test",
         readSqlFile: fixture({ "kfix/sql/001-init.sql": INIT_SQL, "kfix/sql/002-hp.sql": ALTER_SQL }),
       });
-      assert.deepEqual(third, { applied: [{ kitId: "kfix", file: "sql/002-hp.sql" }], skipped: 1, orphanLedgerKits: [] });
+      assert.deepEqual(third, { applied: [{ kitId: "kfix", file: "sql/002-hp.sql" }], skipped: 1, orphanLedgerKits: orphans() });
       const [hp] = await conn.query<mysql.RowDataPacket[]>(
         "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'k_kfix_tile' AND COLUMN_NAME = 'hp'",
         [dbName],
@@ -164,7 +170,7 @@ test("kit 迁移账本：应用两遍第二遍零 DDL、改文件 fail-closed、
         }),
         /⛔ 已应用的迁移文件被改动：kit "kfix" sql\/001-init\.sql/u,
       );
-      const [ledgerAfter] = await conn.query<CountRow[]>("SELECT COUNT(*) AS n FROM kit_migration");
+      const [ledgerAfter] = await conn.query<CountRow[]>("SELECT COUNT(*) AS n FROM kit_migration WHERE kit_id = 'kfix'");
       assert.equal(Number(ledgerAfter[0]?.n), 2);
 
       // ⑤ 形态校验：真 INFORMATION_SCHEMA 下按 zone 判
@@ -222,7 +228,7 @@ test("kit 迁移账本：应用两遍第二遍零 DDL、改文件 fail-closed、
         conn, dbName, catalog: [withAlter], holder: "int-test",
         readSqlFile: fixture({ "kfix/sql/001-init.sql": INIT_SQL, "kfix/sql/002-hp.sql": ALTER_SQL }),
       });
-      assert.deepEqual(orphan, { applied: [], skipped: 2, orphanLedgerKits: ["kbad"] });
+      assert.deepEqual(orphan, { applied: [], skipped: 2, orphanLedgerKits: orphans("kbad") });
 
       // ⑨ 中途失败 → 账本记进度 → 重跑从失败那条续跑（⛔ 不重跑已成功的语句）
       const files3 = {
@@ -242,7 +248,7 @@ test("kit 迁移账本：应用两遍第二遍零 DDL、改文件 fail-closed、
       // 排除冲突原因（测试里直接删掉冲突行；真实场景是修库或人工核对）后重跑：从第 2 条续跑，第 1 条不重跑（否则 world_id=2 会重复主键报错）
       await conn.query("DELETE FROM k_kfix_world WHERE world_id = 1");
       const resumed = await applyKitMigrations({ conn, dbName, catalog: [withSeed], holder: "int-test", readSqlFile: fixture(files3) });
-      assert.deepEqual(resumed, { applied: [{ kitId: "kfix", file: "sql/003-seed.sql" }], skipped: 2, orphanLedgerKits: ["kbad"] });
+      assert.deepEqual(resumed, { applied: [{ kitId: "kfix", file: "sql/003-seed.sql" }], skipped: 2, orphanLedgerKits: orphans("kbad") });
       const [worlds] = await conn.query<mysql.RowDataPacket[]>("SELECT world_id FROM k_kfix_world ORDER BY world_id");
       assert.deepEqual(worlds.map((r) => Number(r.world_id)), [1, 2, 3]);
       const [progressAfter] = await conn.query<ProgressRow[]>(
@@ -250,7 +256,7 @@ test("kit 迁移账本：应用两遍第二遍零 DDL、改文件 fail-closed、
       );
       assert.deepEqual([Number(progressAfter[0]?.statement_count), Number(progressAfter[0]?.applied_statements)], [3, 3]);
       const fourth = await applyKitMigrations({ conn, dbName, catalog: [withSeed], holder: "int-test", readSqlFile: fixture(files3) });
-      assert.deepEqual(fourth, { applied: [], skipped: 3, orphanLedgerKits: ["kbad"] });
+      assert.deepEqual(fourth, { applied: [], skipped: 3, orphanLedgerKits: orphans("kbad") });
 
       // ⑩ --drop-data：kit 内父子外键、父表按名排在子表前 ⇒ 仍能整批 drop，账本行一起清
       const kfk: ServerKitCatalogEntry = {

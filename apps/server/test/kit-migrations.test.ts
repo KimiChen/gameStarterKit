@@ -5,6 +5,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { ServerKitCatalogEntry } from "../src/kits/catalogTypes";
+import { SERVER_KIT_CATALOG } from "../src/kits/catalog.generated";
 import {
   FRAMEWORK_GLOBAL_TABLES, FRAMEWORK_PER_ZONE_TABLES, allTables, assertKitTablePrefixesUnique, globalTables, kitTablePrefix, perZoneTables,
 } from "../src/core/infra/zoneTables";
@@ -54,8 +55,12 @@ test("zoneTables：框架表 ∪ kit 表按 zone 汇入，catalog 可注入", ()
   assert.deepEqual(perZoneTables([KFIX]), [...FRAMEWORK_PER_ZONE_TABLES, "k_kfix_tile"]);
   assert.deepEqual(globalTables([KFIX]), [...FRAMEWORK_GLOBAL_TABLES, "k_kfix_world"]);
   assert.deepEqual(new Set(allTables([KFIX])), new Set([...FRAMEWORK_PER_ZONE_TABLES, ...FRAMEWORK_GLOBAL_TABLES, "k_kfix_tile", "k_kfix_world"]));
-  // 生成物缺省：当前目录为空 ⇒ 全集 = 框架表
-  assert.equal(allTables().length, FRAMEWORK_PER_ZONE_TABLES.length + FRAMEWORK_GLOBAL_TABLES.length);
+  // 生成物缺省：全集 = 框架表 ∪ 已登记 kit（真仓当前只有 arena）的表
+  assert.equal(
+    allTables().length,
+    FRAMEWORK_PER_ZONE_TABLES.length + FRAMEWORK_GLOBAL_TABLES.length + SERVER_KIT_CATALOG.reduce((sum, kit) => sum + kit.sqlTables.length, 0),
+  );
+  assert.ok(perZoneTables().includes("k_arena_board"), "arena kit 的 per-zone 表按 zone 汇入");
 });
 
 test("zoneTables：只差大小写的 kit id 共用表前缀 ⇒ fail-closed", () => {

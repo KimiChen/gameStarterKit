@@ -2,7 +2,28 @@
 import { type KitCatalogEntry, type KitEffectSpec } from "./catalogTypes";
 
 /** 已登记 kit（按 id 排序）。 */
-export const KIT_CATALOG: readonly KitCatalogEntry[] = [];
+export const KIT_CATALOG: readonly KitCatalogEntry[] = [
+    {
+        id: "arena",
+        version: "1.0.0",
+        api: {
+            board: { version: 1, minSupported: 1 },
+            ranking: { version: 1, minSupported: 1 },
+        },
+        modes: [
+            { id: "arenaCapture", constantName: "ArenaCapture" },
+            { id: "arenaDuel", constantName: "ArenaDuel" },
+        ],
+        domains: [
+            "arena",
+        ],
+        effects: [
+            { kitId: "arena", name: "trophy", userKey: "stats", field: "trophies", max: 1000000 },
+        ],
+    },
+];
 
 /** `kit:<kitId>:<name>` → effect 规格（economy.ts validateGrant 与 Lua 镜像的共同真源）。 */
-export const KIT_EFFECT_KINDS: Readonly<Record<string, KitEffectSpec>> = {};
+export const KIT_EFFECT_KINDS: Readonly<Record<string, KitEffectSpec>> = {
+    "kit:arena:trophy": { kitId: "arena", name: "trophy", userKey: "stats", field: "trophies", max: 1000000 },
+};

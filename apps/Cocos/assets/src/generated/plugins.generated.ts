@@ -36,6 +36,8 @@ export interface GeneratedPluginDescriptor {
 
 /** plugin 全集（生成器删除保护锚）。 */
 export const PLUGIN_IDS: readonly string[] = [
+    "arena",
+    "arenaShop",
     "builtin",
     "redeem",
     "snake",
@@ -44,6 +46,32 @@ export const PLUGIN_IDS: readonly string[] = [
 ];
 
 export const GENERATED_PLUGINS: readonly GeneratedPluginDescriptor[] = [
+    {
+        id: "arena",
+        resident: false,
+        load: () => import("../kits/arena/index").then((m) => m.createPluginModule()),
+        dependencies: [],
+        routes: [
+            { id: "arena", view: "ArenaBoard", group: "authenticated", restore: "discard" },
+        ],
+        menu: [
+            { entryId: "board", pluginId: "arena", label: "竞技场", labelKey: "menu.arena.board", launch: { kind: "route", routeId: "arena" } },
+            { entryId: "capture", pluginId: "arena", label: "占领赛", labelKey: "menu.arena.capture", launch: { kind: "gameplay", gameplayId: "arenaCapture" } },
+            { entryId: "duel", pluginId: "arena", label: "决斗", labelKey: "menu.arena.duel", launch: { kind: "gameplay", gameplayId: "arenaDuel" } },
+        ],
+    },
+    {
+        id: "arenaShop",
+        resident: false,
+        load: () => import("../plugins/arenaShop/index").then((m) => m.createPluginModule()),
+        dependencies: ["arena"],
+        routes: [
+            { id: "arenaShop", view: "ArenaShop", group: "authenticated", restore: "discard" },
+        ],
+        menu: [
+            { entryId: "arenaShop", pluginId: "arenaShop", label: "竞技场商店", labelKey: "menu.arenaShop", launch: { kind: "route", routeId: "arenaShop" } },
+        ],
+    },
     {
         id: "builtin",
         resident: true,
@@ -109,6 +137,10 @@ export const GENERATED_PLUGINS: readonly GeneratedPluginDescriptor[] = [
 
 /** 全仓菜单贡献（已按 pluginId → entryId 排序；⛔ 不含位置——首屏顺序见 GENERATED_HOST.home）。 */
 export const GENERATED_MENU_CONTRIBUTIONS: readonly GeneratedMenuContribution[] = [
+    { entryId: "board", pluginId: "arena", label: "竞技场", labelKey: "menu.arena.board", launch: { kind: "route", routeId: "arena" } },
+    { entryId: "capture", pluginId: "arena", label: "占领赛", labelKey: "menu.arena.capture", launch: { kind: "gameplay", gameplayId: "arenaCapture" } },
+    { entryId: "duel", pluginId: "arena", label: "决斗", labelKey: "menu.arena.duel", launch: { kind: "gameplay", gameplayId: "arenaDuel" } },
+    { entryId: "arenaShop", pluginId: "arenaShop", label: "竞技场商店", labelKey: "menu.arenaShop", launch: { kind: "route", routeId: "arenaShop" } },
     { entryId: "ballMove", pluginId: "builtin", label: "进入战斗", labelKey: "menu.enterBattle", launch: { kind: "gameplay", gameplayId: "ballMove" } },
     { entryId: "redeem", pluginId: "redeem", label: "兑换码", labelKey: "menu.redeem", launch: { kind: "route", routeId: "redeem" } },
     { entryId: "snake", pluginId: "snake", label: "贪吃蛇大作战", labelKey: "menu.snakeOff", launch: { kind: "gameplay", gameplayId: "snake" } },
