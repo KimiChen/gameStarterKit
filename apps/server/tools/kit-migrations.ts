@@ -302,8 +302,10 @@ async function acquireBootstrapLease(conn: SqlConn, holder: string, leaseSeconds
 }
 
 async function releaseBootstrapLease(conn: SqlConn, holder: string): Promise<void> {
+  // 回退 1 秒而不是 = NOW(3)：acquire 的判据是 `expires_at < NOW(3)`，同一毫秒内「释放 → 立刻再抢」会因相等而误判
+  //（集成测试实证：连续两次 applyKitMigrations 偶发「租约被自己持有」）。
   await conn.query(
-    "UPDATE singleton_lease SET expires_at = NOW(3) WHERE lease_name = ? AND holder = ?",
+    "UPDATE singleton_lease SET expires_at = NOW(3) - INTERVAL 1 SECOND WHERE lease_name = ? AND holder = ?",
     [DB_BOOTSTRAP_LEASE, holder],
   );
 }
