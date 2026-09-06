@@ -1,13 +1,14 @@
 # Creator 真机预览逐包实证（2026-09-06）
 
 把仓内**每一个 kit / plugin 的每一个入口**在 Cocos Creator 3.8.8 桌面预览（真实引擎）里挨个走一遍，
-经 Chrome DevTools Protocol（`--remote-debugging-port=9222`）驱动，一次会话跑完 13 个场景、61 步、39 张截图，
-`replay-all/report.json` 是判据真源。生成器与用法见 [tools/creator-preview/README.md](../../../tools/creator-preview/README.md)；
+经 Chrome DevTools Protocol（`--remote-debugging-port=9222`）驱动，一次会话跑完 13 个场景、61 步；
+修复前后各跑一遍（`replay-all/` 与 `replay-fixed/`），两份 `report.json` 是判据真源。生成器与用法见 [tools/creator-preview/README.md](../../../tools/creator-preview/README.md)；
 ⛔ 本目录是人工触发的证据，不进 `verify:core` / `verify:all`。
 
 | 目录 | 内容 |
 | --- | --- |
-| `replay-all/` | 一次会话跑完的全量重放（`run.mjs all --code DEVTEST`），**ok=true、页面 console 零 error** |
+| `replay-all/` | **修复前**的全量重放（`run.mjs all --code DEVTEST`），ok=true、console 零 error；下面三条问题就是在它里面暴露的 |
+| `replay-fixed/` | **修复后**的全量重放（同一套场景，13 场景 61 步 40 图），ok=true、console 零 error：snake 首击不再需要重试（`retried: false`）、ballMove 有「离开」按钮并回首屏、衣柜可翻页 |
 | `replay-arenashop-insufficient/` | 补充对照：dev 账号 0 金时买加固 → 「金币不足」（`tx.debit` 经主账本拒绝） |
 
 ## 环境
@@ -29,7 +30,7 @@
 | builtin | route `loginNotice` | 登录页 `btn_notice` → 公告（`tge_tip`）读到「开服狂欢 / 版本更新 / 例行维护」→ 关闭 | ✅ `loginNotice` |
 | builtin | route `promoHome` | `PromoHomeView` 挂载、卡片含「协议 game v8 · lobby v7 · 已登记玩法 8」 | ✅ `home` |
 | builtin | route `settings` | 设置面板列出**全部 9 个入口**（竞技场 / 占领赛 / 决斗 / 竞技场商店 / 进入战斗 / 兑换码 / 贪吃蛇大作战 / 衣柜 / 点数赛） | ✅ `settings` |
-| builtin | menu `ballMove`（gameplay） | 加入 GameRoom、`BallMoveView` 挂载（该演示无文本、无退出 UI，退出靠重载页） | ✅ `ballMove` |
+| builtin | menu `ballMove`（gameplay） | 加入 GameRoom、`BallMoveView` 挂载（画布演示无文本）；修复后左上角有「离开」，点它回首屏 | ✅ `ballMove` |
 | builtin | route `confirm` | 只在错误分支弹（区服/公告加载失败等）；本轮两个弹窗都成功打开，故未触发 | ⚪ 未覆盖（无错误可造） |
 | builtin | route `home` | 旧版首屏；`loginFlow` 的 authenticated base 已固定为 `promoHome`，代码路径不可达 | ⚪ 不可达（留存视图） |
 | snake（宿主自有 gameplay） | menu `snake` | `SnakeWorld` HUD → 「结束本次」→ 确认框 → 结算页「本次游玩结束 / 原因：explicitExit …」→「返回主页」 | ✅ `snake` |
@@ -59,16 +60,20 @@
 两者都只动开发库/开发 Redis，⛔ 未改任何产品代码。种完 ② 需重启游戏服——`cosmeticProfile` 每进程只按 uid 从 Redis
 hydrate 一次（`hydrated` Set），否则内存档会盖过种子。
 
-## 本轮暴露的问题（都已如实登记，⛔ 未改产品代码）
+## 暴露的问题与处置
 
-1. **snake 结算确认框的首击会被吞**：确认框刚出现就点「结束本次」，框关了但局没结束。生成器改成等一拍再点、
-   仍无结算就重开重点一次并把 `retried` 写进报告——本轮 `retried: true`，即真机下这一击确实需要重试。
-2. **衣柜只渲染前 6 行且没有翻页/滚动控件**（`VISIBLE_ROWS = 6`、`scrollTop` 恒 0，见
-   `apps/client/src/plugins/snakeCosmetic/view/WardrobeView.ts`）：16 件皮肤里排在 6 行之后的（含全部碎片合成皮肤
-   401/403/411）在「全部」筛选下够不着，只能靠「可合成 / 未拥有」筛选绕过。
-3. **衣柜的筛选状态跨次打开保留**：上次停在「可合成」，下次打开还停在那儿（可能一行都没有），
-   容易被误判成「面板空了」。生成器已在挂载后先切回「全部」再断言。
-4. **碎片合成类皮肤的业务数据仍是草稿**：`skinBusinessCatalog.generated.ts` 里 401/403/411 的
-   `fragmentItemId` 是 `unavailable`，`acquisition` 却是 `fragmentCraft` —— 碎片余额够时仍能合成（本轮实测 401
-   合成成功、碎片 10 → 0），但「碎片来源」这条链在业务数据上是断的。
-5. **ballMove 演示没有退出 UI**：只能验「入口能进 + 房间加入 + 视图挂载」，退出靠重载预览页。
+真问题 3 条，**都已修复并在真机复验**（`replay-fixed/`）；另有 2 条是我当轮的误判，已撤回并写明依据。
+
+| # | 问题 | 根因 | 修复 | 复验 |
+| --- | --- | --- | --- | --- |
+| 1 | **snake 结算确认框首击被吞**：点「结束本次」后框关了、局没结束，要再点一次才生效 | 服务端对 `runId` 不匹配或已 `Finalized` 的 `c2s.snake.endRun` **静默丢弃**（`apps/server/src/rooms/modes/snake/index.ts` SnakeEndRun 分支），客户端却已乐观关框 | 客户端加结束请求看门狗（`SnakeGameplay`）：1.5 s 内没进终局就用**当前** runId 重发一次；两次都没生效就把确认框还给玩家，⛔ 不再静默。单测钉住重发/兜底/终局收摊三条路径 | `replay-fixed/` 里 `retried: false`（首击即生效） |
+| 2 | **衣柜只渲染前 6 行、没有翻页**：16 件皮肤里 10 件在 UI 上够不着 | `WardrobeView` 的 `VISIBLE_ROWS = 6` 而 `scrollTop` 恒 0，没有任何翻页控件 | 加「上一页 / 下一页」（到头置灰），换筛选时回到第一页 | 真机翻页实测：`1-6 / 16` → `7-12 / 16` → `11-16 / 16`，401/403/411/701 都能到达 |
+| 3 | **ballMove 演示没有退出 UI**：进去就只能重载页面 | 该演示的 `BallMoveGameplay` 根本没有 host / `requestExit` 通道 | 输入加 `leave`、gameplay 接 `GameplayInstanceHost`（与 tally / arena 同形）、模块装配传 host、视图左上角加「离开」；单测钉住「只请求一次」 | `replay-fixed/` 的 ballMove 场景：`hasExitButton: true`，点「离开」回首屏 |
+
+撤回的两条（当轮误判，留档以免再犯）：
+
+- ~~衣柜筛选状态跨次打开保留~~：`WardrobeLogic` 每次 `onOpen` 新建、`filter` 缺省 `all`，实测「切到可合成 → 关闭 → 重开」
+  回到 `1-6 / 16`。我当时看到的「保留」其实是**面板压根没关**（上一次重放失败后停在那儿）。
+- ~~碎片皮肤 `fragmentItemId: unavailable` 是断链~~：`skinBusinessCatalog.ts` 明确把 `ownershipItemId` /
+  `fragmentItemId` / `price` 列为**尚未拍板、填值即拒**的三项（fail-closed 机检），而合成本来就按 per-skin 的
+  `fragmentBalances` 结算——本轮 401 合成成功正是设计内行为，不是数据断链。
