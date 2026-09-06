@@ -1,0 +1,5 @@
+{
+  "name": "@game/plugins-scope",
+  "private": true,
+  "type": "module"
+}

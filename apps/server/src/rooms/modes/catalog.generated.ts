@@ -5,7 +5,7 @@ import { registerArenaDuelGameMode } from "./arenaDuel/index";
 import { registerBallMoveGameMode } from "./ballMove/index";
 import { registerIdleGameMode } from "./idle/index";
 import { registerSnakeGameMode } from "./snake/index";
-import { registerTallyGameMode } from "./tally/index";
+import { registerTallyGameMode } from "../../../../plugins/tally/server/index";
 
 /** 已装配服务端 GameMode 的玩法 id（= canonical GameplayModeId；fixture 玩法不在此表）。 */
 export const GENERATED_GAME_MODE_IDS: readonly string[] = [

@@ -10,7 +10,7 @@
     "start": "tsx src/index.ts",
     "smoke": "tsx test/smoke.ts",
     "smoke:framework": "tsx tools/smoke.ts",
-    "test": "node --import tsx --test --test-concurrency=1 test/*.test.ts",
+    "test": "node --import tsx --test --test-concurrency=1 test/*.test.ts ../plugins/*/test/*.test.ts",
     "test:int": "node --import tsx --test --test-concurrency=1 test/int/*.test.ts",
     "stack": "tools/dev-stack.sh start",
     "stack:stop": "tools/dev-stack.sh stop",

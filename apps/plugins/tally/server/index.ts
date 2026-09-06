@@ -1,11 +1,11 @@
 import { GameplayModeId, MAX_PLAYERS, TallyTap, gameplayC2STokens } from "@game/shared";
-import { TallyPlayerState, TallyRoomState } from "../../schema/GameRoomState";
+import { TallyPlayerState, TallyRoomState } from "../../../server/src/rooms/schema/GameRoomState";
 import {
     gameModeRegistry,
     type GameMode,
     type GameModeRegistry,
     type GameplayCommandsFor,
-} from "../../GameMode";
+} from "../../../server/src/rooms/GameMode";
 
 /**
  * tally 服务端 GameMode（plugins/tally）。规则：每个 tap +1，先到 tapGoal 者胜并结算；
