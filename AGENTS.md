@@ -122,7 +122,9 @@ npm --workspace @game/server run test:int
    - `apps/shared/src/gameplays/`、`apps/server/src/rooms/schema/GameRoomState.ts` 与
      `apps/server/src/rooms/schema/generated/`、`apps/client/src/gameplay/catalog.generated.ts`、
      `apps/server/src/rooms/modes/catalog.generated.ts` 来自
-     `apps/shared/schema/gameplays/<id>/`（manifest.json + state.json）与各玩法手写的
+     玩法单源的三个发现根——宿主自有 `apps/shared/schema/gameplays/<id>/`、插件自带
+     `apps/plugins/<id>/gameplay/`（如 snake、tally）、kit 自带 `apps/kits/<kitId>/gameplays/<modeId>/`
+     （manifest.json + state.json）——与各玩法手写的
      `apps/shared/src/gameplays/<id>/wire.ts`，用
      `npm --workspace @game/server run codegen:gameplays` 刷新。⚠ `gameplays/` 下的
      `defineGameplayWire.ts` 与 `<id>/wire.ts` 是手写真源（不是生成物），其余
