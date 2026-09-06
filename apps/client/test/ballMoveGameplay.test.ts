@@ -12,7 +12,9 @@ import {
     type BallMoveRoom,
 } from "../src/logic/rooms/ballMove/BallMoveGameplay";
 import { GameECS } from "../src/logic/rooms/ballMove/GameECS";
+import { GamePhase } from "../src/shared/index";
 import type {
+    GamePhaseType,
     IChatRes,
     IErrorRes,
     IPlayerState,
@@ -49,6 +51,8 @@ class FakeBallMoveRoom implements BallMoveRoom {
     readonly roomId = "room-exact";
     readonly sessionId = "self";
     dropping = false;
+    /** 默认按「已开局」构造：多数用例测的是移动本身。⚠ 阶段闸单独有用例。 */
+    phaseValue: GamePhaseType | null = GamePhase.Playing;
     readonly moves: Array<{ x: number; y: number }> = [];
     pings = 0;
     clears = 0;
@@ -73,6 +77,7 @@ class FakeBallMoveRoom implements BallMoveRoom {
             this.observerOffs++;
         };
     }
+    phase(): GamePhaseType | null { return this.phaseValue; }
     move(dirX: number, dirY: number): void { this.moves.push({ x: dirX, y: dirY }); }
     clearMove(): void { this.clears++; }
     ping(): void { this.pings++; }
@@ -159,6 +164,40 @@ test("ballMove plugin：registry 装配后由精确 room 驱动监听、输入�
     let remaining = 0;
     ecs.forEachPlayer(() => { remaining++; });
     assert.equal(remaining, 0);
+});
+
+/**
+ * F17 回归（真机实证 2026-09-06）：`c2s.move` 的 wire 声明是 `phases: [Playing]`，而 ballMove 的
+ * roster 要 2 人才开局——单人进这个演示时房间一直停在 Waiting，每拖一下就被服务端按
+ * 「1001 参数非法」拒一次，控制台刷屏。客户端必须自己看阶段。
+ */
+test("ballMove plugin：房间还没开局（Waiting）时 ⛔ 不发 move；开局后同一个方向照常发出去", async () => {
+    const ecs = new CountingGameECS();
+    const presentation = new FakePresentation();
+    const room = new FakeBallMoveRoom();
+    room.phaseValue = GamePhase.Waiting;
+    const registry = new GameplayRegistry<BallMoveRoom, BallMoveInput>();
+    registerBallMoveGameplay(registry, {
+        presentation, ecs, now: () => 1_100,
+        joiner: { join: () => ({ ready: Promise.resolve(room), async leave() {} }) },
+    });
+    const controller = new RoomController<BallMoveRoom, BallMoveInput>();
+    await controller.startRegistered(registry, BALL_MOVE_GAMEPLAY_ID);
+    room.observer?.add(player("self", 100, 100), true);
+
+    await controller.input({ type: "target", x: 200, y: 100 });
+    await controller.tick(1 / 60);
+    assert.equal(room.moves.length, 0, "Waiting 阶段 ⛔ 一条 move 都不许发——发了就是服务端 1001 刷屏");
+    await controller.input({ type: "release" });
+    assert.equal(room.moves.length, 0, "松手的归零 move 同样不发");
+
+    // 开局后：同一个 target 必须真的发出去（⛔ 阶段闸不能顺手把去重状态污染掉）。
+    room.phaseValue = GamePhase.Playing;
+    await controller.input({ type: "target", x: 200, y: 100 });
+    await controller.tick(1 / 60);
+    assert.equal(room.moves.length, 1, "开局后同一个方向必须发得出去");
+    assert.ok((room.moves.at(-1)?.x ?? 0) > 0.99);
+    await controller.dispose();
 });
 
 test("ballMove plugin：非法 target fail-closed，越界 target 在玩法边界收敛", async () => {

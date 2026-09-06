@@ -26,6 +26,7 @@ import {
     type GameplayStopReason,
     type RoomCapability,
 } from "../src/logic/gameplay";
+import { GamePhase } from "../src/shared/index";
 import { createGameplayServices } from "../src/gameplay/services";
 import { createGameplayModule as createBallMoveModule } from "../src/gameplay/modes/ballMove/index";
 import { createGameplayModule as createIdleModule } from "../src/gameplay/modes/idle/index";
@@ -262,6 +263,7 @@ test("§7.8：宿主输入闸拒绝的输入不产生 ballMove adapter seq（暂
         roomId: "seq-room",
         sessionId: "self",
         get dropping() { return false; },
+        phase: () => GamePhase.Playing,
         onWelcome: listener,
         onPong: listener,
         onChat: listener,

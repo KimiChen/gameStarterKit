@@ -9,12 +9,14 @@ import type { GameplayRegistry } from "../../gameplay/GameplayRegistry";
 import {
     MAP_HEIGHT,
     MAP_WIDTH,
+    GamePhase,
     GameplayModeId,
     distance,
     normalize,
     type IChatRes,
     type IErrorRes,
     type IPlayerState,
+    type GamePhaseType,
     type IPongRes,
     type ISkillResultRes,
     type IWelcomeRes,
@@ -116,6 +118,14 @@ export interface BallMoveRoom {
     readonly roomId: string;
     readonly sessionId: string;
     readonly dropping: boolean;
+    /**
+     * 当前房间阶段；房间已失效时为 null。
+     * ⚠ `c2s.move` / `c2s.castSkill` 的 wire 声明是 `phases: [Playing]`，而 ballMove 的 roster 要
+     * **2 人**才开局（`{ min: 2, autoStart: 2 }`）——单人进这个演示时房间一直停在 Waiting。
+     * 不看阶段就把 move 发出去 = 每次拖动都被服务端按「参数非法(1001)」拒一次刷屏
+     * （真机实证 2026-09-06：两次点击换来 4 条 `[服务端错误] 1001: 参数非法`）。
+     */
+    phase(): GamePhaseType | null;
     onWelcome(callback: (message: IWelcomeRes) => void): () => void;
     onPong(callback: (message: IPongRes) => void): () => void;
     onChat(callback: (message: IChatRes) => void): () => void;
@@ -310,6 +320,8 @@ export class BallMoveGameplay implements GameplayPlugin<BallMoveRoom, BallMoveIn
     }
 
     private sendDir(x: number, y: number): void {
+        // ⚠ 阶段闸在**发之前**：⛔ 不更新 lastDir——否则等真开局了，同一个方向会被去重吃掉。
+        if (this.room?.phase() !== GamePhase.Playing) return;
         if (Math.abs(x - this.lastDirX) < 0.02 && Math.abs(y - this.lastDirY) < 0.02) return;
         this.lastDirX = x;
         this.lastDirY = y;
