@@ -1,6 +1,6 @@
-# scripts/plugins/ —— 已安装插件的登记与文件清单锁
+# scripts/packages/ —— 已安装包（plugin / kit）的登记与文件清单锁
 
-每个已安装插件一把 `<id>.lock`（writer：`npm --workspace @game/server run plugin -- install`；
+每个已安装包（插件或 kit，共享同一 id 空间，撞名即拒绝）一把 `<id>.lock`（writer：`npm --workspace @game/server run plugin -- install`；
 checker：`apps/server/test/plugin-lock.test.ts` 随 `verify:all`，以及 `plugin -- check`）。
 
 - 抬头 `# manifest {...}` 承载 plugin.json 的归一化值（id / version / kinds / constantName / domains / fguiPackages）；

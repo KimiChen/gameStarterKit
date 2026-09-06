@@ -154,7 +154,7 @@ test("硬排除与受保护路径永远拒绝：真仓 protected-paths.json 的�
   }
   for (const relative of [
     "package.json", "apps/server/package.json", "package-lock.json", ".npmrc", "tsconfig.json", "tsconfig.strict.json",
-    ".env", ".env.development", ".github/workflows/ci.yml", "scripts/verify-toolchain.mjs", "scripts/plugins/chamber.lock",
+    ".env", ".env.development", ".github/workflows/ci.yml", "scripts/verify-toolchain.mjs", "scripts/packages/chamber.lock",
     "tools/fgui-codegen/cli.ts", "apps/server/tools/plugin/install.ts", "apps/Cocos/assets/scene.scene",
     "apps/client/src/lib/bitecs/index.ts", "apps/client/src/shared/protocol/rooms.ts", "apps/client/src/app/AppRuntime.ts",
     "apps/shared/src/protocol/rooms.ts", "apps/shared/src/protocol/lobbyRpc/index.ts", "apps/server/src/core/infra/keys.ts",
@@ -382,7 +382,7 @@ test("install：首装落盘 + 锁 + plugins/<id>/plugin.json；check 通过；�
     assert.ok(fs.existsSync(path.join(target, "apps/plugins/chamber/plugin.json")));
     const lock = readInstalledLock(target, "chamber");
     assert.ok(lock && lock.manifest.version === "1.0.0" && lock.entries.length === report.written.length);
-    assert.ok(fs.readFileSync(path.join(target, "scripts/plugins/chamber.lock"), "utf8").includes("Do not edit"));
+    assert.ok(fs.readFileSync(path.join(target, "scripts/packages/chamber.lock"), "utf8").includes("Do not edit"));
     assert.ok(report.nextSteps.some((step) => step.includes("protocol-fingerprint") && step.includes("本次未跑 codegen")), "postinstall:false 时带 domain 的插件只给条件式的指纹提示（没跑 codegen 无从知道是否真变了）");
     assert.equal(checkInstalledPlugins(target).ok, true);
 
@@ -443,7 +443,7 @@ test("upgrade：旧有新无按清单删除、同版本不同内容拒绝、降�
     assert.ok(!fs.existsSync(path.join(target, "apps/plugins/chamber")));
     assert.ok(!fs.existsSync(path.join(target, "apps/Cocos/assets/src/plugins/chamber")));
     assert.ok(!fs.existsSync(path.join(target, "apps/Cocos/assets/src/plugins/chamber.meta")));
-    assert.ok(!fs.existsSync(path.join(target, "scripts/plugins/chamber.lock")));
+    assert.ok(!fs.existsSync(path.join(target, "scripts/packages/chamber.lock")));
     assert.ok(!fs.existsSync(path.join(target, "apps/plugins/chamber")));
     assert.equal(checkInstalledPlugins(target).plugins.length, 0);
     assert.throws(() => uninstallPlugin({ root: target, id: "chamber", git: false, postinstall: false }), /未安装/u);
@@ -510,7 +510,7 @@ test("reinstall-from-tree（E6 方案 ②）：同仓改动不 bump 拒绝并点
 
     // 篡改锁 → 拒绝（与 install/uninstall 同一道 allowlist）：登记了树上存在的越权文件即拒绝；
     // 树上已不存在的越权条目构不成误删风险（规则演进后改名的旧文件正是这种形态），不拦。
-    const lockFile = path.join(target, "scripts/plugins/chamber.lock");
+    const lockFile = path.join(target, "scripts/packages/chamber.lock");
     fs.appendFileSync(lockFile, "scripts/evil.mjs 0000000000000000000000000000000000000000000000000000000000000000\n");
     fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"0.9.0"', '"0.9.1"'));
     const dropped = reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false });
@@ -588,7 +588,7 @@ test("审阅后加固：篡改锁 → install/uninstall 拒绝且不删；锁登
     installPlugin({ root: target, source: v1, git: false, postinstall: false });
     // 把一个框架文件塞进锁（sha 与工作树一致，verifyLockAgainstTree 不会报 modified）。
     write(target, "apps/client/src/Main.ts", "// framework file\n");
-    const lockFile = path.join(target, "scripts/plugins/chamber.lock");
+    const lockFile = path.join(target, "scripts/packages/chamber.lock");
     fs.appendFileSync(lockFile, `apps/client/src/Main.ts ${sha256("// framework file\n")}\n`);
     assert.equal(checkInstalledPlugins(target).ok, false, "check 必须点名锁内越权路径");
     const manifestFile = path.join(author, "apps/plugins/chamber/plugin.json");
@@ -761,7 +761,7 @@ test("PLUGIN-REGISTRY §1-4：互为前缀的两个插件共存——各自升�
     // 锁间重叠：把 chamber 的一个路径塞进 chamberBoard 的锁（模拟规则演进/合并错），install chamber 拒绝并点名所有者；
     // check 报锁间重叠；作者侧 pack 遇到推导集与他锁重叠也拒绝。
     installPlugin({ root: target, source: zipA2, git: false, postinstall: false });
-    const lockB = path.join(target, "scripts/plugins/chamberBoard.lock");
+    const lockB = path.join(target, "scripts/packages/chamberBoard.lock");
     fs.appendFileSync(lockB, `apps/server/src/core/chamber/keys.ts ${sha256("export const kChamberSeq = 1;\n")}\n`);
     const overlapping = checkInstalledPlugins(target);
     assert.equal(overlapping.ok, false);
@@ -795,7 +795,7 @@ test("PLUGIN-REGISTRY §1-1：postinstall 失败即回滚——无 git：文件�
       if (args.includes("codegen:plugins")) throw new Error("route id 重复：chamber（模拟跨插件冲突）");
     });
     assert.throws(() => installPlugin({ root: target, source: v1, git: false, runner: boom }), /postinstall失败，已回滚到操作前[\s\S]*route id 重复/u);
-    for (const relative of ["apps/plugins/chamber/plugin.json", "apps/server/src/core/chamber/keys.ts", "scripts/plugins/chamber.lock", "apps/plugins/chamber/plugin.json", "apps/Cocos/assets/src/plugins/chamber.meta"]) {
+    for (const relative of ["apps/plugins/chamber/plugin.json", "apps/server/src/core/chamber/keys.ts", "scripts/packages/chamber.lock", "apps/plugins/chamber/plugin.json", "apps/Cocos/assets/src/plugins/chamber.meta"]) {
       assert.ok(!fs.existsSync(path.join(target, relative)), `回滚后不得残留：${relative}`);
     }
     assert.ok(!fs.existsSync(path.join(target, "apps/Cocos/assets/src/plugins/chamber")), "空目录也清掉");
@@ -819,7 +819,7 @@ test("PLUGIN-REGISTRY §1-1：postinstall 失败即回滚——无 git：文件�
     assert.equal(gitPorcelain(gitTarget), wipStatus, "回滚后 git 状态与安装前逐字相同（用户 WIP 原样留下，其余干净）");
     assert.equal(fs.readFileSync(path.join(gitTarget, "apps/client/src/generated/plugins.generated.ts"), "utf8"), "// generated baseline\n");
     assert.ok(!fs.existsSync(path.join(gitTarget, "apps/shared/src/protocol/lobbyRpc/registry.generated.ts")));
-    assert.ok(!fs.existsSync(path.join(gitTarget, "scripts/plugins/chamber.lock")));
+    assert.ok(!fs.existsSync(path.join(gitTarget, "scripts/packages/chamber.lock")));
   } finally {
     cleanup(author, target, gitTarget);
   }
@@ -909,7 +909,7 @@ test("PLUGIN-REGISTRY §1-5：锁的 source 抬头——install 写 package、re
     assert.ok(lock1?.source && lock1.source.kind === "package");
     assert.equal(lock1.source.filesLockSha256, filesLockSha256Of(lock1.entries), "内容身份可从锁 entries 离线复算");
     assert.equal(installed.source.filesLockSha256, sha256(readPackage(v1).entries.length > 0 ? renderFilesLock(readPackage(v1).entries) : ""), "= 包内 files.lock 规范文本的 sha256");
-    assert.ok(fs.readFileSync(path.join(target, "scripts/plugins/chamber.lock"), "utf8").includes('# source {"kind":"package"'));
+    assert.ok(fs.readFileSync(path.join(target, "scripts/packages/chamber.lock"), "utf8").includes('# source {"kind":"package"'));
     assert.equal(checkInstalledPlugins(target).plugins[0].source, "package");
 
     // 宿主本地改一行 + bump → reinstall：source=tree，forkedFrom = 原 package 来源。
@@ -961,7 +961,7 @@ test("PLUGIN-REGISTRY §1-9（v2）：兼容轴 = plugin.json 自己的 schemaVe
     const v1 = path.join(author, "out/v1.zip");
     packPlugin({ root: author, id: "chamber", outFile: v1 });
     installPlugin({ root: target, source: v1, git: false, postinstall: false });
-    const lockFile = path.join(target, "scripts/plugins/chamber.lock");
+    const lockFile = path.join(target, "scripts/packages/chamber.lock");
     assert.match(fs.readFileSync(lockFile, "utf8"), /"kinds":\["client"\],"constantName":null,"domains":\["chamber"\]/u);
     assert.ok(!fs.readFileSync(lockFile, "utf8").includes("requires"), "锁抬头不再登记 requires");
     assert.equal(checkInstalledPlugins(target).ok, true);
@@ -1122,7 +1122,7 @@ test("加固 §1-1：落盘阶段失败（锁目录不可写 / 包内文件与�
     packPlugin({ root: author, id: "chamber", outFile: v1 });
     gitInit(target);
     const porcelainBefore = gitPorcelain(target);
-    const lockDir = path.join(target, "scripts/plugins");
+    const lockDir = path.join(target, "scripts/packages");
     fs.mkdirSync(lockDir, { recursive: true });
     fs.chmodSync(lockDir, 0o500);
     try {
@@ -1287,7 +1287,7 @@ test("加固 §1-5：分叉不能被「内容相同的包」洗白；旧锁（�
     assert.equal(installPlugin({ root: target, source: self, git: false, postinstall: false, replaceLocalFork: true }).source.kind, "package");
 
     // 旧锁形态（删掉 # source 行）：check 点名，内容不同的来包按分叉待遇拒绝，--replace-local-fork 放行。
-    const lockFile = path.join(target, "scripts/plugins/chamber.lock");
+    const lockFile = path.join(target, "scripts/packages/chamber.lock");
     const withSource = fs.readFileSync(lockFile, "utf8");
     fs.writeFileSync(lockFile, withSource.split("\n").filter((line) => !line.startsWith("# source ")).join("\n"), "utf8");
     assert.match(checkInstalledPlugins(target).plugins[0].problems.join("\n"), /锁未登记 source（旧锁形态/u);

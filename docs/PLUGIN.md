@@ -10,7 +10,7 @@
 > | §4 装载时机 | 设计基线；措辞按审阅修正 |
 > | §5 包格式与安装流程 | ✅ 已实现（`apps/server/tools/plugin/`，`plugin -- pack/install/uninstall/check`；隔离 fixture 验证，真实包端到端实证仍开放，见 §9 第 6 条 / plan-v5 E5） |
 > | §6 入口与位置 | ✅ 已实施（设置面板、宿主 `apps/plugins/host.json`、slot/order 退役、route 形态 launch、依赖装载） |
-> | §7 生命周期 | ✅ 已实现（已安装锁 `scripts/plugins/<id>.lock`） |
+> | §7 生命周期 | ✅ 已实现（已安装锁 `scripts/packages/<id>.lock`） |
 > | §8 冲突面 | 按实际机检状态改写 |
 > | §9 缺口 | 已分「已补 / 仍开放」，开放项登记在 [plan-v5.md](../plan-v5.md) E 类 |
 >
@@ -202,7 +202,7 @@ npm --workspace @game/server run plugin -- check
    互不重复；安装（含从树重装）再把包内 uuid 与宿主 `apps/Cocos/assets` 树比对（本插件旧锁与本包将覆盖的路径除外），
    撞车在落盘前拒绝并点名两侧路径——修法在作者侧（删掉包内那个 `.meta` 让 Creator 重铸后重新 pack），⛔ 不再是
    verify:sync 事后报错与插件锁互相矛盾；
-3. 已安装锁 `scripts/plugins/<id>.lock` 存在时：工作树与旧锁不符（本地改动）⇒ 拒绝；同版本不同内容 ⇒ 拒绝；
+3. 已安装锁 `scripts/packages/<id>.lock` 存在时：工作树与旧锁不符（本地改动）⇒ 拒绝；同版本不同内容 ⇒ 拒绝；
    降级须 `--allow-downgrade`；旧锁有、新包无的文件 ⇒ 按清单删除（陈旧文件不残留）；
    首装时目标路径已存在且不属本插件 ⇒ 拒绝（所有权冲突，⛔ 不覆盖）；
 4. 受影响路径的工作树必须干净（`git status`；索引里已暂存删除且工作树不存在的路径视为干净——uninstall 后未提交即可
@@ -210,7 +210,7 @@ npm --workspace @game/server run plugin -- check
    升级时旧锁的每条路径也要重过 §5.2 闸（锁是仓内明文，被改过/规则演进即拒绝，⛔ 不按可疑的锁删文件）；
    锁登记的文件在树中缺失 ⇒ 拒绝（先 `plugin -- check` 修锁或 `uninstall --force`）；推导集内已有不属本插件的
    文件（含 id/domain 与框架目录同名的目录级占用）⇒ 所有权冲突拒绝；
-5. 原子落盘 → 写 `scripts/plugins/<id>.lock`（已安装插件的唯一登记面）→ `git add`（只加存在或已跟踪的路径）
+5. 原子落盘 → 写 `scripts/packages/<id>.lock`（已安装插件的唯一登记面）→ `git add`（只加存在或已跟踪的路径）
    → `codegen:gameplays`（含 gameplay；按新旧并集跑，升级去掉 gameplay 时仍跑一次收缩）/ `codegen:plugins`（总是跑：每个 plugin.json 都是它的输入；
    codegen 仍跑一次收缩）→ `sync:shared`（Cocos 镜像只 `git add -u`：新建的镜像文件没有 `.meta`，保持未跟踪）。
    **升级删除面显式交给 codegen**（2026-09-05，PLUGIN-REGISTRY §1-2）：旧身份 / 旧 plugin.json 有、新包没有的
@@ -231,7 +231,7 @@ npm --workspace @game/server run plugin -- check
 等价于「`pack` 当前树 → `install` 该包」，采集与自检走 pack 同一条路（缺 `.meta` / 越权 / 镜像不一致即拒绝），
 锁被篡改即拒绝，目录级所有权冲突拒绝；**版本规则原样保留**——树上内容与锁不同但 `apps/plugins/<id>/plugin.json`
 的 version 未 bump ⇒ 拒绝并点名改动面（新增/变化/删除），降级须 `--allow-downgrade`。它 ⛔ 不写任何插件文件
-（文件本来就在树上），只重写 `scripts/plugins/<id>.lock`，然后照常 `git add` + postinstall。动线：
+（文件本来就在树上），只重写 `scripts/packages/<id>.lock`，然后照常 `git add` + postinstall。动线：
 改文件 → bump version → `install --reinstall-from-tree <id>` → `check` ✔ → 提交；之后从同一棵树 `pack` 出的包
 与新锁逐条相同，仍可分发给别的宿主。
 两道闸（2026-09-05，PLUGIN-REGISTRY §1-3；对抗审阅实证：树上把框架域 guild 写进 domains 并 bump，旧实现会把 guild 的
@@ -381,7 +381,7 @@ apps/plugins/
    在「基本不卸载」的世界里，目录消失最可能的成因是**误删或包没拉全**，此时静默收缩生成物比报错糟糕得多
    ——所以两个 codegen 的 `--allow-delete` 删除保护要留着，卸载命令显式传它；升级删掉域 / View / kind 时 install
    也按同一算法显式传（§5.4 第 5 条）。
-2. **升级取代卸载成为第二高频操作**，因此包必须带版本；**已安装状态是一把锁**（`scripts/plugins/<id>.lock`：
+2. **升级取代卸载成为第二高频操作**，因此包必须带版本；**已安装状态是一把锁**（`scripts/packages/<id>.lock`：
    版本 + 全部文件的 sha256），升级 = 三方比对（§5.4），本地改动、同版本不同内容、降级都被点名。
    多插件长期共存是常态，冲突面（§8）才是主战场。
 

@@ -277,7 +277,7 @@ export function assertInstalledLockOwned(root: string, lock: InstalledLock, acti
     if (!verdict.allowed) denied.push(`${entry.path}（${verdict.reason}）`);
   }
   if (denied.length > 0) {
-    fail(`${action}拒绝：已安装锁 scripts/plugins/${manifest.id}.lock 登记了不在插件所有权推导集内的路径（锁被改过或规则演进），`
+    fail(`${action}拒绝：已安装锁 scripts/packages/${manifest.id}.lock 登记了不在插件所有权推导集内的路径（锁被改过或规则演进），`
       + `⛔ 不按此锁删除任何文件——先用 plugin -- check 核对并修正锁：\n  ${denied.join("\n  ")}`);
   }
 }

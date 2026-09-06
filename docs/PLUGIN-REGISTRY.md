@@ -142,7 +142,7 @@ publishedAt, publisher, yanked, validatedAgainst: <最新一条> }] }] }`。
 1. `readPackage`（清单自证）→ `validatePackage(pkg, root)`（身份交叉、allowlist、镜像/.meta 自洽，含 §1-11 的 uuid 闸）；
 2. 目录级 `ownershipConflicts(root, rules, owned = pkg.files.keys())`（从 install.ts 导出）；
 3. `requires` 与检出的 schemaVersion / `PLUGIN_API_VERSION` 比对（§4.3）；
-4. ⛔ 不读 `scripts/plugins/<id>.lock` 做版本闸、不跑 git、不跑 postinstall——原草案用 `install --dry-run` 是错的：
+4. ⛔ 不读 `scripts/packages/<id>.lock` 做版本闸、不跑 git、不跑 postinstall——原草案用 `install --dry-run` 是错的：
    校验检出上已装 redeem@1.0.3，任何补丁线或同版本都会被当成降级拒掉。
 
 校验在**固定 commit** 的一次性 worktree 里、子进程内跑（`--max-old-space-size`、超时、并发 1）；结果连同
@@ -176,7 +176,7 @@ CI 对所有未下架版本重跑一遍并追加。CLI 安装时比较本地检�
 
 ### 4.2 已安装锁的 `source` 抬头（§1-5 的修法，随前置修复落地）
 
-`scripts/plugins/<id>.lock` 新增一行 `# source <json>`（`parseEntries` 本就跳过 `#` 行，旧读者向后兼容）：
+`scripts/packages/<id>.lock` 新增一行 `# source <json>`（`parseEntries` 本就跳过 `#` 行，旧读者向后兼容）：
 
 ```text
 # source {"kind":"package","filesLockSha256":"…","registry":{"url":"https://plugin.gono.games","version":"1.0.4","zipSha256":"…","publisher":"alice"}}
@@ -200,7 +200,7 @@ CI 对所有未下架版本重跑一遍并追加。CLI 安装时比较本地检�
 - 插件 `plugin.json.requires.pluginApiVersion` = 构建时依赖的门面版本。兼容判定（install / check / `validate` / 索引）：
   `PLUGIN_API_MIN_SUPPORTED ≤ requires.pluginApiVersion ≤ PLUGIN_API_VERSION`。「需要框架 ≥ X」= 索引里
   `requires.pluginApiVersion = X`，宿主 `PLUGIN_API_VERSION < X` 即拒绝。
-- 导入边界机检：新增 `apps/server/test/plugin-import-boundary.test.ts`，按 `scripts/plugins/*.lock` + `deriveOwnership`
+- 导入边界机检：新增 `apps/server/test/plugin-import-boundary.test.ts`，按 `scripts/packages/*.lock` + `deriveOwnership`
   枚举插件文件，AST 解析 import 说明符，只允许三处门面、`@game/shared` 的 plugin-api、插件自身推导集内的相对路径；
   `core/infra/**`、`rooms/core/**`、`app/**`、`GameMode.ts`、`dispatcher.ts` 直接 import 即红。
   `GameModeRegistry.register` 的 `replace` 选项对生成 catalog 之外的调用方关闭。

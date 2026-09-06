@@ -4,7 +4,7 @@
  *  - 升级：工作树与旧锁不符（本地改动）⇒ 拒绝；同版本不同内容 ⇒ 拒绝；降级须显式 --allow-downgrade；
  *    旧锁有、新包无 ⇒ 按清单删除（陈旧文件不残留）；
  *  - 写盘前工作树受影响路径必须干净（git status），失败前不碰工作树；
- *  - 落盘后写 scripts/plugins/<id>.lock、git add，再跑 codegen:gameplays / codegen:plugins / sync:shared；
+ *  - 落盘后写 scripts/packages/<id>.lock、git add，再跑 codegen:gameplays / codegen:plugins / sync:shared；
  *    协议指纹与 FGUI manifest 的重钉是人的决策（⛔ 脚本不隐式 --write），只打印下一步；
  *  - postinstall（codegen / sync）失败 ⇒ **精确回滚**：本次写入/删除的插件文件与锁按落盘前字节复原、git 索引同步、
  *    生成物路径里「本次新变脏」的部分 restore/删除——树回到安装前，⛔ 不留「文件已写、锁已写、生成物过期」的半安装态
@@ -696,7 +696,7 @@ export function installPlugin(options: InstallOptions): InstallReport {
  * 与 install 的差别只有两处：不要求「树 ≡ 旧锁」（本地改动正是要吸收的东西），也不要求受影响路径
  * git 干净。其余闸门一个不少：采集与自检走 pack 同一条路（缺 .meta / 越权 / 镜像不一致即拒绝）、
  * 锁被篡改即拒绝、同版本不同内容拒绝（同仓迭代也必须 bump plugin.json version）、降级须显式、
- * 目录级所有权冲突拒绝。⛔ 不写任何插件文件（它们本来就在树上），只重写 scripts/plugins/<id>.lock，
+ * 目录级所有权冲突拒绝。⛔ 不写任何插件文件（它们本来就在树上），只重写 scripts/packages/<id>.lock，
  * 然后照常 postinstall（codegen / sync）并 git add。
  */
 export function reinstallFromTree(options: ReinstallFromTreeOptions): InstallReport {
