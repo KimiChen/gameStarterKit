@@ -1654,9 +1654,12 @@ test("K0 kit：域名前缀规则 (i) 一域一主 (ii) 边界前缀 + 最长前
     // (ii) 边界：redeemx 不是 redeem 的边界前缀形态
     assert.throws(check((root) => mutateJson(root, "apps/plugins/redeem/plugin.json", (m) => { m.domains = ["redeem", "redeemx"]; })),
       /plugin "redeem" 声明的域 "redeemx" 必须等于其 id 或以其 id 开头并紧随大写字母\/数字/u);
-    // (ii) 最长前缀：snake 不能在 snakeCosmetic 存在时声明 snakeCosmetic（descriptor 真实存在，故不是「无 descriptor」触发）
-    assert.throws(check((root) => mutateJson(root, "apps/plugins/snake/plugin.json", (m) => { m.domains = ["snakeCosmetic"]; })),
-      /plugin "snake" 声明的域 "snakeCosmetic" 的最长前缀单元是 "snakeCosmetic"/u);
+    // (ii) 最长前缀：snake 不能在 snakeCosmetic 存在时声明 snakeCosmetic（descriptor 真实存在，故不是「无 descriptor」触发；
+    // 同时把 snakeCosmetic 自己的声明摘掉，否则先撞上 (i) 一个域一个主人，测不到最长前缀这条）
+    assert.throws(check((root) => {
+      mutateJson(root, "apps/plugins/snakeCosmetic/plugin.json", (m) => { m.domains = []; });
+      mutateJson(root, "apps/plugins/snake/plugin.json", (m) => { m.domains = ["snakeCosmetic"]; });
+    }), /plugin "snake" 声明的域 "snakeCosmetic" 的最长前缀单元是 "snakeCosmetic"/u);
     // (ii) 声明的域必须真有 descriptor
     assert.throws(check((root) => mutateJson(root, "apps/kits/kfix/kit.json", (m) => { m.domains = ["kfix", "kfixAdmin"]; })),
       /kit "kfix" 声明的域 "kfixAdmin" 没有 descriptor/u);

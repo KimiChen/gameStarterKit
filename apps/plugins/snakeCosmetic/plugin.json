@@ -1,6 +1,9 @@
 {
   "schemaVersion": 2,
   "id": "snakeCosmetic",
+  "domains": [
+    "snakeCosmetic"
+  ],
   "category": "extra",
   "docs": [
     "apps/plugins/snake/README.md"

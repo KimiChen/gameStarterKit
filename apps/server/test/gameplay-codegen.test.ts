@@ -1064,12 +1064,13 @@ test("声明 enumSource:\"gameplay\" 但 ruleset.ts 缺失：codegen 必须点�
   fs.rmSync(ruleset);
   assert.throws(
     () => readGameplayDescriptors(options),
-    /apps\/shared\/schema\/gameplays\/snake\/state\.json: declares enumSource "gameplay" but apps\/shared\/src\/gameplays\/snake\/ruleset\.ts is missing/,
+    /apps\/plugins\/snake\/gameplay\/state\.json: declares enumSource "gameplay" but apps\/shared\/src\/gameplays\/snake\/ruleset\.ts is missing/,
   );
   // 反向对照：ballMove 不声明 gameplay 归属，没有 ruleset.ts 也必须照常通过——
   // 存在性闸只在真正声明时收紧，⛔ 不给所有玩法强加一个文件。
   assert.ok(!fs.existsSync(path.join(root, "apps/shared/src/gameplays/ballMove/ruleset.ts")));
-  fs.rmSync(path.join(root, "apps/shared/schema/gameplays/snake"), { recursive: true });
+  // snake 的玩法单源已迁进插件目录（apps/plugins/snake/gameplay/），⛔ 不在中央 schema 根下。
+  fs.rmSync(path.join(root, "apps/plugins/snake/gameplay"), { recursive: true });
   fs.rmSync(path.join(root, CLIENT_MODES_DIR, "snake"), { recursive: true });
   assert.doesNotThrow(() => readGameplayDescriptors(options));
   fs.rmSync(root, { recursive: true, force: true });

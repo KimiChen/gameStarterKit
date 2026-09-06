@@ -17,6 +17,7 @@ export * from "./snake/ruleset";
 export * from "./snake/wire";
 export * from "./snake/cosmetics";
 export * from "./snake/progression";
+export * from "./snake/snakeSkinCatalogData";
 export * from "./generated/state/snake";
 export * from "./tally/wire";
 export * from "./generated/state/tally";

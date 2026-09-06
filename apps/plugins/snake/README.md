@@ -93,18 +93,18 @@ Cocos Creator 3.8.8、FairyGUI、Colyseus 与服务端权威模型**独立实现
 登记单元
 ```
 apps/plugins/snake/plugin.json            本文件所在目录
+apps/plugins/snake/gameplay/manifest.json codegen 输入（modeVersion 在此）
+apps/plugins/snake/gameplay/state.json    codegen 输入
 apps/plugins/snakeCosmetic/plugin.json
 ```
 
 契约真源 `apps/shared`
 ```
-schema/gameplays/snake/manifest.json      codegen 输入（modeVersion 在此）
-schema/gameplays/snake/state.json         codegen 输入
 src/gameplays/snake/wire.ts               手写真源 ⚠ 进 contractDigest
 src/gameplays/snake/ruleset.ts            规则常量
 src/gameplays/snake/cosmetics.ts          外观公共类型
 src/gameplays/snake/progression.ts        养成公式（纯函数）
-src/gameplays/snake/snakeSkinCatalog.generated.ts    ⛔ 生成物，见 §9
+src/gameplays/snake/snakeSkinCatalogData.ts          ⚠ 冻结数据表，不可再生，见 §9
 src/gameplays/generated/state/snake.ts               ⛔ 生成物
 src/protocol/lobbyRpc/domains/snakeCosmetic.ts       ⚠ 进协议指纹字节范围
 ```
@@ -114,7 +114,7 @@ src/protocol/lobbyRpc/domains/snakeCosmetic.ts       ⚠ 进协议指纹字节�
 rooms/modes/snake/  index.ts world.ts rules.ts ai.ts lifecycle.ts keys.ts
                     cosmeticProfile.ts cosmeticRpc.ts runRewards.ts
                     skinBusinessCatalog.ts
-                    skinBusinessCatalog.generated.ts    ⛔ 生成物，见 §9
+                    skinBusinessCatalogData.ts          ⚠ 冻结数据表，不可再生，见 §9
 rooms/schema/generated/snake.ts                        ⛔ 生成物
 websocket/snakeCosmetic/  getSnapshot.ts equip.ts unlock.ts
 ```
@@ -125,7 +125,7 @@ gameplay/modes/snake/index.ts
 net/rooms/SnakeRoom.ts
 logic/rooms/snake/  SnakeGameplay.ts SnakeHud.ts SnakeControls.ts
                     SnakeSnapshotBuffer.ts SnakePresentationCatalog.ts
-                    SnakePresentationCatalog.generated.ts   ⛔ 生成物，见 §9
+                    SnakePresentationCatalogData.ts         ⚠ 冻结数据表，不可再生，见 §9
 view/rooms/snake/   SnakeWorldView.ts + .view.json
                     SnakeMeshRenderer.ts SnakeFoodMeshRenderer.ts
                     SnakeMagnetAuraRenderer.ts snakeQuadMesh.ts
@@ -136,7 +136,7 @@ plugins/snakeCosmetic/  index.ts logic/{WardrobeLogic,snakeCosmeticRuntime}.ts
 
 测试
 ```
-apps/client/test/  snakeGameplay / snakePresentation / snakeSkinCatalog .test.ts
+apps/client/test/  snake-gameplay / snake-presentation / snake-skin-catalog .test.ts
 apps/server/test/  snake-world snake-room snake-rules snake-cosmetic-profile
                    snake-progression snake-run-rewards snake-relive-demo .test.ts
                    int/snake.test.ts  int/snake-relive-demo.test.ts   ⚠ 真栈，有意留在 verify:all 链外
@@ -386,10 +386,15 @@ fail-closed 发布开关；② 双端模块加载期的三层目录 fail-closed�
 注册写入器，登记在 `scripts/protected-paths.json`（三条 writer 登记已一并摘除）：
 
 ```
-apps/shared/src/gameplays/snake/snakeSkinCatalog.generated.ts
-apps/server/src/rooms/modes/snake/skinBusinessCatalog.generated.ts
-apps/client/src/logic/rooms/snake/SnakePresentationCatalog.generated.ts
+apps/shared/src/gameplays/snake/snakeSkinCatalogData.ts
+apps/server/src/rooms/modes/snake/skinBusinessCatalogData.ts
+apps/client/src/logic/rooms/snake/SnakePresentationCatalogData.ts
 ```
+
+⚠ 2026-09-06 迁插件标准时三者去掉了 `.generated` 后缀（原名 `snakeSkinCatalog.generated.ts` /
+`skinBusinessCatalog.generated.ts` / `SnakePresentationCatalog.generated.ts`）：`*.generated.*` 是
+`plugin -- pack` 的硬排除文件名形态，带着旧名 snake 包既打不进这三个文件、`install` 又会把树上残留的
+它们判成所有权冲突——即 snake 根本装不上。名字现在与事实一致：它们是手工维护的冻结数据表，不是生成物。
 
 ⛔ **这三个文件从此只能手工维护**：没有任何工具能从原作素材重新生成它们，
 16 套皮肤的帧矩形、pivot、body track、稀有度与合成门槛全部固化在这三个文件里。

@@ -25,7 +25,7 @@ import {
     EMBEDDED_PUBLIC_SNAKE_SKIN_CATALOG_HASH,
     SNAKE_ENTITY_PRESENTATION_CATALOG_DATA,
     SNAKE_PRESENTATION_VERSION as GENERATED_SNAKE_PRESENTATION_VERSION,
-} from "../src/logic/rooms/snake/SnakePresentationCatalog.generated";
+} from "../src/logic/rooms/snake/SnakePresentationCatalogData";
 
 const IDS = [1, 2, 3, 4, 10, 11, 101, 111, 112, 132, 133, 139, 401, 403, 411, 701];
 

@@ -902,7 +902,7 @@ export class SnakeWorldView implements SnakePresentation {
         // 强制转换，typecheck 与单测双双漏过）。
         // 引擎按节点 UITransform.anchorPoint 摆放精灵，⛔ 并不消费 SpriteFrame.pivot；且目录里 156 处
         // pivot 全是 (0.5, 0.5)，正好等于默认锚点，故删除赋值是行为等价的。⚠ 该前提由
-        // snakePresentation.test.ts 的「目录 pivot 必须居中」用例机检钉住——真出现偏心 pivot 时它转红，
+        // snake-presentation.test.ts 的「目录 pivot 必须居中」用例机检钉住——真出现偏心 pivot 时它转红，
         // 那时才需要把 pivot 转写到消费节点的 anchorPoint 上。
         this.skinFrameCache.set(key, frame);
         return frame;

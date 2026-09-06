@@ -1,6 +1,7 @@
 {
   "schemaVersion": 2,
   "id": "snake",
+  "version": "1.0.0",
   "category": "core",
   "docs": [
     "apps/plugins/snake/README.md"

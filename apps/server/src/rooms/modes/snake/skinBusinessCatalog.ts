@@ -8,7 +8,7 @@ import {
     EMBEDDED_PUBLIC_SNAKE_SKIN_CATALOG_HASH,
     SERVER_SNAKE_SKIN_BUSINESS_HASH,
     SNAKE_SKIN_BUSINESS_CATALOG_DATA,
-} from "./skinBusinessCatalog.generated";
+} from "./skinBusinessCatalogData";
 
 export type SnakeSkinPendingDecision = Readonly<{
     state: "draft" | "unavailable";
