@@ -1561,6 +1561,16 @@ test("K0 kit：requires.kits 闸——kit 未安装 / api 面不存在 / 版本�
     assert.throws(() => readViewCatalog(withRequires({ kfix: { board: 3 } })), /插件 kfixShop 需要 kit kfix 的 api 面 board 版本 3，宿主 kit 提供 \[1, 2\]/u);
     // 边界：声明 == version 与 == minSupported 都放行。
     assert.doesNotThrow(() => readViewCatalog(withRequires({ kfix: { board: 2 } })));
+    // api 面名的模式 ^[a-z][A-Za-z0-9]{0,63}$ 把 Object.prototype 的成员名全都放了进来。api 映射若是
+    // 普通字面量，`kit.api["toString"]` 读到的是继承来的函数（truthy）：「面不存在」闸不触发，
+    // 且 declared < undefined 与 declared > undefined 都是 false ⇒ 版本区间闸也不触发，两道一起 fail-open。
+    for (const surface of ["toString", "constructor", "valueOf", "hasOwnProperty", "isPrototypeOf", "propertyIsEnumerable", "toLocaleString"]) {
+      assert.throws(
+        () => readViewCatalog(withRequires({ kfix: { [surface]: 99 } })),
+        /宿主 kit 没有该 api 面/u,
+        `api 面 ${surface} 必须按「不存在」拒绝，⛔ 不得读到 Object.prototype 成员`,
+      );
+    }
     // 无 entry 的 kit（纯 SQL + 服务）不进装载序（PluginHost 没东西可装），但依赖闸照判。
     const { root } = fixtures.create();
     const { entry: _entry, ...headless } = KFIX_KIT_JSON;

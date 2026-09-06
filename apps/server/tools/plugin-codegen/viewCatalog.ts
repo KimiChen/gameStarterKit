@@ -634,7 +634,8 @@ function mergeRequiredKits(
     const kit = kitsById.get(kitId);
     if (!kit) fail(label, `插件 ${plugin.id} 需要 kit ${kitId}，但该 kit 未安装（${KITS_DIR_RELATIVE}/${kitId}/kit.json 不存在）`);
     for (const [surface, declared] of Object.entries(plugin.requires.kits[kitId])) {
-      const spec = kit.api[surface];
+      // 只认自有属性：即便 api 映射将来退回普通字面量，也不会读到 Object.prototype 成员而 fail-open。
+      const spec = Object.prototype.hasOwnProperty.call(kit.api, surface) ? kit.api[surface] : undefined;
       if (!spec) {
         fail(label, `插件 ${plugin.id} 需要 kit ${kitId} 的 api 面 ${surface} 版本 ${declared}，宿主 kit 没有该 api 面（已有：${Object.keys(kit.api).sort().join(", ") || "无"}）`);
       }
