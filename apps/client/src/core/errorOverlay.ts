@@ -12,6 +12,8 @@
  *   这道闸在**调用点**（Main.ts）上，本模块因此零 `cc` 依赖、可在 Node 里直接单测。
  * ⚠ 弹框按**游戏画布**定位与缩放（不是浏览器窗口）：尺寸用设计分辨率（designSpec 的 750 宽）
  *   写，再按画布实际 CSS 宽度换算，⛔ 不写死 px——否则手机上要么糊成一团要么大得出屏。
+ * ⚠ 复制**只由用户点「复制全部」触发**：⛔ 弹框出现时不碰剪贴板、不自动选中——那会弹权限框，
+ *   还会把用户手里已经复制的东西冲掉。单测钉住了这条。
  * ⚠ 复制必须在 **http** 下也能用：局域网 IP 不是安全上下文，`navigator.clipboard` 不可用，
  *   所以按「异步剪贴板 → execCommand → 选中让用户长按」三级降级，⛔ 不假设任何一级存在。
  * ⛔ 不 import `cc`（一行都不），⛔ 不碰引擎对象：错误发生时引擎可能已经半死。
@@ -110,15 +112,24 @@ interface OverlayElement {
     value?: string;
 }
 
+interface OverlayRange { selectNodeContents(node: OverlayElement): void }
+
+interface OverlaySelection {
+    removeAllRanges(): void;
+    addRange(range: OverlayRange): void;
+}
+
 interface OverlayDocument {
     readonly body: OverlayElement | null;
     createElement(tag: string): OverlayElement;
     querySelector(selector: string): OverlayElement | null;
     execCommand?(command: string): boolean;
+    createRange?(): OverlayRange;
 }
 
 interface OverlayWindow {
     addEventListener(type: string, listener: (event: unknown) => void): void;
+    getSelection?(): OverlaySelection | null;
     readonly innerWidth?: number;
     readonly innerHeight?: number;
     readonly navigator?: { readonly userAgent?: string; readonly clipboard?: { writeText(text: string): Promise<void> } };
@@ -260,12 +271,18 @@ function createOverlay(doc: OverlayDocument, win: OverlayWindow, now: () => Date
         }
     };
 
-    const build = (): void => {
-        if (scrim || !doc.body) return;
-        // ⚠ 预览页自己那个 #error 框留着只会和本弹框叠在一起；直接藏掉，内容我们已经全收了。
+    /**
+     * 藏掉预览页自带的 #error 框（内容我们已经全收了）。
+     * ⚠ 必须**每次**出错都藏一遍：Creator 的 `showError` 每收到一条错误就把它重新 `display:block`，
+     * 只在建弹框时藏一次的话，第二条错误一来它又冒出来跟弹框叠在一起（真机演示时抓到的）。
+     */
+    const hideCreatorBox = (): void => {
         const creatorBox = doc.querySelector("#error");
         if (creatorBox) creatorBox.style.display = "none";
+    };
 
+    const build = (): void => {
+        if (scrim || !doc.body) return;
         // ⚠ 只覆盖画布那块矩形：⛔ 不铺满窗口——预览页里那样会连 Creator 的工具条一起压住。
         scrim = style(doc.createElement("div"), {
             position: "fixed", display: "flex", alignItems: "center", justifyContent: "center",
@@ -315,6 +332,7 @@ function createOverlay(doc: OverlayDocument, win: OverlayWindow, now: () => Date
 
     const render = (): void => {
         build();
+        hideCreatorBox();
         if (!scrim || !list || !title) return;
         scrim.style.display = "flex";
         layout();
@@ -341,6 +359,21 @@ function createOverlay(doc: OverlayDocument, win: OverlayWindow, now: () => Date
             if (entries.length > MAX_ENTRIES) entries.splice(0, entries.length - MAX_ENTRIES);
         }
         render();
+    };
+
+    /** 把报告正文整段选中（第三级降级的实际动作）；返回是否真的选上了。 */
+    const selectReportText = (): boolean => {
+        const selection = win.getSelection?.();
+        const range = doc.createRange?.();
+        if (!selection || !range || !list) return false;
+        try {
+            range.selectNodeContents(list);
+            selection.removeAllRanges();
+            selection.addRange(range);
+            return true;
+        } catch {
+            return false;
+        }
     };
 
     /**
@@ -374,8 +407,9 @@ function createOverlay(doc: OverlayDocument, win: OverlayWindow, now: () => Date
                 return "execCommand";
             }
         }
-        list?.select?.();
-        if (copyButton) copyButton.textContent = "已选中，长按复制";
+        // ⚠ 第三级：`<div>` **没有** `.select()`（那是 input/textarea 才有的）——早先写成
+        // `list.select?.()` 时它静默什么也不做，按钮却说「已选中」，是句谎话。必须走 Range。
+        if (copyButton) copyButton.textContent = selectReportText() ? "已选中，长按复制" : "请手动选中复制";
         return "selection";
     };
 
