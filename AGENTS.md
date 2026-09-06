@@ -133,7 +133,8 @@ npm --workspace @game/server run test:int
    - `apps/shared/src/protocol/lobbyRpc/registry.generated.ts`、`apps/client/src/generated/`
      （views/fguiContracts/plugins）、`docs/plugins.generated.md` 与
      `apps/server/test/lobbyRpcVectors/index.generated.ts` 来自
-     `apps/plugins/<id>/plugin.json` + 宿主 placement `apps/plugins/host.json`（默认玩法与首屏入口顺序，
+     `apps/plugins/<id>/plugin.json` 与 `apps/kits/<id>/kit.json`（kit 另产出 `apps/shared/src/kits/catalog.generated.ts`、
+     `apps/server/src/kits/catalog.generated.ts`，见 docs/KIT.md）+ 宿主 placement `apps/plugins/host.json`（默认玩法与首屏入口顺序，
      ⛔ plugin.json 无 slot/order）+ View 同目录 `.view.json` sidecar + FGUI XML + 各域
      RPC descriptor + 各域向量 sidecar `apps/server/test/lobbyRpcVectors/<域>.ts`，用
      `npm --workspace @game/server run codegen:plugins` 刷新。
