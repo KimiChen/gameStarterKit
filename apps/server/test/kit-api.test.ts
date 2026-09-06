@@ -144,6 +144,47 @@ test("表闸拒绝：框架表、别的 kit、schema 限定、注释绕过、DDL
   denied("");
 });
 
+test("表闸拒绝：backtick 标识符里的引号 / 注释字符不得让剥离器与 MySQL 词法错位", () => {
+  // MySQL 把 `…` 当一个原子，里面的 ' " # -- /* 都不是字面量/注释起点。剥离器若不认 backtick，
+  // 两个这样的标识符之间的整段（含 FROM/JOIN）会被当作字符串删掉，表引用就此对表闸隐身。
+  denied("SELECT 1 AS `x'`, (SELECT balance FROM user_currency LIMIT 1) AS `y'` FROM k_arena_tile");
+  denied('SELECT 1 AS `x"`, (SELECT balance FROM user_currency LIMIT 1) AS `y"` FROM k_arena_tile');
+  denied("SELECT 1 AS `x#`, (SELECT balance FROM user_currency LIMIT 1) AS `y#` FROM k_arena_tile");
+  denied("SELECT 1 AS `a-- `, (SELECT balance FROM user_currency LIMIT 1) AS `b` FROM k_arena_tile");
+  denied("SELECT 1 AS `a/*`, (SELECT balance FROM user_currency LIMIT 1) AS `b*/` FROM k_arena_tile");
+  // 写侧同形：多表 UPDATE / DELETE 借同一处错位夹带框架表
+  denied("UPDATE k_arena_tile t, (SELECT 1 AS `a'`) d1, user_currency c, (SELECT 2 AS `b'`) d2 SET c.balance = 999999");
+  denied("DELETE c FROM k_arena_tile t, (SELECT 1 AS `a'`) d1, currency_ledger c, (SELECT 2 AS `b'`) d2");
+  // 双写转义 `` 是 tokenize 的 /`([^`]*)`/ 认不了的形态 ⇒ fail-closed，不猜
+  denied("SELECT * FROM `k_arena_a``b`");
+  // 反方向：合法的 backtick 别名照样放行（含引号 / 注释字符），不因加闸误伤
+  assert.deepEqual(allowed("SELECT name AS `it's` FROM k_arena_tile"), ["k_arena_tile"]);
+  assert.deepEqual(allowed('SELECT name AS `say "hi"` FROM k_arena_tile'), ["k_arena_tile"]);
+  assert.deepEqual(allowed("SELECT name AS `a -- b`, x AS `c#d` FROM k_arena_tile"), ["k_arena_tile"]);
+  assert.deepEqual(allowed("SELECT * FROM k_arena_tile WHERE note = 'a`b'"), ["k_arena_tile"]);
+});
+
+test("表闸拒绝：INSERT / REPLACE 省略 INTO（MySQL 语法可省）时目标表仍须过前缀闸", () => {
+  // 省掉 INTO 后整条语句一个 TABLE_KEYWORDS 都不含，主循环不触发 ⇒ 目标表会整个逃过前缀闸。
+  denied("INSERT user_currency (user_id, server_id, currency, balance) VALUES (?,?,?,?)");
+  denied("INSERT user_currency SET balance = 999999");
+  denied("INSERT IGNORE user_currency (user_id) VALUES (?)");
+  denied("INSERT LOW_PRIORITY user_currency (user_id) VALUES (?)");
+  denied("INSERT HIGH_PRIORITY user_currency (user_id) VALUES (?)");
+  denied("INSERT DELAYED user_currency (user_id) VALUES (?)");
+  denied("INSERT user_currency (user_id, balance) VALUES (?,?) ON DUPLICATE KEY UPDATE balance = 99999");
+  denied("INSERT gameplay_outbox SET op_id = ?, status = 'PENDING'");
+  denied("REPLACE user_currency (user_id, server_id, currency, balance) VALUES (?,?,?,?)");
+  denied("REPLACE user_currency SET balance = 1");
+  denied("INSERT k_slgworld_map (id) VALUES (?)"); // 别的 kit 同样拒
+  // 反方向：省略 INTO 指向本 kit 表照样放行
+  assert.deepEqual(allowed("INSERT k_arena_tile (id) VALUES (?)"), ["k_arena_tile"]);
+  assert.deepEqual(allowed("INSERT k_arena_tile SET id = ?"), ["k_arena_tile"]);
+  assert.deepEqual(allowed("INSERT IGNORE k_arena_tile (id) VALUES (?)"), ["k_arena_tile"]);
+  assert.deepEqual(allowed("REPLACE k_arena_tile SET id = ?"), ["k_arena_tile"]);
+  assert.deepEqual(allowed("INSERT `k_arena_tile` (id) SELECT id FROM k_arena_b"), ["k_arena_tile", "k_arena_b"]);
+});
+
 test("kitOpId：命名空间化 type = kit:<id>:<op>，同输入确定、跨 kit / op / 区 / 请求互不碰撞", () => {
   const a = kitOpId("arena", "u1", 3, "capture", "req-1");
   assert.equal(a, deriveOpId("u1", 3, "kit:arena:capture", "req-1"));
