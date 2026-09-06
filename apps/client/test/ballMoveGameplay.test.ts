@@ -31,7 +31,7 @@ class FakePresentation implements BallMovePresentation {
     /** 等待提示的推送流水（null = 收起）。 */
     readonly waitings: (string | null)[] = [];
 
-    showWaiting(text: string | null): void { this.waitings.push(text); }
+    showNotice(text: string | null): void { this.waitings.push(text); }
 
     mount(): void { this.mounts++; }
     render(world: BallMoveRenderWorld): void {
@@ -202,11 +202,19 @@ test("ballMove plugin：房间还没开局（Waiting）时 ⛔ 不发 move；开
     assert.equal(room.moves.length, 1, "开局后同一个方向必须发得出去");
     assert.ok((room.moves.at(-1)?.x ?? 0) > 0.99);
 
-    // 等待提示：未开局时报「n/2」，开局后收起；⚠ 只在变化时推，⛔ 不每帧刷。
+    // 状态提示：Waiting 报「n/2」，开局后收起；⚠ 只在变化时推，⛔ 不每帧刷。
     assert.deepEqual(presentation.waitings, [`等待另一名玩家（1/${BALL_MOVE_MIN_PLAYERS}）`, null],
         "先给等待提示、开局后收起，且各只推一次");
     await controller.tick(1 / 60);
     assert.equal(presentation.waitings.length, 2, "文案没变就 ⛔ 不重复推");
+
+    // ⚠ 对手中途离开 → ballMove 的 shouldSettle（aliveCount<=1）让房间**结算**，而开局时房间
+    // 已被 matchmaking 锁上（真机回探 joinById 得到 `room "…" is locked`）。这时候再说
+    // 「等待另一名玩家」就是骗人：那个人永远不会来。
+    room.phaseValue = GamePhase.Settle;
+    await controller.tick(1 / 60);
+    assert.equal(presentation.waitings.at(-1), "本局结束，点「离开」回主页",
+        "结算阶段 ⛔ 不许再说「等待另一名玩家」");
     await controller.dispose();
 });
 
