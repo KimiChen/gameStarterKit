@@ -9,7 +9,7 @@
 >
 > | 决定项 | 结论 |
 > | --- | --- |
-> | 身份源 | WebPlatform SSO，登录方式 github.com（GitHub OAuth） |
+> | 身份源 | ~~WebPlatform SSO~~ → **注册表自建 GitHub OAuth App**（scope `read:org`；2026-09-06 随 KIT.md §6 改：kit 审核要读 GitHub 团队成员关系，而 WebPlatform 契约不暴露 GitHub 身份） |
 > | 服务形态 | **自建**最小服务（⛔ 不借 Gitea / GitLab 的 package registry） |
 > | 包的归属 | 「首发者拥有 id」，所有者以 GitHub 登录得到的 `username` / `id` 记录 |
 > | 框架 API 门面 | `plugin-api/` + `PLUGIN_API_VERSION` + 导入边界机检**与注册表同期做** |
@@ -77,7 +77,8 @@
   packages/<id>/owners.json                    所有者（GitHub username + id 列表；首发者写入）
   packages/<id>/metadata.json                  单包详情（派生物：版本列表、latest、README 渲染源）
   packages/<id>/<version>/<id>-<version>.zip   pack 产物本体，一经落定不可变
-  packages/<id>/<version>/publish.json         发布 sidecar（§2.1）
+  packages/<id>/<version>/publish.json         发布 sidecar（§2.1；含 class: "kit" | "plugin"）
+  packages/<id>/<version>/reviews/NNN.json     仅 kit：追加式审核记录 + 审核签名（KIT.md §6）
   packages/<id>/<version>/yank.json            下架 sidecar（存在即下架；who / when / reason）
   packages/<id>/<version>/<id>-<version>.zip.sig   可选签名（§3.3）
 ```
@@ -91,7 +92,7 @@
   "publishedAt": "2026-09-05T08:00:00Z",
   "zipSha256": "…", "filesLockSha256": "…", "zipBytes": 123456,
   "manifest": { "schemaVersion": 2, "kinds": ["client"], "constantName": null, "domains": ["redeem"], "fguiPackages": [],
-                "requires": { "pluginApiVersion": 3 }, "description": "…" },
+                "requires": { "pluginApiVersion": 3, "kits": { "slg": { "worldmap": 1 } } }, "description": "…" },
   "validatedAgainst": [
     { "at": "2026-09-05T08:00:01Z", "frameworkCommit": "75a64d3", "protectedPathsSha256": "…",
       "pluginApiVersion": 3, "result": "ok" }
@@ -101,7 +102,7 @@
 ```
 
 - `manifest` 是包内 `plugin.json`（v2：身份 + 客户端登记）经 `parsePluginManifest` 归一化后的身份摘要：`kinds` / `constantName`
-  是派生值（PLUGIN.md §5.3），`requires` 只剩将来的 `pluginApiVersion`；⛔ 不接受任何表单字段。
+  是派生值（PLUGIN.md §5.3），`requires` 是将来的 `pluginApiVersion` 与 `kits`（plugin schema v3，KIT.md §4）；⛔ 不接受任何表单字段。
 - `validatedAgainst` 是**追加式数组**：框架 `main` 每次前进，CI 对所有未下架版本复验并追加一条（§3.2）。
 - 索引字段一律由 `publish.json` / `owners.json` / `yank.json` 派生。
 
@@ -123,7 +124,7 @@
 | 静态 | `index.json`（`Cache-Control: no-cache` + ETag）与 `packages/**`（`immutable, max-age=1y`）由 nginx 直接托管；内网公开读 |
 | 上传 API | `PUT /api/packages`（multipart zip）：鉴权 → 体积上限（64 MB，与 `MAX_ENTRY_BYTES` 同量级）写临时文件 → 子进程校验（§3.2）→ 所有权检查 → `wx` 落盘 → 写 `publish.json` → 派生索引 |
 | 管理 API | `POST /api/packages/<id>/<version>/yank|unyank`、`PUT /api/packages/<id>/owners`（owner 才能改；转让/增员写审计日志） |
-| 鉴权 | WebPlatform SSO（GitHub OAuth）一次交换后，由注册表签发**自己的**短期、限范围 token（`publish`、`yank`、`owners`）；⛔ 不复用 WebPlatform 会话 accessToken（否则注册表要持有 Internal 密钥，且泄漏的 token 同时是可登录游戏的会话） |
+| 鉴权 | 注册表自建 GitHub OAuth App（scope `read:org`）登录后，签发**自己的**短期、限范围 token（`publish`、`yank`、`owners`、`review`）；owners / publisher 记 GitHub login + id；kit 审核动作实时复核 `gono-maintainers` 团队成员关系（KIT.md §6）。⛔ 不走 WebPlatform 会话（它不暴露 GitHub 身份，且泄漏的 token 同时是可登录游戏的会话） |
 | 索引写 | 单写者（进程内队列 + `index.lock`），每次从制品目录重新派生后 tmp + rename 整体替换；`registry rebuild-index` 可离线重建；CI 定期「重建 ⟷ 线上」deepEqual |
 | 网页 | 列表（id / latest / kinds / 描述 / 发布者 / 时间）、单包页（README 取自 latest 未下架版本 zip 内 `apps/plugins/<id>/README.md`，Markdown 渲染禁原生 HTML + sanitizer + CSP；相对链接改写到框架仓在 `validatedAgainst` 最新 commit 的浏览 URL；版本历史、文件清单、sha256、一条安装命令） |
 | 备份 | 备份对象就是 `packages/` 树（sidecar 在内）；索引可重建 |
@@ -209,7 +210,7 @@ CI 对所有未下架版本重跑一遍并追加。CLI 安装时比较本地检�
 
 ## 5. 明确不做（v0）
 
-插件间依赖解析（插件只依赖框架）；付费 / 评分 / 评论；沙箱；公网开放；运行时热更新（PLUGIN.md §10）。
+插件间依赖解析（plugin → plugin 不做；plugin → kit 的单向依赖见 KIT.md §4，kit → kit 不做）；付费 / 评分 / 评论；沙箱；公网开放；运行时热更新（PLUGIN.md §10）。
 
 ## 6. 分期
 
@@ -234,4 +235,5 @@ CI 对所有未下架版本重跑一遍并追加。CLI 安装时比较本地检�
 | §1-11 `.meta` uuid 闸 | ✅ 2026-09-05：`tools/plugin/meta.ts`（正则与 sync-client 逐字相等由测试钉住）、validatePackage 的形状/importer/包内唯一闸、install/reinstall 的宿主 uuid 撞车闸（落盘前拒绝）；fixture `.meta` 改为按路径派生的真 uuid；钉：「§1-11」用例 |
 | feature → plugin 正名 + plugin.json v2（2026-09-05 晚，用户拍板）| ✅：登记单元并入 plugin.json（一个插件一个文件），宿主自有单元搬进 `apps/plugins/`（无 version = 不可打包/不进锁），`features/` 目录、`feature.json`、`FeatureHost`、`codegen:features`、`ft:` 前缀全部改名，`EXTRAS.md` → `EXTRAS.md`；`feature` 一词留给日常语义与地基层（kit，另开设计） |
 | 对抗验证（三名审阅者实跑绕过） | ✅ 2026-09-05 晚：击穿 9 处全部收口——回滚精确到操作前（字节 + 索引快照，用户 WIP 逐字回来）、落盘阶段同套回滚、`git status -z`、暂存删除豁免限 HEAD 本插件锁、大小写改名不丢文件、包内「文件与子路径并存」拒绝、reinstall 不替作者删磁盘文件 + View 删除面从旧锁推出 + 共享命名空间吸收点名、分叉不可被同内容包洗白 + 旧锁 fail-closed + `check` 复核 source 形状/内容身份/id 大小写、requires ⟷ 随包 schemaVersion 交叉核对、孤儿 `.meta` 拒绝、宿主 `.meta` 不可解析即拒绝装、同路径 uuid 变化报告；未击穿：§1-3 git 跟踪闸、§1-4 前缀边界 / 锁间不交、§1-2 install 路径、§1-9 requires 形态。余留（记录，未做）：`--no-git` 与未跟踪文件的吸收仍是「全部吸收」（已点名 review）；subMetas 内 uuid 不在闸内（Creator 是否采信待验证）；NFC/NFD 同名未查 |
+| kit 类别（`class: kit`、`reviews/`、审核签名链、GitHub 团队判定、`latest` 按已批准重算）| 设计已拍板，见 KIT.md §6 / §8 K2；随注册表 v2 实施 |
 | v0 / v1 / v2 | 未开始 |

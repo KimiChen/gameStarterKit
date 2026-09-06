@@ -442,7 +442,8 @@ apps/plugins/
    `apps/server/test/wire-vectors/index.ts` 的手写 import 表（改为 `codegen:gameplays` 生成 `index.generated.ts`，
    sidecar `wire-vectors/<id>.ts` 进 gameplay 所有权）与 `gameplay-codegen.test.ts` 的硬编码玩法集（改为按 schema
    目录发现）。至此 §3 的判据在两种 kind 上都有真实包背书。
-7. **同仓「作者=宿主」的插件迭代动线**（plan-v5 E6）：✅ 已按方案 ② 实施（2026-09-05）——
+7. **kit（地基层）前置的框架 PR**：迁移账本 / 按区表登记 / freeze-thaw 读 `userKeys` / `kKit*` / `kit-api/server` 门面 / effect 登记通道 / 域名前缀规则对插件生效 / plugin schema v3（`requires`）/ 锁目录合并到 `scripts/packages/`——清单与顺序见 [docs/KIT.md](KIT.md) §7，状态只在 KIT.md §9 回写。
+8. **同仓「作者=宿主」的插件迭代动线**（plan-v5 E6）：✅ 已按方案 ② 实施（2026-09-05）——
    `install --reinstall-from-tree <id>`（§5.4）。E5 实证当天撞上的现场（改插件 README 一行即锁红、
    只能回退）已用它重放闭合：bump 1.0.0 → 1.0.1 后以树重写锁。仍开放的同类尾巴：随包 `.meta` 在锁内，Creator
    重排键序即锁红（plan-v5 B 节清单 1-② 待实测后决定 `.meta` 是否按语义比对）。
