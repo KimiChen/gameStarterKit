@@ -375,14 +375,36 @@ fail-closed 发布开关；② 双端模块加载期的三层目录 fail-closed�
 | F10 | 蛇身两侧白齿 | 几何画成「每段一个压扁四边形」；应为「每隔 `repeatedBodyPointDistance` 个路径点画一个按朝向旋转的整帧」，且**写入顺序必须尾→头** | 已修 |
 | F11 | 同一条蛇身体与头有色差（实测 255→229、128→156） | `builtin-unlit` 走 `CCFragOutput`，缺省 ACES 色调映射叠加入口的 `SRGBToLinear` | 已修（场景 `toneMappingType` 置 LINEAR） |
 | F12 | 蛇变短时残留上一帧四边形 | `updateSubMesh` ⛔ 不同步 InputAssembler，而 `gl.drawElements` 读的正是它 | 已修（每次上传后 `onGeometryChanged()`） |
-| F13 | **一局结算把 Redis 里的 `ownedSkinIds` / `fragmentBalances` 写回默认值**（实测：种 `[1,2]` → 只打一局、⛔ 没开过衣柜 → 键变回 `[1]`） | `applyRunRewards` 是**同步**的，读 `fullSnapshotOf(uid)` 拿进程内 profile，而 profile 只由 `snakeCosmetic.*` 三个 RPC 的 `hydrate` 回灌；玩家本进程内没开过衣柜时它就是默认档，随后那条「六字段 HSET」把默认档盖回 Redis。同一原因下 `equippedSkinIdOf` 也会让回访玩家带默认皮肤开局 | **未修**（见下） |
+| F13 | **一局结算把 Redis 里的 `ownedSkinIds` / `fragmentBalances` / `coinBalance` 写回默认值**（实测：种 `[1,2]` → 只打一局、⛔ 没开过衣柜 → 键变回 `[1]`） | `applyRunRewards` 是**同步**的，读 `fullSnapshotOf(uid)` 拿进程内 profile，而 profile 只由 `snakeCosmetic.*` 三个 RPC 的 `hydrate` 回灌；玩家本进程内没开过衣柜时它就是默认档，随后那条「六字段 HSET」把默认档盖回 Redis。demo 钱包更彻底——它**从不**回灌，每局都写「初始余额 + 本局所得」。同一原因下 `equippedSkinIdOf` 也让回访玩家带默认皮肤开局 | 已修（见 §8.3） |
 
-⚠ **F13 未修的原因与影响面**（2026-09-06 衣柜并入 snake 时实测发现，⛔ 不是本次合并引入的——
-合并前「先打一局再开衣柜」同样会丢）：正解是**玩家进房时 await 一次 `snakeCosmeticStore.hydrate(uid)`**，
-但 mode 契约里没有异步 join 钩子，加钩子要动 `GameRoom.ts` / `GameMode.ts`——两者都在
-`scripts/protected-paths.json` 的 `gameplayFlow` 里，属框架改动（要显式重钉 lock）。
-⚠ 衣柜入口改到结算页之后，**每次进衣柜都必然先打一局**，这条缺陷因此从「碰巧遇到」变成「每次都先触发」：
-在开发库里表现为一进衣柜就只剩默认皮肤。⛔ 修它之前不要拿衣柜的皮肤数据当准。
+### 8.3 F13 的修法（2026-09-06 已修）
+
+⛔ 不是本次衣柜合并引入的——合并前「先打一局再开衣柜」同样会丢；只是入口挪到结算页后
+**每次进衣柜都必然先打一局**，于是从「碰巧遇到」变成「每次都先触发」。
+
+三处一起改，缺一条都补不全：
+
+| 层 | 改动 | 为什么非改不可 |
+| --- | --- | --- |
+| 框架（受保护路径，已重钉 `protected-paths.lock`） | `GameMode` 新增 `onBeforeAdmission?(ctx): void \| Promise<void>`，`GameRoom.onJoin` 在**同步重验之后、`onAdmission` 之前** await 它（准入时序新增第 4.5 步） | `createPlayer` 与结算都是**同步**的，要读的档案却在 Redis 里。join 路径上原本没有任何可 await 的玩法钩子——`onAdmission` 被刻意设计成同步（重复/满员检查与玩法资源所有权的原子性靠它）。新钩子只做**无副作用的预热**，⛔ 不分配房间资源；reject = 拒绝入房 |
+| snake | `onBeforeAdmission` 里 await `snakeCosmeticStore.hydrate(uid)` 与 `hydrateDemoCoinBalance(uid)`（`lifecycle.resolveProfilePreheat`，`runtimeEnvironment: "test"` 时为 no-op，纯内存单测不连 Redis） | 这是唯一能让随后的同步读拿到真实档的位置 |
+| snake | 回灌本身改对：并发共用同一个在途 Promise 且**都等它**；失败**不**标记为已回灌（下次重试）。结算侧加兜底闸——`isProfileHydrated && isDemoCoinBalanceHydrated` 都为真才写 Redis，否则点名告警并跳过写回 | 旧实现在 await **之前**就 `hydrated.add(uid)`：第二个并发调用者立刻拿到尚未回灌的默认档（所以「fire-and-forget 预热」不成立），且一次 Redis 抖动就让该 uid 在整个进程里永远停在默认档 |
+
+**实证**（本地栈 Redis 6401 / 游戏服 2568 / `AUTH_PROVIDER=dev`，按台账里的复现步骤逐字跑）：
+
+| 步骤 | 修复前 | 修复后 |
+| --- | --- | --- |
+| 种 `ownedSkinIds=[1,2] equippedSkinId=2 fragmentBalances.401=4 coinBalance=777` | — | — |
+| 只打一局、全程 ⛔ 不开衣柜，读回四个字段 | `[1]` / `1` / `401:0` / `10000` | **`[1,2]` / `2` / `401:4` / `777`**（一个字节都没被动） |
+| 再从结算页进衣柜 | 只剩默认皮肤，equip 无对象可切 | 读到「皮肤 2 已装备、小红 可装备」，点「装备」→ `skin-1` 变已装备，Redis `equippedSkinId` 随之为 `1` 且其余三项不变 |
+
+单测钉住（都做过「改错必转红」的变异验证）：`game-mode.test.ts` 两条（钩子被 await 且排在
+`onAdmission`/`createPlayer` 之前；reject = 拒绝入房）、`snake-room.test.ts` 一条（预热后
+`createPlayer` 锁存存档皮肤 401 而不是默认 1）、`snake-run-rewards.test.ts` 三条（冷档 ⛔ 不写回、
+预热后照常写回、只热了一半也不写）、`snake-cosmetic-profile.test.ts` 与 `snake-relive-demo.test.ts`
+各两三条（并发共用一次回灌、失败不毒化可重试、键不存在算成功）。
+
+---
 
 ⚠ **取证环境限制**：本仓位于 `/Volumes/KimData` 非启动卷，Creator 的资源监听**收不到该卷的
 文件变更**——原子替换与浏览器硬重载实测均无效，**必须手动重开 Creator** 才会重新导入编译。

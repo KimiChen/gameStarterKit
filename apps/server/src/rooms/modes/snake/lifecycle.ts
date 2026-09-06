@@ -3,6 +3,7 @@
 import { createHash } from "node:crypto";
 import { clientFor } from "../../../core/infra/redisRoute";
 import { equippedSkinIdOf } from "./cosmeticProfile";
+import { snakeCosmeticStore } from "./cosmeticRpc";
 import { kSnakeUser } from "./keys";
 
 export const ONLINE_COIN_RELIVE_PLAYER_RELEASED = false;
@@ -117,6 +118,63 @@ const demoOperationKey = (input: ReliveEconomyInput): string =>
     `${input.uid}\u0000${input.roomEpochId}\u0000${input.runId}\u0000${input.deathSeq}`;
 const demoBalances = new Map<string, number>();
 const demoResults = new Map<string, ReliveEconomyResult>();
+/**
+ * 已从 Redis 回灌过余额的 uid（失败不记，下次重试）。⚠ 与衣柜 profile 同一道理：
+ * 没回灌过的钱包是「默认 10000」，而结算的六字段 HSET 会把它写回 Redis——回访玩家的余额
+ * 会被重置成初始值（F13 的同族写回，只是种子档余额恰好也是 10000 才没在复现里显形）。
+ */
+const coinHydrated = new Set<string>();
+const coinHydrations = new Map<string, Promise<void>>();
+
+/** 该 uid 的进程内 demo 余额是否可信（= 能安全写回 Redis）。 */
+export function isDemoCoinBalanceHydrated(uid: string): boolean {
+    return coinHydrated.has(uid);
+}
+
+export type DemoCoinHydration = (uid: string) => Promise<string | null>;
+
+const hydrateCoinFromRedis: DemoCoinHydration = async (uid) =>
+    clientFor(uid).hget(kSnakeUser(uid), "coinBalance");
+
+/**
+ * 入房前把该 uid 的 demo 余额从 Redis 回灌进来；并发调用共用同一次在途请求并都等它。
+ * 读不到（键不存在）也算回灌成功——那就是「新玩家用初始余额」这个事实；
+ * 只有 Redis 报错才不标记，留给下次重试，在那之前 `isDemoCoinBalanceHydrated` 为 false。
+ */
+export async function hydrateDemoCoinBalance(
+    uid: string,
+    options: { readonly hydration?: DemoCoinHydration; readonly initialBalance?: number;
+        readonly reportError?: (error: unknown) => void } = {},
+): Promise<void> {
+    if (coinHydrated.has(uid)) return;
+    let inFlight = coinHydrations.get(uid);
+    if (!inFlight) {
+        const hydration = options.hydration ?? hydrateCoinFromRedis;
+        const initialBalance = options.initialBalance ?? SNAKE_DEMO_INITIAL_COINS;
+        const reportError = options.reportError
+            ?? ((error: unknown) => console.warn(`[snake] demo 钱包回灌失败，本进程内该 uid 的结算不写回 Redis（uid=${uid}）`, error));
+        inFlight = (async (): Promise<void> => {
+            let raw: string | null;
+            try {
+                raw = await hydration(uid);
+            } catch (error) {
+                reportError(error);
+                return;
+            }
+            if (raw !== null && raw !== undefined) {
+                const parsed = Number(raw);
+                if (Number.isSafeInteger(parsed) && parsed >= 0) demoBalances.set(uid, parsed);
+                else console.warn(`[snake] demo 钱包 coinBalance 非法，按初始余额兜底（uid=${uid}, raw=${raw}）`);
+            }
+            if (!demoBalances.has(uid)) demoBalances.set(uid, initialBalance);
+            coinHydrated.add(uid);
+        })().finally(() => {
+            if (coinHydrations.get(uid) === inFlight) coinHydrations.delete(uid);
+        });
+        coinHydrations.set(uid, inFlight);
+    }
+    await inFlight;
+}
 
 const persistDemoRelive: DemoRelivePersistence = async (record): Promise<void> => {
     await clientFor(record.uid).hset(kSnakeUser(record.uid), "coinBalance", String(record.coinBalance));
@@ -190,6 +248,36 @@ export function demoCoinBalanceOf(uid: string, initialBalance = SNAKE_DEMO_INITI
 export function __resetDemoCoinsForTest(): void {
     demoBalances.clear();
     demoResults.clear();
+    coinHydrated.clear();
+    coinHydrations.clear();
+}
+
+/**
+ * 入房前预热：把该 uid 的衣柜档与 demo 钱包从 Redis 回灌进进程内。
+ *
+ * ⚠ 它是 `createPlayer`（同步读装备皮肤）与结算（同步读档算奖励、再全量写回）唯一的正确性前提，
+ * 由 mode 的 `onBeforeAdmission` **await**。⛔ 不能 fire-and-forget：两处读都在同步路径上，
+ * 不等它就等于读默认档（F13）。两份档在同一个 Redis hash 里，但分属两个模块各自的读闸，
+ * 这里并行打一次。任一失败都不抛——各自不标记「已回灌」，结算侧的兜底闸据此跳过写回。
+ */
+export type SnakeProfilePreheat = (uid: string) => Promise<void>;
+
+const preheatFromStorage: SnakeProfilePreheat = async (uid) => {
+    await Promise.all([snakeCosmeticStore.hydrate(uid), hydrateDemoCoinBalance(uid)]);
+};
+
+/**
+ * 预热的环境解析，形态同 `resolveS2ReliveEconomy` / `resolveRewardPersistence`。
+ *
+ * ⚠ `test` 环境返回 no-op：默认实现经 `clientFor` 真开 Redis 连接，而房间单测是纯内存套件。
+ */
+export function resolveProfilePreheat(
+    injected: SnakeProfilePreheat | undefined,
+    runtimeEnvironment: string | undefined,
+): SnakeProfilePreheat {
+    if (injected) return injected;
+    const environment = runtimeEnvironment ?? process.env.NODE_ENV ?? "development";
+    return environment === "test" ? async (): Promise<void> => {} : preheatFromStorage;
 }
 
 export const DISABLED_RELIVE_ECONOMY: ReliveEconomyPort = Object.freeze({
