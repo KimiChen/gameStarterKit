@@ -333,12 +333,23 @@ apps/plugins/
 - **域名前缀规则收紧到真实包上**：snake 一带 version，未被声明的宿主域 `snakeCosmetic` 就落进「框架先占可分发单元前缀」
   （规则 iii），`snakeCosmetic` 因此必须在自己的 `plugin.json` 里显式声明该域。规则按设计生效，不是缺陷。
 
-⚠ **仍未达标的一项：美术资源不随包走**。玩法资源的所有权规则是 `resources/<modeId>/`，而 snake 的 96 个资源在
-`apps/Cocos/assets/resources/snakeoff/`（目录名 ≠ mode id），落在推导集外——`pack snake` 因此**一张图都不带**。
-在本仓装回来看不出问题（资源本来就在），但把这个包装到别的仓里只有代码没有贴图。要补齐得把目录改名为
-`resources/snake/`，代价是：三个客户端文件里的 80 条 `snakeoff/...` 资源路径要同步改（65 条在手工维护的冻结表 `SnakePresentationCatalogData.ts` 里）（现在是
-手工维护的冻结表，⛔ 没有重建工具复核）、`previews/` 目前由 snake 与 snakeCosmetic 共用要先定归属、96 个
-`.meta` 要随文件一起搬且 uuid 不能变。⛔ 本轮不动：它要 snake 专项对 README §2 素材台账拍板。
+#### 5.5.2 衣柜并入 snake + 资源目录归位（2026-09-06，已实施）
+
+`snakeCosmetic` 作为独立 plugin 撤销，整体并入 `snake`（snake@1.1.0）：
+
+- **登记面**：`snakeCosmetic` 域改由 snake 声明（域名与协议**不变**，`registry.generated.ts` 零 diff、协议指纹不动）；
+  Wardrobe route/view 与第二个 `owners` 条目并进 `apps/plugins/snake/plugin.json`；客户端源码从
+  `apps/client/src/plugins/snakeCosmetic/` 搬到 `apps/client/src/plugins/snake/`（后者才是 snake 的客户端命名空间），
+  测试改名 `snake-wardrobe-logic.test.ts` 落进前缀规则。`codegen:plugins` 删单元要显式 `--allow-delete snakeCosmetic`。
+- **入口**：衣柜**不再有设置面板菜单项**，唯一入口是 snake 结算页的「我的衣柜」，与「返回主页」同排。
+  结算页那颗按钮经玩法装配件读 plugin module 注入的 holder 调 `navigation.open("snakeCosmetic")`。
+- **snake 因此是 `resident: true`**：route refcount 归零（关掉衣柜）会触发 `PluginHost.releaseIfIdle` 拆掉
+  plugin module，holder 变 null，同一局里第二次点「我的衣柜」就成哑键。resident 只影响 releaseIfIdle 豁免，
+  ⛔ 不改变「装载在首次 launch 时发生」。
+- **美术资源归位**：`apps/Cocos/assets/resources/snakeoff/` → `resources/snake/`（127 个文件含 `.meta`，`git mv`
+  保 uuid），目录名与 mode id 一致后才落进 `resources/<modeId>/` 规则——**这条补上了 §5.5.1 遗留的「一张图都不带」**：
+  `pack snake` 从 78 文件涨到 230 文件，美术随包走。三个客户端文件 + 两个测试里的 80 条 `snakeoff/...` 路径同批改写。
+  `previews/` 原本由 snake 与 snakeCosmetic 共用的归属问题随合并自然消失。
 
 ## 6. 入口与位置：插件声明身份，宿主决定去处
 

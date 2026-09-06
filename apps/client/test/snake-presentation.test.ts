@@ -85,8 +85,8 @@ class FakeTexture2D {
  * 假件给 2048×2048 的话，结算页的布局断言验的是一块不存在的板子。⛔ 别把这里改回统一默认值。
  */
 const REAL_TEXTURE_SIZES: ReadonlyMap<string, readonly [number, number]> = new Map([
-    ["snakeoff/snake_result_bg/texture", [674, 694]],
-    ["snakeoff/snake_btn_blue/texture", [368, 110]],
+    ["snake/snake_result_bg/texture", [674, 694]],
+    ["snake/snake_btn_blue/texture", [368, 110]],
 ]);
 
 class FakeJsonAsset {
@@ -119,7 +119,7 @@ class FakeJsonAsset {
             "x_lighting01", "x_lighting02", "x_lighting03", "xt_s_lighting", "xt_s_lighting02",
         ].map((logicalName) => ({
             logicalName,
-            textureAsset: `snakeoff/snake_magnet_aura_${logicalName}`,
+            textureAsset: `snake/snake_magnet_aura_${logicalName}`,
             frame: {
                 sourceFrameName: logicalName,
                 rect: { x: 0, y: 0, width: 16, height: 16 },
@@ -237,6 +237,7 @@ class FakeNode {
     readonly position = new FakeVec3();
     readonly scale = new FakeVec3(1, 1, 1);
     private readonly components: unknown[] = [];
+    private readonly taps = new Map<string, (() => void)[]>();
 
     constructor(readonly name = "node") {}
 
@@ -274,7 +275,19 @@ class FakeNode {
         this.scale.set(x, y, z);
     }
 
-    on(_type: string, _callback: (...args: unknown[]) => void, _target: unknown): void {}
+    /** 记录监听而不是丢弃：结算页两颗按钮要按名字取出各自的 TOUCH_END 回调来点。 */
+    on(type: string, callback: (...args: unknown[]) => void, target: unknown): void {
+        const bucket = this.taps.get(type) ?? [];
+        bucket.push(() => callback.call(target));
+        this.taps.set(type, bucket);
+    }
+
+    /** 触发本节点某类事件的全部监听（测试用；⛔ 不做冒泡，真引擎的冒泡不在本桩范围内）。 */
+    tap(type = "touch-end"): number {
+        const bucket = this.taps.get(type) ?? [];
+        for (const fire of bucket) fire();
+        return bucket.length;
+    }
 
     destroy(): void {
         this.destroyed = true;
@@ -335,11 +348,11 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
                 callback(new Error(`missing test resource: ${path}`));
                 return;
             }
-            if (Type === FakeJsonAsset && path === "snakeoff/snake_magnet_aura") {
+            if (Type === FakeJsonAsset && path === "snake/snake_magnet_aura") {
                 callback(null, new FakeJsonAsset());
                 return;
             }
-            if (Type === FakeAudioClip && path === "snakeoff/snake_sfx_collect_magnet") {
+            if (Type === FakeAudioClip && path === "snake/snake_sfx_collect_magnet") {
                 callback(null, new FakeAudioClip());
                 return;
             }
@@ -419,25 +432,30 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
         host.setPosition(375, 812, 0);
         const dispatched: unknown[] = [];
         let sfxEnabled = true;
-        const presentation = new SnakeWorldView(host as never, (value) => dispatched.push(value), () => {}, () => sfxEnabled);
+        let exits = 0;
+        let wardrobeOpens = 0;
+        const presentation = new SnakeWorldView(
+            host as never, (value) => dispatched.push(value), () => { exits += 1; }, () => sfxEnabled,
+            () => { wardrobeOpens += 1; },
+        );
 
         presentation.mount();
         await new Promise<void>((resolve) => setImmediate(resolve));
 
         assert.equal(loadedPaths.length, CLIENT_SNAKE_PRESENTATION_CATALOG.length + 16);
-        assert.ok(loadedPaths.filter((path) => path !== "snakeoff/snake_magnet_aura"
-            && path !== "snakeoff/snake_sfx_collect_magnet")
+        assert.ok(loadedPaths.filter((path) => path !== "snake/snake_magnet_aura"
+            && path !== "snake/snake_sfx_collect_magnet")
             .every((path) => path.endsWith("/texture")));
         for (const required of [
-            "snakeoff/snake_foods_new/texture",
-            "snakeoff/snake_control_joystick_base/texture",
-            "snakeoff/snake_control_joystick_knob/texture",
-            "snakeoff/snake_control_boost/texture",
-            "snakeoff/snake_magnet_tools/texture",
-            "snakeoff/snake_magnet_aura",
-            "snakeoff/snake_sfx_collect_magnet",
-            "snakeoff/snake_speed_fx/texture",
-            "snakeoff/snake_extras/texture",
+            "snake/snake_foods_new/texture",
+            "snake/snake_control_joystick_base/texture",
+            "snake/snake_control_joystick_knob/texture",
+            "snake/snake_control_boost/texture",
+            "snake/snake_magnet_tools/texture",
+            "snake/snake_magnet_aura",
+            "snake/snake_sfx_collect_magnet",
+            "snake/snake_speed_fx/texture",
+            "snake/snake_extras/texture",
         ]) assert.ok(loadedPaths.includes(required), `缺少 ${required}`);
         for (const name of ["SnakeWorld.JoystickBase", "SnakeWorld.JoystickKnob", "SnakeWorld.S4"]) {
             const node = findNode(host, name);
@@ -718,6 +736,25 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
             `标题必须落在结算底板内（|${titleY}| < ${panelHalf}）`);
         assert.ok(exitY !== undefined && Math.abs(exitY) < panelHalf,
             `「返回主页」必须落在结算底板内（|${exitY}| < ${panelHalf}）`);
+        // ── 衣柜入口：并入 snake 后设置面板不再有「衣柜」，结算页这一行是唯一入口 ──────────
+        const nodeOf = (prefix: string): FakeNode | undefined =>
+            resultLayer?.children.find((child) => child.name.startsWith(prefix));
+        const exitNode = nodeOf("label-返回主页");
+        const wardrobeNode = nodeOf("label-我的衣柜");
+        assert.ok(wardrobeNode, "结算页必须有「我的衣柜」——衣柜没有别的入口了");
+        assert.equal(wardrobeNode?.position.y, exitY,
+            "「我的衣柜」必须与「返回主页」同排（同一 y），⛔ 不许上下错开");
+        assert.ok(Math.abs(wardrobeNode!.position.x) < panelHalf,
+            `「我的衣柜」必须落在结算底板内（|${wardrobeNode!.position.x}| < ${panelHalf}）`);
+        assert.ok(exitNode!.position.x * wardrobeNode!.position.x < 0,
+            "两颗按钮必须分居中线两侧，⛔ 不能压在一起");
+        assert.equal(exits, 0);
+        assert.equal(wardrobeNode?.tap(), 1, "「我的衣柜」必须挂了且只挂一个 TOUCH_END");
+        assert.equal(wardrobeOpens, 1, "点「我的衣柜」只打开一次衣柜");
+        assert.equal(exits, 0, "点「我的衣柜」⛔ 不得顺带退出本局");
+        exitNode?.tap();
+        assert.equal(exits, 1, "「返回主页」仍然照常退出");
+        assert.equal(wardrobeOpens, 1);
 
         // ── 结算页之上 ⛔ 不得再开结束确认框（S5-05 F8）─────────────────────────────
         presentation.showEndRunConfirmation(true);
@@ -728,7 +765,7 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
         assert.equal(input.count(), 0, "unmount 必须释放全部触摸监听");
         assert.equal(game.count(), 0, "unmount 必须释放失焦监听");
 
-        missingResources.add("snakeoff/snake_magnet_tools/texture");
+        missingResources.add("snake/snake_magnet_tools/texture");
         const failedHost = new FakeNode("failed-host");
         failedHost.setPosition(375, 812, 0);
         const missingMagnet = new SnakeWorldView(failedHost as never, () => {}, () => {});

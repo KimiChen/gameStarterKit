@@ -1159,9 +1159,13 @@ test("plugin entry：entry 必须是本 plugin 的 apps/client/src/plugins/<id>/
     }).root),
     /entry 必须是本 plugin 自己的 apps\/client\/src\/plugins\/snake\/index\.ts/u,
   );
-  // 文件缺失 → 拒绝。
+  // 文件缺失 → 拒绝。⚠ snake 自己现在真有 index.ts（衣柜并入后它是带 module 的 plugin），
+  // 所以要先把夹具里那份删掉，否则这条测的是「存在」而不是「缺失」。
   assert.throws(
-    () => readViewCatalog(withModule((_root, manifest) => { manifest.entry = "apps/client/src/plugins/snake/index.ts"; }).root),
+    () => readViewCatalog(withModule((root, manifest) => {
+      manifest.entry = "apps/client/src/plugins/snake/index.ts";
+      fs.rmSync(path.join(root, "apps/client/src/plugins/snake/index.ts"), { force: true });
+    }).root),
     /plugins\/snake\/index\.ts: missing required file/u,
   );
   // 未导出约定符号 → 拒绝。
@@ -1186,11 +1190,13 @@ test("plugin entry：entry 必须是本 plugin 的 apps/client/src/plugins/<id>/
   const rendered = fs.readFileSync(path.join(root, PLUGINS_RELATIVE), "utf8");
   assert.match(rendered, /^import type \{ PluginModule \} from "\.\.\/app\/PluginHost";$/mu);
   assert.match(rendered, /readonly load\?: \(\) => Promise<PluginModule>;/u);
-  assert.match(rendered, /id: "snake",\n {8}resident: false,\n {8}load: \(\) => import\("\.\.\/plugins\/snake\/index"\)\.then\(\(m\) => m\.createPluginModule\(\)\),/u);
+  // ⚠ snake 是 resident（衣柜并入后结算页那颗按钮要 holder 常在，见 PLUGIN.md §5.5.2）。
+  assert.match(rendered, /id: "snake",\n {8}resident: true,\n {8}load: \(\) => import\("\.\.\/plugins\/snake\/index"\)\.then\(\(m\) => m\.createPluginModule\(\)\),/u);
   assert.doesNotMatch(rendered, /id: "builtin",\n {8}resident: true,\n {8}load:/u, "无 entry 的 plugin ⛔ 不带 load");
-  // 真仓（当前无 entry）：不引入未使用的类型（noUnusedLocals）。
+  // 真仓：有 entry 就必须带上类型 import，一个 entry 都没有时 ⛔ 不引入未使用的类型（noUnusedLocals）。
   const real = fs.readFileSync(path.join(REPOSITORY_ROOT, PLUGINS_RELATIVE), "utf8");
-  if (!real.includes("load: () => import(")) assert.doesNotMatch(real, /import type \{ PluginModule \}/u);
+  if (real.includes("load: () => import(")) assert.match(real, /import type \{ PluginModule \}/u);
+  else assert.doesNotMatch(real, /import type \{ PluginModule \}/u);
 });
 
 test("宿主 placement（apps/plugins/host.json）：缺失即 fail-fast；defaultLaunch 须有贡献者；home 引用必须存在且渲染进 GENERATED_HOST", () => {
@@ -1425,7 +1431,7 @@ const KFIX_SHOP_PLUGIN_JSON = {
   requires: { kits: { kfix: { board: 1 } } },
   entry: "apps/client/src/plugins/kfixShop/index.ts",
   // 对 kit 的依赖只写在 requires.kits（⛔ 不写两遍）：dependencies 只列插件。
-  dependencies: ["snakeCosmetic"],
+  dependencies: ["redeem"],
   viewDirs: [],
   views: [],
   owners: [],
@@ -1513,9 +1519,9 @@ test("K0 kit：fixture kit + 建在其上的插件只加新文件 → 双端 kit
     const shop = catalog.plugins.find((unit) => unit.id === "kfixShop");
     assert.equal(kfix?.class, "kit");
     assert.equal(shop?.class, "plugin");
-    assert.deepEqual(shop?.dependencies, ["kfix", "snakeCosmetic"], "有效依赖 = required kit（有 entry）先 ++ 声明依赖，去重");
+    assert.deepEqual(shop?.dependencies, ["kfix", "redeem"], "有效依赖 = required kit（有 entry）先 ++ 声明依赖，去重");
     // 真仓自带 arena kit + arenaShop 插件（K0-5 样本）与 fixture 的 kfix / kfixShop 并存，按 id 排序。
-    assert.deepEqual(catalog.plugins.map((unit) => unit.id), ["arena", "arenaShop", "builtin", "kfix", "kfixShop", "redeem", "snake", "snakeCosmetic", "tally"]);
+    assert.deepEqual(catalog.plugins.map((unit) => unit.id), ["arena", "arenaShop", "builtin", "kfix", "kfixShop", "redeem", "snake", "tally"]);
 
     const result = writePluginArtifacts(options);
     for (const relative of [...KIT_ARTIFACTS, PLUGINS_RELATIVE, PLUGIN_INDEX_RELATIVE, REGISTRY_RELATIVE, VECTORS_INDEX_RELATIVE, VIEWS_RELATIVE]) {
@@ -1537,7 +1543,7 @@ test("K0 kit：fixture kit + 建在其上的插件只加新文件 → 双端 kit
     const plugins = fs.readFileSync(path.join(root, PLUGINS_RELATIVE), "utf8");
     assert.match(plugins, /^ {4}"kfix",\n {4}"kfixShop",/mu, "kit 与插件同进 PLUGIN_IDS（class 对 PluginHost 不可见）");
     assert.match(plugins, /id: "kfix",\n {8}resident: false,\n {8}load: \(\) => import\("\.\.\/kits\/kfix\/index"\)\.then\(\(m\) => m\.createPluginModule\(\)\),/u, "kit entry 渲染为 kits/ 命名空间的静态字面量 load");
-    assert.match(plugins, /id: "kfixShop",\n {8}resident: false,\n {8}load: \(\) => import\("\.\.\/plugins\/kfixShop\/index"\)\.then\(\(m\) => m\.createPluginModule\(\)\),\n {8}dependencies: \["kfix","snakeCosmetic"\],/u);
+    assert.match(plugins, /id: "kfixShop",\n {8}resident: false,\n {8}load: \(\) => import\("\.\.\/plugins\/kfixShop\/index"\)\.then\(\(m\) => m\.createPluginModule\(\)\),\n {8}dependencies: \["kfix","redeem"\],/u);
     assert.match(plugins, /entryId: "kfixBoard", pluginId: "kfix"/u, "kit 的菜单贡献照常进 contribution");
     const index = fs.readFileSync(path.join(root, PLUGIN_INDEX_RELATIVE), "utf8");
     assert.match(index, /^\| `kfix` \| kit \| extra \| registered \| /mu);
@@ -1582,7 +1588,7 @@ test("K0 kit：requires.kits 闸——kit 未安装 / api 面不存在 / 版本�
     addFixtureKit(root, { ...headless, viewDirs: [], views: [], owners: [], routes: [], menu: [] });
     addFixtureKitShop(root, KFIX_SHOP_PLUGIN_JSON);
     const shop = readViewCatalog(root).plugins.find((unit) => unit.id === "kfixShop");
-    assert.deepEqual(shop?.dependencies, ["snakeCosmetic"], "无 client entry 的 required kit 不并入 dependencies");
+    assert.deepEqual(shop?.dependencies, ["redeem"], "无 client entry 的 required kit 不并入 dependencies");
     addFixtureKitShop(root, { ...KFIX_SHOP_PLUGIN_JSON, requires: { kits: { kfix: { ranking: 1 } } }, dependencies: [] });
     assert.throws(() => readViewCatalog(root), /没有该 api 面/u, "无 entry 的 kit 的 api 面闸照判");
     // requires.kits 是插件依赖 kit 的唯一通道：dependencies 直接点名 kit 会绕过 api 面版本闸与 plugin 工具的反向闸——
@@ -1593,10 +1599,10 @@ test("K0 kit：requires.kits 闸——kit 未安装 / api 面不存在 / 版本�
       const { requires: _requires, ...noRequires } = KFIX_SHOP_PLUGIN_JSON;
       addFixtureKitShop(bypass, { ...noRequires, dependencies: ["kfix"] });
       assert.throws(() => readViewCatalog(bypass), /插件 kfixShop 的 dependencies 直接引用 kit "kfix"——对 kit 的依赖只能经 requires\.kits 声明/u);
-      addFixtureKitShop(bypass, { ...KFIX_SHOP_PLUGIN_JSON, dependencies: ["snakeCosmetic", "kfix"] });
+      addFixtureKitShop(bypass, { ...KFIX_SHOP_PLUGIN_JSON, dependencies: ["redeem", "kfix"] });
       assert.throws(() => readViewCatalog(bypass), /插件 kfixShop 的 dependencies 直接引用 kit "kfix"/u, "写两遍同样拒绝");
       addFixtureKitShop(bypass, KFIX_SHOP_PLUGIN_JSON);
-      assert.deepEqual(readViewCatalog(bypass).plugins.find((unit) => unit.id === "kfixShop")?.dependencies, ["kfix", "snakeCosmetic"], "只经 requires.kits 声明 → 自动并入");
+      assert.deepEqual(readViewCatalog(bypass).plugins.find((unit) => unit.id === "kfixShop")?.dependencies, ["kfix", "redeem"], "只经 requires.kits 声明 → 自动并入");
     }
   } finally {
     fixtures.dispose();
@@ -1637,7 +1643,7 @@ test("K0 kit：kit.json.modes 必须 ≡ gameplays/ 子目录集（多目录 / �
 
 test("K0 kit：域名前缀规则 (i) 一域一主 (ii) 边界前缀 + 最长前缀单元 + descriptor 存在 (iii) 未声明域不得占带版本单元前缀；真仓与宿主自有单元豁免", () => {
   const descriptorDomains = (root: string): readonly string[] => readPluginDescriptors({ repositoryRoot: root }).domains.map((domain) => domain.domain);
-  // 真仓：guild/mail/room/shop/user/snakeCosmetic 未声明（宿主自有 snakeCosmetic/snake 无 version 豁免），redeem 由带版本的 redeem 声明。
+  // 真仓：guild/mail/room/shop/user 未声明（都不是任何带版本单元的边界前缀），snakeCosmetic 由带版本的 snake 声明（衣柜已并入），redeem 由带版本的 redeem 声明。
   assert.doesNotThrow(() => assertDomainOwnership(descriptorDomains(REPOSITORY_ROOT), readViewCatalog(REPOSITORY_ROOT).plugins));
   const fixtures = fixtureCollector();
   try {
@@ -1654,12 +1660,12 @@ test("K0 kit：域名前缀规则 (i) 一域一主 (ii) 边界前缀 + 最长前
     // (ii) 边界：redeemx 不是 redeem 的边界前缀形态
     assert.throws(check((root) => mutateJson(root, "apps/plugins/redeem/plugin.json", (m) => { m.domains = ["redeem", "redeemx"]; })),
       /plugin "redeem" 声明的域 "redeemx" 必须等于其 id 或以其 id 开头并紧随大写字母\/数字/u);
-    // (ii) 最长前缀：snake 不能在 snakeCosmetic 存在时声明 snakeCosmetic（descriptor 真实存在，故不是「无 descriptor」触发；
-    // 同时把 snakeCosmetic 自己的声明摘掉，否则先撞上 (i) 一个域一个主人，测不到最长前缀这条）
+    // (ii) 最长前缀：kit arena 不能在 plugin arenaShop 存在时声明 arenaShop（descriptor 真实存在，
+    // 故不是「无 descriptor」触发；同时把 arenaShop 自己的声明摘掉，否则先撞上 (i) 一个域一个主人）
     assert.throws(check((root) => {
-      mutateJson(root, "apps/plugins/snakeCosmetic/plugin.json", (m) => { m.domains = []; });
-      mutateJson(root, "apps/plugins/snake/plugin.json", (m) => { m.domains = ["snakeCosmetic"]; });
-    }), /plugin "snake" 声明的域 "snakeCosmetic" 的最长前缀单元是 "snakeCosmetic"/u);
+      mutateJson(root, "apps/plugins/arenaShop/plugin.json", (m) => { m.domains = []; });
+      mutateJson(root, "apps/kits/arena/kit.json", (m) => { m.domains = ["arena", "arenaShop"]; });
+    }), /kit "arena" 声明的域 "arenaShop" 的最长前缀单元是 "arenaShop"/u);
     // (ii) 声明的域必须真有 descriptor
     assert.throws(check((root) => mutateJson(root, "apps/kits/kfix/kit.json", (m) => { m.domains = ["kfix", "kfixAdmin"]; })),
       /kit "kfix" 声明的域 "kfixAdmin" 没有 descriptor/u);
@@ -1722,8 +1728,8 @@ test("K0 kit：kit 与 plugin 共享 id 空间（大小写归一撞名拒绝）�
       writeJson(root, "apps/kits/kfixTwo/kit.json", { schemaVersion: 1, id: "kfixTwo", dependencies: ["kfix"] });
       assert.throws(() => readViewCatalog(root), /kit "kfixTwo" 不得依赖别的 kit "kfix"/u);
       // kit 只依赖框架：依赖插件（会把地基排到插件之后装载）与依赖不存在的 id 同样拒绝。
-      writeJson(root, "apps/kits/kfixTwo/kit.json", { schemaVersion: 1, id: "kfixTwo", dependencies: ["snakeCosmetic"] });
-      assert.throws(() => readViewCatalog(root), /kit "kfixTwo" 不得依赖插件 "snakeCosmetic"（KIT\.md §1\/§4：kit 只依赖框架，依赖解析只做 plugin → kit 单向）/u);
+      writeJson(root, "apps/kits/kfixTwo/kit.json", { schemaVersion: 1, id: "kfixTwo", dependencies: ["redeem"] });
+      assert.throws(() => readViewCatalog(root), /kit "kfixTwo" 不得依赖插件 "redeem"（KIT\.md §1\/§4：kit 只依赖框架，依赖解析只做 plugin → kit 单向）/u);
       writeJson(root, "apps/kits/kfixTwo/kit.json", { schemaVersion: 1, id: "kfixTwo", dependencies: ["ghost"] });
       assert.throws(() => readViewCatalog(root), /kit "kfixTwo" 不得依赖插件 "ghost"/u);
       writeJson(root, "apps/kits/kfixTwo/kit.json", { schemaVersion: 1, id: "kfixTwo", dependencies: [] });

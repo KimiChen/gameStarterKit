@@ -17,6 +17,7 @@ import {
     createSnakeRoomAdapter,
     createSnakeRoomJoiner,
 } from "../../../net/rooms/SnakeRoom";
+import { getSnakeCosmeticRuntime } from "../../../plugins/snake/logic/snakeCosmeticRuntime";
 import type { GameplayServicesContext } from "../../services";
 
 /** snake 的 launch 载荷：首版恒 `{}`（drop-in 撮合无参数；留 exact 校验闸防脏数据）。 */
@@ -76,5 +77,17 @@ async function createSnakePresentation(
             });
         },
         () => services.session.getSessionProfile()?.sfxOn ?? true,
+        () => {
+            // 结算页「我的衣柜」：衣柜并入 snake 后没有菜单入口，只能由本玩法打开自己的 route。
+            // holder 由 snake plugin module install 注入（snake 是 resident，⛔ 关掉衣柜不会被拆）。
+            const runtime = getSnakeCosmeticRuntime();
+            if (!runtime) {
+                console.error("[snake] 衣柜未就绪（snake plugin module 未装载），忽略结算页入口");
+                return;
+            }
+            void runtime.open().catch((error) => {
+                console.error("[snake] 打开衣柜失败：", error);
+            });
+        },
     );
 }
