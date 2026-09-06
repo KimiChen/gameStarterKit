@@ -103,11 +103,13 @@ export interface BallMovePresentation {
     mount(): void;
     render(world: BallMoveRenderWorld): void;
     /**
-     * 未开局时的等待提示（`null` = 收起）。
-     * ⚠ 这个演示 roster 要 `BALL_MOVE_MIN_PLAYERS` 人才开局，单人进来会一直停在 Waiting：
-     * 没有这行提示，玩家只会看到「点了没反应」（还不如以前那一屏 1001 至少说明有事发生）。
+     * 非对局中的一行状态提示（`null` = 收起）。
+     * ⚠ 三种阶段说三种话，⛔ 别再只写「等待另一名玩家」：真机实测（2026-09-06）对手中途离开后
+     * ballMove 的 `shouldSettle`（aliveCount<=1）会让房间**结算**，而开局时房间已被 matchmaking
+     * 锁上（回探 `joinById` 得到 `room "…" is locked`）——这时候再说「等待另一名玩家」就是骗人：
+     * 那个人永远不会来。
      */
-    showWaiting(text: string | null): void;
+    showNotice(text: string | null): void;
     unmount(): void;
 }
 
@@ -335,17 +337,22 @@ export class BallMoveGameplay implements GameplayPlugin<BallMoveRoom, BallMoveIn
     }
 
     /**
-     * 未开局时把「等待另一名玩家（n/N）」推给展示层；已开局收起。
-     * ⚠ 只在文案变化时推：这是每帧调用的路径。
+     * 把当前阶段翻译成一行提示推给展示层。⚠ 只在文案变化时推：这是每帧调用的路径。
+     * 三种阶段各说各的（见 `BallMovePresentation.showNotice` 的说明）：
+     *  - Playing：收起；
+     *  - Waiting：还差人，报 n/N；
+     *  - Settle：本局已结束（对手离开或分出胜负），⛔ 不能再说「等待另一名玩家」——房间已锁，等不来。
      */
     private pumpWaitingNotice(): void {
-        const playing = this.room?.phase() === GamePhase.Playing;
-        const text = playing
+        const phase = this.room?.phase() ?? null;
+        const text = phase === GamePhase.Playing
             ? null
-            : `等待另一名玩家（${this.playerCount}/${BALL_MOVE_MIN_PLAYERS}）`;
+            : phase === GamePhase.Settle
+                ? "本局结束，点「离开」回主页"
+                : `等待另一名玩家（${this.playerCount}/${BALL_MOVE_MIN_PLAYERS}）`;
         if (text === this.waitingText) return;
         this.waitingText = text;
-        this.presentation?.showWaiting(text);
+        this.presentation?.showNotice(text);
     }
 
     private sendDir(x: number, y: number): void {
