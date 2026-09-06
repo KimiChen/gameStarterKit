@@ -760,6 +760,26 @@ async function scenarioBallMove(runner) {
     const shot = await runner.shot("ballmove");
     return { shot, hasExitButton: exit !== null, note: "画布演示无文本，判据是 PlayersLayer 挂载 + 左上角「离开」按钮在位" };
   });
+  // ⚠ 必须真的**动一下**：这个演示的输入是「点画布 → 朝那儿走」，而 c2s.move 只在 phase=Playing
+  // 允许（ballMove roster 要 2 人才开局）。以前这个场景只挂载、只点「离开」，从不发输入，
+  // 于是「单人时一动就被服务端 1001 拒」这条一直测不到。⛔ 别把这一步删了。
+  await runner.step("在画布上拖一下（发 c2s.move）→ 控制台 ⛔ 不许出现服务端错误", async () => {
+    const canvas = await runner.client.evaluate(`(() => {
+      const rect = document.querySelector("#GameCanvas").getBoundingClientRect();
+      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    })()`);
+    const before = (await runner.client.evaluate("(window.__creatorPreviewLogs || []).length")) ?? 0;
+    await runner.client.click(canvas.x + 40, canvas.y - 60);
+    await sleep(600);
+    await runner.client.click(canvas.x - 50, canvas.y + 70);
+    await sleep(900);
+    const logs = await runner.client.evaluate("(window.__creatorPreviewLogs || []).slice(-20)");
+    const fresh = logs.slice(Math.max(0, logs.length - (logs.length - Math.max(0, before - (logs.length - logs.length)))));
+    const serverErrors = logs.filter((entry) => entry.text && entry.text.includes("[服务端错误]"));
+    if (serverErrors.length > 0) throw new Error(`拖动后服务端回了错误：${serverErrors.map((e) => e.text).join(" | ").slice(0, 300)}`);
+    return { taps: 2, logsBefore: before, logsAfter: logs.length, note: "单人时 phase 还是 Waiting，⛔ 客户端不该把 move 发出去" };
+  });
+
   return runner.step("点「离开」回首屏（2026-09-06 修复前该入口没有退出 UI）", async () => {
     await runner.tapText("离开");
     await runner.waitFor(

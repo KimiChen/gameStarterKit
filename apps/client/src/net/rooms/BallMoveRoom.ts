@@ -43,6 +43,7 @@ export function createBallMoveRoom(
         get dropping() {
             return room.dropping;
         },
+        phase: () => (room.current ? room.state.phase ?? null : null),
         onWelcome: (callback) => onMessage(S2C.Welcome, callback),
         onPong: (callback) => onMessage(S2C.Pong, callback),
         onChat: (callback) => onMessage(S2C.Chat, callback),
