@@ -295,7 +295,7 @@ apps/plugins/
   <id>/gameplay/state.json
 ```
 
-宿主自带的登记单元（builtin / snake / snakeCosmetic）与安装进来的插件（redeem / tally）在同一根下、同一形态——
+宿主自带的登记单元（builtin / snakeCosmetic）与带 version 的可分发单元（snake / redeem / tally）在同一根下、同一形态——
 「插件只消费框架既有形态」在这里字面成立。`codegen:plugins` 只有这一个发现根（目录名 = id）；`codegen:gameplays` 读
 `apps/shared/schema/gameplays/<id>/`（框架玩法：snake / ballMove / idle）∪ `apps/plugins/<id>/gameplay/`。旧的 `features/`
 目录、`feature.json`、`FeatureHost`、`codegen:features`、`ft:` 键前缀全部改名（feature → plugin；键前缀 `pl:`），
@@ -313,6 +313,25 @@ apps/plugins/
   到框架固定位置（物化副本登记为 writer 产物，手改即红），锁只登记 `apps/plugins/<id>/**`。前提是插件代码只 import
   `@game/plugin-api/*` 这类稳定说明符——相对导入在原地与物化后无法同时成立；客户端受 Cocos 编译链只认相对导入的限制，
   源码收到 `apps/client/src/plugins/<id>/` 为止。
+
+#### 5.5.1 snake 迁入插件标准（2026-09-06，已实施）
+
+默认玩法 snake 从「宿主自有单元」升为带 version 的可分发 plugin：玩法单源搬到
+`apps/plugins/snake/gameplay/{manifest,state}.json`，测试改用 `snake-` 前缀落进推导集，`plugin.json` 加
+`version: 1.0.0`。**实证**（主树真跑）：`pack snake` 78 文件零跳过 → 删掉全部 78 个作者文件（十个 snake 目录被清空，
+证明推导集无遗漏）→ `install` 写回 78 文件、postinstall 三个 codegen 均 `no changes` → 与迁移提交逐字节相同
+（`git diff` 只多出 `scripts/packages/snake.lock`）→ `check` 五包全绿 → `plugin -- test snake` 106 例 → `uninstall
+--dry-run` 78 文件。
+
+两处连带修正：
+
+- **三个冻结数据表去掉 `.generated` 后缀**（`snakeSkinCatalogData` / `skinBusinessCatalogData` /
+  `SnakePresentationCatalogData`）。它们的生成器已随文档归并删除、从此只能手工维护（snake README §9.1），而
+  `*.generated.*` 是 §5.2 的硬排除文件名形态：带旧名时 `pack` 把它们漏在包外，`install` 又把树上残留的同名文件判成
+  所有权冲突——snake 打得出包却装不上。⚠ 一般结论：**插件目录内不能有真正的生成物**，凡是必须随包走的内容都不能
+  叫 `*.generated.*`。
+- **域名前缀规则收紧到真实包上**：snake 一带 version，未被声明的宿主域 `snakeCosmetic` 就落进「框架先占可分发单元前缀」
+  （规则 iii），`snakeCosmetic` 因此必须在自己的 `plugin.json` 里显式声明该域。规则按设计生效，不是缺陷。
 
 ## 6. 入口与位置：插件声明身份，宿主决定去处
 
