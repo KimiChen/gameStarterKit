@@ -5,6 +5,8 @@
  * app/AppRuntime + app/bootstrap；本组件不再直接触达 pages/session/gameplay。
  */
 import { _decorator, Component, ResolutionPolicy, view } from "cc";
+import { DEV } from "cc/env";
+import { installErrorOverlay } from "./core/errorOverlay";
 import { installWeChatCompat } from "./core/wechat-compat";
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from "./designSpec";
 import { DEFAULT_LAUNCH_GAMEPLAY_ID } from "./app/builtinPlugin";
@@ -14,6 +16,9 @@ import type { AppRuntime } from "./app/AppRuntime";
 // Must run before the first Colyseus operation. Imported network modules do not
 // connect during evaluation; RoomController starts the join only from enterBattle.
 installWeChatCompat();
+// 开发期错误弹框：手机上开预览时「请打开控制台」等于没说，这个弹框可读、可选中、可一键复制。
+// ⚠ 要在最早期装上，才盖得住模块求值阶段就抛的错；⛔ DEV 闸不能去掉——release 不把堆栈甩给玩家。
+if (DEV) installErrorOverlay();
 
 const { ccclass, property } = _decorator;
 
