@@ -2,7 +2,7 @@
  * S3 Demo 衣柜 profile：**进程内唯一真相 + Redis best-effort 镜像**。
  *
  * 形态沿用 S2R 的 `demoBalances`（`lifecycle.ts`）：模块级 Map、同步改内存、再 fire-and-forget
- * 写 Redis，写失败只告警不回滚。两点与 S2R 不同，都是 docs/s/s3 的显式判据：
+ * 写 Redis，写失败只告警不回滚。两点与 S2R 不同，都是 apps/plugins/snake/README.md §5.6 的显式判据：
  *  1. **读函数返回深拷贝**——⛔ 绝不把模块内可变对象交给 handler 或客户端（s3「对外返回排序后的副本」）。
  *  2. **回灌用白名单 `HMGET`**——⛔ 全仓禁 `HGETALL`（09·R1，见 `core/userRecord.ts` 抬头与 docs/SERVER.md）。
  *

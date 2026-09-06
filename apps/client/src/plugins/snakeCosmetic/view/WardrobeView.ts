@@ -46,7 +46,7 @@ const VISIBLE_ROWS = 6;
  * 预览图裁剪：S1 生成的 420×160 技术图顶部有 28px 的 `SKIN <id> NORMAL` 标题条，
  * 衣柜里要裁掉它只留下方的 tail+body+head 合成条。
  * ⚠ 该图底色是**不透明深蓝**（烘死在 PNG 里），贴在行底板上会有一块矩形色差——
- * 要透明底得改 `tools/snake-s1-assets/core.mjs` 重出 16 张 PNG，那会动 S1 证据字节，
+ * ⛔ 要透明底已无法重出：生成器 tools/snake-s1-assets/ 已删除（见 plugins/snake/README.md §9.1），
  * 不在本步范围。⛔ 别把这块色差当渲染 bug 修。
  */
 const PREVIEW_SOURCE_WIDTH = 420;

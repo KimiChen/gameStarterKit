@@ -313,9 +313,9 @@ B 最初只解析 `ui://`，于是「被引用但未导出」的资源同时逃�
 ### 3.11 《Snake Off》竖版贪吃蛇玩法策划案
 
 状态：**首版已实现，且是当前默认玩法 `snake`**（V2 无尽版 S0～S2R 已完成，S3～S5 待实施，见
-[docs/s/README.md](s/README.md)）。
+[Snake 玩法文档](../apps/plugins/snake/README.md)）。
 
-`docs/snakeoff/` 是竖版贪吃蛇首版的策划案与来源台账（产品/规则/房间流程/协议/数据/测试路线/美术方向）。
+⚠ 原 `docs/snakeoff/` 的开房玩法提案（六位邀请码私房、四人、房主开局）**已废弃**并于 2026-09-06 删除；其素材授权台账已并入 Snake 玩法文档。
 玩法运行时不在本节登记为额外能力：它是当前默认玩法（shared 契约 `apps/shared/schema/gameplays/snake`、
 服务端 `modes/snake`、客户端 snake 目录），归 CLAUDE.md「当前范围」与 plan-v5 C1 管辖，`docs/inventory.json`
 的默认入口登记随之。其技术方案由 `docs/Non-intrusive.md`（非侵入式框架改造方案，框架侧阶段 0–9 已实施）承担；

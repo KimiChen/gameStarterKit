@@ -1,5 +1,5 @@
 /**
- * Snake AI（用户拍板 2026-09-02：首版加 AI 填充；docs/snakeoff/08 §3 参考源
+ * Snake AI（用户拍板 2026-09-02：首版加 AI 填充；apps/plugins/snake/README.md §2 参考源
  * `AiUtil.changeAiDirection` 优先级链，全部确定性化）。
  *
  * 决策优先级（每 tick 短路）：

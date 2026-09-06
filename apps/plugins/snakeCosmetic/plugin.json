@@ -3,7 +3,7 @@
   "id": "snakeCosmetic",
   "category": "extra",
   "docs": [
-    "docs/s/s3-wardrobe-and-equipment.md"
+    "apps/plugins/snake/README.md"
   ],
   "resident": false,
   "entry": "apps/client/src/plugins/snakeCosmetic/index.ts",
