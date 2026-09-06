@@ -1,5 +1,13 @@
 {
   "schemaVersion": 1,
   "defaultLaunch": { "kind": "gameplay", "gameplayId": "snake" },
-  "home": ["snake/snake"]
+  "home": ["snake/snake"],
+  "groups": [
+    {
+      "id": "arenaHub",
+      "label": "竞技场",
+      "labelKey": "menu.group.arena",
+      "members": ["arena/board", "arena/capture", "arena/duel", "arenaShop/arenaShop"]
+    }
+  ]
 }

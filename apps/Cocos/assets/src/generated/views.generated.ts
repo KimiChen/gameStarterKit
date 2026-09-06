@@ -26,6 +26,11 @@ export const GENERATED_VIEW_CATALOG: Readonly<Record<string, ViewMeta>> = {
         sharedPkgs: ["ui/Common_Btn","ui/Common_RGBA"],
         load: () => import("../view/ConfirmView").then((m) => m.ConfirmView),
     }),
+    EntryGroup: defineView({
+        name: "EntryGroup", kind: "cocos", layer: "popup",
+        fullscreen: true, onlyOne: true, permanent: false, interactive: false,
+        load: () => import("../view/EntryGroupView").then((m) => m.EntryGroupView),
+    }),
     Home: defineView({
         name: "Home", kind: "fgui", contract: HOME_CONTRACT, layer: "base",
         fullscreen: true, onlyOne: true, permanent: false, interactive: true,
@@ -88,6 +93,7 @@ export const VIEW_SOURCE_RECORDS: readonly GeneratedViewSourceRecord[] = [
     { name: "ArenaShop", owner: "arenaShop", kind: "cocos", path: "apps/client/src/plugins/arenaShop/view/ArenaShopView.ts", logic: "apps/client/src/plugins/arenaShop/logic/ArenaShopLogic.ts", sidecar: "apps/client/src/plugins/arenaShop/view/ArenaShopView.view.json" },
     { name: "BallMove", owner: "ballMove", kind: "cocos", path: "apps/client/src/view/rooms/ballMove/BallMoveView.ts", logic: "apps/client/src/logic/rooms/ballMove/BallMoveGameplay.ts", sidecar: "apps/client/src/view/rooms/ballMove/BallMoveView.view.json" },
     { name: "Confirm", owner: "builtin", kind: "fgui", pkg: "View_SharedWidget_Confirm", comp: "Confirm", path: "apps/client/src/view/ConfirmView.ts", logic: "apps/client/src/logic/page/ConfirmLogic.ts", sidecar: "apps/client/src/view/ConfirmView.view.json" },
+    { name: "EntryGroup", owner: "builtin", kind: "cocos", path: "apps/client/src/view/EntryGroupView.ts", logic: "apps/client/src/logic/page/EntryGroupLogic.ts", sidecar: "apps/client/src/view/EntryGroupView.view.json" },
     { name: "Home", owner: "builtin", kind: "fgui", pkg: "View_Home_Home", comp: "Home", path: "apps/client/src/view/HomeView.ts", logic: "apps/client/src/logic/page/HomeLogic.ts", sidecar: "apps/client/src/view/HomeView.view.json" },
     { name: "Login", owner: "builtin", kind: "fgui", pkg: "View_AreaList_Login", comp: "Login", path: "apps/client/src/view/LoginView.ts", logic: "apps/client/src/logic/page/LoginLogic.ts", sidecar: "apps/client/src/view/LoginView.view.json" },
     { name: "LoginNotice", owner: "builtin", kind: "fgui", pkg: "View_AreaList_LoginNotice", comp: "LoginNotice", path: "apps/client/src/view/LoginNoticeView.ts", logic: "apps/client/src/logic/page/LoginNoticeLogic.ts", sidecar: "apps/client/src/view/LoginNoticeView.view.json" },

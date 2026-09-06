@@ -6,7 +6,8 @@
 
 ## 玩家可见行为
 
-- 设置面板「插件入口」列表出现「竞技场商店」（入口 id `arenaShop`，`launch.kind:"route"`，⛔ 不占首屏位）。
+- 设置面板「插件入口」列表 →「竞技场」分组页里出现「竞技场商店」（入口 id `arenaShop`，`launch.kind:"route"`，⛔ 不占首屏位）。
+  ⚠ 2026-09-06 起本入口与 kit arena 的三条入口一起收在宿主分组 `arenaHub` 里（apps/plugins/host.json），设置面板顶层只见「竞技场」一行。
 - 面板：列出**自己在竞技场占领的格**，每格一个「+守备（10 金）」按钮；成功显示 `→ 守备 N，余额 M`；失败按错误码翻译：
   `ARENA_SHOP_TILE_NOT_OWNED`（本域）/ `INSUFFICIENT_BALANCE`（shop 域所有的框架经济码）/ `STALE_FENCE`（core）/ 网络类——
   codegen 要求一个码只由一个域声明，本域 ⛔ 不重复声明后两者，它们仍经 `RPC_ERR_CODES` 全集到达客户端。

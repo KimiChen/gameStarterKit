@@ -10,6 +10,7 @@
 | `replay-all/` | **修复前**的全量重放（`run.mjs all --code DEVTEST`），ok=true、console 零 error；下面三条问题就是在它里面暴露的 |
 | `replay-fixed/` | **修复后**的全量重放（同一套场景，13 场景 61 步 40 图），ok=true、console 零 error：snake 首击不再需要重试（`retried: false`）、ballMove 有「离开」按钮并回首屏、衣柜可翻页 |
 | `replay-arenashop-insufficient/` | 补充对照：dev 账号 0 金时买加固 → 「金币不足」（`tx.debit` 经主账本拒绝） |
+| `replay-entry-group/` | **竞技场四入口收成一个入口之后**的全量重放（`run.mjs all`，13 场景 73 步 47 图，ok=true、console 零 error）：设置面板顶层从 8 行变 5 行（竞技场 / 进入战斗 / 兑换码 / 贪吃蛇大作战 / 点数赛），「竞技场」点进去是分组页，按 placement 声明序列出「竞技场 · arena / 占领赛 · arena / 决斗 · arena / 竞技场商店 · arenaShop」，四条入口各自照常可进可玩，route 形态关掉后逐层退回设置面板 |
 | `replay-f13-fixed/` | **F13 修复后**的复验（`run.mjs cosmetic`，12 步 12 图，ok=true、console 零 error）：种子档打完一局后 `ownedSkinIds/equippedSkinId/fragmentBalances/coinBalance` 一个字节没动，衣柜读到「皮肤 2 已装备」并成功把装备切回小红 |
 | `replay-wardrobe-merged/` | **衣柜并入 snake 之后**的复验（`snake/` 与 `cosmetic/` 两次重放，ok=true、console 零 error）：设置面板只剩 8 个入口（「衣柜」已撤），结算页「返回主页」(786,587) 与「我的衣柜」(906,587) **同排**（Δy=0），从结算页进衣柜 → 6 行皮肤 + 四个筛选 → 「关闭」回结算页 → 「返回主页」回首屏。⚠ 本轮 equip/craft 记 skip 并非回归，见下方 F13 |
 | `replay-snake-plugin/` | **snake 迁插件标准之后**的复验（`run.mjs snake`，7 步 7 图）：ok=true、console 零 error、`retried: false`——玩法单源搬进 `apps/plugins/snake/gameplay/`、三个冻结数据表改名之后，真引擎里的 snake 一路照旧 |
