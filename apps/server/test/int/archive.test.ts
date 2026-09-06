@@ -26,8 +26,8 @@ import {
   COLD_DAYS, OUTBOX_DEAD, OUTBOX_DONE, OUTBOX_PENDING, SCHEMA_VERSION, WHALE_FIELDS,
 } from "../../src/core/infra/config";
 import {
-  activeLruBucketOf, kActiveLru, kApplied, kAppliedPayload, kArchiveProof, kBag, kBagAll, kFence, kLock, kNegcacheUser, kSess, kUser,
-  zoneCtx,
+  activeLruBucketOf, kActiveLru, kApplied, kAppliedPayload, kArchiveProof, kBag, kBagAll, kFence, kKitUser, kLock, kNegcacheUser,
+  kSess, kUser, zoneCtx,
 } from "../../src/core/infra/keys";
 import { cacheClient, clientFor, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
 import { CAS_HSET, evalshaWithReload } from "../../src/core/infra/redisScripts";
@@ -42,8 +42,9 @@ import { writeGroupSess } from "../../src/core/auth/session";
 import { deriveOpId, redisApply } from "../../src/core/economy/outbox";
 import { relayerTick } from "../../src/core/economy/relayer"; // cold 行内部直接走 ensureLive 解冻重试（09·X5）
 import {
-  prepareArchiveCandidate, thawRestore, type ArchiveSnapshot,
+  kitUserKeyEntries, prepareArchiveCandidate, thawRestore, type ArchiveSnapshot,
 } from "../../src/core/archive/archiveScripts";
+import type { ServerKitCatalogEntry } from "../../src/kits/catalogTypes";
 import {
   _thawTestHooks, archiveCounters, ensureLive, resolve, thawLimiter,
 } from "../../src/core/archive/thaw";
@@ -65,6 +66,15 @@ import {
 import { assertRedisUp, cleanupUser, testUid } from "./helpers";
 
 const COLD_MS = COLD_DAYS * 86_400_000;
+
+/**
+ * kit 目录 fixture（KIT.md §5 冷档行）：生成物 SERVER_KIT_CATALOG 在本仓为空占位，冷档的 kit 段只能靠注入验证。
+ * 两个 userKeys 里只有 tileOwner 会被写入——marchQueue 缺席，证明「缺席不占位」。
+ */
+const KIT_FIXTURE: readonly ServerKitCatalogEntry[] = [{
+  id: "arena", version: "1.0.0", api: { board: { version: 1, minSupported: 1 } }, modes: [], domains: [], effects: [],
+  sqlFiles: [], sqlTables: [], userKeys: ["tileOwner", "marchQueue"],
+}];
 
 const usedUids: string[] = [];
 const uid = (name: string): string => { const u = testUid(name).slice(0, 32); usedUids.push(u); return u; };
@@ -111,17 +121,22 @@ interface Dump {
   bags: Record<string, string>[];
   applied: string[];
   appliedPayload: Record<string, string>;
+  /** KIT_FIXTURE 目录的 kit per-user HASH（`<kitId>:<name>` → 全字段；缺席 = 空对象）。 */
+  kits: Record<string, Record<string, string>>;
   counter: string | null;
 }
 /** 测试专用全量 dump（生产代码 ⛔ HGETALL，测试断言豁免）。 */
 async function dumpAll(u: string, sId = 0): Promise<Dump> {
   return zoneCtx.run({ sId }, async () => {
     const c = clientFor(u);
+    const kits: Record<string, Record<string, string>> = {};
+    for (const entry of kitUserKeyEntries(u, KIT_FIXTURE)) { kits[entry.name] = await c.hgetall(entry.key); }
     return {
       user: await c.hgetall(kUser(u)),
       bags: await Promise.all(kBagAll(u).map((k) => c.hgetall(k))),
       applied: await c.zrange(kApplied(u), 0, -1, "WITHSCORES"),
       appliedPayload: await c.hgetall(kAppliedPayload(u)),
+      kits,
       counter: await c.get(kFence(u)),
     };
   });
@@ -180,7 +195,7 @@ after(async () => {
   for (const u of usedUids) {
     for (const sId of [0, 1, 2]) {
       await zoneCtx.run({ sId }, async () => {
-        await cleanupUser(u);
+        await cleanupUser(u, KIT_FIXTURE);
         await clientFor(u).unlink(kSess(u, sId));
         const b = activeLruBucketOf(u);
         await indexClientFor(b).zrem(kActiveLru(b), u);
@@ -371,6 +386,54 @@ test("PITR 回归：freezeUser 不得用旧热档覆盖较新的本区 archive",
   assert.equal(restored.user.maxRound, undefined, "旧热档独有字段不得残留");
   assert.equal(restored.bags[1]["17"], "8");
   assert.equal(await archiveRow(u, 1), null, "较新 archive 已按权威恢复并在最后删除");
+});
+
+// ── kit per-user 键随冷档往返（docs/KIT.md §5「冷档」行；目录注入 fixture） ─────────────
+
+test("kit per-user 键随冷档往返：freeze 进快照 kits 成员并 UNLINK；thaw（目录已无该 kit）仍原样恢复；非 HASH 拒冻", async () => {
+  const { uid: u } = await seedFullUser("kit_rt");
+  const c = clientFor(u);
+  const tile = kKitUser("arena", "tileOwner", u, { zone: "per-zone" });
+  const march = kKitUser("arena", "marchQueue", u, { zone: "per-zone" });
+  await c.hset(tile, { t1: u, t2: "v", n: "007" }); // 值保持 Redis 原始字符串（前导零不得被规范化）
+  await makeCold(u);
+  const before = await dumpAll(u);
+  assert.deepEqual(before.kits, { "arena:tileOwner": { t1: u, t2: "v", n: "007" }, "arena:marchQueue": {} });
+
+  assert.equal(await freezeUser(u, freezeLease, 0, KIT_FIXTURE), "frozen");
+  assert.equal(await c.exists(tile), 0, "kit 键随 FREEZE_COMMIT 一并 UNLINK");
+  for (const k of [kUser(u), kApplied(u), kAppliedPayload(u), ...kBagAll(u)]) {
+    assert.equal(await c.exists(k), 0, `${k} 应已 UNLINK（固定头与 bag 位置不受 kit 段影响）`);
+  }
+  const row = await archiveRow(u);
+  assert.ok(row, "archive 行已写");
+  assert.deepEqual(row!.snapshot.kits, { "arena:tileOwner": { t1: u, t2: "v", n: "007" } },
+    "快照 kits 只含冻结时存在的键（marchQueue 缺席不占位）");
+  assert.deepEqual(row!.snapshot.bag, before.bags, "bag 段不受 kit 段影响");
+
+  // thaw 走缺省目录（本仓生成物为空占位 = 「该 kit 已卸载」形态）：快照里的 kit 哈希照样恢复，⛔ 不丢数据
+  await ensureLive(u);
+  const after = await dumpAll(u);
+  assert.deepEqual(after.kits, before.kits, "kit HASH 原样恢复（含缺席键仍缺席）");
+  assert.deepEqual(after.bags, before.bags, "背包全等");
+  assert.equal(await c.exists(march), 0, "快照没有的 kit 键 thaw 不凭空创建");
+  assert.equal(await archiveRow(u), null, "thaw 最后一步删 archive 行");
+  assert.equal((await withUserLock(u, async () => resolve(u, 0, KIT_FIXTURE))).kind, "LIVE");
+
+  // 非 HASH 的 kit 键：快照无法表达，freeze 以具名原因拒绝（与 bag 同一道 TYPE 闸），热档零改动
+  await c.set(march, "not-a-hash");
+  await makeCold(u);
+  await assert.rejects(freezeUser(u, freezeLease, 0, KIT_FIXTURE), /related_key_type_string_expected_hash/u);
+  assert.equal(await c.exists(kUser(u)), 1, "拒冻后热档完整");
+  assert.equal(await archiveRow(u), null, "拒冻不写 archive 行");
+  await c.unlink(march);
+  // 目录为空（pre-K0 形态）时同一档仍可冻：快照不带 kits 成员、KEYS 不含 kit 段（向后兼容）
+  assert.equal(await freezeUser(u, freezeLease, 0, []), "frozen");
+  const legacyRow = await archiveRow(u);
+  assert.equal(legacyRow!.snapshot.kits, undefined, "空目录 = 快照无 kits 成员（字节形状同 pre-K0）");
+  assert.equal(await c.exists(tile), 1, "目录未声明的 kit 键不被 freeze 触碰");
+  await ensureLive(u); // 归位便于清理
+  assert.deepEqual((await dumpAll(u)).kits, before.kits);
 });
 
 // ── 完整 freeze→thaw 往返（10·M9 DoD 核心） ─────────────────────────────────

@@ -165,9 +165,21 @@ CREATE TABLE IF NOT EXISTS user_snapshot_readonly (
   PRIMARY KEY (user_id, server_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- kit SQL 迁移账本（docs/KIT.md §5）：db:bootstrap 在 singleton_lease('db_bootstrap') 下按 kit id + 文件序只应用
+-- 账本里没有的 `apps/kits/<id>/sql/NNN-<name>.sql`；已应用文件 sha256 变化即 fail-closed（⛔ 不改已发布迁移）。
+-- ⚠ **刻意不加 server_id**：账本记录的是「哪个文件跑过」，全局一份，与区无关（tools/kit-migrations.ts）。
+CREATE TABLE IF NOT EXISTS kit_migration (
+  kit_id     VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  file       VARCHAR(255) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  sha256     CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  applied_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (kit_id, file)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 -- ── 预置行（幂等 ODKU no-op，⛔ 绝不 INSERT IGNORE，09·DB1） ──
 
 INSERT INTO singleton_lease (lease_name, holder, fence_token, expires_at) VALUES
   ('outbox_relayer',  '', 0, NOW(3)),
-  ('freeze_worker',   '', 0, NOW(3))
+  ('freeze_worker',   '', 0, NOW(3)),
+  ('db_bootstrap',    '', 0, NOW(3))
 ON DUPLICATE KEY UPDATE lease_name = lease_name;

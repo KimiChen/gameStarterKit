@@ -9,7 +9,7 @@
 | 要做的事 | 当前真源 |
 | --- | --- |
 | 增加跨模块配置或环境变量 | `infra/config.ts`；同时更新 `docs/SERVER.md` 的登记点与本地配置说明 |
-| 增加 Redis key | `infra/keys.ts`；明确 global/per-zone、实例与 hash-tag |
+| 增加 Redis key | `infra/keys.ts`；明确 global/per-zone、实例与 hash-tag。玩法 / plugin / kit 自有键不进该文件，分别经 `kGameplay` / `kPluginUser`+`kPluginShared` / `kKitUser`+`kKitShared` 工厂在各自目录构造（`gp:` / `pl:` / `kt:` 互不可达；kit per-user 键随冷档 freeze/thaw，见 `archive/archiveScripts.ts`） |
 | 增加 RPC 错误码 | 先改 shared `protocol/lobbyRpc/envelope.ts` 的 `RPC_ERR_CODES`，再改 `errors.ts` 映射 |
 | 修改 Demo 商品或资产配置 | `economy/catalog.ts`；它目前是手工 TypeScript 配置，没有接入 Excel 产物 |
 | 修改 Demo guild 目录 | `guild/catalog.ts` |

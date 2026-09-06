@@ -12,17 +12,19 @@ import {
   APPLIED_RETENTION_MS, BAG_SHARDS, LOCK_RENEW_MS, OP_ID_NAMESPACE, OUTBOX_DONE, OUTBOX_PENDING,
   OUTBOX_RETENTION_MS,
 } from "../infra/config";
-import { currentZoneId, kApplied, kAppliedPayload, kBagAll, kLock, kUser, zoneCtx } from "../infra/keys";
+import { currentZoneId, kApplied, kAppliedPayload, kBagAll, kKitUser, kLock, kUser, zoneCtx } from "../infra/keys";
 import { clientFor } from "../infra/redisRoute";
-import { APPLY_EFFECT, evalshaWithReload, TRIM_APPLIED } from "../infra/redisScripts";
+import { APPLY_EFFECT, evalshaWithReload, TRIM_APPLIED, type KitEffectKeyMap } from "../infra/redisScripts";
 import { getPool, withRcTx } from "../infra/mysql";
-import type { ResultSetHeader, RowDataPacket } from "../infra/mysql";
+import type { PoolConnection, ResultSetHeader, RowDataPacket } from "../infra/mysql";
 import { withUser } from "../uow";
 import { debitInTx, getBalance, invalidateBalanceCache } from "./currency";
 import type { ShopSku } from "./catalog";
 import {
-  EffectValidationError, normalizeEffect, type IEffect, type IGrant, type IPurchaseResult,
+  EffectValidationError, lookupKitEffectKind, normalizeEffect,
+  type IEffect, type IGrant, type IPurchaseResult, type KitEffectKinds,
 } from "@game/shared";
+import { KIT_EFFECT_KINDS } from "@game/shared/kits/catalog.generated";
 import { BusyError, ColdUserError, EffectConflictError, InvalidEffectError } from "../errors";
 import { storedFinite, storedInt } from "../infra/numbers";
 import { ensureLive } from "../archive/thaw";
@@ -39,10 +41,13 @@ export type Effect = IGrant[];
 export type VersionedEffect = IEffect;
 export type EffectInput = Effect | VersionedEffect;
 
-/** 所有进入 durable/Redis 边界的 effect 都先走 shared validator。 */
-export function canonicalizeEffect(input: unknown): VersionedEffect {
+/**
+ * 所有进入 durable/Redis 边界的 effect 都先走 shared validator。
+ * `kinds` = kit effect kind 表（docs/KIT.md §4），缺省生成物 KIT_EFFECT_KINDS；单测注入自己的表。
+ */
+export function canonicalizeEffect(input: unknown, kinds: KitEffectKinds = KIT_EFFECT_KINDS): VersionedEffect {
   try {
-    return normalizeEffect(input);
+    return normalizeEffect(input, kinds);
   } catch (e) {
     if (e instanceof EffectValidationError) { throw new InvalidEffectError(e.code); }
     throw e;
@@ -64,17 +69,45 @@ export function deriveOpId(uid: string, sId: number, type: string, clientReqId: 
 }
 
 /**
+ * kit effect kind → Lua KEYS/ARGV 投影（docs/KIT.md §4「effect kind 登记通道」，纯函数）：
+ * 对 effect 中出现的每个 `kit:<kitId>:<name>` 取规格，键 = `kKitUser(spec.kitId, spec.userKey, uid, { zone: "per-zone" })`
+ * （per-user 键随区，与 kUser 同槽），同一物理键去重后**追加在 bag 分片之后**（`keys[i]` 的 1-based KEYS 序号
+ * = `baseKeyCount + i + 1`）；`map` 是 APPLY_EFFECT ARGV[4]：kind → `{ k: KEYS 序号, f: 字段, m: 上限 }`。
+ * 只投影 effect 里出现的 kind，⛔ 不把整张表塞进 ARGV。未登记的 kit kind 不在此判（canonicalizeEffect 已拒）。
+ */
+export function kitEffectKeysFor(
+  uid: string, effect: IEffect, kinds: KitEffectKinds, baseKeyCount = 3 + BAG_SHARDS,
+): { readonly keys: string[]; readonly map: KitEffectKeyMap } {
+  const keys: string[] = [];
+  const map: Record<string, { k: number; f: string; m: number }> = {};
+  for (const grant of effect.grants) {
+    if (!grant.kind.startsWith("kit:") || map[grant.kind] !== undefined) { continue; }
+    const spec = lookupKitEffectKind(grant.kind, kinds);
+    if (spec === undefined) { throw new InvalidEffectError("EFFECT_UNKNOWN_KIND"); }
+    const key = kKitUser(spec.kitId, spec.userKey, uid, { zone: "per-zone" });
+    let index = keys.indexOf(key);
+    if (index < 0) { index = keys.push(key) - 1; }
+    map[grant.kind] = { k: baseKeyCount + index + 1, f: spec.field, m: spec.max };
+  }
+  return { keys, map };
+}
+
+/**
  * 幂等 apply（单条 Lua 原子）。`cold` = 档不存在（可能已冻结）→ 调用方 ensureLive 后重试，
  * ⛔ 绝不在缺失 hash 上造残档（09·R2/X5）。
  * effect 若来自 MySQL JSON 列，mysql2 已解析成对象——stringify 统一在这里做（09·DB8）。
  */
-export async function redisApply(uid: string, opId: string, effect: EffectInput): Promise<"ok" | "dup" | "cold"> {
-  const canonical = canonicalEffect(effect);
+export async function redisApply(
+  uid: string, opId: string, effect: EffectInput, kinds: KitEffectKinds = KIT_EFFECT_KINDS,
+): Promise<"ok" | "dup" | "cold"> {
+  const canonical = canonicalEffect(effect, kinds);
   if (canonical.grants.length > 0 && BAG_SHARDS < 1) { throw new Error("BAG_SHARDS 配置非法"); }
-  const keys = [kUser(uid), kApplied(uid), kAppliedPayload(uid), ...kBagAll(uid)];
+  const base = [kUser(uid), kApplied(uid), kAppliedPayload(uid), ...kBagAll(uid)];
+  const kit = kitEffectKeysFor(uid, canonical, kinds, base.length);
+  const keys = [...base, ...kit.keys];
   const r = await evalshaWithReload(
     clientFor(uid), APPLY_EFFECT, keys,
-    [opId, String(Date.now()), JSON.stringify(canonical)],
+    [opId, String(Date.now()), JSON.stringify(canonical), JSON.stringify(kit.map)],
   ) as string;
   if (r.startsWith("ok:")) {
     // 负数下溢已在 Lua 内回补到 0（09·X8），这里记异常供对账/告警
@@ -91,6 +124,26 @@ export async function redisApply(uid: string, opId: string, effect: EffectInput)
 
 // 结果形状真源在 shared/protocol/lobbyRpc/economy.ts（status='granting' → 客户端 queryOp 轮询）
 export type PurchaseResult = IPurchaseResult;
+
+/**
+ * durable intent 写入（阶段 1 的 outbox 半边；purchaseTx / claimMailAttach / kit-api enqueueEffect 共用）。
+ * 事务内调用：effect 先过 shared validator（canonicalizeEffect）再落 JSON 列。
+ * `onDuplicate`："error"（缺省）= 主键冲突原样抛（调用方已用 ledger DUP 先行判定，冲突即真异常）；
+ * "ignore" = `ON DUPLICATE KEY UPDATE op_id = op_id` no-op（⛔ 绝不 INSERT IGNORE，09·DB1）——
+ * 连接池 `-FOUND_ROWS` 下 no-op 的 affectedRows=0 ⇒ 返回 "DUP"。
+ */
+export async function insertOutboxIntent(
+  conn: PoolConnection,
+  row: { opId: string; uid: string; sId: number; effect: IEffect; onDuplicate?: "error" | "ignore" },
+): Promise<"INSERTED" | "DUP"> {
+  const canonical = canonicalEffect(row.effect);
+  const odku = row.onDuplicate === "ignore" ? "\n       ON DUPLICATE KEY UPDATE op_id = op_id" : "";
+  const [r] = await conn.execute<ResultSetHeader>(
+    `INSERT INTO gameplay_outbox (op_id, user_id, server_id, effect, status)
+       VALUES (?,?,?,CAST(? AS JSON),?)${odku}`,
+    [row.opId, row.uid, row.sId, JSON.stringify(canonical), OUTBOX_PENDING]);
+  return r.affectedRows === 0 ? "DUP" : "INSERTED";
+}
 
 /**
  * 阶段 1：扣钱 + durable intent 同一 RC 事务（09·X1 货币先行 / DB5）。
@@ -117,10 +170,7 @@ export async function purchaseTx(
       if (JSON.stringify(existing) !== JSON.stringify(canonical)) { throw new EffectConflictError(); }
       return "DUP" as const;
     }
-    await conn.execute<ResultSetHeader>(
-      `INSERT INTO gameplay_outbox (op_id, user_id, server_id, effect, status)
-       VALUES (?,?,?,CAST(? AS JSON),?)`,
-      [opId, uid, sId, JSON.stringify(canonical), OUTBOX_PENDING]);
+    await insertOutboxIntent(conn, { opId, uid, sId, effect: canonical });
     return "OK" as const;
   });
   if (outcome === "OK") { await invalidateBalanceCache(uid, sId); }

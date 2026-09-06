@@ -8,9 +8,19 @@
  * 看门狗（09·L6）只是减少无用功。
  *
  * KEYS 全部带 `{uid}` hash-tag 同槽（09·R3），单条 Lua 才能原子操作。
+ *
+ * **kit per-user 键（docs/KIT.md §5「冷档」行）**：目录里每个 kit 的每个 `userKeys` 名对应一个
+ * `kKitUser(kitId, name, uid, { zone: "per-zone" })` HASH，随 user/bag/applied 一起进快照（可选顶层成员
+ * `kits`，键 `<kitId>:<name>`）、被 FREEZE_COMMIT UNLINK、由 THAW_RESTORE 恢复。KEYS 布局：**固定头与 bag 位置
+ * 不变，kit 键追加在 bag 之后**，kit 数量经 ARGV 传入——既有的 KEYS/ARGV 断言只改算术项。目录是可注入参数
+ * （缺省生成物 `SERVER_KIT_CATALOG`），单测注入 fixture kit。
  */
 import { SCHEMA_VERSION } from "../infra/config";
-import { kApplied, kAppliedPayload, kArchiveProof, kBagAll, kFence, kLock, kSess, kUser } from "../infra/keys";
+import {
+  kApplied, kAppliedPayload, kArchiveProof, kBagAll, kFence, kKitUser, kLock, kSess, kUser,
+} from "../infra/keys";
+import { SERVER_KIT_CATALOG } from "../../kits/catalog.generated";
+import type { ServerKitCatalogEntry } from "../../kits/catalogTypes";
 import { clientFor } from "../infra/redisRoute";
 import { defineScript, evalshaWithReload } from "../infra/redisScripts";
 
@@ -29,7 +39,91 @@ export interface ArchiveSnapshot {
   applied: string[];
   /** applied:payload:{uid} 的 field→规范化 effect JSON；旧快照可能缺失该字段。 */
   appliedPayload?: Record<string, string>;
+  /**
+   * kit per-user HASH（KIT.md §5）：键 `<kitId>:<name>`（`kitSnapshotName`）→ HASH 全字段。
+   * 只收录冻结时**存在**的键（缺席不占位）；pre-K0 快照没有本成员；快照里含已卸载 kit 的哈希时 thaw 仍原样恢复
+   * （数据永不静默丢弃，thaw 侧告警）。
+   */
+  kits?: Record<string, Record<string, string>>;
 }
+
+/** 快照 `kits` 成员键名：`<kitId>:<name>`（两段都过 kKitUser 的分段闸，故恰有一个 `:`）。 */
+export const kitSnapshotName = (kitId: string, name: string): string => `${kitId}:${name}`;
+
+/** `kitSnapshotName` 的逆：非两段即抛（快照 `kits` 键名畸形）。 */
+export const splitKitSnapshotName = (snapshotName: string): { kitId: string; name: string } => {
+  const parts = snapshotName.split(":");
+  if (parts.length !== 2) {
+    throw new Error(`archive snapshot.kits 键名非法：「${snapshotName}」（期望 <kitId>:<name>）`);
+  }
+  return { kitId: parts[0], name: parts[1] };
+};
+
+export interface KitUserKeyEntry {
+  /** 快照成员名 `<kitId>:<name>`。 */
+  readonly name: string;
+  /** 物理键 `kKitUser(kitId, name, uid, { zone: "per-zone" })`。 */
+  readonly key: string;
+}
+
+/**
+ * 目录展开为冷档要处理的 kit per-user 键：目录序（kit id 序 × `userKeys` 声明序）。⚠ 顺序是 freeze KEYS 的契约
+ * （bag 之后逐个追加），同一目录两次展开必须同序。冷档只认 per-zone（KIT.md §5：共享键不冻结）。
+ */
+export const kitUserKeyEntries = (
+  uid: string,
+  catalog: readonly ServerKitCatalogEntry[] = SERVER_KIT_CATALOG,
+): KitUserKeyEntry[] => {
+  const out: KitUserKeyEntry[] = [];
+  const seen = new Set<string>();
+  for (const kit of catalog) {
+    for (const name of kit.userKeys) {
+      const snapshotName = kitSnapshotName(kit.id, name);
+      if (seen.has(snapshotName)) { throw new Error(`kit 目录 userKeys 重复：${snapshotName}`); }
+      seen.add(snapshotName);
+      out.push({ name: snapshotName, key: kKitUser(kit.id, name, uid, { zone: "per-zone" }) });
+    }
+  }
+  return out;
+};
+
+/**
+ * thaw 的 kit 段：**快照已有成员 ∪ 目录声明**（按成员名排序，KEYS 与 ARGV 名单一一对应）。取并集的两个理由：
+ * 快照里已卸载 kit 的哈希照样恢复（⛔ 不静默丢数据）；目录里有而快照没有的键也进 KEYS，才能在 overwrite=1
+ * 时与 bag 一样 UNLINK 陈旧档、在 overwrite=0 时参与「目标非空」检查。
+ */
+export const thawKitEntries = (
+  uid: string,
+  snapshot: Pick<ArchiveSnapshot, "kits">,
+  catalog: readonly ServerKitCatalogEntry[] = SERVER_KIT_CATALOG,
+): KitUserKeyEntry[] => {
+  const byName = new Map<string, string>();
+  for (const entry of kitUserKeyEntries(uid, catalog)) { byName.set(entry.name, entry.key); }
+  for (const snapshotName of Object.keys(snapshot.kits ?? {})) {
+    if (byName.has(snapshotName)) { continue; }
+    const { kitId, name } = splitKitSnapshotName(snapshotName);
+    byName.set(snapshotName, kKitUser(kitId, name, uid, { zone: "per-zone" }));
+  }
+  return [...byName.entries()]
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([name, key]) => ({ name, key }));
+};
+
+/** 快照里目录未登记的 kit 成员名（thaw 告警用；仍恢复）。 */
+export const unknownSnapshotKits = (
+  snapshot: Pick<ArchiveSnapshot, "kits">,
+  catalog: readonly ServerKitCatalogEntry[] = SERVER_KIT_CATALOG,
+): string[] => {
+  const known = new Set(kitUserKeyEntries("-", catalog).map((entry) => entry.name));
+  return Object.keys(snapshot.kits ?? {}).filter((name) => !known.has(name));
+};
+
+/** FREEZE_COMMIT 的固定头长度（lock/user/fence/proof/sess/applied/payload）；bag 从 KEYS[8] 起。 */
+export const FREEZE_FIXED_KEYS = 7;
+/** THAW_RESTORE 的固定头长度（lock/user/fence/proof/applied/payload）；bag 从 KEYS[7] 起。 */
+export const THAW_FIXED_KEYS = 6;
+/** THAW_RESTORE 的固定 ARGV 数（myFence/hwm/json/overwrite/freezeId/kitCount）；kit 成员名从 ARGV[7] 起。 */
+export const THAW_FIXED_ARGV = 6;
 
 /**
  * A healthy uid has at most the current archive proof plus the in-flight attempt.
@@ -79,14 +173,20 @@ return 'ok'
  */
 export const FREEZE_COMMIT = defineScript("freezeCommit", `
 -- KEYS[1]=lock:{uid} KEYS[2]=user:{uid} KEYS[3]=fence:{uid} KEYS[4]=archive:proof:{uid}
--- KEYS[5]=sess:{uid}:sN KEYS[6]=applied:{uid} KEYS[7]=applied:payload:{uid} KEYS[8..]=bag:{uid}:0..N-1
--- ARGV[1]=myFence ARGV[2]=verAtRead ARGV[3]=freezeId
+-- KEYS[5]=sess:{uid}:sN KEYS[6]=applied:{uid} KEYS[7]=applied:payload:{uid}
+-- KEYS[8..7+B]=bag:{uid}:0..B-1  KEYS[8+B..]=kt:<kitId>:<name>:{uid}（K 个，B = #KEYS-7-K）
+-- ARGV[1]=myFence ARGV[2]=verAtRead ARGV[3]=freezeId ARGV[4]=kitCount(K)
+local kitCount = tonumber(ARGV[4])
+if kitCount == nil or kitCount < 0 or kitCount ~= math.floor(kitCount) or #KEYS < 8 + kitCount then
+  return redis.error_reply('archive freeze kit count')
+end
 if redis.call('GET', KEYS[1]) ~= ARGV[1] then return 'lost' end
 if redis.call('HGET', KEYS[2], 'ver') ~= ARGV[2] then return 'changed' end
 if redis.call('HGET', KEYS[2], 'schemaVersion') ~= '${SCHEMA_VERSION}' then return 'changed' end
 if redis.call('HEXISTS', KEYS[4], ARGV[3]) ~= 1 then return 'unprepared' end
 if redis.call('EXISTS', KEYS[5]) == 1 then return 'active' end
 -- ⛔ KEYS[3]=fence 与 KEYS[4]=archive proof 均保留：前者防发号回退，后者按 freeze_id 证明分支同源。
+-- KEYS[8..] = bag 分片 + 追加其后的 kit per-user 键：一并 UNLINK（快照已含它们）
 redis.call('UNLINK', KEYS[2], KEYS[6], KEYS[7])
 for i = 8, #KEYS do redis.call('UNLINK', KEYS[i]) end
 return 'ok'
@@ -105,9 +205,25 @@ return 'ok'
  */
 export const THAW_RESTORE = defineScript("thawRestore", `
 -- KEYS[1]=lock:{uid} KEYS[2]=user:{uid} KEYS[3]=fence:{uid} KEYS[4]=archive:proof:{uid}
--- KEYS[5]=applied:{uid} KEYS[6]=applied:payload:{uid} KEYS[7..]=bag
+-- KEYS[5]=applied:{uid} KEYS[6]=applied:payload:{uid}
+-- KEYS[7..6+B]=bag  KEYS[7+B..]=kt:<kitId>:<name>:{uid}（K 个，B = #KEYS-6-K）
 -- ARGV[1]=myFence ARGV[2]=fenceHwm ARGV[3]=snapshotJson ARGV[4]=overwrite ARGV[5]=freezeId
-if #KEYS < 7 then return redis.error_reply('archive restore key count') end
+-- ARGV[6]=kitCount(K) ARGV[7..6+K]=kit 成员名 "<kitId>:<name>"（与 KEYS[7+B+i-1] 一一对应）
+local kitCount = tonumber(ARGV[6])
+if kitCount == nil or kitCount < 0 or kitCount ~= math.floor(kitCount) or #ARGV ~= 6 + kitCount then
+  return redis.error_reply('archive restore kit count')
+end
+if #KEYS < 7 + kitCount then return redis.error_reply('archive restore key count') end
+-- bag 占 KEYS[7..bagLast]，kit 键占 KEYS[bagLast+1..#KEYS]
+local bagLast = #KEYS - kitCount
+local kitIndex = {}
+for i = 1, kitCount do
+  local name = ARGV[6 + i]
+  if type(name) ~= 'string' or name == '' or kitIndex[name] ~= nil then
+    return redis.error_reply('archive restore kit name')
+  end
+  kitIndex[name] = i
+end
 local function keyType(key)
   local reply = redis.call('TYPE', key)
   return reply['ok']
@@ -162,12 +278,12 @@ if not decoded or type(s) ~= 'table' then
 end
 local topCount = 0
 for key, _ in pairs(s) do
-  if key ~= 'user' and key ~= 'bag' and key ~= 'applied' and key ~= 'appliedPayload' then
+  if key ~= 'user' and key ~= 'bag' and key ~= 'applied' and key ~= 'appliedPayload' and key ~= 'kits' then
     return redis.error_reply('archive snapshot key invalid')
   end
   topCount = topCount + 1
 end
-if topCount < 3 or topCount > 4 or type(s.user) ~= 'table'
+if topCount < 3 or topCount > 5 or type(s.user) ~= 'table'
   or type(s.user.schemaVersion) ~= 'string' or type(s.user.ver) ~= 'string' then
   return redis.error_reply('archive snapshot user invalid')
 end
@@ -200,7 +316,7 @@ for field, value in pairs(s.user) do
     return redis.error_reply('archive snapshot user field invalid')
   end
 end
-if type(s.bag) ~= 'table' or #s.bag ~= (#KEYS - 6) then
+if type(s.bag) ~= 'table' or #s.bag ~= (bagLast - 6) then
   return redis.error_reply('archive snapshot bag invalid')
 end
 local bagCount = 0
@@ -246,6 +362,22 @@ if s.appliedPayload ~= nil then
     end
   end
 end
+-- kits（可选，pre-K0 快照没有）：每个成员名必须在 ARGV 名单里（调用方按快照 ∪ 目录建 KEYS，
+-- 名单缺失 = 调用方 bug，⛔ 不得静默丢弃），值是 string→string HASH
+if s.kits ~= nil then
+  if type(s.kits) ~= 'table' then return redis.error_reply('archive snapshot kits invalid') end
+  for name, hash in pairs(s.kits) do
+    if type(name) ~= 'string' or kitIndex[name] == nil then
+      return redis.error_reply('archive snapshot kits key unknown')
+    end
+    if type(hash) ~= 'table' then return redis.error_reply('archive snapshot kits hash invalid') end
+    for field, value in pairs(hash) do
+      if type(field) ~= 'string' or type(value) ~= 'string' then
+        return redis.error_reply('archive snapshot kits field invalid')
+      end
+    end
+  end
+end
 if ARGV[4] == '1' then
   -- overwrite（ARCHIVE_NEWER/PITR）：删陈旧档，但 ⛔ KEYS[3]=fence 计数器保留——
   -- acquireLease 是「先 INCR 再抢锁」，抢锁**失败**者也推计数器：resolve 读完计数器到
@@ -279,6 +411,17 @@ if s.applied then
     redis.call('ZADD', KEYS[5], s.applied[i + 1], s.applied[i])
   end
 end
+-- 恢复 kit per-user HASH：s.kits[ARGV[6+i]] → KEYS[bagLast+i]（名单里有、快照里没有的键不写）
+if s.kits then
+  for i = 1, kitCount do
+    local hash = s.kits[ARGV[6 + i]]
+    if hash then
+      for f, v in pairs(hash) do
+        redis.call('HSET', KEYS[bagLast + i], f, v)
+      end
+    end
+  end
+end
 -- fence 双写：hash 字段 + 计数器（约束 3），取 MAX(当前计数器, fence_hwm)——
 -- ⛔ 不许绝对写回 hwm：计数器若已超 hwm（冷档期发号/历史残留），回退 = 滞留 writer
 -- 的大号 fence 能穿过 hash CAS（僵尸写复活）；MAX 保证单调性在任何交错下不破
@@ -289,13 +432,34 @@ redis.call('HSET', KEYS[4], ARGV[5], '1')
 return 'ok'
 `);
 
-/** thawRestore 的 KEYS 排列（脚本注释里的顺序，⛔ 不要改动次序）。 */
-const archiveKeys = (uid: string): string[] =>
-  [kLock(uid), kUser(uid), kFence(uid), kArchiveProof(uid), kApplied(uid), kAppliedPayload(uid), ...kBagAll(uid)];
+/**
+ * thawRestore 的 KEYS 与 kit 名单（脚本注释里的顺序，⛔ 不要改动次序）：固定头 6 + bag + kit 键（快照 ∪ 目录，
+ * `thawKitEntries` 序）。`kitNames` 与 KEYS 的 kit 段一一对应，进 ARGV[7..]。
+ */
+export const thawKeys = (
+  uid: string,
+  snapshot: Pick<ArchiveSnapshot, "kits">,
+  catalog: readonly ServerKitCatalogEntry[] = SERVER_KIT_CATALOG,
+): { keys: string[]; kitNames: string[] } => {
+  const kits = thawKitEntries(uid, snapshot, catalog);
+  return {
+    keys: [
+      kLock(uid), kUser(uid), kFence(uid), kArchiveProof(uid), kApplied(uid), kAppliedPayload(uid),
+      ...kBagAll(uid), ...kits.map((entry) => entry.key),
+    ],
+    kitNames: kits.map((entry) => entry.name),
+  };
+};
 
-const freezeKeys = (uid: string, sId: number): string[] => [
+/** freezeCommit 的 KEYS（固定头 7 + bag + 目录序 kit 键）。kit 数量经 ARGV[4] 传入。 */
+export const freezeKeys = (
+  uid: string,
+  sId: number,
+  catalog: readonly ServerKitCatalogEntry[] = SERVER_KIT_CATALOG,
+): string[] => [
   kLock(uid), kUser(uid), kFence(uid), kArchiveProof(uid), kSess(uid, sId),
   kApplied(uid), kAppliedPayload(uid), ...kBagAll(uid),
+  ...kitUserKeyEntries(uid, catalog).map((entry) => entry.key),
 ];
 
 export async function prepareArchiveCandidate(
@@ -320,10 +484,13 @@ export async function prepareArchiveCandidate(
 /** freezeCommit 包装：'changed' = 快照期间有玩法写（如 relayer applyEffect），放弃本轮。 */
 export async function freezeCommit(
   uid: string, sId: number, myFence: number, verAtRead: string, freezeId: string,
+  catalog: readonly ServerKitCatalogEntry[] = SERVER_KIT_CATALOG,
 ): Promise<"ok" | "lost" | "changed" | "active"> {
+  const keys = freezeKeys(uid, sId, catalog);
+  const kitCount = keys.length - FREEZE_FIXED_KEYS - kBagAll(uid).length;
   const result = await evalshaWithReload(
-    clientFor(uid), FREEZE_COMMIT, freezeKeys(uid, sId),
-    [String(myFence), verAtRead, freezeId],
+    clientFor(uid), FREEZE_COMMIT, keys,
+    [String(myFence), verAtRead, freezeId, String(kitCount)],
   );
   if (result === "ok" || result === "lost" || result === "changed" || result === "active") {
     return result;
@@ -339,9 +506,14 @@ export async function thawRestore(
   snapshot: ArchiveSnapshot,
   overwrite: boolean,
   freezeId: string,
+  catalog: readonly ServerKitCatalogEntry[] = SERVER_KIT_CATALOG,
 ): Promise<"ok" | "lost"> {
+  const { keys, kitNames } = thawKeys(uid, snapshot, catalog);
   return await evalshaWithReload(
-    clientFor(uid), THAW_RESTORE, archiveKeys(uid),
-    [String(myFence), String(fenceHwm), JSON.stringify(snapshot), overwrite ? "1" : "0", freezeId],
+    clientFor(uid), THAW_RESTORE, keys,
+    [
+      String(myFence), String(fenceHwm), JSON.stringify(snapshot), overwrite ? "1" : "0", freezeId,
+      String(kitNames.length), ...kitNames,
+    ],
   ) as "ok" | "lost";
 }
