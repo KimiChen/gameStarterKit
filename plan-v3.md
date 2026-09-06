@@ -1,8 +1,16 @@
 # gameStarterKit 开发收口计划（历史归档 · plan-v3）
 
-> **本文件是历史归档。** 当前开放问题、实施状态与验收证据以 [plan-v5.md](plan-v5.md) 为准；
+> **本文件是历史归档。** 当前实施状态与验收基线以 [plan-v5.md](plan-v5.md) 为准，仍未实现的开放项见
+> [docs/EXTRAS.md §5.2](docs/EXTRAS.md#52-未实现的开放项登记2026-09-06-自-plan-系列归并)；
 > 本文件保留该轮逐项实施的状态与验收证据，不再接受新状态回写，也不得从其中的完成标记推导当前状态。
-> [plan-v4.md](plan-v4.md)、[plan-v2.md](plan-v2.md) 与 [plan.md](plan.md) 同为更早的历史归档。
+> [plan-v4.md](plan-v4.md)、[plan-v2.md](plan-v2.md) 与 [plan.md](plan.md) 同为更早的历史归档
+> （后两份已于 2026-09-06 压缩成 stub，完整正文在 Git 历史）。
+>
+> ⛔ **本文件不可压缩**（2026-09-06 评估）：两条硬约束——(a) [docs/EXTRAS.md §5.3](docs/EXTRAS.md#53-有意保留的边界登记备查-不是待办)
+> 把 78 条 `[不阻塞·有意保留]` 边界的正文**委派**给本文件；(b) 多个活测试的失败信息按小节号指向这里并要求
+> 「同步更新 plan-v3 的边界登记」——`scripts/npm-reference-matrix.test.mjs`（§9.5 / §11.3 / §12.3）、
+> `scripts/sync-mirror-matrix.test.mjs`（P1-08）、`apps/client/test/toolchainContract.test.ts`（§18）、
+> `scripts/verify-inventory.mjs`（§15.3 / §30）。压缩会把这些指向变成死引用。
 >
 > 该轮收尾时正文 34 条 `[已完成]`、0 条待补齐，开放项全部闭合。其 78 条 `[不阻塞·有意保留]`
 > 中真正构成产品/工程留白的 5 条已抽取进 plan-v4 并逐条实施完毕；其余保留边界仍然有效，
