@@ -10,12 +10,14 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { classifyPath, deriveOwnership, pluginDir, readProtectedPaths } from "./ownership";
-import { identityDifferences, identityFromSummary, identityOf, parsePluginManifest, readTreeGameplaySource } from "./manifest";
-import { filesLockSha256Of, listInstalledLocks, verifyLockAgainstTree } from "./lock";
+import { classifyPath, deriveOwnership, packageManifestPath, readProtectedPaths, type PackageClass } from "./ownership";
+import { identityDifferences, identityFromSummary, readTreePackageManifest, treeIdentityOf } from "./manifest";
+import { filesLockSha256Of, kitApiViolations, listInstalledLocks, verifyLockAgainstTree } from "./lock";
+import { resolveKitApi } from "./install";
 import { pluginDeclarations } from "./package";
 
 export interface PluginCheckEntry {
+  readonly class: PackageClass;
   readonly id: string;
   readonly version: string;
   /** 锁的来源抬头：package（由包安装）/ tree（本地分叉）/ unknown（旧锁无 source 行）。 */
@@ -71,24 +73,45 @@ export function checkInstalledPlugins(root: string): PluginCheckReport {
       problems.push(`锁的 "# source" filesLockSha256 与清单不符（合并错或手改）：${lock.source.filesLockSha256} vs ${filesLockSha256Of(lock.entries)}`);
     }
 
-    const manifestRelative = `${pluginDir(id)}/plugin.json`;
+    const manifestRelative = packageManifestPath(lock.manifest.class, id);
     const manifestFile = path.join(root, manifestRelative);
     let clientDirs: readonly string[] = [];
     if (!fs.existsSync(manifestFile)) {
       problems.push(`缺少 ${manifestRelative}`);
     } else {
       try {
-        const authored = parsePluginManifest(JSON.parse(fs.readFileSync(manifestFile, "utf8")), manifestRelative);
-        if (authored.version === null) problems.push(`${manifestRelative} 没有 version（宿主自有插件形态）却有已安装锁`);
+        const authored = readTreePackageManifest(root, id);
+        if (!authored) throw new Error(`读不到 ${manifestRelative}`);
+        if (authored.class !== lock.manifest.class) problems.push(`${manifestRelative} 的类别（${authored.class}）与锁（${lock.manifest.class}）不一致`);
+        if (authored.version === null) problems.push(`${manifestRelative} 没有 version（宿主自有形态）却有已安装锁`);
         else if (authored.version !== lock.manifest.version) problems.push(`${manifestRelative} 的 version（${authored.version}）与锁（${lock.manifest.version}）不一致`);
         clientDirs = pluginDeclarations(authored).clientDirs;
-        // 身份比对：派生 kinds / constantName（gameplay 单源的 schemaVersion 在读取时与 gameplay-schema 比对）。
-        const identity = identityOf(authored, readTreeGameplaySource(root, id));
+        // 身份比对：派生 kinds / constantName / modes（gameplay 单源的 schemaVersion 在读取时与 gameplay-schema 比对）。
+        const identity = treeIdentityOf(root, authored);
         for (const difference of identityDifferences(lock.manifest, identity)) {
           problems.push(`${manifestRelative} 的身份与锁不一致（先 install --reinstall-from-tree ${id} --allow-identity-change 重写锁）：${difference}`);
         }
+        // kit 的 api 面变了却没重写锁：依赖反查靠锁抬头，锁与树脱节即红。
+        if (authored.class === "kit" && lock.manifest.class === "kit" && JSON.stringify(authored.api) !== JSON.stringify(lock.manifest.api)) {
+          problems.push(`${manifestRelative} 的 api 面与锁不一致（先 install --reinstall-from-tree ${id} 重写锁）：树 ${JSON.stringify(authored.api)} vs 锁 ${JSON.stringify(lock.manifest.api)}`);
+        }
       } catch (error) {
         problems.push(`${manifestRelative} 无法解析：${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+    // 插件依赖的 kit 都在且 api 兼容（docs/KIT.md §4/§7）：按锁抬头的 requires 反查。
+    if (lock.manifest.class === "plugin") {
+      for (const [kitId, declared] of Object.entries(lock.manifest.requires.kits)) {
+        try {
+          const provided = resolveKitApi(root, kitId);
+          if (!provided) {
+            problems.push(`依赖的 kit "${kitId}" 未安装（requires.kits 声明了它）`);
+            continue;
+          }
+          for (const violation of kitApiViolations(declared, provided.api)) problems.push(`依赖的 kit "${kitId}" api 不兼容：${violation}`);
+        } catch (error) {
+          problems.push(error instanceof Error ? error.message : String(error));
+        }
       }
     }
     try {
@@ -101,7 +124,7 @@ export function checkInstalledPlugins(root: string): PluginCheckReport {
     } catch (error) {
       problems.push(error instanceof Error ? error.message : String(error));
     }
-    plugins.push({ id, version: lock.manifest.version, source: lock.source?.kind ?? "unknown", problems });
+    plugins.push({ class: lock.manifest.class, id, version: lock.manifest.version, source: lock.source?.kind ?? "unknown", problems });
   }
   return { plugins, ok: plugins.every((plugin) => plugin.problems.length === 0) };
 }

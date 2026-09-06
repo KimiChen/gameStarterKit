@@ -1,11 +1,12 @@
 /**
  * 插件命令（workspace 脚本，⛔ 不新增根命令）：
  *   npm --workspace @game/server run plugin -- pack <id> (--out <zip> | --out-dir <dir>)
- *   npm --workspace @game/server run plugin -- install <zip|dir> [--allow-downgrade] [--replace-local-fork] [--no-git] [--no-postinstall] [--dry-run]
- *   npm --workspace @game/server run plugin -- install --reinstall-from-tree <id> [--allow-identity-change] [--adopt-tracked] [--allow-downgrade] [--no-git] [--no-postinstall] [--dry-run]
- *   npm --workspace @game/server run plugin -- uninstall <id> [--force] [--no-git] [--no-postinstall] [--dry-run]
+ *   npm --workspace @game/server run plugin -- install <zip|dir> [--allow-downgrade] [--replace-local-fork] [--break-dependents] [--no-git] [--no-postinstall] [--dry-run]
+ *   npm --workspace @game/server run plugin -- install --reinstall-from-tree <id> [--allow-identity-change] [--adopt-tracked] [--allow-downgrade] [--break-dependents] [--no-git] [--no-postinstall] [--dry-run]
+ *   npm --workspace @game/server run plugin -- uninstall <id> [--force] [--drop-data] [--no-git] [--no-postinstall] [--dry-run]
  *   npm --workspace @game/server run plugin -- check
- * 全部子命令接受 --root <dir>（测试 fixture seam）。
+ *   npm --workspace @game/server run plugin -- test <id> [--int]
+ * 全部子命令接受 --root <dir>（测试 fixture seam）。包 = 插件（apps/plugins/<id>/plugin.json）或 kit（apps/kits/<id>/kit.json，docs/KIT.md）。
  *
  * 设计基线见 docs/PLUGIN.md §5；判据与推导见 tools/plugin/ownership.ts。
  */
@@ -13,27 +14,31 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { checkInstalledPlugins } from "./check";
+import { dropKitData } from "./dropData";
 import { installPlugin, reinstallFromTree, type InstallReport } from "./install";
 import { packPlugin } from "./pack";
+import { runPackageTests } from "./test";
 import { uninstallPlugin } from "./uninstall";
 
 const TOOL_REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 
 export type PluginCliArguments =
   | { readonly command: "pack"; readonly root: string; readonly id: string; readonly outFile?: string; readonly outDir?: string }
-  | { readonly command: "install"; readonly root: string; readonly source: string; readonly allowDowngrade: boolean; readonly git: boolean; readonly postinstall: boolean; readonly dryRun: boolean; readonly replaceLocalFork: boolean }
-  | { readonly command: "reinstall-from-tree"; readonly root: string; readonly id: string; readonly allowDowngrade: boolean; readonly git: boolean; readonly postinstall: boolean; readonly dryRun: boolean; readonly allowIdentityChange: boolean; readonly adoptTracked: boolean }
-  | { readonly command: "uninstall"; readonly root: string; readonly id: string; readonly force: boolean; readonly git: boolean; readonly postinstall: boolean; readonly dryRun: boolean }
-  | { readonly command: "check"; readonly root: string };
+  | { readonly command: "install"; readonly root: string; readonly source: string; readonly allowDowngrade: boolean; readonly git: boolean; readonly postinstall: boolean; readonly dryRun: boolean; readonly replaceLocalFork: boolean; readonly breakDependents: boolean }
+  | { readonly command: "reinstall-from-tree"; readonly root: string; readonly id: string; readonly allowDowngrade: boolean; readonly git: boolean; readonly postinstall: boolean; readonly dryRun: boolean; readonly allowIdentityChange: boolean; readonly adoptTracked: boolean; readonly breakDependents: boolean }
+  | { readonly command: "uninstall"; readonly root: string; readonly id: string; readonly force: boolean; readonly git: boolean; readonly postinstall: boolean; readonly dryRun: boolean; readonly dropData: boolean }
+  | { readonly command: "check"; readonly root: string }
+  | { readonly command: "test"; readonly root: string; readonly id: string; readonly int: boolean };
 
 const USAGE = [
-  "用法：npm --workspace @game/server run plugin -- <pack|install|uninstall|check> …",
+  "用法：npm --workspace @game/server run plugin -- <pack|install|uninstall|check|test> …",
   "  pack <id> (--out <zip> | --out-dir <dir>)",
-  "  install <zip|dir> [--allow-downgrade] [--replace-local-fork] [--no-git] [--no-postinstall] [--dry-run]",
-  "  install --reinstall-from-tree <id> [--allow-identity-change] [--adopt-tracked] [--allow-downgrade] [--no-git] [--no-postinstall] [--dry-run]（同仓作者迭代：以工作树重写已安装锁）",
-  "  uninstall <id> [--force] [--no-git] [--no-postinstall] [--dry-run]",
+  "  install <zip|dir> [--allow-downgrade] [--replace-local-fork] [--break-dependents] [--no-git] [--no-postinstall] [--dry-run]",
+  "  install --reinstall-from-tree <id> [--allow-identity-change] [--adopt-tracked] [--allow-downgrade] [--break-dependents] [--no-git] [--no-postinstall] [--dry-run]（同仓作者迭代：以工作树重写已安装锁）",
+  "  uninstall <id> [--force] [--drop-data] [--no-git] [--no-postinstall] [--dry-run]（--drop-data 仅 kit：按账本 + 表前缀 drop 表并清理 kt: 键）",
   "  check",
-  "  （均可带 --root <dir>）",
+  "  test <id> [--int]（按锁枚举包自带测试单跑）",
+  "  （均可带 --root <dir>；包 = 插件 apps/plugins/<id> 或 kit apps/kits/<id>）",
 ].join("\n");
 
 export function parseCli(argv: readonly string[]): PluginCliArguments {
@@ -76,7 +81,7 @@ export function parseCli(argv: readonly string[]): PluginCliArguments {
     };
   }
   if (command === "install") {
-    known(["--allow-downgrade", "--no-git", "--no-postinstall", "--dry-run", "--reinstall-from-tree", "--allow-identity-change", "--adopt-tracked", "--replace-local-fork"]);
+    known(["--allow-downgrade", "--no-git", "--no-postinstall", "--dry-run", "--reinstall-from-tree", "--allow-identity-change", "--adopt-tracked", "--replace-local-fork", "--break-dependents"]);
     if (flags.has("--reinstall-from-tree")) {
       if (flags.has("--replace-local-fork")) throw new Error(`--replace-local-fork 只对 install <zip|dir> 有效（从树重装本身就是在写分叉）\n${USAGE}`);
       if (positional.length !== 1) throw new Error(`install --reinstall-from-tree 需要且只需要一个已安装插件 <id>\n${USAGE}`);
@@ -91,6 +96,7 @@ export function parseCli(argv: readonly string[]): PluginCliArguments {
         dryRun: flags.has("--dry-run"),
         allowIdentityChange: flags.has("--allow-identity-change"),
         adoptTracked: flags.has("--adopt-tracked"),
+        breakDependents: flags.has("--break-dependents"),
       };
     }
     for (const flag of ["--allow-identity-change", "--adopt-tracked"]) {
@@ -106,10 +112,11 @@ export function parseCli(argv: readonly string[]): PluginCliArguments {
       postinstall: !flags.has("--no-postinstall"),
       dryRun: flags.has("--dry-run"),
       replaceLocalFork: flags.has("--replace-local-fork"),
+      breakDependents: flags.has("--break-dependents"),
     };
   }
   if (command === "uninstall") {
-    known(["--force", "--no-git", "--no-postinstall", "--dry-run"]);
+    known(["--force", "--no-git", "--no-postinstall", "--dry-run", "--drop-data"]);
     if (positional.length !== 1) throw new Error(`uninstall 需要且只需要一个 <id>\n${USAGE}`);
     return {
       command: "uninstall",
@@ -119,12 +126,18 @@ export function parseCli(argv: readonly string[]): PluginCliArguments {
       git: !flags.has("--no-git"),
       postinstall: !flags.has("--no-postinstall"),
       dryRun: flags.has("--dry-run"),
+      dropData: flags.has("--drop-data"),
     };
   }
   if (command === "check") {
     known([]);
     if (positional.length !== 0) throw new Error(`check 不接受位置参数\n${USAGE}`);
     return { command: "check", root };
+  }
+  if (command === "test") {
+    known(["--int"]);
+    if (positional.length !== 1) throw new Error(`test 需要且只需要一个已安装包 <id>\n${USAGE}`);
+    return { command: "test", root, id: positional[0], int: flags.has("--int") };
   }
   throw new Error(USAGE);
 }
@@ -145,9 +158,10 @@ function printProvenance(report: InstallReport): void {
   else if (before === "tree" && report.source.kind === "tree" && report.adopted === undefined) console.log("[plugin]   锁来源：仍是本地分叉（tree）——与分叉内容相同的包不改变来源，--replace-local-fork 才改标为 package");
   for (const change of report.uuidChanged) console.log(`[plugin]   ⚠ 同路径 .meta 的 uuid 变了（Creator 视为另一个资源，宿主对它的引用会断）：${change.path} ${change.from} → ${change.to}`);
   for (const relative of report.adopted?.review ?? []) console.log(`[plugin]   ⚠ 吸收了共享命名空间里的新文件（未跟踪即吸收）：${relative}——请确认它确属本插件`);
+  for (const broken of report.brokenDependents) console.log(`[plugin]   ⚠ --break-dependents 放行，已破坏依赖：${broken}（plugin -- check 会红，需各自升级）`);
 }
 
-export function runCli(args: PluginCliArguments): number {
+export async function runCli(args: PluginCliArguments): Promise<number> {
   if (args.command === "pack") {
     const result = packPlugin({ root: args.root, id: args.id, ...(args.outFile ? { outFile: args.outFile } : {}), ...(args.outDir ? { outDir: args.outDir } : {}) });
     console.log(`[plugin] packed ${result.manifest.id}@${result.manifest.version}: ${result.entries.length} files → ${result.output}`);
@@ -155,7 +169,7 @@ export function runCli(args: PluginCliArguments): number {
     return 0;
   }
   if (args.command === "install") {
-    const report = installPlugin({ root: args.root, source: args.source, allowDowngrade: args.allowDowngrade, git: args.git, postinstall: args.postinstall, dryRun: args.dryRun, replaceLocalFork: args.replaceLocalFork });
+    const report = installPlugin({ root: args.root, source: args.source, allowDowngrade: args.allowDowngrade, git: args.git, postinstall: args.postinstall, dryRun: args.dryRun, replaceLocalFork: args.replaceLocalFork, breakDependents: args.breakDependents });
     const verb = report.previousVersion ? `upgraded ${report.previousVersion} → ${report.version}` : `installed ${report.version}`;
     console.log(`[plugin] ${args.dryRun ? "(dry-run) " : ""}${report.id}: ${verb}; written ${report.written.length}, unchanged ${report.unchanged.length}, deleted ${report.deleted.length}`);
     for (const relative of report.deleted) console.log(`[plugin]   deleted ${relative}`);
@@ -166,7 +180,7 @@ export function runCli(args: PluginCliArguments): number {
     return 0;
   }
   if (args.command === "reinstall-from-tree") {
-    const report = reinstallFromTree({ root: args.root, id: args.id, allowDowngrade: args.allowDowngrade, git: args.git, postinstall: args.postinstall, dryRun: args.dryRun, allowIdentityChange: args.allowIdentityChange, adoptTracked: args.adoptTracked });
+    const report = reinstallFromTree({ root: args.root, id: args.id, allowDowngrade: args.allowDowngrade, git: args.git, postinstall: args.postinstall, dryRun: args.dryRun, allowIdentityChange: args.allowIdentityChange, adoptTracked: args.adoptTracked, breakDependents: args.breakDependents });
     const adopted = report.adopted ?? { added: [], changed: [] };
     console.log(`[plugin] ${args.dryRun ? "(dry-run) " : ""}${report.id}: lock rewritten from tree ${report.previousVersion} → ${report.version}; adopted changed ${adopted.changed.length}, added ${adopted.added.length}, deleted ${report.deleted.length}, unchanged ${report.unchanged.length}`);
     for (const relative of adopted.changed) console.log(`[plugin]   changed ${relative}`);
@@ -180,19 +194,29 @@ export function runCli(args: PluginCliArguments): number {
   }
   if (args.command === "uninstall") {
     const report = uninstallPlugin({ root: args.root, id: args.id, force: args.force, git: args.git, postinstall: args.postinstall, dryRun: args.dryRun });
-    console.log(`[plugin] ${args.dryRun ? "(dry-run) " : ""}uninstalled ${report.id}@${report.version} [${report.source}]: ${report.deleted.length} files（--allow-delete ${report.allowDelete.join(", ") || "-"}）`);
+    console.log(`[plugin] ${args.dryRun ? "(dry-run) " : ""}uninstalled ${report.class} ${report.id}@${report.version} [${report.source}]: ${report.deleted.length} files（--allow-delete ${report.allowDelete.join(", ") || "-"}）`);
     if (report.source !== "package") console.log(`[plugin]   ⚠ 锁来源是 ${report.source}：被删的是宿主本地内容（分叉 / 来源未知），⛔ 无法从任何包恢复——确认无误再提交`);
     if (report.missing.length > 0) console.log(`[plugin] ⚠ 锁登记但工作树已缺失：${report.missing.join(", ")}`);
+    if (args.dropData) {
+      if (report.class !== "kit") throw new Error(`--drop-data 只对 kit 有效（${report.id} 是 ${report.class}）`);
+      const dropped = await dropKitData({ kitId: report.id, dryRun: args.dryRun });
+      console.log(`[plugin]   ${args.dryRun ? "(dry-run) " : ""}drop-data：表 ${dropped.tables.join(", ") || "-"}；账本行 ${dropped.ledgerRows}；Redis 键 ${dropped.redisKeys}`);
+    } else if (report.class === "kit") {
+      console.log("[plugin]   kit 的表与账本行保留（docs/KIT.md §5）；确认不再需要数据时 uninstall --drop-data");
+    }
     console.log("[plugin] 下一步（人工）：node scripts/protocol-fingerprint.mjs --write（若 registry 变化）、node scripts/fgui-manifest.mjs --write（若删了 FGUI 包）、npm run verify:all");
     return 0;
   }
+  if (args.command === "test") {
+    return runPackageTests({ root: args.root, id: args.id, int: args.int });
+  }
   const report = checkInstalledPlugins(args.root);
   if (report.plugins.length === 0) {
-    console.log("[plugin] 没有已安装插件（scripts/packages/ 为空）");
+    console.log("[plugin] 没有已安装包（scripts/packages/ 为空）");
     return 0;
   }
   for (const plugin of report.plugins) {
-    console.log(`[plugin] ${plugin.id}@${plugin.version} [${plugin.source}]: ${plugin.problems.length === 0 ? "✔ 一致" : "✖ 有问题"}`);
+    console.log(`[plugin] ${plugin.class} ${plugin.id}@${plugin.version} [${plugin.source}]: ${plugin.problems.length === 0 ? "✔ 一致" : "✖ 有问题"}`);
     for (const problem of plugin.problems) console.log(`[plugin]   - ${problem}`);
   }
   return report.ok ? 0 : 1;
@@ -200,10 +224,10 @@ export function runCli(args: PluginCliArguments): number {
 
 const invokedFile = process.argv[1] ? path.resolve(process.argv[1]) : "";
 if (invokedFile === fileURLToPath(import.meta.url)) {
-  try {
-    process.exitCode = runCli(parseCli(process.argv.slice(2)));
-  } catch (error) {
-    console.error(error instanceof Error ? error.message : error);
-    process.exitCode = 1;
-  }
+  runCli(parseCli(process.argv.slice(2)))
+    .then((code) => { process.exitCode = code; })
+    .catch((error: unknown) => {
+      console.error(error instanceof Error ? error.message : error);
+      process.exitCode = 1;
+    });
 }

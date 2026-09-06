@@ -18,11 +18,13 @@ import { parseCli } from "../tools/plugin/cli";
 import { allowDeleteFor, gitStatusEntries, installPlugin, isSharedNamespace, nextStepsFor, reinstallFromTree, runCommand, viewNamesFromEntries, type CommandRunner } from "../tools/plugin/install";
 import { hostMetaUuids } from "../tools/plugin/meta";
 import { filesLockSha256Of, parseInstalledLock, readInstalledLock, renderFilesLock, renderInstalledLock, sha256 } from "../tools/plugin/lock";
-import { CURRENT_PLUGIN_SCHEMA_VERSION, CURRENT_GAMEPLAY_SCHEMA_VERSION, PLUGIN_SCHEMA_FILE, GAMEPLAY_SCHEMA_FILE, compareVersions, parsePluginManifest } from "../tools/plugin/manifest";
+import { CURRENT_KIT_SCHEMA_VERSION, CURRENT_PLUGIN_SCHEMA_VERSION, CURRENT_GAMEPLAY_SCHEMA_VERSION, KIT_SCHEMA_FILE, PLUGIN_SCHEMA_FILE, GAMEPLAY_SCHEMA_FILE, compareVersions, parseKitManifest, parsePluginManifest } from "../tools/plugin/manifest";
+import { planPackageTests } from "../tools/plugin/test";
 import { META_UUID_RE, expectedImporter, parseMeta } from "../tools/plugin/meta";
 import {
   classifyPath,
   deriveOwnership,
+  domainBelongsTo,
   isPluginClientDir,
   normalizePackagePath,
   readProtectedPaths,
@@ -37,18 +39,22 @@ const REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)
 const PROTECTED = readProtectedPaths(REPOSITORY_ROOT);
 
 const PLUGIN_IDENTITY: PluginIdentity = {
+  class: "plugin",
   id: "chamber",
   kinds: ["client"],
   constantName: null,
+  modes: [],
   domains: ["chamber"],
   fguiPackages: ["Chamber"],
   clientDirs: ["apps/client/src/plugins/chamber/view", "apps/client/src/plugins/chamber/logic"],
 };
 
 const GAMEPLAY_IDENTITY: PluginIdentity = {
+  class: "plugin",
   id: "puzzle",
   kinds: ["gameplay", "client"],
   constantName: "Puzzle",
+  modes: [],
   domains: [],
   fguiPackages: [],
   clientDirs: ["apps/client/src/view/rooms/puzzle", "apps/client/src/logic/rooms/puzzle"],
@@ -172,7 +178,11 @@ test("身份形态闸：坏 id / 缺 constantName / 客户端目录越出命名�
   assert.throws(() => deriveOwnership({ ...GAMEPLAY_IDENTITY, constantName: null }), /必须声明 constantName/u);
   assert.throws(() => deriveOwnership({ ...PLUGIN_IDENTITY, constantName: "Chamber" }), /才声明 constantName/u);
   assert.throws(() => deriveOwnership({ ...PLUGIN_IDENTITY, kinds: [] }), /kinds 不能为空/u);
-  assert.doesNotThrow(() => deriveOwnership({ ...GAMEPLAY_IDENTITY, kinds: ["gameplay"], domains: ["x"], clientDirs: [] }), "域不依赖客户端登记（纯服务端插件成立）");
+  assert.doesNotThrow(() => deriveOwnership({ ...GAMEPLAY_IDENTITY, kinds: ["gameplay"], domains: ["puzzleAdmin"], clientDirs: [] }), "域不依赖客户端登记（纯服务端插件成立）");
+  // 域名前缀规则（docs/KIT.md §2）：等于 id 或 id + 大写/数字续接；裸续接与别人的域都拒绝。
+  assert.throws(() => deriveOwnership({ ...PLUGIN_IDENTITY, domains: ["guild"] }), /域 "guild" 不以包 id "chamber" 开头/u);
+  assert.throws(() => deriveOwnership({ ...PLUGIN_IDENTITY, domains: ["chamberx"] }), /域 "chamberx" 不以包 id "chamber" 开头/u);
+  assert.doesNotThrow(() => deriveOwnership({ ...PLUGIN_IDENTITY, domains: ["chamber", "chamberAdmin", "chamber2"] }));
   assert.throws(() => deriveOwnership({ ...GAMEPLAY_IDENTITY, kinds: ["gameplay"], clientDirs: ["apps/client/src/view/rooms/puzzle"] }), /没有客户端登记/u);
   assert.throws(() => deriveOwnership({ ...PLUGIN_IDENTITY, clientDirs: ["apps/client/src/view"] }), /不在插件 "chamber" 的命名空间内/u);
   assert.throws(() => deriveOwnership({ ...PLUGIN_IDENTITY, clientDirs: ["apps/client/src/view/rooms/snake"] }), /不在插件 "chamber" 的命名空间内/u);
@@ -683,36 +693,40 @@ test("审阅后加固：插件 id/domain 与框架既有目录同名 → 目录�
   }
 });
 
-test("PLUGIN-REGISTRY §1-3：reinstall-from-tree 的身份变化闸与 git 跟踪闸——扩 domains 到框架域不能把框架文件吸进插件锁", () => {
+test("PLUGIN-REGISTRY §1-3：reinstall-from-tree 的身份变化闸与 git 跟踪闸——扩 domains 到树上同名域不能把已跟踪文件吸进插件锁；框架域按前缀规则直接拒绝", () => {
   const { author, target } = makeFixture("1.0.0");
   try {
-    // 目标树里 guild 是框架自己的域（已提交），chamber 是插件。
-    write(target, "apps/shared/src/protocol/lobbyRpc/domains/guild.ts", "export default {} as never;\n");
-    write(target, "apps/server/src/websocket/guild/join.ts", "export default {} as never;\n");
-    write(target, "apps/server/test/lobbyRpcVectors/guild.ts", "export default {};\n");
+    // 目标树里 chamberGuild 是别人已提交的域（前缀合规，所以推导集能覆盖它），chamber 是插件。
+    write(target, "apps/shared/src/protocol/lobbyRpc/domains/chamberGuild.ts", "export default {} as never;\n");
+    write(target, "apps/server/src/websocket/chamberGuild/join.ts", "export default {} as never;\n");
+    write(target, "apps/server/test/lobbyRpcVectors/chamberGuild.ts", "export default {};\n");
     gitInit(target);
     const v1 = path.join(author, "out/v1.zip");
     packPlugin({ root: author, id: "chamber", outFile: v1 });
     installPlugin({ root: target, source: v1, git: true, postinstall: false });
     assert.equal(checkInstalledPlugins(target).ok, true);
 
-    // 作者在树上把 guild 写进 domains 并 bump：身份变化 → 拒绝；显式放行后 → guild 文件已被 git 跟踪却不在锁里 → 拒绝并点名。
+    // 框架域（guild）按域名前缀规则在解析期就被拒：插件根本写不进 domains（docs/KIT.md §2 对插件同样生效）。
     const manifestFile = path.join(target, "apps/plugins/chamber/plugin.json");
-    fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.0.1"').replace('"chamber"\n  ]', '"chamber",\n    "guild"\n  ]'));
-    assert.match(JSON.parse(fs.readFileSync(manifestFile, "utf8")).domains.join(","), /guild/u, "fixture 自检：domains 已含 guild");
-    assert.throws(() => reinstallFromTree({ root: target, id: "chamber", git: true, postinstall: false }), /身份与已安装锁不同[\s\S]*domains: chamber → chamber,guild/u);
+    const original = fs.readFileSync(manifestFile, "utf8");
+    fs.writeFileSync(manifestFile, original.replace('"1.0.0"', '"1.0.1"').replace('"chamber"\n  ]', '"chamber",\n    "guild"\n  ]'));
+    assert.throws(() => reinstallFromTree({ root: target, id: "chamber", git: true, postinstall: false, allowIdentityChange: true }), /域 "guild" 不以包 id "chamber" 开头/u);
+    // 作者在树上把 chamberGuild 写进 domains 并 bump：身份变化 → 拒绝；显式放行后 → 域文件已被 git 跟踪却不在锁里 → 拒绝并点名。
+    fs.writeFileSync(manifestFile, original.replace('"1.0.0"', '"1.0.1"').replace('"chamber"\n  ]', '"chamber",\n    "chamberGuild"\n  ]'));
+    assert.match(JSON.parse(fs.readFileSync(manifestFile, "utf8")).domains.join(","), /chamberGuild/u, "fixture 自检：domains 已含 chamberGuild");
+    assert.throws(() => reinstallFromTree({ root: target, id: "chamber", git: true, postinstall: false }), /身份与已安装锁不同[\s\S]*domains: chamber → chamber,chamberGuild/u);
     assert.throws(
       () => reinstallFromTree({ root: target, id: "chamber", git: true, postinstall: false, allowIdentityChange: true }),
-      /已被 git 跟踪却不在已安装锁里[\s\S]*websocket\/guild\/join\.ts[\s\S]*lobbyRpcVectors\/guild\.ts[\s\S]*domains\/guild\.ts/u,
+      /已被 git 跟踪却不在已安装锁里[\s\S]*websocket\/chamberGuild\/join\.ts[\s\S]*lobbyRpcVectors\/chamberGuild\.ts[\s\S]*domains\/chamberGuild\.ts/u,
     );
     assert.equal(readInstalledLock(target, "chamber")?.manifest.version, "1.0.0", "被拒时锁不动");
     // check 也点名树上 plugin.json 与锁的身份漂移。
     const drift = checkInstalledPlugins(target);
     assert.equal(drift.ok, false);
-    assert.match(drift.plugins[0].problems.join("\n"), /身份与锁不一致.*domains: chamber → chamber,guild/u);
+    assert.match(drift.plugins[0].problems.join("\n"), /身份与锁不一致.*domains: chamber → chamber,chamberGuild/u);
     // 两个 flag 都给才吸收（显式决定，可 review）。
     const adopted = reinstallFromTree({ root: target, id: "chamber", git: true, postinstall: false, allowIdentityChange: true, adoptTracked: true });
-    assert.ok(adopted.adopted?.added.includes("apps/server/src/websocket/guild/join.ts"));
+    assert.ok(adopted.adopted?.added.includes("apps/server/src/websocket/chamberGuild/join.ts"));
 
     // 对照：作者新写的未跟踪文件不需要任何 flag 就能吸收（这才是 reinstall-from-tree 的日常）。
     fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.1"', '"1.0.2"'));
@@ -1405,14 +1419,74 @@ test("manifest（v2）：schema 校验、version 可省（宿主自有）、未�
   const readConst = (file: string): number => (JSON.parse(fs.readFileSync(file, "utf8")) as { properties: { schemaVersion: { const: number } } }).properties.schemaVersion.const;
   assert.equal(CURRENT_PLUGIN_SCHEMA_VERSION, readConst(PLUGIN_SCHEMA_FILE));
   assert.equal(CURRENT_GAMEPLAY_SCHEMA_VERSION, readConst(GAMEPLAY_SCHEMA_FILE));
+  assert.equal(CURRENT_KIT_SCHEMA_VERSION, readConst(KIT_SCHEMA_FILE));
+  assert.equal(KIT_SCHEMA_FILE, path.join(REPOSITORY_ROOT, "apps/server/tools/plugin/kit-schema-v1.json"));
+  // requires（plugin.json v2 的增量可选字段，⛔ 不 bump schemaVersion）。
+  const requiring = parsePluginManifest({ schemaVersion: 2, id: "chamber", version: "1.0.0", routes: [{ id: "chamber", view: "Chamber" }], requires: { kits: { kfix: { board: 1 } } } });
+  assert.deepEqual(requiring.requires, { pluginApiVersion: null, kits: { kfix: { board: 1 } } });
+  assert.deepEqual(parsePluginManifest({ schemaVersion: 2, id: "chamber", menu: [] }).requires, { pluginApiVersion: null, kits: {} });
+  assert.throws(() => parsePluginManifest({ schemaVersion: 2, id: "chamber", requires: { kits: { kfix: {} } } }), /至少声明一个 api 面/u);
+  assert.throws(() => parsePluginManifest({ schemaVersion: 2, id: "chamber", requires: { kits: { kfix: { board: 0 } } } }), /must be >= 1/u);
+  assert.throws(() => parsePluginManifest({ schemaVersion: 2, id: "chamber", requires: { kits: { "Bad Id": { board: 1 } } } }), /unknown key/u);
+  // kit.json v1：api 面 / modes / sql / userKeys / effects 的跨字段规则。
+  const kit = parseKitManifest({
+    schemaVersion: 1, id: "kfix", version: "1.0.0", api: { board: { version: 2, minSupported: 1 } },
+    modes: [{ id: "kfixArena", constantName: "KfixArena" }],
+    sql: { files: ["sql/001-init.sql"], tables: [{ name: "k_kfix_board", zone: "per-zone" }] },
+    userKeys: ["stats"], effects: { trophy: { userKey: "stats", field: "trophies", max: 100 } },
+  });
+  assert.equal(kit.class, "kit");
+  assert.deepEqual(kit.api, { board: { version: 2, minSupported: 1 } });
+  assert.deepEqual(kit.modes, [{ id: "kfixArena", constantName: "KfixArena" }]);
+  assert.equal(parseKitManifest({ schemaVersion: 1, id: "kfix", modes: [] }).version, null, "没有 version = 宿主自有 kit");
+  assert.throws(() => parseKitManifest({ schemaVersion: 1, id: "kfix", api: { board: { version: 1, minSupported: 2 } } }), /minSupported（2）不得大于 version（1）/u);
+  assert.throws(() => parseKitManifest({ schemaVersion: 1, id: "kfix", sql: { files: ["sql/001-init.sql"], tables: [{ name: "k_other_x", zone: "global" }] } }), /必须以 "k_kfix_" 开头/u);
+  assert.throws(() => parseKitManifest({ schemaVersion: 1, id: "kfix", sql: { files: [], tables: [{ name: "k_kfix_x", zone: "global" }] } }), /声明了表却没有迁移文件/u);
+  assert.throws(() => parseKitManifest({ schemaVersion: 1, id: "kfix", userKeys: ["a"], effects: { t: { userKey: "b", field: "f", max: 1 } } }), /userKey "b" 不在 userKeys 内/u);
+  assert.throws(() => parseKitManifest({ schemaVersion: 1, id: "kfix", modes: [{ id: "a", constantName: "A" }, { id: "a", constantName: "B" }] }), /mode id 重复/u);
+  assert.throws(() => parseKitManifest({ schemaVersion: 1, id: "kfix", requires: { kits: {} } }), /unknown key/u, "kit ⛔ 不依赖 kit");
+  assert.throws(() => parseKitManifest({ schemaVersion: 1, id: "kfix", entry: "apps/client/src/plugins/kfix/index.ts" }), /entry/u, "kit 的 entry 在 kits/ 命名空间");
+  assert.equal(domainBelongsTo("slg", "slgAdmin"), true);
+  assert.equal(domainBelongsTo("slg", "slgx"), false);
+  assert.equal(domainBelongsTo("snake", "snakeCosmetic"), true, "前缀规则本身放行；「最长包 id 归属」由 codegen 跨包判");
+  // 旧锁抬头：无 class ⇒ plugin，无 requires ⇒ 空；kit 锁带 class/api/modes。
+  const legacy = parseInstalledLock([
+    "# manifest {\"id\":\"redeem\",\"version\":\"1.0.8\",\"kinds\":[\"client\"],\"constantName\":null,\"domains\":[\"redeem\"],\"fguiPackages\":[]}",
+    "apps/plugins/redeem/README.md 0000000000000000000000000000000000000000000000000000000000000000",
+    "",
+  ].join("\n"), "legacy.lock");
+  assert.equal(legacy.manifest.class, "plugin");
+  assert.deepEqual(legacy.manifest.requires, { pluginApiVersion: null, kits: {} });
+  assert.deepEqual(legacy.manifest.modes, []);
+  const kitLockText = renderInstalledLock({
+    manifest: { class: "kit", id: "kfix", version: "1.0.0", kinds: ["client", "gameplay", "server"], constantName: null, modes: [{ id: "kfixArena", constantName: "KfixArena" }], domains: ["kfix"], fguiPackages: [], api: { board: { version: 2, minSupported: 1 } }, requires: { pluginApiVersion: null, kits: {} } },
+    entries: [],
+  });
+  const kitLock = parseInstalledLock(kitLockText, "kfix.lock");
+  assert.equal(kitLock.manifest.class, "kit");
+  assert.deepEqual(kitLock.manifest.api, { board: { version: 2, minSupported: 1 } });
+  assert.deepEqual(kitLock.manifest.modes, [{ id: "kfixArena", constantName: "KfixArena" }]);
+  assert.match(kitLockText, /已安装 kit kfix@1\.0\.0/u);
+  assert.throws(() => parseInstalledLock(kitLockText.replace('"class":"kit",', ""), "bad.lock"), /插件锁不该有 modes \/ api/u);
   assert.equal(PLUGIN_SCHEMA_FILE, path.join(REPOSITORY_ROOT, "apps/server/tools/plugin/plugin-schema-v2.json"));
   assert.equal(compareVersions("1.10.0", "1.9.9") > 0, true);
   assert.equal(compareVersions("1.0.0", "1.0.0"), 0);
   assert.equal(compareVersions("0.9.0", "1.0.0") < 0, true);
 });
 
-test("CLI 参数：四个子命令、--root seam、重复/未知参数 throw", () => {
+test("CLI 参数：五个子命令、--root seam、重复/未知参数 throw", () => {
   assert.equal(parseCli(["check"]).command, "check");
+  const testCmd = parseCli(["test", "chamber", "--int"]);
+  assert.deepEqual(testCmd, { command: "test", root: testCmd.root, id: "chamber", int: true });
+  assert.throws(() => parseCli(["test"]), /只需要一个已安装包/u);
+  assert.throws(() => parseCli(["test", "a", "--dry-run"]), /unknown argument/u);
+  const breaking = parseCli(["install", "kit.zip", "--break-dependents"]);
+  assert.ok(breaking.command === "install" && breaking.breakDependents);
+  const breakingTree = parseCli(["install", "--reinstall-from-tree", "kfix", "--break-dependents"]);
+  assert.ok(breakingTree.command === "reinstall-from-tree" && breakingTree.breakDependents);
+  const drop = parseCli(["uninstall", "kfix", "--drop-data", "--dry-run"]);
+  assert.ok(drop.command === "uninstall" && drop.dropData && drop.dryRun);
+  assert.throws(() => parseCli(["install", "pkg.zip", "--drop-data"]), /unknown argument/u);
   const pack = parseCli(["pack", "chamber", "--out", "/tmp/x.zip", "--root", "/tmp/r"]);
   assert.deepEqual(pack, { command: "pack", root: "/tmp/r", id: "chamber", outFile: "/tmp/x.zip" });
   const install = parseCli(["install", "pkg.zip", "--no-git", "--dry-run"]);
@@ -1457,4 +1531,281 @@ test("nextStepsFor：协议指纹提示按 --check 的实际结果派生，⛔ �
   assert.deepEqual(nextStepsFor(fake({ domains: [], kinds: ["client"] }), root).filter((step) => step.includes("protocol-fingerprint")), []);
   // 过期判定不看 manifest：无 domain 的纯 plugin 若 --check 报红也要提示。
   assert.ok(nextStepsFor(fake({ domains: [], kinds: ["client"] }), root, { protocolStale: true }).some((step) => step.startsWith("协议指纹已过期")));
+});
+
+/**
+ * 作者侧 kit 工作树（docs/KIT.md §2/§3 的样本形态）：kit.json（一个 api 面 board、一个 mode、一张 per-zone 表、
+ * 一个 userKey + effect、一个域、客户端 entry/View/Logic）+ 玩法单源 + SQL + kits/ 命名空间的 shared/server/client 代码 + 镜像 .meta。
+ */
+function kitTree(root: string, version: string, id = "kfix", overrides: Record<string, unknown> = {}): void {
+  const Constant = id.charAt(0).toUpperCase() + id.slice(1);
+  const modeId = `${id}Arena`;
+  const ModeConstant = `${Constant}Arena`;
+  write(root, `apps/kits/${id}/kit.json`, `${JSON.stringify({
+    schemaVersion: 1, id, version, description: "fixture kit",
+    api: { board: { version: 2, minSupported: 1 } },
+    domains: [id],
+    modes: [{ id: modeId, constantName: ModeConstant }],
+    sql: { files: ["sql/001-init.sql"], tables: [{ name: `k_${id.toLowerCase()}_board`, zone: "per-zone" }] },
+    userKeys: ["stats"],
+    effects: { trophy: { userKey: "stats", field: "trophies", max: 1000 } },
+    category: "extra", resident: false,
+    entry: `apps/client/src/kits/${id}/index.ts`,
+    viewDirs: [`apps/client/src/kits/${id}/view`],
+    views: [`apps/client/src/kits/${id}/view/${Constant}View.view.json`],
+    owners: [{ id, logicDir: `apps/client/src/kits/${id}/logic` }],
+    routes: [{ id, view: Constant }], menu: [],
+    ...overrides,
+  }, null, 2)}\n`);
+  write(root, `apps/kits/${id}/README.md`, `# ${id} ${version}\n`);
+  write(root, `apps/kits/${id}/sql/001-init.sql`, `CREATE TABLE IF NOT EXISTS k_${id.toLowerCase()}_board (server_id SMALLINT UNSIGNED NOT NULL, tile INT UNSIGNED NOT NULL, PRIMARY KEY (server_id, tile));\n`);
+  write(root, `apps/kits/${id}/gameplays/${modeId}/manifest.json`, `${JSON.stringify({ schemaVersion: 1, id: modeId, constantName: ModeConstant, modeVersion: 1, maxPlayers: 2, profiles: ["default"] })}\n`);
+  write(root, `apps/kits/${id}/gameplays/${modeId}/state.json`, `${JSON.stringify({ schemaVersion: 1, root: `${ModeConstant}RoomState`, types: [] })}\n`);
+  write(root, `apps/shared/src/protocol/lobbyRpc/domains/${id}.ts`, "export default {} as never;\n");
+  write(root, `apps/server/src/websocket/${id}/peek.ts`, "export default {} as never;\n");
+  write(root, `apps/server/test/lobbyRpcVectors/${id}.ts`, "export default {};\n");
+  write(root, `apps/shared/src/kits/${id}/api/board/index.ts`, "export const BOARD_API = 2;\n");
+  write(root, `apps/server/src/kits/${id}/api/board/index.ts`, "export const board = 1;\n");
+  write(root, `apps/server/src/kits/${id}/service.ts`, "export const service = 1;\n");
+  write(root, `apps/shared/src/gameplays/${modeId}/wire.ts`, "export const wire = 1;\n");
+  write(root, `apps/server/src/rooms/modes/${modeId}/index.ts`, `export function register${ModeConstant}GameMode(): void {}\n`);
+  write(root, `apps/server/test/wire-vectors/${modeId}.ts`, "export default {};\n");
+  write(root, `apps/server/test/${id}-service.test.ts`, "// fixture test\n");
+  write(root, `apps/server/test/${modeId}-mode.test.ts`, "// fixture mode test\n");
+  write(root, `apps/server/test/int/${id}-migration.test.ts`, "// fixture int test\n");
+  const clientFiles: Record<string, string> = {
+    [`apps/client/src/kits/${id}/index.ts`]: `export const ${id} = 1;\n`,
+    [`apps/client/src/kits/${id}/api/board/index.ts`]: "export const board = 1;\n",
+    [`apps/client/src/kits/${id}/view/${Constant}View.ts`]: `export class ${Constant}View {}\n`,
+    [`apps/client/src/kits/${id}/view/${Constant}View.view.json`]: "{ \"kind\": \"cocos\" }\n",
+    [`apps/client/src/kits/${id}/logic/${Constant}Logic.ts`]: `export class ${Constant}Logic {}\n`,
+    [`apps/client/src/gameplay/modes/${modeId}/index.ts`]: "export function createGameplayModule() {}\n",
+    [`apps/client/src/net/rooms/${ModeConstant}Room.ts`]: "export const room = 1;\n",
+  };
+  for (const [relative, content] of Object.entries(clientFiles)) {
+    write(root, relative, content);
+    const mirror = relative.replace("apps/client/src/", "apps/Cocos/assets/src/");
+    write(root, mirror, content);
+    write(root, `${mirror}.meta`, meta(relative.endsWith(".json") ? "json" : "typescript", mirror));
+  }
+  for (const dir of [`apps/Cocos/assets/src/kits/${id}`, `apps/Cocos/assets/src/kits/${id}/api`, `apps/Cocos/assets/src/kits/${id}/api/board`, `apps/Cocos/assets/src/kits/${id}/view`, `apps/Cocos/assets/src/kits/${id}/logic`, `apps/Cocos/assets/src/gameplay/modes/${modeId}`]) {
+    write(root, `${dir}.meta`, meta("directory", dir));
+  }
+}
+
+/** 建在 kit 上的插件（docs/KIT.md §4：requires.kits 声明 api 面版本）。 */
+function dependentPluginTree(root: string, version: string, id: string, requires: Record<string, Record<string, number>>): void {
+  authorTree(root, version, id);
+  const file = path.join(root, `apps/plugins/${id}/plugin.json`);
+  const manifest = JSON.parse(fs.readFileSync(file, "utf8")) as Record<string, unknown>;
+  fs.writeFileSync(file, `${JSON.stringify({ ...manifest, requires: { kits: requires } }, null, 2)}\n`);
+}
+
+test("kit（docs/KIT.md §2/§3）：所有权推导 = kits/ 命名空间 + 逐 mode 玩法规则 + 域 + 测试前缀；⛔ 不给 core/<id>、不给 plugins/<id>", () => {
+  const identity: PluginIdentity = {
+    class: "kit", id: "kfix", kinds: ["client", "gameplay", "server"], constantName: null,
+    modes: [{ id: "kfixArena", constantName: "KfixArena" }], domains: ["kfix", "kfixAdmin"], fguiPackages: [],
+    clientDirs: ["apps/client/src/kits/kfix/view", "apps/client/src/kits/kfix/logic", "apps/client/src/view/rooms/kfixArena"],
+  };
+  const rules = deriveOwnership(identity);
+  const ok = (relative: string): boolean => classifyPath(relative, rules, PROTECTED).allowed;
+  for (const relative of [
+    "apps/kits/kfix/kit.json", "apps/kits/kfix/sql/001-init.sql", "apps/kits/kfix/gameplays/kfixArena/manifest.json",
+    "apps/shared/src/kits/kfix/api/board/index.ts", "apps/server/src/kits/kfix/service.ts", "apps/server/src/core/compute/tasks/kits/kfix/rank.ts",
+    "apps/client/src/kits/kfix/index.ts", "apps/Cocos/assets/src/kits/kfix/index.ts", "apps/Cocos/assets/src/kits/kfix.meta",
+    "apps/shared/src/gameplays/kfixArena/wire.ts", "apps/server/src/rooms/modes/kfixArena/index.ts", "apps/client/src/net/rooms/KfixArenaRoom.ts",
+    "apps/client/src/view/rooms/kfixArena/KfixArenaView.ts", "apps/server/test/wire-vectors/kfixArena.ts", "apps/Cocos/assets/resources/kfixArena/a.png",
+    "apps/shared/src/protocol/lobbyRpc/domains/kfixAdmin.ts", "apps/server/src/websocket/kfixAdmin/x.ts", "apps/server/test/lobbyRpcVectors/kfix.ts",
+    "apps/server/test/kfix-a.test.ts", "apps/server/test/kfixArena-b.test.ts", "apps/server/test/int/kfix-c.test.ts", "apps/client/test/kfixArena-d.test.ts",
+    "apps/Cocos/assets/resources/kits/kfix/x.bin",
+  ]) assert.ok(ok(relative), `kit 应放行：${relative}`);
+  for (const relative of [
+    "apps/server/src/core/kfix/keys.ts", "apps/client/src/plugins/kfix/index.ts", "apps/plugins/kfix/plugin.json",
+    "apps/server/src/core/kfixAdmin/x.ts", "apps/shared/src/kits/catalogTypes.ts", "apps/shared/src/kits/catalog.generated.ts",
+    "apps/server/src/kits/catalog.generated.ts", "apps/server/sql/schema.sql", "apps/server/src/core/infra/kitApi.ts",
+    "apps/server/test/kfixArenaX-a.test.ts", "apps/shared/src/kits/other/index.ts",
+  ]) assert.ok(!ok(relative), `kit 应拒绝：${relative}`);
+  // 形态闸。
+  assert.throws(() => deriveOwnership({ ...identity, constantName: "Kfix" }), /⛔ 不用 constantName/u);
+  assert.throws(() => deriveOwnership({ ...identity, kinds: ["client", "server"] }), /当且仅当 modes 非空/u);
+  assert.throws(() => deriveOwnership({ ...identity, modes: [{ id: "kfix", constantName: "Kfix" }] }), /大小写归一相等/u);
+  assert.throws(() => deriveOwnership({ ...identity, modes: [{ id: "a", constantName: "A" }, { id: "A", constantName: "B" }] }), /大小写归一后重复|mode id "A" 非法/u);
+  assert.throws(() => deriveOwnership({ ...identity, clientDirs: ["apps/client/src/plugins/kfix/view"] }), /不在 kit "kfix" 的命名空间内/u);
+  assert.throws(() => deriveOwnership({ ...PLUGIN_IDENTITY, kinds: ["client", "server"] }), /只有 kit 才有 server 形态/u);
+  assert.throws(() => deriveOwnership({ ...PLUGIN_IDENTITY, modes: [{ id: "x", constantName: "X" }] }), /插件不声明 modes/u);
+  assert.throws(() => deriveOwnership({ ...identity, id: "host" }), /保留字/u);
+  // isSharedNamespace 的 kit 口径：kits/ 与各 mode 目录专属，域目录 / 测试目录共享。
+  assert.equal(isSharedNamespace("apps/server/src/kits/kfix/service.ts", "kfix", "kit", ["kfixArena"]), false);
+  assert.equal(isSharedNamespace("apps/shared/src/gameplays/kfixArena/wire.ts", "kfix", "kit", ["kfixArena"]), false);
+  assert.equal(isSharedNamespace("apps/server/src/websocket/kfix/peek.ts", "kfix", "kit", ["kfixArena"]), true);
+  assert.equal(isSharedNamespace("apps/server/test/kfix-a.test.ts", "kfix", "kit", ["kfixArena"]), true);
+});
+
+test("kit 端到端：pack → install（锁抬头 class/api/modes）→ check → 插件 requires.kits 正向闸 → kit 升级反向闸 --break-dependents → uninstall 依赖反查 → 卸载 kit 收缩每个 mode", () => {
+  const author = makeRoot();
+  const target = makeRoot();
+  try {
+    kitTree(author, "1.0.0");
+    const kitZip = path.join(author, "out/kfix-1.0.0.zip");
+    const packed = packPlugin({ root: author, id: "kfix", outFile: kitZip });
+    assert.equal(packed.manifest.class, "kit");
+    assert.ok(packed.entries.some((entry) => entry.path === "apps/kits/kfix/sql/001-init.sql"), "SQL 迁移随包");
+    assert.ok(packed.entries.some((entry) => entry.path === "apps/kits/kfix/kit.json"));
+    assert.ok(!packed.entries.some((entry) => entry.path.endsWith("plugin.json")));
+    const zipEntries = readZip(fs.readFileSync(kitZip)).map((entry) => entry.path);
+    assert.ok(zipEntries.includes("kit.json") && !zipEntries.includes("plugin.json"), "zip 根是 kit.json");
+
+    const report = installPlugin({ root: target, source: kitZip, git: false, postinstall: false });
+    assert.equal(report.id, "kfix");
+    assert.ok(report.nextSteps.some((step) => step.includes("db:bootstrap")), "带 SQL 的 kit 提示跑 bootstrap（install ⛔ 不碰数据库）");
+    assert.ok(report.nextSteps.some((step) => step.includes("kits.meta")));
+    const lock = readInstalledLock(target, "kfix");
+    assert.ok(lock);
+    assert.equal(lock.manifest.class, "kit");
+    assert.deepEqual(lock.manifest.kinds, ["client", "gameplay", "server"]);
+    assert.deepEqual(lock.manifest.api, { board: { version: 2, minSupported: 1 } });
+    assert.deepEqual(lock.manifest.modes, [{ id: "kfixArena", constantName: "KfixArena" }]);
+    assert.match(fs.readFileSync(path.join(target, "scripts/packages/kfix.lock"), "utf8"), /^# scripts\/packages\/kfix\.lock —— 已安装 kit kfix@1\.0\.0/u);
+    assert.equal(checkInstalledPlugins(target).ok, true, JSON.stringify(checkInstalledPlugins(target)));
+    assert.deepEqual(planPackageTests(target, "kfix", false), {
+      id: "kfix",
+      files: ["test/kfix-service.test.ts", "test/kfixArena-mode.test.ts"],
+      skippedInt: ["apps/server/test/int/kfix-migration.test.ts"],
+    });
+    assert.deepEqual(planPackageTests(target, "kfix", true).files, ["test/int/kfix-migration.test.ts", "test/kfix-service.test.ts", "test/kfixArena-mode.test.ts"]);
+
+    // 正向闸：插件声明 requires.kits。
+    const shopAuthor = makeRoot();
+    try {
+      dependentPluginTree(shopAuthor, "1.0.0", "kfixShop", { kfix: { board: 1 } });
+      const shopZip = path.join(shopAuthor, "out/shop.zip");
+      packPlugin({ root: shopAuthor, id: "kfixShop", outFile: shopZip });
+      // 先在没有 kit 的宿主上装：拒绝。
+      const bare = makeRoot();
+      try {
+        assert.throws(() => installPlugin({ root: bare, source: shopZip, git: false, postinstall: false }), /kit "kfix" 未安装/u);
+      } finally {
+        cleanup(bare);
+      }
+      installPlugin({ root: target, source: shopZip, git: false, postinstall: false });
+      assert.deepEqual(readInstalledLock(target, "kfixShop")?.manifest.requires, { pluginApiVersion: null, kits: { kfix: { board: 1 } } });
+      assert.match(fs.readFileSync(path.join(target, "scripts/packages/kfixShop.lock"), "utf8"), /"requires":\{"pluginApiVersion":null,"kits":\{"kfix":\{"board":1\}\}\}/u);
+      assert.equal(checkInstalledPlugins(target).ok, true);
+      // 面不存在 / 版本越界：拒绝并点名。
+      for (const [requires, pattern] of [
+        [{ kfix: { ranking: 1 } }, /api 面 "ranking" 不存在/u],
+        [{ kfix: { board: 3 } }, /声明版本 3 不在 \[minSupported 1, version 2\] 内/u],
+        [{ kfixShop: { board: 1 } }, /是已安装插件，不是 kit/u],
+      ] as const) {
+        const other = makeRoot();
+        try {
+          dependentPluginTree(other, "1.0.0", "kfixMail", requires as Record<string, Record<string, number>>);
+          const zip = path.join(other, "out/mail.zip");
+          packPlugin({ root: other, id: "kfixMail", outFile: zip });
+          assert.throws(() => installPlugin({ root: target, source: zip, git: false, postinstall: false, dryRun: true }), pattern);
+        } finally {
+          cleanup(other);
+        }
+      }
+      // 反向闸：kit 升级把 board 的 minSupported 提到 2 ⇒ kfixShop 声明的 1 落到区间外 ⇒ 拒绝；--break-dependents 放行并报告。
+      kitTree(author, "1.1.0", "kfix", { api: { board: { version: 3, minSupported: 2 } } });
+      const kitZip2 = path.join(author, "out/kfix-1.1.0.zip");
+      packPlugin({ root: author, id: "kfix", outFile: kitZip2 });
+      assert.throws(() => installPlugin({ root: target, source: kitZip2, git: false, postinstall: false }), /破坏已安装插件的依赖声明[\s\S]*插件 "kfixShop"[\s\S]*声明版本 1 不在 \[minSupported 2, version 3\]/u);
+      assert.equal(readInstalledLock(target, "kfix")?.manifest.version, "1.0.0", "被拒时锁不动");
+      const broken = installPlugin({ root: target, source: kitZip2, git: false, postinstall: false, breakDependents: true });
+      assert.equal(broken.brokenDependents.length, 1);
+      assert.equal(readInstalledLock(target, "kfix")?.manifest.version, "1.1.0");
+      const drift = checkInstalledPlugins(target);
+      assert.equal(drift.ok, false);
+      assert.match(drift.plugins.find((entry) => entry.id === "kfixShop")?.problems.join("\n") ?? "", /依赖的 kit "kfix" api 不兼容/u);
+      // 依赖反查：kit 仍被 kfixShop 依赖 ⇒ 拒绝卸载。
+      assert.throws(() => uninstallPlugin({ root: target, id: "kfix", git: false, postinstall: false }), /拒绝卸载 kit "kfix"[\s\S]*kfixShop/u);
+      uninstallPlugin({ root: target, id: "kfixShop", git: false, postinstall: false });
+    } finally {
+      cleanup(shopAuthor);
+    }
+    // 卸载 kit：每个 mode 进 gameplays 删除面、id + 域 + View 进 plugins 删除面；表保留（--drop-data 另说）。
+    const removed = uninstallPlugin({ root: target, id: "kfix", git: false, postinstall: false });
+    assert.equal(removed.class, "kit");
+    assert.deepEqual(removed.allowDelete, ["Kfix", "kfix"]);
+    assert.ok(!fs.existsSync(path.join(target, "apps/kits/kfix")));
+    assert.ok(!fs.existsSync(path.join(target, "apps/server/src/rooms/modes/kfixArena")));
+    assert.ok(!fs.existsSync(path.join(target, "scripts/packages/kfix.lock")));
+    assert.equal(checkInstalledPlugins(target).ok, true);
+  } finally {
+    cleanup(author, target);
+  }
+});
+
+test("kit 身份与单源一致性：modes ≡ gameplays/ 子目录、constantName 一致、sql.files 随包且非空、类别不能升级着换、宿主自有 kit 满足 requires", () => {
+  const author = makeRoot();
+  const target = makeRoot();
+  try {
+    kitTree(author, "1.0.0");
+    // gameplays/ 多一个未声明的目录 ⇒ pack 拒绝。
+    write(author, "apps/kits/kfix/gameplays/kfixExtra/manifest.json", `${JSON.stringify({ schemaVersion: 1, id: "kfixExtra", constantName: "KfixExtra", modeVersion: 1, maxPlayers: 2 })}\n`);
+    assert.throws(() => packPlugin({ root: author, id: "kfix", outFile: path.join(author, "out/a.zip") }), /kfixExtra[\s\S]*不在 kit\.json 的 modes 里/u);
+    fs.rmSync(path.join(author, "apps/kits/kfix/gameplays/kfixExtra"), { recursive: true });
+    // constantName 与单源不一致 ⇒ 拒绝。
+    const manifestFile = path.join(author, "apps/kits/kfix/gameplays/kfixArena/manifest.json");
+    const original = fs.readFileSync(manifestFile, "utf8");
+    fs.writeFileSync(manifestFile, original.replace('"KfixArena"', '"Other"'));
+    assert.throws(() => packPlugin({ root: author, id: "kfix", outFile: path.join(author, "out/b.zip") }), /constantName（Other）与 kit\.json modes 声明（KfixArena）不一致/u);
+    fs.writeFileSync(manifestFile, original);
+    // sql 目录里多一个未声明的 .sql ⇒ 拒绝；声明的文件为空 ⇒ 拒绝。
+    write(author, "apps/kits/kfix/sql/002-extra.sql", "CREATE TABLE IF NOT EXISTS k_kfix_x (a INT);\n");
+    assert.throws(() => packPlugin({ root: author, id: "kfix", outFile: path.join(author, "out/c.zip") }), /002-extra\.sql 不在 kit\.json 的 sql\.files 里/u);
+    fs.rmSync(path.join(author, "apps/kits/kfix/sql/002-extra.sql"));
+    fs.writeFileSync(path.join(author, "apps/kits/kfix/sql/001-init.sql"), "\n");
+    assert.throws(() => packPlugin({ root: author, id: "kfix", outFile: path.join(author, "out/d.zip") }), /001-init\.sql 是空的/u);
+    fs.writeFileSync(path.join(author, "apps/kits/kfix/sql/001-init.sql"), "CREATE TABLE IF NOT EXISTS k_kfix_board (server_id SMALLINT UNSIGNED NOT NULL, PRIMARY KEY (server_id));\n");
+    // 同一 id 不能既是 plugin 又是 kit：树上并存即拒绝。
+    write(author, "apps/plugins/kfix/plugin.json", `${JSON.stringify({ schemaVersion: 2, id: "kfix", version: "1.0.0", menu: [] })}\n`);
+    assert.throws(() => packPlugin({ root: author, id: "kfix", outFile: path.join(author, "out/e.zip") }), /并存：同一 id 不能既是插件又是 kit/u);
+    fs.rmSync(path.join(author, "apps/plugins/kfix"), { recursive: true });
+    const kitZip = path.join(author, "out/kfix.zip");
+    packPlugin({ root: author, id: "kfix", outFile: kitZip });
+    installPlugin({ root: target, source: kitZip, git: false, postinstall: false });
+    // 已装 kit "kfix"，来一个同 id 的插件包 ⇒ 类别不能升级着换。
+    const pluginAuthor = makeRoot();
+    try {
+      authorTree(pluginAuthor, "2.0.0", "kfix");
+      const pluginZip = path.join(pluginAuthor, "out/kfix-plugin.zip");
+      packPlugin({ root: pluginAuthor, id: "kfix", outFile: pluginZip });
+      assert.throws(() => installPlugin({ root: target, source: pluginZip, git: false, postinstall: false }), /是 kit，来包是 plugin/u);
+    } finally {
+      cleanup(pluginAuthor);
+    }
+    // 从树重装 kit：bump 后吸收新增文件；api 面变化不算身份（反向闸另判）；modes 变化算身份。
+    const kitJson = path.join(target, "apps/kits/kfix/kit.json");
+    fs.writeFileSync(kitJson, fs.readFileSync(kitJson, "utf8").replace('"1.0.0"', '"1.0.1"'));
+    write(target, "apps/server/src/kits/kfix/extra.ts", "export const extra = 1;\n");
+    const rewritten = reinstallFromTree({ root: target, id: "kfix", git: false, postinstall: false });
+    assert.deepEqual(rewritten.adopted?.added, ["apps/server/src/kits/kfix/extra.ts"]);
+    assert.equal(readInstalledLock(target, "kfix")?.manifest.class, "kit");
+    fs.writeFileSync(kitJson, fs.readFileSync(kitJson, "utf8").replace('"1.0.1"', '"1.0.2"').replace('"modes": [', '"modes": [{ "id": "kfixDuel", "constantName": "KfixDuel" },'));
+    assert.throws(() => reinstallFromTree({ root: target, id: "kfix", git: false, postinstall: false }), /kfixDuel[\s\S]*缺少玩法单源/u);
+    // 宿主自有 kit（无 version、无锁）也能满足插件的 requires。
+    const host = makeRoot();
+    try {
+      kitTree(host, "1.0.0", "kfix");
+      const hostKit = path.join(host, "apps/kits/kfix/kit.json");
+      fs.writeFileSync(hostKit, fs.readFileSync(hostKit, "utf8").replace('"version": "1.0.0",\n', ""));
+      const shopAuthor = makeRoot();
+      try {
+        dependentPluginTree(shopAuthor, "1.0.0", "kfixShop", { kfix: { board: 2 } });
+        const shopZip = path.join(shopAuthor, "out/shop.zip");
+        packPlugin({ root: shopAuthor, id: "kfixShop", outFile: shopZip });
+        assert.doesNotThrow(() => installPlugin({ root: host, source: shopZip, git: false, postinstall: false, dryRun: true }));
+        assert.throws(() => packPlugin({ root: host, id: "kfix", outFile: path.join(host, "out/x.zip") }), /没有 version：宿主自有 kit不可打包/u);
+      } finally {
+        cleanup(shopAuthor);
+      }
+    } finally {
+      cleanup(host);
+    }
+  } finally {
+    cleanup(author, target);
+  }
 });

@@ -14,22 +14,39 @@ import path from "node:path";
 import {
   classifyPath,
   deriveOwnership,
+  kitDir,
   mirrorPathOf,
   normalizePackagePath,
+  packageManifestName,
+  packageManifestPath,
   pluginDir,
   readProtectedPaths,
   type OwnershipRule,
+  type PackageClass,
   type PluginIdentity,
 } from "./ownership";
-import { identityFromSummary, identityOf, parseGameplaySource, parsePluginManifest, type GameplaySourceSummary, type PluginManifest } from "./manifest";
-import { PACKAGE_FILES_LOCK, PACKAGE_MANIFEST, parseFilesLock, sha256, type InstalledLock, type LockEntry } from "./lock";
+import {
+  assertKitModesConsistent,
+  identityFromSummary,
+  identityOf,
+  kitIdentityOf,
+  parseGameplaySource,
+  parsePackageManifest,
+  parsePluginManifest,
+  readTreePackageManifest,
+  type GameplaySourceSummary,
+  type KitManifest,
+  type PackageManifest,
+  type PluginManifest,
+} from "./manifest";
+import { KIT_PACKAGE_MANIFEST, PACKAGE_FILES_LOCK, PACKAGE_MANIFEST, parseFilesLock, sha256, type InstalledLock, type LockEntry } from "./lock";
 import { expectedImporter, parseMeta } from "./meta";
 import { readZip } from "./zip";
 
 export interface PluginPackage {
-  readonly manifest: PluginManifest;
+  readonly manifest: PackageManifest;
   readonly manifestBytes: Buffer;
-  /** 仓库相对路径 → 内容（不含 plugin.json / files.lock）。 */
+  /** 仓库相对路径 → 内容（不含包根 plugin.json / kit.json / files.lock）。 */
   readonly files: ReadonlyMap<string, Buffer>;
   readonly entries: readonly LockEntry[];
 }
@@ -72,22 +89,28 @@ export function readPackage(source: string): PluginPackage {
   const raw = fs.statSync(source).isDirectory()
     ? walkDirectory(source)
     : new Map(readZip(fs.readFileSync(source)).map((entry) => [entry.path, entry.data] as const));
-  const manifestBytes = raw.get(PACKAGE_MANIFEST);
-  if (!manifestBytes) fail(`包根缺少 ${PACKAGE_MANIFEST}`);
+  // 包根恰好带一种清单：plugin.json（插件）或 kit.json（kit，docs/KIT.md §3）；两者并存即拒绝。
+  const pluginBytes = raw.get(PACKAGE_MANIFEST);
+  const kitBytes = raw.get(KIT_PACKAGE_MANIFEST);
+  if (pluginBytes && kitBytes) fail(`包根同时有 ${PACKAGE_MANIFEST} 与 ${KIT_PACKAGE_MANIFEST}：一个包只能是插件或 kit`);
+  const cls: PackageClass = kitBytes ? "kit" : "plugin";
+  const manifestName = packageManifestName(cls);
+  const manifestBytes = kitBytes ?? pluginBytes;
+  if (!manifestBytes) fail(`包根缺少 ${PACKAGE_MANIFEST}（插件）或 ${KIT_PACKAGE_MANIFEST}（kit）`);
   const lockBytes = raw.get(PACKAGE_FILES_LOCK);
   if (!lockBytes) fail(`包根缺少 ${PACKAGE_FILES_LOCK}`);
   let parsedManifest: unknown;
   try {
     parsedManifest = JSON.parse(manifestBytes.toString("utf8"));
   } catch (error) {
-    fail(`${PACKAGE_MANIFEST} 不是合法 JSON：${error instanceof Error ? error.message : String(error)}`);
+    fail(`${manifestName} 不是合法 JSON：${error instanceof Error ? error.message : String(error)}`);
   }
-  const manifest = parsePluginManifest(parsedManifest);
+  const manifest = parsePackageManifest(cls, parsedManifest);
   const entries = parseFilesLock(lockBytes.toString("utf8"));
   const files = new Map<string, Buffer>();
   const listed = new Set(entries.map((entry) => entry.path));
   for (const [relative, data] of raw) {
-    if (relative === PACKAGE_MANIFEST || relative === PACKAGE_FILES_LOCK) continue;
+    if (relative === manifestName || relative === PACKAGE_FILES_LOCK) continue;
     const normalized = normalizePackagePath(relative);
     if (!listed.has(normalized)) fail(`包内条目不在 ${PACKAGE_FILES_LOCK} 清单里：${normalized}`);
     files.set(normalized, data);
@@ -116,8 +139,8 @@ export function gameplaySourceDir(id: string): string {
   return `${pluginDir(id)}/gameplay`;
 }
 
-/** 从 plugin.json 的登记面抽取客户端目录声明与 View 名（安装/卸载/删除面都要）。 */
-export function pluginDeclarations(manifest: PluginManifest): {
+/** 从 plugin.json / kit.json 的登记面抽取客户端目录声明与 View 名（安装/卸载/删除面都要）。 */
+export function pluginDeclarations(manifest: PackageManifest): {
   readonly clientDirs: readonly string[];
   readonly viewNames: readonly string[];
 } {
@@ -134,21 +157,61 @@ export function readTreePluginManifest(root: string, id: string): PluginManifest
   return parsePluginManifest(JSON.parse(fs.readFileSync(file, "utf8")), pluginManifestPath(id));
 }
 
+/** 包内 kit 的 gameplays/ 子目录名（按包内路径推出）。 */
+function packageKitGameplayDirs(files: ReadonlyMap<string, Buffer>, id: string): readonly string[] {
+  const base = `${kitDir(id)}/gameplays/`;
+  const dirs = new Set<string>();
+  for (const relative of files.keys()) {
+    if (!relative.startsWith(base)) continue;
+    const rest = relative.slice(base.length);
+    const slash = rest.indexOf("/");
+    if (slash > 0) dirs.add(rest.slice(0, slash));
+  }
+  return [...dirs].sort();
+}
+
+/** kit 的 SQL 迁移文件必须随包且非空（语句级 lint 与账本应用在 db:bootstrap，docs/KIT.md §5）。 */
+function assertKitSqlFilesPresent(manifest: KitManifest, files: ReadonlyMap<string, Buffer>): void {
+  for (const file of manifest.sql.files) {
+    const relative = `${kitDir(manifest.id)}/${file}`;
+    const bytes = files.get(relative);
+    if (!bytes) fail(`kit.json 声明了迁移文件 ${file} 但包内缺少 ${relative}`);
+    if (bytes.toString("utf8").trim() === "") fail(`迁移文件 ${relative} 是空的`);
+  }
+  const base = `${kitDir(manifest.id)}/sql/`;
+  const declared = new Set(manifest.sql.files.map((file) => `${kitDir(manifest.id)}/${file}`));
+  for (const relative of files.keys()) {
+    if (relative.startsWith(base) && relative.endsWith(".sql") && !declared.has(relative)) fail(`包内 ${relative} 不在 kit.json 的 sql.files 里（迁移顺序单源是 kit.json）`);
+  }
+}
+
 /** 全量校验（身份交叉 + allowlist + 镜像自洽）；返回派生的身份与规则。 */
 export function validatePackage(pkg: PluginPackage, root: string): ValidatedPackage {
   const { manifest, files } = pkg;
-  if (manifest.version === null) fail(`${pluginManifestPath(manifest.id)} 没有 version：宿主自有插件不可打包 / 安装`);
-  // 仓内自述必须随包且与根 plugin.json 字节相同：否则安装后的树与锁登记的身份不一致（check 才红）。
-  const authoredPath = pluginManifestPath(manifest.id);
+  const manifestName = packageManifestName(manifest.class);
+  const authoredPath = packageManifestPath(manifest.class, manifest.id);
+  if (manifest.version === null) fail(`${authoredPath} 没有 version：宿主自有${manifest.class === "kit" ? " kit" : "插件"}不可打包 / 安装`);
+  // 仓内自述必须随包且与根清单字节相同：否则安装后的树与锁登记的身份不一致（check 才红）。
   const authored = files.get(authoredPath);
-  if (!authored) fail(`包内缺少 ${authoredPath}（须与包根 plugin.json 同批分发）`);
-  if (!authored.equals(pkg.manifestBytes)) fail(`包内 ${authoredPath} 与包根 plugin.json 字节不同`);
+  if (!authored) fail(`包内缺少 ${authoredPath}（须与包根 ${manifestName} 同批分发）`);
+  if (!authored.equals(pkg.manifestBytes)) fail(`包内 ${authoredPath} 与包根 ${manifestName} 字节不同`);
   const viewNames = pluginDeclarations(manifest).viewNames;
-  // 玩法单源：包内 gameplay/manifest.json 存在即 gameplay 形态；constantName 与 schemaVersion 都从它派生。
-  const gameplayManifestPath = `${gameplaySourceDir(manifest.id)}/manifest.json`;
-  const gameplayBytes = files.get(gameplayManifestPath);
-  const gameplay: GameplaySourceSummary | null = gameplayBytes ? parseGameplaySource(gameplayBytes, manifest.id, gameplayManifestPath) : null;
-  if (gameplay && !files.has(`${gameplaySourceDir(manifest.id)}/state.json`)) fail(`包内缺少 ${gameplaySourceDir(manifest.id)}/state.json`);
+  let gameplay: GameplaySourceSummary | null = null;
+  let identity: PluginIdentity;
+  if (manifest.class === "kit") {
+    // kit 的玩法清单单源是 kit.json.modes，每个 mode 的 gameplays/<modeId>/ 必须同批在包内且一致。
+    assertKitModesConsistent(manifest, (relative) => files.get(relative) ?? null, packageKitGameplayDirs(files, manifest.id));
+    assertKitSqlFilesPresent(manifest, files);
+    const hasServerDir = [...files.keys()].some((relative) => relative.startsWith(`apps/server/src/kits/${manifest.id}/`));
+    identity = kitIdentityOf(manifest, hasServerDir);
+  } else {
+    // 玩法单源：包内 gameplay/manifest.json 存在即 gameplay 形态；constantName 与 schemaVersion 都从它派生。
+    const gameplayManifestPath = `${gameplaySourceDir(manifest.id)}/manifest.json`;
+    const gameplayBytes = files.get(gameplayManifestPath);
+    gameplay = gameplayBytes ? parseGameplaySource(gameplayBytes, manifest.id, gameplayManifestPath) : null;
+    if (gameplay && !files.has(`${gameplaySourceDir(manifest.id)}/state.json`)) fail(`包内缺少 ${gameplaySourceDir(manifest.id)}/state.json`);
+    identity = identityOf(manifest, gameplay);
+  }
   for (const domain of manifest.domains) {
     for (const required of [`apps/shared/src/protocol/lobbyRpc/domains/${domain}.ts`, `apps/server/test/lobbyRpcVectors/${domain}.ts`]) {
       if (!files.has(required)) fail(`声明了 domain "${domain}" 但包内缺少 ${required}`);
@@ -160,7 +223,6 @@ export function validatePackage(pkg: PluginPackage, root: string): ValidatedPack
     if (!files.has(`${RESOURCES}/ui/${fguiPackage}.bin`)) fail(`声明了 FGUI 包 "${fguiPackage}" 但包内缺少 ${RESOURCES}/ui/${fguiPackage}.bin`);
   }
 
-  const identity = identityOf(manifest, gameplay);
   const rules = deriveOwnership(identity);
   const protectedPaths = readProtectedPaths(root);
   const denied: string[] = [];
@@ -168,7 +230,7 @@ export function validatePackage(pkg: PluginPackage, root: string): ValidatedPack
     const verdict = classifyPath(relative, rules, protectedPaths);
     if (!verdict.allowed) denied.push(`${relative}（${verdict.reason}）`);
   }
-  if (denied.length > 0) fail(`包内路径不在插件 "${manifest.id}" 的所有权推导集内，整包拒绝：\n  ${denied.join("\n  ")}`);
+  if (denied.length > 0) fail(`包内路径不在${manifest.class === "kit" ? " kit" : "插件"} "${manifest.id}" 的所有权推导集内，整包拒绝：\n  ${denied.join("\n  ")}`);
 
   assertMirrorsAndMetas(files, rules, protectedPaths);
   return { ...pkg, identity, rules, viewNames, gameplay };
@@ -264,7 +326,7 @@ export function packageMetaUuids(files: ReadonlyMap<string, Buffer>): ReadonlyMa
  */
 export function assertInstalledLockOwned(root: string, lock: InstalledLock, action: string): void {
   const { manifest } = lock;
-  const tree = readTreePluginManifest(root, manifest.id);
+  const tree = readTreePackageManifest(root, manifest.id);
   const clientDirs = tree ? pluginDeclarations(tree).clientDirs : [];
   const rules = deriveOwnership(identityFromSummary(manifest, clientDirs));
   const protectedPaths = readProtectedPaths(root);
