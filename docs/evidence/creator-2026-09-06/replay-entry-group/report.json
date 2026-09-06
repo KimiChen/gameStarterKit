@@ -1,10 +1,10 @@
 {
   "tool": "tools/creator-preview/run.mjs",
   "scenario": "all",
-  "startedAt": "2026-09-06T15:35:19.963Z",
+  "startedAt": "2026-09-06T15:58:37.060Z",
   "options": {
     "scenario": "all",
-    "out": "/private/tmp/claude-501/-Volumes-KimData-work-gameStarterKit/9b39ad4f-f1db-40d0-83a3-f0b1faa228e8/scratchpad/g-all",
+    "out": "/private/tmp/claude-501/-Volumes-KimData-work-gameStarterKit/9b39ad4f-f1db-40d0-83a3-f0b1faa228e8/scratchpad/r-all",
     "code": "WELCOME2026",
     "format": "jpeg",
     "devtools": "http://127.0.0.1:9222",
@@ -20,9 +20,9 @@
     {
       "name": "加载预览场景（Fetch 改写 settings.js?scene=）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:20.050Z",
+      "startedAt": "2026-09-06T15:58:37.111Z",
       "detail": {
-        "frames": 67,
+        "frames": 72,
         "canvas": {
           "x": 658,
           "y": 49.5546875,
@@ -39,22 +39,22 @@
         ]
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:35:22.109Z"
+      "finishedAt": "2026-09-06T15:58:39.167Z"
     },
     {
       "name": "回到登录页（areaList 只在登录页可达）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:22.111Z",
+      "startedAt": "2026-09-06T15:58:39.168Z",
       "detail": {
         "via": "already-login"
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:35:22.115Z"
+      "finishedAt": "2026-09-06T15:58:39.172Z"
     },
     {
       "name": "点登录页 FGUI 按钮 btn_server 打开 areaList",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:22.115Z",
+      "startedAt": "2026-09-06T15:58:39.172Z",
       "detail": {
         "tapped": {
           "tapped": "btn_server",
@@ -81,32 +81,32 @@
       "screenshots": [
         "01-arealist-opened.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:22.943Z"
+      "finishedAt": "2026-09-06T15:58:39.964Z"
     },
     {
       "name": "关闭 AreaListView",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:22.943Z",
+      "startedAt": "2026-09-06T15:58:39.964Z",
       "detail": {
         "closed": "AreaListView"
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:35:23.026Z"
+      "finishedAt": "2026-09-06T15:58:40.043Z"
     },
     {
       "name": "回到登录页（loginNotice 只在登录页可达）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:23.026Z",
+      "startedAt": "2026-09-06T15:58:40.043Z",
       "detail": {
         "via": "already-login"
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:35:23.027Z"
+      "finishedAt": "2026-09-06T15:58:40.047Z"
     },
     {
       "name": "点登录页 FGUI 按钮 btn_notice 打开 loginNotice",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:23.027Z",
+      "startedAt": "2026-09-06T15:58:40.047Z",
       "detail": {
         "tapped": {
           "tapped": "btn_notice",
@@ -130,22 +130,22 @@
       "screenshots": [
         "02-notice-opened.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:23.845Z"
+      "finishedAt": "2026-09-06T15:58:40.857Z"
     },
     {
       "name": "关闭 LoginNoticeView",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:23.845Z",
+      "startedAt": "2026-09-06T15:58:40.857Z",
       "detail": {
         "closed": "LoginNoticeView"
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:35:23.920Z"
+      "finishedAt": "2026-09-06T15:58:40.927Z"
     },
     {
       "name": "登录页可见（FGUI btn_login）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:23.923Z",
+      "startedAt": "2026-09-06T15:58:40.928Z",
       "detail": {
         "via": "fgui:btn_login",
         "shot": "03-login.jpg"
@@ -153,12 +153,12 @@
       "screenshots": [
         "03-login.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:24.281Z"
+      "finishedAt": "2026-09-06T15:58:41.268Z"
     },
     {
       "name": "点「开始游戏」",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:24.281Z",
+      "startedAt": "2026-09-06T15:58:41.268Z",
       "detail": {
         "tapped": "btn_login",
         "at": [
@@ -167,12 +167,12 @@
         ]
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:35:24.351Z"
+      "finishedAt": "2026-09-06T15:58:41.342Z"
     },
     {
       "name": "首屏 PromoHomeView 挂载",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:24.351Z",
+      "startedAt": "2026-09-06T15:58:41.342Z",
       "detail": {
         "card": [
           "gono",
@@ -186,12 +186,12 @@
       "screenshots": [
         "04-home.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:25.089Z"
+      "finishedAt": "2026-09-06T15:58:42.074Z"
     },
     {
       "name": "点首屏「设置」",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:25.091Z",
+      "startedAt": "2026-09-06T15:58:42.075Z",
       "detail": {
         "tapped": "设置",
         "at": [
@@ -200,12 +200,12 @@
         ]
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:35:25.173Z"
+      "finishedAt": "2026-09-06T15:58:42.146Z"
     },
     {
       "name": "设置面板与插件入口",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:25.173Z",
+      "startedAt": "2026-09-06T15:58:42.146Z",
       "detail": {
         "entries": [
           {
@@ -234,12 +234,12 @@
       "screenshots": [
         "05-settings.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:25.526Z"
+      "finishedAt": "2026-09-06T15:58:42.472Z"
     },
     {
       "name": "进入「兑换码 · redeem」",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:25.530Z",
+      "startedAt": "2026-09-06T15:58:42.475Z",
       "detail": {
         "tapped": "进入 @ /·\\s*redeem$/u",
         "at": [
@@ -248,12 +248,12 @@
         ]
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:35:25.607Z"
+      "finishedAt": "2026-09-06T15:58:42.562Z"
     },
     {
       "name": "RedeemView 挂载（route 形态：PluginHost 动态装载后打开）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:25.607Z",
+      "startedAt": "2026-09-06T15:58:42.562Z",
       "detail": {
         "editboxText": "",
         "labels": [
@@ -268,12 +268,12 @@
       "screenshots": [
         "06-redeem-empty.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:25.939Z"
+      "finishedAt": "2026-09-06T15:58:42.864Z"
     },
     {
       "name": "输入兑换码 WELCOME2026",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:25.939Z",
+      "startedAt": "2026-09-06T15:58:42.864Z",
       "detail": {
         "code": "WELCOME2026",
         "shot": "07-redeem-typed.jpg"
@@ -281,12 +281,12 @@
       "screenshots": [
         "07-redeem-typed.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:27.038Z"
+      "finishedAt": "2026-09-06T15:58:43.938Z"
     },
     {
       "name": "点「兑换」并读取结果",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:27.038Z",
+      "startedAt": "2026-09-06T15:58:43.938Z",
       "detail": {
         "code": "WELCOME2026",
         "outcome": "already-claimed",
@@ -296,22 +296,22 @@
       "screenshots": [
         "08-redeem-already-claimed.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:27.858Z"
+      "finishedAt": "2026-09-06T15:58:44.734Z"
     },
     {
       "name": "「关闭」回到设置面板",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:27.858Z",
+      "startedAt": "2026-09-06T15:58:44.734Z",
       "detail": {
         "settingsStillOpen": true
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:35:27.936Z"
+      "finishedAt": "2026-09-06T15:58:44.811Z"
     },
     {
       "name": "进入「点数赛 · tally」",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:27.940Z",
+      "startedAt": "2026-09-06T15:58:44.814Z",
       "detail": {
         "tapped": "进入 @ /·\\s*tally$/u",
         "at": [
@@ -320,12 +320,12 @@
         ]
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:35:28.021Z"
+      "finishedAt": "2026-09-06T15:58:44.898Z"
     },
     {
       "name": "TallyView 挂载并开局（gameplay 形态：PluginHost 装载 → 加入 GameRoom）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:28.021Z",
+      "startedAt": "2026-09-06T15:58:44.898Z",
       "detail": {
         "headline": "目标 10 次 · 你已点 0",
         "tapGoal": 10,
@@ -334,12 +334,12 @@
       "screenshots": [
         "09-tally-start.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:28.754Z"
+      "finishedAt": "2026-09-06T15:58:45.618Z"
     },
     {
       "name": "连点 TAP 直到判胜（目标 10 次）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:28.754Z",
+      "startedAt": "2026-09-06T15:58:45.618Z",
       "detail": {
         "taps": 10,
         "midShot": "10-tally-match.jpg",
@@ -350,12 +350,12 @@
         "10-tally-match.jpg",
         "11-tally-settle.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:34.257Z"
+      "finishedAt": "2026-09-06T15:58:51.093Z"
     },
     {
       "name": "结算倒计时结束后回到首屏（AppRuntime 恢复 authenticated base）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:34.257Z",
+      "startedAt": "2026-09-06T15:58:51.093Z",
       "detail": {
         "card": [
           "gono",
@@ -368,12 +368,12 @@
       "screenshots": [
         "12-tally-back-home.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:36.210Z"
+      "finishedAt": "2026-09-06T15:58:53.052Z"
     },
     {
       "name": "点首屏「设置」",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:36.213Z",
+      "startedAt": "2026-09-06T15:58:53.068Z",
       "detail": {
         "tapped": "设置",
         "at": [
@@ -382,12 +382,12 @@
         ]
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:35:36.293Z"
+      "finishedAt": "2026-09-06T15:58:53.152Z"
     },
     {
       "name": "设置面板与插件入口",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:36.293Z",
+      "startedAt": "2026-09-06T15:58:53.152Z",
       "detail": {
         "entries": [
           {
@@ -416,12 +416,12 @@
       "screenshots": [
         "13-settings.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:36.628Z"
+      "finishedAt": "2026-09-06T15:58:53.481Z"
     },
     {
       "name": "进入「贪吃蛇大作战 · snake」（宿主自有 gameplay plugin：默认玩法）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:36.628Z",
+      "startedAt": "2026-09-06T15:58:53.481Z",
       "detail": {
         "tapped": "进入 @ /^贪吃蛇大作战\\s+·\\s+snake$/u",
         "at": [
@@ -430,17 +430,17 @@
         ]
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:35:36.705Z"
+      "finishedAt": "2026-09-06T15:58:53.562Z"
     },
     {
       "name": "SnakeWorld 挂载并开跑（HUD 出现）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:36.705Z",
+      "startedAt": "2026-09-06T15:58:53.562Z",
       "detail": {
         "hud": [
           "准备 3",
           "保护 5s",
-          "1. 神秘成语精 0",
+          "1. 快乐拼音怪 0",
           "2. AI-1 0",
           "3. AI-10 0",
           "4. AI-11 0",
@@ -456,24 +456,24 @@
       "screenshots": [
         "14-snake-run.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:37.446Z"
+      "finishedAt": "2026-09-06T15:58:54.293Z"
     },
     {
       "name": "点「结束本次」→ 确认框",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:37.446Z",
+      "startedAt": "2026-09-06T15:58:54.293Z",
       "detail": {
         "shot": "15-snake-end-confirm.jpg"
       },
       "screenshots": [
         "15-snake-end-confirm.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:37.853Z"
+      "finishedAt": "2026-09-06T15:58:54.687Z"
     },
     {
       "name": "确认结束 → 结算页",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:37.853Z",
+      "startedAt": "2026-09-06T15:58:54.687Z",
       "detail": {
         "retried": false,
         "backButtonAt": [
@@ -493,24 +493,24 @@
       "screenshots": [
         "16-snake-result.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:41.098Z"
+      "finishedAt": "2026-09-06T15:58:57.920Z"
     },
     {
       "name": "结算页点「我的衣柜」（衣柜的唯一入口）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:41.098Z",
+      "startedAt": "2026-09-06T15:58:57.920Z",
       "detail": {
         "shot": "17-cosmetic-from-result.jpg"
       },
       "screenshots": [
         "17-cosmetic-from-result.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:41.507Z"
+      "finishedAt": "2026-09-06T15:58:58.329Z"
     },
     {
       "name": "WardrobeView 挂载并读到皮肤行",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:41.507Z",
+      "startedAt": "2026-09-06T15:58:58.329Z",
       "detail": {
         "skinRows": 6,
         "skins": [
@@ -531,10 +531,10 @@
           "选择一件皮肤后装备或合成",
           "小红",
           "普通 · 默认拥有",
-          "装备",
+          "已装备",
           "皮肤 2",
           "普通 · 等级解锁",
-          "已装备",
+          "装备",
           "皮肤 3",
           "普通 · 等级解锁",
           "未拥有"
@@ -544,31 +544,31 @@
       "screenshots": [
         "18-cosmetic-open.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:42.830Z"
+      "finishedAt": "2026-09-06T15:58:59.630Z"
     },
     {
       "name": "切「已拥有」筛选 → 「装备」另一件皮肤（snakeCosmetic.equip）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:42.830Z",
+      "startedAt": "2026-09-06T15:58:59.630Z",
       "detail": {
         "action": "equip",
-        "skin": "skin-1",
+        "skin": "skin-2",
         "outcome": "equipped",
         "rowsBefore": [
-          "skin-1=装备",
-          "skin-2=已装备"
+          "skin-1=已装备",
+          "skin-2=装备"
         ],
         "shot": "19-cosmetic-equipped.jpg"
       },
       "screenshots": [
         "19-cosmetic-equipped.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:44.745Z"
+      "finishedAt": "2026-09-06T15:59:01.526Z"
     },
     {
       "name": "切「可合成」筛选 → 试「合成」（snakeCosmetic.unlock；碎片业务数据缺失时如实记录）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:44.745Z",
+      "startedAt": "2026-09-06T15:59:01.526Z",
       "detail": {
         "action": "skip",
         "why": "「可合成」筛选下没有可合成皮肤（业务目录里碎片皮肤的 fragmentItemId 为 unavailable）",
@@ -580,12 +580,12 @@
       "screenshots": [
         "20-cosmetic-no-craft.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:46.362Z"
+      "finishedAt": "2026-09-06T15:59:03.112Z"
     },
     {
       "name": "「关闭」回到结算页（WardrobeView 卸载，结算页还在）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:46.362Z",
+      "startedAt": "2026-09-06T15:59:03.112Z",
       "detail": {
         "resultStillOpen": true,
         "shot": "21-cosmetic-back-to-result.jpg"
@@ -593,24 +593,24 @@
       "screenshots": [
         "21-cosmetic-back-to-result.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:46.774Z"
+      "finishedAt": "2026-09-06T15:59:03.513Z"
     },
     {
       "name": "「返回主页」回首屏",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:46.774Z",
+      "startedAt": "2026-09-06T15:59:03.513Z",
       "detail": {
         "shot": "22-cosmetic-back-home.jpg"
       },
       "screenshots": [
         "22-cosmetic-back-home.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:47.571Z"
+      "finishedAt": "2026-09-06T15:59:04.310Z"
     },
     {
       "name": "点首屏「设置」",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:47.573Z",
+      "startedAt": "2026-09-06T15:59:04.312Z",
       "detail": {
         "tapped": "设置",
         "at": [
@@ -619,12 +619,12 @@
         ]
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:35:47.644Z"
+      "finishedAt": "2026-09-06T15:59:04.384Z"
     },
     {
       "name": "设置面板与插件入口",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:47.644Z",
+      "startedAt": "2026-09-06T15:59:04.384Z",
       "detail": {
         "entries": [
           {
@@ -653,12 +653,12 @@
       "screenshots": [
         "23-settings.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:47.975Z"
+      "finishedAt": "2026-09-06T15:59:04.697Z"
     },
     {
       "name": "设置面板进「竞技场」分组页（组内 4 条入口只占一行）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:47.978Z",
+      "startedAt": "2026-09-06T15:59:04.699Z",
       "detail": {
         "rows": [
           "竞技场  ·  arena",
@@ -668,12 +668,12 @@
         ]
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:35:48.068Z"
+      "finishedAt": "2026-09-06T15:59:04.792Z"
     },
     {
       "name": "分组页里进「竞技场 · arena」（kit route 形态：kit 的客户端 entry 由 PluginHost 装载）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:48.068Z",
+      "startedAt": "2026-09-06T15:59:04.792Z",
       "detail": {
         "tapped": "进入 @ /^竞技场\\s+·\\s+arena$/u",
         "at": [
@@ -682,12 +682,12 @@
         ]
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:35:48.145Z"
+      "finishedAt": "2026-09-06T15:59:04.869Z"
     },
     {
       "name": "ArenaBoardView 挂载并读到棋盘（16 格 + 奖杯行）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:48.145Z",
+      "startedAt": "2026-09-06T15:59:04.869Z",
       "detail": {
         "tiles": [
           "A1",
@@ -714,12 +714,12 @@
       "screenshots": [
         "24-arena-board.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:48.474Z"
+      "finishedAt": "2026-09-06T15:59:05.178Z"
     },
     {
       "name": "占一格（arena.capture：withKitTx 写 k_arena_board + kit effect 发奖杯）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:48.474Z",
+      "startedAt": "2026-09-06T15:59:05.178Z",
       "detail": {
         "tile": "A1",
         "via": "own-tile",
@@ -731,19 +731,19 @@
           ]
         },
         "outcome": "captured",
-        "notice": "A1 已占领 · 守备 28 · 奖杯 16",
+        "notice": "A1 已占领 · 守备 35 · 奖杯 16",
         "trophyLine": "奖杯 16",
         "shot": "25-arena-captured.jpg"
       },
       "screenshots": [
         "25-arena-captured.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:49.291Z"
+      "finishedAt": "2026-09-06T15:59:05.978Z"
     },
     {
       "name": "点「刷新」重读棋盘（arena.board 查询面）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:49.291Z",
+      "startedAt": "2026-09-06T15:59:05.978Z",
       "detail": {
         "trophyBefore": "奖杯 16",
         "trophyAfter": "奖杯 16",
@@ -753,17 +753,17 @@
       "screenshots": [
         "26-arena-refreshed.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:50.913Z"
+      "finishedAt": "2026-09-06T15:59:07.567Z"
     },
     {
       "name": "再点自己的格 = 加固（power +1、⛔ 不再发奖杯）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:50.913Z",
+      "startedAt": "2026-09-06T15:59:07.567Z",
       "detail": {
         "tile": "A1",
-        "notice": "A1 已占领 · 守备 29 · 奖杯 16",
-        "powerBefore": 28,
-        "powerAfter": 29,
+        "notice": "A1 已占领 · 守备 36 · 奖杯 16",
+        "powerBefore": 35,
+        "powerAfter": 36,
         "trophyBefore": "奖杯 16",
         "trophyAfter": "奖杯 16",
         "trophyUnchanged": true,
@@ -772,23 +772,23 @@
       "screenshots": [
         "27-arena-reinforced.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:52.342Z"
+      "finishedAt": "2026-09-06T15:59:08.981Z"
     },
     {
       "name": "「关闭」回到设置面板（ArenaBoardView 卸载）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:52.342Z",
+      "startedAt": "2026-09-06T15:59:08.981Z",
       "detail": {
         "settingsStillOpen": true,
         "viaGroup": true
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:35:52.515Z"
+      "finishedAt": "2026-09-06T15:59:09.155Z"
     },
     {
       "name": "设置面板进「竞技场」分组页（组内 4 条入口只占一行）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:52.523Z",
+      "startedAt": "2026-09-06T15:59:09.165Z",
       "detail": {
         "rows": [
           "竞技场  ·  arena",
@@ -798,12 +798,12 @@
         ]
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:35:52.611Z"
+      "finishedAt": "2026-09-06T15:59:09.268Z"
     },
     {
       "name": "分组页里进「占领赛 · arena」（kit gameplay 形态：加入 GameRoom）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:52.611Z",
+      "startedAt": "2026-09-06T15:59:09.268Z",
       "detail": {
         "tapped": "进入 @ /^占领赛\\s+·\\s+arena$/u",
         "at": [
@@ -812,12 +812,12 @@
         ]
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:35:52.693Z"
+      "finishedAt": "2026-09-06T15:59:09.354Z"
     },
     {
       "name": "ArenaCaptureView 挂载并开局",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:52.693Z",
+      "startedAt": "2026-09-06T15:59:09.354Z",
       "detail": {
         "status": "目标 5 格 · 你已占 0",
         "goal": 5,
@@ -826,12 +826,12 @@
       "screenshots": [
         "28-arenaCapture-start.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:53.423Z"
+      "finishedAt": "2026-09-06T15:59:10.060Z"
     },
     {
       "name": "连点「占领」直到判胜（上限 8 次）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:53.424Z",
+      "startedAt": "2026-09-06T15:59:10.060Z",
       "detail": {
         "taps": 5,
         "midShot": "29-arenaCapture-match.jpg",
@@ -842,87 +842,31 @@
         "29-arenaCapture-match.jpg",
         "30-arenaCapture-settle.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:56.509Z"
+      "finishedAt": "2026-09-06T15:59:13.102Z"
     },
     {
-      "name": "结算倒计时结束后回到首屏（AppRuntime 恢复 authenticated base）",
+      "name": "结算后回到分组页（⛔ 不是大厅）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:56.509Z",
-      "detail": {
-        "shot": "31-arenaCapture-back-home.jpg"
-      },
-      "screenshots": [
-        "31-arenaCapture-back-home.jpg"
-      ],
-      "finishedAt": "2026-09-06T15:35:58.461Z"
-    },
-    {
-      "name": "点首屏「设置」",
-      "ok": true,
-      "startedAt": "2026-09-06T15:35:58.463Z",
-      "detail": {
-        "tapped": "设置",
-        "at": [
-          973,
-          90
-        ]
-      },
-      "screenshots": [],
-      "finishedAt": "2026-09-06T15:35:58.548Z"
-    },
-    {
-      "name": "设置面板与插件入口",
-      "ok": true,
-      "startedAt": "2026-09-06T15:35:58.548Z",
-      "detail": {
-        "entries": [
-          {
-            "label": "竞技场",
-            "pluginId": "arenaHub"
-          },
-          {
-            "label": "进入战斗",
-            "pluginId": "builtin"
-          },
-          {
-            "label": "兑换码",
-            "pluginId": "redeem"
-          },
-          {
-            "label": "贪吃蛇大作战",
-            "pluginId": "snake"
-          },
-          {
-            "label": "点数赛",
-            "pluginId": "tally"
-          }
-        ],
-        "shot": "32-settings.jpg"
-      },
-      "screenshots": [
-        "32-settings.jpg"
-      ],
-      "finishedAt": "2026-09-06T15:35:58.877Z"
-    },
-    {
-      "name": "设置面板进「竞技场」分组页（组内 4 条入口只占一行）",
-      "ok": true,
-      "startedAt": "2026-09-06T15:35:58.878Z",
+      "startedAt": "2026-09-06T15:59:13.102Z",
       "detail": {
         "rows": [
           "竞技场  ·  arena",
           "占领赛  ·  arena",
           "决斗  ·  arena",
           "竞技场商店  ·  arenaShop"
-        ]
+        ],
+        "settingsBelow": true,
+        "shot": "31-arenaCapture-back-group.jpg"
       },
-      "screenshots": [],
-      "finishedAt": "2026-09-06T15:35:58.971Z"
+      "screenshots": [
+        "31-arenaCapture-back-group.jpg"
+      ],
+      "finishedAt": "2026-09-06T15:59:15.034Z"
     },
     {
       "name": "分组页里进「决斗 · arena」（kit gameplay 形态：加入 GameRoom）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:58.971Z",
+      "startedAt": "2026-09-06T15:59:15.041Z",
       "detail": {
         "tapped": "进入 @ /^决斗\\s+·\\s+arena$/u",
         "at": [
@@ -931,117 +875,61 @@
         ]
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:35:59.046Z"
+      "finishedAt": "2026-09-06T15:59:15.117Z"
     },
     {
       "name": "ArenaDuelView 挂载并开局",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:59.046Z",
+      "startedAt": "2026-09-06T15:59:15.117Z",
       "detail": {
         "status": "HP 3 · 你已命中 0",
         "hp": 3,
-        "shot": "33-arenaDuel-start.jpg"
+        "shot": "32-arenaDuel-start.jpg"
       },
       "screenshots": [
-        "33-arenaDuel-start.jpg"
+        "32-arenaDuel-start.jpg"
       ],
-      "finishedAt": "2026-09-06T15:35:59.774Z"
+      "finishedAt": "2026-09-06T15:59:15.852Z"
     },
     {
       "name": "连点「出击」直到判胜（上限 6 次）",
       "ok": true,
-      "startedAt": "2026-09-06T15:35:59.774Z",
+      "startedAt": "2026-09-06T15:59:15.852Z",
       "detail": {
         "taps": 3,
-        "midShot": "34-arenaDuel-match.jpg",
+        "midShot": "33-arenaDuel-match.jpg",
         "settleText": "你赢了！",
-        "shot": "35-arenaDuel-settle.jpg"
+        "shot": "34-arenaDuel-settle.jpg"
       },
       "screenshots": [
-        "34-arenaDuel-match.jpg",
-        "35-arenaDuel-settle.jpg"
+        "33-arenaDuel-match.jpg",
+        "34-arenaDuel-settle.jpg"
       ],
-      "finishedAt": "2026-09-06T15:36:01.869Z"
+      "finishedAt": "2026-09-06T15:59:17.893Z"
     },
     {
-      "name": "结算倒计时结束后回到首屏（AppRuntime 恢复 authenticated base）",
+      "name": "结算后回到分组页（⛔ 不是大厅）",
       "ok": true,
-      "startedAt": "2026-09-06T15:36:01.869Z",
-      "detail": {
-        "shot": "36-arenaDuel-back-home.jpg"
-      },
-      "screenshots": [
-        "36-arenaDuel-back-home.jpg"
-      ],
-      "finishedAt": "2026-09-06T15:36:03.417Z"
-    },
-    {
-      "name": "点首屏「设置」",
-      "ok": true,
-      "startedAt": "2026-09-06T15:36:03.419Z",
-      "detail": {
-        "tapped": "设置",
-        "at": [
-          973,
-          90
-        ]
-      },
-      "screenshots": [],
-      "finishedAt": "2026-09-06T15:36:03.497Z"
-    },
-    {
-      "name": "设置面板与插件入口",
-      "ok": true,
-      "startedAt": "2026-09-06T15:36:03.497Z",
-      "detail": {
-        "entries": [
-          {
-            "label": "竞技场",
-            "pluginId": "arenaHub"
-          },
-          {
-            "label": "进入战斗",
-            "pluginId": "builtin"
-          },
-          {
-            "label": "兑换码",
-            "pluginId": "redeem"
-          },
-          {
-            "label": "贪吃蛇大作战",
-            "pluginId": "snake"
-          },
-          {
-            "label": "点数赛",
-            "pluginId": "tally"
-          }
-        ],
-        "shot": "37-settings.jpg"
-      },
-      "screenshots": [
-        "37-settings.jpg"
-      ],
-      "finishedAt": "2026-09-06T15:36:03.836Z"
-    },
-    {
-      "name": "设置面板进「竞技场」分组页（组内 4 条入口只占一行）",
-      "ok": true,
-      "startedAt": "2026-09-06T15:36:03.838Z",
+      "startedAt": "2026-09-06T15:59:17.893Z",
       "detail": {
         "rows": [
           "竞技场  ·  arena",
           "占领赛  ·  arena",
           "决斗  ·  arena",
           "竞技场商店  ·  arenaShop"
-        ]
+        ],
+        "settingsBelow": true,
+        "shot": "35-arenaDuel-back-group.jpg"
       },
-      "screenshots": [],
-      "finishedAt": "2026-09-06T15:36:03.922Z"
+      "screenshots": [
+        "35-arenaDuel-back-group.jpg"
+      ],
+      "finishedAt": "2026-09-06T15:59:19.419Z"
     },
     {
       "name": "分组页里进「竞技场商店 · arenaShop」（plugin route 形态：requires.kits.arena.board）",
       "ok": true,
-      "startedAt": "2026-09-06T15:36:03.922Z",
+      "startedAt": "2026-09-06T15:59:19.426Z",
       "detail": {
         "tapped": "进入 @ /^竞技场商店\\s+·\\s+arenaShop$/u",
         "at": [
@@ -1050,19 +938,19 @@
         ]
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:36:03.998Z"
+      "finishedAt": "2026-09-06T15:59:19.503Z"
     },
     {
       "name": "ArenaShopView 挂载（经 kit 的 board 面读棋盘）",
       "ok": true,
-      "startedAt": "2026-09-06T15:36:03.998Z",
+      "startedAt": "2026-09-06T15:59:19.503Z",
       "detail": {
         "tiles": "owned",
         "labels": [
           "竞技场商店",
           "关闭",
           "刷新",
-          "A1 我方 29",
+          "A1 我方 36",
           "+守备 (10 金)",
           "B1 我方 1",
           "+守备 (10 金)",
@@ -1080,36 +968,36 @@
           "+守备 (10 金)",
           "点自己的格花 10 金币加守备"
         ],
-        "shot": "38-arenaShop-open.jpg"
+        "shot": "36-arenaShop-open.jpg"
       },
       "screenshots": [
-        "38-arenaShop-open.jpg"
+        "36-arenaShop-open.jpg"
       ],
-      "finishedAt": "2026-09-06T15:36:04.331Z"
+      "finishedAt": "2026-09-06T15:59:20.235Z"
     },
     {
       "name": "点「+守备」买加固（arenaShop.buyBoost → kit boostTile → tx.debit）",
       "ok": true,
-      "startedAt": "2026-09-06T15:36:04.331Z",
+      "startedAt": "2026-09-06T15:59:20.235Z",
       "detail": {
         "rows": 8,
-        "row": "A1 我方 29",
+        "row": "A1 我方 36",
         "outcome": "bought",
-        "notice": "A1 我方 29 → 守备 34，余额 50（余额 50）",
-        "shot": "39-arenaShop-bought.jpg"
+        "notice": "A1 我方 36 → 守备 41，余额 40（余额 40）",
+        "shot": "37-arenaShop-bought.jpg"
       },
       "screenshots": [
-        "39-arenaShop-bought.jpg"
+        "37-arenaShop-bought.jpg"
       ],
-      "finishedAt": "2026-09-06T15:36:05.151Z"
+      "finishedAt": "2026-09-06T15:59:21.072Z"
     },
     {
       "name": "点「刷新」重读自有格（经 kit 的 board 面）",
       "ok": true,
-      "startedAt": "2026-09-06T15:36:05.151Z",
+      "startedAt": "2026-09-06T15:59:21.072Z",
       "detail": {
         "rows": [
-          "A1 我方 34",
+          "A1 我方 41",
           "B1 我方 1",
           "C1 我方 1",
           "D1 我方 1",
@@ -1117,30 +1005,30 @@
           "B2 我方 1",
           "C2 我方 1",
           "D2 我方 1",
-          "A1 我方 29 → 守备 34，余额 50（余额 50）"
+          "A1 我方 36 → 守备 41，余额 40（余额 40）"
         ],
-        "shot": "40-arenaShop-refreshed.jpg"
+        "shot": "38-arenaShop-refreshed.jpg"
       },
       "screenshots": [
-        "40-arenaShop-refreshed.jpg"
+        "38-arenaShop-refreshed.jpg"
       ],
-      "finishedAt": "2026-09-06T15:36:06.766Z"
+      "finishedAt": "2026-09-06T15:59:22.670Z"
     },
     {
       "name": "「关闭」回到设置面板（ArenaShopView 卸载）",
       "ok": true,
-      "startedAt": "2026-09-06T15:36:06.766Z",
+      "startedAt": "2026-09-06T15:59:22.670Z",
       "detail": {
         "settingsStillOpen": true,
         "viaGroup": true
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:36:06.942Z"
+      "finishedAt": "2026-09-06T15:59:22.844Z"
     },
     {
       "name": "进入「贪吃蛇大作战 · snake」（宿主自有 gameplay plugin：默认玩法）",
       "ok": true,
-      "startedAt": "2026-09-06T15:36:06.953Z",
+      "startedAt": "2026-09-06T15:59:22.853Z",
       "detail": {
         "tapped": "进入 @ /^贪吃蛇大作战\\s+·\\s+snake$/u",
         "at": [
@@ -1149,50 +1037,50 @@
         ]
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:36:07.032Z"
+      "finishedAt": "2026-09-06T15:59:22.937Z"
     },
     {
       "name": "SnakeWorld 挂载并开跑（HUD 出现）",
       "ok": true,
-      "startedAt": "2026-09-06T15:36:07.032Z",
+      "startedAt": "2026-09-06T15:59:22.937Z",
       "detail": {
         "hud": [
           "准备 3",
           "保护 5s",
-          "1. AI-1 0",
-          "2. AI-10 0",
-          "3. AI-11 0",
-          "4. AI-12 0",
-          "5. AI-13 0",
-          "6. AI-14 0",
-          "7. AI-15 0",
-          "8. AI-16 0",
-          "9. AI-2 0",
-          "10. AI-3 0"
+          "1. 低调小汉字 0",
+          "2. AI-1 0",
+          "3. AI-10 0",
+          "4. AI-11 0",
+          "5. AI-12 0",
+          "6. AI-13 0",
+          "7. AI-14 0",
+          "8. AI-15 0",
+          "9. AI-16 0",
+          "10. AI-2 0"
         ],
-        "shot": "41-snake-run.jpg"
+        "shot": "39-snake-run.jpg"
       },
       "screenshots": [
-        "41-snake-run.jpg"
+        "39-snake-run.jpg"
       ],
-      "finishedAt": "2026-09-06T15:36:07.763Z"
+      "finishedAt": "2026-09-06T15:59:23.663Z"
     },
     {
       "name": "点「结束本次」→ 确认框",
       "ok": true,
-      "startedAt": "2026-09-06T15:36:07.763Z",
+      "startedAt": "2026-09-06T15:59:23.663Z",
       "detail": {
-        "shot": "42-snake-end-confirm.jpg"
+        "shot": "40-snake-end-confirm.jpg"
       },
       "screenshots": [
-        "42-snake-end-confirm.jpg"
+        "40-snake-end-confirm.jpg"
       ],
-      "finishedAt": "2026-09-06T15:36:08.178Z"
+      "finishedAt": "2026-09-06T15:59:24.070Z"
     },
     {
       "name": "确认结束 → 结算页",
       "ok": true,
-      "startedAt": "2026-09-06T15:36:08.178Z",
+      "startedAt": "2026-09-06T15:59:24.070Z",
       "detail": {
         "retried": false,
         "backButtonAt": [
@@ -1207,17 +1095,17 @@
           "本局不计奖励（时长不足或无有效操作）",
           "我的衣柜"
         ],
-        "shot": "43-snake-result.jpg"
+        "shot": "41-snake-result.jpg"
       },
       "screenshots": [
-        "43-snake-result.jpg"
+        "41-snake-result.jpg"
       ],
-      "finishedAt": "2026-09-06T15:36:11.422Z"
+      "finishedAt": "2026-09-06T15:59:27.322Z"
     },
     {
       "name": "结算页两颗按钮同排（「返回主页」+「我的衣柜」）",
       "ok": true,
-      "startedAt": "2026-09-06T15:36:11.422Z",
+      "startedAt": "2026-09-06T15:59:27.322Z",
       "detail": {
         "exitAt": [
           786,
@@ -1231,24 +1119,24 @@
         "deltaY": 0
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:36:11.424Z"
+      "finishedAt": "2026-09-06T15:59:27.324Z"
     },
     {
       "name": "「返回主页」回首屏",
       "ok": true,
-      "startedAt": "2026-09-06T15:36:11.424Z",
+      "startedAt": "2026-09-06T15:59:27.324Z",
       "detail": {
-        "shot": "44-snake-back-home.jpg"
+        "shot": "42-snake-back-home.jpg"
       },
       "screenshots": [
-        "44-snake-back-home.jpg"
+        "42-snake-back-home.jpg"
       ],
-      "finishedAt": "2026-09-06T15:36:12.232Z"
+      "finishedAt": "2026-09-06T15:59:28.118Z"
     },
     {
       "name": "点首屏「设置」",
       "ok": true,
-      "startedAt": "2026-09-06T15:36:12.236Z",
+      "startedAt": "2026-09-06T15:59:28.120Z",
       "detail": {
         "tapped": "设置",
         "at": [
@@ -1257,12 +1145,12 @@
         ]
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:36:12.317Z"
+      "finishedAt": "2026-09-06T15:59:28.187Z"
     },
     {
       "name": "设置面板与插件入口",
       "ok": true,
-      "startedAt": "2026-09-06T15:36:12.317Z",
+      "startedAt": "2026-09-06T15:59:28.187Z",
       "detail": {
         "entries": [
           {
@@ -1286,17 +1174,17 @@
             "pluginId": "tally"
           }
         ],
-        "shot": "45-settings.jpg"
+        "shot": "43-settings.jpg"
       },
       "screenshots": [
-        "45-settings.jpg"
+        "43-settings.jpg"
       ],
-      "finishedAt": "2026-09-06T15:36:12.664Z"
+      "finishedAt": "2026-09-06T15:59:28.526Z"
     },
     {
       "name": "进入「进入战斗 · builtin」（宿主自有 plugin 的 gameplay 入口（ballMove 演示））",
       "ok": true,
-      "startedAt": "2026-09-06T15:36:12.664Z",
+      "startedAt": "2026-09-06T15:59:28.526Z",
       "detail": {
         "tapped": "进入 @ /^进入战斗\\s+·\\s+builtin$/u",
         "at": [
@@ -1305,39 +1193,39 @@
         ]
       },
       "screenshots": [],
-      "finishedAt": "2026-09-06T15:36:12.748Z"
+      "finishedAt": "2026-09-06T15:59:28.609Z"
     },
     {
       "name": "BallMoveView 挂载（加入 GameRoom）",
       "ok": true,
-      "startedAt": "2026-09-06T15:36:12.748Z",
+      "startedAt": "2026-09-06T15:59:28.609Z",
       "detail": {
-        "shot": "46-ballmove.jpg",
+        "shot": "44-ballmove.jpg",
         "hasExitButton": true,
         "note": "画布演示无文本，判据是 PlayersLayer 挂载 + 左上角「离开」按钮在位"
       },
       "screenshots": [
-        "46-ballmove.jpg"
+        "44-ballmove.jpg"
       ],
-      "finishedAt": "2026-09-06T15:36:13.481Z"
+      "finishedAt": "2026-09-06T15:59:29.332Z"
     },
     {
       "name": "点「离开」回首屏（2026-09-06 修复前该入口没有退出 UI）",
       "ok": true,
-      "startedAt": "2026-09-06T15:36:13.481Z",
+      "startedAt": "2026-09-06T15:59:29.332Z",
       "detail": {
-        "shot": "47-ballmove-back-home.jpg"
+        "shot": "45-ballmove-back-home.jpg"
       },
       "screenshots": [
-        "47-ballmove-back-home.jpg"
+        "45-ballmove-back-home.jpg"
       ],
-      "finishedAt": "2026-09-06T15:36:14.280Z"
+      "finishedAt": "2026-09-06T15:59:30.137Z"
     }
   ],
   "console": [],
   "tab": {
-    "id": "50A0E655C7F4D0DFCFA50A38092F1FBA",
+    "id": "F859D583B3E830A55933F9457DFAF117",
     "created": true
   },
-  "finishedAt": "2026-09-06T15:36:14.281Z"
+  "finishedAt": "2026-09-06T15:59:30.139Z"
 }
