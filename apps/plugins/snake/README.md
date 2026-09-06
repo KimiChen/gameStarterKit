@@ -53,7 +53,8 @@
 ⚠ `atlas/classic_snake150001` 与 `atlas/snake1` 字节相同（dedupe 符号链接），不重复引入。
 ⚠ `texture/bg/bg1`（1624×750）审计后**明确不采用**：不旋转、不裁切复用。
 
-当前落地的运行时素材在 `apps/Cocos/assets/resources/snakeoff/`（63 个文件 + 同名 `.meta`）：
+当前落地的运行时素材在 `apps/Cocos/assets/resources/snake/`（63 个文件 + 同名 `.meta`；
+2026-09-06 由 `resources/snakeoff/` 改名到 mode id 同名目录，才落进 snake 的所有权推导集、随包分发）：
 16 套皮肤图集、16 张确定性生成的预览图、7 张磁铁/光环纹理、食物图集、摇杆/加速/结算底板、8 个音效。
 
 ### 2.3 明确不复用清单
@@ -95,8 +96,9 @@ Cocos Creator 3.8.8、FairyGUI、Colyseus 与服务端权威模型**独立实现
 apps/plugins/snake/plugin.json            本文件所在目录
 apps/plugins/snake/gameplay/manifest.json codegen 输入（modeVersion 在此）
 apps/plugins/snake/gameplay/state.json    codegen 输入
-apps/plugins/snakeCosmetic/plugin.json
 ```
+⚠ 衣柜（原 `snakeCosmetic` plugin）已于 2026-09-06 并入本插件：域名仍是 `snakeCosmetic`（协议不变），
+入口从设置面板菜单项挪到**结算页**的「我的衣柜」（与「返回主页」同排）。
 
 契约真源 `apps/shared`
 ```
@@ -129,14 +131,16 @@ logic/rooms/snake/  SnakeGameplay.ts SnakeHud.ts SnakeControls.ts
 view/rooms/snake/   SnakeWorldView.ts + .view.json
                     SnakeMeshRenderer.ts SnakeFoodMeshRenderer.ts
                     SnakeMagnetAuraRenderer.ts snakeQuadMesh.ts
-plugins/snakeCosmetic/  index.ts logic/{WardrobeLogic,snakeCosmeticRuntime}.ts
-                        view/WardrobeView.ts + .view.json
+plugins/snake/      index.ts（plugin module：衣柜 RPC + open/close route）
+                    logic/{WardrobeLogic,snakeCosmeticRuntime}.ts
+                    view/WardrobeView.ts + .view.json
 ```
 ⛔ `apps/client/src/shared/**` 与 `apps/Cocos/assets/src/**` 是镜像生成物，禁手改。
 
 测试
 ```
-apps/client/test/  snake-gameplay / snake-presentation / snake-skin-catalog .test.ts
+apps/client/test/  snake-gameplay / snake-presentation / snake-skin-catalog
+                   snake-wardrobe-logic .test.ts
 apps/server/test/  snake-world snake-room snake-rules snake-cosmetic-profile
                    snake-progression snake-run-rewards snake-relive-demo .test.ts
                    int/snake.test.ts  int/snake-relive-demo.test.ts   ⚠ 真栈，有意留在 verify:all 链外
@@ -146,7 +150,7 @@ apps/server/test/  snake-world snake-room snake-rules snake-cosmetic-profile
 其它
 ```
 tools/snake-s0-replication/       S0 复刻基线生成器 ⚠ 其输出目录已随本次归并删除，--check 会失败
-apps/Cocos/assets/resources/snakeoff/   63 个运行时素材（见 §2.2）
+apps/Cocos/assets/resources/snake/      63 个运行时素材（见 §2.2）
 ```
 
 ---
@@ -371,6 +375,14 @@ fail-closed 发布开关；② 双端模块加载期的三层目录 fail-closed�
 | F10 | 蛇身两侧白齿 | 几何画成「每段一个压扁四边形」；应为「每隔 `repeatedBodyPointDistance` 个路径点画一个按朝向旋转的整帧」，且**写入顺序必须尾→头** | 已修 |
 | F11 | 同一条蛇身体与头有色差（实测 255→229、128→156） | `builtin-unlit` 走 `CCFragOutput`，缺省 ACES 色调映射叠加入口的 `SRGBToLinear` | 已修（场景 `toneMappingType` 置 LINEAR） |
 | F12 | 蛇变短时残留上一帧四边形 | `updateSubMesh` ⛔ 不同步 InputAssembler，而 `gl.drawElements` 读的正是它 | 已修（每次上传后 `onGeometryChanged()`） |
+| F13 | **一局结算把 Redis 里的 `ownedSkinIds` / `fragmentBalances` 写回默认值**（实测：种 `[1,2]` → 只打一局、⛔ 没开过衣柜 → 键变回 `[1]`） | `applyRunRewards` 是**同步**的，读 `fullSnapshotOf(uid)` 拿进程内 profile，而 profile 只由 `snakeCosmetic.*` 三个 RPC 的 `hydrate` 回灌；玩家本进程内没开过衣柜时它就是默认档，随后那条「六字段 HSET」把默认档盖回 Redis。同一原因下 `equippedSkinIdOf` 也会让回访玩家带默认皮肤开局 | **未修**（见下） |
+
+⚠ **F13 未修的原因与影响面**（2026-09-06 衣柜并入 snake 时实测发现，⛔ 不是本次合并引入的——
+合并前「先打一局再开衣柜」同样会丢）：正解是**玩家进房时 await 一次 `snakeCosmeticStore.hydrate(uid)`**，
+但 mode 契约里没有异步 join 钩子，加钩子要动 `GameRoom.ts` / `GameMode.ts`——两者都在
+`scripts/protected-paths.json` 的 `gameplayFlow` 里，属框架改动（要显式重钉 lock）。
+⚠ 衣柜入口改到结算页之后，**每次进衣柜都必然先打一局**，这条缺陷因此从「碰巧遇到」变成「每次都先触发」：
+在开发库里表现为一进衣柜就只剩默认皮肤。⛔ 修它之前不要拿衣柜的皮肤数据当准。
 
 ⚠ **取证环境限制**：本仓位于 `/Volumes/KimData` 非启动卷，Creator 的资源监听**收不到该卷的
 文件变更**——原子替换与浏览器硬重载实测均无效，**必须手动重开 Creator** 才会重新导入编译。

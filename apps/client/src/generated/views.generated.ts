@@ -62,7 +62,7 @@ export const GENERATED_VIEW_CATALOG: Readonly<Record<string, ViewMeta>> = {
     Wardrobe: defineView({
         name: "Wardrobe", kind: "cocos", layer: "popup",
         fullscreen: true, onlyOne: true, permanent: false, interactive: false,
-        load: () => import("../plugins/snakeCosmetic/view/WardrobeView").then((m) => m.WardrobeView),
+        load: () => import("../plugins/snake/view/WardrobeView").then((m) => m.WardrobeView),
     }),
 };
 
@@ -96,7 +96,7 @@ export const VIEW_SOURCE_RECORDS: readonly GeneratedViewSourceRecord[] = [
     { name: "Settings", owner: "builtin", kind: "cocos", path: "apps/client/src/view/SettingsView.ts", logic: "apps/client/src/logic/page/SettingsLogic.ts", sidecar: "apps/client/src/view/SettingsView.view.json" },
     { name: "SnakeWorld", owner: "snake", kind: "cocos", path: "apps/client/src/view/rooms/snake/SnakeWorldView.ts", logic: "apps/client/src/logic/rooms/snake/SnakeGameplay.ts", sidecar: "apps/client/src/view/rooms/snake/SnakeWorldView.view.json" },
     { name: "Tally", owner: "tally", kind: "cocos", path: "apps/client/src/view/rooms/tally/TallyView.ts", logic: "apps/client/src/logic/rooms/tally/TallyGameplay.ts", sidecar: "apps/client/src/view/rooms/tally/TallyView.view.json" },
-    { name: "Wardrobe", owner: "snakeCosmetic", kind: "cocos", path: "apps/client/src/plugins/snakeCosmetic/view/WardrobeView.ts", logic: "apps/client/src/plugins/snakeCosmetic/logic/WardrobeLogic.ts", sidecar: "apps/client/src/plugins/snakeCosmetic/view/WardrobeView.view.json" },
+    { name: "Wardrobe", owner: "snakeCosmetic", kind: "cocos", path: "apps/client/src/plugins/snake/view/WardrobeView.ts", logic: "apps/client/src/plugins/snake/logic/WardrobeLogic.ts", sidecar: "apps/client/src/plugins/snake/view/WardrobeView.view.json" },
 ];
 
 /** manifest 声明的 view 目录（守门测试的递归比对根）。 */
@@ -104,7 +104,7 @@ export const VIEW_SOURCE_DIRS: readonly string[] = [
     "apps/client/src/kits/arena/view",
     "apps/client/src/plugins/arenaShop/view",
     "apps/client/src/plugins/redeem/view",
-    "apps/client/src/plugins/snakeCosmetic/view",
+    "apps/client/src/plugins/snake/view",
     "apps/client/src/view",
     "apps/client/src/view/rooms/arenaCapture",
     "apps/client/src/view/rooms/arenaDuel",

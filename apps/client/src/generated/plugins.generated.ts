@@ -41,7 +41,6 @@ export const PLUGIN_IDS: readonly string[] = [
     "builtin",
     "redeem",
     "snake",
-    "snakeCosmetic",
     "tally",
 ];
 
@@ -103,24 +102,14 @@ export const GENERATED_PLUGINS: readonly GeneratedPluginDescriptor[] = [
     },
     {
         id: "snake",
-        resident: false,
-        dependencies: [],
-        routes: [
-        ],
-        menu: [
-            { entryId: "snake", pluginId: "snake", label: "贪吃蛇大作战", labelKey: "menu.snakeOff", launch: { kind: "gameplay", gameplayId: "snake" } },
-        ],
-    },
-    {
-        id: "snakeCosmetic",
-        resident: false,
-        load: () => import("../plugins/snakeCosmetic/index").then((m) => m.createPluginModule()),
+        resident: true,
+        load: () => import("../plugins/snake/index").then((m) => m.createPluginModule()),
         dependencies: [],
         routes: [
             { id: "snakeCosmetic", view: "Wardrobe", group: "authenticated", restore: "discard" },
         ],
         menu: [
-            { entryId: "snakeCosmetic", pluginId: "snakeCosmetic", label: "衣柜", labelKey: "menu.snakeCosmetic", launch: { kind: "route", routeId: "snakeCosmetic" } },
+            { entryId: "snake", pluginId: "snake", label: "贪吃蛇大作战", labelKey: "menu.snakeOff", launch: { kind: "gameplay", gameplayId: "snake" } },
         ],
     },
     {
@@ -144,7 +133,6 @@ export const GENERATED_MENU_CONTRIBUTIONS: readonly GeneratedMenuContribution[] 
     { entryId: "ballMove", pluginId: "builtin", label: "进入战斗", labelKey: "menu.enterBattle", launch: { kind: "gameplay", gameplayId: "ballMove" } },
     { entryId: "redeem", pluginId: "redeem", label: "兑换码", labelKey: "menu.redeem", launch: { kind: "route", routeId: "redeem" } },
     { entryId: "snake", pluginId: "snake", label: "贪吃蛇大作战", labelKey: "menu.snakeOff", launch: { kind: "gameplay", gameplayId: "snake" } },
-    { entryId: "snakeCosmetic", pluginId: "snakeCosmetic", label: "衣柜", labelKey: "menu.snakeCosmetic", launch: { kind: "route", routeId: "snakeCosmetic" } },
     { entryId: "tally", pluginId: "tally", label: "点数赛", labelKey: "menu.tally", launch: { kind: "gameplay", gameplayId: "tally" } },
 ];
 

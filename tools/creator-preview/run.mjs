@@ -381,8 +381,16 @@ async function playUntilWin(runner, { actionText, countLabel, shotPrefix, maxTap
   });
 }
 
+/**
+ * 衣柜（2026-09-06 起并入 snake）：设置面板**没有**「衣柜」条目了，唯一入口是打完一局后结算页的
+ * 「我的衣柜」。所以本场景先跑一局 snake 到结算页，再从那儿进衣柜。
+ */
 async function scenarioCosmetic(runner) {
-  await enterFromSettings(runner, "衣柜", "snakeCosmetic", "宿主自有 plugin 的 route 形态");
+  await snakeRunToResult(runner);
+  await runner.step("结算页点「我的衣柜」（衣柜的唯一入口）", async () => {
+    await runner.tapText("我的衣柜", { pathIncludes: "SnakeWorld.RunResult" });
+    return { shot: await runner.shot("cosmetic-from-result") };
+  });
   await runner.step("WardrobeView 挂载并读到皮肤行", async () => {
     await runner.waitFor("WardrobeView", (walk) => (selectNodes(walk, { name: "WardrobeView" }).length > 0 ? true : null), 60_000);
     // ⚠ 筛选状态跨次打开保留（上次停在「可合成」就还停在那儿，可能一行都没有）——先切回「全部」再断言行数。
@@ -447,7 +455,16 @@ async function scenarioCosmetic(runner) {
     const shot = await runner.shot("cosmetic-craft");
     return { action: "craft", outcome: outcome?.text ?? "no-feedback", shot };
   });
-  return closeBackToSettings(runner, "WardrobeView");
+  await runner.step("「关闭」回到结算页（WardrobeView 卸载，结算页还在）", async () => {
+    await runner.tapText("关闭", { pathIncludes: "WardrobeView" });
+    await runner.waitFor(
+      "WardrobeView 关闭且结算页仍在",
+      (walk) => (selectNodes(walk, { name: "WardrobeView" }).length === 0
+        && selectNodes(walk, { kind: "label", text: "返回主页" }).length > 0 ? true : null),
+    );
+    return { resultStillOpen: true, shot: await runner.shot("cosmetic-back-to-result") };
+  });
+  return snakeBackHome(runner, "cosmetic");
 }
 
 /** kit 的 route 形态入口：棋盘页 + 占一格（走 arena.capture → withKitTx → k_arena_board → effect 奖杯）。 */
@@ -605,7 +622,10 @@ async function scenarioArenaShop(runner) {
 }
 
 /** 宿主自有的默认玩法：进入 → 结束本次（确认框）→ 结算页「返回主页」。 */
-async function scenarioSnake(runner) {
+/** 打一局 snake 直到结算页（snake 与 cosmetic 两个场景共用；cosmetic 要经结算页才够得着衣柜）。 */
+async function snakeRunToResult(runner) {
+  await runner.walk();
+  if (runner.find({ pathIncludes: "SnakeWorld.RunResult", kind: "label", text: "返回主页" })[0]) return;
   await enterFromSettings(runner, "贪吃蛇大作战", "snake", "宿主自有 gameplay plugin：默认玩法");
   await runner.step("SnakeWorld 挂载并开跑（HUD 出现）", async () => {
     await runner.waitFor(
@@ -646,12 +666,35 @@ async function scenarioSnake(runner) {
     const shot = await runner.shot("snake-result");
     return { retried, backButtonAt: [Math.round(back.center.x), Math.round(back.center.y)], lines, shot };
   });
+}
+
+/** 结算页「返回主页」回首屏。 */
+async function snakeBackHome(runner, shotPrefix = "snake") {
   return runner.step("「返回主页」回首屏", async () => {
     await runner.tapText("返回主页");
     await runner.waitFor("PromoHomeView 回来", (walk) => (selectNodes(walk, { name: "PromoHomeView" }).length > 0 ? true : null), 45_000);
-    const shot = await runner.shot("snake-back-home");
+    const shot = await runner.shot(`${shotPrefix}-back-home`);
     return { shot };
   });
+}
+
+/** snake 全流程：跑一局 → 结算页（顺带钉住「我的衣柜」与「返回主页」同排）→ 回首屏。 */
+async function scenarioSnake(runner) {
+  await snakeRunToResult(runner);
+  await runner.step("结算页两颗按钮同排（「返回主页」+「我的衣柜」）", async () => {
+    await runner.walk();
+    const exit = runner.find({ pathIncludes: "SnakeWorld.RunResult", kind: "label", text: "返回主页" })[0];
+    const wardrobe = runner.find({ pathIncludes: "SnakeWorld.RunResult", kind: "label", text: "我的衣柜" })[0];
+    if (!wardrobe) throw new Error("结算页没有「我的衣柜」——衣柜并入 snake 后这是它唯一的入口");
+    const dy = Math.abs(exit.center.y - wardrobe.center.y);
+    if (dy > 4) throw new Error(`两颗按钮不在同一行（Δy=${dy}）`);
+    return {
+      exitAt: [Math.round(exit.center.x), Math.round(exit.center.y)],
+      wardrobeAt: [Math.round(wardrobe.center.x), Math.round(wardrobe.center.y)],
+      sameRow: true, deltaY: dy,
+    };
+  });
+  return snakeBackHome(runner, "snake");
 }
 
 /** 宿主自有的 ballMove 演示入口（builtin 的 menu 条目）：入口能进 + 房间加入 + 视图挂载 + 「离开」回首屏。 */
