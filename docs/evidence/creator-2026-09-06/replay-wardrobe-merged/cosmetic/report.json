@@ -1,0 +1,344 @@
+{
+  "tool": "tools/creator-preview/run.mjs",
+  "scenario": "cosmetic",
+  "startedAt": "2026-09-06T14:14:08.101Z",
+  "options": {
+    "scenario": "cosmetic",
+    "out": "/private/tmp/claude-501/-Volumes-KimData-work-gameStarterKit/9b39ad4f-f1db-40d0-83a3-f0b1faa228e8/scratchpad/cosmetic-equip2",
+    "code": "WELCOME2026",
+    "format": "jpeg",
+    "devtools": "http://127.0.0.1:9222",
+    "preview": "http://localhost:7456",
+    "scene": null,
+    "bootTimeoutMs": 300000,
+    "stepTimeoutMs": 20000,
+    "reuse": false
+  },
+  "scene": "33a6cd88-ca61-42f3-97e1-6b18a9096a34",
+  "ok": true,
+  "steps": [
+    {
+      "name": "加载预览场景（Fetch 改写 settings.js?scene=）",
+      "ok": true,
+      "startedAt": "2026-09-06T14:14:08.194Z",
+      "detail": {
+        "frames": 66,
+        "canvas": {
+          "x": 658,
+          "y": 49.5546875,
+          "width": 375,
+          "height": 803.4453125
+        },
+        "visible": {
+          "width": 750,
+          "height": 1606
+        },
+        "topLevel": [
+          "Canvas",
+          "PROFILER_NODE"
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T14:14:10.285Z"
+    },
+    {
+      "name": "登录页可见（FGUI btn_login）",
+      "ok": true,
+      "startedAt": "2026-09-06T14:14:10.299Z",
+      "detail": {
+        "via": "fgui:btn_login",
+        "shot": "01-login.jpg"
+      },
+      "screenshots": [
+        "01-login.jpg"
+      ],
+      "finishedAt": "2026-09-06T14:14:10.654Z"
+    },
+    {
+      "name": "点「开始游戏」",
+      "ok": true,
+      "startedAt": "2026-09-06T14:14:10.654Z",
+      "detail": {
+        "tapped": "btn_login",
+        "at": [
+          845,
+          702
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T14:14:10.720Z"
+    },
+    {
+      "name": "首屏 PromoHomeView 挂载",
+      "ok": true,
+      "startedAt": "2026-09-06T14:14:10.720Z",
+      "detail": {
+        "card": [
+          "gono",
+          "Cocos Creator + Colyseus 实时游戏脚手架",
+          "协议 game v8 · lobby v7 · 已登记玩法 8",
+          "本地开发服 · dev-63bfdde39b49cc16 · 体力 30 · 0胜0负"
+        ],
+        "protocolLine": "协议 game v8 · lobby v7 · 已登记玩法 8",
+        "shot": "02-home.jpg"
+      },
+      "screenshots": [
+        "02-home.jpg"
+      ],
+      "finishedAt": "2026-09-06T14:14:11.434Z"
+    },
+    {
+      "name": "点首屏「设置」",
+      "ok": true,
+      "startedAt": "2026-09-06T14:14:11.435Z",
+      "detail": {
+        "tapped": "设置",
+        "at": [
+          973,
+          90
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T14:14:11.510Z"
+    },
+    {
+      "name": "设置面板与插件入口",
+      "ok": true,
+      "startedAt": "2026-09-06T14:14:11.510Z",
+      "detail": {
+        "entries": [
+          {
+            "label": "竞技场",
+            "pluginId": "arena"
+          },
+          {
+            "label": "占领赛",
+            "pluginId": "arena"
+          },
+          {
+            "label": "决斗",
+            "pluginId": "arena"
+          },
+          {
+            "label": "竞技场商店",
+            "pluginId": "arenaShop"
+          },
+          {
+            "label": "进入战斗",
+            "pluginId": "builtin"
+          },
+          {
+            "label": "兑换码",
+            "pluginId": "redeem"
+          },
+          {
+            "label": "贪吃蛇大作战",
+            "pluginId": "snake"
+          },
+          {
+            "label": "点数赛",
+            "pluginId": "tally"
+          }
+        ],
+        "shot": "03-settings.jpg"
+      },
+      "screenshots": [
+        "03-settings.jpg"
+      ],
+      "finishedAt": "2026-09-06T14:14:11.838Z"
+    },
+    {
+      "name": "进入「贪吃蛇大作战 · snake」（宿主自有 gameplay plugin：默认玩法）",
+      "ok": true,
+      "startedAt": "2026-09-06T14:14:11.838Z",
+      "detail": {
+        "tapped": "进入 @ /^贪吃蛇大作战\\s+·\\s+snake$/u",
+        "at": [
+          947,
+          690
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T14:14:11.924Z"
+    },
+    {
+      "name": "SnakeWorld 挂载并开跑（HUD 出现）",
+      "ok": true,
+      "startedAt": "2026-09-06T14:14:11.924Z",
+      "detail": {
+        "hud": [
+          "准备 3",
+          "保护 5s",
+          "1. 神秘笔画侠 0",
+          "2. AI-1 0",
+          "3. AI-10 0",
+          "4. AI-11 0",
+          "5. AI-12 0",
+          "6. AI-13 0",
+          "7. AI-14 0",
+          "8. AI-15 0",
+          "9. AI-16 0",
+          "10. AI-2 0"
+        ],
+        "shot": "04-snake-run.jpg"
+      },
+      "screenshots": [
+        "04-snake-run.jpg"
+      ],
+      "finishedAt": "2026-09-06T14:14:12.652Z"
+    },
+    {
+      "name": "点「结束本次」→ 确认框",
+      "ok": true,
+      "startedAt": "2026-09-06T14:14:12.652Z",
+      "detail": {
+        "shot": "05-snake-end-confirm.jpg"
+      },
+      "screenshots": [
+        "05-snake-end-confirm.jpg"
+      ],
+      "finishedAt": "2026-09-06T14:14:13.054Z"
+    },
+    {
+      "name": "确认结束 → 结算页",
+      "ok": true,
+      "startedAt": "2026-09-06T14:14:13.054Z",
+      "detail": {
+        "retried": false,
+        "backButtonAt": [
+          786,
+          587
+        ],
+        "lines": [
+          "本次游玩结束",
+          "原因：explicitExit",
+          "本局：0 秒 · 0 分 · 0 击杀",
+          "最长 80 · 星星 0 · 磁铁 0",
+          "本局不计奖励（时长不足或无有效操作）",
+          "我的衣柜"
+        ],
+        "shot": "06-snake-result.jpg"
+      },
+      "screenshots": [
+        "06-snake-result.jpg"
+      ],
+      "finishedAt": "2026-09-06T14:14:16.312Z"
+    },
+    {
+      "name": "结算页点「我的衣柜」（衣柜的唯一入口）",
+      "ok": true,
+      "startedAt": "2026-09-06T14:14:16.312Z",
+      "detail": {
+        "shot": "07-cosmetic-from-result.jpg"
+      },
+      "screenshots": [
+        "07-cosmetic-from-result.jpg"
+      ],
+      "finishedAt": "2026-09-06T14:14:16.718Z"
+    },
+    {
+      "name": "WardrobeView 挂载并读到皮肤行",
+      "ok": true,
+      "startedAt": "2026-09-06T14:14:16.718Z",
+      "detail": {
+        "skinRows": 6,
+        "skins": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "10",
+          "11"
+        ],
+        "labels": [
+          "衣柜",
+          "关闭",
+          "全部",
+          "已拥有",
+          "未拥有",
+          "可合成",
+          "选择一件皮肤后装备或合成",
+          "小红",
+          "普通 · 默认拥有",
+          "已装备",
+          "皮肤 2",
+          "普通 · 等级解锁",
+          "未拥有",
+          "皮肤 3",
+          "普通 · 等级解锁",
+          "未拥有"
+        ],
+        "shot": "08-cosmetic-open.jpg"
+      },
+      "screenshots": [
+        "08-cosmetic-open.jpg"
+      ],
+      "finishedAt": "2026-09-06T14:14:18.026Z"
+    },
+    {
+      "name": "切「已拥有」筛选 → 「装备」另一件皮肤（snakeCosmetic.equip）",
+      "ok": true,
+      "startedAt": "2026-09-06T14:14:18.026Z",
+      "detail": {
+        "action": "skip",
+        "why": "「已拥有」筛选下只有当前已装备的皮肤，没有可切换目标",
+        "rows": [
+          "skin-1=已装备"
+        ],
+        "shot": "09-cosmetic-nothing-to-equip.jpg"
+      },
+      "screenshots": [
+        "09-cosmetic-nothing-to-equip.jpg"
+      ],
+      "finishedAt": "2026-09-06T14:14:19.440Z"
+    },
+    {
+      "name": "切「可合成」筛选 → 试「合成」（snakeCosmetic.unlock；碎片业务数据缺失时如实记录）",
+      "ok": true,
+      "startedAt": "2026-09-06T14:14:19.440Z",
+      "detail": {
+        "action": "skip",
+        "why": "「可合成」筛选下没有可合成皮肤（业务目录里碎片皮肤的 fragmentItemId 为 unavailable）",
+        "empty": [
+          "该筛选下没有皮肤"
+        ],
+        "shot": "10-cosmetic-no-craft.jpg"
+      },
+      "screenshots": [
+        "10-cosmetic-no-craft.jpg"
+      ],
+      "finishedAt": "2026-09-06T14:14:21.031Z"
+    },
+    {
+      "name": "「关闭」回到结算页（WardrobeView 卸载，结算页还在）",
+      "ok": true,
+      "startedAt": "2026-09-06T14:14:21.031Z",
+      "detail": {
+        "resultStillOpen": true,
+        "shot": "11-cosmetic-back-to-result.jpg"
+      },
+      "screenshots": [
+        "11-cosmetic-back-to-result.jpg"
+      ],
+      "finishedAt": "2026-09-06T14:14:21.442Z"
+    },
+    {
+      "name": "「返回主页」回首屏",
+      "ok": true,
+      "startedAt": "2026-09-06T14:14:21.442Z",
+      "detail": {
+        "shot": "12-cosmetic-back-home.jpg"
+      },
+      "screenshots": [
+        "12-cosmetic-back-home.jpg"
+      ],
+      "finishedAt": "2026-09-06T14:14:22.257Z"
+    }
+  ],
+  "console": [],
+  "tab": {
+    "id": "57C71F0D40BD62E1B43C8FCF01819D84",
+    "created": true
+  },
+  "finishedAt": "2026-09-06T14:14:22.258Z"
+}
