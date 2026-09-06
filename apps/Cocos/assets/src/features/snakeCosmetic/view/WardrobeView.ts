@@ -211,9 +211,19 @@ export class WardrobeView extends CocosView {
             const preview = this.node(`preview-${row.skinId}`, node, previewWidth, previewHeight);
             preview.setPosition(-width * 0.5 + width * 0.035 + previewWidth * 0.5, 0, 0);
             const sprite = preview.addComponent(Sprite);
-            sprite.spriteFrame = frame;
-            // CUSTOM：按 UITransform 尺寸缩放，⛔ 不用贴图原始 420×132。
+            // ⚠ 顺序即契约（S5-05 F7）：sizeMode 必须在赋 spriteFrame **之前**设成 CUSTOM。
+            // 赋值那一刻若仍是默认的 TRIMMED，引擎会在 _applySpriteFrame → _applySpriteSize 里
+            // 用 frame.rect 覆写 UITransform 尺寸（420×132）；而事后再设 CUSTOM ⛔ 不会回滚——
+            // 它只抑制后续的自动改尺寸。原来的写法正是这个顺序，于是预览条半宽从 74.5 涨到 210，
+            // 向左溢出面板 79px、并压住「皮肤 N」与稀有度行约 120px。
             sprite.sizeMode = Sprite.SizeMode.CUSTOM;
+            sprite.spriteFrame = frame;
+            // ⚠ 再钉一次尺寸：不依赖上面那条顺序在未来引擎版本里继续成立。
+            const transform = preview.getComponent(UITransform);
+            if (transform) {
+                transform.width = previewWidth;
+                transform.height = previewHeight;
+            }
         }
         // 给预览让位；预览缺失时文字仍从这里起排，⛔ 不做两套布局。
         const nameX = -width * 0.5 + width * 0.30;

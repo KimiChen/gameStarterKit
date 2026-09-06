@@ -53,6 +53,11 @@ const WHITE = new Color(255, 255, 255);
 const TEXT = new Color(244, 247, 255);
 const DIM = new Color(158, 171, 196);
 const SELF = new Color(255, 255, 255, 220);
+/** 覆盖层的全屏压暗底与面板底色；⚠ 都要不透明到能压住活动的战场，见 newBackdrop。 */
+/** `snakeoff/snake_result_bg` 的原生高度；⚠ 贴图缺失时结算页仍按这个尺寸排布，⛔ 别退回视口比例。 */
+const RESULT_PANEL_HEIGHT = 694;
+const SCRIM = new Color(6, 10, 20, 196);
+const PANEL = new Color(24, 32, 52, 242);
 const DOT = new Color(240, 200, 90);
 const STAR = new Color(120, 210, 255);
 const WRECK = new Color(255, 220, 130);
@@ -206,18 +211,30 @@ export class SnakeWorldView implements SnakePresentation {
         this.reliveLayer = null;
         const layer = this.node("SnakeWorld.RunResult", this.root, true);
         this.resultLayer = layer;
-        const size = view.getVisibleSize();
+        // ⚠ 结算期必须收起战斗 HUD 与操作区（S5-05 F5b）。⛔ 不能指望结算底板遮住它们：
+        // 排行榜在 x=240、摇杆在 y=-592、加速键在 (245,-402)，全都落在 674×694 的底板之外，
+        // 而且它们的 TOUCH_END 监听仍然活着——「结束本次」因此还能在结算页上再弹一次确认框（F8）。
+        if (this.hudLayer) this.hudLayer.active = false;
+        if (this.controlLayer) this.controlLayer.active = false;
+        this.newBackdrop(layer);
         if (this.assets?.resultBg) this.newSprite(layer, this.assets.resultBg, 0, 0);
-        this.newLabel(layer, "本次游玩结束", 0, size.height * 0.24, 42, TEXT);
-        this.newLabel(layer, `原因：${model.endReason}`, 0, size.height * 0.17, 26, DIM);
+        // ⚠ 全部相对**底板半高**排布，⛔ 不要再按视口高度取比例（S5-05 F5a）：
+        // 底板是固定 674×694 的贴图且不缩放（上下界 ±347），而 FIXED_WIDTH 下视口高度随机型变化。
+        // 原来的 0.24 / 0.22 在 1624 高时把标题推到 +389.8、把「返回主页」推到 −357.3，双双出界；
+        // 只有在 ~1400 以下的矮视口才碰巧落在板内，所以 Node 桩与 typecheck 永远看不见。
+        // ⚠ lines 最多 7 行（SnakeHud.ts：2 基础 + 复活 + 金币 + 经验 + 碎片 + 解锁），
+        // 下面的步长按 7 行仍留在板内选取，⛔ 别再调大。
+        const panelHalf = (this.assets?.resultBg?.rect.height ?? RESULT_PANEL_HEIGHT) / 2;
+        this.newLabel(layer, "本次游玩结束", 0, panelHalf * 0.73, 42, TEXT);
+        this.newLabel(layer, `原因：${model.endReason}`, 0, panelHalf * 0.55, 26, DIM);
         // 逐行画 Logic 已翻译好的展示行；⛔ View 不自己算奖励（铁律 9）。
         model.lines.forEach((line, index) => {
-            this.newLabel(layer, line, 0, size.height * (0.10 - index * 0.055), 24,
+            this.newLabel(layer, line, 0, panelHalf * (0.32 - index * 0.155), 24,
                 index === 0 ? TEXT : DIM);
         });
         // ⚠ 按 README §9.6 的 C-a 默认：只放「返回主页」，⛔ 不做「再来一局」——
         // 玩法内没有起新局的能力面，那要动受保护的 app 层。
-        const exit = this.newLabel(layer, "返回主页", 0, -size.height * 0.22, 34, TEXT).node;
+        const exit = this.newLabel(layer, "返回主页", 0, -panelHalf * 0.78, 34, TEXT).node;
         exit.on(Node.EventType.TOUCH_END, () => this.requestExit(), this);
     }
 
@@ -228,9 +245,12 @@ export class SnakeWorldView implements SnakePresentation {
             this.confirmLayer = null;
             return;
         }
-        if (this.confirmLayer || !this.root) return;
+        // ⛔ run 已经结束、结算页在显示时不得再开确认框：两层都挂在 root 下、后加的画在上面，
+        // 会与结算页文字互相压字（S5-05 F8）。这里是兜底闸——HUD 里那颗按钮也已单独加了判据。
+        if (this.confirmLayer || this.resultLayer || !this.root) return;
         const layer = this.node("SnakeWorld.EndRunConfirm", this.root, true);
         this.confirmLayer = layer;
+        this.newBackdrop(layer, { halfWidth: 250, halfHeight: 110, centerY: 25 });
         this.newLabel(layer, "确定结束本次游玩吗？", 0, 80, 32, TEXT);
         const cancel = this.newLabel(layer, "继续战斗", -110, -30, 28, TEXT).node;
         const confirm = this.newLabel(layer, "结束本次", 110, -30, 28, new Color(255, 120, 135)).node;
@@ -684,6 +704,9 @@ export class SnakeWorldView implements SnakePresentation {
         }, this);
         const exit = this.newLabel(this.hudLayer, "结束本次", -size.width / 2 + 78, size.height / 2 - safeTop - 95, 22, TEXT).node;
         exit.on(Node.EventType.TOUCH_END, () => {
+            // ⛔ 结算页已在显示时不再请求结束：否则确认框会叠在结算页上互相压字（S5-05 F8）。
+            // ⚠ showRunResult 已经把整个 hudLayer 关掉了，这条是防将来有人改动可见性时回归。
+            if (this.resultLayer) return;
             this.cancelInput();
             this.dispatchInput({ type: "request-end-run" });
         }, this);
@@ -740,6 +763,7 @@ export class SnakeWorldView implements SnakePresentation {
         if (!this.reliveLayer && this.root) {
             const layer = this.node("SnakeWorld.Relive", this.root, true);
             this.reliveLayer = layer;
+            this.newBackdrop(layer, { halfWidth: 290, halfHeight: 130, centerY: 20 });
             this.reliveLabel = this.newLabel(layer, "", 0, 70, 28, TEXT);
             const decline = this.newLabel(layer, "放弃", -110, -55, 28, DIM).node;
             const accept = this.newLabel(layer, "金币复活", 110, -55, 28, TEXT).node;
@@ -915,6 +939,31 @@ export class SnakeWorldView implements SnakePresentation {
         label.fontSize = size;
         label.color = color;
         return label;
+    }
+
+    /**
+     * 给覆盖层铺一层压暗全屏底，可选再叠一块居中面板。
+     *
+     * ⚠ 复活提示与结束确认此前都是**裸文字直接画在世界之上**（S5-05 F6）：这两层显示期间
+     * `render()` 并不早退（只有 `resultLayer` / `battleBlocked` 才早退），世界仍在逐帧渲染并跟随
+     * 镜头移动，蛇身从字底下穿过时「金币复活」就完全读不出来。
+     * ⛔ 别改成只调文字颜色或加描边——底下是活动的战场、颜色随机，唯一稳的办法是给一层不透明底。
+     * ⚠ 必须在建文字**之前**调用：同层内后加的节点画在上面。
+     */
+    private newBackdrop(
+        layer: Node,
+        panel?: { readonly halfWidth: number; readonly halfHeight: number; readonly centerY: number },
+    ): void {
+        const size = view.getVisibleSize();
+        const graphics = this.node("backdrop", layer, true).addComponent(Graphics);
+        graphics.fillColor = SCRIM;
+        graphics.rect(-size.width / 2, -size.height / 2, size.width, size.height);
+        graphics.fill();
+        if (!panel) return;
+        graphics.fillColor = PANEL;
+        graphics.rect(-panel.halfWidth, panel.centerY - panel.halfHeight,
+            panel.halfWidth * 2, panel.halfHeight * 2);
+        graphics.fill();
     }
 
     private newSprite(parent: Node, frame: SpriteFrame, x: number, y: number, name = "sprite"): Sprite {
