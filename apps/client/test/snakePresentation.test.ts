@@ -80,6 +80,15 @@ class FakeTexture2D {
     constructor(readonly width = 2048, readonly height = 2048) {}
 }
 
+/**
+ * ⚠ 少数几张贴图必须给出**真实尺寸**：它们是按原生大小绘制且不缩放的，界面排布相对其半高计算。
+ * 假件给 2048×2048 的话，结算页的布局断言验的是一块不存在的板子。⛔ 别把这里改回统一默认值。
+ */
+const REAL_TEXTURE_SIZES: ReadonlyMap<string, readonly [number, number]> = new Map([
+    ["snakeoff/snake_result_bg/texture", [674, 694]],
+    ["snakeoff/snake_btn_blue/texture", [368, 110]],
+]);
+
 class FakeJsonAsset {
     json: unknown = {
         recipeVersion: 1,
@@ -338,7 +347,8 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
                 callback(new Error(`not a Texture2D resource: ${path}`));
                 return;
             }
-            callback(null, new FakeTexture2D());
+            const real = REAL_TEXTURE_SIZES.get(path);
+            callback(null, real ? new FakeTexture2D(real[0], real[1]) : new FakeTexture2D());
         },
     };
     const fakeCc = {
@@ -628,7 +638,6 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
         // ⚠ Node.destroy ⛔ 不回收动态网格持有的 GPU 顶点/索引缓冲（本例容量下约 750KB/条）。
         // 一局里反复死亡重开、换皮肤都会走这条路径，漏销毁就是持续增长的显存泄漏。
         assert.equal(bodyMesh?.destroyed, true, "清理 mesh 节点时必须一并销毁动态网格");
-
         const touch = (id: number, x: number, y: number) => ({
             getID: () => id,
             getUILocation: () => ({ x, y }),
@@ -664,6 +673,56 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
         input.emit("touch-end", touch(2, 620, 410));
         assert.deepEqual(dispatched.at(-1), { type: "release-boost" });
         input.emit("touch-end", touch(1, 375, 110));
+
+        // ⚠ 以下三段必须放在触摸/摇杆用例**之后**：showRunResult 会关掉 hudLayer 与
+        // controlLayer 并 cancelInput，放前面会让方向与加速断言取不到输入。
+        // ── 复活提示必须有底（S5-05 F6）─────────────────────────────────────────────────
+        // ⚠ 这两层显示期间 render() 并不早退，世界仍在逐帧渲染并跟随镜头移动；没有不透明底时
+        // 蛇身会从「金币复活」字底下穿过，按钮直接读不出来。⛔ 别把断言弱化成「层存在」。
+        presentation.render(snakeFrame(0) as never, activeHud as never, {
+            runId: "run-self", deathSeq: 1, stateVersion: 3, deathCause: "collision",
+            coinCost: 100, coinBalance: 10000, reliveIndex: 1, relivesRemaining: 4,
+            decisionSeconds: 3, score: 5, length: 85, processing: false,
+        } as never);
+        const reliveLayer = findNode(host, "SnakeWorld.Relive");
+        assert.ok(reliveLayer, "复活提示层必须建出来");
+        const reliveBackdrop = reliveLayer?.children.find((child) => child.name === "backdrop");
+        assert.ok(reliveBackdrop, "复活提示必须铺不透明底，⛔ 不能把裸文字画在活动的战场上");
+        assert.equal(reliveLayer?.children[0]?.name, "backdrop",
+            "底必须是第一个子节点：同层内后加的画在上面，放后面会把文字盖住");
+        presentation.render(snakeFrame(0) as never, activeHud as never, null);
+
+        // ── 结算页：排布相对底板、收起 HUD 与操作区（S5-05 F5）────────────────────────
+        const hudLayer = findNode(host, "SnakeWorld.Hud");
+        const controlLayer = findNode(host, "SnakeWorld.Controls");
+        assert.equal(hudLayer?.active, true, "结算前 HUD 应当是可见的，否则下面的断言恒真");
+        presentation.showRunResult({
+            runId: "run-self", endReason: "collision", confirmedThroughTick: 100,
+            rewardStatus: "granted", qualified: true,
+            stats: {} as never, coin: {} as never, progression: {} as never,
+            lines: ["本局：15 秒 · 27 分 · 0 击杀", "最长 107 · 星星 1 · 磁铁 0", "本局不计奖励"],
+        } as never);
+        assert.equal(hudLayer?.active, false,
+            "结算期必须收起 HUD：排行榜/左右手/结束本次都在结算底板之外，遮不住且监听仍活着");
+        assert.equal(controlLayer?.active, false, "结算期必须收起摇杆与加速键");
+        const resultLayer = findNode(host, "SnakeWorld.RunResult");
+        assert.ok(resultLayer, "结算层必须建出来");
+        // ⚠ 排布必须相对**底板半高**（694/2 = 347），⛔ 不得按视口高度取比例：
+        // 原实现用 0.24/0.22，在 1624 高的视口下把标题推到 +389.8、返回主页推到 −357.3，双双出界。
+        const panelHalf = 694 / 2;
+        const yOf = (prefix: string): number | undefined =>
+            resultLayer?.children.find((child) => child.name.startsWith(prefix))?.position.y;
+        const titleY = yOf("label-本次游玩结束");
+        const exitY = yOf("label-返回主页");
+        assert.ok(titleY !== undefined && Math.abs(titleY) < panelHalf,
+            `标题必须落在结算底板内（|${titleY}| < ${panelHalf}）`);
+        assert.ok(exitY !== undefined && Math.abs(exitY) < panelHalf,
+            `「返回主页」必须落在结算底板内（|${exitY}| < ${panelHalf}）`);
+
+        // ── 结算页之上 ⛔ 不得再开结束确认框（S5-05 F8）─────────────────────────────
+        presentation.showEndRunConfirmation(true);
+        assert.equal(findNode(host, "SnakeWorld.EndRunConfirm"), null,
+            "结算页在显示时必须拒绝再开确认框，否则两层叠在一起互相压字");
 
         presentation.unmount();
         assert.equal(input.count(), 0, "unmount 必须释放全部触摸监听");
