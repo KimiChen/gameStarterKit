@@ -41,6 +41,7 @@ export class BallMoveView implements BallMovePresentation {
 
     private graphics: Graphics | null = null;
     private layerTransform: UITransform | null = null;
+    private waitingLabel: Label | null = null;
     private layer: Node | null = null;
     private mounted = false;
     private touchStartBound = false;
@@ -90,6 +91,38 @@ export class BallMoveView implements BallMovePresentation {
     }
 
     /**
+     * 未开局时的等待提示（`null` = 收起）。⚠ 这个演示 roster 要 2 人才开局，单人进来一直是 Waiting；
+     * 客户端已经不再把 move 发出去（否则服务端每次拖动都回 1001），所以必须有这行字，
+     * ⛔ 不然玩家只会看到「点了没反应」。
+     */
+    showWaiting(text: string | null): void {
+        if (!this.mounted || !this.layer) return;
+        if (text === null) {
+            this.waitingLabel?.node.destroy();
+            this.waitingLabel = null;
+            return;
+        }
+        if (!this.waitingLabel) {
+            const hostTransform = typeof this.host.getComponent === "function" ? this.host.getComponent(UITransform) : null;
+            const width = hostTransform && hostTransform.width > 0 ? hostTransform.width : EXIT_FALLBACK_SIZE.width;
+            const height = hostTransform && hostTransform.height > 0 ? hostTransform.height : EXIT_FALLBACK_SIZE.height;
+            const node = new Node("BallMove.Waiting");
+            node.layer = this.layer.layer;
+            const transform = node.addComponent(UITransform);
+            transform.width = width * 0.9;
+            transform.height = Math.max(40, height * 0.06);
+            node.setPosition(0, height * 0.32, 0);
+            const label = node.addComponent(Label);
+            label.fontSize = Math.round(transform.height * 0.52);
+            label.lineHeight = Math.round(transform.height * 0.7);
+            label.color = EXIT_TEXT;
+            this.layer.addChild(node);
+            this.waitingLabel = label;
+        }
+        this.waitingLabel.string = text;
+    }
+
+    /**
      * 左上角「离开」（真机实证 2026-09-06：该入口此前没有任何退出 UI，只能重载页面）。
      * ⚠ 全屏 `input` 监听同时也会把这一击当成移动目标——离开意图优先，⛔ 不为它改动全屏操控。
      */
@@ -128,6 +161,7 @@ export class BallMoveView implements BallMovePresentation {
         const layer = this.layer ?? this.graphics?.node ?? null;
         this.graphics = null;
         this.layerTransform = null;
+        this.waitingLabel = null;
         this.layer = null;
         this.destroyLayer(layer, cleanupErrors);
         this.reportCleanupErrors(cleanupErrors);
