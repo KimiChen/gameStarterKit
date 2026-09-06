@@ -68,7 +68,13 @@ export interface PathVerdict {
 
 const ID = /^[a-z][A-Za-z0-9]{0,63}$/u;
 /** 保留 id：与注册表/工具/宿主 placement 的落点同名会让 `apps/plugins/<id>/` 与配置文件混淆（PLUGIN-REGISTRY §2.2；codegen 同口径保留 host）。 */
-export const RESERVED_IDS: readonly string[] = ["host", "registry"];
+/**
+ * 保留 id。`host` / `registry` 是登记面自己的保留字；`ui` / `config` 是**宿主在
+ * `apps/Cocos/assets/resources/` 下的既有目录**——把它们一并保留是第二道闸，
+ * 万一将来谁又把某条资源规则写回 `resources/<id>/` 形态，也不至于让一个叫 `ui` 的包
+ * 把整个 FGUI 发布目录算成自己的。
+ */
+export const RESERVED_IDS: readonly string[] = ["host", "registry", "ui", "config"];
 /** prefix 规则（缺省边界）允许的续接字符：`<id>-x.test.ts` / `<id>.x.test.ts`。 */
 const PREFIX_SEPARATORS: readonly string[] = ["-", "."];
 const CONSTANT = /^[A-Z][A-Za-z0-9]{0,63}$/u;
@@ -232,7 +238,8 @@ function gameplayRules(modeId: string, constant: string): OwnershipRule[] {
     { kind: "dir", path: `${CLIENT_SRC}/view/rooms/${modeId}`, reason: "客户端玩法 View" },
     { kind: "file", path: `${CLIENT_SRC}/net/rooms/${constant}Room.ts`, reason: "客户端玩法 joiner/adapter（<Constant>Room.ts）" },
     { kind: "file", path: `apps/server/test/wire-vectors/${modeId}.ts`, reason: "玩法 wire 向量 sidecar（随 codegen:gameplays 汇入 wire-vectors/index.generated.ts）" },
-    { kind: "dir", path: `${RESOURCES}/${modeId}`, reason: "玩法运行时资源（resources/<id>/）" },
+    // ⛔ 运行时资源**不在**这里：它按**包**（而不是按 mode）落在 resources/plugins/<id>/ 或
+    // resources/kits/<id>/，见 deriveOwnership。理由见下面 RESERVED_IDS 附近的说明。
   ];
 }
 
@@ -273,6 +280,13 @@ export function deriveOwnership(identity: PluginIdentity): readonly OwnershipRul
         ? { kind: "dir", path: `${CLIENT_SRC}/kits/${id}`, reason: "kit 客户端源码（index/logic/view + api/<surface>/ 门面）" }
         : { kind: "dir", path: `${CLIENT_SRC}/plugins/${id}`, reason: "插件客户端源码（index/logic/net/view）" },
     );
+  }
+  if (!isKit) {
+    // ⚠ 运行时资源按**包**分命名空间：`resources/plugins/<id>/`，与 kit 的 `resources/kits/<id>/` 对称。
+    // ⛔ 不要退回按 mode 的 `resources/<modeId>/`——那一层与宿主的 `resources/{ui,config}/` 平级，
+    // 实测（2026-09-06 调 deriveOwnership）一个叫 `ui` 的插件会把整个 FGUI 发布目录连同别的插件的
+    // 图集算进自己的推导集；反方向宿主新建目录撞上某个 mode 名同样没有任何东西会红。
+    rules.push({ kind: "dir", path: `${RESOURCES}/plugins/${id}`, reason: "插件运行时资源（resources/plugins/<id>/）" });
   }
   if (isKit) {
     // kit 的服务端 / shared 落点是 kits/ 命名空间（docs/KIT.md §2），⛔ 不给 core/<id>/（那是插件的落点）。

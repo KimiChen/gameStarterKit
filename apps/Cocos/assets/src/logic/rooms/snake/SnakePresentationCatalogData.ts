@@ -8,8 +8,8 @@
 export const CLIENT_SNAKE_PRESENTATION_CATALOG_DATA = [
   {
     "skinId": 1,
-    "previewAsset": "snake/previews/snake_skin_1_preview",
-    "textureAsset": "snake/snake_skin_01",
+    "previewAsset": "plugins/snake/previews/snake_skin_1_preview",
+    "textureAsset": "plugins/snake/snake_skin_01",
     "normal": {
       "head": {
         "level": 0,
@@ -157,8 +157,8 @@ export const CLIENT_SNAKE_PRESENTATION_CATALOG_DATA = [
   },
   {
     "skinId": 2,
-    "previewAsset": "snake/previews/snake_skin_2_preview",
-    "textureAsset": "snake/snake_skin_02",
+    "previewAsset": "plugins/snake/previews/snake_skin_2_preview",
+    "textureAsset": "plugins/snake/snake_skin_02",
     "normal": {
       "head": {
         "level": 0,
@@ -306,8 +306,8 @@ export const CLIENT_SNAKE_PRESENTATION_CATALOG_DATA = [
   },
   {
     "skinId": 3,
-    "previewAsset": "snake/previews/snake_skin_3_preview",
-    "textureAsset": "snake/snake_skin_03",
+    "previewAsset": "plugins/snake/previews/snake_skin_3_preview",
+    "textureAsset": "plugins/snake/snake_skin_03",
     "normal": {
       "head": {
         "level": 0,
@@ -455,8 +455,8 @@ export const CLIENT_SNAKE_PRESENTATION_CATALOG_DATA = [
   },
   {
     "skinId": 4,
-    "previewAsset": "snake/previews/snake_skin_4_preview",
-    "textureAsset": "snake/snake_skin_04",
+    "previewAsset": "plugins/snake/previews/snake_skin_4_preview",
+    "textureAsset": "plugins/snake/snake_skin_04",
     "normal": {
       "head": {
         "level": 0,
@@ -604,8 +604,8 @@ export const CLIENT_SNAKE_PRESENTATION_CATALOG_DATA = [
   },
   {
     "skinId": 10,
-    "previewAsset": "snake/previews/snake_skin_10_preview",
-    "textureAsset": "snake/snake_skin_10",
+    "previewAsset": "plugins/snake/previews/snake_skin_10_preview",
+    "textureAsset": "plugins/snake/snake_skin_10",
     "normal": {
       "head": {
         "level": 0,
@@ -753,8 +753,8 @@ export const CLIENT_SNAKE_PRESENTATION_CATALOG_DATA = [
   },
   {
     "skinId": 11,
-    "previewAsset": "snake/previews/snake_skin_11_preview",
-    "textureAsset": "snake/snake_skin_11",
+    "previewAsset": "plugins/snake/previews/snake_skin_11_preview",
+    "textureAsset": "plugins/snake/snake_skin_11",
     "normal": {
       "head": {
         "level": 0,
@@ -902,8 +902,8 @@ export const CLIENT_SNAKE_PRESENTATION_CATALOG_DATA = [
   },
   {
     "skinId": 101,
-    "previewAsset": "snake/previews/snake_skin_101_preview",
-    "textureAsset": "snake/snake_skin_101",
+    "previewAsset": "plugins/snake/previews/snake_skin_101_preview",
+    "textureAsset": "plugins/snake/snake_skin_101",
     "normal": {
       "head": {
         "level": 0,
@@ -1525,8 +1525,8 @@ export const CLIENT_SNAKE_PRESENTATION_CATALOG_DATA = [
   },
   {
     "skinId": 111,
-    "previewAsset": "snake/previews/snake_skin_111_preview",
-    "textureAsset": "snake/snake_skin_111",
+    "previewAsset": "plugins/snake/previews/snake_skin_111_preview",
+    "textureAsset": "plugins/snake/snake_skin_111",
     "normal": {
       "head": {
         "level": 0,
@@ -1736,8 +1736,8 @@ export const CLIENT_SNAKE_PRESENTATION_CATALOG_DATA = [
   },
   {
     "skinId": 112,
-    "previewAsset": "snake/previews/snake_skin_112_preview",
-    "textureAsset": "snake/snake_skin_112",
+    "previewAsset": "plugins/snake/previews/snake_skin_112_preview",
+    "textureAsset": "plugins/snake/snake_skin_112",
     "normal": {
       "head": {
         "level": 0,
@@ -1947,8 +1947,8 @@ export const CLIENT_SNAKE_PRESENTATION_CATALOG_DATA = [
   },
   {
     "skinId": 132,
-    "previewAsset": "snake/previews/snake_skin_132_preview",
-    "textureAsset": "snake/snake_skin_132",
+    "previewAsset": "plugins/snake/previews/snake_skin_132_preview",
+    "textureAsset": "plugins/snake/snake_skin_132",
     "normal": {
       "head": {
         "level": 0,
@@ -2158,8 +2158,8 @@ export const CLIENT_SNAKE_PRESENTATION_CATALOG_DATA = [
   },
   {
     "skinId": 133,
-    "previewAsset": "snake/previews/snake_skin_133_preview",
-    "textureAsset": "snake/snake_skin_133",
+    "previewAsset": "plugins/snake/previews/snake_skin_133_preview",
+    "textureAsset": "plugins/snake/snake_skin_133",
     "normal": {
       "head": {
         "level": 0,
@@ -2369,8 +2369,8 @@ export const CLIENT_SNAKE_PRESENTATION_CATALOG_DATA = [
   },
   {
     "skinId": 139,
-    "previewAsset": "snake/previews/snake_skin_139_preview",
-    "textureAsset": "snake/snake_skin_139",
+    "previewAsset": "plugins/snake/previews/snake_skin_139_preview",
+    "textureAsset": "plugins/snake/snake_skin_139",
     "normal": {
       "head": {
         "level": 0,
@@ -2580,8 +2580,8 @@ export const CLIENT_SNAKE_PRESENTATION_CATALOG_DATA = [
   },
   {
     "skinId": 401,
-    "previewAsset": "snake/previews/snake_skin_401_preview",
-    "textureAsset": "snake/snake_skin_401",
+    "previewAsset": "plugins/snake/previews/snake_skin_401_preview",
+    "textureAsset": "plugins/snake/snake_skin_401",
     "normal": {
       "head": {
         "level": 0,
@@ -2853,8 +2853,8 @@ export const CLIENT_SNAKE_PRESENTATION_CATALOG_DATA = [
   },
   {
     "skinId": 403,
-    "previewAsset": "snake/previews/snake_skin_403_preview",
-    "textureAsset": "snake/snake_skin_403",
+    "previewAsset": "plugins/snake/previews/snake_skin_403_preview",
+    "textureAsset": "plugins/snake/snake_skin_403",
     "normal": {
       "head": {
         "level": 0,
@@ -3122,8 +3122,8 @@ export const CLIENT_SNAKE_PRESENTATION_CATALOG_DATA = [
   },
   {
     "skinId": 411,
-    "previewAsset": "snake/previews/snake_skin_411_preview",
-    "textureAsset": "snake/snake_skin_411",
+    "previewAsset": "plugins/snake/previews/snake_skin_411_preview",
+    "textureAsset": "plugins/snake/snake_skin_411",
     "normal": {
       "head": {
         "level": 0,
@@ -3597,8 +3597,8 @@ export const CLIENT_SNAKE_PRESENTATION_CATALOG_DATA = [
   },
   {
     "skinId": 701,
-    "previewAsset": "snake/previews/snake_skin_701_preview",
-    "textureAsset": "snake/snake_skin_ai",
+    "previewAsset": "plugins/snake/previews/snake_skin_701_preview",
+    "textureAsset": "plugins/snake/snake_skin_ai",
     "normal": {
       "head": {
         "level": 0,
@@ -4066,7 +4066,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       "sourceToolId": 10001,
       "world": {
         "logicalName": "magnet",
-        "textureAsset": "snake/snake_magnet_tools",
+        "textureAsset": "plugins/snake/snake_magnet_tools",
         "frame": {
           "sourceFrameName": "10001",
           "rect": {
@@ -4099,7 +4099,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       "statusIcon": {
         "logicalName": "magnet-status-icon",
         "logicalAliasOf": "magnet",
-        "textureAsset": "snake/snake_magnet_tools",
+        "textureAsset": "plugins/snake/snake_magnet_tools",
         "frame": {
           "sourceFrameName": "10001",
           "rect": {
@@ -4133,7 +4133,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       "activeEffect": {
         "event": "magnet-active",
         "policy": "resource",
-        "recipeAsset": "snake/snake_magnet_aura",
+        "recipeAsset": "plugins/snake/snake_magnet_aura",
         "rendering": {
           "batchGroup": "snake-head-effects",
           "material": "recipe-defined"
@@ -4146,7 +4146,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
     }
   },
   "food": {
-    "textureAsset": "snake/snake_foods_new",
+    "textureAsset": "plugins/snake/snake_foods_new",
     "dots": [
       {
         "kind": "dot-1",
@@ -4439,7 +4439,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
     "skins": [
       {
         "skinId": 1,
-        "textureAsset": "snake/snake_skin_01",
+        "textureAsset": "plugins/snake/snake_skin_01",
         "frame": {
           "sourceFrameName": "snakewreck",
           "rect": {
@@ -4467,7 +4467,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       },
       {
         "skinId": 2,
-        "textureAsset": "snake/snake_skin_02",
+        "textureAsset": "plugins/snake/snake_skin_02",
         "frame": {
           "sourceFrameName": "snakewreck",
           "rect": {
@@ -4495,7 +4495,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       },
       {
         "skinId": 3,
-        "textureAsset": "snake/snake_skin_03",
+        "textureAsset": "plugins/snake/snake_skin_03",
         "frame": {
           "sourceFrameName": "wreck",
           "rect": {
@@ -4523,7 +4523,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       },
       {
         "skinId": 4,
-        "textureAsset": "snake/snake_skin_04",
+        "textureAsset": "plugins/snake/snake_skin_04",
         "frame": {
           "sourceFrameName": "wreck",
           "rect": {
@@ -4551,7 +4551,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       },
       {
         "skinId": 10,
-        "textureAsset": "snake/snake_skin_10",
+        "textureAsset": "plugins/snake/snake_skin_10",
         "frame": {
           "sourceFrameName": "munaiyi_body",
           "rect": {
@@ -4579,7 +4579,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       },
       {
         "skinId": 11,
-        "textureAsset": "snake/snake_skin_11",
+        "textureAsset": "plugins/snake/snake_skin_11",
         "frame": {
           "sourceFrameName": "snakewreck",
           "rect": {
@@ -4607,7 +4607,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       },
       {
         "skinId": 101,
-        "textureAsset": "snake/snake_skin_101",
+        "textureAsset": "plugins/snake/snake_skin_101",
         "frame": {
           "sourceFrameName": "20170315043643",
           "rect": {
@@ -4635,7 +4635,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       },
       {
         "skinId": 111,
-        "textureAsset": "snake/snake_skin_111",
+        "textureAsset": "plugins/snake/snake_skin_111",
         "frame": {
           "sourceFrameName": "cat_body01",
           "rect": {
@@ -4663,7 +4663,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       },
       {
         "skinId": 112,
-        "textureAsset": "snake/snake_skin_112",
+        "textureAsset": "plugins/snake/snake_skin_112",
         "frame": {
           "sourceFrameName": "kele_body01",
           "rect": {
@@ -4691,7 +4691,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       },
       {
         "skinId": 132,
-        "textureAsset": "snake/snake_skin_132",
+        "textureAsset": "plugins/snake/snake_skin_132",
         "frame": {
           "sourceFrameName": "snakewreck",
           "rect": {
@@ -4719,7 +4719,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       },
       {
         "skinId": 133,
-        "textureAsset": "snake/snake_skin_133",
+        "textureAsset": "plugins/snake/snake_skin_133",
         "frame": {
           "sourceFrameName": "snakewreck",
           "rect": {
@@ -4747,7 +4747,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       },
       {
         "skinId": 139,
-        "textureAsset": "snake/snake_skin_139",
+        "textureAsset": "plugins/snake/snake_skin_139",
         "frame": {
           "sourceFrameName": "snakewreck",
           "rect": {
@@ -4775,7 +4775,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       },
       {
         "skinId": 401,
-        "textureAsset": "snake/snake_skin_401",
+        "textureAsset": "plugins/snake/snake_skin_401",
         "frame": {
           "sourceFrameName": "snakewreck",
           "rect": {
@@ -4803,7 +4803,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       },
       {
         "skinId": 403,
-        "textureAsset": "snake/snake_skin_403",
+        "textureAsset": "plugins/snake/snake_skin_403",
         "frame": {
           "sourceFrameName": "snakewreck",
           "rect": {
@@ -4831,7 +4831,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       },
       {
         "skinId": 411,
-        "textureAsset": "snake/snake_skin_411",
+        "textureAsset": "plugins/snake/snake_skin_411",
         "frame": {
           "sourceFrameName": "snakefood",
           "rect": {
@@ -4859,7 +4859,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
       },
       {
         "skinId": 701,
-        "textureAsset": "snake/snake_skin_ai",
+        "textureAsset": "plugins/snake/snake_skin_ai",
         "frame": {
           "sourceFrameName": "snakefood",
           "rect": {
@@ -4890,7 +4890,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
   "walls": [
     {
       "theme": "light",
-      "textureAsset": "snake/snake_wall_block_1",
+      "textureAsset": "plugins/snake/snake_wall_block_1",
       "frame": {
         "sourceFrameName": "whole-texture",
         "rect": {
@@ -4925,7 +4925,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
     },
     {
       "theme": "dark",
-      "textureAsset": "snake/snake_wall_block_2",
+      "textureAsset": "plugins/snake/snake_wall_block_2",
       "frame": {
         "sourceFrameName": "whole-texture",
         "rect": {
@@ -4963,7 +4963,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
     {
       "event": "eat-food",
       "policy": "resource",
-      "asset": "snake/snake_sfx_eat_food",
+      "asset": "plugins/snake/snake_sfx_eat_food",
       "resourceHash": "33a86d8e738ea9120d1abd09c1b6234c83e972b09e071c4ecbcd05ba0e575822",
       "volume": 1,
       "sfxOnGuarded": true,
@@ -4976,7 +4976,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
     {
       "event": "eat-wreck",
       "policy": "resource",
-      "asset": "snake/snake_sfx_eat_wreck",
+      "asset": "plugins/snake/snake_sfx_eat_wreck",
       "resourceHash": "b556777b04899444bfee3a68a9829fa646fc46f772b34abad8f19612dc867ea6",
       "volume": 1,
       "sfxOnGuarded": true,
@@ -4989,7 +4989,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
     {
       "event": "kill",
       "policy": "resource",
-      "asset": "snake/snake_sfx_kill",
+      "asset": "plugins/snake/snake_sfx_kill",
       "resourceHash": "41e06994f05a12898dd3dddfdbba11b9fdee783efe4d63c499349d2cfe09d3a0",
       "volume": 1,
       "sfxOnGuarded": true,
@@ -5002,7 +5002,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
     {
       "event": "death",
       "policy": "resource",
-      "asset": "snake/snake_sfx_end",
+      "asset": "plugins/snake/snake_sfx_end",
       "resourceHash": "e7efb684164c4bd63db627eb03131fa743b3e55ce75daa6bce30450788c9406c",
       "volume": 1,
       "sfxOnGuarded": true,
@@ -5015,7 +5015,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
     {
       "event": "button",
       "policy": "resource",
-      "asset": "snake/snake_sfx_button",
+      "asset": "plugins/snake/snake_sfx_button",
       "resourceHash": "00428dcf5dc443a71e4ef0df3f70f886bba5da81194f12be97fa738dfa070dcf",
       "volume": 1,
       "sfxOnGuarded": true,
@@ -5028,7 +5028,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
     {
       "event": "collect-magnet",
       "policy": "resource",
-      "asset": "snake/snake_sfx_collect_magnet",
+      "asset": "plugins/snake/snake_sfx_collect_magnet",
       "resourceHash": "7ca26a88922302ec4492ed31117f57410268109d47645b689318e6138bb5c113",
       "volume": 1,
       "sfxOnGuarded": true,
@@ -5067,7 +5067,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
     {
       "event": "time-over",
       "policy": "historical-unused",
-      "asset": "snake/snake_sfx_time_over",
+      "asset": "plugins/snake/snake_sfx_time_over",
       "resourceHash": "e687e745fe6d93925eea349ef67857da780379bd086c37f27186b91a3e301a8f",
       "volume": null,
       "sfxOnGuarded": null,
@@ -5082,7 +5082,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
     {
       "event": "boost",
       "policy": "resource",
-      "textureAsset": "snake/snake_speed_fx",
+      "textureAsset": "plugins/snake/snake_speed_fx",
       "resourceHash": "56677edbe061bd252f506aeded7a5b964e0f152ec9de1566d8707e19b396035e",
       "frame": {
         "sourceFrameName": "speed_up",
@@ -5112,7 +5112,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
     {
       "event": "protection",
       "policy": "resource",
-      "textureAsset": "snake/snake_extras",
+      "textureAsset": "plugins/snake/snake_extras",
       "resourceHash": "01c89919e26b4aeea08c5381b26f098aa18ffc4661896c6f7d9d7abd334b9288",
       "frame": {
         "sourceFrameName": "protect",
@@ -5142,7 +5142,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
     {
       "event": "spawn-protection",
       "policy": "resource",
-      "textureAsset": "snake/snake_extras",
+      "textureAsset": "plugins/snake/snake_extras",
       "resourceHash": "01c89919e26b4aeea08c5381b26f098aa18ffc4661896c6f7d9d7abd334b9288",
       "frame": {
         "sourceFrameName": "protect",
@@ -5172,7 +5172,7 @@ export const SNAKE_ENTITY_PRESENTATION_CATALOG_DATA = {
     {
       "event": "revive-protection",
       "policy": "resource",
-      "textureAsset": "snake/snake_extras",
+      "textureAsset": "plugins/snake/snake_extras",
       "resourceHash": "01c89919e26b4aeea08c5381b26f098aa18ffc4661896c6f7d9d7abd334b9288",
       "frame": {
         "sourceFrameName": "protect",

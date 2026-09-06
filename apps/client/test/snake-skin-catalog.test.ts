@@ -174,7 +174,7 @@ test("food, wreck, walls, audio and FX presentation policy is explicit", () => {
         skinTint: [255, 255, 255, 255],
     });
     const collectMagnet = SNAKE_ENTITY_PRESENTATION_CATALOG.audio.find((entry) => entry.event === "collect-magnet");
-    assert.equal(collectMagnet?.asset, "snake/snake_sfx_collect_magnet");
+    assert.equal(collectMagnet?.asset, "plugins/snake/snake_sfx_collect_magnet");
     assert.equal(collectMagnet?.sfxOnGuarded, true);
     assert.equal(collectMagnet?.playback, "single-instance");
     assert.equal(collectMagnet?.maxConcurrent, 1);
@@ -194,14 +194,14 @@ test("version-2 magnet catalog has one exact world frame, one passive alias and 
     assert.equal(magnet.kind, "magnet");
     assert.equal(magnet.sourceToolId, 10001);
     assert.equal(magnet.world.logicalName, "magnet");
-    assert.equal(magnet.world.textureAsset, "snake/snake_magnet_tools");
+    assert.equal(magnet.world.textureAsset, "plugins/snake/snake_magnet_tools");
     assert.equal(magnet.world.displaySize, 70);
     assert.deepEqual(magnet.world.frame.rect, { x: 346, y: 256, width: 84, height: 92 });
     assert.equal(magnet.statusIcon.logicalAliasOf, "magnet");
     assert.equal(magnet.statusIcon.interactive, false);
     assert.equal(magnet.statusIcon.textureAsset, magnet.world.textureAsset);
     assert.deepEqual(magnet.statusIcon.frame, magnet.world.frame);
-    assert.equal(magnet.activeEffect.recipeAsset, "snake/snake_magnet_aura");
+    assert.equal(magnet.activeEffect.recipeAsset, "plugins/snake/snake_magnet_aura");
     assert.deepEqual(magnet.activeEffect.fallback, { logicalName: "magnet-status-icon", placement: "over-head" });
 });
 
@@ -229,7 +229,7 @@ test("entity validator rejects magnet entry/rect/alias/button/fallback, identity
     }
     {
         const value = clone();
-        value.tools.magnet.statusIcon.textureAsset = "snake/copied_status_icon";
+        value.tools.magnet.statusIcon.textureAsset = "plugins/snake/copied_status_icon";
         assert.throws(() => validateSnakeEntityPresentationCatalog(value), /exact logical alias/);
     }
     {
@@ -244,7 +244,7 @@ test("entity validator rejects magnet entry/rect/alias/button/fallback, identity
     }
     {
         const value = clone();
-        value.tools.magnet.activeEffect.recipeAsset = "snake/speed_fx";
+        value.tools.magnet.activeEffect.recipeAsset = "plugins/snake/speed_fx";
         assert.throws(() => validateSnakeEntityPresentationCatalog(value), /registered magnet aura recipe/);
     }
     {
@@ -269,7 +269,7 @@ test("entity validator rejects magnet entry/rect/alias/button/fallback, identity
     }
     {
         const value = clone();
-        value.audio.find((entry: any) => entry.event === "magnet-active-loop").asset = "snake/guessed_loop";
+        value.audio.find((entry: any) => entry.event === "magnet-active-loop").asset = "plugins/snake/guessed_loop";
         assert.throws(() => validateSnakeEntityPresentationCatalog(value), /resource-free/);
     }
 });
@@ -288,11 +288,11 @@ test("magnet runtime blocks an invisible world item and falls back once from a m
     assert.equal(auraMissing.activeVisual?.logicalName, "magnet-status-icon");
     assert.equal(auraMissing.activeVisual?.placement, "over-head");
     assert.deepEqual(probes, [
-        "world-texture:snake/snake_magnet_tools",
-        "aura-recipe:snake/snake_magnet_aura",
+        "world-texture:plugins/snake/snake_magnet_tools",
+        "aura-recipe:plugins/snake/snake_magnet_aura",
     ], "fallback is a single direct hop and does not probe recursively");
 
     const ready = resolveMagnetRuntimePresentation();
     assert.equal(ready.battleReady, true);
-    assert.deepEqual(ready.activeVisual, { mode: "aura", recipeAsset: "snake/snake_magnet_aura" });
+    assert.deepEqual(ready.activeVisual, { mode: "aura", recipeAsset: "plugins/snake/snake_magnet_aura" });
 });
