@@ -1,12 +1,12 @@
 # 技术总览
 
-> 本文只描述 gameStarterKit 在**开发阶段**提供的代码结构、契约和本地验证方式；完整范围见
+> 本文只描述 gono 在**开发阶段**提供的代码结构、契约和本地验证方式；完整范围见
 > [根 README](../README.md#项目边界)，非核心参考实现见
 > [额外功能与参考实现](EXTRAFEATURES.md)。
 
 ## 1. 定位
 
-gameStarterKit 是客户端、服务端和 shared 共同演进的 TypeScript 游戏开发骨架：
+gono 是客户端、服务端和 shared 共同演进的 TypeScript 游戏开发骨架：
 
 - Cocos Creator 工程负责编辑器、场景和资源。
 - `apps/client` 负责客户端游戏代码。

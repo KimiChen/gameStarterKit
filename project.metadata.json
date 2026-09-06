@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
   "projectId": "gono",
-  "name": "gameStarterKit",
-  "displayName": "gameStarterKit",
+  "name": "gono",
+  "displayName": "gono",
   "scope": "@game",
   "brand": "ballMove",
   "license": "MIT",
   "packages": {
-    "root": "@game/gameStarterKit",
+    "root": "@game/gono",
     "shared": "@game/shared",
     "server": "@game/server",
-    "client": "gameStarterKit-client"
+    "client": "gono-client"
   },
   "generated": {
     "shared": {

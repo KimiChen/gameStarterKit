@@ -1,6 +1,6 @@
 # 外部身份服务：开发契约边界
 
-> `gono-webplatform` 是独立代码库。本文只说明 gameStarterKit 在本地开发中如何消费其锁定 HTTP 契约；
+> `gono-webplatform` 是独立代码库。本文只说明 gono 在本地开发中如何消费其锁定 HTTP 契约；
 > 渠道登录、账号管理等生成契约中的额外 operation 见
 > [EXTRAFEATURES](EXTRAFEATURES.md)，不属于核心框架承诺。
 
@@ -18,7 +18,7 @@ Cocos 本地预览
 Game server 本地进程
   └─ HTTP → WebPlatform Internal 开发接口
 
-gameStarterKit
+gono
   └─ 只消费精确锁定的 @gono/webplatform-contract
 ```
 
@@ -41,7 +41,7 @@ gameStarterKit
 | --- | --- |
 | 开发账号、账号状态与会话 | 外部 WebPlatform |
 | 某账号在某区是否存在角色 | 外部 WebPlatform 的目录索引 |
-| 玩家玩法档、背包、货币 Demo | gameStarterKit 游戏数据层 |
+| 玩家玩法档、背包、货币 Demo | gono 游戏数据层 |
 | 房间状态 | 游戏服务端内存与 shared Schema |
 
 游戏库不能重新创建账号表，游戏源码不能 import 外部服务业务包。跨边界信息只通过契约化 HTTP 传输。
