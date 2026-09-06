@@ -473,12 +473,22 @@ export function readClientGameplayModules(
   return modules;
 }
 
+/**
+ * 服务端 GameMode 模块的两个发现根（tally 试点，docs/PLUGIN.md §5.5.4）：
+ *  ① 框架/宿主玩法：`apps/server/src/rooms/modes/<id>/index.ts`（历史形态）；
+ *  ② 插件自带：`apps/plugins/<id>/server/index.ts`——真源直接住在插件目录里，⛔ 不复制、不物化。
+ * ⚠ 两处都有 = 歧义，两处都没有 = 缺失，都 fail-closed。
+ */
+const PLUGIN_SERVER_ROOT = (id: string): string => `apps/plugins/${id}/server`;
+
 /** 已装配服务端 GameMode 的玩法（= canonical GameplayModeId ∩ catalog；与客户端装配集同口径）。 */
 export type ServerGameplayModule = {
   readonly id: string;
   readonly constantName: string;
   /** 约定导出符号：`register<ConstantName>GameMode`。 */
   readonly registerSymbol: string;
+  /** 生成的 catalog 从 `apps/server/src/rooms/modes/` 出发到本模块的相对说明符（⛔ 不带扩展名）。 */
+  readonly specifier: string;
 };
 
 /**
@@ -499,11 +509,22 @@ export function readServerGameplayModules(
   for (const gameplay of [...canonical].sort((left, right) => (left.id < right.id ? -1 : 1))) {
     const id = gameplay.id;
     const registerSymbol = `register${gameplay.manifest.constantName}GameMode`;
-    const label = `${SERVER_MODES_DIR_RELATIVE}/${id}/index.ts`;
-    const file = path.join(root, SERVER_MODES_DIR_RELATIVE, id, "index.ts");
-    assertRegularFile(file, label);
-    assertServerGameModeModuleSource(fs.readFileSync(file, "utf8"), label, registerSymbol);
-    modules.push({ id, constantName: gameplay.manifest.constantName, registerSymbol });
+    const framework = { label: `${SERVER_MODES_DIR_RELATIVE}/${id}/index.ts`, specifier: `./${id}/index` };
+    const plugin = { label: `${PLUGIN_SERVER_ROOT(id)}/index.ts`, specifier: `../../../../plugins/${id}/server/index` };
+    const found = [framework, plugin].filter((candidate) => fs.existsSync(path.join(root, candidate.label)));
+    if (found.length === 0) {
+      fail(framework.label, `missing required file——玩法 "${id}" 的服务端 GameMode 模块必须在 `
+        + `${framework.label} 或 ${plugin.label} 二选一`);
+    }
+    if (found.length > 1) {
+      fail(framework.label, `玩法 "${id}" 的服务端 GameMode 模块同时存在于 ${framework.label} 与 `
+        + `${plugin.label}——⛔ 两处都有即歧义，删掉其中一处`);
+    }
+    const chosen = found[0];
+    const file = path.join(root, chosen.label);
+    assertRegularFile(file, chosen.label);
+    assertServerGameModeModuleSource(fs.readFileSync(file, "utf8"), chosen.label, registerSymbol);
+    modules.push({ id, constantName: gameplay.manifest.constantName, registerSymbol, specifier: chosen.specifier });
   }
   return modules;
 }
@@ -1024,7 +1045,7 @@ function renderServerCatalog(serverModules: readonly ServerGameplayModule[]): st
     "import type { GameModeRegistry } from \"../GameMode\";",
   ];
   for (const module of serverModules) {
-    lines.push(`import { ${module.registerSymbol} } from "./${module.id}/index";`);
+    lines.push(`import { ${module.registerSymbol} } from "${module.specifier}";`);
   }
   lines.push(
     "",
@@ -1137,16 +1158,27 @@ export function readWireVectorOwners(
   }
   const required = ["core", ...gameplays.filter((gameplay) => gameplay.wire.c2s.length > 0).map((gameplay) => gameplay.id)]
     .sort((left, right) => (left < right ? -1 : left > right ? 1 : 0));
+  // 第二个发现根（tally 试点）：插件把 sidecar 放在自己目录里 `apps/plugins/<id>/test/wire-vectors.ts`。
+  // ⚠ 两处都有即歧义，fail-closed。
+  const inPlugin = new Set(required.filter((owner) =>
+    owner !== "core" && fs.existsSync(path.join(root, `apps/plugins/${owner}/test/wire-vectors.ts`))));
   const present = fs.readdirSync(dir)
     .filter((name) => name.endsWith(".ts") && !WIRE_VECTORS_NON_SIDECAR.has(name))
     .map((name) => name.slice(0, -".ts".length))
     .sort();
-  const missing = required.filter((owner) => !present.includes(owner));
+  for (const owner of inPlugin) {
+    if (present.includes(owner)) {
+      fail(WIRE_VECTORS_DIR_RELATIVE, `玩法 "${owner}" 的 wire 向量 sidecar 同时存在于 `
+        + `${WIRE_VECTORS_DIR_RELATIVE}/${owner}.ts 与 apps/plugins/${owner}/test/wire-vectors.ts——⛔ 两处都有即歧义`);
+    }
+  }
+  const missing = required.filter((owner) => !present.includes(owner) && !inPlugin.has(owner));
   if (missing.length > 0) {
     fail(
       WIRE_VECTORS_DIR_RELATIVE,
       `missing wire vector sidecar(s): ${missing.map((owner) => `${owner}.ts`).join(", ")}. `
-      + "每个声明了 C2S wire 的玩法（与 core）必须自带 apps/server/test/wire-vectors/<owner>.ts",
+      + "每个声明了 C2S wire 的玩法（与 core）必须自带 apps/server/test/wire-vectors/<owner>.ts "
+      + "或 apps/plugins/<owner>/test/wire-vectors.ts",
     );
   }
   const orphans = present.filter((owner) => !required.includes(owner));
@@ -1161,9 +1193,15 @@ export function readWireVectorOwners(
 }
 
 /** 向量登记表 `wire-vectors/index.generated.ts`：owner → sidecar default（两份 wire 测试经 index.ts façade 唯一消费）。 */
-function renderWireVectorsIndex(owners: readonly string[]): string {
+function renderWireVectorsIndex(owners: readonly string[], options: GameplayCodegenOptions = {}): string {
+  const root = resolvedRoot(options);
   const lines = [generatedHeader(WIRE_VECTORS_SOURCE_LABEL)];
-  for (const owner of owners) lines.push(`import ${owner}Vectors from "./${owner}";`);
+  for (const owner of owners) {
+    // 说明符跟着 sidecar 的真实落点走：插件目录（试点）优先，其余仍是同目录。
+    const inPlugin = owner !== "core" && fs.existsSync(path.join(root, `apps/plugins/${owner}/test/wire-vectors.ts`));
+    const specifier = inPlugin ? `../../../plugins/${owner}/test/wire-vectors` : `./${owner}`;
+    lines.push(`import ${owner}Vectors from "${specifier}";`);
+  }
   lines.push(
     'import type { WireVectorFile } from "./vectorTypes";',
     "",
@@ -1183,10 +1221,11 @@ export function renderGameplayArtifacts(
   clientModules: readonly ClientGameplayModule[],
   serverModules: readonly ServerGameplayModule[],
   wireVectorOwners: readonly string[],
+  options: GameplayCodegenOptions = {},
 ): ReadonlyMap<string, string> {
   const artifacts = new Map<string, string>();
   artifacts.set(SHARED_WIRE_CATALOG_RELATIVE, renderWireCatalog(gameplays, core));
-  artifacts.set(WIRE_VECTORS_INDEX_RELATIVE, renderWireVectorsIndex(wireVectorOwners));
+  artifacts.set(WIRE_VECTORS_INDEX_RELATIVE, renderWireVectorsIndex(wireVectorOwners, options));
   for (const gameplay of gameplays) {
     artifacts.set(
       `${SHARED_STATE_DIR_RELATIVE}/${gameplay.id}.ts`,
@@ -1319,6 +1358,7 @@ export function assertGameplayArtifactsFresh(options: GameplayCodegenOptions = {
       readClientGameplayModules(gameplays, options),
       readServerGameplayModules(gameplays, options),
       readWireVectorOwners(gameplays, options),
+      options,
     ),
   );
   const problems: string[] = [];
@@ -1367,6 +1407,7 @@ export function writeGameplayArtifacts(options: GameplayCodegenOptions = {}): Ga
     readClientGameplayModules(gameplays, options),
     readServerGameplayModules(gameplays, options),
     readWireVectorOwners(gameplays, options),
+    options,
   );
   // extra 清理：生成目录里不再被任何 mode 拥有的文件。允许删除名单里的 mode 产物删除；
   // 其余一律拒绝——普通 --write 不得静默吞掉未知文件。

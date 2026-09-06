@@ -5,9 +5,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { GamePhase, GameplayModeId, TallyTap } from "@game/shared";
-import { createRoomStateForMode, TallyRoomState } from "../src/rooms/schema/GameRoomState";
-import { TALLY_DEFAULT_TAP_GOAL, TALLY_MAX_TAP_GOAL, createTallyGameMode, registerTallyGameMode } from "../src/rooms/modes/tally/index";
-import { GameModeRegistry } from "../src/rooms/GameMode";
+import { createRoomStateForMode, TallyRoomState } from "../../../server/src/rooms/schema/GameRoomState";
+import { TALLY_DEFAULT_TAP_GOAL, TALLY_MAX_TAP_GOAL, createTallyGameMode, registerTallyGameMode } from "../server/index";
+import { GameModeRegistry } from "../../../server/src/rooms/GameMode";
 
 function tallyState(): TallyRoomState {
   const state = createRoomStateForMode(GameplayModeId.Tally);
