@@ -11,9 +11,10 @@
  * 布局取 750×1624 设计基线的**相对定位**：坐标由 `layerWidth/layerHeight` 按比例算出，
  * ⛔ 不写死像素；四周留 6% 安全区，右上角按钮不贴边。
  */
-import { Color, Graphics, Label, Node, UITransform } from "cc";
+import { Color, Label, Node, UITransform } from "cc";
 import { CocosView } from "./CocosView";
 import type { PromoHomeLogic } from "../logic/page/PromoHomeLogic";
+import { createSolidPlate } from "./uiPlate";
 
 /** 安全区留白比例（⛔ 不贴边）。 */
 const SAFE = 0.06;
@@ -113,13 +114,9 @@ export class PromoHomeView extends CocosView {
     }
 
     private plate(parent: Node, width: number, height: number, color: Color, x: number, y: number): Node {
-        const node = this.node("plate", parent, width, height);
-        node.setPosition(x, y, 0);
-        const graphics = node.addComponent(Graphics);
-        graphics.fillColor = color;
-        graphics.rect(-width / 2, -height / 2, width, height);
-        graphics.fill();
-        return node;
+        // ⛔ 这里曾经是「每块底板一个 Graphics」，实测每个固定占约 2.25MB 显存缓冲
+        // 且各自一个 draw call；改走共用的白图 Sprite（可合批）。判据见 view/uiPlate.ts。
+        return createSolidPlate(parent, width, height, color, x, y, "plate");
     }
 
     private label(parent: Node, text: string, size: number, color: Color, x: number, y: number): Label {

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "redeem",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "kinds": ["feature"],
   "domains": ["redeem"],
   "requires": { "featureSchemaVersion": 1 },
