@@ -12,7 +12,7 @@ import {
     type BallMoveRoom,
 } from "../src/logic/rooms/ballMove/BallMoveGameplay";
 import { GameECS } from "../src/logic/rooms/ballMove/GameECS";
-import { GamePhase } from "../src/shared/index";
+import { BALL_MOVE_MIN_PLAYERS, GamePhase } from "../src/shared/index";
 import type {
     GamePhaseType,
     IChatRes,
@@ -28,6 +28,10 @@ class FakePresentation implements BallMovePresentation {
     unmounts = 0;
     renders = 0;
     lastPlayerCount = 0;
+    /** 等待提示的推送流水（null = 收起）。 */
+    readonly waitings: (string | null)[] = [];
+
+    showWaiting(text: string | null): void { this.waitings.push(text); }
 
     mount(): void { this.mounts++; }
     render(world: BallMoveRenderWorld): void {
@@ -197,6 +201,12 @@ test("ballMove plugin：房间还没开局（Waiting）时 ⛔ 不发 move；开
     await controller.tick(1 / 60);
     assert.equal(room.moves.length, 1, "开局后同一个方向必须发得出去");
     assert.ok((room.moves.at(-1)?.x ?? 0) > 0.99);
+
+    // 等待提示：未开局时报「n/2」，开局后收起；⚠ 只在变化时推，⛔ 不每帧刷。
+    assert.deepEqual(presentation.waitings, [`等待另一名玩家（1/${BALL_MOVE_MIN_PLAYERS}）`, null],
+        "先给等待提示、开局后收起，且各只推一次");
+    await controller.tick(1 / 60);
+    assert.equal(presentation.waitings.length, 2, "文案没变就 ⛔ 不重复推");
     await controller.dispose();
 });
 

@@ -8,6 +8,7 @@ export * from "./generated/state/arenaCapture";
 export * from "./arenaDuel/wire";
 export * from "./generated/state/arenaDuel";
 export * from "./ballMove/wire";
+export * from "./ballMove/roster";
 export * from "./generated/state/ballMove";
 export * from "./generated/state/dropInFixture";
 export * from "./idle/wire";
