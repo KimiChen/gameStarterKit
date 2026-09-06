@@ -2,7 +2,7 @@
 
 > 文件名和以下编号为兼容源码注释中的历史锚点而保留。本文只记录当前代码仍依赖的区上下文正确性规则；
 > 多区拓扑、Redis 路由与冷档属于额外参考，不代表项目提供线上伸缩或运行体系，见
-> [EXTRAFEATURES §3.6](EXTRAFEATURES.md#36-多区分片扩展与冷档参考)。
+> [EXTRAS §3.6](EXTRAS.md#36-多区分片扩展与冷档参考)。
 > 注：源码注释中仍出现的 §3.2（每区独立经济总述）、§3.7（充值落区）、§5.3（区前缀命名）三个历史编号
 > 未在本文保留，其内容分别并入 §3.3、§3.3 与 §3.5；按这三个编号跳转找不到对应小节属预期，不是文档缺页。
 
@@ -18,7 +18,7 @@ sess，丢弃陈旧或指向自己的事件。封号/撤销事件缺省 `sId`，
 
 `stream:kick` 只是组内 best-effort 的本地开发接缝：每节点从启动后的新条目开始读，没有 outbox 或送达
 确认；在线表也只登记 Lobby 连接，不包含 GameRoom。不能把它描述为全节点、全房间立即下线能力。相关
-额外功能边界见 [EXTRAFEATURES §3.2](EXTRAFEATURES.md#32-gm账号管理与强制下线参考)。
+额外功能边界见 [EXTRAS §3.2](EXTRAS.md#32-gm账号管理与强制下线参考)。
 
 ## 2.6 角色存在性
 
@@ -136,4 +136,4 @@ freeze 迁移后才取快照，thaw 与热档共用连续 migration registry 和
 `characterRegistrationCheckedAt="0"`、保留合法旧值并 bump `ver`，畸形/future/WRONGTYPE 均 fail-closed。
 
 准确状态见 [SERVER §9](SERVER.md#9-实验性冷档模块) 和
-[EXTRAFEATURES §3.6](EXTRAFEATURES.md#36-多区分片扩展与冷档参考)。
+[EXTRAS §3.6](EXTRAS.md#36-多区分片扩展与冷档参考)。

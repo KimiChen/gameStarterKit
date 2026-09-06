@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { INSTALLED_LOCK_DIR, installedLockPath, readInstalledLock, verifyLockAgainstTree } from "./lock";
-import { assertInstalledLockOwned, featureDeclarations, featureManifestPath } from "./package";
+import { assertInstalledLockOwned, pluginDeclarations, readTreePluginManifest } from "./package";
 import { pluginDir } from "./ownership";
 import { gitAddExisting, gitStatusDirty, runCommand } from "./install";
 
@@ -60,14 +60,12 @@ export function uninstallPlugin(options: UninstallOptions): UninstallReport {
   if (verification.modified.length > 0 && !options.force) {
     fail(`拒绝卸载：以下文件与已安装锁不符（本地改动会随卸载丢失；--force 放行）：\n  ${verification.modified.join("\n  ")}`);
   }
-  // --allow-delete 集合：feature id、各 domain、feature.json 登记的 View 名、gameplay id。
-  const allowFeatures: string[] = [];
-  if (lock.manifest.kinds.includes("feature")) {
-    allowFeatures.push(id, ...lock.manifest.domains);
-    const featureFile = path.join(root, featureManifestPath(id));
-    if (fs.existsSync(featureFile)) {
-      allowFeatures.push(...featureDeclarations(new Map([[featureManifestPath(id), fs.readFileSync(featureFile)]]), id).viewNames);
-    }
+  // --allow-delete 集合：plugin id、各 domain、plugin.json 登记的 View 名、gameplay id。
+  const allowPlugins: string[] = [];
+  if (lock.manifest.kinds.includes("client") || lock.manifest.domains.length > 0) {
+    allowPlugins.push(id, ...lock.manifest.domains);
+    const tree = readTreePluginManifest(root, id);
+    if (tree) allowPlugins.push(...pluginDeclarations(tree).viewNames);
   }
   const report: UninstallReport = {
     id,
@@ -75,7 +73,7 @@ export function uninstallPlugin(options: UninstallOptions): UninstallReport {
     source: lock.source?.kind ?? "unknown",
     deleted: lock.entries.map((entry) => entry.path).filter((relative) => fs.existsSync(path.join(root, relative))),
     missing: verification.missing,
-    allowDelete: [...new Set(allowFeatures)].sort(),
+    allowDelete: [...new Set(allowPlugins)].sort(),
   };
   if (options.dryRun) return report;
 
@@ -88,12 +86,10 @@ export function uninstallPlugin(options: UninstallOptions): UninstallReport {
     if (lock.manifest.kinds.includes("gameplay")) {
       runCommand(root, "npm", ["--workspace", "@game/server", "run", "codegen:gameplays", "--", "--allow-delete", id]);
     }
-    if (lock.manifest.kinds.includes("feature")) {
-      runCommand(root, "npm", ["--workspace", "@game/server", "run", "codegen:features", "--", ...report.allowDelete.flatMap((value) => ["--allow-delete", value])]);
-    }
+    runCommand(root, "npm", ["--workspace", "@game/server", "run", "codegen:plugins", "--", ...report.allowDelete.flatMap((value) => ["--allow-delete", value])]);
     runCommand(root, "npm", ["run", "sync:shared"], { SYNC_FORCE: "1" });
     if (useGit) {
-      runCommand(root, "git", ["add", "-A", "--", "apps/shared/src", "apps/server/src", "apps/client/src", "docs/features.generated.md", "apps/server/test/lobbyRpcVectors", "apps/server/test/wire-vectors"]);
+      runCommand(root, "git", ["add", "-A", "--", "apps/shared/src", "apps/server/src", "apps/client/src", "docs/plugins.generated.md", "apps/server/test/lobbyRpcVectors", "apps/server/test/wire-vectors"]);
       runCommand(root, "git", ["add", "-u", "--", "apps/Cocos/assets/src"]);
     }
   }

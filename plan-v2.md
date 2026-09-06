@@ -333,11 +333,11 @@
   对外部项目的对照吸收计划，不是本仓承诺、不与核心优先级竞争，也不构成核心完成门槛
   （`todo-godogen.md` 自述为「不进入 `verify:core` 的既有门禁口径」）。
 - `[不阻塞·有意保留]` 原列首位的「产物往返自检」已按 `docs/undergroundIdle/` 的既有先例迁入
-  [`docs/EXTRAFEATURES.md` §3.10](docs/EXTRAFEATURES.md#310-产物往返自检导出物反序列化校验)，
+  [`docs/EXTRAS.md` §3.10](docs/EXTRAS.md#310-产物往返自检导出物反序列化校验)，
   当前状态仍为未实现；它用于发现导出过程静默丢内容，现有 manifest/hash 检查不能覆盖这一失败形态。
   该迁移可作为其余条目的处置样板。
 - `[已完成]` 根 `todo-godogen.md` 作为未实现的外部项目对照计划长期保留，并已在 README、
-  AGENTS/CLAUDE 与 `docs/EXTRAFEATURES.md` 登记；`docs/inventory.json.referenceDocs` 将其全部 Markdown
+  AGENTS/CLAUDE 与 `docs/EXTRAS.md` 登记；`docs/inventory.json.referenceDocs` 将其全部 Markdown
   链接和锚点纳入检查，本地 `#L` 行号均已替换为稳定标题锚点。验收证据：`npm run test:inventory`
   25/25 覆盖入口、登记、EXTRAFEATURES、内部锚点及助手文档同步遗漏；`npm run verify:inventory`、
   两脚本 `node --check`、AGENTS/CLAUDE byte-identical 与 `git diff --check` 通过。

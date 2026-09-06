@@ -1,5 +1,5 @@
 /**
- * PendingOperationJournal（Non-intrusive §7.2 阶段 5b）：feature-session scoped 的
+ * PendingOperationJournal（Non-intrusive §7.2 阶段 5b）：plugin-session scoped 的
  * 未决幂等写日志。ResultUnknown ⛔ 不只保存在 route Logic——route 关闭只断开渲染
  * 订阅，不删除未决操作；重开后仍复用原 clientReqId。
  *
@@ -16,13 +16,13 @@
  *  3. **重发必须字节等同**：只能原样发送 journal 已存的那份规范化串（shared 的
  *     canonicalJsonString 是仓库唯一 canonicalizer；canonical 形态是重解析的不动点，
  *     resendPayloadOf 返回原串）。⛔ 不得在重发时重新规范化。
- *  4. **账号边界**：feature-session scoped。主动登出与任何 uid 变化都同步清空整个
+ *  4. **账号边界**：plugin-session scoped。主动登出与任何 uid 变化都同步清空整个
  *     journal（ensureUid 在每次写入点校验），clientReqId ⛔ 不跨 uid 复用。
  *
  * 生命周期分叉（§7.3）：auth-invalid = session ended → 清空（clearForSessionEnd，
  * AppRuntime 在 onAuthInvalid 同步栈接线）；final-loss → **保留**，重进成功后对账
  * （reconcileAfterRejoin——本阶段无服务端 operation 查询路由，对账 = 把 unknown 条目
- * 交给调用方重发或维持 unknown；服务端 inspect 消费者留待有产品 feature 时接入）。
+ * 交给调用方重发或维持 unknown；服务端 inspect 消费者留待有产品 plugin 时接入）。
  */
 import { canonicalJsonString } from "../shared/index";
 

@@ -1,9 +1,44 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "redeem",
-  "version": "1.0.6",
-  "kinds": ["feature"],
-  "domains": ["redeem"],
-  "requires": { "featureSchemaVersion": 1 },
-  "description": "兑换码：输入兑换码换取奖励——docs/PLUGIN.md §3/§6.1 所称「插件标准形态」的端到端实证（plan-v5 E5）"
+  "version": "1.0.8",
+  "description": "兑换码：输入兑换码换取奖励——docs/PLUGIN.md §3/§6.1 所称「插件标准形态」的端到端实证（plan-v5 E5）",
+  "domains": [
+    "redeem"
+  ],
+  "category": "extra",
+  "docs": [
+    "apps/plugins/redeem/README.md"
+  ],
+  "resident": false,
+  "entry": "apps/client/src/plugins/redeem/index.ts",
+  "viewDirs": [
+    "apps/client/src/plugins/redeem/view"
+  ],
+  "views": [
+    "apps/client/src/plugins/redeem/view/RedeemView.view.json"
+  ],
+  "owners": [
+    {
+      "id": "redeem",
+      "logicDir": "apps/client/src/plugins/redeem/logic"
+    }
+  ],
+  "routes": [
+    {
+      "id": "redeem",
+      "view": "Redeem"
+    }
+  ],
+  "menu": [
+    {
+      "entryId": "redeem",
+      "label": "兑换码",
+      "labelKey": "menu.redeem",
+      "launch": {
+        "kind": "route",
+        "routeId": "redeem"
+      }
+    }
+  ]
 }

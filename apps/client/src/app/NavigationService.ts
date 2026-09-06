@@ -12,7 +12,7 @@
  * 只作用于已加载缓存（未加载过 = 没有任何页面被打开过 = 无事可做）。
  *
  * closeGroup("authenticated") 取代原 view/pages.ts `closeLobby()` 的硬编码页面名
- * 数组：数组内容已迁为 builtinFeature 描述符的 group 声明（成员与顺序逐字继承）。
+ * 数组：数组内容已迁为 builtinPlugin 描述符的 group 声明（成员与顺序逐字继承）。
  *
  * 登录恢复不再固定打开 Home：最终断线对账成功后走 `restoreAuthenticatedBase()`，
  * 当前实现恢复 authenticated base 栈顶（今天即 Home），行为与旧实现等价但机制通用。
@@ -20,7 +20,7 @@
 // 页面基类而非 FguiView：kind:"cocos" 的路由页面（纯 Cocos 节点）与 FGUI 页面共用
 // 同一套生命周期，navigation 只搬 handle，不认渲染栈；调用方按已知页面类型断言。
 import type { ViewBase, ViewLifecycleContext } from "../view/ViewBase";
-import type { FeatureRegistry, ResolvedFeatureRoute } from "./FeatureRegistry";
+import type { PluginRegistry, ResolvedPluginRoute } from "./PluginRegistry";
 
 /** ViewMgr 模块的最小结构面（懒加载后缓存；⛔ 不静态 import 真模块）。 */
 interface ViewHandleLike {
@@ -45,7 +45,7 @@ interface ViewMgrModule {
 /** 一次 route open 的 ownership handle（§7.2）。 */
 export interface NavRouteHandle {
     readonly routeId: string;
-    readonly featureId: string;
+    readonly pluginId: string;
     readonly group: string;
     readonly view: ViewBase;
     readonly signal: AbortSignal;
@@ -58,7 +58,7 @@ export interface NavRouteHandle {
 interface RouteStackEntry {
     readonly routeId: string;
     readonly group: string;
-    readonly featureId: string;
+    readonly pluginId: string;
     readonly handle: NavRouteHandle;
 }
 
@@ -79,23 +79,23 @@ export class NavigationService {
     private readonly stack: RouteStackEntry[] = [];
     private handleGeneration = 0;
     private authenticatedBase: AuthenticatedBaseRecord | null = null;
-    private routeObserver: ((featureId: string, openCount: number) => void) | null = null;
+    private routeObserver: ((pluginId: string, openCount: number) => void) | null = null;
 
-    constructor(private readonly registry: FeatureRegistry, options: NavigationServiceOptions = {}) {
+    constructor(private readonly registry: PluginRegistry, options: NavigationServiceOptions = {}) {
         this.loadViews = options.loadViews
             ?? (() => import("../view/ViewMgr") as Promise<ViewMgrModule>);
     }
 
-    /** FeatureHost 的 route refcount 通知口（最后一个 route 关闭 → 停用判定）。 */
-    setRouteObserver(observer: ((featureId: string, openCount: number) => void) | null): void {
+    /** PluginHost 的 route refcount 通知口（最后一个 route 关闭 → 停用判定）。 */
+    setRouteObserver(observer: ((pluginId: string, openCount: number) => void) | null): void {
         this.routeObserver = observer;
     }
 
-    /** 当前某 feature 打开中的 route 数（refcount 的地面真相）。 */
-    openRouteCountOf(featureId: string): number {
+    /** 当前某 plugin 打开中的 route 数（refcount 的地面真相）。 */
+    openRouteCountOf(pluginId: string): number {
         let count = 0;
         for (const entry of this.stack) {
-            if (entry.featureId === featureId) count++;
+            if (entry.pluginId === pluginId) count++;
         }
         return count;
     }
@@ -190,11 +190,11 @@ export class NavigationService {
         return base.reopen(context);
     }
 
-    private adoptHandle(route: ResolvedFeatureRoute, underlying: ViewHandleLike): NavRouteHandle {
+    private adoptHandle(route: ResolvedPluginRoute, underlying: ViewHandleLike): NavRouteHandle {
         const generation = ++this.handleGeneration;
         const handle: NavRouteHandle = {
             routeId: route.id,
-            featureId: route.featureId,
+            pluginId: route.pluginId,
             group: route.group,
             view: underlying.view,
             signal: underlying.signal,
@@ -205,14 +205,14 @@ export class NavigationService {
         const entry: RouteStackEntry = {
             routeId: route.id,
             group: route.group,
-            featureId: route.featureId,
+            pluginId: route.pluginId,
             handle,
         };
         this.stack.push(entry);
         const remove = (): void => {
             const at = this.stack.indexOf(entry);
             if (at >= 0) this.stack.splice(at, 1);
-            this.notifyRouteObserver(route.featureId);
+            this.notifyRouteObserver(route.pluginId);
         };
         if (underlying.signal.aborted) {
             remove();
@@ -222,11 +222,11 @@ export class NavigationService {
         return handle;
     }
 
-    private notifyRouteObserver(featureId: string): void {
+    private notifyRouteObserver(pluginId: string): void {
         const observer = this.routeObserver;
         if (!observer) return;
         try {
-            observer(featureId, this.openRouteCountOf(featureId));
+            observer(pluginId, this.openRouteCountOf(pluginId));
         } catch (error) {
             console.error("[NavigationService] route observer 异常", error);
         }

@@ -2,7 +2,7 @@
  * Lobby RPC 向量 sidecar 通用测试（Non-intrusive §5.6 阶段 3）。
  *
  * 中央向量表（原 wire-contract 的 requestFixtures/responseFixtures 与 lobby-rpc-contract
- * 的 validPayloads）已迁入 test/lobbyRpcVectors/<域>.ts，登记表由 codegen:features 生成
+ * 的 validPayloads）已迁入 test/lobbyRpcVectors/<域>.ts，登记表由 codegen:plugins 生成
  * （lobbyRpcVectors/index.generated.ts）；本文件按清单自动验证：
  *  ① sidecar 文件集合 ⇔ registry 域集合双向相等；
  *  ② 路由 ⇔ 向量双向相等（漏 / 多 / 未知路由都红）；
@@ -32,7 +32,7 @@ import { LOBBY_RPC_VECTOR_FILES } from "./lobbyRpcVectors/index.generated";
 const VECTORS_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "lobbyRpcVectors");
 
 /**
- * 域 → sidecar default：来自 `codegen:features` 生成的登记表（新增域只新建 lobbyRpcVectors/<域>.ts
+ * 域 → sidecar default：来自 `codegen:plugins` 生成的登记表（新增域只新建 lobbyRpcVectors/<域>.ts
  * 并重跑 codegen，⛔ 本文件不再手写登记行；生成器已做 domain ⇔ sidecar 双向对齐，① 再核一遍）。
  */
 const VECTOR_FILES = LOBBY_RPC_VECTOR_FILES;

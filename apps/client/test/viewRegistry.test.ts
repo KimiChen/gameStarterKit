@@ -26,7 +26,7 @@ import {
   VIEW_SOURCE_DIRS,
   VIEW_SOURCE_RECORDS,
 } from "../src/generated/views.generated";
-import { GENERATED_FEATURES } from "../src/generated/features.generated";
+import { GENERATED_PLUGINS } from "../src/generated/plugins.generated";
 import { parseFguiComponent } from "../../../tools/fgui-codegen/parseFgui";
 import { regenerateViewSource } from "../../../tools/fgui-codegen/binding";
 
@@ -57,7 +57,7 @@ function viewFilesUnder(dir: string): string[] {
 
 test("manifest 目录递归发现的 *View.ts ⇔ generated 登记条目 双向相等", () => {
   assert.ok(VIEW_SOURCE_DIRS.length >= 1, "manifest 必须声明至少一个 view 目录");
-  // ⚠ VIEW_SOURCE_DIRS 允许嵌套（built-in 声明 view/ 全树，玩法 feature 只声明自己的
+  // ⚠ VIEW_SOURCE_DIRS 允许嵌套（built-in 声明 view/ 全树，玩法 plugin 只声明自己的
   // view/rooms/<id>/ 子树）：同一文件会被两条目录各发现一次。比对的不变式是**集合相等**，
   // 去重是如实建模而非弱化——registered 侧本就是一 View 一条（一 View 一 manifest 由
   // 生成器 fail-fast 保证），任一侧多出/少一个文件仍必红。
@@ -67,7 +67,7 @@ test("manifest 目录递归发现的 *View.ts ⇔ generated 登记条目 双向�
     .sort();
   const registered = VIEW_SOURCE_RECORDS.map((record) => record.path).slice().sort();
   assert.deepEqual(discovered, registered,
-    "view 目录里的 *View.ts 与 generated manifest 必须一一对应（新 View 写 sidecar 并重跑 codegen:features；删 View 用 --allow-delete）");
+    "view 目录里的 *View.ts 与 generated manifest 必须一一对应（新 View 写 sidecar 并重跑 codegen:plugins；删 View 用 --allow-delete）");
 });
 
 test("manifest 逐条 logic 路径存在 + sidecar 文件存在（View↔Logic 配对，不再硬编码 logic/page）", () => {
@@ -83,10 +83,10 @@ test("manifest 逐条 logic 路径存在 + sidecar 文件存在（View↔Logic �
 test("稳定 façade 与 generated 单源：VIEW_REGISTRY ⇔ catalog ⇔ manifest 页面条目 ⇔ FGUI_CONTRACTS", () => {
   assert.equal(VIEW_REGISTRY, GENERATED_VIEW_CATALOG,
     "viewRegistry 必须是 generated catalog 的稳定 façade（不许出现第二份手写全集）");
-  // catalog 收录面 = fgui 条目 ∪ 被 feature routes 引用的 cocos 条目。「被 routes 引用」
+  // catalog 收录面 = fgui 条目 ∪ 被 plugin routes 引用的 cocos 条目。「被 routes 引用」
   // 就是「是页面而非玩法表现件」的判别信号——BallMove/SnakeWorld 不在任何 routes 里，
   // 天然排除，⛔ 不靠额外标记字段。
-  const routedViews = new Set(GENERATED_FEATURES.flatMap((feature) => feature.routes.map((route) => route.view)));
+  const routedViews = new Set(GENERATED_PLUGINS.flatMap((plugin) => plugin.routes.map((route) => route.view)));
   const pageNames = VIEW_SOURCE_RECORDS
     .filter((record) => record.kind === "fgui" || routedViews.has(record.name))
     .map((record) => record.name).sort();
@@ -195,7 +195,7 @@ test("generated 条目 sharedPkgs ⊇ art 依赖传递闭包（独立重算，�
     const missing = [...need].filter((n) => !declared.has(n)).sort();
     assert.deepEqual(missing, [],
       `${key}: sharedPkgs 缺依赖包 ${JSON.stringify(missing)}（fairygui 不自动加载，运行时这些包的元素会空白）——` +
-      `补进 ${key}View.view.json 的 sharedPkgs（形如 "ui/<包名>"）并重跑 codegen:features`);
+      `补进 ${key}View.view.json 的 sharedPkgs（形如 "ui/<包名>"）并重跑 codegen:plugins`);
   }
 });
 
@@ -231,7 +231,7 @@ test("已登记页面的 AUTO 区块与 .fui 同步且未被手改（双向漂�
     assert.equal(regen, source,
       `${record.path} 的 AUTO 区块与 .fui 不同步（忘跑 codegen？）或生成区被手改（重跑 codegen 恢复）`);
     // View 内嵌 AUTO REQUIRED ⇔ generated contract.required（生成器按同一 binding 规则
-    // 从 XML 计算——此处双向兜住「忘跑 codegen:features」与「忘跑 codegen:fgui」）
+    // 从 XML 计算——此处双向兜住「忘跑 codegen:plugins」与「忘跑 codegen:fgui」）
     const m = /static readonly REQUIRED = (\[[\s\S]*?\]) as const;/.exec(source);
     assert.ok(m, `${record.path} 缺 static REQUIRED（codegen 产物）`);
     assert.deepEqual(JSON.parse(m[1]), [...meta.contract.required],

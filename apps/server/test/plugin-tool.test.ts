@@ -18,7 +18,7 @@ import { parseCli } from "../tools/plugin/cli";
 import { allowDeleteFor, gitStatusEntries, installPlugin, isSharedNamespace, nextStepsFor, reinstallFromTree, runCommand, viewNamesFromEntries, type CommandRunner } from "../tools/plugin/install";
 import { hostMetaUuids } from "../tools/plugin/meta";
 import { filesLockSha256Of, parseInstalledLock, readInstalledLock, renderFilesLock, renderInstalledLock, sha256 } from "../tools/plugin/lock";
-import { CURRENT_FEATURE_SCHEMA_VERSION, CURRENT_GAMEPLAY_SCHEMA_VERSION, FEATURE_SCHEMA_FILE, GAMEPLAY_SCHEMA_FILE, assertManifestCompatible, compareVersions, parsePluginManifest } from "../tools/plugin/manifest";
+import { CURRENT_PLUGIN_SCHEMA_VERSION, CURRENT_GAMEPLAY_SCHEMA_VERSION, PLUGIN_SCHEMA_FILE, GAMEPLAY_SCHEMA_FILE, compareVersions, parsePluginManifest } from "../tools/plugin/manifest";
 import { META_UUID_RE, expectedImporter, parseMeta } from "../tools/plugin/meta";
 import {
   classifyPath,
@@ -36,18 +36,18 @@ import { readZip, writeZip } from "../tools/plugin/zip";
 const REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const PROTECTED = readProtectedPaths(REPOSITORY_ROOT);
 
-const FEATURE_IDENTITY: PluginIdentity = {
+const PLUGIN_IDENTITY: PluginIdentity = {
   id: "chamber",
-  kinds: ["feature"],
+  kinds: ["client"],
   constantName: null,
   domains: ["chamber"],
   fguiPackages: ["Chamber"],
-  clientDirs: ["apps/client/src/features/chamber/view", "apps/client/src/features/chamber/logic"],
+  clientDirs: ["apps/client/src/plugins/chamber/view", "apps/client/src/plugins/chamber/logic"],
 };
 
 const GAMEPLAY_IDENTITY: PluginIdentity = {
   id: "puzzle",
-  kinds: ["gameplay", "feature"],
+  kinds: ["gameplay", "client"],
   constantName: "Puzzle",
   domains: [],
   fguiPackages: [],
@@ -60,10 +60,10 @@ function allowed(relative: string, identity: PluginIdentity): boolean {
 
 // ── 所有权推导 ─────────────────────────────────────────────────────────────
 
-test("allowlist：feature 插件的推导集覆盖 feature/domain/客户端/FGUI/测试/文档落点，镜像与 .meta 随真源", () => {
+test("allowlist：plugin 插件的推导集覆盖 plugin/domain/客户端/FGUI/测试/文档落点，镜像与 .meta 随真源", () => {
   for (const relative of [
     "apps/plugins/chamber/plugin.json",
-    "apps/plugins/chamber/feature.json",
+    "apps/plugins/chamber/plugin.json",
     "apps/shared/src/protocol/lobbyRpc/domains/chamber.ts",
     "apps/server/src/websocket/chamber/peek.ts",
     "apps/server/src/core/chamber/keys.ts",
@@ -71,13 +71,13 @@ test("allowlist：feature 插件的推导集覆盖 feature/domain/客户端/FGUI
     "apps/server/test/chamber-peek.test.ts",
     "apps/server/test/int/chamber-flow.test.ts",
     "apps/client/test/chamber-logic.test.ts",
-    "apps/client/src/features/chamber/index.ts",
-    "apps/client/src/features/chamber/view/ChamberView.ts",
-    "apps/client/src/features/chamber/view/ChamberView.view.json",
-    "apps/Cocos/assets/src/features/chamber/view/ChamberView.ts",
-    "apps/Cocos/assets/src/features/chamber/view/ChamberView.ts.meta",
-    "apps/Cocos/assets/src/features/chamber.meta",
-    "apps/Cocos/assets/src/features/chamber/view.meta",
+    "apps/client/src/plugins/chamber/index.ts",
+    "apps/client/src/plugins/chamber/view/ChamberView.ts",
+    "apps/client/src/plugins/chamber/view/ChamberView.view.json",
+    "apps/Cocos/assets/src/plugins/chamber/view/ChamberView.ts",
+    "apps/Cocos/assets/src/plugins/chamber/view/ChamberView.ts.meta",
+    "apps/Cocos/assets/src/plugins/chamber.meta",
+    "apps/Cocos/assets/src/plugins/chamber/view.meta",
     "apps/art/fairygui/assets/Chamber/package.xml",
     "apps/Cocos/assets/resources/ui/Chamber.bin",
     "apps/Cocos/assets/resources/ui/Chamber.bin.meta",
@@ -85,12 +85,12 @@ test("allowlist：feature 插件的推导集覆盖 feature/domain/客户端/FGUI
     "apps/Cocos/assets/resources/ui/Chamber_atlas0.png.meta",
     "apps/plugins/chamber/README.md",
   ]) {
-    assert.ok(allowed(relative, FEATURE_IDENTITY), `应放行：${relative}`);
+    assert.ok(allowed(relative, PLUGIN_IDENTITY), `应放行：${relative}`);
   }
   for (const relative of [
-    "apps/Cocos/assets/src/features.meta", // 共享祖先目录 .meta 由仓库持有
+    "apps/Cocos/assets/src/plugins.meta", // 共享祖先目录 .meta 由仓库持有
     "apps/Cocos/assets/src/view/rooms.meta",
-    "apps/client/src/features/other/index.ts",
+    "apps/client/src/plugins/other/index.ts",
     "apps/server/src/websocket/user/getInfo.ts",
     "apps/server/src/websocket/chamberx/peek.ts",
     "apps/server/test/lobbyRpcVectors/user.ts",
@@ -101,10 +101,10 @@ test("allowlist：feature 插件的推导集覆盖 feature/domain/客户端/FGUI
     "apps/client/test/chamberLogic.test.ts",
     "apps/Cocos/assets/resources/ui/Common_Btn.bin",
     "apps/Cocos/assets/resources/ui/Chamber2.bin",
-    "apps/plugins/chamber2/feature.json",
+    "apps/plugins/chamber2/plugin.json",
     "docs/PLUGIN.md",
   ]) {
-    assert.ok(!allowed(relative, FEATURE_IDENTITY), `应拒绝：${relative}`);
+    assert.ok(!allowed(relative, PLUGIN_IDENTITY), `应拒绝：${relative}`);
   }
 });
 
@@ -124,7 +124,7 @@ test("allowlist：gameplay 插件的推导集覆盖 manifest/shared/server mode/
     "apps/Cocos/assets/resources/puzzle/tiles.png",
     "apps/Cocos/assets/resources/puzzle/tiles.png.meta",
     "apps/Cocos/assets/resources/puzzle.meta",
-    "apps/plugins/puzzle/feature.json",
+    "apps/plugins/puzzle/plugin.json",
   ]) {
     assert.ok(allowed(relative, GAMEPLAY_IDENTITY), `应放行：${relative}`);
   }
@@ -147,7 +147,7 @@ test("allowlist：gameplay 插件的推导集覆盖 manifest/shared/server mode/
 });
 
 test("硬排除与受保护路径永远拒绝：真仓 protected-paths.json 的每条路径对任何插件都不可写", () => {
-  const rules = deriveOwnership(FEATURE_IDENTITY);
+  const rules = deriveOwnership(PLUGIN_IDENTITY);
   for (const protectedPath of PROTECTED) {
     const probe = protectedPath.endsWith("/**") ? `${protectedPath.slice(0, -3)}/probe.ts` : protectedPath;
     assert.ok(!classifyPath(probe, rules, PROTECTED).allowed, `受保护路径必须拒绝：${probe}`);
@@ -159,34 +159,35 @@ test("硬排除与受保护路径永远拒绝：真仓 protected-paths.json 的�
     "apps/client/src/lib/bitecs/index.ts", "apps/client/src/shared/protocol/rooms.ts", "apps/client/src/app/AppRuntime.ts",
     "apps/shared/src/protocol/rooms.ts", "apps/shared/src/protocol/lobbyRpc/index.ts", "apps/server/src/core/infra/keys.ts",
     "node_modules/x/index.js", "apps/plugins/chamber/node_modules/x.js", "scripts/protocol.fingerprint", "vendor/x.tgz",
-    "docs/features.generated.md", "apps/client/src/generated/features.generated.ts",
+    "docs/plugins.generated.md", "apps/client/src/generated/plugins.generated.ts",
   ]) {
     assert.ok(!classifyPath(relative, rules, PROTECTED).allowed, `必须拒绝：${relative}`);
   }
 });
 
-test("身份形态闸：坏 id / 缺 constantName / feature 客户端目录越出命名空间 / 非 feature 声明 domains 一律拒绝", () => {
-  assert.throws(() => deriveOwnership({ ...FEATURE_IDENTITY, id: "Chamber" }), /id "Chamber" 非法/u);
-  assert.throws(() => deriveOwnership({ ...FEATURE_IDENTITY, id: "a/b" }), /id "a\/b" 非法/u);
-  assert.throws(() => deriveOwnership({ ...FEATURE_IDENTITY, id: "registry", domains: [] }), /保留字/u);
+test("身份形态闸：坏 id / 缺 constantName / 客户端目录越出命名空间 / 无客户端登记却声明客户端目录 一律拒绝", () => {
+  assert.throws(() => deriveOwnership({ ...PLUGIN_IDENTITY, id: "Chamber" }), /id "Chamber" 非法/u);
+  assert.throws(() => deriveOwnership({ ...PLUGIN_IDENTITY, id: "a/b" }), /id "a\/b" 非法/u);
+  assert.throws(() => deriveOwnership({ ...PLUGIN_IDENTITY, id: "registry", domains: [] }), /保留字/u);
   assert.throws(() => deriveOwnership({ ...GAMEPLAY_IDENTITY, constantName: null }), /必须声明 constantName/u);
-  assert.throws(() => deriveOwnership({ ...FEATURE_IDENTITY, constantName: "Chamber" }), /才声明 constantName/u);
-  assert.throws(() => deriveOwnership({ ...FEATURE_IDENTITY, kinds: [] }), /kinds 不能为空/u);
-  assert.throws(() => deriveOwnership({ ...GAMEPLAY_IDENTITY, kinds: ["gameplay"], domains: ["x"], clientDirs: [] }), /只有 kinds 含 feature/u);
-  assert.throws(() => deriveOwnership({ ...FEATURE_IDENTITY, clientDirs: ["apps/client/src/view"] }), /不在插件 "chamber" 的命名空间内/u);
-  assert.throws(() => deriveOwnership({ ...FEATURE_IDENTITY, clientDirs: ["apps/client/src/view/rooms/snake"] }), /不在插件 "chamber" 的命名空间内/u);
-  assert.ok(isPluginClientDir("chamber", "apps/client/src/features/chamber/view"));
+  assert.throws(() => deriveOwnership({ ...PLUGIN_IDENTITY, constantName: "Chamber" }), /才声明 constantName/u);
+  assert.throws(() => deriveOwnership({ ...PLUGIN_IDENTITY, kinds: [] }), /kinds 不能为空/u);
+  assert.doesNotThrow(() => deriveOwnership({ ...GAMEPLAY_IDENTITY, kinds: ["gameplay"], domains: ["x"], clientDirs: [] }), "域不依赖客户端登记（纯服务端插件成立）");
+  assert.throws(() => deriveOwnership({ ...GAMEPLAY_IDENTITY, kinds: ["gameplay"], clientDirs: ["apps/client/src/view/rooms/puzzle"] }), /没有客户端登记/u);
+  assert.throws(() => deriveOwnership({ ...PLUGIN_IDENTITY, clientDirs: ["apps/client/src/view"] }), /不在插件 "chamber" 的命名空间内/u);
+  assert.throws(() => deriveOwnership({ ...PLUGIN_IDENTITY, clientDirs: ["apps/client/src/view/rooms/snake"] }), /不在插件 "chamber" 的命名空间内/u);
+  assert.ok(isPluginClientDir("chamber", "apps/client/src/plugins/chamber/view"));
   assert.ok(isPluginClientDir("chamber", "apps/client/src/view/rooms/chamber"));
   assert.ok(isPluginClientDir("chamber", "apps/client/src/logic/page/chamber/"));
   assert.ok(!isPluginClientDir("chamber", "apps/client/src/logic/page"));
-  assert.ok(!isPluginClientDir("chamber", "apps/client/src/features/chamberx"));
+  assert.ok(!isPluginClientDir("chamber", "apps/client/src/plugins/chamberx"));
 });
 
 test("包内路径形态闸：zip-slip / 绝对路径 / 反斜杠 / 控制字符 / 空段一律拒绝", () => {
   for (const raw of ["../x", "a/../b", "/etc/passwd", "C:/x", "a\\b", "a//b", "./a", "", "a/\u0000"]) {
     assert.throws(() => normalizePackagePath(raw), `应拒绝：${JSON.stringify(raw)}`);
   }
-  assert.equal(normalizePackagePath("apps/plugins/chamber/feature.json"), "apps/plugins/chamber/feature.json");
+  assert.equal(normalizePackagePath("apps/plugins/chamber/plugin.json"), "apps/plugins/chamber/plugin.json");
 });
 
 // ── zip ───────────────────────────────────────────────────────────────────
@@ -264,18 +265,16 @@ function meta(importer: string, key: string): string {
   return `${JSON.stringify({ ver: "4.0.24", importer, imported: true, uuid: uuidFor(key), files: [], subMetas: {}, userData: {} }, null, 2)}\n`;
 }
 
-/** 作者侧工作树：一个带 RPC 域 + 客户端 View/Logic + 镜像 .meta + 测试 + 文档的 feature 插件（id 可换，默认 chamber）。 */
+/** 作者侧工作树：一个带 RPC 域 + 客户端 View/Logic + 镜像 .meta + 测试 + 文档的 plugin 插件（id 可换，默认 chamber）。 */
 function authorTree(root: string, version: string, id = "chamber"): void {
   const Constant = id.charAt(0).toUpperCase() + id.slice(1);
+  // plugin.json v2 = 身份 + 客户端登记（PLUGIN.md §5.3）。
   write(root, `apps/plugins/${id}/plugin.json`, `${JSON.stringify({
-    schemaVersion: 1, id, version, kinds: ["feature"], domains: [id],
-    requires: { featureSchemaVersion: 1 }, description: "fixture feature plugin",
-  }, null, 2)}\n`);
-  write(root, `apps/plugins/${id}/feature.json`, `${JSON.stringify({
-    schemaVersion: 1, id, category: "extra", resident: false,
-    viewDirs: [`apps/client/src/features/${id}/view`],
-    views: [`apps/client/src/features/${id}/view/${Constant}View.view.json`],
-    owners: [{ id, logicDir: `apps/client/src/features/${id}/logic` }],
+    schemaVersion: 2, id, version, description: "fixture plugin", domains: [id],
+    category: "extra", resident: false,
+    viewDirs: [`apps/client/src/plugins/${id}/view`],
+    views: [`apps/client/src/plugins/${id}/view/${Constant}View.view.json`],
+    owners: [{ id, logicDir: `apps/client/src/plugins/${id}/logic` }],
     routes: [{ id, view: Constant }], menu: [],
   }, null, 2)}\n`);
   write(root, `apps/shared/src/protocol/lobbyRpc/domains/${id}.ts`, "export default {} as never;\n");
@@ -285,10 +284,10 @@ function authorTree(root: string, version: string, id = "chamber"): void {
   write(root, `apps/server/test/${id}-peek.test.ts`, "// fixture test\n");
   write(root, `apps/plugins/${id}/README.md`, `# ${id} ${version}\n`);
   const clientFiles: Record<string, string> = {
-    [`apps/client/src/features/${id}/index.ts`]: `export const ${id} = 1;\n`,
-    [`apps/client/src/features/${id}/view/${Constant}View.ts`]: `export class ${Constant}View {}\n`,
-    [`apps/client/src/features/${id}/view/${Constant}View.view.json`]: "{ \"kind\": \"cocos\" }\n",
-    [`apps/client/src/features/${id}/logic/${Constant}Logic.ts`]: `export class ${Constant}Logic {}\n`,
+    [`apps/client/src/plugins/${id}/index.ts`]: `export const ${id} = 1;\n`,
+    [`apps/client/src/plugins/${id}/view/${Constant}View.ts`]: `export class ${Constant}View {}\n`,
+    [`apps/client/src/plugins/${id}/view/${Constant}View.view.json`]: "{ \"kind\": \"cocos\" }\n",
+    [`apps/client/src/plugins/${id}/logic/${Constant}Logic.ts`]: `export class ${Constant}Logic {}\n`,
   };
   for (const [relative, content] of Object.entries(clientFiles)) {
     write(root, relative, content);
@@ -296,7 +295,7 @@ function authorTree(root: string, version: string, id = "chamber"): void {
     write(root, mirror, content);
     write(root, `${mirror}.meta`, meta(relative.endsWith(".json") ? "json" : "typescript", mirror));
   }
-  for (const dir of [`apps/Cocos/assets/src/features/${id}`, `apps/Cocos/assets/src/features/${id}/view`, `apps/Cocos/assets/src/features/${id}/logic`]) {
+  for (const dir of [`apps/Cocos/assets/src/plugins/${id}`, `apps/Cocos/assets/src/plugins/${id}/view`, `apps/Cocos/assets/src/plugins/${id}/logic`]) {
     write(root, `${dir}.meta`, meta("directory", dir));
   }
 }
@@ -336,19 +335,19 @@ test("pack：采集所有权推导集 + 镜像 + .meta，写出确定性 zip 与
     const paths = result.entries.map((entry) => entry.path);
     for (const expected of [
       "apps/plugins/chamber/plugin.json",
-      "apps/plugins/chamber/feature.json",
+      "apps/plugins/chamber/plugin.json",
       "apps/shared/src/protocol/lobbyRpc/domains/chamber.ts",
       "apps/server/test/lobbyRpcVectors/chamber.ts",
-      "apps/client/src/features/chamber/view/ChamberView.ts",
-      "apps/Cocos/assets/src/features/chamber/view/ChamberView.ts",
-      "apps/Cocos/assets/src/features/chamber/view/ChamberView.ts.meta",
-      "apps/Cocos/assets/src/features/chamber.meta",
-      "apps/Cocos/assets/src/features/chamber/view.meta",
+      "apps/client/src/plugins/chamber/view/ChamberView.ts",
+      "apps/Cocos/assets/src/plugins/chamber/view/ChamberView.ts",
+      "apps/Cocos/assets/src/plugins/chamber/view/ChamberView.ts.meta",
+      "apps/Cocos/assets/src/plugins/chamber.meta",
+      "apps/Cocos/assets/src/plugins/chamber/view.meta",
       "apps/plugins/chamber/README.md",
     ]) {
       assert.ok(paths.includes(expected), `包应含 ${expected}`);
     }
-    assert.ok(!paths.includes("apps/Cocos/assets/src/features.meta"), "共享祖先目录 .meta ⛔ 不随包");
+    assert.ok(!paths.includes("apps/Cocos/assets/src/plugins.meta"), "共享祖先目录 .meta ⛔ 不随包");
     const again = packPlugin({ root: author, id: "chamber", outFile: path.join(target, "again.zip") });
     assert.ok(fs.readFileSync(zipFile).equals(fs.readFileSync(again.output)), "同一工作树两次 pack 字节级相同");
 
@@ -360,7 +359,7 @@ test("pack：采集所有权推导集 + 镜像 + .meta，写出确定性 zip 与
     assert.deepEqual(fromDir.entries, fromZip.entries, "目录形态与 zip 形态清单一致");
 
     // 作者忘了让 Creator 落盘 .meta → pack 拒绝并点名。
-    fs.rmSync(path.join(author, "apps/Cocos/assets/src/features/chamber/logic/ChamberLogic.ts.meta"));
+    fs.rmSync(path.join(author, "apps/Cocos/assets/src/plugins/chamber/logic/ChamberLogic.ts.meta"));
     assert.throws(() => packPlugin({ root: author, id: "chamber", outFile: path.join(target, "x.zip") }), /缺少 .*ChamberLogic\.ts\.meta/u);
   } finally {
     cleanup(author, target);
@@ -374,12 +373,12 @@ test("install：首装落盘 + 锁 + plugins/<id>/plugin.json；check 通过；�
     packPlugin({ root: author, id: "chamber", outFile: zipFile });
     const dry = installPlugin({ root: target, source: zipFile, git: false, postinstall: false, dryRun: true });
     assert.equal(dry.previousVersion, null);
-    assert.ok(!fs.existsSync(path.join(target, "apps/plugins/chamber/feature.json")), "dry-run 不落盘");
+    assert.ok(!fs.existsSync(path.join(target, "apps/plugins/chamber/plugin.json")), "dry-run 不落盘");
 
     const report = installPlugin({ root: target, source: zipFile, git: false, postinstall: false });
     assert.equal(report.version, "1.0.0");
-    assert.ok(report.written.includes("apps/plugins/chamber/feature.json"));
-    assert.ok(fs.existsSync(path.join(target, "apps/Cocos/assets/src/features/chamber/view/ChamberView.ts.meta")));
+    assert.ok(report.written.includes("apps/plugins/chamber/plugin.json"));
+    assert.ok(fs.existsSync(path.join(target, "apps/Cocos/assets/src/plugins/chamber/view/ChamberView.ts.meta")));
     assert.ok(fs.existsSync(path.join(target, "apps/plugins/chamber/plugin.json")));
     const lock = readInstalledLock(target, "chamber");
     assert.ok(lock && lock.manifest.version === "1.0.0" && lock.entries.length === report.written.length);
@@ -438,12 +437,12 @@ test("upgrade：旧有新无按清单删除、同版本不同内容拒绝、降�
     assert.ok(fs.existsSync(path.join(target, "apps/plugins/chamber/README.md")));
     assert.ok(!fs.existsSync(path.join(target, "apps/plugins/chamber/CHANGELOG.md")));
 
-    // uninstall：按锁删除、目录清空、锁与 plugin.json 消失；--allow-delete 集合含 feature/domain/View。
+    // uninstall：按锁删除、目录清空、锁与 plugin.json 消失；--allow-delete 集合含 plugin/domain/View。
     const removal = uninstallPlugin({ root: target, id: "chamber", git: false, postinstall: false });
     assert.deepEqual(removal.allowDelete, ["Chamber", "chamber"]);
     assert.ok(!fs.existsSync(path.join(target, "apps/plugins/chamber")));
-    assert.ok(!fs.existsSync(path.join(target, "apps/Cocos/assets/src/features/chamber")));
-    assert.ok(!fs.existsSync(path.join(target, "apps/Cocos/assets/src/features/chamber.meta")));
+    assert.ok(!fs.existsSync(path.join(target, "apps/Cocos/assets/src/plugins/chamber")));
+    assert.ok(!fs.existsSync(path.join(target, "apps/Cocos/assets/src/plugins/chamber.meta")));
     assert.ok(!fs.existsSync(path.join(target, "scripts/plugins/chamber.lock")));
     assert.ok(!fs.existsSync(path.join(target, "apps/plugins/chamber")));
     assert.equal(checkInstalledPlugins(target).plugins.length, 0);
@@ -564,9 +563,9 @@ test("install：越权路径整包拒绝并点名（脚本 / 受保护文件 / �
     assert.throws(() => validatePackage(readPackage(dirOut), target), /apps\/client\/src\/Main\.ts（受保护路径 apps\/client\/src\/Main\.ts）/u);
     remove("apps/client/src/Main.ts");
     // 他人目录。
-    inject("apps/client/src/features/other/index.ts", "export {};\n");
-    assert.throws(() => validatePackage(readPackage(dirOut), target), /features\/other\/index\.ts（不在插件所有权推导集内）/u);
-    remove("apps/client/src/features/other/index.ts");
+    inject("apps/client/src/plugins/other/index.ts", "export {};\n");
+    assert.throws(() => validatePackage(readPackage(dirOut), target), /plugins\/other\/index\.ts（不在插件所有权推导集内）/u);
+    remove("apps/client/src/plugins/other/index.ts");
     // 包依赖注入：package.json 永远拒绝。
     inject("apps/plugins/chamber/package.json", "{}\n");
     assert.throws(() => validatePackage(readPackage(dirOut), target), /package\.json（硬排除文件名形态/u);
@@ -631,13 +630,13 @@ test("审阅后加固：只带镜像无真源、受保护目录的镜像、根 p
     };
     // 只带镜像、无真源。
     relock(() => {
-      write(dirOut, "apps/Cocos/assets/src/features/chamber/evil.ts", "export const evil = 1;\n");
-      write(dirOut, "apps/Cocos/assets/src/features/chamber/evil.ts.meta", meta("typescript", "evil"));
+      write(dirOut, "apps/Cocos/assets/src/plugins/chamber/evil.ts", "export const evil = 1;\n");
+      write(dirOut, "apps/Cocos/assets/src/plugins/chamber/evil.ts.meta", meta("typescript", "evil"));
     });
     assert.throws(() => validatePackage(readPackage(dirOut), target), /镜像 .*evil\.ts 没有同批的客户端真源/u);
     relock(() => {
-      fs.rmSync(path.join(dirOut, "apps/Cocos/assets/src/features/chamber/evil.ts"));
-      fs.rmSync(path.join(dirOut, "apps/Cocos/assets/src/features/chamber/evil.ts.meta"));
+      fs.rmSync(path.join(dirOut, "apps/Cocos/assets/src/plugins/chamber/evil.ts"));
+      fs.rmSync(path.join(dirOut, "apps/Cocos/assets/src/plugins/chamber/evil.ts.meta"));
     });
     assert.doesNotThrow(() => validatePackage(readPackage(dirOut), target));
     // 根 plugin.json 改 version 而仓内自述不变 → 拒绝。
@@ -647,7 +646,7 @@ test("审阅后加固：只带镜像无真源、受保护目录的镜像、根 p
     assert.throws(() => validatePackage(readPackage(dirOut), target), /plugins\/chamber\/plugin\.json 与包根 plugin\.json 字节不同/u);
     fs.writeFileSync(rootManifest, original, "utf8");
     // 受保护目录的镜像：logic/gameplay/<id> 的真源被 gameplayFlow 保护，镜像必须继承。
-    const rules = deriveOwnership({ ...FEATURE_IDENTITY, clientDirs: ["apps/client/src/logic/gameplay/chamber"] });
+    const rules = deriveOwnership({ ...PLUGIN_IDENTITY, clientDirs: ["apps/client/src/logic/gameplay/chamber"] });
     assert.ok(!classifyPath("apps/client/src/logic/gameplay/chamber/x.ts", rules, PROTECTED).allowed);
     assert.ok(!classifyPath("apps/Cocos/assets/src/logic/gameplay/chamber/x.ts", rules, PROTECTED).allowed, "镜像必须继承真源的受保护路径");
     assert.ok(!classifyPath("apps/Cocos/assets/src/logic/gameplay/chamber/x.ts.meta", rules, PROTECTED).allowed);
@@ -670,12 +669,12 @@ test("审阅后加固：插件 id/domain 与框架既有目录同名 → 目录�
     );
     fs.rmSync(path.join(target, "apps/server/src/core/chamber"), { recursive: true });
     // 镜像侧同样检查：目标树已有插件专属镜像目录的陌生文件。
-    write(target, "apps/Cocos/assets/src/features/chamber/stale.ts", "// someone else\n");
+    write(target, "apps/Cocos/assets/src/plugins/chamber/stale.ts", "// someone else\n");
     assert.throws(
       () => installPlugin({ root: target, source: zipFile, git: false, postinstall: false }),
-      /所有权冲突.*apps\/Cocos\/assets\/src\/features\/chamber\/stale\.ts/su,
+      /所有权冲突.*apps\/Cocos\/assets\/src\/plugins\/chamber\/stale\.ts/su,
     );
-    fs.rmSync(path.join(target, "apps/Cocos/assets/src/features/chamber"), { recursive: true });
+    fs.rmSync(path.join(target, "apps/Cocos/assets/src/plugins/chamber"), { recursive: true });
     assert.doesNotThrow(() => installPlugin({ root: target, source: zipFile, git: false, postinstall: false }));
     // 升级时本插件自己的文件（在旧锁里）不算冲突。
     assert.doesNotThrow(() => installPlugin({ root: target, source: zipFile, git: false, postinstall: false }));
@@ -793,32 +792,32 @@ test("PLUGIN-REGISTRY §1-1：postinstall 失败即回滚——无 git：文件�
     packPlugin({ root: author, id: "chamber", outFile: v1 });
     // 无 git：codegen 抛错 → 树上不留任何插件文件、锁、plugins/<id>。
     const boom = fakeRunner((args) => {
-      if (args.includes("codegen:features")) throw new Error("route id 重复：chamber（模拟跨插件冲突）");
+      if (args.includes("codegen:plugins")) throw new Error("route id 重复：chamber（模拟跨插件冲突）");
     });
     assert.throws(() => installPlugin({ root: target, source: v1, git: false, runner: boom }), /postinstall失败，已回滚到操作前[\s\S]*route id 重复/u);
-    for (const relative of ["apps/plugins/chamber/feature.json", "apps/server/src/core/chamber/keys.ts", "scripts/plugins/chamber.lock", "apps/plugins/chamber/plugin.json", "apps/Cocos/assets/src/features/chamber.meta"]) {
+    for (const relative of ["apps/plugins/chamber/plugin.json", "apps/server/src/core/chamber/keys.ts", "scripts/plugins/chamber.lock", "apps/plugins/chamber/plugin.json", "apps/Cocos/assets/src/plugins/chamber.meta"]) {
       assert.ok(!fs.existsSync(path.join(target, relative)), `回滚后不得残留：${relative}`);
     }
-    assert.ok(!fs.existsSync(path.join(target, "apps/Cocos/assets/src/features/chamber")), "空目录也清掉");
+    assert.ok(!fs.existsSync(path.join(target, "apps/Cocos/assets/src/plugins/chamber")), "空目录也清掉");
     // 回滚后同一包可以直接重装（不再「受影响路径不干净」）。
     assert.doesNotThrow(() => installPlugin({ root: target, source: v1, git: false, postinstall: false }));
 
     // 有 git：基线里有一个已跟踪的生成物与一个用户 WIP 改过的生成物；失败的 codegen 改了前者、新建了一个未跟踪生成物。
-    write(gitTarget, "apps/client/src/generated/features.generated.ts", "// generated baseline\n");
+    write(gitTarget, "apps/client/src/generated/plugins.generated.ts", "// generated baseline\n");
     write(gitTarget, "apps/client/src/generated/wip.generated.ts", "// wip baseline\n");
     gitInit(gitTarget);
     fs.writeFileSync(path.join(gitTarget, "apps/client/src/generated/wip.generated.ts"), "// user WIP, must survive\n");
     const wipStatus = gitPorcelain(gitTarget);
     assert.match(wipStatus, /wip\.generated\.ts/u);
     const boomGit = fakeRunner((args, root) => {
-      if (!args.includes("codegen:features")) return;
-      write(root, "apps/client/src/generated/features.generated.ts", "// half-written by failing codegen\n");
+      if (!args.includes("codegen:plugins")) return;
+      write(root, "apps/client/src/generated/plugins.generated.ts", "// half-written by failing codegen\n");
       write(root, "apps/shared/src/protocol/lobbyRpc/registry.generated.ts", "// new generated file\n");
       throw new Error("模拟 codegen 写到一半失败");
     });
     assert.throws(() => installPlugin({ root: gitTarget, source: v1, git: true, runner: boomGit }), /已回滚到操作前[\s\S]*生成物收回 2 项/u);
     assert.equal(gitPorcelain(gitTarget), wipStatus, "回滚后 git 状态与安装前逐字相同（用户 WIP 原样留下，其余干净）");
-    assert.equal(fs.readFileSync(path.join(gitTarget, "apps/client/src/generated/features.generated.ts"), "utf8"), "// generated baseline\n");
+    assert.equal(fs.readFileSync(path.join(gitTarget, "apps/client/src/generated/plugins.generated.ts"), "utf8"), "// generated baseline\n");
     assert.ok(!fs.existsSync(path.join(gitTarget, "apps/shared/src/protocol/lobbyRpc/registry.generated.ts")));
     assert.ok(!fs.existsSync(path.join(gitTarget, "scripts/plugins/chamber.lock")));
   } finally {
@@ -840,9 +839,9 @@ test("PLUGIN-REGISTRY §1-2：升级删掉域 / View / kind 时 postinstall 以�
     for (const relative of ["apps/shared/src/protocol/lobbyRpc/domains/chamber.ts", "apps/server/src/websocket/chamber/peek.ts", "apps/server/test/lobbyRpcVectors/chamber.ts"]) {
       fs.rmSync(path.join(author, relative));
     }
-    const featureFile = path.join(author, "apps/plugins/chamber/feature.json");
-    fs.writeFileSync(featureFile, fs.readFileSync(featureFile, "utf8").replaceAll("ChamberView", "ChamberPanelView").replace('"view": "Chamber"', '"view": "ChamberPanel"'));
-    for (const base of ["apps/client/src/features/chamber/view", "apps/Cocos/assets/src/features/chamber/view"]) {
+    const pluginFile = path.join(author, "apps/plugins/chamber/plugin.json");
+    fs.writeFileSync(pluginFile, fs.readFileSync(pluginFile, "utf8").replaceAll("ChamberView", "ChamberPanelView").replace('"view": "Chamber"', '"view": "ChamberPanel"'));
+    for (const base of ["apps/client/src/plugins/chamber/view", "apps/Cocos/assets/src/plugins/chamber/view"]) {
       for (const suffix of [".ts", ".view.json"]) {
         fs.renameSync(path.join(author, `${base}/ChamberView${suffix}`), path.join(author, `${base}/ChamberPanelView${suffix}`));
       }
@@ -856,31 +855,31 @@ test("PLUGIN-REGISTRY §1-2：升级删掉域 / View / kind 时 postinstall 以�
     const calls: string[][] = [];
     const recorder = fakeRunner((args) => { calls.push([...args]); });
     const dry = installPlugin({ root: target, source: v2, git: false, dryRun: true, runner: recorder });
-    assert.deepEqual(dry.allowDelete, { gameplays: [], features: ["Chamber", "chamber"] }, "dry-run 就报告删除面");
+    assert.deepEqual(dry.allowDelete, { gameplays: [], plugins: ["Chamber", "chamber"] }, "dry-run 就报告删除面");
     const report = installPlugin({ root: target, source: v2, git: false, runner: recorder });
-    assert.deepEqual(report.allowDelete, { gameplays: [], features: ["Chamber", "chamber"] });
-    const features = calls.find((args) => args.includes("codegen:features"));
-    assert.ok(features, "跑了 codegen:features");
-    assert.deepEqual(features.slice(features.indexOf("--") + 1), ["--allow-delete", "Chamber", "--allow-delete", "chamber"]);
-    assert.ok(!calls.some((args) => args.includes("codegen:gameplays")), "纯 feature 插件不跑 gameplay codegen");
+    assert.deepEqual(report.allowDelete, { gameplays: [], plugins: ["Chamber", "chamber"] });
+    const plugins = calls.find((args) => args.includes("codegen:plugins"));
+    assert.ok(plugins, "跑了 codegen:plugins");
+    assert.deepEqual(plugins.slice(plugins.indexOf("--") + 1), ["--allow-delete", "Chamber", "--allow-delete", "chamber"]);
+    assert.ok(!calls.some((args) => args.includes("codegen:gameplays")), "纯 plugin 插件不跑 gameplay codegen");
     assert.ok(calls.some((args) => args.includes("sync:shared")));
     assert.ok(readInstalledLock(target, "chamber")?.entries.some((entry) => entry.path.endsWith("ChamberPanelView.ts")));
 
     // 首装无删除面；再装同版本（幂等）也无删除面。
     const again = installPlugin({ root: target, source: v2, git: false, postinstall: false });
-    assert.deepEqual(again.allowDelete, { gameplays: [], features: [] });
+    assert.deepEqual(again.allowDelete, { gameplays: [], plugins: [] });
   } finally {
     cleanup(author, target);
   }
 });
 
-test("allowDeleteFor：去掉 gameplay kind ⇒ codegen:gameplays --allow-delete <id>；去掉 feature kind ⇒ feature id + 全部域 + 全部 View", () => {
-  const both = parsePluginManifest({ schemaVersion: 1, id: "puzzle", version: "1.0.0", kinds: ["gameplay", "feature"], constantName: "Puzzle", domains: ["puzzle"], requires: { featureSchemaVersion: 1, gameplaySchemaVersion: 1 } });
-  const featureOnly = parsePluginManifest({ schemaVersion: 1, id: "puzzle", version: "1.1.0", kinds: ["feature"], domains: ["puzzle"], requires: { featureSchemaVersion: 1 } });
-  const gameplayOnly = parsePluginManifest({ schemaVersion: 1, id: "puzzle", version: "1.2.0", kinds: ["gameplay"], constantName: "Puzzle", requires: { gameplaySchemaVersion: 1 } });
-  assert.deepEqual(allowDeleteFor({ manifest: both, viewNames: ["PuzzleWorld"] }, { manifest: featureOnly, viewNames: ["PuzzleWorld"] }), { gameplays: ["puzzle"], features: [] });
-  assert.deepEqual(allowDeleteFor({ manifest: both, viewNames: ["PuzzleWorld"] }, { manifest: gameplayOnly, viewNames: [] }), { gameplays: [], features: ["PuzzleWorld", "puzzle"] });
-  assert.deepEqual(allowDeleteFor({ manifest: both, viewNames: ["A", "B"] }, { manifest: both, viewNames: ["B"] }), { gameplays: [], features: ["A"] });
+test("allowDeleteFor：去掉 gameplay kind ⇒ codegen:gameplays --allow-delete <id>；去掉客户端登记与域 ⇒ 插件 id + 全部域 + 全部 View", () => {
+  const both = { id: "puzzle", kinds: ["gameplay", "client"] as const, domains: ["puzzle"], viewNames: ["PuzzleWorld"] };
+  const clientOnly = { id: "puzzle", kinds: ["client"] as const, domains: ["puzzle"], viewNames: ["PuzzleWorld"] };
+  const gameplayOnly = { id: "puzzle", kinds: ["gameplay"] as const, domains: [], viewNames: [] };
+  assert.deepEqual(allowDeleteFor(both, clientOnly), { gameplays: ["puzzle"], plugins: [] });
+  assert.deepEqual(allowDeleteFor(both, gameplayOnly), { gameplays: [], plugins: ["PuzzleWorld", "puzzle"] });
+  assert.deepEqual(allowDeleteFor({ ...both, viewNames: ["A", "B"] }, { ...both, viewNames: ["B"] }), { gameplays: [], plugins: ["A"] });
 });
 
 test("PLUGIN-REGISTRY §1-1 附带：uninstall 后未提交（索引里是暂存删除）即可重装，不再被「受影响路径不干净」拦住", () => {
@@ -956,32 +955,38 @@ test("PLUGIN-REGISTRY §1-5：锁的 source 抬头——install 写 package、re
   }
 });
 
-test("PLUGIN-REGISTRY §1-9：requires 进已安装锁并被 check 复核；旧锁未登记即点名，reinstall-from-tree 重写即补上", () => {
+test("PLUGIN-REGISTRY §1-9（v2）：兼容轴 = plugin.json 自己的 schemaVersion const + gameplay 单源的 schemaVersion；派生 kinds / constantName 进锁抬头", () => {
   const { author, target } = makeFixture("1.0.0");
   try {
     const v1 = path.join(author, "out/v1.zip");
     packPlugin({ root: author, id: "chamber", outFile: v1 });
     installPlugin({ root: target, source: v1, git: false, postinstall: false });
     const lockFile = path.join(target, "scripts/plugins/chamber.lock");
-    assert.match(fs.readFileSync(lockFile, "utf8"), /"requires":\{"featureSchemaVersion":1,"gameplaySchemaVersion":null\}/u);
-    assert.deepEqual(readInstalledLock(target, "chamber")?.manifest.requires, { featureSchemaVersion: 1, gameplaySchemaVersion: null });
+    assert.match(fs.readFileSync(lockFile, "utf8"), /"kinds":\["client"\],"constantName":null,"domains":\["chamber"\]/u);
+    assert.ok(!fs.readFileSync(lockFile, "utf8").includes("requires"), "锁抬头不再登记 requires");
     assert.equal(checkInstalledPlugins(target).ok, true);
-    // 树上 plugin.json 把 requires 改成不兼容的值：check 点名两条（不兼容 + 与锁不一致）。
+    // 旧形态（schemaVersion 1）的 plugin.json：解析即拒绝，包也进不来。
+    assert.throws(() => parsePluginManifest({ schemaVersion: 1, id: "chamber", version: "1.0.0", kinds: ["client"] }), /must be 2|unknown key/u);
     const manifestFile = path.join(target, "apps/plugins/chamber/plugin.json");
     const original = fs.readFileSync(manifestFile, "utf8");
-    fs.writeFileSync(manifestFile, original.replace('"featureSchemaVersion": 1', '"featureSchemaVersion": 99'));
-    const bad = checkInstalledPlugins(target).plugins[0].problems.join("\n");
-    assert.match(bad, /featureSchemaVersion=99 与本仓 feature-schema-v1 不兼容/u);
-    assert.match(bad, /requires 与锁不一致/u);
+    fs.writeFileSync(manifestFile, original.replace('"schemaVersion": 2', '"schemaVersion": 1'));
+    assert.match(checkInstalledPlugins(target).plugins[0].problems.join("\n"), /无法解析[\s\S]*must be 2/u);
     fs.writeFileSync(manifestFile, original);
-    // 旧锁形态（无 requires）：check 点名「未登记」，no-op reinstall 重写锁即补上、不要求 bump。
-    const legacy = fs.readFileSync(lockFile, "utf8").split("\n").map((line) => (line.startsWith("# manifest ") ? line.replace(/,"requires":\{[^}]*\}/u, "") : line)).join("\n");
-    fs.writeFileSync(lockFile, legacy, "utf8");
-    assert.deepEqual(readInstalledLock(target, "chamber")?.manifest.requires, { featureSchemaVersion: null, gameplaySchemaVersion: null });
-    assert.match(checkInstalledPlugins(target).plugins[0].problems.join("\n"), /锁未登记 requires（旧锁形态）/u);
-    reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false });
-    assert.equal(checkInstalledPlugins(target).ok, true);
-    assert.deepEqual(readInstalledLock(target, "chamber")?.manifest.requires, { featureSchemaVersion: 1, gameplaySchemaVersion: null });
+    // gameplay 单源的 schemaVersion 与 gameplay-schema 不符：包拒绝、树上 check 点名。
+    const dirOut = path.join(author, "out/pkg");
+    packPlugin({ root: author, id: "chamber", outDir: dirOut });
+    const gameplayManifest = "apps/plugins/chamber/gameplay/manifest.json";
+    write(dirOut, gameplayManifest, `${JSON.stringify({ schemaVersion: 99, id: "chamber", constantName: "Chamber" })}\n`);
+    write(dirOut, "apps/plugins/chamber/gameplay/state.json", "{}\n");
+    const entries = readPackage(v1).entries;
+    fs.writeFileSync(path.join(dirOut, "files.lock"), renderFilesLock([
+      ...entries,
+      { path: gameplayManifest, sha256: sha256(fs.readFileSync(path.join(dirOut, gameplayManifest))) },
+      { path: "apps/plugins/chamber/gameplay/state.json", sha256: sha256("{}\n") },
+    ]), "utf8");
+    assert.throws(() => validatePackage(readPackage(dirOut), target), /schemaVersion=99 与本仓 gameplay-schema-v1 不兼容/u);
+    write(target, gameplayManifest, `${JSON.stringify({ schemaVersion: 99, id: "chamber", constantName: "Chamber" })}\n`);
+    assert.match(checkInstalledPlugins(target).plugins[0].problems.join("\n"), /gameplay-schema-v1 不兼容/u);
   } finally {
     cleanup(author, target);
   }
@@ -1012,8 +1017,8 @@ test("PLUGIN-REGISTRY §1-11：随包 .meta 的内容闸——uuid 形状 / impo
       const present = walk(dirOut).filter((relative) => relative !== "plugin.json" && relative !== "files.lock");
       fs.writeFileSync(path.join(dirOut, "files.lock"), renderFilesLock(present.map((relative) => ({ path: relative, sha256: sha256(fs.readFileSync(path.join(dirOut, relative))) }))), "utf8");
     };
-    const viewMeta = "apps/Cocos/assets/src/features/chamber/view/ChamberView.ts.meta";
-    const logicMeta = "apps/Cocos/assets/src/features/chamber/logic/ChamberLogic.ts.meta";
+    const viewMeta = "apps/Cocos/assets/src/plugins/chamber/view/ChamberView.ts.meta";
+    const logicMeta = "apps/Cocos/assets/src/plugins/chamber/logic/ChamberLogic.ts.meta";
     const originalView = fs.readFileSync(path.join(dirOut, viewMeta));
     // 包内两个 .meta 同 uuid（复制模板忘换）→ 整包拒绝并点名两个路径。
     write(dirOut, logicMeta, originalView.toString("utf8"));
@@ -1029,18 +1034,18 @@ test("PLUGIN-REGISTRY §1-11：随包 .meta 的内容闸——uuid 形状 / impo
     assert.throws(() => validatePackage(readPackage(dirOut), target), /uuid 形状非法/u);
     // 目录 .meta 的 importer 必须是 directory。
     write(dirOut, logicMeta, meta("typescript", "logic"));
-    const dirMeta = "apps/Cocos/assets/src/features/chamber/logic.meta";
+    const dirMeta = "apps/Cocos/assets/src/plugins/chamber/logic.meta";
     write(dirOut, dirMeta, meta("typescript", "dir"));
     relock();
     assert.throws(() => validatePackage(readPackage(dirOut), target), /logic\.meta 的 importer 是 "typescript"，目录的 \.meta 应为 "directory"/u);
-    write(dirOut, dirMeta, meta("directory", "apps/Cocos/assets/src/features/chamber/logic"));
+    write(dirOut, dirMeta, meta("directory", "apps/Cocos/assets/src/plugins/chamber/logic"));
     relock();
     assert.doesNotThrow(() => validatePackage(readPackage(dirOut), target));
 
     // 与宿主撞车：目标树某个框架资源的 .meta 与包内 ChamberView.ts.meta 同 uuid → install 落盘前拒绝并点名两侧。
     write(target, "apps/Cocos/assets/resources/ui/Common.bin.meta", originalView.toString("utf8"));
     assert.throws(() => installPlugin({ root: target, source: dirOut, git: false, postinstall: false }), /uuid 与宿主资源撞车[\s\S]*ChamberView\.ts\.meta ⟷ 宿主 apps\/Cocos\/assets\/resources\/ui\/Common\.bin\.meta/u);
-    assert.ok(!fs.existsSync(path.join(target, "apps/plugins/chamber/feature.json")), "撞车在落盘前拒绝");
+    assert.ok(!fs.existsSync(path.join(target, "apps/plugins/chamber/plugin.json")), "撞车在落盘前拒绝");
     fs.rmSync(path.join(target, "apps/Cocos/assets/resources/ui/Common.bin.meta"));
     assert.doesNotThrow(() => installPlugin({ root: target, source: dirOut, git: false, postinstall: false }));
     // 升级：本插件自己旧锁里的 .meta 不算撞车（同 uuid 同路径是正常的）。
@@ -1081,7 +1086,7 @@ test("加固 §1-1：回滚精确到操作前——已暂存 / 未暂存的生�
     const porcelainBefore = gitPorcelain(target);
     const cachedBefore = gitCached(target);
     const clobber = fakeRunner((args, root) => {
-      if (args.includes("codegen:features")) {
+      if (args.includes("codegen:plugins")) {
         write(root, "apps/client/src/generated/staged.generated.ts", "// codegen half output\n");
         write(root, "apps/client/src/generated/unstaged.generated.ts", "// codegen half output\n");
         write(root, "apps/client/src/shared/gameplays/foo/测试.ts", "// 非 ASCII 路径\n");
@@ -1126,7 +1131,7 @@ test("加固 §1-1：落盘阶段失败（锁目录不可写 / 包内文件与�
       if (fs.existsSync(lockDir)) fs.chmodSync(lockDir, 0o755); // 回滚会把清空的锁目录一并收掉
     }
     assert.equal(gitPorcelain(target), porcelainBefore, "落盘失败后树回到操作前");
-    assert.ok(!fs.existsSync(path.join(target, "apps/plugins/chamber/feature.json")));
+    assert.ok(!fs.existsSync(path.join(target, "apps/plugins/chamber/plugin.json")));
     assert.doesNotThrow(() => installPlugin({ root: target, source: v1, git: true, postinstall: false }), "恢复权限后同一包直接重装");
 
     // 文件与其子路径并存的包（只能以 zip 构造）：读包阶段拒绝（⛔ 不走到写盘）。
@@ -1216,30 +1221,30 @@ test("加固 §1-3 / §1-2：reinstall-from-tree 不替作者删仍在磁盘的�
     }
     const porcelainBefore = gitPorcelain(target);
     const cachedBefore = gitCached(target);
-    const boom = fakeRunner((args) => { if (args.includes("codegen:features")) throw new Error("模拟 codegen 失败"); });
+    const boom = fakeRunner((args) => { if (args.includes("codegen:plugins")) throw new Error("模拟 codegen 失败"); });
     assert.throws(() => reinstallFromTree({ root: target, id: "chamber", git: true, allowIdentityChange: true, runner: boom }), /已回滚到操作前/u);
     assert.equal(gitPorcelain(target), porcelainBefore, "回滚后 git status 与操作前逐字相同");
     assert.equal(gitCached(target), cachedBefore);
     assert.equal(readInstalledLock(target, "chamber")?.manifest.version, "1.0.0");
     const calls: string[][] = [];
     const ok = reinstallFromTree({ root: target, id: "chamber", git: true, allowIdentityChange: true, runner: fakeRunner((args) => { calls.push([...args]); }) });
-    assert.deepEqual(ok.allowDelete, { gameplays: [], features: ["chamber"] });
+    assert.deepEqual(ok.allowDelete, { gameplays: [], plugins: ["chamber"] });
     assert.equal(readInstalledLock(target, "chamber")?.manifest.version, "1.1.0");
 
     // View 改名（树上）：删除面从旧锁的 sidecar 推出 → --allow-delete Chamber。
     assert.deepEqual(viewNamesFromEntries(readInstalledLock(target, "chamber")?.entries ?? []), ["Chamber"]);
     fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.1.0"', '"1.2.0"'));
-    const featureFile = path.join(target, "apps/plugins/chamber/feature.json");
-    fs.writeFileSync(featureFile, fs.readFileSync(featureFile, "utf8").replaceAll("ChamberView", "ChamberPanelView").replace('"view": "Chamber"', '"view": "ChamberPanel"'));
-    for (const base of ["apps/client/src/features/chamber/view", "apps/Cocos/assets/src/features/chamber/view"]) {
+    const pluginFile = path.join(target, "apps/plugins/chamber/plugin.json");
+    fs.writeFileSync(pluginFile, fs.readFileSync(pluginFile, "utf8").replaceAll("ChamberView", "ChamberPanelView").replace('"view": "Chamber"', '"view": "ChamberPanel"'));
+    for (const base of ["apps/client/src/plugins/chamber/view", "apps/Cocos/assets/src/plugins/chamber/view"]) {
       for (const suffix of [".ts", ".view.json"]) fs.renameSync(path.join(target, `${base}/ChamberView${suffix}`), path.join(target, `${base}/ChamberPanelView${suffix}`));
       if (base.startsWith("apps/Cocos")) for (const suffix of [".ts", ".view.json"]) fs.renameSync(path.join(target, `${base}/ChamberView${suffix}.meta`), path.join(target, `${base}/ChamberPanelView${suffix}.meta`));
     }
     calls.length = 0;
     const renamed = reinstallFromTree({ root: target, id: "chamber", git: true, runner: fakeRunner((args) => { calls.push([...args]); }) });
-    assert.deepEqual(renamed.allowDelete, { gameplays: [], features: ["Chamber"] });
-    const featuresCall = calls.find((args) => args.includes("codegen:features"));
-    assert.ok(featuresCall && featuresCall.includes("--allow-delete") && featuresCall.includes("Chamber"));
+    assert.deepEqual(renamed.allowDelete, { gameplays: [], plugins: ["Chamber"] });
+    const pluginsCall = calls.find((args) => args.includes("codegen:plugins"));
+    assert.ok(pluginsCall && pluginsCall.includes("--allow-delete") && pluginsCall.includes("Chamber"));
 
     // 共享命名空间的吸收：未跟踪的 apps/server/test/chamber-extra.test.ts 被吸收但点名 review；专属目录的新文件不点名。
     fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.2.0"', '"1.3.0"'));
@@ -1315,7 +1320,7 @@ test("加固 §1-5：分叉不能被「内容相同的包」洗白；旧锁（�
   }
 });
 
-test("加固 §1-9 / §1-11：requires 与随包 feature.json / manifest.json 的 schemaVersion 交叉核对；孤儿 .meta 拒绝；宿主 .meta 不可解析即拒绝装；同路径 uuid 变化被报告", () => {
+test("加固 §1-9 / §1-11：requires 与随包 plugin.json / manifest.json 的 schemaVersion 交叉核对；孤儿 .meta 拒绝；宿主 .meta 不可解析即拒绝装；同路径 uuid 变化被报告", () => {
   const { author, target } = makeFixture("1.0.0");
   try {
     const dirOut = path.join(author, "out/pkg");
@@ -1328,18 +1333,20 @@ test("加固 §1-9 / §1-11：requires 与随包 feature.json / manifest.json �
       const present = walk(dirOut).filter((relative) => relative !== "plugin.json" && relative !== "files.lock");
       fs.writeFileSync(path.join(dirOut, "files.lock"), renderFilesLock(present.map((relative) => ({ path: relative, sha256: sha256(fs.readFileSync(path.join(dirOut, relative))) }))), "utf8");
     };
-    // feature.json schemaVersion=2 而 requires.featureSchemaVersion=1 → 整包拒绝；check 对树上也点名。
-    const featureFile = path.join(dirOut, "apps/plugins/chamber/feature.json");
-    const featureOriginal = fs.readFileSync(featureFile, "utf8");
-    fs.writeFileSync(featureFile, featureOriginal.replace('"schemaVersion": 1', '"schemaVersion": 2'));
+    // 包内 plugin.json 是旧形态（schemaVersion 1）→ 读包阶段就拒绝。
+    const pluginFile = path.join(dirOut, "apps/plugins/chamber/plugin.json");
+    const pluginOriginal = fs.readFileSync(pluginFile, "utf8");
+    fs.writeFileSync(pluginFile, pluginOriginal.replace('"schemaVersion": 2', '"schemaVersion": 1'));
+    fs.writeFileSync(path.join(dirOut, "plugin.json"), pluginOriginal.replace('"schemaVersion": 2', '"schemaVersion": 1'));
     relock();
-    assert.throws(() => validatePackage(readPackage(dirOut), target), /feature\.json 的 schemaVersion（2）与 plugin\.json requires\.featureSchemaVersion（1）不一致/u);
-    fs.writeFileSync(featureFile, featureOriginal);
+    assert.throws(() => readPackage(dirOut), /must be 2/u);
+    fs.writeFileSync(pluginFile, pluginOriginal);
+    fs.writeFileSync(path.join(dirOut, "plugin.json"), pluginOriginal);
     // 孤儿 .meta（无目标文件、无子路径）→ 拒绝。
-    write(dirOut, "apps/Cocos/assets/src/features/chamber/view/Nope.ts.meta", meta("typescript", "nope"));
+    write(dirOut, "apps/Cocos/assets/src/plugins/chamber/view/Nope.ts.meta", meta("typescript", "nope"));
     relock();
     assert.throws(() => validatePackage(readPackage(dirOut), target), /孤儿 \.meta[\s\S]*Nope\.ts\.meta/u);
-    fs.rmSync(path.join(dirOut, "apps/Cocos/assets/src/features/chamber/view/Nope.ts.meta"));
+    fs.rmSync(path.join(dirOut, "apps/Cocos/assets/src/plugins/chamber/view/Nope.ts.meta"));
     relock();
     assert.doesNotThrow(() => validatePackage(readPackage(dirOut), target));
 
@@ -1349,15 +1356,10 @@ test("加固 §1-9 / §1-11：requires 与随包 feature.json / manifest.json �
     assert.deepEqual(hostMetaUuids(target).unreadable.length, 1);
     fs.rmSync(path.join(target, "apps/Cocos/assets/resources/ui/Weird.bin.meta"));
     installPlugin({ root: target, source: dirOut, git: false, postinstall: false });
-    // check 对树上 feature.json schemaVersion 漂移点名。
-    const treeFeature = path.join(target, "apps/plugins/chamber/feature.json");
-    fs.writeFileSync(treeFeature, fs.readFileSync(treeFeature, "utf8").replace('"schemaVersion": 1', '"schemaVersion": 2'));
-    assert.match(checkInstalledPlugins(target).plugins[0].problems.join("\n"), /feature\.json 的 schemaVersion（2）与 requires\.featureSchemaVersion（1）不一致/u);
-    fs.writeFileSync(treeFeature, featureOriginal);
     assert.equal(checkInstalledPlugins(target).ok, true);
 
     // 升级时同路径 .meta 换 uuid：装得上，但 uuidChanged 报出来。
-    const viewMeta = "apps/Cocos/assets/src/features/chamber/view/ChamberView.ts.meta";
+    const viewMeta = "apps/Cocos/assets/src/plugins/chamber/view/ChamberView.ts.meta";
     write(dirOut, viewMeta, meta("typescript", "rewritten by creator"));
     const manifestFile = path.join(dirOut, "apps/plugins/chamber/plugin.json");
     const bumped = fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.0.1"');
@@ -1388,24 +1390,22 @@ test("加固：git status -z 解析（非 ASCII / 重命名条目）", () => {
   }
 });
 
-test("manifest：schema 校验、kinds 语义、requires 兼容轴、版本比较", () => {
-  const valid = parsePluginManifest({ schemaVersion: 1, id: "chamber", version: "1.2.3", kinds: ["feature"], requires: { featureSchemaVersion: 1 } });
-  assert.equal(valid.constantName, null);
+test("manifest（v2）：schema 校验、version 可省（宿主自有）、未知键拒绝、schemaVersion const 读自 schema 文件、版本比较", () => {
+  const valid = parsePluginManifest({ schemaVersion: 2, id: "chamber", version: "1.2.3", routes: [{ id: "chamber", view: "Chamber" }] });
+  assert.equal(valid.version, "1.2.3");
   assert.deepEqual(valid.domains, []);
-  assert.throws(() => parsePluginManifest({ schemaVersion: 1, id: "chamber", version: "1.2", kinds: ["feature"], requires: { featureSchemaVersion: 1 } }), /version/u);
-  assert.throws(() => parsePluginManifest({ schemaVersion: 1, id: "chamber", version: "1.2.3", kinds: ["feature"], requires: { featureSchemaVersion: 1 }, slot: 0 }), /unknown key/u);
-  assert.throws(() => parsePluginManifest({ schemaVersion: 1, id: "chamber", version: "1.2.3", kinds: [], requires: {} }), /kinds 不能为空/u);
-  assert.throws(() => parsePluginManifest({ schemaVersion: 2, id: "chamber", version: "1.2.3", kinds: ["feature"], requires: { featureSchemaVersion: 1 } }), /schemaVersion/u);
-  // PLUGIN-REGISTRY §1-9：requires fail-closed——缺省不再「视为当前版本」。
-  assert.throws(() => parsePluginManifest({ schemaVersion: 1, id: "chamber", version: "1.2.3", kinds: ["feature"] }), /requires/u);
-  assert.throws(() => parsePluginManifest({ schemaVersion: 1, id: "chamber", version: "1.2.3", kinds: ["feature"], requires: {} }), /featureSchemaVersion 必填/u);
-  assert.throws(() => parsePluginManifest({ schemaVersion: 1, id: "puzzle", version: "1.2.3", kinds: ["gameplay", "feature"], constantName: "Puzzle", requires: { featureSchemaVersion: 1 } }), /gameplaySchemaVersion 必填/u);
-  assert.throws(() => assertManifestCompatible(parsePluginManifest({ schemaVersion: 1, id: "chamber", version: "1.2.3", kinds: ["feature"], requires: { featureSchemaVersion: CURRENT_FEATURE_SCHEMA_VERSION + 1 } })), /不兼容/u);
+  assert.equal(valid.registration.entry, null);
+  assert.equal(parsePluginManifest({ schemaVersion: 2, id: "builtin", menu: [] }).version, null, "没有 version = 宿主自有插件");
+  assert.throws(() => parsePluginManifest({ schemaVersion: 2, id: "chamber", version: "1.2" }), /version/u);
+  assert.throws(() => parsePluginManifest({ schemaVersion: 2, id: "chamber", slot: 0 }), /unknown key/u);
+  assert.throws(() => parsePluginManifest({ schemaVersion: 2, id: "chamber", kinds: ["client"] }), /unknown key/u);
+  assert.throws(() => parsePluginManifest({ schemaVersion: 1, id: "chamber", version: "1.2.3" }), /must be 2/u);
+  assert.throws(() => parsePluginManifest({ schemaVersion: 2, id: "chamber", entry: "apps/client/src/features/chamber/index.ts" }), /entry/u);
   // 比对基准读自两个 schema 文件的 const，⛔ 不是手抄常量。
   const readConst = (file: string): number => (JSON.parse(fs.readFileSync(file, "utf8")) as { properties: { schemaVersion: { const: number } } }).properties.schemaVersion.const;
-  assert.equal(CURRENT_FEATURE_SCHEMA_VERSION, readConst(FEATURE_SCHEMA_FILE));
+  assert.equal(CURRENT_PLUGIN_SCHEMA_VERSION, readConst(PLUGIN_SCHEMA_FILE));
   assert.equal(CURRENT_GAMEPLAY_SCHEMA_VERSION, readConst(GAMEPLAY_SCHEMA_FILE));
-  assert.equal(FEATURE_SCHEMA_FILE, path.join(REPOSITORY_ROOT, "features/feature-schema-v1.json"));
+  assert.equal(PLUGIN_SCHEMA_FILE, path.join(REPOSITORY_ROOT, "apps/server/tools/plugin/plugin-schema-v2.json"));
   assert.equal(compareVersions("1.10.0", "1.9.9") > 0, true);
   assert.equal(compareVersions("1.0.0", "1.0.0"), 0);
   assert.equal(compareVersions("0.9.0", "1.0.0") < 0, true);
@@ -1442,9 +1442,9 @@ test("CLI 参数：四个子命令、--root seam、重复/未知参数 throw", (
 
 test("nextStepsFor：协议指纹提示按 --check 的实际结果派生，⛔ 不按「带 domain 就一定变了」猜", () => {
   const fake = (manifest: { domains: string[]; kinds: string[] }) =>
-    ({ manifest: { ...manifest, fguiPackages: [] }, files: new Map<string, Buffer>(), entries: [] }) as unknown as Parameters<typeof nextStepsFor>[0];
+    ({ manifest: { domains: manifest.domains, fguiPackages: [] }, identity: { kinds: manifest.kinds }, files: new Map<string, Buffer>(), entries: [] }) as unknown as Parameters<typeof nextStepsFor>[0];
   const root = os.tmpdir();
-  const withDomain = fake({ domains: ["chamber"], kinds: ["feature"] });
+  const withDomain = fake({ domains: ["chamber"], kinds: ["client"] });
   const stale = nextStepsFor(withDomain, root, { protocolStale: true });
   assert.ok(stale.some((step) => step.startsWith("协议指纹已过期") && step.includes("protocol-fingerprint.mjs --write")), "过期 ⇒ 明确要求重钉");
   const fresh = nextStepsFor(withDomain, root, { protocolStale: false });
@@ -1452,9 +1452,9 @@ test("nextStepsFor：协议指纹提示按 --check 的实际结果派生，⛔ �
   const unknown = nextStepsFor(withDomain, root, { protocolStale: null });
   assert.ok(unknown.some((step) => step.startsWith("本次未跑 codegen") && step.includes("protocol-fingerprint.mjs --write")), "未跑 codegen ⇒ 条件式提示");
   assert.deepEqual(nextStepsFor(withDomain, root).filter((step) => step.includes("protocol-fingerprint")), unknown.filter((step) => step.includes("protocol-fingerprint")), "缺省上下文 = 未知");
-  // gameplay 形态没有 domain 也会改 protocol/（modeIds 等）：未知时同样给条件提示；纯 feature 无 domain 则一句不提。
+  // gameplay 形态没有 domain 也会改 protocol/（modeIds 等）：未知时同样给条件提示；纯 plugin 无 domain 则一句不提。
   assert.ok(nextStepsFor(fake({ domains: [], kinds: ["gameplay"] }), root).some((step) => step.startsWith("本次未跑 codegen")));
-  assert.deepEqual(nextStepsFor(fake({ domains: [], kinds: ["feature"] }), root).filter((step) => step.includes("protocol-fingerprint")), []);
-  // 过期判定不看 manifest：无 domain 的纯 feature 若 --check 报红也要提示。
-  assert.ok(nextStepsFor(fake({ domains: [], kinds: ["feature"] }), root, { protocolStale: true }).some((step) => step.startsWith("协议指纹已过期")));
+  assert.deepEqual(nextStepsFor(fake({ domains: [], kinds: ["client"] }), root).filter((step) => step.includes("protocol-fingerprint")), []);
+  // 过期判定不看 manifest：无 domain 的纯 plugin 若 --check 报红也要提示。
+  assert.ok(nextStepsFor(fake({ domains: [], kinds: ["client"] }), root, { protocolStale: true }).some((step) => step.startsWith("协议指纹已过期")));
 });

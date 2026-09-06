@@ -4,8 +4,8 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { describeRedeemError, normalizeRedeemInput, RedeemLogic } from "../src/features/redeem/logic/RedeemLogic";
-import type { RedeemRuntime } from "../src/features/redeem/logic/redeemRuntime";
+import { describeRedeemError, normalizeRedeemInput, RedeemLogic } from "../src/plugins/redeem/logic/RedeemLogic";
+import type { RedeemRuntime } from "../src/plugins/redeem/logic/redeemRuntime";
 
 class FakeRpcError extends Error {
     constructor(readonly code: string) { super(code); }
@@ -72,6 +72,6 @@ test("redeem：宿主未就绪（runtime null）→ 不可提交、提示未就�
     logic.setInput("WELCOME2026");
     assert.equal(logic.canSubmit(), false);
     assert.equal(await logic.submit(), false);
-    assert.equal(logic.currentNotice().text, "兑换功能未就绪（feature 未装载）");
+    assert.equal(logic.currentNotice().text, "兑换功能未就绪（plugin 未装载）");
     logic.close();
 });

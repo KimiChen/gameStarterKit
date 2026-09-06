@@ -1,12 +1,12 @@
 /**
  * 阶段 5 退出条件汇总（Non-intrusive §9 阶段 5）：
- *  - fixture feature 在 route 关闭/加载取消/drop/reconnect/强踢/最终 leave/回前台/
+ *  - fixture plugin 在 route 关闭/加载取消/drop/reconnect/强踢/最终 leave/回前台/
  *    session generation 变化下旧响应一律不回写；
  *  - late subscriber 能立即读取连接状态（订阅即回放）；
  *  - app destroy 后 connection/session/route/ticker 订阅计数归零；
- *  - 静态门禁雏形：feature fixture ⛔ 不得值导入 WebSocketClient/RoomClient/cc/
- *    fairygui/colyseus（覆盖 test/fixtures 与 src/features，形态参考 serverImportBan）；
- *    src/features/<id>/view/** 是引擎绑定层，只豁免 cc/fairygui，transport 仍禁。
+ *  - 静态门禁雏形：plugin fixture ⛔ 不得值导入 WebSocketClient/RoomClient/cc/
+ *    fairygui/colyseus（覆盖 test/fixtures 与 src/plugins，形态参考 serverImportBan）；
+ *    src/plugins/<id>/view/** 是引擎绑定层，只豁免 cc/fairygui，transport 仍禁。
  */
 import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -14,8 +14,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { loadAppHost } from "./appHostHarness";
-import { createCounterFeature } from "./fixtures/counterFeature";
-import { FeatureHost } from "../src/app/FeatureHost";
+import { createCounterPlugin } from "./fixtures/counterPlugin";
+import { PluginHost } from "../src/app/PluginHost";
 
 interface Deferred<T> {
   promise: Promise<T>;
@@ -44,15 +44,15 @@ const USER = {
   ver: 1,
 };
 
-test("fixture feature：全部失效场景下旧响应不回写，健康路径可提交", async () => {
+test("fixture plugin：全部失效场景下旧响应不回写，健康路径可提交", async () => {
   const { appRuntime, session, wiring, webSocketClient, makeNode } = await loadAppHost();
   const socketAny = webSocketClient.WebSocketClient.inst as unknown as Record<string, any>;
   const originalRpc = socketAny.rpc;
   const runtime = new appRuntime.AppRuntime({ node: makeNode() });
   const runtimeAny = runtime as unknown as Record<string, any>;
   runtime.wireSessionLifecycle();
-  const counter = createCounterFeature();
-  const host = new FeatureHost([
+  const counter = createCounterPlugin();
+  const host = new PluginHost([
     { id: "counter", load: () => counter.module },
   ], { ports: runtime.ports, appGeneration: runtime.generation });
 
@@ -119,7 +119,7 @@ test("fixture feature：全部失效场景下旧响应不回写，健康路径�
   }
 });
 
-test("late subscriber：订阅即回放当前连接状态（Lobby 已 ready 后加载的 feature 不错过 ready）", async () => {
+test("late subscriber：订阅即回放当前连接状态（Lobby 已 ready 后加载的 plugin 不错过 ready）", async () => {
   const { appRuntime, webSocketClient, session, makeNode } = await loadAppHost();
   const socketAny = webSocketClient.WebSocketClient.inst as unknown as Record<string, any>;
   const runtime = new appRuntime.AppRuntime({ node: makeNode() });
@@ -182,10 +182,10 @@ test("app destroy：connection/session/route/ticker 订阅计数归零", async (
   session.clearSession();
 });
 
-// ── 静态门禁雏形（形态参考 serverImportBan）：feature fixture 的值导入禁令。────────
+// ── 静态门禁雏形（形态参考 serverImportBan）：plugin fixture 的值导入禁令。────────
 const HERE = fileURLToPath(new URL(".", import.meta.url));
 const FIXTURES_DIR = join(HERE, "fixtures");
-const FUTURE_FEATURES_DIR = join(HERE, "../src/features");
+const FUTURE_PLUGINS_DIR = join(HERE, "../src/plugins");
 
 /** 值导入禁令：允许 `import type`，禁止其余形态引入 transport/引擎模块。 */
 const BANNED_VALUE_IMPORT =
@@ -203,32 +203,32 @@ function collectTs(dir: string): string[] {
 }
 
 /**
- * feature 目录下的 View（`src/features/<id>/view/**`，经 .view.json sidecar 登记进 ViewMgr catalog）
+ * plugin 目录下的 View（`src/plugins/<id>/view/**`，经 .view.json sidecar 登记进 ViewMgr catalog）
  * 是引擎绑定层（铁律 9），cc/fairygui 值导入是其职责本身；对它们只禁 transport（net 客户端 /
  * colyseus）——能力仍只经 ports（logic 层由 logic-purity 另闸 cc/fairygui）。
  */
 const BANNED_VALUE_IMPORT_VIEW =
   /(?:^|\n)\s*import\s+(?!type\b)[^;]*?from\s*["'](?:[^"']*\/net\/WebSocketClient|[^"']*\/net\/RoomClient|colyseus|@colyseus\/[^"']*)["']|require\s*\(\s*["'](?:colyseus|@colyseus\/[^"']*)["']\s*\)/;
 
-const isFeatureViewFile = (file: string): boolean =>
-  /[\\/]src[\\/]features[\\/][^\\/]+[\\/]view[\\/]/.test(file);
+const isPluginViewFile = (file: string): boolean =>
+  /[\\/]src[\\/]plugins[\\/][^\\/]+[\\/]view[\\/]/.test(file);
 
-test("静态门禁：feature fixture（与 src/features）不得值导入 WebSocketClient/RoomClient/cc/fairygui；feature View 只豁免引擎模块", () => {
-  const files = [...collectTs(FIXTURES_DIR), ...collectTs(FUTURE_FEATURES_DIR)];
+test("静态门禁：plugin fixture（与 src/plugins）不得值导入 WebSocketClient/RoomClient/cc/fairygui；plugin View 只豁免引擎模块", () => {
+  const files = [...collectTs(FIXTURES_DIR), ...collectTs(FUTURE_PLUGINS_DIR)];
   assert.ok(files.length >= 1, "扫描目标为空：fixtures 目录丢失（门禁空转）");
   for (const file of files) {
     const source = readFileSync(file, "utf8");
-    if (isFeatureViewFile(file)) {
+    if (isPluginViewFile(file)) {
       assert.doesNotMatch(source, BANNED_VALUE_IMPORT_VIEW,
-        `${file} 含被禁的 transport 值导入（feature View 只豁免 cc/fairygui，能力仍只经 ports）`);
+        `${file} 含被禁的 transport 值导入（plugin View 只豁免 cc/fairygui，能力仍只经 ports）`);
       continue;
     }
     assert.doesNotMatch(source, BANNED_VALUE_IMPORT,
-      `${file} 含被禁的值导入（feature 只能经 ports 取得能力）`);
+      `${file} 含被禁的值导入（plugin 只能经 ports 取得能力）`);
   }
-  assert.ok(isFeatureViewFile("/x/src/features/redeem/view/RedeemView.ts"));
-  assert.ok(!isFeatureViewFile("/x/src/features/redeem/logic/RedeemLogic.ts"));
-  assert.ok(!isFeatureViewFile("/x/src/features/redeem/index.ts"));
+  assert.ok(isPluginViewFile("/x/src/plugins/redeem/view/RedeemView.ts"));
+  assert.ok(!isPluginViewFile("/x/src/plugins/redeem/logic/RedeemLogic.ts"));
+  assert.ok(!isPluginViewFile("/x/src/plugins/redeem/index.ts"));
   assert.match('\nimport { RoomClient } from "../../../net/RoomClient";\n', BANNED_VALUE_IMPORT_VIEW);
   assert.doesNotMatch('\nimport { Node } from "cc";\n', BANNED_VALUE_IMPORT_VIEW);
 });
@@ -249,7 +249,7 @@ test("静态门禁正则自测：值导入判违规、type-only 放行", () => {
     'import type { Node } from "cc";',
     'import type { AppPorts } from "../../src/app/ports";',
     'import { createAppPorts } from "../../src/app/ports";',
-    'import type { FeatureModule } from "../../src/app/FeatureHost";',
+    'import type { PluginModule } from "../../src/app/PluginHost";',
   ]) {
     assert.doesNotMatch(`\n${good}\n`, BANNED_VALUE_IMPORT, `不应误伤: ${good}`);
   }

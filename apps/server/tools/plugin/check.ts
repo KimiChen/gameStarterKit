@@ -11,9 +11,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { classifyPath, deriveOwnership, pluginDir, readProtectedPaths } from "./ownership";
-import { assertManifestCompatible, identityDifferences, identityOf, parsePluginManifest } from "./manifest";
+import { identityDifferences, identityFromSummary, identityOf, parsePluginManifest, readTreeGameplaySource } from "./manifest";
 import { filesLockSha256Of, listInstalledLocks, verifyLockAgainstTree } from "./lock";
-import { featureDeclarations, featureManifestPath, gameplaySourceDir } from "./package";
+import { pluginDeclarations } from "./package";
 
 export interface PluginCheckEntry {
   readonly id: string;
@@ -79,56 +79,20 @@ export function checkInstalledPlugins(root: string): PluginCheckReport {
     } else {
       try {
         const authored = parsePluginManifest(JSON.parse(fs.readFileSync(manifestFile, "utf8")), manifestRelative);
-        if (authored.version !== lock.manifest.version) problems.push(`${manifestRelative} 的 version（${authored.version}）与锁（${lock.manifest.version}）不一致`);
-        for (const difference of identityDifferences(lock.manifest, authored)) {
+        if (authored.version === null) problems.push(`${manifestRelative} 没有 version（宿主自有插件形态）却有已安装锁`);
+        else if (authored.version !== lock.manifest.version) problems.push(`${manifestRelative} 的 version（${authored.version}）与锁（${lock.manifest.version}）不一致`);
+        clientDirs = pluginDeclarations(authored).clientDirs;
+        // 身份比对：派生 kinds / constantName（gameplay 单源的 schemaVersion 在读取时与 gameplay-schema 比对）。
+        const identity = identityOf(authored, readTreeGameplaySource(root, id));
+        for (const difference of identityDifferences(lock.manifest, identity)) {
           problems.push(`${manifestRelative} 的身份与锁不一致（先 install --reinstall-from-tree ${id} --allow-identity-change 重写锁）：${difference}`);
-        }
-        // 兼容轴：树上 plugin.json 与本仓两个 schemaVersion 比对；锁登记的 requires 也要与之一致（旧锁未登记即点名）。
-        try {
-          assertManifestCompatible(authored, manifestRelative);
-        } catch (error) {
-          problems.push(error instanceof Error ? error.message : String(error));
-        }
-        const lockRequires = lock.manifest.requires;
-        if ((lock.manifest.kinds.includes("feature") && lockRequires.featureSchemaVersion === null) || (lock.manifest.kinds.includes("gameplay") && lockRequires.gameplaySchemaVersion === null)) {
-          problems.push(`锁未登记 requires（旧锁形态）：install --reinstall-from-tree ${id} 重写锁即补上`);
-        } else if (lockRequires.featureSchemaVersion !== authored.requires.featureSchemaVersion || lockRequires.gameplaySchemaVersion !== authored.requires.gameplaySchemaVersion) {
-          problems.push(`${manifestRelative} 的 requires 与锁不一致：锁 ${JSON.stringify(lockRequires)} vs 树 ${JSON.stringify(authored.requires)}`);
-        }
-        // requires 不是自述：树上 feature.json / gameplay manifest.json 的 schemaVersion 必须与之一致。
-        const artifactVersion = (relative: string): unknown => {
-          const file = path.join(root, relative);
-          if (!fs.existsSync(file)) return undefined;
-          try {
-            return (JSON.parse(fs.readFileSync(file, "utf8")) as { readonly schemaVersion?: unknown }).schemaVersion;
-          } catch {
-            return "<无法解析>";
-          }
-        };
-        if (authored.kinds.includes("feature")) {
-          const actual = artifactVersion(featureManifestPath(id));
-          if (actual !== undefined && actual !== authored.requires.featureSchemaVersion) problems.push(`${featureManifestPath(id)} 的 schemaVersion（${String(actual)}）与 requires.featureSchemaVersion（${String(authored.requires.featureSchemaVersion)}）不一致`);
-        }
-        if (authored.kinds.includes("gameplay")) {
-          const actual = artifactVersion(`${gameplaySourceDir(id)}/manifest.json`);
-          if (actual !== undefined && actual !== authored.requires.gameplaySchemaVersion) problems.push(`${gameplaySourceDir(id)}/manifest.json 的 schemaVersion（${String(actual)}）与 requires.gameplaySchemaVersion（${String(authored.requires.gameplaySchemaVersion)}）不一致`);
         }
       } catch (error) {
         problems.push(`${manifestRelative} 无法解析：${error instanceof Error ? error.message : String(error)}`);
       }
     }
-    if (lock.manifest.kinds.includes("feature")) {
-      const featureFile = path.join(root, featureManifestPath(id));
-      if (fs.existsSync(featureFile)) {
-        try {
-          clientDirs = featureDeclarations(new Map([[featureManifestPath(id), fs.readFileSync(featureFile)]]), id).clientDirs;
-        } catch (error) {
-          problems.push(error instanceof Error ? error.message : String(error));
-        }
-      }
-    }
     try {
-      const rules = deriveOwnership(identityOf(lock.manifest, clientDirs));
+      const rules = deriveOwnership(identityFromSummary(lock.manifest, clientDirs));
       const protectedPaths = readProtectedPaths(root);
       for (const entry of lock.entries) {
         const verdict = classifyPath(entry.path, rules, protectedPaths);

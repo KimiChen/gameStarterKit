@@ -221,15 +221,15 @@ test("wireSessionLifecycle：transport 失效先拆玩法 generation；journal/t
 });
 
 
-test("launch 统一启动通道经 FeatureHost 闸：failed 不启动、userIntent 重试成功后启动、常驻与未托管直通", async () => {
-  // 缺口：此前 AppRuntime.launch 直接 launchGameplay，FeatureHost 状态机（failed/disabled）
-  // 在生产启动通道上无任何判定——菜单 enabled 只是渲染期快照，渲染后失败的 feature
+test("launch 统一启动通道经 PluginHost 闸：failed 不启动、userIntent 重试成功后启动、常驻与未托管直通", async () => {
+  // 缺口：此前 AppRuntime.launch 直接 launchGameplay，PluginHost 状态机（failed/disabled）
+  // 在生产启动通道上无任何判定——菜单 enabled 只是渲染期快照，渲染后失败的 plugin
   // 照常进玩法；userIntent 重试也没有生产调用方。本用例钉住启动时刻的唯一判定。
   // 变异锚点：launch 退化为直走 launchGameplay ⇒ ① 的 started=0 断言必红。
   const { appRuntime, makeNode } = await loadAppHost();
   let failInstall = true;
   let installs = 0;
-  const hostedFeatures = [
+  const hostedPlugins = [
     { id: "builtin", resident: true },
     {
       id: "fx",
@@ -243,29 +243,29 @@ test("launch 统一启动通道经 FeatureHost 闸：failed 不启动、userInte
   ];
   const runtime = new appRuntime.AppRuntime({
     node: makeNode(),
-    hostedFeatures,
-    launchFeatureMap: new Map([["ballMove", "builtin"], ["fxGame", "fx"]]),
+    hostedPlugins,
+    launchPluginMap: new Map([["ballMove", "builtin"], ["fxGame", "fx"]]),
   }) as unknown as Record<string, any>;
   let started = 0;
   runtime.launchGameplay = async () => { started++; };
 
-  // ① 托管 feature install 失败：玩法不得启动（启动时刻再闸，不信渲染期快照）。
+  // ① 托管 plugin install 失败：玩法不得启动（启动时刻再闸，不信渲染期快照）。
   await runtime.launch({ kind: "gameplay", gameplayId: "fxGame" });
-  assert.equal(started, 0, "feature failed 时不得启动玩法");
-  assert.equal(runtime.features.statusOf("fx"), "failed");
+  assert.equal(started, 0, "plugin failed 时不得启动玩法");
+  assert.equal(runtime.plugins.statusOf("fx"), "failed");
 
   // ② 点击 = 显式用户意图：重试装载成功后照常启动，且装载恰好重试一次。
   failInstall = false;
   await runtime.launch({ kind: "gameplay", gameplayId: "fxGame" });
-  assert.equal(runtime.features.statusOf("fx"), "active");
+  assert.equal(runtime.plugins.statusOf("fx"), "active");
   assert.equal(started, 1, "userIntent 重试成功后必须启动玩法");
   assert.equal(installs, 2, "装载必须恰好重试一次");
 
   // ③ resident built-in：恒 active 短路，零开销直通（不触发任何装载）。
   await runtime.launch({ kind: "gameplay", gameplayId: "ballMove" });
-  assert.equal(started, 2, "常驻 feature 必须直通");
+  assert.equal(started, 2, "常驻 plugin 必须直通");
 
-  // ④ 未托管 target（无 contribution 映射）：不受 feature 闸管控，直通。
+  // ④ 未托管 target（无 contribution 映射）：不受 plugin 闸管控，直通。
   await runtime.launch({ kind: "gameplay", gameplayId: "otherGame" });
   assert.equal(started, 3, "未托管 target 必须直通");
 
@@ -273,7 +273,7 @@ test("launch 统一启动通道经 FeatureHost 闸：failed 不启动、userInte
 });
 
 test("launch 闸 await 窗口的活性复验：换代/dispose 后迟到的 install 完成不得启动玩法", async () => {
-  // 缺口（47dc934 引入的回归）：launch 的 FeatureHost 闸是 await——install 挂起期间
+  // 缺口（47dc934 引入的回归）：launch 的 PluginHost 闸是 await——install 挂起期间
   // 会话可能换代（returnToLogin 后重新登录）、app 可能 dispose。若无复验，迟到的
   // install 完成会带着旧意图进 launchGameplay（closeGroup("authenticated") 关掉换代后
   // 重开的 Login / 在新会话下启动玩法）。观察面取 started 计数：launchGameplay 被
@@ -283,7 +283,7 @@ test("launch 闸 await 窗口的活性复验：换代/dispose 后迟到的 insta
     let resolveGate: () => void = () => {};
     const gate = new Promise<void>((resolve) => { resolveGate = resolve; });
     let installs = 0;
-    const hostedFeatures = [
+    const hostedPlugins = [
       { id: "builtin", resident: true },
       {
         id: "fx",
@@ -295,8 +295,8 @@ test("launch 闸 await 窗口的活性复验：换代/dispose 后迟到的 insta
     ];
     const runtime = new appRuntime.AppRuntime({
       node: makeNode(),
-      hostedFeatures,
-      launchFeatureMap: new Map([["ballMove", "builtin"], ["fxGame", "fx"]]),
+      hostedPlugins,
+      launchPluginMap: new Map([["ballMove", "builtin"], ["fxGame", "fx"]]),
     }) as unknown as Record<string, any>;
     let started = 0;
     runtime.launchGameplay = async () => { started++; };
@@ -316,7 +316,7 @@ test("launch 闸 await 窗口的活性复验：换代/dispose 后迟到的 insta
     first.resolveGate();
     await pending;
     assert.equal(first.installs(), 1, "install 本身照常完成（复验只拦启动，不拦装载结算）");
-    assert.equal(first.runtime.features.statusOf("fx"), "active");
+    assert.equal(first.runtime.plugins.statusOf("fx"), "active");
     assert.equal(first.started(), 0, "换代后迟到的 install 完成不得启动玩法");
   } finally {
     session.clearSession();
@@ -329,10 +329,10 @@ test("launch 闸 await 窗口的活性复验：换代/dispose 后迟到的 insta
   second.resolveGate();
   second.runtime.dispose();
   await second.runtime.launch({ kind: "gameplay", gameplayId: "fxGame" });
-  assert.equal(second.installs(), 0, "dispose 后 launch 不得触发 feature 装载");
+  assert.equal(second.installs(), 0, "dispose 后 launch 不得触发 plugin 装载");
   assert.equal(second.started(), 0, "dispose 后 launch 不得启动玩法");
 
-  // ③ 闸 await 期间 dispose（常驻 feature：闸恒 active，窗口只有一个微任务跳）。
+  // ③ 闸 await 期间 dispose（常驻 plugin：闸恒 active，窗口只有一个微任务跳）。
   const third = makeRuntime();
   const inFlight = third.runtime.launch({ kind: "gameplay", gameplayId: "ballMove" });
   third.runtime.dispose();
@@ -340,10 +340,10 @@ test("launch 闸 await 窗口的活性复验：换代/dispose 后迟到的 insta
   assert.equal(third.started(), 0, "闸 await 期间 dispose 后不得启动玩法");
 });
 
-test("deriveLaunchFeatureIds：生产派生 ballMove→builtin；多贡献者取先到者（生成器已闸一 gameplayId 一贡献者）", async () => {
+test("deriveLaunchPluginIds：生产派生 ballMove→builtin；多贡献者取先到者（生成器已闸一 gameplayId 一贡献者）", async () => {
   // 缺口（变异 M4/M5 存活）：此前派生内联在构造函数里，生产路径（不注入
-  // launchFeatureMap seam）零覆盖——把 map 键改成 featureId（M4）或去掉 !map.has
-  // 守卫（M5）全绿存活。codegen:features 已拒绝同一 gameplayId 的第二贡献者，
+  // launchPluginMap seam）零覆盖——把 map 键改成 pluginId（M4）或去掉 !map.has
+  // 守卫（M5）全绿存活。codegen:plugins 已拒绝同一 gameplayId 的第二贡献者，
   // 这里的「先到者不被覆盖」只是对手工 fixture 的防御语义。
   const { appRuntime, loginFlow, makeNode } = await loadAppHost();
 
@@ -351,10 +351,10 @@ test("deriveLaunchFeatureIds：生产派生 ballMove→builtin；多贡献者取
   // ballMove → builtin；纯函数喂真实 menuContributions() 得到同一结果。
   const runtime = new appRuntime.AppRuntime({ node: makeNode() }) as unknown as Record<string, any>;
   try {
-    assert.equal(runtime.launchFeatureIds.get("ballMove"), "builtin",
-      "生产派生必须以 gameplayId 为键映射到贡献 feature");
+    assert.equal(runtime.launchPluginIds.get("ballMove"), "builtin",
+      "生产派生必须以 gameplayId 为键映射到贡献 plugin");
     assert.equal(
-      appRuntime.deriveLaunchFeatureIds(loginFlow.appFeatureRegistry.menuContributions()).get("ballMove"),
+      appRuntime.deriveLaunchPluginIds(loginFlow.appPluginRegistry.menuContributions()).get("ballMove"),
       "builtin");
   } finally {
     runtime.dispose();
@@ -362,92 +362,92 @@ test("deriveLaunchFeatureIds：生产派生 ballMove→builtin；多贡献者取
 
   // ② 多贡献者（杀 M5）：同 gameplayId 两条 contribution（B 在前）→ 取 B；
   // 去掉 !map.has 守卫会被后来者覆盖成 A。route 形态的 contribution ⛔ 不进表。
-  const contribution = (featureId: string, entryId: string) => ({
-    entryId, featureId, label: entryId, labelKey: `menu.${entryId}`,
+  const contribution = (pluginId: string, entryId: string) => ({
+    entryId, pluginId, label: entryId, labelKey: `menu.${entryId}`,
     launch: { kind: "gameplay" as const, gameplayId: "sharedGame" },
   });
   const sorted = [contribution("featB", "bEntry"), contribution("featA", "aEntry")];
-  assert.equal(appRuntime.deriveLaunchFeatureIds(sorted).get("sharedGame"), "featB",
+  assert.equal(appRuntime.deriveLaunchPluginIds(sorted).get("sharedGame"), "featB",
     "同一 gameplayId 多贡献者必须取先到的贡献者");
   const routeOnly = [{
-    entryId: "panel", featureId: "featC", label: "panel", labelKey: "menu.panel",
+    entryId: "panel", pluginId: "featC", label: "panel", labelKey: "menu.panel",
     launch: { kind: "route" as const, routeId: "panel" },
   }];
-  assert.equal(appRuntime.deriveLaunchFeatureIds(routeOnly).size, 0, "route 形态的入口不进 gameplayId 映射");
+  assert.equal(appRuntime.deriveLaunchPluginIds(routeOnly).size, 0, "route 形态的入口不进 gameplayId 映射");
 });
 
 test("launch 点击恒为 userIntent：连续点击不计入自动重试上限，永不进 disabled", async () => {
   // 缺口（变异 M2-drop-userIntent 存活）：既有用例只覆盖「failed 后一次点击重试成功」，
   // 没钉住「点击不消耗自动重试预算」——把 launch 的 { userIntent: true } 改成 {} 时
-  // 全绿存活，用户连点几次入口就把 feature 点进 disabled(app-generation)。
+  // 全绿存活，用户连点几次入口就把 plugin 点进 disabled(app-generation)。
   const { appRuntime, makeNode } = await loadAppHost();
-  const hostedFeatures = [
+  const hostedPlugins = [
     { id: "fx", load: () => ({ install: () => { throw new Error("install always fails"); } }) },
   ];
   const runtime = new appRuntime.AppRuntime({
     node: makeNode(),
-    hostedFeatures,
-    launchFeatureMap: new Map([["fxGame", "fx"]]),
+    hostedPlugins,
+    launchPluginMap: new Map([["fxGame", "fx"]]),
   }) as unknown as Record<string, any>;
   let started = 0;
   runtime.launchGameplay = async () => { started++; };
 
-  // 对照 FeatureHost 实现读出本 runtime 生效的自动重试上限（默认 2），点击数取上限 + 2，
+  // 对照 PluginHost 实现读出本 runtime 生效的自动重试上限（默认 2），点击数取上限 + 2，
   // 保证只要点击被计入自动重试就必然越过上限。
-  const maxAutoRetries = (runtime.features as unknown as Record<string, any>).maxAutoRetries as number;
+  const maxAutoRetries = (runtime.plugins as unknown as Record<string, any>).maxAutoRetries as number;
   assert.equal(typeof maxAutoRetries, "number");
   for (let i = 0; i < maxAutoRetries + 2; i++) {
     await runtime.launch({ kind: "gameplay", gameplayId: "fxGame" });
-    assert.equal(runtime.features.statusOf("fx"), "failed",
+    assert.equal(runtime.plugins.statusOf("fx"), "failed",
       `第 ${i + 1} 次点击后必须仍是 failed——点击 = userIntent，不消耗自动重试预算`);
   }
   assert.equal(started, 0, "install 恒失败时玩法始终不得启动");
   // 非 userIntent 的内部路径按上限进 disabled 由既有用例钉住：
-  // 本文件「launch 统一启动通道：disabled(app-generation)…」与 featureHost.test.ts
+  // 本文件「launch 统一启动通道：disabled(app-generation)…」与 pluginHost.test.ts
   // 「failed 两条出路…」。
   runtime.dispose();
 });
 
-test("launch 闸对未托管 featureId 的裁定与渲染侧一致：不误伤、直通", async () => {
-  // 缺口：映射指向不在 hostedFeatures 的 feature id 时，渲染侧 featureAvailability
-  // 防御性返回 "available"（入口可点击），而闸侧 featureHost.launch 对未登记 id
+test("launch 闸对未托管 pluginId 的裁定与渲染侧一致：不误伤、直通", async () => {
+  // 缺口：映射指向不在 hostedPlugins 的 plugin id 时，渲染侧 pluginAvailability
+  // 防御性返回 "available"（入口可点击），而闸侧 pluginHost.launch 对未登记 id
   // fail-fast throw——同一个入口两侧裁定不一致：可点击却点不动（unhandled rejection）。
   // 修复后闸侧经 hosts() 与渲染侧同款裁定：未托管即直通，不进闸。
   const { appRuntime, makeNode } = await loadAppHost();
   const runtime = new appRuntime.AppRuntime({
     node: makeNode(),
-    hostedFeatures: [{ id: "builtin", resident: true }],
-    launchFeatureMap: new Map([["fxGame", "ghost"]]),
+    hostedPlugins: [{ id: "builtin", resident: true }],
+    launchPluginMap: new Map([["fxGame", "ghost"]]),
   }) as unknown as Record<string, any>;
   let started = 0;
   runtime.launchGameplay = async () => { started++; };
 
   await runtime.launch({ kind: "gameplay", gameplayId: "fxGame" });
-  assert.equal(started, 1, "未托管 featureId 必须直通（与渲染侧防御裁定一致），且不得 rejection");
+  assert.equal(started, 1, "未托管 pluginId 必须直通（与渲染侧防御裁定一致），且不得 rejection");
   runtime.dispose();
 });
 
-test("launch 统一启动通道：disabled(app-generation) 的 feature 同样不得启动玩法", async () => {
+test("launch 统一启动通道：disabled(app-generation) 的 plugin 同样不得启动玩法", async () => {
   const { appRuntime, makeNode } = await loadAppHost();
-  const hostedFeatures = [
+  const hostedPlugins = [
     { id: "fx", load: () => ({ install: () => { throw new Error("always fails"); } }) },
   ];
   const runtime = new appRuntime.AppRuntime({
     node: makeNode(),
-    hostedFeatures,
-    launchFeatureMap: new Map([["fxGame", "fx"]]),
+    hostedPlugins,
+    launchPluginMap: new Map([["fxGame", "fx"]]),
   }) as unknown as Record<string, any>;
   let started = 0;
   runtime.launchGameplay = async () => { started++; };
 
   // 自动重试预算耗尽（默认上限 2：首次 failed 后两次自动重试仍失败）→ disabled。
-  assert.equal(await runtime.features.launch("fx"), "failed");
-  assert.equal(await runtime.features.launch("fx"), "failed");
-  assert.equal(await runtime.features.launch("fx"), "failed");
-  assert.equal(await runtime.features.launch("fx"), "disabled", "超限必须置 disabled(app-generation)");
+  assert.equal(await runtime.plugins.launch("fx"), "failed");
+  assert.equal(await runtime.plugins.launch("fx"), "failed");
+  assert.equal(await runtime.plugins.launch("fx"), "failed");
+  assert.equal(await runtime.plugins.launch("fx"), "disabled", "超限必须置 disabled(app-generation)");
 
   await runtime.launch({ kind: "gameplay", gameplayId: "fxGame" });
-  assert.equal(started, 0, "disabled feature 不得启动玩法（userIntent 也不能越过 disabled）");
+  assert.equal(started, 0, "disabled plugin 不得启动玩法（userIntent 也不能越过 disabled）");
   runtime.dispose();
 });
 

@@ -3,7 +3,7 @@
  *
  * 从 FguiView 原样搬出：打开世代（beginLifecycle）、实例级 onCreate 单次闸（runCreate）、
  * 每次打开的 onOpen（runOpen）、幂等关闭（closeLifecycle/startClose）与 dispose 模板。
- * 搬出的原因只有一个：`kind:"cocos"` 页面（被 feature routes 引用的纯 Cocos 节点页）
+ * 搬出的原因只有一个：`kind:"cocos"` 页面（被 plugin routes 引用的纯 Cocos 节点页）
  * 必须与 FGUI 页面共用**同一套**生命周期——ViewMgr 的事务序、取消桥接与回滚逐段一致，
  * ⛔ 不允许按渲染栈各写一套。
  *

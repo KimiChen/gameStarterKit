@@ -8,7 +8,7 @@
  * 分层：GRoot 下按 VIEW_LAYERS 顺序懒建 base/popup/top 三个全屏容器（顺序即 z 序，
  * 尺寸 relation 跟随 GRoot）；GRoot 随场景重载销毁时容器/缓存整体重建。
  * 渲染栈：`kind:"fgui"` 页面走 ensurePackages → FguiView.create → 挂 GComponent 容器；
- * `kind:"cocos"` 页面（被 feature routes 引用的纯节点页）跳过这两步，直接实例化并挂到
+ * `kind:"cocos"` 页面（被 plugin routes 引用的纯节点页）跳过这两步，直接实例化并挂到
  * 层容器的 `.node` 下。⚠ 两条分支只在「造实例」和「挂哪里」不同，其余事务序
  * （beginLifecycle → runCreate → mount → 登记 → runOpen → setup）与错误/取消回滚逐段一致，
  * 生命周期实现也只有 ViewBase 一套——⛔ 不为任一渲染栈另起一条。
@@ -362,7 +362,7 @@ function ensurePendingActive(rec: PendingOpen): void {
 
 async function open(name: string, setup?: ViewSetup): Promise<ViewHandle> {
   const meta = activeCatalog[name];
-  if (!meta) { throw new Error(`[ViewMgr] 未注册页面: ${name}（写 <Name>View.view.json 并登记进 features/<id>/feature.json 后重跑 codegen:features）`); }
+  if (!meta) { throw new Error(`[ViewMgr] 未注册页面: ${name}（写 <Name>View.view.json 并登记进 apps/plugins/<id>/plugin.json 后重跑 codegen:plugins）`); }
 
   ensureLayers(); // 先做失效检测：场景重载后 cache 里是死视图，不能走复用分支
   const entry = cache.get(name);

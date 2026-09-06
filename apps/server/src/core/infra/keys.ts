@@ -3,7 +3,7 @@
  *
  * ⛔ 业务代码禁止手拼 key（09·R5：新增 key 必须先更新契约登记，再进构造器）。框架键定义在本文件；
  * 玩法自有键 ⛔ 不进本文件，由下方 `kGameplay` 工厂在 `rooms/modes/<id>/keys.ts` 里构造；
- * feature 自有键同样 ⛔ 不进本文件，由 `kFeatureUser` / `kFeatureShared` 工厂在 `core/<featureId>/keys.ts` 里构造。
+ * plugin 自有键同样 ⛔ 不进本文件，由 `kPluginUser` / `kPluginShared` 工厂在 `core/<pluginId>/keys.ts` 里构造。
  *
  * **项目前缀**：全部键带 `${PROJECT_ID}_` 运行时前缀（config.REDIS_KEY_PREFIX，缺省 `gono_`）：
  * 多项目共用一套 Redis 实例时按项目隔离，文档登记的是去前缀的逻辑键名。本文件是唯一拼接点。
@@ -90,43 +90,43 @@ export const kGameplay = (modeId: string, name: string, uid: string, scope: Game
   return `${scope.zone === "per-zone" ? P() : G}gp:${modeId}:${name}:{${uid}}`;
 };
 
-// ── feature 自有键工厂（feature 键由 feature 自己在 core/<featureId>/keys.ts 定义，中央本文件只提供
-//    构造器与分段契约——与 kGameplay 对称；docs/PLUGIN.md §8「feature 侧仍各写各的」的收口） ─────
+// ── plugin 自有键工厂（plugin 键由 plugin 自己在 core/<pluginId>/keys.ts 定义，中央本文件只提供
+//    构造器与分段契约——与 kGameplay 对称；docs/PLUGIN.md §8「plugin 侧仍各写各的」的收口） ─────
 
-/** feature 键的分区语义（与 GameplayKeyScope 同形：⛔ 无隐式缺省，理由见 GameplayKeyScope）。 */
-export type FeatureKeyScope = GameplayKeyScope;
+/** plugin 键的分区语义（与 GameplayKeyScope 同形：⛔ 无隐式缺省，理由见 GameplayKeyScope）。 */
+export type PluginKeyScope = GameplayKeyScope;
 
-/** feature 分段字面量闸：与玩法键同一规则，错误信息点名 kFeature。 */
-const assertFeatureKeySegment = (value: string, label: string): void => {
+/** plugin 分段字面量闸：与玩法键同一规则，错误信息点名 kPlugin。 */
+const assertPluginKeySegment = (value: string, label: string): void => {
   if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(value)) {
-    throw new Error(`kFeature ${label} "${value}" 非法：只允许 [A-Za-z0-9._-] 且首字符为字母数字（分段不得含 ':' / '{' / '}'）`);
+    throw new Error(`kPlugin ${label} "${value}" 非法：只允许 [A-Za-z0-9._-] 且首字符为字母数字（分段不得含 ':' / '{' / '}'）`);
   }
 };
 
 /**
- * feature 自有 per-user 键：逻辑名 `ft:<featureId>:<name>:{uid}`（物理键再带项目前缀，per-zone 时另带区前缀）。
+ * plugin 自有 per-user 键：逻辑名 `pl:<pluginId>:<name>:{uid}`（物理键再带项目前缀，per-zone 时另带区前缀）。
  *
- * 分段顺序是契约（同 `kGameplay`）：`ft:` 命名空间段把 feature 键族与框架键族 / 玩法键族（`gp:`）
- * 隔开、`featureId` 紧随其后（按 feature 前缀 scan/清理的唯一依据）、**`{uid}` hash-tag 必须是末段**
+ * 分段顺序是契约（同 `kGameplay`）：`pl:` 命名空间段把 plugin 键族与框架键族 / 玩法键族（`gp:`）
+ * 隔开、`pluginId` 紧随其后（按 plugin 前缀 scan/清理的唯一依据）、**`{uid}` hash-tag 必须是末段**
  * （09·R3 与该 uid 的框架键同槽）。⛔ 禁改分段或挪动末段。
  */
-export const kFeatureUser = (featureId: string, name: string, uid: string, scope: FeatureKeyScope): string => {
-  assertFeatureKeySegment(featureId, "featureId");
-  assertFeatureKeySegment(name, "name");
-  return `${scope.zone === "per-zone" ? P() : G}ft:${featureId}:${name}:{${uid}}`;
+export const kPluginUser = (pluginId: string, name: string, uid: string, scope: PluginKeyScope): string => {
+  assertPluginKeySegment(pluginId, "pluginId");
+  assertPluginKeySegment(name, "name");
+  return `${scope.zone === "per-zone" ? P() : G}pl:${pluginId}:${name}:{${uid}}`;
 };
 
 /**
- * feature 自有共享键（非 per-user）：逻辑名 `ft:<featureId>:<name>:{<featureId>}`——hash-tag 取
- * featureId，让同一 feature 的全部共享键同槽（可进同一条 Lua），且永不与任何 `{uid}` 槽混淆。
+ * plugin 自有共享键（非 per-user）：逻辑名 `pl:<pluginId>:<name>:{<pluginId>}`——hash-tag 取
+ * pluginId，让同一 plugin 的全部共享键同槽（可进同一条 Lua），且永不与任何 `{uid}` 槽混淆。
  * `key` 是可选的自由末段（如 `guild:<gid>`），走同一字面量闸。
  */
-export const kFeatureShared = (featureId: string, name: string, scope: FeatureKeyScope, key?: string): string => {
-  assertFeatureKeySegment(featureId, "featureId");
-  assertFeatureKeySegment(name, "name");
-  if (key !== undefined) assertFeatureKeySegment(key, "key");
+export const kPluginShared = (pluginId: string, name: string, scope: PluginKeyScope, key?: string): string => {
+  assertPluginKeySegment(pluginId, "pluginId");
+  assertPluginKeySegment(name, "name");
+  if (key !== undefined) assertPluginKeySegment(key, "key");
   const suffix = key === undefined ? "" : `:${key}`;
-  return `${scope.zone === "per-zone" ? P() : G}ft:${featureId}:${name}:{${featureId}}${suffix}`;
+  return `${scope.zone === "per-zone" ? P() : G}pl:${pluginId}:${name}:{${pluginId}}${suffix}`;
 };
 
 // ── durable 实例 · per-zone 键（P()：角色档 + 每区经济，09·R3 同 {uid} 槽） ──────────────

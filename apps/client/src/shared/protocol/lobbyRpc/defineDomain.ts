@@ -2,7 +2,7 @@
  * Lobby RPC 领域自描述 builder（Non-intrusive §4.1 阶段 3）。
  *
  * 每个域在 `domains/<域>.ts` 里 `export default defineLobbyRpcDomain({...})` 声明路由、
- * 执行模式、领域错误码与推送；`codegen:features` 以**语法读取**（⛔ 不执行 domain 文件）
+ * 执行模式、领域错误码与推送；`codegen:plugins` 以**语法读取**（⛔ 不执行 domain 文件）
  * 把它们聚合进 `registry.generated.ts`。
  *
  * 执行模式三分（§4.1）：
@@ -50,7 +50,7 @@ export interface LobbyPushDescriptor<TData = unknown> {
 export interface LobbyRpcDomainDescriptor {
     readonly domain: string;
     /**
-     * 域契约版本（缺省 1）：codegen:features 以 `domains/<域>.ts` 的字节 digest 为契约身份，
+     * 域契约版本（缺省 1）：codegen:plugins 以 `domains/<域>.ts` 的字节 digest 为契约身份，
      * digest 变化而本值未递增即拒绝生成（与 gameplay 的 contractDigest/modeVersion 闸对称，
      * docs/PLUGIN.md §8/§9）。⛔ 只是 codegen 层的人工确认闸，不进 wire、不进 join 信封。
      */
@@ -130,7 +130,7 @@ export function defineLobbyPush<TData>(
  * 域声明入口；contractVersion / pushes / ownsOperationGroups / exposesOperationGroupTo 可省
  * （缺省 1 / 空集）。
  *
- * operation group 所有权规则（§6.13，codegen:features 校验，任一违反即拒绝生成）：
+ * operation group 所有权规则（§6.13，codegen:plugins 校验，任一违反即拒绝生成）：
  *  1. group 是受拥有 id：由且仅由一个域在 `ownsOperationGroups` 声明，跨域重复即拒；
  *  2. 路由的 `operationGroup` 必须是本域拥有的组；`inspectable: true` 必须同时声明 `operationGroup`；
  *  3. `inspectsOperationGroup` 默认只能引用本域拥有的组；引用他域的组必须由该组 owner 在

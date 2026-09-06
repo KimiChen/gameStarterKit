@@ -1,10 +1,35 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "tally",
-  "version": "1.0.6",
-  "kinds": ["gameplay", "feature"],
-  "constantName": "Tally",
-  "domains": [],
-  "requires": { "featureSchemaVersion": 1, "gameplaySchemaVersion": 1 },
-  "description": "点数赛：先点满目标次数者胜——gameplay 形态插件的端到端实证（plan-v5 E5 第二样本）"
+  "version": "1.0.8",
+  "description": "点数赛：先点满目标次数者胜——gameplay 形态插件的端到端实证（plan-v5 E5 第二样本）",
+  "category": "extra",
+  "docs": [
+    "apps/plugins/tally/README.md"
+  ],
+  "resident": false,
+  "viewDirs": [
+    "apps/client/src/view/rooms/tally"
+  ],
+  "views": [
+    "apps/client/src/view/rooms/tally/TallyView.view.json"
+  ],
+  "owners": [
+    {
+      "id": "tally",
+      "logicDir": "apps/client/src/logic/rooms/tally"
+    }
+  ],
+  "routes": [],
+  "menu": [
+    {
+      "entryId": "tally",
+      "label": "点数赛",
+      "labelKey": "menu.tally",
+      "launch": {
+        "kind": "gameplay",
+        "gameplayId": "tally"
+      }
+    }
+  ]
 }

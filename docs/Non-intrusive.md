@@ -19,7 +19,7 @@
 >
 > 本文覆盖**两类扩展实体**（边界见 §3.1，⛔ 不得互相冒充）：
 >
-> - **feature** —— 已登录 Lobby 页面型能力，不进 GameRoom。直接需求来源是
+> - **plugin** —— 已登录 Lobby 页面型能力，不进 GameRoom。直接需求来源是
 >   [《Underground Idle》策划案](undergroundIdle/README.md)。
 > - **gameplay module** —— 实时 Room 玩法，运行在 GameRoom 内。直接需求来源是
 >   [《Snake Off》竖版贪吃蛇开房玩法策划案](snakeoff/README.md)（含邀请码房间；素材授权台账见
@@ -41,19 +41,19 @@
 锁文件。因此，至少会有生成注册表、指纹和镜像变化；消除这些变化反而会削弱静态类型、启动期 fail-fast 和
 审查可见性。普通脚本仍禁止静态 import 具体 View/FairyGUI 模块。
 
-本文首先承诺的是“新增已登录 Lobby 页面型 feature”的扩展边界。它不自动覆盖实时 Room 玩法、新增 GameRoom
+本文首先承诺的是“新增已登录 Lobby 页面型 plugin”的扩展边界。它不自动覆盖实时 Room 玩法、新增 GameRoom
 C2S 消息、公共 FGUI 基础包改造或全局数据模型变化；这些仍属于有意的框架修改。
 
 改造后的理想开发边界是：
 
 ```text
 一次性修改框架
-  → 建立 feature 描述符、生成注册表和通用运行时接缝
+  → 建立 plugin 描述符、生成注册表和通用运行时接缝
   → 迁移现有 user/mail/shop/guild、页面和 ballMove 入口
   → 验证生成物与现有行为一致
 
 以后新增玩法
-  → 只新增 feature/domain/endpoint/view/logic/test/art
+  → 只新增 plugin/domain/endpoint/view/logic/test/art
   → 运行 codegen、FGUI 导出与 sync
   → 只审查玩法源码 + 确定性生成 diff
 ```
@@ -107,7 +107,7 @@ C2S 消息、公共 FGUI 基础包改造或全局数据模型变化；这些仍�
 | 位置 | 当前扩展动作 | 带来的问题 |
 | --- | --- | --- |
 | `apps/shared/src/protocol/lobbyRpc/index.ts` | 手工增加 export、`LobbyRpcMap`、路由全集和 req/res validator | 同一领域分散登记；漏一处才在后续测试或启动时发现 |
-| `apps/shared/src/protocol/lobbyRpc/envelope.ts` | 手工扩展全局错误码数组 | 领域错误与框架错误耦合，多个 feature 分支容易冲突 |
+| `apps/shared/src/protocol/lobbyRpc/envelope.ts` | 手工扩展全局错误码数组 | 领域错误与框架错误耦合，多个 plugin 分支容易冲突 |
 | `apps/shared/src/protocol/lobbyRpc/push.ts` | 手工扩展 push 常量、Map、switch validator | 第二阶段新增唤醒推送仍会修改中央文件 |
 | `apps/shared/src/logic/index.ts` | 手工 re-export 新纯逻辑 | 玩法代码虽然是新增文件，公共入口仍要人工侵入 |
 | `apps/server/src/websocket/rpc.ts` | endpoint 重复声明 schema 和 `idem: true` | shared 已有语义仍需服务端再次登记；剩余风险是手写两字段的机械重复（含 clientReqId 的路由漏开 idem 已是编译期错误） |
@@ -117,8 +117,8 @@ C2S 消息、公共 FGUI 基础包改造或全局数据模型变化；这些仍�
 | `apps/client/src/view/viewRegistry.ts` | 每个 View 手工登记动态 import 和元数据 | View 文件与中央 registry 需要同步修改 |
 | `apps/client/src/view/fguiContracts.ts` | 手工维护契约常量和全集 | XML、View AUTO、contract 和 registry 存在多个同步点 |
 | `apps/client/src/view/HomeView.ts` | 固定 `btn_enter` 进入 ballMove | 每增加一个主入口都可能修改既有 Home 页面 |
-| `apps/client/src/net/WebSocketClient.ts`、`net/session.ts` | **瞬态** drop/reconnect 只在 `WebSocketClient` 内部处理；**最终态**已有 `session.ts` 的 `onAuthInvalid` / `onConnLost` / `onBattleLost` 稳定订阅（`Main.ts` 消费），但没有 joining/ready/dropped/reconnected 这类瞬态事件 | feature 只能感知“已经完了”，无法响应短暂 drop、重连与结果未知 |
-| 契约、View 与 inventory 测试 | 中央穷尽 fixture 或文件名假设 | 新领域必须修改旧测试表，feature 无法完全拥有自己的验收向量 |
+| `apps/client/src/net/WebSocketClient.ts`、`net/session.ts` | **瞬态** drop/reconnect 只在 `WebSocketClient` 内部处理；**最终态**已有 `session.ts` 的 `onAuthInvalid` / `onConnLost` / `onBattleLost` 稳定订阅（`Main.ts` 消费），但没有 joining/ready/dropped/reconnected 这类瞬态事件 | plugin 只能感知“已经完了”，无法响应短暂 drop、重连与结果未知 |
+| 契约、View 与 inventory 测试 | 中央穷尽 fixture 或文件名假设 | 新领域必须修改旧测试表，plugin 无法完全拥有自己的验收向量 |
 
 这些修改本身不一定复杂，但会产生三个长期问题：
 
@@ -169,7 +169,7 @@ Cocos Creator 3.8.8 的 TypeScript 源工程。它适合用于梳理玩法规则
 - 多个 View、FGUI 包、契约和测试接入。
 
 其中只有矿场、矿工、远征、公式和存档结构属于 undergroundIdle 领域。幂等 payload 绑定、连接生命周期、
-导航恢复、feature 菜单、静态注册表生成以及 fixture 发现都是其他 Lobby 玩法同样需要的框架能力。若只在
+导航恢复、plugin 菜单、静态注册表生成以及 fixture 发现都是其他 Lobby 玩法同样需要的框架能力。若只在
 `undergroundIdle.*` 内部
 解决，将来每个玩法都会复制一次，而且通用 dispatcher 在进入 handler 前就可能返回旧缓存，领域代码无法完整
 补救。
@@ -190,7 +190,7 @@ Cocos Creator 3.8.8 的 TypeScript 源工程。它适合用于梳理玩法规则
 
 ## 3. 两种扩展实体、目标与所有权
 
-本章先钉死 **feature** 与 **gameplay module** 的边界。后续所有共享设施（生成器、协议身份、View 登记、
+本章先钉死 **plugin** 与 **gameplay module** 的边界。后续所有共享设施（生成器、协议身份、View 登记、
 保护路径）都按这条边界划分归属，⛔ 不得把两者合并成一个巨型插件模型。
 
 ### 3.1 术语与实体边界
@@ -199,12 +199,12 @@ Cocos Creator 3.8.8 的 TypeScript 源工程。它适合用于梳理玩法规则
 
 | 实体 | 运行位置 | 典型能力 | 生成器 | 单源目录 |
 | --- | --- | --- | --- | --- |
-| **feature** | 已登录 Lobby，页面型 | 挂机、邮件、商店、公会 | `codegen:features` | `apps/client/src/features/<id>/` + shared domain |
+| **plugin** | 已登录 Lobby，页面型 | 挂机、邮件、商店、公会 | `codegen:plugins` | `apps/client/src/plugins/<id>/` + shared domain |
 | **gameplay module** | GameRoom 内，实时对局 | ballMove、Snake | `codegen:gameplays` | `apps/shared/gameplays/<id>/` + 三端模块 |
 
 **命名规则**：两类实体的 id **不得同名**。目前唯一一处需要区分的是 `idle`——
 它归既有 gameplay module（`GameplayModeId.Idle`），因此 Lobby 侧的挂机能力一律用准确名
-`undergroundIdle`。风格统一为 **camelCase**，⛔ 不用 kebab-case。该规则约束：feature id、RPC domain 名与
+`undergroundIdle`。风格统一为 **camelCase**，⛔ 不用 kebab-case。该规则约束：plugin id、RPC domain 名与
 路由前缀、`operationGroup`、服务端 endpoint 与 core 目录、shared domain 文件、测试与向量文件名、领域配置
 表 id。
 
@@ -216,8 +216,8 @@ Cocos Creator 3.8.8 的 TypeScript 源工程。它适合用于梳理玩法规则
 （如动画状态 `Idle` / `Work`）、以及实体**内部**的领域字段与函数名（如 `idleState`、`advanceIdleTo`）
 ——后者是标识符而非命名空间前缀，目录归属已足够表明所有权。
 
-⚠ **feature 与 gameplay module 是两种不同实体**，⛔ 不得互相冒充，也 ⛔ 不得合并成一个巨型插件模型。
-两者各自的 manifest schema 必须改名区分（`features/feature-schema-v1.json` 与
+⚠ **plugin 与 gameplay module 是两种不同实体**，⛔ 不得互相冒充，也 ⛔ 不得合并成一个巨型插件模型。
+两者各自的 manifest schema 必须改名区分（`apps/server/tools/plugin/plugin-schema-v2.json` 与
 `apps/server/tools/gameplay-codegen/gameplay-schema-v1.json`），避免同基名文件在检索与工具链里互相顶替。
 `manifest` / `descriptor` / `catalog` / `registry` 的用词在本文内保持一致即可，⛔ 不做全仓重命名——
 仓内 `GameplayRegistry` / `viewRegistry` / `VIEW_REGISTRY` 已把 registry 用于多种含义。
@@ -230,38 +230,38 @@ Cocos Creator 3.8.8 的 TypeScript 源工程。它适合用于梳理玩法规则
 | Home 菜单数据源 | §7.4 的 menu contribution | gameplay 入口编译成**相同形状**的 contribution |
 | 协议兼容版本与仓库级指纹锁 | §4.8 | 两类实体共用 `GAME_ROOM_PROTOCOL_VERSION` / `LOBBY_PROTOCOL_VERSION`，⛔ 不各自新增版本闸 |
 | Redis Lua 装载与 key 构造 | 仓内既有 `core/infra/redisScripts.ts` + `keys.ts` | 两侧都只**复用**，⛔ 不另建第二套（但 ⛔ 不共用记录结构，见 §6 导语） |
-| 生成器执行顺序 | 本节 | 当 gameplay 的 View/menu contribution 成为最终 View 生成器的输入时，`codegen:gameplays` 必须在 `codegen:features` **之前**运行；两者的 freshness 断言互不依赖顺序。⛔ 不合并成单一 `codegen -- --all` 前端——与仓内 `codegen:fgui` / `codegen:http` / `codegen:state` 三条并存、逐条登记的惯例冲突 |
+| 生成器执行顺序 | 本节 | 当 gameplay 的 View/menu contribution 成为最终 View 生成器的输入时，`codegen:gameplays` 必须在 `codegen:plugins` **之前**运行；两者的 freshness 断言互不依赖顺序。⛔ 不合并成单一 `codegen -- --all` 前端——与仓内 `codegen:fgui` / `codegen:http` / `codegen:state` 三条并存、逐条登记的惯例冲突 |
 
 下面是各自的术语定义：
 
-| 术语 | 定义 | 新增普通 feature 时是否允许 |
+| 术语 | 定义 | 新增普通 plugin 时是否允许 |
 | --- | --- | --- |
 | 人工侵入 | 开发者手改既有框架或其他领域拥有的源码、测试、页面或登记表 | 不允许 |
-| 新增式改动 | 在新 feature/domain 目录增加由该 feature 拥有的文件 | 允许，也是目标形态 |
-| 生成侵入 | codegen 根据 feature 源生成或刷新中央 registry、索引和锁文件 | 允许，必须确定且可检查 |
+| 新增式改动 | 在新 plugin/domain 目录增加由该 plugin 拥有的文件 | 允许，也是目标形态 |
+| 生成侵入 | codegen 根据 plugin 源生成或刷新中央 registry、索引和锁文件 | 允许，必须确定且可检查 |
 | 镜像变化 | `sync:shared`、`sync:client` 产生的客户端/Cocos 镜像变化 | 允许，禁止手改 |
 | 框架变化 | 修改通用语义、默认入口、DB schema、依赖或运行时机制 | 仍需显式修改和评审 |
 
-删除 feature 也不属于普通“新增式改动”。删除会涉及生成条目、资源、镜像和可能的存量数据兼容，必须走单独的
+删除 plugin 也不属于普通“新增式改动”。删除会涉及生成条目、资源、镜像和可能的存量数据兼容，必须走单独的
 显式审核与删除保护，不能让生成器因为目录暂时缺失就静默批量删除。
 
 
 ### 3.2 可验收目标
 
-**feature 侧**——一次性改造完成后，应满足：
+**plugin 侧**——一次性改造完成后，应满足：
 
 1. 新增 Lobby RPC 领域不再手改 `lobbyRpc/index.ts`、`envelope.ts`、`rpc.ts`、`dispatcher.ts` 或
    `core/errors.ts`。
-2. 新增 feature 页面不再手改 `pages.ts`、`viewRegistry.ts`、`fguiContracts.ts`、Home、`Main.ts` 或
+2. 新增 plugin 页面不再手改 `pages.ts`、`viewRegistry.ts`、`fguiContracts.ts`、Home、`Main.ts` 或
    `WebSocketClient.ts`。
 3. 路由的请求、响应、执行模式和幂等策略只有一个领域真源；全局错误码全集由 core + domain descriptor
    单源聚合。
 4. 所有 idempotent write 自动获得 payload hash、唯一 lease 和短期结果缓存；只有显式声明 inspectable/
    operation group 的路由才能进入受控查询。
-5. 所有 feature 通过统一的会话、连接和宿主生命周期接口恢复，不自行重建 Lobby 连接。
-6. 新增 feature 只增加自己的测试向量；通用测试自动遍历并验证全集。
+5. 所有 plugin 通过统一的会话、连接和宿主生命周期接口恢复，不自行重建 Lobby 连接。
+6. 新增 plugin 只增加自己的测试向量；通用测试自动遍历并验证全集。
 7. `--check` 在生成物陈旧、重复 id、路径越界或集合不齐时失败，且不修改工作区。
-8. 提交 diff 能清楚区分手写 feature 文件、生成物、资源导出物和镜像。
+8. 提交 diff 能清楚区分手写 plugin 文件、生成物、资源导出物和镜像。
 
 **gameplay module 侧**——一次性改造完成后，应满足：
 
@@ -276,10 +276,10 @@ Cocos Creator 3.8.8 的 TypeScript 源工程。它适合用于梳理玩法规则
    ⚠ **唯一例外**：若新玩法要在 Home 出现可见入口，它需要往菜单 contribution 集合登记一条——该集合按
    §3.1 交汇点表归 §7.4 拥有。「登记一条 contribution」属于生成侵入还是人工侵入，取决于 §7.4 最终把
    contribution 的手写真源放在哪里；实施时必须明确，⛔ 不能默认它是零成本。
-   > 注记（2026-09-04，已关闭）：`features/snake/feature.json` 落地后，玩法自持 views/owners/menu
-   > contribution，登记入口只写自己的 manifest，⛔ 不再碰 `features/built-in/feature.json`——本例外不再需要。
+   > 注记（2026-09-04，已关闭）：`apps/plugins/snake/plugin.json` 落地后，玩法自持 views/owners/menu
+   > contribution，登记入口只写自己的 manifest，⛔ 不再碰 `apps/plugins/builtin/plugin.json`——本例外不再需要。
    > 上面的正文保留为历史设计记录（当时确实未定），闭合断言见 `apps/client/test/homeMenu.test.ts` 的
-   > 「contribution 归属」用例：玩法只要有自己的 feature，入口搬回 built-in 即红。
+   > 「contribution 归属」用例：玩法只要有自己的 plugin，入口搬回 built-in 即红。
 
 
 ### 3.3 非目标
@@ -287,7 +287,7 @@ Cocos Creator 3.8.8 的 TypeScript 源工程。它适合用于梳理玩法规则
 **两侧共同**——本方案不做以下事情：
 
 - 不实现运行时热插拔、远程插件下载或脚本热更新；
-- 不把 feature 变成新的 npm workspace，也不要求把所有现有源码迁入一个巨型 vertical-slice 目录；
+- 不把 plugin 变成新的 npm workspace，也不要求把所有现有源码迁入一个巨型 vertical-slice 目录；
 - 不在 shared 引入 Zod、Node API、DOM、`cc` 或完整 schema DSL；
 - 不从 TypeScript interface 自动猜测运行时 validator；validator 仍由领域显式实现；
 - 不让生成器自动 bump 语义版本、自动宣告功能完成或自动修改**当前计划文件**（写作时为 plan-v4.md）的验收
@@ -344,7 +344,7 @@ apps/shared/src/gameplays/<id>/wire.ts
 `context.send(ref, s2cToken, payload)`。发送层还要确认 token 方向为 S2C 且 owner 是 core/当前 mode，不能只
 验证 payload。这样玩法无法通过 `client.send()` 绕过 core 的验证、预算与生命周期。
 
-feature 必须拥有自己的：
+plugin 必须拥有自己的：
 
 - shared domain contract 和纯逻辑；
 - server endpoint、core 领域模块及持久化收据；
@@ -354,7 +354,7 @@ feature 必须拥有自己的：
   tsconfig include 内）的 RPC 最小向量；
 - 说明文档和 inventory fragment。
 
-跨 feature 依赖必须在 manifest 中通过 `dependsOn` 或稳定 port 声明。禁止 feature 互相直接读取内部状态，生成器
+跨 plugin 依赖必须在 manifest 中通过 `dependsOn` 或稳定 port 声明。禁止 plugin 互相直接读取内部状态，生成器
 应拒绝依赖环和重复公开 id。
 
 
@@ -368,15 +368,15 @@ shared 是双端唯一契约真源，也是两类实体交汇点中最核心的�
 > **命名边界**：仓内已有 Room 玩法 `idle`——它是一个 **gameplay module**
 > （`GameplayModeId.Idle = "idle"`、`apps/server/src/rooms/modes/IdleGameMode.ts`、
 > `apps/client/src/logic/rooms/idle/IdleGameplay.ts`、`c2s.idle.pulse`、`IdleRoomState`）。
-> 本文的 Lobby 能力是一个 **feature**，两者按 §3.1 是**不同实体**，⛔ 不得同名。
+> 本文的 Lobby 能力是一个 **plugin**，两者按 §3.1 是**不同实体**，⛔ 不得同名。
 >
-> **`idle` 归既有 gameplay module；Lobby feature 一律用准确名 `undergroundIdle`。**
+> **`idle` 归既有 gameplay module；Lobby plugin 一律用准确名 `undergroundIdle`。**
 > 方向如此选择的原因是成本不对称：`idle` 已进 join envelope、state manifest 的 root 选择、生成物与三端
 > 镜像，且 `PROTOCOL_VERSION` 的版本注释明确记录了 v7 新增 `c2s.idle.pulse`——给它改名要动协议并 bump
-> 版本；而 undergroundIdle feature 尚无任何代码，改名零成本。
+> 版本；而 undergroundIdle plugin 尚无任何代码，改名零成本。
 >
 > 风格统一为 **camelCase**（与 `docs/undergroundIdle/` 及仓内 `logic/rooms/idle/` 等目录惯例一致），
-> ⛔ 不使用 kebab-case 的 `underground-idle`。这条同时约束：feature id、RPC domain 名与路由前缀、
+> ⛔ 不使用 kebab-case 的 `underground-idle`。这条同时约束：plugin id、RPC domain 名与路由前缀、
 > `operationGroup`、服务端 endpoint 与 core 目录、shared domain 文件、测试与向量文件名。
 
 新增稳定的零依赖 builder，例如：
@@ -477,9 +477,9 @@ metadata，不能把 domain 级错误集合误读为逐路由穷尽表。
 ⛔ 不能混进 §9 阶段 3 「现有 route、validator、endpoint 和行为不变」的机械迁移。
 ⛔ 不要顺手把长度下界从 1 提到 8——那会拒绝现有客户端的合法短 ID。
 
-生产 contract 中不放测试 fixture，避免客户端包携带测试数据。测试向量放在 feature-owned sidecar。
+生产 contract 中不放测试 fixture，避免客户端包携带测试数据。测试向量放在 plugin-owned sidecar。
 
-`apps/shared/src/logic/index.ts` 一次性改为 re-export 一个生成 barrel，或允许 feature 使用稳定的 shared 子路径
+`apps/shared/src/logic/index.ts` 一次性改为 re-export 一个生成 barrel，或允许 plugin 使用稳定的 shared 子路径
 export。后续新增 `logic/undergroundIdle/**` 时，不再手改中央 `logic/index.ts`。
 
 
@@ -649,7 +649,7 @@ Proxy/跨边界属性读取异常。客户端继续只按 `code` 分支，不解
 下发的非 INTERNAL message 必须是有界、可公开文本，禁止包含 SQL、Redis key、完整 payload、内部路径、种子或
 私有状态；不能证明安全时发送稳定通用文案。客户端不解析 msg 并不能自动防止服务端泄漏。
 
-以后领域错误类和错误码都在 feature 新文件中定义，不再修改 `core/errors.ts`。
+以后领域错误类和错误码都在 plugin 新文件中定义，不再修改 `core/errors.ts`。
 
 
 ### 4.8 协议身份与版本边界
@@ -694,7 +694,7 @@ Lobby join（`LobbyRoom.ts:252`）、Game join（`GameRoom.ts:115/706/926`）、
 仓库级 fingerprint 对原始字节敏感，注释、排序和 generated registry 变化都可能改变它；它证明“协议目录经过
 显式接受”，不证明这些变化在语义上不兼容。运行时 join 兼容只看对应的人工版本整数，二者职责不能混用。
 
-不得为了追求无侵入而取消协议锁，也不得让 `--check` 自动重钉。若未来多个 feature 分支频繁冲突，再基于真实
+不得为了追求无侵入而取消协议锁，也不得让 `--check` 自动重钉。若未来多个 plugin 分支频繁冲突，再基于真实
 冲突数据考虑按 domain/package 分片指纹；初期继续保留一个确定性的全局锁更简单。
 
 > **本节是全文对协议身份的唯一口径。** 上文所说的 “framework protocol version”**就是**
@@ -712,22 +712,22 @@ Lobby join（`LobbyRoom.ts:252`）、Game join（`GameRoom.ts:115/706/926`）、
 两类实体各有自己的单源目录与生成器，但**生成器的通用约束只写一份**（§5.5），两个生成器都继承它。
 命令形态也已统一：两者都是 workspace 脚本 + freshness 测试断言，⛔ 都不新增根命令。
 
-### 5.1 feature 描述符
+### 5.1 plugin 描述符
 
 建议增加一个只承载跨层登记信息的数据文件：
 
 ```text
-features/
-├── feature-schema-v1.json
+plugins/
+├── plugin-schema-v2.json
 ├── built-in/
-│   └── feature.json
+│   └── plugin.json
 └── undergroundIdle/
-    └── feature.json
+    └── plugin.json
 ```
 
-`feature.json` 只描述：
+`plugin.json` 只描述：
 
-- `schemaVersion`、feature id、类别和声明状态；
+- `schemaVersion`、plugin id、类别和声明状态；
 - 权威文档路径；
 - shared RPC domain module、可选 push contribution 和纯逻辑公开模块；
 - 服务端 endpoint 目录和测试向量路径；
@@ -778,24 +778,24 @@ apps/client/src/gameplay/modes/<id>/index.ts
 
 ### 5.3 生成静态注册表，不依赖运行时扫描
 
-建议新增 `scripts/feature-codegen.mjs` 或同等工具，扫描 feature 描述符和领域描述符，生成：
+建议新增 `scripts/plugin-codegen.mjs` 或同等工具，扫描 plugin 描述符和领域描述符，生成：
 
 ```text
-apps/shared/src/features.generated.ts
+apps/shared/src/plugins.generated.ts
 apps/shared/src/protocol/lobbyRpc/registry.generated.ts
-apps/shared/src/logic/features.generated.ts
-apps/client/src/generated/features.generated.ts
+apps/shared/src/logic/plugins.generated.ts
+apps/client/src/generated/plugins.generated.ts
 apps/client/src/generated/routes.generated.ts
 apps/client/src/generated/views.generated.ts
 apps/client/src/generated/fguiContracts.generated.ts
 apps/client/src/generated/fguiPackages.generated.ts
-docs/features.generated.md
+docs/plugins.generated.md
 ```
 
 所有客户端 loader 必须是生成的静态字面量：
 
 ```ts
-load: () => import("../features/undergroundIdle/index")
+load: () => import("../plugins/undergroundIdle/index")
 ```
 
 不得在 Creator 运行时依赖 `fs`、目录扫描或未经当前构建链验证的 `import.meta.glob`。生成器承担“发现文件”，
@@ -901,7 +901,7 @@ per-mode 生成物落到 `apps/shared/src/gameplays/generated/**`（wire catalog
 
 ### 5.5 `--write` 与 `--check` 分离（生成器通用约束）
 
-feature 生成器必须提供两种明确模式（writer = workspace 脚本 `codegen:features`；只读闸 = freshness 测试断言）：
+plugin 生成器必须提供两种明确模式（writer = workspace 脚本 `codegen:plugins`；只读闸 = freshness 测试断言）：
 
 ```text
 --write  确定性刷新生成物
@@ -909,7 +909,7 @@ feature 生成器必须提供两种明确模式（writer = workspace 脚本 `cod
 ```
 
 `--check` 不得创建目录、修改 mtime、运行 sync、重钉协议指纹或接受 FGUI 资源锁；CI/`verify:*` 只能调用只读
-检查。`--write` 也只能覆盖文档列出的普通 generated output，不得修改 feature 业务源码、plan、SQL、package
+检查。`--write` 也只能覆盖文档列出的普通 generated output，不得修改 plugin 业务源码、plan、SQL、package
 或手写文档。协议与 FGUI 审计锁继续使用独立的显式接受动作。
 
 生成器必须：
@@ -917,10 +917,10 @@ feature 生成器必须提供两种明确模式（writer = workspace 脚本 `cod
 - 稳定排序，保证相同输入得到字节级相同输出；
 - 用真实 JSON Schema 校验 manifest，`additionalProperties: false`，同时检查 schema version、必填字段、类型和
   路径形状；
-- 拒绝重复 feature/domain/route/error/push/View/capability id；
+- 拒绝重复 plugin/domain/route/error/push/View/capability id；
 - 按规范化大小写检查 id/path 冲突，文件系统发现顺序不得影响输出；
 - 拒绝路径越出仓库、符号链接逃逸和不允许的扩展名；
-- 拒绝跨 feature 依赖环；
+- 拒绝跨 plugin 依赖环；
 - 拒绝 manifest 中 module reference 携带扩展名；源码 import 边界由独立 TypeScript/AST 门禁检查；
 - 提供只读 `--root` fixture seam，便于在临时根测试而不触碰真实 checkout；
 - `--check` 对 stale、missing 和不应存在的 extra generated output 都失败，并点名输入与目标；
@@ -928,21 +928,21 @@ feature 生成器必须提供两种明确模式（writer = workspace 脚本 `cod
   不完整集合必须由下一次 `--check` 全部发现；
 - 生成文件带“禁止手改”和来源说明。
 
-生成检查还必须双向验证所有权：manifest 引用的 domain/runtime/route/View/vector/art 必须存在；feature-owned 根下
+生成检查还必须双向验证所有权：manifest 引用的 domain/runtime/route/View/vector/art 必须存在；plugin-owned 根下
 存在的这些文件也必须被唯一 manifest 拥有，防止删除 manifest 后留下未引用源码和资源。普通 `--write` 不得
-静默接受整个 feature 消失，删除必须使用显式 `--allow-delete <id>`、tombstone 或等价的基线批准。
+静默接受整个 plugin 消失，删除必须使用显式 `--allow-delete <id>`、tombstone 或等价的基线批准。
 
 codegen 不直接 import/执行 TypeScript descriptor。RPC descriptor 限定为可静态读取的 builder + object/string
 literal 形态，生成器用 TypeScript compiler API 读取 domain、route、mode、error 和 module reference；computed
 property、spread 或顶层副作用形态直接拒绝。validator 函数本身仍由生成 registry 在 typecheck/contract test 中
 加载并验证。这样生成阶段既不依赖 tsx 副作用，也不复制一份 JSON 路由真源。
 
-**生成器必须有确定的命令名**（全文其余位置一律引用它，⛔ 不再写“feature codegen”这类无法执行的代称）。
+**生成器必须有确定的命令名**（全文其余位置一律引用它，⛔ 不再写“plugin codegen”这类无法执行的代称）。
 
 **命令形态：不新增根命令**，与 §5.4 的 gameplay 生成器
 同形（见 §3.1 交汇点表）：
 
-- **writer** 是 workspace 脚本 `codegen:features`；
+- **writer** 是 workspace 脚本 `codegen:plugins`；
 - **只读闸不是独立命令**，而是 freshness 测试断言，随 `verify:all` 生效；
 - 生成器自身的 `.ts` 由该 freshness 测试**值导入**而被 tsc 传递纳入，⛔ 不需要改 tsconfig 的 include。
 
@@ -955,28 +955,28 @@ property、spread 或顶层副作用形态直接拒绝。validator 函数本身�
 > 跨写 `apps/shared` 的先例），代价是 server workspace 的职责边界被撑宽。若改为给 `apps/shared` 或
 > `apps/client` 补齐 workspace 基础设施，属于**额外的一次性框架改造**，必须单独评审。
 >
-> 被否决的替代方案：新增根命令 `codegen:features` / `verify:features`。命令可直接执行、动线更直观，
+> 被否决的替代方案：新增根命令 `codegen:plugins` / `verify:plugins`。命令可直接执行、动线更直观，
 > 但必须逐条接入根 `package.json`、`scripts/verify-toolchain.mjs`、
 > `apps/client/test/toolchainContract.test.ts` 的承重钉（仅当被挂进 typecheck / verify:sync / verify:core /
 > verify:all 之一时）、`docs/inventory.json` 的验证依赖，以及上述三份命令表的双向相等断言——漏一条就是静默
-> 失闸。仍需保留的是那条**反例**：无论哪种形态，都要证明 feature gate 不会静默退出 `verify:core`。
+> 失闸。仍需保留的是那条**反例**：无论哪种形态，都要证明 plugin gate 不会静默退出 `verify:core`。
 
-之后普通 feature 只运行既有命令，不再新增专属命令。
+之后普通 plugin 只运行既有命令，不再新增专属命令。
 
 建议提交版产物的 provenance 固定如下：
 
 | 产物 | 真源 | Writer | 只读检查 | 性质 |
 | --- | --- | --- | --- | --- |
-| `apps/shared/src/features.generated.ts` | feature manifest | workspace 脚本 `codegen:features` | freshness 断言 | 普通机械生成 |
-| `apps/shared/src/protocol/lobbyRpc/registry.generated.ts` | feature manifest + RPC domain descriptor AST | workspace 脚本 `codegen:features` | freshness 断言 + contract test | 普通机械生成 |
-| `apps/shared/src/logic/features.generated.ts` | manifest 中的 shared public modules | workspace 脚本 `codegen:features` | freshness 断言 | 普通机械生成 |
-| `apps/client/src/generated/features.generated.ts` | feature manifest | workspace 脚本 `codegen:features` | freshness 断言 | 普通机械生成 |
-| `apps/client/src/generated/routes.generated.ts` | route descriptor references | workspace 脚本 `codegen:features` | freshness 断言 + route test | 普通机械生成 |
-| `apps/client/src/generated/views.generated.ts` | `.view.json` + FGUI XML | workspace 脚本 `codegen:features` | freshness 断言 + FGUI contract test | 普通机械生成 |
-| `apps/client/src/generated/fguiContracts.generated.ts` | `.view.json` + FGUI XML | workspace 脚本 `codegen:features` | freshness 断言 + FGUI contract test | 普通机械生成 |
-| `apps/client/src/generated/fguiPackages.generated.ts` | art 引用图 + View/entry asset URLs | workspace 脚本 `codegen:features` | freshness 断言 + FGUI contract test | 普通机械生成 |
-| `apps/client/src/features/**/view/*View.ts` 的 AUTO 区 | FGUI XML + binding 规则 | `fgui-codegen` | AUTO freshness test | 局部机械生成 |
-| `docs/features.generated.md` | feature manifest | workspace 脚本 `codegen:features` | freshness 断言 | 普通机械生成 |
+| `apps/shared/src/plugins.generated.ts` | plugin manifest | workspace 脚本 `codegen:plugins` | freshness 断言 | 普通机械生成 |
+| `apps/shared/src/protocol/lobbyRpc/registry.generated.ts` | plugin manifest + RPC domain descriptor AST | workspace 脚本 `codegen:plugins` | freshness 断言 + contract test | 普通机械生成 |
+| `apps/shared/src/logic/plugins.generated.ts` | manifest 中的 shared public modules | workspace 脚本 `codegen:plugins` | freshness 断言 | 普通机械生成 |
+| `apps/client/src/generated/plugins.generated.ts` | plugin manifest | workspace 脚本 `codegen:plugins` | freshness 断言 | 普通机械生成 |
+| `apps/client/src/generated/routes.generated.ts` | route descriptor references | workspace 脚本 `codegen:plugins` | freshness 断言 + route test | 普通机械生成 |
+| `apps/client/src/generated/views.generated.ts` | `.view.json` + FGUI XML | workspace 脚本 `codegen:plugins` | freshness 断言 + FGUI contract test | 普通机械生成 |
+| `apps/client/src/generated/fguiContracts.generated.ts` | `.view.json` + FGUI XML | workspace 脚本 `codegen:plugins` | freshness 断言 + FGUI contract test | 普通机械生成 |
+| `apps/client/src/generated/fguiPackages.generated.ts` | art 引用图 + View/entry asset URLs | workspace 脚本 `codegen:plugins` | freshness 断言 + FGUI contract test | 普通机械生成 |
+| `apps/client/src/plugins/**/view/*View.ts` 的 AUTO 区 | FGUI XML + binding 规则 | `fgui-codegen` | AUTO freshness test | 局部机械生成 |
+| `docs/plugins.generated.md` | plugin manifest | workspace 脚本 `codegen:plugins` | freshness 断言 | 普通机械生成 |
 | `scripts/protocol.fingerprint` | shared protocol 真源 + 协议版本 | protocol fingerprint writer | fingerprint test | 显式协议审计锁 |
 | `scripts/fgui.manifest.json` | art、FGUI 导出物和 View AUTO 区 | FGUI manifest writer | `verify:fgui` | 显式资源审计锁 |
 | 保护路径规则（如 `scripts/protected-paths.json`） | 人工评审 | 人工（提交中显式声明） | 无侵入矩阵测试 | 显式治理锁 |
@@ -985,7 +985,7 @@ property、spread 或顶层副作用形态直接拒绝。validator 函数本身�
 | `apps/Cocos/assets/src/**` | `apps/client/src/**` | `sync:client` | `verify:sync` | 生成镜像 |
 
 
-### 5.6 测试向量由 feature 持有
+### 5.6 测试向量由 plugin 持有
 
 ⚠ 先厘清现状：中央 request 向量表有两张（服务端契约测试的 `validPayloads` 与 wire contract 测试的
 `requestFixtures`，各 12 条）；response 侧除发送前调用的 shared 运行时 validator 外，也已有中央向量表
@@ -999,7 +999,7 @@ request 与 response 最小合法向量时，存量 12 条路由的 request/resp
 apps/server/test/lobbyRpcVectors/undergroundIdle.ts
 ```
 
-> 注记（2026-09-05）：sidecar 发现已落地为生成物——`codegen:features` 按 domain 集合发现
+> 注记（2026-09-05）：sidecar 发现已落地为生成物——`codegen:plugins` 按 domain 集合发现
 > `lobbyRpcVectors/<域>.ts` 并渲染 `lobbyRpcVectors/index.generated.ts`（domain ⇔ sidecar 双向对齐），
 > `lobby-rpc-vectors.test.ts` / `lobby-rpc-contract.test.ts` 只消费该表；此前两份测试各手写一张登记表的
 > 形态（PLUGIN-REVIEW F06）已删除。
@@ -1019,12 +1019,12 @@ shared/runtime descriptor 或同步到 Cocos。
 7. malformed response 既不发送，也不写入 done cache；
 8. generated manifest 保持新鲜。
 
-NaN、版本冲突、远征未完成、满仓和奖励 exactly-once 等领域反例继续放在 feature 自己的测试中；生成器不尝试
+NaN、版本冲突、远征未完成、满仓和奖励 exactly-once 等领域反例继续放在 plugin 自己的测试中；生成器不尝试
 从 validator 自动反演全部坏样例。
 
 View 测试不再假设 `apps/client/src/view/<Name>View.ts` 顶层结构，而是遍历 generated manifest，继续验证：
 
-- route composer/module/export 存在，feature logic 目录不导入引擎；
+- route composer/module/export 存在，plugin logic 目录不导入引擎；
 - AUTO 区块与 XML 同步；
 - registry contract 与生成 contract 相同；
 - package 依赖闭包完整；
@@ -1033,22 +1033,22 @@ View 测试不再假设 `apps/client/src/view/<Name>View.ts` 顶层结构，而�
 
 ### 5.7 inventory 与文档索引
 
-`docs/inventory.json` 保留框架和 core 基座，verifier 合并 `features/*/feature.json` 中的 capability fragment：
+`docs/inventory.json` 保留框架和 core 基座，verifier 合并 `apps/plugins/*/plugin.json` 中的 capability fragment：
 
-- 普通 feature fragment **只能**声明 `extra`，禁止修改 `defaultModules`、`defaultScene`、`routeOfTruth` 和
+- 普通 plugin fragment **只能**声明 `extra`，禁止修改 `defaultModules`、`defaultScene`、`routeOfTruth` 和
   `workspaceCommandScope`；
-- category 为 `extra` 的 fragment **必须**在 `docs` 中包含 `docs/EXTRAFEATURES.md`；`core` 则**必须不含**
+- category 为 `extra` 的 fragment **必须**在 `docs` 中包含 `docs/EXTRAS.md`；`core` 则**必须不含**
   （现有 verifier 已双向断言）；
 - 声明了独立 `launch` 的能力**只能是 `extra`**，且 `launch` 必须能实际启动其 `defaultEntry`（verifier 另校验
   命令与入口的对应关系）；
 - 晋升 core、改变默认入口或修改项目边界仍需显式修改中央 inventory 和计划；
 - manifest 只记录 `planned/registered/source-present/enabled` 等结构状态，不使用 `implemented/verified` 冒充
   测试实跑或人工验收；
-- 生成 `docs/features.generated.md` 作为能力索引，根文档只链接该索引，不在多处复制状态。
+- 生成 `docs/plugins.generated.md` 作为能力索引，根文档只链接该索引，不在多处复制状态。
 
-一次性迁移后，`EXTRAFEATURES.md` 保留额外能力的政策、边界和生成索引入口；具体 extra 条目由 manifest +
-generated index 成为机器发现真相，verifier 不再要求人工在 `EXTRAFEATURES.md` 逐项复制。verification fragment
-只能引用能实际发现该 feature 的固定聚合命令，防止登记一个存在但不覆盖 feature 的脚本而假绿。
+一次性迁移后，`EXTRAS.md` 保留额外能力的政策、边界和生成索引入口；具体 extra 条目由 manifest +
+generated index 成为机器发现真相，verifier 不再要求人工在 `EXTRAS.md` 逐项复制。verification fragment
+只能引用能实际发现该 plugin 的固定聚合命令，防止登记一个存在但不覆盖 plugin 的脚本而假绿。
 
 ⛔ 生成器不能自动写**当前计划文件**（写作时为 plan-v4.md）的验收结果。实跑证据、开放问题和“已完成”判断仍由
 人工维护。实施时以 `docs/inventory.json` 的 `routeOfTruth.corePlan` 为准，而不是本文写死的文件名；并补一条
@@ -1057,23 +1057,23 @@ generated index 成为机器发现真相，verifier 不再要求人工在 `EXTRA
 
 ### 5.8 同步与资源产物
 
-正常新增 feature 后，机械变化必须来自 §5.5 的唯一 provenance 表。路径分类可概括为：
+正常新增 plugin 后，机械变化必须来自 §5.5 的唯一 provenance 表。路径分类可概括为：
 
 ```text
-apps/shared/src/features.generated.ts
+apps/shared/src/plugins.generated.ts
 apps/shared/src/protocol/lobbyRpc/registry.generated.ts
-apps/shared/src/logic/features.generated.ts
+apps/shared/src/logic/plugins.generated.ts
 apps/client/src/generated/**
 apps/client/src/shared/**
 apps/Cocos/assets/src/**
 scripts/protocol.fingerprint
 scripts/fgui.manifest.json
-apps/Cocos/assets/resources/ui/<该 feature 声明的新包>/**
-该 feature 新资源对应的 .meta
+apps/Cocos/assets/resources/ui/<该 plugin 声明的新包>/**
+该 plugin 新资源对应的 .meta
 ```
 
 codegen/sync 产物禁止手改；FGUI 二进制和图集由 FairyGUI 编辑器导出，再通过 manifest 接受和校验。整个
-`resources/ui/**` 不是无条件白名单：普通 feature 只能新增自己声明的 package/output，修改或删除既有公共包仍是
+`resources/ui/**` 不是无条件白名单：普通 plugin 只能新增自己声明的 package/output，修改或删除既有公共包仍是
 真实侵入。
 
 机械 diff 白名单必须有限且可机检：普通 generated text 可由 writer 覆盖；协议/FGUI lock 只能显式接受；镜像
@@ -1680,11 +1680,11 @@ type InspectResult<T extends LobbyRpcIdemType> =
 
 **`operationGroup` 的所有权规则（⛔ 它不是一个无主的全局字符串命名空间）**：
 
-1. `operationGroup` 是受生成器管理的**受拥有 id**：每个 group 必须由且仅由一个 feature/domain 在 manifest
+1. `operationGroup` 是受生成器管理的**受拥有 id**：每个 group 必须由且仅由一个 plugin/domain 在 manifest
    顶层显式 `ownsOperationGroups: [...]` 声明，重复声明由 codegen 拒绝；
-2. `inspectsOperationGroup` 默认只能引用**本 feature 自己拥有**的组。引用他人拥有的组必须同时满足：查询方
-   `dependsOn` 被查询方，且被查询方显式 `exposesOperationGroupTo: [<featureId>]`。任一条缺失即 codegen
-   fail closed——这与 §3.4「禁止 feature 互相直接读取内部状态」是同一条边界；
+2. `inspectsOperationGroup` 默认只能引用**本 plugin 自己拥有**的组。引用他人拥有的组必须同时满足：查询方
+   `dependsOn` 被查询方，且被查询方显式 `exposesOperationGroupTo: [<pluginId>]`。任一条缺失即 codegen
+   fail closed——这与 §3.4「禁止 plugin 互相直接读取内部状态」是同一条边界；
 3. 同一条 route ⛔ 不得同时声明 `operationGroup` 与 `inspectsOperationGroup`；查询 route 必须是 `query` 模式；
 4. §5.5 的重复 id 拒绝清单必须包含 `operationGroup`，双向所有权校验也必须覆盖 group 的 owner/consumer 关系。
 
@@ -1738,7 +1738,7 @@ UNIQUE 或 CAS 收敛。
 
 ### 6.14 可选的玩家 JSON 聚合适配器
 
-如果预期还有多个挂机、家园或单人养成 feature，可以在第二优先级增加 `definePlayerAggregate` 或
+如果预期还有多个挂机、家园或单人养成 plugin，可以在第二优先级增加 `definePlayerAggregate` 或
 `VersionedJsonAggregate`，统一处理：
 
 - 内嵌 `schemaVersion` 解码与迁移；
@@ -1755,13 +1755,13 @@ UNIQUE 或 CAS 收敛。
 
 ## 7. 客户端改造
 
-客户端是两类实体耦合最紧的一层：AppRuntime、NavigationService、SessionCoordinator 由 feature 侧建立，
+客户端是两类实体耦合最紧的一层：AppRuntime、NavigationService、SessionCoordinator 由 plugin 侧建立，
 gameplay module 直接消费同一套 host；View catalog / FGUI contract / Home 菜单**全仓只有一个 writer、一个
 产物路径、一套双向闭合测试**（§7.5）。
 
-### 7.1 生成式 Feature Catalog
+### 7.1 生成式 Plugin Catalog
 
-生成器根据 `feature.json` 生成静态 catalog。每个 feature 至少声明：
+生成器根据 `plugin.json` 生成静态 catalog。每个 plugin 至少声明：
 
 - 唯一 id；
 - runtime 安装入口；
@@ -1771,16 +1771,16 @@ gameplay module 直接消费同一套 host；View catalog / FGUI contract / Home
 - 可选的**已登记** gameplay 入口；
 - 依赖的 FGUI package 和动态资源 URL。
 
-route 和 View id 建议采用 `<featureId>/<localId>` 形式，生成期检查碰撞。manifest 是小型纯数据，feature runtime、
+route 和 View id 建议采用 `<pluginId>/<localId>` 形式，生成期检查碰撞。manifest 是小型纯数据，plugin runtime、
 route 和 View 继续懒加载，不能因为引入 catalog 就把所有 `cc`/FairyGUI 模块静态打进普通脚本依赖图。
 
-catalog 中的 feature/route/menu/View descriptor 是生成期确定的不可变数据，runtime install 不再动态注册这些
+catalog 中的 plugin/route/menu/View descriptor 是生成期确定的不可变数据，runtime install 不再动态注册这些
 条目。route 参数 validator 位于不依赖 `cc`/FairyGUI 的纯 descriptor module：Navigator 先校验 route id 和
-可 JSON 化外壳，再加载该纯模块校验参数，最后才 activate feature runtime 和打开 View。每个 View 的手写 metadata
-唯一真源固定为**与 View 同目录**的 `*.view.json` sidecar（feature 的落在
-`apps/client/src/features/<id>/view/`，gameplay 的落在自己的 View 目录，见
-§7.5），具体路径由拥有它的 feature 或 gameplay manifest 声明；
-根 `feature.json` 只引用这些路径，不复制内容。每条 View metadata 带 `owner` 字段，生成期检查同一 View 只被
+可 JSON 化外壳，再加载该纯模块校验参数，最后才 activate plugin runtime 和打开 View。每个 View 的手写 metadata
+唯一真源固定为**与 View 同目录**的 `*.view.json` sidecar（plugin 的落在
+`apps/client/src/plugins/<id>/view/`，gameplay 的落在自己的 View 目录，见
+§7.5），具体路径由拥有它的 plugin 或 gameplay manifest 声明；
+根 `plugin.json` 只引用这些路径，不复制内容。每条 View metadata 带 `owner` 字段，生成期检查同一 View 只被
 一个 manifest 拥有。
 
 
@@ -1792,8 +1792,8 @@ catalog 中的 feature/route/menu/View descriptor 是生成期确定的不可变
 apps/client/src/app/
 ├── AppRuntime.ts
 ├── bootstrap.ts
-├── FeatureRegistry.ts
-├── FeatureHost.ts
+├── PluginRegistry.ts
+├── PluginHost.ts
 ├── NavigationService.ts
 ├── SessionCoordinator.ts
 ├── LifecycleBus.ts
@@ -1806,12 +1806,12 @@ apps/client/src/app/
 
 职责边界：
 
-- `AppRuntime`：构造小型稳定 port 并管理整体 dispose，不做 feature 分支。它同时定义 **app generation**——
+- `AppRuntime`：构造小型稳定 port 并管理整体 dispose，不做 plugin 分支。它同时定义 **app generation**——
   构造时递增、dispose 时冻结，对应一次 Cocos scene owner 生命周期，替代今天 `view/pages.ts` 里的
   page lifecycle generation（后者今天与 session generation **分开**校验，二者不可互相推导）；
-- `FeatureRegistry`：消费 generated catalog，解析 feature、route 和 Home contribution；
-- `FeatureHost`：只拥有 feature module 的 app/session scope、安装状态和 dispose，不拥有当前 route。
-  **停用由 route refcount 决定**：NavigationService 关闭该 feature 的最后一个 route 时通知 FeatureHost 进入
+- `PluginRegistry`：消费 generated catalog，解析 plugin、route 和 Home contribution；
+- `PluginHost`：只拥有 plugin module 的 app/session scope、安装状态和 dispose，不拥有当前 route。
+  **停用由 route refcount 决定**：NavigationService 关闭该 plugin 的最后一个 route 时通知 PluginHost 进入
   `disposing`；session 结束与 app dispose 是强制释放点。`keep-mounted` 策略的 route 显式豁免 refcount 归零
   释放，并必须在 manifest 里声明其常驻代价；
 - `NavigationService`：唯一拥有业务 route stack、route handle 和当前 authenticated base route；
@@ -1820,16 +1820,16 @@ apps/client/src/app/
 - `LifecycleBus`：**只做无状态转发与订阅管理**——转发 transport 原样事件和宿主 hide/show，
   ⛔ 不持有 session generation、⛔ 不做任何派生；
 - `RefreshCoordinator`：合并 foreground、reconnect、reopen 等并发原因，只刷新当前 authenticated base
-  feature/session controller；
+  plugin/session controller；
 - `ports.ts`：只暴露 navigation、lobbyRpc、session、clock、route-scoped ticker、lifecycle、views、launch 等
   必要能力。
 
-这不是通用 DI 容器。feature 不应得到原始 SDK Room、Redis key 或任意服务定位器，只取得完成自身行为所需的
+这不是通用 DI 容器。plugin 不应得到原始 SDK Room、Redis key 或任意服务定位器，只取得完成自身行为所需的
 最小 port。
 
 `pages.ts` 可先保留为登录/公告等旧页面的兼容 façade，但最终只能纯转发到 Navigator/SessionCoordinator；现有
 模块级 session owner、reconciler、return-to-login listener、authenticated continuation 和 `closeLobby()` 页面
-数组必须迁走，不能让旧接线和新 Coordinator 同时拥有恢复真相。最终新增 feature 不再向 `pages.ts` 添加
+数组必须迁走，不能让旧接线和新 Coordinator 同时拥有恢复真相。最终新增 plugin 不再向 `pages.ts` 添加
 `openXxx`。
 
 迁移期的“两套并存”必须有可执行规则，⛔ 不能只写目标态：
@@ -1841,21 +1841,21 @@ apps/client/src/app/
   handler 身份比对失败退化为 no-op）。迁移后必须改为**重复注册即 fail-fast**，或至少有一条断言测试证明整个
   启动链路里各只注册一次。
 
-FeatureHost 至少需要 `unloaded/loading/active/disposing/failed` 状态；并发加载同一 feature 必须合流为同一个
+PluginHost 至少需要 `unloaded/loading/active/disposing/failed` 状态；并发加载同一 plugin 必须合流为同一个
 Promise。descriptor 非法在 codegen 期 fail closed；runtime install 失败只回滚 controller、订阅和 scoped
 provider，不修改不可变 catalog；View/FGUI 加载失败保持可重试。dispose 必须幂等并按依赖逆序执行。
 
 `failed` 的两条出路要写死：**经显式用户意图（再次 launch）回到 `loading`**，每个 app generation 的自动/连续
 重试次数有上限；超限后置为 `disabled(app-generation)`，直到下一个 app generation 才复位。
 
-这两个状态必须连回 Home：**FeatureHost 的运行时可用性是 catalog 之外的可变叠加层**。§7.4 的 Home composer
+这两个状态必须连回 Home：**PluginHost 的运行时可用性是 catalog 之外的可变叠加层**。§7.4 的 Home composer
 在渲染时把 `disabled` / `failed` 叠加到不可变 contribution 上，显示为不可点击 + 可手动重试的入口，
 ⛔ **绝不允许显示一个必然失败的正常入口**。
 NavigationService 的稳定 API 至少包括 `open/replace/back/close/closeGroup`：Navigator 管业务路由栈和页面组，
 ViewMgr 只管 View mount/cache/input lease，不拥有业务 route。每次 route open 都返回带 signal/generation 的
-ownership handle；close/replace 即使发生在 feature、package、View 或 setup 的任一 await 中，也必须取消并回滚。
+ownership handle；close/replace 即使发生在 plugin、package、View 或 setup 的任一 await 中，也必须取消并回滚。
 
-ResultUnknown 不能只保存在 route Logic。增加 feature-session scoped `PendingOperationJournal`，保存
+ResultUnknown 不能只保存在 route Logic。增加 plugin-session scoped `PendingOperationJournal`，保存
 `clientReqId + route + 完整规范化原 payload + expectedStateVersion + 状态`。route 关闭只断开渲染订阅，不删除
 未决操作；只有 applied、结果过期、明确人工放弃或 session ended 才清理，重开后仍复用原 ID。本方案至少保证
 同一 app session 内恢复；若要跨进程重启，还需另行设计安全持久化、隐私和版本迁移，本文不作承诺。
@@ -1875,12 +1875,12 @@ journal 的四条硬约束：
    客户端与服务端共用 shared 里的同一个 canonicalizer 参考实现（§6.11 所指的“仓库唯一参考实现”）并共享同一组
    golden vectors，否则同 ID 重发会被误判为 `OPERATION_CONFLICT`。canonicalizer 放 shared 满足铁律 4
    （纯 TypeScript + ES 标准库），但 **SHA-256 摘要仍只在服务端计算**——客户端不需要也不应计算 hash。
-4. **账号边界**：journal 是 feature-session scoped。主动登出与任何 uid 变化都必须**同步清空整个 journal**，
+4. **账号边界**：journal 是 plugin-session scoped。主动登出与任何 uid 变化都必须**同步清空整个 journal**，
    `clientReqId` ⛔ 不得跨 uid 复用。
 
-静态依赖门禁必须证明 feature logic/route 不导入 `WebSocketClient` singleton、Colyseus Room、`cc` 或
+静态依赖门禁必须证明 plugin logic/route 不导入 `WebSocketClient` singleton、Colyseus Room、`cc` 或
 FairyGUI；View 目录是引擎依赖例外。Ticker/FrameScheduler 由 route scope 注入，Logic 只消费 monotonic Clock，
-close/session change 自动解绑，避免 feature 再修改 Main。
+close/session change 自动解绑，避免 plugin 再修改 Main。
 
 
 ### 7.3 连接与宿主生命周期
@@ -1907,7 +1907,7 @@ subscribeConnection(listener): () => void
 SessionCoordinator 再派生带 session generation 的高层事件（LifecycleBus 只转发，见 §7.2），并区分主动关闭、
 短暂 drop 和最终 leave：
 
-- `dropped`：当前 feature 立即禁用写操作；在途写进入 ResultUnknown；
+- `dropped`：当前 plugin 立即禁用写操作；在途写进入 ResultUnknown；
 - `reconnected`：只在发送闸重新建立后发布，随后**固定按“先对账、后拉快照”的顺序**执行——先按
   `PendingOperationJournal` 对账未决 operation（走 §6.13 的查询路由确定 applied / pending / unknown），
   **再**由 RefreshCoordinator 拉权威快照。这与下文 `EVENT_SHOW` 路径**同序**。⛔ 不允许先拉快照：那会渲染
@@ -1921,28 +1921,28 @@ SessionCoordinator 再派生带 session generation 的高层事件（LifecycleBu
   journal 的处置也在此分叉：`auth-invalid` 视为 session ended，**必须清空 journal**（新会话无权查询旧 uid 的
   operation）；`final-loss` **保留** journal 并在重进成功后对账。⚠ 同 uid 重新登录**不恢复**上一 session 的
   journal；
-- feature 不得自行调用 join/rejoin；
+- plugin 不得自行调用 join/rejoin；
 - SDK 离线发送队列继续保持禁用，不能借生命周期接口恢复不受控重放。
 
 `onDrop` 的顺序固定为“关闭发送闸 → 在途**写**结算为 ResultUnknown、在途**只读**按可重试失败结算 →
 清理 SDK 队列 → 发布 `dropped`”；`reconnected` 只能在发送闸恢复后发布。onLeave、replay guard 失败和 join 后物理死亡都必须汇入一个 generation-gated final-loss 出口，
 每代只发布一次；强踢 close code/push 要先规约成 auth-invalid，绝不能触发重连。订阅接口还要提供当前不可变状态
-snapshot，或在订阅时立即回放，确保 Lobby 已 ready 后才加载的 feature 不会永远错过 ready。
+snapshot，或在订阅时立即回放，确保 Lobby 已 ready 后才加载的 plugin 不会永远错过 ready。
 
 最终断线由 SessionCoordinator 重进并对账，成功后保留或恢复原 authenticated base route，失败才清空
 authenticated history 并回 Login。临时 popup 默认 `discard`，只有显式声明且参数可重建时才 reopen。普通 popup
-不是 refresh owner；它通过父 route ownership 关联到底层 feature controller。
+不是 refresh owner；它通过父 route ownership 关联到底层 plugin controller。
 
 **回登录 transition 必须包含用户可见提示**，⛔ 不能静默把人踢回登录页。固定次序是：关闭发送闸 → leave →
 清空 authenticated route/页面组 → 打开并 **await** 一个 **session 作用域**（不是 route 作用域）的提示视图 →
-重开 Login。该提示不属于任何 feature route，**不受 `discard` 策略影响**，也不是 refresh owner；它的关闭或
+重开 Login。该提示不属于任何 plugin route，**不受 `discard` 策略影响**，也不是 refresh owner；它的关闭或
 超时都必须让 transition 继续，⛔ 不得卡死。回登录原因 → 文案的映射由 SessionCoordinator 拥有（继承现有
-`view/pages.ts` 里 AUTH_INVALID 子因 / CONN_LOST / BATTLE_LOST / BATTLE_JOIN_FAILED 的分支），feature 不参与。
+`view/pages.ts` 里 AUTH_INVALID 子因 / CONN_LOST / BATTLE_LOST / BATTLE_JOIN_FAILED 的分支），plugin 不参与。
 每一步 await 之后都要重校验 app generation + session generation。
 
 foreground、reconnect 和 route reopen 同时发生时，RefreshCoordinator 只合流**当前并发 flight**，key 包含
 **app generation**、route-handle generation、session generation 和 connection/recovery epoch；flight settle
-后允许下一次正常刷新。非活跃 feature 不得后台请求快照。
+后允许下一次正常刷新。非活跃 plugin 不得后台请求快照。
 
 “flight 中再次变脏时最多补一次 trailing refresh”有三处语义留白，必须写死：
 
@@ -1951,10 +1951,10 @@ foreground、reconnect 和 route reopen 同时发生时，RefreshCoordinator 只
 2. **“最多一次 trailing”是按 flight 计且递归的**：每个 flight（trailing 自身也算一个 flight）settle 时若
    dirty 仍置位，必须再排一次刷新；⛔ 不允许理解为「每个 dirty 周期至多一次」。
 3. **刷新失败（超时、drop、错误）必须把 dirty 位重新置位**，由下一次 ready / foreground 触发重试；
-   ⛔ 不允许静默丢弃——配合「非活跃 feature 不得后台请求快照」，静默丢弃会让该 feature 永久停在陈旧快照上。
+   ⛔ 不允许静默丢弃——配合「非活跃 plugin 不得后台请求快照」，静默丢弃会让该 plugin 永久停在陈旧快照上。
 
 另需**背压**：同一 key 的连续刷新有最小间隔与失败指数退避；退避期内的变脏只置 dirty、不新开 flight；
-退避上限内仍失败则把该 feature 标记为 stale 并显示可手动重试的占位，⛔ 不得静默空转。
+退避上限内仍失败则把该 plugin 标记为 stale 并显示可手动重试的占位，⛔ 不得静默空转。
 
 `Main.ts` 最终只负责 bootstrap、update 转发和 dispose，但现有启动不变量必须迁入 host 而不是删除。
 ⚠ **“都有回归测试”不准确**——逐条核实后，当前保护形态如下，迁移前必须按“迁移后形态”一列补齐：
@@ -1978,7 +1978,7 @@ Cocos `EVENT_HIDE/EVENT_SHOW` 通过独立 bridge 进入 LifecycleBus：hide 只
 
 一次性把 Home 的单一 `btn_enter` 改为玩法入口列表或稳定 slot：
 
-- 菜单数据来自 FeatureRegistry；
+- 菜单数据来自 PluginRegistry；
 - 每个 contribution 声明稳定排序字段、标题文本或可用 LocalizePort 的 key、图标和 launch target；
 - ballMove 也迁成 built-in contribution，不能保留 Home→Main 专属回调；
 - 点击只调用统一 `LaunchPort.launch(target)`，不在 Home 分支 Navigation/gameplay；
@@ -1986,27 +1986,27 @@ Cocos `EVENT_HIDE/EVENT_SHOW` 通过独立 bridge 进入 LifecycleBus：hide 只
 
 gameplay 的**实现**仍走 GameRoom 动线（见 §6），但它的 Home 入口
 以**同一形状**的 menu contribution 登记——**菜单只有一个数据源**。排序固定为
-`slot → order → featureId → entryId`。
+`slot → order → pluginId → entryId`。
 
 > 注记（2026-09-05，排序字段已退役）：contribution 不再声明 `slot/order`（docs/PLUGIN.md §6
-> 「插件只声明身份、位置归宿主」）。全量列表排序改为 `featureId → entryId`；首屏顺序与默认玩法由宿主
-> `features/host.json` 声明并生成为 `GENERATED_HOST`；launch 增 `route` 形态（纯 feature 入口）；
+> 「插件只声明身份、位置归宿主」）。全量列表排序改为 `pluginId → entryId`；首屏顺序与默认玩法由宿主
+> `apps/plugins/host.json` 声明并生成为 `GENERATED_HOST`；launch 增 `route` 形态（纯 plugin 入口）；
 > codegen 另闸 entryId 全仓唯一与一 gameplayId 一贡献者。上文 `slot → order` 表述保留为历史设计记录。
 
-⚠ 实施时必须明确写出：新玩法登记入口时**是否会碰** `features/built-in/feature.json`。若会碰，则
+⚠ 实施时必须明确写出：新玩法登记入口时**是否会碰** `apps/plugins/builtin/plugin.json`。若会碰，则
 §3.2 第 8 条与 §12.2 的「不再因玩法名修改中央清单」必须相应保留那条例外（已登记）；
 若不会碰（contribution 的手写真源在玩法自己的 manifest 里），则那条例外可以删除。⛔ 不能默认它是零成本。
 
 > 注记（2026-09-04，本问句已答）：答案是**不会碰**——contribution 的手写真源就在玩法自己的
-> `features/<id>/feature.json`（snake 已落地）；生成器把各 manifest 的 menu 汇总排序进
+> `apps/plugins/<id>/plugin.json`（snake 已落地）；生成器把各 manifest 的 menu 汇总排序进
 > `GENERATED_MENU_CONTRIBUTIONS`，Home 与默认 launch target 都只读这一份汇总值。
 > 因此 §3.2 第 8 条与 §12.2 的那条例外**已关闭**（两处均就地加了注记，正文作为历史设计记录保留）。
-> 代价如实登记：不是零成本，成本 = 新增一个 `features/<id>/` 目录 + 一次 `codegen:features`
+> 代价如实登记：不是零成本，成本 = 新增一个 `apps/plugins/<id>/` 目录 + 一次 `codegen:plugins`
 > + 客户端 generated 与 Cocos 镜像 diff；⛔ 但它不再是**中央清单**的手改。
 
 若图标来自跨包资源，manifest 必须声明 URL，由生成器计算 entry package dependency；Home route composer 在
 render 前通过受控 package loader 按当前可见 entry 合流加载。**失败时显示明确占位**——占位有两种触发因素：
-图标包加载失败，以及 §7.2 所说的 feature 已 `disabled` / `failed`。⛔ 不允许静默空白，也不允许显示一个必然
+图标包加载失败，以及 §7.2 所说的 plugin 已 `disabled` / `failed`。⛔ 不允许静默空白，也不允许显示一个必然
 失败的正常入口。不得让 View 临时猜测或隐式加载包。
 
 
@@ -2020,7 +2020,7 @@ contract 和 registry，派生的 View AUTO 不能反过来成为 contract 真�
 > 最终文件固定为本节的 `apps/client/src/generated/views.generated.ts` + `fguiContracts.generated.ts`；
 > `codegen:gameplays` 只产出 gameplay 的 View contribution
 > 中间产物，⛔ 不直接写客户端 View 产物（口径见 §3.1 交汇点表）。每条 View metadata 带 `owner` 字段
-> （feature id 或 gameplay id），生成期检查同一 View 只被一个 manifest 拥有。
+> （plugin id 或 gameplay id），生成期检查同一 View 只被一个 manifest 拥有。
 > §9 已把本节（阶段 6）排在 gameplay 客户端 module（阶段 9）之前，因此**本生成器与产物路径从一开始就是
 > 终态**——gameplay 侧只新增输入类型与 `owner` 取值，⛔ 不存在「先建一套再接管」的过渡期。
 
@@ -2030,18 +2030,18 @@ contract 和 registry，派生的 View AUTO 不能反过来成为 contract 真�
 - 生成 `defineView` 元数据和静态动态 import；
 - 计算 FairyGUI package 传递依赖闭包；
 - 把显式 `assetUrls` 所属包加入闭包；
-- 校验 route composer/module/export 和 route→view 引用，以及 feature logic 目录的引擎依赖边界；
+- 校验 route composer/module/export 和 route→view 引用，以及 plugin logic 目录的引擎依赖边界；
 - 检查重复 qualified View id 和非法路径。package/component 允许通过显式 `aliasOf` 做迁移期兼容，除此之外
   重复引用必须失败。
 
-仍需在 feature view metadata 中显式声明：
+仍需在 plugin view metadata 中显式声明：
 
 - layer、fullscreen、onlyOne、permanent、interactive；
 - 无命名前缀的手写绑定；
 - nested、list item、controller、relation 等业务依赖子集；
 - 动态拼接或代码直接引用的资源 URL。
 
-`fgui-codegen` 应支持 feature 输出目录，并且只写 View AUTO 区；完成后可以提示或运行 feature 生成器
+`fgui-codegen` 应支持 plugin 输出目录，并且只写 View AUTO 区；完成后可以提示或运行 plugin 生成器
 `--check`，但不得覆盖 registry/contracts，也不得自动执行 FGUI manifest `--write`。它不再要求开发者手改
 `fguiContracts.ts` 和 `viewRegistry.ts`。generated view
 manifest 给出精确源码路径，`fgui-manifest.mjs`、view registry test 和 contract test 统一消费它，不再各自扫描
@@ -2054,12 +2054,12 @@ manifest 给出精确源码路径，`fgui-manifest.mjs`、view registry test 和
   手写的 `VIEW_REGISTRY` 全集。**writer 只有一个**：最终产物固定为 §7.5 的
   `apps/client/src/generated/views.generated.ts` + `fguiContracts.generated.ts`（见 §3.1 交汇点表），
   `codegen:gameplays` 只产出 gameplay 的 View contribution 中间产物。每条 View metadata 带 `owner` 字段
-  （feature id 或 gameplay id），生成期检查同一 View 只被一个 manifest 拥有；
+  （plugin id 或 gameplay id），生成期检查同一 View 只被一个 manifest 拥有；
 - View metadata 的**手写唯一真源**沿用 §7.1 的 `*.view.json` sidecar 格式与字段集（layer / fullscreen /
   onlyOne / permanent / interactive、无前缀的手写绑定、动态资源 URL，并**必须包含 `sharedPkgs` 传递闭包**）；
   gameplay 拥有的 View 把 sidecar 放在自己的 View 同目录，`codegen:gameplays` 只校验 gameplay View 集合与
   manifest 一致，⛔ 不定义第二种 metadata 格式；
-- Login / Home / Confirm 等核心 View 由 built-in feature 拥有（§7.1）；**gameplay 只贡献自己的** Lobby、
+- Login / Home / Confirm 等核心 View 由 built-in plugin 拥有（§7.1）；**gameplay 只贡献自己的** Lobby、
   等待、HUD、结算 View；
 - FGUI contract 直接放入 `ViewMeta.contract`，测试遍历 generated catalog，不再维护第二份 `FGUI_CONTRACTS` 全集；
 - 生成的 catalog 必须同时产出 **`sharedPkgs` 传递依赖闭包**（含代码里 `ui://` 直引、无法由 art XML 推导的包）
@@ -2069,7 +2069,7 @@ manifest 给出精确源码路径，`fgui-manifest.mjs`、view registry test 和
   ⛔ `codegen:gameplays` 不自行实现第二套；
 - Home 一次性改为渲染 generated lobby contributions，以后新增玩法只增加 contribution。gameplay 的 Home 入口
   编译成与 §7.4 **相同形状**的 menu contribution（`slot` / `order` / owner id / entryId、标题
-  LocalizePort key、图标 URL 与 launch target），菜单只有一个数据源，排序沿用 `slot → order → featureId →
+  LocalizePort key、图标 URL 与 launch target），菜单只有一个数据源，排序沿用 `slot → order → pluginId →
   entryId`；
 - 具体 View 保持动态 import，Logic 继续禁止 import `cc` / `fairygui-cc`。
 
@@ -2100,7 +2100,7 @@ Start、错误重试”，数据只来自 `AccessPolicy + StartPolicy` 的公共
 `pages.ts` 若保留 `openGameplayLobby` / `submitGameplayLaunch` / `restoreAuthenticatedHome`，只能是**零状态
 的纯转发**（分别转发到 navigation 的 route open、`LaunchPort.launch(target)`、SessionCoordinator 的已登录
 base route 恢复），⛔ 不得在 `pages.ts` 内持有 session、reconciler 或页面数组，也不增加 `openSnakeRoom`、
-`openFishingRoom` 等玩法名函数。这三个函数属于一次性框架能力，与 §8.3「新增 feature 不得再往 `pages.ts`
+`openFishingRoom` 等玩法名函数。这三个函数属于一次性框架能力，与 §8.3「新增 plugin 不得再往 `pages.ts`
 加 `openXxx`」并不冲突——真正的约束是**状态所有权**，不是函数名。
 
 
@@ -2175,7 +2175,7 @@ gameplay generation」双守卫并写清两者失效的先后；`dispatchInput` 
 
 ## 8. 一次性侵入范围
 
-下面是实施本方案时预期需要修改的既有文件。它们是为了消除今后的重复侵入，而不是每个 feature 都要修改。
+下面是实施本方案时预期需要修改的既有文件。它们是为了消除今后的重复侵入，而不是每个 plugin 都要修改。
 
 | 层 | 一次性修改的主要现有位置 | 目的 |
 | --- | --- | --- |
@@ -2184,19 +2184,19 @@ gameplay generation」双守卫并写清两者失效的先后；`dispatchInput` 
 | Server RPC | `websocket/rpc.ts`、`dispatcher.ts`、`loader.ts`、现有 endpoint | metadata 驱动 schema、响应校验和执行模式 |
 | Server idem | `core/idem.ts`、`core/infra/redisScripts.ts`、必要的 key/config | payload hash、唯一 lease、CAS 和 inspect |
 | Server errors | `core/errors.ts` 及现有异常子类 | 自描述错误，移除领域中央映射 |
-| Client host | `Main.ts`、`view/pages.ts`、`net/WebSocketClient.ts`、`net/session.ts` | 通用 feature、导航、会话和生命周期接缝 |
-| Home | `HomeView.ts`、`HomeLogic.ts`、Home FGUI XML 与导出物 | 固定按钮改为数据驱动 feature menu |
+| Client host | `Main.ts`、`view/pages.ts`、`net/WebSocketClient.ts`、`net/session.ts` | 通用 plugin、导航、会话和生命周期接缝 |
+| Home | `HomeView.ts`、`HomeLogic.ts`、Home FGUI XML 与导出物 | 固定按钮改为数据驱动 plugin menu |
 | View/FGUI | `viewRegistry.ts`、`fguiContracts.ts`、`defineView.ts`、必要的 `ViewMgr.ts`、FGUI codegen/manifest | 生成静态 registry 与契约 |
 | Tests | RPC contract/wire/idem 测试、View/FGUI 测试、相关生命周期测试 | 中央穷尽表改为 manifest/vector 遍历 |
 | Governance | 根 `package.json`、工具链检查、inventory verifier、README、AGENTS/CLAUDE、OVERVIEW/CLIENT/SERVER、保护路径规则文件与无侵入矩阵测试 | 登记一次性命令、新开发动线与可机检的保护集合 |
 | 场景资产 | `apps/Cocos/assets/scene.scene`（及其 `.meta`） | `Main` 的 `@property` 搬家时由 Creator 重新序列化并人工审查；⛔ 不属于机械 diff |
 
-`scripts/fault-matrix.config.json` 是**人工审阅的中央故障矩阵登记**：新增普通 feature 只有在需要把自己的
+`scripts/fault-matrix.config.json` 是**人工审阅的中央故障矩阵登记**：新增普通 plugin 只有在需要把自己的
 故障点纳入矩阵时才动它；届时按“显式框架登记项”评审，**不计入“只新增文件”的承诺**，并在保护规则的
 provenance 白名单里单列说明它是人工项。⛔ 不建议把它改成 generated 产物。
 
 若分阶段实施，可通过 compatibility manifest 暂时指向现有 Login、Home、Confirm 等旧路径；不要求一次提交把所有
-页面搬目录。但在完成现有功能迁移和双向集合测试之前，不能对外承诺“后续 feature 只新增文件”。
+页面搬目录。但在完成现有功能迁移和双向集合测试之前，不能对外承诺“后续 plugin 只新增文件”。
 
 
 ### 8.1 Shared 与生成器
@@ -2251,7 +2251,7 @@ RPC/error/codegen 的一次性框架改造，不能把“新增 endpoint 文件�
 | `apps/client/src/view/fguiContracts.ts` | contract 和 ViewMeta 两份全集 | contract 随 ViewMeta contribution，测试从 generated catalog 派生全集 |
 | `apps/client/src/view/HomeView.ts`、`logic/page/HomeLogic.ts`、Home FGUI 设计源 | 入口固定为 `btn_enter` | 一次性改为玩法入口列表，数据来自 lobby contributions |
 | `apps/Cocos/assets/scene.scene`（及其 `.meta`） | `Main` 的 `@property`（`serverUrl` / `portalUrl`）序列化在**手工场景资产**里（`gameplayId` 未被序列化，仅是类默认值） | 属性搬到 bootstrap 组件时必须在 Creator 编辑器中重新序列化并人工审查该 diff；⛔ 该文件**不在**机械 diff 白名单内。若 Main 保留这些 `@property` 并只转发给新 host，则本行不触发。`gameplayId` 在 Home 数据驱动化之后应从 `Main.ts` 删除；它不在该场景资产里，删除不产生 scene.scene diff |
-| 客户端 lifecycle/wire/view/FGUI 测试 | 两类：(a) fixture 穷举现有玩法和页面；(b) 对 `Main.ts` / `pages.ts` 的**源文本正则 pin**（如 `ResolutionPolicy.FIXED_WIDTH`、`controller.tick(dt)`、`this.disposePages?.()`） | (a) 改成自动遍历 registry，并增加旧 generation、迟到 RPC 和不同 join strategy 反例；(b) 源文本 pin 改写为对新 host 的**行为断言**，且必须与掏空 `Main.ts` 的提交**同批**改写，⛔ 不允许删除了事。另：客户端 typecheck 配置测试硬编码了一组必含路径哨兵（`src/Main.ts`、`src/view/pages.ts`、`src/view/LoginView.ts`、`src/view/HomeView.ts`、`src/view/ConfirmView.ts` 等），把这些 core View 搬进 feature/玩法目录时必须同批更新该哨兵列表；**include 本身是递归 `src/**/*.ts`，新增目录会自动覆盖，不必改 tsconfig** |
+| 客户端 lifecycle/wire/view/FGUI 测试 | 两类：(a) fixture 穷举现有玩法和页面；(b) 对 `Main.ts` / `pages.ts` 的**源文本正则 pin**（如 `ResolutionPolicy.FIXED_WIDTH`、`controller.tick(dt)`、`this.disposePages?.()`） | (a) 改成自动遍历 registry，并增加旧 generation、迟到 RPC 和不同 join strategy 反例；(b) 源文本 pin 改写为对新 host 的**行为断言**，且必须与掏空 `Main.ts` 的提交**同批**改写，⛔ 不允许删除了事。另：客户端 typecheck 配置测试硬编码了一组必含路径哨兵（`src/Main.ts`、`src/view/pages.ts`、`src/view/LoginView.ts`、`src/view/HomeView.ts`、`src/view/ConfirmView.ts` 等），把这些 core View 搬进 plugin/玩法目录时必须同批更新该哨兵列表；**include 本身是递归 `src/**/*.ts`，新增目录会自动覆盖，不必改 tsconfig** |
 
 以下位置不应因“竖版 Snake”而修改：
 
@@ -2306,7 +2306,7 @@ apps/art/fairygui/assets/<PrivateRoomLobby-package>/**
 provenance：真源 = 该规则文件；writer = 人工评审并在提交中显式声明；checker = 无侵入矩阵测试；
 红在 `verify:core` 链里。
 
-**全仓只有一份规则文件**（登记见 §5.5 的 provenance 表与 §8 的 Governance 行）：feature 与 gameplay
+**全仓只有一份规则文件**（登记见 §5.5 的 provenance 表与 §8 的 Governance 行）：plugin 与 gameplay
 module 的保护条目都追加进同一份，⛔ 不产生第二份。§11.3 的保护清单是它的散文视图，两者必须双向比对。
 
 先例：仓内 `verify-inventory` 已经在做「解析 Markdown 表 → 与 `package.json` 双向 deepEqual」，本规则的
@@ -2343,7 +2343,7 @@ token、catch-all dispatcher 与分片 state 是 GameRoom 地基，越早建立�
 | 2 | gameplay wire token、分片 state、静态 catalog | **高，且是单向门** | 无 | **单向门**：state codegen 的 writer 切换必须在同一提交内完成 |
 | 3 | RPC descriptor 与测试向量发现 | 中——机械迁移，但要保持 12 条存量路由行为不变并把中央 request/response 向量迁入 sidecar | 无 | 可回退 |
 | 4 | 幂等 v2 与错误自描述 | **高，且是单向门** | 本地 Redis（`test:int` + 故障矩阵） | **单向门**：需 drain 窗口（≥ `IDEM_RESULT_MS + IDEM_PENDING_MS`），回退同样需要一次 drain |
-| 5 | 客户端 FeatureHost 与生命周期 | **最高**——12 个新模块 + `pages.ts` 状态机迁移；`Main.ts` 源文本 pin 必须与掏空同批改写 | Creator 预览（人工证据） | 可回退，但迁移期 ⛔ 不允许「新旧都注册」的中间态，回退必须整批 |
+| 5 | 客户端 PluginHost 与生命周期 | **最高**——12 个新模块 + `pages.ts` 状态机迁移；`Main.ts` 源文本 pin 必须与掏空同批改写 | Creator 预览（人工证据） | 可回退，但迁移期 ⛔ 不允许「新旧都注册」的中间态，回退必须整批 |
 | 6 | Home 与 View/FGUI 生成登记 | 高——建立全仓唯一的 View writer 与产物路径 | FairyGUI 编辑器真实导出、Creator 预览 | 可回退 |
 | 7 | inventory、文档索引与协议身份 | 中——协议身份拆分会动指纹锁文件格式与版本矩阵测试 | 无 | 可回退（需同批回滚锁文件格式） |
 | 8 | 通用 private-room 与 owner-ready policy | 高——新增 Redis 租约、ticket 状态机与开局事务 | 本地 Redis | 需数据清理：回退前释放全部在途 lease 与 ticket key |
@@ -2359,7 +2359,7 @@ token、catch-all dispatcher 与分片 state 是 GameRoom 地基，越早建立�
 工作：
 
 - 确定“人工侵入/生成侵入/镜像变化”的分类；
-- 固定 feature manifest v1 schema；
+- 固定 plugin manifest v1 schema；
 - 记录现有 RPC、错误码、push、View、Home 和测试全集；
 - 为生成器建立 isolated fixture 和 `--check` 反例测试。
 
@@ -2407,7 +2407,7 @@ lifecycle 与测试基线。§6.7 的三个时间参数与 §6.8 的限流数值
 - 建立 shared domain builder 和 registry codegen；
 - 迁移 user/mail/shop/guild；
 - `defineRpc` 改为 metadata 驱动；
-- 中央 fixture 改为 feature/domain vector loader；
+- 中央 fixture 改为 plugin/domain vector loader；
 - 保留 endpoint loader 的全集校验。
 
 本阶段把存量 12 条路由的 request/response 向量**从中央表迁入 sidecar**（现状见 §5.6：request/response
@@ -2437,11 +2437,11 @@ lifecycle 与测试基线。§6.7 的三个时间参数与 §6.8 的限流数值
 不重跑 handler；receipt/generic done/tombstone/pending/unknown、complete 失败后的 durable replay 和升级 SOP 均有
 测试或运行证据。
 
-### 阶段 5：客户端 FeatureHost 与生命周期
+### 阶段 5：客户端 PluginHost 与生命周期
 
 工作：
 
-- 新增 AppRuntime、FeatureRegistry、Navigation、SessionCoordinator 和 LifecycleBus；
+- 新增 AppRuntime、PluginRegistry、Navigation、SessionCoordinator 和 LifecycleBus；
 - WebSocketClient 暴露只读连接状态；
 - Main 收敛为 bootstrap/update/dispose；
 - 登录恢复不再固定打开 Home；
@@ -2449,22 +2449,22 @@ lifecycle 与测试基线。§6.7 的三个时间参数与 §6.8 的限流数值
 
 退出条件补三条：`Main.ts` / `pages.ts` 的**源文本 pin 已全部改写为对新 host 的行为断言，且改写与掏空 Main
 在同一次提交**，⛔ 不允许先删后补；WeChat compat 的 bootstrap 顺序断言在迁移**之前**已补上；`auth-invalid`
-事件发布后的**同一 tick 内** `getToken()` 已为空，且此后任何 feature 发起的 HTTP/RPC 都不携带旧 Bearer
+事件发布后的**同一 tick 内** `getToken()` 已为空，且此后任何 plugin 发起的 HTTP/RPC 都不携带旧 Bearer
 （有反例测试）。
 
-退出条件：fixture feature 在页面关闭、加载中取消、drop/reconnect、强踢、最终 leave、回前台和 session
+退出条件：fixture plugin 在页面关闭、加载中取消、drop/reconnect、强踢、最终 leave、回前台和 session
 generation 变化时均不会让旧响应回写；late subscriber 能立即读取连接状态；foreground+reconnect+reopen 只
 合流当前 flight，下一次 foreground 仍能刷新；PendingOperationJournal 在 route close/reopen 后复用原 ID；app
-destroy 后 connection/session/route/ticker 订阅归零；静态门禁证明 feature 无法直接访问原始 Lobby Room 或自行
+destroy 后 connection/session/route/ticker 订阅归零；静态门禁证明 plugin 无法直接访问原始 Lobby Room 或自行
 重连，所有同步/异步 listener 异常都被观察。
 
 ### 阶段 6：Home 与 View/FGUI 生成登记
 
 工作：
 
-- Home 改为 feature menu，ballMove 迁入 contribution；
+- Home 改为 plugin menu，ballMove 迁入 contribution；
 - view/contract/package registry 生成化；
-- fgui-codegen 支持 feature 目录；
+- fgui-codegen 支持 plugin 目录；
 - View/FGUI 测试改为遍历 manifest。
 
 退出条件：新增 fixture View/入口只新增 manifest、View metadata、composer/Logic 和 art；Home、registry、
@@ -2474,12 +2474,12 @@ contracts 无人工 diff；迁移期 alias 不产生重复所有权；Creator �
 
 工作：
 
-- inventory 合并 feature fragment；
-- 生成 feature 能力索引；
+- inventory 合并 plugin fragment；
+- 生成 plugin 能力索引；
 - 分离 Lobby/GameRoom 协议身份；
 - 更新标准开发动线和工具链聚合命令。
 
-退出条件：普通 extra feature 不修改中央 inventory；协议变更未接受时 check 失败；生成索引不冒充人工计划和验收
+退出条件：普通 extra plugin 不修改中央 inventory；协议变更未接受时 check 失败；生成索引不冒充人工计划和验收
 证据。
 
 ### 阶段 8：通用 private-room 与 owner-ready policy
@@ -2519,7 +2519,7 @@ join envelope 的版本矩阵（旧客户端被明确拒绝）通过。
 
 回滚策略：可回退。本阶段是唯一依赖真机与真实多客户端联调的阶段，人工验收证据不可由 Node 无头测试冒充。
 
-undergroundIdle 在本阶段并行实现：它只新增 feature 文件，不再触碰框架（这正是阶段 3–7 要证明的结论）。
+undergroundIdle 在本阶段并行实现：它只新增 plugin 文件，不再触碰框架（这正是阶段 3–7 要证明的结论）。
 
 ⚠ 本阶段是唯一依赖真机与真实多客户端联调的阶段，人工验收证据 ⛔ 不可由 Node 无头测试冒充。
 
@@ -2528,7 +2528,7 @@ undergroundIdle 在本阶段并行实现：它只新增 feature 文件，不再�
 - 默认 Home contribution 指向 Snake 私房 Demo（归属见 §9.2）；
 - ballMove 仍作为**已登记 GameMode** 保留（供回归与 fixture 遍历），但**不贡献 Home menu contribution**；
   “隐藏回归 mode”指的正是这个状态，⛔ 不是菜单里的隐藏条目。只有确需「已登记但不可见的菜单条目」时，才在
-  §7.4 的字段清单里补显式 `visibility` 字段——那不改变 §12.3「改变默认启用 feature 仍需显式评审」；
+  §7.4 的字段清单里补显式 `visibility` 字段——那不改变 §12.3「改变默认启用 plugin 仍需显式评审」；
 - Snake 稳定后另立清理任务，评估 ballMove evidence/replay、性能基线、文档和测试是否删除或归档。
 
 退出条件：默认入口无 ballMove 特判；删除/保留 ballMove 都不会改变通用框架接口。
@@ -2630,9 +2630,9 @@ undergroundIdle 在本阶段并行实现：它只新增 feature 文件，不再�
 > 纳入目标机型预算。上表的 dispose 验收项据此**不包含** FGUI 包本身的释放。
 
 
-### 10.5 feature 侧最终验收
+### 10.5 plugin 侧最终验收
 
-框架只有在以下条件全部满足后，才能宣称支持本方案中的“非侵入式 feature”：
+框架只有在以下条件全部满足后，才能宣称支持本方案中的“非侵入式 plugin”：
 
 > **口径同 §10 导语**：机检项必须给出「判定方式」与「变异验证」
 > （改哪一行 / 删哪个断言 → 哪条用例转红）。⛔ 机检项给不出变异验证的不得作为验收项。人工项写「人工证据」
@@ -2640,28 +2640,28 @@ undergroundIdle 在本阶段并行实现：它只新增 feature 文件，不再�
 
 | 验收项 | 判定方式 | 变异验证 |
 | --- | --- | --- |
-| 新增完整 fixture feature 时，既有人工源码零修改 | 无侵入矩阵（见下） | 让 fixture 必须手改一处中央源码 → 矩阵转红 |
-| 只有 feature 新文件、generated registry、指纹、FGUI 产物和镜像发生变化 | 无侵入矩阵的 diff 分类器 | 往既有文件里加一行 → 分类器转红 |
-| manifest 仍存在时，缺任一 descriptor、endpoint、vector、View metadata 或 composer 必然失败 | feature freshness 断言（随 `verify:all`） | 逐个删除这五类引用 → 各转红一条 |
-| 删除整个 feature 只能通过显式允许的删除流程 | feature freshness 断言（随 `verify:all`） | 直接删目录后跑 writer → 必须拒绝而不是静默删生成物 |
+| 新增完整 fixture plugin 时，既有人工源码零修改 | 无侵入矩阵（见下） | 让 fixture 必须手改一处中央源码 → 矩阵转红 |
+| 只有 plugin 新文件、generated registry、指纹、FGUI 产物和镜像发生变化 | 无侵入矩阵的 diff 分类器 | 往既有文件里加一行 → 分类器转红 |
+| manifest 仍存在时，缺任一 descriptor、endpoint、vector、View metadata 或 composer 必然失败 | plugin freshness 断言（随 `verify:all`） | 逐个删除这五类引用 → 各转红一条 |
+| 删除整个 plugin 只能通过显式允许的删除流程 | plugin freshness 断言（随 `verify:all`） | 直接删目录后跑 writer → 必须拒绝而不是静默删生成物 |
 | route mode 不再由字段结构推断 | 编译期负例 | 让 `LobbyRpcIdemType` 改回结构推断 → 负例转红 |
 | 相同 ID 不同 payload 在 handler 前被拒绝 | 服务端幂等用例 | 去掉 payload hash 比较 → 转红 |
 | `clientReqId` 的字符集/长度积木拒绝含 `:`、`{`、换行、超长与非 ASCII 的值 | shared 契约向量 | 换回通用 `requiredId` → 转红 |
 | pending/done/done-oversize/unknown 与 durable receipt 的优先级有故障测试 | `test:int` + 故障矩阵 | 把 `done-oversize` 归类为 `unknown` → 转红 |
-| 新 feature 仅声明 `inspectsOperationGroup: "undergroundIdle"` 而未 `dependsOn`、也未获 undergroundIdle 侧 expose 时必须失败 | feature freshness 断言（随 `verify:all`） | 去掉 group 所有权校验 → 该反例转绿（即门禁失效） |
+| 新 plugin 仅声明 `inspectsOperationGroup: "undergroundIdle"` 而未 `dependsOn`、也未获 undergroundIdle 侧 expose 时必须失败 | plugin freshness 断言（随 `verify:all`） | 去掉 group 所有权校验 → 该反例转绿（即门禁失效） |
 | drop/reconnect/foreground/close 后不会发生旧 View 回写或 SDK 队列重放 | 客户端生命周期用例 | 去掉 generation 守卫 → 转红 |
 | `auth-invalid` 事件发布后的**同一 tick 内** `getToken()` 已为空，此后任何请求不携带旧 Bearer | 客户端用例 | 在清 token 与发布事件之间插入一个 await → 转红 |
-| app dispose 后 connection/session/route/ticker/lifecycle 订阅计数**归零**，`PendingOperationJournal` 与 FeatureHost 实例全部释放 | 客户端 dispose 用例（计数断言） | 漏掉任一 disposer → 计数不归零，转红 |
-| 反复 open/close 同一 feature route N 轮后，订阅数、ViewMgr 缓存条目和 uncached handle 回到基线 | 客户端用例 | 让 route close 不解绑订阅 → 转红 |
+| app dispose 后 connection/session/route/ticker/lifecycle 订阅计数**归零**，`PendingOperationJournal` 与 PluginHost 实例全部释放 | 客户端 dispose 用例（计数断言） | 漏掉任一 disposer → 计数不归零，转红 |
+| 反复 open/close 同一 plugin route N 轮后，订阅数、ViewMgr 缓存条目和 uncached handle 回到基线 | 客户端用例 | 让 route close 不解绑订阅 → 转红 |
 | Home 新入口不需要修改 Home 源码或 XML | 无侵入矩阵 | 让新入口必须改 Home XML → 转红 |
 | 抬头状态行与 `docs/inventory.json` 的 `routeOfTruth` 指向一致 | `npm run verify:inventory` | 把抬头指向已降级的归档 → 转红 |
 | §11.3 的散文保护清单与 canonical 规则文件**双向比对**一致 | 无侵入矩阵 | 从规则文件里删掉 `pages.ts` → 矩阵因散文清单对不上而转红 |
-| `verify:all`、feature generator/vector gate、相关 server integration/fault 测试和同步检查全部通过 | 上述命令 | 不适用（聚合项） |
+| `verify:all`、plugin generator/vector gate、相关 server integration/fault 测试和同步检查全部通过 | 上述命令 | 不适用（聚合项） |
 | FGUI 新包仍通过真实编辑器导出和 Creator 预览 | **人工证据** | 不适用（人工项） |
 
 还应增加一条端到端“无侵入扩展矩阵”：在临时 checkout 中记录保护文件 hash，加入并 stage/intent-to-add 一个
-带合成 FGUI 导出物的最小 `smoke-lobby-feature`；先证明全部 `--check` 因 stale/missing output 与 lock 失败，再运行
-writer、显式 lock accept 和 sync，最后证明全部 check 通过。分类器断言人工文件只出现 feature-owned `A`，既有
+带合成 FGUI 导出物的最小 `smoke-lobby-plugin`；先证明全部 `--check` 因 stale/missing output 与 lock 失败，再运行
+writer、显式 lock accept 和 sync，最后证明全部 check 通过。分类器断言人工文件只出现 plugin-owned `A`，既有
 `M` 只命中 provenance 白名单且没有 `D/R` 或既有 `.meta` UUID 变化；第二次 writer/sync 后第一次 patch 的字节/
 hash 不再变化。FGUI 编辑器/Creator 的真实导出与预览另做专项验收，Node fixture 不冒充编辑器。
 
@@ -2669,7 +2669,7 @@ hash 不再变化。FGUI 编辑器/Creator 的真实导出与预览另做专项�
 从而触发 `sync-client --check` 的 `.meta` 断言。矩阵要么另造合成 `.meta` 并说明 uuid 来源，要么**显式声明
 本矩阵跳过 `sync-client --check` 的 `.meta` 段**、由单独的 Creator 人工验收项覆盖。⛔ 不能假装这一段被覆盖了。
 
-删除 fixture 是第二个独立阶段，允许该 feature 自有文件和镜像出现预期 `D`，但必须通过显式删除授权，并确认
+删除 fixture 是第二个独立阶段，允许该 plugin 自有文件和镜像出现预期 `D`，但必须通过显式删除授权，并确认
 generated registry、Home entry、View、FGUI package/output、未引用源码和镜像均无残留。
 
 
@@ -2707,7 +2707,7 @@ npm --workspace @game/server run test:int  # 需先 npm --workspace @game/server
 > gameplay 生成物的 freshness 断言随 `npm --workspace @game/server run test` 进入 `verify:all`，
 > ⛔ 不新增独立根命令、也不单列（命令形态见 §5.4）。
 > 若 gameplay 的 View/menu contribution 是最终 View 生成器的输入，则 `codegen:gameplays` 必须在
-> `codegen:features` **之前**运行（§3.1 交汇点表）。
+> `codegen:plugins` **之前**运行（§3.1 交汇点表）。
 
 涉及邀请码 Redis lease 时还要启动本地 stack 并运行相应 `test:int` 和故障矩阵。完整登录链依赖匹配的外部
 WebPlatform；Creator/真机预览必须单列，不能由 Node 无头测试冒充。
@@ -2852,8 +2852,8 @@ apps/client/test/snake-*.test.ts
 完成框架改造后，Underground Idle 的人工源码应只新增在自己的边界内：
 
 ```text
-features/undergroundIdle/
-└── feature.json
+plugins/undergroundIdle/
+└── plugin.json
 
 apps/shared/src/protocol/lobbyRpc/domains/undergroundIdle.ts
 apps/shared/src/logic/undergroundIdle/**
@@ -2861,7 +2861,7 @@ apps/shared/src/logic/undergroundIdle/**
 apps/server/src/websocket/undergroundIdle/*.ts
 apps/server/src/core/undergroundIdle/**
 
-apps/client/src/features/undergroundIdle/
+apps/client/src/plugins/undergroundIdle/
 ├── index.ts
 ├── logic/**
 ├── net/**
@@ -2881,18 +2881,18 @@ apps/client/test/undergroundIdle*.test.ts
 推荐开发动线：
 
 ```text
-1. 新增 feature.json、shared domain、RPC vectors、server/client 源码和 View metadata
+1. 新增 plugin.json、shared domain、RPC vectors、server/client 源码和 View metadata
 2. FairyGUI 编辑并真实导出；fgui-codegen 生成 View AUTO 区
-3. 运行 feature 生成器 writer（workspace 脚本 codegen:features），审查普通 generated registry diff
+3. 运行 plugin 生成器 writer（workspace 脚本 codegen:plugins），审查普通 generated registry diff
 4. 显式运行 protocol fingerprint --write 与 fgui manifest --write，审查两类 lock diff
 5. 运行 npm run sync:shared（当前已包含 client→Cocos 同步，不再重复运行 sync:client）
 6. 打开 Cocos Creator 一次，为 sync 新产生的 apps/Cocos/assets/src/** 文件与新目录生成 .meta，
    与源码同批提交（⚠ sync-client --check 的 .meta 断言只遍历 git ls-files：本地未 add 时不会红，
    提交或 CI 上必红——这一步不能省）
-7. 运行 protocol/FGUI/sync/inventory check、typecheck 和 RPC/客户端/服务端测试（feature 生成物的 freshness
+7. 运行 protocol/FGUI/sync/inventory check、typecheck 和 RPC/客户端/服务端测试（plugin 生成物的 freshness
    断言就在这批测试里，⛔ 无独立 --check 命令）
 8. Creator 本地预览真实资源与生命周期
-9. 分类审查手写 feature diff、generated diff、lock diff、资源 diff 和镜像 diff
+9. 分类审查手写 plugin diff、generated diff、lock diff、资源 diff 和镜像 diff
 ```
 
 在这条动线中，不应再修改：
@@ -2918,7 +2918,7 @@ apps/client/src/net/session.ts
 apps/client/src/app/**
 ```
 
-如果实现一个普通 feature 仍需手改其中任何文件，应视为框架扩展点缺失，先判断是本方案遗漏，还是该需求本质上
+如果实现一个普通 plugin 仍需手改其中任何文件，应视为框架扩展点缺失，先判断是本方案遗漏，还是该需求本质上
 改变了全局框架语义。
 
 正式实现时应把上述保护集合变成一份 canonical protected-path 规则文件（如 `scripts/protected-paths.json`）并由
@@ -2926,7 +2926,7 @@ apps/client/src/app/**
 表与 §8 的 Governance 行；矩阵必须把散文清单与规则文件做**双向比对**，两者不一致时红。
 （先例：仓内 `verify-inventory` 已经在做「解析 Markdown 表 → 与 `package.json` 双向 deepEqual」。）
 
-⚠ **适用范围**：本清单约束的是**普通 feature 与 gameplay module 的新增动线**（见本节首句“在这条动线中”）。
+⚠ **适用范围**：本清单约束的是**普通 plugin 与 gameplay module 的新增动线**（见本节首句“在这条动线中”）。
 §9 的框架改造阶段本身按 §12.3 属于**显式框架侵入**，不适用本清单。保护集合的机检真源见 §8.5，
 **全仓只有一份规则文件**（登记见 §5.5 provenance 表与 §8 Governance 行），⛔ 本节散文不是第二真源。
 
@@ -2940,12 +2940,12 @@ apps/client/src/app/**
 | RPC 接入 | 领域文件 + 中央 export/map/validator/错误码 + endpoint schema | 领域 descriptor + endpoint；中央 registry 自动生成 |
 | 幂等 | endpoint 手工 `idem:true`，短缓存不绑定 payload | route metadata 自动驱动，payload 绑定、唯一 lease；显式组可查询 |
 | 错误 | 领域异常修改中央 `ERR_MAP` | 领域 `RpcFault` + 生成 whitelist |
-| 客户端导航 | `pages.ts`/Main/Home 手工接线 | feature route/menu contribution + 通用 host |
-| 断线/回前台 | feature 需要触碰网络或页面组合根 | 订阅统一 lifecycle，由 RefreshCoordinator 拉快照 |
+| 客户端导航 | `pages.ts`/Main/Home 手工接线 | plugin route/menu contribution + 通用 host |
+| 断线/回前台 | plugin 需要触碰网络或页面组合根 | 订阅统一 lifecycle，由 RefreshCoordinator 拉快照 |
 | View | 手改 registry + contracts | manifest/XML/codegen 生成静态注册表 |
-| 测试 | 修改中央穷尽 fixture | feature 新增自己的向量，通用测试遍历全集 |
-| 能力清单 | 修改中央 inventory 和多份状态文档 | extra feature fragment + 生成索引；core 晋升仍人工 |
-| 分支冲突 | 集中在多个中央文件 | 主要发生在 feature 自己目录；中央只有稳定生成 diff |
+| 测试 | 修改中央穷尽 fixture | plugin 新增自己的向量，通用测试遍历全集 |
+| 能力清单 | 修改中央 inventory 和多份状态文档 | extra plugin fragment + 生成索引；core 晋升仍人工 |
+| 分支冲突 | 集中在多个中央文件 | 主要发生在 plugin 自己目录；中央只有稳定生成 diff |
 
 
 ### 12.2 最终效果
@@ -2986,29 +2986,29 @@ apps/server/sql/schema.sql
 
 ⚠ 本块是 `scripts/protected-paths.json` 的 `gameplayFlow.paths` 的散文视图，由无侵入矩阵做**双向
 deepEqual**——任一侧单方面增删即红（⛔ 堵住「先从规则文件删条目、再重钉 `protected-paths.lock`」
-这条绕过路径）。§12.2 点名的 `Main.ts` / `pages.ts` / Home 属 feature 动线，列在 §11.3 的清单里，
+这条绕过路径）。§12.2 点名的 `Main.ts` / `pages.ts` / Home 属 plugin 动线，列在 §11.3 的清单里，
 此处不重复。
 
 
-两条边界要一起记住：**本清单约束的是「新增普通玩法 / feature」的动线**，§9 的框架改造阶段本身属于**显式框架侵入**，
+两条边界要一起记住：**本清单约束的是「新增普通玩法 / plugin」的动线**，§9 的框架改造阶段本身属于**显式框架侵入**，
 不适用本清单；而「Home 可见入口」的登记按 §3.2 第 8 条是唯一例外。保护集合的机检真源见 §8.5，
 ⛔ 本节散文不是第二真源。
 
-> 注记（2026-09-04，例外已关闭）：snake 的 views/owners/menu 已搬进 `features/snake/feature.json`，
-> Home 可见入口不再需要手改中央 `features/built-in/feature.json`；本段「唯一例外」的表述保留为历史
+> 注记（2026-09-04，例外已关闭）：snake 的 views/owners/menu 已搬进 `apps/plugins/snake/plugin.json`，
+> Home 可见入口不再需要手改中央 `apps/plugins/builtin/plugin.json`；本段「唯一例外」的表述保留为历史
 > 设计记录。⚠ 例外关闭只覆盖**菜单入口登记**这一格，本节其余「不再因玩法名发生修改」的边界不变。
 
 
 ### 12.3 仍然应当侵入框架的情况
 
-以下需求本质上改变全局行为，不应为了形式上的无侵入而伪装成普通 feature：
+以下需求本质上改变全局行为，不应为了形式上的无侵入而伪装成普通 plugin：
 
 - 修改 RPC 信封、通用错误语义或幂等算法；
 - 修改鉴权、连接恢复、限流、网关预算或默认导航策略；
 - 新增 npm 依赖、根命令或运行时环境要求；
 - 修改玩家根 schema、SQL schema、跨存储事务或 outbox 语义；
 - 修改 GameRoom 通用 C2S 消息、state root 或对局生命周期；
-- 改变默认启用 feature、核心项目边界或生产承诺；
+- 改变默认启用 plugin、核心项目边界或生产承诺；
 - 修改 FGUI 公共基础包的稳定组件契约。
 
 这些改动仍应显式修改对应框架文件、文档和验收证据。非侵入式架构的目的，是消除重复登记和无关冲突，
@@ -3034,14 +3034,14 @@ deepEqual**——任一侧单方面增删即红（⛔ 堵住「先从规则文�
 
 **实施优先级**——§9 的阶段顺序已由依赖方向定死，下面是各项工作的**价值排序**，用于在阶段内部取舍：
 
-1. **最高优先级**：RPC domain descriptor、显式 route mode、生成 registry、feature-owned vectors。
+1. **最高优先级**：RPC domain descriptor、显式 route mode、生成 registry、plugin-owned vectors。
 2. **最高优先级**：幂等 payload 绑定、唯一 lease/CAS、operation inspect、自描述错误。
-3. **高优先级**：客户端 FeatureHost、统一导航/会话/连接/前后台生命周期、数据驱动 Home。
+3. **高优先级**：客户端 PluginHost、统一导航/会话/连接/前后台生命周期、数据驱动 Home。
 4. **高优先级**：View/FGUI 生成登记和递归 manifest 测试。
 5. **中优先级**：inventory fragment、生成文档索引、Lobby/GameRoom 协议身份拆分。
 6. **按需求决定**：通用玩家 JSON 聚合适配器和分片协议/FGUI 锁。
 
 不建议为了一个玩法先建设运行时插件系统、完整 DI 容器、跨端热加载或通用 schema 编译器。先消除已经被两个
-策划案明确触发的人工登记点，并用最小 fixture（feature 与 gameplay module 各一个）证明“只新增文件”的验收
+策划案明确触发的人工登记点，并用最小 fixture（plugin 与 gameplay module 各一个）证明“只新增文件”的验收
 条件，再开始完整玩法实现——这正是 §9 把两个玩法的实现排在阶段 10、全部框架阶段之后的原因。
 

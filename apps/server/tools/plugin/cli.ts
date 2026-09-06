@@ -129,13 +129,13 @@ export function parseCli(argv: readonly string[]): PluginCliArguments {
   throw new Error(USAGE);
 }
 
-function printAllowDelete(allowDelete: { readonly gameplays: readonly string[]; readonly features: readonly string[] }): void {
+function printAllowDelete(allowDelete: { readonly gameplays: readonly string[]; readonly plugins: readonly string[] }): void {
   if (allowDeleteCount(allowDelete) === 0) return;
-  console.log(`[plugin]   升级删除面 → codegen --allow-delete：gameplays ${allowDelete.gameplays.join(", ") || "-"}；features ${allowDelete.features.join(", ") || "-"}`);
+  console.log(`[plugin]   升级删除面 → codegen --allow-delete：gameplays ${allowDelete.gameplays.join(", ") || "-"}；plugins ${allowDelete.plugins.join(", ") || "-"}`);
 }
 
-function allowDeleteCount(allowDelete: { readonly gameplays: readonly string[]; readonly features: readonly string[] }): number {
-  return allowDelete.gameplays.length + allowDelete.features.length;
+function allowDeleteCount(allowDelete: { readonly gameplays: readonly string[]; readonly plugins: readonly string[] }): number {
+  return allowDelete.gameplays.length + allowDelete.plugins.length;
 }
 
 /** source 变迁与 uuid 变化：都是宿主该看一眼的事实（不拦，只讲清）。 */

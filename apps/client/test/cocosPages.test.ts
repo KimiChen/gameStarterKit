@@ -246,12 +246,12 @@ async function makeSettingsLogic(): Promise<SettingsFixture> {
   const launched: string[] = [];
   const logic = new SettingsLogic({
     updateProfile: async (patch) => { patches.push(patch as Record<string, boolean>); },
-    availabilityOf: (featureId) => (featureId === "broken" ? "failed" : "available"),
+    availabilityOf: (pluginId) => (pluginId === "broken" ? "failed" : "available"),
   });
   logic.setProfile({ musicOn: true, sfxOn: true });
   logic.setEntries([
-    { entryId: "ok", featureId: "alpha", label: "可用玩法", launch: () => { launched.push("ok"); } },
-    { entryId: "bad", featureId: "broken", label: "坏掉的玩法", launch: () => { launched.push("bad"); } },
+    { entryId: "ok", pluginId: "alpha", label: "可用玩法", launch: () => { launched.push("ok"); } },
+    { entryId: "bad", pluginId: "broken", label: "坏掉的玩法", launch: () => { launched.push("bad"); } },
   ]);
   return { logic, patches, launched };
 }

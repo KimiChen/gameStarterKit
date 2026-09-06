@@ -1,10 +1,10 @@
 /**
- * 兑换存储：每用户「已兑换码集合」+「本 feature 钱包余额」两把 feature 键（kFeatureUser，
+ * 兑换存储：每用户「已兑换码集合」+「本 plugin 钱包余额」两把 plugin 键（kPluginUser，
  * 与该 uid 的框架键同槽，09·R3），一条 Lua 原子完成「未兑换则记账并加余额」。
  * ⛔ 不碰经济系统主钱包/账本——插件只能消费框架 API，不能改框架写路径（PLUGIN.md §3）。
  */
 import type { Redis } from "ioredis";
-import { kFeatureUser } from "../infra/keys";
+import { kPluginUser } from "../infra/keys";
 import { clientFor } from "../infra/redisRoute";
 import { defineScript, evalshaWithReload } from "../infra/redisScripts";
 
@@ -15,11 +15,11 @@ export interface RedeemStore {
   claim(uid: string, code: string, amount: number): Promise<RedeemClaimOutcome>;
 }
 
-const FEATURE_ID = "redeem";
+const PLUGIN_ID = "redeem";
 const SCOPE = { zone: "per-zone" } as const;
 
-export const kRedeemClaimed = (uid: string): string => kFeatureUser(FEATURE_ID, "claimed", uid, SCOPE);
-export const kRedeemWallet = (uid: string): string => kFeatureUser(FEATURE_ID, "wallet", uid, SCOPE);
+export const kRedeemClaimed = (uid: string): string => kPluginUser(PLUGIN_ID, "claimed", uid, SCOPE);
+export const kRedeemWallet = (uid: string): string => kPluginUser(PLUGIN_ID, "wallet", uid, SCOPE);
 
 /** KEYS[1]=claimed set，KEYS[2]=wallet；ARGV=[code, amount]。同 {uid} 槽，集群安全。 */
 export const REDEEM_CLAIM = defineScript("redeemClaim", `

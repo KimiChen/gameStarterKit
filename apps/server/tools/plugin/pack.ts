@@ -9,9 +9,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { classifyPath, deriveOwnership, hardExclusionReason, matchesPrefixRule, mirrorPathOf, pluginDir, readProtectedPaths, type OwnershipRule } from "./ownership";
-import { identityOf, parsePluginManifest, type PluginManifest } from "./manifest";
+import { identityOf, parsePluginManifest, readTreeGameplaySource, type PluginManifest } from "./manifest";
 import { PACKAGE_FILES_LOCK, PACKAGE_MANIFEST, foreignLockOwners, renderFilesLock, sha256, type LockEntry } from "./lock";
-import { featureDeclarations, featureManifestPath, validatePackage, type PluginPackage } from "./package";
+import { validatePackage, type PluginPackage } from "./package";
 import { writeZip } from "./zip";
 
 export interface PackOptions {
@@ -61,6 +61,7 @@ export function readAuthoredManifest(root: string, id: string): { readonly manif
   const bytes = fs.readFileSync(file);
   const manifest = parsePluginManifest(JSON.parse(bytes.toString("utf8")), relative);
   if (manifest.id !== id) fail(`${relative} 的 id（${manifest.id}）与目录名不一致`);
+  if (manifest.version === null) fail(`${relative} 没有 version：宿主自有插件不可打包（要分发就给它一个 semver）`);
   return { manifest, bytes };
 }
 
@@ -70,14 +71,7 @@ export function collectPluginFiles(root: string, manifest: PluginManifest): {
   readonly skipped: readonly string[];
   readonly rules: readonly OwnershipRule[];
 } {
-  let clientDirs: readonly string[] = [];
-  if (manifest.kinds.includes("feature")) {
-    const featureFile = featureManifestPath(manifest.id);
-    const full = path.join(root, featureFile);
-    if (!fs.existsSync(full)) fail(`工作树缺少 ${featureFile}`);
-    clientDirs = featureDeclarations(new Map([[featureFile, fs.readFileSync(full)]]), manifest.id).clientDirs;
-  }
-  const rules = deriveOwnership(identityOf(manifest, clientDirs));
+  const rules = deriveOwnership(identityOf(manifest, readTreeGameplaySource(root, manifest.id)));
   const protectedPaths = readProtectedPaths(root);
   const candidates = new Set<string>();
   for (const rule of rules) {

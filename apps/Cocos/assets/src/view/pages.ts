@@ -8,7 +8,7 @@
  * session 处理器（§7.2 (a)：两个单槽的唯一注册方是
  * SessionCoordinator.attachSessionNavigator）。
  *
- * 最终新增 feature ⛔ 不再向本文件添加 openXxx（经 feature route/NavigationService）。
+ * 最终新增 plugin ⛔ 不再向本文件添加 openXxx（经 plugin route/NavigationService）。
  */
 export type { PageSessionOwner, PageSessionScope } from "../app/loginFlow";
 export {
