@@ -152,7 +152,7 @@
 
 **多插件共存的所有权账本**（2026-09-05，PLUGIN-REGISTRY §1-4）：别的已安装插件锁登记的路径永远不是本插件的——
 `pack` 遇到推导集与他锁重叠即拒绝采集（⛔ 不静默把别人的文件打进自己的包），`install` 对包内文件与他锁的交集单独点名
-（「属于插件 X」），`check` 断言各锁清单两两不交。`registry` 是保留 id。
+（「属于插件 X」），`check` 断言各锁清单两两不交。保留 id 是 `host` / `registry` / `ui` / `config`（后两个是宿主在 `resources/` 下的既有目录，见 §5.5.3）。
 
 ### 5.3 包格式
 
@@ -288,7 +288,7 @@ gameplay `manifest.json` 的 `schemaVersion` 读时与 gameplay-schema 比对（
 
 ```text
 apps/plugins/
-  host.json                       宿主 placement（默认玩法 + 首屏入口顺序）；host / registry 是保留 id
+  host.json                       宿主 placement（默认玩法 + 首屏入口顺序）；host / registry / ui / config 是保留 id
   <id>/plugin.json                身份 + 客户端登记（§5.3；宿主自有插件没有 version）
   <id>/README.md                  插件自述（plugin.json 的 docs 指向它）
   <id>/gameplay/manifest.json     有玩法时的单源（与 apps/shared/schema/gameplays/<id>/ 同等被发现）
