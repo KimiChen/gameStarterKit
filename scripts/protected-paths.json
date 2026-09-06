@@ -82,6 +82,8 @@
       { "path": "scripts/protocol.fingerprint", "writer": "node scripts/protocol-fingerprint.mjs --write", "autoHeader": false },
       { "path": "scripts/protected-paths.lock", "writer": "node scripts/protected-paths-lock.mjs --write", "autoHeader": true },
       { "path": "scripts/fgui.manifest.json", "writer": "node scripts/fgui-manifest.mjs --write", "autoHeader": false },
+      { "path": "apps/shared/src/kits/catalog.generated.ts", "writer": "npm --workspace @game/server run codegen:plugins", "autoHeader": true },
+      { "path": "apps/server/src/kits/catalog.generated.ts", "writer": "npm --workspace @game/server run codegen:plugins", "autoHeader": true },
       { "path": "scripts/packages/**", "writer": "npm --workspace @game/server run plugin", "autoHeader": false }
     ]
   },

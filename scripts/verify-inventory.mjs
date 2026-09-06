@@ -1133,7 +1133,7 @@ function assertSupportedPluginSchema(schema, label) {
   // （与 commandInvokesEntry 的启动器表同一约束）。
   const PLUGIN_SCHEMA_KEYWORDS = new Set([
     "$schema", "title", "type", "const", "pattern", "minimum", "maximum",
-    "required", "properties", "additionalProperties", "items",
+    "required", "properties", "additionalProperties", "items", "patternProperties",
   ]);
   if (!isJsonRecord(schema)) throw new Error(`${label}: schema node must be an object`);
   for (const keyword of Object.keys(schema)) {
@@ -1144,6 +1144,11 @@ function assertSupportedPluginSchema(schema, label) {
   if (isJsonRecord(schema.properties)) {
     for (const [key, child] of Object.entries(schema.properties)) {
       assertSupportedPluginSchema(child, `${label}.properties.${key}`);
+    }
+  }
+  if (isJsonRecord(schema.patternProperties)) {
+    for (const [key, child] of Object.entries(schema.patternProperties)) {
+      assertSupportedPluginSchema(child, `${label}.patternProperties.${key}`);
     }
   }
   if (schema.items !== undefined) assertSupportedPluginSchema(schema.items, `${label}.items`);
@@ -1159,9 +1164,18 @@ function validatePluginSchemaNode(schema, value, pathLabel) {
   if (type === "object") {
     if (!isJsonRecord(value)) throw new Error(`${pathLabel} must be an object`);
     const properties = isJsonRecord(schema.properties) ? schema.properties : {};
+    const patternProperties = isJsonRecord(schema.patternProperties) ? Object.entries(schema.patternProperties) : [];
+    const matchingPatterns = (key) => patternProperties
+      .filter(([pattern]) => new RegExp(pattern, "u").test(key))
+      .map(([, child]) => child);
     if (schema.additionalProperties === false) {
-      const unknown = Object.keys(value).filter((key) => !Object.prototype.hasOwnProperty.call(properties, key));
+      const unknown = Object.keys(value).filter((key) => !Object.prototype.hasOwnProperty.call(properties, key)
+        && matchingPatterns(key).length === 0);
       if (unknown.length > 0) throw new Error(`${pathLabel} unknown key(s): ${unknown.join(", ")}`);
+    }
+    for (const [key, child] of Object.entries(value)) {
+      if (Object.prototype.hasOwnProperty.call(properties, key)) continue;
+      for (const patternSchema of matchingPatterns(key)) validatePluginSchemaNode(patternSchema, child, `${pathLabel}.${key}`);
     }
     const required = Array.isArray(schema.required) ? schema.required : [];
     const missing = required.filter((key) => typeof key === "string"

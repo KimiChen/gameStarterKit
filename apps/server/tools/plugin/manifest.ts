@@ -14,7 +14,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { PluginIdentity, PluginKind } from "./ownership";
-import { PLUGIN_SCHEMA_FILE, parsePluginRegistration, type PluginRegistration } from "../plugin-codegen/pluginManifestSchema";
+import { PLUGIN_SCHEMA_FILE, parsePluginRegistration, type PluginRegistration, type PluginRequires } from "../plugin-codegen/pluginManifestSchema";
 
 const TOOL_DIR = path.dirname(fileURLToPath(import.meta.url));
 export { PLUGIN_SCHEMA_FILE };
@@ -41,6 +41,8 @@ export interface PluginManifest {
   readonly domains: readonly string[];
   readonly fguiPackages: readonly string[];
   readonly description: string;
+  /** 对 kit / 框架门面的依赖（docs/KIT.md §4）；来自登记面，缺省空。 */
+  readonly requires: PluginRequires;
   readonly registration: PluginRegistration;
 }
 
@@ -65,6 +67,7 @@ export function parsePluginManifest(input: unknown, pathLabel = "plugin.json"): 
     domains: Array.isArray(value.domains) ? [...(value.domains as string[])] : [],
     fguiPackages: Array.isArray(value.fguiPackages) ? [...(value.fguiPackages as string[])] : [],
     description: typeof value.description === "string" ? value.description : "",
+    requires: registration.requires,
     registration,
   };
 }
