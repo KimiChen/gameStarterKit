@@ -106,7 +106,7 @@ test("closeGroup(authenticated)：按描述符声明顺序关闭原 closeLobby �
   navigation.closeGroup("authenticated");
   // 原 closeLobby 硬编码数组的成员与顺序（Login/AreaList/LoginNotice/Home）逐字保留；
   // 其后是后加入 authenticated 组的壳页面，同样按 plugin.json 的 routes 声明顺序。
-  assert.deepEqual(fake.closes, ["Login", "AreaList", "LoginNotice", "Home", "PromoHome", "Settings"],
+  assert.deepEqual(fake.closes, ["Login", "AreaList", "LoginNotice", "Home", "PromoHome", "Settings", "EntryGroup"],
     "closeGroup 必须按描述符声明顺序关闭 authenticated 组全部成员（含原 closeLobby 四项）");
   assert.deepEqual(navigation.openRoutes(), ["confirm"],
     "system 组（session 作用域提示）不得被 authenticated 组关闭");

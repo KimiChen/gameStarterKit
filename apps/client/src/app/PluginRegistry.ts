@@ -14,6 +14,7 @@ import {
     type PluginMenuContribution,
     type PluginRouteDescriptor,
     type HostDescriptor,
+    type HostEntryGroup,
 } from "./builtinPlugin";
 
 /** route 查询结果：附归属 plugin id。 */
@@ -119,6 +120,35 @@ export class PluginRegistry {
             }
             return item;
         });
+    }
+
+    /**
+     * 宿主声明的入口分组（apps/plugins/host.json → GENERATED_HOST.groups，docs/PLUGIN.md §6.1）：
+     * 设置面板把整组渲染成**一行**，点进去才见成员。⛔ 插件无权分组——一个插件不知道自己该和谁
+     * 并排（arena 是 kit、arenaShop 是插件，kit ⛔ 不得依赖插件），只有宿主知道。
+     * 成员按 placement 声明序解析；引用不存在的入口 fail-fast（与 homeContributions 同口径）。
+     */
+    entryGroups(): readonly { readonly group: HostEntryGroup; readonly members: readonly PluginMenuContribution[] }[] {
+        const byEntry = new Map<string, PluginMenuContribution>();
+        for (const item of this.menuContributions()) byEntry.set(item.entryId, item);
+        return this.host.groups.map((group) => ({
+            group,
+            members: group.members.map((entry) => {
+                const item = byEntry.get(entry.entryId);
+                if (!item || item.pluginId !== entry.pluginId) {
+                    throw new Error(`[PluginRegistry] 宿主分组 ${group.id} 引用不存在的入口: ${entry.pluginId}/${entry.entryId}`);
+                }
+                return item;
+            }),
+        }));
+    }
+
+    /** 该入口所属分组 id；不在任何组里返回 null。 */
+    groupIdOf(pluginId: string, entryId: string): string | null {
+        for (const group of this.host.groups) {
+            if (group.members.some((member) => member.pluginId === pluginId && member.entryId === entryId)) return group.id;
+        }
+        return null;
     }
 
     /** 宿主声明的默认玩法（apps/plugins/host.json defaultLaunch）。 */

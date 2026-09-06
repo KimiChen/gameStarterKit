@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "apps/plugins/host.json v1（docs/PLUGIN.md §6：宿主决定位置——默认玩法与首屏 Home 入口的唯一声明处）",
+  "title": "apps/plugins/host.json v1（docs/PLUGIN.md §6：宿主决定位置——默认玩法、首屏 Home 入口顺序与入口分组的唯一声明处）",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "defaultLaunch", "home"],
@@ -18,6 +18,23 @@
     "home": {
       "type": "array",
       "items": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]{0,63}/[a-z][A-Za-z0-9]{0,63}$" }
+    },
+    "groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "labelKey", "members"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]{0,63}$" },
+          "label": { "type": "string" },
+          "labelKey": { "type": "string" },
+          "members": {
+            "type": "array",
+            "items": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]{0,63}/[a-z][A-Za-z0-9]{0,63}$" }
+          }
+        }
+      }
     }
   }
 }

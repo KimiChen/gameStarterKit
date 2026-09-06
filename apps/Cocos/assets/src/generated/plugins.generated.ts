@@ -82,6 +82,7 @@ export const GENERATED_PLUGINS: readonly GeneratedPluginDescriptor[] = [
             { id: "home", view: "Home", group: "authenticated", restore: "reopen" },
             { id: "promoHome", view: "PromoHome", group: "authenticated", restore: "reopen" },
             { id: "settings", view: "Settings", group: "authenticated", restore: "discard" },
+            { id: "entryGroup", view: "EntryGroup", group: "authenticated", restore: "discard" },
             { id: "confirm", view: "Confirm", group: "system", restore: "discard" },
         ],
         menu: [
@@ -142,15 +143,32 @@ export interface GeneratedHostHomeEntry {
     readonly entryId: string;
 }
 
-/** 宿主 placement（apps/plugins/host.json）：默认玩法与首屏入口顺序的唯一来源（docs/PLUGIN.md §6）。 */
+/** 入口分组（宿主 placement 的展开形态）：设置面板把整组渲染成**一行**，点进去才见成员。 */
+export interface GeneratedHostGroup {
+    readonly id: string;
+    readonly label: string;
+    readonly labelKey: string;
+    readonly members: readonly GeneratedHostHomeEntry[];
+}
+
+/** 宿主 placement（apps/plugins/host.json）：默认玩法、首屏入口顺序与入口分组的唯一来源（docs/PLUGIN.md §6）。 */
 export interface GeneratedHostDescriptor {
     readonly defaultLaunch: { readonly kind: "gameplay"; readonly gameplayId: string };
     readonly home: readonly GeneratedHostHomeEntry[];
+    readonly groups: readonly GeneratedHostGroup[];
 }
 
 export const GENERATED_HOST: GeneratedHostDescriptor = {
     defaultLaunch: { kind: "gameplay", gameplayId: "snake" },
     home: [
         { pluginId: "snake", entryId: "snake" },
+    ],
+    groups: [
+        { id: "arenaHub", label: "竞技场", labelKey: "menu.group.arena", members: [
+            { pluginId: "arena", entryId: "board" },
+            { pluginId: "arena", entryId: "capture" },
+            { pluginId: "arena", entryId: "duel" },
+            { pluginId: "arenaShop", entryId: "arenaShop" },
+        ] },
     ],
 };

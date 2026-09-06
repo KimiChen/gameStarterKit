@@ -53,11 +53,24 @@ export type PluginManifestMenuItem = {
   readonly launch: PluginManifestLaunch;
 };
 
-/** 宿主 placement（apps/plugins/host.json）：默认玩法 + 首屏 Home 入口的有序 qualified id（`pluginId/entryId`）。 */
+/**
+ * 入口分组（宿主 placement 的一部分）：把若干条 menu contribution 收进**一个**入口。
+ * ⛔ 插件无权声明分组——一个插件根本不知道自己该和谁并排（arena 是 kit，arenaShop 是插件，
+ * kit ⛔ 不得依赖插件），只有宿主知道。members 是有序 qualified id（`pluginId/entryId`）。
+ */
+export type HostManifestGroup = {
+  readonly id: string;
+  readonly label: string;
+  readonly labelKey: string;
+  readonly members: readonly string[];
+};
+
+/** 宿主 placement（apps/plugins/host.json）：默认玩法 + 首屏 Home 入口的有序 qualified id（`pluginId/entryId`）+ 入口分组。 */
 export type HostManifest = {
   readonly schemaVersion: 1;
   readonly defaultLaunch: { readonly kind: "gameplay"; readonly gameplayId: string };
   readonly home: readonly string[];
+  readonly groups: readonly HostManifestGroup[];
 };
 
 /**
@@ -333,10 +346,34 @@ export function readHostManifest(repositoryRoot: string): HostManifest {
     if (seen.has(entry)) fail("apps/plugins/host.json", `home 重复登记 "${entry}"`);
     seen.add(entry);
   }
+  const groups = (Array.isArray(value.groups) ? value.groups : []).map((raw) => {
+    const record = raw as JsonRecord;
+    return {
+      id: record.id as string,
+      label: record.label as string,
+      labelKey: record.labelKey as string,
+      members: [...(record.members as string[])],
+    };
+  });
+  const groupIds = new Set<string>();
+  const claimed = new Map<string, string>();
+  for (const group of groups) {
+    if (groupIds.has(group.id)) fail("apps/plugins/host.json", `groups 重复登记 id "${group.id}"`);
+    groupIds.add(group.id);
+    if (group.members.length < 2) {
+      fail("apps/plugins/host.json", `groups["${group.id}"] 至少要收 2 条入口——只收 1 条不是分组，只是多套了一层页面`);
+    }
+    for (const member of group.members) {
+      const owner = claimed.get(member);
+      if (owner !== undefined) fail("apps/plugins/host.json", `入口 "${member}" 同时属于分组 "${owner}" 与 "${group.id}"（一条入口只能进一个组）`);
+      claimed.set(member, group.id);
+    }
+  }
   return {
     schemaVersion: 1,
     defaultLaunch: { kind: "gameplay", gameplayId: (value.defaultLaunch as JsonRecord).gameplayId as string },
     home,
+    groups,
   };
 }
 

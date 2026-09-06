@@ -1020,6 +1020,23 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
       fail("apps/plugins/host.json", `home 引用不存在的入口 "${qualified}"（形态 pluginId/entryId，须与某条 menu contribution 一致）`);
     }
   }
+  // 分组：成员必须真实存在；组 id ⛔ 不得与任何入口 id 或单元 id 撞车（设置面板把组渲染成一行，
+  // 撞车会让「点的到底是组还是入口」取决于实现细节）。
+  const unitIds = new Set(plugins.map((plugin) => plugin.id));
+  for (const group of host.groups) {
+    if (menuEntryIds.has(group.id)) {
+      fail("apps/plugins/host.json", `分组 id "${group.id}" 与入口 id 同名——设置面板同一层里两者都是一行，⛔ 不允许同名`);
+    }
+    if (unitIds.has(group.id)) {
+      fail("apps/plugins/host.json", `分组 id "${group.id}" 与 plugin/kit id 同名——⛔ 不允许（分组是宿主 placement，不是单元）`);
+    }
+    for (const qualified of group.members) {
+      const [pluginId, entryId] = qualified.split("/");
+      if (menuEntryIds.get(entryId) !== pluginId) {
+        fail("apps/plugins/host.json", `分组 "${group.id}" 引用不存在的入口 "${qualified}"（形态 pluginId/entryId，须与某条 menu contribution 一致）`);
+      }
+    }
+  }
 
   return { plugins, entries, viewDirs: allViewDirs, root, host };
 }
@@ -1344,10 +1361,19 @@ export function renderPlugins(catalog: ViewCatalog): string {
   lines.push("    readonly entryId: string;");
   lines.push("}");
   lines.push("");
-  lines.push("/** 宿主 placement（apps/plugins/host.json）：默认玩法与首屏入口顺序的唯一来源（docs/PLUGIN.md §6）。 */");
+  lines.push("/** 入口分组（宿主 placement 的展开形态）：设置面板把整组渲染成**一行**，点进去才见成员。 */");
+  lines.push("export interface GeneratedHostGroup {");
+  lines.push("    readonly id: string;");
+  lines.push("    readonly label: string;");
+  lines.push("    readonly labelKey: string;");
+  lines.push("    readonly members: readonly GeneratedHostHomeEntry[];");
+  lines.push("}");
+  lines.push("");
+  lines.push("/** 宿主 placement（apps/plugins/host.json）：默认玩法、首屏入口顺序与入口分组的唯一来源（docs/PLUGIN.md §6）。 */");
   lines.push("export interface GeneratedHostDescriptor {");
   lines.push(`    readonly defaultLaunch: { readonly kind: "gameplay"; readonly gameplayId: string };`);
   lines.push("    readonly home: readonly GeneratedHostHomeEntry[];");
+  lines.push("    readonly groups: readonly GeneratedHostGroup[];");
   lines.push("}");
   lines.push("");
   lines.push("export const GENERATED_HOST: GeneratedHostDescriptor = {");
@@ -1356,6 +1382,16 @@ export function renderPlugins(catalog: ViewCatalog): string {
   for (const qualified of catalog.host.home) {
     const [pluginId, entryId] = qualified.split("/");
     lines.push(`        { pluginId: ${JSON.stringify(pluginId)}, entryId: ${JSON.stringify(entryId)} },`);
+  }
+  lines.push("    ],");
+  lines.push("    groups: [");
+  for (const group of catalog.host.groups) {
+    lines.push(`        { id: ${JSON.stringify(group.id)}, label: ${JSON.stringify(group.label)}, labelKey: ${JSON.stringify(group.labelKey)}, members: [`);
+    for (const qualified of group.members) {
+      const [pluginId, entryId] = qualified.split("/");
+      lines.push(`            { pluginId: ${JSON.stringify(pluginId)}, entryId: ${JSON.stringify(entryId)} },`);
+    }
+    lines.push("        ] },");
   }
   lines.push("    ],");
   lines.push("};");
