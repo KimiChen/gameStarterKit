@@ -121,6 +121,31 @@ reconcile；新增玩法只新增 `modes/<id>/` 模块文件与自己的 logic/r
 
 业务判定、排序、时间规则、错误分支和网络编排不进入 View。
 
+#### 纯色矩形一律走 `view/uiPlate.ts`，⛔ 不要用 `Graphics`
+
+手搓 Cocos 页（`kind:"cocos"`，无 FGUI 资源）用色块拼版是允许的，但**每块底板一个 `Graphics`
+组件**这种写法有两个实测代价，Creator 3.8.8 预览下经 CDP 读引擎 profiler 得到：
+
+| 页面 | 改造前 Graphics | 缓冲显存 | 改造后 | 缓冲显存 |
+|---|---|---|---|---|
+| 首屏 | 3 | 6.8 MB | 3 个 Sprite | 0.0 MB |
+| 设置 | 25 | 56.3 MB | 25 个 Sprite | 0.0 MB |
+| 衣柜 | 50 | 112.6 MB | 56 个 Sprite | 0.1 MB |
+
+⚠ **每个 `Graphics` 组件固定占用约 2.25MB 显存缓冲**，与它实际画多少内容无关（三点线性，
+缓冲显存几乎全部由 Graphics 个数解释）。衣柜那 50 个各自只画一个 4 顶点的矩形，却合计吃掉 113MB
+——桌面看不出来，手机视口是事故。改用共享白帧的 `Sprite` 后基本清零。
+
+- 纯色矩形 → `createSolidPlate()`（`apps/client/src/view/uiPlate.ts`）。
+- ⚠ **draw call 基本不会因此下降**（实测衣柜 116 → 107，约 8%）：底板与 Label 在节点树里交替
+  出现，UI 合批一遇材质切换就断。要真正合批得把底板与文字分层重排，会改变遮挡语义，
+  ⛔ 在当前帧时间（0.4~0.8ms）下不值得。
+- ⚠ ⛔ **不要图省事直接用 `builtinResMgr.get("default-spriteframe")`**：那张帧 `packable` 为 true，
+  动态图集会去打包它，而它的 `ImageAsset.data` 是 `Uint8Array` 不是 `HTMLImageElement`，
+  `texSubImage2D` 重载解析失败会让**整个渲染循环当场死掉**（画面定格、帧数不再推进）。
+  `uiPlate` 自建帧并置 `packable = false` 正是为此。
+- `Graphics` 仍是画线、圆、折线的正确工具（战场网格、轨迹、降级描边），⛔ 只禁「纯色矩形」这一种用法。
+
 ## 4. 页面定义与生命周期
 
 页面由三部分组成：
@@ -399,8 +424,9 @@ Creator 编辑器预览用于补充验证引擎绑定、资源导入和页面交
 8. 页面打开经 feature route / NavigationService；登录/选区/公告页面的组合根在 `app/loginFlow.ts`
    （`view/pages.ts` 为零状态转发 façade；新增 feature ⛔ 禁止添加 `openXxx`）。
 9. 增加无头测试。
-10. 运行 `sync:client`。
-11. 通过 Cocos Dashboard 打开 Creator 并本地预览。
+10. 纯色底板用 `createSolidPlate()`（`view/uiPlate.ts`），⛔ 不要每块一个 `Graphics`——理由见 §3。
+11. 运行 `sync:client`。
+12. 通过 Cocos Dashboard 打开 Creator 并本地预览。
 
 ## 10. 范围
 

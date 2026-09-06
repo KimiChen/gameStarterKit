@@ -100,12 +100,60 @@ class FakeColor {
   constructor(readonly r = 0, readonly g = 0, readonly b = 0, readonly a = 255) {}
 }
 
+class FakeSpriteFrame {
+  texture: unknown = null;
+  rect: { width: number; height: number } = { width: 2, height: 2 };
+  /** ⚠ 引擎默认 true；⛔ 纯色帧必须置 false，否则动态图集打包时会打崩渲染循环。 */
+  packable = true;
+}
+
+class FakeRect {
+  constructor(readonly x = 0, readonly y = 0, readonly width = 0, readonly height = 0) {}
+}
+
+class FakeTexture2D { constructor(readonly width = 2, readonly height = 2) {} }
+
+/**
+ * ⚠ 复刻引擎契约：`sizeMode` 为默认的 TRIMMED 时，赋 `spriteFrame` 会用 `frame.rect` 覆写
+ * UITransform 尺寸；事后再设 CUSTOM ⛔ 不回滚。S5-05 F7 就是踩了这个顺序——衣柜预览条被
+ * 覆写成 420×132、溢出面板并压住文字。假件必须同形，否则同类回归照样全绿。
+ */
+class FakeSprite {
+  static readonly SizeMode = { CUSTOM: 0, TRIMMED: 1, RAW: 2 };
+  static readonly Type = { SIMPLE: 0, SLICED: 1, TILED: 2, FILLED: 3 };
+
+  node!: FakeNode;
+  color: unknown = null;
+  sizeMode: number = FakeSprite.SizeMode.TRIMMED;
+  type: number = FakeSprite.Type.SIMPLE;
+  private frame: FakeSpriteFrame | null = null;
+
+  get spriteFrame(): FakeSpriteFrame | null { return this.frame; }
+
+  set spriteFrame(value: FakeSpriteFrame | null) {
+    this.frame = value;
+    if (!value || this.sizeMode !== FakeSprite.SizeMode.TRIMMED) return;
+    const transform = this.node?.getComponent(FakeUITransform) as FakeUITransform | null;
+    if (transform) {
+      transform.width = value.rect.width;
+      transform.height = value.rect.height;
+    }
+  }
+}
+
+const sharedWhiteTexture = new FakeTexture2D();
+
 const cc = {
   Node: FakeNode,
   UITransform: FakeUITransform,
   Label: FakeLabel,
   Graphics: FakeGraphics,
+  Sprite: FakeSprite,
+  SpriteFrame: FakeSpriteFrame,
+  Rect: FakeRect,
+  Texture2D: FakeTexture2D,
   Color: FakeColor,
+  builtinResMgr: { get: (_name: string) => sharedWhiteTexture },
 };
 
 let loaded: {
@@ -229,6 +277,52 @@ test("SettingsView：两个区块都画出来；置灰占位项 ⛔ 没有任何
   for (const row of placeholderRows) {
     assert.equal(row.flatten().some((node) => node.listeners.length > 0), false,
       "置灰占位项 ⛔ 不得挂任何点击回调（点不动 = 没实现，⛔ 不做假实现）");
+  }
+});
+
+test("纯色底板必须走可合批的 Sprite，⛔ 不再每块一个 Graphics", async () => {
+  // ⚠ 判据来自真机实测（Creator 3.8.8，CDP 读引擎 profiler）：**每个 Graphics 组件固定占用
+  // 约 2.25MB 显存缓冲**，与画多少内容无关，且各自一个 draw call。三点完全线性：
+  // 首屏 3 个 → 6.8MB / 9 draw call；设置 25 个 → 56.3MB / 59；衣柜 50 个 → 112.6MB / 116。
+  // ⛔ 别把这条弱化成「底板存在」——那正是问题潜伏了这么久的原因。
+  const { SettingsView, PromoHomeView } = await loadViews();
+  for (const Page of [SettingsView, PromoHomeView]) {
+    const view = new Page();
+    const root = await openPage(view);
+    if (Page === SettingsView) view.setup((await makeSettingsLogic()).logic);
+
+    const nodes = root.flatten();
+    const graphics = nodes.filter((node) => node.getComponent(FakeGraphics));
+    assert.equal(graphics.length, 0,
+      `${Page.name}：纯色矩形 ⛔ 不得再用 Graphics（每个约 2.25MB 显存 + 独占 draw call）`);
+
+    const sprites = nodes
+      .map((node) => node.getComponent(FakeSprite) as FakeSprite | null)
+      .filter((sprite): sprite is FakeSprite => sprite !== null);
+    assert.ok(sprites.length > 0, `${Page.name}：底板必须真的建出 Sprite，否则上面那条恒真`);
+    // 共用同一张 SpriteFrame 才可能合批。⚠ 坦白：这条**无法用变异证伪**——引擎的
+    // builtinResMgr.get 本身就返回同一个缓存资源，忠实的假件也如此，所以 uiPlate 里那层
+    // 模块级缓存去掉后本条仍为真。它守的是另一种改法：有人改成每块底板 new SpriteFrame()。
+    // ⛔ 不要为了让它可变异而把假件改成每次返回新对象——假件失真正是这一串缺陷的病根。
+    const frames = new Set(sprites.map((sprite) => sprite.spriteFrame));
+    assert.equal(frames.size, 1, `${Page.name}：所有底板必须共用同一张内置白图才能合批`);
+    // ⛔ 底板帧必须关掉动态图集打包。⚠ 这条守的是一个**会让整个渲染循环当场死掉**的缺陷：
+    // 引擎内置帧的 packable 为 true，而它的 ImageAsset.data 是 Uint8Array 不是 HTMLImageElement，
+    // 动态图集调 texSubImage2D 会抛 TypeError，画面定格、帧数不再推进。真机正向对照已实测。
+    // Node 侧测不出崩溃本身，只能钉住这个字段——⛔ 别因为「看起来无关」就删掉。
+    for (const sprite of sprites) {
+      const frame = sprite.spriteFrame as FakeSpriteFrame | null;
+      assert.equal(frame?.packable, false,
+        `${Page.name}：底板帧必须 packable=false，否则动态图集打包会打崩渲染循环`);
+      assert.ok(frame?.texture, `${Page.name}：底板帧必须绑上白图纹理，⛔ 空纹理什么都画不出来`);
+    }
+    // 尺寸不得被 2×2 的白图覆写——这是 createSolidPlate 里「先 CUSTOM 再赋帧」那条顺序的闸。
+    for (const sprite of sprites) {
+      const transform = sprite.node.getComponent(FakeUITransform) as FakeUITransform;
+      assert.ok(transform.width > 2 && transform.height > 2,
+        `${Page.name}：底板尺寸被白图 rect 覆写成 ${transform.width}×${transform.height}——`
+        + "sizeMode 必须在赋 spriteFrame 之前设成 CUSTOM");
+    }
   }
 });
 

@@ -37,10 +37,13 @@ declare module "cc" {
   export class JsonAsset { json: unknown; }
   export class SpriteFrame { texture: Texture2D | null; rect: Rect; rotated: boolean;
       /** ⚠ 引擎侧只有 getter：赋值会抛 TypeError，故声明为 readonly 让 typecheck 拦下。 */
-      readonly pivot: Vec2; }
+      readonly pivot: Vec2;
+      /** ⚠ 动态图集打包开关；⛔ 自建的纯色帧必须置 false，否则会打崩渲染循环，见 view/uiPlate.ts。 */
+      packable: boolean; }
   export class Sprite extends Component {
       spriteFrame: SpriteFrame | null; color: Color; sizeMode: number; type: number;
       static SizeMode: { CUSTOM: number; TRIMMED: number; RAW: number };
+      static Type: { SIMPLE: number; SLICED: number; TILED: number; FILLED: number };
   }
   export class Label extends Component {
     string: string; fontSize: number; color: Color; horizontalAlign: number; verticalAlign: number;
@@ -126,6 +129,8 @@ declare module "cc" {
     getVisibleSize(): { width: number; height: number };
   };
   export const ResolutionPolicy: { FIXED_WIDTH: unknown };
+    /** 引擎内置资源表；⚠ `default-spriteframe` 是共用的 2×2 全白图，见 view/uiPlate.ts。 */
+  export const builtinResMgr: { get<T>(name: string): T };
   export const director: {
     /** ⚠ 场景根同时挂着渲染全局设置；`globals` 在部分宿主下可能缺席，调用方需可选取值。 */
     getScene(): (Node & { globals?: { postSettings?: { toneMappingType: number } } }) | null;

@@ -1,14 +1,15 @@
 /**
  * 兑换码面板（`kind:"cocos"` 纯节点页，⛔ 无 FGUI 资源；形态同 SettingsView 的手搓粗糙版：
- * Graphics 色块 + Label + 一个 EditBox）。布局按 layerWidth/layerHeight 相对定位。
+ * 纯色底板 + Label + 一个 EditBox）。布局按 layerWidth/layerHeight 相对定位。
  *
  * 分工（铁律 9）：本文件只管节点与事件；输入规范化、提交闸与错误翻译在 ../logic/RedeemLogic.ts。
  * 宿主接线自 ../logic/redeemRuntime.ts 读取（feature module install 时注入）。
  */
-import { Color, EditBox, Graphics, Label, Node, UITransform } from "cc";
+import { Color, EditBox, Label, Node, UITransform } from "cc";
 import { CocosView } from "../../../view/CocosView";
 import { RedeemLogic } from "../logic/RedeemLogic";
 import { getRedeemRuntime } from "../logic/redeemRuntime";
+import { createSolidPlate } from "../../../view/uiPlate";
 
 const SCRIM = new Color(6, 9, 18, 190);
 const PANEL = new Color(24, 30, 44, 245);
@@ -66,7 +67,7 @@ export class RedeemView extends CocosView {
             panelWidth * 0.5 - panelWidth * 0.13, titleY,
             () => this.observeAsync(async () => logic.close(), "redeem-close"));
 
-        // 输入框：底板（Graphics）里嵌一个略窄的 EditBox 节点当内边距；EditBox 事件在其节点上派发
+        // 输入框：底板里嵌一个略窄的 EditBox 节点当内边距；EditBox 事件在其节点上派发
         // （EditBox.EventType.TEXT_CHANGED = "text-changed"）。
         const fieldWidth = panelWidth * 0.88;
         const fieldHeight = panelHeight * 0.18;
@@ -153,13 +154,9 @@ export class RedeemView extends CocosView {
     private plate(
         parent: Node, width: number, height: number, color: Color, x: number, y: number, name = "plate",
     ): Node {
-        const node = this.node(name, parent, width, height);
-        node.setPosition(x, y, 0);
-        const graphics = node.addComponent(Graphics);
-        graphics.fillColor = color;
-        graphics.rect(-width / 2, -height / 2, width, height);
-        graphics.fill();
-        return node;
+        // ⛔ 这里曾经是「每块底板一个 Graphics」，实测每个固定占约 2.25MB 显存缓冲
+        // 且各自一个 draw call；改走共用的白图 Sprite（可合批）。判据见 view/uiPlate.ts。
+        return createSolidPlate(parent, width, height, color, x, y, name);
     }
 
     /** align="left" 时 x 是文字左边缘（锚点 (0,0.5) + 左对齐）；缺省 "center" 时 x 是中心（同 SettingsView）。 */
