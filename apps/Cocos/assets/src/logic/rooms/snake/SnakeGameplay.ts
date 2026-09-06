@@ -61,6 +61,12 @@ export interface SnakeRoomLike {
     readonly dropping: boolean;
     state(): ISnakeRoomState | null;
     onWelcome(callback: (message: { motd: string }) => void): () => void;
+    /**
+     * ⚠ snake 只用 ping 保活、⛔ 不算 RTT，但 `s2c.pong` 必须有人登记：
+     * @colyseus/sdk 收到没登记 onMessage 的消息会 warn（真机控制台里那条
+     * 「onMessage() not registered for type 's2c.pong'」，README §8.2 F9 的一半）。
+     */
+    onPong(callback: () => void): () => void;
     onError(callback: (message: { code: number; message: string }) => void): () => void;
     onBaselineBegin(callback: (message: ISnakeBaselineBegin) => void): () => void;
     onBaselineChunk(callback: (message: ISnakeBaselineChunk) => void): () => void;
@@ -160,6 +166,8 @@ export class SnakeGameplay implements GameplayPlugin<SnakeRoomLike, SnakeInput> 
             presentation.setHandedness(this.preference.load());
             const active = () => this.started && this.context === context && this.room === context.room && context.isActive();
             this.track(context.room.onWelcome((message) => { if (active()) console.log(`[snake] ${message.motd}`); }));
+            // 登记即可，⛔ 不做任何事：见 SnakeRoom.onPong 的说明。
+            this.track(context.room.onPong(() => {}));
             this.track(context.room.onError((message) => {
                 if (active()) console.warn(`[服务端错误] ${message.code}: ${message.message}`);
             }));

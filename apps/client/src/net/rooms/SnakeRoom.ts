@@ -134,6 +134,8 @@ export interface SnakeRoom {
     /** 权威房间状态（Schema 摘要面）。 */
     state(): ISnakeRoomState | null;
     onWelcome(callback: (message: S2CPayloadMap[typeof S2C.Welcome]) => void): MessageOff;
+    /** ⚠ 只为满足 SDK 的「消息必须有登记」：snake 只用 ping 保活，⛔ 不算 RTT。 */
+    onPong(callback: (message: S2CPayloadMap[typeof S2C.Pong]) => void): MessageOff;
     onError(callback: (message: S2CPayloadMap[typeof S2C.Error]) => void): MessageOff;
     onBaselineBegin(callback: (message: ISnakeBaselineBegin) => void): MessageOff;
     onBaselineChunk(callback: (message: ISnakeBaselineChunk) => void): MessageOff;
@@ -175,6 +177,7 @@ export function createSnakeRoom(room: SnakeTypedRoom, adapter: SnakeRoomAdapter)
         },
         state: () => (room.current ? (room.state as ISnakeRoomState) : null),
         onWelcome: (callback) => onMessage(S2C.Welcome, callback),
+        onPong: (callback) => onMessage(S2C.Pong, callback),
         onError: (callback) => onMessage(S2C.Error, callback),
         onBaselineBegin: (callback) => onMessage(S2C.SnakeBaselineBegin, callback),
         onBaselineChunk: (callback) => onMessage(S2C.SnakeBaselineChunk, callback),

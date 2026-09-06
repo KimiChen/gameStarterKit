@@ -590,7 +590,10 @@ export class SnakeWorldView implements SnakePresentation {
         }
         const resolution = resolveClientSnakeSkinPresentation(snake.skinId, (entry) => this.skinAvailability(entry));
         const presentation = resolution.presentation;
-        if (resolution.usedFallback && !this.warnedSkinIds.has(snake.skinId)) {
+        // ⚠ 贴图还没加载完时（loadAssets 结束才置 this.assets）**每个**皮肤都探成 missing，
+        // 于是开局刷一串 `default-unavailable` 假警报——它们把真问题淹了。资源就绪后再判：
+        // 那时若仍回退，才是真的缺资源/坏帧，照常点名。
+        if (this.assets && resolution.usedFallback && !this.warnedSkinIds.has(snake.skinId)) {
             this.warnedSkinIds.add(snake.skinId);
             console.warn(`[snake] skinId ${snake.skinId} fallback: ${resolution.diagnostic}`);
         }
