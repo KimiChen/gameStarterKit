@@ -1,7 +1,7 @@
 # scripts/protected-paths.lock —— 受保护手写路径的字节锁。Do not edit by hand.
 # writer: node scripts/protected-paths-lock.mjs --write ；checker: --check（npm run verify:protected-paths）
 # 每行 `<路径> <sha256>`（内容哈希，可用 shasum -a 256 复核）；范围见 scripts/protected-paths.json。
-apps/client/src/Main.ts 3a524fd3d00e5c765f13938de73a5e42d9eb0e7891ec5d50a87878a90f88e159
+apps/client/src/Main.ts 099c43d68e355bec3c78ad6b81c6d13a02b1ff75577b9fc91e53cf2c2ebf8378
 apps/client/src/app/AppRuntime.ts a8e75ab42c516d7b4bc6b8d556727b39d1ea3d3d24ec0c3b5dcb030506113f92
 apps/client/src/app/CocosLifecycleBridge.ts 333e689f1657019ab7e2f6dbf87a524b87af3988a2a1a6748b5fbf1c6e72361d
 apps/client/src/app/FrameScheduler.ts 04766a657ba81991e085d5cc960c1a4caa700686eee2ca69c9dd8a2d9ec3c262
