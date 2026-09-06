@@ -167,12 +167,16 @@ CREATE TABLE IF NOT EXISTS user_snapshot_readonly (
 
 -- kit SQL 迁移账本（docs/KIT.md §5）：db:bootstrap 在 singleton_lease('db_bootstrap') 下按 kit id + 文件序只应用
 -- 账本里没有的 `apps/kits/<id>/sql/NNN-<name>.sql`；已应用文件 sha256 变化即 fail-closed（⛔ 不改已发布迁移）。
+-- 进度按语句粒度记（statement_count / applied_statements）：文件先入账再逐条执行，每条成功即推进；中途失败
+-- （DDL 已隐式提交）下次 bootstrap 从失败那条续跑；applied_statements = statement_count 才算已应用。
 -- ⚠ **刻意不加 server_id**：账本记录的是「哪个文件跑过」，全局一份，与区无关（tools/kit-migrations.ts）。
 CREATE TABLE IF NOT EXISTS kit_migration (
-  kit_id     VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
-  file       VARCHAR(255) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
-  sha256     CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
-  applied_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  kit_id             VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  file               VARCHAR(255) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  sha256             CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  statement_count    INT UNSIGNED NOT NULL DEFAULT 0,
+  applied_statements INT UNSIGNED NOT NULL DEFAULT 0,
+  applied_at         DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   PRIMARY KEY (kit_id, file)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 

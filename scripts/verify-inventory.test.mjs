@@ -349,7 +349,8 @@ test("inventory verifier requires EXTRAS to register the Godogen plan", () => {
   const root = createFixture();
   try {
     const extra = join(root, "docs", "EXTRAS.md");
-    const text = readFileSync(extra, "utf8").replace(
+    // EXTRAS 里该链接可出现多次（§3 与 §5.2 各一处）：全部去掉才是「未登记」，⛔ 只替换第一处会让验证器仍然通过。
+    const text = readFileSync(extra, "utf8").replaceAll(
       "[`todo-godogen.md`](../todo-godogen.md)",
       "`todo-godogen.md`",
     );
@@ -1828,6 +1829,97 @@ test("plugin fragment：与中央能力重复 id / defaultEntry 不存在，均�
     assertRejected(root2, /能力 fixture-extra-cap 路径不存在：apps\/server\/src\/core\/economy\/ghost\.ts/);
   } finally {
     rmSync(root2, { recursive: true, force: true });
+  }
+});
+
+// ── K0：kit 发现根 apps/kits/<id>/kit.json 的 capability fragment（docs/KIT.md §7；同一解释器 + kit-schema-v1） ──
+
+/** 在 fixture 根写一个最小 kit（仅 capability fragment；无 View/路由/菜单/SQL）。 */
+function writeFragmentKit(root, manifestOverrides = {}, fragmentOverrides = {}) {
+  const dir = join(root, "apps", "kits", "fixtureKit");
+  mkdirSync(dir, { recursive: true });
+  const fragment = {
+    id: "fixture-kit-cap",
+    category: "extra",
+    defaultEntry: "apps/server/src/core/economy/outbox.ts",
+    sourceOfTruth: "apps/server/src/core/economy",
+    wireBoundary: "apps/server/src/core/economy/outbox.ts",
+    verification: [{ kind: "root", script: "verify:core" }],
+    docs: ["docs/EXTRAS.md"],
+    ...fragmentOverrides,
+  };
+  const manifest = {
+    schemaVersion: 1,
+    id: "fixtureKit",
+    version: "1.0.0",
+    api: { board: { version: 1, minSupported: 1 } },
+    category: "extra",
+    docs: ["docs/EXTRAS.md"],
+    capabilities: [fragment],
+    ...manifestOverrides,
+  };
+  writeFileSync(join(dir, "kit.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+}
+
+test("kit fragment：合法 extra fragment 绿（apps/kits/ 缺席也绿），且不修改中央 inventory.json", () => {
+  const root = createFixture();
+  try {
+    rmSync(join(root, "apps", "kits"), { recursive: true, force: true });
+    const absent = runVerifier(root);
+    assert.equal(absent.status, 0, outputOf(absent));
+    const centralBefore = readFileSync(join(root, "docs", "inventory.json"), "utf8");
+    writeFragmentKit(root);
+    const result = runVerifier(root);
+    assert.equal(result.status, 0, outputOf(result));
+    assert.equal(readFileSync(join(root, "docs", "inventory.json"), "utf8"), centralBefore,
+      "kit 经 fragment 通道登记，⛔ 不得要求（也不得发生）中央 inventory 改写");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("kit fragment：kit.json 未知键未通过 kit-schema-v1 校验（additionalProperties:false）；requires 对 kit 也是未知键", () => {
+  const root = createFixture();
+  try {
+    writeFragmentKit(root, { bogus: true });
+    assertRejected(root, /apps\/kits\/fixtureKit\/kit\.json 未通过 kit-schema-v1 校验.*unknown key\(s\): bogus/);
+    writeFragmentKit(root, { requires: { kits: {} } });
+    assertRejected(root, /未通过 kit-schema-v1 校验.*unknown key\(s\): requires/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("kit fragment：声明 core / 中央专属键 与插件同规则拒绝", () => {
+  const root = createFixture();
+  try {
+    writeFragmentKit(root, {}, { category: "core", docs: ["docs/SERVER.md"] });
+    assertRejected(root, /apps\/kits\/fixtureKit\/kit\.json capabilities\[0\] 只能声明 extra/);
+    writeFragmentKit(root, { routeOfTruth: { corePlan: "plan-v4.md" } });
+    assertRejected(root, /apps\/kits\/fixtureKit\/kit\.json 不得声明中央 inventory 专属键.*routeOfTruth/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("kit fragment：apps/kits/ 下的子目录缺 kit.json 即拒绝（有根则每个子目录都是 kit）", () => {
+  const root = createFixture();
+  try {
+    mkdirSync(join(root, "apps", "kits", "ghost"), { recursive: true });
+    assertRejected(root, /apps\/kits\/ghost\/kit\.json 缺失：每个kit目录必须有 kit\.json/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("kit fragment：apps/kits 存在但不是目录即拒绝（可选根 ⛔ 不得 fail-open）", () => {
+  const root = createFixture();
+  try {
+    rmSync(join(root, "apps", "kits"), { recursive: true, force: true });
+    writeFileSync(join(root, "apps", "kits"), "not a directory\n");
+    assertRejected(root, /apps\/kits 不是目录：kit目录是 capability fragment 的发现面/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
   }
 });
 

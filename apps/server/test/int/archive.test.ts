@@ -436,6 +436,54 @@ test("kit per-user 键随冷档往返：freeze 进快照 kits 成员并 UNLINK�
   assert.deepEqual((await dumpAll(u)).kits, before.kits);
 });
 
+test("kit 键并发守卫：快照后不 bump ver 的 kit 直写（新建键 / 增字段）→ freezeCommit 'changed'，热档与该写零丢失", async () => {
+  const { uid: u } = await seedFullUser("kit_race");
+  const c = clientFor(u);
+  const tile = kKitUser("arena", "tileOwner", u, { zone: "per-zone" });
+  const march = kKitUser("arena", "marchQueue", u, { zone: "per-zone" });
+  await c.hset(tile, { t1: u });
+  await makeCold(u);
+
+  // 场景 A（创建）：快照时 marchQueue 缺席（字段数 0），窗口内被违反写侧契约的直写创建——HLEN 闸拦下
+  _freezeTestHooks.afterSnapshot = async (hookUid) => {
+    await clientFor(hookUid).hset(march, { m1: "late" });
+  };
+  try {
+    assert.equal(await freezeUser(u, freezeLease, 0, KIT_FIXTURE), "lost");
+  } finally {
+    delete _freezeTestHooks.afterSnapshot;
+  }
+  assert.equal(await c.exists(kUser(u)), 1, "changed：未删任何东西");
+  assert.deepEqual(await c.hgetall(march), { m1: "late" }, "窗口内落地的 kit 写完好（未被 UNLINK）");
+  assert.deepEqual(await c.hgetall(tile), { t1: u });
+  assert.equal(await archiveRow(u), null, "changed 只 CAS 删除自己的 PREPARED 行");
+  assert.equal(await c.hlen(kArchiveProof(u)), 0, "changed 清理自己的 proof membership");
+
+  // 场景 B（既有键增字段）：tileOwner 字段数 1 → 2，ver 不变——同样 'changed'
+  await makeCold(u);
+  _freezeTestHooks.afterSnapshot = async (hookUid) => {
+    await clientFor(hookUid).hset(tile, { t2: "late" });
+  };
+  try {
+    assert.equal(await freezeUser(u, freezeLease, 0, KIT_FIXTURE), "lost");
+  } finally {
+    delete _freezeTestHooks.afterSnapshot;
+  }
+  assert.deepEqual(await c.hgetall(tile), { t1: u, t2: "late" });
+  assert.deepEqual(await c.hgetall(march), { m1: "late" });
+  assert.equal(await archiveRow(u), null);
+
+  // 无窗口写时同一档正常冻结，快照收录两键的最终状态
+  await makeCold(u);
+  assert.equal(await freezeUser(u, freezeLease, 0, KIT_FIXTURE), "frozen");
+  const row = await archiveRow(u);
+  assert.deepEqual(row!.snapshot.kits, { "arena:tileOwner": { t1: u, t2: "late" }, "arena:marchQueue": { m1: "late" } });
+  assert.equal(await c.exists(tile), 0);
+  assert.equal(await c.exists(march), 0);
+  await ensureLive(u); // 归位便于清理
+  assert.deepEqual(await c.hgetall(march), { m1: "late" });
+});
+
 // ── 完整 freeze→thaw 往返（10·M9 DoD 核心） ─────────────────────────────────
 
 test("完整往返：字段/背包/applied 全等；fence ≥ 冻结前；旧 fence stale；旧 op_id dup；冻结期 cold", async () => {

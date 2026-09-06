@@ -5,7 +5,9 @@
  *   首跑应用 1 个文件、账本 1 行、表形态校验通过；再跑应用 0、跳过 1；
  * - 改动已应用文件 ⇒ fail-closed 抛错，账本与表都不动；
  * - 形态校验：per-zone 表 PK 不含 server_id 的 kit 抛错；global 表带 server_id 抛错；未声明的 k_<id>_ 表抛错；
- * - 租约：另一持有者未过期时拒绝；成功路径结束后租约已释放（expires_at ≤ NOW）。
+ * - 租约：另一持有者未过期时拒绝；成功路径结束后租约已释放（expires_at ≤ NOW）；
+ * - 中途失败：账本记语句粒度进度，重跑从失败那条续跑（已成功的语句不重跑）；
+ * - --drop-data：kit 内父子外键、父表按名在前 ⇒ dropKitTables 仍整批 drop 并清账本行。
  * 前置：本地 MySQL 栈已启动（npm --workspace @game/server run stack）。
  */
 import "./env-setup"; // 必须第一个 import（env 先于 config.ts 模块级读取）
@@ -19,6 +21,7 @@ import mysql from "mysql2/promise";
 import { MYSQL_URL } from "../../src/core/infra/config";
 import type { ServerKitCatalogEntry } from "../../src/kits/catalogTypes";
 import { applyKitMigrations, sha256Hex, verifyKitTableShapes } from "../../tools/kit-migrations";
+import { dropKitTables } from "../../tools/plugin/dropData";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const serverRoot = join(here, "../..");
@@ -102,6 +105,7 @@ const fixture = (files: Record<string, string>) => (kitId: string, file: string)
 interface LedgerRow extends mysql.RowDataPacket { kit_id: string; file: string; sha256: string }
 interface LeaseRow extends mysql.RowDataPacket { holder: string; expired: number }
 interface CountRow extends mysql.RowDataPacket { n: number }
+interface ProgressRow extends mysql.RowDataPacket { statement_count: number; applied_statements: number }
 
 test("kit 迁移账本：应用两遍第二遍零 DDL、改文件 fail-closed、形态校验与租约", { timeout: 120_000 }, async () => {
   const suffix = `${process.pid}_${Date.now().toString(36)}`;
@@ -209,7 +213,8 @@ test("kit 迁移账本：应用两遍第二遍零 DDL、改文件 fail-closed、
       );
 
       // ⑧ 账本孤儿：kbad 已入账、目录里去掉它 ⇒ 只告警
-      await conn.query("UPDATE singleton_lease SET expires_at = NOW(3) WHERE lease_name = 'db_bootstrap'");
+      // （手工释放也要退到严格过去：抢占谓词是 expires_at < NOW(3)，`= NOW(3)` 在同一毫秒内会把紧接着的这次挡住）
+      await conn.query("UPDATE singleton_lease SET expires_at = NOW(3) - INTERVAL 1 SECOND WHERE lease_name = 'db_bootstrap'");
       await conn.query("DROP TABLE k_kbad_t");
       const [kbadLedger] = await conn.query<LedgerRow[]>("SELECT file FROM kit_migration WHERE kit_id = 'kbad'");
       assert.equal(kbadLedger.length, 1, "kbad 的文件已执行即入账（形态校验在账本之后）");
@@ -218,6 +223,64 @@ test("kit 迁移账本：应用两遍第二遍零 DDL、改文件 fail-closed、
         readSqlFile: fixture({ "kfix/sql/001-init.sql": INIT_SQL, "kfix/sql/002-hp.sql": ALTER_SQL }),
       });
       assert.deepEqual(orphan, { applied: [], skipped: 2, orphanLedgerKits: ["kbad"] });
+
+      // ⑨ 中途失败 → 账本记进度 → 重跑从失败那条续跑（⛔ 不重跑已成功的语句）
+      const files3 = {
+        "kfix/sql/001-init.sql": INIT_SQL, "kfix/sql/002-hp.sql": ALTER_SQL,
+        // 第 2 条撞 world_id=1 的 PK（001 种子行）⇒ 失败；第 1 条已提交
+        "kfix/sql/003-seed.sql": "INSERT INTO k_kfix_world (world_id, name) VALUES (2, 'two');\nINSERT INTO k_kfix_world (world_id, name) VALUES (1, 'dup');\nINSERT INTO k_kfix_world (world_id, name) VALUES (3, 'three');\n",
+      };
+      const withSeed: ServerKitCatalogEntry = { ...KFIX, sqlFiles: ["sql/001-init.sql", "sql/002-hp.sql", "sql/003-seed.sql"] };
+      await assert.rejects(
+        applyKitMigrations({ conn, dbName, catalog: [withSeed], holder: "int-test", readSqlFile: fixture(files3) }),
+        /kit "kfix" sql\/003-seed\.sql 第 2\/3 条语句执行失败：.*（账本已记进度 1\/3；/u,
+      );
+      const [progress] = await conn.query<ProgressRow[]>(
+        "SELECT statement_count, applied_statements FROM kit_migration WHERE kit_id = 'kfix' AND file = 'sql/003-seed.sql'",
+      );
+      assert.deepEqual([Number(progress[0]?.statement_count), Number(progress[0]?.applied_statements)], [3, 1]);
+      // 排除冲突原因（测试里直接删掉冲突行；真实场景是修库或人工核对）后重跑：从第 2 条续跑，第 1 条不重跑（否则 world_id=2 会重复主键报错）
+      await conn.query("DELETE FROM k_kfix_world WHERE world_id = 1");
+      const resumed = await applyKitMigrations({ conn, dbName, catalog: [withSeed], holder: "int-test", readSqlFile: fixture(files3) });
+      assert.deepEqual(resumed, { applied: [{ kitId: "kfix", file: "sql/003-seed.sql" }], skipped: 2, orphanLedgerKits: ["kbad"] });
+      const [worlds] = await conn.query<mysql.RowDataPacket[]>("SELECT world_id FROM k_kfix_world ORDER BY world_id");
+      assert.deepEqual(worlds.map((r) => Number(r.world_id)), [1, 2, 3]);
+      const [progressAfter] = await conn.query<ProgressRow[]>(
+        "SELECT statement_count, applied_statements FROM kit_migration WHERE kit_id = 'kfix' AND file = 'sql/003-seed.sql'",
+      );
+      assert.deepEqual([Number(progressAfter[0]?.statement_count), Number(progressAfter[0]?.applied_statements)], [3, 3]);
+      const fourth = await applyKitMigrations({ conn, dbName, catalog: [withSeed], holder: "int-test", readSqlFile: fixture(files3) });
+      assert.deepEqual(fourth, { applied: [], skipped: 3, orphanLedgerKits: ["kbad"] });
+
+      // ⑩ --drop-data：kit 内父子外键、父表按名排在子表前 ⇒ 仍能整批 drop，账本行一起清
+      const kfk: ServerKitCatalogEntry = {
+        ...KFIX, id: "kfk", sqlFiles: ["sql/001-init.sql"],
+        sqlTables: [{ name: "k_kfk_a", zone: "global" }, { name: "k_kfk_b", zone: "global" }],
+      };
+      const FK_SQL = "CREATE TABLE k_kfk_a (id INT NOT NULL, PRIMARY KEY (id)) ENGINE=InnoDB;\n"
+        + "CREATE TABLE k_kfk_b (id INT NOT NULL, a_id INT NOT NULL, PRIMARY KEY (id), CONSTRAINT fk_b_a FOREIGN KEY (a_id) REFERENCES k_kfk_a (id)) ENGINE=InnoDB;\n";
+      const withFk = await applyKitMigrations({
+        conn, dbName, catalog: [withSeed, kfk], holder: "int-test", readSqlFile: fixture({ ...files3, "kfk/sql/001-init.sql": FK_SQL }),
+      });
+      assert.deepEqual(withFk.applied, [{ kitId: "kfk", file: "sql/001-init.sql" }]);
+      const dropConn = await mysql.createConnection(connectionOptions(dbName));
+      try {
+        const dry = await dropKitTables({ conn: dropConn, dbName, kitId: "kfk", dryRun: true });
+        assert.deepEqual(dry, { tables: ["k_kfk_a", "k_kfk_b"], ledgerRows: 1 });
+        const dropped = await dropKitTables({ conn: dropConn, dbName, kitId: "kfk" });
+        assert.deepEqual(dropped, { tables: ["k_kfk_a", "k_kfk_b"], ledgerRows: 1 });
+      } finally {
+        await dropConn.end();
+      }
+      const [left] = await conn.query<mysql.RowDataPacket[]>(
+        "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME LIKE 'k\\_kfk\\_%'", [dbName],
+      );
+      assert.equal(left.length, 0, "父子表都已 drop");
+      const [fkLedger] = await conn.query<CountRow[]>("SELECT COUNT(*) AS n FROM kit_migration WHERE kit_id = 'kfk'");
+      assert.equal(Number(fkLedger[0]?.n), 0);
+      // kfix 的表 / 账本不受影响
+      const [kfixLedger] = await conn.query<CountRow[]>("SELECT COUNT(*) AS n FROM kit_migration WHERE kit_id = 'kfix'");
+      assert.equal(Number(kfixLedger[0]?.n), 3);
     } finally {
       await conn.end();
     }

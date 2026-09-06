@@ -8,13 +8,15 @@
  *   且每个表名都必须在 kit.json 声明且带 `k_<id 小写>_` 前缀；其余一律拒绝（fail-closed）。
  * - `applyKitMigrations`：在 `singleton_lease('db_bootstrap')` 下按 kit id + 文件序，只应用账本里没有的文件，
  *   逐条语句执行（一条语句一次 query，⛔ 不依赖 multipleStatements），已应用文件 sha256 变化即 fail-closed；
+ *   账本按语句粒度记进度（`statement_count` / `applied_statements`）：文件先入账再执行、每条语句成功即推进，
+ *   中途失败（DDL 已隐式提交）下次 bootstrap 从失败的那条续跑，⛔ 不会重跑已成功的 CREATE TABLE；
  *   随后 `verifyKitTableShapes` 按 `zone` 校验 server_id 形态（per-zone 进 PK 与每个 UNIQUE；global 不得有），
  *   并拒绝「库里有 `k_<id>_` 前缀表却未声明」；账本有而目录无的 kit 只告警（uninstall 默认保留表）。
  */
 import { createHash } from "node:crypto";
 import { hostname } from "node:os";
 import type { KitTableZone, ServerKitCatalogEntry } from "../src/kits/catalogTypes";
-import { kitTablePrefix } from "../src/core/infra/zoneTables";
+import { assertKitTablePrefixesUnique, kitTablePrefix } from "../src/core/infra/zoneTables";
 
 /** 最小连接面：mysql2 Connection / PoolConnection 与测试假连接都满足。 */
 export interface SqlConn {
@@ -51,8 +53,11 @@ export function splitSqlStatements(text: string): string[] {
       while (i < n && text[i] !== "\n") { i += 1; }
       continue;
     }
-    // 块注释（含 /*! … */ 版本注释：一并剥掉，kit 不得靠它夹带语句）
+    // 块注释。`/*! … */` 版本注释 MySQL 会执行其内容而切分器会剥掉——两者不一致即账本 sha 背书的不是实际执行的 DDL，⛔ 直接拒
     if (ch === "/" && next === "*") {
+      if (text[i + 2] === "!") {
+        throw new Error("kit SQL 不允许 /*! … */ 版本注释（服务端会执行其内容，账本无法为其背书；请写成普通语句）");
+      }
       const end = text.indexOf("*/", i + 2);
       if (end < 0) { throw new Error("kit SQL 块注释未闭合"); }
       i = end + 2;
@@ -125,8 +130,24 @@ function blankQuoted(statement: string): string {
   return out;
 }
 
-/** 语句中任何位置都不许出现的关键字（无合法宿主：kit 允许的语句类型里用不到它们；同名列请加反引号）。 */
-const FORBIDDEN_ANYWHERE = ["DROP", "TRUNCATE", "RENAME", "TRIGGER", "EVENT", "PROCEDURE", "FUNCTION", "GRANT", "REVOKE"];
+/** 在已 blankQuoted 的视图上再把反引号标识符整段留白（等长），供关键字扫描 / 括号深度切分用——⛔ 标识符里的 `(` `,` 不得影响结构。 */
+function blankIdents(blank: string): string {
+  return blank.replace(/`[^`]*`/gu, (seg) => " ".repeat(seg.length));
+}
+
+/** 语句中任何位置都不许出现的关键字（无合法宿主：kit 允许的语句类型里用不到它们；同名列请加反引号）。
+ *  `LOAD_FILE` 是函数名：种子行 VALUES 里读服务器文件系统没有任何 kit 理由。 */
+const FORBIDDEN_ANYWHERE = ["DROP", "TRUNCATE", "RENAME", "TRIGGER", "EVENT", "PROCEDURE", "FUNCTION", "GRANT", "REVOKE", "LOAD_FILE"];
+/** 表选项里指向服务器文件系统的子句（CREATE / ALTER 都不许）。 */
+const FILE_DIRECTORY_RE = /\b(?:DATA|INDEX)\s+DIRECTORY\b/u;
+/** 反引号标识符里不许出现的结构字符：它们能骗过括号深度 / 逗号切分（fail-closed，正常 kit 表 / 列名用不到）。
+ *  逐段配对扫描（⛔ 不能用一个跨段正则：`a` (x, `b` 里两段之间的文本会被误当成标识符）。 */
+function hasStructuralCharInIdent(blank: string): boolean {
+  for (const m of blank.matchAll(/`[^`]*`/gu)) {
+    if (/[(),;.]/u.test(m[0])) { return true; }
+  }
+  return false;
+}
 /** 语句头即拒绝的类型（给出点名信息，其余走「类型不在白名单」兜底）。 */
 const FORBIDDEN_HEADS = ["DELETE", "UPDATE", "USE", "LOCK", "UNLOCK", "SET", "SELECT", "REPLACE", "CALL", "LOAD", "ALTER DATABASE", "CREATE DATABASE", "CREATE SCHEMA", "CREATE VIEW", "CREATE TEMPORARY"];
 
@@ -150,9 +171,13 @@ export function lintKitStatement(statement: string, kitId: string, declaredTable
   const prefix = kitTablePrefix(kitId);
   const declared = new Set(declaredTables);
   const blank = blankQuoted(statement);
+  if (hasStructuralCharInIdent(blank)) {
+    lintFail(kitId, "反引号标识符里不得含 ( ) , ; . （它们会干扰语句结构判定）", statement);
+  }
   if (blank.includes(";")) { lintFail(kitId, "一条字符串里含多条语句（`;`）——请用 splitSqlStatements 逐条传入", statement); }
-  // 关键字扫描用的视图：反引号标识符也留白（列名 `event` 合法），表名提取仍用 blank
-  const upper = blank.toUpperCase().replace(/`[^`]*`/gu, (seg) => " ".repeat(seg.length));
+  // 关键字扫描 / 结构切分用的视图：反引号标识符也留白（列名 `event` 合法），与 blank 等长；表名提取仍用 blank
+  const structural = blankIdents(blank);
+  const upper = structural.toUpperCase();
   const head = upper.trim();
   for (const kw of FORBIDDEN_HEADS) {
     if (new RegExp(`^${kw}\\b`, "u").test(head)) { lintFail(kitId, `不允许 ${kw} 语句`, statement); }
@@ -182,6 +207,9 @@ export function lintKitStatement(statement: string, kitId: string, declaredTable
   if ((m = trimmed.match(new RegExp(`^CREATE\\s+TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?(${IDENT}(?:\\s*\\.\\s*${IDENT})?)\\s*\\(`, "iu")))) {
     assertTable(m[1], "CREATE TABLE 表");
     if (/\bSELECT\b/iu.test(upper)) { lintFail(kitId, "CREATE TABLE … SELECT 不允许", statement); }
+    // `(LIKE <t>)` 带括号形态会把任意表（含框架表）的定义复制进 kit 命名空间；列定义里用不到 LIKE
+    if (/\bLIKE\b/u.test(upper)) { lintFail(kitId, "CREATE TABLE 不允许 LIKE（⛔ 复制别的表定义）", statement); }
+    if (FILE_DIRECTORY_RE.test(upper)) { lintFail(kitId, "CREATE TABLE 不允许 DATA / INDEX DIRECTORY 表选项", statement); }
     return;
   }
   if (/^CREATE\s+TABLE\b/iu.test(trimmed)) {
@@ -191,8 +219,14 @@ export function lintKitStatement(statement: string, kitId: string, declaredTable
   // ALTER TABLE <t> <action>[, <action>…]
   if ((m = trimmed.match(new RegExp(`^ALTER\\s+TABLE\\s+(${IDENT}(?:\\s*\\.\\s*${IDENT})?)\\s+([\\s\\S]+)$`, "iu")))) {
     assertTable(m[1], "ALTER TABLE 表");
-    for (const action of splitTopLevelCommas(m[2])) {
-      const a = action.trim().toUpperCase();
+    // 多 action 按括号深度 0 的逗号切分——在反引号也留白的等长视图上切（⛔ 标识符里的 `(` 不能把后面的 action 藏进第一个里）
+    const actionsStart = (blank.length - blank.trimStart().length) + m[0].length - m[2].length;
+    const actionsView = structural.slice(actionsStart);
+    const actionsRaw = blank.slice(actionsStart); // 等长；反引号标识符可读（server_id 判定要看名字）
+    if (FILE_DIRECTORY_RE.test(upper)) { lintFail(kitId, "ALTER TABLE 不允许 DATA / INDEX DIRECTORY 表选项", statement); }
+    for (const [from, to] of splitTopLevelCommas(actionsView)) {
+      const action = actionsRaw.slice(from, to);
+      const a = actionsView.slice(from, to).trim().toUpperCase();
       const ok = /^ADD\s+COLUMN\b/u.test(a)
         || /^ADD\s+(?:UNIQUE\s+)?(?:INDEX|KEY)\b/u.test(a)
         || /^MODIFY\s+COLUMN\b/u.test(a)
@@ -200,6 +234,11 @@ export function lintKitStatement(statement: string, kitId: string, declaredTable
         || /^LOCK\s*=\s*(?:NONE|SHARED|EXCLUSIVE|DEFAULT)$/u.test(a);
       if (!ok) {
         lintFail(kitId, `ALTER TABLE 只允许 ADD COLUMN / ADD [UNIQUE] INDEX|KEY / MODIFY COLUMN（不允许：${action.trim().slice(0, 60)}）`, statement);
+      }
+      // server_id 是区列（KIT.md §5）：形态由 CREATE TABLE 一次定死并经 verifyKitTableShapes 机检；
+      // ALTER 改它只会在账本入账之后才被形态校验拒——这里提前 fail-closed
+      if (/^\s*(?:ADD|MODIFY)\s+COLUMN\s+`?server_id`?(?![A-Za-z0-9_$])/iu.test(action)) {
+        lintFail(kitId, "ALTER TABLE 不得 ADD / MODIFY COLUMN server_id（区列形态只能在 CREATE TABLE 里定义）", statement);
       }
     }
     return;
@@ -227,19 +266,22 @@ export function lintKitStatement(statement: string, kitId: string, declaredTable
   lintFail(kitId, "语句类型不在白名单（CREATE TABLE / ALTER TABLE ADD|MODIFY / CREATE INDEX / INSERT）", statement);
 }
 
-/** 按括号深度 0 的逗号切分（ALTER 的多 action）。输入已 blankQuoted。 */
-function splitTopLevelCommas(s: string): string[] {
-  const parts: string[] = [];
+/**
+ * 按括号深度 0 的逗号切分（ALTER 的多 action），返回 [from, to) 区间。输入须是引号与反引号都已留白的视图
+ * （blankIdents(blankQuoted(..))），区间可同时套用到等长的未留白视图上。空白段丢弃。
+ */
+function splitTopLevelCommas(view: string): [number, number][] {
+  const parts: [number, number][] = [];
   let depth = 0;
-  let cur = "";
-  for (const ch of s) {
+  let from = 0;
+  for (let i = 0; i < view.length; i += 1) {
+    const ch = view[i];
     if (ch === "(") { depth += 1; }
     else if (ch === ")") { depth -= 1; }
-    if (ch === "," && depth === 0) { parts.push(cur); cur = ""; continue; }
-    cur += ch;
+    else if (ch === "," && depth === 0) { parts.push([from, i]); from = i + 1; }
   }
-  parts.push(cur);
-  return parts.filter((p) => p.trim().length > 0);
+  parts.push([from, view.length]);
+  return parts.filter(([a, b]) => view.slice(a, b).trim().length > 0);
 }
 
 // ── 账本驱动应用 ──────────────────────────────────────────────────────────
@@ -301,24 +343,43 @@ async function acquireBootstrapLease(conn: SqlConn, holder: string, leaseSeconds
   }
 }
 
+/**
+ * 释放：expires_at 退到严格过去（NOW(3) - 1s）。抢占谓词是 `expires_at < NOW(3)`，若释放写成 `= NOW(3)`，
+ * 同一毫秒内紧接着的下一次 bootstrap（测试 / 脚本连跑）会被自己上一轮的租约挡住（集成测试实证）。
+ */
 async function releaseBootstrapLease(conn: SqlConn, holder: string): Promise<void> {
-  // 回退 1 秒而不是 = NOW(3)：acquire 的判据是 `expires_at < NOW(3)`，同一毫秒内「释放 → 立刻再抢」会因相等而误判
-  //（集成测试实证：连续两次 applyKitMigrations 偶发「租约被自己持有」）。
   await conn.query(
     "UPDATE singleton_lease SET expires_at = NOW(3) - INTERVAL 1 SECOND WHERE lease_name = ? AND holder = ?",
     [DB_BOOTSTRAP_LEASE, holder],
   );
 }
 
+/** 账本一行：文件的 sha256 与语句粒度进度（`applied_statements` = 已成功执行的语句数）。 */
+interface LedgerRow {
+  readonly sha256: string;
+  readonly statementCount: number;
+  readonly appliedStatements: number;
+}
+
+function ledgerRowOf(row: Row): LedgerRow {
+  return {
+    sha256: String(row.sha256),
+    statementCount: Number(row.statement_count ?? 0),
+    appliedStatements: Number(row.applied_statements ?? 0),
+  };
+}
+
 /**
- * 按 kit id 排序、按 sqlFiles 顺序应用账本里没有的迁移文件；随后校验全部 kit 表形态。
- * 任何一步抛错都会释放租约再上抛（账本只在整文件成功后写，⛔ 半个文件不入账）。
+ * 按 kit id 排序、按 sqlFiles 顺序应用账本里没有（或没跑完）的迁移文件；随后校验全部 kit 表形态。
+ * 账本按语句粒度记进度：文件先以 applied_statements=0 入账，每条语句成功即 +1；
+ * 上次中途失败的文件（sha 相同、进度未满）从失败那条续跑；任何一步抛错都会释放租约再上抛。
  */
 export async function applyKitMigrations(options: ApplyKitMigrationsOptions): Promise<ApplyKitMigrationsReport> {
   const { conn, dbName, catalog, readSqlFile } = options;
   const log = options.log ?? ((): void => undefined);
   const holder = options.holder ?? `${hostname()}:${process.pid}`.slice(0, 64);
   const leaseSeconds = options.leaseSeconds ?? 600;
+  assertKitTablePrefixesUnique(catalog);
   await acquireBootstrapLease(conn, holder, leaseSeconds);
   try {
     const applied: AppliedMigration[] = [];
@@ -333,38 +394,62 @@ export async function applyKitMigrations(options: ApplyKitMigrationsOptions): Pr
         const text = readSqlFile(kit.id, file);
         const digest = sha256Hex(text);
         const [ledger] = await conn.query(
-          "SELECT sha256 FROM kit_migration WHERE kit_id = ? AND file = ?",
+          "SELECT sha256, statement_count, applied_statements FROM kit_migration WHERE kit_id = ? AND file = ?",
           [kit.id, file],
         );
         const rows = rowsOf(ledger);
-        if (rows.length > 0) {
-          const recorded = String(rows[0].sha256);
-          if (recorded === digest) { skipped += 1; continue; }
-          throw new Error(
-            `⛔ 已应用的迁移文件被改动：kit "${kit.id}" ${file}（账本 sha256=${recorded}，当前 sha256=${digest}）`
-            + "——已发布迁移不可改，请追加新文件",
-          );
+        const recorded = rows.length > 0 ? ledgerRowOf(rows[0]) : undefined;
+        let start = 0;
+        if (recorded) {
+          const complete = recorded.appliedStatements >= recorded.statementCount;
+          if (recorded.sha256 !== digest) {
+            const progress = complete
+              ? ""
+              : `；该文件上次只跑到 ${recorded.appliedStatements}/${recorded.statementCount} 条就失败了，已执行的语句无法撤回`;
+            throw new Error(
+              `⛔ 已应用的迁移文件被改动：kit "${kit.id}" ${file}（账本 sha256=${recorded.sha256}，当前 sha256=${digest}）`
+              + `——已发布迁移不可改，请追加新文件${progress}`,
+            );
+          }
+          if (complete) { skipped += 1; continue; }
+          start = recorded.appliedStatements;
         }
         const statements = splitSqlStatements(text);
         // 先全部 lint 再执行：任一语句不合规即整文件不动
         for (const statement of statements) { lintKitStatement(statement, kit.id, declaredTables); }
-        for (let index = 0; index < statements.length; index += 1) {
+        if (recorded) {
+          if (recorded.statementCount !== statements.length) {
+            throw new Error(
+              `⛔ kit "${kit.id}" ${file} 账本记的语句数（${recorded.statementCount}）与当前切分结果（${statements.length}）不一致`
+              + "——切分器变了？请人工核对账本后再续跑",
+            );
+          }
+          log(`  kit ${kit.id}: ${file} 上次跑到 ${start}/${statements.length} 条，续跑`);
+        } else {
+          await conn.query(
+            "INSERT INTO kit_migration (kit_id, file, sha256, statement_count, applied_statements) VALUES (?, ?, ?, ?, 0)",
+            [kit.id, file, digest, statements.length],
+          );
+        }
+        for (let index = start; index < statements.length; index += 1) {
           try {
             await conn.query(statements[index]);
           } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             throw new Error(
-              `kit "${kit.id}" ${file} 第 ${index + 1}/${statements.length} 条语句执行失败：${message}\n  语句：${statements[index].slice(0, 120)}`,
+              `kit "${kit.id}" ${file} 第 ${index + 1}/${statements.length} 条语句执行失败：${message}`
+              + `（账本已记进度 ${index}/${statements.length}；修复原因后重跑 db:bootstrap 从第 ${index + 1} 条续跑）`
+              + `\n  语句：${statements[index].slice(0, 120)}`,
               { cause: error },
             );
           }
+          await conn.query(
+            "UPDATE kit_migration SET applied_statements = ?, applied_at = NOW(3) WHERE kit_id = ? AND file = ?",
+            [index + 1, kit.id, file],
+          );
         }
-        await conn.query(
-          "INSERT INTO kit_migration (kit_id, file, sha256) VALUES (?, ?, ?)",
-          [kit.id, file, digest],
-        );
         applied.push({ kitId: kit.id, file });
-        log(`  kit ${kit.id}: 已应用 ${file}（${statements.length} 条语句）`);
+        log(`  kit ${kit.id}: 已应用 ${file}（${statements.length - start} 条语句）`);
       }
     }
 
@@ -399,6 +484,7 @@ export interface VerifyKitTableShapesOptions {
  */
 export async function verifyKitTableShapes(options: VerifyKitTableShapesOptions): Promise<void> {
   const { conn, dbName, catalog } = options;
+  assertKitTablePrefixesUnique(catalog);
   const [tableRows] = await conn.query(
     "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'",
     [dbName],

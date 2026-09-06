@@ -1,18 +1,21 @@
 /**
  * kit-api/server 门面（core/infra/kitApi.ts，docs/KIT.md §4）单测：
- * - `assertKitTableAccess` 表闸矩阵：本 kit 前缀（裸 / backtick / JOIN / INSERT INTO / 多表 / 别名 / 子查询）放行，
- *   框架表、别的 kit、schema 限定名、注释绕过、DDL / 多语句一律拒绝；
+ * - `assertKitTableAccess` 表闸矩阵：本 kit 前缀（裸 / backtick / JOIN / STRAIGHT_JOIN / INSERT INTO / 多表 / 别名 /
+ *   派生表 / PARTITION / 索引提示 / DELETE … USING）放行，框架表、别的 kit、schema 限定名、注释绕过（含 `/*!` 可执行
+ *   注释）、括号表引用、JOIN 条件后逗号接续、提示组后逗号接续、DDL / 多语句一律拒绝；
  * - `kitOpId` 命名空间化与确定性；
- * - `withKitTx` 用假 pool：越界 SQL 在触达连接前抛出、debit / credit 绑定 sId、提交后逐 uid 失效余额缓存、
- *   回调抛出即回滚且不失效缓存；
+ * - `withKitTx` 用假 pool：越界 SQL / 非原始值参数在触达连接前抛出、query 走 execute、debit / credit 绑定 sId、
+ *   enqueueEffect 拒别的 kit 的 kind、"DUP" 回读比对（冲突上抛）、提交后逐 uid 失效余额缓存、回调抛出即回滚且不失效缓存；
  * - `kitEffectKeysFor` 纯投影：键去重、序号紧随 bag 之后、map 形态；
  * - APPLY_EFFECT Lua 文本含 kit 分支且键数表达式引用 ARGV[4] 投影。
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  KitTableAccessError, assertKitTableAccess, kitOpId, kitTablePrefix, withKitTx, type KitTxDeps,
+  KitEffectScopeError, KitTableAccessError, assertKitEffectScope, assertKitTableAccess, kitOpId, kitTablePrefix, withKitTx,
+  type KitTxDeps,
 } from "../src/core/infra/kitApi";
+import { EffectConflictError, InvalidEffectError } from "../src/core/errors";
 import type { PoolConnection } from "../src/core/infra/mysql";
 import { deriveOpId, kitEffectKeysFor } from "../src/core/economy/outbox";
 import { APPLY_EFFECT } from "../src/core/infra/redisScripts";
@@ -49,10 +52,34 @@ test("表闸放行：本 kit 前缀的裸名 / backtick / JOIN / INSERT INTO / �
   assert.deepEqual(allowed("DELETE FROM k_arena_tile WHERE id = ?"), ["k_arena_tile"]);
   assert.deepEqual(allowed("REPLACE INTO k_arena_tile (id) VALUES (?)"), ["k_arena_tile"]);
   assert.deepEqual(allowed("SELECT a.x FROM k_arena_a a, k_arena_b b WHERE a.id = b.id"), ["k_arena_a", "k_arena_b"]);
+  // 派生表：外层 FROM 先扫到 JOIN 的 owner，内层 FROM 再扫到 tile（按首次出现去重）
   assert.deepEqual(
     allowed("SELECT * FROM (SELECT id FROM k_arena_tile) AS d JOIN k_arena_owner o ON o.tile = d.id"),
+    ["k_arena_owner", "k_arena_tile"],
+  );
+  assert.deepEqual(allowed("SELECT * FROM (WITH x AS (SELECT 1) SELECT id FROM k_arena_tile) d"), ["k_arena_tile"]);
+  // STRAIGHT_JOIN / DELETE … USING / 表名后的 PARTITION 与索引提示组 / JOIN 条件后逗号接续（全是本 kit 表）
+  assert.deepEqual(
+    allowed("SELECT * FROM k_arena_tile t STRAIGHT_JOIN k_arena_owner o ON o.tile = t.id"),
     ["k_arena_tile", "k_arena_owner"],
   );
+  assert.deepEqual(
+    allowed("DELETE FROM k_arena_a USING k_arena_a JOIN k_arena_b USING (id) WHERE k_arena_b.x = 1"),
+    ["k_arena_a", "k_arena_b"],
+  );
+  assert.deepEqual(allowed("SELECT * FROM k_arena_tile PARTITION (p0, p1) t USE INDEX (PRIMARY), k_arena_owner"),
+    ["k_arena_tile", "k_arena_owner"]);
+  assert.deepEqual(
+    allowed("SELECT * FROM k_arena_tile FORCE INDEX FOR ORDER BY (idx_a) IGNORE KEY FOR JOIN (idx_b) JOIN k_arena_owner USING (id)"),
+    ["k_arena_tile", "k_arena_owner"],
+  );
+  assert.deepEqual(allowed("SELECT * FROM k_arena_a a JOIN k_arena_b b ON a.id = b.id AND b.y IN (1, 2), k_arena_c c"),
+    ["k_arena_a", "k_arena_b", "k_arena_c"]);
+  assert.deepEqual(allowed("UPDATE k_arena_a a JOIN k_arena_b b ON a.id = b.id SET a.x = (SELECT MAX(y) FROM k_arena_c)"),
+    ["k_arena_a", "k_arena_b", "k_arena_c"]);
+  assert.deepEqual(allowed("INSERT INTO k_arena_a (id, x) SELECT id, x FROM k_arena_b WHERE x > ?"), ["k_arena_a", "k_arena_b"]);
+  assert.deepEqual(allowed("SELECT * FROM k_arena_a WHERE EXISTS (SELECT 1 FROM k_arena_b WHERE k_arena_b.a = k_arena_a.id)"),
+    ["k_arena_a", "k_arena_b"]);
   assert.deepEqual(allowed("SELECT COUNT(*) FROM k_arena_tile WHERE note = 'FROM user_currency' -- FROM mail"), ["k_arena_tile"]);
   // 大小写归一：kit id 大小写混排也只认小写前缀
   assert.deepEqual(allowed("SELECT * FROM k_slgworld_map", "slgWorld"), ["k_slgworld_map"]);
@@ -74,6 +101,35 @@ test("表闸拒绝：框架表、别的 kit、schema 限定、注释绕过、DDL
   denied("SELECT * FROM `game`.`k_arena_tile`");
   denied("SELECT * FROM /* k_arena_tile */ user_currency"); // 注释绕过
   denied("SELECT * FROM user_currency # k_arena_tile");
+  // 服务端会执行的 `/*! … */` 与优化器提示 `/*+ … */`：⛔ 一律拒（普通块注释才剥掉）
+  denied("SELECT 1 FROM k_arena_tile /*! UNION SELECT balance FROM user_currency */");
+  denied("SELECT * FROM k_arena_tile WHERE 1 /*!50000 UNION SELECT balance FROM user_currency */");
+  denied("SELECT /*+ NO_INDEX(t) */ * FROM k_arena_tile t");
+  // 括号表引用 `( table_references )`：只放行 (SELECT …) / (WITH …) 派生表
+  denied("SELECT balance FROM (user_currency) WHERE user_id = ?");
+  denied("SELECT * FROM k_arena_a, (user_currency)");
+  denied("SELECT * FROM k_arena_tile JOIN (user_currency) c ON 1");
+  denied("SELECT * FROM ((user_currency))");
+  denied("DELETE FROM k_arena_a USING (user_currency)");
+  // STRAIGHT_JOIN / DELETE … USING 也是表引用入口
+  denied("SELECT c.balance FROM k_arena_tile t STRAIGHT_JOIN user_currency c ON c.user_id = t.owner");
+  denied("DELETE FROM k_arena_a USING k_arena_a, user_currency WHERE 1");
+  denied("DELETE FROM k_arena_a USING k_arena_a JOIN user_currency USING (id)");
+  // 表名后的 PARTITION / 索引提示组之后、JOIN 条件之后的逗号接续
+  denied("SELECT * FROM k_arena_tile USE INDEX (PRIMARY), user_currency");
+  denied("SELECT * FROM k_arena_tile PARTITION (p0), user_currency");
+  denied("SELECT * FROM k_arena_a a JOIN k_arena_b b ON a.id = b.id, user_currency");
+  denied("SELECT * FROM k_arena_a JOIN k_arena_b USING (id), user_currency");
+  denied("SELECT * FROM k_arena_a a JOIN k_arena_b b ON a.id = b.id AND b.y IN (1, 2), user_currency c");
+  denied("UPDATE k_arena_a a JOIN user_currency c ON a.id = c.user_id SET c.balance = 0");
+  denied("INSERT INTO k_arena_a (id) SELECT user_id FROM user_currency");
+  denied("SELECT * FROM k_arena_a WHERE x IN (SELECT balance FROM user_currency)");
+  denied("SELECT STRAIGHT_JOIN x FROM k_arena_a");               // SELECT 修饰词：fail-closed（kit 改写即可）
+  denied("SELECT * FROM k_arena_tile USE INDEX PRIMARY");        // 提示组形态不识别：fail-closed
+  denied("SELECT * FROM k_arena_tile PARTITION p0");
+  denied("SELECT * FROM LATERAL (SELECT 1) d");
+  denied("SELECT 1 FROM DUAL");
+  denied("SELECT * FROM (SELECT 1 FROM k_arena_a");               // 括号未闭合
   denied("CREATE TABLE k_arena_tmp (id INT)");              // DDL 隐式提交
   denied("DROP TABLE k_arena_tile");
   denied("ALTER TABLE k_arena_tile ADD COLUMN x INT");
@@ -103,18 +159,32 @@ test("kitOpId：命名空间化 type = kit:<id>:<op>，同输入确定、跨 kit
 
 interface FakeState {
   readonly queries: { sql: string; params: unknown[] }[];
+  rawQueries: number;
   readonly debits: unknown[][];
   readonly credits: unknown[][];
   readonly intents: unknown[];
+  readonly matched: unknown[];
   readonly invalidated: [string, number][];
   committed: number;
   rolledBack: number;
 }
 
-function fakeDeps(opts: { debit?: "DUP" | number; credit?: "DUP" | number } = {}): { deps: KitTxDeps; state: FakeState } {
-  const state: FakeState = { queries: [], debits: [], credits: [], intents: [], invalidated: [], committed: 0, rolledBack: 0 };
+const kinds: Readonly<Record<string, KitEffectSpec>> = {
+  "kit:arena:score": { kitId: "arena", name: "score", userKey: "stats", field: "score", max: 1000 },
+  "kit:arena:kills": { kitId: "arena", name: "kills", userKey: "stats", field: "kills", max: 50 },
+  "kit:arena:coin": { kitId: "arena", name: "coin", userKey: "wallet", field: "coin", max: 9 },
+  "kit:slg:score": { kitId: "slg", name: "score", userKey: "stats", field: "score", max: 10 },
+};
+
+function fakeDeps(
+  opts: { debit?: "DUP" | number; credit?: "DUP" | number; intent?: "INSERTED" | "DUP"; matches?: boolean } = {},
+): { deps: KitTxDeps; state: FakeState } {
+  const state: FakeState = {
+    queries: [], rawQueries: 0, debits: [], credits: [], intents: [], matched: [], invalidated: [], committed: 0, rolledBack: 0,
+  };
   const conn = {
-    query: async (sql: string, params: unknown[]) => { state.queries.push({ sql, params }); return [[{ ok: 1 }], []]; },
+    execute: async (sql: string, params: unknown[]) => { state.queries.push({ sql, params }); return [[{ ok: 1 }], []]; },
+    query: async () => { state.rawQueries++; return [[], []]; },
   } as unknown as PoolConnection;
   const deps: KitTxDeps = {
     withRcTx: async (fn) => {
@@ -123,8 +193,13 @@ function fakeDeps(opts: { debit?: "DUP" | number; credit?: "DUP" | number } = {}
     },
     debitInTx: async (...args) => { state.debits.push(args); return opts.debit ?? 90; },
     creditInTx: async (...args) => { state.credits.push(args); return opts.credit ?? 110; },
-    insertOutboxIntent: async (_conn, row) => { state.intents.push(row); return "INSERTED"; },
+    insertOutboxIntent: async (_conn, row, k) => { state.intents.push({ ...row, kinds: k }); return opts.intent ?? "INSERTED"; },
+    assertOutboxIntentMatches: async (_conn, row) => {
+      state.matched.push(row);
+      if (opts.matches === false) { throw new EffectConflictError(); }
+    },
     invalidateBalanceCache: async (uid, sId) => { state.invalidated.push([uid, sId]); },
+    kinds,
   };
   return { deps, state };
 }
@@ -149,9 +224,81 @@ test("withKitTx：句柄绑定 kitId/sId，query 过闸后才触达连接，debi
   assert.deepEqual(state.queries, [{ sql: "SELECT * FROM k_arena_tile WHERE id = ?", params: [1] }]);
   assert.deepEqual(state.debits[0]!.slice(1), ["u1", 7, 1, 10, 5, opId, "kit.arena.capture"]);
   assert.deepEqual(state.credits[0]!.slice(1), ["u2", 7, 1, 10, opId, "kit.arena.reward"]);
-  assert.deepEqual(state.intents, [{ opId, uid: "u1", sId: 7, effect, onDuplicate: "ignore" }]);
+  assert.deepEqual(state.intents, [{ opId, uid: "u1", sId: 7, effect, onDuplicate: "ignore", kinds }]);
+  assert.deepEqual(state.matched, [], "INSERTED 不回读");
+  assert.equal(state.rawQueries, 0, "tx.query 走 execute（预处理语句），不走 conn.query");
   // 提交后失效：每个 uid 一次（u1 扣了两次也只失效一次），且在 commit 之后
   assert.deepEqual(state.invalidated, [["u1", 7], ["u2", 7]]);
+});
+
+test("withKitTx：query 参数只允许原始值 / Date / Buffer——toSqlString 一类对象在触达连接前拒", async () => {
+  const { deps, state } = fakeDeps();
+  await assert.rejects(withKitTx("arena", 0, async (tx) => {
+    await tx.query("SELECT * FROM k_arena_tile WHERE ?", [{ toSqlString: () => "1 UNION SELECT balance FROM user_currency" }]);
+  }, deps), KitTableAccessError);
+  await assert.rejects(withKitTx("arena", 0, async (tx) => {
+    await tx.query("SELECT * FROM k_arena_tile WHERE id = ?", [[1, 2]]);
+  }, deps), KitTableAccessError);
+  await assert.rejects(withKitTx("arena", 0, async (tx) => {
+    await tx.query("SELECT * FROM k_arena_tile WHERE id = ?", [undefined]);
+  }, deps), KitTableAccessError);
+  assert.equal(state.queries.length, 0);
+  await withKitTx("arena", 0, async (tx) => {
+    await tx.query("SELECT * FROM k_arena_tile WHERE id = ? AND t < ? AND b = ? AND n IS ?", [1n, new Date(0), Buffer.from("x"), null]);
+  }, deps);
+  assert.equal(state.queries.length, 1);
+});
+
+test("withKitTx.enqueueEffect：先规范化（注入 kinds）、拒别的 kit 的 kind、DUP 回读比对、冲突上抛回滚", async () => {
+  const kitEffect: IEffect = { schemaVersion: EFFECT_SCHEMA_VERSION, grants: [{ kind: "kit:arena:score", delta: 3 }] };
+  // 本 kit 的 kind：规范化后透传，kinds 一并透传给 insertOutboxIntent
+  {
+    const { deps, state } = fakeDeps();
+    assert.equal(await withKitTx("arena", 1, async (tx) => tx.enqueueEffect("u1", "op", kitEffect), deps), "INSERTED");
+    assert.deepEqual(state.intents, [{ opId: "op", uid: "u1", sId: 1, effect: kitEffect, onDuplicate: "ignore", kinds }]);
+  }
+  // 别的 kit 的 kind：KitEffectScopeError，intent 不落库、事务回滚
+  {
+    const { deps, state } = fakeDeps();
+    await assert.rejects(withKitTx("arena", 1, async (tx) =>
+      tx.enqueueEffect("u1", "op", { schemaVersion: EFFECT_SCHEMA_VERSION, grants: [{ kind: "kit:slg:score", delta: 1 }] }), deps),
+    KitEffectScopeError);
+    assert.deepEqual(state.intents, []);
+    assert.equal(state.rolledBack, 1);
+  }
+  // 未登记 kind / delta 越界：validator 先拒（InvalidEffectError），⛔ 不到 outbox
+  {
+    const { deps, state } = fakeDeps();
+    await assert.rejects(withKitTx("arena", 1, async (tx) =>
+      tx.enqueueEffect("u1", "op", { schemaVersion: EFFECT_SCHEMA_VERSION, grants: [{ kind: "kit:arena:nope", delta: 1 }] }), deps),
+    InvalidEffectError);
+    await assert.rejects(withKitTx("arena", 1, async (tx) =>
+      tx.enqueueEffect("u1", "op", { schemaVersion: EFFECT_SCHEMA_VERSION, grants: [{ kind: "kit:arena:score", delta: 1001 }] }), deps),
+    InvalidEffectError);
+    assert.deepEqual(state.intents, []);
+  }
+  // DUP：回读比对同载荷 ⇒ "DUP"；不同载荷 ⇒ EffectConflictError 回滚
+  {
+    const { deps, state } = fakeDeps({ intent: "DUP" });
+    assert.equal(await withKitTx("arena", 1, async (tx) => tx.enqueueEffect("u1", "op", kitEffect), deps), "DUP");
+    assert.deepEqual(state.matched, [{ opId: "op", uid: "u1", sId: 1, effect: kitEffect }]);
+  }
+  {
+    const { deps, state } = fakeDeps({ intent: "DUP", matches: false });
+    await assert.rejects(withKitTx("arena", 1, async (tx) => tx.enqueueEffect("u1", "op", kitEffect), deps), EffectConflictError);
+    assert.equal(state.rolledBack, 1);
+  }
+});
+
+test("assertKitEffectScope：非 kit grant 不管、本 kit 放行、别的 kit 拒、未登记拒", () => {
+  assertKitEffectScope("arena", effect, kinds);
+  assertKitEffectScope("arena", { schemaVersion: 1, grants: [{ kind: "kit:arena:coin", delta: 1 }, { kind: "star", delta: 1 }] }, kinds);
+  assert.throws(() => assertKitEffectScope("arena", { schemaVersion: 1, grants: [{ kind: "kit:slg:score", delta: 1 }] }, kinds),
+    KitEffectScopeError);
+  assert.throws(() => assertKitEffectScope("slg", { schemaVersion: 1, grants: [{ kind: "kit:arena:coin", delta: 1 }] }, kinds),
+    KitEffectScopeError);
+  assert.throws(() => assertKitEffectScope("arena", { schemaVersion: 1, grants: [{ kind: "kit:arena:nope", delta: 1 }] }, kinds),
+    InvalidEffectError);
 });
 
 test("withKitTx：越界 SQL 在触达连接前抛 KitTableAccessError、事务回滚、不失效缓存；DUP 的账本调用不触发失效", async () => {
@@ -168,12 +315,6 @@ test("withKitTx：越界 SQL 在触达连接前抛 KitTableAccessError、事务�
   await assert.rejects(withKitTx("Arena", 0, async () => 0, deps), TypeError);
   await assert.rejects(withKitTx("arena", -1, async () => 0, deps), TypeError);
 });
-
-const kinds: Readonly<Record<string, KitEffectSpec>> = {
-  "kit:arena:score": { kitId: "arena", name: "score", userKey: "stats", field: "score", max: 1000 },
-  "kit:arena:kills": { kitId: "arena", name: "kills", userKey: "stats", field: "kills", max: 50 },
-  "kit:arena:coin": { kitId: "arena", name: "coin", userKey: "wallet", field: "coin", max: 9 },
-};
 
 test("kitEffectKeysFor：只投影出现的 kind、同一物理键去重、序号紧随 bag 分片之后、map 带 k/f/m", () => {
   const eff: IEffect = {

@@ -1,7 +1,8 @@
 /**
  * 按区表登记（docs/KIT.md §5「区」/ docs/SERVER.md §3）：框架表的 per-zone / global 分类 + kit 表按
- * `kit.json.sql.tables[].zone` 汇入。关单区 / 统计 / 冷档遍历与 smoke 的「表齐全」都从这里取全集，
- * ⛔ 不再各处手抄表名清单。
+ * `kit.json.sql.tables[].zone` 汇入。smoke 的「表齐全」已从这里取全集；关单区 / 统计 / 冷档遍历等
+ * 后续消费者接入时也从这里取，⛔ 不再各处手抄表名清单（db-bootstrap 自己的 ARCHIVE_ZONE_TABLES 是冷档迁移
+ * 步的局部子集，不是全集）。
  *
  * - per-zone 表：有 `server_id SMALLINT UNSIGNED NOT NULL` 且进主键与每个 UNIQUE（kit 表由
  *   tools/kit-migrations.ts 的 verifyKitTableShapes 机检；框架表 `match_results` 是刻意例外——
@@ -38,7 +39,24 @@ export function kitTablePrefix(kitId: string): string {
   return `k_${kitId.toLowerCase()}_`;
 }
 
+/**
+ * kit id 允许大小写字母而表前缀是小写归一的：两个只差大小写的 kit id 会共用一个前缀，迁移 lint /
+ * 形态校验 / `--drop-data` 都分不开它们。目录里出现这种撞车一律 fail-closed（⛔ 不猜哪个是「真的」）。
+ */
+export function assertKitTablePrefixesUnique(catalog: readonly ServerKitCatalogEntry[]): void {
+  const byPrefix = new Map<string, string>();
+  for (const kit of catalog) {
+    const prefix = kitTablePrefix(kit.id);
+    const other = byPrefix.get(prefix);
+    if (other !== undefined && other !== kit.id) {
+      throw new Error(`kit "${other}" 与 "${kit.id}" 只差大小写，表前缀都是 ${prefix}——kit id 必须大小写不敏感唯一`);
+    }
+    byPrefix.set(prefix, kit.id);
+  }
+}
+
 function kitTablesByZone(catalog: readonly ServerKitCatalogEntry[], zone: KitTableZone): string[] {
+  assertKitTablePrefixesUnique(catalog);
   const out: string[] = [];
   for (const kit of catalog) {
     for (const table of kit.sqlTables) {

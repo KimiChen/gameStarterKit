@@ -619,6 +619,9 @@ async function main(): Promise<void> {
   // 增量列迁移（幂等：1060 重复列即已迁）。CREATE IF NOT EXISTS 不会给存量表加新列
   const alters = [
     "ALTER TABLE mail ADD COLUMN attach_effect JSON NULL AFTER attach_op_id",
+    // kit_migration 账本进度列（语句粒度续跑，docs/KIT.md §5）：存量 4 列账本的旧行 0/0 视作已应用
+    "ALTER TABLE kit_migration ADD COLUMN statement_count INT UNSIGNED NOT NULL DEFAULT 0 AFTER sha256",
+    "ALTER TABLE kit_migration ADD COLUMN applied_statements INT UNSIGNED NOT NULL DEFAULT 0 AFTER statement_count",
   ];
   for (const sql of alters) {
     await conn.query(sql).catch((e: { errno?: number }) => {

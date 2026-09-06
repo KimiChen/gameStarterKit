@@ -1117,7 +1117,7 @@ function checkCommand(command, owner, stack = new Set()) {
 
 // ── plugin capability fragment（§5.7 阶段 7） ────────────────────────────────
 //
-// verifier 合并 `apps/plugins/*/plugin.json` 里的 capability fragment：普通 plugin 只能
+// verifier 合并 `apps/plugins/*/plugin.json` ∪ `apps/kits/*/kit.json` 里的 capability fragment：普通 plugin / kit 只能
 // 以 fragment 声明 extra 能力，⛔ 禁改 defaultModules/defaultScene/routeOfTruth/
 // workspaceCommandScope（中央 inventory 专属）；fragment 逐条并入上方同一套能力检查集
 // （fail closed），因此普通 extra plugin 无需修改中央 docs/inventory.json。
@@ -1215,30 +1215,59 @@ function validatePluginSchemaNode(schema, value, pathLabel) {
   throw new Error(`${pathLabel} schema declares unsupported type: ${String(type)}`);
 }
 
+/**
+ * 两个发现根同一解释器（docs/KIT.md §3/§7）：`apps/plugins/<id>/plugin.json`（必须存在）与
+ * `apps/kits/<id>/kit.json`（根可缺席；有根则每个子目录都必须有 kit.json），各按自己的 schema 校验，
+ * capability fragment 的中央键拒绝 / 只能 extra 规则完全相同。
+ */
 function checkPluginCapabilityFragments() {
-  const pluginsDir = path.join(ROOT, "apps/plugins");
-  if (!fs.existsSync(pluginsDir) || !fs.statSync(pluginsDir).isDirectory()) {
-    fail("apps/plugins/ 目录不存在：插件目录是 capability fragment 的发现面（fail closed）");
+  checkUnitCapabilityFragments({
+    dir: "apps/plugins",
+    manifest: "plugin.json",
+    schema: "apps/server/tools/plugin/plugin-schema-v2.json",
+    schemaName: "plugin-schema-v2",
+    noun: "插件",
+    required: true,
+  });
+  checkUnitCapabilityFragments({
+    dir: "apps/kits",
+    manifest: "kit.json",
+    schema: "apps/server/tools/plugin/kit-schema-v1.json",
+    schemaName: "kit-schema-v1",
+    noun: "kit",
+    required: false,
+  });
+}
+
+function checkUnitCapabilityFragments({ dir: dirRelative, manifest: manifestName, schema: schemaRelative, schemaName, noun, required }) {
+  const unitsDir = path.join(ROOT, dirRelative);
+  if (!fs.existsSync(unitsDir)) {
+    if (required) fail(`${dirRelative}/ 目录不存在：${noun}目录是 capability fragment 的发现面（fail closed）`);
     return;
   }
-  const schemaFile = path.join(ROOT, "apps/server/tools/plugin/plugin-schema-v2.json");
+  // 存在但不是目录：与「根缺席」不同，可选根也 ⛔ 不得 fail-open（plugin-codegen 同口径拒绝）。
+  if (!fs.statSync(unitsDir).isDirectory()) {
+    fail(`${dirRelative} 不是目录：${noun}目录是 capability fragment 的发现面，存在即必须是目录`);
+    return;
+  }
+  const schemaFile = path.join(ROOT, schemaRelative);
   let schema;
   try {
     schema = readJson(schemaFile);
-    assertSupportedPluginSchema(schema, "apps/server/tools/plugin/plugin-schema-v2.json");
+    assertSupportedPluginSchema(schema, schemaRelative);
   } catch (error) {
-    fail(`apps/server/tools/plugin/plugin-schema-v2.json 无法加载为受支持的 JSON Schema：${error instanceof Error ? error.message : error}`);
+    fail(`${schemaRelative} 无法加载为受支持的 JSON Schema：${error instanceof Error ? error.message : error}`);
     return;
   }
 
-  const dirs = fs.readdirSync(pluginsDir, { withFileTypes: true })
+  const dirs = fs.readdirSync(unitsDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
     .sort();
   for (const dir of dirs) {
-    const relative = `apps/plugins/${dir}/plugin.json`;
-    const file = path.join(pluginsDir, dir, "plugin.json");
-    if (!fs.existsSync(file)) { fail(`${relative} 缺失：每个插件目录必须有 plugin.json`); continue; }
+    const relative = `${dirRelative}/${dir}/${manifestName}`;
+    const file = path.join(unitsDir, dir, manifestName);
+    if (!fs.existsSync(file)) { fail(`${relative} 缺失：每个${noun}目录必须有 ${manifestName}`); continue; }
     let manifest;
     try { manifest = readJson(file); } catch { fail(`${relative} 不是有效 JSON`); continue; }
     if (!isJsonRecord(manifest)) { fail(`${relative} 必须是 JSON object`); continue; }
@@ -1253,7 +1282,7 @@ function checkPluginCapabilityFragments() {
     try {
       validatePluginSchemaNode(schema, manifest, relative);
     } catch (error) {
-      fail(`${relative} 未通过 plugin-schema-v2 校验：${error instanceof Error ? error.message : error}`);
+      fail(`${relative} 未通过 ${schemaName} 校验：${error instanceof Error ? error.message : error}`);
       continue;
     }
     const fragments = Array.isArray(manifest.capabilities) ? manifest.capabilities : [];

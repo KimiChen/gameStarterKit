@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { ServerKitCatalogEntry } from "../src/kits/catalogTypes";
 import {
-  FRAMEWORK_GLOBAL_TABLES, FRAMEWORK_PER_ZONE_TABLES, allTables, globalTables, kitTablePrefix, perZoneTables,
+  FRAMEWORK_GLOBAL_TABLES, FRAMEWORK_PER_ZONE_TABLES, allTables, assertKitTablePrefixesUnique, globalTables, kitTablePrefix, perZoneTables,
 } from "../src/core/infra/zoneTables";
 import {
   applyKitMigrations, lintKitStatement, sha256Hex, splitSqlStatements, verifyKitTableShapes,
@@ -58,6 +58,14 @@ test("zoneTables：框架表 ∪ kit 表按 zone 汇入，catalog 可注入", ()
   assert.equal(allTables().length, FRAMEWORK_PER_ZONE_TABLES.length + FRAMEWORK_GLOBAL_TABLES.length);
 });
 
+test("zoneTables：只差大小写的 kit id 共用表前缀 ⇒ fail-closed", () => {
+  assert.doesNotThrow(() => assertKitTablePrefixesUnique([KFIX, { ...KFIX, id: "other" }]));
+  assert.doesNotThrow(() => assertKitTablePrefixesUnique([KFIX, KFIX]), "同一 id 重复不算撞车");
+  assert.throws(() => assertKitTablePrefixesUnique([KFIX, { ...KFIX, id: "kFix" }]), /"kfix" 与 "kFix" 只差大小写，表前缀都是 k_kfix_/u);
+  assert.throws(() => perZoneTables([KFIX, { ...KFIX, id: "KFIX" }]), /只差大小写/u);
+  assert.throws(() => allTables([KFIX, { ...KFIX, id: "Kfix" }]), /只差大小写/u);
+});
+
 // ── splitSqlStatements ───────────────────────────────────────────────────
 
 test("splitSqlStatements：注释 / 引号 / 反引号里的分号不切分，尾部空白丢弃", () => {
@@ -80,6 +88,13 @@ test("splitSqlStatements：DELIMITER 与未闭合引号 / 注释拒绝", () => {
   assert.throws(() => splitSqlStatements("  delimiter //"), /DELIMITER/u);
   assert.throws(() => splitSqlStatements("INSERT INTO t VALUES ('a"), /引号未闭合/u);
   assert.throws(() => splitSqlStatements("/* open"), /块注释未闭合/u);
+  // `/*! … */` 版本注释：MySQL 会执行其内容而切分器只能剥掉——账本 sha 背书的就不是实际执行的 DDL ⇒ 拒
+  assert.throws(
+    () => splitSqlStatements("CREATE TABLE k_kfix_tile (id INT) /*!50100 PARTITION BY HASH(id) PARTITIONS 4 */;"),
+    /不允许 \/\*! … \*\/ 版本注释/u,
+  );
+  assert.throws(() => splitSqlStatements("/*!40101 SET NAMES utf8 */"), /版本注释/u);
+  assert.deepEqual(splitSqlStatements("/* 普通块注释 ; 照剥 */ SELECT 1"), ["SELECT 1"]);
 });
 
 // ── lintKitStatement ─────────────────────────────────────────────────────
@@ -97,6 +112,10 @@ test("lintKitStatement：白名单语句放行", () => {
     "INSERT IGNORE INTO k_kfix_world (world_id, name) VALUES (1, 'a')",
     "INSERT INTO k_kfix_world (world_id, name) VALUES (1, 'a') ON DUPLICATE KEY UPDATE world_id = world_id",
     "CREATE TABLE k_kfix_tile (id INT, world_id INT, PRIMARY KEY (id), CONSTRAINT fk FOREIGN KEY (world_id) REFERENCES k_kfix_world (world_id))",
+    // 反引号标识符（不含结构字符）在多 action ALTER 里照常切分
+    "ALTER TABLE `k_kfix_tile` ADD COLUMN `hp` INT NOT NULL DEFAULT 0, ADD KEY `idx_hp` (`hp`), MODIFY COLUMN `owner` VARCHAR(64) NULL",
+    // 字符串字面量里的关键字 / 结构字符不参与判定
+    "INSERT INTO k_kfix_world (world_id, name) VALUES (1, 'like, drop (x); load_file')",
   ];
   for (const s of ok) { assert.doesNotThrow(() => lintKitStatement(s, "kfix", DECLARED), s); }
 });
@@ -136,6 +155,30 @@ test("lintKitStatement：禁用语句类型逐条拒绝（fail-closed）", () =>
     ["CREATE TABLE k_kfix_tile (id INT, event INT)", /EVENT/u],
     ["FLUSH TABLES", /不在白名单/u],
     ["", /不在白名单/u],
+    // 反引号标识符里的 `(` 曾能让括号深度计数不归零、后续 action 全部藏进第一个 ADD COLUMN 里逃过白名单
+    ["ALTER TABLE k_kfix_tile ADD COLUMN `z(` INT, CHANGE COLUMN x y INT", /反引号标识符里不得含/u],
+    ["ALTER TABLE k_kfix_tile ADD COLUMN `z(` INT, ADD PRIMARY KEY (x)", /反引号标识符里不得含/u],
+    ["ALTER TABLE k_kfix_tile ADD COLUMN `z(` INT, ENGINE=MyISAM", /反引号标识符里不得含/u],
+    ["ALTER TABLE k_kfix_tile ADD COLUMN `z(` INT, CONVERT TO CHARACTER SET latin1", /反引号标识符里不得含/u],
+    ["ALTER TABLE k_kfix_tile ADD COLUMN `a,b` INT", /反引号标识符里不得含/u],
+    ["CREATE TABLE `k_kfix_tile` (`id)` INT)", /反引号标识符里不得含/u],
+    // 同样的 action 不带反引号伎俩时本来就被白名单拒
+    ["ALTER TABLE k_kfix_tile CHANGE COLUMN x y INT", /ALTER TABLE 只允许/u],
+    ["ALTER TABLE k_kfix_tile ADD PRIMARY KEY (x)", /ALTER TABLE 只允许/u],
+    ["ALTER TABLE k_kfix_tile CONVERT TO CHARACTER SET latin1", /ALTER TABLE 只允许/u],
+    ["ALTER TABLE k_kfix_tile ADD COLUMN x INT, CHANGE COLUMN x y INT", /ALTER TABLE 只允许/u],
+    // `(LIKE <t>)` 带括号形态复制任意表定义
+    ["CREATE TABLE k_kfix_tile (LIKE user_currency)", /不允许 LIKE/u],
+    ["CREATE TABLE k_kfix_tile ( LIKE `user_currency` )", /不允许 LIKE/u],
+    // 区列 server_id 只能在 CREATE TABLE 里定义（否则入账后才被形态校验拒，bootstrap 永久红）
+    ["ALTER TABLE k_kfix_tile MODIFY COLUMN server_id INT NULL", /不得 ADD \/ MODIFY COLUMN server_id/u],
+    ["ALTER TABLE k_kfix_tile ADD COLUMN hp INT, MODIFY COLUMN `server_id` SMALLINT NULL", /不得 ADD \/ MODIFY COLUMN server_id/u],
+    ["ALTER TABLE k_kfix_world ADD COLUMN server_id SMALLINT UNSIGNED NOT NULL", /不得 ADD \/ MODIFY COLUMN server_id/u],
+    // 指向服务器文件系统的表选项 / 函数
+    ["CREATE TABLE k_kfix_tile (id INT) DATA DIRECTORY = '/tmp'", /DATA \/ INDEX DIRECTORY/u],
+    ["CREATE TABLE k_kfix_tile (id INT) INDEX DIRECTORY = '/tmp'", /DATA \/ INDEX DIRECTORY/u],
+    ["ALTER TABLE k_kfix_tile ADD COLUMN x INT, DATA DIRECTORY = '/tmp'", /DATA \/ INDEX DIRECTORY|ALTER TABLE 只允许/u],
+    ["INSERT INTO k_kfix_world (world_id, name) VALUES (1, LOAD_FILE('/etc/passwd'))", /LOAD_FILE/u],
   ];
   for (const [s, re] of deny) { assert.throws(() => lintKitStatement(s, "kfix", DECLARED), re, s); }
 });
@@ -164,12 +207,16 @@ test("lintKitStatement：表名必须已声明、带 k_<id>_ 前缀、不带库�
 
 interface Call { sql: string; params: unknown[] | undefined }
 
+/** 账本一行（sha + 语句粒度进度）；`count === applied` 即已应用。 */
+interface Ledger { sha256: string; count: number; applied: number }
+const done = (sha256: string, count = 3): Ledger => ({ sha256, count, applied: count });
+
 interface FakeConnOptions {
   /** 租约行；undefined = 无预置行。 */
   lease?: { holder: string; free: boolean };
-  /** 账本：`${kitId}\n${file}` → sha256。 */
-  ledger?: Map<string, string>;
-  /** 执行到第 N 条（1 起）kit 语句时抛。 */
+  /** 账本：`${kitId}\n${file}` → 行。 */
+  ledger?: Map<string, Ledger>;
+  /** 执行到第 N 条（1 起）kit 语句时抛（只抛一次：续跑时不再抛）。 */
   failStatementAt?: number;
   /** INFORMATION_SCHEMA 剧本；缺省按 KFIX 目标形态作答。 */
   schema?: SchemaAnswers;
@@ -194,13 +241,14 @@ const GOOD_SCHEMA: SchemaAnswers = {
   ],
 };
 
-function fakeConn(options: FakeConnOptions): SqlConn & { calls: Call[]; executed: string[]; ledger: Map<string, string> } {
+function fakeConn(options: FakeConnOptions): SqlConn & { calls: Call[]; executed: string[]; ledger: Map<string, Ledger> } {
   const calls: Call[] = [];
   const executed: string[] = [];
-  const ledger = options.ledger ?? new Map<string, string>();
+  const ledger = options.ledger ?? new Map<string, Ledger>();
   const schema = options.schema ?? GOOD_SCHEMA;
   let lease = options.lease;
   let kitStatementCount = 0;
+  let failArmed = options.failStatementAt !== undefined;
   const query = async (sql: string, params?: readonly unknown[]): Promise<[unknown, unknown]> => {
     const p = params ? [...params] : undefined;
     calls.push({ sql, params: p });
@@ -213,17 +261,24 @@ function fakeConn(options: FakeConnOptions): SqlConn & { calls: Call[]; executed
       lease = { holder: String(p?.[0]), free: false };
       return [{ affectedRows: 1 }, []];
     }
-    if (head.startsWith("UPDATE singleton_lease SET expires_at = NOW(3)")) {
+    if (head.startsWith("UPDATE singleton_lease SET expires_at = NOW(3) - INTERVAL 1 SECOND")) {
       const ok = lease !== undefined && lease.holder === String(p?.[1]);
       if (ok && lease) { lease = { ...lease, free: true }; }
       return [{ affectedRows: ok ? 1 : 0 }, []];
     }
-    if (head.startsWith("SELECT sha256 FROM kit_migration")) {
-      const sha = ledger.get(`${String(p?.[0])}\n${String(p?.[1])}`);
-      return [sha === undefined ? [] : [{ sha256: sha }], []];
+    if (head.startsWith("SELECT sha256, statement_count, applied_statements FROM kit_migration")) {
+      const row = ledger.get(`${String(p?.[0])}\n${String(p?.[1])}`);
+      return [row === undefined ? [] : [{ sha256: row.sha256, statement_count: row.count, applied_statements: row.applied }], []];
     }
-    if (head.startsWith("INSERT INTO kit_migration")) {
-      ledger.set(`${String(p?.[0])}\n${String(p?.[1])}`, String(p?.[2]));
+    if (head.startsWith("INSERT INTO kit_migration (kit_id, file, sha256, statement_count, applied_statements)")) {
+      ledger.set(`${String(p?.[0])}\n${String(p?.[1])}`, { sha256: String(p?.[2]), count: Number(p?.[3]), applied: 0 });
+      return [{ affectedRows: 1 }, []];
+    }
+    if (head.startsWith("UPDATE kit_migration SET applied_statements = ?, applied_at = NOW(3)")) {
+      const key = `${String(p?.[1])}\n${String(p?.[2])}`;
+      const row = ledger.get(key);
+      if (!row) { throw new Error(`fake: 进度更新前账本无行 ${key}`); }
+      ledger.set(key, { ...row, applied: Number(p?.[0]) });
       return [{ affectedRows: 1 }, []];
     }
     if (head.startsWith("SELECT DISTINCT kit_id FROM kit_migration")) {
@@ -241,7 +296,8 @@ function fakeConn(options: FakeConnOptions): SqlConn & { calls: Call[]; executed
     }
     // 其余 = kit 迁移语句
     kitStatementCount += 1;
-    if (options.failStatementAt === kitStatementCount) {
+    if (failArmed && options.failStatementAt === kitStatementCount) {
+      failArmed = false;
       throw new Error("ER_FAKE: Table 'k_kfix_tile' already exists");
     }
     executed.push(sql);
@@ -265,12 +321,21 @@ test("applyKitMigrations：首次应用写账本；同 sha 再跑零 DDL；租�
   });
   assert.deepEqual(first, { applied: [{ kitId: "kfix", file: "sql/001-init.sql" }], skipped: 0, orphanLedgerKits: [] });
   assert.equal(conn.executed.length, 3, "三条语句各自一次 query");
-  assert.equal(conn.ledger.get("kfix\nsql/001-init.sql"), sha256Hex(INIT_SQL));
+  assert.deepEqual(conn.ledger.get("kfix\nsql/001-init.sql"), { sha256: sha256Hex(INIT_SQL), count: 3, applied: 3 });
+  // 账本先入账（0/3）再执行，每条成功即推进：INSERT 账本 → 语句1 → 进度1 → 语句2 → 进度2 → 语句3 → 进度3
+  const kitOps = conn.calls
+    .map((c) => (c.sql.startsWith("INSERT INTO kit_migration") ? "ledger:insert"
+      : c.sql.startsWith("UPDATE kit_migration") ? "ledger:step"
+        : conn.executed.includes(c.sql) ? "exec" : ""))
+    .filter((op) => op !== "");
+  assert.deepEqual(kitOps, ["ledger:insert", "exec", "ledger:step", "exec", "ledger:step", "exec", "ledger:step"]);
   // 调用顺序：SELECT lease → UPDATE 取租约 → … → 释放租约在最后
   assert.match(conn.calls[0].sql, /SELECT holder, expires_at FROM singleton_lease/u);
   assert.match(conn.calls[1].sql, /UPDATE singleton_lease/u);
   assert.deepEqual(conn.calls[1].params, ["h1", 60, "db_bootstrap"]);
+  assert.match(conn.calls[1].sql, /WHERE lease_name = \? AND expires_at < NOW\(3\)/u, "抢占谓词是严格小于");
   const last = conn.calls[conn.calls.length - 1];
+  // 释放必须退到严格过去：`= NOW(3)` 会让同一毫秒内的下一次 bootstrap 被自己上一轮的租约挡住
   assert.match(last.sql, /SET expires_at = NOW\(3\) - INTERVAL 1 SECOND WHERE lease_name = \? AND holder = \?/u);
   assert.deepEqual(last.params, ["db_bootstrap", "h1"]);
   assert.ok(logs.some((l) => l.includes("已应用 sql/001-init.sql")));
@@ -286,7 +351,7 @@ test("applyKitMigrations：首次应用写账本；同 sha 再跑零 DDL；租�
 test("applyKitMigrations：已应用文件 sha 变化 ⇒ fail-closed，点名 kit/file/两个 hash，且不执行任何语句", async () => {
   const conn = fakeConn({
     lease: { holder: "", free: true },
-    ledger: new Map([["kfix\nsql/001-init.sql", sha256Hex(INIT_SQL)]]),
+    ledger: new Map([["kfix\nsql/001-init.sql", done(sha256Hex(INIT_SQL))]]),
   });
   const changed = `${INIT_SQL}\n-- touched`;
   await assert.rejects(
@@ -296,7 +361,27 @@ test("applyKitMigrations：已应用文件 sha 变化 ⇒ fail-closed，点名 k
       && e.message.includes(sha256Hex(INIT_SQL)) && e.message.includes(sha256Hex(changed)),
   );
   assert.equal(conn.executed.length, 0);
-  assert.match(conn.calls[conn.calls.length - 1].sql, /SET expires_at = NOW\(3\)/u, "失败也释放租约");
+  assert.match(conn.calls[conn.calls.length - 1].sql, /SET expires_at = NOW\(3\) - INTERVAL 1 SECOND/u, "失败也释放租约");
+
+  // 半应用（1/3）的文件被改动：同样 fail-closed，且点名进度（已执行的语句无法撤回）
+  const partial = fakeConn({
+    lease: { holder: "", free: true },
+    ledger: new Map([["kfix\nsql/001-init.sql", { sha256: sha256Hex(INIT_SQL), count: 3, applied: 1 }]]),
+  });
+  await assert.rejects(
+    applyKitMigrations({ conn: partial, dbName: "game_t", catalog: [KFIX], holder: "h", readSqlFile: readFixture({ "kfix/sql/001-init.sql": changed }) }),
+    /⛔ 已应用的迁移文件被改动：kit "kfix" sql\/001-init\.sql.*上次只跑到 1\/3 条/u,
+  );
+  assert.equal(partial.executed.length, 0);
+});
+
+test("applyKitMigrations：目录里两个 kit 只差大小写 ⇒ 取租约前就拒（表前缀撞车）", async () => {
+  const conn = fakeConn({ lease: { holder: "", free: true } });
+  await assert.rejects(
+    applyKitMigrations({ conn, dbName: "g", catalog: [KFIX, { ...KFIX, id: "kFix" }], holder: "h", readSqlFile: readFixture({}) }),
+    /"kfix" 与 "kFix" 只差大小写/u,
+  );
+  assert.equal(conn.calls.length, 0);
 });
 
 test("applyKitMigrations：租约被持有 / 缺预置行 ⇒ 拒绝", async () => {
@@ -326,15 +411,47 @@ DROP TABLE user_currency;`;
   assert.equal(conn.ledger.size, 0);
 });
 
-test("applyKitMigrations：语句执行错误归因到 kit/file/序号与语句前 120 字，且不入账本", async () => {
+test("applyKitMigrations：语句执行错误归因到 kit/file/序号与语句前 120 字；账本记下进度，重跑从失败那条续跑", async () => {
   const conn = fakeConn({ lease: { holder: "", free: true }, failStatementAt: 2 });
+  const files = readFixture({ "kfix/sql/001-init.sql": INIT_SQL });
   await assert.rejects(
-    applyKitMigrations({ conn, dbName: "g", catalog: [KFIX], holder: "h", readSqlFile: readFixture({ "kfix/sql/001-init.sql": INIT_SQL }) }),
+    applyKitMigrations({ conn, dbName: "g", catalog: [KFIX], holder: "h", readSqlFile: files }),
     (e: Error) => /kit "kfix" sql\/001-init\.sql 第 2\/3 条语句执行失败：.*already exists/u.test(e.message)
+      && e.message.includes("账本已记进度 1/3")
       && e.message.includes("语句：CREATE TABLE IF NOT EXISTS k_kfix_world"),
   );
   assert.equal(conn.executed.length, 1, "第一条已执行，第二条失败即停");
-  assert.equal(conn.ledger.size, 0, "半个文件不入账");
+  assert.deepEqual(conn.ledger.get("kfix\nsql/001-init.sql"), { sha256: sha256Hex(INIT_SQL), count: 3, applied: 1 }, "半个文件：账本记 1/3");
+  assert.match(conn.calls[conn.calls.length - 1].sql, /SET expires_at = NOW\(3\) - INTERVAL 1 SECOND/u, "失败也释放租约");
+
+  // 重跑：⛔ 不重跑第 1 条（那张 CREATE TABLE 已存在），从第 2 条续跑到完
+  const logs: string[] = [];
+  const resumed = await applyKitMigrations({ conn, dbName: "g", catalog: [KFIX], holder: "h", readSqlFile: files, log: (l) => logs.push(l) });
+  assert.deepEqual(resumed, { applied: [{ kitId: "kfix", file: "sql/001-init.sql" }], skipped: 0, orphanLedgerKits: [] });
+  assert.equal(conn.executed.length, 3);
+  assert.match(conn.executed[1], /^CREATE TABLE IF NOT EXISTS k_kfix_world/u);
+  assert.match(conn.executed[2], /^INSERT INTO k_kfix_world/u);
+  assert.equal(conn.executed.filter((s) => s.startsWith("CREATE TABLE IF NOT EXISTS k_kfix_tile")).length, 1, "第 1 条只跑过一次");
+  assert.deepEqual(conn.ledger.get("kfix\nsql/001-init.sql"), { sha256: sha256Hex(INIT_SQL), count: 3, applied: 3 });
+  assert.ok(logs.some((l) => l.includes("上次跑到 1/3 条，续跑")));
+  assert.ok(logs.some((l) => l.includes("已应用 sql/001-init.sql（2 条语句）")));
+
+  // 再跑：已完成 ⇒ 跳过
+  const again = await applyKitMigrations({ conn, dbName: "g", catalog: [KFIX], holder: "h", readSqlFile: files });
+  assert.deepEqual(again, { applied: [], skipped: 1, orphanLedgerKits: [] });
+  assert.equal(conn.executed.length, 3);
+});
+
+test("applyKitMigrations：账本语句数与当前切分不一致（同 sha）⇒ 拒绝续跑", async () => {
+  const conn = fakeConn({
+    lease: { holder: "", free: true },
+    ledger: new Map([["kfix\nsql/001-init.sql", { sha256: sha256Hex(INIT_SQL), count: 4, applied: 1 }]]),
+  });
+  await assert.rejects(
+    applyKitMigrations({ conn, dbName: "g", catalog: [KFIX], holder: "h", readSqlFile: readFixture({ "kfix/sql/001-init.sql": INIT_SQL }) }),
+    /账本记的语句数（4）与当前切分结果（3）不一致/u,
+  );
+  assert.equal(conn.executed.length, 0);
 });
 
 test("applyKitMigrations：kit 按 id 排序、文件按 sqlFiles 顺序；非法文件名拒绝", async () => {
@@ -371,7 +488,7 @@ test("applyKitMigrations：kit 按 id 排序、文件按 sqlFiles 顺序；非�
 test("applyKitMigrations：账本有而目录无的 kit 只告警并回报 orphanLedgerKits", async () => {
   const conn = fakeConn({
     lease: { holder: "", free: true },
-    ledger: new Map([["gone\nsql/001-init.sql", "0".repeat(64)], ["kfix\nsql/001-init.sql", sha256Hex(INIT_SQL)]]),
+    ledger: new Map([["gone\nsql/001-init.sql", done("0".repeat(64), 1)], ["kfix\nsql/001-init.sql", done(sha256Hex(INIT_SQL))]]),
   });
   const logs: string[] = [];
   const report = await applyKitMigrations({

@@ -48,6 +48,9 @@ const SCHEMA_DIR_RELATIVE = "apps/shared/schema/gameplays";
 /** 插件根（PLUGIN.md §5.5 阶段 1）：`apps/plugins/<id>/gameplay/{manifest.json,state.json}` 与 schema 目录同等发现。 */
 export const PLUGINS_DIR_RELATIVE = "apps/plugins";
 const PLUGIN_GAMEPLAY_SUBDIR = "gameplay";
+/** kit 根（docs/KIT.md §7）：`apps/kits/<kitId>/gameplays/<modeId>/{manifest.json,state.json}` 是第三发现根（id = modeId）。 */
+export const KITS_DIR_RELATIVE = "apps/kits";
+const KIT_GAMEPLAYS_SUBDIR = "gameplays";
 const SHARED_GAMEPLAYS_DIR_RELATIVE = "apps/shared/src/gameplays";
 const SHARED_STATE_DIR_RELATIVE = "apps/shared/src/gameplays/generated/state";
 const SHARED_GENERATED_DIR_RELATIVE = "apps/shared/src/gameplays/generated";
@@ -187,9 +190,34 @@ interface GameplaySource {
   readonly id: string;
   readonly entryPath: string;
   readonly entryLabel: string;
+  /** 非 null = 来自 `apps/kits/<kitId>/gameplays/<modeId>/`（docs/KIT.md §2：modeId ⛔ 不得与任何包 id 大小写归一相等）。 */
+  readonly kitId: string | null;
 }
 
-/** 两个发现根：schema 目录（每个子目录都必须是玩法）与插件目录（有 gameplay/ 子目录的插件才算）。 */
+function sortedDirents(dir: string): readonly fs.Dirent[] {
+  return fs.readdirSync(dir, { withFileTypes: true })
+    .slice()
+    .sort((left, right) => (left.name < right.name ? -1 : left.name > right.name ? 1 : 0));
+}
+
+/** 包 id 集 = apps/plugins ∪ apps/kits 的目录名（大小写归一）→ 原名；kit mode id 与之撞名即拒绝。 */
+function packageDirNames(root: string): ReadonlyMap<string, string> {
+  const out = new Map<string, string>();
+  for (const relative of [PLUGINS_DIR_RELATIVE, KITS_DIR_RELATIVE]) {
+    const dir = path.join(root, relative);
+    if (!fs.existsSync(dir)) continue;
+    if (!fs.statSync(dir).isDirectory()) fail(relative, "must be a directory");
+    for (const entry of sortedDirents(dir)) {
+      if (entry.isDirectory() && !out.has(entry.name.toLowerCase())) out.set(entry.name.toLowerCase(), `${relative}/${entry.name}`);
+    }
+  }
+  return out;
+}
+
+/**
+ * 三个发现根：schema 目录（每个子目录都必须是玩法）、插件目录（有 gameplay/ 子目录的插件才算）与
+ * kit 目录（`apps/kits/<kitId>/gameplays/` 下每个子目录都是一个 mode；根可缺席）。
+ */
 function discoverGameplaySources(root: string): readonly GameplaySource[] {
   const schemaDir = path.join(root, SCHEMA_DIR_RELATIVE);
   if (!fs.existsSync(schemaDir)) {
@@ -209,21 +237,41 @@ function discoverGameplaySources(root: string): readonly GameplaySource[] {
     if (resolvedEntry !== path.join(schemaDir, entry.name) || !resolvedEntry.startsWith(schemaDir + path.sep)) {
       fail(entryLabel, "path escapes the gameplay schema root");
     }
-    sources.push({ id: entry.name, entryPath, entryLabel });
+    sources.push({ id: entry.name, entryPath, entryLabel, kitId: null });
   }
   const pluginsDir = path.join(root, PLUGINS_DIR_RELATIVE);
   if (fs.existsSync(pluginsDir)) {
-    const pluginEntries = fs.readdirSync(pluginsDir, { withFileTypes: true })
-      .slice()
-      .sort((left, right) => (left.name < right.name ? -1 : left.name > right.name ? 1 : 0));
-    for (const entry of pluginEntries) {
+    for (const entry of sortedDirents(pluginsDir)) {
       if (!entry.isDirectory()) continue;
       const entryPath = path.join(pluginsDir, entry.name, PLUGIN_GAMEPLAY_SUBDIR);
       if (!fs.existsSync(entryPath)) continue;
       const entryLabel = `${PLUGINS_DIR_RELATIVE}/${entry.name}/${PLUGIN_GAMEPLAY_SUBDIR}`;
       if (fs.lstatSync(path.join(pluginsDir, entry.name)).isSymbolicLink() || fs.lstatSync(entryPath).isSymbolicLink()) fail(entryLabel, "symlink escape is not allowed");
       if (!fs.statSync(entryPath).isDirectory()) fail(entryLabel, "gameplay must be a directory");
-      sources.push({ id: entry.name, entryPath, entryLabel });
+      sources.push({ id: entry.name, entryPath, entryLabel, kitId: null });
+    }
+  }
+  const kitsDir = path.join(root, KITS_DIR_RELATIVE);
+  if (fs.existsSync(kitsDir)) {
+    if (!fs.statSync(kitsDir).isDirectory()) fail(KITS_DIR_RELATIVE, "must be a directory");
+    for (const kit of sortedDirents(kitsDir)) {
+      if (!kit.isDirectory()) continue;
+      const kitPath = path.join(kitsDir, kit.name);
+      // 有根则每个子目录都是 kit（docs/KIT.md §3/§7）：没有 kit.json 的目录不得只凭 gameplays/ 就把 mode 生成进三端——
+      // 否则 codegen:gameplays 单独跑时「kit.json.modes ≡ gameplays/」的契约 fail-open（那条闸在 codegen:plugins 侧）。
+      if (!fs.existsSync(path.join(kitPath, "kit.json"))) fail(`${KITS_DIR_RELATIVE}/${kit.name}`, "kit directory without kit.json");
+      const gameplaysPath = path.join(kitPath, KIT_GAMEPLAYS_SUBDIR);
+      if (!fs.existsSync(gameplaysPath)) continue;
+      const gameplaysLabel = `${KITS_DIR_RELATIVE}/${kit.name}/${KIT_GAMEPLAYS_SUBDIR}`;
+      if (fs.lstatSync(kitPath).isSymbolicLink() || fs.lstatSync(gameplaysPath).isSymbolicLink()) fail(gameplaysLabel, "symlink escape is not allowed");
+      if (!fs.statSync(gameplaysPath).isDirectory()) fail(gameplaysLabel, "gameplays must be a directory");
+      for (const mode of sortedDirents(gameplaysPath)) {
+        const entryLabel = `${gameplaysLabel}/${mode.name}`;
+        const entryPath = path.join(gameplaysPath, mode.name);
+        if (fs.lstatSync(entryPath).isSymbolicLink()) fail(entryLabel, "symlink escape is not allowed");
+        if (!mode.isDirectory()) fail(entryLabel, "only per-gameplay directories are allowed here");
+        sources.push({ id: mode.name, entryPath, entryLabel, kitId: kit.name });
+      }
     }
   }
   return sources;
@@ -233,6 +281,7 @@ export function readGameplayDescriptors(options: GameplayCodegenOptions = {}): r
   const root = resolvedRoot(options);
   const gameplays: GameplayDescriptor[] = [];
   const normalizedIds = new Map<string, string>();
+  const packageIds = packageDirNames(root);
   for (const source of discoverGameplaySources(root)) {
     const { entryPath, entryLabel } = source;
     const entry = { name: source.id };
@@ -243,6 +292,15 @@ export function readGameplayDescriptors(options: GameplayCodegenOptions = {}): r
       fail(entryLabel, `gameplay id collides with "${clash}" under case normalization`);
     }
     normalizedIds.set(normalized, entry.name);
+    // docs/KIT.md §2：kit 自带的 modeId 是全仓玩法 id 空间的成员，⛔ 不得与任何包 id（apps/plugins ∪ apps/kits 目录名）
+    // 大小写归一相等——包 id 与玩法 id 撞名会让所有权推导（`<id>-*.test.ts` 等）与锁抬头两义。
+    // ⚠ 只对 kit 根生效：插件玩法（apps/plugins/<id>/gameplay/）与宿主玩法（snake）按既有约定 id 就等于包 id。
+    if (source.kitId !== null) {
+      const packageClash = packageIds.get(normalized);
+      if (packageClash !== undefined) {
+        fail(entryLabel, `kit "${source.kitId}" 的 mode id "${entry.name}" 与包 id 大小写归一相等（${packageClash}）——modeId ⛔ 不得与任何 plugin / kit id 撞名`);
+      }
+    }
 
     const children = fs.readdirSync(entryPath).sort();
     const unexpected = children.filter((name) => name !== "manifest.json" && name !== "state.json");

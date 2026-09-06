@@ -135,14 +135,35 @@ export type PurchaseResult = IPurchaseResult;
 export async function insertOutboxIntent(
   conn: PoolConnection,
   row: { opId: string; uid: string; sId: number; effect: IEffect; onDuplicate?: "error" | "ignore" },
+  kinds: KitEffectKinds = KIT_EFFECT_KINDS,
 ): Promise<"INSERTED" | "DUP"> {
-  const canonical = canonicalEffect(row.effect);
+  const canonical = canonicalEffect(row.effect, kinds);
   const odku = row.onDuplicate === "ignore" ? "\n       ON DUPLICATE KEY UPDATE op_id = op_id" : "";
   const [r] = await conn.execute<ResultSetHeader>(
     `INSERT INTO gameplay_outbox (op_id, user_id, server_id, effect, status)
        VALUES (?,?,?,CAST(? AS JSON),?)${odku}`,
     [row.opId, row.uid, row.sId, JSON.stringify(canonical), OUTBOX_PENDING]);
   return r.affectedRows === 0 ? "DUP" : "INSERTED";
+}
+
+/**
+ * 幂等命中后的载荷比对（purchaseTx 的 ledger DUP 分支与 kit-api enqueueEffect 的 ODKU "DUP" 共用）：
+ * 同 (opId, uid, sId) 的既有 durable intent 必须与本次规范化载荷逐字节相同才算真重试；行不存在（op_id
+ * 撞到别的 uid / 区，或 ledger 有行而 intent 没有）或载荷不同 ⇒ EffectConflictError（确定性冲突，
+ * ⛔ 不把变了的请求静默当已发货）。事务内 FOR UPDATE 回读。
+ */
+export async function assertOutboxIntentMatches(
+  conn: PoolConnection,
+  row: { opId: string; uid: string; sId: number; effect: IEffect },
+  kinds: KitEffectKinds = KIT_EFFECT_KINDS,
+): Promise<void> {
+  const canonical = canonicalEffect(row.effect, kinds);
+  const [rows] = await conn.query<RowDataPacket[]>(
+    "SELECT effect FROM gameplay_outbox WHERE op_id = ? AND user_id = ? AND server_id = ? FOR UPDATE",
+    [row.opId, row.uid, row.sId]);
+  if (rows.length === 0) { throw new EffectConflictError(); }
+  const existing = canonicalEffect(rows[0].effect, kinds);
+  if (JSON.stringify(existing) !== JSON.stringify(canonical)) { throw new EffectConflictError(); }
 }
 
 /**
@@ -162,12 +183,7 @@ export async function purchaseTx(
       // A unique ledger hit is only a true retry when the existing durable intent has
       // the same canonical payload. Otherwise surface a deterministic conflict rather
       // than silently treating a changed request as delivered.
-      const [rows] = await conn.query<RowDataPacket[]>(
-        "SELECT effect FROM gameplay_outbox WHERE op_id = ? AND user_id = ? AND server_id = ? FOR UPDATE",
-        [opId, uid, sId]);
-      if (rows.length === 0) { throw new EffectConflictError(); }
-      const existing = canonicalEffect(rows[0].effect);
-      if (JSON.stringify(existing) !== JSON.stringify(canonical)) { throw new EffectConflictError(); }
+      await assertOutboxIntentMatches(conn, { opId, uid, sId, effect: canonical });
       return "DUP" as const;
     }
     await insertOutboxIntent(conn, { opId, uid, sId, effect: canonical });
