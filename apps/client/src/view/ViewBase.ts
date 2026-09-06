@@ -9,7 +9,32 @@
  *
  * 分工：本文件只管「世代与 hook」，⛔ 不 import cc / fairygui；
  * 「挂载/摘下/置顶/销毁根」由各渲染栈子类实现（FguiView = GComponent，CocosView = Node）。
+ *
+ * ⚠ 顺带在这里登记「当前打开的页面」到 core/errorContext：出错弹框要报「在哪个页面出的事」，
+ * 而这里是两套渲染栈**唯一**的公共开关点。⛔ 不为此再往 ViewMgr（受保护）里加钩子。
  */
+import { setErrorContext } from "../core/errorContext";
+
+/** 当前处于打开世代的页面名（按打开先后）；只作诊断用，⛔ 不参与任何业务判定。 */
+const openViews: string[] = [];
+
+function publishOpenViews(): void {
+  setErrorContext("view.open", openViews.length > 0 ? openViews.join(" > ") : null);
+}
+
+function markOpened(view: object): void {
+  const name = view.constructor.name || "View";
+  const at = openViews.indexOf(name);
+  if (at >= 0) openViews.splice(at, 1);
+  openViews.push(name);
+  publishOpenViews();
+}
+
+function markClosed(view: object): void {
+  const at = openViews.indexOf(view.constructor.name || "View");
+  if (at >= 0) openViews.splice(at, 1);
+  publishOpenViews();
+}
 
 /**
  * 一次页面打开的生命周期上下文。
@@ -69,6 +94,7 @@ export abstract class ViewBase {
     };
     state = { generation, controller, context, active: true, closePromise: null };
     this.lifecycle = state;
+    markOpened(this);
     return context;
   }
 
@@ -144,6 +170,7 @@ export abstract class ViewBase {
     closePromise.catch((e) => console.error("[View] onClose 回调异常", e));
 
     state.active = false;
+    markClosed(this);
     let abortError: unknown = null;
     try { state.controller.abort(); } catch (e) {
       // AbortController implementations normally report listener failures

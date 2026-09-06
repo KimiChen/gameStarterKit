@@ -27,6 +27,7 @@ import {
     type SnakePersonalResultModel,
     type SnakeReliveViewModel,
 } from "./SnakeHud";
+import { setErrorContext } from "../../../core/errorContext";
 import { SnakeSnapshotBuffer, type SnakeRenderFrame } from "./SnakeSnapshotBuffer";
 
 export const SNAKE_GAMEPLAY_ID = "snake";
@@ -281,6 +282,7 @@ export class SnakeGameplay implements GameplayPlugin<SnakeRoomLike, SnakeInput> 
                 if (state?.roomEpochId) context.room.requestBaseline(state.roomEpochId, this.buffer.latestSnapshot?.seq ?? 0);
             }
         }
+        this.publishErrorContext(context);
         const frame = this.buffer.sample(this.buffer.latestTick - RENDER_LAG_TICKS);
         if (frame) {
             this.presentation?.render(
@@ -297,6 +299,18 @@ export class SnakeGameplay implements GameplayPlugin<SnakeRoomLike, SnakeInput> 
             }
             this.pumpEndRunWatchdog(dt, context);
         }
+    }
+
+    /**
+     * 把「哪一局、第几 tick、什么状态」登记进 core/errorContext，出错弹框会一并显示与复制。
+     * ⚠ 纯诊断：⛔ 不参与任何判定，取不到就不登记；玩法退出时由 teardown 撤下。
+     */
+    private publishErrorContext(context: GameplayContext<SnakeRoomLike>): void {
+        const player = context.room.state()?.players.get(context.room.sessionId);
+        setErrorContext("gameplay.mode", SNAKE_GAMEPLAY_ID);
+        setErrorContext("gameplay.runId", player?.runId ?? null);
+        setErrorContext("gameplay.runState", player?.runState ?? null);
+        setErrorContext("gameplay.tick", this.buffer.latestTick);
     }
 
     /** 发结束请求并起看门狗（`attempts` 是本次是第几次尝试）。 */
@@ -416,6 +430,9 @@ export class SnakeGameplay implements GameplayPlugin<SnakeRoomLike, SnakeInput> 
     private teardown(): void {
         if (this.tornDown) return;
         this.tornDown = true;
+        for (const key of ["gameplay.mode", "gameplay.runId", "gameplay.runState", "gameplay.tick"]) {
+            setErrorContext(key, null);
+        }
         this.started = false;
         this.endRunPending = null;
         this.endRunConfirmation = false;

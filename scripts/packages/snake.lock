@@ -1,7 +1,7 @@
-# scripts/packages/snake.lock —— 已安装插件 snake@1.1.2 的登记与文件清单锁。Do not edit by hand.
+# scripts/packages/snake.lock —— 已安装插件 snake@1.1.3 的登记与文件清单锁。Do not edit by hand.
 # writer: npm --workspace @game/server run plugin -- install ；checker: apps/server/test/plugin-lock.test.ts（随 verify:all）与 plugin -- check
-# manifest {"id":"snake","version":"1.1.2","kinds":["client","gameplay"],"constantName":"Snake","domains":["snakeCosmetic"],"fguiPackages":[]}
-# source {"kind":"tree","filesLockSha256":"9cf8f1b15f2cc647e320ce2c3a5a5dffd7b57470212873c915a75c4563c2256a","forkedFrom":{"kind":"package","filesLockSha256":"ee8abb67f3736bbe97566edabf6497d72c9b2609a6a45be0cd954fb5323eeddb"}}
+# manifest {"id":"snake","version":"1.1.3","kinds":["client","gameplay"],"constantName":"Snake","domains":["snakeCosmetic"],"fguiPackages":[]}
+# source {"kind":"tree","filesLockSha256":"9b97a2c41b70650c8258c711e880f8624fa639367ee416b3c70c33e9b5d69d25","forkedFrom":{"kind":"package","filesLockSha256":"ee8abb67f3736bbe97566edabf6497d72c9b2609a6a45be0cd954fb5323eeddb"}}
 apps/Cocos/assets/resources/snake.meta 85e68ed472c0da45ebea35950a476a5cb976516eccd675d2b181ce83f3dbf63d
 apps/Cocos/assets/resources/snake/previews.meta fd3ada6b751ad55808b6099d569bb617669c68b1a6bb8928f44fa6c245d355a2
 apps/Cocos/assets/resources/snake/previews/snake_skin_101_preview.png 4feb052ee2474e59e5da9e038eed03801ff47ff4d017a90b2ec0491aba3ba3c0
@@ -136,7 +136,7 @@ apps/Cocos/assets/src/gameplay/modes/snake/index.ts.meta 706270f86337407c87a1ea8
 apps/Cocos/assets/src/logic/rooms/snake.meta 63287020c081f9db8e472ba45e027d299b6fe1996f1bad844fb569a62f91a98c
 apps/Cocos/assets/src/logic/rooms/snake/SnakeControls.ts cde041f80024227138eb2963897cc884289a55791ca1c20208d5d49767c18795
 apps/Cocos/assets/src/logic/rooms/snake/SnakeControls.ts.meta 5387be668774df0a218cd4834dd0d532c15d222be5584b594b77c5dea78039ff
-apps/Cocos/assets/src/logic/rooms/snake/SnakeGameplay.ts b318f396503693291f2fdc1d93d81e453277c2fb5e599c070be8dac0eaee374e
+apps/Cocos/assets/src/logic/rooms/snake/SnakeGameplay.ts 0bfc40d28c5cb79433cd0aad2670e97ef89cb39440408134bf34c0abb6efbca4
 apps/Cocos/assets/src/logic/rooms/snake/SnakeGameplay.ts.meta ead364986d58c9522a11abd08c312b0ccb73dc10fd8c5c94965cfbaf40d5d9db
 apps/Cocos/assets/src/logic/rooms/snake/SnakeHud.ts 98b9b7fcc4533a148c00a1cf2a22038b5cead42302db1e14d26149f569909cc6
 apps/Cocos/assets/src/logic/rooms/snake/SnakeHud.ts.meta 8404c942c783901173103ca0f39ef7f68ae5dd803fc1aae43a31670ff0ff7be3
@@ -176,7 +176,7 @@ apps/Cocos/assets/src/view/rooms/snake/snakeQuadMesh.ts 9bc4e15650da2654d246850b
 apps/Cocos/assets/src/view/rooms/snake/snakeQuadMesh.ts.meta a8da74de39fa306232f1da2157d1f5958af07d3fb9a55ff03357784ff9ea463c
 apps/client/src/gameplay/modes/snake/index.ts 739092ca4e91fbc8c57343d5d06d5c9fec272c6c4dbbf6b611b1b084b8fbe17d
 apps/client/src/logic/rooms/snake/SnakeControls.ts cde041f80024227138eb2963897cc884289a55791ca1c20208d5d49767c18795
-apps/client/src/logic/rooms/snake/SnakeGameplay.ts b318f396503693291f2fdc1d93d81e453277c2fb5e599c070be8dac0eaee374e
+apps/client/src/logic/rooms/snake/SnakeGameplay.ts 0bfc40d28c5cb79433cd0aad2670e97ef89cb39440408134bf34c0abb6efbca4
 apps/client/src/logic/rooms/snake/SnakeHud.ts 98b9b7fcc4533a148c00a1cf2a22038b5cead42302db1e14d26149f569909cc6
 apps/client/src/logic/rooms/snake/SnakePresentationCatalog.ts c8b413c8a12ba84a040638c5c4a7a589f255cffed5ee6a67ed233c3ee6fdf685
 apps/client/src/logic/rooms/snake/SnakePresentationCatalogData.ts b9ac275ffe0985cb904618f08ac2150440d23ef618b59197c6d81eb601ff4ceb
@@ -200,7 +200,7 @@ apps/client/test/snake-wardrobe-logic.test.ts cb49b54fcefa2eb8724be8cb739da61be0
 apps/plugins/snake/README.md c760a3e3fd7f47d6b548690acce2eaae10ad6cdfe392ca53e9e58078cdf5ba6d
 apps/plugins/snake/gameplay/manifest.json 311e776e01d511c93611c38705cb4e150123db099b561b0a8047cf577463653d
 apps/plugins/snake/gameplay/state.json f8637eb1265c04f2f21ca3836505edbeb2c7e3e765385227de2e7619a7cf57bc
-apps/plugins/snake/plugin.json db0d440ce7c12363938df917a666b88c0aa1bc54cda4d2f950c7c747ac652be6
+apps/plugins/snake/plugin.json 9422ba543479fdcddb32cdf645332b3dc30b75375d1adab27df35178753bb2f0
 apps/server/src/rooms/modes/snake/ai.ts 6c0eb0d0632fdc6e4233206cba61612f556720898f9c1fd162136ea9b8eb497e
 apps/server/src/rooms/modes/snake/cosmeticProfile.ts 2da39ebc80f91e1992ae34132297c2be9851bf6beb248952fda6eda569017cc9
 apps/server/src/rooms/modes/snake/cosmeticRpc.ts 4a25f84fdcfab9294ab6e2c6b43bea402500ccd5bf1b281876f425bab141cb95

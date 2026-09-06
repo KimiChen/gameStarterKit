@@ -10,10 +10,14 @@
  *
  * ⚠ 只在 `DEV` 下装（预览 + debug 构建）：release 构建 ⛔ 不把堆栈甩给玩家。
  *   这道闸在**调用点**（Main.ts）上，本模块因此零 `cc` 依赖、可在 Node 里直接单测。
+ * ⚠ 弹框按**游戏画布**定位与缩放（不是浏览器窗口）：尺寸用设计分辨率（designSpec 的 750 宽）
+ *   写，再按画布实际 CSS 宽度换算，⛔ 不写死 px——否则手机上要么糊成一团要么大得出屏。
  * ⚠ 复制必须在 **http** 下也能用：局域网 IP 不是安全上下文，`navigator.clipboard` 不可用，
  *   所以按「异步剪贴板 → execCommand → 选中让用户长按」三级降级，⛔ 不假设任何一级存在。
  * ⛔ 不 import `cc`（一行都不），⛔ 不碰引擎对象：错误发生时引擎可能已经半死。
  */
+import { DESIGN_WIDTH } from "../designSpec";
+import { snapshotErrorContext } from "./errorContext";
 
 /** 一条去重后的错误记录。 */
 export interface ErrorOverlayEntry {
@@ -28,6 +32,8 @@ export interface ErrorOverlayEnvironment {
     readonly url: string;
     readonly userAgent: string;
     readonly at: string;
+    /** 出错当时的游戏上下文（core/errorContext 的快照）：当前页面、玩法 mode、runId… */
+    readonly context?: readonly (readonly [string, string])[];
 }
 
 /** 最多留几条：错误常常成串刷屏，留最新的即可。 */
@@ -46,6 +52,8 @@ export function formatErrorReport(
         `页面：${environment.url}`,
         `UA：${environment.userAgent}`,
         `错误：${entries.length} 条`,
+        // 上下文放在错误正文**之前**：贴进 issue 时第一眼要能看出「在哪个页面、哪一局」出的事。
+        ...(environment.context ?? []).map(([key, value]) => `${key}：${value}`),
     ];
     const body = entries.map((entry, index) => {
         const times = entry.count > 1 ? `（×${entry.count}）` : "";
@@ -86,8 +94,11 @@ function safeStringify(value: unknown): string {
 
 interface OverlayStyle { [property: string]: string }
 
+interface OverlayRect { readonly left: number; readonly top: number; readonly width: number; readonly height: number }
+
 interface OverlayElement {
     style: OverlayStyle;
+    getBoundingClientRect?(): OverlayRect;
     textContent: string;
     readonly children?: readonly OverlayElement[];
     appendChild(child: OverlayElement): OverlayElement;
@@ -108,6 +119,8 @@ interface OverlayDocument {
 
 interface OverlayWindow {
     addEventListener(type: string, listener: (event: unknown) => void): void;
+    readonly innerWidth?: number;
+    readonly innerHeight?: number;
     readonly navigator?: { readonly userAgent?: string; readonly clipboard?: { writeText(text: string): Promise<void> } };
     readonly location?: { readonly href?: string };
 }
@@ -156,22 +169,18 @@ export function __resetErrorOverlayForTest(): void {
     installed = null;
 }
 
-const PANEL_STYLE: OverlayStyle = {
-    position: "fixed", left: "50%", top: "50%", transform: "translate(-50%, -50%)",
-    width: "min(560px, calc(100vw - 32px))", maxHeight: "min(70vh, 560px)",
-    display: "flex", flexDirection: "column",
-    background: "#171b24", color: "#eef3ff", borderRadius: "12px",
-    border: "1px solid #384154", boxShadow: "0 18px 48px rgba(0,0,0,.55)",
-    font: "13px/1.5 -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif",
-    zIndex: "2147483647",
-};
+/**
+ * 版面尺寸一律写**设计分辨率下的 px**（designSpec 的 750×1624 那套坐标），
+ * 渲染时统一乘以 `画布 CSS 宽度 / DESIGN_WIDTH`。⛔ 不要在这里写 CSS px。
+ */
+const DESIGN = {
+    panelWidth: 690, radius: 24, border: 2,
+    titleFont: 30, bodyFont: 24, buttonFont: 28,
+    padding: 28, gap: 16, buttonHeight: 84, maxPanelHeight: 1180,
+} as const;
 
-const BUTTON_STYLE: OverlayStyle = {
-    flex: "1", padding: "10px 12px", borderRadius: "8px", border: "0",
-    fontSize: "14px", cursor: "pointer", color: "#0d1017", background: "#7fb2ff",
-    // 手机上按钮要够大够好点；⛔ 别缩到 32px 以下。
-    minHeight: "40px",
-};
+/** 画布量不到时（无头/异常早于画布创建）的兜底比例：按设计宽算 1:1，至少不崩。 */
+const FALLBACK_SCALE = 1;
 
 function createOverlay(doc: OverlayDocument, win: OverlayWindow, now: () => Date): ErrorOverlayHandle {
     const entries: ErrorOverlayEntry[] = [];
@@ -181,15 +190,74 @@ function createOverlay(doc: OverlayDocument, win: OverlayWindow, now: () => Date
     let copyButton: OverlayElement | null = null;
     let disposed = false;
 
+    let panel: OverlayElement | null = null;
+    let bar: OverlayElement | null = null;
+    let closeButton: OverlayElement | null = null;
+
     const environment = (): ErrorOverlayEnvironment => ({
         url: win.location?.href ?? "",
         userAgent: win.navigator?.userAgent ?? "",
         at: now().toISOString(),
+        context: snapshotErrorContext(),
     });
 
     const style = (element: OverlayElement, values: OverlayStyle): OverlayElement => {
         for (const key of Object.keys(values)) element.style[key] = values[key];
         return element;
+    };
+
+    /**
+     * 游戏画布在页面里的位置与大小。⚠ 弹框贴的是**画布**不是窗口：预览页里画布只占中间一块
+     * （旁边还有 Creator 的工具条），手机上画布才是整屏。量不到就退回整窗。
+     */
+    const gameRect = (): OverlayRect => {
+        const canvas = doc.querySelector("#GameCanvas") ?? doc.querySelector("canvas");
+        const rect = canvas?.getBoundingClientRect?.();
+        if (rect && rect.width > 0 && rect.height > 0) return rect;
+        return { left: 0, top: 0, width: win.innerWidth ?? DESIGN_WIDTH, height: win.innerHeight ?? 0 };
+    };
+
+    /** 设计分辨率 px → 当前画布下的 CSS px。 */
+    const scaleOf = (rect: OverlayRect): number => (rect.width > 0 ? rect.width / DESIGN_WIDTH : FALLBACK_SCALE);
+    const px = (design: number, scale: number): string => `${Math.round(design * scale * 100) / 100}px`;
+
+    /** 按当前画布重新排版（首次构建、每次出错、窗口/朝向变化时都会调）。 */
+    const layout = (): void => {
+        if (!scrim || !panel || !title || !list || !bar) return;
+        const rect = gameRect();
+        const scale = scaleOf(rect);
+        style(scrim, {
+            left: `${rect.left}px`, top: `${rect.top}px`,
+            width: `${rect.width}px`, height: `${rect.height}px`,
+        });
+        style(panel, {
+            width: px(DESIGN.panelWidth, scale),
+            maxHeight: `min(${px(DESIGN.maxPanelHeight, scale)}, ${Math.round(rect.height * 0.86)}px)`,
+            borderRadius: px(DESIGN.radius, scale),
+            borderWidth: px(DESIGN.border, scale),
+            fontSize: px(DESIGN.bodyFont, scale),
+            boxShadow: `0 ${px(DESIGN.gap, scale)} ${px(DESIGN.padding * 1.6, scale)} rgba(0,0,0,.55)`,
+        });
+        style(title, {
+            padding: `${px(DESIGN.padding, scale)} ${px(DESIGN.padding, scale)}`,
+            fontSize: px(DESIGN.titleFont, scale),
+        });
+        style(list, {
+            padding: `${px(DESIGN.gap, scale)} ${px(DESIGN.padding, scale)}`,
+            fontSize: px(DESIGN.bodyFont, scale),
+        });
+        style(bar, {
+            gap: px(DESIGN.gap, scale),
+            padding: `${px(DESIGN.gap, scale)} ${px(DESIGN.padding, scale)}`,
+        });
+        for (const button of [copyButton, closeButton]) {
+            if (!button) continue;
+            style(button, {
+                minHeight: px(DESIGN.buttonHeight, scale),
+                borderRadius: px(DESIGN.radius * 0.6, scale),
+                fontSize: px(DESIGN.buttonFont, scale),
+            });
+        }
     };
 
     const build = (): void => {
@@ -198,29 +266,38 @@ function createOverlay(doc: OverlayDocument, win: OverlayWindow, now: () => Date
         const creatorBox = doc.querySelector("#error");
         if (creatorBox) creatorBox.style.display = "none";
 
+        // ⚠ 只覆盖画布那块矩形：⛔ 不铺满窗口——预览页里那样会连 Creator 的工具条一起压住。
         scrim = style(doc.createElement("div"), {
-            position: "fixed", inset: "0", background: "rgba(4,6,12,.6)", zIndex: "2147483646",
+            position: "fixed", display: "flex", alignItems: "center", justifyContent: "center",
+            background: "rgba(4,6,12,.6)", zIndex: "2147483646",
         });
-        const panel = style(doc.createElement("div"), PANEL_STYLE);
+        panel = style(doc.createElement("div"), {
+            display: "flex", flexDirection: "column", overflow: "hidden",
+            background: "#171b24", color: "#eef3ff",
+            borderStyle: "solid", borderColor: "#384154",
+            fontFamily: "-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif",
+            zIndex: "2147483647",
+        });
         title = style(doc.createElement("div"), {
-            padding: "14px 16px", fontSize: "15px", fontWeight: "600",
-            borderBottom: "1px solid #2b3243",
+            fontWeight: "600", borderBottom: "1px solid #2b3243", flex: "0 0 auto",
         });
         list = style(doc.createElement("div"), {
-            padding: "12px 16px", overflow: "auto", flex: "1",
-            whiteSpace: "pre-wrap", wordBreak: "break-word",
-            font: "12px/1.55 ui-monospace, Menlo, Consolas, monospace", color: "#c8d3ea",
+            overflow: "auto", flex: "1 1 auto",
+            whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: "1.55",
+            fontFamily: "ui-monospace, Menlo, Consolas, monospace", color: "#c8d3ea",
             // 手机上要能长按选中——这是第三级降级的前提。
             userSelect: "text", webkitUserSelect: "text",
         });
-        const bar = style(doc.createElement("div"), {
-            display: "flex", gap: "8px", padding: "12px 16px", borderTop: "1px solid #2b3243",
+        bar = style(doc.createElement("div"), {
+            display: "flex", borderTop: "1px solid #2b3243", flex: "0 0 auto",
         });
-        copyButton = style(doc.createElement("button"), BUTTON_STYLE);
+        copyButton = style(doc.createElement("button"), {
+            flex: "1", border: "0", cursor: "pointer", color: "#0d1017", background: "#7fb2ff",
+        });
         copyButton.textContent = "复制全部";
         copyButton.addEventListener("click", () => { void copy(); });
-        const closeButton = style(doc.createElement("button"), {
-            ...BUTTON_STYLE, background: "#2b3243", color: "#c8d3ea",
+        closeButton = style(doc.createElement("button"), {
+            flex: "1", border: "0", cursor: "pointer", color: "#c8d3ea", background: "#2b3243",
         });
         closeButton.textContent = "关闭";
         closeButton.addEventListener("click", () => { hide(); });
@@ -231,12 +308,16 @@ function createOverlay(doc: OverlayDocument, win: OverlayWindow, now: () => Date
         panel.appendChild(bar);
         scrim.appendChild(panel);
         doc.body.appendChild(scrim);
+        // 转屏 / 改窗口大小后画布位置会变，弹框跟着重排。
+        win.addEventListener("resize", () => { if (scrim?.style.display !== "none") layout(); });
+        win.addEventListener("orientationchange", () => { if (scrim?.style.display !== "none") layout(); });
     };
 
     const render = (): void => {
         build();
         if (!scrim || !list || !title) return;
         scrim.style.display = "flex";
+        layout();
         const total = entries.reduce((sum, entry) => sum + entry.count, 0);
         title.textContent = entries.length === 1 && total === 1
             ? "出错了（1 条）"
@@ -315,6 +396,9 @@ function createOverlay(doc: OverlayDocument, win: OverlayWindow, now: () => Date
             disposed = true;
             scrim?.remove?.();
             scrim = null;
+            panel = null;
+            bar = null;
+            closeButton = null;
             list = null;
             title = null;
             copyButton = null;
