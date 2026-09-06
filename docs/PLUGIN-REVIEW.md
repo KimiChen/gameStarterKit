@@ -59,7 +59,7 @@ F09（§4 信任模型对立为措辞歧义，§10 已答；`plugin-codegen/cli.
 **分条设计**
 1. 所有权推导：`apps/server/tools/plugin/ownership.ts`，复用 gameplay-codegen/plugin-codegen 导出的目录常量；扁平目录用 `<ConstantName>Room.ts`、`<id>-*.test.ts` 前缀；硬性排除 scripts/**、tools/**、package*.json、镜像、生成物、锁、scene；plugin.json 的 viewDirs/logicDir 必须 ⊆ 集合；测试断言「codegen 发现集 ⊆ 推导集」且各插件展开集两两不交。
 2. 包格式：zip 根 `plugin.json`（schemaVersion/id/kind 含 gameplay+plugin/version/domains/fguiPackages/requires 仅两个 schemaVersion）+ `files.lock`；id 与 plugin.json/manifest/目录名交叉校验。⛔ 版本不进 gameplay manifest（会进 contractDigest）。
-3. 状态锁：`scripts/plugins/<id>.lock`，登记 generatedWriterOwned，`apps/server/test/plugin-lock.test.ts` 随 verify:all；升级三方比对（本地改动拒绝、同版本不同内容拒绝、降级显式 flag、旧有新无按清单删）。
+3. 状态锁：`scripts/packages/<id>.lock`，登记 generatedWriterOwned，`apps/server/test/plugin-lock.test.ts` 随 verify:all；升级三方比对（本地改动拒绝、同版本不同内容拒绝、降级显式 flag、旧有新无按清单删）。
 4. 命令：`npm --workspace @game/server run plugin -- pack|install|uninstall|check`，⛔ 不新增根命令。install：工作树干净 → 校验 → staging 解包 → 原子落盘 → `git add` 暂存 → codegen:gameplays/plugins → sync:shared → 停下，打印 fingerprint/fgui-manifest `--write` 与 LOBBY_PROTOCOL_VERSION 决策；失败用 `git restore/clean` 精确回滚；verify:all 由人跑。uninstall 按 lock 删 + `--allow-delete` + `SYNC_FORCE=1`。
 5. .meta：作者侧 pack 采集 Creator 产出的 .meta，缺即失败；安装侧不合成。
 6. 服务端硬前置：`modes/catalog.generated.ts`（统一 `registerGameMode` 导出，IdleGameMode 迁 `modes/idle/`）；`lobbyRpcVectors/index.generated.ts` 供两份 vectors 测试消费，plugin-codegen.test.ts 改目录发现；`kPluginUser/kPluginShared` 工厂；SQL 不开口。

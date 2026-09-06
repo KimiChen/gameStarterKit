@@ -12,7 +12,7 @@
 
 - 插件写入仓库的其余路径（shared / server / client 源码、测试、镜像与 `.meta`）由 plugin.json **纯函数推导**
   （`apps/server/tools/plugin/ownership.ts`），不在推导集内的路径整包拒绝；
-- 已安装状态在 `scripts/plugins/<id>.lock`（writer 产物），本目录只有作者手写的真源；
+- 已安装状态在 `scripts/packages/<id>.lock`（writer 产物），本目录只有作者手写的真源；
 - ballMove / idle 是框架自带玩法，⛔ 不是插件，本目录下没有它们（它们没有客户端登记面）。
 
 命令、包格式、安装动线见 [docs/PLUGIN.md](../../docs/PLUGIN.md) §5。

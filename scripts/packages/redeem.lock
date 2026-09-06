@@ -1,4 +1,4 @@
-# scripts/plugins/redeem.lock —— 已安装插件 redeem@1.0.8 的登记与文件清单锁。Do not edit by hand.
+# scripts/packages/redeem.lock —— 已安装插件 redeem@1.0.8 的登记与文件清单锁。Do not edit by hand.
 # writer: npm --workspace @game/server run plugin -- install ；checker: apps/server/test/plugin-lock.test.ts（随 verify:all）与 plugin -- check
 # manifest {"id":"redeem","version":"1.0.8","kinds":["client"],"constantName":null,"domains":["redeem"],"fguiPackages":[]}
 # source {"kind":"tree","filesLockSha256":"ab136d5f37ac3466ab71ce8d4735fdd05e7bc3a6c7907e98ad9fe64cb0b7f65e","forkedFrom":null}

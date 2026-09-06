@@ -48,7 +48,7 @@ export function uninstallPlugin(options: UninstallOptions): UninstallReport {
   const root = path.resolve(options.root);
   const { id } = options;
   const lock = readInstalledLock(root, id);
-  if (!lock) fail(`插件 "${id}" 未安装（没有 scripts/plugins/${id}.lock）`);
+  if (!lock) fail(`插件 "${id}" 未安装（没有 scripts/packages/${id}.lock）`);
   // 删除面与写入面过同一道 allowlist：锁被改过即拒绝（⛔ 不按可疑的锁删文件）。
   assertInstalledLockOwned(root, lock, "卸载");
   const useGit = options.git !== false;

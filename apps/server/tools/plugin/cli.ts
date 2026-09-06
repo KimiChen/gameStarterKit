@@ -188,7 +188,7 @@ export function runCli(args: PluginCliArguments): number {
   }
   const report = checkInstalledPlugins(args.root);
   if (report.plugins.length === 0) {
-    console.log("[plugin] 没有已安装插件（scripts/plugins/ 为空）");
+    console.log("[plugin] 没有已安装插件（scripts/packages/ 为空）");
     return 0;
   }
   for (const plugin of report.plugins) {

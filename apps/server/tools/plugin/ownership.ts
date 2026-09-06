@@ -15,6 +15,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { INSTALLED_LOCK_DIR } from "./lock";
 
 /** 派生的插件形态：client = 有客户端登记（entry / views / routes / menu），gameplay = 有玩法单源；两者可并存。 */
 export type PluginKind = "gameplay" | "client";
@@ -279,7 +280,7 @@ export function readGeneratedWriterPaths(root: string): readonly string[] {
   const file = path.join(root, "scripts/protected-paths.json");
   if (!fs.existsSync(file)) return [];
   const rules = JSON.parse(fs.readFileSync(file, "utf8")) as ProtectedRules;
-  return (rules.generatedWriterOwned?.entries ?? []).map((entry) => entry.path).filter((entry) => !entry.startsWith("scripts/plugins/"));
+  return (rules.generatedWriterOwned?.entries ?? []).map((entry) => entry.path).filter((entry) => !entry.startsWith(`${INSTALLED_LOCK_DIR}/`));
 }
 
 function matchesProtected(relative: string, protectedPath: string): boolean {
