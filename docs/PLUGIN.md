@@ -77,9 +77,9 @@
 玩法侧的声明：
 
 ```jsonc
-// apps/shared/schema/gameplays/snake/manifest.json
+// apps/plugins/snake/gameplay/manifest.json
 "profiles": ["dropIn", "private"]
-// apps/shared/schema/gameplays/snake/state.json
+// apps/plugins/snake/gameplay/state.json
 "fragments": ["ownerReady", "inviteRoom"]
 ```
 

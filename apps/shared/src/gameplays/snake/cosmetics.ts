@@ -1,7 +1,7 @@
 import {
     PUBLIC_SNAKE_SKIN_CATALOG_DATA,
     PUBLIC_SNAKE_SKIN_CATALOG_HASH,
-} from "./snakeSkinCatalog.generated";
+} from "./snakeSkinCatalogData";
 
 export type SnakeSkinPublicationState = "active" | "retired";
 

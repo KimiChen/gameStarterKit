@@ -2799,7 +2799,7 @@ WebPlatform；Creator/真机预览必须单列，不能由 Node 无头测试冒�
 完成一次性框架改造后，Snake 的手写业务改动应主要是新增以下目录；具体文件可合并，但所有权不能回流到公共壳：
 
 ```text
-apps/shared/schema/gameplays/snake/
+apps/plugins/snake/gameplay/
 ├── manifest.json
 └── state.json
 

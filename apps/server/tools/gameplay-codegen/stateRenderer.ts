@@ -883,7 +883,8 @@ export function renderSharedStateModule(
   lines.push(`import { ${httpImports.join(", ")} } from "../../../protocol/http";`, "");
   if (hasFieldKind(types, "map")) {
     lines.push(
-      `/** Root players map capacity. Source: apps/shared/schema/gameplays/${gameplayId}/manifest.json (maxPlayers). */`,
+      // 单源标签跟着玩法真源走（中央 schema 根 / 插件 gameplay/ / kit gameplays/），⛔ 不写死中央根。
+      `/** Root players map capacity. Source: ${sourceLabel.replace("/{manifest.json,state.json}", "/manifest.json")} (maxPlayers). */`,
       `const ${MAP_CAPACITY_IDENT} = ${maxPlayers};`,
       "",
     );

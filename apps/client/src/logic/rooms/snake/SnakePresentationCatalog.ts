@@ -9,7 +9,7 @@ import {
     EMBEDDED_PUBLIC_SNAKE_SKIN_CATALOG_HASH,
     SNAKE_ENTITY_PRESENTATION_CATALOG_DATA,
     SNAKE_PRESENTATION_VERSION as GENERATED_SNAKE_PRESENTATION_VERSION,
-} from "./SnakePresentationCatalog.generated";
+} from "./SnakePresentationCatalogData";
 
 export interface FrameDefinition {
     readonly sourceFrameName: string;
