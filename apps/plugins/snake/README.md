@@ -53,8 +53,9 @@
 ⚠ `atlas/classic_snake150001` 与 `atlas/snake1` 字节相同（dedupe 符号链接），不重复引入。
 ⚠ `texture/bg/bg1`（1624×750）审计后**明确不采用**：不旋转、不裁切复用。
 
-当前落地的运行时素材在 `apps/Cocos/assets/resources/snake/`（63 个文件 + 同名 `.meta`；
-2026-09-06 由 `resources/snakeoff/` 改名到 mode id 同名目录，才落进 snake 的所有权推导集、随包分发）：
+当前落地的运行时素材在 `apps/Cocos/assets/resources/plugins/snake/`（63 个文件 + 同名 `.meta`；
+2026-09-06 先由 `resources/snakeoff/` 改名到 `resources/snake/` 落进所有权推导集，同日再随规则
+改到 `resources/plugins/<id>/` 命名空间——见 docs/PLUGIN.md §5.5.3）：
 16 套皮肤图集、16 张确定性生成的预览图、7 张磁铁/光环纹理、食物图集、摇杆/加速/结算底板、8 个音效。
 
 ### 2.3 明确不复用清单
@@ -150,7 +151,7 @@ apps/server/test/  snake-world snake-room snake-rules snake-cosmetic-profile
 其它
 ```
 tools/snake-s0-replication/       S0 复刻基线生成器 ⚠ 其输出目录已随本次归并删除，--check 会失败
-apps/Cocos/assets/resources/snake/      63 个运行时素材（见 §2.2）
+apps/Cocos/assets/resources/plugins/snake/   63 个运行时素材（见 §2.2）
 ```
 
 ---

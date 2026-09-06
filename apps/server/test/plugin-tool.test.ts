@@ -127,9 +127,11 @@ test("allowlist：gameplay 插件的推导集覆盖 manifest/shared/server mode/
     "apps/server/test/wire-vectors/puzzle.ts",
     "apps/Cocos/assets/src/net/rooms/PuzzleRoom.ts.meta",
     "apps/Cocos/assets/src/view/rooms/puzzle.meta",
-    "apps/Cocos/assets/resources/puzzle/tiles.png",
-    "apps/Cocos/assets/resources/puzzle/tiles.png.meta",
-    "apps/Cocos/assets/resources/puzzle.meta",
+    // ⚠ 运行时资源按**包**分命名空间（resources/plugins/<id>/），与 kit 的 resources/kits/<id>/ 对称。
+    // ⛔ 不是按 mode 的 resources/<modeId>/——那一层与宿主的 resources/{ui,config}/ 平级，会撞车。
+    "apps/Cocos/assets/resources/plugins/puzzle/tiles.png",
+    "apps/Cocos/assets/resources/plugins/puzzle/tiles.png.meta",
+    "apps/Cocos/assets/resources/plugins/puzzle.meta",
     "apps/plugins/puzzle/plugin.json",
   ]) {
     assert.ok(allowed(relative, GAMEPLAY_IDENTITY), `应放行：${relative}`);
@@ -1614,7 +1616,7 @@ test("kit（docs/KIT.md §2/§3）：所有权推导 = kits/ 命名空间 + 逐 
     "apps/shared/src/kits/kfix/api/board/index.ts", "apps/server/src/kits/kfix/service.ts", "apps/server/src/core/compute/tasks/kits/kfix/rank.ts",
     "apps/client/src/kits/kfix/index.ts", "apps/Cocos/assets/src/kits/kfix/index.ts", "apps/Cocos/assets/src/kits/kfix.meta",
     "apps/shared/src/gameplays/kfixArena/wire.ts", "apps/server/src/rooms/modes/kfixArena/index.ts", "apps/client/src/net/rooms/KfixArenaRoom.ts",
-    "apps/client/src/view/rooms/kfixArena/KfixArenaView.ts", "apps/server/test/wire-vectors/kfixArena.ts", "apps/Cocos/assets/resources/kfixArena/a.png",
+    "apps/client/src/view/rooms/kfixArena/KfixArenaView.ts", "apps/server/test/wire-vectors/kfixArena.ts",
     "apps/shared/src/protocol/lobbyRpc/domains/kfixAdmin.ts", "apps/server/src/websocket/kfixAdmin/x.ts", "apps/server/test/lobbyRpcVectors/kfix.ts",
     "apps/server/test/kfix-a.test.ts", "apps/server/test/kfixArena-b.test.ts", "apps/server/test/int/kfix-c.test.ts", "apps/client/test/kfixArena-d.test.ts",
     "apps/Cocos/assets/resources/kits/kfix/x.bin",

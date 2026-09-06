@@ -56,7 +56,7 @@ const DIM = new Color(158, 171, 196);
 const LINK = new Color(120, 200, 255);
 const SELF = new Color(255, 255, 255, 220);
 /** 覆盖层的全屏压暗底与面板底色；⚠ 都要不透明到能压住活动的战场，见 newBackdrop。 */
-/** `snake/snake_result_bg` 的原生高度；⚠ 贴图缺失时结算页仍按这个尺寸排布，⛔ 别退回视口比例。 */
+/** `plugins/snake/snake_result_bg` 的原生高度；⚠ 贴图缺失时结算页仍按这个尺寸排布，⛔ 别退回视口比例。 */
 const RESULT_PANEL_HEIGHT = 694;
 const SCRIM = new Color(6, 10, 20, 196);
 const PANEL = new Color(24, 32, 52, 242);
@@ -366,13 +366,13 @@ export class SnakeWorldView implements SnakePresentation {
         const [foodTexture, joystickBase, joystickKnob, boost, magnet, magnetAura, resultBg, button,
             collectMagnetClip, boostEffectTexture, protectionEffectTexture] = await Promise.all([
             load(SNAKE_ENTITY_PRESENTATION_CATALOG.food.textureAsset),
-            load("snake/snake_control_joystick_base"),
-            load("snake/snake_control_joystick_knob"),
-            load("snake/snake_control_boost"),
-            load("snake/snake_magnet_tools"),
+            load("plugins/snake/snake_control_joystick_base"),
+            load("plugins/snake/snake_control_joystick_knob"),
+            load("plugins/snake/snake_control_boost"),
+            load("plugins/snake/snake_magnet_tools"),
             loadJson(SNAKE_ENTITY_PRESENTATION_CATALOG.tools.magnet.activeEffect.recipeAsset),
-            load("snake/snake_result_bg"),
-            load("snake/snake_btn_blue"),
+            load("plugins/snake/snake_result_bg"),
+            load("plugins/snake/snake_btn_blue"),
             collectMagnetAudio?.policy === "resource" && collectMagnetAudio.asset
                 ? loadAudio(collectMagnetAudio.asset)
                 : Promise.resolve(null),

@@ -41,7 +41,7 @@
 
 | 层 | 插件能否自持 | 落点 |
 | --- | --- | --- |
-| gameplay module（实时玩法：manifest/state/wire + 三端模块） | ✅ 可消费 | `apps/shared/schema/gameplays/<id>/`、`apps/shared/src/gameplays/<id>/`、`apps/server/src/rooms/modes/<id>/`（导出 `register<Constant>GameMode`，`codegen:gameplays` 生成 `modes/catalog.generated.ts` 收录）、`apps/client/src/gameplay/modes/<id>/`、`logic/rooms/<id>/`、`view/rooms/<id>/`、`net/rooms/<Constant>Room.ts`、`apps/server/test/wire-vectors/<id>.ts`（wire 向量 sidecar，`codegen:gameplays` 汇入 `index.generated.ts`）、`apps/Cocos/assets/resources/<id>/` |
+| gameplay module（实时玩法：manifest/state/wire + 三端模块） | ✅ 可消费 | `apps/shared/schema/gameplays/<id>/`、`apps/shared/src/gameplays/<id>/`、`apps/server/src/rooms/modes/<id>/`（导出 `register<Constant>GameMode`，`codegen:gameplays` 生成 `modes/catalog.generated.ts` 收录）、`apps/client/src/gameplay/modes/<id>/`、`logic/rooms/<id>/`、`view/rooms/<id>/`、`net/rooms/<Constant>Room.ts`、`apps/server/test/wire-vectors/<id>.ts`（wire 向量 sidecar，`codegen:gameplays` 汇入 `index.generated.ts`）、`apps/Cocos/assets/resources/plugins/<id>/` |
 | plugin（大厅页面 + RPC domain + View + 路由 + 菜单） | ✅ 可消费 | `apps/plugins/<id>/plugin.json`、`apps/client/src/plugins/<id>/`、`apps/server/src/core/<id>/`（自有键经 `kPluginUser`/`kPluginShared`）；每个 domain：`apps/shared/src/protocol/lobbyRpc/domains/<d>.ts`、`apps/server/src/websocket/<d>/`、`apps/server/test/lobbyRpcVectors/<d>.ts`（`codegen:plugins` 生成向量登记表收录）；FGUI 包：`apps/art/fairygui/assets/<Pkg>/` + `resources/ui/<Pkg>.bin`/图集 |
 | 入口（菜单 contribution） | ✅ 可消费 | plugin.json 的 `menu`：只有身份（entryId/label/labelKey/icon/launch），launch 可为 `gameplay` 或 `route`；位置见 §6 |
 | profile 声明（选用已有的房型策略组合） | ✅ 可消费 | manifest 的 `profiles` 一行 |
@@ -136,7 +136,7 @@
 | kind | 推导出的可写落点 |
 | --- | --- |
 | 共有 | `apps/plugins/<id>/`（plugin.json / README.md / gameplay 单源，§5.5）、`apps/server/test/<id>-*.test.ts`、`apps/server/test/int/<id>-*.test.ts`、`apps/client/test/<id>-*.test.ts`（前缀后**必须**紧跟 `-` 或 `.`，⛔ 不是裸 startsWith：`tally` 不拥有 `tallyBoard-*`、`red` 不拥有 `redis-*`；2026-09-05 收紧，PLUGIN-REGISTRY §1-4） |
-| gameplay | `apps/shared/src/gameplays/<id>/`、`apps/server/src/rooms/modes/<id>/`、`apps/client/src/gameplay/modes/<id>/`、`apps/client/src/logic/rooms/<id>/`、`apps/client/src/view/rooms/<id>/`、`apps/client/src/net/rooms/<Constant>Room.ts`、`apps/server/test/wire-vectors/<id>.ts`、`apps/Cocos/assets/resources/<id>/` |
+| gameplay | `apps/shared/src/gameplays/<id>/`、`apps/server/src/rooms/modes/<id>/`、`apps/client/src/gameplay/modes/<id>/`、`apps/client/src/logic/rooms/<id>/`、`apps/client/src/view/rooms/<id>/`、`apps/client/src/net/rooms/<Constant>Room.ts`、`apps/server/test/wire-vectors/<id>.ts`、`apps/Cocos/assets/resources/plugins/<id>/` |
 | plugin | `apps/client/src/plugins/<id>/`、`apps/server/src/core/<id>/`；每个声明的 domain：`apps/shared/src/protocol/lobbyRpc/domains/<d>.ts`、`apps/server/src/websocket/<d>/`、`apps/server/test/lobbyRpcVectors/<d>.ts`；plugin.json 的 viewDirs/logicDir 必须 ⊆ `apps/client/src/plugins/<id>/**` 或 `apps/client/src/{view,logic}/**/<id>` |
 | fguiPackages | `apps/art/fairygui/assets/<Pkg>/`、`apps/Cocos/assets/resources/ui/<Pkg>.bin`、`<Pkg>_atlas*` |
 | 镜像 / `.meta` | 由真源推导：`apps/client/src/X` 可写 ⇒ `apps/Cocos/assets/src/X` 与 `X.meta` 可写；插件专属目录的目录 `.meta` 可写，共享祖先目录（如 `view/rooms.meta`）⛔ 不随包 |
@@ -347,9 +347,36 @@ apps/plugins/
   plugin module，holder 变 null，同一局里第二次点「我的衣柜」就成哑键。resident 只影响 releaseIfIdle 豁免，
   ⛔ 不改变「装载在首次 launch 时发生」。
 - **美术资源归位**：`apps/Cocos/assets/resources/snakeoff/` → `resources/snake/`（127 个文件含 `.meta`，`git mv`
-  保 uuid），目录名与 mode id 一致后才落进 `resources/<modeId>/` 规则——**这条补上了 §5.5.1 遗留的「一张图都不带」**：
+  保 uuid），目录名与 mode id 一致后才落进当时的 `resources/<modeId>/` 规则（该规则已于同日改为
+  `resources/plugins/<id>/`，见 §5.5.3）——**这条补上了 §5.5.1 遗留的「一张图都不带」**：
   `pack snake` 从 78 文件涨到 230 文件，美术随包走。三个客户端文件 + 两个测试里的 80 条 `snakeoff/...` 路径同批改写。
   `previews/` 原本由 snake 与 snakeCosmetic 共用的归属问题随合并自然消失。
+
+#### 5.5.3 运行时资源改按包分命名空间（2026-09-06，已实施）
+
+`resources/<modeId>/` → **`resources/plugins/<id>/`**，与 kit 既有的 `resources/kits/<id>/` 对称。
+
+**为什么**：原规则那一层与宿主目录**平级**——`apps/Cocos/assets/resources/` 下就三样：`config/`（宿主）、
+`ui/`（FGUI 发布物，宿主与所有插件共用）、以及玩法资源。实测（调 `deriveOwnership`）：
+
+```
+id=ui     → dir:apps/Cocos/assets/resources/ui        ← 整个 FGUI 发布目录进了它的推导集
+id=config → dir:apps/Cocos/assets/resources/config
+```
+
+一个叫 `ui` 的插件会把宿主的 FGUI 发布物连同**别的插件的图集**算成自己的：`install` 的所有权冲突闸
+能在装的时候拦下，但 `pack` 从树上采集时不会，会把宿主的东西打进包里。反方向同样成立——宿主将来
+新建一个与某 mode 同名的资源目录，没有任何东西会红。
+
+**两道闸一起上**：
+- 规则改成 `resources/plugins/<id>`（按**包**不按 mode：一个插件的多个 mode 共用一个资源目录，
+  kit 的 mode 资源仍归 `resources/kits/<kitId>/`）；
+- `RESERVED_IDS` 补上 `ui` / `config`（原本只有 `host` / `registry`）——万一将来谁把规则写回
+  `resources/<id>/` 形态，这道闸还在。
+
+⚠ **这是包格式的破坏性变更**：推导集变了，带资源的包必须 bump 版本并重钉锁。当时仓内只有 snake
+一个包有资源目录（redeem / tally / arenaShop / builtin 都没有，arena 已在 `resources/kits/arena/`），
+所以代价是 snake 一次改名（127 文件 + 80 条路径字符串）与 1.1.4 → 1.2.0。⛔ 越晚做越贵。
 
 ## 6. 入口与位置：插件声明身份，宿主决定去处
 
