@@ -468,7 +468,7 @@ function fakeRoom(): FakeRoom {
         roomId: "room", sessionId: "self", dropping: false, stateValue: fakeState(),
         sentInputs: [], relives: [], endRuns: [], baselineRequests: [], callbacks,
         state() { return this.stateValue; },
-        onWelcome: () => () => {}, onError: () => () => {},
+        onWelcome: () => () => {}, onError: () => () => {}, onPong: () => () => {},
         onBaselineBegin(callback) { callbacks.begin.push(callback); return () => {}; },
         onBaselineChunk(callback) { callbacks.chunk.push(callback); return () => {}; },
         onBaselineEnd(callback) { callbacks.end.push(callback); return () => {}; },

@@ -800,11 +800,17 @@ async function main() {
       const walk = await runner.walk();
       if (!walk) throw new Error("--reuse 的标签页里 cc 未初始化；去掉 --reuse 重新加载");
     } else {
+      // ⚠ 钩子必须在**任何页面脚本之前**装：早先是在 openScene 之后才 evaluate，于是开机期
+      // （引擎启动、资源加载）的 console 记录全漏了——snake 的 5 条 `texture missing` 就是这么
+      // 一直没被报告看见的。⛔ 不要把这一步挪回 openScene 之后。
+      await client.send("Page.enable");
+      await client.send("Page.addScriptToEvaluateOnNewDocument", { source: consoleHookSource });
       await runner.step("加载预览场景（Fetch 改写 settings.js?scene=）", async () => {
         const boot = await openScene(client, { preview: options.preview, sceneUuid, timeoutMs: options.bootTimeoutMs });
         return { frames: boot.frames, canvas: boot.canvas, visible: boot.visible, topLevel: boot.nodes.filter((node) => node.depth === 1).map((node) => node.name) };
       });
     }
+    // --reuse 的页面已经加载过，补装一次（钩子自身幂等）。
     await client.evaluate(consoleHookSource);
     const scenarios = options.scenario === "all" ? ALL_SEQUENCE : [options.scenario];
     const table = {
@@ -821,7 +827,9 @@ async function main() {
   } finally {
     if (client) {
       try {
-        report.console = (await client.evaluate("window.__creatorPreviewLogs || []")).filter((entry) => entry.level !== "warn");
+        // ⚠ warn 也要进报告：`[snake] texture missing …` 这类是 console.warn，早先被过滤掉，
+        // 于是报告写着「console 零 error」而控制台里其实是一屏黄字。⛔ 不要再按等级丢记录。
+        report.console = await client.evaluate("window.__creatorPreviewLogs || []");
       } catch {}
       client.close();
     }
@@ -830,7 +838,10 @@ async function main() {
     fs.writeFileSync(path.join(outDir, "report.json"), `${JSON.stringify(report, null, 2)}\n`);
   }
   for (const step of report.steps) console.log(`${step.ok ? "✔" : "✘"} ${step.name}${step.skipped ? "（跳过）" : ""}${step.error ? ` — ${step.error}` : ""}${step.screenshots.length ? `  [${step.screenshots.join(", ")}]` : ""}`);
-  if (report.console.length > 0) console.log(`⚠ 页面 console 有 ${report.console.length} 条 error/uncaught（见 report.json）`);
+  if (report.console.length > 0) {
+    const bad = report.console.filter((entry) => entry.level !== "warn").length;
+    console.log(`⚠ 页面 console 有 ${report.console.length} 条记录（其中 error/uncaught ${bad} 条；见 report.json）`);
+  }
   console.log(`${report.ok ? "✔ 全部通过" : `✘ 失败：${report.error}`} → ${outDir}`);
   return report.ok ? 0 : 1;
 }

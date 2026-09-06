@@ -355,7 +355,7 @@ fail-closed 发布开关；② 双端模块加载期的三层目录 fail-closed�
 **S5 剩余缺口**：16 套皮肤逐一装备验证、`safeBottom=0/100` 两组对比、真栈 int 未跑。
 ⛔ 不得据此宣称 demo 可放行。
 
-### 8.2 Creator 3.8.8 真引擎缺陷台账（F1～F14）
+### 8.2 Creator 3.8.8 真引擎缺陷台账（F1～F16）
 
 ⚠ 这些缺陷的共同特征是「写了属性但到不了 GPU，且不抛异常」——Node 桩与 `verify:all` 全绿
 却在真引擎里坏掉。根因往往是**假件与 .d.ts 桩把不存在的引擎成员声明成存在的**。
@@ -371,10 +371,12 @@ fail-closed 发布开关；② 双端模块加载期的三层目录 fail-closed�
 | F6 | 复活提示文字压在蛇身上、按钮读不出 | 该层只有容器 + 三个 Label，**没有任何底**，而世界仍在逐帧渲染 | 已修 |
 | F7 | 衣柜预览条溢出面板 79px、压住文字 120px | `sizeMode` 在赋 `spriteFrame` **之后**才设 CUSTOM；引擎已用 `frame.rect` 覆写尺寸且⛔ 不回滚 | 已修 |
 | F8 | 结算页上重复弹出结束确认框 | run 已结束仍可点「结束本次」 | 已修 |
-| F9 | `getComponent: Type must be non-nil`；`s2c.pong` 未登记 onMessage | 未定位 | **观察项** |
+| F9 | `getComponent: Type must be non-nil`；`s2c.pong` 未登记 onMessage | 后半条已定位：snake 每 `PING_INTERVAL_SECONDS` 发一次 `c2s.ping` 保活，却从没登记 `s2c.pong` 的 onMessage，@colyseus/sdk 因此每局警告一次 | `s2c.pong` **已修**（SnakeRoom 暴露 onPong、SnakeGameplay 空登记）；`getComponent` 那半条仍**未定位**，留作观察项 |
 | F10 | 蛇身两侧白齿 | 几何画成「每段一个压扁四边形」；应为「每隔 `repeatedBodyPointDistance` 个路径点画一个按朝向旋转的整帧」，且**写入顺序必须尾→头** | 已修 |
 | F11 | 同一条蛇身体与头有色差（实测 255→229、128→156） | `builtin-unlit` 走 `CCFragOutput`，缺省 ACES 色调映射叠加入口的 `SRGBToLinear` | 已修（场景 `toneMappingType` 置 LINEAR） |
 | F12 | 蛇变短时残留上一帧四边形 | `updateSubMesh` ⛔ 不同步 InputAssembler，而 `gl.drawElements` 读的正是它 | 已修（每次上传后 `onGeometryChanged()`） |
+| F15 | 开局控制台刷一串 `[snake] skinId N fallback: default-unavailable`（11 条） | `loadAssets` 结束才置 `this.assets`，在那之前每个皮肤都探成 missing → 每个 skinId 各报一次假警报（`warnedSkinIds` 只去重、不判时机） | 已修（资源就绪后才判；真缺资源仍照常点名） |
+| F16 | 开局控制台刷 5 条 `[snake] texture missing snakeoff/…`，磁铁光环静默降级成状态图标 | 2026-09-06 把 `resources/snakeoff/` 改名成 `resources/snake/` 时只扫了 `.ts`，**漏了数据文件** `resources/snake/snake_magnet_aura.json` 里的 5 条资源路径 | 已修（路径同批改写；用「故意写坏一条」验过报告确实抓得到） |
 | F14 | 蛇长到一定程度必崩：`RangeError: Invalid typed array length: 235216`（`Graphics._uploadData` → `_render` → `fillBuffers`） | 自机细白轮廓**按身体点逐个描边圆**。单个 r=20 / lineWidth=3 的描边圆实测 **122 顶点**，241 个正好 29402 顶点，×8 floats = 235216 —— 与报错数字逐位吻合。cc.Graphics 3.8.8 的 RenderData 到该量级后停止扩容（崩溃帧 vData 容量卡在 1152 顶点） | 已修（见 §8.4） |
 | F13 | **一局结算把 Redis 里的 `ownedSkinIds` / `fragmentBalances` / `coinBalance` 写回默认值**（实测：种 `[1,2]` → 只打一局、⛔ 没开过衣柜 → 键变回 `[1]`） | `applyRunRewards` 是**同步**的，读 `fullSnapshotOf(uid)` 拿进程内 profile，而 profile 只由 `snakeCosmetic.*` 三个 RPC 的 `hydrate` 回灌；玩家本进程内没开过衣柜时它就是默认档，随后那条「六字段 HSET」把默认档盖回 Redis。demo 钱包更彻底——它**从不**回灌，每局都写「初始余额 + 本局所得」。同一原因下 `equippedSkinIdOf` 也让回访玩家带默认皮肤开局 | 已修（见 §8.3） |
 
