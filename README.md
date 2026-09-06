@@ -1,4 +1,4 @@
-# gameStarterKit
+# gono
 
 本项目正式名称为 gono，诠释为 Go Non-blocking。
 是一套通过单源契约、确定性生成、精确运行时校验、非阻塞生命周期和可执行验证矩阵，让游戏功能能够安全前进、独立扩展、低冲突协作的 TypeScript 开发底座。
