@@ -36,8 +36,8 @@ node tools/creator-preview/run.mjs home --format png --step-timeout 30000
 | `settings` | 点首屏「设置」→ `SettingsView` 出现 → 读出「插件入口」全部行（label + 包 id） |
 | `redeem` | 同行「进入」→ `RedeemView` + EditBox 出现 → 输入 `--code`（默认 `WELCOME2026`）→「兑换」→ 结果文案归类 `success` / `already-claimed` / `invalid` / `other` →「关闭」回设置面板 |
 | `tally` | 同行「进入」→「目标 N 次」出现 → 连点 `TAP` 直到「你赢了」→ 结算倒计时后 `PromoHomeView` 回来且结算文案消失 |
-| `cosmetic` | 「衣柜 · snakeCosmetic」→ 先切回「全部」筛选（重放之间可能停在别的筛选上）→ 读皮肤行 → 切「已拥有」→ 点某行「装备」并等**那一行**变「已装备」（`snakeCosmetic.equip`；⛔ 不能数「装备」标签总数：换装是互换，总数不变）→ 切「可合成」试「合成」（`snakeCosmetic.unlock`，没有可合成皮肤时记 skip）→「关闭」 |
-| `snake` | 「贪吃蛇大作战 · snake」→ `SnakeWorld.Hud` 出现 →「结束本次」→ 确认框 → 确认 → 结算页读行 →「返回主页」回首屏。⚠ 确认框首击会被吞，脚本等一拍再点、必要时重开重点一次并把 `retried` 写进报告 |
+| `cosmetic` | ⚠ 2026-09-06 起衣柜并入 snake，**设置面板没有「衣柜」条目**：先跑一局 snake 到结算页 → 点「我的衣柜」→ 先切回「全部」筛选（重放之间可能停在别的筛选上）→ 读皮肤行 → 切「已拥有」→ 点某行「装备」并等**那一行**变「已装备」（`snakeCosmetic.equip`；⛔ 不能数「装备」标签总数：换装是互换，总数不变）→ 切「可合成」试「合成」（`snakeCosmetic.unlock`，没有可合成皮肤时记 skip）→「关闭」回结算页 →「返回主页」 |
+| `snake` | 「贪吃蛇大作战 · snake」→ `SnakeWorld.Hud` 出现 →「结束本次」→ 确认框 → 确认 → 结算页读行 + 钉住「返回主页」与「我的衣柜」**同排**（Δy ≤ 4）→「返回主页」回首屏。⚠ 确认框首击会被吞，脚本等一拍再点、必要时重开重点一次并把 `retried` 写进报告 |
 | `ballMove` | 「进入战斗 · builtin」→ `PlayersLayer` 挂载（画布演示无文本）→ 点左上角「离开」回首屏（2026-09-06 前该入口没有退出 UI） |
 | `arena` | 「竞技场 · arena」（**kit** 的 route 形态）→ `ArenaBoardView` 16 格 +「奖杯 N」→ 点一格 → `arena.capture` 结果归类 `captured` / `refused` → 点「刷新」重读 → 再点自己的格 = 加固（断言守备 +1 且奖杯不变；⚠ 必须等**与上一条不同**的提示，旧提示还挂在面板上）→「关闭」 |
 | `arenaCapture` | 「占领赛 · arena」（kit 的 gameplay mode）→「目标 N 格」→ 连点「占领」到「你赢了！」→ 回首屏 |

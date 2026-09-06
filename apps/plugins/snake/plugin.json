@@ -1,25 +1,40 @@
 {
   "schemaVersion": 2,
   "id": "snake",
-  "version": "1.0.0",
+  "version": "1.1.0",
+  "domains": [
+    "snakeCosmetic"
+  ],
   "category": "core",
   "docs": [
     "apps/plugins/snake/README.md"
   ],
-  "resident": false,
+  "resident": true,
+  "entry": "apps/client/src/plugins/snake/index.ts",
   "viewDirs": [
-    "apps/client/src/view/rooms/snake"
+    "apps/client/src/view/rooms/snake",
+    "apps/client/src/plugins/snake/view"
   ],
   "views": [
-    "apps/client/src/view/rooms/snake/SnakeWorldView.view.json"
+    "apps/client/src/view/rooms/snake/SnakeWorldView.view.json",
+    "apps/client/src/plugins/snake/view/WardrobeView.view.json"
   ],
   "owners": [
     {
       "id": "snake",
       "logicDir": "apps/client/src/logic/rooms/snake"
+    },
+    {
+      "id": "snakeCosmetic",
+      "logicDir": "apps/client/src/plugins/snake/logic"
     }
   ],
-  "routes": [],
+  "routes": [
+    {
+      "id": "snakeCosmetic",
+      "view": "Wardrobe"
+    }
+  ],
   "menu": [
     {
       "entryId": "snake",

@@ -6,8 +6,8 @@ import {
     WardrobeLogic,
     describeWardrobeError,
     type WardrobeStorage,
-} from "../src/plugins/snakeCosmetic/logic/WardrobeLogic";
-import type { SnakeCosmeticRuntime } from "../src/plugins/snakeCosmetic/logic/snakeCosmeticRuntime";
+} from "../src/plugins/snake/logic/WardrobeLogic";
+import type { SnakeCosmeticRuntime } from "../src/plugins/snake/logic/snakeCosmeticRuntime";
 
 const CATALOG = [
     { skinId: 1, displayName: "小红", rarity: 0, acquisition: "default", fragmentThreshold: null },
@@ -30,6 +30,7 @@ function runtime(over: Partial<SnakeCosmeticRuntime> = {}): SnakeCosmeticRuntime
         getSnapshot: async () => ({ profile: profile(), catalog: [...CATALOG] }),
         equip: async () => ({ profile: profile() }),
         unlock: async () => ({ profile: profile() }),
+        open: async () => {},
         close: () => {},
         ...over,
     };

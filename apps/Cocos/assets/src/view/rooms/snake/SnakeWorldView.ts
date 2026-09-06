@@ -52,9 +52,11 @@ import {
 const WHITE = new Color(255, 255, 255);
 const TEXT = new Color(244, 247, 255);
 const DIM = new Color(158, 171, 196);
+/** 结算页「我的衣柜」用的次要动作色（与同排的「返回主页」区分开）。 */
+const LINK = new Color(120, 200, 255);
 const SELF = new Color(255, 255, 255, 220);
 /** 覆盖层的全屏压暗底与面板底色；⚠ 都要不透明到能压住活动的战场，见 newBackdrop。 */
-/** `snakeoff/snake_result_bg` 的原生高度；⚠ 贴图缺失时结算页仍按这个尺寸排布，⛔ 别退回视口比例。 */
+/** `snake/snake_result_bg` 的原生高度；⚠ 贴图缺失时结算页仍按这个尺寸排布，⛔ 别退回视口比例。 */
 const RESULT_PANEL_HEIGHT = 694;
 const SCRIM = new Color(6, 10, 20, 196);
 const PANEL = new Color(24, 32, 52, 242);
@@ -146,6 +148,8 @@ export class SnakeWorldView implements SnakePresentation {
         private readonly dispatchInput: (input: SnakeInput) => void,
         private readonly requestExit: () => void,
         private readonly sfxEnabled: () => boolean = () => true,
+        /** 结算页「我的衣柜」：打开衣柜 route（装配件经 plugin holder 接线）。缺省 no-op 供无头装配。 */
+        private readonly openWardrobe: () => void = () => {},
     ) {}
 
     mount(): void {
@@ -234,8 +238,12 @@ export class SnakeWorldView implements SnakePresentation {
         });
         // ⚠ 按 README §9.6 的 C-a 默认：只放「返回主页」，⛔ 不做「再来一局」——
         // 玩法内没有起新局的能力面，那要动受保护的 app 层。
-        const exit = this.newLabel(layer, "返回主页", 0, -panelHalf * 0.78, 34, TEXT).node;
+        // 衣柜并入 snake 后它的唯一入口在这一行（设置面板不再有「衣柜」菜单项）：两颗按钮同排，
+        // ⚠ 底板半宽 337，±120 的中心配 34 号字（4 字 ≈ 136 宽）左右各留 ~50 余量，⛔ 别再拉大间距。
+        const exit = this.newLabel(layer, "返回主页", -120, -panelHalf * 0.78, 34, TEXT).node;
         exit.on(Node.EventType.TOUCH_END, () => this.requestExit(), this);
+        const wardrobe = this.newLabel(layer, "我的衣柜", 120, -panelHalf * 0.78, 34, LINK).node;
+        wardrobe.on(Node.EventType.TOUCH_END, () => this.openWardrobe(), this);
     }
 
     showEndRunConfirmation(visible: boolean): void {
@@ -358,13 +366,13 @@ export class SnakeWorldView implements SnakePresentation {
         const [foodTexture, joystickBase, joystickKnob, boost, magnet, magnetAura, resultBg, button,
             collectMagnetClip, boostEffectTexture, protectionEffectTexture] = await Promise.all([
             load(SNAKE_ENTITY_PRESENTATION_CATALOG.food.textureAsset),
-            load("snakeoff/snake_control_joystick_base"),
-            load("snakeoff/snake_control_joystick_knob"),
-            load("snakeoff/snake_control_boost"),
-            load("snakeoff/snake_magnet_tools"),
+            load("snake/snake_control_joystick_base"),
+            load("snake/snake_control_joystick_knob"),
+            load("snake/snake_control_boost"),
+            load("snake/snake_magnet_tools"),
             loadJson(SNAKE_ENTITY_PRESENTATION_CATALOG.tools.magnet.activeEffect.recipeAsset),
-            load("snakeoff/snake_result_bg"),
-            load("snakeoff/snake_btn_blue"),
+            load("snake/snake_result_bg"),
+            load("snake/snake_btn_blue"),
             collectMagnetAudio?.policy === "resource" && collectMagnetAudio.asset
                 ? loadAudio(collectMagnetAudio.asset)
                 : Promise.resolve(null),

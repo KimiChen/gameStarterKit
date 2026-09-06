@@ -7,7 +7,7 @@
   "onlyOne": true,
   "permanent": false,
   "interactive": false,
-  "logic": "apps/client/src/plugins/snakeCosmetic/logic/WardrobeLogic.ts",
+  "logic": "apps/client/src/plugins/snake/logic/WardrobeLogic.ts",
   "group": "authenticated",
   "restore": "discard"
 }
