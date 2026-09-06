@@ -10,6 +10,7 @@
 | `replay-all/` | **修复前**的全量重放（`run.mjs all --code DEVTEST`），ok=true、console 零 error；下面三条问题就是在它里面暴露的 |
 | `replay-fixed/` | **修复后**的全量重放（同一套场景，13 场景 61 步 40 图），ok=true、console 零 error：snake 首击不再需要重试（`retried: false`）、ballMove 有「离开」按钮并回首屏、衣柜可翻页 |
 | `replay-arenashop-insufficient/` | 补充对照：dev 账号 0 金时买加固 → 「金币不足」（`tx.debit` 经主账本拒绝） |
+| `replay-f13-fixed/` | **F13 修复后**的复验（`run.mjs cosmetic`，12 步 12 图，ok=true、console 零 error）：种子档打完一局后 `ownedSkinIds/equippedSkinId/fragmentBalances/coinBalance` 一个字节没动，衣柜读到「皮肤 2 已装备」并成功把装备切回小红 |
 | `replay-wardrobe-merged/` | **衣柜并入 snake 之后**的复验（`snake/` 与 `cosmetic/` 两次重放，ok=true、console 零 error）：设置面板只剩 8 个入口（「衣柜」已撤），结算页「返回主页」(786,587) 与「我的衣柜」(906,587) **同排**（Δy=0），从结算页进衣柜 → 6 行皮肤 + 四个筛选 → 「关闭」回结算页 → 「返回主页」回首屏。⚠ 本轮 equip/craft 记 skip 并非回归，见下方 F13 |
 | `replay-snake-plugin/` | **snake 迁插件标准之后**的复验（`run.mjs snake`，7 步 7 图）：ok=true、console 零 error、`retried: false`——玩法单源搬进 `apps/plugins/snake/gameplay/`、三个冻结数据表改名之后，真引擎里的 snake 一路照旧 |
 
@@ -72,14 +73,18 @@ hydrate 一次（`hydrated` Set），否则内存档会盖过种子。
 | 2 | **衣柜只渲染前 6 行、没有翻页**：16 件皮肤里 10 件在 UI 上够不着 | `WardrobeView` 的 `VISIBLE_ROWS = 6` 而 `scrollTop` 恒 0，没有任何翻页控件 | 加「上一页 / 下一页」（到头置灰），换筛选时回到第一页 | 真机翻页实测：`1-6 / 16` → `7-12 / 16` → `11-16 / 16`，401/403/411/701 都能到达 |
 | 3 | **ballMove 演示没有退出 UI**：进去就只能重载页面 | 该演示的 `BallMoveGameplay` 根本没有 host / `requestExit` 通道 | 输入加 `leave`、gameplay 接 `GameplayInstanceHost`（与 tally / arena 同形）、模块装配传 host、视图左上角加「离开」；单测钉住「只请求一次」 | `replay-fixed/` 的 ballMove 场景：`hasExitButton: true`，点「离开」回首屏 |
 
-### 2026-09-06 追加：衣柜并入 snake 时实测到的 F13（未修，已登记）
+### 2026-09-06 追加：衣柜并入 snake 时实测到的 F13（当日已修）
 
 给 dev 档种 `ownedSkinIds=[1,2]` → **只打一局、全程没开衣柜** → 键变回 `[1]`。根因是 `applyRunRewards`
 同步读进程内 profile（只由 `snakeCosmetic.*` 三个 RPC 的 `hydrate` 回灌），没开过衣柜时它就是默认档，
-随后那条六字段 `HSET` 把默认档盖回 Redis。⛔ 不是本次合并引入的（合并前「先打一局再开衣柜」同样会丢），
-但衣柜入口改到结算页后每次进衣柜都必然先打一局，于是必然先触发——所以本轮 `cosmetic` 重放的
-equip / craft 两步都记 skip（「已拥有」筛选下只剩默认皮肤）。详情与修复前置见
-[apps/plugins/snake/README.md §8.2 F13](../../../apps/plugins/snake/README.md)。
+随后那条六字段 `HSET` 把默认档盖回 Redis；demo 钱包更彻底——它从不回灌，每局都写「初始余额 + 本局所得」。
+⛔ 不是衣柜合并引入的（合并前「先打一局再开衣柜」同样会丢），但入口改到结算页后每次进衣柜都必然先打一局，
+于是必然先触发——`replay-wardrobe-merged/` 那轮 `cosmetic` 重放的 equip / craft 记 skip 正是这个原因。
+
+修法与逐条实证见 [apps/plugins/snake/README.md §8.3](../../../apps/plugins/snake/README.md)：
+`GameMode` 加了唯一可 await 的 join 钩子 `onBeforeAdmission`，snake 在其中等档案回灌完再入房。
+修复后的重放在 `replay-f13-fixed/`：同样的种子档打完一局后四个字段一个字节没动
+（`[1,2]` / `2` / `401:4` / `777`），再从结算页进衣柜读到真实拥有集并成功 equip。
 
 撤回的两条（当轮误判，留档以免再犯）：
 

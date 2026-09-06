@@ -1521,6 +1521,20 @@ export class GameRoom extends Room {
             }
         };
 
+        // 第 4.5 步：**异步** mode.onBeforeAdmission（唯一允许 await 的 join 钩子）。排在这里的理由：
+        // 它要 uid（auth 已完成）、又必须早于同步的 createPlayer（后者要读回灌后的档案），而且
+        // ⛔ 不能排在公共的重复/满员/ticket 检查之前——那样会为一个注定被拒的 join 打存储。
+        // 契约说明与「⛔ 不得分配房间资源」的理由见 GameMode.onBeforeAdmission。
+        if (mode.onBeforeAdmission) {
+            try {
+                await mode.onBeforeAdmission({ ...this.modeContext(), client });
+            } catch (error) {
+                console.error(`[GameRoom ${this.roomId}] mode ${mode.id} before-admission hook failed`, error);
+                releaseClaim();
+                throw joinRefused(ErrorCode.BadRequest);
+            }
+        }
+
         // 第 5 步：**同步** mode.onAdmission（⛔ 不允许把它排在 ticket claim 之前——玩法资源
         // 分配不得先于权威准入）。Run the mode hook only after all common, side-effect-free
         // rejection checks. A duplicate/full join must not let a mode reserve resources

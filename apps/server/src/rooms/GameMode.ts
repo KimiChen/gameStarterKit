@@ -169,6 +169,22 @@ export interface GameMode<TState = GameRoomState, TPlayer = PlayerState> {
     /** 可选证据能力；未声明的 mode settle 时不产出证据。 */
     readonly evidence?: GameModeEvidenceCapability;
     readonly roomLifecycle?: GameModeRoomLifecycleCapability<TState>;
+    /**
+     * 准入前的**异步**预热点，是 join 路径上唯一允许 await 的玩法钩子。
+     *
+     * ⚠ 只做「把该玩家的持久档从存储回灌进进程内缓存」这类**无副作用的预热**：
+     * ⛔ 不得分配房间资源、不得改 state、不得依赖已入座（此刻 `userIdOf` 还是 null，
+     * uid 只能从 `client.auth` 取）——那些必须留在同步的 `onAdmission` 之后，
+     * 因为重复/满员检查与玩法资源所有权的原子性正是靠 `onAdmission` 同步来保证的。
+     *
+     * 存在的理由：`createPlayer` 与结算路径都是**同步**的，它们要读的档案却在 Redis 里。
+     * 没有这个点，玩法只能读到默认档——snake 的 F13（一局结算把默认档写回 Redis，
+     * 抹掉玩家的皮肤/碎片/余额）就是这么来的。
+     *
+     * throw / reject = 拒绝入房（fail-closed，与其余 join 步骤同口径）。玩法若认为
+     * 「预热失败也该让玩家进来」，就自己 catch 并在同步路径上按冷档降级。
+     */
+    onBeforeAdmission?(context: GameModeContext<TState> & { readonly client: Client }): void | Promise<void>;
     /** Return false to reject the client after auth but before state mutation. */
     onAdmission?(context: GameModeContext<TState> & { readonly client: Client }): boolean | void;
     /** Runs after common tick/match bookkeeping has been reset. */

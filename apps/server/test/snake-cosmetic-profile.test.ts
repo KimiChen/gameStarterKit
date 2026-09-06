@@ -7,6 +7,7 @@ import {
     __grantSnakeFragmentsForTest,
     __resetSnakeCosmeticProfilesForTest,
     equippedSkinIdOf,
+    isProfileHydrated,
     type SnakeCosmeticPersistenceRecord,
 } from "../src/rooms/modes/snake/cosmeticProfile";
 import { DEFAULT_SNAKE_RUN_SKIN_RESOLVER } from "../src/rooms/modes/snake/lifecycle";
@@ -106,6 +107,57 @@ test("回灌：Redis 抛错只告警，profile 保持默认且不阻塞", async 
     const profile = await h.store.hydrate("u1");
     assert.equal(profile.equippedSkinId, 1);
     assert.equal(h.errors.length, 1);
+    assert.equal(isProfileHydrated("u1"), false, "读不到 Redis ⛔ 不算已回灌——否则结算会把默认档写回去");
+});
+
+/**
+ * F13 的两条根因之一：旧实现在 await **之前**就把 uid 记进「已回灌」，于是
+ * ① 并发的第二个调用者立刻拿到尚未回灌的默认档（所以「入房时 fire-and-forget 预热」不成立）；
+ * ② 一次 Redis 抖动就让该 uid 在整个进程生命周期里永远停在默认档。
+ */
+test("F13：同一 uid 的并发回灌共用一次请求，且两个调用者都拿到回灌后的值", async () => {
+    __resetSnakeCosmeticProfilesForTest();
+    let calls = 0;
+    let release: (() => void) | null = null;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    const store = new SnakeDemoCosmeticStore({
+        persistence: async () => {},
+        hydration: async () => {
+            calls += 1;
+            await gate;
+            return ["401", "[1,401]", '{"133":0,"401":7,"403":0,"411":0}'];
+        },
+    });
+    const first = store.hydrate("u1");
+    const second = store.hydrate("u1");
+    assert.equal(isProfileHydrated("u1"), false, "在途期间 ⛔ 不得先把标记打上");
+    release!();
+    const [a, b] = await Promise.all([first, second]);
+    assert.equal(calls, 1, "并发只打一次 Redis");
+    assert.deepEqual(a.ownedSkinIds, [1, 401]);
+    assert.deepEqual(b.ownedSkinIds, [1, 401], "第二个调用者 ⛔ 不许拿到尚未回灌的默认档");
+    assert.equal(isProfileHydrated("u1"), true);
+});
+
+test("F13：回灌失败不毒化——下一次调用会重试，成功后才算已回灌", async () => {
+    __resetSnakeCosmeticProfilesForTest();
+    let calls = 0;
+    const errors: unknown[] = [];
+    const store = new SnakeDemoCosmeticStore({
+        persistence: async () => {},
+        reportError: (error) => { errors.push(error); },
+        hydration: async () => {
+            calls += 1;
+            if (calls === 1) throw new Error("redis down");
+            return ["401", "[1,401]", null];
+        },
+    });
+    assert.deepEqual((await store.hydrate("u1")).ownedSkinIds, [1], "第一次失败：保持默认档");
+    assert.equal(isProfileHydrated("u1"), false);
+    assert.deepEqual((await store.hydrate("u1")).ownedSkinIds, [1, 401], "第二次必须真的重试");
+    assert.equal(calls, 2);
+    assert.equal(isProfileHydrated("u1"), true);
+    assert.equal(errors.length, 1);
 });
 
 test("equip：未拥有拒绝、非法 ID 拒绝、重复装备是 no-op 且不写 Redis", () => {

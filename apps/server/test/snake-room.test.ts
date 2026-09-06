@@ -74,8 +74,11 @@ interface Harness {
     view(): SnakeRoomState;
 }
 
-async function buildSnakeRoom(economy = new DeterministicTestReliveEconomy()): Promise<Harness> {
-    const mode = createSnakeGameMode({ reliveEconomy: economy, runtimeEnvironment: "test" });
+async function buildSnakeRoom(
+    economy = new DeterministicTestReliveEconomy(),
+    modeOptions: { readonly profilePreheat?: (uid: string) => Promise<void> } = {},
+): Promise<Harness> {
+    const mode = createSnakeGameMode({ reliveEconomy: economy, runtimeEnvironment: "test", ...modeOptions });
     let epochCalls = 0;
     const room = new GameRoom({
         seed: 17,
@@ -619,6 +622,28 @@ test("S3-03 run 起始锁存装备皮肤：join ⛔ 无自报通道；run 中换
     await seat(harness, "p2");
     assert.equal(harness.view().players.get("p2")?.skinId, 1);
 
+    __resetSnakeCosmeticProfilesForTest();
+});
+
+/**
+ * F13 的另一半：`createPlayer` 同步读装备皮肤，档案却在 Redis 里。没有 `onBeforeAdmission`
+ * 这个可 await 的入房前预热点时，回访玩家一律带默认皮肤 1 开局——本用例证明预热已被等到。
+ */
+test("F13：onBeforeAdmission 在入房前 await 档案预热，createPlayer 因此锁存的是存档里的皮肤", async () => {
+    __resetSnakeCosmeticProfilesForTest();
+    const preheated: string[] = [];
+    // 模拟真实预热：从"存储"读到该 uid 装备着 401（⛔ 全程没人开过衣柜）。
+    const store = new SnakeDemoCosmeticStore({
+        persistence: async () => {},
+        hydration: async () => ["401", "[1,401]", null, null, null],
+    });
+    const harness = await buildSnakeRoom(new DeterministicTestReliveEconomy(), {
+        profilePreheat: async (uid) => { preheated.push(uid); await store.hydrate(uid); },
+    });
+    await seat(harness, "p1");
+    assert.deepEqual(preheated, ["u-p1"], "入房前必须为该 uid 预热过一次");
+    assert.equal(harness.view().players.get("p1")?.skinId, 401,
+        "⛔ 不许再是默认皮肤 1：预热已被 await，createPlayer 读得到存档");
     __resetSnakeCosmeticProfilesForTest();
 });
 
