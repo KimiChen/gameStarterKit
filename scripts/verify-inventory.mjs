@@ -618,7 +618,8 @@ else {
  */
 /** 仓内全部 Markdown（跳过依赖与生成物目录）。 */
 function allMarkdownDocs() {
-  const skip = new Set(["node_modules", ".git", "library", "temp", "build", "dist"]);
+  // .claude/ 是 Claude Code 的会话目录（worktrees/ 里是别的检出副本），⛔ 不是仓库文档。
+  const skip = new Set(["node_modules", ".git", ".claude", "library", "temp", "build", "dist"]);
   const out = [];
   const walk = (relative) => {
     let children;
