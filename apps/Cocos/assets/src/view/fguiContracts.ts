@@ -1,14 +1,14 @@
 /**
  * FairyGUI 结构契约（稳定 façade，Non-intrusive §7.5 阶段 6）。
  *
- * 类型定义留在本文件（手写单源）；契约**值**由 `codegen:features` 从
+ * 类型定义留在本文件（手写单源）；契约**值**由 `codegen:plugins` 从
  * `<Name>View.view.json` sidecar + FGUI XML 生成到
  * `generated/fguiContracts.generated.ts`，此处只 re-export——本文件不再手改契约内容。
  *
  * - `required` 由生成器按 binding 规则从 XML 计算（与 View AUTO REQUIRED 单源）；
  * - manualRequired/nested/listItems/controllers/relations/assetUrls 的手写唯一真源是
  *   View 同目录的 sidecar；`.fui` 变更后 `npm run codegen:fgui` 重写 AUTO 区块，
- *   `npm --workspace @game/server run codegen:features` 刷新本表。
+ *   `npm --workspace @game/server run codegen:plugins` 刷新本表。
  * - 无头契约测（`test/fguiContract.test.ts`）与 `test/viewRegistry.test.ts` 遍历
  *   generated catalog 做相等校验。方案见 docs/CLIENT.md §5。
  */

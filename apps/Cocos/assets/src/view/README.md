@@ -11,13 +11,13 @@
    generated 产物的稳定 façade）。
 3. 同目录写 `XxxView.view.json` sidecar（owner/kind/layer/fullscreen/onlyOne/permanent/
    interactive/logic/sharedPkgs + 手写契约段 manualRequired/nested/listItems/controllers/
-   relations/assetUrls），并把 sidecar 路径登记进 `features/<id>/feature.json` 的 `views`
+   relations/assetUrls），并把 sidecar 路径登记进 `apps/plugins/<id>/plugin.json` 的 `views`
    （需要路由时同步登记 `routes`，group/restore 写在 sidecar）。
 4. 在 sidecar.logic 指向的 `logic/.../XxxLogic.ts` 写行为与无头测试。
-5. 运行 `npm --workspace @game/server run codegen:features` 刷新
-   `src/generated/{fguiContracts,views,features}.generated.ts`（只读校验 `-- --check`）。
-6. 页面打开经 feature route/NavigationService；登录/公告等旧页面的组合根在
-   `app/loginFlow.ts`（`view/pages.ts` 是零状态转发 façade，最终新增 feature ⛔ 不再加 openXxx）。
+5. 运行 `npm --workspace @game/server run codegen:plugins` 刷新
+   `src/generated/{fguiContracts,views,plugins}.generated.ts`（只读校验 `-- --check`）。
+6. 页面打开经 plugin route/NavigationService；登录/公告等旧页面的组合根在
+   `app/loginFlow.ts`（`view/pages.ts` 是零状态转发 façade，最终新增 plugin ⛔ 不再加 openXxx）。
 7. 新 View 会由 `apps/client/tsconfig.test.json` 的 `src/**/*.ts` glob 自动纳入 Node strict 探针；若
    使用新的引擎 API，先补齐 `client-test-stubs.d.ts`，再由 Creator 工程验证真实类型和资源。
 8. 运行 `npm run sync:client`，再运行 `npm run typecheck:client`、`npm run typecheck:client:legacy`、`npm run test:client`、

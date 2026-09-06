@@ -6,14 +6,14 @@
  * 本文件是它登记的 checker：随 `npm run test:client` 进入 `verify:core` 链。
  *
  * 守的形态（先例：verify-inventory 的「解析 Markdown 表 ⇔ package.json 双向 deepEqual」）：
- * 1. docs/Non-intrusive.md §11.3 与 §12.2 的两个散文代码块 ⇔ 规则文件的 featureFlow.paths
+ * 1. docs/Non-intrusive.md §11.3 与 §12.2 的两个散文代码块 ⇔ 规则文件的 pluginFlow.paths
  *    与 gameplayFlow.paths **各自双向 deepEqual**——从任一侧删掉 `pages.ts` 或
  *    `gameplay/services.ts` 都转红（⛔ 封死「先删规则条目、再重钉字节锁」的绕过路径）；
  * 2. §12.2 点名的中央文件（`GameRoom.ts` 等反引号 codespan）必须被规则文件覆盖；
  * 3. 每条保护路径都真实存在（改名/收敛后清单静默漂移即红）；
  * 4. generatedWriterOwned 的生成物存在、Do not edit 抬头在位、writer 命令真实可执行。
  *
- * ⛔ 本矩阵约束的是「普通 feature / gameplay module 新增动线」的禁改集合；显式框架侵入
+ * ⛔ 本矩阵约束的是「普通 plugin / gameplay module 新增动线」的禁改集合；显式框架侵入
  * （Non-intrusive §12.3）必须同批更新规则文件与对应散文视图，本矩阵因此保持绿。
  */
 import assert from "node:assert/strict";
@@ -33,7 +33,7 @@ interface WriterOwnedEntry {
 }
 
 interface ProtectedPathRules {
-  readonly featureFlow: { readonly prose: { readonly marker: string }; readonly paths: readonly string[] };
+  readonly pluginFlow: { readonly prose: { readonly marker: string }; readonly paths: readonly string[] };
   readonly gameplayFlow: { readonly prose: { readonly marker: string }; readonly paths: readonly string[] };
   readonly generatedWriterOwned: { readonly entries: readonly WriterOwnedEntry[] };
   readonly semantics: Readonly<Record<string, string>>;
@@ -90,8 +90,8 @@ function assertProseMatchesPaths(
   assert.ok(proseList.length >= minEntries, `${label}：散文清单条目数异常（<${minEntries}）——解析被架空或清单被掏空`);
 }
 
-test("§11.3 散文清单 ⇔ featureFlow.paths 双向 deepEqual（任一侧单方面增删即红）", () => {
-  assertProseMatchesPaths("featureFlow.paths", rules.featureFlow.prose, rules.featureFlow.paths, 10);
+test("§11.3 散文清单 ⇔ pluginFlow.paths 双向 deepEqual（任一侧单方面增删即红）", () => {
+  assertProseMatchesPaths("pluginFlow.paths", rules.pluginFlow.prose, rules.pluginFlow.paths, 10);
 });
 
 test("§12.2 散文清单 ⇔ gameplayFlow.paths 双向 deepEqual（封死「删条目再重钉」的绕过路径）", () => {
@@ -108,19 +108,19 @@ test("§12.2 点名的中央文件必须被保护集合覆盖（散文 → 规�
   assert.ok(named.includes("GameRoom.ts") && named.includes("RoomClient.ts"), "§12.2 应点名 GameRoom.ts 与 RoomClient.ts——散文被改动后本断言需人工复核");
 
   const protectedBasenames = new Set(
-    [...rules.featureFlow.paths, ...rules.gameplayFlow.paths].map((path) => path.split("/").pop() ?? path),
+    [...rules.pluginFlow.paths, ...rules.gameplayFlow.paths].map((path) => path.split("/").pop() ?? path),
   );
   for (const base of new Set(named)) {
     assert.ok(
       protectedBasenames.has(base),
-      `§12.2 点名的 ${base} 未被 protected-paths.json 覆盖（featureFlow ∪ gameplayFlow）`,
+      `§12.2 点名的 ${base} 未被 protected-paths.json 覆盖（pluginFlow ∪ gameplayFlow）`,
     );
   }
 });
 
 test("每条保护路径真实存在（glob 条目为目录），且两组之间无重复", () => {
-  const all = [...rules.featureFlow.paths, ...rules.gameplayFlow.paths];
-  assert.equal(new Set(all).size, all.length, "featureFlow/gameplayFlow 存在重复条目");
+  const all = [...rules.pluginFlow.paths, ...rules.gameplayFlow.paths];
+  assert.equal(new Set(all).size, all.length, "pluginFlow/gameplayFlow 存在重复条目");
   for (const path of all) {
     const { target, isGlob } = fsTarget(path);
     assert.ok(existsSync(target), `保护路径不存在：${path}（改名/收敛后必须同批更新规则文件与 §11.3 散文）`);
@@ -133,7 +133,7 @@ test("每条保护路径真实存在（glob 条目为目录），且两组之间
 });
 
 test("semantics 注释无孤儿：键 ⊆ 保护路径集合，且 gameplayFlow 逐条带语义说明", () => {
-  const all = new Set([...rules.featureFlow.paths, ...rules.gameplayFlow.paths]);
+  const all = new Set([...rules.pluginFlow.paths, ...rules.gameplayFlow.paths]);
   for (const key of Object.keys(rules.semantics)) {
     assert.ok(all.has(key), `semantics 登记了不在保护集合里的路径：${key}`);
   }
@@ -145,7 +145,7 @@ test("semantics 注释无孤儿：键 ⊆ 保护路径集合，且 gameplayFlow 
 });
 
 test("generatedWriterOwned：生成物存在、Do not edit 抬头在位、与保护集合不重叠", () => {
-  const manual = new Set([...rules.featureFlow.paths, ...rules.gameplayFlow.paths]);
+  const manual = new Set([...rules.pluginFlow.paths, ...rules.gameplayFlow.paths]);
   const seen = new Set<string>();
   for (const entry of rules.generatedWriterOwned.entries) {
     assert.ok(!seen.has(entry.path), `generatedWriterOwned 重复条目：${entry.path}`);

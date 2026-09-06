@@ -1,13 +1,13 @@
 /**
  * 受保护手写路径的字节锁（scripts/protected-paths.lock）。
  *
- * `scripts/protected-paths.json` 说的是「普通 feature / gameplay 动线里**不应**再改哪些文件」，
+ * `scripts/protected-paths.json` 说的是「普通 plugin / gameplay 动线里**不应**再改哪些文件」，
  * 但它只是一张**名单**：谁真的改了名单上的文件，全仓没有任何东西会红。名单的执行力此前
  * 100% 依赖「提交里要显式声明改了哪条、为什么」这条人工纪律——而人工纪律漏过一次就等于没有。
  * 这把锁给名单配一条机器执行力：受保护文件的字节一变，`--check` 必红并点名被改的路径，
  * 重钉产生的 diff 让「动了受保护文件」在 review 里无法静默混过。
  *
- * 锁的范围 = `featureFlow.paths` ∪ `gameplayFlow.paths` 里的**手写**文件（glob 条目展开到
+ * 锁的范围 = `pluginFlow.paths` ∪ `gameplayFlow.paths` 里的**手写**文件（glob 条目展开到
  * 目录下每个文件）。⛔ 刻意不锁 `generatedWriterOwned`：那些是生成物/镜像/锁，各自已有
  * writer 闸与新鲜度检查（codegen、sync、vendor-lock…），再压一层字节锁只会让每次正常
  * 重生成都要多钉一次，锁很快会被当成噪音而习惯性 `--write`。
@@ -71,9 +71,9 @@ export function collectLockedFiles(root = DEFAULT_ROOT) {
     } catch (error) {
         throw new Error(`${RULES_RELATIVE} 不可读或不是合法 JSON：${error instanceof Error ? error.message : error}`);
     }
-    const declared = [...(rules?.featureFlow?.paths ?? []), ...(rules?.gameplayFlow?.paths ?? [])];
+    const declared = [...(rules?.pluginFlow?.paths ?? []), ...(rules?.gameplayFlow?.paths ?? [])];
     if (declared.length === 0) {
-        throw new Error(`${RULES_RELATIVE} 的 featureFlow.paths / gameplayFlow.paths 为空——锁失去覆盖面（失败关闭）`);
+        throw new Error(`${RULES_RELATIVE} 的 pluginFlow.paths / gameplayFlow.paths 为空——锁失去覆盖面（失败关闭）`);
     }
 
     const owner = new Map(); // 文件 → 把它纳入锁的那条保护路径
@@ -208,7 +208,7 @@ export function runCli(argv) {
         if (drifts.length > 0) {
             console.error(`✘ 受保护路径漂移 ${drifts.length} 处：`);
             for (const drift of drifts) console.error(`  - ${drift}`);
-            console.error("  这些文件属「普通 feature / gameplay 动线禁改」集合（scripts/protected-paths.json）。");
+            console.error("  这些文件属「普通 plugin / gameplay 动线禁改」集合（scripts/protected-paths.json）。");
             console.error("  若本次确属显式框架侵入（Non-intrusive §12.3）：在提交信息里声明改了哪条、为什么，");
             console.error("  再运行 node scripts/protected-paths-lock.mjs --write 重钉并连锁文件一起提交。");
             return 1;

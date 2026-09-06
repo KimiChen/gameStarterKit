@@ -6,17 +6,17 @@
  *  1. **宿主固定项**（⛔ 不可由插件提供）：音乐/音效走 user profile 的 musicOn/sfxOn
  *     幂等写；语言/推送/条款/隐私/兑换码/日志上报当前**没有实现**，一律置灰并逐条
  *     标注原因（⛔ 不做假实现——一个点了没反应的开关比没有这个开关更糟）。兑换码 ⛔ 不在此列：
- *     它是插件标准形态（PLUGIN.md §6.1），由 features/redeem 以 launch.kind:"route" 的入口进插件列表。
+ *     它是插件标准形态（PLUGIN.md §6.1），由 plugins/redeem 以 launch.kind:"route" 的入口进插件列表。
  *  2. **插件入口列表**：数据源仍是 generated menu contributions（全量），排序取
- *     **featureId 字母序**（§6：插件只声明入口身份，位置归宿主——首屏位置是 features/host.json
- *     的事，本层 ⛔ 不看）。不可用（FeatureHost failed/disabled）的条目置灰，
+ *     **pluginId 字母序**（§6：插件只声明入口身份，位置归宿主——首屏位置是 apps/plugins/host.json
+ *     的事，本层 ⛔ 不看）。不可用（PluginHost failed/disabled）的条目置灰，
  *     另给显式「重试」——重试走的就是同一条 launch 通道（宿主侧 userIntent 闸）。
  *
  * 渲染归 view/SettingsView.ts；本文件 ⛔ 不 import cc / fairygui（铁律 9）。
  */
 
-/** FeatureHost 运行时可用性叠加（catalog 之外的可变层；与 AppRuntime.featureAvailability 同形）。 */
-export type FeatureAvailability = "available" | "failed" | "disabled";
+/** PluginHost 运行时可用性叠加（catalog 之外的可变层；与 AppRuntime.pluginAvailability 同形）。 */
+export type PluginAvailability = "available" | "failed" | "disabled";
 
 /** 宿主固定音频开关的字段名（= user profile 字段名，⛔ 不另造一套 key）。 */
 export type SettingsAudioKey = "musicOn" | "sfxOn";
@@ -45,7 +45,7 @@ export interface SettingsPlaceholderModel {
 /** 一条插件入口的输入（组合根从 menu contribution 组装；launch 闭包同 HomeLogic 形态）。 */
 export interface SettingsPluginEntryInput {
     readonly entryId: string;
-    readonly featureId: string;
+    readonly pluginId: string;
     readonly label: string;
     readonly launch: () => void | Promise<void>;
 }
@@ -53,7 +53,7 @@ export interface SettingsPluginEntryInput {
 /** 已叠加运行时可用性的插件入口（渲染用）。 */
 export interface SettingsPluginEntryModel {
     readonly entryId: string;
-    readonly featureId: string;
+    readonly pluginId: string;
     readonly label: string;
     readonly enabled: boolean;
     /** 不可用原因；可用时 null。 */
@@ -63,8 +63,8 @@ export interface SettingsPluginEntryModel {
 export interface SettingsDeps {
     /** 幂等写（宿主接 ports.lobbyRpc.sendIdempotent(user.updateProfile)）。 */
     readonly updateProfile: (patch: SettingsProfilePatch) => Promise<void>;
-    /** FeatureHost 可用性叠加（未托管贡献者按 available 处理，与 Home 同裁定）。 */
-    readonly availabilityOf: (featureId: string) => FeatureAvailability;
+    /** PluginHost 可用性叠加（未托管贡献者按 available 处理，与 Home 同裁定）。 */
+    readonly availabilityOf: (pluginId: string) => PluginAvailability;
 }
 
 /** 渲染顺序（也是 audioToggles 的返回顺序）。 */
@@ -87,7 +87,7 @@ export const SETTINGS_PLACEHOLDERS: readonly SettingsPlaceholderModel[] = [
     { id: "logUpload", label: "日志上报", reason: "未实现：客户端诊断采集与上报 endpoint 都还没有" },
 ];
 
-function disabledReasonOf(availability: FeatureAvailability): string | null {
+function disabledReasonOf(availability: PluginAvailability): string | null {
     if (availability === "failed") return "装载失败，可重试";
     if (availability === "disabled") return "本次启动已停用（自动重试超限），可重试";
     return null;
@@ -134,21 +134,21 @@ export class SettingsLogic {
     }
 
     /**
-     * 插件入口列表：**featureId 字母序**（PLUGIN.md §6；同一 feature 内以 entryId 兜底
+     * 插件入口列表：**pluginId 字母序**（PLUGIN.md §6；同一 plugin 内以 entryId 兜底
      * 保证确定性）。⛔ 不看宿主 placement——首屏位置归 Home，本列表是全量入口的稳定序。
      */
     pluginEntries(): readonly SettingsPluginEntryModel[] {
         return [...this.entries]
             .sort((left, right) => {
-                if (left.featureId !== right.featureId) return left.featureId < right.featureId ? -1 : 1;
+                if (left.pluginId !== right.pluginId) return left.pluginId < right.pluginId ? -1 : 1;
                 if (left.entryId === right.entryId) return 0;
                 return left.entryId < right.entryId ? -1 : 1;
             })
             .map((entry) => {
-                const availability = this.deps.availabilityOf(entry.featureId);
+                const availability = this.deps.availabilityOf(entry.pluginId);
                 return {
                     entryId: entry.entryId,
-                    featureId: entry.featureId,
+                    pluginId: entry.pluginId,
                     label: entry.label,
                     enabled: availability === "available",
                     disabledReason: disabledReasonOf(availability),
@@ -197,7 +197,7 @@ export class SettingsLogic {
 
     /**
      * 显式重试一条不可用入口：走的是**同一条** launch 通道——宿主的
-     * LaunchPort.launch 内部就是 FeatureHost.launch(userIntent:true)，failed 在那一刻重装。
+     * LaunchPort.launch 内部就是 PluginHost.launch(userIntent:true)，failed 在那一刻重装。
      * ⛔ 本层不自己实现重试计数/状态机。
      */
     async retry(entryId: string): Promise<void> {

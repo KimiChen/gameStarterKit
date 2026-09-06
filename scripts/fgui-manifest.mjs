@@ -428,14 +428,14 @@ function generatedViewHash(source) {
 /**
  * 注册 View 的精确源码路径集合来自 generated view manifest（Non-intrusive §7.5 守门
  * manifest 化第四处）：原 `/^[A-Z].*View\.ts$/` 目录自扫作用于相对路径，**静默排除了
- * 子目录 View**——View 迁入 feature/gameplay 目录后 AUTO 哈希覆盖会无声丢失。
+ * 子目录 View**——View 迁入 plugin/gameplay 目录后 AUTO 哈希覆盖会无声丢失。
  * 现改为消费 `views.generated.ts` 的 VIEW_SOURCE_RECORDS（kind:"fgui" 条目；行格式由
- * feature-codegen 唯一拥有，与 previousGeneratedViewNames 同款生成物自解析先例）。
+ * plugin-codegen 唯一拥有，与 previousGeneratedViewNames 同款生成物自解析先例）。
  */
 function generatedViewSourceRecords() {
   const file = path.join(ROOT, "apps/client/src/generated/views.generated.ts");
   if (!fs.existsSync(file)) {
-    throw new Error(`${rel(ROOT, file)} 不存在——先运行 npm --workspace @game/server run codegen:features`);
+    throw new Error(`${rel(ROOT, file)} 不存在——先运行 npm --workspace @game/server run codegen:plugins`);
   }
   const text = fs.readFileSync(file, "utf8");
   const records = [];

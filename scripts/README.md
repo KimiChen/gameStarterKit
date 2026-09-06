@@ -16,7 +16,7 @@ provenance——它们不是普通生成物，每一份都有显式的 writer �
 
 ## protected-paths.json（保护路径规则）
 
-canonical 保护路径规则文件（docs/Non-intrusive.md §8.5）。约束的是**普通 feature / gameplay
+canonical 保护路径规则文件（docs/Non-intrusive.md §8.5）。约束的是**普通 plugin / gameplay
 module 的新增动线**：清单内的中央文件在该动线中禁手改，仍需手改即视为框架扩展点缺失。
 §11.3 的散文清单只是它的视图，矩阵测试对两者做**双向 deepEqual**，任一侧单方面增删即红；
 全仓只有这一份规则文件，⛔ 不产生第二份。显式框架侵入（Non-intrusive §12.3）不适用本清单，

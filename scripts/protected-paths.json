@@ -4,14 +4,14 @@
     "真源 = 本文件；writer = 人工评审（每次修改必须在提交信息中显式声明改了哪条、为什么）；",
     "checker = apps/client/test/protectedPaths.test.ts 无侵入矩阵（随 npm run test:client 进 verify:core 链）；",
     "性质 = 显式治理锁（Non-intrusive §5.5 provenance 表的「保护路径规则」行）。",
-    "docs/Non-intrusive.md §11.3 的散文清单是本文件 featureFlow.paths 的散文视图：矩阵测试解析该代码块",
+    "docs/Non-intrusive.md §11.3 的散文清单是本文件 pluginFlow.paths 的散文视图：矩阵测试解析该代码块",
     "并与本文件双向 deepEqual，任一侧单方面增删即红；⛔ 散文不是第二真源，全仓只有这一份规则文件。",
-    "适用范围：本清单约束的是「普通 feature / gameplay module 的新增动线」——实现一个普通扩展仍需手改",
+    "适用范围：本清单约束的是「普通 plugin / gameplay module 的新增动线」——实现一个普通扩展仍需手改",
     "这些文件时，应视为框架扩展点缺失（Non-intrusive §11.3 末段）。§9 的框架改造按 §12.3 属显式框架侵入，",
     "不适用本清单；那类改动必须在提交中声明并同批更新本文件与 §11.3 散文视图。"
   ],
   "version": 1,
-  "featureFlow": {
+  "pluginFlow": {
     "prose": {
       "doc": "docs/Non-intrusive.md",
       "section": "11.3",
@@ -43,7 +43,7 @@
       "doc": "docs/Non-intrusive.md",
       "section": "12.2",
       "marker": "新增普通玩法的动线中，不应再修改：",
-      "note": "§12.2 边界（『不再因玩法名发生修改』）的机读化 + 阶段 9 收敛后的等价保护点。§12.2 点名的 Main.ts / pages.ts / Home 已在 featureFlow.paths，此处不重复。 本清单与 §12.2 的散文块由无侵入矩阵做双向 deepEqual，⛔ 单方面增删即红。"
+      "note": "§12.2 边界（『不再因玩法名发生修改』）的机读化 + 阶段 9 收敛后的等价保护点。§12.2 点名的 Main.ts / pages.ts / Home 已在 pluginFlow.paths，此处不重复。 本清单与 §12.2 的散文块由无侵入矩阵做双向 deepEqual，⛔ 单方面增删即红。"
     },
     "paths": [
       "apps/shared/src/protocol/messages.ts",
@@ -69,10 +69,10 @@
       { "path": "apps/server/src/rooms/schema/generated/**", "writer": "npm --workspace @game/server run codegen:gameplays", "autoHeader": true },
       { "path": "apps/client/src/gameplay/catalog.generated.ts", "writer": "npm --workspace @game/server run codegen:gameplays", "autoHeader": true },
       { "path": "apps/server/src/rooms/modes/catalog.generated.ts", "writer": "npm --workspace @game/server run codegen:gameplays", "autoHeader": true },
-      { "path": "apps/shared/src/protocol/lobbyRpc/registry.generated.ts", "writer": "npm --workspace @game/server run codegen:features", "autoHeader": true },
-      { "path": "apps/client/src/generated/**", "writer": "npm --workspace @game/server run codegen:features", "autoHeader": true },
-      { "path": "docs/features.generated.md", "writer": "npm --workspace @game/server run codegen:features", "autoHeader": true },
-      { "path": "apps/server/test/lobbyRpcVectors/index.generated.ts", "writer": "npm --workspace @game/server run codegen:features", "autoHeader": true },
+      { "path": "apps/shared/src/protocol/lobbyRpc/registry.generated.ts", "writer": "npm --workspace @game/server run codegen:plugins", "autoHeader": true },
+      { "path": "apps/client/src/generated/**", "writer": "npm --workspace @game/server run codegen:plugins", "autoHeader": true },
+      { "path": "docs/plugins.generated.md", "writer": "npm --workspace @game/server run codegen:plugins", "autoHeader": true },
+      { "path": "apps/server/test/lobbyRpcVectors/index.generated.ts", "writer": "npm --workspace @game/server run codegen:plugins", "autoHeader": true },
       { "path": "apps/server/test/wire-vectors/index.generated.ts", "writer": "npm --workspace @game/server run codegen:gameplays", "autoHeader": true },
       { "path": "apps/server/src/http/manifest.generated.ts", "writer": "npm --workspace @game/server run codegen:http", "autoHeader": true },
       { "path": "apps/shared/src/project.ts", "writer": "npm run init:project", "autoHeader": true },
@@ -93,11 +93,11 @@
     "apps/shared/src/protocol/lobbyRpc/index.ts": "阶段 3 起为稳定 façade；façade 同样受保护——新增域只新建 domains/<domain>.ts",
     "apps/shared/src/protocol/lobbyRpc/envelope.ts": "阶段 3 起为稳定 façade（信封与错误常量经 coreErrors/registry 聚合）",
     "apps/shared/src/protocol/lobbyRpc/push.ts": "阶段 3 起为稳定 façade；域推送在各域 descriptor 声明",
-    "apps/client/src/view/pages.ts": "阶段 5b 起为零状态转发 façade（组合根在 app/loginFlow）；façade 也不许普通 feature 手改",
+    "apps/client/src/view/pages.ts": "阶段 5b 起为零状态转发 façade（组合根在 app/loginFlow）；façade 也不许普通 plugin 手改",
     "apps/client/src/view/viewRegistry.ts": "阶段 6 起为稳定 façade（值来自 generated/views.generated.ts）",
     "apps/client/src/view/fguiContracts.ts": "阶段 6 起类型手写单源 + 契约值 re-export façade（值来自 generated/fguiContracts.generated.ts）",
     "apps/client/src/net/session.ts": "阶段 5a 起为纯 façade（状态与派生逻辑在 app/SessionCoordinator）",
-    "apps/client/src/app/**": "阶段 5/9 的宿主件全体（AppRuntime/NavigationService/FeatureHost/SessionCoordinator/loginFlow 等）——普通 feature 经 contribution/登记点扩展，不改宿主",
+    "apps/client/src/app/**": "阶段 5/9 的宿主件全体（AppRuntime/NavigationService/PluginHost/SessionCoordinator/loginFlow 等）——普通 plugin 经 contribution/登记点扩展，不改宿主",
     "apps/shared/src/protocol/messages.ts": "阶段 2b 起只承载 core wire（Ping/Chat/Pong/Welcome/Error）；玩法消息在各玩法 wire.ts",
     "apps/server/src/rooms/GameRoom.ts": "通用房间壳（catch-all dispatcher）；玩法消息经 wire token + mode commands 接入",
     "apps/server/src/rooms/GameMode.ts": "服务端玩法契约与 registry；登记发生在 modes/catalog.ts 组合根",

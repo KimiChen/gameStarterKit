@@ -8,7 +8,7 @@
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import type { PluginManifest } from "./manifest";
+import type { PluginKind } from "./ownership";
 
 export const INSTALLED_LOCK_DIR = "scripts/plugins";
 export const PACKAGE_FILES_LOCK = "files.lock";
@@ -37,8 +37,18 @@ export type LockSource =
   | { readonly kind: "package"; readonly filesLockSha256: string; readonly registry?: LockSourceRegistry }
   | { readonly kind: "tree"; readonly filesLockSha256: string; readonly forkedFrom: LockSource | null };
 
+/** 锁抬头承载的身份摘要（派生 kinds / constantName 已算好；登记面不进锁）。 */
+export interface LockManifestSummary {
+  readonly id: string;
+  readonly version: string;
+  readonly kinds: readonly PluginKind[];
+  readonly constantName: string | null;
+  readonly domains: readonly string[];
+  readonly fguiPackages: readonly string[];
+}
+
 export interface InstalledLock {
-  readonly manifest: PluginManifest;
+  readonly manifest: LockManifestSummary;
   readonly entries: readonly LockEntry[];
   readonly source?: LockSource | null;
 }
@@ -108,7 +118,6 @@ export function renderInstalledLock(lock: InstalledLock): string {
     constantName: manifest.constantName,
     domains: manifest.domains,
     fguiPackages: manifest.fguiPackages,
-    requires: manifest.requires,
   });
   return [
     `# ${INSTALLED_LOCK_DIR}/${manifest.id}.lock —— 已安装插件 ${manifest.id}@${manifest.version} 的登记与文件清单锁。Do not edit by hand.`,
@@ -174,30 +183,26 @@ export function parseInstalledLock(text: string, label: string): InstalledLock {
   const summary = parsedSummary as {
     readonly id: string;
     readonly version: string;
-    readonly kinds: readonly ("gameplay" | "feature")[];
+    readonly kinds: readonly PluginKind[];
     readonly constantName: string | null;
     readonly domains: readonly string[];
     readonly fguiPackages: readonly string[];
-    readonly requires?: { readonly featureSchemaVersion?: number | null; readonly gameplaySchemaVersion?: number | null };
   };
   if (typeof summary.id !== "string" || typeof summary.version !== "string") throw new Error(`[plugin] ${label} 的 "# manifest" 抬头缺 id / version`);
-  if (!Array.isArray(summary.kinds) || summary.kinds.length === 0 || summary.kinds.some((kind) => kind !== "gameplay" && kind !== "feature")) {
+  // 2026-09-05 之前的锁把「有客户端登记」写作 "feature"（改名前）/ "plugin"（改名中间态）：读时归一为 "client"，
+  // reinstall-from-tree 重写后即消失，⛔ 不再新写这两个词。
+  const LEGACY_CLIENT_KINDS = new Set(["feature", "plugin"]);
+  if (!Array.isArray(summary.kinds) || summary.kinds.length === 0 || summary.kinds.some((kind) => kind !== "gameplay" && kind !== "client" && !LEGACY_CLIENT_KINDS.has(kind as string))) {
     throw new Error(`[plugin] ${label} 的 "# manifest" 抬头 kinds 非法`);
   }
-  const manifest: PluginManifest = {
-    schemaVersion: 1,
+  const kinds = [...new Set(summary.kinds.map((kind) => (LEGACY_CLIENT_KINDS.has(kind as string) ? "client" : kind)))] as PluginKind[];
+  const manifest: LockManifestSummary = {
     id: summary.id,
     version: summary.version,
-    kinds: summary.kinds,
+    kinds,
     constantName: summary.constantName ?? null,
     domains: summary.domains ?? [],
     fguiPackages: summary.fguiPackages ?? [],
-    // 旧锁没有 requires ⇒ 两轴 null（check 点名为「未登记」，reinstall-from-tree 重写即补上）。
-    requires: {
-      featureSchemaVersion: typeof summary.requires?.featureSchemaVersion === "number" ? summary.requires.featureSchemaVersion : null,
-      gameplaySchemaVersion: typeof summary.requires?.gameplaySchemaVersion === "number" ? summary.requires.gameplaySchemaVersion : null,
-    },
-    description: "",
   };
   return { manifest, entries: parseEntries(lines, label), source: parseLockSource(lines, label) };
 }

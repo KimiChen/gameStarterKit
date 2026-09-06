@@ -41,7 +41,7 @@ test("受保护路径锁：仓内锁 ⇔ 当前字节逐条一致（改了受保
 
 test("受保护路径锁的覆盖面 = 规则文件两组手写路径的展开（⛔ 不含 generatedWriterOwned）", () => {
   const rules = JSON.parse(readFileSync(join(ROOT, "scripts/protected-paths.json"), "utf8")) as {
-    featureFlow: { paths: string[] };
+    pluginFlow: { paths: string[] };
     gameplayFlow: { paths: string[] };
     generatedWriterOwned: { entries: Array<{ path: string }> };
   };
@@ -49,7 +49,7 @@ test("受保护路径锁的覆盖面 = 规则文件两组手写路径的展开�
 
   // 每条非 glob 保护路径必须**逐条**在锁的覆盖面里：整体计数相等对「一条掉了、另一条多展开
   // 一个文件」零判别力。
-  const declared = [...rules.featureFlow.paths, ...rules.gameplayFlow.paths];
+  const declared = [...rules.pluginFlow.paths, ...rules.gameplayFlow.paths];
   for (const entry of declared.filter((path) => !path.endsWith("/**"))) {
     assert.ok(files.includes(entry), `保护路径未进锁：${entry}`);
   }
@@ -78,7 +78,7 @@ function createFixture(): string {
     writeFileSync(join(root, relative), content);
   };
   write("scripts/protected-paths.json", `${JSON.stringify({
-    featureFlow: { paths: ["src/Main.ts"] },
+    pluginFlow: { paths: ["src/Main.ts"] },
     gameplayFlow: { paths: ["src/app/**"] },
   }, null, 2)}\n`);
   write("src/Main.ts", "export const main = 1;\n");
@@ -167,13 +167,13 @@ test("规则文件被掏空 / 保护路径不存在时 fail closed（⛔ 不静�
   try {
     writeFileSync(
       join(root, "scripts/protected-paths.json"),
-      `${JSON.stringify({ featureFlow: { paths: [] }, gameplayFlow: { paths: [] } })}\n`,
+      `${JSON.stringify({ pluginFlow: { paths: [] }, gameplayFlow: { paths: [] } })}\n`,
     );
     assert.throws(() => collectLockedFiles(root), /失去覆盖面/u);
 
     writeFileSync(
       join(root, "scripts/protected-paths.json"),
-      `${JSON.stringify({ featureFlow: { paths: ["src/Ghost.ts"] }, gameplayFlow: { paths: [] } })}\n`,
+      `${JSON.stringify({ pluginFlow: { paths: ["src/Ghost.ts"] }, gameplayFlow: { paths: [] } })}\n`,
     );
     assert.throws(() => collectLockedFiles(root), /保护路径不存在/u);
   } finally {

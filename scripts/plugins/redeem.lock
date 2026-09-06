@@ -1,33 +1,32 @@
-# scripts/plugins/redeem.lock —— 已安装插件 redeem@1.0.6 的登记与文件清单锁。Do not edit by hand.
+# scripts/plugins/redeem.lock —— 已安装插件 redeem@1.0.8 的登记与文件清单锁。Do not edit by hand.
 # writer: npm --workspace @game/server run plugin -- install ；checker: apps/server/test/plugin-lock.test.ts（随 verify:all）与 plugin -- check
-# manifest {"id":"redeem","version":"1.0.6","kinds":["feature"],"constantName":null,"domains":["redeem"],"fguiPackages":[],"requires":{"featureSchemaVersion":1,"gameplaySchemaVersion":null}}
-# source {"kind":"tree","filesLockSha256":"0d8d131a4121832f779e023529910bf275b2af5b13b5e70f8898f9e74dfe3c46","forkedFrom":null}
-apps/Cocos/assets/src/features/redeem.meta 639172d3ae01bb4b2390beb1f10e5b847d28238a601c5521f4610d27ac66a6b4
-apps/Cocos/assets/src/features/redeem/index.ts 2c950c4e5695748d495f114fe6049049af56d8a0c338562f174b91518ef7b4b2
-apps/Cocos/assets/src/features/redeem/index.ts.meta 7d02df934e31940ab85a30f8f5482ef445342604bc3723753a40c75e2950da24
-apps/Cocos/assets/src/features/redeem/logic.meta 5a6c5001f17d0a350de12d0fbef7776dfd575d949772ba8acca425dd7c4183ef
-apps/Cocos/assets/src/features/redeem/logic/RedeemLogic.ts bd6288956bc8e765969f80e6372991a187383eaa8c0e557ce96fdd175f7050b2
-apps/Cocos/assets/src/features/redeem/logic/RedeemLogic.ts.meta 89a04a1896b6905d4b42a05be59e3bfb6859bfe6dbfb65de5268b751701f7961
-apps/Cocos/assets/src/features/redeem/logic/redeemRuntime.ts 9fcbd589f1351f35314da4cc2ef89a67804728d0ac1cdcae26c0c502a9860560
-apps/Cocos/assets/src/features/redeem/logic/redeemRuntime.ts.meta 1f64b466126ee9b1943fa49780aa2ab2631bfad02a91d2dcd1050bb505292b9e
-apps/Cocos/assets/src/features/redeem/view.meta 817ce2db4c2b48ac83b856009001105cb7fbeb546cb680df4c6de80ba453202c
-apps/Cocos/assets/src/features/redeem/view/RedeemView.ts fd986d0d678ca1979a6e192e603f6c6f68b00816185087d8356673039dcfeb89
-apps/Cocos/assets/src/features/redeem/view/RedeemView.ts.meta d52c1a01534db10c73166f0ce49db48f44c8d38a2d86d7c9dc9400b2fd497276
-apps/Cocos/assets/src/features/redeem/view/RedeemView.view.json 42bbf1aa57dfb12678e024d248209d7797332adba7999399b6a15e49ec836a50
-apps/Cocos/assets/src/features/redeem/view/RedeemView.view.json.meta e6aeeca0b36de4c84ad917aba1a4401fd85c3b9480394b8d0fedf7b14c5fd149
-apps/client/src/features/redeem/index.ts 2c950c4e5695748d495f114fe6049049af56d8a0c338562f174b91518ef7b4b2
-apps/client/src/features/redeem/logic/RedeemLogic.ts bd6288956bc8e765969f80e6372991a187383eaa8c0e557ce96fdd175f7050b2
-apps/client/src/features/redeem/logic/redeemRuntime.ts 9fcbd589f1351f35314da4cc2ef89a67804728d0ac1cdcae26c0c502a9860560
-apps/client/src/features/redeem/view/RedeemView.ts fd986d0d678ca1979a6e192e603f6c6f68b00816185087d8356673039dcfeb89
-apps/client/src/features/redeem/view/RedeemView.view.json 42bbf1aa57dfb12678e024d248209d7797332adba7999399b6a15e49ec836a50
-apps/client/test/redeem-logic.test.ts f1db5128bd123c6184911ef0ae8aa8cfcf1acff93e369523d10e32f1181e7f91
-apps/plugins/redeem/README.md a4958218bd274537b8207481578bcb8cced2f1bc1974ada90ad8511edd20bbb7
-apps/plugins/redeem/feature.json aea2c9a227d1a1c2880fe55abecad94ea43c94e6c3b8fdd4d30eb5c18e3ce8e6
-apps/plugins/redeem/plugin.json 3668748d8a028e9ef2b636ea6520881ff2b1eec6724a7b94ac3208eb2e0ad45e
+# manifest {"id":"redeem","version":"1.0.8","kinds":["client"],"constantName":null,"domains":["redeem"],"fguiPackages":[]}
+# source {"kind":"tree","filesLockSha256":"ab136d5f37ac3466ab71ce8d4735fdd05e7bc3a6c7907e98ad9fe64cb0b7f65e","forkedFrom":null}
+apps/Cocos/assets/src/plugins/redeem.meta 639172d3ae01bb4b2390beb1f10e5b847d28238a601c5521f4610d27ac66a6b4
+apps/Cocos/assets/src/plugins/redeem/index.ts 7418a31154e52bde7c09aab2f697dfca420271bea97f54f40f7ef89829b49e5b
+apps/Cocos/assets/src/plugins/redeem/index.ts.meta 7d02df934e31940ab85a30f8f5482ef445342604bc3723753a40c75e2950da24
+apps/Cocos/assets/src/plugins/redeem/logic.meta 5a6c5001f17d0a350de12d0fbef7776dfd575d949772ba8acca425dd7c4183ef
+apps/Cocos/assets/src/plugins/redeem/logic/RedeemLogic.ts 72a39370f65a78f4a41039afc0cdb7dbd9c323a3d64ed93aff2f0d644abb018a
+apps/Cocos/assets/src/plugins/redeem/logic/RedeemLogic.ts.meta 89a04a1896b6905d4b42a05be59e3bfb6859bfe6dbfb65de5268b751701f7961
+apps/Cocos/assets/src/plugins/redeem/logic/redeemRuntime.ts 04a5cf8e3e372733d9694f05565627ec9461a29d1958844ef71f98125a19af4a
+apps/Cocos/assets/src/plugins/redeem/logic/redeemRuntime.ts.meta 1f64b466126ee9b1943fa49780aa2ab2631bfad02a91d2dcd1050bb505292b9e
+apps/Cocos/assets/src/plugins/redeem/view.meta 817ce2db4c2b48ac83b856009001105cb7fbeb546cb680df4c6de80ba453202c
+apps/Cocos/assets/src/plugins/redeem/view/RedeemView.ts af3c3c47a5428b9f5bb3eec2e85a265f6bc9023259d539ef21fc2a7ad899ca64
+apps/Cocos/assets/src/plugins/redeem/view/RedeemView.ts.meta d52c1a01534db10c73166f0ce49db48f44c8d38a2d86d7c9dc9400b2fd497276
+apps/Cocos/assets/src/plugins/redeem/view/RedeemView.view.json 9fe9023a25e9216827328104c7dcd2bf28a7afeaf7c69901924935d6c7f4790d
+apps/Cocos/assets/src/plugins/redeem/view/RedeemView.view.json.meta e6aeeca0b36de4c84ad917aba1a4401fd85c3b9480394b8d0fedf7b14c5fd149
+apps/client/src/plugins/redeem/index.ts 7418a31154e52bde7c09aab2f697dfca420271bea97f54f40f7ef89829b49e5b
+apps/client/src/plugins/redeem/logic/RedeemLogic.ts 72a39370f65a78f4a41039afc0cdb7dbd9c323a3d64ed93aff2f0d644abb018a
+apps/client/src/plugins/redeem/logic/redeemRuntime.ts 04a5cf8e3e372733d9694f05565627ec9461a29d1958844ef71f98125a19af4a
+apps/client/src/plugins/redeem/view/RedeemView.ts af3c3c47a5428b9f5bb3eec2e85a265f6bc9023259d539ef21fc2a7ad899ca64
+apps/client/src/plugins/redeem/view/RedeemView.view.json 9fe9023a25e9216827328104c7dcd2bf28a7afeaf7c69901924935d6c7f4790d
+apps/client/test/redeem-logic.test.ts ac95b5e2e931856480e3242e05dda2e0b9695266b64828980305f8b28b6bad62
+apps/plugins/redeem/README.md 7f5ecbd446a4c360a625df2f738ae9e7b8912ec8f231dbc0347dd20c3fca4f04
+apps/plugins/redeem/plugin.json 717cbec09b93386cfcac04afb2d04198aeca03fb211e9a13ec69fffc22b06260
 apps/server/src/core/redeem/claim.ts 6020b88ba76db80579ed0a94d18b4d0e68e87199367977b6e30d68b39830fc81
 apps/server/src/core/redeem/codes.ts 492a7aeddb96f3d3473b59bebf172e9e63267781167718671c111d612ef7211a
-apps/server/src/core/redeem/store.ts f02a1eff0b5ff63a5298136d6f2aacf86f2a8394f7ad052b91056ec9990e748a
+apps/server/src/core/redeem/store.ts c051cf5849f2d27c23c7d658ebe7b371c504b2dd640bec568647a060a8dae79b
 apps/server/src/websocket/redeem/claim.ts 5f292f9c1d6e23ec23a97d5aaaf35acb9fba8ad78af2d3d8f15095b0fd999113
-apps/server/test/lobbyRpcVectors/redeem.ts 356bb48acbbc8a7ffc2f5e56f23cfe8a6ac123fffce936990dcc8fc15e2d14b8
-apps/server/test/redeem-claim.test.ts 8110f796f52049c5ed4e9353fcf96b13132602372807d9424ee80482e0d8b8d0
+apps/server/test/lobbyRpcVectors/redeem.ts f104ae472d2dd8bcf1d6bab12377fa0fed628502a401865000b84dbaec62d0a4
+apps/server/test/redeem-claim.test.ts 4302ccf91b75ea30bce5045ef2f16d07e24171d39658c0d3959a94f64e48a55f
 apps/shared/src/protocol/lobbyRpc/domains/redeem.ts e7e74dc98acf6cfb1d5bfd0261930d6bbc5bb07e2efa79dec0e91be485596514

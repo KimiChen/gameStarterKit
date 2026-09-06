@@ -430,7 +430,7 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
   理由登记——`supersededBy` 用既有 `commandCovers` 证明某根脚本确实转调它，`documentedIn` 要求该文档写出
   命令原文；并拒绝重复登记、拒绝与命令表双登记、拒绝指向已不存在的脚本。另加 `checkWorkspaceCommandLiterals`：
   三份根文档里写出的 workspace 命令必须解析到真实脚本，防止改名后留下可复制但已失效的指令。落地时该闸立刻
-  查出 `loadtest` 是唯一没有任何文档写出命令原文的脚本，已在 `docs/EXTRAFEATURES.md` 补上。
+  查出 `loadtest` 是唯一没有任何文档写出命令原文的脚本，已在 `docs/EXTRAS.md` 补上。
   `scripts/verify-inventory.test.mjs` 新增 5 条反例（新增未登记 workspace 脚本、`supersededBy` 的根脚本不再
   转调、`documentedIn` 文档删掉命令原文、与命令表重复登记、根文档引用不存在的 workspace 命令）。变异推演
   两处：删掉 `checkWorkspaceCommandScope` 调用 → 4 条变红；删掉字面量存在性断言 → 第 5 条变红。上述
@@ -517,7 +517,7 @@ FGUI 50/50、集成 153/153；故障矩阵 unit 2 组 131/131、integration 4 �
   `verify:core` 的既有门禁口径」）。机检深度止于「入口存在性 + 登记点 + 链接锚点」，T1–T7 的完成状态不受
   机检约束。
 - `[不阻塞·有意保留]` 原列首位的「产物往返自检」已迁入
-  [`docs/EXTRAFEATURES.md` §3.10](docs/EXTRAFEATURES.md#310-产物往返自检导出物反序列化校验)，
+  [`docs/EXTRAS.md` §3.10](docs/EXTRAS.md#310-产物往返自检导出物反序列化校验)，
   当前状态仍为未实现；它用于发现导出过程静默丢内容，现有 manifest/hash 检查不能覆盖这一失败形态。
 
 ## 7. 文档自身的问题

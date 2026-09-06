@@ -9,12 +9,12 @@
 > | §1 判据 / §2 分层 / §3 例证 | 设计基线；措辞按审阅修正（机检真源改为所有权推导 allowlist） |
 > | §4 装载时机 | 设计基线；措辞按审阅修正 |
 > | §5 包格式与安装流程 | ✅ 已实现（`apps/server/tools/plugin/`，`plugin -- pack/install/uninstall/check`；隔离 fixture 验证，真实包端到端实证仍开放，见 §9 第 6 条 / plan-v5 E5） |
-> | §6 入口与位置 | ✅ 已实施（设置面板、宿主 `features/host.json`、slot/order 退役、route 形态 launch、依赖装载） |
+> | §6 入口与位置 | ✅ 已实施（设置面板、宿主 `apps/plugins/host.json`、slot/order 退役、route 形态 launch、依赖装载） |
 > | §7 生命周期 | ✅ 已实现（已安装锁 `scripts/plugins/<id>.lock`） |
 > | §8 冲突面 | 按实际机检状态改写 |
 > | §9 缺口 | 已分「已补 / 仍开放」，开放项登记在 [plan-v5.md](../plan-v5.md) E 类 |
 >
-> 与 [docs/Non-intrusive.md](Non-intrusive.md) 的关系：那份是「框架如何做到新增玩法/feature 不侵入」的
+> 与 [docs/Non-intrusive.md](Non-intrusive.md) 的关系：那份是「框架如何做到新增玩法/plugin 不侵入」的
 > 改造方案（框架侧阶段 0-9 已实施）；本文接着回答下一个问题——**外部包能否直接装进本项目跑起来**。
 > 判据的机检真源是 §5.2 的所有权推导（`apps/server/tools/plugin/ownership.ts`），`scripts/protected-paths.json`
 > 只是它之外的第二道闸。
@@ -26,13 +26,13 @@
 > **插件只能「消费」，不能「定义」。要定义就是框架 PR。**
 
 这条判据不是新发明的规矩，而是把前面十几轮改造**已经形成的结构**说出来：框架把「消费一层能力」做成了声明式
-（manifest / feature.json 里一行），把「定义一层能力」留在了中央文件里。两者的分界线恰好就是插件边界。
+（manifest / plugin.json 里一行），把「定义一层能力」留在了中央文件里。两者的分界线恰好就是插件边界。
 
 除「能不能」之外还有第三类：**⛔ 责任不可转移**——技术上完全能做成插件，但责任在发行方，不该外包给
 插件（服务条款、隐私政策、推送授权、日志上报，见 §6.1）。
 
 **判据可机检，但机检形态是 allowlist 而不是 denylist**：插件能写入的路径集合由它的身份纯函数推导（§5.2），
-不在推导集内的路径整包拒绝。`scripts/protected-paths.json` 自述只约束「普通 feature/gameplay 的新增动线」，
+不在推导集内的路径整包拒绝。`scripts/protected-paths.json` 自述只约束「普通 plugin/gameplay 的新增动线」，
 它拦不住 zip 用相对路径写 `scripts/`、`package.json`、`RoomProfile.ts` 这类根本不在名单里的文件
 （PLUGIN-REVIEW F03/F04），所以它只作为 allowlist 之外的第二道闸。威胁模型见 §5.1：作者可信、包不可信，
 闸门防的是非预期写入与静默漂移，⛔ 不是沙箱。
@@ -42,15 +42,15 @@
 | 层 | 插件能否自持 | 落点 |
 | --- | --- | --- |
 | gameplay module（实时玩法：manifest/state/wire + 三端模块） | ✅ 可消费 | `apps/shared/schema/gameplays/<id>/`、`apps/shared/src/gameplays/<id>/`、`apps/server/src/rooms/modes/<id>/`（导出 `register<Constant>GameMode`，`codegen:gameplays` 生成 `modes/catalog.generated.ts` 收录）、`apps/client/src/gameplay/modes/<id>/`、`logic/rooms/<id>/`、`view/rooms/<id>/`、`net/rooms/<Constant>Room.ts`、`apps/server/test/wire-vectors/<id>.ts`（wire 向量 sidecar，`codegen:gameplays` 汇入 `index.generated.ts`）、`apps/Cocos/assets/resources/<id>/` |
-| feature（大厅页面 + RPC domain + View + 路由 + 菜单） | ✅ 可消费 | `apps/plugins/<id>/feature.json`、`apps/client/src/features/<id>/`、`apps/server/src/core/<id>/`（自有键经 `kFeatureUser`/`kFeatureShared`）；每个 domain：`apps/shared/src/protocol/lobbyRpc/domains/<d>.ts`、`apps/server/src/websocket/<d>/`、`apps/server/test/lobbyRpcVectors/<d>.ts`（`codegen:features` 生成向量登记表收录）；FGUI 包：`apps/art/fairygui/assets/<Pkg>/` + `resources/ui/<Pkg>.bin`/图集 |
-| 入口（菜单 contribution） | ✅ 可消费 | feature.json 的 `menu`：只有身份（entryId/label/labelKey/icon/launch），launch 可为 `gameplay` 或 `route`；位置见 §6 |
+| plugin（大厅页面 + RPC domain + View + 路由 + 菜单） | ✅ 可消费 | `apps/plugins/<id>/plugin.json`、`apps/client/src/plugins/<id>/`、`apps/server/src/core/<id>/`（自有键经 `kPluginUser`/`kPluginShared`）；每个 domain：`apps/shared/src/protocol/lobbyRpc/domains/<d>.ts`、`apps/server/src/websocket/<d>/`、`apps/server/test/lobbyRpcVectors/<d>.ts`（`codegen:plugins` 生成向量登记表收录）；FGUI 包：`apps/art/fairygui/assets/<Pkg>/` + `resources/ui/<Pkg>.bin`/图集 |
+| 入口（菜单 contribution） | ✅ 可消费 | plugin.json 的 `menu`：只有身份（entryId/label/labelKey/icon/launch），launch 可为 `gameplay` 或 `route`；位置见 §6 |
 | profile 声明（选用已有的房型策略组合） | ✅ 可消费 | manifest 的 `profiles` 一行 |
 | state fragment 声明（选用已有的公共状态片段） | ✅ 可消费 | state.json 的 `fragments` 一行 |
 | room policy 定义（新的 Start/Access 策略） | ⛔ 只能定义 | `apps/server/src/rooms/core/RoomProfile.ts` |
 | state fragment 定义（新的公共状态片段） | ⛔ 只能定义 | gameplay-codegen 的 stateRenderer |
 | core wire 定义（房内公共消息） | ⛔ 只能定义 | `apps/shared/src/protocol/messages.ts` |
 | shell 生命周期钩子定义 | ⛔ 只能定义 | `apps/server/src/rooms/GameMode.ts` 的钩子表 |
-| 入口位置（首屏摆什么、默认进哪个玩法） | ⛔ 归宿主 | `features/host.json`（§6） |
+| 入口位置（首屏摆什么、默认进哪个玩法） | ⛔ 归宿主 | `apps/plugins/host.json`（§6） |
 | npm 依赖 / 根命令 / 协议信封 / SQL 表 | ⛔ 框架 PR | Non-intrusive §12.3；§5.2 的硬排除让它们根本进不了包 |
 
 上五行是声明式、零侵入；「只能定义」四行**不在任何插件的可写前缀内**（不是「都在受保护路径上」——
@@ -60,7 +60,7 @@
 
 | 需求 | 判定 | 依据 |
 | --- | --- | --- |
-| 大厅聊天面板 | **消费型 → 插件可做** | feature 层完备：feature.json + domain + websocket 端点 + 向量 sidecar + 客户端 View，零中央文件改动（§2 feature 行） |
+| 大厅聊天面板 | **消费型 → 插件可做** | plugin 层完备：plugin.json + domain + websocket 端点 + 向量 sidecar + 客户端 View，零中央文件改动（§2 plugin 行） |
 | 房内聊天增强（频道/私聊/表情） | 定义型 → 框架 PR | 房内聊天今天是 core wire（`CORE_C2S.Chat`），要扩展就得改 `protocol/messages.ts` |
 | 蛇增加「邀请好友内战」 | **消费型 → 插件可做** | 服务端侧只需声明，但代价如实见 §3.1 |
 | 做一个「给任意玩法加内战」的通用插件 | 定义型 → 框架 PR | 要同时贡献 room policy + state fragment + core wire |
@@ -110,8 +110,8 @@
 **`.meta` 的取舍**（修正旧表述「安装后始终要开一次 Creator」）：包自带的文件由作者侧 Creator 产出 `.meta` 并**随包分发**，
 安装侧 ⛔ 不合成；`sync-client --check` 的 `.meta` 断言只遍历 git 已跟踪文件——`plugin -- install` 只 `git add`
 包内文件与已跟踪镜像的改动，`sync:shared` 为 shared 变化**新建**的镜像文件保持未跟踪，因此无头 CI 上安装后
-`verify:all` 可通过；提交前仍要开一次 Creator 为这些新镜像（以及首个 feature 插件的共享祖先目录
-`apps/Cocos/assets/src/features.meta`）生成 `.meta` 再 `git add`。Creator 对随包 `.meta` 只会重写键序/版本，uuid 不变。
+`verify:all` 可通过；提交前仍要开一次 Creator 为这些新镜像（以及首个带客户端源码插件的共享祖先目录
+`apps/Cocos/assets/src/plugins.meta`）生成 `.meta` 再 `git add`。Creator 对随包 `.meta` 只会重写键序/版本，uuid 不变。
 
 ## 5. 包格式与安装流程
 
@@ -129,15 +129,15 @@
 
 ### 5.2 所有权由身份推导（allowlist，fail-closed）
 
-插件能写入仓库的路径集合由 `plugin.json` 的身份 (id, kinds, constantName, domains, fguiPackages) 与
-`apps/plugins/<id>/feature.json` 声明的客户端目录**纯函数推导**（`tools/plugin/ownership.ts`）——这就是
+插件能写入仓库的路径集合由 `plugin.json` 的身份 (id, domains, fguiPackages) + 派生形态（有客户端登记 ⇒ client、有 `gameplay/` ⇒ gameplay，constantName 从 gameplay manifest 派生）与
+`apps/plugins/<id>/plugin.json` 声明的客户端目录**纯函数推导**（`tools/plugin/ownership.ts`）——这就是
 「目录即所有权」的机检形态：
 
 | kind | 推导出的可写落点 |
 | --- | --- |
-| 共有 | `apps/plugins/<id>/`（plugin.json / feature.json / README.md / gameplay 单源，§5.5）、`apps/server/test/<id>-*.test.ts`、`apps/server/test/int/<id>-*.test.ts`、`apps/client/test/<id>-*.test.ts`（前缀后**必须**紧跟 `-` 或 `.`，⛔ 不是裸 startsWith：`tally` 不拥有 `tallyBoard-*`、`red` 不拥有 `redis-*`；2026-09-05 收紧，PLUGIN-REGISTRY §1-4） |
+| 共有 | `apps/plugins/<id>/`（plugin.json / README.md / gameplay 单源，§5.5）、`apps/server/test/<id>-*.test.ts`、`apps/server/test/int/<id>-*.test.ts`、`apps/client/test/<id>-*.test.ts`（前缀后**必须**紧跟 `-` 或 `.`，⛔ 不是裸 startsWith：`tally` 不拥有 `tallyBoard-*`、`red` 不拥有 `redis-*`；2026-09-05 收紧，PLUGIN-REGISTRY §1-4） |
 | gameplay | `apps/shared/src/gameplays/<id>/`、`apps/server/src/rooms/modes/<id>/`、`apps/client/src/gameplay/modes/<id>/`、`apps/client/src/logic/rooms/<id>/`、`apps/client/src/view/rooms/<id>/`、`apps/client/src/net/rooms/<Constant>Room.ts`、`apps/server/test/wire-vectors/<id>.ts`、`apps/Cocos/assets/resources/<id>/` |
-| feature | `apps/client/src/features/<id>/`、`apps/server/src/core/<id>/`；每个声明的 domain：`apps/shared/src/protocol/lobbyRpc/domains/<d>.ts`、`apps/server/src/websocket/<d>/`、`apps/server/test/lobbyRpcVectors/<d>.ts`；feature.json 的 viewDirs/logicDir 必须 ⊆ `apps/client/src/features/<id>/**` 或 `apps/client/src/{view,logic}/**/<id>` |
+| plugin | `apps/client/src/plugins/<id>/`、`apps/server/src/core/<id>/`；每个声明的 domain：`apps/shared/src/protocol/lobbyRpc/domains/<d>.ts`、`apps/server/src/websocket/<d>/`、`apps/server/test/lobbyRpcVectors/<d>.ts`；plugin.json 的 viewDirs/logicDir 必须 ⊆ `apps/client/src/plugins/<id>/**` 或 `apps/client/src/{view,logic}/**/<id>` |
 | fguiPackages | `apps/art/fairygui/assets/<Pkg>/`、`apps/Cocos/assets/resources/ui/<Pkg>.bin`、`<Pkg>_atlas*` |
 | 镜像 / `.meta` | 由真源推导：`apps/client/src/X` 可写 ⇒ `apps/Cocos/assets/src/X` 与 `X.meta` 可写；插件专属目录的目录 `.meta` 可写，共享祖先目录（如 `view/rooms.meta`）⛔ 不随包 |
 
@@ -159,25 +159,23 @@
 zip（或已解开的目录，两者等价）根部两件元数据 + 仓库相对路径的文件：
 
 ```text
-plugin.json      身份：{ schemaVersion:1, id, version(semver), kinds:["gameplay"|"feature",…],
-                       constantName?(gameplay 必填), domains?, fguiPackages?,
-                       requires?:{ featureSchemaVersion, gameplaySchemaVersion }, description? }
+plugin.json      一个文件两面（schema v2，单源 apps/server/tools/plugin/plugin-schema-v2.json）：
+                 身份 { schemaVersion:2, id, version?(semver；宿主自有插件省略), domains?, fguiPackages?, description? }
+                 + 客户端登记 { entry?, viewDirs?, views?, owners?, routes?, menu?, dependencies?, resident?, category?, docs?, capabilities? }
 files.lock       清单：每行 <仓库相对路径> <sha256>（与 protected-paths.lock 同形态）
 <仓库相对路径>…  文件本体（含客户端镜像与 Creator 产出的 .meta）
 ```
 
-- `kinds` 可同时含 gameplay 与 feature——一个玩法插件天然是「manifest/state/wire + feature.json」的组合，
-  ⛔ 没有「kind 二分」；
-- `requires` 只钉两个 schemaVersion（feature-schema-v1 / gameplay-schema-v1），**必填且 fail-closed**（2026-09-05，
-  PLUGIN-REGISTRY §1-9）：kinds 含 feature ⇒ `featureSchemaVersion` 必填，含 gameplay ⇒ `gameplaySchemaVersion` 必填，
-  缺省不再「视为当前版本」；比对基准读自两个 schema 文件的 `schemaVersion.const`（⛔ 不手抄常量）；值进已安装锁抬头，
-  `check` 复核树上 plugin.json 与锁两侧（旧锁未登记即点名，`--reinstall-from-tree` 重写即补上）。协议整数不是插件的兼容轴：
-  gameplay 的契约身份是 per-mode `contractDigest`/`modeVersion`（既有闸），Lobby 域的契约身份是
-  codegen 层的域 descriptor digest → 域级 `contractVersion` 闸（`LOBBY_RPC_DOMAIN_CONTRACTS`，✅ 2026-09-05；
-  覆盖面 = 域 descriptor 文件自身字节，与 gameplay 只算 wire.ts 同口径——跨文件复用的 validator/类型变化由
-  protocol-fingerprint 点名但不强制 bump）；
+- ⛔ 没有 `kinds`：有客户端登记（entry / views / routes / menu 任一）⇒ client 形态，包内有 `gameplay/manifest.json` ⇒ gameplay
+  形态，两者可并存（一个玩法插件天然 = gameplay 单源 + 入口登记），两者皆无即拒绝；⛔ 没有 `constantName`：从 gameplay
+  manifest 派生；派生结果写进锁抬头（`"kinds":["client","gameplay"]`），`check` 按它与树比对身份漂移。
+- ⛔ 没有 `requires.*SchemaVersion`（2026-09-05 合并 plugin.json 时去掉）：兼容轴就是 `plugin.json` 自己的 `schemaVersion`
+  （const，读时 fail-closed）与 gameplay manifest 的 `schemaVersion`（读时与 gameplay-schema 的 const 比对）。协议整数不是插件的
+  兼容轴：gameplay 的契约身份是 per-mode `contractDigest`/`modeVersion`（既有闸），Lobby 域的契约身份是 codegen 层的域
+  descriptor digest → 域级 `contractVersion` 闸（`LOBBY_RPC_DOMAIN_CONTRACTS`；覆盖面 = 域 descriptor 文件自身字节，与
+  gameplay 只算 wire.ts 同口径——跨文件复用的 validator/类型变化由 protocol-fingerprint 点名但不强制 bump）；
 - ⛔ 不放路径映射（仓库布局不能成为第二真源），⛔ 不放 slot/order（位置归宿主，§6）；
-- `plugin.json` 同时以 `apps/plugins/<id>/plugin.json` 落在仓库（作者侧手写、`pack` 的输入、`install` 原样落回），
+- 同一份 `plugin.json` 以 `apps/plugins/<id>/plugin.json` 落在仓库（作者侧手写、`pack` 的输入、`install` 原样落回、`codegen:plugins` 的登记面），
   包的自证由 `files.lock` 承担：清单外条目、哈希不符一律拒绝。
 
 ### 5.4 命令与动线
@@ -196,7 +194,7 @@ npm --workspace @game/server run plugin -- check
 
 **宿主侧 `install`**（= install-or-upgrade，「zip 清单 ⟷ 已安装锁 ⟷ 工作树」三方比对）：
 
-1. 读包并自证（`files.lock`）；身份交叉校验（feature.json / manifest.json 的 id、constantName、viewDirs；
+1. 读包并自证（`files.lock`）；身份交叉校验（plugin.json / manifest.json 的 id、constantName、viewDirs；
    每个 domain 的 descriptor 与向量 sidecar 同批在包内；每个 FGUI 包的 ART 源与发布物同批在包内）；
 2. 每个路径过 §5.2 闸；镜像与真源字节相同、`.meta` 齐全；**`.meta` 内容闸**（2026-09-05，PLUGIN-REGISTRY §1-11，
    `tools/plugin/meta.ts`）：JSON 可解析、uuid 是小写 8-4-4-4-12（与 `scripts/sync-client.mjs` 同一正则，测试钉住相等）、
@@ -213,10 +211,10 @@ npm --workspace @game/server run plugin -- check
    锁登记的文件在树中缺失 ⇒ 拒绝（先 `plugin -- check` 修锁或 `uninstall --force`）；推导集内已有不属本插件的
    文件（含 id/domain 与框架目录同名的目录级占用）⇒ 所有权冲突拒绝；
 5. 原子落盘 → 写 `scripts/plugins/<id>.lock`（已安装插件的唯一登记面）→ `git add`（只加存在或已跟踪的路径）
-   → `codegen:gameplays`（含 gameplay）/ `codegen:features`（含 feature；kinds 按新旧并集跑，升级去掉某 kind 时对应
+   → `codegen:gameplays`（含 gameplay；按新旧并集跑，升级去掉 gameplay 时仍跑一次收缩）/ `codegen:plugins`（总是跑：每个 plugin.json 都是它的输入；
    codegen 仍跑一次收缩）→ `sync:shared`（Cocos 镜像只 `git add -u`：新建的镜像文件没有 `.meta`，保持未跟踪）。
-   **升级删除面显式交给 codegen**（2026-09-05，PLUGIN-REGISTRY §1-2）：旧身份 / 旧 feature.json 有、新包没有的
-   gameplay id / feature id / 域 / View 名按 uninstall 同一算法算成 `--allow-delete` 集合传下去（成批删除时
+   **升级删除面显式交给 codegen**（2026-09-05，PLUGIN-REGISTRY §1-2）：旧身份 / 旧 plugin.json 有、新包没有的
+   gameplay id / plugin id / 域 / View 名按 uninstall 同一算法算成 `--allow-delete` 集合传下去（成批删除时
    `SYNC_FORCE=1`），报告与 `--dry-run` 都打印它。**postinstall 失败即精确回滚**（PLUGIN-REGISTRY §1-1）：本次写入 /
    删除的插件文件与锁按落盘前字节复原、受影响路径的 git 索引重新同步、生成物 writer 路径里「本次新变脏」的部分
    restore / 删除（之前就脏的用户 WIP 原样留下），然后把 codegen 的原错误连同回滚清单抛出——树回到安装前，同一包可
@@ -224,7 +222,7 @@ npm --workspace @game/server run plugin -- check
 6. 停下，打印**人工**下一步：域变化时人工决定是否 bump `LOBBY_PROTOCOL_VERSION` 后
    `node scripts/protocol-fingerprint.mjs --write`（⛔ 脚本不隐式重钉）、带 FGUI 包时
    `node scripts/fgui-manifest.mjs --write`、`npm run verify:all`、提交前开一次 Creator 为 `sync:shared` 新建的
-   镜像（与首个 feature 插件的 `features.meta`）生成 `.meta` 后 `git add apps/Cocos/assets/src`，并确认随包 `.meta`
+   镜像（与首个带客户端源码插件的 `plugins.meta`）生成 `.meta` 后 `git add apps/Cocos/assets/src`，并确认随包 `.meta`
    的 uuid 稳定（Creator 只会重写键序/版本，uuid 不变）。
 
 **同仓迭代 `install --reinstall-from-tree <id>`**（plan-v5 E6 方案 ②，2026-09-05；两道新闸见段末）：已安装锁把插件自有文件锁死后，
@@ -260,7 +258,7 @@ kinds / constantName / domains / fguiPackages 与锁不同即拒绝，显式 `--
 View 改名的删除面从旧锁 sidecar 推出，吸收了共享命名空间（测试前缀 / 域目录 / resources/ui …）的新文件时点名请人确认。
 锁来源：与分叉内容相同的包 ⛔ 不能把 `tree` 洗白成 `package`（来源照旧，`--replace-local-fork` 才改标），无 `# source`
 的旧锁按分叉待遇 fail-closed，`check` 复核抬头形状、`filesLockSha256` 与清单一致、id 大小写归一不重复，`uninstall` 报告来源。
-`requires` 与随包 `feature.json` / gameplay `manifest.json` 的 `schemaVersion` 交叉核对（包与树两侧）；孤儿 `.meta` 拒绝；
+gameplay `manifest.json` 的 `schemaVersion` 读时与 gameplay-schema 比对（包与树两侧）；孤儿 `.meta` 拒绝；
 宿主 `.meta` 解析不了即拒绝装（撞车无从判定）；升级时同路径 `.meta` 换 uuid 只报告不拦。
 
 **报告里的 `nextSteps` 按事实派生**（2026-09-05 小修）：协议指纹一项不再按「带 domain 就一定变了」猜——postinstall
@@ -270,50 +268,49 @@ View 改名的删除面从旧锁 sidecar 推出，吸收了共享命名空间（
 
 **`uninstall`**：先让锁的每条路径重过 §5.2 闸并要求受影响路径的工作树干净（未提交的锁改动尤其可疑），
 再按锁清单删除（⛔ 不按目录猜）、删 `apps/plugins/<id>/` 与锁，然后用显式 `--allow-delete`
-（gameplay id / feature id / 各 domain / feature.json 登记的 View 名）驱动两个 codegen 收缩生成物，
+（gameplay id / plugin id / 各 domain / plugin.json 登记的 View 名）驱动两个 codegen 收缩生成物，
 `SYNC_FORCE=1` 放行 sync 熔断（成批删除是有意的）。本地改动过的文件默认拒绝删除（`--force` 放行）。
 
 **`check`**（只读；`plugin-lock.test.ts` 随 `verify:all` 跑同一逻辑）：每把锁的清单文件都在且哈希一致、
 `apps/plugins/<id>/plugin.json` 与锁一致、锁内路径仍在推导集内。没有插件 = 空通过。
 
-### 5.5 目录形态：一个插件一个目录（阶段 1，2026-09-05）
-
-插件的**登记面**全部收进 `apps/plugins/<id>/`：
+### 5.5 目录形态：一个插件一个目录（阶段 1，2026-09-05；同日把登记单元并入 plugin.json、目录搬到 apps/plugins/）
 
 ```text
-apps/plugins/<id>/
-  plugin.json                   身份（§5.3）
-  feature.json                  kinds 含 feature 时的登记面（原 features/<id>/feature.json）
-  README.md                     插件自述（原 docs/<id>/README.md；feature.json 的 docs 指向它）
-  gameplay/manifest.json        kinds 含 gameplay 时的玩法单源（原 apps/shared/schema/gameplays/<id>/）
-  gameplay/state.json
+apps/plugins/
+  host.json                       宿主 placement（默认玩法 + 首屏入口顺序）；host / registry 是保留 id
+  <id>/plugin.json                身份 + 客户端登记（§5.3；宿主自有插件没有 version）
+  <id>/README.md                  插件自述（plugin.json 的 docs 指向它）
+  <id>/gameplay/manifest.json     有玩法时的单源（与 apps/shared/schema/gameplays/<id>/ 同等被发现）
+  <id>/gameplay/state.json
 ```
 
-两个 codegen 各有两个发现根：`codegen:features` 读 `features/<dir>/feature.json`（宿主自有 feature）∪
-`apps/plugins/<id>/feature.json`（插件，目录名 = id），`codegen:gameplays` 读 `apps/shared/schema/gameplays/<id>/` ∪
-`apps/plugins/<id>/gameplay/`；id 在两根之间仍全仓唯一（含大小写归一）。`features/` 目录从此只有宿主自己的 feature、
-`host.json` 与 schema；`docs/<id>/` 不再给插件用。`apps/` 之所以是插件的家：npm workspaces 是显式列举而非 `apps/*`
-通配、Creator 只看 `apps/Cocos/assets`、仓内没有 `apps/*` 形态的通配规则，而且到阶段 3 时 `apps/plugins/<id>/{shared,server,client}`
-正好与 `apps/shared`、`apps/server`、`apps/client` 并排。
+宿主自带的登记单元（builtin / snake / snakeCosmetic）与安装进来的插件（redeem / tally）在同一根下、同一形态——
+「插件只消费框架既有形态」在这里字面成立。`codegen:plugins` 只有这一个发现根（目录名 = id）；`codegen:gameplays` 读
+`apps/shared/schema/gameplays/<id>/`（框架玩法：snake / ballMove / idle）∪ `apps/plugins/<id>/gameplay/`。旧的 `features/`
+目录、`feature.json`、`FeatureHost`、`codegen:features`、`ft:` 键前缀全部改名（feature → plugin；键前缀 `pl:`），
+`feature` 这个词从此不再是仓内概念，留给日常语义与将来的地基层（kit，另开设计）。`apps/` 之所以是插件的家：npm workspaces
+是显式列举而非 `apps/*` 通配、Creator 只看 `apps/Cocos/assets`、仓内没有 `apps/*` 形态的通配规则，而且到阶段 3 时
+`apps/plugins/<id>/{shared,server,client}` 正好与 `apps/shared`、`apps/server`、`apps/client` 并排。
 
 **为什么不是软链接**：三个 sync 脚本都用 `Dirent.isDirectory()` 遍历（符号链接目录被跳过）、`pack` 拒绝符号链接、Creator
 资源库不认链接目录、git 符号链接在 Windows 上要特权、TypeScript 按真实路径判 `rootDir`。本仓对「同一份代码出现在两处」
 的既定答案是复制 + 新鲜度闸（`sync:shared` / `sync:client`），插件的后续阶段沿用同一模式：
 
-- 阶段 2：gameplay 插件的客户端四件（gameplay/logic/view/net）允许全部放在 `apps/client/src/features/<id>/`，生成的
+- 阶段 2：gameplay 插件的客户端四件（gameplay/logic/view/net）允许全部放在 `apps/client/src/plugins/<id>/`，生成的
   catalog 与 `<Constant>Room` 引用指向那里（源 + Cocos 镜像两处，与全仓一致）；
 - 阶段 3（plugin-api 门面落地后，PLUGIN-REGISTRY §4.3）：`apps/plugins/<id>/{shared,server,test}` + `sync:plugins` 物化
   到框架固定位置（物化副本登记为 writer 产物，手改即红），锁只登记 `apps/plugins/<id>/**`。前提是插件代码只 import
   `@game/plugin-api/*` 这类稳定说明符——相对导入在原地与物化后无法同时成立；客户端受 Cocos 编译链只认相对导入的限制，
-  源码收到 `apps/client/src/features/<id>/` 为止。
+  源码收到 `apps/client/src/plugins/<id>/` 为止。
 
 ## 6. 入口与位置：插件声明身份，宿主决定去处
 
 > 状态：✅ 已实施（2026-09-05）——设置面板（`logic/page/SettingsLogic.ts`，eacb687）、宿主 placement
-> `features/host.json`（`codegen:features` 生成 `GENERATED_HOST`）、slot/order 从 schema/codegen/
-> FeatureRegistry/AppRuntime/Main 全部退役、`launch.kind:"route"`、FeatureHost 按 `dependencies` 装载。
-> 机检：`apps/client/test/homeMenu.test.ts`、`settings.test.ts`、`featureHost.test.ts`、
-> `apps/server/test/feature-codegen.test.ts`「入口治理闸」。
+> `apps/plugins/host.json`（`codegen:plugins` 生成 `GENERATED_HOST`）、slot/order 从 schema/codegen/
+> PluginRegistry/AppRuntime/Main 全部退役、`launch.kind:"route"`、PluginHost 按 `dependencies` 装载。
+> 机检：`apps/client/test/homeMenu.test.ts`、`settings.test.ts`、`pluginHost.test.ts`、
+> `apps/server/test/plugin-codegen.test.ts`「入口治理闸」。
 
 **框架默认形态**（本仓自带、供接手者替换）：默认首屏（本项目的宣传内容 `PromoHome`，右上角一个设置
 按钮）→ 设置面板，**插件入口默认收纳在设置面板的入口列表里**；旧 FGUI `Home` 保留为可达 route（ballMove
@@ -324,10 +321,10 @@ apps/plugins/<id>/
 > 插件只声明入口的**身份与元数据**（`entryId` / `label` / `labelKey` / 图标 / `launch`），
 > ⛔ **不声明位置**。位置归宿主。
 
-- `launch` 两种形态：`{ kind:"gameplay", gameplayId }` 进玩法；`{ kind:"route", routeId }` 打开一个 feature
-  route（纯 feature 插件——兑换码/聊天面板一类——的唯一入口形态；AppRuntime 先让 route 归属的 feature
-  过 FeatureHost 闸再打开）。
-- **位置归宿主的机检形态**是 `features/host.json`（不是「宿主自己写代码硬编码 entryId」）：
+- `launch` 两种形态：`{ kind:"gameplay", gameplayId }` 进玩法；`{ kind:"route", routeId }` 打开一个 plugin
+  route（纯客户端登记插件——兑换码/聊天面板一类——的唯一入口形态；AppRuntime 先让 route 归属的 plugin
+  过 PluginHost 闸再打开）。
+- **位置归宿主的机检形态**是 `apps/plugins/host.json`（不是「宿主自己写代码硬编码 entryId」）：
 
   ```jsonc
   { "schemaVersion": 1,
@@ -335,14 +332,14 @@ apps/plugins/<id>/
     "home": ["snake/snake"] }                                          // 首屏 Home 入口，qualified id 有序列表
   ```
 
-  `codegen:features` 校验 defaultLaunch 有唯一贡献者、home 每条都存在且不重复，并渲染为 `GENERATED_HOST`；
+  `codegen:plugins` 校验 defaultLaunch 有唯一贡献者、home 每条都存在且不重复，并渲染为 `GENERATED_HOST`；
   换默认玩法/首屏顺序 = 改 host.json + 重跑 codegen，**零代码改动**。真实产品替换首屏时也只改这一份。
 - codegen 另闸：**entryId 全仓唯一**（宿主与设置面板都按裸 entryId 引用）、**一 gameplayId 一贡献者**
-  （launch → feature 的映射不靠排序裁决）。
-- 全量入口列表（设置面板）按 **`featureId` → `entryId` 字母序**：确定、无冲突、与语言无关；⛔ 不裁剪——
+  （launch → plugin 的映射不靠排序裁决）。
+- 全量入口列表（设置面板）按 **`pluginId` → `entryId` 字母序**：确定、无冲突、与语言无关；⛔ 不裁剪——
   未上首屏的入口（回归样例 ballMove）仍出现在设置面板。
-- feature.json 的 `dependencies` 由 FeatureHost 真正消费：launch 先按声明序装依赖（依赖正在 dispose 则等它拆完
-  再装；运行期环点名结算 failed），任一依赖非 active 则本 feature failed 且不装；仍有依赖方在位的 feature 不随
+- plugin.json 的 `dependencies` 由 PluginHost 真正消费：launch 先按声明序装依赖（依赖正在 dispose 则等它拆完
+  再装；运行期环点名结算 failed），任一依赖非 active 则本 plugin failed 且不装；仍有依赖方在位的 plugin 不随
   route refcount 归零释放（记请求，依赖方拆完后级联释放）；disposeAll 按依赖拓扑拆（依赖方先拆）。codegen 侧
   查环与不存在的依赖。
 
@@ -362,7 +359,7 @@ apps/plugins/<id>/
 
 ### 6.2 连带后果（状态）
 
-1. **默认玩法的数据来源**：✅ 已重定位为 `features/host.json` 的 `defaultLaunch`（`DEFAULT_LAUNCH_GAMEPLAY_ID`
+1. **默认玩法的数据来源**：✅ 已重定位为 `apps/plugins/host.json` 的 `defaultLaunch`（`DEFAULT_LAUNCH_GAMEPLAY_ID`
    读 `GENERATED_HOST`，⛔ 不再从排序推导——否则退役 slot/order 后会静默翻成回归样例 ballMove，
    PLUGIN-REVIEW F16）。`Main.ts` 的 `@property gameplayId` 已降格为**开发调试快捷入口**（tooltip/注释改写；
    删除 @property 属场景资产 diff，需 Creator）。
@@ -392,15 +389,15 @@ apps/plugins/<id>/
 
 | 冲突面 | 现状 |
 | --- | --- |
-| 玩法/feature id、RPC domain、route 名、View 名、错误码、operationGroup | ✅ codegen fail-fast（含大小写归一化） |
+| 玩法/plugin id、RPC domain、route 名、View 名、错误码、operationGroup | ✅ codegen fail-fast（含大小写归一化） |
 | menu entryId | ✅ codegen 全仓唯一（2026-09-05） |
 | 同一 gameplayId 多贡献者 | ✅ codegen 拒绝（一 gameplayId 一贡献者） |
-| 入口位置 | ✅ 已消解——插件不声明位置，`features/host.json` 是唯一声明处 |
-| Redis key 命名空间 | ✅ gameplay 侧 `kGameplay`（`gp:`）、feature 侧 `kFeatureUser`/`kFeatureShared`（`ft:`）两个工厂，命名空间互不可达 |
+| 入口位置 | ✅ 已消解——插件不声明位置，`apps/plugins/host.json` 是唯一声明处 |
+| Redis key 命名空间 | ✅ gameplay 侧 `kGameplay`（`gp:`）、plugin 侧 `kPluginUser`/`kPluginShared`（`pl:`）两个工厂，命名空间互不可达 |
 | FGUI 包名与 `ui://` 命名空间 | ✅ `scripts/fgui-manifest.mjs` 已查 package 名/id 与资源名/id 重复；安装侧靠所有权推导（只允许声明的 `fguiPackages`）挡住同名包解压覆盖 |
-| 插件间依赖顺序与环 | ✅ codegen 查环与不存在的依赖；FeatureHost 运行期按依赖顺序装载/逆序卸载 |
+| 插件间依赖顺序与环 | ✅ codegen 查环与不存在的依赖；PluginHost 运行期按依赖顺序装载/逆序卸载 |
 | 文件级越权与残留 | ✅ allowlist 整包拒绝；已安装锁让升级按清单删、卸载按清单删 |
-| Lobby 域契约漂移（feature 侧） | ✅ codegen 闸：`domains/<域>.ts` **自身字节** digest 变化必须伴随域级 `contractVersion` 递增（`LOBBY_RPC_DOMAIN_CONTRACTS`，与 gameplay 只算 wire.ts 的 modeVersion 闸同口径）；跨文件复用的 validator/类型（primitives/economy/../http、被他域 import 的域文件）变化由 protocol-fingerprint 点名但不强制 bump；join 信封侧仍共用协议整数（Non-intrusive §4.8，⛔ 不各自新增版本闸） |
+| Lobby 域契约漂移（plugin 侧） | ✅ codegen 闸：`domains/<域>.ts` **自身字节** digest 变化必须伴随域级 `contractVersion` 递增（`LOBBY_RPC_DOMAIN_CONTRACTS`，与 gameplay 只算 wire.ts 的 modeVersion 闸同口径）；跨文件复用的 validator/类型（primitives/economy/../http、被他域 import 的域文件）变化由 protocol-fingerprint 点名但不强制 bump；join 信封侧仍共用协议整数（Non-intrusive §4.8，⛔ 不各自新增版本闸） |
 | MySQL 表 | ⛔ 不开口：需要新表的能力不是插件，是框架 PR（Non-intrusive §12.3） |
 
 ## 9. 缺口清单（做插件机制前要补的）
@@ -408,13 +405,13 @@ apps/plugins/<id>/
 已补（2026-09-05，证据在各自测试）：
 
 - ✅ `modes/catalog.ts` 生成化（`codegen:gameplays` → `modes/catalog.generated.ts`）；
-- ✅ RPC 向量登记表生成化（`codegen:features` → `lobbyRpcVectors/index.generated.ts`）——新增域不再手改中央测试；
-- ✅ feature 侧 Redis 键工厂；
+- ✅ RPC 向量登记表生成化（`codegen:plugins` → `lobbyRpcVectors/index.generated.ts`）——新增域不再手改中央测试；
+- ✅ plugin 侧 Redis 键工厂；
 - ✅ 默认 launch target 重定位（`host.json.defaultLaunch`）与 slot/order 退役；
-- ✅ `launch.kind:"route"`（纯 feature 入口）；
+- ✅ `launch.kind:"route"`（纯 plugin 入口）；
 - ✅ `dependencies` 运行期消费；
 - ✅ §8 两条「待核实」定论（FGUI 包名重复已查、依赖已消费）；
-- ✅ feature 侧契约闸（codegen 层域 descriptor digest → 域级 `contractVersion`，`LOBBY_RPC_DOMAIN_CONTRACTS`）。
+- ✅ plugin 侧契约闸（codegen 层域 descriptor digest → 域级 `contractVersion`，`LOBBY_RPC_DOMAIN_CONTRACTS`）。
 
 仍开放（登记在 [plan-v5.md](../plan-v5.md) E 类）：
 
@@ -427,21 +424,21 @@ apps/plugins/<id>/
    之前它只是装饰；一旦要做，它就成了契约——缺的是 LocalizePort 契约与 locales 载体，
    并**必须先于第一个第三方插件落地**，否则每个插件都会硬编码一种语言。
 4. **框架默认加载页**：全新 route，与 FGUI 包预热策略绑定（§6.2 第 2 条）。
-5. **join 信封侧的 feature 契约比对**：codegen 层的闸已落地（上表），但 Lobby join 仍只比对 `LOBBY_PROTOCOL_VERSION`
+5. **join 信封侧的 plugin 契约比对**：codegen 层的闸已落地（上表），但 Lobby join 仍只比对 `LOBBY_PROTOCOL_VERSION`
    整数——按 Non-intrusive §4.8 两类实体共用协议整数、⛔ 不各自新增版本闸，域契约变化要不要反映到
    `LOBBY_PROTOCOL_VERSION` 是人工决策（`plugin -- install` 在域变化时会提示）。
 6. **第一个真实插件的端到端实证**（plan-v5 E5）：✅ 已完成（2026-09-05）——「兑换码」插件
-   `apps/plugins/redeem`（kinds `feature`、domains `redeem`；文件清单与取舍见 [apps/plugins/redeem/README.md](../apps/plugins/redeem/README.md)）
+   `apps/plugins/redeem`（client 形态、domains `redeem`；文件清单与取舍见 [apps/plugins/redeem/README.md](../apps/plugins/redeem/README.md)）
    在作者侧 `plugin -- pack` 成 29 文件的包，再从**干净树**以 `plugin -- install` 进仓：postinstall 链
-   （codegen:features → sync:shared）重生全部生成物，人工步骤只剩 `protocol-fingerprint --write`
-   （新增域为纯追加，未 bump `LOBBY_PROTOCOL_VERSION`）与共享祖先 `apps/Cocos/assets/src/features.meta`；
+   （codegen:plugins → sync:shared）重生全部生成物，人工步骤只剩 `protocol-fingerprint --write`
+   （新增域为纯追加，未 bump `LOBBY_PROTOCOL_VERSION`）与共享祖先 `apps/Cocos/assets/src/plugins.meta`；
    `verify:all` 通过（launcher-matrix `bash --pretty-print` 与 S1 素材新鲜度两条为既有环境基线）。
-   实证过程暴露并补齐的框架前置（`5c6df35`）：feature.json 可选 `module`（FeatureHost 装载器由生成器渲染，
-   AppRuntime 透传）、logic/sidecar 可落 `apps/client/src/features/<id>/`、feature View 只豁免 cc/fairygui
+   实证过程暴露并补齐的框架前置（`5c6df35`）：plugin.json 可选 `module`（PluginHost 装载器由生成器渲染，
+   AppRuntime 透传）、logic/sidecar 可落 `apps/client/src/plugins/<id>/`、plugin View 只豁免 cc/fairygui
    值导入、错误码顺序测试不再硬编码域清单——即「新插件不得需要改中央源码/中央测试」的判据真的成立了。
    Creator 侧确认已于当天下午闭合（见 plan-v5 E5 行与 docs/evidence/creator-2026-09-05）。
    **gameplay 形态**同日由第二个真实插件「点数赛」`apps/plugins/tally` 走通同一条动线（`fb903db`，
-   [apps/plugins/tally/README.md](../apps/plugins/tally/README.md)）：它逼出了两处此前 feature 形态没碰到的中央清单——
+   [apps/plugins/tally/README.md](../apps/plugins/tally/README.md)）：它逼出了两处此前纯客户端形态没碰到的中央清单——
    `apps/server/test/wire-vectors/index.ts` 的手写 import 表（改为 `codegen:gameplays` 生成 `index.generated.ts`，
    sidecar `wire-vectors/<id>.ts` 进 gameplay 所有权）与 `gameplay-codegen.test.ts` 的硬编码玩法集（改为按 schema
    目录发现）。至此 §3 的判据在两种 kind 上都有真实包背书。

@@ -3,11 +3,11 @@
  * 编排逻辑（gameplay 装配 / enterBattle / startGameplay / stopGameplay / dispose 顺序）
  * **逐字迁入**本类，只改归属与接线；Main.ts 收敛为 bootstrap/update 转发/dispose。
  *
- * 职责（§7.2）：构造小型稳定 port 并管理整体 dispose，不做 feature 分支。
+ * 职责（§7.2）：构造小型稳定 port 并管理整体 dispose，不做 plugin 分支。
  *  - **app generation**：构造时经 createPageSessionScope 递增、dispose 冻结（旧世代
  *    从此不再当前），取代原 view/pages.ts 的 page lifecycle generation——它与
  *    session generation 分开校验，二者不可互推（app/appGeneration.ts）；
- *  - 组合 FeatureRegistry/FeatureHost/NavigationService/RefreshCoordinator/
+ *  - 组合 PluginRegistry/PluginHost/NavigationService/RefreshCoordinator/
  *    FrameScheduler/PendingOperationJournal/ports；
  *  - `tick(dt)` 转发 RoomController.tick 与 FrameScheduler；
  *  - `dispose()` 顺序 = 原 Main.onDestroy 逐字保序：disposePages → battleAbort →
@@ -41,16 +41,16 @@ import {
     onConnLost,
     returnToLogin,
 } from "./SessionCoordinator";
-import { resolveLaunchGameplayId } from "./builtinFeature";
-import type { FeatureLaunchTarget, FeatureMenuContribution } from "./builtinFeature";
-import { FeatureHost, type FeatureStatus, type HostedFeature } from "./FeatureHost";
+import { resolveLaunchGameplayId } from "./builtinPlugin";
+import type { PluginLaunchTarget, PluginMenuContribution } from "./builtinPlugin";
+import { PluginHost, type PluginStatus, type HostedPlugin } from "./PluginHost";
 import { FrameScheduler } from "./FrameScheduler";
 import { PendingOperationJournal } from "./PendingOperationJournal";
 import { RefreshCoordinator } from "./RefreshCoordinator";
 import { createAppPorts, type AppPorts } from "./ports";
 import { lifecycleBus } from "./wiring";
 import {
-    appFeatureRegistry,
+    appPluginRegistry,
     appNavigation,
     createPageSessionScope,
     openLogin,
@@ -62,19 +62,19 @@ import {
 import type { NavigationService } from "./NavigationService";
 
 /**
- * launch target(gameplayId) → 贡献它的 feature id：menu contribution 是唯一映射源
- * （§7.4）。codegen:features 已闸「一 gameplayId 一贡献者」（PLUGIN-REVIEW F17），映射不再
+ * launch target(gameplayId) → 贡献它的 plugin id：menu contribution 是唯一映射源
+ * （§7.4）。codegen:plugins 已闸「一 gameplayId 一贡献者」（PLUGIN-REVIEW F17），映射不再
  * 需要靠排序裁决；这里保留「先到者不被覆盖」只是对手工 fixture 的防御。route 形态的
- * target 不进此表（它按 route 归属 feature 过闸，见 launch()）。无贡献者的 target 不受
- * feature 闸管控。
+ * target 不进此表（它按 route 归属 plugin 过闸，见 launch()）。无贡献者的 target 不受
+ * plugin 闸管控。
  */
-export function deriveLaunchFeatureIds(
-    contributions: readonly FeatureMenuContribution[],
+export function deriveLaunchPluginIds(
+    contributions: readonly PluginMenuContribution[],
 ): ReadonlyMap<string, string> {
     const map = new Map<string, string>();
     for (const item of contributions) {
         if (item.launch.kind !== "gameplay") continue;
-        if (!map.has(item.launch.gameplayId)) map.set(item.launch.gameplayId, item.featureId);
+        if (!map.has(item.launch.gameplayId)) map.set(item.launch.gameplayId, item.pluginId);
     }
     return map;
 }
@@ -82,14 +82,14 @@ export function deriveLaunchFeatureIds(
 export interface AppRuntimeOptions {
     /** 玩法 presentation 挂载节点（Main 传入；本类不 import cc 值）。 */
     readonly node: Node;
-    /** 要进入的已登记玩法 id；缺省 = 宿主 features/host.json 的 defaultLaunch（DEFAULT_LAUNCH_GAMEPLAY_ID）。 */
+    /** 要进入的已登记玩法 id；缺省 = 宿主 apps/plugins/host.json 的 defaultLaunch（DEFAULT_LAUNCH_GAMEPLAY_ID）。 */
     readonly gameplayId?: string;
     /** §7.8 show 三态判定的战斗连接快照 seam（测试注入；生产缺省读 gameplay services 的 roomClient）。 */
     readonly battleConnection?: () => GameRoomConnectionSnapshot;
-    /** 测试注入：覆盖 hosted feature 列表（生产缺省由 appFeatureRegistry 派生，全部静态常驻）。 */
-    readonly hostedFeatures?: readonly HostedFeature[];
-    /** 测试注入：覆盖 launch target(gameplayId) → 贡献 feature id 的映射（生产缺省由 menu contributions 派生）。 */
-    readonly launchFeatureMap?: ReadonlyMap<string, string>;
+    /** 测试注入：覆盖 hosted plugin 列表（生产缺省由 appPluginRegistry 派生，全部静态常驻）。 */
+    readonly hostedPlugins?: readonly HostedPlugin[];
+    /** 测试注入：覆盖 launch target(gameplayId) → 贡献 plugin id 的映射（生产缺省由 menu contributions 派生）。 */
+    readonly launchPluginMap?: ReadonlyMap<string, string>;
 }
 
 export class AppRuntime {
@@ -114,8 +114,8 @@ export class AppRuntime {
     private readonly gameplayId: string;
     private readonly pageScope: PageSessionScope;
     private readonly navigation: NavigationService;
-    private readonly featureHost: FeatureHost;
-    private readonly launchFeatureIds: ReadonlyMap<string, string>;
+    private readonly pluginHost: PluginHost;
+    private readonly launchPluginIds: ReadonlyMap<string, string>;
     private readonly frameScheduler = new FrameScheduler();
     private readonly journal = new PendingOperationJournal();
     private readonly refresh = new RefreshCoordinator();
@@ -141,34 +141,34 @@ export class AppRuntime {
             launch: (target) => this.launch(target),
             track: (unsubscribe) => this.track(unsubscribe),
         });
-        const hostedFeatures: readonly HostedFeature[] = options.hostedFeatures
-            ?? appFeatureRegistry.featureIds().map((id) => ({
+        const hostedPlugins: readonly HostedPlugin[] = options.hostedPlugins
+            ?? appPluginRegistry.pluginIds().map((id) => ({
                 id,
-                resident: appFeatureRegistry.featureOf(id)?.resident ?? false,
-                // feature.json 的 dependencies：FeatureHost 按它先装依赖、逆序拆（codegen 已查环）。
-                dependencies: appFeatureRegistry.featureOf(id)?.dependencies ?? [],
-                // feature.json 的 module：generated 静态字面量 loader（无 = 静态常驻，与 built-in 同形）。
-                ...(appFeatureRegistry.featureOf(id)?.load ? { load: appFeatureRegistry.featureOf(id)!.load } : {}),
+                resident: appPluginRegistry.pluginOf(id)?.resident ?? false,
+                // plugin.json 的 dependencies：PluginHost 按它先装依赖、逆序拆（codegen 已查环）。
+                dependencies: appPluginRegistry.pluginOf(id)?.dependencies ?? [],
+                // plugin.json 的 module：generated 静态字面量 loader（无 = 静态常驻，与 built-in 同形）。
+                ...(appPluginRegistry.pluginOf(id)?.load ? { load: appPluginRegistry.pluginOf(id)!.load } : {}),
             }));
-        this.featureHost = new FeatureHost(hostedFeatures, {
+        this.pluginHost = new PluginHost(hostedPlugins, {
             ports: this.ports,
             appGeneration: this.generation,
         });
-        // 生产派生见 deriveLaunchFeatureIds 文档注释（多贡献者取菜单排序最前者）。
-        this.launchFeatureIds = options.launchFeatureMap
-            ?? deriveLaunchFeatureIds(appFeatureRegistry.menuContributions());
-        // route refcount → FeatureHost 停用判定（§7.2；built-in 常驻豁免）。
-        this.navigation.setRouteObserver((featureId, openCount) => {
-            void this.featureHost.releaseIfIdle(featureId, openCount).catch((error) => {
-                console.error("[AppRuntime] feature 停用失败：", error);
+        // 生产派生见 deriveLaunchPluginIds 文档注释（多贡献者取菜单排序最前者）。
+        this.launchPluginIds = options.launchPluginMap
+            ?? deriveLaunchPluginIds(appPluginRegistry.menuContributions());
+        // route refcount → PluginHost 停用判定（§7.2；built-in 常驻豁免）。
+        this.navigation.setRouteObserver((pluginId, openCount) => {
+            void this.pluginHost.releaseIfIdle(pluginId, openCount).catch((error) => {
+                console.error("[AppRuntime] plugin 停用失败：", error);
             });
         });
         this.unsubs.push(() => this.navigation.setRouteObserver(null));
         // §7.4：Home 菜单接线——点击唯一出口 LaunchPort.launch(target)，可用性查询
-        // FeatureHost（disabled/failed 叠加层）。注销器身份守卫，随 dispose 强制释放。
+        // PluginHost（disabled/failed 叠加层）。注销器身份守卫，随 dispose 强制释放。
         this.unsubs.push(setHomeMenuRuntime({
             launch: (target) => this.ports.launch.launch(target),
-            availabilityOf: (featureId) => this.featureAvailability(featureId),
+            availabilityOf: (pluginId) => this.pluginAvailability(pluginId),
         }));
         // 设置面板的档案写接线：走 ports.lobbyRpc.sendIdempotent（clientReqId +
         // PendingOperationJournal write-ahead 都在那条通道里），⛔ 不直调 rpcIdem。
@@ -181,11 +181,11 @@ export class AppRuntime {
         }));
     }
 
-    /** FeatureHost 运行时可用性叠加（未托管的贡献者不误伤为占位）。 */
-    private featureAvailability(featureId: string): "available" | "failed" | "disabled" {
-        let status: FeatureStatus;
+    /** PluginHost 运行时可用性叠加（未托管的贡献者不误伤为占位）。 */
+    private pluginAvailability(pluginId: string): "available" | "failed" | "disabled" {
+        let status: PluginStatus;
         try {
-            status = this.featureHost.statusOf(featureId);
+            status = this.pluginHost.statusOf(pluginId);
         } catch {
             return "available";
         }
@@ -223,8 +223,8 @@ export class AppRuntime {
         return this.journal;
     }
 
-    get features(): FeatureHost {
-        return this.featureHost;
+    get plugins(): PluginHost {
+        return this.pluginHost;
     }
 
     get scheduler(): FrameScheduler {
@@ -332,7 +332,7 @@ export class AppRuntime {
     /**
      * 释放宿主。顺序逐字保序自原 Main.onDestroy（appRuntime.test.ts 顺序行为断言）：
      * disposePages → battleAbort.abort → unsubs → unregisterGameplay →
-     * controller.dispose；5b 新增件（ticker/feature host）的清理跟在其后。
+     * controller.dispose；5b 新增件（ticker/plugin host）的清理跟在其后。
      */
     dispose(): void {
         if (this.disposed) return;
@@ -352,8 +352,8 @@ export class AppRuntime {
             console.error("[AppRuntime] gameplay dispose 失败：", error);
         });
         this.frameScheduler.clear();
-        void this.featureHost.disposeAll().catch((error) => {
-            console.error("[AppRuntime] feature dispose 失败：", error);
+        void this.pluginHost.disposeAll().catch((error) => {
+            console.error("[AppRuntime] plugin dispose 失败：", error);
         });
     }
 
@@ -413,28 +413,28 @@ export class AppRuntime {
 
     /**
      * §7.4 统一玩法启动通道（LaunchPort.launch 的宿主实现）：target 覆盖默认玩法 id。
-     * 启动前先过 FeatureHost 闸：点击 = 显式用户意图（userIntent），failed 在此刻重试
+     * 启动前先过 PluginHost 闸：点击 = 显式用户意图（userIntent），failed 在此刻重试
      * 装载；结算非 active（failed/disabled）则不启动玩法——菜单 enabled 只是渲染期
      * 快照，本闸是启动时刻的唯一判定（§7.2 状态机不得被启动通道绕过；built-in 常驻
-     * feature 恒 active，零开销直通）。
+     * plugin 恒 active，零开销直通）。
      */
-    async launch(target: FeatureLaunchTarget): Promise<void> {
+    async launch(target: PluginLaunchTarget): Promise<void> {
         if (this.disposed) return;
         if (target.kind === "route") return this.launchRoute(target.routeId);
-        const featureId = this.launchFeatureIds.get(target.gameplayId) ?? null;
-        // 映射指向未托管 feature 时不误伤、直通——与渲染侧 featureAvailability 对未登记
+        const pluginId = this.launchPluginIds.get(target.gameplayId) ?? null;
+        // 映射指向未托管 plugin 时不误伤、直通——与渲染侧 pluginAvailability 对未登记
         // id 返回 "available" 的防御裁定一致（⛔ 不用 try/catch 吞异常：真实 install
         // 错误不得被掩蔽为直通）。
-        if (featureId !== null && this.featureHost.hosts(featureId)) {
+        if (pluginId !== null && this.pluginHost.hosts(pluginId)) {
             // ⚠ 闸是 await：install 期间会话可能换代（clearSession/setSession）、app 可能
             // dispose。迟到的 install 完成不得 closeGroup("authenticated")（会关掉换代后
             // 重开的 Login），也不得在新会话下启动玩法——await 后复验，不一致直接
             // return（换代/dispose 是正常竞态，⛔ 不进 launchGameplay、不打错误）。
             const sessionGeneration = getSessionGeneration();
-            const status = await this.featureHost.launch(featureId, { userIntent: true });
+            const status = await this.pluginHost.launch(pluginId, { userIntent: true });
             if (this.disposed || getSessionGeneration() !== sessionGeneration) return;
             if (status !== "active") {
-                console.error(`[AppRuntime] feature ${featureId} 不可用（${status}），取消启动玩法 ${target.gameplayId}`);
+                console.error(`[AppRuntime] plugin ${pluginId} 不可用（${status}），取消启动玩法 ${target.gameplayId}`);
                 return;
             }
         }
@@ -442,22 +442,22 @@ export class AppRuntime {
     }
 
     /**
-     * route 形态的入口（纯 feature 插件的唯一入口形态，docs/PLUGIN.md §6 / PLUGIN-REVIEW F23）：
-     * 先让 route 归属的 feature 过同一道 FeatureHost 闸（userIntent），再经 navigation 打开 route。
+     * route 形态的入口（纯 plugin 插件的唯一入口形态，docs/PLUGIN.md §6 / PLUGIN-REVIEW F23）：
+     * 先让 route 归属的 plugin 过同一道 PluginHost 闸（userIntent），再经 navigation 打开 route。
      * 未登记的 route 不猜测、不打开（生成器已闸，这里只是防御）。
      */
     private async launchRoute(routeId: string): Promise<void> {
-        if (!appFeatureRegistry.hasRoute(routeId)) {
+        if (!appPluginRegistry.hasRoute(routeId)) {
             console.error(`[AppRuntime] launch 引用未登记的 route ${routeId}，忽略`);
             return;
         }
-        const featureId = appFeatureRegistry.routeOf(routeId).featureId;
-        if (this.featureHost.hosts(featureId)) {
+        const pluginId = appPluginRegistry.routeOf(routeId).pluginId;
+        if (this.pluginHost.hosts(pluginId)) {
             const sessionGeneration = getSessionGeneration();
-            const status = await this.featureHost.launch(featureId, { userIntent: true });
+            const status = await this.pluginHost.launch(pluginId, { userIntent: true });
             if (this.disposed || getSessionGeneration() !== sessionGeneration) return;
             if (status !== "active") {
-                console.error(`[AppRuntime] feature ${featureId} 不可用（${status}），取消打开 route ${routeId}`);
+                console.error(`[AppRuntime] plugin ${pluginId} 不可用（${status}），取消打开 route ${routeId}`);
                 return;
             }
         }
@@ -501,7 +501,7 @@ export class AppRuntime {
 
         // launch target（generated contribution）优先；Main 的 gameplayId @property 仍是
         // 默认 launch target 的兜底（开发调试快捷入口）。两级都走 resolveLaunchGameplayId：
-        // 未填/空白最终回落到宿主 features/host.json 的 defaultLaunch，⛔ 此处不再硬编码玩法名。
+        // 未填/空白最终回落到宿主 apps/plugins/host.json 的 defaultLaunch，⛔ 此处不再硬编码玩法名。
         const requestedId = resolveLaunchGameplayId(
             typeof targetGameplayId === "string" && targetGameplayId.trim().length > 0
                 ? targetGameplayId

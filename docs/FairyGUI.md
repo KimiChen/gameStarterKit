@@ -9,8 +9,8 @@
 
 本文同时包含当前能力和规划能力。阅读时必须区分：
 
-- **当前已有**：FairyGUI Editor 工程、人工保存与发布、View codegen、`.view.json`/`feature.json` 驱动的
-  `codegen:features`、生成式 FGUI 契约与 registry、结构契约测试、FGUI 发布闭包锁、发布物反解析对账、客户端同步和 Creator 人工验收。
+- **当前已有**：FairyGUI Editor 工程、人工保存与发布、View codegen、`.view.json`/`plugin.json` 驱动的
+  `codegen:plugins`、生成式 FGUI 契约与 registry、结构契约测试、FGUI 发布闭包锁、发布物反解析对账、客户端同步和 Creator 人工验收。
 - **实际 PSD 证据**：`docs/psd-maker/ug_main_layered_source_v02.psd` 是已保存的
   `referenceCompositeOnly` 重组证据，制作与 composite 对账见 `docs/psd-maker.md`；它不证明元素级可编辑，不是通用
   CLI 的生产金样，也没有通过 Photoshop 往返、运行资产、三层 stable key 或 FairyGUI 编译门禁。
@@ -59,8 +59,8 @@ G6：    人工 Editor 装配（当前）
           → Editor 保存—重开 → Editor 正式发布
                                       │
                                       ▼
-G7：    codegen:fgui → .view.json / feature.json / Logic / View
-          → codegen:features → 生成式结构契约 / registry / routes
+G7：    codegen:fgui → .view.json / plugin.json / Logic / View
+          → codegen:plugins → 生成式结构契约 / registry / routes
           → fgui-manifest --write → sync:client
                                       │
                                       ▼
@@ -274,7 +274,7 @@ Schema 派生或按 Schema 校验。提示词中的 `layoutMode`、fixture 或 m
 | 内容 | 权威真源 | 状态与说明 |
 | --- | --- | --- |
 | 玩法与业务 | 已冻结策划案 | 当前流程 |
-| 批次页面、`featureKind` 与前后端领域 | 批准的 `delivery-spec.json` | 计划中的批次投影；从策划条款派生并保留来源 hash，XML 不得补造 |
+| 批次页面、`pluginKind` 与前后端领域 | 批准的 `delivery-spec.json` | 计划中的批次投影；从策划条款派生并保留来源 hash，XML 不得补造 |
 | 页面语义 | `<Page>.page-spec.yaml` | 推荐的新单一契约；Schema 计划中。包含页面、字段、动作、状态维度、运动反馈、非目标和 Scenario ID |
 | 可执行 Scenario | `<Page>.scenarios.ts` | M1 计划；使用真实 UI-model/Logic 类型，同时驱动无头测试与 Creator Gallery |
 | 精确布局 | 当前 `editor` 以 Editor 设计源为真；`cliPSDCompiler` takeover 后同样回归 Editor | takeover 前 recipe 只表达候选约束；坐标 snapshot 是只读派生物 |
@@ -296,7 +296,7 @@ PageSpec 只引用稳定 Scenario ID。M1 前，每个批次必须在 PageSpec �
 以下路径是新批次的推荐形态；标注“计划”的代码目录在 M1 实现前不要假装存在：
 
 ```text
-docs/ui/<feature>/<page>/
+docs/ui/<plugin>/<page>/
 ├─ 00-input/
 │  ├─ gdd-freeze.md
 │  ├─ decision-log.md
@@ -600,11 +600,11 @@ CLI 不得写正式工程或正式发布目录，不得把候选 ID 当正式 ID
 G7 同时消费两类互不替代的输入：批准的 DeliverySpec/PageSpec/Scenario 驱动 shared、服务端与客户端行为；正式
 FairyGUI XML 只驱动 View 结构绑定。不得从按钮名、Controller 或 XML 推导 RPC、Room state、存档、锁、幂等或结算。
 
-- `featureKind=lobbyFeature`：先在 shared 的 Lobby RPC domain descriptor 声明消息与 validator，再实现服务端
+- `pluginKind=lobbyPlugin`：先在 shared 的 Lobby RPC domain descriptor 声明消息与 validator，再实现服务端
   endpoint、数据一致性和测试。
-- `featureKind=roomGameplay`：先手写 `apps/shared/schema/gameplays/<id>/{manifest.json,state.json}` 和玩法
+- `pluginKind=roomGameplay`：先手写 `apps/shared/schema/gameplays/<id>/{manifest.json,state.json}` 和玩法
   `wire.ts`，运行 `codegen:gameplays`，再实现服务端 mode/commands、客户端 room adapter 与 gameplay module。
-- 两类都遵守 View/Logic 分离；涉及玩法 schema/wire 时，`codegen:gameplays` 必须早于 `codegen:features`，生成物禁手改。
+- 两类都遵守 View/Logic 分离；涉及玩法 schema/wire 时，`codegen:gameplays` 必须早于 `codegen:plugins`，生成物禁手改。
 
 UI 接入顺序以正式产物为准：
 
@@ -616,11 +616,11 @@ UI 接入顺序以正式产物为准：
 4. 在 View 同目录创建或更新 `<Name>View.view.json` sidecar：登记 owner/kind、layer、fullscreen、onlyOne、
    permanent、interactive、logic、sharedPkgs，以及 `manualRequired/nested/listItems/controllers/relations/assetUrls`
    等手写契约段。直接绑定的 `required` 由 XML 与 View AUTO 共同守门，不在 sidecar 复制。
-5. 将 sidecar、路由、菜单或其他 contribution 登记进 `features/<id>/feature.json`；新增 feature 页面通过 feature
+5. 将 sidecar、路由、菜单或其他 contribution 登记进 `apps/plugins/<id>/plugin.json`；新增 plugin 页面通过 plugin
    route / `NavigationService` 打开，不向 `pages.ts` 增加新的手写全集入口。
-6. 运行 `npm --workspace @game/server run codegen:features`，从 `.view.json`、FGUI XML 与 `feature.json` 刷新
-   `apps/client/src/generated/` 下的 View、FGUI 契约、feature、route 和 package catalog。
-7. 审阅 View AUTO、sidecar、feature 登记与生成 catalog；`fguiContracts.ts`、`viewRegistry.ts`、`pages.ts` 是
+6. 运行 `npm --workspace @game/server run codegen:plugins`，从 `.view.json`、FGUI XML 与 `plugin.json` 刷新
+   `apps/client/src/generated/` 下的 View、FGUI 契约、plugin、route 和 package catalog。
+7. 审阅 View AUTO、sidecar、plugin 登记与生成 catalog；`fguiContracts.ts`、`viewRegistry.ts`、`pages.ts` 是
    稳定 façade，禁止手改其中的生成值或新增页面全集。
 8. 审阅完成后运行 `node scripts/fgui-manifest.mjs --write`，更新包含 View AUTO 哈希的 FGUI 发布闭包锁。
 9. 运行 `npm run sync:client`，不手改 `apps/Cocos/assets/src`。
@@ -628,7 +628,7 @@ UI 接入顺序以正式产物为准：
     deferred/scheduler，结束时必须完成 teardown。
 
 直接绑定的 `required` 以 Editor XML → `codegen:fgui` View AUTO 为单源；其余手写契约段以 `.view.json` 为单源，
-页面/路由/contribution 归属以 `feature.json` 为单源，契约与注册值由 `codegen:features` 生成。FGUI 发布闭包锁记录
+页面/路由/contribution 归属以 `plugin.json` 为单源，契约与注册值由 `codegen:plugins` 生成。FGUI 发布闭包锁记录
 View AUTO 哈希和生成 View 清单，所以 `fgui-manifest --write` 必须晚于两条 codegen 与对应审阅。
 
 若本批次改变 shared 契约，按 [整体开发动线](OVERVIEW.md#4-标准开发动线) 运行 `sync:shared`、协议指纹或 gameplay
@@ -697,10 +697,10 @@ npm run sync:shared
 npm run codegen:fgui -- <Package> <Component>
 
 # 2. 在 AUTO 区块外完成 View/Logic；更新同目录 <Name>View.view.json
-#    并将 sidecar、路由和 contribution 登记进 features/<id>/feature.json
+#    并将 sidecar、路由和 contribution 登记进 apps/plugins/<id>/plugin.json
 
-# 3. 生成 View、FGUI 契约、feature、route 与 package catalog；稳定 façade 禁止手改
-npm --workspace @game/server run codegen:features
+# 3. 生成 View、FGUI 契约、plugin、route 与 package catalog；稳定 façade 禁止手改
+npm --workspace @game/server run codegen:plugins
 
 # 4. 审阅设计源、发布物、四个 AUTO 区块、sidecar 与生成 catalog 后，更新 FGUI 发布闭包锁
 node scripts/fgui-manifest.mjs --write
@@ -1069,7 +1069,7 @@ runtime-reference-excluded composite ↔ Editor/Creator runtime：Editor 发布�
 □ Editor 保存—关闭—重开无未解释修复或丢引用
 □ 发布物由 Editor 产生，Creator .meta 由真实导入产生
 □ 发布物反解析对账通过，但未被当成 Editor 保存—重开证据
-□ codegen AUTO、`.view.json`、`feature.json` 与 generated FGUI 契约/registry 字段级一致
+□ codegen AUTO、`.view.json`、`plugin.json` 与 generated FGUI 契约/registry 字段级一致
 □ FGUI 发布闭包锁晚于 codegen 更新且只在审阅后写入
 □ M0.5 后，FguiProjectIR 的消费者对同一工程得出一致结构
 □ M2 后，CLI 候选只在临时完整工程生成，并通过零 diff、Editor takeover、重开、隔离发布和 receipt

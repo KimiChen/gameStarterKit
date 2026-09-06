@@ -6,10 +6,10 @@
 > - [docs/SERVER.md](docs/SERVER.md)：服务端目录、RPC、数据一致性与开发约束
 > - [docs/CLIENT.md](docs/CLIENT.md)：客户端目录、View/Logic、FGUI 与本地预览
 > - [docs/WEBPLATFORM.md](docs/WEBPLATFORM.md)：外部身份服务的开发契约边界
-> - [docs/EXTRAFEATURES.md](docs/EXTRAFEATURES.md)：可选额外功能、现有实现与非承诺说明
+> - [docs/EXTRAS.md](docs/EXTRAS.md)：可选额外功能、现有实现与非承诺说明
 > - [docs/undergroundIdle/README.md](docs/undergroundIdle/README.md)：未实现的玩法策划案与扩展草案
-> - [docs/Non-intrusive.md](docs/Non-intrusive.md)：非侵入式框架改造方案（feature 与实时 Room 玩法；框架侧阶段 0-9 已实施，两玩法未实现，编辑器/真机待办见 plan-v5.md）
-> - [docs/PLUGIN.md](docs/PLUGIN.md)：插件机制设计基线（「插件只能消费不能定义」判据、构建期装载；§5 包格式与 `plugin -- pack/install/uninstall/check` 命令、§6 宿主 placement 已实施，插件目录 `apps/plugins/<id>/`（§5.5，阶段 1：plugin.json / feature.json / README / gameplay 单源都在插件目录内），首个真实插件样本 `apps/plugins/redeem` 见 [apps/plugins/redeem/README.md](apps/plugins/redeem/README.md)，开放项见 plan-v5 E 类）
+> - [docs/Non-intrusive.md](docs/Non-intrusive.md)：非侵入式框架改造方案（plugin 与实时 Room 玩法；框架侧阶段 0-9 已实施，两玩法未实现，编辑器/真机待办见 plan-v5.md）
+> - [docs/PLUGIN.md](docs/PLUGIN.md)：插件机制设计基线（「插件只能消费不能定义」判据、构建期装载；§5 包格式与 `plugin -- pack/install/uninstall/check` 命令、§6 宿主 placement 已实施，插件目录 `apps/plugins/<id>/`（§5.5，阶段 1：plugin.json / plugin.json / README / gameplay 单源都在插件目录内），首个真实插件样本 `apps/plugins/redeem` 见 [apps/plugins/redeem/README.md](apps/plugins/redeem/README.md)，开放项见 plan-v5 E 类）
 > - [docs/PLUGIN-REVIEW.md](docs/PLUGIN-REVIEW.md)：PLUGIN.md 的审阅记录（2026-09-05；经验证的问题清单与推荐实现方案，实施状态登记在 plan-v5.md）
 > - [docs/PLUGIN-REGISTRY.md](docs/PLUGIN-REGISTRY.md)：插件分享平台 plugin.gono.games 设计提案（2026-09-05；§1 机制余留问题清单与七条前置修复、§2-4 制品布局/自建服务/CLI/锁 source/plugin-api 门面；实施状态只在其 §7 回写，⛔ 不进 plan-v5）
 > - [tools/creator-preview/README.md](tools/creator-preview/README.md)：Creator 预览证据生成器（CDP 驱动真实引擎预览重放登录 → 首屏 → 设置 → 插件入口，落盘截图 + report.json；⛔ 不进 verify:core）
@@ -131,14 +131,14 @@ npm --workspace @game/server run test:int
      （catalog.generated.ts / index.ts / generated/）禁手改；服务端 `modes/catalog.ts` 是生成物的稳定
      façade（登记全集按 manifest.wireExposed 发现 `modes/<id>/index.ts`），⛔ 不再逐玩法手写。
    - `apps/shared/src/protocol/lobbyRpc/registry.generated.ts`、`apps/client/src/generated/`
-     （views/fguiContracts/features）、`docs/features.generated.md` 与
+     （views/fguiContracts/plugins）、`docs/plugins.generated.md` 与
      `apps/server/test/lobbyRpcVectors/index.generated.ts` 来自
-     `features/<id>/feature.json` + 宿主 placement `features/host.json`（默认玩法与首屏入口顺序，
-     ⛔ feature.json 无 slot/order）+ View 同目录 `.view.json` sidecar + FGUI XML + 各域
+     `apps/plugins/<id>/plugin.json` + 宿主 placement `apps/plugins/host.json`（默认玩法与首屏入口顺序，
+     ⛔ plugin.json 无 slot/order）+ View 同目录 `.view.json` sidecar + FGUI XML + 各域
      RPC descriptor + 各域向量 sidecar `apps/server/test/lobbyRpcVectors/<域>.ts`，用
-     `npm --workspace @game/server run codegen:features` 刷新。
+     `npm --workspace @game/server run codegen:plugins` 刷新。
      `lobbyRpc/index.ts`、`envelope.ts`、`push.ts`、客户端 `view/viewRegistry.ts`、
-     `view/fguiContracts.ts`、`view/pages.ts` 是稳定 façade，普通 feature 不手改
+     `view/fguiContracts.ts`、`view/pages.ts` 是稳定 façade，普通 plugin 不手改
      （机检真源 `scripts/protected-paths.json`，随 `test:client` 无侵入矩阵校验）。
    - `apps/server/src/http/manifest.generated.ts` 来自 `apps/server/src/http/<domain>/<method>.ts`，
      用 `npm --workspace @game/server run codegen:http` 刷新。
@@ -163,13 +163,13 @@ npm --workspace @game/server run test:int
 
 ```text
 shared 契约
-  → npm --workspace @game/server run codegen:features / codegen:gameplays（改 Lobby RPC 域 descriptor
-    / feature 登记 / 玩法 manifest 时；生成物含 docs/features.generated.md 能力索引）
+  → npm --workspace @game/server run codegen:plugins / codegen:gameplays（改 Lobby RPC 域 descriptor
+    / plugin 登记 / 玩法 manifest 时；生成物含 docs/plugins.generated.md 能力索引）
   → npm run sync:shared
   → node scripts/protocol-fingerprint.mjs --write（仅改动 protocol/ 时显式重钉；--check 只读比对，
     CI/审计用，⛔ 无隐式重钉形态）
   → 服务端 websocket/http endpoint
-  → 客户端 Logic + View（.view.json sidecar）+ features/<id>/feature.json 登记
+  → 客户端 Logic + View（.view.json sidecar）+ apps/plugins/<id>/plugin.json 登记
     （viewRegistry/fguiContracts/pages 是生成值的稳定 façade，⛔ 不手改）
   → npm run sync:client
   → 本地类型检查与测试
@@ -187,7 +187,7 @@ shared 契约
   `ballMove` + 技能结算保留为可选入口与内部回归样例，`idle` 是最小第二 mode 证明。
 - 本地账号示例只使用外部服务提供的开发会话契约。
 - 本仓核心是开发期基础框架，详细范围见根 [README.md](README.md#项目边界)；仓库中的可选额外功能
-  见 [docs/EXTRAFEATURES.md](docs/EXTRAFEATURES.md)，不构成核心能力承诺或项目约束。
+  见 [docs/EXTRAS.md](docs/EXTRAS.md)，不构成核心能力承诺或项目约束。
 
 ## Git 约定
 

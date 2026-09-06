@@ -1,4 +1,4 @@
-/** redeem 域测试向量（插件 plugins/redeem 自带；随 codegen:features 汇入 index.generated.ts）。 */
+/** redeem 域测试向量（插件 plugins/redeem 自带；随 codegen:plugins 汇入 index.generated.ts）。 */
 import { RedeemRpc } from "@game/shared/protocol/lobbyRpc/domains/redeem";
 import type { LobbyRpcVectorFile } from "./vectorTypes";
 

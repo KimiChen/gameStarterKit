@@ -1,4 +1,4 @@
-/** snakeCosmetic 域测试向量（S3-02；随 codegen:features 汇入 index.generated.ts）。 */
+/** snakeCosmetic 域测试向量（S3-02；随 codegen:plugins 汇入 index.generated.ts）。 */
 import {
   SnakeCosmeticRpc,
   type ISnakeCosmeticCatalogEntry,

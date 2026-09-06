@@ -167,7 +167,7 @@ test("生命周期分叉：auth-invalid 清空（session ended）；final-loss �
   assert.equal(pendingAfter, 0);
   assert.equal(journal.entryOf("f1")?.state, "applied");
 
-  // 无查询/重发通道时：维持 unknown（机制齐；服务端 inspect 消费者留待产品 feature 接入）。
+  // 无查询/重发通道时：维持 unknown（机制齐；服务端 inspect 消费者留待产品 plugin 接入）。
   const held = new PendingOperationJournal();
   held.begin({ uid: "u", clientReqId: "h1", route: "r", payload: {} });
   held.markInflightUnknown();

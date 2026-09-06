@@ -16,7 +16,7 @@
 - [客户端开发](docs/CLIENT.md)
 - [服务端开发](docs/SERVER.md)
 - [外部身份服务开发边界](docs/WEBPLATFORM.md)
-- [额外功能说明](docs/EXTRAFEATURES.md)
+- [额外功能说明](docs/EXTRAS.md)
 - [《Underground Idle》玩法策划案（未实现）](docs/undergroundIdle/README.md)
 - [非侵入式框架改造方案（框架侧阶段 0-9 已实施，两玩法未实现）](docs/Non-intrusive.md)
 - [插件机制设计基线（判据、包格式与 plugin 命令、宿主 placement；开放项见 plan-v5 E 类）](docs/PLUGIN.md)
@@ -149,7 +149,7 @@ FGUI 专项测试。
 只到得了链条里最后一个脚本。放行会连同入库的 `.meta` 一起删除，Creator 重开将重铸 uuid。
 
 `npm run config:excel-to-json` 与 `npm run config:excel-to-json:check` 是 Excel 配表转换与生成物新鲜度校验，属额外功能，
-见 [额外功能与参考实现](docs/EXTRAFEATURES.md#38-配表负载与-unity-实验) 与 [配表工具 README](tools/excel-config/README.md)。
+见 [额外功能与参考实现](docs/EXTRAS.md#38-配表负载与-unity-实验) 与 [配表工具 README](tools/excel-config/README.md)。
 
 ### 框架维护团队的依赖更新
 
@@ -177,12 +177,12 @@ bitECS 没有自动抓取命令。其 `apps/client/src/lib/bitecs/` 下的 12 �
 
 ```text
 shared 契约
-  → npm --workspace @game/server run codegen:features / codegen:gameplays（改 RPC 域 descriptor /
-    feature 登记 / 玩法 manifest 时）
+  → npm --workspace @game/server run codegen:plugins / codegen:gameplays（改 RPC 域 descriptor /
+    plugin 登记 / 玩法 manifest 时）
   → npm run sync:shared
   → node scripts/protocol-fingerprint.mjs --write（仅改动 protocol/ 时；--check 只读比对）
   → 服务端 endpoint
-  → 客户端 Logic + View（.view.json sidecar）+ features/<id>/feature.json 登记
+  → 客户端 Logic + View（.view.json sidecar）+ apps/plugins/<id>/plugin.json 登记
     （viewRegistry/fguiContracts/pages 是生成值的稳定 façade，不手改）
   → npm run sync:client
   → 本地类型检查与测试
@@ -202,7 +202,7 @@ shared 契约
 
 仓库还可能包含部署运行、商业化、渠道接入和发行运营等额外功能或参考实现。它们不属于核心框架的能力、
 稳定性或长期维护承诺，也不作为项目架构和后续演进的强制约束；是否采用及如何完善由实际项目决定。
-具体分类、当前实现和使用原则见 [额外功能与参考实现](docs/EXTRAFEATURES.md)。
+具体分类、当前实现和使用原则见 [额外功能与参考实现](docs/EXTRAS.md)。
 
 仓库中的本地启动脚本、调试页面、开发会话、测试命令，以及 `@colyseus/sdk`、FairyGUI、bitECS
 等通用技术依赖，仍属于核心框架的本地开发和验证基础。

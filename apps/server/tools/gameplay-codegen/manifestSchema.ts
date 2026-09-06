@@ -2,7 +2,7 @@
  * gameplay manifest 的真实 JSON Schema 校验（§5.4/§5.5：additionalProperties:false）。
  *
  * 单源是同目录的 `gameplay-schema-v1.json`（按 §3.1 必须带 gameplay- 前缀，与
- * `features/feature-schema-v1.json` 区分）。这里的解释器只实现该 schema 用到的
+ * `apps/server/tools/plugin/plugin-schema-v2.json` 区分）。这里的解释器只实现该 schema 用到的
  * draft-07 关键字子集，并在加载期对未知关键字 fail-fast——schema 文件演进出解释器
  * 认不得的关键字时先炸加载，⛔ 不允许静默跳过一条约束。
  */

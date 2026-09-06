@@ -54,11 +54,11 @@ npm run sync:shared
 apps/client/src/
 ├── Main.ts             Cocos 组件入口：@property 三件 + 分辨率/兼容桥 + AppRuntime 转发
 ├── designSpec.ts       设计分辨率数值真源（750×1624）
-├── app/                AppRuntime 宿主、NavigationService、SessionCoordinator、FeatureHost、
+├── app/                AppRuntime 宿主、NavigationService、SessionCoordinator、PluginHost、
 │                       RefreshCoordinator、loginFlow 等横切协调件
 ├── core/               HTTP 底座、生成的开发配置与宿主环境桥
 ├── gameplay/           每玩法 modes/<id>/ 模块 + 生成 catalog + services 注入面
-├── generated/          codegen:features 的 View/契约/feature 注册表产物（禁手改）
+├── generated/          codegen:plugins 的 View/契约/plugin 注册表产物（禁手改）
 ├── lib/                锁定的第三方技术依赖
 ├── logic/              引擎无关页面与玩法行为
 ├── net/                Room、RPC 与 HTTP 适配
@@ -79,10 +79,10 @@ apps/Cocos/
 - `apps/client/src/shared` 禁止手改；改 `apps/shared/src`。
 - `apps/Cocos/assets/src` 整体禁止手改；运行 `npm run sync:client`。
 - `.meta` 与镜像一起提交，保持 UUID 稳定。
-- feature/页面/路由/Home 入口的手写登记在仓库根 `features/<id>/feature.json` 与 View 同目录的
+- plugin/页面/路由/Home 入口的手写登记在仓库根 `apps/plugins/<id>/plugin.json` 与 View 同目录的
   `<Name>View.view.json` sidecar；`src/generated/` 与 `gameplay/catalog.generated.ts` 是
-  `codegen:features` / `codegen:gameplays` 的产物，禁止手改。
-- 普通 feature/玩法动线的中央禁改集合以 `scripts/protected-paths.json` 为机检真源
+  `codegen:plugins` / `codegen:gameplays` 的产物，禁止手改。
+- 普通 plugin/玩法动线的中央禁改集合以 `scripts/protected-paths.json` 为机检真源
   （`test:client` 的无侵入矩阵校验，散文视图见 docs/Non-intrusive.md §11.3）。
 
 ## 3. View 与 Logic 分层
@@ -153,15 +153,15 @@ reconcile；新增玩法只新增 `modes/<id>/` 模块文件与自己的 logic/r
 1. `view/XxxView.ts`：结构绑定（codegen 维护四个 AUTO 区块）与手写接线。
 2. 同目录 `XxxView.view.json` sidecar：owner/layer/实例策略/logic 指向与手写契约段
    （manualRequired/nested/listItems/controllers/relations/assetUrls）的唯一手写真源。
-3. `features/<id>/feature.json`：把 sidecar、路由（group/restore 在 sidecar）与入口
+3. `apps/plugins/<id>/plugin.json`：把 sidecar、路由（group/restore 在 sidecar）与入口
    contribution（只有身份：entryId/label/labelKey/icon/launch，launch 可为 gameplay 或 route，
-   ⛔ 无 slot/order）登记进 feature；首屏入口顺序与默认玩法由宿主 `features/host.json` 声明
-   （docs/PLUGIN.md §6「位置归宿主」）；`npm --workspace @game/server run codegen:features` 据此生成
-   `src/generated/{views,fguiContracts,features}.generated.ts`（含 `GENERATED_HOST`）。`view/viewRegistry.ts` 与
+   ⛔ 无 slot/order）登记进 plugin；首屏入口顺序与默认玩法由宿主 `apps/plugins/host.json` 声明
+   （docs/PLUGIN.md §6「位置归宿主」）；`npm --workspace @game/server run codegen:plugins` 据此生成
+   `src/generated/{views,fguiContracts,plugins}.generated.ts`（含 `GENERATED_HOST`）。`view/viewRegistry.ts` 与
    `view/fguiContracts.ts` 只是生成值的稳定 façade，⛔ 禁止手改。
 
-页面打开经 feature route / `app/NavigationService`；登录/选区/公告等既有页面的组合根在
-`app/loginFlow.ts`（`view/pages.ts` 是零状态转发 façade；新增 feature ⛔ 只通过 feature route，禁止向它添加
+页面打开经 plugin route / `app/NavigationService`；登录/选区/公告等既有页面的组合根在
+`app/loginFlow.ts`（`view/pages.ts` 是零状态转发 façade；新增 plugin ⛔ 只通过 plugin route，禁止向它添加
 `openXxx`）。回登录 transition 的固定次序与文案映射由
 `app/SessionCoordinator` 拥有。
 
@@ -170,7 +170,7 @@ reconcile；新增玩法只新增 `modes/<id>/` 模块文件与自己的 logic/r
 ```ts
 const handle = await ViewMgr.open("Home");
 await handle.run((_view, context) => {
-  // 组合根（app/loginFlow 或 feature route）在这里注入 view.setup(...)，并把 context.signal 传给异步 Logic。
+  // 组合根（app/loginFlow 或 plugin route）在这里注入 view.setup(...)，并把 context.signal 传给异步 Logic。
 });
 ```
 
@@ -227,7 +227,7 @@ AUTO 区块外是手写区。重复执行应得到稳定结果。
 
 命名元素契约的 `required` 段由生成器从 FGUI XML 按 binding 规则计算（与 View AUTO REQUIRED 单源）；
 手写契约段（manualRequired/nested/listItems 等）写在 View 同目录的 `.view.json` sidecar，经
-`codegen:features` 汇入 `generated/fguiContracts.generated.ts`（`view/fguiContracts.ts` 只是
+`codegen:plugins` 汇入 `generated/fguiContracts.generated.ts`（`view/fguiContracts.ts` 只是
 re-export façade）。跨包组件依赖通过 sidecar 的 `sharedPkgs` 声明，不要在页面中临时加载隐式依赖。
 
 常见约束：
@@ -282,8 +282,8 @@ apps/art/fairygui 中修改设计源
 GameRoom 的通用 join/leave ownership 与 mode adapter 契约位于 `net/rooms/GameRoomTransport.ts`；
 `BallMoveRoom.ts`、`IdleRoom.ts` 只把一个已捕获的物理 room 适配成各玩法能力。玩法启动目标经
 Home 菜单 contribution → `LaunchPort.launch` → AppRuntime launch 通道选择（gameplay target 进玩法，
-route target 经 FeatureHost 闸后打开 route；`Main.gameplayId` 只是默认 launch target 的开发调试
-@property 兜底，缺省 = `features/host.json` 的 defaultLaunch；删除属场景资产 diff，需 Creator）。adapter 必须把对应
+route target 经 PluginHost 闸后打开 route；`Main.gameplayId` 只是默认 launch target 的开发调试
+@property 兜底，缺省 = `apps/plugins/host.json` 的 defaultLaunch；删除属场景资产 diff，需 Creator）。adapter 必须把对应
 `mode`、生成的 state 类型/validator 和允许的 C2S 集合传给 Game join，不能依赖服务端默认值；
 Game join 信封（v8）必填 `mode/modeVersion/profile`——默认撮合由 `joinGameRoom` 按 catalog 注入，
 私房由 `net/rooms/PrivateRoomService.ts`（prepareCreate→create / resolve→joinById，携带 access
@@ -417,12 +417,12 @@ Creator 编辑器预览用于补充验证引擎绑定、资源导入和页面交
 3. 在 View 手写区接入必要事件。
 4. 同目录写 `<Name>View.view.json` sidecar（实例策略、logic 指向与手写契约段）。
 5. 在 Logic 中实现行为并注入依赖。
-6. 把 sidecar、路由与 Home 入口登记进 `features/<id>/feature.json`，运行
-   `npm --workspace @game/server run codegen:features` 刷新生成注册表（共享包依赖写在 sidecar）。
+6. 把 sidecar、路由与 Home 入口登记进 `apps/plugins/<id>/plugin.json`，运行
+   `npm --workspace @game/server run codegen:plugins` 刷新生成注册表（共享包依赖写在 sidecar）。
 7. 审阅 Editor 设计源、发布物、View AUTO、sidecar 和生成 catalog，再运行
    `node scripts/fgui-manifest.mjs --write` 更新 FGUI 发布闭包锁。
-8. 页面打开经 feature route / NavigationService；登录/选区/公告页面的组合根在 `app/loginFlow.ts`
-   （`view/pages.ts` 为零状态转发 façade；新增 feature ⛔ 禁止添加 `openXxx`）。
+8. 页面打开经 plugin route / NavigationService；登录/选区/公告页面的组合根在 `app/loginFlow.ts`
+   （`view/pages.ts` 为零状态转发 façade；新增 plugin ⛔ 禁止添加 `openXxx`）。
 9. 增加无头测试。
 10. 纯色底板用 `createSolidPlate()`（`view/uiPlate.ts`），⛔ 不要每块一个 `Graphics`——理由见 §3。
 11. 运行 `sync:client`。
@@ -431,5 +431,5 @@ Creator 编辑器预览用于补充验证引擎绑定、资源导入和页面交
 ## 10. 范围
 
 现有场景、开发账号和演示页面只用于本地开发。微信小游戏兼容层等渠道接缝属于
-[额外功能与参考实现](EXTRAFEATURES.md)，不构成核心能力承诺；完整项目边界见根 README，已知客户端
+[额外功能与参考实现](EXTRAS.md)，不构成核心能力承诺；完整项目边界见根 README，已知客户端
 缺口见 [plan-v5.md](../plan-v5.md)。

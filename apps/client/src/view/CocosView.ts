@@ -6,7 +6,7 @@
  * 挂载时接到 ViewMgr 层容器的 `.node` 下。FGUI 编辑器暂不可用时（或页面本就不需要 FGUI
  * 资源时），页面用本基类手搓节点。
  *
- * 判别信号：一个 `kind:"cocos"` 的 View 是不是「页面」，看它**有没有被某个 feature 的
+ * 判别信号：一个 `kind:"cocos"` 的 View 是不是「页面」，看它**有没有被某个 plugin 的
  * routes 引用**——被引用的进 ViewMgr catalog（本基类的适用范围），没被引用的是玩法表现件
  * （BallMoveView / SnakeWorldView，由 gameplay presentation 自行挂载）。⛔ 不新发明标记字段。
  *

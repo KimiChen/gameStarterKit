@@ -30,7 +30,7 @@ node tools/creator-preview/run.mjs home --format png --step-timeout 30000
 | 场景 | 步骤与判据 |
 | --- | --- |
 | `home` | 登录页 FGUI 对象 `btn_login` 可见 → 点击 → `PromoHomeView` 挂载且卡片含「协议 …」行 |
-| `settings` | 点首屏「设置」→ `SettingsView` 出现 → 读出「插件入口」全部行（label + featureId） |
+| `settings` | 点首屏「设置」→ `SettingsView` 出现 → 读出「插件入口」全部行（label + pluginId） |
 | `redeem` | 同行「进入」→ `RedeemView` + EditBox 出现 → 输入 `--code`（默认 `WELCOME2026`）→「兑换」→ 结果文案归类 `success` / `already-claimed` / `invalid` / `other` →「关闭」回设置面板 |
 | `tally` | 同行「进入」→「目标 N 次」出现 → 连点 `TAP` 直到「你赢了」→ 结算倒计时后 `PromoHomeView` 回来且结算文案消失 |
 | `all` | 依次 home → settings → redeem → tally |

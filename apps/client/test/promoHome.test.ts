@@ -11,7 +11,7 @@ import { test } from "node:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { GENERATED_FEATURES } from "../src/generated/features.generated";
+import { GENERATED_PLUGINS } from "../src/generated/plugins.generated";
 import { GENERATED_VIEW_CATALOG } from "../src/generated/views.generated";
 import {
   GAMEPLAY_CATALOG,
@@ -46,7 +46,7 @@ test("首屏模型是封闭字段集合：只有宣传内容与设置按钮，�
 test("首屏 View/Logic 源码 ⛔ 不得触达菜单或启动通道（间接摆玩法入口同样红）", () => {
   // 候选符号 = 「把玩法入口摆上首屏」必然要用到的东西；GAMEPLAY_CATALOG 不在其中
   // （首屏只数已登记玩法个数，不列出它们）。
-  const banned = ["menuContributions", "HomeMenuEntryModel", "FeatureLaunchTarget", "launch", "enterBattle"];
+  const banned = ["menuContributions", "HomeMenuEntryModel", "PluginLaunchTarget", "launch", "enterBattle"];
   for (const relative of [
     "apps/client/src/logic/page/PromoHomeLogic.ts",
     "apps/client/src/view/PromoHomeView.ts",
@@ -89,7 +89,7 @@ test("设置按钮：点击唯一出口是注入的 openSettings 回调", async 
 });
 
 test("登记：promoHome 是 authenticated base route；旧 FGUI Home 仍是可达 route（⛔ 不删）", () => {
-  const builtin = GENERATED_FEATURES.find((feature) => feature.id === "builtin");
+  const builtin = GENERATED_PLUGINS.find((plugin) => plugin.id === "builtin");
   const routes = new Map((builtin?.routes ?? []).map((route) => [route.id, route]));
   assert.equal(routes.get("promoHome")?.view, "PromoHome");
   assert.equal(routes.get("promoHome")?.restore, "reopen", "base 断线恢复必须重开");

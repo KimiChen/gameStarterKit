@@ -2,10 +2,10 @@
  * 插件所有权推导（docs/PLUGIN.md §1/§5「目录即所有权」的机检形态）。
  *
  * 一个插件能写入仓库的路径集合由它的身份 (id, kinds, constantName, domains, fguiPackages,
- * feature.json 声明的客户端目录) **纯函数推导**，fail-closed：不在推导集内的路径一律拒绝——
+ * plugin.json 声明的客户端目录) **纯函数推导**，fail-closed：不在推导集内的路径一律拒绝——
  * 这是 allowlist，⛔ 不是「protected-paths.json 挡一下」的 denylist（PLUGIN-REVIEW F03/F04）。
  *
- * 推导集与仓库既有的 per-id 目录约定同构（gameplay-codegen / feature-codegen 发现的正是这些目录）；
+ * 推导集与仓库既有的 per-id 目录约定同构（gameplay-codegen / plugin-codegen 发现的正是这些目录）；
  * 扁平目录（net/rooms、lobbyRpc/domains、websocket）按精确文件名归属；测试目录按 `<id>-*` / `<id>.*`
  * 前缀归属——前缀后**必须**紧跟分隔符（`-` 或 `.`），⛔ 不是裸 startsWith：否则 `tally` 会吞掉
  * `tallyBoard-*.test.ts`、`red` 会拥有 `redis-route.test.ts`（PLUGIN-REGISTRY §1-4）。
@@ -16,18 +16,19 @@
 import fs from "node:fs";
 import path from "node:path";
 
-export type PluginKind = "gameplay" | "feature";
+/** 派生的插件形态：client = 有客户端登记（entry / views / routes / menu），gameplay = 有玩法单源；两者可并存。 */
+export type PluginKind = "gameplay" | "client";
 
 export interface PluginIdentity {
   readonly id: string;
   readonly kinds: readonly PluginKind[];
   /** kinds 含 gameplay 时必填（`register<ConstantName>GameMode` / `<ConstantName>Room.ts` 的派生源）。 */
   readonly constantName: string | null;
-  /** kinds 含 feature 时可声明的 Lobby RPC 域（`domains/<d>.ts` / `websocket/<d>/` / 向量 sidecar）。 */
+  /** 可声明的 Lobby RPC 域（`domains/<d>.ts` / `websocket/<d>/` / 向量 sidecar）。 */
   readonly domains: readonly string[];
   /** 声明的 FGUI 包名（ART 源目录 + resources/ui 发布物）。 */
   readonly fguiPackages: readonly string[];
-  /** feature.json 声明的 viewDirs / owners[].logicDir（安装期校验必须落在本插件命名空间内）。 */
+  /** plugin.json 声明的 viewDirs / owners[].logicDir（安装期校验必须落在本插件命名空间内）。 */
   readonly clientDirs: readonly string[];
 }
 
@@ -63,8 +64,8 @@ const CLIENT_SRC = "apps/client/src";
 const COCOS_SRC = "apps/Cocos/assets/src";
 const RESOURCES = "apps/Cocos/assets/resources";
 /**
- * 插件根（PLUGIN.md §5.5 阶段 1）：`apps/plugins/<id>/` 装插件自己的登记面——plugin.json、feature.json、README.md、
- * gameplay/{manifest,state}.json；⛔ 不再散落到 features/、docs/、apps/shared/schema/gameplays/。
+ * 插件根（PLUGIN.md §5.5 阶段 1）：`apps/plugins/<id>/` 装插件自己的登记面——plugin.json、plugin.json、README.md、
+ * gameplay/{manifest,state}.json；⛔ 不再散落到 plugins/、docs/、apps/shared/schema/gameplays/。
  */
 export const PLUGINS_ROOT = "apps/plugins";
 export function pluginDir(id: string): string {
@@ -114,7 +115,7 @@ export function assertPluginIdentity(identity: PluginIdentity): void {
   if (RESERVED_IDS.includes(identity.id)) throw new Error(`[plugin] id "${identity.id}" 是保留字（${RESERVED_IDS.join(", ")}）`);
   if (identity.kinds.length === 0) throw new Error("[plugin] kinds 不能为空");
   for (const kind of identity.kinds) {
-    if (kind !== "gameplay" && kind !== "feature") throw new Error(`[plugin] 未知 kind: ${String(kind)}`);
+    if (kind !== "gameplay" && kind !== "client") throw new Error(`[plugin] 未知 kind: ${String(kind)}`);
   }
   if (new Set(identity.kinds).size !== identity.kinds.length) throw new Error("[plugin] kinds 重复");
   if (identity.kinds.includes("gameplay")) {
@@ -123,30 +124,28 @@ export function assertPluginIdentity(identity: PluginIdentity): void {
   } else if (identity.constantName !== null) {
     throw new Error("[plugin] 只有 kinds 含 gameplay 的插件才声明 constantName");
   }
-  if (identity.domains.length > 0 && !identity.kinds.includes("feature")) {
-    throw new Error("[plugin] 只有 kinds 含 feature 的插件可以声明 domains");
-  }
+
   for (const domain of identity.domains) assertSegment(domain, ID, "domain");
   if (new Set(identity.domains).size !== identity.domains.length) throw new Error("[plugin] domains 重复");
   for (const pkg of identity.fguiPackages) assertSegment(pkg, FGUI_PACKAGE, "fguiPackage");
   if (new Set(identity.fguiPackages).size !== identity.fguiPackages.length) throw new Error("[plugin] fguiPackages 重复");
-  if (identity.clientDirs.length > 0 && !identity.kinds.includes("feature")) {
-    throw new Error("[plugin] 只有 kinds 含 feature 的插件才有 feature.json 客户端目录声明");
+  if (identity.clientDirs.length > 0 && !identity.kinds.includes("client")) {
+    throw new Error("[plugin] 没有客户端登记的插件不该有 viewDirs / owners.logicDir");
   }
   for (const dir of identity.clientDirs) {
     if (!isPluginClientDir(identity.id, dir)) {
       throw new Error(
-        `[plugin] feature.json 声明的客户端目录 "${dir}" 不在插件 "${identity.id}" 的命名空间内`
-        + `（允许：${CLIENT_SRC}/features/${identity.id}[/…]、${CLIENT_SRC}/view/**/${identity.id}、${CLIENT_SRC}/logic/**/${identity.id}）`,
+        `[plugin] plugin.json 声明的客户端目录 "${dir}" 不在插件 "${identity.id}" 的命名空间内`
+        + `（允许：${CLIENT_SRC}/plugins/${identity.id}[/…]、${CLIENT_SRC}/view/**/${identity.id}、${CLIENT_SRC}/logic/**/${identity.id}）`,
       );
     }
   }
 }
 
-/** feature.json 的 viewDirs / logicDir 是否落在插件自己的客户端命名空间内。 */
+/** plugin.json 的 viewDirs / logicDir 是否落在插件自己的客户端命名空间内。 */
 export function isPluginClientDir(id: string, dir: string): boolean {
   const normalized = dir.replace(/\/+$/u, "");
-  if (normalized === `${CLIENT_SRC}/features/${id}` || normalized.startsWith(`${CLIENT_SRC}/features/${id}/`)) return true;
+  if (normalized === `${CLIENT_SRC}/plugins/${id}` || normalized.startsWith(`${CLIENT_SRC}/plugins/${id}/`)) return true;
   return new RegExp(`^${CLIENT_SRC.replace(/\//gu, "\\/")}\\/(view|logic)\\/(?:[A-Za-z0-9_-]+\\/)*${id}$`, "u").test(normalized);
 }
 
@@ -155,7 +154,7 @@ export function deriveOwnership(identity: PluginIdentity): readonly OwnershipRul
   assertPluginIdentity(identity);
   const { id } = identity;
   const rules: OwnershipRule[] = [
-    { kind: "dir", path: pluginDir(id), reason: "插件目录（plugin.json / feature.json / README.md / gameplay 单源）" },
+    { kind: "dir", path: pluginDir(id), reason: "插件目录（plugin.json / plugin.json / README.md / gameplay 单源）" },
     { kind: "prefix", path: "apps/server/test", prefix: id, reason: "插件自有服务端测试（<id>-*.test.ts / <id>.*.test.ts）" },
     { kind: "prefix", path: "apps/server/test/int", prefix: id, reason: "插件自有集成测试（<id>-*.test.ts / <id>.*.test.ts）" },
     { kind: "prefix", path: "apps/client/test", prefix: id, reason: "插件自有客户端测试（<id>-*.test.ts / <id>.*.test.ts）" },
@@ -173,11 +172,14 @@ export function deriveOwnership(identity: PluginIdentity): readonly OwnershipRul
       { kind: "dir", path: `${RESOURCES}/${id}`, reason: "玩法运行时资源（resources/<id>/）" },
     );
   }
-  if (identity.kinds.includes("feature")) {
+  if (identity.kinds.includes("client")) {
     rules.push(
-      { kind: "dir", path: `${CLIENT_SRC}/features/${id}`, reason: "feature 客户端源码（index/logic/net/view）" },
-      { kind: "dir", path: `apps/server/src/core/${id}`, reason: "feature 服务端领域逻辑与自有键（keys.ts 经 kFeature* 工厂）" },
+      { kind: "dir", path: `${CLIENT_SRC}/plugins/${id}`, reason: "插件客户端源码（index/logic/net/view）" },
     );
+  }
+  // 服务端领域逻辑与 Lobby RPC 域不依赖客户端登记：纯服务端插件（只有域）也成立。
+  rules.push({ kind: "dir", path: `apps/server/src/core/${id}`, reason: "插件服务端领域逻辑与自有键（keys.ts 经 kPlugin* 工厂）" });
+  {
     for (const domain of identity.domains) {
       rules.push(
         { kind: "file", path: domainDescriptorPath(domain), reason: `Lobby RPC 域 descriptor（${domain}）` },
@@ -186,7 +188,7 @@ export function deriveOwnership(identity: PluginIdentity): readonly OwnershipRul
       );
       if (domain !== id) rules.push({ kind: "dir", path: `apps/server/src/core/${domain}`, reason: `域 ${domain} 的服务端领域逻辑` });
     }
-    for (const dir of identity.clientDirs) rules.push({ kind: "dir", path: dir.replace(/\/+$/u, ""), reason: "feature.json 声明的客户端目录" });
+    for (const dir of identity.clientDirs) rules.push({ kind: "dir", path: dir.replace(/\/+$/u, ""), reason: "plugin.json 声明的客户端目录" });
   }
   for (const pkg of identity.fguiPackages) {
     rules.push(
@@ -247,7 +249,7 @@ export function hardExclusionReason(relative: string, rules: readonly OwnershipR
 }
 
 type ProtectedRules = {
-  readonly featureFlow?: { readonly paths?: readonly string[] };
+  readonly pluginFlow?: { readonly paths?: readonly string[] };
   readonly gameplayFlow?: { readonly paths?: readonly string[] };
   readonly generatedWriterOwned?: { readonly entries?: readonly { readonly path: string }[] };
 };
@@ -263,7 +265,7 @@ export function readProtectedPaths(root: string): readonly string[] {
   if (!fs.existsSync(file)) return [];
   const rules = JSON.parse(fs.readFileSync(file, "utf8")) as ProtectedRules;
   return [
-    ...(rules.featureFlow?.paths ?? []),
+    ...(rules.pluginFlow?.paths ?? []),
     ...(rules.gameplayFlow?.paths ?? []),
     ...(rules.generatedWriterOwned?.entries ?? []).map((entry) => entry.path).filter((entry) => entry !== `${COCOS_SRC}/**`),
   ];

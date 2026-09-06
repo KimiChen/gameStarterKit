@@ -200,7 +200,7 @@ test("project initializer rewrites bare package module specifiers when adding a 
     writeFileSync(source, [
       'import { sharedValue } from "shared";',
       "export { serverValue } from 'server/subpath';",
-      'const dynamic = import(`shared/feature`);',
+      'const dynamic = import(`shared/plugin`);',
       'const ordinary = "shared";',
       'const localPath = "./shared";',
       "",
@@ -226,7 +226,7 @@ test("project initializer rewrites bare package module specifiers when adding a 
     const migrated = readTextForTest(source);
     assert.match(migrated, /from "@example\/shared"/);
     assert.match(migrated, /from '@example\/server\/subpath'/);
-    assert.match(migrated, /import\(`@example\/shared\/feature`\)/);
+    assert.match(migrated, /import\(`@example\/shared\/plugin`\)/);
     assert.match(migrated, /const ordinary = "shared"/);
     assert.match(migrated, /const localPath = "\.\/shared"/);
     const migratedDocs = readTextForTest(docs);

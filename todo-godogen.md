@@ -82,7 +82,7 @@ T1 verify:creator 最小路径
 ```
 
 ⚠ 原列首位的「产物往返自检」已移出本文，登记为
-[`docs/EXTRAFEATURES.md` §3.10](docs/EXTRAFEATURES.md#310-产物往返自检导出物反序列化校验)（状态：未实现）。
+[`docs/EXTRAS.md` §3.10](docs/EXTRAS.md#310-产物往返自检导出物反序列化校验)（状态：未实现）。
 它不依赖真引擎、成本最低，仍建议在下列任务之前先落地；实施边界以该节为准。
 
 排序理由：T2 拆成两步，避免完整字段表拖住整条链。每一步都保留现有核心门禁，Creator/资产证据作为
@@ -254,5 +254,5 @@ T1 verify:creator 最小路径
   `verify:core` / `verify:all` 的口径。
 - 本文任务若产出新的门禁（如 T1 的 `verify:creator`），应在落地时按本仓既有规则登记到
   `docs/inventory.json` 并补正反例，再考虑是否并入聚合命令；已移出的产物往返自检同此要求，
-  见 [`docs/EXTRAFEATURES.md` §3.10](docs/EXTRAFEATURES.md#310-产物往返自检导出物反序列化校验)。
+  见 [`docs/EXTRAS.md` §3.10](docs/EXTRAS.md#310-产物往返自检导出物反序列化校验)。
 - 研究过程中对两个外部仓库的只读调研不改动本仓任何其它文件。

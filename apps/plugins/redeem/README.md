@@ -16,26 +16,25 @@
 
 | 路径 | 角色 |
 | --- | --- |
-| `apps/plugins/redeem/plugin.json` | 插件身份：id `redeem`、kinds `["feature"]`、domains `["redeem"]` |
-| `apps/plugins/redeem/feature.json` | feature 登记：route `redeem` → View `Redeem`；menu 入口；`module` 指向 feature 自己的 index.ts |
+| `apps/plugins/redeem/plugin.json` | 身份（id `redeem`、domains `["redeem"]`）+ 客户端登记：route `redeem` → View `Redeem`；menu 入口；`entry` 指向 plugin 自己的 index.ts |
 | `apps/shared/src/protocol/lobbyRpc/domains/redeem.ts` | 域契约：`redeem.claim` idempotent-write，errorCodes 两条，contractVersion 1 |
-| `apps/server/src/core/redeem/{codes,store,claim}.ts` | 码表（静态）/ Redis Lua 原子记账（`kFeatureUser` 两键同槽）/ 用例 |
+| `apps/server/src/core/redeem/{codes,store,claim}.ts` | 码表（静态）/ Redis Lua 原子记账（`kPluginUser` 两键同槽）/ 用例 |
 | `apps/server/src/websocket/redeem/claim.ts` | 端点：`defineRpc(RedeemRpc.Claim)` |
 | `apps/server/test/lobbyRpcVectors/redeem.ts` | 域向量 sidecar（汇入 `index.generated.ts`） |
 | `apps/server/test/redeem-claim.test.ts` | 服务端用例测试（内存 store + Lua 返回解析） |
-| `apps/client/src/features/redeem/index.ts` | feature module：install 时把 ports 组装成 RedeemRuntime |
-| `apps/client/src/features/redeem/logic/{RedeemLogic,redeemRuntime}.ts` | 纯 TS 逻辑（铁律 9） |
-| `apps/client/src/features/redeem/view/RedeemView.ts` + `.view.json` | Cocos 纯节点页 + sidecar（owner `redeem`） |
+| `apps/client/src/plugins/redeem/index.ts` | plugin module：install 时把 ports 组装成 RedeemRuntime |
+| `apps/client/src/plugins/redeem/logic/{RedeemLogic,redeemRuntime}.ts` | 纯 TS 逻辑（铁律 9） |
+| `apps/client/src/plugins/redeem/view/RedeemView.ts` + `.view.json` | Cocos 纯节点页 + sidecar（owner `redeem`） |
 | `apps/client/test/redeem-logic.test.ts` | 客户端逻辑测试 |
 | `apps/plugins/redeem/README.md` | 本文 |
 
-生成物（registry/features/views/fguiContracts/vectors index/features.generated.md、shared→client 镜像、
+生成物（registry/plugins/views/fguiContracts/vectors index/plugins.generated.md、shared→client 镜像、
 client→Cocos 镜像）⛔ 不在包内，由 install 的 postinstall 链在宿主仓重生。
 
 ## 已知取舍（插件自身的后续版本，⛔ 不是框架承诺）
 
 - **码表是进程内静态表**（`core/redeem/codes.ts`）。真实运营需要运营后台/DB 码表、有效期、总量与批次。
-- **奖励只入本 feature 钱包**（`ft:redeem:wallet:{uid}`），⛔ 不碰经济系统主钱包/账本：插件只能消费框架 API，
+- **奖励只入本 plugin 钱包**（`ft:redeem:wallet:{uid}`），⛔ 不碰经济系统主钱包/账本：插件只能消费框架 API，
   不能改框架写路径（PLUGIN.md §3）。接入主钱包属于框架侧开放能力（需要一条受治理的经济写 API），未实施。
 - **Cocos 镜像 `.meta` 是脚本合成的占位**（与 eacb687 先例同口径），Creator 打开工程时会按需重写；
   作者侧 FGUI 编辑器不可用，故 View 是纯节点手搓版。

@@ -5,7 +5,7 @@ import { ForceLogoutReason, type ForceLogoutReasonType } from "./coreErrors";
  *
  * 阶段 3 起推送全集由 registry.generated.ts 聚合：core 推送（ServerNotice/ForceLogout）
  * 声明在 coreErrors.ts，域推送（MailNew/GuildEvent）声明在各 domains/<域>.ts 的 pushes 段。
- * 新增一条域推送只改所属域文件 + `codegen:features`，⛔ 不再回到本文件登记四处。
+ * 新增一条域推送只改所属域文件 + `codegen:plugins`，⛔ 不再回到本文件登记四处。
  * 本文件保留强制下线的关闭码/文案（非 wire 聚合物）并 re-export 聚合名，兼容既有 import。
  */
 

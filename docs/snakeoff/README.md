@@ -141,7 +141,7 @@ Snake 玩法与视觉分析借鉴自用户提供的《贪吃蛇大作战》静�
 - [整体设计与标准动线](../OVERVIEW.md)
 - [服务端目录、RPC 与一致性](../SERVER.md)
 - [客户端 View/Logic、FGUI 与本地预览](../CLIENT.md)
-- [可选额外功能边界](../EXTRAFEATURES.md)
+- [可选额外功能边界](../EXTRAS.md)
 - [非侵入式框架改造方案](../Non-intrusive.md)
 - [当前实施状态与开放问题](../../plan-v5.md)
 

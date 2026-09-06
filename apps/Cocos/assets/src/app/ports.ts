@@ -1,7 +1,7 @@
 /**
- * ports（Non-intrusive §7.2 阶段 5b）：feature 可见的**最小能力面**。
+ * ports（Non-intrusive §7.2 阶段 5b）：plugin 可见的**最小能力面**。
  *
- * 这不是通用 DI 容器：feature ⛔ 不得拿到原始 WebSocketClient/RoomClient/SDK Room、
+ * 这不是通用 DI 容器：plugin ⛔ 不得拿到原始 WebSocketClient/RoomClient/SDK Room、
  * Redis key 或任意服务定位器——只取得完成自身行为所需的最小 port。静态门禁
  * （appExitConditions.test.ts 的值导入禁令雏形）与本约定配对。
  *
@@ -14,7 +14,7 @@
  *  - ticker：route-scoped 帧回调（signal abort 自动解绑）；
  *  - lifecycle：连接/宿主事件订阅（连接订阅带快照回放，晚到订阅者不错过 ready；
  *    经 runtime 追踪，app dispose 时强制解绑）；
- *  - launch：enterBattle 通道（feature ⛔ 不自行 join/rejoin）。
+ *  - launch：enterBattle 通道（plugin ⛔ 不自行 join/rejoin）。
  */
 import { WebSocketClient } from "../net/WebSocketClient";
 import type {
@@ -34,7 +34,7 @@ import type {
     RpcRes,
     IUserView,
 } from "../shared/index";
-import type { FeatureLaunchTarget } from "./builtinFeature";
+import type { PluginLaunchTarget } from "./builtinPlugin";
 import type { FrameScheduler } from "./FrameScheduler";
 import type { LifecycleBus, HostLifecycleEvent } from "./LifecycleBus";
 import type { NavigationService, NavRouteHandle } from "./NavigationService";
@@ -87,7 +87,7 @@ export interface LifecyclePort {
 }
 
 export interface ViewsPort {
-    /** open 经 navigation（§7.2：feature 不直接触达 ViewMgr）。 */
+    /** open 经 navigation（§7.2：plugin 不直接触达 ViewMgr）。 */
     open(routeId: string): Promise<NavRouteHandle>;
 }
 
@@ -97,11 +97,11 @@ export interface LaunchPort {
     /**
      * §7.4：统一玩法启动通道——Home 菜单 contribution 点击的唯一出口。
      * target 来自 generated menu contribution；未注入专用 launch 时回退 enterBattle。
-     * ⛔ feature install() 内不得 await 对自身 gameplay target 的 ports.launch——
-     * 宿主闸会与该 feature 自身的 in-flight install 合流，install 等它自己完成，
-     * 循环 await 静默挂死（FeatureHost.launch 合流分支的同款警告）。
+     * ⛔ plugin install() 内不得 await 对自身 gameplay target 的 ports.launch——
+     * 宿主闸会与该 plugin 自身的 in-flight install 合流，install 等它自己完成，
+     * 循环 await 静默挂死（PluginHost.launch 合流分支的同款警告）。
      */
-    launch(target: FeatureLaunchTarget): Promise<void>;
+    launch(target: PluginLaunchTarget): Promise<void>;
 }
 
 export interface AppPorts {
@@ -128,7 +128,7 @@ export interface AppPortsDeps {
     readonly lifecycleBus: LifecycleBus;
     readonly enterBattle: () => Promise<void>;
     /** §7.4 launch 通道（缺省回退 enterBattle——测试替身无需提供）。 */
-    readonly launch?: (target: FeatureLaunchTarget) => Promise<void>;
+    readonly launch?: (target: PluginLaunchTarget) => Promise<void>;
     /** runtime 的订阅追踪：dispose 时强制解绑（订阅计数归零）。 */
     readonly track: (unsubscribe: () => void) => () => void;
     readonly now?: () => number;

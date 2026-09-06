@@ -1,6 +1,6 @@
 /**
  * RefreshCoordinator（Non-intrusive §7.2/§7.3 阶段 5b）：合并 foreground、reconnect、
- * reopen 等并发刷新原因，只刷新当前 authenticated base feature/session controller。
+ * reopen 等并发刷新原因，只刷新当前 authenticated base plugin/session controller。
  *
  * flight key 四维（§7.3）：**app generation** + route-handle generation +
  * session generation + connection/recovery epoch。同 key 并发只合流**当前 flight**；
