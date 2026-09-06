@@ -32,7 +32,12 @@ import type { EntryGroupView } from "../view/EntryGroupView";
 import type { SettingsView } from "../view/SettingsView";
 import type { ConfirmView } from "../view/ConfirmView";
 import { PromoHomeLogic } from "../logic/page/PromoHomeLogic";
-import { EntryGroupLogic } from "../logic/page/EntryGroupLogic";
+import {
+  EntryGroupLogic,
+  clearGroupReturn,
+  rememberGroupReturn,
+  takeGroupReturn,
+} from "../logic/page/EntryGroupLogic";
 import { SettingsLogic, type SettingsProfilePatch } from "../logic/page/SettingsLogic";
 import { reconcileSessionProfile } from "../logic/page/SessionReconcileLogic";
 import {
@@ -742,12 +747,25 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
 export async function openPromoHome(
   userId = "", user: IUserView | null = null,
 ): Promise<NavRouteHandle> {
-  appNavigation.setAuthenticatedBase("promoHome", (restoreContext) => {
+  appNavigation.setAuthenticatedBase("promoHome", async (restoreContext) => {
     const restore = (restoreContext ?? {}) as {
       readonly userId?: string;
       readonly user?: IUserView | null;
     };
-    return openPromoHome(restore.userId ?? "", restore.user ?? null);
+    const handle = await openPromoHome(restore.userId ?? "", restore.user ?? null);
+    // 从分组页进的战斗：把玩家送回他出发的那一页，⛔ 不是大厅。连设置面板一起还原——
+    // 这样关掉分组页露出的仍是设置面板，与 route 形态成员（关掉直接露出分组页）走同一条回路。
+    const groupId = takeGroupReturn();
+    if (groupId !== null) {
+      try {
+        await openSettings();
+        await openEntryGroup(groupId);
+      } catch (error) {
+        // 还原失败不影响已经回到的首屏：玩家仍在一个可用页面上。
+        console.error(`[pages] 玩法结束后恢复分组页 ${groupId} 失败：`, error);
+      }
+    }
+    return handle;
   });
   const h = await appNavigation.open("promoHome");
   const view = h.view as PromoHomeView;
@@ -789,6 +807,8 @@ export async function openEntryGroup(groupId: string): Promise<NavRouteHandle | 
       label: item.label,
       launch: () => {
         if (!context.isActive()) return;
+        // gameplay 形态会关掉整层大厅壳（含本页）：记下返回位，战斗结束后回到这一组。
+        rememberGroupReturn(item.launch.kind === "gameplay" ? resolved.group.id : null);
         return homeMenuRuntime ? homeMenuRuntime.launch(item.launch) : undefined;
       },
     })));
@@ -824,6 +844,7 @@ export async function openSettings(): Promise<NavRouteHandle> {
       pluginIds: [...new Set(members.map((item) => item.pluginId))],
       launch: () => {
         if (!context.isActive()) return;
+        clearGroupReturn();
         return openEntryGroup(group.id).then(() => undefined);
       },
     })));
@@ -836,6 +857,7 @@ export async function openSettings(): Promise<NavRouteHandle> {
       // onEnterBattle 回退通道，⛔ 也不该编一个。
       launch: () => {
         if (!context.isActive()) return;
+        clearGroupReturn();
         return homeMenuRuntime ? homeMenuRuntime.launch(item.launch) : undefined;
       },
     })));
@@ -884,6 +906,7 @@ export async function openHome(
       enabled: homeMenuRuntime ? homeMenuRuntime.availabilityOf(item.pluginId) === "available" : true,
       launch: () => {
         if (!context.isActive()) return;
+        clearGroupReturn();
         return homeMenuRuntime ? homeMenuRuntime.launch(item.launch) : onEnterBattle();
       },
     }));

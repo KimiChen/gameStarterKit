@@ -7,7 +7,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { GENERATED_HOST, GENERATED_MENU_CONTRIBUTIONS } from "../src/generated/plugins.generated";
-import { EntryGroupLogic, type EntryGroupItemInput } from "../src/logic/page/EntryGroupLogic";
+import {
+  EntryGroupLogic,
+  clearGroupReturn,
+  rememberGroupReturn,
+  takeGroupReturn,
+  type EntryGroupItemInput,
+} from "../src/logic/page/EntryGroupLogic";
 import type { PluginAvailability } from "../src/logic/page/SettingsLogic";
 
 function makeHarness(items: readonly Omit<EntryGroupItemInput, "launch">[], title = "竞技场") {
@@ -88,4 +94,27 @@ test("真仓 placement：host.json 每个分组的成员都能在全量 contribu
         `分组 ${group.id} 的成员 ${member.pluginId}/${member.entryId} 必须是真实 contribution`);
     }
   }
+});
+
+/**
+ * 战斗结束后的返回位：从分组页进的 gameplay 入口，打完必须回到那一组，⛔ 不是大厅。
+ * （route 形态的成员 ⛔ 不记——它们只是压在分组页上的一层，关掉本来就露出分组页。）
+ */
+test("返回位：记一次、消费一次；⛔ 不重复回", () => {
+  clearGroupReturn();
+  assert.equal(takeGroupReturn(), null, "没记过就没有返回位");
+  rememberGroupReturn("arenaHub");
+  assert.equal(takeGroupReturn(), "arenaHub");
+  assert.equal(takeGroupReturn(), null, "消费即清空——⛔ 下一局结束不许再弹一次分组页");
+});
+
+test("返回位：route 形态成员记 null；分组页之外启动入口要清位", () => {
+  clearGroupReturn();
+  rememberGroupReturn(null);
+  assert.equal(takeGroupReturn(), null, "route 形态不经 closeGroup，⛔ 不需要返回位");
+
+  // 典型的脏数据场景：从分组页点了 gameplay 但没打起来，玩家转头从设置面板进了别的玩法。
+  rememberGroupReturn("arenaHub");
+  clearGroupReturn();
+  assert.equal(takeGroupReturn(), null, "别处启动的战斗结束后 ⛔ 不许把玩家送进竞技场");
 });
