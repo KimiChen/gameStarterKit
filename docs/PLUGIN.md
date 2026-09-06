@@ -400,6 +400,16 @@ apps/plugins/
   plugin/kit id 撞名、每组至少 2 条（只收 1 条不是分组，只是多套一层页面）。
   组行的可用性按「组内**还有**可用成员」判——⛔ 不能因为组里某个插件 failed 就把整个入口置灰，
   那会连带屏蔽掉同组其他人的入口。
+- **组内成员的返回路径必须回到分组页，⛔ 不是大厅**（否则玩家每玩一局就被扔回首屏，还得重新
+  点设置 → 分组才能玩下一个）。两种形态的回法不同：
+  - `launch.kind:"route"` 的成员只是压在分组页上的一层，关掉自然露出分组页——本来就回得去，
+    ⛔ 无需任何额外机制；
+  - `launch.kind:"gameplay"` 的成员进战斗前会 `closeGroup("authenticated")` 把整层大厅壳（含分组页）
+    关掉，战斗结束后宿主只恢复 authenticated base（首屏）。所以组合根在从分组页启动 gameplay 时
+    记一个**返回位**（`logic/page/EntryGroupLogic.ts` 的 `rememberGroupReturn`），恢复 base 时
+    **消费即清空**并把「设置面板 → 分组页」一起还原，使两种形态的回路一致。
+    ⛔ 返回位只记一次、只回一次；从分组页之外启动任何入口都清位——否则一次没打起来的战斗
+    会让后面某局结束时莫名弹出分组页。
 - plugin.json 的 `dependencies` 由 PluginHost 真正消费：launch 先按声明序装依赖（依赖正在 dispose 则等它拆完
   再装；运行期环点名结算 failed），任一依赖非 active 则本 plugin failed 且不装；仍有依赖方在位的 plugin 不随
   route refcount 归零释放（记请求，依赖方拆完后级联释放）；disposeAll 按依赖拓扑拆（依赖方先拆）。codegen 侧

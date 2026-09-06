@@ -105,3 +105,32 @@ export class EntryGroupLogic {
         }
     }
 }
+
+// ── 战斗结束后的返回位（纯状态，无 cc；组合根 app/loginFlow.ts 是唯一调用方） ──
+
+/**
+ * 「从哪个分组页进的战斗」。玩法结束后要回到那儿，⛔ 不是把玩家扔回大厅。
+ *
+ * ⚠ 为什么需要记这一笔：`launch.kind:"gameplay"` 的入口进战斗前会 `closeGroup("authenticated")`
+ * 把整层大厅壳关掉（设置面板与分组页一起没），战斗结束后宿主只恢复 authenticated base（首屏）。
+ * route 形态的成员（竞技场棋盘 / 竞技场商店）⛔ 不走这条路——它们只是压在分组页上的一层，
+ * 关掉自然露出分组页，本来就回得去。
+ */
+let pendingGroupReturn: string | null = null;
+
+/** 从分组页启动 gameplay 形态的成员时置位；传 null 表示这次不需要回分组页。 */
+export function rememberGroupReturn(groupId: string | null): void {
+    pendingGroupReturn = groupId;
+}
+
+/** 从分组页之外启动任何入口时清位——⛔ 否则一次没打起来的战斗会让后面某局结束时莫名弹出分组页。 */
+export function clearGroupReturn(): void {
+    pendingGroupReturn = null;
+}
+
+/** 读取并清空（**只回一次**）：恢复 authenticated base 时调用。 */
+export function takeGroupReturn(): string | null {
+    const groupId = pendingGroupReturn;
+    pendingGroupReturn = null;
+    return groupId;
+}

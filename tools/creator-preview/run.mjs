@@ -381,7 +381,7 @@ async function closeBackToSettings(runner, viewName) {
 }
 
 /** gameplay 形态的通用重放：连点动作按钮直到「你赢了！」，再等结算回首屏。 */
-async function playUntilWin(runner, { actionText, countLabel, shotPrefix, maxTaps }) {
+async function playUntilWin(runner, { actionText, countLabel, shotPrefix, maxTaps, returnsTo = "home" }) {
   await runner.step(`连点「${actionText}」直到判胜（上限 ${maxTaps} 次）`, async () => {
     let taps = 0;
     let midShot = null;
@@ -404,6 +404,22 @@ async function playUntilWin(runner, { actionText, countLabel, shotPrefix, maxTap
     const shot = await runner.shot(`${shotPrefix}-settle`);
     return { taps, midShot, settleText: won.text, shot };
   });
+  if (returnsTo === "group") {
+    // 从分组页进的战斗，打完必须回到**那一组**，⛔ 不是大厅（否则玩家每打一局就被扔回首屏，
+    // 还得再点设置 → 竞技场才能玩下一个）。设置面板同时被还原，所以关掉分组页仍露出设置面板。
+    return runner.step("结算后回到分组页（⛔ 不是大厅）", async () => {
+      await runner.waitFor(
+        "EntryGroupView 回来且结算文案消失",
+        (walk) => (selectNodes(walk, { name: "EntryGroupView" }).length > 0
+          && selectNodes(walk, { name: "SettingsView" }).length > 0
+          && selectNodes(walk, { textMatches: /你赢了/u }).length === 0 ? true : null),
+        45_000,
+      );
+      const rows = runner.find({ pathIncludes: "EntryGroupView", kind: "label", textMatches: /\s+·\s+/u }).map((node) => node.text);
+      const shot = await runner.shot(`${shotPrefix}-back-group`);
+      return { rows, settingsBelow: true, shot };
+    });
+  }
   return runner.step("结算倒计时结束后回到首屏（AppRuntime 恢复 authenticated base）", async () => {
     await runner.waitFor(
       "PromoHomeView 回来且结算文案消失",
@@ -584,7 +600,7 @@ async function scenarioArenaCapture(runner) {
     const shot = await runner.shot("arenaCapture-start");
     return { status: status.text, goal, shot };
   });
-  return playUntilWin(runner, { actionText: "占领", countLabel: "你已占", shotPrefix: "arenaCapture", maxTaps: start.goal + 3 });
+  return playUntilWin(runner, { actionText: "占领", countLabel: "你已占", shotPrefix: "arenaCapture", maxTaps: start.goal + 3, returnsTo: "group" });
 }
 
 /** kit 的第二个 gameplay 形态 mode。 */
@@ -597,7 +613,7 @@ async function scenarioArenaDuel(runner) {
     const shot = await runner.shot("arenaDuel-start");
     return { status: status.text, hp, shot };
   });
-  return playUntilWin(runner, { actionText: "出击", countLabel: "你已命中", shotPrefix: "arenaDuel", maxTaps: start.hp + 3 });
+  return playUntilWin(runner, { actionText: "出击", countLabel: "你已命中", shotPrefix: "arenaDuel", maxTaps: start.hp + 3, returnsTo: "group" });
 }
 
 /** 建在 kit 上的插件：读 kit 的 board 面拿自己的格，买加固走 kit 的 boostTile → tx.debit 扣金币。 */
