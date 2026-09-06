@@ -2,7 +2,7 @@
 import { GamePhase, type GamePhaseType } from "../../../constants/game";
 import { assertExactKeys, boundedString, finiteInteger, guardWire, isPlainRecord, type PlainRecord, WireValidationError } from "../../../protocol/http";
 
-/** Root players map capacity. Source: apps/shared/schema/gameplays/arenaDuel/manifest.json (maxPlayers). */
+/** Root players map capacity. Source: apps/kits/arena/gameplays/arenaDuel/manifest.json (maxPlayers). */
 const MAX_PLAYERS = 2;
 
 /** Dependency-free mirrors of the Colyseus wire state. */

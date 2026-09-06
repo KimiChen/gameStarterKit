@@ -2,6 +2,8 @@
 // ⚠ 原生成器 tools/snake-s1-assets/ 已于 2026-09-06 随文档归并删除，本文件**不可再生**：
 // 没有任何工具能从原作素材重建它，16 套皮肤的帧矩形/pivot/track/业务值全部固化在此。
 // ⛔ 改动前先读 apps/plugins/snake/README.md §9.1——这里没有 hash 守卫也没有 --check 可复核。
+// 文件名不再带 .generated：它已是手工维护的冻结数据表，而 `*.generated.*` 是 plugin 包的硬排除形态
+// （带着这个名字，snake 包既打不进也装不上——见 README §9.1）。
 
 export const PUBLIC_SNAKE_SKIN_CATALOG_DATA = [
   {
