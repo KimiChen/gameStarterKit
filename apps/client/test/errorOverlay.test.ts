@@ -66,8 +66,10 @@ function harness(options: {
     const creatorBox = new FakeElement("div");
     const canvas = new FakeElement("canvas");
     canvas.rect = options.canvas ?? null;
+    const selected: FakeElement[] = [];
     const doc = {
         body,
+        createRange: () => ({ selectNodeContents: (node: FakeElement) => { range.node = node; } }),
         createElement: (tag: string) => new FakeElement(tag),
         querySelector: (selector: string) => {
             if (selector === "#error") return creatorBox;
@@ -76,6 +78,7 @@ function harness(options: {
         },
         ...(options.execCommand ? { execCommand: options.execCommand } : {}),
     };
+    const range: { node: FakeElement | null } = { node: null };
     const winListeners = new Map<string, ((event: unknown) => void)[]>();
     const win = {
         addEventListener: (type: string, listener: (event: unknown) => void) => {
@@ -87,6 +90,10 @@ function harness(options: {
         location: { href: "http://10.0.2.10:7456/" },
         innerWidth: 1440,
         innerHeight: 900,
+        getSelection: () => ({
+            removeAllRanges: () => { selected.length = 0; },
+            addRange: () => { if (range.node) selected.push(range.node); },
+        }),
     };
     const handle = installErrorOverlay({
         doc: doc as never, win: win as never, enabled: true, now: () => new Date("2026-09-06T12:00:00.000Z"),
@@ -102,7 +109,7 @@ function harness(options: {
     };
     const scrim = (): FakeElement => body.children[0];
     const panel = (): FakeElement => scrim().children[0];
-    return { handle: handle!, body, creatorBox, emit, buttonOf, scrim, panel };
+    return { handle: handle!, body, creatorBox, emit, buttonOf, scrim, panel, selected };
 }
 
 test("errorOverlay：不满足开关或没有 DOM 时是 no-op（release 构建 ⛔ 不把堆栈甩给玩家）", () => {
@@ -123,7 +130,11 @@ test("errorOverlay：window error / unhandledrejection 都进弹框，且盖掉�
     assert.ok(panelText?.textContent.includes("页面：http://10.0.2.10:7456/"), "环境行要带页面地址");
     assert.ok(panelText?.textContent.includes("UA：FakeUA/1.0"));
 
+    // ⚠ Creator 的 showError 每收到一条错误都会把 #error 重新 display:block，
+    // 所以每次出错都得再藏一遍——只在建弹框时藏一次的话第二条错误就又冒出来了。
+    h.creatorBox.style.display = "block";
     h.emit("unhandledrejection", { reason: new Error("boom") });
+    assert.equal(h.creatorBox.style.display, "none", "第二条错误也必须把预览页的框重新藏掉");
     assert.equal(h.handle.entries().length, 2);
     assert.equal(h.handle.entries()[1].kind, "unhandledrejection");
     __resetErrorOverlayForTest();
@@ -156,11 +167,15 @@ test("errorOverlay：复制三级降级 —— 剪贴板 → execCommand → 选
     assert.equal(await withExec.handle.copy(), "execCommand");
     assert.equal(execCalls, 1);
 
-    // ③ 两级都没有：把文本选中，按钮改口让用户长按。
+    // ③ 两级都没有：把报告正文**真的选中**，按钮改口让用户长按。
+    // ⚠ `<div>` 没有 .select()（那是 input/textarea 才有的）：早先那版静默什么也没做、
+    // 按钮却说「已选中」——真机演示时抓到的。这条断言钉住「选区里确实是正文那块」。
     const bare = harness();
     bare.emit("error", { error: new Error("boom") });
     assert.equal(await bare.handle.copy(), "selection");
     bare.buttonOf("已选中，长按复制");
+    assert.equal(bare.selected.length, 1, "必须真的建了选区");
+    assert.ok(bare.selected[0].textContent.includes("boom"), "选中的必须是报告正文那一块");
 
     // ④ 剪贴板存在但抛错（权限被拒）也必须继续降级，⛔ 不是哑键。
     let execAfterReject = 0;
@@ -171,6 +186,20 @@ test("errorOverlay：复制三级降级 —— 剪贴板 → execCommand → 选
     rejecting.emit("error", { error: new Error("boom") });
     assert.equal(await rejecting.handle.copy(), "execCommand");
     assert.equal(execAfterReject, 1);
+    __resetErrorOverlayForTest();
+});
+
+test("errorOverlay：弹出时 ⛔ 不自动复制、不自动选中——复制只能由用户点按钮触发", () => {
+    let writes = 0;
+    const h = harness({ clipboard: { writeText: async () => { writes += 1; } }, execCommand: () => true });
+    h.emit("error", { error: new Error("boom") });
+    h.emit("unhandledrejection", { reason: new Error("again") });
+    assert.equal(writes, 0, "⛔ 弹框出现不许碰剪贴板（会弹权限框/抢走用户已复制的内容）");
+    assert.equal(h.selected.length, 0, "⛔ 弹框出现不许自动选中");
+    assert.equal(h.buttonOf("复制全部").textContent, "复制全部", "按钮保持初始文案，⛔ 不许自己变成「已复制」");
+    // 只有用户点了才复制。
+    h.buttonOf("复制全部").click();
+    assert.equal(writes, 1);
     __resetErrorOverlayForTest();
 });
 
