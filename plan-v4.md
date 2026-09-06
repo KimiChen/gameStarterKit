@@ -1,10 +1,16 @@
 # gameStarterKit 开发收口计划（历史归档 · plan-v4）
 
-> **本文件是历史归档。** 当前开放问题、实施状态与验收证据以 [plan-v5.md](plan-v5.md) 为准；
+> **本文件是历史归档。** 当前实施状态与验收基线以 [plan-v5.md](plan-v5.md) 为准，仍未实现的开放项见
+> [docs/EXTRAS.md §5.2](docs/EXTRAS.md#52-未实现的开放项登记2026-09-06-自-plan-系列归并)；
 > 本文件保留该轮逐项实施的状态与验收证据（含 Non-intrusive 阶段 0–9 与 drop-in 房型的
 > 实施证据、第二十至二十五轮复核记录），不再接受新状态回写，也不得从其中的完成标记推导
 > 当前状态。[plan-v3.md](plan-v3.md)、[plan-v2.md](plan-v2.md) 与 [plan.md](plan.md)
-> 同为更早的历史归档。
+> 同为更早的历史归档（后两份已于 2026-09-06 压缩成 stub，完整正文在 Git 历史）。
+>
+> ⛔ **本文件不可压缩**（2026-09-06 评估）：`docs/Non-intrusive.md` 按「条目 N」与「Non-intrusive 阶段 0–9
+> 实施证据」一节引用本文件七处，`apps/server/test/drop-in.test.ts`、`game-mode.test.ts`、
+> `gameplay-codegen.test.ts` 也按条目号引用；`scripts/verify-inventory.mjs` 另有硬闸要求 AGENTS/CLAUDE
+> 含字面量 `[plan-v4.md](plan-v4.md)`。
 >
 > 该轮收尾时「仍然开放的部分」8 条与各轮登记边界已抽取进 plan-v5（A/B/C 三类清单 + D 类
 > 有意保留边界）；判断其当轮细节时以本文的原始记录为准。

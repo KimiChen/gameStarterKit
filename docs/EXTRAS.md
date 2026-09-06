@@ -312,8 +312,8 @@ B 最初只解析 `ui://`，于是「被引用但未导出」的资源同时逃�
 
 ### 3.11 《Snake Off》竖版贪吃蛇玩法策划案
 
-状态：**首版已实现，且是当前默认玩法 `snake`**（V2 无尽版 S0～S2R 已完成，S3～S5 待实施，见
-[Snake 玩法文档](../apps/plugins/snake/README.md)）。
+状态：**首版已实现，且是当前默认玩法 `snake`**（V2 无尽版 S0～S4 已完成、S5 Demo 验收进行中，见
+[Snake 玩法文档](../apps/plugins/snake/README.md)——该文档是 snake 专项的唯一真相，本节不复制其阶段状态）。
 
 ⚠ 原 `docs/snakeoff/` 的开房玩法提案（六位邀请码私房、四人、房主开局）**已废弃**并于 2026-09-06 删除；其素材授权台账已并入 Snake 玩法文档。
 玩法运行时不在本节登记为额外能力：它是当前默认玩法（shared 契约 `apps/shared/schema/gameplays/snake`、
@@ -335,13 +335,17 @@ B 最初只解析 `ui://`，于是「被引用但未导出」的资源同时逃�
 
 ## 5. 原待办归并与非绑定候选
 
-原独立待办同时混合了核心正确性问题和可选扩展方向。当前核心项以
-[plan-v5.md](../plan-v5.md) 的收口状态与证据为准；额外项在本节保留。下面的映射用于证明原内容已有明确
-去向，不构成第二份路线图，也不改变本文件的非承诺定位。
+原独立待办同时混合了核心正确性问题和可选扩展方向。实施状态与验收基线以
+[plan-v5.md](../plan-v5.md) 为准；**仍未实现的开放项登记在 §5.2**、**有意保留的边界登记在 §5.3**
+（2026-09-06 自 plan 系列归并）。下面的映射用于证明原内容已有明确去向，不构成第二份路线图，也不改变
+本文件的非承诺定位。
+
+⚠ §5.2 里标注为「核心」的条目**不因登记在本文件而降级为非承诺**——沿用本节末尾既有口径：核心代码缺口
+不在本节降级为可选项，本节只是它们的**统一登记面**。
 
 | 原编号 | 原内容摘要 | 归并结果 |
 | --- | --- | --- |
-| D1 | 客户端 app/session/scene/room 状态机、玩法 registry、统一回登录出口、可注入持久化、timeout/cancel | 历史归档：`plan.md` P0-01、P1-01；当前边界见 `plan-v3.md` |
+| D1 | 客户端 app/session/scene/room 状态机、玩法 registry、统一回登录出口、可注入持久化、timeout/cancel | 历史归档：`plan.md` P0-01、P1-01；保留边界的原始记录在历史归档 `plan-v3.md` |
 | D2 | Main/View 无头类型与生命周期测试、引擎 stub、FGUI 深层契约、测试源码严格类型检查 | 核心：P1-02、P1-05、P1-08 |
 | D3 | join deadline、完整登录事务互斥、掉线输入 reconcile、session 事件串行化 | 核心：P0-01、P1-07 |
 | D4 | FGUI 设计源到 `.bin`/`.meta`/codegen 的可检查流程、required/optional 语义、失败重试与资源释放 | 核心：P1-05 |
@@ -370,7 +374,63 @@ B 最初只解析 `ui://`，于是「被引用但未导出」的资源同时逃�
 - ESLint 当前没有纳入根工具链；只有出现现有 TypeScript/定制检查无法覆盖的具体问题时再评估。
 
 客户端状态机、GameRoom 输入、effect 原子性、角色 ready、默认进程生命周期、View 生命周期、wire schema
-和本地验证闭环属于核心代码缺口，不在本节降级为可选项；当前开放边界统一进入 [plan-v5.md](../plan-v5.md)。
+和本地验证闭环属于核心代码缺口，不在本节降级为可选项；它们当年的收口证据在 [plan-v5.md](../plan-v5.md)
+指向的归档链里，今天仍未实现的部分登记在 §5.2。
+
+对照吸收计划仍在根目录 [`todo-godogen.md`](../todo-godogen.md)（T1–T7 未完成，非本仓能力承诺）。
+
+### 5.2 未实现的开放项登记（2026-09-06 自 plan 系列归并）
+
+本表是**登记面**，不是路线图：⛔ 无排期、无优先级、无先后承诺。每条都在 2026-09-06 逐条回代码核验过
+（⛔ 不采信计划文件与提交信息的自述标记）。归并来源是 plan-v5 的 A/B/C/E 表；四个历史归档
+（[plan.md](../plan.md) / [plan-v2.md](../plan-v2.md) / [plan-v3.md](../plan-v3.md) /
+[plan-v4.md](../plan-v4.md)）经同轮核验**没有任何未被承接的开放项**。
+
+| # | 开放项 | 类别 | 现状（2026-09-06 实测） |
+| --- | --- | --- | --- |
+| G1 | FGUI 不变量 E：sprite rect ⊆ 图集图片真实尺寸 | 核心·工程 | `scripts/fgui-roundtrip.mjs` 只实现 A/A'/B/C/D，全文无 PNG IHDR / JPEG SOF 解析。未做的理由与形态见 §3.10 |
+| G2 | `tools/excel-to-json.mjs` 的 `--check` 不是往返自检 | 核心·工程 | writer 与 checker 共用同一份内存 `data`，`buildItems()` 的静默丢行对两侧同时生效；行数只进 summary 不做断言。见 §3.10 |
+| U1 | Home「玩法入口列表 GList」视觉 | 编辑器 | 机制已落地（生成的 menu contributions + LaunchPort + disabled/failed 叠加）；`HomeView.ts` 仍只渲染 `contribution[0]` 并对多入口 warn，`Home.xml` 只有单个 `btn_enter`。需设计师在 FGUI 编辑器出图 |
+| U2 | Home 页 failed 入口的「可手动重试」UX | 编辑器 | **设置面板侧已实现并跑过真实引擎**（`SettingsLogic` 的 retry + 两条文案）；Home 页 failed 入口仍只置灰不可点，被 U1 的出图卡住 |
+| U3 | `PrivateRoomLobby` FGUI 包与模板 View | 编辑器 | transport 已就绪（`PrivateRoomService`，headless 用例覆盖）；`apps/art/fairygui/assets/` 的 13 个包里没有该包，页面视觉零进展 |
+| U4 | Creator 人工证据剩余三项：取消回滚 / 输入租约 / 跨包资源 | 编辑器 | 四项里「动态加载」已闭合（两种插件形态都跑过）；其余三项未做。补做时在已入仓的重放器 [`tools/creator-preview/`](../tools/creator-preview/README.md) 同一条路上加 step 即可 |
+| U5 | `.meta` uuid 集合 ↔ Cocos 场景序列化往返自检 | 编辑器 | 零进展，需真实 Creator 引擎。见 §3.10 |
+| R1 | 两玩法的**物理真机**联调 | 核心·验收 | ⚠ **口径澄清**：snake 文档与近期提交里的「真机验证」指 Creator 3.8.8 桌面预览（Chrome + CDP），**不是物理设备**。物理设备 + 多个真实客户端 + 完整 WebPlatform 登录链的联调从未做过，真实 Safe Area、真机多指与移动端性能均未验证 |
+| P1 | 《Underground Idle》玩法实现 | 额外·玩法 | 纯策划案 + 美术规格，业务代码零实现。见 §3.9 |
+| P2 | Snake S5 Demo 验收 | 额外·玩法 | S0～S4 已完成，S5 进行中。阶段状态以 [Snake 玩法文档](../apps/plugins/snake/README.md) 为唯一真相，本表不复制 |
+| X1 | 插件 `launch.profile`：一个玩法多房型入口 | 核心·插件 | `plugin-schema-v2.json` 的 `launch` 只有 kind/gameplayId/routeId；各玩法 joiner 仍写死 profile。三处补丁点（schema 可选字段 → AppRuntime 透传 → joiner 按 target 选）一处都没做。PLUGIN-REVIEW F19 判定当前分层是**有意接缝**，非断点 |
+| X2 | i18n / LocalizePort 契约 | 核心·插件 | `labelKey` 必填且透传到生成物，渲染仍用硬编码 `label`；全仓无 LocalizePort 与 locales 载体。缺口本身已被 `SettingsLogic` 的语言项 reason 与 `settings.test.ts` 钉成断言。**须先于第一个第三方插件落地**，否则每个插件硬编码一种语言 |
+| X3 | 框架默认加载页 | 核心·插件 | 未开工：`builtin` 的 routes 里没有 loading，`view/` 下无 LoadingView。与 FGUI 包预热策略绑定（本仓 FGUI 包只有加载路径无卸载路径） |
+| X4 | join 信封侧的域契约比对 | 有意接缝 | 构建期闸已落地（`LOBBY_RPC_DOMAIN_CONTRACTS`）；Lobby join 仍只比对 `LOBBY_PROTOCOL_VERSION`。⛔ 这是既定边界不是待办：Non-intrusive §4.8 明确「不各自新增版本闸」，域契约变化是否 bump 那个整数是人工决策 |
+| Y1 | 插件分享平台 plugin.gono.games | 额外·分发 | 设计提案已定稿，v0/v1/v2 分期与七条前置修复的实施状态**只在 [docs/PLUGIN-REGISTRY.md](PLUGIN-REGISTRY.md) §7 回写**，本表不复制 |
+| Y2 | kit（地基层） | 额外·地基 | 设计提案已定稿，K0/K1/K2 分期的实施状态**只在 [docs/KIT.md](KIT.md) §9 回写**，本表不复制 |
+
+### 5.3 有意保留的边界（登记备查，⛔ 不是待办）
+
+这些是已评估并接受的边界或范围决定，⛔ 不要当成开放项去「修」。同样在 2026-09-06 逐条回代码核验。
+
+- 存量 `match_results` 行的精确回填**不可行**：恰好 8 键的 legacy 行与真 v2 行逐字节相同，无法区分，
+  一律留在 `schema_version = 0`（`schema.sql` 的列注释与 `matchConsumer` 同口径）。
+- `fb777ce` 的熔断 flake 未形成复现-修复-复现闭环（连续全量绿未再撞见），是按静态分析消除唯一可疑变量；
+  若再现需重新取证。
+- `enterBattle()` 回退通道不过 plugin 闸：默认玩法属 built-in 常驻（恒 active）无实际差异；未来默认玩法
+  若变为托管 plugin 需重新评估。
+- 幂等 per-uid 计数器按窗口虚高（窗口内多次失败也计数，计数器只是上限护栏、⛔ 不是真源）；
+  operation inspect 暂无生产消费者（受控诊断面，只覆盖 transient gate）；v8 信封硬断要求双端同批部署。
+- `GameRoom.ts` 已超 2100 行：god-object 风险，拆分属另立计划。⛔ 不再钉具体行数——行数不是判据。
+- plugin `install()` 内 `await` 对自身 gameplay target 的 `ports.launch` 会与 in-flight install 合流成
+  循环 await 静默挂死；结构上无法区分合流者，已在 `ports.ts` 与 `PluginHost.launch` 双侧注释警告。
+- drop-in ⛔ 不与 evidence capability 组合（evidence 在开局冻结 initialRoster，与动态 roster 矛盾）；
+  三处启动期硬闸在 `GameRoom.ts`。**动态 roster 的证据格式属未来独立设计**，今天无任何实现。
+- FGUI 观察项：2 个负差额包（Dynamic_Login、View_SharedWidget_Confirm）的解释不完备，属解释缺口而非
+  缺陷（本仓 12 个包里 7 个有合法差额，绝对值合计 15）。⚠ 原同条登记的「`src=` 悬空 resId 无闸」**已过期**：
+  `src=`/`pkg=` 两种拼写同日就并入不变量 B，今天有闸。
+- 条目 2 的 XADD 失败在 GameRoom stub 侧无注入：int 侧已覆盖真实故障注入，单测侧只注入返回结果，
+  ⛔ 不重复建桩。
+- [plan-v3.md](../plan-v3.md) 的 78 条 `[不阻塞·有意保留]` 与其尾部各轮的保留边界（`--workspaces` 形态
+  失败关闭、workspace 引用解析跳过、豁免表条目靠评审等）继续有效，**原始记录与证据在该历史归档**，
+  本文件不复制。⚠ 多个活测试的失败信息会叫人「同步更新 plan-v3 的边界登记」并按小节号指过去
+  （§9.5 / §11.3 / §12.3 / §15.3 / §18 / §30 / P1-08），所以那份归档 ⛔ 不可压缩。
 
 ## 6. 采用原则
 
