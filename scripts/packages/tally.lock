@@ -1,4 +1,4 @@
-# scripts/plugins/tally.lock —— 已安装插件 tally@1.0.8 的登记与文件清单锁。Do not edit by hand.
+# scripts/packages/tally.lock —— 已安装插件 tally@1.0.8 的登记与文件清单锁。Do not edit by hand.
 # writer: npm --workspace @game/server run plugin -- install ；checker: apps/server/test/plugin-lock.test.ts（随 verify:all）与 plugin -- check
 # manifest {"id":"tally","version":"1.0.8","kinds":["client","gameplay"],"constantName":"Tally","domains":[],"fguiPackages":[]}
 # source {"kind":"tree","filesLockSha256":"40d70a77263d522ffa100904ed1b730420b28f480520000e33a93cf9cc920e41","forkedFrom":null}

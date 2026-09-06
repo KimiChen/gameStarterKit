@@ -1,6 +1,6 @@
 /**
  * 已安装插件的只读核对（`plugin -- check` 与 apps/server/test/plugin-lock.test.ts 共用）：
- *  - 每把 scripts/plugins/<id>.lock 的清单文件都在且哈希一致（本地改动 / 缺失点名）；
+ *  - 每把 scripts/packages/<id>.lock 的清单文件都在且哈希一致（本地改动 / 缺失点名）；
  *  - plugins/<id>/plugin.json 在场且与锁抬头一致；
  *  - 锁内每条路径仍在该插件的所有权推导集内（规则演进不得让已安装文件变成无主）；
  *  - plugins/<id>/plugin.json 的身份分量（kinds / constantName / domains / fguiPackages）与锁抬头一致

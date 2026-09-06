@@ -1,7 +1,7 @@
 /**
  * 两把清单锁（形态沿用 scripts/protected-paths.lock：`#` 注释行 + 每行 `<路径> <sha256>`，按路径排序）：
  *  - 包内 `files.lock`：pack 写出、install 校验（包自证完整性：清单外条目 / 哈希不符即拒绝）；
- *  - 已安装锁 `scripts/plugins/<id>.lock`：install 写出、check/upgrade/uninstall 消费，是「已安装插件」
+ *  - 已安装锁 `scripts/packages/<id>.lock`：install 写出、check/upgrade/uninstall 消费，是「已安装包（plugin / kit）」
  *    的唯一登记面（版本比较、本地改动检测、旧有新无删除、卸载范围都只看它，PLUGIN-REVIEW F14/F21）。
  * 哈希就是文件内容的 sha256（不掺路径），可用 `shasum -a 256 <file>` 复核。
  */
@@ -10,7 +10,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { PluginKind } from "./ownership";
 
-export const INSTALLED_LOCK_DIR = "scripts/plugins";
+export const INSTALLED_LOCK_DIR = "scripts/packages";
 export const PACKAGE_FILES_LOCK = "files.lock";
 export const PACKAGE_MANIFEST = "plugin.json";
 

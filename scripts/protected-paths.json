@@ -85,7 +85,7 @@
       { "path": "scripts/protocol.fingerprint", "writer": "node scripts/protocol-fingerprint.mjs --write", "autoHeader": false },
       { "path": "scripts/protected-paths.lock", "writer": "node scripts/protected-paths-lock.mjs --write", "autoHeader": true },
       { "path": "scripts/fgui.manifest.json", "writer": "node scripts/fgui-manifest.mjs --write", "autoHeader": false },
-      { "path": "scripts/plugins/**", "writer": "npm --workspace @game/server run plugin", "autoHeader": false }
+      { "path": "scripts/packages/**", "writer": "npm --workspace @game/server run plugin", "autoHeader": false }
     ]
   },
   "semantics": {
