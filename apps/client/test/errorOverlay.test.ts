@@ -6,6 +6,8 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { __resetErrorContextForTest, setErrorContext, snapshotErrorContext } from "../src/core/errorContext";
+import { DESIGN_WIDTH } from "../src/designSpec";
 import {
     __resetErrorOverlayForTest,
     describeErrorEvent,
@@ -14,6 +16,8 @@ import {
 } from "../src/core/errorOverlay";
 
 class FakeElement {
+    /** 画布假件用：让 overlay 量到一块「游戏画布」。 */
+    rect: { left: number; top: number; width: number; height: number } | null = null;
     style: Record<string, string> = {};
     textContent = "";
     value = "";
@@ -31,6 +35,9 @@ class FakeElement {
         this.listeners.set(type, bucket);
     }
     click(): void { for (const fire of this.listeners.get("click") ?? []) fire(); }
+    getBoundingClientRect(): { left: number; top: number; width: number; height: number } {
+        return this.rect ?? { left: 0, top: 0, width: 0, height: 0 };
+    }
     setAttribute(): void {}
     remove(): void { this.removed = true; }
     select(): void { this.selected = true; }
@@ -47,14 +54,26 @@ class FakeElement {
     }
 }
 
-function harness(options: { clipboard?: { writeText(text: string): Promise<void> }; execCommand?: () => boolean } = {}) {
+function harness(options: {
+    clipboard?: { writeText(text: string): Promise<void> };
+    execCommand?: () => boolean;
+    /** 游戏画布在页面里的位置与大小；不给 = 页面上没有画布（走整窗兜底）。 */
+    canvas?: { left: number; top: number; width: number; height: number };
+} = {}) {
     __resetErrorOverlayForTest();
+    __resetErrorContextForTest();
     const body = new FakeElement("body");
     const creatorBox = new FakeElement("div");
+    const canvas = new FakeElement("canvas");
+    canvas.rect = options.canvas ?? null;
     const doc = {
         body,
         createElement: (tag: string) => new FakeElement(tag),
-        querySelector: (selector: string) => (selector === "#error" ? creatorBox : null),
+        querySelector: (selector: string) => {
+            if (selector === "#error") return creatorBox;
+            if (selector === "#GameCanvas" || selector === "canvas") return options.canvas ? canvas : null;
+            return null;
+        },
         ...(options.execCommand ? { execCommand: options.execCommand } : {}),
     };
     const winListeners = new Map<string, ((event: unknown) => void)[]>();
@@ -66,6 +85,8 @@ function harness(options: { clipboard?: { writeText(text: string): Promise<void>
         },
         navigator: { userAgent: "FakeUA/1.0", ...(options.clipboard ? { clipboard: options.clipboard } : {}) },
         location: { href: "http://10.0.2.10:7456/" },
+        innerWidth: 1440,
+        innerHeight: 900,
     };
     const handle = installErrorOverlay({
         doc: doc as never, win: win as never, enabled: true, now: () => new Date("2026-09-06T12:00:00.000Z"),
@@ -79,7 +100,9 @@ function harness(options: { clipboard?: { writeText(text: string): Promise<void>
         assert.ok(hit, `找不到按钮「${label}」`);
         return hit;
     };
-    return { handle: handle!, body, creatorBox, emit, buttonOf };
+    const scrim = (): FakeElement => body.children[0];
+    const panel = (): FakeElement => scrim().children[0];
+    return { handle: handle!, body, creatorBox, emit, buttonOf, scrim, panel };
 }
 
 test("errorOverlay：不满足开关或没有 DOM 时是 no-op（release 构建 ⛔ 不把堆栈甩给玩家）", () => {
@@ -185,4 +208,65 @@ test("describeErrorEvent / formatErrorReport：消息、堆栈与次数按可粘
         "at foo",
         "[2] unhandledrejection E2",
     ].join("\n"));
+});
+
+test("errorOverlay：报告带上游戏上下文（当前页面 / mode / runId），排在错误正文之前", () => {
+    const h = harness();
+    setErrorContext("view.open", "PromoHomeView > SettingsView");
+    setErrorContext("gameplay.mode", "snake");
+    setErrorContext("gameplay.runId", "snake-epoch-1:run:3");
+    h.emit("error", { error: new Error("boom") });
+    const text = h.body.find((element) => element.textContent.includes("boom"))!.textContent;
+    const contextAt = text.indexOf("gameplay.runId：snake-epoch-1:run:3");
+    const errorAt = text.indexOf("[1] error");
+    assert.ok(contextAt > 0, `报告里必须有 runId（实际：${text}）`);
+    assert.ok(text.includes("view.open：PromoHomeView > SettingsView"));
+    assert.ok(contextAt < errorAt, "上下文必须排在错误正文之前——贴进 issue 第一眼要看到在哪出的事");
+    __resetErrorContextForTest();
+    __resetErrorOverlayForTest();
+});
+
+test("errorContext：null 撤下、超长截断、键数封顶", () => {
+    __resetErrorContextForTest();
+    setErrorContext("a", "1");
+    setErrorContext("b", 2);
+    assert.deepEqual(snapshotErrorContext(), [["a", "1"], ["b", "2"]]);
+    setErrorContext("a", null);
+    assert.deepEqual(snapshotErrorContext(), [["b", "2"]]);
+    setErrorContext("long", "x".repeat(400));
+    assert.equal(snapshotErrorContext().find(([key]) => key === "long")?.[1].length, 201, "200 字符 + 省略号");
+    for (let i = 0; i < 60; i += 1) setErrorContext(`k${i}`, "v");
+    assert.ok(snapshotErrorContext().length <= 32, "⛔ 不许被当日志用");
+    // 已存在的键即使在封顶后仍可更新（否则最要紧的 runId 会被垃圾键挤掉）。
+    setErrorContext("b", "3");
+    assert.equal(snapshotErrorContext().find(([key]) => key === "b")?.[1], "3");
+    __resetErrorContextForTest();
+});
+
+test("errorOverlay：贴着游戏画布定位，并按设计分辨率缩放（⛔ 不铺满窗口、⛔ 不写死 px）", () => {
+    // 预览页里画布只占中间一块：左上角 (300, 40)、宽 375（设计宽 750 的一半）。
+    const h = harness({ canvas: { left: 300, top: 40, width: 375, height: 812 } });
+    h.emit("error", { error: new Error("boom") });
+    const scrim = h.scrim();
+    assert.equal(scrim.style.left, "300px", "遮罩必须贴画布左上角，⛔ 不是窗口左上角");
+    assert.equal(scrim.style.top, "40px");
+    assert.equal(scrim.style.width, "375px");
+    assert.equal(scrim.style.height, "812px");
+
+    // 缩放 = 画布宽 / DESIGN_WIDTH；面板宽是设计稿 690 换算过来的。
+    const scale = 375 / DESIGN_WIDTH;
+    assert.equal(h.panel().style.width, `${Math.round(690 * scale * 100) / 100}px`);
+    const title = h.panel().children[0];
+    assert.equal(title.style.fontSize, `${Math.round(30 * scale * 100) / 100}px`);
+    assert.equal(h.buttonOf("复制全部").style.minHeight, `${Math.round(84 * scale * 100) / 100}px`);
+    __resetErrorOverlayForTest();
+});
+
+test("errorOverlay：画布量不到时退回整窗，⛔ 不因此崩掉", () => {
+    const h = harness();
+    h.emit("error", { error: new Error("boom") });
+    assert.equal(h.scrim().style.left, "0px");
+    assert.equal(h.scrim().style.width, "1440px", "没有画布就用 window.innerWidth");
+    assert.ok(h.panel().style.width.endsWith("px"));
+    __resetErrorOverlayForTest();
 });
