@@ -1,6 +1,6 @@
 # Creator 3.8.8 预览人工证据 · 2026-09-05
 
-> 对应 [plan-v5.md](../../../plan-v5.md) B 节「一次 Creator 会话的清单」与 E5 的 Creator 侧尾巴。
+> 对应 [plan-v5.md](../../plan-v5.md) B 节「一次 Creator 会话的清单」与 E5 的 Creator 侧尾巴。
 > 判定方式：**真实引擎桌面预览**（⛔ 不是 Node 无头测试）。证据 = 本目录截图 + 下表记录。
 
 ## 环境

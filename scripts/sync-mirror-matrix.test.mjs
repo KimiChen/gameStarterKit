@@ -310,7 +310,7 @@ for (const target of TARGETS) {
       if (scenario.syncCannotFix) {
         if (changed) {
           divergences.push(`${scenario.name}\n    已登记为「同步修不了」，但同步实际改动了镜像`
-            + `\n    请去掉 syncCannotFix 并同步更新 plan-v3 的边界登记（${scenario.syncCannotFix}）`);
+            + `\n    请去掉 syncCannotFix 并同步更新 docs/EXTRAS.md §5.3 的保留边界登记（${scenario.syncCannotFix}）`);
         }
         continue;
       }

@@ -12,7 +12,7 @@
 > | §6 入口与位置 | ✅ 已实施（设置面板、宿主 `apps/plugins/host.json`、slot/order 退役、route 形态 launch、依赖装载） |
 > | §7 生命周期 | ✅ 已实现（已安装锁 `scripts/packages/<id>.lock`） |
 > | §8 冲突面 | 按实际机检状态改写 |
-> | §9 缺口 | 已分「已补 / 仍开放」，开放项登记在 [plan-v5.md](../plan-v5.md) E 类 |
+> | §9 缺口 | 已分「已补 / 仍开放」，开放项登记在 [plan-v5.md](plan-v5.md) E 类 |
 >
 > 与 [docs/Non-intrusive.md](Non-intrusive.md) 的关系：那份是「框架如何做到新增玩法/plugin 不侵入」的
 > 改造方案（框架侧阶段 0-9 已实施）；本文接着回答下一个问题——**外部包能否直接装进本项目跑起来**。
@@ -423,7 +423,7 @@ apps/plugins/
 - ✅ §8 两条「待核实」定论（FGUI 包名重复已查、依赖已消费）；
 - ✅ plugin 侧契约闸（codegen 层域 descriptor digest → 域级 `contractVersion`，`LOBBY_RPC_DOMAIN_CONTRACTS`）。
 
-仍开放（登记在 [plan-v5.md](../plan-v5.md) E 类）：
+仍开放（登记在 [plan-v5.md](plan-v5.md) E 类）：
 
 1. **`launch.profile`**：入口的 gameplay launch 不带房型，一个玩法只能出一个入口——蛇要同时提供「快速开始」
    （dropIn）与「邀请好友」（private）就需要它。客户端现状是各玩法 joiner 写死 profile（`SnakeRoom.ts`），

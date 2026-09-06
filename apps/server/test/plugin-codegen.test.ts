@@ -1348,9 +1348,11 @@ test("阶段 7：fixture extra plugin 只加新文件即进索引；fragment 状
   assertPluginArtifactsFresh(options);
 });
 
-test("⛔ 生成器不写当前计划文件：把 plan-v4.md 加进 writer 允许输出集合 → 自检红（§5.7 反例）", () => {
+test("⛔ 生成器不写当前计划文件：把 docs/plan-v5.md 加进 writer 允许输出集合 → 自检红（§5.7 反例）", () => {
   assert.doesNotThrow(() => assertWriterOutputSetSafe([...ALL_ARTIFACTS]));
-  for (const planFile of ["plan-v4.md", "plan.md", "plan-v2.md", "docs/plan-v4.md"]) {
+  // 2026-09-06 起当前计划就住在 docs/ 里——与生成器**合法**产物 docs/plugins.generated.md 同一目录，
+  // 所以 docs/plan-v5.md 是这条闸现在最要紧的一例（四份 plan-*.md 归档已删，名字仍留作形态覆盖）。
+  for (const planFile of ["docs/plan-v5.md", "plan-v5.md", "plan-v4.md", "plan.md", "plan-v2.md", "docs/plan-v4.md"]) {
     assert.throws(
       () => assertWriterOutputSetSafe([...ALL_ARTIFACTS, planFile]),
       /计划文件.*不得进入生成器允许输出集合/u,

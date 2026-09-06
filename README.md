@@ -23,8 +23,7 @@
 - [插件机制设计基线的审阅记录（问题清单与推荐实现方案）](docs/PLUGIN-REVIEW.md)
 - [Snake 玩法（竖版新版无尽 V2 + 外观养成 demo）](apps/plugins/snake/README.md)
 - [Godogen 对照吸收计划（未实现的额外能力）](todo-godogen.md)
-- [当前开发收口计划](plan-v5.md)
-- [上一轮收口计划（历史归档）](plan-v4.md)
+- [当前开发收口计划](docs/plan-v5.md)
 
 ## 目录
 

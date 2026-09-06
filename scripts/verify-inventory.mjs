@@ -585,7 +585,7 @@ for (const entry of allEntries) if (!registeredDefaults.has(entry) && entry.star
 
 const corePlan = inventory?.routeOfTruth?.corePlan;
 const extra = inventory?.routeOfTruth?.extraCapabilities;
-if (corePlan !== "plan-v5.md") fail("routeOfTruth.corePlan 必须指向 plan-v5.md");
+if (corePlan !== "docs/plan-v5.md") fail("routeOfTruth.corePlan 必须指向 docs/plan-v5.md");
 if (!exists(corePlan) || !exists(extra)) fail("routeOfTruth 必须指向存在的核心计划与 EXTRAS.md");
 else {
   const planText = fs.readFileSync(repoPath(corePlan), "utf8");
@@ -593,8 +593,8 @@ else {
   const readmeText = fs.readFileSync(repoPath("README.md"), "utf8");
   checkMarkdownLinks(corePlan);
   checkMarkdownLinks(extra);
-  if (!/唯一真相/.test(planText)) fail("plan-v5.md 未声明当前计划唯一真相");
-  if (!readmeText.includes("[当前开发收口计划](plan-v5.md)")) fail("README.md 未登记 plan-v5.md 当前计划入口");
+  if (!/唯一真相/.test(planText)) fail("docs/plan-v5.md 未声明当前计划唯一真相");
+  if (!readmeText.includes("[当前开发收口计划](docs/plan-v5.md)")) fail("README.md 未登记 docs/plan-v5.md 当前计划入口");
   if (!readmeText.includes("](todo-godogen.md)")) fail("README.md 未登记 todo-godogen.md 对照计划入口");
   if (!/额外功能/.test(extraText)) fail("docs/EXTRAS.md 未声明额外能力真相");
   if (!extraText.includes("](../todo-godogen.md)")) {
@@ -662,12 +662,9 @@ function checkArchiveNotClaimedAsTruth(docs, archives) {
 if (!Array.isArray(inventory.referenceDocs)) {
   fail("referenceDocs 必须是数组");
 } else {
-  if (!inventory.referenceDocs.includes("plan.md")) fail("referenceDocs 必须登记历史 plan.md");
-  if (!inventory.referenceDocs.includes("plan-v2.md")) fail("referenceDocs 必须登记历史 plan-v2.md");
-  if (!inventory.referenceDocs.includes("plan-v3.md")) fail("referenceDocs 必须登记历史 plan-v3.md");
-  // 真相指针迁到 plan-v5 后，plan-v4 与更早计划同列为历史归档。⛔ 缺登记会让一份仍被
-  // 大量文档引用的计划变成没有归属的孤儿。
-  if (!inventory.referenceDocs.includes("plan-v4.md")) fail("referenceDocs 必须登记历史 plan-v4.md");
+  // plan.md / plan-v2 / plan-v3 / plan-v4 四份历史归档已删除（正文只在 Git 历史里，
+  // 未实现项与保留边界已归并进 docs/EXTRAS.md §5.2/§5.3），因此不再硬断言它们的登记。
+  // ⛔ 但下面的「归档不得被说成当前真相」闸保持通用：将来再有归档，移进 referenceDocs 即自动生效。
   if (inventory.referenceDocs.includes(corePlan)) fail("referenceDocs 不得同时登记当前计划");
   if (!inventory.referenceDocs.includes("todo-godogen.md")) {
     fail("referenceDocs 必须登记 Godogen 对照计划 todo-godogen.md");
@@ -683,7 +680,7 @@ if (!Array.isArray(inventory.referenceDocs)) {
     if (!exists(doc)) fail(`referenceDocs 文档不存在：${doc}`);
     else checkMarkdownLinks(doc);
   }
-  const archives = inventory.referenceDocs.filter((doc) => /^plan(-v\d+)?\.md$/u.test(doc));
+  const archives = inventory.referenceDocs.filter((doc) => /^(?:docs\/)?plan(-v\d+)?\.md$/u.test(doc));
   // ⚠ 扫**全仓 Markdown**，不再只扫已登记文档。
   // 这条闸原本只覆盖 inventory 里登记的 17 份，于是 `docs/snakeoff/` 这类未登记文档
   // 在 plan-v3→v4 与 plan-v4→v5 **两次迁移里各漏了一次**（同样的文件、同样的原因），
@@ -731,8 +728,7 @@ const assistantRequirements = [
   ["inventory 正向校验", "npm run verify:inventory"],
   ["inventory 反例测试", "npm run test:inventory"],
   ["Godogen 对照计划", "[todo-godogen.md](todo-godogen.md)"],
-  ["当前计划唯一真相", "[plan-v5.md](plan-v5.md)"],
-  ["上一轮计划归档登记", "[plan-v4.md](plan-v4.md)"],
+  ["当前计划唯一真相", "[docs/plan-v5.md](docs/plan-v5.md)"],
 ];
 for (const [label, requirement] of assistantRequirements) {
   if (!agents.includes(requirement) || !claude.includes(requirement)) {
@@ -882,7 +878,8 @@ function segmentLeadsWith(segment, binaries) {
 // 形态（见 `shellFlagVerdict` 与对应正例锁），其余一律判「未启动」。黑名单打地鼠的教训：
 // `-s`（stdin）、`-n`（noexec）、`-D`（隐含 `-n`）、`-t`（执行一条即退）、`+` 簇、
 // `--dump-*`/`--pretty-print`/`--help`/`--version` 全是入口不执行的形态，逐一特判赶不上。
-// node/tsx 保持黑名单+粘连判定（其 flag 面已有 17 形态零背离实测矩阵，见 plan-v3 §15.3）。
+// node/tsx 保持黑名单+粘连判定（其 flag 面已有 17 形态零背离实测矩阵；出处是已删除的归档 plan-v3 §15.3，
+// 边界登记见 docs/EXTRAS.md §5.3）。
 function isNonExecutingFlag(token, launcher) {
   // 内联而非模块级 const：本函数经 commandInvokesEntry 被顶层驱动段调用，模块级 const
   // 若声明在驱动段之后会 TDZ 崩溃（与下方启动器表同一约束）。

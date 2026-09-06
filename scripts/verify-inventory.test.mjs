@@ -53,6 +53,22 @@ function createFixture() {
   return root;
 }
 
+/**
+ * 在夹具里造一份**历史归档**并登记进 referenceDocs。
+ *
+ * 四份真实归档（plan.md / plan-v2 / plan-v3 / plan-v4）已于 2026-09-06 删除，但
+ * 「归档不得被说成当前真相」这道闸仍然在岗：它的归档清单取自 inventory 自己的
+ * referenceDocs（见 verify-inventory.mjs 的设计注释）。⛔ 用例不能因为仓里没归档了就退化成
+ * 空跑——那正是这道闸当初被两次迁移绕过的形态。这里自建一份，闸照旧被完整驱动。
+ * ⚠ 登记文档会额外过 checkMarkdownLinks，所以归档正文 ⛔ 不放任何链接。
+ */
+function registerArchive(root, name) {
+  writeFileSync(join(root, name), `# ${name}\n\n历史归档夹具正文。\n`);
+  const inventory = readInventory(root);
+  inventory.referenceDocs = [...inventory.referenceDocs, name];
+  writeInventory(root, inventory);
+}
+
 function readInventory(root) {
   return JSON.parse(readFileSync(join(root, "docs", "inventory.json"), "utf8"));
 }
@@ -141,7 +157,7 @@ test("inventory verifier rejects a standalone relayer classified as core", () =>
     const inventory = readInventory(root);
     const relayer = inventory.capabilities.find((capability) => capability.id === "outbox-relayer");
     relayer.category = "core";
-    relayer.docs = ["plan-v5.md", "docs/SERVER.md"];
+    relayer.docs = ["docs/plan-v5.md", "docs/SERVER.md"];
     writeInventory(root, inventory);
     assertRejected(root, /能力 outbox-relayer 的独立 launch 只能登记为 extra/);
   } finally {
@@ -184,7 +200,7 @@ test("inventory verifier rejects the historical plan as route of truth", () => {
     const inventory = readInventory(root);
     inventory.routeOfTruth.corePlan = "plan.md";
     writeInventory(root, inventory);
-    assertRejected(root, /routeOfTruth\.corePlan 必须指向 plan-v5\.md/);
+    assertRejected(root, /routeOfTruth\.corePlan 必须指向 docs\/plan-v5\.md/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -193,11 +209,11 @@ test("inventory verifier rejects the historical plan as route of truth", () => {
 test("inventory verifier rejects removal of the current plan truth declaration", () => {
   const root = createFixture();
   try {
-    const plan = join(root, "plan-v5.md");
+    const plan = join(root, "docs", "plan-v5.md");
     // 全量替换：门禁只要求文中存在「唯一真相」，留下任何一处都不算移除声明。
     const text = readFileSync(plan, "utf8").replaceAll("唯一真相", "执行清单");
     writeFileSync(plan, text);
-    assertRejected(root, /plan-v5\.md 未声明当前计划唯一真相/);
+    assertRejected(root, /docs\/plan-v5\.md 未声明当前计划唯一真相/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -207,9 +223,9 @@ test("inventory verifier rejects removal of the current plan from README", () =>
   const root = createFixture();
   try {
     const readme = join(root, "README.md");
-    const text = readFileSync(readme, "utf8").replace("- [当前开发收口计划](plan-v5.md)\n", "");
+    const text = readFileSync(readme, "utf8").replace("- [当前开发收口计划](docs/plan-v5.md)\n", "");
     writeFileSync(readme, text);
-    assertRejected(root, /README\.md 未登记 plan-v5\.md 当前计划入口/);
+    assertRejected(root, /README\.md 未登记 docs\/plan-v5\.md 当前计划入口/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -230,13 +246,16 @@ test("inventory verifier rejects removal of the Godogen plan from README", () =>
   }
 });
 
-test("inventory verifier keeps the historical plan registered as a checked reference", () => {
+test("inventory verifier rejects a referenceDocs entry whose file does not exist", () => {
+  // 2026-09-06：四份历史归档删除后，「referenceDocs 必须登记 plan.md / plan-v2 / plan-v3 / plan-v4」
+  // 四条硬断言一并取消（再断言就等于要求登记一份不存在的文件）。仍然在岗的是这条**通用**闸：
+  // 登记面里的每一份文档都必须真实存在且链接可解析。⛔ 不能因为取消了四条点名断言就没有用例守它。
   const root = createFixture();
   try {
     const inventory = readInventory(root);
-    inventory.referenceDocs = [];
+    inventory.referenceDocs = [...inventory.referenceDocs, "plan-v3.md"];
     writeInventory(root, inventory);
-    assertRejected(root, /referenceDocs 必须登记历史 plan\.md/);
+    assertRejected(root, /referenceDocs 文档不存在：plan-v3\.md/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -250,6 +269,7 @@ test("inventory verifier rejects a registered doc that points at an archive as c
   for (const archive of ["plan-v3.md", "plan-v4.md"]) {
     const root = createFixture();
     try {
+      registerArchive(root, archive);
       const doc = join(root, "docs/OVERVIEW.md");
       writeFileSync(doc, `${readFileSync(doc, "utf8")}\n\n完成状态以 [${archive}](../${archive}) 为准。\n`);
       assertRejected(root, new RegExp(`docs/OVERVIEW\\.md:\\d+ 把历史归档 ${archive.replace(".", "\\.")} 说成当前真相`));
@@ -267,6 +287,7 @@ test("inventory verifier scans unregistered docs too (未登记目录也要扫)"
   // checkMarkdownLinks，下一条用例正依赖「链接指向不存在的文件也应 exit 0」。
   const root = createFixture();
   try {
+    registerArchive(root, "plan-v4.md");
     const doc = join(root, "docs/undergroundIdle/README.md");
     writeFileSync(doc, `${readFileSync(doc, "utf8")}\n\n- [当前实施状态与开放问题](../../plan-v4.md)\n`);
     assertRejected(root, /docs\/undergroundIdle\/README\.md:\d+ 把历史归档 plan-v4\.md 说成当前真相/);
@@ -296,10 +317,11 @@ test("inventory verifier still allows citing an archive when its identity is sta
   // ⛔ 闸不能宽到把一切归档链接都拒掉：文档经常需要正当地引用归档。判据是「有没有写明身份」。
   const root = createFixture();
   try {
+    registerArchive(root, "plan-v4.md");
     const doc = join(root, "docs/OVERVIEW.md");
     writeFileSync(
       doc,
-      `${readFileSync(doc, "utf8")}\n\n完成状态以 [plan-v5.md](../plan-v5.md) 为准` +
+      `${readFileSync(doc, "utf8")}\n\n完成状态以 [plan-v5.md](plan-v5.md) 为准` +
       `（保留边界的原始记录在历史归档 [plan-v4.md](../plan-v4.md)）。\n`,
     );
     const result = runVerifier(root);
@@ -309,19 +331,25 @@ test("inventory verifier still allows citing an archive when its identity is sta
   }
 });
 
-test("inventory verifier keeps the previous plan registered as a checked archive", () => {
-  // 真相指针迁到 plan-v5 后，plan-v4 与 plan/plan-v2/plan-v3 同列历史归档。⛔ 缺登记会让
-  // 一份仍被大量文档引用的计划变成没有归属的孤儿，链接检查也不再覆盖它。
-  for (const archive of ["plan-v3.md", "plan-v4.md"]) {
-    const root = createFixture();
-    try {
-      const inventory = readInventory(root);
-      inventory.referenceDocs = inventory.referenceDocs.filter((doc) => doc !== archive);
-      writeInventory(root, inventory);
-      assertRejected(root, new RegExp(`referenceDocs 必须登记历史 ${archive.replace(".", "\\.")}`));
-    } finally {
-      rmSync(root, { recursive: true, force: true });
-    }
+test("inventory verifier 归档闸随 referenceDocs 自动生效（新归档一进清单就被守）", () => {
+  // 这是 verify-inventory.mjs 那段设计注释的可执行版本：归档清单取自 referenceDocs，
+  // 所以下一轮迁移只要把新归档移进清单，闸自动开始守它，⛔ 不需要改验证器代码。
+  // 反过来说：**没**登记进 referenceDocs 的归档不被守——这正是「必须登记」的意义所在。
+  const root = createFixture();
+  try {
+    const doc = join(root, "docs/OVERVIEW.md");
+    const claim = `\n\n完成状态以 [docs/plan-v9.md](plan-v9.md) 为准。\n`;
+    writeFileSync(join(root, "docs", "plan-v9.md"), "# plan-v9\n\n未登记的归档夹具。\n");
+    writeFileSync(doc, `${readFileSync(doc, "utf8")}${claim}`);
+    // 未登记 ⇒ 不在归档清单里 ⇒ 这道闸不管它（其它闸也不该因此红）
+    assert.equal(runVerifier(root).status, 0, "未登记的归档不该被这道闸拒");
+    // 登记进 referenceDocs ⇒ 立刻被守
+    const inventory = readInventory(root);
+    inventory.referenceDocs = [...inventory.referenceDocs, "docs/plan-v9.md"];
+    writeInventory(root, inventory);
+    assertRejected(root, /docs\/OVERVIEW\.md:\d+ 把历史归档 docs\/plan-v9\.md 说成当前真相/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
   }
 });
 
@@ -583,7 +611,7 @@ test("inventory verifier rejects synchronized removal of the current plan entry"
     for (const filename of ["AGENTS.md", "CLAUDE.md"]) {
       const file = join(root, filename);
       const text = readFileSync(file, "utf8").replace(
-        "> - [plan-v5.md](plan-v5.md)：当前开放问题、实施状态与验收证据的唯一真相\n",
+        "> - [docs/plan-v5.md](docs/plan-v5.md)：当前开放问题、实施状态与验收证据的唯一真相\n",
         "",
       );
       writeFileSync(file, text);
@@ -1046,8 +1074,9 @@ test("inventory verifier rejects documentedIn pointing at an archived plan", () 
     const entry = inventory.workspaceCommandScope.find((item) => item.command.script === "loadtest");
     entry.documentedIn = "plan-v2.md";
     writeInventory(root, inventory);
-    const plan = join(root, "plan-v2.md");
-    writeFileSync(plan, `${readFileSync(plan, "utf8")}\n\`npm --workspace @game/server run loadtest\`\n`);
+    // plan-v2.md 已随四份归档删除；这条用例判的是「根级非 README 的 .md 不得当 documentedIn」，
+    // 与文件是不是归档无关，夹具自建一份同形文件即可。
+    writeFileSync(join(root, "plan-v2.md"), `# plan-v2\n\n\`npm --workspace @game/server run loadtest\`\n`);
     assertRejected(root, /documentedIn 必须是 README\.md 或 docs\/ 下的 \.md 文档：plan-v2\.md/);
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -1333,8 +1362,8 @@ test("inventory verifier rejects documentedIn escaping through a parent segment"
     const entry = inventory.workspaceCommandScope.find((item) => item.command.script === "loadtest");
     entry.documentedIn = "docs/../plan-v2.md";
     writeInventory(root, inventory);
-    const plan = join(root, "plan-v2.md");
-    writeFileSync(plan, `${readFileSync(plan, "utf8")}\nnpm --workspace @game/server run loadtest\n`);
+    // plan-v2.md 已随四份归档删除；判据与文件是不是归档无关，夹具自建一份同形文件即可。
+    writeFileSync(join(root, "plan-v2.md"), "# plan-v2\n\nnpm --workspace @game/server run loadtest\n");
     assertRejected(root, /documentedIn 必须是 README\.md 或 docs\/ 下的 \.md 文档/);
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -1871,6 +1900,13 @@ test("kit fragment：合法 extra fragment 绿（apps/kits/ 缺席也绿），�
   const root = createFixture();
   try {
     rmSync(join(root, "apps", "kits"), { recursive: true, force: true });
+    // 助手入口文档里指向 apps/kits/** 的索引行随之失效——一个真的没有 kit 的仓库不会带这些链接，
+    // 夹具同步去掉，否则测的就成了 checkMarkdownLinks 而不是「apps/kits/ 缺席也绿」。
+    for (const entryDoc of ["AGENTS.md", "CLAUDE.md"]) {
+      const file = join(root, entryDoc);
+      writeFileSync(file, readFileSync(file, "utf8")
+        .split("\n").filter((line) => !line.includes("](apps/kits/")).join("\n"));
+    }
     const absent = runVerifier(root);
     assert.equal(absent.status, 0, outputOf(absent));
     const centralBefore = readFileSync(join(root, "docs", "inventory.json"), "utf8");
