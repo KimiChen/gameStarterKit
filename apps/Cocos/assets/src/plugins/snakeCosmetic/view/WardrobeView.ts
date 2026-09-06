@@ -140,7 +140,8 @@ export class WardrobeView extends CocosView {
         FILTERS.forEach((filter, index) => {
             const x = -panelWidth * 0.5 + panelWidth * 0.055 + index * (filterWidth + panelWidth * 0.015) + filterWidth * 0.5;
             this.button(panel, filter.label, filterWidth, panelHeight * 0.065, x, filterY,
-                () => this.observeAsync(async () => logic.setFilter(filter.id), "wardrobe-filter"),
+                // 换筛选后行集变了，⛔ 不能停在旧页码（会看到空白页）——回到第一页再重绘。
+                () => this.observeAsync(async () => { this.scrollTop = 0; logic.setFilter(filter.id); }, "wardrobe-filter"),
                 logic.currentFilter() === filter.id ? ACCENT : ROW_OFF);
         });
 
@@ -189,9 +190,25 @@ export class WardrobeView extends CocosView {
             this.rowNode(body, logic, row, width, rowHeight, y);
         });
         if (rows.length > VISIBLE_ROWS) {
+            // 翻页（真机实证 2026-09-06：此前只渲染前 VISIBLE_ROWS 行且 scrollTop 恒 0，其余皮肤在 UI 上够不着）。
+            const pageY = -height * 0.5 + height * 0.03;
+            const pageButtonWidth = width * 0.16;
+            const pageButtonHeight = height * 0.075;
             this.label(body, `${start + 1}-${start + shown.length} / ${rows.length}`,
-                Math.round(height * 0.04), DIM, width * 0.5, -height * 0.5 + height * 0.02, "center");
+                Math.round(height * 0.04), DIM, width * 0.5 - pageButtonWidth * 2.4, pageY, "center");
+            this.button(body, "上一页", pageButtonWidth, pageButtonHeight, width * 0.5 - pageButtonWidth * 1.6, pageY,
+                () => this.scrollBy(-VISIBLE_ROWS), ROW, start === 0);
+            this.button(body, "下一页", pageButtonWidth, pageButtonHeight, width * 0.5 - pageButtonWidth * 0.5, pageY,
+                () => this.scrollBy(VISIBLE_ROWS), ROW, start + shown.length >= rows.length);
         }
+    }
+
+    /** 翻页：`scrollTop` 落在 [0, rows-VISIBLE_ROWS]（renderBody 再钳一次），改完立即重绘。 */
+    private scrollBy(delta: number): void {
+        const next = Math.max(0, this.scrollTop + delta);
+        if (next === this.scrollTop) return;
+        this.scrollTop = next;
+        this.render();
     }
 
     private rowNode(

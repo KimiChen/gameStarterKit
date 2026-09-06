@@ -3,6 +3,7 @@ import {
     EventTouch,
     Graphics,
     Input,
+    Label,
     Node,
     UITransform,
     Vec3,
@@ -22,6 +23,9 @@ const COLOR_SELF = new Color(60, 200, 120, 255);
 const COLOR_OTHER = new Color(240, 150, 60, 255);
 const COLOR_HP_BG = new Color(40, 40, 40, 255);
 const COLOR_HP = new Color(220, 60, 60, 255);
+const EXIT_TEXT = new Color(238, 243, 255, 255);
+/** presentation host 没有 UITransform 时的兜底画布尺寸（设计分辨率）。 */
+const EXIT_FALLBACK_SIZE = { width: 750, height: 1334 };
 const RENDER_PALETTE = {
     border: COLOR_BORDER,
     dead: COLOR_DEAD,
@@ -71,6 +75,7 @@ export class BallMoveView implements BallMovePresentation {
             input.on(Input.EventType.TOUCH_END, this.onTouchEnd, this);
             this.touchCancelBound = true;
             input.on(Input.EventType.TOUCH_CANCEL, this.onTouchEnd, this);
+            this.buildExitButton(layer);
             this.mounted = true;
         } catch (error) {
             this.mounted = false;
@@ -82,6 +87,31 @@ export class BallMoveView implements BallMovePresentation {
             this.reportCleanupErrors(cleanupErrors);
             throw error;
         }
+    }
+
+    /**
+     * 左上角「离开」（真机实证 2026-09-06：该入口此前没有任何退出 UI，只能重载页面）。
+     * ⚠ 全屏 `input` 监听同时也会把这一击当成移动目标——离开意图优先，⛔ 不为它改动全屏操控。
+     */
+    private buildExitButton(layer: Node): void {
+        // 尺寸取自 presentation host 的 UITransform（⛔ 不依赖 cc.view 单例：无头测试的 cc 桩没有它；
+        // 桩节点也可能没有 getComponent，取不到就退到设计分辨率兜底）。
+        const hostTransform = typeof this.host.getComponent === "function" ? this.host.getComponent(UITransform) : null;
+        const width = hostTransform && hostTransform.width > 0 ? hostTransform.width : EXIT_FALLBACK_SIZE.width;
+        const height = hostTransform && hostTransform.height > 0 ? hostTransform.height : EXIT_FALLBACK_SIZE.height;
+        const node = new Node("BallMove.Exit");
+        node.layer = layer.layer;
+        const transform = node.addComponent(UITransform);
+        transform.width = Math.max(96, width * 0.22);
+        transform.height = Math.max(40, height * 0.055);
+        node.setPosition(-width / 2 + transform.width * 0.6, height / 2 - transform.height * 0.9, 0);
+        const label = node.addComponent(Label);
+        label.string = "离开";
+        label.fontSize = Math.round(transform.height * 0.5);
+        label.lineHeight = label.fontSize;
+        label.color = EXIT_TEXT;
+        node.on(Node.EventType.TOUCH_END, () => this.dispatchInput({ type: "leave" }), this);
+        layer.addChild(node);
     }
 
     render(world: BallMoveRenderWorld): void {

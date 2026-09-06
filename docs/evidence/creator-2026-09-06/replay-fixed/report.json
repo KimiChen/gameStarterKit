@@ -1,0 +1,1195 @@
+{
+  "tool": "tools/creator-preview/run.mjs",
+  "scenario": "all",
+  "startedAt": "2026-09-06T12:08:02.129Z",
+  "options": {
+    "scenario": "all",
+    "out": "/private/tmp/claude-501/-Volumes-KimData-work-gameStarterKit/6ceedd07-ccda-4b53-94e5-24758a423bb2/scratchpad/preview-fixed",
+    "code": "WELCOME2026",
+    "format": "jpeg",
+    "devtools": "http://127.0.0.1:9222",
+    "preview": "http://localhost:7456",
+    "scene": null,
+    "bootTimeoutMs": 300000,
+    "stepTimeoutMs": 20000,
+    "reuse": false
+  },
+  "scene": "33a6cd88-ca61-42f3-97e1-6b18a9096a34",
+  "ok": true,
+  "steps": [
+    {
+      "name": "加载预览场景（Fetch 改写 settings.js?scene=）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:02.203Z",
+      "detail": {
+        "frames": 66,
+        "canvas": {
+          "x": 658,
+          "y": 49.5546875,
+          "width": 375,
+          "height": 803.4453125
+        },
+        "visible": {
+          "width": 750,
+          "height": 1606
+        },
+        "topLevel": [
+          "Canvas",
+          "PROFILER_NODE"
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:04.318Z"
+    },
+    {
+      "name": "回到登录页（areaList 只在登录页可达）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:04.319Z",
+      "detail": {
+        "via": "already-login"
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:04.326Z"
+    },
+    {
+      "name": "点登录页 FGUI 按钮 btn_server 打开 areaList",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:04.326Z",
+      "detail": {
+        "tapped": {
+          "tapped": "btn_server",
+          "at": [
+            844,
+            664
+          ]
+        },
+        "shown": "AreaListView",
+        "outcome": "opened",
+        "texts": [
+          "1970/1/1",
+          "本地开发服",
+          "推荐",
+          "我的角色",
+          "全部区服",
+          "爆满",
+          "流畅",
+          "维护",
+          "区服列表"
+        ],
+        "shot": "01-arealist-opened.jpg"
+      },
+      "screenshots": [
+        "01-arealist-opened.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:05.168Z"
+    },
+    {
+      "name": "关闭 AreaListView",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:05.168Z",
+      "detail": {
+        "closed": "AreaListView"
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:05.256Z"
+    },
+    {
+      "name": "回到登录页（loginNotice 只在登录页可达）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:05.257Z",
+      "detail": {
+        "via": "already-login"
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:05.261Z"
+    },
+    {
+      "name": "点登录页 FGUI 按钮 btn_notice 打开 loginNotice",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:05.261Z",
+      "detail": {
+        "tapped": {
+          "tapped": "btn_notice",
+          "at": [
+            1000,
+            146
+          ]
+        },
+        "shown": "LoginNoticeView",
+        "outcome": "opened",
+        "texts": [
+          "公告",
+          "开服狂欢",
+          "版本更新",
+          "例行维护",
+          "【开服狂欢】\n新区开启期间，每日登录可领取钻石与体力礼包；累计登录 7 天额外获得限定头像框。",
+          "今日不再提醒"
+        ],
+        "shot": "02-notice-opened.jpg"
+      },
+      "screenshots": [
+        "02-notice-opened.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:06.083Z"
+    },
+    {
+      "name": "关闭 LoginNoticeView",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:06.083Z",
+      "detail": {
+        "closed": "LoginNoticeView"
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:06.153Z"
+    },
+    {
+      "name": "登录页可见（FGUI btn_login）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:06.156Z",
+      "detail": {
+        "via": "fgui:btn_login",
+        "shot": "03-login.jpg"
+      },
+      "screenshots": [
+        "03-login.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:06.498Z"
+    },
+    {
+      "name": "点「开始游戏」",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:06.498Z",
+      "detail": {
+        "tapped": "btn_login",
+        "at": [
+          845,
+          702
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:06.568Z"
+    },
+    {
+      "name": "首屏 PromoHomeView 挂载",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:06.568Z",
+      "detail": {
+        "card": [
+          "gono",
+          "Cocos Creator + Colyseus 实时游戏脚手架",
+          "协议 game v8 · lobby v7 · 已登记玩法 8",
+          "本地开发服 · dev-63bfdde39b49cc16 · 体力 30 · 0胜0负"
+        ],
+        "protocolLine": "协议 game v8 · lobby v7 · 已登记玩法 8",
+        "shot": "04-home.jpg"
+      },
+      "screenshots": [
+        "04-home.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:07.309Z"
+    },
+    {
+      "name": "点首屏「设置」",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:07.312Z",
+      "detail": {
+        "tapped": "设置",
+        "at": [
+          973,
+          90
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:07.392Z"
+    },
+    {
+      "name": "设置面板与插件入口",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:07.392Z",
+      "detail": {
+        "entries": [
+          {
+            "label": "竞技场",
+            "pluginId": "arena"
+          },
+          {
+            "label": "占领赛",
+            "pluginId": "arena"
+          },
+          {
+            "label": "决斗",
+            "pluginId": "arena"
+          },
+          {
+            "label": "竞技场商店",
+            "pluginId": "arenaShop"
+          },
+          {
+            "label": "进入战斗",
+            "pluginId": "builtin"
+          },
+          {
+            "label": "兑换码",
+            "pluginId": "redeem"
+          },
+          {
+            "label": "贪吃蛇大作战",
+            "pluginId": "snake"
+          },
+          {
+            "label": "衣柜",
+            "pluginId": "snakeCosmetic"
+          },
+          {
+            "label": "点数赛",
+            "pluginId": "tally"
+          }
+        ],
+        "shot": "05-settings.jpg"
+      },
+      "screenshots": [
+        "05-settings.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:07.744Z"
+    },
+    {
+      "name": "进入「兑换码 · redeem」",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:07.748Z",
+      "detail": {
+        "tapped": "进入 @ /·\\s*redeem$/u",
+        "at": [
+          947,
+          634
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:07.826Z"
+    },
+    {
+      "name": "RedeemView 挂载（route 形态：PluginHost 动态装载后打开）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:07.826Z",
+      "detail": {
+        "editboxText": "",
+        "labels": [
+          "兑换码",
+          "关闭",
+          "输入兑换码（4～32 位字母/数字）",
+          "输入兑换码后点「兑换」",
+          "兑换"
+        ],
+        "shot": "06-redeem-empty.jpg"
+      },
+      "screenshots": [
+        "06-redeem-empty.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:08.182Z"
+    },
+    {
+      "name": "输入兑换码 WELCOME2026",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:08.182Z",
+      "detail": {
+        "code": "WELCOME2026",
+        "shot": "07-redeem-typed.jpg"
+      },
+      "screenshots": [
+        "07-redeem-typed.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:09.280Z"
+    },
+    {
+      "name": "点「兑换」并读取结果",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:09.280Z",
+      "detail": {
+        "code": "WELCOME2026",
+        "outcome": "already-claimed",
+        "text": "这个兑换码你已经使用过了",
+        "shot": "08-redeem-already-claimed.jpg"
+      },
+      "screenshots": [
+        "08-redeem-already-claimed.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:10.094Z"
+    },
+    {
+      "name": "「关闭」回到设置面板",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:10.095Z",
+      "detail": {
+        "settingsStillOpen": true
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:10.175Z"
+    },
+    {
+      "name": "进入「点数赛 · tally」",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:10.181Z",
+      "detail": {
+        "tapped": "进入 @ /·\\s*tally$/u",
+        "at": [
+          947,
+          724
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:10.258Z"
+    },
+    {
+      "name": "TallyView 挂载并开局（gameplay 形态：PluginHost 装载 → 加入 GameRoom）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:10.258Z",
+      "detail": {
+        "headline": "目标 10 次 · 你已点 0",
+        "tapGoal": 10,
+        "shot": "09-tally-start.jpg"
+      },
+      "screenshots": [
+        "09-tally-start.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:10.999Z"
+    },
+    {
+      "name": "连点 TAP 直到判胜（目标 10 次）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:10.999Z",
+      "detail": {
+        "taps": 10,
+        "midShot": "10-tally-match.jpg",
+        "settleText": "你赢了！",
+        "shot": "11-tally-settle.jpg"
+      },
+      "screenshots": [
+        "10-tally-match.jpg",
+        "11-tally-settle.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:16.476Z"
+    },
+    {
+      "name": "结算倒计时结束后回到首屏（AppRuntime 恢复 authenticated base）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:16.476Z",
+      "detail": {
+        "card": [
+          "gono",
+          "Cocos Creator + Colyseus 实时游戏脚手架",
+          "协议 game v8 · lobby v7 · 已登记玩法 8",
+          "本地开发服 · dev-63bfdde39b49cc16 · 体力 30 · 0胜0负"
+        ],
+        "shot": "12-tally-back-home.jpg"
+      },
+      "screenshots": [
+        "12-tally-back-home.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:18.409Z"
+    },
+    {
+      "name": "点首屏「设置」",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:18.411Z",
+      "detail": {
+        "tapped": "设置",
+        "at": [
+          973,
+          90
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:18.494Z"
+    },
+    {
+      "name": "设置面板与插件入口",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:18.494Z",
+      "detail": {
+        "entries": [
+          {
+            "label": "竞技场",
+            "pluginId": "arena"
+          },
+          {
+            "label": "占领赛",
+            "pluginId": "arena"
+          },
+          {
+            "label": "决斗",
+            "pluginId": "arena"
+          },
+          {
+            "label": "竞技场商店",
+            "pluginId": "arenaShop"
+          },
+          {
+            "label": "进入战斗",
+            "pluginId": "builtin"
+          },
+          {
+            "label": "兑换码",
+            "pluginId": "redeem"
+          },
+          {
+            "label": "贪吃蛇大作战",
+            "pluginId": "snake"
+          },
+          {
+            "label": "衣柜",
+            "pluginId": "snakeCosmetic"
+          },
+          {
+            "label": "点数赛",
+            "pluginId": "tally"
+          }
+        ],
+        "shot": "13-settings.jpg"
+      },
+      "screenshots": [
+        "13-settings.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:18.831Z"
+    },
+    {
+      "name": "进入「衣柜 · snakeCosmetic」（宿主自有 plugin 的 route 形态）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:18.831Z",
+      "detail": {
+        "tapped": "进入 @ /^衣柜\\s+·\\s+snakeCosmetic$/u",
+        "at": [
+          947,
+          694
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:18.914Z"
+    },
+    {
+      "name": "WardrobeView 挂载并读到皮肤行",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:18.914Z",
+      "detail": {
+        "skinRows": 6,
+        "skins": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "10",
+          "11"
+        ],
+        "labels": [
+          "衣柜",
+          "关闭",
+          "全部",
+          "已拥有",
+          "未拥有",
+          "可合成",
+          "选择一件皮肤后装备或合成",
+          "小红",
+          "普通 · 默认拥有",
+          "装备",
+          "皮肤 2",
+          "普通 · 等级解锁",
+          "已装备",
+          "皮肤 3",
+          "普通 · 等级解锁",
+          "未拥有"
+        ],
+        "shot": "14-cosmetic-open.jpg"
+      },
+      "screenshots": [
+        "14-cosmetic-open.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:20.248Z"
+    },
+    {
+      "name": "切「已拥有」筛选 → 「装备」另一件皮肤（snakeCosmetic.equip）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:20.248Z",
+      "detail": {
+        "action": "equip",
+        "skin": "skin-1",
+        "outcome": "equipped",
+        "rowsBefore": [
+          "skin-1=装备",
+          "skin-2=已装备",
+          "skin-401=装备"
+        ],
+        "shot": "15-cosmetic-equipped.jpg"
+      },
+      "screenshots": [
+        "15-cosmetic-equipped.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:22.162Z"
+    },
+    {
+      "name": "切「可合成」筛选 → 试「合成」（snakeCosmetic.unlock；碎片业务数据缺失时如实记录）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:22.162Z",
+      "detail": {
+        "action": "skip",
+        "why": "「可合成」筛选下没有可合成皮肤（业务目录里碎片皮肤的 fragmentItemId 为 unavailable）",
+        "empty": [
+          "该筛选下没有皮肤"
+        ],
+        "shot": "16-cosmetic-no-craft.jpg"
+      },
+      "screenshots": [
+        "16-cosmetic-no-craft.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:23.778Z"
+    },
+    {
+      "name": "「关闭」回到设置面板（WardrobeView 卸载）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:23.778Z",
+      "detail": {
+        "settingsStillOpen": true
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:23.861Z"
+    },
+    {
+      "name": "进入「竞技场 · arena」（kit route 形态：kit 的客户端 entry 由 PluginHost 装载）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:23.867Z",
+      "detail": {
+        "tapped": "进入 @ /^竞技场\\s+·\\s+arena$/u",
+        "at": [
+          947,
+          485
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:23.960Z"
+    },
+    {
+      "name": "ArenaBoardView 挂载并读到棋盘（16 格 + 奖杯行）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:23.960Z",
+      "detail": {
+        "tiles": [
+          "A1",
+          "A2",
+          "A3",
+          "A4",
+          "B1",
+          "B2",
+          "B3",
+          "B4",
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "D1",
+          "D2",
+          "D3",
+          "D4"
+        ],
+        "tileCount": 16,
+        "trophyLine": "奖杯 0 · 处理中…",
+        "shot": "17-arena-board.jpg"
+      },
+      "screenshots": [
+        "17-arena-board.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:24.298Z"
+    },
+    {
+      "name": "占一格（arena.capture：withKitTx 写 k_arena_board + kit effect 发奖杯）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:24.298Z",
+      "detail": {
+        "tile": "A2",
+        "via": "empty-tile",
+        "tapped": {
+          "tapped": "tile-A2",
+          "at": [
+            740,
+            374
+          ]
+        },
+        "outcome": "captured",
+        "notice": "A2 已占领 · 守备 1 · 奖杯 5",
+        "trophyLine": "奖杯 5",
+        "shot": "18-arena-captured.jpg"
+      },
+      "screenshots": [
+        "18-arena-captured.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:25.115Z"
+    },
+    {
+      "name": "点「刷新」重读棋盘（arena.board 查询面）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:25.115Z",
+      "detail": {
+        "trophyBefore": "奖杯 5",
+        "trophyAfter": "奖杯 5",
+        "ownedTilesWithPower": 5,
+        "shot": "19-arena-refreshed.jpg"
+      },
+      "screenshots": [
+        "19-arena-refreshed.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:26.731Z"
+    },
+    {
+      "name": "再点自己的格 = 加固（power +1、⛔ 不再发奖杯）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:26.731Z",
+      "detail": {
+        "tile": "A1",
+        "notice": "A1 已占领 · 守备 20 · 奖杯 5",
+        "powerBefore": 19,
+        "powerAfter": 20,
+        "trophyBefore": "奖杯 5",
+        "trophyAfter": "奖杯 5",
+        "trophyUnchanged": true,
+        "shot": "20-arena-reinforced.jpg"
+      },
+      "screenshots": [
+        "20-arena-reinforced.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:28.163Z"
+    },
+    {
+      "name": "「关闭」回到设置面板（ArenaBoardView 卸载）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:28.163Z",
+      "detail": {
+        "settingsStillOpen": true
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:28.248Z"
+    },
+    {
+      "name": "进入「占领赛 · arena」（kit gameplay 形态：加入 GameRoom）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:28.253Z",
+      "detail": {
+        "tapped": "进入 @ /^占领赛\\s+·\\s+arena$/u",
+        "at": [
+          947,
+          515
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:28.326Z"
+    },
+    {
+      "name": "ArenaCaptureView 挂载并开局",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:28.326Z",
+      "detail": {
+        "status": "目标 5 格 · 你已占 0",
+        "goal": 5,
+        "shot": "21-arenaCapture-start.jpg"
+      },
+      "screenshots": [
+        "21-arenaCapture-start.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:29.060Z"
+    },
+    {
+      "name": "连点「占领」直到判胜（上限 8 次）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:29.060Z",
+      "detail": {
+        "taps": 5,
+        "midShot": "22-arenaCapture-match.jpg",
+        "settleText": "你赢了！",
+        "shot": "23-arenaCapture-settle.jpg"
+      },
+      "screenshots": [
+        "22-arenaCapture-match.jpg",
+        "23-arenaCapture-settle.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:32.116Z"
+    },
+    {
+      "name": "结算倒计时结束后回到首屏（AppRuntime 恢复 authenticated base）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:32.116Z",
+      "detail": {
+        "shot": "24-arenaCapture-back-home.jpg"
+      },
+      "screenshots": [
+        "24-arenaCapture-back-home.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:34.064Z"
+    },
+    {
+      "name": "点首屏「设置」",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:34.066Z",
+      "detail": {
+        "tapped": "设置",
+        "at": [
+          973,
+          90
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:34.147Z"
+    },
+    {
+      "name": "设置面板与插件入口",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:34.147Z",
+      "detail": {
+        "entries": [
+          {
+            "label": "竞技场",
+            "pluginId": "arena"
+          },
+          {
+            "label": "占领赛",
+            "pluginId": "arena"
+          },
+          {
+            "label": "决斗",
+            "pluginId": "arena"
+          },
+          {
+            "label": "竞技场商店",
+            "pluginId": "arenaShop"
+          },
+          {
+            "label": "进入战斗",
+            "pluginId": "builtin"
+          },
+          {
+            "label": "兑换码",
+            "pluginId": "redeem"
+          },
+          {
+            "label": "贪吃蛇大作战",
+            "pluginId": "snake"
+          },
+          {
+            "label": "衣柜",
+            "pluginId": "snakeCosmetic"
+          },
+          {
+            "label": "点数赛",
+            "pluginId": "tally"
+          }
+        ],
+        "shot": "25-settings.jpg"
+      },
+      "screenshots": [
+        "25-settings.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:34.484Z"
+    },
+    {
+      "name": "进入「决斗 · arena」（kit gameplay 形态：加入 GameRoom）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:34.484Z",
+      "detail": {
+        "tapped": "进入 @ /^决斗\\s+·\\s+arena$/u",
+        "at": [
+          947,
+          545
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:34.560Z"
+    },
+    {
+      "name": "ArenaDuelView 挂载并开局",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:34.560Z",
+      "detail": {
+        "status": "HP 3 · 你已命中 0",
+        "hp": 3,
+        "shot": "26-arenaDuel-start.jpg"
+      },
+      "screenshots": [
+        "26-arenaDuel-start.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:35.278Z"
+    },
+    {
+      "name": "连点「出击」直到判胜（上限 6 次）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:35.278Z",
+      "detail": {
+        "taps": 3,
+        "midShot": "27-arenaDuel-match.jpg",
+        "settleText": "你赢了！",
+        "shot": "28-arenaDuel-settle.jpg"
+      },
+      "screenshots": [
+        "27-arenaDuel-match.jpg",
+        "28-arenaDuel-settle.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:37.397Z"
+    },
+    {
+      "name": "结算倒计时结束后回到首屏（AppRuntime 恢复 authenticated base）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:37.397Z",
+      "detail": {
+        "shot": "29-arenaDuel-back-home.jpg"
+      },
+      "screenshots": [
+        "29-arenaDuel-back-home.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:38.931Z"
+    },
+    {
+      "name": "点首屏「设置」",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:38.933Z",
+      "detail": {
+        "tapped": "设置",
+        "at": [
+          973,
+          90
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:39.017Z"
+    },
+    {
+      "name": "设置面板与插件入口",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:39.017Z",
+      "detail": {
+        "entries": [
+          {
+            "label": "竞技场",
+            "pluginId": "arena"
+          },
+          {
+            "label": "占领赛",
+            "pluginId": "arena"
+          },
+          {
+            "label": "决斗",
+            "pluginId": "arena"
+          },
+          {
+            "label": "竞技场商店",
+            "pluginId": "arenaShop"
+          },
+          {
+            "label": "进入战斗",
+            "pluginId": "builtin"
+          },
+          {
+            "label": "兑换码",
+            "pluginId": "redeem"
+          },
+          {
+            "label": "贪吃蛇大作战",
+            "pluginId": "snake"
+          },
+          {
+            "label": "衣柜",
+            "pluginId": "snakeCosmetic"
+          },
+          {
+            "label": "点数赛",
+            "pluginId": "tally"
+          }
+        ],
+        "shot": "30-settings.jpg"
+      },
+      "screenshots": [
+        "30-settings.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:39.352Z"
+    },
+    {
+      "name": "进入「竞技场商店 · arenaShop」（plugin route 形态：requires.kits.arena.board）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:39.352Z",
+      "detail": {
+        "tapped": "进入 @ /^竞技场商店\\s+·\\s+arenaShop$/u",
+        "at": [
+          947,
+          575
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:39.432Z"
+    },
+    {
+      "name": "ArenaShopView 挂载（经 kit 的 board 面读棋盘）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:39.432Z",
+      "detail": {
+        "tiles": "owned",
+        "labels": [
+          "竞技场商店",
+          "关闭",
+          "刷新",
+          "A1 我方 20",
+          "+守备 (10 金)",
+          "B1 我方 1",
+          "+守备 (10 金)",
+          "C1 我方 1",
+          "+守备 (10 金)",
+          "D1 我方 1",
+          "+守备 (10 金)",
+          "A2 我方 1",
+          "+守备 (10 金)",
+          "点自己的格花 10 金币加守备"
+        ],
+        "shot": "31-arenaShop-open.jpg"
+      },
+      "screenshots": [
+        "31-arenaShop-open.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:39.766Z"
+    },
+    {
+      "name": "点「+守备」买加固（arenaShop.buyBoost → kit boostTile → tx.debit）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:39.766Z",
+      "detail": {
+        "rows": 5,
+        "row": "A1 我方 20",
+        "outcome": "bought",
+        "notice": "A1 我方 20 → 守备 25，余额 60（余额 60）",
+        "shot": "32-arenaShop-bought.jpg"
+      },
+      "screenshots": [
+        "32-arenaShop-bought.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:40.583Z"
+    },
+    {
+      "name": "点「刷新」重读自有格（经 kit 的 board 面）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:40.583Z",
+      "detail": {
+        "rows": [
+          "A1 我方 25",
+          "B1 我方 1",
+          "C1 我方 1",
+          "D1 我方 1",
+          "A2 我方 1",
+          "A1 我方 20 → 守备 25，余额 60（余额 60）"
+        ],
+        "shot": "33-arenaShop-refreshed.jpg"
+      },
+      "screenshots": [
+        "33-arenaShop-refreshed.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:42.202Z"
+    },
+    {
+      "name": "「关闭」回到设置面板（ArenaShopView 卸载）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:42.202Z",
+      "detail": {
+        "settingsStillOpen": true
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:42.281Z"
+    },
+    {
+      "name": "进入「贪吃蛇大作战 · snake」（宿主自有 gameplay plugin：默认玩法）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:42.286Z",
+      "detail": {
+        "tapped": "进入 @ /^贪吃蛇大作战\\s+·\\s+snake$/u",
+        "at": [
+          947,
+          664
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:42.364Z"
+    },
+    {
+      "name": "SnakeWorld 挂载并开跑（HUD 出现）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:42.364Z",
+      "detail": {
+        "hud": [
+          "准备 3",
+          "保护 5s",
+          "1. 无敌词王 0",
+          "2. AI-1 0",
+          "3. AI-10 0",
+          "4. AI-11 0",
+          "5. AI-12 0",
+          "6. AI-13 0",
+          "7. AI-14 0",
+          "8. AI-15 0",
+          "9. AI-16 0",
+          "10. AI-2 0"
+        ],
+        "shot": "34-snake-run.jpg"
+      },
+      "screenshots": [
+        "34-snake-run.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:43.093Z"
+    },
+    {
+      "name": "点「结束本次」→ 确认框",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:43.093Z",
+      "detail": {
+        "shot": "35-snake-end-confirm.jpg"
+      },
+      "screenshots": [
+        "35-snake-end-confirm.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:43.490Z"
+    },
+    {
+      "name": "确认结束 → 结算页",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:43.490Z",
+      "detail": {
+        "retried": false,
+        "backButtonAt": [
+          846,
+          587
+        ],
+        "lines": [
+          "本次游玩结束",
+          "原因：explicitExit",
+          "本局：0 秒 · 0 分 · 0 击杀",
+          "最长 80 · 星星 0 · 磁铁 0",
+          "本局不计奖励（时长不足或无有效操作）"
+        ],
+        "shot": "36-snake-result.jpg"
+      },
+      "screenshots": [
+        "36-snake-result.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:46.730Z"
+    },
+    {
+      "name": "「返回主页」回首屏",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:46.730Z",
+      "detail": {
+        "shot": "37-snake-back-home.jpg"
+      },
+      "screenshots": [
+        "37-snake-back-home.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:47.554Z"
+    },
+    {
+      "name": "点首屏「设置」",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:47.556Z",
+      "detail": {
+        "tapped": "设置",
+        "at": [
+          973,
+          90
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:47.634Z"
+    },
+    {
+      "name": "设置面板与插件入口",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:47.634Z",
+      "detail": {
+        "entries": [
+          {
+            "label": "竞技场",
+            "pluginId": "arena"
+          },
+          {
+            "label": "占领赛",
+            "pluginId": "arena"
+          },
+          {
+            "label": "决斗",
+            "pluginId": "arena"
+          },
+          {
+            "label": "竞技场商店",
+            "pluginId": "arenaShop"
+          },
+          {
+            "label": "进入战斗",
+            "pluginId": "builtin"
+          },
+          {
+            "label": "兑换码",
+            "pluginId": "redeem"
+          },
+          {
+            "label": "贪吃蛇大作战",
+            "pluginId": "snake"
+          },
+          {
+            "label": "衣柜",
+            "pluginId": "snakeCosmetic"
+          },
+          {
+            "label": "点数赛",
+            "pluginId": "tally"
+          }
+        ],
+        "shot": "38-settings.jpg"
+      },
+      "screenshots": [
+        "38-settings.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:47.973Z"
+    },
+    {
+      "name": "进入「进入战斗 · builtin」（宿主自有 plugin 的 gameplay 入口（ballMove 演示））",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:47.973Z",
+      "detail": {
+        "tapped": "进入 @ /^进入战斗\\s+·\\s+builtin$/u",
+        "at": [
+          947,
+          604
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-06T12:08:48.048Z"
+    },
+    {
+      "name": "BallMoveView 挂载（加入 GameRoom）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:48.048Z",
+      "detail": {
+        "shot": "39-ballmove.jpg",
+        "hasExitButton": true,
+        "note": "画布演示无文本，判据是 PlayersLayer 挂载 + 左上角「离开」按钮在位"
+      },
+      "screenshots": [
+        "39-ballmove.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:48.782Z"
+    },
+    {
+      "name": "点「离开」回首屏（2026-09-06 修复前该入口没有退出 UI）",
+      "ok": true,
+      "startedAt": "2026-09-06T12:08:48.782Z",
+      "detail": {
+        "shot": "40-ballmove-back-home.jpg"
+      },
+      "screenshots": [
+        "40-ballmove-back-home.jpg"
+      ],
+      "finishedAt": "2026-09-06T12:08:49.585Z"
+    }
+  ],
+  "console": [],
+  "tab": {
+    "id": "7B6C78FDBDBAA950CA154C82E10C6843",
+    "created": true
+  },
+  "finishedAt": "2026-09-06T12:08:49.587Z"
+}

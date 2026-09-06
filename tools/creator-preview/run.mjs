@@ -624,7 +624,8 @@ async function scenarioSnake(runner) {
     return { shot };
   });
   await runner.step("确认结束 → 结算页", async () => {
-    // 确认框刚出现时点会被吞（实测：点下去框关了、局没结束）——先等它稳定一拍再点，仍无结算就重开重点一次并记进报告。
+    // 2026-09-06 修复前：确认框首击会被服务端静默丢弃（点下去框关了、局没结束）。客户端已加看门狗
+    // （1.5 s 内没进终局就用当前 runId 重发一次，仍无效才把确认框还回来），这里保留兜底重试只为暴露回归。
     const tapConfirm = async () => {
       await sleep(1_200);
       await runner.tapText("结束本次", { pathIncludes: "SnakeWorld.EndRunConfirm" });
@@ -653,27 +654,29 @@ async function scenarioSnake(runner) {
   });
 }
 
-/**
- * 宿主自有的 ballMove 演示入口（builtin 的 menu 条目）：只验「入口能进 + 房间加入 + 视图挂载」——
- * 该演示没有退出 UI，退出靠重载预览页（下一个场景会重新登录）。
- */
+/** 宿主自有的 ballMove 演示入口（builtin 的 menu 条目）：入口能进 + 房间加入 + 视图挂载 + 「离开」回首屏。 */
 async function scenarioBallMove(runner) {
   await enterFromSettings(runner, "进入战斗", "builtin", "宿主自有 plugin 的 gameplay 入口（ballMove 演示）");
-  const mounted = await runner.step("BallMoveView 挂载（加入 GameRoom）", async () => {
+  await runner.step("BallMoveView 挂载（加入 GameRoom）", async () => {
     await runner.waitFor(
       "BallMoveView 的 PlayersLayer",
-      (walk) => (selectNodes(walk, { name: "PlayersLayer" }).length > 0 || selectNodes(walk, { name: "BallMoveView" }).length > 0 ? true : null),
+      (walk) => (selectNodes(walk, { name: "PlayersLayer" }).length > 0 ? true : null),
       90_000,
     );
+    const exit = runner.find({ name: "BallMove.Exit" })[0] ?? null;
     const shot = await runner.shot("ballmove");
-    return { shot, note: "ballMove 是无文本的画布演示，判据是 PlayersLayer/BallMoveView 节点挂载" };
+    return { shot, hasExitButton: exit !== null, note: "画布演示无文本，判据是 PlayersLayer 挂载 + 左上角「离开」按钮在位" };
   });
-  await runner.step("重载预览页退出演示（该入口无退出 UI）", async () => {
-    await runner.client.send("Page.reload", { ignoreCache: false });
-    await sleep(3_000);
-    return { reloaded: true };
+  return runner.step("点「离开」回首屏（2026-09-06 修复前该入口没有退出 UI）", async () => {
+    await runner.tapText("离开");
+    await runner.waitFor(
+      "PromoHomeView 回来且演示已卸载",
+      (walk) => (selectNodes(walk, { name: "PromoHomeView" }).length > 0 && selectNodes(walk, { name: "PlayersLayer" }).length === 0 ? true : null),
+      45_000,
+    );
+    const shot = await runner.shot("ballmove-back-home");
+    return { shot };
   });
-  return mounted;
 }
 
 // ---------- 入口 ----------

@@ -60,6 +60,7 @@ export function createGameplayModule(
             join: (_launch, signal) => roomJoiner.join(signal),
         },
         createPlugin: (host) => createBallMoveGameplay({
+            host,
             ...(services.presentationHost ? {
                 presentationFactory: () => createBallMovePresentation(services, host),
             } : {}),
