@@ -12,6 +12,8 @@ class FakeNode {
     destroyed = false;
     parent: FakeNode | null = null;
     readonly children: FakeNode[] = [];
+    readonly components: unknown[] = [];
+    position = { x: 0, y: 0, z: 0 };
 
     constructor(readonly name = "node") {}
 
@@ -30,8 +32,22 @@ class FakeNode {
     addComponent<T>(Constructor: new () => T): T {
         const component = new Constructor() as T & { node?: FakeNode };
         if ("node" in component) component.node = this;
+        this.components.push(component);
         return component;
     }
+
+    /** 视图会给「离开」按钮取 host 的 UITransform 并摆位、挂 TOUCH_END——桩要覆盖这三个面。 */
+    getComponent<T>(Constructor: new () => T): T | null {
+        return (this.components.find((component) => component instanceof Constructor) as T | undefined) ?? null;
+    }
+
+    setPosition(x: number, y: number, z = 0): void {
+        this.position = { x, y, z };
+    }
+
+    on(): void {}
+
+    off(): void {}
 
     destroy(): void {
         this.destroyed = true;
@@ -44,7 +60,16 @@ class FakeGraphics {
 }
 
 class FakeUITransform {
+    width = 0;
+    height = 0;
     convertToNodeSpaceAR(value: FakeVec3): FakeVec3 { return value; }
+}
+
+class FakeLabel {
+    string = "";
+    fontSize = 0;
+    lineHeight = 0;
+    color: unknown = null;
 }
 
 class FakeVec3 {
@@ -125,7 +150,8 @@ test("gameplay catalog：正向动态 presentation factory 可挂载并在 stop 
                 TOUCH_CANCEL: "touch-cancel",
             },
         },
-        Node: FakeNode,
+        Label: FakeLabel,
+        Node: Object.assign(FakeNode, { EventType: { TOUCH_END: "touch-end" } }),
         UITransform: FakeUITransform,
         Vec3: FakeVec3,
         input,

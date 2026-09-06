@@ -4,6 +4,7 @@ import type {
     GameplayStopReason,
     GameplayRoomJoiner,
 } from "../../gameplay/index";
+import type { GameplayInstanceHost } from "../../gameplay/GameplayModule";
 import type { GameplayRegistry } from "../../gameplay/GameplayRegistry";
 import {
     MAP_HEIGHT,
@@ -25,7 +26,9 @@ export const BALL_MOVE_GAMEPLAY_ID = GameplayModeId.BallMove;
 
 export type BallMoveInput =
     | { readonly type: "target"; readonly x: number; readonly y: number }
-    | { readonly type: "release" };
+    | { readonly type: "release" }
+    /** 离开演示回大厅（真机实证 2026-09-06：此前该入口没有任何退出 UI，只能重载页面）。 */
+    | { readonly type: "leave" };
 
 /** Read-only render surface; the view never mutates ECS state. */
 export interface BallMoveRenderWorld {
@@ -131,6 +134,8 @@ export interface BallMoveGameplayOptions {
     readonly presentationFactory?: () => BallMovePresentation | undefined | Promise<BallMovePresentation | undefined>;
     readonly ecs?: GameECS;
     readonly now?: () => number;
+    /** 模块装配时注入；`leave` 输入经它请求退出（与 tally / arena 两个玩法同形）。 */
+    readonly host?: GameplayInstanceHost<BallMoveInput>;
     /** Optional module-owned transport registration for app composition. */
     readonly joiner?: GameplayRoomJoiner<BallMoveRoom>;
 }
@@ -142,6 +147,8 @@ const PING_INTERVAL_SECONDS = 5;
 export class BallMoveGameplay implements GameplayPlugin<BallMoveRoom, BallMoveInput> {
     readonly id = BALL_MOVE_GAMEPLAY_ID;
 
+    private readonly host: GameplayInstanceHost<BallMoveInput> | null;
+    private exitRequested = false;
     private readonly ecs: GameECS;
     private readonly presentationFactory: () => BallMovePresentation | undefined | Promise<BallMovePresentation | undefined>;
     private presentation: BallMovePresentation | null = null;
@@ -159,6 +166,7 @@ export class BallMoveGameplay implements GameplayPlugin<BallMoveRoom, BallMoveIn
     private readonly unsubscribers: Array<() => void> = [];
 
     constructor(options: BallMoveGameplayOptions) {
+        this.host = options.host ?? null;
         this.ecs = options.ecs ?? GameECS.inst;
         this.presentationFactory = options.presentationFactory
             ?? (() => options.presentation);
@@ -234,6 +242,10 @@ export class BallMoveGameplay implements GameplayPlugin<BallMoveRoom, BallMoveIn
     handleInput(input: BallMoveInput, context: GameplayContext<BallMoveRoom>): void {
         if (!this.started || this.context !== context || !context.isActive() || this.room !== context.room) return;
         if (!input || typeof input !== "object") return;
+        if (input.type === "leave") {
+            this.requestExit();
+            return;
+        }
         if (input.type === "release") {
             this.target = null;
             this.sendDir(0, 0);
@@ -244,6 +256,15 @@ export class BallMoveGameplay implements GameplayPlugin<BallMoveRoom, BallMoveIn
             x: Math.max(0, Math.min(MAP_WIDTH, input.x)),
             y: Math.max(0, Math.min(MAP_HEIGHT, input.y)),
         };
+    }
+
+    /** 只请求一次；宿主负责真正的离开与恢复 authenticated base。 */
+    private requestExit(): void {
+        if (this.exitRequested || !this.host) return;
+        this.exitRequested = true;
+        void this.host.requestExit("user-exit").catch((error) => {
+            console.error("[ballMove] requestExit(user-exit) 失败：", error);
+        });
     }
 
     tick(dt: number, context: GameplayContext<BallMoveRoom>): void {

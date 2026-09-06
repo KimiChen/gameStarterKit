@@ -219,3 +219,26 @@ test("ballMove plugin：直接 dispose 也会清理 room 输入与展示层", as
     assert.equal(presentation.unmounts, 1);
     await controller.dispose();
 });
+
+test("ballMove plugin：「离开」经 host.requestExit(user-exit) 退出，且只请求一次（真机实证：该入口此前无退出 UI）", async () => {
+    const room = new FakeBallMoveRoom();
+    const presentation = new FakePresentation();
+    const exits: string[] = [];
+    const host = {
+        generation: 1,
+        isActive: () => true,
+        dispatchInput: async () => true,
+        requestExit: async (reason: string) => { exits.push(reason); },
+    };
+    const plugin = new (class extends BallMoveGameplay {
+        constructor() { super({ presentation, host: host as never }); }
+    })();
+    // 直接驱动插件（与 snakeGameplay 测试同口径）：handleInput 的守卫要求 context 是 start 时那一个对象。
+    const context = { room, signal: new AbortController().signal, generation: 1, isActive: () => true };
+    await plugin.start(context as never);
+    plugin.handleInput({ type: "leave" }, context as never);
+    plugin.handleInput({ type: "leave" }, context as never);
+    await Promise.resolve();
+    assert.deepEqual(exits, ["user-exit"], "重复点击只请求一次退出");
+    plugin.dispose();
+});
