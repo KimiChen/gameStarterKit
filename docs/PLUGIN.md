@@ -333,6 +333,13 @@ apps/plugins/
 - **域名前缀规则收紧到真实包上**：snake 一带 version，未被声明的宿主域 `snakeCosmetic` 就落进「框架先占可分发单元前缀」
   （规则 iii），`snakeCosmetic` 因此必须在自己的 `plugin.json` 里显式声明该域。规则按设计生效，不是缺陷。
 
+⚠ **仍未达标的一项：美术资源不随包走**。玩法资源的所有权规则是 `resources/<modeId>/`，而 snake 的 96 个资源在
+`apps/Cocos/assets/resources/snakeoff/`（目录名 ≠ mode id），落在推导集外——`pack snake` 因此**一张图都不带**。
+在本仓装回来看不出问题（资源本来就在），但把这个包装到别的仓里只有代码没有贴图。要补齐得把目录改名为
+`resources/snake/`，代价是：三个客户端文件里的 80 条 `snakeoff/...` 资源路径要同步改（65 条在手工维护的冻结表 `SnakePresentationCatalogData.ts` 里）（现在是
+手工维护的冻结表，⛔ 没有重建工具复核）、`previews/` 目前由 snake 与 snakeCosmetic 共用要先定归属、96 个
+`.meta` 要随文件一起搬且 uuid 不能变。⛔ 本轮不动：它要 snake 专项对 README §2 素材台账拍板。
+
 ## 6. 入口与位置：插件声明身份，宿主决定去处
 
 > 状态：✅ 已实施（2026-09-05）——设置面板（`logic/page/SettingsLogic.ts`，eacb687）、宿主 placement
