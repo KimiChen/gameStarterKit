@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "arenaDuel",
+  "constantName": "ArenaDuel",
+  "modeVersion": 1,
+  "maxPlayers": 2,
+  "profiles": ["default"]
+}

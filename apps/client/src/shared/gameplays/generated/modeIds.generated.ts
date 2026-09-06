@@ -7,6 +7,8 @@
  * （catalog → generated/state → protocol/http 已指回 protocol/，那样会成环）。
  */
 export const GameplayModeId = {
+    ArenaCapture: "arenaCapture",
+    ArenaDuel: "arenaDuel",
     BallMove: "ballMove",
     Idle: "idle",
     Snake: "snake",

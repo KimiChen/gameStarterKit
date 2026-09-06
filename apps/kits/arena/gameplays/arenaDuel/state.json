@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "root": "ArenaDuelRoomState",
+  "types": [
+    {
+      "name": "ArenaDuelPlayerState",
+      "sharedName": "IArenaDuelPlayerState",
+      "validatorName": "validateArenaDuelPlayerState",
+      "defaultPath": "arenaDuelPlayer",
+      "fields": [
+        {
+          "name": "id",
+          "kind": "string",
+          "default": "",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Colyseus sessionId"
+        },
+        {
+          "name": "name",
+          "kind": "string",
+          "default": "",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        {
+          "name": "hits",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "max": "MAX_SAFE_INTEGER",
+          "description": "Accepted strike count this match"
+        }
+      ],
+      "serverOnly": []
+    },
+    {
+      "name": "ArenaDuelRoomState",
+      "sharedName": "IArenaDuelRoomState",
+      "validatorName": "validateArenaDuelRoomState",
+      "defaultPath": "arenaDuelState",
+      "fields": [
+        {
+          "name": "tick",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "description": "Logical frame number"
+        },
+        {
+          "name": "phase",
+          "kind": "enum",
+          "enumObject": "GamePhase",
+          "enumType": "GamePhaseType",
+          "members": ["Waiting", "Playing", "Settle"],
+          "default": "Waiting",
+          "errorCode": "STATE_PHASE",
+          "description": "Room phase"
+        },
+        {
+          "name": "matchId",
+          "kind": "string",
+          "default": "",
+          "minLength": 0,
+          "maxLength": 128,
+          "description": "Stable match id; empty while waiting"
+        },
+        {
+          "name": "hp",
+          "kind": "integer",
+          "default": 3,
+          "min": 1,
+          "max": "MAX_SAFE_INTEGER",
+          "description": "Hits required to defeat the opponent"
+        },
+        {
+          "name": "winnerId",
+          "kind": "string",
+          "default": "",
+          "minLength": 0,
+          "maxLength": 128,
+          "description": "Winning sessionId; empty before settlement"
+        },
+        {
+          "name": "players",
+          "kind": "map",
+          "valueType": "ArenaDuelPlayerState",
+          "errorCode": "STATE_PLAYERS",
+          "key": {
+            "field": "id",
+            "errorCode": "STATE_PLAYER_ID"
+          },
+          "description": "ArenaDuel players keyed by sessionId"
+        }
+      ],
+      "serverOnly": []
+    }
+  ]
+}

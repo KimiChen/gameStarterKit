@@ -399,3 +399,55 @@ test("APPLY_EFFECT Lua：含 kit 分支，键数表达式引用 ARGV[4] 投影�
   assert.ok(lua.indexOf("kitValues[keyIndex] = values") < lua.indexOf("-- Apply pass"), "kit 现值校验在 apply pass 之前");
   assert.ok(!lua.includes("local N = #KEYS - 3"), "bag 分片数不再从 #KEYS 推（kit 键追加在其后）");
 });
+
+// ── 事务之外的两样门面（K0-5 对抗审阅后补）：applyKitEffect / readKitUserField / currentZoneId 再导出 ──────
+
+test("applyKitEffect：提交后收尾——按 sId 包 zoneCtx 走 redisApply，ok/dup 才 markOutboxDone；失败 / cold 只映射返回值；越界 kind 抛", async () => {
+  const { applyKitEffect, currentZoneId: reexported } = await import("../src/core/infra/kitApi");
+  const { currentZoneId } = await import("../src/core/infra/keys");
+  assert.equal(reexported, currentZoneId, "currentZoneId 从门面再导出（kit 不再 import core/infra/keys）");
+  const calls: { uid: string; opId: string; effect: IEffect; sId: number }[] = [];
+  const done: [string, number][] = [];
+  const kitEffect: IEffect = { schemaVersion: EFFECT_SCHEMA_VERSION, grants: [{ kind: "kit:arena:score", delta: 3 }] };
+  const make = (result: "ok" | "dup" | "cold" | Error, markFails = false) => ({
+    redisApply: async (uid: string, opId: string, effect: IEffect) => {
+      calls.push({ uid, opId, effect, sId: currentZoneId() });
+      if (result instanceof Error) throw result;
+      return result;
+    },
+    markOutboxDone: async (opId: string, sId: number) => { if (markFails) throw new Error("mysql down"); done.push([opId, sId]); },
+    kinds,
+  });
+  assert.equal(await applyKitEffect("arena", "u1", 7, "op-1", kitEffect, make("ok")), "ok");
+  assert.deepEqual(calls, [{ uid: "u1", opId: "op-1", effect: kitEffect, sId: 7 }], "显式 sId 进 zoneCtx");
+  assert.deepEqual(done, [["op-1", 7]]);
+  assert.equal(await applyKitEffect("arena", "u1", 7, "op-1", kitEffect, make("dup")), "dup");
+  assert.deepEqual(done, [["op-1", 7], ["op-1", 7]], "dup 也补标 done（relayer 同一判定）");
+  assert.equal(await applyKitEffect("arena", "u1", 7, "op-2", kitEffect, make("cold")), "cold");
+  assert.equal(done.length, 2, "cold 不标 done（留给 relayer → ensureLive）");
+  assert.equal(await applyKitEffect("arena", "u1", 7, "op-3", kitEffect, make(new Error("redis down"))), "failed", "阶段 2 失败不抛");
+  assert.equal(await applyKitEffect("arena", "u1", 7, "op-4", kitEffect, make("ok", true)), "ok", "阶段 3 失败 best-effort");
+  // 闸：别的 kit 的 kind / 未登记 kind / 非法 sId 在触达 Redis 前抛
+  const before = calls.length;
+  await assert.rejects(applyKitEffect("slg", "u1", 7, "op-5", kitEffect, make("ok")), KitEffectScopeError);
+  await assert.rejects(applyKitEffect("arena", "u1", 7, "op-6", { schemaVersion: EFFECT_SCHEMA_VERSION, grants: [{ kind: "kit:arena:nope", delta: 1 }] }, make("ok")), InvalidEffectError);
+  await assert.rejects(applyKitEffect("arena", "u1", 70000, "op-7", kitEffect, make("ok")), TypeError);
+  assert.equal(calls.length, before);
+});
+
+test("readKitUserField：只读 HGET kKitUser(kitId, name, uid, scope) 的一个字段；name 不在本 kit 的 userKeys 即拒", async () => {
+  const { KitUserKeyScopeError, readKitUserField } = await import("../src/core/infra/kitApi");
+  const reads: [string, string, string][] = [];
+  const deps = {
+    hget: async (uid: string, key: string, field: string) => { reads.push([uid, key, field]); return field === "trophies" ? "5" : null; },
+    userKeysOf: (kitId: string) => (kitId === "arena" ? ["stats"] : undefined),
+  };
+  assert.equal(await readKitUserField("arena", "stats", "u1", "trophies", { zone: "per-zone" }, deps), "5");
+  assert.equal(await readKitUserField("arena", "stats", "u1", "other", { zone: "per-zone" }, deps), null);
+  assert.deepEqual(reads.map((r) => [r[0], r[2]]), [["u1", "trophies"], ["u1", "other"]]);
+  assert.equal(reads[0][1], kKitUser("arena", "stats", "u1", { zone: "per-zone" }));
+  await assert.rejects(readKitUserField("arena", "wallet", "u1", "coin", { zone: "per-zone" }, deps), KitUserKeyScopeError);
+  await assert.rejects(readKitUserField("slg", "stats", "u1", "x", { zone: "per-zone" }, deps), KitUserKeyScopeError, "未登记的 kit");
+  await assert.rejects(readKitUserField("Arena", "stats", "u1", "x", { zone: "per-zone" }, deps), TypeError, "kitId 形态闸");
+  assert.equal(reads.length, 2, "被拒的读不触达 Redis");
+});

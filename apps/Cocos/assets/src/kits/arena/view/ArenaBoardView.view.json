@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "owner": "arena",
+  "kind": "cocos",
+  "layer": "popup",
+  "fullscreen": true,
+  "onlyOne": true,
+  "permanent": false,
+  "interactive": false,
+  "logic": "apps/client/src/kits/arena/logic/ArenaBoardLogic.ts",
+  "group": "authenticated",
+  "restore": "discard"
+}

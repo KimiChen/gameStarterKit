@@ -321,8 +321,9 @@ test("kit effect kind：按注入表判——接受、未登记、delta 0 / 越 
   assertInvalid(() => validateGrant({ kind: "kit:arena:score" }, "grant", kinds), "EFFECT_GRANT_KEYS");
   // 原型链上的名字不算登记（只认自有属性）
   assertInvalid(() => validateGrant({ kind: "kit:constructor", delta: 1 }, "grant", kinds), "EFFECT_UNKNOWN_KIND");
-  // 缺省表 = 生成物（当前无 kit ⇒ 空 ⇒ 任何 kit kind 都未登记）
-  assert.deepEqual(KIT_EFFECT_KINDS, {});
+  // 缺省表 = 生成物（真仓当前只有 arena kit 的 trophy 一个 kind ⇒ 其他 kit kind 都未登记）
+  assert.deepEqual(Object.keys(KIT_EFFECT_KINDS), ["kit:arena:trophy"]);
+  assert.deepEqual(validateGrant({ kind: "kit:arena:trophy", delta: 1 }), { kind: "kit:arena:trophy", delta: 1 });
   assertInvalid(() => validateGrant({ kind: "kit:arena:score", delta: 1 }), "EFFECT_UNKNOWN_KIND");
   // envelope 级：kinds 透传到 validateEffect / normalizeEffect；kit delta 计入 EFFECT_MAX_QUANTITY
   const envelope = { schemaVersion: 1, grants: [{ kind: "kit:arena:score", delta: 7 }, { kind: "item", itemId: 1, count: 1 }] };

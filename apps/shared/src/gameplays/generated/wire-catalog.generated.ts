@@ -8,6 +8,8 @@ import {
     type CoreS2CPayloadMap,
 } from "../../protocol/messages";
 import { defineS2C, type GameplayC2SToken, type GameplayS2CToken } from "../defineGameplayWire";
+import { ArenaCaptureCapture, type IArenaCaptureCaptureReq } from "../arenaCapture/wire";
+import { ArenaDuelStrike, type IArenaDuelStrikeReq } from "../arenaDuel/wire";
 import { CastSkill, Move, SkillResult, type ICastSkillReq, type IMoveReq, type ISkillResultRes } from "../ballMove/wire";
 import { IdlePulse, type IIdlePulseReq } from "../idle/wire";
 import { SnakeBaselineBegin, SnakeBaselineChunk, SnakeBaselineEnd, SnakeBaselineRequest, SnakeDelta, SnakeEndRun, SnakeInput, SnakeReliveDecision, SnakeReliveDecisionResult, SnakeReliveOffered, SnakeReliveResolved, SnakeRunFinalizing, SnakeRunResult, type ISnakeBaselineBegin, type ISnakeBaselineChunk, type ISnakeBaselineEnd, type ISnakeBaselineRequestReq, type ISnakeEndRunReq, type ISnakeInputReq, type ISnakeReliveDecisionReq, type ISnakeReliveDecisionResult, type ISnakeReliveOffered, type ISnakeReliveResolved, type ISnakeRunFinalizing, type ISnakeRunResultV2, type ISnakeWorldDelta } from "../snake/wire";
@@ -19,6 +21,8 @@ export const C2S = {
     Chat: "c2s.chat",
     RoomReady: "c2s.room.ready",
     RoomStart: "c2s.room.start",
+    ArenaCaptureCapture: "c2s.arenaCapture.capture",
+    ArenaDuelStrike: "c2s.arenaDuel.strike",
     Move: "c2s.move",
     CastSkill: "c2s.castSkill",
     IdlePulse: "c2s.idle.pulse",
@@ -58,6 +62,8 @@ export interface C2SPayloadMap {
     "c2s.chat": CoreC2SPayloadMap["c2s.chat"];
     "c2s.room.ready": CoreC2SPayloadMap["c2s.room.ready"];
     "c2s.room.start": CoreC2SPayloadMap["c2s.room.start"];
+    "c2s.arenaCapture.capture": IArenaCaptureCaptureReq;
+    "c2s.arenaDuel.strike": IArenaDuelStrikeReq;
     "c2s.move": IMoveReq;
     "c2s.castSkill": ICastSkillReq;
     "c2s.idle.pulse": IIdlePulseReq;
@@ -96,6 +102,8 @@ export const C2S_RUNTIME_VALIDATORS: { [K in C2SType]: RuntimeValidator<C2SPaylo
     "c2s.chat": CORE_C2S_WIRE["c2s.chat"],
     "c2s.room.ready": CORE_C2S_WIRE["c2s.room.ready"],
     "c2s.room.start": CORE_C2S_WIRE["c2s.room.start"],
+    "c2s.arenaCapture.capture": ArenaCaptureCapture.validate,
+    "c2s.arenaDuel.strike": ArenaDuelStrike.validate,
     "c2s.move": Move.validate,
     "c2s.castSkill": CastSkill.validate,
     "c2s.idle.pulse": IdlePulse.validate,
@@ -148,6 +156,8 @@ export const GAME_WIRE_OWNERS = {
     "c2s.chat": "core",
     "c2s.room.ready": "core",
     "c2s.room.start": "core",
+    "c2s.arenaCapture.capture": "arenaCapture",
+    "c2s.arenaDuel.strike": "arenaDuel",
     "c2s.move": "ballMove",
     "c2s.castSkill": "ballMove",
     "c2s.idle.pulse": "idle",
@@ -178,6 +188,8 @@ export type GameWireType = keyof typeof GAME_WIRE_OWNERS;
 
 /** 玩法 C2S 的 phase 白名单（token 声明；core 消息的 phase 规则由 shell 拥有，不在此表）。 */
 export const GAME_WIRE_PHASES = {
+    "c2s.arenaCapture.capture": [GamePhase.Playing],
+    "c2s.arenaDuel.strike": [GamePhase.Playing],
     "c2s.move": [GamePhase.Playing],
     "c2s.castSkill": [GamePhase.Playing],
     "c2s.idle.pulse": [GamePhase.Playing],
@@ -190,6 +202,8 @@ export const GAME_WIRE_PHASES = {
 
 /** 玩法 C2S 的预算成本（rateCost；机制为高频输入留位）。 */
 export const GAME_WIRE_RATE_COST = {
+    "c2s.arenaCapture.capture": 1,
+    "c2s.arenaDuel.strike": 1,
     "c2s.move": 1,
     "c2s.castSkill": 1,
     "c2s.idle.pulse": 1,
@@ -202,6 +216,12 @@ export const GAME_WIRE_RATE_COST = {
 
 /** 每玩法 C2S token 表（GameMode.commands 键派生与校验用）。 */
 export const gameplayC2STokens = {
+    "arenaCapture": {
+        "c2s.arenaCapture.capture": ArenaCaptureCapture,
+    },
+    "arenaDuel": {
+        "c2s.arenaDuel.strike": ArenaDuelStrike,
+    },
     "ballMove": {
         "c2s.move": Move,
         "c2s.castSkill": CastSkill,
@@ -226,6 +246,10 @@ export const gameplayC2STokens = {
 
 /** 每玩法 S2C token 表。 */
 export const gameplayS2CTokens = {
+    "arenaCapture": {
+    },
+    "arenaDuel": {
+    },
     "ballMove": {
         "s2c.skillResult": SkillResult,
     },
