@@ -267,7 +267,8 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
   `starting` 置位期间 Ready/Unready 拒，rollback 保留 Ready 不动 owner，retry-fence 绝对上限
   fail-closed dispose）；六位邀请码 lease（`core/rooms/invite/`，SET NX + 三态 renew + tombstone 隔离期）
   与 access ticket 固定准入时序（同步 fence → 同步 pending 占位 → 异步 claim → 同步重验 →
-  `mode.onAdmission` → 落座+seated CAS）。invite 房在 `onCreate` 体内 listing 持久化前
+  异步 `mode.onBeforeAdmission`（唯一可 await 的玩法钩子，只预热持久档，⛔ 不分配房间资源，reject 即拒绝入房）
+  → `mode.onAdmission` → 落座+seated CAS）。invite 房在 `onCreate` 体内 listing 持久化前
   `setPrivate(true)`；`roomCode` ⛔ 不进 listing/metadata/filterBy。验收矩阵见
   `test/private-room.test.ts` 与 `test/int/private-room.test.ts`（§10.2/§10.3 逐行）。
   当前生产玩法只声明 `"default"`；`"private"` 由 fixture gameplay `privateFixture` 驱动测试。

@@ -27,10 +27,19 @@ import {
     SNAKE_ACHIEVEMENT_KEYS,
     applyRunGrantToProfile,
     fullSnapshotOf,
+    isProfileHydrated,
     type SnakeDemoFullProfile,
 } from "./cosmeticProfile";
 import { kSnakeUser } from "./keys";
-import { demoCoinBalanceOf, grantDemoCoins } from "./lifecycle";
+import { demoCoinBalanceOf, grantDemoCoins, isDemoCoinBalanceHydrated } from "./lifecycle";
+
+/** 冷档兜底的默认告警：点名 uid，⛔ 不静默——静默正是 F13 一路没被发现的原因。 */
+const reportColdProfile = (uid: string): void => {
+    console.error(
+        `[snake] 结算跳过 Redis 写回：uid=${uid} 的进程内档案未被回灌（Redis 当时不可用？），`
+        + "写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）",
+    );
+};
 
 export interface SnakeRunRewardInput {
     readonly uid: string;
@@ -104,6 +113,8 @@ const runKey = (input: SnakeRunRewardInput): string =>
 export interface SnakeRewardOptions {
     readonly persistence?: SnakeRewardPersistence;
     readonly reportError?: (error: unknown) => void;
+    /** 冷档兜底触发时的告警注入（测试用）。 */
+    readonly reportColdProfile?: (uid: string) => void;
 }
 
 /**
@@ -179,6 +190,15 @@ export function applyRunRewards(
     const persistence = options.persistence ?? persistRewards;
     const reportError = options.reportError
         ?? ((error: unknown) => console.warn("[snake] demo reward Redis mirror failed; result is kept", error));
+    // ⚠ F13 兜底闸：那条六字段 HSET 是**全量覆盖**，一旦 profile / 钱包没被 Redis 回灌过，
+    // 写回去的就是默认档——玩家的皮肤、碎片、余额会被本局结算抹平。⛔ 宁可这一局的奖励
+    // 落不了盘，也不能拿默认档盖掉真实档。正常路径由 mode 的 onBeforeAdmission 在入房前
+    // await 回灌保证走不到这里；走到了就是 Redis 当时不可用。
+    const trustworthy = isProfileHydrated(input.uid) && isDemoCoinBalanceHydrated(input.uid);
+    if (!trustworthy) {
+        (options.reportColdProfile ?? reportColdProfile)(input.uid);
+        return result;
+    }
     void persistence({
         uid: input.uid,
         coinBalance: coinBalanceAfter,

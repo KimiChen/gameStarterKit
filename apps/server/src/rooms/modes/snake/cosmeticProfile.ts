@@ -65,8 +65,26 @@ export interface SnakeDemoFullProfile extends SnakeDemoCosmeticProfile {
 }
 
 const profiles = new Map<string, MutableProfile>();
-/** 已尝试过 Redis 回灌的 uid：失败也记，避免每次 RPC 重复打 Redis。 */
+/**
+ * 回灌成功的 uid。⚠ 语义是「这份进程内 profile 可信」，⛔ 不是「试过了」——
+ * 失败**不**记入，否则一次 Redis 抖动就让该 uid 在整个进程生命周期里永远停在默认档
+ * （而结算的六字段 HSET 会把这份默认档盖回 Redis，正是 F13）。
+ */
 const hydrated = new Set<string>();
+/**
+ * 在途回灌：同一 uid 的并发调用共用同一个 Promise 并**都等它**。
+ * ⚠ 旧实现在 await 之前就 `hydrated.add(uid)`，于是第二个调用者立刻拿到**尚未回灌**的默认档，
+ * 这正是「入房时 fire-and-forget 预热」不成立的原因。
+ */
+const hydrations = new Map<string, Promise<void>>();
+
+/**
+ * 该 uid 的进程内 profile 是否已被 Redis 回灌过（= 可以安全地写回 Redis）。
+ * ⚠ 结算的写回路径必须问过它：未回灌的 profile 是默认档，写回去就是抹掉玩家的皮肤与碎片。
+ */
+export function isProfileHydrated(uid: string): boolean {
+    return hydrated.has(uid);
+}
 
 const defaultFragmentBalances = (): Record<string, number> =>
     Object.fromEntries(SNAKE_FRAGMENT_SKIN_IDS.map((skinId) => [String(skinId), 0]));
@@ -269,18 +287,30 @@ export class SnakeDemoCosmeticStore {
     }
 
     /**
-     * 首次普通 Lobby RPC 的回灌：只在该 uid 尚未回灌过时打一次 Redis。
-     * Redis 不可用或数据非法都不抛错——保留默认 profile 并告警。
+     * Redis 回灌：每个 uid 成功一次；并发调用共用同一次在途请求并都等它返回。
+     * Redis 不可用或数据非法都不抛错——保留默认 profile 并告警，但**不**标记为已回灌
+     * （下次还会重试，且在那之前 `isProfileHydrated` 为 false，结算不会把默认档写回去）。
      */
     async hydrate(uid: string): Promise<SnakeDemoCosmeticProfile> {
         if (hydrated.has(uid)) return this.getSnapshot(uid);
-        hydrated.add(uid);
+        let inFlight = hydrations.get(uid);
+        if (!inFlight) {
+            inFlight = this.runHydration(uid).finally(() => {
+                if (hydrations.get(uid) === inFlight) hydrations.delete(uid);
+            });
+            hydrations.set(uid, inFlight);
+        }
+        await inFlight;
+        return this.getSnapshot(uid);
+    }
+
+    private async runHydration(uid: string): Promise<void> {
         let raw: readonly (string | null)[];
         try {
             raw = await this.hydration(uid);
         } catch (error) {
             this.reportError(error);
-            return this.getSnapshot(uid);
+            return;
         }
         const profile = ensure(uid);
         const [equippedRaw, ownedRaw, fragmentsRaw, xpRaw, achievementsRaw] = raw;
@@ -310,7 +340,9 @@ export class SnakeDemoCosmeticStore {
             if (progress === null) this.reportCorrupt(uid, "achievementProgress");
             else profile.achievementProgress = progress;
         }
-        return this.getSnapshot(uid);
+        // ⚠ 只有真读到了 Redis 才算可信：字段损坏按默认值兜底仍算回灌成功（那是 Redis 里的事实），
+        // 但**读不到 Redis**（上面 catch 已 return）绝不落这一行。
+        hydrated.add(uid);
     }
 
     /** 装备。目录存在且已拥有才生效；重复装备同一皮肤是 no-op（⛔ 不涨 version、不写 Redis）。 */
@@ -376,6 +408,7 @@ export function equippedSkinIdOf(uid: string | null): number {
 export function __resetSnakeCosmeticProfilesForTest(): void {
     profiles.clear();
     hydrated.clear();
+    hydrations.clear();
 }
 
 /**

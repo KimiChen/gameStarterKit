@@ -9,7 +9,11 @@ import {
     fullSnapshotOf,
 } from "../src/rooms/modes/snake/cosmeticProfile";
 import { SNAKE_FRAGMENT_SKIN_THRESHOLDS } from "../src/rooms/modes/snake/skinBusinessCatalog";
-import { __resetDemoCoinsForTest, demoCoinBalanceOf } from "../src/rooms/modes/snake/lifecycle";
+import {
+    __resetDemoCoinsForTest,
+    demoCoinBalanceOf,
+    hydrateDemoCoinBalance,
+} from "../src/rooms/modes/snake/lifecycle";
 import {
     __resetRunRewardsForTest,
     applyRunRewards,
@@ -22,6 +26,21 @@ const ZERO: SnakeRunStats = { activeTicks: 0, score: 0, kills: 0, starCollected:
 const stats = (over: Partial<SnakeRunStats>): SnakeRunStats => ({ ...ZERO, ...over });
 /** 合格且能拿到可观奖励的一局。 */
 const GOOD = stats({ activeTicks: 6000, score: 3000, kills: 6, starCollected: 12, meaningfulInputCount: 20 });
+
+/**
+ * 入房预热的等价物：production 由 mode 的 `onBeforeAdmission` await（契约见 GameMode）。
+ * ⚠ 没预热过的档案是默认档，结算那条六字段 HSET 会拿它盖掉玩家真实的皮肤/碎片/余额（F13），
+ * 所以写回闸只对预热过的 uid 放行——凡是断言「写了几条镜像」的用例都必须先过这一步。
+ * ⛔ 这里走真实回灌路径（注入的存储读），不用 seam 直接打标记。
+ */
+async function preheat(uid: string): Promise<void> {
+    const store = new SnakeDemoCosmeticStore({
+        persistence: async () => {},
+        hydration: async () => [null, null, null, null, null],
+    });
+    await store.hydrate(uid);
+    await hydrateDemoCoinBalance(uid, { hydration: async () => null });
+}
 
 function harness() {
     __resetSnakeCosmeticProfilesForTest();
@@ -39,8 +58,9 @@ function harness() {
     };
 }
 
-test("合格 run：金币/XP/碎片同步落进程内 profile，并只写一条六字段镜像", () => {
+test("合格 run：金币/XP/碎片同步落进程内 profile，并只写一条六字段镜像", async () => {
     const h = harness();
+    await preheat("u1");
     const before = demoCoinBalanceOf("u1");
     const result = applyRunRewards(
         { uid: "u1", roomEpochId: "e1", runId: "r1", endReason: "explicitExit", stats: GOOD }, h.opts);
@@ -64,8 +84,9 @@ test("合格 run：金币/XP/碎片同步落进程内 profile，并只写一条�
     assert.equal(h.writes[0].snakeXp, profile.xp);
 });
 
-test("同一 uid+roomEpochId+runId 重复终局只奖一次，返回缓存结果且不重复写", () => {
+test("同一 uid+roomEpochId+runId 重复终局只奖一次，返回缓存结果且不重复写", async () => {
     const h = harness();
+    await preheat("u1");
     const input = { uid: "u1", roomEpochId: "e1", runId: "r1", endReason: "explicitExit", stats: GOOD };
     const first = applyRunRewards(input, h.opts);
     const second = applyRunRewards(input, h.opts);
@@ -76,8 +97,9 @@ test("同一 uid+roomEpochId+runId 重复终局只奖一次，返回缓存结果
     assert.equal(processedRunCount(), 1);
 });
 
-test("换 runId 或换 roomEpochId 都算新 run，各自发一次", () => {
+test("换 runId 或换 roomEpochId 都算新 run，各自发一次", async () => {
     const h = harness();
+    await preheat("u1");
     const base = { uid: "u1", endReason: "explicitExit", stats: GOOD };
     const a = applyRunRewards({ ...base, roomEpochId: "e1", runId: "r1" }, h.opts);
     const b = applyRunRewards({ ...base, roomEpochId: "e1", runId: "r2" }, h.opts);
@@ -99,6 +121,50 @@ test("不合格 run：全部奖励为 0，成就进度不累计，但仍写一�
     assert.equal(result.fragmentAmount, 0);
     assert.ok(Object.values(result.achievementProgressAfter).every((v) => v === 0), "不合格 run ⛔ 不累计成就");
     assert.equal(latestRunResultOf("u2"), result);
+});
+
+/**
+ * F13 回归（apps/plugins/snake/README.md §8.2）：结算那条六字段 HSET 是**全量覆盖**。
+ * 档案没被 Redis 回灌过时它写的是默认档——玩家的皮肤、碎片、余额会被这一局抹平。
+ * 实测复现（2026-09-06）：种 ownedSkinIds=[1,2] → 只打一局、全程不开衣柜 → 键变回 [1]。
+ */
+test("F13：未预热的档案 ⛔ 不写回 Redis（宁可这局奖励落不了盘，也不能拿默认档盖真实档）", () => {
+    const h = harness();
+    const cold: string[] = [];
+    const result = applyRunRewards(
+        { uid: "u-cold", roomEpochId: "e1", runId: "r1", endReason: "explicitExit", stats: GOOD },
+        { ...h.opts, reportColdProfile: (uid) => { cold.push(uid); } });
+    assert.equal(result.qualified, true, "前置：必须是合格 run，否则测的是「没奖励所以没写」");
+    assert.ok(result.coinAmount > 0 && result.xpAmount > 0, "前置：这一局确实产生了奖励");
+    assert.equal(h.writes.length, 0, "⛔ 冷档一条都不许写——这正是 F13 的抹档动作");
+    assert.deepEqual(cold, ["u-cold"], "必须点名告警，⛔ 不许静默跳过");
+});
+
+test("F13：预热过的同一局照常写回（证明上一条测的是冷档而不是「本来就不写」）", async () => {
+    const h = harness();
+    await preheat("u-warm");
+    const cold: string[] = [];
+    const result = applyRunRewards(
+        { uid: "u-warm", roomEpochId: "e1", runId: "r1", endReason: "explicitExit", stats: GOOD },
+        { ...h.opts, reportColdProfile: (uid) => { cold.push(uid); } });
+    assert.equal(h.writes.length, 1);
+    assert.equal(h.writes[0].uid, "u-warm");
+    assert.equal(h.writes[0].snakeXp, result.xpAmount);
+    assert.deepEqual(cold, []);
+});
+
+test("F13：只回灌了衣柜、钱包还是冷的，同样 ⛔ 不写回（那条写里带着 coinBalance）", async () => {
+    const h = harness();
+    const store = new SnakeDemoCosmeticStore({
+        persistence: async () => {},
+        hydration: async () => [null, null, null, null, null],
+    });
+    await store.hydrate("u-half");
+    const result = applyRunRewards(
+        { uid: "u-half", roomEpochId: "e1", runId: "r1", endReason: "explicitExit", stats: GOOD },
+        { ...h.opts, reportColdProfile: () => {} });
+    assert.equal(result.qualified, true);
+    assert.equal(h.writes.length, 0, "六字段是一条原子写，任一份档是冷的都不能写");
 });
 
 test("moderationKick ⛔ 不发奖", () => {
@@ -164,6 +230,7 @@ test("Redis 镜像写失败只告警，已返回的奖励结果不回滚", async
     __resetSnakeCosmeticProfilesForTest();
     __resetRunRewardsForTest();
     __resetDemoCoinsForTest();
+    await preheat("u7");
     const errors: unknown[] = [];
     const result = applyRunRewards(
         { uid: "u7", roomEpochId: "e1", runId: "r1", endReason: "explicitExit", stats: GOOD },

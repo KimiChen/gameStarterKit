@@ -56,8 +56,10 @@ import { driveAi } from "./ai";
 import {
     DEFAULT_SNAKE_RUN_SKIN_RESOLVER,
     ONLINE_COIN_RELIVE_PLAYER_RELEASED,
+    resolveProfilePreheat,
     resolveS2ReliveEconomy,
     type ReliveEconomyPort,
+    type SnakeProfilePreheat,
     type SnakeRunSkinResolver,
 } from "./lifecycle";
 import { SNAKE_AI_SKIN_POOL, resolveServerBattleSkin } from "./skinBusinessCatalog";
@@ -126,6 +128,8 @@ export interface SnakeGameModeOptions {
     readonly runSkinResolver?: SnakeRunSkinResolver;
     /** S4 结算镜像的注入位；⛔ 测试必须走它或 `runtimeEnvironment: "test"`，否则会真连 Redis。 */
     readonly rewardPersistence?: SnakeRewardPersistence;
+    /** 入房前档案预热的注入位；同上，⛔ 测试必须走它或 `runtimeEnvironment: "test"`。 */
+    readonly profilePreheat?: SnakeProfilePreheat;
     readonly runtimeEnvironment?: string;
 }
 
@@ -176,6 +180,7 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
     const economy = resolveS2ReliveEconomy(options.reliveEconomy, options.runtimeEnvironment);
     const skinResolver = options.runSkinResolver ?? DEFAULT_SNAKE_RUN_SKIN_RESOLVER;
     const rewardPersistence = resolveRewardPersistence(options.rewardPersistence, options.runtimeEnvironment);
+    const profilePreheat = resolveProfilePreheat(options.profilePreheat, options.runtimeEnvironment);
     let roomEpochId = "";
     let world: SnakeWorld | null = null;
     let runCounter = 0;
@@ -763,6 +768,18 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
                 context.state.matchId = roomEpochId;
                 context.state.onlineCoinReliveEnabled = ONLINE_COIN_RELIVE_PLAYER_RELEASED;
             },
+        },
+
+        // ⚠ 入房前**等**档案回灌完：紧随其后的 createPlayer 同步读装备皮肤、结算同步读档算奖励并
+        // 全量写回 Redis，两处都不能 await。不等它 = 读默认档 = 结算把默认档盖回玩家的真实档（F13）。
+        // ⛔ 这里只预热、不分配任何房间资源（契约见 GameMode.onBeforeAdmission）；预热失败不抛，
+        // 由 runRewards 的兜底闸跳过写回——⛔ 绝不因衣柜/钱包数据异常阻塞进房。
+        onBeforeAdmission: async (context): Promise<void> => {
+            const auth = (context.client as unknown as {
+                auth?: { readonly userId?: unknown; readonly sId?: unknown };
+            }).auth;
+            if (typeof auth?.userId !== "string" || auth.userId.length === 0 || auth.sId !== context.sId) return;
+            await profilePreheat(auth.userId);
         },
 
         onAdmission: (context): boolean => {

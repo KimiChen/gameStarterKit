@@ -307,6 +307,54 @@ test("GameRoom：transport/admission/tick/finish 均通过可替换 mode 接缝"
     assert.equal(events.filter((event) => event === "dispose").length, 1);
 });
 
+/**
+ * `onBeforeAdmission` 是 join 路径上唯一允许 await 的玩法钩子（GameMode 契约）。
+ * 它存在的唯一理由是：`createPlayer` 与结算都是**同步**的，要读的档案却在 Redis 里——
+ * snake 的 F13（结算把默认档写回 Redis、抹掉玩家皮肤/碎片/余额）就是没有这个点造成的。
+ */
+test("GameRoom：onBeforeAdmission 被 await，且排在 onAdmission 与 createPlayer 之前", async () => {
+    const order: string[] = [];
+    let resolvePreheat: (() => void) | null = null;
+    const preheatGate = new Promise<void>((resolve) => { resolvePreheat = resolve; });
+    const base = createBallMoveGameMode();
+    const mode: GameMode<GameRoomState> = {
+        ...base,
+        onBeforeAdmission: async ({ client: joining }) => {
+            order.push(`before:${joining.sessionId}`);
+            await preheatGate;
+            order.push(`before-done:${joining.sessionId}`);
+        },
+        onAdmission: ({ client: admitted }) => { order.push(`admit:${admitted.sessionId}`); },
+        createPlayer: (context) => { order.push(`create:${context.sessionId}`); return base.createPlayer(context); },
+    };
+    const room = new GameRoom({ seed: 7, mode });
+    installLock(room);
+    const joining = join(room, client("pre-a", BALL_MOVE_GAME_MODE_ID));
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.deepEqual(order, ["before:pre-a"], "预热未完成前 ⛔ 不得进入 onAdmission / createPlayer");
+    resolvePreheat!();
+    await joining;
+    assert.deepEqual(order, ["before:pre-a", "before-done:pre-a", "admit:pre-a", "create:pre-a"]);
+});
+
+test("GameRoom：onBeforeAdmission 抛错 = 拒绝入房（fail-closed），且不进入 onAdmission", async () => {
+    const order: string[] = [];
+    const mode: GameMode<GameRoomState> = {
+        ...createBallMoveGameMode(),
+        onBeforeAdmission: () => { order.push("before"); throw new Error("preheat exploded"); },
+        onAdmission: () => { order.push("admit"); },
+    };
+    const room = new GameRoom({ seed: 8, mode });
+    installLock(room);
+    const joining = client("pre-b", BALL_MOVE_GAME_MODE_ID);
+    await assert.rejects(
+        join(room, joining),
+        (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.BadRequest)),
+    );
+    assert.deepEqual(order, ["before"], "⛔ 不得继续走到 onAdmission");
+    assert.equal(room.state.players.has(joining.sessionId), false);
+});
+
 test("GameRoom：开局失败会归还本次 mode admission 且迟到 leave 不重复释放", async () => {
     const events: string[] = [];
     const room = new GameRoom({

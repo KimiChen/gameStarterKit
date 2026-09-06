@@ -1478,6 +1478,8 @@ ticket。
 3. **异步** claim access ticket（`issued → pending(session)` CAS），并校验 `roomId / mode / profile /
    lease generation`；
 4. await 返回后**同步重验** fence、phase、roster 与容量；
+4.5. **异步** `mode.onBeforeAdmission`（唯一允许 await 的玩法钩子；只做持久档预热，⛔ 不分配房间资源；
+   reject = 拒绝入房）；
 5. **同步**调用 `mode.onAdmission`；
 6. 落座，并把 ticket CAS 到 `seated`。
 
