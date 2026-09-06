@@ -31,9 +31,9 @@ import {
 } from "./lib.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const SCENARIOS = ["home", "settings", "redeem", "tally", "cosmetic", "snake", "ballMove", "arena", "arenaCapture", "arenaDuel", "arenaShop", "all"];
+const SCENARIOS = ["areaList", "loginNotice", "home", "settings", "redeem", "tally", "cosmetic", "snake", "ballMove", "arena", "arenaCapture", "arenaDuel", "arenaShop", "all"];
 /** `all` 的顺序：先 route 形态再 gameplay 形态；arenaShop 排在 arena 之后（它要一块自己的格子）。 */
-const ALL_SEQUENCE = ["home", "settings", "redeem", "tally", "cosmetic", "arena", "arenaCapture", "arenaDuel", "arenaShop", "snake", "ballMove"];
+const ALL_SEQUENCE = ["areaList", "loginNotice", "home", "settings", "redeem", "tally", "cosmetic", "arena", "arenaCapture", "arenaDuel", "arenaShop", "snake", "ballMove"];
 /** 登录页兜底坐标（设计 375×812）：只在找不到 FGUI 对象 btn_login 时使用，并在报告里标注。 */
 const LOGIN_BUTTON_DESIGN = { x: 184.7, y: 670 };
 
@@ -136,6 +136,59 @@ class Runner {
 const slug = (text) => text.replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/gu, "").toLowerCase();
 
 // ---------- 场景 ----------
+
+/** 回到登录页：已经登录过就重载预览页（authenticated base 不可逆退）。 */
+async function ensureLoginPage(runner) {
+  await runner.walk();
+  if (selectNodes(runner.lastWalk, { name: "btn_login" }).length > 0) return { via: "already-login" };
+  await runner.client.send("Page.reload", { ignoreCache: false });
+  await sleep(4_000);
+  await runner.waitFor("重载后的登录页 btn_login", (walk) => selectNodes(walk, { name: "btn_login" })[0] ?? null, 120_000);
+  return { via: "reload" };
+}
+
+/**
+ * 登录页的 FGUI 弹窗（builtin 的 areaList / loginNotice 两个 route）：点开 → 读内容 → 关闭。
+ * ⚠ FGUI 视图挂在 `GRoot/…/layer_popup/…/GComponent` 下，节点名不是类名——按各自**独有的子件名**判定
+ * （区服列表 `lst_server`、公告 `tge_tip`、确认框 `yesBtn`）。外部身份服务不在时会落到 ConfirmView 的
+ * 错误分支（「区服列表加载失败」/「公告加载失败」），那也是实据——把弹出的到底是哪一个如实记进报告。
+ */
+async function loginPopup(runner, { button, marker, viewName, routeId, shotPrefix }) {
+  await runner.step(`回到登录页（${routeId} 只在登录页可达）`, () => ensureLoginPage(runner));
+  const opened = await runner.step(`点登录页 FGUI 按钮 ${button} 打开 ${routeId}`, async () => {
+    const target = runner.find({ name: button })[0];
+    if (!target) throw new Error(`登录页找不到 FGUI 按钮 ${button}`);
+    const tapped = await runner.tap(target, button);
+    const shown = await runner.waitFor(
+      `${viewName}（子件 ${marker}）或 ConfirmView（子件 yesBtn）`,
+      (walk) => {
+        if (selectNodes(walk, { name: marker }).length > 0) return viewName;
+        return selectNodes(walk, { name: "yesBtn" }).length > 0 ? "ConfirmView" : null;
+      },
+      30_000,
+    );
+    const texts = runner.find({ pathIncludes: "layer_popup" }).map((node) => node.text).filter(Boolean);
+    const shot = await runner.shot(`${shotPrefix}-${shown === viewName ? "opened" : "confirm"}`);
+    return { tapped, shown, outcome: shown === viewName ? "opened" : "error-confirm", texts: texts.slice(0, 14), shot };
+  });
+  const marker2 = opened.shown === "ConfirmView" ? "yesBtn" : marker;
+  return runner.step(`关闭 ${opened.shown}`, async () => {
+    await runner.walk();
+    const close = runner.find({ name: opened.shown === "ConfirmView" ? "yesBtn" : "btn_close" })[0]
+      ?? runner.find({ name: "btn_mask" })[0];
+    if (!close) throw new Error(`${opened.shown} 上找不到关闭按钮（btn_close / yesBtn / btn_mask）`);
+    await runner.tap(close, close.name);
+    await runner.waitFor(
+      `${opened.shown} 关闭后回到登录页`,
+      (walk) => (selectNodes(walk, { name: marker2 }).length === 0 && selectNodes(walk, { name: "btn_login" }).length > 0 ? true : null),
+      20_000,
+    );
+    return { closed: opened.shown };
+  });
+}
+
+const scenarioAreaList = (runner) => loginPopup(runner, { button: "btn_server", marker: "lst_server", viewName: "AreaListView", routeId: "areaList", shotPrefix: "arealist" });
+const scenarioLoginNotice = (runner) => loginPopup(runner, { button: "btn_notice", marker: "tge_tip", viewName: "LoginNoticeView", routeId: "loginNotice", shotPrefix: "notice" });
 
 async function scenarioHome(runner) {
   await runner.walk();
@@ -332,10 +385,67 @@ async function scenarioCosmetic(runner) {
   await enterFromSettings(runner, "衣柜", "snakeCosmetic", "宿主自有 plugin 的 route 形态");
   await runner.step("WardrobeView 挂载并读到皮肤行", async () => {
     await runner.waitFor("WardrobeView", (walk) => (selectNodes(walk, { name: "WardrobeView" }).length > 0 ? true : null), 60_000);
+    // ⚠ 筛选状态跨次打开保留（上次停在「可合成」就还停在那儿，可能一行都没有）——先切回「全部」再断言行数。
+    await runner.walk();
+    const all = runner.find({ pathIncludes: "WardrobeView", kind: "label", text: "全部" })[0];
+    if (all) { await runner.tap(all, "全部"); await sleep(900); }
+    await runner.waitFor("皮肤行加载完成", (walk) => (selectNodes(walk, { namePrefix: "skin-" }).length > 0 ? true : null), 30_000);
+    const skins = runner.find({ namePrefix: "skin-" }).map((node) => node.name.slice("skin-".length));
     const labels = runner.find({ pathIncludes: "WardrobeView", kind: "label" }).map((node) => node.text).filter(Boolean);
-    if (labels.length === 0) throw new Error("衣柜面板没有任何文本");
-    const shot = await runner.shot("cosmetic");
-    return { labels: labels.slice(0, 24), shot };
+    const shot = await runner.shot("cosmetic-open");
+    return { skinRows: skins.length, skins: skins.slice(0, 8), labels: labels.slice(0, 16), shot };
+  });
+  // 只挂载不算验通：碎片够就先「合成」（snakeCosmetic.unlock），再「装备」（snakeCosmetic.equip），都等界面回流。
+  // 先验写路径「装备」（snakeCosmetic.equip），再试「合成」（unlock）——后者依赖碎片业务数据，拿不到不算失败。
+  await runner.step("切「已拥有」筛选 → 「装备」另一件皮肤（snakeCosmetic.equip）", async () => {
+    await runner.tapText("已拥有", { pathIncludes: "WardrobeView" });
+    await sleep(1_000);
+    await runner.walk();
+    // ⚠ 只数「装备」标签的个数没用：换装是**互换**（点的那行变已装备、原来那行变装备），总数不变。
+    // 判据必须钉在**被点的那一行**（路径里的 skin-<id>）上。
+    const rowButtons = runner.find({ pathIncludes: "skin-", kind: "label", textMatches: /^(装备|已装备)$/u });
+    const rows = rowButtons.map((node) => `${node.path.match(/skin-\d+/u)?.[0]}=${node.text}`);
+    const target = rowButtons.find((node) => node.text === "装备");
+    if (!target) {
+      const shot = await runner.shot("cosmetic-nothing-to-equip");
+      return { action: "skip", why: "「已拥有」筛选下只有当前已装备的皮肤，没有可切换目标", rows, shot };
+    }
+    const skin = target.path.match(/skin-\d+/u)?.[0] ?? "?";
+    await runner.tap(target, `装备 @ ${skin}`);
+    const outcome = await runner.waitFor(
+      `装备结果（${skin} 那一行变成「已装备」）`,
+      (walk) => {
+        if (selectNodes(walk, { pathIncludes: `${skin}/`, kind: "label", text: "已装备" }).length > 0) return "equipped";
+        return selectNodes(walk, { pathIncludes: "WardrobeView", kind: "label", textMatches: /失败|不可用|错误/u })[0] ? "refused" : null;
+      },
+      15_000,
+    );
+    const shot = await runner.shot(`cosmetic-${outcome}`);
+    return { action: "equip", skin, outcome, rowsBefore: rows, shot };
+  });
+  await runner.step("切「可合成」筛选 → 试「合成」（snakeCosmetic.unlock；碎片业务数据缺失时如实记录）", async () => {
+    await runner.walk();
+    if (!runner.hasNode("WardrobeView")) return { action: "skip", why: "面板已不在（上一步收尾后关闭）" };
+    const filter = runner.find({ pathIncludes: "WardrobeView", kind: "label", text: "可合成" })[0];
+    if (!filter) return { action: "skip", why: "面板上没有「可合成」筛选" };
+    await runner.tap(filter, "可合成");
+    await sleep(1_200);
+    await runner.walk();
+    if (!runner.hasNode("WardrobeView")) {
+      return { action: "skip", why: "点「可合成」后面板消失（未展开排查，本轮只记录）" };
+    }
+    const craft = runner.find({ pathIncludes: "WardrobeView", kind: "label", text: "合成" })[0];
+    if (!craft) {
+      const empty = runner.find({ pathIncludes: "WardrobeView", kind: "label", textMatches: /没有皮肤|碎片/u }).map((node) => node.text);
+      const shot = await runner.shot("cosmetic-no-craft");
+      return { action: "skip", why: "「可合成」筛选下没有可合成皮肤（业务目录里碎片皮肤的 fragmentItemId 为 unavailable）", empty, shot };
+    }
+    await runner.tap(craft, "合成");
+    const outcome = await runner
+      .waitFor("合成结果", (walk) => selectNodes(walk, { pathIncludes: "WardrobeView", kind: "label", textMatches: /合成成功|碎片不足|失败|错误/u })[0] ?? null, 12_000)
+      .catch(() => null);
+    const shot = await runner.shot("cosmetic-craft");
+    return { action: "craft", outcome: outcome?.text ?? "no-feedback", shot };
   });
   return closeBackToSettings(runner, "WardrobeView");
 }
@@ -374,6 +484,41 @@ async function scenarioArena(runner) {
     const trophy = runner.find({ pathIncludes: "ArenaBoardView", kind: "label", textMatches: /^奖杯\s/u })[0];
     const shot = await runner.shot(`arena-${outcome}`);
     return { tile: tileName.slice("tile-".length), via: emptyLabel ? "empty-tile" : "own-tile", tapped, outcome, notice: notice.text, trophyLine: trophy?.text ?? null, shot };
+  });
+  await runner.step("点「刷新」重读棋盘（arena.board 查询面）", async () => {
+    const trophyBefore = runner.find({ pathIncludes: "ArenaBoardView", kind: "label", textMatches: /^奖杯\s/u })[0]?.text ?? null;
+    await runner.tapText("刷新", { pathIncludes: "ArenaBoardView" });
+    await sleep(1_200);
+    await runner.walk();
+    const trophyAfter = runner.find({ pathIncludes: "ArenaBoardView", kind: "label", textMatches: /^奖杯\s/u })[0]?.text ?? null;
+    const mine = runner.find({ pathIncludes: "ArenaBoardView", kind: "label", textMatches: /^\d+$/u }).length;
+    const shot = await runner.shot("arena-refreshed");
+    return { trophyBefore, trophyAfter, ownedTilesWithPower: mine, shot };
+  });
+  await runner.step("再点自己的格 = 加固（power +1、⛔ 不再发奖杯）", async () => {
+    await runner.walk();
+    const trophyBefore = runner.find({ pathIncludes: "ArenaBoardView", kind: "label", textMatches: /^奖杯\s/u })[0]?.text ?? null;
+    // 自己的格：格内第二行是数字（守备值），无主格是「无主」。
+    const powerLabel = runner.find({ kind: "label", textMatches: /^\d+$/u, pathIncludes: "tile-" })[0];
+    if (!powerLabel) throw new Error("找不到自己的格（格内应有守备数字）");
+    const tileName = powerLabel.path.match(/tile-[A-Z]\d+/u)?.[0];
+    const powerBefore = Number(powerLabel.text);
+    // 上一步的提示还挂在面板上：必须等**变化后**的提示，⛔ 不能匹配到旧文案（否则加固没发生也会“通过”）。
+    const noticeBefore = runner.find({ pathIncludes: "ArenaBoardView", kind: "label", textMatches: /已占领|失败|错误|稍后/u })[0]?.text ?? null;
+    const tile = runner.find({ name: tileName })[0];
+    await runner.tap(tile, tileName);
+    const notice = await runner.waitFor(
+      "加固结果提示（与上一条不同）",
+      (walk) => selectNodes(walk, { pathIncludes: "ArenaBoardView", kind: "label", textMatches: /已占领|失败|错误|稍后/u })
+        .find((node) => node.text !== noticeBefore) ?? null,
+    );
+    await sleep(600);
+    await runner.walk();
+    const trophyAfter = runner.find({ pathIncludes: "ArenaBoardView", kind: "label", textMatches: /^奖杯\s/u })[0]?.text ?? null;
+    const powerAfter = Number(runner.find({ name: tileName })[0] ? runner.find({ kind: "label", textMatches: /^\d+$/u, pathIncludes: tileName })[0]?.text ?? "0" : "0");
+    if (powerAfter !== powerBefore + 1) throw new Error(`加固后守备应 ${powerBefore} → ${powerBefore + 1}，实际 ${powerAfter}`);
+    const shot = await runner.shot("arena-reinforced");
+    return { tile: tileName?.slice("tile-".length), notice: notice.text, powerBefore, powerAfter, trophyBefore, trophyAfter, trophyUnchanged: trophyBefore === trophyAfter, shot };
   });
   return closeBackToSettings(runner, "ArenaBoardView");
 }
@@ -433,14 +578,28 @@ async function scenarioArenaShop(runner) {
     });
   }
   await runner.step("点「+守备」买加固（arenaShop.buyBoost → kit boostTile → tx.debit）", async () => {
-    await runner.tapText(/^\+守备/u, { pathIncludes: "ArenaShopView" });
+    // 自有格可能不止一块（每块一颗「+守备」）：取最上面那行，并把它对应的格子记进报告。
+    await runner.walk();
+    const buttons = runner.find({ pathIncludes: "ArenaShopView", kind: "label", textMatches: /^\+守备/u })
+      .sort((left, right) => left.center.y - right.center.y);
+    if (buttons.length === 0) throw new Error("商店里没有「+守备」按钮（没有自有格？）");
+    const rowLabel = nearestByRow(runner.find({ pathIncludes: "ArenaShopView", kind: "label", textMatches: /我方/u }), buttons[0]);
+    await runner.tap(buttons[0], `+守备 @ ${rowLabel?.text ?? "?"}`);
     const notice = await runner.waitFor(
       "购买结果提示",
       (walk) => selectNodes(walk, { pathIncludes: "ArenaShopView", kind: "label", textMatches: /守备\s*\d+|金币不足|不是你的|失败|错误|稍后|未就绪/u })[0] ?? null,
     );
     const outcome = /余额|重放/u.test(notice.text) ? "bought" : /金币不足/u.test(notice.text) ? "insufficient-balance" : /不是你的/u.test(notice.text) ? "not-owned" : "other";
     const shot = await runner.shot(`arenaShop-${outcome}`);
-    return { outcome, notice: notice.text, shot };
+    return { rows: buttons.length, row: rowLabel?.text ?? null, outcome, notice: notice.text, shot };
+  });
+  await runner.step("点「刷新」重读自有格（经 kit 的 board 面）", async () => {
+    await runner.tapText("刷新", { pathIncludes: "ArenaShopView" });
+    await sleep(1_200);
+    await runner.walk();
+    const rows = runner.find({ pathIncludes: "ArenaShopView", kind: "label", textMatches: /我方/u }).map((node) => node.text);
+    const shot = await runner.shot("arenaShop-refreshed");
+    return { rows, shot };
   });
   return closeBackToSettings(runner, "ArenaShopView");
 }
@@ -557,6 +716,7 @@ async function main() {
       cosmetic: scenarioCosmetic, arena: scenarioArena, arenaCapture: scenarioArenaCapture,
       arenaDuel: scenarioArenaDuel, arenaShop: scenarioArenaShop,
       snake: scenarioSnake, ballMove: scenarioBallMove,
+      areaList: scenarioAreaList, loginNotice: scenarioLoginNotice,
     };
     for (const name of scenarios) await table[name](runner);
     report.ok = true;
