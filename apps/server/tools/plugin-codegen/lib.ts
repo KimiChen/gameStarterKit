@@ -8,10 +8,13 @@
  *  - 发现 `apps/server/test/lobbyRpcVectors/<域>.ts` 向量 sidecar 并与 domain 集合双向对齐，渲染
  *    `lobbyRpcVectors/index.generated.ts`（§5.6：向量由 plugin 持有，两份 vectors 测试只消费此表，
  *    新增域 ⛔ 不再手改任何中央测试登记表）；
- *  - 渲染能力索引 `docs/plugins.generated.md`（§5.7 阶段 7：id/category/docs/结构状态，
+ *  - 渲染能力索引 `docs/plugins.generated.md`（§5.7 阶段 7：id/class/category/docs/结构状态，
  *    状态词汇表仅 planned/registered/source-present；⛔ 生成器不写 plan-*.md——
- *    `assertWriterOutputSetSafe` 对允许输出集合自检，塞进计划文件即红）。
- * freshness（--check 只读）与原子写盘（--write）对五件产物同一口径。
+ *    `assertWriterOutputSetSafe` 对允许输出集合自检，塞进计划文件即红）；
+ *  - 发现 `apps/kits/<id>/kit.json`（docs/KIT.md §3/§7，与插件同一 catalog），渲染 kit 登记的双端形态
+ *    `apps/shared/src/kits/catalog.generated.ts` + `apps/server/src/kits/catalog.generated.ts`（零 kit 时与占位相同），
+ *    并按登记面 `domains` 对域 descriptor 集做域名前缀规则交叉核对（KIT.md §2，viewCatalog.assertDomainOwnership）。
+ * freshness（--check 只读）与原子写盘（--write）对七件产物同一口径。
  *
  * §5.5 通用约束的落点（形态沿用 gameplay-codegen）：
  *  - 稳定排序（域按 id 排序、域内按声明序）⇒ 相同输入字节级相同输出；
@@ -46,7 +49,13 @@ import {
   type TypeRef,
 } from "./astReader";
 import {
+  KIT_CATALOG_SERVER_RELATIVE,
+  KIT_CATALOG_SHARED_RELATIVE,
+  KITS_DIR_RELATIVE,
   PLUGIN_INDEX_RELATIVE,
+  PLUGINS_DIR_RELATIVE,
+  assertDomainOwnership,
+  previousGeneratedKitIds,
   previousGeneratedPluginIds,
   previousGeneratedViewNames,
   readViewCatalog,
@@ -64,7 +73,7 @@ export const VECTORS_INDEX_RELATIVE = `${VECTORS_DIR_RELATIVE}/index.generated.t
 const VECTORS_TYPES_FILE = "vectorTypes.ts";
 
 const DOMAIN_ID = /^[a-z][A-Za-z0-9]{0,63}$/u;
-/** --allow-delete 同时接受域/plugin（camelCase）与 View 名（PascalCase）。 */
+/** --allow-delete 同时接受域/plugin/kit（camelCase）与 View 名（PascalCase）。 */
 const ALLOW_DELETE_ID = /^[A-Za-z][A-Za-z0-9]{0,63}$/u;
 const ROUTE_METHOD = /^[A-Za-z][A-Za-z0-9]{0,63}$/u;
 const ERROR_CODE = /^[A-Z][A-Z0-9_]{0,63}$/u;
@@ -737,7 +746,8 @@ export function previousRegistryDomains(options: PluginCodegenOptions = {}): rea
 // ── freshness 与写盘 ────────────────────────────────────────────────────────
 
 /** 生成器独占所有权面：lobbyRpc/、apps/client/src/generated/ 与 test/lobbyRpcVectors/ 下的全部
- *  *.generated.ts，外加能力索引 docs/plugins.generated.md；预期之外的即 extra。 */
+ *  *.generated.ts，外加能力索引 docs/plugins.generated.md 与 kit 登记双端生成物（精确两个文件：
+ *  ⛔ 不递归 kits/ 命名空间，kit 自己的生成物不归本生成器）；预期之外的即 extra。 */
 function collectOwnedFiles(root: string): readonly string[] {
   const out: string[] = [];
   const walk = (dir: string, base: string): void => {
@@ -751,7 +761,9 @@ function collectOwnedFiles(root: string): readonly string[] {
   walk(path.join(root, LOBBY_RPC_DIR_RELATIVE), root);
   walk(path.join(root, "apps/client/src/generated"), root);
   walk(path.join(root, VECTORS_DIR_RELATIVE), root);
-  if (fs.existsSync(path.join(root, PLUGIN_INDEX_RELATIVE))) out.push(PLUGIN_INDEX_RELATIVE);
+  for (const relative of [PLUGIN_INDEX_RELATIVE, KIT_CATALOG_SHARED_RELATIVE, KIT_CATALOG_SERVER_RELATIVE]) {
+    if (fs.existsSync(path.join(root, relative))) out.push(relative);
+  }
   return [...new Set(out)].sort();
 }
 
@@ -759,13 +771,15 @@ function collectOwnedFiles(root: string): readonly string[] {
 
 /**
  * writer 输出路径的显式允许形态：protocol/lobbyRpc 与客户端 generated/ 的 `*.generated.ts`
- * + 能力索引 `docs/plugins.generated.md`。集合外的任何路径都拒绝。
+ * + 能力索引 `docs/plugins.generated.md` + kit 登记双端生成物（精确两个路径）。集合外的任何路径都拒绝。
  */
 const WRITER_OUTPUT_ALLOWED = [
   /^apps\/shared\/src\/protocol\/lobbyRpc\/[A-Za-z0-9_/.-]*\.generated\.ts$/u,
   /^apps\/client\/src\/generated\/[A-Za-z0-9_.-]+\.generated\.ts$/u,
   /^docs\/plugins\.generated\.md$/u,
   /^apps\/server\/test\/lobbyRpcVectors\/index\.generated\.ts$/u,
+  /^apps\/shared\/src\/kits\/catalog\.generated\.ts$/u,
+  /^apps\/server\/src\/kits\/catalog\.generated\.ts$/u,
 ] as const;
 
 /**
@@ -780,7 +794,7 @@ export function assertWriterOutputSetSafe(outputs: readonly string[]): void {
       fail(normalized, "当前计划文件（plan-*.md）不得进入生成器允许输出集合——验收与实跑证据由人工维护（§5.7）");
     }
     if (!WRITER_OUTPUT_ALLOWED.some((pattern) => pattern.test(normalized))) {
-      fail(normalized, "不在生成器允许输出集合内（lobbyRpc/客户端 generated 的 *.generated.ts + docs/plugins.generated.md + lobbyRpcVectors/index.generated.ts）");
+      fail(normalized, "不在生成器允许输出集合内（lobbyRpc/客户端 generated 的 *.generated.ts + docs/plugins.generated.md + lobbyRpcVectors/index.generated.ts + {shared,server}/src/kits/catalog.generated.ts）");
     }
   }
 }
@@ -810,6 +824,7 @@ export function assertPluginArtifactsFresh(options: PluginCodegenOptions = {}): 
   const descriptors = readPluginDescriptors(options);
   assertDomainContractVersionBumped(descriptors, previousDomainContracts(options));
   const catalog = readViewCatalog(root);
+  assertDomainOwnership(descriptors.domains.map((domain) => domain.domain), catalog.plugins);
   const expected = renderPluginArtifacts(descriptors, catalog);
   assertWriterOutputSetSafe([...expected.keys()]);
   const { stale, missing, extra } = diffArtifacts(root, expected);
@@ -832,8 +847,10 @@ function atomicWrite(file: string, content: string): void {
 }
 
 /**
- * 写盘。已登记而真源消失的域 / plugin / View 必须显式 `--allow-delete <id>`；
- * 普通 `--write` 不得静默接受整个域、plugin 或 View 消失。
+ * 写盘。已登记而真源消失的域 / plugin / kit / View 必须显式 `--allow-delete <id>`；
+ * 普通 `--write` 不得静默接受整个域、plugin、kit 或 View 消失（kit 与 plugin 同一口径：
+ * 它既在 PLUGIN_IDS 也在 KIT_CATALOG，两处锚任一命中都要求显式删除）。同一 id 换类别
+ * （plugin ⇄ kit：共享 id 空间与锁目录 scripts/packages/）与删除同等重大，两个方向都要显式 --allow-delete。
  */
 export function writePluginArtifacts(options: PluginCodegenOptions = {}): PluginWriteResult {
   const root = resolvedRoot(options);
@@ -841,17 +858,27 @@ export function writePluginArtifacts(options: PluginCodegenOptions = {}): Plugin
   const descriptors = readPluginDescriptors(options);
   assertDomainContractVersionBumped(descriptors, previousDomainContracts(options));
   const catalog = readViewCatalog(root);
+  assertDomainOwnership(descriptors.domains.map((domain) => domain.domain), catalog.plugins);
   const currentIds = new Set(descriptors.domains.map((domain) => domain.domain));
   const removed = previousRegistryDomains(options).filter((id) => !currentIds.has(id));
   const currentPluginIds = new Set(catalog.plugins.map((plugin) => plugin.id));
-  const removedPlugins = previousGeneratedPluginIds(root).filter((id) => !currentPluginIds.has(id));
+  const currentKitIds = new Set(catalog.plugins.filter((unit) => unit.class === "kit").map((unit) => unit.id));
+  const previousKitIds = previousGeneratedKitIds(root);
+  const previousPluginIds = previousGeneratedPluginIds(root);
+  // PLUGIN_IDS 不带 class：既在 PLUGIN_IDS 又不在 KIT_CATALOG 的 id 才是「原来是 plugin」。
+  const previousPluginOnlyIds = previousPluginIds.filter((id) => !previousKitIds.includes(id));
+  const removedPlugins = [...new Set([...previousPluginIds, ...previousKitIds])]
+    .filter((id) => !currentPluginIds.has(id)
+      || (previousKitIds.includes(id) && !currentKitIds.has(id))
+      || (previousPluginOnlyIds.includes(id) && currentKitIds.has(id)));
   const currentViewNames = new Set(catalog.entries.map((entry) => entry.name));
   const removedViews = previousGeneratedViewNames(root).filter((name) => !currentViewNames.has(name));
-  const refused = [...removed, ...removedPlugins, ...removedViews].filter((id) => !allowDelete.has(id));
+  // 同一 id 可能同时是域与 kit（kit 声明与自己同名的域是常态）：去重后再判，--allow-delete <id> 一次覆盖两处。
+  const refused = [...new Set([...removed, ...removedPlugins, ...removedViews])].filter((id) => !allowDelete.has(id));
   if (refused.length > 0) {
     fail(
-      `${DOMAINS_DIR_RELATIVE} + plugins/`,
-      `已登记但真源消失的域/plugin/View：${refused.join(", ")}。`
+      `${DOMAINS_DIR_RELATIVE} + ${PLUGINS_DIR_RELATIVE} + ${KITS_DIR_RELATIVE}`,
+      `已登记但真源消失的域/plugin/kit/View：${refused.join(", ")}。`
       + "删除需要显式 --allow-delete <id>",
     );
   }
@@ -872,7 +899,7 @@ export function writePluginArtifacts(options: PluginCodegenOptions = {}): Plugin
   }
   return {
     changed,
-    deleted: [...removed, ...removedPlugins, ...removedViews].filter((id) => allowDelete.has(id)),
+    deleted: [...new Set([...removed, ...removedPlugins, ...removedViews])].filter((id) => allowDelete.has(id)),
   };
 }
 

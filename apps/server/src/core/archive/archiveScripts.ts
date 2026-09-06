@@ -14,6 +14,11 @@
  * `kits`，键 `<kitId>:<name>`）、被 FREEZE_COMMIT UNLINK、由 THAW_RESTORE 恢复。KEYS 布局：**固定头与 bag 位置
  * 不变，kit 键追加在 bag 之后**，kit 数量经 ARGV 传入——既有的 KEYS/ARGV 断言只改算术项。目录是可注入参数
  * （缺省生成物 `SERVER_KIT_CATALOG`），单测注入 fixture kit。
+ *
+ * **kit 键的并发守卫**：FREEZE_COMMIT 对快照过期的判据是 `user.ver`（relayer 的 APPLY_EFFECT 每次写 bag 都 bump 它），
+ * 所以 kit per-user 键的写侧必须遵守 `kKitUser` 注释里的硬契约（持 `withUserLock` 或同条 Lua 内 `user` 存在检查 +
+ * `HINCRBY ver`）。作为廉价的第二道闸，freeze 把快照里每个 kit 键的字段数（缺席 = 0）经 ARGV 传入，Lua 里逐键
+ * `HLEN` 比对——窗口内的创建 / 删除 / 增删字段都会让本轮 'changed' 放弃；只改既有字段值的漂移仍只有 ver 规则能拦。
  */
 import { SCHEMA_VERSION } from "../infra/config";
 import {
@@ -118,8 +123,21 @@ export const unknownSnapshotKits = (
   return Object.keys(snapshot.kits ?? {}).filter((name) => !known.has(name));
 };
 
+/**
+ * FREEZE_COMMIT 的 ARGV kit 段：目录序每个 kit 键在快照里的字段数（缺席 = "0"），与 `freezeKeys` 的 kit 段一一对应。
+ * Lua 里逐键 `HLEN` 比对，任一不等即 'changed'（快照读取后该键被创建 / 删除 / 增删字段）。
+ */
+export const freezeKitFieldCounts = (
+  uid: string,
+  snapshotKits: ArchiveSnapshot["kits"],
+  catalog: readonly ServerKitCatalogEntry[] = SERVER_KIT_CATALOG,
+): string[] => kitUserKeyEntries(uid, catalog)
+  .map((entry) => String(Object.keys(snapshotKits?.[entry.name] ?? {}).length));
+
 /** FREEZE_COMMIT 的固定头长度（lock/user/fence/proof/sess/applied/payload）；bag 从 KEYS[8] 起。 */
 export const FREEZE_FIXED_KEYS = 7;
+/** FREEZE_COMMIT 的固定 ARGV 数（myFence/verAtRead/freezeId/kitCount）；kit 字段数从 ARGV[5] 起。 */
+export const FREEZE_FIXED_ARGV = 4;
 /** THAW_RESTORE 的固定头长度（lock/user/fence/proof/applied/payload）；bag 从 KEYS[7] 起。 */
 export const THAW_FIXED_KEYS = 6;
 /** THAW_RESTORE 的固定 ARGV 数（myFence/hwm/json/overwrite/freezeId/kitCount）；kit 成员名从 ARGV[7] 起。 */
@@ -169,6 +187,10 @@ return 'ok'
  * 反超 fence_hwm，thaw 绝对写回 hwm = 计数**回退**，滞留 writer 的大号 fence 就能穿过
  * hash 字段 CAS（僵尸写被重新接受）。保留计数器 + thaw 侧 MAX 双保险闭死此窗口。
  *
+ * kit 键（KEYS[8+B..]）的守卫：ver 之外再逐键 `HLEN` 比对 ARGV 里的快照字段数（缺席 = 0）——窗口内不 bump ver
+ * 的 kit 直写若改变了键的存在性或字段数，本轮 'changed'（写侧硬契约见 `kKitUser`；值级漂移仍只有 ver 规则能拦）。
+ * 键在窗口内变成非 HASH 时 `HLEN` 以 WRONGTYPE 报错，脚本中止在任何 UNLINK 之前（fail-closed）。
+ *
  * 返回 'ok' | 'lost'（锁已易主）| 'changed'（快照已过期）| 'active'（扫描后有登录写入）。
  */
 export const FREEZE_COMMIT = defineScript("freezeCommit", `
@@ -176,15 +198,26 @@ export const FREEZE_COMMIT = defineScript("freezeCommit", `
 -- KEYS[5]=sess:{uid}:sN KEYS[6]=applied:{uid} KEYS[7]=applied:payload:{uid}
 -- KEYS[8..7+B]=bag:{uid}:0..B-1  KEYS[8+B..]=kt:<kitId>:<name>:{uid}（K 个，B = #KEYS-7-K）
 -- ARGV[1]=myFence ARGV[2]=verAtRead ARGV[3]=freezeId ARGV[4]=kitCount(K)
+-- ARGV[5..4+K]=快照里各 kit 键的字段数（缺席 = 0，与 KEYS[7+B+i] 一一对应）
 local kitCount = tonumber(ARGV[4])
 if kitCount == nil or kitCount < 0 or kitCount ~= math.floor(kitCount) or #KEYS < 8 + kitCount then
   return redis.error_reply('archive freeze kit count')
 end
+if #ARGV ~= 4 + kitCount then return redis.error_reply('archive freeze kit field counts') end
+local bagLast = #KEYS - kitCount
 if redis.call('GET', KEYS[1]) ~= ARGV[1] then return 'lost' end
 if redis.call('HGET', KEYS[2], 'ver') ~= ARGV[2] then return 'changed' end
 if redis.call('HGET', KEYS[2], 'schemaVersion') ~= '${SCHEMA_VERSION}' then return 'changed' end
 if redis.call('HEXISTS', KEYS[4], ARGV[3]) ~= 1 then return 'unprepared' end
 if redis.call('EXISTS', KEYS[5]) == 1 then return 'active' end
+-- kit 键第二道闸：快照读取后被创建 / 删除 / 增删字段的键让本轮放弃（HLEN 对缺席键返回 0，对非 HASH 报错中止）
+for i = 1, kitCount do
+  local expectedLen = tonumber(ARGV[4 + i])
+  if expectedLen == nil or expectedLen < 0 or expectedLen ~= math.floor(expectedLen) then
+    return redis.error_reply('archive freeze kit field counts')
+  end
+  if redis.call('HLEN', KEYS[bagLast + i]) ~= expectedLen then return 'changed' end
+end
 -- ⛔ KEYS[3]=fence 与 KEYS[4]=archive proof 均保留：前者防发号回退，后者按 freeze_id 证明分支同源。
 -- KEYS[8..] = bag 分片 + 追加其后的 kit per-user 键：一并 UNLINK（快照已含它们）
 redis.call('UNLINK', KEYS[2], KEYS[6], KEYS[7])
@@ -481,16 +514,24 @@ export async function prepareArchiveCandidate(
   throw new Error(`prepareArchiveCandidate 返回非法结果：${String(result)}`);
 }
 
-/** freezeCommit 包装：'changed' = 快照期间有玩法写（如 relayer applyEffect），放弃本轮。 */
+/**
+ * freezeCommit 包装：'changed' = 快照期间有玩法写（如 relayer applyEffect）或 kit 键存在性 / 字段数变化，放弃本轮。
+ * `snapshotKits` 是刚读到的快照 `kits` 成员（pre-K0 形态 / 全缺席时 undefined）：逐键字段数进 ARGV 供 Lua HLEN 比对。
+ */
 export async function freezeCommit(
   uid: string, sId: number, myFence: number, verAtRead: string, freezeId: string,
+  snapshotKits: ArchiveSnapshot["kits"],
   catalog: readonly ServerKitCatalogEntry[] = SERVER_KIT_CATALOG,
 ): Promise<"ok" | "lost" | "changed" | "active"> {
   const keys = freezeKeys(uid, sId, catalog);
+  const kitFieldCounts = freezeKitFieldCounts(uid, snapshotKits, catalog);
   const kitCount = keys.length - FREEZE_FIXED_KEYS - kBagAll(uid).length;
+  if (kitFieldCounts.length !== kitCount) {
+    throw new Error(`freezeCommit kit 段不一致 uid=${uid}：KEYS ${kitCount} 个 vs 字段数 ${kitFieldCounts.length} 个`);
+  }
   const result = await evalshaWithReload(
     clientFor(uid), FREEZE_COMMIT, keys,
-    [String(myFence), verAtRead, freezeId, String(kitCount)],
+    [String(myFence), verAtRead, freezeId, String(kitCount), ...kitFieldCounts],
   );
   if (result === "ok" || result === "lost" || result === "changed" || result === "active") {
     return result;

@@ -141,9 +141,16 @@ export const kPluginShared = (pluginId: string, name: string, scope: PluginKeySc
 /** kit 键的分区语义（与 GameplayKeyScope 同形：⛔ 无隐式缺省，理由见 GameplayKeyScope）。 */
 export type KitKeyScope = GameplayKeyScope;
 
-/** kit 分段字面量闸：与玩法键 / plugin 键同一规则（`kKitShared` 的 shard 段同样过闸），错误信息点名 kKit。 */
+/**
+ * kit 分段字面量的**唯一**判据（与玩法键 / plugin 键同一规则）：`assertKitKeySegment` 与冷档快照校验器
+ * （archive/lazyMigrate.ts 的 `kits` 成员名）都从这里取——⛔ 不得再复制正则，否则校验器放行的名字会在
+ * thaw 建 KEYS 时被 `kKitUser` 拒绝（校验已过、Lua 未跑的中途失败）。
+ */
+export const isKitKeySegment = (value: string): boolean => /^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(value);
+
+/** kit 分段字面量闸（`kKitShared` 的 shard 段同样过闸），错误信息点名 kKit。 */
 const assertKitKeySegment = (value: string, label: string): void => {
-  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(value)) {
+  if (!isKitKeySegment(value)) {
     throw new Error(`kKit ${label} "${value}" 非法：只允许 [A-Za-z0-9._-] 且首字符为字母数字（分段不得含 ':' / '{' / '}'）`);
   }
 };
@@ -158,6 +165,13 @@ const assertKitKeySegment = (value: string, label: string): void => {
  *
  * 冷档：`name` ∈ `kit.json.userKeys` 且 `{ zone: "per-zone" }` 的键由 freeze 快照、UNLINK，thaw 恢复（KIT.md §5）；
  * 快照要求它是 HASH（或不存在），其它类型 freeze 拒绝。
+ *
+ * ⚠ **写侧硬契约（冷档正确性的前提，与 bag 只走 APPLY_EFFECT 的理由相同）**：对 `userKeys` per-user HASH 的每一次
+ * 写都必须满足二者之一——(a) 在 `withUserLock(uid)` 内进行；或 (b) 在同一条 Lua 里先确认 `user:{uid}` 存在
+ * （缺席返回 'cold'，⛔ 不得给冷档用户凭空创建 kt: 键——否则 thaw 会因「目标非空」拒绝恢复，该用户被锁死）
+ * 并 `HINCRBY user:{uid} ver 1`。理由：FREEZE_COMMIT 在快照读取与 UNLINK 之间只靠 `user.ver`（再加各 kt: 键的
+ * HLEN 计数）判快照是否过期，不持锁也不 bump ver 的直写会在窗口内落地后被一并 UNLINK（写丢失、档里也没有）。
+ * 跨用户写（如别的玩家的行动改本 uid 的键）同样受此约束。kit-api 的 effect apply 路径必须按此实现。
  */
 export function kKitUser(kitId: string, name: string, uid: string, scope: KitKeyScope): string {
   assertKitKeySegment(kitId, "kitId"); assertKitKeySegment(name, "name");

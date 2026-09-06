@@ -11,9 +11,10 @@ import { test } from "node:test";
 import { BAG_SHARDS, SCHEMA_VERSION } from "../src/core/infra/config";
 import { kBagAll, kKitUser, zoneCtx } from "../src/core/infra/keys";
 import {
-  FREEZE_COMMIT, FREEZE_FIXED_KEYS, THAW_FIXED_ARGV, THAW_FIXED_KEYS, THAW_RESTORE,
-  freezeKeys, kitUserKeyEntries, thawKeys, unknownSnapshotKits, type ArchiveSnapshot,
+  FREEZE_COMMIT, FREEZE_FIXED_ARGV, FREEZE_FIXED_KEYS, THAW_FIXED_ARGV, THAW_FIXED_KEYS, THAW_RESTORE,
+  freezeKeys, freezeKitFieldCounts, kitUserKeyEntries, thawKeys, unknownSnapshotKits, type ArchiveSnapshot,
 } from "../src/core/archive/archiveScripts";
+import { readKitUserHashes, type KitHashReader } from "../src/core/archive/freezeWorker";
 import { lazyMigrateSchema, validateArchiveSnapshotSchema } from "../src/core/archive/lazyMigrate";
 import type { ServerKitCatalogEntry } from "../src/kits/catalogTypes";
 
@@ -118,10 +119,67 @@ test("thawKeys：快照 ∪ 目录取并集按名排序；名单与 KEYS 的 kit
   assert.throws(() => thawKeys("u1", { kits: { "a{x}:b": {} } }, FIXTURE), /kKit kitId/u);
 });
 
+test("freezeKitFieldCounts：目录序逐键字段数，缺席 = 0；pre-K0 / 全缺席（undefined）全 0；空目录为空", () => {
+  const kits: ArchiveSnapshot["kits"] = { "arena:tileOwner": { t1: "u1", t2: "u2", n: "007" }, "zeta:wallet": {} };
+  assert.deepEqual(freezeKitFieldCounts("u1", kits, FIXTURE), ["3", "0", "0"], "arena:marchQueue 缺席 = 0");
+  assert.deepEqual(freezeKitFieldCounts("u1", undefined, FIXTURE), ["0", "0", "0"]);
+  assert.deepEqual(freezeKitFieldCounts("u1", kits, []), [], "空目录：ARGV 无 kit 段（字节形状同 pre-K0）");
+  // 快照里有、目录里没有的成员不进 ARGV（freeze KEYS 只按目录展开，两侧长度恒等）
+  assert.equal(
+    freezeKitFieldCounts("u1", { "ghost:old": { a: "1" } }, FIXTURE).length,
+    kitUserKeyEntries("u1", FIXTURE).length,
+  );
+});
+
+/** 桩 client：只实现快照读侧用到的四个命令；hscan 不该被触发（字段数 ≤ WHALE_FIELDS）。 */
+const stubReader = (keys: Record<string, { type: string; fields?: Record<string, string> }>): KitHashReader => {
+  const lookup = (key: string) => keys[key] ?? { type: "none" };
+  return {
+    type: async (key: string) => lookup(key).type,
+    hlen: async (key: string) => Object.keys(lookup(key).fields ?? {}).length,
+    hgetall: async (key: string) => ({ ...(lookup(key).fields ?? {}) }),
+    hscan: async () => { throw new Error("stub hscan 不应被调用"); },
+  } as unknown as KitHashReader;
+};
+
+test("readKitUserHashes 读侧第二道闸：缺席不占位、HASH 全字段进快照、全缺席返回 undefined、非 HASH 具名拒冻", async () => {
+  const [tile, march, wallet] = kitUserKeyEntries("u1", FIXTURE).map((entry) => entry.key);
+  assert.deepEqual(
+    await readKitUserHashes(stubReader({ [tile]: { type: "hash", fields: { t1: "u1", n: "007" } } }), "u1", FIXTURE),
+    { "arena:tileOwner": { t1: "u1", n: "007" } },
+    "只收录存在的键；值保持原始字符串",
+  );
+  assert.equal(await readKitUserHashes(stubReader({}), "u1", FIXTURE), undefined, "全缺席 = 快照不带 kits 成员");
+  assert.equal(await readKitUserHashes(stubReader({ [tile]: { type: "hash" } }), "u1", []), undefined, "空目录不读任何键");
+  // resolve 的 TYPE 闸与本函数之间键类型被翻转（string / list / zset）：具名错误、不产出快照
+  for (const type of ["string", "list", "zset"]) {
+    await assert.rejects(
+      readKitUserHashes(stubReader({ [tile]: { type: "hash", fields: { t1: "u1" } }, [march]: { type } }), "u1", FIXTURE),
+      new RegExp(`\\[freeze\\] kit 键类型非法 uid=u1 key=arena:marchQueue type=${type}`, "u"),
+    );
+  }
+  assert.deepEqual(
+    await readKitUserHashes(stubReader({ [wallet]: { type: "hash", fields: { coin: "5" } } }), "u1", FIXTURE),
+    { "zeta:wallet": { coin: "5" } },
+  );
+});
+
 test("Lua 模板：FREEZE_COMMIT / THAW_RESTORE 的 KEYS/ARGV 算术项与 TS 常量一致", () => {
   const freeze = FREEZE_COMMIT.lua;
-  assert.match(freeze, /local kitCount = tonumber\(ARGV\[4\]\)/u);
+  assert.equal(FREEZE_FIXED_ARGV, 4);
+  assert.match(freeze, new RegExp(`local kitCount = tonumber\\(ARGV\\[${FREEZE_FIXED_ARGV}\\]\\)`, "u"));
   assert.match(freeze, new RegExp(`#KEYS < ${FREEZE_FIXED_KEYS + 1} \\+ kitCount`, "u"));
+  assert.match(freeze, new RegExp(`#ARGV ~= ${FREEZE_FIXED_ARGV} \\+ kitCount`, "u"), "ARGV kit 段长度 = kitCount");
+  assert.match(freeze, /local bagLast = #KEYS - kitCount/u);
+  assert.match(
+    freeze,
+    new RegExp(`local expectedLen = tonumber\\(ARGV\\[${FREEZE_FIXED_ARGV} \\+ i\\]\\)[\\s\\S]*?redis\\.call\\('HLEN', KEYS\\[bagLast \\+ i\\]\\) ~= expectedLen then return 'changed'`, "u"),
+    "kit 键第二道闸：快照字段数 vs 当前 HLEN，不等即 'changed'",
+  );
+  assert.ok(
+    freeze.indexOf("'HLEN', KEYS[bagLast + i]") < freeze.indexOf("redis.call('UNLINK'"),
+    "HLEN 闸必须在任何 UNLINK 之前",
+  );
   assert.match(freeze, new RegExp(`for i = ${FREEZE_FIXED_KEYS + 1}, #KEYS do redis\\.call\\('UNLINK', KEYS\\[i\\]\\) end`, "u"));
   assert.doesNotMatch(freeze, /redis\.call\('DEL'/u, "模块统一 UNLINK");
 

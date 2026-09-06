@@ -5,8 +5,8 @@
  *  - late subscriber 能立即读取连接状态（订阅即回放）；
  *  - app destroy 后 connection/session/route/ticker 订阅计数归零；
  *  - 静态门禁雏形：plugin fixture ⛔ 不得值导入 WebSocketClient/RoomClient/cc/
- *    fairygui/colyseus（覆盖 test/fixtures 与 src/plugins，形态参考 serverImportBan）；
- *    src/plugins/<id>/view/** 是引擎绑定层，只豁免 cc/fairygui，transport 仍禁。
+ *    fairygui/colyseus（覆盖 test/fixtures、src/plugins 与 src/kits，形态参考 serverImportBan）；
+ *    src/{plugins,kits}/<id>/view/** 是引擎绑定层，只豁免 cc/fairygui，transport 仍禁。
  */
 import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -186,6 +186,8 @@ test("app destroy：connection/session/route/ticker 订阅计数归零", async (
 const HERE = fileURLToPath(new URL(".", import.meta.url));
 const FIXTURES_DIR = join(HERE, "fixtures");
 const FUTURE_PLUGINS_DIR = join(HERE, "../src/plugins");
+/** kit 自持目录（docs/KIT.md §2）与插件同一门禁。 */
+const FUTURE_KITS_DIR = join(HERE, "../src/kits");
 
 /** 值导入禁令：允许 `import type`，禁止其余形态引入 transport/引擎模块。 */
 const BANNED_VALUE_IMPORT =
@@ -203,7 +205,7 @@ function collectTs(dir: string): string[] {
 }
 
 /**
- * plugin 目录下的 View（`src/plugins/<id>/view/**`，经 .view.json sidecar 登记进 ViewMgr catalog）
+ * plugin / kit 目录下的 View（`src/{plugins,kits}/<id>/view/**`，经 .view.json sidecar 登记进 ViewMgr catalog）
  * 是引擎绑定层（铁律 9），cc/fairygui 值导入是其职责本身；对它们只禁 transport（net 客户端 /
  * colyseus）——能力仍只经 ports（logic 层由 logic-purity 另闸 cc/fairygui）。
  */
@@ -211,10 +213,10 @@ const BANNED_VALUE_IMPORT_VIEW =
   /(?:^|\n)\s*import\s+(?!type\b)[^;]*?from\s*["'](?:[^"']*\/net\/WebSocketClient|[^"']*\/net\/RoomClient|colyseus|@colyseus\/[^"']*)["']|require\s*\(\s*["'](?:colyseus|@colyseus\/[^"']*)["']\s*\)/;
 
 const isPluginViewFile = (file: string): boolean =>
-  /[\\/]src[\\/]plugins[\\/][^\\/]+[\\/]view[\\/]/.test(file);
+  /[\\/]src[\\/](?:plugins|kits)[\\/][^\\/]+[\\/]view[\\/]/.test(file);
 
-test("静态门禁：plugin fixture（与 src/plugins）不得值导入 WebSocketClient/RoomClient/cc/fairygui；plugin View 只豁免引擎模块", () => {
-  const files = [...collectTs(FIXTURES_DIR), ...collectTs(FUTURE_PLUGINS_DIR)];
+test("静态门禁：plugin fixture（与 src/plugins、src/kits）不得值导入 WebSocketClient/RoomClient/cc/fairygui；plugin/kit View 只豁免引擎模块", () => {
+  const files = [...collectTs(FIXTURES_DIR), ...collectTs(FUTURE_PLUGINS_DIR), ...collectTs(FUTURE_KITS_DIR)];
   assert.ok(files.length >= 1, "扫描目标为空：fixtures 目录丢失（门禁空转）");
   for (const file of files) {
     const source = readFileSync(file, "utf8");
@@ -229,6 +231,10 @@ test("静态门禁：plugin fixture（与 src/plugins）不得值导入 WebSocke
   assert.ok(isPluginViewFile("/x/src/plugins/redeem/view/RedeemView.ts"));
   assert.ok(!isPluginViewFile("/x/src/plugins/redeem/logic/RedeemLogic.ts"));
   assert.ok(!isPluginViewFile("/x/src/plugins/redeem/index.ts"));
+  assert.ok(isPluginViewFile("/x/src/kits/arena/view/BoardView.ts"));
+  assert.ok(!isPluginViewFile("/x/src/kits/arena/logic/BoardLogic.ts"));
+  assert.ok(!isPluginViewFile("/x/src/kits/arena/index.ts"));
+  assert.ok(!isPluginViewFile("/x/src/kitsx/arena/view/BoardView.ts"), "只认 plugins/ 与 kits/ 两个命名空间");
   assert.match('\nimport { RoomClient } from "../../../net/RoomClient";\n', BANNED_VALUE_IMPORT_VIEW);
   assert.doesNotMatch('\nimport { Node } from "cc";\n', BANNED_VALUE_IMPORT_VIEW);
 });

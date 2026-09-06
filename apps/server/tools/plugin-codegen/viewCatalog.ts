@@ -2,8 +2,11 @@
  * View/FGUI catalog 读取与渲染（Non-intrusive §7.1/§7.4/§7.5 阶段 6）。
  *
  * 输入（唯一真源）：
- *  - `apps/plugins/<id>/plugin.json`（宿主自有 plugin）∪ `apps/plugins/<id>/plugin.json`（插件；PLUGIN.md §5.5
- *    阶段 1：插件的登记面收进自己的目录），都经 apps/server/tools/plugin/plugin-schema-v2.json 真实 JSON Schema 校验；
+ *  - `apps/plugins/<id>/plugin.json`（class "plugin"：宿主自有插件与安装进来的插件同一根，PLUGIN.md §5.5
+ *    阶段 1）∪ `apps/kits/<id>/kit.json`（class "kit"，docs/KIT.md §3/§7；根可缺席），分别经
+ *    apps/server/tools/plugin/{plugin-schema-v2,kit-schema-v1}.json 真实 JSON Schema 校验（两份 schema 一个解释器）；
+ *    两类单元共享 id 空间（大小写归一唯一）与保留字；kit 的 class 对 PluginHost 不可见——它与插件一样进
+ *    GENERATED_PLUGINS / PLUGIN_IDS / 菜单贡献；
  *  - 每个 View 同目录的 `<Name>View.view.json` sidecar（手写 metadata，逐字进产物）；
  *  - `apps/art/fairygui/assets` 的 FGUI XML（复用 tools/fgui-codegen 的 parseFgui/binding
  *    计算 direct required；⛔ 不执行任何客户端 TS）。
@@ -16,10 +19,20 @@
  *    cocos View（BallMove/SnakeWorld 这类玩法表现件）只进源文件清单，不进 catalog；
  *  - `apps/client/src/generated/plugins.generated.ts`：plugin/route/menu contribution 数据
  *    （menu 只声明身份，排序 pluginId → entryId；位置归宿主 `apps/plugins/host.json`，渲染为
- *    GENERATED_HOST：defaultLaunch + 首屏 home placement，docs/PLUGIN.md §6）。
+ *    GENERATED_HOST：defaultLaunch + 首屏 home placement，docs/PLUGIN.md §6）；
+ *  - `apps/shared/src/kits/catalog.generated.ts`（KIT_CATALOG / KIT_EFFECT_KINDS）与
+ *    `apps/server/src/kits/catalog.generated.ts`（SERVER_KIT_CATALOG：多 sqlFiles / sqlTables / userKeys）：
+ *    kit 登记的双端形态（docs/KIT.md §3/§5）；零 kit 时与占位生成物字节相同。
+ *
+ * kit 相对插件多出来的闸（docs/KIT.md §4/§7）：`kit.json.modes[]` ≡ `apps/kits/<id>/gameplays/` 子目录集
+ * （id 与 constantName 逐个相等）；插件 `requires.kits` 的每个 kit 必须已发现、每个 api 面必须存在且
+ * `minSupported ≤ 声明 ≤ version`，随后并入 PluginHost 的 dependencies（有 client entry 的 kit 先装载，⛔ 不写两遍：
+ * 插件 `dependencies` 直接点名 kit 即拒绝，requires.kits 是插件依赖 kit 的唯一通道）；kit 的 `dependencies` 必须为空
+ * （§1：kit 只依赖框架；v0 无 kit-on-kit，也 ⛔ 不得反向依赖插件）；
+ * 域名前缀规则（§2，对插件同样生效）见 assertDomainOwnership（由 lib.ts 在拿到域 descriptor 集后调用）。
  *
  * 校验 fail-fast（§7.5）：重复 qualified View id、一 View 一 manifest、logic 路径存在且位于
- * owner 声明目录、sidecar⇔View 文件双向（viewDirs 递归发现，未登记红）、`ui://` 引用 ⊆
+ * owner 声明目录（中央 logic/、plugins/<id>/ 或 kits/<id>/）、sidecar⇔View 文件双向（viewDirs 递归发现，未登记红）、`ui://` 引用 ⊆
  * 自身∪sharedPkgs、sharedPkgs ⊇ art 传递闭包∪assetUrls 所属包、package/component 重复引用
  * 仅允许显式 aliasOf、路径越界/符号链接拒绝、plugin 依赖环拒绝。
  *
@@ -32,40 +45,67 @@ import ts from "typescript";
 import { parseFguiComponent } from "../../../../tools/fgui-codegen/parseFgui";
 import { bindingFields } from "../../../../tools/fgui-codegen/binding";
 import {
+  parseKitRegistration,
   parsePluginRegistration,
   readHostManifest,
+  type KitRegistration,
   type PluginRegistration,
   type PluginManifestLaunch,
   type HostManifest,
+  type UnitClass,
 } from "./pluginManifestSchema";
 
 /** 插件根（PLUGIN.md §5.5）：宿主自有插件与安装进来的插件都在 `apps/plugins/<id>/plugin.json`，目录名 = id。 */
 export const PLUGINS_DIR_RELATIVE = "apps/plugins";
+/** kit 根（docs/KIT.md §2/§7）：`apps/kits/<id>/kit.json`，目录名 = id；根可缺席（当前真仓无 kit）。 */
+export const KITS_DIR_RELATIVE = "apps/kits";
+/** kit 自带玩法单源子目录：`apps/kits/<id>/gameplays/<modeId>/{manifest.json,state.json}`（gameplay-codegen 的第三发现根同名）。 */
+export const KIT_GAMEPLAYS_SUBDIR = "gameplays";
 const PLUGIN_DIR_NAME = /^[a-z][A-Za-z0-9]{0,63}$/u;
-/** 保留目录名：与宿主 placement 文件 / 注册表配置同名会混淆（PLUGIN-REGISTRY §2.2）。 */
+/** 保留目录名（两类单元共用）：与宿主 placement 文件 / 注册表配置同名会混淆（PLUGIN-REGISTRY §2.2）。 */
 const RESERVED_PLUGIN_IDS = new Set(["host", "registry"]);
 
 interface PluginSource {
+  readonly class: UnitClass;
   readonly label: string;
   readonly dirLabel: string;
   readonly file: string;
   readonly dirName: string;
 }
 
-/** 唯一发现根：apps/plugins/<id>/plugin.json（每个子目录都必须是插件；没有 plugin.json 即 fail）。 */
+const UNIT_ROOTS: readonly { readonly class: UnitClass; readonly dir: string; readonly manifest: string; readonly required: boolean }[] = [
+  { class: "plugin", dir: PLUGINS_DIR_RELATIVE, manifest: "plugin.json", required: true },
+  { class: "kit", dir: KITS_DIR_RELATIVE, manifest: "kit.json", required: false },
+];
+
+/**
+ * 发现根：apps/plugins/<id>/plugin.json（必须存在）∪ apps/kits/<id>/kit.json（根可缺席）。
+ * 每个子目录都必须是对应类别的单元（没有登记文件即 fail）。
+ */
 function discoverPluginSources(root: string): readonly PluginSource[] {
-  const pluginsDir = path.join(root, PLUGINS_DIR_RELATIVE);
-  if (!fs.existsSync(pluginsDir)) fail(PLUGINS_DIR_RELATIVE, "plugins directory is missing");
-  return fs.readdirSync(pluginsDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name)
-    .sort()
-    .map((dirName) => ({
-      label: `${PLUGINS_DIR_RELATIVE}/${dirName}/plugin.json`,
-      dirLabel: `${PLUGINS_DIR_RELATIVE}/${dirName}`,
-      file: path.join(pluginsDir, dirName, "plugin.json"),
-      dirName,
-    }));
+  const sources: PluginSource[] = [];
+  for (const unitRoot of UNIT_ROOTS) {
+    const dir = path.join(root, unitRoot.dir);
+    if (!fs.existsSync(dir)) {
+      if (unitRoot.required) fail(unitRoot.dir, `${unitRoot.class}s directory is missing`);
+      continue;
+    }
+    // 存在但不是目录（例如误建了名为 apps/kits 的文件）：⛔ 不当作「根缺席」放行，也不让 readdir 抛裸 ENOTDIR。
+    if (!fs.statSync(dir).isDirectory()) fail(unitRoot.dir, "must be a directory");
+    for (const dirName of fs.readdirSync(dir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort()) {
+      sources.push({
+        class: unitRoot.class,
+        label: `${unitRoot.dir}/${dirName}/${unitRoot.manifest}`,
+        dirLabel: `${unitRoot.dir}/${dirName}`,
+        file: path.join(dir, dirName, unitRoot.manifest),
+        dirName,
+      });
+    }
+  }
+  return sources;
 }
 const ART_DIR_RELATIVE = "apps/art/fairygui/assets";
 const CLIENT_SRC_RELATIVE = "apps/client/src";
@@ -75,6 +115,9 @@ export const VIEWS_RELATIVE = `${GENERATED_DIR_RELATIVE}/views.generated.ts`;
 export const PLUGINS_RELATIVE = `${GENERATED_DIR_RELATIVE}/plugins.generated.ts`;
 /** 能力索引（§5.7 阶段 7）：根文档只链接此索引，不在多处复制状态。 */
 export const PLUGIN_INDEX_RELATIVE = "docs/plugins.generated.md";
+/** kit 登记的双端生成物（docs/KIT.md §3；类型真源 catalogTypes.ts 手写）。 */
+export const KIT_CATALOG_SHARED_RELATIVE = "apps/shared/src/kits/catalog.generated.ts";
+export const KIT_CATALOG_SERVER_RELATIVE = "apps/server/src/kits/catalog.generated.ts";
 
 const VIEW_NAME = /^[A-Z][A-Za-z0-9]{0,63}$/u;
 const VIEW_LAYERS = ["base", "popup", "top"] as const;
@@ -236,10 +279,12 @@ function parseSidecar(input: unknown, label: string): ViewSidecar {
   for (const key of ["fullscreen", "onlyOne", "permanent", "interactive"] as const) {
     if (typeof input[key] !== "boolean") fail(label, `${key} must be a boolean`);
   }
-  // logic 落点：中央 logic/ 或 plugin 自持目录 apps/plugins/<id>/（Non-intrusive §11.3 的插件形态）。
+  // logic 落点：中央 logic/、plugin 自持目录 apps/client/src/plugins/<id>/（Non-intrusive §11.3 的插件形态）
+  // 或 kit 自持目录 apps/client/src/kits/<id>/（docs/KIT.md §2）。
   if (typeof input.logic !== "string" || !input.logic.endsWith(".ts")
-    || !(input.logic.startsWith("apps/client/src/logic/") || input.logic.startsWith("apps/client/src/plugins/"))) {
-    fail(label, "logic must be a repo-relative path under apps/client/src/logic/ or apps/client/src/plugins/ ending in .ts");
+    || !(input.logic.startsWith("apps/client/src/logic/") || input.logic.startsWith("apps/client/src/plugins/")
+      || input.logic.startsWith("apps/client/src/kits/"))) {
+    fail(label, "logic must be a repo-relative path under apps/client/src/logic/, apps/client/src/plugins/ or apps/client/src/kits/ ending in .ts");
   }
   if (input.kind === "fgui") {
     if (typeof input.package !== "string" || input.package === "") fail(label, "fgui sidecar requires package");
@@ -408,8 +453,17 @@ export type ViewCatalogEntry = {
   readonly required: readonly FguiFieldContractData[];
 };
 
+/**
+ * 进入 catalog 的登记单元：插件（`dependencies` 已是 requires.kits 并入后的有效依赖）或 kit。
+ * class 只在生成器内部与能力索引可见；客户端产物对二者一视同仁。
+ */
+export type CatalogUnit =
+  | (PluginRegistration & { readonly class: "plugin" })
+  | (KitRegistration & { readonly class: "kit" });
+
 export type ViewCatalog = {
-  readonly plugins: readonly PluginRegistration[];
+  /** 全部登记单元（插件 ∪ kit），按 id 排序。字段名沿用历史（消费方只按 id/entry/routes/menu 读）。 */
+  readonly plugins: readonly CatalogUnit[];
   readonly entries: readonly ViewCatalogEntry[];
   /** 全部 plugin 声明的 view 目录（仓库相对，排序去重）。 */
   readonly viewDirs: readonly string[];
@@ -445,6 +499,19 @@ function readGameplayIdSets(root: string): GameplayIdSets {
       manifests.push({ file: path.join(pluginsDir, entry.name, "gameplay", "manifest.json"), label: `${PLUGINS_DIR_RELATIVE}/${entry.name}/gameplay/manifest.json` });
     }
   }
+  // 第三发现根（docs/KIT.md §7）：apps/kits/<kitId>/gameplays/<modeId>/manifest.json。
+  const kitsDir = path.join(root, KITS_DIR_RELATIVE);
+  if (fs.existsSync(kitsDir)) {
+    for (const kit of fs.readdirSync(kitsDir, { withFileTypes: true })) {
+      if (!kit.isDirectory()) continue;
+      for (const mode of kitGameplayDirs(root, kit.name)) {
+        manifests.push({
+          file: path.join(kitsDir, kit.name, KIT_GAMEPLAYS_SUBDIR, mode, "manifest.json"),
+          label: `${KITS_DIR_RELATIVE}/${kit.name}/${KIT_GAMEPLAYS_SUBDIR}/${mode}/manifest.json`,
+        });
+      }
+    }
+  }
   for (const { file, label } of manifests) {
     if (!fs.existsSync(file)) continue;
     let parsed: { readonly id?: unknown; readonly wireExposed?: unknown };
@@ -464,7 +531,50 @@ function assertLaunchableGameplay(label: string, gameplayId: string, sets: Gamep
   if (sets.fixture.has(gameplayId)) {
     fail(label, `${context} 引用 fixture 玩法 "${gameplayId}"（manifest wireExposed:false，不装配客户端 module / 服务端 mode，⛔ 不得作为入口）`);
   }
-  fail(label, `${context} 引用未登记的玩法 "${gameplayId}"（apps/shared/schema/gameplays/ 与 apps/plugins/<id>/gameplay/ 下都没有该 manifest）`);
+  fail(label, `${context} 引用未登记的玩法 "${gameplayId}"（apps/shared/schema/gameplays/、apps/plugins/<id>/gameplay/ 与 apps/kits/<id>/gameplays/<modeId>/ 下都没有该 manifest）`);
+}
+
+/** kit 的玩法子目录名集合（排序；gameplays/ 缺席 = 空集）。 */
+function kitGameplayDirs(root: string, kitId: string): readonly string[] {
+  const dir = path.join(root, KITS_DIR_RELATIVE, kitId, KIT_GAMEPLAYS_SUBDIR);
+  if (!fs.existsSync(dir)) return [];
+  if (!fs.statSync(dir).isDirectory()) fail(`${KITS_DIR_RELATIVE}/${kitId}/${KIT_GAMEPLAYS_SUBDIR}`, "must be a directory");
+  return fs.readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+}
+
+/**
+ * kit.json 的 modes[] 必须与 `apps/kits/<id>/gameplays/` 的子目录集一一对应（docs/KIT.md §3：锁抬头与所有权都按
+ * modes 逐个推玩法规则，登记面与单源目录脱节即 fail），且每个 manifest.json 的 constantName 与登记值相等。
+ */
+function assertKitModesMatchGameplays(root: string, kit: KitRegistration, label: string): void {
+  const dirs = kitGameplayDirs(root, kit.id);
+  const declared = new Map(kit.modes.map((mode) => [mode.id, mode]));
+  for (const mode of dirs) {
+    if (!declared.has(mode)) {
+      fail(label, `${KIT_GAMEPLAYS_SUBDIR}/${mode}/ 存在但 modes[] 未登记该 mode（kit.json.modes 必须 ≡ gameplays/ 子目录集）`);
+    }
+  }
+  for (const mode of kit.modes) {
+    if (!dirs.includes(mode.id)) {
+      fail(label, `modes[] 登记了 "${mode.id}" 但 ${KITS_DIR_RELATIVE}/${kit.id}/${KIT_GAMEPLAYS_SUBDIR}/${mode.id}/ 不存在（kit.json.modes 必须 ≡ gameplays/ 子目录集）`);
+    }
+    const manifestLabel = `${KITS_DIR_RELATIVE}/${kit.id}/${KIT_GAMEPLAYS_SUBDIR}/${mode.id}/manifest.json`;
+    const manifestFile = path.join(root, manifestLabel);
+    assertRegularFile(manifestFile, manifestLabel);
+    let parsed: { readonly id?: unknown; readonly constantName?: unknown };
+    try {
+      parsed = JSON.parse(fs.readFileSync(manifestFile, "utf8")) as { readonly id?: unknown; readonly constantName?: unknown };
+    } catch (error) {
+      fail(manifestLabel, `cannot read valid JSON: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    if (parsed.id !== mode.id) fail(manifestLabel, `manifest.id（${JSON.stringify(parsed.id)}）必须等于 mode 目录名 "${mode.id}"`);
+    if (parsed.constantName !== mode.constantName) {
+      fail(label, `mode "${mode.id}" 的 constantName "${mode.constantName}" 与 ${manifestLabel} 的 constantName ${JSON.stringify(parsed.constantName)} 不一致`);
+    }
+  }
 }
 
 /** 顶层 `export function <name>` / `export const <name>` 是否存在（语法级，⛔ 不执行客户端 TS）。 */
@@ -483,7 +593,7 @@ function hasExportedFunction(source: string, label: string, name: string): boole
   return false;
 }
 
-function detectDependencyCycle(plugins: readonly PluginRegistration[]): void {
+function detectDependencyCycle(plugins: readonly CatalogUnit[]): void {
   const byId = new Map(plugins.map((plugin) => [plugin.id, plugin]));
   const visiting = new Set<string>();
   const done = new Set<string>();
@@ -501,17 +611,132 @@ function detectDependencyCycle(plugins: readonly PluginRegistration[]): void {
   for (const plugin of plugins) visit(plugin.id, []);
 }
 
-/** 发现并校验全部 plugin manifest 与 view sidecar；返回稳定排序的 catalog。 */
+/**
+ * 插件对 kit 的依赖闸（docs/KIT.md §4）：每个 required kit 必须是已发现的 kit，每个 api 面必须存在且
+ * `minSupported ≤ 声明 ≤ version`；返回并入后的有效 dependencies = [有 client entry 的 required kit（按 id 排序）] ++
+ * 声明 dependencies（去重，kit 先）。无 entry 的 kit 不进 PluginHost 装载序（那里没有东西可装）。
+ *
+ * 插件对 kit 的依赖只有 requires.kits 这一条通道：声明 `dependencies` 直接点名 kit 即拒绝——否则 api 面版本闸、
+ * plugin 工具的反向闸（--break-dependents 只读 requires.kits）与卸载依赖反查全被绕过（KIT.md §4「⛔ 不写两遍」）。
+ */
+function mergeRequiredKits(
+  plugin: PluginRegistration,
+  kitsById: ReadonlyMap<string, KitRegistration>,
+  label: string,
+): readonly string[] {
+  for (const dep of plugin.dependencies) {
+    if (kitsById.has(dep)) {
+      fail(label, `插件 ${plugin.id} 的 dependencies 直接引用 kit "${dep}"——对 kit 的依赖只能经 requires.kits 声明（KIT.md §4：codegen 自动并入，⛔ 不写两遍）`);
+    }
+  }
+  const requiredKitIds = Object.keys(plugin.requires.kits).sort();
+  for (const kitId of requiredKitIds) {
+    const kit = kitsById.get(kitId);
+    if (!kit) fail(label, `插件 ${plugin.id} 需要 kit ${kitId}，但该 kit 未安装（${KITS_DIR_RELATIVE}/${kitId}/kit.json 不存在）`);
+    for (const [surface, declared] of Object.entries(plugin.requires.kits[kitId])) {
+      const spec = kit.api[surface];
+      if (!spec) {
+        fail(label, `插件 ${plugin.id} 需要 kit ${kitId} 的 api 面 ${surface} 版本 ${declared}，宿主 kit 没有该 api 面（已有：${Object.keys(kit.api).sort().join(", ") || "无"}）`);
+      }
+      if (declared < spec.minSupported || declared > spec.version) {
+        fail(label, `插件 ${plugin.id} 需要 kit ${kitId} 的 api 面 ${surface} 版本 ${declared}，宿主 kit 提供 [${spec.minSupported}, ${spec.version}]`);
+      }
+    }
+  }
+  const merged: string[] = [];
+  for (const kitId of requiredKitIds) {
+    if (kitsById.get(kitId)!.entry !== null && !merged.includes(kitId)) merged.push(kitId);
+  }
+  for (const dep of plugin.dependencies) {
+    if (!merged.includes(dep)) merged.push(dep);
+  }
+  return merged;
+}
+
+/** 单元 id 对域名的边界前缀：域 === id，或以 id 开头且紧随其后的是大写字母 / 数字（`slg` → `slgAdmin`，⛔ 不匹配 `slgx`）。 */
+function boundaryPrefixes(unitId: string, domain: string): boolean {
+  if (domain === unitId) return true;
+  if (!domain.startsWith(unitId)) return false;
+  return /^[A-Z0-9]/u.test(domain.slice(unitId.length));
+}
+
+/**
+ * 大小写归一版的边界前缀：前缀按归一比较（`slgadmin` 也算 `slgAdminOps` 的前缀单元），
+ * 但边界字符（紧随前缀的大写字母 / 数字）按域**原文**判——⛔ 不能把域也归一后再判，否则大写边界永远不成立。
+ */
+function boundaryPrefixesFolded(unitId: string, domain: string): boolean {
+  const folded = unitId.toLowerCase();
+  const domainFolded = domain.toLowerCase();
+  if (domainFolded === folded) return true;
+  if (!domainFolded.startsWith(folded)) return false;
+  return /^[A-Z0-9]/u.test(domain.slice(unitId.length));
+}
+
+/**
+ * 域名前缀规则（docs/KIT.md §2「域名必须以包 id 开头；该规则对插件同样生效」）——按登记面的 `domains` 交叉核对
+ * Lobby RPC 域 descriptor 集（由 lib.ts 传入）：
+ *  (i)  一个域只能被一个单元声明；
+ *  (ii) 声明的域必须以声明者 id 为边界前缀，且声明者必须是**最长的**边界前缀单元（大小写归一）：
+ *       单元 `snake` 不得在 `snakeCosmetic` 存在时声明 `snakeCosmeticX`；声明的域还必须真有 descriptor；
+ *  (iii) 未被任何单元声明的域（宿主 / 框架自有：guild / mail / room / shop / user / snakeCosmetic）不得等于或被任一
+ *       **带 version 的**单元 id 边界前缀匹配（否则可分发单元的前缀被框架先占）；宿主自有单元（无 version）豁免。
+ */
+export function assertDomainOwnership(domainIds: readonly string[], units: readonly CatalogUnit[]): void {
+  const label = `${PLUGINS_DIR_RELATIVE} + ${KITS_DIR_RELATIVE}`;
+  const owners = new Map<string, CatalogUnit>();
+  for (const unit of units) {
+    for (const domain of unit.domains) {
+      const existing = owners.get(domain);
+      if (existing) fail(label, `域 "${domain}" 同时被 ${existing.class} "${existing.id}" 与 ${unit.class} "${unit.id}" 声明（一个域一个主人）`);
+      owners.set(domain, unit);
+    }
+  }
+  const longestPrefixOwner = (domain: string): CatalogUnit | null => {
+    let best: CatalogUnit | null = null;
+    for (const unit of units) {
+      if (!boundaryPrefixesFolded(unit.id, domain)) continue;
+      if (best === null || unit.id.length > best.id.length) best = unit;
+    }
+    return best;
+  };
+  const known = new Set(domainIds);
+  for (const [domain, owner] of owners) {
+    if (!boundaryPrefixes(owner.id, domain)) {
+      fail(label, `${owner.class} "${owner.id}" 声明的域 "${domain}" 必须等于其 id 或以其 id 开头并紧随大写字母/数字（KIT.md §2 域名前缀规则）`);
+    }
+    const longest = longestPrefixOwner(domain);
+    if (longest !== null && longest.id !== owner.id) {
+      fail(label, `${owner.class} "${owner.id}" 声明的域 "${domain}" 的最长前缀单元是 "${longest.id}"——该域只能由 "${longest.id}" 声明`);
+    }
+    if (!known.has(domain)) {
+      fail(label, `${owner.class} "${owner.id}" 声明的域 "${domain}" 没有 descriptor（apps/shared/src/protocol/lobbyRpc/domains/${domain}.ts 不存在）`);
+    }
+  }
+  for (const domain of domainIds) {
+    if (owners.has(domain)) continue;
+    for (const unit of units) {
+      if (unit.version === null) continue;
+      if (boundaryPrefixesFolded(unit.id, domain)) {
+        fail(label, `域 "${domain}" 未被任何单元声明，却等于或以带版本的 ${unit.class} "${unit.id}" 为前缀——宿主 / 框架自有域不得占用可分发单元的前缀（要么由 "${unit.id}" 声明该域，要么改名）`);
+      }
+    }
+  }
+}
+
+/** 发现并校验全部 plugin / kit manifest 与 view sidecar；返回稳定排序的 catalog。 */
 export function readViewCatalog(repositoryRoot: string): ViewCatalog {
   const root = path.resolve(repositoryRoot);
-  const plugins: PluginRegistration[] = [];
+  const parsedPlugins: PluginRegistration[] = [];
+  const kitsById = new Map<string, KitRegistration>();
   const seenPluginIds = new Map<string, string>();
-  /** plugin id → 其登记目录标签（apps/plugins/<id> 或 apps/plugins/<id>），错误信息据此点名真源。 */
+  /** 单元 id → 其登记目录标签（apps/plugins/<id> 或 apps/kits/<id>），错误信息据此点名真源。 */
   const dirLabelById = new Map<string, string>();
+  const manifestLabelById = new Map<string, string>();
   for (const source of discoverPluginSources(root)) {
     const { label, dirName } = source;
-    if (!PLUGIN_DIR_NAME.test(dirName)) fail(label, `插件目录名 "${dirName}" 必须是合法插件 id（小写字母开头的驼峰）`);
-    if (RESERVED_PLUGIN_IDS.has(dirName)) fail(label, `插件 id "${dirName}" 是保留字（${[...RESERVED_PLUGIN_IDS].join(", ")}）`);
+    const noun = source.class === "kit" ? "kit" : "插件";
+    if (!PLUGIN_DIR_NAME.test(dirName)) fail(label, `${noun}目录名 "${dirName}" 必须是合法${noun} id（小写字母开头的驼峰）`);
+    if (RESERVED_PLUGIN_IDS.has(dirName)) fail(label, `${noun} id "${dirName}" 是保留字（${[...RESERVED_PLUGIN_IDS].join(", ")}）`);
     assertRegularFile(source.file, label);
     let parsed: unknown;
     try {
@@ -519,16 +744,40 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
     } catch (error) {
       fail(label, `cannot read valid JSON: ${error instanceof Error ? error.message : String(error)}`);
     }
-    const manifest = parsePluginRegistration(parsed, label);
-    if (manifest.id !== dirName) fail(label, `plugin id ("${manifest.id}") 必须等于插件目录名 ("${dirName}")`);
+    const manifest = source.class === "kit" ? parseKitRegistration(parsed, label) : parsePluginRegistration(parsed, label);
+    if (manifest.id !== dirName) fail(label, `${noun} id ("${manifest.id}") 必须等于${noun}目录名 ("${dirName}")`);
+    // plugin 与 kit 共享同一 id 空间（docs/KIT.md §3：撞名即拒绝）。
     const normalized = manifest.id.toLowerCase();
     const clash = seenPluginIds.get(normalized);
-    if (clash) fail(label, `plugin id 与 "${clash}" 大小写归一化后冲突（${dirLabelById.get(clash) ?? "?"} ⟷ ${source.dirLabel}）`);
+    if (clash) fail(label, `${noun} id 与 "${clash}" 大小写归一化后冲突（${dirLabelById.get(clash) ?? "?"} ⟷ ${source.dirLabel}）`);
     seenPluginIds.set(normalized, manifest.id);
     dirLabelById.set(manifest.id, source.dirLabel);
-    plugins.push(manifest);
+    manifestLabelById.set(manifest.id, label);
+    if (manifest.schemaVersion === 1) {
+      assertKitModesMatchGameplays(root, manifest, label);
+      kitsById.set(manifest.id, manifest);
+    } else {
+      parsedPlugins.push(manifest);
+    }
   }
+  const plugins: CatalogUnit[] = [
+    ...parsedPlugins.map((plugin): CatalogUnit => ({
+      ...plugin,
+      class: "plugin",
+      dependencies: mergeRequiredKits(plugin, kitsById, manifestLabelById.get(plugin.id)!),
+    })),
+    ...[...kitsById.values()].map((kit): CatalogUnit => ({ ...kit, class: "kit" })),
+  ];
   plugins.sort((left, right) => (left.id < right.id ? -1 : 1));
+  // kit 只依赖框架（docs/KIT.md §1）：v0 ⛔ 不依赖 kit，也 ⛔ 不依赖插件——依赖解析只做 plugin → kit 单向，
+  // 否则地基层会被排到插件之后装载，且 plugin 工具的卸载反查（只读插件 requires.kits）看不见这条边。
+  for (const unit of plugins) {
+    if (unit.class !== "kit") continue;
+    for (const dep of unit.dependencies) {
+      if (kitsById.has(dep)) fail(manifestLabelById.get(unit.id)!, `kit "${unit.id}" 不得依赖别的 kit "${dep}"（KIT.md §4：v0 无 kit-on-kit）`);
+      fail(manifestLabelById.get(unit.id)!, `kit "${unit.id}" 不得依赖插件 "${dep}"（KIT.md §1/§4：kit 只依赖框架，依赖解析只做 plugin → kit 单向）`);
+    }
+  }
   detectDependencyCycle(plugins);
 
   const artDir = path.join(root, ART_DIR_RELATIVE);
@@ -547,12 +796,14 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
       ownerDirs.set(owner.id, owner.logicDir);
     }
     if (plugin.entry !== null) {
-      const expected = `${CLIENT_SRC_RELATIVE}/plugins/${plugin.id}/index.ts`;
-      if (plugin.entry !== expected) fail(pluginLabel, `entry 必须是本 plugin 自己的 ${expected}（读到 ${plugin.entry}）`);
+      // 命名空间按 class 分（docs/KIT.md §2）：插件 apps/client/src/plugins/<id>/，kit apps/client/src/kits/<id>/。
+      const expected = `${CLIENT_SRC_RELATIVE}/${plugin.class === "kit" ? "kits" : "plugins"}/${plugin.id}/index.ts`;
+      if (plugin.entry !== expected) fail(pluginLabel, `entry 必须是本 ${plugin.class} 自己的 ${expected}（读到 ${plugin.entry}）`);
       const moduleFile = path.resolve(root, plugin.entry);
-      assertRegularFile(moduleFile, `${pluginLabel}/plugin.json → ${plugin.entry}`);
+      const manifestLabel = manifestLabelById.get(plugin.id) ?? `${pluginLabel}/plugin.json`;
+      assertRegularFile(moduleFile, `${manifestLabel} → ${plugin.entry}`);
       if (!hasExportedFunction(fs.readFileSync(moduleFile, "utf8"), plugin.entry, "createPluginModule")) {
-        fail(`${pluginLabel}/plugin.json → ${plugin.entry}`, "plugin entry 必须导出约定符号 createPluginModule（() => PluginModule）");
+        fail(`${manifestLabel} → ${plugin.entry}`, `${plugin.class} entry 必须导出约定符号 createPluginModule（() => PluginModule）`);
       }
     }
     for (const dir of plugin.viewDirs) {
@@ -588,7 +839,7 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
       const sidecar = parseSidecar(parsed, label);
       const logicDir = ownerDirs.get(sidecar.owner);
       if (!logicDir) {
-        fail(label, `owner "${sidecar.owner}" 未在 ${pluginLabel}/plugin.json 的 owners 表登记 logicDir`);
+        fail(label, `owner "${sidecar.owner}" 未在 ${manifestLabelById.get(plugin.id) ?? `${pluginLabel}/plugin.json`} 的 owners 表登记 logicDir`);
       }
       const logicFile = path.resolve(root, sidecar.logic);
       if (!logicFile.startsWith(path.resolve(root, logicDir) + path.sep)) {
@@ -715,7 +966,7 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
   const gameplayIds = readGameplayIdSets(root);
   // route 先全部登记（launch.kind:"route" 可以引用他 plugin 的 route），再校验 menu。
   for (const plugin of plugins) {
-    const label = `${dirLabelById.get(plugin.id) ?? `${PLUGINS_DIR_RELATIVE}/${plugin.id}`}/plugin.json`;
+    const label = manifestLabelById.get(plugin.id) ?? `${PLUGINS_DIR_RELATIVE}/${plugin.id}/plugin.json`;
     for (const route of plugin.routes) {
       const clash = routeIds.get(route.id);
       if (clash) fail(label, `route id "${route.id}" 与 plugin "${clash}" 重复`);
@@ -732,7 +983,7 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
     }
   }
   for (const plugin of plugins) {
-    const label = `${dirLabelById.get(plugin.id) ?? `${PLUGINS_DIR_RELATIVE}/${plugin.id}`}/plugin.json`;
+    const label = manifestLabelById.get(plugin.id) ?? `${PLUGINS_DIR_RELATIVE}/${plugin.id}/plugin.json`;
     for (const item of plugin.menu) {
       // entryId 全仓唯一（PLUGIN-REVIEW F24）：宿主 placement 与设置面板都按裸 entryId 引用/查找。
       const clash = menuEntryIds.get(item.entryId);
@@ -776,7 +1027,87 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
 
 function generatedClientHeader(): string {
   return "/** AUTO-GENERATED by apps/server/tools/plugin-codegen/cli.ts from"
-    + " apps/plugins/<id>/plugin.json + apps/plugins/<id>/plugin.json + <Name>View.view.json sidecars + apps/art/fairygui/assets. Do not edit. */";
+    + " apps/plugins/<id>/plugin.json + apps/kits/<id>/kit.json + <Name>View.view.json sidecars + apps/art/fairygui/assets. Do not edit. */";
+}
+
+// ── kit 登记的双端生成物（docs/KIT.md §3/§5） ─────────────────────────────
+
+const KIT_CATALOG_HEADER = "/** AUTO-GENERATED by apps/server/tools/plugin-codegen/cli.ts from apps/kits/<id>/kit.json. Do not edit. */";
+const TS_IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/u;
+
+/** 把 JSON 值渲染成 TS 对象字面量（键为合法标识符时不加引号；4 空格缩进；确定性键序 = 调用方给定顺序）。 */
+function tsLiteral(value: unknown, indent: number): string {
+  const pad = " ".repeat(indent);
+  const inner = " ".repeat(indent + 4);
+  if (Array.isArray(value)) {
+    if (value.length === 0) return "[]";
+    return `[\n${value.map((item) => `${inner}${tsLiteral(item, indent + 4)},`).join("\n")}\n${pad}]`;
+  }
+  if (isRecord(value)) {
+    const entries = Object.entries(value);
+    if (entries.length === 0) return "{}";
+    const inline = entries.every(([, item]) => !isRecord(item) && !Array.isArray(item));
+    const render = ([key, item]: [string, unknown]): string =>
+      `${TS_IDENTIFIER.test(key) ? key : JSON.stringify(key)}: ${tsLiteral(item, indent + 4)}`;
+    if (inline) return `{ ${entries.map(render).join(", ")} }`;
+    return `{\n${entries.map((entry) => `${inner}${render(entry)},`).join("\n")}\n${pad}}`;
+  }
+  return JSON.stringify(value);
+}
+
+type KitEffectRecord = { readonly kitId: string; readonly name: string; readonly userKey: string; readonly field: string; readonly max: number };
+
+function kitUnits(catalog: ViewCatalog): readonly (KitRegistration & { readonly class: "kit" })[] {
+  return catalog.plugins.filter((unit): unit is KitRegistration & { readonly class: "kit" } => unit.class === "kit");
+}
+
+/** effects 按 name 排序（kit:<kitId>:<name> 的登记序）。 */
+function kitEffects(kit: KitRegistration): readonly KitEffectRecord[] {
+  return Object.keys(kit.effects).sort().map((name) => ({
+    kitId: kit.id, name, userKey: kit.effects[name].userKey, field: kit.effects[name].field, max: kit.effects[name].max,
+  }));
+}
+
+/** shared 条目字段（键序固定 = KitCatalogEntry 声明序）。 */
+function sharedKitEntry(kit: KitRegistration): Record<string, unknown> {
+  return {
+    id: kit.id,
+    version: kit.version,
+    api: Object.fromEntries(Object.keys(kit.api).sort().map((surface) => [surface, { version: kit.api[surface].version, minSupported: kit.api[surface].minSupported }])),
+    modes: kit.modes.map((mode) => ({ id: mode.id, constantName: mode.constantName })),
+    domains: [...kit.domains],
+    effects: kitEffects(kit),
+  };
+}
+
+export function renderKitCatalogShared(catalog: ViewCatalog): string {
+  const kits = kitUnits(catalog);
+  const lines: string[] = [KIT_CATALOG_HEADER];
+  lines.push(`import { type KitCatalogEntry, type KitEffectSpec } from "./catalogTypes";`);
+  lines.push("");
+  lines.push("/** 已登记 kit（按 id 排序）。 */");
+  lines.push(`export const KIT_CATALOG: readonly KitCatalogEntry[] = ${tsLiteral(kits.map(sharedKitEntry), 0)};`);
+  lines.push("");
+  lines.push("/** `kit:<kitId>:<name>` → effect 规格（economy.ts validateGrant 与 Lua 镜像的共同真源）。 */");
+  const kinds = Object.fromEntries(kits.flatMap((kit) => kitEffects(kit).map((effect) => [`kit:${effect.kitId}:${effect.name}`, effect])));
+  lines.push(`export const KIT_EFFECT_KINDS: Readonly<Record<string, KitEffectSpec>> = ${tsLiteral(kinds, 0)};`);
+  return `${lines.join("\n")}\n`;
+}
+
+export function renderKitCatalogServer(catalog: ViewCatalog): string {
+  const kits = kitUnits(catalog);
+  const lines: string[] = [KIT_CATALOG_HEADER];
+  lines.push(`import type { ServerKitCatalogEntry } from "./catalogTypes";`);
+  lines.push("");
+  lines.push("/** 已登记 kit（按 id 排序）；与 @game/shared/kits/catalog.generated 的 KIT_CATALOG 同源同序。 */");
+  const entries = kits.map((kit) => ({
+    ...sharedKitEntry(kit),
+    sqlFiles: [...kit.sql.files],
+    sqlTables: kit.sql.tables.map((table) => ({ name: table.name, zone: table.zone })),
+    userKeys: [...kit.userKeys],
+  }));
+  lines.push(`export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = ${tsLiteral(entries, 0)};`);
+  return `${lines.join("\n")}\n`;
 }
 
 function contractConstName(viewName: string): string {
@@ -1045,16 +1376,16 @@ function indexDocLink(doc: string): string {
 
 export function renderPluginIndex(catalog: ViewCatalog): string {
   const lines: string[] = [];
-  lines.push("<!-- AUTO-GENERATED by apps/server/tools/plugin-codegen/cli.ts from apps/plugins/<id>/plugin.json + apps/plugins/<id>/plugin.json. Do not edit. -->");
+  lines.push("<!-- AUTO-GENERATED by apps/server/tools/plugin-codegen/cli.ts from apps/plugins/<id>/plugin.json + apps/kits/<id>/kit.json. Do not edit. -->");
   lines.push("");
   lines.push("# 能力索引（plugins 生成）");
   lines.push("");
-  lines.push("由 `npm --workspace @game/server run codegen:plugins` 从 `apps/plugins/<id>/plugin.json`（宿主）与 `apps/plugins/<id>/plugin.json`（插件）生成。");
+  lines.push("由 `npm --workspace @game/server run codegen:plugins` 从 `apps/plugins/<id>/plugin.json`（class `plugin`：宿主自有与安装进来的插件）与 `apps/kits/<id>/kit.json`（class `kit`，docs/KIT.md）生成。");
   lines.push("状态字段只描述可机检的**结构状态**（词汇表仅 `planned` / `registered` / `source-present` 三值），");
   lines.push("不代表测试实跑或人工验收结论；实跑证据、开放问题与完成判断由人工维护在");
   lines.push("`docs/inventory.json` 的 `routeOfTruth.corePlan` 指向的当前计划文件里（本生成器⛔ 不写任何 plan-*.md）。");
   lines.push("");
-  lines.push("- `registered`：plugin.json 有效且已并入本次生成的客户端 catalog；");
+  lines.push("- `registered`：plugin.json / kit.json 有效且已并入本次生成的客户端 catalog；");
   lines.push("- `source-present`：capability fragment 声明的 `defaultEntry` 在仓内存在；");
   lines.push("- `planned`：capability fragment 已声明但其 `defaultEntry` 尚不存在。");
   lines.push("");
@@ -1063,13 +1394,13 @@ export function renderPluginIndex(catalog: ViewCatalog): string {
   lines.push("");
   lines.push("## plugin 目录");
   lines.push("");
-  lines.push("| plugin | category | 状态 | 权威文档 |");
-  lines.push("| --- | --- | --- | --- |");
+  lines.push("| plugin | class | category | 状态 | 权威文档 |");
+  lines.push("| --- | --- | --- | --- | --- |");
   for (const plugin of catalog.plugins) {
     const docs = plugin.docs.length === 0
       ? "—"
       : plugin.docs.map((doc) => indexDocLink(doc)).join("、");
-    lines.push(`| \`${plugin.id}\` | ${plugin.category} | registered | ${docs} |`);
+    lines.push(`| \`${plugin.id}\` | ${plugin.class} | ${plugin.category} | registered | ${docs} |`);
   }
   lines.push("");
   lines.push("## capability fragment");
@@ -1101,6 +1432,8 @@ export function renderViewCatalogArtifacts(catalog: ViewCatalog): ReadonlyMap<st
     [VIEWS_RELATIVE, renderViews(catalog)],
     [PLUGINS_RELATIVE, renderPlugins(catalog)],
     [PLUGIN_INDEX_RELATIVE, renderPluginIndex(catalog)],
+    [KIT_CATALOG_SHARED_RELATIVE, renderKitCatalogShared(catalog)],
+    [KIT_CATALOG_SERVER_RELATIVE, renderKitCatalogServer(catalog)],
   ]);
 }
 
@@ -1121,4 +1454,14 @@ export function previousGeneratedPluginIds(repositoryRoot: string): readonly str
   const block = text.match(/^export const PLUGIN_IDS: readonly string\[\] = \[\n((?: {4}"[^"\n]+",\n)*)\];$/mu);
   if (!block) return [];
   return [...block[1].matchAll(/"([^"\n]+)"/gu)].map((match) => match[1]);
+}
+
+/** 既有 KIT_CATALOG 里的 kit id（kit 同时也在 PLUGIN_IDS；这里是 shared 侧生成物自己的删除保护锚）。 */
+export function previousGeneratedKitIds(repositoryRoot: string): readonly string[] {
+  const file = path.join(path.resolve(repositoryRoot), KIT_CATALOG_SHARED_RELATIVE);
+  if (!fs.existsSync(file)) return [];
+  const text = fs.readFileSync(file, "utf8");
+  const block = text.match(/^export const KIT_CATALOG: readonly KitCatalogEntry\[\] = \[\n([\s\S]*?)\n\];$/mu);
+  if (!block) return [];
+  return [...block[1].matchAll(/^ {8}id: "([^"\n]+)",$/gmu)].map((match) => match[1]);
 }

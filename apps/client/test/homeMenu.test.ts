@@ -60,20 +60,24 @@ function makePorts(overrides: {
 const REPO_ROOT = fileURLToPath(new URL("../../..", import.meta.url));
 
 /**
- * 手写真源侧的菜单全集：直接读 `apps/plugins/<id>/plugin.json`（宿主自有与安装进来的插件同一根，PLUGIN.md §5.5），
- * 按 plugin id 附上 pluginId。
+ * 手写真源侧的菜单全集：直接读 `apps/plugins/<id>/plugin.json`（宿主自有与安装进来的插件同一根，PLUGIN.md §5.5）
+ * ∪ `apps/kits/<id>/kit.json`（docs/KIT.md §7：menu 字段同形，kit 根可缺席），按单元 id 附上 pluginId。
  * ⛔ 不复用生成物——本文件要守的正是「生成汇总 ⇔ 手写 manifest」这一格。
  */
 function readManifestMenu(): GeneratedMenuContribution[] {
-  const roots = [{ dir: join(REPO_ROOT, "apps/plugins") }];
-  return roots.flatMap(({ dir }) => {
+  const roots = [
+    { dir: join(REPO_ROOT, "apps/plugins"), manifest: "plugin.json" },
+    { dir: join(REPO_ROOT, "apps/kits"), manifest: "kit.json" },
+  ];
+  return roots.flatMap(({ dir, manifest: manifestName }) => {
+    if (!existsSync(dir)) return [];
     return readdirSync(dir, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory() && existsSync(join(dir, entry.name, "plugin.json")))
+      .filter((entry) => entry.isDirectory() && existsSync(join(dir, entry.name, manifestName)))
       .flatMap((entry) => {
         const manifest = JSON.parse(
-          readFileSync(join(dir, entry.name, "plugin.json"), "utf8"),
-        ) as { id: string; menu: ReadonlyArray<Omit<GeneratedMenuContribution, "pluginId">> };
-        return manifest.menu.map((item) => ({ ...item, pluginId: manifest.id }));
+          readFileSync(join(dir, entry.name, manifestName), "utf8"),
+        ) as { id: string; menu?: ReadonlyArray<Omit<GeneratedMenuContribution, "pluginId">> };
+        return (manifest.menu ?? []).map((item) => ({ ...item, pluginId: manifest.id }));
       });
   });
 }

@@ -52,7 +52,11 @@ import { parseGameplayStateDescriptor, renderSharedStateModule } from "../tools/
 const REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const SCHEMA_DIR = path.join(REPOSITORY_ROOT, "apps/shared/schema/gameplays");
 const PLUGINS_DIR = path.join(REPOSITORY_ROOT, "apps/plugins");
-/** 玩法单源目录：schema 目录的每个子目录 ∪ 插件目录里带 gameplay/ 的插件（PLUGIN.md §5.5 阶段 1）。 */
+const KITS_DIR = path.join(REPOSITORY_ROOT, "apps/kits");
+/**
+ * 玩法单源目录：schema 目录的每个子目录 ∪ 插件目录里带 gameplay/ 的插件（PLUGIN.md §5.5 阶段 1）
+ * ∪ kit 目录里 gameplays/ 的每个子目录（docs/KIT.md §7 第三发现根，id = modeId）。
+ */
 function gameplaySourceDirs(): ReadonlyMap<string, string> {
   const out = new Map<string, string>();
   for (const entry of fs.readdirSync(SCHEMA_DIR, { withFileTypes: true })) {
@@ -61,6 +65,15 @@ function gameplaySourceDirs(): ReadonlyMap<string, string> {
   if (fs.existsSync(PLUGINS_DIR)) {
     for (const entry of fs.readdirSync(PLUGINS_DIR, { withFileTypes: true })) {
       if (entry.isDirectory() && fs.existsSync(path.join(PLUGINS_DIR, entry.name, "gameplay", "manifest.json"))) out.set(entry.name, `apps/plugins/${entry.name}/gameplay`);
+    }
+  }
+  if (fs.existsSync(KITS_DIR)) {
+    for (const kit of fs.readdirSync(KITS_DIR, { withFileTypes: true })) {
+      const gameplaysDir = path.join(KITS_DIR, kit.name, "gameplays");
+      if (!kit.isDirectory() || !fs.existsSync(gameplaysDir)) continue;
+      for (const mode of fs.readdirSync(gameplaysDir, { withFileTypes: true })) {
+        if (mode.isDirectory() && fs.existsSync(path.join(gameplaysDir, mode.name, "manifest.json"))) out.set(mode.name, `apps/kits/${kit.name}/gameplays/${mode.name}`);
+      }
     }
   }
   return out;
@@ -161,9 +174,10 @@ function canonicalGameplayIds(): readonly string[] {
 function createFixture(): { readonly root: string; readonly options: GameplayCodegenOptions } {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "gameplay-codegen-"));
   fs.cpSync(SCHEMA_DIR, path.join(root, "apps/shared/schema/gameplays"), { recursive: true });
-  // 插件玩法单源：按插件目录形态复制（apps/plugins/<id>/gameplay/），生成器的第二个发现根。
+  // 插件 / kit 玩法单源：按各自目录形态复制（apps/plugins/<id>/gameplay/、apps/kits/<kitId>/gameplays/<modeId>/），
+  // 生成器的第二、第三个发现根。
   for (const [id, relative] of GAMEPLAY_SOURCES) {
-    if (!relative.startsWith("apps/plugins/")) continue;
+    if (relative.startsWith("apps/shared/schema/gameplays/")) continue;
     fs.cpSync(sourceDirOf(id), path.join(root, relative), { recursive: true });
   }
   // wire catalog 的两个额外单源：core 消息名表（protocol/messages.ts）与各玩法手写 wire.ts。
@@ -595,6 +609,95 @@ test("新增第三个 mode 目录：三端产物 + catalog 收录，另两 mode 
     assert.match(readFixtureText(fixture.root, SERVER_AGGREGATE), /"puzzle": PuzzleRoomState,/);
     assert.match(readFixtureText(fixture.root, CLIENT_CATALOG), /"puzzle"/);
     assert.doesNotThrow(() => assertGameplayArtifactsFresh(fixture.options));
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+// ── K0：kit 第三发现根 apps/kits/<kitId>/gameplays/<modeId>/（docs/KIT.md §2/§7） ──
+
+/** puzzle 夹具改名成 kit 自带 mode（KfixArena），⛔ 不与 puzzle 共用符号名。 */
+function kfixArenaFixture(): { manifest: MutableManifest; state: MutableState } {
+  const rename = (text: string): string => text.replace(/Puzzle/gu, "KfixArena").replace(/puzzle/gu, "kfixArena");
+  return {
+    manifest: JSON.parse(rename(JSON.stringify(puzzleManifest()))) as MutableManifest,
+    state: JSON.parse(rename(JSON.stringify(puzzleState()))) as MutableState,
+  };
+}
+
+/** 最小 kit.json（gameplay-codegen 只要求存在；modes ≡ gameplays/ 的闸在 codegen:plugins 侧）。 */
+function addFixtureKitJson(root: string, kitId: string): void {
+  const dir = path.join(root, "apps/kits", kitId);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "kit.json"), `${JSON.stringify({ schemaVersion: 1, id: kitId }, null, 2)}\n`, "utf8");
+}
+
+function addFixtureKitMode(root: string, kitId: string, modeId: string, manifest: MutableManifest, state: MutableState): void {
+  addFixtureKitJson(root, kitId);
+  const dir = path.join(root, "apps/kits", kitId, "gameplays", modeId);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+  fs.writeFileSync(path.join(dir, "state.json"), `${JSON.stringify(state, null, 2)}\n`, "utf8");
+}
+
+test("K0 kit：apps/kits/<kitId>/gameplays/<modeId>/ 是第三发现根——mode 进三端产物与 catalog，sourceDir 点名 kit 目录", () => {
+  const fixture = createFixture();
+  try {
+    writeGameplayArtifacts(fixture.options);
+    const { manifest, state } = kfixArenaFixture();
+    addFixtureKitMode(fixture.root, "kfix", "kfixArena", manifest, state);
+    const descriptor = readGameplayDescriptors(fixture.options).find((gameplay) => gameplay.id === "kfixArena");
+    assert.ok(descriptor, "kit 根下的 mode 必须被发现");
+    assert.equal(descriptor.sourceDir, "apps/kits/kfix/gameplays/kfixArena");
+    const result = writeGameplayArtifacts(fixture.options);
+    assert.ok(result.changed.includes(`${SHARED_STATE_DIR}/kfixArena.ts`));
+    assert.ok(result.changed.includes(`${SERVER_SCHEMA_DIR}/kfixArena.ts`));
+    assert.match(readFixtureText(fixture.root, SHARED_CATALOG), /"kfixArena": validateKfixArenaRoomState,/u);
+    assert.match(readFixtureText(fixture.root, SERVER_AGGREGATE), /"kfixArena": KfixArenaRoomState,/u);
+    assert.doesNotThrow(() => assertGameplayArtifactsFresh(fixture.options));
+    // 目录名 === manifest.id 对 kit 根同样生效。
+    manifest.id = "arena";
+    addFixtureKitMode(fixture.root, "kfix", "kfixArena", manifest, state);
+    assert.throws(() => readGameplayDescriptors(fixture.options),
+      /apps\/kits\/kfix\/gameplays\/kfixArena\/manifest\.json: manifest\.id "arena" must equal its directory name "kfixArena"/u);
+    // 有根则每个子目录都是 kit：没有 kit.json 的目录不得只凭 gameplays/ 就把 mode 生成进三端（单独跑 codegen:gameplays 也 fail-closed）。
+    manifest.id = "kfixArena";
+    addFixtureKitMode(fixture.root, "kfix", "kfixArena", manifest, state);
+    fs.rmSync(path.join(fixture.root, "apps/kits/kfix/kit.json"));
+    assert.throws(() => readGameplayDescriptors(fixture.options), /apps\/kits\/kfix: kit directory without kit\.json/u);
+    fs.mkdirSync(path.join(fixture.root, "apps/kits/ghost"), { recursive: true });
+    addFixtureKitJson(fixture.root, "kfix");
+    assert.throws(() => readGameplayDescriptors(fixture.options), /apps\/kits\/ghost: kit directory without kit\.json/u, "没有 gameplays/ 的空 kit 目录同样拒绝");
+    fs.rmSync(path.join(fixture.root, "apps/kits/ghost"), { recursive: true });
+    assert.doesNotThrow(() => readGameplayDescriptors(fixture.options));
+    // 根存在但不是目录：⛔ 不当作「根缺席」放行，也不抛裸 ENOTDIR。
+    fs.rmSync(path.join(fixture.root, "apps/kits"), { recursive: true });
+    fs.writeFileSync(path.join(fixture.root, "apps/kits"), "not a directory\n");
+    assert.throws(() => readGameplayDescriptors(fixture.options), /apps\/kits: must be a directory/u);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test("K0 kit：kit 自带的 modeId ⛔ 不得与任何包 id（apps/plugins ∪ apps/kits 目录名）大小写归一相等——点名 mode 与包", () => {
+  const fixture = createFixture();
+  try {
+    const { manifest, state } = kfixArenaFixture();
+    // 与自己所在 kit 同名
+    fs.mkdirSync(path.join(fixture.root, "apps/kits/kfix"), { recursive: true });
+    addFixtureKitMode(fixture.root, "kfix", "kfix", { ...manifest, id: "kfix" }, state);
+    assert.throws(() => readGameplayDescriptors(fixture.options),
+      /apps\/kits\/kfix\/gameplays\/kfix: kit "kfix" 的 mode id "kfix" 与包 id 大小写归一相等（apps\/kits\/kfix）/u);
+    fs.rmSync(path.join(fixture.root, "apps/kits/kfix/gameplays/kfix"), { recursive: true });
+    // 与某个插件包 id 大小写归一相等（snakecosmetic ⟷ apps/plugins/snakeCosmetic；真仓无同名玩法，故不是玩法 id 撞名先触发）。
+    // fixture 只拷带 gameplay/ 的插件目录，snakeCosmetic 没有玩法——按真仓形态补一个空包目录（包 id 集只看目录名）。
+    fs.mkdirSync(path.join(fixture.root, "apps/plugins/snakeCosmetic"), { recursive: true });
+    addFixtureKitMode(fixture.root, "kfix", "snakecosmetic", { ...manifest, id: "snakecosmetic" }, state);
+    assert.throws(() => readGameplayDescriptors(fixture.options),
+      /kit "kfix" 的 mode id "snakecosmetic" 与包 id 大小写归一相等（apps\/plugins\/snakeCosmetic）/u);
+    fs.rmSync(path.join(fixture.root, "apps/kits/kfix/gameplays/snakecosmetic"), { recursive: true });
+    // 插件玩法 / 宿主玩法照旧：id 就等于包 id（snake、tally）——真仓 fixture 本身必须仍能读取。
+    assert.doesNotThrow(() => readGameplayDescriptors(fixture.options));
   } finally {
     fs.rmSync(fixture.root, { recursive: true, force: true });
   }

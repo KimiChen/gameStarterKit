@@ -5,13 +5,15 @@
  * 用法：
  *   npm --workspace @game/server run codegen:plugins               # 写盘
  *   npm --workspace @game/server run codegen:plugins -- --check    # 只读校验
- *   npm --workspace @game/server run codegen:plugins -- --allow-delete <域>  # 显式删除保护
+ *   npm --workspace @game/server run codegen:plugins -- --allow-delete <域|plugin|kit|View>  # 显式删除保护
  *
  * 单源：apps/shared/src/protocol/lobbyRpc/{domains/*.ts,coreErrors.ts}（AST 语法读取，⛔ 不执行）
- *      + apps/plugins/<id>/plugin.json + apps/client/src 下的 <Name>View.view.json + apps/art/fairygui XML
+ *      + apps/plugins/<id>/plugin.json ∪ apps/kits/<id>/kit.json（docs/KIT.md §7；kit 根可缺席）
+ *      + apps/client/src 下的 <Name>View.view.json + apps/art/fairygui XML
  * 产物：apps/shared/src/protocol/lobbyRpc/registry.generated.ts
  *      + apps/client/src/generated/{fguiContracts,views,plugins}.generated.ts（唯一 View writer，§7.5）
  *      + docs/plugins.generated.md（能力索引，§5.7；⛔ 不写 plan-*.md）
+ *      + apps/{shared,server}/src/kits/catalog.generated.ts（kit 登记双端形态；零 kit 时 = 占位字节）
  * ⚠ registry 在 protocol/ 内：其字节变化后须 `node scripts/protocol-fingerprint.mjs --write` 重钉指纹；
  *   客户端产物变化后须 `npm run sync:client` 刷新 Cocos 镜像。
  */
