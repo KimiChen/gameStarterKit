@@ -91,11 +91,11 @@ export class BallMoveView implements BallMovePresentation {
     }
 
     /**
-     * 未开局时的等待提示（`null` = 收起）。⚠ 这个演示 roster 要 2 人才开局，单人进来一直是 Waiting；
-     * 客户端已经不再把 move 发出去（否则服务端每次拖动都回 1001），所以必须有这行字，
+     * 非对局中的一行状态提示（`null` = 收起）；文案由 Logic 按阶段决定，本文件只负责画。
+     * ⚠ 客户端在非 Playing 阶段不发 move（否则服务端每次拖动都回 1001），所以必须有这行字，
      * ⛔ 不然玩家只会看到「点了没反应」。
      */
-    showWaiting(text: string | null): void {
+    showNotice(text: string | null): void {
         if (!this.mounted || !this.layer) return;
         if (text === null) {
             this.waitingLabel?.node.destroy();
