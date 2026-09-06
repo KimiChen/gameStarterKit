@@ -2,7 +2,7 @@
  * snake-ruleset@2：Snake 新版无尽 V2 的双端单源。
  *
  * 这里仅包含纯 TypeScript/ES 标准库值与纯函数。配置来源、地图覆盖与五层 hash 的
- * 审计证据见 docs/s/s0-replication-baseline.md 与 docs/s/s2-battle-and-endless-lifecycle.md。
+ * 审计证据见 apps/plugins/snake/README.md §5。
  */
 
 /** 世界量化：round(x * 1000) / 1000，并把 -0 归一成 0。 */

@@ -110,7 +110,7 @@ verify:sync 镜像一致、inventory 全绿）；`test:int` 169/169（本地真 
 > `npm run verify:all` 在本机**首次完整 exit 0**：verify:core 17 步全绿（含 launcher-matrix 3/3、四个矩阵、perf），
 > 客户端 419/419，服务端 540/540。PNG 编码器改动对 S0 的影响：14 张 golden 由同一 `encodePng` 产出，S0
 > `--write/--check` 需要外部锁定归档，本轮未重生；下一次持归档刷新 S0 时 golden 字节会变（像素不变），
-> 届时需重钉 docs/s/evidence/s0 的 SHA256SUMS 与 goldens manifest。
+> ⚠ 2026-09-06：docs/s/evidence/ 已随文档归并删除，此项作废。
 
 ---
 
@@ -165,7 +165,7 @@ verify:sync 镜像一致、inventory 全绿）；`test:int` 169/169（本地真 
 
 | # | 条目 | 现状 |
 |---|---|---|
-| C1 | snakeoff（竖版贪吃蛇）玩法实现 | ✅ **首版已实现**（2026-09-02，S0–S5：素材与台账 `e9ab40f`、shared 契约 `f0c2111`、SnakeWorld 模拟 `3d2affe`、房间集成 `08b48e4`、客户端战斗链路 `b062f2a`、默认入口切换）。下一轮竖版新版无尽 V2 专项已完成 **S0 复刻证据基线**（`7a04131`）、**完整 S1 素材/三层目录**（原基线 `d18846a` + 磁铁增量 `bc5bb97`，[证据](docs/s/evidence/s1/README.md)）、**S2 战场/无尽生命周期**与 **S2R demo 金币复活**。当前代码口径为 `snake@4`（`f2639ae` state 枚举归属重构递增 modeVersion，规则同 S2R 的 `snake@3`）：8 真人 drop-in、稳定态 17 蛇、4096²、1030 食物、无房级 deadline、个人 run、Star/磁铁精确运动、按 uid 的 demo 金币余额和设备本地左右手。S2R 当前仅 best-effort 镜像 Redis 余额；S3/S4 将以同一 HASH 镜像 demo 衣柜/养成 profile，S5 Creator demo 验收仍未实施，`onlineCoinRelive5V1` 发布开关保持关闭；详细状态见 [docs/s/README.md](docs/s/README.md)。剩余尾巴：Creator 预览人工证据与真机联调（归 C3/S5）、数值手感调优（随预览进行） |
+| C1 | snakeoff（竖版贪吃蛇）玩法实现 | ✅ **首版已实现**（2026-09-02，S0–S5：素材与台账 `e9ab40f`、shared 契约 `f0c2111`、SnakeWorld 模拟 `3d2affe`、房间集成 `08b48e4`、客户端战斗链路 `b062f2a`、默认入口切换）。下一轮竖版新版无尽 V2 专项已完成 **S0 复刻证据基线**（`7a04131`）、**完整 S1 素材/三层目录**（原基线 `d18846a` + 磁铁增量 `bc5bb97`，证据（已随文档归并删除，见 C1 尾注））、**S2 战场/无尽生命周期**与 **S2R demo 金币复活**。当前代码口径为 `snake@4`（`f2639ae` state 枚举归属重构递增 modeVersion，规则同 S2R 的 `snake@3`）：8 真人 drop-in、稳定态 17 蛇、4096²、1030 食物、无房级 deadline、个人 run、Star/磁铁精确运动、按 uid 的 demo 金币余额和设备本地左右手。S2R 当前仅 best-effort 镜像 Redis 余额；S3/S4 将以同一 HASH 镜像 demo 衣柜/养成 profile，S5 Creator demo 验收仍未实施，`onlineCoinRelive5V1` 发布开关保持关闭；详细状态见 [apps/plugins/snake/README.md](apps/plugins/snake/README.md)。⚠ 2026-09-06 文档归并：docs/s/、docs/snakeoff/、docs/s/evidence/ 与 tools/snake-s1-assets/ 已删除，三个皮肤目录生成物成为不可再生的手工维护文件。剩余尾巴：Creator 预览人工证据与真机联调（归 C3/S5）、数值手感调优（随预览进行） |
 | C2 | undergroundIdle 玩法实现 | wsrpc 迁移入口路线次之（同一拍板）；美术生产流程与规格文档在 `docs/undergroundIdle/`（在途） |
 | C3 | 两玩法的**真机联调** | 承接 plan-v4「遗留待办」表的 `真机 / 阶段 10` 行。原表已定性为「既定范围外，随玩法实现另立计划」，故归入 C 而非 B——⛔ 但必须被点名：B 类全是编辑器/Creator 项，不点名它就会随抽离一起消失 |
 

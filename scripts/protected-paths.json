@@ -76,9 +76,6 @@
       { "path": "apps/server/test/wire-vectors/index.generated.ts", "writer": "npm --workspace @game/server run codegen:gameplays", "autoHeader": true },
       { "path": "apps/server/src/http/manifest.generated.ts", "writer": "npm --workspace @game/server run codegen:http", "autoHeader": true },
       { "path": "apps/shared/src/project.ts", "writer": "npm run init:project", "autoHeader": true },
-      { "path": "apps/shared/src/gameplays/snake/snakeSkinCatalog.generated.ts", "writer": "node tools/snake-s1-assets/cli.mjs --write", "autoHeader": true },
-      { "path": "apps/server/src/rooms/modes/snake/skinBusinessCatalog.generated.ts", "writer": "node tools/snake-s1-assets/cli.mjs --write", "autoHeader": true },
-      { "path": "apps/client/src/logic/rooms/snake/SnakePresentationCatalog.generated.ts", "writer": "node tools/snake-s1-assets/cli.mjs --write", "autoHeader": true },
       { "path": "apps/shared/src/generated/webplatform/**", "writer": "npm run sync:webplatform-contract", "autoHeader": true },
       { "path": "apps/client/src/shared/**", "writer": "npm run sync:shared", "autoHeader": false },
       { "path": "apps/Cocos/assets/src/**", "writer": "npm run sync:client", "autoHeader": false },
@@ -89,7 +86,7 @@
     ]
   },
   "semantics": {
-    "apps/server/sql/schema.sql": "Snake 专项冻结决策：不新建 snake_player_run、不新增或修改任何 MySQL 表（docs/s/s2r-reliable-coin-relive.md）。⚠ 本条是防未来误改的机检，把 S5 退出条件「SQL schema 无本专项差异」从人工核对升级为字节锁；⛔ 不禁止框架层正常的 schema 演进——真要改就同批重钉 protected-paths.lock 并在提交里说明。",
+    "apps/server/sql/schema.sql": "Snake 专项冻结决策：不新建 snake_player_run、不新增或修改任何 MySQL 表（apps/plugins/snake/README.md §5.6）。⚠ 本条是防未来误改的机检，把 S5 退出条件「SQL schema 无本专项差异」从人工核对升级为字节锁；⛔ 不禁止框架层正常的 schema 演进——真要改就同批重钉 protected-paths.lock 并在提交里说明。",
     "apps/shared/src/protocol/lobbyRpc/index.ts": "阶段 3 起为稳定 façade；façade 同样受保护——新增域只新建 domains/<domain>.ts",
     "apps/shared/src/protocol/lobbyRpc/envelope.ts": "阶段 3 起为稳定 façade（信封与错误常量经 coreErrors/registry 聚合）",
     "apps/shared/src/protocol/lobbyRpc/push.ts": "阶段 3 起为稳定 façade；域推送在各域 descriptor 声明",

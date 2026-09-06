@@ -46,7 +46,7 @@ export interface SnakeSkinBusinessEntry {
 /**
  * 外观经济写（装备/解锁/购买）的运行期 fail-closed 总闸。
  *
- * **这是不变量 8 的锚点**（拍板 A，docs/s/README.md §9.1）：此前描述的「双端 catalog hash 比对」
+ * **这是不变量 8 的锚点**（拍板 A，apps/plugins/snake/README.md §5.7）：此前描述的「双端 catalog hash 比对」
  * 在两侧都是死判据（hash 形参默认值等于本进程常量、生产调用点都不传该参），⛔ 不要再把不变量 8
  * 理解成那条比对。真正活着的判据是本开关 + 双端模块加载期的目录 fail-closed。
  *

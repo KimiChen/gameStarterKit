@@ -1,5 +1,5 @@
 /**
- * Snake 玩法的 RoomClient 装配（docs/snakeoff/04 §4/§8；drop-in 自由加入）。
+ * Snake 玩法的 RoomClient 装配（apps/plugins/snake/README.md；drop-in 自由加入）。
  *
  * 与 ballMove 的差异点：
  *  - join options 带 `profile: "dropIn"`（生产撮合 filterBy sId/mode/profile 隔离）；

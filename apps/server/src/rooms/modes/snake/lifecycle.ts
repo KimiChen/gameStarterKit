@@ -9,7 +9,7 @@ export const ONLINE_COIN_RELIVE_PLAYER_RELEASED = false;
 
 /**
  * run 起始皮肤解析。⛔ 永不读取 join 自报值——`uid` 由服务端从认证上下文反查后传入
- * （拍板 A「服务端单方面权威」，docs/s/README.md §9.1）。
+ * （拍板 A「服务端单方面权威」，apps/plugins/snake/README.md §7）。
  *
  * ⚠ `resolve` 必须是**同步**的：`createPlayer` 在同步路径上建实体，不能在这里 await Redis。
  */
