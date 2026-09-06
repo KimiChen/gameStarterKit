@@ -271,7 +271,7 @@ test("applyKitMigrations：首次应用写账本；同 sha 再跑零 DDL；租�
   assert.match(conn.calls[1].sql, /UPDATE singleton_lease/u);
   assert.deepEqual(conn.calls[1].params, ["h1", 60, "db_bootstrap"]);
   const last = conn.calls[conn.calls.length - 1];
-  assert.match(last.sql, /SET expires_at = NOW\(3\) WHERE lease_name = \? AND holder = \?/u);
+  assert.match(last.sql, /SET expires_at = NOW\(3\) - INTERVAL 1 SECOND WHERE lease_name = \? AND holder = \?/u);
   assert.deepEqual(last.params, ["db_bootstrap", "h1"]);
   assert.ok(logs.some((l) => l.includes("已应用 sql/001-init.sql")));
 
