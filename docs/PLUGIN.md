@@ -403,7 +403,7 @@ apps/plugins/
 | menu entryId | ✅ codegen 全仓唯一（2026-09-05） |
 | 同一 gameplayId 多贡献者 | ✅ codegen 拒绝（一 gameplayId 一贡献者） |
 | 入口位置 | ✅ 已消解——插件不声明位置，`apps/plugins/host.json` 是唯一声明处 |
-| Redis key 命名空间 | ✅ gameplay 侧 `kGameplay`（`gp:`）、plugin 侧 `kPluginUser`/`kPluginShared`（`pl:`）两个工厂，命名空间互不可达 |
+| Redis key 命名空间 | ✅ gameplay 侧 `kGameplay`（`gp:`）、plugin 侧 `kPluginUser`/`kPluginShared`（`pl:`）、kit 侧 `kKitUser`/`kKitShared`（`kt:`，docs/KIT.md §2）三个工厂，命名空间互不可达 |
 | FGUI 包名与 `ui://` 命名空间 | ✅ `scripts/fgui-manifest.mjs` 已查 package 名/id 与资源名/id 重复；安装侧靠所有权推导（只允许声明的 `fguiPackages`）挡住同名包解压覆盖 |
 | 插件间依赖顺序与环 | ✅ codegen 查环与不存在的依赖；PluginHost 运行期按依赖顺序装载/逆序卸载 |
 | 文件级越权与残留 | ✅ allowlist 整包拒绝；已安装锁让升级按清单删、卸载按清单删 |
@@ -419,7 +419,7 @@ apps/plugins/
 - ✅ plugin 侧 Redis 键工厂；
 - ✅ 默认 launch target 重定位（`host.json.defaultLaunch`）与 slot/order 退役；
 - ✅ `launch.kind:"route"`（纯 plugin 入口）；
-- ✅ `dependencies` 运行期消费；
+- ✅ `dependencies` 运行期消费；⛔ `dependencies` 不得直接写 kit id——对 kit 的依赖只经 `requires.kits` 声明（codegen 拒绝，KIT.md §4；带客户端 entry 的 kit 由 codegen 自动并入 dependencies 且排在前面）；
 - ✅ §8 两条「待核实」定论（FGUI 包名重复已查、依赖已消费）；
 - ✅ plugin 侧契约闸（codegen 层域 descriptor digest → 域级 `contractVersion`，`LOBBY_RPC_DOMAIN_CONTRACTS`）。
 
