@@ -128,6 +128,8 @@ const NOT_ALIAS = new Set([
   ...TERMINATORS, ...JOIN_KEYWORDS, ...JOIN_MODIFIERS,
   "ON", "USING", "PARTITION", "IGNORE", "FORCE", "USE", "AS", "IF", "LATERAL", "WHEN", "THEN", "ELSE", "END",
 ]);
+/** `INSERT` / `REPLACE` 动词与目标表之间允许的修饰词（其后 INTO 可省）。 */
+const INSERT_MODIFIERS = new Set(["LOW_PRIORITY", "DELAYED", "HIGH_PRIORITY", "IGNORE"]);
 /** 索引提示：`{USE|IGNORE|FORCE} {INDEX|KEY} [FOR {JOIN|ORDER BY|GROUP BY}] (…)`。 */
 const INDEX_HINT_HEADS = new Set(["USE", "IGNORE", "FORCE"]);
 
@@ -135,7 +137,9 @@ type Token = { readonly kind: "ident" | "quoted" | "punct" | "other"; readonly t
 
 /**
  * 剥字符串字面量与注释（单/双引号字符串含反斜杠转义与双引号折叠；`-- ` / `#` 行注释；斜杠星号块注释）。
- * 未闭合 ⇒ 抛（fail-closed）。`/*!`（服务端会执行）与 `/*+`（优化器提示）⛔ 一律拒。backtick 标识符保留给 tokenizer。
+ * 未闭合 ⇒ 抛（fail-closed）。`/*!`（服务端会执行）与 `/*+`（优化器提示）⛔ 一律拒。
+ * backtick 标识符按 MySQL 词法**整体吃掉再原样吐回**给 tokenizer：漏掉这一步，`` `x'` `` 里的引号会被
+ * 当成字符串起点，与 MySQL 的解析错位，两个这样的标识符之间的 FROM/JOIN 就会被整段删掉而逃过表闸。
  */
 function stripLiteralsAndComments(sql: string, kitId: string): string {
   let out = "";
@@ -143,6 +147,23 @@ function stripLiteralsAndComments(sql: string, kitId: string): string {
   const n = sql.length;
   while (i < n) {
     const c = sql[i];
+    if (c === "`") {
+      // MySQL 把 `…` 当一个原子：里面的 ' " # -- /* 都不是字面量/注释起点。
+      let j = i + 1;
+      let closed = false;
+      while (j < n) {
+        if (sql[j] === "`") {
+          // 双写转义（``）：tokenize 的 /`([^`]*)`/ 认不了这一形态 ⇒ fail-closed，不猜。
+          if (sql[j + 1] === "`") { throw new KitTableAccessError(kitId, "``", "⛔ backtick 标识符含双写转义"); }
+          closed = true; break;
+        }
+        j++;
+      }
+      if (!closed) { throw new KitTableAccessError(kitId, "", "backtick 标识符未闭合"); }
+      out += sql.slice(i, j + 1);
+      i = j + 1;
+      continue;
+    }
     if (c === "'" || c === "\"") {
       let j = i + 1;
       let closed = false;
@@ -326,6 +347,15 @@ export function assertKitTableAccess(sql: string, kitId: string): string[] {
       j += 1;                                                                                // ON 条件等表达式 token
     }
   };
+
+  // `INSERT [LOW_PRIORITY|DELAYED|HIGH_PRIORITY] [IGNORE] [INTO] tbl` / `REPLACE [LOW_PRIORITY|DELAYED] [INTO] tbl`
+  // ——INTO 在 MySQL 语法里**可省**。省掉时整条语句一个 TABLE_KEYWORDS 都不含，下面的主循环永不触发，
+  // 目标表就整个逃过前缀闸。这里显式认这一形态，表因子仍交给 scanTableRefs（同一套限定名/别名/提示规则）。
+  if (leading === "INSERT" || leading === "REPLACE") {
+    let j = 1;
+    while (INSERT_MODIFIERS.has(upper(tokens[j]))) { j += 1; }
+    if (upper(tokens[j]) !== "INTO") { scanTableRefs(j, leading); }
+  }
 
   for (let i = 0; i < tokens.length; i++) {
     const kw = upper(tokens[i]);
