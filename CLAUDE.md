@@ -17,10 +17,7 @@
 > - [apps/plugins/snake/README.md](apps/plugins/snake/README.md)：Snake 玩法唯一文档（素材授权台账、冻结数值、拍板记录、真引擎缺陷台账）
 > - [apps/kits/README.md](apps/kits/README.md)：kit 目录说明；首个样本 kit `arena` 见 [apps/kits/arena/README.md](apps/kits/arena/README.md)，建在其上的样本插件见 [apps/plugins/arenaShop/README.md](apps/plugins/arenaShop/README.md)
 > - [todo-godogen.md](todo-godogen.md)：未实现的外部项目对照吸收计划，不构成核心能力承诺
-> - [plan-v5.md](plan-v5.md)：当前开放问题、实施状态与验收证据的唯一真相
-> - [plan-v4.md](plan-v4.md)：上一轮实施状态与验收证据的历史归档
-> - [plan-v3.md](plan-v3.md)：更早的历史归档
-> - [plan-v2.md](plan-v2.md)：更早的历史归档
+> - [docs/plan-v5.md](docs/plan-v5.md)：当前开放问题、实施状态与验收证据的唯一真相
 >
 > 多数源码目录另有就近 README，但尚未覆盖全部：`apps/shared`、`apps/server` 根、`apps/server/src/player/`
 > 与 `core/` 下除 `compute/` 外的子目录目前没有；这些目录的约束分别见铁律 4/6 与
