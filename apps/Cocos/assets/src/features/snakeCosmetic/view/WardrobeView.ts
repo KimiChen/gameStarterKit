@@ -5,11 +5,12 @@
  * 分工（铁律 9）：本文件只管节点与事件；筛选、提交闸、错误翻译与红点在 ../logic/WardrobeLogic.ts。
  * 宿主接线自 ../logic/snakeCosmeticRuntime.ts 读取（feature module install 时注入）。
  */
-import { Color, Graphics, Label, Node, Rect, Sprite, SpriteFrame, Texture2D, UITransform, resources } from "cc";
+import { Color, Label, Node, Rect, Sprite, SpriteFrame, Texture2D, UITransform, resources } from "cc";
 import { CocosView } from "../../../view/CocosView";
 import { getClientSnakeSkinPresentation } from "../../../logic/rooms/snake/SnakePresentationCatalog";
 import { WardrobeLogic, type WardrobeFilter, type WardrobeRow } from "../logic/WardrobeLogic";
 import { getSnakeCosmeticRuntime } from "../logic/snakeCosmeticRuntime";
+import { createSolidPlate } from "../../../view/uiPlate";
 
 const SCRIM = new Color(6, 9, 18, 190);
 const PANEL = new Color(24, 30, 44, 245);
@@ -269,13 +270,9 @@ export class WardrobeView extends CocosView {
     private plate(
         parent: Node, width: number, height: number, color: Color, x: number, y: number, name = "plate",
     ): Node {
-        const node = this.node(name, parent, width, height);
-        node.setPosition(x, y, 0);
-        const graphics = node.addComponent(Graphics);
-        graphics.fillColor = color;
-        graphics.rect(-width / 2, -height / 2, width, height);
-        graphics.fill();
-        return node;
+        // ⛔ 这里曾经是「每块底板一个 Graphics」，实测每个固定占约 2.25MB 显存缓冲
+        // 且各自一个 draw call；改走共用的白图 Sprite（可合批）。判据见 view/uiPlate.ts。
+        return createSolidPlate(parent, width, height, color, x, y, name);
     }
 
     /** align="left" 时 x 是文字左边缘（锚点 (0,0.5) + 左对齐）；缺省 "center" 时 x 是中心。 */

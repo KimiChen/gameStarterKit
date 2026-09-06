@@ -1,11 +1,12 @@
 /**
  * tally presentation（Cocos 纯节点，挂在玩法 presentation host 节点下；坐标以 host 中心为原点）。
  * 分工（铁律 9）：本文件只管节点与触摸；视图模型来自 logic/rooms/tally/TallyGameplay.ts 的 model()。
- * 手搓粗糙版（同 SettingsView 口径）：Graphics 色块 + Label，每帧按模型重建状态区。
+ * 手搓粗糙版（同 SettingsView 口径）：纯色底板 + Label，每帧按模型重建状态区。
  */
-import { Color, Graphics, Label, Node, UITransform, view } from "cc";
+import { Color, Label, Node, UITransform, view } from "cc";
 import type { TallyInput, TallyPresentation, TallyViewModel } from "../../../logic/rooms/tally/TallyGameplay";
 import { GamePhase } from "../../../shared/index";
+import { createSolidPlate } from "../../uiPlate";
 
 const BG = new Color(18, 22, 34, 255);
 const PANEL = new Color(30, 36, 52, 255);
@@ -105,13 +106,9 @@ export class TallyView implements TallyPresentation {
     }
 
     private plate(parent: Node, width: number, height: number, color: Color, x: number, y: number, name = "plate"): Node {
-        const node = this.node(name, parent, width, height);
-        node.setPosition(x, y, 0);
-        const graphics = node.addComponent(Graphics);
-        graphics.fillColor = color;
-        graphics.rect(-width / 2, -height / 2, width, height);
-        graphics.fill();
-        return node;
+        // ⛔ 这里曾经是「每块底板一个 Graphics」，实测每个固定占约 2.25MB 显存缓冲
+        // 且各自一个 draw call；改走共用的白图 Sprite（可合批）。判据见 view/uiPlate.ts。
+        return createSolidPlate(parent, width, height, color, x, y, name);
     }
 
     private label(

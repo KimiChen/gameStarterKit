@@ -3,7 +3,7 @@
  *
  * ⚠ 手搓粗糙版：FGUI 编辑器当前不可用，这版用 Cocos 节点直接堆（先例
  * SnakeWorldView）。目标是**能跑能点**，视觉后续出图再换 FGUI 实现——所以这里没有
- * 九宫、没有字体、没有滚动容器，只有 Graphics 色块 + Label。
+ * 九宫、没有字体、没有滚动容器，只有纯色底板 + Label。
  *
  * 布局取 750×1624 设计基线的**相对定位**：一切坐标由 `layerWidth/layerHeight` 按比例
  * 算出（CocosView 挂载时按层容器尺寸铺满），⛔ 不写死像素、不贴边（留安全区）。
@@ -12,9 +12,10 @@
  * 分工（铁律 9）：本文件只管节点与事件；两个区块的数据、排序、可用性叠加与
  * 失败回滚全在 logic/page/SettingsLogic.ts。
  */
-import { Color, Graphics, Label, Node, UITransform } from "cc";
+import { Color, Label, Node, UITransform } from "cc";
 import { CocosView } from "./CocosView";
 import type { SettingsLogic } from "../logic/page/SettingsLogic";
+import { createSolidPlate } from "./uiPlate";
 
 const SCRIM = new Color(6, 9, 18, 190);
 const PANEL = new Color(24, 30, 44, 245);
@@ -171,13 +172,9 @@ export class SettingsView extends CocosView {
     private plate(
         parent: Node, width: number, height: number, color: Color, x: number, y: number, name = "plate",
     ): Node {
-        const node = this.node(name, parent, width, height);
-        node.setPosition(x, y, 0);
-        const graphics = node.addComponent(Graphics);
-        graphics.fillColor = color;
-        graphics.rect(-width / 2, -height / 2, width, height);
-        graphics.fill();
-        return node;
+        // ⛔ 这里曾经是「每块底板一个 Graphics」，实测每个固定占约 2.25MB 显存缓冲
+        // 且各自一个 draw call；改走共用的白图 Sprite（可合批）。判据见 view/uiPlate.ts。
+        return createSolidPlate(parent, width, height, color, x, y, name);
     }
 
     private row(parent: Node, width: number, height: number, y: number, color: Color, kind: string): Node {
