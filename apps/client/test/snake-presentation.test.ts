@@ -93,8 +93,8 @@ class FakeTexture2D {
  * 假件给 2048×2048 的话，结算页的布局断言验的是一块不存在的板子。⛔ 别把这里改回统一默认值。
  */
 const REAL_TEXTURE_SIZES: ReadonlyMap<string, readonly [number, number]> = new Map([
-    ["snake/snake_result_bg/texture", [674, 694]],
-    ["snake/snake_btn_blue/texture", [368, 110]],
+    ["plugins/snake/snake_result_bg/texture", [674, 694]],
+    ["plugins/snake/snake_btn_blue/texture", [368, 110]],
 ]);
 
 class FakeJsonAsset {
@@ -127,7 +127,7 @@ class FakeJsonAsset {
             "x_lighting01", "x_lighting02", "x_lighting03", "xt_s_lighting", "xt_s_lighting02",
         ].map((logicalName) => ({
             logicalName,
-            textureAsset: `snake/snake_magnet_aura_${logicalName}`,
+            textureAsset: `plugins/snake/snake_magnet_aura_${logicalName}`,
             frame: {
                 sourceFrameName: logicalName,
                 rect: { x: 0, y: 0, width: 16, height: 16 },
@@ -356,11 +356,11 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
                 callback(new Error(`missing test resource: ${path}`));
                 return;
             }
-            if (Type === FakeJsonAsset && path === "snake/snake_magnet_aura") {
+            if (Type === FakeJsonAsset && path === "plugins/snake/snake_magnet_aura") {
                 callback(null, new FakeJsonAsset());
                 return;
             }
-            if (Type === FakeAudioClip && path === "snake/snake_sfx_collect_magnet") {
+            if (Type === FakeAudioClip && path === "plugins/snake/snake_sfx_collect_magnet") {
                 callback(null, new FakeAudioClip());
                 return;
             }
@@ -451,19 +451,19 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
         await new Promise<void>((resolve) => setImmediate(resolve));
 
         assert.equal(loadedPaths.length, CLIENT_SNAKE_PRESENTATION_CATALOG.length + 16);
-        assert.ok(loadedPaths.filter((path) => path !== "snake/snake_magnet_aura"
-            && path !== "snake/snake_sfx_collect_magnet")
+        assert.ok(loadedPaths.filter((path) => path !== "plugins/snake/snake_magnet_aura"
+            && path !== "plugins/snake/snake_sfx_collect_magnet")
             .every((path) => path.endsWith("/texture")));
         for (const required of [
-            "snake/snake_foods_new/texture",
-            "snake/snake_control_joystick_base/texture",
-            "snake/snake_control_joystick_knob/texture",
-            "snake/snake_control_boost/texture",
-            "snake/snake_magnet_tools/texture",
-            "snake/snake_magnet_aura",
-            "snake/snake_sfx_collect_magnet",
-            "snake/snake_speed_fx/texture",
-            "snake/snake_extras/texture",
+            "plugins/snake/snake_foods_new/texture",
+            "plugins/snake/snake_control_joystick_base/texture",
+            "plugins/snake/snake_control_joystick_knob/texture",
+            "plugins/snake/snake_control_boost/texture",
+            "plugins/snake/snake_magnet_tools/texture",
+            "plugins/snake/snake_magnet_aura",
+            "plugins/snake/snake_sfx_collect_magnet",
+            "plugins/snake/snake_speed_fx/texture",
+            "plugins/snake/snake_extras/texture",
         ]) assert.ok(loadedPaths.includes(required), `缺少 ${required}`);
         for (const name of ["SnakeWorld.JoystickBase", "SnakeWorld.JoystickKnob", "SnakeWorld.S4"]) {
             const node = findNode(host, name);
@@ -803,7 +803,7 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
         assert.equal(input.count(), 0, "unmount 必须释放全部触摸监听");
         assert.equal(game.count(), 0, "unmount 必须释放失焦监听");
 
-        missingResources.add("snake/snake_magnet_tools/texture");
+        missingResources.add("plugins/snake/snake_magnet_tools/texture");
         const failedHost = new FakeNode("failed-host");
         failedHost.setPosition(375, 812, 0);
         const missingMagnet = new SnakeWorldView(failedHost as never, () => {}, () => {});

@@ -2445,7 +2445,7 @@
       },
       "logicalName": "x_lighting01",
       "resourceHash": "f86fb2768cc1c9228ca99d7588c01f37c86e1a088e306076bbde05d94c35aa5b",
-      "textureAsset": "snake/snake_magnet_aura_x_lighting01",
+      "textureAsset": "plugins/snake/snake_magnet_aura_x_lighting01",
       "textureSize": {
         "height": 26,
         "width": 54
@@ -2477,7 +2477,7 @@
       },
       "logicalName": "x_lighting02",
       "resourceHash": "8bf1c195d4dfc2bf7ad8db4740a0faaa1743d092ac715f9e562a0bccee2c3194",
-      "textureAsset": "snake/snake_magnet_aura_x_lighting02",
+      "textureAsset": "plugins/snake/snake_magnet_aura_x_lighting02",
       "textureSize": {
         "height": 34,
         "width": 78
@@ -2509,7 +2509,7 @@
       },
       "logicalName": "x_lighting03",
       "resourceHash": "15331a741d25de8e08ed903f9c88cab46ebad60bc57c40005fc96f839dd5b45d",
-      "textureAsset": "snake/snake_magnet_aura_x_lighting03",
+      "textureAsset": "plugins/snake/snake_magnet_aura_x_lighting03",
       "textureSize": {
         "height": 64,
         "width": 56
@@ -2541,7 +2541,7 @@
       },
       "logicalName": "xt_s_lighting",
       "resourceHash": "11b9fdc1983d39bb1a578ded1fa7e4962fae95da44895f40b819f507c1a5425c",
-      "textureAsset": "snake/snake_magnet_aura_xt_s_lighting",
+      "textureAsset": "plugins/snake/snake_magnet_aura_xt_s_lighting",
       "textureSize": {
         "height": 40,
         "width": 40
@@ -2573,7 +2573,7 @@
       },
       "logicalName": "xt_s_lighting02",
       "resourceHash": "4e77f9fbd45a66be64f8cd4311e4e761ffdb91e76580e4e8334d582dd7eaebc0",
-      "textureAsset": "snake/snake_magnet_aura_xt_s_lighting02",
+      "textureAsset": "plugins/snake/snake_magnet_aura_xt_s_lighting02",
       "textureSize": {
         "height": 128,
         "width": 128

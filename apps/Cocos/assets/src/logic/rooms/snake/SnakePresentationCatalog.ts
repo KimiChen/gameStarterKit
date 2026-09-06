@@ -78,7 +78,7 @@ export interface MagnetPresentation {
     readonly sourceToolId: 10001;
     readonly world: {
         readonly logicalName: "magnet";
-        readonly textureAsset: "snake/snake_magnet_tools";
+        readonly textureAsset: "plugins/snake/snake_magnet_tools";
         readonly frame: FrameDefinition;
         readonly displaySize: 70;
         readonly rendering: MagnetRenderingGroup;
@@ -86,7 +86,7 @@ export interface MagnetPresentation {
     readonly statusIcon: {
         readonly logicalName: "magnet-status-icon";
         readonly logicalAliasOf: "magnet";
-        readonly textureAsset: "snake/snake_magnet_tools";
+        readonly textureAsset: "plugins/snake/snake_magnet_tools";
         readonly frame: FrameDefinition;
         readonly role: "passive-indicator";
         readonly interactive: false;
@@ -95,7 +95,7 @@ export interface MagnetPresentation {
     readonly activeEffect: {
         readonly event: "magnet-active";
         readonly policy: "resource";
-        readonly recipeAsset: "snake/snake_magnet_aura";
+        readonly recipeAsset: "plugins/snake/snake_magnet_aura";
         readonly rendering: MagnetRenderingGroup;
         readonly fallback: {
             readonly logicalName: "magnet-status-icon";
@@ -256,7 +256,7 @@ export function validateMagnetPresentation(value: unknown): MagnetPresentation {
 
     const world = record(magnet.world, "tools.magnet.world");
     exactKeys(world, ["displaySize", "frame", "logicalName", "rendering", "textureAsset"], "tools.magnet.world");
-    if (world.logicalName !== "magnet" || world.textureAsset !== "snake/snake_magnet_tools" || world.displaySize !== 70) {
+    if (world.logicalName !== "magnet" || world.textureAsset !== "plugins/snake/snake_magnet_tools" || world.displaySize !== 70) {
         fail("tools.magnet.world identity, texture or displaySize is invalid");
     }
     const worldFrameRecord = record(world.frame, "tools.magnet.world.frame");
@@ -284,7 +284,7 @@ export function validateMagnetPresentation(value: unknown): MagnetPresentation {
 
     const activeEffect = record(magnet.activeEffect, "tools.magnet.activeEffect");
     exactKeys(activeEffect, ["event", "fallback", "policy", "recipeAsset", "rendering"], "tools.magnet.activeEffect");
-    if (activeEffect.event !== "magnet-active" || activeEffect.policy !== "resource" || activeEffect.recipeAsset !== "snake/snake_magnet_aura") {
+    if (activeEffect.event !== "magnet-active" || activeEffect.policy !== "resource" || activeEffect.recipeAsset !== "plugins/snake/snake_magnet_aura") {
         fail("tools.magnet.activeEffect must use the registered magnet aura recipe");
     }
     validateRendering(activeEffect.rendering, "snake-head-effects", "recipe-defined", "tools.magnet.activeEffect.rendering");
@@ -334,7 +334,7 @@ export function validateSnakeEntityPresentationCatalog(value: unknown, generated
     if (names.some((name) => typeof name !== "string") || new Set(names).size !== names.length) fail("presentation.audio event names must be unique strings");
     const collect = audio.find((entry) => entry.event === "collect-magnet");
     const loop = audio.find((entry) => entry.event === "magnet-active-loop");
-    if (!collect || collect.policy !== "resource" || collect.asset !== "snake/snake_sfx_collect_magnet"
+    if (!collect || collect.policy !== "resource" || collect.asset !== "plugins/snake/snake_sfx_collect_magnet"
         || typeof collect.resourceHash !== "string" || !/^[a-f0-9]{64}$/.test(collect.resourceHash)
         || collect.sfxOnGuarded !== true || collect.playback !== "single-instance" || collect.maxConcurrent !== 1
         || collect.missingPolicy !== "silent" || collect.endlessReachability !== "mapped") {
@@ -444,12 +444,12 @@ export interface MagnetRuntimeResolution {
     readonly battleReady: boolean;
     readonly world: MagnetPresentation["world"] | null;
     readonly activeVisual:
-        | Readonly<{ mode: "aura"; recipeAsset: "snake/snake_magnet_aura" }>
+        | Readonly<{ mode: "aura"; recipeAsset: "plugins/snake/snake_magnet_aura" }>
         | Readonly<{
             mode: "status-icon-fallback";
             logicalName: "magnet-status-icon";
             placement: "over-head";
-            textureAsset: "snake/snake_magnet_tools";
+            textureAsset: "plugins/snake/snake_magnet_tools";
             frame: FrameDefinition;
         }>
         | null;
