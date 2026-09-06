@@ -426,6 +426,9 @@ export function parseKitRegistration(input: unknown, pathLabel: string): KitRegi
   validateNode(loadKitRegistrationSchema(), input, pathLabel);
   const value = input as JsonRecord;
   const common = parseRegistrationCommon(value, pathLabel);
+  // ⚠ api 面名的模式 ^[a-z][A-Za-z0-9]{0,63}$ 能匹配 toString / constructor / valueOf 一类
+  // Object.prototype 成员；按面名索引这个映射的两处闸（viewCatalog.mergeRequiredKits、
+  // lock.kitApiViolations）都必须只认自有属性，否则会读到继承来的函数而 fail-open。
   const api: Record<string, KitApiSurface> = {};
   for (const [surface, spec] of Object.entries(isRecord(value.api) ? value.api : {})) {
     const record = spec as JsonRecord;
