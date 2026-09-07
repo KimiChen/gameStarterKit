@@ -1,6 +1,6 @@
 /** tally wire owner 的向量 sidecar（plugins/tally 自带；随 codegen:gameplays 汇入 wire-vectors/index.generated.ts）。 */
 import { C2S } from "@game/shared";
-import { symbolExtra, type WireVectorFile } from "../../../server/test/wire-vectors/vectorTypes";
+import { symbolExtra, type WireVectorFile } from "./vectorTypes";
 
 export default {
   c2s: {
