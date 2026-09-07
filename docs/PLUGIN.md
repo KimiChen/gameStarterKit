@@ -319,6 +319,9 @@ gameplay `manifest.json` 的 `schemaVersion` 读时与 gameplay-schema 比对（
 `test:aggregate-chain-matrix` / `test:toolchain-runtime-matrix`）与宿主自己的服务端测试——工具链一变就
 已经算宿主改动、会走全量。
 
+**实测**（2026-09-07，10 核 / APFS，snake 包内一处改动）：`verify:all` 213.9s → `test:changed` **37.7s**，
+两者都 exit 0。收窄跑掉的是 23 个测试文件 319 例 + 客户端 477 例 + 全部校验脚本。
+
 ⚠ **这是内循环便利，⛔ 不是审核闸。** 提交前与 CI 仍跑 `verify:all`；判据本身由
 `apps/server/test/plugin-changed.test.ts` 逐条守（判反了不会红，只会静默少跑，所以每条都要有用例）。
 
