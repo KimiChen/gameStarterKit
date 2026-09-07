@@ -276,7 +276,7 @@ export function runChanged(options: ChangedRunOptions): number {
     runCommand(root, "npm", args);
   }
   console.log(`[plugin]   ▶ ${plan.tests.length} 个测试文件（包机制 + ${plan.packages.join("、")} 自有）`);
-  const result = spawnSync(process.execPath, ["--import", "tsx", "--test", "--test-concurrency=1", ...plan.tests], {
+  const result = spawnSync(process.execPath, ["--import", "tsx", "--test", "--test-concurrency=4", ...plan.tests], {
     cwd: path.join(root, "apps/server"),
     stdio: "inherit",
   });

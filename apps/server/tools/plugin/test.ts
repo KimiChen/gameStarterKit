@@ -56,7 +56,7 @@ export function runPackageTests(options: PackageTestOptions): number {
     return 0;
   }
   console.log(`[plugin] ${plan.id}：跑 ${plan.files.length} 个测试文件`);
-  const result = spawnSync(process.execPath, ["--import", "tsx", "--test", "--test-concurrency=1", ...plan.files], {
+  const result = spawnSync(process.execPath, ["--import", "tsx", "--test", "--test-concurrency=4", ...plan.files], {
     cwd: path.join(path.resolve(options.root), "apps/server"),
     stdio: "inherit",
   });
