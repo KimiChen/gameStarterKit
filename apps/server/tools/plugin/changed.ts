@@ -258,7 +258,11 @@ export function runChanged(options: ChangedRunOptions): number {
   const plan = planChanged(root, collectChangedPaths(root, options.base));
   console.log(`[plugin] changed：${plan.changed.length} 条改动 → ${plan.fast ? "收窄" : "全量"}`);
   console.log(`[plugin]   ${plan.reason}`);
-  for (const entry of plan.undeducible) console.log(`[plugin]   ⚠ ${entry.id} 推导不出所有权集，其路径按宿主算：${entry.reason}`);
+  // ⚠ 只在这次真的碰到了它的目录时才报——否则宿主自有登记 builtin 会在每一次运行里刷同一行噪音。
+  for (const entry of plan.undeducible) {
+    const touched = plan.changed.some((relative) => relative.startsWith(`${PLUGINS_ROOT}/${entry.id}/`) || relative.startsWith(`${KITS_ROOT}/${entry.id}/`));
+    if (touched) console.log(`[plugin]   ⚠ ${entry.id} 推导不出所有权集，其路径按宿主算：${entry.reason}`);
+  }
   if (options.dryRun === true) {
     if (plan.fast) console.log(`[plugin]   将跑 ${plan.tests.length} 个测试文件：${plan.tests.join(" ")}`);
     return 0;
