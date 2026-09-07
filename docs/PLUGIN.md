@@ -303,7 +303,13 @@ gameplay `manifest.json` 的 `schemaVersion` 读时与 gameplay-schema 比对（
 | --- | --- | --- |
 | `apps/plugins/<id>/**`、`apps/client/src/plugins/<id>/**`、`resources/plugins/<id>/**`、`<id>-*.test.ts` … | 包自有 | 收窄 |
 | `generatedWriterOwned` 登记的生成物与镜像（`registry.generated.ts` / `client/src/generated/**` / Cocos 镜像 …） | 派生 | 不阻止收窄（有 `codegen --check` 与 `verify:sync` 把关）；**只有派生在动**时仍走全量 |
-| 其余一切（含宿主自有登记 `builtin`、`scripts/packages/<id>.lock`） | 宿主 | 全量 |
+| 已知包自己的锁 `scripts/packages/<id>.lock` | 派生 | 同上（见下方⚠） |
+| 其余一切（含宿主自有登记 `builtin`、未知 id 的锁） | 宿主 | 全量 |
+
+⚠ 锁被算作派生是**实测逼出来的**：`plugin -- check` 在包被编辑后**必红**（「本地改动（与锁不符）」，
+和 `verify:all` 同一行为），要靠 `install --reinstall-from-tree` 重写锁才绿。锁若算宿主改动，
+「编辑包 → 重装 → 跑测试」这条唯一的内循环就永远退回全量，快路径等于没有。⛔ 但只有锁在动、
+没有任何包真源在动时仍走全量，凭空改锁不会被放过。
 
 收窄后仍然跑：全部 `verify:*` 校验脚本（合计约 2s——它们检查工作树，跟工具自身无关）、两个
 `codegen --check`、`plugin -- check`、`typecheck`、`test:fgui`、`test:client`、**包机制**服务端测试
