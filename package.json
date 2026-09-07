@@ -43,6 +43,7 @@
     "typecheck:client": "tsc -p apps/client/tsconfig.test.json --noEmit",
     "typecheck:client:legacy": "tsc -p apps/client/tsconfig.json --noEmit",
     "test:client": "cd apps/server && node --import tsx --test ../client/test/*.test.ts ../../scripts/vendor-lock.test.mjs",
+    "test:changed": "npm --workspace @game/server run plugin -- changed",
     "test:vendor": "node --test scripts/vendor-lock.test.mjs",
     "test:fgui": "cd apps/server && node --import tsx --test ../../scripts/fgui-manifest.test.mjs ../../scripts/fgui-roundtrip.test.mjs ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/fguiContract.test.ts ../client/test/viewRegistry.test.ts",
     "test:faults": "node scripts/fault-matrix.mjs",
