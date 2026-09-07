@@ -378,51 +378,33 @@ id=config → dir:apps/Cocos/assets/resources/config
 一个包有资源目录（redeem / tally / arenaShop / builtin 都没有，arena 已在 `resources/kits/arena/`），
 所以代价是 snake 一次改名（127 文件 + 80 条路径字符串）与 1.1.4 → 1.2.0。⛔ 越晚做越贵。
 
-#### 5.5.4 tally 试点：服务端与测试真正搬进插件目录（2026-09-06）
+#### 5.5.4 试点：把服务端与测试搬进插件目录——已回滚（2026-09-06 试，2026-09-07 撤）
 
-问的是「能不能把一个插件的文件收进一个文件夹」。答案是**部分能**，试点拿最小的 tally（27 文件）走通了
-服务端那一半，⛔ 没有复制、没有物化——文件是真搬走的。
+⛔ **结论先写：维持原方案**——服务端 GameMode 留在 `apps/server/src/rooms/modes/<id>/index.ts`，
+测试与 wire 向量 sidecar 留在 `apps/server/test/`。下面是试点的实测代价，留档是为了让下一个想做
+这件事的人不必再踩一遍，⛔ 不是待办。
 
-**搬成了**（3 个文件，`apps/plugins/tally/` 下）：`server/index.ts`（服务端 GameMode）、
-`test/tally-game-mode.test.ts`、`test/wire-vectors.ts`（wire 向量 sidecar）。
-
-**做法**：给两个发现点各加**第二个根**，两处都有即歧义、fail-closed：
-
-| 发现点 | 根 ① 框架 | 根 ② 插件自带 |
-| --- | --- | --- |
-| 服务端 GameMode | `apps/server/src/rooms/modes/<id>/index.ts` | `apps/plugins/<id>/server/index.ts` |
-| wire 向量 sidecar | `apps/server/test/wire-vectors/<id>.ts` | `apps/plugins/<id>/test/wire-vectors.ts` |
-
-生成的 `catalog.generated.ts` / `wire-vectors/index.generated.ts` 的 import 说明符跟着真实落点走；
-服务端测试 glob 扩成 `test/*.test.ts ../plugins/*/test/*.test.ts`。所有权推导**不用改**——
-`apps/plugins/<id>/` 整个目录本来就在推导集里。
-
-**踩到的三条真代价**（试点的主要产出）：
+试点做法：给两个发现点各加**第二个根**（`apps/plugins/<id>/server/index.ts`、
+`apps/plugins/<id>/test/wire-vectors.ts`），两处都有即歧义、fail-closed，然后把 tally 的 3 个文件
+真搬过去。`verify:all` 能跑绿，但代价有三条：
 
 1. ⚠ **package scope 会把单例劈成两个。** `apps/server/package.json` 是 `"type":"module"`，而
-   `apps/plugins/` 没有 package.json、落在**根 CJS scope**。同一个 `GameMode.ts` 因此被加载两次，
-   `gameModeRegistry` 成了两个实例：tally 注册进去了，`registry.list()` 里却没有，`tsc` 全绿。
-   修法是给 `apps/plugins/` 加一个只声明 `"type":"module"` 的 scope 标记（⛔ 不是 workspace）。
-   **任何把插件代码搬出 workspace 的方案都要先处理这条**，否则症状极难认。
-2. ⚠ **服务端不再能单独搬走。** 生成的 catalog 现在静态 import `../../../../plugins/<id>/server/index`，
-   凡是「只复制 apps/server」的沙箱都会在解析阶段炸（`index-startup-lifecycle` 的启动沙箱因此改成
-   `server/` 与 `plugins/` 同级 + 根上 node_modules，与真仓同形）。部署面上这是对的——插件本来就是
-   服务端的一部分——但它是一条真实的耦合。
-3. ⚠ **夹具会按老形态硬编码。** `gameplay-codegen.test` 的夹具原来从 `modes/<id>/index.ts` 复制、
-   断言 catalog 里是 `"./<id>/index"`、还比对「modes/ 子目录 == 装配集」。三处都得改成「两根并集」。
+   `apps/plugins/` 落在**根 CJS scope**。同一个 `GameMode.ts` 因此被加载两次，`gameModeRegistry`
+   成了两个实例：tally 注册进去了，`registry.list()` 里却没有，`tsc` 全绿。要靠给 `apps/plugins/`
+   加 `"type":"module"` 的 scope 标记才修得掉。**任何把插件代码搬出 workspace 的方案都得先处理这条**，
+   否则症状极难认。
+2. ⚠ **服务端不再能单独搬走。** 生成的 catalog 会静态 import `../../../../plugins/<id>/server/index`，
+   凡是「只复制 apps/server」的沙箱都在解析阶段炸（`index-startup-lifecycle` 的启动沙箱得改成
+   `server/` 与 `plugins/` 同级）。
+3. ⚠ **夹具按老形态硬编码。** `gameplay-codegen.test` 的复制路径、catalog 说明符断言、
+   「`modes/` 子目录 == 装配集」三处都得改成「两根并集」。每多搬一个插件就再付一次这笔钱。
 
-**搬不动的两半**（试点同时确认）：
+**而且只能搬一半**：`apps/shared/src/gameplays/<id>/wire.ts` 被 `sync:shared` 镜像到
+`apps/client/src/shared/`，搬出去就断镜像链；客户端 module / logic / view 的 38 条 import 全是相对
+路径且 `apps/client/tsconfig.json` 的 `paths` 为空（铁律 3），要搬必须先有 `@game/plugin-api/*`
+这类稳定说明符。**收益要两半都能搬才完整，而代价是逐插件重复付的**——这是回滚的理由。
 
-- **shared**（`apps/shared/src/gameplays/<id>/wire.ts`）：它被 `sync:shared` 镜像到
-  `apps/client/src/shared/`，客户端经 `../../shared/index` 消费。搬出 `apps/shared/src` 就断了镜像链，
-  除非改成物化（复制回去）——那就不是「搬」了。
-- **客户端**（module / logic / view / net / 测试）：38 条 import 全是相对路径、`apps/client/tsconfig.json`
-  的 `paths` 是空的（铁律 3：Cocos 编译链只认相对导入）。要搬必须先有 `@game/plugin-api/*` 这类稳定
-  说明符，即 §5.5 阶段 3 的前提。
-
-**结论**：服务端 + 测试这一半今天就能收（tally 已收，代价是上面三条 + 一次 version bump）；
-shared 与客户端要等 plugin-api 门面。⛔ 在那之前不要给别的插件做同样的搬迁——每搬一个都要再付
-一次「发现根 + 夹具」的钱，而收益要等两半都能搬时才完整。
+重开这件事的前置条件只有一个：§5.5 阶段 3 的 plugin-api 门面落地。在那之前 ⛔ 不要再试。
 
 ## 6. 入口与位置：插件声明身份，宿主决定去处
 

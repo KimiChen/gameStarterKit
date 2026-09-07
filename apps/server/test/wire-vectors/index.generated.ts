@@ -5,7 +5,7 @@ import ballMoveVectors from "./ballMove";
 import coreVectors from "./core";
 import idleVectors from "./idle";
 import snakeVectors from "./snake";
-import tallyVectors from "../../../plugins/tally/test/wire-vectors";
+import tallyVectors from "./tally";
 import type { WireVectorFile } from "./vectorTypes";
 
 /** owner → sidecar default（core + 声明了 C2S wire 的玩法；新增玩法只新增 wire-vectors/<id>.ts 并重跑 codegen:gameplays）。 */
