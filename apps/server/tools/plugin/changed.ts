@@ -156,15 +156,22 @@ export function loadPackageOwnerships(root: string): PackageOwnershipScan {
  * （registry.generated / client/src/generated / Cocos 镜像 / client/src/shared 镜像 …）。
  * 快路径里的两个 `codegen --check` 与 `verify:sync` 正是验这些产物是否新鲜，所以放它们过不降低强度。
  *
- * ⚠ 唯一的例外是 `scripts/packages/**`（锁）——`readGeneratedWriterPaths` 自己就把它排除在外，
- * 这里照办：锁变了说明刚做过 install/reinstall，那是**身份**变更，该跑全量而不是收窄。
+ * ⚠ `readGeneratedWriterPaths` 把 `scripts/packages/**`（锁）排除在外，这里要**加回来**——但只加
+ * 已知包的锁。理由是实测出来的：`plugin -- check` 在包被编辑后**必红**（「本地改动（与锁不符）」），
+ * 要靠 `install --reinstall-from-tree` 重写锁才能绿；若把锁算成宿主改动，编辑包 → 重装 → 锁变了 →
+ * 退回全量，快路径在它唯一该用的场景里永远走不通。⚠ 只有锁在动、没有任何包的真源在动时仍走全量
+ * （下面 `packages.size === 0` 那一条），所以「凭空改锁」不会被放过。
  * ⚠ 只有生成物变、没有任何包变时也**不收窄**（有人手改了生成物，或改动来自宿主真源）。
  */
-function makeIsDerived(root: string): (relative: string) => boolean {
+function makeIsDerived(root: string, knownIds: ReadonlySet<string>): (relative: string) => boolean {
   const entries = readGeneratedWriterPaths(root);
-  return (relative) => entries.some((entry) => (entry.endsWith("/**")
-    ? relative === entry.slice(0, -3) || relative.startsWith(`${entry.slice(0, -3)}/`)
-    : relative === entry));
+  return (relative) => {
+    const lock = /^scripts\/packages\/([^/]+)\.lock$/u.exec(relative);
+    if (lock) return knownIds.has(lock[1]);
+    return entries.some((entry) => (entry.endsWith("/**")
+      ? relative === entry.slice(0, -3) || relative.startsWith(`${entry.slice(0, -3)}/`)
+      : relative === entry));
+  };
 }
 
 /** 一个包按前缀规则在工作树上拥有的测试文件（⛔ 不读锁，见文件头注释）。 */
@@ -186,7 +193,7 @@ function worktreeTestsOf(root: string, rules: readonly OwnershipRule[]): readonl
 export function planChanged(root: string, changed: readonly string[]): ChangedPlan {
   const { owners, undeducible } = loadPackageOwnerships(root);
   const protectedPaths = readProtectedPaths(root);
-  const isDerived = makeIsDerived(root);
+  const isDerived = makeIsDerived(root, new Set([...owners.map((owner) => owner.id), ...undeducible.map((entry) => entry.id)]));
   const packages = new Set<string>();
   const foreign: string[] = [];
   const derived: string[] = [];

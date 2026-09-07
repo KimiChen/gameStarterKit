@@ -88,10 +88,24 @@ test("只有生成物在动、没有任何包的真源 → 全量（有人手改
   assert.equal(result.derived.length, 2);
 });
 
-test("锁变了 = 刚做过 install/reinstall，是身份变更 → 全量", () => {
+test("包改动 + 它自己的锁 = 刚 reinstall-from-tree，仍收窄", () => {
+  // ⚠ 实测：`plugin -- check` 在包被编辑后必红，要靠重装重写锁才绿。锁若算宿主改动，
+  //   「编辑包 → 重装 → 跑测试」这条唯一的内循环就永远退全量，快路径等于没有。
   const result = plan(["apps/plugins/snake/plugin.json", "scripts/packages/snake.lock"]);
+  assert.equal(result.fast, true, result.reason);
+  assert.deepEqual([...result.packages], ["snake"]);
+  assert.deepEqual([...result.derived], ["scripts/packages/snake.lock"]);
+});
+
+test("只有锁在动、没有任何包的真源 → 全量（凭空改锁不放过）", () => {
+  const result = plan(["scripts/packages/snake.lock"]);
   assert.equal(result.fast, false, result.reason);
-  assert.deepEqual([...result.foreign], ["scripts/packages/snake.lock"]);
+});
+
+test("不认识的 id 的锁仍算宿主", () => {
+  const result = plan(["apps/plugins/snake/plugin.json", "scripts/packages/ghost.lock"]);
+  assert.equal(result.fast, false, result.reason);
+  assert.deepEqual([...result.foreign], ["scripts/packages/ghost.lock"]);
 });
 
 test("工作树干净 → 全量（没有可收窄的改动面）", () => {
