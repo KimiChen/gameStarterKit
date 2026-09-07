@@ -61,6 +61,7 @@ npm run typecheck:client
 npm run typecheck:client:legacy
 npm run verify:sync
 npm run test:client
+npm run test:changed
 npm run test:fgui
 npm run test:vendor
 npm run test:faults
@@ -99,6 +100,11 @@ npm --workspace @game/server run test:int
 `stack` 启动本地 Redis/MySQL，`db:bootstrap` 建库并执行 `sql/schema.sql`（幂等）；`smoke:framework` 只检查
 已启动并初始化的本地 Redis/MySQL；`smoke` 还要求外部 WebPlatform Public/Internal 与游戏服已经运行，
 额外的 GM kick 分支仅在显式配置 secret 时执行。
+
+`test:changed` 是**内循环收窄跑法**：只有当整次改动都落在某些包的所有权推导集（+ 生成物/镜像）内，
+才只跑那些包的测试 + 包机制测试 + 全部 `verify:*` 校验脚本 + typecheck / test:fgui / test:client；
+只要有一条宿主路径就退回 `verify:all`。⚠ 判据是反的（⛔ 不是「插件目录变了就只跑插件」）——包测试直接
+import 宿主，改宿主能把它们打红。⚠ 它是内循环便利，⛔ 不是审核闸：提交前与 CI 仍跑 `verify:all`。
 
 `npm run typecheck` 的客户端阶段使用 `apps/client/tsconfig.test.json`，在 Node 侧最小 cc/FairyGUI 桩下
 严格覆盖 `apps/client/src/**/*.ts`、`apps/client/test/**/*.ts`，包括 `Main.ts`、全部 View、装配件和测试。

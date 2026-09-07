@@ -187,6 +187,7 @@ npm --workspace @game/server run plugin -- install --reinstall-from-tree <id> [-
 npm --workspace @game/server run plugin -- uninstall <id> [--force] [--drop-data] [--no-git] [--no-postinstall] [--dry-run]
 npm --workspace @game/server run plugin -- check
 npm --workspace @game/server run plugin -- test <id> [--int]
+npm --workspace @game/server run plugin -- changed [--base <ref>] [--dry-run]   # 根别名 npm run test:changed
 ```
 
 同一套命令同时服务两种包类别：插件（`apps/plugins/<id>/plugin.json`）与 kit（`apps/kits/<id>/kit.json`，docs/KIT.md）；
@@ -283,6 +284,37 @@ gameplay `manifest.json` 的 `schemaVersion` 读时与 gameplay-schema 比对（
 
 **`check`**（只读；`plugin-lock.test.ts` 随 `verify:all` 跑同一逻辑）：每把锁的清单文件都在且哈希一致、
 `apps/plugins/<id>/plugin.json` 与锁一致、锁内路径仍在推导集内。没有插件 = 空通过。
+
+#### 5.4.1 `changed`：内循环按包收窄（2026-09-07，已实施）
+
+`verify:all` 里 kits/plugins 自有测试只占 21.5s（server 20.8 + client 0.65），⛔ 全跳也就省这点——
+所以 `changed` 的价值不在「跳过包测试」，而在**改一个包时跳过宿主那一大批**。
+
+**判据是反过来的。** ⛔ 不是「插件目录变了就只跑插件测试」：包测试直接 import 宿主
+（`GameRoom` / `GameMode` / `GameRoomState` / `core/infra/keys` / `core/errors` / `core/economy/outbox` /
+`@game/shared` / `http`），**改宿主、不改插件，照样能把它们打红**——F13（`applyRunRewards` 覆盖玩家皮肤/
+碎片/余额）就是改宿主 admission 流程时被 `snake-run-rewards.test.ts` 抓到的，snake 目录一个字没动。
+按插件目录切，等于在最需要那张网的时候把它摘了。
+
+所以只在**整次改动都落在包的所有权推导集内**时才收窄，判定复用 `deriveOwnership` + `classifyPath`
+（⛔ 不另造路径分类器）。三档：
+
+| 改动路径 | 归类 | 结果 |
+| --- | --- | --- |
+| `apps/plugins/<id>/**`、`apps/client/src/plugins/<id>/**`、`resources/plugins/<id>/**`、`<id>-*.test.ts` … | 包自有 | 收窄 |
+| `generatedWriterOwned` 登记的生成物与镜像（`registry.generated.ts` / `client/src/generated/**` / Cocos 镜像 …） | 派生 | 不阻止收窄（有 `codegen --check` 与 `verify:sync` 把关）；**只有派生在动**时仍走全量 |
+| 其余一切（含宿主自有登记 `builtin`、`scripts/packages/<id>.lock`） | 宿主 | 全量 |
+
+收窄后仍然跑：全部 `verify:*` 校验脚本（合计约 2s——它们检查工作树，跟工具自身无关）、两个
+`codegen --check`、`plugin -- check`、`typecheck`、`test:fgui`、`test:client`、**包机制**服务端测试
+（`plugin-*` / `kit-*` / `gameplay-codegen`，11.7s）、以及变更包自己的测试（按前缀规则从**工作树**取，
+⛔ 不从锁取——新写的测试文件在重装前不在锁里）。⛔ 只跳过**测工具本身**的那些套件
+（`test:inventory` / `test:sync-mirror-matrix` / `test:launcher-matrix` / `test:npm-reference-matrix` /
+`test:aggregate-chain-matrix` / `test:toolchain-runtime-matrix`）与宿主自己的服务端测试——工具链一变就
+已经算宿主改动、会走全量。
+
+⚠ **这是内循环便利，⛔ 不是审核闸。** 提交前与 CI 仍跑 `verify:all`；判据本身由
+`apps/server/test/plugin-changed.test.ts` 逐条守（判反了不会红，只会静默少跑，所以每条都要有用例）。
 
 ### 5.5 目录形态：一个插件一个目录（阶段 1，2026-09-05；同日把登记单元并入 plugin.json、目录搬到 apps/plugins/）
 

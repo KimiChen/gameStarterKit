@@ -6,6 +6,7 @@
  *   npm --workspace @game/server run plugin -- uninstall <id> [--force] [--drop-data] [--no-git] [--no-postinstall] [--dry-run]
  *   npm --workspace @game/server run plugin -- check
  *   npm --workspace @game/server run plugin -- test <id> [--int]
+ *   npm --workspace @game/server run plugin -- changed [--base <ref>] [--dry-run]（根别名 npm run test:changed）
  * 全部子命令接受 --root <dir>（测试 fixture seam）。包 = 插件（apps/plugins/<id>/plugin.json）或 kit（apps/kits/<id>/kit.json，docs/KIT.md）。
  *
  * 设计基线见 docs/PLUGIN.md §5；判据与推导见 tools/plugin/ownership.ts。
@@ -13,6 +14,7 @@
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { runChanged } from "./changed";
 import { checkInstalledPlugins } from "./check";
 import { dropKitData } from "./dropData";
 import { installPlugin, reinstallFromTree, type InstallReport } from "./install";
@@ -28,16 +30,18 @@ export type PluginCliArguments =
   | { readonly command: "reinstall-from-tree"; readonly root: string; readonly id: string; readonly allowDowngrade: boolean; readonly git: boolean; readonly postinstall: boolean; readonly dryRun: boolean; readonly allowIdentityChange: boolean; readonly adoptTracked: boolean; readonly breakDependents: boolean }
   | { readonly command: "uninstall"; readonly root: string; readonly id: string; readonly force: boolean; readonly git: boolean; readonly postinstall: boolean; readonly dryRun: boolean; readonly dropData: boolean }
   | { readonly command: "check"; readonly root: string }
-  | { readonly command: "test"; readonly root: string; readonly id: string; readonly int: boolean };
+  | { readonly command: "test"; readonly root: string; readonly id: string; readonly int: boolean }
+  | { readonly command: "changed"; readonly root: string; readonly base?: string; readonly dryRun: boolean };
 
 const USAGE = [
-  "用法：npm --workspace @game/server run plugin -- <pack|install|uninstall|check|test> …",
+  "用法：npm --workspace @game/server run plugin -- <pack|install|uninstall|check|test|changed> …",
   "  pack <id> (--out <zip> | --out-dir <dir>)",
   "  install <zip|dir> [--allow-downgrade] [--replace-local-fork] [--break-dependents] [--no-git] [--no-postinstall] [--dry-run]",
   "  install --reinstall-from-tree <id> [--allow-identity-change] [--adopt-tracked] [--allow-downgrade] [--break-dependents] [--no-git] [--no-postinstall] [--dry-run]（同仓作者迭代：以工作树重写已安装锁）",
   "  uninstall <id> [--force] [--drop-data] [--no-git] [--no-postinstall] [--dry-run]（--drop-data 仅 kit：按账本 + 表前缀 drop 表并清理 kt: 键）",
   "  check",
   "  test <id> [--int]（按锁枚举包自带测试单跑）",
+  "  changed [--base <ref>] [--dry-run]（内循环收窄：改动整个落在包内才只跑那些包，否则退回 verify:all）",
   "  （均可带 --root <dir>；包 = 插件 apps/plugins/<id> 或 kit apps/kits/<id>）",
 ].join("\n");
 
@@ -48,7 +52,7 @@ export function parseCli(argv: readonly string[]): PluginCliArguments {
   const flags = new Map<string, string | true>();
   for (let index = 0; index < rest.length; index += 1) {
     const arg = rest[index];
-    if (arg === "--root" || arg === "--out" || arg === "--out-dir") {
+    if (arg === "--root" || arg === "--out" || arg === "--out-dir" || arg === "--base") {
       const value = rest[++index];
       if (!value) throw new Error(`${arg} 需要一个值`);
       if (flags.has(arg)) throw new Error(`duplicate argument: ${arg}`);
@@ -134,6 +138,13 @@ export function parseCli(argv: readonly string[]): PluginCliArguments {
     if (positional.length !== 0) throw new Error(`check 不接受位置参数\n${USAGE}`);
     return { command: "check", root };
   }
+  if (command === "changed") {
+    known(["--base", "--dry-run"]);
+    if (positional.length !== 0) throw new Error(`changed 不接受位置参数\n${USAGE}`);
+    const base = flags.get("--base");
+    if (base === true) throw new Error(`--base 需要一个 git ref\n${USAGE}`);
+    return { command: "changed", root, ...(typeof base === "string" ? { base } : {}), dryRun: flags.has("--dry-run") };
+  }
   if (command === "test") {
     known(["--int"]);
     if (positional.length !== 1) throw new Error(`test 需要且只需要一个已安装包 <id>\n${USAGE}`);
@@ -209,6 +220,9 @@ export async function runCli(args: PluginCliArguments): Promise<number> {
   }
   if (args.command === "test") {
     return runPackageTests({ root: args.root, id: args.id, int: args.int });
+  }
+  if (args.command === "changed") {
+    return runChanged({ root: args.root, ...(args.base === undefined ? {} : { base: args.base }), dryRun: args.dryRun });
   }
   const report = checkInstalledPlugins(args.root);
   if (report.plugins.length === 0) {

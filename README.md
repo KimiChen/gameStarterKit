@@ -118,6 +118,7 @@ WebPlatform**。要联调真实外部身份服务时，另行启动与当前契�
 | `npm run test:toolchain-runtime-matrix` | 比对工具链声明与真实运行时 / 实际安装的依赖版本 |
 | `npm run verify:perf` | 校验固定输入下的客户端性能基线结构和 checksum |
 | `npm run test:client` | 客户端全部无头行为测试（Node/tsx） |
+| `npm run test:changed` | 内循环收窄：改动整个落在包内才只跑那些包，否则退回 `verify:all` |
 | `npm run test:vendor` | 运行第三方运行时内容锁专项反例测试 |
 | `npm run test:fgui` | FGUI codegen、结构契约与 registry 专项测试 |
 | `npm run test:faults` / `npm run test:faults:int` | 运行核心 fault-matrix；前者默认不连接本地栈，后者使用本地 Redis/MySQL |
