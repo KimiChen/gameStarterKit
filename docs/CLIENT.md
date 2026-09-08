@@ -59,9 +59,11 @@ apps/client/src/
 ├── core/               HTTP 底座、生成的开发配置与宿主环境桥
 ├── gameplay/           每玩法 modes/<id>/ 模块 + 生成 catalog + services 注入面
 ├── generated/          codegen:plugins 的 View/契约/plugin 注册表产物（禁手改）
+├── kits/               kit 自带客户端代码（apps/kits/<id> 的客户端面）
 ├── lib/                锁定的第三方技术依赖
 ├── logic/              引擎无关页面与玩法行为
 ├── net/                Room、RPC 与 HTTP 适配
+├── plugins/            插件自带客户端代码（apps/plugins/<id> 的客户端面）
 ├── shared/             apps/shared 的生成镜像
 └── view/               Cocos/FairyGUI 视图绑定与 ViewMgr（registry/契约为生成 façade）
 

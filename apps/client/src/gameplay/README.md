@@ -39,9 +39,14 @@ createPlugin），由生成的 `catalog.generated.ts`（`registerGeneratedGamepl
 
 ## 当前登记
 
+登记真源是各玩法单源 manifest，生成物 `catalog.generated.ts`（禁手改）当前装配 6 个带客户端 module 的玩法：
+
+- `snake`：默认玩法（竖版无尽 drop-in），归 `apps/plugins/snake` 管辖。
 - `ballMove`：带 `BallMoveView` 的演示玩法；presentation 只在该 entry 启动时动态加载。
 - `idle`：无 presentation、独立 `IdleRoomState` 与 pulse 输入/结算的最小第二 mode，不代表完整玩法 UI。
-- `privateFixture`（仅 catalog）：私房验收 fixture gameplay——走完整单源链但 ⛔ 无客户端 module、
-  不进生产 mode registry。
+- `tally`：点数赛，`apps/plugins/tally` 的 gameplay 形态样本。
+- `arenaCapture` / `arenaDuel`：`apps/kits/arena` 的两个玩法。
+- `privateFixture` / `dropInFixture`（仅 catalog）：私房与 drop-in 验收 fixture gameplay——走完整单源链
+  但 ⛔ 无客户端 module、不进生产 mode registry。
 
 目录本身不是玩法规则的真源；修改规则请回到 `logic/rooms/`，修改共享协议请回到 `apps/shared/src`。

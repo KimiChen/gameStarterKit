@@ -1,6 +1,7 @@
 # 点数赛插件（apps/plugins/tally）
 
-[docs/PLUGIN.md](../../../docs/PLUGIN.md) §9.6 / [plan-v5.md](../../../plan-v5.md) E5 的**第二个真实插件样本**：`kinds: ["gameplay","plugin"]`，
+[docs/PLUGIN.md](../../../docs/PLUGIN.md) §9.6（原 plan-v5 E5）的**第二个真实插件样本**：派生 kinds `["client","gameplay"]`
+（schema v2 ⛔ 无 `kinds` 字段，由客户端登记 + `gameplay/` 单源推导，见 [apps/plugins/README.md](../README.md)），
 用来证明 gameplay 形态（manifest/state/wire + 三端模块 + `<Constant>Room.ts` + wire 向量 sidecar + 入口）也能
 「只加文件、不改中央源码」地 pack → 干净树 install → verify:all → Creator 预览。兑换码（`apps/plugins/redeem`）只证明了
 plugin 形态。

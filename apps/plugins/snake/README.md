@@ -56,7 +56,7 @@
 当前落地的运行时素材在 `apps/Cocos/assets/resources/plugins/snake/`（63 个文件 + 同名 `.meta`；
 2026-09-06 先由 `resources/snakeoff/` 改名到 `resources/snake/` 落进所有权推导集，同日再随规则
 改到 `resources/plugins/<id>/` 命名空间——见 docs/PLUGIN.md §5.5.3）：
-16 套皮肤图集、16 张确定性生成的预览图、7 张磁铁/光环纹理、食物图集、摇杆/加速/结算底板、8 个音效。
+16 套皮肤图集、16 张确定性生成的预览图、6 张磁铁/光环纹理、食物图集、摇杆/加速/结算底板、7 个音效。
 
 ### 2.3 明确不复用清单
 
@@ -150,7 +150,7 @@ apps/server/test/  snake-world snake-room snake-rules snake-cosmetic-profile
 
 其它
 ```
-tools/snake-s0-replication/       S0 复刻基线生成器 ⚠ 其输出目录已随本次归并删除，--check 会失败
+tools/snake-s0-replication/       S0 复刻基线生成器 ⚠ 其基线文件已随 docs/s/ 一并删除，--check 与 --write 均会在启动期抛错
 apps/Cocos/assets/resources/plugins/snake/   63 个运行时素材（见 §2.2）
 ```
 
@@ -471,8 +471,8 @@ apps/client/src/logic/rooms/snake/SnakePresentationCatalogData.ts
 
 `docs/s/evidence/`（s0 55 个、s1 30 个、s5 8 个文件）已删除，包括 14 张 S0 golden、
 16 张 S1 预览、contact sheet、`SHA256SUMS` 与各类审计 JSON。
-⚠ `tools/snake-s0-replication/` 本身保留，但它的输出目录已不存在，`--check` 会失败；
-`--write` 仍可重新生成一份（不含已丢失的 S1 证据）。
+⚠ `tools/snake-s0-replication/` 本身保留，但它两种模式都以 `docs/s/s0-replication-baseline.md`
+存在为前置（`cli.mjs`），该文件已随 `docs/s/` 一并删除，`--check` 与 `--write` 均会在启动期抛错。
 ⚠ S0 证据**原本就无法重新生成**：重钉需要外部归档 `--source` 参数，而该归档在本机已不存在。
 
 ### 9.4 一处**故意保留**的失效指针

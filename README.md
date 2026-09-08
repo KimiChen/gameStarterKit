@@ -19,7 +19,7 @@
 - [额外功能说明](docs/EXTRAS.md)
 - [《Underground Idle》玩法策划案（未实现）](docs/undergroundIdle/README.md)
 - [非侵入式框架改造方案（框架侧阶段 0-11 已实施：snake 已实现并成为默认玩法，undergroundIdle 未实现）](docs/Non-intrusive.md)
-- [插件机制设计基线（判据、包格式与 plugin 命令、宿主 placement；开放项见 plan-v5 E 类）](docs/PLUGIN.md)
+- [插件机制设计基线（判据、包格式与 plugin 命令、宿主 placement；开放项见 EXTRAS §5.2）](docs/PLUGIN.md)
 - [插件机制设计基线的审阅记录（问题清单与推荐实现方案）](docs/PLUGIN-REVIEW.md)
 - [Snake 玩法（竖版新版无尽 V2 + 外观养成 demo）](apps/plugins/snake/README.md)
 - [Godogen 对照吸收计划（未实现的额外能力）](todo-godogen.md)

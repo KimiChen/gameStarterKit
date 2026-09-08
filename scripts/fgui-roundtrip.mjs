@@ -43,7 +43,7 @@ const KIND_TO_ITEM_TYPE = new Map([
 
 /**
  * `.bin` 的只读游标。字段顺序、`readS` 的 65534/65533 哨兵与分段索引表的 seek 语义都照抄
- * `apps/client/extensions/fairygui-cc/runtime/fairygui.mjs` 的 `loadPackage`——那是运行时真正
+ * `apps/Cocos/extensions/fairygui-cc/runtime/fairygui.mjs` 的 `loadPackage`——那是运行时真正
  * 用来读这些文件的实现，⛔ 偏离它就等于在验一份没人会那样读的格式。
  */
 class BinCursor {

@@ -2,7 +2,7 @@
   "name": "@game/server",
   "version": "0.1.0",
   "private": true,
-  "description": "Colyseus 0.17 游戏服务端（当前为模拟接口 + 假数据）",
+  "description": "Colyseus 0.17 游戏服务端",
   "type": "module",
   "main": "src/index.ts",
   "scripts": {

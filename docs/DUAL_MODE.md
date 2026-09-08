@@ -77,7 +77,7 @@ freeze worker 不从 `GROUP_ZONES` 猜后台范围；启用时必须显式配置
 
 ## 4.1 GameRoom 区隔离
 
-`app.config.ts` 用 `filterBy(["sId", "mode"])` 隔离常规 `joinOrCreate`；`GameRoom.onAuth` 规范化并校验区号
+`app.config.ts` 用 `filterBy(["sId", "mode", "profile"])` 隔离常规 `joinOrCreate`；`GameRoom.onAuth` 规范化并校验区号
 与玩法，`onJoin` 再比较认证值和房级 `sId`/`mode`，兜住 `joinById`。房间把区号写入 match evidence。
 
 这只保证当前 Demo 的房间内不静默混区，不代表本项目提供多区拓扑或容量能力。GameRoom 的其他限制见

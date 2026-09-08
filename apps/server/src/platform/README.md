@@ -1,14 +1,15 @@
 # platform/ —— 外部服务 HTTP 接缝
 
-本目录当前只有游戏服到独立 WebPlatform 的 Internal HTTP adapter：
+本目录收容游戏服与外部身份服务（WebPlatform）之间的 HTTP 接缝：
 
 | 文件 | 当前职责 |
 | --- | --- |
 | `webPlatformClient.ts` | strict session verify、角色登记与存在性查询；服务鉴权、keep-alive、超时、响应上限、一次有限重试、熔断和 exact-key 响应校验 |
+| `devAuthProvider.ts` | `AUTH_PROVIDER=dev`（非生产缺省）时的进程内开发身份提供者：复刻锁定契约的 dev 会话/区目录路径形状，语义与真链路逐语义一致 |
 
 硬边界：
 
-- 普通运行默认只委托 HTTP 实现；没有 in-process 账号实现或运行期模式开关。
+- 普通运行默认只委托 HTTP 实现；唯一进程内例外是 `AUTH_PROVIDER=dev` 的 dev 身份提供者（非生产缺省，与 `NODE_ENV=production` 组合启动期拒启，见 [docs/WEBPLATFORM.md](../../../../docs/WEBPLATFORM.md) §1.1）。
 - 不导入 WebPlatform 业务源码，不持有账号库 DSN；token 是不透明句柄，身份只信 verify 的 `userId`。
 - HTTP 401/403、其他调用错误、超时、5xx 和非法响应都不能伪装成玩家 token 无效。
 - Lobby/GameRoom 建连做 strict HTTP verify；Lobby 每消息只读游戏组 Redis session cache。
