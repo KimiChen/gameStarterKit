@@ -8,16 +8,16 @@
 > - [docs/WEBPLATFORM.md](docs/WEBPLATFORM.md)：外部身份服务的开发契约边界
 > - [docs/EXTRAS.md](docs/EXTRAS.md)：可选额外功能、现有实现与非承诺说明
 > - [docs/undergroundIdle/README.md](docs/undergroundIdle/README.md)：未实现的玩法策划案与扩展草案
-> - [docs/Non-intrusive.md](docs/Non-intrusive.md)：非侵入式框架改造方案（plugin 与实时 Room 玩法；框架侧阶段 0-9 已实施，两玩法未实现，编辑器/真机待办见 plan-v5.md）
-> - [docs/PLUGIN.md](docs/PLUGIN.md)：插件机制设计基线（「插件只能消费不能定义」判据、构建期装载；§5 包格式与 `plugin -- pack/install/uninstall/check` 命令、§6 宿主 placement 已实施，插件目录 `apps/plugins/<id>/`（§5.5，阶段 1：plugin.json / plugin.json / README / gameplay 单源都在插件目录内），首个真实插件样本 `apps/plugins/redeem` 见 [apps/plugins/redeem/README.md](apps/plugins/redeem/README.md)，开放项见 plan-v5 E 类）
-> - [docs/PLUGIN-REVIEW.md](docs/PLUGIN-REVIEW.md)：PLUGIN.md 的审阅记录（2026-09-05；经验证的问题清单与推荐实现方案，实施状态登记在 plan-v5.md）
+> - [docs/Non-intrusive.md](docs/Non-intrusive.md)：非侵入式框架改造方案（plugin 与实时 Room 玩法；框架侧阶段 0-11 已实施：snake 已实现并成为默认玩法，undergroundIdle 未实现；编辑器/真机待办见 EXTRAS §5.2）
+> - [docs/PLUGIN.md](docs/PLUGIN.md)：插件机制设计基线（「插件只能消费不能定义」判据、构建期装载；§5 包格式与 `plugin -- pack/install/uninstall/check` 命令、§6 宿主 placement 已实施，插件目录 `apps/plugins/<id>/`（§5.5，阶段 1：plugin.json / plugin.json / README / gameplay 单源都在插件目录内），首个真实插件样本 `apps/plugins/redeem` 见 [apps/plugins/redeem/README.md](apps/plugins/redeem/README.md)，开放项见 EXTRAS §5.2）
+> - [docs/PLUGIN-REVIEW.md](docs/PLUGIN-REVIEW.md)：PLUGIN.md 的审阅记录（2026-09-05；经验证的问题清单与推荐实现方案，实施状态登记在 EXTRAS §5.2）
 > - [docs/PLUGIN-REGISTRY.md](docs/PLUGIN-REGISTRY.md)：插件分享平台 plugin.gono.games 设计提案（2026-09-05；§1 机制余留问题清单与七条前置修复、§2-4 制品布局/自建服务/CLI/锁 source/plugin-api 门面；实施状态只在其 §7 回写，⛔ 不进 plan-v5）
 > - [docs/KIT.md](docs/KIT.md)：kit（地基层）设计提案（2026-09-06；可分发但须 gono 团队审核；§2 划线、§3 kit.json、§4 kit-api 与 requires.kits、§6 审核线；实施状态只在其 §9 回写，⛔ 不进 plan-v5）
 > - [tools/creator-preview/README.md](tools/creator-preview/README.md)：Creator 预览证据生成器（CDP 驱动真实引擎预览重放登录 → 首屏 → 设置 → 插件入口，落盘截图 + report.json；⛔ 不进 verify:core）
 > - [apps/plugins/snake/README.md](apps/plugins/snake/README.md)：Snake 玩法唯一文档（素材授权台账、冻结数值、拍板记录、真引擎缺陷台账）
 > - [apps/kits/README.md](apps/kits/README.md)：kit 目录说明；首个样本 kit `arena` 见 [apps/kits/arena/README.md](apps/kits/arena/README.md)，建在其上的样本插件见 [apps/plugins/arenaShop/README.md](apps/plugins/arenaShop/README.md)
 > - [todo-godogen.md](todo-godogen.md)：未实现的外部项目对照吸收计划，不构成核心能力承诺
-> - [docs/plan-v5.md](docs/plan-v5.md)：当前开放问题、实施状态与验收证据的唯一真相
+> - [docs/plan-v5.md](docs/plan-v5.md)：当前实施状态、验收基线与开放项去向的唯一真相（未实现开放项登记在 EXTRAS §5.2，有意保留边界在 §5.3）
 >
 > 多数源码目录另有就近 README，但尚未覆盖全部：`apps/shared`、`apps/server` 根、`apps/server/src/player/`
 > 与 `core/` 下除 `compute/` 外的子目录目前没有；这些目录的约束分别见铁律 4/6 与
