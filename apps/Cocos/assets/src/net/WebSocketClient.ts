@@ -16,11 +16,18 @@ import type {
     LobbyConnectionSnapshot,
 } from "./connectionEvents";
 import {
-    looksLikeJoinSignal,
-    normalizeJoinSignal,
     observeJoinControlResult,
     waitMsForJoin,
 } from "./joinControl";
+import {
+    cloneJson,
+    disableSdkOutboundReplay,
+    safeError,
+    splitJoinControl,
+    stableJson,
+    warnInvalidWire as sharedWarnInvalidWire,
+    wireErrorText,
+} from "./wireCommon";
 import {
     ForceLogoutReason,
     forceLogoutReasonOf,
@@ -91,106 +98,6 @@ export class RpcError extends Error {
     }
 }
 
-function cloneJson<T>(value: T, ancestors = new Set<object>()): T {
-    if (value === null || typeof value !== "object") {
-        if (typeof value === "number" && !Number.isFinite(value)) {
-            throw new TypeError("[WebSocketClient] join options 不能包含 NaN/Infinity");
-        }
-        if (typeof value === "bigint") {
-            throw new TypeError("[WebSocketClient] join options 不支持 BigInt");
-        }
-        return value;
-    }
-    const object = value as unknown as object;
-    if (ancestors.has(object)) throw new TypeError("[WebSocketClient] join options 不支持循环引用");
-    ancestors.add(object);
-    try {
-        if (Array.isArray(value)) return value.map((item) => cloneJson(item, ancestors)) as unknown as T;
-        const out: Record<string, unknown> = {};
-        for (const key of Object.keys(value as Record<string, unknown>)) {
-            const item = (value as Record<string, unknown>)[key];
-            if (item === undefined || typeof item === "function" || typeof item === "symbol") continue;
-            out[key] = cloneJson(item, ancestors);
-        }
-        return out as T;
-    } finally {
-        ancestors.delete(object);
-    }
-}
-
-function stableJson(value: unknown, ancestors = new Set<object>()): string | undefined {
-    if (value === null) return "null";
-    switch (typeof value) {
-        case "string": return JSON.stringify(value);
-        case "boolean": return value ? "true" : "false";
-        case "number": return JSON.stringify(value);
-        case "undefined":
-        case "function":
-        case "symbol": return undefined;
-        case "bigint": throw new TypeError("[WebSocketClient] join options 不支持 BigInt");
-        case "object": break;
-    }
-    const object = value as object;
-    if (ancestors.has(object)) throw new TypeError("[WebSocketClient] join options 不支持循环引用");
-    ancestors.add(object);
-    try {
-        if (Array.isArray(object)) {
-            return `[${object.map((item) => stableJson(item, ancestors) ?? "null").join(",")}]`;
-        }
-        const fields: string[] = [];
-        for (const key of Object.keys(object).sort()) {
-            const encoded = stableJson((object as Record<string, unknown>)[key], ancestors);
-            if (encoded !== undefined) fields.push(`${JSON.stringify(key)}:${encoded}`);
-        }
-        return `{${fields.join(",")}}`;
-    } finally {
-        ancestors.delete(object);
-    }
-}
-
-function splitJoinControl(
-    options: Record<string, unknown> | undefined,
-    explicit: JoinControl | AbortSignal | undefined,
-): { options: Record<string, unknown>; control: JoinControl } {
-    const source = options ?? {};
-    const wire: Record<string, unknown> = {};
-    try {
-        for (const key of Reflect.ownKeys(source)) {
-            if (typeof key !== "string") {
-                throw new TypeError("[WebSocketClient] join options 不得包含 symbol key");
-            }
-            wire[key] = source[key];
-        }
-    } catch {
-        throw new TypeError("[WebSocketClient] join options 无法读取");
-    }
-    let explicitIsSignal = false;
-    if (explicit !== undefined && explicit !== null) {
-        try { explicitIsSignal = looksLikeJoinSignal(explicit); }
-        catch { throw new TypeError("[WebSocketClient] join control 无法读取"); }
-    }
-    // Snapshot controls before allocating a slot so hostile getters/methods
-    // cannot fail later in an owner cleanup callback.
-    const controlSource = explicitIsSignal ? undefined : (explicit ?? source) as Partial<JoinControl>;
-    const readControl = (key: keyof JoinControl): unknown => {
-        try { return controlSource?.[key]; }
-        catch { throw new TypeError(`[WebSocketClient] join control 字段 ${String(key)} 无法读取`); }
-    };
-    const control: JoinControl = {
-        signal: normalizeJoinSignal(explicitIsSignal ? explicit : readControl("signal")),
-        timeoutMs: readControl("timeoutMs") as number | undefined,
-        deadlineMs: readControl("deadlineMs") as number | undefined,
-        timeout: readControl("timeout") as number | undefined,
-        deadline: readControl("deadline") as number | undefined,
-    };
-    delete wire.signal;
-    delete wire.timeoutMs;
-    delete wire.deadlineMs;
-    delete wire.timeout;
-    delete wire.deadline;
-    return { options: wire, control };
-}
-
 const FORCE_REASON_MAP: Record<ForceLogoutReasonType, AuthInvalidReason> = {
     [ForceLogoutReason.Banned]: "FORCE_BANNED",
     [ForceLogoutReason.Replaced]: "FORCE_REPLACED",
@@ -236,31 +143,11 @@ interface IPending {
     readonly type: LobbyRpcType;
 }
 
-function wireErrorText(error: unknown): string {
-    try {
-        if (error instanceof Error) {
-            const message = error.message;
-            return typeof message === "string" ? message : "";
-        }
-        return typeof error === "string" ? error : "";
-    } catch {
-        return "";
-    }
-}
-
-function safeError(error: unknown, fallback: string): Error {
-    try {
-        if (error instanceof Error) return error;
-    } catch { /* hostile/revoked error proxy */ }
-    const text = wireErrorText(error);
-    return new Error(text || fallback);
-}
-
 function warnInvalidWire(scope: string, error: unknown): void {
     // Do not print the packet itself: RPC payloads can contain account data and
     // join options can contain bearer tokens. The validator path is enough for
     // local diagnostics while keeping logs free of secrets.
-    console.warn(`[WebSocketClient] 丢弃非法 ${scope}: ${wireErrorText(error)}`);
+    sharedWarnInvalidWire("[WebSocketClient]", scope, error);
 }
 
 /** Push handlers are SDK event callbacks, so callers cannot be expected to
@@ -268,46 +155,6 @@ function warnInvalidWire(scope: string, error: unknown): void {
  * printing the push payload (which may contain user/account data). */
 function reportPushFailure(kind: "exception" | "rejection"): void {
     console.error(`[WebSocketClient] push 处理器 ${kind}`);
-}
-
-/**
- * The 0.17 SDK buffers `room.send()` while its socket is closed and flushes that
- * queue right after reconnect JOIN_ROOM (`onReconnect.invoke()` runs first, the
- * flush loop immediately after). The Lobby answers RPCs by id, so a request the
- * caller already saw rejected as CONN_LOST must never be replayed: the reply
- * would land on a deleted pending entry while the server-side effect happened
- * twice. Keep the SDK queue disabled, including in the close -> onDrop gap where
- * `slot.dropping` is still false.
- */
-function disableSdkOutboundReplay(room: Colyseus.Room): boolean {
-    try {
-        const reconnection = (room as unknown as {
-            reconnection?: {
-                maxEnqueuedMessages?: unknown;
-                enqueuedMessages?: unknown;
-            };
-        }).reconnection;
-        if (!reconnection || typeof reconnection !== "object") return false;
-        // 顺序与分步都要紧：调用点（bindRoom / onDrop / onReconnect）返回后 SDK 会
-        // **同步** flush 队列，所以「清空已入队的旧消息」必须先于「设上限」，且任一步
-        // 失败都不能吞掉后面的补救——过去三步共用一个 try，写上限抛错会直接跳过清队列。
-        try {
-            const queue = reconnection.enqueuedMessages;
-            if (Array.isArray(queue) && queue.length > 0) queue.length = 0;
-        } catch { /* 冻结数组：交给下面的整体替换 */ }
-        try {
-            const queue = reconnection.enqueuedMessages;
-            if (!Array.isArray(queue) || queue.length > 0) reconnection.enqueuedMessages = [];
-        } catch { /* 不可写：只能如实报告失败 */ }
-        try {
-            reconnection.maxEnqueuedMessages = 0;
-        } catch { /* 不可写：只能如实报告失败 */ }
-        return reconnection.maxEnqueuedMessages === 0
-            && Array.isArray(reconnection.enqueuedMessages)
-            && reconnection.enqueuedMessages.length === 0;
-    } catch {
-        return false;
-    }
 }
 
 function invokePushHandler(callback: (data: unknown) => unknown, data: unknown): void {
