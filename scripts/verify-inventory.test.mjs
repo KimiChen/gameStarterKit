@@ -1,22 +1,19 @@
 import assert from "node:assert/strict";
-import { execFileSync, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import {
-  constants,
-  cpSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
-  statSync,
   symlinkSync,
   writeFileSync,
 } from "node:fs";
-import { cp, rm } from "node:fs/promises";
 import { availableParallelism, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, test as declareTest } from "node:test";
+import { buildCheckout, cloneCheckout, removeFixture, removeFixtureSync } from "./lib/fixture-checkout.mjs";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const VERIFY_SCRIPT = join(REPO_ROOT, "scripts", "verify-inventory.mjs");
@@ -27,7 +24,8 @@ const VERIFY_SCRIPT = join(REPO_ROOT, "scripts", "verify-inventory.mjs");
  * ⛔ 都没有削弱隔离：
  *
  * 1. pristine 检出**只建一次**，各用例从它做写时复制（APFS clonefile）克隆——每个用例照旧拿到
- *    一份自己的、可以随便破坏的检出，只是不再逐文件复制。
+ *    一份自己的、可以随便破坏的检出，只是不再逐文件复制。夹具根落在仓的**旁目录**、与仓同卷，
+ *    clonefile 才不会跨卷静默退化成全量复制（构建与排除清单见 scripts/lib/fixture-checkout.mjs）。
  * 2. 用例体改成异步（`spawn` + `fs/promises`）后放进**并发 suite**。⚠ 这两件必须一起做：
  *    `spawnSync` / `cpSync` 会占住事件循环，同步用例放进并发 suite 也不会重叠。
  *
@@ -47,60 +45,23 @@ function test(name, fn) {
   pendingTests.push([name, fn]);
 }
 
-/**
- * Copy Git-visible checkout files into a disposable checkout. Include
- * non-ignored untracked files because a new verifier/test must be testable
- * before its first commit; ignored local state and credentials stay excluded.
- */
+/** pristine 检出只建一次（构建细节收进 lib/fixture-checkout）；进程退出时清掉。 */
 let pristineCheckout = null;
 
-function buildPristineCheckout() {
-  const root = mkdtempSync(join(tmpdir(), "verify-inventory-pristine-"));
-  const checkoutFiles = new Set(execFileSync(
-    "git",
-    ["ls-files", "--cached", "--others", "--exclude-standard", "-z"],
-    {
-      cwd: REPO_ROOT,
-      encoding: "buffer",
-    },
-  ).toString().split("\0").filter(Boolean));
-  for (const file of checkoutFiles) {
-    if (file === "apps/website" || file.startsWith("apps/website/")) continue;
-    if (file === ".env" || file.startsWith(".env.")) continue;
-    // .claude/ 是 Claude Code 的会话目录（worktrees/ 里是别的检出副本），⛔ 不属于被测检出。
-    if (file === ".claude" || file.startsWith(".claude/")) continue;
-    const source = join(REPO_ROOT, file);
-    // A tracked deletion is still present in the index until commit; it is not
-    // part of the checkout that the verifier must evaluate.
-    if (!existsSync(source)) continue;
-    // git ls-files 把嵌套 git 仓库/worktree 整体报成一个「目录」条目（末尾带 /）；
-    // cpSync 不带 recursive 会 ERR_FS_EISDIR 炸掉整个套件。这类条目从不属于被测检出。
-    if (statSync(source).isDirectory()) continue;
-    const destination = join(root, file);
-    mkdirSync(dirname(destination), { recursive: true });
-    cpSync(source, destination);
-  }
-  return root;
-}
-
-/** pristine 检出只建一次；进程退出时清掉。 */
 function ensurePristineCheckout() {
-  if (!pristineCheckout) pristineCheckout = buildPristineCheckout();
+  if (!pristineCheckout) pristineCheckout = buildCheckout({ prefix: "verify-inventory-pristine-" });
   return pristineCheckout;
 }
 
 process.on("exit", () => {
-  if (pristineCheckout) rmSync(pristineCheckout, { recursive: true, force: true });
+  if (pristineCheckout) removeFixtureSync(pristineCheckout);
 });
 
 /**
  * 一份**独占**的一次性检出。写时复制：⛔ 用例对它的任何破坏都不会回流到 pristine。
- * `COPYFILE_FICLONE` 在不支持 clonefile 的文件系统上自动退化成普通复制，不会失败。
  */
 async function createFixture() {
-  const root = mkdtempSync(join(tmpdir(), "verify-inventory-"));
-  await cp(ensurePristineCheckout(), root, { recursive: true, mode: constants.COPYFILE_FICLONE });
-  return root;
+  return cloneCheckout(ensurePristineCheckout(), { prefix: "verify-inventory-" });
 }
 
 /**
@@ -167,7 +128,7 @@ test("inventory verifier accepts an isolated checkout fixture", async () => {
     assert.equal(result.status, 0, outputOf(result));
     assert.match(outputOf(result), /inventory \d+ 项能力/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -181,7 +142,7 @@ test("inventory verifier rejects an unregistered default workspace entry", async
     writeInventory(root, inventory);
     await assertRejected(root, /默认活跃入口未登记：apps\/shared\/src\/index\.ts/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -195,7 +156,7 @@ test("inventory verifier discovers app.config as a workspace composition root", 
     writeInventory(root, inventory);
     await assertRejected(root, /默认活跃入口未登记：apps\/server\/src\/app\.config\.ts/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -209,7 +170,7 @@ test("inventory verifier discovers Main from the scene's compressed Creator UUID
     writeInventory(root, inventory);
     await assertRejected(root, /默认活跃入口未登记：apps\/client\/src\/Main\.ts/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -223,7 +184,7 @@ test("inventory verifier rejects a standalone relayer classified as core", async
     writeInventory(root, inventory);
     await assertRejected(root, /能力 outbox-relayer 的独立 launch 只能登记为 extra/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -239,7 +200,7 @@ test("inventory verifier rejects a launch command that does not start its declar
       /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -252,7 +213,7 @@ test("inventory verifier rejects a vanished verification command", async () => {
     writeInventory(root, inventory);
     await assertRejected(root, /能力 shared-contract 根命令不存在：missing:inventory-command/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -264,7 +225,7 @@ test("inventory verifier rejects the historical plan as route of truth", async (
     writeInventory(root, inventory);
     await assertRejected(root, /routeOfTruth\.corePlan 必须指向 docs\/plan-v5\.md/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -277,7 +238,7 @@ test("inventory verifier rejects removal of the current plan truth declaration",
     writeFileSync(plan, text);
     await assertRejected(root, /docs\/plan-v5\.md 未声明当前计划唯一真相/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -289,7 +250,7 @@ test("inventory verifier rejects removal of the current plan from README", async
     writeFileSync(readme, text);
     await assertRejected(root, /README\.md 未登记 docs\/plan-v5\.md 当前计划入口/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -304,7 +265,7 @@ test("inventory verifier rejects removal of the Godogen plan from README", async
     writeFileSync(readme, text);
     await assertRejected(root, /README\.md 未登记 todo-godogen\.md 对照计划入口/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -319,7 +280,7 @@ test("inventory verifier rejects a referenceDocs entry whose file does not exist
     writeInventory(root, inventory);
     await assertRejected(root, /referenceDocs 文档不存在：plan-v3\.md/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -336,7 +297,7 @@ test("inventory verifier rejects a registered doc that points at an archive as c
       writeFileSync(doc, `${readFileSync(doc, "utf8")}\n\n完成状态以 [${archive}](../${archive}) 为准。\n`);
       await assertRejected(root, new RegExp(`docs/OVERVIEW\\.md:\\d+ 把历史归档 ${archive.replace(".", "\\.")} 说成当前真相`));
     } finally {
-      await rm(root, { recursive: true, force: true });
+      await removeFixture(root);
     }
   }
 });
@@ -354,7 +315,7 @@ test("inventory verifier scans unregistered docs too (未登记目录也要扫)"
     writeFileSync(doc, `${readFileSync(doc, "utf8")}\n\n- [当前实施状态与开放问题](../../plan-v4.md)\n`);
     await assertRejected(root, /docs\/undergroundIdle\/README\.md:\d+ 把历史归档 plan-v4\.md 说成当前真相/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -371,7 +332,7 @@ test("inventory verifier 不因文件名子串误红（live-plan.md 不是 plan.
     const result = await runVerifier(root);
     assert.equal(result.status, 0, outputOf(result));
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -389,7 +350,7 @@ test("inventory verifier still allows citing an archive when its identity is sta
     const result = await runVerifier(root);
     assert.equal(result.status, 0, outputOf(result));
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -411,7 +372,7 @@ test("inventory verifier 归档闸随 referenceDocs 自动生效（新归档一�
     writeInventory(root, inventory);
     await assertRejected(root, /docs\/OVERVIEW\.md:\d+ 把历史归档 docs\/plan-v9\.md 说成当前真相/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -425,7 +386,7 @@ test("inventory verifier rejects listing the current plan as a historical refere
     writeInventory(root, inventory);
     await assertRejected(root, /referenceDocs 不得同时登记当前计划/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -437,7 +398,7 @@ test("inventory verifier keeps the Godogen plan registered as a checked referenc
     writeInventory(root, inventory);
     await assertRejected(root, /referenceDocs 必须登记 Godogen 对照计划 todo-godogen\.md/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -453,7 +414,7 @@ test("inventory verifier requires EXTRAS to register the Godogen plan", async ()
     writeFileSync(extra, text);
     await assertRejected(root, /docs\/EXTRAS\.md 未登记 todo-godogen\.md 对照计划入口/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -471,7 +432,7 @@ test("inventory verifier checks stable local anchors in the Godogen plan", async
       /文档 todo-godogen\.md 的锚点不存在：docs\/CLIENT\.md#不存在的本地检查/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -482,7 +443,7 @@ test("inventory verifier rejects a broken registered Markdown link", async () =>
     writeFileSync(overview, `${readFileSync(overview, "utf8")}\n[broken inventory link](missing-inventory-doc.md)\n`);
     await assertRejected(root, /文档 docs\/OVERVIEW\.md 的链接不存在：missing-inventory-doc\.md/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -497,7 +458,7 @@ test("inventory verifier rejects a Markdown link that escapes through a symlink"
     writeFileSync(overview, `${readFileSync(overview, "utf8")}\n[escaped inventory link](linked-inventory-doc.md)\n`);
     await assertRejected(root, /文档 docs\/OVERVIEW\.md 的链接越出项目根：linked-inventory-doc\.md/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
     rmSync(outside, { recursive: true, force: true });
   }
 });
@@ -513,7 +474,7 @@ test("inventory verifier rejects AGENTS/CLAUDE semantic drift even when key mark
     writeFileSync(claude, text);
     await assertRejected(root, /AGENTS\.md\/CLAUDE\.md 除空白外必须保持一致/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -527,7 +488,7 @@ test("inventory verifier rejects synchronized removal of a required assistant in
     }
     await assertRejected(root, /AGENTS\.md\/CLAUDE\.md 缺少共同关键指令：inventory 反例测试/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -554,7 +515,7 @@ test("inventory verifier rejects synchronized removal of the state codegen regis
     }
     await assertRejected(root, /AGENTS\.md\/CLAUDE\.md 缺少共同关键指令：state 生成物登记/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -572,7 +533,7 @@ test("inventory verifier rejects synchronized removal of the HTTP manifest regis
     }
     await assertRejected(root, /AGENTS\.md\/CLAUDE\.md 缺少共同关键指令：HTTP manifest 生成物登记/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -589,7 +550,7 @@ test("inventory verifier rejects synchronized removal of the project metadata re
     }
     await assertRejected(root, /AGENTS\.md\/CLAUDE\.md 缺少共同关键指令：项目元数据生成物登记/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -606,7 +567,7 @@ test("inventory verifier rejects synchronized removal of the Godogen assistant e
     }
     await assertRejected(root, /AGENTS\.md\/CLAUDE\.md 缺少共同关键指令：Godogen 对照计划/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -628,7 +589,7 @@ test("inventory verifier rejects a root command removed from both assistant comm
       );
     }
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -650,7 +611,7 @@ test("inventory verifier rejects a newly added undocumented root command", async
       );
     }
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -665,7 +626,7 @@ test("inventory verifier rejects a stale root command in the README command tabl
     writeFileSync(readme, text);
     await assertRejected(root, /README\.md 的常用命令登记包含不存在的根命令：fixture:stale/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -682,7 +643,7 @@ test("inventory verifier rejects synchronized removal of the current plan entry"
     }
     await assertRejected(root, /AGENTS\.md\/CLAUDE\.md 缺少共同关键指令：当前计划唯一真相/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -708,7 +669,7 @@ test("inventory verifier rejects a newly added unregistered workspace script", a
       /workspace 脚本既未登记进助手命令表也未登记作用域：workspace:@game\/server#fixture:worker/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -726,7 +687,7 @@ test("inventory verifier rejects a workspace scope entry whose root command stop
       /workspaceCommandScope\[\d+\]\.supersededBy 并未实际调用 workspace:@game\/server#start/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -743,7 +704,7 @@ test("inventory verifier rejects a workspace scope entry whose document drops th
       /workspaceCommandScope\[\d+\]\.documentedIn 未写出命令原文：docs\/EXTRAS\.md 缺少 workspace:@game\/server#loadtest/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -762,7 +723,7 @@ test("inventory verifier rejects a workspace scope entry that is already in the 
       /workspaceCommandScope\[\d+\] 已在助手命令表登记，不得再列为作用域外：workspace:@game\/server#test/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -779,7 +740,7 @@ test("inventory verifier rejects a root document citing a missing workspace comm
     writeFileSync(file, after);
     await assertRejected(root, /README\.md 引用了不存在的 workspace 命令：workspace:@game\/server#db:migrate/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -798,7 +759,7 @@ test("inventory verifier rejects a workspace scope entry that supersedes itself"
       /workspaceCommandScope\[\d+\]\.supersededBy 必须锚定到根命令或助手命令表已登记的 workspace 命令：workspace:@game\/server#relayer/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -827,7 +788,7 @@ test("inventory verifier rejects two workspace scope entries that supersede each
       /workspaceCommandScope\[\d+\]\.supersededBy 必须锚定到根命令或助手命令表已登记的 workspace 命令：workspace:@game\/server#fx:(a|b)/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -852,7 +813,7 @@ test("inventory verifier accepts a workspace anchor that is itself in the comman
     const result = await runVerifier(root);
     assert.equal(result.status, 0, outputOf(result));
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -869,7 +830,7 @@ test("inventory verifier rejects an echoed workspace command as coverage", async
       /workspaceCommandScope\[\d+\]\.supersededBy 并未实际调用 workspace:@game\/server#start/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -886,7 +847,7 @@ test("inventory verifier rejects a commented-out workspace command as coverage",
       /workspaceCommandScope\[\d+\]\.supersededBy 并未实际调用 workspace:@game\/server#start/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -905,7 +866,7 @@ test("inventory verifier rejects an echoed root command in a verification chain"
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(root, /未实际覆盖声明的验证命令：root:verify:vendor/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -921,7 +882,7 @@ test("inventory verifier rejects an echoed launch entry", async () => {
       /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -933,7 +894,7 @@ test("inventory verifier rejects a prototype-chain property posing as a root scr
     writeInventory(root, inventory);
     await assertRejected(root, /根命令不存在：toString/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -949,7 +910,7 @@ test("inventory verifier rejects a prototype-chain property posing as a workspac
     writeInventory(root, inventory);
     await assertRejected(root, /workspace 命令不存在：@game\/server#constructor/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -966,7 +927,7 @@ test("inventory verifier rejects a prototype-chain workspace scope registration"
     writeInventory(root, inventory);
     await assertRejected(root, /workspaceCommandScope 登记了不存在的 workspace 命令：workspace:@game\/server#toString/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -982,7 +943,7 @@ test("inventory verifier rejects a non-string script value", async () => {
     writeInventory(root, inventory);
     await assertRejected(root, /根命令不存在：fixture:object/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -999,7 +960,7 @@ test("inventory verifier rejects a self-referencing verification requirement", a
     writeInventory(root, inventory);
     await assertRejected(root, /requires 不得自引用或成环：root:verify:core/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1019,7 +980,7 @@ test("inventory verifier rejects mutually requiring verification commands", asyn
     writeInventory(root, inventory);
     await assertRejected(root, /requires 不得自引用或成环：root:verify:core/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1048,7 +1009,7 @@ test("inventory verifier does not let a self-wrapped requirement whitewash a bro
     writeInventory(root, inventory);
     await assertRejected(root, /requires 不得自引用或成环：root:verify:core/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1075,7 +1036,7 @@ test("inventory verifier rejects a commented-out workspace command in the assist
       /workspace 脚本既未登记进助手命令表也未登记作用域：workspace:@game\/server#fixture:worker/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1100,7 +1061,7 @@ test("inventory verifier rejects an echoed workspace command in the assistant bl
       /workspace 脚本既未登记进助手命令表也未登记作用域：workspace:@game\/server#fixture:worker/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1121,7 +1082,7 @@ test("inventory verifier rejects documentedIn outside README and docs", async ()
       /documentedIn 必须是 README\.md 或 docs\/ 下的 \.md 文档：apps\/server\/package\.json/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1137,7 +1098,7 @@ test("inventory verifier rejects documentedIn pointing at an archived plan", asy
     writeFileSync(join(root, "plan-v2.md"), `# plan-v2\n\n\`npm --workspace @game/server run loadtest\`\n`);
     await assertRejected(root, /documentedIn 必须是 README\.md 或 docs\/ 下的 \.md 文档：plan-v2\.md/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1154,7 +1115,7 @@ test("inventory verifier rejects documentedIn pointing at a directory instead of
     assert.doesNotMatch(outputOf(result), /EISDIR/, outputOf(result));
     assert.match(outputOf(result), /documentedIn 文档不存在：docs\/fixture\.md/, outputOf(result));
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1172,7 +1133,7 @@ test("inventory verifier rejects an npx-launched entry", async () => {
       /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1188,7 +1149,7 @@ test("inventory verifier rejects a quoted pseudo-call as coverage", async () => 
       /workspaceCommandScope\[\d+\]\.supersededBy 并未实际调用 workspace:@game\/server#start/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1206,7 +1167,7 @@ test("inventory verifier rejects an entry mentioned only in a trailing comment",
       /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1224,7 +1185,7 @@ test("inventory verifier rejects a command-substitution launch as coverage", asy
       /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1240,7 +1201,7 @@ test("inventory verifier rejects a heredoc pseudo-call as coverage", async () =>
       /workspaceCommandScope\[\d+\]\.supersededBy 并未实际调用 workspace:@game\/server#start/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1259,7 +1220,7 @@ test("inventory verifier rejects an argument-position pseudo-call as coverage", 
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(root, /未实际覆盖声明的验证命令：root:verify:vendor/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1275,7 +1236,7 @@ test("inventory verifier rejects a non-executing launcher flag as launch", async
       /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1291,7 +1252,7 @@ test("inventory verifier still accepts launchers with value-taking flags", async
     const result = await runVerifier(root);
     assert.equal(result.status, 0, outputOf(result));
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1310,7 +1271,7 @@ test("inventory verifier rejects a suffix-workspace npm run posing as a root com
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(root, /未实际覆盖声明的验证命令：root:verify:vendor/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1329,7 +1290,7 @@ test("inventory verifier rejects an inline suffix-workspace npm run", async () =
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(root, /未实际覆盖声明的验证命令：root:verify:vendor/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1344,7 +1305,7 @@ test("inventory verifier still accepts a prefix-workspace npm run", async () => 
     const result = await runVerifier(root);
     assert.equal(result.status, 0, outputOf(result));
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1361,7 +1322,7 @@ test("inventory verifier rejects a backgrounded pseudo-launch", async () => {
       /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1376,7 +1337,7 @@ test("inventory verifier still accepts a launcher with shell redirection", async
     const result = await runVerifier(root);
     assert.equal(result.status, 0, outputOf(result));
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1391,7 +1352,7 @@ test("inventory verifier still accepts a heredoc mentioned only inside a comment
     const result = await runVerifier(root);
     assert.equal(result.status, 0, outputOf(result));
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1408,7 +1369,7 @@ test("inventory verifier rejects a blacklisted flag after a value-taking flag", 
       /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1424,7 +1385,7 @@ test("inventory verifier rejects documentedIn escaping through a parent segment"
     writeFileSync(join(root, "plan-v2.md"), "# plan-v2\n\nnpm --workspace @game/server run loadtest\n");
     await assertRejected(root, /documentedIn 必须是 README\.md 或 docs\/ 下的 \.md 文档/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1441,7 +1402,7 @@ test("inventory verifier rejects a CR-glued npm run script name", async () => {
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(root, /未实际覆盖声明的验证命令：root:verify:vendor/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1460,7 +1421,7 @@ test("inventory verifier rejects NBSP-glued npm run tokens", async () => {
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(root, /未实际覆盖声明的验证命令：root:verify:vendor/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1477,7 +1438,7 @@ test("inventory verifier rejects a glued long non-executing flag before the entr
       /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1494,7 +1455,7 @@ test("inventory verifier rejects a glued short non-executing flag before the ent
       /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1509,7 +1470,7 @@ test("inventory verifier still accepts a value-taking flag before the entry", as
     const result = await runVerifier(root);
     assert.equal(result.status, 0, outputOf(result));
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1526,7 +1487,7 @@ test("inventory verifier rejects an entry that only appears as a redirect target
       /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1541,7 +1502,7 @@ test("inventory verifier still accepts an entry followed by a log redirect", asy
     const result = await runVerifier(root);
     assert.equal(result.status, 0, outputOf(result));
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1558,7 +1519,7 @@ test("inventory verifier rejects an entry behind a noclobber redirection", async
       /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1575,7 +1536,7 @@ test("inventory verifier rejects an entry behind an fd-allocating redirection", 
       /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1590,7 +1551,7 @@ test("inventory verifier still accepts a launcher piped into another command", a
     const result = await runVerifier(root);
     assert.equal(result.status, 0, outputOf(result));
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1605,7 +1566,7 @@ test("inventory verifier accepts a shell launcher with clustered short options",
     const result = await runVerifier(root);
     assert.equal(result.status, 0, outputOf(result));
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1622,7 +1583,7 @@ test("inventory verifier rejects a shell launcher whose option cluster contains 
       /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1639,7 +1600,7 @@ test("inventory verifier rejects a shell launch that reads stdin instead of the 
       /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1656,7 +1617,7 @@ test("inventory verifier rejects a shell option that eats the entry as its value
       /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1671,7 +1632,7 @@ test("inventory verifier still accepts an idiomatic shell option cluster with a 
     const result = await runVerifier(root);
     assert.equal(result.status, 0, outputOf(result));
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1689,7 +1650,7 @@ test("inventory verifier rejects an entry after the &| garbage sequence", async 
       /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1706,7 +1667,7 @@ test("inventory verifier rejects an entry after a spaced > | sequence", async ()
       /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1724,7 +1685,7 @@ test("inventory verifier rejects a mid-cluster shell option that eats the entry"
       /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1748,7 +1709,7 @@ for (const [name, script] of [
         /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
       );
     } finally {
-      await rm(root, { recursive: true, force: true });
+      await removeFixture(root);
     }
   });
 }
@@ -1769,7 +1730,7 @@ for (const [name, script] of [
       const result = await runVerifier(root);
       assert.equal(result.status, 0, outputOf(result));
     } finally {
-      await rm(root, { recursive: true, force: true });
+      await removeFixture(root);
     }
   });
 }
@@ -1787,7 +1748,7 @@ test("inventory verifier rejects a positional operand before the shell entry", a
       /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1805,7 +1766,7 @@ test("inventory verifier rejects a bare dash as the node entry position (stdin s
       /能力 outbox-relayer\.launch 未实际启动 defaultEntry：apps\/server\/src\/core\/economy\/relayer\.ts/,
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1854,7 +1815,7 @@ test("plugin fragment：合法 extra fragment 绿，且不修改中央 inventory
       "普通 extra plugin 经 fragment 通道登记，⛔ 不得要求（也不得发生）中央 inventory 改写",
     );
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1864,7 +1825,7 @@ test("plugin fragment：声明 core 必须拒绝（core 身份不经 fragment �
     writeFragmentPlugin(root, {}, { category: "core", docs: ["docs/SERVER.md"] });
     await assertRejected(root, /capabilities\[0\] 只能声明 extra/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1874,7 +1835,7 @@ test("plugin fragment：extra fragment 缺 docs/EXTRAS.md 必须拒绝（沿用�
     writeFragmentPlugin(root, {}, { docs: ["docs/SERVER.md"] });
     await assertRejected(root, /额外能力 fixture-extra-cap 必须引用 docs\/EXTRAS\.md/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1884,7 +1845,7 @@ test("plugin fragment：plugin.json 出现中央 inventory 专属键（routeOfTr
     writeFragmentPlugin(root, { routeOfTruth: { corePlan: "plan-v4.md" } });
     await assertRejected(root, /不得声明中央 inventory 专属键.*routeOfTruth/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1894,7 +1855,7 @@ test("plugin fragment：fragment 未知键未通过真实 JSON Schema 校验（a
     writeFragmentPlugin(root, {}, { bogus: true });
     await assertRejected(root, /未通过 plugin-schema-v2 校验.*unknown key\(s\): bogus/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1904,7 +1865,7 @@ test("plugin fragment：verification 登记存在但不发现 fragment 的命令
     writeFragmentPlugin(root, {}, { verification: [{ kind: "root", script: "verify:ecs" }] });
     await assertRejected(root, /plugin fragment 能力 fixture-extra-cap 的 verification 未包含能实际发现 fragment 的聚合命令/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1914,14 +1875,14 @@ test("plugin fragment：与中央能力重复 id / defaultEntry 不存在，均�
     writeFragmentPlugin(root, {}, { id: "outbox-relayer" });
     await assertRejected(root, /能力 id 重复：outbox-relayer/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
   const root2 = await createFixture();
   try {
     writeFragmentPlugin(root2, {}, { defaultEntry: "apps/server/src/core/economy/ghost.ts" });
     await assertRejected(root2, /能力 fixture-extra-cap 路径不存在：apps\/server\/src\/core\/economy\/ghost\.ts/);
   } finally {
-    await rm(root2, { recursive: true, force: true });
+    await removeFixture(root2);
   }
 });
 
@@ -1974,7 +1935,7 @@ test("kit fragment：合法 extra fragment 绿（apps/kits/ 缺席也绿），�
     assert.equal(readFileSync(join(root, "docs", "inventory.json"), "utf8"), centralBefore,
       "kit 经 fragment 通道登记，⛔ 不得要求（也不得发生）中央 inventory 改写");
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1986,7 +1947,7 @@ test("kit fragment：kit.json 未知键未通过 kit-schema-v1 校验（addition
     writeFragmentKit(root, { requires: { kits: {} } });
     await assertRejected(root, /未通过 kit-schema-v1 校验.*unknown key\(s\): requires/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -1998,7 +1959,7 @@ test("kit fragment：声明 core / 中央专属键 与插件同规则拒绝", as
     writeFragmentKit(root, { routeOfTruth: { corePlan: "plan-v4.md" } });
     await assertRejected(root, /apps\/kits\/fixtureKit\/kit\.json 不得声明中央 inventory 专属键.*routeOfTruth/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -2008,7 +1969,7 @@ test("kit fragment：apps/kits/ 下的子目录缺 kit.json 即拒绝（有根�
     mkdirSync(join(root, "apps", "kits", "ghost"), { recursive: true });
     await assertRejected(root, /apps\/kits\/ghost\/kit\.json 缺失：每个kit目录必须有 kit\.json/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -2019,7 +1980,7 @@ test("kit fragment：apps/kits 存在但不是目录即拒绝（可选根 ⛔ �
     writeFileSync(join(root, "apps", "kits"), "not a directory\n");
     await assertRejected(root, /apps\/kits 不是目录：kit目录是 capability fragment 的发现面/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
@@ -2029,7 +1990,7 @@ test("plugin fragment：plugins/ 目录缺失即 fail closed（发现面不可�
     rmSync(join(root, "apps", "plugins"), { recursive: true, force: true });
     await assertRejected(root, /apps\/plugins\/ 目录不存在/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await removeFixture(root);
   }
 });
 
