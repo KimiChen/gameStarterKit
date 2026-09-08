@@ -29,7 +29,7 @@ gono
 本地开发可以不启动 WebPlatform：`AUTH_PROVIDER=dev`（非生产缺省）会安装进程内开发身份提供者
 （`apps/server/src/platform/devAuthProvider.ts`）——会话形状、组 sess 缓存、MySQL 角色登记
 与真链路逐语义一致，并复刻锁定契约的 `/v1/sessions/dev` 与 `/v1/areas` 路径形状
-（`apps/server/src/http/devPublic.ts`）。此时客户端 `portalUrl` 留空即回落到游戏服自身端口
+（`apps/server/src/http/_support/devPublic.ts`）。此时客户端 `portalUrl` 留空即回落到游戏服自身端口
 （`Main.portalUrl` 或 `bootstrap` 的 `DEV_SERVER_URL` 回落）。
 
 ⛔ 这是唯一的进程内例外：`AUTH_PROVIDER=dev` + `NODE_ENV=production` 启动期拒启；生产环境的
@@ -48,9 +48,10 @@ gono
 
 ## 3. 核心开发链实际使用的契约
 
-路径常量来自生成物 `WebPlatformPath`，字段真相来自锁定的 `types.generated.ts`。`WebPlatformMethod`
-目前只被服务端 Internal 客户端（`platform/webPlatformClient.ts`）消费，客户端 Public 调用的 method
-仍是 `net/http/account.ts`、`net/http/area.ts` 里的字面量。下列是当前代码实际消费的摘要。
+路径常量来自生成物 `WebPlatformPath`，字段真相来自锁定的 `types.generated.ts`。双端 method 都经
+`WebPlatformHttpContractMap`（`apps/shared/src/protocol/http.ts`）消费：服务端 Internal 客户端
+（`platform/webPlatformClient.ts`）与客户端 Public 封装（`net/http/account.ts`、`net/http/area.ts`）
+均取自该映射，无手写字面量。下列是当前代码实际消费的摘要。
 
 ### Public：创建开发会话
 
@@ -126,7 +127,7 @@ vendor/gono-webplatform-contract-*.tgz
 
 当前实现：
 
-- `Main.portalUrl` 初始化独立 Public origin；空值或非 http(s) 绝对地址立即失败，不回退游戏服 URL。
+- `Main.portalUrl` 初始化独立 Public origin；留空时由 `bootstrap` 回落到游戏服地址（dev 语义，见 §1.1），非空但不是合法 http(s) origin 时由 `core/http.ts` 的 `initPortal` 立即失败。
 - `net/http/account.ts` 使用生成路径封装 dev session；`net/http/area.ts` 封装区目录。
 - `core/http.ts` 统一 XHR、10 秒超时、Bearer 和结构化 `HttpError(status, code)`。
 - 非 2xx、网络失败、超时或非 JSON 2xx 会 reject。

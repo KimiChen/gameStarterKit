@@ -7,7 +7,7 @@
 
 | 文件 | 作用 |
 | --- | --- |
-| `plugin.json` | 一个文件两面：**身份**（id / version / domains / fguiPackages / description）+ **客户端登记**（entry / viewDirs / views / owners / routes / menu / dependencies / resident / category / docs / capabilities）。schema 单源 `apps/server/tools/plugin/plugin-schema-v2.json`；⛔ 没有 kinds / constantName / requires——有客户端登记即 client 形态，有 `gameplay/` 即 gameplay 形态，constantName 从 gameplay manifest 派生 |
+| `plugin.json` | 一个文件两面：**身份**（id / version / domains / fguiPackages / description）+ **客户端登记**（entry / viewDirs / views / owners / routes / menu / dependencies / resident / category / docs / capabilities）。schema 单源 `apps/server/tools/plugin/plugin-schema-v2.json`；⛔ 没有 kinds / constantName——有客户端登记即 client 形态，有 `gameplay/` 即 gameplay 形态，constantName 从 gameplay manifest 派生；`requires` 是可选字段（v2 增量，KIT.md §9 K0-2 拍板不 bump schemaVersion） |
 | `README.md` | 插件自述文档（`docs` 指向它） |
 | `gameplay/{manifest.json,state.json}` | 玩法单源，与 `apps/shared/schema/gameplays/<id>/` 同等被 `codegen:gameplays` 发现 |
 | `host.json`（本目录根） | 宿主 placement：默认玩法与首屏入口顺序，⛔ 插件无权声明位置；保留 id：`host` / `registry` / `ui` / `config`（后两个是宿主在 `apps/Cocos/assets/resources/` 下的既有目录） |

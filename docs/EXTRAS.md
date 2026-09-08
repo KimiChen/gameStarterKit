@@ -252,6 +252,10 @@ guard 要求显式区清单。每区 `archive_zone_usage` 在 freeze singleton l
 | [`05-data-and-server.md`](undergroundIdle/05-data-and-server.md) | 数据模型、服务端一致性和内容配置 |
 | [`06-testing-and-roadmap.md`](undergroundIdle/06-testing-and-roadmap.md) | 指标、测试矩阵、阶段路线和完成定义 |
 | [`07-art-direction.md`](undergroundIdle/07-art-direction.md) | 美术方向、界面结构、资产与验收标准 |
+| [`08-main-screen-art-brief.md`](undergroundIdle/08-main-screen-art-brief.md) | 主界面视觉落地与效果图任务书 |
+| [`09-fairygui-undergroundidle-main-assembly.md`](undergroundIdle/09-fairygui-undergroundidle-main-assembly.md) | UndergroundIdleMain FairyGUI 装配契约 |
+| [`10-image-to-fairygui-live-plan.md`](undergroundIdle/10-image-to-fairygui-live-plan.md) | 黄金位图到 FairyGUI Editor 生产流程 |
+| [`11-ue-flow-and-wireframes.md`](undergroundIdle/11-ue-flow-and-wireframes.md) | 页面 UE、流程与交互线框 |
 
 ### 3.10 产物往返自检（导出物反序列化校验）
 
@@ -271,7 +275,7 @@ guard 要求显式区清单。每区 `archive_zone_usage` 在 freeze singleton l
 
 [`scripts/fgui-roundtrip.mjs`](../scripts/fgui-roundtrip.mjs) 用纯 Node、零依赖重写了 uncompressed FGUI v7
 的 header + 分段索引表 seek + 字符串表 + 依赖表 + 条目表 + sprite 表，字段顺序照抄
-`apps/client/extensions/fairygui-cc/runtime/fairygui.mjs` 的 `loadPackage`——那是运行时真正用来读这些文件的
+`apps/Cocos/extensions/fairygui-cc/runtime/fairygui.mjs` 的 `loadPackage`——那是运行时真正用来读这些文件的
 实现。检查**内联在 `fgui-manifest.mjs` 的 `currentManifest()` 里、重记哈希之前**，所以 `--write` 与 `--check`
 两侧口径一致，一次 `--write` 不会把残缺状态钉成新基线。
 

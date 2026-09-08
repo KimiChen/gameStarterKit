@@ -23,7 +23,7 @@ Protocol 重放「登录 → 首屏 → 设置面板 → 插件入口（route �
 ## 用法
 
 ```bash
-node tools/creator-preview/run.mjs all --out docs/evidence/creator-<日期>/replay      # 逐包全量（11 个场景）
+node tools/creator-preview/run.mjs all --out docs/evidence/creator-<日期>/replay      # 逐包全量（13 个场景）
 node tools/creator-preview/run.mjs arena --reuse --out /tmp/arena-run                # 单个 kit 入口
 node tools/creator-preview/run.mjs redeem --code SNAKE90 --out /tmp/redeem-run
 node tools/creator-preview/run.mjs tally --reuse            # 复用已打开的预览页（已在首屏时跳过登录）

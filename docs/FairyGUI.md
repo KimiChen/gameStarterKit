@@ -14,7 +14,7 @@
 - **实际 PSD 证据**：`docs/psd-maker/ug_main_layered_source_v02.psd` 是已保存的
   `referenceCompositeOnly` 重组证据，制作与 composite 对账见 `docs/psd-maker.md`；它不证明元素级可编辑，不是通用
   CLI 的生产金样，也没有通过 Photoshop 往返、运行资产、三层 stable key 或 FairyGUI 编译门禁。
-  `docs/ui/undergroundIdle/ue-v01/` 的 11 份 PSD 也属于该档：整画布 ImageGen base 未拆成独立语义元素，只能作 UE 审稿参考。
+  `docs/ui/undergroundIdle/ue-v01/` 的 11 份 PSD（未入库，仅存本机，见其 README）也属于该档：整画布 ImageGen base 未拆成独立语义元素，只能作 UE 审稿参考。
 - **近期优先**：统一只读 `FguiProjectIR`、PageSpec Schema、可执行 Scenario、Creator UI Gallery、设置门禁、Editor 工具链锁和发布 receipt。
 - **受控试点**：CLI 编译器 PSD 版在临时完整工程中生成候选 XML/`package.xml`，再由固定版本 Editor 人工接管、
   保存—重开和正式发布。OpenFairyGUI 至多作为只读解析/影子验证候选。

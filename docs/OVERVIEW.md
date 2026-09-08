@@ -117,6 +117,7 @@ apps/client/src
 - `net/`：房间、RPC 和 HTTP 的传输适配。
 - `core/`：HTTP 底座、生成的本地开发配置和宿主环境兼容桥。
 - `generated/`：`codegen:plugins` 的 View/契约/plugin 注册表产物，禁手改。
+- `plugins/` 与 `kits/`：插件与 kit 自带的客户端代码（由 plugin.json / kit.json 发现，分层规则同上）。
 - `view/ViewMgr.ts`：页面加载、分层、缓存和交互输入生命周期。
 
 新增页面通过 `.view.json` sidecar + `apps/plugins/<id>/plugin.json` 登记，经 `codegen:plugins`
@@ -197,7 +198,7 @@ shared 登记 canonical mode id + 新建 apps/shared/schema/gameplays/<id>/{mani
 
 `GameplayRegistry` 让 factory 与 mode-owned joiner 同属一个 registration；`RoomController` 只接管一次启动的
 精确 room capability。服务端 `GameRoom` 按已验证的 `mode` 延迟创建对应 `GameMode`，并在首次 handshake 前
-从生成映射选择且冻结 root；撮合同时按 `sId` 和 `mode` 隔离。客户端 `RoomClient` 不假定 root shape，状态
+从生成映射选择且冻结 root；撮合同时按 `sId`、`mode` 和 `profile` 隔离。客户端 `RoomClient` 不假定 root shape，状态
 raw exact validator 与重连 reconcile 由玩法 adapter 注入；校验先看 reflected Schema 的真实 wire shape，
 不先白名单重建状态。玩法只取得不含原始 SDK room/send 的 typed facade；只有真实 `ROOM_STATE` 校验通过才
 开放发送，SDK 离线队列不能绕过该闸。客户端新增玩法通过登记点扩展，不在通用 transport 中增加玩法分支；
@@ -259,14 +260,14 @@ FairyGUI 编辑设计源
 - 本仓包含用于本地验证的 Lobby、GameRoom、ballMove、技能结算、页面和数据读写示例。
 - 通用 private-room 能力（profile `"private"`：六位邀请码租约 + access ticket + owner-ready 开局
   事务；客户端 matchmaking strategy 与 `PrivateRoomService`）已落地，由 fixture gameplay
-  `privateFixture` 驱动测试；生产玩法当前只声明 `"default"`（auto + matchmaking），
+  `privateFixture` 驱动测试；生产玩法当前未声明 `"private"`（`snake` 为 `"dropIn"` 自由加入，其余为 `"default"` auto + matchmaking），
   `PrivateRoomLobby` 页面视觉属 FGUI 编辑器待办（登记在 [EXTRAS.md §5.2](EXTRAS.md#52-未实现的开放项登记2026-09-06-自-plan-系列归并) U3）。
 - 本地开发账号通过外部服务的 dev session 契约创建。
 - Unity 目录只是研究占位。
 - 所有演示 endpoint、配置和页面只用于开发与验证。
-- `apps/shared/src/logic` 的体力（stamina）、自然日（time）与命名 RNG 子流（`SeededRandom.stream`）当前
-  只有单测覆盖，没有服务端或客户端调用点；被实际消费的是 logic 中的 math 工具与技能表/伤害公式，以及
-  constants 中的 join 错误码工具。
+- `apps/shared/src/logic` 的体力（stamina）当前只有单测覆盖，没有服务端或客户端调用点；自然日（time）
+  由客户端 `LoginNoticeLogic` 消费，命名 RNG 子流（`SeededRandom.stream`）由服务端 GameRoom / snake world /
+  matchReplay 消费；被实际消费的还有 logic 中的 math 工具与技能表/伤害公式，以及 constants 中的 join 错误码工具。
 - 核心改进状态以 [plan-v5.md](plan-v5.md) 为准；可选模块的准确状态见
   [额外功能与参考实现](EXTRAS.md)。
 - 完整项目边界以根 README 为准。

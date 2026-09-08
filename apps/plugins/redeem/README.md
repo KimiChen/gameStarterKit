@@ -1,9 +1,9 @@
 # 兑换码插件（apps/plugins/redeem）
 
 「兑换码」是 [docs/PLUGIN.md](../../../docs/PLUGIN.md) §6.1 点名的**插件标准形态**，本目录是它的首个真实实现，
-同时充当 PLUGIN.md §9.6 / [plan-v5.md](../../../plan-v5.md) E5「第一个真实插件端到端实证」的样本：
+同时充当 PLUGIN.md §9.6（原 plan-v5 E5）「第一个真实插件端到端实证」的样本：
 作者侧在本仓内编写 → `plugin -- pack` 打包 → 干净树上 `plugin -- install` → `verify:all` 通过（当时两条既有
-环境基线除外，根因与处置登记在 plan-v5「当前验证基线」；两条基线随后已在 `661e542`/`f731658` 闭合）。
+环境基线除外；两条基线随后已在 `661e542`/`f731658` 闭合）。
 
 ## 玩家可见行为
 
@@ -34,7 +34,7 @@ client→Cocos 镜像）⛔ 不在包内，由 install 的 postinstall 链在宿
 ## 已知取舍（插件自身的后续版本，⛔ 不是框架承诺）
 
 - **码表是进程内静态表**（`core/redeem/codes.ts`）。真实运营需要运营后台/DB 码表、有效期、总量与批次。
-- **奖励只入本 plugin 钱包**（`ft:redeem:wallet:{uid}`），⛔ 不碰经济系统主钱包/账本：插件只能消费框架 API，
+- **奖励只入本 plugin 钱包**（`pl:redeem:wallet:{uid}`），⛔ 不碰经济系统主钱包/账本：插件只能消费框架 API，
   不能改框架写路径（PLUGIN.md §3）。接入主钱包属于框架侧开放能力（需要一条受治理的经济写 API），未实施。
 - **Cocos 镜像 `.meta` 是脚本合成的占位**（与 eacb687 先例同口径），Creator 打开工程时会按需重写；
   作者侧 FGUI 编辑器不可用，故 View 是纯节点手搓版。
