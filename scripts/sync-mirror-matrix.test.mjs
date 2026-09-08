@@ -18,15 +18,16 @@
  * 每个场景还额外断言**收敛性**：跑完同步后 `--check` 必须转绿（除非 syncCannotFix）。
  */
 import assert from "node:assert/strict";
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
-  existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync,
+  existsSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
+import { availableParallelism } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { after, test } from "node:test";
+import { describe, test as declareTest } from "node:test";
+import { buildCheckout, cloneCheckout, removeFixture, removeFixtureSync } from "./lib/fixture-checkout.mjs";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -74,41 +75,49 @@ const CHECK_SCRIPT_EXEMPTIONS = {
 };
 
 
-const fixtures = [];
-after(() => { for (const dir of fixtures) rmSync(dir, { recursive: true, force: true }); });
+/**
+ * pristine 检出（含 .git）只建一次，每个场景用 clonefile 克隆自己的副本再破坏——场景之间唯一的
+ * 共享状态就是这个只读 pristine。夹具根与仓同卷（scripts/lib/fixture-checkout.mjs），否则
+ * APFS clonefile 跨卷静默退化成「约 2000 文件全量复制 + git init/add/commit」× 每场景。
+ */
+let pristineCheckout = null;
+
+function ensurePristineCheckout() {
+  if (!pristineCheckout) {
+    pristineCheckout = buildCheckout({
+      prefix: "sync-matrix-pristine-",
+      // 只排除含密钥的 .env；已入库的 .env.development 必须进夹具，
+      // 否则「开发者改 PORT 并正常同步」的合法状态会被 devEnv 新鲜度检查按默认值重算成漂移（假红）。
+      excludeEnvVariants: false,
+      // 必须是 git 仓库：`sync-client --check` 用 `git ls-files` 判断
+      // 「入库文件是否缺入库 `.meta`」，非 git 目录下会直接抛错而不是给出判定。
+      gitCommit: true,
+    });
+  }
+  return pristineCheckout;
+}
+
+process.on("exit", () => {
+  if (pristineCheckout) removeFixtureSync(pristineCheckout);
+});
+
+/** 一份**独占**的克隆。写时复制：场景的破坏不会回流到 pristine。 */
+async function createFixture() {
+  return cloneCheckout(ensurePristineCheckout(), { prefix: "sync-matrix-" });
+}
 
 /**
- * 一次性 checkout 副本。必须是 git 仓库：`sync-client --check` 用 `git ls-files` 判断
- * 「入库文件是否缺入库 `.meta`」，非 git 目录下会直接抛错而不是给出判定。
+ * 并发前提（与 verify-inventory 同构）：场景体只写自己的克隆，被测 sync 脚本以克隆根为 cwd
+ * 运行，pristine 建好后只读。用例体必须保持异步（`spawn` + await）——`spawnSync` 会占住
+ * 事件循环，放进并发 suite 也不会重叠。
  */
-function createFixture() {
-  const root = mkdtempSync(join(tmpdir(), "sync-matrix-"));
-  fixtures.push(root);
-  const files = execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "-z"], {
-    cwd: REPO_ROOT, encoding: "buffer",
-  }).toString().split("\0").filter(Boolean);
-  for (const file of files) {
-    if (file === "apps/website" || file.startsWith("apps/website/")) continue;
-    if (file === ".env") continue; // 只排除含密钥的 .env；已入库的 .env.development 必须进夹具，
-    // 否则「开发者改 PORT 并正常同步」的合法状态会被 devEnv 新鲜度检查按默认值重算成漂移（假红）。
-    // .claude/ 是 Claude Code 的会话目录（worktrees/ 里是别的检出副本），⛔ 不属于被测检出。
-    if (file === ".claude" || file.startsWith(".claude/")) continue;
-    const source = join(REPO_ROOT, file);
-    if (!existsSync(source)) continue;
-    // git ls-files 把嵌套 git 仓库/worktree 整体报成一个「目录」条目（末尾带 /）；
-    // 按文件复制会 EISDIR 炸掉整个套件。这类条目从不属于被测检出。
-    if (statSync(source).isDirectory()) continue;
-    const destination = join(root, file);
-    mkdirSync(dirname(destination), { recursive: true });
-    writeFileSync(destination, readFileSync(source));
-  }
-  const git = (...args) => execFileSync("git", args, { cwd: root, stdio: "ignore" });
-  git("init", "-q");
-  git("config", "user.email", "matrix@example.invalid");
-  git("config", "user.name", "sync matrix");
-  git("add", "-A");
-  git("commit", "-qm", "fixture");
-  return root;
+const CONCURRENCY = Number(process.env.SYNC_MIRROR_TEST_CONCURRENCY)
+  || Math.max(2, Math.min(4, availableParallelism()));
+
+/** 收集夹具用例，文件末尾统一注册进并发 suite（node:test 的顶层 `test()` 之间是串行的）。 */
+const pendingTests = [];
+function test(name, fn) {
+  pendingTests.push([name, fn]);
 }
 
 /** 镜像树的可观测快照：相对路径 → 内容哈希。 */
@@ -130,11 +139,26 @@ function snapshot(root, relative) {
 const sameSnapshot = (left, right) => left.size === right.size
   && [...left].every(([key, value]) => right.get(key) === value);
 
-/** A：`--check` 怎么说。true = 判为一致（绿）。 */
-function checkSaysClean(root, script) {
-  const result = spawnSync(process.execPath, [join(root, script), "--check"], {
-    cwd: root, encoding: "utf8", timeout: 120_000,
+/** ⚠ `settle` ⛔ 不叫 `resolve`：`resolve` 是 node:path 的导入，同名会把它遮掉。 */
+function runScript(root, script, args) {
+  return new Promise((settle, fail) => {
+    const child = spawn(process.execPath, [join(root, script), ...args], {
+      cwd: root, timeout: 120_000,
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk) => { stdout += chunk; });
+    child.stderr.on("data", (chunk) => { stderr += chunk; });
+    child.on("error", fail);
+    child.on("close", (status) => { settle({ status, stdout, stderr }); });
   });
+}
+
+/** A：`--check` 怎么说。true = 判为一致（绿）。 */
+async function checkSaysClean(root, script) {
+  const result = await runScript(root, script, ["--check"]);
   assert.notEqual(
     result.status, null,
     `${script} --check 未正常退出（超时或被信号杀死）：${result.stderr}`,
@@ -143,11 +167,9 @@ function checkSaysClean(root, script) {
 }
 
 /** B：真的跑一次同步，镜像树变了没有。 */
-function syncChangesMirror(root, script, mirror) {
+async function syncChangesMirror(root, script, mirror) {
   const before = snapshot(root, mirror);
-  const result = spawnSync(process.execPath, [join(root, script)], {
-    cwd: root, encoding: "utf8", timeout: 120_000,
-  });
+  const result = await runScript(root, script, []);
   assert.equal(result.status, 0, `${script} 同步本身应当成功：${result.stdout}\n${result.stderr}`);
   return !sameSnapshot(before, snapshot(root, mirror));
 }
@@ -293,55 +315,62 @@ for (const target of TARGETS) {
     ? [...SCENARIOS, ...CLIENT_SCENARIOS]
     : SCENARIOS;
 
-  test(`${target.name}：--check 判定与真实同步效果一致`, () => {
-    const divergences = [];
-    for (const scenario of scenarios) {
-      const root = createFixture();
-      scenario.mutate(root, target);
+  for (const scenario of scenarios) {
+    test(`${target.name} / ${scenario.name}：--check 判定与真实同步效果一致`, async () => {
+      const root = await createFixture();
+      try {
+        scenario.mutate(root, target);
 
-      const clean = checkSaysClean(root, target.script);
-      if (clean !== scenario.expectClean) {
-        divergences.push(`${scenario.name}\n    --check 判定=${clean ? "绿" : "红"}`
-          + ` 期望=${scenario.expectClean ? "绿" : "红"}`);
-        continue;
-      }
+        const clean = await checkSaysClean(root, target.script);
+        assert.equal(
+          clean, scenario.expectClean,
+          `--check 判定=${clean ? "绿" : "红"} 期望=${scenario.expectClean ? "绿" : "红"}`,
+        );
 
-      const changed = syncChangesMirror(root, target.script, target.mirror);
-      if (scenario.syncCannotFix) {
-        if (changed) {
-          divergences.push(`${scenario.name}\n    已登记为「同步修不了」，但同步实际改动了镜像`
-            + `\n    请去掉 syncCannotFix 并同步更新 docs/EXTRAS.md §5.3 的保留边界登记（${scenario.syncCannotFix}）`);
+        const changed = await syncChangesMirror(root, target.script, target.mirror);
+        if (scenario.syncCannotFix) {
+          assert.ok(
+            !changed,
+            `已登记为「同步修不了」（${scenario.syncCannotFix}），但同步实际改动了镜像\n`
+              + "请去掉 syncCannotFix 并同步更新 docs/EXTRAS.md §5.3 的保留边界登记",
+          );
+          return;
         }
-        continue;
+        assert.notEqual(
+          clean, changed,
+          `--check=${clean ? "绿" : "红"} 但同步${changed ? "改动了" : "没改动"}镜像`
+            + `  → ${clean ? "假绿（说一致，实际同步还会改）" : "假红（说不一致，实际同步什么都没做）"}`,
+        );
+        // 收敛性：同步之后必须转绿，否则「跑一次 sync 就好」这句话是假的。
+        assert.equal(
+          await checkSaysClean(root, target.script), true,
+          `${target.name} / ${scenario.name}：跑完同步后 --check 仍为红，未收敛`,
+        );
+      } finally {
+        await removeFixture(root);
       }
-      if (clean === changed) {
-        divergences.push(`${scenario.name}\n    --check=${clean ? "绿" : "红"} 但同步${changed ? "改动了" : "没改动"}镜像`
-          + `  → ${clean ? "假绿（说一致，实际同步还会改）" : "假红（说不一致，实际同步什么都没做）"}`);
-        continue;
-      }
-      // 收敛性：同步之后必须转绿，否则「跑一次 sync 就好」这句话是假的。
-      assert.equal(
-        checkSaysClean(root, target.script), true,
-        `${target.name} / ${scenario.name}：跑完同步后 --check 仍为红，未收敛`,
-      );
-    }
-    assert.deepEqual(
-      divergences, [],
-      `${divergences.length}/${scenarios.length} 个场景与真实同步效果背离：\n  ${divergences.join("\n  ")}`,
-    );
-  });
+    });
+  }
 }
 
-test("矩阵本身有判别力：两侧探针都不是恒真", () => {
+test("矩阵本身有判别力：两侧探针都不是恒真", async () => {
   const target = TARGETS[0];
-  const root = createFixture();
-  // 门禁侧：原样为绿，改坏后为红。
-  assert.equal(checkSaysClean(root, target.script), true, "原样镜像必须判绿");
-  appendTo(join(root, target.mirror, target.sample), "\n// drift\n");
-  assert.equal(checkSaysClean(root, target.script), false, "改坏后必须判红");
-  // 效果侧：改坏时同步会动树，原样时不会。
-  assert.equal(syncChangesMirror(root, target.script, target.mirror), true, "改坏后同步必须改动镜像");
-  assert.equal(syncChangesMirror(root, target.script, target.mirror), false, "已一致时同步不得再改动镜像");
+  const root = await createFixture();
+  try {
+    // 门禁侧：原样为绿，改坏后为红。
+    assert.equal(await checkSaysClean(root, target.script), true, "原样镜像必须判绿");
+    appendTo(join(root, target.mirror, target.sample), "\n// drift\n");
+    assert.equal(await checkSaysClean(root, target.script), false, "改坏后必须判红");
+    // 效果侧：改坏时同步会动树，原样时不会。
+    assert.equal(await syncChangesMirror(root, target.script, target.mirror), true, "改坏后同步必须改动镜像");
+    assert.equal(await syncChangesMirror(root, target.script, target.mirror), false, "已一致时同步不得再改动镜像");
+  } finally {
+    await removeFixture(root);
+  }
+});
+
+describe("sync-mirror-matrix", { concurrency: CONCURRENCY }, () => {
+  for (const [name, fn] of pendingTests) declareTest(name, fn);
 });
 
 /** 扫描面：任何「解释器 [flags] [./] (scripts|tools)/**.mjs --check」形态的脚本调用。
@@ -354,7 +383,7 @@ function checkScriptPaths(body) {
   )].map((match) => match[1]);
 }
 
-test("矩阵覆盖面钉住 package.json：新增镜像 --check 脚本必须进 TARGETS 或显式豁免", () => {
+declareTest("矩阵覆盖面钉住 package.json：新增镜像 --check 脚本必须进 TARGETS 或显式豁免", () => {
   // TARGETS 是本文件对「有哪几面镜子」的第二次表达。新增一面镜子若忘了登记，矩阵会
   // 一眼都不看它就全绿。这条钉把它和 package.json 的真实脚本文本对齐。
   const scripts = JSON.parse(readFileSync(join(REPO_ROOT, "package.json"), "utf8")).scripts ?? {};
@@ -372,7 +401,7 @@ test("矩阵覆盖面钉住 package.json：新增镜像 --check 脚本必须进 
   }
 });
 
-test("覆盖面扫描面承认 ./ 前缀、解释器 flag 与子目录脚本（此前三类静默逃逸）", () => {
+declareTest("覆盖面扫描面承认 ./ 前缀、解释器 flag 与子目录脚本（此前三类静默逃逸）", () => {
   const cases = [
     ["node ./scripts/x.mjs --check", "scripts/x.mjs"],
     ["node --import tsx scripts/lib/x.mjs --check", "scripts/lib/x.mjs"],

@@ -30,7 +30,7 @@
 | --- | --- |
 | A 可排期工程项（2 条） | 仍未实现 → EXTRAS §5.2 G1/G2（两条早已在 EXTRAS §3.10 登记，此前是重复登记） |
 | B 编辑器 / Creator 待办（6 条） | 5 条仍未实现 → EXTRAS §5.2 U1–U5；B5「合成 `.meta` 的 Creator 确认」2026-09-05 已闭合（Creator 3.8.8 未重写任何合成 `.meta`，证据在 [docs/evidence/creator-2026-09-05/](evidence/creator-2026-09-05/README.md)），保留为「下次 Creator 版本升级时复核」 |
-| C 玩法实现（3 条） | C1 snake → 专项文档；C2 undergroundIdle → EXTRAS §5.2 P1；C3 真机联调 → EXTRAS §5.2 R1（**口径已澄清**：此前各处「真机验证」实为 Creator 桌面预览，物理设备联调从未做过） |
+| C 玩法实现（3 条） | C1 snake → 专项文档；C2 undergroundIdle → EXTRAS §5.2 P1；|
 | D 有意保留边界（10 条） | → EXTRAS §5.3（其中「`src=` 悬空 resId 无闸」已过期删除，`GameRoom.ts` 行数改为不再逐轮重钉） |
 | E 插件机制（6 条） | E1–E4 仍未实现 → EXTRAS §5.2 X1–X4；E5（两种形态的真实插件端到端实证）与 E6（`install --reinstall-from-tree`）已完成，证据是各自的契约测试与 Creator 证据目录 |
 
