@@ -180,7 +180,7 @@ Gate A：未关闭
 | `docs/undergroundIdle/09-fairygui-undergroundidle-main-assembly.md` | 提供 R/T/H/A 坐标、T01～T13 槽位、岗位锚点、目标节点树和安全区规则 |
 | `docs/undergroundIdle/10-image-to-fairygui-live-plan.md` | 确认 `regionCrop`、`inpaintCrop`、`alphaObject`、`fullCanvas` 等生产方式，以及禁止盲切和整页导入 |
 | `docs/undergroundIdle/art/production/README.md` | 确认 Bitmap-first 批次状态、source/runtime/composite/review 的目录责任和 Gate 顺序 |
-| `docs/undergroundIdle/art/production/main_bitmap_v02/README.md` | 确认 79 项计划输出、当前烘焙责任、三层场景、角色/灯光/状态的待拆边界 |
+| `docs/undergroundIdle/art/production/main_bitmap_v02/README.md`（未入库，目录现已不存在） | 确认 79 项计划输出、当前烘焙责任、三层场景、角色/灯光/状态的待拆边界 |
 | `docs/psd-maker/asset-manifest.json` | 核对计划资产组、文字槽、热区、状态族和 composite 责任；没有把 pending 条目冒充 accepted 输入 |
 | `docs/psd-maker/ug_main_golden_v02.geometry.md` | 确认 `adoptConceptGeometry`、六区坐标、Mask、安全区和短屏决策 |
 | `docs/psd-maker/ug_main_golden_v02.prompt.md` | 确认原始 ImageGen 提示词、用户选稿、853×1844 源、750×1624 规范化方法和历史候选排除项 |
@@ -658,7 +658,8 @@ magick compare \
 
 ### 12.4 项目计划校验
 
-若 PSD 对应 Underground Idle 主界面批次，还应运行：
+若 PSD 对应 Underground Idle 主界面批次，还应运行（⚠ 该脚本与 `main_bitmap_v02/` 目录未入库、现已不存在，
+命令与输出留作历史记录）：
 
 ```bash
 node docs/undergroundIdle/art/production/main_bitmap_v02/validate-manifest.mjs --plan

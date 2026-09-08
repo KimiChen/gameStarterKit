@@ -3,7 +3,8 @@
 ⛔ 全目录禁止 import `cc` / `fairygui-cc`（`apps/client/test/logic-purity.test.ts` 机检）。本目录纳入
 客户端严格类型检查，代码可在无引擎环境测试；这不表示每个 Logic 已有完整行为用例。
 
-- `page/`：UI 页面行为，`XxxLogic.ts` ↔ `view/XxxView.ts` 同名配对
+- `page/`：UI 页面行为，`XxxLogic.ts` ↔ `view/XxxView.ts` 同名配对；无页面的编排件也在内
+  （如断线对账 `SessionReconcileLogic`、无头样例 `GuildLogic`）
 - `areaDirectory.ts`：区服目录的展示/准入判定（维护态与 openTime 闸）；真正的进服准入仍由游戏服 onAuth 决定
 - `rooms/<玩法>/`：实时玩法域，对应服务端 `rooms/`；`ballMove/` 是 demo 玩法（小球移动）的域名，
   fork 本仓后按真实玩法改名/新增（如 `rooms/fishing/`）

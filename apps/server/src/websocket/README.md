@@ -11,8 +11,10 @@
 - `dispatcher.ts`：路由查找 → 令牌桶 → Zod parse → 可选幂等占位 → handler timeout/error mapping。
 - `push.ts`：只登记 Lobby 在线连接，提供 user/guild/all push 与 mailwake consumer。
 
-新增 RPC：先在 shared `protocol/lobbyRpc` 增加请求、响应和消息名，运行 `npm run sync:shared`，再创建
-`<domain>/<method>.ts` 并用 `defineRpc` 默认导出。路由名必须等于路径；全集不一致时服务端拒绝启动。
+新增 RPC：先在 shared `protocol/lobbyRpc/domains/<域>.ts` 声明路由、类型、validator 与领域错误码（改既有域须
+同批递增 `contractVersion`），运行 `npm --workspace @game/server run codegen:plugins` 刷新 `registry.generated.ts`
+并重钉协议指纹、`npm run sync:shared`，再创建 `<domain>/<method>.ts` 并用 `defineRpc` 默认导出，最后补
+`test/lobbyRpcVectors/<域>.ts` 向量（完整四步见 `docs/SERVER.md §4`）。路由名必须等于路径；全集不一致时服务端拒绝启动。
 
 loader 依赖 tsx 直接运行、文件系统扫描和动态 import；它不是打包器的静态 manifest。dispatcher 不负责
 连接认证或 per-user 写串行化，后者由 LobbyRoom 和 handler/core 分别承担。

@@ -19,4 +19,4 @@
 - 首个样本：[`arena`](arena/README.md)（一张 per-zone 世界表 + 两个 mode + 两个 api 面）与建在其 `board` 面上的插件
   [`apps/plugins/arenaShop`](../plugins/arenaShop/README.md)。
 
-命令（与插件同一套 `plugin -- pack/install/uninstall/check/test`，kit 多出来的闸）见 [docs/PLUGIN.md](../../docs/PLUGIN.md) §5.4。
+命令（与插件同一套 `plugin -- pack/install/uninstall/check/test/changed`，kit 多出来的闸）见 [docs/PLUGIN.md](../../docs/PLUGIN.md) §5.4。
