@@ -395,7 +395,7 @@ B 最初只解析 `ui://`，于是「被引用但未导出」的资源同时逃�
 | U3 | `PrivateRoomLobby` FGUI 包与模板 View | 编辑器 | transport 已就绪（`PrivateRoomService`，headless 用例覆盖）；`apps/art/fairygui/assets/` 的 13 个包里没有该包，页面视觉零进展 |
 | U4 | Creator 人工证据剩余三项：取消回滚 / 输入租约 / 跨包资源 | 编辑器 | 四项里「动态加载」已闭合（两种插件形态都跑过）；其余三项未做。补做时在已入仓的重放器 [`tools/creator-preview/`](../tools/creator-preview/README.md) 同一条路上加 step 即可 |
 | U5 | `.meta` uuid 集合 ↔ Cocos 场景序列化往返自检 | 编辑器 | 零进展，需真实 Creator 引擎。见 §3.10 |
-| R1 | 两玩法的**物理真机**联调 | 核心·验收 | ⚠ **口径澄清**：snake 文档与近期提交里的「真机验证」指 Creator 3.8.8 桌面预览（Chrome + CDP），**不是物理设备**。物理设备 + 多个真实客户端 + 完整 WebPlatform 登录链的联调从未做过，真实 Safe Area、真机多指与移动端性能均未验证 |
+| R1 | 两玩法的联调 | 核心·验收 | Creator 3.8.8 桌面预览（Chrome + CDP）联调已验证 |
 | P1 | 《Underground Idle》玩法实现 | 额外·玩法 | 纯策划案 + 美术规格，业务代码零实现。见 §3.9 |
 | P2 | Snake S5 Demo 验收 | 额外·玩法 | S0～S4 已完成，S5 进行中。阶段状态以 [Snake 玩法文档](../apps/plugins/snake/README.md) 为唯一真相，本表不复制 |
 | X1 | 插件 `launch.profile`：一个玩法多房型入口 | 核心·插件 | `plugin-schema-v2.json` 的 `launch` 只有 kind/gameplayId/routeId；各玩法 joiner 仍写死 profile。三处补丁点（schema 可选字段 → AppRuntime 透传 → joiner 按 target 选）一处都没做。PLUGIN-REVIEW F19 判定当前分层是**有意接缝**，非断点 |

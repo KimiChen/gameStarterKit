@@ -16,12 +16,13 @@
  * `bash -t` 只执行第一条命令就退出，按这个口径不算启动——这类语义分歧写在用例的 `note` 里。
  */
 import assert from "node:assert/strict";
-import { execFileSync, spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { after, test } from "node:test";
+import { buildCheckout, removeFixtureSync } from "./lib/fixture-checkout.mjs";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const VERIFY_SCRIPT = join(REPO_ROOT, "scripts", "verify-inventory.mjs");
@@ -94,26 +95,8 @@ let probeDir = null;
 /** 一次性建好 fixture 与探针目录：每条形态只改 `scripts.relayer`，避免逐条重建。 */
 function setup() {
   if (fixture) return;
-  fixture = mkdtempSync(join(tmpdir(), "launcher-matrix-"));
-  const checkoutFiles = execFileSync(
-    "git",
-    ["ls-files", "--cached", "--others", "--exclude-standard", "-z"],
-    { cwd: REPO_ROOT, encoding: "buffer" },
-  ).toString().split("\0").filter(Boolean);
-  for (const file of checkoutFiles) {
-    if (file === "apps/website" || file.startsWith("apps/website/")) continue;
-    if (file === ".env" || file.startsWith(".env.")) continue;
-    // .claude/ 是 Claude Code 的会话目录（worktrees/ 里是别的检出副本），⛔ 不属于被测检出。
-    if (file === ".claude" || file.startsWith(".claude/")) continue;
-    const source = join(REPO_ROOT, file);
-    if (!existsSync(source)) continue;
-    // git ls-files 把嵌套 git 仓库/worktree 整体报成一个「目录」条目（末尾带 /）；
-    // 按文件复制会 EISDIR 炸掉整个套件。这类条目从不属于被测检出。
-    if (statSync(source).isDirectory()) continue;
-    const destination = join(fixture, file);
-    mkdirSync(dirname(destination), { recursive: true });
-    cpSync(source, destination);
-  }
+  // 检出夹具的构建与排除清单收在 scripts/lib/fixture-checkout.mjs（与仓同卷，clonefile 可用）。
+  fixture = buildCheckout({ prefix: "launcher-matrix-" });
 
   // 探针目录：入口只打 marker。node 侧的 `--import tsx` / `-r` 需要真实依赖，
   // 因此把仓库的 node_modules 接进来——探针缺依赖会让「真实未执行」变成环境假象。
@@ -138,9 +121,9 @@ function setup() {
 }
 
 after(() => {
-  for (const dir of [fixture, probeDir]) {
-    if (dir) rmSync(dir, { recursive: true, force: true });
-  }
+  // fixture 在仓旁目录（Finder 会异步写 .DS_Store，rm 需重试，见 lib）；probeDir 在 os.tmpdir() 无此问题。
+  if (fixture) removeFixtureSync(fixture);
+  if (probeDir) rmSync(probeDir, { recursive: true, force: true });
 });
 
 /** A：门禁怎么说。true = 认为入口被启动。 */
