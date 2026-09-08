@@ -614,7 +614,7 @@ id=config → dir:apps/Cocos/assets/resources/config
 8. **同仓「作者=宿主」的插件迭代动线**（原 plan-v5 E6）：✅ 已按方案 ② 实施（2026-09-05）——
    `install --reinstall-from-tree <id>`（§5.4）。E5 实证当天撞上的现场（改插件 README 一行即锁红、
    只能回退）已用它重放闭合：bump 1.0.0 → 1.0.1 后以树重写锁。仍开放的同类尾巴：随包 `.meta` 在锁内，Creator
-   重排键序即锁红（原 plan-v5 B 节清单 1-②，待实测后决定 `.meta` 是否按语义比对）。
+   重排键序即锁红（待实测后决定 `.meta` 是否按语义比对，登记在 [EXTRAS.md §5.2](EXTRAS.md#52-未实现的开放项登记2026-09-06-自-plan-系列归并) X5）。
 
 ## 10. 非目标
 

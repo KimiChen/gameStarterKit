@@ -403,6 +403,7 @@ B 最初只解析 `ui://`，于是「被引用但未导出」的资源同时逃�
 | X2 | i18n / LocalizePort 契约 | 核心·插件 | `labelKey` 必填且透传到生成物，渲染仍用硬编码 `label`；全仓无 LocalizePort 与 locales 载体。缺口本身已被 `SettingsLogic` 的语言项 reason 与 `settings.test.ts` 钉成断言。**须先于第一个第三方插件落地**，否则每个插件硬编码一种语言 |
 | X3 | 框架默认加载页 | 核心·插件 | 未开工：`builtin` 的 routes 里没有 loading，`view/` 下无 LoadingView。与 FGUI 包预热策略绑定（本仓 FGUI 包只有加载路径无卸载路径） |
 | X4 | join 信封侧的域契约比对 | 有意接缝 | 构建期闸已落地（`LOBBY_RPC_DOMAIN_CONTRACTS`）；Lobby join 仍只比对 `LOBBY_PROTOCOL_VERSION`。⛔ 这是既定边界不是待办：Non-intrusive §4.8 明确「不各自新增版本闸」，域契约变化是否 bump 那个整数是人工决策 |
+| X5 | 随包 `.meta` 的锁比对语义（字节 vs 语义） | 核心·插件 | 2026-09-08 自 [PLUGIN.md](PLUGIN.md) §9 第 8 条补登记（原 plan-v5 B 节清单 1-②，归并时遗漏）。现状已核验：插件锁按文件内容 sha256 逐字节比对（`apps/server/tools/plugin/lock.ts`），`scripts/packages/snake.lock` 234 行中 90 行是 `.meta`——Creator 若重排 `.meta` 键序，语义不变也会锁红。Creator 实际是否重排、`.meta` 是否改按语义比对（解析后比规范形），待真实 Creator 实测后决定 |
 | Y1 | 插件分享平台 plugin.gono.games | 额外·分发 | 设计提案已定稿，v0/v1/v2 分期与七条前置修复的实施状态**只在 [docs/PLUGIN-REGISTRY.md](PLUGIN-REGISTRY.md) §7 回写**，本表不复制 |
 | Y2 | kit（地基层） | 额外·地基 | 设计提案已定稿，K0/K1/K2 分期的实施状态**只在 [docs/KIT.md](KIT.md) §9 回写**，本表不复制 |
 
