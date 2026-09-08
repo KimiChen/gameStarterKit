@@ -101,7 +101,7 @@ apps/client/src
 导入和完整 View 生命周期仍需编辑器预览。
 `test:fgui` 侧重 codegen/registry 行为，
 设计源到已导出 `.bin` 的新鲜度由 `verify:fgui` 的 manifest 检查与 `fgui-roundtrip` 的产物往返自检；
-已知边界见 [plan-v5.md](plan-v5.md)。
+已知边界见 [EXTRAS.md](EXTRAS.md) §3.10 与 §5.2 G1。
 
 ### 3.3 视图与行为分离
 
@@ -260,7 +260,7 @@ FairyGUI 编辑设计源
 - 通用 private-room 能力（profile `"private"`：六位邀请码租约 + access ticket + owner-ready 开局
   事务；客户端 matchmaking strategy 与 `PrivateRoomService`）已落地，由 fixture gameplay
   `privateFixture` 驱动测试；生产玩法当前只声明 `"default"`（auto + matchmaking），
-  `PrivateRoomLobby` 页面视觉属 FGUI 编辑器待办（见 [plan-v5.md](plan-v5.md)）。
+  `PrivateRoomLobby` 页面视觉属 FGUI 编辑器待办（登记在 [EXTRAS.md §5.2](EXTRAS.md#52-未实现的开放项登记2026-09-06-自-plan-系列归并) U3）。
 - 本地开发账号通过外部服务的 dev session 契约创建。
 - Unity 目录只是研究占位。
 - 所有演示 endpoint、配置和页面只用于开发与验证。
