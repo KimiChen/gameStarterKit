@@ -8,7 +8,7 @@ Cocos Creator 工程壳在 [../Cocos](../Cocos)，代码经同步脚本灌入 `a
 **「纯 TS」≠「引擎无关」**——引擎无关代码主要在 `logic/`、`shared/`、`lib/bitecs/`，以及
 `view/areaPresentation.ts`、`fguiContracts.ts`、`defineView.ts`、`layers.ts` 等纯数据文件
 （`logic-purity.test.ts` 机检 Logic 禁 cc/fairygui）。`Main.ts` 与多数 View 绑定 cc + fairygui-cc，
-`core/` 负责宿主环境桥与 XHR，`net/` 依赖全局 Colyseus UMD；跨引擎复用时这些层需按目标引擎重写。
+`core/` 负责宿主环境桥、XHR 与开发期错误弹框，`net/` 依赖全局 Colyseus UMD；跨引擎复用时这些层需按目标引擎重写。
 
 `npm run typecheck:client` 使用 `tsconfig.test.json` 和 Node 侧最小 `cc`/FairyGUI 桩，严格编译
 `Main.ts`、全部 View/`pages.ts`/ViewMgr 以及客户端测试；`npm run typecheck:client:legacy` 使用

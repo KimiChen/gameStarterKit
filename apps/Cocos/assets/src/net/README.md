@@ -9,6 +9,7 @@
 | 游戏服 HTTP | `http/notice.ts`（公告） | `logic/page/` |
 | （无，纯客户端状态） | `serverSession.ts`（当前选中区服、列表与目录响应） | 页面写入，Lobby/GameRoom 读取 `gameWsUrl` |
 | （无，纯客户端状态） | `session.ts`（登录态 identity、角色快照与 authInvalid/connLost/battleLost 事件枢纽；Lobby 最终断线先对账，失败才进入统一 returnToLogin） | 编排层订阅 |
+| （无，两 transport 共用件） | `wireCommon.ts`（join options 克隆/稳定序列化、控制字段拆分、错误文本卫生与 SDK 离线重放闸）+ `joinControl.ts`（join timeout/deadline/cancel 契约）+ `connectionEvents.ts`（低层连接事件契约类型） | — |
 
 注意：RoomClient 与 WebSocketClient 都走 websocket 协议——按「有无状态同步」区分，不按协议区分。
 Game join 信封（v8，Non-intrusive §4.4）必填 `mode/modeVersion/profile`：默认撮合由 `joinGameRoom`

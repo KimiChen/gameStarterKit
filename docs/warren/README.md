@@ -19,7 +19,7 @@
 ## 与仓库治理的衔接
 
 - 本目录随 `proposal-bitecs-vendor.md` 一并评审；**合入时需登记** `docs/inventory.json`
-  与 `features/warren/feature.json`（schema v1 的 `docs` 字段），并过
+  （原 `features/warren/feature.json` 登记点已随 feature → plugin 改名退役），并过
   `npm run verify:inventory`。
 - 文档内所有公式/数值仅作参考基准——warren 的数值须重调（键名设计可参考，
   数值照抄=换皮风险，见 COMBAT_CLONE_PLAN.md §四）。
