@@ -56,7 +56,7 @@ apps/client/src/
 ├── designSpec.ts       设计分辨率数值真源（750×1624）
 ├── app/                AppRuntime 宿主、NavigationService、SessionCoordinator、PluginHost、
 │                       RefreshCoordinator、loginFlow 等横切协调件
-├── core/               HTTP 底座、生成的开发配置与宿主环境桥
+├── core/               HTTP 底座、生成的开发配置、开发期错误弹框与宿主环境桥
 ├── gameplay/           每玩法 modes/<id>/ 模块 + 生成 catalog + services 注入面
 ├── generated/          codegen:plugins 的 View/契约/plugin 注册表产物（禁手改）
 ├── kits/               kit 自带客户端代码（apps/kits/<id> 的客户端面）
@@ -321,6 +321,8 @@ reconcile；idle 没有该 hook，join/reconnect 都不会构造 Move。
 options，不符即抛错而非静默复用；本次 `client`/`endpoint`/options/generation 会在 join 开始时冻结，
 `init()` 换端点不会污染在途连接。join 的 deadline/cancel 契约由 `net/joinControl.ts` 定义，RoomClient
 与 WebSocketClient 共用；timeout 或 AbortSignal 会立即结束本地 ownership，SDK 迟到的 room 仍在后台释放。
+两个 transport 共用的其余 wire 原语（join options 克隆与稳定序列化、控制字段拆分、错误文本卫生与离线
+重放闸）收敛在 `net/wireCommon.ts`；低层连接事件契约类型在 `net/connectionEvents.ts`。
 LobbyRoom 只为四个 SDK 会自动重试的 transport close code（1001/1005/1006/4010）**加上「框架未给关闭码」
 的兜底分支**保留 10 秒重连窗口（`code === undefined` 时无从判定是否可重试，fail-open 最多多占 10 秒
 seat / online registration）；主动退出、停服和 49xx 强踢直接最终清理。客户端 onDrop 会立即把全部在途

@@ -8,7 +8,7 @@
 > | --- | --- |
 > | §1 判据 / §2 分层 / §3 例证 | 设计基线；措辞按审阅修正（机检真源改为所有权推导 allowlist） |
 > | §4 装载时机 | 设计基线；措辞按审阅修正 |
-> | §5 包格式与安装流程 | ✅ 已实现（`apps/server/tools/plugin/`，`plugin -- pack/install/uninstall/check`；隔离 fixture 验证与真实包端到端实证均完成，见 §9 第 6 条） |
+> | §5 包格式与安装流程 | ✅ 已实现（`apps/server/tools/plugin/`，`plugin -- pack/install/uninstall/check/test/changed`；隔离 fixture 验证与真实包端到端实证均完成，见 §9 第 6 条） |
 > | §6 入口与位置 | ✅ 已实施（设置面板、宿主 `apps/plugins/host.json`、slot/order 退役、route 形态 launch、依赖装载） |
 > | §7 生命周期 | ✅ 已实现（已安装锁 `scripts/packages/<id>.lock`） |
 > | §8 冲突面 | 按实际机检状态改写 |
@@ -336,7 +336,7 @@ apps/plugins/
   <id>/gameplay/state.json
 ```
 
-宿主自带的登记单元（builtin / snakeCosmetic）与带 version 的可分发单元（snake / redeem / tally）在同一根下、同一形态——
+宿主自带的登记单元（builtin）与带 version 的可分发单元（snake / redeem / tally / arenaShop）在同一根下、同一形态——
 「插件只消费框架既有形态」在这里字面成立。`codegen:plugins` 只有这一个发现根（目录名 = id）；`codegen:gameplays` 读
 `apps/shared/schema/gameplays/<id>/`（框架玩法：snake / ballMove / idle）∪ `apps/plugins/<id>/gameplay/`。旧的 `features/`
 目录、`feature.json`、`FeatureHost`、`codegen:features`、`ft:` 键前缀全部改名（feature → plugin；键前缀 `pl:`），

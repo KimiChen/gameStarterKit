@@ -88,7 +88,8 @@ Creator 导入、Scenario 验收、receipt 冻结
 | CLI FairyGUI 编译器 / Editor 映射 | 当前无实现 | 计划能力 |
 | 根据契约和 XML 实现前后端 | 仓库有现成 codegen 与开发动线，但无本文编排器 | 人工可执行，自动编排是计划能力 |
 
-[`docs/ui/undergroundIdle/ue-v01/`](ui/undergroundIdle/ue-v01/README.md) 的 11 份 UE PSD 同样属于
+[`docs/ui/undergroundIdle/ue-v01/`](ui/undergroundIdle/ue-v01/README.md) 的 11 份 UE PSD（未入库，仅存本机，见其
+README）同样属于
 `referenceCompositeOnly`：可见 ImageGen 内容仍是整画布 baked base，主要只把运行时文字预览独立出来；UE-08 还用第二张
 整画布图表达状态。它们是本方案新增“元素级可编辑性 Gate”的直接失败样本，不得作为 `artistEditableSource` 金样；
 该结论不否定其作为 G3 整页效果图的审美用途，也不允许重建时降低 UI 美术质量。
@@ -1081,7 +1082,7 @@ PageSpec/Scenario 已批准，正式 Editor 已保存、重开并发布。业务
    `codegen:gameplays`，再实现服务端 mode/commands 和客户端 room adapter/gameplay module；不得修改通用
    `GameRoom` dispatcher 补玩法分支。
 3. 两类都在 `apps/client/src/logic` 实现无引擎业务逻辑，在 View AUTO 区块外完成绑定和动作转发，并登记
-   `.view.json` 与 `feature.json`。
+   `.view.json` 与 `plugin.json`。
 
 ```bash
 # roomGameplay 且 schema/manifest/wire 变化时先运行；lobbyFeature 可跳过
@@ -1091,10 +1092,10 @@ npm run sync:shared
 # 从正式 XML 生成或重写 View AUTO 区块
 npm run codegen:fgui -- <Package> <Component>
 
-# AUTO 区块外完成 View/Logic，并更新同目录 .view.json 与 feature.json
+# AUTO 区块外完成 View/Logic，并更新同目录 .view.json 与 plugin.json
 
-# 刷新 Lobby RPC registry、feature、View、FGUI 契约、route 和 package catalog
-npm --workspace @game/server run codegen:features
+# 刷新 Lobby RPC registry、plugin、View、FGUI 契约、route 和 package catalog
+npm --workspace @game/server run codegen:plugins
 
 # shared 生成结果变更后同步；纯 View 批次若 shared 未变也必须确认镜像无漂移
 npm run sync:shared

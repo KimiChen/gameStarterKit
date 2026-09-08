@@ -7,6 +7,10 @@
 - `devEnv.ts`：`sync:client` 根据根 `.env.development` 生成的本地游戏服地址；属于生成物，禁止手改。
 - `wechat-compat.ts`：由 `Main.ts` 提前装配、仅在 Cocos `MINIGAME` 环境实际打补丁的微信兼容层。
   它属于 `docs/EXTRAS.md` 记录的额外功能，不是通用渠道 SDK 能力。
+- `errorOverlay.ts`：开发期错误弹框（只在 `DEV` 装配，调用点在 `Main.ts`），把「请打开控制台」的
+  灰板换成可读、可选、可一键复制的弹框；零 `cc` 依赖。
+- `errorContext.ts`：出错时登记短字符串上下文（当前页面/玩法 mode/runId）供 `errorOverlay` 展示；
+  零依赖，⛔ 不放 token 与玩家隐私。
 
 环境兼容初始化必须早于相关第三方库使用，并保持集中、可测试。新增宿主差异通过独立 adapter 扩展，
 不要把平台判断散落到 Logic 或业务调用中。

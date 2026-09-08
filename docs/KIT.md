@@ -93,8 +93,8 @@ pattern、命名空间闸（`isKitClientDir`）、entry 形态都指向 `kits/`�
   事务句柄）、`debitInTx` / `creditInTx`（经济主账本的事务内调用）、outbox 写入；以及构建期登记命名空间化 effect kind
   （`kit:<id>:<name>` + 零依赖 validator，随 codegen 汇入 effect 表与 Lua 镜像）。没有这三样，「世界状态在 SQL、经济在框架」
   之间没有原子路径。
-- 插件声明依赖：`plugin.json` 加 `requires: { kits: { "slg": { "worldmap": 1 } } }`（**plugin schema v2 → v3**，`requires` 进
-  锁抬头、身份摘要、注册表索引；PLUGIN.md §5.3 与 PLUGIN-REGISTRY §2.1 / §5 同步改口径：依赖解析只做 plugin → kit 单向）。
+- 插件声明依赖：`plugin.json` 加 `requires: { kits: { "slg": { "worldmap": 1 } } }`（plugin schema **v2 增量可选字段**，
+  K0-2 拍板 ⛔ 不 bump schemaVersion，`requires` 进锁抬头、身份摘要、注册表索引；PLUGIN.md §5.3 与 PLUGIN-REGISTRY §2.1 / §5 同步改口径：依赖解析只做 plugin → kit 单向）。
   判定：`kit.api.<surface>.minSupported ≤ 声明 ≤ version`；`install` / `check` / 注册表 `validate` 都查；宿主未装该 kit 即拒绝。
   `codegen:plugins` 把 `requires.kits` 自动并入 PluginHost 的 `dependencies`（有 entry 的 kit 先装载），⛔ 不写两遍。
 - **kit 升级的反向闸**：kit 的 `install` / `--reinstall-from-tree` 落盘前读全部已安装插件的 `requires.kits`，任一声明落到新的

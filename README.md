@@ -18,7 +18,7 @@
 - [外部身份服务开发边界](docs/WEBPLATFORM.md)
 - [额外功能说明](docs/EXTRAS.md)
 - [《Underground Idle》玩法策划案（未实现）](docs/undergroundIdle/README.md)
-- [非侵入式框架改造方案（框架侧阶段 0-11 已实施：snake 已实现并成为默认玩法，undergroundIdle 未实现）](docs/Non-intrusive.md)
+- [非侵入式框架改造方案（框架侧阶段 0-9 已实施；阶段 10 的 snake 与阶段 11 的默认入口切换已落地，undergroundIdle 未实现）](docs/Non-intrusive.md)
 - [插件机制设计基线（判据、包格式与 plugin 命令、宿主 placement；开放项见 EXTRAS §5.2）](docs/PLUGIN.md)
 - [插件机制设计基线的审阅记录（问题清单与推荐实现方案）](docs/PLUGIN-REVIEW.md)
 - [Snake 玩法（竖版新版无尽 V2 + 外观养成 demo）](apps/plugins/snake/README.md)
@@ -33,11 +33,13 @@ apps/
 ├── Cocos/      Cocos Creator 工程壳，代码由 sync:client 写入 assets/src
 ├── Unity/      Unity 方向的研究占位，不是可用客户端
 ├── server/     Colyseus 服务端开发工程
+├── plugins/    可分发插件目录（apps/plugins/<id>/：plugin.json + README + gameplay 单源；宿主 placement 见 host.json）
+├── kits/       kit 地基层（apps/kits/<kitId>/：kit.json 单源，插件可经 requires.kits 声明依赖）
 ├── shared/     双端共享协议、公式与常量
 └── art/        FairyGUI 编辑器工程
 docs/           当前开发架构说明
 scripts/        同步、校验、依赖抓取与协议指纹脚本，及其锁文件基线（bitecs/vendor/protocol/fgui）与保护路径规则（protected-paths.json）
-tools/          FairyGUI codegen 与 Excel 配表转换工具
+tools/          FairyGUI codegen、Excel 配表转换、性能基线与 Creator 预览证据等工具
 vendor/         精确锁定的外部身份契约 tarball（`@gono/webplatform-contract`，由 package.json 以 file: 引用）
 ```
 

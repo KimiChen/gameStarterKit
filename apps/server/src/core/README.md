@@ -10,7 +10,7 @@
 | --- | --- |
 | 增加跨模块配置或环境变量 | `infra/config.ts`；同时更新 `docs/SERVER.md` 的登记点与本地配置说明 |
 | 增加 Redis key | `infra/keys.ts`；明确 global/per-zone、实例与 hash-tag。玩法 / plugin / kit 自有键不进该文件，分别经 `kGameplay` / `kPluginUser`+`kPluginShared` / `kKitUser`+`kKitShared` 工厂在各自目录构造（`gp:` / `pl:` / `kt:` 互不可达；kit per-user 键随冷档 freeze/thaw，见 `archive/archiveScripts.ts`） |
-| 增加 RPC 错误码 | 先改 shared `protocol/lobbyRpc/envelope.ts` 的 `RPC_ERR_CODES`，再改 `errors.ts` 映射 |
+| 增加 RPC 错误码 | core 码先改 shared `protocol/lobbyRpc/coreErrors.ts`，领域码改 `domains/<域>.ts` 的 `errorCodes` 并递增 `contractVersion`、跑 `codegen:plugins`（`envelope.ts` 只再导出 `RPC_ERR_CODES`），再改 `errors.ts` 映射 |
 | 修改 Demo 商品或资产配置 | `economy/catalog.ts`；它目前是手工 TypeScript 配置，没有接入 Excel 产物 |
 | 修改 Demo guild 目录 | `guild/catalog.ts` |
 | 增加玩家档字段 | shared 视图类型 + `../player/userStore.ts` 字段读取；需要跨版本时再设计 reader/migration |
@@ -19,11 +19,15 @@
 目录概览：
 
 - 根层：`locks`（本地 mutex + Redis lock/fence）、`uow`（dirty commit）、`idem`（幂等 v2：payload hash
-  绑定 + 唯一 leaseId + Lua CAS 结果缓存，`docs/SERVER.md §8.1`）、`errors`、`userRecord`。
+  绑定 + 唯一 leaseId + Lua CAS 结果缓存，`docs/SERVER.md §8.1`）、`errors`、`userRecord`、
+  `userSchema`/`liveSchema`（玩家档 schema 契约与热档原子只读/锁内迁移适配层）。
 - `infra/`：配置、key、Redis 路由/Lua、MySQL、lease、stream consumer 与本地 loop monitor。
 - `auth/`：游戏组 session cache 和 best-effort kick 接缝；账号权威仍在外部 WebPlatform。
 - `economy/`：软货币、ledger、shop/outbox 与显式 relayer 样例。
 - `guild/`：Demo 目录与事件近窗。
+- `redeem/`：redeem 插件的兑换码、核销与插件钱包存储（键经 `kPluginUser`）。
+- `arenaShop/`：建在 arena kit 上的商店插件服务端（购买走 kit-api `tx.debit` + outbox effect）。
+- `rooms/`：私房邀请码/ticket 的 Redis 层（`invite/`）与 `privateRoomRpc.ts` 领域逻辑。
 - `match/`：match evidence stream 的生产/消费样例。
 - `compute/`：worker_threads 纯计算池。
 - `archive/`：已接入 thaw、但 freeze 默认关闭的实验模块。
