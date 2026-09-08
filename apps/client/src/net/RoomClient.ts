@@ -34,11 +34,17 @@ import { normalizeGameRoomStrategy, type GameRoomMatchmakingStrategy } from "./r
 import { lifecycleBus } from "../app/wiring";
 import type { GameRoomConnectionEvent, GameRoomConnectionSnapshot } from "./connectionEvents";
 import {
-    looksLikeJoinSignal,
-    normalizeJoinSignal,
     observeJoinControlResult,
     waitMsForJoin,
 } from "./joinControl";
+import {
+    cloneJson,
+    disableSdkOutboundReplay,
+    safeError,
+    splitJoinControl,
+    stableJson,
+    warnInvalidWire as sharedWarnInvalidWire,
+} from "./wireCommon";
 
 export type { S2CPayloadMap };
 
@@ -139,90 +145,12 @@ export class JoinError extends Error {
 }
 
 /**
- * 按 JSON 线上语义生成稳定 key：对象键递归排序、对象里的 undefined 等不可编码值省略、
- * 数组里的不可编码值视为 null。这样字段顺序不影响合流，但 token/sId 及未来新增的任意
- * join option 都会进入连接身份。循环引用/BigInt 与 JSON 传输本就不兼容，直接 fail-fast。
- */
-function stableJson(value: unknown, ancestors = new Set<object>()): string | undefined {
-    if (value === null) return "null";
-    switch (typeof value) {
-        case "string": return JSON.stringify(value);
-        case "boolean": return value ? "true" : "false";
-        case "number": return JSON.stringify(value);
-        case "undefined":
-        case "function":
-        case "symbol":
-            return undefined;
-        case "bigint":
-            throw new TypeError("[RoomClient] join options 必须是 JSON 可编码数据（不支持 BigInt）");
-        case "object":
-            break;
-    }
-
-    const object = value as object;
-    if (ancestors.has(object)) {
-        throw new TypeError("[RoomClient] join options 必须是 JSON 可编码数据（不支持循环引用）");
-    }
-    ancestors.add(object);
-    try {
-        const toJSON = (object as { toJSON?: unknown }).toJSON;
-        if (typeof toJSON === "function") {
-            const converted = toJSON.call(object);
-            if (converted !== object) return stableJson(converted, ancestors);
-        }
-        if (Array.isArray(object)) {
-            return `[${object.map((item) => stableJson(item, ancestors) ?? "null").join(",")}]`;
-        }
-        const fields: string[] = [];
-        for (const key of Object.keys(object).sort()) {
-            const encoded = stableJson((object as Record<string, unknown>)[key], ancestors);
-            if (encoded !== undefined) fields.push(`${JSON.stringify(key)}:${encoded}`);
-        }
-        return `{${fields.join(",")}}`;
-    } finally {
-        ancestors.delete(object);
-    }
-}
-
-/**
  * endpoint + matchmaking strategy（含 roomName/roomId）+ 实际发送的完整 join options 共同
  * 定义一个可安全合流的物理连接（§4.4：三者都必须进 ownership key）。key 含 token/ticket，
  * 只参与内存比较，⛔ 不得打印或写日志。
  */
 function connectionKey(endpoint: string, strategy: GameRoomMatchmakingStrategy, options: unknown): string {
     return stableJson([endpoint, strategy, options])!;
-}
-
-/** 复制调用方的 JSON options，避免 join 在途期间外部 mutating 改写身份或线上 payload。 */
-function cloneJson<T>(value: T, ancestors = new Set<object>()): T {
-    if (value === null || typeof value !== "object") {
-        if (typeof value === "number" && !Number.isFinite(value)) {
-            throw new TypeError("[RoomClient] join options 不能包含 NaN/Infinity");
-        }
-        if (typeof value === "bigint") {
-            throw new TypeError("[RoomClient] join options 必须是 JSON 可编码数据（不支持 BigInt）");
-        }
-        return value;
-    }
-    const object = value as unknown as object;
-    if (ancestors.has(object)) {
-        throw new TypeError("[RoomClient] join options 必须是 JSON 可编码数据（不支持循环引用）");
-    }
-    ancestors.add(object);
-    try {
-        if (Array.isArray(value)) {
-            return value.map((item) => cloneJson(item, ancestors)) as unknown as T;
-        }
-        const out: Record<string, unknown> = {};
-        for (const key of Object.keys(value as Record<string, unknown>)) {
-            const item = (value as Record<string, unknown>)[key];
-            if (item === undefined || typeof item === "function" || typeof item === "symbol") continue;
-            out[key] = cloneJson(item, ancestors);
-        }
-        return out as T;
-    } finally {
-        ancestors.delete(object);
-    }
 }
 
 function snapshotGameplayAdapter(input: unknown): GameplayAdapterSnapshot {
@@ -275,71 +203,6 @@ function snapshotGameplayAdapter(input: unknown): GameplayAdapterSnapshot {
     };
 }
 
-function splitJoinControl(
-    options: Record<string, unknown> | undefined,
-    explicit: JoinControl | AbortSignal | undefined,
-): { options: Record<string, unknown>; control: JoinControl } {
-    const source = options ?? {};
-    const wire: Record<string, unknown> = {};
-    try {
-        for (const key of Reflect.ownKeys(source)) {
-            if (typeof key !== "string") {
-                throw new TypeError("[RoomClient] join options 不得包含 symbol key");
-            }
-            wire[key] = source[key];
-        }
-    } catch {
-        throw new TypeError("[RoomClient] join options 无法读取");
-    }
-    // 支持把控制字段放在第二参的兼容写法，同时不让它们进入 matchmaking payload。
-    let explicitIsSignal = false;
-    if (explicit !== undefined && explicit !== null) {
-        try { explicitIsSignal = looksLikeJoinSignal(explicit); }
-        catch { throw new TypeError("[RoomClient] join control 无法读取"); }
-    }
-    // Snapshot every control field before allocating a slot.  Besides making
-    // the lifetime deterministic, this prevents a getter/Proxy from throwing
-    // later in a timer or leave callback.
-    const controlSource = explicitIsSignal ? undefined : (explicit ?? source) as Partial<JoinControl>;
-    const readControl = (key: keyof JoinControl): unknown => {
-        try { return controlSource?.[key]; }
-        catch { throw new TypeError(`[RoomClient] join control 字段 ${String(key)} 无法读取`); }
-    };
-    const control: JoinControl = {
-        signal: normalizeJoinSignal(explicitIsSignal ? explicit : readControl("signal")),
-        timeoutMs: readControl("timeoutMs") as number | undefined,
-        deadlineMs: readControl("deadlineMs") as number | undefined,
-        timeout: readControl("timeout") as number | undefined,
-        deadline: readControl("deadline") as number | undefined,
-    };
-    delete wire.signal;
-    delete wire.timeoutMs;
-    delete wire.deadlineMs;
-    delete wire.timeout;
-    delete wire.deadline;
-    return { options: wire, control };
-}
-
-function wireErrorText(error: unknown): string {
-    try {
-        if (error instanceof Error) {
-            const message = error.message;
-            return typeof message === "string" ? message : "";
-        }
-        return typeof error === "string" ? error : "";
-    } catch {
-        return "";
-    }
-}
-
-function safeError(error: unknown, fallback: string): Error {
-    try {
-        if (error instanceof Error) return error;
-    } catch { /* hostile/revoked error proxy */ }
-    const text = wireErrorText(error);
-    return new Error(text || fallback);
-}
-
 /** Diagnostic values come from the SDK callback and may be hostile at runtime. */
 function safeDiagnostic(value: unknown): string {
     try {
@@ -374,47 +237,10 @@ function sdkSocketOpen(room: Colyseus.Room<unknown>): boolean {
     }
 }
 
-/**
- * The 0.17 SDK buffers `room.send()` while its socket is closed and flushes
- * that queue immediately after reconnect JOIN_ROOM, before the next full
- * ROOM_STATE. Our mode/state barrier owns replay, so the SDK queue must stay
- * empty even in the close -> onDrop notification gap.
- */
-function disableSdkOutboundReplay(room: Colyseus.Room<unknown>): boolean {
-    try {
-        const reconnection = (room as unknown as {
-            reconnection?: {
-                maxEnqueuedMessages?: unknown;
-                enqueuedMessages?: unknown;
-            };
-        }).reconnection;
-        if (!reconnection || typeof reconnection !== "object") return false;
-        // 顺序与分步都要紧：调用点（bindRoom / onDrop / onReconnect）返回后 SDK 会
-        // **同步** flush 队列，所以「清空已入队的旧消息」必须先于「设上限」，且任一步
-        // 失败都不能吞掉后面的补救——过去三步共用一个 try，写上限抛错会直接跳过清队列。
-        try {
-            const queue = reconnection.enqueuedMessages;
-            if (Array.isArray(queue) && queue.length > 0) queue.length = 0;
-        } catch { /* 冻结数组：交给下面的整体替换 */ }
-        try {
-            const queue = reconnection.enqueuedMessages;
-            if (!Array.isArray(queue) || queue.length > 0) reconnection.enqueuedMessages = [];
-        } catch { /* 不可写：只能如实报告失败 */ }
-        try {
-            reconnection.maxEnqueuedMessages = 0;
-        } catch { /* 不可写：只能如实报告失败 */ }
-        return reconnection.maxEnqueuedMessages === 0
-            && Array.isArray(reconnection.enqueuedMessages)
-            && reconnection.enqueuedMessages.length === 0;
-    } catch {
-        return false;
-    }
-}
-
 function warnInvalidWire(scope: string, error: unknown): void {
     // Payloads may contain user text or account identifiers; log only the
     // validator's stable code/path, never the rejected packet itself.
-    console.warn(`[RoomClient] 丢弃非法 ${scope}: ${wireErrorText(error)}`);
+    sharedWarnInvalidWire("[RoomClient]", scope, error);
 }
 
 /** Colyseus `room.send` is allowed to throw synchronously (closed socket, bad adapter, etc.).
