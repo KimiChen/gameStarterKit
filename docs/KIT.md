@@ -162,7 +162,7 @@ packages/<id>/<version>/reviews/NNN.json    仅 kit，追加式：{ action: "app
   （依据 = 各插件锁抬头的 `requires`）与 `--drop-data`；`install` 加反向闸 `--break-dependents`；新增 `plugin -- test <id>`。
 - 框架 PR（前置，⛔ 不在 kit 包内）：`kit_migration` 账本 + bootstrap 租约 + 逐语句执行；按区表登记；freeze/thaw 读 `userKeys`；
   `kKitUser` / `kKitShared`（`kt:`，共享键强制分片 tag）；`kit-api/server` 的 `withKitTx` / `debitInTx` / `creditInTx` / outbox；
-  effect kind 登记通道；域名前缀规则对插件生效；plugin schema v3（`requires`）；`scripts/kits/allowed_signers`。
+  effect kind 登记通道；域名前缀规则对插件生效；plugin schema v2 增量 `requires`（K0-2 拍板 ⛔ 不 bump schemaVersion）；`scripts/kits/allowed_signers`。
 
 ## 8. 分期与首个样本
 
@@ -182,7 +182,7 @@ packages/<id>/<version>/reviews/NNN.json    仅 kit，追加式：{ action: "app
 | §2 划线 / §3 格式 / §4 api / §5 数据 / §6 审核线 | ✅ 2026-09-06 用户拍板（下列五条全部同意） |
 | K0-1 锁目录合并 `scripts/packages/` | ✅ 2026-09-06（276faae：两把插件锁 git mv，`INSTALLED_LOCK_DIR` 改值） |
 | K0-2 基座：`kit-schema-v1.json` + 同一解释器（`patternProperties`）、plugin.json `requires`（v2 增量可选字段，⛔ 不 bump schemaVersion）、`apps/{shared,server}/src/kits/catalog.generated.ts` 占位与类型真源 | ✅ 2026-09-06（fc8d4fb） |
-| K0-3 工具：kit 类别（class/modes 身份、kits/ 命名空间推导、域名前缀规则对插件生效、锁抬头 class/api/modes/requires、正向 / 反向闸、依赖反查、`plugin -- test`） | ✅ 2026-09-06（78b2e53；`--drop-data` 待账本落地） |
+| K0-3 工具：kit 类别（class/modes 身份、kits/ 命名空间推导、域名前缀规则对插件生效、锁抬头 class/api/modes/requires、正向 / 反向闸、依赖反查、`plugin -- test`） | ✅ 2026-09-06（78b2e53；`--drop-data` 已随 K0-4 账本落地，14ef9e5） |
 | K0-4 框架 PR（账本 + 租约 + 逐语句、按区表登记、freeze/thaw 读 userKeys、`kKit*`、`kit-api/server`、effect kind 通道、域名前缀规则对插件生效）与四处发现根（codegen:plugins / codegen:gameplays / verify-inventory / homeMenu.test.ts） | ✅ 2026-09-06（14ef9e5 三区集成、c92a5c3 租约修复、4783122 第四区 + 三区对抗审阅修复：39 条发现全部消化）；`scripts/kits/allowed_signers` 随 K2 签名链一起做 |
 | K0-5 样本 `arena` kit + `arenaShop` 插件走通 pack → install → codegen → bootstrap → 插件建在其上 → uninstall | ✅ 2026-09-06（7c37d56：主树真跑 pack 93 + 26 → 干净安装（首次 postinstall 因残留空目录失败并精确回滚，重装成功）→ arenaShop 过正向闸 → db:bootstrap 两遍（应用 2 条语句 / 第二遍跳过 1）→ check 四包 ✔ → test arena 33 / arenaShop 9 → uninstall arena 被依赖反查拒绝；对抗审阅 16 条：11 修复、5 按约束驳回；两包保持已安装，样本文档见 [apps/kits/arena/README.md](../apps/kits/arena/README.md) / [apps/plugins/arenaShop/README.md](../apps/plugins/arenaShop/README.md)） |
 | K1 / K2 | 未开始（K1 待做项：kit-api 路径级导入边界的客户端 / shared 侧机检（服务端侧 kit-import-boundary.test 已有）、K1 的 `.conn` 访问禁令、uninstall 对 pending `kit:<id>:*` outbox 行的闸；样本发现的框架小面：`applyKitEffect` / `readKitUserField` / `currentZoneId` 已进 kit-api） |

@@ -12,7 +12,7 @@
 > | §6 入口与位置 | ✅ 已实施（设置面板、宿主 `apps/plugins/host.json`、slot/order 退役、route 形态 launch、依赖装载） |
 > | §7 生命周期 | ✅ 已实现（已安装锁 `scripts/packages/<id>.lock`） |
 > | §8 冲突面 | 按实际机检状态改写 |
-> | §9 缺口 | 已分「已补 / 仍开放」，开放项登记在 [plan-v5.md](plan-v5.md) E 类 |
+> | §9 缺口 | 已分「已补 / 仍开放」，开放项登记在 [EXTRAS.md §5.2](EXTRAS.md#52-未实现的开放项登记2026-09-06-自-plan-系列归并) |
 >
 > 与 [docs/Non-intrusive.md](Non-intrusive.md) 的关系：那份是「框架如何做到新增玩法/plugin 不侵入」的
 > 改造方案（框架侧阶段 0-9 已实施）；本文接着回答下一个问题——**外部包能否直接装进本项目跑起来**。
@@ -416,7 +416,7 @@ id=config → dir:apps/Cocos/assets/resources/config
   `resources/<id>/` 形态，这道闸还在。
 
 ⚠ **这是包格式的破坏性变更**：推导集变了，带资源的包必须 bump 版本并重钉锁。当时仓内只有 snake
-一个包有资源目录（redeem / tally / arenaShop / builtin 都没有，arena 已在 `resources/kits/arena/`），
+一个包有资源目录（redeem / tally / arenaShop / builtin 都没有；arena 也没有——`resources/kits/<id>/` 规则已备、尚无 kit 使用），
 所以代价是 snake 一次改名（127 文件 + 80 条路径字符串）与 1.1.4 → 1.2.0。⛔ 越晚做越贵。
 
 #### 5.5.4 试点：把服务端与测试搬进插件目录——已回滚（2026-09-06 试，2026-09-07 撤）

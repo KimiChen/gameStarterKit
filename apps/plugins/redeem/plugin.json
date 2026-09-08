@@ -1,8 +1,8 @@
 {
   "schemaVersion": 2,
   "id": "redeem",
-  "version": "1.0.8",
-  "description": "兑换码：输入兑换码换取奖励——docs/PLUGIN.md §3/§6.1 所称「插件标准形态」的端到端实证（plan-v5 E5）",
+  "version": "1.0.9",
+  "description": "兑换码：输入兑换码换取奖励——docs/PLUGIN.md §3/§6.1 所称「插件标准形态」的端到端实证（原 plan-v5 E5）",
   "domains": [
     "redeem"
   ],

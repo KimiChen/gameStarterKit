@@ -89,4 +89,4 @@
 - [技术总览](../OVERVIEW.md)
 - [服务端开发约束](../SERVER.md)
 - [客户端开发约束](../CLIENT.md)
-- [额外功能与非承诺边界](../EXTRAFEATURES.md)
+- [额外功能与非承诺边界](../EXTRAS.md)
