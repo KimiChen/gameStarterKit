@@ -8,7 +8,7 @@
 > | --- | --- |
 > | §1 判据 / §2 分层 / §3 例证 | 设计基线；措辞按审阅修正（机检真源改为所有权推导 allowlist） |
 > | §4 装载时机 | 设计基线；措辞按审阅修正 |
-> | §5 包格式与安装流程 | ✅ 已实现（`apps/server/tools/plugin/`，`plugin -- pack/install/uninstall/check`；隔离 fixture 验证，真实包端到端实证仍开放，见 §9 第 6 条 / plan-v5 E5） |
+> | §5 包格式与安装流程 | ✅ 已实现（`apps/server/tools/plugin/`，`plugin -- pack/install/uninstall/check`；隔离 fixture 验证与真实包端到端实证均完成，见 §9 第 6 条） |
 > | §6 入口与位置 | ✅ 已实施（设置面板、宿主 `apps/plugins/host.json`、slot/order 退役、route 形态 launch、依赖装载） |
 > | §7 生命周期 | ✅ 已实现（已安装锁 `scripts/packages/<id>.lock`） |
 > | §8 冲突面 | 按实际机检状态改写 |
@@ -92,7 +92,7 @@
 - snake 自己的代码要改：服务端 AI 填充与 `shouldSettle` 恒 false 的无尽结算策略要为私房分支、
   客户端 `SnakeRoom.ts` 的 joiner 写死 `profile: "dropIn"` 且没有 Ready/Start 出站消息（`RoomClient` 运行时
   拒发未声明的 C2S）——这些是玩法自有代码的工作，不是框架的；
-- 客户端还需要玩法自己的输码/房间页 View（`PrivateRoomLobby` 模板属编辑器待办，plan-v5 B3），
+- 客户端还需要玩法自己的输码/房间页 View（`PrivateRoomLobby` 模板属编辑器待办，EXTRAS §5.2 U3），
   以及 §9 仍开放的 `launch.profile`。
 
 ## 4. 装载时机：只做构建期插件
@@ -581,12 +581,12 @@ id=config → dir:apps/Cocos/assets/resources/config
 - ✅ §8 两条「待核实」定论（FGUI 包名重复已查、依赖已消费）；
 - ✅ plugin 侧契约闸（codegen 层域 descriptor digest → 域级 `contractVersion`，`LOBBY_RPC_DOMAIN_CONTRACTS`）。
 
-仍开放（登记在 [plan-v5.md](plan-v5.md) E 类）：
+仍开放（登记在 [EXTRAS.md §5.2](EXTRAS.md#52-未实现的开放项登记2026-09-06-自-plan-系列归并)：下文 1→X1、2→U3、3→X2、4→X3、5→X4）：
 
 1. **`launch.profile`**：入口的 gameplay launch 不带房型，一个玩法只能出一个入口——蛇要同时提供「快速开始」
    （dropIn）与「邀请好友」（private）就需要它。客户端现状是各玩法 joiner 写死 profile（`SnakeRoom.ts`），
    补丁：生成器加可选字段 → AppRuntime 传下去 → 玩法 joiner 按 target 选 profile。
-2. **`PrivateRoomLobby` 模板**（plan-v5 B3，编辑器待办）：不做的话，每个用 private profile 的玩法都要自画
+2. **`PrivateRoomLobby` 模板**（EXTRAS §5.2 U3，编辑器待办）：不做的话，每个用 private profile 的玩法都要自画
    输码/房间页。
 3. **i18n / LocalizePort 空位**：`labelKey` 有字段、无实现，实际渲染的是硬编码 `label`。做「选择语言」
    之前它只是装饰；一旦要做，它就成了契约——缺的是 LocalizePort 契约与 locales 载体，
@@ -595,7 +595,7 @@ id=config → dir:apps/Cocos/assets/resources/config
 5. **join 信封侧的 plugin 契约比对**：codegen 层的闸已落地（上表），但 Lobby join 仍只比对 `LOBBY_PROTOCOL_VERSION`
    整数——按 Non-intrusive §4.8 两类实体共用协议整数、⛔ 不各自新增版本闸，域契约变化要不要反映到
    `LOBBY_PROTOCOL_VERSION` 是人工决策（`plugin -- install` 在域变化时会提示）。
-6. **第一个真实插件的端到端实证**（plan-v5 E5）：✅ 已完成（2026-09-05）——「兑换码」插件
+6. **第一个真实插件的端到端实证**（原 plan-v5 E5）：✅ 已完成（2026-09-05）——「兑换码」插件
    `apps/plugins/redeem`（client 形态、domains `redeem`；文件清单与取舍见 [apps/plugins/redeem/README.md](../apps/plugins/redeem/README.md)）
    在作者侧 `plugin -- pack` 成 29 文件的包，再从**干净树**以 `plugin -- install` 进仓：postinstall 链
    （codegen:plugins → sync:shared）重生全部生成物，人工步骤只剩 `protocol-fingerprint --write`
@@ -604,17 +604,17 @@ id=config → dir:apps/Cocos/assets/resources/config
    实证过程暴露并补齐的框架前置（`5c6df35`）：plugin.json 可选 `module`（PluginHost 装载器由生成器渲染，
    AppRuntime 透传）、logic/sidecar 可落 `apps/client/src/plugins/<id>/`、plugin View 只豁免 cc/fairygui
    值导入、错误码顺序测试不再硬编码域清单——即「新插件不得需要改中央源码/中央测试」的判据真的成立了。
-   Creator 侧确认已于当天下午闭合（见 plan-v5 E5 行与 docs/evidence/creator-2026-09-05）。
+   Creator 侧确认已于当天下午闭合（见 docs/evidence/creator-2026-09-05）。
    **gameplay 形态**同日由第二个真实插件「点数赛」`apps/plugins/tally` 走通同一条动线（`fb903db`，
    [apps/plugins/tally/README.md](../apps/plugins/tally/README.md)）：它逼出了两处此前纯客户端形态没碰到的中央清单——
    `apps/server/test/wire-vectors/index.ts` 的手写 import 表（改为 `codegen:gameplays` 生成 `index.generated.ts`，
    sidecar `wire-vectors/<id>.ts` 进 gameplay 所有权）与 `gameplay-codegen.test.ts` 的硬编码玩法集（改为按 schema
    目录发现）。至此 §3 的判据在两种 kind 上都有真实包背书。
 7. **kit（地基层）前置的框架 PR**：迁移账本 / 按区表登记 / freeze-thaw 读 `userKeys` / `kKit*` / `kit-api/server` 门面 / effect 登记通道 / 域名前缀规则对插件生效 / plugin schema v3（`requires`）/ 锁目录合并到 `scripts/packages/`——清单与顺序见 [docs/KIT.md](KIT.md) §7，状态只在 KIT.md §9 回写。
-8. **同仓「作者=宿主」的插件迭代动线**（plan-v5 E6）：✅ 已按方案 ② 实施（2026-09-05）——
+8. **同仓「作者=宿主」的插件迭代动线**（原 plan-v5 E6）：✅ 已按方案 ② 实施（2026-09-05）——
    `install --reinstall-from-tree <id>`（§5.4）。E5 实证当天撞上的现场（改插件 README 一行即锁红、
    只能回退）已用它重放闭合：bump 1.0.0 → 1.0.1 后以树重写锁。仍开放的同类尾巴：随包 `.meta` 在锁内，Creator
-   重排键序即锁红（plan-v5 B 节清单 1-② 待实测后决定 `.meta` 是否按语义比对）。
+   重排键序即锁红（原 plan-v5 B 节清单 1-②，待实测后决定 `.meta` 是否按语义比对）。
 
 ## 10. 非目标
 

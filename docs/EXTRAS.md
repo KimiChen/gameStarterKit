@@ -317,7 +317,7 @@ B 最初只解析 `ui://`，于是「被引用但未导出」的资源同时逃�
 
 ⚠ 原 `docs/snakeoff/` 的开房玩法提案（六位邀请码私房、四人、房主开局）**已废弃**并于 2026-09-06 删除；其素材授权台账已并入 Snake 玩法文档。
 玩法运行时不在本节登记为额外能力：它是当前默认玩法（shared 契约 `apps/shared/schema/gameplays/snake`、
-服务端 `modes/snake`、客户端 snake 目录），归 CLAUDE.md「当前范围」与 plan-v5 C1 管辖，`docs/inventory.json`
+服务端 `modes/snake`、客户端 snake 目录），归 CLAUDE.md「当前范围」与 [Snake 玩法文档](../apps/plugins/snake/README.md) 管辖，`docs/inventory.json`
 的默认入口登记随之。其技术方案由 `docs/Non-intrusive.md`（非侵入式框架改造方案，框架侧阶段 0–9 已实施）承担；
 策划案里的接口规划以代码与 shared 契约为准，不能把文档中的规划当成已交付协议。
 
@@ -390,9 +390,10 @@ B 最初只解析 `ui://`，于是「被引用但未导出」的资源同时逃�
 | --- | --- | --- | --- |
 | G1 | FGUI 不变量 E：sprite rect ⊆ 图集图片真实尺寸 | 核心·工程 | `scripts/fgui-roundtrip.mjs` 只实现 A/A'/B/C/D，全文无 PNG IHDR / JPEG SOF 解析。未做的理由与形态见 §3.10 |
 | G2 | `tools/excel-to-json.mjs` 的 `--check` 不是往返自检 | 核心·工程 | writer 与 checker 共用同一份内存 `data`，`buildItems()` 的静默丢行对两侧同时生效；行数只进 summary 不做断言。见 §3.10 |
+| G3 | 设计分辨率四处一致性无机检闸 | 核心·工程 | 2026-09-08 自 [CLIENT.md](CLIENT.md) §6 补登记（归并时遗漏的收口项）：`fguiContract.test.ts` 只互钉 `designSpec.ts` / `Main.ts` / FairyGUI `Adaptation.json` 三处，不读 Cocos `settings/v2/packages/project.json`（2026-09-08 抽核 project.json = 750×1624/fitWidth，与三处一致，漂移仍无闸）。更宽的一致性检查（含 Publish.json）在 [FairyGUI.md](FairyGUI.md) M0.5 第 4 条 |
 | U1 | Home「玩法入口列表 GList」视觉 | 编辑器 | 机制已落地（生成的 menu contributions + LaunchPort + disabled/failed 叠加）；`HomeView.ts` 仍只渲染 `contribution[0]` 并对多入口 warn，`Home.xml` 只有单个 `btn_enter`。需设计师在 FGUI 编辑器出图 |
 | U2 | Home 页 failed 入口的「可手动重试」UX | 编辑器 | **设置面板侧已实现并跑过真实引擎**（`SettingsLogic` 的 retry + 两条文案）；Home 页 failed 入口仍只置灰不可点，被 U1 的出图卡住 |
-| U3 | `PrivateRoomLobby` FGUI 包与模板 View | 编辑器 | transport 已就绪（`PrivateRoomService`，headless 用例覆盖）；`apps/art/fairygui/assets/` 的 13 个包里没有该包，页面视觉零进展 |
+| U3 | `PrivateRoomLobby` FGUI 包与模板 View | 编辑器 | transport 已就绪（`PrivateRoomService`，headless 用例覆盖）；`apps/art/fairygui/assets/` 的 12 个包里没有该包，页面视觉零进展 |
 | U4 | Creator 人工证据剩余三项：取消回滚 / 输入租约 / 跨包资源 | 编辑器 | 四项里「动态加载」已闭合（两种插件形态都跑过）；其余三项未做。补做时在已入仓的重放器 [`tools/creator-preview/`](../tools/creator-preview/README.md) 同一条路上加 step 即可 |
 | U5 | `.meta` uuid 集合 ↔ Cocos 场景序列化往返自检 | 编辑器 | 零进展，需真实 Creator 引擎。见 §3.10 |
 | R1 | 两玩法的联调 | 核心·验收 | Creator 3.8.8 桌面预览（Chrome + CDP）联调已验证 |

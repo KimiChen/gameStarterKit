@@ -635,11 +635,11 @@ test("inventory verifier rejects synchronized removal of the current plan entry"
   try {
     for (const filename of ["AGENTS.md", "CLAUDE.md"]) {
       const file = join(root, filename);
-      const text = readFileSync(file, "utf8").replace(
-        "> - [docs/plan-v5.md](docs/plan-v5.md)：当前开放问题、实施状态与验收证据的唯一真相\n",
-        "",
-      );
-      writeFileSync(file, text);
+      const before = readFileSync(file, "utf8");
+      // 措辞会随维护漂移，按结构（blockquote 列表里的 plan-v5 链接行）定位入口行。
+      const planEntry = before.match(/^> - \[docs\/plan-v5\.md\]\(docs\/plan-v5\.md\)：.*\n/m);
+      assert.ok(planEntry, "fixture 前提：AGENTS.md/CLAUDE.md 的 plan-v5 入口行必须与真仓一致");
+      writeFileSync(file, before.replace(planEntry[0], ""));
     }
     await assertRejected(root, /AGENTS\.md\/CLAUDE\.md 缺少共同关键指令：当前计划唯一真相/);
   } finally {
