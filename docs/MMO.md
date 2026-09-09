@@ -126,6 +126,15 @@ AzerothCore 固定 `a5e0e6b8f2bf878cb45cb1dc2251eb1448b9bbc3`：`src/server/game
 | `mmo` kit（MK0–MK4） | mode `mmoWorld` 与其 wire / state；`k_mmo_*` 表；九个 api 面；内容包 schema；编排运行器；客户端世界引擎与角色选择页；默认 HUD | 绕过框架的账本 / 身份 / 租约 / 在线表；任何一款游戏的内容与美术 |
 | 内容插件（MG0–MG2） | `plugin.json`（`requires.kits.mmo` + `contributes.mmo`）；内容包；表现映射；编排模块；自有 Lobby RPC 域与页面；美术；测试 | SQL、wire、mode、对 kit 内部模块的 import |
 
+### 4.1.1 两种世界形态（2026-09-09 补，由 slg kit 的审核引出）
+
+| 形态 | 权威在哪 | 房间是什么 | 用到的框架阶段 | 例 |
+| --- | --- | --- | --- | --- |
+| 内存权威世界 | WorldRuntime 内存 + 检查点 | WorldRoom：常驻、租约、控制权、Draining | MF2 / MF4 / MF5 / MF6 / MF7 / MF8 全用 | `mmo` kit |
+| SQL 权威 + 视图房 | `k_<id>_*` 表（Lobby RPC 幂等写） | dropIn GameRoom 上的实时视图：无人即销毁、重建从 SQL 拉、崩溃不丢状态 | **只共用 MF5**（按会话裁剪同步）与 **MF7 的 `kit.json.workers[]`**（离线周期结算）；⛔ 不需要 MF2 / MF4 / MF8 与检查点 | `arena`（已有）、`slg` kit（大地图 + 行军） |
+
+视图房形态的约束：⛔ 不得在 kit 内自建第二套兴趣集差分 / 投递（AOI 只用 MF5 原语，在 MF5 落地前该 kit 的房间阶段不开工）；名册 / 视口是否进 Schema 仍按 D4 缺省（不进）；满员 `joinOrCreate` 开第二房时正确性靠 SQL 权威，验收须含跨房互见。
+
 ### 4.2 运行结构（目标形态，除「已有」外均需实现）
 
 ```text
@@ -529,6 +538,7 @@ kit 段开工条件：MF0–MF8 退出 + MF9 退出；MF10 / MF11 可与 MK0 并
 | party | 组队进图、经验分配 | **snake 私房整队入座**：队长 `room.prepareCreate` 得邀请码后发 `party.event{kind: roomInvite, data:{code}}`，成员各自 `room.resolve` |
 | presence | `party.get` 标记、队友标记 | freezeWorker 的「此刻在线」判定（本阶段只登记）；`/admin/kick` 节点定位提示 |
 | channel | 世界 / 附近聊天 | 队伍频道在 snake 大厅即可用；`ServerNotice` 是 realm 寻址第二用法 |
+| MF5 兴趣集原语（非社交，一并登记） | mmo kit 的 entity 同步 | **`slg` kit 的 tile / army 兴趣集**：同一 `InterestSet` / `perSession` 原语、不同实体模型与世界形态（SQL 权威视图房，§4.1.1），验证原语通用性 |
 
 ## 7. `mmo` kit 规格（MK0–MK4）
 
@@ -960,6 +970,7 @@ apps/client/test/mmodemo-logic.test.ts
 | D16 | 附近聊天 | 框架 core 世界 token `c2s/s2c.world.chat` |
 | D17 | 贡献点形态 | `contributions.<id> = { kind: data \| module, … }`；三贡献点 content / presentation / orchestration |
 | D18 | 第二样本 | `mmohold`（据点争夺）；⛔ 不预绑 Knight Online |
+| D19 | SQL 权威视图房形态 | 可跑在 GameRoom dropIn 上，不需要 MF2 / MF4 / MF8；AOI 只用 MF5 原语，⛔ kit 内不自建；`slg` kit 登记为 MF5 第二消费方（§4.1.1 / §6.7，2026-09-09 由 slg.md 审核引出） |
 
 ### 11.2 待 MF1 决定
 
