@@ -1,0 +1,5 @@
+
+> @game/server@0.1.0 plugin
+> node --import tsx tools/plugin/cli.ts pack slg --out /tmp/slg-acceptance.zip
+
+[plugin] packed slg@0.1.0: 64 files → /tmp/slg-acceptance.zip
