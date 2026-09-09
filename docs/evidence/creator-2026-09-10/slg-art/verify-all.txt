@@ -1,0 +1,2578 @@
+
+> @game/gono@0.1.0 verify:all
+> npm run verify:core && npm --workspace @game/server run test
+
+
+> @game/gono@0.1.0 verify:core
+> node scripts/verify-toolchain.mjs && npm run verify:project && npm run typecheck && npm run verify:ecs && npm run verify:vendor && npm run verify:fgui && npm run verify:protected-paths && npm run test:fgui && npm run verify:inventory && npm run test:inventory && npm run test:launcher-matrix && npm run test:npm-reference-matrix && npm run test:aggregate-chain-matrix && npm run test:sync-mirror-matrix && npm run test:toolchain-runtime-matrix && npm run verify:perf && npm run test:client
+
+[verify-toolchain] ✔ Node 22.x 声明、锁文件与验证聚合一致
+
+> @game/gono@0.1.0 verify:project
+> node scripts/verify-project-metadata.mjs
+
+[verify-project-metadata] ✔ 项目身份、包名、生成区和第三方登记一致
+
+> @game/gono@0.1.0 typecheck
+> npm run verify:webplatform-contract && npm --workspace @game/shared run typecheck && npm --workspace @game/server run typecheck && npm run typecheck:client && npm run typecheck:client:legacy && npm run verify:sync
+
+
+> @game/gono@0.1.0 verify:webplatform-contract
+> node scripts/sync-webplatform-contract.mjs --check
+
+[sync-webplatform-contract --check] ✔ 契约镜像一致
+
+> @game/shared@0.1.0 typecheck
+> tsc --noEmit
+
+
+> @game/server@0.1.0 typecheck
+> tsc --noEmit
+
+
+> @game/gono@0.1.0 typecheck:client
+> tsc -p apps/client/tsconfig.test.json --noEmit
+
+
+> @game/gono@0.1.0 typecheck:client:legacy
+> tsc -p apps/client/tsconfig.json --noEmit
+
+
+> @game/gono@0.1.0 verify:sync
+> node scripts/sync-shared.mjs --check && node scripts/sync-client.mjs --check
+
+[sync-shared --check] ✔ 镜像一致
+[sync-client --check] ✔ 镜像一致，入库 .meta 齐全且 uuid 互不撞车
+
+> @game/gono@0.1.0 verify:ecs
+> node scripts/verify-ecs.mjs
+
+Component.ts: OK
+Entity.ts: OK
+EntityIndex.ts: OK
+Hierarchy.ts: OK
+Query.ts: OK
+Relation.ts: OK
+World.ts: OK
+index.ts: OK
+utils/Observer.ts: OK
+utils/SparseSet.ts: OK
+utils/defineHiddenProperty.ts: OK
+utils/pipe.ts: OK
+
+> @game/gono@0.1.0 verify:vendor
+> node scripts/vendor-lock.mjs --check
+
+✔ vendor 内容锁校验通过（3 个产物）
+
+> @game/gono@0.1.0 verify:fgui
+> node scripts/fgui-manifest.mjs --check
+
+✔ FGUI manifest、源资源闭包和导出物一致
+
+> @game/gono@0.1.0 verify:protected-paths
+> node scripts/protected-paths-lock.mjs --check
+
+✅ 受保护路径一致：48 个手写文件字节未变
+
+> @game/gono@0.1.0 test:fgui
+> cd apps/server && node --import tsx --test ../../scripts/fgui-manifest.test.mjs ../../scripts/fgui-roundtrip.test.mjs ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/fguiContract.test.ts ../client/test/viewRegistry.test.ts
+
+✔ manifest records:哈希不符、缺失、多余和非法记录分别被报告 (1.4265ms)
+✔ manifest records:非数组和重复路径也拒绝 (0.28925ms)
+✔ manifest source 路径边界:包外、目录穿越和包根本身均报错 (0.270625ms)
+✔ manifest export ownership:一个导出物不能由两个包声明 (0.213834ms)
+✔ manifest structure:顶层、包字段和重复 name/id 均拒绝 (0.696417ms)
+✔ currentManifest:只读构建当前资源闭包，不写回 manifest (43.41625ms)
+✔ checkManifest 编排:五类集合/声明漂移均被直接报告 (29.982291ms)
+✔ checkManifest:manifest 缺失与 JSON 解析失败均给出可诊断错误 (0.64475ms)
+✔ manifest CLI 参数:显式路径统一用于 check/write，并拒绝歧义参数 (0.216291ms)
+✔ fgui-manifest CLI:漂移返回非零，--check 不会隐式改写显式 manifest (83.154542ms)
+✔ fgui-manifest CLI:--write 写入显式 manifest 路径，环境变量不能静默改道 (113.143375ms)
+✔ package.xml declarations:注释和 resources 外的伪声明不会进入闭包 (0.184958ms)
+✔ package.xml declarations:**resources 内部**被注释/CDATA 包住的声明同样不算声明 (0.073959ms)
+✔ ui:// closure:合法 name/id 别名通过，未知包、资源和缺失 key 均报错 (0.129959ms)
+✔ CDATA 里的字面 <!-- 不得吞掉其后的真实引用 (0.090792ms)
+✔ CDATA **内容**里的 src/pkg/ui:// 是展示文字，不是引用 (0.049709ms)
+✔ XML 注释里的 src/pkg/ui:// 引用不是引用 (0.059459ms)
+✔ parsePackageBin 必须能解析仓内全部真产物，且与 package.xml 的 exported 数一致 (1.254584ms)
+✔ HEAD 基线必须无问题，否则下面的构造用例失去意义 (1.788667ms)
+✔ A：产物漏掉一个 package.xml 声明为 exported 的资源必须被命中 (0.495875ms)
+✔ A：⛔ 不得拿「声明数 == 条目数」当判据——剥离未导出且无人引用的资源是正确行为 (0.950542ms)
+✔ A'：条目存在但 exported/type/name 与 package.xml 对不上必须被命中 (1.596125ms)
+✔ B：目标包漏导了被引用的资源必须被命中——ui:// 与 src=/pkg= 两种拼写都要 (0.740417ms)
+✔ B：被引用但未导出的资源被漏导时必须被命中（A 对它无能为力） (0.483917ms)
+✔ D'：package.xml 用 require= 声明的伴生文件未落盘必须被命中 (1.206708ms)
+✔ C：产物声明的依赖包不存在、或 id 与名字对不上，必须分别被命中 (0.766875ms)
+✔ D：产物引用的外部文件未落盘必须被命中，且两种命名形态都算落盘 (0.591625ms)
+✔ 解析器对损坏产物必须抛错而不是静默给出空结果 (0.346833ms)
+✔ 解析:只取 displayList 直接子元素(list 的 item/relation 不计) (1.088083ms)
+✔ 类型推断:fairygui-cc 类名;tge_ 是 GButton;jb_ 是 GComponent;无前缀不绑定 (0.148917ms)
+✔ codegen:AUTO FIELD 块只含有前缀的元素(普通 group 跳过) (0.167792ms)
+✔ FguiView scaffold:导入 + REQUIRED 契约 + bind() 里 getChild<T> (0.221708ms)
+✔ 契约校验:满足 → ok (0.159ms)
+✔ 契约校验:设计师删了元素 → missing 报红 (0.092167ms)
+✔ 契约校验:把 GList 名安到 loader 上 → mismatched 报红(前缀/标签矛盾) (0.289958ms)
+✔ 递归结构契约:嵌套元素按 path、列表模板/资源和 controller/relation 可检 (0.24725ms)
+✔ XML tokenizer:属性值含 `>`、单引号和注释不会截断结构 (0.091042ms)
+✔ 解析:省略 displayList 时仍读取根 component 的直接元素 (0.105375ms)
+✔ 嵌套契约必须显式使用 path，不能用同名子元素满足直接字段 (0.079125ms)
+✔ region 幂等:对刚生成的脚手架 regenerate = 恒等;同输入两遍零 diff (0.246167ms)
+✔ region 重写:契约变更时区块更新、区块外业务代码一字不动 (1.302875ms)
+✔ region 篡改检测:手改生成区 → regenerate 结果 ≠ 原文(CI 红的判据) (0.554709ms)
+✔ region 结构破坏:标记行被删/重复 → throw 而不是生成错文件 (0.283542ms)
+✔ region 结束标记带 kind:业务代码里的手写 #endregion 不会被误当区块边界吞掉 (0.082375ms)
+✔ FGUI 契约:ui://View_AreaList_AreaList/AreaList 满足代码依赖的命名元素 (1.517666ms)
+✔ FGUI 契约:View_AreaList_AreaList/package.xml 已导出 AreaList (0.136375ms)
+✔ FGUI 契约:View_AreaList_AreaList/AreaList 的手写/嵌套/list-item 依赖完整 (3.465542ms)
+✔ FGUI 契约:ui://View_SharedWidget_Confirm/Confirm 满足代码依赖的命名元素 (0.174833ms)
+✔ FGUI 契约:View_SharedWidget_Confirm/package.xml 已导出 Confirm (0.080125ms)
+✔ FGUI 契约:View_SharedWidget_Confirm/Confirm 的手写/嵌套/list-item 依赖完整 (2.282416ms)
+✔ FGUI 契约:ui://View_Home_Home/Home 满足代码依赖的命名元素 (0.156542ms)
+✔ FGUI 契约:View_Home_Home/package.xml 已导出 Home (0.10275ms)
+✔ FGUI 契约:View_Home_Home/Home 的手写/嵌套/list-item 依赖完整 (2.379459ms)
+✔ FGUI 契约:ui://View_AreaList_Login/Login 满足代码依赖的命名元素 (0.355916ms)
+✔ FGUI 契约:View_AreaList_Login/package.xml 已导出 Login (0.137584ms)
+✔ FGUI 契约:View_AreaList_Login/Login 的手写/嵌套/list-item 依赖完整 (1.544084ms)
+✔ FGUI 契约:ui://View_AreaList_LoginNotice/LoginNotice 满足代码依赖的命名元素 (0.118917ms)
+✔ FGUI 契约:View_AreaList_LoginNotice/package.xml 已导出 LoginNotice (0.063416ms)
+✔ FGUI 契约:View_AreaList_LoginNotice/LoginNotice 的手写/嵌套/list-item 依赖完整 (1.794959ms)
+✔ FGUI 编辑器 Adaptation 设置 ⇔ designSpec/Main.ts 三处一致 (2.908916ms)
+✔ manifest 目录递归发现的 *View.ts ⇔ generated 登记条目 双向相等 (1.33475ms)
+✔ manifest 逐条 logic 路径存在 + sidecar 文件存在（View↔Logic 配对，不再硬编码 logic/page） (0.245083ms)
+✔ 稳定 façade 与 generated 单源：VIEW_REGISTRY ⇔ catalog ⇔ manifest 页面条目 ⇔ FGUI_CONTRACTS (0.285375ms)
+✔ generated 条目 sharedPkgs ⊇ art 依赖传递闭包（独立重算，防生成器闭包实现退化） (5.970792ms)
+✔ 代码内 ui://Pkg/ 引用 ⊆ 本页包 ∪ sharedPkgs（写错包名不报错、运行时图标/元素空白） (0.343666ms)
+✔ 已登记页面的 AUTO 区块与 .fui 同步且未被手改（双向漂移机检） (3.331083ms)
+ℹ tests 66
+ℹ suites 0
+ℹ pass 66
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 398.908291
+
+> @game/gono@0.1.0 verify:inventory
+> node scripts/verify-inventory.mjs
+
+✔ inventory 14 项能力、5 个默认入口校验通过
+
+> @game/gono@0.1.0 test:inventory
+> node --test scripts/verify-inventory.test.mjs
+
+▶ verify-inventory
+  ✔ inventory verifier accepts an isolated checkout fixture (2279.273875ms)
+  ✔ inventory verifier rejects an unregistered default workspace entry (1748.4235ms)
+  ✔ inventory verifier discovers app.config as a workspace composition root (1749.252583ms)
+  ✔ inventory verifier discovers Main from the scene's compressed Creator UUID (1747.058417ms)
+  ✔ inventory verifier rejects a standalone relayer classified as core (1314.804542ms)
+  ✔ inventory verifier rejects a launch command that does not start its declared entry (1313.414167ms)
+  ✔ inventory verifier rejects a vanished verification command (1314.476667ms)
+  ✔ inventory verifier rejects the historical plan as route of truth (1313.226375ms)
+  ✔ inventory verifier rejects removal of the current plan truth declaration (1277.919917ms)
+  ✔ inventory verifier rejects removal of the current plan from README (1279.149459ms)
+  ✔ inventory verifier rejects removal of the Godogen plan from README (1278.446417ms)
+  ✔ inventory verifier rejects a referenceDocs entry whose file does not exist (1278.305709ms)
+  ✔ inventory verifier rejects a registered doc that points at an archive as current truth (2417.129958ms)
+  ✔ inventory verifier scans unregistered docs too (未登记目录也要扫) (1236.36925ms)
+  ✔ inventory verifier 不因文件名子串误红（live-plan.md 不是 plan.md） (1237.258667ms)
+  ✔ inventory verifier still allows citing an archive when its identity is stated (1235.229083ms)
+  ✔ inventory verifier 归档闸随 referenceDocs 自动生效（新归档一进清单就被守） (1255.226209ms)
+  ✔ inventory verifier rejects listing the current plan as a historical reference (1179.250917ms)
+  ✔ inventory verifier keeps the Godogen plan registered as a checked reference (1177.642959ms)
+  ✔ inventory verifier requires EXTRAS to register the Godogen plan (1289.231ms)
+  ✔ inventory verifier checks stable local anchors in the Godogen plan (1288.738292ms)
+  ✔ inventory verifier rejects a broken registered Markdown link (1287.566917ms)
+  ✔ inventory verifier rejects a Markdown link that escapes through a symlink (1212.923166ms)
+  ✔ inventory verifier rejects AGENTS/CLAUDE semantic drift even when key markers remain (1199.165791ms)
+  ✔ inventory verifier rejects synchronized removal of a required assistant instruction (1197.762916ms)
+  ✔ inventory verifier rejects synchronized removal of the state codegen registration (1197.19275ms)
+  ✔ inventory verifier rejects synchronized removal of the HTTP manifest registration (1181.142458ms)
+  ✔ inventory verifier rejects synchronized removal of the project metadata registration (1219.733333ms)
+  ✔ inventory verifier rejects synchronized removal of the Godogen assistant entry (1199.682791ms)
+  ✔ inventory verifier rejects a root command removed from both assistant command blocks (1204.557625ms)
+  ✔ inventory verifier rejects a newly added undocumented root command (1204.68825ms)
+  ✔ inventory verifier rejects a stale root command in the README command table (1224.103042ms)
+  ✔ inventory verifier rejects synchronized removal of the current plan entry (1198.930709ms)
+  ✔ inventory verifier rejects duplicate or empty --root arguments (71.402792ms)
+  ✔ inventory verifier rejects a newly added unregistered workspace script (1198.647292ms)
+  ✔ inventory verifier rejects a workspace scope entry whose root command stops invoking it (1151.648625ms)
+  ✔ inventory verifier rejects a workspace scope entry whose document drops the command (1279.513333ms)
+  ✔ inventory verifier rejects a workspace scope entry that is already in the command table (1276.69ms)
+  ✔ inventory verifier rejects a root document citing a missing workspace command (1258.20775ms)
+  ✔ inventory verifier rejects a workspace scope entry that supersedes itself (1252.458166ms)
+  ✔ inventory verifier rejects two workspace scope entries that supersede each other (1219.132959ms)
+  ✔ inventory verifier accepts a workspace anchor that is itself in the command table (1220.481542ms)
+  ✔ inventory verifier rejects an echoed workspace command as coverage (1218.056ms)
+  ✔ inventory verifier rejects a commented-out workspace command as coverage (1217.969834ms)
+  ✔ inventory verifier rejects an echoed root command in a verification chain (1318.618667ms)
+  ✔ inventory verifier rejects an echoed launch entry (1318.988375ms)
+  ✔ inventory verifier rejects a prototype-chain property posing as a root script (1318.58025ms)
+  ✔ inventory verifier rejects a prototype-chain property posing as a workspace script (1318.147667ms)
+  ✔ inventory verifier rejects a prototype-chain workspace scope registration (1265.010667ms)
+  ✔ inventory verifier rejects a non-string script value (1266.241958ms)
+  ✔ inventory verifier rejects a self-referencing verification requirement (1266.33525ms)
+  ✔ inventory verifier rejects mutually requiring verification commands (1263.036583ms)
+  ✔ inventory verifier does not let a self-wrapped requirement whitewash a broken chain (1209.977208ms)
+  ✔ inventory verifier rejects a commented-out workspace command in the assistant block (1209.146542ms)
+  ✔ inventory verifier rejects an echoed workspace command in the assistant block (1207.015541ms)
+  ✔ inventory verifier rejects documentedIn outside README and docs (1205.997292ms)
+  ✔ inventory verifier rejects documentedIn pointing at an archived plan (1254.374417ms)
+  ✔ inventory verifier rejects documentedIn pointing at a directory instead of crashing (1260.165917ms)
+  ✔ inventory verifier rejects an npx-launched entry (1255.323167ms)
+  ✔ inventory verifier rejects a quoted pseudo-call as coverage (1259.790333ms)
+  ✔ inventory verifier rejects an entry mentioned only in a trailing comment (1307.754959ms)
+  ✔ inventory verifier rejects a command-substitution launch as coverage (1316.268791ms)
+  ✔ inventory verifier rejects a heredoc pseudo-call as coverage (1312.518792ms)
+  ✔ inventory verifier rejects an argument-position pseudo-call as coverage (1311.849208ms)
+  ✔ inventory verifier rejects a non-executing launcher flag as launch (1319.506916ms)
+  ✔ inventory verifier still accepts launchers with value-taking flags (1310.217917ms)
+  ✔ inventory verifier rejects a suffix-workspace npm run posing as a root command (1310.538583ms)
+  ✔ inventory verifier rejects an inline suffix-workspace npm run (1308.871666ms)
+  ✔ inventory verifier still accepts a prefix-workspace npm run (1260.990292ms)
+  ✔ inventory verifier rejects a backgrounded pseudo-launch (1261.36425ms)
+  ✔ inventory verifier still accepts a launcher with shell redirection (1260.388042ms)
+  ✔ inventory verifier still accepts a heredoc mentioned only inside a comment (1258.789834ms)
+  ✔ inventory verifier rejects a blacklisted flag after a value-taking flag (1288.619ms)
+  ✔ inventory verifier rejects documentedIn escaping through a parent segment (1288.509708ms)
+  ✔ inventory verifier rejects a CR-glued npm run script name (1287.141459ms)
+  ✔ inventory verifier rejects NBSP-glued npm run tokens (1286.28525ms)
+  ✔ inventory verifier rejects a glued long non-executing flag before the entry (1224.655625ms)
+  ✔ inventory verifier rejects a glued short non-executing flag before the entry (1223.315875ms)
+  ✔ inventory verifier still accepts a value-taking flag before the entry (1224.022791ms)
+  ✔ inventory verifier rejects an entry that only appears as a redirect target (1217.669375ms)
+  ✔ inventory verifier still accepts an entry followed by a log redirect (1298.015584ms)
+  ✔ inventory verifier rejects an entry behind a noclobber redirection (1293.134375ms)
+  ✔ inventory verifier rejects an entry behind an fd-allocating redirection (1291.056792ms)
+  ✔ inventory verifier still accepts a launcher piped into another command (1291.559292ms)
+  ✔ inventory verifier accepts a shell launcher with clustered short options (1228.678875ms)
+  ✔ inventory verifier rejects a shell launcher whose option cluster contains -c (1227.192458ms)
+  ✔ inventory verifier rejects a shell launch that reads stdin instead of the entry (1227.421834ms)
+  ✔ inventory verifier rejects a shell option that eats the entry as its value (1227.712334ms)
+  ✔ inventory verifier still accepts an idiomatic shell option cluster with a value (1275.964541ms)
+  ✔ inventory verifier rejects an entry after the &| garbage sequence (1275.13525ms)
+  ✔ inventory verifier rejects an entry after a spaced > | sequence (1275.228625ms)
+  ✔ inventory verifier rejects a mid-cluster shell option that eats the entry (1246.408625ms)
+  ✔ inventory verifier rejects a non-executing shell -n (noexec) (1862.086708ms)
+  ✔ inventory verifier rejects a non-executing shell +s cluster (stdin) (1833.383541ms)
+  ✔ inventory verifier rejects a non-executing shell -D (dump implies noexec) (1833.427334ms)
+  ✔ inventory verifier rejects a non-executing shell --dump-strings (1832.176333ms)
+  ✔ inventory verifier rejects a non-executing shell -t (exit after one command) (1416.661792ms)
+  ✔ inventory verifier still accepts long-option whitelist (--norc) (1416.7885ms)
+  ✔ inventory verifier still accepts -- terminator (1416.923ms)
+  ✔ inventory verifier still accepts interactive flag in cluster (1409.698542ms)
+  ✔ inventory verifier rejects a positional operand before the shell entry (1298.84225ms)
+  ✔ inventory verifier rejects a bare dash as the node entry position (stdin script) (1286.777083ms)
+  ✔ plugin fragment：合法 extra fragment 绿，且不修改中央 inventory.json（阶段 7 退出条件） (1292.760917ms)
+  ✔ plugin fragment：声明 core 必须拒绝（core 身份不经 fragment 通道） (1286.075958ms)
+  ✔ plugin fragment：extra fragment 缺 docs/EXTRAS.md 必须拒绝（沿用双向断言） (1399.357292ms)
+  ✔ plugin fragment：plugin.json 出现中央 inventory 专属键（routeOfTruth 等）必须拒绝 (1396.550541ms)
+  ✔ plugin fragment：fragment 未知键未通过真实 JSON Schema 校验（additionalProperties:false） (1390.245292ms)
+  ✔ plugin fragment：verification 登记存在但不发现 fragment 的命令 → 假绿拒绝（须覆盖 verify:inventory） (1392.356125ms)
+  ✔ plugin fragment：与中央能力重复 id / defaultEntry 不存在，均并入既有 fail-closed 检查 (2601.42025ms)
+  ✔ kit fragment：合法 extra fragment 绿（apps/kits/ 缺席也绿），且不修改中央 inventory.json (1363.518917ms)
+  ✔ kit fragment：kit.json 未知键未通过 kit-schema-v1 校验（additionalProperties:false）；requires 对 kit 也是未知键 (1362.694458ms)
+  ✔ kit fragment：声明 core / 中央专属键 与插件同规则拒绝 (1365.905291ms)
+  ✔ kit fragment：apps/kits/ 下的子目录缺 kit.json 即拒绝（有根则每个子目录都是 kit） (1357.103541ms)
+  ✔ kit fragment：apps/kits 存在但不是目录即拒绝（可选根 ⛔ 不得 fail-open） (1355.601ms)
+  ✔ plugin fragment：plugins/ 目录缺失即 fail closed（发现面不可静默为空） (1352.423ms)
+✔ verify-inventory (38568.725209ms)
+ℹ tests 115
+ℹ suites 1
+ℹ pass 115
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 38720.920083
+
+> @game/gono@0.1.0 test:launcher-matrix
+> node --test scripts/launcher-matrix.test.mjs
+
+✔ 启动器判定与真实解释器逐条一致 (11809.298084ms)
+✔ 矩阵本身有判别力：入口路径写错时门禁必须说未启动 (220.734958ms)
+✔ 探针本身有判别力：marker 判定不是恒真 (47.650125ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12505.937667
+
+> @game/gono@0.1.0 test:npm-reference-matrix
+> node --test scripts/npm-reference-matrix.test.mjs
+
+✔ npm 引用判定与真实 npm 逐条一致 (6513.463709ms)
+✔ 矩阵本身有判别力：门禁侧与探针侧都不是恒真 (950.915417ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7595.620958
+
+> @game/gono@0.1.0 test:aggregate-chain-matrix
+> node --test scripts/aggregate-chain-matrix.test.mjs
+
+✔ 聚合链声明与真实 npm 执行序列逐条一致 (3080.95575ms)
+✔ 矩阵本身有判别力：桩缺一条时必须报出来 (110.694292ms)
+✔ 声明表里的每条命令在真实仓库中都必须可解析 (3.505542ms)
+✔ 矩阵覆盖面钉住声明表：新增聚合链必须同步进 CHAINS (0.08125ms)
+✔ 声明提取本身有判别力：读不到的常量必须失败而不是静默返回空 (0.548292ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3239.866958
+
+> @game/gono@0.1.0 test:sync-mirror-matrix
+> node --test scripts/sync-mirror-matrix.test.mjs
+
+▶ sync-mirror-matrix
+  ✔ sync-shared / 原样未改动：--check 判定与真实同步效果一致 (6636.166667ms)
+  ✔ sync-shared / 镜像里的文件被改坏：--check 判定与真实同步效果一致 (2781.101666ms)
+  ✔ sync-shared / 镜像里的文件被删掉：--check 判定与真实同步效果一致 (2781.964792ms)
+  ✔ sync-shared / 镜像里多出源目录没有的孤儿文件：--check 判定与真实同步效果一致 (2782.554125ms)
+  ✔ sync-shared / 源目录新增文件但镜像未更新：--check 判定与真实同步效果一致 (2728.7795ms)
+  ✔ sync-shared / 生成的警示 README 被改：--check 判定与真实同步效果一致 (2737.160208ms)
+  ✔ sync-client / 原样未改动：--check 判定与真实同步效果一致 (2744.80075ms)
+  ✔ sync-client / 镜像里的文件被改坏：--check 判定与真实同步效果一致 (2743.855166ms)
+  ✔ sync-client / 镜像里的文件被删掉：--check 判定与真实同步效果一致 (2903.443625ms)
+  ✔ sync-client / 镜像里多出源目录没有的孤儿文件：--check 判定与真实同步效果一致 (2882.907666ms)
+  ✔ sync-client / 源目录新增文件但镜像未更新：--check 判定与真实同步效果一致 (2886.331666ms)
+  ✔ sync-client / 生成的警示 README 被改：--check 判定与真实同步效果一致 (2886.892166ms)
+  ✔ sync-client / PORT 改值后 .env 与两端生成物一致：--check 判定与真实同步效果一致 (2840.44775ms)
+  ✔ sync-client / PORT 改值但未跑同步：--check 判定与真实同步效果一致 (2829.49025ms)
+  ✔ sync-client / 入库文件的 .meta 未入库：--check 判定与真实同步效果一致 (2821.357916ms)
+  ✔ sync-client / 两个入库 .meta 的 uuid 撞车（跨 src/ 与 resources/）：--check 判定与真实同步效果一致 (2826.533041ms)
+  ✔ sync-client / 入库 .meta 不是合法 JSON：--check 判定与真实同步效果一致 (2180.507333ms)
+  ✔ sync-client / 入库 .meta 的 uuid 形状非法：--check 判定与真实同步效果一致 (2175.562417ms)
+  ✔ 矩阵本身有判别力：两侧探针都不是恒真 (2173.456375ms)
+✔ sync-mirror-matrix (17269.974333ms)
+✔ 矩阵覆盖面钉住 package.json：新增镜像 --check 脚本必须进 TARGETS 或显式豁免 (1.21475ms)
+✔ 覆盖面扫描面承认 ./ 前缀、解释器 flag 与子目录脚本（此前三类静默逃逸） (0.1055ms)
+ℹ tests 21
+ℹ suites 1
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 17522.269459
+
+> @game/gono@0.1.0 test:toolchain-runtime-matrix
+> node --test scripts/toolchain-runtime-matrix.test.mjs
+
+✔ 工具链声明与真实运行时/安装态一致 (3.604958ms)
+✔ 判定本身有判别力：构造的每种背离都必须被精确命中 (1.130875ms)
+✔ semver 判定遇到没见过的范围形态必须抛错而不是静默放行 (0.447542ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 48.217958
+
+> @game/gono@0.1.0 verify:perf
+> node scripts/verify-perf-baseline.mjs
+
+✔ client-ballMove deterministic performance baseline verified (2 cases; timing/heap excluded)
+
+> @game/gono@0.1.0 test:client
+> cd apps/server && node --import tsx --test ../client/test/*.test.ts ../../scripts/vendor-lock.test.mjs
+
+✔ vendor lock actual-set check rejects an unregistered runtime file (25.13625ms)
+✔ vendor lock actual-set check rejects symlinks before hashing outside bytes (15.865333ms)
+✔ fixture plugin：全部失效场景下旧响应不回写，健康路径可提交 (310.672417ms)
+✔ late subscriber：订阅即回放当前连接状态（Lobby 已 ready 后加载的 plugin 不错过 ready） (0.678875ms)
+✔ app destroy：connection/session/route/ticker 订阅计数归零 (0.336917ms)
+✔ 静态门禁：plugin fixture（与 src/plugins、src/kits）不得值导入 WebSocketClient/RoomClient/cc/fairygui；plugin/kit View 只豁免引擎模块 (6.194333ms)
+✔ 静态门禁正则自测：值导入判违规、type-only 放行 (0.123041ms)
+[AppRuntime] plugin fx 不可用（failed），取消启动玩法 fxGame
+[AppRuntime] plugin fx 不可用（failed），取消启动玩法 fxGame
+[AppRuntime] plugin fx 不可用（failed），取消启动玩法 fxGame
+[AppRuntime] plugin fx 不可用（failed），取消启动玩法 fxGame
+[AppRuntime] plugin fx 不可用（failed），取消启动玩法 fxGame
+[AppRuntime] plugin fx 不可用（disabled），取消启动玩法 fxGame
+[pages] WebPlatform 区服目录加载失败： ReferenceError: XMLHttpRequest is not defined
+    at <anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/core/http.ts:142:21)
+    at new Promise (<anonymous>)
+    at doRequest (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/core/http.ts:141:12)
+    at portalRequest (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/core/http.ts:121:12)
+    at fetchAreaList (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/net/http/area.ts:9:12)
+    at openLoginImpl (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/app/loginFlow.ts:577:24)
+    at ensureLoginFlight (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/app/loginFlow.ts:550:20)
+    at openLogin (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/app/loginFlow.ts:569:10)
+    at AppRuntime.startNavigation (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/app/AppRuntime.ts:314:19)
+    at Object.createAppRuntime (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/app/bootstrap.ts:64:18)
+[pages] WebPlatform 区服目录加载失败： ReferenceError: XMLHttpRequest is not defined
+    at <anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/core/http.ts:142:21)
+    at new Promise (<anonymous>)
+    at doRequest (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/core/http.ts:141:12)
+    at portalRequest (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/core/http.ts:121:12)
+    at fetchAreaList (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/net/http/area.ts:9:12)
+    at openLoginImpl (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/app/loginFlow.ts:577:24)
+    at ensureLoginFlight (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/app/loginFlow.ts:550:20)
+    at openLogin (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/app/loginFlow.ts:569:10)
+    at AppRuntime.startNavigation (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/app/AppRuntime.ts:314:19)
+    at Object.createAppRuntime (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/app/bootstrap.ts:64:18)
+✔ AppRuntime.dispose：顺序行为断言 disposePages→battleAbort→unsubs→unregisterGameplay→controller.dispose，且幂等 (272.603666ms)
+✔ AppRuntime：app generation 构造递增、dispose 冻结（取代 pageLifecycleGeneration） (1.667875ms)
+✔ AppRuntime.tick：转发 RoomController.tick 与 FrameScheduler；dispose 后不再驱动 (0.864291ms)
+✔ §7.8 宿主前后台：hide 停喂 tick + 拒新输入；show 按 ready/drop 宽限/final-loss 三态恢复 (2.132583ms)
+✔ wireSessionLifecycle：transport 失效先拆玩法 generation；journal/ticker 生命周期接线 (2.002084ms)
+✔ launch 统一启动通道经 PluginHost 闸：failed 不启动、userIntent 重试成功后启动、常驻与未托管直通 (1.14525ms)
+✔ launch 闸 await 窗口的活性复验：换代/dispose 后迟到的 install 完成不得启动玩法 (0.534416ms)
+✔ deriveLaunchPluginIds：生产派生 ballMove→builtin；多贡献者取先到者（生成器已闸一 gameplayId 一贡献者） (1.016708ms)
+✔ launch 点击恒为 userIntent：连续点击不计入自动重试上限，永不进 disabled (0.928ms)
+✔ launch 闸对未托管 pluginId 的裁定与渲染侧一致：不误伤、直通 (0.532125ms)
+✔ launch 统一启动通道：disabled(app-generation) 的 plugin 同样不得启动玩法 (2.034625ms)
+✔ bootstrap：portalUrl 空串回落 DEV_SERVER_URL（dev 下 portal 即游戏服自身）；显式坏值仍 fail-fast (8.401042ms)
+✔ bootstrap：?server= 查询参数覆盖 serverUrl（LAN 调试），portal 空串跟随同一地址 (12.827375ms)
+✔ 玩法侧退出（controllerBridge.requestStop）后恢复 authenticated base；未登录 / 无 base / 已 dispose 不恢复 (1.807167ms)
+✔ arena board 面：4×4 坐标标签、归属与可占领判定、缺格补齐 (1.75925ms)
+✔ arena ranking 面：按格数 → 守备和 → uid 聚合；文案标记本人 (0.248416ms)
+✔ arena 棋盘页：refresh 装载棋盘与奖杯；未装载 / 敌格有守备 / 在途都不可占；占领成功写提示并本地更新 (0.466083ms)
+✔ arena 棋盘页：ARENA_TILE_TAKEN → 错误提示 + 重读棋盘（提示保留）；其他错误不重读；错误码翻译 (0.251875ms)
+✔ arena 棋盘页：宿主未就绪（runtime null）→ 不可刷新 / 不可占领、提示未就绪、close 无副作用 (0.092792ms)
+✔ arenaCapture：start 挂载并观察；capture 只在 Playing 期发；模型按 captures 降序、标记自己 (9.606958ms)
+✔ arenaCapture：结算后停留再 requestExit(settled)，只请求一次；leave → user-exit (0.2505ms)
+✔ arenaCapture：presentation 缺失或形状不对 → start 抛错且不留状态；context 失活后输入/tick 被忽略 (0.261792ms)
+✔ arenaDuel：start 挂载并观察；strike 只在 Playing 期发；模型带 hp / 自己与对手命中数 (2.609417ms)
+✔ arenaDuel：结算后停留再 requestExit(settled)，只请求一次；对手赢时 selfWon=false；leave → user-exit (0.610792ms)
+✔ arenaDuel：presentation 缺失 → start 抛错；context 失活后输入/tick 被忽略 (0.323292ms)
+✔ arenaShop：只列自己的格；未装载 / 敌格 / 无主格不可买；购买成功更新守备与余额并写提示 (2.931709ms)
+✔ arenaShop：域错误码 / 框架经济码 / 网络码翻译；失败后可重试 (1.235458ms)
+✔ arenaShop：账本重放（balance=null）→ 守备照更新、余额保留上次已知值、提示说明未扣款 (0.625166ms)
+✔ arenaShop：插件只经 kit 的 client board 面读棋盘（fetchArenaBoard 走 lobbyRpc.query arena.board），⛔ 不自己点名 ArenaRpc (1.508958ms)
+✔ arenaShop：宿主未就绪（runtime null）→ 不可刷新 / 不可买、提示未就绪、close 无副作用 (0.137958ms)
+✔ ballMove ECS：add/sync/插值/remove/clear (1.857541ms)
+✔ eid 复用防残值：addPlayer 必须全量覆写 PlayerModel 每个字段 (0.221708ms)
+✔ ballMove ECS：重复 sessionId add 幂等，不遗留幽灵 entity (0.105459ms)
+[ballMove] hello（tickRate=20）
+[ballMove] 已加入房间 room-exact，我是 self
+[ballMove] hello（tickRate=20）
+[ballMove] 已加入房间 room-exact，我是 self
+[ballMove] hello（tickRate=20）
+[ballMove] 已加入房间 room-exact，我是 self
+[ballMove] hello（tickRate=20）
+[ballMove] hello（tickRate=20）
+[ballMove] 已加入房间 room-exact，我是 self
+[ballMove] hello（tickRate=20）
+[ballMove] 已加入房间 room-exact，我是 self
+✔ ballMove plugin：registry 装配后由精确 room 驱动监听、输入、tick/渲染与清理 (9.5015ms)
+✔ ballMove plugin：房间还没开局（Waiting）时 ⛔ 不发 move；开局后同一个方向照常发出去 (14.96525ms)
+✔ ballMove plugin：非法 target fail-closed，越界 target 在玩法边界收敛 (1.053ms)
+✔ ballMove plugin：启动半失败会回滚已登记监听、展示层与 room 输入 (0.335708ms)
+✔ ballMove plugin：直接 dispose 也会清理 room 输入与展示层 (0.258791ms)
+✔ ballMove plugin：「离开」经 host.requestExit(user-exit) 退出，且只请求一次（真机实证：该入口此前无退出 UI） (0.206666ms)
+✔ client headless tsconfig strictly includes all source and test TypeScript files (39.827292ms)
+✔ client legacy tsconfig covers every source TypeScript file (26.643916ms)
+✔ client legacy probe enforces the ES2017 API floor (4212.546542ms)
+✔ PromoHomeView：挂载后节点树可用，首屏唯一可点节点是设置按钮 (101.98725ms)
+✔ SettingsView：两个区块都画出来；置灰占位项 ⛔ 没有任何点击回调 (10.23ms)
+✔ 纯色底板必须走可合批的 Sprite，⛔ 不再每块一个 Graphics (0.51325ms)
+✔ SettingsView：遮罩参与命中测试，⛔ 不让指针穿到底下的首屏 (0.566375ms)
+✔ SettingsView：按钮真的接上 Logic（关闭 / 音频开关 / 不可用条目重试） (9.895292ms)
+✔ CocosView：挂到 FGUI 层容器（锚点 (0,1)、原点左上）时根节点按父锚居中，⛔ 不再钉在左上角 (2.771709ms)
+[WebSocketClient] connection listener 异常 Error: listener boom
+    at <anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/test/connectionEvents.test.ts:205:11)
+    at WebSocketClient.publishConnectionEvent (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/net/WebSocketClient.ts:250:17)
+    at WebSocketClient.joinOwned (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/net/WebSocketClient.ts:372:18)
+    at WebSocketClient.join (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/net/WebSocketClient.ts:315:28)
+    at joinWithFakeRoom (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/test/connectionEvents.test.ts:43:30)
+    at TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/test/connectionEvents.test.ts:212:11)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+[WebSocketClient] connection listener 异常 Error: listener boom
+    at <anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/test/connectionEvents.test.ts:205:11)
+    at WebSocketClient.publishConnectionEvent (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/net/WebSocketClient.ts:250:17)
+    at WebSocketClient.doJoin (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/net/WebSocketClient.ts:515:14)
+[WebSocketClient] SDK 离线重放队列不可控，主动断开大厅连接
+✔ 事件矩阵：joining→ready→dropped→reconnected→closed{voluntary}，seq 单调、同代同 generation (1.924375ms)
+✔ 先闸后播：dropped 事件送达时发送闸已关（listener 栈内 rpc 立即拒 CONN_LOST） (0.282667ms)
+✔ closed 三分类：普通关闭码→final-loss；强踢关闭码→auth-invalid+authReason (0.823416ms)
+✔ RPC 鉴权错误码路径：err AUTH_REQUIRED → closed{auth-invalid, AUTH_REQUIRED} (2.3645ms)
+✔ ForceLogout 推送 → closed{auth-invalid}；随后的物理 leave 不再补发第二个 closed (0.798042ms)
+✔ 订阅即回放：晚到订阅者立即拿到 ready 快照（不会永远错过 ready） (0.5265ms)
+✔ idle 状态订阅不回放；leave 后快照回到 idle (0.347958ms)
+✔ listener 异常不中断后续 listener 与主流程 (5.215375ms)
+✔ connGeneration 随 slot 换代递增，seq 跨代单调 (0.29975ms)
+✔ replay 闸失守放弃连接：closed{final-loss}，不再补发 dropped/voluntary (0.230958ms)
+✔ PORT 解析语义与服务端一致：默认/首条生效/空值=未设置 (4.68625ms)
+✔ PORT 非空非法：抛错（与服务端拒绝启动对齐，禁静默回退） (2.115042ms)
+✔ 组内顺序 = placement 声明序（⛔ 不按 pluginId 字母序重排） (0.973ms)
+✔ 可用条目点击走 launch；failed/disabled 置灰、activate 拒绝、retry 仍走同一通道 (0.195875ms)
+✔ launch 之后重绘一次（可用性可能因这次 launch 翻转） (0.17675ms)
+✔ 真仓 placement：host.json 每个分组的成员都能在全量 contribution 里解析出来 (0.517333ms)
+✔ 返回位：记一次、消费一次；⛔ 不重复回 (0.225209ms)
+✔ 返回位：route 形态成员记 null；分组页之外启动入口要清位 (0.696709ms)
+✔ errorOverlay：不满足开关或没有 DOM 时是 no-op（release 构建 ⛔ 不把堆栈甩给玩家） (1.3575ms)
+✔ errorOverlay：window error / unhandledrejection 都进弹框，且盖掉预览页自带的 #error (5.441375ms)
+✔ errorOverlay：同一条错误重复出现只累加计数，⛔ 不刷屏 (0.342333ms)
+✔ errorOverlay：复制三级降级 —— 剪贴板 → execCommand → 选中长按 (0.538625ms)
+✔ errorOverlay：弹出时 ⛔ 不自动复制、不自动选中——复制只能由用户点按钮触发 (1.061667ms)
+✔ errorOverlay：关闭按钮只隐藏，下一条错误会重新弹出来 (0.627292ms)
+✔ describeErrorEvent / formatErrorReport：消息、堆栈与次数按可粘贴格式排版 (1.143666ms)
+✔ errorOverlay：报告带上游戏上下文（当前页面 / mode / runId），排在错误正文之前 (0.747334ms)
+✔ errorContext：null 撤下、超长截断、键数封顶 (0.66525ms)
+✔ errorOverlay：贴着游戏画布定位，并按设计分辨率缩放（⛔ 不铺满窗口、⛔ 不写死 px） (0.488166ms)
+✔ errorOverlay：画布量不到时退回整窗，⛔ 不因此崩掉 (0.2585ms)
+✔ FGUI 契约:ui://View_AreaList_AreaList/AreaList 满足代码依赖的命名元素 (2.75425ms)
+✔ FGUI 契约:View_AreaList_AreaList/package.xml 已导出 AreaList (0.411917ms)
+✔ FGUI 契约:View_AreaList_AreaList/AreaList 的手写/嵌套/list-item 依赖完整 (12.071583ms)
+✔ FGUI 契约:ui://View_SharedWidget_Confirm/Confirm 满足代码依赖的命名元素 (0.269542ms)
+✔ FGUI 契约:View_SharedWidget_Confirm/package.xml 已导出 Confirm (0.112666ms)
+✔ FGUI 契约:View_SharedWidget_Confirm/Confirm 的手写/嵌套/list-item 依赖完整 (3.381375ms)
+✔ FGUI 契约:ui://View_Home_Home/Home 满足代码依赖的命名元素 (0.191583ms)
+✔ FGUI 契约:View_Home_Home/package.xml 已导出 Home (0.085875ms)
+✔ FGUI 契约:View_Home_Home/Home 的手写/嵌套/list-item 依赖完整 (5.329833ms)
+✔ FGUI 契约:ui://View_AreaList_Login/Login 满足代码依赖的命名元素 (2.979583ms)
+✔ FGUI 契约:View_AreaList_Login/package.xml 已导出 Login (0.403958ms)
+✔ FGUI 契约:View_AreaList_Login/Login 的手写/嵌套/list-item 依赖完整 (6.8895ms)
+✔ FGUI 契约:ui://View_AreaList_LoginNotice/LoginNotice 满足代码依赖的命名元素 (0.66775ms)
+✔ FGUI 契约:View_AreaList_LoginNotice/package.xml 已导出 LoginNotice (0.153583ms)
+✔ FGUI 契约:View_AreaList_LoginNotice/LoginNotice 的手写/嵌套/list-item 依赖完整 (2.818166ms)
+✔ FGUI 编辑器 Adaptation 设置 ⇔ designSpec/Main.ts 三处一致 (2.802042ms)
+✔ GameplayRegistry：新增 idle 玩法只需登记 factory，id 与解绑具有 ownership (1.095792ms)
+✔ GameplayRegistry：玩法自带 joiner 可由无默认 transport 的 RoomController 启动 (0.474625ms)
+✔ GameplayRegistry：replace 使用 registration ownership，旧 disposer 不删除同 factory 新登记 (0.089625ms)
+✔ GameplayRegistry：factory 重入 replace 时仍返回同一 registration 的 plugin/joiner 快照 (0.085459ms)
+✔ RoomController：登记缺 joiner 时不构造无主 plugin (0.075708ms)
+✔ RoomController：所有未接管插件的拒绝路径都等待 exactly-once dispose (0.338333ms)
+✔ generated 登记：后续模块登记失败会回滚先前登记，且不删除调用前已有登记 (7.820958ms)
+✔ gameplay module：模块 joiner 可整体替换（⛔ 无逐玩法 context 字段），idle 由无默认 transport 的 controller 启动 (0.3485ms)
+✔ gameplay module：idle 不创建 BallMove presentation，缺失 presentation 只影响 ballMove 并完整回滚 (4.409583ms)
+✔ GameplayRegistry：玩法 id 必须是 canonical wire identity (3.018917ms)
+✔ RoomController：精确 room context、并发启动合流、输入/tick 与幂等 stop (0.436416ms)
+✔ RoomController：取消黑洞 join 立即释放，迟到 ready 不启动旧插件也不影响新 generation (0.159084ms)
+✔ RoomController：外部 AbortSignal 在 running 状态也会触发完整 stop (10.823917ms)
+[ballMove] 已加入房间 seq-room，我是 self
+✔ GameplayInstanceHost：generation 直接是 controller 计数，旧 host 拒绝、迟到异步无权染新房 (15.200625ms)
+✔ requestExit：user-exit/settled 都映射既有 manual（词汇表写死），且经通用 stop 路径 (0.230416ms)
+✔ registerGameplayModule：module/bridge 形状 fail-fast；plugin.id 必须等于 module.id (0.283458ms)
+✔ validateLaunch：ballMove/idle 只接受 exact {} 或 {profile ∈ catalog.profiles} (0.352917ms)
+✔ 登记态 joiner：join 使用 validateLaunch({}) 的默认 launch（launch 接缝已就位） (0.161542ms)
+✔ 阶段 9 退出条件：fixture module 全流程不修改 Main/RoomClient/pages/Home/catalog 手写文件（字节断言） (0.798959ms)
+✔ §7.8：宿主输入闸拒绝的输入不产生 ballMove adapter seq（暂停期间 seq 不跳变） (2.16725ms)
+[ballMove] 已加入房间 ball-room，我是 self
+✔ gameplay catalog：正向动态 presentation factory 可挂载并在 stop 时卸载 (89.841166ms)
+✔ gameplay start continuation：迟到 AbortSignal 结果只停止旧 controller (2.233834ms)
+✔ gameplay start continuation：迟到 session generation 结果只停止旧 controller (0.149458ms)
+✔ gameplay start recovery：正常停止后再回登录 (0.134167ms)
+✔ gameplay start recovery：同步 stop 异常被报告且不阻断回登录 (0.098459ms)
+✔ gameplay start recovery：异步 stop 拒绝被报告且不阻断回登录 (0.105084ms)
+✔ gameplay start recovery：回登录失败保持原异常向上传播 (0.079042ms)
+✔ gameplay start recovery：停止期间 ownership 失效时不触碰新会话 (0.066792ms)
+✔ src/gameplay/** 与 src/generated/** 禁 cc/fairygui-cc/db:// 值导入（type-only 与字面量动态 import 放行） (4.022334ms)
+✔ 门禁正则自测：值导入/副作用导入/export-from/require 判违规，type-only 与动态 import 放行 (0.376833ms)
+✔ 首拉 + 推送唤醒增量 + 迟到唤醒忽略 (8.261333ms)
+✔ 拉取中并发唤醒合流：结束后只补一轮 (7.357666ms)
+✔ 增量跳号（窗口外）触发 onGapRefresh (1.73875ms)
+✔ 换会重置水位：高 seq 会 → 低 seq 会不失聪（评审修复） (2.379584ms)
+✔ 重复 start 不叠订阅：先解旧订阅；stop 后清空（防死页面收唤醒回调） (0.839959ms)
+✔ 生命周期：stop 后迟到 pull 结果不触发 events/error/gap (1.262125ms)
+✔ 生命周期：旧世代 pull 在途时新首拉不被旧 pulling 状态阻塞 (0.582333ms)
+✔ stop 清 pendingWake：在途 pull 结束后不再补拉（防回调已关闭页面） (3.250834ms)
+✔ 拉取失败：不产生 unhandledRejection，回调后续唤醒自愈 (8.092834ms)
+✔ generated contributions 按 pluginId → entryId 排序且 = 手写 manifest 并集；manifest ⛔ 无 slot/order (3.6995ms)
+✔ 位置归宿主：首屏入口顺序 = 手写 apps/plugins/host.json 的 home；每条都能解析到一条 contribution (0.669333ms)
+✔ 默认 launch target = apps/plugins/host.json 的 defaultLaunch：AppRuntime/Main 兜底只读生成值，⛔ 不硬编码玩法名 (0.610417ms)
+✔ contribution 归属：拥有自己 plugin 的玩法，菜单入口必须由该 plugin 贡献（⛔ 不得留在 builtin） (0.107834ms)
+✔ 菜单排序：多 contribution fixture 按 pluginId → entryId；首屏顺序只听宿主 placement；引用不存在的入口 fail-fast (0.4385ms)
+✔ HomeLogic：主入口点击唯一走 entry.launch；disabled 时 handler 拒绝；无入口回退旧回调 (0.149208ms)
+✔ PluginHost 可用性叠加（fixture）：install 失败 → failed 入口拒绝；显式重试成功 → 可用 (0.591042ms)
+✔ LaunchPort.launch：注入专用通道即走它并携带 target；未注入回退 enterBattle (0.637167ms)
+✔ http：2xx resolve、非 2xx reject（错误 JSON 体不得伪装成功） (5.155375ms)
+✔ http：非 2xx 带出可判别的 status/code（业务层靠字段分流，⛔ 不靠正则抠 message） (9.717583ms)
+✔ WebPlatform Public：portal 必填且不回退；v1 登录/选服方法、字段与 Bearer 正确 (5.855709ms)
+✔ HTTP runtime contract：2xx 缺字段/多字段/非法 URL 与未登记 endpoint 均在发包前失败 (0.426542ms)
+✔ join deadline contract accepts only safe integer durations and absolute deadlines (0.75125ms)
+✔ small absolute deadlines are not reinterpreted as relative durations (0.083084ms)
+✔ logic/ 全目录禁 import cc / fairygui-cc（无头纯度守门） (6.933875ms)
+✔ 守门正则覆盖真实违规形态（db:// 静态引用 + 经 view/ 间接引入），正常 shared 引用不误伤 (0.343625ms)
+✔ loginFlow transition：按 flight identity 延后重开，不能 await 自身 Promise (0.658417ms)
+✔ SessionCoordinator：回登录 transition 固定次序与文案映射的唯一所有权 (0.781416ms)
+✔ pages.ts 保持零状态纯转发 façade（模块级状态与注册全部迁出） (0.219625ms)
+✔ AppRuntime：宿主装配保留 flight/scope/session 世代的迁移前判别力 (0.220334ms)
+✔ Main bootstrap：installWeChatCompat 是模块求值期顶层调用，早于任何 Colyseus/网络初始化 (2.946833ms)
+✔ bootstrap 接线序：initHttp/initPortal → 会话订阅 → wireConnectionEvents → bridge → 导航启动 (0.493917ms)
+✔ AppRuntime.startGameplay：宿主 dispose 后迟到成功只清理旧 generation (314.836875ms)
+✔ AppRuntime.startGameplay：AbortSignal 取消后迟到成功只清理旧 generation (0.697792ms)
+✔ AppRuntime.startGameplay：session generation 变化后迟到成功只清理旧 generation (0.247916ms)
+✔ open：route → view 解析、栈登记；close/abort 即出栈（取消回滚） (1.360666ms)
+✔ closeGroup(authenticated)：按描述符声明顺序关闭原 closeLobby 数组成员，不触碰 system 组 (0.229625ms)
+✔ closeGroup/disposeViewRoot：ViewMgr 未加载（无页面打开过）时是 no-op，不强行拉起 FGUI (0.07625ms)
+✔ replace/back：关闭当前栈顶（旧 handle signal 立即失效）后打开新 route (0.145583ms)
+✔ authenticated base：登记/恢复/清除；恢复走登记的 reopen 而非硬编码页面 (1.785709ms)
+✔ route observer：refcount 变化通知（PluginHost 停用判定的地面真相） (0.183208ms)
+✔ required 共享包缺失抛可判别、可重试错误，不打开空占位 (0.942125ms)
+✔ 统一 deadline 超时释放重试槽，迟到回调不会让旧打开复活 (0.747459ms)
+✔ 关闭页面时取消当前 waiter，底层成功迟到也不触发旧打开 (0.564ms)
+✔ 场景世代切换后旧 signal 迟到，新的打开独立合流并成功 (0.420417ms)
+✔ 并发 waiter 合流：关闭一个页面不取消另一个，成功共享包保持常驻 (0.397916ms)
+✔ 底层错误即使残留半成品包也必须失败；仅更新世代的成功可屏蔽旧迟到错误 (0.494541ms)
+✔ package deadline 只接受非负安全整数，非法配置不会启动底层请求 (0.745166ms)
+✔ 成功回调返回的包对象必须与运行时注册对象一致 (0.587167ms)
+✔ ensure 的重复路径合流为一个 waiter 请求 (0.12375ms)
+✔ AreaList：拉取 + 推荐/我的角色/全部区服页签 + 维护不可进 (1.714125ms)
+✔ AreaList：未开服（openTime=0）不可进——含挂 new 角标的未开服 (0.174459ms)
+✔ AreaList：运维模式（isOps）豁免——维护/未开服的开服前验证可选中 (0.127292ms)
+✔ AreaList 生命周期：stop 后迟到 HTTP 不触发 tabs/list 回调 (0.125625ms)
+✔ AreaList 生命周期：重进页面时只接受最新世代结果 (0.1235ms)
+✔ AreaList 生命周期：拉取边界和回调均使用独立快照 (0.192709ms)
+✔ AreaList 生命周期：恶意 response 在发布前拒绝且不触发页面回调 (0.30475ms)
+✔ Area/Notice 生命周期：stop 后主动事件也不再触发旧 View 回调 (1.054583ms)
+✔ LoginNotice 生命周期：stop 后迟到公告不更新正文 (0.097167ms)
+✔ Area：isServerEnterable 判定单源（维护/未开服双条件） (0.069417ms)
+✔ serverSession：存列表 + 默认选中（myServerIds 优先，否则首个可进入服）+ 选服 (0.140208ms)
+✔ serverSession：默认选中跳过不可进服——最近服顺延 / 兜底扫描 / 全不可进展示位 (0.049208ms)
+✔ serverSession：目录刷新保留当前区，区消失才回退默认，失败保留完整旧快照 (0.135792ms)
+✔ serverSession：目录输入和 getter 都是隔离副本，不会拆散 list/hash/current 快照 (0.065042ms)
+✔ serverSession：写入点拒绝恶意目录且保留上一份完整快照 (0.111291ms)
+✔ serverSession：WS accessor 只取当前快照，空目录后拒绝建立连接 (0.068166ms)
+✔ Login 大厅接缝：同一份当前目录快照提供 gameWsUrl 与 sId (0.115ms)
+✔ 公告日期键：生产纯函数锁定 UTC+8 自然日边界 (0.0725ms)
+✔ Area 状态展示：Public 字符串枚举稳定映射现有 FGUI 图标 (0.044209ms)
+✔ LoginNotice：页签标题最多 4 字 + 默认选中首条正文 + 切标签换正文 (0.163458ms)
+✔ Login：进度回调 + 登录幂等（重复点不重复请求） (0.384583ms)
+✔ Login：签发请求失败不自动重试（由用户明确再次发起） (0.106666ms)
+✔ Login：join/GetInfo 任一失败都清会话并释放大厅，不进入半状态 (0.311625ms)
+✔ Login：GetInfo 返回空档案也拒绝导航；成功路径保留完整会话 (0.152875ms)
+✔ Login：角色 uid 不匹配或快照提交过期时回滚完整登录事务 (0.133458ms)
+✔ Login：旧页面世代失败不清理或关闭新会话的连接 (0.100375ms)
+✔ Login：完整 flow 锁覆盖 HTTP 之后的 continuation (21.472834ms)
+✔ Confirm：单/双按钮 + 只结算一次 (0.280125ms)
+✔ write-ahead：条目在 send 之前落 inflight；applied/unknown/failed 按结果结算 (2.10075ms)
+✔ onDrop 只做 inflight → unknown 状态迁移，⛔ 不产生新条目、不触碰终态 (0.115416ms)
+✔ maxEntries fail-closed：未决条目 ⛔ 不淘汰；只淘汰终态；超 payload 上限降级 oversize 占位 (0.247792ms)
+✔ 重发字节等同：resend 返回 begin 时的规范化串，且是 canonical 不动点（⛔ 不重新规范化） (0.093625ms)
+✔ uid 边界：任何 uid 变化同步清空整本 journal（clientReqId ⛔ 不跨 uid 复用） (0.070042ms)
+✔ 生命周期分叉：auth-invalid 清空（session ended）；final-loss 保留并可重进对账（字节等同重发） (0.472084ms)
+✔ client baseline：固定 seed/input 的结构结果可重复，且覆盖 ECS/渲染/分配探针 (7.349166ms)
+✔ client baseline：不同 seed 会改变输入 tape 校验和 (2.353916ms)
+✔ client baseline：Graphics checksum 锁定 Float64、opcode、顺序与样式 (0.134167ms)
+✔ client baseline：动态执行真实 BallMoveView 并与无头探针比较完整有序 trace (2.174584ms)
+✔ client baseline：入库 deterministic artifact 与当前探针一致 (649.357709ms)
+✔ launch：并发加载同一 plugin 合流为同一个 Promise，install 完成后 active (0.662833ms)
+✔ install 失败：只回滚 scope/disposer（逆序），进入 failed 并保留错误 (0.468125ms)
+✔ failed 两条出路：显式 launch 重回 loading；自动重试上限后 disabled(app-generation) 复位 (0.278625ms)
+✔ dependencies：launch 先装依赖（顺序 = 声明序），依赖失败则本 plugin failed 且不装；dispose 依赖方先拆 (0.456542ms)
+✔ dependencies 生命周期：依赖方在位时依赖不随 refcount 归零释放（级联释放）；重装后 disposeAll 仍依赖方先拆 (10.501584ms)
+✔ dependencies 生命周期：依赖正在 dispose 时 launch 依赖方 → 等拆完再装（⛔ 不卡 loading）；运行期环点名 failed (1.122834ms)
+✔ dispose：按安装完成逆序执行且幂等；releaseIfIdle 常驻豁免、refcount 归零停用 (0.442167ms)
+✔ generated load：每个带 module 的 plugin 都能动态装载出 { install } (55.950916ms)
+✔ PluginHost：按 AppRuntime 同一口径托管 generated plugins，launch 走真实 loader 到 active，disposeAll 干净 (1.287167ms)
+✔ route 形态入口：AppRuntime.launch 先经 PluginHost 装载归属 plugin，再 navigation.open(routeId) (233.39775ms)
+✔ project package identity rejects workspace name collisions (0.613417ms)
+✔ project metadata verifier rejects duplicate or empty --root arguments (115.731333ms)
+✔ project metadata verifier rejects a symlinked parent directory (18.071917ms)
+✔ project initializer preflights metadata symlinks before writing other files (75.942791ms)
+✔ project initializer rewrites bare package module specifiers when adding a scope (391.77925ms)
+✔ project initializer is idempotent with identical arguments (831.58375ms)
+✔ 首屏模型是封闭字段集合：只有宣传内容与设置按钮，⛔ 没有玩法入口列表 (2.328042ms)
+✔ 首屏 View/Logic 源码 ⛔ 不得触达菜单或启动通道（间接摆玩法入口同样红） (0.427958ms)
+✔ 运行时身份行取 shared 单源常量（协议整数 + 已登记玩法数） (0.414875ms)
+✔ 会话摘要行：无会话给可读占位；有档案时带体力与战绩（对账刷新的消费点） (0.270459ms)
+✔ 设置按钮：点击唯一出口是注入的 openSettings 回调 (0.210666ms)
+✔ 登记：promoHome 是 authenticated base route；旧 FGUI Home 仍是可达 route（⛔ 不删） (2.644042ms)
+✔ §11.3 散文清单 ⇔ pluginFlow.paths 双向 deepEqual（任一侧单方面增删即红） (0.857ms)
+✔ §12.2 散文清单 ⇔ gameplayFlow.paths 双向 deepEqual（封死「删条目再重钉」的绕过路径） (0.14575ms)
+✔ §12.2 点名的中央文件必须被保护集合覆盖（散文 → 规则第二方向） (1.049542ms)
+✔ 每条保护路径真实存在（glob 条目为目录），且两组之间无重复 (1.386917ms)
+✔ semantics 注释无孤儿：键 ⊆ 保护路径集合，且 gameplayFlow 逐条带语义说明 (0.269375ms)
+✔ generatedWriterOwned：生成物存在、Do not edit 抬头在位、与保护集合不重叠 (4.34875ms)
+✔ generatedWriterOwned：登记的 writer 命令真实存在（防止规则文件教一条不存在的刷新命令） (0.468917ms)
+✔ 受保护路径锁：仓内锁 ⇔ 当前字节逐条一致（改了受保护文件忘重钉即红） (4.858042ms)
+✔ 受保护路径锁的覆盖面 = 规则文件两组手写路径的展开（⛔ 不含 generatedWriterOwned） (2.033542ms)
+✔ CLI：无参数打印用法并退出 1；--check 与 --write 互斥；未知参数拒绝 (220.890375ms)
+✔ CLI：锁缺失即红；--write 幂等；改一字节 / 增删受保护文件都逐条点名且 --check 只读 (521.99075ms)
+✔ 锁格式解析 fail closed：畸形行、重复路径、空锁一律拒绝；注释与空行放行 (0.671667ms)
+✔ 规则文件被掏空 / 保护路径不存在时 fail closed（⛔ 不静默缩小锁面） (1.822334ms)
+✔ 协议指纹：shared/protocol 内容 ⇔ 钉档一致；两个协议身份 ⇔ 钉档一致（新格式 g<GAME> l<LOBBY> <sha256>） (32.139167ms)
+✔ 协议版本解析：注释中的旧声明不能遮蔽真实 export；两常量各自读出 (0.826459ms)
+✔ 协议版本解析：旧名 PROTOCOL_VERSION 残留必须 throw 指引（含与新常量并存的形态） (1.715042ms)
+✔ 协议版本解析：缺一即拒；重复声明必须失败 (1.324792ms)
+✔ 协议版本解析：只接受顶层精确 export，字符串和嵌套声明不应伪造版本（对两个常量同刚性） (3.621292ms)
+✔ CLI：无参数打印用法并退出 1；--check 与 --write 互斥；未知参数拒绝 (840.577875ms)
+✔ CLI：--write 首钉新格式且幂等；--check 通过后改协议一字节不重钉 → --check 红且只读 (1594.624708ms)
+✔ 锁格式解析：旧格式 v<N> 与畸形行一律拒绝 (0.322875ms)
+✔ redeem：输入 trim+大写；格式不合规不可提交；改输入清掉旧提示 (1.071541ms)
+✔ redeem：域错误码翻译；在途期间拒绝二次提交；失败后可重试 (0.438625ms)
+✔ redeem：宿主未就绪（runtime null）→ 不可提交、提示未就绪、close 无副作用 (0.171625ms)
+✔ request：同 key 并发只合流当前 flight；settle 后允许下一次；异 key 互不合流 (1.578125ms)
+✔ dirty 语义 1：只在实际发出请求那一刻清除（启动前置位归本次，启动后置位归 trailing） (0.839166ms)
+✔ dirty 语义 2：trailing 按 flight 计且递归——trailing 自身 settle 时若又变脏必须再排 (0.884459ms)
+✔ dirty 语义 3 + 背压：失败重置 dirty、退避窗口内 trigger 不开新 flight、上限后 stale 手动重试 (0.936791ms)
+✔ app/route/session 任一维不同即不同 key（世代/route/会话互不冒领） (1.3395ms)
+[RoomClient] 丢弃非法 idle GameRoom state: WIRE_KEYS at idleState
+✔ 合流同一在途 join：旧 owner 释放不关闭后来者共享的 room (5.775875ms)
+▶ slot 连接 key：endpoint/token/sId 任一不同均 fail-fast，且不破坏原 owner
+  ✔ endpoint 不同 (0.98475ms)
+  ✔ token 不同 (4.41125ms)
+  ✔ sId 不同 (0.919458ms)
+✔ slot 连接 key：endpoint/token/sId 任一不同均 fail-fast，且不破坏原 owner (6.83675ms)
+✔ join mode 与 adapter 不匹配时在 SDK join 前 fail-closed (0.505666ms)
+✔ GameplayRoomAdapter：state 类型由 mode 映射，不能独立拼接异构 validator (0.240625ms)
+✔ 玩法 transport API：不暴露原始 SDK room/send (0.245041ms)
+✔ Idle adapter：直接 exact 校验 reflected Schema，不洗掉 root/player 额外 wire 字段 (1.274833ms)
+✔ Idle ownership：初始 root 畸形时 ready fail-closed 并关闭物理房 (2.001333ms)
+✔ GameRoom ownership：SDK 已 join 但首个 state 黑洞时 timeout 关闭精确物理房 (19.801042ms)
+✔ GameRoom ownership：首个 exact state 前公共发送 API 保持只读 (2.046417ms)
+[RoomClient] 已离开房间 code=1006 reason=left before initial state
+[RoomClient] 丢弃非法 ballMove GameRoom state: WIRE_KEYS at state
+✔ GameRoom ownership：首个 state 前物理离场立即拒绝 owner，不等待二次 leave 超时 (2.312459ms)
+▶ GameRoom ownership：非法后续 patch/reconnect state 均销毁房间且不执行 reconcile
+  ✔ ordinary patch (2.693042ms)
+[RoomClient] 连接掉线（自动重连中） code=1006 reason=temporary
+[RoomClient] 丢弃非法 ballMove GameRoom state: WIRE_KEYS at state
+[RoomClient] 连接掉线（自动重连中） code=1006 reason=temporary
+[RoomClient] C2S c2s.idle.pulse 发送失败
+[RoomClient] 自动重连成功
+[RoomClient] 自动重连成功
+  ✔ reconnect full state (3.174875ms)
+✔ GameRoom ownership：非法后续 patch/reconnect state 均销毁房间且不执行 reconcile (6.493292ms)
+✔ Idle ownership：join/drop/reconnect 不发送 Move，pulse 只发送 exact 空对象 (1.326125ms)
+✔ 独立 reconnect 与 SDK 离线队列：下一有效 state 前均不得越过发送屏障 (1.324958ms)
+✔ 玩法 capability：ballMove typed room 不能构造 IdleRoom (1.051541ms)
+✔ 玩法 capability：旧 typed room 在提升 input generation 前 fail-closed (0.512167ms)
+✔ slot 连接 key：契约允许字段稳定比较，键顺序/undefined 不造成误拒 (1.112917ms)
+✔ slot 连接 key：未知 join option 在发送前拒绝 (0.432416ms)
+✔ 非法 join control 在分配 slot 前失败，不遗留 owner (0.525334ms)
+✔ hostile AbortSignal：读取 aborted 在分配 slot 前失败 (0.216208ms)
+[RoomClient] 已离开房间 code=1006 reason=network lost
+[RoomClient] 连接掉线（自动重连中） code=1006 reason=temporary
+[RoomClient] 连接掉线（自动重连中） code=1006 reason=temporary
+[RoomClient] 自动重连成功
+[RoomClient] 自动重连成功
+✔ hostile AbortSignal：addEventListener 抛错时 owner/slot 清理，迟到 room 释放 (3.667833ms)
+✔ hostile AbortSignal：removeEventListener 抛错不阻断成功 join/leave (0.966958ms)
+✔ joinOrCreate 同步抛错：迟到 owner 立即失败并释放失败槽 (0.9485ms)
+✔ 旧 room 的迟到 onLeave 不得清除/上报后来创建的新 room (0.5265ms)
+✔ 当前 room 非主动 onLeave：失效 owner、清当前槽并且只上报一次 battleLost (0.881458ms)
+✔ BallMoveRoom：消息、Schema 与发送都绑定捕获的物理 room (1.157375ms)
+✔ BallMoveRoom capability：切到后来 room 后，迟到消息/Schema/发送全部失效 (1.58675ms)
+✔ BallMoveRoom joiner：连接端点直接取当前区的 gameWsUrl (1.314291ms)
+✔ IdleRoom joiner：复用同一区服 transport 并显式选择 idle mode (0.675417ms)
+✔ AppRuntime：只装配 registry/controller/catalog，不再内联 RoomClient、ECS 或玩法回调 (0.596375ms)
+✔ 掉线输入 reconcile：松手后的 stop/最新方向成为重连后的第一条有效输入 (0.532167ms)
+✔ 输入 generation：leave 摘槽后本局可清零，旧局迟到 stop 不覆盖新局方向 (0.300708ms)
+[RoomClient] C2S c2s.ping 发送失败
+[RoomClient] C2S c2s.move 发送失败
+✔ RoomClient join 黑洞：超时/AbortSignal 不阻塞 leave，迟到 room 会被释放 (13.843125ms)
+✔ 发送屏障：socket 已关而 onDrop 未到达时 send 必须返回 false (1.020833ms)
+✔ SDK 升级绊线：读不到 socket 状态时 join 必须失败而不是静默哑火 (2.820167ms)
+✔ ownership key：strategy（含 roomName/roomId）参与连接身份——同 options 不同 strategy fail-fast (1.251375ms)
+✔ strategy 三形态分别映射 SDK joinOrCreate/create/joinById，roomName/roomId 逐字生效 (1.639875ms)
+✔ PrivateRoomService：prepareCreate → create('game')，creationTicket 只进 access（§6.9 房主流程） (0.873375ms)
+✔ PrivateRoomService：resolve(code) → joinById(roomId)，joinTicket 只进 access（§6.9 好友流程） (0.3425ms)
+✔ PrivateRoomService：输错码停留可重试——不误创建房间、不清登录态（§10.2 行 22） (1.51625ms)
+✔ client/src 全目录禁 import colyseus 服务端/npm 包（铁律 5 机检） (17.838ms)
+✔ 守门正则覆盖违规形态，全局 Colyseus 用法不误伤 (0.099125ms)
+[session] battleLost 处理器异常
+[session] authInvalid 处理器 rejection
+[session] connLost 处理器 rejection
+[session] battleLost 处理器 rejection
+✔ session façade：单槽注册 fail-fast（§7.2 (b)——⛔ 后注册者静默覆盖已废止） (1.469083ms)
+✔ session：登录入态 / 换号 = clear 后新登 (0.154875ms)
+✔ session：踢线先清态再广播；未登录时的迟到上报吞掉（防重复弹窗） (0.393375ms)
+✔ session：没有导航出口时 connLost 仅广播，不直接改登录态 (0.10625ms)
+✔ battleLost 与 connLost 是两个独立事件（战斗断线 ⛔ 不当成大厅断线） (1.717167ms)
+✔ battleLost 处理器抛错不影响其它订阅者（Main 回滚 + pages 导航互不牵连） (1.785708ms)
+✔ session 广播观察异步订阅 rejection，不产生 unhandledRejection (0.836708ms)
+✔ 没有导航出口时 battleLost 仅广播，不直接改登录态 (0.16225ms)
+✔ connLost/battleLost：统一 returnToLogin 出口回登录前清理旧 bearer (0.158084ms)
+✔ 迟到 transport 事件：会话已主动清理时只广播、不幽灵打开回登录 transition (0.097291ms)
+✔ 失效广播期间同步重登：旧 transport 事件不得覆盖新会话 (0.081292ms)
+✔ SessionTransition：处理器 rejection 不锁死 handled，显式再次运行可恢复 (0.856ms)
+✔ returnToLogin：并发失效事件共享一个可等待 Promise，并先清 Bearer (0.332917ms)
+✔ returnToLogin：新会话建立后旧 transition 不得与新事件合流 (0.824541ms)
+[LifecycleBus] host listener 异常 Error: host listener boom
+    at <anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/test/sessionCoordinator.test.ts:259:11)
+    at LifecycleBus.publish (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/app/LifecycleBus.ts:59:17)
+    at TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/test/sessionCoordinator.test.ts:264:7)
+    at Test.runInAsyncScope (node:async_hooks:226:14)
+    at Test.run (node:internal/test_runner/test:1382:25)
+    at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+    at Test.postRun (node:internal/test_runner/test:1522:19)
+    at Test.run (node:internal/test_runner/test:1447:12)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+✔ closed{auth-invalid} 全链同一同步栈：广播时凭证已清、此后 HTTP 不带旧 Bearer (7.629667ms)
+✔ 单槽注册 fail-fast：已注册未释放时 registerReturnToLogin/registerSessionReconciler 直接 throw (1.08775ms)
+✔ bus→derive 分支矩阵：closed 三分类派生正确，非 closed 事件不触发 session 广播 (0.759709ms)
+✔ battle 通道派生矩阵（阶段 9）：closed{final-loss} → battleLost；voluntary/透传事件不派生 (0.174042ms)
+✔ LifecycleBus：严格同步转发（无微任务）、通道隔离、解绑与异常隔离 (1.86725ms)
+✔ CocosLifecycleBridge：EVENT_HIDE/EVENT_SHOW 进 bus host 通道，seq 单调，卸载幂等解绑 (4.187375ms)
+✔ attachSessionNavigator：第二步 fail-fast 时回滚第一步，不留半注册 (0.528833ms)
+✔ session profile：按完整 identity 原子提交副本，新登录拒绝旧快照 (1.010667ms)
+✔ Lobby 最终断线：并发事件合流一次，原 token 重连并刷新角色快照 (0.67775ms)
+✔ Lobby 最终断线：对账失败释放本次 owner，再进入既有回登录事务 (0.251542ms)
+✔ Lobby 对账迟到：旧 generation 只释放旧 owner，不覆盖或关闭新登录 (1.080167ms)
+✔ Lobby 对账控制：join 使用显式 timeout，页面取消后结果 stale 并释放精确 owner (3.977083ms)
+[SettingsLogic] 音频偏好写入失败 Error: network down
+    at Object.updateProfile (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/test/settings.test.ts:44:15)
+    at SettingsLogic.toggleAudio (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/logic/page/SettingsLogic.ts:217:29)
+    at TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/test/settings.test.ts:224:23)
+    at Test.runInAsyncScope (node:async_hooks:226:14)
+    at Test.run (node:internal/test_runner/test:1382:25)
+    at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+    at Test.postRun (node:internal/test_runner/test:1522:19)
+    at Test.run (node:internal/test_runner/test:1447:12)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+✔ 插件入口是全量 contribution 按 pluginId 字母序（⛔ 不是宿主 placement 的首屏序） (2.288375ms)
+✔ 分组：成员 ⛔ 不在设置面板单独出现，整组只占一行且点击走组的 launch (1.013917ms)
+✔ 分组行可用性：组内还有可用成员就不置灰（⛔ 一个插件 failed 不该屏蔽同组其他人） (0.169584ms)
+✔ 真仓 placement：host.json 的分组真的把 arena 四条入口收成了一行 (0.2475ms)
+✔ 同一 plugin 的多条入口以 entryId 兜底排序（确定性，与语言无关） (0.117625ms)
+✔ 可用条目点击走 launch；failed/disabled 条目置灰、activate 拒绝、retry 仍走同一通道 (0.194708ms)
+✔ 音频开关成功：乐观翻转后保留新值，幂等写只带被改的那个字段 (0.213209ms)
+✔ 音频开关失败：UI 回滚到写之前的值并给可重试提示；重试成功后提示清空 (1.944208ms)
+✔ 音频写单飞：在途期间的重复点击被忽略（⛔ 不排队第二次写） (0.121458ms)
+✔ 宿主固定占位项：合规四项 + 语言全部置灰且逐条带未实现原因（兑换码是插件，⛔ 不在宿主占位里） (0.158375ms)
+✔ SLG art assets: runtime images exactly mirror the approved art sources and retain their dimensions (8.872708ms)
+✔ SLG art assets: decoration pixels are real RGBA with transparent background and six occupied cells (154.894709ms)
+✔ SLG art asset metadata: declared texture sampling is linear, clamped and has no mipmaps (0.613792ms)
+✔ SLG art resources: successful unordered callbacks acquire a bundle whose release is idempotent (21.781917ms)
+✔ SLG art resources: partial failure waits for every in-flight callback and releases late successes (13.6345ms)
+▶ SLG art resources: invalid terrain or texture dimensions release every successfully loaded asset
+  ✔ terrain violates shared dimensions (1.122291ms)
+  ✔ ground atlas has wrong width (0.678167ms)
+  ✔ decoration atlas has wrong height (29.195ms)
+  ✔ overview is not square (0.722541ms)
+  ✔ overview has zero dimensions (0.131291ms)
+✔ SLG art resources: invalid terrain or texture dimensions release every successfully loaded asset (33.868708ms)
+✔ SLG art resources: two routes sharing cached textures release only their own references (0.196ms)
+✔ SLG art atlas: six nonoverlapping cells use PNG top-left coordinates and exact pixel bounds (0.97775ms)
+✔ SLG decorations: fixed seed does not depend on chunk visitation order or LOD changes (0.701166ms)
+✔ SLG decorations: bounded density, unique neighboring ownership and complete footprints inside chunks (6.242958ms)
+✔ SLG仙洲: compact six-terrain geography leaves the default sect dry and all landmarks in separate chunks (1.622959ms)
+✔ SLG overview: north-up coordinates round trip with arbitrary display dimensions and clamp outer bounds (0.789583ms)
+✔ SLG overview viewport: inclusive final cells keep one-cell edge footprints visible (0.350709ms)
+✔ SLG overview: ordered geographic quads reproduce terrainAt without enumerating cells (2.613875ms)
+✔ SLG camera: anchored zoom, moving pinch center, four LODs and bounds (2.051584ms)
+✔ SLG camera: taps, dragging inertia and cancellation/background stop (0.178416ms)
+✔ SLG overview locate: preserves zoom, stops active inertia and discards both old touch pointers (0.158542ms)
+✔ SLG overview locate: rejects nonfinite input and keeps the entire viewport within both world edges (0.152917ms)
+✔ SLG streamer: ring order, unchanged camera no-op, stale loads discarded and retention (0.445959ms)
+✔ SLG map: sparse baseline, selected ownership, one write while busy, authoritative reread (18.759542ms)
+✔ SLG map: overview jumps and disposed views reject late query responses (3.642709ms)
+✔ SLG map: failed loads are not marked authoritative and explicit refresh recovers (1.709833ms)
+✔ SLG map: a capture response after closing cannot revive the disposed page (1.536333ms)
+✔ SLG map: rapid zoom stays within five requests/sec and each request is at most four chunks (15.414375ms)
+✔ SLG map: RATE_LIMITED waits, exponentially backs off and recovers without a busy retry loop (9.9235ms)
+✔ SLG 10000-square map: far edge and widest viewport allocate only visible chunks (0.709834ms)
+✔ SLG terrain mesh: adjacent ground edges sample exactly the same texture edge, including chunk joins (11.824ms)
+✔ SLG terrain mesh: every valid terrain ID selects its assigned atlas cell without bleeding (13.430292ms)
+✔ SLG terrain mesh: ownership is a sparse blue/red alpha overlay independent of terrain color (3.520625ms)
+✔ SLG terrain mesh: close LODs preserve grid gaps while distant LODs join exactly (2.292709ms)
+✔ SLG terrain mesh: farthest chunk stays bounded and indices address only its own geometry (1.243875ms)
+[snake] 已加入无尽房间 room，我是 self
+[snake] 已加入无尽房间 room，我是 self
+[snake] 已加入无尽房间 room，我是 self
+[snake] 已加入无尽房间 room，我是 self
+✔ 分块 baseline 只有完整、有序且 checksum 正确时原子提交 (6.239125ms)
+✔ 有序 path append/trim delta 可插值；丢序/checksum 错转入 resync (5.422ms)
+✔ tool ID 在 epoch 内移除后复用被拒，tool/buff 只按 envelopeTick 校验 (16.096458ms)
+✔ delta 显式删除已离场 run，不靠 checksum 失败反复重取 baseline (7.711958ms)
+✔ HUD 无房级时长；磁铁/保护和复活窗只读权威绝对 tick (1.295667ms)
+✔ 750×1624 中央控制区、Safe Area 与左右手功能镜像精确 (0.219834ms)
+✔ 设备偏好先写后用；非法/读异常/写失败均稳定回退 right (0.145459ms)
+✔ pointer owner：按钮优先、摇杆拖出继续、双指 boost、cancel-all 无残留 (9.766458ms)
+✔ Gameplay：完整 baseline 后渲染；结束本次需二次确认；断线 cancel 并重取 (7.058875ms)
+✔ Gameplay：复活/终局 push 按 run、deathSeq、stateVersion 单调收敛且去重 (3.341083ms)
+✔ Room adapter：输入合流、seq 无空洞、重连从权威 ack 续发且 boost=false (0.352333ms)
+✔ 容量常量仍覆盖 17 蛇/1030 food/10 tool/88162 点 (0.057ms)
+✔ Gameplay：结束请求看门狗——超时先用当前 runId 重发一次，两次都没进终局就把确认框还给玩家 (0.291291ms)
+✔ Gameplay：终局消息到达即收摊看门狗（⛔ 不再重发、不再弹确认框） (0.150958ms)
+[snake] texture missing plugins/snake/snake_magnet_tools Error: missing test resource: plugins/snake/snake_magnet_tools/texture
+    at Object.load (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/test/snake-presentation.test.ts:356:26)
+    at <anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/view/rooms/snake/SnakeWorldView.ts:338:23)
+    at new Promise (<anonymous>)
+    at load (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/view/rooms/snake/SnakeWorldView.ts:337:67)
+    at SnakeWorldView.loadAssets (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/view/rooms/snake/SnakeWorldView.ts:372:13)
+✔ SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触摸回流 (122.823291ms)
+✔ 目录里每个 frame 的 pivot 必须居中——SnakeWorldView 删除 pivot 转写的前提 (1.032666ms)
+✔ public skin catalog is exact, stable, uniquely defaulted and hash-compatible (2.006209ms)
+✔ public exact validator rejects extra/missing fields, duplicate IDs and invalid defaults (0.916917ms)
+✔ client presentation catalog covers all 16 direct fallback chains and source-preserved structures (0.747792ms)
+✔ client validator rejects orphan entries, fallback loops, incomplete inherited boost and public hash drift (2.124583ms)
+✔ NormalRepeat layout derives finite positive path-point distances from normal geometry only (1.028708ms)
+✔ runtime failures leave authoritative requested ID intact and deterministically fall back to skin 1 (0.18875ms)
+✔ frame bounds reject deployment-time invalid rects, including packed rotated dimensions (0.141458ms)
+✔ food, wreck, walls, audio and FX presentation policy is explicit (0.203292ms)
+✔ version-2 magnet catalog has one exact world frame, one passive alias and one registered aura recipe (0.163666ms)
+✔ entity validator rejects magnet entry/rect/alias/button/fallback, identity and audio policy drift (1.521333ms)
+✔ magnet runtime blocks an invisible world item and falls back once from a missing aura to the passive icon (0.151ms)
+✔ 未装载 plugin：不就绪、行为 no-op、给出可读提示 (0.516334ms)
+✔ load 拉快照并投影出行：稀有度中文名、获取方式、碎片进度、已装备标记 (0.504875ms)
+✔ 筛选：全部 / 已拥有 / 未拥有 / 可合成 (0.176708ms)
+✔ equip 成功后用返回的 profile 刷新，装备态跟着变 (0.115333ms)
+✔ craft 成功后拥有集合更新；失败按错误码翻译且 profile 不变 (0.185625ms)
+✔ 错误只按 code 分派，⛔ 不解析文案 (0.08925ms)
+✔ 红点：设备本地记录已查看；坏值与写失败都降级为内存态，⛔ 不影响服务端 profile (0.21175ms)
+✔ load 失败：给出错误提示且不进入已加载态 (0.071083ms)
+✔ 熔断判据：两闸取「或」——任一达标即熔断（⛔ 取「且」即红） (0.727ms)
+✔ 逃生口：必须认 SYNC_FORCE env——`-- --force` 到不了复合命令里的第一个脚本 (0.124417ms)
+✔ tally：start 挂载并观察；tap 只在 Playing 期发；模型按 taps 降序、标记自己 (2.292958ms)
+✔ tally：结算后停留再 requestExit(settled)，只请求一次；leave → user-exit (0.32825ms)
+✔ tally：presentation 缺失或形状不对 → start 抛错且不留状态；context 失活后输入/tick 被忽略 (0.309125ms)
+✔ toolchain contract accepts the checked-in Node and verification declarations (61.2005ms)
+✔ toolchain contract rejects Node declaration and lock projection drift (1133.330583ms)
+✔ toolchain contract rejects removal of every command in the verification graph (1177.314208ms)
+✔ toolchain contract rejects weakened negative-test entrypoints and duplicate inherited gates (200.334125ms)
+✔ toolchain contract rejects declaration-table shrinkage in the opposite direction (42.341291ms)
+✔ toolchain contract pins load-bearing chain members against silent removal (0.945667ms)
+✔ toolchain contract fails closed on workspace lifecycle hooks of gated commands (83.939791ms)
+✔ toolchain contract gates workspace hooks even when the chain uses the suffix form (42.610458ms)
+✔ toolchain contract gates workspace hooks when the selector is a directory path (79.665542ms)
+✔ toolchain contract fails closed on unclassifiable workspace selector forms (75.175333ms)
+✔ toolchain contract leaves non-gated workspace scripts alone (36.81475ms)
+✔ toolchain contract pins exact script bodies against collusive rewrite (0.18375ms)
+✔ toolchain contract catches collusive deletion from both declaration table and chain (35.07525ms)
+✔ toolchain contract fails closed on npm pre/post lifecycle hooks of gated commands (1148.453167ms)
+✔ colyseus UMD：入库产物内嵌版本 = fetch 脚本钉的版本（两侧副本） (4.05775ms)
+✔ colyseus 双端版本：SDK = lock 里的 @colyseus/sdk；与服务端 colyseus 包 major.minor 一致（铁律 7） (0.622125ms)
+✔ fairygui-cc：扩展外壳 package.json 版本 = fetch 脚本钉的版本 (0.212ms)
+✔ vendor 内容锁：产物 sha256 与 scripts/vendor.sha256 逐一相符 (6.912875ms)
+✔ vendor-lock --check：只读校验并拒绝静默重钉 (72.074833ms)
+✔ WebPlatform 本地 tarball：package-lock integrity 与入库字节一致 (0.888709ms)
+✔ CLAUDE.md 技术栈声明与钉死版本一致（文档不说谎） (0.312042ms)
+[ViewMgr] 关闭页面后恢复输入失败 Error: input processor disposed
+    at FguiView.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/test/viewLifecycle.test.ts:550:43)
+    at closeEffects (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/view/ViewMgr.ts:251:22)
+    at <anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/view/ViewMgr.ts:231:53)
+    at Object.close (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/view/ViewMgr.ts:313:15)
+    at <anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/test/viewLifecycle.test.ts:557:38)
+    at getActual (node:assert:580:5)
+    at strict.doesNotThrow (node:assert:748:32)
+    at TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/test/viewLifecycle.test.ts:557:12)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+[View] login handler rejection Error: async click failed
+    at TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/test/viewLifecycle.test.ts:1142:21)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+✔ FguiView closeLifecycle publishes its promise before synchronous re-entry (48.825917ms)
+✔ FguiView runs an instance create hook once across a cancelled generation (0.788833ms)
+✔ ViewMgr detaches a view when disabling input throws (4.758666ms)
+✔ ViewMgr teardown closes active uncached views and permits a fresh root (0.446ms)
+✔ ViewMgr catalog 注入 seam：替身 catalog 不触碰生产 catalog，复位后按名回落 generated (0.277ms)
+✔ ViewMgr kind:"cocos" 路由页面：跳过 FGUI 创建、挂层容器节点，事务序与 FGUI 分支逐段一致 (0.708625ms)
+✔ ViewMgr cocos 路由页面：在途 close 在实例化前拦截；teardown 关闭并销毁节点树 (0.363334ms)
+✔ ViewMgr cacheable open transaction rolls back mount/onOpen/setup/render failures and input lease (0.491291ms)
+✔ ViewMgr permanent remount preserves setup errors and remains retryable (0.37725ms)
+✔ ViewMgr permanent stale handle cannot close a remounted same-name generation (0.226459ms)
+✔ ViewMgr interactive lease stays enabled until the last view closes, then restores input (0.249166ms)
+✔ concrete View setup is idempotent across repeated calls and keeps the latest callback (0.875375ms)
+✔ concrete AreaList/LoginNotice closeLifecycle stops pending logic before late UI callbacks (0.734292ms)
+✔ LoginView setProgress normalizes ratio and marks unsupported controls as placeholders (0.128708ms)
+[pages] test-navigation rejection Error: async navigation failed
+    at TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/test/viewLifecycle.test.ts:1161:21)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+✔ View event boundary observes rejected async actions without unhandledRejection (7.037083ms)
+[pages] 首屏打开失败，回滚登录事务： Error: PromoHome open failed
+    at Object.mgr.open (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/test/viewLifecycle.test.ts:1594:15)
+    at NavigationService.open (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/app/NavigationService.ts:122:49)
+    at async openPromoHome (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/app/loginFlow.ts:770:13)
+    at async <anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/app/loginFlow.ts:711:24)
+[pages] 首屏打开失败，回滚登录事务： Error: PromoHome setup failed
+    at Object.setup (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/test/viewLifecycle.test.ts:1600:32)
+    at <anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/app/loginFlow.ts:780:10)
+    at Object.run (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/test/viewLifecycle.test.ts:1522:32)
+    at Object.run (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/app/NavigationService.ts:203:41)
+    at openPromoHome (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/app/loginFlow.ts:772:11)
+    at async <anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/client/src/app/loginFlow.ts:711:24)
+✔ page navigation boundary observes rejected async actions without unhandledRejection (4.221583ms)
+✔ pages login flight：重复打开与重复进入只完成一次首屏导航 (6.624625ms)
+✔ pages Lobby 最终断线：复用 session 对账 GetInfo 并刷新首屏，不重新签发登录 (4.113042ms)
+✔ pages 首屏 open/setup 失败：清理会话与 Lobby 后提示并重开可用 Login (9.534375ms)
+✔ pages 首屏迟到成功：scope/session 失效后只关闭旧首屏 handle (3.34675ms)
+✔ 启动链路单槽注册各只注册一次：openLogin 全链在 fail-fast 语义下可重入（§7.2 (b) 断言） (0.819083ms)
+✔ manifest 目录递归发现的 *View.ts ⇔ generated 登记条目 双向相等 (7.170458ms)
+✔ manifest 逐条 logic 路径存在 + sidecar 文件存在（View↔Logic 配对，不再硬编码 logic/page） (0.363625ms)
+✔ 稳定 façade 与 generated 单源：VIEW_REGISTRY ⇔ catalog ⇔ manifest 页面条目 ⇔ FGUI_CONTRACTS (0.310875ms)
+✔ generated 条目 sharedPkgs ⊇ art 依赖传递闭包（独立重算，防生成器闭包实现退化） (6.651208ms)
+✔ 代码内 ui://Pkg/ 引用 ⊆ 本页包 ∪ sharedPkgs（写错包名不报错、运行时图标/元素空白） (0.79875ms)
+✔ 已登记页面的 AUTO 区块与 .fui 同步且未被手改（双向漂移机检） (6.410125ms)
+✔ §7.3 单向依赖：net/WebSocketClient.ts 不得 import session/SessionCoordinator（静态断言） (3.047041ms)
+✔ rpc 按信封 id 配对：ok resolve data、err 按 code 抛 RpcError (6.889208ms)
+✔ rpc 超时判 TIMEOUT；迟到回包静默丢弃 (1.137ms)
+✔ onLeave：在途请求全判 CONN_LOST，之后 rpc 立即拒（未加入） (0.700042ms)
+✔ onDrop/onReconnect：掉线期 RPC fail-fast，恢复后复用 room、owner 与 push 订阅 (5.734917ms)
+✔ drop 后最终 onLeave：只上报一次 connLost；主动 leave 则不误报 (1.487167ms)
+✔ 隐式 ownership：被动 onLeave 后清理，重复掉线/重登不累积旧闭包 (1.457666ms)
+✔ 隐式 ownership：替换后旧 room 的迟到 reconnect/leave 不得改写新一代 (0.684459ms)
+✔ 隐式 ownership：主动 leave 后迟到 join 结果只释放旧 room，不回填记录 (5.587667ms)
+✔ rpcIdem：BUSY/STALE_FENCE 自动重试，全程复用同一 clientReqId (1805.139708ms)
+✔ join 透传 options.sId 进 joinOrCreate（区服路由）：带 sId 带上、缺省不带 (0.373042ms)
+✔ rpcIdem：非 BUSY 错误立即抛且回填 clientReqId，不重试 (0.162209ms)
+✔ 强制下线·推送路径：收到 auth.forceLogout{reason} → 上报对应 FORCE_* 原因 (0.430583ms)
+✔ 强制下线·掉线窗口关闭码兜底：最终 onLeave 仍判出被踢（⛔ 不当成普通掉线） (0.191333ms)
+✔ ⛔ 普通掉线不误判被踢：非踢人关闭码 → connLost（登录态保留） (0.207209ms)
+✔ 推送先到 + onLeave 随后：只弹一次（notifyAuthInvalid 幂等，⛔ 不重复弹窗） (0.142167ms)
+✔ join 在途固定 client/endpoint：A 被取消后迟到 room 只释放 A，不会污染 B (2.286ms)
+✔ join 黑洞：timeout/cancel 立即结束 ownership，迟到 room 在后台释放 (14.434167ms)
+✔ 非法 join control 在分配大厅 slot 前失败，不遗留 owner (0.365125ms)
+✔ hostile AbortSignal：读取 aborted 在分配大厅 slot 前失败 (0.128208ms)
+[WebSocketClient] SDK 离线重放队列不可控，主动断开大厅连接
+[WebSocketClient] SDK 离线重放队列不可控，主动断开大厅连接
+[WebSocketClient] SDK 离线重放队列不可控，主动断开大厅连接
+[WebSocketClient] SDK 离线重放队列不可控，主动断开大厅连接
+[WebSocketClient] SDK 离线重放队列不可控，主动断开大厅连接
+✔ hostile AbortSignal：addEventListener 抛错时大厅 owner/slot 清理，迟到 room 释放 (1.703458ms)
+✔ hostile AbortSignal：removeEventListener 抛错不阻断大厅成功 leave (0.205542ms)
+✔ joinOrCreate 同步抛错：迟到大厅 owner 立即失败并释放失败槽 (0.148125ms)
+✔ 主动 leave 立即拒绝旧 slot 的 pending RPC (0.125416ms)
+✔ close→onDrop 间隙发出的写 RPC 不得进入 SDK 队列并在重连后重放 (0.226584ms)
+✔ 掉线/重连时若 SDK 重放队列不可控则主动断开大厅连接 (0.253625ms)
+✔ 装闸部分失败时仍必须同步清空已入队消息，重连不得 flush 旧 RPC (0.149917ms)
+✔ 清队列失败也不得吞掉设上限：三步中和必须各自独立 (0.1125ms)
+✔ 闸失效放弃连接：释放全部 owner 并只上报一次最终断线 (0.518917ms)
+✔ bind 前已存在的 SDK 出站队列必须被清空 (0.088458ms)
+[WebSocketClient] 丢弃非法 Lobby RPC request user.getUserId: WIRE_KEYS at payload
+[WebSocketClient] 丢弃非法 Lobby RPC response user.getUserId: WIRE_KEYS at response
+[WebSocketClient] 丢弃非法 Lobby RPC reply: RPC_REPLY_SHAPE at reply.err
+[WebSocketClient] 丢弃非法 Lobby RPC reply: RPC_REPLY_SHAPE at reply.err
+[WebSocketClient] 丢弃非法 Lobby push: WIRE_KEYS at push.data
+[RoomClient] 丢弃非法 S2C s2c.pong: WIRE_KEYS at payload
+[BallMoveRoomAdapter] 丢弃非法 Move
+[RoomClient] 丢弃非法 C2S c2s.castSkill: WIRE_INTEGER at payload.skillId
+[RoomClient] 丢弃非法 C2S c2s.chat: MESSAGE_TEXT at payload.text
+[RoomClient] 丢弃非法 ballMove GameRoom state: WIRE_INTEGER at state.tick
+[RoomClient] S2C s2c.pong callback exception
+[RoomClient] S2C s2c.pong callback rejection
+[RoomClient] state onAdd callback exception
+[RoomClient] state onRemove callback rejection
+[WebSocketClient] push 处理器 exception
+[WebSocketClient] push 处理器 rejection
+✔ WebSocketClient：RPC/push 在业务回调前做 envelope、route shape 校验 (5.961458ms)
+✔ RoomClient：idle slot 下与 mode 无关的公共 send API 被 C2S allowlist 拒绝 (3.365833ms)
+✔ RoomClient：C2S/S2C 发送与回调均经过 runtime validator (1.393416ms)
+✔ RoomClient：room.send 同步异常不穿透，reconcile 不误记已发送 seq (0.526042ms)
+✔ RoomClient state$：MapSchema-like entries 可校验，坏快照不触发 deferred callback (0.455458ms)
+✔ RoomClient：S2C callback 的同步异常与 Promise rejection 都被观察 (0.323ms)
+✔ RoomClient state$：注册方法/回调异常均不穿透，也不产生 unhandled rejection (0.364416ms)
+✔ WebSocketClient：push handler 的同步异常与 Promise rejection 都被观察 (0.23825ms)
+ℹ tests 513
+ℹ suites 0
+ℹ pass 513
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6436.656084
+
+> @game/server@0.1.0 test
+> node --import tsx --test --test-concurrency=4 test/*.test.ts
+
+✔ Redis INFO MEMORY 严格解析并按阈值判定 (1.0425ms)
+✔ Redis INFO MEMORY 缺失、重复或畸形时 fail-closed (0.336541ms)
+✔ snapshot 使用 UTF-8 字节数，容量投影正确处理新增与替换 (0.171334ms)
+✔ ledger 连续 admission 与 replacement 都走 O(1) 增量，不触发全区聚合 (0.155291ms)
+✔ ledger 拒绝时精确刷新，可识别外部删除释放的容量 (0.125ms)
+✔ writeArchiveUsage affectedRows=0 仅在锁内回读值完全匹配时视为成功 (0.282958ms)
+✔ 快照校验：无 kits（pre-K0）合法；kits 为 <kitId>:<name> → string 记录合法（含空对象） (1.3635ms)
+✔ 快照校验：kits 畸形一律 fail-closed（数组 / 非记录值 / 非字符串字段 / 键名段数或字符非法） (0.402667ms)
+✔ 懒迁移保留 kits 成员（不可变替换 user，其余原样） (0.524042ms)
+✔ kitUserKeyEntries：目录序（kit id 序 × userKeys 声明序），per-zone 键，名单 <kitId>:<name> (0.277208ms)
+✔ freezeKeys：固定头 7 + bag 位置不变，kit 键追加在 bag 之后 (0.195291ms)
+✔ thawKeys：快照 ∪ 目录取并集按名排序；名单与 KEYS 的 kit 段一一对应；已卸载 kit 的哈希仍进 KEYS (0.245208ms)
+✔ freezeKitFieldCounts：目录序逐键字段数，缺席 = 0；pre-K0 / 全缺席（undefined）全 0；空目录为空 (0.083291ms)
+✔ readKitUserHashes 读侧第二道闸：缺席不占位、HASH 全字段进快照、全缺席返回 undefined、非 HASH 具名拒冻 (0.381584ms)
+✔ Lua 模板：FREEZE_COMMIT / THAW_RESTORE 的 KEYS/ARGV 算术项与 TS 常量一致 (0.260958ms)
+✔ arena board：readBoard 补齐 ARENA_TILE_COUNT 格、tile 升序；空表也是整张无主棋盘 (1.678333ms)
+✔ arena board：越界守备值（INT UNSIGNED 无 CHECK）在数据出口钳到 ARENA_MAX_POWER，整张棋盘仍可读 (0.269625ms)
+✔ arena board：占无主格 → captured power=1、入队 kit:arena:trophy +1（effect 先于棋盘写）、写回执，提交后才 apply effect (0.178167ms)
+✔ arena board：自己的格再占 = 加固 +1（封顶 ARENA_MAX_POWER），不发奖杯 (0.158375ms)
+✔ arena board：敌格有守备 → taken 并让它 −1（提交）；守备归零后可夺取（改主 + 奖杯） (0.177458ms)
+✔ arena board：同 opId 重放走回执——三种结果都原样回读、棋盘零写入、effect 不再入队 / 不再 apply（taken 不再削守备） (0.300542ms)
+✔ arena board：outbox 已有同 opId intent 但无回执 → 账本不一致，抛出回滚（棋盘 / 回执零写入）；tile 越界即抛且零 SQL (0.286417ms)
+✔ arena board：同 opId 并发到达——第二个事务写回执撞主键即抛、整体回滚（数据层 fail-closed，不 apply） (0.156208ms)
+✔ arena board：boostTile 只对自己的格——不是自己的即抛 ArenaTileNotOwnedError 且零扣款；自己的格先 debit 再 +ARENA_BOOST_POWER（封顶） (0.825625ms)
+✔ arena board：boostTile 账本 DUP（同 opId 已扣过）→ 不再加守备、balance=null；扣款失败即整体不写 (0.214125ms)
+✔ arena ranking：topOwners 按格数 → 守备和 → uid 聚合，limit 截断，无主格不计 (0.230208ms)
+✔ arena opId：kit 命名空间化（kit:arena:<op>），与 deriveOpId 同一派生、不同 op / clientReqId 不撞 (1.425ms)
+✔ arena sql：每个迁移文件的每条语句都过 lintKitStatement，表名 ⊆ kit.json.sql.tables (5.087584ms)
+✔ arena sql：per-zone 表 server_id SMALLINT UNSIGNED NOT NULL 且进主键；未声明的表 / 越权语句被 lint 拒绝 (0.595791ms)
+✔ arena kit.json：effects 的 userKey ∈ userKeys、双端 catalog 收录 arena（表 / 区 / userKeys 与 kit.json 一致） (0.366333ms)
+✔ arenaCapture：createPlayer/onMatchInitialize/capture 计数，先到 captureGoal 者胜并 settle，结算后再 capture 无效 (2.630084ms)
+✔ arenaCapture：captureGoal 归一化（非法 → 缺省、超上限 → 缺省）；rollback 复位 (0.491625ms)
+✔ arenaCapture：对局中离开——剩最后一人即胜；等待期离开不判；空房 shouldSettle (0.666875ms)
+✔ arenaCapture：registerArenaCaptureGameMode 登记到给定 registry，create 过 roster 闸，注销后消失 (0.388167ms)
+✔ arenaDuel：roster max = manifest maxPlayers（2）；strike 计数，先让 hits ≥ hp 者胜并 settle，结算后输入无效 (1.948334ms)
+✔ arenaDuel：hp 归一化（非法 → 缺省 3、超上限 → 缺省）；rollback 复位 (0.157166ms)
+✔ arenaDuel：对局中对手离开即胜；等待期离开不判；空房 shouldSettle；registry.create 过 roster 闸 (0.411542ms)
+✔ arenaShop：成功路径——sId 来自 currentZoneId、fence 来自 withUser、opId = arenaOpId(boost)、cost = ARENA_SHOP_BOOST_COST (1.2055ms)
+✔ arenaShop：不是自己的格 → RpcFault ARENA_SHOP_TILE_NOT_OWNED（kit 错误在插件层翻译） (0.674708ms)
+✔ arenaShop：账本 DUP（balance=null）原样透传且过响应 validator；其他错误原样上抛 (0.543708ms)
+✔ arenaShop：服务端用例只 import kit 的 board 面与框架 uow / 区 / 错误，⛔ 不 import 经济模块或 kit 内部模块 (0.210709ms)
+✔ safeEqualHex：损坏的等长 hash fail-closed 且不得抛 RangeError (0.536208ms)
+✔ safeSecretEqual：长度不等 ⛔ 不得抛（timingSafeEqual 直接比会因不等长抛错 = 泄漏长度） (0.277625ms)
+✔ safeSecretEqual：相等为真、任一为空/缺失一律假（fail-closed） (0.169584ms)
+◇ injected env (1) from ../../.env.development // tip: ⌘ override existing { override: true }
+✅ .env.development loaded.
+✔ GameRoom auth：缺失标准 token时拒绝 (1.081208ms)
+✔ LobbyRoom auth：缺失标准 token时拒绝 (0.159833ms)
+✔ GameRoom auth：options.token 与标准 token 不一致时拒绝 (0.069292ms)
+✔ LobbyRoom auth：options.token 与标准 token 不一致时拒绝 (0.065666ms)
+✔ LobbyRoom auth：拒绝只属于 GameRoom 的 mode 撮合字段 (0.1315ms)
+✔ golden vectors：标量与空容器 (0.527292ms)
+✔ golden vectors：对象键按 UTF-16 码元序稳定排序，键序变化不影响输出 (0.715042ms)
+✔ golden vectors：Unicode key（含代理对）按码元序，⛔ 不是码点/locale 序 (0.071166ms)
+✔ golden vectors：数组保序、嵌套对象逐层排序 (0.059375ms)
+✔ golden vectors：可选字段——缺席与存在是不同字节串 (0.067625ms)
+✔ 拒绝面：undefined / 函数 / symbol / bigint / 非有限数 / 非 plain 对象 / 循环引用一律 throw (1.8045ms)
+✔ idemPayloadHash：从副本排除 clientReqId、不改原对象；route 进 preimage (1.065541ms)
+✔ character ready timeout validates the timer domain before starting a flight (0.652459ms)
+✔ character ready shutdown gate rejects late joins and can be explicitly reset (0.17675ms)
+✔ character ready keeps the underlying flight after one caller times out (3.125541ms)
+✔ character initializer：MySQL/Redis/WebPlatform 任一慢阶段超时都拒绝 ready，且按顺序短路 (6.845834ms)
+✔ character initializer：已有热档按登记 marker/hasCharacter 短路 WebPlatform PUT，pending 才修复 (0.553333ms)
+✔ character initializer：ready marker 按区隔离，s1 的 ready 不得短路 s2 首次登记 (0.630667ms)
+✔ character initializer：过期 ready marker 重新探测外部登记并可自愈 (0.198417ms)
+✔ character initializer：未来/坏时间戳与恰好到期都不得走 ready 快路径 (0.193666ms)
+[character] WebPlatform 不可用，ready marker 走有界宽限放行 uid=in-grace sId=1 staleMs=1000 graceMs=5000（已留 durable repair intent）
+[character] WebPlatform 不可用，ready marker 走有界宽限放行 uid=grace-control sId=1 staleMs=1000 graceMs=5000（已留 durable repair intent）
+✔ character ready observes a late underlying rejection and reuses it across reset (1.00175ms)
+✔ character ready drain waits for admitted work before dependencies close (1.00825ms)
+✔ character initializer：WebPlatform 不可用时的有界宽限 (0.502958ms)
+✔ character initializer：宽限「不覆盖」形状反例——新号/pending/legacy/配置事故一律照拒 (0.386125ms)
+✔ battleSim 任务 roundtrip（shared 公式在 worker 线程内可用） (134.679709ms)
+✔ 并发任务分派（多于池大小的任务全部完成且互不串结果） (41.029875ms)
+✔ 未知任务名：错误传播为 reject（不炸 worker 池） (4.945542ms)
+✔ battleSim 输入校验：拒绝非对象、未知字段和非有限/越界数字 (0.496583ms)
+✔ battleSim 输入校验：保留边界合法值并复制成干净输入 (0.468ms)
+✔ battleSim worker：非法输入受控 reject，后续合法任务仍完成 (1.172083ms)
+✔ compute admission：运行中 + 排队任务达到总容量时稳定返回 overload (180.0555ms)
+✔ PROJECT_ID 非法值：config 加载期即 throw（服务端拒绝启动） (600.985959ms)
+✔ PROJECT_ID 合法值与缺省值：正常加载 (425.23625ms)
+✔ PORT 非法值：config 加载期即 throw（parseInt 截断类值必须拒绝，防双端脑裂） (549.248625ms)
+✔ PORT 合法值与缺省值：正常加载 (651.107084ms)
+✔ CHARACTER_READY_TIMEOUT_MS：环境配置必须是 1..120000 的安全整数 (784.799208ms)
+✔ CHARACTER_REGISTRATION_RECHECK_MS：环境配置必须是 1..2592000000 毫秒的安全整数（最长 30 天） (756.179834ms)
+✔ GROUP_ZONES 非法值：config 加载期即 throw（防区归属闸配错） (532.33825ms)
+✔ GROUP_ZONES 合法值与缺省值：正常加载 (577.397916ms)
+✔ WEBPLATFORM_INTERNAL_URL 只接受无凭据、无路径参数的 http(s) origin (612.3215ms)
+✔ WEBPLATFORM_SERVICE_ID 非法值加载期拒绝 (272.163583ms)
+✔ ARCHIVE_ZONES 必须是显式、无重复的合法区清单 (737.862917ms)
+✔ FREEZE_ENABLED=1 要求非空 ARCHIVE_ZONES，旧 unsafe 开关不能绕过 (281.507125ms)
+✔ FREEZE_ENABLED=0（或未设）允许空 worker 区清单 (202.395959ms)
+✔ archive 容量、水位与 sweep budget 配置严格拒绝零值和畸形值 (2023.177958ms)
+✔ PAY_ENABLED=1 + NODE_ENV=production：加载期即 throw（⛔ 支付链闭环前不许生产开启） (74.406291ms)
+✔ PAY_ENABLED=1 在非生产：正常加载（联调/灰度留口） (202.848667ms)
+✔ 幂等 pending 租约窗口必须覆盖 handler timeout (66.250584ms)
+✔ IDEM_RESULT_MAX_BYTES：0 与畸形值加载期拒绝，正整数放行 (542.871833ms)
+✔ IDEM_MAX_PENDING_PER_UID：0 与畸形值加载期拒绝，≥1 放行 (592.370625ms)
+✔ CHARACTER_REGISTRATION_GRACE_MS 不大于 RECHECK 时必须拒绝启动 (243.040958ms)
+✔ GRACE 严格大于 RECHECK、以及关闭宽限（0）都必须正常加载 (157.806541ms)
+✔ COMPUTE_RESPAWN_DELAY_MS 边界：非正整数与越界必须拒绝启动，1 与上限必须放行 (675.908375ms)
+✔ INVITE 配对不等式：renewIntervalMs ≤ leaseTtlMs/3 且 leaseTtlMs < waitingDeadlineMs（启动期断言） (393.645333ms)
+✔ retry fence 绝对上限：∈ [GAME_ROOM_START_LOCK_TIMEOUT_MS, INVITE_WAITING_DEADLINE_MS]（§6.3 启动期断言） (336.84875ms)
+✔ resolve 专用桶参数：容量 ≥1、回填速率 >0（0 会拒绝一切 resolve / 桶永不回填） (263.780125ms)
+✔ parseArgs：场景名是首个位置参数，选项带默认值，坏值 fail-fast (1.199292ms)
+✔ sceneUuidFromMeta：只认严格 JSON 里的 36 位 uuid (0.157916ms)
+✔ rewriteSceneQuery：只改 scene= 参数，其余 URL 原样 (0.125125ms)
+✔ 坐标换算：世界坐标原点在可见区左下、y 轴向上；设计坐标原点左上 (0.18675ms)
+✔ pageWalkSource：注入页面的脚本自包含（⛔ 不得引用模块作用域的常量/函数） (0.212625ms)
+✔ selectNodes / nearestByRow：按名字、文本、路径筛选；多枚同名按钮按锚点所在行消歧 (0.2655ms)
+✔ SLG 预览证据：只认地图视图的完整公开文本，网格没有 UITransform 也参与加载证据 (0.795125ms)
+✔ SLG 总览证据：区分实地图与绘卷，地标坐标只取公开锚点并反转北向 Y (0.642916ms)
+✔ SLG 材质证据：页面脚本自包含，只读公开共享材质和精灵，不创实例、不加载资源 (0.375042ms)
+✔ SLG 预览输入：从公开帮助/详情行定位地图内区域，缺失/倒置时拒绝猜坐标 (0.23ms)
+✔ SLG LOD 截图等待：网格集合变化/限流退避重置稳定计时，不以标题或固定睡眠冒充加载完毕 (0.132042ms)
+✔ AUTH_PROVIDER=dev + NODE_ENV=production：加载期即拒（铁律 12 生产闸） (80.100041ms)
+✔ AUTH_PROVIDER 非法值：加载期即拒 (335.854209ms)
+✔ AUTH_PROVIDER 合法值与缺省：非生产缺省 dev、生产缺省 webplatform (344.109875ms)
+✔ devUidOf：同一 devKey 稳定同账号、不同 key 不同账号、形状稳定 (0.238417ms)
+✔ dev-stack.sh：解析 ps 输出的调用必须钉死 LC_ALL=C（跨 locale 的归属校验） (1.388417ms)
+✔ dev-stack.sh：归属校验以 started_epoch 为主判据，旧 locale 格式的 .owner 只在其余身份项全过后自愈 (0.563459ms)
+✔ 三端相对导入禁指向目录（worker/Node22 ESM 与 Cocos SystemJS 不认） (33.86575ms)
+✔ 同 ID 同 payload：并发第二发 IN_PROGRESS；done 后缓存重放不重执行 (1.300125ms)
+✔ 同 ID 异 payload：pending 与 done 两态都稳定 OPERATION_CONFLICT（去 hash 比对即红） (0.222ms)
+✔ done-oversize 墓碑：重放 OPERATION_RESULT_EXPIRED，⛔ 不重跑 handler、不当作未执行 (0.193041ms)
+✔ per-uid pending 上限：超限 acquire 返回 BUSY；释放一个后恢复 (0.194041ms)
+✔ version-mismatch fail-closed：pending 态 IN_PROGRESS、done 态 OPERATION_RESULT_EXPIRED，都不重放不重跑 (0.1535ms)
+✔ corrupt/未知版本记录：INTERNAL，⛔ 不当作未执行、不重跑、不删记录 (0.096875ms)
+✔ 旧 lease 不能覆盖新 lease 的完成结果，也不能删除后来者的 pending (0.095791ms)
+✔ complete 返回 lost：结果仍回给本次调用方、不 release、打 [idem-orphan-lease] 指标 (0.108166ms)
+✔ idem 只缓存契约合法响应；malformed 尝试释放自己的占位后可重试 (0.269833ms)
+✔ done 缓存重校验失败：INTERNAL、不重跑 handler、记录保留（刻意 fail-closed） (0.22275ms)
+✔ 入站 wire 错误仍是 INVALID_PAYLOAD；handler 内 wire 异常包装为 INTERNAL (0.11825ms)
+✔ RpcFault：构造期白名单校验；两读取点语义（dispatcher.rpcErrorCode） (0.082542ms)
+✔ RpcFault 敌意/伪造对象：一律 INTERNAL，⛔ 不信任裸 .rpcCode (0.093708ms)
+✔ inspect：unknown / pending / done（重过 response validator）三分支 (0.184458ms)
+✔ inspect：done-oversize → result-expired（变异守卫：归 unknown 即红） (0.056625ms)
+✔ inspect：版本不匹配 fail-closed（pending→pending、done→result-expired） (0.06025ms)
+✔ inspect：腐坏记录/非法缓存体 throw INTERNAL，⛔ 不伪装 unknown (0.131167ms)
+✔ inspect 授权：目标路由不在声明组 / 不可查 / clientReqId 非法 一律拒绝 (0.134375ms)
+✔ inspect 领域适配顺序演示：收据 → generic done → pending → 复读收据 → unknown（双 miss 关闭） (0.120458ms)
+✔ dispatcher handler deadline unrefs its timer and clears it on success (0.1245ms)
+✔ dispatcher handler deadline rejects on timeout and still clears its timer (0.355417ms)
+◇ injected env (1) from ../../.env.development // tip: ⌘ suppress logs { quiet: true }
+✅ .env.development loaded.
+[GameRoom dropin-room] 创建 sId=0
+[GameRoom dropin-room] 锦鲤词王(first) 加入，当前 1 人
+[GameRoom dropin-room] 创建 sId=0
+[GameRoom dropin-room] 锦鲤词王(first) 加入，当前 2 人
+[GameRoom dropin-room] 无敌拼音怪(second) 加入，当前 2 人
+[GameRoom dropin-room] 创建 sId=0
+[GameRoom dropin-room] 锦鲤词王(p1) 加入，当前 1 人
+[GameRoom dropin-room] 无敌拼音怪(p2) 加入，当前 2 人
+[GameRoom dropin-room] 锦鲤部首君(p3) 加入，当前 3 人
+[GameRoom dropin-room] 神秘笔画侠(p4) 加入，当前 4 人
+[GameRoom dropin-room] 快乐笔画侠(p5) 加入，当前 5 人
+[GameRoom dropin-room] 神秘小汉字(p6) 加入，当前 6 人
+[GameRoom dropin-room] 锦鲤拼音怪(p7) 加入，当前 7 人
+[GameRoom dropin-room] 低调部首君(p8) 加入，当前 8 人
+[GameRoom dropin-room] 创建 sId=0
+[GameRoom dropin-room] 锦鲤词王(p1) 加入，当前 1 人
+[GameRoom dropin-room] 无敌拼音怪(p2) 加入，当前 2 人
+[GameRoom dropin-room] 锦鲤部首君(p3) 加入，当前 3 人
+[GameRoom dropin-room] 神秘笔画侠(p4) 加入，当前 4 人
+[GameRoom dropin-room] 快乐笔画侠(p5) 加入，当前 5 人
+[GameRoom dropin-room] 神秘小汉字(p6) 加入，当前 6 人
+[GameRoom dropin-room] 锦鲤拼音怪(p7) 加入，当前 7 人
+[GameRoom dropin-room] 低调部首君(p8) 加入，当前 8 人
+[GameRoom dropin-room] p8 断线后重连成功
+[GameRoom dropin-room] 创建 sId=0
+[GameRoom dropin-room] 锦鲤词王(p1) 加入，当前 1 人
+[GameRoom dropin-room] 无敌拼音怪(p2) 加入，当前 2 人
+[GameRoom dropin-room] p2 离开（主动），剩余 1 人
+[GameRoom undefined] 创建 sId=0
+[GameRoom undefined] 闪电拼音怪(a) 加入，当前 1 人
+[GameRoom undefined] 无敌部首君(b) 加入，当前 2 人
+[GameRoom undefined] 暴走拼音怪(a) 加入，当前 1 人
+[GameRoom undefined] 闪电小汉字(b) 加入，当前 2 人
+[GameRoom dropin-room] 创建 sId=0
+[GameRoom dropin-room] 锦鲤词王(first) 加入，当前 1 人
+✔ drop-in：profile 注册表解析 dropIn = drop-in startPolicy + matchmaking access (0.835375ms)
+✔ drop-in：首人入座即 Playing，开局事务 ⛔ 不调用 room.lock (2.09525ms)
+✔ drop-in：starting 窗口内第二人入座不破坏开局，两人都在局 (0.447375ms)
+✔ drop-in：Playing 中第 2..8 人入座走同一 createModePlayer 流，第 9 人 RoomFull (0.785041ms)
+✔ drop-in：宽限内断线成员保留座位并计入容量，第 9 人仍被拒 (0.624125ms)
+✔ drop-in：Settle 后 join 被 GameAlreadyStarted 拒绝 (0.497875ms)
+✔ 回归钉：auto 房 Playing 中 join 仍被 GameAlreadyStarted 拒绝 (1.942333ms)
+✔ 回归钉：owner-ready 房 Playing 中 join 仍被 GameAlreadyStarted 拒绝 (0.370209ms)
+✔ drop-in：与 invite-code AccessPolicy 的组合在注册期被拒（未设计的组合） (0.208583ms)
+✔ drop-in：声明 evidence capability 的 mode 在构造期被拒（动态 roster 与冻结 initialRoster 矛盾） (0.162875ms)
+✔ drop-in：roster.min/autoStart ≠ 1 的 mode 配 dropIn profile 注册期被拒 (0.121542ms)
+✔ drop-in：C2S Ready/Start 回 BadRequest（waitingDeadline/邀请码同样不接线） (0.393167ms)
+✔ ⛔ 除 core/errors.ts 外禁止 `new ServerError(` —— 拒连一律走 joinRefused（防业务码当 HTTP status） (6.188042ms)
+✔ joinRefused：status 恒落 200–599 + 业务码可从 message 还原 (0.289459ms)
+✔ fault-matrix 子进程收到显式组与故障点配置 (0.404167ms)
+✔ 风险加权 wire/effect 变异：每个单点变异均 fail-closed (0.765208ms)
+✔ 故障注入：compute structured-clone 失败后健康 worker 仍可复用 (111.29325ms)
+✔ 故障注入：真实 worker error/exit 会 reap 并退避补位 (6071.604959ms)
+✔ 故障注入：任务异常是受控 reject，后续任务继续完成 (2.51425ms)
+✔ 故障收尾：destroyPool 可等待并允许下一轮重建 (96.1065ms)
+✔ 故障注入：character ready deferred 超时不释放底层 flight (2.876209ms)
+✔ 故障注入：lifecycle 启动半失败仍释放其余资源 (1.114917ms)
+✔ ⛔ 禁悬空 Promise：未被 await/void/catch 收口的 Promise 语句（Node22 下 reject 即杀进程） (2438.968334ms)
+✔ 机检自身有效：判据能认出裸调用、且 ⛔ 不误伤已收口的四种写法 (235.606208ms)
+[freeze] Redis INFO MEMORY 失败 uid=candidate sId=3 Error: Redis INFO MEMORY used_memory 非法：「bad」
+    at safeStoredBytes (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/core/archive/capacity.ts:20:11)
+    at parseRedisMemoryInfo (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/core/archive/capacity.ts:39:19)
+    at memoryPressureAllowsFreeze (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/core/archive/capacity.ts:60:17)
+    at runSweepOnce (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/core/archive/freezeWorker.ts:595:30)
+    at async TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/freeze-janitor.test.ts:316:19)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+[freeze] Redis INFO MEMORY 失败 uid=candidate sId=3 Error: redis unavailable
+    at Object.cases (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/freeze-janitor.test.ts:311:25)
+    at <anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/core/archive/freezeWorker.ts:594:60)
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:66:14)
+    at runSweepOnce (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/core/archive/freezeWorker.ts:594:36)
+    at async TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/freeze-janitor.test.ts:316:19)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+✔ janitor batch is a finite positive total-scan budget (1.496084ms)
+✔ janitor frozen_at accepts driver dates and rejects malformed cursor values (1.549333ms)
+✔ janitor cursor continues across calls and resets after an empty page (0.985791ms)
+✔ janitor 每区独立游标：同时间同 uid 的两个配置区都不会被跳过 (0.299125ms)
+✔ janitor 只查询配置区，满区轮转且空区 probe 计入总预算 (0.3055ms)
+✔ freeze sweep 的 budget 是跨全部区/桶总预算，满桶后下轮前进到下一槽 (0.681958ms)
+✔ freeze sweep 全空多区时 slot probe 也消耗预算，下一轮从后继槽继续 (0.133208ms)
+✔ freeze bucket 内永久 skip 不饥饿后继候选，budget=1 有界轮转 (0.166542ms)
+✔ freeze sweep 在 rate=0/空扫描前也必须先消费 singleton lease (0.202ms)
+✔ whale 分页扫描钉住初始 ver：旧业务页 + writer + 新 ver 页确定判 changed (0.239583ms)
+✔ janitor 每行 visit 前守卫 lease，失租不推进游标也不触发 ARCHIVE_NEWER 修复 (0.212542ms)
+✔ freeze sweep 对 maxmemory=0、畸形 INFO 和 INFO 异常均 fail-closed (2.470583ms)
+✔ janitor short page resets the cursor, and a failed row is retried without advancing it (0.196ms)
+◇ injected env (1) from ../../.env.development // tip: ◈ encrypted .env [www.dotenvx.com]
+✅ .env.development loaded.
+[GameRoom undefined] 创建 sId=0
+[GameRoom undefined] 创建 sId=0
+[GameRoom undefined] 暴走拼音怪(a) 加入，当前 1 人
+[GameRoom undefined] 低调小汉字(b) 加入，当前 2 人
+[GameRoom undefined] b 离开（主动），剩余 1 人
+[GameRoom undefined] 销毁
+✔ GameModeRegistry：第二个 mode 可独立登记、创建和撤销 (1.674959ms)
+✔ GameModeRegistry：同 factory replace 后旧 disposer 不删除新 registration (0.137041ms)
+✔ GameModeRegistry：漏配 player factory 时 fail-closed (0.072708ms)
+✔ 生产 mode catalog 与 shared/state 生成映射保持精确同集 (1.228583ms)
+✔ GameRoom：onCreate 从生产 registry 选择 idle，未知 mode 和直连错 mode 均拒绝 (2.545084ms)
+✔ GameRoom：legacy protocol preflight 先于 v5 mode 必填校验 (0.354208ms)
+✔ idle mode：保留 GameRoom Ping/Pong transport capability (0.523208ms)
+✔ GameRoom：transport/admission/tick/finish 均通过可替换 mode 接缝 (2.628125ms)
+[GameRoom undefined] 暴走拼音怪(pre-a) 加入，当前 1 人
+[GameRoom undefined] mode ballMove before-admission hook failed Error: preheat exploded
+    at Object.onBeforeAdmission (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:344:64)
+    at GameRoom.onJoin (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1530:28)
+    at join (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:71:16)
+    at TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:351:9)
+    at Test.runInAsyncScope (node:async_hooks:226:14)
+    at Test.run (node:internal/test_runner/test:1382:25)
+    at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+    at Test.postRun (node:internal/test_runner/test:1522:19)
+    at Test.run (node:internal/test_runner/test:1447:12)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+[GameRoom] 开局失败，回滚到 Waiting roomId=undefined Error: injected lock failure
+    at GameRoom.room.lock (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:369:15)
+    at GameRoom.lockWithDeadline (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1963:48)
+    at GameRoom.performStartMatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1819:37)
+    at GameRoom.startMatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1793:30)
+    at GameRoom.onJoin (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1629:44)
+    at join (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:71:16)
+    at TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:374:26)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+[GameRoom undefined] 快乐小汉字(rollback-a) 加入，当前 1 人
+[GameRoom undefined] rollback-b 离开（主动），剩余 1 人
+[GameRoom undefined] 销毁
+[GameRoom undefined] 无敌词王(async-a) 加入，当前 1 人
+[GameRoom undefined] mode ballMove rollback hook failed Error: injected async rollback failure
+    at Object.onMatchRollback (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:408:27)
+    at async GameRoom.rollbackMatchState (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:2066:13)
+    at async GameRoom.performStartMatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1839:54)
+    at async GameRoom.startMatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1796:20)
+    at async GameRoom.onJoin (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1629:33)
+    at async join (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:71:5)
+    at async waitForActual (node:assert:615:5)
+    at async strict.rejects (node:assert:738:25)
+    at async TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:424:9)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+[GameRoom undefined] mode ballMove leave hook failed Error: injected async leave failure
+    at Object.onLeave (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:413:27)
+    at async GameRoom.releaseModeAdmission (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1297:13)
+    at async GameRoom.onJoin (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1633:17)
+    at async join (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:71:5)
+    at async waitForActual (node:assert:615:5)
+    at async strict.rejects (node:assert:738:25)
+    at async TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:424:9)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+[GameRoom] 开局失败，回滚到 Waiting roomId=undefined Error: injected async start failure
+    at Object.onMatchStart (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:403:27)
+    at async GameRoom.performStartMatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1827:13)
+    at async GameRoom.startMatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1796:20)
+    at async GameRoom.onJoin (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1629:33)
+    at async join (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:71:5)
+    at async waitForActual (node:assert:615:5)
+    at async strict.rejects (node:assert:738:25)
+    at async TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:424:9)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+[GameRoom undefined] mode ballMove dispose hook failed Error: injected async dispose failure
+    at Object.onDispose (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:418:27)
+    at async <anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1760:38)
+[GameRoom undefined] 销毁
+✔ GameRoom：onBeforeAdmission 被 await，且排在 onAdmission 与 createPlayer 之前 (5.487125ms)
+✔ GameRoom：onBeforeAdmission 抛错 = 拒绝入房（fail-closed），且不进入 onAdmission (4.024875ms)
+✔ GameRoom：开局失败会归还本次 mode admission 且迟到 leave 不重复释放 (1.075875ms)
+[GameRoom undefined] 暴走词王(initialize-leave-a) 加入，当前 1 人
+[GameRoom undefined] initialize-leave-a 离开（主动），剩余 1 人
+[GameRoom] 开局失败，回滚到 Waiting roomId=undefined Error: match participants or phase changed during initialization
+    at GameRoom.assertMatchStartBoundary (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1934:19)
+    at GameRoom.performStartMatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1824:18)
+    at async GameRoom.startMatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1796:20)
+    at async GameRoom.onJoin (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1629:33)
+    at async join (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:71:5)
+    at async waitForActual (node:assert:615:5)
+    at async strict.rejects (node:assert:738:25)
+    at async exerciseLeave (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:472:9)
+    at async TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:480:5)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+[GameRoom undefined] 销毁
+[GameRoom undefined] 闪电成语精(start-leave-a) 加入，当前 1 人
+[GameRoom undefined] start-leave-a 离开（主动），剩余 1 人
+[GameRoom] 开局失败，回滚到 Waiting roomId=undefined Error: match participants or phase changed during mode start
+    at GameRoom.assertMatchStartBoundary (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1934:19)
+    at GameRoom.performStartMatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1828:18)
+    at async GameRoom.startMatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1796:20)
+    at async GameRoom.onJoin (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1629:33)
+    at async join (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:71:5)
+    at async waitForActual (node:assert:615:5)
+    at async strict.rejects (node:assert:738:25)
+    at async exerciseLeave (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:472:9)
+    at async TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:481:5)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+[GameRoom undefined] 销毁
+[GameRoom undefined] 低调成语精(dispose-start-a) 加入，当前 1 人
+[GameRoom undefined] 销毁
+[GameRoom] 开局失败，回滚到 Waiting roomId=undefined Error: room disposed during match initialization
+    at GameRoom.assertMatchStartBoundary (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1917:19)
+    at GameRoom.performStartMatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1824:18)
+[GameRoom undefined] 销毁
+[GameRoom undefined] 销毁
+[GameRoom undefined] 销毁
+[GameRoom] lock 回滚失败，关闭房间 roomId=undefined Error: injected unlock failure
+    at GameRoom.room.unlock (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:607:15)
+    at GameRoom.performStartMatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1850:32)
+    at async GameRoom.startMatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1796:20)
+    at async waitForActual (node:assert:615:5)
+    at async strict.rejects (node:assert:738:25)
+    at async TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:624:5)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+[GameRoom undefined] 销毁
+[GameRoom undefined] mode idle command hook failed Error: async command
+    at c2s.idle.pulse (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:638:64)
+    at GameRoom.dispatchGameMessage (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:750:28)
+    at Object._ (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:696:18)
+    at dispatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:76:86)
+    at TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:650:9)
+    at Test.runInAsyncScope (node:async_hooks:226:14)
+    at Test.run (node:internal/test_runner/test:1382:25)
+    at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+    at Test.postRun (node:internal/test_runner/test:1522:19)
+    at Test.run (node:internal/test_runner/test:1447:12)
+[GameRoom undefined] mode idle step hook failed Error: async step
+    at Object.onStep (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:639:43)
+    at GameRoom.stepFixed (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:2089:33)
+    at TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:651:56)
+    at Test.runInAsyncScope (node:async_hooks:226:14)
+    at Test.run (node:internal/test_runner/test:1382:25)
+    at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+    at Test.postRun (node:internal/test_runner/test:1522:19)
+    at Test.run (node:internal/test_runner/test:1447:12)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+[GameRoom undefined] mode idle finish hook failed Error: async finish
+    at Object.onFinish (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:640:45)
+    at GameRoom.settle (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:2194:33)
+    at TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-mode.test.ts:652:53)
+    at Test.runInAsyncScope (node:async_hooks:226:14)
+    at Test.run (node:internal/test_runner/test:1382:25)
+    at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+    at Test.postRun (node:internal/test_runner/test:1522:19)
+    at Test.run (node:internal/test_runner/test:1447:12)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+✔ GameRoom：可等待 mode hook 失败被观察，dispose 合流并继续公共清理 (3.292334ms)
+✔ GameRoom：每个可等待开局 hook 后重验 roster/generation，不发布单人或已销毁对局 (1.815167ms)
+✔ GameRoom：dispose 等待进行中的 initialize/start/rollback hook 后再做最终清理 (1.059917ms)
+✔ GameRoom：开局致命 disconnect 不与等待中的 dispose 自锁 (1.083666ms)
+[GameRoom undefined] 销毁
+[GameRoom undefined] 锦鲤拼音怪(idle-evidence-a) 加入，当前 1 人
+[GameRoom undefined] 神秘词王(idle-evidence-b) 加入，当前 2 人
+[GameRoom undefined] idle-evidence-b 离开（主动），剩余 1 人
+[GameRoom undefined] 销毁
+[GameRoom undefined] 销毁
+[GameRoom undefined] 创建 sId=0
+[GameRoom undefined] 暴走拼音怪(a) 加入，当前 1 人
+[GameRoom undefined] 低调小汉字(b) 加入，当前 2 人
+[GameRoom undefined] 暴走词王(c) 加入，当前 3 人
+[GameRoom undefined] 销毁
+[GameRoom undefined] 创建 sId=0
+[GameRoom undefined] 暴走拼音怪(a) 加入，当前 1 人
+[GameRoom undefined] 低调小汉字(b) 加入，当前 2 人
+[GameRoom undefined] 暴走词王(c) 加入，当前 3 人
+[GameRoom undefined] 销毁
+[GameRoom undefined] 创建 sId=0
+[GameRoom undefined] 销毁
+[GameRoom undefined] 创建 sId=0
+[GameRoom undefined] 创建 sId=0
+✔ GameRoom：同步热路径返回 thenable 时显式观察 rejection 并 fail-closed (2.864708ms)
+✔ idle mode：generic settle 不写 ballMove casual evidence (0.450917ms)
+✔ GameRoom：未结算直接销毁仍只调用一次 mode dispose (0.10075ms)
+✔ GameModeRegistry：非法 roster 必须在建实例时抛（非 register 时），⛔ 不留到运行期兜底 (0.245292ms)
+✔ 注入式 mode 也必须过同一道 roster 闸——⛔ 注入路径不得成为绕过闸的后门 (0.073167ms)
+✔ shell 的人数闸按 mode.roster 分发：满员/自动开局都随声明变化 (0.432958ms)
+✔ shell 的开局下限按 mode.roster.min：低于它 startMatch 不开局 (0.736084ms)
+✔ 声明 ballMove v1 证据的 mode，其 roster 必须与冻结的 2 人 initialRoster 自洽 (0.678292ms)
+✔ 满员闸的上限来自 mode.roster.max——这是防御性闸，用预置座位直接抵达 (0.833292ms)
+✔ 开局边界重验的人数下限同样来自 mode.roster.min (0.36225ms)
+✔ GameModeRegistry：非法 commands 必须在建实例时抛（非 register 时） (0.233ms)
+✔ 注入式 mode 的 commands 也必须过同一道闸 (0.075292ms)
+✔ shell 不再认识具体玩法输入：IdlePulse 只对 owner mode 开放 (0.508584ms)
+✔ wire catalog 穷尽矩阵：owner 独占 + token phases 决定玩法输入准入 (1.914417ms)
+✔ shell 公共消息的 phase 规则仍归 shell：Ping W/P/S 全放行，Chat 只在 W/P (0.764792ms)
+✔ 未登记 mode fail-fast：requireMode 不再回退 ballMove (0.355708ms)
+✔ 阶段 1 退出条件：apps/server 源码与测试不再出现 ballMove 默认规则旗标 (21.086042ms)
+✔ fail-closed 闸的真实时机：register 放行，create 才抛 (0.171459ms)
+◇ injected env (1) from ../../.env.development // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+✅ .env.development loaded.
+✔ GameRoom 只注册 catch-all，且 messages 是每实例对象 (2.020584ms)
+✔ 未知/非法 type 也计费：拼错消息名不能白嫖预算，且必回 1 条 BadRequest (1.912833ms)
+✔ 非普通对象 payload 拒收：二进制帧 fallback 的 Uint8Array/Buffer 原样交入也必须被拒 (0.480708ms)
+✔ rateCost 机制：>1 的消息在 exact validate 后追加消耗基础预算，超限即拒 (0.495041ms)
+✔ owner 闸：他玩法消息即使 validate/phase/commands 全过也必须被拒（唯一拒绝点） (0.137917ms)
+◇ injected env (1) from ../../.env.development // tip: ◈ encrypted .env [www.dotenvx.com]
+✅ .env.development loaded.
+✔ GameRoom C2S boundary is sourced from the generated wire catalog (11.062125ms)
+✔ real Colyseus GameRoomState and PlayerState instances satisfy the shared state contract (1.095958ms)
+◇ injected env (1) from ../../.env.development // tip: ⌘ enable debugging { debug: true }
+✅ .env.development loaded.
+[GameRoom undefined] 咸鱼小汉字(a) 加入，当前 1 人
+[GameRoom undefined] 暴走小汉字(b) 加入，当前 2 人
+[GameRoom undefined] 低调词王(a) 加入，当前 1 人
+[GameRoom undefined] 暴走笔画侠(b) 加入，当前 2 人
+[GameRoom undefined] 快乐拼音怪(a) 加入，当前 1 人
+[GameRoom undefined] 快乐笔画侠(b) 加入，当前 2 人
+[GameRoom undefined] 快乐部首君(a) 加入，当前 1 人
+[GameRoom undefined] 无敌小汉字(b) 加入，当前 2 人
+[GameRoom undefined] 神秘小汉字(a) 加入，当前 1 人
+[GameRoom undefined] 神秘小汉字(b) 加入，当前 2 人
+[GameRoom undefined] 收局 matchId=m_mtud48bhf1cf9dd581cdcbff：#1 神秘小汉字，#2 神秘小汉字
+[GameRoom undefined] b 离开（主动），剩余 1 人
+[GameRoom undefined] 快乐笔画侠(a) 加入，当前 1 人
+[GameRoom undefined] 快乐拼音怪(b) 加入，当前 2 人
+[GameRoom undefined] 无敌小汉字(a) 加入，当前 1 人
+[GameRoom undefined] 闪电词王(b) 加入，当前 2 人
+[GameRoom undefined] 收局 matchId=m_winning_cast：#1 无敌小汉字，#2 闪电词王
+[GameRoom undefined] 锦鲤拼音怪(a) 加入，当前 1 人
+[GameRoom undefined] 神秘笔画侠(b) 加入，当前 2 人
+[GameRoom undefined] 收局 matchId=m_ordered_leave：#1 锦鲤拼音怪，#2 神秘笔画侠
+[GameRoom undefined] b 离开（主动），剩余 1 人
+[GameRoom undefined] 暴走拼音怪(a) 加入，当前 1 人
+[GameRoom undefined] 锦鲤词王(b) 加入，当前 2 人
+[GameRoom undefined] 收局 matchId=m_diagonal_replay：#1 暴走拼音怪，#2 锦鲤词王
+[GameRoom undefined] b 离开（主动），剩余 1 人
+[GameRoom undefined] 神秘拼音怪(a) 加入，当前 1 人
+[GameRoom undefined] 低调词王(b) 加入，当前 2 人
+[GameRoom undefined] 收局 matchId=m_finish_snapshot：#1 神秘拼音怪，#2 低调词王
+[GameRoom undefined] b 离开（主动），剩余 1 人
+[GameRoom undefined] 锦鲤成语精(a) 加入，当前 1 人
+[GameRoom undefined] 咸鱼词王(b) 加入，当前 2 人
+[GameRoom undefined] 收局 matchId=m_slow_leave：#1 锦鲤成语精，#2 咸鱼词王
+[GameRoom undefined] b 离开（主动），剩余 1 人
+[GameRoom undefined] 无敌词王(a) 加入，当前 1 人
+[GameRoom undefined] 咸鱼小汉字(a) 加入，当前 1 人
+[GameRoom undefined] 暴走部首君(b) 加入，当前 2 人
+[GameRoom undefined] 咸鱼词王(a) 加入，当前 1 人
+[GameRoom] 开局失败，回滚到 Waiting roomId=undefined Error: driver unavailable
+    at GameRoom.lock (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-room.test.ts:563:45)
+    at GameRoom.lockWithDeadline (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1963:48)
+    at GameRoom.performStartMatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1819:37)
+    at GameRoom.startMatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1793:30)
+    at GameRoom.onJoin (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1629:44)
+    at join (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-room.test.ts:84:16)
+    at TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-room.test.ts:565:26)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+[GameRoom undefined] 锦鲤词王(a) 加入，当前 1 人
+[GameRoom undefined] 锦鲤部首君(b) 加入，当前 2 人
+[GameRoom undefined] 低调部首君(a) 加入，当前 1 人
+[GameRoom undefined] a 离开（主动），剩余 1 人
+[GameRoom] 开局失败，回滚到 Waiting roomId=undefined Error: match participants or phase changed during locking
+    at GameRoom.assertMatchStartBoundary (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1934:19)
+    at GameRoom.performStartMatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1822:18)
+    at async GameRoom.startMatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1796:20)
+    at async GameRoom.onJoin (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1629:33)
+    at async join (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-room.test.ts:84:5)
+    at async waitForActual (node:assert:615:5)
+    at async strict.rejects (node:assert:738:25)
+    at async TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-room.test.ts:610:5)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+[GameRoom undefined] 无敌拼音怪(first) 加入，当前 1 人
+[GameRoom undefined] first 离开（主动），剩余 0 人
+[GameRoom undefined] 快乐笔画侠(second) 加入，当前 1 人
+[GameRoom undefined] 快乐小汉字(a) 加入，当前 1 人
+[GameRoom undefined] 锦鲤成语精(b) 加入，当前 2 人
+[GameRoom undefined] 快乐小汉字(a) 加入，当前 1 人
+[GameRoom undefined] 锦鲤成语精(b) 加入，当前 2 人
+[GameRoom undefined] 神秘词王(a) 加入，当前 1 人
+[GameRoom undefined] 低调笔画侠(b) 加入，当前 2 人
+[GameRoom undefined] 神秘词王(observer) 加入，当前 1 人
+[GameRoom undefined] observer 离开（主动），剩余 0 人
+[GameRoom undefined] 低调笔画侠(a) 加入，当前 1 人
+[GameRoom undefined] 闪电词王(b) 加入，当前 2 人
+[GameRoom undefined] 低调笔画侠(a) 加入，当前 1 人
+[GameRoom undefined] 神秘部首君(b) 加入，当前 2 人
+[GameRoom undefined] 锦鲤成语精(a) 加入，当前 1 人
+[GameRoom undefined] 低调词王(b) 加入，当前 2 人
+[GameRoom undefined] 低调拼音怪(a) 加入，当前 1 人
+[GameRoom undefined] 销毁
+[GameRoom] 开局失败，回滚到 Waiting roomId=undefined Error: room disposed during match start
+    at GameRoom.onDispose (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1729:33)
+    at TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-room.test.ts:804:16)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+[GameRoom undefined] 快乐成语精(a) 加入，当前 1 人
+✔ GameRoom auth 只信标准 token，options.token 只能逐字匹配 (1.054166ms)
+✔ GameRoom S2C 出站 payload 先经 shared runtime validator，再交给 transport (1.326458ms)
+✔ GameRoom C2S exact runtime schema rejects NaN/range/length/unknown keys (1.668458ms)
+✔ GameRoom C2S rejects non-plain and symbol-keyed direct handler payloads (0.558666ms)
+✔ rejected skills do not enter the accepted input sequence (1.869125ms)
+✔ accepted input evidence has a bounded capacity and rejects later side effects (1.109667ms)
+✔ cast 达到 accepted input 上限时在冷却与伤害之前 fail-closed (0.528958ms)
+✔ winning cast is appended before settlement emits replayable v3 evidence (2.668459ms)
+✔ Playing leave is appended before death/removal and emits ordered deterministic evidence (0.595208ms)
+✔ diagonal move evidence preserves accepted input and normalizes exactly once in replay (0.52425ms)
+✔ settlement freezes replay evidence before the mode finish hook can mutate live state (0.446166ms)
+✔ Playing leave settles before awaiting a slow mode leave hook (0.384709ms)
+✔ Waiting/Settle phase whitelist prevents simulation input and update (0.161208ms)
+✔ startMatch waits for lock before publishing Playing and rolls back on lock failure (5.254542ms)
+✔ startMatch resets every gameplay field changed while waiting (0.339375ms)
+✔ a leave during lock aborts the start instead of publishing a one-player match (1.189625ms)
+✔ Waiting leave clears both identity indexes so the same account can rejoin (1.408084ms)
+✔ same seed + fixed steps + injected inputs produce identical state (0.973625ms)
+✔ default seed sequence keeps rooms created in the same millisecond distinct and replayable (0.431ms)
+✔ same seed keeps formal match state deterministic across different waiting histories (1.428541ms)
+✔ input source is fail-closed and respects declared ticks (1.168375ms)
+✔ hostile injected proxies and iterators are dropped without breaking the next frame (0.306458ms)
+✔ dispose invalidates a pending match start and prevents a late lock from publishing Playing (0.36925ms)
+[GameRoom] 开局失败，回滚到 Waiting roomId=undefined GameRoomStartLockTimeoutError: GameRoom start lock timed out
+    at Timeout.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:2017:24)
+    at listOnTimeout (node:internal/timers:635:17)
+    at process.processTimers (node:internal/timers:571:7)
+[GameRoom undefined] 咸鱼成语精(e) 加入，当前 2 人
+[GameRoom undefined] 快乐拼音怪(a) 加入，当前 1 人
+✔ a timed-out lock gates retries until its late unlock settles (6.670375ms)
+[GameRoom] 开局失败，回滚到 Waiting roomId=undefined GameRoomStartLockTimeoutError: GameRoom start lock timed out
+    at Timeout.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:2017:24)
+    at listOnTimeout (node:internal/timers:635:17)
+    at process.processTimers (node:internal/timers:571:7)
+[GameRoom undefined] 销毁
+[GameRoom undefined] 暴走词王(a) 加入，当前 1 人
+[GameRoom undefined] 销毁
+[GameRoom] 开局失败，回滚到 Waiting roomId=undefined Error: room disposed during match start
+    at GameRoom.onDispose (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1729:33)
+    at TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-room.test.ts:894:16)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+✔ dispose still best-effort releases a late lock (6.786333ms)
+[GameRoom undefined] 快乐笔画侠(a) 加入，当前 1 人
+[GameRoom undefined] 快乐词王(b) 加入，当前 2 人
+[GameRoom undefined] 销毁
+[GameRoom undefined] 咸鱼部首君(a) 加入，当前 1 人
+[GameRoom undefined] 销毁
+[GameRoom undefined] a 断线后重连成功
+[GameRoom undefined] 快乐成语精(a) 加入，当前 1 人
+✔ dispose before timeout also releases a lock that settles late (1.056625ms)
+✔ disposed rooms ignore late leave callbacks, messages, ticks, and injected input (0.874416ms)
+✔ onLeave does not mutate a room after reconnection await resolves post-dispose (0.201417ms)
+[GameRoom] 开局失败，回滚到 Waiting roomId=undefined GameRoomStartLockTimeoutError: GameRoom start lock timed out
+    at Timeout.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:2017:24)
+    at listOnTimeout (node:internal/timers:635:17)
+    at process.processTimers (node:internal/timers:571:7)
+[GameRoom undefined] 低调小汉字(a) 加入，当前 1 人
+[GameRoom] 开局失败，回滚到 Waiting roomId=undefined Error: match did not start
+    at GameRoom.onJoin (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1630:37)
+    at async join (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-room.test.ts:84:5)
+    at async waitForActual (node:assert:615:5)
+    at async strict.rejects (node:assert:738:25)
+    at async TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/game-room.test.ts:960:5)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+[GameRoom undefined] 闪电小汉字(a) 加入，当前 1 人
+[GameRoom undefined] 闪电拼音怪(b) 加入，当前 2 人
+[GameRoom undefined] 快乐词王(a) 加入，当前 1 人
+[GameRoom undefined] 低调部首君(a) 加入，当前 1 人
+[GameRoom undefined] 神秘拼音怪(b) 加入，当前 2 人
+[GameRoom undefined] 低调小汉字(a) 加入，当前 1 人
+[GameRoom undefined] 低调词王(b) 加入，当前 2 人
+[GameRoom undefined] 收局 matchId=m_evidence_kind：#1 低调小汉字，#2 低调词王
+✔ match start lock has a bounded deadline and rolls back without hanging the join (6.37725ms)
+✔ startMatch returning false is treated as a failed join and does not send welcome (0.507958ms)
+✔ faulty clocks and enormous dt stay finite and keep the room loop alive (0.924458ms)
+✔ fixed-step options cannot produce an invalid Welcome tick rate (0.154667ms)
+✔ per-client message budget returns controlled errors and stays isolated by session (0.476667ms)
+[GameRoom undefined] 低调小汉字(a) 加入，当前 1 人
+[GameRoom undefined] 低调词王(b) 加入，当前 2 人
+[GameRoom undefined] 收局 matchId=m_evidence_kind：#1 低调小汉字，#2 低调词王
+[GameRoom undefined] 低调小汉字(a) 加入，当前 1 人
+[GameRoom undefined] 低调词王(b) 加入，当前 2 人
+[GameRoom undefined] 收局 matchId=m_evidence_kind：#1 低调小汉字，#2 低调词王
+[GameRoom undefined] 低调小汉字(a) 加入，当前 1 人
+[GameRoom undefined] 低调词王(b) 加入，当前 2 人
+[GameRoom undefined] 收局 matchId=m_evidence_kind：#1 低调小汉字，#2 低调词王
+[GameRoom undefined] 闪电成语精(a) 加入，当前 1 人
+[GameRoom undefined] 神秘小汉字(b) 加入，当前 2 人
+[GameRoom undefined] 收局 matchId=m_leaving_deletes：#1 闪电成语精，#2 神秘小汉字
+[GameRoom undefined] b 离开（主动），剩余 1 人
+✔ 收局证据：只有自检失败告警，传输失败与成功都不得污染告警通道 (3.492917ms)
+✔ mode 在 onPlayerLeaving 里删掉条目时，收局证据仍必须完整产出 (1.1455ms)
+✔ checked-in gameplay artifacts are fresh (45.795333ms)
+✔ 玩法自有 shared 模块自动进 barrel：新增手写模块零框架改动，*.generated.ts 排除在导出面外 (33.465625ms)
+✔ catalog contractDigest 就是 sha256(manifest + NUL + state + NUL + wire)，⛔ 不是另一套口径 (0.363375ms)
+✔ freshness check is read-only and fails after a descriptor field is added (99.079792ms)
+✔ client catalog 与 extra 产物同受 freshness 守门（stale/extra 都点名） (129.882792ms)
+✔ 契约 digest 变化而 modeVersion 未增：writer 与只读闸都必须拒绝；bump 后放行 (65.766875ms)
+✔ catalog 里已有的 mode 目录消失：writer 必须拒绝；--allow-delete 放行且产物无残留 (67.732834ms)
+✔ 新增第三个 mode 目录：三端产物 + catalog 收录，另两 mode 的产物字节不动 (59.563333ms)
+✔ K0 kit：apps/kits/<kitId>/gameplays/<modeId>/ 是第三发现根——mode 进三端产物与 catalog，sourceDir 点名 kit 目录 (69.011375ms)
+✔ K0 kit：kit 自带的 modeId ⛔ 不得与任何包 id（apps/plugins ∪ apps/kits 目录名）大小写归一相等——点名 mode 与包 (28.298167ms)
+✔ 目录名 === manifest.id，manifest+state 必须齐备，模式目录不收陌生文件 (19.049208ms)
+✔ 跨 mode 重名符号与重名 constantName 必须 fail——聚合 barrel 里会互相顶替 (27.21025ms)
+✔ manifest JSON Schema 拒绝多余键/缺键/坏类型/坏取值 (0.467125ms)
+✔ state 拒绝 unknown shapes、非法字段类型、重复字段与非法值域 (0.553417ms)
+✔ state 拒绝断裂的 map 与跨字段引用 (0.288958ms)
+✔ server-only 字段拒绝暴露标记、碰撞、重复与不支持的 kind (0.215125ms)
+✔ generated root maps are frozen, type-safe and reject unknown modes (2.082792ms)
+✔ generated validator keys exactly equal runtime decorated keys and exclude server-only fields (22.037167ms)
+✔ map entry helpers are unique per owner type when roots share a field name (15.746791ms)
+✔ root 漏掉任一生命周期字段必须在 codegen 期失败 (0.433417ms)
+✔ 生命周期字段的 kind 不对同样必须失败——⛔ 只查名字不够 (0.190875ms)
+✔ root 的 phase 必须是 GamePhase 本身，⛔ 「是个 enum」不够 (0.159125ms)
+✔ enumSource:"gameplay" 的字段：shared 侧产物 import 指向该玩法自有 ruleset (0.629667ms)
+✔ enumSource 取值闭合，且 root 的 phase 恒属 core (1.285542ms)
+✔ 声明 enumSource:"gameplay" 但 ruleset.ts 缺失：codegen 必须点名拒绝 (34.066916ms)
+✔ root 的 phase 必须声明 shell 会写入的全部成员，缺一个都不行 (0.532208ms)
+✔ root 的 player 类型漏掉 name 必须在 codegen 期失败 (0.34575ms)
+✔ 真实 descriptor 必须通过生命周期断言，否则上面的反例只是恒真 (5.1775ms)
+✔ 生成的 RoomStateLifecycle 是独立接口，⛔ 不得是某个具体 root 的别名，也不得泄进 shared 产物 (13.290375ms)
+✔ wire.ts 语法约束：顶层副作用/spread/computed/let/未导出 token 一律拒绝 (59.535ms)
+✔ wire 重名闸：跨 mode 消息名、与 core 重名的消息名/聚合键名都必须 fail (42.491833ms)
+✔ digest 并入 wire.ts 字节：改 wire.ts 一个字节而不 bump modeVersion 必须转红 (76.967292ms)
+✔ 阶段 2b 退出条件：fixture mode 新增 C2S/S2C 只加 wire.ts（+manifest/state），生成 wire catalog 即收发 (54.101292ms)
+✔ GameplayModeId 的单源是 manifest.wireExposed：闭合、⊆ catalog，rooms.ts 只是 façade (48.63225ms)
+✔ client module 集 = canonical GameplayModeId：真仓 modes/ 目录双向同集，渲染进 GAMEPLAY_MODULES (11.132167ms)
+✔ client module 缺失或未导出约定符号：freshness 与 writer 都必须 fail-fast (73.324625ms)
+✔ server mode 缺失或未导出 register<Constant>GameMode：freshness 与 writer 都必须 fail-fast (82.196084ms)
+✔ 阶段 9 退出条件：新增 canonical 玩法 = 单源目录 + modes/<id>/index.ts，⛔ 不改中央文件即入 GAMEPLAY_MODULES (67.839584ms)
+✔ CLI 沿用惯例：--check、--root <dir>/--root=<dir>、--allow-delete；重复/未知参数 throw (0.3135ms)
+✔ kGameplay 分段契约：gp 命名空间 + modeId + name + {uid} 末段 (0.453458ms)
+✔ kGameplay scope 显式：per-zone 随 sId 变前缀，global 恒定 (0.187416ms)
+✔ kGameplay 分段字面量闸：能拼出歧义物理键的分段一律拒绝 (0.244666ms)
+✔ checked-in HTTP endpoint manifest is fresh (8.964417ms)
+✔ file discovery catches an endpoint file move that the registered-route set cannot see (7.502625ms)
+✔ manifest freshness catches a newly added endpoint file (2.455708ms)
+✔ HTTP endpoint discovery rejects missing, unknown and duplicate contract keys (2.698917ms)
+✔ root infrastructure, README and the explicit support directory are excluded from endpoint discovery (1.454625ms)
+✔ every domain .ts must import the official factory and use a literal direct default call (6.578625ms)
+✔ HTTP response adapter validates plain handler output before serialization (1.363541ms)
+✔ HTTP response adapter validates ctx.json body and keeps Better-Call marker (3.139625ms)
+✔ HTTP response adapter preserves a Better-Call Response override while validating JSON (0.5195ms)
+✔ HTTP response adapter preserves a cross-realm Response override (1.504375ms)
+✔ HTTP response adapter passes returned APIError through unchanged (2.064292ms)
+✔ HTTP response adapter contains hostile marker and APIError probes (0.267791ms)
+✔ HTTP endpoint executes the shared request contract before its handler (0.351541ms)
+✔ HTTP endpoint 对 GET 也执行 shared 请求契约：非空 body 必须在 handler 前被拒 (0.178166ms)
+✔ HTTP endpoint 类型级禁止 endpoint options 另带 body schema (0.093208ms)
+✔ HTTP endpoint rejects route-local strip/coercion schemas instead of composing a second request source (0.259875ms)
+✔ HTTP route definitions match shared contract keys and method/path (0.784042ms)
+✔ HTTP request schemas pin the absolute shared uid/amountFen domains (0.541167ms)
+✔ IDEM_V2_ACQUIRE：单条原子——GET 判定与 SET pending 在同一脚本，⛔ 无 SET NX (0.8465ms)
+✔ IDEM_V2_COMPLETE：CAS 比对 pending + leaseId；覆写 done 时重置 result TTL (0.066292ms)
+✔ IDEM_V2_RELEASE：只删自己的 pending（leaseId CAS），⛔ 不碰 done/他人占位 (0.051208ms)
+◇ injected env (1) from ../../.env.development // tip: ◈ encrypted .env [www.dotenvx.com]
+✅ .env.development loaded.
+[GameRoom undefined] 创建 sId=0
+[GameRoom undefined] 创建 sId=0
+[GameRoom undefined] 无敌部首君(idle-a) 加入，当前 1 人
+[GameRoom undefined] 锦鲤成语精(idle-b) 加入，当前 2 人
+[GameRoom undefined] 销毁
+[GameRoom undefined] 无敌部首君(idle-a) 加入，当前 1 人
+[GameRoom undefined] 锦鲤成语精(idle-b) 加入，当前 2 人
+[GameRoom undefined] 销毁
+[GameRoom undefined] 无敌部首君(idle-a) 加入，当前 1 人
+[GameRoom undefined] 锦鲤成语精(idle-b) 加入，当前 2 人
+[GameRoom undefined] 销毁
+[GameRoom undefined] 无敌部首君(idle-a) 加入，当前 1 人
+[GameRoom undefined] 锦鲤成语精(idle-b) 加入，当前 2 人
+[GameRoom undefined] 销毁
+[GameRoom undefined] 无敌部首君(idle-a) 加入，当前 1 人
+[GameRoom undefined] 锦鲤成语精(idle-b) 加入，当前 2 人
+[GameRoom undefined] 销毁
+[GameRoom undefined] mode idle player admission failed reason=mode-player-factory TypeError: [GameRoom] mode idle createPlayer 必须返回 Schema player
+    at GameRoom.createModePlayer (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:524:19)
+    at GameRoom.onJoin (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1571:27)
+    at join (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/idle-game-mode.test.ts:66:16)
+    at TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/idle-game-mode.test.ts:204:9)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+[GameRoom undefined] 销毁
+[GameRoom undefined] mode idle player admission failed reason=mode-player-factory TypeError: [GameRoom] mode idle createPlayer 破坏公共玩家身份
+    at GameRoom.createModePlayer (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:528:19)
+    at GameRoom.onJoin (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1571:27)
+    at join (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/idle-game-mode.test.ts:66:16)
+    at TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/idle-game-mode.test.ts:224:13)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+[GameRoom undefined] 销毁
+[GameRoom undefined] mode idle player admission failed reason=mode-player-factory TypeError: [GameRoom] mode idle createPlayer 破坏公共玩家身份
+    at GameRoom.createModePlayer (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:528:19)
+    at GameRoom.onJoin (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1571:27)
+    at join (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/idle-game-mode.test.ts:66:16)
+    at TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/idle-game-mode.test.ts:224:13)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+[GameRoom undefined] 销毁
+[GameRoom undefined] 销毁
+[GameRoom undefined] 销毁
+[GameRoom undefined] 快乐词王(pulse-a) 加入，当前 1 人
+[GameRoom undefined] 神秘拼音怪(pulse-b) 加入，当前 2 人
+[GameRoom undefined] 销毁
+[GameRoom undefined] 无敌部首君(idle-a) 加入，当前 1 人
+[GameRoom undefined] 锦鲤成语精(idle-b) 加入，当前 2 人
+[GameRoom undefined] 销毁
+[GameRoom undefined] 闪电成语精(ball-a) 加入，当前 1 人
+[GameRoom undefined] 无敌部首君(ball-b) 加入，当前 2 人
+[GameRoom undefined] 销毁
+[GameRoom undefined] 低调拼音怪(waiting-a) 加入，当前 1 人
+[GameRoom undefined] waiting-a 离开（主动），剩余 0 人
+[GameRoom undefined] 销毁
+[GameRoom undefined] 无敌部首君(idle-a) 加入，当前 1 人
+[GameRoom undefined] 锦鲤成语精(idle-b) 加入，当前 2 人
+[GameRoom undefined] idle-b 离开（主动），剩余 1 人
+[GameRoom undefined] 销毁
+[GameRoom undefined] 无敌部首君(idle-a) 加入，当前 1 人
+[GameRoom undefined] 锦鲤成语精(idle-b) 加入，当前 2 人
+[GameRoom undefined] idle-b 断线后重连成功
+[GameRoom undefined] 销毁
+[GameRoom undefined] 无敌部首君(idle-a) 加入，当前 1 人
+[GameRoom undefined] 锦鲤成语精(idle-b) 加入，当前 2 人
+[GameRoom undefined] 销毁
+✔ Idle root：onCreate 只按生成映射选择一次，之后禁止替换 (2.337208ms)
+✔ Idle 开局：精确 player/root 字段，生产 goal=3 且拒绝非 Schema/篡改身份 player (7.396459ms)
+✔ player factory 守卫与 schema 注册兜底必须给出可区分的入座诊断 (0.428083ms)
+✔ IdlePulse：strict {}、只累加发送者，达目标同步结算且不产 evidence (0.799125ms)
+✔ 玩法消息 fail-closed：Idle 拒 Move/Cast，ballMove 拒 IdlePulse (0.570041ms)
+✔ Idle leave：Waiting 正常清理，Playing 对手胜，开局后拒绝晚加入 (0.494125ms)
+✔ Idle 重连成功：保留座位与 pulses，不触发离场胜负 (0.198ms)
+✔ Idle fixed step：只推进公共 tick，GameRoom 已无 ballMove 注入 API (0.22325ms)
+✔ index 顶层启动失败：进程退出前等待 lifecycle cleanup，并保留原始异常 (595.89475ms)
+✔ index 默认入口：真实监听后收到 SIGTERM 按序释放并以 0 正常退出 (335.839833ms)
+✔ index 默认入口：真实依赖装配、停服列表与 listen(app, PORT) 均有显式接缝 (0.422167ms)
+✔ 邀请码：恒为六位数字（000001 是合法码，padStart 不可删） (0.796208ms)
+✔ kick stream parser preserves legacy omission semantics (0.942875ms)
+✔ kick stream parser drops malformed scoped fields instead of widening the kick (0.218458ms)
+✔ kick stream parser keeps replacement and account-wide events disjoint (0.066916ms)
+✔ kick session fence fails closed on missing or corrupt storage values (0.107ms)
+✔ kick producer rejects malformed unions without touching Redis or stringifying hostile values (0.158625ms)
+✔ kickUser acknowledges only a close call that returns successfully (0.224041ms)
+✔ kick stream parser rejects ambiguous field layouts (0.048333ms)
+✔ kick stream parser contains hostile arrays and revoked Proxies (0.116584ms)
+✔ KICK_CLOSE_CODE ⛔ 不得与 Colyseus CloseCode / ErrorCode 段撞码 (0.491792ms)
+✔ kit user fence: explicit zone survives awaits, only frozen fence crosses the facade (1.028083ms)
+✔ kit field read: explicit per-zone key; catalog enforcement retained (0.4135ms)
+✔ kit contention: retries rolled-back MySQL contention only, never business failure (214.051917ms)
+✔ kitTablePrefix：小写 + 下划线包裹；kitId 形态闸 (1.232792ms)
+✔ 表闸放行：本 kit 前缀的裸名 / backtick / JOIN / INSERT INTO / 多表 / 别名 / 子查询 / ODKU / FOR UPDATE (1.360625ms)
+✔ 表闸拒绝：框架表、别的 kit、schema 限定、注释绕过、DDL / 多语句 / 首词、识别不了的形态 (0.833667ms)
+✔ 表闸拒绝：backtick 标识符里的引号 / 注释字符不得让剥离器与 MySQL 词法错位 (0.228083ms)
+✔ 表闸拒绝：INSERT / REPLACE 省略 INTO（MySQL 语法可省）时目标表仍须过前缀闸 (0.228417ms)
+✔ kitOpId：命名空间化 type = kit:<id>:<op>，同输入确定、跨 kit / op / 区 / 请求互不碰撞 (0.511875ms)
+✔ withKitTx：句柄绑定 kitId/sId，query 过闸后才触达连接，debit/credit/enqueue 透传绑定 sId，提交后逐 uid 失效缓存 (0.797958ms)
+✔ withKitTx：query 参数只允许原始值 / Date / Buffer——toSqlString 一类对象在触达连接前拒 (1.423959ms)
+✔ withKitTx.enqueueEffect：先规范化（注入 kinds）、拒别的 kit 的 kind、DUP 回读比对、冲突上抛回滚 (0.79125ms)
+✔ assertKitEffectScope：非 kit grant 不管、本 kit 放行、别的 kit 拒、未登记拒 (0.135959ms)
+✔ withKitTx：越界 SQL 在触达连接前抛 KitTableAccessError、事务回滚、不失效缓存；DUP 的账本调用不触发失效 (0.152875ms)
+✔ kitEffectKeysFor：只投影出现的 kind、同一物理键去重、序号紧随 bag 分片之后、map 带 k/f/m (0.377875ms)
+✔ APPLY_EFFECT Lua：含 kit 分支，键数表达式引用 ARGV[4] 投影，先验后写 (0.16225ms)
+✔ applyKitEffect：提交后收尾——按 sId 包 zoneCtx 走 redisApply，ok/dup 才 markOutboxDone；失败 / cold 只映射返回值；越界 kind 抛 (0.780416ms)
+✔ readKitUserField：只读 HGET kKitUser(kitId, name, uid, scope) 的一个字段；name 不在本 kit 的 userKeys 即拒 (0.239125ms)
+✔ dropKitTables：关外键检查后按名 drop 全部前缀表，再删账本行；表名反引号转义 (1.134625ms)
+✔ dropKitTables：dryRun 只数不写；无前缀表时不动外键检查 (0.343958ms)
+✔ isKitRedisKey：只认 <项目前缀>(s<sId>_)?kt:<kitId>: 形态 (0.133792ms)
+✔ dropKitRedisKeys：MATCH 粗筛后精确过滤（别的包含子串的键不删）、≤500 一批、每个节点各扫一遍、dryRun 只数 (0.832792ms)
+✔ dropKitData：目录里有只差大小写的另一个 kit ⇒ 连库前就拒（前缀清单会连它的表一起 drop） (0.1835ms)
+✔ kit 导入边界：apps/server/src/kits/<id>/** 只 import 本 kit 目录、core/infra/kitApi 与 @game/shared* (6.114416ms)
+✔ kit 导入边界自测：门面 / 自身放行，core/infra 其他模块、core/economy、ioredis、mysql2、type-only 越界都拒 (0.861333ms)
+✔ kKitUser 分段契约：kt 命名空间 + kitId + name + {uid} 末段 (0.485459ms)
+✔ kt: 与 pl: / gp: / 框架键互不可达：同名 id 三个命名空间拼不出同一物理键 (0.125875ms)
+✔ kKitUser scope 显式：per-zone 随 sId 变前缀，global 恒定 (0.147291ms)
+✔ kKitShared：tag 强制带分片键；per-zone 的 tag 带 s<sId>，global 不带 (0.124291ms)
+✔ kKit* 分段字面量闸：能拼出歧义物理键的分段一律拒绝；shard 必填非空（整 kit 单 tag 不可能） (0.278584ms)
+✔ zoneTables：框架表 ∪ kit 表按 zone 汇入，catalog 可注入 (1.152167ms)
+✔ zoneTables：只差大小写的 kit id 共用表前缀 ⇒ fail-closed (0.288292ms)
+✔ splitSqlStatements：注释 / 引号 / 反引号里的分号不切分，尾部空白丢弃 (0.370916ms)
+✔ splitSqlStatements：DELIMITER 与未闭合引号 / 注释拒绝 (0.129958ms)
+✔ lintKitStatement：白名单语句放行 (2.41325ms)
+✔ lintKitStatement：禁用语句类型逐条拒绝（fail-closed） (1.135959ms)
+✔ lintKitStatement：表名必须已声明、带 k_<id>_ 前缀、不带库名；外键不得指向 kit 外的表 (0.687458ms)
+✔ applyKitMigrations：首次应用写账本；同 sha 再跑零 DDL；租约先取后放 (2.638459ms)
+✔ applyKitMigrations：已应用文件 sha 变化 ⇒ fail-closed，点名 kit/file/两个 hash，且不执行任何语句 (0.370791ms)
+✔ applyKitMigrations：目录里两个 kit 只差大小写 ⇒ 取租约前就拒（表前缀撞车） (0.327542ms)
+✔ applyKitMigrations：租约被持有 / 缺预置行 ⇒ 拒绝 (0.32675ms)
+✔ applyKitMigrations：lint 失败在执行前中止（整文件一条都不跑、不入账本） (0.439417ms)
+✔ applyKitMigrations：语句执行错误归因到 kit/file/序号与语句前 120 字；账本记下进度，重跑从失败那条续跑 (1.184667ms)
+✔ applyKitMigrations：账本语句数与当前切分不一致（同 sha）⇒ 拒绝续跑 (0.183667ms)
+✔ applyKitMigrations：kit 按 id 排序、文件按 sqlFiles 顺序；非法文件名拒绝 (0.264584ms)
+✔ applyKitMigrations：账本有而目录无的 kit 只告警并回报 orphanLedgerKits (0.136333ms)
+✔ verifyKitTableShapes：目标形态通过 (0.069917ms)
+✔ verifyKitTableShapes：声明的表不存在 ⇒ 抛 (0.132958ms)
+✔ verifyKitTableShapes：per-zone 缺 server_id / 类型不对 / 不在 PK / UNIQUE 不含 ⇒ 抛 (0.267292ms)
+✔ verifyKitTableShapes：kit 表的实际引擎必须是 InnoDB（迁移文本看不见的既有表 / 带外建的表兜底） (0.22775ms)
+✔ verifyKitTableShapes：global 表带 server_id ⇒ 抛；未声明的 k_<id>_ 前缀表 ⇒ 抛 (0.267334ms)
+✔ 生产源码绝对禁止旧 WebPlatform 包、源码目录、ACCOUNT_MODE 与 useServerPool (11.306834ms)
+✔ LifecycleRegistry：按逆序释放、重复 dispose 只执行一次，并继续处理失败资源 (0.996083ms)
+✔ LifecycleRegistry：并发 dispose 共享同一个可等待结果，重复名称不产生双重释放 (5.30975ms)
+✔ LifecycleRegistry：空表开始释放后迟到注册也会被同一轮清理 (0.4765ms)
+✔ LifecycleRegistry：释放期间新增资源按全局逆序处理，并汇总迟到资源错误 (0.220875ms)
+[lifecycle] 异步任务失败：failed Error: expected
+    at TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/lifecycle.test.ts:100:48)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+✔ LifecycleRegistry：停服 Promise 完成后的 macrotask 注册也会立即释放 (10.509083ms)
+✔ TaskTracker：等待在途任务并观察失败，不留下未处理 rejection (1.4015ms)
+✔ TaskTracker：drain 期间登记的迟到任务必须纳入同一轮等待 (0.152542ms)
+[duplicate-retry] 消费循环异常，1s 后重试 Error: duplicate unavailable
+    at Object.duplicate (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/lifecycle.test.ts:206:15)
+    at <anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/core/infra/streamConsumer.ts:87:28)
+    at startStreamConsumer (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/core/infra/streamConsumer.ts:135:3)
+    at TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/lifecycle.test.ts:224:22)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+✔ TaskTracker：close/drain 完成后迟到 rejection 只观察、不重新进入 tracker (0.678083ms)
+✔ StreamConsumer：阻塞 stop 期间重启的 consumer 仍登记到 shutdown registry (0.476791ms)
+✔ StreamConsumer：同步 duplicate 异常进入重试，且不会产生 unhandledRejection (1.405292ms)
+✔ StreamConsumer：disconnect 同步异常仍建立幂等 stop，并注销生命周期登记 (0.214583ms)
+✔ 停服后存储入口不复活新连接，显式 reset 后可重建 (0.707ms)
+✔ Lobby onJoin rejects a token replaced while character ready is pending (2.160917ms)
+✔ Lobby onJoin fails closed when the client has no auth context (0.148042ms)
+✔ Lobby onJoin rejects when the client leaves while character ready is pending (0.155458ms)
+✔ Lobby onJoin unregisters the exact slot when replacement wins after registration (0.126166ms)
+✔ Lobby onJoin rejects and unregisters when shutdown closes admission before completion (0.136458ms)
+✔ Lobby kick observes an asynchronous leave rejection without losing sync errors (3.496709ms)
+✔ a late stale join cannot unregister a replacement using the same session key (0.373042ms)
+✔ Lobby reconnect keeps one registration and rebinds push/kick to the new physical client (0.479208ms)
+✔ Lobby reconnect grace timeout unregisters the exact registration once (0.187167ms)
+✔ Lobby drop without a close code fails open into the same grace window (0.272166ms)
+✔ Lobby replacement during grace wins over old timeout cleanup (0.248583ms)
+✔ Lobby replacement wins while the reconnect session fence is pending (0.25175ms)
+✔ Lobby reconnect rejects a token fence replaced during grace (0.176541ms)
+▶ Lobby forced, consented and shutdown leaves bypass reconnect grace
+  ✔ forced (0.078375ms)
+  ✔ server shutdown (0.049ms)
+  ✔ consented (0.033209ms)
+✔ Lobby forced, consented and shutdown leaves bypass reconnect grace (0.344125ms)
+✔ Lobby reconnect continuation after shutdown cannot restore registration (0.131417ms)
+✔ Lobby RPC malformed envelopes produce a legal correlated error reply (3.368125ms)
+✔ Lobby RPC async failures and closing sockets are observed without unhandled rejection (1.301833ms)
+✔ 端点全集与 shared 声明集合相等，路由名与文件路径一致 (143.229458ms)
+✔ 幂等域 = registry 派生（mode=idempotent-write ⇔ def.idem，双向） (3.812959ms)
+✔ 服务端 schema 与 shared request validator 逐路由保持同一规范化结果 (4.707583ms)
+✔ defineRpc 在发送前校验 handler response，禁止 malformed reply 穿过服务端边界 (0.465333ms)
+✔ ① sidecar 文件集合 ⇔ registry 域集合双向相等 (0.750167ms)
+✔ ② 路由 ⇔ 向量双向相等（漏/多/未知路由都红） (0.230958ms)
+✔ ③/④ 向量通过 shared validator，加未知字段后 request/response 都被拒 (4.392208ms)
+✔ ⑤/⑥ 幂等向量去 clientReqId 必拒；query/natural-write 向量不含 clientReqId (0.513375ms)
+✔ ⑦ endpoint 无法覆盖 schema/mode/idem：def.mode/def.idem 必须与 registry 派生一致 (126.015666ms)
+✔ NaN/未知路由/响应越界（自 wire-contract 中央表用例迁移） (0.203916ms)
+✔ Lobby guild warm-up is tracked and a late result cannot mutate a left slot (1.095542ms)
+✔ Lobby guild warm-up cannot overwrite a replacement using the same client key (3.893041ms)
+✔ loop monitor：重复 start 共享句柄，stop 幂等并注销生命周期登记 (0.956333ms)
+✔ loop monitor：registry dispose 后显式重开 admission 可启动新一代监控 (0.193917ms)
+✔ loop monitor：停服 admission 关闭时拒绝启动且不留下资源 (0.205792ms)
+✔ loop monitor：stop 移除 MySQL enqueue listener，重启只挂当前一代 (10.892833ms)
+✔ mail.created_at 统一接受 epoch 毫秒的 number/数字字符串、Date 和日期字符串 (1.279208ms)
+✔ mail.created_at 拒绝无法证明为非负安全整数毫秒的值 (0.263708ms)
+✔ v3 evidence exact-validates and replays production-shaped move/cast/leave state (2.72675ms)
+✔ v3 replay rejects deleted move, cast, or leave events (0.758541ms)
+✔ v3 replay rejects event payload/tick changes and cast/leave reordering (0.438917ms)
+✔ v3 replay rejects seed, ordered roster, final state/tick, and participants changes (1.854166ms)
+✔ v3 validator classifies one-player and hostile event shapes without leaking reflection errors (20.024209ms)
+✔ v3 replay handles maximum input count and maximum safe tick in O(events + players) (16.079041ms)
+✔ v3 replay freezes a moving victim at the tick the lethal cast lands (0.462958ms)
+◇ injected env (1) from ../../.env.development // tip: ◈ encrypted .env [www.dotenvx.com]
+✅ .env.development loaded.
+[GameRoom xzv1oJTkr] 创建 sId=0
+[GameRoom xzv1oJTkr] 暴走成语精(tyEN6Eytu) 加入，当前 1 人
+@colyseus/sdk: onMessage() not registered for type 's2c.welcome'.
+[GameRoom xzv1oJTkr] 低调词王(ki9kgNHnD) 加入，当前 2 人
+@colyseus/sdk: onMessage() not registered for type 's2c.welcome'.
+[GameRoom lydnp6nxQ] 创建 sId=0
+[GameRoom lydnp6nxQ] 快乐成语精(3RaukJRSb) 加入，当前 1 人
+@colyseus/sdk: onMessage() not registered for type 's2c.welcome'.
+[GameRoom lydnp6nxQ] 神秘词王(eZnAjbXJg) 加入，当前 2 人
+@colyseus/sdk: onMessage() not registered for type 's2c.welcome'.
+[RoomClient] 连接掉线（自动重连中） code=4010 reason=multi-mode-wire-test
+[Colyseus reconnection]: ⏳ will retry in 0.0 seconds...
+[Colyseus reconnection]: 🔄 Re-establishing sessionId '3RaukJRSb' with roomId 'lydnp6nxQ'... (attempt 1 of 10)
+[GameRoom lydnp6nxQ] 3RaukJRSb 断线后重连成功
+[Colyseus reconnection]: ✅ reconnection successful!
+[RoomClient] 自动重连成功
+[GameRoom lydnp6nxQ] eZnAjbXJg 离开（主动），剩余 1 人
+[GameRoom xzv1oJTkr] 收局 matchId=wire-match-1：#1 低调词王，#2 暴走成语精
+[GameRoom xzv1oJTkr] tyEN6Eytu 离开（主动），剩余 1 人
+[GameRoom xzv1oJTkr] ki9kgNHnD 离开（主动），剩余 0 人
+[GameRoom xzv1oJTkr] 销毁
+[GameRoom lydnp6nxQ] 3RaukJRSb 离开（主动），剩余 0 人
+[GameRoom lydnp6nxQ] 销毁
+✔ one real GameRoom definition carries independent ballMove and idle Schema patches (510.891833ms)
+✔ storedInt accepts finite safe integer storage values and rejects coercion (0.651542ms)
+✔ storedFinite rejects non-finite and out-of-range values (0.178208ms)
+✔ optionalStoredInt only defaults missing fields; malformed present data fails closed (0.068375ms)
+✔ storedBool accepts only the persisted 0/1 encoding and rejects corrupt values (0.12575ms)
+✔ trimApplied reports two lost attempts as BUSY instead of cold (0.558166ms)
+✔ trimApplied keeps two cold attempts on the cold-user path (0.092541ms)
+✔ trimApplied accumulates chunks removed before a lost retry (0.062166ms)
+✔ 纯包改动收窄，且只带上该包自己的测试 (6.566458ms)
+✔ 包机制测试恒在（任何 plugin.json 改动都碰得到它们） (1.389ms)
+✔ 宿主改动一律退回全量——包测试直接 import 宿主，改宿主能把它们打红 (5.641625ms)
+✔ 包改动 + 一条宿主改动 = 全量（⛔ 不允许「大部分是包」就收窄） (1.200166ms)
+✔ 宿主自有登记 builtin 推导不出所有权集 → 按宿主算，并且报出来而不是静默 (1.038417ms)
+✔ 生成物与镜像跟着包的真源走，不算宿主改动 (1.735833ms)
+✔ 只有生成物在动、没有任何包的真源 → 全量（有人手改了生成物） (0.946ms)
+✔ 包改动 + 它自己的锁 = 刚 reinstall-from-tree，仍收窄 (0.927209ms)
+✔ 只有锁在动、没有任何包的真源 → 全量（凭空改锁不放过） (1.237708ms)
+✔ 不认识的 id 的锁仍算宿主 (0.9555ms)
+✔ 工作树干净 → 全量（没有可收窄的改动面） (2.649042ms)
+✔ 两个包同时改 → 收窄，两个包的测试都带上 (1.194875ms)
+✔ kit 与建在它上面的插件同样按包收窄 (3.621167ms)
+✔ 快路径的每个 npm 脚本名都真实存在（⛔ 打错名字会在收窄时才炸） (0.177375ms)
+✔ 机制测试清单里的文件都存在（⛔ 改名后清单会静默少跑） (0.066292ms)
+✔ checked-in plugin registry is fresh (45.035541ms)
+✔ --check 只读：stale/missing/extra 三态失败并点名 (170.7615ms)
+✔ descriptor 运行时值 ⇔ generated 表双向相等（route/mode/errorCodes/pushes 全覆盖） (1.512417ms)
+✔ domain 形态违规点名拒绝：副作用/let/computed/spread/未知调用/未导出/缺注解/重复路由 (0.994292ms)
+✔ idempotent-write 的 request 接口必须字面含必选 clientReqId: string（AST 层校验反例） (0.354917ms)
+✔ coreErrors 解析 + 顺序钉：钉表引用不存在的码必须拒绝 (68.638834ms)
+✔ 重复 id 拒绝：跨域错误码 / 推送消息名 / 推送 key / 路由前缀与文件名闸 (338.2355ms)
+✔ 向量 sidecar ⇔ domain 双向对齐：孤儿 sidecar 与缺失 sidecar 都必须 fail-fast (134.2765ms)
+✔ 退出条件：新增 fixture domain 只加 domains/chamber.ts + 向量 sidecar，生成 registry/向量表即收录，人工中央源码零改 (305.13225ms)
+✔ 阶段 4 fixture：operationGroup/inspectable/inspects/contractVersion 经生成进四张表 (103.900542ms)
+✔ operation group 所有权 fail closed：无主/越权/跨域重复/无组可查全部点名拒绝 (565.971583ms)
+✔ 跨域 inspects：缺 exposesOperationGroupTo 即 fail closed，显式暴露后放行 (143.779958ms)
+✔ contractVersion AST 校验：非数字字面量 / 0 / 小数一律点名拒绝 (0.637542ms)
+✔ 删除保护：域源文件消失必须显式 --allow-delete，放行后 registry 同步收缩 (92.112083ms)
+✔ 渲染确定性：相同输入重复渲染字节相同（registry + 客户端三件） (20.206167ms)
+✔ cocos View 进 ViewMgr catalog 的判别信号 = 被 plugin routes 引用（⛔ 无标记字段） (216.605208ms)
+✔ checked-in client view artifacts are fresh（客户端 freshness 由 server 侧断言，§5.4 口径） (10.86125ms)
+✔ 阶段 6 退出条件：fixture view 只新增文件 + plugin.json 登记，三产物收录且既有条目字节不动 (301.477709ms)
+✔ 阶段 6 --check 三态：sidecar 变更 → stale 点名客户端产物；删/多余 generated 也红 (154.140125ms)
+✔ sidecar⇔View 双向：未登记的 *View.ts 红；登记的 sidecar 缺 View/logic 也红 (294.941959ms)
+✔ sharedPkgs ⊇ 闭包 fail-fast：漏声明依赖包点名拒绝（art 闭包与 assetUrls 所属包同口径） (62.683083ms)
+✔ aliasOf 迁移期兼容：无 alias 的重复 package\/component 必败；显式 aliasOf 放行且不产重复所有权 (273.541584ms)
+✔ 阶段 6 删除保护：View 真源消失必须显式 --allow-delete，放行后三产物同步收缩 (107.801625ms)
+✔ 路由/菜单校验：route 引用未登记 View、缺 group\/restore、menu entryId 重复均点名拒绝 (172.756833ms)
+✔ 入口治理闸：entryId 全仓唯一、一 gameplayId 一贡献者、route 形态 launch 必须引用已登记 route (637.29475ms)
+✔ plugin entry：entry 必须是本 plugin 的 apps/client/src/plugins/<id>/index.ts 且导出 createPluginModule，渲染为静态字面量 load (364.744834ms)
+✔ 宿主 placement（apps/plugins/host.json）：缺失即 fail-fast；defaultLaunch 须有贡献者；home 引用必须存在且渲染进 GENERATED_HOST (598.931792ms)
+✔ 宿主分组（host.json groups）：成员必须存在、⛔ 不得跨组重复、id ⛔ 不得与入口/单元撞名，且渲染进 GENERATED_HOST (603.243709ms)
+✔ 域契约闸：descriptor 字节变化而 contractVersion 未增，writer 与只读闸都拒绝；bump 后放行并渲染 LOBBY_RPC_DOMAIN_CONTRACTS (135.900542ms)
+✔ CLI 沿用惯例：--check、--root <dir>/--root=<dir>、--allow-delete；重复/未知参数 throw (0.287708ms)
+✔ 能力索引：真仓在盘且新鲜；状态词汇表仅 planned/registered/source-present，无实跑冒充词 (5.934083ms)
+✔ 阶段 7：fixture extra plugin 只加新文件即进索引；fragment 状态按 defaultEntry 存在性判定 (333.298875ms)
+✔ ⛔ 生成器不写当前计划文件：把 docs/plan-v5.md 加进 writer 允许输出集合 → 自检红（§5.7 反例） (0.336167ms)
+✔ K0 kit：真仓零 kit 时双端 kit catalog 与占位生成物字节相同且在盘新鲜 (4.991333ms)
+✔ K0 kit：fixture kit + 建在其上的插件只加新文件 → 双端 kit catalog 收录、requires.kits 并入 dependencies（kit 先）、索引 class 列；手写源零 diff (323.134125ms)
+✔ K0 kit：requires.kits 闸——kit 未安装 / api 面不存在 / 版本低于 minSupported / 高于 version 全部点名拒绝；dependencies 直接点名 kit 也拒绝（唯一通道） (1032.892959ms)
+✔ K0 kit：kit.json.modes 必须 ≡ gameplays/ 子目录集（多目录 / 缺目录 / constantName 不一致 都点名 mode） (279.595792ms)
+✔ K0 kit：域名前缀规则 (i) 一域一主 (ii) 边界前缀 + 最长前缀单元 + descriptor 存在 (iii) 未声明域不得占带版本单元前缀；真仓与宿主自有单元豁免 (572.158875ms)
+✔ K0 kit：kit 与 plugin 共享 id 空间（大小写归一撞名拒绝）、保留字拒绝、kit 目录缺 kit.json 拒绝、apps/kits 非目录拒绝、kit 不得依赖 kit 或插件 (483.610709ms)
+✔ K0 kit：删除保护——同一 id 换类别（plugin → kit 与 kit → plugin）两个方向都要显式 --allow-delete (207.065875ms)
+✔ K0 kit：删除保护——kit 真源消失必须显式 --allow-delete，放行后双端 kit catalog 收缩回加 fixture 前的字节 (100.109833ms)
+✔ kPluginUser 分段契约：pl 命名空间 + pluginId + name + {uid} 末段 (0.8715ms)
+✔ kPluginUser scope 显式：per-zone 随 sId 变前缀，global 恒定 (0.221792ms)
+✔ kPluginShared：hash-tag 取 pluginId，同 plugin 共享键同槽；可选末段走同一闸 (0.122041ms)
+✔ kPlugin* 分段字面量闸：能拼出歧义物理键的分段一律拒绝 (0.240083ms)
+✔ checked-in installed-plugin locks are consistent with the working tree (39.970416ms)
+✔ scripts/packages/ 只承载 *.lock（writer = plugin -- install）与 README (0.263833ms)
+✔ kitApiViolations：api 面名撞 Object.prototype 成员时不得读到继承属性而 fail-open (0.180292ms)
+✔ allowlist：plugin 插件的推导集覆盖 plugin/domain/客户端/FGUI/测试/文档落点，镜像与 .meta 随真源 (1.895125ms)
+✔ allowlist：gameplay 插件的推导集覆盖 manifest/shared/server mode/client module/logic/view/<Constant>Room/resources (0.565208ms)
+✔ 硬排除与受保护路径永远拒绝：真仓 protected-paths.json 的每条路径对任何插件都不可写 (0.286583ms)
+✔ 身份形态闸：坏 id / 缺 constantName / 客户端目录越出命名空间 / 无客户端登记却声明客户端目录 一律拒绝 (0.534125ms)
+✔ 包内路径形态闸：zip-slip / 绝对路径 / 反斜杠 / 控制字符 / 空段一律拒绝 (0.116ms)
+✔ zip：确定性写出、往返一致；zip-slip / 符号链接 / zip64 / 坏 CRC 一律拒绝 (1.616ms)
+✔ pack：采集所有权推导集 + 镜像 + .meta，写出确定性 zip 与目录形态；缺 .meta 即失败 (26.656084ms)
+✔ install：首装落盘 + 锁 + plugins/<id>/plugin.json；check 通过；本地改动被 check 与再次 install 点名 (33.064667ms)
+✔ upgrade：旧有新无按清单删除、同版本不同内容拒绝、降级须显式；uninstall 按锁删除并清空目录 (44.365875ms)
+✔ reinstall-from-tree（E6 方案 ②）：同仓改动不 bump 拒绝并点名；bump 后以树重写锁（吸收变化/新增/删除）；未安装、篡改锁、降级各自拒绝 (122.499417ms)
+✔ install：越权路径整包拒绝并点名（脚本 / 受保护文件 / 他人目录）；目标已存在且不属本插件 → 所有权冲突 (34.850666ms)
+✔ 审阅后加固：篡改锁 → install/uninstall 拒绝且不删；锁登记文件缺失 → install 拒绝 (26.981458ms)
+✔ 审阅后加固：只带镜像无真源、受保护目录的镜像、根 plugin.json 与仓内自述不一致 → 整包拒绝 (27.881375ms)
+✔ 审阅后加固：插件 id/domain 与框架既有目录同名 → 目录级所有权冲突拒绝（⛔ 不混入框架目录） (27.803209ms)
+✔ PLUGIN-REGISTRY §1-3：reinstall-from-tree 的身份变化闸与 git 跟踪闸——扩 domains 到树上同名域不能把已跟踪文件吸进插件锁；框架域按前缀规则直接拒绝 (359.258584ms)
+✔ PLUGIN-REGISTRY §1-4：互为前缀的两个插件共存——各自升级、从树重装、卸载其一都不动另一者；锁间重叠被 pack/install/check 点名 (68.987834ms)
+✔ PLUGIN-REGISTRY §1-1：postinstall 失败即回滚——无 git：文件与锁按落盘前字节复原；有 git：索引同步、生成物只回退本次新变脏的部分 (259.701958ms)
+✔ PLUGIN-REGISTRY §1-2：升级删掉域 / View / kind 时 postinstall 以显式 --allow-delete 交给 codegen（并集 kinds 都跑） (64.412208ms)
+✔ allowDeleteFor：去掉 gameplay kind ⇒ codegen:gameplays --allow-delete <id>；去掉客户端登记与域 ⇒ 插件 id + 全部域 + 全部 View (0.1325ms)
+✔ PLUGIN-REGISTRY §1-1 附带：uninstall 后未提交（索引里是暂存删除）即可重装，不再被「受影响路径不干净」拦住 (460.256708ms)
+✔ PLUGIN-REGISTRY §1-5：锁的 source 抬头——install 写 package、reinstall-from-tree 写 tree（forkedFrom 保留上一来源、no-op 不改）；分叉之上的升级默认拒绝，--replace-local-fork 放行；旧锁无 source ⇒ unknown (103.071417ms)
+✔ PLUGIN-REGISTRY §1-9（v2）：兼容轴 = plugin.json 自己的 schemaVersion const + gameplay 单源的 schemaVersion；派生 kinds / constantName 进锁抬头 (51.202541ms)
+✔ PLUGIN-REGISTRY §1-11：随包 .meta 的内容闸——uuid 形状 / importer / 包内撞车整包拒绝；与宿主 assets 树撞车在落盘前拒绝 (69.622584ms)
+✔ 加固 §1-1：回滚精确到操作前——已暂存 / 未暂存的生成物 WIP 逐字回来，失败点在 git add 之后也一样；非 ASCII 生成物路径不让回滚自己炸 (565.2205ms)
+✔ 加固 §1-1：落盘阶段失败（锁目录不可写 / 包内文件与其子路径并存）也回滚，不留无锁的半安装态 (309.341625ms)
+✔ 加固 §1-1：暂存删除只对 HEAD 里本插件锁登记过的路径算干净——别人对框架文件的暂存删除仍拒绝 (156.841542ms)
+✔ 加固 §1-1：仅大小写不同的改名升级在大小写不敏感文件系统上不丢文件（先删旧名再写新名），成功与回滚两条路径都正确 (37.329208ms)
+✔ 加固 §1-3 / §1-2：reinstall-from-tree 不替作者删仍在磁盘的旧锁文件；View 改名的删除面从旧锁 sidecar 推出；共享命名空间的吸收被点名；失败回滚回到操作前 (1150.918584ms)
+✔ 加固 §1-5：分叉不能被「内容相同的包」洗白；旧锁（无 source）按分叉待遇 fail-closed；check 复核 source 抬头形状与内容身份；uninstall 报告来源 (85.401875ms)
+✔ 加固 §1-9 / §1-11：requires 与随包 plugin.json / manifest.json 的 schemaVersion 交叉核对；孤儿 .meta 拒绝；宿主 .meta 不可解析即拒绝装；同路径 uuid 变化被报告 (47.423584ms)
+✔ 加固：git status -z 解析（非 ASCII / 重命名条目） (115.785ms)
+✔ manifest（v2）：schema 校验、version 可省（宿主自有）、未知键拒绝、schemaVersion const 读自 schema 文件、版本比较 (1.902375ms)
+✔ CLI 参数：五个子命令、--root seam、重复/未知参数 throw (0.667709ms)
+✔ nextStepsFor：协议指纹提示按 --check 的实际结果派生，⛔ 不按「带 domain 就一定变了」猜 (0.167167ms)
+✔ kit（docs/KIT.md §2/§3）：所有权推导 = kits/ 命名空间 + 逐 mode 玩法规则 + 域 + 测试前缀；⛔ 不给 core/<id>、不给 plugins/<id> (1.110959ms)
+✔ kit 端到端：pack → install（锁抬头 class/api/modes）→ check → 插件 requires.kits 正向闸 → kit 升级反向闸 --break-dependents → uninstall 依赖反查 → 卸载 kit 收缩每个 mode (148.617083ms)
+✔ kit 身份与单源一致性：modes ≡ gameplays/ 子目录、constantName 一致、sql.files 随包且非空、类别不能升级着换、宿主自有 kit 满足 requires (126.653667ms)
+◇ injected env (1) from ../../.env.development // tip: ◈ secrets for agents [www.dotenvx.com]
+✅ .env.development loaded.
+[GameRoom fixture-room] 创建 sId=0
+[GameRoom fixture-room] 暴走拼音怪(owner) 加入，当前 1 人
+[GameRoom fixture-room] 闪电小汉字(guest-a) 加入，当前 2 人
+[GameRoom fixture-room] 创建 sId=0
+[GameRoom fixture-room] 暴走拼音怪(owner) 加入，当前 1 人
+[GameRoom fixture-room] 闪电小汉字(guest-1) 加入，当前 2 人
+✔ 私房：入座默认未 Ready；全员（含房主）Ready 才能开局 (9.187166ms)
+[GameRoom fixture-room] 创建 sId=0
+[GameRoom fixture-room] 暴走拼音怪(owner) 加入，当前 1 人
+[GameRoom fixture-room] 闪电小汉字(guest-1) 加入，当前 2 人
+[GameRoom fixture-room] 锦鲤拼音怪(guest-2) 加入，当前 3 人
+[GameRoom fixture-room] 创建 sId=0
+[GameRoom fixture-room] 暴走拼音怪(owner) 加入，当前 1 人
+[GameRoom fixture-room] 闪电小汉字(guest-1) 加入，当前 2 人
+[GameRoom fixture-room] 锦鲤拼音怪(guest-2) 加入，当前 3 人
+[GameRoom fixture-room] 咸鱼小汉字(guest-3) 加入，当前 4 人
+[GameRoom fixture-room] 创建 sId=0
+[GameRoom fixture-room] 暴走拼音怪(owner) 加入，当前 1 人
+[GameRoom fixture-room] 闪电小汉字(guest-1) 加入，当前 2 人
+[GameRoom fixture-room] 锦鲤拼音怪(guest-2) 加入，当前 3 人
+[GameRoom fixture-room] 咸鱼小汉字(guest-3) 加入，当前 4 人
+[GameRoom fixture-room] 创建 sId=0
+[GameRoom fixture-room] 暴走拼音怪(owner) 加入，当前 1 人
+[GameRoom fixture-room] 闪电小汉字(guest-a) 加入，当前 2 人
+✔ 私房容量矩阵：2/3/4 人全 Ready 可开局，1 人 BelowMin，第五人 RoomFull (8.346375ms)
+[GameRoom fixture-room] 创建 sId=0
+[GameRoom fixture-room] 暴走拼音怪(owner) 加入，当前 1 人
+[GameRoom fixture-room] 闪电小汉字(guest-a) 加入，当前 2 人
+✔ 私房：非房主 Start / 未全 Ready / Start 在途重复 Start 的稳定拒绝 (0.607416ms)
+[GameRoom fixture-room] 创建 sId=0
+[GameRoom fixture-room] 暴走拼音怪(owner) 加入，当前 1 人
+[GameRoom fixture-room] 闪电小汉字(guest-a) 加入，当前 2 人
+[GameRoom fixture-room] 锦鲤拼音怪(guest-b) 加入，当前 3 人
+[GameRoom fixture-room] guest-b 离开（主动），剩余 2 人
+[GameRoom fixture-room] owner Start 失败，已回滚 Waiting Error: match participants or phase changed during locking
+    at GameRoom.assertMatchStartBoundary (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1934:19)
+    at GameRoom.performStartMatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1822:18)
+✔ 私房：Start 在途期间 Ready/Unready 被 StartInProgress 拒绝，Ready 状态不变 (0.653417ms)
+[GameRoom fixture-room] 创建 sId=0
+[GameRoom fixture-room] 暴走拼音怪(owner) 加入，当前 1 人
+[GameRoom fixture-room] 闪电小汉字(guest-a) 加入，当前 2 人
+[GameRoom fixture-room] owner Start 失败，已回滚 Waiting Error: start fence tuple changed during locking
+    at GameRoom.assertMatchStartBoundary (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1947:23)
+    at GameRoom.performStartMatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1822:18)
+[GameRoom fixture-room] 创建 sId=0
+[GameRoom fixture-room] 暴走拼音怪(owner) 加入，当前 1 人
+[GameRoom fixture-room] 闪电小汉字(guest-a) 加入，当前 2 人
+[GameRoom fixture-room] guest-a 断线后重连成功
+✔ 私房：Start await 期间的最终离开与 drop 都使启动失效并回滚 Waiting (5.036417ms)
+[GameRoom fixture-room] 创建 sId=0
+[GameRoom fixture-room] 暴走拼音怪(owner) 加入，当前 1 人
+[GameRoom fixture-room] 闪电小汉字(guest-a) 加入，当前 2 人
+[GameRoom fixture-room] owner Start 失败，已回滚 Waiting Error: lock refused
+    at GameRoom.lock (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/private-room.test.ts:477:76)
+    at GameRoom.lockWithDeadline (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1963:48)
+    at GameRoom.performStartMatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1819:37)
+    at GameRoom.startMatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1793:30)
+    at GameRoom.runOwnerStart (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:909:40)
+    at GameRoom.handleRoomStart (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:904:49)
+    at GameRoom.handleCoreMessage (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:820:18)
+    at GameRoom.dispatchGameMessage (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:738:18)
+    at Object._ (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:696:18)
+    at dispatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/private-room.test.ts:273:86)
+✔ 私房：宽限内离线成员阻止 Start，reconnect 后恢复可开局 (1.259917ms)
+[GameRoom fixture-room] 创建 sId=0
+[GameRoom fixture-room] 暴走拼音怪(owner) 加入，当前 1 人
+[GameRoom fixture-room] 闪电小汉字(guest-a) 加入，当前 2 人
+[GameRoom] lock 回滚失败，关闭房间 roomId=fixture-room Error: unlock down
+    at GameRoom.internals.unlock (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/private-room.test.ts:504:48)
+    at GameRoom.performStartMatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1850:32)
+[GameRoom fixture-room] owner Start 失败，已回滚 Waiting Error: mode start failed
+    at Object.onMatchStart (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/private-room.test.ts:494:76)
+    at GameRoom.performStartMatch (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:1827:38)
+[GameRoom fixture-room] 创建 sId=0
+[GameRoom fixture-room] 暴走拼音怪(owner) 加入，当前 1 人
+[GameRoom fixture-room] 闪电小汉字(guest-a) 加入，当前 2 人
+✔ 私房：lock 拒绝回滚 Waiting（Ready/owner 原样）；unlock 失败关闭房间 (3.733625ms)
+[GameRoom fixture-room] owner Start 失败，已回滚 Waiting GameRoomStartLockTimeoutError: GameRoom start lock timed out
+    at Timeout.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/src/rooms/GameRoom.ts:2017:24)
+    at listOnTimeout (node:internal/timers:635:17)
+    at process.processTimers (node:internal/timers:571:7)
+[GameRoom fixture-room] retry fence 超过绝对上限（1000ms）仍未收敛，fail-closed 关闭房间
+[GameRoom fixture-room] 创建 sId=0
+[GameRoom fixture-room] 暴走拼音怪(owner) 加入，当前 1 人
+[GameRoom fixture-room] 闪电小汉字(guest-a) 加入，当前 2 人
+[GameRoom fixture-room] 锦鲤拼音怪(guest-b) 加入，当前 3 人
+[GameRoom fixture-room] owner 离开（code=1006，宽限已过），剩余 2 人
+[GameRoom fixture-room] 创建 sId=0
+[GameRoom fixture-room] 暴走拼音怪(owner) 加入，当前 1 人
+[GameRoom fixture-room] 闪电小汉字(guest-a) 加入，当前 2 人
+✔ 私房：lock 永不 settle → 超时 + retry fence 绝对上限 → 释放 lease 并 dispose (2.333792ms)
+✔ 私房：宽限内 owner 不转移；最终离开后按最早仍在房成员转移 (0.500416ms)
+[GameRoom fixture-room] 创建 sId=0
+[GameRoom fixture-room] 暴走拼音怪(early) 加入，当前 1 人
+[GameRoom fixture-room] 闪电小汉字(owner) 加入，当前 2 人
+[GameRoom fixture-room] 创建 sId=0
+[GameRoom fixture-room] 暴走拼音怪(owner) 加入，当前 1 人
+[GameRoom fixture-room] 闪电小汉字(guest-a) 加入，当前 2 人
+[GameRoom fixture-room] 创建 sId=0
+[GameRoom fixture-room] 暴走拼音怪(owner) 加入，当前 1 人
+[GameRoom fixture-room] 闪电小汉字(guest-a) 加入，当前 2 人
+[GameRoom fixture-room] 锦鲤拼音怪(guest-b) 加入，当前 3 人
+[GameRoom fixture-room] 咸鱼小汉字(guest-c) 加入，当前 4 人
+[GameRoom fixture-room] 创建 sId=0
+✔ 私房：Start 成功即码进隔离期（tombstone）、房间拒绝中途入座 (0.939583ms)
+✔ 私房：房主身份只来自 creation claim 的 expectedOwnerUid，与入座顺序无关 (0.4125ms)
+✔ 私房：ticket claim 先于 mode.onAdmission；claim 失败不触碰玩法资源 (0.613833ms)
+✔ 私房：pending 占位计入容量——并发第 4/5 人只有一人入座，失败释放占位 (0.224458ms)
+[GameRoom fixture-room] 创建 sId=0
+[GameRoom fixture-room] 暴走拼音怪(owner) 加入，当前 1 人
+[GameRoom fixture-room] 闪电小汉字(guest-a) 加入，当前 2 人
+[GameRoom fixture-room] guest-a 断线后重连成功
+[GameRoom fixture-room] 创建 sId=0
+[GameRoom fixture-room] 暴走拼音怪(owner) 加入，当前 1 人
+✔ 私房：缺 access ticket 的 joinById 直连被拒 (0.573708ms)
+✔ 私房：drop 后 reconnect 不再走 ticket claim (0.186125ms)
+[GameRoom fixture-room] 创建 sId=0
+[GameRoom fixture-room] 暴走拼音怪(owner) 加入，当前 1 人
+[GameRoom fixture-room] 闪电小汉字(guest-a) 加入，当前 2 人
+[GameRoom fixture-room] owner Start 失败，已回滚 Waiting Error: lock refused
+    at TestContext.<anonymous> (/Volumes/KimData/work/worldMap/zlb_gameStarterKit/apps/server/test/private-room.test.ts:770:17)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+✔ 私房：renew 三态——lost 立即失效旧码并换新码；unknown 累计超 TTL 按 lost (0.787875ms)
+[GameRoom fixture-room] waiting deadline 到期，关闭私房
+✔ 私房：waitingDeadline 只在 starting===false 求值；到期 dispose 而非只释放码 (1.163ms)
+[GameRoom undefined] 创建 sId=0
+[GameRoom undefined] 创建 sId=0
+[GameRoom undefined] 闪电拼音怪(probe) 加入，当前 1 人
+[GameRoom undefined] 创建 sId=0
+[GameRoom fixture-room] 创建 sId=0
+[GameRoom fixture-room] 暴走拼音怪(owner) 加入，当前 1 人
+✔ 私房：leaseToken/ticket 不进 state、广播与日志输出 (0.824375ms)
+✔ 私房：邀请码基础设施故障时建房 fail-closed (0.172958ms)
+✔ 私房：无 fragment 的 mode 配 owner-ready/invite profile 在 onCreate 被拒 (3.781875ms)
+✔ default profile：显式 profile=default 行为与历史一致，Ready/Start 回 BadRequest (2.045834ms)
+✔ profile 双查：joinById 带另一 profile 的 auth 进不了 default 房，也进不了 private 房 (0.383ms)
+◇ injected env (1) from ../../.env.development // tip: ⌁ auth for agents [www.vestauth.com]
+✅ .env.development loaded.
+✔ 版本矩阵：Lobby join 只拿 LOBBY_PROTOCOL_VERSION 判定（正确版本穿过版本闸，错误版本 ProtocolMismatch） (0.737916ms)
+✔ 版本矩阵：Game join 只拿 GAME_ROOM_PROTOCOL_VERSION 判定（onAuth 与 onCreate 同口径） (1.221583ms)
+✔ 版本矩阵 v8：旧 v=7 Game join（无 profile/modeVersion 信封）被 ProtocolMismatch 明确拒绝 (0.895125ms)
+✔ 版本矩阵：modeVersion 对 catalog 单玩法判定（不匹配拒绝；不影响其他玩法与 core 信封） (0.982667ms)
+✔ 版本矩阵源码钉：两房间各只比较自己的整数，另一个整数不得参与拒绝（变异即红） (1.036666ms)
+✔ redeem：未登记码 → REDEEM_CODE_INVALID，且不动余额 (0.665584ms)
+✔ redeem：首兑成功回显码与奖励；同码再兑 → REDEEM_CODE_USED；不同码累计余额 (0.438417ms)
+✔ redeem：Redis 实现两键同 {uid} 槽，Lua 返回 ok/used 解析正确，异常形状 fail-fast (0.378542ms)
+✔ redis route URL validation is fail-closed before client construction (1.003833ms)
+✔ REDIS_ROUTE_FILE loader parses, sorts, and returns a complete bucket cover (4.31625ms)
+✔ REDIS_ROUTE_FILE loader rejects every structural and coverage failure before routing (0.444667ms)
+✔ REDIS_ROUTE_FILE loader validates fallback URLs when the file is absent (0.077041ms)
+✔ relayer outbox metadata normalizes mysql numeric strings before routing/arithmetic (0.880834ms)
+✔ relayer outbox metadata rejects malformed or overflowing durable values (0.239583ms)
+✔ relayer runs apply, thaw, and trim only after guarded transactions close (0.289208ms)
+✔ relayer pre-apply archive reconciliation failure never calls Redis apply (0.326042ms)
+✔ lease loss after apply blocks stale finalization and successor converges by dup replay (0.425291ms)
+✔ relayer failure accounting commits retry/dead transitions before reporting (0.339458ms)
+✔ relayer corrupt metadata uses pending CAS and reports only a committed dead letter (0.18975ms)
+✔ relayer lost failure guard and zero-row finalization produce no stale report or trim (0.258666ms)
+✔ recomputeStamina：进位保留余数、满则计时归 now (0.705834ms)
+✔ spendStamina：满体力扣减起表；不足不扣但回写恢复结果 (0.117458ms)
+✔ SeededRandom.stream：同 (seed,name) 可复现，异名子流互相独立 (0.142292ms)
+✔ isNewNaturalDay：同日 false / 跨午夜 true / 首次(0) false (0.096ms)
+✔ naturalDayIndex：显式 UTC 偏移，不随宿主 TZ 漂移 (0.175333ms)
+✔ 铁律 4：apps/shared 只许相对导入（⛔ 禁 npm 包与 Node 内建——workspaces 提升让 tsc 抓不到） (6.38825ms)
+✔ 铁律 4：apps/shared 禁 `const enum`（Cocos 单文件转译下跨文件内联不安全） (3.081167ms)
+✔ 机检自身有效：两条判据都能认出违规，且 ⛔ 不误伤相对导入/注释里的举例/普通 enum (0.211459ms)
+✔ 顶层 shutdown aggregator：只占用一对槽位并按停服顺序执行 (0.879375ms)
+✔ 顶层 shutdown aggregator：before 回调先同步关闸且返回 producer drain (0.114458ms)
+✔ producer stopper：按入口声明顺序逐个停止、异常隔离且幂等 (0.163709ms)
+✔ 最终 cleanup：producer 完成后按 character-ready → tasks → resources 顺序执行 (0.103541ms)
+✔ shutdown aggregator：同一 Server 禁止重复注册第二个 onBeforeShutdown (0.185792ms)
+✔ 真实 Colyseus Server：活动 Room 在 before 与 after shutdown 之间完成排空 (1264.056083ms)
+✔ slg 即时守备：无主占领、己方加固封顶、敌方削守备归零当次夺取；只改主发奖 (2.266166ms)
+✔ slg 稀疏INSERT冲突后按实际新主人重读，不覆盖或误发占领奖 (0.172083ms)
+✔ slg 回执绑定hash/version，永久重放首次结果，即使地块后来改主；同op并发不重复变更 (0.715541ms)
+✔ slg 回执写失败回滚地块、日志、revision和outbox intent；重试正常提交 (0.329542ms)
+✔ slg 派遣：己方起点、1金币、3支限制；回执重放原余额，源地途中失守不影响到达 (1.203625ms)
+✔ slg 非己方起点、同点、余额不足、派遣回执失败都不遗留命令或扣款 (0.379375ms)
+✔ slg 撤回在到达前结束且不退款；不泄露他人行军；截止当刻先提交到达再拒撤回 (0.834084ms)
+✔ slg 同目标按到达时间再marchId排序，两并发结算只生效一次；即时操作在旧到达之后 (0.368917ms)
+✔ slg 有界补算满批仍提交进度，绝不跳过剩余事件执行即时操作 (1.614ms)
+✔ slg 到达事务故障不遗留半成品，重放修复且只奖励一次 (0.387541ms)
+✔ slg 区域隔离、稀疏有界快照与双消费者独立游标 (0.419042ms)
+✔ slg shared: 10000×10000 grid ids round trip across both axes and uint32 boundaries (15.391666ms)
+✔ slg shared: chunk border, final chunk, bounded request area and exact keys (0.503375ms)
+✔ slg shared: capture on zero in the same action, reinforcement cap and sparse default (0.50325ms)
+✔ slg shared: frozen march time and linear position; invalid or overposted orders rejected (0.4785ms)
+✔ slg terrain: frozen content validation and ordered regional painting (0.734583ms)
+✔ 新 uid 拿到默认 profile：装备皮肤 1、只拥有皮肤 1、四项碎片为 0 (1.098917ms)
+✔ 返回的是深拷贝：改动快照不回流到模块内状态 (0.110542ms)
+✔ 回灌走白名单 HMGET 的三个 field，且顺序固定 (0.185417ms)
+✔ 回灌：合法值进内存；只回灌一次，后续读走进程内值 (0.471459ms)
+✔ 回灌：坏 JSON / 越权皮肤 / 未拥有的装备值都告警并退回默认，⛔ 坏值不进玩法 (0.363459ms)
+✔ 回灌：Redis 抛错只告警，profile 保持默认且不阻塞 (0.169291ms)
+✔ F13：同一 uid 的并发回灌共用一次请求，且两个调用者都拿到回灌后的值 (0.413083ms)
+✔ F13：回灌失败不毒化——下一次调用会重试，成功后才算已回灌 (0.2015ms)
+✔ equip：未拥有拒绝、非法 ID 拒绝、重复装备是 no-op 且不写 Redis (0.251042ms)
+✔ unlock：非碎片皮肤拒绝、碎片不足拒绝且不扣，达标时精确扣门槛并保留超额 (0.241666ms)
+✔ unlock：已拥有再次解锁直接返回快照，⛔ 不二次扣碎片 (0.093292ms)
+✔ 镜像只写三个 cosmetic field，⛔ 不含 coinBalance (0.070917ms)
+✔ Redis 镜像写失败只告警，已返回的 demo 结果不回滚 (6.20475ms)
+✔ 同一进程内不同房间共享同一 uid 的 profile (0.148625ms)
+✔ equippedSkinIdOf：uid 缺失 / 未预热 / 装备值失效都回退默认皮肤 1 (0.081084ms)
+✔ DEFAULT_SNAKE_RUN_SKIN_RESOLVER 是同步的，且只认服务端传入的 uid (0.061ms)
+✔ cappedComponent：先乘后整除再封顶；负数/非有限/零分母都退化为 0 (0.447ms)
+✔ 合格 run 判据：moderationKick 一律不发；时长不足不发；三选一支路各自成立 (0.111583ms)
+✔ 金币/XP：不合格 run 为 0；下界是 base + 时长；上界精确触顶 (0.1125ms)
+✔ 等级：门槛表 50*L*(L-1)，满级封顶，解锁只在跨过档位时授予一次 (0.390167ms)
+✔ 成就：四项指标各自取值，进度在门槛处饱和 (0.088709ms)
+✔ 碎片：按 401→403→133→411 取第一个未拥有；数量 1..5；四款全有则不发 (0.141208ms)
+✔ 策略常量是冻结的：⛔ 运行期改参数不生效（改动只能走真源 + fixture） (0.046125ms)
+✔ Redis demo economy charges one business death once and mirrors its balance (3.791541ms)
+✔ Redis demo mirror failure is reported but does not roll back gameplay (0.427209ms)
+✔ Redis demo balance is shared by mode-local economy instances (0.102208ms)
+✔ Snake demo Redis key is global: no zone prefix and identical across sId (0.231709ms)
+✔ F13：demo 钱包入房前从 Redis 回灌，回灌前 ⛔ 不可信 (0.143916ms)
+✔ F13：钱包回灌——键不存在算成功（新玩家用初始余额），Redis 报错则不可信且可重试 (0.146625ms)
+✔ F13：钱包并发回灌共用一次请求，两个调用者都等到回灌后的值 (0.105292ms)
+◇ injected env (1) from ../../.env.development // tip: ⌘ override existing { override: true }
+✅ .env.development loaded.
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(first) 加入，当前 1 人
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(p1) 加入，当前 1 人
+[GameRoom snake-room] 无敌拼音怪(p2) 加入，当前 2 人
+[GameRoom snake-room] 锦鲤部首君(p3) 加入，当前 3 人
+[GameRoom snake-room] 神秘笔画侠(p4) 加入，当前 4 人
+[GameRoom snake-room] 快乐笔画侠(p5) 加入，当前 5 人
+[GameRoom snake-room] 神秘小汉字(p6) 加入，当前 6 人
+[GameRoom snake-room] 锦鲤拼音怪(p7) 加入，当前 7 人
+[GameRoom snake-room] 低调部首君(p8) 加入，当前 8 人
+[snake] 结算跳过 Redis 写回：uid=u-p8 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] p8 离开（主动），剩余 7 人
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(fractional) 加入，当前 1 人
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(first) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-first 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(first) 加入，当前 1 人
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(first) 加入，当前 1 人
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(first) 加入，当前 1 人
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(first) 加入，当前 1 人
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(timeout) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-timeout 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(cas) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-cas 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(spawn) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-spawn 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(retry) 加入，当前 1 人
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(failed) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-failed 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(protected) 加入，当前 1 人
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(reconnect) 加入，当前 1 人
+[GameRoom snake-room] reconnect 断线后重连成功
+[snake] 结算跳过 Redis 写回：uid=u-reconnect 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] reconnect 断线后重连成功
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(churn-0) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-churn-0 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] churn-0 离开（主动），剩余 0 人
+[GameRoom snake-room] 无敌拼音怪(churn-1) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-churn-1 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] churn-1 离开（主动），剩余 0 人
+[GameRoom snake-room] 锦鲤部首君(churn-2) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-churn-2 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] churn-2 离开（主动），剩余 0 人
+[GameRoom snake-room] 神秘笔画侠(churn-3) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-churn-3 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] churn-3 离开（主动），剩余 0 人
+[GameRoom snake-room] 快乐笔画侠(churn-4) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-churn-4 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] churn-4 离开（主动），剩余 0 人
+[GameRoom snake-room] 神秘小汉字(churn-5) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-churn-5 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] churn-5 离开（主动），剩余 0 人
+[GameRoom snake-room] 锦鲤拼音怪(churn-6) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-churn-6 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] churn-6 离开（主动），剩余 0 人
+[GameRoom snake-room] 低调部首君(churn-7) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-churn-7 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] churn-7 离开（主动），剩余 0 人
+[GameRoom snake-room] 锦鲤词王(churn-8) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-churn-8 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] churn-8 离开（主动），剩余 0 人
+[GameRoom snake-room] 低调成语精(churn-9) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-churn-9 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] churn-9 离开（主动），剩余 0 人
+[GameRoom snake-room] 快乐词王(churn-10) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-churn-10 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] churn-10 离开（主动），剩余 0 人
+[GameRoom snake-room] 神秘拼音怪(churn-11) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-churn-11 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] churn-11 离开（主动），剩余 0 人
+[GameRoom snake-room] 低调词王(churn-12) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-churn-12 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] churn-12 离开（主动），剩余 0 人
+[GameRoom snake-room] 锦鲤小汉字(churn-13) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-churn-13 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] churn-13 离开（主动），剩余 0 人
+[GameRoom snake-room] 无敌部首君(churn-14) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-churn-14 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] churn-14 离开（主动），剩余 0 人
+[GameRoom snake-room] 低调小汉字(churn-15) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-churn-15 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] churn-15 离开（主动），剩余 0 人
+[GameRoom snake-room] 无敌部首君(churn-16) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-churn-16 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] churn-16 离开（主动），剩余 0 人
+[GameRoom snake-room] 闪电笔画侠(churn-17) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-churn-17 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] churn-17 离开（主动），剩余 0 人
+[GameRoom snake-room] 暴走部首君(churn-18) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-churn-18 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] churn-18 离开（主动），剩余 0 人
+[GameRoom snake-room] 暴走词王(churn-19) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-churn-19 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] churn-19 离开（主动），剩余 0 人
+[GameRoom snake-room] 销毁
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(first) 加入，当前 1 人
+[GameRoom snake-room] 无敌拼音怪(second) 加入，当前 2 人
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(p1) 加入，当前 1 人
+[GameRoom snake-room] 无敌拼音怪(p2) 加入，当前 2 人
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(p1) 加入，当前 1 人
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(s4) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-s4 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] s4 离开（主动），剩余 0 人
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(p1) 加入，当前 1 人
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(r1) 加入，当前 1 人
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(poor) 加入，当前 1 人
+[GameRoom snake-room] 创建 sId=0
+[GameRoom snake-room] 锦鲤词王(g1) 加入，当前 1 人
+[snake] 结算跳过 Redis 写回：uid=u-g1 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[GameRoom snake-room] g1 离开（主动），剩余 0 人
+[GameRoom snake-room] 无敌拼音怪(g1) 加入，当前 1 人
+✔ 首人即无尽开局：稳定 epoch/meta、17 蛇、1030 食物和分块 baseline (9.887833ms)
+✔ 1～8 真人始终 17 条活动蛇，只淘汰 level-401；离场只补 401 (46.044291ms)
+✔ schema 允许 AI 千分位 wreck 进入真人分数投影 (4.674833ms)
+✔ 1800/1801 后仍 Playing；delta 有序且移动使用 append/trim (4128.408875ms)
+✔ 输入 exact/seq 闸与 baseline 重取 (67.425083ms)
+✔ 磁铁拾取在一个 delta 原子包含 tool removal、蛇 buff 与真人累计 (386.396292ms)
+✔ 五次金币复活费用 100/200/300/300/300；第六死无 offer，buff 清零但累计保留 (136.814083ms)
+✔ 复活 decision CAS：同 ID 同 payload 重放，同 ID 异 payload 不改状态 (102.704375ms)
+✔ deadline 等值时 timeout 获胜；decline/accept 只允许第一个 CAS 结果 (201.670291ms)
+✔ 安全点最多搜索 20 tick 且失败不调用经济；retryable 可用新 ID 重试，systemFailure 终局 (343.916208ms)
+✔ 复活保护包含 provisional 首 tick 共 60 tick；activeTicks 从其下一 step 恢复 (182.39725ms)
+✔ 断线关闭 boost/暂停 activeTicks，绝对磁铁与 offer deadline 继续；重连沿用同一 run (243.100667ms)
+✔ final-leave/churn 集合回落；dispose 进入 Draining 并释放世界、游标与任务 (41.3425ms)
+✔ 结束本次只终结本人；生产环境不能绑定测试或 demo 经济 (143.591917ms)
+✔ S3-03 run 起始锁存装备皮肤：join ⛔ 无自报通道；run 中换装不改当前蛇，下一 run 才生效 (18.098042ms)
+✔ F13：onBeforeAdmission 在入房前 await 档案预热，createPlayer 因此锁存的是存档里的皮肤 (2.352625ms)
+✔ S4-01 per-run 统计：峰值长度、有效输入去重计数、复活消耗累计，且随新 run 归零 (88.764625ms)
+✔ S5-03 磁铁 gate 只认真人合格 run；AI 死亡 ⛔ 不进复活/发奖路径 (152.802542ms)
+✔ S5-03 复活成功恢复当前 run（runId 不变），⛔ 不是新开一局 (107.375125ms)
+✔ S5-03 余额不足：保留选择窗、回当前余额，⛔ 不终结 run 也不扣费 (94.992417ms)
+✔ S5-03 连续两局：第一局中换装 → 离房重进后第二局生效（拍板 C=离房重进） (16.79125ms)
+✔ S2 五层身份：四层 hash 不变，online v2 与组合 hash 为真实新值 (0.82875ms)
+✔ 4096² V2 几何与 71 项路径表命中全部冻结向量 (0.162084ms)
+✔ 相机/身体尺度连续、单调并钉住端点 (0.118667ms)
+✔ 320/3 unit/s 的 milli 余数严格循环 5333/5333/5334 (0.643583ms)
+✔ 无尽 deadline 必须由 hasDeadline 守门 (0.062417ms)
+✔ 方向、速度、转角与磁铁扩圈均消费 V2 单源 (0.149208ms)
+✔ 加速债务 1 秒精确扣 3，长度下限/死亡拒绝 (0.082042ms)
+✔ AI 死亡残骸公式边界与 0.001 分值守恒 (1.001833ms)
+✔ 排名 tie-break 稳定 (0.112875ms)
+[snake] 结算跳过 Redis 写回：uid=u2 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[snake] 结算跳过 Redis 写回：uid=u3 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[snake] 结算跳过 Redis 写回：uid=u4 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[snake] 结算跳过 Redis 写回：uid=u4 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[snake] 结算跳过 Redis 写回：uid=u5 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[snake] 结算跳过 Redis 写回：uid=u5 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+[snake] 结算跳过 Redis 写回：uid=u6 的进程内档案未被回灌（Redis 当时不可用？），写回会用默认档覆盖玩家的皮肤/碎片/余额（F13）
+✔ 合格 run：金币/XP/碎片同步落进程内 profile，并只写一条六字段镜像 (1.443666ms)
+✔ 同一 uid+roomEpochId+runId 重复终局只奖一次，返回缓存结果且不重复写 (0.1705ms)
+✔ 换 runId 或换 roomEpochId 都算新 run，各自发一次 (0.215666ms)
+✔ 不合格 run：全部奖励为 0，成就进度不累计，但仍写一条镜像并可查最近结果 (0.426166ms)
+✔ F13：未预热的档案 ⛔ 不写回 Redis（宁可这局奖励落不了盘，也不能拿默认档盖真实档） (0.122291ms)
+✔ F13：预热过的同一局照常写回（证明上一条测的是冷档而不是「本来就不写」） (0.132084ms)
+✔ F13：只回灌了衣柜、钱包还是冷的，同样 ⛔ 不写回（那条写里带着 coinBalance） (0.124042ms)
+✔ moderationKick ⛔ 不发奖 (0.102625ms)
+✔ 等级与成就解锁：跨门槛时把皮肤加进拥有集合，⛔ 已拥有不重复解锁 (0.259334ms)
+✔ 成就达标解锁：kills 累计到 100 解锁皮肤 101 (0.274708ms)
+✔ 碎片：四款全拥有时本局碎片为 0（⚠ 真的先全拥有，不是靠不合格 run 蒙混） (0.395834ms)
+✔ Redis 镜像写失败只告警，已返回的奖励结果不回滚 (6.807042ms)
+✔ 同 seed/输入的 Star、磁铁、AI 与世界字节级可重放 (655.66325ms)
+✔ 稳态严格 1000 Dot + 30 Star，variant 与独立运动流合法 (1.6165ms)
+✔ Star 独立子流严格按 heading→hold 抽取，34/67 都驱动完整 movement 次数 (1.003ms)
+✔ 计划变向与角落反射同 tick：方向/hold 后再仅抽一次反射 hold (0.349459ms)
+✔ Star 小地图长驻反弹保持实体半径在四边内，反弹只重抽一次 hold (0.177125ms)
+✔ 磁铁 300/1200/3000 必发、400 tick 半开过期，6000 gate 跳过不耗 ID (128.70025ms)
+✔ 6000 gate 精确区分真人资格状态与 49999/50000 (220.390375ms)
+✔ 循环 gate 覆盖七种资格与四种排除状态，AI/跳过均不补发 (0.257625ms)
+✔ trigger 使用调用前快照；新磁铁当 tick 可拾取，buff 同 tick 扩大食物圈且重拾只刷新 (0.387792ms)
+✔ 同 tick 磁铁唯一胜者按稳定 entityId；buff 为 160 tick 且不扩大磁铁拾取圈 (3.708542ms)
+✔ 首人 + 16 AI 阵容；2～8 真人只替换 401，活动蛇始终 17 (0.935916ms)
+✔ 真人无自动重生/无计分残骸；AI 独立 40 tick 重生并守恒掉落 (12.489042ms)
+✔ AI 残骸达到房间 cap 时只合并实体，逐点 min=3 后的总分严格守恒 (0.189167ms)
+✔ 无尽世界跨越 1799/1800/1801 且从不返回房级完成 (46.374417ms)
+✔ 最大路径 fixture 可承载 17×5186=88162 点且工具不计入 food cap (8.853041ms)
+✔ S5-03 出生保护 30 tick 是半开区间，且只护碰撞 ⛔ 不护墙 (1.451334ms)
+✔ stream depth alert：start/stop 幂等，显式 stop 后可登记新一代 (0.707542ms)
+✔ stream depth alert：停服关闸后拒绝重启且不留下资源 (0.328667ms)
+✔ stream depth alert：各来源与 quarantine 故障独立告警，不能被统一 catch 吞掉 (0.626042ms)
+✔ tally：createPlayer/onMatchInitialize/tap 计数，先到 tapGoal 者胜并 settle，结算后再 tap 无效 (1.516583ms)
+✔ tally：tapGoal 归一化（非法 → 缺省、超上限 → 缺省）；rollback 复位 (0.167875ms)
+✔ tally：对局中离开——剩最后一人即胜；等待期离开不判；空房 shouldSettle (0.256334ms)
+✔ tally：registerTallyGameMode 登记到给定 registry，注销后消失 (0.147667ms)
+✔ ensureLive single-flight isolates concurrent same-uid work by zone (1.068875ms)
+✔ user schema registry is continuous through current v2 (0.977ms)
+✔ v1->v2 adds missing checkedAt=0, preserves legal old values, bumps ver and never mutates input (0.268709ms)
+✔ v1 explicit malformed checkedAt and overflowing ver fail before a migration result exists (0.565834ms)
+✔ current v2 is a validated no-op and requires canonical checkedAt (0.233292ms)
+✔ lazy archive migration returns a new snapshot and leaves success/failure inputs untouched (0.88875ms)
+✔ generic UoW reserved fields are exact and rejected before dirty state (0.184416ms)
+✔ character 路由熔断不得波及 session verify (13.424208ms)
+✔ WebPlatformClient：test delegate 可恢复，生产默认仍走真实 HTTP (9.829209ms)
+✔ WebPlatformClient：服务身份头、request-id、请求 body 与 character 路径正确 (2.910083ms)
+✔ WebPlatformClient：503 仅重试一次，且两次复用同一 request-id (1.21725ms)
+✔ WebPlatformClient：HTTP 200 响应仍做严格 schema 校验 (1.128333ms)
+✔ WebPlatformClient：只有 valid:false 是玩家鉴权失败 (0.800625ms)
+✔ WebPlatformClient：401 与请求超时保持 INTERNAL，不谎报 token 无效 (1003.70175ms)
+✔ HTTP contract map：路径/方法唯一且响应 validator 拒绝 extra、NaN 和非法 origin (1.430959ms)
+✔ HTTP/WS origin：拒绝非 canonical 空白、非法 DNS label 与多重尾斜杠 (0.244875ms)
+✔ join/RPC envelope：exact keys、有限数值和错误码联合严格收口 (0.9135ms)
+✔ C2S/S2C：每个消息都有 exact runtime validator，坏包不进入回调 (0.432292ms)
+✔ wire catalog 闭合：validator 表 ≡ core 表 ∪ 各玩法 token 表，且 owner 双向一致 (0.262708ms)
+✔ wire helpers：revoked/throwing Proxy 按非法 shape 处理，不泄漏原生 Proxy 异常 (0.42475ms)
+✔ setField：按字段值域拒绝数字垃圾、越界值和非规范开关 (0.272084ms)
+✔ kit effect kind：按注入表判——接受、未登记、delta 0 / 越 max / 非整数、extra key、缺省表为空 (0.33125ms)
+✔ setField：角色登记 marker 与复核时间戳永久保留 (0.112ms)
+✔ setField：文本上限统一按 UTF-8 字节，含信封级上限和代理字符 (0.268583ms)
+✔ 所有公开 wire validator：hostile getter/iterator 统一转为可判别错误 (0.581292ms)
+✔ push/state vectors：未知推送、非法 phase、状态 extra key 在渲染前拒绝 (0.221917ms)
+✔ WebPlatform contract map：Public consumer endpoints 都有 method/path 与 validator (0.307458ms)
+✔ 硬化 fail-fast：GROUP_ZONES 非空 + 未建 zoneCtx → per-zone 键构造 throw (70.815458ms)
+✔ 硬化 fail-fast：GROUP_ZONES 非空 + zoneCtx.run 内 → 正常带区前缀 (67.805792ms)
+✔ 硬化 fail-fast：GROUP_ZONES 空（单形态）+ 未建 zoneCtx → 回退基础前缀不 throw (68.290625ms)
+✔ 区服组（GROUP_ZONES 非空）：**缺 sId 必须拒**（否则大厅串基础前缀 + GameRoom 绕过 filterBy 混区） (209.757584ms)
+✔ 单形态（GROUP_ZONES 空）：缺 sId 仍放行（向后兼容老客户端） (138.973708ms)
+ℹ tests 751
+ℹ suites 0
+ℹ pass 751
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 20846.318125
