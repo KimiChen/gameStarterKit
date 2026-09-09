@@ -18,11 +18,14 @@ type Listener = { type: string; callback: (...args: unknown[]) => unknown; targe
 class FakeNode {
   name: string;
   layer = 0;
+  active = true;
   isValid = true;
   parent: FakeNode | null = null;
   children: FakeNode[] = [];
   x = 0;
   y = 0;
+  position = { x: 0, y: 0, z: 0 };
+  scale = { x: 1, y: 1, z: 1 };
   readonly listeners: Listener[] = [];
   private readonly components = new Map<unknown, unknown>();
 
@@ -31,6 +34,7 @@ class FakeNode {
     TOUCH_MOVE: "touch-move",
     TOUCH_END: "touch-end",
     TOUCH_CANCEL: "touch-cancel",
+    SIZE_CHANGED: "size-changed",
   };
 
   constructor(name = "node") { this.name = name; }
@@ -49,7 +53,16 @@ class FakeNode {
 
   removeFromParent(): void { this.parent?.removeChild(this); }
   setSiblingIndex(): void {}
-  setPosition(x: number, y: number): void { this.x = x; this.y = y; }
+  setPosition(x: number, y: number, z = 0): void {
+    this.x = x;
+    this.y = y;
+    this.position = { x, y, z };
+  }
+  setScale(x: number, y: number, z = 1): void { this.scale = { x, y, z }; }
+
+  getChildByName(name: string): FakeNode | null {
+    return this.children.find((child) => child.name === name) ?? null;
+  }
 
   getComponent(type: unknown): unknown { return this.components.get(type) ?? null; }
 
@@ -64,11 +77,17 @@ class FakeNode {
     this.listeners.push({ type, callback, target });
   }
 
-  off(): void {}
+  off(type: string, callback: (...args: unknown[]) => unknown, target?: unknown): void {
+    const index = this.listeners.findIndex((listener) =>
+      listener.type === type && listener.callback === callback && listener.target === target);
+    if (index >= 0) this.listeners.splice(index, 1);
+  }
 
   destroy(): boolean {
     this.removeFromParent();
     this.isValid = false;
+    for (const child of [...this.children]) child.destroy();
+    this.listeners.length = 0;
     return true;
   }
 
@@ -79,12 +98,41 @@ class FakeNode {
 }
 
 class FakeUITransform { width = 0; height = 0; anchorX = 0.5; anchorY = 0.5; }
+class FakeVec2 { constructor(public x = 0, public y = 0) {} }
+class FakeMask {
+  static Type = { GRAPHICS_RECT: 0 };
+  type = FakeMask.Type.GRAPHICS_RECT;
+}
+class FakeScrollView {
+  node!: FakeNode;
+  content: FakeNode | null = null;
+  horizontal = true;
+  vertical = true;
+  inertia = true;
+  brake = 0.5;
+  elastic = true;
+  cancelInnerEvents = true;
+  private offset = new FakeVec2();
+
+  getScrollOffset(): FakeVec2 { return new FakeVec2(this.offset.x, this.offset.y); }
+  getMaxScrollOffset(): FakeVec2 {
+    const viewport = this.node.getComponent(FakeUITransform) as FakeUITransform;
+    const content = this.content?.getComponent(FakeUITransform) as FakeUITransform | null;
+    return new FakeVec2(
+      Math.max(0, (content?.width ?? 0) - viewport.width),
+      Math.max(0, (content?.height ?? 0) - viewport.height),
+    );
+  }
+  scrollToOffset(offset: FakeVec2): void { this.offset = new FakeVec2(offset.x, offset.y); }
+  scrollToTop(): void { this.offset = new FakeVec2(); }
+  stopAutoScroll(): void {}
+}
 class FakeLabel {
   static HorizontalAlign = { LEFT: 0, CENTER: 1, RIGHT: 2 };
   static VerticalAlign = { TOP: 0, CENTER: 1, BOTTOM: 2 };
   static Overflow = { NONE: 0, CLAMP: 1, SHRINK: 2, RESIZE_HEIGHT: 3 };
   string = ""; fontSize = 0; color: unknown = null; horizontalAlign = 1; verticalAlign = 0;
-  lineHeight = 40; overflow = 0; enableWrapText = true;
+  lineHeight = 40; overflow = 0; enableWrapText = true; isBold = false;
 }
 class FakeGraphics {
   fillColor: unknown = null;
@@ -105,13 +153,25 @@ class FakeSpriteFrame {
   rect: { width: number; height: number } = { width: 2, height: 2 };
   /** ⚠ 引擎默认 true；⛔ 纯色帧必须置 false，否则动态图集打包时会打崩渲染循环。 */
   packable = true;
+  insetTop = 0;
+  insetBottom = 0;
+  insetLeft = 0;
+  insetRight = 0;
 }
 
 class FakeRect {
   constructor(readonly x = 0, readonly y = 0, readonly width = 0, readonly height = 0) {}
 }
 
-class FakeTexture2D { constructor(readonly width = 2, readonly height = 2) {} }
+class FakeTexture2D {
+  data: Uint8Array | null = null;
+  constructor(public width = 2, public height = 2) {}
+  reset(info: { width: number; height: number }): void {
+    this.width = info.width;
+    this.height = info.height;
+  }
+  uploadData(source: Uint8Array): void { this.data = source; }
+}
 
 /**
  * ⚠ 复刻引擎契约：`sizeMode` 为默认的 TRIMMED 时，赋 `spriteFrame` 会用 `frame.rect` 覆写
@@ -146,6 +206,9 @@ const sharedWhiteTexture = new FakeTexture2D();
 const cc = {
   Node: FakeNode,
   UITransform: FakeUITransform,
+  Vec2: FakeVec2,
+  Mask: FakeMask,
+  ScrollView: FakeScrollView,
   Label: FakeLabel,
   Graphics: FakeGraphics,
   Sprite: FakeSprite,
@@ -196,6 +259,18 @@ function labels(root: FakeNode): string[] {
     .map((node) => node.getComponent(FakeLabel) as FakeLabel | null)
     .filter((label): label is FakeLabel => label !== null)
     .map((label) => label.string);
+}
+
+function named(root: FakeNode, name: string): FakeNode {
+  const result = root.flatten().find((node) => node.name === name);
+  assert.ok(result, `页面缺少节点 ${name}`);
+  return result;
+}
+
+function spritesOf(root: FakeNode): FakeSprite[] {
+  return root.flatten()
+    .map((node) => node.getComponent(FakeSprite))
+    .filter((sprite): sprite is FakeSprite => sprite instanceof FakeSprite);
 }
 
 function tapAll(nodes: readonly FakeNode[]): void {
@@ -256,7 +331,7 @@ async function makeSettingsLogic(): Promise<SettingsFixture> {
   return { logic, patches, launched };
 }
 
-test("SettingsView：两个区块都画出来；置灰占位项 ⛔ 没有任何点击回调", async () => {
+test("SettingsView：系统设置和玩法入口分区双列；置灰占位卡片没有点击回调", async () => {
   const { SettingsView } = await loadViews();
   const view = new SettingsView();
   const root = await openPage(view);
@@ -264,65 +339,92 @@ test("SettingsView：两个区块都画出来；置灰占位项 ⛔ 没有任何
   view.setup(logic);
 
   const rendered = labels(root);
-  for (const line of ["设置", "关闭", "音乐", "音效", "可用玩法  ·  alpha", "坏掉的玩法  ·  broken", "重试", "进入"]) {
+  for (const line of ["设置", "系统设置", "玩法入口", "通用设置", "可用玩法", "坏掉的玩法", "重试"]) {
     assert.ok(rendered.includes(line), `设置面板必须渲染出「${line}」`);
   }
+  assert.ok(!rendered.includes("关闭"), "关闭入口应使用 X 图标");
+  assert.ok(!rendered.some((line) => line.includes("alpha") || line.includes("broken")),
+    "入口标题面向玩家展示，不拼接内部 pluginId");
+  assert.ok(!rendered.includes("音乐"), "音频开关由通用设置子页承载");
   for (const item of logic.placeholders()) {
     assert.ok(rendered.includes(item.label), `占位项 ${item.id} 必须有标题`);
-    assert.ok(rendered.includes(item.reason), `占位项 ${item.id} 必须把未实现原因画出来`);
+    assert.ok(!rendered.includes(item.reason), `占位项 ${item.id} 不直接展示技术实现说明`);
   }
 
   const placeholderRows = root.flatten().filter((node) => node.name === "row-placeholder");
   assert.equal(placeholderRows.length, logic.placeholders().length);
   for (const row of placeholderRows) {
     assert.equal(row.flatten().some((node) => node.listeners.length > 0), false,
-      "置灰占位项 ⛔ 不得挂任何点击回调（点不动 = 没实现，⛔ 不做假实现）");
+      "置灰占位项不得挂任何点击回调");
+    assert.ok(labels(row).length >= 2, "未开放卡片需要标题与简洁状态说明");
   }
+
+  const general = named(root, "btn-general");
+  assert.ok(placeholderRows.some((node) => node.y === general.y && node.x > general.x),
+    "系统卡片应按双列排列");
+  const enabled = named(root, "card-ok");
+  const failed = named(root, "card-bad");
+  const cardSize = enabled.getComponent(FakeUITransform) as FakeUITransform;
+  assert.ok(cardSize.width > 200 && cardSize.height > 80,
+    "卡片必须保留布局尺寸，不能被 96×96 的纹理帧覆写");
+  assert.equal(enabled.y, failed.y, "相邻玩法入口应在同一行");
+  assert.ok(enabled.x < failed.x, "玩法入口应按稳定顺序从左至右排列");
+  assert.ok(enabled.y < Math.min(general.y, ...placeholderRows.map((node) => node.y)),
+    "玩法入口必须在系统设置区域下方");
+  view.dispose();
 });
 
-test("纯色底板必须走可合批的 Sprite，⛔ 不再每块一个 Graphics", async () => {
-  // ⚠ 判据来自真机实测（Creator 3.8.8，CDP 读引擎 profiler）：**每个 Graphics 组件固定占用
-  // 约 2.25MB 显存缓冲**，与画多少内容无关，且各自一个 draw call。三点完全线性：
-  // 首屏 3 个 → 6.8MB / 9 draw call；设置 25 个 → 56.3MB / 59；衣柜 50 个 → 112.6MB / 116。
-  // ⛔ 别把这条弱化成「底板存在」——那正是问题潜伏了这么久的原因。
+test("设置表面和图标使用缓存 SpriteFrame，纯色底板不逐块分配 Graphics", async () => {
+  // Creator 3.8.8 每个 Graphics 组件都有独占的显存缓冲和 draw call。程序绘制纹理后复用
+  // SpriteFrame；允许 panel/card/icon 各有自己的帧，限制的是同款卡片逐次 new 帧的回归。
   const { SettingsView, PromoHomeView } = await loadViews();
   for (const Page of [SettingsView, PromoHomeView]) {
     const view = new Page();
     const root = await openPage(view);
-    if (Page === SettingsView) view.setup((await makeSettingsLogic()).logic);
+    const fixture = await makeSettingsLogic();
+    if (Page === SettingsView) view.setup(fixture.logic);
 
-    const nodes = root.flatten();
-    const graphics = nodes.filter((node) => node.getComponent(FakeGraphics));
+    const graphics = root.flatten().filter((node) => node.getComponent(FakeGraphics));
     assert.equal(graphics.length, 0,
-      `${Page.name}：纯色矩形 ⛔ 不得再用 Graphics（每个约 2.25MB 显存 + 独占 draw call）`);
+      `${Page.name}：面板和卡片底板不得逐块使用 Graphics`);
 
-    const sprites = nodes
-      .map((node) => node.getComponent(FakeSprite) as FakeSprite | null)
-      .filter((sprite): sprite is FakeSprite => sprite !== null);
-    assert.ok(sprites.length > 0, `${Page.name}：底板必须真的建出 Sprite，否则上面那条恒真`);
-    // 共用同一张 SpriteFrame 才可能合批。⚠ 坦白：这条**无法用变异证伪**——引擎的
-    // builtinResMgr.get 本身就返回同一个缓存资源，忠实的假件也如此，所以 uiPlate 里那层
-    // 模块级缓存去掉后本条仍为真。它守的是另一种改法：有人改成每块底板 new SpriteFrame()。
-    // ⛔ 不要为了让它可变异而把假件改成每次返回新对象——假件失真正是这一串缺陷的病根。
-    const frames = new Set(sprites.map((sprite) => sprite.spriteFrame));
-    assert.equal(frames.size, 1, `${Page.name}：所有底板必须共用同一张内置白图才能合批`);
-    // ⛔ 底板帧必须关掉动态图集打包。⚠ 这条守的是一个**会让整个渲染循环当场死掉**的缺陷：
-    // 引擎内置帧的 packable 为 true，而它的 ImageAsset.data 是 Uint8Array 不是 HTMLImageElement，
-    // 动态图集调 texSubImage2D 会抛 TypeError，画面定格、帧数不再推进。真机正向对照已实测。
-    // Node 侧测不出崩溃本身，只能钉住这个字段——⛔ 别因为「看起来无关」就删掉。
+    const sprites = spritesOf(root);
+    assert.ok(sprites.length > 0, `${Page.name}：底板必须建出 Sprite`);
+    if (Page === PromoHomeView) {
+      assert.equal(new Set(sprites.map((sprite) => sprite.spriteFrame)).size, 1,
+        "PromoHomeView 的纯色底板应共用内置白图帧");
+    } else {
+      const firstFrames = new Set(sprites.map((sprite) => sprite.spriteFrame));
+      fixture.logic.onChanged();
+      for (const sprite of spritesOf(root)) {
+        assert.ok(firstFrames.has(sprite.spriteFrame), "同一数据重绘应复用已缓存的表面与图标帧");
+      }
+      const placeholderSprites = root.flatten()
+        .filter((node) => node.name === "row-placeholder")
+        .map((row) => spritesOf(row)[0]);
+      assert.ok(placeholderSprites.length > 1);
+      assert.equal(new Set(placeholderSprites.map((sprite) => sprite.spriteFrame)).size, 1,
+        "同款占位卡片必须共用同一个底板 SpriteFrame");
+    }
     for (const sprite of sprites) {
-      const frame = sprite.spriteFrame as FakeSpriteFrame | null;
+      const frame = sprite.spriteFrame;
       assert.equal(frame?.packable, false,
-        `${Page.name}：底板帧必须 packable=false，否则动态图集打包会打崩渲染循环`);
-      assert.ok(frame?.texture, `${Page.name}：底板帧必须绑上白图纹理，⛔ 空纹理什么都画不出来`);
-    }
-    // 尺寸不得被 2×2 的白图覆写——这是 createSolidPlate 里「先 CUSTOM 再赋帧」那条顺序的闸。
-    for (const sprite of sprites) {
+        `${Page.name}：程序生成帧必须 packable=false，避免动态图集处理原始像素失败`);
+      assert.ok(frame?.texture, `${Page.name}：SpriteFrame 必须绑定真实纹理`);
+      const texture = frame?.texture as FakeTexture2D;
+      if (texture !== sharedWhiteTexture) {
+        assert.equal(texture.data?.length, texture.width * texture.height * 4,
+          "程序纹理必须上传完整 RGBA 数据");
+        assert.ok(texture.data?.some((value, index) => index % 4 === 3 && value > 0),
+          "程序纹理必须包含可见像素，不能只创建一个空纹理");
+      }
       const transform = sprite.node.getComponent(FakeUITransform) as FakeUITransform;
+      assert.equal(sprite.sizeMode, FakeSprite.SizeMode.CUSTOM,
+        `${Page.name}：Sprite 必须保留布局尺寸`);
       assert.ok(transform.width > 2 && transform.height > 2,
-        `${Page.name}：底板尺寸被白图 rect 覆写成 ${transform.width}×${transform.height}——`
-        + "sizeMode 必须在赋 spriteFrame 之前设成 CUSTOM");
+        `${Page.name}：底板尺寸不能被内置白图覆写成 2×2`);
     }
+    view.dispose();
   }
 });
 
@@ -345,7 +447,7 @@ test("SettingsView：遮罩参与命中测试，⛔ 不让指针穿到底下的�
   assert.equal(closes, 0, "遮罩的吞噬回调必须是纯空操作");
 });
 
-test("SettingsView：按钮真的接上 Logic（关闭 / 音频开关 / 不可用条目重试）", async () => {
+test("SettingsView：整卡进入、不可用入口重试以及关闭按钮接入真实回调", async () => {
   const { SettingsView } = await loadViews();
   const view = new SettingsView();
   const root = await openPage(view);
@@ -354,24 +456,110 @@ test("SettingsView：按钮真的接上 Logic（关闭 / 音频开关 / 不可�
 
   let closes = 0;
   view.onClose = () => { closes++; };
-  const buttonNamed = (name: string): FakeNode[] =>
-    root.flatten().filter((node) => node.name === name && node.listeners.length > 0);
+  tapAll([named(root, "btn-关闭")]);
+  assert.equal(closes, 1, "关闭按钮必须调用 opener 注入的 onClose");
 
-  tapAll(buttonNamed("btn-关闭"));
-  assert.equal(closes, 1, "关闭按钮必须回到 opener 注入的 onClose");
+  tapAll([named(root, "card-ok")]);
+  await Promise.resolve();
+  assert.deepEqual(fixture.launched, ["ok"], "点击卡片任何可命中区域都应进入玩法");
+  const failed = named(root, "card-bad");
+  assert.equal(failed.listeners.length, 0, "不可用卡片只允许显式重试");
+  tapAll([named(root, "btn-重试")]);
+  await Promise.resolve();
+  assert.deepEqual(fixture.launched, ["ok", "bad"], "不可用条目的重试必须走 launch 通道");
+  view.dispose();
+});
 
-  // 音频开关：两行各一个「开」按钮，点第一个即写 musicOn。
-  const audioButtons = root.flatten()
-    .filter((node) => node.parent?.name === "row-audio" && node.listeners.length > 0);
-  assert.equal(audioButtons.length, 2, "音乐/音效各一个开关按钮");
-  tapAll([audioButtons[0]]);
+test("SettingsView：通用设置子页保存音频偏好，返回后再次打开保留状态", async () => {
+  const { SettingsView } = await loadViews();
+  const view = new SettingsView();
+  const root = await openPage(view);
+  const fixture = await makeSettingsLogic();
+  view.setup(fixture.logic);
+
+  tapAll([named(root, "btn-general")]);
+  const rendered = labels(root);
+  for (const line of ["通用设置", "音乐", "音效"]) assert.ok(rendered.includes(line));
+  assert.equal(root.flatten().filter((node) => node.name === "row-audio").length, 2);
+  assert.ok(!rendered.includes("可用玩法"), "详情页只呈现通用设置内容");
+  tapAll([named(root, "btn-musicOn")]);
   await Promise.resolve();
   await Promise.resolve();
-  assert.deepEqual(fixture.patches, [{ musicOn: false }], "点音乐开关必须发出对应的幂等写");
-
-  tapAll(buttonNamed("btn-重试"));
+  tapAll([named(root, "btn-sfxOn")]);
   await Promise.resolve();
-  assert.deepEqual(fixture.launched, ["bad"], "不可用条目的重试必须走 launch 通道");
+  await Promise.resolve();
+  assert.deepEqual(fixture.patches, [{ musicOn: false }, { sfxOn: false }],
+    "两个开关必须保存各自的 profile 偏好");
+  assert.deepEqual(fixture.logic.audioToggles().map((item: { on: boolean }) => item.on), [false, false]);
+
+  tapAll([named(root, "btn-back")]);
+  assert.ok(labels(root).includes("玩法入口"), "返回后重新展示主菜单");
+  tapAll([named(root, "btn-general")]);
+  assert.deepEqual(fixture.logic.audioToggles().map((item: { on: boolean }) => item.on), [false, false],
+    "重开通用设置不能重置已保存偏好");
+  view.dispose();
+});
+
+test("SettingsView：长列表保持卡片高度、启用原生纵向裁剪滚动，重绘保留位置", async () => {
+  const { SettingsView } = await loadViews();
+  const view = new SettingsView();
+  const root = await openPage(view, 750, 1000);
+  const fixture = await makeSettingsLogic();
+  view.setup(fixture.logic);
+  const originalCardHeight = (named(root, "card-ok").getComponent(FakeUITransform) as FakeUITransform).height;
+
+  fixture.logic.setEntries(Array.from({ length: 30 }, (_, index) => ({
+    entryId: `entry-${index}`, pluginId: `plugin-${String(index).padStart(2, "0")}`,
+    label: `玩法 ${index + 1}`, launch: () => {},
+  })));
+  fixture.logic.onChanged();
+  const scroll = root.flatten().map((node) => node.getComponent(FakeScrollView))
+    .find((component): component is FakeScrollView => component instanceof FakeScrollView);
+  assert.ok(scroll, "长列表必须使用 Cocos ScrollView");
+  assert.equal(scroll.horizontal, false);
+  assert.equal(scroll.vertical, true);
+  assert.equal(scroll.cancelInnerEvents, true, "拖动滚动内容不能误触玩法卡片");
+  assert.ok(root.flatten().some((node) => node.getComponent(FakeMask)), "滚动视口必须裁剪越界内容");
+  assert.ok(scroll.content);
+  const contentTransform = scroll.content.getComponent(FakeUITransform) as FakeUITransform;
+  assert.equal(contentTransform.anchorY, 1, "滚动内容以顶边定位，首次打开不能落在列表中间");
+  assert.ok(scroll.getMaxScrollOffset().y > 0, "超高内容必须产生实际可滚动空间");
+  for (let index = 0; index < 30; index++) {
+    const transform = named(root, `card-entry-${index}`).getComponent(FakeUITransform) as FakeUITransform;
+    assert.equal(transform.height, originalCardHeight, "增加入口只能增加内容高度，不压缩卡片");
+  }
+
+  scroll.scrollToOffset(new FakeVec2(0, 240));
+  fixture.logic.onChanged();
+  assert.equal(scroll.getScrollOffset().y, 240, "运行时状态更新不应把列表跳回顶端");
+  tapAll([named(root, "btn-general")]);
+  assert.equal(scroll.getScrollOffset().y, 0, "打开详情应从顶部开始");
+  tapAll([named(root, "btn-back")]);
+  assert.equal(scroll.getScrollOffset().y, 240, "返回主菜单应恢复进入详情前的位置");
+  view.dispose();
+});
+
+test("SettingsView：更换 Logic 与关闭后解除重绘订阅", async () => {
+  const { SettingsView } = await loadViews();
+  const view = new SettingsView();
+  const root = await openPage(view);
+  const previous = await makeSettingsLogic();
+  const current = await makeSettingsLogic();
+  view.setup(previous.logic);
+  view.setup(current.logic);
+  const parent = root.parent!;
+  assert.equal(parent.listeners.filter((item) => item.type === FakeNode.EventType.SIZE_CHANGED).length, 1,
+    "打开期间需要监听宿主尺寸变化");
+  const unchangedCard = named(root, "card-ok");
+  previous.logic.onChanged();
+  assert.equal(named(root, "card-ok"), unchangedCard, "换绑后旧 Logic 不应继续触发重绘");
+  await view.closeLifecycle();
+  assert.equal(parent.listeners.filter((item) => item.type === FakeNode.EventType.SIZE_CHANGED).length, 0,
+    "退出后必须解绑宿主尺寸监听");
+  current.logic.onChanged();
+  assert.equal(named(root, "card-ok"), unchangedCard, "页面退出后重绘钩子应解绑");
+  view.dispose();
+  assert.doesNotThrow(() => current.logic.onChanged(), "异步写入结束不应重建已销毁节点");
 });
 
 test("CocosView：挂到 FGUI 层容器（锚点 (0,1)、原点左上）时根节点按父锚居中，⛔ 不再钉在左上角", async () => {
