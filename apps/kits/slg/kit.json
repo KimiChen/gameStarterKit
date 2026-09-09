@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "slg",
+  "description": "大地图机制样例：SQL 权威的地块与行军，worldmap / march 两个 API 面，阶段 1 / 2a 不带房间 mode",
+  "api": {
+    "worldmap": { "version": 1, "minSupported": 1 },
+    "march": { "version": 1, "minSupported": 1 }
+  },
+  "domains": ["slg"],
+  "sql": {
+    "files": ["sql/001-init.sql", "sql/002-march.sql"],
+    "tables": [
+      { "name": "k_slg_revision", "zone": "per-zone" },
+      { "name": "k_slg_tile", "zone": "per-zone" },
+      { "name": "k_slg_capture", "zone": "per-zone" },
+      { "name": "k_slg_tile_log", "zone": "per-zone" },
+      { "name": "k_slg_march", "zone": "per-zone" },
+      { "name": "k_slg_march_receipt", "zone": "per-zone" },
+      { "name": "k_slg_march_log", "zone": "per-zone" }
+    ]
+  },
+  "userKeys": ["stats"],
+  "effects": {
+    "trophy": { "userKey": "stats", "field": "trophies", "max": 1000000 }
+  },
+  "category": "extra",
+  "docs": ["apps/kits/slg/README.md"],
+  "resident": false,
+  "entry": "apps/client/src/kits/slg/index.ts",
+  "viewDirs": ["apps/client/src/kits/slg/view"],
+  "views": ["apps/client/src/kits/slg/view/SlgMapView.view.json"],
+  "owners": [{ "id": "slg", "logicDir": "apps/client/src/kits/slg/logic" }],
+  "routes": [{ "id": "slgMap", "view": "SlgMap" }],
+  "menu": [
+    {
+      "entryId": "map",
+      "label": "大地图",
+      "labelKey": "menu.slg.map",
+      "launch": { "kind": "route", "routeId": "slgMap" }
+    }
+  ]
+}

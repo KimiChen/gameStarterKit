@@ -126,14 +126,16 @@ AzerothCore 固定 `a5e0e6b8f2bf878cb45cb1dc2251eb1448b9bbc3`：`src/server/game
 | `mmo` kit（MK0–MK4） | mode `mmoWorld` 与其 wire / state；`k_mmo_*` 表；九个 api 面；内容包 schema；编排运行器；客户端世界引擎与角色选择页；默认 HUD | 绕过框架的账本 / 身份 / 租约 / 在线表；任何一款游戏的内容与美术 |
 | 内容插件（MG0–MG2） | `plugin.json`（`requires.kits.mmo` + `contributes.mmo`）；内容包；表现映射；编排模块；自有 Lobby RPC 域与页面；美术；测试 | SQL、wire、mode、对 kit 内部模块的 import |
 
-### 4.1.1 两种世界形态（2026-09-09 补，由 slg kit 的审核引出）
+### 4.1.1 两种世界形态（2026-09-09，SLG 已采纳说明）
 
-| 形态 | 权威在哪 | 房间是什么 | 用到的框架阶段 | 例 |
+| 世界形态 | 权威数据 | 房间职责 | 共用框架能力 | 消费方 |
 | --- | --- | --- | --- | --- |
-| 内存权威世界 | WorldRuntime 内存 + 检查点 | WorldRoom：常驻、租约、控制权、Draining | MF2 / MF4 / MF5 / MF6 / MF7 / MF8 全用 | `mmo` kit |
-| SQL 权威 + 视图房 | `k_<id>_*` 表（Lobby RPC 幂等写） | dropIn GameRoom 上的实时视图：无人即销毁、重建从 SQL 拉、崩溃不丢状态 | **只共用 MF5**（按会话裁剪同步）与 **MF7 的 `kit.json.workers[]`**（离线周期结算）；⛔ 不需要 MF2 / MF4 / MF8 与检查点 | `arena`（已有）、`slg` kit（大地图 + 行军） |
+| 内存权威世界 | WorldRuntime 内存 + 检查点 | WorldRoom 常驻、租约、控制权、drain 与恢复 | MF2 / MF4 / MF5 / MF6 / MF7 / MF8 | `mmo` kit |
+| SQL 权威 + 视图房 | `k_<id>_*` 表与耐久操作回执 | dropIn GameRoom 实时视图，无人销毁、重建从 SQL 拉取 | MF5 观察者同步；MF7 的通用 SQL kit worker | `arena` 已有 SQL 样例；`slg` 大地图/行军阶段 1 / 2a 已验收，房间阶段未实施 |
 
-视图房形态的约束：⛔ 不得在 kit 内自建第二套兴趣集差分 / 投递（AOI 只用 MF5 原语，在 MF5 落地前该 kit 的房间阶段不开工）；名册 / 视口是否进 Schema 仍按 D4 缺省（不进）；满员 `joinOrCreate` 开第二房时正确性靠 SQL 权威，验收须含跨房互见。
+SQL 视图房消费方不需要 persona、世界权威租约、交接或内存检查点；这不改变 §5 框架阶段的前置依赖。SLG 阶段 1 / 2a 不依赖房间，阶段 2b 等待正式 MF5，kit 不自建 AOI 差分/投递内核。满员后 `joinOrCreate` 可开第二房，各房自持 SQL 日志游标，正确性由同事务变更日志与定期对账保证，Redis 仅提示；跨房恢复须单独验收。
+
+SLG 正式名册不广播全房 id/name，只随视野内地块/军队提供必要归属，视口只在服务端会话表；MF5 必须把 GameRoom 内部名册需求与客户端 Schema 投影分离，不能把现有 `players` map 当作 D4 的默许例外。相关冻结决策见根 [slg.md](../slg.md) 第三、四轮拍板。本段是消费边界与待实施契约，不表示 MF5/MF7 已交付。
 
 ### 4.2 运行结构（目标形态，除「已有」外均需实现）
 
@@ -358,10 +360,13 @@ MF10 容量 / 多进程 / 运维（依赖 MF4–MF8）→ MF11 收口审阅与�
 | `rooms/core/S2CPorts.ts` | `broadcastS2C` 对 perSession token fail-closed（启动期 + 发送期） |
 | `rooms/WorldRoom.ts` | 每 tick 排空出站；重连 / 兴趣集突变触发 baseline |
 | 客户端 `WorldRoomTransport.ts` | enter / update / leave 与 baseline reconcile 端口 |
+| `GameMode` / `GameRoom` 与客户端对应 adapter | 同一观察者原语接入 SQL 视图房；端口不强制要求 WorldAddress / personaId / authorityEpoch。内部名册与 Schema 投影分离，满足 D4 并回归现有 match mode；SLG 仅消费公开接缝 |
 | 夹具 | worldFixture wire 加 `s2c.worldFixture.{enter,update,leave,private,baselineBegin,baselineChunk,baselineEnd}`（perSession）；实体带一个「私有字段」 |
+| SQL 视图房夹具 | 用 kitfix 表而非真实 SLG 作为持久真源；两间 dropIn GameRoom 各自恢复投影与兴趣集，覆盖满员第二房、慢会话、断线 baseline、空房销毁重建 |
 | 测试 | `observer-sync.test.ts`、`outbound-queue.test.ts`、`world-visibility-leak.test.ts`、`world-bench` 场景「视野缩小 → 每会话字节下降」 |
 
 退出条件：超视距两会话互不收到；跨格 enter / leave 各一次且顺序正确；重连 baseline 只含兴趣集且 checksum 通过；perSession 全房广播被拒；私有字段对他人零泄露；慢会话超限重同步且回执不丢。
+SQL 视图 GameRoom 路径也须逐项通过以上矩阵与变异验证，并检查真实 Schema patch 不含未授权名册/视口。WorldRoom 单一路径通过不能作为 SLG 2b 的开工证据；SQL 提交后提示失败、晚提交、删除/结束、baseline 期间写入与跨房对账恢复由夹具和 SLG 2b 分别验证。
 变异验证：删 leave 分支 → 跨格离开转红；删 perSession 闸 → 广播被拒转红；私有字段塞进 enter → 零泄露转红；删队列上界 → 背压转红。回滚：可回退。
 
 #### MF6a / MF6b · 社交原语
@@ -379,8 +384,10 @@ MF10 容量 / 多进程 / 运维（依赖 MF4–MF8）→ MF11 收口审阅与�
 | `WorldRuntime.ts`、`WorldRoom.ts` | 周期 `onCheckpoint`（manifest `checkpointMs`）+ 强制点（drain / leave / 交接）；Recovering 顺序见 §4.5 |
 | `tools/plugin/kit-schema-v1.json`、`kits/catalogTypes.ts`、`tools/db-bootstrap.ts` | `workers[]: { id, entry }`；bootstrap 预置 `singleton_lease` 行 `kit:<id>:<worker>`（ODKU no-op） |
 | `apps/server/src/workers/kitWorker.ts`（新） | `npm --workspace @game/server run worker -- <kit>:<worker>`：按登记加载、`tryAcquireLease` / `withLeaseTx` 串行 pass（relayer 形态）；未登记即拒 |
+| 通用 SQL worker 事务接缝（SLG S6） | 框架绑定 kit / worker / 区 / 持有代次，在同一连接、同一事务内执行租约守卫并构造受限 KitTx；回调不得取原始连接或另开事务绕过守卫。端口无需 WorldRoom、persona 或检查点，支持有界批次、失租停写、退出、失败重试与回执重放 |
 | `tools/plugin/uninstall.ts` | `role:"world-event"` 表 `status=0` > 0 或 `world_transfer` 有该 kit 在途行 → 拒 |
 | 夹具 `kitfix` | `k_kitfix_checkpoint`、`k_kitfix_world_event`（role 声明）、`workers:[…]`；worldFixture 实现 `CheckpointPort` 走 kitfix 表 |
+| SQL worker 夹具 | 普通 kitfix SQL 表、无 WorldRoom/persona；同进程两个独立 worker 争租，注入旧持有者暂停/恢复与事务前后失租，验证失效写拒绝、失败整体回滚、提交丢响应可重放、越表/原始连接旁路被拒，以及停止/卸载后不再提交 |
 | 测试 | `world-checkpoint.test.ts`；`test:int/world-crash-restart.test.ts`（同进程两房 A / B，硬杀 A = 停续租 + 跳过 drain；A′ 从检查点恢复；位置回退 ≤ 1 周期、货币 0 回退、A 的迟到 `withWorldTx` 0 行）；`world-event-dedup.test.ts`；`kit-workers.test.ts` |
 
 退出条件：上述断言 + 未登记 worker 不起 + 有 pending 事件时 uninstall 拒；§7.3 回退窗口表逐行有用例。
@@ -538,7 +545,7 @@ kit 段开工条件：MF0–MF8 退出 + MF9 退出；MF10 / MF11 可与 MK0 并
 | party | 组队进图、经验分配 | **snake 私房整队入座**：队长 `room.prepareCreate` 得邀请码后发 `party.event{kind: roomInvite, data:{code}}`，成员各自 `room.resolve` |
 | presence | `party.get` 标记、队友标记 | freezeWorker 的「此刻在线」判定（本阶段只登记）；`/admin/kick` 节点定位提示 |
 | channel | 世界 / 附近聊天 | 队伍频道在 snake 大厅即可用；`ServerNotice` 是 realm 寻址第二用法 |
-| MF5 兴趣集原语（非社交，一并登记） | mmo kit 的 entity 同步 | **`slg` kit 的 tile / army 兴趣集**：同一 `InterestSet` / `perSession` 原语、不同实体模型与世界形态（SQL 权威视图房，§4.1.1），验证原语通用性 |
+| MF5 兴趣集原语（非社交，一并登记） | mmo 的 entity 同步 | `slg` kit 的 tile / army 兴趣集；同一原语、不同 SQL 权威世界形态（§4.1.1），SLG 2b 等正式 GameRoom 消费路径验收 |
 
 ## 7. `mmo` kit 规格（MK0–MK4）
 
@@ -970,7 +977,7 @@ apps/client/test/mmodemo-logic.test.ts
 | D16 | 附近聊天 | 框架 core 世界 token `c2s/s2c.world.chat` |
 | D17 | 贡献点形态 | `contributions.<id> = { kind: data \| module, … }`；三贡献点 content / presentation / orchestration |
 | D18 | 第二样本 | `mmohold`（据点争夺）；⛔ 不预绑 Knight Online |
-| D19 | SQL 权威视图房形态 | 可跑在 GameRoom dropIn 上，不需要 MF2 / MF4 / MF8；AOI 只用 MF5 原语，⛔ kit 内不自建；`slg` kit 登记为 MF5 第二消费方（§4.1.1 / §6.7，2026-09-09 由 slg.md 审核引出） |
+| D19 | SQL 权威视图房与 SLG | SLG 只消费 MF5 与 MF7 通用 worker，不引入 persona/内存检查点；正式名册不广播全房 id/name，必要归属随视野对象。MF5/MF7 本仓按 §5 独立实施；SLG 1/2a 先行，2b 等 MF5 的 GameRoom 接线与名册验收 |
 
 ### 11.2 待 MF1 决定
 
@@ -986,6 +993,9 @@ apps/client/test/mmodemo-logic.test.ts
 
 > 未立项。每阶段完成在此登记一行（阶段 / 日期 / commit / 实际交付与基准结果 / 偏差）。⛔ 不向 plan-v5 回写。
 
-- （无记录）
+- MMO 框架阶段：暂无完成记录。
+- SLG 消费方准备阶段 1 / 2a（2026-09-09）：已完成并验收；10000×10000 SQL 稀疏地图、worldmap/march v1、七张表与桌面地图页；verify:all 通过、Creator 17 步/13 图/console 空、干净安装与独立空库包测试 35/35、重复 bootstrap 零新应用。证据见 [SLG 验收记录](evidence/creator-2026-09-09/slg/README.md)。这不构成 MF5 第二消费方接线完成，SLG 2b 仍待 MF5。
+
+2026-09-09 设计同步：已将 SLG 已采纳的两种世界形态、MF5 GameRoom 消费/名册验收、MF7 受租约保护 KitTx 契约补入正文。SLG 阶段 1 / 2a 的本轮实施与验收已完成；MF5、MF7 与 SLG 2b 尚未实施/验收，本次同步及 SLG 交付不登记为框架阶段完成。
 
 下一动作：同事按 mmo1 §4 四条对照本文 §4 / §7 / §9 做第二轮审阅 → MF0 与 MF1 并行开工（MF1 = 本文对抗审阅 + 基准台 + AOI 实验）。

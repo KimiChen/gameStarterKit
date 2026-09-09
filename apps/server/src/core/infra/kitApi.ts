@@ -40,7 +40,8 @@
  * 原始值 / Date / Buffer，⛔ `toSqlString` 一类对象在客户端拼接 SQL 绕过闸）。
  */
 import type { PoolConnection, ResultSetHeader, RowDataPacket } from "./mysql";
-import { withRcTx } from "./mysql";
+import { retryOnContention, withRcTx } from "./mysql";
+import { withUser } from "../uow";
 import type { IEffect, KitEffectKinds } from "@game/shared";
 import { lookupKitEffectKind } from "@game/shared";
 import { KIT_EFFECT_KINDS } from "@game/shared/kits/catalog.generated";
@@ -58,6 +59,28 @@ import { SERVER_KIT_CATALOG } from "../../kits/catalog.generated";
 
 export { CUR_GOLD, EffectConflictError, InsufficientBalanceError, InvalidEffectError, RpcFault, StaleFenceError, currentZoneId, kKitUser };
 export type { IEffect, KitKeyScope, PoolConnection, ResultSetHeader, RowDataPacket };
+
+export interface KitUserFence { readonly fence: number }
+export interface KitUserFenceDeps {
+  readonly withUser: <T>(uid: string, fn: (user: KitUserFence) => Promise<T>) => Promise<T>;
+}
+
+/**
+ * 带金币扣款的 kit 命令：先进入显式区的用户锁/冷档自愈，只交出 fence，不暴露 UoW 的档案写入口。
+ * 回调内用 withKitTx；SQL 提交后才 apply effect。不得从持有世界 SQL 锁的事务内反向获取用户锁。
+ */
+export function withKitUserFence<T>(
+  uid: string, sId: number, fn: (user: KitUserFence) => Promise<T>, deps: KitUserFenceDeps = { withUser },
+): Promise<T> {
+  if (!uid || uid.length > 32) throw new TypeError("kit uid invalid");
+  if (!Number.isInteger(sId) || sId < 0 || sId > 65535) throw new TypeError("kit sId invalid");
+  return zoneCtx.run({ sId }, () => deps.withUser(uid, (user) => fn(Object.freeze({ fence: user.fence }))));
+}
+
+/** 仅重试无事务外副作用的完整幂等事务；业务冲突/余额不足不重试，最多三次。 */
+export function retryKitTransaction<T>(fn: () => Promise<T>): Promise<T> {
+  return retryOnContention(fn, 3);
+}
 
 /** `tx.query()` 触到本 kit 前缀之外的表标识符（或识别不了的 SQL 形态）时抛出；⛔ 不带 SQL 原文下发。 */
 export class KitTableAccessError extends Error {
@@ -543,4 +566,12 @@ export async function readKitUserField(
   const userKeys = deps.userKeysOf(kitId);
   if (userKeys === undefined || !userKeys.includes(name)) { throw new KitUserKeyScopeError(kitId, name); }
   return deps.hget(uid, kKitUser(kitId, name, uid, scope), field);
+}
+
+/** SQL 权威 kit 的显式区读取；不依赖 RPC/房间的 ambient zoneCtx。 */
+export function readKitUserFieldInZone(
+  kitId: string, name: string, uid: string, field: string, sId: number, deps: KitUserReadDeps = DEFAULT_READ_DEPS,
+): Promise<string | null> {
+  if (!Number.isInteger(sId) || sId < 0 || sId > 65535) throw new TypeError("kit sId invalid");
+  return zoneCtx.run({ sId }, () => readKitUserField(kitId, name, uid, field, { zone: "per-zone" }, deps));
 }

@@ -22,6 +22,7 @@ capability fragment 的合并规则由 `npm run verify:inventory` fail-closed �
 | `arenaShop` | plugin | extra | registered | [apps/plugins/arenaShop/README.md](../apps/plugins/arenaShop/README.md) |
 | `builtin` | plugin | core | registered | [docs/CLIENT.md](./CLIENT.md) |
 | `redeem` | plugin | extra | registered | [apps/plugins/redeem/README.md](../apps/plugins/redeem/README.md) |
+| `slg` | kit | extra | registered | [apps/kits/slg/README.md](../apps/kits/slg/README.md) |
 | `snake` | plugin | core | registered | [apps/plugins/snake/README.md](../apps/plugins/snake/README.md) |
 | `tally` | plugin | extra | registered | [apps/plugins/tally/README.md](../apps/plugins/tally/README.md) |
 

@@ -28,6 +28,7 @@ node tools/creator-preview/run.mjs arena --reuse --out /tmp/arena-run           
 node tools/creator-preview/run.mjs redeem --code SNAKE90 --out /tmp/redeem-run
 node tools/creator-preview/run.mjs tally --reuse            # 复用已打开的预览页（已在首屏时跳过登录）
 node tools/creator-preview/run.mjs home --format png --step-timeout 30000
+node tools/creator-preview/run.mjs slg --out /tmp/slg-preview --format png         # SLG 地图独立验收
 ```
 
 | 场景 | 步骤与判据 |
@@ -40,6 +41,7 @@ node tools/creator-preview/run.mjs home --format png --step-timeout 30000
 | `snake` | 点「贪吃蛇大作战」整卡 → `SnakeWorld.Hud` 出现 →「结束本次」→ 确认框 → 确认 → 结算页读行 + 钉住「返回主页」与「我的衣柜」**同排**（Δy ≤ 4）→「返回主页」回首屏。⚠ 确认框首击会被吞，脚本等一拍再点、必要时重开重点一次并把 `retried` 写进报告 |
 | `ballMove` | 点「进入战斗」整卡 → `PlayersLayer` 挂载（画布演示无文本）→ 点左上角「离开」回首屏（2026-09-06 前该入口没有退出 UI） |
 | `arena` | 点「竞技场」整卡 → `EntryGroupView` →「竞技场 · arena」同行「进入」（**kit** 的 route 形态）→ `ArenaBoardView` 16 格 +「奖杯 N」→ 点一格 → `arena.capture` 结果归类 `captured` / `refused` → 点「刷新」重读 → 再点自己的格 = 加固（断言守备 +1 且奖杯不变；⚠ 必须等**与上一条不同**的提示，旧提示还挂在面板上）→「关闭」 |
+| `slg` | 设置中的「大地图 · slg」→ `SlgMapView` 青原标题与 chunk 网格 → 点选可见无主格 → 免费占领（我方守备 1、奖杯 +1）→ 刷新后读回同格 → 鼠标拖动验证世界节点坐标改变 → 滚轮逐档验证 LOD 1–4，各档截图 → 关闭回设置。无主格会在可见范围内择取；没有可占目标时明确失败。此场景独立触发，尚未纳入既有 `all` 的 13 场景基线 |
 | `arenaCapture` | 「占领赛 · arena」（kit 的 gameplay mode）→「目标 N 格」→ 连点「占领」到「你赢了！」→ 回首屏 |
 | `arenaDuel` | 「决斗 · arena」（kit 的第二个 mode）→「HP N」→ 连点「出击」到「你赢了！」→ 回首屏 |
 | `arenaShop` | 「竞技场商店 · arenaShop」（建在 kit 上的 plugin）→ 经 kit 的 `board` 面读自有格（没有就先跑 `arena` 占一格）→ 取最上面一行的「+守备」（自有格可能多块）→ 结果归类 `bought` / `insufficient-balance` / `not-owned` → 点「刷新」重读 |
@@ -55,6 +57,8 @@ node tools/creator-preview/run.mjs home --format png --step-timeout 30000
 `EntryGroupView` 的成员仍使用 `${label}  ·  ${包 id}` 行文本和独立「进入」按钮。竞技场的四条入口都经
 `arenaHub` 卡片进入分组页；组内按**整行文本**（`^label\s+·\s+id$`）消歧，不能只按包 id。
 `arenaCapture` / `arenaDuel` 结算后回分组页；route 页面关闭后再关分组页回设置。
+
+SLG 的地图打开与各 LOD 截图在标题到位后继续等待：至少观察 2.4 秒，且 chunk 集合与地图位置持续 1.2 秒稳定；遇到可见限流重试提示会重新计时，失败提示直接失败。报告记录 `settling.elapsedMs/stableMs/chunkCount`，避免缩放刚结束时把尚未补齐的地图网格当作最终画面。此项只观察公开引擎节点，不读取内部请求队列。
 
 退出码：0 全部通过；1 有步骤失败（失败现场也会截图 `NN-failed-<step>.jpg`，报告仍落盘）；2 参数/连接错误。
 `report.json` 的 `ok`、`steps[].ok/detail/error/screenshots`、`console[]` 是复核依据；截图只是佐证。
@@ -87,4 +91,5 @@ node tools/creator-preview/run.mjs home --format png --step-timeout 30000
 
 - `lib.mjs`：纯函数（`parseArgs`、`sceneUuidFromMeta`、`rewriteSceneQuery`、`worldToPage`、`selectNodes`、`nearestByRow`）+ 最小 CDP 客户端 + `openScene`；⛔ 零 npm 依赖（Node 22+ 自带 `WebSocket`/`fetch`）。
 - `run.mjs`：场景与报告。
+- `slg.mjs`：SLG 地图场景与公开 UI 证据解析。只遍历渲染节点/文本、发送普通 CDP 点击/拖动/滚轮，不访问页面 Logic、RPC 端口或私有相机字段；场景只验证阶段 1，行军面板和房间 AOI 不在本轮范围。
 - 钉：`apps/server/test/creator-preview-tool.test.ts`。

@@ -21,9 +21,25 @@ export const KIT_CATALOG: readonly KitCatalogEntry[] = [
             { kitId: "arena", name: "trophy", userKey: "stats", field: "trophies", max: 1000000 },
         ],
     },
+    {
+        id: "slg",
+        version: null,
+        api: {
+            march: { version: 1, minSupported: 1 },
+            worldmap: { version: 1, minSupported: 1 },
+        },
+        modes: [],
+        domains: [
+            "slg",
+        ],
+        effects: [
+            { kitId: "slg", name: "trophy", userKey: "stats", field: "trophies", max: 1000000 },
+        ],
+    },
 ];
 
 /** `kit:<kitId>:<name>` → effect 规格（economy.ts validateGrant 与 Lua 镜像的共同真源）。 */
 export const KIT_EFFECT_KINDS: Readonly<Record<string, KitEffectSpec>> = {
     "kit:arena:trophy": { kitId: "arena", name: "trophy", userKey: "stats", field: "trophies", max: 1000000 },
+    "kit:slg:trophy": { kitId: "slg", name: "trophy", userKey: "stats", field: "trophies", max: 1000000 },
 };

@@ -17,6 +17,7 @@ declare module "cc" {
     export class Rect { constructor(x?: number, y?: number, width?: number, height?: number); x: number; y: number; width: number; height: number; }
 
     export class EventTouch { getUILocation(out?: Vec2): Vec2; getID(): number; }
+    export class EventMouse { getUILocation(out?: Vec2): Vec2; getButton(): number; getScrollY(): number; }
 
     export class UITransform {
         width: number;
@@ -213,6 +214,10 @@ declare module "cc" {
             TOUCH_MOVE: string;
             TOUCH_END: string;
             TOUCH_CANCEL: string;
+            MOUSE_DOWN: string;
+            MOUSE_MOVE: string;
+            MOUSE_UP: string;
+            MOUSE_WHEEL: string;
         };
     };
 

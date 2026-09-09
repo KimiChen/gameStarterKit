@@ -135,11 +135,13 @@ declare module "cc" {
   }
   export class Canvas extends Component {}
   export class EventTouch { getUILocation(out?: Vec2): Vec2; getID(): number; }
+  export class EventMouse { getUILocation(out?: Vec2): Vec2; getButton(): number; getScrollY(): number; }
   export const input: {
     on(type: unknown, callback: (...args: any[]) => unknown, target?: unknown): void;
     off(type: unknown, callback: (...args: any[]) => unknown, target?: unknown): void;
   };
-  export const Input: { EventType: { TOUCH_START: string; TOUCH_MOVE: string; TOUCH_END: string; TOUCH_CANCEL: string } };
+  export const Input: { EventType: { TOUCH_START: string; TOUCH_MOVE: string; TOUCH_END: string; TOUCH_CANCEL: string;
+    MOUSE_DOWN: string; MOUSE_MOVE: string; MOUSE_UP: string; MOUSE_WHEEL: string } };
   export const _decorator: {
     ccclass(name?: string): ClassDecorator;
     property(options?: unknown): PropertyDecorator;

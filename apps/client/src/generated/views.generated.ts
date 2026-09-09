@@ -64,6 +64,11 @@ export const GENERATED_VIEW_CATALOG: Readonly<Record<string, ViewMeta>> = {
         fullscreen: true, onlyOne: true, permanent: false, interactive: false,
         load: () => import("../view/SettingsView").then((m) => m.SettingsView),
     }),
+    SlgMap: defineView({
+        name: "SlgMap", kind: "cocos", layer: "popup",
+        fullscreen: true, onlyOne: true, permanent: false, interactive: false,
+        load: () => import("../kits/slg/view/SlgMapView").then((m) => m.SlgMapView),
+    }),
     Wardrobe: defineView({
         name: "Wardrobe", kind: "cocos", layer: "popup",
         fullscreen: true, onlyOne: true, permanent: false, interactive: false,
@@ -100,6 +105,7 @@ export const VIEW_SOURCE_RECORDS: readonly GeneratedViewSourceRecord[] = [
     { name: "PromoHome", owner: "builtin", kind: "cocos", path: "apps/client/src/view/PromoHomeView.ts", logic: "apps/client/src/logic/page/PromoHomeLogic.ts", sidecar: "apps/client/src/view/PromoHomeView.view.json" },
     { name: "Redeem", owner: "redeem", kind: "cocos", path: "apps/client/src/plugins/redeem/view/RedeemView.ts", logic: "apps/client/src/plugins/redeem/logic/RedeemLogic.ts", sidecar: "apps/client/src/plugins/redeem/view/RedeemView.view.json" },
     { name: "Settings", owner: "builtin", kind: "cocos", path: "apps/client/src/view/SettingsView.ts", logic: "apps/client/src/logic/page/SettingsLogic.ts", sidecar: "apps/client/src/view/SettingsView.view.json" },
+    { name: "SlgMap", owner: "slg", kind: "cocos", path: "apps/client/src/kits/slg/view/SlgMapView.ts", logic: "apps/client/src/kits/slg/logic/SlgMapLogic.ts", sidecar: "apps/client/src/kits/slg/view/SlgMapView.view.json" },
     { name: "SnakeWorld", owner: "snake", kind: "cocos", path: "apps/client/src/view/rooms/snake/SnakeWorldView.ts", logic: "apps/client/src/logic/rooms/snake/SnakeGameplay.ts", sidecar: "apps/client/src/view/rooms/snake/SnakeWorldView.view.json" },
     { name: "Tally", owner: "tally", kind: "cocos", path: "apps/client/src/view/rooms/tally/TallyView.ts", logic: "apps/client/src/logic/rooms/tally/TallyGameplay.ts", sidecar: "apps/client/src/view/rooms/tally/TallyView.view.json" },
     { name: "Wardrobe", owner: "snakeCosmetic", kind: "cocos", path: "apps/client/src/plugins/snake/view/WardrobeView.ts", logic: "apps/client/src/plugins/snake/logic/WardrobeLogic.ts", sidecar: "apps/client/src/plugins/snake/view/WardrobeView.view.json" },
@@ -108,6 +114,7 @@ export const VIEW_SOURCE_RECORDS: readonly GeneratedViewSourceRecord[] = [
 /** manifest 声明的 view 目录（守门测试的递归比对根）。 */
 export const VIEW_SOURCE_DIRS: readonly string[] = [
     "apps/client/src/kits/arena/view",
+    "apps/client/src/kits/slg/view",
     "apps/client/src/plugins/arenaShop/view",
     "apps/client/src/plugins/redeem/view",
     "apps/client/src/plugins/snake/view",

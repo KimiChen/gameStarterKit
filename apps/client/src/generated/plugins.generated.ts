@@ -40,6 +40,7 @@ export const PLUGIN_IDS: readonly string[] = [
     "arenaShop",
     "builtin",
     "redeem",
+    "slg",
     "snake",
     "tally",
 ];
@@ -102,6 +103,18 @@ export const GENERATED_PLUGINS: readonly GeneratedPluginDescriptor[] = [
         ],
     },
     {
+        id: "slg",
+        resident: false,
+        load: () => import("../kits/slg/index").then((m) => m.createPluginModule()),
+        dependencies: [],
+        routes: [
+            { id: "slgMap", view: "SlgMap", group: "authenticated", restore: "discard" },
+        ],
+        menu: [
+            { entryId: "map", pluginId: "slg", label: "大地图", labelKey: "menu.slg.map", launch: { kind: "route", routeId: "slgMap" } },
+        ],
+    },
+    {
         id: "snake",
         resident: true,
         load: () => import("../plugins/snake/index").then((m) => m.createPluginModule()),
@@ -133,6 +146,7 @@ export const GENERATED_MENU_CONTRIBUTIONS: readonly GeneratedMenuContribution[] 
     { entryId: "arenaShop", pluginId: "arenaShop", label: "竞技场商店", labelKey: "menu.arenaShop", launch: { kind: "route", routeId: "arenaShop" } },
     { entryId: "ballMove", pluginId: "builtin", label: "进入战斗", labelKey: "menu.enterBattle", launch: { kind: "gameplay", gameplayId: "ballMove" } },
     { entryId: "redeem", pluginId: "redeem", label: "兑换码", labelKey: "menu.redeem", launch: { kind: "route", routeId: "redeem" } },
+    { entryId: "map", pluginId: "slg", label: "大地图", labelKey: "menu.slg.map", launch: { kind: "route", routeId: "slgMap" } },
     { entryId: "snake", pluginId: "snake", label: "贪吃蛇大作战", labelKey: "menu.snakeOff", launch: { kind: "gameplay", gameplayId: "snake" } },
     { entryId: "tally", pluginId: "tally", label: "点数赛", labelKey: "menu.tally", launch: { kind: "gameplay", gameplayId: "tally" } },
 ];
