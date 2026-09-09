@@ -9,6 +9,8 @@ import { test } from "node:test";
 
 // @ts-expect-error 纯 ESM 工具模块，无类型声明。
 import { DESIGN, designToPage, nearestByRow, pageWalkSource, parseArgs, rewriteSceneQuery, sceneUuidFromMeta, selectNodes, worldToPage } from "../../../tools/creator-preview/lib.mjs";
+// @ts-expect-error 纯 ESM 场景工具，无类型声明。
+import { readSlgMapEvidence, slgFrameStability, slgMapGestureArea } from "../../../tools/creator-preview/slg.mjs";
 
 const UUID = "33a6cd88-ca61-42f3-97e1-6b18a9096a34";
 
@@ -86,4 +88,61 @@ test("selectNodes / nearestByRow：按名字、文本、路径筛选；多枚同
   const picked = nearestByRow(selectNodes(walk, { text: "进入" }), anchor);
   assert.equal(picked?.center.y, 708);
   assert.equal(nearestByRow([], anchor), null);
+});
+
+test("SLG 预览证据：只认地图视图的完整公开文本，网格没有 UITransform 也参与加载证据", () => {
+  const node = (name: string, text: string | null, center: object | null = { x: 100, y: 100 }) => ({ name, text, path: `scene/Canvas/SlgMapView/${name}`, center });
+  const walk = { nodes: [
+    node("SlgMapView", null),
+    node("title", "青原 · LOD 2 · 奖杯 7"),
+    node("details", "(103, 98) · 地形 0 · 我方 · 守备 1"),
+    node("slg-chunk-6-6", null, null),
+    node("status", "已占领 · 奖杯 +1"),
+    node("slg-world", null, { x: -1000, y: 1100 }),
+    { ...node("wrong-title", "青原 · LOD 4 · 奖杯 999"), path: "scene/Canvas/OtherView/title" },
+  ] };
+  const result = readSlgMapEvidence(walk);
+  assert.equal(result.loaded, true);
+  assert.equal(result.lod, 2);
+  assert.equal(result.trophies, 7);
+  assert.deepEqual(result.chunks, ["slg-chunk-6-6"]);
+  assert.deepEqual(result.tile, { x: 103, y: 98, terrain: 0, owner: "我方", guard: 1, text: "(103, 98) · 地形 0 · 我方 · 守备 1" });
+  assert.equal(readSlgMapEvidence(null), null);
+  assert.equal(readSlgMapEvidence({ nodes: walk.nodes.filter((entry) => entry.name !== "SlgMapView") }), null);
+  assert.equal(readSlgMapEvidence({ nodes: walk.nodes.filter((entry) => !entry.name.startsWith("slg-chunk-")) }).loaded, false);
+  assert.equal(readSlgMapEvidence({ nodes: walk.nodes.map((entry) => entry.name === "details" ? { ...entry, text: "(103, 98) · 地形 ? · 我方 · 守备 1" } : entry) }).tile, null);
+});
+
+test("SLG 预览输入：从公开帮助/详情行定位地图内区域，缺失/倒置时拒绝猜坐标", () => {
+  const label = (text: string, y: number) => ({ name: "label", text, path: "scene/Canvas/SlgMapView/label", center: { x: 237.5, y } });
+  const walk = { canvas: { x: 50, y: 30, width: 375, height: 812 }, nodes: [
+    label("拖动平移  ·  双指 / 滚轮缩放", 130), label("点选地图中的一格", 630),
+  ] };
+  const area = slgMapGestureArea(walk);
+  assert.equal(area.x, 237.5);
+  assert.equal(area.y, 380);
+  assert(area.y - area.height / 2 > 130);
+  assert(area.y + area.height / 2 < 630);
+  assert.throws(() => slgMapGestureArea({ ...walk, nodes: [] }), /不可用/u);
+  assert.throws(() => slgMapGestureArea({ ...walk, nodes: [walk.nodes[0], label("点选地图中的一格", 100)] }), /不可用/u);
+});
+
+test("SLG LOD 截图等待：网格集合变化/限流退避重置稳定计时，不以标题或固定睡眠冒充加载完毕", () => {
+  const evidence = { loaded: true, lod: 4, chunks: ["slg-chunk-1-1"], notice: null, worldCenter: { x: 50, y: 60 } };
+  let state = slgFrameStability(null, evidence, 0, 4);
+  state = slgFrameStability(state, evidence, 1200, 4);
+  assert.equal(state.ready, false, "至少等待 2.4 秒，即使早期集合看起来稳定");
+  const changed = { ...evidence, chunks: ["slg-chunk-1-2"] };
+  state = slgFrameStability(state, changed, 2000, 4);
+  state = slgFrameStability(state, changed, 2400, 4);
+  assert.equal(state.ready, false, "相同个数但成员改变也须重新稳定 1.2 秒");
+  state = slgFrameStability(state, changed, 3200, 4);
+  assert.equal(state.ready, true);
+  state = slgFrameStability(state, { ...changed, notice: "地图请求较多，稍后自动重试" }, 4000, 4);
+  assert.equal(state.ready, false);
+  state = slgFrameStability(state, { ...changed, notice: "地图已恢复加载" }, 8000, 4);
+  assert.equal(state.ready, false, "退避恢复后重新观察稳定窗口");
+  assert.equal(slgFrameStability(state, changed, 9200, 4).ready, true);
+  assert.equal(slgFrameStability(state, { ...changed, loaded: false }, 9200, 4).ready, false);
+  assert.equal(slgFrameStability(state, { ...changed, lod: 3 }, 9200, 4).ready, false);
 });

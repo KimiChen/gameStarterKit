@@ -11,6 +11,7 @@ import { validateMailClaimAttachRes, validateMailClaimReq, validateMailListReq, 
 import { validateRedeemClaimReq, validateRedeemClaimRes, type IRedeemClaimReq, type IRedeemClaimRes } from "./domains/redeem";
 import { validatePrepareCreateReq, validatePrepareCreateRes, validateResolveReq, validateResolveRes, type IRoomPrepareCreateReq, type IRoomPrepareCreateRes, type IRoomResolveReq, type IRoomResolveRes } from "./domains/room";
 import { validatePurchaseResult, validateShopPurchaseReq, validateShopQueryReq, type IShopPurchaseReq, type IShopQueryOpReq } from "./domains/shop";
+import { validateSlgMapTilesReq, validateSlgMapTilesRes, validateSlgMarchDispatchReq, validateSlgMarchDispatchRes, validateSlgMarchRecallReq, validateSlgMarchRecallRes, validateSlgTileCaptureReq, validateSlgTileCaptureRes, type ISlgMapTilesReq, type ISlgMapTilesRes, type ISlgMarchDispatchReq, type ISlgMarchDispatchRes, type ISlgMarchRecallReq, type ISlgMarchRecallRes, type ISlgTileCaptureReq, type ISlgTileCaptureRes } from "./domains/slg";
 import { validateSnakeCosmeticGetSnapshotReq, validateSnakeCosmeticProfileRes, validateSnakeCosmeticSkinReq, validateSnakeCosmeticSnapshotRes, type ISnakeCosmeticGetSnapshotReq, type ISnakeCosmeticProfileRes, type ISnakeCosmeticSkinReq, type ISnakeCosmeticSnapshotRes } from "./domains/snakeCosmetic";
 import { validateGetInfoReq, validateGetInfoRes, validateGetProfileReq, validateGetUserIdReq, validateGetUserIdRes, validateProfileRes, validateUpdateProfileReq, validateUpdateRes, type IGetInfoReq, type IGetInfoRes, type IGetProfileReq, type IGetProfileRes, type IGetUserIdReq, type IGetUserIdRes, type IUpdateProfileReq, type IUpdateProfileRes } from "./domains/user";
 
@@ -23,6 +24,7 @@ export const LOBBY_RPC_DOMAINS: readonly string[] = [
     "redeem",
     "room",
     "shop",
+    "slg",
     "snakeCosmetic",
     "user",
 ];
@@ -43,6 +45,10 @@ export interface LobbyRpcMap {
     "room.resolve": { req: IRoomResolveReq; res: IRoomResolveRes };
     "shop.purchase": { req: IShopPurchaseReq; res: IPurchaseResult };
     "shop.queryOp": { req: IShopQueryOpReq; res: IPurchaseResult };
+    "slg.mapTiles": { req: ISlgMapTilesReq; res: ISlgMapTilesRes };
+    "slg.tileCapture": { req: ISlgTileCaptureReq; res: ISlgTileCaptureRes };
+    "slg.marchDispatch": { req: ISlgMarchDispatchReq; res: ISlgMarchDispatchRes };
+    "slg.marchRecall": { req: ISlgMarchRecallReq; res: ISlgMarchRecallRes };
     "snakeCosmetic.getSnapshot": { req: ISnakeCosmeticGetSnapshotReq; res: ISnakeCosmeticSnapshotRes };
     "snakeCosmetic.equip": { req: ISnakeCosmeticSkinReq; res: ISnakeCosmeticProfileRes };
     "snakeCosmetic.unlock": { req: ISnakeCosmeticSkinReq; res: ISnakeCosmeticProfileRes };
@@ -66,11 +72,15 @@ export type LobbyRpcIdemType =
     | "redeem.claim"
     | "room.prepareCreate"
     | "shop.purchase"
+    | "slg.tileCapture"
+    | "slg.marchDispatch"
+    | "slg.marchRecall"
     | "user.updateProfile";
 
 /** natural-write 路由子集（写入天然可安全重复；不进通用幂等层） */
 export type LobbyRpcNaturalWriteType =
     | "mail.markRead"
+    | "slg.mapTiles"
     | "snakeCosmetic.equip"
     | "snakeCosmetic.unlock";
 
@@ -90,6 +100,10 @@ export const LOBBY_RPC_ROUTE_MODES: { readonly [K in LobbyRpcType]: LobbyRpcRout
     "room.resolve": "query",
     "shop.purchase": "idempotent-write",
     "shop.queryOp": "query",
+    "slg.mapTiles": "natural-write",
+    "slg.tileCapture": "idempotent-write",
+    "slg.marchDispatch": "idempotent-write",
+    "slg.marchRecall": "idempotent-write",
     "snakeCosmetic.getSnapshot": "query",
     "snakeCosmetic.equip": "natural-write",
     "snakeCosmetic.unlock": "natural-write",
@@ -115,6 +129,10 @@ export const ALL_LOBBY_RPC_TYPES: readonly LobbyRpcType[] = [
     "room.resolve",
     "shop.purchase",
     "shop.queryOp",
+    "slg.mapTiles",
+    "slg.tileCapture",
+    "slg.marchDispatch",
+    "slg.marchRecall",
     "snakeCosmetic.getSnapshot",
     "snakeCosmetic.equip",
     "snakeCosmetic.unlock",
@@ -141,6 +159,10 @@ export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number
     "room.resolve": 1,
     "shop.purchase": 1,
     "shop.queryOp": 1,
+    "slg.mapTiles": 1,
+    "slg.tileCapture": 1,
+    "slg.marchDispatch": 1,
+    "slg.marchRecall": 1,
     "snakeCosmetic.getSnapshot": 1,
     "snakeCosmetic.equip": 1,
     "snakeCosmetic.unlock": 1,
@@ -159,6 +181,7 @@ export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly
     redeem: { contractVersion: 1, digest: "e7e74dc98acf6cfb1d5bfd0261930d6bbc5bb07e2efa79dec0e91be485596514" },
     room: { contractVersion: 1, digest: "8655531a80f2ffc6a941247c2c2ef00ad44dfb3842b722741556430bf2c12ff2" },
     shop: { contractVersion: 1, digest: "80f5bc9c74300aecd0bf2caf8dea93506657c5e9a4d64e91931760e8c06544cf" },
+    slg: { contractVersion: 1, digest: "d2d736dfd9cb795dd5aa4ce199cb294647b9b1754953e8dac29b951094034dcf" },
     snakeCosmetic: { contractVersion: 3, digest: "17949949b68946f630d82e9b6f4703dc87b44866e90bf08865eab91bb974e908" },
     user: { contractVersion: 1, digest: "ce1f3ff0528a15836c188d111ddbe29bfb8c97c4f68d69c3e77a9432fe157a28" },
 };
@@ -191,6 +214,10 @@ export const LOBBY_RPC_REQUEST_VALIDATORS: { readonly [K in LobbyRpcType]: Runti
     "room.resolve": guardRpcValidator("payload", validateResolveReq),
     "shop.purchase": guardRpcValidator("payload", validateShopPurchaseReq),
     "shop.queryOp": guardRpcValidator("payload", validateShopQueryReq),
+    "slg.mapTiles": guardRpcValidator("payload", validateSlgMapTilesReq),
+    "slg.tileCapture": guardRpcValidator("payload", validateSlgTileCaptureReq),
+    "slg.marchDispatch": guardRpcValidator("payload", validateSlgMarchDispatchReq),
+    "slg.marchRecall": guardRpcValidator("payload", validateSlgMarchRecallReq),
     "snakeCosmetic.getSnapshot": guardRpcValidator("payload", validateSnakeCosmeticGetSnapshotReq),
     "snakeCosmetic.equip": guardRpcValidator("payload", validateSnakeCosmeticSkinReq),
     "snakeCosmetic.unlock": guardRpcValidator("payload", validateSnakeCosmeticSkinReq),
@@ -216,6 +243,10 @@ export const LOBBY_RPC_RESPONSE_VALIDATORS: { readonly [K in LobbyRpcType]: Runt
     "room.resolve": guardRpcValidator("response", validateResolveRes),
     "shop.purchase": guardRpcValidator("response", validatePurchaseResult),
     "shop.queryOp": guardRpcValidator("response", validatePurchaseResult),
+    "slg.mapTiles": guardRpcValidator("response", validateSlgMapTilesRes),
+    "slg.tileCapture": guardRpcValidator("response", validateSlgTileCaptureRes),
+    "slg.marchDispatch": guardRpcValidator("response", validateSlgMarchDispatchRes),
+    "slg.marchRecall": guardRpcValidator("response", validateSlgMarchRecallRes),
     "snakeCosmetic.getSnapshot": guardRpcValidator("response", validateSnakeCosmeticSnapshotRes),
     "snakeCosmetic.equip": guardRpcValidator("response", validateSnakeCosmeticProfileRes),
     "snakeCosmetic.unlock": guardRpcValidator("response", validateSnakeCosmeticProfileRes),
@@ -271,6 +302,11 @@ export const RPC_ERR_CODES = [
     "ROOM_QUOTA_EXCEEDED",
     "ROOM_SERVICE_UNAVAILABLE",
     "ROOM_RESULT_UNKNOWN",
+    "SLG_TILE_NOT_OWNED",
+    "SLG_MARCH_LIMIT",
+    "SLG_MARCH_NOT_FOUND",
+    "SLG_MARCH_FINISHED",
+    "SLG_SETTLEMENT_PENDING",
     "SNAKE_SKIN_UNKNOWN",
     "SNAKE_SKIN_NOT_OWNED",
     "SNAKE_SKIN_NOT_CRAFTABLE",

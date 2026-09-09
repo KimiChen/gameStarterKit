@@ -22,7 +22,7 @@
 | 世界形态 | **SQL 权威 + 视图房**：世界状态在 `k_slg_*`，`slgWorld` 房只是 dropIn GameRoom 上的实时视图（arena 放大）。与 MMO.md 的 WorldRoom（内存权威 + 租约 + 控制权 + 检查点 + 交接）是两种形态，MMO.md §4.1.1 已登记 |
 | 不需要的框架阶段 | MF2（persona / 资产主体：本 kit 用 uid 主体，`tx.debit` 旧 API 默认 account 语义，MF2 迁移时零变）、MF4（权威租约 / 控制权）、MF8（交接）、MF7 的检查点（行军位置是 `f(now)` 的确定函数，重启从 SQL 重放） |
 | 依赖的框架阶段 | **MF5**（按会话裁剪同步：`InterestSet` / `diffAndEmit` / `perSession` token / 有界出站队列）——阶段 2b 的前置；**MF7 的 `kit.json.workers[]`**——无人在线时的行军到达结算 |
-| 可见性 | 按 MMO.md D4 缺省：名册不进 Schema；本 kit 的 `players` map 只放 id / name（是否全区公开名册由产品拍板），视口只在服务端会话表 |
+| 可见性 | 正式名册不广播全房 id/name，只随视野内地块/军队提供必要归属；视口只在服务端会话表。MF5 负责把 GameRoom 内部名册与客户端 Schema 投影拆开，见第四轮拍板 |
 | 登记 | MMO.md §6.7 把本 kit 登记为 MF5 原语的第二消费方（tile / army 兴趣集与 mmo 的 entity 兴趣集共用同一原语）；本 kit 落地后在 MMO.md §12 回写一行 |
 | 与 mmo kit | 两个独立 kit（KIT.md v0 不做 kit-on-kit）；共用的只有框架原语 |
 
@@ -42,10 +42,10 @@
 
 ## 2. 数据与同步模型（先把最难的想清楚）
 
-- **地块**：`k_slg_tile(server_id, tile_id, owner_uid, guard_power, updated_at)` per-zone 稀疏表（`server_id+tile_id` 主键）。地图总量可配（v0 默认 200×200 = 4 万格），只有被占/被改的格才有行 → 避开万行 INSERT 种子。（2026-09-09 拍板，落实 S2）**并发竞争契约 = 唯一键插入 + 冲突事务内重读**：占无主格用裸 `INSERT` 撞 `(server_id,tile_id)` 主键；撞唯一键即在本事务内重读该行，按**实际获得的状态**走加固 / 削守备分支；地块结果 + 回执 + 奖励 intent 同一事务原子提交。⛔ 不依赖 `SELECT … FOR UPDATE` 对不存在行的间隙行为，⛔ 不把 `withKitTx`（READ COMMITTED）当作已处理竞争。请求级幂等另有回执表 `k_slg_capture`（同 opId 重放原样回读，照 arena `k_arena_attempt`）。
-- **行军**：`k_slg_march(server_id, march_id, uid, from_tile, to_tile, depart_at, arrive_at, status, …)` per-zone。位置是 `f(now)` 的确定函数 → 房间崩溃/重启从 SQL 重放即恢复，**不需要框架还没有的 checkpoint 接缝**；到达结算用懒结算（任何触碰该行军/该地块的 RPC 或房间 tick 扫描到 `arrive_at<=now` 即结算写库）。懒结算**必须**带回执表 `k_slg_march_receipt`（并发 RPC 结算同一行军会双写，幂等靠回执 + `withKitTx` 内事务，照 arena `k_arena_attempt`）；无人在线时的到达结算登记为 MMO.md MF7 `kit.json.workers[]` 落地后接 worker（S6：worker 须用租约保护的受限 KitTx，见 §6），落地前是已知取舍（写进 README）。（2026-09-09 拍板，落实 S3）**守备制规则包**：同目标事件按 `arrive_at` 升序、并列再按 `march_id` 升序逐条结算；到达 = 交战——无主格直接占领，敌格削 `guard_power`、归零夺取（改主、power=1）；撤回在 `arrive_at` 前任意时刻可发起、已到达不可撤；派遣 / 撤回 / 懒结算共用 kit API 单一写入口，RPC、视图房、未来 worker 只调该入口；锁顺序冻结为 tile → march → receipt → 经济/effect，批次有界。
+- **地块**：`k_slg_tile(server_id, tile_id, owner_uid, guard_power, updated_at)` per-zone 稀疏表（`server_id+tile_id` 主键）。地图总量可配（v0 默认 10000×10000 = 1 亿格），只有被占/被改的格才有行 → 避开万行 INSERT 种子。（2026-09-09 拍板，落实 S2）**并发竞争契约 = 唯一键插入 + 冲突事务内重读**：占无主格用裸 `INSERT` 撞 `(server_id,tile_id)` 主键；撞唯一键即在本事务内重读该行，按**实际获得的状态**走加固 / 削守备分支；地块结果 + 回执 + 奖励 intent 同一事务原子提交。⛔ 不依赖 `SELECT … FOR UPDATE` 对不存在行的间隙行为，⛔ 不把 `withKitTx`（READ COMMITTED）当作已处理竞争。请求级幂等另有回执表 `k_slg_capture`（同 opId 重放原样回读，照 arena `k_arena_attempt`）。
+- **行军**：`k_slg_march(server_id, march_id, uid, from_tile, to_tile, depart_at, arrive_at, status, …)` per-zone。位置是 `f(now)` 的确定函数 → 房间崩溃/重启从 SQL 重放即恢复，**不需要框架还没有的 checkpoint 接缝**；到达结算用懒结算（任何触碰该行军/该地块的 RPC 或房间 tick 扫描到 `arrive_at<=now` 即结算写库）。懒结算**必须**带回执表 `k_slg_march_receipt`（并发 RPC 结算同一行军会双写，幂等靠回执 + `withKitTx` 内事务，照 arena `k_arena_attempt`）；无人在线时的到达结算登记为 MMO.md MF7 `kit.json.workers[]` 落地后接 worker（S6：worker 须用租约保护的受限 KitTx，见 §6），落地前是已知取舍（写进 README）。（2026-09-09 拍板，落实 S3）**守备制规则包**：同目标事件按 `arrive_at` 升序、并列再按 `march_id` 升序逐条结算；到达 = 交战——无主格直接占领，敌格削 `guard_power`、归零夺取（改主、power=1）；撤回在 `arrive_at` 前任意时刻可发起、已到达不可撤；派遣 / 撤回 / 懒结算共用 kit API 单一写入口，RPC、视图房、未来 worker 只调该入口；领域锁顺序冻结为 tile → march → receipt → 经济/effect；第四轮增加每区 revision 行先锁并持有至提交，批次有界。
 - **RPC→房同步**（2026-09-09 拍板，落实 S1）：**变更日志表 + 游标**。`slg.*` 写端点、房内懒结算与未来 worker 共用同一 kit API 写入口；每次世界状态变更在**同一事务内**追加 `k_slg_tile_log` / `k_slg_march_log`（per-zone 单调 revision；删除 / 结束有 tombstone 记录；提交顺序 = revision 序）。每个消费方（`slgWorld` 房 / worker）自持游标按 revision 增量消费，并定期向 SQL 对账；Redis 脏标记（经 kit-api 门面，待 §0 的小 PR）**只做低延迟提示，不是正确性来源**；日志有保留窗口，游标落后出窗即走 baseline 重建。⛔ 不在 websocket 端点里 import 房间；⛔ 不在 `rooms/modes/slgWorld/**` import `core/infra/*`。
-- **AOI 载体**（2026-09-09 审核改）：消费 MMO.md MF5 的框架原语——兴趣集 `InterestSet`（本 kit 的兴趣集 = 视口 chunk 矩形，chunk 数学与矩形计算是 shared 纯函数）、`diffAndEmit` 产出 enter / update / leave、`defineS2C(..., { perSession: true })` 声明 `tilesEnter/tilesUpdate/tilesLeave`、`armiesEnter/Update/Leave`（框架对 perSession token 的 `broadcastS2C` fail-closed）、只含兴趣集的分块 baseline + checksum + `baselineRequest` 重同步、有界出站队列。C2S `mapSubscribe{center, lod}` 是本 kit 的 token。世界格子**不进 Colyseus Schema root**，root 只放房级摘要 + `players` map（只有 id / name，⛔ 无视口摘要，见 §0.1）。⛔ kit 内不自建第二套差分 / 投递。
+- **AOI 载体**（2026-09-09 审核改）：消费 MMO.md MF5 的框架原语——兴趣集 `InterestSet`（本 kit 的兴趣集 = 视口 chunk 矩形，chunk 数学与矩形计算是 shared 纯函数）、`diffAndEmit` 产出 enter / update / leave、`defineS2C(..., { perSession: true })` 声明 `tilesEnter/tilesUpdate/tilesLeave`、`armiesEnter/Update/Leave`（框架对 perSession token 的 `broadcastS2C` fail-closed）、只含兴趣集的分块 baseline + checksum + `baselineRequest` 重同步、有界出站队列。C2S `mapSubscribe{center, lod}` 是本 kit 的 token。世界格子**不进 Colyseus Schema root**，正式 root 只放房级公开摘要；不广播全房 players id/name，必要归属随视野对象，当前 GameRoom/codegen 名册接缝由 MF5 先提供（见 §0.1）。⛔ kit 内不自建第二套差分 / 投递。
 - **房间形态**：`slgWorld` mode，dropIn profile，`filterBy(["sId","mode","profile"])` 每区一房**只在未满员时成立**（满员 `joinOrCreate` 开第二房，`apps/server/src/websocket/loader.ts:60`；两房各自缓存与轮询，正确性靠 SQL 权威，验收要补「不同房互见」）；manifest `maxPlayers` v0 定 100——上限来自各 mode 自己的 manifest（`apps/server/src/rooms/GameMode.ts:299-306`，schema 上限 1024），⛔ 不需要改任何框架常量（`MAX_PLAYERS = 4` 只是未进 catalog 的兜底，snake 已用 8）；验证项改为 `patchRate = 50`（`GameRoom.ts:289`）下 100 人 Schema patch 开销，建议复用 MMO.md MF1 的基准台。⚠ GameRoom 未设 `autoDispose`（默认 true）：无人即销毁，仓内唯一零客户端保活是 LobbyRoom；重建成本 = 全量拉 active 行军。（2026-09-09 审核补）
 
 ## 3. 阶段划分
@@ -54,8 +54,8 @@
 
 **登记与单源**
 
-1. `apps/kits/slg/kit.json`：`schemaVersion:1`、`id:"slg"`（宿主自有，无 `version`）、`api:{worldmap:{version:1,minSupported:1}}`、`domains:["slg"]`、**阶段 1 不登记 `modes`**（`gameplays/` 目录 2b 再加，codegen 对 `modes≡gameplays/ 子目录集` 有双向断言）、`sql.files:["sql/001-init.sql"]`、`sql.tables:[{name:"k_slg_tile",zone:"per-zone"},{name:"k_slg_capture",zone:"per-zone"},{name:"k_slg_tile_log",zone:"per-zone"}]`、`userKeys:["stats"]`、entry/routes/menu/viewDirs/views/owners 按 arena 形状。
-2. `apps/kits/slg/sql/001-init.sql`：`k_slg_tile`（地块，稀疏）+ `k_slg_capture`（占领回执，照 `k_arena_attempt`）+ `k_slg_tile_log`（S1 变更日志：`(server_id, revision)` 主键 + tile_id + op 类型 + payload + tombstone）三张表；server_id 进主键，遵守 lint 白名单。
+1. `apps/kits/slg/kit.json`：`schemaVersion:1`、`id:"slg"`（宿主自有，无 `version`）、`api:{worldmap:{version:1,minSupported:1}}`、`domains:["slg"]`、**阶段 1 不登记 `modes`**（`gameplays/` 目录 2b 再加，codegen 对 `modes≡gameplays/ 子目录集` 有双向断言）；`sql.files` 登记 `sql/001-init.sql`，`sql.tables` 登记 `k_slg_revision` / `k_slg_tile` / `k_slg_capture` / `k_slg_tile_log`（均 per-zone）；`userKeys:["stats"]`、`effects.trophy:{userKey:"stats",field:"trophies",max:1000000}`，entry/routes/menu/viewDirs/views/owners 按 arena 形状。本轮与 2a 同批登记 march 面及第二份迁移。
+2. `apps/kits/slg/sql/001-init.sql`：`k_slg_revision`（每区 revision 分配行）+ `k_slg_tile`（地块，稀疏）+ `k_slg_capture`（占领回执，绑定 uid / payload_hash / contract_version / response_json）+ `k_slg_tile_log`（S1 变更日志：`(server_id, revision)` 主键 + tile_id + op 类型 + payload + tombstone）四张表；server_id 进主键，遵守 lint 白名单。每区 revision 行在业务事务先锁定并持锁到提交，使 revision 顺序等于提交顺序；两张日志共用序列，单表可缺号。
 3. `apps/kits/slg/README.md`：定义了什么、插件怎么用 api 面（照 arena README 格式）。
 
 **shared（零依赖，铁律 4）**
@@ -71,7 +71,7 @@
 
 **配表（静态地形）**
 
-9. （2026-09-09 审核改）v0 由 kit 直接带冻结 JSON：`apps/kits/slg/data/terrain.json`（服务端读）+ `apps/Cocos/assets/resources/kits/slg/terrain.json`（客户端读），两条路径都在 kit 推导集内（`apps/server/tools/plugin/ownership.ts:269` / `:297`），与 MMO.md「静态内容 = 冻结 JSON 内容包」同口径。excel 管线：`tools/excel-to-json.mjs` 的 `--output` / `--client-output` 存在（`:85-88`），但源表只登记了 `items.xlsx`（`:47-49`），加 `slg_terrain.xlsx` 要改宿主脚本（kit 推导集外）——列为可选后续项，不在阶段 1。
+9. （2026-09-09 审核改）v0 由 kit 直接带冻结 JSON：`apps/kits/slg/data/terrain.json`（kit 内容源）+ `apps/Cocos/assets/resources/kits/slg/terrain.json`（客户端资源镜像；服务端只遵守 shared 规则，不加载仅用于展示的地形），两条路径都在 kit 推导集内（`apps/server/tools/plugin/ownership.ts:269` / `:297`），与 MMO.md「静态内容 = 冻结 JSON 内容包」同口径。excel 管线：`tools/excel-to-json.mjs` 的 `--output` / `--client-output` 存在（`:85-88`），但源表只登记了 `items.xlsx`（`:47-49`），加 `slg_terrain.xlsx` 要改宿主脚本（kit 推导集外）——列为可选后续项，不在阶段 1。
 
 **客户端（全部走已有管线）**
 
@@ -80,10 +80,10 @@
     - `logic/mapCamera.ts`：pan + **pinch 双指缩放**（全新，纯数学：两指距离比→scale，锚点保持）+ 惯性；scale→LOD 分档 + 越档事件。
     - `logic/mapStreamer.ts`：源游戏 §6 的 2D 移植——可见矩形、外扩 margin、滞回带、环形扩张、chunk 集 added/removed 差分。
     - `logic/mapLayers.ts`：内容层注册表 + `hideAtLod` 显隐规则；地块占有色块层、格子线层。
-12. view 层：`view/SlgMapView.ts` + `.view.json` sidecar（`kind:"cocos"`、`interactive:false` + scrim 吞触摸，照 ArenaBoardView）；世界根节点 scale/translate；瓦片渲染**用 snake 动态网格合批**（每 chunk 一张 dynamic mesh，⛔ 不用每格一个 Sprite）；输入走全局 `input.on` + 多点路由（SnakePointerRouter 先例）；地形贴图 `resources.load("kits/slg/terrain")`。
+12. view 层：`view/SlgMapView.ts` + `.view.json` sidecar（`kind:"cocos"`、`interactive:false` + scrim 吞触摸，照 ArenaBoardView）；世界根节点 scale/translate；瓦片渲染**用 snake 动态网格合批**（每 chunk 一张 dynamic mesh，⛔ 不用每格一个 Sprite）；输入走全局 `input.on` + 多点路由（SnakePointerRouter 先例），触屏 pinch / 拖动、桌面滚轮；`resources.load("kits/slg/terrain")` 读取原创色块地形 JSON，用顶点色渲染，无外部贴图转换。
 13. kit.json 登记 `route {id:"slgMap", view:"SlgMap"}` + menu 一条（kind:"route"）。
 
-**阶段 1 验收**：`codegen:plugins` → `sync:shared` → `sync:client` → `db:bootstrap`（应用 k_slg_tile）→ `npm run typecheck` / `test:client` / `plugin -- test slg` → `verify:all` 绿 → Creator 预览实证：地图页打开、平移/缩放四档 LOD、占领一格写库并重读。
+**阶段 1 验收**：`codegen:plugins` → `sync:shared` → `sync:client` → `db:bootstrap`（应用 k_slg_tile）→ `npm run typecheck` / `test:client` / `plugin -- test slg`（已安装制品的临时宿主，见 §4）→ `verify:all` 绿 → Creator 预览实证：地图页打开、平移/缩放四档 LOD、占领一格写库并重读。
 
 ### 阶段 2：march 面（2a，可先做）+ `slgWorld` 房 / AOI 动态单位（2b，等 MF5）
 
@@ -91,14 +91,14 @@
 
 **玩法单源**
 
-14. `apps/kits/slg/gameplays/slgWorld/{manifest.json,state.json}`：manifest（dropIn profile、`maxPlayers:100`、`wireExposed` 默认）；state root 只放 tick/phase/matchId/players（房级摘要），players 只放 id/name（⛔ 视口摘要移除——视口只驻服务端会话表，见 §6 S4；名册可见性 v0 暂接受 codegen 默认 id/name 同房可见，产品拍板后随 MF5 的 D4 策略收口）。kit.json 补 `modes:[{id:"slgWorld",constantName:"SlgWorld"}]`（`api.march` 与 SQL 登记已在 2a 完成，见第 16 条）。
+14. `apps/kits/slg/gameplays/slgWorld/{manifest.json,state.json}`：manifest（dropIn profile、`maxPlayers:100`、`wireExposed` 默认）；正式 state root 只放房级公开摘要，不广播全房 players id/name，必要归属随视野地块/军队下发；视口只驻服务端会话表。当前 GameRoom/codegen 的 root players 约束由 MF5 先提供兼容接缝，⛔ kit 不绕过生成器自行删字段。kit.json 补 `modes:[{id:"slgWorld",constantName:"SlgWorld"}]`（`api.march` 与 SQL 登记已在 2a 完成，见第 16 条）。
 15. `apps/shared/src/gameplays/slgWorld/wire.ts`（手写真源）：C2S `MapSubscribe{chunkAnchor,lod}`、`MapUnsubscribe`、`BaselineRequest`（rateCost）；S2C `BaselineBegin/Chunk/End`（checksum）、`TilesEnter/Update/Leave`、`ArmiesEnter/Update/Leave`——消息族形态照 snake wire。改 wire 一字节必须 bump `modeVersion`。（2b）S2C 全部以 MF5 的 `defineS2C(..., { perSession: true })` 声明，baseline 族由框架原语注入 token，⛔ 不自写分块 / checksum 逻辑。
 
 **服务端**
 
 16. `apps/kits/slg/sql/002-march.sql`：`k_slg_march` + `k_slg_march_receipt` 回执表 + `k_slg_march_log`（S1 变更日志，与业务写同事务追加）；追加式，⛔ 不改 001。**同批完成 S5 的 kit.json 登记**：`api.march:{version:1,minSupported:1}`、`sql.files` 追加 `sql/002-march.sql`、`sql.tables` 追加三张表（均 per-zone）——不为登记 march 面提前制造空 mode。
 17. `apps/shared/src/kits/slg/api/march/index.ts`：行军令类型、路径/速度/到达时刻纯函数（`positionAt(order, now)`）、校验器。
-18. `apps/server/src/kits/slg/`：`marchRepo.ts`、`api/march/index.ts`（`dispatchMarch`（`tx.debit` 扣体力/粮食 + 写行军 + enqueueEffect，照 arena `boostTile` 形态）、`recallMarch`、`settleDueMarches`）。
+18. `apps/server/src/kits/slg/`：`marchRepo.ts`、`api/march/index.ts`（`dispatchMarch`（`tx.debit` 扣现有 1 金币 + 写行军与回执，照 arena `boostTile` 原子路径）、`recallMarch`、`settleDueMarches`）。第四轮已冻结己方起点、直线 1 格/s、每区每用户最多 3 支、固定 1 点守备作用、撤回不退、到达/撤回立即结束；不新增体力/粮食或返程系统。
 19. `apps/shared/src/protocol/lobbyRpc/domains/slg.ts` 增量：`MarchDispatch/MarchRecall` 路由 + errorCodes + contractVersion bump；websocket 端点两个薄壳；向量 sidecar 同步补。
 20. `apps/server/src/rooms/modes/slgWorld/index.ts`：GameMode——roster dropIn、`createPlayer`、commands（MapSubscribe 等）、`onStep` 低频扫描（脏标记 → 增量拉 SQL → 逐会话兴趣集差分 → per-client 有序 S2C）；AOI 接线 `./aoi.ts` 只做「视口 chunk 矩形 → 兴趣集」（shared 纯函数），差分与投递交 MF5 的 `InterestSet` / `diffAndEmit`（2b，⛔ 不自建差分内核）；脏标记读写经 kit-api 门面（§0 小 PR），⛔ 不 import `core/infra/*`。**先读 SQL 全量 active 行军进内存，房即该区行军缓存；结算写库经 kit-api**。
 21. Redis 新 key 登记进契约表/登记点（SERVER.md §13，铁律 8）。
@@ -109,7 +109,7 @@
 23. 地图页接房间：视口变化→`MapSubscribe`；`tilesEnter/…`→地块层增量刷；军队层（图标 Sprite 池 + 位置插值）与行军线层（动态网格折线）按 `hideAtLod` 显隐。表现件挂法设计点：v0 由 SlgMapView 直接消费 SlgWorldRoom adapter（不走 gameplay presentationHost），codegen 对客户端四件套是**硬性要求**（`apps/server/tools/gameplay-codegen/lib.ts:445-471`：`apps/client/src/gameplay/modes/slgWorld/index.ts` 必须存在并导出 `createGameplayModule`；`rooms/modes/` 子目录集合与 canonical 集合精确相等），2b 必须同批补齐服务端 `index.ts` 与客户端四件套。
 24. `apps/client/test/slg-*.test.ts`：地图数学/流式器/LOD/AOI buffer 无头测试；`apps/server/test/slg-*.test.ts`：repo/api/RPC/mode/AOI 差分（arena/snake 测试形态）。命名吃 `<id>-*` 所有权前缀。
 
-**阶段 2a 验收**：`marchDispatch` 扣资源 + 写行军 + 回执幂等（同 `clientReqId` 重放不双写）；`arrive_at<=now` 的行军由任一触碰 RPC 结算且并发结算只生效一次；`plugin -- test slg` / `verify:all` 绿。
+**阶段 2a 验收**：`marchDispatch` 扣资源 + 写行军 + 回执幂等（同 `clientReqId` 重放不双写）；`arrive_at<=now` 的行军由任一触碰 RPC 结算且并发结算只生效一次；`plugin -- test slg`（已安装制品的临时宿主，见 §4）/ `verify:all` 绿。
 
 **阶段 2b 验收**（等 MF5）：两客户端进同区房互见行军，**不同房（满员后第二房）也互见**；dispatch→对方 2s 内看到军队出现并移动；到达后地块易主、双方收到 tilesUpdate；视口外的会话收不到该 chunk 的 tiles / armies（perSession 零泄露）；断线重连走 baseline 重同步；`verify:all` 绿。
 
@@ -122,9 +122,11 @@ npm run sync:shared && npm run sync:client         # 镜像刷新（铁律 2）
 npm --workspace @game/server run db:bootstrap      # SQL 迁移（阶段 1 起）
 npm run typecheck && npm run test:client
 npm --workspace @game/server run test
-npm --workspace @game/server run plugin -- test slg
+npm --workspace @game/server run plugin -- test slg --int # 只在制品已安装、具备包锁的临时宿主中运行
 npm run verify:all                                  # 提交闸
 ```
+
+**宿主自有包的验证动线**：主树 `apps/kits/slg/kit.json` 保持无 `version`，不能直接按已安装包运行 `plugin -- test slg`，也不能直接 pack。包验证在临时制品副本中补 `version:"0.1.0"`，打包后安装到临时宿主，由 install 生成的包锁驱动 `plugin -- test slg`；验完不把该测试版本或安装锁回灌主树。主树自身仍运行相关源码测试与 `verify:all`。
 
 cc 桩缺口按需补 `apps/client/cc-stub.d.ts` / `client-test-stubs.d.ts`（`clientTypecheckConfig.test.ts` 守门）。Creator 本地预览实证两阶段各做一次（真引擎渲染 + 资源）。
 
@@ -138,11 +140,11 @@ cc 桩缺口按需补 `apps/client/cc-stub.d.ts` / `client-test-stubs.d.ts`（`c
 - **版权红线**：⛔ 不拷 zlbAllVersion 的任何代码/素材/数值表文件；LOD 阈值等数值自行调参定标（可「参考其约 1.8 倍几何级数」的设计思想）。
 - **文档回写**：落地后更新 `apps/kits/slg/README.md`、根 `AGENTS.md` 速查清单、`docs/KIT.md` §9 实施状态（kit 机制文档的状态回写点）；`docs/MMO.md` §12 回写一行（MF5 第二消费方落地）。
 
-## 6. 第二轮审阅意见（2026-09-09，待落实）
+## 6. 第二轮审阅意见（2026-09-09，历史记录）
 
-> 本节是对现有计划与仓内源码的静态复核，所有条目均为**审阅建议 / 待落实**，不表示实施、测试或验收完成。本轮未运行真实 MySQL 并发、Redis 故障、进程崩溃或多房同步实验。保留正文及既有路线 A：阶段 1 / 2a 先行，阶段 2b 等 MF5；下列建议不新增已拍板决策。
+> 本节保留第二轮静态复核当时的**历史审阅记录**。各小节的“待落实/待选择”描述的是该次审阅时点，不覆盖第三、四轮拍板及本次实施结果；该次审阅没有运行真实 MySQL 并发、Redis 故障、进程崩溃或多房同步实验，不代表本次实施尚未验证。已采纳设计见后续拍板表，实际验收以本次实施状态与证据登记为准。路线 A 保持：阶段 1 / 2a 先行，阶段 2b 等 MF5。
 >
-> 与[本轮审阅的 MMO 基线（另一工作树）](/Volumes/KimData/work/gameStarterKit/docs/MMO.md) §13 的第二轮审阅互相对应：S1 ↔ R3（SQL 同步与补偿），S4 ↔ R1 / R2（GameRoom 适配与名册），S6 ↔ R4（worker 契约）。正文中的旧描述须在后续设计消化时逐条修订，不能因为本节已登记就视为已修复。
+> 与[该次审阅的 MMO 基线（另一工作树）](/Volumes/KimData/work/gameStarterKit/docs/MMO.md) §13 的第二轮审阅互相对应：S1 ↔ R3（SQL 同步与补偿），S4 ↔ R1 / R2（GameRoom 适配与名册），S6 ↔ R4（worker 契约）。正文中的旧描述须在后续设计消化时逐条修订，不能因为本节已登记就视为已修复。
 
 ### S1：SQL 提交、脏标记与增量游标尚未形成可恢复同步协议
 
@@ -180,7 +182,7 @@ cc 桩缺口按需补 `apps/client/cc-stub.d.ts` / `client-test-stubs.d.ts`（`c
 
 **风险**：路线 A 等待的是可被 `slgWorld` 的 dropIn GameRoom 消费的 MF5，而非只有 WorldRoom 与其客户端 adapter 接入成功。当前生成器要求 root 有 `players` map 且值含 id/name（`apps/server/tools/gameplay-codegen/stateRenderer.ts` 的 `ROOT_LIFECYCLE_FIELDS` / `PLAYER_LIFECYCLE_FIELDS`），GameRoom 也把参与者写入该 map；仅用 `perSession` 消息不能隐藏 root Schema 里的名册。§0.1 一面写「名册不进 Schema」，一面又保留 id/name，尚未解决冲突；第 14 条还残留「视口摘要」，与前文仅服务端持有视口直接矛盾。公开名册尚未获产品批准，不能视为默许例外。
 
-**建议（待落实）**：将 GameRoom 与客户端 adapter 的消费路径及 codegen、exact validator、baseline、背压 / 重同步一并列入 MF5 的框架验收，再由 SLG 接线验证；框架阶段同时说明如何满足 D4 的名册策略，必要的生成器 / 房壳接缝由框架修改，不以 kit 绕行。后续正文应移除第 14 条视口摘要；视口只驻服务端会话表，不广播。id/name 是否公开及何种范围公开须另行明确；本节不批准公共名册，也不擅定实现方案。
+**建议（待落实）**：将 GameRoom 与客户端 adapter 的消费路径及 codegen、exact validator、baseline、背压 / 重同步一并列入 MF5 的框架验收，再由 SLG 接线验证；框架阶段同时说明如何满足 D4 的名册策略，必要的生成器 / 房壳接缝由框架修改，不以 kit 绕行。后续正文应移除第 14 条视口摘要；视口只驻服务端会话表，不广播。id/name 是否公开及何种范围公开须另行明确；该次审阅不批准公共名册；正式范围已由第四轮拍板冻结，本段只保留当时的风险依据。
 
 **验收建议**：SQL 视图房使用正式 MF5 API 建立完整客户端连接并收发；检查实际 Schema patch、baseline 与消息流，超视距会话拿不到未授权名册、视口和实体字段。保留同房 / 不同房互见、慢客户端、重连、兴趣集改变测试；WorldRoom 夹具通过不能替代这一组 GameRoom 消费证据。
 
@@ -217,10 +219,43 @@ cc 桩缺口按需补 `apps/client/cc-stub.d.ts` / `client-test-stubs.d.ts`（`c
 | --- | --- |
 | S1 同步协议 | **变更日志表 + 游标**：`k_slg_tile_log` / `k_slg_march_log` 与业务写同事务追加（单调 revision、tombstone 覆盖删除/结束）；消费方自持游标 + 定期对账；Redis 仅提示；日志有保留窗口，出窗走 baseline 重建。已并入 §2 与阶段 1 / 2a 建表清单。 |
 | S2 地块竞争 | **唯一键插入 + 冲突事务内重读**（稀疏表保留）；请求级幂等由 `k_slg_capture` 回执承担。已并入 §2 与阶段 1 第 7 条。 |
-| S3 行军规则 | **守备制规则包**：同目标 `arrive_at`→`march_id` 升序逐条结算；到达 = 交战（无主格占领 / 敌格削守备归零夺取）；`arrive_at` 前可撤；kit API 单写入口；锁顺序 tile → march → receipt → 经济/effect。已并入 §2 与 2a。 |
-| S4 名册可见性 | v0 暂接受 codegen 默认（root `players` map 含 id/name、同房可见）；不视为产品批准，随 MF5 的 D4 名册策略一并收口，2b 验收按 S4 复核。第 14 条视口摘要已移除。 |
+| S3 行军规则 | **守备制规则包**：同目标 `arrive_at`→`march_id` 升序逐条结算；到达 = 交战（无主格占领 / 敌格削守备归零夺取）；`arrive_at` 前可撤；kit API 单写入口；锁顺序经第四轮补齐为 revision → tile → march → receipt → 经济/effect。已并入 §2 与 2a。 |
+| S4 名册可见性 | 本轮曾暂接受 codegen 默认；正式产品范围已由第四轮替代：不广播全房 id/name，随 MF5 的 D4 策略与 GameRoom 接缝收口。第 14 条视口摘要已移除。 |
 | S5 manifest 登记 | march 面的 `api.march` / `sql.files` / `sql.tables` 增量归入 2a（第 16 条同批）；mode / wire / 四件套仍留 2b。 |
 | S6 worker | 维持等待 MF7；MF7 须供「租约保护的受限 KitTx」（同一连接同一事务内验租约 + 业务写），本 kit 不碰框架租约表、不用 `.conn`。 |
 | MF5 / MF7 归属 | **本仓按 MMO.md §5 自行实施**（独立排期、先于 2b）；2b 开工条件 = MF5 落地且含 S4 GameRoom 消费路径验收。 |
 
 阶段进入条件（更新后）：阶段 1 全部开工（S2 契约已冻结）；2a 开工条件已满足（S1 / S3 已冻结、S5 登记已并入第 16 条）；2b 等待 MF5（含 S4）；无人在线 worker 等待 MF7（S6）。
+
+### 第四轮拍板与本轮实施范围（2026-09-09）
+
+| 项 | 用户最终决定 |
+| --- | --- |
+| 玩法定位 | 机制样例；保留免费即时占领/攻击/加固。无主城、无连地要求；行军仅从己方格出发，地形仅用于展示。 |
+| 守备与奖励 | 每次作用固定 1 点；敌格归零的当次即夺取并设守备 1，己方加固上限 99；每次改主 +1 独立奖杯，不可兑金，加固不奖。 |
+| 行军 | 直线匀速 1 格/s；每用户每区最多 3 支活动行军；起点途中失守不取消，到达按目标当时归属结算；到达/撤回立即结束，无库存返程。 |
+| 经济 | 派遣扣 1 现有金币，撤回不退；起终相同、起点非己方、超活动上限、余额不足均拒绝不扣款；使用已有开发测试种币，不新增赠币。 |
+| 事件次序 | 即时操作先处理目标已到达行军；同目标依 arrive_at 再依 march_id 升序结算；回执绑定规范载荷摘要与 contractVersion。 |
+| 提交序 | 新增每区 k_slg_revision 分配行，事务先锁并持锁到 COMMIT；revision → tile → march → receipt → 经济/effect。普通自增号不能代替提交顺序。 |
+| 地图与输入 | 按用户最新要求改为 **10000×10000（1 亿格）**、chunk 16、四档 LOD；触屏 pinch/拖动，桌面滚轮。首轮原创简化色块，无来源素材转换；五个地形矩形由初版等比扩大 50 倍，palette 不变，不展开逐格 JSON。 |
+| 2a 界面 | 只交付 RPC + 测试；无行军操作面板，军队/行军线及房间接线留 2b。 |
+| 正式名册 | 不广播全房 id/name，只随视野内地块/军队提供必要归属。MF5 先解决 GameRoom/codegen 现有名册约束。 |
+| 框架边界 | 阶段 1 / 2a 同批可装无 mode；2b 仍等 MF5（含 GameRoom 名册验收）；无人在线 worker 仍等 MF7。宿主默认 snake 不变。 |
+
+阶段 1 / 2a 已于 2026-09-09 完成并验收，证据登记见 §7。§6 第二轮的“待选择/待冻结”是审阅历史，S1/S2/S3/S5 的设计与本轮交付已按第三、四轮拍板消化。阶段 2b 及 MF5/MF7 不计入本轮完成范围；日志先持久记录，房间消费者游标、日志保留窗口与 baseline 接续仍留 2b，本轮不主动裁剪回执或日志。
+
+
+## 7. 实施与验收记录
+
+**阶段 1 / 2a：2026-09-09 已完成并验收。** 主树保持宿主自有无版本 SLG kit，worldmap/march v1、四条 Lobby RPC、七张 per-zone SQL 表、10000×10000 稀疏地图与原创矩形内容、桌面地图页；不登记 mode，不改宿主默认 snake。
+
+| 验收 | 结果 |
+| --- | --- |
+| 主树全量 | `npm run verify:all` 退出 0，包含类型/同步/全部既有矩阵；FGUI 66、inventory 115、客户端 487、服务端 749 个测试通过。 |
+| 干净制品 | 临时 manifest 加 `version:"0.1.0"` 生成 64 文件制品，安装到无 SLG 临时宿主，真实 postinstall 与 package check 通过；主 manifest 保持无版本。 |
+| 空库与包测试 | 独立空库首次应用 SLG 001/002 共 4+3 条语句，七表齐全；锁驱动 `plugin -- test slg --int` 35/35，通过且无跳过（含真实 SQL/Redis 集成 9 条）；重复 bootstrap 新应用 0、跳过 3（含 arena），临时库清理成功。 |
+| Creator 实证 | Cocos Creator 3.8.8 桌面真实预览 17 步通过、13 截图、console 空；入口/占领/刷新/鼠标平移/滚轮 LOD 1–4/关闭，稳定 LOD 4 已目视铺满。触屏 pinch 仅逻辑测试，单次 60 FPS 读数不构成容量结论。 |
+
+机器日志、截图与复跑动线统一见 [docs/evidence/creator-2026-09-09/slg/README.md](docs/evidence/creator-2026-09-09/slg/README.md)，干净安装细节见其 [clean-install](docs/evidence/creator-2026-09-09/slg/clean-install/README.md)。
+
+**未进入本轮范围**：2b 的 GameRoom/AOI、军队与行军线、跨房可见性及正式名册策略，继续等待 MF5（含 GameRoom 消费/名册验收）；无人在线 worker 等待 MF7 受租约保护 KitTx。日志消费者的故障恢复窗口和容量也不以本轮阶段 1 / 2a 结果代验。
