@@ -44,9 +44,14 @@ declare module "cc" {
         rect(x: number, y: number, width: number, height: number): void;
     }
 
-    export class Texture2D { width: number; height: number; }
+    export class Texture2D {
+        width: number; height: number;
+        reset(info: { width: number; height: number }): void;
+        uploadData(source: Uint8Array): void;
+    }
     export class JsonAsset { json: unknown; }
     export class SpriteFrame { texture: Texture2D | null; rect: Rect; rotated: boolean;
+        insetTop: number; insetBottom: number; insetLeft: number; insetRight: number;
         /** ⚠ 引擎侧只有 getter：赋值会抛 TypeError，故声明为 readonly 让 typecheck 拦下。 */
         readonly pivot: Vec2;
         /** ⚠ 动态图集打包开关；⛔ 自建的纯色帧必须置 false，否则会打崩渲染循环，见 view/uiPlate.ts。 */
@@ -58,7 +63,7 @@ declare module "cc" {
     }
     export class Label extends Component {
         string: string; fontSize: number; color: Color; horizontalAlign: number; verticalAlign: number;
-        lineHeight: number; overflow: number; enableWrapText: boolean;
+        lineHeight: number; overflow: number; enableWrapText: boolean; isBold: boolean;
         static Overflow: { NONE: number; CLAMP: number; SHRINK: number; RESIZE_HEIGHT: number };
         static HorizontalAlign: { LEFT: number; CENTER: number; RIGHT: number };
         static VerticalAlign: { TOP: number; CENTER: number; BOTTOM: number };
@@ -137,7 +142,7 @@ declare module "cc" {
         position: Vec3;
         scale: Vec3;
         angle: number;
-        static EventType: { TOUCH_START: string; TOUCH_MOVE: string; TOUCH_END: string; TOUCH_CANCEL: string };
+        static EventType: { TOUCH_START: string; TOUCH_MOVE: string; TOUCH_END: string; TOUCH_CANCEL: string; SIZE_CHANGED: string };
         addChild(child: Node): void;
         removeFromParent(): void;
         destroy(): boolean;
@@ -157,6 +162,19 @@ declare module "cc" {
         destroy(): boolean;
     }
 
+    export class ScrollView extends Component {
+        content: Node | null; horizontal: boolean; vertical: boolean;
+        inertia: boolean; brake: number; elastic: boolean; cancelInnerEvents: boolean;
+        getScrollOffset(): Vec2;
+        getMaxScrollOffset(): Vec2;
+        scrollToOffset(offset: Vec2, timeInSecond?: number, attenuated?: boolean): void;
+        scrollToTop(timeInSecond?: number): void;
+        stopAutoScroll(): void;
+    }
+    export class Mask extends Component {
+        static Type: { GRAPHICS_RECT: number };
+        type: number;
+    }
     export class Canvas extends Component {}
 
         /** 引擎内置资源表；⚠ `default-spriteframe` 是共用的 2×2 全白图，见 view/uiPlate.ts。 */

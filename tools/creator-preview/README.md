@@ -33,13 +33,13 @@ node tools/creator-preview/run.mjs home --format png --step-timeout 30000
 | 场景 | 步骤与判据 |
 | --- | --- |
 | `home` | 登录页 FGUI 对象 `btn_login` 可见 → 点击 → `PromoHomeView` 挂载且卡片含「协议 …」行 |
-| `settings` | 点首屏「设置」→ `SettingsView` 出现 → 读出「插件入口」全部行（label + 包 id） |
-| `redeem` | 同行「进入」→ `RedeemView` + EditBox 出现 → 输入 `--code`（默认 `WELCOME2026`）→「兑换」→ 结果文案归类 `success` / `already-claimed` / `invalid` / `other` →「关闭」回设置面板 |
-| `tally` | 同行「进入」→「目标 N 次」出现 → 连点 `TAP` 直到「你赢了」→ 结算倒计时后 `PromoHomeView` 回来且结算文案消失 |
+| `settings` | 点首屏「设置」→ `SettingsView` 出现 → 确认上方「系统设置」和下方「玩法入口」，读取双列卡片标题与稳定 entryId；已在「通用设置」详情时先点返回箭头 |
+| `redeem` | 点「兑换码」整卡（必要时自动滚入视口）→ `RedeemView` + EditBox 出现 → 输入 `--code`（默认 `WELCOME2026`）→「兑换」→ 结果文案归类 `success` / `already-claimed` / `invalid` / `other` →「关闭」回设置面板 |
+| `tally` | 点「点数赛」整卡（必要时自动滚入视口）→「目标 N 次」出现 → 连点 `TAP` 直到「你赢了」→ 结算倒计时后 `PromoHomeView` 回来且结算文案消失 |
 | `cosmetic` | ⚠ 2026-09-06 起衣柜并入 snake，**设置面板没有「衣柜」条目**：先跑一局 snake 到结算页 → 点「我的衣柜」→ 先切回「全部」筛选（重放之间可能停在别的筛选上）→ 读皮肤行 → 切「已拥有」→ 点某行「装备」并等**那一行**变「已装备」（`snakeCosmetic.equip`；⛔ 不能数「装备」标签总数：换装是互换，总数不变）→ 切「可合成」试「合成」（`snakeCosmetic.unlock`，没有可合成皮肤时记 skip）→「关闭」回结算页 →「返回主页」 |
-| `snake` | 「贪吃蛇大作战 · snake」→ `SnakeWorld.Hud` 出现 →「结束本次」→ 确认框 → 确认 → 结算页读行 + 钉住「返回主页」与「我的衣柜」**同排**（Δy ≤ 4）→「返回主页」回首屏。⚠ 确认框首击会被吞，脚本等一拍再点、必要时重开重点一次并把 `retried` 写进报告 |
-| `ballMove` | 「进入战斗 · builtin」→ `PlayersLayer` 挂载（画布演示无文本）→ 点左上角「离开」回首屏（2026-09-06 前该入口没有退出 UI） |
-| `arena` | 「竞技场 · arena」（**kit** 的 route 形态）→ `ArenaBoardView` 16 格 +「奖杯 N」→ 点一格 → `arena.capture` 结果归类 `captured` / `refused` → 点「刷新」重读 → 再点自己的格 = 加固（断言守备 +1 且奖杯不变；⚠ 必须等**与上一条不同**的提示，旧提示还挂在面板上）→「关闭」 |
+| `snake` | 点「贪吃蛇大作战」整卡 → `SnakeWorld.Hud` 出现 →「结束本次」→ 确认框 → 确认 → 结算页读行 + 钉住「返回主页」与「我的衣柜」**同排**（Δy ≤ 4）→「返回主页」回首屏。⚠ 确认框首击会被吞，脚本等一拍再点、必要时重开重点一次并把 `retried` 写进报告 |
+| `ballMove` | 点「进入战斗」整卡 → `PlayersLayer` 挂载（画布演示无文本）→ 点左上角「离开」回首屏（2026-09-06 前该入口没有退出 UI） |
+| `arena` | 点「竞技场」整卡 → `EntryGroupView` →「竞技场 · arena」同行「进入」（**kit** 的 route 形态）→ `ArenaBoardView` 16 格 +「奖杯 N」→ 点一格 → `arena.capture` 结果归类 `captured` / `refused` → 点「刷新」重读 → 再点自己的格 = 加固（断言守备 +1 且奖杯不变；⚠ 必须等**与上一条不同**的提示，旧提示还挂在面板上）→「关闭」 |
 | `arenaCapture` | 「占领赛 · arena」（kit 的 gameplay mode）→「目标 N 格」→ 连点「占领」到「你赢了！」→ 回首屏 |
 | `arenaDuel` | 「决斗 · arena」（kit 的第二个 mode）→「HP N」→ 连点「出击」到「你赢了！」→ 回首屏 |
 | `arenaShop` | 「竞技场商店 · arenaShop」（建在 kit 上的 plugin）→ 经 kit 的 `board` 面读自有格（没有就先跑 `arena` 占一格）→ 取最上面一行的「+守备」（自有格可能多块）→ 结果归类 `bought` / `insufficient-balance` / `not-owned` → 点「刷新」重读 |
@@ -47,8 +47,14 @@ node tools/creator-preview/run.mjs home --format png --step-timeout 30000
 | `loginNotice` | 登录页 FGUI `btn_notice` → 公告（判据：子件 `tge_tip`）→ 关闭。⚠ FGUI 视图挂在 `GRoot/…/layer_popup/…/GComponent` 下、节点名不是类名，只能按**独有子件名**判定；外部服务不在时会落到 ConfirmView（子件 `yesBtn`），脚本如实记 `outcome: error-confirm` |
 | `all` | 依次 areaList → loginNotice → home → settings → redeem → tally → cosmetic → arena → arenaCapture → arenaDuel → arenaShop → snake → ballMove（两个登录页场景排最前：它们会重载页面回登录态） |
 
-设置面板一行的文本是 `${label}  ·  ${包 id}`，kit 的多个 menu 入口共用同一个包 id（arena 三个），所以脚本按
-**整行文本**（`^label\s+·\s+id$`）消歧，⛔ 不能只按包 id。
+设置面板用纯 Cocos 代码绘制双列卡片：标题只有玩家可读的 label，不显示包 id，也没有独立「进入」按钮。
+重放按 `SettingsView/panel/viewport/content/card-<entryId>` 定位整卡，稳定 entryId 为
+`arenaHub` / `ballMove` / `redeem` / `snake` / `tally`；报告记录 entryId 与卡片标题。
+上方系统卡片「通用设置」为 `btn-general`，详情返回箭头为 `btn-back`，右上角 X 为 `btn-关闭`（无「关闭」文字）。
+
+`EntryGroupView` 的成员仍使用 `${label}  ·  ${包 id}` 行文本和独立「进入」按钮。竞技场的四条入口都经
+`arenaHub` 卡片进入分组页；组内按**整行文本**（`^label\s+·\s+id$`）消歧，不能只按包 id。
+`arenaCapture` / `arenaDuel` 结算后回分组页；route 页面关闭后再关分组页回设置。
 
 退出码：0 全部通过；1 有步骤失败（失败现场也会截图 `NN-failed-<step>.jpg`，报告仍落盘）；2 参数/连接错误。
 `report.json` 的 `ok`、`steps[].ok/detail/error/screenshots`、`console[]` 是复核依据；截图只是佐证。
@@ -58,10 +64,14 @@ node tools/creator-preview/run.mjs home --format png --step-timeout 30000
 - **场景改写**：预览页 `index.html` 写死 `settings.js?scene=current_scene`（= 编辑器当前打开的场景），编辑器没开场景时预览是空场景。
   脚本用 CDP `Fetch` 域把该请求的 `scene=` 改写为目标 uuid，再轮询到场景里出现 `Canvas` 且渲染 >30 帧。
   首次加载会按需编译全部 TS（实测 77～125 s，`--boot-timeout` 默认 5 分钟）；之后一次完整 `all` 约 35 s。
-- **定位不靠坐标**：每一步先注入 `pageWalkSource` 遍历激活节点，读 `cc.Label` / `cc.EditBox` 字符串与 FGUI
+- **定位不靠硬编码坐标**：每一步先注入 `pageWalkSource` 遍历激活节点，读 `cc.Label` / `cc.EditBox` 字符串与 FGUI
   对象（`node.$gobj`）的 `text`/`title`，用 `UITransform.convertToWorldSpaceAR` 算中心并换算成页面 CSS 像素后点击；
-  多枚同名按钮（设置面板的「进入」）按锚点文本所在行消歧。唯一的坐标兜底是登录按钮（FGUI 图片标题、无文本），
+  多枚同名按钮（分组页的「进入」）按锚点文本所在行消歧。唯一的坐标兜底是登录按钮（FGUI 图片标题、无文本），
   且只在 `btn_login` 找不到时使用并在报告里标注 `design-fallback`。
+- **设置卡片先滚后点**：遍历包含 Mask 裁剪外的激活节点，不能直接用首次读到的中心点击。脚本读取
+  `SettingsView/panel/viewport` 的 `cc.ScrollView`，按顶锚 content 中卡片的位置调用 `scrollToOffset`；
+  卡片完整可见时保持当前偏移，否则尽量居中并约束到最大偏移。滚动后重新遍历、确认点击中心在视口内，
+  最后通过 CDP 发真实鼠标点击；不直接调用 SettingsLogic 或入口回调。
 - **页面必须可见**：`document.hidden` 时没有 rAF，Cocos 不启动——不要用应用内隐藏的浏览器面板，脚本会 `Page.bringToFront`。
 - **编辑器重编译**：Creator 只在应用激活时重编译脚本，改了源码先激活一次 Creator（`osascript -e 'tell application "CocosCreator" to activate'`）再跑，否则预览拿的是旧 chunk。
 - **有些路径要先有资源**：皮肤装备/合成要求账号已拥有第二件皮肤或够数的碎片（种完 `gp:snake:user` 的

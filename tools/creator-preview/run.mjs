@@ -97,7 +97,7 @@ class Runner {
     return { tapped: note ?? node.path, at: [Math.round(node.center.x), Math.round(node.center.y)] };
   }
 
-  /** 点文本节点；`near` 给定时在多个同名候选里挑与锚点同一行的那个（设置面板的多枚「进入」）。 */
+  /** 点文本节点；`near` 给定时在多个同名候选里挑与锚点同一行的那个（分组页的多枚「进入」）。 */
   async tapText(text, { near, pathIncludes } = {}) {
     await this.walk();
     const query = typeof text === "string" ? { text } : { textMatches: text };
@@ -113,6 +113,24 @@ class Runner {
       throw new Error(`文本 ${String(text)} 命中 ${candidates.length} 个节点，需要 near 锚点消歧`);
     }
     return this.tap(target, `${String(text)}${near ? ` @ ${String(near)}` : ""}`);
+  }
+
+  /** 设置页按稳定 entryId 定位整卡；先滚入裁剪视口，再重读真实坐标点击。 */
+  async tapSettingsEntry(entryId) {
+    const scroll = await this.client.evaluate(`(${revealSettingsEntry.toString()})(${JSON.stringify(entryId)})`);
+    if (!scroll.ok) throw new Error(`无法定位设置入口 ${entryId}：${scroll.error}`);
+    // ScrollView 的零时长滚动也需等下一帧更新世界变换；不复用滚动前的 walk。
+    if (scroll.scrolled) await sleep(100);
+    await this.walk();
+    const target = this.find({ name: `card-${entryId}`, pathIncludes: "SettingsView/panel/viewport/content/" })[0];
+    const viewport = this.find({ name: "viewport", pathIncludes: "SettingsView/panel/" })[0];
+    if (!target || !viewport) throw new Error(`滚动后找不到设置入口 ${entryId} 或其视口`);
+    const scaleY = this.lastWalk.canvas.height / this.lastWalk.visible.height;
+    const halfHeight = viewport.center.height * scaleY / 2;
+    if (target.center.y <= viewport.center.y - halfHeight || target.center.y >= viewport.center.y + halfHeight) {
+      throw new Error(`设置入口 ${entryId} 的点击中心仍在裁剪视口外`);
+    }
+    return { entryId, scroll, ...(await this.tap(target, `card-${entryId}`)) };
   }
 
   async shot(name) {
@@ -134,6 +152,37 @@ class Runner {
 }
 
 const slug = (text) => text.replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/gu, "").toLowerCase();
+
+/** 页面侧仅操作 ScrollView；入口激活始终由随后真实鼠标点击触发。函数须保持自包含。 */
+function revealSettingsEntry(entryId) {
+  if (typeof cc === "undefined" || !cc.director?.getScene()) return { ok: false, error: "场景尚未就绪" };
+  const find = (node) => {
+    if (!node.activeInHierarchy) return null;
+    if (node.name === "SettingsView") return node;
+    for (const child of node.children) { const found = find(child); if (found) return found; }
+    return null;
+  };
+  const settings = find(cc.director.getScene());
+  const viewport = settings?.getChildByName("panel")?.getChildByName("viewport");
+  const scroll = viewport?.getComponent("cc.ScrollView");
+  const card = scroll?.content?.getChildByName(`card-${entryId}`);
+  const cardTransform = card?.getComponent("cc.UITransform");
+  const viewportTransform = viewport?.getComponent("cc.UITransform");
+  if (!scroll || !card?.activeInHierarchy || !cardTransform || !viewportTransform) {
+    return { ok: false, error: "卡片或 ScrollView 不存在（可能正停在通用设置详情）" };
+  }
+  scroll.stopAutoScroll();
+  const before = scroll.getScrollOffset().y;
+  const height = viewportTransform.height;
+  // content 为顶锚，卡片是其直接子节点；y 负值表示距内容顶部的距离。
+  const top = -card.position.y - cardTransform.height * (1 - cardTransform.anchorY);
+  const bottom = top + cardTransform.height;
+  const max = Math.max(0, scroll.getMaxScrollOffset().y);
+  const outside = top < before || bottom > before + height;
+  const offset = outside ? Math.max(0, Math.min(max, (top + bottom - height) / 2)) : before;
+  if (outside) scroll.scrollToOffset(new cc.Vec2(0, offset), 0);
+  return { ok: true, scrolled: outside, before, offset, max };
+}
 
 // ---------- 场景 ----------
 
@@ -228,25 +277,31 @@ async function ensureHome(runner) {
 async function scenarioSettings(runner) {
   await ensureHome(runner);
   await runner.walk();
-  if (runner.hasNode("SettingsView")) return runner.steps.at(-1)?.detail;
-  await runner.step("点首屏「设置」", () => runner.tapText("设置", { pathIncludes: "PromoHomeView" }));
-  return runner.step("设置面板与插件入口", async () => {
+  if (!runner.hasNode("SettingsView")) {
+    await runner.step("点首屏「设置」", () => runner.tapText("设置", { pathIncludes: "PromoHomeView" }));
+  } else if (!runner.hasNode("EntryGroupView")) {
+    const back = runner.find({ name: "btn-back", pathIncludes: "SettingsView/" })[0];
+    if (back) await runner.step("通用设置返回入口卡片", () => runner.tap(back, "btn-back"));
+  }
+  return runner.step("设置面板：上方系统设置、下方玩法入口", async () => {
     await runner.waitFor("SettingsView", (walk) => (selectNodes(walk, { name: "SettingsView" }).length > 0 ? true : null));
-    const entries = runner
-      .find({ pathIncludes: "row-entry", kind: "label" })
-      .map((node) => node.text)
-      .filter((text) => /·\s*\S+$/u.test(text))
-      .map((text) => ({ label: text.replace(/\s*·\s*\S+$/u, ""), pluginId: text.match(/·\s*(\S+)$/u)[1] }));
-    if (entries.length === 0) throw new Error("设置面板没有任何插件入口行");
+    const sections = runner.find({ pathIncludes: "SettingsView/", kind: "label", textMatches: /^(系统设置|玩法入口)$/u }).map((node) => node.text);
+    if (sections.length !== 2) throw new Error(`设置面板缺少系统/玩法分区：${JSON.stringify(sections)}`);
+    const entries = runner.find({ namePrefix: "card-", pathIncludes: "SettingsView/panel/viewport/content/", kind: "node" })
+      .map((card) => ({
+        entryId: card.name.slice("card-".length),
+        label: runner.find({ pathIncludes: `${card.path}/`, kind: "label" })[0]?.text ?? "",
+      }));
+    if (entries.length === 0 || entries.some((entry) => !entry.label)) throw new Error("设置面板缺少玩法卡片或卡片标题");
     const shot = await runner.shot("settings");
-    return { entries, shot };
+    return { sections, entries, shot };
   });
 }
 
 async function scenarioRedeem(runner) {
   await scenarioSettings(runner);
   const code = runner.options.code;
-  await runner.step("进入「兑换码 · redeem」", () => runner.tapText("进入", { near: /·\s*redeem$/u }));
+  await runner.step("点「兑换码」卡片", () => runner.tapSettingsEntry("redeem"));
   await runner.step("RedeemView 挂载（route 形态：PluginHost 动态装载后打开）", async () => {
     const editbox = await runner.waitFor("RedeemView 的输入框", (walk) => (selectNodes(walk, { name: "RedeemView" }).length > 0 ? selectNodes(walk, { kind: "editbox", pathIncludes: "RedeemView" })[0] ?? null : null));
     const shot = await runner.shot("redeem-empty");
@@ -283,7 +338,7 @@ async function scenarioRedeem(runner) {
 
 async function scenarioTally(runner) {
   await scenarioSettings(runner);
-  await runner.step("进入「点数赛 · tally」", () => runner.tapText("进入", { near: /·\s*tally$/u }));
+  await runner.step("点「点数赛」卡片", () => runner.tapSettingsEntry("tally"));
   const goal = await runner.step("TallyView 挂载并开局（gameplay 形态：PluginHost 装载 → 加入 GameRoom）", async () => {
     const headline = await runner.waitFor("「目标 N 次」标题", (walk) => selectNodes(walk, { kind: "label", textMatches: /目标\s*\d+\s*次/u })[0] ?? null, 60_000);
     const tapGoal = Number(headline.text.match(/目标\s*(\d+)\s*次/u)[1]);
@@ -323,36 +378,36 @@ async function scenarioTally(runner) {
 }
 
 /**
- * 设置面板一行插件入口的锚点：行文本是 `${label}  ·  ${unitId}`（SettingsView）。
+ * EntryGroupView 的成员行锚点：行文本是 `${label}  ·  ${unitId}`。
  * ⛔ 不能只按 unitId 消歧——kit 的多个 menu 入口共用同一个包 id（arena 的 竞技场 / 占领赛 / 决斗）。
  */
 const entryRow = (label, unitId) => new RegExp(`^${label}\\s+·\\s+${unitId}$`, "u");
 
-/** 从设置面板点某一行的「进入」。 */
-async function enterFromSettings(runner, label, unitId, note) {
+/** 从设置面板按 entryId 点整张玩法卡片。 */
+async function enterFromSettings(runner, label, entryId, note) {
   await scenarioSettings(runner);
-  return runner.step(`进入「${label} · ${unitId}」${note ? `（${note}）` : ""}`, () => runner.tapText("进入", { near: entryRow(label, unitId) }));
+  return runner.step(`点「${label}」卡片${note ? `（${note}）` : ""}`, () => runner.tapSettingsEntry(entryId));
 }
 
 /**
- * 经**入口分组页**进一条成员入口（2026-09-06 起 arena 四个入口收在「竞技场」一行后面）：
- * 设置面板 →「竞技场」这一行的「进入」→ EntryGroupView →成员行的「进入」。
+ * 经**入口分组页**进一条成员入口（arena 四个入口收在「竞技场」卡片后面）：
+ * 设置面板 →「竞技场」整卡 → EntryGroupView →成员行的「进入」。
  */
 async function enterFromGroup(runner, groupId, groupLabel, label, unitId, note) {
   await scenarioSettings(runner);
   await runner.walk();
   // 上一个场景可能把分组页留在栈顶（gameplay 形态的入口不走 closeBackToSettings）：已经在分组页上
-  // 就直接点成员，⛔ 不要再点一次设置面板那一行（那一行此刻被分组页盖着）。
+  // 就直接点成员，⛔ 不要再点一次设置卡片（卡片此刻被分组页盖着）。
   if (!runner.hasNode("EntryGroupView")) {
-    await runner.step(`设置面板进「${groupLabel}」分组页（组内 4 条入口只占一行）`, async () => {
-      await runner.tapText("进入", { near: entryRow(groupLabel, groupId) });
+    await runner.step(`设置面板点「${groupLabel}」卡片进入分组页`, async () => {
+      await runner.tapSettingsEntry(groupId);
       await runner.waitFor("EntryGroupView", (walk) => (selectNodes(walk, { name: "EntryGroupView" }).length > 0 ? true : null), 30_000);
       const rows = runner.find({ pathIncludes: "EntryGroupView", kind: "label", textMatches: /\s+·\s+/u }).map((node) => node.text);
       return { rows };
     });
   }
   return runner.step(`分组页里进「${label} · ${unitId}」${note ? `（${note}）` : ""}`,
-    () => runner.tapText("进入", { near: entryRow(label, unitId) }));
+    () => runner.tapText("进入", { near: entryRow(label, unitId), pathIncludes: "EntryGroupView/" }));
 }
 
 /**
@@ -749,7 +804,7 @@ async function scenarioSnake(runner) {
 
 /** 宿主自有的 ballMove 演示入口（builtin 的 menu 条目）：入口能进 + 房间加入 + 视图挂载 + 「离开」回首屏。 */
 async function scenarioBallMove(runner) {
-  await enterFromSettings(runner, "进入战斗", "builtin", "宿主自有 plugin 的 gameplay 入口（ballMove 演示）");
+  await enterFromSettings(runner, "进入战斗", "ballMove", "宿主自有 plugin 的 gameplay 入口（ballMove 演示）");
   await runner.step("BallMoveView 挂载（加入 GameRoom）", async () => {
     await runner.waitFor(
       "BallMoveView 的 PlayersLayer",
