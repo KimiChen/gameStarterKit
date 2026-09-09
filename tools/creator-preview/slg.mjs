@@ -2,6 +2,7 @@
 import { selectNodes, sleep } from "./lib.mjs";
 
 const VIEW = "SlgMapView";
+const OVERVIEW = "slg-world-overview";
 const inView = (node) => node.path.includes(`${VIEW}/`);
 
 /** Parse the public UI, deliberately rejecting missing/loading titles and incomplete tile details. */
@@ -20,10 +21,85 @@ export function readSlgMapEvidence(walk) {
     lod: titleMatch ? Number(titleMatch[2]) : null,
     trophies: titleMatch ? Number(titleMatch[3]) : null,
     chunks,
+    terrainLayer: nodes.some((node) => node.name === "slg-terrain-layer"),
+    decorationLayer: nodes.some((node) => node.name === "slg-decoration-layer"),
+    decorationChunks: nodes.filter((node) => /^slg-decorations-\d+-\d+$/u.test(node.name)).map((node) => node.name).sort(),
     tile: tileMatch ? { x: Number(tileMatch[1]), y: Number(tileMatch[2]), terrain: Number(tileMatch[3]), owner: tileMatch[4], guard: Number(tileMatch[5]), text: details.text } : null,
     notice: notice?.text ?? null,
     worldCenter: nodes.find((node) => node.name === "slg-world")?.center ?? null,
   };
+}
+
+/** Read actual visible overview nodes; hidden scroll/navigation branches are absent from pageWalk. */
+export function readSlgOverviewEvidence(walk, worldWidth = 10000, worldHeight = 10000) {
+  const panel = walk?.nodes.find((node) => inView(node) && node.name === OVERVIEW);
+  if (!panel) return null;
+  const nodes = walk.nodes.filter((node) => node.path.startsWith(`${panel.path}/`));
+  const navigation = nodes.find((node) => node.name === "slg-overview-navigation");
+  const scroll = nodes.find((node) => node.name === "slg-overview-scroll");
+  const map = navigation ?? scroll;
+  const center = map?.center;
+  const scaleX = walk.canvas?.width / walk.visible?.width, scaleY = walk.canvas?.height / walk.visible?.height;
+  const width = center?.width * scaleX, height = center?.height * scaleY;
+  const dimensions = [center?.x, center?.y, width, height, worldWidth, worldHeight];
+  const bounds = dimensions.every(Number.isFinite) && width > 0 && height > 0 && worldWidth > 0 && worldHeight > 0
+    ? { x: center.x - width / 2, y: center.y - height / 2, width, height } : null;
+  const coordinate = nodes.find((node) => typeof node.text === "string" && /^当前位置（\d+, \d+） · 点击地图定位$/u.test(node.text));
+  const coordinates = coordinate?.text.match(/^当前位置（(\d+), (\d+)）/u);
+  const landmarks = nodes.filter((node) => /^slg-overview-site-/u.test(node.name) && node.center).map((site) => {
+    const label = nodes.find((node) => node.path.startsWith(`${site.path}/`) && typeof node.text === "string" && node.text.length > 0);
+    // Site group centers are their true map anchors. Icons and labels may have presentation offsets.
+    const expected = bounds ? {
+      x: Math.max(0, Math.min(worldWidth - 1, Math.round((site.center.x - bounds.x) / bounds.width * worldWidth))),
+      y: Math.max(0, Math.min(worldHeight - 1, Math.round((1 - (site.center.y - bounds.y) / bounds.height) * worldHeight))),
+    } : null;
+    return { name: label?.text ?? null, path: site.path, center: site.center, expected };
+  }).filter((site) => site.name);
+  return {
+    title: nodes.find((node) => typeof node.text === "string" && /^.+ · 世界总览$/u.test(node.text))?.text ?? null,
+    mode: navigation && !scroll ? "navigation" : scroll && !navigation ? "scroll" : null,
+    bounds,
+    viewportEdges: nodes.filter((node) => node.name === "slg-overview-viewport" && node.center).map((node) => node.center),
+    position: coordinates ? { x: Number(coordinates[1]), y: Number(coordinates[2]) } : null,
+    landmarks,
+    artVisible: nodes.some((node) => node.name === "slg-overview-art"),
+  };
+}
+
+/** Self-contained browser observation: public render components only, with no asset loads or material instances. */
+function readSlgRenderAssets() {
+  if (typeof cc === "undefined" || !cc.director?.getScene()) return [];
+  const result = [];
+  const visit = (node, inMap) => {
+    if (!node.activeInHierarchy) return;
+    const inside = inMap || node.name === "SlgMapView";
+    if (inside && (/^slg-chunk-\d+-\d+$/u.test(node.name) || /^slg-decorations-\d+-\d+$/u.test(node.name))) {
+      const renderer = node.getComponent("cc.MeshRenderer");
+      const material = renderer?.getSharedMaterial(0);
+      const texture = material?.getProperty("mainTexture");
+      result.push({ name: node.name, kind: "mesh", textured: !!texture && texture.width > 0 && texture.height > 0,
+        width: texture?.width ?? null, height: texture?.height ?? null });
+    }
+    if (inside && node.name === "slg-overview-art") {
+      const texture = node.getComponent("cc.Sprite")?.spriteFrame?.texture;
+      result.push({ name: node.name, kind: "sprite", textured: !!texture && texture.width > 0 && texture.height > 0,
+        width: texture?.width ?? null, height: texture?.height ?? null });
+    }
+    for (const child of node.children) visit(child, inside);
+  };
+  visit(cc.director.getScene(), false);
+  return result;
+}
+export const slgRenderAssetsSource = `(${readSlgRenderAssets.toString()})()`;
+
+async function renderedMapAssets(runner) {
+  const assets = await runner.client.evaluate(slgRenderAssetsSource);
+  const terrain = assets.filter((entry) => /^slg-chunk-/u.test(entry.name));
+  const decorations = assets.filter((entry) => /^slg-decorations-/u.test(entry.name));
+  if (!terrain.length || !decorations.length || [...terrain, ...decorations].some((entry) => !entry.textured)) {
+    throw new Error(`地图贴图/装饰材质尚未就绪：${JSON.stringify({ terrain: terrain.slice(0, 2), decorations: decorations.slice(0, 2) })}`);
+  }
+  return { terrainCount: terrain.length, decorationCount: decorations.length, samples: [terrain[0], decorations[0]] };
 }
 
 /** Anchor the gestures between the visible help row and tile detail row, never in the toolbars. */
@@ -72,12 +148,12 @@ export async function replaySlgMap(runner) {
   await runner.step("进入「大地图 · slg」（设置菜单的正式 route）", async () => {
     return runner.tapText("进入", { near: /^大地图\s+·\s+slg$/u });
   });
-  await runner.step("SlgMapView 加载原创地形与 chunk 网格", async () => {
-    const evidence = await runner.waitFor("青原标题与 slg-chunk 网格", (walk) => {
+  await runner.step("SlgMapView 加载地表贴图与独立装饰层", async () => {
+    const evidence = await runner.waitFor("地图标题、chunk 网格与装饰节点", (walk) => {
       const value = failed(readSlgMapEvidence(walk));
-      return value?.loaded ? value : null;
+      return value?.loaded && value.terrainLayer && value.decorationLayer && value.decorationChunks.length ? value : null;
     }, 60_000);
-    return { ...(await stableSlgFrame(runner, evidence.lod)), shot: await runner.shot("slg-opened") };
+    return { ...(await stableSlgFrame(runner, evidence.lod)), assets: await renderedMapAssets(runner), shot: await runner.shot("slg-opened") };
   });
 
   const selected = await runner.step("点选可见无主格（不直接调用 Logic 或 RPC）", async () => {
@@ -173,12 +249,114 @@ export async function replaySlgMap(runner) {
       throw new Error(`64 次滚轮后仍未到 LOD ${target}`);
     });
   }
-  return runner.step("关闭地图回设置面板", async () => {
+  const openedOverview = await runner.step("打开世界总览，读取实地图、当前位置框与地标", async () => {
+    const local = failed(readSlgMapEvidence(await runner.walk()));
+    if (!local?.loaded || !local.worldCenter) throw new Error("总览打开前的局部地图尚未就绪");
+    await runner.tapText("总览", { pathIncludes: VIEW });
+    const overview = await runner.waitFor("实地图与四条视口边框", (walk) => {
+      const value = readSlgOverviewEvidence(walk);
+      return value?.mode === "navigation" && value.title && value.bounds && value.position
+        && value.viewportEdges.length === 4 && value.landmarks.length > 0 ? value : null;
+    });
+    return { ...overview, localBefore: { worldCenter: local.worldCenter, tile: local.tile, lod: local.lod },
+      shot: await runner.shot("slg-world-navigation") };
+  });
+
+  await runner.step("山河绘卷可欣赏，点击画面保持位置与总览", async () => {
+    const before = failed(readSlgMapEvidence(await runner.walk()));
+    await runner.tapText("山河绘卷", { pathIncludes: `${OVERVIEW}/slg-overview-山河绘卷` });
+    const scroll = await runner.waitFor("山河绘卷图片显示、实地图隐藏", (walk) => {
+      const value = readSlgOverviewEvidence(walk);
+      return value?.mode === "scroll" && value.artVisible && value.bounds && value.viewportEdges.length === 0 ? value : null;
+    });
+    const assets = await runner.client.evaluate(slgRenderAssetsSource);
+    const art = assets.find((entry) => entry.name === "slg-overview-art" && entry.textured);
+    if (!art) throw new Error("山河绘卷的 Sprite 尚无有效贴图");
+    await runner.client.click(scroll.bounds.x + scroll.bounds.width / 2, scroll.bounds.y + scroll.bounds.height / 2);
+    await sleep(700);
+    const walk = await runner.walk(), after = failed(readSlgMapEvidence(walk));
+    const retained = readSlgOverviewEvidence(walk);
+    if (retained?.mode !== "scroll" || after?.tile?.text !== before?.tile?.text) {
+      throw new Error("点击山河绘卷意外关闭总览或改变选格");
+    }
+    const shot = await runner.shot("slg-world-scroll");
+    // The local world is intentionally inactive while the overview is open, so its chunks and
+    // transform are absent from pageWalk. Compare its public position only after closing the panel.
+    await runner.tapText("返回", { pathIncludes: OVERVIEW });
+    const origin = openedOverview.localBefore;
+    const restored = await runner.waitFor("关闭绘卷后，局部地图位置与选格保持", (next) => {
+      const value = failed(readSlgMapEvidence(next));
+      return !readSlgOverviewEvidence(next) && value?.loaded && value.worldCenter && value.lod === origin.lod
+        && value.tile?.text === origin.tile?.text
+        && Math.hypot(value.worldCenter.x - origin.worldCenter.x, value.worldCenter.y - origin.worldCenter.y) < 0.1 ? value : null;
+    });
+    await runner.tapText("总览", { pathIncludes: VIEW });
+    await runner.waitFor("绘卷关闭后重新打开世界总览", (next) => readSlgOverviewEvidence(next));
+    await runner.tapText("实地图", { pathIncludes: `${OVERVIEW}/slg-overview-实地图` });
+    const navigation = await runner.waitFor("实地图当前位置保持", (next) => {
+      const value = readSlgOverviewEvidence(next);
+      return value?.mode === "navigation" && value.position?.x === openedOverview.position.x
+        && value.position?.y === openedOverview.position.y ? value : null;
+    });
+    return { ...retained, art, positionUnchanged: true, restoredWorldCenter: restored.worldCenter,
+      overviewPosition: navigation.position, shot };
+  });
+
+  await runner.step("实地图点选命名地标，回到对应局部格并稳定显示", async () => {
+    await runner.tapText("实地图", { pathIncludes: `${OVERVIEW}/slg-overview-实地图` });
+    const overview = await runner.waitFor("实地图地标可点击", (walk) => {
+      const value = readSlgOverviewEvidence(walk);
+      return value?.mode === "navigation" && value.position && value.landmarks.some((site) => site.expected) ? value : null;
+    });
+    const candidates = overview.landmarks.filter((site) => site.expected).sort((a, b) =>
+      Math.hypot(b.expected.x - overview.position.x, b.expected.y - overview.position.y)
+      - Math.hypot(a.expected.x - overview.position.x, a.expected.y - overview.position.y));
+    const landmark = candidates[0];
+    await runner.tapText(landmark.name, { pathIncludes: landmark.path });
+    const located = await runner.waitFor("总览关闭，详情坐标与地标位置吻合", (walk) => {
+      const value = failed(readSlgMapEvidence(walk));
+      return !readSlgOverviewEvidence(walk) && value?.loaded && value.tile
+        && Math.abs(value.tile.x - landmark.expected.x) <= 1 && Math.abs(value.tile.y - landmark.expected.y) <= 1 ? value : null;
+    });
+    return { landmark, ...(await stableSlgFrame(runner, located.lod)), assets: await renderedMapAssets(runner),
+      shot: await runner.shot("slg-world-located") };
+  });
+
+  await runner.step("总览返回只关闭面板，保留当前位置与选格", async () => {
+    const before = failed(readSlgMapEvidence(await runner.walk()));
+    await runner.tapText("总览", { pathIncludes: VIEW });
+    await runner.waitFor("世界总览重新显示", (walk) => readSlgOverviewEvidence(walk));
+    await runner.tapText("返回", { pathIncludes: OVERVIEW });
+    const after = await runner.waitFor("总览隐藏、局部位置不变", (walk) => {
+      const value = failed(readSlgMapEvidence(walk));
+      return !readSlgOverviewEvidence(walk) && value?.loaded && value.tile?.text === before?.tile?.text
+        && value.worldCenter && before.worldCenter
+        && Math.hypot(value.worldCenter.x - before.worldCenter.x, value.worldCenter.y - before.worldCenter.y) < 0.1 ? value : null;
+    });
+    return { ...after, positionUnchanged: true, shot: await runner.shot("slg-world-returned") };
+  });
+
+  await runner.step("关闭地图回设置面板", async () => {
     await runner.tapText("关闭", { pathIncludes: VIEW });
     await runner.waitFor("SlgMapView 卸载，SettingsView 保留", (walk) => {
       return !walk.nodes.some((node) => node.name === VIEW)
         && walk.nodes.some((node) => node.name === "SettingsView") ? true : null;
     });
     return { lods: [...lods], shot: await runner.shot("slg-closed") };
+  });
+
+  await runner.step("重新进入地图，地表和装饰重新加载", async () => {
+    await runner.tapText("进入", { near: /^大地图\s+·\s+slg$/u });
+    const evidence = await runner.waitFor("重开后的地图与装饰层", (walk) => {
+      const value = failed(readSlgMapEvidence(walk));
+      return value?.loaded && value.terrainLayer && value.decorationLayer && value.decorationChunks.length ? value : null;
+    }, 60_000);
+    return { ...(await stableSlgFrame(runner, evidence.lod)), assets: await renderedMapAssets(runner), shot: await runner.shot("slg-reopened") };
+  });
+  return runner.step("完成验收并再次关闭地图", async () => {
+    await runner.tapText("关闭", { pathIncludes: VIEW });
+    await runner.waitFor("重开的地图卸载，设置面板保留", (walk) =>
+      !walk.nodes.some((node) => node.name === VIEW) && walk.nodes.some((node) => node.name === "SettingsView") ? true : null);
+    return { lods: [...lods], reopened: true, shot: await runner.shot("slg-reopened-closed") };
   });
 }
