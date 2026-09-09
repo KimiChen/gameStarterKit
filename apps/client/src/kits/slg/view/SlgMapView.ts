@@ -1,12 +1,15 @@
 /** Fullscreen map route: global multi-pointer input, chunk meshes, and a selected-tile action bar. */
-import { Color, EventMouse, EventTouch, Game, game, input, Input, JsonAsset, Label, Node, resources, UITransform, Vec3 } from "cc";
+import { Color, EventMouse, EventTouch, Game, game, input, Input, Label, Node, UITransform, Vec3 } from "cc";
 import { CocosView } from "../../../view/CocosView";
 import { createSolidPlate } from "../../../view/uiPlate";
-import { gridFromTileId, terrainAt, validateSlgTerrain, type ISlgTerrain } from "../../../shared/kits/slg/api/worldmap/index";
+import { gridFromTileId, terrainAt, type ISlgTerrain } from "../../../shared/kits/slg/api/worldmap/index";
 import { SLG_GRID_PIXELS } from "../logic/mapCamera";
 import { SlgMapLogic } from "../logic/SlgMapLogic";
 import { getSlgRuntime } from "../logic/slgRuntime";
 import { SlgChunkRenderer } from "./SlgChunkRenderer";
+import { SlgDecorationRenderer } from "./SlgDecorationRenderer";
+import { SlgWorldOverview } from "./SlgWorldOverview";
+import { loadSlgArtResources, type SlgArtResources } from "./SlgArtResources";
 
 const BACK = new Color(19, 29, 32, 255);
 const PANEL = new Color(19, 28, 38, 255);
@@ -18,8 +21,13 @@ const MOUSE_POINTER = -1;
 export class SlgMapView extends CocosView {
     private logic: SlgMapLogic | null = null;
     private world: Node | null = null;
+    private terrainLayer: Node | null = null;
+    private decorationLayer: Node | null = null;
     private selection: Node | null = null;
     private renderer: SlgChunkRenderer | null = null;
+    private decorationRenderer: SlgDecorationRenderer | null = null;
+    private overview: SlgWorldOverview | null = null;
+    private art: SlgArtResources | null = null;
     private terrain: ISlgTerrain | null = null;
     private details: Label | null = null;
     private status: Label | null = null;
@@ -34,6 +42,7 @@ export class SlgMapView extends CocosView {
     private touchAt = -Infinity;
     private mouseDown = false;
     private assetGeneration = 0;
+    private inputBlockedUntil = -Infinity;
 
     protected onOpen(): void {
         this.active = true;
@@ -49,6 +58,8 @@ export class SlgMapView extends CocosView {
         scrim.on(Node.EventType.TOUCH_START, this.swallow, this);
         scrim.on(Node.EventType.TOUCH_END, this.swallow, this);
         this.world = this.node("slg-world", this.root, 0, 0);
+        this.terrainLayer = this.node("slg-terrain-layer", this.world, 0, 0);
+        this.decorationLayer = this.node("slg-decoration-layer", this.world, 0, 0);
         this.selection = this.node("slg-selection", this.root, SLG_GRID_PIXELS, SLG_GRID_PIXELS);
         const edge = SLG_GRID_PIXELS / 2 - 1.5;
         for (const [w, h, x, y] of [[SLG_GRID_PIXELS, 3, 0, edge], [SLG_GRID_PIXELS, 3, 0, -edge],
@@ -63,16 +74,20 @@ export class SlgMapView extends CocosView {
             if (this.resourceFailed) void this.loadTerrain();
             this.logic?.refresh();
         });
-        this.label("拖动平移  ·  双指 / 滚轮缩放", 18, MUTED, 0, height / 2 - header * 0.77, width * 0.94);
+        this.label("拖动平移  ·  双指 / 滚轮缩放", 18, MUTED, -width * 0.12, height / 2 - header * 0.77, width * 0.68);
+        this.button("总览", width * 0.18, 38, width * 0.37, height / 2 - header * 0.77, () => {
+            this.overview?.updateViewport(this.logic!.camera.visibleRect());
+            this.overview?.setVisible(true);
+        });
         this.details = this.label("点选地图中的一格", 22, TEXT, 0, this.mapBottom - footer * 0.18, width * 0.94);
         const actionNode = this.button("先点选一格", width * 0.66, 54, 0, this.mapBottom - footer * 0.52,
-            () => this.observeAsync(async () => { await this.logic?.capture(); }, "slg-capture"));
+            () => { if (!this.inputBlocked()) this.observeAsync(async () => { await this.logic?.capture(); }, "slg-capture"); });
         this.action = actionNode.getComponentInChildren(Label);
         this.status = this.label("", 17, MUTED, 0, -height / 2 + footer * 0.17, width * 0.94);
         this.bindInput(true);
         this.offTick = runtime?.tick((dt) => {
             const logic = this.logic;
-            if (!logic) return;
+            if (!logic || this.overview?.visible) return;
             const before = logic.camera.version;
             logic.camera.step(dt);
             if (before !== logic.camera.version) logic.updateViewport();
@@ -82,9 +97,10 @@ export class SlgMapView extends CocosView {
     }
 
     protected onCloseLifecycle(): void {
-        this.active = false; this.bindInput(false); this.cancelInput(); this.offTick?.(); this.offTick = null;
+        this.active = false; this.assetGeneration += 1; this.bindInput(false); this.cancelInput(); this.offTick?.(); this.offTick = null;
         this.logic?.dispose(); this.logic = null;
-        this.renderer?.dispose(); this.renderer = null; this.terrain = null;
+        this.disposeArt(); this.terrain = null;
+        this.terrainLayer = null; this.decorationLayer = null;
         this.world = null; this.selection = null; this.details = null; this.status = null; this.title = null; this.action = null;
     }
 
@@ -92,17 +108,29 @@ export class SlgMapView extends CocosView {
         const generation = ++this.assetGeneration;
         this.resourceFailed = false;
         try {
-            const asset = await new Promise<JsonAsset>((resolve, reject) => {
-                resources.load("kits/slg/terrain", JsonAsset, (error, result) => error ? reject(error) : resolve(result));
-            });
-            if (!this.active || generation !== this.assetGeneration || !this.world || !this.logic) return;
-            if (!validateSlgTerrain(asset.json)) throw new Error("SLG terrain content is invalid");
-            this.terrain = asset.json;
-            this.renderer?.dispose();
-            this.renderer = new SlgChunkRenderer(this.world, this.terrain);
+            const art = await loadSlgArtResources();
+            if (!this.active || generation !== this.assetGeneration || !this.terrainLayer || !this.decorationLayer || !this.logic) {
+                art.release(); return;
+            }
+            this.disposeArt();
+            this.art = art; this.terrain = art.terrain;
+            this.renderer = new SlgChunkRenderer(this.terrainLayer, this.terrain, art.ground);
+            this.decorationRenderer = new SlgDecorationRenderer(this.decorationLayer, this.terrain, art.decorations);
+            this.overview = new SlgWorldOverview(this.root, this.terrain, art.overview, art.decorations,
+                this.layerWidth, this.mapTop - this.mapBottom, (x, y) => {
+                    if (!this.active || !this.logic) return;
+                    this.logic.camera.locate(x, y);
+                    this.logic.notice = `已定位至 (${x}, ${y})`;
+                    this.logic.updateViewport(); this.logic.select(x, y);
+                }, () => {
+                    this.cancelInput(); this.inputBlockedUntil = this.now() + 350;
+                    this.render();
+                });
+            this.overview.node.setPosition(0, this.mapCenter);
             this.logic.updateViewport();
         } catch (error) {
             if (!this.active || generation !== this.assetGeneration || !this.logic) return;
+            this.disposeArt(); this.terrain = null;
             this.resourceFailed = true;
             this.logic.notice = "地图资源加载失败，请点击刷新重试";
             console.error("[slg] terrain load failed", error);
@@ -110,17 +138,28 @@ export class SlgMapView extends CocosView {
         }
     }
 
+    private disposeArt(): void {
+        this.overview?.dispose(); this.overview = null;
+        this.decorationRenderer?.dispose(); this.decorationRenderer = null;
+        this.renderer?.dispose(); this.renderer = null;
+        this.art?.release(); this.art = null;
+    }
+
     private render(): void {
         const logic = this.logic;
-        if (!logic || !this.world) return;
+        if (!this.active || !logic || !this.world) return;
         const camera = logic.camera;
+        const overviewVisible = this.overview?.visible ?? false;
+        this.world.active = !overviewVisible;
         this.world.setScale(camera.scale, camera.scale, 1);
         this.world.setPosition(-camera.x * camera.pixelsPerGrid, this.mapCenter - camera.y * camera.pixelsPerGrid);
         this.renderer?.render(logic.chunkVersions, logic.tiles, logic.runtime?.selfUid() ?? "", camera.lod);
+        this.decorationRenderer?.render(logic.chunkVersions, camera.lod);
+        this.overview?.updateViewport(camera.visibleRect());
         if (this.title) this.title.string = `${this.terrain?.name ?? "大地图"} · LOD ${camera.lod + 1} · 奖杯 ${logic.trophies}`;
         if (this.status) this.status.string = logic.notice;
         const tile = logic.selectedTile();
-        if (this.selection) this.selection.active = tile !== null;
+        if (this.selection) this.selection.active = tile !== null && !overviewVisible;
         if (tile) {
             const point = gridFromTileId(tile.tileId);
             const owner = !tile.ownerUid ? "无主" : tile.ownerUid === logic.runtime?.selfUid() ? "我方" : `敌方 ${tile.ownerUid}`;
@@ -131,12 +170,12 @@ export class SlgMapView extends CocosView {
                 this.selection.setPosition((point.x + 0.5 - camera.x) * camera.pixelsPerGrid,
                     this.mapCenter + (point.y + 0.5 - camera.y) * camera.pixelsPerGrid);
                 const screenY = this.mapCenter + (point.y + 0.5 - camera.y) * camera.pixelsPerGrid;
-                this.selection.active = screenY > this.mapBottom && screenY < this.mapTop;
+                this.selection.active = !overviewVisible && screenY > this.mapBottom && screenY < this.mapTop;
             }
         }
         if (this.action) {
             this.action.string = logic.busy ? "处理中…" : logic.actionText();
-            this.action.color = logic.canCapture() ? TEXT : MUTED;
+            this.action.color = !overviewVisible && logic.canCapture() ? TEXT : MUTED;
         }
     }
 
@@ -147,44 +186,49 @@ export class SlgMapView extends CocosView {
     }
     private inside(y: number): boolean { return y > this.mapBottom && y < this.mapTop; }
     private now(): number { return this.logic?.runtime?.now() ?? 0; }
+    private inputBlocked(): boolean { return !this.active || !!this.overview?.visible || this.now() < this.inputBlockedUntil; }
     private readonly swallow = (): void => {};
     private readonly onTouchStart = (event: EventTouch): void => {
+        if (this.inputBlocked()) return;
         this.touchAt = this.now();
         if (this.mouseDown) { this.mouseDown = false; this.logic?.camera.cancel(); }
         const point = this.local(event);
         if (this.inside(point.y)) this.logic?.camera.start(event.getID(), point.x, point.y - this.mapCenter, this.now());
     };
     private readonly onTouchMove = (event: EventTouch): void => {
+        if (this.inputBlocked()) return;
         const point = this.local(event);
         this.logic?.camera.move(event.getID(), point.x, point.y - this.mapCenter, this.now());
         this.logic?.updateViewport();
     };
     private readonly onTouchEnd = (event: EventTouch): void => {
+        if (this.inputBlocked()) return;
         this.touchAt = this.now();
         const point = this.logic?.camera.end(event.getID(), this.now());
         if (point) this.logic?.select(point.x, point.y);
     };
     private readonly onTouchCancel = (): void => { this.cancelInput(); };
     private readonly onMouseDown = (event: EventMouse): void => {
-        if (event.getButton() !== 0 || this.now() - this.touchAt < 500) return;
+        if (this.inputBlocked() || event.getButton() !== 0 || this.now() - this.touchAt < 500) return;
         const point = this.local(event);
         if (!this.inside(point.y)) return;
         this.mouseDown = true;
         this.logic?.camera.start(MOUSE_POINTER, point.x, point.y - this.mapCenter, this.now());
     };
     private readonly onMouseMove = (event: EventMouse): void => {
-        if (!this.mouseDown) return;
+        if (this.inputBlocked() || !this.mouseDown) return;
         const point = this.local(event);
         this.logic?.camera.move(MOUSE_POINTER, point.x, point.y - this.mapCenter, this.now());
         this.logic?.updateViewport();
     };
     private readonly onMouseUp = (): void => {
-        if (!this.mouseDown) return;
+        if (this.inputBlocked() || !this.mouseDown) return;
         this.mouseDown = false;
         const point = this.logic?.camera.end(MOUSE_POINTER, this.now());
         if (point) this.logic?.select(point.x, point.y);
     };
     private readonly onMouseWheel = (event: EventMouse): void => {
+        if (this.inputBlocked()) return;
         const point = this.local(event);
         if (!this.inside(point.y)) return;
         this.logic?.camera.zoom(Math.exp(Math.max(-1, Math.min(1, event.getScrollY() * 0.001))), point.x, point.y - this.mapCenter);

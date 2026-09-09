@@ -1,6 +1,6 @@
 # 大地图 kit（slg）
 
-`slg` 是 SQL 权威的大地图机制样例，提供分别版本化的 `worldmap` / `march` 两个 API 面。阶段 1 包含地图页与即时占领，阶段 2a 包含行军 Lobby RPC 与懒结算；二者同批登记 SQL 与 API，不登记 `slgWorld` mode。首轮为原创色块地图，默认入口仍由宿主 placement 决定。
+`slg` 是 SQL 权威的大地图机制样例，提供分别版本化的 `worldmap` / `march` 两个 API 面。阶段 1 包含地图页与即时占领，阶段 2a 包含行军 Lobby RPC 与懒结算；二者同批登记 SQL 与 API，不登记 `slgWorld` mode。地图现已接入「青原仙洲」地表、透明装饰和独立总览，默认入口仍由宿主 placement 决定。
 
 阶段 1 / 2a 已于 2026-09-09 实现并验收：主树全量校验、真实 Creator 桌面地图预览、临时制品干净安装与独立空数据库迁移/包测试均通过。证据见 [本轮验收记录](../../../docs/evidence/creator-2026-09-09/slg/README.md)。实施依据见根 [slg.md](../../../slg.md)，框架接缝见 [docs/MMO.md](../../../docs/MMO.md)。
 
@@ -11,7 +11,7 @@
 | `worldmap` v1 | 10000×10000 地图坐标、16×16 chunk 数学、四档 LOD；按 chunk 矩形读稀疏地块；免费即时占领、攻击、加固 |
 | `march` v1 | 行军令、确定性位置与时间计算；派遣、撤回、按目标顺序懒结算 |
 | Lobby RPC 域 `slg` | `slg.mapTiles`、`slg.tileCapture`、`slg.marchDispatch`、`slg.marchRecall` |
-| 客户端入口 | 菜单“大地图”，route `slgMap`，View `SlgMap`；拖动、惯性、双指缩放及桌面滚轮；阶段 2a 不提供行军操作面板 |
+| 客户端入口 | 菜单“大地图”，route `slgMap`，View `SlgMap`；拖动、惯性、双指缩放及桌面滚轮；“总览”含可定位的实地图与山河绘卷预览；阶段 2a 不提供行军操作面板 |
 | `stats` / `trophy` | per-user `stats.trophies`；只有 `kit:slg:trophy` effect 增加奖杯，独立于金币，不可兑换 |
 
 ## 冻结规则
@@ -56,15 +56,25 @@
 
 ## 静态内容与素材
 
-`data/terrain.json` 是原创“青原”地图，客户端资源为 `apps/Cocos/assets/resources/kits/slg/terrain.json` 的逐字节镜像。格式固定为 `name / width / height / palette / regions`：palette 包含 id 为 0 的默认草地与 RGB 颜色，regions 是界内矩形，后列区域覆盖前列区域。四个地形色和五个矩形均在本仓新建；不复制或转换来源项目的代码、素材、数值表。
+`data/terrain.json` 是原创「青原仙洲」地图，客户端资源 `apps/Cocos/assets/resources/kits/slg/terrain.json` 为其逐字节镜像。现有布局使用六类地形与 55 个矩形区域：北部雪岭、西部赤岩、南部林地、东部灵海和中央青原，并以水域连接各区。格式仍为 `name / width / height / palette / regions`：id 为 0 的草地隐式覆盖全图，矩形按登记顺序覆盖；保持 16 色与 512 区域上限。
 
-地图按最新要求扩大为 10000×10000（1 亿格）；地形仍只保存四个色值与五个矩形区域，区域坐标/宽高由初版等比扩大 50 倍。默认平原隐式表示，SQL 只保存发生变化的地块，客户端只加载视口附近的 chunk，不生成或遍历 1 亿条地形记录。
+世界仍为 10000×10000 格（1 亿格），每个 chunk 为 16×16 格。SQL 只保存发生变化的地块，客户端只加载视口附近的 chunk；静态内容和总览均不生成或遍历 1 亿条地形记录。
 
-地图使用 chunk 动态网格与顶点色，不需要额外纹理图片。变更地形时同时保持源 JSON 与资源镜像一致，并通过客户端内容校验与镜像测试。
+美术源文件见 [青原仙洲素材包](art/qingyuan-v1/README.md)：地表和透明装饰图集各为 1536×1024（3 列×2 行，每格 512×512），山河绘卷为 1254×1254。三张运行时图片位于 `apps/Cocos/assets/resources/kits/slg/qingyuan/`，逐字节镜像已批准的源图；纯洋红底稿只保留在素材目录。图集索引、地标和装饰配置的唯一真源是 `apps/client/src/kits/slg/logic/mapArt.ts`，没有另建 `atlas.json`。
+
+- 地表每 chunk 使用一个贴图动态网格。UV 按世界格 x/y 奇偶分别镜像，使同地形相邻格在块内与跨块边界采样相同图像边；同时内缩半个纹理像素。导入采样为线性、clamp-to-edge、无 mipmap。地表 ID 0–5 保留原图颜色，6–15 使用色板 RGB 为草地后备纹理着色。
+- 地块归属使用独立的无贴图半透明网格：我方蓝色、敌方红色、alpha 0.40；与地表格位置对齐，近景网格间隙由 `mapLayers.ts` 统一控制。装饰位于地表之上、选中框之下。
+- 装饰按 chunk 确定性布置，每块最多 7 件（含最多 1 个地标），每个非空块一个透明贴图网格。内部 LOD 0–3 的普通装饰数量上限为 6/4/2/0，已加载块内的地标四档均保留；装饰完整范围留在所属块内。缓存只随块增删和 LOD 更新，权威地块版本变化不重建静态装饰；离开保留范围后销毁对应节点和网格，未实现对象池。
+- “实地图”直接从同一份 `terrain.json` 绘制区域轮廓，显示同源地标、当前位置和视野框；点击地图或地标可定位。“山河绘卷”显示独立美术预览，不参与坐标导航。总览不请求全世界地块；打开期间隔离局部地图手势、惯性和选格输入。
+- 页面通过 `SlgArtResources` 统一加载地形和三张贴图并持有引用，关闭时先销毁网格、材质与 SpriteFrame，再释放资源引用。失败及过期加载会回收已取得的引用；加载失败可点击“刷新”重试。
+
+本轮只改变静态布局和显示，不新增地形阻挡、寻路、宗门经营、采矿、传送或行军规则。改动地形或图片时保持源文件与资源镜像一致；源码镜像仍通过 `sync:client` 刷新。具体文件与接入状态见 [实施记录](art/qingyuan-v1/IMPLEMENTATION-PLAN.md)。
 
 ## 验收与后续边界
 
 2026-09-09 验收通过：`verify:all` 退出 0（FGUI 66、inventory 115、客户端 487、服务端 749 个测试）；Creator 桌面预览 17 步、13 张截图、console 空，涵盖地图打开、选格占领及刷新、鼠标拖动、滚轮四档 LOD、关闭；临时制品干净安装后按包锁执行 `plugin -- test slg --int`，35/35 通过，含真实 SQL/Redis 集成 9 条。独立空库首次应用 SLG 001/002 的 4+3 条建表语句，重复 bootstrap 新应用 0、跳过 3（含 arena）；临时库已清理。完整证据及范围见 [验收记录](../../../docs/evidence/creator-2026-09-09/slg/README.md)。触屏 pinch 当前只有逻辑测试，截图中的 60 FPS 是单次预览读数，未作容量结论。
+
+2026-09-10「青原仙洲」美术接入已验收：`verify:all` 退出 0（FGUI 66、inventory 115、客户端 513、服务端 751 个测试）；Creator 23 步、19 张截图、console 空，覆盖地表和透明装饰、占领刷新、四档 LOD、实地图定位、绘卷输入隔离、关闭及重开资源。资源加载失败后的引用回收由客户端测试覆盖；未做真实触屏、失败资源注入或长跑内存实验。详见 [美术接入验收记录](../../../docs/evidence/creator-2026-09-10/slg-art/README.md)。
 
 主树的 SLG 是宿主自有包，manifest 保持无 `version`，不可直接 pack 或执行要求已安装包锁的 `plugin -- test slg`。包测试在临时副本补 `version:"0.1.0"` 后生成制品，再安装到临时宿主，依据 install 产生的锁运行 `npm --workspace @game/server run plugin -- test slg --int`；测试版本和临时安装锁不回灌主树。主树通过源码测试及 `verify:all` 验证。
 

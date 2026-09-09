@@ -35,6 +35,12 @@ export class MapCamera {
     pan(dx: number, dy: number): void {
         this.commit(this.x - dx / this.pixelsPerGrid, this.y - dy / this.pixelsPerGrid, this.scale);
     }
+    /** Overview navigation preserves zoom and cannot leave an old drag/inertia running. */
+    locate(x: number, y: number): void {
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+        this.cancel();
+        this.commit(x, y, this.scale);
+    }
     zoom(factor: number, anchorX = 0, anchorY = 0): void {
         if (!Number.isFinite(factor) || factor <= 0) return;
         const anchor = this.worldAt(anchorX, anchorY);
