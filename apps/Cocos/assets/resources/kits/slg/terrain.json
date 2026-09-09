@@ -1,0 +1,18 @@
+{
+  "name": "青原",
+  "width": 10000,
+  "height": 10000,
+  "palette": [
+    { "id": 0, "color": [91, 132, 84] },
+    { "id": 1, "color": [48, 95, 77] },
+    { "id": 2, "color": [67, 126, 154] },
+    { "id": 3, "color": [181, 161, 103] }
+  ],
+  "regions": [
+    { "x": 1100, "y": 1400, "width": 2000, "height": 2900, "terrain": 1 },
+    { "x": 5900, "y": 5400, "width": 2300, "height": 3200, "terrain": 1 },
+    { "x": 4100, "y": 0, "width": 700, "height": 10000, "terrain": 2 },
+    { "x": 7200, "y": 1100, "width": 1900, "height": 1700, "terrain": 3 },
+    { "x": 3500, "y": 4400, "width": 1800, "height": 600, "terrain": 3 }
+  ]
+}

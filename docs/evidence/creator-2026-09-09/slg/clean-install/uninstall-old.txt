@@ -1,0 +1,20 @@
+
+> @game/server@0.1.0 plugin
+> node --import tsx tools/plugin/cli.ts uninstall slg --no-git
+
+
+> @game/server@0.1.0 codegen:plugins
+> node --import tsx tools/plugin-codegen/cli.ts --allow-delete SlgMap --allow-delete slg
+
+[plugin-codegen] updated apps/shared/src/protocol/lobbyRpc/registry.generated.ts, apps/client/src/generated/views.generated.ts, apps/client/src/generated/plugins.generated.ts, docs/plugins.generated.md, apps/shared/src/kits/catalog.generated.ts, apps/server/src/kits/catalog.generated.ts, apps/server/test/lobbyRpcVectors/index.generated.ts; deleted domain(s) slg, SlgMap
+[plugin-codegen] ⚠ protocol/ 字节已变化：运行 node scripts/protocol-fingerprint.mjs --write 重钉指纹
+[plugin-codegen] ⚠ 客户端产物已变化：运行 npm run sync:client 刷新 Cocos 镜像
+
+> @game/gono@0.1.0 sync:shared
+> node scripts/sync-shared.mjs && node scripts/sync-client.mjs
+
+[sync-shared 23:53:45] 同步完成：70 个文件（写入 2，清理 7）
+[sync-client 23:53:45] 同步完成：241 个文件（写入 4，清理 7）
+[plugin] uninstalled kit slg@0.1.0 [package]: 64 files（--allow-delete SlgMap, slg）
+[plugin]   kit 的表与账本行保留（docs/KIT.md §5）；确认不再需要数据时 uninstall --drop-data
+[plugin] 下一步（人工）：node scripts/protocol-fingerprint.mjs --write（若 registry 变化）、node scripts/fgui-manifest.mjs --write（若删了 FGUI 包）、npm run verify:all

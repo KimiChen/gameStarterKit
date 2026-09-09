@@ -31,4 +31,35 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
             "stats",
         ],
     },
+    {
+        id: "slg",
+        version: null,
+        api: {
+            march: { version: 1, minSupported: 1 },
+            worldmap: { version: 1, minSupported: 1 },
+        },
+        modes: [],
+        domains: [
+            "slg",
+        ],
+        effects: [
+            { kitId: "slg", name: "trophy", userKey: "stats", field: "trophies", max: 1000000 },
+        ],
+        sqlFiles: [
+            "sql/001-init.sql",
+            "sql/002-march.sql",
+        ],
+        sqlTables: [
+            { name: "k_slg_revision", zone: "per-zone" },
+            { name: "k_slg_tile", zone: "per-zone" },
+            { name: "k_slg_capture", zone: "per-zone" },
+            { name: "k_slg_tile_log", zone: "per-zone" },
+            { name: "k_slg_march", zone: "per-zone" },
+            { name: "k_slg_march_receipt", zone: "per-zone" },
+            { name: "k_slg_march_log", zone: "per-zone" },
+        ],
+        userKeys: [
+            "stats",
+        ],
+    },
 ];

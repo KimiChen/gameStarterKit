@@ -1,0 +1,42 @@
+{
+  "temporary_root": "/private/var/folders/2g/50wg6pj54vs5yp9dvfk8kxm80000gn/T/slg-install-nr0uixbc",
+  "database": "game_slgacc_ae91691eabb9",
+  "project_id": "slgacc_ae91691eabb9",
+  "started_utc": "2026-09-09T15:54:34.958770+00:00",
+  "steps": [
+    {
+      "name": "fresh-bootstrap",
+      "exit_code": 0,
+      "log": "/tmp/slg-install-fresh-bootstrap.log",
+      "archived_log": "fresh-bootstrap.txt"
+    },
+    {
+      "name": "fresh-package-tests",
+      "exit_code": 0,
+      "log": "/tmp/slg-install-fresh-package-tests.log",
+      "archived_log": "fresh-package-tests.txt"
+    },
+    {
+      "name": "fresh-bootstrap-repeat",
+      "exit_code": 0,
+      "log": "/tmp/slg-install-fresh-bootstrap-repeat.log",
+      "archived_log": "fresh-bootstrap-repeat.txt"
+    }
+  ],
+  "database_cleanup_exit_code": 0,
+  "artifact": "/tmp/slg-acceptance.zip",
+  "artifact_sha256": "6ba80c57b51a612fc0cae6d2ba3a779b5ad81f0f1ba84bab0ab25bd3d33f7775",
+  "artifact_file_count": 64,
+  "temporary_distribution_version": "0.1.0",
+  "source_manifest_has_version": false,
+  "temporary_shared_resolves": "/private/var/folders/2g/50wg6pj54vs5yp9dvfk8kxm80000gn/T/slg-install-nr0uixbc/apps/shared",
+  "source_drift_except_manifest": [
+    "apps/kits/slg/README.md"
+  ],
+  "package_test_file_count": 4,
+  "package_test_count": 35,
+  "package_test_pass": 35,
+  "package_test_fail": 0,
+  "package_test_skipped": 0,
+  "node_version": "v26.5.0"
+}

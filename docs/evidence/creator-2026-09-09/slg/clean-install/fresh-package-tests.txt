@@ -1,0 +1,48 @@
+
+> @game/server@0.1.0 plugin
+> node --import tsx tools/plugin/cli.ts test slg --int
+
+[plugin] slg：跑 4 个测试文件
+✔ SLG camera: anchored zoom, moving pinch center, four LODs and bounds (1.93575ms)
+✔ SLG camera: taps, dragging inertia and cancellation/background stop (0.176167ms)
+✔ SLG streamer: ring order, unchanged camera no-op, stale loads discarded and retention (1.641792ms)
+✔ SLG map: sparse baseline, selected ownership, one write while busy, authoritative reread (13.466ms)
+✔ SLG map: camera changes and disposed views reject late query responses (0.885208ms)
+✔ SLG map: failed loads are not marked authoritative and explicit refresh recovers (1.146458ms)
+✔ SLG map: a capture response after closing cannot revive the disposed page (1.658041ms)
+✔ SLG map: rapid zoom stays within five requests/sec and each request is at most four chunks (11.735875ms)
+✔ SLG map: RATE_LIMITED waits, exponentially backs off and recovers without a busy retry loop (0.650167ms)
+✔ SLG 10000-square map: far edge and widest viewport allocate only visible chunks (0.531792ms)
+✔ slg MySQL：两用户并发争同一不存在格，唯一竞争结果、回执与奖励一致 (101.474958ms)
+✔ slg MySQL：同op并发/重建API永久重放一次，payload与契约版本冲突拒绝 (36.151667ms)
+✔ slg MySQL/Redis：真实用户fence下并发派遣只容3支，主账本只扣3次；重放原余额 (63.804458ms)
+✔ slg MySQL：扣款后回执finalize故障回滚扣款/命令/占位/日志；同op可安全重试 (21.884917ms)
+✔ slg MySQL：到达/撤回边界在锁后判时；到达补算不随失败撤回回滚 (41.462792ms)
+✔ slg MySQL：反向插入/两实例并发结算、33条积压跨批次保持顺序并保留提交进度 (292.095834ms)
+✔ slg MySQL：写日志后延迟提交，另一事务不能越过revision，提交序即日志序 (71.387875ms)
+✔ slg MySQL：提交后Redis提示/effect不可用，日志仍完整且重放不双发intent (27.960792ms)
+✔ slg MySQL：10000×10000地图边缘chunk稀疏分页与跨区隔离，不种默认格或读入邻接行 (128.679958ms)
+✔ slg 即时守备：无主占领、己方加固封顶、敌方削守备归零当次夺取；只改主发奖 (4.125542ms)
+✔ slg 稀疏INSERT冲突后按实际新主人重读，不覆盖或误发占领奖 (1.253834ms)
+✔ slg 回执绑定hash/version，永久重放首次结果，即使地块后来改主；同op并发不重复变更 (1.785ms)
+✔ slg 回执写失败回滚地块、日志、revision和outbox intent；重试正常提交 (1.329208ms)
+✔ slg 派遣：己方起点、1金币、3支限制；回执重放原余额，源地途中失守不影响到达 (2.645125ms)
+✔ slg 非己方起点、同点、余额不足、派遣回执失败都不遗留命令或扣款 (0.515333ms)
+✔ slg 撤回在到达前结束且不退款；不泄露他人行军；截止当刻先提交到达再拒撤回 (0.909208ms)
+✔ slg 同目标按到达时间再marchId排序，两并发结算只生效一次；即时操作在旧到达之后 (1.306083ms)
+✔ slg 有界补算满批仍提交进度，绝不跳过剩余事件执行即时操作 (2.330042ms)
+✔ slg 到达事务故障不遗留半成品，重放修复且只奖励一次 (0.75775ms)
+✔ slg 区域隔离、稀疏有界快照与双消费者独立游标 (0.631416ms)
+✔ slg shared: 10000×10000 grid ids round trip across both axes and uint32 boundaries (32.3905ms)
+✔ slg shared: chunk border, final chunk, bounded request area and exact keys (0.824917ms)
+✔ slg shared: capture on zero in the same action, reinforcement cap and sparse default (0.332125ms)
+✔ slg shared: frozen march time and linear position; invalid or overposted orders rejected (0.27225ms)
+✔ slg terrain: frozen content validation and ordered regional painting (0.572334ms)
+ℹ tests 35
+ℹ suites 0
+ℹ pass 35
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3616.626042

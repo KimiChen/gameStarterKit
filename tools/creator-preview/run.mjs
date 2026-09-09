@@ -29,9 +29,10 @@ import {
   selectNodes,
   sleep,
 } from "./lib.mjs";
+import { replaySlgMap } from "./slg.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const SCENARIOS = ["areaList", "loginNotice", "home", "settings", "redeem", "tally", "cosmetic", "snake", "ballMove", "arena", "arenaCapture", "arenaDuel", "arenaShop", "all"];
+const SCENARIOS = ["areaList", "loginNotice", "home", "settings", "redeem", "tally", "cosmetic", "snake", "ballMove", "arena", "arenaCapture", "arenaDuel", "arenaShop", "slg", "all"];
 /** `all` 的顺序：先 route 形态再 gameplay 形态；arenaShop 排在 arena 之后（它要一块自己的格子）。 */
 const ALL_SEQUENCE = ["areaList", "loginNotice", "home", "settings", "redeem", "tally", "cosmetic", "arena", "arenaCapture", "arenaDuel", "arenaShop", "snake", "ballMove"];
 /** 登录页兜底坐标（设计 375×812）：只在找不到 FGUI 对象 btn_login 时使用，并在报告里标注。 */
@@ -896,6 +897,7 @@ async function main() {
     const scenarios = options.scenario === "all" ? ALL_SEQUENCE : [options.scenario];
     const table = {
       home: scenarioHome, settings: scenarioSettings, redeem: scenarioRedeem, tally: scenarioTally,
+      slg: async (current) => { await scenarioSettings(current); await replaySlgMap(current); },
       cosmetic: scenarioCosmetic, arena: scenarioArena, arenaCapture: scenarioArenaCapture,
       arenaDuel: scenarioArenaDuel, arenaShop: scenarioArenaShop,
       snake: scenarioSnake, ballMove: scenarioBallMove,

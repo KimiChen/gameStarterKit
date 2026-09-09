@@ -1,0 +1,10 @@
+
+> @game/server@0.1.0 plugin
+> node --import tsx tools/plugin/cli.ts check
+
+[plugin] kit arena@1.0.0 [package]: ✔ 一致
+[plugin] plugin arenaShop@1.0.1 [tree]: ✔ 一致
+[plugin] plugin redeem@1.0.9 [tree]: ✔ 一致
+[plugin] kit slg@0.1.0 [package]: ✔ 一致
+[plugin] plugin snake@1.2.2 [tree]: ✔ 一致
+[plugin] plugin tally@1.0.9 [tree]: ✔ 一致

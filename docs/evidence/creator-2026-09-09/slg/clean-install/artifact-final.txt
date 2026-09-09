@@ -1,0 +1,23 @@
+
+> @game/server@0.1.0 plugin
+> node --import tsx tools/plugin/cli.ts install /tmp/slg-acceptance.zip --no-git
+
+
+> @game/server@0.1.0 codegen:plugins
+> node --import tsx tools/plugin-codegen/cli.ts
+
+[plugin-codegen] updated apps/shared/src/protocol/lobbyRpc/registry.generated.ts, apps/client/src/generated/views.generated.ts, apps/client/src/generated/plugins.generated.ts, docs/plugins.generated.md, apps/shared/src/kits/catalog.generated.ts, apps/server/src/kits/catalog.generated.ts, apps/server/test/lobbyRpcVectors/index.generated.ts
+[plugin-codegen] ⚠ protocol/ 字节已变化：运行 node scripts/protocol-fingerprint.mjs --write 重钉指纹
+[plugin-codegen] ⚠ 客户端产物已变化：运行 npm run sync:client 刷新 Cocos 镜像
+
+> @game/gono@0.1.0 sync:shared
+> node scripts/sync-shared.mjs && node scripts/sync-client.mjs
+
+[sync-shared 23:53:46] 同步完成：73 个文件（写入 5，清理 0）
+[sync-client 23:53:47] 同步完成：255 个文件（写入 7，清理 0）
+[plugin] slg: installed 0.1.0; written 64, unchanged 0, deleted 0
+[plugin] 下一步（人工）：
+[plugin]   - kit 带 SQL 迁移：npm --workspace @game/server run db:bootstrap（迁移账本 kit_migration 只应用未应用过的文件；install ⛔ 不碰数据库，docs/KIT.md §5）
+[plugin]   - npm run verify:all（生成物新鲜度、镜像、协议指纹、测试全链；sync:shared 新建的 Cocos 镜像文件保持未跟踪，verify:sync 只查已跟踪文件）
+[plugin]   - 提交前打开一次 Cocos Creator 为 sync:shared 新建的镜像文件（apps/Cocos/assets/src/shared/**）生成 .meta，再 git add apps/Cocos/assets/src
+[plugin]   - 打开一次 Cocos Creator 确认随包 .meta 的 uuid 稳定（Creator 只会重写键序/版本，uuid 不变）
