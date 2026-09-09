@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="886.5" height="810" viewBox="181.5 225.75 886.5 810" fill="none" role="img" aria-labelledby="gono-title gono-description">
+  <title id="gono-title">gono</title>
+  <desc id="gono-description">Orange open G with a detached violet module, on a transparent background.</desc>
+  <path fill="#FF6B35" d="M 448 301
+    H 738
+    C 752 301 763 312 763 326
+    V 442
+    C 763 456 752 467 738 467
+    H 473
+    C 441 467 414 490 414 522
+    V 762
+    C 414 794 441 817 474 817
+    H 780
+    C 810 817 835 793 835 764
+    V 740
+    C 835 725 825 715 811 715
+    L 584 717
+    C 568 717 556 705 556 689
+    V 599
+    C 556 582 568 569 586 569
+    L 914 568
+    C 965 568 1006 609 1006 661
+    V 802
+    C 1006 891 928 963 831 963
+    H 417
+    C 321 963 242 890 242 800
+    V 483
+    C 242 383 335 301 448 301
+    Z"/>
+  <rect x="813" y="301" width="190" height="183" rx="24" fill="#AFA7F8"/>
+</svg>
