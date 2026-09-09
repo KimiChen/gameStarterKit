@@ -16,7 +16,7 @@ declare module "cc" {
     export class Color { constructor(r?: number, g?: number, b?: number, a?: number); r: number; g: number; b: number; a: number; }
     export class Rect { constructor(x?: number, y?: number, width?: number, height?: number); x: number; y: number; width: number; height: number; }
 
-    export class EventTouch { getUILocation(out?: Vec2): Vec2; getID(): number; }
+    export class EventTouch { getUILocation(out?: Vec2): Vec2; getID(): number; propagationStopped: boolean; }
     export class EventMouse { getUILocation(out?: Vec2): Vec2; getButton(): number; getScrollY(): number; }
 
     export class UITransform {
@@ -46,17 +46,17 @@ declare module "cc" {
     }
 
     export class Texture2D {
-        width: number; height: number;
+        width: number; height: number; addRef(): unknown; decRef(): unknown;
         reset(info: { width: number; height: number }): void;
         uploadData(source: Uint8Array): void;
     }
-    export class JsonAsset { json: unknown; }
+    export class JsonAsset { json: unknown; addRef(): unknown; decRef(): unknown; }
     export class SpriteFrame { texture: Texture2D | null; rect: Rect; rotated: boolean;
         insetTop: number; insetBottom: number; insetLeft: number; insetRight: number;
         /** ⚠ 引擎侧只有 getter：赋值会抛 TypeError，故声明为 readonly 让 typecheck 拦下。 */
         readonly pivot: Vec2;
         /** ⚠ 动态图集打包开关；⛔ 自建的纯色帧必须置 false，否则会打崩渲染循环，见 view/uiPlate.ts。 */
-        packable: boolean; }
+        packable: boolean; destroy(): boolean; }
     export class Sprite extends Component {
         spriteFrame: SpriteFrame | null; color: Color; sizeMode: number; type: number;
         static SizeMode: { CUSTOM: number; TRIMMED: number; RAW: number };

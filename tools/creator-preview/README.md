@@ -41,7 +41,7 @@ node tools/creator-preview/run.mjs slg --out /tmp/slg-preview --format png      
 | `snake` | 点「贪吃蛇大作战」整卡 → `SnakeWorld.Hud` 出现 →「结束本次」→ 确认框 → 确认 → 结算页读行 + 钉住「返回主页」与「我的衣柜」**同排**（Δy ≤ 4）→「返回主页」回首屏。⚠ 确认框首击会被吞，脚本等一拍再点、必要时重开重点一次并把 `retried` 写进报告 |
 | `ballMove` | 点「进入战斗」整卡 → `PlayersLayer` 挂载（画布演示无文本）→ 点左上角「离开」回首屏（2026-09-06 前该入口没有退出 UI） |
 | `arena` | 点「竞技场」整卡 → `EntryGroupView` →「竞技场 · arena」同行「进入」（**kit** 的 route 形态）→ `ArenaBoardView` 16 格 +「奖杯 N」→ 点一格 → `arena.capture` 结果归类 `captured` / `refused` → 点「刷新」重读 → 再点自己的格 = 加固（断言守备 +1 且奖杯不变；⚠ 必须等**与上一条不同**的提示，旧提示还挂在面板上）→「关闭」 |
-| `slg` | 设置中的「大地图 · slg」→ `SlgMapView` 青原标题与 chunk 网格 → 点选可见无主格 → 免费占领（我方守备 1、奖杯 +1）→ 刷新后读回同格 → 鼠标拖动验证世界节点坐标改变 → 滚轮逐档验证 LOD 1–4，各档截图 → 关闭回设置。无主格会在可见范围内择取；没有可占目标时明确失败。此场景独立触发，尚未纳入既有 `all` 的 13 场景基线 |
+| `slg` | 设置中的「大地图 · slg」→ `SlgMapView` 贴图地表与透明装饰 → 点选可见无主格 → 免费占领（我方守备 1、奖杯 +1）→ 刷新后读回同格 → 鼠标拖动 → 滚轮逐档验证 LOD 1–4 → 总览实地图与当前位置框 → 山河绘卷展示、点击不改变位置 → 实地图点击命名地标定位 → 返回保留位置 → 关闭、重新进入验证资源恢复，再关闭。无主格在可见范围内择取，没有目标时明确失败。独立触发，未纳入既有 `all` 的 13 场景基线 |
 | `arenaCapture` | 「占领赛 · arena」（kit 的 gameplay mode）→「目标 N 格」→ 连点「占领」到「你赢了！」→ 回首屏 |
 | `arenaDuel` | 「决斗 · arena」（kit 的第二个 mode）→「HP N」→ 连点「出击」到「你赢了！」→ 回首屏 |
 | `arenaShop` | 「竞技场商店 · arenaShop」（建在 kit 上的 plugin）→ 经 kit 的 `board` 面读自有格（没有就先跑 `arena` 占一格）→ 取最上面一行的「+守备」（自有格可能多块）→ 结果归类 `bought` / `insufficient-balance` / `not-owned` → 点「刷新」重读 |
@@ -59,6 +59,8 @@ node tools/creator-preview/run.mjs slg --out /tmp/slg-preview --format png      
 `arenaCapture` / `arenaDuel` 结算后回分组页；route 页面关闭后再关分组页回设置。
 
 SLG 的地图打开与各 LOD 截图在标题到位后继续等待：至少观察 2.4 秒，且 chunk 集合与地图位置持续 1.2 秒稳定；遇到可见限流重试提示会重新计时，失败提示直接失败。报告记录 `settling.elapsedMs/stableMs/chunkCount`，避免缩放刚结束时把尚未补齐的地图网格当作最终画面。此项只观察公开引擎节点，不读取内部请求队列。
+
+贴图检查读取已渲染 MeshRenderer 的共享材质 `mainTexture` 与绘卷 Sprite 的纹理尺寸，不主动加载图片。地标预期坐标由总览公开节点位置换算，点击标签后与局部详情坐标比对。总览显示期间局部世界处于隐藏状态，因此绘卷的「位置不变」在关闭面板后通过公开世界节点位置、LOD 与选格共同验证。2026-09-10 的美术接入样本为 23 步、19 张截图，见 [验收记录](../../docs/evidence/creator-2026-09-10/slg-art/README.md)。
 
 退出码：0 全部通过；1 有步骤失败（失败现场也会截图 `NN-failed-<step>.jpg`，报告仍落盘）；2 参数/连接错误。
 `report.json` 的 `ok`、`steps[].ok/detail/error/screenshots`、`console[]` 是复核依据；截图只是佐证。

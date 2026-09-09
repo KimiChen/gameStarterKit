@@ -30,7 +30,7 @@ test("SLG camera: anchored zoom, moving pinch center, four LODs and bounds", () 
     assert.equal(camera.end(1, 20), null, "pinch never becomes an accidental tile tap");
     assert.equal(camera.end(2, 20), null);
     assert.deepEqual([0.12, 0.28, 0.5, 0.85].map(mapLod), [3, 2, 1, 0]);
-    assert.deepEqual(visibleMapLayers(3), ["terrain", "ownership"]);
+    assert.deepEqual(visibleMapLayers(3), ["terrain", "ownership", "landmarks"]);
     assert.ok(visibleMapLayers(0).includes("grid"));
     camera.pan(1000000, -1000000);
     const rect = camera.visibleRect();
@@ -51,6 +51,59 @@ test("SLG camera: taps, dragging inertia and cancellation/background stop", () =
     camera.start(3, 0, 0, 100); camera.cancel();
     assert.equal(camera.end(3, 101), null);
     assert.equal(camera.pointerCount, 0);
+});
+
+test("SLG overview locate: preserves zoom, stops active inertia and discards both old touch pointers", () => {
+    const camera = new MapCamera(750, 1100);
+    camera.zoom(0.72);
+    const scale = camera.scale;
+    camera.start(1, 0, 0, 10); camera.move(1, 100, 30, 26); camera.end(1, 27);
+    const draggingX = camera.x;
+    camera.step(0.016);
+    assert.ok(camera.x < draggingX, "fixture must have active inertia before the jump");
+    camera.locate(8421.5, 2143.25);
+    const locatedVersion = camera.version;
+    assert.equal(camera.scale, scale);
+    for (let step = 0; step < 10; step++) camera.step(0.05);
+    near(camera.x, 8421.5); near(camera.y, 2143.25);
+    assert.equal(camera.version, locatedVersion, "old inertia cannot drift away from the overview destination");
+
+    camera.start(2, -40, 0, 100); camera.start(3, 40, 0, 100);
+    camera.move(3, 80, 20, 116);
+    const pinchedScale = camera.scale;
+    assert.equal(camera.pointerCount, 2);
+    camera.locate(1234, 8765);
+    const jumpedVersion = camera.version;
+    assert.equal(camera.scale, pinchedScale, "an overview jump retains the user's latest pinch zoom");
+    assert.equal(camera.pointerCount, 0);
+    camera.move(2, 200, 200, 132); camera.move(3, 400, 400, 133);
+    assert.equal(camera.end(2, 134), null, "old touch release cannot become a tile selection");
+    assert.equal(camera.end(3, 135), null);
+    camera.step(0.05);
+    near(camera.x, 1234); near(camera.y, 8765);
+    assert.equal(camera.version, jumpedVersion);
+});
+
+test("SLG overview locate: rejects nonfinite input and keeps the entire viewport within both world edges", () => {
+    const camera = new MapCamera(750, 1100);
+    camera.zoom(0.001);
+    const scale = camera.scale;
+    camera.start(1, 0, 0, 0);
+    const before = { x: camera.x, y: camera.y, version: camera.version };
+    for (const [x, y] of [[NaN, 100], [100, NaN], [Infinity, 100], [100, -Infinity]]) camera.locate(x, y);
+    assert.deepEqual({ x: camera.x, y: camera.y, version: camera.version }, before);
+    assert.equal(camera.pointerCount, 1, "invalid coordinates do not interrupt the current valid gesture");
+
+    const halfWidth = camera.width / camera.pixelsPerGrid / 2;
+    const halfHeight = camera.height / camera.pixelsPerGrid / 2;
+    camera.locate(-1000000, SLG_MAP_H + 1000000);
+    near(camera.x, halfWidth); near(camera.y, SLG_MAP_H - halfHeight);
+    assert.equal(camera.visibleRect().minX, 0); assert.equal(camera.visibleRect().maxY, SLG_MAP_H - 1);
+    assert.equal(camera.pointerCount, 0);
+    camera.locate(SLG_MAP_W + 1000000, -1000000);
+    near(camera.x, SLG_MAP_W - halfWidth); near(camera.y, halfHeight);
+    assert.equal(camera.visibleRect().maxX, SLG_MAP_W - 1); assert.equal(camera.visibleRect().minY, 0);
+    assert.equal(camera.scale, scale);
 });
 
 test("SLG streamer: ring order, unchanged camera no-op, stale loads discarded and retention", () => {
@@ -127,7 +180,7 @@ test("SLG map: sparse baseline, selected ownership, one write while busy, author
     logic.dispose(); assert.equal(logic.canCapture(), false);
 });
 
-test("SLG map: camera changes and disposed views reject late query responses", async () => {
+test("SLG map: overview jumps and disposed views reject late query responses", async () => {
     const pending = deferred<ISlgMapTilesRes>();
     const fake = runtimeWithTiles();
     let reads = 0;
@@ -137,7 +190,7 @@ test("SLG map: camera changes and disposed views reject late query responses", a
     };
     const logic = fixtureLogic(fake.runtime);
     logic.updateViewport();
-    logic.camera.pan(-5000, -5000); logic.updateViewport();
+    logic.camera.locate(SLG_MAP_W - 100, SLG_MAP_H - 100); logic.updateViewport();
     pending.resolve({ tiles: [{ tileId: tileIdFromGrid(100, 100), ownerUid: "stale", guardPower: 1 }], revision: 0, myTrophies: 0 });
     await flush();
     assert.equal(logic.tiles.size, 0);

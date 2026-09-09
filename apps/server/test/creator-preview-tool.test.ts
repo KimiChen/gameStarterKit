@@ -10,7 +10,7 @@ import { test } from "node:test";
 // @ts-expect-error 纯 ESM 工具模块，无类型声明。
 import { DESIGN, designToPage, nearestByRow, pageWalkSource, parseArgs, rewriteSceneQuery, sceneUuidFromMeta, selectNodes, worldToPage } from "../../../tools/creator-preview/lib.mjs";
 // @ts-expect-error 纯 ESM 场景工具，无类型声明。
-import { readSlgMapEvidence, slgFrameStability, slgMapGestureArea } from "../../../tools/creator-preview/slg.mjs";
+import { readSlgMapEvidence, readSlgOverviewEvidence, slgFrameStability, slgMapGestureArea, slgRenderAssetsSource } from "../../../tools/creator-preview/slg.mjs";
 
 const UUID = "33a6cd88-ca61-42f3-97e1-6b18a9096a34";
 
@@ -97,6 +97,9 @@ test("SLG 预览证据：只认地图视图的完整公开文本，网格没有 
     node("title", "青原 · LOD 2 · 奖杯 7"),
     node("details", "(103, 98) · 地形 0 · 我方 · 守备 1"),
     node("slg-chunk-6-6", null, null),
+    node("slg-terrain-layer", null, null),
+    node("slg-decoration-layer", null, null),
+    node("slg-decorations-6-6", null, null),
     node("status", "已占领 · 奖杯 +1"),
     node("slg-world", null, { x: -1000, y: 1100 }),
     { ...node("wrong-title", "青原 · LOD 4 · 奖杯 999"), path: "scene/Canvas/OtherView/title" },
@@ -106,11 +109,107 @@ test("SLG 预览证据：只认地图视图的完整公开文本，网格没有 
   assert.equal(result.lod, 2);
   assert.equal(result.trophies, 7);
   assert.deepEqual(result.chunks, ["slg-chunk-6-6"]);
+  assert.equal(result.terrainLayer, true);
+  assert.equal(result.decorationLayer, true);
+  assert.deepEqual(result.decorationChunks, ["slg-decorations-6-6"]);
+  assert.equal(readSlgMapEvidence({ nodes: walk.nodes.filter((entry) => !/slg-(terrain-layer|decoration-layer|decorations-)/u.test(entry.name)) }).loaded,
+    true, "旧版标题与 chunk 证据仍兼容；新版回放步骤另行要求贴图和装饰层");
   assert.deepEqual(result.tile, { x: 103, y: 98, terrain: 0, owner: "我方", guard: 1, text: "(103, 98) · 地形 0 · 我方 · 守备 1" });
   assert.equal(readSlgMapEvidence(null), null);
   assert.equal(readSlgMapEvidence({ nodes: walk.nodes.filter((entry) => entry.name !== "SlgMapView") }), null);
   assert.equal(readSlgMapEvidence({ nodes: walk.nodes.filter((entry) => !entry.name.startsWith("slg-chunk-")) }).loaded, false);
   assert.equal(readSlgMapEvidence({ nodes: walk.nodes.map((entry) => entry.name === "details" ? { ...entry, text: "(103, 98) · 地形 ? · 我方 · 守备 1" } : entry) }).tile, null);
+});
+
+test("SLG 总览证据：区分实地图与绘卷，地标坐标只取公开锚点并反转北向 Y", () => {
+  const root = "scene/Canvas/SlgMapView/slg-world-overview";
+  const nav = `${root}/slg-overview-navigation`;
+  const site = `${nav}/slg-overview-site-beiling`;
+  const node = (name: string, text: string | null, path: string, center: object | null = { x: 200, y: 400 }) => ({ name, text, path, center });
+  const walk = { canvas: { x: 0, y: 0, width: 375, height: 800 }, visible: { width: 750, height: 1600 }, nodes: [
+    node("SlgMapView", null, "scene/Canvas/SlgMapView"),
+    node("map-title", "青原仙洲 · LOD 4 · 奖杯 7", "scene/Canvas/SlgMapView/title"),
+    node("details", "(5000, 5000) · 地形 0 · 我方 · 守备 1", "scene/Canvas/SlgMapView/details"),
+    node("slg-world-overview", null, root),
+    node("title", "青原仙洲 · 世界总览", `${root}/title`),
+    node("slg-overview-navigation", null, nav, { x: 200, y: 400, width: 600, height: 600 }),
+    node("footer", "当前位置（5000, 5000） · 点击地图定位", `${root}/footer`),
+    node("slg-overview-site-beiling", null, site, { x: 200, y: 325, width: 46, height: 46 }),
+    node("label", "北岭遗迹", `${site}/label`, { x: 200, y: 340 }),
+    ...Array.from({ length: 4 }, (_, i) => node("slg-overview-viewport", null, `${nav}/edge-${i}`)),
+    node("outside", "伪地标", "scene/Canvas/OtherView/slg-overview-site-fake"),
+  ] };
+  const hiddenWorld = readSlgMapEvidence(walk);
+  assert.equal(hiddenWorld.loaded, false, "总览期间 world.active=false，公开 walker 不包含局部 chunk");
+  assert.equal(hiddenWorld.worldCenter, null);
+  assert.deepEqual(hiddenWorld.chunks, []);
+  assert.equal(hiddenWorld.tile.x, 5000, "总览外的选格详情仍然可读");
+  const overview = readSlgOverviewEvidence(walk);
+  assert.equal(overview.mode, "navigation");
+  assert.equal(overview.title, "青原仙洲 · 世界总览");
+  assert.deepEqual(overview.bounds, { x: 50, y: 250, width: 300, height: 300 });
+  assert.deepEqual(overview.position, { x: 5000, y: 5000 });
+  assert.equal(overview.viewportEdges.length, 4);
+  assert.equal(overview.landmarks.length, 1);
+  assert.equal(overview.landmarks[0].name, "北岭遗迹");
+  assert.deepEqual(overview.landmarks[0].expected, { x: 5000, y: 7500 }, "标签向下偏移不改变地标世界坐标");
+  assert.equal(overview.artVisible, false);
+  assert.equal(readSlgOverviewEvidence(null), null);
+  assert.equal(readSlgOverviewEvidence({ ...walk, nodes: walk.nodes.filter((entry) => entry.path !== root) }), null);
+  const badDimensions = readSlgOverviewEvidence({ ...walk, visible: { width: 0, height: 1600 } });
+  assert.equal(badDimensions.bounds, null);
+  assert.equal(badDimensions.landmarks[0].expected, null, "没有有效公开地图尺寸就不能猜定位坐标");
+  const scrollPath = `${root}/slg-overview-scroll`;
+  const scroll = readSlgOverviewEvidence({ ...walk, nodes: [
+    ...walk.nodes.filter((entry) => !entry.path.startsWith(nav)).map((entry) => entry.name === "footer" ? { ...entry, text: "山河绘卷" } : entry),
+    node("slg-overview-scroll", null, scrollPath, { x: 200, y: 400, width: 600, height: 600 }),
+    node("slg-overview-art", null, `${scrollPath}/slg-overview-art`),
+  ] });
+  assert.equal(scroll.mode, "scroll");
+  assert.equal(scroll.artVisible, true);
+  assert.equal(scroll.position, null);
+  assert.equal(scroll.viewportEdges.length, 0);
+  assert.deepEqual(scroll.landmarks, []);
+  const closed = { ...walk, nodes: [
+    ...walk.nodes.filter((entry) => !entry.path.startsWith(root)),
+    node("slg-world", null, "scene/Canvas/SlgMapView/slg-world", { x: -1200, y: 1700 }),
+    node("slg-chunk-312-312", null, "scene/Canvas/SlgMapView/slg-world/slg-chunk-312-312", null),
+  ] };
+  assert.equal(readSlgOverviewEvidence(closed), null);
+  assert.equal(readSlgMapEvidence(closed).loaded, true);
+  assert.deepEqual(readSlgMapEvidence(closed).worldCenter, { x: -1200, y: 1700 }, "只在关闭总览后比对重新激活的公开地图坐标");
+});
+
+test("SLG 材质证据：页面脚本自包含，只读公开共享材质和精灵，不创实例、不加载资源", () => {
+  for (const token of ["getMaterialInstance", "resources.", "Logic", "fetch(", "require("]) {
+    assert.ok(!slgRenderAssetsSource.includes(token), `渲染观察脚本不得包含 ${token}`);
+  }
+  const node = (name: string, children: unknown[] = [], components: Record<string, unknown> = {}, activeInHierarchy = true) => ({
+    name, children, activeInHierarchy, getComponent: (id: string) => components[id] ?? null,
+  });
+  const texture = { width: 1536, height: 1024 };
+  const texturedMesh = { "cc.MeshRenderer": { getSharedMaterial: (index: number) => {
+    assert.equal(index, 0);
+    return { getProperty: (name: string) => { assert.equal(name, "mainTexture"); return texture; } };
+  } } };
+  const scene = node("scene", [
+    node("slg-chunk-9-9", [], texturedMesh),
+    node("SlgMapView", [
+      node("slg-chunk-1-2", [], texturedMesh),
+      node("slg-decorations-1-2", [], texturedMesh),
+      node("slg-chunk-2-2", [], { "cc.MeshRenderer": { getSharedMaterial: () => ({ getProperty: () => null }) } }),
+      node("slg-overview-art", [], { "cc.Sprite": { spriteFrame: { texture: { width: 1254, height: 1254 } } } }),
+      node("slg-decorations-3-3", [], texturedMesh, false),
+    ]),
+  ]);
+  const evaluate = new Function("cc", `return ${slgRenderAssetsSource};`);
+  const result = evaluate({ director: { getScene: () => scene } });
+  assert.deepEqual(result.map((entry: { name: string }) => entry.name), ["slg-chunk-1-2", "slg-decorations-1-2", "slg-chunk-2-2", "slg-overview-art"]);
+  assert.equal(result[0].textured, true);
+  assert.equal(result[1].width, 1536);
+  assert.equal(result[2].textured, false);
+  assert.deepEqual(result[3], { name: "slg-overview-art", kind: "sprite", textured: true, width: 1254, height: 1254 });
+  assert.deepEqual(evaluate({ director: { getScene: () => null } }), []);
 });
 
 test("SLG 预览输入：从公开帮助/详情行定位地图内区域，缺失/倒置时拒绝猜坐标", () => {

@@ -1,12 +1,12 @@
 # 青原仙洲 v1 · 素材包
 
-本轮仅新增素材及说明，未修改游戏代码、地形配置、shared 契约或 Cocos 导入资源。后续实施范围见 [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md)。
+首轮仅生成素材；2026-09-10 已将本套资源接入 SLG 的局部地图和独立总览。地形调整为北雪、西赤岩、南林、东海、中央青原的六类地形与 55 个矩形区域；玩法规则不变。接入文件与验收范围见 [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md)。
 
 | 文件 | 实际尺寸 / 格式 | 用途 |
 | --- | --- | --- |
 | [terrain-atlas.png](terrain-atlas.png) | 1536 × 1024，RGB PNG | 六类地表，3 列 × 2 行，每格 512 × 512。 |
 | [decoration-atlas.png](decoration-atlas.png) | 1536 × 1024，RGBA PNG | 六类装饰，真实透明背景，3 列 × 2 行，每格 512 × 512。 |
-| [world-overview.png](world-overview.png) | 1254 × 1254，RGB PNG | 独立世界总览美术底图；无文字、宗门图标或交互信息。 |
+| [world-overview.png](world-overview.png) | 1254 × 1254，RGB PNG | “山河绘卷”美术预览；无文字、宗门图标或交互信息，不用于精确定位。 |
 | [decoration-atlas-keyed-source.png](decoration-atlas-keyed-source.png) | 1536 × 1024，RGB PNG | 装饰成品的纯洋红底稿，留作源文件；不可直接当作透明图导入。 |
 
 ## 图块顺序
@@ -22,10 +22,21 @@
 | 4 | 512 / 512 / 512 / 512 | 岩地 | 遗迹 |
 | 5 | 1024 / 512 / 512 / 512 | 雪地 | 灵晶 |
 
-## 来源与检查
+## 项目接入
+
+运行时使用 `apps/Cocos/assets/resources/kits/slg/qingyuan/` 下的三张同名图片，均与本目录成品逐字节一致。`decoration-atlas-keyed-source.png` 是去背前底稿，不进入运行资源。地形源 `apps/kits/slg/data/terrain.json` 镜像到 `apps/Cocos/assets/resources/kits/slg/terrain.json`。
+
+图集格位、UV、装饰布局和地标统一由 `apps/client/src/kits/slg/logic/mapArt.ts` 定义，不另设 `atlas.json`。世界坐标以格为单位、y 增大指向北；图片与总览坐标以左上角为原点、y/v 向下。
+
+- 地表按世界格的 x/y 奇偶交替镜像 UV，保证同地形相邻格接边采样相同图像边。每格 UV 向内收半个纹理像素；三张图片均采用线性过滤、边缘钳制、无 mipmap。镜像重复能对齐采样边，但不等于重新绘制了一套无重复感的地表。
+- 归属为独立蓝/红半透明层，alpha 0.40，避免与地表乘色。装饰使用真实 alpha 的批量网格，按 chunk 增删和 LOD 缓存；每块最多 7 件，四档 LOD 普通装饰上限为 6/4/2/0，块内地标始终保留。
+- “实地图”从同一份地形区域数据绘制，显示同源地标和视野框，支持精确坐标定位；“山河绘卷”只显示这张美术预览。原始绘卷与实际地形没有逐像素标定。
+- 页面统一持有并释放资源引用，关闭时销毁私有网格、材质及 SpriteFrame。过期或失败加载会释放已取得引用，资源加载失败可通过“刷新”重试。
+
+## 来源与验收状态
 
 - 美术由内置 imagegen 生成，延续上一轮「青原仙洲」概念图的颜色和地理布局；完整提示词见 [PROMPTS.md](PROMPTS.md)。
 - 装饰经过用户明确授权的本地纯色去背：保留原始绘画细节，恢复真实 alpha，并清理边缘底色。源图与透明成品均保留。
 - 已核对图片实际尺寸、装饰 alpha 范围 0–255、所有图集边界为全透明、六个图块均未越界；已目检绿色底上的叠加效果，确认雪顶、石面和建筑没有误删的大块缺口。
-- 地表是首版可切取图集，尚未做引擎中的无缝铺设与过滤渗色验收。
-- 世界总览是美术底图，尚未与当前 `terrain.json` 标定。正式点击定位前必须统一地形轮廓、地标与世界坐标，或从地形数据绘制准确总览。本素材包不代表已接入游戏或通过 Creator 验收。
+- 已补充素材镜像、尺寸、alpha、导入采样参数，以及 UV 接边、图集边界、装饰密度和总览坐标测试。
+- 本轮 `verify:all` 通过（客户端 513、服务端 751）；Creator 23 步、19 张原始截图、console 空，覆盖贴图与透明装饰、四档 LOD、实地图定位、绘卷输入隔离、关闭与重新加载。失败回调、尺寸拒绝和引用释放由加载器测试覆盖，未做 Creator 失败资源注入或长跑内存实验。详见 [验收记录](../../../../../docs/evidence/creator-2026-09-10/slg-art/README.md)。
