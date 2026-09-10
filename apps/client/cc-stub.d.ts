@@ -143,7 +143,8 @@ declare module "cc" {
         position: Vec3;
         scale: Vec3;
         angle: number;
-        static EventType: { TOUCH_START: string; TOUCH_MOVE: string; TOUCH_END: string; TOUCH_CANCEL: string; SIZE_CHANGED: string };
+        static EventType: { TOUCH_START: string; TOUCH_MOVE: string; TOUCH_END: string; TOUCH_CANCEL: string; SIZE_CHANGED: string;
+          MOUSE_DOWN: string; MOUSE_MOVE: string; MOUSE_UP: string; MOUSE_WHEEL: string; MOUSE_LEAVE: string };
         addChild(child: Node): void;
         removeFromParent(): void;
         destroy(): boolean;

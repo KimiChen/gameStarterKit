@@ -1,5 +1,5 @@
-/** Fullscreen map route: global multi-pointer input, chunk meshes, and a selected-tile action bar. */
-import { Color, EventMouse, EventTouch, Game, game, input, Input, Label, Node, UITransform, Vec3 } from "cc";
+/** Fullscreen map route: foreground multi-pointer input, chunk meshes, and a selected-tile action bar. */
+import { Color, EventMouse, EventTouch, Game, game, Label, Node, UITransform, Vec3 } from "cc";
 import { CocosView } from "../../../view/CocosView";
 import { createSolidPlate } from "../../../view/uiPlate";
 import { gridFromTileId, terrainAt, type ISlgTerrain } from "../../../shared/kits/slg/api/worldmap/index";
@@ -54,9 +54,7 @@ export class SlgMapView extends CocosView {
         const runtime = getSlgRuntime();
         this.logic = new SlgMapLogic(runtime, width, this.mapTop - this.mapBottom);
         this.logic.onChanged = () => this.render();
-        const scrim = createSolidPlate(this.root, width, height, BACK, 0, 0, "slg-scrim");
-        scrim.on(Node.EventType.TOUCH_START, this.swallow, this);
-        scrim.on(Node.EventType.TOUCH_END, this.swallow, this);
+        createSolidPlate(this.root, width, height, BACK, 0, 0, "slg-scrim");
         this.world = this.node("slg-world", this.root, 0, 0);
         this.terrainLayer = this.node("slg-terrain-layer", this.world, 0, 0);
         this.decorationLayer = this.node("slg-decoration-layer", this.world, 0, 0);
@@ -187,7 +185,6 @@ export class SlgMapView extends CocosView {
     private inside(y: number): boolean { return y > this.mapBottom && y < this.mapTop; }
     private now(): number { return this.logic?.runtime?.now() ?? 0; }
     private inputBlocked(): boolean { return !this.active || !!this.overview?.visible || this.now() < this.inputBlockedUntil; }
-    private readonly swallow = (): void => {};
     private readonly onTouchStart = (event: EventTouch): void => {
         if (this.inputBlocked()) return;
         this.touchAt = this.now();
@@ -237,14 +234,19 @@ export class SlgMapView extends CocosView {
     private readonly cancelInput = (): void => { this.mouseDown = false; this.logic?.camera.cancel(); };
     private bindInput(bind: boolean): void {
         const method = bind ? "on" : "off";
-        input[method](Input.EventType.TOUCH_START, this.onTouchStart, this);
-        input[method](Input.EventType.TOUCH_MOVE, this.onTouchMove, this);
-        input[method](Input.EventType.TOUCH_END, this.onTouchEnd, this);
-        input[method](Input.EventType.TOUCH_CANCEL, this.onTouchCancel, this);
-        input[method](Input.EventType.MOUSE_DOWN, this.onMouseDown, this);
-        input[method](Input.EventType.MOUSE_MOVE, this.onMouseMove, this);
-        input[method](Input.EventType.MOUSE_UP, this.onMouseUp, this);
-        input[method](Input.EventType.MOUSE_WHEEL, this.onMouseWheel, this);
+        // Creator dispatches UI events before global input. The fullscreen foreground
+        // node must receive them so the Settings ScrollView underneath cannot consume them.
+        // Keep the listeners while overview is visible: inputBlocked guards map movement,
+        // while node hit testing still shields the background page.
+        this.root[method](Node.EventType.TOUCH_START, this.onTouchStart, this);
+        this.root[method](Node.EventType.TOUCH_MOVE, this.onTouchMove, this);
+        this.root[method](Node.EventType.TOUCH_END, this.onTouchEnd, this);
+        this.root[method](Node.EventType.TOUCH_CANCEL, this.onTouchCancel, this);
+        this.root[method](Node.EventType.MOUSE_DOWN, this.onMouseDown, this);
+        this.root[method](Node.EventType.MOUSE_MOVE, this.onMouseMove, this);
+        this.root[method](Node.EventType.MOUSE_UP, this.onMouseUp, this);
+        this.root[method](Node.EventType.MOUSE_WHEEL, this.onMouseWheel, this);
+        this.root[method](Node.EventType.MOUSE_LEAVE, this.cancelInput, this);
         game[method](Game.EVENT_HIDE, this.cancelInput, this);
     }
     private node(name: string, parent: Node, width: number, height: number): Node {
