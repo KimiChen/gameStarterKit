@@ -5,6 +5,9 @@ node_modules/
 # 构建产物
 dist/
 
+# 本地预览验收截图与报告
+/docs/evidence/
+
 # ImageGen 概念图输出；设计说明与提示词另存 docs/concepts/
 output/imagegen/
 

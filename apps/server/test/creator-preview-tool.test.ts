@@ -10,7 +10,7 @@ import { test } from "node:test";
 // @ts-expect-error 纯 ESM 工具模块，无类型声明。
 import { DESIGN, designToPage, nearestByRow, pageWalkSource, parseArgs, rewriteSceneQuery, sceneUuidFromMeta, selectNodes, worldToPage } from "../../../tools/creator-preview/lib.mjs";
 // @ts-expect-error 纯 ESM 场景工具，无类型声明。
-import { readSlgMapEvidence, readSlgOverviewEvidence, slgFrameStability, slgMapGestureArea, slgRenderAssetsSource } from "../../../tools/creator-preview/slg.mjs";
+import { assertSlgSettingsScrollUnchanged, readSlgMapEvidence, readSlgOverviewEvidence, slgFrameStability, slgMapGestureArea, slgRenderAssetsSource, slgSettingsScrollSource } from "../../../tools/creator-preview/slg.mjs";
 
 const UUID = "33a6cd88-ca61-42f3-97e1-6b18a9096a34";
 
@@ -210,6 +210,48 @@ test("SLG 材质证据：页面脚本自包含，只读公开共享材质和精�
   assert.equal(result[2].textured, false);
   assert.deepEqual(result[3], { name: "slg-overview-art", kind: "sprite", textured: true, width: 1254, height: 1254 });
   assert.deepEqual(evaluate({ director: { getScene: () => null } }), []);
+});
+
+test("SLG 后台滚动证据：页面脚本自包含，只读取设置视口并复制公开偏移", () => {
+  const offset = { x: 0, y: 12 };
+  interface TestNode {
+    name: string; children: TestNode[]; activeInHierarchy: boolean;
+    getChildByName: (id: string) => TestNode | null;
+    getComponent: (id: string) => unknown;
+  }
+  const node = (name: string, children: TestNode[] = [], components: Record<string, unknown> = {}, activeInHierarchy = true): TestNode => ({
+    name, children, activeInHierarchy,
+    getChildByName: (id) => children.find((child) => child.name === id) ?? null,
+    getComponent: (id) => components[id] ?? null,
+  });
+  const scroll = { getScrollOffset: () => offset };
+  const settings = node("SettingsView", [node("panel", [node("viewport", [], { "cc.ScrollView": scroll })])]);
+  const evaluate = new Function("cc", `return ${slgSettingsScrollSource};`);
+  const scene = node("scene", [
+    node("SettingsView", [], {}, false),
+    node("OtherView", [node("viewport", [], { "cc.ScrollView": { getScrollOffset: () => ({ x: 99, y: 99 }) } })]),
+    settings,
+  ]);
+  const snapshot = evaluate({ director: { getScene: () => scene } });
+  assert.deepEqual(snapshot, { x: 0, y: 12 });
+  offset.y = 20;
+  assert.equal(snapshot.y, 12, "保存快照，不能把引擎复用 Vec2 的新偏移当成原值");
+  assert.deepEqual(evaluate({ director: { getScene: () => scene } }), { x: 0, y: 20 });
+  assert.equal(evaluate({ director: { getScene: () => node("scene") } }), null);
+  assert.equal(evaluate({ director: { getScene: () => null } }), null);
+  offset.y = Number.NaN;
+  assert.equal(evaluate({ director: { getScene: () => scene } }), null);
+});
+
+test("SLG 输入隔离断言：检测两轴后台偏移，不把缺失证据或失效组件算通过", () => {
+  const before = { x: 0, y: 12 };
+  assert.deepEqual(assertSlgSettingsScrollUnchanged(before, { x: 0, y: 12 }),
+    { before, after: { x: 0, y: 12 }, unchanged: true });
+  assert.throws(() => assertSlgSettingsScrollUnchanged(before, { x: 0, y: 13 }), /穿透到后台设置滚动/u);
+  assert.throws(() => assertSlgSettingsScrollUnchanged(before, { x: 2, y: 12 }), /穿透到后台设置滚动/u);
+  assert.throws(() => assertSlgSettingsScrollUnchanged(null, null), /不可观测/u);
+  assert.throws(() => assertSlgSettingsScrollUnchanged(before, null), /不可观测/u);
+  assert.throws(() => assertSlgSettingsScrollUnchanged(before, { x: 0, y: Number.NaN }), /不可观测/u);
 });
 
 test("SLG 预览输入：从公开帮助/详情行定位地图内区域，缺失/倒置时拒绝猜坐标", () => {

@@ -76,6 +76,8 @@
 
 2026-09-10「青原仙洲」美术接入已验收：`verify:all` 退出 0（FGUI 66、inventory 115、客户端 513、服务端 751 个测试）；Creator 23 步、19 张截图、console 空，覆盖地表和透明装饰、占领刷新、四档 LOD、实地图定位、绘卷输入隔离、关闭及重开资源。资源加载失败后的引用回收由客户端测试覆盖；未做真实触屏、失败资源注入或长跑内存实验。详见 [美术接入验收记录](../../../docs/evidence/creator-2026-09-10/slg-art/README.md)。
 
+2026-09-10 修复设置页 ScrollView 吞掉地图输入的回归：地图改用全屏前景节点接收触摸、鼠标和滚轮，关闭时解绑，鼠标离开画布时取消手势；预览入口适配 `card-map`。Chrome 标准流程 23/23 步、补充隔离检查 7/7 步通过，console 空，确认中央操作不滚动后台设置，标题栏和总览不穿透，关闭后设置恢复滚动。详见 [输入修复验收记录](../../../docs/evidence/creator-2026-09-10/slg-input-fix/README.md)。
+
 主树的 SLG 是宿主自有包，manifest 保持无 `version`，不可直接 pack 或执行要求已安装包锁的 `plugin -- test slg`。包测试在临时副本补 `version:"0.1.0"` 后生成制品，再安装到临时宿主，依据 install 产生的锁运行 `npm --workspace @game/server run plugin -- test slg --int`；测试版本和临时安装锁不回灌主树。主树通过源码测试及 `verify:all` 验证。
 
 阶段 2b 等待 MF5 的正式原语及 GameRoom 消费验收，才加入地图房、按视野同步、军队与行军线、客户端连接四件套。正式 SLG 名册不广播全房 id/name，只随视野内地块/军队提供必要归属；视口仅存在于服务端会话表。MF5 必须同时处理 GameRoom 当前 root `players` 约束，不能仅靠 perSession 消息宣称完成可见性隔离。

@@ -92,6 +92,36 @@ function readSlgRenderAssets() {
 }
 export const slgRenderAssetsSource = `(${readSlgRenderAssets.toString()})()`;
 
+/** Observe the still-mounted settings panel without changing its event listeners or scroll state. */
+function readSlgSettingsScroll() {
+  if (typeof cc === "undefined" || !cc.director?.getScene()) return null;
+  const find = (node) => {
+    if (!node.activeInHierarchy) return null;
+    if (node.name === "SettingsView") return node;
+    for (const child of node.children) { const found = find(child); if (found) return found; }
+    return null;
+  };
+  const settings = find(cc.director.getScene());
+  const viewport = settings?.getChildByName("panel")?.getChildByName("viewport");
+  const offset = viewport?.getComponent("cc.ScrollView")?.getScrollOffset();
+  return offset && Number.isFinite(offset.x) && Number.isFinite(offset.y) ? { x: offset.x, y: offset.y } : null;
+}
+export const slgSettingsScrollSource = `(${readSlgSettingsScroll.toString()})()`;
+
+export function assertSlgSettingsScrollUnchanged(before, after) {
+  if (![before?.x, before?.y, after?.x, after?.y].every(Number.isFinite)) {
+    throw new Error("后台 SettingsView 的 ScrollView 偏移不可观测，无法验证地图输入隔离");
+  }
+  if (Math.hypot(after.x - before.x, after.y - before.y) > 0.1) {
+    throw new Error(`地图操作穿透到后台设置滚动：${JSON.stringify({ before, after })}`);
+  }
+  return { before, after, unchanged: true };
+}
+
+async function settingsScrollUnchanged(runner, before) {
+  return assertSlgSettingsScrollUnchanged(before, await runner.client.evaluate(slgSettingsScrollSource));
+}
+
 async function renderedMapAssets(runner) {
   const assets = await runner.client.evaluate(slgRenderAssetsSource);
   const terrain = assets.filter((entry) => /^slg-chunk-/u.test(entry.name));
@@ -145,8 +175,8 @@ async function stableSlgFrame(runner, lod) {
 
 /** Run after SettingsView has been reached by the shared login/settings flow. */
 export async function replaySlgMap(runner) {
-  await runner.step("进入「大地图 · slg」（设置菜单的正式 route）", async () => {
-    return runner.tapText("进入", { near: /^大地图\s+·\s+slg$/u });
+  await runner.step("点设置中的「大地图」卡片（正式 route）", async () => {
+    return runner.tapSettingsEntry("map");
   });
   await runner.step("SlgMapView 加载地表贴图与独立装饰层", async () => {
     const evidence = await runner.waitFor("地图标题、chunk 网格与装饰节点", (walk) => {
@@ -201,25 +231,32 @@ export async function replaySlgMap(runner) {
     return { ...evidence, shot: await runner.shot("slg-refreshed") };
   });
 
-  await runner.step("鼠标拖动平移（地图节点位置实际改变）", async () => {
+  await runner.step("中央鼠标拖动平移，后台设置不滚动", async () => {
     const walk = await runner.walk();
     const before = readSlgMapEvidence(walk)?.worldCenter;
     const area = slgMapGestureArea(walk);
+    const settingsBefore = await runner.client.evaluate(slgSettingsScrollSource);
+    assertSlgSettingsScrollUnchanged(settingsBefore, settingsBefore);
     if (!before) throw new Error("找不到 slg-world 的可测坐标");
     const from = { x: area.x - area.width * 0.15, y: area.y };
     const to = { x: area.x + area.width * 0.15, y: area.y + area.height * 0.1 };
     await runner.client.send("Input.dispatchMouseEvent", { type: "mouseMoved", ...from });
     await runner.client.send("Input.dispatchMouseEvent", { type: "mousePressed", ...from, button: "left", buttons: 1, clickCount: 1 });
-    for (let step = 1; step <= 8; step++) {
-      await runner.client.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: from.x + (to.x - from.x) * step / 8, y: from.y + (to.y - from.y) * step / 8, button: "left", buttons: 1 });
-      await sleep(40);
+    try {
+      for (let step = 1; step <= 8; step++) {
+        await runner.client.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: from.x + (to.x - from.x) * step / 8, y: from.y + (to.y - from.y) * step / 8, button: "left", buttons: 1 });
+        await sleep(40);
+        await settingsScrollUnchanged(runner, settingsBefore);
+      }
+    } finally {
+      await runner.client.send("Input.dispatchMouseEvent", { type: "mouseReleased", ...to, button: "left", buttons: 0, clickCount: 1 });
     }
-    await runner.client.send("Input.dispatchMouseEvent", { type: "mouseReleased", ...to, button: "left", buttons: 0, clickCount: 1 });
     const evidence = await runner.waitFor("平移后的世界节点坐标", (next) => {
       const value = failed(readSlgMapEvidence(next));
       return value?.worldCenter && Math.hypot(value.worldCenter.x - before.x, value.worldCenter.y - before.y) > 5 ? value : null;
     });
-    return { from, to, before, after: evidence.worldCenter, shot: await runner.shot("slg-panned") };
+    return { from, to, before, after: evidence.worldCenter, settingsScroll: await settingsScrollUnchanged(runner, settingsBefore),
+      shot: await runner.shot("slg-panned") };
   });
 
   const lods = new Set();
@@ -229,18 +266,22 @@ export async function replaySlgMap(runner) {
   await runner.step("记录 LOD 1 近景（网格稳定后）", async () => ({ ...(await stableSlgFrame(runner, 1)), shot: await runner.shot("slg-lod-1") }));
   let direction = 1;
   for (const target of [2, 3, 4]) {
-    await runner.step(`滚轮缩放到 LOD ${target}`, async () => {
+    await runner.step(`中央滚轮缩放到 LOD ${target}，后台设置不滚动`, async () => {
       const area = slgMapGestureArea(await runner.walk());
+      const settingsBefore = await runner.client.evaluate(slgSettingsScrollSource);
+      assertSlgSettingsScrollUnchanged(settingsBefore, settingsBefore);
       const deltas = [];
       for (let attempt = 0; attempt < 64; attempt++) {
         const deltaY = 60 * direction;
         await runner.client.send("Input.dispatchMouseEvent", { type: "mouseWheel", x: area.x, y: area.y, deltaX: 0, deltaY });
         deltas.push(deltaY);
         await sleep(120);
+        await settingsScrollUnchanged(runner, settingsBefore);
         const evidence = failed(readSlgMapEvidence(await runner.walk()));
         if (evidence?.lod === target) {
           lods.add(target);
-          return { ...(await stableSlgFrame(runner, target)), deltas, shot: await runner.shot(`slg-lod-${target}`) };
+          return { ...(await stableSlgFrame(runner, target)), deltas,
+            settingsScroll: await settingsScrollUnchanged(runner, settingsBefore), shot: await runner.shot(`slg-lod-${target}`) };
         }
         if (evidence?.lod > target) throw new Error(`滚轮从 LOD ${target - 1} 跳过 ${target} 到 ${evidence.lod}`);
         // Cocos/browser wheel conventions vary. Decide by observed LOD, never mutate camera fields.
@@ -346,7 +387,7 @@ export async function replaySlgMap(runner) {
   });
 
   await runner.step("重新进入地图，地表和装饰重新加载", async () => {
-    await runner.tapText("进入", { near: /^大地图\s+·\s+slg$/u });
+    await runner.tapSettingsEntry("map");
     const evidence = await runner.waitFor("重开后的地图与装饰层", (walk) => {
       const value = failed(readSlgMapEvidence(walk));
       return value?.loaded && value.terrainLayer && value.decorationLayer && value.decorationChunks.length ? value : null;

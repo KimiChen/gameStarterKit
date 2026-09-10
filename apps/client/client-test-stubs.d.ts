@@ -13,7 +13,8 @@ declare module "cc" {
     constructor(name?: string);
     name: string; layer: number; active: boolean; parent: Node | null; children: Node[]; isValid: boolean;
     position: Vec3; scale: Vec3; angle: number;
-    static EventType: { TOUCH_START: string; TOUCH_MOVE: string; TOUCH_END: string; TOUCH_CANCEL: string; SIZE_CHANGED: string };
+    static EventType: { TOUCH_START: string; TOUCH_MOVE: string; TOUCH_END: string; TOUCH_CANCEL: string; SIZE_CHANGED: string;
+      MOUSE_DOWN: string; MOUSE_MOVE: string; MOUSE_UP: string; MOUSE_WHEEL: string; MOUSE_LEAVE: string };
     addChild(child: Node): void; removeFromParent(): void; destroy(): boolean; setSiblingIndex(index: number): void;
     setPosition(x: number, y: number, z?: number): void; setScale(x: number, y: number, z?: number): void;
     on(type: string, callback: (...args: any[]) => unknown, target?: unknown): void;
