@@ -82,7 +82,7 @@ test("SLG decorations: bounded density, unique neighboring ownership and complet
                 assert.ok(entry.x - entry.width / 2 >= cx * 16 && entry.x + entry.width / 2 <= (cx + 1) * 16);
                 assert.ok(entry.y - entry.height / 2 >= cy * 16 && entry.y + entry.height / 2 <= (cy + 1) * 16);
             }
-            if (terrainId === 0) assert.ok(entries.filter((entry) => !entry.landmark).length <= 2);
+            if (terrainId === 0) assert.ok(entries.filter((entry) => !entry.landmark).length <= 3);
             if (terrainId === 2) assert.ok(entries.every((entry) => entry.landmark), "water never grows ordinary decorations");
         }
     }
@@ -97,10 +97,10 @@ test("SLG森之国: 海环、内陆湖与六类地形围绕中心复刻区，地
     assert.ok(terrain.regions.length < 100, "compact rectangles replace per-cell records");
     assert.equal(terrainAt(terrain, 50, 50).id, 2, "西南海外");
     assert.equal(terrainAt(terrain, 1450, 1450).id, 2, "东北海外");
-    assert.equal(terrainAt(terrain, 801, 624).id, 2, "气泡湖内陆湖");
-    assert.equal(terrainAt(terrain, 838, 764).id, 5, "归木村裸土场");
-    assert.equal(terrainAt(terrain, 763, 915).id, 4, "狂花海岸沙滩");
-    assert.equal(terrainAt(terrain, 748, 836).id, 3, "蛛后巢穴岩石");
+    assert.equal(terrainAt(terrain, 781, 674).id, 2, "气泡湖内陆湖");
+    assert.equal(terrainAt(terrain, 803, 760).id, 5, "归木村裸土场");
+    assert.equal(terrainAt(terrain, 758, 853).id, 4, "狂花海岸沙滩");
+    assert.equal(terrainAt(terrain, 747, 806).id, 3, "蛛后巢穴岩石");
     const chunks = new Set<string>();
     for (const landmark of SLG_LANDMARKS) {
         const cx = Math.floor(landmark.x / SLG_CHUNK_SIZE), cy = Math.floor(landmark.y / SLG_CHUNK_SIZE);
@@ -111,11 +111,11 @@ test("SLG森之国: 海环、内陆湖与六类地形围绕中心复刻区，地
         assert.notEqual(terrainAt(terrain, landmark.x, landmark.y).id, 2, "地标不下水");
         assert.deepEqual(slgDecorationsForChunk(terrain, cx, cy, 3), [landmark]);
     }
-    const village = slgDecorationsForChunk(terrain, 52, 47, 0);
+    const village = slgDecorationsForChunk(terrain, 50, 47, 0);
     assert.ok(village.some((entry) => entry.name === "归木村"));
     // 地图几何中心块（岩石地表）：stele/crystal 混编，无地标
     const center = slgDecorationsForChunk(terrain, 46, 46, 0);
-    assert.deepEqual(center.filter((entry) => !entry.landmark).map((entry) => entry.kind).sort(), ["crystal", "stele", "stele"]);
+    assert.deepEqual(center.filter((entry) => !entry.landmark).map((entry) => entry.kind).sort(), ["crystal", "stele", "stele", "stele"]);
 });
 
 test("SLG overview: north-up coordinates round trip with arbitrary display dimensions and clamp outer bounds", () => {

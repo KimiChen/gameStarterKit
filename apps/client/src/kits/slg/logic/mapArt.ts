@@ -50,11 +50,11 @@ const DECORATION_ATLAS_INDEX: Readonly<Record<SlgDecorationKind, number>> = {
 };
 /** 森之国地标（布局复刻坐标，经 chunk 足迹与旱地校验微调；森林/湖泊/海岸干燥陆地上，各占独立 chunk）。 */
 export const SLG_LANDMARKS: readonly SlgLandmark[] = [
-    { id: "guimu-village", name: "归木村", x: 838, y: 764, width: 6, height: 6, kind: "stele", atlasIndex: 3, landmark: true },
-    { id: "worldtree", name: "世界树半岛", x: 764, y: 1003, width: 6, height: 6, kind: "vine", atlasIndex: 0, landmark: true },
-    { id: "bubble-lake", name: "气泡湖", x: 891, y: 627, width: 6, height: 6, kind: "crystal", atlasIndex: 4, landmark: true },
-    { id: "flower-coast", name: "狂花海岸", x: 763, y: 915, width: 6, height: 6, kind: "portal", atlasIndex: 2, landmark: true },
-    { id: "spider-den", name: "蛛后巢穴", x: 748, y: 836, width: 6, height: 6, kind: "sword", atlasIndex: 5, landmark: true },
+    { id: "guimu-village", name: "归木村", x: 805, y: 760, width: 9, height: 9, kind: "stele", atlasIndex: 3, landmark: true },
+    { id: "worldtree", name: "世界树半岛", x: 759, y: 902, width: 9, height: 9, kind: "vine", atlasIndex: 0, landmark: true },
+    { id: "bubble-lake", name: "气泡湖", x: 779, y: 730, width: 9, height: 9, kind: "crystal", atlasIndex: 4, landmark: true },
+    { id: "flower-coast", name: "狂花海岸", x: 758, y: 853, width: 9, height: 9, kind: "portal", atlasIndex: 2, landmark: true },
+    { id: "spider-den", name: "蛛后巢穴", x: 747, y: 806, width: 9, height: 9, kind: "sword", atlasIndex: 5, landmark: true },
 ];
 
 function artHash(cx: number, cy: number, slot: number, salt: number): number {
@@ -76,11 +76,11 @@ function ordinaryKind(terrain: number, slot: number, roll: number, central: bool
     // 森之国 palette：0 草地 / 1 林地 / 2 水面 / 3 岩石 / 4 沙滩 / 5 裸土；水面不出装饰。
     if (terrain === 2) return null;
     if (terrain === 0) {
-        if (slot >= 2 || (!central && roll > 0.42)) return null;
-        return central ? slot === 0 ? "vine" : "crystal" : roll < 0.06 ? "crystal" : "vine";
+        if (slot >= 3 || (!central && roll > 0.55)) return null;
+        return central ? slot === 0 ? "vine" : "crystal" : roll < 0.08 ? "crystal" : "vine";
     }
     if (terrain === 1) return "vine";
-    if (terrain === 3 && slot < 3 && roll < 0.75) return roll < 0.16 ? "crystal" : "stele";
+    if (terrain === 3 && slot < 4 && roll < 0.85) return roll < 0.16 ? "crystal" : "stele";
     if (terrain === 4 && slot < 4) return roll < 0.12 ? "sword" : "chest";
     if (terrain === 5 && slot < 4) return roll < 0.1 ? "crystal" : "sword";
     return null;
@@ -113,13 +113,14 @@ export function slgDecorationsForChunk(terrain: ISlgTerrain, cx: number, cy: num
         const kind = ordinaryKind(terrainAt(terrain, Math.floor(seedX), Math.floor(seedY)).id, slot,
             unitHash(cx, cy, slot, 0x51494e47), central);
         if (!kind) continue;
-        const size = kind === "vine" ? 2.5 : kind === "crystal" ? 2.25 : kind === "chest" ? 2 : kind === "portal" ? 3 : kind === "sword" ? 3.5 : 4;
+        const size = kind === "vine" ? 4.5 : kind === "crystal" ? 3.5 : kind === "chest" ? 3 : kind === "portal" ? 5 : kind === "sword" ? 5 : 6;
         const variance = 0.9 + unitHash(cx, cy, slot, 0x41525431) * 0.2;
         const width = size * variance, height = size * variance;
         const entry: SlgDecoration = {
             id: `decor-${cx}-${cy}-${slot}`, kind, atlasIndex: DECORATION_ATLAS_INDEX[kind], landmark: false, width, height,
-            x: bounded(seedX + unitHash(cx, cy, slot, 0x584a4954) - 0.5, minX + width / 2, maxX - width / 2),
-            y: bounded(seedY + unitHash(cx, cy, slot, 0x594a4954) - 0.5, minY + height / 2, maxY - height / 2),
+            // 封界：中心钳进 [块界+半径+ε]；ε 抵消浮点尾差，足迹测试按 ≥ 断言整块内
+            x: bounded(seedX + unitHash(cx, cy, slot, 0x584a4954) - 0.5, minX + width / 2 + 1e-9, maxX - width / 2 - 1e-9),
+            y: bounded(seedY + unitHash(cx, cy, slot, 0x594a4954) - 0.5, minY + height / 2 + 1e-9, maxY - height / 2 - 1e-9),
         };
         if (!landmarks.some((landmark) => intersects(entry, landmark))) ordinary.push(entry);
     }
@@ -196,7 +197,7 @@ export function validateSlgForestLayout(input: unknown): input is SlgForestLayou
 }
 
 const LAYOUT_SIZE: Readonly<Record<SlgDecorationKind, number>> = {
-    vine: 2.5, chest: 2, portal: 3, stele: 4, crystal: 2.25, sword: 3.5,
+    vine: 4.5, chest: 3, portal: 5, stele: 6, crystal: 3.5, sword: 5,
 };
 
 /**
