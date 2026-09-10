@@ -5,6 +5,9 @@ const VIEW = "SlgMapView";
 const OVERVIEW = "slg-world-overview";
 const inView = (node) => node.path.includes(`${VIEW}/`);
 
+/** 世界格边长（真源 = shared worldmap 的 SLG_MAP_W；creator-preview-tool.test.ts 钉住两者一致）。 */
+export const SLG_WORLD_SIZE = 1500;
+
 /** Parse the public UI, deliberately rejecting missing/loading titles and incomplete tile details. */
 export function readSlgMapEvidence(walk) {
   if (!walk?.nodes.some((node) => node.name === VIEW)) return null;
@@ -38,7 +41,7 @@ export function readSlgMapEvidence(walk) {
 }
 
 /** Read actual visible overview nodes; hidden scroll/navigation branches are absent from pageWalk. */
-export function readSlgOverviewEvidence(walk, worldWidth = 10000, worldHeight = 10000) {
+export function readSlgOverviewEvidence(walk, worldWidth = SLG_WORLD_SIZE, worldHeight = SLG_WORLD_SIZE) {
   const panel = walk?.nodes.find((node) => inView(node) && node.name === OVERVIEW);
   if (!panel) return null;
   const nodes = walk.nodes.filter((node) => node.path.startsWith(`${panel.path}/`));

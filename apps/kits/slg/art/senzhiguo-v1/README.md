@@ -8,7 +8,7 @@
 
 | 文件 | 形态 | 来源与做法 |
 | --- | --- | --- |
-| [terrain-atlas.png](terrain-atlas.png) | 1536×1024，RGB PNG，6 格 | **程序化生成**（PIL 值噪声 + 斑点，环形采样保证四边可平铺）：草地/林地/水面/岩石/沙滩/裸土。⚠ 原计划用 UnityPy 从 bundle 还原森之国真实 Tilemap 地砖；实际执行发现地砖贴图所在的共享 bundle **不在该学习包内**（`device-cdn` 只拉了 1804 个地图相关 bundle，chunk 的 SpriteRenderer 外部引用 `CAB-a4f77805…` 未入包），按 slg 换肤计划登记的 fallback 转程序化。提取记录见 [pipeline/](pipeline/)。 |
+| [terrain-atlas.png](terrain-atlas.png) | 1536×1024，RGB PNG，6 格 | **真贴图 + 程序化混合**：草地 = 真实地砖 `ground11/ground_1.png`；林地 = 真草地乘色加深；岩石 = `ground11/sactx-0-2048x2048-ASTC 6x6-Ground11_Atlas-a2189f17.png` 崖壁切（像素框 (360,676)-(628,816)）；水面/沙滩/裸土包内无平铺真贴图（水面是 shader+mask）→ 程序化生成（PIL 值噪声，环形采样保证四边可平铺）。最初计划用 UnityPy 从 bundle 还原 Tilemap 地砖全链，但 chunk sprite 外部引用 bundle（`CAB-a4f77805…`）不在学习包内；真实瓦片后经 `Mapscence/map11/ground11/` 的 PNG 直供解决（用户指路），不再需要 UnityPy 链。 |
 | [decoration-atlas.png](decoration-atlas.png) | 1536×1024，RGBA PNG，6 格 | 从 `zjcs-1.2.6/yoo-assets/map-assets/Assets/AppearanceAssets/Map/` 的多 sprite 部件图**人工策展子矩形**切片：藤蔓（map_mingYunShuTeng）、宝箱（map_baoXiang_01 第 3 帧）、传送门（map_dingDianChuanSongMen_E_1 左扉）、祭坛（map_fangJianBei_B_2 主体）、灵晶（map_shuangYanShanMai_G 蓝晶簇）、古剑碑（map_guJianCheng_D_1 主体）。裁剪坐标见 [pipeline/build-atlases.py](pipeline/build-atlases.py) 的 `CROPS` 表。 |
 | [world-overview.png](world-overview.png) | 1024×1024，RGBA PNG | 程序绘制：terrain.json 区域矩形 + forest-layout 装饰剪影 + 地标金点（pipeline/build-overview.py），非原始美术。 |
 | `../data/forest-layout.json`（kit 数据） | JSON | 森之国布局包 `mapinfowrap_11_mspack.bytes`（MessagePack，77 区 1803 实体）经 [pipeline/build-layout.py](pipeline/build-layout.py) 解码：坐标 5× 放大复刻到本图中心区，实体按 `entity_map_display.csv` 的 DisplayPath 归六类装饰（怪物/NPC 不进装饰层）。 |
