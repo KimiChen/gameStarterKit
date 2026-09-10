@@ -14,29 +14,37 @@ export class SlgFarLayerRenderer {
     readonly node: Node;
     private readonly untextured: Material;
     private readonly textured: Material;
-    private readonly ground: MeshBatch;
+    private readonly islandMaterial: Material;
+    private readonly sea: MeshBatch;
+    private readonly island: MeshBatch;
     private readonly landmarks: MeshBatch;
     private ownership: MeshBatch | null = null;
     private ownershipVersion = -1;
     private disposed = false;
 
-    constructor(parent: Node, terrain: ISlgTerrain, decorationTexture: Texture2D) {
+    constructor(parent: Node, terrain: ISlgTerrain, decorationTexture: Texture2D, islandTexture: Texture2D) {
         const technique = EffectAsset.get("builtin-unlit")?.techniques.findIndex((entry) => entry.name === "alpha-blend") ?? -1;
         if (technique < 0) throw new Error("SLG far layer requires builtin-unlit alpha-blend");
         this.untextured = new Material();
         this.textured = new Material();
+        this.islandMaterial = new Material();
         try {
             this.untextured.initialize({ effectName: "builtin-unlit", technique,
                 defines: { USE_VERTEX_COLOR: true, USE_TEXTURE: false }, states: { rasterizerState: { cullMode: gfx.CullMode.NONE } } });
-            this.textured.initialize({ effectName: "builtin-unlit", technique,
-                defines: { USE_VERTEX_COLOR: true, USE_TEXTURE: true }, states: { rasterizerState: { cullMode: gfx.CullMode.NONE } } });
+            for (const material of [this.textured, this.islandMaterial]) {
+                material.initialize({ effectName: "builtin-unlit", technique,
+                    defines: { USE_VERTEX_COLOR: true, USE_TEXTURE: true }, states: { rasterizerState: { cullMode: gfx.CullMode.NONE } } });
+            }
             this.textured.setProperty("mainTexture", decorationTexture);
-        } catch (error) { this.untextured.destroy(); this.textured.destroy(); throw error; }
+            this.islandMaterial.setProperty("mainTexture", islandTexture);
+        } catch (error) { this.untextured.destroy(); this.textured.destroy(); this.islandMaterial.destroy(); throw error; }
         this.node = new Node("slg-far-layer");
         try {
             this.node.layer = parent.layer;
             parent.addChild(this.node);
-            this.ground = this.createBatch("slg-far-ground", buildSlgFarGround(terrain), this.untextured);
+            const ground = buildSlgFarGround(terrain);
+            this.sea = this.createBatch("slg-far-sea", ground.sea, this.untextured);
+            this.island = this.createBatch("slg-far-island", ground.island, this.islandMaterial);
             this.landmarks = this.createBatch("slg-far-landmarks",
                 buildSlgFarLandmarks(decorationTexture.width, decorationTexture.height), this.textured);
             this.node.active = false;
@@ -47,7 +55,8 @@ export class SlgFarLayerRenderer {
     render(tiles: ReadonlyMap<number, ISlgTile>, selfUid: string, version: number): void {
         if (this.disposed) return;
         const hidden = slgMapDebug.hiddenLayers;
-        this.ground.node.active = !hidden.has("terrain");
+        this.sea.node.active = !hidden.has("terrain");
+        this.island.node.active = !hidden.has("terrain");
         this.landmarks.node.active = !hidden.has("landmarks");
         if (this.ownership) this.ownership.node.active = !hidden.has("ownership");
         if (version === this.ownershipVersion) return;
@@ -76,10 +85,10 @@ export class SlgFarLayerRenderer {
     dispose(): void {
         if (this.disposed) return;
         this.disposed = true;
-        this.destroyBatch(this.ground); this.destroyBatch(this.landmarks);
+        this.destroyBatch(this.sea); this.destroyBatch(this.island); this.destroyBatch(this.landmarks);
         if (this.ownership) this.destroyBatch(this.ownership);
         this.ownership = null;
-        this.untextured.destroy(); this.textured.destroy();
+        this.untextured.destroy(); this.textured.destroy(); this.islandMaterial.destroy();
         this.node.destroy();
     }
 

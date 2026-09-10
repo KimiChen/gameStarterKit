@@ -140,7 +140,7 @@ export function validateSlgTerrain(input: unknown): input is ISlgTerrain {
         assertExactKeys(r, ["name", "width", "height", "palette", "regions"], [], "terrain");
         boundedString(r.name, "terrain.name", 1, 100);
         if (r.width !== SLG_MAP_W || r.height !== SLG_MAP_H || !Array.isArray(r.palette)
-            || r.palette.length === 0 || r.palette.length > 16 || !Array.isArray(r.regions) || r.regions.length > 512) return false;
+            || r.palette.length === 0 || r.palette.length > 16 || !Array.isArray(r.regions) || r.regions.length > 2048) return false;
         const ids = new Set<number>();
         for (const p of r.palette) {
             const v = requireRecord(p, "terrain.palette");

@@ -1,6 +1,6 @@
 /** 远档（LOD 3）整图层几何：静态区域色块 + 地标 + 稀疏归属，draw call 与缩放出图脱钩。 */
 import { SLG_MAP_H, SLG_MAP_W, gridFromTileId, type ISlgTerrain, type ISlgTile } from "../../../shared/kits/slg/api/worldmap/index";
-import { buildSlgOverviewRects, SLG_LANDMARKS, slgAtlasUv } from "./mapArt";
+import { SLG_LANDMARKS, slgAtlasUv } from "./mapArt";
 import { SLG_GRID_PIXELS } from "./mapCamera";
 import { SLG_OTHER_TILE_COLOR, SLG_SELF_TILE_COLOR, type SlgGroundMeshGeometry, type SlgMeshGeometry } from "./terrainMesh";
 
@@ -26,29 +26,42 @@ function writeRect(positions: Float32Array, indices: Uint16Array, quad: number,
     indices.set([v, v + 1, v + 2, v + 2, v + 1, v + 3], quad * 6);
 }
 
+/** 原版森之国纯地表烘图在本图里的覆盖矩形（世界格 (-99,-81)~(125,69) 经 (w+97)*3+420/(w+79)*3+531 换算）。 */
+export const SLG_ISLAND_RECT = { minX: 414, minY: 525, maxX: 1086, maxY: 975 } as const;
+
+export interface SlgFarGround { readonly sea: SlgMeshGeometry; readonly island: SlgGroundMeshGeometry }
+
 /**
- * 静态地表：与总览同一份区域矩形（≤513 quads、不枚举格），按像素缩放成世界尺寸网格。
- * 矩形按 terrain.json 登记顺序叠加，与 terrainAt 的「后者覆盖前者」一致。
+ * 远档地表 = 海面全幅底（palette id 2 海青）+ 原版纯地表烘图一张（SlgFarLayerRenderer 配 island-ground 贴图）。
+ * 有机细节由烘图承载；palette 矩形只用于总览绘制与玩法标签，不再在远档逐块描边。
  */
-export function buildSlgFarGround(terrain: ISlgTerrain, alpha = 1): SlgMeshGeometry {
+export function buildSlgFarGround(terrain: ISlgTerrain, alpha = 1): SlgFarGround {
     assertAlpha(alpha);
-    const rects = buildSlgOverviewRects(terrain);
-    const positions = new Float32Array(rects.length * 12);
-    const indices16 = new Uint16Array(rects.length * 6);
-    const colors = new Float32Array(rects.length * 16);
-    rects.forEach((rect, quad) => {
-        writeRect(positions, indices16, quad,
-            rect.x * SLG_GRID_PIXELS, rect.y * SLG_GRID_PIXELS,
-            (rect.x + rect.width) * SLG_GRID_PIXELS, (rect.y + rect.height) * SLG_GRID_PIXELS);
+    const seaColor = terrain.palette.find((entry) => entry.id === 2)?.color ?? [66, 143, 163];
+    const sea: SlgMeshGeometry = (() => {
+        const positions = new Float32Array(12);
+        const indices16 = new Uint16Array(6);
+        writeRect(positions, indices16, 0, WORLD_BOUNDS.minX, WORLD_BOUNDS.minY, WORLD_BOUNDS.maxX, WORLD_BOUNDS.maxY);
+        const colors = new Float32Array(16);
         for (let vertex = 0; vertex < 4; vertex += 1) {
-            const offset = quad * 16 + vertex * 4;
-            colors[offset] = rect.color[0] / 255;
-            colors[offset + 1] = rect.color[1] / 255;
-            colors[offset + 2] = rect.color[2] / 255;
+            const offset = vertex * 4;
+            colors[offset] = seaColor[0] / 255;
+            colors[offset + 1] = seaColor[1] / 255;
+            colors[offset + 2] = seaColor[2] / 255;
             colors[offset + 3] = alpha;
         }
-    });
-    return { positions, colors, indices16, ...WORLD_BOUNDS };
+        return { positions, colors, indices16, ...WORLD_BOUNDS };
+    })();
+    const left = SLG_ISLAND_RECT.minX * SLG_GRID_PIXELS, bottom = SLG_ISLAND_RECT.minY * SLG_GRID_PIXELS;
+    const right = SLG_ISLAND_RECT.maxX * SLG_GRID_PIXELS, top = SLG_ISLAND_RECT.maxY * SLG_GRID_PIXELS;
+    const positions = new Float32Array(12);
+    const indices16 = new Uint16Array(6);
+    writeRect(positions, indices16, 0, left, bottom, right, top);
+    // PNG 顶 = 世界北（本图 y 大）：底边采 v=1、顶边采 v=0
+    const uvs = new Float32Array([0, 1, 1, 1, 0, 0, 1, 0]);
+    const island: SlgGroundMeshGeometry = { positions, uvs, colors: solidColors(1, alpha), indices16,
+        minX: left, minY: bottom, maxX: right, maxY: top };
+    return { sea, island };
 }
 
 /** 静态地标：全部 SLG_LANDMARKS 一张网格（远处仍保留的最后内容层），装饰图集 UV + 半像素内缩。 */

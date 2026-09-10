@@ -33,7 +33,7 @@ export function slgTerrainUv(terrainId: number): SlgAtlasUv {
     return slgAtlasUv(terrainId < 6 ? terrainId : 0);
 }
 
-export type SlgDecorationKind = "vine" | "chest" | "portal" | "stele" | "crystal" | "sword";
+export type SlgDecorationKind = "tree" | "chest" | "portal" | "stele" | "crystal" | "sword";
 export interface SlgDecoration extends SlgArtPoint {
     readonly id: string;
     readonly width: number;
@@ -46,13 +46,13 @@ export interface SlgDecoration extends SlgArtPoint {
 export interface SlgLandmark extends SlgDecoration { readonly landmark: true; readonly name: string }
 
 const DECORATION_ATLAS_INDEX: Readonly<Record<SlgDecorationKind, number>> = {
-    vine: 0, chest: 1, portal: 2, stele: 3, crystal: 4, sword: 5,
+    tree: 0, chest: 1, portal: 2, stele: 3, crystal: 4, sword: 5,
 };
 /** 森之国地标（布局复刻坐标，经 chunk 足迹与旱地校验微调；森林/湖泊/海岸干燥陆地上，各占独立 chunk）。 */
 export const SLG_LANDMARKS: readonly SlgLandmark[] = [
-    { id: "guimu-village", name: "归木村", x: 805, y: 760, width: 9, height: 9, kind: "stele", atlasIndex: 3, landmark: true },
-    { id: "worldtree", name: "世界树半岛", x: 759, y: 902, width: 9, height: 9, kind: "vine", atlasIndex: 0, landmark: true },
-    { id: "bubble-lake", name: "气泡湖", x: 779, y: 730, width: 9, height: 9, kind: "crystal", atlasIndex: 4, landmark: true },
+    { id: "guimu-village", name: "归木村", x: 805, y: 757, width: 9, height: 9, kind: "stele", atlasIndex: 3, landmark: true },
+    { id: "worldtree", name: "世界树半岛", x: 759, y: 888, width: 9, height: 9, kind: "tree", atlasIndex: 0, landmark: true },
+    { id: "bubble-lake", name: "气泡湖", x: 779, y: 726, width: 9, height: 9, kind: "crystal", atlasIndex: 4, landmark: true },
     { id: "flower-coast", name: "狂花海岸", x: 758, y: 853, width: 9, height: 9, kind: "portal", atlasIndex: 2, landmark: true },
     { id: "spider-den", name: "蛛后巢穴", x: 747, y: 806, width: 9, height: 9, kind: "sword", atlasIndex: 5, landmark: true },
 ];
@@ -77,9 +77,9 @@ function ordinaryKind(terrain: number, slot: number, roll: number, central: bool
     if (terrain === 2) return null;
     if (terrain === 0) {
         if (slot >= 3 || (!central && roll > 0.55)) return null;
-        return central ? slot === 0 ? "vine" : "crystal" : roll < 0.08 ? "crystal" : "vine";
+        return central ? slot === 0 ? "tree" : "crystal" : roll < 0.08 ? "crystal" : "tree";
     }
-    if (terrain === 1) return "vine";
+    if (terrain === 1) return "tree";
     if (terrain === 3 && slot < 4 && roll < 0.85) return roll < 0.16 ? "crystal" : "stele";
     if (terrain === 4 && slot < 4) return roll < 0.12 ? "sword" : "chest";
     if (terrain === 5 && slot < 4) return roll < 0.1 ? "crystal" : "sword";
@@ -113,7 +113,7 @@ export function slgDecorationsForChunk(terrain: ISlgTerrain, cx: number, cy: num
         const kind = ordinaryKind(terrainAt(terrain, Math.floor(seedX), Math.floor(seedY)).id, slot,
             unitHash(cx, cy, slot, 0x51494e47), central);
         if (!kind) continue;
-        const size = kind === "vine" ? 4.5 : kind === "crystal" ? 3.5 : kind === "chest" ? 3 : kind === "portal" ? 5 : kind === "sword" ? 5 : 6;
+        const size = kind === "tree" ? 4.5 : kind === "crystal" ? 3.5 : kind === "chest" ? 3 : kind === "portal" ? 5 : kind === "sword" ? 5 : 6;
         const variance = 0.9 + unitHash(cx, cy, slot, 0x41525431) * 0.2;
         const width = size * variance, height = size * variance;
         const entry: SlgDecoration = {
@@ -179,7 +179,7 @@ export interface SlgForestLayout {
     readonly decorations: readonly SlgForestLayoutDecoration[];
 }
 
-const LAYOUT_KINDS: readonly string[] = ["vine", "chest", "portal", "stele", "crystal", "sword"];
+const LAYOUT_KINDS: readonly string[] = ["tree", "chest", "portal", "stele", "crystal", "sword"];
 
 /** 布局文件的 fail-closed 形状闸：kind 必须是六类之一，坐标落在图内。 */
 export function validateSlgForestLayout(input: unknown): input is SlgForestLayout {
@@ -197,7 +197,7 @@ export function validateSlgForestLayout(input: unknown): input is SlgForestLayou
 }
 
 const LAYOUT_SIZE: Readonly<Record<SlgDecorationKind, number>> = {
-    vine: 4.5, chest: 3, portal: 5, stele: 6, crystal: 3.5, sword: 5,
+    tree: 4.5, chest: 3, portal: 5, stele: 6, crystal: 3.5, sword: 5,
 };
 
 /**
