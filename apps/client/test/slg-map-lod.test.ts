@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { ChunkFadeTracker, SLG_CHUNK_FADE_MAX_CONCURRENT, SLG_CHUNK_FADE_MS } from "../src/kits/slg/logic/chunkFade";
-import { buildSlgFarGround, buildSlgFarLandmarks, buildSlgFarOwnership, slgFarOwnershipVersion,
+import { buildSlgFarGround, buildSlgFarLandmarks, buildSlgFarOwnership, SLG_ISLAND_RECT, slgFarOwnershipVersion,
     SLG_FAR_LOD } from "../src/kits/slg/logic/farLayerMesh";
 import { MapCamera, SLG_GRID_PIXELS } from "../src/kits/slg/logic/mapCamera";
 import { installSlgMapDebugGlobal, slgMapDebug, SLG_MAP_DEBUG_GLOBAL } from "../src/kits/slg/logic/mapDebug";
@@ -62,18 +62,20 @@ test("SLG camera: LOD 经滞回状态化，阈值抖动不迁移，locate 不动
     assert.equal(camera.lod, lodBefore);
 });
 
-test("SLG far ground: 区域矩形 + 默认底色一张网格，不枚举格，alpha 写入顶点", () => {
-    const data = buildSlgFarGround(terrain(), 0.5);
-    const quadCount = data.indices16.length / 6;
-    assert.equal(quadCount, 2); // 默认底 + 1 个区域矩形
-    assert.equal(data.positions.length, quadCount * 12);
-    // 默认底覆盖全世界；区域矩形按格→像素换算。
-    assert.equal(data.positions[0], 0);
-    assert.equal(data.positions[1], SLG_MAP_H * SLG_GRID_PIXELS);
-    const regionLeft = 100 * SLG_GRID_PIXELS;
-    assert.ok([...data.positions.slice(12)].some((value) => value === regionLeft));
-    // 顶点色来自 palette；alpha 通道 = 0.5。
-    assert.equal(data.colors[3], 0.5);
+test("SLG far ground: 海面全幅底 + 原版岛图一张网格，alpha 写入顶点", () => {
+    const { sea, island } = buildSlgFarGround(terrain(), 0.5);
+    // 海面：一张全幅四边形，palette id 2 海青顶点色，alpha 通道 = 0.5。
+    assert.equal(sea.indices16.length, 6);
+    assert.equal(sea.positions[0], 0);
+    assert.equal(sea.positions[1], SLG_MAP_H * SLG_GRID_PIXELS);
+    assert.equal(sea.colors[3], 0.5);
+    // 岛图：SLG_ISLAND_RECT 全范围一张贴图四边形，UV 翻转北向。
+    assert.equal(island.indices16.length, 6);
+    assert.equal(island.minX, SLG_ISLAND_RECT.minX * SLG_GRID_PIXELS);
+    assert.equal(island.maxX, SLG_ISLAND_RECT.maxX * SLG_GRID_PIXELS);
+    assert.equal(island.minY, SLG_ISLAND_RECT.minY * SLG_GRID_PIXELS);
+    assert.equal(island.maxY, SLG_ISLAND_RECT.maxY * SLG_GRID_PIXELS);
+    assert.deepEqual([...island.uvs], [0, 1, 1, 1, 0, 0, 1, 0]);
     assert.throws(() => buildSlgFarGround(terrain(), 1.5), /alpha/);
 });
 

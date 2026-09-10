@@ -9,6 +9,8 @@ export interface SlgArtResources {
     readonly ground: Texture2D;
     readonly decorations: Texture2D;
     readonly overview: Texture2D;
+    /** 原版森之国纯地表烘图（远档地表）。 */
+    readonly island: Texture2D;
     /** 森之国真实布局复刻点位（chunkKey → 装饰）；无布局数据的 chunk 走确定性哈希。 */
     readonly layout: ReadonlyMap<number, readonly SlgDecoration[]>;
     release(): void;
@@ -33,14 +35,15 @@ export async function loadSlgArtResources(): Promise<SlgArtResources> {
             });
         });
     try {
-        const [data, ground, decorations, overview, layoutData] = await Promise.all([
+        const [data, ground, decorations, overview, layoutData, island] = await Promise.all([
             load("kits/slg/terrain", JsonAsset),
             load("kits/slg/senzhiguo/terrain-atlas/texture", Texture2D),
             load("kits/slg/senzhiguo/decoration-atlas/texture", Texture2D),
             load("kits/slg/senzhiguo/world-overview/texture", Texture2D),
             load("kits/slg/forest-layout", JsonAsset),
+            load("kits/slg/senzhiguo/island-ground/texture", Texture2D),
         ]);
-        if (!data || !ground || !decorations || !overview || !layoutData
+        if (!data || !ground || !decorations || !overview || !layoutData || !island
             || !validateSlgTerrain(data.json) || !validateSlgForestLayout(layoutData.json)) {
             throw new Error("SLG terrain/art/layout bundle is missing/invalid");
         }
@@ -51,6 +54,7 @@ export async function loadSlgArtResources(): Promise<SlgArtResources> {
             }
         }
         if (overview.width <= 0 || overview.height !== overview.width) throw new Error("SLG overview must be square");
-        return { terrain: data.json, ground, decorations, overview, layout: buildSlgLayoutIndex(layoutData.json), release };
+        if (island.width <= 0 || island.height <= 0) throw new Error("SLG island ground must have dimensions");
+        return { terrain: data.json, ground, decorations, overview, island, layout: buildSlgLayoutIndex(layoutData.json), release };
     } catch (error) { release(); throw error; }
 }
