@@ -35,8 +35,11 @@ function writeQuad(positions: Float32Array, indices: Uint16Array, quad: number,
     indices.set([v, v + 1, v + 2, v + 2, v + 1, v + 3], quad * 6);
 }
 
+/** 贴图在世界里每 4 格一个循环（邻格共享采样边，地表连续）；周期 8 格镜像防重复感。 */
+export const SLG_TEXTURE_SPAN = 4;
+
 /**
- * Each axis alternates between a tile and its reflection in WORLD coordinates. Thus adjacent
+ * Texture spans SLG_TEXTURE_SPAN grids with mirrored wrap in WORLD coordinates. Thus adjacent
  * tiles of the same terrain sample identical image edges, including across chunk boundaries.
  * The half-texel inset keeps interpolation inside the selected atlas cell. Ownership uses a
  * separate solid-color pass so its blue/red indicator cannot be multiplied by green terrain.
@@ -81,9 +84,19 @@ export function buildSlgTerrainMeshes(terrain: ISlgTerrain, cx: number, cy: numb
         }
         const u0 = uv.u0 + insetU, u1 = uv.u1 - insetU;
         const v0 = uv.v0 + insetV, v1 = uv.v1 - insetV;
-        const leftU = x % 2 === 0 ? u0 : u1, rightU = x % 2 === 0 ? u1 : u0;
-        const topV = y % 2 === 0 ? v0 : v1, bottomV = y % 2 === 0 ? v1 : v0;
-        uvs.set([leftU, topV, rightU, topV, leftU, bottomV, rightU, bottomV], quad * 8);
+        // 世界连续采样：同一地形的贴图每 SPAN 格一个循环、按 2*SPAN 周期镜像——相邻格共享采样边，
+        // 地面读作连续地表而不是逐格印花（格子观感来自网格线层，不来自贴图重启）。
+        const spanU = (value: number): number => {
+            const phase = value % (SLG_TEXTURE_SPAN * 2);
+            const t = phase < SLG_TEXTURE_SPAN ? phase / SLG_TEXTURE_SPAN : (SLG_TEXTURE_SPAN * 2 - phase) / SLG_TEXTURE_SPAN;
+            return u0 + t * (u1 - u0);
+        };
+        const spanV = (value: number): number => {
+            const phase = value % (SLG_TEXTURE_SPAN * 2);
+            const t = phase < SLG_TEXTURE_SPAN ? 1 - phase / SLG_TEXTURE_SPAN : (phase - SLG_TEXTURE_SPAN) / SLG_TEXTURE_SPAN;
+            return v0 + t * (v1 - v0);
+        };
+        uvs.set([spanU(x), spanV(y + 1), spanU(x + 1), spanV(y + 1), spanU(x), spanV(y), spanU(x + 1), spanV(y)], quad * 8);
         const tile = tiles.get(tileIdFromGrid(x, y));
         if (tile?.ownerUid) {
             writeQuad(ownerPositions, ownerIndices, ownerCount, left, bottom, right, top);
