@@ -37,6 +37,7 @@ class FakeNode extends EventHub {
         return { convertToNodeSpaceAR: (point) => new FakeVec3(point.x - 400, point.y - 600, point.z) };
     }
     setPosition(): void {}
+    setScale(): void {}
 }
 class FakeVec3 { constructor(readonly x: number, readonly y: number, readonly z: number) {} }
 class FakeCocosView {
@@ -44,13 +45,20 @@ class FakeCocosView {
     readonly layerWidth = 800;
     readonly layerHeight = 1200;
 }
-class FakeRenderer { dispose(): void {} }
+class FakeRenderer { render(): void {} dispose(): void {} }
+class FakeFarRenderer {
+    readonly node = new FakeNode();
+    render(): void {}
+    setVisible(): void {}
+    dispose(): void {}
+}
 class FakeOverview {
     readonly node = new FakeNode();
     visible = false;
     private readonly visibilityChanged: (visible: boolean) => void;
     constructor(...args: unknown[]) { this.visibilityChanged = args[7] as (visible: boolean) => void; }
     setVisible(value: boolean): void { this.visible = value; this.visibilityChanged(value); }
+    updateViewport(): void {}
     dispose(): void {}
 }
 
@@ -70,6 +78,7 @@ async function loadSubject(): Promise<Subject> {
         if (request === "../../../view/uiPlate") return { createSolidPlate: () => { throw new Error("input tests do not build renderer nodes"); } };
         if (request === "./SlgChunkRenderer") return { SlgChunkRenderer: FakeRenderer };
         if (request === "./SlgDecorationRenderer") return { SlgDecorationRenderer: FakeRenderer };
+        if (request === "./SlgFarLayerRenderer") return { SlgFarLayerRenderer: FakeFarRenderer };
         if (request === "./SlgWorldOverview") return { SlgWorldOverview: FakeOverview };
         if (request === "./SlgArtResources") return { loadSlgArtResources: async () => ({ terrain: {}, release(): void {} }) };
         return originalLoad.call(this, request, parent, isMain);
@@ -84,15 +93,21 @@ interface InputView {
     mapBottom: number;
     mapTop: number;
     mapCenter: number;
+    world: FakeNode;
     terrainLayer: FakeNode;
     decorationLayer: FakeNode;
     overview: FakeOverview | null;
     logic: {
         camera: MapCamera;
-        runtime: { now(): number };
+        runtime: { now(): number; selfUid(): string };
         updateViewport(): void;
         select(x: number, y: number): void;
         dispose(): void;
+        selectedTile(): unknown;
+        canCapture(): boolean;
+        actionText(): string;
+        busy: boolean;
+        trophies: number;
     };
     offTick: () => void;
     bindInput(bind: boolean): void;
@@ -111,10 +126,11 @@ async function withView(body: (harness: {
     const selections: { x: number; y: number }[] = [];
     let now = 1000, updates = 0, disposed = 0, stoppedTicks = 0;
     view.active = true; view.mapBottom = -300; view.mapTop = 420; view.mapCenter = 60;
-    view.terrainLayer = new FakeNode(); view.decorationLayer = new FakeNode();
+    view.world = new FakeNode(); view.terrainLayer = new FakeNode(); view.decorationLayer = new FakeNode();
     view.logic = {
-        camera, runtime: { now: () => now }, updateViewport: () => { updates += 1; },
+        camera, runtime: { now: () => now, selfUid: () => "" }, updateViewport: () => { updates += 1; },
         select: (x, y) => { selections.push({ x, y }); }, dispose: () => { disposed += 1; camera.cancel(); },
+        selectedTile: () => null, canCapture: () => false, actionText: () => "", busy: false, trophies: 0,
     };
     view.offTick = () => { stoppedTicks += 1; };
     view.bindInput(true);
