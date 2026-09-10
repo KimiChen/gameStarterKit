@@ -43,7 +43,7 @@
 ## 本轮验收
 
 - `verify:all` 退出 0：FGUI 66、inventory 115、客户端 513、服务端 751 个测试通过，包含类型检查、同步及既有矩阵。
-- Creator 真实桌面预览 23 步通过，19 张原始截图、console 空：地表和透明装饰、我方归属、拖动、四档 LOD、实地图地标定位、绘卷输入隔离、关闭与重新加载。另留三张隐藏调试叠层的展示截图。见 [完整证据](../../../../../docs/evidence/creator-2026-09-10/slg-art/README.md)。
+- Creator 真实桌面预览 23 步通过，19 张原始截图、console 空：地表和透明装饰、我方归属、拖动、四档 LOD、实地图地标定位、绘卷输入隔离、关闭与重新加载。另留三张隐藏调试叠层的展示截图。见 docs/evidence/creator-2026-09-10/slg-art/（本地预览证据，按 .gitignore 政策不入库）。
 - `tools/creator-preview/slg.mjs` 与 `apps/server/test/creator-preview-tool.test.ts` 已扩展；总览隐藏主图期间不读取不存在的公开主图节点，关闭后再核验位置未变。
 - 未做 Creator 资源失败注入、敌方红色归属场景、真实触屏或长跑内存实验；失败回调与资源引用计数、红蓝归属几何、坐标及相机行为由客户端测试覆盖。
 

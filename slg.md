@@ -256,6 +256,6 @@ cc 桩缺口按需补 `apps/client/cc-stub.d.ts` / `client-test-stubs.d.ts`（`c
 | 空库与包测试 | 独立空库首次应用 SLG 001/002 共 4+3 条语句，七表齐全；锁驱动 `plugin -- test slg --int` 35/35，通过且无跳过（含真实 SQL/Redis 集成 9 条）；重复 bootstrap 新应用 0、跳过 3（含 arena），临时库清理成功。 |
 | Creator 实证 | Cocos Creator 3.8.8 桌面真实预览 17 步通过、13 截图、console 空；入口/占领/刷新/鼠标平移/滚轮 LOD 1–4/关闭，稳定 LOD 4 已目视铺满。触屏 pinch 仅逻辑测试，单次 60 FPS 读数不构成容量结论。 |
 
-机器日志、截图与复跑动线统一见 [docs/evidence/creator-2026-09-09/slg/README.md](docs/evidence/creator-2026-09-09/slg/README.md)，干净安装细节见其 [clean-install](docs/evidence/creator-2026-09-09/slg/clean-install/README.md)。
+机器日志、截图与复跑动线统一见 docs/evidence/creator-2026-09-09/slg/，干净安装细节见其 clean-install/（本地预览证据，按 .gitignore 政策不入库）。
 
 **未进入本轮范围**：2b 的 GameRoom/AOI、军队与行军线、跨房可见性及正式名册策略，继续等待 MF5（含 GameRoom 消费/名册验收）；无人在线 worker 等待 MF7 受租约保护 KitTx。日志消费者的故障恢复窗口和容量也不以本轮阶段 1 / 2a 结果代验。
