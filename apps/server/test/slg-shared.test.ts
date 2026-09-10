@@ -11,21 +11,21 @@ import {
     validateSlgMapTilesReq, validateSlgMapTilesRes, validateSlgMarchDispatchReq, validateSlgMarchRecallRes,
 } from "@game/shared/protocol/lobbyRpc/domains/slg";
 
-test("slg shared: 10000×10000 grid ids round trip across both axes and uint32 boundaries", () => {
+test("slg shared: 1500×1500 grid ids round trip across both axes and uint32 boundaries", () => {
     const ids = new Set<number>();
-    for (let i = 0; i < 10000; i++) for (const [x, y] of [[i, 0], [i, 9999], [0, i], [9999, i]]) {
+    for (let i = 0; i < 1500; i++) for (const [x, y] of [[i, 0], [i, 1499], [0, i], [1499, i]]) {
         const id = tileIdFromGrid(x, y); ids.add(id);
         assert.deepEqual(gridFromTileId(id), { x, y });
     }
-    assert.equal(SLG_MAP_W * SLG_MAP_H, 100000000);
-    assert.equal(ids.size, 39996);
-    assert.equal(tileIdFromGrid(9999, 9999), 655304463);
-    for (const invalid of [-1, 10000, 65535, 10000 * 65536, 0.5, NaN, Infinity, "1"]) assert.equal(isSlgTileId(invalid), false);
-    assert.throws(() => tileIdFromGrid(10000, 0));
+    assert.equal(SLG_MAP_W * SLG_MAP_H, 2250000);
+    assert.equal(ids.size, 5996);
+    assert.equal(tileIdFromGrid(1499, 1499), 98239963);
+    for (const invalid of [-1, 1500, 65535, 1500 * 65536, 0.5, NaN, Infinity, "1"]) assert.equal(isSlgTileId(invalid), false);
+    assert.throws(() => tileIdFromGrid(1500, 0));
 });
 test("slg shared: chunk border, final chunk, bounded request area and exact keys", () => {
     assert.deepEqual(chunkRectForGridRect({ minX: 15, minY: 15, maxX: 16, maxY: 16 }), { minX: 0, minY: 0, maxX: 1, maxY: 1 });
-    assert.deepEqual(gridRectForChunkRect({ minX: 624, minY: 624, maxX: 624, maxY: 624 }), { minX: 9984, minY: 9984, maxX: 9999, maxY: 9999 });
+    assert.deepEqual(gridRectForChunkRect({ minX: 93, minY: 93, maxX: 93, maxY: 93 }), { minX: 1488, minY: 1488, maxX: 1499, maxY: 1499 });
     assert.throws(() => validateSlgChunkRect({ minX: 0, minY: 0, maxX: 12, maxY: 12 }));
     assert.throws(() => validateSlgChunkRect({ minX: 1, minY: 0, maxX: 0, maxY: 0 }));
     assert.throws(() => validateSlgMapTilesReq({ rect: { minX: 0, minY: 0, maxX: 0, maxY: 0 }, uid: "other" }));
@@ -59,14 +59,14 @@ test("slg terrain: frozen content validation and ordered regional painting", () 
     const source = readFileSync(new URL("../../kits/slg/data/terrain.json", import.meta.url), "utf8");
     const resource = readFileSync(new URL("../../Cocos/assets/resources/kits/slg/terrain.json", import.meta.url), "utf8");
     assert.equal(resource, source, "Creator resource must exactly mirror the kit's terrain source");
-    assert.equal(validateSlgTerrain(JSON.parse(source)), true, "shipped terrain must match the 10000×10000 contract");
-    const data = { name: "Demo", width: 10000, height: 10000, palette: [{ id: 0, color: [1, 2, 3] }, { id: 1, color: [4, 5, 6] }], regions: [{ x: 2, y: 3, width: 4, height: 5, terrain: 1 }] };
+    assert.equal(validateSlgTerrain(JSON.parse(source)), true, "shipped terrain must match the 1500×1500 contract");
+    const data = { name: "Demo", width: 1500, height: 1500, palette: [{ id: 0, color: [1, 2, 3] }, { id: 1, color: [4, 5, 6] }], regions: [{ x: 2, y: 3, width: 4, height: 5, terrain: 1 }] };
     if (!validateSlgTerrain(data)) throw new Error("valid fixture rejected");
     assert.equal(terrainAt(data, 0, 0).id, 0);
     assert.equal(terrainAt(data, 2, 3).id, 1);
     assert.equal(terrainAt(data, 6, 3).id, 0);
-    assert.equal(validateSlgTerrain({ ...data, width: 10001 }), false);
+    assert.equal(validateSlgTerrain({ ...data, width: 1501 }), false);
     assert.equal(validateSlgTerrain({ ...data, palette: [data.palette[0], data.palette[0]] }), false);
-    assert.equal(validateSlgTerrain({ ...data, regions: [{ x: 9999, y: 0, width: 2, height: 1, terrain: 0 }] }), false);
+    assert.equal(validateSlgTerrain({ ...data, regions: [{ x: 1499, y: 0, width: 2, height: 1, terrain: 0 }] }), false);
     assert.equal(validateSlgTerrain({ ...data, regions: [{ x: 0, y: 0, width: 1, height: 1, terrain: 2 }] }), false);
 });

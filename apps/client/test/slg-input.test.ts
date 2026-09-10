@@ -176,9 +176,9 @@ test("SLG input: fullscreen foreground owns every pointer event and route close 
 test("SLG input: central click selects, drag pans without selecting, and wheel zoom preserves its anchor", async () => {
     await withView(({ camera, selections, emit, advance, updates }) => {
         emit(EVENTS.MOUSE_DOWN); emit(EVENTS.MOUSE_UP);
-        assert.deepEqual(selections, [{ x: 5000, y: 5000 }]);
+        assert.deepEqual(selections, [{ x: 750, y: 750 }]);
         emit(EVENTS.MOUSE_DOWN); advance(20); emit(EVENTS.MOUSE_MOVE, 80, 30); emit(EVENTS.MOUSE_UP);
-        assert.ok(camera.x < 5000 && camera.y < 5000);
+        assert.ok(camera.x < 750 && camera.y < 750);
         assert.equal(selections.length, 1);
         const anchor = camera.worldAt(120, 50), scale = camera.scale;
         emit(EVENTS.MOUSE_WHEEL, 120, 50, 1, 200);

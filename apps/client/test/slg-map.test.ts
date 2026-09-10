@@ -61,18 +61,18 @@ test("SLG overview locate: preserves zoom, stops active inertia and discards bot
     const draggingX = camera.x;
     camera.step(0.016);
     assert.ok(camera.x < draggingX, "fixture must have active inertia before the jump");
-    camera.locate(8421.5, 2143.25);
+    camera.locate(421.5, 1143.25);
     const locatedVersion = camera.version;
     assert.equal(camera.scale, scale);
     for (let step = 0; step < 10; step++) camera.step(0.05);
-    near(camera.x, 8421.5); near(camera.y, 2143.25);
+    near(camera.x, 421.5); near(camera.y, 1143.25);
     assert.equal(camera.version, locatedVersion, "old inertia cannot drift away from the overview destination");
 
     camera.start(2, -40, 0, 100); camera.start(3, 40, 0, 100);
     camera.move(3, 80, 20, 116);
     const pinchedScale = camera.scale;
     assert.equal(camera.pointerCount, 2);
-    camera.locate(1234, 8765);
+    camera.locate(1234, 765);
     const jumpedVersion = camera.version;
     assert.equal(camera.scale, pinchedScale, "an overview jump retains the user's latest pinch zoom");
     assert.equal(camera.pointerCount, 0);
@@ -80,7 +80,7 @@ test("SLG overview locate: preserves zoom, stops active inertia and discards bot
     assert.equal(camera.end(2, 134), null, "old touch release cannot become a tile selection");
     assert.equal(camera.end(3, 135), null);
     camera.step(0.05);
-    near(camera.x, 1234); near(camera.y, 8765);
+    near(camera.x, 1234); near(camera.y, 765);
     assert.equal(camera.version, jumpedVersion);
 });
 
@@ -265,20 +265,20 @@ test("SLG map: RATE_LIMITED waits, exponentially backs off and recovers without 
     logic.dispose();
 });
 
-test("SLG 10000-square map: far edge and widest viewport allocate only visible chunks", () => {
-    assert.equal(SLG_MAP_W, 10000); assert.equal(SLG_MAP_H, 10000);
+test("SLG 1500×1500 map: far edge and widest viewport allocate only visible chunks", () => {
+    assert.equal(SLG_MAP_W, 1500); assert.equal(SLG_MAP_H, 1500);
     const camera = new MapCamera(750, 1100);
     camera.zoom(0.001); camera.pan(-10000000, -10000000);
     const rect = camera.visibleRect();
-    assert.equal(rect.maxX, 9999); assert.equal(rect.maxY, 9999);
+    assert.equal(rect.maxX, 1499); assert.equal(rect.maxY, 1499);
     const streamer = new MapStreamer();
     const delta = streamer.update(rect);
-    assert.ok(delta.added.length < 200, "one hundred million cells must not be materialized");
+    assert.ok(delta.added.length < 200, "2.25 million cells must not be materialized");
     let loaded = 0;
     for (;;) {
         const batch = streamer.takeBatch(); if (!batch.length) break;
         assert.ok(batch.length <= 4);
-        for (const load of batch) { assert.ok(load.x <= 624 && load.y <= 624); streamer.accept(load); loaded += 1; }
+        for (const load of batch) { assert.ok(load.x <= 93 && load.y <= 93); streamer.accept(load); loaded += 1; }
     }
     assert.equal(loaded, delta.added.length);
 });

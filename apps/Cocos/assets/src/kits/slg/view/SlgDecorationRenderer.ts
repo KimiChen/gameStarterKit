@@ -20,7 +20,8 @@ export class SlgDecorationRenderer {
     private readonly insetV: number;
     private disposed = false;
 
-    constructor(private readonly root: Node, private readonly terrain: ISlgTerrain, texture: Texture2D) {
+    constructor(private readonly root: Node, private readonly terrain: ISlgTerrain, texture: Texture2D,
+        private readonly layout?: ReadonlyMap<number, readonly SlgDecoration[]>) {
         if (!(texture.width > 0 && texture.height > 0)) throw new Error("SLG decoration atlas must be loaded before rendering");
         this.insetU = 0.5 / texture.width;
         this.insetV = 0.5 / texture.height;
@@ -102,7 +103,7 @@ export class SlgDecorationRenderer {
     /** 内容枚举（含调试隐藏层覆写）；远东先绘制的顺序与块内封界由 mapArt 保证。 */
     private decorationsFor(cx: number, cy: number, lod: number): readonly SlgDecoration[] {
         const layers = visibleMapLayers(lod, slgMapDebug.hiddenLayers);
-        const decorations = [...slgDecorationsForChunk(this.terrain, cx, cy, lod)]
+        const decorations = [...slgDecorationsForChunk(this.terrain, cx, cy, lod, this.layout)]
             .filter((entry) => layers.includes(entry.landmark ? "landmarks" : "decorations"))
             .sort((a, b) => b.y - a.y || a.x - b.x);
         if (decorations.length > SLG_MAX_DECORATIONS_PER_CHUNK) throw new Error("SLG decoration chunk exceeds its mesh capacity");

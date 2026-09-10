@@ -133,15 +133,16 @@ test("SLG terrain mesh: close LODs preserve grid gaps while distant LODs join ex
 });
 
 test("SLG terrain mesh: farthest chunk stays bounded and indices address only its own geometry", () => {
-    const { ground, ownership, quadCapacity } = buildSlgTerrainMeshes(terrain(), 624, 624, 3, EMPTY_TILES, SELF);
-    assert.equal(quadCapacity, SLG_CHUNK_SIZE * SLG_CHUNK_SIZE);
+    // 1500 = 93×16 + 12：尾块是不满 16×16 的部分块（12×12）。
+    const { ground, ownership, quadCapacity } = buildSlgTerrainMeshes(terrain(), 93, 93, 3, EMPTY_TILES, SELF);
+    assert.equal(quadCapacity, 12 * 12);
     assert.equal(ground.positions.length, quadCapacity * 4 * 3);
     assert.equal(ground.indices16.length, quadCapacity * 6);
     assert.ok([...ground.indices16].every((index) => index < ground.positions.length / 3));
     assert.equal(ground.maxX, SLG_MAP_W * SLG_GRID_PIXELS);
     assert.equal(ground.maxY, SLG_MAP_H * SLG_GRID_PIXELS);
     assert.equal(ownership, null);
-    assert.throws(() => buildSlgTerrainMeshes(terrain(), 625, 0, 0, EMPTY_TILES, SELF), RangeError);
+    assert.throws(() => buildSlgTerrainMeshes(terrain(), 94, 0, 0, EMPTY_TILES, SELF), RangeError);
     assert.throws(() => buildSlgTerrainMeshes(terrain(), 0, 0, 4, EMPTY_TILES, SELF), RangeError);
     assert.throws(() => buildSlgTerrainMeshes(terrain(), 0, 0, 0, EMPTY_TILES, SELF, 0, 0), RangeError);
 });
