@@ -195,7 +195,7 @@ test("slg MySQL：提交后Redis提示/effect不可用，日志仍完整且重�
   assert.equal(changes.nextCursor, 1);
 });
 
-test("slg MySQL：10000×10000地图边缘chunk稀疏分页与跨区隔离，不种默认格或读入邻接行", async () => {
+test("slg MySQL：1500×1500地图边缘chunk稀疏分页与跨区隔离，不种默认格或读入邻接行", async () => {
   const queries: { sql: string; params: unknown[] }[] = [];
   const f = await fixture({ run: (sId, fn) => withKitTx("slg", sId, (tx) => fn({ ...tx,
     query: async <T>(sql: string, params: unknown[] = []) => {
@@ -203,19 +203,19 @@ test("slg MySQL：10000×10000地图边缘chunk稀疏分页与跨区隔离，不
     },
   })) });
   const other = await fixture(); const uid = await f.user();
-  assert.equal(SLG_MAP_W, 10000); assert.equal(SLG_MAP_H, 10000);
+  assert.equal(SLG_MAP_W, 1500); assert.equal(SLG_MAP_H, 1500);
   const chunkX = Math.ceil(SLG_MAP_W / SLG_CHUNK_SIZE) - 1, chunkY = Math.ceil(SLG_MAP_H / SLG_CHUNK_SIZE) - 1;
   const edgeTile = tileIdFromGrid(SLG_MAP_W - 1, SLG_MAP_H - 1);
   await f.api.captureTile(uid, f.sId, edgeTile, f.op(uid, "capture", "edge"));
   await f.api.captureTile(uid, f.sId, tileIdFromGrid(chunkX * SLG_CHUNK_SIZE - 1, SLG_MAP_H - 1), f.op(uid, "capture", "neighbor"));
   const edge = await f.api.readTiles(uid, f.sId, { minX: chunkX, maxX: chunkX, minY: chunkY, maxY: chunkY });
   assert.equal(edge.tiles.length, 1); assert.equal(edge.tiles[0].tileId, edgeTile);
-  assert.equal(await f.count("k_slg_tile"), 2, "一亿默认格不落SQL，仅存两条被修改格");
+  assert.equal(await f.count("k_slg_tile"), 2, "225 万默认格不落SQL，仅存两条被修改格");
   await f.api.readTiles(uid, f.sId, { minX: chunkX - 1, maxX: chunkX, minY: chunkY - 1, maxY: chunkY });
   const reads = queries.filter((query) => query.sql.includes("FROM k_slg_tile") && query.sql.includes(" OR "));
   assert.equal(reads.length, 2);
   for (const query of reads) {
-    assert.doesNotMatch(query.sql, /MOD|FLOOR/u, "不按整张10000宽的跨度扫描后过滤");
+    assert.doesNotMatch(query.sql, /MOD|FLOOR/u, "不按整张1500宽的跨度扫描后过滤");
     const ranges = query.params.slice(1);
     assert.ok(ranges.length <= 128, "最多64个行范围，所有坐标参数绑定");
     let candidates = 0;

@@ -279,4 +279,19 @@ cc 桩缺口按需补 `apps/client/cc-stub.d.ts` / `client-test-stubs.d.ts`（`c
 | 8 | 地形高度 / 阻挡 / 官道加速影响行军路径与战斗 | **冻结维持 v0 拍板**（地形仅展示）；若解冻，接缝在 `marchDurationMs` 与 dispatch 目标校验 | 冻结（不实施） |
 | 9 | 玩法内容层：资源地 / 建筑 / 城市影响范围 / 地块标记 / 气泡 / 通报 / 侦查 / 天气冻土 / 八阵区 / NPC 军队 / 官道 | 玩法策划选题，超出机制样例 v0 定位，非缺陷 | 开放（策划） |
 
-**本轮（差距分析小版本）验收**：typecheck 退出 0；客户端测试 550/550（新增 `slg-map-lod.test.ts` 8 项：滞回分档 / 相机状态化 / 远档地表 / 地标 UV / 稀疏归属 / fade 状态机 / 调试开关）；镜像同步检查一致。远档整图层、淡入淡出与 GM 开关的真引擎表现为 Creator 预览后续项（未随本轮验证）。
+**本轮（差距分析小版本）验收**：typecheck 退出 0；客户端测试 550/550（新增 `slg-map-lod.test.ts` 8 项：滞回分档 / 相机状态化 / 远档地表 / 地标 UV / 稀疏归属 / fade 状态机 / 调试开关）；镜像同步检查一致；Creator 预览 23 步全过（含 LOD 4 远档整图层、地标定位、关闭重开资源），预览工具随之适配 `slg-far-*` 证据（`tools/creator-preview/slg.mjs` + 其单测 15/15）。
+
+## 9. 森之国主题换肤与 1500×1500 尺寸（2026-09-10）
+
+按用户要求：地图尺寸改用三战标准图 **1500×1500**（`zlbAllVersion/code/script/config/config_3d.lua:11` 的 `MAP_WIDTH/MAP_HEIGHT=1500`，正方形格）；主题换为《杖剑传说》森之国素材（zjcs-1.2.6）。
+
+| 决策 | 结果 |
+| --- | --- |
+| 地表真贴图（UnityPy 解 bundle） | **未遂，走预登记 fallback**：chunk 地表 sprite 的外部引用 bundle（`CAB-a4f77805…`）不在学习包的 1804 个已拉 bundle 内；程序化地表 + 森之国调色板替代，留档于 `apps/kits/slg/art/senzhiguo-v1/` |
+| 摆件 | 从 `AppearanceAssets/Map` 部件图人工策展切片六类：藤蔓 / 宝箱 / 传送门 / 祭坛 / 灵晶 / 古剑碑 |
+| 布局 | `mapinfowrap_11`（77 区 1803 实体，MessagePack）解码，坐标 5× 放大复刻中心区；装饰双源（中心区真实点位 + 其余确定性哈希）；地标换森之国五地名（经 chunk 足迹与旱地校验微调） |
+| 尺寸切换 | `SLG_MAP_W/H` 10000→1500；`SLG_TILE_ID_STRIDE` / SQL 列宽兼容；尾块 12 格由既有部分块逻辑承接 |
+| 旧 SQL 数据 | dev 库 10000 尺度数据作废（本地重建即可） |
+| 版权口径 | 素材仅本仓私有研究，禁止二次分发；写进 `art/senzhiguo-v1/README.md` |
+
+验收：typecheck 0；客户端 550/550、服务端 755/755、集成 9/9（真实 MySQL/Redis）；Creator 预览 23 步见下节复核记录。

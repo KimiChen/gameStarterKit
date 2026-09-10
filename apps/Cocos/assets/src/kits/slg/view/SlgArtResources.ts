@@ -1,6 +1,7 @@
 /** A route owns one reference to every loaded asset; stale/failed loads release the entire bundle. */
 import { JsonAsset, resources, Texture2D } from "cc";
 import { validateSlgTerrain, type ISlgTerrain } from "../../../shared/kits/slg/api/worldmap/index";
+import { buildSlgLayoutIndex, validateSlgForestLayout, type SlgDecoration } from "../logic/mapArt";
 import { SLG_ART_ATLAS_CELL_SIZE, SLG_ART_ATLAS_COLUMNS, SLG_ART_ATLAS_ROWS } from "../logic/mapArt";
 
 export interface SlgArtResources {
@@ -8,6 +9,8 @@ export interface SlgArtResources {
     readonly ground: Texture2D;
     readonly decorations: Texture2D;
     readonly overview: Texture2D;
+    /** 森之国真实布局复刻点位（chunkKey → 装饰）；无布局数据的 chunk 走确定性哈希。 */
+    readonly layout: ReadonlyMap<number, readonly SlgDecoration[]>;
     release(): void;
 }
 
@@ -30,14 +33,16 @@ export async function loadSlgArtResources(): Promise<SlgArtResources> {
             });
         });
     try {
-        const [data, ground, decorations, overview] = await Promise.all([
+        const [data, ground, decorations, overview, layoutData] = await Promise.all([
             load("kits/slg/terrain", JsonAsset),
-            load("kits/slg/qingyuan/terrain-atlas/texture", Texture2D),
-            load("kits/slg/qingyuan/decoration-atlas/texture", Texture2D),
-            load("kits/slg/qingyuan/world-overview/texture", Texture2D),
+            load("kits/slg/senzhiguo/terrain-atlas/texture", Texture2D),
+            load("kits/slg/senzhiguo/decoration-atlas/texture", Texture2D),
+            load("kits/slg/senzhiguo/world-overview/texture", Texture2D),
+            load("kits/slg/forest-layout", JsonAsset),
         ]);
-        if (!data || !ground || !decorations || !overview || !validateSlgTerrain(data.json)) {
-            throw new Error("SLG terrain or art bundle is missing/invalid");
+        if (!data || !ground || !decorations || !overview || !layoutData
+            || !validateSlgTerrain(data.json) || !validateSlgForestLayout(layoutData.json)) {
+            throw new Error("SLG terrain/art/layout bundle is missing/invalid");
         }
         for (const texture of [ground, decorations]) {
             if (texture.width !== SLG_ART_ATLAS_COLUMNS * SLG_ART_ATLAS_CELL_SIZE
@@ -46,6 +51,6 @@ export async function loadSlgArtResources(): Promise<SlgArtResources> {
             }
         }
         if (overview.width <= 0 || overview.height !== overview.width) throw new Error("SLG overview must be square");
-        return { terrain: data.json, ground, decorations, overview, release };
+        return { terrain: data.json, ground, decorations, overview, layout: buildSlgLayoutIndex(layoutData.json), release };
     } catch (error) { release(); throw error; }
 }

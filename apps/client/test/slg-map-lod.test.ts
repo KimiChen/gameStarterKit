@@ -96,7 +96,7 @@ test("SLG far landmarks: 全部地标一张网格，UV 内缩留在图集格内�
 test("SLG far ownership: 稀疏归属按 tileId 排序、我方/敌方配色、alpha 相乘、空图返回 null", () => {
     assert.equal(buildSlgFarOwnership(new Map(), SELF), null);
     const tiles = new Map<number, ISlgTile>([
-        [tileIdFromGrid(5000, 5000), { tileId: tileIdFromGrid(5000, 5000), ownerUid: SELF, guardPower: 1 }],
+        [tileIdFromGrid(500, 500), { tileId: tileIdFromGrid(500, 500), ownerUid: SELF, guardPower: 1 }],
         [tileIdFromGrid(3, 7), { tileId: tileIdFromGrid(3, 7), ownerUid: "other", guardPower: 2 }],
     ]);
     const data = buildSlgFarOwnership(tiles, SELF, 0.5);

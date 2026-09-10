@@ -2,8 +2,10 @@
 import { assertExactKeys, boundedString, finiteInteger, WireValidationError } from "../../../../protocol/http";
 import { rpcRecord as requireRecord } from "../../../../protocol/lobbyRpc/primitives";
 
-export const SLG_MAP_W = 10000;
-export const SLG_MAP_H = 10000;
+// 1500×1500 沿用《三国志·战略版》标准图格数（zlbAllVersion code/script/config/config_3d.lua:11
+// 的 MAP_WIDTH/MAP_HEIGHT=1500）；正方形格。
+export const SLG_MAP_W = 1500;
+export const SLG_MAP_H = 1500;
 export const SLG_CHUNK_SIZE = 16;
 export const SLG_MAX_GUARD_POWER = 99;
 export const SLG_MAX_GUARD = SLG_MAX_GUARD_POWER;
