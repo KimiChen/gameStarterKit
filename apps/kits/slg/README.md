@@ -2,7 +2,7 @@
 
 `slg` 是 SQL 权威的大地图机制样例，提供分别版本化的 `worldmap` / `march` 两个 API 面。阶段 1 包含地图页与即时占领，阶段 2a 包含行军 Lobby RPC 与懒结算；二者同批登记 SQL 与 API，不登记 `slgWorld` mode。地图现已接入「青原仙洲」地表、透明装饰和独立总览，默认入口仍由宿主 placement 决定。
 
-阶段 1 / 2a 已于 2026-09-09 实现并验收：主树全量校验、真实 Creator 桌面地图预览、临时制品干净安装与独立空数据库迁移/包测试均通过。证据见 [本轮验收记录](../../../docs/evidence/creator-2026-09-09/slg/README.md)。实施依据见根 [slg.md](../../../slg.md)，框架接缝见 [docs/MMO.md](../../../docs/MMO.md)。
+阶段 1 / 2a 已于 2026-09-09 实现并验收：主树全量校验、真实 Creator 桌面地图预览、临时制品干净安装与独立空数据库迁移/包测试均通过。证据见 docs/evidence/creator-2026-09-09/slg/（本地预览证据，按 .gitignore 政策不入库，下同）。实施依据见根 [slg.md](../../../slg.md)，框架接缝见 [docs/MMO.md](../../../docs/MMO.md)。
 
 ## 定义了什么
 
@@ -72,11 +72,11 @@
 
 ## 验收与后续边界
 
-2026-09-09 验收通过：`verify:all` 退出 0（FGUI 66、inventory 115、客户端 487、服务端 749 个测试）；Creator 桌面预览 17 步、13 张截图、console 空，涵盖地图打开、选格占领及刷新、鼠标拖动、滚轮四档 LOD、关闭；临时制品干净安装后按包锁执行 `plugin -- test slg --int`，35/35 通过，含真实 SQL/Redis 集成 9 条。独立空库首次应用 SLG 001/002 的 4+3 条建表语句，重复 bootstrap 新应用 0、跳过 3（含 arena）；临时库已清理。完整证据及范围见 [验收记录](../../../docs/evidence/creator-2026-09-09/slg/README.md)。触屏 pinch 当前只有逻辑测试，截图中的 60 FPS 是单次预览读数，未作容量结论。
+2026-09-09 验收通过：`verify:all` 退出 0（FGUI 66、inventory 115、客户端 487、服务端 749 个测试）；Creator 桌面预览 17 步、13 张截图、console 空，涵盖地图打开、选格占领及刷新、鼠标拖动、滚轮四档 LOD、关闭；临时制品干净安装后按包锁执行 `plugin -- test slg --int`，35/35 通过，含真实 SQL/Redis 集成 9 条。独立空库首次应用 SLG 001/002 的 4+3 条建表语句，重复 bootstrap 新应用 0、跳过 3（含 arena）；临时库已清理。完整证据及范围见 docs/evidence/creator-2026-09-09/slg/。触屏 pinch 当前只有逻辑测试，截图中的 60 FPS 是单次预览读数，未作容量结论。
 
-2026-09-10「青原仙洲」美术接入已验收：`verify:all` 退出 0（FGUI 66、inventory 115、客户端 513、服务端 751 个测试）；Creator 23 步、19 张截图、console 空，覆盖地表和透明装饰、占领刷新、四档 LOD、实地图定位、绘卷输入隔离、关闭及重开资源。资源加载失败后的引用回收由客户端测试覆盖；未做真实触屏、失败资源注入或长跑内存实验。详见 [美术接入验收记录](../../../docs/evidence/creator-2026-09-10/slg-art/README.md)。
+2026-09-10「青原仙洲」美术接入已验收：`verify:all` 退出 0（FGUI 66、inventory 115、客户端 513、服务端 751 个测试）；Creator 23 步、19 张截图、console 空，覆盖地表和透明装饰、占领刷新、四档 LOD、实地图定位、绘卷输入隔离、关闭及重开资源。资源加载失败后的引用回收由客户端测试覆盖；未做真实触屏、失败资源注入或长跑内存实验。详见 docs/evidence/creator-2026-09-10/slg-art/。
 
-2026-09-10 修复设置页 ScrollView 吞掉地图输入的回归：地图改用全屏前景节点接收触摸、鼠标和滚轮，关闭时解绑，鼠标离开画布时取消手势；预览入口适配 `card-map`。Chrome 标准流程 23/23 步、补充隔离检查 7/7 步通过，console 空，确认中央操作不滚动后台设置，标题栏和总览不穿透，关闭后设置恢复滚动。详见 [输入修复验收记录](../../../docs/evidence/creator-2026-09-10/slg-input-fix/README.md)。
+2026-09-10 修复设置页 ScrollView 吞掉地图输入的回归：地图改用全屏前景节点接收触摸、鼠标和滚轮，关闭时解绑，鼠标离开画布时取消手势；预览入口适配 `card-map`。Chrome 标准流程 23/23 步、补充隔离检查 7/7 步通过，console 空，确认中央操作不滚动后台设置，标题栏和总览不穿透，关闭后设置恢复滚动。详见 docs/evidence/creator-2026-09-10/slg-input-fix/。
 
 主树的 SLG 是宿主自有包，manifest 保持无 `version`，不可直接 pack 或执行要求已安装包锁的 `plugin -- test slg`。包测试在临时副本补 `version:"0.1.0"` 后生成制品，再安装到临时宿主，依据 install 产生的锁运行 `npm --workspace @game/server run plugin -- test slg --int`；测试版本和临时安装锁不回灌主树。主树通过源码测试及 `verify:all` 验证。
 

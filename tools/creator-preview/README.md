@@ -3,9 +3,9 @@
 把 Cocos Creator 3.8.8 的**桌面预览**（真实引擎，⛔ 不是 Node 无头测试）当被测对象，经 Chrome DevTools
 Protocol 重放「登录 → 首屏 → 设置面板 → 插件入口（route 形态 redeem / gameplay 形态 tally）」，落盘编号截图
 与 `report.json`（每一步的判据、读到的文本、点击坐标、页面 console 的 error/uncaught）。
-首次样本见 [docs/evidence/creator-2026-09-05/replay/](../../docs/evidence/creator-2026-09-05/replay/)；
+首次样本见 docs/evidence/creator-2026-09-05/replay/；
 逐包全量样本（一次会话 13 场景 / 61 步，覆盖 7 个包的全部 route 与 menu 入口）见
-[docs/evidence/creator-2026-09-06/](../../docs/evidence/creator-2026-09-06/)。
+docs/evidence/creator-2026-09-06/（预览证据目录按 .gitignore 政策不入库，均为本地产物，下同）。
 
 ⛔ **不进 `verify:core` / `verify:all`**：它依赖四个外部进程（下表），是人工触发的证据动线，不是门禁。
 进门禁的只有纯函数钉 `apps/server/test/creator-preview-tool.test.ts`（参数解析、`scene=` 改写、坐标换算、
@@ -62,7 +62,7 @@ SLG 的地图打开与各 LOD 截图在标题到位后继续等待：至少观�
 
 中央拖动的每段移动、每次滚轮和 LOD 稳定后，还通过 `SettingsView/panel/viewport` 的公开 `ScrollView.getScrollOffset()` 检查后台偏移。偏移变化超过 0.1 或组件不可观测均失败，结果写入步骤的 `settingsScroll`；这样可识别后台滚动容器先吞掉地图输入的回归。
 
-贴图检查读取已渲染 MeshRenderer 的共享材质 `mainTexture` 与绘卷 Sprite 的纹理尺寸，不主动加载图片。地标预期坐标由总览公开节点位置换算，点击标签后与局部详情坐标比对。总览显示期间局部世界处于隐藏状态，因此绘卷的「位置不变」在关闭面板后通过公开世界节点位置、LOD 与选格共同验证。2026-09-10 的美术接入样本为 23 步、19 张截图，见 [验收记录](../../docs/evidence/creator-2026-09-10/slg-art/README.md)。
+贴图检查读取已渲染 MeshRenderer 的共享材质 `mainTexture` 与绘卷 Sprite 的纹理尺寸，不主动加载图片。地标预期坐标由总览公开节点位置换算，点击标签后与局部详情坐标比对。总览显示期间局部世界处于隐藏状态，因此绘卷的「位置不变」在关闭面板后通过公开世界节点位置、LOD 与选格共同验证。2026-09-10 的美术接入样本为 23 步、19 张截图，见 docs/evidence/creator-2026-09-10/slg-art/。
 
 退出码：0 全部通过；1 有步骤失败（失败现场也会截图 `NN-failed-<step>.jpg`，报告仍落盘）；2 参数/连接错误。
 `report.json` 的 `ok`、`steps[].ok/detail/error/screenshots`、`console[]` 是复核依据；截图只是佐证。

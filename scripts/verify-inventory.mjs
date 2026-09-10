@@ -1317,6 +1317,10 @@ function checkMarkdownLinks(doc) {
     if (!target) continue;
     const resolved = path.resolve(path.dirname(docPath), target);
     const relative = path.relative(ROOT, resolved);
+    // 本地预览证据按 .gitignore 政策不入库（截图/报告只留在本机），干净检出永远不含
+    // docs/evidence/**。指向它的链接是「证据在本机的存放位置」说明，豁免存在性/符号链接/
+    // 锚点检查；越界与 symlink 逃逸判据对其它路径照常生效（含 evidence 字样的非该前缀路径）。
+    if (relative === `docs${path.sep}evidence` || relative.startsWith(`docs${path.sep}evidence${path.sep}`)) continue;
     if (relative === ".." || relative.startsWith(`..${path.sep}`) || !fs.existsSync(resolved)) {
       fail(`文档 ${doc} 的链接不存在：${target}`);
       continue;
