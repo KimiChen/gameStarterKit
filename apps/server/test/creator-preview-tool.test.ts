@@ -10,7 +10,8 @@ import { test } from "node:test";
 // @ts-expect-error 纯 ESM 工具模块，无类型声明。
 import { DESIGN, designToPage, nearestByRow, pageWalkSource, parseArgs, rewriteSceneQuery, sceneUuidFromMeta, selectNodes, worldToPage } from "../../../tools/creator-preview/lib.mjs";
 // @ts-expect-error 纯 ESM 场景工具，无类型声明。
-import { assertSlgSettingsScrollUnchanged, readSlgMapEvidence, readSlgOverviewEvidence, slgFrameStability, slgMapGestureArea, slgRenderAssetsSource, slgSettingsScrollSource } from "../../../tools/creator-preview/slg.mjs";
+import { assertSlgSettingsScrollUnchanged, readSlgMapEvidence, readSlgOverviewEvidence, SLG_WORLD_SIZE, slgFrameStability, slgMapGestureArea, slgRenderAssetsSource, slgSettingsScrollSource } from "../../../tools/creator-preview/slg.mjs";
+import { SLG_MAP_W } from "@game/shared/kits/slg/api/worldmap/index";
 
 const UUID = "33a6cd88-ca61-42f3-97e1-6b18a9096a34";
 
@@ -144,7 +145,7 @@ test("SLG 总览证据：区分实地图与绘卷，地标坐标只取公开锚�
   assert.equal(hiddenWorld.worldCenter, null);
   assert.deepEqual(hiddenWorld.chunks, []);
   assert.equal(hiddenWorld.tile.x, 5000, "总览外的选格详情仍然可读");
-  const overview = readSlgOverviewEvidence(walk);
+  const overview = readSlgOverviewEvidence(walk, 10000, 10000);
   assert.equal(overview.mode, "navigation");
   assert.equal(overview.title, "青原仙洲 · 世界总览");
   assert.deepEqual(overview.bounds, { x: 50, y: 250, width: 300, height: 300 });
@@ -156,7 +157,7 @@ test("SLG 总览证据：区分实地图与绘卷，地标坐标只取公开锚�
   assert.equal(overview.artVisible, false);
   assert.equal(readSlgOverviewEvidence(null), null);
   assert.equal(readSlgOverviewEvidence({ ...walk, nodes: walk.nodes.filter((entry) => entry.path !== root) }), null);
-  const badDimensions = readSlgOverviewEvidence({ ...walk, visible: { width: 0, height: 1600 } });
+  const badDimensions = readSlgOverviewEvidence({ ...walk, visible: { width: 0, height: 1600 } }, 10000, 10000);
   assert.equal(badDimensions.bounds, null);
   assert.equal(badDimensions.landmarks[0].expected, null, "没有有效公开地图尺寸就不能猜定位坐标");
   const scrollPath = `${root}/slg-overview-scroll`;
@@ -164,7 +165,7 @@ test("SLG 总览证据：区分实地图与绘卷，地标坐标只取公开锚�
     ...walk.nodes.filter((entry) => !entry.path.startsWith(nav)).map((entry) => entry.name === "footer" ? { ...entry, text: "山河绘卷" } : entry),
     node("slg-overview-scroll", null, scrollPath, { x: 200, y: 400, width: 600, height: 600 }),
     node("slg-overview-art", null, `${scrollPath}/slg-overview-art`),
-  ] });
+  ] }, 10000, 10000);
   assert.equal(scroll.mode, "scroll");
   assert.equal(scroll.artVisible, true);
   assert.equal(scroll.position, null);
@@ -175,9 +176,13 @@ test("SLG 总览证据：区分实地图与绘卷，地标坐标只取公开锚�
     node("slg-world", null, "scene/Canvas/SlgMapView/slg-world", { x: -1200, y: 1700 }),
     node("slg-chunk-312-312", null, "scene/Canvas/SlgMapView/slg-world/slg-chunk-312-312", null),
   ] };
-  assert.equal(readSlgOverviewEvidence(closed), null);
+  assert.equal(readSlgOverviewEvidence(closed, 10000, 10000), null);
   assert.equal(readSlgMapEvidence(closed).loaded, true);
   assert.deepEqual(readSlgMapEvidence(closed).worldCenter, { x: -1200, y: 1700 }, "只在关闭总览后比对重新激活的公开地图坐标");
+});
+
+test("SLG 预览工具世界尺寸与 shared 常量一致（换图改尺寸时必须同改）", () => {
+  assert.equal(SLG_WORLD_SIZE, SLG_MAP_W);
 });
 
 test("SLG 材质证据：页面脚本自包含，只读公开共享材质和精灵，不创实例、不加载资源", () => {

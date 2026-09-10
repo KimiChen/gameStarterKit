@@ -2,6 +2,7 @@
 import { SLG_CHUNK_SIZE, SLG_MAP_W, SLG_MAP_H, SLG_MAX_GUARD, chunkKey, gridFromTileId, tileIdFromGrid, type ISlgTile } from "../../../shared/kits/slg/api/worldmap/index";
 import { tileAction } from "../api/worldmap/index";
 import { MapCamera } from "./mapCamera";
+import { SLG_LANDMARKS } from "./mapArt";
 import { MapStreamer } from "./mapStreamer";
 import type { SlgRuntime } from "./slgRuntime";
 
@@ -27,7 +28,8 @@ export class SlgMapLogic {
     private waitingForRateLimit = false;
     private readonly offPump: (() => void) | null;
     constructor(readonly runtime: SlgRuntime | null, width: number, height: number) {
-        this.camera = new MapCamera(width, height);
+        // 初始视野落在首个地标（归木村）附近，而不是几何中心——首开即是主题风貌。
+        this.camera = new MapCamera(width, height, SLG_LANDMARKS[0].x, SLG_LANDMARKS[0].y + 10);
         if (!runtime) this.notice = "大地图未就绪（kit 未装载）";
         this.offPump = runtime?.tick(() => { void this.pump(); }) ?? null;
     }

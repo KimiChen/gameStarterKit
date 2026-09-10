@@ -20,7 +20,9 @@ export class MapCamera {
     private velocityY = 0;
     private lastMoveAt = 0;
     private readonly pointers = new Map<number, Pointer>();
-    constructor(readonly width: number, readonly height: number) {}
+    constructor(readonly width: number, readonly height: number, initialX?: number, initialY?: number) {
+        if (Number.isFinite(initialX) && Number.isFinite(initialY)) this.commit(initialX!, initialY!, this.scale);
+    }
 
     get lod(): number { return this.currentLod; }
     get pixelsPerGrid(): number { return this.scale * SLG_GRID_PIXELS; }

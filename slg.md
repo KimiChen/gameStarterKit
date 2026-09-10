@@ -287,7 +287,7 @@ cc 桩缺口按需补 `apps/client/cc-stub.d.ts` / `client-test-stubs.d.ts`（`c
 
 | 决策 | 结果 |
 | --- | --- |
-| 地表真贴图（UnityPy 解 bundle） | **未遂，走预登记 fallback**：chunk 地表 sprite 的外部引用 bundle（`CAB-a4f77805…`）不在学习包的 1804 个已拉 bundle 内；程序化地表 + 森之国调色板替代，留档于 `apps/kits/slg/art/senzhiguo-v1/` |
+| 地表真贴图 | **混合落地**：UnityPy 链未遂（chunk sprite 的外部引用 bundle `CAB-a4f77805…` 不在学习包内）；用户指明 `Mapscence/map11/ground11/` PNG 直供后，草地（`ground_1.png`）、林地（真草乘色）、岩石（Ground11_Atlas 崖壁切 (360,676)-(628,816)）换真贴图；水面/沙滩/裸土包内无平铺真贴图（水面=shader+mask）维持程序化 |
 | 摆件 | 从 `AppearanceAssets/Map` 部件图人工策展切片六类：藤蔓 / 宝箱 / 传送门 / 祭坛 / 灵晶 / 古剑碑 |
 | 布局 | `mapinfowrap_11`（77 区 1803 实体，MessagePack）解码，坐标 5× 放大复刻中心区；装饰双源（中心区真实点位 + 其余确定性哈希）；地标换森之国五地名（经 chunk 足迹与旱地校验微调） |
 | 尺寸切换 | `SLG_MAP_W/H` 10000→1500；`SLG_TILE_ID_STRIDE` / SQL 列宽兼容；尾块 12 格由既有部分块逻辑承接 |
