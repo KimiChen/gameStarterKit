@@ -259,3 +259,24 @@ cc 桩缺口按需补 `apps/client/cc-stub.d.ts` / `client-test-stubs.d.ts`（`c
 机器日志、截图与复跑动线统一见 docs/evidence/creator-2026-09-09/slg/，干净安装细节见其 clean-install/（本地预览证据，按 .gitignore 政策不入库）。
 
 **未进入本轮范围**：2b 的 GameRoom/AOI、军队与行军线、跨房可见性及正式名册策略，继续等待 MF5（含 GameRoom 消费/名册验收）；无人在线 worker 等待 MF7 受租约保护 KitTx。日志消费者的故障恢复窗口和容量也不以本轮阶段 1 / 2a 结果代验。
+
+## 8. 与源游戏（zlbAllVersion）大地图设计的差距分析与开放项（2026-09-10）
+
+> 对照 `../zlbAllVersion/docs/LOD-LOGIC.md` / `TERRAIN-LOD.md` 与 `script/logic/map/` 模块清单逐条盘点。
+> 「已在路线图内」（AOI / 军队 / 行军线 / worker）见 §0.1、§3 与 §5，不重复登记；3D 几何类设计
+> （真 3D 地形 / 高度场 / PCG 画布 / 水面双档 shader / 视锥反投影 / 共享索引缓冲 / LOD 段表）判定为
+> 引擎形式差异，不移植，其精髓（早退链 / 差分 / 滞回 / 共享几何）已体现在现有客户端实现。
+
+| # | 源游戏的做法 | 去向 | 状态（2026-09-10） |
+| --- | --- | --- | --- |
+| 1 | ZOOM_AOI 分尺度信息粒度：远档只下发聚合信息，近档才全量 | 并入 2b：MF5 兴趣集设计须含「LOD 档 → 下发字段集」 | 开放（2b） |
+| 2 | 服务端按 AOI 过滤，视野外内容不可得 | 并入 2b：军队 / 侦查等敏感信息必须按兴趣集在服务端裁剪；当前 `slg.mapTiles` 可查任意矩形仅因地块归属是公开信息 | 开放（2b） |
+| 3 | 远档 chunk 聚合（grid 10→60）与 LOD4 整图贴图 `lod4_terr_map`，draw call 不随缩放出图 | 本轮已实现：**LOD 3 远档整图层**（静态区域色块地表 + 地标 + 稀疏归属 overlay，共 3~5 张网格替代 200+ draw call），数据管线与 RPC 粒度不变；进出远档整批硬切 | ✅ 已实现 |
+| 4 | LOD 缩放滞回（zoom in/out 双阈值表 + tween/防抖），防阈值附近图层 flapping | 本轮已实现：`slgLodForScaleStable`（±8% 滞回带，shared 单源）+ `MapCamera` 状态化 LOD | ✅ 已实现 |
+| 5 | chunk 内容建销走 alpha 渐变 tween，非硬切 | 本轮已实现：顶点 alpha 淡入淡出 240ms（`ChunkFadeTracker`，淡出并发上限 12，批量/整档切换硬切兜底） | ✅ 已实现 |
+| 6 | 平台画质分档（HIGH/MIDDLE/LOW）+ GM LOD 覆写与逐层隐藏调试表 | GM 调试本轮已实现（`globalThis.slgMapDebug`：`setLod(0..3|null)` / `hide` / `show` / `reset`，页开安装页关注销）；**画质分档留待容量证据后定档** | ✅ GM 已实现；画质档开放 |
+| 7 | `minimap_mgr` / `minimap_march_mgr` 常驻 HUD 小地图（带军队/行军标记） | 并入 2b：总览的常驻缩略形态，与 AOI 兴趣集同数据源 | 开放（2b） |
+| 8 | 地形高度 / 阻挡 / 官道加速影响行军路径与战斗 | **冻结维持 v0 拍板**（地形仅展示）；若解冻，接缝在 `marchDurationMs` 与 dispatch 目标校验 | 冻结（不实施） |
+| 9 | 玩法内容层：资源地 / 建筑 / 城市影响范围 / 地块标记 / 气泡 / 通报 / 侦查 / 天气冻土 / 八阵区 / NPC 军队 / 官道 | 玩法策划选题，超出机制样例 v0 定位，非缺陷 | 开放（策划） |
+
+**本轮（差距分析小版本）验收**：typecheck 退出 0；客户端测试 550/550（新增 `slg-map-lod.test.ts` 8 项：滞回分档 / 相机状态化 / 远档地表 / 地标 UV / 稀疏归属 / fade 状态机 / 调试开关）；镜像同步检查一致。远档整图层、淡入淡出与 GM 开关的真引擎表现为 Creator 预览后续项（未随本轮验证）。

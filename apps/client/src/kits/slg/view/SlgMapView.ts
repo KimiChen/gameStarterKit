@@ -3,11 +3,14 @@ import { Color, EventMouse, EventTouch, Game, game, Label, Node, UITransform, Ve
 import { CocosView } from "../../../view/CocosView";
 import { createSolidPlate } from "../../../view/uiPlate";
 import { gridFromTileId, terrainAt, type ISlgTerrain } from "../../../shared/kits/slg/api/worldmap/index";
+import { SLG_FAR_LOD, slgFarOwnershipVersion } from "../logic/farLayerMesh";
 import { SLG_GRID_PIXELS } from "../logic/mapCamera";
+import { installSlgMapDebugGlobal, slgMapDebug } from "../logic/mapDebug";
 import { SlgMapLogic } from "../logic/SlgMapLogic";
 import { getSlgRuntime } from "../logic/slgRuntime";
 import { SlgChunkRenderer } from "./SlgChunkRenderer";
 import { SlgDecorationRenderer } from "./SlgDecorationRenderer";
+import { SlgFarLayerRenderer } from "./SlgFarLayerRenderer";
 import { SlgWorldOverview } from "./SlgWorldOverview";
 import { loadSlgArtResources, type SlgArtResources } from "./SlgArtResources";
 
@@ -26,6 +29,7 @@ export class SlgMapView extends CocosView {
     private selection: Node | null = null;
     private renderer: SlgChunkRenderer | null = null;
     private decorationRenderer: SlgDecorationRenderer | null = null;
+    private farRenderer: SlgFarLayerRenderer | null = null;
     private overview: SlgWorldOverview | null = null;
     private art: SlgArtResources | null = null;
     private terrain: ISlgTerrain | null = null;
@@ -43,6 +47,8 @@ export class SlgMapView extends CocosView {
     private mouseDown = false;
     private assetGeneration = 0;
     private inputBlockedUntil = -Infinity;
+    private farActive = false;
+    private uninstallDebug: (() => void) | null = null;
 
     protected onOpen(): void {
         this.active = true;
@@ -83,11 +89,14 @@ export class SlgMapView extends CocosView {
         this.action = actionNode.getComponentInChildren(Label);
         this.status = this.label("", 17, MUTED, 0, -height / 2 + footer * 0.17, width * 0.94);
         this.bindInput(true);
+        this.uninstallDebug = installSlgMapDebugGlobal();
         this.offTick = runtime?.tick((dt) => {
             const logic = this.logic;
             if (!logic || this.overview?.visible) return;
             const before = logic.camera.version;
             logic.camera.step(dt);
+            this.renderer?.update(dt * 1000);
+            this.decorationRenderer?.update(dt * 1000);
             if (before !== logic.camera.version) logic.updateViewport();
         }) ?? null;
         this.render();
@@ -96,8 +105,10 @@ export class SlgMapView extends CocosView {
 
     protected onCloseLifecycle(): void {
         this.active = false; this.assetGeneration += 1; this.bindInput(false); this.cancelInput(); this.offTick?.(); this.offTick = null;
+        this.uninstallDebug?.(); this.uninstallDebug = null;
         this.logic?.dispose(); this.logic = null;
         this.disposeArt(); this.terrain = null;
+        this.farActive = false;
         this.terrainLayer = null; this.decorationLayer = null;
         this.world = null; this.selection = null; this.details = null; this.status = null; this.title = null; this.action = null;
     }
@@ -107,13 +118,14 @@ export class SlgMapView extends CocosView {
         this.resourceFailed = false;
         try {
             const art = await loadSlgArtResources();
-            if (!this.active || generation !== this.assetGeneration || !this.terrainLayer || !this.decorationLayer || !this.logic) {
+            if (!this.active || generation !== this.assetGeneration || !this.world || !this.terrainLayer || !this.decorationLayer || !this.logic) {
                 art.release(); return;
             }
             this.disposeArt();
             this.art = art; this.terrain = art.terrain;
             this.renderer = new SlgChunkRenderer(this.terrainLayer, this.terrain, art.ground);
             this.decorationRenderer = new SlgDecorationRenderer(this.decorationLayer, this.terrain, art.decorations);
+            this.farRenderer = new SlgFarLayerRenderer(this.world, this.terrain, art.decorations);
             this.overview = new SlgWorldOverview(this.root, this.terrain, art.overview, art.decorations,
                 this.layerWidth, this.mapTop - this.mapBottom, (x, y) => {
                     if (!this.active || !this.logic) return;
@@ -138,6 +150,7 @@ export class SlgMapView extends CocosView {
 
     private disposeArt(): void {
         this.overview?.dispose(); this.overview = null;
+        this.farRenderer?.dispose(); this.farRenderer = null;
         this.decorationRenderer?.dispose(); this.decorationRenderer = null;
         this.renderer?.dispose(); this.renderer = null;
         this.art?.release(); this.art = null;
@@ -147,14 +160,29 @@ export class SlgMapView extends CocosView {
         const logic = this.logic;
         if (!this.active || !logic || !this.world) return;
         const camera = logic.camera;
+        const lod = slgMapDebug.forceLod ?? camera.lod;
         const overviewVisible = this.overview?.visible ?? false;
         this.world.active = !overviewVisible;
         this.world.setScale(camera.scale, camera.scale, 1);
         this.world.setPosition(-camera.x * camera.pixelsPerGrid, this.mapCenter - camera.y * camera.pixelsPerGrid);
-        this.renderer?.render(logic.chunkVersions, logic.tiles, logic.runtime?.selfUid() ?? "", camera.lod);
-        this.decorationRenderer?.render(logic.chunkVersions, camera.lod);
+        const far = lod >= SLG_FAR_LOD;
+        if (far !== this.farActive) {
+            // 进出远档一次性硬切：整批 chunk 网格换一张整图层（批量场景不走单块淡出）。
+            this.farActive = far;
+            this.renderer?.clear();
+            this.decorationRenderer?.clear();
+        }
+        this.farRenderer?.setVisible(far);
+        if (far) {
+            this.farRenderer?.render(logic.tiles, logic.runtime?.selfUid() ?? "",
+                slgFarOwnershipVersion(logic.tiles, logic.chunkVersions));
+        } else {
+            this.renderer?.render(logic.chunkVersions, logic.tiles, logic.runtime?.selfUid() ?? "", lod);
+            this.decorationRenderer?.render(logic.chunkVersions, lod);
+        }
         this.overview?.updateViewport(camera.visibleRect());
-        if (this.title) this.title.string = `${this.terrain?.name ?? "大地图"} · LOD ${camera.lod + 1} · 奖杯 ${logic.trophies}`;
+        if (this.title) this.title.string = `${this.terrain?.name ?? "大地图"} · LOD ${lod + 1}`
+            + `${slgMapDebug.forceLod !== null ? "（GM）" : ""} · 奖杯 ${logic.trophies}`;
         if (this.status) this.status.string = logic.notice;
         const tile = logic.selectedTile();
         if (this.selection) this.selection.active = tile !== null && !overviewVisible;

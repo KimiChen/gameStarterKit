@@ -14,13 +14,20 @@ export function readSlgMapEvidence(walk) {
   const details = nodes.find((node) => typeof node.text === "string" && /^\(\d+, \d+\) · 地形 \d+ · .+ · 守备 \d+$/u.test(node.text));
   const tileMatch = details?.text.match(/^\((\d+), (\d+)\) · 地形 (\d+) · (无主|我方|敌方 .+) · 守备 (\d+)$/u);
   const chunks = nodes.filter((node) => /^slg-chunk-\d+-\d+$/u.test(node.name)).map((node) => node.name).sort();
+  // LOD 4 远档：逐 chunk 网格被整图层（slg-far-*）替代——整图层存在同样算「已加载」。
+  const farNodes = nodes.filter((node) => /^slg-far-(ground|landmarks|ownership)$/u.test(node.name)).map((node) => node.name).sort();
+  const farGround = farNodes.includes("slg-far-ground");
   const notice = nodes.find((node) => typeof node.text === "string" && /^(已占领|已加固|已削减|地图资源加载失败|操作失败|地图加载或操作失败|网络暂不可用|地图请求较多|地图已恢复加载)/u.test(node.text));
   return {
-    loaded: !!titleMatch && titleMatch[1] !== "大地图" && chunks.length > 0,
+    loaded: !!titleMatch && titleMatch[1] !== "大地图" && (chunks.length > 0 || farGround),
     title: title?.text ?? null,
     lod: titleMatch ? Number(titleMatch[2]) : null,
     trophies: titleMatch ? Number(titleMatch[3]) : null,
     chunks,
+    farNodes,
+    farGround,
+    farLandmarks: farNodes.includes("slg-far-landmarks"),
+    farOwnership: farNodes.includes("slg-far-ownership"),
     terrainLayer: nodes.some((node) => node.name === "slg-terrain-layer"),
     decorationLayer: nodes.some((node) => node.name === "slg-decoration-layer"),
     decorationChunks: nodes.filter((node) => /^slg-decorations-\d+-\d+$/u.test(node.name)).map((node) => node.name).sort(),
@@ -73,7 +80,8 @@ function readSlgRenderAssets() {
   const visit = (node, inMap) => {
     if (!node.activeInHierarchy) return;
     const inside = inMap || node.name === "SlgMapView";
-    if (inside && (/^slg-chunk-\d+-\d+$/u.test(node.name) || /^slg-decorations-\d+-\d+$/u.test(node.name))) {
+    if (inside && (/^slg-chunk-\d+-\d+$/u.test(node.name) || /^slg-decorations-\d+-\d+$/u.test(node.name)
+        || /^slg-far-(ground|landmarks|ownership)$/u.test(node.name))) {
       const renderer = node.getComponent("cc.MeshRenderer");
       const material = renderer?.getSharedMaterial(0);
       const texture = material?.getProperty("mainTexture");
@@ -132,6 +140,17 @@ async function renderedMapAssets(runner) {
   return { terrainCount: terrain.length, decorationCount: decorations.length, samples: [terrain[0], decorations[0]] };
 }
 
+/** 远档（标题 LOD 4）整图层证据：地表为无贴图顶点色（设计如此），地标必须有贴图。 */
+async function renderedFarAssets(runner) {
+  const assets = await runner.client.evaluate(slgRenderAssetsSource);
+  const ground = assets.find((entry) => entry.name === "slg-far-ground");
+  const landmarks = assets.find((entry) => entry.name === "slg-far-landmarks");
+  if (!ground || ground.textured) throw new Error(`远档地表应为无贴图顶点色整图层：${JSON.stringify(ground ?? null)}`);
+  if (!landmarks?.textured) throw new Error(`远档地标贴图尚未就绪：${JSON.stringify(landmarks ?? null)}`);
+  return { groundUntextured: true, landmarksTextured: true,
+    ownership: assets.some((entry) => entry.name === "slg-far-ownership") };
+}
+
 /** Anchor the gestures between the visible help row and tile detail row, never in the toolbars. */
 export function slgMapGestureArea(walk) {
   const help = selectNodes(walk, { pathIncludes: VIEW, text: "拖动平移  ·  双指 / 滚轮缩放" })[0];
@@ -157,7 +176,7 @@ export function slgFrameStability(previous, evidence, now, lod) {
   const valid = !!evidence?.loaded && evidence.lod === lod && !/稍后自动重试/u.test(evidence.notice ?? "");
   // Also wait out residual drag inertia; subpixel noise smaller than 0.1 CSS px is immaterial.
   const position = evidence?.worldCenter ? [evidence.worldCenter.x, evidence.worldCenter.y].map((n) => Math.round(n * 10)) : [];
-  const key = valid ? JSON.stringify([lod, evidence.chunks, position]) : null;
+  const key = valid ? JSON.stringify([lod, evidence.chunks, evidence.farNodes ?? [], position]) : null;
   const lastChangeAt = !valid || previous?.key !== key ? now : previous.lastChangeAt;
   const elapsedMs = now - startedAt;
   const stableMs = now - lastChangeAt;
@@ -359,7 +378,9 @@ export async function replaySlgMap(runner) {
       return !readSlgOverviewEvidence(walk) && value?.loaded && value.tile
         && Math.abs(value.tile.x - landmark.expected.x) <= 1 && Math.abs(value.tile.y - landmark.expected.y) <= 1 ? value : null;
     });
-    return { landmark, ...(await stableSlgFrame(runner, located.lod)), assets: await renderedMapAssets(runner),
+    return { landmark, ...(await stableSlgFrame(runner, located.lod)),
+      // 定位落点在哪一档就按哪一档断言：LOD 4 远档是整图层（无贴图地表 + 贴图地标），近档是逐 chunk 贴图与装饰。
+      assets: located.lod >= 4 ? await renderedFarAssets(runner) : await renderedMapAssets(runner),
       shot: await runner.shot("slg-world-located") };
   });
 

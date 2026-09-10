@@ -200,15 +200,23 @@ test("SLG 材质证据：页面脚本自包含，只读公开共享材质和精�
       node("slg-chunk-2-2", [], { "cc.MeshRenderer": { getSharedMaterial: () => ({ getProperty: () => null }) } }),
       node("slg-overview-art", [], { "cc.Sprite": { spriteFrame: { texture: { width: 1254, height: 1254 } } } }),
       node("slg-decorations-3-3", [], texturedMesh, false),
+      node("slg-far-ground", [], { "cc.MeshRenderer": { getSharedMaterial: () => ({ getProperty: () => null }) } }),
+      node("slg-far-landmarks", [], texturedMesh),
+      node("slg-far-ownership", [], texturedMesh, false),
     ]),
   ]);
   const evaluate = new Function("cc", `return ${slgRenderAssetsSource};`);
   const result = evaluate({ director: { getScene: () => scene } });
-  assert.deepEqual(result.map((entry: { name: string }) => entry.name), ["slg-chunk-1-2", "slg-decorations-1-2", "slg-chunk-2-2", "slg-overview-art"]);
+  assert.deepEqual(result.map((entry: { name: string }) => entry.name),
+    ["slg-chunk-1-2", "slg-decorations-1-2", "slg-chunk-2-2", "slg-overview-art", "slg-far-ground", "slg-far-landmarks"]);
   assert.equal(result[0].textured, true);
   assert.equal(result[1].width, 1536);
   assert.equal(result[2].textured, false);
   assert.deepEqual(result[3], { name: "slg-overview-art", kind: "sprite", textured: true, width: 1254, height: 1254 });
+  assert.deepEqual(result[4], { name: "slg-far-ground", kind: "mesh", textured: false, width: null, height: null },
+    "远档地表为无贴图顶点色整图层");
+  assert.equal(result[5].textured, true, "远档地标使用装饰图集贴图");
+  assert.ok(!result.some((entry: { name: string }) => entry.name === "slg-far-ownership"), "隐藏节点不参与证据");
   assert.deepEqual(evaluate({ director: { getScene: () => null } }), []);
 });
 
@@ -286,4 +294,41 @@ test("SLG LOD 截图等待：网格集合变化/限流退避重置稳定计时�
   assert.equal(slgFrameStability(state, changed, 9200, 4).ready, true);
   assert.equal(slgFrameStability(state, { ...changed, loaded: false }, 9200, 4).ready, false);
   assert.equal(slgFrameStability(state, { ...changed, lod: 3 }, 9200, 4).ready, false);
+});
+
+
+test("SLG 预览证据：LOD 4 远档整图层（slg-far-*）替代逐 chunk 网格同样算已加载", () => {
+  const node = (name: string, text: string | null, center: object | null = { x: 100, y: 100 }) => ({ name, text, path: `scene/Canvas/SlgMapView/${name}`, center });
+  const walk = { nodes: [
+    node("SlgMapView", null),
+    node("title", "青原仙洲 · LOD 4 · 奖杯 7"),
+    node("details", "(5006, 4999) · 地形 0 · 我方 · 守备 1"),
+    node("slg-far-ground", null, null),
+    node("slg-far-landmarks", null, null),
+    node("slg-far-ownership", null, null),
+    node("slg-world", null, { x: -1000, y: 1100 }),
+  ] };
+  const result = readSlgMapEvidence(walk)!;
+  assert.equal(result.loaded, true, "整图层存在即已加载（远档无逐 chunk 节点）");
+  assert.deepEqual(result.chunks, []);
+  assert.deepEqual(result.farNodes, ["slg-far-ground", "slg-far-landmarks", "slg-far-ownership"]);
+  assert.equal(result.farGround, true);
+  assert.equal(result.farLandmarks, true);
+  assert.equal(result.farOwnership, true);
+  assert.equal(readSlgMapEvidence({ nodes: walk.nodes.filter((entry) => entry.name !== "slg-far-ground") })!.loaded,
+    false, "远档缺地表整图层与近档缺全部 chunk 一样未就绪");
+});
+
+test("SLG LOD 截图等待：远档整图层集合变化同样重置稳定计时", () => {
+  const evidence = { loaded: true, lod: 4, chunks: [] as string[],
+    farNodes: ["slg-far-ground", "slg-far-landmarks"], notice: null, worldCenter: { x: 50, y: 60 } };
+  let state = slgFrameStability(null, evidence, 0, 4);
+  state = slgFrameStability(state, evidence, 1200, 4);
+  state = slgFrameStability(state, evidence, 2400, 4);
+  assert.equal(state.ready, true);
+  const changed = { ...evidence, farNodes: ["slg-far-ground", "slg-far-landmarks", "slg-far-ownership"] };
+  state = slgFrameStability(state, changed, 2500, 4);
+  assert.equal(state.ready, false, "farNodes 变化（归属网格重建/图层增删）也须重新稳定 1.2 秒");
+  state = slgFrameStability(state, changed, 3700, 4);
+  assert.equal(state.ready, true);
 });

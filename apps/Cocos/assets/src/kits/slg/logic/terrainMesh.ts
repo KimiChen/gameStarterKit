@@ -24,6 +24,9 @@ export interface SlgTerrainMeshes {
 
 const SELF_COLOR: readonly number[] = [65 / 255, 148 / 255, 236 / 255, 0.4];
 const OTHER_COLOR: readonly number[] = [220 / 255, 91 / 255, 78 / 255, 0.4];
+/** 归属叠加色（近景 overlay 与远档整图层共用，⛔ 不另造第二份常量）：我方蓝 / 敌方红，基础 alpha 0.40。 */
+export const SLG_SELF_TILE_COLOR = SELF_COLOR;
+export const SLG_OTHER_TILE_COLOR = OTHER_COLOR;
 
 function writeQuad(positions: Float32Array, indices: Uint16Array, quad: number,
     left: number, bottom: number, right: number, top: number): void {
@@ -39,13 +42,15 @@ function writeQuad(positions: Float32Array, indices: Uint16Array, quad: number,
  * separate solid-color pass so its blue/red indicator cannot be multiplied by green terrain.
  */
 export function buildSlgTerrainMeshes(terrain: ISlgTerrain, cx: number, cy: number, lod: number,
-    tiles: ReadonlyMap<number, ISlgTile>, selfUid: string, atlasWidth = 1536, atlasHeight = 1024): SlgTerrainMeshes {
+    tiles: ReadonlyMap<number, ISlgTile>, selfUid: string, atlasWidth = 1536, atlasHeight = 1024,
+    alpha = 1, hiddenLayers?: ReadonlySet<string>): SlgTerrainMeshes {
     chunkKey(cx, cy);
     if (!Number.isInteger(lod) || lod < 0 || lod > 3) throw new RangeError("SLG terrain mesh LOD invalid");
     if (!Number.isInteger(atlasWidth) || !Number.isInteger(atlasHeight)
         || atlasWidth < SLG_ART_ATLAS_COLUMNS || atlasHeight < SLG_ART_ATLAS_ROWS) {
         throw new RangeError("SLG terrain atlas dimensions invalid");
     }
+    if (!Number.isFinite(alpha) || alpha < 0 || alpha > 1) throw new RangeError("SLG terrain mesh alpha invalid");
     const startX = cx * SLG_CHUNK_SIZE, startY = cy * SLG_CHUNK_SIZE;
     const width = Math.min(SLG_CHUNK_SIZE, SLG_MAP_W - startX);
     const height = Math.min(SLG_CHUNK_SIZE, SLG_MAP_H - startY);
@@ -53,11 +58,12 @@ export function buildSlgTerrainMeshes(terrain: ISlgTerrain, cx: number, cy: numb
     const positions = new Float32Array(quadCapacity * 12);
     const uvs = new Float32Array(quadCapacity * 8);
     const colors = new Float32Array(quadCapacity * 16).fill(1);
+    for (let channel = 3; channel < colors.length; channel += 4) colors[channel] = alpha;
     const indices16 = new Uint16Array(quadCapacity * 6);
     const ownerPositions = new Float32Array(quadCapacity * 12);
     const ownerColors = new Float32Array(quadCapacity * 16);
     const ownerIndices = new Uint16Array(quadCapacity * 6);
-    const gap = visibleMapLayers(lod).includes("grid") ? 0.65 : 0;
+    const gap = visibleMapLayers(lod, hiddenLayers).includes("grid") ? 0.65 : 0;
     const insetU = 0.5 / atlasWidth, insetV = 0.5 / atlasHeight;
     let ownerCount = 0;
     for (let dy = 0; dy < height; dy++) for (let dx = 0; dx < width; dx++) {
@@ -81,7 +87,8 @@ export function buildSlgTerrainMeshes(terrain: ISlgTerrain, cx: number, cy: numb
         const tile = tiles.get(tileIdFromGrid(x, y));
         if (tile?.ownerUid) {
             writeQuad(ownerPositions, ownerIndices, ownerCount, left, bottom, right, top);
-            const color = tile.ownerUid === selfUid ? SELF_COLOR : OTHER_COLOR;
+            const base = tile.ownerUid === selfUid ? SELF_COLOR : OTHER_COLOR;
+            const color = alpha === 1 ? base : [base[0], base[1], base[2], base[3] * alpha];
             for (let vertex = 0; vertex < 4; vertex++) ownerColors.set(color, ownerCount * 16 + vertex * 4);
             ownerCount += 1;
         }

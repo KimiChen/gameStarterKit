@@ -1,5 +1,5 @@
 /** UI-space camera; world coordinates are grid units, input is design pixels. */
-import { SLG_MAP_W, SLG_MAP_H, slgLodForScale } from "../../../shared/kits/slg/api/worldmap/index";
+import { SLG_MAP_W, SLG_MAP_H, slgLodForScale, slgLodForScaleStable } from "../../../shared/kits/slg/api/worldmap/index";
 
 export const SLG_GRID_PIXELS = 48;
 export interface MapPoint { readonly x: number; readonly y: number }
@@ -14,13 +14,15 @@ export class MapCamera {
     y = SLG_MAP_H / 2;
     scale = 0.85;
     version = 0;
+    /** 滞回后的当前 LOD（初始化取裸映射；之后只随越带迁移，不随阈值抖动）。 */
+    private currentLod = mapLod(this.scale);
     private velocityX = 0;
     private velocityY = 0;
     private lastMoveAt = 0;
     private readonly pointers = new Map<number, Pointer>();
     constructor(readonly width: number, readonly height: number) {}
 
-    get lod(): number { return mapLod(this.scale); }
+    get lod(): number { return this.currentLod; }
     get pixelsPerGrid(): number { return this.scale * SLG_GRID_PIXELS; }
     get pointerCount(): number { return this.pointers.size; }
     worldAt(x: number, y: number): MapPoint {
@@ -101,6 +103,8 @@ export class MapCamera {
         const nextX = halfW * 2 >= SLG_MAP_W ? SLG_MAP_W / 2 : Math.min(SLG_MAP_W - halfW, Math.max(halfW, x));
         const nextY = halfH * 2 >= SLG_MAP_H ? SLG_MAP_H / 2 : Math.min(SLG_MAP_H - halfH, Math.max(halfH, y));
         if (nextX === this.x && nextY === this.y && scale === this.scale) return;
-        this.x = nextX; this.y = nextY; this.scale = scale; this.version += 1;
+        this.x = nextX; this.y = nextY; this.scale = scale;
+        this.currentLod = slgLodForScaleStable(this.currentLod, scale);
+        this.version += 1;
     }
 }

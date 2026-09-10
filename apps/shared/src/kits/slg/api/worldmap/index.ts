@@ -9,6 +9,8 @@ export const SLG_MAX_GUARD_POWER = 99;
 export const SLG_MAX_GUARD = SLG_MAX_GUARD_POWER;
 export const SLG_MAX_QUERY_CHUNKS = 4;
 export const SLG_LOD_SCALE_THRESHOLDS: readonly number[] = [0.28, 0.5, 0.85];
+/** LOD 滞回带（相对比例）：越过「更细档下界 × (1+r)」才升细，跌破「当前档下界 × (1−r)」才降粗。 */
+export const SLG_LOD_HYSTERESIS_RATIO = 0.08;
 export const SLG_TILE_ID_STRIDE = 65536;
 
 export interface ISlgPoint { readonly x: number; readonly y: number }
@@ -81,6 +83,19 @@ export function slgLodForScale(scale: number): number {
     if (scale >= SLG_LOD_SCALE_THRESHOLDS[1]) return 1;
     if (scale >= SLG_LOD_SCALE_THRESHOLDS[0]) return 2;
     return 3;
+}
+/**
+ * 滞回分档：以上一档 prevLod 为基准，scale 必须明确越过更细档下界（×1+r）才升细、明确跌破当前档
+ * 下界（×1−r）才降粗——阈值附近往复缩放不再让图层反复闪现。跨多档的大幅缩放一次循环到位。
+ */
+export function slgLodForScaleStable(prevLod: number, scale: number): number {
+    if (!Number.isInteger(prevLod) || prevLod < 0 || prevLod > 3) throw new RangeError("SLG prev LOD invalid");
+    if (!Number.isFinite(scale) || scale <= 0) throw new RangeError("SLG scale must be positive");
+    let lod = prevLod;
+    // 档 L（L<3）的下界 = THRESHOLDS[2-L]；lod 3 无下界。
+    while (lod > 0 && scale >= SLG_LOD_SCALE_THRESHOLDS[2 - (lod - 1)] * (1 + SLG_LOD_HYSTERESIS_RATIO)) lod -= 1;
+    while (lod < 3 && scale < SLG_LOD_SCALE_THRESHOLDS[2 - lod] * (1 - SLG_LOD_HYSTERESIS_RATIO)) lod += 1;
+    return lod;
 }
 export function validateSlgTile(value: unknown, path = "tile"): ISlgTile {
     const r = requireRecord(value, path);
