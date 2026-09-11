@@ -1,10 +1,10 @@
 /** Separate, bounded world navigation and an optional art scroll; neither view requests world chunks. */
 import { Color, EffectAsset, EventTouch, gfx, Label, Material, Mesh, MeshRenderer, Node, Rect,
     Sprite, SpriteFrame, Texture2D, UIMeshRenderer, UITransform, utils, Vec3 } from "cc";
-import { type ISlgTerrain } from "../../../shared/kits/slg/api/worldmap/index";
+import { SLG_TERRAIN_MAX_REGIONS, type ISlgTerrain } from "../../../shared/kits/slg/api/worldmap/index";
 import { createSolidPlate } from "../../../view/uiPlate";
-import { buildSlgOverviewRects, overviewToWorld, overviewViewportRect, SLG_LANDMARKS,
-    slgArtAtlasRect, worldToOverview } from "../logic/mapArt";
+import { buildSlgOverviewRects, overviewToWorld, overviewViewportRect,
+    slgArtAtlasRect, worldToOverview, type SlgLandmark } from "../logic/mapArt";
 import { type MapRect } from "../logic/mapCamera";
 
 const PAPER = new Color(229, 237, 220, 255);
@@ -49,6 +49,7 @@ export class SlgWorldOverview {
     constructor(
         parent: Node,
         private readonly terrain: ISlgTerrain,
+        private readonly landmarks: readonly SlgLandmark[],
         artTexture: Texture2D,
         decorationTexture: Texture2D,
         width: number,
@@ -99,7 +100,7 @@ export class SlgWorldOverview {
     /** MapCamera.visibleRect includes its last tile; the shared projection accounts for that once. */
     updateViewport(rect: MapRect): void {
         if (this.disposed) return;
-        const projected = overviewViewportRect(rect, this.mapSize, this.mapSize);
+        const projected = overviewViewportRect(this.terrain, rect, this.mapSize, this.mapSize);
         const left = projected.x - this.mapSize / 2, top = this.mapSize / 2 - projected.y;
         const right = left + projected.width, bottom = top - projected.height;
         const x = (left + right) / 2, y = (top + bottom) / 2;
@@ -134,7 +135,7 @@ export class SlgWorldOverview {
     private buildNavigation(decorationTexture: Texture2D): void {
         const rectangles = buildSlgOverviewRects(this.terrain);
         const ground = rectangles[0];
-        if (!ground || rectangles.length > 2049) throw new RangeError("SLG overview region budget exceeded");  // 2048 区域上限 + 默认底（有机岛貌反分类契约）
+        if (!ground || rectangles.length > SLG_TERRAIN_MAX_REGIONS + 1) throw new RangeError("SLG overview region budget exceeded");  // 契约区域上限 + 默认底
         // A shared white Sprite supplies terrain 0; at most 512 overriding regions use one mesh.
         createSolidPlate(this.navigation, this.mapSize, this.mapSize,
             new Color(ground.color[0], ground.color[1], ground.color[2], 255), 0, 0, "slg-overview-ground");
@@ -151,8 +152,8 @@ export class SlgWorldOverview {
             const indices16 = new Uint16Array(regions.length * 6);
             for (let i = 0; i < regions.length; i++) {
                 const region = regions[i];
-                const northwest = worldToOverview({ x: region.x, y: region.y + region.height }, this.mapSize, this.mapSize);
-                const southeast = worldToOverview({ x: region.x + region.width, y: region.y }, this.mapSize, this.mapSize);
+                const northwest = worldToOverview(this.terrain, { x: region.x, y: region.y + region.height }, this.mapSize, this.mapSize);
+                const southeast = worldToOverview(this.terrain, { x: region.x + region.width, y: region.y }, this.mapSize, this.mapSize);
                 const left = northwest.x - this.mapSize / 2, right = southeast.x - this.mapSize / 2;
                 const top = this.mapSize / 2 - northwest.y, bottom = this.mapSize / 2 - southeast.y;
                 positions.set([left, top, 0, right, top, 0, left, bottom, 0, right, bottom, 0], i * 12);
@@ -170,8 +171,8 @@ export class SlgWorldOverview {
         }
         this.border(this.navigation);
         const iconSize = Math.min(46, this.mapSize * 0.085), fontSize = Math.min(17, this.mapSize * 0.035);
-        for (const landmark of SLG_LANDMARKS) {
-            const point = worldToOverview(landmark, this.mapSize, this.mapSize);
+        for (const landmark of this.landmarks) {
+            const point = worldToOverview(this.terrain, landmark, this.mapSize, this.mapSize);
             const x = point.x - this.mapSize / 2, y = this.mapSize / 2 - point.y;
             const site = this.createNode(`slg-overview-site-${landmark.id}`, this.navigation, iconSize, iconSize);
             site.setPosition(x, y);
@@ -293,7 +294,7 @@ export class SlgWorldOverview {
                 return;
             }
         }
-        const world = overviewToWorld({ x: point.x + this.mapSize / 2, y: this.mapSize / 2 - (point.y - this.mapCenterY) },
+        const world = overviewToWorld(this.terrain, { x: point.x + this.mapSize / 2, y: this.mapSize / 2 - (point.y - this.mapCenterY) },
             this.mapSize, this.mapSize);
         const x = Math.max(0, Math.min(this.terrain.width - 1, Math.floor(world.x)));
         const y = Math.max(0, Math.min(this.terrain.height - 1, Math.floor(world.y)));

@@ -6,7 +6,7 @@ import {
   marchDurationMs, type ISlgMarch,
 } from "@game/shared/kits/slg/api/march/index";
 import {
-  applySlgTileAction, validateSlgChunkRect, validateSlgTileId,
+  applySlgTileAction, validateSlgChunkRect, validateSlgMapId, validateSlgTileId,
   type ISlgChunkRect,
 } from "@game/shared/kits/slg/api/worldmap/index";
 import {
@@ -189,10 +189,11 @@ export function createSlgApi(overrides: Partial<SlgApiDeps> = {}) {
 
   return {
     settleDueMarches,
-    async readTiles(uid: string, sId: number, rectInput: ISlgChunkRect): Promise<ISlgMapTilesRes> {
+    async readTiles(uid: string, sId: number, mapIdInput: string, rectInput: ISlgChunkRect): Promise<ISlgMapTilesRes> {
       assertIdentity(uid);
+      const mapId = validateSlgMapId(mapIdInput);
       const rect = validateSlgChunkRect(rectInput);
-      const snapshot = await fresh(sId, async (ctx) => ({ tiles: await ctx.repo.readTiles(rect), revision: ctx.repo.revision }));
+      const snapshot = await fresh(sId, async (ctx) => ({ tiles: await ctx.repo.readTiles(mapId, rect), revision: ctx.repo.revision }));
       return { ...snapshot, myTrophies: await deps.readTrophies(uid, sId) };
     },
     async captureTile(uid: string, sId: number, tileId: number, op: SlgOperation): Promise<ISlgTileCaptureRes> {

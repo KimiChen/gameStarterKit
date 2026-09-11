@@ -2,21 +2,32 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { ChunkFadeTracker, SLG_CHUNK_FADE_MAX_CONCURRENT, SLG_CHUNK_FADE_MS } from "../src/kits/slg/logic/chunkFade";
-import { buildSlgFarGround, buildSlgFarLandmarks, buildSlgFarOwnership, SLG_ISLAND_RECT, slgFarOwnershipVersion,
+import { buildSlgFarGround, buildSlgFarLandmarks, buildSlgFarOwnership, slgFarOwnershipVersion,
     SLG_FAR_LOD } from "../src/kits/slg/logic/farLayerMesh";
 import { MapCamera, SLG_GRID_PIXELS } from "../src/kits/slg/logic/mapCamera";
 import { installSlgMapDebugGlobal, slgMapDebug, SLG_MAP_DEBUG_GLOBAL } from "../src/kits/slg/logic/mapDebug";
-import { SLG_LANDMARKS, slgAtlasUv } from "../src/kits/slg/logic/mapArt";
+import { slgAtlasUv, slgLandmarkOf, type SlgLandmark, type SlgLayoutLandmark } from "../src/kits/slg/logic/mapArt";
 import { visibleMapLayers } from "../src/kits/slg/logic/mapLayers";
-import { SLG_LOD_HYSTERESIS_RATIO, SLG_LOD_SCALE_THRESHOLDS, SLG_MAP_H, SLG_MAP_W, tileIdFromGrid,
+import { SLG_LOD_HYSTERESIS_RATIO, SLG_LOD_SCALE_THRESHOLDS, slgMapInfo, tileIdFromGrid,
     slgLodForScale, slgLodForScaleStable, type ISlgTerrain, type ISlgTile } from "../src/shared/kits/slg/api/worldmap/index";
 
 const SELF = "me";
+/** 默认图森之国（catalog 登记 1500×1500）；五国多图化后尺寸按图取，不再用全局常量。 */
+const MAP = slgMapInfo("senzhiguo");
 function terrain(): ISlgTerrain {
-    return { name: "lod fixture", width: SLG_MAP_W, height: SLG_MAP_H,
+    return { id: MAP.id, name: "lod fixture", width: MAP.width, height: MAP.height,
+        islandRect: { minX: 414, minY: 525, maxX: 1086, maxY: 975 },
         palette: [{ id: 0, color: [10, 20, 30] }, { id: 1, color: [40, 50, 60] }],
         regions: [{ x: 100, y: 200, width: 300, height: 400, terrain: 1 }] };
 }
+/** 森之国 layout.json 的五处地标（数据驱动构建，替代旧硬编码 SLG_LANDMARKS）。 */
+const LANDMARKS: readonly SlgLandmark[] = ([
+    { name: "归木村", x: 805, y: 757, tag: "归木村", kind: "stele" },
+    { name: "世界树半岛", x: 758, y: 887, tag: "世界树半岛", kind: "tree" },
+    { name: "气泡湖-战力", x: 775, y: 722, tag: "气泡湖-战力", kind: "crystal" },
+    { name: "狂花海岸", x: 758, y: 849, tag: "狂花海岸", kind: "portal" },
+    { name: "蛛后巢穴", x: 743, y: 802, tag: "蛛后巢穴", kind: "sword" },
+] as const satisfies readonly SlgLayoutLandmark[]).map(slgLandmarkOf);
 function near(actual: number, expected: number, epsilon = 0.0001): void {
     assert.ok(Math.abs(actual - expected) < epsilon, `${actual} != ${expected}`);
 }
@@ -43,7 +54,7 @@ test("SLG LOD hysteresis: 阈值带内往复不越档，明确越界才迁移，
 });
 
 test("SLG camera: LOD 经滞回状态化，阈值抖动不迁移，locate 不动 LOD", () => {
-    const camera = new MapCamera(750, 1000);
+    const camera = new MapCamera(750, 1000, MAP.width, MAP.height);
     assert.equal(camera.lod, slgLodForScale(camera.scale));
     // 放大到明确越档 → 迁移到 lod 0。
     camera.zoom(2, 0, 0); // scale 0.85 → 1.7
@@ -63,25 +74,26 @@ test("SLG camera: LOD 经滞回状态化，阈值抖动不迁移，locate 不动
 });
 
 test("SLG far ground: 海面全幅底 + 原版岛图一张网格，alpha 写入顶点", () => {
-    const { sea, island } = buildSlgFarGround(terrain(), 0.5);
+    const data = terrain();
+    const { sea, island } = buildSlgFarGround(data, 0.5);
     // 海面：一张全幅四边形，palette id 2 海青顶点色，alpha 通道 = 0.5。
     assert.equal(sea.indices16.length, 6);
     assert.equal(sea.positions[0], 0);
-    assert.equal(sea.positions[1], SLG_MAP_H * SLG_GRID_PIXELS);
+    assert.equal(sea.positions[1], data.height * SLG_GRID_PIXELS);
     assert.equal(sea.colors[3], 0.5);
-    // 岛图：SLG_ISLAND_RECT 全范围一张贴图四边形，UV 翻转北向。
+    // 岛图：terrain.islandRect 全范围一张贴图四边形，UV 翻转北向。
     assert.equal(island.indices16.length, 6);
-    assert.equal(island.minX, SLG_ISLAND_RECT.minX * SLG_GRID_PIXELS);
-    assert.equal(island.maxX, SLG_ISLAND_RECT.maxX * SLG_GRID_PIXELS);
-    assert.equal(island.minY, SLG_ISLAND_RECT.minY * SLG_GRID_PIXELS);
-    assert.equal(island.maxY, SLG_ISLAND_RECT.maxY * SLG_GRID_PIXELS);
+    assert.equal(island.minX, data.islandRect.minX * SLG_GRID_PIXELS);
+    assert.equal(island.maxX, data.islandRect.maxX * SLG_GRID_PIXELS);
+    assert.equal(island.minY, data.islandRect.minY * SLG_GRID_PIXELS);
+    assert.equal(island.maxY, data.islandRect.maxY * SLG_GRID_PIXELS);
     assert.deepEqual([...island.uvs], [0, 1, 1, 1, 0, 0, 1, 0]);
-    assert.throws(() => buildSlgFarGround(terrain(), 1.5), /alpha/);
+    assert.throws(() => buildSlgFarGround(data, 1.5), /alpha/);
 });
 
 test("SLG far landmarks: 全部地标一张网格，UV 内缩留在图集格内，按先北后南排序", () => {
-    const data = buildSlgFarLandmarks(1536, 1024);
-    const sorted = [...SLG_LANDMARKS].sort((a, b) => b.y - a.y || a.x - b.x);
+    const data = buildSlgFarLandmarks(1536, 1024, terrain(), LANDMARKS);
+    const sorted = [...LANDMARKS].sort((a, b) => b.y - a.y || a.x - b.x);
     assert.equal(data.indices16.length / 6, sorted.length);
     const insetU = 0.5 / 1536, insetV = 0.5 / 1024;
     const epsilon = 0.00001; // UV 经 Float32 存储有尾差，容差比对不钉字节。
@@ -92,16 +104,16 @@ test("SLG far landmarks: 全部地标一张网格，UV 内缩留在图集格内�
         assert.ok(us[0] >= uv.u0 + insetU - epsilon && us[1] <= uv.u1 - insetU + epsilon, "u inset");
         assert.ok(vs[0] >= uv.v0 + insetV - epsilon && vs[1] <= uv.v1 - insetV + epsilon, "v inset");
     }
-    assert.throws(() => buildSlgFarLandmarks(0, 1024), /dimensions/);
+    assert.throws(() => buildSlgFarLandmarks(0, 1024, terrain(), LANDMARKS), /dimensions/);
 });
 
 test("SLG far ownership: 稀疏归属按 tileId 排序、我方/敌方配色、alpha 相乘、空图返回 null", () => {
-    assert.equal(buildSlgFarOwnership(new Map(), SELF), null);
+    assert.equal(buildSlgFarOwnership(terrain(), new Map(), SELF), null);
     const tiles = new Map<number, ISlgTile>([
-        [tileIdFromGrid(500, 500), { tileId: tileIdFromGrid(500, 500), ownerUid: SELF, guardPower: 1 }],
-        [tileIdFromGrid(3, 7), { tileId: tileIdFromGrid(3, 7), ownerUid: "other", guardPower: 2 }],
+        [tileIdFromGrid(0, 500, 500), { tileId: tileIdFromGrid(0, 500, 500), ownerUid: SELF, guardPower: 1 }],
+        [tileIdFromGrid(0, 3, 7), { tileId: tileIdFromGrid(0, 3, 7), ownerUid: "other", guardPower: 2 }],
     ]);
-    const data = buildSlgFarOwnership(tiles, SELF, 0.5);
+    const data = buildSlgFarOwnership(terrain(), tiles, SELF, 0.5);
     assert.ok(data);
     assert.equal(data.indices16.length / 6, 2);
     // 排序：小 tileId 在前 → (3,7) 是 quad 0，敌方红色，alpha 0.4*0.5。

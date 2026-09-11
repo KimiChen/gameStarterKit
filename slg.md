@@ -295,3 +295,23 @@ cc 桩缺口按需补 `apps/client/cc-stub.d.ts` / `client-test-stubs.d.ts`（`c
 | 版权口径 | 素材仅本仓私有研究，禁止二次分发；写进 `art/senzhiguo-v1/README.md` |
 
 验收：typecheck 0；客户端 550/550、服务端 755/755、集成 9/9（真实 MySQL/Redis）；Creator 预览 23 步见下节复核记录。
+
+## 10. 五国多地图与小地图切换（2026-09-12）
+
+按用户要求：大地图扩为 zjcs-1.2.6 五国可切换地图——森之国 `senzhiguo`(ClassId 11)、山之国 `shanzhiguo`(12)、泽之国 `zezhiguo`(13)、鲸背岛 `jingbeidao`(16)、羽之国 `yuzhiguo`(17)；地图区右上角常显小地图预览（`SlgMapSwitcher`），点击展开五图切换面板。
+
+| 决策 | 结果 |
+| --- | --- |
+| 状态隔离 | **按图隔离**：tileId 重打包 `mapIndex×2²² + y×2048 + x`（图 4bit、每轴 11bit，`SLG_TILE_ID_STRIDE` 65536→2048）；SQL 主键 `(server_id, tile_id)` 与 INT UNSIGNED 列宽不变；dev 库旧数据作废（同 §9 先例）；`slg.mapTiles` 请求加 `mapId`，slg 域 contractVersion 1→2 |
+| 每图尺寸 | 不再全局统一 1500²：森之国保持 1500×1500；新四图 = 逻辑格×scale + 海环 margin（山 1148×983、泽 1044×1080、鲸背 940×850、羽 1325×1166），登记进 `SLG_MAPS` catalog（shared 单源），`validateSlgTerrain` 对照 catalog |
+| 地形管线 | `tools/slg-maps/` 入库可复跑：render-ground（复用 zjcs render_map_full 的装载/解码出纯地表）→ calibrate（auto-offset 落陆率寻优 entityToRender、主色建议、地标足迹校验/自动寻优 fix-landmarks）→ classify-terrain（逐格反分类+贪心矩形分解，**y 翻转修正**：渲染图顶=北=世界 y 大）→ extract-layout → build-atlases → bake-island / frame-overview。森之国回归基线：layout 字节级、terrain regions/palette 一致、图集/island 像素级 |
+| 地形契约 | `ISlgTerrain` 增 `id`/`islandRect`；regions 上限 2048→`SLG_TERRAIN_MAX_REGIONS=4096`（羽之国群岛 3949 条实测）；总览预算闸同步 |
+| 客户端硬编码清除 | `SLG_LANDMARKS`/`SLG_ISLAND_RECT` 删除：地标从 layout.json 读（`kind` 即图集 kind，坐标中心格锚），岛矩形进 terrain.islandRect；相机/流式/远档/总览全部按当前图尺寸参数化；`SlgMapLogic.switchMap`（清稀疏模型+在途作废+相机重建，首开落点=地标[0] 且仅在用户未触碰相机时） |
+| 资源布局 | `resources/kits/slg/maps/<mapId>/`（terrain.json/layout.json/两图集/island-ground/world-overview + 256² mini）；森之国迁入 `maps/senzhiguo/`，旧顶层 json 与 senzhiguo/ 目录下线；qingyuan 留档不动 |
+| 小地图纹理自持 | 切换面板与小地图用各图 256² mini 绘卷（独立引用计数），与地图 bundle 释放解耦（曾踩 disposeArt 后 Sprite 渲染空纹理 `null.hash` 的坑） |
+| 鲸背岛素材 | 无专属贴图目录：地砖走共享图集（render-ground 经 bundle 依赖自动解析），装饰 tree 格复用森之国命运树藤 |
+
+预览工具新增 4 步（`slg.mjs`）：小地图开面板 → 切山之国（标题/地块/资源重载）→ 山之国 LOD 4 远档岛貌 → 切回森之国。
+
+验收：typecheck 0；客户端 550/550（五图化等价改造 + 地标中心锚足迹校验）、服务端 756/756；Creator 预览 27 步全过（/tmp/slg-five-maps-2，含五图切换）。
+开放项回写：§8 #7 常驻 HUD 小地图 ✅ 本轮落地（缩略预览 + 切换；军队/行军标记仍属 2b AOI 范畴）。

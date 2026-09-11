@@ -11,7 +11,7 @@ import { test } from "node:test";
 import { DESIGN, designToPage, nearestByRow, pageWalkSource, parseArgs, rewriteSceneQuery, sceneUuidFromMeta, selectNodes, worldToPage } from "../../../tools/creator-preview/lib.mjs";
 // @ts-expect-error 纯 ESM 场景工具，无类型声明。
 import { assertSlgSettingsScrollUnchanged, readSlgMapEvidence, readSlgOverviewEvidence, SLG_WORLD_SIZE, slgFrameStability, slgMapGestureArea, slgRenderAssetsSource, slgSettingsScrollSource } from "../../../tools/creator-preview/slg.mjs";
-import { SLG_MAP_W } from "@game/shared/kits/slg/api/worldmap/index";
+import { SLG_MAPS } from "@game/shared/kits/slg/api/worldmap/index";
 
 const UUID = "33a6cd88-ca61-42f3-97e1-6b18a9096a34";
 
@@ -182,7 +182,8 @@ test("SLG 总览证据：区分实地图与绘卷，地标坐标只取公开锚�
 });
 
 test("SLG 预览工具世界尺寸与 shared 常量一致（换图改尺寸时必须同改）", () => {
-  assert.equal(SLG_WORLD_SIZE, SLG_MAP_W);
+  assert.equal(SLG_WORLD_SIZE, SLG_MAPS[0].width);
+  assert.equal(SLG_MAPS[0].id, "senzhiguo");
 });
 
 test("SLG 材质证据：页面脚本自包含，只读公开共享材质和精灵，不创实例、不加载资源", () => {

@@ -1,5 +1,5 @@
 /** Presentation-only map art. No engine state, network reads or gameplay semantics. */
-import { SLG_CHUNK_SIZE, SLG_MAP_H, SLG_MAP_W, chunkKey, terrainAt, type ISlgChunkRect, type ISlgTerrain } from "../../../shared/kits/slg/api/worldmap/index";
+import { SLG_CHUNK_SIZE, SLG_MAPS, chunkKey, terrainAt, type ISlgChunkRect, type ISlgTerrain } from "../../../shared/kits/slg/api/worldmap/index";
 
 export const SLG_ART_ATLAS_COLUMNS = 3;
 export const SLG_ART_ATLAS_ROWS = 2;
@@ -48,14 +48,20 @@ export interface SlgLandmark extends SlgDecoration { readonly landmark: true; re
 const DECORATION_ATLAS_INDEX: Readonly<Record<SlgDecorationKind, number>> = {
     tree: 0, chest: 1, portal: 2, stele: 3, crystal: 4, sword: 5,
 };
-/** 森之国地标（布局复刻坐标，经 chunk 足迹与旱地校验微调；森林/湖泊/海岸干燥陆地上，各占独立 chunk）。 */
-export const SLG_LANDMARKS: readonly SlgLandmark[] = [
-    { id: "guimu-village", name: "归木村", x: 805, y: 757, width: 9, height: 9, kind: "stele", atlasIndex: 3, landmark: true },
-    { id: "worldtree", name: "世界树半岛", x: 759, y: 888, width: 9, height: 9, kind: "tree", atlasIndex: 0, landmark: true },
-    { id: "bubble-lake", name: "气泡湖", x: 779, y: 726, width: 9, height: 9, kind: "crystal", atlasIndex: 4, landmark: true },
-    { id: "flower-coast", name: "狂花海岸", x: 758, y: 853, width: 9, height: 9, kind: "portal", atlasIndex: 2, landmark: true },
-    { id: "spider-den", name: "蛛后巢穴", x: 747, y: 806, width: 9, height: 9, kind: "sword", atlasIndex: 5, landmark: true },
-];
+/** 地标占地固定 9×9（管线 calibrate --check-landmarks 按此校验 chunk 足迹）。 */
+export const SLG_LANDMARK_FOOT = 9;
+/** layout.json 的地标条目（管线 tools/slg-maps 产出；x/y 为中心格锚；kind 即图集 kind）。 */
+export interface SlgLayoutLandmark { readonly name: string; readonly x: number; readonly y: number; readonly tag: string; readonly kind: SlgDecorationKind }
+
+/** 布局地标 → 运行时装饰（数据驱动；曾硬编码 SLG_LANDMARKS，五图化后从 layout 读）。
+ *  坐标为中心格锚（管线 calibrate 按 x−4..x+4 校验 9×9 足迹）。 */
+export function slgLandmarkOf(entry: SlgLayoutLandmark): SlgLandmark {
+    return {
+        id: `landmark-${entry.name}`, name: entry.name, x: entry.x, y: entry.y,
+        width: SLG_LANDMARK_FOOT, height: SLG_LANDMARK_FOOT,
+        kind: entry.kind, atlasIndex: DECORATION_ATLAS_INDEX[entry.kind], landmark: true,
+    };
+}
 
 function artHash(cx: number, cy: number, slot: number, salt: number): number {
     let value = Math.imul(cx + 1, 0x9e3779b1) ^ Math.imul(cy + 1, 0x85ebca77) ^ Math.imul(slot + 1, 0xc2b2ae3d) ^ salt;
@@ -73,7 +79,7 @@ function intersects(a: SlgDecoration, b: SlgDecoration): boolean {
 }
 
 function ordinaryKind(terrain: number, slot: number, roll: number, central: boolean): SlgDecorationKind | null {
-    // 森之国 palette：0 草地 / 1 林地 / 2 水面 / 3 岩石 / 4 沙滩 / 5 裸土；水面不出装饰。
+    // 五图统一 palette 语义：0 草地主陆 / 1 林地湿地 / 2 水面 / 3 岩石台地 / 4 沙滩浅滩 / 5 裸土；水面不出装饰。
     if (terrain === 2) return null;
     if (terrain === 0) {
         if (slot >= 3 || (!central && roll > 0.55)) return null;
@@ -90,22 +96,23 @@ function ordinaryKind(terrain: number, slot: number, roll: number, central: bool
  * Enumerate at most six fixed slots, never the world's cells. X/Y are center anchors in grid
  * units; complete bounds stay inside their owning chunk. LODs select prefixes of the same
  * candidates, so zooming never moves retained objects or introduces duplicate neighbors.
+ *
+ * 地标与布局点位全部数据驱动（layout = buildSlgLayoutIndex 产物）；无布局区域维持确定性哈希兜底。
  */
 export function slgDecorationsForChunk(terrain: ISlgTerrain, cx: number, cy: number, lod: number,
-    layoutIndex?: ReadonlyMap<number, readonly SlgDecoration[]>): readonly SlgDecoration[] {
+    layout?: SlgLayoutIndex): readonly SlgDecoration[] {
     chunkKey(cx, cy);
     if (!Number.isInteger(lod) || lod < 0 || lod > 3) throw new RangeError("SLG art LOD invalid");
     const minX = cx * SLG_CHUNK_SIZE, minY = cy * SLG_CHUNK_SIZE;
-    const maxX = Math.min(SLG_MAP_W, minX + SLG_CHUNK_SIZE), maxY = Math.min(SLG_MAP_H, minY + SLG_CHUNK_SIZE);
-    const landmarks = SLG_LANDMARKS.filter((entry) => entry.x >= minX && entry.x < maxX && entry.y >= minY && entry.y < maxY);
-    // 双源：布局复刻区（中心 1045×680 一带）用 forest-layout 的真实点位，其余 chunk 维持确定性哈希。
-    const layout = layoutIndex?.get(chunkKey(cx, cy));
-    if (layout) {
+    const maxX = Math.min(terrain.width, minX + SLG_CHUNK_SIZE), maxY = Math.min(terrain.height, minY + SLG_CHUNK_SIZE);
+    const landmarks = (layout?.landmarks ?? []).filter((entry) => entry.x >= minX && entry.x < maxX && entry.y >= minY && entry.y < maxY);
+    const bucket = layout?.index.get(chunkKey(cx, cy));
+    if (bucket) {
         const limit = [6, 4, 2, 0][lod];
-        return [...layout.slice(0, Math.max(0, limit - landmarks.length)), ...landmarks].sort((a, b) => b.y - a.y || a.x - b.x);
+        return [...bucket.slice(0, Math.max(0, limit - landmarks.length)), ...landmarks].sort((a, b) => b.y - a.y || a.x - b.x);
     }
     const ordinary: SlgDecoration[] = [];
-    const central = cx === Math.floor(750 / SLG_CHUNK_SIZE) && cy === Math.floor(750 / SLG_CHUNK_SIZE);
+    const central = cx === Math.floor(terrain.width / 2 / SLG_CHUNK_SIZE) && cy === Math.floor(terrain.height / 2 / SLG_CHUNK_SIZE);
     const limit = [6, 4, 2, 0][lod];
     for (let slot = 0; slot < 6 && ordinary.length < limit; slot++) {
         const seedX = minX + (slot % 3 + 0.5) * (maxX - minX) / 3;
@@ -133,26 +140,26 @@ function validateOverview(point: SlgArtPoint, width: number, height: number): vo
     }
 }
 
-/** World space uses continuous outer bounds 0..10000; overview uses top-left, north-up pixels. */
-export function worldToOverview(point: SlgArtPoint, width = 1, height = 1): SlgArtPoint {
+/** World space uses the terrain's own bounds; overview uses top-left, north-up pixels. */
+export function worldToOverview(terrain: ISlgTerrain, point: SlgArtPoint, width = 1, height = 1): SlgArtPoint {
     validateOverview(point, width, height);
-    return { x: bounded(point.x, 0, SLG_MAP_W) / SLG_MAP_W * width,
-        y: (1 - bounded(point.y, 0, SLG_MAP_H) / SLG_MAP_H) * height };
+    return { x: bounded(point.x, 0, terrain.width) / terrain.width * width,
+        y: (1 - bounded(point.y, 0, terrain.height) / terrain.height) * height };
 }
 
-/** Returns continuous world bounds, including 10000. A tile lookup must floor and clamp to 9999. */
-export function overviewToWorld(point: SlgArtPoint, width = 1, height = 1): SlgArtPoint {
+/** Returns continuous world bounds, including width/height. A tile lookup must floor and clamp. */
+export function overviewToWorld(terrain: ISlgTerrain, point: SlgArtPoint, width = 1, height = 1): SlgArtPoint {
     validateOverview(point, width, height);
-    return { x: bounded(point.x / width, 0, 1) * SLG_MAP_W,
-        y: (1 - bounded(point.y / height, 0, 1)) * SLG_MAP_H };
+    return { x: bounded(point.x / width, 0, 1) * terrain.width,
+        y: (1 - bounded(point.y / height, 0, 1)) * terrain.height };
 }
 
 /** Accepts MapCamera.visibleRect(): maxima INCLUDE their last grid cell. Add one exactly here. */
-export function overviewViewportRect(rect: ISlgChunkRect, width = 1, height = 1): SlgOverviewRect {
+export function overviewViewportRect(terrain: ISlgTerrain, rect: ISlgChunkRect, width = 1, height = 1): SlgOverviewRect {
     if (![rect.minX, rect.minY, rect.maxX, rect.maxY].every(Number.isFinite)
         || rect.minX > rect.maxX || rect.minY > rect.maxY) throw new RangeError("SLG overview viewport invalid");
-    const topLeft = worldToOverview({ x: rect.minX, y: rect.maxY + 1 }, width, height);
-    const bottomRight = worldToOverview({ x: rect.maxX + 1, y: rect.minY }, width, height);
+    const topLeft = worldToOverview(terrain, { x: rect.minX, y: rect.maxY + 1 }, width, height);
+    const bottomRight = worldToOverview(terrain, { x: rect.maxX + 1, y: rect.minY }, width, height);
     return { x: topLeft.x, y: topLeft.y, width: bottomRight.x - topLeft.x, height: bottomRight.y - topLeft.y };
 }
 
@@ -171,26 +178,41 @@ export function buildSlgOverviewRects(terrain: ISlgTerrain): readonly SlgOvervie
 }
 
 
-/** forest-layout.json 的运行时形状（森之国真实布局复刻，见 apps/kits/slg/data/forest-layout.json）。 */
+/** <mapId>/layout.json 的运行时形状（五国真实布局复刻，tools/slg-maps 管线产出）。 */
 export interface SlgForestLayoutDecoration { readonly x: number; readonly y: number; readonly kind: SlgDecorationKind }
 export interface SlgForestLayout {
     readonly source: string;
-    readonly mapSize: number;
+    readonly id: string;
+    /** 方图为单值（森之国 legacy），非方图为 [width, height]。 */
+    readonly mapSize: number | readonly [number, number];
+    readonly landmarks: readonly SlgLayoutLandmark[];
     readonly decorations: readonly SlgForestLayoutDecoration[];
 }
 
 const LAYOUT_KINDS: readonly string[] = ["tree", "chest", "portal", "stele", "crystal", "sword"];
 
-/** 布局文件的 fail-closed 形状闸：kind 必须是六类之一，坐标落在图内。 */
+/** 布局文件的 fail-closed 形状闸：id 对照 SLG_MAPS catalog，mapSize 匹配该图尺寸，kind 必须是六类之一。 */
 export function validateSlgForestLayout(input: unknown): input is SlgForestLayout {
     if (!input || typeof input !== "object") return false;
-    const value = input as { mapSize?: unknown; decorations?: unknown };
-    if (value.mapSize !== SLG_MAP_W || !Array.isArray(value.decorations)) return false;
+    const value = input as { id?: unknown; mapSize?: unknown; landmarks?: unknown; decorations?: unknown };
+    if (typeof value.id !== "string") return false;
+    const info = SLG_MAPS.find((m) => m.id === value.id);
+    if (!info) return false;
+    const size = Array.isArray(value.mapSize) ? value.mapSize : [value.mapSize, value.mapSize];
+    if (size.length !== 2 || size[0] !== info.width || size[1] !== info.height) return false;
+    if (!Array.isArray(value.landmarks) || value.landmarks.length === 0) return false;
+    for (const lm of value.landmarks) {
+        if (!lm || typeof lm !== "object") return false;
+        const { name, x, y, kind } = lm as { name?: unknown; x?: unknown; y?: unknown; kind?: unknown };
+        if (typeof name !== "string" || !name || typeof kind !== "string" || !LAYOUT_KINDS.includes(kind)) return false;
+        if (!Number.isInteger(x) || !Number.isInteger(y)) return false;
+    }
+    if (!Array.isArray(value.decorations)) return false;
     for (const entry of value.decorations) {
         if (!entry || typeof entry !== "object") return false;
         const { x, y, kind } = entry as { x?: unknown; y?: unknown; kind?: unknown };
-        if (!Number.isInteger(x) || !Number.isInteger(y) || (x as number) < 0 || (x as number) >= SLG_MAP_W
-            || (y as number) < 0 || (y as number) >= SLG_MAP_H) return false;
+        if (!Number.isInteger(x) || !Number.isInteger(y) || (x as number) < 0 || (x as number) >= info.width
+            || (y as number) < 0 || (y as number) >= info.height) return false;
         if (typeof kind !== "string" || !LAYOUT_KINDS.includes(kind)) return false;
     }
     return true;
@@ -200,12 +222,17 @@ const LAYOUT_SIZE: Readonly<Record<SlgDecorationKind, number>> = {
     tree: 4.5, chest: 3, portal: 5, stele: 6, crystal: 3.5, sword: 5,
 };
 
+export interface SlgLayoutIndex {
+    readonly index: ReadonlyMap<number, readonly SlgDecoration[]>;
+    readonly landmarks: readonly SlgLandmark[];
+}
+
 /**
  * 布局点位 → 按 chunk 分桶的索引（chunkKey → 装饰数组）。每 chunk 上限 6（超出按输入序截断），
- * 与确定性哈希路径共用同一上限族。
+ * 与确定性哈希路径共用同一上限族。地标从布局 landmarks 构建（数据驱动）。
  */
-export function buildSlgLayoutIndex(layout: SlgForestLayout): ReadonlyMap<number, readonly SlgDecoration[]> {
-    if (!validateSlgForestLayout(layout)) throw new RangeError("SLG forest layout invalid");
+export function buildSlgLayoutIndex(layout: SlgForestLayout): SlgLayoutIndex {
+    if (!validateSlgForestLayout(layout)) throw new RangeError("SLG layout invalid");
     const buckets = new Map<number, SlgDecoration[]>();
     layout.decorations.forEach((entry, index) => {
         const size = LAYOUT_SIZE[entry.kind];
@@ -219,5 +246,5 @@ export function buildSlgLayoutIndex(layout: SlgForestLayout): ReadonlyMap<number
         else buckets.set(key, [decoration]);
     });
     for (const bucket of buckets.values()) bucket.sort((a, b) => a.id < b.id ? -1 : 1);
-    return buckets;
+    return { index: buckets, landmarks: layout.landmarks.map(slgLandmarkOf) };
 }

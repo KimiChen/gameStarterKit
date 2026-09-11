@@ -1,5 +1,5 @@
 /** Bounded chunk geometry for separate textured ground and untextured ownership batches. */
-import { SLG_CHUNK_SIZE, SLG_MAP_H, SLG_MAP_W, chunkKey, terrainAt, tileIdFromGrid,
+import { SLG_CHUNK_SIZE, chunkKey, slgMapIndex, terrainAt, tileIdFromGrid,
     type ISlgTerrain, type ISlgTile } from "../../../shared/kits/slg/api/worldmap/index";
 import { SLG_ART_ATLAS_COLUMNS, SLG_ART_ATLAS_ROWS, slgTerrainUv } from "./mapArt";
 import { SLG_GRID_PIXELS } from "./mapCamera";
@@ -55,8 +55,9 @@ export function buildSlgTerrainMeshes(terrain: ISlgTerrain, cx: number, cy: numb
     }
     if (!Number.isFinite(alpha) || alpha < 0 || alpha > 1) throw new RangeError("SLG terrain mesh alpha invalid");
     const startX = cx * SLG_CHUNK_SIZE, startY = cy * SLG_CHUNK_SIZE;
-    const width = Math.min(SLG_CHUNK_SIZE, SLG_MAP_W - startX);
-    const height = Math.min(SLG_CHUNK_SIZE, SLG_MAP_H - startY);
+    const width = Math.min(SLG_CHUNK_SIZE, terrain.width - startX);
+    const height = Math.min(SLG_CHUNK_SIZE, terrain.height - startY);
+    const mapIndex = slgMapIndex(terrain.id);
     const quadCapacity = width * height;
     const positions = new Float32Array(quadCapacity * 12);
     const uvs = new Float32Array(quadCapacity * 8);
@@ -97,7 +98,7 @@ export function buildSlgTerrainMeshes(terrain: ISlgTerrain, cx: number, cy: numb
             return v0 + t * (v1 - v0);
         };
         uvs.set([spanU(x), spanV(y + 1), spanU(x + 1), spanV(y + 1), spanU(x), spanV(y), spanU(x + 1), spanV(y)], quad * 8);
-        const tile = tiles.get(tileIdFromGrid(x, y));
+        const tile = tiles.get(tileIdFromGrid(mapIndex, x, y));
         if (tile?.ownerUid) {
             writeQuad(ownerPositions, ownerIndices, ownerCount, left, bottom, right, top);
             const base = tile.ownerUid === selfUid ? SELF_COLOR : OTHER_COLOR;

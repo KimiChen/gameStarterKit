@@ -14,6 +14,9 @@ apps/Cocos/settings/cocos.config.json
 # 构建产物
 dist/
 
+# SLG 地图管线中间产物（渲染大图/校准叠图；入库产物在 apps/kits/slg/{data,art}）
+tools/slg-maps/out/
+
 # 本地预览验收截图与报告
 /docs/evidence/
 

@@ -403,6 +403,58 @@ export async function replaySlgMap(runner) {
     return { ...after, positionUnchanged: true, shot: await runner.shot("slg-world-returned") };
   });
 
+  await runner.step("小地图展开五图切换面板", async () => {
+    const current = failed(readSlgMapEvidence(await runner.walk()));
+    if (!current?.title) throw new Error("当前地图标题不可读");
+    const currentName = current.title.split(" · ")[0];
+    await runner.tapText(currentName, { pathIncludes: `${VIEW}/slg-minimap` });
+    await runner.waitFor("切换面板与五图选项出现", (walk) => {
+      const panel = walk.nodes.find((node) => node.name === "slg-map-switcher" && inView(node));
+      const options = walk.nodes.filter((node) => /^slg-map-option-/u.test(node.name) && inView(node));
+      return panel && options.length === 5 ? { options: options.map((node) => node.name).sort() } : null;
+    });
+    return { shot: await runner.shot("slg-switcher-opened") };
+  });
+
+  await runner.step("切换到山之国：标题、地块与资源按图重载", async () => {
+    await runner.tapText("山之国", { pathIncludes: "slg-map-option-shanzhiguo" });
+    const evidence = await runner.waitFor("标题变山之国且网格重载", (walk) => {
+      const value = failed(readSlgMapEvidence(walk));
+      return value?.loaded && value.title?.startsWith("山之国 ·") && value.chunks.length > 0 ? value : null;
+    }, 60_000);
+    return { ...(await stableSlgFrame(runner, evidence.lod)), assets: await renderedMapAssets(runner),
+      shot: await runner.shot("slg-switch-shanzhiguo") };
+  });
+
+  await runner.step("山之国缩到 LOD 4 看远档岛貌", async () => {
+    const area = slgMapGestureArea(await runner.walk());
+    let direction = 1;
+    for (let attempt = 0; attempt < 64; attempt += 1) {
+      await runner.client.send("Input.dispatchMouseEvent", { type: "mouseWheel", x: area.x, y: area.y, deltaX: 0, deltaY: 60 * direction });
+      await sleep(120);
+      const evidence = failed(readSlgMapEvidence(await runner.walk()));
+      if (evidence?.lod === 4) {
+        return { ...(await stableSlgFrame(runner, 4)), assets: await renderedFarAssets(runner),
+          shot: await runner.shot("slg-shanzhiguo-lod-4") };
+      }
+      // 与 LOD 2-4 步同一约定：首开档 7 次后不动则换向（一次性探测）
+      if (attempt === 7 && evidence?.lod === 1) direction = -1;
+    }
+    throw new Error("64 次滚轮后仍未到 LOD 4（山之国）");
+  });
+
+  await runner.step("切回森之国并恢复近档", async () => {
+    await runner.tapText("山之国", { pathIncludes: `${VIEW}/slg-minimap` });
+    await runner.waitFor("切换面板出现", (walk) => walk.nodes.some((node) => node.name === "slg-map-switcher" && inView(node)) ? true : null);
+    await runner.tapText("森之国", { pathIncludes: "slg-map-option-senzhiguo" });
+    const evidence = await runner.waitFor("标题回森之国且网格重载", (walk) => {
+      const value = failed(readSlgMapEvidence(walk));
+      return value?.loaded && value.title?.startsWith("森之国 ·") && value.chunks.length > 0 ? value : null;
+    }, 60_000);
+    return { ...(await stableSlgFrame(runner, evidence.lod)), assets: await renderedMapAssets(runner),
+      shot: await runner.shot("slg-switch-back-senzhiguo") };
+  });
+
   await runner.step("关闭地图回设置面板", async () => {
     await runner.tapText("关闭", { pathIncludes: VIEW });
     await runner.waitFor("SlgMapView 卸载，SettingsView 保留", (walk) => {

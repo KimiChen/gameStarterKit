@@ -5,8 +5,11 @@ import { MapStreamer } from "../src/kits/slg/logic/mapStreamer";
 import { visibleMapLayers } from "../src/kits/slg/logic/mapLayers";
 import { SlgMapLogic, SLG_MAP_READ_INTERVAL_MS } from "../src/kits/slg/logic/SlgMapLogic";
 import type { SlgRuntime } from "../src/kits/slg/logic/slgRuntime";
-import { chunkKey, gridFromTileId, SLG_CHUNK_SIZE, SLG_MAP_W, SLG_MAP_H, tileIdFromGrid, type ISlgTile } from "../src/shared/kits/slg/api/worldmap/index";
+import { chunkKey, gridFromTileId, SLG_CHUNK_SIZE, slgMapInfo, tileIdFromGrid, type ISlgTile } from "../src/shared/kits/slg/api/worldmap/index";
 import type { ISlgMapTilesRes } from "../src/shared/protocol/lobbyRpc/domains/slg";
+
+/** 默认图森之国（catalog 登记 1500×1500）；五国多图化后尺寸按图取，不再用全局常量。 */
+const MAP = slgMapInfo("senzhiguo");
 
 function near(a: number, b: number): void { assert.ok(Math.abs(a - b) < 0.000001, `${a} != ${b}`); }
 const flush = () => new Promise<void>((resolve) => setImmediate(resolve));
@@ -17,7 +20,7 @@ function deferred<T>() {
 }
 
 test("SLG camera: anchored zoom, moving pinch center, four LODs and bounds", () => {
-    const camera = new MapCamera(750, 1100);
+    const camera = new MapCamera(750, 1100, MAP.width, MAP.height);
     const anchor = camera.worldAt(180, -220);
     camera.zoom(1.7, 180, -220);
     near(camera.worldAt(180, -220).x, anchor.x);
@@ -34,16 +37,16 @@ test("SLG camera: anchored zoom, moving pinch center, four LODs and bounds", () 
     assert.ok(visibleMapLayers(0).includes("grid"));
     camera.pan(1000000, -1000000);
     const rect = camera.visibleRect();
-    assert.equal(rect.minX, 0); assert.equal(rect.maxY, SLG_MAP_H - 1);
+    assert.equal(rect.minX, 0); assert.equal(rect.maxY, MAP.height - 1);
     const version = camera.version;
     camera.zoom(NaN); camera.pan(Infinity, 1);
     assert.equal(camera.version, version);
 });
 
 test("SLG camera: taps, dragging inertia and cancellation/background stop", () => {
-    const camera = new MapCamera(750, 1100);
+    const camera = new MapCamera(750, 1100, MAP.width, MAP.height);
     camera.start(1, 0, 0, 0);
-    assert.deepEqual(camera.end(1, 1), { x: SLG_MAP_W / 2, y: SLG_MAP_H / 2 });
+    assert.deepEqual(camera.end(1, 1), { x: MAP.width / 2, y: MAP.height / 2 });
     camera.start(2, 0, 0, 10); camera.move(2, 80, 0, 26);
     assert.equal(camera.end(2, 27), null);
     const x = camera.x; camera.step(0.016); assert.ok(camera.x < x);
@@ -54,7 +57,7 @@ test("SLG camera: taps, dragging inertia and cancellation/background stop", () =
 });
 
 test("SLG overview locate: preserves zoom, stops active inertia and discards both old touch pointers", () => {
-    const camera = new MapCamera(750, 1100);
+    const camera = new MapCamera(750, 1100, MAP.width, MAP.height);
     camera.zoom(0.72);
     const scale = camera.scale;
     camera.start(1, 0, 0, 10); camera.move(1, 100, 30, 26); camera.end(1, 27);
@@ -85,7 +88,7 @@ test("SLG overview locate: preserves zoom, stops active inertia and discards bot
 });
 
 test("SLG overview locate: rejects nonfinite input and keeps the entire viewport within both world edges", () => {
-    const camera = new MapCamera(750, 1100);
+    const camera = new MapCamera(750, 1100, MAP.width, MAP.height);
     camera.zoom(0.001);
     const scale = camera.scale;
     camera.start(1, 0, 0, 0);
@@ -96,18 +99,18 @@ test("SLG overview locate: rejects nonfinite input and keeps the entire viewport
 
     const halfWidth = camera.width / camera.pixelsPerGrid / 2;
     const halfHeight = camera.height / camera.pixelsPerGrid / 2;
-    camera.locate(-1000000, SLG_MAP_H + 1000000);
-    near(camera.x, halfWidth); near(camera.y, SLG_MAP_H - halfHeight);
-    assert.equal(camera.visibleRect().minX, 0); assert.equal(camera.visibleRect().maxY, SLG_MAP_H - 1);
+    camera.locate(-1000000, MAP.height + 1000000);
+    near(camera.x, halfWidth); near(camera.y, MAP.height - halfHeight);
+    assert.equal(camera.visibleRect().minX, 0); assert.equal(camera.visibleRect().maxY, MAP.height - 1);
     assert.equal(camera.pointerCount, 0);
-    camera.locate(SLG_MAP_W + 1000000, -1000000);
-    near(camera.x, SLG_MAP_W - halfWidth); near(camera.y, halfHeight);
-    assert.equal(camera.visibleRect().maxX, SLG_MAP_W - 1); assert.equal(camera.visibleRect().minY, 0);
+    camera.locate(MAP.width + 1000000, -1000000);
+    near(camera.x, MAP.width - halfWidth); near(camera.y, halfHeight);
+    assert.equal(camera.visibleRect().maxX, MAP.width - 1); assert.equal(camera.visibleRect().minY, 0);
     assert.equal(camera.scale, scale);
 });
 
 test("SLG streamer: ring order, unchanged camera no-op, stale loads discarded and retention", () => {
-    const streamer = new MapStreamer();
+    const streamer = new MapStreamer(MAP.width, MAP.height);
     const delta = streamer.update({ minX: 32, minY: 32, maxX: 63, maxY: 63 });
     assert.equal(delta.added.length, 16);
     const first = streamer.take(); assert.ok(first);
@@ -119,11 +122,11 @@ test("SLG streamer: ring order, unchanged camera no-op, stale loads discarded an
     streamer.update({ minX: 48, minY: 32, maxX: 79, maxY: 63 });
     assert.ok(streamer.loadedKeys().includes(first.key), "nearby chunks remain within hysteresis band");
     assert.equal(streamer.accept(old), false);
-    const moved = streamer.update({ minX: SLG_MAP_W - 25, minY: SLG_MAP_H - 25, maxX: SLG_MAP_W - 1, maxY: SLG_MAP_H - 1 });
+    const moved = streamer.update({ minX: MAP.width - 25, minY: MAP.height - 25, maxX: MAP.width - 1, maxY: MAP.height - 1 });
     assert.ok(moved.removed.includes(first.key));
     for (;;) {
         const load = streamer.take(); if (!load) break;
-        assert.ok(load.x < Math.ceil(SLG_MAP_W / SLG_CHUNK_SIZE) && load.y < Math.ceil(SLG_MAP_H / SLG_CHUNK_SIZE));
+        assert.ok(load.x < Math.ceil(MAP.width / SLG_CHUNK_SIZE) && load.y < Math.ceil(MAP.height / SLG_CHUNK_SIZE));
         assert.equal(streamer.accept(load), true);
     }
     assert.ok(streamer.loadedKeys().length <= 9);
@@ -139,11 +142,14 @@ function runtimeWithTiles(initial: readonly ISlgTile[] = []) {
     const tickers = new Set<(dt: number) => void>();
     const runtime: SlgRuntime = {
         selfUid: () => "me", now: () => now, tick: (callback) => { tickers.add(callback); return () => { tickers.delete(callback); }; }, close: () => {},
-        mapTiles: async (rect) => ({ revision, myTrophies: trophies, tiles: [...tiles.values()].filter((tile) => {
-            const point = gridFromTileId(tile.tileId);
-            const x = Math.floor(point.x / SLG_CHUNK_SIZE), y = Math.floor(point.y / SLG_CHUNK_SIZE);
-            return x >= rect.minX && x <= rect.maxX && y >= rect.minY && y <= rect.maxY;
-        }) }),
+        mapTiles: async (mapId, rect) => {
+            assert.equal(mapId, "senzhiguo", "logic must pass its own mapId to the runtime");
+            return { revision, myTrophies: trophies, tiles: [...tiles.values()].filter((tile) => {
+                const point = gridFromTileId(tile.tileId);
+                const x = Math.floor(point.x / SLG_CHUNK_SIZE), y = Math.floor(point.y / SLG_CHUNK_SIZE);
+                return x >= rect.minX && x <= rect.maxX && y >= rect.minY && y <= rect.maxY;
+            }) };
+        },
         capture: async (tileId) => {
             captures += 1; revision += 1; trophies += 1;
             const tile = { tileId, ownerUid: "me", guardPower: 1 };
@@ -156,14 +162,14 @@ function runtimeWithTiles(initial: readonly ISlgTile[] = []) {
 
 /** These API fixtures live near (100,100), independent of the configured world's full extent. */
 function fixtureLogic(runtime: SlgRuntime): SlgMapLogic {
-    const logic = new SlgMapLogic(runtime, 750, 1100);
+    const logic = new SlgMapLogic(runtime, "senzhiguo", 750, 1100);
     logic.camera.pan((logic.camera.x - 100) * logic.camera.pixelsPerGrid, (logic.camera.y - 100) * logic.camera.pixelsPerGrid);
     return logic;
 }
 
 test("SLG map: sparse baseline, selected ownership, one write while busy, authoritative reread", async () => {
-    const id = tileIdFromGrid(100, 100);
-    const otherId = tileIdFromGrid(101, 100);
+    const id = tileIdFromGrid(0, 100, 100);
+    const otherId = tileIdFromGrid(0, 101, 100);
     const fake = runtimeWithTiles([{ tileId: otherId, ownerUid: "enemy", guardPower: 9 }]);
     const logic = fixtureLogic(fake.runtime);
     logic.select(100, 100); assert.equal(logic.canCapture(), false);
@@ -190,15 +196,15 @@ test("SLG map: overview jumps and disposed views reject late query responses", a
     };
     const logic = fixtureLogic(fake.runtime);
     logic.updateViewport();
-    logic.camera.locate(SLG_MAP_W - 100, SLG_MAP_H - 100); logic.updateViewport();
-    pending.resolve({ tiles: [{ tileId: tileIdFromGrid(100, 100), ownerUid: "stale", guardPower: 1 }], revision: 0, myTrophies: 0 });
+    logic.camera.locate(MAP.width - 100, MAP.height - 100); logic.updateViewport();
+    pending.resolve({ tiles: [{ tileId: tileIdFromGrid(0, 100, 100), ownerUid: "stale", guardPower: 1 }], revision: 0, myTrophies: 0 });
     await flush();
     assert.equal(logic.tiles.size, 0);
     assert.equal(logic.chunkVersions.has(chunkKey(6, 6)), false);
     const disposedRead = deferred<ISlgMapTilesRes>();
     fake.runtime.mapTiles = () => disposedRead.promise;
     fake.advance(); logic.refresh(); logic.dispose();
-    disposedRead.resolve({ tiles: [{ tileId: tileIdFromGrid(199, 199), ownerUid: "stale", guardPower: 1 }], revision: 2, myTrophies: 4 });
+    disposedRead.resolve({ tiles: [{ tileId: tileIdFromGrid(0, 199, 199), ownerUid: "stale", guardPower: 1 }], revision: 2, myTrophies: 4 });
     await flush(); assert.equal(logic.tiles.size, 0); assert.equal(logic.chunkVersions.size, 0);
 });
 
@@ -220,7 +226,7 @@ test("SLG map: a capture response after closing cannot revive the disposed page"
     logic.updateViewport(); await flush(); logic.select(100, 100);
     const write = logic.capture(); assert.equal(logic.busy, true);
     logic.dispose();
-    pending.resolve({ tile: { tileId: tileIdFromGrid(100, 100), ownerUid: "me", guardPower: 1 }, outcome: "captured" });
+    pending.resolve({ tile: { tileId: tileIdFromGrid(0, 100, 100), ownerUid: "me", guardPower: 1 }, outcome: "captured" });
     assert.equal(await write, false); assert.equal(logic.tiles.size, 0); assert.equal(logic.chunkVersions.size, 0);
 });
 
@@ -228,10 +234,10 @@ test("SLG map: rapid zoom stays within five requests/sec and each request is at 
     const fake = runtimeWithTiles();
     const starts: number[] = [];
     const read = fake.runtime.mapTiles;
-    fake.runtime.mapTiles = (rect) => {
+    fake.runtime.mapTiles = (mapId, rect) => {
         starts.push(fake.runtime.now());
         assert.ok((rect.maxX - rect.minX + 1) * (rect.maxY - rect.minY + 1) <= 4);
-        return read(rect);
+        return read(mapId, rect);
     };
     const logic = fixtureLogic(fake.runtime);
     logic.updateViewport(); await flush();
@@ -266,12 +272,12 @@ test("SLG map: RATE_LIMITED waits, exponentially backs off and recovers without 
 });
 
 test("SLG 1500×1500 map: far edge and widest viewport allocate only visible chunks", () => {
-    assert.equal(SLG_MAP_W, 1500); assert.equal(SLG_MAP_H, 1500);
-    const camera = new MapCamera(750, 1100);
+    assert.equal(MAP.width, 1500); assert.equal(MAP.height, 1500);
+    const camera = new MapCamera(750, 1100, MAP.width, MAP.height);
     camera.zoom(0.001); camera.pan(-10000000, -10000000);
     const rect = camera.visibleRect();
     assert.equal(rect.maxX, 1499); assert.equal(rect.maxY, 1499);
-    const streamer = new MapStreamer();
+    const streamer = new MapStreamer(MAP.width, MAP.height);
     const delta = streamer.update(rect);
     assert.ok(delta.added.length < 200, "2.25 million cells must not be materialized");
     let loaded = 0;

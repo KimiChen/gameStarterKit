@@ -3,7 +3,7 @@ import type { ISlgMapTilesRes, ISlgTileCaptureRes } from "../../../shared/protoc
 
 export interface SlgRuntime {
     selfUid(): string;
-    mapTiles(rect: ISlgChunkRect): Promise<ISlgMapTilesRes>;
+    mapTiles(mapId: string, rect: ISlgChunkRect): Promise<ISlgMapTilesRes>;
     capture(tileId: number): Promise<ISlgTileCaptureRes>;
     now(): number;
     tick(callback: (dt: number) => void): () => void;
