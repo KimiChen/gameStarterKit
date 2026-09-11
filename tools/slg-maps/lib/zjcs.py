@@ -63,6 +63,39 @@ def entity_class_id(entity) -> int:
     return d[0] if isinstance(d, list) and d else 0
 
 
+def load_map_grid(cfg: dict, class_id: int):
+    """MapRootEntityLite 逐格 [area, groundType] + AreaInfos + maxstep。
+    结构：root(8 字段) + 11B 自定义 framing + array16(H)×array16(W) 逐格 + AreaInfos + maxstep。
+    坐标：lite 格 = mapinfowrap 实体格（零偏移）；y 不翻转（y=0 为南）。"""
+    from msgpack.fallback import Unpacker
+    data = (zjcs(cfg, "yoo-assets", "map-assets", "Assets", "Config", "EC",
+                 "MapRootEntityLite", f"{class_id}.g.bytes")).read_bytes()
+
+    def skip_scalar(o: int) -> int:
+        b = data[o]
+        if b <= 0x7f or b >= 0xe0 or b in (0xc2, 0xc3):
+            return o + 1
+        if b == 0xcc:
+            return o + 2
+        return o + 3
+
+    off = skip_scalar(skip_scalar(skip_scalar(1)))
+    up = Unpacker(raw=False, strict_map_key=False)
+    up.feed(data[off:off + 12])
+    width, height = next(up)
+    pattern = bytes([0xdc, height >> 8, height & 0xff, 0xdc, width >> 8, width & 0xff])
+    pos = data.find(pattern)
+    if pos < 0:
+        raise SystemExit(f"MapRootEntityLite {class_id}: 未找到逐格数组头（W={width} H={height}）")
+    up = Unpacker(raw=False, strict_map_key=False, max_buffer_size=0)
+    up.feed(data[pos:])
+    grid = next(up)
+    areas = next(up)
+    maxstep = next(up)
+    assert len(grid) == height and all(len(r) == width for r in grid), "逐格数组尺寸不符"
+    return grid, areas, maxstep
+
+
 def resolve_ground_image(cfg: dict, mc: dict) -> Path:
     """纯地表渲染图：config render.groundImage 为 "@local"（或缺失）时用本管线 out/<id>/ground.png，
     否则按 zjcs map-assets 相对路径（如 renders/Map11_ground_web.jpg）。"""

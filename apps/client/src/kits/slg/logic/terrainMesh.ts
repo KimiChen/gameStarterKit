@@ -46,12 +46,14 @@ export const SLG_TEXTURE_SPAN = 4;
  *
  * groundMode（缺省 = atlas 图集采样，兼容旧行为）：
  * - `{ kind: "tile", tile }`：UV 取「世界格 64 块贴图」的块内子区（块顶=北），顶点色全白（贴图原色）。
- * - `{ kind: "palette" }`：块贴图未就绪回退——顶点色 = palette 染色（无贴图材质下显示地形色）。
+ * - `{ kind: "island", rect }`：块贴图未就绪回退——UV 取 island-ground 覆盖矩形同区（rect=terrain.islandRect），
+ *   顶点白；矩形外 UV 越界由 clamp-to-edge 取海色边（island-ground 边缘即海）。
+ * - `{ kind: "palette" }`：纯 palette 顶点色（无贴图材质下显示地形色，测试/调试用）。
  */
 export function buildSlgTerrainMeshes(terrain: ISlgTerrain, cx: number, cy: number, lod: number,
     tiles: ReadonlyMap<number, ISlgTile>, selfUid: string, atlasWidth = 1536, atlasHeight = 1024,
     alpha = 1, hiddenLayers?: ReadonlySet<string>,
-    groundMode?: { kind: "tile"; tile: number } | { kind: "palette" }): SlgTerrainMeshes {
+    groundMode?: { kind: "tile"; tile: number } | { kind: "island"; rect: { readonly minX: number; readonly minY: number; readonly maxX: number; readonly maxY: number } } | { kind: "palette" }): SlgTerrainMeshes {
     chunkKey(cx, cy);
     if (!Number.isInteger(lod) || lod < 0 || lod > 3) throw new RangeError("SLG terrain mesh LOD invalid");
     if (!Number.isInteger(atlasWidth) || !Number.isInteger(atlasHeight)
@@ -94,6 +96,13 @@ export function buildSlgTerrainMeshes(terrain: ISlgTerrain, cx: number, cy: numb
             const vNorth = 1 - (y % groundMode.tile) / groundMode.tile;
             const vSouth = 1 - (((y + 1) % groundMode.tile || groundMode.tile) / groundMode.tile);
             uvs.set([u, vNorth, u1v, vNorth, u, vSouth, u1v, vSouth], quad * 8);
+        } else if (groundMode?.kind === "island") {
+            // island-ground 同区：覆盖矩形 rect（世界格）→ UV，顶=北采 v=0；界外 clamp-to-edge 取海色边
+            const rect = groundMode.rect;
+            const uw = rect.maxX - rect.minX, vh = rect.maxY - rect.minY;
+            const uA = (x - rect.minX) / uw, uB = (x + 1 - rect.minX) / uw;
+            const vNorth = 1 - (y + 1 - rect.minY) / vh, vSouth = 1 - (y - rect.minY) / vh;
+            uvs.set([uA, vNorth, uB, vNorth, uA, vSouth, uB, vSouth], quad * 8);
         } else {
             if (ground.id >= 6) {
                 for (let vertex = 0; vertex < 4; vertex++) for (let channel = 0; channel < 3; channel++) {

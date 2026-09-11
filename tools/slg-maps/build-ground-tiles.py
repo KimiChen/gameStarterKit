@@ -44,14 +44,6 @@ def main() -> None:
                 t = r["terrain"]
         return t
 
-    def has_land(bx, by):
-        x0, y0 = bx * TILE, by * TILE
-        for gy in range(y0, min(y0 + TILE, height), 4):
-            for gx in range(x0, min(x0 + TILE, width), 4):
-                if terrain_at(gx, gy) != 2:
-                    return True
-        return False
-
     def crop_block(bx, by):
         """世界格块 → 渲染图对应像素区（窗外填海色）。"""
         # 世界格 y 块顶（北）→ 渲染行小（图上）
@@ -86,10 +78,26 @@ def main() -> None:
     blocks = []
     for by in range((height + TILE - 1) // TILE):
         for bx in range((width + TILE - 1) // TILE):
-            if not has_land(bx, by):
-                continue
+            # 全量产图（含纯海块：海面 = 渲染图水面，含 WaterMask 浪边渐变，拒绝顶点色平涂）
             crop_block(bx, by).save(out_dir / f"{bx}-{by}.jpg", quality=88)
             blocks.append([bx, by])
+    # 远档 sea 层贴图：滑窗找「与海色最接近且方差最小」的 512² 纯海区（角部可能挨陆地）
+    def sea_tile():
+        best = None
+        for y in range(0, ground.size[1] - 512, 256):
+            for x in range(0, ground.size[0] - 512, 256):
+                piece = ground.crop((x, y, x + 512, y + 512)).resize((64, 64))
+                px = list(piece.getdata())
+                n = len(px)
+                mean = tuple(sum(c[i] for c in px) / n for i in range(3))
+                var = sum(sum((c[i] - mean[i]) ** 2 for i in range(3)) for c in px) / n
+                dist = sum((mean[i] - sea[i]) ** 2 for i in range(3))
+                score = (dist, var)
+                if best is None or score < best[0]:
+                    best = (score, x, y)
+        _, bx, by = best
+        return ground.crop((bx, by, bx + 512, by + 512))
+    sea_tile().save(Path(__file__).resolve().parent / "out" / map_id / "sea-tile.png")
     (Path(__file__).resolve().parent / "out" / map_id / "ground-tiles.json").write_text(
         json.dumps({"tile": TILE, "image": IMG, "blocks": blocks}, separators=(",", ":")) + "\n", encoding="utf-8")
     print(f"{map_id}: {len(blocks)} 块（{width}×{height} 世界格，{TILE} 格/块）→ {out_dir}")

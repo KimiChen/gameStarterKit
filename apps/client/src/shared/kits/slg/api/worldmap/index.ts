@@ -17,8 +17,8 @@ export const SLG_TILE_ID_STRIDE = 2048;
 export const SLG_TILE_MAP_SHIFT = 22;
 /** 单图任一边长上限（tileId 11bit/轴）；catalog 登记的每图 width/height 均须 ≤ 此值。 */
 export const SLG_MAP_DIM_MAX = SLG_TILE_ID_STRIDE;
-/** 地形 regions 上限（羽之国群岛 3949 条实测，留余量）。 */
-export const SLG_TERRAIN_MAX_REGIONS = 4096;
+/** 地形 regions 上限（羽之国直读 GroundType 5908 条实测，留余量）。 */
+export const SLG_TERRAIN_MAX_REGIONS = 8192;
 
 /** 五国地图目录。尺寸与 tools/slg-maps 管线产出（terrain.json）一一对应，validateSlgTerrain 对照校验。 */
 export interface ISlgMapInfo {

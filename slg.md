@@ -330,3 +330,21 @@ cc 桩缺口按需补 `apps/client/cc-stub.d.ts` / `client-test-stubs.d.ts`（`c
 | 环境坑 | 预览卡住一度误诊：Chrome tab 的 CDP Input 域在被杀的工具会话后卡死（mouseWheel 超时），换新 tab 即恢复，与代码无关 |
 
 验收：typecheck 0；客户端 49/49（slg-* 全绿）；verify:all 退出 0；Creator 预览 27 步全过（/tmp/slg-ground-tiles-3，近档真地表、山之国画廊污染条纹消失、纹理内存 ~95MB）。
+
+### 10.2 拒绝程序化推导（2026-09-12 晚）
+
+用户拍板「尽可能用原版素材，拒绝程序化推导」。消灭生产路径残留的四类程序化内容：
+
+| 项 | 原做法（反推） | 现做法（原版） |
+| --- | --- | --- |
+| 地形分类 | 渲染图逐格颜色 → 最近质心反推 6 类 | **直读 `MapRootEntityLite` 逐格 GroundType**（agent 破解：root+11B framing+`array16(H)×array16(W)` [area,gt]；838/658 完整版交叉验证 18,547/18,547 全等）。映射：None→草 / Tree→林 / Block+Water→水 / Hill→岩 / Shallow→沙 / Wall+HyalineBlock→土。森对照：rock 从反分类 2,412 → 直读 37,791（Hill 被严重低估），sand/dirt 从 0/54 → 1,107/990；矩形 2,364→3,532（泽 4,792、羽 5,908——契约上限 4096→`SLG_TERRAIN_MAX_REGIONS=8192`） |
+| 海面 | palette 顶点色平涂 | 渲染图水面（含 WaterMask 浪边混合）：**ground-tiles 全量产海块**（剔海→全产 442→1,762 块、~63MB）；远档 sea 层换 `sea-tile.png`（滑窗自动选纯海区 512²）贴图平铺 |
+| 空白区装饰 | `ordinaryKind` 确定性哈希兜底摆位 | **删除**——layout.json（mapinfowrap 原版实体）无覆盖的 chunk 一律空白，原版没有的就是没有 |
+| 总览实地图 | palette 色块矩形网格 | **island-ground 渲染图**（纯地表含植被）；海色底取 palette id 2（渲染海色）；地标/视口框/定位交互不变 |
+| 块贴图回退 | palette 顶点色 | island-ground 同区 UV 采样（bundle 已有纹理，零新资源） |
+
+附带升级：biomes 区域质心改 `AreaInfos` 原版质心（`[[Σx,Σy],count]`）、biome.terrain 改区域内主导 GroundType（不再关键词反推）；地标 25/25 在直读版地形上重校验定稿（山裂谷河岸 Δ-9,-7、羽结晶螺旋树 Δ0,-3 微调）。
+
+原版合规说明：装饰图集 chest/portal/stele/crystal/sword 五格复用森之国策展件**不是**程序化推导——`entity_map_display.csv` 的 `MapClassId=0` 通用行（344 条）证明宝箱/传送门是全图通用件，原版各国本来同一套。
+
+验收：typecheck 0；客户端 slg-* 49/49；verify:all 退出 0。预览因编辑器构建服务罢工两次重启，最终手动 ▶ 后验证（见下节）。

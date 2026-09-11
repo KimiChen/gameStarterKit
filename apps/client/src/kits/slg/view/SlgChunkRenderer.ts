@@ -28,7 +28,8 @@ export class SlgChunkRenderer {
     private disposed = false;
 
     constructor(private readonly root: Node, private readonly terrain: ISlgTerrain,
-        private readonly tileIndex: SlgGroundTileIndex, private readonly tileCache: SlgGroundTileCache) {
+        private readonly tileIndex: SlgGroundTileIndex, private readonly tileCache: SlgGroundTileCache,
+        islandTexture: Texture2D) {
         const technique = EffectAsset.get("builtin-unlit")?.techniques.findIndex((entry) => entry.name === "alpha-blend") ?? -1;
         if (technique < 0) throw new Error("SLG requires builtin-unlit alpha-blend");
         this.blockSet = new Set(tileIndex.blocks.map(([bx, by]) => `${bx}-${by}`));
@@ -36,7 +37,8 @@ export class SlgChunkRenderer {
         this.ownershipMaterial = new Material();
         try {
             this.fallbackMaterial.initialize({ effectName: "builtin-unlit", technique,
-                defines: { USE_VERTEX_COLOR: true, USE_TEXTURE: false }, states: { rasterizerState: { cullMode: gfx.CullMode.NONE } } });
+                defines: { USE_VERTEX_COLOR: true, USE_TEXTURE: true }, states: { rasterizerState: { cullMode: gfx.CullMode.NONE } } });
+            this.fallbackMaterial.setProperty("mainTexture", islandTexture);
             this.ownershipMaterial.initialize({ effectName: "builtin-unlit", technique,
                 defines: { USE_VERTEX_COLOR: true, USE_TEXTURE: false }, states: { rasterizerState: { cullMode: gfx.CullMode.NONE } } });
         } catch (error) { this.fallbackMaterial.destroy(); this.ownershipMaterial.destroy(); throw error; }
@@ -176,7 +178,7 @@ export class SlgChunkRenderer {
         const { x: cx, y: cy } = gridFromTileId(key);
         return buildSlgTerrainMeshes(this.terrain, cx, cy, lod, tiles, selfUid,
             this.tileIndex.image, this.tileIndex.image, alpha, slgMapDebug.hiddenLayers,
-            textured ? { kind: "tile", tile: this.tileIndex.tile } : { kind: "palette" });
+            textured ? { kind: "tile", tile: this.tileIndex.tile } : { kind: "island", rect: this.terrain.islandRect });
     }
 
     private geometry(data: SlgMeshGeometry) {

@@ -19,6 +19,8 @@ export interface SlgArtResources {
     readonly overview: Texture2D;
     /** 原版纯地表烘图（远档地表）。 */
     readonly island: Texture2D;
+    /** 原版渲染海面（远档 sea 层平铺贴图，含浪边渐变）。 */
+    readonly sea: Texture2D;
     /** 真实布局复刻（chunk 分桶索引 + 数据驱动地标）；无布局数据的 chunk 走确定性哈希。 */
     readonly layout: SlgLayoutIndex;
     /** 近档真地表切块注册表（64 格块，4×4 chunk 对齐）。 */
@@ -47,7 +49,7 @@ export async function loadSlgArtResources(mapId: string): Promise<SlgArtResource
         });
     const base = `kits/slg/maps/${mapId}`;
     try {
-        const [data, ground, decorations, overview, layoutData, island, tilesData] = await Promise.all([
+        const [data, ground, decorations, overview, layoutData, island, tilesData, sea] = await Promise.all([
             load(`${base}/terrain`, JsonAsset),
             load(`${base}/terrain-atlas/texture`, Texture2D),
             load(`${base}/decoration-atlas/texture`, Texture2D),
@@ -55,6 +57,7 @@ export async function loadSlgArtResources(mapId: string): Promise<SlgArtResource
             load(`${base}/layout`, JsonAsset),
             load(`${base}/island-ground/texture`, Texture2D),
             load(`${base}/ground-tiles`, JsonAsset),
+            load(`${base}/sea-tile/texture`, Texture2D),
         ]);
         if (!data) throw new Error(`SLG terrain json missing/invalid (${mapId})`);
         if (!ground) throw new Error(`SLG ground atlas missing/invalid (${mapId})`);
@@ -63,6 +66,7 @@ export async function loadSlgArtResources(mapId: string): Promise<SlgArtResource
         if (!layoutData) throw new Error(`SLG layout missing/invalid (${mapId})`);
         if (!island) throw new Error(`SLG island ground missing/invalid (${mapId})`);
         if (!tilesData) throw new Error(`SLG ground tiles missing/invalid (${mapId})`);
+        if (!sea) throw new Error(`SLG sea tile missing/invalid (${mapId})`);
         if (!validateSlgTerrain(data.json)) throw new Error(`SLG terrain contract violation: bundle missing/invalid (${mapId})`);
         const terrain = data.json;
         if (terrain.id !== mapId) throw new Error(`SLG terrain map mismatch: ${terrain.id} != ${mapId}`);
@@ -76,12 +80,13 @@ export async function loadSlgArtResources(mapId: string): Promise<SlgArtResource
         }
         if (overview.width <= 0 || overview.height !== overview.width) throw new Error("SLG overview must be square");
         if (island.width <= 0 || island.height <= 0) throw new Error("SLG island ground must have dimensions");
+        if (sea.width <= 0 || sea.height <= 0) throw new Error("SLG sea tile must have dimensions");
         const tiles = tilesData.json as SlgGroundTileIndex;
         if (!Number.isInteger(tiles.tile) || tiles.tile !== 64 || !Number.isInteger(tiles.image) || tiles.image <= 0
             || !Array.isArray(tiles.blocks)) {
             throw new Error(`SLG ground tiles contract violation (${mapId})`);
         }
-        return { mapId, terrain, ground, decorations, overview, island, groundTiles: tiles,
+        return { mapId, terrain, ground, decorations, overview, island, sea, groundTiles: tiles,
             layout: buildSlgLayoutIndex(layoutData.json), release };
     } catch (error) { release(); throw error; }
 }
