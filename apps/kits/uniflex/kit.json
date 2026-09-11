@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "uniflex",
+  "description": "UniFlex UI 核心：共享资源与导航生命周期，独立 Cocos/Web 宿主入口",
+  "category": "core",
+  "docs": ["apps/kits/uniflex/README.md"],
+  "api": {
+    "core": { "version": 1, "minSupported": 1 },
+    "navigation": { "version": 1, "minSupported": 1 },
+    "provider": { "version": 1, "minSupported": 1 },
+    "cocos": { "version": 1, "minSupported": 1 },
+    "web": { "version": 1, "minSupported": 1 }
+  }
+}

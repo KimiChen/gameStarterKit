@@ -10,7 +10,7 @@
  *   本层只做"取组件 + 搬数据"。见 docs/CLIENT.md §3。
  */
 import { Canvas, director, sys, view } from "cc";
-import { GComponent, GObject, GRoot, RelationType, UIPackage } from "db://fairygui-cc/fairygui.mjs";
+import { Event as FguiEvent, GComponent, GObject, GRoot, RelationType, UIPackage } from "db://fairygui-cc/fairygui.mjs";
 import { ViewBase } from "./ViewBase";
 import {
   FguiPackageCancelledError,
@@ -69,6 +69,53 @@ export abstract class FguiView extends ViewBase {
     const G = GRoot as unknown as { _inst?: GRoot };
     const ip = G._inst?.inputProcessor;
     if (ip) { ip.enabled = on; }
+  }
+
+  /** End captured presses before disabling the shared processor, without synthesizing clicks. */
+  static cancelPendingInput(): void {
+    const G = GRoot as unknown as { _inst?: GRoot };
+    // The locked FairyGUI runtime exposes only cancelClick publicly, which leaves captures alive.
+    const ip = G._inst?.inputProcessor as unknown as {
+      getAllTouches(): number[];
+      getInfo(id: number, create: boolean): {
+        touchId: number; button: number; began: boolean; clickCancelled: boolean;
+        target: GObject | null; pos: { x: number; y: number };
+        downTargets: GObject[]; touchMonitors: GObject[];
+      } | null;
+    } | undefined;
+    if (!ip) return;
+    for (const id of ip.getAllTouches()) {
+      const touch = ip.getInfo(id, false);
+      if (!touch) continue;
+      const target = touch.target;
+      const button = touch.button;
+      const pos = { ...touch.pos };
+      const monitors = touch.touchMonitors.slice();
+      // Clear first: TOUCH_END can synchronously close/open a route and re-enter input arbitration.
+      touch.clickCancelled = true;
+      touch.began = false;
+      touch.downTargets.length = 0;
+      touch.touchMonitors.length = 0;
+      touch.target = null;
+      touch.touchId = -1;
+      touch.button = -1;
+      const dispatchEnd = (object: GObject, bubbles: boolean): void => {
+        if (!object.node?.isValid || !object.node.activeInHierarchy) return;
+        const event = new FguiEvent(FguiEvent.TOUCH_END, bubbles);
+        event.touchId = id;
+        event.button = button;
+        event.pos.x = pos.x;
+        event.pos.y = pos.y;
+        event.initiator = target ?? object;
+        (event as unknown as { _processor: unknown })._processor = ip;
+        object.node.dispatchEvent(event);
+      };
+      for (const monitor of monitors) {
+        if (monitor === target || (target && monitor instanceof GComponent && monitor.isAncestorOf(target))) continue;
+        dispatchEnd(monitor, false);
+      }
+      if (target) dispatchEnd(target, true);
+    }
   }
 
   /** FairyGUI 组件根（由 `UIPackage.createObject(...).asCom` 传入）。 */

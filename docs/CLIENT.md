@@ -20,9 +20,9 @@ npm run sync:shared
 - `apps/client/src/lib/colyseus/colyseus.js`
 - `apps/Cocos/extensions/fairygui-cc/runtime/`
 - `apps/client/src/lib/bitecs/`
+- `apps/client/src/lib/uniflex/`
 
-上述依赖已随仓库锁定并入库，首次打开或普通开发不需要抓取。`fetch:colyseus` 和
-`fetch:fgui` 仍保留为框架维护团队在需要显式升级对应依赖时使用的工具；它们会校验下载内容并更新
+上述依赖已随仓库锁定并入库，首次打开或普通开发不需要抓取。`fetch:colyseus`、`fetch:fgui` 和 `fetch:uniflex` 仍保留为框架维护团队在需要显式升级对应依赖时使用的工具；它们会校验下载内容并更新
 仓库内的运行时镜像。若运行时存在针对 Cocos 3.8 的社区补丁，升级后必须重新应用补丁并重算
 `scripts/vendor.sha256`，不能把裸抓取结果直接视为最终版本。bitECS 没有自动抓取命令，其
 `apps/client/src/lib/bitecs/` 下的 12 个锁定源文件及 `scripts/bitecs.sha256` 由维护团队按上游版本
@@ -70,7 +70,8 @@ apps/client/src/
 apps/Cocos/
 ├── assets/src/         apps/client/src 的生成镜像
 ├── assets/resources/   FGUI 导出物等本地资源
-├── assets/scene.scene  启动场景
+├── assets/scene.scene  默认启动场景（登录 / AppRuntime）
+├── assets/uniflex.scene  UniFlex 独立预览场景（不经过 Main）
 ├── extensions/         Cocos 编辑器扩展
 └── settings/           工程设置
 ```
@@ -78,6 +79,20 @@ apps/Cocos/
 修改规则：
 
 - `apps/client/src` 是源码真相。
+- UniFlex 通用 UI 核心在 `src/kits/uniflex/`，由独立的 `api/cocos/index.ts`、
+  `api/web/index.ts` 提供宿主入口，共用资源与导航生命周期；业务侧不得导入 kit 内部实现。
+  清单与 API 规则见 [UniFlex kit](../apps/kits/uniflex/README.md)，不将业务作者态、Logic 或路由放入 kit。
+- UniFlex 增量迁移的作者态在 `src/ui-uniflex/*.authoring.tsx`，`generated/` 子目录及
+  `apps/Cocos/assets/resources/uniflex/` 由 `npm run build:uniflex-ui` 生成，不手改、不入库。
+  编译器使用 `UNIFLEX_COMPILER` 或 PATH 中的独立 `uniflex-compiler`；运行时以
+  `src/lib/uniflex/` 入库副本为准，`vendor/uniflex/` 的 npm 制品只作为 AOT 与
+  `fetch:uniflex` 的输入。生成后运行 `sync:client`，`check:uniflex-ui` 只读检查新鲜度。
+- Confirm 已通过既有 `confirm → Confirm` 路由接入 UniFlex；`openConfirm(): Promise<boolean>` 与
+  `ConfirmLogic` 保持原契约，`ConfirmView.setup()` 的异步资源就绪纳入句柄回滚。其他页面仍使用各自
+  既有渲染方式。Cocos 默认启动场景仍是 `assets/scene.scene`。UniFlex 独立预览场景是
+  `assets/uniflex.scene`，入口组件为 `UniFlexPreview`，不经过 `Main` / AppRuntime；URL 加
+  `cancel=0` 验证单按钮模式。独立 WebProvider 宿主在 `apps/web-ui-preview/`，通过
+  `npm run dev:uniflex-web` 启动，消费相同 AOT、字体和 `ConfirmLogic`。
 - `apps/client/src/shared` 禁止手改；改 `apps/shared/src`。
 - `apps/Cocos/assets/src` 整体禁止手改；运行 `npm run sync:client`。
 - `.meta` 与镜像一起提交，保持 UUID 稳定。
@@ -199,13 +214,18 @@ ViewMgr 的生命周期语义：onlyOne/permanent 页面的在途 open 会合流
 
 ### `interactive` 的含义
 
-FairyGUI 在当前 Cocos 运行时只有一个全局 InputProcessor，`interactive` 因此是全局输入租约，不是单个
-根组件的命中测试属性：
+FairyGUI 在当前 Cocos 运行时只有一个全局 InputProcessor。`interactive` 表示模态输入所有权，
+ViewMgr 按 `base < popup < top` 和同层置顶顺序选择最高交互页：
 
-- `interactive: true`：页面打开期间增加租约并启用整棵 FGUI 树输入；页面可点击，但背后的玩法触摸会被挡住。
-- `interactive: false`：页面本身不增加租约；没有其他交互页时整棵 FGUI 树都收不到输入，适合纯展示 HUD。
+- 最高交互页为 FGUI 时启用 InputProcessor；为 Cocos 时禁用它。被遮挡的 FGUI 挂载槽关闭
+  `touchable`，被遮挡的 Cocos 页面暂停节点系统事件并禁用原生 Button，恢复时保留原开关状态。
+- `interactive: false` 不争夺模态所有权，适合展示 HUD 或非模态玩法页；它不是绕过上层遮挡的标记。
+- Cocos 模态页需自行提供全屏输入屏障，Confirm 在资源加载期间也挂有 `BlockInputEvents`。
+  每页独占 FGUI 管理的挂载槽，避免裸 Node 与 GComponent 混排导致显示和输入顺序不一致。
+- 输入所有者切换时取消 FGUI 在途 click 并结束已捕获的按压，重置 Cocos Button 的按压状态；
+  原生节点新增或所在树重新激活后重新落实输入暂停，避免引擎激活流程恢复被遮挡页面。
+  这不替代玩法自行管理的全局键盘、拖拽或网络输入取消逻辑。
 
-只要还有任一交互页打开，全局处理器就保持启用，`interactive: false` 页面也不是独立的输入隔离区。
 关闭必须走 open 返回的 `ViewHandle.close()`；onlyOne/permanent 页也可用 `ViewMgr.close(name)`——它会
 取消该名字下的在途 open，但对已挂载的多实例实例是空操作。直调 `view.dispose()` 会让 `interactive`
 租约无法恢复。

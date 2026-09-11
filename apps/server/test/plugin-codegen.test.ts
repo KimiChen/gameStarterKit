@@ -1566,6 +1566,7 @@ test("K0 kit：fixture kit + 建在其上的插件只加新文件 → 双端 kit
   const { root, options } = createFixture();
   try {
     const before = snapshotHandwritten(root);
+    const existingIds = readViewCatalog(root).plugins.map((unit) => unit.id);
     addFixtureKit(root);
     addFixtureKitShop(root);
     const catalog = readViewCatalog(root);
@@ -1574,8 +1575,8 @@ test("K0 kit：fixture kit + 建在其上的插件只加新文件 → 双端 kit
     assert.equal(kfix?.class, "kit");
     assert.equal(shop?.class, "plugin");
     assert.deepEqual(shop?.dependencies, ["kfix", "redeem"], "有效依赖 = required kit（有 entry）先 ++ 声明依赖，去重");
-    // 真仓 arena / slg kit 与 arenaShop 插件和 fixture 的 kfix / kfixShop 并存，按 id 排序。
-    assert.deepEqual(catalog.plugins.map((unit) => unit.id), ["arena", "arenaShop", "builtin", "kfix", "kfixShop", "redeem", "slg", "snake", "tally"]);
+    // 真仓新增 kit 不得要求改写本 fixture 的期望基线。
+    assert.deepEqual(catalog.plugins.map((unit) => unit.id), [...existingIds, "kfix", "kfixShop"].sort());
 
     const result = writePluginArtifacts(options);
     for (const relative of [...KIT_ARTIFACTS, PLUGINS_RELATIVE, PLUGIN_INDEX_RELATIVE, REGISTRY_RELATIVE, VECTORS_INDEX_RELATIVE, VIEWS_RELATIVE]) {
@@ -1661,6 +1662,23 @@ test("K0 kit：requires.kits 闸——kit 未安装 / api 面不存在 / 版本�
     }
   } finally {
     fixtures.dispose();
+  }
+});
+
+test("K0 kit：无 entry/route/menu 的纯库 kit 只进 KIT_CATALOG，⛔ 不进 PLUGIN_IDS", () => {
+  const { root, options } = createFixture();
+  try {
+    const { entry: _entry, ...headless } = KFIX_KIT_JSON;
+    addFixtureKit(root, { ...headless, viewDirs: [], views: [], owners: [], routes: [], menu: [] });
+    writePluginArtifacts(options);
+    const plugins = fs.readFileSync(path.join(root, PLUGINS_RELATIVE), "utf8");
+    assert.doesNotMatch(plugins, /^ {4}"kfix",$/mu, "纯库 kit 不是 PluginHost 单元");
+    assert.doesNotMatch(plugins, /id: "kfix",/u);
+    assert.match(fs.readFileSync(path.join(root, KIT_CATALOG_SHARED_RELATIVE), "utf8"), /^ {8}id: "kfix",$/mu);
+    assert.match(fs.readFileSync(path.join(root, PLUGIN_INDEX_RELATIVE), "utf8"), /^\| `kfix` \| kit \| /mu);
+    assertPluginArtifactsFresh(options);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
   }
 });
 

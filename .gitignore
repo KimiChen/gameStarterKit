@@ -1,5 +1,14 @@
 # Node
 node_modules/
+apps/client/.cache/
+# UniFlex authoring is source; these outputs are recreated by build:uniflex-ui.
+apps/client/src/ui-uniflex/generated/
+apps/Cocos/assets/src/ui-uniflex/generated/
+apps/Cocos/assets/src/ui-uniflex/generated.meta
+apps/Cocos/assets/resources/uniflex/
+apps/Cocos/assets/resources/uniflex.meta
+# Cocos CLI 本地配置，指向 temp schema，不是作者态。
+apps/Cocos/settings/cocos.config.json
 *.log
 
 # 构建产物

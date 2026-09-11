@@ -34,7 +34,7 @@ export interface GeneratedPluginDescriptor {
     readonly load?: () => Promise<PluginModule>;
 }
 
-/** plugin 全集（生成器删除保护锚）。 */
+/** PluginHost 单元全集（插件 + 有 entry/路由/菜单的 kit；纯库 kit 只在 KIT_CATALOG）。 */
 export const PLUGIN_IDS: readonly string[] = [
     "arena",
     "arenaShop",

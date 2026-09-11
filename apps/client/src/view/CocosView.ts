@@ -10,15 +10,15 @@
  * routes 引用**——被引用的进 ViewMgr catalog（本基类的适用范围），没被引用的是玩法表现件
  * （BallMoveView / SnakeWorldView，由 gameplay presentation 自行挂载）。⛔ 不新发明标记字段。
  *
- * 输入：cocos 页面在 sidecar 里声明 `interactive: false`——FGUI 的 InputProcessor 一旦启用就
- * 全屏吞指针（见 FguiView.ensureRoot 注释），自建节点上的 Cocos 事件就再也收不到了。
- * 需要 FGUI 模态的 cocos 页面另行讨论，本基类不提供。
+ * 输入：interactive:true 表示模态交互页，须用 BlockInputEvents 等全屏屏障阻止点击穿透。
+ * ViewMgr 按层级暂停被遮挡节点的系统事件，并切换全局 FGUI InputProcessor。
+ * 非模态展示/玩法页保留 interactive:false。
  *
  * 尺寸：`mountToLayer` 按层容器当前尺寸铺满根节点（层容器自身经 FGUI Size relation 跟随
  * GRoot）。⚠ 已挂载期间的实时 resize 不跟随——FGUI relation 驱动不了裸 Node；GRoot 重建/
  * 页面重挂时会按新尺寸重新铺满。子类布局请读 `layerWidth/layerHeight`，⛔ 不写死像素。
  */
-import { Node, UITransform } from "cc";
+import { Button, Node, UITransform } from "cc";
 import { ViewBase } from "./ViewBase";
 
 export abstract class CocosView extends ViewBase {
@@ -27,12 +27,42 @@ export abstract class CocosView extends ViewBase {
   /** 最近一次挂载时的层容器尺寸（设计像素）；子类按它做相对布局。 */
   protected layerWidth = 0;
   protected layerHeight = 0;
+  private inputEnabled = true;
+  private readonly disabledButtons = new Map<Button, boolean>();
+  private readonly watchedNodes = new Set<Node>();
+  private readonly watchedAncestors = new Set<Node>();
+  private readonly refreshBlockedInput = (): void => {
+    if (!this.inputEnabled) this.setInputEnabled(false);
+  };
+  private readonly trackInputNode = (node: Node): void => {
+    if (this.watchedNodes.has(node)) return;
+    this.watchedNodes.add(node);
+    node.on("child-added", this.trackInputNode, this);
+    node.on("child-removed", this.untrackInputNode, this);
+    node.on("active-in-hierarchy-changed", this.refreshBlockedInput, this);
+    if (!this.inputEnabled) this.applyNodeInput(node, false);
+    for (const child of node.children) this.trackInputNode(child);
+  };
+  private readonly untrackInputNode = (node: Node): void => {
+    node.off("child-added", this.trackInputNode, this);
+    node.off("child-removed", this.untrackInputNode, this);
+    node.off("active-in-hierarchy-changed", this.refreshBlockedInput, this);
+    this.watchedNodes.delete(node);
+    const button = node.getComponent(Button);
+    if (button && this.disabledButtons.has(button)) {
+      button.enabled = this.disabledButtons.get(button)!;
+      this.disabledButtons.delete(button);
+    }
+    if (!this.inputEnabled) node.resumeSystemEvents();
+    for (const child of node.children) this.untrackInputNode(child);
+  };
 
   constructor() {
     super();
     // ⚠ 与 FguiView 同一条 useDefineForClassFields 约束：子类字段声明在 super() 之后才定义，
     //   故构造器里只建根节点，⛔ 不在此调用任何子类 build/bind（那些放 onCreate）。
     this.root = new Node(this.constructor.name);
+    this.trackInputNode(this.root);
   }
 
   /**
@@ -40,6 +70,11 @@ export abstract class CocosView extends ViewBase {
    * 自己在 onCreate/onOpen 里设 UITransform）。挂载失败由 ViewMgr 的 mount lease 回滚。
    */
   mountToLayer(parent: Node, width: number, height: number, fullscreen: boolean): void {
+    this.unwatchAncestors();
+    for (let ancestor: Node | null = parent; ancestor; ancestor = ancestor.parent) {
+      ancestor.on("active-in-hierarchy-changed", this.refreshBlockedInput, this);
+      this.watchedAncestors.add(ancestor);
+    }
     this.layerWidth = width;
     this.layerHeight = height;
     this.root.layer = parent.layer;
@@ -60,6 +95,7 @@ export abstract class CocosView extends ViewBase {
 
   /** 从父节点摘下但**不销毁**（permanent 页面 close 用；再次 open 直接重挂）。 */
   unmount(): void {
+    this.unwatchAncestors();
     this.root.removeFromParent();
   }
 
@@ -69,8 +105,43 @@ export abstract class CocosView extends ViewBase {
     if (parent) { this.root.setSiblingIndex(parent.children.length - 1); }
   }
 
+  /** ViewMgr 在混合模态页面之间切换输入；不改变渲染可见性。 */
+  setInputEnabled(enabled: boolean): void {
+    this.inputEnabled = enabled;
+    for (const node of this.watchedNodes) this.applyNodeInput(node, enabled);
+  }
+
+  private applyNodeInput(node: Node, enabled: boolean): void {
+    const button = node.getComponent(Button);
+    if (button) {
+      if (!enabled) {
+        if (!this.disabledButtons.has(button)) {
+          this.disabledButtons.set(button, button.enabled);
+        }
+        // Button.onDisable resets an in-flight press, preventing a delayed click after restoration.
+        button.enabled = false;
+      } else if (enabled && this.disabledButtons.has(button)) {
+        button.enabled = this.disabledButtons.get(button)!;
+        this.disabledButtons.delete(button);
+      }
+    }
+    // Engine activation resets event processors; recursive pause can short-circuit at a paused root.
+    if (enabled) node.resumeSystemEvents(false);
+    else node.pauseSystemEvents(false);
+  }
+
+  private unwatchAncestors(): void {
+    for (const node of this.watchedAncestors)
+      node.off("active-in-hierarchy-changed", this.refreshBlockedInput, this);
+    this.watchedAncestors.clear();
+  }
+
+  protected get acceptsInput(): boolean { return this.inputEnabled; }
+
   /** 释放渲染根：摘下并销毁节点树（世代关闭由 ViewBase.dispose 负责）。 */
   protected disposeRoot(): void {
+    this.unwatchAncestors();
+    this.untrackInputNode(this.root);
     try { this.root.removeFromParent(); } catch (e) {
       console.error("[CocosView] removeFromParent 异常", e);
     }

@@ -24,10 +24,9 @@ interface ViewMetaBase {
     /** 常驻：close() 只摘下不销毁（缓存实例），再次 open 秒开 */
     permanent: boolean;
     /**
-     * 交互页（有按钮/输入）= true：open 期间启用 FGUI 输入（fairygui 单 InputProcessor 的
-     * 现实约束：启用即全屏捕获，**背后游戏触摸同时被挡**——引擎里「可交互」与「模态」
-     * 是同一件事）；全部交互页关闭后自动恢复游戏输入。
-     * 纯展示 HUD（零输入、要与战斗触摸共存）= false。
+     * 模态交互页 = true：由最高层交互页的 kind 决定 FGUI 输入开关；
+     * 其下 Cocos 页暂停系统事件。Cocos 模态页自身必须提供全屏输入屏障。
+     * 非模态展示/玩法页 = false，不获取模态输入所有权。
      */
     interactive: boolean;
     /** 动态 import 闭包（铁律 10：fairygui 不进静态依赖图）；也是后续资源拆分的加载点 */

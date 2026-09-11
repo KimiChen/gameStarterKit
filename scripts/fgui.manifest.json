@@ -1835,12 +1835,6 @@
       "generatedHash": "6887a32400f9e7a03c8f27913809adae8382c400c049ce4bd6a077477c43892f"
     },
     {
-      "path": "apps/client/src/view/ConfirmView.ts",
-      "pkg": "View_SharedWidget_Confirm",
-      "comp": "Confirm",
-      "generatedHash": "c7018a9f070b662ae166e3d2dc7a8a4aeed5d00e3fb63892eb64fd94c82d4314"
-    },
-    {
       "path": "apps/client/src/view/HomeView.ts",
       "pkg": "View_Home_Home",
       "comp": "Home",

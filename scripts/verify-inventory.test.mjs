@@ -1939,10 +1939,10 @@ test("kit fragment：合法 extra fragment 绿（apps/kits/ 缺席也绿），�
     rmSync(join(root, "apps", "kits"), { recursive: true, force: true });
     // 助手入口文档里指向 apps/kits/** 的索引行随之失效——一个真的没有 kit 的仓库不会带这些链接，
     // 夹具同步去掉，否则测的就成了 checkMarkdownLinks 而不是「apps/kits/ 缺席也绿」。
-    for (const entryDoc of ["AGENTS.md", "CLAUDE.md"]) {
+    for (const entryDoc of ["AGENTS.md", "CLAUDE.md", "docs/CLIENT.md"]) {
       const file = join(root, entryDoc);
       writeFileSync(file, readFileSync(file, "utf8")
-        .split("\n").filter((line) => !line.includes("](apps/kits/")).join("\n"));
+        .split("\n").filter((line) => !line.includes("](apps/kits/") && !line.includes("](../apps/kits/")).join("\n"));
     }
     const absent = await runVerifier(root);
     assert.equal(absent.status, 0, outputOf(absent));

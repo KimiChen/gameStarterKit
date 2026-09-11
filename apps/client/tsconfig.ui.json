@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.test.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "types": ["@uniflex/compiler/jsx"],
+    "rootDir": "."
+  },
+  "include": ["cc-stub.d.ts", "src/ui-uniflex/**/*.tsx", "src/ui-uniflex/**/*.ts"]
+}
