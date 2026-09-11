@@ -30,6 +30,8 @@ cocos preview --project "$PWD" --scene db://assets/uniflex.scene --no-open
 
 项目根目录的 `npm run build:uniflex-ui` 会调用仓库内
 `vendor/uniflex/bin/<platform>-<arch>/uniflex-compiler`，不依赖 SDK 仓库缓存。
+可用 `node tools/uniflex-compiler.mjs version` 检查 compiler 制品是否已正确取到；
+`vfs: failed to get executable path` 表示需要更新仓库内的 compiler 制品。
 
 Node 无头 strict 探针（`npm run typecheck:client`）已经覆盖 `Main.ts`、全部 View、`pages.ts`、
 ViewMgr 和客户端测试，使用 `apps/client/tsconfig.test.json` 的最小引擎桩；`npm run typecheck:client:legacy`
