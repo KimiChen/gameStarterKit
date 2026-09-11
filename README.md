@@ -80,6 +80,14 @@ cocos preview \
 当前项目内置的原生编译器适用于 macOS Apple Silicon，Cocos CLI 预览还需使用其兼容的
 Node.js 22 环境；Intel Mac、Windows 和 Linux 需要补充对应平台的
 `vendor/uniflex/bin/<platform>-<arch>/uniflex-compiler`，或设置 `UNIFLEX_COMPILER`。
+如需确认本地使用的是仓库内 compiler，可运行：
+
+```bash
+node tools/uniflex-compiler.mjs version
+```
+
+若出现 `vfs: failed to get executable path`，通常是旧版 compiler 制品或错误的平台制品，
+应先确认已更新到当前 `new` 分支并重新执行 `npm install`、`npm run build:uniflex-ui`。
 
 从本 Starter 派生新项目时，先运行 `npm run init:project -- --help` 查看幂等初始化参数；项目身份、包名、
 生成区和第三方来源统一登记在 [project.metadata.json](project.metadata.json)，不要在各端复制项目名常量。

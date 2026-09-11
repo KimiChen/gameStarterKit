@@ -1,11 +1,11 @@
 {
   "name": "uniflex-compiler",
   "version": "0.1.0",
-  "source": "cocos-flex-layout/frontend/packages/compiler/native",
+  "source": "cocos-flex-layout/frontend/packages/compiler/native (os.Executable fallback for macOS process launchers)",
   "commit": "2bd066d87f5bafd315be9f40889d0a60b9e58e0b",
   "binaries": {
     "darwin-arm64/uniflex-compiler": {
-      "sha256": "9d7a9e545f94d362bc87475527c2186f96a16ab53f07e669b4ec4c26423d15df"
+      "sha256": "5384ec097008a795bd36184026511a5ac65c17195d24d480839e076bde8f25cd"
     }
   }
 }
