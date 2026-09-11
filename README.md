@@ -52,14 +52,34 @@ WebPlatform 不属于本 monorepo；旧提交中的 `apps/WebPlatform` 仅用于
 
 ```bash
 npm install
-npm run build:uniflex-ui
 npm run sync:shared
+npm run build:uniflex-ui
 ```
 
 UniFlex 原生 `uniflex-compiler` 已按宿主平台放入 `vendor/uniflex/bin/`，默认由
 `config/uniflex.ui.json` 使用项目内 wrapper 调用；也可以用 `UNIFLEX_COMPILER` 覆盖。当前仓库包含
 `darwin-arm64` 制品，其他平台需补充对应平台制品。UI 生成物不入库，首次类型检查或预览前
 必须显式生成。双端预览与源码边界见 [客户端开发](docs/CLIENT.md#2-源码与工程壳)。
+
+只验证 UniFlex Web 页面时，生成后运行：
+
+```bash
+npm run dev:uniflex-web
+```
+
+命令会输出本地地址。预览 Cocos 独立 UniFlex 场景时，先完成上面的安装、同步和生成，
+再使用独立 Cocos CLI（不要使用 `CocosCreator.app` 内置 CLI）：
+
+```bash
+cocos preview \
+  --project "$PWD/apps/Cocos" \
+  --scene db://assets/uniflex.scene \
+  --no-open
+```
+
+当前项目内置的原生编译器适用于 macOS Apple Silicon，Cocos CLI 预览还需使用其兼容的
+Node.js 22 环境；Intel Mac、Windows 和 Linux 需要补充对应平台的
+`vendor/uniflex/bin/<platform>-<arch>/uniflex-compiler`，或设置 `UNIFLEX_COMPILER`。
 
 从本 Starter 派生新项目时，先运行 `npm run init:project -- --help` 查看幂等初始化参数；项目身份、包名、
 生成区和第三方来源统一登记在 [project.metadata.json](project.metadata.json)，不要在各端复制项目名常量。
