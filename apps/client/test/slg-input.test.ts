@@ -83,8 +83,9 @@ async function loadSubject(): Promise<Subject> {
         if (request === "./SlgWorldOverview") return { SlgWorldOverview: FakeOverview };
         if (request === "./SlgArtResources") return { loadSlgArtResources: async (mapId: string) => ({
             mapId, terrain: {}, overview: null, decorations: null, island: null,
+            groundTiles: { tile: 64, image: 1024, blocks: [] },
             layout: { index: new Map(), landmarks: [] }, release(): void {},
-        }) };
+        }), SlgGroundTileCache: class { dispose(): void {} } };
         return originalLoad.call(this, request, parent, isMain);
     };
     try { loaded = await import("../src/kits/slg/view/SlgMapView"); return loaded; }

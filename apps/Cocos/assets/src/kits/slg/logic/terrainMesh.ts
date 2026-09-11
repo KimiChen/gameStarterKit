@@ -43,10 +43,15 @@ export const SLG_TEXTURE_SPAN = 4;
  * tiles of the same terrain sample identical image edges, including across chunk boundaries.
  * The half-texel inset keeps interpolation inside the selected atlas cell. Ownership uses a
  * separate solid-color pass so its blue/red indicator cannot be multiplied by green terrain.
+ *
+ * groundMode（缺省 = atlas 图集采样，兼容旧行为）：
+ * - `{ kind: "tile", tile }`：UV 取「世界格 64 块贴图」的块内子区（块顶=北），顶点色全白（贴图原色）。
+ * - `{ kind: "palette" }`：块贴图未就绪回退——顶点色 = palette 染色（无贴图材质下显示地形色）。
  */
 export function buildSlgTerrainMeshes(terrain: ISlgTerrain, cx: number, cy: number, lod: number,
     tiles: ReadonlyMap<number, ISlgTile>, selfUid: string, atlasWidth = 1536, atlasHeight = 1024,
-    alpha = 1, hiddenLayers?: ReadonlySet<string>): SlgTerrainMeshes {
+    alpha = 1, hiddenLayers?: ReadonlySet<string>,
+    groundMode?: { kind: "tile"; tile: number } | { kind: "palette" }): SlgTerrainMeshes {
     chunkKey(cx, cy);
     if (!Number.isInteger(lod) || lod < 0 || lod > 3) throw new RangeError("SLG terrain mesh LOD invalid");
     if (!Number.isInteger(atlasWidth) || !Number.isInteger(atlasHeight)
@@ -76,28 +81,42 @@ export function buildSlgTerrainMeshes(terrain: ISlgTerrain, cx: number, cy: numb
         const bottom = y * SLG_GRID_PIXELS + gap, top = (y + 1) * SLG_GRID_PIXELS - gap;
         writeQuad(positions, indices16, quad, left, bottom, right, top);
         const ground = terrainAt(terrain, x, y);
-        const uv = slgTerrainUv(ground.id);
-        // The first six IDs have dedicated art; custom palette IDs tint the grass fallback.
-        if (ground.id >= 6) {
+        // groundMode 分支：tile = 块贴图 UV + 顶点白；palette = 顶点染地形色（回退）；缺省 = 图集 span 采样。
+        if (groundMode?.kind === "palette") {
             for (let vertex = 0; vertex < 4; vertex++) for (let channel = 0; channel < 3; channel++) {
                 colors[quad * 16 + vertex * 4 + channel] = ground.color[channel] / 255;
             }
+            uvs.set([0, 0, 0, 0, 0, 0, 0, 0], quad * 8);
+        } else if (groundMode?.kind === "tile") {
+            // 块贴图子区：块 = 世界格 tile×tile，块图顶=北（世界 y 大）→ v 翻转
+            const u = (x % groundMode.tile) / groundMode.tile;
+            const u1v = ((x + 1) % groundMode.tile || groundMode.tile) / groundMode.tile;
+            const vNorth = 1 - (y % groundMode.tile) / groundMode.tile;
+            const vSouth = 1 - (((y + 1) % groundMode.tile || groundMode.tile) / groundMode.tile);
+            uvs.set([u, vNorth, u1v, vNorth, u, vSouth, u1v, vSouth], quad * 8);
+        } else {
+            if (ground.id >= 6) {
+                for (let vertex = 0; vertex < 4; vertex++) for (let channel = 0; channel < 3; channel++) {
+                    colors[quad * 16 + vertex * 4 + channel] = ground.color[channel] / 255;
+                }
+            }
+            const uv = slgTerrainUv(ground.id);
+            const u0 = uv.u0 + insetU, u1 = uv.u1 - insetU;
+            const v0 = uv.v0 + insetV, v1 = uv.v1 - insetV;
+            // 世界连续采样：同一地形的贴图每 SPAN 格一个循环、按 2*SPAN 周期镜像——相邻格共享采样边，
+            // 地面读作连续地表而不是逐格印花（格子观感来自网格线层，不来自贴图重启）。
+            const spanU = (value: number): number => {
+                const phase = value % (SLG_TEXTURE_SPAN * 2);
+                const t = phase < SLG_TEXTURE_SPAN ? phase / SLG_TEXTURE_SPAN : (SLG_TEXTURE_SPAN * 2 - phase) / SLG_TEXTURE_SPAN;
+                return u0 + t * (u1 - u0);
+            };
+            const spanV = (value: number): number => {
+                const phase = value % (SLG_TEXTURE_SPAN * 2);
+                const t = phase < SLG_TEXTURE_SPAN ? 1 - phase / SLG_TEXTURE_SPAN : (phase - SLG_TEXTURE_SPAN) / SLG_TEXTURE_SPAN;
+                return v0 + t * (v1 - v0);
+            };
+            uvs.set([spanU(x), spanV(y + 1), spanU(x + 1), spanV(y + 1), spanU(x), spanV(y), spanU(x + 1), spanV(y)], quad * 8);
         }
-        const u0 = uv.u0 + insetU, u1 = uv.u1 - insetU;
-        const v0 = uv.v0 + insetV, v1 = uv.v1 - insetV;
-        // 世界连续采样：同一地形的贴图每 SPAN 格一个循环、按 2*SPAN 周期镜像——相邻格共享采样边，
-        // 地面读作连续地表而不是逐格印花（格子观感来自网格线层，不来自贴图重启）。
-        const spanU = (value: number): number => {
-            const phase = value % (SLG_TEXTURE_SPAN * 2);
-            const t = phase < SLG_TEXTURE_SPAN ? phase / SLG_TEXTURE_SPAN : (SLG_TEXTURE_SPAN * 2 - phase) / SLG_TEXTURE_SPAN;
-            return u0 + t * (u1 - u0);
-        };
-        const spanV = (value: number): number => {
-            const phase = value % (SLG_TEXTURE_SPAN * 2);
-            const t = phase < SLG_TEXTURE_SPAN ? 1 - phase / SLG_TEXTURE_SPAN : (phase - SLG_TEXTURE_SPAN) / SLG_TEXTURE_SPAN;
-            return v0 + t * (v1 - v0);
-        };
-        uvs.set([spanU(x), spanV(y + 1), spanU(x + 1), spanV(y + 1), spanU(x), spanV(y), spanU(x + 1), spanV(y)], quad * 8);
         const tile = tiles.get(tileIdFromGrid(mapIndex, x, y));
         if (tile?.ownerUid) {
             writeQuad(ownerPositions, ownerIndices, ownerCount, left, bottom, right, top);
