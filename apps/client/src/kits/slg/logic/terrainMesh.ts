@@ -76,7 +76,7 @@ export function buildSlgTerrainMeshes(terrain: ISlgTerrain, cx: number, cy: numb
     const ownerPositions = new Float32Array(quadCapacity * 12);
     const ownerColors = new Float32Array(quadCapacity * 16);
     const ownerIndices = new Uint16Array(quadCapacity * 6);
-    const gap = visibleMapLayers(lod, hiddenLayers).includes("grid") ? 0.65 : 0;
+    const gap = visibleMapLayers(lod, hiddenLayers).includes("grid") ? 0.3 : 0;
     const insetU = 0.5 / atlasWidth, insetV = 0.5 / atlasHeight;
     let ownerCount = 0;
     for (let dy = 0; dy < height; dy++) for (let dx = 0; dx < width; dx++) {

@@ -17,7 +17,7 @@ from PIL import Image
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib.zjcs import load_config, map_config, resolve_ground_image
 
-TILE = 64          # 块边长（世界格；= 4 chunk）
+TILE = 32          # 块边长（世界格；= 2×2 chunk；1024²→32px/格，近档不糊）
 IMG = 1024         # 块图边长（px）
 
 
