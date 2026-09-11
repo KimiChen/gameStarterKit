@@ -1,5 +1,5 @@
 /** Presentation-only map art. No engine state, network reads or gameplay semantics. */
-import { SLG_CHUNK_SIZE, SLG_MAPS, chunkKey, terrainAt, type ISlgChunkRect, type ISlgTerrain } from "../../../shared/kits/slg/api/worldmap/index";
+import { SLG_CHUNK_SIZE, SLG_MAPS, chunkKey, type ISlgChunkRect, type ISlgTerrain } from "../../../shared/kits/slg/api/worldmap/index";
 
 export const SLG_ART_ATLAS_COLUMNS = 3;
 export const SLG_ART_ATLAS_ROWS = 2;
@@ -63,41 +63,12 @@ export function slgLandmarkOf(entry: SlgLayoutLandmark): SlgLandmark {
     };
 }
 
-function artHash(cx: number, cy: number, slot: number, salt: number): number {
-    let value = Math.imul(cx + 1, 0x9e3779b1) ^ Math.imul(cy + 1, 0x85ebca77) ^ Math.imul(slot + 1, 0xc2b2ae3d) ^ salt;
-    value = Math.imul(value ^ value >>> 16, 0x7feb352d);
-    value = Math.imul(value ^ value >>> 15, 0x846ca68b);
-    return (value ^ value >>> 16) >>> 0;
-}
-function unitHash(cx: number, cy: number, slot: number, salt: number): number {
-    return artHash(cx, cy, slot, salt) / 0x100000000;
-}
 function bounded(value: number, min: number, max: number): number { return Math.max(min, Math.min(max, value)); }
-function intersects(a: SlgDecoration, b: SlgDecoration): boolean {
-    return Math.abs(a.x - b.x) < (a.width + b.width) / 2 + 0.2
-        && Math.abs(a.y - b.y) < (a.height + b.height) / 2 + 0.2;
-}
-
-function ordinaryKind(terrain: number, slot: number, roll: number, central: boolean): SlgDecorationKind | null {
-    // 五图统一 palette 语义：0 草地主陆 / 1 林地湿地 / 2 水面 / 3 岩石台地 / 4 沙滩浅滩 / 5 裸土；水面不出装饰。
-    if (terrain === 2) return null;
-    if (terrain === 0) {
-        if (slot >= 3 || (!central && roll > 0.55)) return null;
-        return central ? slot === 0 ? "tree" : "crystal" : roll < 0.08 ? "crystal" : "tree";
-    }
-    if (terrain === 1) return "tree";
-    if (terrain === 3 && slot < 4 && roll < 0.85) return roll < 0.16 ? "crystal" : "stele";
-    if (terrain === 4 && slot < 4) return roll < 0.12 ? "sword" : "chest";
-    if (terrain === 5 && slot < 4) return roll < 0.1 ? "crystal" : "sword";
-    return null;
-}
 
 /**
- * Enumerate at most six fixed slots, never the world's cells. X/Y are center anchors in grid
- * units; complete bounds stay inside their owning chunk. LODs select prefixes of the same
- * candidates, so zooming never moves retained objects or introduces duplicate neighbors.
- *
- * 地标与布局点位全部数据驱动（layout = buildSlgLayoutIndex 产物）；无布局区域维持确定性哈希兜底。
+ * chunk 装饰枚举：地标 + layout.json 真实点位（全部来自 mapinfowrap 原版实体布局）。
+ * 无布局覆盖的 chunk 就是空白——拒绝确定性哈希兜底摆位（原版没有的就是没有）。
+ * LOD 只截断数量，缩放不会移动或增删已展示的物件。
  */
 export function slgDecorationsForChunk(terrain: ISlgTerrain, cx: number, cy: number, lod: number,
     layout?: SlgLayoutIndex): readonly SlgDecoration[] {
@@ -106,32 +77,9 @@ export function slgDecorationsForChunk(terrain: ISlgTerrain, cx: number, cy: num
     const minX = cx * SLG_CHUNK_SIZE, minY = cy * SLG_CHUNK_SIZE;
     const maxX = Math.min(terrain.width, minX + SLG_CHUNK_SIZE), maxY = Math.min(terrain.height, minY + SLG_CHUNK_SIZE);
     const landmarks = (layout?.landmarks ?? []).filter((entry) => entry.x >= minX && entry.x < maxX && entry.y >= minY && entry.y < maxY);
-    const bucket = layout?.index.get(chunkKey(cx, cy));
-    if (bucket) {
-        const limit = [6, 4, 2, 0][lod];
-        return [...bucket.slice(0, Math.max(0, limit - landmarks.length)), ...landmarks].sort((a, b) => b.y - a.y || a.x - b.x);
-    }
-    const ordinary: SlgDecoration[] = [];
-    const central = cx === Math.floor(terrain.width / 2 / SLG_CHUNK_SIZE) && cy === Math.floor(terrain.height / 2 / SLG_CHUNK_SIZE);
+    const bucket = layout?.index.get(chunkKey(cx, cy)) ?? [];
     const limit = [6, 4, 2, 0][lod];
-    for (let slot = 0; slot < 6 && ordinary.length < limit; slot++) {
-        const seedX = minX + (slot % 3 + 0.5) * (maxX - minX) / 3;
-        const seedY = minY + (Math.floor(slot / 3) + 0.5) * (maxY - minY) / 2;
-        const kind = ordinaryKind(terrainAt(terrain, Math.floor(seedX), Math.floor(seedY)).id, slot,
-            unitHash(cx, cy, slot, 0x51494e47), central);
-        if (!kind) continue;
-        const size = kind === "tree" ? 4.5 : kind === "crystal" ? 3.5 : kind === "chest" ? 3 : kind === "portal" ? 5 : kind === "sword" ? 5 : 6;
-        const variance = 0.9 + unitHash(cx, cy, slot, 0x41525431) * 0.2;
-        const width = size * variance, height = size * variance;
-        const entry: SlgDecoration = {
-            id: `decor-${cx}-${cy}-${slot}`, kind, atlasIndex: DECORATION_ATLAS_INDEX[kind], landmark: false, width, height,
-            // 封界：中心钳进 [块界+半径+ε]；ε 抵消浮点尾差，足迹测试按 ≥ 断言整块内
-            x: bounded(seedX + unitHash(cx, cy, slot, 0x584a4954) - 0.5, minX + width / 2 + 1e-9, maxX - width / 2 - 1e-9),
-            y: bounded(seedY + unitHash(cx, cy, slot, 0x594a4954) - 0.5, minY + height / 2 + 1e-9, maxY - height / 2 - 1e-9),
-        };
-        if (!landmarks.some((landmark) => intersects(entry, landmark))) ordinary.push(entry);
-    }
-    return [...ordinary, ...landmarks].sort((a, b) => b.y - a.y || a.x - b.x);
+    return [...bucket.slice(0, Math.max(0, limit - landmarks.length)), ...landmarks].sort((a, b) => b.y - a.y || a.x - b.x);
 }
 
 function validateOverview(point: SlgArtPoint, width: number, height: number): void {
@@ -200,7 +148,7 @@ export function validateSlgForestLayout(input: unknown): input is SlgForestLayou
     if (!info) return false;
     const size = Array.isArray(value.mapSize) ? value.mapSize : [value.mapSize, value.mapSize];
     if (size.length !== 2 || size[0] !== info.width || size[1] !== info.height) return false;
-    if (!Array.isArray(value.landmarks) || value.landmarks.length === 0) return false;
+    if (!Array.isArray(value.landmarks)) return false;
     for (const lm of value.landmarks) {
         if (!lm || typeof lm !== "object") return false;
         const { name, x, y, kind } = lm as { name?: unknown; x?: unknown; y?: unknown; kind?: unknown };

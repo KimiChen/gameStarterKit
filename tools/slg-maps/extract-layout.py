@@ -15,7 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib.zjcs import (entity_class_id, entity_xy, load_area_names, load_config,
-                      load_display, load_mapinfowrap, map_config)
+                      load_display, load_map_grid, load_mapinfowrap, map_config)
 
 
 def classify(display: dict, ecid: int, refresh_group: int) -> str | None:
@@ -33,35 +33,6 @@ def classify(display: dict, ecid: int, refresh_group: int) -> str | None:
     if path:
         return "tree"
     return "tree" if refresh_group == 0 else "crystal"  # 未解析的静态物件按植被/灵晶兜底
-
-
-# 森之国 legacy 词表（回归钉死）；新图可用 config 的 biomeKeywordsExtend 扩展。
-# legacy 语义：岸/岛词与「湖」同判一档，含「湖」（或扩展水词）才算 water，否则 sand。
-BASE_KEYWORDS = {
-    "shore": ("海岸", "海角", "海边", "岛", "远航"),
-    "lake": ("湖",),
-    "rock": ("山谷", "峡谷", "崖", "石窟", "巢穴", "大本营"),
-    "forest": ("密林", "森林", "树林", "回廊", "花谷", "花海", "蘑森", "蘑菇"),
-}
-
-
-def make_biome_of(extend: dict | None):
-    ext = extend or {}
-    shore = tuple(BASE_KEYWORDS["shore"]) + tuple(ext.get("shore", ()))
-    lake = tuple(BASE_KEYWORDS["lake"]) + tuple(ext.get("lake", ()))
-    rock = tuple(BASE_KEYWORDS["rock"]) + tuple(ext.get("rock", ()))
-    forest = tuple(BASE_KEYWORDS["forest"]) + tuple(ext.get("forest", ()))
-
-    def biome_of(name: str) -> str:
-        if any(k in name for k in shore) or any(k in name for k in lake):
-            return "water" if any(k in name for k in lake) else "sand"
-        if any(k in name for k in rock):
-            return "rock"
-        if any(k in name for k in forest):
-            return "forest"
-        return "grass"
-
-    return biome_of
 
 
 def main() -> None:
@@ -117,9 +88,27 @@ def main() -> None:
         cy = sum(tx(entity_xy(e)[1]) for e in ents) / len(ents) + off[1]
         centroids[rid] = (round(cx), round(cy), len(ents))
 
-    biome_of = make_biome_of(mc.get("biomeKeywordsExtend"))
-    biomes = [{"name": area_names.get(rid, f"区域{rid}"), "terrain": biome_of(area_names.get(rid, "")),
-               "cx": c[0], "cy": c[1], "entities": c[2]} for rid, c in sorted(centroids.items())]
+    # biomes：全部原版数据——区域名（map_area.csv）+ AreaInfos 原版质心 + 区域内主导 GroundType 映射类。
+    gt_grid, area_infos, _ = load_map_grid(cfg, mc["classId"])
+    gt_to_biome = {0: "grass", 4: "forest", 2: "water", 3: "water", 5: "rock", 6: "sand", 1: "rock", 8: "rock"}
+    dominant: dict[int, str] = {}
+    for row in gt_grid:
+        for area_id, gt in row:
+            if area_id < 0:
+                continue
+            slot = dominant.setdefault(area_id, {})
+            biome_name = gt_to_biome.get(gt, "grass")
+            slot[biome_name] = slot.get(biome_name, 0) + 1
+    def world_of_grid(lx, ly):
+        return (tx(lx) + off[0], tx(ly) + off[1])
+    biomes = []
+    for rid, (acc, count) in enumerate(area_infos):
+        if not count:
+            continue
+        cx, cy = world_of_grid(acc[0] / count, acc[1] / count)
+        top = max(dominant.get(rid, {"grass": 1}).items(), key=lambda kv: kv[1])[0]
+        biomes.append({"name": area_names.get(rid, f"区域{rid}"), "terrain": top,
+                       "cx": round(cx), "cy": round(cy), "entities": len(regions.get(rid, []))})
 
     # 地标三态混合：{"x","y"} 定稿坐标（fix-landmarks 回填）| {"region"} 质心+nudge | {"name"} 按区域名查找。
     landmarks = []

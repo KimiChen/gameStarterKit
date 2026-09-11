@@ -32,38 +32,32 @@ function writeRect(positions: Float32Array, indices: Uint16Array, quad: number,
 export interface SlgFarGround { readonly sea: SlgMeshGeometry; readonly island: SlgGroundMeshGeometry }
 
 /**
- * 远档地表 = 海面全幅底（palette id 2 海青）+ 原版纯地表烘图一张（SlgFarLayerRenderer 配 island-ground 贴图）。
- * 有机细节由烘图承载；palette 矩形只用于总览绘制与玩法标签，不再在远档逐块描边。
+ * 远档地表 = 海面整幅平铺贴图（sea-tile，原版渲染水面含浪边）+ 原版纯地表烘图一张（island-ground）。
+ * 有机细节由烘图承载；palette 矩形只用于玩法标签与测试，不再在远档逐块描边。
  * 烘图覆盖矩形 = terrain.islandRect（管线 classify-terrain 产出，与 island-ground.png 同帧）。
  */
 export function buildSlgFarGround(terrain: ISlgTerrain, alpha = 1): SlgFarGround {
     assertAlpha(alpha);
     const bounds = worldBounds(terrain);
-    const seaColor = terrain.palette.find((entry) => entry.id === 2)?.color ?? [66, 143, 163];
-    const sea: SlgMeshGeometry = (() => {
-        const positions = new Float32Array(12);
-        const indices16 = new Uint16Array(6);
-        writeRect(positions, indices16, 0, bounds.minX, bounds.minY, bounds.maxX, bounds.maxY);
-        const colors = new Float32Array(16);
-        for (let vertex = 0; vertex < 4; vertex += 1) {
-            const offset = vertex * 4;
-            colors[offset] = seaColor[0] / 255;
-            colors[offset + 1] = seaColor[1] / 255;
-            colors[offset + 2] = seaColor[2] / 255;
-            colors[offset + 3] = alpha;
-        }
-        return { positions, colors, indices16, ...bounds };
-    })();
+    // 海面 UV 平铺：sea-tile 512² 对应 16 世界格一张；v 与 island 同约定（北顶采小 v=图顶）
+    const span = 16 * SLG_GRID_PIXELS;
+    const positions = new Float32Array(12);
+    const indices16 = new Uint16Array(6);
+    writeRect(positions, indices16, 0, bounds.minX, bounds.minY, bounds.maxX, bounds.maxY);
+    const u0 = bounds.minX / span, u1 = bounds.maxX / span;
+    const vNorth = bounds.minY / span, vSouth = bounds.maxY / span;
+    const uvs = new Float32Array([u0, vNorth, u1, vNorth, u0, vSouth, u1, vSouth]);
+    const sea: SlgGroundMeshGeometry = { positions, uvs, colors: solidColors(1, alpha), indices16, ...bounds };
     const rect = terrain.islandRect;
     const left = rect.minX * SLG_GRID_PIXELS, bottom = rect.minY * SLG_GRID_PIXELS;
     const right = rect.maxX * SLG_GRID_PIXELS, top = rect.maxY * SLG_GRID_PIXELS;
-    const positions = new Float32Array(12);
-    const indices16 = new Uint16Array(6);
-    writeRect(positions, indices16, 0, left, bottom, right, top);
+    const islandPositions = new Float32Array(12);
+    const islandIndices = new Uint16Array(6);
+    writeRect(islandPositions, islandIndices, 0, left, bottom, right, top);
     // PNG 顶 = 世界北（本图 y 大）：底边采 v=1、顶边采 v=0
-    const uvs = new Float32Array([0, 1, 1, 1, 0, 0, 1, 0]);
-    const island: SlgGroundMeshGeometry = { positions, uvs, colors: solidColors(1, alpha), indices16,
-        minX: left, minY: bottom, maxX: right, maxY: top };
+    const islandUvs = new Float32Array([0, 1, 1, 1, 0, 0, 1, 0]);
+    const island: SlgGroundMeshGeometry = { positions: islandPositions, uvs: islandUvs, colors: solidColors(1, alpha),
+        indices16: islandIndices, minX: left, minY: bottom, maxX: right, maxY: top };
     return { sea, island };
 }
 

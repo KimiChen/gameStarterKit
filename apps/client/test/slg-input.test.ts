@@ -57,7 +57,7 @@ class FakeOverview {
     visible = false;
     private readonly visibilityChanged: (visible: boolean) => void;
     // 生产构造签名 (parent, terrain, landmarks, art, decorations, w, h, onLocate, onVisibilityChange)。
-    constructor(...args: unknown[]) { this.visibilityChanged = args[8] as (visible: boolean) => void; }
+    constructor(...args: unknown[]) { this.visibilityChanged = args[9] as (visible: boolean) => void; }  // 构造签名新增 islandTexture 参
     setVisible(value: boolean): void { this.visible = value; this.visibilityChanged(value); }
     updateViewport(): void {}
     dispose(): void {}
@@ -82,7 +82,7 @@ async function loadSubject(): Promise<Subject> {
         if (request === "./SlgFarLayerRenderer") return { SlgFarLayerRenderer: FakeFarRenderer };
         if (request === "./SlgWorldOverview") return { SlgWorldOverview: FakeOverview };
         if (request === "./SlgArtResources") return { loadSlgArtResources: async (mapId: string) => ({
-            mapId, terrain: {}, overview: null, decorations: null, island: null,
+            mapId, terrain: {}, overview: null, decorations: null, island: null, sea: null,
             groundTiles: { tile: 64, image: 1024, blocks: [] },
             layout: { index: new Map(), landmarks: [] }, release(): void {},
         }), SlgGroundTileCache: class { dispose(): void {} } };
