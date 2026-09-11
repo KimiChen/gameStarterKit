@@ -134,7 +134,7 @@ export class SlgWorldOverview {
     private buildNavigation(decorationTexture: Texture2D): void {
         const rectangles = buildSlgOverviewRects(this.terrain);
         const ground = rectangles[0];
-        if (!ground || rectangles.length > 513) throw new RangeError("SLG overview region budget exceeded");
+        if (!ground || rectangles.length > 2049) throw new RangeError("SLG overview region budget exceeded");  // 2048 区域上限 + 默认底（有机岛貌反分类契约）
         // A shared white Sprite supplies terrain 0; at most 512 overriding regions use one mesh.
         createSolidPlate(this.navigation, this.mapSize, this.mapSize,
             new Color(ground.color[0], ground.color[1], ground.color[2], 255), 0, 0, "slg-overview-ground");

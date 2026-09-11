@@ -18,8 +18,8 @@ export function readSlgMapEvidence(walk) {
   const tileMatch = details?.text.match(/^\((\d+), (\d+)\) · 地形 (\d+) · (无主|我方|敌方 .+) · 守备 (\d+)$/u);
   const chunks = nodes.filter((node) => /^slg-chunk-\d+-\d+$/u.test(node.name)).map((node) => node.name).sort();
   // LOD 4 远档：逐 chunk 网格被整图层（slg-far-*）替代——整图层存在同样算「已加载」。
-  const farNodes = nodes.filter((node) => /^slg-far-(ground|landmarks|ownership)$/u.test(node.name)).map((node) => node.name).sort();
-  const farGround = farNodes.includes("slg-far-ground");
+  const farNodes = nodes.filter((node) => /^slg-far-(sea|island|landmarks|ownership)$/u.test(node.name)).map((node) => node.name).sort();
+  const farGround = farNodes.includes("slg-far-sea") || farNodes.includes("slg-far-island");
   const notice = nodes.find((node) => typeof node.text === "string" && /^(已占领|已加固|已削减|地图资源加载失败|操作失败|地图加载或操作失败|网络暂不可用|地图请求较多|地图已恢复加载)/u.test(node.text));
   return {
     loaded: !!titleMatch && titleMatch[1] !== "大地图" && (chunks.length > 0 || farGround),
@@ -84,7 +84,7 @@ function readSlgRenderAssets() {
     if (!node.activeInHierarchy) return;
     const inside = inMap || node.name === "SlgMapView";
     if (inside && (/^slg-chunk-\d+-\d+$/u.test(node.name) || /^slg-decorations-\d+-\d+$/u.test(node.name)
-        || /^slg-far-(ground|landmarks|ownership)$/u.test(node.name))) {
+        || /^slg-far-(sea|island|landmarks|ownership)$/u.test(node.name))) {
       const renderer = node.getComponent("cc.MeshRenderer");
       const material = renderer?.getSharedMaterial(0);
       const texture = material?.getProperty("mainTexture");
@@ -143,14 +143,16 @@ async function renderedMapAssets(runner) {
   return { terrainCount: terrain.length, decorationCount: decorations.length, samples: [terrain[0], decorations[0]] };
 }
 
-/** 远档（标题 LOD 4）整图层证据：地表为无贴图顶点色（设计如此），地标必须有贴图。 */
+/** 远档（标题 LOD 4）整图层证据：海面为无贴图顶点色（设计如此），岛貌地表与地标必须有贴图。 */
 async function renderedFarAssets(runner) {
   const assets = await runner.client.evaluate(slgRenderAssetsSource);
-  const ground = assets.find((entry) => entry.name === "slg-far-ground");
+  const sea = assets.find((entry) => entry.name === "slg-far-sea");
+  const island = assets.find((entry) => entry.name === "slg-far-island");
   const landmarks = assets.find((entry) => entry.name === "slg-far-landmarks");
-  if (!ground || ground.textured) throw new Error(`远档地表应为无贴图顶点色整图层：${JSON.stringify(ground ?? null)}`);
+  if (!sea || sea.textured) throw new Error(`远档海面应为无贴图顶点色整图层：${JSON.stringify(sea ?? null)}`);
+  if (!island?.textured) throw new Error(`远档岛貌地表贴图尚未就绪：${JSON.stringify(island ?? null)}`);
   if (!landmarks?.textured) throw new Error(`远档地标贴图尚未就绪：${JSON.stringify(landmarks ?? null)}`);
-  return { groundUntextured: true, landmarksTextured: true,
+  return { seaUntextured: true, islandTextured: true, landmarksTextured: true,
     ownership: assets.some((entry) => entry.name === "slg-far-ownership") };
 }
 
