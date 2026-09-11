@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { randomInt, randomUUID } from "node:crypto";
 import { after, before, test } from "node:test";
-import { SLG_MAP_W, SLG_MAP_H, SLG_CHUNK_SIZE, tileIdFromGrid } from "@game/shared/kits/slg/api/worldmap/index";
+import { SLG_MAPS, SLG_CHUNK_SIZE, tileIdFromGrid } from "@game/shared/kits/slg/api/worldmap/index";
 import { createSlgApi, slgOperation, type SlgApiDeps } from "../../src/kits/slg/service";
 import { createUser } from "../../src/core/userRecord";
 import { CUR_GOLD, withKitTx } from "../../src/core/infra/kitApi";
@@ -71,7 +71,7 @@ test("slg MySQL：两用户并发争同一不存在格，唯一竞争结果、�
   assert.equal((await f.outbox(a)).length + (await f.outbox(b)).length, 2);
   const log = await f.api.readChanges(f.sId, 0);
   assert.deepEqual(log.changes.map((c) => c.revision), [1, 2]);
-  const snapshot = await f.api.readTiles(a, f.sId, RECT);
+  const snapshot = await f.api.readTiles(a, f.sId, "senzhiguo", RECT);
   assert.deepEqual(snapshot.tiles[0], log.changes[1].payload);
 });
 
@@ -129,7 +129,7 @@ test("slg MySQL：到达/撤回边界在锁后判时；到达补算不随失败�
   const second = await f.api.dispatchMarch(uid, f.sId, 0, 1, f.op(uid, "dispatch", "second"));
   f.at(second.march.arriveAt);
   await assert.rejects(f.api.recallMarch(uid, f.sId, second.march.marchId, f.op(uid, "recall", "late")), /已经结束/u);
-  const snapshot = await f.api.readTiles(uid, f.sId, RECT);
+  const snapshot = await f.api.readTiles(uid, f.sId, "senzhiguo", RECT);
   assert.equal(snapshot.tiles.find((t) => t.tileId === 1)?.ownerUid, uid);
   assert.equal(snapshot.myTrophies, 2, "到达奖杯经真实outbox/effect落对应区");
   const changes = (await f.api.readChanges(f.sId, 0)).changes;
@@ -148,7 +148,7 @@ test("slg MySQL：反向插入/两实例并发结算、33条积压跨批次保�
   const otherInstance = createSlgApi({ now: () => 1000 });
   const settled = await Promise.all([f.api.settleDueMarches(f.sId), otherInstance.settleDueMarches(f.sId)]);
   assert.equal(settled.reduce((n, r) => n + r.settled, 0), 1);
-  const snapshot = await f.api.readTiles(a, f.sId, RECT);
+  const snapshot = await f.api.readTiles(a, f.sId, "senzhiguo", RECT);
   assert.equal(snapshot.tiles[0].ownerUid, a, "seed32最后到达按稳定ID归属a");
   assert.equal(await f.count("k_slg_march_receipt"), 33);
   assert.equal((await f.outbox(a)).length + (await f.outbox(b)).length, 33);
@@ -203,15 +203,16 @@ test("slg MySQL：1500×1500地图边缘chunk稀疏分页与跨区隔离，不�
     },
   })) });
   const other = await fixture(); const uid = await f.user();
-  assert.equal(SLG_MAP_W, 1500); assert.equal(SLG_MAP_H, 1500);
-  const chunkX = Math.ceil(SLG_MAP_W / SLG_CHUNK_SIZE) - 1, chunkY = Math.ceil(SLG_MAP_H / SLG_CHUNK_SIZE) - 1;
-  const edgeTile = tileIdFromGrid(SLG_MAP_W - 1, SLG_MAP_H - 1);
+  const mapW = SLG_MAPS[0].width, mapH = SLG_MAPS[0].height;
+  assert.equal(mapW, 1500); assert.equal(mapH, 1500);
+  const chunkX = Math.ceil(mapW / SLG_CHUNK_SIZE) - 1, chunkY = Math.ceil(mapH / SLG_CHUNK_SIZE) - 1;
+  const edgeTile = tileIdFromGrid(0, mapW - 1, mapH - 1);
   await f.api.captureTile(uid, f.sId, edgeTile, f.op(uid, "capture", "edge"));
-  await f.api.captureTile(uid, f.sId, tileIdFromGrid(chunkX * SLG_CHUNK_SIZE - 1, SLG_MAP_H - 1), f.op(uid, "capture", "neighbor"));
-  const edge = await f.api.readTiles(uid, f.sId, { minX: chunkX, maxX: chunkX, minY: chunkY, maxY: chunkY });
+  await f.api.captureTile(uid, f.sId, tileIdFromGrid(0, chunkX * SLG_CHUNK_SIZE - 1, mapH - 1), f.op(uid, "capture", "neighbor"));
+  const edge = await f.api.readTiles(uid, f.sId, "senzhiguo", { minX: chunkX, maxX: chunkX, minY: chunkY, maxY: chunkY });
   assert.equal(edge.tiles.length, 1); assert.equal(edge.tiles[0].tileId, edgeTile);
   assert.equal(await f.count("k_slg_tile"), 2, "225 万默认格不落SQL，仅存两条被修改格");
-  await f.api.readTiles(uid, f.sId, { minX: chunkX - 1, maxX: chunkX, minY: chunkY - 1, maxY: chunkY });
+  await f.api.readTiles(uid, f.sId, "senzhiguo", { minX: chunkX - 1, maxX: chunkX, minY: chunkY - 1, maxY: chunkY });
   const reads = queries.filter((query) => query.sql.includes("FROM k_slg_tile") && query.sql.includes(" OR "));
   assert.equal(reads.length, 2);
   for (const query of reads) {
@@ -222,7 +223,7 @@ test("slg MySQL：1500×1500地图边缘chunk稀疏分页与跨区隔离，不�
     for (let i = 0; i < ranges.length; i += 2) candidates += Number(ranges[i + 1]) - Number(ranges[i]) + 1;
     assert.ok(candidates <= 1024, `SQL候选格由视口限定，实际${candidates}`);
   }
-  assert.equal((await other.api.readTiles(uid, other.sId, RECT)).tiles.length, 0);
+  assert.equal((await other.api.readTiles(uid, other.sId, "senzhiguo", RECT)).tiles.length, 0);
   const page1 = await f.api.readChanges(f.sId, 0, 1);
   const page2 = await f.api.readChanges(f.sId, page1.nextCursor, 1);
   assert.equal(page2.changes[0].revision, 2);

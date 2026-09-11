@@ -20,6 +20,7 @@ export interface ISlgMarch {
 export function marchDurationMs(fromTile: number, toTile: number): number {
     const from = gridFromTileId(fromTile), to = gridFromTileId(toTile);
     if (fromTile === toTile) throw new RangeError("SLG march requires different endpoints");
+    if (from.mapIndex !== to.mapIndex) throw new RangeError("SLG march requires same map");
     return Math.ceil(Math.hypot(to.x - from.x, to.y - from.y) * 1000 / SLG_MARCH_SPEED);
 }
 export function positionAt(order: ISlgMarch, now: number): ISlgPoint {

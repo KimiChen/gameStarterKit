@@ -1,5 +1,5 @@
 /** UI-space camera; world coordinates are grid units, input is design pixels. */
-import { SLG_MAP_W, SLG_MAP_H, slgLodForScale, slgLodForScaleStable } from "../../../shared/kits/slg/api/worldmap/index";
+import { slgLodForScale, slgLodForScaleStable } from "../../../shared/kits/slg/api/worldmap/index";
 
 export const SLG_GRID_PIXELS = 48;
 export interface MapPoint { readonly x: number; readonly y: number }
@@ -10,17 +10,22 @@ export const mapLod = slgLodForScale;
 
 /** Version changes only when the camera actually moves; no engine/global clock dependencies. */
 export class MapCamera {
-    x = SLG_MAP_W / 2;
-    y = SLG_MAP_H / 2;
+    x: number;
+    y: number;
     scale = 0.85;
     version = 0;
+    /** 用户拖/滚过即置位；首开「落首个地标」只在未触碰时发生。 */
+    touched = false;
     /** 滞回后的当前 LOD（初始化取裸映射；之后只随越带迁移，不随阈值抖动）。 */
     private currentLod = mapLod(this.scale);
     private velocityX = 0;
     private velocityY = 0;
     private lastMoveAt = 0;
     private readonly pointers = new Map<number, Pointer>();
-    constructor(readonly width: number, readonly height: number, initialX?: number, initialY?: number) {
+    constructor(readonly width: number, readonly height: number,
+        readonly mapWidth: number, readonly mapHeight: number, initialX?: number, initialY?: number) {
+        this.x = mapWidth / 2;
+        this.y = mapHeight / 2;
         if (Number.isFinite(initialX) && Number.isFinite(initialY)) this.commit(initialX!, initialY!, this.scale);
     }
 
@@ -34,9 +39,10 @@ export class MapCamera {
         const halfW = this.width / this.pixelsPerGrid / 2;
         const halfH = this.height / this.pixelsPerGrid / 2;
         return { minX: Math.max(0, Math.floor(this.x - halfW)), minY: Math.max(0, Math.floor(this.y - halfH)),
-            maxX: Math.min(SLG_MAP_W - 1, Math.floor(this.x + halfW)), maxY: Math.min(SLG_MAP_H - 1, Math.floor(this.y + halfH)) };
+            maxX: Math.min(this.mapWidth - 1, Math.floor(this.x + halfW)), maxY: Math.min(this.mapHeight - 1, Math.floor(this.y + halfH)) };
     }
     pan(dx: number, dy: number): void {
+        this.touched = true;
         this.commit(this.x - dx / this.pixelsPerGrid, this.y - dy / this.pixelsPerGrid, this.scale);
     }
     /** Overview navigation preserves zoom and cannot leave an old drag/inertia running. */
@@ -47,6 +53,7 @@ export class MapCamera {
     }
     zoom(factor: number, anchorX = 0, anchorY = 0): void {
         if (!Number.isFinite(factor) || factor <= 0) return;
+        this.touched = true;
         const anchor = this.worldAt(anchorX, anchorY);
         const scale = Math.min(2, Math.max(0.12, this.scale * factor));
         this.commit(anchor.x - anchorX / (scale * SLG_GRID_PIXELS), anchor.y - anchorY / (scale * SLG_GRID_PIXELS), scale);
@@ -102,8 +109,8 @@ export class MapCamera {
         if (![x, y, scale].every(Number.isFinite)) return;
         const halfW = this.width / (scale * SLG_GRID_PIXELS) / 2;
         const halfH = this.height / (scale * SLG_GRID_PIXELS) / 2;
-        const nextX = halfW * 2 >= SLG_MAP_W ? SLG_MAP_W / 2 : Math.min(SLG_MAP_W - halfW, Math.max(halfW, x));
-        const nextY = halfH * 2 >= SLG_MAP_H ? SLG_MAP_H / 2 : Math.min(SLG_MAP_H - halfH, Math.max(halfH, y));
+        const nextX = halfW * 2 >= this.mapWidth ? this.mapWidth / 2 : Math.min(this.mapWidth - halfW, Math.max(halfW, x));
+        const nextY = halfH * 2 >= this.mapHeight ? this.mapHeight / 2 : Math.min(this.mapHeight - halfH, Math.max(halfH, y));
         if (nextX === this.x && nextY === this.y && scale === this.scale) return;
         this.x = nextX; this.y = nextY; this.scale = scale;
         this.currentLod = slgLodForScaleStable(this.currentLod, scale);

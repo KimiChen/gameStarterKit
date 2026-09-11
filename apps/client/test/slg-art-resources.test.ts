@@ -51,24 +51,27 @@ async function loadSubject(): Promise<Subject> {
 
 function fixture() {
     return {
-        terrain: new FakeJsonAsset({ name: "Fixture", width: 1500, height: 1500,
-            palette: [{ id: 0, color: [100, 150, 200] }], regions: [] }),
+        terrain: new FakeJsonAsset({ id: "senzhiguo", name: "Fixture", width: 1500, height: 1500,
+            islandRect: { minX: 0, minY: 0, maxX: 1499, maxY: 1499 },
+            palette: [{ id: 0, color: [100, 150, 200] }],
+            regions: [{ x: 0, y: 0, width: 1500, height: 1500, terrain: 0 }] }),
         ground: new FakeTexture2D(1536, 1024),
         decorations: new FakeTexture2D(1536, 1024),
         overview: new FakeTexture2D(1024, 1024),
-        layout: new FakeJsonAsset({ source: "fixture", mapSize: 1500, decorations: [] }),
+        layout: new FakeJsonAsset({ source: "fixture", id: "senzhiguo", mapSize: 1500,
+            landmarks: [{ name: "灯塔", x: 100, y: 100, tag: "灯塔", kind: "stele" }], decorations: [] }),
         island: new FakeTexture2D(2400, 1607),
     };
 }
 type Fixture = ReturnType<typeof fixture>;
 type ResourceName = keyof Fixture;
 const PATHS: Readonly<Record<ResourceName, string>> = {
-    terrain: "kits/slg/terrain",
-    ground: "kits/slg/senzhiguo/terrain-atlas/texture",
-    decorations: "kits/slg/senzhiguo/decoration-atlas/texture",
-    overview: "kits/slg/senzhiguo/world-overview/texture",
-    layout: "kits/slg/forest-layout",
-    island: "kits/slg/senzhiguo/island-ground/texture",
+    terrain: "kits/slg/maps/senzhiguo/terrain",
+    ground: "kits/slg/maps/senzhiguo/terrain-atlas/texture",
+    decorations: "kits/slg/maps/senzhiguo/decoration-atlas/texture",
+    overview: "kits/slg/maps/senzhiguo/world-overview/texture",
+    layout: "kits/slg/maps/senzhiguo/layout",
+    island: "kits/slg/maps/senzhiguo/island-ground/texture",
 };
 
 async function withHarness(body: (subject: Subject, complete: (name: ResourceName, asset?: FakeAsset, error?: Error) => void) => Promise<void>): Promise<void> {
@@ -90,11 +93,14 @@ const flush = () => new Promise<void>((resolve) => setImmediate(resolve));
 test("SLG art resources: successful unordered callbacks acquire a bundle whose release is idempotent", async () => {
     await withHarness(async (subject, complete) => {
         const assets = fixture();
-        const pending = subject.loadSlgArtResources();
+        const pending = subject.loadSlgArtResources("senzhiguo");
         assert.equal(requests?.length, 6);
         for (const name of ["overview", "ground", "terrain", "decorations", "layout", "island"] as const) complete(name, assets[name]);
         const bundle = await pending;
+        assert.equal(bundle.mapId, "senzhiguo");
         assert.equal(bundle.terrain, assets.terrain.json);
+        assert.equal(bundle.layout.landmarks.length, 1);
+        assert.equal(bundle.layout.landmarks[0].name, "灯塔");
         assert.equal(bundle.ground, assets.ground); assert.equal(bundle.decorations, assets.decorations); assert.equal(bundle.overview, assets.overview);
         for (const asset of Object.values(assets)) assert.deepEqual([asset.acquired, asset.released, asset.refs], [1, 0, 3]);
         bundle.release(); bundle.release(); bundle.release();
@@ -105,7 +111,7 @@ test("SLG art resources: successful unordered callbacks acquire a bundle whose r
 test("SLG art resources: partial failure waits for every in-flight callback and releases late successes", async () => {
     await withHarness(async (subject, complete) => {
         const assets = fixture();
-        const pending = subject.loadSlgArtResources();
+        const pending = subject.loadSlgArtResources("senzhiguo");
         let settled = false;
         const rejected = assert.rejects(pending, /missing\/invalid/u).then(() => { settled = true; });
         complete("ground", assets.ground);
@@ -141,7 +147,7 @@ test("SLG art resources: invalid terrain or texture dimensions release every suc
     for (const entry of cases) await t.test(entry.name, async () => {
         await withHarness(async (subject, complete) => {
             const assets = fixture(); entry.mutate(assets);
-            const pending = subject.loadSlgArtResources();
+            const pending = subject.loadSlgArtResources("senzhiguo");
             const rejected = assert.rejects(pending, entry.message);
             for (const name of ["decorations", "terrain", "overview", "ground", "layout", "island"] as const) complete(name, assets[name]);
             await rejected;
@@ -153,7 +159,7 @@ test("SLG art resources: invalid terrain or texture dimensions release every suc
 test("SLG art resources: two routes sharing cached textures release only their own references", async () => {
     await withHarness(async (subject, complete) => {
         const assets = fixture();
-        const first = subject.loadSlgArtResources(), second = subject.loadSlgArtResources();
+        const first = subject.loadSlgArtResources("senzhiguo"), second = subject.loadSlgArtResources("senzhiguo");
         assert.equal(requests?.length, 12);
         for (const name of ["terrain", "ground", "decorations", "overview", "layout", "island"] as const) {
             complete(name, assets[name]); complete(name, assets[name]);

@@ -1,8 +1,11 @@
 /** Owns sparse SQL snapshots. Stale camera requests and disposed routes cannot change the model. */
-import { SLG_CHUNK_SIZE, SLG_MAP_W, SLG_MAP_H, SLG_MAX_GUARD, chunkKey, gridFromTileId, tileIdFromGrid, type ISlgTile } from "../../../shared/kits/slg/api/worldmap/index";
+import {
+    SLG_CHUNK_SIZE, SLG_MAX_GUARD, chunkKey, gridFromTileId, slgMapIndex, slgMapInfo,
+    tileIdFromGrid, type ISlgTile,
+} from "../../../shared/kits/slg/api/worldmap/index";
 import { tileAction } from "../api/worldmap/index";
 import { MapCamera } from "./mapCamera";
-import { SLG_LANDMARKS } from "./mapArt";
+import type { SlgLandmark } from "./mapArt";
 import { MapStreamer } from "./mapStreamer";
 import type { SlgRuntime } from "./slgRuntime";
 
@@ -10,8 +13,9 @@ import type { SlgRuntime } from "./slgRuntime";
 export const SLG_MAP_READ_INTERVAL_MS = 200;
 
 export class SlgMapLogic {
-    readonly camera: MapCamera;
-    readonly streamer = new MapStreamer();
+    mapId: string;
+    camera: MapCamera;
+    streamer: MapStreamer;
     readonly tiles = new Map<number, ISlgTile>();
     readonly chunkVersions = new Map<number, number>();
     onChanged: () => void = () => {};
@@ -19,6 +23,7 @@ export class SlgMapLogic {
     notice = "单指拖动 · 双指缩放 · 点选地块";
     trophies = 0;
     busy = false;
+    private landmarks: readonly SlgLandmark[] = [];
     private disposed = false;
     private loading = false;
     private writeGeneration = 0;
@@ -27,11 +32,42 @@ export class SlgMapLogic {
     private rateBackoffMs = 1000;
     private waitingForRateLimit = false;
     private readonly offPump: (() => void) | null;
-    constructor(readonly runtime: SlgRuntime | null, width: number, height: number) {
-        // 初始视野落在首个地标（归木村）附近，而不是几何中心——首开即是主题风貌。
-        this.camera = new MapCamera(width, height, SLG_LANDMARKS[0].x, SLG_LANDMARKS[0].y + 10);
+    constructor(readonly runtime: SlgRuntime | null, mapId: string, width: number, height: number) {
+        this.mapId = mapId;
+        const info = slgMapInfo(mapId);
+        // 首开落在图中心；资源就绪后 setLandmarks 会把未触碰的相机带到首个地标（主题风貌）。
+        this.camera = new MapCamera(width, height, info.width, info.height);
+        this.streamer = new MapStreamer(info.width, info.height);
         if (!runtime) this.notice = "大地图未就绪（kit 未装载）";
         this.offPump = runtime?.tick(() => { void this.pump(); }) ?? null;
+    }
+    get mapIndex(): number { return slgMapIndex(this.mapId); }
+    get mapWidth(): number { return slgMapInfo(this.mapId).width; }
+    get mapHeight(): number { return slgMapInfo(this.mapId).height; }
+    get homeLandmarks(): readonly SlgLandmark[] { return this.landmarks; }
+    /** 资源层注入地标（layout.landmarks）；相机未被用户触碰时开到首个地标。 */
+    setLandmarks(landmarks: readonly SlgLandmark[]): void {
+        if (this.disposed) return;
+        this.landmarks = landmarks;
+        if (landmarks.length > 0 && !this.camera.touched) {
+            this.camera.locate(landmarks[0].x, landmarks[0].y + 10);
+            this.camera.touched = false;
+        }
+    }
+    /** 切换地图：清空稀疏模型与流式状态，相机按新图尺寸重建（首开落点等待 setLandmarks）。 */
+    switchMap(mapId: string): void {
+        if (this.disposed || mapId === this.mapId) return;
+        slgMapIndex(mapId);  // 未知地图 fail-fast
+        this.mapId = mapId;
+        const info = slgMapInfo(mapId);
+        this.landmarks = [];
+        this.selected = null;
+        this.tiles.clear(); this.chunkVersions.clear();
+        this.writeGeneration += 1;  // 在途旧图响应全部作废
+        this.camera = new MapCamera(this.camera.width, this.camera.height, info.width, info.height);
+        this.streamer = new MapStreamer(info.width, info.height);
+        this.notice = "单指拖动 · 双指缩放 · 点选地块";
+        this.refresh();
     }
     updateViewport(): void {
         if (this.disposed) return;
@@ -50,8 +86,8 @@ export class SlgMapLogic {
         return this.tiles.get(this.selected) ?? { tileId: this.selected, ownerUid: "", guardPower: 0 };
     }
     select(x: number, y: number): void {
-        if (this.disposed || x < 0 || y < 0 || x >= SLG_MAP_W || y >= SLG_MAP_H) return;
-        this.selected = tileIdFromGrid(Math.floor(x), Math.floor(y)); this.onChanged();
+        if (this.disposed || x < 0 || y < 0 || x >= this.mapWidth || y >= this.mapHeight) return;
+        this.selected = tileIdFromGrid(this.mapIndex, Math.floor(x), Math.floor(y)); this.onChanged();
     }
     actionText(): string {
         const tile = this.selectedTile();
@@ -104,9 +140,10 @@ export class SlgMapLogic {
                 const rect = { minX: Math.min(...loads.map((load) => load.x)), minY: Math.min(...loads.map((load) => load.y)),
                     maxX: Math.max(...loads.map((load) => load.x)), maxY: Math.max(...loads.map((load) => load.y)) };
                 const writes = this.writeGeneration;
+                const mapId = this.mapId;
                 try {
-                    const result = await this.runtime.mapTiles(rect);
-                    if (this.disposed || writes !== this.writeGeneration) { for (const load of loads) this.streamer.reject(load); continue; }
+                    const result = await this.runtime.mapTiles(mapId, rect);
+                    if (this.disposed || writes !== this.writeGeneration || mapId !== this.mapId) { for (const load of loads) this.streamer.reject(load); continue; }
                     for (const tile of result.tiles) {
                         const point = gridFromTileId(tile.tileId);
                         const x = Math.floor(point.x / SLG_CHUNK_SIZE), y = Math.floor(point.y / SLG_CHUNK_SIZE);

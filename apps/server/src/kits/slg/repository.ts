@@ -1,8 +1,8 @@
 /** SLG 内部存储；所有 SQL 仅经受限 KitTx，调用方必须先持有本区 revision 行锁。 */
 import type { ISlgMarch } from "@game/shared/kits/slg/api/march/index";
 import {
-  SLG_CHUNK_SIZE, SLG_MAP_H, SLG_MAP_W, SLG_MAX_GUARD_POWER,
-  type ISlgChunkRect, type ISlgTile, tileIdFromGrid, validateSlgTileId,
+  SLG_CHUNK_SIZE, SLG_MAX_GUARD_POWER,
+  type ISlgChunkRect, type ISlgTile, slgMapIndex, slgMapInfo, tileIdFromGrid, validateSlgTileId,
 } from "@game/shared/kits/slg/api/worldmap/index";
 import type { KitTx, RowDataPacket } from "../../core/infra/kitApi";
 
@@ -29,7 +29,7 @@ export interface SlgRepository {
   readTile(tileId: number): Promise<ISlgTile>;
   insertTile(tile: ISlgTile): Promise<boolean>;
   updateTile(tile: ISlgTile): Promise<void>;
-  readTiles(rect: ISlgChunkRect): Promise<ISlgTile[]>;
+  readTiles(mapId: string, rect: ISlgChunkRect): Promise<ISlgTile[]>;
   readReceipt(kind: SlgReceiptKind, opId: string): Promise<SlgReceipt | null>;
   insertReceipt(receipt: SlgReceipt): Promise<void>;
   updateReceipt(kind: SlgReceiptKind, opId: string, response: unknown): Promise<void>;
@@ -118,16 +118,18 @@ export function createSqlSlgRepository(tx: KitTx, sId: number): SlgRepository {
       assertLocked();
       await tx.query("UPDATE k_slg_tile SET owner_uid = ?, guard_power = ? WHERE server_id = ? AND tile_id = ?", [tile.ownerUid, tile.guardPower, sId, tile.tileId]);
     },
-    async readTiles(rect) {
+    async readTiles(mapId, rect) {
       assertLocked();
+      const mapIndex = slgMapIndex(mapId);
+      const info = slgMapInfo(mapId);
       const minX = rect.minX * SLG_CHUNK_SIZE;
-      const maxX = Math.min(SLG_MAP_W, (rect.maxX + 1) * SLG_CHUNK_SIZE) - 1;
-      const maxY = Math.min(SLG_MAP_H, (rect.maxY + 1) * SLG_CHUNK_SIZE) - 1;
+      const maxX = Math.min(info.width, (rect.maxX + 1) * SLG_CHUNK_SIZE) - 1;
+      const maxY = Math.min(info.height, (rect.maxY + 1) * SLG_CHUNK_SIZE) - 1;
       const ranges: string[] = [];
       const params: unknown[] = [sId];
       for (let y = rect.minY * SLG_CHUNK_SIZE; y <= maxY; y += 1) {
         ranges.push("tile_id BETWEEN ? AND ?");
-        params.push(tileIdFromGrid(minX, y), tileIdFromGrid(maxX, y));
+        params.push(tileIdFromGrid(mapIndex, minX, y), tileIdFromGrid(mapIndex, maxX, y));
       }
       const rows = await tx.query<RowDataPacket[]>(`SELECT tile_id, owner_uid, guard_power FROM k_slg_tile WHERE server_id = ? AND (${ranges.join(" OR ")}) ORDER BY tile_id`, params);
       return rows.map(tileOf);

@@ -2,7 +2,7 @@
 import { assertExactKeys, boundedString, finiteInteger, type RuntimeValidator, WireValidationError } from "../../http";
 import {
     type ISlgChunkRect, type ISlgTile, type SlgTileOutcome, SLG_CHUNK_SIZE, SLG_MAX_QUERY_CHUNKS,
-    validateSlgChunkRect, validateSlgTile, validateSlgTileId,
+    validateSlgChunkRect, validateSlgMapId, validateSlgTile, validateSlgTileId,
 } from "../../../kits/slg/api/worldmap/index";
 import { type ISlgMarch, validateSlgMarch } from "../../../kits/slg/api/march/index";
 import { defineLobbyRpcDomain, defineRpcIdempotentWrite, defineRpcNaturalWrite } from "../defineDomain";
@@ -12,7 +12,7 @@ export const SlgRpc = {
     MapTiles: "slg.mapTiles", TileCapture: "slg.tileCapture",
     MarchDispatch: "slg.marchDispatch", MarchRecall: "slg.marchRecall",
 } as const;
-export interface ISlgMapTilesReq { rect: ISlgChunkRect }
+export interface ISlgMapTilesReq { mapId: string; rect: ISlgChunkRect }
 export interface ISlgMapTilesRes { tiles: ISlgTile[]; revision: number; myTrophies: number }
 export interface ISlgTileCaptureReq { clientReqId: string; tileId: number }
 export interface ISlgTileCaptureRes { tile: ISlgTile; outcome: SlgTileOutcome }
@@ -27,8 +27,8 @@ export interface SlgRpcMap {
     [SlgRpc.MarchRecall]: { req: ISlgMarchRecallReq; res: ISlgMarchRecallRes };
 }
 export const validateSlgMapTilesReq: RuntimeValidator<ISlgMapTilesReq> = (input) => {
-    const r = rpcRecord(input); assertExactKeys(r, ["rect"], [], "payload");
-    return { rect: validateSlgChunkRect(r.rect) };
+    const r = rpcRecord(input); assertExactKeys(r, ["mapId", "rect"], [], "payload");
+    return { mapId: validateSlgMapId(r.mapId), rect: validateSlgChunkRect(r.rect) };
 };
 export const validateSlgMapTilesRes: RuntimeValidator<ISlgMapTilesRes> = (input) => {
     const r = rpcRecord(input, "response"); assertExactKeys(r, ["tiles", "revision", "myTrophies"], [], "response");
@@ -74,7 +74,7 @@ export const validateSlgMarchRecallRes: RuntimeValidator<ISlgMarchRecallRes> = (
 };
 
 export default defineLobbyRpcDomain({
-    domain: "slg", contractVersion: 1,
+    domain: "slg", contractVersion: 2,
     errorCodes: ["SLG_TILE_NOT_OWNED", "SLG_MARCH_LIMIT", "SLG_MARCH_NOT_FOUND", "SLG_MARCH_FINISHED", "SLG_SETTLEMENT_PENDING"],
     pushes: [],
     routes: [

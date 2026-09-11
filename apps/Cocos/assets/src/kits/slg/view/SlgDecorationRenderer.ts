@@ -21,7 +21,7 @@ export class SlgDecorationRenderer {
     private disposed = false;
 
     constructor(private readonly root: Node, private readonly terrain: ISlgTerrain, texture: Texture2D,
-        private readonly layout?: ReadonlyMap<number, readonly SlgDecoration[]>) {
+        private readonly layout?: import("../logic/mapArt").SlgLayoutIndex) {
         if (!(texture.width > 0 && texture.height > 0)) throw new Error("SLG decoration atlas must be loaded before rendering");
         this.insetU = 0.5 / texture.width;
         this.insetV = 0.5 / texture.height;

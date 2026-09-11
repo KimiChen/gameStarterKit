@@ -1,13 +1,16 @@
 /** 远档（LOD 3）整图层几何：静态区域色块 + 地标 + 稀疏归属，draw call 与缩放出图脱钩。 */
-import { SLG_MAP_H, SLG_MAP_W, gridFromTileId, type ISlgTerrain, type ISlgTile } from "../../../shared/kits/slg/api/worldmap/index";
-import { SLG_LANDMARKS, slgAtlasUv } from "./mapArt";
+import { gridFromTileId, type ISlgTerrain, type ISlgTile } from "../../../shared/kits/slg/api/worldmap/index";
+import { slgAtlasUv, type SlgLandmark } from "./mapArt";
 import { SLG_GRID_PIXELS } from "./mapCamera";
 import { SLG_OTHER_TILE_COLOR, SLG_SELF_TILE_COLOR, type SlgGroundMeshGeometry, type SlgMeshGeometry } from "./terrainMesh";
 
 /** 远档切换档：lod >= SLG_FAR_LOD 时整图层替代逐 chunk 网格（含调试强制档）。 */
 export const SLG_FAR_LOD = 3;
 
-const WORLD_BOUNDS = { minX: 0, minY: 0, maxX: SLG_MAP_W * SLG_GRID_PIXELS, maxY: SLG_MAP_H * SLG_GRID_PIXELS };
+/** 世界像素边界（当前图尺寸 × 48px/格）。 */
+function worldBounds(terrain: ISlgTerrain) {
+    return { minX: 0, minY: 0, maxX: terrain.width * SLG_GRID_PIXELS, maxY: terrain.height * SLG_GRID_PIXELS };
+}
 
 function assertAlpha(alpha: number): void {
     if (!Number.isFinite(alpha) || alpha < 0 || alpha > 1) throw new RangeError("SLG far layer alpha invalid");
@@ -26,22 +29,21 @@ function writeRect(positions: Float32Array, indices: Uint16Array, quad: number,
     indices.set([v, v + 1, v + 2, v + 2, v + 1, v + 3], quad * 6);
 }
 
-/** 原版森之国纯地表烘图在本图里的覆盖矩形（世界格 (-99,-81)~(125,69) 经 (w+97)*3+420/(w+79)*3+531 换算）。 */
-export const SLG_ISLAND_RECT = { minX: 414, minY: 525, maxX: 1086, maxY: 975 } as const;
-
 export interface SlgFarGround { readonly sea: SlgMeshGeometry; readonly island: SlgGroundMeshGeometry }
 
 /**
  * 远档地表 = 海面全幅底（palette id 2 海青）+ 原版纯地表烘图一张（SlgFarLayerRenderer 配 island-ground 贴图）。
  * 有机细节由烘图承载；palette 矩形只用于总览绘制与玩法标签，不再在远档逐块描边。
+ * 烘图覆盖矩形 = terrain.islandRect（管线 classify-terrain 产出，与 island-ground.png 同帧）。
  */
 export function buildSlgFarGround(terrain: ISlgTerrain, alpha = 1): SlgFarGround {
     assertAlpha(alpha);
+    const bounds = worldBounds(terrain);
     const seaColor = terrain.palette.find((entry) => entry.id === 2)?.color ?? [66, 143, 163];
     const sea: SlgMeshGeometry = (() => {
         const positions = new Float32Array(12);
         const indices16 = new Uint16Array(6);
-        writeRect(positions, indices16, 0, WORLD_BOUNDS.minX, WORLD_BOUNDS.minY, WORLD_BOUNDS.maxX, WORLD_BOUNDS.maxY);
+        writeRect(positions, indices16, 0, bounds.minX, bounds.minY, bounds.maxX, bounds.maxY);
         const colors = new Float32Array(16);
         for (let vertex = 0; vertex < 4; vertex += 1) {
             const offset = vertex * 4;
@@ -50,10 +52,11 @@ export function buildSlgFarGround(terrain: ISlgTerrain, alpha = 1): SlgFarGround
             colors[offset + 2] = seaColor[2] / 255;
             colors[offset + 3] = alpha;
         }
-        return { positions, colors, indices16, ...WORLD_BOUNDS };
+        return { positions, colors, indices16, ...bounds };
     })();
-    const left = SLG_ISLAND_RECT.minX * SLG_GRID_PIXELS, bottom = SLG_ISLAND_RECT.minY * SLG_GRID_PIXELS;
-    const right = SLG_ISLAND_RECT.maxX * SLG_GRID_PIXELS, top = SLG_ISLAND_RECT.maxY * SLG_GRID_PIXELS;
+    const rect = terrain.islandRect;
+    const left = rect.minX * SLG_GRID_PIXELS, bottom = rect.minY * SLG_GRID_PIXELS;
+    const right = rect.maxX * SLG_GRID_PIXELS, top = rect.maxY * SLG_GRID_PIXELS;
     const positions = new Float32Array(12);
     const indices16 = new Uint16Array(6);
     writeRect(positions, indices16, 0, left, bottom, right, top);
@@ -64,14 +67,16 @@ export function buildSlgFarGround(terrain: ISlgTerrain, alpha = 1): SlgFarGround
     return { sea, island };
 }
 
-/** 静态地标：全部 SLG_LANDMARKS 一张网格（远处仍保留的最后内容层），装饰图集 UV + 半像素内缩。 */
-export function buildSlgFarLandmarks(atlasWidth: number, atlasHeight: number, alpha = 1): SlgGroundMeshGeometry {
+/** 静态地标一张网格（远处仍保留的最后内容层），装饰图集 UV + 半像素内缩。地标数据驱动（layout.landmarks）。 */
+export function buildSlgFarLandmarks(atlasWidth: number, atlasHeight: number, terrain: ISlgTerrain,
+    landmarks: readonly SlgLandmark[], alpha = 1): SlgGroundMeshGeometry {
     assertAlpha(alpha);
     if (!Number.isInteger(atlasWidth) || !Number.isInteger(atlasHeight) || atlasWidth <= 0 || atlasHeight <= 0) {
         throw new RangeError("SLG far landmarks atlas dimensions invalid");
     }
+    const bounds = worldBounds(terrain);
     const insetU = 0.5 / atlasWidth, insetV = 0.5 / atlasHeight;
-    const sorted = [...SLG_LANDMARKS].sort((a, b) => b.y - a.y || a.x - b.x);
+    const sorted = [...landmarks].sort((a, b) => b.y - a.y || a.x - b.x);
     const positions = new Float32Array(sorted.length * 12);
     const uvs = new Float32Array(sorted.length * 8);
     const indices16 = new Uint16Array(sorted.length * 6);
@@ -83,14 +88,14 @@ export function buildSlgFarLandmarks(atlasWidth: number, atlasHeight: number, al
         uvs.set([uv.u0 + insetU, uv.v0 + insetV, uv.u1 - insetU, uv.v0 + insetV,
             uv.u0 + insetU, uv.v1 - insetV, uv.u1 - insetU, uv.v1 - insetV], quad * 8);
     });
-    return { positions, uvs, colors: solidColors(sorted.length, alpha), indices16, ...WORLD_BOUNDS };
+    return { positions, uvs, colors: solidColors(sorted.length, alpha), indices16, ...bounds };
 }
 
 /**
  * 稀疏归属：tiles 里每个有主格一个整格 quad（近景 overlay 同款色），按 tileId 排序保证重建稳定。
  * 数据仍来自既有的逐 chunk mapTiles 管线——远档只换渲染形态，不改数据粒度。
  */
-export function buildSlgFarOwnership(tiles: ReadonlyMap<number, ISlgTile>, selfUid: string, alpha = 1): SlgMeshGeometry | null {
+export function buildSlgFarOwnership(terrain: ISlgTerrain, tiles: ReadonlyMap<number, ISlgTile>, selfUid: string, alpha = 1): SlgMeshGeometry | null {
     assertAlpha(alpha);
     const owned = [...tiles.keys()].sort((a, b) => a - b);
     if (owned.length === 0) return null;
@@ -111,7 +116,7 @@ export function buildSlgFarOwnership(tiles: ReadonlyMap<number, ISlgTile>, selfU
             colors[offset + 3] = base[3] * alpha;
         }
     });
-    return { positions, colors, indices16, ...WORLD_BOUNDS };
+    return { positions, colors, indices16, ...worldBounds(terrain) };
 }
 
 /** 归属重建签名：稀疏数据版次（tiles 规模 + 各 chunk 版本和），远档每帧算一次成本可忽略。 */

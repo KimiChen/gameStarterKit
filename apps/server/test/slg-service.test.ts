@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { SLG_SETTLEMENT_BATCH_SIZE, type ISlgMarch } from "@game/shared/kits/slg/api/march/index";
-import { SLG_CHUNK_SIZE, tileIdToCoord, type ISlgTile } from "@game/shared/kits/slg/api/worldmap/index";
+import { SLG_CHUNK_SIZE, slgMapIndex, tileIdToCoord, type ISlgTile } from "@game/shared/kits/slg/api/worldmap/index";
 import { type IEffect, type KitTx, InsufficientBalanceError } from "../src/core/infra/kitApi";
 import { createSlgApi, slgOperation, type SlgOperation, type SlgTxRunner } from "../src/kits/slg/service";
 import type { SlgChange, SlgReceipt, SlgRepository } from "../src/kits/slg/repository";
@@ -86,9 +86,11 @@ function fixture() {
         z.tiles.set(tile.tileId, tile); return true;
       },
       async updateTile(tile) { check(); z.tiles.set(tile.tileId, tile); },
-      async readTiles(rect) {
-        check(); return [...z.tiles.values()].filter((tile) => {
+      async readTiles(mapId, rect) {
+        check(); const mapIndex = slgMapIndex(mapId);
+        return [...z.tiles.values()].filter((tile) => {
           const p = tileIdToCoord(tile.tileId);
+          if (p.mapIndex !== mapIndex) return false;
           const x = Math.floor(p.x / SLG_CHUNK_SIZE), y = Math.floor(p.y / SLG_CHUNK_SIZE);
           return x >= rect.minX && x <= rect.maxX && y >= rect.minY && y <= rect.maxY;
         }).sort((a, b) => a.tileId - b.tileId);
@@ -194,7 +196,7 @@ test("slg 派遣：己方起点、1金币、3支限制；回执重放原余额�
   assert.deepEqual(await f.api.dispatchMarch("u", 1, 0, 1, op), result);
   assert.equal(f.get(1).balances.get("u"), 97);
   f.own("rival"); f.at(2000);
-  await f.api.readTiles("u", 1, RECT);
+  await f.api.readTiles("u", 1, "senzhiguo", RECT);
   assert.equal(f.get(1).marches.get(op.opId)?.status, "arrived");
   assert.equal(f.get(1).tiles.get(1)?.ownerUid, "u");
   assert.deepEqual(await f.api.dispatchMarch("u", 1, 0, 1, op), result, "原响应不受已到达或源地失守影响");
@@ -275,10 +277,10 @@ test("slg 区域隔离、稀疏有界快照与双消费者独立游标", async (
   await f.api.captureTile("u", 1, 1, operation("u", 1, "capture", "a"));
   await f.api.captureTile("u", 1, 100, operation("u", 1, "capture", "b"));
   await f.api.captureTile("v", 2, 1, operation("v", 2, "capture", "a"));
-  const snapshot = await f.api.readTiles("u", 1, RECT);
+  const snapshot = await f.api.readTiles("u", 1, "senzhiguo", RECT);
   assert.deepEqual(snapshot.tiles.map((t) => t.tileId), [1]);
   assert.equal(snapshot.revision, 2); assert.equal(snapshot.myTrophies, 2);
-  assert.equal((await f.api.readTiles("u", 2, RECT)).tiles[0].ownerUid, "v");
+  assert.equal((await f.api.readTiles("u", 2, "senzhiguo", RECT)).tiles[0].ownerUid, "v");
   const one = await f.api.readChanges(1, 0, 1);
   const other = await f.api.readChanges(1, 0, 128);
   assert.equal(one.nextCursor, 1); assert.equal(other.nextCursor, 2);

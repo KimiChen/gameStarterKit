@@ -56,7 +56,8 @@ class FakeOverview {
     readonly node = new FakeNode();
     visible = false;
     private readonly visibilityChanged: (visible: boolean) => void;
-    constructor(...args: unknown[]) { this.visibilityChanged = args[7] as (visible: boolean) => void; }
+    // 生产构造签名 (parent, terrain, landmarks, art, decorations, w, h, onLocate, onVisibilityChange)。
+    constructor(...args: unknown[]) { this.visibilityChanged = args[8] as (visible: boolean) => void; }
     setVisible(value: boolean): void { this.visible = value; this.visibilityChanged(value); }
     updateViewport(): void {}
     dispose(): void {}
@@ -80,7 +81,10 @@ async function loadSubject(): Promise<Subject> {
         if (request === "./SlgDecorationRenderer") return { SlgDecorationRenderer: FakeRenderer };
         if (request === "./SlgFarLayerRenderer") return { SlgFarLayerRenderer: FakeFarRenderer };
         if (request === "./SlgWorldOverview") return { SlgWorldOverview: FakeOverview };
-        if (request === "./SlgArtResources") return { loadSlgArtResources: async () => ({ terrain: {}, release(): void {} }) };
+        if (request === "./SlgArtResources") return { loadSlgArtResources: async (mapId: string) => ({
+            mapId, terrain: {}, overview: null, decorations: null, island: null,
+            layout: { index: new Map(), landmarks: [] }, release(): void {},
+        }) };
         return originalLoad.call(this, request, parent, isMain);
     };
     try { loaded = await import("../src/kits/slg/view/SlgMapView"); return loaded; }
@@ -102,6 +106,7 @@ interface InputView {
         runtime: { now(): number; selfUid(): string };
         updateViewport(): void;
         select(x: number, y: number): void;
+        setLandmarks(landmarks: readonly unknown[]): void;
         dispose(): void;
         selectedTile(): unknown;
         canCapture(): boolean;
@@ -122,14 +127,15 @@ async function withView(body: (harness: {
 }) => void | Promise<void>): Promise<void> {
     const subject = await loadSubject();
     const view = new subject.SlgMapView() as unknown as InputView;
-    const camera = new MapCamera(800, 720);
+    const camera = new MapCamera(800, 720, 1500, 1500);
     const selections: { x: number; y: number }[] = [];
     let now = 1000, updates = 0, disposed = 0, stoppedTicks = 0;
     view.active = true; view.mapBottom = -300; view.mapTop = 420; view.mapCenter = 60;
     view.world = new FakeNode(); view.terrainLayer = new FakeNode(); view.decorationLayer = new FakeNode();
     view.logic = {
         camera, runtime: { now: () => now, selfUid: () => "" }, updateViewport: () => { updates += 1; },
-        select: (x, y) => { selections.push({ x, y }); }, dispose: () => { disposed += 1; camera.cancel(); },
+        select: (x, y) => { selections.push({ x, y }); }, setLandmarks: () => {},
+        dispose: () => { disposed += 1; camera.cancel(); },
         selectedTile: () => null, canCapture: () => false, actionText: () => "", busy: false, trophies: 0,
     };
     view.offTick = () => { stoppedTicks += 1; };

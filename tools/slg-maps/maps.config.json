@@ -1,0 +1,1254 @@
+{
+  "zjcsRoot": "/Volumes/KimData/apksource/sourceVersion/zjcs-1.2.6",
+  "comment": "五国地图管线配置。entityToWorld: 实体格×scale+offset → 本 kit 世界格（森之国为 2026-09-11 已验收 legacy 参数，勿动）。render: 纯地表渲染窗（render-ground.py 生成后回填）。新图世界尺寸 = 渲染窗格×scale + 2×margin。",
+  "maps": [
+    {
+      "id": "senzhiguo",
+      "name": "森之国",
+      "classId": 11,
+      "groundSize": [
+        240,
+        180
+      ],
+      "scale": 3,
+      "worldSize": [
+        1500,
+        1500
+      ],
+      "entityToWorld": {
+        "scale": 3,
+        "offset": [
+          408,
+          465
+        ]
+      },
+      "entityToRender": [
+        -101,
+        -101
+      ],
+      "render": {
+        "groundImage": "renders/Map11_ground_web.jpg",
+        "window": {
+          "x0": -99,
+          "y0": -81,
+          "cols": 224,
+          "rows": 150
+        },
+        "worldOrigin": [
+          420,
+          531
+        ]
+      },
+      "seaColor": [
+        66,
+        143,
+        163
+      ],
+      "centroids": [
+        [
+          126,
+          173,
+          99
+        ],
+        [
+          62,
+          108,
+          66
+        ],
+        [
+          66,
+          143,
+          163
+        ],
+        [
+          147,
+          148,
+          124
+        ],
+        [
+          196,
+          178,
+          128
+        ],
+        [
+          163,
+          150,
+          96
+        ]
+      ],
+      "palette": [
+        {
+          "id": 0,
+          "color": [
+            126,
+            173,
+            99
+          ]
+        },
+        {
+          "id": 1,
+          "color": [
+            62,
+            108,
+            66
+          ]
+        },
+        {
+          "id": 2,
+          "color": [
+            84,
+            140,
+            158
+          ]
+        },
+        {
+          "id": 3,
+          "color": [
+            147,
+            148,
+            124
+          ]
+        },
+        {
+          "id": 4,
+          "color": [
+            196,
+            178,
+            128
+          ]
+        },
+        {
+          "id": 5,
+          "color": [
+            163,
+            150,
+            96
+          ]
+        }
+      ],
+      "islandRect": [
+        414,
+        525,
+        1086,
+        975
+      ],
+      "landmarks": [
+        {
+          "name": "归木村",
+          "kind": "stele",
+          "tag": "village",
+          "x": 804,
+          "y": 756
+        },
+        {
+          "name": "世界树半岛",
+          "kind": "tree",
+          "tag": "tree",
+          "x": 757,
+          "y": 900
+        },
+        {
+          "name": "气泡湖-战力",
+          "kind": "crystal",
+          "tag": "lake",
+          "x": 778,
+          "y": 667
+        },
+        {
+          "name": "狂花海岸",
+          "kind": "portal",
+          "tag": "coast",
+          "x": 756,
+          "y": 843
+        },
+        {
+          "name": "蛛后巢穴",
+          "kind": "sword",
+          "tag": "den",
+          "x": 746,
+          "y": 795
+        }
+      ],
+      "atlas": {
+        "tree": {
+          "src": "Image/Mapscence/map11/object11/Obejct11_Forest_Tree01.png",
+          "box": [
+            10,
+            0,
+            226,
+            404
+          ]
+        },
+        "chest": {
+          "src": "AppearanceAssets/Map/map_baoXiang_01/map_baoXiang_01.png",
+          "box": [
+            0,
+            126,
+            136,
+            184
+          ]
+        },
+        "portal": {
+          "src": "AppearanceAssets/Map/map_dingDianChuanSongMen_E_1/map_dingDianChuanSongMen_E_1.png",
+          "box": [
+            8,
+            60,
+            210,
+            630
+          ]
+        },
+        "stele": {
+          "src": "AppearanceAssets/Map/map_fangJianBei_B_2/map_fangJianBei_B_2.png",
+          "box": [
+            70,
+            262,
+            830,
+            788
+          ]
+        },
+        "crystal": {
+          "src": "AppearanceAssets/Map/map_shuangYanShanMai_G/map_shuangYanShanMai_G.png",
+          "box": [
+            640,
+            100,
+            900,
+            420
+          ]
+        },
+        "sword": {
+          "src": "AppearanceAssets/Map/map_guJianCheng_D_1/map_guJianCheng_D_1.png",
+          "box": [
+            0,
+            0,
+            540,
+            420
+          ]
+        }
+      },
+      "terrainTiles": {
+        "grass": {
+          "src": "Image/Mapscence/map11/ground11/ground_1.png"
+        },
+        "forest": {
+          "mulOf": "grass",
+          "mul": [
+            0.62,
+            0.78,
+            0.55
+          ]
+        },
+        "rock": {
+          "src": "Image/Mapscence/map11/ground11/sactx-0-2048x2048-ASTC 6x6-Ground11_Atlas-a2189f17.png",
+          "box": [
+            360,
+            676,
+            628,
+            816
+          ]
+        }
+      }
+    },
+    {
+      "id": "shanzhiguo",
+      "name": "山之国",
+      "classId": 12,
+      "groundSize": [
+        280,
+        210
+      ],
+      "scale": 3,
+      "margin": 190,
+      "entityToRender": [
+        -141,
+        -111
+      ],
+      "render": {
+        "groundImage": "@local",
+        "window": {
+          "x0": -125,
+          "y0": -109,
+          "x1": 131,
+          "y1": 92,
+          "cols": 256,
+          "rows": 201,
+          "pxPerCell": 35.15625,
+          "image": "ground.png"
+        },
+        "worldOrigin": [
+          190,
+          190
+        ]
+      },
+      "seaColor": null,
+      "centroids": [
+        [
+          181,
+          155,
+          112
+        ],
+        [
+          167,
+          153,
+          117
+        ],
+        [
+          66,
+          143,
+          163
+        ],
+        [
+          107,
+          95,
+          84
+        ],
+        [
+          196,
+          178,
+          128
+        ],
+        [
+          150,
+          128,
+          96
+        ]
+      ],
+      "landmarkNames": [
+        "机械群落",
+        "熔火秘藏",
+        "裂谷河岸",
+        "峡谷守卫",
+        "石之遗迹一"
+      ],
+      "atlas": {
+        "tree": {
+          "src": "Image/Mapscence/map12/object12/Object12_Desert_Tree01.png"
+        },
+        "chest": {
+          "src": "AppearanceAssets/Map/map_baoXiang_01/map_baoXiang_01.png",
+          "box": [
+            0,
+            126,
+            136,
+            184
+          ]
+        },
+        "portal": {
+          "src": "AppearanceAssets/Map/map_dingDianChuanSongMen_E_1/map_dingDianChuanSongMen_E_1.png",
+          "box": [
+            8,
+            60,
+            210,
+            630
+          ]
+        },
+        "stele": {
+          "src": "AppearanceAssets/Map/map_fangJianBei_B_2/map_fangJianBei_B_2.png",
+          "box": [
+            70,
+            262,
+            830,
+            788
+          ]
+        },
+        "crystal": {
+          "src": "AppearanceAssets/Map/map_shuangYanShanMai_G/map_shuangYanShanMai_G.png",
+          "box": [
+            640,
+            100,
+            900,
+            420
+          ]
+        },
+        "sword": {
+          "src": "AppearanceAssets/Map/map_guJianCheng_D_1/map_guJianCheng_D_1.png",
+          "box": [
+            0,
+            0,
+            540,
+            420
+          ]
+        }
+      },
+      "palette": [
+        {
+          "id": 0,
+          "color": [
+            181,
+            155,
+            112
+          ]
+        },
+        {
+          "id": 1,
+          "color": [
+            167,
+            153,
+            117
+          ]
+        },
+        {
+          "id": 2,
+          "color": [
+            84,
+            140,
+            158
+          ]
+        },
+        {
+          "id": 3,
+          "color": [
+            107,
+            95,
+            84
+          ]
+        },
+        {
+          "id": 4,
+          "color": [
+            196,
+            178,
+            128
+          ]
+        },
+        {
+          "id": 5,
+          "color": [
+            150,
+            128,
+            96
+          ]
+        }
+      ],
+      "landmarkKinds": [
+        "sword",
+        "chest",
+        "crystal",
+        "portal",
+        "stele"
+      ],
+      "biomeKeywordsExtend": {
+        "rock": [
+          "裂谷",
+          "遗迹",
+          "熔火",
+          "机械"
+        ]
+      },
+      "worldSize": [
+        1148,
+        983
+      ],
+      "terrainTiles": {
+        "grass": {
+          "sample": [
+            113,
+            104
+          ]
+        },
+        "forest": {
+          "mulOf": "grass",
+          "mul": [
+            0.8,
+            0.78,
+            0.72
+          ]
+        },
+        "rock": {
+          "sample": [
+            136,
+            41
+          ]
+        }
+      },
+      "landmarks": [
+        {
+          "name": "机械群落",
+          "kind": "sword",
+          "tag": "机械群落",
+          "x": 827,
+          "y": 516
+        },
+        {
+          "name": "熔火秘藏",
+          "kind": "chest",
+          "tag": "熔火秘藏",
+          "x": 522,
+          "y": 662
+        },
+        {
+          "name": "裂谷河岸",
+          "kind": "crystal",
+          "tag": "裂谷河岸",
+          "x": 596,
+          "y": 667
+        },
+        {
+          "name": "峡谷守卫",
+          "kind": "portal",
+          "tag": "峡谷守卫",
+          "x": 470,
+          "y": 427
+        },
+        {
+          "name": "石之遗迹一",
+          "kind": "stele",
+          "tag": "石之遗迹一",
+          "x": 631,
+          "y": 469
+        }
+      ]
+    },
+    {
+      "id": "zezhiguo",
+      "name": "泽之国",
+      "classId": 13,
+      "groundSize": [
+        240,
+        240
+      ],
+      "scale": 3,
+      "margin": 180,
+      "entityToRender": [
+        -112,
+        -146
+      ],
+      "render": {
+        "groundImage": "@local",
+        "window": {
+          "x0": -109,
+          "y0": -146,
+          "x1": 119,
+          "y1": 94,
+          "cols": 228,
+          "rows": 240,
+          "pxPerCell": 37.5,
+          "image": "ground.png"
+        },
+        "worldOrigin": [
+          180,
+          180
+        ]
+      },
+      "seaColor": null,
+      "centroids": [
+        [
+          196,
+          188,
+          181
+        ],
+        [
+          163,
+          168,
+          206
+        ],
+        [
+          66,
+          143,
+          163
+        ],
+        [
+          90,
+          104,
+          123
+        ],
+        [
+          214,
+          206,
+          190
+        ],
+        [
+          148,
+          140,
+          130
+        ]
+      ],
+      "landmarkNames": [
+        "硫磺半岛",
+        "珊瑚营地",
+        "大漩涡",
+        "奈落森林",
+        "雨林群落"
+      ],
+      "atlas": {
+        "tree": {
+          "src": "Image/Mapscence/map13/object13/Object13_Bog_Tree01.png"
+        },
+        "chest": {
+          "src": "AppearanceAssets/Map/map_baoXiang_01/map_baoXiang_01.png",
+          "box": [
+            0,
+            126,
+            136,
+            184
+          ]
+        },
+        "portal": {
+          "src": "AppearanceAssets/Map/map_dingDianChuanSongMen_E_1/map_dingDianChuanSongMen_E_1.png",
+          "box": [
+            8,
+            60,
+            210,
+            630
+          ]
+        },
+        "stele": {
+          "src": "AppearanceAssets/Map/map_fangJianBei_B_2/map_fangJianBei_B_2.png",
+          "box": [
+            70,
+            262,
+            830,
+            788
+          ]
+        },
+        "crystal": {
+          "src": "AppearanceAssets/Map/map_shuangYanShanMai_G/map_shuangYanShanMai_G.png",
+          "box": [
+            640,
+            100,
+            900,
+            420
+          ]
+        },
+        "sword": {
+          "src": "AppearanceAssets/Map/map_guJianCheng_D_1/map_guJianCheng_D_1.png",
+          "box": [
+            0,
+            0,
+            540,
+            420
+          ]
+        }
+      },
+      "palette": [
+        {
+          "id": 0,
+          "color": [
+            196,
+            188,
+            181
+          ]
+        },
+        {
+          "id": 1,
+          "color": [
+            163,
+            168,
+            206
+          ]
+        },
+        {
+          "id": 2,
+          "color": [
+            84,
+            140,
+            158
+          ]
+        },
+        {
+          "id": 3,
+          "color": [
+            90,
+            104,
+            123
+          ]
+        },
+        {
+          "id": 4,
+          "color": [
+            214,
+            206,
+            190
+          ]
+        },
+        {
+          "id": 5,
+          "color": [
+            148,
+            140,
+            130
+          ]
+        }
+      ],
+      "landmarkKinds": [
+        "portal",
+        "stele",
+        "crystal",
+        "tree",
+        "tree"
+      ],
+      "biomeKeywordsExtend": {
+        "lake": [
+          "漩涡",
+          "泽"
+        ],
+        "forest": [
+          "雨林"
+        ]
+      },
+      "worldSize": [
+        1044,
+        1080
+      ],
+      "terrainTiles": {
+        "grass": {
+          "sample": [
+            95,
+            188
+          ]
+        },
+        "forest": {
+          "sample": [
+            170,
+            166
+          ]
+        },
+        "rock": {
+          "mulOf": "grass",
+          "mul": [
+            0.55,
+            0.6,
+            0.68
+          ]
+        }
+      },
+      "landmarks": [
+        {
+          "name": "硫磺半岛",
+          "kind": "portal",
+          "tag": "硫磺半岛",
+          "x": 340,
+          "y": 436
+        },
+        {
+          "name": "珊瑚营地",
+          "kind": "stele",
+          "tag": "珊瑚营地",
+          "x": 468,
+          "y": 331
+        },
+        {
+          "name": "大漩涡",
+          "kind": "crystal",
+          "tag": "大漩涡",
+          "x": 437,
+          "y": 388
+        },
+        {
+          "name": "奈落森林",
+          "kind": "tree",
+          "tag": "奈落森林",
+          "x": 651,
+          "y": 340
+        },
+        {
+          "name": "雨林群落",
+          "kind": "tree",
+          "tag": "雨林群落",
+          "x": 692,
+          "y": 404
+        }
+      ]
+    },
+    {
+      "id": "jingbeidao",
+      "name": "鲸背岛",
+      "classId": 16,
+      "groundSize": [
+        140,
+        120
+      ],
+      "scale": 5,
+      "margin": 130,
+      "entityToRender": [
+        -81,
+        -72
+      ],
+      "render": {
+        "groundImage": "@local",
+        "window": {
+          "x0": -79,
+          "y0": -70,
+          "x1": 57,
+          "y1": 48,
+          "cols": 136,
+          "rows": 118,
+          "pxPerCell": 66.17647058823529,
+          "image": "ground.png"
+        },
+        "worldOrigin": [
+          130,
+          130
+        ]
+      },
+      "seaColor": null,
+      "centroids": [
+        [
+          196,
+          188,
+          181
+        ],
+        [
+          181,
+          172,
+          160
+        ],
+        [
+          66,
+          143,
+          163
+        ],
+        [
+          93,
+          103,
+          120
+        ],
+        [
+          214,
+          206,
+          190
+        ],
+        [
+          170,
+          158,
+          140
+        ]
+      ],
+      "landmarkNames": [
+        "鲸首浅滩一",
+        "鲸尾浅滩三",
+        "鲸背荒村三",
+        "落樱之森一",
+        "鲸背森林三"
+      ],
+      "atlas": {
+        "tree": {
+          "src": "Image/Mapscence/map11/object11/Obejct11_Forest_Tree01.png",
+          "box": [
+            10,
+            0,
+            226,
+            404
+          ]
+        },
+        "chest": {
+          "src": "AppearanceAssets/Map/map_baoXiang_01/map_baoXiang_01.png",
+          "box": [
+            0,
+            126,
+            136,
+            184
+          ]
+        },
+        "portal": {
+          "src": "AppearanceAssets/Map/map_dingDianChuanSongMen_E_1/map_dingDianChuanSongMen_E_1.png",
+          "box": [
+            8,
+            60,
+            210,
+            630
+          ]
+        },
+        "stele": {
+          "src": "AppearanceAssets/Map/map_fangJianBei_B_2/map_fangJianBei_B_2.png",
+          "box": [
+            70,
+            262,
+            830,
+            788
+          ]
+        },
+        "crystal": {
+          "src": "AppearanceAssets/Map/map_shuangYanShanMai_G/map_shuangYanShanMai_G.png",
+          "box": [
+            640,
+            100,
+            900,
+            420
+          ]
+        },
+        "sword": {
+          "src": "AppearanceAssets/Map/map_guJianCheng_D_1/map_guJianCheng_D_1.png",
+          "box": [
+            0,
+            0,
+            540,
+            420
+          ]
+        }
+      },
+      "palette": [
+        {
+          "id": 0,
+          "color": [
+            196,
+            188,
+            181
+          ]
+        },
+        {
+          "id": 1,
+          "color": [
+            181,
+            172,
+            160
+          ]
+        },
+        {
+          "id": 2,
+          "color": [
+            84,
+            140,
+            158
+          ]
+        },
+        {
+          "id": 3,
+          "color": [
+            93,
+            103,
+            120
+          ]
+        },
+        {
+          "id": 4,
+          "color": [
+            214,
+            206,
+            190
+          ]
+        },
+        {
+          "id": 5,
+          "color": [
+            170,
+            158,
+            140
+          ]
+        }
+      ],
+      "landmarkKinds": [
+        "crystal",
+        "portal",
+        "stele",
+        "tree",
+        "tree"
+      ],
+      "worldSize": [
+        940,
+        850
+      ],
+      "terrainTiles": {
+        "grass": {
+          "sample": [
+            61,
+            84
+          ]
+        },
+        "forest": {
+          "mulOf": "grass",
+          "mul": [
+            0.85,
+            0.82,
+            0.78
+          ]
+        },
+        "rock": {
+          "mulOf": "grass",
+          "mul": [
+            0.48,
+            0.53,
+            0.62
+          ]
+        }
+      },
+      "landmarks": [
+        {
+          "name": "鲸首浅滩一",
+          "kind": "crystal",
+          "tag": "鲸首浅滩一",
+          "x": 762,
+          "y": 619
+        },
+        {
+          "name": "鲸尾浅滩三",
+          "kind": "portal",
+          "tag": "鲸尾浅滩三",
+          "x": 436,
+          "y": 299
+        },
+        {
+          "name": "鲸背荒村三",
+          "kind": "stele",
+          "tag": "鲸背荒村三",
+          "x": 731,
+          "y": 535
+        },
+        {
+          "name": "落樱之森一",
+          "kind": "tree",
+          "tag": "落樱之森一",
+          "x": 507,
+          "y": 427
+        },
+        {
+          "name": "鲸背森林三",
+          "kind": "tree",
+          "tag": "鲸背森林三",
+          "x": 468,
+          "y": 388
+        }
+      ]
+    },
+    {
+      "id": "yuzhiguo",
+      "name": "羽之国",
+      "classId": 17,
+      "groundSize": [
+        300,
+        260
+      ],
+      "scale": 3,
+      "margin": 220,
+      "entityToRender": [
+        -151,
+        -133
+      ],
+      "render": {
+        "groundImage": "@local",
+        "window": {
+          "x0": -149,
+          "y0": -122,
+          "x1": 146,
+          "y1": 120,
+          "cols": 295,
+          "rows": 242,
+          "pxPerCell": 30.508474576271187,
+          "image": "ground.png"
+        },
+        "worldOrigin": [
+          220,
+          220
+        ]
+      },
+      "seaColor": null,
+      "centroids": [
+        [
+          121,
+          189,
+          148
+        ],
+        [
+          96,
+          168,
+          126
+        ],
+        [
+          66,
+          143,
+          163
+        ],
+        [
+          163,
+          183,
+          182
+        ],
+        [
+          196,
+          190,
+          160
+        ],
+        [
+          140,
+          170,
+          150
+        ]
+      ],
+      "landmarkNames": [
+        "秩序神殿",
+        "结晶螺旋树",
+        "祖灵之森",
+        "羽之国八",
+        "羽之国十六"
+      ],
+      "atlas": {
+        "tree": {
+          "src": "Image/Mapscence/map17/object17/Object17_Severe_Tree01.png"
+        },
+        "chest": {
+          "src": "AppearanceAssets/Map/map_baoXiang_01/map_baoXiang_01.png",
+          "box": [
+            0,
+            126,
+            136,
+            184
+          ]
+        },
+        "portal": {
+          "src": "AppearanceAssets/Map/map_dingDianChuanSongMen_E_1/map_dingDianChuanSongMen_E_1.png",
+          "box": [
+            8,
+            60,
+            210,
+            630
+          ]
+        },
+        "stele": {
+          "src": "AppearanceAssets/Map/map_fangJianBei_B_2/map_fangJianBei_B_2.png",
+          "box": [
+            70,
+            262,
+            830,
+            788
+          ]
+        },
+        "crystal": {
+          "src": "AppearanceAssets/Map/map_shuangYanShanMai_G/map_shuangYanShanMai_G.png",
+          "box": [
+            640,
+            100,
+            900,
+            420
+          ]
+        },
+        "sword": {
+          "src": "AppearanceAssets/Map/map_guJianCheng_D_1/map_guJianCheng_D_1.png",
+          "box": [
+            0,
+            0,
+            540,
+            420
+          ]
+        }
+      },
+      "palette": [
+        {
+          "id": 0,
+          "color": [
+            121,
+            189,
+            148
+          ]
+        },
+        {
+          "id": 1,
+          "color": [
+            96,
+            168,
+            126
+          ]
+        },
+        {
+          "id": 2,
+          "color": [
+            84,
+            140,
+            158
+          ]
+        },
+        {
+          "id": 3,
+          "color": [
+            163,
+            183,
+            182
+          ]
+        },
+        {
+          "id": 4,
+          "color": [
+            196,
+            190,
+            160
+          ]
+        },
+        {
+          "id": 5,
+          "color": [
+            140,
+            170,
+            150
+          ]
+        }
+      ],
+      "landmarkKinds": [
+        "stele",
+        "crystal",
+        "tree",
+        "sword",
+        "portal"
+      ],
+      "biomeKeywordsExtend": {
+        "forest": [
+          "祖灵"
+        ],
+        "rock": [
+          "神殿",
+          "螺旋"
+        ]
+      },
+      "worldSize": [
+        1325,
+        1166
+      ],
+      "terrainTiles": {
+        "grass": {
+          "sample": [
+            81,
+            106
+          ]
+        },
+        "forest": {
+          "sample": [
+            161,
+            116
+          ]
+        },
+        "rock": {
+          "mulOf": "grass",
+          "mul": [
+            0.85,
+            0.9,
+            0.88
+          ]
+        }
+      },
+      "landmarks": [
+        {
+          "name": "秩序神殿",
+          "kind": "stele",
+          "tag": "秩序神殿",
+          "x": 777,
+          "y": 603
+        },
+        {
+          "name": "结晶螺旋树",
+          "kind": "crystal",
+          "tag": "结晶螺旋树",
+          "x": 276,
+          "y": 809
+        },
+        {
+          "name": "祖灵之森",
+          "kind": "tree",
+          "tag": "祖灵之森",
+          "x": 836,
+          "y": 902
+        },
+        {
+          "name": "羽之国八",
+          "kind": "sword",
+          "tag": "羽之国八",
+          "x": 459,
+          "y": 628
+        },
+        {
+          "name": "羽之国十六",
+          "kind": "portal",
+          "tag": "羽之国十六",
+          "x": 699,
+          "y": 596
+        }
+      ]
+    }
+  ]
+}

@@ -3,6 +3,7 @@ import { EffectAsset, gfx, Material, Mesh, MeshRenderer, Node, Texture2D, UIMesh
 import { type ISlgTerrain, type ISlgTile } from "../../../shared/kits/slg/api/worldmap/index";
 import { buildSlgFarGround, buildSlgFarLandmarks, buildSlgFarOwnership } from "../logic/farLayerMesh";
 import { slgMapDebug } from "../logic/mapDebug";
+import type { SlgLayoutIndex } from "../logic/mapArt";
 import type { SlgMeshGeometry } from "../logic/terrainMesh";
 
 interface MeshBatch { readonly node: Node; readonly mesh: Mesh; readonly model: MeshRenderer; capacity: number }
@@ -18,11 +19,12 @@ export class SlgFarLayerRenderer {
     private readonly sea: MeshBatch;
     private readonly island: MeshBatch;
     private readonly landmarks: MeshBatch;
+    private readonly terrain: ISlgTerrain;
     private ownership: MeshBatch | null = null;
     private ownershipVersion = -1;
     private disposed = false;
 
-    constructor(parent: Node, terrain: ISlgTerrain, decorationTexture: Texture2D, islandTexture: Texture2D) {
+    constructor(parent: Node, terrain: ISlgTerrain, layout: SlgLayoutIndex, decorationTexture: Texture2D, islandTexture: Texture2D) {
         const technique = EffectAsset.get("builtin-unlit")?.techniques.findIndex((entry) => entry.name === "alpha-blend") ?? -1;
         if (technique < 0) throw new Error("SLG far layer requires builtin-unlit alpha-blend");
         this.untextured = new Material();
@@ -41,12 +43,13 @@ export class SlgFarLayerRenderer {
         this.node = new Node("slg-far-layer");
         try {
             this.node.layer = parent.layer;
+            this.terrain = terrain;
             parent.addChild(this.node);
             const ground = buildSlgFarGround(terrain);
             this.sea = this.createBatch("slg-far-sea", ground.sea, this.untextured);
             this.island = this.createBatch("slg-far-island", ground.island, this.islandMaterial);
             this.landmarks = this.createBatch("slg-far-landmarks",
-                buildSlgFarLandmarks(decorationTexture.width, decorationTexture.height), this.textured);
+                buildSlgFarLandmarks(decorationTexture.width, decorationTexture.height, terrain, layout.landmarks), this.textured);
             this.node.active = false;
         } catch (error) { this.dispose(); throw error; }
     }
@@ -61,7 +64,7 @@ export class SlgFarLayerRenderer {
         if (this.ownership) this.ownership.node.active = !hidden.has("ownership");
         if (version === this.ownershipVersion) return;
         this.ownershipVersion = version;
-        const data = buildSlgFarOwnership(tiles, selfUid);
+        const data = buildSlgFarOwnership(this.terrain, tiles, selfUid);
         if (!data) {
             if (this.ownership) { this.destroyBatch(this.ownership); this.ownership = null; }
             return;

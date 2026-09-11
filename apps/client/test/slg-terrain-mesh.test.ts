@@ -2,18 +2,21 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { buildSlgTerrainMeshes, type SlgGroundMeshGeometry, type SlgMeshGeometry } from "../src/kits/slg/logic/terrainMesh";
 import { SLG_GRID_PIXELS } from "../src/kits/slg/logic/mapCamera";
-import { SLG_CHUNK_SIZE, SLG_MAP_H, SLG_MAP_W, tileIdFromGrid,
+import { SLG_CHUNK_SIZE, slgMapInfo, tileIdFromGrid,
     type ISlgTerrain, type ISlgTile } from "../src/shared/kits/slg/api/worldmap/index";
 
 const EMPTY_TILES: ReadonlyMap<number, ISlgTile> = new Map();
 const SELF = "me";
+/** 默认图森之国（catalog 登记 1500×1500）；五国多图化后尺寸按图取，不再用全局常量。 */
+const MAP = slgMapInfo("senzhiguo");
 function near(actual: number, expected: number, epsilon = 0.0001): void {
     assert.ok(Math.abs(actual - expected) < epsilon, `${actual} != ${expected}`);
 }
 function terrain(id = 0): ISlgTerrain {
-    return { name: "mesh fixture", width: SLG_MAP_W, height: SLG_MAP_H,
+    return { id: MAP.id, name: "mesh fixture", width: MAP.width, height: MAP.height,
+        islandRect: { minX: 414, minY: 525, maxX: 1086, maxY: 975 },
         palette: Array.from({ length: 16 }, (_, value) => ({ id: value, color: [31, 132, 68] as const })),
-        regions: id === 0 ? [] : [{ x: 0, y: 0, width: SLG_MAP_W, height: SLG_MAP_H, terrain: id }] };
+        regions: id === 0 ? [] : [{ x: 0, y: 0, width: MAP.width, height: MAP.height, terrain: id }] };
 }
 interface Vertex { readonly x: number; readonly y: number; readonly u: number; readonly v: number }
 function vertices(mesh: SlgGroundMeshGeometry, quad: number): readonly Vertex[] {
@@ -43,7 +46,7 @@ function edge(mesh: SlgGroundMeshGeometry, x: number, y: number, side: "left" | 
         .map((point) => [point.u, point.v]);
 }
 function tile(x: number, y: number, ownerUid: string): ISlgTile {
-    return { tileId: tileIdFromGrid(x, y), ownerUid, guardPower: ownerUid ? 1 : 0 };
+    return { tileId: tileIdFromGrid(0, x, y), ownerUid, guardPower: ownerUid ? 1 : 0 };
 }
 
 test("SLG terrain mesh: adjacent ground edges sample exactly the same texture edge, including chunk joins", () => {
@@ -139,8 +142,8 @@ test("SLG terrain mesh: farthest chunk stays bounded and indices address only it
     assert.equal(ground.positions.length, quadCapacity * 4 * 3);
     assert.equal(ground.indices16.length, quadCapacity * 6);
     assert.ok([...ground.indices16].every((index) => index < ground.positions.length / 3));
-    assert.equal(ground.maxX, SLG_MAP_W * SLG_GRID_PIXELS);
-    assert.equal(ground.maxY, SLG_MAP_H * SLG_GRID_PIXELS);
+    assert.equal(ground.maxX, MAP.width * SLG_GRID_PIXELS);
+    assert.equal(ground.maxY, MAP.height * SLG_GRID_PIXELS);
     assert.equal(ownership, null);
     assert.throws(() => buildSlgTerrainMeshes(terrain(), 94, 0, 0, EMPTY_TILES, SELF), RangeError);
     assert.throws(() => buildSlgTerrainMeshes(terrain(), 0, 0, 4, EMPTY_TILES, SELF), RangeError);
