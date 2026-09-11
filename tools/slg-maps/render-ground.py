@@ -51,7 +51,7 @@ def main() -> None:
         raise SystemExit(f"Map{mid}: bare 无瓦片")
 
     # 植被瓦片 chunk（TileChunkData：Rug 地坪贴花/Highland 崖沿/UnderObject/Object·Dense_Object 树阵）
-    # ——地表丰富度与「林地」反分类的来源；跳过 Shadow（投影）与 prefabs 大装饰。
+    # ——地表丰富度与「林地」反分类的来源；跳过 Shadow（投影）。
     chunks = []
     chunks_env = None
     cfiles = []
@@ -64,7 +64,21 @@ def main() -> None:
         chunks = R.collect_tile_chunks(chunks_env)
         print(f"  瓦片chunk: {len(chunks)} 个（含变体层）")
 
-    # 画布范围：只取地表层（纯地表渲染不含装饰/chunk 的范围扩边）
+    # 场景装饰 prefabs（蘑菇屋/雕像/建筑群等组合 SpriteRenderer——大型场景件在此层；小怪是 EcEntity 不在此）
+    items = []
+    envs = [env]
+    for suffix in ("_prefabs.bundle", "_prefabs_n.bundle", "_extensions.bundle"):
+        f = R.bundle_files(f"{tag}{suffix}", have, dev)
+        if f:
+            e2 = R.Env(f)
+            envs.append(e2)
+            its = R.collect_renderers(e2)
+            for it in its:
+                it["env"] = e2
+            items += its
+    print(f"  装饰 prefabs: {len(items)} 个 SpriteRenderer")
+
+    # 画布范围：地表层 + prefabs 装饰（含 chunk 装饰时的范围扩边）
     xs, ys = [], []
     for _n, _f, t in tms:
         o, s = t["m_Origin"], t["m_Size"]
@@ -134,6 +148,34 @@ def main() -> None:
     # 1.5) 植被瓦片 chunk（Rug/Highland/Shadow/UnderObject/Object·Dense_Object——树阵/贴花/崖沿）
     if chunks_env is not None:
         R.draw_tile_chunks(canvas, chunks_env, chunks, to_px, px_per_unit, px_per_unit)
+
+    # 2) 场景装饰 prefabs（16 → 18，order 升序，y 降序；与游戏 SortingLayer 一致）
+    # 过滤 UI/标记件：解锁锁线(UnlockLock/UnlockLine)、虚线(xuxian)、红点标记(dot)——运行时由系统控制，不属地表
+    UI_MARKS = ("unlock", "xuxian", "dot")
+    items.sort(key=lambda i: (i["layer"], i["order"], -i["y"]))
+    n_draw = miss = skipped = 0
+    for it in items:
+        fid, spid = it["sp"][1], it["sp"][2]
+        obj = it["env"].resolve(it["sp"][0], fid, spid)
+        spname = ""
+        if obj is not None:
+            try:
+                spname = obj.read().m_Name.lower()
+            except Exception:
+                pass
+        if any(k in spname for k in UI_MARKS):
+            skipped += 1
+            continue
+        img, ppu, pivot = it["env"].sprite_image(*it["sp"])
+        if img is None:
+            miss += 1
+            continue
+        w = img.size[0] / ppu * it["sx"] * px_per_unit
+        h = img.size[1] / ppu * it["sy"] * px_per_unit
+        cx, cy = to_px(it["x"], it["y"])
+        R.draw_image(canvas, img, cx, cy, w, h, it["ang"], pivot)
+        n_draw += 1
+    print(f"  装饰: 绘制 {n_draw}（UI标记跳过 {skipped}，贴图缺失 {miss}）")
 
     out_dir = HERE / "out" / sys.argv[1]
     out_dir.mkdir(parents=True, exist_ok=True)
