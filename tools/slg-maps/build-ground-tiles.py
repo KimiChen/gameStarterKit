@@ -44,6 +44,15 @@ def main() -> None:
                 t = r["terrain"]
         return t
 
+    def has_land(bx, by):
+        """陆地块判定：块内有非水格才产文件（全海块不产——海面由 sea-tile 平铺承担，零重复文件）。"""
+        x0, y0 = bx * TILE, by * TILE
+        for gy in range(y0, min(y0 + TILE, height), 4):
+            for gx in range(x0, min(x0 + TILE, width), 4):
+                if terrain_at(gx, gy) != 2:
+                    return True
+        return False
+
     def crop_block(bx, by):
         """世界格块 → 渲染图对应像素区（窗外填海色）。"""
         # 世界格 y 块顶（北）→ 渲染行小（图上）
@@ -78,7 +87,8 @@ def main() -> None:
     blocks = []
     for by in range((height + TILE - 1) // TILE):
         for bx in range((width + TILE - 1) // TILE):
-            # 全量产图（含纯海块：海面 = 渲染图水面，含 WaterMask 浪边渐变，拒绝顶点色平涂）
+            if not has_land(bx, by):
+                continue  # 全海块不产文件：运行时 fallback 用 sea-tile 平铺（拒绝重复文件）
             crop_block(bx, by).save(out_dir / f"{bx}-{by}.jpg", quality=88)
             blocks.append([bx, by])
     # 远档 sea 层贴图：滑窗找「与海色最接近且方差最小」的 512² 纯海区（角部可能挨陆地）

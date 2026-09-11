@@ -137,7 +137,7 @@ export class SlgMapView extends CocosView {
             this.disposeArt();
             this.art = art; this.terrain = art.terrain;
             this.tileCache = new SlgGroundTileCache(mapId);
-            this.renderer = new SlgChunkRenderer(this.terrainLayer, this.terrain, art.groundTiles, this.tileCache, art.island);
+            this.renderer = new SlgChunkRenderer(this.terrainLayer, this.terrain, art.groundTiles, this.tileCache, art.island, art.sea);
             this.decorationRenderer = new SlgDecorationRenderer(this.decorationLayer, this.terrain, art.decorations, art.layout);
             this.farRenderer = new SlgFarLayerRenderer(this.world, this.terrain, art.layout, art.decorations, art.island, art.sea);
             this.overview = new SlgWorldOverview(this.root, this.terrain, art.layout.landmarks, art.island, art.overview, art.decorations,
