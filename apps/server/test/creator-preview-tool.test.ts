@@ -206,7 +206,7 @@ test("SLG 材质证据：页面脚本自包含，只读公开共享材质和精�
       node("slg-chunk-2-2", [], { "cc.MeshRenderer": { getSharedMaterial: () => ({ getProperty: () => null }) } }),
       node("slg-overview-art", [], { "cc.Sprite": { spriteFrame: { texture: { width: 1254, height: 1254 } } } }),
       node("slg-decorations-3-3", [], texturedMesh, false),
-      node("slg-far-sea", [], { "cc.MeshRenderer": { getSharedMaterial: () => ({ getProperty: () => null }) } }),
+      node("slg-far-sea", [], texturedMesh),
       node("slg-far-island", [], texturedMesh),
       node("slg-far-landmarks", [], texturedMesh),
       node("slg-far-ownership", [], texturedMesh, false),
@@ -220,8 +220,8 @@ test("SLG 材质证据：页面脚本自包含，只读公开共享材质和精�
   assert.equal(result[1].width, 1536);
   assert.equal(result[2].textured, false);
   assert.deepEqual(result[3], { name: "slg-overview-art", kind: "sprite", textured: true, width: 1254, height: 1254 });
-  assert.deepEqual(result[4], { name: "slg-far-sea", kind: "mesh", textured: false, width: null, height: null },
-    "远档海面为无贴图顶点色整图层");
+  assert.deepEqual(result[4], { name: "slg-far-sea", kind: "mesh", textured: true, width: 1536, height: 1024 },
+    "远档海面为 sea-tile 贴图整图层（渲染水面平铺）");
   assert.equal(result[5].textured, true, "远档岛貌地表使用纯地表烘图贴图");
   assert.equal(result[6].textured, true, "远档地标使用装饰图集贴图");
   assert.ok(!result.some((entry: { name: string }) => entry.name === "slg-far-ownership"), "隐藏节点不参与证据");

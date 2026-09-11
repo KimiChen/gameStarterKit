@@ -143,16 +143,16 @@ async function renderedMapAssets(runner) {
   return { terrainCount: terrain.length, decorationCount: decorations.length, samples: [terrain[0], decorations[0]] };
 }
 
-/** 远档（标题 LOD 4）整图层证据：海面为无贴图顶点色（设计如此），岛貌地表与地标必须有贴图。 */
+/** 远档（标题 LOD 4）整图层证据：海面/岛貌地表/地标三层都必须有贴图（海面=sea-tile 渲染水面平铺）。 */
 async function renderedFarAssets(runner) {
   const assets = await runner.client.evaluate(slgRenderAssetsSource);
   const sea = assets.find((entry) => entry.name === "slg-far-sea");
   const island = assets.find((entry) => entry.name === "slg-far-island");
   const landmarks = assets.find((entry) => entry.name === "slg-far-landmarks");
-  if (!sea || sea.textured) throw new Error(`远档海面应为无贴图顶点色整图层：${JSON.stringify(sea ?? null)}`);
+  if (!sea?.textured) throw new Error(`远档海面应为 sea-tile 贴图整图层：${JSON.stringify(sea ?? null)}`);
   if (!island?.textured) throw new Error(`远档岛貌地表贴图尚未就绪：${JSON.stringify(island ?? null)}`);
   if (!landmarks?.textured) throw new Error(`远档地标贴图尚未就绪：${JSON.stringify(landmarks ?? null)}`);
-  return { seaUntextured: true, islandTextured: true, landmarksTextured: true,
+  return { seaTextured: true, islandTextured: true, landmarksTextured: true,
     ownership: assets.some((entry) => entry.name === "slg-far-ownership") };
 }
 
