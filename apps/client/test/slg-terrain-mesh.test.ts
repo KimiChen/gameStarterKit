@@ -124,7 +124,7 @@ test("SLG terrain mesh: close LODs preserve grid gaps while distant LODs join ex
         const first = vertices(ground, quadAt(ground, 0, 0));
         const next = vertices(ground, quadAt(ground, 1, 0));
         const minX = Math.min(...first.map((vertex) => vertex.x)), maxX = Math.max(...first.map((vertex) => vertex.x));
-        const gap = lod < 2 ? 0.65 : 0;
+        const gap = lod < 2 ? 0.3 : 0;
         near(minX, gap); near(maxX, SLG_GRID_PIXELS - gap);
         near(Math.min(...next.map((vertex) => vertex.x)) - maxX, gap * 2);
         near(ground.minX, gap); near(ground.minY, gap);
