@@ -3,14 +3,19 @@ import { dirname, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const update = process.argv.includes("--update");
-const packageArg = process.argv.slice(2).find(arg => !arg.startsWith("--"));
+const outIndex = process.argv.indexOf("--out");
+const outputArg = outIndex >= 0 ? process.argv[outIndex + 1] : undefined;
+const packageArg = process.argv.slice(2).find((arg, index, args) =>
+    !arg.startsWith("--") && !(index > 0 && args[index - 1] === "--out"));
 const packageDir = resolve(packageArg || "");
 if (!packageDir) throw new Error("Usage: npm run import:uniflex-ui -- /path/to/project-package");
 const manifest = JSON.parse(await readFile(resolve(packageDir, "components.json"), "utf8"));
 if (manifest.schemaVersion !== 1 || manifest.kind !== "uniflex-import-package")
     throw new Error("Invalid UniFlex import package.");
 const name = String(manifest.name).replace(/[^a-zA-Z0-9_-]+/g, "_");
-const target = resolve(root, "apps/client/src/ui-uniflex/imported", name);
+const target = outputArg
+    ? resolve(root, outputArg)
+    : resolve(root, "apps/client/src/ui-uniflex/imported", name);
 const exists = await access(target).then(() => true).catch((error) => {
     if (error.code === "ENOENT") return false;
     throw error;
