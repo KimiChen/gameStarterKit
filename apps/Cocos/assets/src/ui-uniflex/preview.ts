@@ -1,6 +1,7 @@
 import { Node, UITransform, view } from "cc";
 import { UniFlexCocosRuntime } from "../kits/uniflex/api/cocos/index";
-import { Confirm, loadGameUI } from "./generated/ui";
+import { Backpack, Confirm, loadGameUI } from "./generated/ui";
+import type { BackpackAction } from "./generated/Backpack";
 import { resourceMap } from "./generated/resource-map";
 import { ConfirmLogic } from "../logic/page/ConfirmLogic";
 
@@ -38,6 +39,44 @@ export function createConfirmPreview(parent: Node, hasCancel: boolean) {
     logic.onClose = dispose;
     return {
         ready: runtime.start(Confirm, { logic, isActive: () => !disposed }),
+        dispose,
+    };
+}
+
+export function createBackpackPreview(
+    parent: Node,
+    onAction: (action: BackpackAction) => void = (action) =>
+        console.info("[UniFlex Backpack] action", action),
+) {
+    const root = new Node("UniFlexBackpack");
+    root.layer = parent.layer;
+    const transform = root.addComponent(UITransform);
+    parent.addChild(root);
+    const resize = (): void => {
+        const size = view.getVisibleSize();
+        transform.setContentSize(size.width, size.height);
+    };
+    resize();
+    view.on("canvas-resize", resize);
+    const runtime = new UniFlexCocosRuntime({ container: root, resources: resourceMap, loadUI: loadGameUI });
+    let disposed = false;
+    const dispose = (): void => {
+        if (disposed) return;
+        disposed = true;
+        view.off("canvas-resize", resize);
+        try {
+            runtime.dispose();
+        } finally {
+            root.destroy();
+        }
+    };
+    return {
+        ready: runtime.start(Backpack, {
+            onAction: (action) => {
+                onAction(action);
+                if (action.action === "back" || action.action === "close") dispose();
+            },
+        }),
         dispose,
     };
 }

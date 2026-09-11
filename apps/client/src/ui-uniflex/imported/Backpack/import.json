@@ -8,8 +8,21 @@
     "height": 1334
   },
   "interactiveNodes": [
-    "layer-2",
-    "layer-27",
-    "layer-13"
+    {
+      "id": "layer-2",
+      "action": "primary"
+    },
+    {
+      "id": "layer-27",
+      "action": "back"
+    },
+    {
+      "id": "layer-13",
+      "action": "primary"
+    },
+    {
+      "id": "layer-57",
+      "action": "tab"
+    }
   ]
 }

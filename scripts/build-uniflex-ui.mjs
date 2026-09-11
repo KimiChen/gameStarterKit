@@ -123,10 +123,16 @@ const catalog = parseResourceCatalog({
     version: 1, hash: jsonHash(entries), resources: entries,
 });
 const catalogHash = jsonHash(catalog);
-const plan = JSON.parse(await readFile(resolve(cache, "aot/data/Confirm.plan.json"), "utf8"));
+const planFiles = (await readdir(resolve(cache, "aot/data")))
+    .filter(file => file.endsWith(".plan.json")).sort();
+const plans = Object.fromEntries(await Promise.all(planFiles.map(async file => [
+    file.replace(/\.plan\.json$/, ""),
+    JSON.parse(await readFile(resolve(cache, "aot/data", file), "utf8")),
+])));
 for (const destination of [cocosResources, resolve(cache, "uniflex")]) {
     await emit(resolve(destination, fontEntry.file), fontBytes);
-    await emit(resolve(destination, "ui/Confirm.json"), canonicalJson(plan) + "\n");
+    for (const [name, pagePlan] of Object.entries(plans))
+        await emit(resolve(destination, `ui/${name}.json`), canonicalJson(pagePlan) + "\n");
     for (const imported of importedPackages) {
         for (const resource of imported.resources) {
             await emit(resolve(destination, `imported/${imported.name}/${resource.path}`),
@@ -140,17 +146,20 @@ await emit(resolve(generated, "catalog-ref.ts"), header +
     `export const catalogRef = ${JSON.stringify({ id: "ui/catalog", sha256: catalogHash })} as const satisfies JsonRef;\n`);
 const resourceMap = {
     "ui/catalog": { path: "uniflex/catalog", sha256: catalogHash },
-    "ui/Confirm": { path: "uniflex/ui/Confirm", sha256: jsonHash(plan) },
     [fontEntry.id]: { path: "uniflex/fonts/regular", sha256: fontEntry.sha256 },
 };
+for (const [name, pagePlan] of Object.entries(plans))
+    resourceMap[`ui/${name}`] = { path: `uniflex/ui/${name}`, sha256: jsonHash(pagePlan) };
 for (const entry of entries.slice(1))
     resourceMap[entry.id] = { path: `uniflex/${entry.file}`, sha256: entry.sha256 };
 await emit(resolve(generated, "resource-map.ts"), header +
     `import type { CocosResourceMapping } from '../../kits/uniflex/api/cocos/index';\n` +
     `export const resourceMap = ${JSON.stringify(resourceMap, null, 2)} as const satisfies CocosResourceMapping;\n`);
-const webResourceMap = Object.fromEntries(Object.entries(resourceMap).map(([id, entry]) => [
-    id, { url: `/${entry.path}${id === fontEntry.id ? ".ttf" : ".json"}`, sha256: entry.sha256 },
-]));
+const webResourceMap = Object.fromEntries(Object.entries(resourceMap).map(([id, entry]) => {
+    const suffix = id === "ui/catalog" || id.startsWith("ui/") ? ".json"
+        : id === fontEntry.id ? ".ttf" : "";
+    return [id, { url: `/${entry.path}${suffix}`, sha256: entry.sha256 }];
+}));
 await emit(resolve(generated, "web-resource-map.ts"), header +
     `import type { WebResourceMapping } from '../../kits/uniflex/api/web/index';\n` +
     `export const webResourceMap = ${JSON.stringify(webResourceMap, null, 2)} as const satisfies WebResourceMapping;\n`);

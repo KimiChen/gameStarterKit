@@ -93,8 +93,9 @@ apps/Cocos/
   `ConfirmLogic` 保持原契约，`ConfirmView.setup()` 的异步资源就绪纳入句柄回滚。其他页面仍使用各自
   既有渲染方式。Cocos 默认启动场景仍是 `assets/scene.scene`。UniFlex 独立预览场景是
   `assets/uniflex.scene`，入口组件为 `UniFlexPreview`，不经过 `Main` / AppRuntime；URL 加
-  `cancel=0` 验证单按钮模式。独立 WebProvider 宿主在 `apps/web-ui-preview/`，通过
-  `npm run dev:uniflex-web` 启动，消费相同 AOT、字体和 `ConfirmLogic`。
+  `cancel=0` 验证单按钮模式；加 `screen=backpack` 可预览 PSD 导入页面，点击后由
+  `BackpackAction` 回调输出动作。独立 WebProvider 宿主在 `apps/web-ui-preview/`，通过
+  `npm run dev:uniflex-web` 启动，消费相同 AOT、字体和页面资源。
 - `apps/client/src/shared` 禁止手改；改 `apps/shared/src`。
 - `apps/Cocos/assets/src` 整体禁止手改；运行 `npm run sync:client`。
 - `.meta` 与镜像一起提交，保持 UUID 稳定。
