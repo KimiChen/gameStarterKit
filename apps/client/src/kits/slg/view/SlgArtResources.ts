@@ -43,10 +43,14 @@ export async function loadSlgArtResources(): Promise<SlgArtResources> {
             load("kits/slg/forest-layout", JsonAsset),
             load("kits/slg/senzhiguo/island-ground/texture", Texture2D),
         ]);
-        if (!data || !ground || !decorations || !overview || !layoutData || !island
-            || !validateSlgTerrain(data.json) || !validateSlgForestLayout(layoutData.json)) {
-            throw new Error("SLG terrain/art/layout bundle is missing/invalid");
-        }
+        if (!data) throw new Error("SLG terrain json missing/invalid");
+        if (!ground) throw new Error("SLG ground atlas missing/invalid");
+        if (!decorations) throw new Error("SLG decoration atlas missing/invalid");
+        if (!overview) throw new Error("SLG overview missing/invalid");
+        if (!layoutData) throw new Error("SLG forest layout missing/invalid");
+        if (!island) throw new Error("SLG island ground missing/invalid");
+        if (!validateSlgTerrain(data.json)) throw new Error("SLG terrain contract violation: bundle missing/invalid");
+        if (!validateSlgForestLayout(layoutData.json)) throw new Error("SLG forest layout contract violation: bundle missing/invalid");
         for (const texture of [ground, decorations]) {
             if (texture.width !== SLG_ART_ATLAS_COLUMNS * SLG_ART_ATLAS_CELL_SIZE
                 || texture.height !== SLG_ART_ATLAS_ROWS * SLG_ART_ATLAS_CELL_SIZE) {

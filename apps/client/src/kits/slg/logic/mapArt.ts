@@ -157,7 +157,7 @@ export function overviewViewportRect(rect: ISlgChunkRect, width = 1, height = 1)
 }
 
 export interface SlgOverviewTerrainRect extends SlgOverviewRect { readonly color: readonly [number, number, number] }
-/** Default quad followed by ordered overlays: at most 513 quads, without sampling world cells. */
+/** Default quad followed by ordered overlays: at most 2049 quads（2048 区域上限 + 默认底）, without sampling world cells. */
 export function buildSlgOverviewRects(terrain: ISlgTerrain): readonly SlgOverviewTerrainRect[] {
     const colors = new Map(terrain.palette.map((entry) => [entry.id, entry.color] as const));
     const colorFor = (id: number): readonly [number, number, number] => {
