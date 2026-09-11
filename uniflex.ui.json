@@ -1,7 +1,0 @@
-{
-  "root": "apps/client",
-  "project": "tsconfig.ui.json",
-  "input": "src/ui-uniflex",
-  "output": ".cache/uniflex/aot",
-  "bindingsOutput": ".cache/uniflex"
-}
