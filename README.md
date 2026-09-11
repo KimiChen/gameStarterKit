@@ -86,8 +86,11 @@ Node.js 22 环境；Intel Mac、Windows 和 Linux 需要补充对应平台的
 node tools/uniflex-compiler.mjs version
 ```
 
-若出现 `vfs: failed to get executable path`，通常是旧版 compiler 制品或错误的平台制品，
-应先确认已更新到当前 `new` 分支并重新执行 `npm install`、`npm run build:uniflex-ui`。
+若出现 `vfs: failed to get executable path`，先确认 compiler 文件没有被安全软件拦截、隔离或替换。
+安全软件提示风险时，按组织安全策略仅放行或恢复仓库内的
+`vendor/uniflex/bin/<platform>-<arch>/uniflex-compiler`，不要整体关闭安全防护；随后再校验
+SHA-256 并重新执行 `npm run build:uniflex-ui`。若文件已被删除或校验值不一致，再更新到当前
+`new` 分支并重新执行 `npm install`。
 
 从本 Starter 派生新项目时，先运行 `npm run init:project -- --help` 查看幂等初始化参数；项目身份、包名、
 生成区和第三方来源统一登记在 [project.metadata.json](project.metadata.json)，不要在各端复制项目名常量。
