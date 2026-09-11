@@ -56,8 +56,9 @@ npm run build:uniflex-ui
 npm run sync:shared
 ```
 
-接入 UniFlex 需先将匹配 SDK 的独立 `uniflex-compiler` 放入 PATH，或设置
-`UNIFLEX_COMPILER` 指向它；当前 npm 制品不包含原生编译器。UI 生成物不入库，首次类型检查或预览前
+UniFlex 原生 `uniflex-compiler` 已按宿主平台放入 `vendor/uniflex/bin/`，默认由
+`config/uniflex.ui.json` 使用项目内 wrapper 调用；也可以用 `UNIFLEX_COMPILER` 覆盖。当前仓库包含
+`darwin-arm64` 制品，其他平台需补充对应平台制品。UI 生成物不入库，首次类型检查或预览前
 必须显式生成。双端预览与源码边界见 [客户端开发](docs/CLIENT.md#2-源码与工程壳)。
 
 从本 Starter 派生新项目时，先运行 `npm run init:project -- --help` 查看幂等初始化参数；项目身份、包名、
@@ -130,7 +131,7 @@ WebPlatform**。要联调真实外部身份服务时，另行启动与当前契�
 | `npm run test:fgui` | FGUI codegen、结构契约与 registry 专项测试 |
 | `npm run test:faults` / `npm run test:faults:int` | 运行核心 fault-matrix；前者默认不连接本地栈，后者使用本地 Redis/MySQL |
 | `npm run codegen:fgui -- <Pkg> <Comp>` | 生成或更新 View 的 AUTO 区块 |
-| `npm run build:uniflex-ui` | 用 `UNIFLEX_COMPILER` 或 PATH 中的 `uniflex-compiler` 生成 UniFlex Confirm 与双端资源；随后运行 `sync:client` |
+| `npm run build:uniflex-ui` | 用仓库内 `vendor/uniflex/bin/` 的原生编译器生成 UniFlex Confirm 与双端资源；随后运行 `sync:client` |
 | `npm run import:uniflex-ui -- /path/to/project-package` | 导入 UniFlex 设计包到 `apps/client/src/ui-uniflex/imported/` |
 | `npm run check:uniflex-ui` | 只读校验 UniFlex AOT、字体与双端生成物是否过期 |
 | `npm run typecheck:uniflex-ui` | 检查 UniFlex TSX 作者态和独立 Web 预览入口 |

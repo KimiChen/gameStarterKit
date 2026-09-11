@@ -84,7 +84,9 @@ apps/Cocos/
   清单与 API 规则见 [UniFlex kit](../apps/kits/uniflex/README.md)，不将业务作者态、Logic 或路由放入 kit。
 - UniFlex 增量迁移的作者态在 `src/ui-uniflex/*.authoring.tsx`，`generated/` 子目录及
   `apps/Cocos/assets/resources/uniflex/` 由 `npm run build:uniflex-ui` 生成，不手改、不入库。
-  编译器使用 `UNIFLEX_COMPILER` 或 PATH 中的独立 `uniflex-compiler`；运行时以
+  编译器默认使用项目内 `tools/uniflex-compiler.mjs` 调用
+  `vendor/uniflex/bin/<platform>-<arch>/`；显式设置 `UNIFLEX_COMPILER` 可覆盖项目内制品。
+  运行时以
   `src/lib/uniflex/` 入库副本为准，`vendor/uniflex/` 的 npm 制品只作为 AOT 与
   `fetch:uniflex` 的输入。生成后运行 `sync:client`，`check:uniflex-ui` 只读检查新鲜度。
 - Confirm 已通过既有 `confirm → Confirm` 路由接入 UniFlex；`openConfirm(): Promise<boolean>` 与

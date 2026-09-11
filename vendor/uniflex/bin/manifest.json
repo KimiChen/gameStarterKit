@@ -1,0 +1,11 @@
+{
+  "name": "uniflex-compiler",
+  "version": "0.1.0",
+  "source": "cocos-flex-layout/frontend/packages/compiler/native",
+  "commit": "2bd066d87f5bafd315be9f40889d0a60b9e58e0b",
+  "binaries": {
+    "darwin-arm64/uniflex-compiler": {
+      "sha256": "9d7a9e545f94d362bc87475527c2186f96a16ab53f07e669b4ec4c26423d15df"
+    }
+  }
+}
