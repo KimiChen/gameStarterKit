@@ -315,3 +315,18 @@ cc 桩缺口按需补 `apps/client/cc-stub.d.ts` / `client-test-stubs.d.ts`（`c
 
 验收：typecheck 0；客户端 550/550（五图化等价改造 + 地标中心锚足迹校验）、服务端 756/756；Creator 预览 27 步全过（/tmp/slg-five-maps-2，含五图切换）。
 开放项回写：§8 #7 常驻 HUD 小地图 ✅ 本轮落地（缩略预览 + 切换；军队/行军标记仍属 2b AOI 范畴）。
+
+### 10.1 近档真地表切块（2026-09-12，B 方案）
+
+用户反馈「地表表现形式与 zjcs 不同」。排查定位四类根因：①四图 palette 图集地表格粗采样污染（山 grass 格含蓝水道 → 平铺蓝色竖条纹；羽含云台；鲸背含岛缘）②水面程序化色块无浪边 ③单变体 4 格镜像平铺缺原版瓦片丰富度 ④岸线被 6 类硬分类抹平。拍板 B 方案：**近档地表直接用原版渲染图切块**（像素级一致），不做图集增强。
+
+| 决策 | 结果 |
+| --- | --- |
+| 渲染层补齐 | `render-ground.py` 增画 TileChunkData 植被层（树阵/地坪贴花/崖沿，`render_map_full` 的 draw_tile_chunks 复用），否则四图近档无林地纹理；跳过 Shadow 之外的 prefabs 大装饰（可移动游戏件） |
+| 切块产物 | `build-ground-tiles.py`：世界格 64×64（恰 4×4 chunk 整数对齐）1024² JPG q88，剔全海块；五图共 442 块（森 61/山 88/泽 90/鲸背 65/羽 138）+ `ground-tiles.json` 注册表 |
+| 运行时 | `SlgGroundTileCache`（懒加载 + 引用计数 + dispose 防在飞泄漏）；`SlgChunkRenderer` 块材质池（16 chunk 共享一块材质），未就绪/海块回退 palette 顶点色，贴图就绪后 update() 逐帧换肤重建；块随 chunk 生命周期 retain/release |
+| 网格几何 | `buildSlgTerrainMeshes` 加 `groundMode`：`{kind:"tile", tile:64}` 块内子区 UV（块顶=北 v 翻转）+ 顶点白；`{kind:"palette"}` 回退染色；缺省保持图集 span 采样（旧测试不炸） |
+| 资源包 | 块贴图 ~29MB（JPG）；terrain-atlas 保留（装饰/回退色）；island-ground 四图换含植被版重烘 |
+| 环境坑 | 预览卡住一度误诊：Chrome tab 的 CDP Input 域在被杀的工具会话后卡死（mouseWheel 超时），换新 tab 即恢复，与代码无关 |
+
+验收：typecheck 0；客户端 49/49（slg-* 全绿）；verify:all 退出 0；Creator 预览 27 步全过（/tmp/slg-ground-tiles-3，近档真地表、山之国画廊污染条纹消失、纹理内存 ~95MB）。

@@ -28,8 +28,9 @@ $P classify-terrain.py <mapId>       # 反分类+矩形分解 → terrain.json�
 $P extract-layout.py <mapId>         # mapinfowrap → layout.json（地标按 landmarkNames 找区域）
 $P calibrate.py <mapId> --check-landmarks     # 地标旱地+9×9 足迹校验，不过则 config 加 nudge 重跑上一步
 $P build-atlases.py <mapId>          # 装饰切片图集 + 地表图集（config atlas/terrainTiles 策展）
-$P bake-island.py <mapId>            # island-ground.png（纯地表缩放到 2400 宽）
-$P frame-overview.py <mapId>         # world-overview.png（MapNN_web.jpg 装裱 2048² 海青底）
+$P bake-island.py <mapId>            # island-ground.png（纯地表缩放到 2400 宽，远档地表）
+$P frame-overview.py <mapId>         # world-overview.png（MapNN_web.jpg 装裱 2048² 海青底）+ 256² mini
+$P build-ground-tiles.py <mapId>     # 近档真地表：世界格 64×64 切块 1024² JPG（剔全海块）+ ground-tiles.json
 ```
 
 装饰切片策展（config `atlas`）：从 `Image/Mapscence/mapNN/objectNN/` 与 `AppearanceAssets/Map/` 挑摆件
@@ -62,3 +63,8 @@ $P bake-island.py senzhiguo        # island-ground.png 与入库逐像素一致
 - 学习包只读；管线产物先落 `out/<mapId>/`，目检后人工拷贝入库（`apps/kits/slg/data/maps/<id>/` 与
   `apps/Cocos/assets/resources/kits/slg/maps/<id>/`，含 .meta 由编辑器导入生成）。
 - 鲸背岛（16）无专属贴图目录，地砖/装饰走共享图集，render-ground.py 经 bundle 依赖自动解析。
+- render-ground.py 画 Ground/WaterMask/Ground_Under + TileChunkData 植被层（Rug/Highland/Shadow/
+  UnderObject/Object·Dense_Object——树阵/贴花/崖沿，反分类「林地」与近档真地表的纹理来源），
+  跳过 Ground_Manual（纯遮罩）与 prefabs 大装饰。
+- 近档地表（2026-09-12 起）= `ground-tiles/` 块贴图（B 方案：渲染图本身切块，替代 palette 图集平铺）；
+  terrain-atlas.png 保留为装饰/回退色用，全水块不产贴图（海色顶点色回退）。

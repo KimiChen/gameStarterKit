@@ -1,40 +1,67 @@
-/** One textured terrain mesh per chunk; sparse ownership uses its own translucent overlay. */
+/** One textured terrain mesh per chunk; sparse ownership uses its own translucent overlay.
+ *  地表 = 世界格 64 块真地表贴图（ground-tiles 懒加载）；未就绪/海块回退 palette 顶点色。 */
 import { director, EffectAsset, gfx, Material, Mesh, MeshRenderer, Node, Texture2D, UIMeshRenderer, utils, Vec3 } from "cc";
 import { gridFromTileId, type ISlgTerrain, type ISlgTile } from "../../../shared/kits/slg/api/worldmap/index";
 import { ChunkFadeTracker } from "../logic/chunkFade";
 import { slgMapDebug } from "../logic/mapDebug";
 import { buildSlgTerrainMeshes, type SlgMeshGeometry } from "../logic/terrainMesh";
+import type { SlgGroundTileCache, SlgGroundTileIndex } from "./SlgArtResources";
 
 interface MeshBatch { readonly node: Node; readonly mesh: Mesh; readonly model: MeshRenderer }
-interface ChunkBatch { ground: MeshBatch; ownership: MeshBatch | null; version: number; lod: number }
+interface ChunkBatch {
+    key: number;
+    ground: MeshBatch; ownership: MeshBatch | null; version: number; lod: number;
+    blockKey: string; textured: boolean;
+}
 interface LastArgs { tiles: ReadonlyMap<number, ISlgTile>; selfUid: string; lod: number }
 
 export class SlgChunkRenderer {
     private readonly batches = new Map<number, ChunkBatch>();
     private readonly dying = new Map<number, ChunkBatch>();
     private readonly fades = new ChunkFadeTracker();
-    private readonly groundMaterial: Material;
+    private readonly tileMaterials = new Map<string, Material>();
+    private readonly blockSet: ReadonlySet<string>;
+    private readonly fallbackMaterial: Material;
     private readonly ownershipMaterial: Material;
     private readonly toneMapping: { readonly post: { toneMappingType: number }; readonly previous: number } | null;
     private lastArgs: LastArgs | null = null;
     private disposed = false;
 
-    constructor(private readonly root: Node, private readonly terrain: ISlgTerrain, private readonly texture: Texture2D) {
+    constructor(private readonly root: Node, private readonly terrain: ISlgTerrain,
+        private readonly tileIndex: SlgGroundTileIndex, private readonly tileCache: SlgGroundTileCache) {
         const technique = EffectAsset.get("builtin-unlit")?.techniques.findIndex((entry) => entry.name === "alpha-blend") ?? -1;
         if (technique < 0) throw new Error("SLG requires builtin-unlit alpha-blend");
-        this.groundMaterial = new Material();
+        this.blockSet = new Set(tileIndex.blocks.map(([bx, by]) => `${bx}-${by}`));
+        this.fallbackMaterial = new Material();
         this.ownershipMaterial = new Material();
         try {
-            for (const [material, textured] of [[this.groundMaterial, true], [this.ownershipMaterial, false]] as const) {
-                material.initialize({ effectName: "builtin-unlit", technique,
-                    defines: { USE_VERTEX_COLOR: true, USE_TEXTURE: textured },
-                    states: { rasterizerState: { cullMode: gfx.CullMode.NONE } } });
-            }
-            this.groundMaterial.setProperty("mainTexture", texture);
-        } catch (error) { this.groundMaterial.destroy(); this.ownershipMaterial.destroy(); throw error; }
+            this.fallbackMaterial.initialize({ effectName: "builtin-unlit", technique,
+                defines: { USE_VERTEX_COLOR: true, USE_TEXTURE: false }, states: { rasterizerState: { cullMode: gfx.CullMode.NONE } } });
+            this.ownershipMaterial.initialize({ effectName: "builtin-unlit", technique,
+                defines: { USE_VERTEX_COLOR: true, USE_TEXTURE: false }, states: { rasterizerState: { cullMode: gfx.CullMode.NONE } } });
+        } catch (error) { this.fallbackMaterial.destroy(); this.ownershipMaterial.destroy(); throw error; }
         const post = director.getScene()?.globals?.postSettings;
         this.toneMapping = post ? { post, previous: post.toneMappingType } : null;
         if (post) post.toneMappingType = 1;
+    }
+
+    private blockOf(cx: number, cy: number): { bx: number; by: number; key: string } {
+        const tile = this.tileIndex.tile / 16;  // 块边长（chunk 数）= 64/16 = 4
+        const bx = Math.floor(cx / tile), by = Math.floor(cy / tile);
+        return { bx, by, key: `${bx}-${by}` };
+    }
+
+    private materialFor(key: string, texture: Texture2D): Material {
+        let material = this.tileMaterials.get(key);
+        if (!material) {
+            const technique = EffectAsset.get("builtin-unlit")?.techniques.findIndex((entry) => entry.name === "alpha-blend") ?? -1;
+            material = new Material();
+            material.initialize({ effectName: "builtin-unlit", technique,
+                defines: { USE_VERTEX_COLOR: true, USE_TEXTURE: true }, states: { rasterizerState: { cullMode: gfx.CullMode.NONE } } });
+            material.setProperty("mainTexture", texture);
+            this.tileMaterials.set(key, material);
+        }
+        return material;
     }
 
     render(chunks: ReadonlyMap<number, number>, tiles: ReadonlyMap<number, ISlgTile>, selfUid: string, lod: number): void {
@@ -44,7 +71,7 @@ export class SlgChunkRenderer {
             if (chunks.has(key)) continue;
             // 淡出超限（整档切换/大幅刷新）退化为硬销；否则转入 dying 渐隐。
             if (this.fades.beginOut(key)) { this.dying.set(key, batch); }
-            else this.destroyChunkBatch(batch);
+            else { this.destroyChunkBatch(batch); }
             this.batches.delete(key);
         }
         for (const [key, version] of chunks) {
@@ -57,32 +84,61 @@ export class SlgChunkRenderer {
                 this.batches.set(key, batch);
                 this.fades.beginIn(key);
             }
-            if (batch?.version === version && batch.lod === lod && !this.fading(key)) continue;
-            const data = this.buildGeometry(key, lod, tiles, selfUid, this.fades.alphaOf(key));
+            const { x: cx, y: cy } = gridFromTileId(key);
+            const block = this.blockOf(cx, cy);
+            const texture = this.blockSet.has(block.key) ? this.tileCache.textureOf(block.bx, block.by) : null;
+            const textured = !!texture;
+            if (!batch && this.blockSet.has(block.key)) {
+                // 陆地块随 chunk 生命周期 retain/release（销毁在 destroyChunkBatch）。
+                void this.tileCache.retain(block.bx, block.by);
+            }
+            if (batch?.version === version && batch.lod === lod && batch.textured === textured && !this.fading(key)) continue;
+            const data = this.buildGeometry(key, lod, tiles, selfUid, this.fades.alphaOf(key), textured);
             if (!batch) {
-                const ground = this.createBatch(`slg-chunk-${gridFromTileId(key).x}-${gridFromTileId(key).y}`,
-                    data.ground, data.quadCapacity, this.groundMaterial);
-                batch = { ground, ownership: null, version, lod };
+                const ground = this.createBatch(`slg-chunk-${cx}-${cy}`, data.ground, data.quadCapacity,
+                    textured ? this.materialFor(block.key, texture!) : this.fallbackMaterial);
+                batch = { key, ground, ownership: null, version, lod, blockKey: block.key, textured };
                 this.batches.set(key, batch);
                 this.fades.beginIn(key);
-            } else this.upload(batch.ground, data.ground);
+            } else {
+                this.upload(batch.ground, data.ground);
+                if (batch.textured !== textured) {
+                    batch.ground.model.material = textured ? this.materialFor(block.key, texture!) : this.fallbackMaterial;
+                }
+            }
             if (data.ownership) {
                 if (batch.ownership) this.upload(batch.ownership, data.ownership);
-                else batch.ownership = this.createBatch(`slg-ownership-${gridFromTileId(key).x}-${gridFromTileId(key).y}`,
+                else batch.ownership = this.createBatch(`slg-ownership-${cx}-${cy}`,
                     data.ownership, data.quadCapacity, this.ownershipMaterial);
             } else { this.destroyBatch(batch.ownership); batch.ownership = null; }
-            batch.version = version; batch.lod = lod;
+            batch.version = version; batch.lod = lod; batch.textured = textured;
         }
     }
 
-    /** 帧驱动淡入淡出：只有 alpha 变化的 chunk 重建网格（数量受 fade 并发上限约束）。 */
+    /** 帧驱动：fade 推进 + 块贴图就绪后的 chunk 换肤（无需用户动相机）。 */
     update(dtMs: number): void {
-        if (this.disposed || this.fades.size === 0 || !this.lastArgs) return;
+        if (this.disposed) return;
+        // 块贴图就绪翻转：未 textured 的在册 chunk 重查一次（贴图加载是异步的）。
+        if (this.lastArgs) {
+            for (const batch of this.batches.values()) {
+                if (batch.textured || !this.blockSet.has(batch.blockKey)) continue;
+                const [bx, by] = batch.blockKey.split("-").map(Number);
+                const texture = this.tileCache.textureOf(bx, by);
+                if (texture) {
+                    const data = this.buildGeometry(batch.key, batch.lod, this.lastArgs.tiles, this.lastArgs.selfUid,
+                        this.fades.alphaOf(batch.key), true);
+                    this.upload(batch.ground, data.ground);
+                    batch.ground.model.material = this.materialFor(batch.blockKey, texture);
+                    batch.textured = true;
+                }
+            }
+        }
+        if (this.fades.size === 0 || !this.lastArgs) return;
         const { changed, finishedOut } = this.fades.advance(dtMs);
         for (const { key, alpha } of changed) {
             const batch = this.batches.get(key) ?? this.dying.get(key);
             if (!batch) continue;
-            const data = this.buildGeometry(key, batch.lod, this.lastArgs.tiles, this.lastArgs.selfUid, alpha);
+            const data = this.buildGeometry(key, batch.lod, this.lastArgs.tiles, this.lastArgs.selfUid, alpha, batch.textured);
             this.upload(batch.ground, data.ground);
             if (data.ownership) {
                 if (batch.ownership) this.upload(batch.ownership, data.ownership);
@@ -107,16 +163,20 @@ export class SlgChunkRenderer {
         if (this.disposed) return;
         this.disposed = true;
         this.clear();
-        this.groundMaterial.destroy(); this.ownershipMaterial.destroy();
+        for (const material of this.tileMaterials.values()) material.destroy();
+        this.tileMaterials.clear();
+        this.fallbackMaterial.destroy(); this.ownershipMaterial.destroy();
         if (this.toneMapping?.post.toneMappingType === 1) this.toneMapping.post.toneMappingType = this.toneMapping.previous;
     }
 
     private fading(key: number): boolean { return this.fades.alphaOf(key) < 1; }
 
-    private buildGeometry(key: number, lod: number, tiles: ReadonlyMap<number, ISlgTile>, selfUid: string, alpha: number) {
+    private buildGeometry(key: number, lod: number, tiles: ReadonlyMap<number, ISlgTile>, selfUid: string,
+        alpha: number, textured: boolean) {
         const { x: cx, y: cy } = gridFromTileId(key);
         return buildSlgTerrainMeshes(this.terrain, cx, cy, lod, tiles, selfUid,
-            this.texture.width, this.texture.height, alpha, slgMapDebug.hiddenLayers);
+            this.tileIndex.image, this.tileIndex.image, alpha, slgMapDebug.hiddenLayers,
+            textured ? { kind: "tile", tile: this.tileIndex.tile } : { kind: "palette" });
     }
 
     private geometry(data: SlgMeshGeometry) {
@@ -143,5 +203,10 @@ export class SlgChunkRenderer {
     private destroyChunkBatch(batch: ChunkBatch): void {
         this.destroyBatch(batch.ground);
         this.destroyBatch(batch.ownership);
+        // 块贴图引用配对释放（render 里 chunk 创建时的 retain）
+        if (this.blockSet.has(batch.blockKey)) {
+            const [bx, by] = batch.blockKey.split("-").map(Number);
+            this.tileCache.release(bx, by);
+        }
     }
 }

@@ -48,6 +48,20 @@ def main() -> None:
     if not tms:
         raise SystemExit(f"Map{mid}: bare 无瓦片")
 
+    # 植被瓦片 chunk（TileChunkData：Rug 地坪贴花/Highland 崖沿/UnderObject/Object·Dense_Object 树阵）
+    # ——地表丰富度与「林地」反分类的来源；跳过 Shadow（投影）与 prefabs 大装饰。
+    chunks = []
+    chunks_env = None
+    cfiles = []
+    for suffix in ("_chunks.bundle", "_chunks_n.bundle"):
+        f = R.bundle_files(f"{tag}{suffix}", have, dev)
+        if f:
+            cfiles += f
+    if cfiles:
+        chunks_env = R.Env(cfiles)
+        chunks = R.collect_tile_chunks(chunks_env)
+        print(f"  瓦片chunk: {len(chunks)} 个（含变体层）")
+
     # 画布范围：只取地表层（纯地表渲染不含装饰/chunk 的范围扩边）
     xs, ys = [], []
     for _n, _f, t in tms:
@@ -114,6 +128,10 @@ def main() -> None:
             print(f"  层 {name}: {len(t['m_Tiles'])} 块为白色遮罩，跳过")
             continue
         print(f"  层 {name}: 绘制 {draw_tiles(name, fname, t)} 瓦片")
+
+    # 1.5) 植被瓦片 chunk（Rug/Highland/Shadow/UnderObject/Object·Dense_Object——树阵/贴花/崖沿）
+    if chunks_env is not None:
+        R.draw_tile_chunks(canvas, chunks_env, chunks, to_px, px_per_unit, px_per_unit)
 
     out_dir = HERE / "out" / sys.argv[1]
     out_dir.mkdir(parents=True, exist_ok=True)
