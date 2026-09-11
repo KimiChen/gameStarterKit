@@ -8,10 +8,11 @@ import { buildSlgTerrainMeshes, type SlgMeshGeometry } from "../logic/terrainMes
 import type { SlgGroundTileCache, SlgGroundTileIndex } from "./SlgArtResources";
 
 interface MeshBatch { readonly node: Node; readonly mesh: Mesh; readonly model: MeshRenderer }
+type SlgGroundMode = "tile" | "island" | "sea";
 interface ChunkBatch {
     key: number;
     ground: MeshBatch; ownership: MeshBatch | null; version: number; lod: number;
-    blockKey: string; textured: boolean;
+    blockKey: string; textured: boolean; groundMode: SlgGroundMode;
 }
 interface LastArgs { tiles: ReadonlyMap<number, ISlgTile>; selfUid: string; lod: number }
 
@@ -22,6 +23,7 @@ export class SlgChunkRenderer {
     private readonly tileMaterials = new Map<string, Material>();
     private readonly blockSet: ReadonlySet<string>;
     private readonly fallbackMaterial: Material;
+    private readonly seaFallbackMaterial: Material;
     private readonly ownershipMaterial: Material;
     private readonly toneMapping: { readonly post: { toneMappingType: number }; readonly previous: number } | null;
     private lastArgs: LastArgs | null = null;
@@ -29,19 +31,23 @@ export class SlgChunkRenderer {
 
     constructor(private readonly root: Node, private readonly terrain: ISlgTerrain,
         private readonly tileIndex: SlgGroundTileIndex, private readonly tileCache: SlgGroundTileCache,
-        islandTexture: Texture2D) {
+        islandTexture: Texture2D, seaTexture: Texture2D) {
         const technique = EffectAsset.get("builtin-unlit")?.techniques.findIndex((entry) => entry.name === "alpha-blend") ?? -1;
         if (technique < 0) throw new Error("SLG requires builtin-unlit alpha-blend");
         this.blockSet = new Set(tileIndex.blocks.map(([bx, by]) => `${bx}-${by}`));
         this.fallbackMaterial = new Material();
+        this.seaFallbackMaterial = new Material();
         this.ownershipMaterial = new Material();
         try {
             this.fallbackMaterial.initialize({ effectName: "builtin-unlit", technique,
                 defines: { USE_VERTEX_COLOR: true, USE_TEXTURE: true }, states: { rasterizerState: { cullMode: gfx.CullMode.NONE } } });
             this.fallbackMaterial.setProperty("mainTexture", islandTexture);
+            this.seaFallbackMaterial.initialize({ effectName: "builtin-unlit", technique,
+                defines: { USE_VERTEX_COLOR: true, USE_TEXTURE: true }, states: { rasterizerState: { cullMode: gfx.CullMode.NONE } } });
+            this.seaFallbackMaterial.setProperty("mainTexture", seaTexture);
             this.ownershipMaterial.initialize({ effectName: "builtin-unlit", technique,
                 defines: { USE_VERTEX_COLOR: true, USE_TEXTURE: false }, states: { rasterizerState: { cullMode: gfx.CullMode.NONE } } });
-        } catch (error) { this.fallbackMaterial.destroy(); this.ownershipMaterial.destroy(); throw error; }
+        } catch (error) { this.fallbackMaterial.destroy(); this.seaFallbackMaterial.destroy(); this.ownershipMaterial.destroy(); throw error; }
         const post = director.getScene()?.globals?.postSettings;
         this.toneMapping = post ? { post, previous: post.toneMappingType } : null;
         if (post) post.toneMappingType = 1;
@@ -88,24 +94,28 @@ export class SlgChunkRenderer {
             }
             const { x: cx, y: cy } = gridFromTileId(key);
             const block = this.blockOf(cx, cy);
-            const texture = this.blockSet.has(block.key) ? this.tileCache.textureOf(block.bx, block.by) : null;
+            const hasBlock = this.blockSet.has(block.key);
+            const texture = hasBlock ? this.tileCache.textureOf(block.bx, block.by) : null;
             const textured = !!texture;
-            if (!batch && this.blockSet.has(block.key)) {
+            // 三态：块贴图（陆地块就绪）/ island 回退（陆地块未就绪）/ sea 平铺（全海块，注册表无块）
+            const groundMode = textured ? "tile" : hasBlock ? "island" : "sea";
+            if (!batch && hasBlock) {
                 // 陆地块随 chunk 生命周期 retain/release（销毁在 destroyChunkBatch）。
                 void this.tileCache.retain(block.bx, block.by);
             }
-            if (batch?.version === version && batch.lod === lod && batch.textured === textured && !this.fading(key)) continue;
-            const data = this.buildGeometry(key, lod, tiles, selfUid, this.fades.alphaOf(key), textured);
+            if (batch?.version === version && batch.lod === lod && batch.textured === textured
+                && (textured || batch.groundMode === groundMode) && !this.fading(key)) continue;
+            const data = this.buildGeometry(key, lod, tiles, selfUid, this.fades.alphaOf(key), groundMode);
             if (!batch) {
                 const ground = this.createBatch(`slg-chunk-${cx}-${cy}`, data.ground, data.quadCapacity,
-                    textured ? this.materialFor(block.key, texture!) : this.fallbackMaterial);
-                batch = { key, ground, ownership: null, version, lod, blockKey: block.key, textured };
+                    this.materialOf(groundMode, block.key, texture));
+                batch = { key, ground, ownership: null, version, lod, blockKey: block.key, textured, groundMode };
                 this.batches.set(key, batch);
                 this.fades.beginIn(key);
             } else {
                 this.upload(batch.ground, data.ground);
-                if (batch.textured !== textured) {
-                    batch.ground.model.material = textured ? this.materialFor(block.key, texture!) : this.fallbackMaterial;
+                if (batch.textured !== textured || batch.groundMode !== groundMode) {
+                    batch.ground.model.material = this.materialOf(groundMode, block.key, texture);
                 }
             }
             if (data.ownership) {
@@ -113,7 +123,7 @@ export class SlgChunkRenderer {
                 else batch.ownership = this.createBatch(`slg-ownership-${cx}-${cy}`,
                     data.ownership, data.quadCapacity, this.ownershipMaterial);
             } else { this.destroyBatch(batch.ownership); batch.ownership = null; }
-            batch.version = version; batch.lod = lod; batch.textured = textured;
+            batch.version = version; batch.lod = lod; batch.textured = textured; batch.groundMode = groundMode;
         }
     }
 
@@ -128,10 +138,10 @@ export class SlgChunkRenderer {
                 const texture = this.tileCache.textureOf(bx, by);
                 if (texture) {
                     const data = this.buildGeometry(batch.key, batch.lod, this.lastArgs.tiles, this.lastArgs.selfUid,
-                        this.fades.alphaOf(batch.key), true);
+                        this.fades.alphaOf(batch.key), "tile");
                     this.upload(batch.ground, data.ground);
-                    batch.ground.model.material = this.materialFor(batch.blockKey, texture);
-                    batch.textured = true;
+                    batch.ground.model.material = this.materialOf("tile", batch.blockKey, texture);
+                    batch.textured = true; batch.groundMode = "tile";
                 }
             }
         }
@@ -140,7 +150,7 @@ export class SlgChunkRenderer {
         for (const { key, alpha } of changed) {
             const batch = this.batches.get(key) ?? this.dying.get(key);
             if (!batch) continue;
-            const data = this.buildGeometry(key, batch.lod, this.lastArgs.tiles, this.lastArgs.selfUid, alpha, batch.textured);
+            const data = this.buildGeometry(key, batch.lod, this.lastArgs.tiles, this.lastArgs.selfUid, alpha, batch.groundMode);
             this.upload(batch.ground, data.ground);
             if (data.ownership) {
                 if (batch.ownership) this.upload(batch.ownership, data.ownership);
@@ -167,18 +177,25 @@ export class SlgChunkRenderer {
         this.clear();
         for (const material of this.tileMaterials.values()) material.destroy();
         this.tileMaterials.clear();
-        this.fallbackMaterial.destroy(); this.ownershipMaterial.destroy();
+        this.fallbackMaterial.destroy(); this.seaFallbackMaterial.destroy(); this.ownershipMaterial.destroy();
         if (this.toneMapping?.post.toneMappingType === 1) this.toneMapping.post.toneMappingType = this.toneMapping.previous;
     }
 
     private fading(key: number): boolean { return this.fades.alphaOf(key) < 1; }
 
+    private materialOf(groundMode: SlgGroundMode, blockKey: string, texture: Texture2D | null): Material {
+        if (groundMode === "tile" && texture) return this.materialFor(blockKey, texture);
+        return groundMode === "sea" ? this.seaFallbackMaterial : this.fallbackMaterial;
+    }
+
     private buildGeometry(key: number, lod: number, tiles: ReadonlyMap<number, ISlgTile>, selfUid: string,
-        alpha: number, textured: boolean) {
+        alpha: number, groundMode: SlgGroundMode) {
         const { x: cx, y: cy } = gridFromTileId(key);
+        const mode = groundMode === "tile" ? { kind: "tile" as const, tile: this.tileIndex.tile }
+            : groundMode === "sea" ? { kind: "sea" as const, span: 64 }
+            : { kind: "island" as const, rect: this.terrain.islandRect };
         return buildSlgTerrainMeshes(this.terrain, cx, cy, lod, tiles, selfUid,
-            this.tileIndex.image, this.tileIndex.image, alpha, slgMapDebug.hiddenLayers,
-            textured ? { kind: "tile", tile: this.tileIndex.tile } : { kind: "island", rect: this.terrain.islandRect });
+            this.tileIndex.image, this.tileIndex.image, alpha, slgMapDebug.hiddenLayers, mode);
     }
 
     private geometry(data: SlgMeshGeometry) {

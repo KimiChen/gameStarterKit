@@ -46,14 +46,16 @@ export const SLG_TEXTURE_SPAN = 4;
  *
  * groundMode（缺省 = atlas 图集采样，兼容旧行为）：
  * - `{ kind: "tile", tile }`：UV 取「世界格 64 块贴图」的块内子区（块顶=北），顶点色全白（贴图原色）。
- * - `{ kind: "island", rect }`：块贴图未就绪回退——UV 取 island-ground 覆盖矩形同区（rect=terrain.islandRect），
- *   顶点白；矩形外 UV 越界由 clamp-to-edge 取海色边（island-ground 边缘即海）。
+ * - `{ kind: "island", rect }`：陆地块贴图未就绪回退——UV 取 island-ground 覆盖矩形同区，顶点白。
+ * - `{ kind: "sea", span }`：全海块（注册表无块）——UV 平铺 sea-tile（span 世界格一张），顶点白。
  * - `{ kind: "palette" }`：纯 palette 顶点色（无贴图材质下显示地形色，测试/调试用）。
  */
 export function buildSlgTerrainMeshes(terrain: ISlgTerrain, cx: number, cy: number, lod: number,
     tiles: ReadonlyMap<number, ISlgTile>, selfUid: string, atlasWidth = 1536, atlasHeight = 1024,
     alpha = 1, hiddenLayers?: ReadonlySet<string>,
-    groundMode?: { kind: "tile"; tile: number } | { kind: "island"; rect: { readonly minX: number; readonly minY: number; readonly maxX: number; readonly maxY: number } } | { kind: "palette" }): SlgTerrainMeshes {
+    groundMode?: { kind: "tile"; tile: number } | { kind: "sea"; span: number }
+        | { kind: "island"; rect: { readonly minX: number; readonly minY: number; readonly maxX: number; readonly maxY: number } }
+        | { kind: "palette" }): SlgTerrainMeshes {
     chunkKey(cx, cy);
     if (!Number.isInteger(lod) || lod < 0 || lod > 3) throw new RangeError("SLG terrain mesh LOD invalid");
     if (!Number.isInteger(atlasWidth) || !Number.isInteger(atlasHeight)
@@ -102,6 +104,12 @@ export function buildSlgTerrainMeshes(terrain: ISlgTerrain, cx: number, cy: numb
             const uw = rect.maxX - rect.minX, vh = rect.maxY - rect.minY;
             const uA = (x - rect.minX) / uw, uB = (x + 1 - rect.minX) / uw;
             const vNorth = 1 - (y + 1 - rect.minY) / vh, vSouth = 1 - (y - rect.minY) / vh;
+            uvs.set([uA, vNorth, uB, vNorth, uA, vSouth, uB, vSouth], quad * 8);
+        } else if (groundMode?.kind === "sea") {
+            // sea-tile 平铺：span 世界格一张，v 与 island 同约定（北顶采小 v）
+            const span = groundMode.span;
+            const uA = x / span, uB = (x + 1) / span;
+            const vNorth = 1 - ((y + 1) % span) / span, vSouth = 1 - (y % span) / span;
             uvs.set([uA, vNorth, uB, vNorth, uA, vSouth, uB, vSouth], quad * 8);
         } else {
             if (ground.id >= 6) {
