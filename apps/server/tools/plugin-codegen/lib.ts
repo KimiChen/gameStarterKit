@@ -848,8 +848,8 @@ function atomicWrite(file: string, content: string): void {
 
 /**
  * 写盘。已登记而真源消失的域 / plugin / kit / View 必须显式 `--allow-delete <id>`；
- * 普通 `--write` 不得静默接受整个域、plugin、kit 或 View 消失（kit 与 plugin 同一口径：
- * 它既在 PLUGIN_IDS 也在 KIT_CATALOG，两处锚任一命中都要求显式删除）。同一 id 换类别
+ * 普通 `--write` 不得静默接受整个域、plugin、kit 或 View 消失（kit 锚在 KIT_CATALOG，
+ * PluginHost 单元锚在 PLUGIN_IDS，两处任一命中都要求显式删除）。同一 id 换类别
  * （plugin ⇄ kit：共享 id 空间与锁目录 scripts/packages/）与删除同等重大，两个方向都要显式 --allow-delete。
  */
 export function writePluginArtifacts(options: PluginCodegenOptions = {}): PluginWriteResult {

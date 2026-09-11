@@ -6,7 +6,8 @@
  *  - fairygui-cc/runtime/{fairygui.mjs,fairygui.d.ts}; these live outside the
  *    client mirror and have no embedded version string;
  *  - apps/client/src/lib/colyseus/colyseus.js; the Cocos copy is covered by
- *    verify:sync while this lock protects both copies from same-version edits.
+ *    verify:sync while this lock protects both copies from same-version edits;
+ *  - apps/client/src/lib/uniflex runtime copies unpacked from vendor/uniflex.
  *
  * `node scripts/vendor-lock.mjs` regenerates the lock after an explicitly
  * reviewed vendor update. `node scripts/vendor-lock.mjs --check` is read-only
@@ -26,7 +27,7 @@ export const LOCK_FILE = path.join(ROOT, "scripts", "vendor.sha256");
  * lock. Keep metadata (`.meta`), READMEs and hand-written type declarations
  * outside this list; they have their own importer/mirror contracts.
  */
-export const LOCKED_FILES = Object.freeze([
+const BASE_LOCKED_FILES = Object.freeze([
     "apps/Cocos/extensions/fairygui-cc/runtime/fairygui.mjs",
     "apps/Cocos/extensions/fairygui-cc/runtime/fairygui.d.ts",
     "apps/client/src/lib/colyseus/colyseus.js",
@@ -42,6 +43,10 @@ const ARTIFACT_RULES = Object.freeze([
         // The JS UMD is vendored runtime bytes. README and the deliberately
         // hand-written declaration have their own documentation/type checks.
         excludedNames: Object.freeze(["README.md", "colyseus.d.ts"]),
+    },
+    {
+        directory: "apps/client/src/lib/uniflex",
+        excludedNames: Object.freeze(["README.md"]),
     },
 ]);
 
@@ -103,6 +108,11 @@ export function discoverVendorFiles(root = ROOT) {
     }
     return discovered.sort();
 }
+
+export const LOCKED_FILES = Object.freeze([
+    ...BASE_LOCKED_FILES,
+    ...discoverVendorFiles(ROOT).filter((file) => file.startsWith("apps/client/src/lib/uniflex/")),
+]);
 
 function sha256(root, relative) {
     const file = resolvedRepoFile(root, relative);

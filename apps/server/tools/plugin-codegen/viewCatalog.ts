@@ -5,8 +5,8 @@
  *  - `apps/plugins/<id>/plugin.json`（class "plugin"：宿主自有插件与安装进来的插件同一根，PLUGIN.md §5.5
  *    阶段 1）∪ `apps/kits/<id>/kit.json`（class "kit"，docs/KIT.md §3/§7；根可缺席），分别经
  *    apps/server/tools/plugin/{plugin-schema-v2,kit-schema-v1}.json 真实 JSON Schema 校验（两份 schema 一个解释器）；
- *    两类单元共享 id 空间（大小写归一唯一）与保留字；kit 的 class 对 PluginHost 不可见——它与插件一样进
- *    GENERATED_PLUGINS / PLUGIN_IDS / 菜单贡献；
+ *    两类单元共享 id 空间（大小写归一唯一）与保留字；有 client entry / route / menu 的 kit
+ *    与插件一样进 GENERATED_PLUGINS / PLUGIN_IDS，class 对 PluginHost 不可见；纯库 kit 只进 KIT_CATALOG；
  *  - 每个 View 同目录的 `<Name>View.view.json` sidecar（手写 metadata，逐字进产物）；
  *  - `apps/art/fairygui/assets` 的 FGUI XML（复用 tools/fgui-codegen 的 parseFgui/binding
  *    计算 direct required；⛔ 不执行任何客户端 TS）。
@@ -455,7 +455,7 @@ export type ViewCatalogEntry = {
 
 /**
  * 进入 catalog 的登记单元：插件（`dependencies` 已是 requires.kits 并入后的有效依赖）或 kit。
- * class 只在生成器内部与能力索引可见；客户端产物对二者一视同仁。
+ * class 只在生成器内部与能力索引可见；PluginHost 产物只收插件和有入口面的 kit。
  */
 export type CatalogUnit =
   | (PluginRegistration & { readonly class: "plugin" })
@@ -1264,10 +1264,17 @@ function renderLaunch(launch: PluginManifestLaunch): string {
     : `launch: { kind: "route", routeId: ${JSON.stringify(launch.routeId)} }`;
 }
 
+/** PluginHost 单元：插件一律进入；kit 只有声明了 entry / route / menu 才进入 plugins.generated。 */
+function pluginHostUnits(catalog: ViewCatalog): readonly CatalogUnit[] {
+  return catalog.plugins.filter((unit) =>
+    unit.class !== "kit" || unit.entry !== null || unit.routes.length > 0 || unit.menu.length > 0);
+}
+
 export function renderPlugins(catalog: ViewCatalog): string {
+  const hostUnits = pluginHostUnits(catalog);
   const entryByName = new Map(catalog.entries.map((entry) => [entry.name, entry]));
   const lines: string[] = [generatedClientHeader()];
-  if (catalog.plugins.some((plugin) => plugin.entry !== null)) {
+  if (hostUnits.some((plugin) => plugin.entry !== null)) {
     // ⚠ noUnusedLocals：只有存在 module 时才引入类型（generated-purity：type-only import 放行）。
     lines.push("import type { PluginModule } from \"../app/PluginHost\";");
   }
@@ -1302,16 +1309,16 @@ export function renderPlugins(catalog: ViewCatalog): string {
   lines.push("    readonly routes: readonly GeneratedPluginRoute[];");
   lines.push("    readonly menu: readonly GeneratedMenuContribution[];");
   lines.push("    /** plugin module 加载器（静态字面量动态 import，Non-intrusive §5.3）；无 = 静态常驻。 */");
-  lines.push(`    readonly load?: () => Promise<${catalog.plugins.some((plugin) => plugin.entry !== null) ? "PluginModule" : "never"}>;`);
+  lines.push(`    readonly load?: () => Promise<${hostUnits.some((plugin) => plugin.entry !== null) ? "PluginModule" : "never"}>;`);
   lines.push("}");
   lines.push("");
-  lines.push("/** plugin 全集（生成器删除保护锚）。 */");
+  lines.push("/** PluginHost 单元全集（插件 + 有 entry/路由/菜单的 kit；纯库 kit 只在 KIT_CATALOG）。 */");
   lines.push("export const PLUGIN_IDS: readonly string[] = [");
-  for (const plugin of catalog.plugins) lines.push(`    ${JSON.stringify(plugin.id)},`);
+  for (const plugin of hostUnits) lines.push(`    ${JSON.stringify(plugin.id)},`);
   lines.push("];");
   lines.push("");
   lines.push("export const GENERATED_PLUGINS: readonly GeneratedPluginDescriptor[] = [");
-  for (const plugin of catalog.plugins) {
+  for (const plugin of hostUnits) {
     lines.push("    {");
     lines.push(`        id: ${JSON.stringify(plugin.id)},`);
     lines.push(`        resident: ${plugin.resident},`);
@@ -1344,7 +1351,7 @@ export function renderPlugins(catalog: ViewCatalog): string {
   lines.push("");
   lines.push("/** 全仓菜单贡献（已按 pluginId → entryId 排序；⛔ 不含位置——首屏顺序见 GENERATED_HOST.home）。 */");
   lines.push("export const GENERATED_MENU_CONTRIBUTIONS: readonly GeneratedMenuContribution[] = [");
-  const all = catalog.plugins
+  const all = hostUnits
     .flatMap((plugin) => plugin.menu.map((item) => ({ ...item, pluginId: plugin.id })))
     .sort(compareContributions);
   for (const item of all) {
@@ -1493,7 +1500,7 @@ export function previousGeneratedPluginIds(repositoryRoot: string): readonly str
   return [...block[1].matchAll(/"([^"\n]+)"/gu)].map((match) => match[1]);
 }
 
-/** 既有 KIT_CATALOG 里的 kit id（kit 同时也在 PLUGIN_IDS；这里是 shared 侧生成物自己的删除保护锚）。 */
+/** 既有 KIT_CATALOG 里的 kit id（纯库 kit 只在这里，不进 PLUGIN_IDS）。 */
 export function previousGeneratedKitIds(repositoryRoot: string): readonly string[] {
   const file = path.join(path.resolve(repositoryRoot), KIT_CATALOG_SHARED_RELATIVE);
   if (!fs.existsSync(file)) return [];

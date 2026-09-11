@@ -1,0 +1,5 @@
+{
+    "private": true,
+    "type": "module",
+    "description": "Cocos module-type marker for vendored UniFlex ESM. Not an npm package."
+}

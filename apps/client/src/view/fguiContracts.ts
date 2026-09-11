@@ -70,7 +70,6 @@ export interface FguiContract {
 
 export {
   AREALIST_CONTRACT,
-  CONFIRM_CONTRACT,
   FGUI_CONTRACTS,
   HOME_CONTRACT,
   LOGIN_CONTRACT,

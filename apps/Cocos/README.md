@@ -8,7 +8,8 @@ Cocos 客户端开发工程（引擎、资源与编辑器壳）。**游戏代码
 - `assets/src/` —— ⚠ 生成物，禁手改：`apps/client/src` 经 `sync:client` 同步而来
   （`.meta` 由 Cocos 编辑器生成/复用，随目录提交保证 uuid 稳定，新 checkout 可直接打开工程）
 - `assets/resources/` —— FGUI 本地导出物等资源（见 [docs/CLIENT.md](../../docs/CLIENT.md)）
-- `assets/scene.scene` —— 启动场景
+- `assets/scene.scene` —— 默认启动场景（登录 / AppRuntime）
+- `assets/uniflex.scene` —— UniFlex 独立预览场景，入口是 `UniFlexPreview`，不经过 `Main`
 - `settings/` —— 工程配置（提交入库）
   - `logo-diy.png` —— Dashboard 项目列表图标（512×512 透明 PNG）；`logo-diy.svg` 保留原始矢量图。
 - `extensions/fairygui-cc/` —— fairygui-cc 扩展（外壳 + 运行库均入库；仅框架维护团队显式升级时运行

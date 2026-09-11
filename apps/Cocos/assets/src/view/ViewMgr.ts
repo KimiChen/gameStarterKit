@@ -12,8 +12,8 @@
  * 层容器的 `.node` 下。⚠ 两条分支只在「造实例」和「挂哪里」不同，其余事务序
  * （beginLifecycle → runCreate → mount → 登记 → runOpen → setup）与错误/取消回滚逐段一致，
  * 生命周期实现也只有 ViewBase 一套——⛔ 不为任一渲染栈另起一条。
- * 交互输入：任一 interactive 页在开 → 启用 FGUI 输入（同时挡住背后游戏触摸——
- * fairygui 单 InputProcessor 的现实，见 FguiView.ensureRoot 注释），全部关闭 → 恢复。
+ * 交互输入：最高层交互页决定 FGUI 输入开关，被遮挡的 Cocos 页面暂停节点事件。
+ * 每页独占 GComponent 挂载槽，保证混合页面的显示顺序与输入仲裁顺序一致。
  * 在途去重：onlyOne/permanent 页面加载期间的重复 open（双击竞态）合流到同一 Promise。
  */
 import { GComponent, GRoot, RelationType } from "db://fairygui-cc/fairygui.mjs";
@@ -77,7 +77,15 @@ const pendingAll = new Set<PendingOpen>();               // 所有在途加载�
 // name cache. Keep their live handles here so a scene/root teardown can still
 // abort their lifecycle and release the global interactive lease.
 const activeUncached = new Set<ViewHandle>();
-let interactiveCount = 0;
+interface MountedPage {
+  readonly view: ViewBase;
+  readonly meta: ViewMeta;
+  readonly slot: GComponent;
+  order: number;
+}
+const mountedPages = new Map<ViewBase, MountedPage>();
+let mountOrder = 0;
+let inputOwner: ViewBase | undefined;
 let rootGeneration = 0;
 let nextGeneration = 0;
 let tearingDownRoot = false;
@@ -146,7 +154,8 @@ function teardownRoot(): void {
         console.error("[ViewMgr] 旧层容器释放异常", e);
       }
     }
-    interactiveCount = 0;
+    mountedPages.clear();
+    inputOwner = undefined;
     try { FguiView.setInputEnabled(false); } catch (e) {
       // Root teardown must finish even if a disposed InputProcessor rejects the
       // final disable call (some Creator versions do this during scene changes).
@@ -217,44 +226,80 @@ function mount(view: ViewBase, meta: ViewMeta): () => void {
   if (!parent) { throw new Error(`[ViewMgr] 未知层级: ${meta.layer}`); }
   let mounted = false;
   let leased = false;
+  const slot = new GComponent();
   try {
-    attach(view, meta, parent);
+    slot.node.name = `view_${meta.name}`;
+    slot.opaque = meta.interactive && meta.kind !== "cocos";
+    parent.addChild(slot);
+    slot.setSize(parent.width, parent.height);
+    slot.addRelation(parent, RelationType.Size);
+    attach(view, meta, slot);
     mounted = true;
-    if (meta.interactive) {
-      interactiveCount++;
-      leased = true;
-      FguiView.setInputEnabled(true);
-    }
+    mountedPages.set(view, { view, meta, slot, order: ++mountOrder });
+    leased = true;
+    syncInput();
     return () => {
       if (leased) {
         leased = false;
-        if (leaseRootGeneration === rootGeneration) closeEffects(meta);
+        if (leaseRootGeneration === rootGeneration) closeEffects(view);
       }
       if (mounted) {
         mounted = false;
         try { view.unmount(); } catch (e) { console.error("[ViewMgr] mount lease 回滚异常", e); }
       }
+      slot.removeFromParent();
+      slot.dispose();
     };
   } catch (e) {
-    if (leased) closeEffects(meta);
+    if (leased) closeEffects(view);
     try { view.unmount(); } catch (unmountError) {
       console.error("[ViewMgr] mount 失败后的摘除异常", unmountError);
+    }
+    try { slot.removeFromParent(); slot.dispose(); } catch (disposeError) {
+      console.error("[ViewMgr] mount 槽回滚异常", disposeError);
     }
     throw e;
   }
 }
 
-function closeEffects(meta: ViewMeta): void {
-  if (meta.interactive) {
-    interactiveCount = Math.max(0, interactiveCount - 1);
-    if (interactiveCount === 0) {
-      try { FguiView.setInputEnabled(false); } catch (e) {
-        // Input cleanup is best-effort; the mount lease still has to detach
-        // its component and release the logical count.
-        console.error("[ViewMgr] 关闭页面后恢复输入失败", e);
-      }
+function comparePages(left: MountedPage, right: MountedPage): number {
+  return VIEW_LAYERS.indexOf(left.meta.layer) - VIEW_LAYERS.indexOf(right.meta.layer)
+    || left.order - right.order;
+}
+
+function syncInput(): void {
+  let top: MountedPage | undefined;
+  for (const page of mountedPages.values()) {
+    if (page.meta.interactive && (!top || comparePages(page, top) > 0)) top = page;
+  }
+  if (inputOwner !== top?.view) {
+    inputOwner = top?.view;
+    FguiView.cancelPendingInput();
+    return syncInput();
+  }
+  for (const page of mountedPages.values()) {
+    page.slot.touchable = page.meta.kind !== "cocos" && (!top || comparePages(page, top) >= 0);
+    if (page.meta.kind === "cocos") {
+      (page.view as CocosView).setInputEnabled(!top || comparePages(page, top) >= 0);
     }
   }
+  FguiView.setInputEnabled(!!top && top.meta.kind !== "cocos");
+}
+
+function closeEffects(view: ViewBase): void {
+  mountedPages.delete(view);
+  try { syncInput(); } catch (e) {
+    console.error("[ViewMgr] 关闭页面后恢复输入失败", e);
+  }
+}
+
+function bringToFront(view: ViewBase): void {
+  const page = mountedPages.get(view);
+  if (!page) return;
+  const parent = layerRoots.get(page.meta.layer)!;
+  parent.setChildIndex(page.slot, parent.numChildren - 1);
+  page.order = ++mountOrder;
+  syncInput();
 }
 
 function makeHandle(
@@ -281,6 +326,7 @@ function makeHandle(
     try {
       const result = await action(view, activeContext);
       if (state.context !== activeContext || !activeContext.isActive()) throw new ViewOpenCancelledError(name);
+      syncInput();
       return result;
     } catch (e) {
       // A public run owns its rollback. During open/remount the surrounding
@@ -368,7 +414,7 @@ async function open(name: string, setup?: ViewSetup): Promise<ViewHandle> {
   const entry = cache.get(name);
   if (entry) {
     if (entry.mounted) {
-      entry.view.bringToFront();
+      bringToFront(entry.view);
       if (setup) await entry.handle.run(setup);
       return entry.handle;
     }

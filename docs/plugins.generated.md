@@ -25,6 +25,7 @@ capability fragment 的合并规则由 `npm run verify:inventory` fail-closed �
 | `slg` | kit | extra | registered | [apps/kits/slg/README.md](../apps/kits/slg/README.md) |
 | `snake` | plugin | core | registered | [apps/plugins/snake/README.md](../apps/plugins/snake/README.md) |
 | `tally` | plugin | extra | registered | [apps/plugins/tally/README.md](../apps/plugins/tally/README.md) |
+| `uniflex` | kit | core | registered | [apps/kits/uniflex/README.md](../apps/kits/uniflex/README.md) |
 
 ## capability fragment
 

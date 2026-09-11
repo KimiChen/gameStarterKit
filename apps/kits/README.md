@@ -18,5 +18,7 @@
 - **可分发但须 gono 团队审核**（KIT.md §6）：kit 能碰的东西（SQL、玩法、世界状态、账本）比插件多得多，审核线就是安全线；
 - 首个样本：[`arena`](arena/README.md)（一张 per-zone 世界表 + 两个 mode + 两个 api 面）与建在其 `board` 面上的插件
   [`apps/plugins/arenaShop`](../plugins/arenaShop/README.md)。
+- UI 核心：[`uniflex`](uniflex/README.md) 是宿主维护的纯客户端 kit，运行时真源在
+  `apps/client/src/kits/uniflex/`；此处仅放清单和说明，无业务 entry、SQL、玩法或可分发版本。
 
 命令（与插件同一套 `plugin -- pack/install/uninstall/check/test/changed`，kit 多出来的闸）见 [docs/PLUGIN.md](../../docs/PLUGIN.md) §5.4。

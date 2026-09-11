@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.strict.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "strict": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM"],
+    "types": [],
+    "skipLibCheck": true
+  },
+  "include": ["main.ts"]
+}

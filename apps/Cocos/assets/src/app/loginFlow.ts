@@ -1007,14 +1007,14 @@ export async function openConfirm(opts: Omit<IConfirmOptions, "onYes" | "onNo">)
           onNo: () => finish(false),
         });
         logic.onClose = () => h.close();
-        view.setup(logic);
+        return view.setup(logic);
       });
     })();
     void task.catch((e: unknown) => {
       // ⚠ **必须兜住并 resolve**：这个 detached task 可能因 FGUI 包/组件/ setup 失败而 reject。
       //   句柄一旦已创建，先走统一 close 回滚 interactive 租约，再按取消处理，避免调用方永久悬挂。
       handle?.close();
-      console.error("[pages] 提示框打开失败，按取消处理", e);
+      if (!isOpenCancelled(e)) console.error("[pages] 提示框打开失败，按取消处理", e);
       finish(false);
     });
   });

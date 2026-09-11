@@ -21,6 +21,7 @@ export const TYPECHECK_COMMANDS = [
   "npm --workspace @game/server run typecheck",
   "npm run typecheck:client",
   "npm run typecheck:client:legacy",
+  "npm run typecheck:uniflex-ui",
   "npm run verify:sync",
 ];
 export const VERIFY_SYNC_COMMANDS = [
@@ -31,6 +32,8 @@ export const VERIFY_CORE_COMMANDS = [
   "node scripts/verify-toolchain.mjs",
   "npm run verify:project",
   "npm run typecheck",
+  "npm run typecheck:uniflex-ui",
+  "npm run check:uniflex-ui",
   "npm run verify:ecs",
   "npm run verify:vendor",
   "npm run verify:fgui",
@@ -51,7 +54,7 @@ export const VERIFY_ALL_COMMANDS = [
   "npm --workspace @game/server run test",
 ];
 export const CLIENT_TEST_COMMAND =
-  "cd apps/server && node --import tsx --test ../client/test/*.test.ts ../../scripts/vendor-lock.test.mjs";
+  "cd apps/server && node --import tsx --test ../client/test/*.test.ts ../../scripts/vendor-lock.test.mjs ../../scripts/uniflex-output.test.mjs";
 export const FGUI_TEST_COMMAND =
   "cd apps/server && node --import tsx --test ../../scripts/fgui-manifest.test.mjs ../../scripts/fgui-roundtrip.test.mjs ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/fguiContract.test.ts ../client/test/viewRegistry.test.ts";
 export const INVENTORY_TEST_COMMAND = "node --test scripts/verify-inventory.test.mjs";

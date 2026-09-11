@@ -9,9 +9,12 @@ declare module "cc" {
   export class Color { constructor(r?: number, g?: number, b?: number, a?: number); r: number; g: number; b: number; a: number; }
   export class Rect { constructor(x?: number, y?: number, width?: number, height?: number); x: number; y: number; width: number; height: number; }
   export class Node {
+    pauseSystemEvents(recursive?: boolean): void;
+    resumeSystemEvents(recursive?: boolean): void;
     getChildByName(name: string): Node | null;
     constructor(name?: string);
-    name: string; layer: number; active: boolean; parent: Node | null; children: Node[]; isValid: boolean;
+    name: string; layer: number; active: boolean; activeInHierarchy: boolean; parent: Node | null; children: Node[]; isValid: boolean;
+    dispatchEvent(event: unknown): void;
     position: Vec3; scale: Vec3; angle: number;
     static EventType: { TOUCH_START: string; TOUCH_MOVE: string; TOUCH_END: string; TOUCH_CANCEL: string; SIZE_CHANGED: string;
       MOUSE_DOWN: string; MOUSE_MOVE: string; MOUSE_UP: string; MOUSE_WHEEL: string; MOUSE_LEAVE: string };
@@ -24,8 +27,11 @@ declare module "cc" {
     addComponent<T>(type: new (...args: never[]) => T): T;
   }
   export class Component { node: Node; enabled: boolean; destroy(): boolean; }
+  export class BlockInputEvents extends Component {}
+  export class Button extends Component {}
   export class UITransform {
     width: number; height: number; anchorX: number; anchorY: number;
+    setContentSize(width: number, height: number): void;
     convertToNodeSpaceAR(world: Vec3, out?: Vec3): Vec3;
   }
   export class Graphics {
@@ -148,6 +154,8 @@ declare module "cc" {
     property(options?: unknown): PropertyDecorator;
   };
   export const view: {
+    on(type: string, callback: () => void, target?: unknown): void;
+    off(type: string, callback: () => void, target?: unknown): void;
     setDesignResolutionSize(width: number, height: number, policy: unknown): void;
     getVisibleSize(): { width: number; height: number };
   };
@@ -189,6 +197,8 @@ declare module "db://fairygui-cc/fairygui.mjs" {
     get asCom(): GComponent;
   }
   export class GComponent extends GObject {
+    isAncestorOf(object: GObject): boolean;
+    opaque: boolean;
     static inst: GComponent;
     numChildren: number; width: number; height: number;
     addChild(child: GObject): GObject; setChildIndex(child: GObject, index: number): void;
@@ -198,7 +208,7 @@ declare module "db://fairygui-cc/fairygui.mjs" {
     getController(name: string): { selectedIndex: number };
   }
   export class GRoot extends GComponent {
-    static inst: GRoot; inputProcessor: { enabled: boolean }; onWinResize(): void;
+    static inst: GRoot; inputProcessor: { enabled: boolean; getAllTouches(): number[]; cancelClick(id: number): void }; onWinResize(): void;
   }
   export class GButton extends GComponent { selected: boolean; }
   export class GList extends GComponent {
@@ -214,7 +224,11 @@ declare module "db://fairygui-cc/fairygui.mjs" {
   export class GRichTextField extends GTextField {}
   export class GGroup extends GObject {}
   export class GProgressBar extends GComponent { min: number; max: number; value: number; }
-  export const Event: { CLICK_ITEM: string; STATUS_CHANGED: string };
+  export class Event {
+    constructor(type: string, bubbles?: boolean);
+    static CLICK_ITEM: string; static STATUS_CHANGED: string; static TOUCH_END: string;
+    touchId: number; button: number; pos: { x: number; y: number }; initiator: GObject;
+  }
   export const RelationType: { Size: number };
   export const UIPackage: {
     getByName(name: string): unknown;

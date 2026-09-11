@@ -36,6 +36,20 @@ export const KIT_CATALOG: readonly KitCatalogEntry[] = [
             { kitId: "slg", name: "trophy", userKey: "stats", field: "trophies", max: 1000000 },
         ],
     },
+    {
+        id: "uniflex",
+        version: null,
+        api: {
+            cocos: { version: 1, minSupported: 1 },
+            core: { version: 1, minSupported: 1 },
+            navigation: { version: 1, minSupported: 1 },
+            provider: { version: 1, minSupported: 1 },
+            web: { version: 1, minSupported: 1 },
+        },
+        modes: [],
+        domains: [],
+        effects: [],
+    },
 ];
 
 /** `kit:<kitId>:<name>` → effect 规格（economy.ts validateGrant 与 Lua 镜像的共同真源）。 */

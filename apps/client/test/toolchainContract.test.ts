@@ -150,6 +150,7 @@ const CHAIN_LOAD_BEARING: Record<string, string[]> = {
     "npm --workspace @game/server run typecheck",
     "npm run typecheck:client",
     "npm run typecheck:client:legacy",
+    "npm run typecheck:uniflex-ui",
     "npm run verify:sync",
   ],
   "verify:sync": [
@@ -160,6 +161,8 @@ const CHAIN_LOAD_BEARING: Record<string, string[]> = {
     "node scripts/verify-toolchain.mjs",
     "npm run verify:project",
     "npm run typecheck",
+    "npm run typecheck:uniflex-ui",
+    "npm run check:uniflex-ui",
     "npm run verify:ecs",
     "npm run verify:vendor",
     "npm run verify:fgui",
@@ -188,7 +191,7 @@ const CHAIN_LOAD_BEARING: Record<string, string[]> = {
  */
 const EXACT_LOAD_BEARING: Record<string, string> = {
   "test:client":
-    "cd apps/server && node --import tsx --test ../client/test/*.test.ts ../../scripts/vendor-lock.test.mjs",
+    "cd apps/server && node --import tsx --test ../client/test/*.test.ts ../../scripts/vendor-lock.test.mjs ../../scripts/uniflex-output.test.mjs",
   "test:fgui":
     "cd apps/server && node --import tsx --test ../../scripts/fgui-manifest.test.mjs ../../scripts/fgui-roundtrip.test.mjs ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/fguiContract.test.ts ../client/test/viewRegistry.test.ts",
   "test:inventory": "node --test scripts/verify-inventory.test.mjs",

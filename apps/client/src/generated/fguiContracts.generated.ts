@@ -136,48 +136,6 @@ export const AREALIST_CONTRACT: FguiContract = {
     ]
 };
 
-/** View_SharedWidget_Confirm/Confirm（owner: builtin；真源 apps/client/src/view/ConfirmView.view.json） */
-export const CONFIRM_CONTRACT: FguiContract = {
-    "pkg": "View_SharedWidget_Confirm",
-    "comp": "Confirm",
-    "required": [
-        {
-            "name": "go_noBtn",
-            "tsType": "GGroup"
-        },
-        {
-            "name": "go_yesBtn",
-            "tsType": "GGroup"
-        }
-    ],
-    "manualRequired": [
-        {
-            "name": "title",
-            "tsType": "GTextField"
-        },
-        {
-            "name": "content",
-            "tsType": "GRichTextField"
-        },
-        {
-            "name": "yesBtn",
-            "tsType": "GButton"
-        },
-        {
-            "name": "noBtn",
-            "tsType": "GButton"
-        }
-    ],
-    "relations": [
-        {
-            "sidePair": "center-center"
-        },
-        {
-            "sidePair": "center-center,middle-middle"
-        }
-    ]
-};
-
 /** View_Home_Home/Home（owner: builtin；真源 apps/client/src/view/HomeView.view.json） */
 export const HOME_CONTRACT: FguiContract = {
     "pkg": "View_Home_Home",
@@ -379,7 +337,6 @@ export const LOGINNOTICE_CONTRACT: FguiContract = {
 /** 全部已登记视图的契约（守门测试遍历它做相等校验）。 */
 export const FGUI_CONTRACTS: readonly FguiContract[] = [
     AREALIST_CONTRACT,
-    CONFIRM_CONTRACT,
     HOME_CONTRACT,
     LOGIN_CONTRACT,
     LOGINNOTICE_CONTRACT,

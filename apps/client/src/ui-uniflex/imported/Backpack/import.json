@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-project-import",
+  "name": "Backpack",
+  "source": "design.json",
+  "canvas": {
+    "width": 750,
+    "height": 1334
+  },
+  "interactiveNodes": [
+    "layer-2",
+    "layer-27",
+    "layer-13"
+  ]
+}

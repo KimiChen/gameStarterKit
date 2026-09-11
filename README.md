@@ -40,7 +40,7 @@ apps/
 docs/           当前开发架构说明
 scripts/        同步、校验、依赖抓取与协议指纹脚本，及其锁文件基线（bitecs/vendor/protocol/fgui）与保护路径规则（protected-paths.json）
 tools/          FairyGUI codegen、Excel 配表转换、性能基线与 Creator 预览证据等工具
-vendor/         精确锁定的外部身份契约 tarball（`@gono/webplatform-contract`，由 package.json 以 file: 引用）
+vendor/         精确锁定的外部身份契约与 UniFlex SDK tarball（由 package.json 以 file: 引用）
 ```
 
 `apps/client/src/shared/` 和 `apps/Cocos/assets/src/` 是生成镜像，不是源码入口。
@@ -52,8 +52,13 @@ WebPlatform 不属于本 monorepo；旧提交中的 `apps/WebPlatform` 仅用于
 
 ```bash
 npm install
+npm run build:uniflex-ui
 npm run sync:shared
 ```
+
+接入 UniFlex 需先将匹配 SDK 的独立 `uniflex-compiler` 放入 PATH，或设置
+`UNIFLEX_COMPILER` 指向它；当前 npm 制品不包含原生编译器。UI 生成物不入库，首次类型检查或预览前
+必须显式生成。双端预览与源码边界见 [客户端开发](docs/CLIENT.md#2-源码与工程壳)。
 
 从本 Starter 派生新项目时，先运行 `npm run init:project -- --help` 查看幂等初始化参数；项目身份、包名、
 生成区和第三方来源统一登记在 [project.metadata.json](project.metadata.json)，不要在各端复制项目名常量。
@@ -125,8 +130,13 @@ WebPlatform**。要联调真实外部身份服务时，另行启动与当前契�
 | `npm run test:fgui` | FGUI codegen、结构契约与 registry 专项测试 |
 | `npm run test:faults` / `npm run test:faults:int` | 运行核心 fault-matrix；前者默认不连接本地栈，后者使用本地 Redis/MySQL |
 | `npm run codegen:fgui -- <Pkg> <Comp>` | 生成或更新 View 的 AUTO 区块 |
+| `npm run build:uniflex-ui` | 用 `UNIFLEX_COMPILER` 或 PATH 中的 `uniflex-compiler` 生成 UniFlex Confirm 与双端资源；随后运行 `sync:client` |
+| `npm run import:uniflex-ui -- /path/to/project-package` | 导入 UniFlex 设计包到 `apps/client/src/ui-uniflex/imported/` |
+| `npm run check:uniflex-ui` | 只读校验 UniFlex AOT、字体与双端生成物是否过期 |
+| `npm run typecheck:uniflex-ui` | 检查 UniFlex TSX 作者态和独立 Web 预览入口 |
+| `npm run dev:uniflex-web` | 启动独立 WebProvider Confirm 预览；需先生成 UI，地址由命令输出 |
 | `npm run verify:ecs` | 校验锁定的 bitECS 文件 |
-| `npm run fetch:fgui` / `npm run fetch:colyseus` | 维护团队显式升级锁定客户端依赖并重钉内容锁；普通开发不运行 |
+| `npm run fetch:fgui` / `npm run fetch:colyseus` / `npm run fetch:uniflex` | 维护团队显式升级锁定客户端依赖并重钉内容锁；普通开发不运行 |
 | `npm run config:excel-to-json` / `npm run config:excel-to-json:check` | 写出 Excel 示例配表双端 JSON，或只读校验源表与入库生成物；均属额外功能 |
 | `npm --workspace @game/server run test` | 服务端单元测试 |
 | `npm --workspace @game/server run smoke:framework` | 已启动并初始化的本地 Redis/MySQL 连通性检查 |
@@ -154,7 +164,7 @@ FGUI 专项测试。
 
 ### 框架维护团队的依赖更新
 
-`npm run fetch:colyseus` 和 `npm run fetch:fgui` 仍保留为框架维护团队在需要显式升级锁定依赖时使用的工具，不属于首次打开或普通开发流程。这里的“维护团队手动更新”是人工决定版本、修改版本与完整性哈希、运行并审核脚本；脚本负责把下载、完整性校验和运行时镜像更新固化为可重复步骤。完成后应按维护流程复核同步结果并运行相关测试。
+`npm run fetch:colyseus`、`npm run fetch:fgui` 和 `npm run fetch:uniflex` 仍保留为框架维护团队在需要显式升级锁定依赖时使用的工具，不属于首次打开或普通开发流程。这里的“维护团队手动更新”是人工决定版本、修改版本与完整性哈希、运行并审核脚本；脚本负责把下载、完整性校验和运行时镜像更新固化为可重复步骤。完成后应按维护流程复核同步结果并运行相关测试。
 
 bitECS 没有自动抓取命令。其 `apps/client/src/lib/bitecs/` 下的 12 个锁定源文件由框架维护团队按上游版本手动更新，同时更新 `scripts/bitecs.sha256`，保留项目兼容性补丁并运行 `npm run verify:ecs`。普通开发者直接使用仓库已入库的依赖，并通过 `verify:ecs` 检查文件完整性。
 
