@@ -43,6 +43,8 @@ def main() -> None:
             break
     if bare_f is None:
         raise SystemExit(f"{tag}: 无 bare bundle")
+    sea_base = tuple(mc.get("seaColor") or [66, 143, 163]) + (255,)
+    sea_edge = tuple(mc.get("seaEdge") or [209, 252, 255]) + (255,)
     env = R.Env(bare_f)
     tms = R.collect_tilemaps(env)
     if not tms:
@@ -74,7 +76,7 @@ def main() -> None:
     W, H = int(wu * px_per_unit), int(hu * px_per_unit)
     print(f"Map{mid} 纯地表: 画布 {W}x{H}（{wu}x{hu} 格, {px_per_unit:.1f}px/格）窗 x[{x0},{x1}) y[{y0},{y1})")
 
-    canvas = Image.new("RGBA", (W, H), R.SEA_BASE)
+    canvas = Image.new("RGBA", (W, H), sea_base)
 
     def to_px(x, y):
         return (x - x0) * px_per_unit, (y1 - y) * px_per_unit
@@ -111,8 +113,8 @@ def main() -> None:
                 try:
                     import numpy as _np
                     a = _np.asarray(img.resize((max(1, int(w)), max(1, int(h)))), dtype=_np.float32)[..., 3:4] / 255.0 * 0.62
-                    base = _np.array(R.SEA_BASE[:3], dtype=_np.float32)
-                    edge = _np.array(R.SEA_EDGE[:3], dtype=_np.float32)
+                    base = _np.array(sea_base[:3], dtype=_np.float32)
+                    edge = _np.array(sea_edge[:3], dtype=_np.float32)
                     rgb = (base * (1 - a) + edge * a).astype("uint8")
                     img2 = Image.fromarray(rgb, "RGB").convert("RGBA")
                     canvas.alpha_composite(img2, (int(cx - w / 2), int(cy - h / 2)))

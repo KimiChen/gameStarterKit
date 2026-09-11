@@ -348,3 +348,20 @@ cc 桩缺口按需补 `apps/client/cc-stub.d.ts` / `client-test-stubs.d.ts`（`c
 原版合规说明：装饰图集 chest/portal/stele/crystal/sword 五格复用森之国策展件**不是**程序化推导——`entity_map_display.csv` 的 `MapClassId=0` 通用行（344 条）证明宝箱/传送门是全图通用件，原版各国本来同一套。
 
 验收：typecheck 0；客户端 slg-* 49/49；verify:all 退出 0。预览因编辑器构建服务罢工两次重启，最终手动 ▶ 后验证（见下节）。
+
+### 10.3 素材溯源到「对方的实现」（2026-09-12 深夜）
+
+用户要求「确保所有素材都从原游戏移植，不要自己创造」。逆向 agent 闭环了原版实现链后，逐项对齐：
+
+| 项 | 原版实现（csharp-hotupdate/bundle 实证） | 本仓对齐 |
+| --- | --- | --- |
+| 海色 | **按图调色**：CustomWater 材质森 Water2(66,142,164)、山 Water12(66,121,164)、泽/鲸背 Water13(43,94,141 深蓝)、羽 Water17(92,168,192)——`Assets/Effect/CustomWater/Materials/` 实取 | `maps.config.json` 五图 seaColor/seaEdge/seaShallow 按原版材质回填；render-ground/terrain palette/sea-tile 全链按图取色（此前错用统一森色） |
+| 装饰实体形态 | **DisplayPath → view prefab**：`entity_map_display.csv` → `Assets/Prefabs/<DisplayPath>.prefab`（ECViewDriver + 主件），运行时对象池摆放；宝箱/树藤等主件是 **Spine 骨骼**（静态 icon 仅兜底隐藏） | **extract-decorations.py 新建**：从 bundle 解 view prefab，取 active 主件（SpriteRenderer sprite / Spine 材质 _MainTex 纹理）进图集——chest=8200_view Spine 宝箱纹理、portal=8628_14_view 命运树根门、stele=6330_11_view 古要塞群、crystal=8007_view 宝石矿、sword=6541_17_view 纹饰板。**手工框选子矩形全部废弃** |
+| 装饰分类 | 原版无枚举，目录族约定：`EntityDisplaysWorld{Door,Bonus,Building,GamePlay,Monster,NPC}` | classify 按目录族精确匹配（WorldDoor→portal、WorldBonus→chest、WorldBuilding→stele、WorldGamePlay→sword） |
+| 小地图 | 原版=实时渲染（RT 相机 + 逐格 GroundType 着色 tilemap + MiniMap_Atlas 图标），**无预渲染大图** | 本仓小地图/绘卷用 render_map_full 渲染的原版全图装裱（素材全部来自原版渲染图，实现形态不同但零自造内容） |
+| 水面动态 | CustomWater2 shader（焦散/泡沫/噪声/屏幕 RT 遮罩，WaterController 全局参数） | 静态近岸：海面 = 渲染图 WaterMask 混合（材质实取色）。**shader 动态水无源码，不在本仓复刻范围** |
+| 浅水变体 | `_shallow_view`（GroundType=Shallow 选浅水外观，Fording 涉水材质） | ⏳ 开放项：浅滩（Shallow 格）装饰目前用普通版，未做浅水涉水变体（Fording/PartialSubmersion 机制待跟进） |
+
+ground-tiles 二次去重（海色占比 >85% 按产物判）：1762→370 块 36MB；海面由 sea-tile 平铺承担（滑窗自动选纯海区），零重复文件。
+
+验收：typecheck 0；客户端 slg-* 49/49；verify:all 退出 0（VERIFY_EXIT=0）。
