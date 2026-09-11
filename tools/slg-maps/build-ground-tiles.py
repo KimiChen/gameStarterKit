@@ -53,6 +53,12 @@ def main() -> None:
                     return True
         return False
 
+    def sea_ratio(img: Image.Image) -> float:
+        """海色像素占比（64² 采样；>阈值即近纯海块——直读 terrain 与渲染局部错位时以产物为准）。"""
+        px = list(img.resize((64, 64)).getdata())
+        n = sum(1 for r, g, b in px if abs(r - sea[0]) + abs(g - sea[1]) + abs(b - sea[2]) < 60)
+        return n / len(px)
+
     def crop_block(bx, by):
         """世界格块 → 渲染图对应像素区（窗外填海色）。"""
         # 世界格 y 块顶（北）→ 渲染行小（图上）
@@ -85,12 +91,19 @@ def main() -> None:
     for old in out_dir.glob("*.jpg"):
         old.unlink()
     blocks = []
+    dropped_sea = 0
     for by in range((height + TILE - 1) // TILE):
         for bx in range((width + TILE - 1) // TILE):
             if not has_land(bx, by):
                 continue  # 全海块不产文件：运行时 fallback 用 sea-tile 平铺（拒绝重复文件）
-            crop_block(bx, by).save(out_dir / f"{bx}-{by}.jpg", quality=88)
+            tile = crop_block(bx, by)
+            if sea_ratio(tile) > 0.85:
+                dropped_sea += 1
+                continue  # 近纯海块（直读 terrain 与渲染局部错位的伪陆块）——同样归 sea-tile
+            tile.save(out_dir / f"{bx}-{by}.jpg", quality=88)
             blocks.append([bx, by])
+    if dropped_sea:
+        print(f"  近纯海块剔除 {dropped_sea}（海色占比 >85%）")
     # 远档 sea 层贴图：滑窗找「与海色最接近且方差最小」的 512² 纯海区（角部可能挨陆地）
     def sea_tile():
         best = None
