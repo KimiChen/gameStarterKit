@@ -169,7 +169,7 @@ WebPlatform**。要联调真实外部身份服务时，另行启动与当前契�
 | `npm run ui:check-source` | 检查 CI 配置的 `web-ui-to-psd` CLI 是否可执行 |
 | `npm run check:uniflex-ui` | 只读校验 UniFlex AOT、字体与双端生成物是否过期 |
 | `npm run typecheck:uniflex-ui` | 检查 UniFlex TSX 作者态和独立 Web 预览入口 |
-| `npm run dev:uniflex-web` | 启动独立 WebProvider Confirm 预览；需先生成 UI，地址由命令输出 |
+| `npm run dev:uniflex-web` | 启动独立 WebProvider 预览；默认 Confirm，访问输出地址的 `?screen=backpack` 可预览 PSD 导入的 Backpack 组件和交互 |
 | `npm run verify:ecs` | 校验锁定的 bitECS 文件 |
 | `npm run fetch:fgui` / `npm run fetch:colyseus` / `npm run fetch:uniflex` | 维护团队显式升级锁定客户端依赖并重钉内容锁；普通开发不运行 |
 | `npm run config:excel-to-json` / `npm run config:excel-to-json:check` | 写出 Excel 示例配表双端 JSON，或只读校验源表与入库生成物；均属额外功能 |

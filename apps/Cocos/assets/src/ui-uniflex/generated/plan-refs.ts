@@ -3,7 +3,7 @@ import type { JsonRef } from '@uniflex/core';
 export const planRefs = {
   "Backpack": {
     "id": "ui/Backpack",
-    "sha256": "dd44e78fa3e183dc370cecafc96e4cffeb8d018b960c38f3cff4cff90197d0a4"
+    "sha256": "b3e34660846cb0dbe4524988a766084c9db9755d28cc78c63886a60ce255088c"
   },
   "Confirm": {
     "id": "ui/Confirm",

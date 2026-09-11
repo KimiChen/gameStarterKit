@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "kind": "uniflex-import-package",
   "name": "Backpack",
   "canvas": {
@@ -10,53 +10,30 @@
   "components": [
     {
       "id": "layer-57",
-      "name": "BackpackTrainingPagination",
+      "name": "BackpackComponent",
       "node": "分页-训练",
-      "file": "components/BackpackTrainingPagination.tsx"
+      "file": "components/BackpackComponent.tsx"
     }
   ],
   "interactiveNodes": [
-    "layer-2",
-    "layer-27",
-    "layer-13"
+    {
+      "id": "layer-2",
+      "action": "primary"
+    },
+    {
+      "id": "layer-27",
+      "action": "back"
+    },
+    {
+      "id": "layer-13",
+      "action": "primary"
+    },
+    {
+      "id": "layer-57",
+      "action": "tab"
+    }
   ],
   "resources": [
-    {
-      "id": "asset-57dfd8c09ea378a4801ef08c67f8d23d53dd079915c703dc83bb1727e448385f",
-      "kind": "image",
-      "path": "assets/57dfd8c09ea378a4801ef08c67f8d23d53dd079915c703dc83bb1727e448385f.png",
-      "sha256": "57dfd8c09ea378a4801ef08c67f8d23d53dd079915c703dc83bb1727e448385f",
-      "width": 750,
-      "height": 108,
-      "mime": "image/png"
-    },
-    {
-      "id": "asset-ec3f7f19edcf64bf1720a365b1fb770d4a8d4452fe04bb8e05f8c35753b50271",
-      "kind": "image",
-      "path": "assets/ec3f7f19edcf64bf1720a365b1fb770d4a8d4452fe04bb8e05f8c35753b50271.png",
-      "sha256": "ec3f7f19edcf64bf1720a365b1fb770d4a8d4452fe04bb8e05f8c35753b50271",
-      "width": 750,
-      "height": 1334,
-      "mime": "image/png"
-    },
-    {
-      "id": "asset-068372b4c674d4fe1adfb8efe16505becfe80d3a1909291a47a45bca03139676",
-      "kind": "image",
-      "path": "assets/068372b4c674d4fe1adfb8efe16505becfe80d3a1909291a47a45bca03139676.bin",
-      "sha256": "068372b4c674d4fe1adfb8efe16505becfe80d3a1909291a47a45bca03139676",
-      "width": 46,
-      "height": 46,
-      "mime": "application/octet-stream"
-    },
-    {
-      "id": "asset-5250daa5d3dc397d8e7117d2352f42f11db74b332e480a1c8842ae87ecc854d5",
-      "kind": "image",
-      "path": "assets/5250daa5d3dc397d8e7117d2352f42f11db74b332e480a1c8842ae87ecc854d5.bin",
-      "sha256": "5250daa5d3dc397d8e7117d2352f42f11db74b332e480a1c8842ae87ecc854d5",
-      "width": 58,
-      "height": 55,
-      "mime": "application/octet-stream"
-    },
     {
       "id": "asset-32916f407d08982f7711a649b30d6d3b83f883f471c800fba267272c37a58161",
       "kind": "image",
@@ -241,7 +218,7 @@
   "sourceDesign": "design.json",
   "notes": [
     "Authoring source is intended to be copied into a UniFlex project input directory.",
-    "Interactive nodes provide local selection feedback only; bind business actions in project code.",
+    "Interactive nodes emit typed local actions and provide selection feedback; bind business actions in project code through onAction.",
     "Rasterized PSD groups remain images and cannot be edited as individual Web nodes."
   ]
 }

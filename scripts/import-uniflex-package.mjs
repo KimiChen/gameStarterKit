@@ -10,7 +10,7 @@ const packageArg = process.argv.slice(2).find((arg, index, args) =>
 const packageDir = resolve(packageArg || "");
 if (!packageDir) throw new Error("Usage: npm run import:uniflex-ui -- /path/to/project-package");
 const manifest = JSON.parse(await readFile(resolve(packageDir, "components.json"), "utf8"));
-if (manifest.schemaVersion !== 1 || manifest.kind !== "uniflex-import-package")
+if (![1, 2].includes(manifest.schemaVersion) || manifest.kind !== "uniflex-import-package")
     throw new Error("Invalid UniFlex import package.");
 const name = String(manifest.name).replace(/[^a-zA-Z0-9_-]+/g, "_");
 const target = outputArg

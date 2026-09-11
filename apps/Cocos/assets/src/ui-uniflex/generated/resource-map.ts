@@ -3,31 +3,19 @@ import type { CocosResourceMapping } from '../../kits/uniflex/api/cocos/index';
 export const resourceMap = {
   "ui/catalog": {
     "path": "uniflex/catalog",
-    "sha256": "27e4a203186fda7f4a90179bb705ff97b2add45ff0f6ff1141fdf9503ce998a2"
-  },
-  "ui/Confirm": {
-    "path": "uniflex/ui/Confirm",
-    "sha256": "dd72dcdff7747f9b8861087207fb413cd2ceaab443d2dfc518cd3ed0f2139172"
+    "sha256": "eba37ac125f651dad43f3ca979cdbab2b7fb8dcf9c0c57b4c34e2ea2fc642775"
   },
   "fonts/regular": {
     "path": "uniflex/fonts/regular",
     "sha256": "1846353947485b97808030078b5856b7be22e1b270e3231d907a0798bfd0ff14"
   },
-  "asset-57dfd8c09ea378a4801ef08c67f8d23d53dd079915c703dc83bb1727e448385f": {
-    "path": "uniflex/imported/Backpack/assets/57dfd8c09ea378a4801ef08c67f8d23d53dd079915c703dc83bb1727e448385f.png",
-    "sha256": "57dfd8c09ea378a4801ef08c67f8d23d53dd079915c703dc83bb1727e448385f"
+  "ui/Backpack": {
+    "path": "uniflex/ui/Backpack",
+    "sha256": "b3e34660846cb0dbe4524988a766084c9db9755d28cc78c63886a60ce255088c"
   },
-  "asset-ec3f7f19edcf64bf1720a365b1fb770d4a8d4452fe04bb8e05f8c35753b50271": {
-    "path": "uniflex/imported/Backpack/assets/ec3f7f19edcf64bf1720a365b1fb770d4a8d4452fe04bb8e05f8c35753b50271.png",
-    "sha256": "ec3f7f19edcf64bf1720a365b1fb770d4a8d4452fe04bb8e05f8c35753b50271"
-  },
-  "asset-068372b4c674d4fe1adfb8efe16505becfe80d3a1909291a47a45bca03139676": {
-    "path": "uniflex/imported/Backpack/assets/068372b4c674d4fe1adfb8efe16505becfe80d3a1909291a47a45bca03139676.bin",
-    "sha256": "068372b4c674d4fe1adfb8efe16505becfe80d3a1909291a47a45bca03139676"
-  },
-  "asset-5250daa5d3dc397d8e7117d2352f42f11db74b332e480a1c8842ae87ecc854d5": {
-    "path": "uniflex/imported/Backpack/assets/5250daa5d3dc397d8e7117d2352f42f11db74b332e480a1c8842ae87ecc854d5.bin",
-    "sha256": "5250daa5d3dc397d8e7117d2352f42f11db74b332e480a1c8842ae87ecc854d5"
+  "ui/Confirm": {
+    "path": "uniflex/ui/Confirm",
+    "sha256": "dd72dcdff7747f9b8861087207fb413cd2ceaab443d2dfc518cd3ed0f2139172"
   },
   "asset-32916f407d08982f7711a649b30d6d3b83f883f471c800fba267272c37a58161": {
     "path": "uniflex/imported/Backpack/assets/32916f407d08982f7711a649b30d6d3b83f883f471c800fba267272c37a58161.png",
