@@ -22,7 +22,8 @@ Cocos Creator 工程壳在 [../Cocos](../Cocos)，代码经同步脚本灌入 `a
 若要在**不启动 Cocos**的情况下直接用客户端 HTTP 源码联调本地服务，先在一个终端运行
 `npm run dev`，再在仓库根运行 `npm run test:client:server`。该集成测试给 Node 补一个最小 XHR transport，
 但实际执行 `core/http.ts`、`net/http/account.ts`、`net/http/area.ts` 与 `net/http/notice.ts`，并真实覆盖
-开发登录、选区、健康、版本、对时和公告端点。默认目标为 `http://localhost:2568`，可用
+开发登录、选区、健康、版本、对时和公告端点；同一命令还会加载锁定的 Colyseus UMD，经过
+`WebSocketClient` 真实加入 Lobby 并调用用户只读 RPC。默认目标为 `http://localhost:2568`，可用
 `CLIENT_SERVER_ORIGIN` 覆盖；它不替代 Cocos 的渲染、资源与交互验证。
 
 ## 同步链

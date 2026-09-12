@@ -8,14 +8,20 @@
  * token 处理与各端点 wrapper 都直接来自 apps/client/src。
  */
 import assert from "node:assert/strict";
+import { createRequire } from "node:module";
 import { test } from "node:test";
 import { initHttp, initPortal, request, setToken } from "../src/core/http";
+import { WebSocketClient } from "../src/net/WebSocketClient";
 import { devLogin } from "../src/net/http/account";
 import { fetchAreaList } from "../src/net/http/area";
 import { fetchNotices } from "../src/net/http/notice";
-import { ApiPath, type IClockNowRes, type IHealthRes, type IVersionRes } from "../src/shared/index";
+import { ApiPath, UserRpc, type IClockNowRes, type IHealthRes, type IVersionRes } from "../src/shared/index";
 
 const origin = (process.env.CLIENT_SERVER_ORIGIN ?? "").replace(/\/+$/, "");
+const require = createRequire(import.meta.url);
+
+// Cocos 中由「导入为插件」加载的锁定 UMD；Node 联调时装入同一份 SDK 并挂回同一全局名。
+(globalThis as { Colyseus?: unknown }).Colyseus = require("../src/lib/colyseus/colyseus.js");
 
 interface RecordedRequest {
   readonly method: string;
@@ -112,6 +118,31 @@ test("客户端 HTTP 封装可真实联调本地服务：登录、选区、健�
     assert.equal(areaRequest?.headers.Authorization, `Bearer ${login.accessToken}`, "选区请求必须复用客户端保存的 token");
   } finally {
     setToken("");
+    (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = previousXhr;
+  }
+});
+
+test("客户端 WebSocketClient 可真实联调本地 Lobby：认证、RPC 与主动离开", { skip: origin === "" }, async () => {
+  const client = WebSocketClient.inst;
+  const previousXhr = (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest;
+  (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = FetchBackedXhr;
+  await client.leave();
+
+  try {
+    initPortal(origin);
+    const login = await devLogin("client_server_ws_smoke", 0, "client-websocket-integration");
+    client.init(origin);
+    await client.join(login.accessToken, { sId: 0 });
+
+    assert.equal(client.getConnectionState().state, "ready");
+    const userId = await client.rpc(UserRpc.GetUserId, {});
+    assert.equal(userId.uid, login.userId, "Lobby 必须从服务端 token 反查 uid，而非信任客户端上报");
+
+    const info = await client.rpc(UserRpc.GetInfo, {});
+    assert.equal(info.user.uid, login.userId);
+    assert.ok(info.user.ver >= 0);
+  } finally {
+    await client.leave();
     (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = previousXhr;
   }
 });
