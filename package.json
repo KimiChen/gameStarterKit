@@ -52,6 +52,7 @@
     "typecheck:client": "tsc -p apps/client/tsconfig.test.json --noEmit",
     "typecheck:client:legacy": "tsc -p apps/client/tsconfig.json --noEmit",
     "test:client": "cd apps/server && node --import tsx --test ../client/test/*.test.ts ../../scripts/vendor-lock.test.mjs ../../scripts/uniflex-output.test.mjs",
+    "test:client:server": "CLIENT_SERVER_ORIGIN=${CLIENT_SERVER_ORIGIN:-http://localhost:2568} node --import tsx --test apps/client/test/serverHttp.integration.test.ts",
     "test:changed": "npm --workspace @game/server run plugin -- changed",
     "test:vendor": "node --test scripts/vendor-lock.test.mjs",
     "test:fgui": "cd apps/server && node --import tsx --test ../../scripts/fgui-manifest.test.mjs ../../scripts/fgui-roundtrip.test.mjs ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/fguiContract.test.ts ../client/test/viewRegistry.test.ts",
