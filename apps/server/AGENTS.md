@@ -3,6 +3,18 @@
 - 本文件约束 `apps/server`；默认只修改当前目录及其明确需要同步的生成物。
 - **目录访问边界：**正常情况下只访问 `./`（即 `apps/server`）内的目录，不访问 `./` 之外的其他目录。
   测试客户端服务端联调时只访问 [`./test/client/`](test/client/)；它是指向客户端联调用例真源的软链接。
+  联调覆盖客户端 HTTP 与 Lobby WebSocket，运行方式如下：
+
+  ```bash
+  # 终端 A（apps/server）：启动本地依赖、建库并启动游戏服
+  npm run dev
+
+  # 终端 B（apps/server）：直接运行客户端真实服务端联调
+  CLIENT_SERVER_ORIGIN=http://localhost:2568 \
+    node --import tsx --test test/client/clientServer.integration.test.ts
+  ```
+
+  `CLIENT_SERVER_ORIGIN` 可替换为其他目标服务的 HTTP(S) origin；未显式启动服务时不要运行该测试。
 - `humanDocs/` 仅供人类阅读，AI 不读取、不搜索、不修改。
 - 各模块入口见 [AI-INDEX.md](AI-INDEX.md)。
 
