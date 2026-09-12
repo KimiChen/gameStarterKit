@@ -10,18 +10,18 @@
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { test } from "node:test";
-import { initHttp, initPortal, request, setToken } from "../src/core/http";
-import { WebSocketClient } from "../src/net/WebSocketClient";
-import { devLogin } from "../src/net/http/account";
-import { fetchAreaList } from "../src/net/http/area";
-import { fetchNotices } from "../src/net/http/notice";
-import { ApiPath, UserRpc, type IClockNowRes, type IHealthRes, type IVersionRes } from "../src/shared/index";
+import { initHttp, initPortal, request, setToken } from "../../src/core/http";
+import { WebSocketClient } from "../../src/net/WebSocketClient";
+import { devLogin } from "../../src/net/http/account";
+import { fetchAreaList } from "../../src/net/http/area";
+import { fetchNotices } from "../../src/net/http/notice";
+import { ApiPath, UserRpc, type IClockNowRes, type IHealthRes, type IVersionRes } from "../../src/shared/index";
 
 const origin = (process.env.CLIENT_SERVER_ORIGIN ?? "").replace(/\/+$/, "");
 const require = createRequire(import.meta.url);
 
 // Cocos 中由「导入为插件」加载的锁定 UMD；Node 联调时装入同一份 SDK 并挂回同一全局名。
-(globalThis as { Colyseus?: unknown }).Colyseus = require("../src/lib/colyseus/colyseus.js");
+(globalThis as { Colyseus?: unknown }).Colyseus = require("../../src/lib/colyseus/colyseus.js");
 
 interface RecordedRequest {
   readonly method: string;
