@@ -646,7 +646,7 @@ export function isSharedNamespace(relative: string, id: string, cls: PackageClas
   const exclusive = cls === "kit"
     ? [`${kitDir(id)}/`, `apps/client/src/kits/${id}/`, `apps/Cocos/assets/src/kits/${id}/`, `apps/shared/src/kits/${id}/`, `apps/server/src/kits/${id}/`,
       `apps/server/src/framework/compute/tasks/kits/${id}/`, `apps/Cocos/assets/resources/kits/${id}/`, ...modeIds.flatMap(gameplayExclusivePrefixes)]
-    : [`${pluginDir(id)}/`, `apps/client/src/plugins/${id}/`, `apps/Cocos/assets/src/plugins/${id}/`, `apps/server/src/core/${id}/`,
+    : [`${pluginDir(id)}/`, `apps/client/src/plugins/${id}/`, `apps/Cocos/assets/src/plugins/${id}/`, `apps/server/src/modules/${id}/`,
       ...modeIds.flatMap(gameplayExclusivePrefixes)];
   if (exclusive.some((prefix) => relative.startsWith(prefix) || relative === `${prefix.slice(0, -1)}.meta`)) return false;
   return true;

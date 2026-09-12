@@ -298,7 +298,7 @@ export function deriveOwnership(identity: PluginIdentity): readonly OwnershipRul
     );
   } else {
     // 服务端领域逻辑与 Lobby RPC 域不依赖客户端登记：纯服务端插件（只有域）也成立。
-    rules.push({ kind: "dir", path: `apps/server/src/core/${id}`, reason: "插件服务端领域逻辑与自有键（keys.ts 经 kPlugin* 工厂）" });
+    rules.push({ kind: "dir", path: `apps/server/src/modules/${id}`, reason: "插件服务端领域逻辑与自有键（keys.ts 经 kPlugin* 工厂）" });
   }
   {
     for (const domain of identity.domains) {
@@ -307,7 +307,7 @@ export function deriveOwnership(identity: PluginIdentity): readonly OwnershipRul
         { kind: "dir", path: `apps/server/src/websocket/${domain}`, reason: `Lobby RPC 端点（${domain}.<method>）` },
         { kind: "file", path: `apps/server/test/lobbyRpcVectors/${domain}.ts`, reason: `RPC 向量 sidecar（${domain}）` },
       );
-      if (!isKit && domain !== id) rules.push({ kind: "dir", path: `apps/server/src/core/${domain}`, reason: `域 ${domain} 的服务端领域逻辑` });
+      if (!isKit && domain !== id) rules.push({ kind: "dir", path: `apps/server/src/modules/${domain}`, reason: `域 ${domain} 的服务端领域逻辑` });
     }
     for (const dir of identity.clientDirs) rules.push({ kind: "dir", path: dir.replace(/\/+$/u, ""), reason: `${packageManifestName(identity.class)} 声明的客户端目录` });
   }

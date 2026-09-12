@@ -72,7 +72,7 @@ test("allowlist：plugin 插件的推导集覆盖 plugin/domain/客户端/FGUI/�
     "apps/plugins/chamber/plugin.json",
     "apps/shared/src/protocol/lobbyRpc/domains/chamber.ts",
     "apps/server/src/websocket/chamber/peek.ts",
-    "apps/server/src/core/chamber/keys.ts",
+    "apps/server/src/modules/chamber/keys.ts",
     "apps/server/test/lobbyRpcVectors/chamber.ts",
     "apps/server/test/chamber-peek.test.ts",
     "apps/server/test/int/chamber-flow.test.ts",
@@ -291,7 +291,7 @@ function authorTree(root: string, version: string, id = "chamber"): void {
   }, null, 2)}\n`);
   write(root, `apps/shared/src/protocol/lobbyRpc/domains/${id}.ts`, "export default {} as never;\n");
   write(root, `apps/server/src/websocket/${id}/peek.ts`, "export default {} as never;\n");
-  write(root, `apps/server/src/core/${id}/keys.ts`, `export const k${Constant}Seq = 1;\n`);
+  write(root, `apps/server/src/modules/${id}/keys.ts`, `export const k${Constant}Seq = 1;\n`);
   write(root, `apps/server/test/lobbyRpcVectors/${id}.ts`, "export default {};\n");
   write(root, `apps/server/test/${id}-peek.test.ts`, "// fixture test\n");
   write(root, `apps/plugins/${id}/README.md`, `# ${id} ${version}\n`);
@@ -404,7 +404,7 @@ test("install：首装落盘 + 锁 + plugins/<id>/plugin.json；check 通过；�
     assert.equal(again.unchanged.length, report.written.length);
 
     // 本地改动：check 点名；再次 install 拒绝（不覆盖本地改动）。
-    fs.appendFileSync(path.join(target, "apps/server/src/core/chamber/keys.ts"), "// local edit\n");
+    fs.appendFileSync(path.join(target, "apps/server/src/modules/chamber/keys.ts"), "// local edit\n");
     const check = checkInstalledPlugins(target);
     assert.equal(check.ok, false);
     assert.match(check.plugins[0].problems.join("\n"), /本地改动.*core\/chamber\/keys\.ts/u);
@@ -486,14 +486,14 @@ test("reinstall-from-tree（E6 方案 ②）：同仓改动不 bump 拒绝并点
     // bump 到 1.0.1，同时新增一个服务端文件、删掉一个测试：dry-run 只报告不写。
     const manifestFile = path.join(target, "apps/plugins/chamber/plugin.json");
     fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.0.1"'));
-    write(target, "apps/server/src/core/chamber/extra.ts", "export const extra = 2;\n");
+    write(target, "apps/server/src/modules/chamber/extra.ts", "export const extra = 2;\n");
     fs.rmSync(path.join(target, "apps/server/test/chamber-peek.test.ts"));
     const dry = reinstallFromTree({ root: target, id: "chamber", git: false, postinstall: false, dryRun: true });
     assert.equal(dry.previousVersion, "1.0.0");
     assert.equal(dry.version, "1.0.1");
     assert.deepEqual(dry.written, [], "从树重装 ⛔ 不写任何插件文件");
     assert.deepEqual(dry.adopted?.changed, ["apps/plugins/chamber/README.md", "apps/plugins/chamber/plugin.json"]);
-    assert.deepEqual(dry.adopted?.added, ["apps/server/src/core/chamber/extra.ts"]);
+    assert.deepEqual(dry.adopted?.added, ["apps/server/src/modules/chamber/extra.ts"]);
     assert.deepEqual(dry.deleted, ["apps/server/test/chamber-peek.test.ts"]);
     assert.equal(readInstalledLock(target, "chamber")?.manifest.version, "1.0.0", "dry-run 不改锁");
 
@@ -503,7 +503,7 @@ test("reinstall-from-tree（E6 方案 ②）：同仓改动不 bump 拒绝并点
     assert.ok(rewritten);
     assert.equal(rewritten.manifest.version, "1.0.1");
     assert.equal(rewritten.entries.length, baseline.entries.length + 1 - 1);
-    assert.ok(rewritten.entries.some((entry) => entry.path === "apps/server/src/core/chamber/extra.ts"));
+    assert.ok(rewritten.entries.some((entry) => entry.path === "apps/server/src/modules/chamber/extra.ts"));
     assert.ok(!rewritten.entries.some((entry) => entry.path === "apps/server/test/chamber-peek.test.ts"));
     assert.equal(rewritten.entries.find((entry) => entry.path === "apps/plugins/chamber/README.md")?.sha256, sha256("# chamber edited in host repo\n"));
     assert.equal(checkInstalledPlugins(target).ok, true, "重写后 check 必须绿");
@@ -585,7 +585,7 @@ test("install：越权路径整包拒绝并点名（脚本 / 受保护文件 / �
     assert.doesNotThrow(() => validatePackage(readPackage(dirOut), target));
 
     // 所有权冲突：目标树已有同路径文件且不属本插件。
-    write(target, "apps/server/src/core/chamber/keys.ts", "// someone else's\n");
+    write(target, "apps/server/src/modules/chamber/keys.ts", "// someone else's\n");
     assert.throws(() => installPlugin({ root: target, source: dirOut, git: false, postinstall: false }), /所有权冲突/u);
   } finally {
     cleanup(author, target);
@@ -671,7 +671,7 @@ test("审阅后加固：插件 id/domain 与框架既有目录同名 → 目录�
   const { author, target } = makeFixture();
   try {
     // 目标树里 core/chamber 已被"框架"占用（不在任何锁里）。
-    write(target, "apps/server/src/core/chamber/session.ts", "// framework owned\n");
+    write(target, "apps/server/src/modules/chamber/session.ts", "// framework owned\n");
     const zipFile = path.join(author, "out/chamber.zip");
     packPlugin({ root: author, id: "chamber", outFile: zipFile });
     assert.throws(
@@ -679,7 +679,7 @@ test("审阅后加固：插件 id/domain 与框架既有目录同名 → 目录�
       /所有权冲突.*apps\/server\/src\/core\/chamber\/session\.ts/su,
       "推导集内已有不属本插件的文件（即使包里没有同名文件）也必须拒绝",
     );
-    fs.rmSync(path.join(target, "apps/server/src/core/chamber"), { recursive: true });
+    fs.rmSync(path.join(target, "apps/server/src/modules/chamber"), { recursive: true });
     // 镜像侧同样检查：目标树已有插件专属镜像目录的陌生文件。
     write(target, "apps/Cocos/assets/src/plugins/chamber/stale.ts", "// someone else\n");
     assert.throws(
@@ -732,9 +732,9 @@ test("PLUGIN-REGISTRY §1-3：reinstall-from-tree 的身份变化闸与 git 跟�
 
     // 对照：作者新写的未跟踪文件不需要任何 flag 就能吸收（这才是 reinstall-from-tree 的日常）。
     fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.1"', '"1.0.2"'));
-    write(target, "apps/server/src/core/chamber/extra.ts", "export const extra = 2;\n");
+    write(target, "apps/server/src/modules/chamber/extra.ts", "export const extra = 2;\n");
     const plain = reinstallFromTree({ root: target, id: "chamber", git: true, postinstall: false });
-    assert.deepEqual(plain.adopted?.added, ["apps/server/src/core/chamber/extra.ts"]);
+    assert.deepEqual(plain.adopted?.added, ["apps/server/src/modules/chamber/extra.ts"]);
   } finally {
     cleanup(author, target);
   }
@@ -771,14 +771,14 @@ test("PLUGIN-REGISTRY §1-4：互为前缀的两个插件共存——各自升�
     // 卸载 chamber：chamberBoard 文件与锁完好。
     uninstallPlugin({ root: target, id: "chamber", git: false, postinstall: false });
     assert.ok(fs.existsSync(path.join(target, "apps/server/test/chamberBoard-peek.test.ts")));
-    assert.ok(fs.existsSync(path.join(target, "apps/server/src/core/chamberBoard/keys.ts")));
+    assert.ok(fs.existsSync(path.join(target, "apps/server/src/modules/chamberBoard/keys.ts")));
     assert.equal(checkInstalledPlugins(target).ok, true);
 
     // 锁间重叠：把 chamber 的一个路径塞进 chamberBoard 的锁（模拟规则演进/合并错），install chamber 拒绝并点名所有者；
     // check 报锁间重叠；作者侧 pack 遇到推导集与他锁重叠也拒绝。
     installPlugin({ root: target, source: zipA2, git: false, postinstall: false });
     const lockB = path.join(target, "scripts/packages/chamberBoard.lock");
-    fs.appendFileSync(lockB, `apps/server/src/core/chamber/keys.ts ${sha256("export const kChamberSeq = 1;\n")}\n`);
+    fs.appendFileSync(lockB, `apps/server/src/modules/chamber/keys.ts ${sha256("export const kChamberSeq = 1;\n")}\n`);
     const overlapping = checkInstalledPlugins(target);
     assert.equal(overlapping.ok, false);
     assert.match(overlapping.plugins.flatMap((plugin) => plugin.problems).join("\n"), /锁间重叠：apps\/server\/src\/core\/chamber\/keys\.ts 同时登记在 chamber 与 chamberBoard/u);
@@ -811,7 +811,7 @@ test("PLUGIN-REGISTRY §1-1：postinstall 失败即回滚——无 git：文件�
       if (args.includes("codegen:plugins")) throw new Error("route id 重复：chamber（模拟跨插件冲突）");
     });
     assert.throws(() => installPlugin({ root: target, source: v1, git: false, runner: boom }), /postinstall失败，已回滚到操作前[\s\S]*route id 重复/u);
-    for (const relative of ["apps/plugins/chamber/plugin.json", "apps/server/src/core/chamber/keys.ts", "scripts/packages/chamber.lock", "apps/plugins/chamber/plugin.json", "apps/Cocos/assets/src/plugins/chamber.meta"]) {
+    for (const relative of ["apps/plugins/chamber/plugin.json", "apps/server/src/modules/chamber/keys.ts", "scripts/packages/chamber.lock", "apps/plugins/chamber/plugin.json", "apps/Cocos/assets/src/plugins/chamber.meta"]) {
       assert.ok(!fs.existsSync(path.join(target, relative)), `回滚后不得残留：${relative}`);
     }
     assert.ok(!fs.existsSync(path.join(target, "apps/Cocos/assets/src/plugins/chamber")), "空目录也清掉");
@@ -1170,9 +1170,9 @@ test("加固 §1-1：落盘阶段失败（锁目录不可写 / 包内文件与�
 test("加固 §1-1：暂存删除只对 HEAD 里本插件锁登记过的路径算干净——别人对框架文件的暂存删除仍拒绝", () => {
   const { author, target } = makeFixture("1.0.0");
   try {
-    write(target, "apps/server/src/core/chamber/keys.ts", "// framework owned\n");
+    write(target, "apps/server/src/modules/chamber/keys.ts", "// framework owned\n");
     gitInit(target);
-    spawnSync("git", ["rm", "-q", "--", "apps/server/src/core/chamber/keys.ts"], { cwd: target });
+    spawnSync("git", ["rm", "-q", "--", "apps/server/src/modules/chamber/keys.ts"], { cwd: target });
     assert.match(gitPorcelain(target), /^D  apps\/server\/src\/core\/chamber\/keys\.ts/mu);
     const v1 = path.join(author, "out/v1.zip");
     packPlugin({ root: author, id: "chamber", outFile: v1 });
@@ -1265,11 +1265,11 @@ test("加固 §1-3 / §1-2：reinstall-from-tree 不替作者删仍在磁盘的�
     // 共享命名空间的吸收：未跟踪的 apps/server/test/chamber-extra.test.ts 被吸收但点名 review；专属目录的新文件不点名。
     fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.2.0"', '"1.3.0"'));
     write(target, "apps/server/test/chamber-extra.test.ts", "// new shared-namespace test\n");
-    write(target, "apps/server/src/core/chamber/more.ts", "export const more = 1;\n");
+    write(target, "apps/server/src/modules/chamber/more.ts", "export const more = 1;\n");
     const adopted = reinstallFromTree({ root: target, id: "chamber", git: true, postinstall: false });
     assert.deepEqual(adopted.adopted?.review, ["apps/server/test/chamber-extra.test.ts"]);
     assert.ok(isSharedNamespace("apps/server/src/websocket/chamber/x.ts", "chamber"));
-    assert.ok(!isSharedNamespace("apps/server/src/core/chamber/x.ts", "chamber"));
+    assert.ok(!isSharedNamespace("apps/server/src/modules/chamber/x.ts", "chamber"));
   } finally {
     cleanup(author, target);
   }
@@ -1622,8 +1622,8 @@ test("kit（docs/KIT.md §2/§3）：所有权推导 = kits/ 命名空间 + 逐 
     "apps/Cocos/assets/resources/kits/kfix/x.bin",
   ]) assert.ok(ok(relative), `kit 应放行：${relative}`);
   for (const relative of [
-    "apps/server/src/core/kfix/keys.ts", "apps/client/src/plugins/kfix/index.ts", "apps/plugins/kfix/plugin.json",
-    "apps/server/src/core/kfixAdmin/x.ts", "apps/shared/src/kits/catalogTypes.ts", "apps/shared/src/kits/catalog.generated.ts",
+    "apps/server/src/modules/kfix/keys.ts", "apps/client/src/plugins/kfix/index.ts", "apps/plugins/kfix/plugin.json",
+    "apps/server/src/modules/kfixAdmin/x.ts", "apps/shared/src/kits/catalogTypes.ts", "apps/shared/src/kits/catalog.generated.ts",
     "apps/server/src/kits/catalog.generated.ts", "apps/server/sql/schema.sql", "apps/server/src/framework/infra/kitApi.ts",
     "apps/server/test/kfixArenaX-a.test.ts", "apps/shared/src/kits/other/index.ts",
   ]) assert.ok(!ok(relative), `kit 应拒绝：${relative}`);
