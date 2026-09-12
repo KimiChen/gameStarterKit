@@ -8,6 +8,7 @@
 坐标：世界格 (x,y) → 渲染窗格 ((x-margin)/scale, rows-(y-margin)/scale)（y 翻转：图顶=北=世界 y 大）。
 窗外（海环 margin 超出渲染图范围）填海色。
 """
+import functools
 import json
 import sys
 from pathlib import Path
@@ -21,6 +22,24 @@ TILE = 32          # 块边长（世界格；= 2×2 chunk；1024²→32px/格，
 IMG = 1024         # 块图边长（px）
 
 
+@functools.lru_cache(maxsize=8)
+def load_block_image(path: str):
+    return Image.open(path).convert("RGB")
+
+
+def load_render_blocks(blocks_dir: Path):
+    """render-ground --hi-res 的高分块图索引：{size, grid: {(rx,ry): path}}；无则 None。"""
+    files = sorted(blocks_dir.glob("*.png"))
+    if not files:
+        return None
+    size = Image.open(files[0]).size[0]
+    grid = {}
+    for f in files:
+        rx, ry = f.stem.split("-")
+        grid[(int(rx), int(ry))] = str(f)
+    return {"size": size, "grid": grid}
+
+
 def main() -> None:
     map_id = sys.argv[1]
     cfg = load_config()
@@ -32,8 +51,16 @@ def main() -> None:
     margin_x = (width - win["cols"] * scale) // 2
     margin_y = (height - win["rows"] * scale) // 2
     sea = tuple(mc.get("seaColor") or [66, 143, 163])
-    ground = Image.open(resolve_ground_image(cfg, mc)).convert("RGB")
-    px = win.get("pxPerCell") or (ground.size[0] / win["cols"])
+    # 图源：render-blocks（--hi-res 高分块图）优先；否则整图 ground.png
+    blocks_dir = Path(__file__).resolve().parent / "out" / map_id / "render-blocks"
+    rb = load_render_blocks(blocks_dir)
+    ground = None
+    if rb is None:
+        ground = Image.open(resolve_ground_image(cfg, mc)).convert("RGB")
+        px = win.get("pxPerCell") or (ground.size[0] / win["cols"])
+    else:
+        px = 168.0  # 高分块图固定原版地砖分辨率
+        print(f"  高分源: render-blocks {len(rb['grid'])} 块 ×{rb['size']}²")
 
     regs = terrain["regions"]
 
@@ -60,30 +87,60 @@ def main() -> None:
         return n / len(px)
 
     def crop_block(bx, by):
-        """世界格块 → 渲染图对应像素区（窗外填海色）。"""
-        # 世界格 y 块顶（北）→ 渲染行小（图上）
+        """世界格块 → 渲染图源对应像素区（窗外填海色；高分模式从 render-blocks 拼切）。"""
         gx0 = (bx * TILE - margin_x) / scale
         gx1 = ((bx + 1) * TILE - margin_x) / scale
-        gy_south = (by * TILE - margin_y) / scale          # 块南缘（世界 y 小）
-        gy_north = ((by + 1) * TILE - margin_y) / scale    # 块北缘（世界 y 大）
-        # 渲染图行：北缘行号小
+        gy_south = (by * TILE - margin_y) / scale
+        gy_north = ((by + 1) * TILE - margin_y) / scale
         row0 = win["rows"] - gy_north
         row1 = win["rows"] - gy_south
-        canvas = Image.new("RGB", (IMG, IMG), sea)
-        # 源像素区（可能部分出界）
-        sx0, sx1 = gx0 * px, gx1 * px
+        # 窗系像素（相对渲染窗原点 win.x0/win.y0）
+        sx0, sx1 = (gx0) * px, (gx1) * px
         sy0, sy1 = row0 * px, row1 * px
-        # 裁剪到图内
-        cx0, cy0 = max(0, sx0), max(0, sy0)
-        cx1, cy1 = min(ground.size[0], sx1), min(ground.size[1], sy1)
-        if cx1 > cx0 and cy1 > cy0:
-            piece = ground.crop((round(cx0), round(cy0), round(cx1), round(cy1)))
-            # 目标区：源区在块图内的位置（比例映射）
-            dx0 = round((cx0 - sx0) / (sx1 - sx0) * IMG)
-            dy0 = round((cy0 - sy0) / (sy1 - sy0) * IMG)
-            dx1 = round((cx1 - sx0) / (sx1 - sx0) * IMG)
-            dy1 = round((cy1 - sy0) / (sy1 - sy0) * IMG)
-            canvas.paste(piece.resize((max(1, dx1 - dx0), max(1, dy1 - dy0)), Image.LANCZOS), (dx0, dy0))
+        canvas = Image.new("RGB", (IMG, IMG), sea)
+        if rb is None:
+            cx0, cy0 = max(0, sx0), max(0, sy0)
+            cx1, cy1 = min(ground.size[0], sx1), min(ground.size[1], sy1)
+            if cx1 > cx0 and cy1 > cy0:
+                piece = ground.crop((round(cx0), round(cy0), round(cx1), round(cy1)))
+                dx0 = round((cx0 - sx0) / (sx1 - sx0) * IMG)
+                dy0 = round((cy0 - sy0) / (sy1 - sy0) * IMG)
+                dx1 = round((cx1 - sx0) / (sx1 - sx0) * IMG)
+                dy1 = round((cy1 - sy0) / (sy1 - sy0) * IMG)
+                canvas.paste(piece.resize((max(1, dx1 - dx0), max(1, dy1 - dy0)), Image.LANCZOS), (dx0, dy0))
+            return canvas
+        # 高分：逐 render-block 裁贴（块图 x 从图左数、y 从图底数；块图内容 = 窗格 [x0+rx*32, x0+(rx+1)*32)）
+        B = rb["size"]
+        H_full = win["rows"] * px
+
+        def block_at(sx, sy):
+            rx = int(sx // B)
+            ry = int((H_full - sy) // B)  # y 从图底数
+            return rx, ry
+
+        rx0, _ = block_at(sx0, 0)
+        rx1, _ = block_at(max(sx0, sx1 - 1), 0)
+        _, ry0 = block_at(0, sy0)   # sy0 图顶 → ry 大
+        _, ry1 = block_at(0, max(sy0, sy1 - 1))
+        for ry in range(min(ry0, ry1), max(ry0, ry1) + 1):
+            for rx in range(rx0, rx1 + 1):
+                f = rb["grid"].get((rx, ry))
+                if not f:
+                    continue
+                img = load_block_image(f)
+                # 块图覆盖的窗系像素区：x [rx*B, rx*B+B)，y [H_full-(ry+1)*B, H_full-ry*B)
+                bx0, bx1 = rx * B, rx * B + B
+                by0, by1 = H_full - (ry + 1) * B, H_full - ry * B
+                cx0, cy0 = max(sx0, bx0), max(sy0, by0)
+                cx1, cy1 = min(sx1, bx1), min(sy1, by1)
+                if cx1 <= cx0 or cy1 <= cy0:
+                    continue
+                piece = img.crop((round(cx0 - bx0), round(cy0 - by0), round(cx1 - bx0), round(cy1 - by0)))
+                dx0 = round((cx0 - sx0) / (sx1 - sx0) * IMG)
+                dy0 = round((cy0 - sy0) / (sy1 - sy0) * IMG)
+                dx1 = round((cx1 - sx0) / (sx1 - sx0) * IMG)
+                dy1 = round((cy1 - sy0) / (sy1 - sy0) * IMG)
+                canvas.paste(piece.resize((max(1, dx1 - dx0), max(1, dy1 - dy0)), Image.LANCZOS), (dx0, dy0))
         return canvas
 
     out_dir = Path(__file__).resolve().parent / "out" / map_id / "ground-tiles"
@@ -106,6 +163,15 @@ def main() -> None:
         print(f"  近纯海块剔除 {dropped_sea}（海色占比 >85%）")
     # 远档 sea 层贴图：滑窗找「与海色最接近且方差最小」的 512² 纯海区（角部可能挨陆地）
     def sea_tile():
+        if rb is not None:
+            # 高分：从 render-blocks 找海色占比最高的块裁 512²
+            best = None
+            for f in rb["grid"].values():
+                img = load_block_image(f)
+                r = sea_ratio(img)
+                if best is None or r > best[0]:
+                    best = (r, f)
+            return load_block_image(best[1]).crop((0, 0, 512, 512))
         best = None
         for y in range(0, ground.size[1] - 512, 256):
             for x in range(0, ground.size[0] - 512, 256):
