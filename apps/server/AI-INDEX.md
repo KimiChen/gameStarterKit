@@ -1,7 +1,5 @@
 # Server AI 入口
 
-先按改动路径选择最近的 README，再打开目标文件；不要先通读整个 `src/` 或 `test/`。
-
 | 改动路径 | 先读 | 常用验证 |
 | --- | --- | --- |
 | `src/rooms/**` | `src/rooms/README.md` | `npm run test:rooms` |
